@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Map
 public import TauCeti.Topology.CategoryTheory.ActionGroupoid.Basic
 
 /-!
@@ -73,14 +72,7 @@ open embedding on total arrows. In label-source coordinates it is the product of
 of the subgroup and of the subset. Every subgroup of a discrete group is open. -/
 theorem isOpenEmbedding_inclusion_total (hH : IsOpen (H : Set G)) (hS : IsOpen (S : Set X)) :
     IsOpenEmbedding (inclusion S).toPrefunctor.mapTotal := by
-  have : (inclusion S).toPrefunctor.mapTotal =
-      (arrowHomeomorph G X).symm ∘ Prod.map Subtype.val Subtype.val ∘ arrowHomeomorph H S := by
-    funext f
-    apply (arrowHomeomorph G X).injective
-    simp [objEquiv]
-  rw [this]
-  exact (arrowHomeomorph G X).symm.isOpenEmbedding.comp
-    ((hH.isOpenEmbedding_subtypeVal.prodMap
-      hS.isOpenEmbedding_subtypeVal).comp (arrowHomeomorph H S).isOpenEmbedding)
+  rw [inclusion_eq_map]
+  exact isOpenEmbedding_mapTotal_map _ _ hH.isOpenEmbedding_subtypeVal hS.isOpenEmbedding_subtypeVal
 
 end TauCeti.ActionGroupoid

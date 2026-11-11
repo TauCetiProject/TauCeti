@@ -119,6 +119,51 @@ theorem latticeAugmentation_eq_zero_of_mem_degreePart (P : PlumbingGraph V)
     exact hq hdim.symm
   simp [P.latticeAugmentationCoefficient_of_directions_ne_empty k hne]
 
+/-- The two faces of an edge carry the same `U`-power in the augmentation: the face exponent plus
+the drop from the face weight to the minimal weight is the same for the lower and the upper face. -/
+private theorem characteristicFaceExponent_add_toNat_eq (P : PlumbingGraph V)
+    (h : P.IsNegativeDefinite) (k : P.characteristicVectors) (C : PlumbingCube V)
+    (v : C.directions)
+    (hlower : (C.lowerFace v.val v.property).directions = ∅)
+    (hupper : (C.upperFace v.val v.property).directions = ∅) :
+    PlumbingCube.characteristicLowerFaceExponent P k C v.val +
+        (P.characteristicWeight k (C.lowerFace v.val v.property).base -
+          P.sInfCharacteristicWeight k).toNat =
+      PlumbingCube.characteristicUpperFaceExponent P k C v.property +
+        (P.characteristicWeight k (C.upperFace v.val v.property).base -
+          P.sInfCharacteristicWeight k).toNat := by
+  have hlowerbase :
+      P.characteristicWeight k (C.lowerFace v.val v.property).base =
+        PlumbingCube.characteristicWeight P k (C.lowerFace v.val v.property) := by
+    rw [PlumbingCube.characteristicWeight_def, hlower,
+      PlumbingGraph.characteristicCubeWeight_empty]
+  have hupperbase :
+      P.characteristicWeight k (C.upperFace v.val v.property).base =
+        PlumbingCube.characteristicWeight P k (C.upperFace v.val v.property) := by
+    rw [PlumbingCube.characteristicWeight_def, hupper,
+      PlumbingGraph.characteristicCubeWeight_empty]
+  have hlowerexp :
+      (PlumbingCube.characteristicLowerFaceExponent P k C v.val : ℤ) =
+        PlumbingCube.characteristicWeight P k C -
+          PlumbingCube.characteristicWeight P k (C.lowerFace v.val v.property) := by
+    rw [PlumbingCube.characteristicLowerFaceExponent_natCast, PlumbingCube.lowerFace_def]
+  have hupperexp :
+      (PlumbingCube.characteristicUpperFaceExponent P k C v.property : ℤ) =
+        PlumbingCube.characteristicWeight P k C -
+          PlumbingCube.characteristicWeight P k (C.upperFace v.val v.property) :=
+    PlumbingCube.characteristicUpperFaceExponent_natCast P k C v.property
+  have hlowermin :
+      P.sInfCharacteristicWeight k ≤
+        P.characteristicWeight k (C.lowerFace v.val v.property).base :=
+    P.sInfCharacteristicWeight_le h k _
+  have huppermin :
+      P.sInfCharacteristicWeight k ≤
+        P.characteristicWeight k (C.upperFace v.val v.property).base :=
+    P.sInfCharacteristicWeight_le h k _
+  rw [hlowerbase] at hlowermin ⊢
+  rw [hupperbase] at huppermin ⊢
+  omega
+
 /-- The augmentation kills the differential of a single cube.
 
 A cube of dimension at least two has every codimension-one face of positive dimension, so all the
@@ -142,45 +187,7 @@ theorem latticeAugmentation_latticeDifferentialOnGenerator (P : PlumbingGraph V)
     rw [P.latticeAugmentationCoefficient_of_directions_eq_empty k hlower,
       P.latticeAugmentationCoefficient_of_directions_eq_empty k hupper,
       ← pow_add, ← pow_add]
-    have hlowerbase :
-        P.characteristicWeight k (C.lowerFace v.val v.property).base =
-          PlumbingCube.characteristicWeight P k (C.lowerFace v.val v.property) := by
-      rw [PlumbingCube.characteristicWeight_def, hlower,
-        PlumbingGraph.characteristicCubeWeight_empty]
-    have hupperbase :
-        P.characteristicWeight k (C.upperFace v.val v.property).base =
-          PlumbingCube.characteristicWeight P k (C.upperFace v.val v.property) := by
-      rw [PlumbingCube.characteristicWeight_def, hupper,
-        PlumbingGraph.characteristicCubeWeight_empty]
-    have hlowerexp :
-        (PlumbingCube.characteristicLowerFaceExponent P k C v.val : ℤ) =
-          PlumbingCube.characteristicWeight P k C -
-            PlumbingCube.characteristicWeight P k (C.lowerFace v.val v.property) := by
-      rw [PlumbingCube.characteristicLowerFaceExponent_natCast, PlumbingCube.lowerFace_def]
-    have hupperexp :
-        (PlumbingCube.characteristicUpperFaceExponent P k C v.property : ℤ) =
-          PlumbingCube.characteristicWeight P k C -
-            PlumbingCube.characteristicWeight P k (C.upperFace v.val v.property) :=
-      PlumbingCube.characteristicUpperFaceExponent_natCast P k C v.property
-    have hlowermin :
-        P.sInfCharacteristicWeight k ≤
-          P.characteristicWeight k (C.lowerFace v.val v.property).base :=
-      P.sInfCharacteristicWeight_le h k _
-    have huppermin :
-        P.sInfCharacteristicWeight k ≤
-          P.characteristicWeight k (C.upperFace v.val v.property).base :=
-      P.sInfCharacteristicWeight_le h k _
-    have hexp :
-        PlumbingCube.characteristicLowerFaceExponent P k C v.val +
-            (P.characteristicWeight k (C.lowerFace v.val v.property).base -
-              P.sInfCharacteristicWeight k).toNat =
-          PlumbingCube.characteristicUpperFaceExponent P k C v.property +
-            (P.characteristicWeight k (C.upperFace v.val v.property).base -
-              P.sInfCharacteristicWeight k).toNat := by
-      rw [hlowerbase] at hlowermin ⊢
-      rw [hupperbase] at huppermin ⊢
-      omega
-    rw [hexp]
+    rw [characteristicFaceExponent_add_toNat_eq P h k C v hlower hupper]
     exact CharTwo.add_self_eq_zero (R := PlumbingCoefficient) _
   · -- The cube has dimension at least two, so neither face is a lattice point.
     have hlower : (C.lowerFace v.val v.property).directions ≠ ∅ := by

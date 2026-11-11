@@ -37,6 +37,7 @@ def theme : Theme := { Theme.default with
           {{← builtinHeader }}
           <link rel="stylesheet" href="static/style.css"/>
           <script src="static/site.js" defer="defer"></script>
+          <script src="static/chart-hover.js" defer="defer"></script>
         </head>
         <body>
           <header class="site-nav">

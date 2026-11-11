@@ -16,8 +16,8 @@ almostification functor `toAlmost S`:
 
 * `V ⧸ m` almostifies to zero for every setup; for a valuation ring with non-finitely-generated
   maximal ideal `m` so does the residue field, while `V ⧸ (ε)` does not for `ε ∈ m`;
-* for the classical setup `(ℤ, ℤ)`, `ℤ^a` is not zero, multiplication by `2` on `ℤ` does not
-  become an isomorphism, and `toAlmost` is an equivalence;
+* for the classical setup `(ℤ, ℤ)`, `ℤ^a` is not zero, multiplication by `2` on `ℤ` becomes a
+  monomorphism but neither an epimorphism nor an isomorphism, and `toAlmost` is an equivalence;
 * for the zero setup every almost module is zero;
 * the inclusion `m ⊆ V` becomes an isomorphism, `toAlmost` is exact and `V`-linear, and the
   factorisation of `toAlmost` through itself is the identity.
@@ -78,6 +78,24 @@ example : ¬ IsIso ((toAlmost (classical ℤ)).map
   rintro ⟨-, hs⟩
   obtain ⟨x, hx⟩ := hs 1
   simp only [LinearMap.smul_apply, LinearMap.id_apply, smul_eq_mul] at hx
+  omega
+
+-- For the classical setup, multiplication by `2` on `ℤ` becomes a monomorphism, since its kernel
+-- is zero, but not an epimorphism, since its cokernel `ℤ ⧸ 2ℤ` is nonzero.
+example : Mono ((toAlmost (classical ℤ)).map (ModuleCat.ofHom (LinearMap.mulLeft ℤ (2 : ℤ)))) := by
+  rw [mono_toAlmost_map_iff, isAlmostZero_classical_iff, ModuleCat.hom_ofHom,
+    LinearMap.ker_eq_bot.mpr (mul_right_injective₀ two_ne_zero)]
+  infer_instance
+
+example : ¬ Epi ((toAlmost (classical ℤ)).map
+    (ModuleCat.ofHom (LinearMap.mulLeft ℤ (2 : ℤ)))) := by
+  rw [epi_toAlmost_map_iff, isAlmostZero_classical_iff, ModuleCat.hom_ofHom]
+  intro h
+  have h1 : Submodule.Quotient.mk (p := LinearMap.range (LinearMap.mulLeft ℤ (2 : ℤ))) (1 : ℤ) =
+      Submodule.Quotient.mk 0 := Subsingleton.elim _ _
+  rw [Submodule.Quotient.eq, sub_zero] at h1
+  obtain ⟨x, hx⟩ := h1
+  rw [LinearMap.mulLeft_apply] at hx
   omega
 
 -- For the classical setup, `toAlmost` is an equivalence.

@@ -70,11 +70,11 @@ are built on.
 
 public section
 
-open Matrix
+open Matrix TauCeti
 
 universe u v w
 
-namespace TauCeti
+namespace Module.Basis
 
 section CommRing
 
@@ -84,7 +84,7 @@ variable {ρ : Representation k (GL (Fin n) k) W} {wt : ι → Fin n → ℤ}
 
 /-- **A representation with a basis of weight vectors is spanned by its weight spaces.**  Each
 basis vector lies in one of them, and the basis spans. -/
-theorem _root_.Module.Basis.iSup_weightSpace_eq_top (b : Module.Basis ι k W)
+theorem iSup_weightSpace_eq_top (b : Module.Basis ι k W)
     (hb : ∀ i, b i ∈ weightSpace ρ (wt i)) :
     ⨆ l : Fin n → ℤ, weightSpace ρ l = ⊤ := by
   refine top_le_iff.mp ?_
@@ -110,7 +110,7 @@ variable {ρ : Representation k (GL (Fin n) k) W} {wt : ι → Fin n → ℤ}
 /-- **A weight vector has no coordinate on a basis vector of a different weight.**  The torus acts
 on the coordinate of index `i` through the character of `wt i` and on the whole vector through the
 character of its own weight, so a nonzero coordinate would equate the two characters. -/
-theorem _root_.Module.Basis.repr_eq_zero_of_mem_weightSpace (b : Module.Basis ι k W)
+theorem repr_eq_zero_of_mem_weightSpace (b : Module.Basis ι k W)
     (hb : ∀ i, b i ∈ weightSpace ρ (wt i))
     (hchar : Function.Injective (weightChar k (κ := Fin n))) {l : Fin n → ℤ} {w : W}
     (hw : w ∈ weightSpace ρ l) {i : ι} (hi : wt i ≠ l) : b.repr w i = 0 :=
@@ -123,7 +123,7 @@ theorem _root_.Module.Basis.repr_eq_zero_of_mem_weightSpace (b : Module.Basis ι
 subspaces of that basis**: the weight-`l` space is spanned by the basis vectors labelled `l`.  No
 injectivity of the labelling is needed; with it the span collapses to a single line, which is
 `Module.Basis.weightSpace_eq_span`. -/
-theorem _root_.Module.Basis.weightSpace_eq_span_image (b : Module.Basis ι k W)
+theorem weightSpace_eq_span_image (b : Module.Basis ι k W)
     (hb : ∀ i, b i ∈ weightSpace ρ (wt i))
     (hchar : Function.Injective (weightChar k (κ := Fin n))) (l : Fin n → ℤ) :
     weightSpace ρ l = Submodule.span k (b '' {i | wt i = l}) := by
@@ -137,7 +137,7 @@ theorem _root_.Module.Basis.weightSpace_eq_span_image (b : Module.Basis ι k W)
 /-- **The weight spaces of a representation with a basis of weight vectors are the coordinate lines
 of that basis.**  The labelling must be injective: two basis vectors of the same weight span a
 plane inside a single weight space. -/
-theorem _root_.Module.Basis.weightSpace_eq_span (b : Module.Basis ι k W)
+theorem weightSpace_eq_span (b : Module.Basis ι k W)
     (hb : ∀ i, b i ∈ weightSpace ρ (wt i))
     (hchar : Function.Injective (weightChar k (κ := Fin n))) (hwt : Function.Injective wt)
     (i : ι) : weightSpace ρ (wt i) = Submodule.span k {b i} := by
@@ -147,7 +147,7 @@ theorem _root_.Module.Basis.weightSpace_eq_span (b : Module.Basis ι k W)
 
 /-- **Only the labels are weights**: a weight carried by no basis vector has no weight vector at
 all. -/
-theorem _root_.Module.Basis.weightSpace_eq_bot (b : Module.Basis ι k W)
+theorem weightSpace_eq_bot (b : Module.Basis ι k W)
     (hb : ∀ i, b i ∈ weightSpace ρ (wt i))
     (hchar : Function.Injective (weightChar k (κ := Fin n))) {l : Fin n → ℤ}
     (hl : ∀ i, l ≠ wt i) : weightSpace ρ l = ⊥ := by
@@ -158,7 +158,7 @@ theorem _root_.Module.Basis.weightSpace_eq_bot (b : Module.Basis ι k W)
 /-- **The weights of a representation with a basis of weight vectors are exactly the labels of that
 basis.**  The labelling need not be injective here: a label occurring at all already makes its
 weight space nonzero, since it contains a nonzero basis vector. -/
-theorem _root_.Module.Basis.weightSpace_ne_bot_iff [Nontrivial k] (b : Module.Basis ι k W)
+theorem weightSpace_ne_bot_iff [Nontrivial k] (b : Module.Basis ι k W)
     (hb : ∀ i, b i ∈ weightSpace ρ (wt i))
     (hchar : Function.Injective (weightChar k (κ := Fin n)))
     (l : Fin n → ℤ) : weightSpace ρ l ≠ ⊥ ↔ ∃ i, l = wt i := by
@@ -178,7 +178,7 @@ variable {ρ : Representation k (GL (Fin n) k) W} {wt : ι → Fin n → ℤ}
 
 /-- **A representation with a basis of weight vectors is the internal direct sum of its weight
 spaces.** -/
-theorem _root_.Module.Basis.isInternal_weightSpace (b : Module.Basis ι k W)
+theorem isInternal_weightSpace (b : Module.Basis ι k W)
     (hb : ∀ i, b i ∈ weightSpace ρ (wt i))
     (hchar : Function.Injective (weightChar k (κ := Fin n))) :
     DirectSum.IsInternal fun l : Fin n → ℤ => weightSpace ρ l :=
@@ -191,7 +191,7 @@ this is the statement that survives when several basis vectors share a weight.
 Finiteness of the fibre over `l` is what makes the count a natural number, and the rest of the
 basis may be infinite; the injective case needs no finiteness at all, because there the weight
 space is a single exhibited line (`Module.Basis.finrank_weightSpace_eq_one`). -/
-theorem _root_.Module.Basis.finrank_weightSpace_eq_card (b : Module.Basis ι k W)
+theorem finrank_weightSpace_eq_card (b : Module.Basis ι k W)
     (hb : ∀ i, b i ∈ weightSpace ρ (wt i))
     (hchar : Function.Injective (weightChar k (κ := Fin n))) (l : Fin n → ℤ)
     [Finite {i // wt i = l}] :
@@ -210,7 +210,7 @@ theorem _root_.Module.Basis.finrank_weightSpace_eq_card (b : Module.Basis ι k W
     Nat.card_eq_fintype_card]
 
 /-- **Distinctly labelled basis weights have multiplicity one.** -/
-theorem _root_.Module.Basis.finrank_weightSpace_eq_one (b : Module.Basis ι k W)
+theorem finrank_weightSpace_eq_one (b : Module.Basis ι k W)
     (hb : ∀ i, b i ∈ weightSpace ρ (wt i))
     (hchar : Function.Injective (weightChar k (κ := Fin n))) (hwt : Function.Injective wt)
     (i : ι) : Module.finrank k (weightSpace ρ (wt i)) = 1 := by
@@ -219,4 +219,4 @@ theorem _root_.Module.Basis.finrank_weightSpace_eq_one (b : Module.Basis ι k W)
 
 end Field
 
-end TauCeti
+end Module.Basis

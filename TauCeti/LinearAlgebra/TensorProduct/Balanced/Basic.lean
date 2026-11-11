@@ -133,10 +133,8 @@ theorem tmul_smul (r : k) (m : M) (n : N) :
 /-- An `A` action can be moved from the right module to the left module. -/
 theorem balance (a : A) (m : M) (n : N) :
     tmul k A (op a • m) n = tmul k A m (a • n) := by
-  apply sub_eq_zero.mp
-  rw [← mkQ_tmul, ← mkQ_tmul, ← map_sub]
-  exact (Submodule.Quotient.mk_eq_zero _).mpr
-    (Submodule.subset_span ⟨a, m, n, rfl⟩)
+  rw [← mkQ_tmul, ← mkQ_tmul, ← sub_eq_zero, ← map_sub, mkQ_eq_zero_iff]
+  exact Submodule.subset_span ⟨a, m, n, rfl⟩
 
 /-- Every balanced tensor is represented by a ground-ring tensor. -/
 theorem mkQ_surjective : Function.Surjective (mkQ k A (M := M) (N := N)) :=
@@ -158,12 +156,8 @@ variable {k A} {P : Type*} [AddCommGroup P] [Module k P]
 /-- Linear maps out of a balanced tensor product agree if they agree on pure tensors. -/
 @[ext high]
 theorem hom_ext {f g : BalancedTensorProduct k A M N →ₗ[k] P}
-    (h : ∀ m n, f (tmul k A m n) = g (tmul k A m n)) : f = g := by
-  apply LinearMap.ext
-  intro x
-  induction x using induction_on with
-  | ht m n => exact h m n
-  | ha x y hx hy => simp [hx, hy]
+    (h : ∀ m n, f (tmul k A m n) = g (tmul k A m n)) : f = g :=
+  (balancedTensorRelations k A M N).linearMap_qext (TensorProduct.ext' h)
 
 /-- Lift a balanced bilinear map through the tensor product. -/
 def lift (f : M →ₗ[k] N →ₗ[k] P)
@@ -245,22 +239,9 @@ def congr (f : M ≃ₗ[k] M') (g : N ≃ₗ[k] N')
     BalancedTensorProduct k A M N ≃ₗ[k] BalancedTensorProduct k A M' N' :=
   LinearEquiv.ofLinearMap (map f.toLinearMap g.toLinearMap hf hg)
     (map f.symm.toLinearMap g.symm.toLinearMap
-      (fun a m ↦ by
-        apply f.injective
-        simpa only [LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] using
-          (hf a (f.symm m)).symm)
-      (fun a n ↦ by
-        apply g.injective
-        simpa only [LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] using
-          (hg a (g.symm n)).symm))
-    (by
-      apply hom_ext
-      intro m n
-      simp)
-    (by
-      apply hom_ext
-      intro m n
-      simp)
+      (fun a m ↦ f.injective (by simp [hf]))
+      (fun a n ↦ g.injective (by simp [hg])))
+    (hom_ext fun _ _ ↦ by simp) (hom_ext fun _ _ ↦ by simp)
 
 /-- The carrier map of tensor congruence is the balanced tensor of the two factor maps. -/
 theorem congr_apply (f : M ≃ₗ[k] M') (g : N ≃ₗ[k] N')

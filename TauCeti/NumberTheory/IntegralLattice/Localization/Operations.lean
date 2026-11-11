@@ -108,7 +108,7 @@ noncomputable def completedOrthogonalSumIsometry :
   map_app' x y := by
     simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
       LinearMap.BilinForm.IsometryEquiv.coe_toLinearEquiv]
-    simpa only [completedRationalForm_def, orthogonalSum_form, orthogonalSumForm_eq_prod] using
+    simpa only [completedRationalForm_def, orthogonalSum_form] using
       (bilinFormBaseChangeProdIsometry ℚ_[p] L.form M.form).map_app y x
 
 /-- The rational sum comparison on a pure tensor. -/

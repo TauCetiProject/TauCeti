@@ -16,7 +16,7 @@ public import TauCeti.RepresentationTheory.MatrixCoefficients
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.ExteriorPower
 public import TauCeti.RepresentationTheory.ClassicalGroups.SymmetricPower
-public import TauCeti.RepresentationTheory.ClassicalGroups.TensorPower
+public import TauCeti.RepresentationTheory.ClassicalGroups.TensorPower.Basic
 
 /-!
 # Rational and polynomial representations of the general linear group

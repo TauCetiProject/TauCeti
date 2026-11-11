@@ -7,18 +7,27 @@ module
 
 public import Mathlib.LinearAlgebra.Prod
 public import Mathlib.LinearAlgebra.Semisimple
+import TauCeti.LinearAlgebra.End.Aeval
 import TauCeti.RingTheory.SimpleModule.Basic
 
 /-!
 # Products of endomorphisms
 
 This file proves that nilpotence and semisimplicity are preserved by componentwise products of
-endomorphisms.
+endomorphisms, and describes the endomorphisms commuting with a componentwise product `f × g`
+when `f` and `g` have coprime minimal polynomials: they are themselves componentwise products.
+Since the minimal polynomial of `f × g` divides the product of those of `f` and `g`, this
+coprimality passes to iterated products.
 
 ## Main declarations
 
 * `IsNilpotent.prodMap`: a product of nilpotent endomorphisms is nilpotent.
 * `Module.End.IsSemisimple.prodMap`: a product of semisimple endomorphisms is semisimple.
+* `Module.End.commute_prodMap_iff_of_isCoprime`: if `f` and `g` have coprime minimal polynomials,
+  the endomorphisms commuting with `f × g` are the products `a × b` with `a` commuting with `f`
+  and `b` commuting with `g`.
+* `Module.End.isCoprime_minpoly_prodMap`: a polynomial coprime to the minimal polynomials of `f`
+  and `g` is coprime to the minimal polynomial of `f × g`.
 -/
 
 public section
@@ -106,7 +115,50 @@ theorem _root_.Module.End.IsSemisimple.prodMap {f : Module.End K V} {g : Module.
   let _ := hprod
   exact IsSemisimpleModule.congr E
 
+/-- If `f` and `g` have coprime minimal polynomials, the endomorphisms of `V × W` commuting with
+`f × g` are the componentwise products `a × b` with `a` commuting with `f` and `b` commuting with
+`g`. -/
+theorem _root_.Module.End.commute_prodMap_iff_of_isCoprime {f : Module.End K V}
+    {g : Module.End K W} (hc : IsCoprime (minpoly K f) (minpoly K g)) {h : Module.End K (V × W)} :
+    Commute h (f.prodMap g) ↔ ∃ a b, Commute a f ∧ Commute b g ∧ h = a.prodMap b := by
+  refine ⟨fun hh ↦ ?_, ?_⟩
+  · have key : ∀ p : V × W, h (f p.1, g p.2) = (f (h p).1, g (h p).2) := fun p ↦
+      LinearMap.congr_fun hh.eq p
+    -- The two off-diagonal blocks of `h` intertwine `f` and `g`, so they vanish.
+    have h₁ : (snd K V W).comp (h.comp (inl K V W)) = 0 :=
+      Module.End.eq_zero_of_comp_eq_of_isCoprime_minpoly (LinearMap.ext fun x ↦ by
+        simpa using (congrArg Prod.snd (key (x, 0))).symm) hc
+    have h₂ : (fst K V W).comp (h.comp (inr K V W)) = 0 :=
+      Module.End.eq_zero_of_comp_eq_of_isCoprime_minpoly (LinearMap.ext fun y ↦ by
+        simpa using (congrArg Prod.fst (key (0, y))).symm) hc.symm
+    refine ⟨(fst K V W).comp (h.comp (inl K V W)), (snd K V W).comp (h.comp (inr K V W)),
+      LinearMap.ext fun x ↦ ?_, LinearMap.ext fun y ↦ ?_, LinearMap.prod_ext ?_ ?_⟩
+    · simpa using congrArg Prod.fst (key (x, 0))
+    · simpa using congrArg Prod.snd (key (0, y))
+    · refine LinearMap.ext fun x ↦ Prod.ext (by simp) ?_
+      simpa [Prod.mk_zero_zero] using LinearMap.congr_fun h₁ x
+    · refine LinearMap.ext fun y ↦ Prod.ext ?_ (by simp)
+      simpa [Prod.mk_zero_zero] using LinearMap.congr_fun h₂ y
+  · rintro ⟨a, b, ha, hb, rfl⟩
+    rw [Commute, SemiconjBy, LinearMap.prodMap_mul, LinearMap.prodMap_mul, ha.eq, hb.eq]
+
 end CommRing
+
+section Field
+
+variable {K : Type u} {V : Type v} {W : Type w}
+variable [Field K] [AddCommGroup V] [Module K V] [AddCommGroup W] [Module K W]
+
+/-- If the minimal polynomials of `f` and `g` are both coprime to `p`, so is the minimal polynomial
+of `f × g`, since it divides the product of the two. This supplies the coprimality hypothesis of
+`Module.End.commute_prodMap_iff_of_isCoprime` for iterated products. -/
+theorem _root_.Module.End.isCoprime_minpoly_prodMap {f : Module.End K V} {g : Module.End K W}
+    {p : K[X]} (hf : IsCoprime (minpoly K f) p) (hg : IsCoprime (minpoly K g) p) :
+    IsCoprime (minpoly K (f.prodMap g)) p :=
+  (hf.mul_left hg).of_isCoprime_of_dvd_left <| minpoly.dvd K _ <| by
+    simp [Module.End.aeval_prodMap]
+
+end Field
 
 end
 

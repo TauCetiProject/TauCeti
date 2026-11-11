@@ -20,7 +20,7 @@ import TauCeti.Probability.Exchangeability.PathSpace.Law.Bridge
 import TauCeti.Probability.Exchangeability.MixedIID.Implications
 -- Non-public: supplies `MeasurableSingletonClass (ProbabilityMeasure α)`, which the
 -- exchangeable-σ-algebra fixed-function lemma needs to apply to the directing measure.
-import TauCeti.MeasureTheory.Measure.FiniteMeasure
+import TauCeti.MeasureTheory.Measure.FiniteMeasure.Basic
 
 /-!
 # The conditional summit from contractability

@@ -100,6 +100,19 @@ theorem tangentMap_apply_symm (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
   rw [hss] at hh
   exact hh
 
+/-- The tangent map of the inverse acts on a fibre by the inverse differential. This holds
+for every nonzero differentiability order, including finite orders. -/
+theorem tangentMap_symm_mk (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
+    (x : M) (w : TangentSpace J (h x)) :
+    tangentMap J I h.symm (Bundle.TotalSpace.mk' F (h x) w) =
+      Bundle.TotalSpace.mk' E x ((mfderiv I J h x).inverse w) := by
+  have hleft : Function.LeftInverse (tangentMap J I h.symm) (tangentMap I J h) :=
+    h.tangentMap_symm_apply hn
+  apply hleft.injective
+  rw [h.tangentMap_apply_symm hn]
+  exact congrArg (Bundle.TotalSpace.mk' F (h x))
+    ((h.isInvertible_mfderiv hn).self_apply_inverse w).symm
+
 /-- Postcomposition with a diffeomorphism preserves differentiability at a point. -/
 theorem mdifferentiableAt_comp_iff (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
     {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']

@@ -198,9 +198,94 @@ private theorem apply_eq_chainEntry_of_component_iso {B : Type*}
       fun ⟨hne, hA⟩ ↦ ⟨fun heq ↦ hne (Subtype.ext (Subtype.ext heq)), hA⟩⟩
   exact apply_eq_chainEntry_of_iso_pathGraph hdiag' hsl' hadj' f v w
 
+/-- Among the vertices of a path component `C` of the diagram with the centre `c` deleted, the
+neighbours of `c` are the vertices sent to an end `0` of the path, when the unique neighbour of `c`
+in `C` is `q` and `f` sends `q` to `0`. -/
+private theorem adj_center_iff_of_component_iso {B : Type*} {G : SimpleGraph B} {c : B}
+    {C : (G.induce ({c}ᶜ : Set B)).ConnectedComponent}
+    (f : C.toSimpleGraph ≃g pathGraph (Nat.card ↑C.supp)) (q : ↑C.supp) (hfq : (f q : ℕ) = 0)
+    (hcq : G.Adj c q.1.1) (hnb : ∀ y : ↑C.supp, G.Adj c y.1.1 → y = q)
+    (t : Fin (Nat.card ↑C.supp)) :
+    G.Adj c (f.symm t).1.1 ↔ (t : ℕ) = 0 := by
+  constructor
+  · intro hct
+    calc
+      (t : ℕ) = ((f (f.symm t) : Fin _) : ℕ) := by rw [RelIso.apply_symm_apply]
+      _ = ((f q : Fin _) : ℕ) := congrArg Fin.val (congrArg f (hnb _ hct))
+      _ = 0 := hfq
+  · intro ht
+    have htq : t = f q := Fin.ext (ht.trans hfq.symm)
+    rw [htq, RelIso.symm_apply_apply]
+    exact hcq
+
+/-- Vertices of two different components of the diagram with the centre deleted are not
+adjacent, so the matrix entry between them vanishes. -/
+private theorem apply_eq_zero_of_component_ne {B : Type*} {A : Matrix B B ℤ}
+    (hadj : ∀ i j, (diagramGraph A).Adj i j ↔ i ≠ j ∧ A i j ≠ 0) {c : B}
+    {ι : Type*} (e : ι → ((diagramGraph A).induce ({c}ᶜ : Set B)).ConnectedComponent)
+    (he : Function.Injective e) {i j : ι} (hij : i ≠ j)
+    (v : ↑(ConnectedComponent.supp (e i))) (w : ↑(ConnectedComponent.supp (e j))) :
+    A v.1.1 w.1.1 = 0 := by
+  by_contra hA
+  have hvw : v.1 ≠ w.1 := fun hvw ↦ hij <| he <|
+    v.property.symm.trans ((congrArg _ hvw).trans w.property)
+  have hadjG : (diagramGraph A).Adj v.1.1 w.1.1 := (hadj _ _).mpr ⟨fun h ↦ hvw (Subtype.ext h), hA⟩
+  have hcomp := ConnectedComponent.connectedComponentMk_eq_of_adj (induce_adj.mpr hadjG)
+  exact hij (he (v.property.symm.trans (hcomp.trans w.property)))
+
 section Star
 
 variable {B : Type*} [Fintype B] {A : Matrix B B ℤ}
+
+omit [Fintype B] in
+/-- A simply-laced matrix with diagonal entries `2` is the star Cartan matrix on the reindexing of
+its diagram by three path components of the diagram with the centre `c` deleted, provided the
+neighbours of `c` in each component are exactly the vertices sent to index `0` by `f`
+(`hcenter`). -/
+private theorem apply_eq_starCartanMatrix_of_components (hdiag : ∀ i, A i i = 2)
+    (hadj : ∀ i j, (diagramGraph A).Adj i j ↔ i ≠ j ∧ A i j ≠ 0) (hsl : A.IsSimplyLaced) (c : B)
+    (eC : Fin 3 ≃ ((diagramGraph A).induce ({c}ᶜ : Set B)).ConnectedComponent)
+    (f : ∀ i, (eC i).toSimpleGraph ≃g pathGraph (Nat.card ↑(ConnectedComponent.supp (eC i))))
+    (hcenter : ∀ (i : Fin 3) (t : Fin (Nat.card ↑(ConnectedComponent.supp (eC i)))),
+      (diagramGraph A).Adj c ((f i).symm t).1.1 ↔ (t : ℕ) = 0) (i j : B) :
+    A i j = starCartanMatrix (fun k ↦ Nat.card ↑(ConnectedComponent.supp (eC k)))
+      ((starVertexEquiv c (diagramGraph A) eC f).symm i)
+      ((starVertexEquiv c (diagramGraph A) eC f).symm j) := by
+  obtain ⟨v, rfl⟩ := (starVertexEquiv c (diagramGraph A) eC f).surjective i
+  obtain ⟨w, rfl⟩ := (starVertexEquiv c (diagramGraph A) eC f).surjective j
+  simp only [Equiv.symm_apply_apply]
+  rcases v with _ | v <;> rcases w with _ | w
+  · simp only [starVertexEquiv_none, hdiag, starCartanMatrix_none_none]
+  · simp only [starVertexEquiv_none, starVertexEquiv_some, starCartanMatrix_none_some]
+    by_cases hw : (w.2 : ℕ) = 0
+    · rw [ite_eq_left hw]
+      have hadj' := (hcenter w.1 w.2).mpr hw
+      exact (hsl ((diagramGraph A).ne_of_adj hadj')).resolve_left ((hadj _ _).mp hadj').2
+    · rw [ite_eq_right hw]
+      by_contra hA
+      exact hw ((hcenter w.1 w.2).mp <| (hadj _ _).mpr ⟨fun hcw ↦ ((f w.1).symm w.2).1.property
+        (Set.mem_singleton_iff.mpr hcw.symm), hA⟩)
+  · simp only [starVertexEquiv_none, starVertexEquiv_some, starCartanMatrix_some_none]
+    by_cases hv : (v.2 : ℕ) = 0
+    · rw [ite_eq_left hv]
+      have hadj' := (hcenter v.1 v.2).mpr hv
+      exact (hsl ((diagramGraph A).ne_of_adj hadj').symm).resolve_left
+        ((hadj _ _).mp hadj'.symm).2
+    · rw [ite_eq_right hv]
+      by_contra hA
+      exact hv ((hcenter v.1 v.2).mp <| ((hadj _ _).mpr ⟨fun hvc ↦ ((f v.1).symm v.2).1.property
+        (Set.mem_singleton_iff.mpr hvc), hA⟩).symm)
+  · rcases v with ⟨i, v⟩
+    rcases w with ⟨j, w⟩
+    simp only [starVertexEquiv_some, starCartanMatrix_some_some]
+    by_cases hij : i = j
+    · subst j
+      rw [ite_eq_left rfl]
+      simpa only [RelIso.apply_symm_apply, chainEntry_def] using
+        apply_eq_chainEntry_of_component_iso hdiag hadj hsl (eC i) (f i) ((f i).symm v)
+          ((f i).symm w)
+    · rw [ite_eq_right hij]
+      exact apply_eq_zero_of_component_ne hadj eC eC.injective hij ((f i).symm v) ((f j).symm w)
 
 /-- **A simply-laced matrix with diagonal entries `2` whose diagram is a tree of maximum degree
 three, with a unique vertex of degree three, is a three-armed star.**
@@ -233,13 +318,9 @@ theorem exists_equiv_forall_eq_starCartanMatrix_of_isTree_of_isSimplyLaced [Deci
   have hcn (i : Fin 3) : G.Adj c (n i) := (n i).property
   let x (i : Fin 3) : ↑({c}ᶜ : Set B) :=
     ⟨n i, Set.mem_compl_singleton_iff.mpr (G.ne_of_adj (hcn i)).symm⟩
-  have hxC (i : Fin 3) : H.connectedComponentMk (x i) = eC i := by
-    calc
-      H.connectedComponentMk (x i) =
-          TauCeti.IsTree.neighborSetEquivConnectedComponentCompl htree c (n i) := by
-        symm
-        exact TauCeti.IsTree.neighborSetEquivConnectedComponentCompl_apply htree c (n i)
-      _ = eC i := Equiv.apply_symm_apply _ _
+  have hxC (i : Fin 3) : H.connectedComponentMk (x i) = eC i :=
+    (TauCeti.IsTree.neighborSetEquivConnectedComponentCompl_apply htree c (n i)).symm.trans
+      (Equiv.apply_symm_apply _ _)
   let q (i : Fin 3) : ↑(ConnectedComponent.supp (eC i)) := ⟨x i, hxC i⟩
   have hqdeg (i : Fin 3) : (eC i).toSimpleGraph.degree (q i) ≤ 1 := by
     exact degree_toSimpleGraph_le_one_of_adj_branch c hdeg (huniq _) (hcn i) (eC i) (hxC i)
@@ -252,98 +333,23 @@ theorem exists_equiv_forall_eq_starCartanMatrix_of_isTree_of_isSimplyLaced [Deci
     exact Classical.choose_spec
       (exists_iso_pathGraph_apply_eq_zero (q i) (hqdeg i) (heC i))
   let ℓ : Fin 3 → ℕ := fun i ↦ Nat.card ↑(ConnectedComponent.supp (eC i))
-  let E : StarIndex ℓ ≃ B := starVertexEquiv c G eC f
+  have hnb (i : Fin 3) (y : ↑(ConnectedComponent.supp (eC i))) :
+      G.Adj c y.1.1 → y = q i := fun hy ↦ by
+    have hzn : (⟨y.1.1, hy⟩ : ↑(G.neighborSet c)) = n i := by
+      apply (TauCeti.IsTree.neighborSetEquivConnectedComponentCompl htree c).injective
+      rw [TauCeti.IsTree.neighborSetEquivConnectedComponentCompl_apply]
+      exact y.property.trans (Equiv.apply_symm_apply _ _).symm
+    exact Subtype.ext (Subtype.ext (congrArg (fun z : ↑(G.neighborSet c) ↦ z.1) hzn))
   have hcenter (i : Fin 3) (t : Fin (ℓ i)) :
-      G.Adj c ((f i).symm t).1.1 ↔ (t : ℕ) = 0 := by
-    constructor
-    · intro hct
-      let z : ↑(G.neighborSet c) := ⟨((f i).symm t).1.1, hct⟩
-      have hzC : TauCeti.IsTree.neighborSetEquivConnectedComponentCompl htree c z = eC i := by
-        rw [TauCeti.IsTree.neighborSetEquivConnectedComponentCompl_apply]
-        exact ((f i).symm t).property
-      have hzn : z = n i := by
-        apply (TauCeti.IsTree.neighborSetEquivConnectedComponentCompl htree c).injective
-        rw [hzC]
-        exact (Equiv.apply_symm_apply _ _).symm
-      have hyq : (f i).symm t = q i := by
-        have h1 : ((f i).symm t).1.1 = (q i).1.1 :=
-          congrArg (α := ↑(G.neighborSet c)) Subtype.val hzn
-        exact Subtype.ext (Subtype.ext h1)
-      calc
-        (t : ℕ) = ((f i) ((f i).symm t) : ℕ) := by rw [RelIso.apply_symm_apply]
-        _ = ((f i) (q i) : ℕ) := congrArg Fin.val (congrArg (f i) hyq)
-        _ = 0 := hfq i
-    · intro ht
-      have htq : t = (f i) (q i) := Fin.ext (ht.trans (hfq i).symm)
-      have hyq : (f i).symm t = q i := by rw [htq, RelIso.symm_apply_apply]
-      rw [hyq]
-      exact hcn i
-  have hdifferent {i j : Fin 3} (hij : i ≠ j)
-      (v : ↑(ConnectedComponent.supp (eC i)))
-      (w : ↑(ConnectedComponent.supp (eC j))) : A v.1.1 w.1.1 = 0 := by
-    by_contra hA
-    have hadjG : G.Adj v.1.1 w.1.1 := (hGadj _ _).mpr ⟨by
-      intro hvw
-      have hvwH : v.1 = w.1 := Subtype.ext hvw
-      have hcomp : eC i = eC j :=
-        v.property.symm.trans ((congrArg H.connectedComponentMk hvwH).trans w.property)
-      exact hij (eC.injective hcomp), hA⟩
-    have hadjH : H.Adj v.1 w.1 := induce_adj.mpr hadjG
-    have hcomp := ConnectedComponent.connectedComponentMk_eq_of_adj hadjH
-    have heq : eC i = eC j := v.property.symm.trans (hcomp.trans w.property)
-    exact hij (eC.injective heq)
-  refine ⟨ℓ, E.symm, ?_, E.symm_apply_eq.mpr (starVertexEquiv_none c G eC f), ?_⟩
-  · intro i hzero
-    have hpos : 0 < Nat.card ↑(ConnectedComponent.supp (eC i)) :=
-      Nat.card_pos_iff.mpr ⟨⟨x i, hxC i⟩, inferInstance⟩
-    apply hpos.ne'
-    simpa only [ℓ] using hzero
-  · intro i j
-    obtain ⟨v, rfl⟩ := E.surjective i
-    obtain ⟨w, rfl⟩ := E.surjective j
-    simp only [E.symm_apply_apply]
-    rcases v with _ | v <;> rcases w with _ | w
-    · simp only [E, starVertexEquiv_none, hdiag, starCartanMatrix_none_none]
-    · simp only [E, starVertexEquiv_none, starVertexEquiv_some,
-        starCartanMatrix_none_some]
-      by_cases hw : (w.2 : ℕ) = 0
-      · rw [ite_eq_left hw]
-        have hadj := (hcenter w.1 w.2).mpr hw
-        have hneA : A c ((f w.1).symm w.2).1.1 ≠ 0 := by
-          exact ((hGadj _ _).mp hadj).2
-        exact (hsl (G.ne_of_adj hadj)).resolve_left hneA
-      · rw [ite_eq_right hw]
-        by_contra hA
-        have hadj : G.Adj c ((f w.1).symm w.2).1.1 :=
-          (hGadj _ _).mpr ⟨fun hcw ↦ ((f w.1).symm w.2).1.property
-            (Set.mem_singleton_iff.mpr hcw.symm), hA⟩
-        exact hw ((hcenter w.1 w.2).mp hadj)
-    · simp only [E, starVertexEquiv_none, starVertexEquiv_some,
-        starCartanMatrix_some_none]
-      by_cases hv : (v.2 : ℕ) = 0
-      · rw [ite_eq_left hv]
-        have hadj := (hcenter v.1 v.2).mpr hv
-        have hneA : A ((f v.1).symm v.2).1.1 c ≠ 0 := by
-          exact ((hGadj _ _).mp hadj.symm).2
-        exact (hsl (G.ne_of_adj hadj).symm).resolve_left hneA
-      · rw [ite_eq_right hv]
-        by_contra hA
-        have hadj : G.Adj c ((f v.1).symm v.2).1.1 := by
-          symm
-          exact (hGadj _ _).mpr ⟨fun hvc ↦ ((f v.1).symm v.2).1.property
-            (Set.mem_singleton_iff.mpr hvc), hA⟩
-        exact hv ((hcenter v.1 v.2).mp hadj)
-    · rcases v with ⟨i, v⟩
-      rcases w with ⟨j, w⟩
-      simp only [E, starVertexEquiv_some, starCartanMatrix_some_some]
-      by_cases hij : i = j
-      · subst j
-        rw [ite_eq_left rfl]
-        simpa only [RelIso.apply_symm_apply, chainEntry_def] using
-          apply_eq_chainEntry_of_component_iso hdiag hGadj hsl (eC i) (f i) ((f i).symm v)
-            ((f i).symm w)
-      · rw [ite_eq_right hij]
-        exact hdifferent hij ((f i).symm v) ((f j).symm w)
+      G.Adj c ((f i).symm t).1.1 ↔ (t : ℕ) = 0 :=
+    adj_center_iff_of_component_iso (f i) (q i) (hfq i) (hcn i) (hnb i) t
+  refine ⟨ℓ, (starVertexEquiv c G eC f).symm, ?_,
+    (starVertexEquiv c G eC f).symm_apply_eq.mpr (starVertexEquiv_none c G eC f),
+    apply_eq_starCartanMatrix_of_components hdiag hGadj hsl c eC f hcenter⟩
+  intro i hzero
+  have hpos : 0 < Nat.card ↑(ConnectedComponent.supp (eC i)) :=
+    Nat.card_pos_iff.mpr ⟨⟨x i, hxC i⟩, inferInstance⟩
+  exact hpos.ne' (by simpa only [ℓ] using hzero)
 
 end Star
 

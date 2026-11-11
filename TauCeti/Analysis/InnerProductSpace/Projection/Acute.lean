@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, GPT 5.6 High, OpenAI GPT-6
 -/
 module
 
@@ -103,9 +103,19 @@ theorem IsAcute.of_projectionGap_lt_one (h : U.projectionGap V < 1) : U.IsAcute 
       disjoint_orthogonal_of_directedProjectionGap_lt_one V U
         ((directedProjectionGap_le_projectionGap V U).trans_lt (projectionGap_comm U V ▸ h))⟩
 
+end Submodule
+
+namespace Submodule
+
+open Module
+
 section FiniteDimensional
 
-variable [FiniteDimensional 𝕜 E]
+/-! In a finite-dimensional space every submodule has an orthogonal projection, so the statements
+below take `U` and `V` without that hypothesis. -/
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [FiniteDimensional 𝕜 E] (U V : Submodule 𝕜 E)
 
 /-- In finite dimension, a pair of subspaces is acute exactly when all principal angles from `U`
 to `V` and from `V` to `U` are strictly below `π/2`. -/
@@ -239,5 +249,54 @@ theorem avoidsQuarterTurn_comm (h : finrank 𝕜 U = finrank 𝕜 V) :
     principalAngles_comm U V h]
 
 end FiniteDimensional
+
+end Submodule
+
+namespace Submodule
+
+open Module
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+
+/-- Transversality makes every singular value of the directed sine block strictly less than one.
+
+Adapted from the Kitware DKPS formalization,
+`DavisKahan/FiniteDimensional/TanTheta/RitzResidual.lean` (Jon Crall and GPT 5.6 High;
+Apache-2.0). -/
+theorem singularValues_starProjection_orthogonal_comp_lt_one_of_disjoint
+    (U : Submodule 𝕜 E)
+    (X : F →ₗᵢ[𝕜] E)
+    (htrans : Disjoint (LinearMap.range X.toLinearMap) Uᗮ)
+    (i : ℕ) :
+    (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i < 1 := by
+  have hgap := (Submodule.directedProjectionGap_lt_one_iff _ _).2 htrans
+  have hsin := (Submodule.forall_principalSines_lt_iff _ _).2 hgap i
+  have heq := U.principalSines_range_eq_singularValues
+    (X := X.toContinuousLinearMap) X.isometry
+  have heq' : (LinearMap.range X.toLinearMap).principalSines U =
+      (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues := by
+    simpa only [ContinuousLinearMap.toLinearMap_comp,
+      LinearIsometry.toLinearMap_toContinuousLinearMap] using heq
+  rw [heq'] at hsin
+  exact hsin
+
+/-- A principal tangent of the trial subspace against `U` is the sine over the cosine, with the
+sines read off the singular values of the projection onto `Uᗮ`. -/
+theorem principalTangents_range_apply_eq_div_singularValues
+    (U : Submodule 𝕜 E) (X : F →ₗᵢ[𝕜] E) (i : ℕ) :
+    (LinearMap.range X.toLinearMap).principalTangents U i =
+      (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i /
+        Real.sqrt
+          (1 - ((Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i) ^ 2) := by
+  rw [Submodule.principalTangents_apply_eq_div]
+  have heq := U.principalSines_range_eq_singularValues
+    (X := X.toContinuousLinearMap) X.isometry
+  have heq' : (LinearMap.range X.toLinearMap).principalSines U =
+      (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues := by
+    simpa only [ContinuousLinearMap.toLinearMap_comp,
+      LinearIsometry.toLinearMap_toContinuousLinearMap] using heq
+  rw [heq']
 
 end Submodule

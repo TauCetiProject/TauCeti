@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Tangent
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ClosedImmersion
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Basic
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.GeneralLinearBaseChange
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.Tangent
 
 /-!
@@ -24,7 +25,9 @@ The differential of `xᵢ` sends an additive tangent vector `c` to `c` times the
 the represented root generator, over every commutative coefficient ring. Its value at the additive
 unit tangent vector is the normalized root vector
 `TauCeti.UniversalEnvelopingAlgebra.kostantToralRootVector`, which is stable under coefficient
-change. When the factored coordinate map is surjective, the differential is injective, so its image
+change. Transporting the root subgroup to any commutative base ring preserves this matrix
+normalization, with values in every commutative algebra over that ring.
+When the factored coordinate map is surjective, the differential is injective, so its image
 is the line spanned by that nonzero vector. When the basis consists of Cartan weight vectors and
 the root generator has weight `α`, the integral root matrix is supported on the basis pairs whose
 weight difference is `α`.
@@ -40,6 +43,8 @@ All in the namespace `TauCeti.UniversalEnvelopingAlgebra`:
   weight difference.
 * `tangentMatrix_derivationComp_kostantRootSubgroupToralCoordinateMap`: the differential of a
   factored root subgroup is the tangent parameter times the integral root matrix.
+* `tangentMatrix_derivationComp_kostantRootSubgroupBaseChangePresentationCoordinateMap`:
+  the same matrix normalization after transporting the root subgroup to an arbitrary base ring.
 * `kostantToralRootVector`: the normalized root vector, with
   `tangentMatrix_kostantToralRootVector` and
   `range_derivationCompLieHom_kostantRootSubgroupToralCoordinateMap_eq_span`.
@@ -58,6 +63,7 @@ the toral-closure quotient.
 public section
 
 open CategoryTheory
+open scoped TensorProduct
 
 namespace TauCeti.UniversalEnvelopingAlgebra
 
@@ -98,6 +104,60 @@ theorem kostantRootGeneratorIntMatrix_eq_zero_of_weight_ne (i : I) {α : κ → 
 end Support
 
 /-! ## The root differentials -/
+
+section BaseChange
+
+variable (hnil : ∀ i, IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
+variable {n : ℕ} (b : Module.Basis (Fin n) ℤ M)
+variable (R : Type*) [CommRing R] {B : Type*} [CommRing B] [Algebra R B]
+
+/-- The differential of a transported Kostant root subgroup is the additive tangent parameter
+times the integral root-operator matrix, over every commutative base ring and value algebra. -/
+theorem tangentMatrix_derivationComp_kostantRootSubgroupBaseChangePresentationCoordinateMap
+    (i : I)
+    (d : Derivation R (AdditiveGroup.coordinateHopfAlgebra R)
+      (Bialgebra.CounitAlgebra R (AdditiveGroup.coordinateHopfAlgebra R) B)) :
+    GeneralLinear.tangentMatrix n
+      (derivationComp (B := B)
+        (kostantRootSubgroupBaseChangePresentationCoordinateMap e h ρ M hM hnil b R i).hom d) =
+      AdditiveGroup.gaTangentLinearEquiv d •
+        (LinearMap.toMatrix b b (kostantRootOperator e h ρ M hM i)).map
+          (Int.cast : ℤ → B) := by
+  -- Linearity and coefficient naturality reduce all value algebras to the unit tangent over `R`.
+  suffices hunit : GeneralLinear.tangentMatrix n
+      (derivationComp (B := R)
+        (kostantRootSubgroupBaseChangePresentationCoordinateMap e h ρ M hM hnil b R i).hom
+        ((AdditiveGroup.gaTangentLinearEquiv (R := R) (B := R)).symm 1)) =
+      (LinearMap.toMatrix b b (kostantRootOperator e h ρ M hM i)).map
+        (Int.cast : ℤ → R) by
+    rw [AdditiveGroup.derivationComp_eq_smul, map_smul,
+      ← AdditiveGroup.mapValue_derivationComp_gaTangentLinearEquiv_symm_one (Algebra.ofId R B),
+      GeneralLinear.tangentMatrix_mapValue, hunit]
+    congr 1
+    ext a c
+    simp
+  rw [kostantRootSubgroupBaseChangePresentationCoordinateMap_def,
+    GeneralLinear.tangentMatrix_derivationComp_transportedBaseChange,
+    tangentMatrix_derivationComp_kostantRootSubgroupCoordinateMap]
+  simp only [algebraMap_int_eq, Int.coe_castRingHom]
+  suffices hparam : AdditiveGroup.gaTangentLinearEquiv
+      ((tangentBaseChangeLieEquiv (R := ℤ) (K := R)
+        (H := AdditiveGroup.coordinateHopfAlgebra ℤ)).symm
+          (derivationComp (B := R) (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso ℤ R).hom.hom
+            ((AdditiveGroup.gaTangentLinearEquiv (R := R) (B := R)).symm 1))) = 1 by
+    rw [hparam, one_smul]
+  rw [AdditiveGroup.gaTangentLinearEquiv_apply,
+    tangentBaseChangeLieEquiv_symm_apply, AlgEquiv.apply_symm_apply,
+    algEquivSelf_derivationComp_apply]
+  -- The categorical additive base-change isomorphism is the symmetric-algebra equivalence.
+  change (Bialgebra.CounitAlgebra.algEquivSelf R (AdditiveGroup.coordinateHopfAlgebra R) R)
+    (((AdditiveGroup.gaTangentLinearEquiv (R := R) (B := R)).symm 1)
+      (AdditiveGroup.gaScalarTensorBialgEquiv
+        ((1 : R) ⊗ₜ[ℤ] SymmetricAlgebra.ι ℤ ℤ 1))) = _
+  rw [AdditiveGroup.gaScalarTensorBialgEquiv_tmul_ι, map_one (algebraMap ℤ R), one_smul,
+    ← AdditiveGroup.gaTangentLinearEquiv_apply, LinearEquiv.apply_symm_apply]
+
+end BaseChange
 
 variable [Finite κ]
 variable (hnil : ∀ i, IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))

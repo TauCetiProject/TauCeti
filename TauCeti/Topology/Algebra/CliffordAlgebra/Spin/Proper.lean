@@ -118,8 +118,8 @@ theorem isCompact_preimage_spinToOrthogonal (hQ : Q.Nondegenerate)
     (isClosed_lipschitzGroup Q hQ).locallyCompactSpace
   have hv : ∃ v, IsUnit (Q v) := hQ.exists_isUnit
   -- The vector representation is an open surjection, so `C` lies in the image of a compact `L`.
-  obtain ⟨L, hL, hCL⟩ := (isOpenMap_lipschitzToOrthogonal Q hQ).exists_isCompact_subset_image
-    (lipschitzToOrthogonal_surjective Q hQ) hC
+  obtain ⟨L, hL, hCL⟩ := (isOpenMap_lipschitzToOrthogonal Q hQ).exists_isCompact_subset_image hC
+    fun y _ ↦ lipschitzToOrthogonal_surjective Q hQ y
   -- The inverse Clifford norm is bounded on the compact set `L`.
   obtain ⟨R, hR⟩ : ∃ R, ∀ y ∈ L, ‖(((cliffordNorm Q y)⁻¹ : Kˣ) : K)‖ ≤ R :=
     (hL.image (Units.continuous_coe_inv.comp (continuous_cliffordNorm Q)).norm).bddAbove

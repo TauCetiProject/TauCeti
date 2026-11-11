@@ -30,6 +30,6 @@ protected theorem IsVonNBounded.prod {s : Set E} {t : Set F} (hs : IsVonNBounded
   intro W hW
   obtain ⟨U, hU, V, hV, hUV⟩ := mem_nhds_prod_iff.mp hW
   filter_upwards [(hs hU).eventually, (ht hV).eventually] with a ha hb
-  exact (prod_mono ha hb).trans ((smul_set_prod a U V).symm.subset.trans (smul_set_mono hUV))
+  grw [← hUV, smul_set_prod, ha, hb]
 
 end Bornology

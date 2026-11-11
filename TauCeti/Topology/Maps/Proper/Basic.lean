@@ -24,7 +24,8 @@ The nonemptiness hypotheses cannot be dropped: a map out of an empty space is pr
 
 ## Main declarations
 
-* `IsProperMap.compactSpace`: the domain of a proper map to a compact space is compact.
+* `IsProperMap.compactSpace` and `IsProperMap.sigmaCompactSpace`: the domain of a proper map to a
+  compact (respectively sigma-compact) space is compact (respectively sigma-compact).
 * `Homeomorph.comp_isProperMap_iff` and `Homeomorph.comp_isProperMap_iff'`: properness is
   invariant under composition with a homeomorphism.
 * `IsProperMap.of_prodMap_left` and `IsProperMap.of_prodMap_right`: the factors of a proper
@@ -70,6 +71,14 @@ theorem IsProperMap.compactSpace [CompactSpace Y] (hf : IsProperMap f) : Compact
   refine ⟨?_⟩
   simpa only [Set.preimage_univ] using
     hf.isCompact_preimage (isCompact_univ : IsCompact (Set.univ : Set Y))
+
+/-- The domain of a proper map to a sigma-compact space is sigma-compact. No separation axiom is
+needed. -/
+theorem IsProperMap.sigmaCompactSpace [SigmaCompactSpace Y] (hf : IsProperMap f) :
+    SigmaCompactSpace X := by
+  refine ⟨⟨fun n ↦ f ⁻¹' compactCovering Y n,
+    fun n ↦ hf.isCompact_preimage (isCompact_compactCovering Y n), ?_⟩⟩
+  rw [← Set.preimage_iUnion, iUnion_compactCovering, Set.preimage_univ]
 
 /-- If a product map `Prod.map f g` is proper and the source of `g` is nonempty, then `f` is
 proper. -/

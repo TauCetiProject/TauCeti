@@ -70,25 +70,21 @@ variable {ι : Type*} [Fintype ι] [Nonempty ι] {a : ι → ℝ}
 /-! ### Moments of every order -/
 
 omit [Nonempty ι] in
-/-- With positive parameters on a nonempty coordinate type, a Dirichlet vector almost surely lies
-in the closed unit ball. Otherwise `dirichletMeasure a = 0`, so the conclusion is vacuous. -/
+/-- A Dirichlet vector almost surely lies in the closed unit ball. For concentration vectors
+outside the valid range `dirichletMeasure a = 0`, so the conclusion is vacuous. -/
 theorem ae_norm_le_one_dirichletMeasure :
     ∀ᵐ x ∂dirichletMeasure a, ‖x‖ ≤ 1 := by
-  by_cases h : Nonempty ι ∧ ∀ i, 0 < a i
-  · let : Nonempty ι := h.1
-    filter_upwards [ae_pos_dirichletMeasure h.2, ae_sum_eq_one_dirichletMeasure h.2]
-      with x hpos hsum
-    have hle : ∀ i, x i ≤ 1 := fun i ↦ hsum ▸
-      Finset.single_le_sum (fun j _ ↦ (hpos j).le) (Finset.mem_univ i)
-    have hsq : ∑ i, ‖x i‖ ^ 2 ≤ 1 := by
-      rw [← hsum]
-      refine Finset.sum_le_sum fun i _ ↦ ?_
-      rw [Real.norm_eq_abs, abs_of_pos (hpos i), sq]
-      nlinarith [hpos i, hle i]
-    rw [EuclideanSpace.norm_eq]
-    simpa using Real.sqrt_le_sqrt hsq
-  · rw [dirichletMeasure_eq_zero_of_invalid h]
-    simp
+  filter_upwards [ae_pos_dirichletMeasure (a := a), ae_sum_eq_one_dirichletMeasure (a := a)]
+  with x hpos hsum
+  have hle : ∀ i, x i ≤ 1 := fun i ↦ hsum ▸
+    Finset.single_le_sum (fun j _ ↦ (hpos j).le) (Finset.mem_univ i)
+  have hsq : ∑ i, ‖x i‖ ^ 2 ≤ 1 := by
+    rw [← hsum]
+    refine Finset.sum_le_sum fun i _ ↦ ?_
+    rw [Real.norm_eq_abs, abs_of_pos (hpos i), sq]
+    nlinarith [hpos i, hle i]
+  rw [EuclideanSpace.norm_eq]
+  simpa using Real.sqrt_le_sqrt hsq
 
 omit [Nonempty ι] in
 /-- With positive parameters on a nonempty coordinate type, the simplex-supported Dirichlet law has
@@ -184,7 +180,7 @@ theorem variance_sum_dirichletMeasure [DecidableEq ι] (ha : ∀ i, 0 < a i) (s 
   · have hsuniv : s = Finset.univ := by rwa [Finset.compl_eq_empty_iff] at hsc
     subst hsuniv
     rw [hsc, Finset.sum_empty, mul_zero, zero_div,
-      variance_congr (ae_sum_eq_one_dirichletMeasure ha)]
+      variance_congr (ae_sum_eq_one_dirichletMeasure (a := a))]
     exact hconst 1
   · have hα : 0 < ∑ i ∈ s, a i := Finset.sum_pos (fun j _ ↦ ha j) hs
     have hβ : 0 < ∑ i ∈ sᶜ, a i := Finset.sum_pos (fun j _ ↦ ha j) hsc

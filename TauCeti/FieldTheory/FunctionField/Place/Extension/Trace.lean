@@ -356,11 +356,12 @@ theorem trace_sub_sum_mem_filtration (hF' : IsFunctionField k F') (hP : P.degree
       (PowerSeries.coeff i (P'.powerSeriesExpansionResidueField ht' z))) * t ^ (i : ℕ) ∈
         P.filtration m := by
   -- Outline: in the local model `S = 𝒪'_P`, modulo `I = (t ^ m)`, apply
-  -- `Algebra.trace_sub_sum_mem_of_forall_mul_sub_sum_mem` with `w = W ≡ 1` at `P'`, the basis
-  -- `b j` of lifts of a `k`-basis `β j` of `F'_{P'}` with constant expansions, and the matrix
-  -- `a j l = ∑ᵢ [cᵢ]ⱼₗ tⁱ` of multiplication by the expansion coefficients `cᵢ` of `z`. Each of
-  -- its five hypotheses is a membership in `I S`, checked at `P'` on truncated expansions
-  -- (`hfilt`) and at the other places over `P` by smallness (`Small`).
+  -- `Algebra.trace_sub_sum_mem_of_forall_mul_sub_sum_mem` with the basis `b j` of lifts of a
+  -- `k`-basis `β j` of `F'_{P'}` with constant expansions, and the matrix `a j l = ∑ᵢ [cᵢ]ⱼₗ tⁱ`
+  -- of multiplication by the expansion coefficients `cᵢ` of `z`. That `z` maps into the span of
+  -- the `b j` follows from `z ≡ z W` and the same for `W ≡ 1` at `P'`. Each such congruence is a
+  -- membership in `I S`, checked at `P'` on truncated expansions (`hfilt`) and at the other places
+  -- over `P` by smallness (`Small`).
   classical
   subst hPP'
   set P := P'.restrict k F with hPdef
@@ -496,9 +497,6 @@ theorem trace_sub_sum_mem_filtration (hF' : IsFunctionField k F') (hP : P.degree
     Fin (Module.finrank k P'.ResidueField) → k := fun i j l ↦ β.repr (c i * β j) l
   let a : Fin (Module.finrank k P'.ResidueField) → Fin (Module.finrank k P'.ResidueField) →
     P.integers := fun j l ↦ ∑ i : Fin m, algebraMap k P.integers (M i j l) * xR ^ (i : ℕ)
-  have hwb (j) : W * b j - b j ∈ I.map (algebraMap P.integers S) :=
-    hIS _ (by push_cast; exact hWmul _ (hreg (b j) P' rfl))
-      (by push_cast; exact hsmall_sub (hsmall_mul' W (hbS j)) (hbS j))
   have hspan (s : S) : ∃ cs : Fin (Module.finrank k P'.ResidueField) → P.integers,
       W * s - ∑ j, algebraMap P.integers S (cs j) * b j ∈ I.map (algebraMap P.integers S) := by
     let cs : Fin (Module.finrank k P'.ResidueField) → P.integers := fun j ↦
@@ -561,7 +559,19 @@ theorem trace_sub_sum_mem_filtration (hF' : IsFunctionField k F') (hP : P.degree
       · rfl
     · push_cast
       exact hsmall_sub (hsmall_mul hzQ (b j)) (hsmall_sum fun l ↦ hsmallR _ (hbS l))
-  have key := Algebra.trace_sub_sum_mem_of_forall_mul_sub_sum_mem hwb hspan hindep hz hzb
+  -- Since `z ≡ z W`, the class of `z` maps into the span of the `b j`, as `W` does.
+  have hspanz (s : S) : ∃ cs : Fin (Module.finrank k P'.ResidueField) → P.integers,
+      zS * s - ∑ l, algebraMap P.integers S (cs l) * b l ∈ I.map (algebraMap P.integers S) := by
+    obtain ⟨cs, hcs⟩ := hspan s
+    refine ⟨fun l ↦ ∑ j, cs j * a j l, ?_⟩
+    convert add_mem (add_mem (Ideal.mul_mem_right s _ (neg_mem hz)) (Ideal.mul_mem_left _ zS hcs))
+      (sum_mem fun j (_ : j ∈ Finset.univ) ↦
+        Ideal.mul_mem_left _ (algebraMap P.integers S (cs j)) (hzb j)) using 1
+    simp only [map_sum, map_mul, Finset.sum_mul, Finset.mul_sum, mul_sub, Finset.sum_sub_distrib,
+      mul_assoc, mul_left_comm zS]
+    rw [Finset.sum_comm]
+    ring
+  have key := Algebra.trace_sub_sum_mem_of_forall_mul_sub_sum_mem hspanz hindep hzb
   -- The diagonal of `a` is the trace of the coefficients.
   have hdiag : ∑ j, a j j = ∑ i : Fin m,
       algebraMap k P.integers (Algebra.trace k P'.ResidueField (c i)) * xR ^ (i : ℕ) := by

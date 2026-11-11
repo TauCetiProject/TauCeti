@@ -7,26 +7,44 @@ module
 
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Discrete
 public import TauCeti.Analysis.Normed.Ring.PseudoUniformizer
+public import Mathlib.Topology.Algebra.Module.ModuleTopology
 import TauCeti.Analysis.Normed.Operator.RingOpNorm.OpenMapping
 import TauCeti.Analysis.Normed.Group.Ultra
 import TauCeti.Topology.MetricSpace.Ultra.ContinuousMaps
+import TauCeti.RingTheory.Huber.ModuleTopology.Submodule
+import TauCeti.RingTheory.Noetherian.LinearMap
 
 /-!
-# Finite coordinates on complete finite submodules of `C₀`
+# Finite coordinates and closedness of finite submodules of `C₀`
 
 A complete finitely generated submodule of `C₀(I, R)` over a complete ultrametric Tate normed
 ring admits uniform relative approximation by finite coordinate projections. A sufficiently
 accurate projection preserves the norm, giving finite-coordinate norm detection with constant one.
-No freeness or Noetherian hypothesis is needed for these statements.
+No freeness or Noetherian hypothesis is needed once the submodule is complete.
 
-Completeness of the submodule is an explicit hypothesis: for a closed submodule `P`, obtain it
-from `hP.completeSpace_coe`. This does not assert closedness of arbitrary finite submodules.
+Over a commutative ring `R`, any finitely generated submodule of `C₀(X, M)` with values in a
+Noetherian `R`-module `M` is already separated by finitely many point evaluations
+(`Submodule.exists_finset_eq_zero_of_coe_eq_zero`). When `R` is moreover a complete ultrametric
+Tate normed commutative ring and `M` is a complete normed `R`-module with bounded scalar action,
+`Submodule.isClosed_of_forall_apply_eq_zero` shows that every finitely generated submodule of
+`C₀(X, M)` is closed, complete, and carries the canonical `R`-module topology
+(`Submodule.isClosed_zeroAtInfty_of_isNoetherian`,
+`Submodule.completeSpace_zeroAtInfty_of_isNoetherian`,
+`Submodule.isModuleTopology_zeroAtInfty_of_isNoetherian`). Completeness is exposed as an explicit
+theorem rather than a global `CompleteSpace` instance on `↥P`, whose `Subtype` head would fire on
+unrelated subtype goals.
 
-The argument uses `TauCeti.exists_linearCombination_eq_and_norm_le` to choose bounded
-coefficients for a finite generating family, then truncates all generators on the same finite set.
-It follows the finite-coordinate argument of K. Buzzard, *Eigenvarieties*, Lemmas 2.2–2.3,
-with the Banach–Tate setting of C. Johansson and J. Newton, *Extended eigenvarieties for
-overconvergent cohomology*, §2.1.
+Specialising to `[IsNoetherianRing R]` on `C₀(I, R)` removes the completeness hypothesis from
+relative coordinate approximation and finite-coordinate norm bounds on arbitrary finite submodules
+(`Submodule.exists_finset_norm_indicatorCLM_sub_le_of_isNoetherianRing`,
+`Submodule.exists_finset_norm_eq_of_isNoetherianRing`,
+`Submodule.exists_finset_norm_le_of_isNoetherianRing`), with no freeness assumption on `P`.
+
+The argument uses `TauCeti.exists_linearCombination_eq_and_norm_le` to choose bounded coefficients
+for a finite generating family and `Submodule.isClosed_of_forall_apply_eq_zero` to establish
+closedness over Noetherian Banach–Tate rings, following K. Buzzard, *Eigenvarieties*, Lemmas
+2.2–2.3, and C. Johansson and J. Newton, *Extended eigenvarieties for overconvergent cohomology*,
+§2.1.
 -/
 
 public section
@@ -36,6 +54,8 @@ open scoped ZeroAtInfty NNReal
 open ZeroAtInftyContinuousMap
 
 namespace Submodule
+
+section CompleteSubmodule
 
 variable {I R : Type*} [TopologicalSpace I] [DiscreteTopology I]
   [NormedRing R] [IsUltrametricDist R] [CompleteSpace R] [TauCeti.NormedRing.IsTate R]
@@ -98,5 +118,139 @@ theorem exists_finset_norm_le (P : Submodule R C₀(I, R))
       ‖f‖ ≤ C * (S.sup fun i ↦ ‖f i‖₊ : ℝ≥0) := by
   obtain ⟨S, hS⟩ := P.exists_finset_norm_eq
   exact ⟨S, 1, one_pos, fun f hf ↦ by rw [hS f hf, one_mul]⟩
+
+end CompleteSubmodule
+
+section CoordinateDetection
+
+/-- **Finite-coordinate detection on `C₀(X, M)`** (Buzzard, *Eigenvarieties*, Lemma 2.2): on a
+finitely generated submodule of `C₀(X, M)` with values in a Noetherian module over a commutative
+ring, vanishing at a fixed finite set of points forces vanishing everywhere. -/
+theorem exists_finset_eq_zero_of_coe_eq_zero {X R M : Type*} [TopologicalSpace X]
+    [CommRing R] [TopologicalSpace M] [AddCommGroup M] [IsTopologicalAddGroup M] [Module R M]
+    [ContinuousConstSMul R M] [IsNoetherian R M] (P : Submodule R C₀(X, M))
+    [Module.Finite R P] :
+    ∃ S : Finset X, ∀ f ∈ P, (∀ x ∈ S, f x = 0) → f = 0 := by
+  let ev (x : X) : P →ₗ[R] M :=
+    { toFun p := p.1 x
+      map_add' _ _ := rfl
+      map_smul' _ _ := rfl }
+  obtain ⟨S, hS⟩ := TauCeti.exists_finset_eq_zero_of_forall_apply_eq_zero ev
+    fun p hp ↦ Subtype.ext (ZeroAtInftyContinuousMap.ext fun x ↦ by simpa [ev] using hp x)
+  exact ⟨S, fun f hf hfS ↦ congrArg Subtype.val (hS ⟨f, hf⟩ hfS)⟩
+
+end CoordinateDetection
+
+section NoetherianModule
+
+variable {X R M : Type*} [TopologicalSpace X]
+  [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R] [TauCeti.NormedRing.IsTate R]
+  [NormedAddCommGroup M] [CompleteSpace M] [Module R M] [IsBoundedSMul R M] [IsNoetherian R M]
+
+/-- **Closedness of finite submodules of `C₀(X, M)`** (Buzzard, *Eigenvarieties*, Lemma 2.3;
+Johansson–Newton, §2.1): over a complete ultrametric Tate normed commutative ring `R`, every
+finitely generated submodule of `C₀(X, M)` with values in a complete Noetherian normed `R`-module
+is closed. -/
+theorem isClosed_zeroAtInfty_of_isNoetherian (P : Submodule R C₀(X, M))
+    [Module.Finite R P] : IsClosed (P : Set C₀(X, M)) :=
+  P.isClosed_of_forall_apply_eq_zero (evalCLM R)
+    fun _ _ hf ↦ ZeroAtInftyContinuousMap.ext fun x ↦ by simpa using hf x
+
+/-- Over a complete ultrametric Tate normed commutative ring `R`, every finitely generated
+submodule of `C₀(X, M)` with values in a complete Noetherian normed `R`-module is complete. -/
+theorem completeSpace_zeroAtInfty_of_isNoetherian (P : Submodule R C₀(X, M))
+    [Module.Finite R P] : CompleteSpace P :=
+  P.isClosed_zeroAtInfty_of_isNoetherian.completeSpace_coe
+
+/-- Over a complete ultrametric Tate normed commutative ring `R`, every finitely generated
+submodule of `C₀(X, M)` with values in a complete Noetherian normed `R`-module carries the
+canonical `R`-module topology. -/
+theorem isModuleTopology_zeroAtInfty_of_isNoetherian (P : Submodule R C₀(X, M))
+    [Module.Finite R P] : IsModuleTopology R P :=
+  P.isModuleTopology_of_forall_apply_eq_zero (evalCLM R)
+    fun _ _ hf ↦ ZeroAtInftyContinuousMap.ext fun x ↦ by simpa using hf x
+
+end NoetherianModule
+
+section NoetherianRing
+
+variable {I R : Type*} [TopologicalSpace I] [DiscreteTopology I]
+  [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R] [TauCeti.NormedRing.IsTate R]
+  [IsNoetherianRing R]
+
+/-- Over a complete ultrametric Noetherian Tate normed commutative ring, finite coordinate
+projections approximate the identity uniformly relative to the norm on any finite submodule of
+`C₀(I, R)`, with no closedness or freeness assumption. -/
+theorem exists_finset_norm_indicatorCLM_sub_le_of_isNoetherianRing
+    (P : Submodule R C₀(I, R)) [Module.Finite R P] {ε : ℝ} (hε : 0 < ε) :
+    ∃ S : Finset I, ∀ f ∈ P, ‖indicatorCLM R (S : Set I) f - f‖ ≤ ε * ‖f‖ :=
+  have := P.completeSpace_zeroAtInfty_of_isNoetherian
+  P.exists_finset_norm_indicatorCLM_sub_le hε
+
+/-- Over a complete ultrametric Noetherian Tate normed commutative ring, the norm on any finite
+submodule of `C₀(I, R)` equals the maximum of the norms at a fixed finite set of coordinates, with
+no closedness or freeness assumption. -/
+theorem exists_finset_norm_eq_of_isNoetherianRing (P : Submodule R C₀(I, R))
+    [Module.Finite R P] :
+    ∃ S : Finset I, ∀ f ∈ P, ‖f‖ = (S.sup fun i ↦ ‖f i‖₊ : ℝ≥0) :=
+  have := P.completeSpace_zeroAtInfty_of_isNoetherian
+  P.exists_finset_norm_eq
+
+/-- Over a complete ultrametric Noetherian Tate normed commutative ring, every finite submodule of
+`C₀(I, R)` satisfies a finite-coordinate norm bound with a positive constant, with no closedness
+or freeness assumption (Buzzard, *Eigenvarieties*, Lemma 2.3; Johansson–Newton, §2.1). -/
+theorem exists_finset_norm_le_of_isNoetherianRing (P : Submodule R C₀(I, R))
+    [Module.Finite R P] :
+    ∃ S : Finset I, ∃ C > 0, ∀ f ∈ P,
+      ‖f‖ ≤ C * (S.sup fun i ↦ ‖f i‖₊ : ℝ≥0) :=
+  have := P.completeSpace_zeroAtInfty_of_isNoetherian
+  P.exists_finset_norm_le
+
+end NoetherianRing
+
+section Examples
+
+/-- On the zero submodule `⊥`, the empty coordinate set `∅` and constant `C = 1` witness the
+finite-coordinate norm bound. -/
+example {I E R : Type*} [TopologicalSpace I] [DiscreteTopology I] [NormedAddCommGroup E]
+    [Semiring R] [Module R E] [ContinuousConstSMul R E] :
+    ∀ f ∈ (⊥ : Submodule R C₀(I, E)),
+      ‖f‖ ≤ (1 : ℝ) * ((∅ : Finset I).sup fun i ↦ ‖f i‖₊ : ℝ≥0) := by
+  intro f hf
+  simp_all
+
+/-- On a submodule supported on a fixed finite set `S`, the coordinate set `S` itself and constant
+`C = 1` witness the finite-coordinate norm bound with equality. -/
+example {I E R : Type*} [TopologicalSpace I] [DiscreteTopology I] [SeminormedAddCommGroup E]
+    [Semiring R] [Module R E] [ContinuousConstSMul R E] (S : Finset I)
+    (P : Submodule R C₀(I, E)) (hP : ∀ f ∈ P, ∀ i ∉ S, f i = 0) :
+    ∀ f ∈ P, ‖f‖ ≤ (1 : ℝ) * (S.sup fun i ↦ ‖f i‖₊ : ℝ≥0) := fun f hf ↦ by
+  rw [norm_eq_sup_of_forall_eq_zero (hP f hf), one_mul]
+
+/-- On a coordinate line `R ∙ single i b`, the singleton `{i}` and constant `C = 1` witness the
+finite-coordinate norm bound. -/
+example {I E R : Type*} [TopologicalSpace I] [DiscreteTopology I] [DecidableEq I]
+    [SeminormedAddCommGroup E] [Semiring R] [Module R E] [ContinuousConstSMul R E]
+    (i : I) (b : E) :
+    ∀ f ∈ Submodule.span R ({single i b} : Set C₀(I, E)),
+      ‖f‖ ≤ (1 : ℝ) * (({i} : Finset I).sup fun j ↦ ‖f j‖₊ : ℝ≥0) := by
+  intro f hf
+  rw [norm_eq_sup_of_forall_eq_zero, one_mul]
+  obtain ⟨r, rfl⟩ := Submodule.mem_span_singleton.1 hf
+  intro j hj
+  simp [Finset.mem_singleton.not.1 hj]
+
+/-- Over any complete ultrametric nontrivially normed field `K`, a finitely generated submodule of
+`C₀(ℕ, K)` is closed and satisfies the finite-coordinate norm bound with all typeclass hypotheses
+synthesised automatically. -/
+example {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+    (s : Finset C₀(ℕ, K)) :
+    IsClosed (Submodule.span K (s : Set C₀(ℕ, K)) : Set C₀(ℕ, K)) ∧
+      ∃ S : Finset ℕ, ∃ C > 0, ∀ h ∈ Submodule.span K (s : Set C₀(ℕ, K)),
+        ‖h‖ ≤ C * (S.sup fun i ↦ ‖h i‖₊ : ℝ≥0) :=
+  ⟨(Submodule.span K (s : Set C₀(ℕ, K))).isClosed_zeroAtInfty_of_isNoetherian,
+    (Submodule.span K (s : Set C₀(ℕ, K))).exists_finset_norm_le_of_isNoetherianRing⟩
+
+end Examples
 
 end Submodule

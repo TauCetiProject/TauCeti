@@ -17,16 +17,17 @@ import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 /-!
 # Regular levels of maps into finite-dimensional spaces
 
-Let `f : M → F` be a map from a boundaryless manifold modelled on a finite-dimensional real space
-`E` to a finite-dimensional real normed space `F`.
+Let `𝕜` be an `RCLike` field, such as `ℝ` or `ℂ`, and let `f : M → F` be a map from a
+boundaryless manifold modelled on a finite-dimensional `𝕜`-space `E` to a finite-dimensional
+normed `𝕜`-space `F`.
 Suppose `f` is `C¹` at every point of the level `f⁻¹(c)` and `c` is a regular value of `f`. Then
 the actual subtype `{x // f x = c}` carries the atlas `TauCeti.regularLevelChartedSpace`, modelled
-on `Fin n → ℝ` for `n = dim E - dim F`, and is a `C^m` manifold when `f` is `C^m` at the points
+on `Fin n → 𝕜` for `n = dim E - dim F`, and is a `C^m` manifold when `f` is `C^m` at the points
 of the level, `m ≥ 1` (`TauCeti.isManifold_regularLevel`). No Hausdorff or second-countability
 hypothesis is used, and the level may be empty. When it is nonempty, regularity forces
 `dim F ≤ dim E`, so the natural-number subtraction is exact. The model dimension is a parameter
 `n` together with a proof of `dim E - dim F = n`, so that special cases can fix a convenient
-expression for it: for scalar functions, `F = ℝ`, users take `n = dim E - 1`, with the proof
+expression for it: for scalar functions, `F = 𝕜`, users take `n = dim E - 1`, with the proof
 `by rw [finrank_self]`.
 
 The atlas is the section-zero atlas `TauCeti.sectionZeroChartedSpace` of the section `f - c` of
@@ -34,10 +35,10 @@ the trivial bundle with fibre `F` over the self-modelled copy `TauCeti.Boundaryl
 transported to `f⁻¹(c)` along the identity of points. The trivialization coordinate of this
 section is `f - c` itself, and the linearization at `x` is the derivative
 
-`D_x = fderiv ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x x)`
+`D_x = fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x)`
 
 of `f` in the preferred extended chart. Writing `π_x` for the chosen projection of `E` onto
-`ker D_x` and `K_x : ker D_x ≃ (Fin n → ℝ)` for the index-model identification, the preferred
+`ker D_x` and `K_x : ker D_x ≃ (Fin n → 𝕜)` for the index-model identification, the preferred
 chart at `x` is
 
 `w ↦ K_x (π_x (extChartAt I x w - extChartAt I x x))`
@@ -49,7 +50,13 @@ applied to the inverse implicit-function chart of `f - c` on the zero slice
 For this atlas the level is an embedded submanifold: the inclusion `{x // f x = c} → M` is a
 `C^m` immersion with complement `F` and a topological embedding, hence a smooth embedding
 (`TauCeti.isSmoothEmbedding_coe_regularLevel`), and its differential at `x` has range
-`ker (mfderiv I 𝓘(ℝ, F) f x)` (`TauCeti.range_mfderiv_coe_regularLevel`).
+`ker (mfderiv I 𝓘(𝕜, F) f x)` (`TauCeti.range_mfderiv_coe_regularLevel`).
+
+In particular, over `ℂ` and at order `m = ∞` (or `m = ω`), this constructs the complex-manifold
+atlas and holomorphic embedding of a regular holomorphic level in arbitrary codimension
+`dim ℂ F`. The tangent-kernel equation is complex-linear. The `RCLike` assumption is used to
+obtain strict differentiability from `C¹` regularity; the underlying section-zero construction
+works over arbitrary complete nontrivially normed fields when strict differentiability is given.
 
 ## Main declarations
 
@@ -83,8 +90,9 @@ namespace TauCeti
 
 /-! ### The section-zero data of a regular level -/
 
-variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [NormedAddCommGroup F] {f : M → F} {c : F}
+variable {𝕜 E H M F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [NormedAddCommGroup F]
+  {f : M → F} {c : F}
 
 namespace RegularLevel
 
@@ -92,7 +100,7 @@ variable (I f c) in
 /-- The section `f - c` of the trivial bundle with fibre `F` over the base point `0`, on the
 self-modelled copy of `M`. -/
 private noncomputable def sec (y : BoundarylessModel I M) :
-    Bundle.Trivial ℝ F ((fun _ ↦ (0 : ℝ)) y) :=
+    Bundle.Trivial 𝕜 F ((fun _ ↦ (0 : 𝕜)) y) :=
   f ((BoundarylessModel.homeomorph I M).symm y) - c
 
 variable (I f c) in
@@ -127,8 +135,8 @@ private theorem chartAt_self (z : ↥{y : BoundarylessModel I M | sec I f c y = 
 /-- The trivialization coordinate of `f - c` in the preferred chart is `f - c` read in the
 preferred extended chart of `M`. -/
 private theorem coord_eq (z : ↥{y : BoundarylessModel I M | sec I f c y = 0}) :
-    (fun y ↦ ((trivializationAt F (Bundle.Trivial ℝ F) ((fun _ ↦ (0 : ℝ)) z.1))
-      ⟨(fun _ ↦ (0 : ℝ)) ((chartAt E z.1).symm y), sec I f c ((chartAt E z.1).symm y)⟩).2) =
+    (fun y ↦ ((trivializationAt F (Bundle.Trivial 𝕜 F) ((fun _ ↦ (0 : 𝕜)) z.1))
+      ⟨(fun _ ↦ (0 : 𝕜)) ((chartAt E z.1).symm y), sec I f c ((chartAt E z.1).symm y)⟩).2) =
       fun y ↦ f ((extChartAt I (zeroHomeomorph I f c z : M)).symm y) - c := by
   funext y
   rw [coe_zeroHomeomorph]
@@ -136,38 +144,42 @@ private theorem coord_eq (z : ↥{y : BoundarylessModel I M | sec I f c y = 0}) 
   -- The remaining `id` is the identity of `M` read on the model copy.
   rfl
 
-variable [NormedSpace ℝ F]
+variable [NormedSpace 𝕜 F]
 
 /-- The section-zero linearization at a zero: the preferred-chart derivative of `f`. -/
 private noncomputable abbrev linearization (z : ↥{y : BoundarylessModel I M | sec I f c y = 0}) :
-    E →L[ℝ] F :=
-  fderiv ℝ (f ∘ (extChartAt I (zeroHomeomorph I f c z : M)).symm)
+    E →L[𝕜] F :=
+  fderiv 𝕜 (f ∘ (extChartAt I (zeroHomeomorph I f c z : M)).symm)
     (extChartAt I (zeroHomeomorph I f c z : M) (zeroHomeomorph I f c z))
 
-private theorem hasStrictFDerivAt_coord (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ, F) 1 f x)
+private theorem hasStrictFDerivAt_coord (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(𝕜, F) 1 f x)
     (z : ↥{y : BoundarylessModel I M | sec I f c y = 0}) :
     HasStrictFDerivAt
-      (fun y ↦ ((trivializationAt F (Bundle.Trivial ℝ F) ((fun _ ↦ (0 : ℝ)) z.1))
-        ⟨(fun _ ↦ (0 : ℝ)) ((chartAt E z.1).symm y), sec I f c ((chartAt E z.1).symm y)⟩).2)
+      (fun y ↦ ((trivializationAt F (Bundle.Trivial 𝕜 F) ((fun _ ↦ (0 : 𝕜)) z.1))
+        ⟨(fun _ ↦ (0 : 𝕜)) ((chartAt E z.1).symm y), sec I f c ((chartAt E z.1).symm y)⟩).2)
       (linearization z) (chartAt E z.1 z.1) := by
   rw [coord_eq, chartAt_self]
   exact ((hf _ (zeroHomeomorph I f c z).2).contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt_fderiv
     one_ne_zero).sub_const c
 
-private theorem surjective_linearization (hreg : IsRegularValue I 𝓘(ℝ, F) f c)
+private theorem surjective_linearization (hreg : IsRegularValue I 𝓘(𝕜, F) f c)
     (z : ↥{y : BoundarylessModel I M | sec I f c y = 0}) : Surjective (linearization z) :=
   (hreg.isRegularPoint (zeroHomeomorph I f c z).2).surjective_fderiv_comp_extChartAt_symm
 
-variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] {n : ℕ}
+variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F] {n : ℕ}
+
+-- Finite-dimensional completeness is not a global instance over a variable scalar field.
+local instance instCompleteSpaceDomain : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+local instance instCompleteSpaceCodomain : CompleteSpace F := FiniteDimensional.complete 𝕜 F
 
 omit [I.Boundaryless] in
 private theorem isFredholm_linearization (z : ↥{y : BoundarylessModel I M | sec I f c y = 0}) :
     (linearization z).IsFredholm :=
   ContinuousLinearMap.isFredholm_of_finiteDimensional _
 
-omit [FiniteDimensional ℝ F] in
-private theorem index_linearization (hreg : IsRegularValue I 𝓘(ℝ, F) f c)
-    (hn : finrank ℝ E - finrank ℝ F = n) (z : ↥{y : BoundarylessModel I M | sec I f c y = 0}) :
+omit [FiniteDimensional 𝕜 F] in
+private theorem index_linearization (hreg : IsRegularValue I 𝓘(𝕜, F) f c)
+    (hn : finrank 𝕜 E - finrank 𝕜 F = n) (z : ↥{y : BoundarylessModel I M | sec I f c y = 0}) :
     (linearization z).index = n :=
   ((linearization z).finrank_ker_eq_iff_index_eq (surjective_linearization hreg z)).1
     ((Nat.eq_sub_of_add_eq ((hreg.isRegularPoint (zeroHomeomorph I f c z).2)
@@ -175,8 +187,8 @@ private theorem index_linearization (hreg : IsRegularValue I 𝓘(ℝ, F) f c)
 
 /-- The implicit-function chart and regular neighbourhood of the section-zero chart at a zero are
 those of `f - c` read in the preferred extended chart of `M`. -/
-private theorem implicit_coord_eq (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ, F) 1 f x)
-    (hreg : IsRegularValue I 𝓘(ℝ, F) f c) (z : ↥{y : BoundarylessModel I M | sec I f c y = 0}) :
+private theorem implicit_coord_eq (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(𝕜, F) 1 f x)
+    (hreg : IsRegularValue I 𝓘(𝕜, F) f c) (z : ↥{y : BoundarylessModel I M | sec I f c y = 0}) :
     let x := (zeroHomeomorph I f c z : M)
     let hD : HasStrictFDerivAt (fun y ↦ f ((extChartAt I x).symm y) - c) (linearization z)
         (extChartAt I x x) :=
@@ -196,16 +208,22 @@ end RegularLevel
 
 open RegularLevel
 
-variable [NormedSpace ℝ F] [I.Boundaryless] [ChartedSpace H M] [FiniteDimensional ℝ E]
-  [FiniteDimensional ℝ F] {n : ℕ} (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ, F) 1 f x)
-  (hreg : IsRegularValue I 𝓘(ℝ, F) f c) (hn : finrank ℝ E - finrank ℝ F = n)
+variable [NormedSpace 𝕜 F] [I.Boundaryless] [ChartedSpace H M] [FiniteDimensional 𝕜 E]
+  [FiniteDimensional 𝕜 F] {n : ℕ} (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(𝕜, F) 1 f x)
+  (hreg : IsRegularValue I 𝓘(𝕜, F) f c) (hn : finrank 𝕜 E - finrank 𝕜 F = n)
 
-/-- The preferred chart at a point `x` of a regular level `f⁻¹(c)`, modelled on `Fin n → ℝ` for
+-- Finite-dimensional completeness is not a global instance over a variable scalar field.
+local instance instCompleteSpaceRegularLevelDomain : CompleteSpace E :=
+  FiniteDimensional.complete 𝕜 E
+local instance instCompleteSpaceRegularLevelCodomain : CompleteSpace F :=
+  FiniteDimensional.complete 𝕜 F
+
+/-- The preferred chart at a point `x` of a regular level `f⁻¹(c)`, modelled on `Fin n → 𝕜` for
 `n = dim E - dim F`: the section-zero chart of `f - c` at `x`. It reads a point `w` as the kernel
 component of `extChartAt I x w - extChartAt I x x` for the derivative of `f` in the preferred
 extended chart at `x` (`TauCeti.regularLevelChartAt_apply`). -/
 noncomputable def regularLevelChartAt (x : {x : M // f x = c}) :
-    OpenPartialHomeomorph {x : M // f x = c} (Fin n → ℝ) :=
+    OpenPartialHomeomorph {x : M // f x = c} (Fin n → 𝕜) :=
   (zeroHomeomorph I f c).symm.transOpenPartialHomeomorph
     (sectionZeroChartAt (hasStrictFDerivAt_coord hf) isFredholm_linearization
       (surjective_linearization hreg) (index_linearization hreg hn)
@@ -226,12 +244,12 @@ theorem mem_regularLevelChartAt_source (x : {x : M // f x = c}) :
     x ∈ (regularLevelChartAt hf hreg hn x).source := by
   rw [regularLevelChartAt, Homeomorph.transOpenPartialHomeomorph_source]
   exact mem_sectionZeroChartAt_source _ _ _ _ (fun _ ↦ continuousAt_const)
-    (fun z ↦ mem_baseSet_trivializationAt F (Bundle.Trivial ℝ F) _) _
+    (fun z ↦ mem_baseSet_trivializationAt F (Bundle.Trivial 𝕜 F) _) _
 
 /-- The atlas of a regular level `f⁻¹(c)`: the section-zero atlas of `f - c`, with preferred
-charts `TauCeti.regularLevelChartAt`. It is modelled on `Fin n → ℝ` for `n = dim E - dim F`. -/
+charts `TauCeti.regularLevelChartAt`. It is modelled on `Fin n → 𝕜` for `n = dim E - dim F`. -/
 @[irreducible]
-noncomputable def regularLevelChartedSpace : ChartedSpace (Fin n → ℝ) {x : M // f x = c} where
+noncomputable def regularLevelChartedSpace : ChartedSpace (Fin n → 𝕜) {x : M // f x = c} where
   atlas := range (regularLevelChartAt hf hreg hn)
   chartAt := regularLevelChartAt hf hreg hn
   mem_chart_source := mem_regularLevelChartAt_source hf hreg hn
@@ -240,7 +258,7 @@ noncomputable def regularLevelChartedSpace : ChartedSpace (Fin n → ℝ) {x : M
 /-- The installed preferred charts are `TauCeti.regularLevelChartAt`. -/
 @[simp]
 theorem regularLevelChartedSpace_chartAt (x : {x : M // f x = c}) :
-    @chartAt (Fin n → ℝ) _ {x : M // f x = c} _ (regularLevelChartedSpace hf hreg hn) x =
+    @chartAt (Fin n → 𝕜) _ {x : M // f x = c} _ (regularLevelChartedSpace hf hreg hn) x =
       regularLevelChartAt hf hreg hn x := by
   unfold regularLevelChartedSpace
   rfl
@@ -248,17 +266,17 @@ theorem regularLevelChartedSpace_chartAt (x : {x : M // f x = c}) :
 /-- The installed atlas consists exactly of the preferred charts. -/
 @[simp]
 theorem regularLevelChartedSpace_atlas :
-    @atlas (Fin n → ℝ) _ {x : M // f x = c} _ (regularLevelChartedSpace hf hreg hn) =
+    @atlas (Fin n → 𝕜) _ {x : M // f x = c} _ (regularLevelChartedSpace hf hreg hn) =
       range (regularLevelChartAt hf hreg hn) := by
   unfold atlas regularLevelChartedSpace
   rfl
 
 /-- The preferred chart at `x` reads the displacement `extChartAt I x w - extChartAt I x x` through
 the chosen projection onto the kernel of the preferred-chart derivative `D` of `f` at `x`,
-followed by the identification of that kernel with `Fin n → ℝ`. -/
+followed by the identification of that kernel with `Fin n → 𝕜`. -/
 theorem regularLevelChartAt_apply (x w : {x : M // f x = c}) :
     regularLevelChartAt hf hreg hn x w =
-      let D := fderiv ℝ (f ∘ (extChartAt I (x : M)).symm) (extChartAt I (x : M) x)
+      let D := fderiv 𝕜 (f ∘ (extChartAt I (x : M)).symm) (extChartAt I (x : M) x)
       D.kerModelEquiv D.isFredholm_of_finiteDimensional.finite_ker
         ((Nat.eq_sub_of_add_eq
           (hreg.isRegularPoint x.2).finrank_ker_fderiv_comp_extChartAt_symm_add_finrank).trans hn)
@@ -277,7 +295,7 @@ theorem regularLevelChartAt_apply_self (x : {x : M // f x = c}) :
 
 /-- The origin belongs to the target of every preferred chart. -/
 theorem mem_regularLevelChartAt_target (x : {x : M // f x = c}) :
-    (0 : Fin n → ℝ) ∈ (regularLevelChartAt hf hreg hn x).target :=
+    (0 : Fin n → 𝕜) ∈ (regularLevelChartAt hf hreg hn x).target :=
   regularLevelChartAt_apply_self hf hreg hn x ▸
     (regularLevelChartAt hf hreg hn x).map_source (mem_regularLevelChartAt_source hf hreg hn x)
 
@@ -294,7 +312,7 @@ in the neighbourhood where its derivative stays invertible. -/
 @[simp]
 theorem regularLevelChartAt_source (x : {x : M // f x = c}) :
     (regularLevelChartAt hf hreg hn x).source =
-      let D := fderiv ℝ (f ∘ (extChartAt I (x : M)).symm) (extChartAt I (x : M) x)
+      let D := fderiv 𝕜 (f ∘ (extChartAt I (x : M)).symm) (extChartAt I (x : M) x)
       let hD : HasStrictFDerivAt (fun y ↦ f ((extChartAt I (x : M)).symm y) - c) D
           (extChartAt I (x : M) x) :=
         ((hf x x.2).contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt_fderiv
@@ -322,9 +340,9 @@ theorem regularLevelChartAt_source (x : {x : M // f x = c}) :
 gives a point `(0, K.symm k)` of the implicit-function chart target of `f - c`, whose inverse lies
 in the regular neighbourhood and in the target of the preferred extended chart at `x`. -/
 @[simp]
-theorem mem_regularLevelChartAt_target_iff (x : {x : M // f x = c}) (k : Fin n → ℝ) :
+theorem mem_regularLevelChartAt_target_iff (x : {x : M // f x = c}) (k : Fin n → 𝕜) :
     k ∈ (regularLevelChartAt hf hreg hn x).target ↔
-      let D := fderiv ℝ (f ∘ (extChartAt I (x : M)).symm) (extChartAt I (x : M) x)
+      let D := fderiv 𝕜 (f ∘ (extChartAt I (x : M)).symm) (extChartAt I (x : M) x)
       let hD : HasStrictFDerivAt (fun y ↦ f ((extChartAt I (x : M)).symm y) - c) D
           (extChartAt I (x : M) x) :=
         ((hf x x.2).contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt_fderiv
@@ -352,10 +370,10 @@ theorem mem_regularLevelChartAt_target_iff (x : {x : M // f x = c}) (k : Fin n �
 
 /-- On its target, the inverse preferred chart at `x` is the inverse preferred extended chart of
 `M` at `x`, applied to the inverse implicit-function chart of `f - c` on the zero slice. -/
-theorem coe_regularLevelChartAt_symm_apply (x : {x : M // f x = c}) {k : Fin n → ℝ}
+theorem coe_regularLevelChartAt_symm_apply (x : {x : M // f x = c}) {k : Fin n → 𝕜}
     (hk : k ∈ (regularLevelChartAt hf hreg hn x).target) :
     ((regularLevelChartAt hf hreg hn x).symm k : M) =
-      let D := fderiv ℝ (f ∘ (extChartAt I (x : M)).symm) (extChartAt I (x : M) x)
+      let D := fderiv 𝕜 (f ∘ (extChartAt I (x : M)).symm) (extChartAt I (x : M) x)
       let hD : HasStrictFDerivAt (fun y ↦ f ((extChartAt I (x : M)).symm y) - c) D
           (extChartAt I (x : M) x) :=
         ((hf x x.2).contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt_fderiv
@@ -383,17 +401,17 @@ theorem coe_regularLevelChartAt_symm_apply (x : {x : M // f x = c}) {k : Fin n �
 points of the level, the trivialization coordinate of `f - c` is `C^m` in the preferred chart of
 the self-modelled copy at every zero of its chart domain. -/
 private theorem contDiffAt_coord {m : ℕ∞ω} [IsManifold I m M]
-    (hfm : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ, F) m f x) :
+    (hfm : ∀ x, f x = c → ContMDiffAt I 𝓘(𝕜, F) m f x) :
     m ≠ 0 → ∀ z w : ↥{y : BoundarylessModel I M | sec I f c y = 0},
       w.1 ∈ (chartAt E z.1).source →
-      (fun _ ↦ (0 : ℝ)) w.1 ∈
-        (trivializationAt F (Bundle.Trivial ℝ F) ((fun _ ↦ (0 : ℝ)) z.1)).baseSet →
+      (fun _ ↦ (0 : 𝕜)) w.1 ∈
+        (trivializationAt F (Bundle.Trivial 𝕜 F) ((fun _ ↦ (0 : 𝕜)) z.1)).baseSet →
       chartAt E z.1 w.1 ∈ (hasStrictFDerivAt_coord hf z).implicitCoordSource
         (LinearMap.range_eq_top.2 (surjective_linearization hreg z))
         (isFredholm_linearization z).closedComplemented_ker →
-      ContDiffAt ℝ m
-        (fun y ↦ ((trivializationAt F (Bundle.Trivial ℝ F) ((fun _ ↦ (0 : ℝ)) z.1))
-          ⟨(fun _ ↦ (0 : ℝ)) ((chartAt E z.1).symm y), sec I f c ((chartAt E z.1).symm y)⟩).2)
+      ContDiffAt 𝕜 m
+        (fun y ↦ ((trivializationAt F (Bundle.Trivial 𝕜 F) ((fun _ ↦ (0 : 𝕜)) z.1))
+          ⟨(fun _ ↦ (0 : 𝕜)) ((chartAt E z.1).symm y), sec I f c ((chartAt E z.1).symm y)⟩).2)
         (chartAt E z.1 w.1) := by
   intro _ z w hw _ _
   have hw' := (mem_chartAt_source_iff z w).1 hw
@@ -406,10 +424,10 @@ private theorem contDiffAt_coord {m : ℕ∞ω} [IsManifold I m M]
 
 /-- The section-zero atlas of `f - c` on the zero set in the self-modelled copy. -/
 private noncomputable abbrev zeroChartedSpace :
-    ChartedSpace (Fin n → ℝ) ↥{y : BoundarylessModel I M | sec I f c y = 0} :=
+    ChartedSpace (Fin n → 𝕜) ↥{y : BoundarylessModel I M | sec I f c y = 0} :=
   sectionZeroChartedSpace (hasStrictFDerivAt_coord hf) isFredholm_linearization
     (surjective_linearization hreg) (index_linearization hreg hn) (fun _ ↦ continuousAt_const)
-    (fun _ ↦ mem_baseSet_trivializationAt F (Bundle.Trivial ℝ F) _)
+    (fun _ ↦ mem_baseSet_trivializationAt F (Bundle.Trivial 𝕜 F) _)
 
 /-- The atlas of the level is the section-zero atlas of `f - c`, pulled back along the
 identification of the level with the zero set. -/
@@ -433,15 +451,15 @@ private theorem regularLevelChartedSpace_eq_pullbackChartedSpace :
 /-- A regular level `f⁻¹(c)` of a map which is `C^m` at the points of the level, with `m ≥ 1`, is
 a `C^m` manifold of dimension `dim E - dim F` for its preferred atlas. -/
 theorem isManifold_regularLevel {m : ℕ∞ω} [IsManifold I m M] (hm : 1 ≤ m)
-    (hfm : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ, F) m f x) (hreg : IsRegularValue I 𝓘(ℝ, F) f c)
-    (hn : finrank ℝ E - finrank ℝ F = n) :
+    (hfm : ∀ x, f x = c → ContMDiffAt I 𝓘(𝕜, F) m f x) (hreg : IsRegularValue I 𝓘(𝕜, F) f c)
+    (hn : finrank 𝕜 E - finrank 𝕜 F = n) :
     letI := regularLevelChartedSpace (fun x hx ↦ (hfm x hx).of_le hm) hreg hn
-    IsManifold 𝓘(ℝ, Fin n → ℝ) m {x : M // f x = c} := by
-  have hf : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ, F) 1 f x := fun x hx ↦ (hfm x hx).of_le hm
+    IsManifold 𝓘(𝕜, Fin n → 𝕜) m {x : M // f x = c} := by
+  have hf : ∀ x, f x = c → ContMDiffAt I 𝓘(𝕜, F) 1 f x := fun x hx ↦ (hfm x hx).of_le hm
   let := zeroChartedSpace hf hreg hn
-  have := isManifold_sectionZero (hasStrictFDerivAt_coord hf)
+  have := isManifold_sectionZero (𝕜 := 𝕜) (hasStrictFDerivAt_coord hf)
     isFredholm_linearization (surjective_linearization hreg) (index_linearization hreg hn)
-    (fun _ ↦ continuousAt_const) (fun _ ↦ mem_baseSet_trivializationAt F (Bundle.Trivial ℝ F) _)
+    (fun _ ↦ continuousAt_const) (fun _ ↦ mem_baseSet_trivializationAt F (Bundle.Trivial 𝕜 F) _)
     (contDiffAt_coord hf hreg hfm)
   rw [regularLevelChartedSpace_eq_pullbackChartedSpace]
   exact (zeroHomeomorph I f c).symm.pullback_isManifold _ m
@@ -451,29 +469,29 @@ atlas `TauCeti.regularLevelChartedSpace`, the inclusion of a regular level `f⁻
 is `C^m` at the points of the level, `m ≥ 1`, is a `C^m` immersion whose normal forms have the
 space `F` of values of `f` as complement. -/
 theorem isImmersionOfComplement_coe_regularLevel {m : ℕ∞ω} [IsManifold I m M] (hm : 1 ≤ m)
-    (hfm : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ, F) m f x) (hreg : IsRegularValue I 𝓘(ℝ, F) f c)
-    (hn : finrank ℝ E - finrank ℝ F = n) :
+    (hfm : ∀ x, f x = c → ContMDiffAt I 𝓘(𝕜, F) m f x) (hreg : IsRegularValue I 𝓘(𝕜, F) f c)
+    (hn : finrank 𝕜 E - finrank 𝕜 F = n) :
     letI := regularLevelChartedSpace (fun x hx ↦ (hfm x hx).of_le hm) hreg hn
-    Manifold.IsImmersionOfComplement F 𝓘(ℝ, Fin n → ℝ) I m
+    Manifold.IsImmersionOfComplement F 𝓘(𝕜, Fin n → 𝕜) I m
       (Subtype.val : {x : M // f x = c} → M) := by
-  have hf : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ, F) 1 f x := fun x hx ↦ (hfm x hx).of_le hm
+  have hf : ∀ x, f x = c → ContMDiffAt I 𝓘(𝕜, F) 1 f x := fun x hx ↦ (hfm x hx).of_le hm
   let := zeroChartedSpace hf hreg hn
-  have hZ := isImmersionOfComplement_coe_sectionZero (hasStrictFDerivAt_coord hf)
+  have hZ := isImmersionOfComplement_coe_sectionZero (𝕜 := 𝕜) (hasStrictFDerivAt_coord hf)
     isFredholm_linearization (surjective_linearization hreg) (index_linearization hreg hn)
-    (fun _ ↦ continuousAt_const) (fun _ ↦ mem_baseSet_trivializationAt F (Bundle.Trivial ℝ F) _)
+    (fun _ ↦ continuousAt_const) (fun _ ↦ mem_baseSet_trivializationAt F (Bundle.Trivial 𝕜 F) _)
     (contDiffAt_coord hf hreg hfm)
-  have := isManifold_sectionZero (hasStrictFDerivAt_coord hf)
+  have := isManifold_sectionZero (𝕜 := 𝕜) (hasStrictFDerivAt_coord hf)
     isFredholm_linearization (surjective_linearization hreg) (index_linearization hreg hn)
-    (fun _ ↦ continuousAt_const) (fun _ ↦ mem_baseSet_trivializationAt F (Bundle.Trivial ℝ F) _)
+    (fun _ ↦ continuousAt_const) (fun _ ↦ mem_baseSet_trivializationAt F (Bundle.Trivial 𝕜 F) _)
     (contDiffAt_coord hf hreg hfm)
   rw [regularLevelChartedSpace_eq_pullbackChartedSpace]
-  let := (zeroHomeomorph I f c).symm.pullbackChartedSpace (H := Fin n → ℝ)
-  have := (zeroHomeomorph I f c).symm.pullback_isManifold 𝓘(ℝ, Fin n → ℝ) m
+  let := (zeroHomeomorph I f c).symm.pullbackChartedSpace (H := Fin n → 𝕜)
+  have := (zeroHomeomorph I f c).symm.pullback_isManifold 𝓘(𝕜, Fin n → 𝕜) m
   refine BoundarylessModel.isImmersionOfComplement_target_iff.1 ?_
   -- Read in the self-modelled copy, the inclusion of the level is the inclusion of the zero set
   -- precomposed with the pulled-back diffeomorphism from the level to the zero set.
   have hcomp : BoundarylessModel.homeomorph I M ∘ (Subtype.val : {x : M // f x = c} → M) =
-      Subtype.val ∘ (zeroHomeomorph I f c).symm.pullbackDiffeomorph 𝓘(ℝ, Fin n → ℝ) m := by
+      Subtype.val ∘ (zeroHomeomorph I f c).symm.pullbackDiffeomorph 𝓘(𝕜, Fin n → 𝕜) m := by
     funext x
     rw [comp_apply, comp_apply, Homeomorph.coe_pullbackDiffeomorph, coe_zeroHomeomorph_symm]
   rw [hcomp]
@@ -483,10 +501,10 @@ theorem isImmersionOfComplement_coe_regularLevel {m : ℕ∞ω} [IsManifold I m 
 `TauCeti.regularLevelChartedSpace`, the inclusion of a regular level `f⁻¹(c)` of a map which is
 `C^m` at the points of the level, `m ≥ 1`, is a `C^m` smooth embedding. -/
 theorem isSmoothEmbedding_coe_regularLevel {m : ℕ∞ω} [IsManifold I m M] (hm : 1 ≤ m)
-    (hfm : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ, F) m f x) (hreg : IsRegularValue I 𝓘(ℝ, F) f c)
-    (hn : finrank ℝ E - finrank ℝ F = n) :
+    (hfm : ∀ x, f x = c → ContMDiffAt I 𝓘(𝕜, F) m f x) (hreg : IsRegularValue I 𝓘(𝕜, F) f c)
+    (hn : finrank 𝕜 E - finrank 𝕜 F = n) :
     letI := regularLevelChartedSpace (fun x hx ↦ (hfm x hx).of_le hm) hreg hn
-    Manifold.IsSmoothEmbedding 𝓘(ℝ, Fin n → ℝ) I m (Subtype.val : {x : M // f x = c} → M) :=
+    Manifold.IsSmoothEmbedding 𝓘(𝕜, Fin n → 𝕜) I m (Subtype.val : {x : M // f x = c} → M) :=
   letI := regularLevelChartedSpace (fun x hx ↦ (hfm x hx).of_le hm) hreg hn
   ⟨(isImmersionOfComplement_coe_regularLevel hm hfm hreg hn).isImmersion,
     Topology.IsEmbedding.subtypeVal⟩
@@ -496,8 +514,8 @@ level `f⁻¹(c)`, the differential of the inclusion, for the preferred atlas
 `TauCeti.regularLevelChartedSpace`, has range the kernel of the differential of `f` at `x`. -/
 theorem range_mfderiv_coe_regularLevel [IsManifold I 1 M] (x : {x : M // f x = c}) :
     letI := regularLevelChartedSpace hf hreg hn
-    (mfderiv 𝓘(ℝ, Fin n → ℝ) I (Subtype.val : {x : M // f x = c} → M) x).range =
-      (mfderiv I 𝓘(ℝ, F) f x).ker := by
+    (mfderiv 𝓘(𝕜, Fin n → 𝕜) I (Subtype.val : {x : M // f x = c} → M) x).range =
+      (mfderiv I 𝓘(𝕜, F) f x).ker := by
   let := regularLevelChartedSpace hf hreg hn
   have hx := hreg.isRegularPoint x.2
   -- At a point of the level, regularity gives `dim F ≤ dim E`, so `n + dim F = dim E`.
@@ -513,14 +531,14 @@ theorem range_mfderiv_coe_regularLevel [IsManifold I 1 M] (x : {x : M // f x = c
 into the same space, then `ker dg_x = ker df_x` at each of its points `x` which is a regular point
 of `g`. -/
 theorem ker_mfderiv_eq_of_forall_eq_imp [IsManifold I 1 M]
-    (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ, F) 1 f x) (hreg : IsRegularValue I 𝓘(ℝ, F) f c)
+    (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(𝕜, F) 1 f x) (hreg : IsRegularValue I 𝓘(𝕜, F) f c)
     {g : M → F} {c' : F} (hfg : ∀ x, f x = c → g x = c') {x : M} (hx : f x = c)
-    (hgx : IsRegularPoint I 𝓘(ℝ, F) g x) :
-    (mfderiv I 𝓘(ℝ, F) g x).ker = (mfderiv I 𝓘(ℝ, F) f x).ker := by
-  let := regularLevelChartedSpace (n := finrank ℝ E - finrank ℝ F) hf hreg rfl
+    (hgx : IsRegularPoint I 𝓘(𝕜, F) g x) :
+    (mfderiv I 𝓘(𝕜, F) g x).ker = (mfderiv I 𝓘(𝕜, F) f x).ker := by
+  let := regularLevelChartedSpace (n := finrank 𝕜 E - finrank 𝕜 F) hf hreg rfl
   -- The tangent space of the level, the range of the differential of its inclusion, is `ker df`
   -- and lies in `ker dg`, since `g` is constant on the level.
-  have hle : (mfderiv I 𝓘(ℝ, F) f x).ker ≤ (mfderiv I 𝓘(ℝ, F) g x).ker := by
+  have hle : (mfderiv I 𝓘(𝕜, F) f x).ker ≤ (mfderiv I 𝓘(𝕜, F) g x).ker := by
     rw [← range_mfderiv_coe_regularLevel hf hreg rfl (⟨x, hx⟩ : {x : M // f x = c})]
     exact range_mfderiv_le_ker_mfderiv_of_eventually_eq
       (.of_forall fun y : {x : M // f x = c} ↦ hfg y y.2)

@@ -129,7 +129,8 @@ theorem isAdicComplete_quotient_natCast (hξ : ξ.IsDistinguished)
   have : IsAdicComplete (span {(p : 𝕎 S ⧸ span {ξ})} ^ (m + 1)) (𝕎 S ⧸ span {ξ}) := by
     rw [span_singleton_pow]
     exact .span_singleton_of_dvd hdvd
-  exact .of_pow_le_of_le (k := m + 1) le_rfl (Ideal.pow_le_self m.succ_ne_zero)
+  exact .of_pow_le_of_pow_le (k := m + 1) le_rfl
+    ((pow_one _).trans_le (Ideal.pow_le_self m.succ_ne_zero))
 
 private theorem span_le_ker_mk_comp_constantCoeff (hξ : ξ.IsDistinguished) (hξ₀ : ϖ ∣ ξ.coeff 0) :
     span {ξ} ≤ RingHom.ker ((Ideal.Quotient.mk (span {ϖ})).comp (constantCoeff : 𝕎 S →+* S)) := by

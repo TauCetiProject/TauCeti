@@ -158,7 +158,7 @@ theorem exists_paths_arrowSeparator_card_eq [Finite V] [∀ x y, Finite (Q x y)]
   -- `S`, which separate `t` from `s`.
   obtain ⟨f, S, hs, ht, hval⟩ :=
     Flow.exists_val_eq_arrowSum hst (cap := (1 : Assignment Q ℤ)) fun _ _ _ ↦ zero_le_one
-  obtain ⟨k, P, hk, hP, -, hdisj⟩ := f.exists_paths_card_eq_val hst fun _ _ e ↦ f.le_upper e
+  obtain ⟨k, P, hk, hP, -, hdisj⟩ := f.exists_paths_card_eq_val fun _ _ e ↦ f.le_upper e
   refine ⟨k, P, ({a : Σ x y, Q x y | a.1 ∈ S ∧ a.2.1 ∈ Sᶜ} : Finset _), hP, hdisj,
     fun h ↦ ht ?_, ?_⟩
   · refine h.mem_of_mem (C := (S : Set V)) hs fun v w e hv he ↦ ?_

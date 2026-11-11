@@ -34,28 +34,16 @@ variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] [IsRealCl
 square root `0` when `a = 0`, and none when `a < 0`. -/
 theorem card_nthRootsFinset_two (a : R) :
     (nthRootsFinset 2 a).card = if 0 < a then 2 else if a = 0 then 1 else 0 := by
-  have hmem (y : R) : y ∈ nthRootsFinset 2 a ↔ y ^ 2 = a := mem_nthRootsFinset two_pos a
   rcases lt_trichotomy 0 a with h | rfl | h
-  · obtain ⟨s, hs⟩ := IsRealClosed.nonneg_iff_isSquare.mp h.le
-    have hs0 : s ≠ -s := by
-      intro hs'
-      have hs_zero : s = 0 := by linarith
-      have : a = 0 := by rw [hs, hs_zero, mul_zero]
-      exact h.ne' this
-    have : nthRootsFinset 2 a = {s, -s} := by
+  · obtain ⟨s, rfl⟩ := IsRealClosed.nonneg_iff_isSquare.mp h.le
+    have : nthRootsFinset 2 (s * s) = {s, -s} := by
       ext y
-      rw [hmem, hs, sq, mul_self_eq_mul_self_iff, Finset.mem_insert, Finset.mem_singleton]
-    rw [this, Finset.card_pair hs0]
+      simp [mem_nthRootsFinset two_pos, sq, mul_self_eq_mul_self_iff]
+    rw [this, Finset.card_pair (by grind)]
     simp [h]
-  · have : nthRootsFinset 2 (0 : R) = {0} := by
-      ext y
-      rw [hmem]
-      simp
-    simp [this]
-  · have : nthRootsFinset 2 a = ∅ := by
-      ext y
-      simp only [hmem, Finset.notMem_empty, iff_false]
-      nlinarith [sq_nonneg y]
+  · classical simp [nthRootsFinset_def]
+  · have : nthRootsFinset 2 a = ∅ := Finset.eq_empty_of_forall_notMem fun y hy => by
+      nlinarith [(mem_nthRootsFinset two_pos a).1 hy, sq_nonneg y]
     simp [this, h.not_gt, h.ne]
 
 /-- **Roots below a point by a square substitution.** For nonzero `p`, every root of `p` below
@@ -64,7 +52,6 @@ theorem card_nthRootsFinset_two (a : R) :
 theorem card_roots_toFinset_comp_C_sub_X_sq {p : R[X]} (hp : p ≠ 0) (t : R) :
     (p.comp (C t - X ^ 2)).roots.toFinset.card =
       2 * {r ∈ p.roots.toFinset | r < t}.card + if p.IsRoot t then 1 else 0 := by
-  classical
   have hq : p.comp (C t - X ^ 2) ≠ 0 := by
     rw [Ne, comp_eq_zero_iff]
     rintro (h | ⟨-, h⟩)
@@ -84,20 +71,11 @@ theorem card_roots_toFinset_comp_C_sub_X_sq {p : R[X]} (hp : p ≠ 0) (t : R) :
         nthRootsFinset 2 (t - r) := by
       ext y
       rw [Finset.mem_filter, hmem, mem_nthRootsFinset two_pos]
-      constructor
-      · rintro ⟨-, h⟩
-        rw [← h, sub_sub_cancel]
-      · intro h
-        have h' : t - y ^ 2 = r := by rw [h, sub_sub_cancel]
-        exact ⟨h' ▸ hr', h'⟩
+      grind
     rw [this, card_nthRootsFinset_two]
-    simp only [sub_pos, sub_eq_zero]
-    rcases lt_trichotomy r t with h | h | h
-    · simp [h, h.ne']
-    · simp [h]
-    · simp [h.not_gt, h.ne]
+    grind
   rw [Finset.sum_congr rfl hfiber, Finset.sum_add_distrib, ← Finset.sum_filter,
-    Finset.sum_const, smul_eq_mul, mul_comm _ 2, Finset.sum_ite_eq]
-  simp [mem_roots hp]
+    Finset.sum_ite_eq]
+  simp [mem_roots hp, mul_comm]
 
 end Polynomial

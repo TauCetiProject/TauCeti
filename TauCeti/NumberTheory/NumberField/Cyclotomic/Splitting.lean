@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.NumberField.Cyclotomic.Galois
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal
 public import TauCeti.NumberTheory.Cyclotomic.OddLevel
 import TauCeti.Data.Nat.Totient
@@ -51,6 +52,9 @@ inert although `2 ∣ 6`, and in `ℚ(ζ₂) = ℚ` the prime `2` splits complet
   prime `p` is inert iff `p ∤ n` and `p` has order `φ(n)` modulo `n`;
   `isPrime_span_natCast_iff_orderOf_eq_totient_of_mod_four_eq_two` is the version for
   `n ≡ 2 mod 4`.
+* `TauCeti.NumberField.sum_val_galEquivZMod_filter_inv_smul_eq_smul`: for `p ∤ n`, the classes
+  in `(ZMod n)ˣ` of the `σ` sending `τ P` to `P` form a coset of `⟨p⟩`, so their representatives
+  in `[1, n)` sum to `∑_{i < f} (p ^ i c(τ⁻¹) mod n)`.
 
 ## References
 
@@ -248,6 +252,64 @@ theorem ncard_primesOver_mul_orderOf_eq_totient {m : ℕ} [IsCyclotomicExtension
     [Fact p.Prime] (hm : ¬ p ∣ m) :
     (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard * orderOf (p : ZMod m) = Nat.totient m :=
   ncard_primesOver_mul_orderOf_eq_totient_of_eq_pow_mul (k := 0) (by rw [pow_zero, one_mul]) hm
+
+section DecompositionCoset
+
+open IsCyclotomicExtension.Rat
+open scoped Pointwise
+
+/-- **Summing the classes of a decomposition coset.** Let `K` be the `m`-th cyclotomic field,
+`P` a prime of `K` over `p ∤ m` and `τ ∈ Gal(K/ℚ)`. The `σ` with `σ⁻¹ P = τ P` are those whose
+class lies in the coset `c(τ⁻¹) ⟨p⟩` of `(ZMod m)ˣ`, and the sum of their representatives `c(σ)`
+in `[1, m)` is `∑_{i < f} (p ^ i c(τ⁻¹) mod m)`, where `f` is the order of `p` modulo `m`. -/
+theorem sum_val_galEquivZMod_filter_inv_smul_eq_smul {m : ℕ} [NeZero m]
+    [IsCyclotomicExtension {m} ℚ K] [DecidableEq (Ideal (𝓞 K))] {p : ℕ} [Fact p.Prime]
+    (hpm : ¬ p ∣ m) (P : Ideal (𝓞 K)) [P.IsMaximal] [P.LiesOver (span {(p : ℤ)})]
+    (τ : Gal(K/ℚ)) :
+    ∑ σ with σ⁻¹ • P = τ • P, (galEquivZMod m K σ : ZMod m).val =
+      ∑ i ∈ Finset.range (orderOf (p : ZMod m)),
+        p ^ i * (galEquivZMod m K τ⁻¹ : ZMod m).val % m := by
+  classical
+  have hcop : p.Coprime m := (Nat.Prime.coprime_iff_not_dvd Fact.out).2 hpm
+  set u := ZMod.unitOfCoprime p hcop
+  set a := galEquivZMod m K τ⁻¹ with hadef
+  -- `σ⁻¹ • P = τ • P` exactly when `σ τ` stabilises `P`, that is, when `a⁻¹ c(σ) ∈ ⟨p⟩`.
+  have hmem (σ : Gal(K/ℚ)) :
+      σ⁻¹ • P = τ • P ↔ a⁻¹ * galEquivZMod m K σ ∈ Subgroup.zpowers u := by
+    have ha : a⁻¹ * galEquivZMod m K σ = galEquivZMod m K (σ * τ) := by
+      rw [hadef, map_inv, inv_inv, map_mul, mul_comm]
+    rw [ha, ← galEquivZMod_stabilizer m K p P hcop, MulEquiv.coe_mapSubgroup,
+      Subgroup.mem_map_equiv, MulEquiv.symm_apply_apply, MulAction.mem_stabilizer_iff,
+      mul_smul, eq_comm, ← inv_smul_eq_iff, inv_inv]
+  have hu : orderOf u = orderOf (p : ZMod m) := by
+    rw [← orderOf_injective _ Units.coeHom_injective u, Units.coeHom_apply, ZMod.coe_unitOfCoprime]
+  -- The coset `a ⟨p⟩` is `{a p ^ i | i < f}`, without repetitions.
+  have hcoset : ∑ x with a⁻¹ * x ∈ Subgroup.zpowers u, (x : ZMod m).val =
+      ∑ i ∈ Finset.range (orderOf u), ((a * u ^ i : (ZMod m)ˣ) : ZMod m).val := by
+    rw [← Finset.sum_image (f := fun x : (ZMod m)ˣ ↦ (x : ZMod m).val) fun i hi j hj h ↦
+      pow_injOn_Iio_orderOf (Finset.mem_range.1 hi) (Finset.mem_range.1 hj) (mul_left_cancel h)]
+    congr 1
+    ext x
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and, mem_zpowers_iff_mem_range_orderOf,
+      Finset.mem_image]
+    exact ⟨fun ⟨i, hi, h⟩ ↦ ⟨i, hi, by rw [h, mul_inv_cancel_left]⟩,
+      fun ⟨i, hi, h⟩ ↦ ⟨i, hi, by rw [← h, inv_mul_cancel_left]⟩⟩
+  calc ∑ σ with σ⁻¹ • P = τ • P, (galEquivZMod m K σ : ZMod m).val
+      = ∑ σ with a⁻¹ * galEquivZMod m K σ ∈ Subgroup.zpowers u,
+          (galEquivZMod m K σ : ZMod m).val :=
+        Finset.sum_congr (Finset.filter_congr fun σ _ ↦ hmem σ) fun _ _ ↦ rfl
+    _ = ∑ x with a⁻¹ * x ∈ Subgroup.zpowers u, (x : ZMod m).val := by
+        rw [Finset.sum_filter, Finset.sum_filter]
+        exact (galEquivZMod m K).toEquiv.sum_comp
+          fun x ↦ if a⁻¹ * x ∈ Subgroup.zpowers u then (x : ZMod m).val else 0
+    _ = ∑ i ∈ Finset.range (orderOf (p : ZMod m)), p ^ i * (a : ZMod m).val % m := by
+        rw [hcoset, hu]
+        refine Finset.sum_congr rfl fun i _ ↦ ?_
+        rw [Units.val_mul, Units.val_pow_eq_pow_val, ZMod.coe_unitOfCoprime,
+          ← ZMod.natCast_zmod_val (a : ZMod m), ← Nat.cast_pow, ← Nat.cast_mul, ZMod.val_natCast,
+          mul_comm, ZMod.val_natCast, Nat.mul_mod_mod]
+
+end DecompositionCoset
 
 end TauCeti.NumberField
 

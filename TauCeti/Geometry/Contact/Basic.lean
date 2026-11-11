@@ -89,6 +89,13 @@ theorem mem_kerDistribution {α : SmoothForm I M ℝ 1} {x : M} {v : TangentSpac
     v ∈ α.kerDistribution x ↔ α.1 x ![v] = 0 := by
   exact RoughForm.mem_ker
 
+/-- The kernel distribution of a smooth one-form is the pointwise kernel of its underlying rough
+form. -/
+theorem kerDistribution_eq_ker (α : SmoothForm I M ℝ 1) (x : M) :
+    α.kerDistribution x = RoughForm.ker α.1 x := by
+  ext
+  rw [mem_kerDistribution, RoughForm.mem_ker]
+
 /-- At each point, `kerDistribution α` is the kernel of the covector `α_x`. -/
 theorem kerDistribution_def (α : SmoothForm I M ℝ 1) (x : M) :
     α.kerDistribution x = LinearMap.ker (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ) := by
@@ -117,13 +124,26 @@ theorem isContactForm_iff {α : SmoothForm I M ℝ 1} :
           (∀ w : TangentSpace I x, α.1 x ![w] = 0 → mextDeriv α.1 x ![v, w] = 0) → v = 0 := by
   refine forall_congr' fun x ↦ ?_
   rw [Module.Dual.isContact_iff_of_isRefl (isAlt_bilinFormAt _ x).isRefl]
-  simp only [degreeOneEquiv_coe_apply, bilinFormAt_apply, SmoothBundleForm.eval₂_apply,
-    mextDerivₗ_apply, ne_eq, LinearMap.ext_iff, LinearMap.zero_apply, not_forall]
+  simp only [degreeOneEquiv_coe_apply, ← mextDeriv_eq_bilinFormAt, ne_eq, LinearMap.ext_iff,
+    LinearMap.zero_apply, not_forall]
 
 /-- A contact form does not vanish. -/
 theorem IsContactForm.exists_ne_zero {α : SmoothForm I M ℝ 1} (hα : α.IsContactForm) (x : M) :
     ∃ v : TangentSpace I x, α.1 x ![v] ≠ 0 :=
   (isContactForm_iff.1 hα x).1
+
+/-- A contact form vanishes nowhere. -/
+theorem IsContactForm.apply_ne_zero {α : SmoothForm I M ℝ 1} (hα : α.IsContactForm) (x : M) :
+    α.1 x ≠ 0 := fun h ↦
+  let ⟨_, hv⟩ := hα.exists_ne_zero x
+  hv (by simp [h])
+
+/-- Two one-forms with the same kernels vanish at the same points: a covector vanishes exactly
+when its kernel is the whole tangent space. -/
+theorem apply_eq_zero_iff_of_kerDistribution_eq {α β : SmoothForm I M ℝ 1}
+    (hker : β.kerDistribution = α.kerDistribution) (x : M) : β.1 x = 0 ↔ α.1 x = 0 := by
+  rw [← RoughForm.ker_eq_top_iff, ← RoughForm.ker_eq_top_iff]
+  exact Eq.congr_left (congrFun hker x)
 
 /-- If `β = f α` for a nowhere vanishing function `f`, then `α` and `β` have the same kernel. -/
 theorem kerDistribution_of_eq_smul {α β : SmoothForm I M ℝ 1} {f : M → ℝ}
@@ -151,8 +171,7 @@ theorem isContactForm_iff_of_eq_smul {α β : SmoothForm I M ℝ 1} {f : M → �
     intro v w hv hw
     have hβ' : β.1 = fun y ↦ f y • α.1 y := funext hβ
     rw [ha] at hv hw
-    simp only [bilinFormAt_apply, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply,
-      LinearMap.smul_apply, smul_eq_mul, hβ',
+    simp only [← mextDeriv_eq_bilinFormAt, LinearMap.smul_apply, smul_eq_mul, hβ',
       mextDeriv_fun_smul_apply ((hf x).mdifferentiableAt one_ne_zero) (α.mdifferentiableAt x),
       hv, hw, mul_zero, sub_zero, zero_add]
   rw [hb, Module.Dual.isContact_smul_iff (hf₀ x), Module.Dual.isContact_congr hdβ,

@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 /-!
 # Supplements to the lattice of subalgebras
 
-This file collects two small facts about subalgebras that Mathlib's
+This file collects three small facts about subalgebras that Mathlib's
 `Mathlib.Algebra.Algebra.Subalgebra.Lattice` does not state.
 
 For an injective `algebraMap R A`, `Algebra.botEquivOfInjective` identifies the bottom subalgebra
@@ -22,12 +22,15 @@ element itself.
 Adjoining a multiplicatively closed set containing `1` (a submonoid, subring, subalgebra, …)
 creates nothing beyond its span: the products that `Algebra.adjoin` forms lie in the set again.
 
+The bottom subalgebra `⊥`, the image of the scalars, is commutative.
+
 ## Main results
 
 * `Algebra.algebraMap_botEquivOfInjective`: `algebraMap R A (botEquivOfInjective h x) = x` for
   `x : (⊥ : Subalgebra R A)`.
 * `Algebra.adjoin_coe_eq_span`: for a submonoid-like `M` of `A`, `Algebra.adjoin R (M : Set A)`,
   as a submodule, is `Submodule.span R (M : Set A)`.
+* `Subalgebra.isMulCommutative_bot`: the instance `IsMulCommutative (⊥ : Subalgebra R A)`.
 -/
 
 public section
@@ -56,5 +59,15 @@ theorem adjoin_coe_eq_span {M₀ : Type*} [SetLike M₀ A] [SubmonoidClass M₀ 
     Submodule.subset_span
 
 end Algebra
+
+namespace Subalgebra
+
+variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+
+/-- The bottom subalgebra, the image of the scalars, is commutative. -/
+instance isMulCommutative_bot : IsMulCommutative (⊥ : Subalgebra R A) :=
+  Algebra.adjoin_empty R A ▸ Algebra.isMulCommutative_adjoin R (by simp)
+
+end Subalgebra
 
 end

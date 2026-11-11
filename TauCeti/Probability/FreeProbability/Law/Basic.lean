@@ -186,30 +186,33 @@ private lemma ofReal_integral_spectrumLaw (ha : IsSelfAdjoint a) (g : C(spectrum
     ((IsSelfAdjoint.all g).map (cfcHom ha)).map' φ
   exact Complex.conj_eq_iff_re.mp hsa.star_eq
 
-/-- Integration against the law `μ_a` of a selfadjoint element `a` computes `φ` on the continuous
-functional calculus: `∫ f dμ_a = φ (f(a))` for `f` continuous on the spectrum of `a`. -/
-theorem ofReal_integral_law (ha : IsSelfAdjoint a) (f : ℝ → ℝ)
+/-- Integration against the law `μ_a` of an element `a` computes `φ` on the continuous
+functional calculus: `∫ f dμ_a = φ (f(a))` for `f` continuous on the spectrum of `a`. For `a` not
+selfadjoint both sides vanish. -/
+theorem ofReal_integral_law (f : ℝ → ℝ)
     (hf : ContinuousOn f (spectrum ℝ a) := by cfc_cont_tac) :
     ((∫ x, f x ∂(law φ a) : ℝ) : ℂ) = φ (cfc f a) := by
-  rw [law_of_isSelfAdjoint φ ha,
-    (MeasurableEmbedding.subtype_coe (spectrum.isClosed a).measurableSet).integral_map,
-    cfc_apply f a]
-  exact ofReal_integral_spectrumLaw φ ha ⟨_, hf.domRestrict⟩
+  by_cases ha : IsSelfAdjoint a
+  · rw [law_of_isSelfAdjoint φ ha,
+      (MeasurableEmbedding.subtype_coe (spectrum.isClosed a).measurableSet).integral_map,
+      cfc_apply f a]
+    exact ofReal_integral_spectrumLaw φ ha ⟨_, hf.domRestrict⟩
+  · simp [law_of_not_isSelfAdjoint φ ha, cfc_apply_of_not_predicate a ha]
 
 variable {φ} in
-/-- The law `μ_a` of a selfadjoint element `a` is the unique finite measure on `ℝ` that
+/-- The law `μ_a` of an element `a` is the unique finite measure on `ℝ` that
 represents `f ↦ φ (f(a))` on continuous functions. -/
-theorem eq_law_iff (ha : IsSelfAdjoint a) {μ : Measure ℝ} [IsFiniteMeasure μ] :
+theorem eq_law_iff {μ : Measure ℝ} [IsFiniteMeasure μ] :
     μ = law φ a ↔
       ∀ f : ℝ → ℝ, Continuous f → ((∫ x, f x ∂μ : ℝ) : ℂ) = φ (cfc f a) := by
-  refine ⟨fun h f hf ↦ h ▸ ofReal_integral_law φ ha f, fun h ↦ ?_⟩
+  refine ⟨fun h f hf ↦ h ▸ ofReal_integral_law φ f, fun h ↦ ?_⟩
   refine Measure.ext_of_integral_eq_on_compactlySupported fun g ↦ Complex.ofReal_injective ?_
-  rw [h g g.continuous, ofReal_integral_law φ ha g]
+  rw [h g g.continuous, ofReal_integral_law φ g]
 
 /-- The total mass of the law of a selfadjoint element is `φ 1`. -/
 theorem ofReal_law_real_univ (ha : IsSelfAdjoint a) :
     (((law φ a).real Set.univ : ℝ) : ℂ) = φ 1 := by
-  simpa [cfc_const_one ℝ a] using ofReal_integral_law φ ha (fun _ ↦ 1)
+  simpa [cfc_const_one ℝ a] using ofReal_integral_law (a := a) φ (fun _ ↦ 1)
 
 /-- The law of a selfadjoint element with respect to a state is a probability measure. -/
 theorem isProbabilityMeasure_law (hφ : φ 1 = 1) (ha : IsSelfAdjoint a) :
@@ -223,13 +226,13 @@ theorem isProbabilityMeasure_law (hφ : φ 1 = 1) (ha : IsSelfAdjoint a) :
 of `φ`: `∫ p dμ_a = φ (p(a))`. -/
 theorem ofReal_integral_eval_law (ha : IsSelfAdjoint a) (p : ℝ[X]) :
     ((∫ x, p.eval x ∂(law φ a) : ℝ) : ℂ) = φ (aeval a p) := by
-  rw [ofReal_integral_law φ ha (fun x ↦ p.eval x), cfc_polynomial p a]
+  rw [ofReal_integral_law φ (fun x ↦ p.eval x), cfc_polynomial p a]
 
 /-- The moments of the law of a selfadjoint element `a` are the moments of `a`:
 `∫ x ^ n dμ_a = φ (a ^ n)`. -/
 theorem ofReal_integral_pow_law (ha : IsSelfAdjoint a) (n : ℕ) :
     ((∫ x, x ^ n ∂(law φ a) : ℝ) : ℂ) = φ (a ^ n) := by
-  rw [ofReal_integral_law φ ha (· ^ n), cfc_pow_id a n]
+  rw [ofReal_integral_law φ (· ^ n), cfc_pow_id a n]
 
 /-- The law of `g(a)`, for `a` selfadjoint and `g` continuous on its spectrum, is the
 pushforward of the law of `a` along `g`. -/
@@ -239,9 +242,9 @@ theorem law_cfc (ha : IsSelfAdjoint a) (g : ℝ → ℝ)
   have hgm : AEMeasurable g (law φ a) := by
     rw [← restrict_spectrum_law]
     exact hg.aemeasurable (spectrum.isClosed a).measurableSet
-  refine ((eq_law_iff (cfc_predicate g a)).2 fun f hf ↦ ?_).symm
+  refine (eq_law_iff.2 fun f hf ↦ ?_).symm
   rw [integral_map hgm hf.aestronglyMeasurable, ← cfc_comp f g a]
-  exact ofReal_integral_law φ ha (f ∘ g) (hf.comp_continuousOn hg)
+  exact ofReal_integral_law φ (f ∘ g) (hf.comp_continuousOn hg)
 
 /-- The law of `p(a)`, for `a` selfadjoint and `p` a real polynomial, is the pushforward of the
 law of `a` along `p`. -/

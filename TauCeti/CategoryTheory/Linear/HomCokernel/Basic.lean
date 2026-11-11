@@ -38,12 +38,12 @@ It is defined directly as a submodule quotient. -/
 abbrev HomCokernel (f : X ⟶ P) (Y : C) :=
   (X ⟶ Y) ⧸ (Linear.leftComp R Y f).range
 
-/-- A map represents zero in the Hom cokernel exactly when it extends across `f`. -/
-theorem homCokernel_mk_eq_zero_iff (f : X ⟶ P) (g : X ⟶ Y) :
-    (Submodule.Quotient.mk g : HomCokernel R f Y) = 0 ↔ ∃ h : P ⟶ Y, f ≫ h = g := by
-  simp [Submodule.Quotient.mk_eq_zero, LinearMap.mem_range]
-
 namespace HomCokernel
+
+/-- A map represents zero in the Hom cokernel exactly when it extends across `f`. -/
+theorem mk_eq_zero_iff (f : X ⟶ P) (g : X ⟶ Y) :
+    (Submodule.Quotient.mk g : HomCokernel R f Y) = 0 ↔ ∃ h : P ⟶ Y, f ≫ h = g := by
+  simp
 
 /-- Postcomposition on the cokernel of precomposition with `f`. -/
 def map (f : X ⟶ P) (g : Y ⟶ Z) : HomCokernel R f Y →ₗ[R] HomCokernel R f Z :=
@@ -61,19 +61,15 @@ theorem map_mk (f : X ⟶ P) (g : Y ⟶ Z) (h : X ⟶ Y) :
 /-- Postcomposition with an identity acts as the identity. -/
 @[simp]
 theorem map_id (f : X ⟶ P) : map R f (𝟙 Y) = LinearMap.id := by
-  apply LinearMap.ext
-  intro x
-  induction x using Submodule.Quotient.induction_on with
-  | _ h => simp
+  ext
+  simp
 
 /-- Postcomposition respects composition of morphisms. -/
 @[simp]
 theorem map_comp (f : X ⟶ P) (g : Y ⟶ Z) (h : Z ⟶ W) :
     map R f (g ≫ h) = (map R f h).comp (map R f g) := by
-  apply LinearMap.ext
-  intro x
-  induction x using Submodule.Quotient.induction_on with
-  | _ a => simp
+  ext
+  simp
 
 /-- Precomposition by `e` on the cokernel of precomposition with `f`. -/
 def precomp (f : X ⟶ P) (e : W ⟶ X) :
@@ -119,17 +115,11 @@ theorem restrict_map (f : X ⟶ P) (e : W ⟶ X) (h : e ≫ f = 0) (g : Y ⟶ Z)
   | _ a => simp
 
 /-- An epimorphism induces an injection on Hom cokernels by precomposition. -/
-theorem precomp_injective {X W : C} (f : X ⟶ P) (e : W ⟶ X) [Epi e] :
+theorem precomp_injective (f : X ⟶ P) (e : W ⟶ X) [Epi e] :
     Function.Injective (precomp R f e (Y := Y)) := by
-  apply LinearMap.ker_eq_bot.mp
-  apply eq_bot_iff.mpr
-  intro x hx
+  refine (injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_
   induction x using Submodule.Quotient.induction_on with
-  | _ g =>
-    obtain ⟨h, hh⟩ := (homCokernel_mk_eq_zero_iff R (e ≫ f) (e ≫ g)).mp
-      (by simpa using hx)
-    apply (homCokernel_mk_eq_zero_iff R f g).mpr
-    exact ⟨h, (cancel_epi e).mp (by simpa using hh)⟩
+  | _ g => simpa [cancel_epi] using hx
 
 end HomCokernel
 

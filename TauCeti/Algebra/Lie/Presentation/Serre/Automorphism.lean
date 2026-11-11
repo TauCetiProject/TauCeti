@@ -65,6 +65,8 @@ Nothing here assumes that `CM` is a Cartan matrix, matching
   automorphism.
 * `TauCeti.serreLift_comp_serreDiagramAut` and
   `TauCeti.serreLift_comp_serreChevalleyInvolution`: naturality against an arbitrary Serre system.
+* `TauCeti.serreLift_intertwines_serreDiagramAut`: a Serre realization intertwines the diagram
+  automorphism with any endomorphism reindexing its generators the same way.
 
 ## Implementation notes
 
@@ -275,6 +277,16 @@ theorem serreLift_comp_serreDiagramAut {H E F : B → L} (h : IsSerreSystem R CM
         (serreDiagramAut R CM hσ : Matrix.ToLieAlgebra R CM →ₗ⁅R⁆ Matrix.ToLieAlgebra R CM) =
       serreLift (h.perm hσ) :=
   serre_hom_ext (fun i => by simp) (fun i => by simp) fun i => by simp
+
+/-- A Serre realization intertwines the diagram automorphism with any endomorphism performing the
+same reindexing on the `E` and `F` generators: the generator equations imply equivariance, and
+the `H` generators follow from `⁅Eᵢ, Fᵢ⁆ = Hᵢ`. -/
+theorem serreLift_intertwines_serreDiagramAut {H E F : B → L} (h : IsSerreSystem R CM H E F)
+    (hσ : CM.submatrix σ σ = CM) (ψ : L →ₗ⁅R⁆ L)
+    (hE : ∀ i, ψ (E i) = E (σ i)) (hF : ∀ i, ψ (F i) = F (σ i)) :
+    ψ.comp (serreLift h) = (serreLift h).comp (serreDiagramAut R CM hσ).toLieHom :=
+  serre_hom_ext (fun i => by simp [← h.lie_E_F_self, hE, hF]) (fun i => by simp [hE])
+    fun i => by simp [hF]
 
 end Diagram
 

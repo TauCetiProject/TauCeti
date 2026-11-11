@@ -270,6 +270,19 @@ theorem
   CommHopfAlgCat.baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom _ _ _
     (t.map_baseChangeHopfIdeal_geckGeneratedDefiningIdeal ht k K)
 
+/-- Free scalar extension carries each generated Geck root or torus lift to its lift over the
+extended ring, under the canonical coordinate identifications. -/
+@[reassoc (attr := simp)]
+theorem baseChangeMap_geckGeneratedCoordinateLift
+    [Module.Free k K] (j : Sum (Fin t.rank ⊕ Fin t.rank) Unit) :
+    CommHopfAlgCat.baseChangeMap (K := K) (t.geckGeneratedCoordinateLift ht k j) ≫
+        (t.geckGeneratorCoordinateAlgebraBaseChangeIso k K j).hom =
+      (t.geckGeneratedCoordinateHopfAlgebraBaseChangeIso ht k K).hom ≫
+        t.geckGeneratedCoordinateLift ht K j :=
+  CommHopfAlgCat.baseChangeMap_liftQuotient_comp_quotientBaseChangeIsoOfMapEq_hom
+    _ _ _ (t.map_baseChangeHopfIdeal_geckGeneratedDefiningIdeal ht k K) _ _ _ _ _
+    (t.geckGeneratorCoordinateMap_baseChange ht k K j)
+
 end BaseChange
 
 end TauCeti.DynkinType

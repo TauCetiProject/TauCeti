@@ -22,10 +22,14 @@ parabolic stabilizers with the translations used in cusp coordinates.
 
 * `TauCeti.UpperHalfPlane.upperRightHom_smul`: `upperRightHom x` acts as `z ↦ x + z`.
 * `TauCeti.UpperHalfPlane.psl2zToPSL2R_T`: the image of `T` in `PSL(2, ℝ)` is the translation
-  `z ↦ z + 1`.
+  `z ↦ z + 1`, and `TauCeti.UpperHalfPlane.sl2zToPSL2R_T_zpow` that of `T ^ n` the translation
+  `z ↦ z + n`.
 * `TauCeti.UpperHalfPlane.smul_zpow_smul`: conjugating to a translation turns the action of
   integer powers into translation by integer multiples.
 * `TauCeti.UpperHalfPlane.smulDeriv_upperRightHom`: a translation has derivative `1`.
+* `TauCeti.UpperHalfPlane.entries_of_coe_eq_upperRightHom`,
+  `TauCeti.UpperHalfPlane.denom_of_coe_eq_upperRightHom`: a lift to `SL(2, ℝ)` of a translation
+  is `±` the transvection, so its automorphy factor is its lower-right entry `±1`.
 * `TauCeti.UpperHalfPlane.toComplex_upperRightHom_smul`: on `ℍ ∪ ∂ℍ` away from `∞`, a
   translation adds its parameter to the complex coordinate.
 -/
@@ -54,6 +58,11 @@ theorem psl2zToPSL2R_T :
   fin_cases i <;> fin_cases j <;>
     simp [_root_.ModularGroup.coe_T, Matrix.SpecialLinearGroup.transvection_coe]
 
+/-- The image of `T ^ n` in `PSL(2, ℝ)` is the translation `z ↦ z + n`. -/
+theorem sl2zToPSL2R_T_zpow (n : ℤ) :
+    sl2zToPSL2R (_root_.ModularGroup.T ^ n) = upperRightHom (n : ℝ) := by
+  rw [map_zpow, ← psl2zToPSL2R_mk, psl2zToPSL2R_T, ← AddChar.map_zsmul_eq_zpow, zsmul_one]
+
 /-- A transformation conjugating an element to a translation sends its integer-power action
 to translation by the corresponding integer multiple. -/
 theorem smul_zpow_smul {σ γ : PSL(2, ℝ)} {w : ℝ}
@@ -68,6 +77,24 @@ theorem smulDeriv_upperRightHom (x : ℝ) (z : ℍ) : smulDeriv (upperRightHom x
   rw [upperRightHom_apply, Matrix.SpecialLinearGroup.smulDeriv_coe]
   simp [denom, Matrix.SpecialLinearGroup.mapGL_coe_matrix,
     Matrix.SpecialLinearGroup.transvection_coe]
+
+/-- A lift `M ∈ SL(2, ℝ)` of the translation by `w` is `±` the transvection: its lower-left entry
+vanishes and its lower-right entry is `±1`. -/
+theorem entries_of_coe_eq_upperRightHom {M : SL(2, ℝ)} {w : ℝ}
+    (hM : (M : PSL(2, ℝ)) = upperRightHom w) : M 1 0 = 0 ∧ M 1 1 * M 1 1 = 1 := by
+  rw [upperRightHom_apply, mk_eq_mk_iff] at hM
+  rcases hM with h | h
+  · rw [← h]
+    simp [Matrix.SpecialLinearGroup.transvection_coe]
+  · rw [← neg_neg M, ← h]
+    simp [Matrix.SpecialLinearGroup.transvection_coe]
+
+/-- The automorphy factor of a lift `M ∈ SL(2, ℝ)` of a translation is its lower-right entry. -/
+theorem denom_of_coe_eq_upperRightHom {M : SL(2, ℝ)} {w : ℝ}
+    (hM : (M : PSL(2, ℝ)) = upperRightHom w) (z : ℍ) :
+    denom (Matrix.SpecialLinearGroup.mapGL ℝ M) z = (M 1 1 : ℝ) := by
+  simp [denom, Matrix.SpecialLinearGroup.mapGL_coe_matrix,
+    (entries_of_coe_eq_upperRightHom hM).1]
 
 /-- A translation moves every point of `ℍ ∪ ∂ℍ` other than `∞` by its parameter. -/
 @[simp]
