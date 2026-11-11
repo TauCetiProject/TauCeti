@@ -1,9 +1,12 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
+
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.Algebra.Order.Group.Pointwise.Interval
 
 public import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
@@ -54,6 +57,9 @@ open set and jointly continuous spatial jets, integration preserves smoothness
 (`TauCeti.contDiffOn_integral_of_continuous_jets`) and has the integrated spatial Taylor series
 (`TauCeti.hasFTaylorSeriesUpToOn_integral_of_continuous_jets`). All iterated spatial derivatives
 commute with integration (`TauCeti.iteratedFDeriv_integral_of_continuous_jets`).
+
+`TauCeti.hasDerivAt_intervalIntegral_diag_of_eq_zero` handles a moving endpoint: joint
+continuity at `(t, t)` and a zero value there give derivative zero for the shrinking integral.
 
 ## References
 
@@ -641,5 +647,32 @@ theorem iteratedFDeriv_integral_of_continuous_jets (k : ℕ) {x : H} (hx : x ∈
   exact heq.symm
 
 end ContinuousJets
+
+end TauCeti
+
+namespace TauCeti
+
+/-- If a jointly continuous integrand vanishes at `(t, t)`, its integral over the shrinking
+interval `t..q`, with parameter `q`, has derivative zero at `t`. Completeness is unnecessary. -/
+theorem hasDerivAt_intervalIntegral_diag_of_eq_zero {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {f : ℝ × ℝ → F} {t : ℝ}
+    (hf : ContinuousAt f (t, t)) (hzero : f (t, t) = 0) :
+    HasDerivAt (fun q ↦ ∫ r in t..q, f (q, r)) 0 t := by
+  apply HasDerivAt.of_isLittleO
+  simp only [intervalIntegral.integral_same, sub_zero]
+  rw [Asymptotics.isLittleO_iff]
+  intro ε hε
+  obtain ⟨δ, hδ, hbound⟩ := Metric.continuousAt_iff.mp hf ε hε
+  filter_upwards [Metric.ball_mem_nhds t hδ] with q hq
+  have hqt : dist q t < δ := Metric.mem_ball.mp hq
+  have hnorm : ∀ r ∈ Set.uIoc t q, ‖f (q, r)‖ ≤ ε := by
+    intro r hr
+    have hrt : dist r t ≤ dist q t := Set.abs_sub_left_of_mem_uIcc (Set.uIoc_subset_uIcc hr)
+    have hprod : dist (q, r) (t, t) < δ := by
+      rw [Prod.dist_eq]
+      exact max_lt hqt (hrt.trans_lt hqt)
+    simpa [hzero, dist_zero_right] using (hbound hprod).le
+  simpa only [Real.norm_eq_abs, smul_zero, sub_zero] using
+    intervalIntegral.norm_integral_le_of_norm_le_const hnorm
 
 end TauCeti
