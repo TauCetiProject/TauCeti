@@ -655,10 +655,10 @@ theorem not_forall_exists_finset_card_generating_quotient {n : ℕ} (hn : 2 ≤ 
           s.card = n ∧
             Subgroup.closure (s : Set (Field.absoluteGaloisGroup K ⧸ U.toSubgroup)) = ⊤ :=
   fun h ↦ by
-    obtain ⟨s, hs, -⟩ := h (openNormalSubgroupTop _) (by simp)
+    obtain ⟨s, hs, -⟩ := h ⊤ (by simp)
     have : Subsingleton (Field.absoluteGaloisGroup K ⧸
-        (openNormalSubgroupTop (Field.absoluteGaloisGroup K)).toSubgroup) := by
-      rw [openNormalSubgroupTop_toSubgroup]
+        (⊤ : OpenNormalSubgroup (Field.absoluteGaloisGroup K)).toSubgroup) := by
+      rw [OpenNormalSubgroup.toSubgroup_top]
       exact QuotientGroup.subsingleton_quotient_top
     have := s.card_le_one_of_subsingleton
     omega

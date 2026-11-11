@@ -293,11 +293,14 @@ theorem eq_mul_dysonSeries (hp : Continuous p) {f : ℝ → B}
 
 section Star
 
-variable [StarRing B] [StarModule ℝ B] [ContinuousStar B]
+variable [StarRing B] [ContinuousStar B]
 
 /-- The Dyson series of a skew-adjoint path is unitary. -/
 theorem dysonSeries_mem_unitary (hp : Continuous p) (hskew : ∀ t, star (p t) = -p t) (t : ℝ) :
     dysonSeries p t ∈ unitary B := by
+  -- Continuity of `star` makes it commute with real scalars.
+  have : StarModule ℝ B :=
+    ⟨fun r x => by simpa using map_real_smul (starAddEquiv : B ≃+ B) continuous_star r x⟩
   have hΓ := hasDerivAt_dysonSeries hp
   have hΓstar (t : ℝ) :
       HasDerivAt (fun s => star (dysonSeries p s)) (-(p t * star (dysonSeries p t))) t :=

@@ -369,8 +369,7 @@ theorem mem_center_specialIsometryGroup_of_forall_smul_eq_galoisField [NeZero r]
           (GaloisField d.characteristic (d.fieldExponent * 2))).specialIsometryGroup
         (iterateFrobenius _ d.characteristic d.fieldExponent)) :=
   mem_center_specialIsometryGroup_of_forall_smul_eq involutive_iterateFrobenius_galoisField
-    transpose_map_typeAGraphConjugator_galoisField
-    (by rw [← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow]) (isUnits_det_units _).ne_zero
+    transpose_map_typeAGraphConjugator_galoisField (isUnits_det_units _).ne_zero
     (fun _ ↦ exists_add_neg_one_pow_mul_iterateFrobenius_eq)
     exists_ne_zero_add_neg_one_pow_mul_iterateFrobenius_eq_zero hg
 

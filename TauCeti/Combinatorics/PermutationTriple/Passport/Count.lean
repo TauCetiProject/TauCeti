@@ -23,10 +23,10 @@ finite set of generating triples and gives its cardinality.
 
 One `S_n`-cycle type can meet several `G`-classes, and can meet none, so a count of the members of
 `G` with a prescribed cycle type is a sum over `G`-classes rather than a single class size. That
-index set is `TauCeti.Subgroup.classesOfFullCycleType`, in
+index set is `Subgroup.classesOfFullCycleType`, in
 `TauCeti/GroupTheory/Perm/ConjClass.lean`, for a group of permutations in general;
-`TauCeti.Subgroup.mem_iUnionClassesOfFullCycleType` there identifies the union of those classes,
-the set `TauCeti.Subgroup.iUnionClassesOfFullCycleType`, with the elements of the group of that
+`Subgroup.mem_iUnionClassesOfFullCycleType` there identifies the union of those classes,
+the set `Subgroup.iUnionClassesOfFullCycleType`, with the elements of the group of that
 cycle type.
 
 ## The generating triples of a passport

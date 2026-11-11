@@ -49,7 +49,7 @@ Both cases use that interior and boundary points can be detected in the charts o
 which only lie in the maximal atlas: this is
 `TauCeti.ModelWithCorners.isInteriorPoint_euclideanHalfSpace_iff_of_mem_maximalAtlas`. The
 multiple of the boundary coordinate is supplied by
-`ContinuousLinearMap.exists_pos_eq_mul_apply_zero_of_eventually_nonneg`.
+`ContinuousLinearMap.exists_pos_eq_mul_apply_zero_of_eventually_pos`.
 
 ## Main results
 
@@ -331,8 +331,8 @@ theorem exists_isSliceChart_of_isImmersionAtOfComplement_of_preimage_boundary (h
     have hT : T ∈ 𝓝[{y | 0 ≤ y 0}] p := by
       rw [← range_modelWithCornersEuclideanHalfSpace]
       exact h.domChart.extend_target_mem_nhdsWithin hx
-    obtain ⟨c, hc, hνc⟩ := ContinuousLinearMap.exists_pos_eq_mul_apply_zero_of_eventually_nonneg
-      ν hp0 hνp (eventually_of_mem hT hnonneg) (eventually_of_mem hT fun u hu => (hiff u hu).1)
+    obtain ⟨c, hc, hνc⟩ := ContinuousLinearMap.exists_pos_eq_mul_apply_zero_of_eventually_pos
+      ν hp0 hνp (eventually_of_mem hT fun u hu => (hiff u hu).1)
     replace hνc : ∀ u, L (u, 0) 0 = c * u 0 := fun u => (hν u).symm.trans (hνc u)
     obtain ⟨A, hAL, hA⟩ := exists_straightening_of_eq_mul_apply_zero L hc hνc
     exact exists_isSliceChart_of_isImmersionAtOfComplement_of_straightening hf h A hAL
