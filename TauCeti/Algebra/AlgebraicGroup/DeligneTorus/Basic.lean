@@ -87,12 +87,25 @@ theorem coe_pointsMulEquiv (f : WithConv (S →ₐ[ℝ] R)) :
 noncomputable def realPointsMulEquiv : WithConv (S →ₐ[ℝ] ℝ) ≃* ℂˣ :=
   (pointsMulEquiv ℝ).trans (Units.mapEquiv (Algebra.TensorProduct.rid ℝ ℝ ℂ).toMulEquiv)
 
+/-- The complex number attached to a real point of `S` is its unit in `ℂ ⊗[ℝ] ℝ`, read in
+`ℂ ⊗[ℝ] ℝ ≃ ℂ`. -/
+theorem coe_realPointsMulEquiv (f : WithConv (S →ₐ[ℝ] ℝ)) :
+    (realPointsMulEquiv f : ℂ) = Algebra.TensorProduct.rid ℝ ℝ ℂ (pointsMulEquiv ℝ f) := by
+  simp [realPointsMulEquiv]
+
 /-- The complex number attached to a real point of `S` is its value on the coordinate `T` of `𝔾ₘ`,
 read in `ℂ ⊗[ℝ] ℝ ≃ ℂ`. -/
 theorem realPointsMulEquiv_apply (f : WithConv (S →ₐ[ℝ] ℝ)) :
     (realPointsMulEquiv f : ℂ) = Algebra.TensorProduct.rid ℝ ℝ ℂ
       (WeilRestriction.homEquiv ℝ ℂ ℂ[T;T⁻¹] ℝ f.ofConv (LaurentPolynomial.T 1)) := by
-  simp [realPointsMulEquiv]
+  rw [coe_realPointsMulEquiv, coe_pointsMulEquiv]
+
+/-- The right unitors `ℂ ⊗[ℝ] ℝ ≃ ℂ` over `ℝ` and over `ℂ` agree: both send `z ⊗ r` to `r • z`. -/
+private theorem rid_real_eq_rid_complex (x : ℂ ⊗[ℝ] ℝ) :
+    Algebra.TensorProduct.rid ℝ ℝ ℂ x = Algebra.TensorProduct.rid ℝ ℂ ℂ x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul z r => simp
+  | add x y hx hy => simp [hx, hy]
 
 /-- **`S(ℝ) ≃ ℂˣ` is a homeomorphism** for the point topology on `S(ℝ)` and the units topology on
 `ℂˣ`. It is the Weil restriction comparison of point topologies followed by the identification of
@@ -104,9 +117,7 @@ theorem isHomeomorph_realPointsMulEquiv : IsHomeomorph realPointsMulEquiv := by
       ((PointTopology.isHomeomorph_ofConv.homeomorph _).symm.trans
         (MultiplicativeGroup.pointsContinuousMulEquiv ℂ ℂ).toHomeomorph))
   have heq : ⇑realPointsMulEquiv = ⇑h := funext fun f => Units.ext <| by
-    simp [h, realPointsMulEquiv_apply, Function.surjInv_eq]
-    -- the two right unitors `rid ℝ ℝ ℂ` and `rid ℝ ℂ ℂ` have the same underlying function
-    rfl
+    simp [h, realPointsMulEquiv_apply, Function.surjInv_eq, rid_real_eq_rid_complex]
   rw [heq]
   exact h.isHomeomorph
 
@@ -151,8 +162,9 @@ theorem norm_diagonal (r : Rˣ) : norm R (diagonal R r) = r ^ 2 := by
   exact NormTorus.norm_unitsMap_includeRight r
 
 /-- `Nm ∘ w` is `r ↦ r⁻²`. -/
-theorem norm_weight (r : Rˣ) : norm R (weight R r) = r⁻¹ ^ 2 := by
-  simp [weight]
+@[simp]
+theorem norm_weight (r : Rˣ) : norm R (weight R r) = (r ^ 2)⁻¹ := by
+  rw [weight_eq_inv_diagonal, map_inv (norm R), norm_diagonal]
 
 /-- On real points the diagonal is the inclusion `ℝˣ → ℂˣ`. -/
 @[simp]
@@ -161,10 +173,11 @@ theorem realPointsMulEquiv_diagonal (r : ℝˣ) :
   simp [realPointsMulEquiv]
 
 /-- On real points the weight is `r ↦ r⁻¹`. -/
+@[simp]
 theorem realPointsMulEquiv_weight (r : ℝˣ) :
     (realPointsMulEquiv (weight ℝ r) : ℂ) = ((r : ℝ) : ℂ)⁻¹ := by
-  simp only [weight, MonoidHom.coe_comp, Function.comp_apply, MulEquiv.coe_toMonoidHom,
-    MulEquiv.inv_apply, realPointsMulEquiv_diagonal, Units.val_inv_eq_inv_val, Complex.ofReal_inv]
+  rw [weight_eq_inv_diagonal, map_inv realPointsMulEquiv, Units.val_inv_eq_inv_val,
+    realPointsMulEquiv_diagonal]
 
 /-- `w(2) = 1/2` in `S(ℝ) = ℂˣ`: the weight is `r ↦ r⁻¹`, not `r ↦ r`. -/
 theorem weight_two : (realPointsMulEquiv (weight ℝ (Units.mk0 2 two_ne_zero)) : ℂ) = 1 / 2 := by
@@ -174,13 +187,12 @@ theorem weight_two : (realPointsMulEquiv (weight ℝ (Units.mk0 2 two_ne_zero)) 
 /-- On real points, read in `ℂ`, the norm is the squared modulus `z ↦ z * conj z`. -/
 theorem coe_norm_real (f : WithConv (S →ₐ[ℝ] ℝ)) :
     (norm ℝ f : ℝ) = Complex.normSq (realPointsMulEquiv f) := by
-  rw [norm_apply, NormTorus.coe_norm_complex]
-  rfl
+  rw [norm_apply, NormTorus.coe_norm_complex, coe_realPointsMulEquiv]
 
 /-- **The real points of the kernel of the norm are the unit circle `U(1)`.** -/
 theorem norm_eq_one_iff (f : WithConv (S →ₐ[ℝ] ℝ)) :
     norm ℝ f = 1 ↔ ‖(realPointsMulEquiv f : ℂ)‖ = 1 := by
-  rw [norm_apply, ← NormTorus.mem_normOne]
+  rw [norm_apply, ← NormTorus.mem_normOne, coe_realPointsMulEquiv]
   exact NormTorus.mem_normOne_complex_iff
 
 end TauCeti.DeligneTorus
