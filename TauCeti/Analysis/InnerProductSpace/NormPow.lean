@@ -50,6 +50,8 @@ whenever `k < p`, including the behavior at the origin, on arbitrary real inner-
   in operator norm when a nonzero direction is orthogonal to `x`.
 * `norm_iteratedFDeriv_two_norm_rpow_sub_le`: for `p ≤ 3`, the Hessian changes by
   `O(‖a - b‖ ‖b‖ ^ (p - 3))` between points `a` and `b` with `2 ‖a - b‖ ≤ ‖b‖`.
+* `contDiffAt_of_eventuallyEq_comp_log_norm_sub_log_norm`: if a `Cⁿ` function agrees near `y ≠ 0`
+  with `w(log ‖z‖) - log ‖z‖`, then `w` is `Cⁿ` at `log ‖y‖`.
 * `laplacian_norm_rpow_of_ne`: the radial Laplacian formula
   `Δ ‖x‖^p = p (p + dim E - 2) ‖x‖^(p-2)` away from zero.
 * `ContDiffAt.laplacian_comp_norm`: the Laplacian of a radial function,
@@ -200,6 +202,33 @@ theorem exists_contDiff_eq_comp_log_norm_sub_log_norm {w : ℝ → ℝ} (hw : Co
   · have hz₀ : z ≠ 0 := norm_pos_iff.1 ((Real.exp_pos _).trans hz)
     have hlog : c < Real.log ‖z‖ := (Real.lt_log_iff_exp_lt (norm_pos_iff.2 hz₀)).2 hz
     simp [hz₀, ψ, Real.smoothTransition.one_of_one_le (by linarith : 1 ≤ Real.log ‖z‖ - c + 1)]
+
+/-- A function `φ` that is `Cⁿ` at `y ≠ 0` and agrees near `y` with `z ↦ w (log ‖z‖) - log ‖z‖`
+forces `w` to be `Cⁿ` at `log ‖y‖`: along the ray `s ↦ e^s y / ‖y‖`, `w` agrees near `log ‖y‖`
+with the `Cⁿ` function `φ + id`. -/
+theorem contDiffAt_of_eventuallyEq_comp_log_norm_sub_log_norm {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {n : WithTop ℕ∞} {φ : F → ℝ} {w : ℝ → ℝ} {y : F}
+    (hφ : ContDiffAt ℝ n φ y) (hy : y ≠ 0)
+    (heq : φ =ᶠ[𝓝 y] fun z ↦ w (Real.log ‖z‖) - Real.log ‖z‖) :
+    ContDiffAt ℝ n w (Real.log ‖y‖) := by
+  have hy' : 0 < ‖y‖ := norm_pos_iff.2 hy
+  let γ : ℝ → F := fun s ↦ Real.exp s • (‖y‖⁻¹ • y)
+  have hγ : ContDiff ℝ n γ := Real.contDiff_exp.smul contDiff_const
+  have hγ0 : γ (Real.log ‖y‖) = y := by
+    simp [γ, Real.exp_log hy', smul_smul, hy'.ne']
+  have hnorm (t : ℝ) : ‖γ t‖ = Real.exp t := by
+    simp [γ, norm_smul, abs_of_pos (Real.exp_pos t), hy'.ne']
+  have ht : Tendsto γ (𝓝 (Real.log ‖y‖)) (𝓝 y) := by
+    simpa only [ContinuousAt, hγ0] using hγ.continuous.continuousAt (x := Real.log ‖y‖)
+  have hev : ∀ᶠ t in 𝓝 (Real.log ‖y‖),
+      φ (γ t) = w (Real.log ‖γ t‖) - Real.log ‖γ t‖ := ht.eventually heq
+  have hφ' : ContDiffAt ℝ n φ (γ (Real.log ‖y‖)) := by rwa [hγ0]
+  refine ((hφ'.comp (Real.log ‖y‖) hγ.contDiffAt).add
+    contDiff_id.contDiffAt).congr_of_eventuallyEq ?_
+  filter_upwards [hev] with t ht'
+  rw [hnorm, Real.log_exp] at ht'
+  simp only [Function.comp_apply, id_eq]
+  linarith
 
 /-- Away from the origin, the derivative of the norm is `‖x‖⁻¹ ⟨x, ·⟩`. -/
 theorem hasFDerivAt_norm_of_ne {x : E} (hx : x ≠ 0) :
