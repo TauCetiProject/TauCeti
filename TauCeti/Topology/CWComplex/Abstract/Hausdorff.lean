@@ -108,8 +108,9 @@ and the cones over disjoint sets are disjoint. This is the case of a point `Z` i
 `TauCeti.TopCat.extendsDisjointOpens_diskBoundaryInclusion_prodMap`. -/
 theorem extendsDisjointOpens_diskBoundaryInclusion (n : ℕ) :
     extendsDisjointOpens (TopCat.diskBoundaryInclusion.{u} n) :=
+  -- Dropping the point factor, `Homeomorph.prodPUnit`, turns `prodMap` into the inclusion itself.
   (extendsDisjointOpens.arrow_mk_iso_iff (Arrow.isoMk (TopCat.isoOfHomeo (Homeomorph.prodPUnit _))
-    (TopCat.isoOfHomeo (Homeomorph.prodPUnit _)) rfl)).1
+    (TopCat.isoOfHomeo (Homeomorph.prodPUnit _)) (by ext; simp))).1
       (extendsDisjointOpens_diskBoundaryInclusion_prodMap n PUnit)
 
 end TauCeti.TopCat

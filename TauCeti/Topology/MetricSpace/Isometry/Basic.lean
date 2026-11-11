@@ -26,8 +26,9 @@ splits off the interval coordinate.
 * `Fin.image_ball_initLastIsometry`, `Fin.image_closedBall_initLastIsometry`,
   `Fin.image_sphere_initLastIsometry`, `Fin.preimage_ball_prod_initLastIsometry`: its images of
   balls, closed balls and spheres around the origin, and its preimage of a product of balls.
-* `Fin.appendIsometryOfEq_zero`: the concatenation isometry `Fin.appendIsometryOfEq` fixes the
-  origin, so it also preserves the distance to the origin.
+* `Fin.appendIsometryOfEq_zero`, `Fin.image_closedBall_prod_appendIsometryOfEq`: the
+  concatenation isometry `Fin.appendIsometryOfEq` fixes the origin, so it carries the product of
+  the closed balls around the origin onto the closed ball around the origin.
 -/
 
 public section
@@ -111,6 +112,13 @@ theorem preimage_ball_prod_initLastIsometry (n : ℕ) (r : ℝ) :
     initLastIsometry α n ⁻¹' (ball 0 r ×ˢ ball 0 r) = ball 0 r :=
   ((initLastIsometry α n).toEquiv.preimage_eq_iff_eq_image _ _).2
     (image_ball_initLastIsometry n r).symm
+
+/-- Concatenating coordinates carries the product of the closed balls of radius `r` around the
+origin onto the closed ball of radius `r` around the origin. -/
+theorem image_closedBall_prod_appendIsometryOfEq {m l n : ℕ} (h : m + l = n) (r : ℝ) :
+    appendIsometryOfEq (α := α) h '' (closedBall 0 r ×ˢ closedBall 0 r) = closedBall 0 r := by
+  rw [closedBall_prod_same, Prod.mk_zero_zero, IsometryEquiv.image_closedBall,
+    appendIsometryOfEq_zero]
 
 end PseudoMetricSpace
 

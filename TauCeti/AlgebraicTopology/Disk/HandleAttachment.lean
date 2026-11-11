@@ -61,13 +61,6 @@ namespace TauCeti.TopCat
 
 /-! ### A product of disks is a disk -/
 
-/-- Concatenating coordinates preserves the sup norm, which on a product is the maximum of the
-norms of the factors. -/
-private theorem norm_appendIsometryOfEq {k l n : ℕ} (h : k + l = n)
-    (p : (Fin k → ℝ) × (Fin l → ℝ)) : ‖Fin.appendIsometryOfEq h p‖ = ‖p‖ := by
-  rw [← dist_zero_right, ← dist_zero_right p, ← Fin.appendIsometryOfEq_zero h,
-    IsometryEquiv.dist_eq]
-
 /-- The closed unit ball of the sup norm on `Fin k → ℝ` times that on `Fin l → ℝ` is the closed
 unit ball of the sup norm on `Fin n → ℝ`, `k + l = n`, by concatenating coordinates. -/
 private def closedBallProdHomeomorph {k l n : ℕ} (h : k + l = n) :
@@ -75,8 +68,16 @@ private def closedBallProdHomeomorph {k l n : ℕ} (h : k + l = n) :
       closedBall (0 : Fin n → ℝ) 1 :=
   (Homeomorph.Set.prod _ _).symm.trans <|
     (Fin.appendIsometryOfEq h).toHomeomorph.subtype fun p ↦ by
-      rw [closedBall_prod_same, Prod.mk_zero_zero, mem_closedBall_zero_iff,
-        IsometryEquiv.coe_toHomeomorph, mem_closedBall_zero_iff, norm_appendIsometryOfEq]
+      rw [IsometryEquiv.coe_toHomeomorph, ← Fin.image_closedBall_prod_appendIsometryOfEq h 1,
+        (Fin.appendIsometryOfEq h).injective.mem_set_image]
+
+/-- `closedBallProdHomeomorph` concatenates the coordinates of the two factors. Mathlib has no
+evaluation lemmas for `Homeomorph.Set.prod` and `Homeomorph.subtype`, so this holds by unfolding
+both definitions. -/
+private theorem coe_closedBallProdHomeomorph_apply {k l n : ℕ} (h : k + l = n)
+    (p : closedBall (0 : Fin k → ℝ) 1 × closedBall (0 : Fin l → ℝ) 1) :
+    (closedBallProdHomeomorph h p : Fin n → ℝ) = Fin.appendIsometryOfEq h (p.1, p.2) :=
+  rfl
 
 /-- **The handle `𝔻 k × 𝔻 l` is the disk `𝔻 n`**, for `k + l = n`; in particular the handle
 `𝔻 k × 𝔻 (n - k)` of index `k ≤ n` is homeomorphic to `𝔻 n`. Read in the closed unit balls
@@ -96,8 +97,19 @@ theorem coe_diskHomeomorphClosedBall_diskProdHomeomorph {k l n : ℕ} (h : k + l
     (diskHomeomorphClosedBall n (diskProdHomeomorph h z) : Fin n → ℝ) =
       Fin.appendIsometryOfEq h
         ((diskHomeomorphClosedBall k z.1 : Fin k → ℝ), (diskHomeomorphClosedBall l z.2 : _)) := by
-  simp only [diskProdHomeomorph, Homeomorph.trans_apply, Homeomorph.apply_symm_apply]
-  rfl
+  rw [diskProdHomeomorph, Homeomorph.trans_apply, Homeomorph.trans_apply,
+    Homeomorph.apply_symm_apply, coe_closedBallProdHomeomorph_apply, Homeomorph.coe_prodCongr,
+    Prod.map_fst, Prod.map_snd]
+
+/-- Read in the closed unit balls of the sup norm, the inverse of
+`TauCeti.TopCat.diskProdHomeomorph` splits the coordinates into the first `k` and the last `l`. -/
+theorem coe_diskHomeomorphClosedBall_diskProdHomeomorph_symm {k l n : ℕ} (h : k + l = n)
+    (z : TopCat.disk.{u} n) :
+    ((diskHomeomorphClosedBall k ((diskProdHomeomorph h).symm z).1 : Fin k → ℝ),
+        (diskHomeomorphClosedBall l ((diskProdHomeomorph h).symm z).2 : Fin l → ℝ)) =
+      (Fin.appendIsometryOfEq h).symm (diskHomeomorphClosedBall n z) := by
+  rw [IsometryEquiv.eq_symm_apply, ← coe_diskHomeomorphClosedBall_diskProdHomeomorph,
+    Homeomorph.apply_symm_apply]
 
 /-- The homeomorphism `TauCeti.TopCat.diskProdHomeomorph` carries the boundary
 `∂𝔻 k × 𝔻 l ∪ 𝔻 k × ∂𝔻 l` of the handle onto the boundary sphere of the disk. -/
@@ -108,7 +120,8 @@ theorem diskProdHomeomorph_apply_mem_range_diskBoundaryInclusion_iff {k l n : �
         z.2 ∈ range (TopCat.diskBoundaryInclusion.{u} l) := by
   rw [← norm_diskHomeomorphClosedBall_eq_one_iff, ← norm_diskHomeomorphClosedBall_eq_one_iff,
     ← norm_diskHomeomorphClosedBall_eq_one_iff, coe_diskHomeomorphClosedBall_diskProdHomeomorph,
-    norm_appendIsometryOfEq, Prod.norm_mk]
+    (Fin.appendIsometryOfEq h).isometry.norm_map_of_map_zero (Fin.appendIsometryOfEq_zero h),
+    Prod.norm_mk]
   -- Both norms are at most `1`, so their maximum is `1` exactly when one of them is.
   have h₁ := mem_closedBall_zero_iff.1 (diskHomeomorphClosedBall k z.1).2
   have h₂ := mem_closedBall_zero_iff.1 (diskHomeomorphClosedBall l z.2).2
