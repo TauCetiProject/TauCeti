@@ -33,6 +33,10 @@ monotonicity of `|Γ(x + iy)| / Γ(x)` in `x > 0`, and the values of `|Γ|²` on
 The partial products of 5.8.3 are exactly `|GammaSeq x n / GammaSeq (x + iy) n|²`, so the
 product follows from Euler's limit `Complex.GammaSeq_tendsto_Gamma`. The values on vertical
 lines come from the reflection formula `Complex.Gamma_mul_Gamma_one_sub` and `Γ(z̄) = conj Γ(z)`.
+
+The proofs of DLMF 5.8.3 and 5.4.3 are adapted from the lean-DLMF project
+(<https://github.com/bjbraams/lean-DLMF>), files `DLMF/Gamma/Products.lean` and
+`DLMF/Gamma/SpecialValues.lean`.
 -/
 
 @[expose] public section
