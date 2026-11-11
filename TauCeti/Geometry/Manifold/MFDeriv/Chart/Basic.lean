@@ -62,6 +62,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   coordinate expression is differentiable at the chart image of the point.
 * `TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm`: on a boundaryless manifold, the
   vector-valued manifold derivative is the Fréchet derivative of the coordinate expression.
+* `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm`: on a boundaryless manifold, the
+  differential of a map into a normed space vanishes at a point exactly when the
+  Fréchet derivative of its preferred-chart coordinate expression does.
 * `MDifferentiableAt.mfderiv_eq_fderiv_extChartAt_conj`: on a boundaryless manifold, the manifold
   derivative of a map between manifolds is the Fréchet derivative of its expression in the extended
   charts at the point and at its image.
@@ -449,6 +452,19 @@ theorem TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm :
       mt (TauCeti.mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm).mpr hf
     rw [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hf, fderiv_zero_of_not_differentiableAt hd]
     rfl
+
+omit [IsManifold I 1 M] in
+/-- On a boundaryless manifold, the differential of a map into a normed space vanishes at `x` if
+and only if the Fréchet derivative of its coordinate expression in the preferred extended chart
+vanishes at `extChartAt I x x`. Both sides are `0` when the map is not differentiable at the
+point. -/
+theorem TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm :
+    mfderiv I 𝓘(𝕜, F) f x = 0 ↔
+      fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) = 0 := by
+  rw [← TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm]
+  refine ⟨fun h ↦ by ext u; simp [mvfderiv, h]; rfl, fun h ↦ ?_⟩
+  ext u
+  exact congrArg (fun L ↦ L u) h
 
 section SelfModel
 
