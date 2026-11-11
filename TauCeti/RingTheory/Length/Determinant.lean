@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Determinant
-public import Mathlib.LinearAlgebra.Matrix.Transvection
 public import Mathlib.RingTheory.OrderOfVanishing.Basic
+public import TauCeti.LinearAlgebra.Matrix.Transvection
 public import TauCeti.RingTheory.Length.Endomorphism
 import Mathlib.LinearAlgebra.Matrix.Nondegenerate
-import Mathlib.RingTheory.Localization.Integer
 import TauCeti.LinearAlgebra.Dimension.Localization
 import TauCeti.LinearAlgebra.Matrix.Diagonal.Length
 import TauCeti.RingTheory.OrderOfVanishing
@@ -69,152 +68,6 @@ theorem _root_.Module.Basis.length_quotient_range_eq_length_quotient_range_toMat
     rw [Module.Basis.equivFun_apply, Module.Basis.equivFun_apply, LinearMap.toMatrix_mulVec_repr]
 
 variable {A ι : Type*} [CommRing A] [IsDomain A] [Fintype ι] [DecidableEq ι]
-
-/-- **Rigidity of additive functions of nonsingular matrices.** Over a domain `A`, a function `g`
-on square matrices with `g (M * N) = g M + g N` for nonsingular `M` and `N`, vanishing on
-nonsingular diagonal matrices and on transvections, vanishes on every nonsingular matrix. -/
-theorem _root_.Matrix.eq_zero_of_map_mul_of_diagonal_of_transvection {G : Type*}
-    [AddZeroClass G] (g : Matrix ι ι A → G)
-    (hmul : ∀ M N : Matrix ι ι A, M.det ≠ 0 → N.det ≠ 0 → g (M * N) = g M + g N)
-    (hdiag : ∀ d : ι → A, (∀ i, d i ≠ 0) → g (diagonal d) = 0)
-    (htransvec : ∀ i j : ι, i ≠ j → ∀ x : A, g (transvection i j x) = 0)
-    {M : Matrix ι ι A} (hM : M.det ≠ 0) : g M = 0 := by
-  classical
-  let K := FractionRing A
-  let φ : Matrix ι ι A →+* Matrix ι ι K := (algebraMap A K).mapMatrix
-  have hφ : ∀ M : Matrix ι ι A, φ M = M.map (algebraMap A K) := fun _ ↦ rfl
-  have hinj : Function.Injective φ := Matrix.map_injective (IsFractionRing.injective A K)
-  have hdet : ∀ M : Matrix ι ι A, (φ M).det = algebraMap A K M.det := fun M ↦
-    ((algebraMap A K).map_det M).symm
-  have hsmul : ∀ (s : A) (M : Matrix ι ι A), φ (s • M) = algebraMap A K s • φ M := fun s M ↦ by
-    ext; simp [hφ]
-  -- Multiplying by a nonzero scalar does not change `g`.
-  have hscal : ∀ (s : A) (M : Matrix ι ι A), s ≠ 0 → M.det ≠ 0 → g (s • M) = g M := by
-    intro s M hs hM
-    rw [smul_eq_diagonal_mul, hmul _ _ (by simp [det_diagonal, hs]) hM,
-      hdiag _ fun _ ↦ hs, zero_add]
-  -- An integral multiple of a nonsingular matrix over `K` is nonsingular.
-  have hrep_det : ∀ (N : Matrix ι ι K) (s : A) (M : Matrix ι ι A), s ≠ 0 → N.det ≠ 0 →
-      φ M = algebraMap A K s • N → M.det ≠ 0 := by
-    intro N s M hs hN hM h0
-    have := congrArg det hM
-    rw [hdet, h0, map_zero, det_smul] at this
-    exact mul_ne_zero (pow_ne_zero _ ((map_ne_zero_iff _ (IsFractionRing.injective A K)).2 hs))
-      hN this.symm
-  -- Two integral multiples of the same nonsingular matrix have the same value.
-  have hrep_eq : ∀ (N : Matrix ι ι K) (s t : A) (M M' : Matrix ι ι A), s ≠ 0 → t ≠ 0 →
-      N.det ≠ 0 → φ M = algebraMap A K s • N → φ M' = algebraMap A K t • N → g M = g M' := by
-    intro N s t M M' hs ht hN hM hM'
-    have h : t • M = s • M' := hinj (by rw [hsmul, hsmul, hM, hM', smul_smul, smul_smul, mul_comm])
-    rw [← hscal t M ht (hrep_det N s M hs hN hM), h, hscal s M' hs (hrep_det N t M' ht hN hM')]
-  -- Every matrix over `K` has an integral multiple.
-  have hrep : ∀ N : Matrix ι ι K, ∃ s : A, s ≠ 0 ∧ ∃ M : Matrix ι ι A,
-      φ M = algebraMap A K s • N := by
-    intro N
-    obtain ⟨b, hb⟩ := IsLocalization.exist_integer_multiples_of_finite (nonZeroDivisors A)
-      fun p : ι × ι ↦ N p.1 p.2
-    choose M hM using hb
-    refine ⟨b, nonZeroDivisors.coe_ne_zero b, of fun i j ↦ M (i, j), ?_⟩
-    ext i j
-    rw [hφ, map_apply, of_apply, hM]
-    exact Algebra.smul_def _ _
-  -- The matrices over `K` on all of whose integral multiples `g` vanishes.
-  let Good (N : Matrix ι ι K) : Prop :=
-    ∀ (s : A) (M : Matrix ι ι A), s ≠ 0 → φ M = algebraMap A K s • N → g M = 0
-  have hgood_mul : ∀ N N' : Matrix ι ι K, N.det ≠ 0 → N'.det ≠ 0 → Good N → Good N' →
-      Good (N * N') := by
-    intro N N' hN hN' hgN hgN' s M hs hM
-    obtain ⟨s₁, hs₁, M₁, hM₁⟩ := hrep N
-    obtain ⟨s₂, hs₂, M₂, hM₂⟩ := hrep N'
-    have hM₁₂ : φ (M₁ * M₂) = algebraMap A K (s₁ * s₂) • (N * N') := by
-      rw [map_mul, hM₁, hM₂, smul_mul_smul_comm, map_mul]
-    rw [hrep_eq _ s (s₁ * s₂) M (M₁ * M₂) hs (mul_ne_zero hs₁ hs₂)
-      (by rw [det_mul]; exact mul_ne_zero hN hN') hM hM₁₂,
-      hmul _ _ (hrep_det N s₁ M₁ hs₁ hN hM₁) (hrep_det N' s₂ M₂ hs₂ hN' hM₂),
-      hgN s₁ M₁ hs₁ hM₁, hgN' s₂ M₂ hs₂ hM₂, add_zero]
-  have hgood_diag : ∀ D : ι → K, (∀ i, D i ≠ 0) → Good (diagonal D) := by
-    intro D hD s M hs hM
-    have hentry : ∀ i j, algebraMap A K (M i j) = algebraMap A K s * diagonal D i j := fun i j ↦ by
-      simpa [hφ] using congrFun (congrFun hM i) j
-    have hMd : M = diagonal fun i ↦ M i i := by
-      ext i j
-      by_cases hij : i = j
-      · subst hij; simp
-      · refine IsFractionRing.injective A K ?_
-        rw [hentry, diagonal_apply_ne _ hij, diagonal_apply_ne _ hij, mul_zero, map_zero]
-    rw [hMd]
-    refine hdiag _ fun i h ↦ ?_
-    have := hentry i i
-    rw [h, map_zero, diagonal_apply_eq] at this
-    exact mul_ne_zero ((map_ne_zero_iff _ (IsFractionRing.injective A K)).2 hs) (hD i) this.symm
-  have hgood_transvec : ∀ (i j : ι), i ≠ j → ∀ c : K, Good (transvection i j c) := by
-    intro i j hij c s M hs hM
-    obtain ⟨x, t, ht, rfl⟩ := IsFractionRing.div_surjective (A := A) c
-    have ht0 : t ≠ 0 := nonZeroDivisors.ne_zero ht
-    have htK : algebraMap A K t ≠ 0 := (map_ne_zero_iff _ (IsFractionRing.injective A K)).2 ht0
-    -- The transvection with entry `x / t` is `t⁻¹ • u * T x * v`, for the diagonal `u` and `v`.
-    let u : ι → A := Function.update 1 j t
-    let v : ι → A := Function.update (fun _ ↦ t) j 1
-    have hu : ∀ k, u k ≠ 0 := fun k ↦ by
-      by_cases hk : k = j <;> simp [u, hk, ht0]
-    have hv : ∀ k, v k ≠ 0 := fun k ↦ by
-      by_cases hk : k = j <;> simp [v, hk, ht0]
-    have hM₀ : φ (diagonal u * transvection i j x * diagonal v) =
-        algebraMap A K t • transvection i j (algebraMap A K x / algebraMap A K t) := by
-      ext a b
-      simp only [hφ, map_apply, mul_diagonal, diagonal_mul,
-        transvection, u, v, Function.update_apply,
-        Pi.one_apply]
-      by_cases hab : a = b
-      · subst hab
-        have : ¬(i = a ∧ j = a) := fun h ↦ hij (h.1.trans h.2.symm)
-        by_cases haj : a = j <;> simp [haj, this, mul_comm, hij]
-      · by_cases h : i = a ∧ j = b
-        · obtain ⟨rfl, rfl⟩ := h
-          simp [hab, mul_div_cancel₀ _ htK]
-        · simp [hab, h]
-    have hdu : (diagonal u).det ≠ 0 := by
-      rw [det_diagonal]; exact Finset.prod_ne_zero_iff.2 fun k _ ↦ hu k
-    have hdv : (diagonal v).det ≠ 0 := by
-      rw [det_diagonal]; exact Finset.prod_ne_zero_iff.2 fun k _ ↦ hv k
-    have hT : (transvection i j x).det ≠ 0 := by
-      rw [det_transvection_of_ne _ _ hij]; exact one_ne_zero
-    have hTK : (transvection i j (algebraMap A K x / algebraMap A K t)).det ≠ 0 := by
-      rw [det_transvection_of_ne _ _ hij]; exact one_ne_zero
-    rw [hrep_eq _ s t M _ hs ht0 hTK hM hM₀,
-      hmul _ _ (by rw [det_mul]; exact mul_ne_zero hdu hT) hdv, hmul _ _ hdu hT,
-      hdiag u hu, hdiag v hv, htransvec i j hij x, add_zero, add_zero]
-  have hgood_list : ∀ L : List (TransvectionStruct ι K),
-      Good (L.map TransvectionStruct.toMatrix).prod := by
-    intro L
-    induction L with
-    | nil =>
-      simpa only [List.map_nil, List.prod_nil, diagonal_one] using
-        hgood_diag (fun _ ↦ (1 : K)) fun _ ↦ one_ne_zero
-    | cons T L ih =>
-      rw [List.map_cons, List.prod_cons]
-      exact hgood_mul _ _ (by rw [TransvectionStruct.det]; exact one_ne_zero)
-        (by rw [TransvectionStruct.det_toMatrix_prod]; exact one_ne_zero)
-        (hgood_transvec T.i T.j T.hij T.c) ih
-  -- Over `K`, the image of `M` is a product of transvections and a diagonal matrix.
-  obtain ⟨L, L', D, hD⟩ := Pivot.exists_list_transvec_mul_diagonal_mul_list_transvec (φ M)
-  have hφM : (φ M).det ≠ 0 := by
-    rw [hdet]; exact (map_ne_zero_iff _ (IsFractionRing.injective A K)).2 hM
-  have hdetD : (diagonal D).det ≠ 0 := by
-    have := hφM
-    rwa [hD, det_mul, det_mul, TransvectionStruct.det_toMatrix_prod,
-      TransvectionStruct.det_toMatrix_prod, one_mul, mul_one] at this
-  have hDi : ∀ i, D i ≠ 0 := fun i ↦ by
-    rw [det_diagonal] at hdetD
-    exact (Finset.prod_ne_zero_iff.1 hdetD) i (Finset.mem_univ i)
-  have hgood : Good (φ M) := by
-    rw [hD]
-    refine hgood_mul _ _ ?_ (by rw [TransvectionStruct.det_toMatrix_prod]; exact one_ne_zero)
-      (hgood_mul _ _ (by rw [TransvectionStruct.det_toMatrix_prod]; exact one_ne_zero) hdetD
-        (hgood_list L) (hgood_diag D hDi)) (hgood_list L')
-    rw [det_mul, TransvectionStruct.det_toMatrix_prod, one_mul]
-    exact hdetD
-  exact hgood 1 M one_ne_zero (by rw [map_one, one_smul])
 
 section KrullDimLE
 
@@ -285,12 +138,7 @@ variable {A K V : Type*} [CommRing A] [IsDomain A] [IsNoetherianRing A] [Ring.Kr
 Appendix A.2). Let `A` be a Noetherian domain of dimension at most one with fraction field `K`, let
 `M` be a finitely generated `A`-submodule spanning a `K`-vector space `V`, and let `φ` be a
 nonsingular `K`-linear endomorphism of `V` preserving `M`. If `M ⧸ φ(M)` has length `n`, then
-`det φ` has order `n`.
-
-A free submodule `F ≤ M` with `cM ≤ F` for some nonzero `c` is preserved by `cφ`, and its basis
-is a `K`-basis of `V`. The cokernel of `cφ` on `F` is that of `cφ` on `M`, of length
-`rank M * ord c + n`, and by the free case it is also the order of `det (cφ) = c ^ rank M * det φ`.
--/
+`det φ` has order `n`. -/
 theorem _root_.LinearMap.ordFrac_det_eq_coe_of_length_eq (φ : V →ₗ[K] V) (M : Submodule A V)
     (hfg : M.FG) (hM : Submodule.span K (M : Set V) = ⊤) (hφM : ∀ x ∈ M, φ x ∈ M)
     (hφ : LinearMap.det φ ≠ 0) {n : ℕ}
@@ -352,6 +200,9 @@ theorem _root_.LinearMap.ordFrac_det_eq_coe_of_length_eq (φ : V →ₗ[K] V) (M
     have hsum := congrArg (fun x : F ↦ ((x : M) : V)) (bF.sum_repr (ψ (bF j)))
     simp only [Submodule.coe_sum, Submodule.coe_smul] at hsum
     have hψ : ((ψ (bF j) : M) : V) = c • φ (w j) := by
+      -- Unfold ψ = χ|F, χ = c • φM, and φM = φ|M through both subtype coercions.
+      -- Rewriting coe_restrict_apply fails at φM: hφM is stated for φ, while the
+      -- restriction uses φ.restrictScalars A, so matching needs definitional reduction.
       change c • φ ((bF j : M) : V) = _
       rw [hbF]
     have hterm : ∀ k, bF.repr (ψ (bF j)) k • ((bF k : M) : V) =
