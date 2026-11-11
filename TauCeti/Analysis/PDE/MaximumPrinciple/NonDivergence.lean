@@ -556,7 +556,6 @@ theorem le_add_of_mul_sub_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier
   have hg (y : EuclideanSpace ℝ ι) : g y = m + F / lam * Real.exp (α * d) - r * w y := by
     simp only [g, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
     ring
-  have hα : 1 ≤ α := le_add_of_nonneg_left (div_nonneg hβ hlam.le)
   have hFl : 0 ≤ F / lam := div_nonneg hF hlam.le
   -- On `K`, `F / λ ≤ r w ≤ (F / λ) exp (α d)`, so `m ≤ g ≤ m + (exp (α d) - 1) F / λ`.
   have hrwK (y : EuclideanSpace ℝ ι) (hy : y ∈ K) :
