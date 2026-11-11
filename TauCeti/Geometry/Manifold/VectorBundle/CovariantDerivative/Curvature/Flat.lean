@@ -19,6 +19,7 @@ import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Coordinates
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
+import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
 /-!
 # Flat connections and local parallel frames
@@ -176,18 +177,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I]
   (cov : CovariantDerivative I F V) [ContMDiffCovariantDerivative cov ∞]
 
-omit [FiniteDimensional ℝ E] [T2Space M] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  [∀ (x : M), AddCommGroup (V x)] [∀ (x : M), Module ℝ (V x)]
-  [∀ (x : M), IsTopologicalAddGroup (V x)] [∀ (x : M), ContinuousSMul ℝ (V x)]
-  [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I] cov
-  [ContMDiffCovariantDerivative cov ∞] in
-private theorem isOpen_inter_preimage_baseSet_extChartAt_symm (x₀ : M) :
-    IsOpen (interior (extChartAt I x₀).target ∩
-      (extChartAt I x₀).symm ⁻¹' (trivializationAt F V x₀).baseSet) :=
-  ((contMDiffOn_extChartAt_symm (n := ∞) x₀).mono
-    interior_subset).continuousOn.isOpen_inter_preimage isOpen_interior
-    (trivializationAt F V x₀).open_baseSet
-
 private theorem contMDiffOn_bundleChristoffelMap_comp_extChartAt_symm (x₀ : M) :
     letI eV := trivializationAt F V x₀
     letI eT := trivializationAt E (TangentSpace I) x₀
@@ -265,7 +254,7 @@ private theorem isFrobeniusIntegrableAt_neg_bundleChristoffelMap (x₀ : M) {z :
         (cov.isCovariantDerivativeOn (s := eV.baseSet)) ((extChartAt I x₀).symm ζ)) z :=
     (((contMDiffOn_iff_contDiffOn.1
       (contMDiffOn_bundleChristoffelMap_comp_extChartAt_symm cov x₀)).contDiffAt
-        ((isOpen_inter_preimage_baseSet_extChartAt_symm (F := F) (V := V) x₀).mem_nhds
+        ((eV.isOpen_interior_extChartAt_target_inter_symm_preimage_baseSet x₀).mem_nhds
           ⟨hz, hzV⟩)).differentiableAt (by simp))
   refine isFrobeniusIntegrableAt_neg_clm_apply w hΓE_diff fun a c ↦ ?_
   rw [fderiv_bundleChristoffelMap_comp_extChartAt_symm cov x₀ hz hzV a,
@@ -360,7 +349,7 @@ theorem exists_contMDiff_apply_eq_and_eventually_cov_eq_zero_of_isInteriorPoint
   have hx₀V : x₀ ∈ eV.baseSet := mem_baseSet_trivializationAt F V x₀
   have hz₀ : z₀ ∈ interior (extChartAt I x₀).target := I.isInteriorPoint_iff.1 hx₀
   let OE : Set E := interior (extChartAt I x₀).target ∩ (extChartAt I x₀).symm ⁻¹' eV.baseSet
-  have hOE : IsOpen OE := isOpen_inter_preimage_baseSet_extChartAt_symm (F := F) (V := V) x₀
+  have hOE : IsOpen OE := eV.isOpen_interior_extChartAt_target_inter_symm_preimage_baseSet x₀
   have hz₀OE : z₀ ∈ OE := ⟨hz₀, by simpa [z₀] using hx₀V⟩
   let ΓE : E → F →L[ℝ] E →L[ℝ] F := fun ζ ↦ bundleChristoffelMap (Module.finBasis ℝ F) eT
     (cov.isCovariantDerivativeOn (s := eV.baseSet)) ((extChartAt I x₀).symm ζ)

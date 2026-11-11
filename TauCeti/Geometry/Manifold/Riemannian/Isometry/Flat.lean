@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Restriction
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Flat
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.VectorSpace
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.Geometry.Manifold.DifferentialForm.CovariantDerivative
 import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 import TauCeti.Geometry.Manifold.DifferentialForm.Poincare
@@ -141,32 +142,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-
-/-- Expanding two tangent vectors against an orthonormal local frame `(s i)` and reassembling along
-an orthonormal family `(e i)` in `F` preserves the inner product. -/
-private theorem inner_sum_inner_smul_eq
-    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-    {ι : Type*} [Fintype ι] {s : ι → Π y : M, TangentSpace I y} {W₁ : Set M}
-    (hframe : IsLocalFrameOn I E ∞ s W₁) (horth_s : ∀ y ∈ W₁, Orthonormal ℝ (s · y))
-    {e : ι → F} (horth_e : Orthonormal ℝ e) {y : M} (hy : y ∈ W₁)
-    (v w : TangentSpace I y) :
-    inner ℝ (∑ i, inner ℝ (s i y) v • e i) (∑ i, inner ℝ (s i y) w • e i) = inner ℝ v w := by
-  let b_y : OrthonormalBasis ι ℝ (TangentSpace I y) :=
-    (hframe.toBasisAt hy).toOrthonormalBasis
-      (by
-        have hcoe : ⇑(hframe.toBasisAt hy) = fun i ↦ s i y := funext (hframe.toBasisAt_coe hy)
-        rw [hcoe]
-        exact horth_s y hy)
-  have hb_y (i : ι) : b_y i = s i y := by
-    rw [b_y.coe_toBasis.symm, Module.Basis.toBasis_toOrthonormalBasis, hframe.toBasisAt_coe hy]
-  rw [horth_e.inner_sum _ _ Finset.univ]
-  simp only [RCLike.conj_to_real]
-  calc ∑ i, inner ℝ (s i y) v * inner ℝ (s i y) w
-    _ = ∑ i, inner ℝ v (b_y i) * inner ℝ (b_y i) w :=
-        Finset.sum_congr rfl fun i _ ↦ by rw [hb_y i, real_inner_comm (s i y) v]
-    _ = inner ℝ v w := b_y.sum_inner_mul_inner v w
-
-variable [FiniteDimensional ℝ E] [T2Space M]
+  [FiniteDimensional ℝ E] [T2Space M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
 /-- **Flat curvature near an interior point produces a local Riemannian isometry onto an open ball
@@ -265,7 +241,9 @@ theorem exists_riemannianIsometry_ball_of_eventually_curvatureTensor_eq_zero_of_
   rw [Manifold.inner_tangentSpace_vectorSpace, NormedSpace.fromTangentSpace_apply,
     NormedSpace.fromTangentSpace_apply, ← mvfderiv_apply_eq_mfderiv_apply,
     ← mvfderiv_apply_eq_mfderiv_apply, hΦ_mv hy v, hΦ_mv hy w]
-  exact inner_sum_inner_smul_eq hframe₁ horth₁ hLb_orth hy.1 v w
+  simpa only [OrthonormalBasis.coe_mk] using
+    (OrthonormalBasis.mk (horth₁ y hy.1) (hframe₁.generating hy.1)).inner_sum_inner_smul
+      hLb_orth v w
 
 /-- **Existence of an injective local Riemannian isometry into any isometric model space `F` from
 vanishing curvature near an interior point.** -/
