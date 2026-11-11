@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.MorseInequalities
 public import TauCeti.Geometry.Manifold.Morse.CWModel
+import TauCeti.Geometry.Manifold.Morse.Cell.Band
 import TauCeti.Geometry.Manifold.Morse.Generic.Basic
 
 /-!
@@ -75,16 +76,14 @@ variable (I M) in
 include I in
 /-- **The Betti numbers of a compact manifold vanish above its dimension.** For a compact
 boundaryless manifold `M` of dimension `m` and a nontrivial ring `k`, `bⱼ(M; k) = 0` for `j > m`:
-`M` is homotopy equivalent to a finite CW complex with no cells above dimension `m`. -/
+a Morse function on `M` has no critical points of index above `m`. -/
 theorem bettiNumber_eq_zero_of_finrank_lt (k : Type u) [Ring k] [Nontrivial k] {j : ℕ}
     (hj : finrank ℝ E < j) : bettiNumber k M j = 0 := by
   obtain ⟨f, hf⟩ := exists_isMorse (I := I) (M := M)
-  obtain ⟨W, _, _, _, _, ⟨e⟩, hcount⟩ := hf.exists_finite_cwComplex_homotopyEquiv
-  have : IsEmpty (cell (univ : Set W) j) := by
-    rw [← ENat.card_eq_zero_iff_empty, hcount, criticalCount_eq_zero_of_finrank_lt hj]
   have := ModuleCat.isZero_iff_subsingleton.1
-    (isZero_singularHomology_of_isEmpty_cell (univ : Set W) (ModuleCat.of k k) j)
-  rw [← ((Homeomorph.Set.univ W).toHomotopyEquiv.trans e).bettiNumber_eq k j, bettiNumber_def]
+    (hf.isZero_singularHomology_of_compactSpace_of_manifoldMorseIndex_le
+      (fun _ _ ↦ manifoldMorseIndex_le_finrank) (ModuleCat.of k k) hj)
+  rw [bettiNumber_def]
   exact finrank_zero_of_subsingleton
 
 /-- **The Morse polynomial identity, with the cellular coefficients.** A compact boundaryless

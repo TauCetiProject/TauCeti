@@ -98,9 +98,7 @@ theorem bettiNumber_eq_zero_of_contractibleSpace [Nontrivial k] [ContractibleSpa
     bettiNumber k X j = 0 := by
   -- The carrier of `TopCat.of X` is `X` itself.
   have : ContractibleSpace (TopCat.of X) := ‹ContractibleSpace X›
-  have := ModuleCat.isZero_iff_subsingleton.1
-    (isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of k k) (TopCat.of X) hj)
-  exact finrank_zero_of_subsingleton
+  rw [bettiNumber_def, ModuleCat.finrank_singularHomology_of_contractibleSpace, ite_eq_right hj]
 
 end TauCeti
 
