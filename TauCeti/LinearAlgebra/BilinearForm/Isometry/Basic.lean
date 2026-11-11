@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.BilinearForm.Isometry
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
 import Mathlib.Algebra.Ring.NonZeroDivisors
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Isometric endomorphisms of a bilinear form
@@ -90,6 +91,34 @@ protected theorem comp (hf : IsIsometry B f) (hg : IsIsometry B g) : IsIsometry 
 end IsIsometry
 
 end CommSemiring
+
+section CommRing
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+  {B : BilinForm R M} {f : M →ₗ[R] M}
+
+/-- **Unipotent isometries of anisotropic forms are trivial.** If `f` preserves a bilinear form
+`B` with `B v v ≠ 0` for every `v ≠ 0`, such as a positive definite real form, and `(f - 1)² = 0`,
+then `f = 1`. A nontrivial transvection such as the shear `(q, p) ↦ (q + p, p)` therefore
+preserves no inner product. -/
+theorem IsIsometry.eq_one_of_sub_one_sq_eq_zero (hf : IsIsometry B f)
+    (hB : ∀ v, B v v = 0 → v = 0) (hN : (f - 1) ^ 2 = 0) : f = 1 := by
+  refine LinearMap.ext fun v ↦ ?_
+  -- `w = f v - v` is fixed by `f`, and `B (f v) (f w) = B v w` then forces `B w w = 0`.
+  have hfw : f (f v - v) = f v - v := by
+    have := LinearMap.congr_fun hN v
+    simp only [pow_two, mul_apply_eq_comp, LinearMap.sub_apply, one_apply_eq_self,
+      LinearMap.zero_apply, map_sub] at this
+    rw [map_sub, ← sub_eq_zero, this]
+  have hw := hf.apply v (f v - v)
+  rw [hfw, map_sub, map_sub] at hw
+  have hww : B (f v - v) (f v - v) = 0 := by
+    rw [map_sub, map_sub, LinearMap.sub_apply, LinearMap.sub_apply]
+    linear_combination hw
+  rw [one_apply_eq_self]
+  exact sub_eq_zero.mp (hB _ hww)
+
+end CommRing
 
 end BilinForm
 
