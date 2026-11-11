@@ -11,7 +11,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import Mathlib.Topology.MetricSpace.Equicontinuity
 import TauCeti.Analysis.Calculus.SecondDerivative
-import TauCeti.Analysis.Complex.OperatorNorm
+import TauCeti.Analysis.RCLike.OperatorNorm
 
 /-!
 # Second-derivative estimates for variable-coefficient Cauchy–Riemann equations
