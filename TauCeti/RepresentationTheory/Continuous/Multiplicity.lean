@@ -159,15 +159,18 @@ theorem exists_comp_eq (hπ : π.IsUnitary) {S : σ →ⁱL ρ}
   let f : V →ₗ[𝕜] E := Kᗮ.subtype ∘ₗ e.symm.toLinearMap ∘ₗ
     (S.toContinuousLinearMap : V →ₗ[𝕜] F).codRestrict _ hS
   have hf (v : V) : T (f v) = S v := congr($(e.apply_symm_apply ⟨S v, hS v⟩).1)
-  have hKinv (g : G) (k : E) (hk : k ∈ K) : π g k ∈ K := by
-    simp_all [K, LinearMap.mem_ker, toContinuousLinearMap_apply, T.isIntertwining]
+  -- Since `e` is injective, `T` is injective on `Kᗮ`.
+  have hinj {x y : E} (hx : x ∈ Kᗮ) (hy : y ∈ Kᗮ) (hxy : T x = T y) : x = y :=
+    congr($(e.injective (a₁ := ⟨x, hx⟩) (a₂ := ⟨y, hy⟩) (Subtype.ext (by
+      simpa [e, LinearMap.kerComplementEquivRange_apply_coe, toContinuousLinearMap_apply]
+        using hxy))).1)
   refine ⟨⟨LinearMap.toContinuousLinearMap f, fun g ↦ ?_⟩, ?_⟩
   · ext v
-    have h := e.injective (a₁ := ⟨π g (f v), hπ.apply_mem_orthogonal hKinv g (e.symm _).2⟩)
-      (a₂ := ⟨f (σ g v), (e.symm _).2⟩)
-      (Subtype.ext (by simp [e, LinearMap.kerComplementEquivRange_apply_coe,
-        toContinuousLinearMap_apply, hf, S.isIntertwining, T.isIntertwining]))
-    exact congr($h.1).symm
+    -- Both `f (σ g v)` and `π g (f v)` lie in the invariant subspace `Kᗮ` and have image
+    -- `S (σ g v) = ρ g (S v)` under `T`.
+    refine hinj (e.symm _).2 (hπ.apply_mem_orthogonal
+      (fun g _ hk ↦ T.toIntertwiningMap.ker.apply_mem_toSubmodule g hk) g (e.symm _).2) ?_
+    simp [hf, S.isIntertwining, T.isIntertwining]
   · ext v
     exact hf v
 
@@ -269,8 +272,9 @@ to the composite of `S` with the quotient map. -/
 theorem cokerCompLinHomEquiv_mk_apply (hπ : π.IsUnitary) (hρ : ρ.IsUnitary)
     (S : (linHom σ ρ).invariants) (v : V) :
     T.cokerCompLinHomEquiv σ hπ hρ (Submodule.Quotient.mk S) v =
-      Submodule.Quotient.mk ((S : V →L[𝕜] F) v) :=
-  (rfl)
+      Submodule.Quotient.mk ((S : V →L[𝕜] F) v) := by
+  rw [cokerCompLinHomEquiv, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
+    LinearMap.quotKerEquivOfSurjective_apply_mk, toCoker_apply_apply]
 
 /-- **The index of the action on multiplicity spaces.** For unitary representations on Hilbert
 spaces and `T` with a range admitting an orthogonal projection (for instance, a Fredholm `T`), the
