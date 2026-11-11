@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.TestFunction
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 
 /-!
 # Finite localization of test functions
@@ -24,7 +25,10 @@ complex smooth cutoff supported in `K'` and equal to one on `K`
 Multiplication by a smooth function `χ` whose closed support meets `Ω` only inside an open set `U`
 sends tests on `Ω` to tests on `U`. This is `TestFunction.cutoffCLM`, a continuous linear map
 `𝓓^{n}(Ω, F) →L[ℝ] 𝓓^{n}(U, F)` for the LF topologies; it is the localization step used to glue
-distributions and currents defined on the members of an open cover.
+distributions and currents defined on the members of an open cover. In a finite-dimensional space,
+multiplication by a function that is smooth on `Ω` only, with no condition off `Ω`, is also a
+continuous linear map on `𝓓(Ω, F)` (`TestFunction.smulLeftCLMOfContDiffOn`): on the tests
+supported in a compact `K ⊆ Ω` it is a `cutoffCLM` by a smooth function equal to it near `K`.
 
 The decomposition uses Mathlib's `SmoothPartitionOfUnity.exists_isSubordinate`, applied to the
 compact support, and the cutoff packages `IsCompact.exists_contDiff_cutoff` as a test function.
@@ -181,6 +185,45 @@ theorem exists_norm_le_one_mul_eq_abs {s : Finset E} (a : E → ℝ) (hs : (s : 
     · have hxU : x ∉ U := by simp [U, q, hx, lt_of_not_ge hxpos]
       have hψx : ψ x = 0 := ψ.zero_on_compl hxU
       simp [φ, hχx, hψx, abs_of_neg (lt_of_not_ge hxpos)]
+
+/-! ### Multiplication by a function smooth on the domain -/
+
+section SmulLeftOfContDiffOn
+
+variable {g : E → ℝ}
+
+/-- A function smooth on `Ω` agrees near a compact `K ⊆ Ω` with a function smooth on all of `E`:
+its product with a test function equal to one near `K`. -/
+private theorem exists_contDiff_eqOn (hg : ContDiffOn ℝ ∞ g Ω) {K : Set E} (hK : IsCompact K)
+    (hKΩ : K ⊆ Ω) : ∃ f : E → ℝ, ContDiff ℝ ∞ f ∧ EqOn f g K := by
+  obtain ⟨χ, hχ, -⟩ := exists_eventually_eq_one (n := ⊤) hK hKΩ
+  obtain ⟨ψ, hψ⟩ := exists_coe_eq_smul_of_contDiffOn hg χ
+  exact ⟨ψ, ψ.contDiff, fun x hx ↦ by simp [hψ, hχ.self_of_nhdsSet x hx]⟩
+
+/-- **Multiplication by a function smooth on `Ω`**, `φ ↦ g φ`, as a continuous linear map on the
+test functions on `Ω`. Nothing is required of `g` off `Ω`; when `g` is smooth on all of `E` this
+is `TestFunction.smulLeftCLM`. On the tests supported in a compact `K ⊆ Ω` it is multiplication
+by a function smooth on `E` that agrees with `g` on `K`. -/
+noncomputable def smulLeftCLMOfContDiffOn (hg : ContDiffOn ℝ ∞ g Ω) : 𝓓(Ω, F) →L[ℝ] 𝓓(Ω, F) :=
+  TestFunction.limitCLM ℝ (fun φ ↦ (exists_coe_eq_smul_of_contDiffOn hg φ).choose)
+    (fun K hK ↦ cutoffCLM (exists_contDiff_eqOn hg K.isCompact hK).choose_spec.1
+      inter_subset_right ∘L ofSupportedInCLM ℝ hK)
+    (fun K hK φ ↦ by
+      ext x
+      rw [(exists_coe_eq_smul_of_contDiffOn hg _).choose_spec, ContinuousLinearMap.comp_apply,
+        cutoffCLM_apply]
+      by_cases hx : x ∈ (K : Set E)
+      · simp [(exists_contDiff_eqOn hg K.isCompact hK).choose_spec.2 hx]
+      · simp [φ.zero_on_compl hx])
+
+/-- Multiplication by a function smooth on `Ω` is pointwise multiplication. -/
+@[simp]
+theorem smulLeftCLMOfContDiffOn_apply (hg : ContDiffOn ℝ ∞ g Ω) (φ : 𝓓(Ω, F)) (x : E) :
+    smulLeftCLMOfContDiffOn hg φ x = g x • φ x := by
+  rw [smulLeftCLMOfContDiffOn, limitCLM_apply,
+    (exists_coe_eq_smul_of_contDiffOn hg φ).choose_spec]
+
+end SmulLeftOfContDiffOn
 
 end TestFunction
 

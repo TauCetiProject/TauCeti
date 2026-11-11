@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
+public import Mathlib.Topology.Algebra.Module.Determinant
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
@@ -37,6 +38,12 @@ For partial diffeomorphisms `ψ`, `χ`, `φ` into normed spaces, such as charts,
   the transition `ψ ∘ φ⁻¹` is differentiable.
 * `PartialDiffeomorph.fderiv_comp_symm_eq_comp`: the derivatives of transitions compose, the
   chain rule `D(ψ ∘ φ⁻¹) = D(ψ ∘ χ⁻¹) ∘ D(χ ∘ φ⁻¹)`.
+* `PartialDiffeomorph.fderiv_symm_comp_fderiv`, `PartialDiffeomorph.fderiv_comp_fderiv_symm`: for
+  a partial diffeomorphism between normed spaces, the Fréchet derivatives of it and of its inverse
+  are mutually inverse at corresponding points, and
+  `PartialDiffeomorph.det_fderiv_symm_mul_det_fderiv`,
+  `PartialDiffeomorph.det_fderiv_mul_det_fderiv_symm`: so their Jacobian determinants are
+  reciprocal.
 -/
 
 public section
@@ -136,5 +143,48 @@ theorem fderiv_comp_symm_eq_comp (ψ : PartialDiffeomorph I 𝓘(𝕜, G'') M G'
   rw [← heq.fderiv_eq, fderiv_comp (φ x) h₁ (χ.differentiableAt_comp_symm φ hn hχ hφ), hχx]
 
 end Transition
+
+section NormedSpace
+
+variable (Φ : PartialDiffeomorph 𝓘(𝕜, E) 𝓘(𝕜, F) E F n)
+
+/-- A partial diffeomorphism between normed spaces is differentiable at every point of its
+source. -/
+theorem differentiableAt (hn : n ≠ 0) {x : E} (hx : x ∈ Φ.source) : DifferentiableAt 𝕜 Φ x :=
+  mdifferentiableAt_iff_differentiableAt.1 (Φ.mdifferentiableAt hn hx)
+
+/-- The derivative of the inverse of a partial diffeomorphism between normed spaces is a left
+inverse of its derivative: `D(Φ⁻¹)(Φ x) ∘ DΦ(x) = id` on the source. -/
+theorem fderiv_symm_comp_fderiv (hn : n ≠ 0) {x : E} (hx : x ∈ Φ.source) :
+    (fderiv 𝕜 Φ.symm (Φ x)).comp (fderiv 𝕜 Φ x) = ContinuousLinearMap.id 𝕜 E := by
+  have heq : (Φ.symm ∘ Φ : E → E) =ᶠ[𝓝 x] id :=
+    eventually_of_mem (Φ.open_source.mem_nhds hx) fun z hz ↦ Φ.left_inv hz
+  rw [← fderiv_comp x (Φ.symm.differentiableAt hn (Φ.map_source hx)) (Φ.differentiableAt hn hx),
+    heq.fderiv_eq, fderiv_id]
+
+/-- The derivative of a partial diffeomorphism between normed spaces is a left inverse of the
+derivative of its inverse: `DΦ(Φ⁻¹ y) ∘ D(Φ⁻¹)(y) = id` on the target. -/
+theorem fderiv_comp_fderiv_symm (hn : n ≠ 0) {y : F} (hy : y ∈ Φ.target) :
+    (fderiv 𝕜 Φ (Φ.symm y)).comp (fderiv 𝕜 Φ.symm y) = ContinuousLinearMap.id 𝕜 F :=
+  Φ.symm.fderiv_symm_comp_fderiv hn hy
+
+/-- The Jacobian determinants of the inverse of a partial diffeomorphism of a normed space at
+`Φ x` and of `Φ` at `x` multiply to one. -/
+theorem det_fderiv_symm_mul_det_fderiv (Φ : PartialDiffeomorph 𝓘(𝕜, E) 𝓘(𝕜, E) E E n)
+    (hn : n ≠ 0) {x : E} (hx : x ∈ Φ.source) :
+    (fderiv 𝕜 Φ.symm (Φ x)).det * (fderiv 𝕜 Φ x).det = 1 := by
+  have h := congrArg LinearMap.det
+    (congrArg ContinuousLinearMap.toLinearMap (Φ.fderiv_symm_comp_fderiv hn hx))
+  rwa [ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.coe_id, LinearMap.det_comp,
+    LinearMap.det_id] at h
+
+/-- The Jacobian determinants of a partial diffeomorphism of a normed space at `Φ⁻¹ y` and of its
+inverse at `y` multiply to one. -/
+theorem det_fderiv_mul_det_fderiv_symm (Φ : PartialDiffeomorph 𝓘(𝕜, E) 𝓘(𝕜, E) E E n)
+    (hn : n ≠ 0) {y : E} (hy : y ∈ Φ.target) :
+    (fderiv 𝕜 Φ (Φ.symm y)).det * (fderiv 𝕜 Φ.symm y).det = 1 :=
+  Φ.symm.det_fderiv_symm_mul_det_fderiv hn hy
+
+end NormedSpace
 
 end PartialDiffeomorph
