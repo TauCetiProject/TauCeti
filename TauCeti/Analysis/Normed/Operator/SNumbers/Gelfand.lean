@@ -13,10 +13,10 @@ public import Mathlib.LinearAlgebra.Dimension.RankNullity
 # Gelfand numbers
 
 The `n`-th Gelfand number of a bounded operator `T : E →L[𝕜] F` is
-`cₙ(T) = inf {‖T|_M‖ : M ≤ E closed, codim M ≤ n}`, the smallest norm of a restriction of `T`
-to a closed subspace of codimension at most `n`. The codimension of `M` is the rank of the
-quotient `E ⧸ M`, and the restriction is `T ∘L M.subtypeL`. The indexing is zero-based, so
-`c₀(T) = ‖T‖`.
+`cₙ(T) = inf {‖T|_M‖ : M ≤ E closed, codim M ≤ n}`, the infimum of the norms of the
+restrictions of `T` to closed subspaces of codimension at most `n`. The codimension of `M` is
+the rank of the quotient `E ⧸ M`, and the restriction is `T ∘L M.subtypeL`. The indexing is
+zero-based, so `c₀(T) = ‖T‖`.
 
 The closedness condition does not change the value: restricting to the closure of a subspace
 does not increase the norm of the restriction, and does not increase the codimension
