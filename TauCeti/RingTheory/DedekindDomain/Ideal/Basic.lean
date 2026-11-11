@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 import Mathlib.RingTheory.DedekindDomain.Factorization
+import TauCeti.RingTheory.UniqueFactorizationDomain.FactorSet
 
 /-!
 # Complements on ideals of a Dedekind domain
@@ -123,14 +124,6 @@ section RingEquivDedekind
 
 variable {R R' : Type*} [CommRing R] [IsDedekindDomain R] [CommRing R'] [IsDedekindDomain R']
 
-/-- Counting in the factors of `⊥` gives `0`: the factor set of `⊥` is the zero factor set. -/
-private theorem count_factors_bot {S : Type*} [CommRing S] [IsDedekindDomain S]
-    [DecidableEq (Associates (Ideal S))] [∀ a : Associates (Ideal S), Decidable (Irreducible a)]
-    (q : Associates (Ideal S)) : q.count (Associates.mk (⊥ : Ideal S)).factors = 0 := by
-  rw [← zero_eq_bot, Associates.mk_zero, Associates.factors_zero]
-  unfold Associates.count
-  split_ifs <;> rfl
-
 /-- Multiplicities in the factorisation of an ideal are unchanged by pushing forward along a ring
 isomorphism: the number of times `Ideal.map e p` divides `Ideal.map e I` is the number of times
 `p` divides `I`. The identity also holds, with both sides `0`, when `p` is not prime or `I = ⊥`. -/
@@ -140,7 +133,8 @@ theorem count_factors_map_of_ringEquiv (e : R ≃+* R') {p I : Ideal R} :
   classical
   by_cases hI : I = ⊥
   · subst hI
-    rw [Ideal.map_bot, count_factors_bot, count_factors_bot]
+    rw [Ideal.map_bot]
+    simp only [← zero_eq_bot, Associates.mk_zero, Associates.factors_zero, Associates.count_top]
   by_cases hp : Prime p
   · have hpmap := Ideal.map_prime_of_equiv e hp hp.ne_zero
     have hI0 : I ≠ 0 := by simpa only [zero_eq_bot] using hI
