@@ -20,8 +20,10 @@ import TauCeti.Topology.UnitInterval.OpenSquare
 # Euclidean disks and their boundaries
 
 The closed Euclidean disk is contractible, and its boundary is path-connected when the disk has
-dimension at least two.  The disk is a `T₃` space, in particular Hausdorff, so the inclusion of its
-boundary sphere is a closed embedding (`TauCeti.TopCat.isClosedEmbedding_diskBoundaryInclusion`).
+dimension at least two, so `TopCat.sphere (n + 1)` is path-connected
+(`TauCeti.TopCat.pathConnectedSpace_sphere`).  The disk is a `T₃` space, in particular Hausdorff,
+so the inclusion of its boundary sphere is a closed embedding
+(`TauCeti.TopCat.isClosedEmbedding_diskBoundaryInclusion`).
 This module also constructs the standard `TopPair` consisting of a disk and its boundary, providing
 the topological input for relative-homology calculations. A map out of the boundary sphere is
 null-homotopic exactly when it extends over the disk
@@ -88,6 +90,11 @@ lemma pathConnectedSpace_diskBoundary {n : ℕ} (hn : 2 ≤ n) :
           omega)
         0 (by norm_num))
   exact Homeomorph.ulift.symm.pathConnectedSpace
+
+/-- The sphere `TopCat.sphere (n + 1)` of positive dimension, the boundary of the `(n + 2)`-disk,
+is path-connected. -/
+instance pathConnectedSpace_sphere (n : ℕ) : PathConnectedSpace (TopCat.sphere.{u} (n + 1)) :=
+  pathConnectedSpace_diskBoundary (by omega)
 
 /-- The `n`-dimensional disk is a `T₃` space, in particular Hausdorff, being homeomorphic to a
 closed ball in Euclidean space. -/
