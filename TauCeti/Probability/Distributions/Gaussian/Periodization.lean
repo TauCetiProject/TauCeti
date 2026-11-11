@@ -17,7 +17,9 @@ of a point by a nonzero period `T` gives a rescaled Gaussian lattice sum:
 `∑ k : ℤ, gaussianPDFReal m v (x + k • T) = (√(2 * π * v))⁻¹ * Z((m - x) / T, √v / T)`,
 
 where `Z` is `Real.gaussianLatticeSum`. At variance zero every term vanishes, so the periodized
-density is summable at every variance.
+density is summable at every variance. The direct density series converges locally uniformly in
+`x`, so it can be integrated term by term on compact intervals when computing wrapped Gaussian
+probabilities.
 -/
 
 public section
@@ -48,5 +50,38 @@ theorem summable_gaussianPDFReal_add_zsmul (m : ℝ) (v : ℝ≥0) {T : ℝ} (hT
   rcases eq_or_ne v 0 with rfl | hv
   · simp [gaussianPDFReal_zero_var]
   exact (hasSum_gaussianPDFReal_add_zsmul m hv hT x).summable
+
+/-- The direct periodized Gaussian density series converges locally uniformly to the rescaled
+Gaussian lattice sum. This includes variance zero, when every density term vanishes. -/
+theorem hasSumLocallyUniformly_gaussianPDFReal_add_zsmul (m : ℝ) (v : ℝ≥0)
+    {T : ℝ} (hT : T ≠ 0) :
+    HasSumLocallyUniformly
+      (fun k : ℤ => fun x : ℝ => gaussianPDFReal m v (x + k • T))
+      (fun x => (√(2 * π * v))⁻¹ * gaussianLatticeSum ((m - x) / T) (√(v : ℝ) / T)) := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp only [gaussianPDFReal_zero_var, NNReal.coe_zero, mul_zero, sqrt_zero, inv_zero,
+      zero_mul]
+    apply hasSumLocallyUniformly_of_forall_compact
+    intro K _
+    simpa using HasSumUniformlyOn.of_norm_le_summable
+      (f := fun (_ : ℤ) (_ : ℝ) => (0 : ℝ)) summable_zero (s := K) (by simp)
+  have hv' : (0 : ℝ) < v := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hv)
+  have hs : √(v : ℝ) / T ≠ 0 := div_ne_zero (sqrt_ne_zero'.mpr hv') hT
+  have h := hasSumLocallyUniformly_gaussianLatticeSum _ hs
+  rw [hasSumLocallyUniformly_iff_tendstoLocallyUniformly] at h ⊢
+  have hc : Continuous (fun x : ℝ => (m - x) / T) := by fun_prop
+  have hl := Real.uniformContinuous_const_mul
+    (x := (√(2 * π * v))⁻¹) |>.comp_tendstoLocallyUniformly
+      (h.comp (fun x : ℝ => (m - x) / T) hc)
+  simp only [Function.comp_def] at hl
+  convert hl using 1
+  funext K x
+  simp only [Finset.mul_sum]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  rw [gaussianPDFReal]
+  congr 2
+  rw [div_pow, sq_sqrt hv'.le, zsmul_eq_mul]
+  field_simp
+  ring
 
 end TauCeti.Probability

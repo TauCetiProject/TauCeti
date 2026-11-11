@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.SmoothSeries
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.NumberTheory.ModularForms.JacobiTheta.TwoVariable
+public import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
 
 /-!
 # Gaussian lattice sums
@@ -24,6 +25,9 @@ centre `c`.
 ## Main declarations
 
 * `Real.gaussianLatticeSum` — the Gaussian lattice sum `Z(c, s)`.
+* `Real.hasSumUniformlyOn_gaussianLatticeSum` and
+  `Real.hasSumLocallyUniformly_gaussianLatticeSum` — uniform convergence of the direct series on
+  bounded sets of centres, and locally uniform convergence.
 * `Real.hasSum_gaussianLatticeSum` and `Real.gaussianLatticeSum_pos` — convergence and positivity
   for `s ≠ 0`; `Real.gaussianLatticeSum_zero_right` records the totalized value `0` at `s = 0`.
 * `Real.summable_pow_mul_exp_neg_sub_sq` — convergence of the lattice sums with polynomial weights;
@@ -94,6 +98,45 @@ theorem summable_pow_mul_exp_neg_sub_sq (k : ℕ) (c : ℝ) {s : ℝ} (hs : s �
 theorem hasSum_gaussianLatticeSum (c : ℝ) {s : ℝ} (hs : s ≠ 0) :
     HasSum (fun n : ℤ => rexp (-((n : ℝ) - c) ^ 2 / (2 * s ^ 2))) (gaussianLatticeSum c s) := by
   simpa [gaussianLatticeSum_def] using (summable_pow_mul_exp_neg_sub_sq 0 c hs).hasSum
+
+/-- The direct Gaussian lattice series converges uniformly in the centre on every bounded set,
+for each nonzero width. -/
+theorem hasSumUniformlyOn_gaussianLatticeSum (s : ℝ) (hs : s ≠ 0)
+    {S : Set ℝ} (hS : Bornology.IsBounded S) :
+    HasSumUniformlyOn
+      (fun n : ℤ => fun c : ℝ => rexp (-((n : ℝ) - c) ^ 2 / (2 * s ^ 2)))
+      (fun c => gaussianLatticeSum c s) S := by
+  obtain ⟨R, hRpos, hR⟩ := hS.exists_pos_norm_le
+  have hs2 : 0 < s ^ 2 := sq_pos_of_ne_zero hs
+  -- A wider Gaussian supplies a summable majorant for every centre in S.
+  have hu : Summable fun n : ℤ =>
+      rexp (R ^ 2 / (2 * s ^ 2)) * rexp (-(n : ℝ) ^ 2 / (4 * s ^ 2)) := by
+    simpa using (summable_abs_pow_mul_exp_neg_sub_sq_div 0 0
+      (mul_pos four_pos hs2)).mul_left (rexp (R ^ 2 / (2 * s ^ 2)))
+  simp_rw [gaussianLatticeSum_def]
+  refine .of_norm_le_summable hu fun n c hc => ?_
+  rw [norm_of_nonneg (exp_nonneg _), ← exp_add, exp_le_exp]
+  have hcR : c ^ 2 ≤ R ^ 2 := by
+    have h := hR c hc
+    rw [norm_eq_abs] at h
+    simpa only [sq_abs] using (sq_le_sq₀ (abs_nonneg c) hRpos.le).mpr h
+  have hquad : (n : ℝ) ^ 2 ≤ 2 * ((n : ℝ) - c) ^ 2 + 2 * R ^ 2 := by
+    nlinarith [sq_nonneg ((n : ℝ) - 2 * c)]
+  calc
+    -((n : ℝ) - c) ^ 2 / (2 * s ^ 2) =
+        (-2 * ((n : ℝ) - c) ^ 2) / (4 * s ^ 2) := by ring
+    _ ≤ (2 * R ^ 2 - (n : ℝ) ^ 2) / (4 * s ^ 2) :=
+      div_le_div_of_nonneg_right (by linarith) (by positivity)
+    _ = _ := by ring
+
+/-- The direct Gaussian lattice series converges locally uniformly in the centre for every
+nonzero width. In particular, its partial sums converge uniformly on compact intervals. -/
+theorem hasSumLocallyUniformly_gaussianLatticeSum (s : ℝ) (hs : s ≠ 0) :
+    HasSumLocallyUniformly
+      (fun n : ℤ => fun c : ℝ => rexp (-((n : ℝ) - c) ^ 2 / (2 * s ^ 2)))
+      (fun c => gaussianLatticeSum c s) := by
+  exact hasSumLocallyUniformly_of_forall_compact fun _ hK =>
+    hasSumUniformlyOn_gaussianLatticeSum s hs hK.isBounded
 
 /-- At width zero every term of the Gaussian lattice series is `1`, so the totalized sum is `0`. -/
 @[simp]
