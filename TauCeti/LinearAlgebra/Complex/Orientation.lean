@@ -326,8 +326,7 @@ theorem map_toRealLinearEquiv_complexOrientation (f : E ≃ₛₗ[starRingEnd �
     simp [s, Fintype.prod_prod_type, Fin.prod_univ_two, ← inv_pow]
   rw [b.complexOrientation_eq, Orientation.map_reindex, ← Basis.orientation_map, hbasis,
     Basis.orientation_unitsSMul, hs, ← (b.mapₛₗ f).complexOrientation_eq_reindex f.finrank_eqₛₗ]
-  rcases Nat.even_or_odd (finrank ℂ E) with h | h <;>
-    simp [h.neg_one_pow, Module.Ray.neg_units_smul, Orientation.reindex_neg]
+  exact Orientation.reindex_units_smul _ _ _
 
 /-- A conjugate-linear automorphism multiplies the canonical real orientation by `(-1) ^ n`, where
 `n` is the complex dimension. -/
