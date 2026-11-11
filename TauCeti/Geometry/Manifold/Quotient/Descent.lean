@@ -151,7 +151,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 variable (I M n G) in
 /-- The orbit projection `M → M ⧸ G` of a free, properly discontinuous action by `C^n` maps, as a
 `C^n` map. -/
-@[expose] def smoothQuotientMk : C^n⟮I, M; I, MulAction.orbitRel.Quotient G M⟯ :=
+def smoothQuotientMk : C^n⟮I, M; I, MulAction.orbitRel.Quotient G M⟯ :=
   ⟨Quotient.mk _, isLocalDiffeomorph_quotientMk.contMDiff⟩
 
 @[simp]
@@ -178,29 +178,33 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 /-- A `C^n` map constant on the orbits of a free, properly discontinuous action by `C^n` maps
 descends to a `C^n` map on the orbit space. -/
-@[expose] def descend (f : C^n⟮I, M; I', N⟯) (hf : ∀ (g : G) (x : M), f (g • x) = f x) :
+def descend (f : C^n⟮I, M; I', N⟯) (hf : ∀ (g : G) (x : M), f (g • x) = f x) :
     C^n⟮I, MulAction.orbitRel.Quotient G M; I', N⟯ :=
-  ⟨Quotient.lift f fun _ y ⟨g, hg⟩ ↦ hg ▸ hf g y,
-    (isLocalDiffeomorph_quotientMk.contMDiff_comp_iff Quotient.mk_surjective le_rfl).1
-      f.contMDiff⟩
+  ⟨MulAction.orbitRelQuotientLift f hf, (contMDiff_orbitRelQuotientLift_iff le_rfl).2 f.contMDiff⟩
+
+/-- The underlying function of `ContMDiffMap.descend` is the descent
+`TauCeti.MulAction.orbitRelQuotientLift` of the underlying function. -/
+theorem coe_descend (f : C^n⟮I, M; I', N⟯) (hf : ∀ (g : G) (x : M), f (g • x) = f x) :
+    ⇑(f.descend hf) = MulAction.orbitRelQuotientLift f hf :=
+  (rfl)
 
 @[simp]
 theorem descend_apply_mk (f : C^n⟮I, M; I', N⟯) (hf : ∀ (g : G) (x : M), f (g • x) = f x)
     (x : M) : f.descend hf (Quotient.mk (MulAction.orbitRel G M) x) = f x :=
-  (rfl)
+  MulAction.orbitRelQuotientLift_mk x
 
 @[simp]
 theorem descend_comp_smoothQuotientMk (f : C^n⟮I, M; I', N⟯)
     (hf : ∀ (g : G) (x : M), f (g • x) = f x) :
     (f.descend hf).comp (smoothQuotientMk I M n G) = f :=
-  (rfl)
+  ContMDiffMap.ext fun x ↦ by simp
 
 /-- The descent of `f` is the unique map on the orbit space whose pullback is `f`. -/
 theorem eq_descend_iff (f : C^n⟮I, M; I', N⟯) (hf : ∀ (g : G) (x : M), f (g • x) = f x)
     {u : C^n⟮I, MulAction.orbitRel.Quotient G M; I', N⟯} :
     u = f.descend hf ↔ u.comp (smoothQuotientMk I M n G) = f := by
-  refine ⟨fun h ↦ h ▸ rfl, fun h ↦ ContMDiffMap.ext fun y ↦ ?_⟩
+  refine ⟨fun h ↦ h ▸ descend_comp_smoothQuotientMk f hf, fun h ↦ ContMDiffMap.ext fun y ↦ ?_⟩
   induction y using Quotient.inductionOn with
-  | h x => exact DFunLike.congr_fun h x
+  | h x => simpa using DFunLike.congr_fun h x
 
 end ContMDiffMap

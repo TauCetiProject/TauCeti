@@ -144,12 +144,12 @@ def smoothQuotientEquivInvariants :
     C^n⟮I, MulAction.orbitRel.Quotient G M; 𝓘(𝕜, F), F⟯ ≃ₗ[𝕜]
       (smoothFunctionRep 𝕜 I M F n G).invariants where
   toFun u := ⟨u.comp (smoothQuotientMk I M n G),
-    mem_invariants_smoothFunctionRep_iff.2 fun g _ ↦ congrArg u (Quotient.sound ⟨g, rfl⟩)⟩
+    mem_invariants_smoothFunctionRep_iff.2 fun _ _ ↦ by simp⟩
   invFun f := (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯).descend (mem_invariants_smoothFunctionRep_iff.1 f.2)
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
   left_inv u := ((u.comp (smoothQuotientMk I M n G)).eq_descend_iff _).2 rfl |>.symm
-  right_inv _ := rfl
+  right_inv f := Subtype.ext (ContMDiffMap.descend_comp_smoothQuotientMk _ _)
 
 @[simp]
 theorem coe_smoothQuotientEquivInvariants_apply
