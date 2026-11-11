@@ -151,6 +151,7 @@ theorem ofNat_card_quotient_le_profiniteOrder (U : OpenNormalSubgroup G) :
     (fun V : OpenNormalSubgroup G ↦
       Supernatural.ofNat (⟨Nat.card (G ⧸ V.toSubgroup), Nat.card_pos⟩ : ℕ+)) U
 
+omit [SeparatelyContinuousMul G] in
 /-- A profinite group has supernatural order `⊥ = 1` exactly when it is trivial. -/
 @[simp]
 theorem profiniteOrder_eq_bot_iff [IsTopologicalGroup G] [TotallyDisconnectedSpace G] :
@@ -232,15 +233,38 @@ theorem _root_.Subgroup.profiniteOrder_eq_iSup_image (H : Subgroup G)
         Subgroup.relIndex, ← Subgroup.comap_subtype]
     exact hcard.symm
 
-/-- Primewise form of `Subgroup.profiniteOrder_eq_iSup_image`. -/
-theorem _root_.Subgroup.profiniteOrder_apply_eq_iSup_image (H : Subgroup G)
-    (hH : IsClosed (H : Set G)) (ℓ : Nat.Primes) :
+/-- Primewise form of `Subgroup.profiniteOrder_eq_iSup_image`; it holds for every subgroup, closed
+or not. -/
+theorem _root_.Subgroup.profiniteOrder_apply_eq_iSup_image (H : Subgroup G) (ℓ : Nat.Primes) :
     profiniteOrder H ℓ = ⨆ N : OpenNormalSubgroup G,
       (padicValNat ℓ (Nat.card (H.map (QuotientGroup.mk' N.toSubgroup))) : ℕ∞) := by
-  rw [H.profiniteOrder_eq_iSup_image hH, Supernatural.iSup_apply]
-  congr 1
-  funext N
-  exact Supernatural.ofNat_apply _ _
+  rw [profiniteOrder_apply]
+  apply le_antisymm
+  · refine iSup_le fun V ↦ ?_
+    obtain ⟨N, hNV⟩ := H.exists_openNormalSubgroup_comap_le V
+    refine le_trans ?_ (le_iSup (fun N : OpenNormalSubgroup G ↦
+      (padicValNat ℓ (Nat.card (H.map (QuotientGroup.mk' N.toSubgroup))) : ℕ∞)) N)
+    have hdvd : Nat.card (H ⧸ V.toSubgroup) ∣
+        Nat.card (H.map (QuotientGroup.mk' N.toSubgroup)) := by
+      rw [← V.toSubgroup.index_eq_card,
+        ← Subgroup.relIndex_ker H (QuotientGroup.mk' N.toSubgroup), QuotientGroup.ker_mk',
+        Subgroup.relIndex, ← Subgroup.comap_subtype]
+      exact Subgroup.index_dvd_of_le hNV
+    have : Fact (ℓ : ℕ).Prime := ⟨ℓ.prop⟩
+    simp only [Nat.padicValNat_def]
+    exact_mod_cast (multiplicity_dvd_iff_le (p := (ℓ : ℕ)) Nat.card_pos.ne').mp
+      ((pow_multiplicity_dvd _ _).trans hdvd)
+  · refine iSup_le fun N ↦ ?_
+    let V := OpenNormalSubgroup.comap N H.subtype continuous_subtype_val
+    refine le_iSup_of_le V ?_
+    have hV : V.toSubgroup = N.toSubgroup.comap H.subtype :=
+      OpenNormalSubgroup.toSubgroup_comap N H.subtype continuous_subtype_val
+    have hcard : Nat.card (H ⧸ V.toSubgroup) =
+        Nat.card (H.map (QuotientGroup.mk' N.toSubgroup)) := by
+      rw [← V.toSubgroup.index_eq_card, hV,
+        ← Subgroup.relIndex_ker H (QuotientGroup.mk' N.toSubgroup), QuotientGroup.ker_mk',
+        Subgroup.relIndex, ← Subgroup.comap_subtype]
+    rw [hcard]
 
 end ClosedSubgroup
 
