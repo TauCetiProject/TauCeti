@@ -19,7 +19,9 @@ import Mathlib.Topology.MetricSpace.ProperSpace
 Let `μ` be a measure finite on compact sets on a proper metric space, and write
 `m(ρ) = μ(s ∩ ball x₀ ρ)` for the measure of a set `s` in the balls about `x₀`. The function `m`
 is monotone in the radius (`TauCeti.monotone_measureReal_inter_ball`), and two concentric balls of
-the same measure agree up to a null set (`TauCeti.ball_ae_eq_ball_of_measure_eq`). Monotonicity
+the same measure agree up to a null set (`TauCeti.ball_ae_eq_ball_of_measure_eq`); more generally,
+the measure of their symmetric difference is at most that of any two sets with the same measures
+(`TauCeti.measure_ball_symmDiff_ball_le`). Monotonicity
 makes `m` differentiable at almost every radius. Where `m` has a right derivative at `r`, the
 measures `μ(s ∩ (ball x₀ (r + h) \ ball x₀ r)) / h` of `s` in thin shells tend to it as `h → 0⁺`
 (`TauCeti.tendsto_measure_inter_ball_sdiff_ball_div_of_hasDerivWithinAt`). These are the
@@ -36,6 +38,8 @@ once one of them has finite measure (`TauCeti.tendsto_measure_ball_nhdsGT_zero`)
 
 * `TauCeti.monotone_measureReal_inter_ball`: `ρ ↦ μ(s ∩ ball x₀ ρ)` is monotone.
 * `TauCeti.ball_ae_eq_ball_of_measure_eq`: concentric balls of equal measure agree a.e.
+* `TauCeti.measure_ball_symmDiff_ball_le`: concentric balls are no farther apart in measure than
+  any two sets with the same measures.
 * `TauCeti.tendsto_measure_inter_ball_sdiff_ball_div_of_hasDerivWithinAt`: the lower difference
   quotient of `m` is its right derivative, where that exists.
 * `MeasureTheory.Measure.measure_closedBall_le_of_frequently_le`: a closed-ball bound for radii
@@ -51,7 +55,7 @@ public section
 namespace TauCeti
 
 open MeasureTheory Metric Filter Set
-open scoped ENNReal Topology
+open scoped ENNReal Topology symmDiff
 
 variable {E : Type*} [PseudoMetricSpace E] [ProperSpace E] [MeasurableSpace E]
 
@@ -72,6 +76,19 @@ theorem ball_ae_eq_ball_of_measure_eq [OpensMeasurableSpace E] {μ : Measure E}
       measurableSet_ball.nullMeasurableSet measure_ball_lt_top.ne
   · exact (ae_eq_of_subset_of_measure_ge (ball_subset_ball hrr) h.le
       measurableSet_ball.nullMeasurableSet measure_ball_lt_top.ne).symm
+
+/-- For a measure finite on compact sets, the measure of the symmetric difference of two
+concentric open balls is at most that of any two sets with the same measures, since the smaller
+ball is contained in the larger. -/
+theorem measure_ball_symmDiff_ball_le [OpensMeasurableSpace E] {μ : Measure E}
+    [IsFiniteMeasureOnCompacts μ] {x₀ : E} {r r' : ℝ} {s t : Set E} (hs : μ (ball x₀ r) = μ s)
+    (ht : μ (ball x₀ r') = μ t) : μ (ball x₀ r ∆ ball x₀ r') ≤ μ (s ∆ t) := by
+  wlog hrr : r ≤ r' generalizing r r' s t
+  · rw [symmDiff_comm, symmDiff_comm s]
+    exact this ht hs (le_of_not_ge hrr)
+  rw [symmDiff_of_le (ball_subset_ball hrr), measure_sdiff (ball_subset_ball hrr)
+    measurableSet_ball.nullMeasurableSet measure_ball_lt_top.ne, hs, ht, symmDiff_comm]
+  exact le_measure_symmDiff
 
 /-- The difference quotients `μ(s ∩ (ball x₀ (r + h) \ ball x₀ r)) / h` of
 `m(ρ) = μ(s ∩ ball x₀ ρ)` tend, as `h → 0⁺`, to the right derivative of `m` at `r`, when it

@@ -138,21 +138,23 @@ theorem entry_succ_succ_le_entry (P : GTPattern n) {i j : ℕ} (hj : j < n) :
   · exact (P.interlacing' hij hj).2
   · rw [P.entry_eq_zero_of_le hij, P.entry_eq_zero_of_le (Nat.succ_le_succ hij)]
 
-/-- Rows decrease weakly, in adjacent form. -/
-theorem entry_succ_le_entry (P : GTPattern n) {i j : ℕ} (hij : i + 1 < j) (hj : j ≤ n) :
+/-- Rows decrease weakly, in adjacent form. Beyond the last row both sides vanish. -/
+theorem entry_succ_le_entry (P : GTPattern n) {i j : ℕ} (hij : i + 1 < j) :
     P (i + 1) j ≤ P i j := by
+  rcases Nat.lt_or_ge n j with hj | hj
+  · rw [P.entry_eq_zero_of_lt hj, P.entry_eq_zero_of_lt hj]
   obtain ⟨k, rfl⟩ : ∃ k, j = k + 1 := ⟨j - 1, by omega⟩
   exact (P.entry_succ_succ_le_entry (by omega)).trans
     (P.entry_le_entry_succ_row (by omega) (by omega))
 
-/-- Rows decrease weakly: `λᵢ,ⱼ ≥ λᵢ',ⱼ` for `i ≤ i' < j ≤ n`.  This is a consequence of the
+/-- Rows decrease weakly: `λᵢ,ⱼ ≥ λᵢ',ⱼ` for `i ≤ i' < j`.  This is a consequence of the
 interlacing inequalities, not a separate hypothesis on a pattern. -/
-theorem entry_anti (P : GTPattern n) {i j : ℕ} (hj : j ≤ n) :
+theorem entry_anti (P : GTPattern n) {i j : ℕ} :
     ∀ {i' : ℕ}, i ≤ i' → i' < j → P i' j ≤ P i j := by
   intro i' h
   induction i', h using Nat.le_induction with
   | base => exact fun _ => le_rfl
-  | succ k _ ih => exact fun hkj => (P.entry_succ_le_entry hkj hj).trans (ih (by omega))
+  | succ k _ ih => exact fun hkj => (P.entry_succ_le_entry hkj).trans (ih (by omega))
 
 /-- Entries increase weakly with the row index: `λᵢ,ⱼ ≤ λᵢ,ⱼ'` for `i < j ≤ j' ≤ n`. -/
 theorem entry_le_entry_of_le (P : GTPattern n) {i j : ℕ} (hij : i < j) :
@@ -201,7 +203,7 @@ theorem topRow_apply (P : GTPattern n) (i : Fin n) : P.topRow i = P i n := (rfl)
 the top row is one of them, so it is a dominant weight of `GL n`; `TauCeti.GTPattern.topWeight`
 packages it as one. -/
 theorem topRow_antitone (P : GTPattern n) : Antitone P.topRow :=
-  fun _ i' h => P.entry_anti le_rfl h i'.2
+  fun _ i' h => P.entry_anti h i'.2
 
 /-- The top row of a Gelfand-Tsetlin pattern, as a dominant weight of `GL n`. -/
 def topWeight (P : GTPattern n) : DominantWeight n := ⟨P.topRow, P.topRow_antitone⟩
