@@ -231,16 +231,16 @@ theorem heightIdeal_eq_span (hp : p.Prime) (n : ℕ) :
       ext; simp
     rw [F.heightIdeal_succ hp, ih, hI, Set.image_insert_eq, Ideal.span_insert, sup_comm]
 
-/-- The height ideals of a commutative formal group law are finitely generated. -/
-theorem heightIdeal_fg (hp : p.Prime) (n : ℕ) : (F.heightIdeal p n).FG :=
-  F.heightIdeal_eq_span hp n ▸ Submodule.fg_span ((Set.finite_Iio n).image _)
+omit [F.IsComm] in
+/-- The height ideals of a formal group law are finitely generated. -/
+theorem heightIdeal_fg (n : ℕ) : (F.heightIdeal p n).FG :=
+  Submodule.fg_span ((Set.finite_Iio (p ^ n)).image _)
 
 end FormalGroup
 
 namespace FormalGroup
 
-variable {K : Type*} [Field K] (F : FormalGroup K) [F.IsComm] {p : ℕ} [hp : Fact p.Prime]
-  [CharP K p]
+variable {K : Type*} [Field K] (F : FormalGroup K) [F.IsComm] {p : ℕ} [CharP K p]
 
 /-- Over a field of characteristic `p`, the height ideal `I_n(F)` is zero exactly when `F` has
 height at least `n`. -/
@@ -248,9 +248,11 @@ theorem heightIdeal_eq_bot_iff_le_height {n : ℕ} : F.heightIdeal p n = ⊥ ↔
   rw [heightIdeal_eq_bot_iff]
   by_cases h0 : F.nsmulSeries p = 0
   · simp [h0, F.height_eq_top_iff.mpr h0]
-  obtain ⟨h, -, hh⟩ := F.exists_order_nsmulSeries_eq_pow hp.out (CharP.cast_eq_zero K p) h0
-  rw [hh, F.height_eq_natCast_iff.mpr hh, Nat.cast_le, Nat.cast_le,
-    Nat.pow_le_pow_iff_right hp.out.one_lt]
+  obtain hp | rfl := CharP.char_is_prime_or_zero K p
+  · obtain ⟨h, -, hh⟩ := F.exists_order_nsmulSeries_eq_pow hp (CharP.cast_eq_zero K p) h0
+    rw [hh, F.height_eq_natCast_iff.mpr hh, Nat.cast_le, Nat.cast_le,
+      Nat.pow_le_pow_iff_right hp.one_lt]
+  · exact absurd (by simp) h0
 
 /-- Over a field of characteristic `p`, the height ideal `I_n(F)` is the unit ideal exactly when `F`
 has height less than `n`. -/
