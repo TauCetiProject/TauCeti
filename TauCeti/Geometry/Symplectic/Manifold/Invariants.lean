@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.GroupAction.TangentRepresentation
-public import TauCeti.Geometry.Manifold.Riemannian.Isometry.FixedPoints
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
 public import TauCeti.Geometry.Symplectic.Invariants
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 
@@ -19,9 +19,10 @@ representation on `T_x M`, `g ↦ d(g • ·)_x`, acts by linear symplectic maps
 (`TauCeti.SmoothTwoForm.IsNondegenerate.symplecticFormAt_tangentRepresentation`). Its invariant
 vectors form a symplectic subspace of `T_x M` in two situations:
 
-* `G` preserves a Riemannian metric on `M`. No topology on `G` is needed: the tangent
-  representation is then orthogonal (`TauCeti.inner_tangentRepresentation_apply`), so it commutes
-  with the polar normalization of `σ_x`
+* The differentials at `x` of the stabilizer preserve a Riemannian metric on `M`, for instance
+  because `G` acts by isometries. No topology on `G` is needed: the tangent representation is then
+  orthogonal (`TauCeti.inner_tangentRepresentation_apply`), so it commutes with the polar
+  normalization of `σ_x`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.isSymplectic_invariants_tangentRepresentation_of_inner`).
 * `G` is a compact group, itself a manifold, acting by a smooth map `G × M → M` on a Hausdorff
   manifold. The tangent representation is then a continuous representation of a compact group
@@ -43,8 +44,8 @@ closed, so is its restriction, and `M^G` is a symplectic submanifold.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.symplecticFormAt_tangentRepresentation`: the stabilizer
   of `x` acts on `T_x M` by linear symplectic maps of `σ_x`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isSymplectic_invariants_tangentRepresentation_of_inner`:
-  for a group acting by isometries, the tangent vectors at `x` fixed by the stabilizer of `x` form
-  a symplectic subspace.
+  when the stabilizer of `x` acts by differentials at `x` preserving a Riemannian metric, for
+  instance for a group of isometries, its invariant tangent vectors form a symplectic subspace.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isSymplectic_invariants_tangentRepresentation`: the same
   for a compact group acting smoothly.
 
@@ -91,14 +92,14 @@ theorem IsNondegenerate.symplecticFormAt_tangentRepresentation (hσ : σ.IsNonde
 variable [FiniteDimensional ℝ E] [RiemannianBundle (fun y : M ↦ TangentSpace I y)]
 
 /-- **Invariant tangent vectors of a group of symplectic isometries form a symplectic subspace.**
-Let a group act on a Riemannian manifold `M` by smooth maps preserving the metric, and let the
-stabilizer of `x` act by maps preserving a nondegenerate two-form `σ`. Then the tangent vectors at
-`x` fixed by the stabilizer form a symplectic subspace of `(T_x M, σ_x)`. No topology on the group
-is needed. -/
+Let a group act on a Riemannian manifold `M` by smooth maps, and let the stabilizer of `x` act by
+maps preserving a nondegenerate two-form `σ` whose differentials at `x` preserve the metric, for
+instance because the group acts by isometries. Then the tangent vectors at `x` fixed by the
+stabilizer form a symplectic subspace of `(T_x M, σ_x)`. No topology on the group is needed. -/
 theorem IsNondegenerate.isSymplectic_invariants_tangentRepresentation_of_inner
     (hσ : σ.IsNondegenerate)
-    (hK : ∀ (g : G) (y : M) (u w : TangentSpace I y),
-      inner ℝ (mfderiv I I (g • ·) y u) (mfderiv I I (g • ·) y w) = inner ℝ u w)
+    (hK : ∀ g ∈ stabilizer G x, ∀ u w : TangentSpace I x,
+      inner ℝ (mfderiv I I (g • ·) x u) (mfderiv I I (g • ·) x w) = inner ℝ u w)
     (hσG : ∀ g ∈ stabilizer G x, SmoothForm.mpullback (fun y : M ↦ g • y)
       (contMDiff_const_smul g) σ = σ)
     (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x) :

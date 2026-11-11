@@ -92,8 +92,8 @@ theorem isClosed_fixedBy {M X : Type*} [Monoid M] [MulAction M X] [TopologicalSp
   isClosed_eq (continuous_const_smul g) continuous_id
 
 /-- The common fixed set of a monoid acting continuously on a Hausdorff space is closed. -/
-theorem _root_.MulAction.isClosed_fixedPoints {M X : Type*} [Monoid M] [MulAction M X]
-    [TopologicalSpace X] [T2Space X] [ContinuousConstSMul M X] :
+theorem isClosed_fixedPoints_of_continuousConstSMul {M X : Type*} [Monoid M]
+    [MulAction M X] [TopologicalSpace X] [T2Space X] [ContinuousConstSMul M X] :
     IsClosed (MulAction.fixedPoints M X) := by
   rw [MulAction.fixed_eq_iInter_fixedBy]
   exact isClosed_iInter isClosed_fixedBy

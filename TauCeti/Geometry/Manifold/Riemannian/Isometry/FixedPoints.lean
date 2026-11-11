@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.GroupAction.TangentRepresentation
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Exponential
-public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Group
+public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
 
 /-!
 # Fixed points of groups of Riemannian isometries
@@ -29,7 +29,7 @@ and two vectors of a normal ball with the same exponential image are equal. No c
 the metric and no compactness of `M` or `K` is needed.
 
 * The fixed set is closed, since each group element acts continuously
-  (`MulAction.isClosed_fixedPoints`).
+  (`TauCeti.isClosed_fixedPoints_of_continuousConstSMul`).
 * At a point `x`, the tangent representation of the stabilizer of `x` acts on `T_x M` by linear
   isometries (`TauCeti.inner_tangentRepresentation_apply`); at a fixed point its invariant vectors
   are `V^K` (`TauCeti.mem_invariants_tangentRepresentation_iff`).
@@ -77,42 +77,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-
-/-- The norms of a vector in the tangent spaces at two equal points agree. Both tangent spaces
-are the model space, so the vectors are compared there. -/
-private theorem norm_congr {q p : M} (h : q = p) {w : TangentSpace I q} {v : TangentSpace I p}
-    (hw : (w : E) = v) : ‖w‖ = ‖v‖ := by
-  subst h hw
-  rfl
-
-/-- The inner products of two vectors in the tangent spaces at two equal points agree. -/
-private theorem inner_congr {q p : M} (h : q = p) {u w : TangentSpace I q}
-    {u' w' : TangentSpace I p} (hu : (u : E) = u') (hw : (w : E) = w') :
-    inner ℝ u w = inner ℝ u' w' := by
-  subst h hu hw
-  rfl
-
-/-- **The tangent representation of a group of isometries is orthogonal.** If a group acts by
-maps preserving the metric, the tangent representation of the stabilizer of a point `x` acts on
-`T_x M` by linear isometries. -/
-theorem inner_tangentRepresentation_apply {K : Type*} [Group K] [MulAction K M]
-    (hK : ∀ (k : K) (x : M) (u w : TangentSpace I x),
-      inner ℝ (mfderiv I I (k • ·) x u) (mfderiv I I (k • ·) x w) = inner ℝ u w)
-    {x : M} (hd : ∀ g ∈ stabilizer K x, MDifferentiableAt I I (fun y : M ↦ g • y) x)
-    (g : stabilizer K x) (u w : TangentSpace I x) :
-    inner ℝ (tangentRepresentation hd g u) (tangentRepresentation hd g w) = inner ℝ u w := by
-  rw [tangentRepresentation_apply, ← hK g x u w]
-  exact inner_congr (I := I) g.2.symm rfl rfl
-
-/-- The differential of an isometry fixing `p` maps every ball around the origin of `T_p M` into
-itself. -/
-theorem RiemannianIsometry.mfderiv_mem_ball {Φ : Isom I M} {p : M} (hp : Φ p = p) {r : ℝ}
-    {w : TangentSpace I p} (hw : w ∈ Metric.ball (0 : TangentSpace I p) r) :
-    mfderiv I I Φ p w ∈ (Metric.ball 0 r : Set (TangentSpace I p)) := by
-  refine (mem_ball_zero_iff (E := TangentSpace I p)).2 ?_
-  have key := norm_congr (I := I) hp (w := mfderiv I I Φ p w) (v := mfderiv I I Φ p w) rfl
-  rw [Φ.norm_mfderiv] at key
-  exact key ▸ mem_ball_zero_iff.1 hw
 
 variable [FiniteDimensional ℝ E] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
@@ -172,20 +136,6 @@ variable {K : Type*} [Group K] [MulAction K M] [ContMDiffConstSMul I ∞ K M] {p
   (hK : ∀ (k : K) (x : M) (u w : TangentSpace I x),
     inner ℝ (mfderiv I I (k • ·) x u) (mfderiv I I (k • ·) x w) = inner ℝ u w)
 
-/-- An element of a group acting by smooth maps that preserve the metric acts by a Riemannian
-isometry. -/
-private def smulIsom (k : K) : Isom I M where
-  toEquiv := MulAction.toPerm k
-  contMDiff_toFun := ContMDiffConstSMul.contMDiff_const_smul k
-  contMDiff_invFun := ContMDiffConstSMul.contMDiff_const_smul k⁻¹
-  inner_mfderiv' := hK k
-
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] [I.Boundaryless]
-  [T2Space M] in
-private theorem coe_smulIsom (k : K) : ⇑(smulIsom hK k) = (k • ·) :=
-  (rfl)
-
 omit [FiniteDimensional ℝ E] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] [I.Boundaryless]
   [T2Space M] in
@@ -195,8 +145,8 @@ around the origin of `T_p M` into itself. -/
 private theorem mfderiv_smul_mem_ball (hp : p ∈ fixedPoints K M) (k : K) {r : ℝ}
     {w : TangentSpace I p} (hw : w ∈ Metric.ball (0 : TangentSpace I p) r) :
     mfderiv I I (k • ·) p w ∈ (Metric.ball 0 r : Set (TangentSpace I p)) := by
-  have h := (smulIsom hK k).mfderiv_mem_ball (hp k) hw
-  rwa [coe_smulIsom] at h
+  have h := (RiemannianIsometry.constSMul hK k).mfderiv_mem_ball (by simpa using hp k) hw
+  rwa [RiemannianIsometry.coe_constSMul] at h
 
 include hK
 
@@ -206,9 +156,9 @@ group element stays in the fixed set at every time. -/
 theorem maximalGeodesic_mem_fixedPoints (hp : p ∈ fixedPoints K M)
     (hv : ∀ k : K, mfderiv I I (k • ·) p v = v) (t : ℝ) :
     maximalGeodesic I M p v t ∈ fixedPoints K M := fun k ↦ by
-  have h := (smulIsom hK k).apply_maximalGeodesic_of_mfderiv_eq (hp k)
-    (by rw [coe_smulIsom]; exact hv k) t
-  rwa [coe_smulIsom] at h
+  have h := (RiemannianIsometry.constSMul hK k).apply_maximalGeodesic_of_mfderiv_eq
+    (by simpa using hp k) (by rw [RiemannianIsometry.coe_constSMul]; exact hv k) t
+  rwa [RiemannianIsometry.coe_constSMul] at h
 
 /-- For a group acting by isometries, the exponential map at a fixed point `p` sends tangent
 vectors fixed by the differential of every group element into the fixed set. -/
@@ -231,9 +181,9 @@ theorem riemannianExp_mem_fixedPoints_iff (hU : IsNormalDomain I M p U)
     (hv : v ∈ U) :
     riemannianExp I M p v ∈ fixedPoints K M ↔ ∀ k : K, mfderiv I I (k • ·) p v = v := by
   refine ⟨fun h k ↦ ?_, riemannianExp_mem_fixedPoints hK hp⟩
-  have hk := (smulIsom hK k).apply_riemannianExp_eq_self_iff hU (hp k) hv
-    (by rw [coe_smulIsom]; exact hUK k v hv)
-  rw [coe_smulIsom] at hk
+  have hk := (RiemannianIsometry.constSMul hK k).apply_riemannianExp_eq_self_iff hU
+    (by simpa using hp k) hv (by rw [RiemannianIsometry.coe_constSMul]; exact hUK k v hv)
+  rw [RiemannianIsometry.coe_constSMul] at hk
   exact hk.1 (h k)
 
 /-- **The fixed set is the exponential image of the fixed tangent vectors.** For a group acting
