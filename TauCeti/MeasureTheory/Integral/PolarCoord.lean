@@ -73,6 +73,26 @@ theorem circleMap_mem_halfAnnulus (z₀ : ℂ) {a b r θ : ℝ} (ha : 0 ≤ a) (
   · simpa [circleMap, Complex.exp_mul_I, ← Complex.ofReal_cos, ← Complex.ofReal_sin] using
       mul_nonneg hr0 (Real.sin_nonneg_of_nonneg_of_le_pi hθ.1 hθ.2)
 
+/-- The circle of radius `r` about `z₀` starts at `z₀ + r`, the right end of the diameter
+bounding the upper half-disc. -/
+theorem circleMap_zero_angle (z₀ : ℂ) (r : ℝ) : circleMap z₀ r 0 = z₀ + r := by
+  simp [circleMap]
+
+/-- The circle of radius `r` about `z₀` reaches `z₀ - r`, the left end of the diameter bounding
+the upper half-disc, at angle `π`. -/
+theorem circleMap_pi (z₀ : ℂ) (r : ℝ) : circleMap z₀ r π = z₀ - r := by
+  simp [circleMap, Complex.exp_pi_mul_I, ← sub_eq_add_neg]
+
+/-- A closed annular sector, the points `z` with `a ≤ ‖z - z₀‖ ≤ b` whose argument about `z₀`
+lies in `[c, d]`, is measurable. -/
+theorem measurableSet_annularSector (z₀ : ℂ) (a b c d : ℝ) :
+    MeasurableSet {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b ∧ arg (z - z₀) ∈ Icc c d} := by
+  have hn : Measurable (fun z : ℂ ↦ ‖z - z₀‖) := by fun_prop
+  have harg : Measurable (fun z : ℂ ↦ arg (z - z₀)) :=
+    Complex.measurable_arg.comp (measurable_id.sub_const z₀)
+  exact (measurableSet_le measurable_const hn).inter
+    ((measurableSet_le hn measurable_const).inter (harg measurableSet_Icc))
+
 /-- A constant-radius slice of the translated polar map is the circle parametrization. -/
 theorem add_polarCoord_symm_eq_circleMap (z₀ : ℂ) (p : ℝ × ℝ) :
     z₀ + Complex.polarCoord.symm p = circleMap z₀ p.1 p.2 := by
@@ -174,12 +194,7 @@ theorem integral_comp_polarCoord_symm_Icc_Icc (f : ℂ → W) (z₀ : ℂ) {a b 
     (∫ p in Icc (a, c) (b, d), p.1 • f (z₀ + Complex.polarCoord.symm p)) =
       ∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b ∧ arg (z - z₀) ∈ Icc c d}, f z := by
   let S : Set ℂ := {z | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b ∧ arg (z - z₀) ∈ Icc c d}
-  have hS : MeasurableSet S := by
-    have hn : Measurable (fun z : ℂ ↦ ‖z - z₀‖) := by fun_prop
-    have harg : Measurable (fun z : ℂ ↦ arg (z - z₀)) :=
-      Complex.measurable_arg.comp (measurable_id.sub_const z₀)
-    exact (measurableSet_le measurable_const hn).inter
-      ((measurableSet_le hn measurable_const).inter (harg measurableSet_Icc))
+  have hS : MeasurableSet S := TauCeti.measurableSet_annularSector z₀ a b c d
   rw [← integral_indicator hS, ← integral_add_left_eq_self (S.indicator f) z₀,
     ← Complex.integral_comp_polarCoord_symm]
   have hEq : EqOn (fun p : ℝ × ℝ ↦ p.1 • S.indicator f (z₀ + Complex.polarCoord.symm p))

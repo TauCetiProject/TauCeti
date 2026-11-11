@@ -117,10 +117,7 @@ theorem abs_integral_apply_sub_apply_le (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) 
       ((memLp_two_iff_integrable_sq_norm hγ'.aestronglyMeasurable).1 hγ')
   -- For the skew form `ω`, the midpoint correction is `ω(γ a, γ b)`.
   have hmid : B (midpoint ℝ (γ a) (γ b)) (γ b - γ a) = ω (γ a) (γ b) := by
-    have hBω (x y : V) : B x y = ω x y := by simp [B]
-    rw [midpoint_eq_smul_add, invOf_eq_inv, map_smul, map_add, smul_apply,
-      add_apply, map_sub, map_sub, hBω, hBω, hBω, hBω, self_eq_zero,
-      self_eq_zero, smul_eq_mul]
+    simp [B, midpoint_eq_smul_add, map_sub, ω.self_eq_zero]
     linarith [ω.neg_eq (γ a) (γ b)]
   have h := B.norm_intervalIntegral_apply_apply_sub_apply_midpoint_le hab hγ hγ'i
   rw [hmid, Real.norm_eq_abs] at h
@@ -207,10 +204,7 @@ theorem abs_integral_fderiv_apply_halfAnnulus_le {L : Submodule ℝ V} (hL : ω.
     have h := abs_integral_apply_sub_apply_le hg hπ
       (fun θ hθ ↦ ((hcd θ hθ).differentiableAt two_ne_zero).hasDerivAt) hLp
     have hend : ω (u (circleMap z₀ r 0)) (u (circleMap z₀ r π)) = 0 := by
-      have h0 : circleMap z₀ r 0 = z₀ + r := by simp [circleMap]
-      have hπ' : circleMap z₀ r π = z₀ - r := by
-        simp [circleMap, Complex.exp_pi_mul_I, ← sub_eq_add_neg]
-      rw [h0, hπ']
+      rw [circleMap_zero_angle, circleMap_pi]
       exact (ω.isIsotropic_iff.mp hL) _ (huL r hr).1 _ (huL r hr).2
     rwa [hend, sub_zero, sub_zero] at h
   rw [ω.integral_fderiv_apply_halfAnnulus hL z₀ ha hab hu huL, abs_mul,

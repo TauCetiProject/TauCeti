@@ -302,7 +302,7 @@ private theorem apply_fderiv_exp_mul_I_eq_zero_of_isIsotropic [FiniteDimensional
     (hu : DifferentiableAt ℝ u (circleMap z₀ r θ)) :
     ω (u (circleMap z₀ r θ)) (fderiv ℝ u (circleMap z₀ r θ) (exp (θ * I))) = 0 := by
   let φ : V →L[ℝ] ℝ := LinearMap.toContinuousLinearMap (ω.toBilinForm (u (circleMap z₀ r θ)))
-  have hφ (v : V) : φ v = ω (u (circleMap z₀ r θ)) v := rfl
+  have hφ (v : V) : φ v = ω (u (circleMap z₀ r θ)) v := by simp [φ]
   have hγ : HasDerivAt (fun s : ℝ ↦ circleMap z₀ s θ) (exp (θ * I)) r := by
     have h := ((hasDerivAt_id r).ofReal_comp.mul_const (exp (θ * I))).const_add z₀
     simpa [circleMap] using h
@@ -360,11 +360,10 @@ theorem integral_fderiv_apply_halfAnnulus [FiniteDimensional ℝ V]
   have hπ : (0 : ℝ) ≤ π := Real.pi_pos.le
   have hright : ∫ r in a..b, B (u (circleMap z₀ r 0))
       (fderiv ℝ u (circleMap z₀ r 0) (exp ((0 : ℝ) * I))) = 0 :=
-    hedge 0 ⟨le_rfl, hπ⟩ fun s hs ↦ by simpa [circleMap] using (huL s hs).1
+    hedge 0 ⟨le_rfl, hπ⟩ fun s hs ↦ by simpa [circleMap_zero_angle] using (huL s hs).1
   have hleft : ∫ r in a..b, B (u (circleMap z₀ r π))
       (fderiv ℝ u (circleMap z₀ r π) (exp (π * I))) = 0 :=
-    hedge π ⟨hπ, le_rfl⟩ fun s hs ↦ by
-      simpa [circleMap, Complex.exp_pi_mul_I, ← sub_eq_add_neg] using (huL s hs).2
+    hedge π ⟨hπ, le_rfl⟩ fun s hs ↦ by simpa [circleMap_pi] using (huL s hs).2
   have hgreen := B.integral_bilinear_fderiv_sub_annularSector z₀ ha hab
     (by linarith [Real.pi_pos]) hπ le_rfl hu'
   have hset : {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b ∧ arg (z - z₀) ∈ Icc 0 π} =

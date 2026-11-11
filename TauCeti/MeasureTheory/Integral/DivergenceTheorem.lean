@@ -147,13 +147,7 @@ theorem _root_.ContinuousLinearMap.integral_bilinear_fderiv_sub_annularSector
         ∫ r in a..b, B (u (circleMap z₀ r c)) (fderiv ℝ u (circleMap z₀ r c) (exp (c * I)))) := by
   have h := integral_extDeriv_annularSector z₀ ha hab hc hcd hd
     (fun r hr θ hθ ↦ contDiffAt_bilinearPullbackOneForm B (hu r hr θ hθ))
-  have hmeas : MeasurableSet
-      {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b ∧ arg (z - z₀) ∈ Icc c d} := by
-    have hn : Measurable (fun z : ℂ ↦ ‖z - z₀‖) := by fun_prop
-    have harg : Measurable (fun z : ℂ ↦ arg (z - z₀)) :=
-      Complex.measurable_arg.comp (measurable_id.sub_const z₀)
-    exact (measurableSet_le measurable_const hn).inter
-      ((measurableSet_le hn measurable_const).inter (harg measurableSet_Icc))
+  have hmeas := measurableSet_annularSector z₀ a b c d
   -- Every point of the sector is `circleMap z₀ ‖z - z₀‖ (arg (z - z₀))`.
   have hsector (z : ℂ)
       (hz : z ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b ∧ arg (z - z₀) ∈ Icc c d}) :
