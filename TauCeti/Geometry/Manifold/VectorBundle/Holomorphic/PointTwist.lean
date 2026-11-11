@@ -355,12 +355,12 @@ theorem pointTwistDiv_apply_of_ne {x z : X} (h : z ≠ x) (w : F) :
   classical
   rw [pointTwistDiv_apply, decide_eq_false h, pointTwistFactor_self, inv_one, one_smul]
 
-theorem pointTwistDiv_pointTwistMul {x z : X} (h : z ≠ x) (v : E z) :
+@[simp] theorem pointTwistDiv_pointTwistMul {x z : X} (h : z ≠ x) (v : E z) :
     pointTwistDiv F E x z (pointTwistMul F E x z v) = v := by
   rw [pointTwistDiv_apply_of_ne h, pointTwistMul_apply_of_ne h]
   exact (trivializationAt F E z).symm_apply_apply_mk (mem_baseSet_trivializationAt F E z) v
 
-theorem pointTwistMul_pointTwistDiv {x z : X} (h : z ≠ x) (w : F) :
+@[simp] theorem pointTwistMul_pointTwistDiv {x z : X} (h : z ≠ x) (w : F) :
     pointTwistMul F E x z (pointTwistDiv F E x z w) = w := by
   rw [pointTwistDiv_apply_of_ne h, pointTwistMul_apply_of_ne h]
   exact congrArg Prod.snd
@@ -556,7 +556,7 @@ variable (F) in
 omit [IsManifold 𝓘(ℂ) n X] [ContMDiffVectorBundle n F E 𝓘(ℂ)] in
 /-- Every section of the point twist is recovered by `pointTwistOfPole` from its reading as a
 section of `E` and its leading coefficient. -/
-theorem pointTwistOfPole_pointTwistDiv_pointTwistPoleMul {x : X}
+@[simp] theorem pointTwistOfPole_pointTwistDiv_pointTwistPoleMul {x : X}
     (τ : ∀ z, (pointTwistCore F E x).Fiber z) :
     pointTwistOfPole F x (fun z ↦ pointTwistDiv F E x z (τ z))
       (fun z ↦ pointTwistPoleMul F E x z (τ z)) = τ := by
@@ -571,7 +571,9 @@ theorem pointTwistOfPole_pointTwistDiv_pointTwistPoleMul {x : X}
     rw [pointTwistOfPole_self]
     exact key (τ z)
   · rw [pointTwistOfPole_of_ne F h]
-    exact pointTwistMul_pointTwistDiv h (show F from τ z)
+    -- Without `F`, unification takes the model fibre to be the type of `τ z`, which is the
+    -- point-twist fibre `(pointTwistCore F E x).Fiber z` rather than `F` itself.
+    exact pointTwistMul_pointTwistDiv (F := F) h (τ z)
 
 omit [IsManifold 𝓘(ℂ) n X] [ContMDiffVectorBundle n F E 𝓘(ℂ)] in
 theorem pointTwistDiv_pointTwistOfPole {x z : X} (h : z ≠ x) (σ ρ : ∀ z, E z) :
@@ -580,7 +582,7 @@ theorem pointTwistDiv_pointTwistOfPole {x z : X} (h : z ≠ x) (σ ρ : ∀ z, E
   exact pointTwistDiv_pointTwistMul h (σ z)
 
 omit [IsManifold 𝓘(ℂ) n X] [ContMDiffVectorBundle n F E 𝓘(ℂ)] in
-theorem pointTwistPoleMul_pointTwistOfPole {x : X} {σ ρ : ∀ z, E z} {z : X}
+@[simp] theorem pointTwistPoleMul_pointTwistOfPole {x : X} {σ ρ : ∀ z, E z} {z : X}
     (hz : z = x ∨ ρ z = pointTwistCoord x z • σ z) :
     pointTwistPoleMul F E x z (pointTwistOfPole F x σ ρ z) = ρ z := by
   classical
