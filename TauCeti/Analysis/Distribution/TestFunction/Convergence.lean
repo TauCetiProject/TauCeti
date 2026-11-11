@@ -101,7 +101,7 @@ theorem continuous_of_contDiff_uncurry {P : Type*} [NormedAddCommGroup P] [Norme
     (hφK : ∀ p, tsupport (φ p) ⊆ K) (hφ : ContDiff ℝ n fun q : P × E ↦ φ q.1 q.2) :
     Continuous φ := by
   refine continuous_iff_continuousAt.2 fun p₀ ↦
-    tendsto_of_tendstoUniformly_iteratedFDeriv hK hKΩ hφK (hφK p₀) fun k hk ↦ ?_
+    tendsto_of_tendstoUniformly_iteratedFDeriv hK hKΩ hφK fun k hk ↦ ?_
   have hk' : (k : WithTop ℕ∞) ≤ n := by exact_mod_cast hk
   -- The `k`-th derivative in the point variable is the `k`-th derivative on `P × E` restricted
   -- to the directions of `E`, hence jointly continuous in `(p, x)`.
