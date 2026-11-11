@@ -11,9 +11,9 @@ Roadmap: <CanonicalAreaName or none>
 Quality pass. Before you ask for review, run the checks at the end of this template over every
 declaration the PR adds or changes, then replace each `…` below with `changed`, `checked`,
 `declined` or `n/a`, a dash, and a short note: for instance, for Q3, `changed — foo: [NeZero n]
-derived from hn : 1 < n, hn kept (false for n = 1)`, or for Q2, `checked — no change (searched
-TauCeti/ and the open PRs for the defining formula of foo)`. A line with a finding you leave
-unfixed in this PR begins `declined` and gives the reason, so review sees it. A PR that changes
+derived from hn : 1 < n, hn kept (false for n = 1)`, or for Q2, `checked — no change (looked for
+the defining formula of foo)`. A line with a finding you have not fixed begins `declined` and
+gives the reason, so review sees it. A PR that changes
 no Lean declaration may answer `n/a` throughout. When later commits add or change declarations,
 for instance to answer review findings, run the checks again over those and update the lines. The
 `quality-pass` review angle reads this block. Agents: `gh pr create --body` does not apply this
@@ -25,30 +25,20 @@ Quality pass:
 - Q3 Hypotheses: …
 - Q4 Section variables: …
 - Q5 Proofs of at most 50 lines: …
-- Q6 Elaboration speed: …
-- Q7 API and simp lemmas: …
-- Q8 Tidy what the PR adds or changes: …
 
 <!--
-Beyond the checks, improve anything you can in what the PR adds or changes. Work a check suggests
-on code already on `main`, such as generalising an existing declaration, is a separate PR. In Q3,
-assume each hypothesis removable until shown otherwise.
+The checks cover what this PR adds or changes, and nothing else. In Q3, assume each hypothesis
+removable until shown otherwise.
 
-Q1. Search Mathlib for each new declaration, or a more general one, by name and by shape: grep the
-Mathlib source for the conclusion's constants and for the name a Mathlib author would give it. If
-it exists, use it. A renamed Mathlib lemma or a
-one-line wrapper is a duplicate; an `instance` built from a Mathlib theorem is not.
+Q1. Mathlib must not already have any declaration the PR adds, or a more general one, under any
+name. If it does, use Mathlib's. A renamed Mathlib lemma or a one-line wrapper is a duplicate; an
+`instance` built from a Mathlib theorem is not.
 
-Q2. Search `TauCeti/` for the same object or lemma by its defining formula, not only its name, and
-for blocks copied from sibling files. Do the same for every `private` declaration the PR adds:
-grep Mathlib and `TauCeti/` for its conclusion's constants; a private helper that restates an
-existing lemma is a duplicate, so delete it and call
-the lemma. Reuse what exists; if it first needs generalising, do that
-in its own PR and build on it once merged. Then search the open PRs
-(`gh pr list --repo TauCetiProject/TauCeti --search "<term> in:title,body"`, then `gh pr diff` on
-candidates). If one adds the same thing, do not add a second copy: build on it once it merges, or
-if yours is better, say so on both PRs, each linking the other. The note says what you searched,
-on main and in the open PRs.
+Q2. Tau Ceti must not already have the same object or lemma, on main or in an open PR: compare by
+defining formula, not only by name, and look for blocks copied from sibling files. This includes
+every `private` declaration the PR adds: a private helper that restates an existing Mathlib or
+Tau Ceti lemma is a duplicate, so delete it and call the lemma. Reuse what exists, and do not add
+a second copy of something an open PR already adds. The note says what you looked for.
 
 Q3. Take each theorem the PR adds or changes, and each of its hypotheses and instance arguments,
 including those from `variable` lines (`#check @foo` shows them all). Do not delete
@@ -83,27 +73,4 @@ public, documented lemma where it belongs, a proof-specific one a `private` lemm
 be split stays, with comments on its structure and the reason in the note. Move proof obligations
 out of long `def` and `instance` bodies into lemmas, and turn a block repeated across proofs into
 one lemma.
-
-Q6. Time the PR's declarations (time the file, or set `profiler` in a scratch file). Fix anything
-over about a second at its cause, often a broad `simp`, `decide`, instance search or unfolding,
-without changing the statement or raising `maxHeartbeats`. In a `module` file, `#check @f.eq_1`
-from a non-module file should return at once for each new definition. The note names the slowest
-declaration and its time.
-
-Q7. Inline a new definition used once with no API, unless the roadmap names it. For every other
-new definition, name the lemma that says what it is (`_def`, `_iff`, `_apply`, or the equation its
-proofs use). Only such lemmas should unfold it, so a proof that unfolds it by hand shows one is
-missing. Add the `ext` and `@[simp]` lemmas callers need. Try each new `@[simp]` lemma by running
-`simp` on a goal it should help with: the result should be simpler, with no `cast` and nothing
-stuck, and `simp` should discharge the lemma's side conditions. The note names each definition's
-lemma.
-
-Q8. Docstrings are accurate, state every hypothesis, do not overclaim, and credit the mathematical
-source where there is one. Module docstrings list the file's main results, still match it, and
-name no roadmap targets or layers (the roadmap is credited only on the roadmap line). Each added
-import is needed, and `public` only if a statement uses it. No unused `open`, `classical` or
-`noncomputable`. No commented-out code, `by exact`, single-use `have` that inlines cleanly, or
-non-terminal `simp` without `only`; each `show` or `change` has a comment saying why. Names follow
-Mathlib's conventions, and a general helper is public in the file where it belongs. Leave the rest
-of an existing file alone.
 -->
