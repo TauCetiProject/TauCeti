@@ -60,7 +60,7 @@ unknot.
   their difference is a boundary, and `TauCeti.GridDiagram.fullyBlockedHomology_mk_eq_zero_iff`:
   a class vanishes exactly when a representing cycle is a boundary.
 * `TauCeti.GridDiagram.finrank_fullyBlockedHomology_add_two_mul_finrank_range`: rank-nullity for
-  any fully blocked differential that squares to zero.
+  the fully blocked differential, which squares to zero.
 * `TauCeti.GridDiagram.natCard_fullyBlockedHomology_of_le_two` and
   `TauCeti.GridDiagram.finrank_fullyBlockedHomology_of_le_two`: the small-grid cardinality
   `2 ^ n!` and dimension `n!`.
@@ -183,17 +183,16 @@ theorem fullyBlockedHomologyEquivLinearMapHomology_symm_mk
 /-- The coefficient ring `ZMod 2` is a field, as needed for the dimension formula below. -/
 local instance : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
 
-/-- Rank-nullity for fully blocked grid homology: when the differential squares to zero, the
-homology dimension plus twice the differential rank is the number of grid states. -/
-theorem finrank_fullyBlockedHomology_add_two_mul_finrank_range
-    (hsq : G.fullyBlockedDifferential.comp G.fullyBlockedDifferential = 0) :
+/-- Rank-nullity for fully blocked grid homology: the homology dimension plus twice the
+differential rank is the number of grid states. -/
+theorem finrank_fullyBlockedHomology_add_two_mul_finrank_range :
     Module.finrank (ZMod 2) G.fullyBlockedHomology +
         2 * Module.finrank (ZMod 2) (LinearMap.range G.fullyBlockedDifferential) = n.factorial := by
   have hrk := LinearMap.finrank_range_add_finrank_ker G.fullyBlockedDifferential
   have hZ : Module.finrank (ZMod 2) G.fullyBlockedCycles =
       Module.finrank (ZMod 2) (LinearMap.ker G.fullyBlockedDifferential) :=
     (LinearEquiv.ofEq _ _ G.fullyBlockedCycles_eq_ker).finrank_eq
-  have hle := G.fullyBlockedBoundaries_le_cycles hsq
+  have hle := G.fullyBlockedBoundaries_le_cycles G.fullyBlockedDifferential_comp_self_eq_zero
   have hB : Module.finrank (ZMod 2) G.fullyBlockedBoundariesInCycles =
       Module.finrank (ZMod 2) (LinearMap.range G.fullyBlockedDifferential) := by
     exact ((LinearEquiv.ofEq _ _ G.fullyBlockedBoundariesInCycles_eq_comap).trans

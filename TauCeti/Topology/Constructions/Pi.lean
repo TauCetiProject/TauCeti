@@ -123,4 +123,20 @@ theorem exists_forall_univ_pi_subset {I C : Type*} [Finite I] [Finite C] {κ : C
     · exact hW'
     · exact (pi_mono fun j _ => hW'W _).trans (hW q' hq')
 
+/-- An infinite product of nontrivial spaces is not discrete: every basic open set constrains only
+finitely many coordinates, so it contains a point differing from any given one in a free
+coordinate. -/
+theorem not_discreteTopology_pi {ι : Type*} {Y : ι → Type*} [∀ i, TopologicalSpace (Y i)]
+    [Infinite ι] [∀ i, Nontrivial (Y i)] : ¬DiscreteTopology (∀ i, Y i) := fun _ ↦ by
+  classical
+  choose x y hxy using fun i ↦ exists_pair_ne (Y i)
+  obtain ⟨I, u, hu, hsub⟩ := isOpen_pi_iff.1 (isOpen_discrete ({x} : Set (∀ i, Y i))) x rfl
+  obtain ⟨j, hj⟩ := Infinite.exists_notMem_finset I
+  have hmem : Function.update x j (y j) ∈ (I : Set ι).pi u := fun i hi ↦ by
+    rw [Function.update_of_ne (by rintro rfl; exact hj hi)]
+    exact (hu i hi).2
+  have := congrFun (hsub hmem) j
+  simp only [Function.update_self] at this
+  exact hxy j this.symm
+
 end TauCeti

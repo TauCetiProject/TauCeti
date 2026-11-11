@@ -32,7 +32,9 @@ primewise additive formula and the multiplicative supernatural-number formula.
 
 public section
 
-namespace TauCeti
+namespace Subgroup
+
+open TauCeti
 
 open scoped ENat
 
@@ -44,7 +46,7 @@ variable [IsTopologicalGroup G] [CompactSpace G] [TotallyDisconnectedSpace G]
 
 /-- Primewise Lagrange formula for a closed subgroup of a profinite group: the exponent in
 the ambient order is the exponent in the subgroup order plus the exponent in the index. -/
-theorem _root_.Subgroup.profiniteOrder_apply_eq_add_profiniteIndex (H : Subgroup G)
+theorem profiniteOrder_apply_eq_add_profiniteIndex (H : Subgroup G)
     (hH : IsClosed (H : Set G)) (ℓ : Nat.Primes) :
     profiniteOrder G ℓ = profiniteOrder H ℓ + H.profiniteIndex ℓ := by
   have : Fact (ℓ : ℕ).Prime := ⟨ℓ.prop⟩
@@ -87,7 +89,7 @@ theorem _root_.Subgroup.profiniteOrder_apply_eq_add_profiniteIndex (H : Subgroup
 
 /-- **Lagrange's theorem for profinite groups**: the supernatural order of the ambient group
 is the order of a closed subgroup times its supernatural index. -/
-theorem _root_.Subgroup.profiniteOrder_eq_mul_profiniteIndex (H : Subgroup G)
+theorem profiniteOrder_eq_mul_profiniteIndex (H : Subgroup G)
     (hH : IsClosed (H : Set G)) :
     profiniteOrder G = profiniteOrder H * H.profiniteIndex := by
   ext ℓ
@@ -96,4 +98,4 @@ theorem _root_.Subgroup.profiniteOrder_eq_mul_profiniteIndex (H : Subgroup G)
 
 end Profinite
 
-end TauCeti
+end Subgroup
