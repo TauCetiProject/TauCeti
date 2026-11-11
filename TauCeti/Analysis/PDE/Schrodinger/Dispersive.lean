@@ -315,17 +315,6 @@ theorem eLpNorm_schrodingerPropagator_le_of_memLp {t : ℝ} (ht : t ≠ 0) {p q 
 
 /-! ### The dispersive estimate at every point -/
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The Schrödinger symbol `exp(-4π² i t ‖ξ‖²)` has temperate growth. -/
-theorem hasTemperateGrowth_phaseSymbol_laplacianSymbol (t : ℝ) :
-    (phaseSymbol (laplacianSymbol (E := E)) t).HasTemperateGrowth := by
-  have h : phaseSymbol (laplacianSymbol (E := E)) t =
-      fun ξ ↦ cexp (((t * -(4 * π ^ 2 * ‖ξ‖ ^ 2) : ℝ) : ℂ) * I) := by
-    ext ξ
-    rw [phaseSymbol_apply, laplacianSymbol_apply]
-  rw [h]
-  exact Complex.hasTemperateGrowth_exp_mul_I.comp (by fun_prop)
-
 /-- **The dispersive estimate for Schwartz functions, at every point.** For `t ≠ 0` and a Schwartz
 function `f`, the Schwartz function `𝓕⁻ (exp(-4π² i t ‖·‖²) 𝓕 f)`, which represents `S(t) f`,
 satisfies `|S(t) f (x)| ≤ (4π|t|)^(-n/2) ‖f‖₁` at every point `x`, not only almost everywhere. -/

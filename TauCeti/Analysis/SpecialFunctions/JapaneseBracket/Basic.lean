@@ -49,6 +49,8 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
   Japanese bracket, `⟨x⟩ ^ m ‖x‖ ≤ ⟨x⟩ ^ (m + 1)`.
 * `TauCeti.integrable_rpow_neg_sq_add_norm_sq`: the rescaled bracket
   `x ↦ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2)`, `c ≠ 0`, is integrable for every additive Haar measure.
+* `TauCeti.integrable_add_norm_rpow_neg`, `TauCeti.integral_add_norm_rpow_neg`: integrability
+  and rescaling of the shifted power `x ↦ (T + ‖x‖) ^ (-q)`, for every additive Haar measure.
 * `TauCeti.integrable_one_add_norm_sq_rpow_neg_succ_div_two`: on `ℝⁿ` the weight
   `x ↦ (1 + ‖x‖ ^ 2) ^ (-(n + 1) / 2)` is integrable.
 * `TauCeti.integrable_norm_rpow_mul_rpow_neg_one_add_norm_sq`,
@@ -98,6 +100,32 @@ theorem integrable_rpow_neg_sq_add_norm_sq (μ : Measure V) [μ.IsAddHaarMeasure
   beta_reduce
   rw [← Real.mul_rpow (by positivity) (by positivity), norm_smul, mul_pow, norm_inv,
     Real.norm_eq_abs, inv_pow, sq_abs, mul_add, mul_one, mul_inv_cancel_left₀ hc2]
+
+/-- The shifted power `x ↦ (T + ‖x‖) ^ (-q)` with `T > 0` is integrable on a finite-dimensional
+real normed space of dimension `d < q`, for every additive Haar measure. For `T = 1` this is
+Mathlib's `integrable_one_add_norm`. -/
+theorem integrable_add_norm_rpow_neg (μ : Measure V) [μ.IsAddHaarMeasure] {q T : ℝ}
+    (hq : (finrank ℝ V : ℝ) < q) (hT : 0 < T) :
+    Integrable (fun x : V ↦ (T + ‖x‖) ^ (-q)) μ := by
+  refine (((integrable_one_add_norm (μ := μ) hq).comp_smul (inv_ne_zero hT.ne')).const_mul
+    (T ^ (-q))).congr (.of_forall fun x ↦ ?_)
+  beta_reduce
+  rw [← Real.mul_rpow hT.le (by positivity), norm_smul, norm_inv, Real.norm_of_nonneg hT.le,
+    mul_add, mul_one, mul_inv_cancel_left₀ hT.ne']
+
+/-- Rescaling the shifted power: on a space of dimension `d`, for every additive Haar measure and
+`T > 0`, `∫ (T + ‖x‖) ^ (-q) dx = T ^ (d - q) ∫ (1 + ‖x‖) ^ (-q) dx`. -/
+theorem integral_add_norm_rpow_neg (μ : Measure V) [μ.IsAddHaarMeasure] (q : ℝ) {T : ℝ}
+    (hT : 0 < T) :
+    ∫ x : V, (T + ‖x‖) ^ (-q) ∂μ =
+      T ^ ((finrank ℝ V : ℝ) - q) * ∫ x : V, (1 + ‖x‖) ^ (-q) ∂μ := by
+  have h : ∀ x : V, (T + ‖x‖) ^ (-q) = T ^ (-q) * (1 + ‖T⁻¹ • x‖) ^ (-q) := fun x ↦ by
+    rw [← Real.mul_rpow hT.le (by positivity), norm_smul, norm_inv, Real.norm_of_nonneg hT.le,
+      mul_add, mul_one, mul_inv_cancel_left₀ hT.ne']
+  simp_rw [h]
+  rw [integral_const_mul,
+    Measure.integral_comp_inv_smul_of_nonneg μ (fun x ↦ (1 + ‖x‖) ^ (-q)) hT.le, smul_eq_mul,
+    ← mul_assoc, ← Real.rpow_natCast, ← Real.rpow_add hT, neg_add_eq_sub]
 
 /-- The radial moment `x ↦ ‖x‖ ^ p (1 + ‖x‖ ^ 2) ^ (-r / 2)` of order `p ≥ 0` of the Japanese
 bracket is integrable for every additive Haar measure when its decay exponent exceeds

@@ -22,11 +22,12 @@ For a smooth amplitude `g` supported in `[-R, R]`, consider the oscillatory inte
 
 `∫ exp(2πi (t r - s r²)) g(r) dr`.
 
-Its phase has derivative `2π (t - 2 s r)`, which on the support of `g` stays away from zero as
-soon as `4 R |s| ≤ |t|`: there `|t - 2 s r| ≥ |t| / 2`. In this non-stationary regime the integral
-decays faster than every power of `|t|`, uniformly in `s`:
+Its phase has derivative `2π (t - 2 s r)`. When `4 R |s| ≤ |t|`, on the support of `g` this
+derivative satisfies `|t - 2 s r| ≥ |t| / 2`, so it stays away from zero as soon as moreover
+`t ≠ 0`. In this non-stationary regime, `t ≠ 0` and `4 R |s| ≤ |t|`, the integral decays faster
+than every power of `|t|`, uniformly in `s`:
 
-`‖∫ exp(2πi (t r - s r²)) g(r) dr‖ ≤ C_N |t|^(-N)`
+`‖∫ exp(2πi (t r - s r²)) g(r) dr‖ ≤ C_N |t|^(-N)` for `t ≠ 0` and `4 R |s| ≤ |t|`.
 
 (`TauCeti.exists_norm_integral_cexp_mul_le_of_mul_abs_le`). The proof integrates by parts `N`
 times against `exp(2πi (t r - s r²))`, each time dividing by the phase derivative. Since that
@@ -41,7 +42,7 @@ propagator to the Schrödinger propagator negligible.
 ## Main declarations
 
 * `TauCeti.exists_norm_integral_cexp_mul_le_of_mul_abs_le`: rapid decay of the oscillatory
-  integral with phase `t r - s r²` in the non-stationary regime `4 R |s| ≤ |t|`.
+  integral with phase `t r - s r²` in the non-stationary regime `t ≠ 0`, `4 R |s| ≤ |t|`.
 
 ## References
 

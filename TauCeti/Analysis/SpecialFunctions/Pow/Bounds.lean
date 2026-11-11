@@ -17,7 +17,9 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Real
 If `0 < x`, `x ≤ R` and `x⁻¹ ≤ R`, then `x ^ a ≤ R ^ |a|` for every real `a`. This bounds
 powers of a level confined to an interval bounded away from zero.
 
-A base at least `2` raised to a negative exponent of size at least `1` is at most `1 / 2`. This
+A base at least `2` raised to a negative exponent of size at least `1` is at most `1 / 2`. A
+negative power reverses a comparison up to a constant: if `0 < x ≤ a y`, then
+`y ^ (-q) ≤ a ^ q x ^ (-q)` for `q ≥ 0`. This
 is the shape in which the local ratio of an Euler factor is bounded away from `1`, so that the
 denominator `1 - y ^ (-s)` stays bounded below.
 
@@ -148,6 +150,16 @@ theorem rpow_neg_le_half {y s : ℝ} (hy : 2 ≤ y) (hs : 1 ≤ s) : y ^ (-s) �
   calc y ^ (-s) ≤ (2 : ℝ) ^ (-s) := rpow_le_rpow_of_nonpos two_pos hy (by linarith)
     _ ≤ (2 : ℝ) ^ (-(1 : ℝ)) := rpow_le_rpow_of_exponent_le one_le_two (by linarith)
     _ = 1 / 2 := by norm_num
+
+/-- A negative power reverses a comparison up to a constant: if `0 < x ≤ a y` with `a > 0` and
+`q ≥ 0`, then `y ^ (-q) ≤ a ^ q x ^ (-q)`. -/
+theorem rpow_neg_le_mul_rpow_neg {x y a q : ℝ} (hx : 0 < x) (hy : 0 < y) (ha : 0 < a)
+    (hq : 0 ≤ q) (hxy : x ≤ a * y) : y ^ (-q) ≤ a ^ q * x ^ (-q) := by
+  have h1 : (a * y) ^ (-q) ≤ x ^ (-q) := rpow_le_rpow_of_nonpos hx hxy (by linarith)
+  rw [mul_rpow ha.le hy.le, rpow_neg ha.le] at h1
+  have hapos : 0 < a ^ q := rpow_pos_of_pos ha q
+  calc y ^ (-q) = a ^ q * ((a ^ q)⁻¹ * y ^ (-q)) := by field_simp
+    _ ≤ a ^ q * x ^ (-q) := by gcongr
 
 /-- For `θ < 1` and any exponent `β`, some ratio `τ ∈ (0, 1)` has `θ < τ ^ β`. -/
 theorem exists_pos_lt_one_lt_rpow {θ : ℝ} (hθ : θ < 1) (β : ℝ) :
