@@ -112,6 +112,12 @@ theorem plumbingMap_apply (q : Puncture) (L : ℝ) (w : ℂ) :
     q.plumbingMap L w = q.endCenter + q.plumbingFactor L * w :=
   (rfl)
 
+/-- The second input of the inserted sphere sits at offset `f` from the center of the end it is
+plumbed into, where `f` is the plumbing factor. -/
+theorem plumbingMap_one_sub_endCenter (q : Puncture) (L : ℝ) :
+    q.plumbingMap L 1 - q.endCenter = q.plumbingFactor L := by
+  rw [plumbingMap_apply, mul_one, add_sub_cancel_left]
+
 theorem plumbingFactor_ne_zero (q : Puncture) (L : ℝ) : q.plumbingFactor L ≠ 0 :=
   div_ne_zero (mul_ne_zero q.endScale_ne_zero (Complex.exp_ne_zero _)) two_ne_zero
 
@@ -148,6 +154,12 @@ theorem norm_plumbingFactor (q : Puncture) (L : ℝ) :
     ‖q.plumbingFactor L‖ = ‖q.endScale‖ * Real.exp (-(2 * π * L)) / 2 := by
   rw [plumbingFactor_eq_mul_ofReal, norm_mul, Complex.norm_real,
     Real.norm_of_nonneg (by positivity), mul_div_assoc]
+
+/-- At a finite puncture the plumbing factor has norm `e^{-2πL} / 4`. -/
+theorem norm_plumbingFactor_of_ne_inf {q : Puncture} (hq : q ≠ inf) (L : ℝ) :
+    ‖q.plumbingFactor L‖ = Real.exp (-(2 * π * L)) / 4 := by
+  rw [norm_plumbingFactor, norm_endScale hq]
+  ring
 
 /-- The first input of the inserted sphere sits at the center of the end it is plumbed into. -/
 @[simp]
@@ -293,6 +305,13 @@ theorem norm_plumbingMap_one_sub_endCenter_lt {q : Puncture} (hq : q ≠ inf) (L
   rw [plumbingMap_apply, add_sub_cancel_left, mul_one, norm_plumbingFactor, norm_endScale hq]
   have := Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos] : -(2 * π * L) < -(2 * π * (L - 1)))
   linarith [Real.exp_pos (-(2 * π * L))]
+
+/-- The second input `ψ(1)` of the inserted sphere is at distance at least `1 - ‖f‖` from the
+center of the other finite end `r`, where `f` is the plumbing factor. -/
+theorem one_sub_norm_plumbingFactor_le {q r : Puncture} (hq : q ≠ inf) (hr : r ≠ inf) (hrq : r ≠ q)
+    (L : ℝ) : 1 - ‖q.plumbingFactor L‖ ≤ ‖q.plumbingMap L 1 - r.endCenter‖ := by
+  have h := one_sub_norm_sub_endCenter_le hq hr hrq (q.plumbingMap L 1)
+  rwa [plumbingMap_one_sub_endCenter] at h
 
 /-- **The plumbing map preserves the angular forms.** It pulls the angular form `dt` of the end
 `q` back to the angular form `dt` of the end at `∞`. -/
