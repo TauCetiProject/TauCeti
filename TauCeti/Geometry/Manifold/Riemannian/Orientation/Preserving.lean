@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm
 public import Mathlib.Analysis.InnerProductSpace.TwoDim
@@ -58,8 +59,9 @@ theorem IsOrientationPreservingAt.volumeForm_mvfderiv_comp_pos_iff {n : ℕ} {F 
     hmap.trans (orientationAt_model _ _ _)
   have hv : mvfderiv I f x ∘ v = e' ∘ v := by
     ext i
-    exact congrArg (fun L : TangentSpace I x →L[ℝ] TangentSpace 𝓘(ℝ, F) (f x) ↦ (L (v i) : F))
-      he.symm
+    rw [Function.comp_apply, mvfderiv_apply_eq_mfderiv_apply, ← he]
+    -- `e'` is `e` viewed as a linear equivalence, so both sides evaluate `e` at `v i`.
+    rfl
   rw [riemannianVolumeForm_apply, hv, ← hmap', _root_.Orientation.volumeForm_map_comp_pos_iff]
 
 /-- A map `φ` from an oriented Riemannian surface to `ℂ` that preserves orientations at `x`
