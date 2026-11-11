@@ -93,7 +93,9 @@ theorem torusCorestrict_eq_ofWeights :
     generator_inr, generatorCoordinateMap_inr,
     GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
 
-private theorem rootPoint_matrix (i : Fin (n + 1)) (A : Type u) [CommRing A] [Algebra R A]
+/-- The ambient matrix of a point of a positive root generator is the corresponding concrete
+spin root-subgroup matrix, over any value algebra. -/
+theorem rootPoint_matrix (i : Fin (n + 1)) (A : Type u) [CommRing A] [Algebra R A]
     (q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R)
       (CommAlgCat.of R A)) :
     GeneralLinear.pointToGeneralLinear (dimension n)
@@ -127,12 +129,8 @@ theorem single_basisReflection_mem
     (i : Fin (n + 1)) (a : Fin (dimension n)) (ha : basisWeight n a i = -1)
     (hv : Pi.single a (1 : R) ∈ N) :
     Pi.single (basisReflection n i a) (1 : R) ∈ N := by
-  obtain ⟨c, hc⟩ := exists_rep_rootGenerator_inl_exteriorBasis n i _ _ ha
-    (signSet_basisReflection n i a).symm
-  refine single_mem_of_rep_rootGenerator_eq n R N.toSubmodule (.inl i) (c := c)
-    (fun w hw ↦ rootSubgroupPoints_mulVec_mem n R N i _ hw) ?_ hv
-  rw [coe_latticeBasis n a, coe_latticeBasis n (basisReflection n i a)]
-  exact hc
+  exact single_basisReflection_mem_of_rootSubgroupPoints n R N.toSubmodule i a
+    (fun w hw ↦ rootSubgroupPoints_mulVec_mem n R N i _ hw) ha hv
 
 variable {n R}
 
@@ -149,6 +147,7 @@ private theorem stable_of_raising_closed (s : Set (Fin (dimension n)))
   · intro i
     apply GeneralLinear.weightParabolicDefiningHopfIdeal_toIdeal_le_ker
     intro a b hab
+    simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
     have ha : a ∉ s := by
       intro ha
       by_cases hb : b ∈ s <;> simp [w, ha, hb] at hab

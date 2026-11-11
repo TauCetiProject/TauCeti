@@ -285,8 +285,6 @@ theorem formalCharacter_mul_weylDenominator_eq_of_forall_coeff_isDominantIntegra
     (fun _ hchi _ hi ↦ exists_intCast_eq_coroot'_of_sub_mem_posRootCone hv
       (sub_mem_posRootCone_of_coeff_formalCharacter_mul_weylDenominator_ne_zero hv hgen hchi) hi)
     (fun _ hchi _ hi ↦ exists_intCast_eq_coroot'_of_sub_mem_posRootCone hv (hgcone _ hchi) hi)
-    fun nu hnu ↦ hagree nu (isDominantIntegral_iff.mpr fun i hi ↦ ?_)
-  obtain ⟨n, hn⟩ := hnu i hi
-  exact ⟨n, by rwa [← rootSystem_coroot'_apply]⟩
+    fun nu hnu ↦ hagree nu (isDominantIntegral_iff_forall_coroot'.mpr hnu)
 
 end TauCeti

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Submonoid.Support
 public import Mathlib.LinearAlgebra.RootSystem.Base
+public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
 public import TauCeti.LinearAlgebra.RootSystem.Height
 
 /-!
@@ -34,6 +35,8 @@ positive root is a nonnegative integer combination of the simple coroots.
 ## Main results
 
 * `TauCeti.image_reflectionPerm_self_posRoots` says root negation exchanges the two sets.
+* `TauCeti.posRoots_map` and `TauCeti.negRoots_map` say an equivalence of root pairings carries
+  the positive and negative roots of a base to those of the transported base.
 * `TauCeti.ncard_posRoots_eq_natCard_div_two` says that, for a finite root index type, exactly
   half of the roots are positive, and `TauCeti.posRootsFinset_eq_filter`,
   `TauCeti.card_posRootsFinset` read `TauCeti.posRootsFinset` as the filter of the positivity
@@ -74,8 +77,13 @@ positive root is a nonnegative integer combination of the simple coroots.
 * `TauCeti.exists_intCast_eq_coroot'_of_mem_posRootCone` says a coroot functional takes integer
   values on `Q⁺`, and `RootPairing.exists_intCast_eq_coroot'_of_forall_mem_support` says every
   coroot functional takes an integer value on a weight on which the simple ones do.
+* `RootPairing.coroot'_eq_zero_of_forall_mem_support` says a weight killed by the simple coroots
+  is killed by every coroot, and `TauCeti.smul_eq_self_of_forall_coroot'_eq_zero` deduces that the
+  whole Weyl group fixes it.
 * `RootPairing.toLinearMap_apply_nonneg_of_mem_posRootCone` says a member of `Q⁺` is nonnegative
   at a point of the coweight space where every simple root is nonnegative.
+  `TauCeti.toWeightBasis_repr_nonneg_of_mem_posRootCone` says its coordinates in the basis of
+  simple roots are nonnegative.
 * `TauCeti.exists_coroot_eq_sum_nat_of_mem_posRoots` says the coroot of a positive root is a
   nonnegative integer combination of the simple coroots, and
   `TauCeti.exists_coroot'_eq_sum_nat_of_mem_posRoots` restates that on the coroot functionals.
@@ -159,6 +167,26 @@ lemma compl_posRoots : (posRoots P b)ᶜ = negRoots P b := by
 
 /-- The negative roots are the complement of the positive roots. -/
 lemma negRoots_eq_compl : negRoots P b = (posRoots P b)ᶜ := compl_posRoots P b |>.symm
+
+section Map
+
+variable {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
+  {P₂ : RootPairing ι₂ R M₂ N₂}
+
+/-- **An equivalence of root pairings carries positive roots to positive roots**: the positive
+roots of the transported base `b.map e` are the images of the positive roots of `b`. -/
+@[simp]
+theorem posRoots_map (e : P.Equiv P₂) : posRoots P₂ (b.map e) = e.indexEquiv '' posRoots P b := by
+  ext j
+  rw [Equiv.image_eq_preimage_symm, mem_preimage, mem_posRoots, mem_posRoots,
+    ← b.isPos_map_iff e, Equiv.apply_symm_apply]
+
+/-- An equivalence of root pairings carries negative roots to negative roots. -/
+@[simp]
+theorem negRoots_map (e : P.Equiv P₂) : negRoots P₂ (b.map e) = e.indexEquiv '' negRoots P b := by
+  rw [negRoots_eq_compl, negRoots_eq_compl, posRoots_map, Equiv.image_compl]
+
+end Map
 
 /-- No root is both positive and negative. -/
 lemma disjoint_posRoots_negRoots : Disjoint (posRoots P b) (negRoots P b) := by
@@ -443,6 +471,23 @@ theorem _root_.RootPairing.coroot'_eq_zero_of_forall_mem_support {x : M}
   | smul z n _ hn => simp [hn]
 
 omit [CharZero R] in
+variable {P} in
+/-- **A weight killed by the simple coroots is fixed by the Weyl group**: it is killed by every
+coroot (`RootPairing.coroot'_eq_zero_of_forall_mem_support`), so every reflection generating the
+Weyl group fixes it. -/
+theorem smul_eq_self_of_forall_coroot'_eq_zero {x : M} (hx : ∀ i ∈ b.support, P.coroot' i x = 0)
+    (w : P.weylGroup) : w • x = x := by
+  obtain ⟨w, hw⟩ := w
+  induction hw using RootPairing.weylGroup.induction with
+  | mem i =>
+    rw [Subgroup.mk_smul, RootPairing.Equiv.reflection_smul, P.reflection_apply,
+      P.coroot'_eq_zero_of_forall_mem_support b hx i, zero_smul, sub_zero]
+  | one => exact one_smul _ x
+  | mul w₁ w₂ _ _ h₁ h₂ =>
+    rw [Subgroup.mk_smul] at h₁ h₂ ⊢
+    rw [mul_smul, h₂, h₁]
+
+omit [CharZero R] in
 variable {P b} in
 /-- An element of the positive root cone is nonnegative at a point where every simple root is
 nonnegative. -/
@@ -452,6 +497,19 @@ theorem _root_.RootPairing.toLinearMap_apply_nonneg_of_mem_posRootCone [Preorder
   obtain ⟨f, rfl⟩ := (mem_posRootCone P b).mp hv
   simp only [map_sum, map_nsmul, LinearMap.sum_apply, LinearMap.smul_apply]
   exact Finset.sum_nonneg fun i hi ↦ nsmul_nonneg (hx i hi) _
+
+omit [CharZero R] in
+variable {P b} in
+/-- **A member of the positive root cone has nonnegative coordinates** in the basis of simple
+roots. -/
+theorem toWeightBasis_repr_nonneg_of_mem_posRootCone [PartialOrder R] [IsOrderedRing R]
+    [P.IsRootSystem] {v : M} (hv : v ∈ posRootCone P b) (i : b.support) :
+    0 ≤ b.toWeightBasis.repr v i := by
+  obtain ⟨f, rfl⟩ := (mem_posRootCone P b).mp hv
+  rw [← Finset.sum_coe_sort b.support]
+  simp only [← RootPairing.Base.toWeightBasis_apply, map_sum, map_nsmul, Module.Basis.repr_self,
+    Finsupp.finsetSum_apply, Finsupp.smul_apply]
+  exact Finset.sum_nonneg fun j _ ↦ nsmul_nonneg (Finsupp.single_nonneg.mpr zero_le_one i) _
 
 /-- **The positive root cone is pointed**: the only member whose negative is again a member is
 zero. Expanding a member and its negative in the simple roots, the total coefficient vector is

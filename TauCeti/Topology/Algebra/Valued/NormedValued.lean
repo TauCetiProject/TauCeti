@@ -37,7 +37,7 @@ this is the completeness input for the ring of integers `𝒪_F` required to mak
 
 public section
 
-open Filter Topology
+open Filter
 
 namespace Valuation.Integers
 
@@ -60,9 +60,8 @@ theorem mem_radical_span_singleton_of_norm_lt_one
   have hpos : 0 < ‖algebraMap O K ϖ'‖ :=
     norm_pos_iff.mpr ((map_ne_zero_iff _ hv.hom_inj).mpr hϖ')
   obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one hpos hϖ
-  refine ⟨n, ?_⟩
-  simpa using (hv.mem_span_singleton_pow_iff_norm_le (x := ϖ ^ n) (n := 1)).mpr
-    (by simpa using hn.le)
+  exact ⟨n, Ideal.mem_span_singleton.mpr <| hv.dvd_iff_le.mpr <| by
+    simpa [← NNReal.coe_le_coe] using hn.le⟩
 
 /-- **Pseudouniformisers generate ideals with the same radical.** In the ring of integers of a
 nonarchimedean normed field, two nonzero elements of norm less than one each divide a power of the
@@ -83,15 +82,13 @@ variable [CompleteSpace K]
 every `ϖ` of norm less than one. -/
 theorem isAdicComplete_span_singleton (hv : (NormedField.valuation (K := K)).Integers O)
     {ϖ : O} (hϖ : ‖algebraMap O K ϖ‖ < 1) : IsAdicComplete (Ideal.span {ϖ}) O := by
-  have hlim : Tendsto (fun n : ℕ ↦ ‖algebraMap O K ϖ‖ ^ n) atTop (𝓝 0) :=
-    tendsto_pow_atTop_nhds_zero_of_lt_one (_root_.norm_nonneg _) hϖ
   have hhaus : IsHausdorff (Ideal.span {ϖ}) O := by
     refine ⟨fun x hx ↦ hv.hom_inj ?_⟩
     -- An element of every `(ϖ) ^ n` has norm at most `‖ϖ‖ ^ n` for all `n`, hence norm zero.
     simp only [smul_eq_mul, Ideal.mul_top, SModEq.zero, hv.mem_span_singleton_pow_iff_norm_le]
       at hx
     rw [map_zero, ← norm_le_zero_iff]
-    exact ge_of_tendsto' hlim hx
+    exact ge_of_tendsto' (tendsto_pow_atTop_nhds_zero_of_lt_one (_root_.norm_nonneg _) hϖ) hx
   have hprec : IsPrecomplete (Ideal.span {ϖ}) O := by
     refine ⟨fun f hf ↦ ?_⟩
     simp only [smul_eq_mul, Ideal.mul_top, SModEq.sub_mem,
@@ -105,14 +102,11 @@ theorem isAdicComplete_span_singleton (hv : (NormedField.valuation (K := K)).Int
     -- Each `f m` lies within `‖ϖ‖ ^ m` of the limit, since all later terms do.
     have hdist (m : ℕ) : dist (algebraMap O K (f m)) L ≤ ‖algebraMap O K ϖ‖ ^ m :=
       le_of_tendsto (tendsto_const_nhds.dist hL) (eventually_atTop.2 ⟨m, fun _ hn ↦ hf hn⟩)
-    -- In particular `‖L‖ ≤ 1`, so `L` is the image of some `l : O`.
+    -- As a limit of elements of norm at most one, `L` is the image of some `l : O`.
     have hL1 : NormedField.valuation L ≤ 1 := by
       rw [NormedField.valuation_apply, ← NNReal.coe_le_one, coe_nnnorm]
-      calc ‖L‖ = ‖(L - algebraMap O K (f 0)) + algebraMap O K (f 0)‖ := by rw [sub_add_cancel]
-        _ ≤ max ‖L - algebraMap O K (f 0)‖ ‖algebraMap O K (f 0)‖ :=
-          IsUltrametricDist.norm_add_le_max _ _
-        _ ≤ 1 := max_le (by simpa [dist_eq_norm'] using hdist 0) <| by
-          simpa [← NNReal.coe_le_one] using hv.map_le_one (f 0)
+      exact le_of_tendsto' hL.norm fun n ↦ by
+        simpa [← NNReal.coe_le_one] using hv.map_le_one (f n)
     obtain ⟨l, rfl⟩ := hv.exists_of_le_one hL1
     exact ⟨l, fun n ↦ by simpa [dist_eq_norm] using hdist n⟩
   exact {}

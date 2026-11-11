@@ -377,26 +377,25 @@ theorem isIntegralClosure_nsmulSaturation_inf_closure {R G : Type*} [CommRing R]
     (mapDomainRingHom R S₀.nsmulSaturation.subtype).toAlgebra
   let _ : Algebra (AddMonoidAlgebra R S) (AddMonoidAlgebra R L_S) :=
     (mapDomainRingHom R S.toGroupClosure).toAlgebra
-  let ιSat : ↥(S.nsmulSaturation ⊓ L_S.toAddSubmonoid) →+ L_S :=
-    AddSubmonoid.inclusion (inf_le_right : S.nsmulSaturation ⊓ L_S.toAddSubmonoid ≤ _)
   let _ : Algebra (AddMonoidAlgebra R ↥(S.nsmulSaturation ⊓ L_S.toAddSubmonoid))
       (AddMonoidAlgebra R L_S) :=
-    (mapDomainRingHom R ιSat).toAlgebra
+    (mapDomainRingHom R
+      (AddSubmonoid.inclusion
+        (inf_le_right : S.nsmulSaturation ⊓ L_S.toAddSubmonoid ≤ L_S.toAddSubmonoid) :
+        _ →+ L_S)).toAlgebra
+  have h₁ : (S.toGroupClosure : S → L_S) ∘ S.toGroupClosureEquiv.symm = Subtype.val :=
+    funext fun _ => Subtype.ext (by simp)
+  have h₂ : ((AddSubmonoid.inclusion
+        (inf_le_right : S.nsmulSaturation ⊓ L_S.toAddSubmonoid ≤ L_S.toAddSubmonoid) :
+        _ →+ L_S) : _ → L_S) ∘ S.nsmulSaturationInfClosureEquiv.symm = Subtype.val :=
+    funext fun x => Subtype.ext (S.coe_nsmulSaturationInfClosureEquiv_symm_apply x)
   refine (isIntegralClosure_nsmulSaturation hS.comap_subtype_closure).of_ringEquiv
     (mapDomainRingEquiv R S.nsmulSaturationInfClosureEquiv.symm)
-    (mapDomainRingEquiv R S.toGroupClosureEquiv.symm) (.refl _) (fun r => ?_) (fun a => ?_)
-  · rw [RingEquiv.refl_apply, RingHom.algebraMap_toAlgebra, RingHom.algebraMap_toAlgebra,
-      ← RingEquiv.coe_toRingHom, ← RingEquiv.toRingHom_eq_coe, toRingHom_mapDomainRingEquiv,
-      ← RingHom.comp_apply, ← mapDomainRingHom_comp]
-    congr 2
-    ext y
-    simp
-  · rw [RingEquiv.refl_apply, RingHom.algebraMap_toAlgebra, RingHom.algebraMap_toAlgebra,
-      ← RingEquiv.coe_toRingHom, ← RingEquiv.toRingHom_eq_coe, toRingHom_mapDomainRingEquiv,
-      ← RingHom.comp_apply, ← mapDomainRingHom_comp]
-    congr 2
-    ext z
-    simp
+    (mapDomainRingEquiv R S.toGroupClosureEquiv.symm) (.refl _)
+    (fun r => by simp [RingHom.algebraMap_toAlgebra, mapDomainRingEquiv_eq_mapDomain,
+      mapDomain_mapDomain, h₁])
+    (fun a => by simp [RingHom.algebraMap_toAlgebra, mapDomainRingEquiv_eq_mapDomain,
+      mapDomain_mapDomain, h₂])
 
 end HalfSpaceAndGroupClosure
 

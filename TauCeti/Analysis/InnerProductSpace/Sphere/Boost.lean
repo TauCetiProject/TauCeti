@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import TauCeti.Analysis.Normed.Module.Normalize
 
 /-!
 # Conformal boosts of a unit sphere
@@ -33,6 +34,9 @@ by the boost of the unit circle toward `i`. Boosting far enough carries a compac
 sphere avoiding `-v` into any open cap `⟪x, v⟫ > r` around `v` with `r < 1`
 (`IsCompact.eventually_forall_lt_inner_sphereBoost`).
 
+A boost depends smoothly on the rapidity and the point together, wherever its denominator does
+not vanish (`TauCeti.contDiffAt_sphereBoost`), in particular on `ℝ × Sⁿ`.
+
 At the repelling fixed point `-v`, the boost of rapidity `a` stretches every tangent vector by
 `eᵃ` (`TauCeti.fderiv_sphereBoost_neg_self_apply`): it maps the line `-v + s w` through `-v` in a
 tangent direction `w` to the line `-v + eᵃ s w`. Boosting thus rescales the velocity of a curve
@@ -51,8 +55,12 @@ through `-v` without moving the point.
 * `LinearIsometry.sphereBoost_map`: boosts commute with linear isometries.
 * `IsCompact.eventually_forall_lt_inner_sphereBoost`: large boosts carry a compact set
   avoiding `-v` into any open cap around `v`.
+* `TauCeti.contDiffAt_sphereBoost`: a boost is smooth jointly in the rapidity and the point.
 * `TauCeti.fderiv_sphereBoost_neg_self_apply`: at `-v`, the boost of rapidity `a` multiplies
   tangent vectors by `eᵃ`.
+* `LinearIsometry.fderiv_sphereBoost_log_apply_eq`: the boost toward `-y` of rapidity
+  `log (‖w‖ / ‖v‖)` carries `e v` at `e x` to `w`, for a linear isometry `e` with `e x = y`
+  rotating the direction of `v` to that of `w`.
 
 ## References
 
@@ -262,6 +270,21 @@ theorem differentiableAt_sphereBoost {v x : E} {a : ℝ} (hx : cosh a + sinh a *
       (y + (sinh a + (cosh a - 1) * ⟪y, v⟫) • v) from funext (sphereBoost_def v a)]
   exact (hD.inv hx).smul hN
 
+/-- A boost is `C^k` jointly in the rapidity and the point at every pair `(a, x)` where its
+denominator does not vanish, in particular wherever `x` lies on the unit sphere
+(`TauCeti.cosh_add_sinh_mul_inner_pos`). -/
+theorem contDiffAt_sphereBoost {v x : E} {a : ℝ} {k : WithTop ℕ∞}
+    (hx : cosh a + sinh a * ⟪x, v⟫ ≠ 0) :
+    ContDiffAt ℝ k (fun p : ℝ × E => sphereBoost v p.1 p.2) (a, x) := by
+  have hc : ContDiff ℝ k fun p : ℝ × E => cosh p.1 := contDiff_cosh.comp contDiff_fst
+  have hs : ContDiff ℝ k fun p : ℝ × E => sinh p.1 := contDiff_sinh.comp contDiff_fst
+  have hi : ContDiff ℝ k fun p : ℝ × E => ⟪p.2, v⟫ := contDiff_snd.inner ℝ contDiff_const
+  have hD : ContDiff ℝ k fun p : ℝ × E => cosh p.1 + sinh p.1 * ⟪p.2, v⟫ := hc.add (hs.mul hi)
+  have hN : ContDiff ℝ k fun p : ℝ × E =>
+      p.2 + (sinh p.1 + (cosh p.1 - 1) * ⟪p.2, v⟫) • v :=
+    contDiff_snd.add ((hs.add ((hc.sub contDiff_const).mul hi)).smul contDiff_const)
+  exact (hD.contDiffAt.inv hx).smul hN.contDiffAt
+
 /-- **The boost stretches tangent vectors at `-v` by `eᵃ`.** For a unit vector `v` and a vector
 `w` orthogonal to `v`, the derivative at `-v` of the boost of rapidity `a` toward `v` sends `w` to
 `eᵃ w`. -/
@@ -296,3 +319,28 @@ theorem fderiv_sphereBoost_neg_self_apply {v w : E} (hv : ‖v‖ = 1) (a : ℝ)
   exact h₁.unique (h₂.congr_of_eventuallyEq (Filter.Eventually.of_forall fun s => hline s))
 
 end TauCeti
+
+namespace LinearIsometry
+
+open TauCeti
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- Rotating the direction of `v` to that of `w` by a linear isometry `e` that moves the point `x`
+to `y`, the boost toward `-y` of rapidity `log (‖w‖ / ‖v‖)` then carries `e v` at `e x` to `w`. -/
+theorem fderiv_sphereBoost_log_apply_eq (e : E →ₗᵢ[ℝ] F) {x v : E} {y w : F} (hy : ‖-y‖ = 1)
+    (hv : v ≠ 0) (hw : w ≠ 0) (hex : e x = y) (hxv : ⟪x, v⟫ = 0)
+    (hev : e (‖v‖⁻¹ • v) = ‖w‖⁻¹ • w) :
+    fderiv ℝ (sphereBoost (-y) (Real.log (‖w‖ / ‖v‖))) (e x) (e v) = w := by
+  have hperp : ⟪e v, -y⟫ = 0 := by
+    rw [inner_neg_right, ← hex, LinearIsometry.inner_map_map, real_inner_comm, hxv,
+      neg_zero]
+  have hxy : e x = - -y := by rw [hex, neg_neg]
+  rw [hxy, fderiv_sphereBoost_neg_self_apply hy _ hperp, Real.exp_log (by positivity)]
+  rw [← LinearIsometry.norm_map e v]
+  refine TauCeti.norm_div_norm_smul_eq_of_inv_norm_smul_eq_normalize ?_
+  rw [LinearIsometry.norm_map]
+  simpa [NormedSpace.normalize, map_smul] using hev
+
+end LinearIsometry

@@ -64,7 +64,7 @@ modulo `p`.
 
 ## References
 
-* P. Scholze, *Étale cohomology of diamonds*, Definition 3.1, Remarks 3.2–3.3 and Example 3.4.
+* P. Scholze, *Étale cohomology of diamonds*, Definition 3.1 and Remarks 3.2–3.3.
 * P. Scholze, *Perfectoid spaces*, Definition 5.1 and Proposition 5.8.
 * B. Bhatt, M. Morrow, P. Scholze, *Integral p-adic Hodge theory*, Lemma 3.9 and §3.2.
 -/
@@ -109,6 +109,16 @@ theorem IsPerfectoidTateRing.isReduced [IsPerfectoidTateRing p R] : IsReduced R 
   have := IsPerfectoidTateRing.isUniform p (R := R)
   IsUniform.isReduced
 
+variable (R) in
+/-- **The zero ring is a perfectoid Tate ring**: `0` is a topologically nilpotent unit, and all
+the quotients in the definition vanish. -/
+theorem isPerfectoidTateRing_of_subsingleton [Subsingleton R] : IsPerfectoidTateRing p R where
+  isBounded_powerBoundedSubring := isBounded_iff.mpr fun _ hU ↦ ⟨Set.univ, Filter.univ_mem,
+    fun x _ ↦ Subsingleton.elim (0 : R) x ▸ mem_of_mem_nhds hU⟩
+  exists_pseudoUniformizer := ⟨0, isPseudoUniformizer_iff.mpr ⟨isUnit_of_subsingleton _, .zero⟩,
+    ⟨0, Subsingleton.elim _ _⟩, fun _ ↦ ⟨0, ⟨0, Subsingleton.elim _ _⟩⟩,
+    fun _ _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
+
 variable {p}
 
 /-- **Surjectivity of Frobenius suffices**: a uniform complete Hausdorff Tate ring with a
@@ -138,14 +148,19 @@ theorem isPerfectoidTateRing_iff [Fact p.Prime] :
 /-- A uniform complete Hausdorff Tate ring with a pseudouniformiser `ϖ ∈ R°` such that
 `ϖ ^ p ∣ p` in `R°`, and in which every element of `R°` has a `p`-th root in `R`, is perfectoid:
 the roots are power-bounded because `R°` is integrally closed in `R`. -/
-theorem IsPerfectoidTateRing.of_forall_exists_pow_eq [NeZero p] [IsUniform R]
+theorem IsPerfectoidTateRing.of_forall_exists_pow_eq [IsUniform R]
     (ϖ : powerBoundedSubring R) (hϖ : IsPseudoUniformizer (ϖ : R))
     (h : ϖ ^ p ∣ (p : powerBoundedSubring R))
     (hroot : ∀ x : powerBoundedSubring R, ∃ y : R, y ^ p = x) : IsPerfectoidTateRing p R := by
+  rcases Nat.eq_zero_or_pos p with rfl | hp
+  · obtain ⟨y, hy⟩ := hroot 0
+    have : Subsingleton R := subsingleton_of_zero_eq_one (by simpa using hy.symm)
+    exact isPerfectoidTateRing_of_subsingleton 0 R
+  have : NeZero p := ⟨hp.ne'⟩
   refine .of_surjective ϖ hϖ h fun x ↦ ?_
   obtain ⟨y, hy⟩ := hroot x
   obtain ⟨z, rfl⟩ := IsIntegrallyClosedIn.exists_algebraMap_eq_of_isIntegral_pow
-    (R := powerBoundedSubring R) (x := y) (NeZero.pos p) (hy ▸ isIntegral_algebraMap)
+    (R := powerBoundedSubring R) (x := y) hp (hy ▸ isIntegral_algebraMap)
   have hx : x = z ^ p := Subtype.ext hy.symm
   refine ⟨z, ?_⟩
   rw [hx, sub_self]
@@ -229,9 +244,9 @@ private theorem IsPerfectoidTateRing.of_prod_left [IsPerfectoidTateRing p (R × 
         by simpa using pow_dvd_pow_of_dvd (dvd_zero (powerBoundedSubringProdEquiv R S ϖ).2) p⟩
     simpa using (dvd_iff_powerBoundedSubringProdEquiv.mp (hi _ hdvd)).1
 
-/-- **A product of perfectoid Tate rings is perfectoid**: if `ϖ_R` and `ϖ_S` witness the perfectoid
-condition for `R` and `S`, then `(ϖ_R, ϖ_S)` witnesses it for `R × S`, because `(R × S)° = R° × S°`
-and divisibility in it is componentwise (Scholze, *Étale cohomology of diamonds*, Example 3.4). -/
+/-- **A product of perfectoid Tate rings is perfectoid**, directly from the definition: if `ϖ_R` and
+`ϖ_S` witness the perfectoid condition for `R` and `S`, then `(ϖ_R, ϖ_S)` witnesses it for `R × S`,
+because `(R × S)° = R° × S°` and divisibility in it is componentwise. -/
 instance IsPerfectoidTateRing.prod [IsPerfectoidTateRing p R] [IsPerfectoidTateRing p S] :
     IsPerfectoidTateRing p (R × S) := by
   have := IsPerfectoidTateRing.isUniform p (R := R)
@@ -263,22 +278,5 @@ theorem isPerfectoidTateRing_prod_iff :
   exact .of_prod_left (S := R)
 
 end Prod
-
-section Examples
-
-variable (p : ℕ)
-
-/-- **The zero ring is a perfectoid Tate ring**: `0` is a topologically nilpotent unit, and all
-the quotients in the definition vanish. -/
-theorem isPerfectoidTateRing_of_subsingleton (R : Type*) [CommRing R] [UniformSpace R]
-    [IsUniformAddGroup R] [IsTopologicalRing R] [IsTateRing R] [CompleteSpace R] [T2Space R]
-    [Subsingleton R] : IsPerfectoidTateRing p R where
-  isBounded_powerBoundedSubring := isBounded_iff.mpr fun _ hU ↦ ⟨Set.univ, Filter.univ_mem,
-    fun x _ ↦ Subsingleton.elim (0 : R) x ▸ mem_of_mem_nhds hU⟩
-  exists_pseudoUniformizer := ⟨0, isPseudoUniformizer_iff.mpr ⟨isUnit_of_subsingleton _, .zero⟩,
-    ⟨0, Subsingleton.elim _ _⟩, fun _ ↦ ⟨0, ⟨0, Subsingleton.elim _ _⟩⟩,
-    fun _ _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
-
-end Examples
 
 end TauCeti.Perfectoid

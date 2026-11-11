@@ -108,6 +108,13 @@ noncomputable def addEquivContinuousKaehlerDifferential :
     Level.ContinuousKaehlerDifferential K d ≃+ TauCeti.ContinuousKaehlerDifferential K :=
   (equivForm K d).addEquiv
 
+/-- Reading a form constructed in the level variable recovers the original Laurent form. -/
+@[simp]
+theorem addEquivContinuousKaehlerDifferential_ofForm
+    (ω : TauCeti.ContinuousKaehlerDifferential K) :
+    addEquivContinuousKaehlerDifferential K d (ofForm ω) = ω :=
+  (rfl)
+
 /-- The level acts on its one-forms through its underlying Laurent series in `u`. -/
 noncomputable instance : Module (Level K d) (Level.ContinuousKaehlerDifferential K d) :=
   letI := Module.compHom (TauCeti.ContinuousKaehlerDifferential K)

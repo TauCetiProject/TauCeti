@@ -99,8 +99,6 @@ theorem exists_mem_nhds_setLIntegral_exp_mul_abs_rpow_le [LindelofSpace M] (hn :
   set φ := extChartAt I c
   set μ := (Module.finBasis ℝ E).addHaar
   set ρ := chartVolumeDensity (I := I) c
-  have hn' : (2 : ℝ) ≤ n := by exact_mod_cast hn
-  have hq : 0 < q := div_pos (by positivity) (by linarith)
   have hρc : 0 < ρ c := chartVolumeDensity_pos c (FiberBundle.mem_baseSet_trivializationAt' c)
   -- The bump function equal to `1` on the ball of radius `r / 4`, supported in radius `r / 2`.
   let b : ContDiffBump (φ c) := ⟨r / 4, r / 2, by positivity, by linarith⟩
@@ -145,7 +143,7 @@ theorem exists_mem_nhds_setLIntegral_exp_mul_abs_rpow_le [LindelofSpace M] (hn :
       _ ≤ ENNReal.ofReal A := ENNReal.ofReal_le_ofReal (le_add_of_nonneg_right zero_le_one)
   -- The flat Trudinger inequality for `w` on the ball of radius `r`, read back on `M`.
   have htr := setLIntegral_exp_norm_div_rpow_le_of_eLpNorm_fderiv_le (μ := μ) hw hwcs
-    measurableSet_ball hwsupp hn hA hDwA
+    hwsupp hn hA hDwA
   have hb : ball (φ c) b.rIn ⊆ ball (φ c) r :=
     ball_subset_closedBall.trans ((closedBall_subset_closedBall b.rIn_lt_rOut.le).trans hbr)
   have hF (t : ℝ) : ((κ * A) ^ q)⁻¹ * |t| ^ q = (‖t‖ / (κ * A)) ^ q := by

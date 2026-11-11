@@ -21,7 +21,10 @@ maps and, at a common shape `α`, under convolution.
 * **Affine transport.** `a + b * X` has skewness `Real.sign b * β`, scale `‖b‖₊ * s` and
   location `a + b * m`. For `b ≠ 0` this holds for all parameters, valid or not. For valid
   parameters it also covers `b = 0`, where both scale and skewness vanish and the law is the
-  Dirac mass at `a`. Reflection is the case `b = -1`.
+  Dirac mass at `a`; this constant-map identity also follows directly from
+  `MeasureTheory.Measure.map_const`. Invalid stable families and all their pushforwards are zero
+  by `stableMeasure_of_invalid` and `MeasureTheory.Measure.map_zero`. Reflection is the case
+  `b = -1`.
 * **Convolution.** Two stable laws of common shape `α` convolve to a stable law of the same
   shape. Its scale `s` satisfies `s ^ α = s₁ ^ α + s₂ ^ α`, its skewness is the average of the
   skewnesses weighted by `sᵢ ^ α`, and its `S₁` location `stableS1Location α β s m` is the sum of
@@ -82,6 +85,20 @@ theorem stableMeasure_map_affine {s : ℝ≥0} {m a b : ℝ}
   push_cast
   ring_nf
 
+/-- Scaling and translation of the scale-one, location-zero stable law gives the stable law with
+that scale and location, including the zero-scale Dirac case. This holds even for invalid shape
+or skewness. -/
+theorem stableMeasure_one_zero_map_affine {s : ℝ≥0} {m : ℝ} :
+    (stableMeasure α β 1 0).map (fun x ↦ m + s * x) = stableMeasure α β s m := by
+  rcases eq_or_ne s 0 with rfl | hs
+  · by_cases hv : α ∈ Ioc 0 2 ∧ |β| ≤ 1
+    · let _ := isProbabilityMeasure_stableMeasure hv.1 hv.2 1 0
+      simp [stableMeasure_zero_scale hv.1 hv.2, Measure.map_const]
+    · simp [stableMeasure_of_not_valid hv]
+  · simpa [Real.sign_of_pos (NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hs))] using
+      stableMeasure_map_affine (α := α) (β := β) (s := 1) (m := 0) (a := m) (b := s)
+        (Or.inl (NNReal.coe_ne_zero.mpr hs))
+
 /-- Reflection of a stable law negates its skewness and location. This holds for all
 parameters, since invalid shapes give the zero measure on both sides. -/
 @[simp]
@@ -101,6 +118,13 @@ theorem hasLaw_affine_stableMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measu
     HasLaw (fun ω ↦ a + b * X ω)
       (stableMeasure α (Real.sign b * β) (‖b‖₊ * s) (a + b * m)) P :=
   (HasLaw.mk (by fun_prop) (stableMeasure_map_affine h)).fun_comp hX
+
+/-- Reflection of a random variable with a scalar stable law. -/
+theorem hasLaw_neg_stableMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → ℝ} {α β : ℝ} {s : ℝ≥0} {m : ℝ}
+    (hX : HasLaw X (stableMeasure α β s m) P) :
+    HasLaw (fun ω ↦ -X ω) (stableMeasure α (-β) s (-m)) P :=
+  (HasLaw.mk (by fun_prop) (stableMeasure_map_neg α β s m)).fun_comp hX
 
 /-! ### Convolution -/
 

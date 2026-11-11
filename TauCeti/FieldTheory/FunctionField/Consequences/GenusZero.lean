@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Consequences.HighDegree
+-- Proof-only: a divisor of degree one forces the constant field to be exact.
+import TauCeti.FieldTheory.FunctionField.Divisor.ConstantField
 -- Proof-only: inseparable parameters of prime degree are `p`-th powers.
 import TauCeti.FieldTheory.FunctionField.Frobenius
 -- Proof-only: the generator of `k(x)` generates it.
-import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 -- Proof-only: Lüroth's theorem and the genus of `k(t)`, for subfields of a rational function field.
 import Mathlib.FieldTheory.RatFunc.Luroth
 import TauCeti.FieldTheory.FunctionField.RiemannRoch.Equiv
@@ -18,10 +20,9 @@ import TauCeti.FieldTheory.FunctionField.RiemannRoch.RatFunc
 /-!
 # Genus-zero function fields with a divisor of degree one
 
-Let `F / k` be an algebraic function field with exact constant field.  If `F` has genus zero
-and admits a divisor of degree one, then `F` is a rational function field over `k`.  This is the
-nontrivial implication of Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed.,
-Proposition 1.6.3.
+Let `F / k` be an algebraic function field.  If `F` has genus zero and admits a divisor of degree
+one, then `F` is a rational function field over `k`.  This is the nontrivial implication of
+Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., Proposition 1.6.3.
 
 The degree-one hypothesis is deliberately stated for an arbitrary divisor, not for a rational
 place.  Riemann--Roch gives a nonzero section of that divisor.  Translating the section by its
@@ -43,8 +44,9 @@ Over a perfect constant field this converse rules out inseparable subextensions 
 in a function field of positive genus: if `F / k(x)` has prime degree and is inseparable, then
 `x = y ^ p` with `F = k(y)` (Stichtenoth, Proposition 3.10.2), so `F` has genus zero.
 
-Without a degree-one divisor, a genus-zero function field still has an effective divisor of degree
-two in the anticanonical class, whose Riemann–Roch space has dimension three.
+Without a degree-one divisor, a genus-zero function field with exact constant field still has an
+effective divisor of degree two in the anticanonical class, whose Riemann–Roch space has dimension
+three.
 
 ## Main results
 
@@ -87,9 +89,10 @@ Riemann--Roch gives dimension two for the degree-one divisor.  A nonzero section
 to a linearly equivalent effective divisor, still of degree one, and such a divisor contains a
 rational place. -/
 theorem exists_place_degree_eq_one_of_genus_eq_zero_of_divisor_degree_eq_one
-    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 0)
+    (hF : IsFunctionField k F) (hg : genus k F = 0)
     (hdegree : ∃ D : Divisor k F, Divisor.degree D = 1) :
     ∃ P : Place k F, P.degree = 1 := by
+  have hex := isIntegrallyClosedIn_of_exists_divisor_degree_eq_one hdegree
   obtain ⟨D, hD⟩ := hdegree
   have hhigh : 2 * (genus k F : ℤ) - 1 ≤ Divisor.degree D := by
     rw [hg, hD]
@@ -108,23 +111,24 @@ theorem exists_place_degree_eq_one_of_genus_eq_zero_of_divisor_degree_eq_one
   have hEdeg : Divisor.degree E = 1 := by
     simp [E, hD]
   obtain ⟨P, _, hP⟩ :=
-    Divisor.exists_place_degree_eq_one_of_isEffective_of_degree_eq_one hF hE hEdeg
+    Divisor.exists_place_degree_eq_one_of_nonneg_of_degree_eq_one hE hEdeg
   exact ⟨P, hP⟩
 
 /-- **Genus zero plus a divisor of degree one implies rationality** (the nontrivial direction of
 Stichtenoth, Proposition 1.6.3).
 
 The conclusion is an equivalence of `k`-algebras `F ≃ₐ[k] RatFunc k`.  No perfectness,
-separability, or rational-place hypothesis is added: exactness of the constant field is the only
-extra hypothesis required by Riemann--Roch. -/
+separability, rational-place or exactness hypothesis is added: the degree-one divisor already makes
+the constant field exact (`TauCeti.isIntegrallyClosedIn_of_exists_divisor_degree_eq_one`). -/
 theorem nonempty_algEquiv_ratFunc_of_genus_eq_zero_of_divisor_degree_eq_one
-    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 0)
+    (hF : IsFunctionField k F) (hg : genus k F = 0)
     (hdegree : ∃ D : Divisor k F, Divisor.degree D = 1) :
     Nonempty (F ≃ₐ[k] RatFunc k) := by
   obtain ⟨P, hP⟩ :=
-    exists_place_degree_eq_one_of_genus_eq_zero_of_divisor_degree_eq_one hF hex hg hdegree
+    exists_place_degree_eq_one_of_genus_eq_zero_of_divisor_degree_eq_one hF hg hdegree
   obtain ⟨z, hpoles⟩ :=
-    P.exists_poles_eq_natCast_zsmul_ofPoint hF hex (n := 1) (by simp [hg])
+    P.exists_poles_eq_natCast_zsmul_ofPoint hF
+      (isIntegrallyClosedIn_of_exists_divisor_degree_eq_one hdegree) (n := 1) (by simp [hg])
   have hpoles' : Divisor.poles hF z = WeilDivisor.ofPoint P := by
     simpa using hpoles
   have hz : Transcendental k (z : F) := by
@@ -230,7 +234,7 @@ theorem isSeparable_adjoin_of_finrank_prime [PerfectField k] (hg : genus k F ≠
   obtain ⟨p, _⟩ := ExpChar.exists F
   by_contra hsep
   obtain ⟨y, hyx, htop⟩ := hx.isFunctionField_adjoin.finite_extension
-    |>.exists_pow_eq_and_adjoin_eq_top_of_finrank_prime_of_not_isSeparable p hx hprime hsep
+    |>.exists_pow_eq_and_adjoin_eq_top_of_finrank_prime_of_not_isSeparable p hprime hsep
   exact hg (genus_eq_zero_of_adjoin_eq_top (fun h ↦ hx (hyx ▸ (h.isIntegral.pow p).isAlgebraic))
     htop)
 

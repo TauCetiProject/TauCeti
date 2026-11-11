@@ -150,13 +150,16 @@ variable {A : Matrix n n ℝ} {v y : n → ℝ} {r : ℝ}
 matrix has an eigenvector whose entries are all strictly positive, for a strictly positive
 eigenvalue.
 
-This eigenvalue is the spectral radius (`Matrix.spectralRadius_eq_of_mulVec_eq_smul`), its
-eigenspace is spanned by the eigenvector (`Matrix.IsIrreducible.exists_eq_smul_of_mulVec_eq_smul`),
-and it is a simple root of the characteristic polynomial
-(`Matrix.IsIrreducible.rootMultiplicity_charpoly_eq_one`). -/
-theorem IsIrreducible.exists_mulVec_eq_smul [Nonempty n] (hA : A.IsIrreducible) :
+When `n` is nonempty, this eigenvalue is the spectral radius
+(`Matrix.spectralRadius_eq_of_mulVec_eq_smul`), its eigenspace is spanned by the eigenvector
+(`Matrix.IsIrreducible.exists_eq_smul_of_mulVec_eq_smul`), and it is a simple root of the
+characteristic polynomial (`Matrix.IsIrreducible.rootMultiplicity_charpoly_eq_one`).  For empty `n`
+the statement holds trivially, with the zero vector. -/
+theorem IsIrreducible.exists_mulVec_eq_smul (hA : A.IsIrreducible) :
     ∃ r : ℝ, 0 < r ∧ ∃ v : n → ℝ, (∀ i, 0 < v i) ∧ A *ᵥ v = r • v := by
   classical
+  obtain hn | ⟨⟨i₀⟩⟩ := isEmpty_or_nonempty n
+  · exact ⟨1, one_pos, 0, fun i => isEmptyElim i, Subsingleton.elim _ _⟩
   obtain ⟨-, k, -, hk⟩ := hA.isPrimitive_one_add
   obtain ⟨s, -, v, hv, hBv⟩ := exists_mulVec_eq_smul_of_pos hk
   -- The vector `(1 + A) v` is again a positive eigenvector of `(1 + A) ^ k`, hence a positive
@@ -165,7 +168,6 @@ theorem IsIrreducible.exists_mulVec_eq_smul [Nonempty n] (hA : A.IsIrreducible) 
   have hvw : ∀ i, v i ≤ w i := fun i => by
     simpa [w, add_mulVec] using mulVec_nonneg hA.nonneg (fun j => (hv j).le) i
   have hw : 0 ≤ w := fun i => (hv i).le.trans (hvw i)
-  obtain ⟨i₀⟩ := ‹Nonempty n›
   have hw0 : w ≠ 0 := fun h => (hv i₀).not_ge (by simpa [h] using hvw i₀)
   have hBw : ((1 + A) ^ k) *ᵥ w = s • w := by
     rw [mulVec_mulVec, ← pow_succ, pow_succ', ← mulVec_mulVec, hBv, mulVec_smul]

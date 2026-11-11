@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Pi
+public import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 
 /-!
@@ -20,6 +21,9 @@ coordinate `i` to another coordinate.
 
 ## Main results
 
+* `Finset.univ_prod_mulSingle_mulSingle`, `Finset.univ_sum_single_single`: double dependent product
+  or sum of `Pi.mulSingle i (Pi.mulSingle j (f i j))` / `Pi.single i (Pi.single j (f i j))` equals
+  `f`.
 * `Fintype.prod_pow_pi_single`: `∏ j, f j ^ Pi.single i a j = f i ^ a`.
 * `Pi.exists_eq_add_single_one`: an exponent vector with a positive `i`-th entry is `γ + e_i`.
 * `Pi.eq_single_of_apply_eq_sum`: an exponent vector of degree `d` with `i`-th entry `d` is
@@ -35,6 +39,26 @@ public section
 open Finset
 
 variable {ι : Type*}
+
+/-- Decomposing a dependent two-argument function `f : ∀ i j, M i j` as the iterated product of
+pointwise `Pi.mulSingle` factors. -/
+@[to_additive /-- Decomposing a dependent two-argument function `f : ∀ i j, M i j` as the iterated
+sum of pointwise `Pi.single` terms. -/]
+theorem Finset.univ_prod_mulSingle_mulSingle [Fintype ι] [DecidableEq ι]
+    {κ : ι → Type*} [∀ i, Fintype (κ i)] [∀ i, DecidableEq (κ i)]
+    {M : ∀ i, κ i → Type*} [∀ i j, CommMonoid (M i j)] (f : ∀ i j, M i j) :
+    (∏ i, ∏ j, Pi.mulSingle i (Pi.mulSingle j (f i j))) = f := by
+  conv_rhs => rw [← Finset.univ_prod_mulSingle f]
+  refine Finset.prod_congr rfl fun i _ => ?_
+  conv_rhs => rw [← Finset.univ_prod_mulSingle (f i), ← MonoidHom.mulSingle_apply, map_prod]
+  simp only [MonoidHom.mulSingle_apply]
+
+/-- Summing one-hot vectors counts the occurrences of each label in the finite sample. -/
+theorem Finset.sum_pi_single_one_eq_card_filter {J : Type*} [DecidableEq ι]
+    (s : Finset J) (x : J → ι) :
+    ∑ j ∈ s, Pi.single (x j) (1 : ℕ) = fun i => (s.filter fun j => x j = i).card := by
+  ext i
+  simp [Finset.sum_apply, Pi.single_apply, eq_comm, Finset.card_filter]
 
 /-- The monomial with exponent vector `Pi.single i a` is the power `f i ^ a`. -/
 theorem Fintype.prod_pow_pi_single [Fintype ι] [DecidableEq ι] {M : Type*} [CommMonoid M]

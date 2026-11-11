@@ -163,6 +163,15 @@ theorem universalGSpaceChainComplexForget₂Iso_hom_f (n : ℕ) :
         eqToHom (orderedSimplicialChainComplex_X k n).symm :=
   (rfl)
 
+/-- In each degree the inverse comparison reconstructs a permutation vector from its
+coefficients. -/
+@[simp]
+theorem universalGSpaceChainComplexForget₂Iso_inv_f (n : ℕ) :
+    (universalGSpaceChainComplexForget₂Iso k G).inv.f n =
+      eqToHom (orderedSimplicialChainComplex_X k n) ≫
+        (MonoidAlgebra.coeffLinearEquiv k).toModuleIso.inv :=
+  (rfl)
+
 /-- The coefficient sum vanishes on boundaries of `1`-simplices. -/
 private lemma universalGSpaceBoundary_comp_permutationAugmentation :
     universalGSpaceBoundary k G 0 ≫ permutationAugmentation k G _ = 0 :=

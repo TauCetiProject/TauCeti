@@ -192,6 +192,22 @@ private theorem measure_inter_occupied_le_sdiff (hZ : IsAlloc μ A m {j | lvl j 
   exact (add_le_add le_rfl (_root_.tsum_le_tsum fun j ↦
     indicator_le_indicator_of_subset inter_subset_left (fun _ ↦ zero_le) j)).trans (hm i)
 
+/-- A member of level `ℓ` whose old set loses its part occupied below it, and gains a set `G` of
+the same mass, moves by at most twice the demand at level `n` below it. -/
+private theorem measure_symmDiff_sdiff_union_le (hZ : IsAlloc μ A m {j | lvl j < n} Z)
+    (hW : IsAlloc μ A m {j | ℓ + 1 ≤ lvl j ∧ lvl j ≤ n} W) (hi : lvl i = ℓ) (hℓn : ℓ < n)
+    (hAi : μ (A i) ≠ ∞) (hcov : ∀ j, ℓ + 1 ≤ lvl j → lvl j < n → Z j ⊆ W j ∪ occupied A lvl n W j)
+    {G : Set X} (hG : μ G = μ (Z i ∩ occupied A lvl n W i)) :
+    μ (((Z i \ occupied A lvl n W i) ∪ G) ∆ Z i) ≤
+      2 * ∑' j, (below A lvl i ∩ {j | lvl j = n}).indicator m j :=
+  calc μ (((Z i \ occupied A lvl n W i) ∪ G) ∆ Z i)
+      ≤ μ (G ∪ (Z i ∩ occupied A lvl n W i)) := measure_mono (symmDiff_sdiff_union_subset _ _ _)
+    _ ≤ μ G + μ (Z i ∩ occupied A lvl n W i) := measure_union_le _ _
+    _ ≤ 2 * ∑' j, (below A lvl i ∩ {j | lvl j = n}).indicator m j := by
+        rw [hG, ← two_mul]
+        gcongr
+        exact measure_inter_occupied_le hZ hW hi hℓn hAi hcov
+
 end Reallocation
 
 omit [Countable ι] in
@@ -227,6 +243,56 @@ variable [StandardBorelSpace X] [NullSingletonClass μ]
   (hlam : ∀ i j, lvl i < lvl j → A j ⊆ A i ∨ Disjoint (A i) (A j))
 include hA hAfin hlvl hlam
 
+omit [StandardBorelSpace X] [NullSingletonClass μ] hA hAfin in
+/-- Replacing the old sets of the members of level `ℓ` by `(Z i \ occupied) ∪ G i`, with `G i` a
+measurable set of the right mass in the free room of `A i`, keeps an allocation of the levels from
+`ℓ` to `n`. -/
+private theorem isAlloc_reallocate {G W' : ι → Set X}
+    (hZ : IsAlloc μ A m {i | lvl i < n} Z) (hW : IsAlloc μ A m {i | ℓ + 1 ≤ lvl i ∧ lvl i ≤ n} W)
+    (hℓn : ℓ < n) (hGsub : ∀ i, lvl i = ℓ → G i ⊆ A i \ (Z i ∪ occupied A lvl n W i))
+    (hGm : ∀ i, lvl i = ℓ → MeasurableSet (G i))
+    (hGμ : ∀ i, lvl i = ℓ → μ (G i) = μ (Z i ∩ occupied A lvl n W i))
+    (hW'ℓ : ∀ {i : ι}, lvl i = ℓ → W' i = (Z i \ occupied A lvl n W i) ∪ G i)
+    (hW'gt : ∀ {i : ι}, ℓ < lvl i → W' i = W i) :
+    IsAlloc μ A m {i | ℓ ≤ lvl i ∧ lvl i ≤ n} W' := by
+  have hZi {i : ι} (hi : lvl i = ℓ) : i ∈ {j | lvl j < n} := by simpa [hi] using hℓn
+  have hW'A {i : ι} (hi : lvl i = ℓ) : W' i ⊆ A i := by
+    rw [hW'ℓ hi]
+    exact union_subset (sdiff_subset.trans (hZ.subset i (hZi hi))) ((hGsub i hi).trans sdiff_subset)
+  have hGZ {i : ι} (hi : lvl i = ℓ) : Disjoint (G i) (Z i) :=
+    (disjoint_sdiff_left.mono_left (hGsub i hi)).mono_right subset_union_left
+  have hGU {i : ι} (hi : lvl i = ℓ) : Disjoint (W' i) (occupied A lvl n W i) := by
+    rw [hW'ℓ hi]
+    exact disjoint_union_left.2 ⟨disjoint_sdiff_left,
+      (disjoint_sdiff_left.mono_left (hGsub i hi)).mono_right subset_union_right⟩
+  have hdisj {i j : ι} (hi : lvl i = ℓ) (hj : ℓ < lvl j) (hjn : lvl j ≤ n) :
+      Disjoint (W' i) (W' j) := by
+    rw [hW'gt hj]
+    by_cases hb : j ∈ below A lvl i
+    · exact (hGU hi).mono_right
+        (subset_biUnion_of_mem (s := below A lvl i ∩ {j | lvl j ≤ n}) (u := W) ⟨hb, hjn⟩)
+    · exact ((hlam i j (hi ▸ hj)).resolve_left fun h ↦ hb ⟨hi ▸ hj, h⟩).mono (hW'A hi)
+        (hW.subset j ⟨hj, hjn⟩)
+  refine ⟨fun i hi ↦ ?_, fun i hi ↦ ?_, fun i hi ↦ ?_, fun i hi j hj hij ↦ ?_⟩
+  · rcases hi.1.eq_or_lt with h | h
+    · rw [hW'ℓ h.symm]
+      exact ((hZ.measurableSet i (hZi h.symm)).diff (measurableSet_occupied hW h.symm)).union
+        (hGm i h.symm)
+    · exact hW'gt h ▸ hW.measurableSet i ⟨h, hi.2⟩
+  · rcases hi.1.eq_or_lt with h | h
+    · exact hW'A h.symm
+    · exact hW'gt h ▸ hW.subset i ⟨h, hi.2⟩
+  · rcases hi.1.eq_or_lt with h | h
+    · rw [hW'ℓ h.symm, measure_sdiff_union_eq (measurableSet_occupied hW h.symm) (hGm i h.symm)
+        (hGZ h.symm) (hGμ i h.symm), hZ.measure_eq i (hZi h.symm)]
+    · exact hW'gt h ▸ hW.measure_eq i ⟨h, hi.2⟩
+  · rcases hi.1.eq_or_lt with h | h <;> rcases hj.1.eq_or_lt with h' | h'
+    · exact (hlvl i j hij (h.symm.trans h')).mono (hW'A h.symm) (hW'A h'.symm)
+    · exact hdisj h.symm h' hj.2
+    · exact (hdisj h'.symm h hi.2).symm
+    · rw [Function.onFun, hW'gt h, hW'gt h']
+      exact hW.disjoint ⟨h, hi.2⟩ ⟨h', hj.2⟩ hij
+
 /-- Reallocating one more level. Each member `i` of level `ℓ` gives up the part of its old set
 now occupied below it and takes the same mass from the free room of `A i`. -/
 private theorem reallocated_of_succ
@@ -246,45 +312,8 @@ private theorem reallocated_of_succ
   set W' : ι → Set X := fun i ↦ if lvl i = ℓ then (Z i \ U i) ∪ G i else W i
   have hW'ℓ {i : ι} (hi : lvl i = ℓ) : W' i = (Z i \ U i) ∪ G i := by simp [W', hi]
   have hW'gt {i : ι} (hi : ℓ < lvl i) : W' i = W i := by simp [W', hi.ne']
-  have hW'A {i : ι} (hi : lvl i = ℓ) : W' i ⊆ A i := by
-    rw [hW'ℓ hi]
-    exact union_subset (sdiff_subset.trans (hZ.subset i (hZi hi))) ((hGsub i hi).trans sdiff_subset)
-  have hGZ {i : ι} (hi : lvl i = ℓ) : Disjoint (G i) (Z i) :=
-    (disjoint_sdiff_left.mono_left (hGsub i hi)).mono_right subset_union_left
-  have hGU {i : ι} (hi : lvl i = ℓ) : Disjoint (W' i) (U i) := by
-    rw [hW'ℓ hi]
-    exact disjoint_union_left.2 ⟨disjoint_sdiff_left,
-      (disjoint_sdiff_left.mono_left (hGsub i hi)).mono_right subset_union_right⟩
-  have hdisj {i j : ι} (hi : lvl i = ℓ) (hj : ℓ < lvl j) (hjn : lvl j ≤ n) :
-      Disjoint (W' i) (W' j) := by
-    rw [hW'gt hj]
-    by_cases hb : j ∈ below A lvl i
-    · exact (hGU hi).mono_right
-        (subset_biUnion_of_mem (s := below A lvl i ∩ {j | lvl j ≤ n}) (u := W) ⟨hb, hjn⟩)
-    · exact ((hlam i j (hi ▸ hj)).resolve_left fun h ↦ hb ⟨hi ▸ hj, h⟩).mono (hW'A hi)
-        (hW.subset j ⟨hj, hjn⟩)
-  -- Each property splits into the new members of level `ℓ` and the unchanged deeper members:
-  -- measurability, containment, mass, disjointness, covering of old sets, and the moved mass.
-  refine ⟨W', ⟨fun i hi ↦ ?_, fun i hi ↦ ?_, fun i hi ↦ ?_, fun i hi j hj hij ↦ ?_⟩,
+  refine ⟨W', isAlloc_reallocate hlvl hlam hZ hW hℓn hGsub hGm hGμ hW'ℓ hW'gt,
     fun i hi hin ↦ ?_, fun i hi hin ↦ ?_⟩
-  · rcases hi.1.eq_or_lt with h | h
-    · rw [hW'ℓ h.symm]
-      exact ((hZ.measurableSet i (hZi h.symm)).diff (measurableSet_occupied hW h.symm)).union
-        (hGm i h.symm)
-    · exact hW'gt h ▸ hW.measurableSet i ⟨h, hi.2⟩
-  · rcases hi.1.eq_or_lt with h | h
-    · exact hW'A h.symm
-    · exact hW'gt h ▸ hW.subset i ⟨h, hi.2⟩
-  · rcases hi.1.eq_or_lt with h | h
-    · rw [hW'ℓ h.symm, measure_sdiff_union_eq (measurableSet_occupied hW h.symm) (hGm i h.symm)
-        (hGZ h.symm) (hGμ i h.symm), hZ.measure_eq i (hZi h.symm)]
-    · exact hW'gt h ▸ hW.measure_eq i ⟨h, hi.2⟩
-  · rcases hi.1.eq_or_lt with h | h <;> rcases hj.1.eq_or_lt with h' | h'
-    · exact (hlvl i j hij (h.symm.trans h')).mono (hW'A h.symm) (hW'A h'.symm)
-    · exact hdisj h.symm h' hj.2
-    · exact (hdisj h'.symm h hi.2).symm
-    · rw [Function.onFun, hW'gt h, hW'gt h']
-      exact hW.disjoint ⟨h, hi.2⟩ ⟨h', hj.2⟩ hij
   · have hU' : U i ⊆ occupied A lvl n W' i :=
       biUnion_mono subset_rfl fun j hj ↦ (hW'gt (hi.trans_lt hj.1.1)).ge
     rcases hi.eq_or_lt with h | h
@@ -296,15 +325,8 @@ private theorem reallocated_of_succ
     · rw [hW'gt h]
       exact (hcov i h hin).trans (union_subset_union_right _ hU')
   · rcases hi.eq_or_lt with h | h
-    · have hi' := h.symm
-      calc μ (W' i ∆ Z i) ≤ μ (G i ∪ (Z i ∩ U i)) := by
-            rw [hW'ℓ hi']
-            exact measure_mono (symmDiff_sdiff_union_subset _ _ _)
-        _ ≤ μ (G i) + μ (Z i ∩ U i) := measure_union_le _ _
-        _ ≤ 2 * ∑' j, (below A lvl i ∩ {j | lvl j = n}).indicator m j := by
-            rw [hGμ i hi', ← two_mul]
-            gcongr
-            exact measure_inter_occupied_le hZ hW hi' hℓn (hAfin i) hcov
+    · rw [hW'ℓ h.symm]
+      exact measure_symmDiff_sdiff_union_le hZ hW h.symm hℓn (hAfin i) hcov (hGμ i h.symm)
     · exact hW'gt h ▸ hchg i h hin
 
 /-- One pass of the reallocation. Given an allocation `Z` of the levels below `n`, the members

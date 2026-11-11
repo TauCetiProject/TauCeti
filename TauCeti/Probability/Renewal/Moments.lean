@@ -100,7 +100,7 @@ private theorem lintegral_renewalCount_pow_le_add_tsum (hT : ∀ n, Measurable (
     measurableSet_le (measurable_arrival hT n) measurable_const
   have hle : ∀ᵐ ω ∂P, renewalCount T t ω ^ p ≤ (M : ℝ≥0∞) ^ p +
       ∑' j : ℕ, {ω | arrival T (M + j) ω ≤ t}.indicator (fun _ ↦ ((M + j : ℕ) : ℝ≥0∞) ^ p) ω := by
-    filter_upwards [ae_renewalCount_lt_top hT hindep hid hzero] with ω hω
+    filter_upwards [ae_renewalCount_lt_top hindep hid hzero] with ω hω
     obtain ⟨m, hm⟩ := exists_renewalCount_eq_natCast (hω t).ne
     rw [hm]
     rcases lt_or_ge m M with h | h
@@ -161,7 +161,6 @@ theorem exists_lintegral_renewalCount_pow_le (hT : ∀ n, Measurable (T n)) (hin
       summable_pow_mul_geometric_of_norm_lt_one p
       (by rwa [Real.norm_of_nonneg hρ0])
   set S := ∑' j : ℕ, ((j + 1 : ℕ) : ℝ) ^ p * ρ ^ (j + 1)
-  have hS : 0 ≤ S := tsum_nonneg fun j ↦ by positivity
   have hC : 0 ≤ (1 + S) * (L + 1) ^ p := by positivity
   refine ⟨NNReal.mk _ hC, fun t ↦ ?_⟩
   set k := ⌈t⌉₊

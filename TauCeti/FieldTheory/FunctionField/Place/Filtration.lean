@@ -174,6 +174,13 @@ theorem filtration_antitone : Antitone P.filtration := fun a b hab z hz ↦
   P.mem_filtration_iff.mpr
     ((P.mem_filtration_iff.mp hz).trans (WithZero.exp_le_exp.mpr (by omega)))
 
+/-- A function congruent modulo the `m`-th filtration to a regular function is regular. -/
+theorem mem_integers_of_sub_mem_filtration {y w : F} (hy : y ∈ P.integers) {m : ℕ}
+    (hw : w - y ∈ P.filtration m) : w ∈ P.integers := by
+  have := add_mem (P.filtration_antitone (Nat.cast_nonneg m) hw)
+    (P.mem_filtration_zero_iff.mpr hy)
+  rwa [sub_add_cancel, mem_filtration_zero_iff] at this
+
 /-- A function of order at least `a` and one of order at least `b` have a product of order at
 least `a + b`. -/
 theorem mul_mem_filtration {a b : ℤ} {z w : F} (hz : z ∈ P.filtration a)
@@ -212,6 +219,21 @@ theorem mem_filtration_ord (z : F) : z ∈ P.filtration (P.ord z) := by
   rcases eq_or_ne z 0 with rfl | hz
   · simp
   · exact (P.mem_filtration_iff_le_ord hz).mpr le_rfl
+
+/-- A finite sum of terms `c d * t ^ d` with every `d` at least `n` lies in the `n`-th
+filtration step when `t` is a uniformizer. -/
+theorem sum_algebraMap_mul_pow_mem_filtration {t : F} (ht : P.ord t = 1) {n : ℕ} (c : ℕ → k)
+    (S : Finset ℕ) (hS : ∀ d ∈ S, n ≤ d) :
+    ∑ d ∈ S, algebraMap k F (c d) * t ^ d ∈ P.filtration n := by
+  apply Submodule.sum_mem
+  intro d hd
+  have hpow := P.mem_filtration_ord (t ^ d)
+  simp only [P.ord_pow, ht, mul_one] at hpow
+  have hdegree : (n : ℤ) ≤ (d : ℤ) := by exact_mod_cast hS d hd
+  apply P.filtration_antitone hdegree
+  have hm := P.mul_mem_filtration
+    (P.mem_filtration_zero_iff.mpr (P.algebraMap_mem_integers (c d))) hpow
+  simpa only [zero_add] using hm
 
 /-! ### The successive quotients -/
 

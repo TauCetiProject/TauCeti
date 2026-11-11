@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Torsion
-public import Mathlib.RingTheory.Finiteness.Cardinality
+public import Mathlib.GroupTheory.Finiteness
 public import TauCeti.Algebra.Group.Submonoid.GroupCompletion
 public import TauCeti.Algebra.Group.Submonoid.NSMulSaturation
 import Mathlib.Algebra.EuclideanDomain.Int
@@ -17,6 +17,7 @@ import Mathlib.Algebra.Order.Sub.Prod
 import Mathlib.Data.Int.Interval
 import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 import Mathlib.LinearAlgebra.FreeModule.PID
+import Mathlib.RingTheory.Finiteness.Cardinality
 
 /-!
 # Finiteness of preimages and saturations of additive submonoids
@@ -25,9 +26,12 @@ This file establishes two forms of Gordan's lemma for finitely generated additiv
 
 * **Preimages under homomorphisms**: the preimage of a finitely generated additive submonoid under a
   homomorphism from a finitely generated commutative monoid is finitely generated, provided the
-  target is cancellative (`AddSubmonoid.FG.comap`). Together with
-  `AddSubmonoid.fg_iff_exists_fin_addMonoidHom` and `AddSubmonoid.fg_eqLocusM`, this gives the
-  slack-variable form of Gordan's lemma.
+  target is cancellative (`AddSubmonoid.FG.comap`). For instance, since the nonnegative integer
+  vectors form a finitely generated submonoid of `ℤⁿ`, finitely many integral linear inequalities
+  on a finitely generated abelian group cut out a finitely generated additive submonoid. The proof
+  uses Mathlib's `AddSubmonoid.fg_iff_exists_fin_addMonoidHom` to parametrize both monoids by finite
+  products of naturals, and `AddSubmonoid.fg_eqLocusM` to impose equality of their images (the
+  slack-variable form of Gordan's lemma).
 * **Bounded shifts and saturations**: for a finitely generated submonoid `S` of a finitely generated
   torsion-free abelian group `L`, Euclidean division of natural generator coefficients bounds
   representatives of `S.nsmulSaturation` modulo `S` inside a finite coordinate box, yielding a
@@ -60,34 +64,25 @@ This file establishes two forms of Gordan's lemma for finitely generated additiv
 
 public section
 
-namespace TauCeti
-
 /-- The preimage of a finitely generated additive submonoid of a cancellative commutative monoid
-is finitely generated when the source monoid is finitely generated. -/
-theorem _root_.AddSubmonoid.FG.comap {M G : Type*} [AddCommMonoid M] [AddCommMonoid G]
+under a homomorphism from a finitely generated commutative monoid is finitely generated. -/
+theorem AddSubmonoid.FG.comap {M G : Type*} [AddCommMonoid M] [AddCommMonoid G]
     [IsCancelAdd G] [AddMonoid.FG M] {P : AddSubmonoid G} (hP : P.FG) (f : M →+ G) :
     (P.comap f).FG := by
   obtain ⟨n, q, hq⟩ := AddSubmonoid.fg_iff_exists_fin_addMonoidHom.mp
     (AddMonoid.FG.fg_top (M := M))
-  obtain ⟨k, g, hg⟩ := AddSubmonoid.fg_iff_exists_fin_addMonoidHom.mp hP
-  have hqsurj := AddMonoidHom.mrange_eq_top.mp hq
-  let π := q.comp (AddMonoidHom.fst (Fin n → ℕ) (Fin k → ℕ))
-  let γ := g.comp (AddMonoidHom.snd (Fin n → ℕ) (Fin k → ℕ))
-  have hfg := (AddSubmonoid.fg_eqLocusM (f.comp π) γ).map π
-  have heq : ((f.comp π).eqLocusM γ).map π = P.comap f := by
-    ext x
-    constructor
-    · rintro ⟨a, ha, rfl⟩
-      rw [AddSubmonoid.mem_comap, ← hg, AddMonoidHom.mem_mrange]
-      exact ⟨a.2, (AddMonoidHom.mem_eqLocusM.mp ha).symm⟩
-    · intro hx
-      obtain ⟨a, rfl⟩ := hqsurj x
-      rw [AddSubmonoid.mem_comap, ← hg, AddMonoidHom.mem_mrange] at hx
-      obtain ⟨b, hb⟩ := hx
-      exact ⟨(a, b), AddMonoidHom.mem_eqLocusM.mpr hb.symm, rfl⟩
-  exact heq ▸ hfg
-
-end TauCeti
+  obtain ⟨k, g, rfl⟩ := AddSubmonoid.fg_iff_exists_fin_addMonoidHom.mp hP
+  -- Pair a parameter of `M` with a slack vector parametrizing `P`, and keep the pairs whose
+  -- images under `f` and `g` agree.
+  let π := q.comp (AddMonoidHom.fst _ (Fin k → ℕ))
+  convert (AddSubmonoid.fg_eqLocusM (f.comp π) (g.comp (.snd ..))).map π
+  ext x
+  constructor
+  · rintro ⟨b, hb⟩
+    obtain ⟨a, rfl⟩ := AddMonoidHom.mrange_eq_top.mp hq x
+    exact ⟨(a, b), hb.symm, rfl⟩
+  · rintro ⟨a, ha, rfl⟩
+    exact ⟨a.2, ha.symm⟩
 
 namespace Submonoid
 

@@ -165,6 +165,25 @@ theorem val_comp_spaCompletedLocalizationHomeomorph (P : PairOfDefinition A) (Ap
   funext v
   rw [Function.comp_apply, coe_spaCompletedLocalizationHomeomorph, spaLocToRationalSubset_val]
 
+/-- The inverse of the homeomorphism, followed by `spaComapLoc`, is the inclusion of `R(T/s)` into
+`Spa (A, A⁺)`: the point of `Spa (A⟨T/s⟩, A_U⁺)` lying over `x` pulls back to `x`. -/
+@[simp]
+theorem spaComapLoc_spaCompletedLocalizationHomeomorph_symm (P : PairOfDefinition A)
+    (Aplus : Subring A) (hP : P.ringOfDefinition ≤ Aplus) (T : Finset A) (s : A) (S : Type*)
+    [CommRing S] [Algebra A S] [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    ∀ x : (Subtype.val ⁻¹' rationalSubset Aplus T s : Set (spa Aplus)),
+      spaComapLoc P Aplus T s S hden
+        ((spaCompletedLocalizationHomeomorph P Aplus hP T s S hden).symm x) = x.1 := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  intro x
+  rw [← val_comp_spaCompletedLocalizationHomeomorph P Aplus hP T s S hden, Function.comp_apply,
+    Homeomorph.apply_symm_apply]
+
 end TauCeti.ValuationSpectrum
 
 end

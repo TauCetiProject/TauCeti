@@ -337,6 +337,46 @@ theorem mapLinearMap_injective (φ : E →ₗ[R] F) {C : ℝ} (hφ : ∀ e, ‖�
     Function.Injective (mapLinearMap (c := c) φ hφ) := fun _ _ h ↦
   ext fun t ↦ hinj (congrFun (congrArg Subtype.val h) t)
 
+section Lifts
+
+variable (φ : E →ₗ[R] F) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖)
+
+/-- A restricted family is killed by the induced map exactly when each coefficient is killed. -/
+@[simp]
+theorem mapLinearMap_eq_zero_iff (a : IsRestrictedFamily.addSubgroup E c) :
+    mapLinearMap φ hφ a = 0 ↔ ∀ t, φ (a.1 t) = 0 := by
+  constructor
+  · intro h t
+    simpa only [coe_mapLinearMap, Function.comp_apply, AddSubgroup.coe_zero, Pi.zero_apply]
+      using congrFun (congrArg Subtype.val h) t
+  · intro h
+    apply ext
+    simpa only [coe_mapLinearMap, Function.comp_apply, AddSubgroup.coe_zero, Pi.zero_apply]
+      using h
+
+/-- Uniformly bounded coefficient lifts give restricted lifts with the same coefficient bound.
+The polyradius can be arbitrary and the lift need not be linear. -/
+theorem exists_mapLinearMap_eq_and_norm_coeff_le {L : ℝ}
+    (hlift : ∀ y, ∃ x, φ x = y ∧ ‖x‖ ≤ L * ‖y‖)
+    (b : IsRestrictedFamily.addSubgroup F c) :
+    ∃ a, mapLinearMap φ hφ a = b ∧ ∀ t, ‖a.1 t‖ ≤ L * ‖b.1 t‖ := by
+  choose f hf hnorm using hlift
+  refine ⟨⟨f ∘ b.1, mem_addSubgroup.mpr ((mem_addSubgroup.mp b.2).map f hnorm)⟩,
+    ?_, fun t ↦ hnorm _⟩
+  apply ext
+  simpa only [coe_mapLinearMap, Function.comp_apply] using fun t ↦ hf (b.1 t)
+
+/-- Bounded lifts, rather than algebraic surjectivity alone, guarantee surjectivity on
+restricted families. -/
+theorem mapLinearMap_surjective {L : ℝ}
+    (hlift : ∀ y, ∃ x, φ x = y ∧ ‖x‖ ≤ L * ‖y‖) :
+    Function.Surjective (mapLinearMap (c := c) φ hφ) := by
+  intro b
+  obtain ⟨a, ha, -⟩ := exists_mapLinearMap_eq_and_norm_coeff_le φ hφ hlift b
+  exact ⟨a, ha⟩
+
+end Lifts
+
 theorem mapLinearMap_ofFinsupp (φ : E →ₗ[R] F) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖)
     (a : (σ →₀ ℕ) →₀ E) :
     mapLinearMap φ hφ (ofFinsupp R c a) = ofFinsupp R c (Finsupp.mapRange.linearMap φ a) :=

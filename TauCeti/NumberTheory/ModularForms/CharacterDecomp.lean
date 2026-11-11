@@ -62,7 +62,7 @@ Layer 0 of the ModularForms roadmap.
 
 public section
 
-open Matrix Matrix.SpecialLinearGroup CongruenceSubgroup
+open Matrix Matrix.SpecialLinearGroup CongruenceSubgroup TauCeti
 
 open scoped MatrixGroups DirectSum
 

@@ -330,6 +330,29 @@ private theorem LayersIndecomposable.succ {m : ℕ} {i : Symmetrify Q}
   · exact Or.inl fun w => ⟨(h' w).2, h.symm.upper_eq_bot (fun w => (h' w).2) w⟩
   · exact Or.inr fun w => ⟨(h' w).2, h.upper_eq_bot (fun w => (h' w).2) w⟩
 
+/-- The Koszul recursion for weighted dimensions. If the arrows into each vertex `v` carry the
+`(j + 1)`-st layer onto the sum of the `(j + 2)`-nd and `j`-th layers there, and `δ` is
+superadditive, then `2 * s (j + 1) ≤ s (j + 2) + s j` for `s n = ∑ w, δ w * dim (E n i w)`. -/
+private theorem two_mul_weighted_finrank_le_add {S : Type*} [CommRing S] [LinearOrder S]
+    [IsStrictOrderedRing S] {δ : Q → S}
+    (hδle : ∀ i, 2 * δ i ≤
+      ∑ j, ((Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) : ℕ) : S) * δ j) {i : Q} (j : ℕ)
+    (hv : ∀ v : Q, ∑ w : Q, Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) *
+        Module.finrank k (E (j + 1) (Symmetrify.of.obj i) (Symmetrify.of.obj w)) =
+          Module.finrank k (E (j + 2) (Symmetrify.of.obj i) (Symmetrify.of.obj v)) +
+            Module.finrank k (E j (Symmetrify.of.obj i) (Symmetrify.of.obj v))) :
+    2 * ∑ w : Q, δ w * (Module.finrank k (E (j + 1) (Symmetrify.of.obj i)
+        (Symmetrify.of.obj w)) : S) ≤
+      ∑ w : Q, δ w * (Module.finrank k (E (j + 2) (Symmetrify.of.obj i)
+        (Symmetrify.of.obj w)) : S) +
+      ∑ w : Q, δ w * (Module.finrank k (E j (Symmetrify.of.obj i) (Symmetrify.of.obj w)) : S) := by
+  refine (two_mul_sum_mul_le_sum_mul_sum_mul
+    (fun i j => ((Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) : ℕ) : S)) hδle
+    (e := fun w => (Module.finrank k (E (j + 1) (Symmetrify.of.obj i) (Symmetrify.of.obj w)) : S))
+    fun w => Nat.cast_nonneg _).trans_eq ?_
+  simp only [← card_symmetrify_hom, ← Nat.cast_mul, ← Nat.cast_sum, hv, Nat.cast_add, mul_add,
+    Finset.sum_add_distrib]
+
 /-- Exactness of the Koszul complex at its left end in every degree and on every graded corner, for
 a quiver whose underlying multigraph carries a positive superadditive weight. -/
 private theorem eq_zero_of_mem_preprojectiveCorner_of_two_mul_le_sum {S : Type*} [CommRing S]
@@ -364,11 +387,8 @@ private theorem eq_zero_of_mem_preprojectiveCorner_of_two_mul_le_sum {S : Type*}
     refine (hδle i).trans_eq (Finset.sum_congr rfl fun w _ => ?_)
     rw [finrank_preprojectiveCorner_one, card_symmetrify_hom, mul_comm]
   -- While the Koszul map is injective, the dimensions obey the Koszul recursion.
-  have hrec (j : ℕ) (hj : j + 2 ≤ m + 1) : 2 * s (j + 1) ≤ s (j + 2) + s j := by
-    have hv (v : Q) : ∑ w : Q, Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) *
-        Module.finrank k (E (j + 1) (Symmetrify.of.obj i) (Symmetrify.of.obj w)) =
-          Module.finrank k (E (j + 2) (Symmetrify.of.obj i) (Symmetrify.of.obj v)) +
-            Module.finrank k (E j (Symmetrify.of.obj i) (Symmetrify.of.obj v)) := by
+  have hrec (j : ℕ) (hj : j + 2 ≤ m + 1) : 2 * s (j + 1) ≤ s (j + 2) + s j :=
+    two_mul_weighted_finrank_le_add hδle j fun v => by
       -- The vertices of the doubled quiver are those of `Q`.
       rw [Fintype.sum_equiv (Equiv.ofBijective _ symmetrify_of_obj_bijective)
         (fun w : Q => Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) *
@@ -377,26 +397,6 @@ private theorem eq_zero_of_mem_preprojectiveCorner_of_two_mul_le_sum {S : Type*}
           Module.finrank k (E (j + 1) (Symmetrify.of.obj i) w)) fun _ => rfl]
       exact (sum_card_mul_finrank_preprojectiveCorner_eq_iff k Q j _ v).2
         fun y hy hb => IH j (by omega) v hy hb
-    calc 2 * s (j + 1)
-        = ∑ w : Q, 2 * δ w *
-            (Module.finrank k (E (j + 1) (Symmetrify.of.obj i) (Symmetrify.of.obj w)) : S) := by
-          simp only [hs, Finset.mul_sum, mul_assoc]
-      _ ≤ ∑ w : Q, (∑ v : Q,
-            ((Fintype.card (w ⟶ v) + Fintype.card (v ⟶ w) : ℕ) : S) * δ v) *
-            (Module.finrank k (E (j + 1) (Symmetrify.of.obj i) (Symmetrify.of.obj w)) : S) :=
-          Finset.sum_le_sum fun w _ => mul_le_mul_of_nonneg_right (hδle w) (Nat.cast_nonneg _)
-      _ = ∑ v : Q, δ v *
-            ((∑ w : Q, Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) *
-              Module.finrank k (E (j + 1) (Symmetrify.of.obj i) (Symmetrify.of.obj w)) : ℕ) :
-                S) := by
-          simp only [Finset.sum_mul, Finset.mul_sum, Nat.cast_sum, Nat.cast_mul,
-            card_symmetrify_hom]
-          rw [Finset.sum_comm]
-          refine Finset.sum_congr rfl fun v _ => Finset.sum_congr rfl fun w _ => ?_
-          push_cast
-          ring
-      _ = s (j + 2) + s j := by
-          simp only [hv, hs, Nat.cast_add, mul_add, Finset.sum_add_distrib]
   -- But the layer `m + 1` vanishes, while the weighted dimensions stay positive.
   have hz : s (m + 1) = 0 :=
     Finset.sum_eq_zero fun w _ => by rw [hE, finrank_bot, Nat.cast_zero, mul_zero]

@@ -90,23 +90,24 @@ theorem det_exteriorPower_two (b₀ : Basis (Fin 4) R M) (f : M →ₗ[R] M) :
     · exact h
     · let ε : P →+* ℤ := MvPolynomial.eval₂Hom (RingHom.id ℤ)
         (fun ij ↦ (1 : Matrix (Fin 4) (Fin 4) ℤ) ij.1 ij.2)
-      have hU : ε.mapMatrix U = 1 := by
+      have hU : U.map ε = 1 := by
         ext i j
-        rw [RingHom.mapMatrix_apply, Matrix.map_apply]
+        rw [Matrix.map_apply]
         exact MvPolynomial.eval₂Hom_X' _ _ (i, j)
-      have hC : ε.mapMatrix C = 1 := by
+      have hC : C.map ε = 1 := by
         rw [RingHom.map_toMatrix_exteriorPower, hU]
         simp only [Matrix.toLin'_one, exteriorPower.map_id, LinearMap.toMatrix_id]
       have he := congrArg ε h
-      rw [map_neg, map_pow, RingHom.map_det, RingHom.map_det, hC, hU] at he
+      rw [map_neg, map_pow, RingHom.map_det, RingHom.map_det, RingHom.mapMatrix_apply,
+        RingHom.mapMatrix_apply, hC, hU] at he
       norm_num at he
   let ε : P →+* R := MvPolynomial.eval₂Hom (Int.castRingHom R) (fun ij ↦ A ij.1 ij.2)
-  have hU : ε.mapMatrix U = A := by
+  have hU : U.map ε = A := by
     ext i j
-    rw [RingHom.mapMatrix_apply, Matrix.map_apply]
+    rw [Matrix.map_apply]
     exact MvPolynomial.eval₂Hom_X' _ _ (i, j)
   have h := congrArg ε hpos
-  rw [map_pow, RingHom.map_det, RingHom.map_det,
+  rw [map_pow, RingHom.map_det, RingHom.map_det, RingHom.mapMatrix_apply, RingHom.mapMatrix_apply,
     RingHom.map_toMatrix_exteriorPower, hU] at h
   have hmatrix : LinearMap.toMatrix ((Pi.basisFun R (Fin 4)).exteriorPower 2)
       ((Pi.basisFun R (Fin 4)).exteriorPower 2) (exteriorPower.map 2 A.toLin') =

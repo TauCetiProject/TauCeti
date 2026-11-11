@@ -6,18 +6,73 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.OpenPartialHomeomorph.Composition
+public import TauCeti.Logic.Equiv.PartialEquiv
 
 /-!
-# Composing open partial homeomorphisms with homeomorphisms
+# Composing and restricting open partial homeomorphisms
 
-This file supplements Mathlib's `Homeomorph.transOpenPartialHomeomorph`, which precomposes an
-open partial homeomorphism with a homeomorphism, by its identity law: precomposing with
-`Homeomorph.refl` changes nothing (`Homeomorph.refl_transOpenPartialHomeomorph`). Together with
-Mathlib's `Homeomorph.trans_transOpenPartialHomeomorph` this makes the precomposition an action of
-homeomorphisms.
+This file supplements `Mathlib.Topology.OpenPartialHomeomorph.Composition`:
+
+* `OpenPartialHomeomorph.image_trans_source_inter`,
+  `OpenPartialHomeomorph.image_restrOpen_source_inter`,
+  `OpenPartialHomeomorph.image_symm_trans_source_inter`, and
+  `OpenPartialHomeomorph.image_restrOpen_symm_trans_source_inter`: equational image-transport
+  formulas for compositions `e.trans e'`, open restrictions `e.restrOpen u hu`, and chart
+  transitions `e.symm.trans e'`.
+* `Homeomorph.refl_transOpenPartialHomeomorph`: precomposing an open partial homeomorphism with
+  `Homeomorph.refl` changes nothing; together with `Homeomorph.trans_transOpenPartialHomeomorph`
+  this makes `Homeomorph.transOpenPartialHomeomorph` an action of homeomorphisms.
+* `Homeomorph.symm_transOpenPartialHomeomorph_transOpenPartialHomeomorph` and
+  `Homeomorph.transOpenPartialHomeomorph_symm_transOpenPartialHomeomorph`: precomposing with a
+  homeomorphism and then with its inverse, in either order, changes nothing.
+* `Homeomorph.eventuallyEq_symm_comp_transOpenPartialHomeomorph` and
+  `Homeomorph.symm_eventuallyEq_symm_transOpenPartialHomeomorph_comp`: near a point of the
+  source, `h` is recovered from `h.transOpenPartialHomeomorph e` by applying `e.symm`, and `h.symm`
+  from `e` by applying the inverse of `h.transOpenPartialHomeomorph e`.
 -/
 
 public section
+
+open Topology
+
+namespace OpenPartialHomeomorph
+
+variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
+
+/-- Pushing a set forward along a composition `e.trans e'` of open partial homeomorphisms pushes its
+`e`-source trace through `e` and then its `e'`-source trace through `e'`. -/
+theorem image_trans_source_inter (e : OpenPartialHomeomorph X Y) (e' : OpenPartialHomeomorph Y Z)
+    (s : Set X) :
+    (e.trans e') '' ((e.trans e').source ∩ s) = e' '' (e'.source ∩ e '' (e.source ∩ s)) :=
+  e.toPartialEquiv.image_trans_source_inter e'.toPartialEquiv s
+
+/-- Restricting an open partial homeomorphism to an open subset `u` intersects source-restricted
+images with the restricted target. -/
+theorem image_restrOpen_source_inter (e : OpenPartialHomeomorph X Y) {u : Set X} (hu : IsOpen u)
+    (s : Set X) :
+    (e.restrOpen u hu) '' ((e.restrOpen u hu).source ∩ s) =
+      (e.restrOpen u hu).target ∩ e '' (e.source ∩ s) :=
+  e.toPartialEquiv.image_restr_source_inter u s
+
+/-- A transition open partial homeomorphism `e.symm.trans e'` transports the `e`-image of `s` onto
+the part of the `e'`-image of `s` lying in `(e.symm.trans e').target`. -/
+theorem image_symm_trans_source_inter (e : OpenPartialHomeomorph X Y)
+    (e' : OpenPartialHomeomorph X Z) (s : Set X) :
+    (e.symm.trans e') '' ((e.symm.trans e').source ∩ e '' (e.source ∩ s)) =
+      (e.symm.trans e').target ∩ e' '' (e'.source ∩ s) :=
+  e.toPartialEquiv.image_symm_trans_source_inter e'.toPartialEquiv s
+
+/-- Restricting a transition open partial homeomorphism `e.symm.trans e'` to an open subset `u ⊆ Y`
+transports the `e`-image of `s` onto the part of the `e'`-image of `s` lying in
+`((e.symm.trans e').restrOpen u hu).target`. -/
+theorem image_restrOpen_symm_trans_source_inter (e : OpenPartialHomeomorph X Y)
+    (e' : OpenPartialHomeomorph X Z) {u : Set Y} (hu : IsOpen u) (s : Set X) :
+    ((e.symm.trans e').restrOpen u hu) ''
+        (((e.symm.trans e').restrOpen u hu).source ∩ e '' (e.source ∩ s)) =
+      ((e.symm.trans e').restrOpen u hu).target ∩ e' '' (e'.source ∩ s) :=
+  e.toPartialEquiv.image_restr_symm_trans_source_inter e'.toPartialEquiv u s
+
+end OpenPartialHomeomorph
 
 namespace Homeomorph
 
@@ -29,5 +84,40 @@ unchanged. -/
 theorem refl_transOpenPartialHomeomorph (c : OpenPartialHomeomorph X Y) :
     (Homeomorph.refl X).transOpenPartialHomeomorph c = c := by
   simp [transOpenPartialHomeomorph_eq_trans]
+
+variable {Z : Type*} [TopologicalSpace Z]
+
+/-- Precomposing an open partial homeomorphism with a homeomorphism `h` and then with `h.symm`
+leaves it unchanged. -/
+@[simp, mfld_simps]
+theorem symm_transOpenPartialHomeomorph_transOpenPartialHomeomorph (h : X ≃ₜ Y)
+    (c : OpenPartialHomeomorph Y Z) :
+    h.symm.transOpenPartialHomeomorph (h.transOpenPartialHomeomorph c) = c := by
+  simp [← trans_transOpenPartialHomeomorph]
+
+/-- Precomposing an open partial homeomorphism with `h.symm` for a homeomorphism `h` and then
+with `h` leaves it unchanged. -/
+@[simp, mfld_simps]
+theorem transOpenPartialHomeomorph_symm_transOpenPartialHomeomorph (h : X ≃ₜ Y)
+    (c : OpenPartialHomeomorph X Z) :
+    h.transOpenPartialHomeomorph (h.symm.transOpenPartialHomeomorph c) = c := by
+  simp [← trans_transOpenPartialHomeomorph]
+
+/-- Near a point whose image under `h` lies in the source of `e`, the homeomorphism `h` is the
+inverse of `e` after `h.transOpenPartialHomeomorph e`. -/
+theorem eventuallyEq_symm_comp_transOpenPartialHomeomorph (h : X ≃ₜ Y)
+    {e : OpenPartialHomeomorph Y Z} {x : X} (hx : h x ∈ e.source) :
+    h =ᶠ[𝓝 x] e.symm ∘ h.transOpenPartialHomeomorph e := by
+  filter_upwards [(h.transOpenPartialHomeomorph e).open_source.mem_nhds
+    (by simpa using hx)] with x' hx'
+  simp [e.left_inv (by simpa using hx')]
+
+/-- Near a point of the source of `e`, the inverse of the homeomorphism `h` is the inverse of
+`h.transOpenPartialHomeomorph e` after `e`. -/
+theorem symm_eventuallyEq_symm_transOpenPartialHomeomorph_comp (h : X ≃ₜ Y)
+    {e : OpenPartialHomeomorph Y Z} {y : Y} (hy : y ∈ e.source) :
+    h.symm =ᶠ[𝓝 y] (h.transOpenPartialHomeomorph e).symm ∘ e := by
+  filter_upwards [e.open_source.mem_nhds hy] with y' hy'
+  simp [e.left_inv hy']
 
 end Homeomorph

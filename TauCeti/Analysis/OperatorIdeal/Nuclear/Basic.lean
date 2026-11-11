@@ -9,8 +9,8 @@ public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.KyFan
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Adjoint
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Compact
 public import Mathlib.Topology.Semicontinuity.Basic
-public import Mathlib.Analysis.Normed.Operator.Compact.FiniteDimension
 import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.MinMax
 
 /-!
 # The nuclear gauge of a bounded operator
@@ -23,7 +23,7 @@ laws needed to construct the trace-class operator ideal.
 
 The gauge is lower semicontinuous in operator norm. Finite gauge forces approximation
 numbers to tend to zero. Over a locally compact scalar field this implies compactness
-when the target is complete, and the identity on an infinite-dimensional Banach space
+when the target is complete, and the identity on an infinite-dimensional normed space
 has infinite gauge.
 Finite-rank operators have finite gauge, computed by any prefix beyond their rank.
 
@@ -114,6 +114,21 @@ theorem nuclearENorm_eq_kyFanGauge_of_rank_le (T : E →L[𝕜] F) {k : ℕ}
     have hkn : k ≤ n := by simpa using hn
     simp [singularValue_eq_zero_of_rank_le (hT.trans (Nat.cast_le.mpr hkn))]
 
+/-- The approximation-number gauge of a rank-one operator is the product of the norms
+of its functional and vector. No Hilbert-space hypothesis is needed for this formula. -/
+@[simp]
+theorem nuclearENorm_smulRight (f : StrongDual 𝕜 E) (y : F) :
+    (f.smulRight y).nuclearENorm = ‖f‖ₑ * ‖y‖ₑ := by
+  have hr : (f.smulRight y).rank ≤ 1 := by
+    calc
+      _ ≤ Module.rank 𝕜 (Submodule.span 𝕜 ({y} : Set F)) :=
+        Submodule.rank_mono (by
+          rintro z ⟨x, rfl⟩
+          exact Submodule.smul_mem _ _ (Submodule.subset_span (Set.mem_singleton y)))
+      _ ≤ 1 := by simpa using rank_span_le ({y} : Set F)
+  rw [nuclearENorm_eq_kyFanGauge_of_rank_le _ hr]
+  simp [enorm_eq_nnnorm, nnnorm_smulRight_apply]
+
 /-- Finite-rank operators have finite nuclear gauge. -/
 theorem nuclearENorm_ne_top_of_rank_le (T : E →L[𝕜] F) {k : ℕ} (hT : T.rank ≤ k) :
     T.nuclearENorm ≠ ∞ := by
@@ -159,15 +174,20 @@ end Compact
 
 section Identity
 
-variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  [LocallyCompactSpace 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 
-/-- The identity on an infinite-dimensional Banach space has infinite nuclear gauge. -/
+/-- The identity on an infinite-dimensional normed space has infinite nuclear gauge. -/
 theorem nuclearENorm_id_eq_top (hE : ¬ FiniteDimensional 𝕜 E) :
     (ContinuousLinearMap.id 𝕜 E).nuclearENorm = ∞ := by
   by_contra h
-  exact hE (FiniteDimensional.of_isCompactOperator_id
-    ((ContinuousLinearMap.id 𝕜 E).isCompactOperator_of_nuclearENorm_ne_top h))
+  have hs := (nuclearENorm_ne_top_iff_summable _).1 h
+  obtain ⟨n, hn⟩ := ((NNReal.tendsto_atTop_zero_of_summable hs).eventually
+    (gt_mem_nhds one_pos)).exists
+  -- an infinite-dimensional space has rank above every natural number, so `aₙ(id) = 1`
+  have hrank : (n : Cardinal) < Module.rank 𝕜 E :=
+    Cardinal.natCast_lt_aleph0.trans_le
+      (not_lt.1 fun h ↦ hE (Module.rank_lt_aleph0_iff.1 h))
+  simp [hrank] at hn
 
 end Identity
 
@@ -187,6 +207,20 @@ theorem nuclearENorm_add_le (S T : E →L[𝕜] F) :
         exact_mod_cast kyFanGauge_add_le S T k
     _ ≤ S.nuclearENorm + T.nuclearENorm :=
       add_le_add (S.kyFanGauge_le_nuclearENorm k) (T.kyFanGauge_le_nuclearENorm k)
+
+/-- The trace-class gauge of a finite sum is bounded by the sum of the gauges. -/
+theorem nuclearENorm_sum_le {ι : Type*} (s : Finset ι) (T : ι → E →L[𝕜] F) :
+    (∑ i ∈ s, T i).nuclearENorm ≤ ∑ i ∈ s, (T i).nuclearENorm := by
+  exact Finset.le_sum_of_subadditive nuclearENorm nuclearENorm_zero.le nuclearENorm_add_le s T
+
+/-- **Fatou inequality for the trace-class gauge.** For a series converging in operator norm,
+the gauge of its sum is at most the sum of the gauges, even when that sum is infinite. -/
+theorem nuclearENorm_le_tsum_of_hasSum {ι : Type*} {T : ι → E →L[𝕜] F} {S : E →L[𝕜] F}
+    (hT : HasSum T S) : S.nuclearENorm ≤ ∑' i, (T i).nuclearENorm := by
+  apply (lowerSemicontinuous_nuclearENorm.isClosed_preimage
+    (∑' i, (T i).nuclearENorm)).mem_of_tendsto hT
+  exact Filter.Eventually.of_forall fun s ↦
+    (nuclearENorm_sum_le s T).trans (sum_le_tsum s)
 
 /-- Taking adjoints preserves the nuclear gauge. -/
 @[simp]

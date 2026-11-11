@@ -33,6 +33,7 @@ none of the further theory built on it.
 * The `IsAddTorsionFree (MonoidAlgebra R M)` and `HasUniqueDiv (MonoidAlgebra R M)` instances:
   `R[M]` inherits the absence of additive torsion from its coefficients, as `M →₀ R` does in
   Mathlib.
+* The `Finite (MonoidAlgebra R M)` instance: `R[M]` is finite when `R` and `M` are.
 * `MonoidAlgebra.single_mem_nonZeroDivisors` and `MonoidAlgebra.mrange_of_le_nonZeroDivisors`:
   for a cancellative monoid `M`, monomials with non-zero-divisor coefficients (in particular
   coefficient-one monomials) are non-zero-divisors in `R[M]`.
@@ -190,6 +191,13 @@ instance instHasUniqueDiv [HasUniqueDiv R] : HasUniqueDiv (MonoidAlgebra R M) :=
 
 end TorsionFree
 
+/-- A monoid algebra over a finite semiring is finite when the monoid is. -/
+@[to_additive
+/-- An additive monoid algebra over a finite semiring is finite when the additive monoid is. -/]
+instance instFinite {R M : Type*} [Semiring R] [Finite R] [Finite M] :
+    Finite (MonoidAlgebra R M) :=
+  .of_injective (fun x ↦ ⇑x.coeff) (DFunLike.coe_injective.comp coeff_injective)
+
 /-- In the monoid algebra of a cancellative monoid, any monomial whose coefficient is a
 non-zero-divisor of `R` is a non-zero-divisor of `R[M]`. -/
 @[to_additive (dont_translate := R)
@@ -227,9 +235,10 @@ theorem coe_inv_singleOneUnit (g : G) :
       single g⁻¹ 1 := by
   rfl
 
+omit [CommSemiring R] in
 /-- Conjugating by a basis element conjugates the indices of the coefficients:
 `(g x g⁻¹)_h = x_{g⁻¹ h g}`. -/
-theorem coeff_single_mul_mul_single_inv (g h : G) (x : MonoidAlgebra R G) :
+theorem coeff_single_mul_mul_single_inv [Semiring R] (g h : G) (x : MonoidAlgebra R G) :
     (single g (1 : R) * x * single g⁻¹ 1).coeff h = x.coeff (g⁻¹ * h * g) := by
   simp [mul_assoc]
 

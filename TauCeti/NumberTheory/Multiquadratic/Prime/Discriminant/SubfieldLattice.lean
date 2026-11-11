@@ -83,9 +83,11 @@ fixed field of the automorphisms whose sign patterns lie in that subspace. -/
 
 include hD hinj heven hroot
 
+omit [Finite ι] in
 /-- **The number of subfields from prime-discriminant radicands.** Under the prime-discriminant
-independence hypotheses, the intermediate fields are counted by the `𝔽₂`-subspaces of
-`ι → ℤ/2`. -/
+independence hypotheses and a finite index type, the intermediate fields are counted by the
+`𝔽₂`-subspaces of `ι → ℤ/2`. For an infinite index type the statement is only the equality of two
+`Nat.card`s that are both `0`. -/
 theorem card_intermediateField_adjoin_roots_primeDiscriminantRadicands :
     Nat.card (IntermediateField ℚ (adjoin ℚ (Set.range root)))
       = Nat.card (Submodule (ZMod 2) (ι → ZMod 2)) :=

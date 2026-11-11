@@ -191,29 +191,33 @@ theorem inseparableDegree_id (W : WeierstrassCurve.Affine F) : (id W).inseparabl
     ((id W).separableDegree_mul_inseparableDegree.trans (degree_id W))
   exact Nat.eq_one_of_mul_eq_one_left h
 
+/-! The four lemmas below eliminate an assumed separability or pure-inseparability instance.
+They are deliberately not `@[simp]`: as simp lemmas they make every `simp` that meets a
+`separableDegree` or `inseparableDegree` run a failing `Algebra.IsSeparable` or
+`IsPurelyInseparable` instance search on the function-field extension, and that search sits at the
+typeclass heartbeat budget, so it times out rather than failing. Concrete isogenies whose class is
+an instance state the specialisations as `@[simp]` lemmas instead, as
+`separableDegree_frobeniusIsogeny` does. -/
+
 /-- **A separable isogeny has separable degree equal to its degree.** -/
-@[simp]
 theorem separableDegree_eq_degree_of_isSeparable (φ : Isogeny W₁ W₂)
     [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField] :
     φ.separableDegree = φ.degree := by
   rw [separableDegree_def, degree_def, Field.finSepDegree_eq_finrank_of_isSeparable]
 
 /-- **A separable isogeny has inseparable degree one.** -/
-@[simp]
 theorem inseparableDegree_eq_one_of_isSeparable (φ : Isogeny W₁ W₂)
     [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.FunctionField] :
     φ.inseparableDegree = 1 := by
   rw [inseparableDegree_def, Algebra.IsSeparable.finInsepDegree_eq]
 
 /-- **A purely inseparable isogeny has separable degree one.** -/
-@[simp]
 theorem separableDegree_eq_one_of_isPurelyInseparable (φ : Isogeny W₁ W₂)
     [IsPurelyInseparable φ.fieldPullback.fieldRange W₁.FunctionField] :
     φ.separableDegree = 1 := by
   rw [separableDegree_def, IsPurelyInseparable.finSepDegree_eq_one]
 
 /-- **A purely inseparable isogeny carries its whole degree in the inseparable part.** -/
-@[simp]
 theorem inseparableDegree_eq_degree_of_isPurelyInseparable (φ : Isogeny W₁ W₂)
     [IsPurelyInseparable φ.fieldPullback.fieldRange W₁.FunctionField] :
     φ.inseparableDegree = φ.degree := by
@@ -221,7 +225,7 @@ theorem inseparableDegree_eq_degree_of_isPurelyInseparable (φ : Isogeny W₁ W�
 
 /-- **A separable degree of `1` characterises pure inseparability**, not merely follows from it.
 
-The `@[simp]` lemmas above eliminate an assumed instance; this is the way back, for a consumer
+The lemmas above eliminate an assumed instance; this is the way back, for a consumer
 holding a computed degree and wanting the class. Both directions matter once `[n]` and Frobenius
 are in play, where the degree is what gets calculated. -/
 theorem separableDegree_eq_one_iff_isPurelyInseparable (φ : Isogeny W₁ W₂) :
@@ -305,10 +309,8 @@ theorem isSeparable_comp_iff (ψ : Isogeny W₂ W₃) (φ : Isogeny W₁ W₂) :
     ← inseparableDegree_eq_one_iff_isSeparable, inseparableDegree_comp, mul_eq_one]
 
 -- Deliberately a theorem rather than a global instance: as an instance it adds two
--- `Algebra.IsSeparable` subgoals to every failing search for the separability of a composite, and
--- `simp` runs that search whenever it tries `separableDegree_eq_degree_of_isSeparable` or
--- `inseparableDegree_eq_one_of_isSeparable` on `(ψ.comp φ).separableDegree`, where it then
--- exceeds the typeclass heartbeat budget instead of failing.
+-- `Algebra.IsSeparable` subgoals to every failing search for the separability of a composite,
+-- which then exceeds the typeclass heartbeat budget instead of failing.
 /-- **A composite of separable isogenies is separable.** This is a theorem, not a global instance;
 a consumer that needs the composite's separability as an instance activates it with
 `attribute [local instance] isSeparable_comp`. -/

@@ -53,13 +53,14 @@ private theorem integralEquivProductModel_apply (s : ℤ)
 noncomputable def equivProductOfSq (s : ℤ) (hs : s ≠ 0) :
     toSubalgebra (s ^ 2) (by rw [Int.sq_emod_four]; omega) ≃ₐ[ℤ] productSubalgebra s :=
   (equivToSubalgebra (s ^ 2) (by rw [Int.sq_emod_four]; omega)).symm.trans
-    ((integralEquivProductModel s).trans (equivProductSubalgebra s hs))
+    ((integralEquivProductModel s).trans
+      (equivProductSubalgebra s (IsRegular.of_ne_zero hs).left))
 
 /-- The rational quadratic algebra of a nonzero integer square splits at its two roots. -/
 noncomputable def algEquivProdOfIntSq (s : ℤ) (hs : s ≠ 0) :
     QuadraticAlgebra ℚ ((s ^ 2 : ℤ) : ℚ) 0 ≃ₐ[ℚ] ℚ × ℚ := by
   letI : Invertible (2 : ℚ) := invertibleOfNonzero (by decide)
-  exact TauCeti.QuadraticAlgebra.algEquivProdOfSq (Units.mk0 (s : ℚ) (by exact_mod_cast hs))
+  exact QuadraticAlgebra.algEquivProdOfSq (Units.mk0 (s : ℚ) (by exact_mod_cast hs))
     (by simp)
 
 /-- The rational splitting evaluates at the opposite integer roots. -/
@@ -68,7 +69,7 @@ noncomputable def algEquivProdOfIntSq (s : ℤ) (hs : s ≠ 0) :
     algEquivProdOfIntSq s hs z = (z.re + s * z.im, z.re - s * z.im) := by
   let : Invertible (2 : ℚ) := invertibleOfNonzero (by decide)
   unfold algEquivProdOfIntSq
-  exact _root_.QuadraticAlgebra.algEquivProdOfSq_apply _ _ _
+  exact QuadraticAlgebra.algEquivProdOfSq_apply _ _ _
 
 private theorem coe_shift (s : ℤ) :
     (((s ^ 2 - s) / 2 : ℤ) : ℚ) = ((s : ℚ) ^ 2 - s) / 2 := by

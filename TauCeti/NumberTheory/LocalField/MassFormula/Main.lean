@@ -81,7 +81,7 @@ theorem tsum_one_div_natCard_residueField_pow_wildExponent :
       rw [isOpen_integerBox.interior_eq]
       exact ⟨0, by simp⟩⟩
   have hμ : Measure.addHaarMeasure B (integerBox K (Fin n)) = 1 := Measure.addHaarMeasure_self
-  exact tsum_one_div_natCard_residueField_pow_wildExponent_eq_of_lintegral_rootCount_eq hn _ hμ
+  exact tsum_one_div_natCard_residueField_pow_wildExponent_eq_of_lintegral_rootCount_eq _ hμ
     fun L hL ↦ L.lintegral_rootCount hL _ hμ
 
 /-- **Serre's second mass formula**: for `0 < n` and every set `R` of representatives of the
