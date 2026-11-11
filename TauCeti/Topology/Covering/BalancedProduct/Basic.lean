@@ -39,6 +39,7 @@ there for an abstract presentation of `E / H` rather than for a fixed model.
 * `TauCeti.BalancedProduct`: the quotient of `E × A` by the diagonal action of `G`.
 * `TauCeti.BalancedProduct.equivSelf` and `homeomorphSelf`: the regular label action recovers
   `E`, sending `⟦e, g⟧` to `g⁻¹ • e`.
+* The centre of `G` acts on `E ×_G A` through the labels (`TauCeti.BalancedProduct.center_smul_mk`).
 * `TauCeti.isQuotientCoveringMap_quotientMk_of_smul_disjoint`: an action with locally pairwise
   disjoint translates presents its orbit space as a quotient covering map.
 * `TauCeti.BalancedProduct.isQuotientCoveringMap_mk`: the class map `E × A → E ×_G A` is one such.
@@ -194,6 +195,23 @@ theorem mapRight_comp (f : A → B) (hf : ∀ (g : G) a, f (g • a) = g • f a
     mapRight (G := G) (E := E) (k ∘ f) (fun g a => by simp only [Function.comp_apply, hf, hk]) =
       mapRight k hk ∘ mapRight f hf :=
   funext fun z => Quotient.inductionOn z fun _ => rfl
+
+/-- The centre of `G` acts on the balanced product through the labels: multiplication by a
+central element is an equivariant map of labels. -/
+instance : MulAction (Subgroup.center G) (BalancedProduct G E A) where
+  smul c := mapRight ((c : G) • ·) fun g a => by
+    rw [smul_smul, smul_smul, Subgroup.mem_center_iff.mp c.2 g]
+  one_smul z := Quotient.inductionOn z fun ⟨e, a⟩ =>
+    (mapRight_mk _ _ e a).trans (congrArg (mk G e) (one_smul G a))
+  mul_smul c c' z := Quotient.inductionOn z fun ⟨e, a⟩ =>
+    ((mapRight_mk _ _ e a).trans (congrArg (mk G e) (mul_smul (c : G) c' a))).trans
+      ((mapRight_mk _ _ e _).symm.trans (congrArg (mapRight _ _) (mapRight_mk _ _ e a).symm))
+
+/-- A central element acts on a class through its label. -/
+@[simp]
+theorem center_smul_mk (c : Subgroup.center G) (e : E) (a : A) :
+    c • mk G e a = mk G e ((c : G) • a) :=
+  (rfl)
 
 /-- The map induced by a continuous equivariant label map is continuous. -/
 theorem continuous_mapRight [TopologicalSpace E] [TopologicalSpace A] [TopologicalSpace B]
