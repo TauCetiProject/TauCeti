@@ -160,14 +160,14 @@ variable {N : ι → Type y} [∀ i, AddCommGroup (N i)] [∀ i, Module A (N i)]
 variable {Q : κ → Type z} [∀ j, AddCommGroup (Q j)] [∀ j, Module A (Q j)]
 
 /-- **The Krull-Schmidt theorem for external direct sums**, in Azumaya's generality: if a module is
-isomorphic to a finite direct sum of modules with local endomorphism rings, and also to a finite
-direct sum of indecomposable modules, then the two families are matched by a bijection of their
+isomorphic to a direct sum of modules with local endomorphism rings, and also to a finite direct
+sum of indecomposable modules, then the two families are matched by a bijection of their
 index sets under which corresponding summands are isomorphic.
 
 No finiteness hypothesis on `M` is needed; for a module of finite length Fitting's lemma supplies
 the locality hypothesis, which is `TauCeti.exists_equiv_linearEquiv_of_directSum` below. -/
 theorem exists_equiv_linearEquiv_of_directSum_of_isLocalRing_end
-    [Finite ι] [Finite κ]
+    [Finite κ]
     (eN : M ≃ₗ[A] ⨁ i, N i) (eQ : M ≃ₗ[A] ⨁ j, Q j)
     (hN : ∀ i, IsLocalRing (Module.End A (N i)))
     (hQ : ∀ j, IsIndecomposableModule A (Q j)) :
@@ -185,7 +185,7 @@ summands matched by a bijection of the index sets.
 
 This is `TauCeti.exists_equiv_linearEquiv_of_directSum_of_isLocalRing_end` with the ambient module
 taken to be the first direct sum; it is the form to use when no ambient module is in play. -/
-theorem exists_equiv_linearEquiv_of_directSumEquiv [Finite ι] [Finite κ]
+theorem exists_equiv_linearEquiv_of_directSumEquiv [Finite κ]
     (e : (⨁ i, N i) ≃ₗ[A] ⨁ j, Q j)
     (hN : ∀ i, IsLocalRing (Module.End A (N i)))
     (hQ : ∀ j, IsIndecomposableModule A (Q j)) :
