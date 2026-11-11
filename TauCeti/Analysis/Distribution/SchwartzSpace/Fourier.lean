@@ -293,18 +293,19 @@ variable [NormedSpace ℂ F] [CompleteSpace F]
 
 /-- The integral of the Fourier transform of a Schwartz function is its value at `0`. -/
 @[simp]
-theorem integral_fourier_eq_apply_zero (f : 𝓢(E, F)) : ∫ v, 𝓕 (f : E → F) v = f 0 := by
+theorem integral_fourier_eq_apply_zero (f : 𝓢(E, F)) : ∫ v, 𝓕 f v = f 0 := by
   have h : (𝓕⁻ (𝓕 f : 𝓢(E, F)) : 𝓢(E, F)) 0 = f 0 := by
     rw [FourierTransform.fourierInv_fourier_eq]
   rw [fourierInv_coe, fourier_coe, Real.fourierInv_eq] at h
+  rw [fourier_coe]
   simpa using h
 
 /-- The Fourier transform of the Fourier transform of a Schwartz function is its reflection. -/
 @[simp]
-theorem fourier_fourier_apply (f : 𝓢(E, F)) (w : E) : 𝓕 (𝓕 (f : E → F)) w = f (-w) := by
+theorem fourier_fourier_apply (f : 𝓢(E, F)) (w : E) : 𝓕 (𝓕 f) w = f (-w) := by
   have h := Real.fourierInv_eq_fourier_neg (𝓕 (f : E → F)) (-w)
   rw [neg_neg] at h
-  rw [← h]
+  rw [fourier_coe, fourier_coe, ← h]
   have h' : (𝓕⁻ (𝓕 f : 𝓢(E, F)) : 𝓢(E, F)) (-w) = f (-w) := by
     rw [FourierTransform.fourierInv_fourier_eq]
   rwa [fourierInv_coe, fourier_coe] at h'
@@ -314,7 +315,8 @@ theorem fourier_fourier_apply (f : 𝓢(E, F)) (w : E) : 𝓕 (𝓕 (f : E → F
 `𝓕 (𝓕 χ) = χ (-·)` vanishes. -/
 theorem integral_prod_inner_smul_fourier_eq_zero (χ : 𝓢(E, ℂ))
     (hχ : (χ : E → ℂ) =ᶠ[𝓝 0] 1) {k : ℕ} (hk : k ≠ 0) (m : Fin k → E) :
-    ∫ v, (∏ i, ⟪v, m i⟫) • 𝓕 (χ : E → ℂ) v = 0 := by
+    ∫ v, (∏ i, ⟪v, m i⟫) • 𝓕 χ v = 0 := by
+  rw [fourier_coe]
   have hD := Real.iteratedFDeriv_fourier (f := 𝓕 (χ : E → ℂ)) (N := k)
     (fun n _ ↦ (𝓕 χ).integrable_pow_mul volume n) (𝓕 χ).continuous.aestronglyMeasurable
     (n := k) le_rfl
@@ -322,7 +324,7 @@ theorem integral_prod_inner_smul_fourier_eq_zero (χ : 𝓢(E, ℂ))
     have ht : Filter.Tendsto (fun w : E ↦ -w) (𝓝 0) (𝓝 0) := by
       simpa using (continuous_neg.tendsto (0 : E))
     filter_upwards [ht.eventually hχ] with w hw
-    rw [fourier_fourier_apply]
+    rw [← fourier_coe, ← fourier_coe, fourier_fourier_apply]
     simpa using hw
   have hzero : iteratedFDeriv ℝ k (𝓕 (𝓕 (χ : E → ℂ))) 0 m = 0 := by
     rw [(hev.iteratedFDeriv ℝ k).eq_of_nhds, iteratedFDeriv_const_of_ne hk]
@@ -343,8 +345,9 @@ positive order of its Fourier transform vanishes: `∫ 𝓕 χ (v) M (v, …, v)
 continuous multilinear map `M` of positive arity. -/
 theorem integral_fourier_smul_apply_eq_zero (χ : 𝓢(E, ℂ)) (hχ : (χ : E → ℂ) =ᶠ[𝓝 0] 1)
     {k : ℕ} (hk : k ≠ 0) (M : ContinuousMultilinearMap ℝ (fun _ : Fin k ↦ E) F) :
-    ∫ v, 𝓕 (χ : E → ℂ) v • M (fun _ ↦ v) = 0 := by
+    ∫ v, 𝓕 χ v • M (fun _ ↦ v) = 0 := by
   classical
+  rw [fourier_coe]
   set b := stdOrthonormalBasis ℝ E
   -- Expand `M (v, …, v)` in the coordinates of `v` in an orthonormal basis.
   have hM (v : E) : M (fun _ ↦ v) = ∑ r : Fin k → Fin (Module.finrank ℝ E),
@@ -380,7 +383,7 @@ theorem integral_fourier_smul_apply_eq_zero (χ : 𝓢(E, ℂ)) (hχ : (χ : E �
         rw [integral_finsetSum _ fun r _ ↦ hterm r]
         exact Finset.sum_congr rfl fun r _ ↦ integral_smul_const _ _
     _ = 0 := Finset.sum_eq_zero fun r _ ↦ by
-        rw [integral_prod_inner_smul_fourier_eq_zero χ hχ hk, zero_smul]
+        rw [← fourier_coe, integral_prod_inner_smul_fourier_eq_zero χ hχ hk, zero_smul]
 
 open scoped Nat in
 /-- **Averaging reproduces Taylor polynomials.** If a Schwartz function `χ` equals `1` near `0`,
@@ -404,11 +407,10 @@ theorem integral_fourier_smul_sum_iteratedFDeriv_eq (χ : 𝓢(E, ℂ)) (hχ : (
         fun _ ↦ c • ContinuousLinearMap.id ℝ E)
     simp only [ContinuousMultilinearMap.compContinuousLinearMap_apply,
       FunLike.coe_smul, Pi.smul_apply, ContinuousLinearMap.id_apply] at hM
-    rw [← fourier_coe] at hM
     rw [integral_smul, hM, smul_zero]
   simp only [hzero, Finset.sum_const_zero, zero_add, Nat.factorial_zero, Nat.cast_one, inv_one,
     one_smul, iteratedFDeriv_zero_apply]
-  rw [integral_smul_const, fourier_coe, integral_fourier_eq_apply_zero, hχ.self_of_nhds,
+  rw [integral_smul_const, integral_fourier_eq_apply_zero, hχ.self_of_nhds,
     Pi.one_apply, one_smul]
 
 open scoped Nat in
