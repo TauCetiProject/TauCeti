@@ -149,11 +149,10 @@ def serreLift : t.SerreLieAlgebra →ₗ⁅ℚ⁆ t.lieAlgebra ht :=
 /-- **The comparison map is the unique homomorphism sending the Serre generators to the pinned
 Chevalley generators.** -/
 theorem eq_serreLift {g : t.SerreLieAlgebra →ₗ⁅ℚ⁆ t.lieAlgebra ht}
-    (hH : ∀ i, g (serreH ℚ t.cartanMatrixᵀ i) = (t.lieBasis ht).h i)
     (hE : ∀ i, g (serreE ℚ t.cartanMatrixᵀ i) = (t.lieBasis ht).e i)
     (hF : ∀ i, g (serreF ℚ t.cartanMatrixᵀ i) = (t.lieBasis ht).f i) :
     g = t.serreLift ht :=
-  _root_.TauCeti.eq_serreLift hH hE hF
+  _root_.TauCeti.eq_serreLift hE hF
 
 /-- **The pinned split Lie algebra is a quotient of its Serre presentation.** The raising and
 lowering generators generate it, which is what makes the comparison map surjective. -/
@@ -208,10 +207,6 @@ theorem serreLift_serreChevalleyInvolution (x : t.SerreLieAlgebra) :
         (t.chevalleyInvolution ht : t.lieAlgebra ht →ₗ⁅ℚ⁆ t.lieAlgebra ht).comp
           (t.serreLift ht) :=
     serre_hom_ext
-      (fun i => by
-        simp only [LieHom.comp_apply, LieEquiv.coe_coe, serreChevalleyInvolution_serreH, map_neg,
-          t.serreLift_serreH ht]
-        exact (t.chevalleyInvolution_lieBasis_h ht i).symm)
       (fun i => by
         simp only [LieHom.comp_apply, LieEquiv.coe_coe, serreChevalleyInvolution_serreE, map_neg,
           t.serreLift_serreE ht, t.serreLift_serreF ht]
