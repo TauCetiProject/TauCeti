@@ -290,7 +290,7 @@ every limit in `M × M` of level pairs of trajectories from `p` to `r` is either
 level pair of a broken trajectory. -/
 theorem closure_trajectoryLevelPairs_subset_union_brokenLevelPairs (h : hX.IsMorseSmale)
     (hf : IsMorse 𝓘(ℝ, E) f)
-    {p r : M} (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0) (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0)
+    {p r : M}
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f r + 2) {c₁ c₂ : ℝ}
     (hreg : ∀ y, f y = c₁ → mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y ≠ 0)
     (hsep : SeparatesIntermediateLevels 𝓘(ℝ, E) f p r c₁ c₂) :
@@ -309,7 +309,7 @@ theorem closure_trajectoryLevelPairs_subset_union_brokenLevelPairs (h : hX.IsMor
       (hX.flow.isInvariant_unstableSet_inter_stableSet p r (s 0) (hw₁ 0))
     rwa [hs, hwc₂] at this
   obtain ⟨n, y, hn, hyc, hlim, hcase⟩ :=
-    h.exists_subseq_unbroken_or_broken_of_manifoldMorseIndex_eq_add_two hf hp hr hind hreg
+    h.exists_subseq_unbroken_or_broken_of_manifoldMorseIndex_eq_add_two hf hind hreg
       (fun k ↦ (w k).1) fun k ↦ ⟨hw₁ k, hwc₁ k⟩
   obtain rfl : y = y₁ := tendsto_nhds_unique hlim (hw₁lim.comp hn.tendsto_atTop)
   -- The second points of the subsequence are its level points on `c₂`.

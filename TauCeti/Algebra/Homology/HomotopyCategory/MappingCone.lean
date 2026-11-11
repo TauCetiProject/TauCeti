@@ -46,6 +46,8 @@ whose cones are acyclic.
 * `CochainComplex.mappingCone.quasiIso_map`: in an abelian category, the map of mapping cones
   induced by a commutative square whose two horizontal sides are quasi-isomorphisms is a
   quasi-isomorphism (an instance).
+* `CochainComplex.mappingCone.isIso_map_f`: the map of mapping cones induced by a commutative
+  square is an isomorphism in each degree where the vertical maps are.
 
 ## Mapping cones of natural transformations and shifts
 
@@ -434,6 +436,27 @@ lemma map_triangle_mor₃_comp_shiftIso_inv :
     Cochain.comp_v _ _ (add_neg_cancel 1) (n + 1) (n + 2) (n + 1) (by lia) (by lia)]
 
 end Transpose
+
+section Map
+
+/-! ### Components of the map of mapping cones induced by a commutative square -/
+
+variable {K₁ L₁ K₂ L₂ : CochainComplex C ℤ} (φ₁ : K₁ ⟶ L₁) (φ₂ : K₂ ⟶ L₂) (a : K₁ ⟶ K₂)
+  (b : L₁ ⟶ L₂) (comm : φ₁ ≫ b = a ≫ φ₂)
+
+/-- The map of mapping cones induced by a commutative square is an isomorphism in degree `p` when
+the vertical maps are isomorphisms in degrees `p + 1` (on the sources) and `p` (on the
+targets). -/
+lemma isIso_map_f (p q : ℤ) (hpq : p + 1 = q) [IsIso (a.f q)] [IsIso (b.f p)] :
+    IsIso ((map φ₁ φ₂ a b comm).f p) := by
+  refine ⟨(fst φ₂).1.v p q hpq ≫ inv (a.f q) ≫ (inl φ₁).v q p (by lia) +
+      (snd φ₂).v p p (add_zero p) ≫ inv (b.f p) ≫ (inr φ₁).f p, ?_, ?_⟩
+  · apply ext_from φ₁ q p (by lia) <;> simp
+  · simp only [Preadditive.add_comp, Category.assoc, inl_v_map_f, inr_f_map_f,
+      IsIso.inv_hom_id_assoc]
+    exact id_X φ₂ p q hpq
+
+end Map
 
 section MapHomologicalComplex
 

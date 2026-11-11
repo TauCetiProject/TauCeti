@@ -36,6 +36,8 @@ characters.
 ## Main results
 
 * `ZMod.mulCastHom_injective`: multiplication by `k ≠ 0` is injective.
+* `ZMod.val_natCast_mul_val`: the residue `k x` modulo `m * k` of a residue `x` modulo `m` has
+  value `k * x.val`.
 * `ZMod.exact_mulCastHom_castHom`: exactness of `ZMod m → ZMod n → ZMod k`.
 * `ZMod.mulCastHom_mulCastHom`: two successive multiplications compose to one.
 * `ZMod.castHom_mulCastHom_eq_mulCastHom_castHom`: the reductions commute with the
@@ -81,6 +83,18 @@ theorem mulCastHom_injective (hk : k ≠ 0) : Function.Injective (mulCastHom k h
   rw [intCast_zmod_eq_zero_iff_dvd, ← h, Nat.cast_mul,
     mul_dvd_mul_iff_right (by exact_mod_cast hk)] at ha'
   exact (intCast_zmod_eq_zero_iff_dvd a m).2 ha'
+
+/-- The residue `k x` modulo `n = m * k` of a residue `x` modulo `m` has value `k * x.val`. -/
+theorem val_natCast_mul_val {k : ℕ} (hn : n = m * k) (x : ZMod m) :
+    ((k * x.val : ℕ) : ZMod n).val = k * x.val := by
+  rcases n.eq_zero_or_pos with rfl | hpos
+  · simp [ZMod.val_natCast]
+  · have hm : 0 < m := Nat.pos_of_mul_pos_right (hn ▸ hpos)
+    have hk : 0 < k := Nat.pos_of_mul_pos_left (hn ▸ hpos)
+    have : NeZero m := ⟨hm.ne'⟩
+    exact ZMod.val_natCast_of_lt (by
+      rw [hn, mul_comm m]
+      exact Nat.mul_lt_mul_of_pos_left x.val_lt hk)
 
 /-- Multiplication by `1` is the identity. -/
 @[simp]
