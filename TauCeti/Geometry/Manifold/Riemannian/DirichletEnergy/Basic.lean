@@ -55,13 +55,24 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 variable (I) in
 /-- The Dirichlet energy `∫ ‖grad φ‖² dV` of a real function, without the factor `1 / 2`. -/
-@[expose] def dirichletEnergy (φ : M → ℝ) : ℝ :=
+def dirichletEnergy (φ : M → ℝ) : ℝ :=
   ∫ x, ‖mgradient I φ x‖ ^ 2 ∂riemannianVolume I M
 
 variable (I) in
 /-- The Dirichlet energy `∫_s ‖grad φ‖² dV` of a real function on a subset `s`. -/
-@[expose] def dirichletEnergyOn (φ : M → ℝ) (s : Set M) : ℝ :=
+def dirichletEnergyOn (φ : M → ℝ) (s : Set M) : ℝ :=
   ∫ x in s, ‖mgradient I φ x‖ ^ 2 ∂riemannianVolume I M
+
+variable (I) in
+/-- The Dirichlet energy is the integral of the squared length of the gradient. -/
+theorem dirichletEnergy_def (φ : M → ℝ) :
+    dirichletEnergy I φ = ∫ x, ‖mgradient I φ x‖ ^ 2 ∂riemannianVolume I M := (rfl)
+
+variable (I) in
+/-- The Dirichlet energy on a subset is the integral over that subset of the squared length of
+the gradient. -/
+theorem dirichletEnergyOn_def (φ : M → ℝ) (s : Set M) :
+    dirichletEnergyOn I φ s = ∫ x in s, ‖mgradient I φ x‖ ^ 2 ∂riemannianVolume I M := (rfl)
 
 /-- The Dirichlet energy is nonnegative. -/
 theorem dirichletEnergy_nonneg (φ : M → ℝ) : 0 ≤ dirichletEnergy I φ :=
