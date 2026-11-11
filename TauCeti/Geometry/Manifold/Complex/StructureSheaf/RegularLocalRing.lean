@@ -45,17 +45,33 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
 
 /-- The minimal number of generators of the maximal ideal of a holomorphic stalk equals the
 complex dimension of the manifold model. -/
--- Normalize the generator count before expanding the maximal ideal as the kernel of evaluation.
-@[simp↓]
 theorem spanFinrank_maximalIdeal_stalk (x : X) :
     (maximalIdeal ((holomorphicStructureSheaf I X).presheaf.stalk x)).spanFinrank =
       Module.finrank ℂ E := by
-  rw [← Ideal.spanFinrank_map_eq_of_ringEquiv (stalkRingEquivModelSpace (I := I) x),
+  rw [← Ideal.spanFinrank_map_eq_of_ringEquiv
+    (stalkEquivModelSpace (I := I) (V := Fin (Module.finrank ℂ E) → ℂ) x
+      (ContinuousLinearEquiv.ofFinrankEq (by simp))),
     map_ringEquiv_maximalIdeal, spanFinrank_maximalIdeal_eq_finrank_cotangentSpace]
   let V := Fin (Module.finrank ℂ E) → ℂ
   exact ((OpenPartialHomeomorph.refl V).finrank_cotangentSpace_holomorphicStalk
     _ (Set.mem_univ _)
     (StructureGroupoid.id_mem_maximalAtlas (contDiffGroupoid ω 𝓘(ℂ, V)))).trans (by simp [V])
+
+/-- The kernel of evaluation on a holomorphic stalk needs as many generators as the complex
+model dimension. This is the generator count in the simp normal form of the maximal ideal. -/
+@[simp]
+theorem spanFinrank_ker_eval (x : X) :
+    (RingHom.ker (eval I X x)).spanFinrank = Module.finrank ℂ E := by
+  rw [← maximalIdeal_stalk, spanFinrank_maximalIdeal_stalk]
+
+/-- The maximal ideal of the native complex-smooth stalk needs as many generators as the
+complex model dimension. -/
+@[simp]
+theorem spanFinrank_maximalIdeal_smoothStalk (x : X) :
+    (maximalIdeal ((smoothSheafCommRing I 𝓘(ℂ) X ℂ).presheaf.stalk x)).spanFinrank =
+      Module.finrank ℂ E := by
+  rw [← map_ringEquiv_maximalIdeal (smoothStalkIso I X x).commRingCatIsoToRingEquiv,
+    Ideal.spanFinrank_map_eq_of_ringEquiv, spanFinrank_maximalIdeal_stalk]
 
 /-- The holomorphic local ring at a point of a complex manifold has Krull dimension equal to
 its complex dimension, including dimension zero. -/
@@ -101,7 +117,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
 /-- Centered coordinates of a holomorphic chart, in any ordered basis, form a regular sequence
 in the holomorphic local ring. In particular each coordinate is a non-zero-divisor after
 quotienting by the preceding coordinates. -/
-theorem isRegular_holomorphicLinearCoordinateGerm (e : OpenPartialHomeomorph X E)
+theorem isRegular_ofFn_holomorphicLinearCoordinateGerm (e : OpenPartialHomeomorph X E)
     (he : e ∈ IsManifold.maximalAtlas 𝓘(ℂ, E) ω X) (x : X) (hx : x ∈ e.source)
     {n : ℕ} (b : Module.Basis (Fin n) ℂ E) :
     RingTheory.Sequence.IsRegular ((holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x)

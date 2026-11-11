@@ -10,7 +10,6 @@ public import Mathlib.RingTheory.Noetherian.Defs
 
 import Mathlib.RingTheory.FiniteType
 import TauCeti.Analysis.Analytic.Uniqueness
-import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Weierstrass
 import TauCeti.RingTheory.Ideal.Quotient.Finite
@@ -134,7 +133,8 @@ without boundary is a Noetherian ring. -/
 instance stalkIsNoetherianRing (x : X) :
     IsNoetherianRing ((holomorphicStructureSheaf I X).presheaf.stalk x) := by
   refine @isNoetherianRing_of_ringEquiv _ _ _ _
-    (stalkRingEquivModelSpace (I := I) x).symm ?_
+    (stalkEquivModelSpace (I := I) (V := Fin (finrank ℂ E) → ℂ) x
+      (ContinuousLinearEquiv.ofFinrankEq (by simp))).symm ?_
   exact isNoetherianRing_stalk_of_finrank_eq _ (Fin (finrank ℂ E) → ℂ) rfl _
 
 /-- A stalk of Mathlib's complex-smooth structure sheaf on a finite-dimensional complex manifold
