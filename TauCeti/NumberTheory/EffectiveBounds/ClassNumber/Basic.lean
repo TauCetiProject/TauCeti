@@ -37,8 +37,9 @@ elementary-2 quotient), and the quadratic square-root specializations
 `classNumber_mul_units_sq_index_le_natAbs_of_sq_intCast` compose these with the quadratic
 discriminant bound `NumberField.abs_discr_le_of_sq_intCast` to turn a square-root model
 `x² = a ∈ ℤ` of a quadratic field directly into `h_K ≤ 64·|a|` and
-`h_K · [O_K^× : (O_K^×)²] ≤ 256·|a|`. These are the closed forms the roadmap's `ℚ(√-5)` worked
-example needs.
+`h_K · [O_K^× : (O_K^×)²] ≤ 256·|a|`.
+`NumberField.WorkedExamples.classNumber_adjoinRoot_sqrt_neg_five_le` applies the first of these to
+`ℚ(√-5)`.
 
 ## Provenance
 
