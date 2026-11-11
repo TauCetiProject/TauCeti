@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FreeGroup.Computability
-import TauCeti.Data.List.Pairwise
 
 /-!
 # Primitive-recursive substitution of free-group words
@@ -67,11 +66,11 @@ theorem flatMap_substituteLetter_update_of_notMem [DecidableEq α] {w : List (α
     Function.update_of_ne (fun h : a.1 = y => hy (h ▸ List.mem_map_of_mem ha)) _ _
 
 /-- Changing the word assigned to a generator `y` whose two signed letters end one word and begin
-a later one, in a list of words without repeated signed letters, changes only the substitutions
+a later one, in a list of words in which `y` occurs nowhere else, changes only the substitutions
 into these two words, and only at these two letters. -/
 theorem map_flatMap_substituteLetter_update [DecidableEq α]
     {Vpre Vmid Vpost : List (List (α × Bool))} {A C : List (α × Bool)} {y : α} {c : Bool}
-    (hnd : (Vpre ++ (A ++ [(y, c)]) :: (Vmid ++ ((y, !c) :: C) :: Vpost)).flatten.Nodup)
+    (hy : y ∉ ((Vpre.flatten ++ A) ++ Vmid.flatten ++ (C ++ Vpost.flatten)).map Prod.fst)
     (f : α → List (β × Bool)) (s : List (β × Bool)) :
     (Vpre ++ (A ++ [(y, c)]) :: (Vmid ++ ((y, !c) :: C) :: Vpost)).map
         (·.flatMap (substituteLetter (Function.update f y s))) =
@@ -80,8 +79,6 @@ theorem map_flatMap_substituteLetter_update [DecidableEq α]
         (Vmid.map (·.flatMap (substituteLetter f)) ++
           (substituteLetter (Function.update f y s) (y, !c) ++ C.flatMap (substituteLetter f)) ::
           Vpost.map (·.flatMap (substituteLetter f))) := by
-  have hy := List.notMem_map_fst_of_nodup_append_cons_append_cons (L₁ := Vpre.flatten ++ A)
-    (L₂ := Vmid.flatten) (L₃ := C ++ Vpost.flatten) (y := y) (c := c) (by simpa using hnd)
   simp only [List.map_append, List.mem_append, List.map_flatten, not_or] at hy
   have hFs : ∀ V : List (List (α × Bool)), y ∉ (V.map (List.map Prod.fst)).flatten →
       V.map (·.flatMap (substituteLetter (Function.update f y s))) =

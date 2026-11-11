@@ -34,7 +34,7 @@ theorem pairwise_map_append_cons_append_cons {R : β → β → Prop} {S : γ �
     {l₁ l₂ l₃ : List β} {a b : β} {a' b' : γ} (h : (l₁ ++ a :: (l₂ ++ b :: l₃)).Pairwise R)
     (hg : ∀ x y, R x y → S (g x) (g y))
     (ha : ∀ x, (R a x → S a' (g x)) ∧ (R x a → S (g x) a'))
-    (hb : ∀ x, (R b x → S b' (g x)) ∧ (R x b → S (g x) b')) (hab : S a' b') :
+    (hb : ∀ x, (R b x → S b' (g x)) ∧ (R x b → S (g x) b')) (hab : R a b → S a' b') :
     (l₁.map g ++ a' :: (l₂.map g ++ b' :: l₃.map g)).Pairwise S := by
   simp only [List.pairwise_append, List.pairwise_cons, List.pairwise_map, List.mem_append,
     List.mem_cons, List.mem_map, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂] at h ⊢
@@ -43,7 +43,7 @@ theorem pairwise_map_append_cons_append_cons {R : β → β → Prop} {S : γ �
     h₅.imp (hg _ _)⟩, ?_⟩, ?_⟩
   · rintro _ (⟨x, hx, rfl⟩ | rfl | ⟨x, hx, rfl⟩)
     · exact (ha x).1 (h₂ x (Or.inl hx))
-    · exact hab
+    · exact hab (h₂ b (Or.inr (Or.inl rfl)))
     · exact (ha x).1 (h₂ x (Or.inr (Or.inr hx)))
   · rintro x hx _ (rfl | ⟨y, hy, rfl⟩)
     · exact (hb x).2 (h₆ x hx b (Or.inl rfl))

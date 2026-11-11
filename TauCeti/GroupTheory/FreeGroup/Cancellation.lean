@@ -241,7 +241,10 @@ private theorem nonempty_of_continue {ws : List (List (α × Bool))} (P : Cancel
     · subst hz
       cases c <;> simp [hu, ht, hx]
     · simpa [hu, Function.update_of_ne hz] using P.piece_ne_nil z
-  · rw [hP, hu, map_flatMap_substituteLetter_update (hP ▸ P.nodup_flatten_patterns), ← hu, hc, hnc]
+  · have hy := List.notMem_map_fst_of_nodup_append_cons_append_cons (L₁ := Vpre.flatten ++ A)
+      (L₂ := Vmid.flatten) (L₃ := C ++ Vpost.flatten) (y := y) (c := c)
+      (by simpa [hP] using P.nodup_flatten_patterns)
+    rw [hP, hu, map_flatMap_substituteLetter_update hy, ← hu, hc, hnc]
     simp [ht]
 
 /-- If the patterns of `P` contain a block `A (z, c) B` followed (after empty blocks) by a block
@@ -369,7 +372,7 @@ private theorem pairwise_insertPiece {f : Z → Z'} (hf : f.Injective) {n : Z'} 
   · rcases hext (Or.inr hw) with hw | rfl
     exacts [key hv hw, absurd hv (hn' w)]
   · -- The two blocks of the new piece share only the new letter.
-    refine (Set.subsingleton_singleton (a := n)).anti fun z hz => ?_
+    refine fun _ => (Set.subsingleton_singleton (a := n)).anti fun z hz => ?_
     rcases hext (Or.inl hz.1) with h₁ | rfl
     · rcases hext (Or.inr hz.2) with h₂ | rfl
       · obtain ⟨z₀, ⟨h₀, h₀'⟩, -⟩ := key h₁ h₂
