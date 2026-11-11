@@ -15,7 +15,6 @@ public import Mathlib.Topology.Algebra.Monoid.Defs
 public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.LocallyFinite
-public import Mathlib.Topology.OpenPartialHomeomorph.Defs
 
 import Mathlib.Topology.Maps.Proper.Basic
 
@@ -50,8 +49,6 @@ set the orbit projection is an open embedding.
   properly discontinuous subgroup `H` acts properly discontinuously.
 * `TauCeti.isOpen_setOf_forall_smul_mem`: under a continuous action of a compact space, the
   points whose whole orbit lies in an open set form an open set.
-* `OpenPartialHomeomorph.isOpen_setOf_mem_target_smul_symm_mem_source`: under a continuous
-  action, the pairs `(w, g)` for which `e (g • e.symm w)` is defined form an open set.
 * `TauCeti.isClosed_stabilizer`: the stabilizer of a point with continuous orbit map in a `T₁`
   space is closed.
 * `TauCeti.isClosed_orbit_of_forall_isOpen_orbit`: if every orbit of a group action is open,
@@ -113,22 +110,6 @@ theorem isOpen_setOf_forall_smul_mem {G X : Type*} [SMul G X] [TopologicalSpace 
     isClosedMap_snd_of_compactSpace _ (hs.isClosed_compl.preimage continuous_smul)
   convert hc.isOpen_compl using 1
   ext x
-  simp
-
-/-- Under a jointly continuous action, the pairs `(w, g)` for which the action of `g` is defined
-in the coordinates of a partial homeomorphism `e`, that is `w ∈ e.target` and
-`g • e.symm w ∈ e.source`, form an open set. -/
-theorem _root_.OpenPartialHomeomorph.isOpen_setOf_mem_target_smul_symm_mem_source
-    {G X Y : Type*} [SMul G X] [TopologicalSpace G] [TopologicalSpace X] [TopologicalSpace Y]
-    [ContinuousSMul G X] (e : OpenPartialHomeomorph X Y) :
-    IsOpen {p : Y × G | p.1 ∈ e.target ∧ p.2 • e.symm p.1 ∈ e.source} := by
-  have hc : ContinuousOn (fun p : Y × G ↦ (p.2, e.symm p.1)) (e.target ×ˢ Set.univ) :=
-    continuous_snd.continuousOn.prodMk
-      (e.continuousOn_symm.comp continuous_fst.continuousOn fun p hp ↦ hp.1)
-  have h := (continuous_smul.comp_continuousOn hc).isOpen_inter_preimage
-    (e.open_target.prod isOpen_univ) e.open_source
-  convert h using 1
-  ext p
   simp
 
 /-- If every orbit of a group action is open, then every orbit is also closed: its complement is

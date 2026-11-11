@@ -38,6 +38,7 @@ theorem toRepresentation_apply {R G V : Type*} [Ring R] [Monoid G]
     (π.toRepresentation : Representation R G V) g v = π g v := (rfl)
 
 /-- An action operator composed with the action of the inverse group element is the identity. -/
+@[simp]
 theorem comp_inv_self {R G V : Type*} [Ring R] [Group G] [AddCommGroup V] [TopologicalSpace V]
     [IsTopologicalAddGroup V] [Module R V] (ρ : ContRepresentation R G V) (g : G) :
     (ρ g).comp (ρ g⁻¹) = ContinuousLinearMap.id R V := by
