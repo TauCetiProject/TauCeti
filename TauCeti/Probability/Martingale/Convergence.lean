@@ -207,8 +207,7 @@ theorem tendsto_eLpNorm_condExp_of_ae_bdd [IsFiniteMeasure μ]
   -- The local `m` would otherwise be found as the measurable structure of `Ω`.
   let _ : MeasurableSpace Ω := mΩ
   rcases le_total p 1 with hp1 | hp
-  · exact tendsto_eLpNorm_of_tendsto_eLpNorm_one hp1
-      (fun _ => (integrable_condExp.sub integrable_condExp).aestronglyMeasurable) h_L1
+  · exact tendsto_eLpNorm_of_tendsto_eLpNorm_one hp1 h_L1
   -- The conditional expectations of `g` inherit its essential bound, so they are uniformly
   -- integrable in `Lᵖ`, and Vitali's theorem upgrades the convergence in measure, which follows
   -- from the `L¹` convergence, to `Lᵖ` convergence.
@@ -237,8 +236,7 @@ private theorem tendsto_eLpNorm_condExp_of_tendsto_real [IsFiniteMeasure μ]
   -- The local `m` would otherwise be found as the measurable structure of `Ω`.
   let _ : MeasurableSpace Ω := mΩ
   rcases le_total p 1 with hp1 | hp1
-  · exact tendsto_eLpNorm_of_tendsto_eLpNorm_one hp1
-      (fun _ => (integrable_condExp.sub integrable_condExp).aestronglyMeasurable) (h_L1 f)
+  · exact tendsto_eLpNorm_of_tendsto_eLpNorm_one hp1 (h_L1 f)
   -- For `1 ≤ p`, approximate `f` by a simple, hence bounded, function `g` up to `ε / 3`. The
   -- bounded case handles `g`, and `μ[· | m]` contracts the `Lᵖ` seminorm, so `f - g` contributes at
   -- most `ε / 3` at each of the two levels.
