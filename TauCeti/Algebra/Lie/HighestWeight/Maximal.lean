@@ -46,7 +46,7 @@ goes through.
 
 * `TauCeti.genWeightSpace_sup_genWeightSpaceSpan_eq_top_of_isHighestWeightVector_of_lieSpan_eq_top`:
   a highest weight module is the sum of its `lam`-weight space and the span of its other weight
-  spaces, which meet trivially by `TauCeti.disjoint_genWeightSpace_genWeightSpaceSpan_ne`.
+  spaces, which meet trivially by `TauCeti.disjoint_genWeightSpace_genWeightSpaceSpan`.
 * `TauCeti.le_genWeightSpaceSpan_ne_of_notMem_of_isHighestWeightVector_of_lieSpan_eq_top`: **a Lie
   submodule of a highest weight module which misses the generator misses the whole top weight
   space**, being contained in the span of the other weight spaces.
@@ -291,7 +291,9 @@ theorem notMem_maximalSubmodule_of_isHighestWeightVector_of_lieSpan_eq_top
       hgen).mp hN
     exact le_genWeightSpaceSpan_ne_of_notMem_of_isHighestWeightVector_of_lieSpan_eq_top hv hgen hvN
   -- but the generator lies in the top weight space, which meets that span trivially
-  have hdisj := disjoint_genWeightSpace_genWeightSpaceSpan_ne H M lam
+  have hdisj : Disjoint (genWeightSpace M ((lam : Dual K H) : H → K))
+      (genWeightSpaceSpan H M {chi | chi ≠ ((lam : Dual K H) : H → K)}) :=
+    disjoint_genWeightSpace_genWeightSpaceSpan H M (by simp)
   have hbot : (genWeightSpace M ((lam : Dual K H) : H → K) : Submodule K M)
       ⊓ (genWeightSpaceSpan H M {chi | chi ≠ ((lam : Dual K H) : H → K)} : Submodule K M) = ⊥ := by
     rw [← LieSubmodule.inf_toSubmodule, disjoint_iff.mp hdisj, LieSubmodule.bot_toSubmodule]
