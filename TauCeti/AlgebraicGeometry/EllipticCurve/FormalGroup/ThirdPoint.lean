@@ -166,12 +166,21 @@ lemma chord_point_add {q₁ q₂ w₁ w₂ Λ N T₃ wT : F}
       -(W.a₁ * Λ + W.a₂ * N + W.a₃ * Λ ^ 2 + 2 * W.a₄ * Λ * N + 3 * W.a₆ * Λ ^ 2 * N))
     (hwT : wT = Λ * T₃ + N)
     (hA : (1 + W.a₂ * Λ + W.a₄ * Λ ^ 2 + W.a₆ * Λ ^ 3) ≠ 0)
-    (hw₁0 : w₁ ≠ 0) (hw₂0 : w₂ ≠ 0) (hwT0 : wT ≠ 0)
+    (hwT0 : wT ≠ 0)
     (hx : q₁ * w₂ - q₂ * w₁ ≠ 0)
     (h₁ : W.toAffine.Nonsingular (q₁ / w₁) (-1 / w₁))
     (h₂ : W.toAffine.Nonsingular (q₂ / w₂) (-1 / w₂)) :
     ∃ h₃ : W.toAffine.Nonsingular (T₃ / wT) ((1 - W.a₁ * T₃ - W.a₃ * wT) / wT),
       Affine.Point.some _ _ h₁ + Affine.Point.some _ _ h₂ = Affine.Point.some _ _ h₃ := by
+  -- a vanishing `wᵢ` forces `qᵢ = 0` by the `w`-equation, contradicting `hx`
+  have hw₁0 : w₁ ≠ 0 := by
+    rintro rfl
+    have : q₁ = 0 := by simpa using hw₁.symm
+    exact hx (by simp [this])
+  have hw₂0 : w₂ ≠ 0 := by
+    rintro rfl
+    have : q₂ = 0 := by simpa using hw₂.symm
+    exact hx (by simp [this])
   have hxq : q₁ / w₁ ≠ q₂ / w₂ := by rwa [Ne, div_eq_div_iff hw₁0 hw₂0, ← sub_eq_zero]
   have hline₁ : w₁ = Λ * q₁ + N := by linear_combination -hN
   have hline₂ : w₂ = Λ * q₂ + N := by linear_combination -hN - hslope
