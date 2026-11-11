@@ -73,7 +73,7 @@ theorem multiplicity_relDiscr_eq_index_mul_discriminantExponent [IsGalois K L] :
         TauCeti.discriminantExponent (v.adicCompletion K) (w.adicCompletion L) := by
   classical
   -- The primes above `v` are the orbit of `w`, whose size is the index of its stabilizer.
-  rw [TauCeti.multiplicity_relDiscr _ _ v.ne_bot (differentIdeal_ne_bot (A := 𝓞 K)),
+  rw [TauCeti.multiplicity_relDiscr _ _ (differentIdeal_ne_bot (A := 𝓞 K)),
     MulAction.index_stabilizer,
     Algebra.IsInvariant.orbit_eq_primesOver (𝓞 K) (𝓞 L) Gal(L/K) v.asIdeal w.asIdeal,
     Set.ncard_eq_toFinset_card', ← smul_eq_mul, ← Finset.sum_const]

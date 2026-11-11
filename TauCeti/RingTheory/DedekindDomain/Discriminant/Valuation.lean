@@ -18,7 +18,7 @@ different at the primes of `B` above `p`, each weighted by a residue degree:
 `mult_p(relDiscr A B) = Σ_{P ∣ p} f(P / p) · mult_P(𝔇(B / A))`.
 
 This is the coefficient formula for `relDiscr` specifically: it is `TauCeti.multiplicity_relNorm`
-applied to the different, through `relDiscr_def`. The hypotheses are that `p` is a nonzero maximal
+applied to the different, through `relDiscr_def`. The hypotheses are that `p` is a maximal
 ideal of `A` and that the different is nonzero, the latter holding whenever the extension is
 separable.
 
@@ -46,16 +46,26 @@ variable {A B : Type*} [CommRing A] [IsDedekindDomain A] [CommRing B] [IsDedekin
   [PerfectField (FractionRing A)]
 
 variable (B) in
-/-- **The coefficients of the relative discriminant.** At a nonzero maximal ideal `p` of `A`,
+/-- **The coefficients of the relative discriminant.** At a maximal ideal `p` of `A`,
 the coefficient of `relDiscr A B` is the sum of the coefficients of the different at the primes
 above `p`, each weighted by its residue degree. -/
-theorem multiplicity_relDiscr (p : Ideal A) [p.IsMaximal] (hp : p ≠ ⊥)
+theorem multiplicity_relDiscr (p : Ideal A) [p.IsMaximal]
     (hd : differentIdeal A B ≠ ⊥) :
     multiplicity p (relDiscr A B) =
       ∑ P ∈ (p.primesOver B).toFinset,
         P.inertiaDeg A * multiplicity P (differentIdeal A B) := by
-  rw [relDiscr_def]
-  exact multiplicity_relNorm B p hp hd
+  by_cases hp : p = ⊥
+  · subst hp
+    have hbot : ∀ I : Ideal B, I ≠ ⊥ → ∀ Q : Ideal B, Q = ⊥ → multiplicity Q I = 0 :=
+      fun I hI Q hQ ↦ multiplicity_eq_zero_of_not_dvd fun hdvd ↦
+        hI (le_bot_iff.mp (hQ ▸ Ideal.dvd_iff_le.mp hdvd))
+    rw [multiplicity_eq_zero_of_not_dvd fun hdvd ↦
+      (relDiscr_eq_bot_iff.not.mpr hd) (le_bot_iff.mp (Ideal.dvd_iff_le.mp hdvd))]
+    refine (Finset.sum_eq_zero fun P hP ↦ ?_).symm
+    have := (Set.mem_toFinset.mp hP).2
+    rw [hbot _ hd P (Ideal.eq_bot_of_liesOver_bot A P), Nat.mul_zero]
+  · rw [relDiscr_def]
+    exact multiplicity_relNorm B p hp hd
 
 end TauCeti
 
