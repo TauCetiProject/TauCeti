@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
@@ -49,6 +50,8 @@ plateau, built from two smooth transitions, is equal to `1` on `[a + δ, b - δ]
 * `expNegInvGlue.lt_one`: `expNegInvGlue x < 1`.
 * `expNegInvGlue.hasDerivAt`: the derivative of `expNegInvGlue` at `x` is
   `x⁻² expNegInvGlue x`.
+* `expNegInvGlue.hasFDerivAt_norm_sq`: on a real inner product space, the derivative of
+  `x ↦ expNegInvGlue (‖x‖²)` at `x` is `‖x‖⁻⁴ expNegInvGlue (‖x‖²) · 2 ⟪x, ·⟫`.
 * `Real.smoothTransition.abs_le_one`: `|Real.smoothTransition x| ≤ 1`.
 * `Real.smoothTransition.deriv_of_neg`: `deriv Real.smoothTransition x = 0` for `x < 0`.
 * `Real.smoothTransition.deriv_of_one_lt`: `deriv Real.smoothTransition x = 0` for `1 < x`.
@@ -108,6 +111,13 @@ theorem lt_one (x : ℝ) : expNegInvGlue x < 1 := by
 both sides vanish. -/
 theorem hasDerivAt (x : ℝ) : HasDerivAt expNegInvGlue (x⁻¹ ^ 2 * expNegInvGlue x) x := by
   simpa using hasDerivAt_polynomial_eval_inv_mul 1 x
+
+/-- On a real inner product space, the derivative of `x ↦ expNegInvGlue (‖x‖ ^ 2)` at `x` is
+`‖x‖⁻⁴ expNegInvGlue (‖x‖²) · 2 ⟪x, ·⟫`, also at `x = 0`, where it vanishes. -/
+theorem hasFDerivAt_norm_sq {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] (x : E) :
+    HasFDerivAt (fun y ↦ expNegInvGlue (‖y‖ ^ 2))
+      (((‖x‖ ^ 2)⁻¹ ^ 2 * expNegInvGlue (‖x‖ ^ 2)) • (2 • innerSL ℝ x)) x :=
+  (hasDerivAt _).comp_hasFDerivAt x (hasStrictFDerivAt_norm_sq x).hasFDerivAt
 
 end expNegInvGlue
 

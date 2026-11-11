@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.ContinuousLog.ArgumentPrinciple
 public import Mathlib.Algebra.Polynomial.Roots
-import TauCeti.Analysis.Complex.Wirtinger.Similarity
+import TauCeti.Analysis.Analytic.Order
 import Mathlib.Data.Finsupp.Multiset
 import Mathlib.Topology.Algebra.Polynomial
 
