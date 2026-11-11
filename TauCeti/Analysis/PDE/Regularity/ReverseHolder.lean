@@ -180,7 +180,6 @@ theorem exists_eLpNorm_rpow_le_mul_eLpNorm_rpow :
   refine ⟨2 * √2 * c, by positivity, ?_⟩
   intro mu _ Omega a lam Lam q S u ε p x₀ r ρ h ha hS hu hε hεu hp hr hrρ hball
   have hlam := h.pos
-  have h1p : 0 < 1 - p := by linarith
   set K := |p| * Lam / ((1 - p) * lam)
   have hK : 0 ≤ K := div_nonneg (mul_nonneg (abs_nonneg p) h.upper_nonneg) (by positivity)
   -- A cutoff equal to `1` on `B(x₀, r)`, supported in `closedBall x₀ ρ'` with `ρ' = (r + ρ)/2`.
@@ -211,7 +210,7 @@ theorem exists_eLpNorm_rpow_le_mul_eLpNorm_rpow :
   have hI : ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu ≤
       G ^ 2 * ∫ x in Metric.ball x₀ ρ, W1p.value w x ^ 2 ∂mu := by
     have hbound := W1p.setIntegral_norm_gradient_sq_mul_value_sq_le w hψ hψg
-      measurableSet_ball (hψts.trans hρ'B) (Lp.memLp (W1p.value w)).integrable_sq
+      (hψts.trans hρ'B) (Lp.memLp (W1p.value w)).integrable_sq
       (Filter.Eventually.of_forall fun x => le_rfl)
     rwa [inter_eq_right.2 hball] at hbound
   set I := ∫ x in Metric.ball x₀ ρ, W1p.value w x ^ 2 ∂mu
@@ -269,7 +268,6 @@ theorem exists_eLpNorm_le_ofReal_rpow_mul_eLpNorm :
   obtain ⟨C, hC0, hstep⟩ := exists_eLpNorm_rpow_le_mul_eLpNorm_rpow (ι := ι)
   refine ⟨C, hC0, ?_⟩
   intro mu _ Omega a lam Lam q S u ε p x₀ r ρ h ha hq hS hu hε hεu hp0 hp hr hrρ hball
-  have h1p : 0 < 1 - p := by linarith
   have hlam := h.pos
   have hstep' := hstep mu h ha hS hu hε hεu hp hr hrρ hball
   rw [abs_of_pos hp0] at hstep'
@@ -343,7 +341,6 @@ private theorem exists_eLpNorm_le_ofReal_rpow_mul_eLpNorm_of_ball_subset [Nonemp
   set n : ℝ := (Fintype.card ι : ℝ)
   have hn : (1 : ℝ) ≤ n := Nat.one_le_cast.2 Fintype.card_pos
   have hn0 : (0 : ℝ) < n := by linarith
-  have hχ0 : 0 < χ := zero_lt_one.trans hχ
   set δ : ℝ := (χ - 1) / (2 * χ)
   have hδn : δ < n⁻¹ := by
     rw [div_lt_iff₀ (by positivity), inv_mul_eq_div, lt_div_iff₀ hn0]
@@ -670,7 +667,6 @@ private theorem exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv_
   -- Divide by `|B(x₀, R/2)|^{1/s}` and collect the powers of `R` and `V`.
   set As := (⨍ x in Metric.ball x₀ (R / 2), W1p.value u x ^ s ∂mu) ^ s⁻¹
   set Ap := (⨍ x in Metric.ball x₀ R, W1p.value u x ^ p ∂mu) ^ p⁻¹
-  have hB : 0 < ((R / 2) ^ n * V) ^ s⁻¹ := by positivity
   calc As = (((R / 2) ^ n * V) ^ s⁻¹)⁻¹ * (((R / 2) ^ n * V) ^ s⁻¹ * As) := by field_simp
     _ ≤ (((R / 2) ^ n * V) ^ s⁻¹)⁻¹ * (D * R ^ (n / s - n / p) * ((R ^ n * V) ^ p⁻¹ * Ap)) := by
         gcongr

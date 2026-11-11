@@ -145,8 +145,10 @@ private theorem exists_continuous_eqOn_preciseRepresentative (hp : 2 < p) {s : �
     refine Measure.eqOn_open_of_ae_eq (μ := volume) ?_ (A.isOpen_overlap i i')
       ((hg_cont i').mono (A.overlap_subset_image i i')) ?_
     · filter_upwards [ae_restrict_of_ae_restrict_of_subset (A.overlap_subset_image i i')
-        (hg_ae i'), A.ae_restrict_overlap_transition (i' := i') (hg_ae i),
+        (hg_ae i'), A.sectionChartData.aeTransition_iff.1 (A.aeTransition_sectionChartData volume)
+          (i' := i') (hg_ae i),
         ae_restrict_mem (A.isOpen_overlap i i').measurableSet] with y h' h hy
+      rw [A.sectionChartData_transition_of_mem hy] at h
       rw [← h', ← h, A.coord_eq_coordChange s hy]
     · have hbase : MapsTo (A.chart i').symm (A.overlap i i')
           ((A.triv i).baseSet ∩ (A.triv i').baseSet) := fun y hy ↦
@@ -198,12 +200,15 @@ continuous section `s` of `V` whose chart expression `A.coord i s` agrees, for e
 almost everywhere on `A.image i` with the chart data of `w`. -/
 theorem existsUnique_continuous_ae_eq_coord (hp : 2 < p) (w : SobolevSection A volume p 1) :
     ∃! s : ∀ x, V x, Continuous (fun x ↦ TotalSpace.mk' F x (s x)) ∧
-      ∀ i, A.chartValueL volume p 1 i w =ᵐ[volume.restrict (A.image i)] A.coord i s := by
-  obtain ⟨s, hs⟩ := exists_section A volume p 1 w
+      ∀ i, A.sectionChartData.chartValueL volume p 1 i w
+        =ᵐ[volume.restrict (A.image i)] A.coord i s := by
+  obtain ⟨s, hs⟩ := A.sectionChartData.exists_section volume p 1 w
+  replace hs (i : Fin A.n) := (hs i).trans (A.sectionChartData_coord_ae_eq volume i s)
   obtain ⟨t, ht, hts⟩ :=
     exists_continuous_eqOn_preciseRepresentative hp fun i ↦ memWkpLoc_coord w hs i
   have hae (i : Fin A.n) :
-      A.chartValueL volume p 1 i w =ᵐ[volume.restrict (A.image i)] A.coord i t := by
+      A.sectionChartData.chartValueL volume p 1 i w
+        =ᵐ[volume.restrict (A.image i)] A.coord i t := by
     filter_upwards [hs i, (memWkpLoc_coord w hs i).memLpLoc.ae_eq_preciseRepresentative Fact.out,
       ae_restrict_mem (A.image i).isOpen.measurableSet] with y hy hy' hyU
     rw [hy, hy', hts i hyU]
@@ -225,7 +230,8 @@ theorem continuous_toSection (hp : 2 < p) (w : SobolevSection A volume p 1) :
 representative, almost everywhere. -/
 theorem chartValueL_ae_eq_coord_toSection (hp : 2 < p) (w : SobolevSection A volume p 1)
     (i : Fin A.n) :
-    A.chartValueL volume p 1 i w =ᵐ[volume.restrict (A.image i)] A.coord i (toSection hp w) :=
+    A.sectionChartData.chartValueL volume p 1 i w
+      =ᵐ[volume.restrict (A.image i)] A.coord i (toSection hp w) :=
   (existsUnique_continuous_ae_eq_coord hp w).exists.choose_spec.2 i
 
 /-- **Uniqueness of the continuous representative.** A continuous section whose chart
@@ -233,7 +239,8 @@ expressions agree almost everywhere with the chart data of `w` is the continuous
 of `w`. -/
 theorem eq_toSection (hp : 2 < p) {w : SobolevSection A volume p 1} {s : ∀ x, V x}
     (hs : Continuous fun x ↦ TotalSpace.mk' F x (s x))
-    (hw : ∀ i, A.chartValueL volume p 1 i w =ᵐ[volume.restrict (A.image i)] A.coord i s) :
+    (hw : ∀ i, A.sectionChartData.chartValueL volume p 1 i w
+      =ᵐ[volume.restrict (A.image i)] A.coord i s) :
     s = toSection hp w :=
   (existsUnique_continuous_ae_eq_coord hp w).unique ⟨hs, hw⟩
     ⟨continuous_toSection hp w, chartValueL_ae_eq_coord_toSection hp w⟩
@@ -241,7 +248,8 @@ theorem eq_toSection (hp : 2 < p) {w : SobolevSection A volume p 1} {s : ∀ x, 
 /-- The chart expressions of the continuous representative are, on the chart images, the precise
 representatives of the chart expressions of any section whose coordinates are the chart data. -/
 theorem eqOn_coord_toSection (hp : 2 < p) {w : SobolevSection A volume p 1} {s : ∀ x, V x}
-    (hs : ∀ i, A.chartValueL volume p 1 i w =ᵐ[volume.restrict (A.image i)] A.coord i s)
+    (hs : ∀ i, A.sectionChartData.chartValueL volume p 1 i w
+      =ᵐ[volume.restrict (A.image i)] A.coord i s)
     (i : Fin A.n) :
     EqOn (A.coord i (toSection hp w)) (preciseRepresentative volume (A.coord i s))
       (A.image i) := by
@@ -257,7 +265,8 @@ continuous with exponent `1 - 2 / p` on every compact subset of the chart image.
 theorem exists_holderOnWith_coord_toSection (hp : 2 < p) (w : SobolevSection A volume p 1)
     (i : Fin A.n) {K : Set ℂ} (hK : IsCompact K) (hKi : K ⊆ A.image i) :
     ∃ C : ℝ≥0, HolderOnWith C ((1 : ℝ≥0∞) - 2 / p).toNNReal (A.coord i (toSection hp w)) K := by
-  obtain ⟨s, hs⟩ := exists_section A volume p 1 w
+  obtain ⟨s, hs⟩ := A.sectionChartData.exists_section volume p 1 w
+  replace hs (i : Fin A.n) := (hs i).trans (A.sectionChartData_coord_ae_eq volume i s)
   obtain ⟨C, hC⟩ :=
     (memWkpLoc_coord w hs i).exists_holderOnWith_preciseRepresentative_of_isCompact hp hK hKi
   refine ⟨C, fun x hx y hy ↦ ?_⟩
