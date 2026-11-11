@@ -49,6 +49,8 @@ coprime, coprimality can be read off a unit resultant: against `X - C a` this is
 * `Polynomial.resultant_one_sub_C_mul_X_right`: `Res_(n,1)(f, 1 - t X) = (reflect n f)(t)`.
 * `Polynomial.resultant_mul_left_of_natDegree_le`: multiplicativity in the left argument at
   arbitrary degree bounds.
+* `Polynomial.resultant_prod_left_of_monic`: multiplicativity in a finite product of monic left
+  arguments, at the actual degrees.
 * `Polynomial.resultant_reflect`: reversing both arguments at their degree bounds multiplies the
   resultant by `(-1) ^ (m * n)`.
 * `Polynomial.resultant_map_of_natDegree_eq`: resultants at the actual degrees commute with a
@@ -158,6 +160,16 @@ theorem resultant_mul_left_of_natDegree_le {f₁ f₂ g : R[X]} {m₁ m₂ n : �
     resultant_mul_left _ _ _ _ hg, resultant_add_left_deg _ _ _ _ _ le_rfl,
     resultant_add_left_deg _ _ _ _ _ le_rfl]
   ring
+
+/-- `Res(∏ fᵢ, g) = ∏ Res(fᵢ, g)` for a finite product of monic polynomials, the resultants being
+taken at the actual degrees. -/
+theorem resultant_prod_left_of_monic {ι : Type*} (s : Finset ι) {f : ι → R[X]}
+    (hf : ∀ i ∈ s, (f i).Monic) (g : R[X]) :
+    (∏ i ∈ s, f i).resultant g = ∏ i ∈ s, (f i).resultant g := by
+  nontriviality R
+  refine resultant_prod_left s f g _ ?_ le_rfl
+  rw [Finset.prod_congr rfl fun i hi ↦ (hf i hi).leadingCoeff, Finset.prod_const_one]
+  exact one_ne_zero
 
 /-- The resultant of `f` with the linear polynomial `1 - t X`, at the degree bound `n` for `f`, is
 the value at `t` of the reversal of `f` in degree `n`. When `f = ∏ (X - αᵢ)` has degree `n`, both

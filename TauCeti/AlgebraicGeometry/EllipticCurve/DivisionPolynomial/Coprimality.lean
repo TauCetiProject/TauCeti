@@ -58,20 +58,17 @@ characteristic divides `n`. Coprimality removes that restriction: were `ΨSqₙ`
 to be a unit, and `natDegree_Φ_pos` says it has positive degree. Neither statement subsumes the
 other — Mathlib's holds on singular curves, this one in every characteristic — so both are useful.
 
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md:99` — "**`[n]` is division polynomials**": for `n ≠ 0`,
-multiplication-by-`n` is an isogeny of degree `n²`, pinned by the division-polynomial
-multiplication formula. Reading that degree off `Φₙ / ΨSqₙ` requires knowing the fraction is in
-lowest terms, which is what this file supplies; `ΨSq_ne_zero_of_Δ_ne_zero` is the accompanying
-statement that the denominator is not the zero polynomial in any characteristic.
+**Why lowest terms.** For `n ≠ 0`, multiplication-by-`n` is an isogeny of degree `n²`, pinned by
+the division-polynomial multiplication formula. Reading that degree off `Φₙ / ΨSqₙ` requires
+knowing the fraction is in lowest terms, which is what this file supplies;
+`ΨSq_ne_zero_of_Δ_ne_zero` is the accompanying statement that the denominator is not the zero
+polynomial in any characteristic.
 
 ## Provenance
 
 Ported, with the authors' proofs, from AINTLIB (`github.com/CBirkbeck/AINTLIB`, Apache-2.0), the
-HasseWeil project at `dev/hasse-weil @ 513e83879e2f` — the revision
-`TauCetiRoadmap/EllipticCurves/README.md:1071` pins for that project, as distinct from the
-restructured `projects/HasseWeil` copy carried at the NagellLutz entry's `dev/modular-curves` pin.
+HasseWeil project at `dev/hasse-weil @ 513e83879e2f`, as distinct from the restructured
+`projects/HasseWeil` copy carried at `dev/modular-curves`.
 Source file `projects/HasseWeil/HasseWeil/Auxiliary/DivisionPolynomial.lean`, section
 `Coprimality`, declaration `isCoprime_Φ_ΨSq`. The section's `exists_point_on_curve`, which the
 proof below calls, is ported in `Affine/IsAlgClosed.lean` instead, since it is about
