@@ -18,11 +18,10 @@ The process-level predicate `Contractable μ X` remains the main stochastic-proc
 `ContractableLaw` names the equivalent path-space viewpoint needed by the de Finetti
 factorization and path-space dynamics.
 
-This is the contractability analogue of `ExchangeableLaw`. It realizes the Exchangeability
-roadmap's Layer 0 request for the characterization of contractability by strictly increasing
-maps `ℕ → ℕ`, with finite-dimensional marginal consequences. The process-level ↔ path-law
-bridges live in `TauCeti.Probability.Exchangeability.PathSpace.Law.Bridge`, which imports this
-file and `Contractability`; no Mathlib infrastructure is vendored.
+This is the contractability analogue of `ExchangeableLaw`. It characterizes contractability by
+strictly increasing maps `ℕ → ℕ`, with finite-dimensional marginal consequences. The
+process-level ↔ path-law bridges live in `TauCeti.Probability.Exchangeability.PathSpace.Law.Bridge`,
+which imports this file and `Contractability`; no Mathlib infrastructure is vendored.
 -/
 
 public section
