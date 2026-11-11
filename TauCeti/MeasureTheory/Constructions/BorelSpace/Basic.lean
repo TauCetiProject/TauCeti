@@ -50,12 +50,17 @@ namespace MeasureTheory.Measure
 
 /-- A proper continuous pushforward preserves finiteness on compact sets. -/
 theorem isFiniteMeasureOnCompacts_map_of_isProperMap {X Y : Type*}
-    [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
-    [TopologicalSpace Y] [MeasurableSpace Y] [BorelSpace Y] [T2Space Y]
+    [TopologicalSpace X] [MeasurableSpace X]
+    [TopologicalSpace Y] [MeasurableSpace Y] [OpensMeasurableSpace Y] [T2Space Y]
     (μ : Measure X) [IsFiniteMeasureOnCompacts μ] {f : X → Y} (hf : IsProperMap f) :
     IsFiniteMeasureOnCompacts (μ.map f) where
   lt_top_of_isCompact K hK := by
-    rw [Measure.map_apply hf.continuous.measurable hK.measurableSet]
-    exact (hf.isCompact_preimage hK).measure_lt_top
+    by_cases hfm : AEMeasurable f μ
+    · rw [Measure.map_apply_of_aemeasurable hfm hK.measurableSet]
+      exact (hf.isCompact_preimage hK).measure_lt_top
+    · by_cases hμ : μ = 0
+      · simp [hμ]
+      · rw [Measure.map_of_not_aemeasurable_of_ne_zero hfm hμ]
+        exact @measure_lt_top _ _ _ isFiniteMeasure_dirac _
 
 end MeasureTheory.Measure

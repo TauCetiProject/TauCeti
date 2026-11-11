@@ -168,6 +168,21 @@ theorem valuation_coe_of_isUnit {h : K⟦X⟧} (hh : IsUnit h) : Valued.v (h : K
   Valuation.Integers.one_of_isUnit' hh fun g ↦ (_root_.LaurentSeries.val_le_one_iff_eq_coe K _).mpr
     ⟨g, rfl⟩
 
+/-- A power series has Laurent valuation strictly below one exactly when its constant
+coefficient vanishes. -/
+@[simp]
+theorem valuation_coe_lt_one_iff {g : K⟦X⟧} :
+    Valued.v (g : K⸨X⸩) < 1 ↔ PowerSeries.constantCoeff g = 0 := by
+  refine ⟨fun h ↦ ?_, fun hg ↦ ?_⟩
+  · by_contra hg
+    have hunit := PowerSeries.isUnit_iff_constantCoeff.mpr (isUnit_iff_ne_zero.mpr hg)
+    exact h.ne (valuation_coe_of_isUnit hunit)
+  · have hle : Valued.v (g : K⸨X⸩) ≤ exp (-1) := by
+      apply (_root_.LaurentSeries.intValuation_le_iff_coeff_lt_eq_zero K g).mpr
+      intro n hn
+      simpa only [Nat.lt_one_iff.mp hn, coeff_zero_eq_constantCoeff_apply] using hg
+    exact hle.trans_lt (by rw [← exp_zero]; exact exp_lt_exp.mpr (by norm_num))
+
 /-- The power series part of a nonzero Laurent series over a division ring is a unit: its constant
 coefficient is the leading coefficient. -/
 theorem isUnit_powerSeriesPart {D : Type*} [DivisionRing D] {f : D⸨X⸩} (hf : f ≠ 0) :
