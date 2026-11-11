@@ -10,45 +10,45 @@ public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 
 /-!
-# The compact perturbation `∂̄ + 1` and its kernel
+# The compact perturbation `\bar∂ + 1` and its kernel
 
-The Cauchy–Riemann operator `∂̄` on functions over the unit disc with real boundary values has
+The Cauchy–Riemann operator `\bar∂` on functions over the unit disc with real boundary values has
 index `1`, and its kernel consists of the real constants. Adding the compact zeroth-order term
 `1` does not change the index, but it does change the kernel: this file records the explicit
 computation behind that example, which is a check on the compact-perturbation and deformation
 statements for real Cauchy–Riemann operators.
 
-The integrating factor `e^{conj z}` turns `∂̄ + 1` into `∂̄`: for `ξ` real differentiable,
-`∂̄(e^{conj z} ξ) = e^{conj z} (∂̄ξ + ξ)`, since `∂̄ e^{conj z} = e^{conj z}`. Hence the solutions
-of `∂̄ξ + ξ = 0` on an open set are exactly the maps `e^{-conj z} h` with `h` holomorphic. A nonzero
-constant `c` is not a solution, because `(∂̄ + 1) c = c`. On the other hand
-`e^{-2 s} = e^{-conj z} e^{-z}` (with `z = s + i t`) is a nonzero solution which is real on the
-whole plane, in particular on the unit circle. So the kernel with real boundary values contains
-`e^{-2 s}` and no nonzero constant.
+The integrating factor `e^{conj z}` turns `\bar∂ + 1` into `\bar∂`: for `ξ` real differentiable,
+`\bar∂(e^{conj z} ξ) = e^{conj z} (\bar∂ξ + ξ)`, since `\bar∂ e^{conj z} = e^{conj z}`. Hence the
+solutions of `\bar∂ξ + ξ = 0` on an open set are exactly the maps `e^{-conj z} h` with `h`
+holomorphic. A nonzero constant `c` is not a solution, because `(\bar∂ + 1) c = c`. On the other
+hand `e^{-2 s} = e^{-conj z} e^{-z}` (with `z = s + i t`) is a nonzero solution which is real on
+the whole plane, in particular on the unit circle. So the kernel with real boundary values
+contains `e^{-2 s}` and no nonzero constant.
 
-For the deformation statement, the family `∂̄ + t` with `t ∈ [0, 1]` has a continuous zeroth-order
-term, whereas the family `∂̄ + t / (1 - t)` does not extend continuously to `t = 1`: its
-zeroth-order term, the constant `t / (1 - t)`, has `L^p` norm tending to infinity as `t → 1⁻`
-for every finite nonzero measure.
+For the deformation statement, the family `\bar∂ + t` with `t ∈ [0, 1]` has a continuous
+zeroth-order term, whereas the family `\bar∂ + t / (1 - t)` does not extend continuously to
+`t = 1`: its zeroth-order term, the constant `t / (1 - t)`, has `L^p` norm tending to infinity as
+`t → 1⁻` for every finite nonzero measure.
 
-Here `∂̄ξ` is `conjWirtingerDeriv ξ z 1 = (∂ₛξ + i ∂ₜξ) / 2`.
+Here `\bar∂ξ` is `conjWirtingerDeriv ξ z 1 = (∂ₛξ + i ∂ₜξ) / 2`.
 
 ## Main results
 
-* `TauCeti.conjWirtingerDeriv_cexp_conj_apply_one`: `∂̄ e^{conj z} = e^{conj z}`.
+* `TauCeti.conjWirtingerDeriv_cexp_conj_apply_one`: `\bar∂ e^{conj z} = e^{conj z}`.
 * `TauCeti.conjWirtingerDeriv_cexp_conj_smul_apply_one`: the integrating factor identity
-  `∂̄(e^{conj z} ξ) = e^{conj z} (∂̄ξ + ξ)`.
+  `\bar∂(e^{conj z} ξ) = e^{conj z} (\bar∂ξ + ξ)`.
 * `TauCeti.differentiableAt_cexp_conj_smul_iff`: `e^{conj z} ξ` is complex differentiable at `z`
-  exactly when `∂̄ξ + ξ = 0` there.
+  exactly when `\bar∂ξ + ξ = 0` there.
 * `TauCeti.conjWirtingerDeriv_add_eq_zero_iff_exists_eq_cexp_neg_conj_smul`: on an open set, the
-  solutions of `∂̄ξ + ξ = 0` are the maps `e^{-conj z} h` with `h` holomorphic.
-* `TauCeti.conjWirtingerDeriv_const_apply_one_add_eq_zero_iff`: a constant solves `∂̄ξ + ξ = 0`
+  solutions of `\bar∂ξ + ξ = 0` are the maps `e^{-conj z} h` with `h` holomorphic.
+* `TauCeti.conjWirtingerDeriv_const_apply_one_add_eq_zero_iff`: a constant solves `\bar∂ξ + ξ = 0`
   only if it is zero.
 * `TauCeti.conjWirtingerDeriv_ofReal_exp_neg_two_mul_re_apply_one_add`: `e^{-2 s}` solves
-  `∂̄ξ + ξ = 0`.
+  `\bar∂ξ + ξ = 0`.
 * `TauCeti.compactPerturbation_disc_kernel_check`: on the unit disc with real values on the unit
-  circle, the constants solving `∂̄ξ = 0` are the real ones, the only constant solving
-  `∂̄ξ + ξ = 0` is `0`, and `e^{-2 s}` solves `∂̄ξ + ξ = 0`.
+  circle, the constants solving `\bar∂ξ = 0` are the real ones, the only constant solving
+  `\bar∂ξ + ξ = 0` is `0`, and `e^{-2 s}` solves `\bar∂ξ + ξ = 0`.
 * `TauCeti.tendsto_div_one_sub_nhdsLT_one`, `TauCeti.tendsto_norm_lpConst_div_one_sub`: the
   zeroth-order term `t / (1 - t)` is unbounded as `t → 1⁻`, also in `L^p` norm.
 
@@ -75,7 +75,7 @@ theorem hasFDerivAt_cexp_conj (z : ℂ) :
   (conjCLE : ℂ ≃L[ℝ] ℂ).hasFDerivAt.cexp
 
 /-- The antiholomorphic exponential is its own conjugate Wirtinger derivative:
-`∂̄ e^{conj z} = e^{conj z}`. -/
+`\bar∂ e^{conj z} = e^{conj z}`. -/
 theorem conjWirtingerDeriv_cexp_conj_apply_one (z : ℂ) :
     conjWirtingerDeriv (fun w : ℂ ↦ cexp (conj w)) z 1 = cexp (conj z) := by
   rw [conjWirtingerDeriv_apply, (hasFDerivAt_cexp_conj z).fderiv]
@@ -83,7 +83,7 @@ theorem conjWirtingerDeriv_cexp_conj_apply_one (z : ℂ) :
     mul_one, conj_I]
   linear_combination -cexp (conj z) / 2 * I_sq
 
-/-- **The integrating factor** for `∂̄ + 1`: `∂̄(e^{conj z} ξ) = e^{conj z} (∂̄ξ + ξ)`. -/
+/-- **The integrating factor** for `\bar∂ + 1`: `\bar∂(e^{conj z} ξ) = e^{conj z} (\bar∂ξ + ξ)`. -/
 theorem conjWirtingerDeriv_cexp_conj_smul_apply_one {ξ : ℂ → E} {z : ℂ}
     (hξ : DifferentiableAt ℝ ξ z) :
     conjWirtingerDeriv (fun w ↦ cexp (conj w) • ξ w) z 1 =
@@ -91,7 +91,7 @@ theorem conjWirtingerDeriv_cexp_conj_smul_apply_one {ξ : ℂ → E} {z : ℂ}
   rw [conjWirtingerDeriv_smul_apply (hasFDerivAt_cexp_conj z).differentiableAt hξ,
     conjWirtingerDeriv_cexp_conj_apply_one, smul_add]
 
-/-- A real-differentiable `ξ` solves `∂̄ξ + ξ = 0` at `z` exactly when `e^{conj z} ξ` is complex
+/-- A real-differentiable `ξ` solves `\bar∂ξ + ξ = 0` at `z` exactly when `e^{conj z} ξ` is complex
 differentiable at `z`. -/
 theorem differentiableAt_cexp_conj_smul_iff {ξ : ℂ → E} {z : ℂ}
     (hξ : DifferentiableAt ℝ ξ z) :
@@ -102,8 +102,8 @@ theorem differentiableAt_cexp_conj_smul_iff {ξ : ℂ → E} {z : ℂ}
   rw [differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero hd,
     conjWirtingerDeriv_cexp_conj_smul_apply_one hξ, smul_eq_zero_iff_right (exp_ne_zero _)]
 
-/-- **The kernel of `∂̄ + 1`.** On an open set `Ω`, a map `ξ` is real differentiable with
-`∂̄ξ + ξ = 0` exactly when `ξ = e^{-conj z} h` on `Ω` for a map `h` holomorphic on `Ω`. -/
+/-- **The kernel of `\bar∂ + 1`.** On an open set `Ω`, a map `ξ` is real differentiable with
+`\bar∂ξ + ξ = 0` exactly when `ξ = e^{-conj z} h` on `Ω` for a map `h` holomorphic on `Ω`. -/
 theorem conjWirtingerDeriv_add_eq_zero_iff_exists_eq_cexp_neg_conj_smul {ξ : ℂ → E}
     {Ω : Set ℂ} (hΩ : IsOpen Ω) :
     (DifferentiableOn ℝ ξ Ω ∧ ∀ z ∈ Ω, conjWirtingerDeriv ξ z 1 + ξ z = 0) ↔
@@ -127,13 +127,13 @@ theorem conjWirtingerDeriv_add_eq_zero_iff_exists_eq_cexp_neg_conj_smul {ξ : �
 
 /-! ### Constants and the solution `e^{-2 s}` -/
 
-/-- For a constant `c`, `(∂̄ + 1) c = c`. -/
+/-- For a constant `c`, `(\bar∂ + 1) c = c`. -/
 theorem conjWirtingerDeriv_const_apply_one_add (c : E) (z : ℂ) :
     conjWirtingerDeriv (fun _ : ℂ ↦ c) z 1 + c = c := by
   simp
 
-/-- A constant solves `∂̄ξ + ξ = 0` only if it is zero: the constants are not in the kernel
-of `∂̄ + 1`. -/
+/-- A constant solves `\bar∂ξ + ξ = 0` only if it is zero: the constants are not in the kernel
+of `\bar∂ + 1`. -/
 theorem conjWirtingerDeriv_const_apply_one_add_eq_zero_iff (c : E) (z : ℂ) :
     conjWirtingerDeriv (fun _ : ℂ ↦ c) z 1 + c = 0 ↔ c = 0 := by
   rw [conjWirtingerDeriv_const_apply_one_add]
@@ -145,7 +145,7 @@ theorem ofReal_exp_neg_two_mul_re (z : ℂ) :
   congr 1
   apply Complex.ext <;> simp; ring
 
-/-- The real function `e^{-2 s}` solves `∂̄ξ + ξ = 0` on the whole plane. -/
+/-- The real function `e^{-2 s}` solves `\bar∂ξ + ξ = 0` on the whole plane. -/
 theorem conjWirtingerDeriv_ofReal_exp_neg_two_mul_re_apply_one_add (z : ℂ) :
     conjWirtingerDeriv (fun w : ℂ ↦ ((Real.exp (-2 * w.re) : ℝ) : ℂ)) z 1 +
       ((Real.exp (-2 * z.re) : ℝ) : ℂ) = 0 :=
@@ -155,10 +155,11 @@ theorem conjWirtingerDeriv_ofReal_exp_neg_two_mul_re_apply_one_add (z : ℂ) :
 
 /-- **Check: compact perturbation changes the kernel.** On the unit disc with real values on the
 unit circle:
-* a constant is in the kernel of `∂̄` exactly when it is real;
-* the only constant in the kernel of `∂̄ + 1` is `0`;
-* the function `e^{-2 s}`, which is nonzero and real everywhere, is in the kernel of `∂̄ + 1`.
-So the kernel changes under the compact perturbation `∂̄ ↦ ∂̄ + 1`, while the index does not. -/
+* a constant is in the kernel of `\bar∂` exactly when it is real;
+* the only constant in the kernel of `\bar∂ + 1` is `0`;
+* the function `e^{-2 s}`, which is nonzero and real everywhere, is in the kernel of `\bar∂ + 1`.
+So the kernel changes under the compact perturbation `\bar∂ ↦ \bar∂ + 1`, while the index does
+not. -/
 theorem compactPerturbation_disc_kernel_check :
     (∀ c : ℂ, ((∀ z ∈ ball (0 : ℂ) 1, conjWirtingerDeriv (fun _ : ℂ ↦ c) z 1 = 0) ∧
         ∀ z ∈ sphere (0 : ℂ) 1, c.im = 0) ↔ c.im = 0) ∧
@@ -194,7 +195,7 @@ theorem tendsto_div_one_sub_nhdsLT_one :
       exact sub_pos.2 ht
   simpa [div_eq_mul_inv] using h1.pos_mul_atTop one_pos (tendsto_inv_nhdsGT_zero.comp h2)
 
-/-- **Check: the family `∂̄ + t / (1 - t)` is not continuous at `t = 1`.** For a finite nonzero
+/-- **Check: the family `\bar∂ + t / (1 - t)` is not continuous at `t = 1`.** For a finite nonzero
 measure `μ` and `p ≠ 0`, the `L^p(μ)` norm of the constant zeroth-order term `t / (1 - t)` tends
 to infinity as `t → 1⁻`; applied to Lebesgue measure on the unit disc, the multiplication
 operators have unbounded norm, so the deformation invariance of the index does not apply. -/
