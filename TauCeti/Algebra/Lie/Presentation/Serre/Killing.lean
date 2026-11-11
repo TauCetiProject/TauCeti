@@ -80,9 +80,12 @@ variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
 /-! ## The higher Serre relation from a root string -/
 
 /-- If `β - α` is not a root then the `α`-root string through `β` has no lower part. -/
-theorem chainBotCoeff_eq_zero_of_rootSpace_sub_eq_bot {α β : Weight K H L} (hα : α.IsNonZero)
+theorem chainBotCoeff_eq_zero_of_rootSpace_sub_eq_bot {α β : Weight K H L}
     (hsub : rootSpace H (⇑β - ⇑α) = ⊥) :
     chainBotCoeff (⇑α) β = 0 := by
+  by_cases hα : α.IsZero
+  · rw [hα.eq]
+    exact chainBotCoeff_zero β
   by_contra hne
   refine (rootSpace_zsmul_add_ne_bot_iff α β hα (-1)).2 ⟨by omega, by omega⟩ ?_
   rw [neg_one_zsmul, neg_add_eq_sub]
@@ -91,11 +94,15 @@ theorem chainBotCoeff_eq_zero_of_rootSpace_sub_eq_bot {α β : Weight K H L} (h�
 /-- **The higher Serre relation.** If `x` and `y` are root vectors for roots `α` and `β` whose
 difference `β - α` is not a root, and `n = ⟨β, α∨⟩`, then `ad x` kills `⁅x, y⁆` after `-n` further
 steps: one step past the top of the `α`-root string through `β`. -/
-theorem ad_pow_lie_eq_zero_of_rootSpace_sub_eq_bot {α β : Weight K H L} (hα : α.IsNonZero)
+theorem ad_pow_lie_eq_zero_of_rootSpace_sub_eq_bot {α β : Weight K H L}
     (hsub : rootSpace H (⇑β - ⇑α) = ⊥) {n : ℤ} (hn : (n : K) = β (coroot α))
     {x y : L} (hx : x ∈ rootSpace H (⇑α)) (hy : y ∈ rootSpace H (⇑β)) :
     ((ad K L x) ^ (-n).toNat) ⁅x, y⁆ = 0 := by
-  have hbot := chainBotCoeff_eq_zero_of_rootSpace_sub_eq_bot hα hsub
+  by_cases hα : α.IsZero
+  · have hβ : rootSpace H (⇑β) = ⊥ := by simpa [hα.eq] using hsub
+    have hy0 : y = 0 := by simpa [hβ] using hy
+    simp [hy0]
+  have hbot := chainBotCoeff_eq_zero_of_rootSpace_sub_eq_bot hsub
   have hcast : ((n : ℤ) : K) = (((chainBotCoeff (⇑α) β : ℤ) - chainTopCoeff (⇑α) β : ℤ) : K) :=
     hn.trans (apply_coroot_eq_cast α β)
   have hn' : n = (chainBotCoeff (⇑α) β : ℤ) - chainTopCoeff (⇑α) β := by exact_mod_cast hcast
@@ -168,7 +175,7 @@ theorem isSerreSystem_coroot (b : (rootSystem H).Base) {e f : ↥b.support → L
         ((j : H.root) : Weight K H L) (coroot ((i : H.root) : Weight K H L)) := by
       rw [Matrix.transpose_apply]
       exact cartanMatrix_eq_apply_coroot b i j
-    exact ad_pow_lie_eq_zero_of_rootSpace_sub_eq_bot (H.isNonZero_coe_root _)
+    exact ad_pow_lie_eq_zero_of_rootSpace_sub_eq_bot
       (rootSpace_sub_eq_bot_of_base b hij.symm) hn (he i) (he j)
   ad_pow_lie_F_F i j := by
     rcases eq_or_ne i j with rfl | hij
@@ -185,8 +192,7 @@ theorem isSerreSystem_coroot (b : (rootSystem H).Base) {e f : ↥b.support → L
         (-((j : H.root) : Weight K H L)) (coroot (-((i : H.root) : Weight K H L))) := by
       rw [coroot_neg, Weight.coe_neg, Pi.neg_apply, map_neg, neg_neg, Matrix.transpose_apply]
       exact cartanMatrix_eq_apply_coroot b i j
-    exact ad_pow_lie_eq_zero_of_rootSpace_sub_eq_bot
-      (Weight.isNonZero_neg.2 (H.isNonZero_coe_root _)) hsub hn hx hy
+    exact ad_pow_lie_eq_zero_of_rootSpace_sub_eq_bot hsub hn hx hy
 
 /-- **A split semisimple Lie algebra carries a Serre system for its Cartan matrix**, whose
 raising and lowering families generate it. -/
