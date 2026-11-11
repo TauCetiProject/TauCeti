@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
+import Mathlib.Analysis.Normed.Operator.Banach
+import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 
 /-!
@@ -25,6 +27,14 @@ and `⟨ξ⟩ ^ r 𝓕 u = ⟨ξ⟩ ^ (r - s) ⟨ξ⟩ ^ s 𝓕 u` with `0 < ⟨
 Compactness properties of the inclusion, such as the Rellich theorem for distributions with a
 common compact support, are statements about this map.
 
+For `1 < p < ∞` the inclusion `H^{s,p} ⊆ H^{r,p}` holds as well
+(`TemperedDistribution.MemSobolev.mono_of_one_lt`, by the Mihlin–Hörmander theorem), and it is
+bundled as `BesselPotentialSpace.inclusionOfOneLt`. Its continuity comes from the closed graph
+theorem rather than from a norm computation: every `H^{s,p}` embeds continuously in the tempered
+distributions (`BesselPotentialSpace.continuous_toDistr`), so a linear map into `H^{s,p}` from a
+Banach space is continuous as soon as its composite with this embedding is
+(`BesselPotentialSpace.continuous_of_continuous_toDistr`).
+
 ## Main declarations
 
 * `BesselPotentialSpace.inclusion`: the inclusion `H^s(E, F) →L[ℂ] H^r(E, F)` for `r ≤ s`.
@@ -34,6 +44,11 @@ common compact support, are statements about this map.
   of a space into itself is the identity, and inclusions compose.
 * `BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM`: it is the identity on Schwartz
   functions.
+* `BesselPotentialSpace.continuous_toDistr`: `H^{s,p}(E, F)` embeds continuously in `𝓢'(E, F)`.
+* `BesselPotentialSpace.continuous_of_continuous_toDistr`: the closed graph criterion for linear
+  maps into `H^{s,p}`.
+* `BesselPotentialSpace.inclusionOfOneLt`: the inclusion `H^{s,p}(E, F) →L[ℂ] H^{r,p}(E, F)` for
+  `r ≤ s` and `1 < p < ∞`, with `BesselPotentialSpace.toDistr_inclusionOfOneLt`.
 -/
 
 public section
@@ -136,5 +151,48 @@ theorem inclusion_toBesselPotentialSpaceCLM (h : r ≤ s) (u : 𝓢(E, F)) :
     inclusion h (SchwartzMap.toBesselPotentialSpaceCLM s 2 u) =
       SchwartzMap.toBesselPotentialSpaceCLM r 2 u :=
   ext (by simp)
+
+section Lp
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G] [CompleteSpace G] {s : ℝ} {p : ℝ≥0∞}
+  [Fact (1 ≤ p)]
+
+/-- The underlying tempered distribution of an element of `H^{s,p}(E, G)` depends continuously on
+it: it is the Bessel potential of order `-s` of the `Lᵖ` function `toLp u`. -/
+theorem continuous_toDistr : Continuous fun u : H^{s, p}(E, G) ↦ u.toDistr := by
+  have h := ((besselPotential E G (-s)).comp ((Lp.toTemperedDistributionCLM G volume p).comp
+    (toLpₗᵢ E G s p).toContinuousLinearEquiv.toContinuousLinearMap)).continuous
+  exact h.congr fun u ↦ by simp
+
+/-- **Closed graph criterion.** A real-linear map `L` from a Banach space into `H^{s,p}(E, G)` is
+continuous as soon as `x ↦ (L x).toDistr` is continuous into the tempered distributions. -/
+theorem continuous_of_continuous_toDistr {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℝ X] [CompleteSpace X] (L : X →ₗ[ℝ] H^{s, p}(E, G))
+    (hL : Continuous fun x ↦ (L x).toDistr) : Continuous L := by
+  refine L.continuous_of_seq_closed_graph fun u x y hu hy ↦ ext ?_
+  exact tendsto_nhds_unique ((continuous_toDistr.tendsto y).comp hy) ((hL.tendsto x).comp hu)
+
+variable {r : ℝ}
+
+/-- The inclusion `H^{s,p}(E, F) ⊆ H^{r,p}(E, F)` of Bessel-potential spaces for `r ≤ s` and
+`1 < p < ∞`, as a continuous linear map. It keeps the underlying tempered distribution
+(`BesselPotentialSpace.toDistr_inclusionOfOneLt`). For `p = 2` the inclusion of norm at most `1` is
+`BesselPotentialSpace.inclusion`. -/
+def inclusionOfOneLt (hp : 1 < p) (hp_top : p ≠ ∞) (h : r ≤ s) :
+    H^{s, p}(E, F) →L[ℂ] H^{r, p}(E, F) :=
+  let L : H^{s, p}(E, F) →ₗ[ℂ] H^{r, p}(E, F) :=
+    { toFun u := (u.memSobolev_toDistr.mono_of_one_lt hp hp_top h).toBesselPotentialSpace
+      map_add' u v := ext (by simp)
+      map_smul' c u := ext (by simp) }
+  { L with
+    cont := continuous_of_continuous_toDistr (L.restrictScalars ℝ) <|
+      continuous_toDistr.congr fun u ↦ by simp [L] }
+
+@[simp]
+theorem toDistr_inclusionOfOneLt (hp : 1 < p) (hp_top : p ≠ ∞) (h : r ≤ s) (u : H^{s, p}(E, F)) :
+    (inclusionOfOneLt hp hp_top h u).toDistr = u.toDistr :=
+  MemSobolev.toBesselPotentialSpace_toDistr _
+
+end Lp
 
 end BesselPotentialSpace
