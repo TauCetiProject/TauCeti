@@ -42,11 +42,9 @@ theorem coe_cycleRange {n : ℕ} (i j : Fin n) :
     (cycleRange i j : ℕ) = if (j : ℕ) < i then (j : ℕ) + 1 else if (j : ℕ) = i then 0 else j := by
   rcases le_or_gt j i with h | h
   · rw [coe_cycleRange_of_le h]
-    have h' : (j : ℕ) ≤ i := h
     simp only [Fin.ext_iff]
     split_ifs <;> omega
   · rw [cycleRange_of_gt h]
-    have h' : (i : ℕ) < j := h
     split_ifs <;> omega
 
 /-- The cycle through the points of `Fin n` in increasing order is the rotation `i ↦ i + 1`

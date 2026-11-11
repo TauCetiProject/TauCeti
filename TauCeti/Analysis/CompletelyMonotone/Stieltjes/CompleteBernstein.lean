@@ -41,8 +41,8 @@ function outside `(0, ∞)` remain irrelevant, and values of a complete Bernstei
   and `congr`.
 * `TauCeti.IsCompleteBernsteinFunction`: the representation-based predicate.
 * `TauCeti.representsCompleteBernstein_stieltjesBernsteinTransform` and
-  `TauCeti.isCompleteBernsteinFunction_stieltjesBernsteinTransform`: the transform of normalized,
-  integrable representing data carries the representation.
+  `TauCeti.isCompleteBernsteinFunction_stieltjesBernsteinTransform`: the transform of normalized
+  representing data carries the representation (integrable weight for the first).
 * `TauCeti.RepresentsCompleteBernstein.add`, `TauCeti.RepresentsCompleteBernstein.smul`,
   `TauCeti.IsCompleteBernsteinFunction.add` and `TauCeti.IsCompleteBernsteinFunction.smul`:
   complete Bernstein functions are closed under sums and nonnegative scalar multiples.
@@ -220,13 +220,20 @@ theorem representsCompleteBernstein_stieltjesBernsteinTransform
     RepresentsCompleteBernstein μ a b (stieltjesBernsteinTransform μ a b) :=
   ⟨hzero, hμ, fun _ _ => rfl⟩
 
-/-- The Stieltjes--Bernstein transform of normalized, integrable measure data is a complete
-Bernstein function. -/
+/-- The Stieltjes--Bernstein transform of normalized measure data is a complete Bernstein function.
+If the weight is not integrable, every transform integral at `t > 0` is `0` by convention, so on
+`[0, ∞)` the transform is the affine function `a + b t`, represented by the zero measure. -/
 theorem isCompleteBernsteinFunction_stieltjesBernsteinTransform
-    {μ : Measure ℝ≥0} {a b : ℝ≥0} (hzero : μ {0} = 0)
-    (hμ : Integrable stieltjesWeight μ) :
-    IsCompleteBernsteinFunction (stieltjesBernsteinTransform μ a b) :=
-  ⟨a, b, μ, representsCompleteBernstein_stieltjesBernsteinTransform hzero hμ⟩
+    {μ : Measure ℝ≥0} {a b : ℝ≥0} (hzero : μ {0} = 0) :
+    IsCompleteBernsteinFunction (stieltjesBernsteinTransform μ a b) := by
+  by_cases hμ : Integrable stieltjesWeight μ
+  · exact ⟨a, b, μ, representsCompleteBernstein_stieltjesBernsteinTransform hzero hμ⟩
+  refine ⟨a, b, 0, by simp, integrable_zero_measure, fun t ht => ?_⟩
+  rcases ht.eq_or_lt with rfl | ht
+  · simp [stieltjesBernsteinTransform_apply]
+  · rw [stieltjesBernsteinTransform_apply, stieltjesBernsteinTransform_apply,
+      integral_undef fun h => hμ (integrable_stieltjesWeight_of_integrable_div ht h)]
+    simp
 
 /-- **Stieltjes--complete-Bernstein correspondence.** A function `f` is Stieltjes exactly when
 its product `t ↦ t * f t` on `(0, ∞)` extends to a complete Bernstein function on `[0, ∞)`.
@@ -243,8 +250,7 @@ theorem isStieltjesFunction_iff_exists_isCompleteBernsteinFunction_eqOn_mul
     rw [isStieltjesFunction_iff] at hf
     obtain ⟨a, b, μ, hμ⟩ := hf
     exact ⟨stieltjesBernsteinTransform μ a b,
-      isCompleteBernsteinFunction_stieltjesBernsteinTransform hμ.measure_singleton_zero
-        hμ.integrable_weight,
+      isCompleteBernsteinFunction_stieltjesBernsteinTransform hμ.measure_singleton_zero,
       fun _ ht => hμ.stieltjesBernsteinTransform_eq_mul ht⟩
   · rintro ⟨g, ⟨a, b, μ, hμ⟩, hgf⟩
     rw [isStieltjesFunction_iff]

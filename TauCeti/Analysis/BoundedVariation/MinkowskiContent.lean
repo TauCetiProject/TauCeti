@@ -361,7 +361,6 @@ private theorem eventually_volume_thickening_sdiff_le {w : E → ℝ} (hw : Cont
     (divergenceCLM ψ).hasCompactSupport
   have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
   set m := min (min η₀ η₁) (ε / (C + 1))
-  have hm : 0 < m := lt_min (lt_min hη₀ hη₁) (by positivity)
   have hmε : 0 < m / (1 + ε) := by positivity
   filter_upwards [Ioo_mem_nhdsGT hmε] with r ⟨hr, hrm⟩
   -- Write `η = (1 + ε) r` for the width of the outer shell `S = {-η < w < 0}`.

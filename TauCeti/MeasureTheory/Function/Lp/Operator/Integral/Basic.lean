@@ -222,7 +222,6 @@ theorem norm_integralOperatorLp_le_max : ‖integralOperatorLp K p hK hA hB‖ �
   refine norm_integralOperatorLp_le.trans ?_
   have h₀ : 0 ≤ 1 - p.toReal⁻¹ := by
     simpa only [one_div] using ENNReal.one_sub_one_div_toReal_nonneg (Fact.out : 1 ≤ p)
-  have h₁ : 0 ≤ p.toReal⁻¹ := by positivity
   rw [NNReal.coe_le_coe]
   calc A ^ (1 - p.toReal⁻¹) * B ^ p.toReal⁻¹
       ≤ max A B ^ (1 - p.toReal⁻¹) * max A B ^ p.toReal⁻¹ := by

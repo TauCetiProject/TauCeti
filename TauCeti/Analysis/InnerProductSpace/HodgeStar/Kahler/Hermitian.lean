@@ -403,7 +403,6 @@ theorem forall_le_hermitianForm_apply_self_iff (F : ⋀[ℝ]^2 V) {C : ℝ} :
   have hle : ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ / √2 ≤ ⟪J.kahlerForm, F⟫ / 2 + C := by
     rw [div_le_iff₀ (by positivity), mul_comm]
     exact hC
-  have hv := sq_nonneg ‖v‖
   nlinarith [neg_abs_le (J.hermitianForm F v v - ⟪J.kahlerForm, F⟫ / 2 * ‖v‖ ^ 2)]
 
 end Four

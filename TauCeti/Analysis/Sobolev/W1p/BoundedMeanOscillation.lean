@@ -150,7 +150,6 @@ theorem W1p.setLAverage_enorm_value_sub_setAverage_ball_le (hp : p = finrank ℝ
     have h1 : (1 : ℝ≥0∞) ≤ p := Fact.out
     simp [hp, h] at h1
   have hpn : p.toReal = n := by rw [hp, ENNReal.toReal_natCast]
-  have h0 : mu (ball (0 : E) 1) ≠ 0 := (measure_ball_pos mu 0 one_pos).ne'
   have htop : mu (ball (0 : E) 1) ≠ ∞ := measure_ball_lt_top.ne
   -- The radius cancels: `r (rⁿ)^(-1/n) = 1`.
   have hrad : ENNReal.ofReal r * ENNReal.ofReal (r ^ n) ^ (-(n : ℝ)⁻¹) = 1 := by

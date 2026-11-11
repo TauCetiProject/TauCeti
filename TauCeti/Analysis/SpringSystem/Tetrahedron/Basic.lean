@@ -697,9 +697,6 @@ theorem finrank_eigenspace_smul_tetrahedronSpringMatrix {κ m ω : ℝ} (hκm : 
         (Matrix.toLin' ((κ / (2 * m)) • tetrahedronSpringMatrix)) (-(ω ^ 2))) =
       (if ω = 0 then 6 else 0) + (if ω = √(κ / m) then 2 else 0) +
         (if ω = √(2 * κ / m) then 3 else 0) + (if ω = 2 * √(κ / m) then 1 else 0) := by
-  have hm : m ≠ 0 := by
-    rintro rfl
-    simp at hκm
   have hc : κ / (2 * m) ≠ 0 := by
     rw [mul_comm, ← div_div]
     positivity
