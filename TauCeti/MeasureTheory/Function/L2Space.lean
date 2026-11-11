@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.MeasureTheory.Function.L2Space
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 public import TauCeti.MeasureTheory.Integral.PiSystem
 
@@ -186,31 +185,6 @@ theorem L2.inner_toLp (f : Lp E 2 μ) {g : α → E} (hg : MemLp g 2 μ) :
   rw [hx]
 
 end MeasureTheory
-
-namespace ContinuousLinearMap
-
-open MeasureTheory
-
-/-- A continuous linear map out of counting-measure L² that vanishes on all
-singleton-supported vectors is zero. No countability of the index space is needed. -/
-theorem eq_zero_of_apply_indicatorConstLp_singleton
-    {α 𝕜 E F : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] [RCLike 𝕜]
-    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
-    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
-    (T : Lp E 2 (Measure.count : Measure α) →L[𝕜] F)
-    (h : ∀ (i : α) (v : E),
-      T (indicatorConstLp 2 (measurableSet_singleton i) (by simp) v) = 0) : T = 0 := by
-  have ht : T.adjoint = 0 := by
-    apply ContinuousLinearMap.ext
-    intro η
-    rw [zero_apply]
-    refine Lp.eq_zero_of_inner_indicatorConstLp_singleton (𝕜 := 𝕜) _ fun i v => ?_
-    rw [adjoint_inner_right, h, inner_zero_left]
-  calc
-    T = T.adjoint.adjoint := (adjoint_adjoint T).symm
-    _ = 0 := by rw [ht, map_zero]
-
-end ContinuousLinearMap
 
 section IntegralInner
 

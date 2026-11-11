@@ -365,10 +365,10 @@ private theorem level_slice (hf : IsMorse 𝓘(ℝ, E) f) (ha : mfderiv 𝓘(ℝ
     .of_finiteDimensional_quotient (Submodule.isClosed_of_finiteDimensional _)
   rw [hlevel]
   exact ⟨exists_isSliceChart_inter_preimage_of_span_mtangentConeAt_sup_ker_eq_top (by simp) hq hs
-      hyq hy isOpen_univ (mem_univ y) hf.contMDiff.contMDiffOn hyc hrange htr'
+      hyq isOpen_univ (mem_univ y) hf.contMDiff.contMDiffOn hyc hrange htr'
       (hcc _) (hcc _) (hcc _),
     span_mtangentConeAt_inter_preimage_of_span_mtangentConeAt_sup_ker_eq_top (by simp) hq hs hyq
-      hy isOpen_univ (mem_univ y) hf.contMDiff.contMDiffOn hyc hrange htr'
+      isOpen_univ (mem_univ y) hf.contMDiff.contMDiffOn hyc hrange htr'
       (hcc _) (hcc _) (hcc _)⟩
 
 /-- **The level slice of a transverse intersection is an embedded submanifold.** If the unstable

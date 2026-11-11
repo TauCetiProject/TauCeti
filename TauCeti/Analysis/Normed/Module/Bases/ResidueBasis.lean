@@ -137,7 +137,7 @@ theorem linearIndependent_mk_iff (hR : ∀ a : R, zpowCeil ‖(ϖ.unit : R)‖ �
   · rw [← h0]
     exact norm_nonneg _
   set c := ‖(ϖ.unit : R)‖
-  obtain ⟨n, hn⟩ := ((zpowCeil_eq_self_iff ϖ.norm_pos ϖ.norm_lt_one (norm_nonneg _)).mp
+  obtain ⟨n, hn⟩ := ((zpowCeil_eq_self_iff ϖ.norm_pos).mp
     (hR (a j))).resolve_left hpos.ne'
   -- The coefficients `b i = ϖ ^ (-n) * a i` lie in the unit ball, and `‖b j‖ = 1`.
   have hnorm_b (i : I) : ‖((ϖ.unit ^ (-n) : Rˣ) : R) * a i‖ = c ^ (-n) * ‖a i‖ := by
@@ -190,7 +190,7 @@ private theorem exists_mem_span_norm_sub_le (hM : ∀ m : M, zpowCeil ‖(ϖ.uni
       simp only [ha, Function.comp_apply]
     rw [mk_eq_mk_iff ϖ hM, Submodule.coe_sum] at heq
     simp only [Submodule.coe_smul, Subring.smul_def] at heq
-    exact le_of_zpowCeil_eq_self_of_lt_one ϖ.norm_pos ϖ.norm_lt_one (hM _) heq
+    exact le_of_zpowCeil_eq_self_of_lt_one ϖ.norm_pos (hM _) heq
   induction k with
   | zero => exact ⟨0, V.zero_mem, by simpa using hx⟩
   | succ k ih =>

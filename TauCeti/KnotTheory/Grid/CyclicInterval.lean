@@ -283,14 +283,16 @@ theorem right_notMem_cIco (a b : Fin n) : b ∉ cIco a b := by
   · rw [cIco_of_ne hab, Finset.mem_insert]
     exact fun h => h.elim (fun hba => hab hba.symm) (right_notMem_cIoo a b)
 
+/-- The endpoints of a nonempty half-open cyclic interval are distinct. -/
+theorem ne_of_mem_cIco {a b x : Fin n} (h : x ∈ cIco a b) : a ≠ b := fun hab => by
+  rw [hab, cIco_self] at h
+  exact absurd h (Finset.notMem_empty x)
+
 /-- A point of a half-open cyclic interval other than its initial endpoint lies in the open
 interval with the same endpoints. -/
 theorem mem_cIoo_of_mem_cIco {a b x : Fin n} (h : x ∈ cIco a b) (hx : x ≠ a) : x ∈ cIoo a b := by
-  by_cases hab : a = b
-  · rw [hab, cIco_self] at h
-    exact absurd h (Finset.notMem_empty x)
-  · rw [cIco_of_ne hab, Finset.mem_insert] at h
-    exact h.resolve_left hx
+  rw [cIco_of_ne (ne_of_mem_cIco h), Finset.mem_insert] at h
+  exact h.resolve_left hx
 
 /-- The open cyclic interval is contained in the half-open one with the same endpoints. -/
 theorem cIoo_subset_cIco (a b : Fin n) : cIoo a b ⊆ cIco a b := by

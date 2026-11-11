@@ -16,7 +16,7 @@ import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 
 For a finite exponent `q`, if the functions `f n` converge to `g` almost everywhere
 and the errors `‖f n - g‖ₑ` are eventually dominated by a fixed nonnegative multiple of the
-eNorm of a `MemLp` function, then `f n → g` in the `Lᵖ` seminorm. In particular, this applies
+enorm of a `MemLp` function, then `f n → g` in the `Lᵖ` seminorm. In particular, this applies
 when truncating a function by cutoffs that are eventually `1` on every bounded set.
 The dominating function's codomain only needs a topology and an extended norm.
 
@@ -41,7 +41,7 @@ open Filter MeasureTheory
 open scoped NNReal ENNReal Topology
 
 /-- **Dominated convergence in `Lᵖ`.** For a finite exponent, if `f n` converges to `g` at almost
-every point and `‖f n - g‖ₑ` is eventually dominated by a fixed nonnegative multiple of the eNorm
+every point and `‖f n - g‖ₑ` is eventually dominated by a fixed nonnegative multiple of the enorm
 of a `MemLp` function, then `f n → g` in the `Lᵖ` seminorm.
 The dominating function may take values in any topological space with an extended norm.
 Both the measurability of `f n` and the domination are only needed eventually along `l`, and `g`
@@ -135,7 +135,7 @@ theorem limsup_eLpNorm_restrict_le {α E : Type*} [MeasurableSpace α] {μ : Mea
   rw [Function.comp_def] at hmap
   rw [← hmap]
   refine ENNReal.rpow_le_rpow (limsup_setLIntegral_le
-    (hmeas.eNorm.pow_const _) hs hst ?_) hpos
+    (hmeas.eNorm.pow_const _).aemeasurable hs hst ?_) hpos
   exact (lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top hp0 hptop
     ((hgh le_rfl).symm.trans_lt hg.eLpNorm_lt_top)).ne
 
