@@ -317,8 +317,8 @@ theorem IsGroundState.apply_star_mul_entireExtension_mul_I_le (hω : α.IsGround
   have hG0 : G 0 = ω (star a * a) := by simp [hG_def, ha.entireExtension_apply_zero]
   -- Cauchy–Schwarz with `a` and `α_{is}(a)` gives `g s ^ 2 ≤ g 0 * g (s + s)`
   have hcs (s : ℝ) : g s ^ 2 ≤ g 0 * g (s + s) := by
-    have hyy := apply_star_entireExtension_mul_I_mul_entireExtension_mul_I_of_apply_action
-      (α := α) (a := a) (φ := (ω : A →L[ℂ] ℂ)) (fun t b => by
+    have hyy := apply_star_entireExtension_mul_I_mul_entireExtension_mul_I_of_apply_action α a
+      (φ := (ω : A →L[ℂ] ℂ)) (fun t b => by
         simpa only [PositiveContinuousLinearMap.coe_toContinuousLinearMap] using hinv t b) s s
     rw [PositiveContinuousLinearMap.coe_toContinuousLinearMap] at hyy
     have h := PositiveLinearMap.norm_map_star_mul_sq_le ω a (α.entireExtension a (s * I))
@@ -397,7 +397,7 @@ private theorem antitone_re_apply_star_entireExtension_mul_entireExtension
   · exact L.hasFDerivAt.comp_hasDerivAt t
       ((ContinuousLinearMap.mul ℝ A).hasDerivAt_of_bilinear (fun _ => (hx t).star)
         fun _ => hx t)
-  · have hW := h _ (isEntireAnalytic_entireExtension (α := α) (a := b) (t * v))
+  · have hW := h _ (isEntireAnalytic_entireExtension α b (t * v))
     rw [generator_entireExtension] at hW
     set W := ω (star (x t) * deriv (α.entireExtension b) (t * v))
     have hy : ω (star (x t) * d t) = v * W := by

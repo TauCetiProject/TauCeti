@@ -154,14 +154,15 @@ theorem entireExtension_add_ofReal (z : ℂ) (t : ℝ) :
   simpa using congrFun this z
 
 /-- The values of the complex-time extension are again entire analytic. -/
-theorem isEntireAnalytic_entireExtension (z : ℂ) :
+theorem isEntireAnalytic_entireExtension (α : CStarAction (Multiplicative ℝ) A) (a : A) (z : ℂ) :
     α.IsEntireAnalytic (α.entireExtension a z) :=
   ⟨fun w => α.entireExtension a (z + w),
     (differentiable_entireExtension α a).comp (differentiable_const z |>.add differentiable_id),
     entireExtension_add_ofReal z⟩
 
 /-- **Group law in complex time.** `α_w (α_z a) = α_{z + w} a`. -/
-theorem entireExtension_entireExtension (z w : ℂ) :
+theorem entireExtension_entireExtension (α : CStarAction (Multiplicative ℝ) A) (a : A)
+    (z w : ℂ) :
     α.entireExtension (α.entireExtension a z) w = α.entireExtension a (z + w) :=
   congrFun (entireExtension_eq_of_differentiable
     ((differentiable_entireExtension α a).comp (differentiable_const z |>.add differentiable_id))
@@ -172,7 +173,7 @@ namespace IsEntireAnalytic
 /-- The action at a real time preserves entire analyticity. -/
 theorem apply (h : α.IsEntireAnalytic a) (t : ℝ) :
     α.IsEntireAnalytic (α (Multiplicative.ofAdd t) a) := by
-  simpa only [h.entireExtension_ofReal] using isEntireAnalytic_entireExtension (α := α) (a := a) t
+  simpa only [h.entireExtension_ofReal] using isEntireAnalytic_entireExtension α a t
 
 end IsEntireAnalytic
 
@@ -188,7 +189,7 @@ theorem entireExtension_action (t : ℝ) (z : ℂ) :
     α.entireExtension (α (Multiplicative.ofAdd t) a) z = α.entireExtension a (t + z) := by
   by_cases h : α.IsEntireAnalytic a
   · simpa only [h.entireExtension_ofReal] using
-      entireExtension_entireExtension (α := α) (a := a) t z
+      entireExtension_entireExtension α a t z
   · have h' : ¬α.IsEntireAnalytic (α (Multiplicative.ofAdd t) a) := by
       rwa [isEntireAnalytic_apply_iff]
     simp [entireExtension_of_not_isEntireAnalytic h, entireExtension_of_not_isEntireAnalytic h']
@@ -201,7 +202,8 @@ theorem norm_entireExtension (z : ℂ) :
 
 /-- **Strip bound.** The complex-time extension is bounded on every horizontal strip whose
 imaginary parts form a bounded set. -/
-theorem isBounded_image_im_preimage {s : Set ℝ} (hs : Bornology.IsBounded s) :
+theorem isBounded_image_im_preimage (α : CStarAction (Multiplicative ℝ) A) (a : A) {s : Set ℝ}
+    (hs : Bornology.IsBounded s) :
     Bornology.IsBounded (α.entireExtension a '' (Complex.im ⁻¹' s)) := by
   have hcont : Continuous fun y : ℝ => α.entireExtension a (y * Complex.I) :=
     (differentiable_entireExtension α a).continuous.comp
@@ -240,7 +242,7 @@ end IsEntireAnalytic
 
 /-- The complex-time extension is compatible with complex scalar multiplication. -/
 @[simp]
-theorem entireExtension_smul (c : ℂ) (z : ℂ) :
+theorem entireExtension_smul (α : CStarAction (Multiplicative ℝ) A) (a : A) (c : ℂ) (z : ℂ) :
     α.entireExtension (c • a) z = c • α.entireExtension a z := by
   by_cases ha : α.IsEntireAnalytic a
   · exact congrFun (entireExtension_eq_of_differentiable
@@ -271,7 +273,7 @@ end IsEntireAnalytic
 @[simp]
 theorem entireExtension_neg (z : ℂ) :
     α.entireExtension (-a) z = -α.entireExtension a z := by
-  simpa only [neg_one_smul] using entireExtension_smul (α := α) (a := a) (-1) z
+  simpa only [neg_one_smul] using entireExtension_smul α a (-1) z
 
 namespace IsEntireAnalytic
 
@@ -390,10 +392,10 @@ end IsEntireAnalytic
 `δ(α_z(a)) = (d/dz) α_z(a)`. -/
 theorem generator_entireExtension (z : ℂ) :
     α.generator ⟨α.entireExtension a z,
-      (isEntireAnalytic_entireExtension z).mem_generator_domain⟩ =
+      (isEntireAnalytic_entireExtension α a z).mem_generator_domain⟩ =
       deriv (α.entireExtension a) z := by
-  rw [(isEntireAnalytic_entireExtension z).generator_eq_deriv,
-    funext (entireExtension_entireExtension z), deriv_comp_const_add, add_zero]
+  rw [(isEntireAnalytic_entireExtension α a z).generator_eq_deriv,
+    funext (entireExtension_entireExtension α a z), deriv_comp_const_add, add_zero]
 
 /-- The entire analytic subalgebra is contained in the generator domain. -/
 theorem entireAnalytic_le_generatorDomain (α : CStarAction (Multiplicative ℝ) A) :
@@ -418,7 +420,7 @@ theorem apply_entireExtension_mul_entireExtension_of_apply_action {φ : A →L[�
     (hφ : ∀ t a, φ (α t a) = φ a) (ha : α.IsEntireAnalytic a) (z w : ℂ) :
     φ (α.entireExtension a z * α.entireExtension b w) =
       φ (a * α.entireExtension b (w - z)) := by
-  have hb' := isEntireAnalytic_entireExtension (α := α) (a := b) (w - z)
+  have hb' := isEntireAnalytic_entireExtension α b (w - z)
   rw [← apply_entireExtension_of_apply_action hφ (ha.mul hb') z, ha.entireExtension_mul hb',
     entireExtension_entireExtension, sub_add_cancel]
 
@@ -438,7 +440,8 @@ theorem apply_star_entireExtension_mul_entireExtension_of_apply_action {φ : A �
 /-- For an invariant continuous linear functional `φ`, imaginary-time correlations add:
 `φ ((α_{is}(a))⋆ α_{it}(a)) = φ (a⋆ α_{i(s + t)}(a))` for real `s, t`. -/
 theorem apply_star_entireExtension_mul_I_mul_entireExtension_mul_I_of_apply_action
-    {φ : A →L[ℂ] ℂ} (hφ : ∀ t a, φ (α t a) = φ a) (s t : ℝ) :
+    (α : CStarAction (Multiplicative ℝ) A) (a : A) {φ : A →L[ℂ] ℂ} (hφ : ∀ t a, φ (α t a) = φ a)
+    (s t : ℝ) :
     φ (star (α.entireExtension a (s * Complex.I)) * α.entireExtension a (t * Complex.I)) =
       φ (star a * α.entireExtension a ((s + t : ℝ) * Complex.I)) := by
   rw [apply_star_entireExtension_mul_entireExtension_of_apply_action hφ]
@@ -459,8 +462,8 @@ analytic the correlation is `0`. -/
 theorem apply_star_mul_entireExtension_mul_I_nonneg_of_apply_action
     (hω : ∀ t a, ω (α t a) = ω a) (s : ℝ) :
     0 ≤ ω (star a * α.entireExtension a (s * I)) := by
-  have h := apply_star_entireExtension_mul_I_mul_entireExtension_mul_I_of_apply_action
-    (α := α) (a := a) (φ := (ω : A →L[ℂ] ℂ))
+  have h := apply_star_entireExtension_mul_I_mul_entireExtension_mul_I_of_apply_action α a
+    (φ := (ω : A →L[ℂ] ℂ))
     (fun t b => by simpa only [PositiveContinuousLinearMap.coe_toContinuousLinearMap] using hω t b)
     (s / 2) (s / 2)
   rw [add_halves, PositiveContinuousLinearMap.coe_toContinuousLinearMap] at h
