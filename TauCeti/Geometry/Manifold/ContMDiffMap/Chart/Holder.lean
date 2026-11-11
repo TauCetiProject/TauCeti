@@ -30,8 +30,7 @@ modelled on a locally compact space over `ℝ` or `ℂ`, and `F` is complete
 (`TauCeti.CompactChartAtlas.CkHolderSpace.instCompleteSpace`). The comparison of the spaces
 and norms of two atlases, by chart-change estimates, is not part of this file.
 
-The usual Hölder spaces are those with `0 < α ≤ 1`. The definitions accept every `α`, but for
-`α > 1` the `k`th coordinate derivatives are constant on each connected subset of a piece.
+The usual Hölder spaces are those with `0 < α ≤ 1`, but the definitions accept every `α`.
 
 The derivatives are taken within the extended chart targets, so the definitions also apply to
 manifolds with boundary and corners; only completeness uses that `M` is boundaryless.
@@ -235,8 +234,7 @@ variable (A : CompactChartAtlas I M) (k : ℕ) (α : ℝ≥0)
 `k`th coordinate derivatives are `α`-Hölder on the pieces of `A`. Its norm
 (`TauCeti.CompactChartAtlas.CkHolderSpace.norm_def`) is the finite-atlas `C^k` norm plus the
 Hölder seminorms of the `k`th coordinate derivatives on the pieces. The usual range of exponents
-is `0 < α ≤ 1`; for `α > 1` the `k`th coordinate derivatives are constant on each connected
-subset of a piece. -/
+is `0 < α ≤ 1`. -/
 @[expose] def CkHolderSpace : Type _ :=
   ↥(ContMDiffMap.finiteAtlasHolderSubmodule (F := F) (n := k) A.center
     (fun i ↦ (A.piece i : Set (extChartAt I (A.center i)).target)) k le_rfl α)
@@ -455,8 +453,9 @@ instance instCompleteSpace : CompleteSpace (A.CkHolderSpace k α F) := by
     exact finiteAtlasSeminorm_le_norm (u m - u n)
   obtain ⟨g, hg⟩ := cauchySeq_tendsto_of_complete hv
   have hg0 : Tendsto (fun n ↦ ContMDiffMap.finiteAtlasSeminorm A.center A.piece k le_rfl
-      (v n - g)) atTop (𝓝 0) :=
-    tendsto_iff_norm_sub_tendsto_zero.mp hg
+      (v n - g)) atTop (𝓝 0) := by
+    refine (tendsto_iff_norm_sub_tendsto_zero.mp hg).congr fun n ↦ ?_
+    exact ContMDiffMap.norm_finiteAtlas k A.interior_cover (v n - g)
   -- The `k`th coordinate derivatives converge pointwise on the pieces.
   have hpt (i : A.ι) (z) (hz : z ∈ (A.piece i : Set (extChartAt I (A.center i)).target)) :
       Tendsto (fun n ↦ ContMDiffMap.chartIteratedFDeriv (v n) (A.center i) k le_rfl z) atTop
