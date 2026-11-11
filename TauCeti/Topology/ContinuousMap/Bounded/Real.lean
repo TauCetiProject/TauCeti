@@ -5,15 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 public import Mathlib.Analysis.SpecialFunctions.Exponential
-import Mathlib.Topology.ContinuousMap.Algebra
+public import TauCeti.Topology.ContinuousMap.Bounded.Exponential
 
 /-!
 # Exponential multipliers and positive inverses of real bounded continuous functions
-
-The exponential of a bounded continuous function with values in a complete normed `ℚ`-algebra
-is computed pointwise (`BoundedContinuousFunction.exp_apply`).
 
 For a real bounded continuous function `m`, `m.expNegMul t` is the exponential multiplier
 `x ↦ exp (-(t * m x))`. Its norm for nonnegative `t` is controlled by the negative part of `m`.
@@ -33,15 +29,6 @@ open NormedSpace
 namespace BoundedContinuousFunction
 
 variable {α : Type*} [TopologicalSpace α]
-
-/-- The exponential of a bounded continuous function with values in a complete normed
-`ℚ`-algebra is computed pointwise. -/
-@[simp]
-theorem exp_apply {R : Type*} [NormedRing R] [NormedAlgebra ℚ R] [CompleteSpace R]
-    (g : α →ᵇ R) (x : α) : exp g x = exp (g x) :=
-  -- The coercion of the composite ring homomorphism is definitionally evaluation at `x`.
-  map_exp (((Pi.evalRingHom (fun _ : α => R) x).comp ContinuousMap.coeFnRingHom).comp
-    (toContinuousMapₐ ℚ : (α →ᵇ R) →ₐ[ℚ] C(α, R)).toRingHom) (continuous_eval_const x) g
 
 /-- The exponential multiplier `x ↦ exp (-(t * m x))` as a bounded continuous function. -/
 def expNegMul (m : α →ᵇ ℝ) (t : ℝ) : α →ᵇ ℝ :=
