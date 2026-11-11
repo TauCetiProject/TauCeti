@@ -49,18 +49,6 @@ theorem exists_diffeotopy_final_comp_eqOn_of_pairwise_disjoint (s : Finset ι) {
     ∃ Φ : Diffeotopy J n M, ∃ K : Set M, IsCompact K ∧ K ⊆ ⋃ i ∈ s, W i ∧
       (∀ t, ∀ y ∉ K, Φ (t, y) = y) ∧ ∀ i ∈ s, EqOn (Φ.final ∘ a i) (b i) A := by
   classical
-  -- A motion supported in `W i` carries points of `W i` into `W i`.
-  have hb : ∀ i ∈ s, MapsTo (b i) A (W i) := fun i hi x hx ↦ by
-    obtain ⟨Φ, K, -, hKW, hΦK, hΦ⟩ := h i hi
-    rw [← hΦ hx, comp_apply]
-    by_cases hax : a i x ∈ K
-    · refine hKW ?_
-      by_contra hnK
-      have hfix : Φ.final (Φ.final (a i x)) = Φ.final (a i x) := by
-        rw [Diffeotopy.final_apply Φ, hΦK 1 _ hnK]
-      exact hnK (by rw [Φ.final.injective hfix]; exact hax)
-    · rw [Diffeotopy.final_apply, hΦK 1 _ hax]
-      exact ha i hi hx
   induction s using Finset.induction_on with
   | empty =>
     exact ⟨Diffeotopy.refl _ _ _, ∅, isCompact_empty, empty_subset _,
@@ -68,7 +56,7 @@ theorem exists_diffeotopy_final_comp_eqOn_of_pairwise_disjoint (s : Finset ι) {
   | @insert j s hjs ih =>
     have hs : ∀ i ∈ s, i ∈ insert j s := fun i ↦ Finset.mem_insert_of_mem
     obtain ⟨Φ, K, hK, hKW, hΦK, hΦ⟩ := ih (hW.subset (by simp))
-      (fun i hi ↦ ha i (hs i hi)) (fun i hi ↦ h i (hs i hi)) fun i hi ↦ hb i (hs i hi)
+      (fun i hi ↦ ha i (hs i hi)) fun i hi ↦ h i (hs i hi)
     obtain ⟨Ψ, L, hL, hLW, hΨL, hΨ⟩ := h j (Finset.mem_insert_self j s)
     have hWj (i) (hi : i ∈ s) : Disjoint (W i) (W j) :=
       hW (by simp [hi]) (by simp) (ne_of_mem_of_not_mem hi hjs)
@@ -88,7 +76,12 @@ theorem exists_diffeotopy_final_comp_eqOn_of_pairwise_disjoint (s : Finset ι) {
       rcases Finset.mem_insert.mp hi with rfl | hi
       · rw [Diffeotopy.final_apply Φ, hΦK 1 _ (hK' _ (ha i (Finset.mem_insert_self i s) hx))]
         exact hΨ hx
-      · rw [← comp_apply (f := Φ.final), hΦ i hi hx, Diffeotopy.final_apply]
-        exact hΨL 1 _ (hL' i hi _ (hb i (hs i hi) hx))
+      · -- a motion supported in `W i` keeps `a i x ∈ W i` inside `W i`
+        obtain ⟨Φ', K', -, hK'W, hΦ'K, hΦ'⟩ := h i (hs i hi)
+        have hb : b i x ∈ W i := by
+          rw [← hΦ' hx]
+          exact Φ'.mapsTo_final_of_eqOn_compl hK'W (fun t _ hy ↦ hΦ'K t _ hy) (ha i (hs i hi) hx)
+        rw [← comp_apply (f := Φ.final), hΦ i hi hx, Diffeotopy.final_apply]
+        exact hΨL 1 _ (hL' i hi _ hb)
 
 end TauCeti
