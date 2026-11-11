@@ -18,8 +18,8 @@ sphere, are shown to be Hausdorff.
 
 ## Main results
 
-* `TauCeti.properSMul_of_compactSpace`: a continuous action of a compact group on a Hausdorff space
-  is proper.
+* `TauCeti.properSMul_of_compactSpace`, `TauCeti.properVAdd_of_compactSpace`: a continuous action
+  of a compact group, or of a compact additive group, on a Hausdorff space is proper.
 -/
 
 public section
@@ -28,10 +28,16 @@ namespace TauCeti
 
 /-- **A continuous action of a compact group on a Hausdorff space is proper.** This is not an
 instance, since `ProperSMul` itself provides `ContinuousSMul`. -/
+@[to_additive /-- **A continuous action of a compact additive group on a Hausdorff space is
+proper.** This is not an instance, since `ProperVAdd` itself provides `ContinuousVAdd`. -/]
 theorem properSMul_of_compactSpace (G X : Type*) [Group G] [TopologicalSpace G] [CompactSpace G]
     [MulAction G X] [TopologicalSpace X] [T2Space X] [ContinuousSMul G X] : ProperSMul G X :=
-  properSMul_iff_continuousSMul_ultrafilter_tendsto_t2.2 ⟨inferInstance, fun 𝒰 _ _ _ ↦ by
+  properSMul_iff_continuousSMul_ultrafilter_tendsto.2 ⟨inferInstance, fun 𝒰 _ _ hxx ↦ by
     obtain ⟨g, -, hg⟩ := isCompact_univ.ultrafilter_le_nhds (𝒰.map Prod.fst) (by simp)
-    exact ⟨g, hg⟩⟩
+    -- `Tendsto Prod.fst 𝒰 (𝓝 g)` is by definition `map Prod.fst 𝒰 ≤ 𝓝 g`.
+    rw [Ultrafilter.coe_map] at hg
+    change Filter.Tendsto (Prod.fst : G × X → G) 𝒰 (nhds g) at hg
+    exact ⟨g, tendsto_nhds_unique (hg.smul ((continuous_snd.tendsto _).comp hxx))
+      ((continuous_fst.tendsto _).comp hxx), hg⟩⟩
 
 end TauCeti
