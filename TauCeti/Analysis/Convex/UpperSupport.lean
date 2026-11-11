@@ -6,6 +6,7 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 module
 
 public import TauCeti.Analysis.Calculus.DerivativeTest
+import TauCeti.Topology.Order.Compact
 
 /-!
 # Concavity from second-order upper supports
@@ -37,21 +38,17 @@ theorem min_endpoints_le_of_strict_upper_supports {f : ℝ → ℝ} {a b : ℝ}
       B c = f c ∧ (∀ᶠ t in 𝓝 c, f t ≤ B t) ∧
         ContinuousAt B c ∧ deriv (deriv B) c < 0)
     {x : ℝ} (hx : x ∈ Icc a b) : min (f a) (f b) ≤ f x := by
-  by_contra! hbad
-  obtain ⟨c, hc, hmin⟩ := isCompact_Icc.exists_isMinOn (nonempty_Icc.mpr hab.le) hf
-  have hcx : f c ≤ f x := hmin hx
-  have hca : c ≠ a := by
-    intro heq
-    subst c
-    exact (not_lt_of_ge (hcx.trans' (min_le_left _ _))) hbad
-  have hcb : c ≠ b := by
-    intro heq
-    subst c
-    exact (not_lt_of_ge (hcx.trans' (min_le_right _ _))) hbad
-  have hcint : c ∈ Ioo a b := ⟨lt_of_le_of_ne hc.1 hca.symm, lt_of_le_of_ne hc.2 hcb⟩
-  obtain ⟨B, hcontact, hupper, hcont, hsecond⟩ := hcontacts c hcint
-  exact not_isLocalMin_of_strict_upper_support hcontact hupper hcont hsecond
-    (hmin.isLocalMin (Icc_mem_nhds hcint.1 hcint.2))
+  obtain ⟨c, hc, hmin⟩ :=
+    isCompact_Icc.exists_mem_frontier_isMinOn_of_forall_mem_interior_not_isLocalMin
+      (nonempty_Icc.mpr hab.le) hf (by
+        intro c hc
+        rw [interior_Icc] at hc
+        obtain ⟨B, hcontact, hupper, hcont, hsecond⟩ := hcontacts c hc
+        exact not_isLocalMin_of_strict_upper_support hcontact hupper hcont hsecond)
+  rw [frontier_Icc hab.le, mem_insert_iff, mem_singleton_iff] at hc
+  rcases hc with rfl | rfl
+  · exact (min_le_left _ _).trans (hmin hx)
+  · exact (min_le_right _ _).trans (hmin hx)
 
 /-- Nonpositive second derivatives of local upper supports force the chord inequality. -/
 theorem chord_le_of_upper_supports {f : ℝ → ℝ}
