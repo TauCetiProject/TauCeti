@@ -44,8 +44,15 @@ namespace TauCeti.Probability
 def quadraticError {Ω : Type*} (B : ℝ≥0 → Ω → ℝ) (τ : ℕ → ℝ≥0) (n : ℕ) (ω : Ω) : ℝ :=
   ∑ i ∈ range n, ((B (τ (i + 1)) ω - B (τ i) ω) ^ 2 - ((τ (i + 1) : ℝ) - τ i))
 
+/-- Express the error as a sum of centered squared increments. -/
+theorem quadraticError_def {Ω : Type*} (B : ℝ≥0 → Ω → ℝ) (τ : ℕ → ℝ≥0) (n : ℕ) :
+    quadraticError B τ n = fun ω ↦
+      ∑ i ∈ range n, ((B (τ (i + 1)) ω - B (τ i) ω) ^ 2 - ((τ (i + 1) : ℝ) - τ i)) :=
+  (rfl)
+
 /-- Express the centered prefix sum using the uncentered quadratic sum. -/
-theorem quadraticError_eq {Ω : Type*} (B : ℝ≥0 → Ω → ℝ) (τ : ℕ → ℝ≥0) (n : ℕ) (ω : Ω) :
+theorem quadraticError_eq_quadraticSum_sub {Ω : Type*} (B : ℝ≥0 → Ω → ℝ) (τ : ℕ → ℝ≥0)
+    (n : ℕ) (ω : Ω) :
     quadraticError B τ n ω = quadraticSum B (fun i : Fin (n + 1) ↦ τ i) ω -
       ((τ n : ℝ) - τ 0) := by
   rw [quadraticError, sum_sub_distrib, sum_range_sub (fun i ↦ (τ i : ℝ))]
@@ -64,6 +71,24 @@ theorem quadraticError_succ {Ω : Type*} (B : ℝ≥0 → Ω → ℝ) (τ : ℕ 
       ((B (τ (n + 1)) ω - B (τ n) ω) ^ 2 - ((τ (n + 1) : ℝ) - τ n)) := by
   simp only [quadraticError, sum_range_succ]
 
+end TauCeti.Probability
+
+namespace ProbabilityTheory.IsPreBrownianReal
+
+open TauCeti.Probability
+
+/-- Every Brownian quadratic-sum error is square integrable, even on an unordered grid. -/
+theorem memLp_quadraticError {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
+    {B : ℝ≥0 → Ω → ℝ} (hB : IsPreBrownianReal B P) (τ : ℕ → ℝ≥0) (n : ℕ) :
+    MemLp (quadraticError B τ n) 2 P := by
+  have : IsProbabilityMeasure P := (hB.hasLaw_eval 0).isProbabilityMeasure
+  rw [funext (quadraticError_eq_quadraticSum_sub B τ n)]
+  exact (hB.memLp_quadraticSum _).sub (memLp_const _)
+
+end ProbabilityTheory.IsPreBrownianReal
+
+namespace TauCeti.Probability
+
 namespace IsFilteredPreBrownianReal
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
@@ -74,10 +99,8 @@ theorem martingale_quadraticError (hB : IsFilteredPreBrownianReal ℱ B P) (hτ 
     Martingale (quadraticError B τ)
       ⟨fun n ↦ ℱ (τ n), fun _ _ h ↦ ℱ.mono (hτ h), fun n ↦ ℱ.le (τ n)⟩ P := by
   have : IsProbabilityMeasure P := (hB.hasLaw_eval 0).isProbabilityMeasure
-  have hL (n : ℕ) : MemLp (quadraticError B τ n) 2 P := by
-    rw [funext (quadraticError_eq B τ n)]
-    exact (hB.toIsPreBrownianReal.memLp_quadraticSum _).sub (memLp_const _)
-  refine martingale_of_condExp_sub_eq_zero_nat (fun n ↦ ?_) (fun n ↦ (hL n).integrable one_le_two)
+  refine martingale_of_condExp_sub_eq_zero_nat (fun n ↦ ?_)
+    (fun n ↦ (hB.toIsPreBrownianReal.memLp_quadraticError τ n).integrable one_le_two)
     (fun n ↦ ?_)
   · refine Finset.stronglyMeasurable_fun_sum _ fun i hi ↦ ?_
     have hi : i + 1 ≤ n := mem_range.mp hi
@@ -103,9 +126,9 @@ theorem integral_sq_partialSups_quadraticError_le (hB : IsFilteredPreBrownianRea
     ∫ ω, (partialSups (fun j ω ↦ |quadraticError B τ j ω|) n ω) ^ 2 ∂P ≤
       8 * ∑ i ∈ range n, ((τ (i + 1) : ℝ) - τ i) ^ 2 := by
   have : IsProbabilityMeasure P := (hB.hasLaw_eval 0).isProbabilityMeasure
-  have hL : MemLp (quadraticError B τ n) 2 P := by
-    rw [funext (quadraticError_eq B τ n)]
-    exact (hB.toIsPreBrownianReal.memLp_quadraticSum _).sub (memLp_const _)
+  have hfin : Monotone (fun i : Fin (n + 1) ↦ τ i) := fun i j h ↦
+    hτ (Set.mem_Iic.2 (Nat.le_of_lt_succ i.isLt))
+      (Set.mem_Iic.2 (Nat.le_of_lt_succ j.isLt)) h
   -- Only the finite prefix is ordered: hold the last date fixed to sample a full martingale.
   let τ' : ℕ → ℝ≥0 := fun j ↦ τ (min j n)
   have hτ' : Monotone τ' := fun _ _ hij ↦
@@ -117,7 +140,7 @@ theorem integral_sq_partialSups_quadraticError_le (hB : IsFilteredPreBrownianRea
     intro i hi
     have hi := mem_range.mp hi
     simp only [τ', min_eq_left (by omega : i ≤ n), min_eq_left (by omega : i + 1 ≤ n)]
-  have hL' : MemLp (quadraticError B τ' n) 2 P := by rwa [heq n le_rfl]
+  have hL' := hB.toIsPreBrownianReal.memLp_quadraticError τ' n
   have hm := (hB.martingale_quadraticError hτ').integral_sq_partialSups_norm_le n hL'
   have hmaxEq : partialSups (fun j ω ↦ |quadraticError B τ' j ω|) n =
       partialSups (fun j ω ↦ |quadraticError B τ j ω|) n := by
@@ -127,11 +150,8 @@ theorem integral_sq_partialSups_quadraticError_le (hB : IsFilteredPreBrownianRea
   simp only [Real.norm_eq_abs, sq_abs, hmaxEq] at hm
   have he : ∫ ω, quadraticError B τ n ω ^ 2 ∂P =
       2 * ∑ i ∈ range n, ((τ (i + 1) : ℝ) - τ i) ^ 2 := by
-    simpa only [quadraticError_eq, Fin.val_last, Fin.val_zero, Fin.val_succ,
-      Fin.val_castSucc, sum_range] using hB.toIsPreBrownianReal.integral_sq_quadraticSum_sub
-        (t := fun i : Fin (n + 1) ↦ τ i)
-          (fun i j h ↦ hτ (Set.mem_Iic.2 (Nat.le_of_lt_succ i.isLt))
-            (Set.mem_Iic.2 (Nat.le_of_lt_succ j.isLt)) h)
+    simpa only [quadraticError_eq_quadraticSum_sub, Fin.val_last, Fin.val_zero, Fin.val_succ,
+      Fin.val_castSucc, sum_range] using hB.toIsPreBrownianReal.integral_sq_quadraticSum_sub hfin
   rw [he] at hm
   linarith
 
@@ -142,12 +162,12 @@ theorem integral_sq_partialSups_quadraticError_le_mesh (hB : IsFilteredPreBrowni
     (hmesh : ∀ i < n, (τ (i + 1) : ℝ) - τ i ≤ δ) :
     ∫ ω, (partialSups (fun j ω ↦ |quadraticError B τ j ω|) n ω) ^ 2 ∂P ≤
       8 * ((τ n : ℝ) - τ 0) * δ := by
-  have hvar := hB.toIsPreBrownianReal.integral_sq_quadraticSum_sub
-    (t := fun i : Fin (n + 1) ↦ τ i) (fun i j h ↦ hτ (Set.mem_Iic.2 (Nat.le_of_lt_succ i.isLt))
-      (Set.mem_Iic.2 (Nat.le_of_lt_succ j.isLt)) h)
-  have hbound := hB.toIsPreBrownianReal.integral_sq_quadraticSum_sub_le
-    (t := fun i : Fin (n + 1) ↦ τ i) (fun i j h ↦ hτ (Set.mem_Iic.2 (Nat.le_of_lt_succ i.isLt))
-      (Set.mem_Iic.2 (Nat.le_of_lt_succ j.isLt)) h) (fun i ↦ hmesh i i.isLt)
+  have hfin : Monotone (fun i : Fin (n + 1) ↦ τ i) := fun i j h ↦
+    hτ (Set.mem_Iic.2 (Nat.le_of_lt_succ i.isLt))
+      (Set.mem_Iic.2 (Nat.le_of_lt_succ j.isLt)) h
+  have hvar := hB.toIsPreBrownianReal.integral_sq_quadraticSum_sub hfin
+  have hbound := hB.toIsPreBrownianReal.integral_sq_quadraticSum_sub_le hfin
+    (fun i ↦ hmesh i i.isLt)
   simp only [Fin.val_last, Fin.val_zero, Fin.val_succ, Fin.val_castSucc] at hvar hbound
   have hmax := hB.integral_sq_partialSups_quadraticError_le n hτ
   rw [sum_range] at hmax
@@ -158,28 +178,31 @@ bounded horizon. The grids need not be nested or have the same number of interva
 theorem tendsto_integral_sq_partialSups_quadraticError (hB : IsFilteredPreBrownianReal ℱ B P)
     {ι : Type*} {l : Filter ι} {N : ι → ℕ} {grid : ι → ℕ → ℝ≥0}
     (ht : ∀ k, MonotoneOn (grid k) (Set.Iic (N k)))
-    {T : ℝ≥0} (hT : ∀ k, grid k (N k) ≤ T) {δ : ι → ℝ} (hδnonneg : ∀ k, 0 ≤ δ k)
+    {T : ℝ≥0} (hT : ∀ k, grid k (N k) ≤ T) {δ : ι → ℝ}
     (hmesh : ∀ k i, i < N k → (grid k (i + 1) : ℝ) - grid k i ≤ δ k)
     (hδ : Tendsto δ l (𝓝 0)) :
     Tendsto (fun k ↦ ∫ ω,
       (partialSups (fun j ω ↦ |quadraticError B (grid k) j ω|) (N k) ω) ^ 2 ∂P) l (𝓝 0) := by
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (by simpa using hδ.const_mul (8 * (T : ℝ)))
+    (by simpa using
+      (hδ.max (tendsto_const_nhds (x := (0 : ℝ)))).const_mul (8 * (T : ℝ)))
     (fun _ ↦ integral_nonneg fun _ ↦ sq_nonneg _) fun k ↦ ?_
   calc
-    _ ≤ 8 * ((grid k (N k) : ℝ) - grid k 0) * δ k :=
-      hB.integral_sq_partialSups_quadraticError_le_mesh (N k) (ht k) (hmesh k)
-    _ ≤ 8 * (T : ℝ) * δ k := by
+    _ ≤ 8 * ((grid k (N k) : ℝ) - grid k 0) * max (δ k) 0 :=
+      hB.integral_sq_partialSups_quadraticError_le_mesh (N k) (ht k)
+        (fun i hi ↦ (hmesh k i hi).trans (le_max_left _ _))
+    _ ≤ 8 * (T : ℝ) * max (δ k) 0 := by
       have hle : (grid k (N k) : ℝ) - grid k 0 ≤ T :=
         (sub_le_self _ (NNReal.coe_nonneg _)).trans (NNReal.coe_le_coe.2 (hT k))
-      exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hle (by norm_num)) (hδnonneg k)
+      exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hle (by norm_num))
+        (le_max_right _ _)
 
 /-- Maximal prefix errors converge in probability along every bounded-horizon vanishing-mesh
 family. Unlike convergence of the terminal sum alone, this controls every trading date. -/
 theorem tendstoInMeasure_partialSups_quadraticError (hB : IsFilteredPreBrownianReal ℱ B P)
     {ι : Type*} {l : Filter ι} {N : ι → ℕ} {grid : ι → ℕ → ℝ≥0}
     (ht : ∀ k, MonotoneOn (grid k) (Set.Iic (N k)))
-    {T : ℝ≥0} (hT : ∀ k, grid k (N k) ≤ T) {δ : ι → ℝ} (hδnonneg : ∀ k, 0 ≤ δ k)
+    {T : ℝ≥0} (hT : ∀ k, grid k (N k) ≤ T) {δ : ι → ℝ}
     (hmesh : ∀ k i, i < N k → (grid k (i + 1) : ℝ) - grid k i ≤ δ k)
     (hδ : Tendsto δ l (𝓝 0)) :
     TendstoInMeasure P
@@ -190,11 +213,10 @@ theorem tendstoInMeasure_partialSups_quadraticError (hB : IsFilteredPreBrownianR
     rw [partialSups_apply]
     refine Finset.sup'_induction _ _ (p := fun g ↦ MemLp g 2 P)
       (fun _ hf _ hg ↦ hf.sup hg) fun j _ ↦ ?_
-    rw [funext (quadraticError_eq B (grid k) j)]
-    exact ((hB.toIsPreBrownianReal.memLp_quadraticSum _).sub (memLp_const _)).norm
+    exact (hB.toIsPreBrownianReal.memLp_quadraticError (grid k) j).norm
   refine tendstoInMeasure_iff_norm.2 fun ε hε ↦ ?_
   have hlim := ENNReal.continuous_ofReal.continuousAt.tendsto.comp
-    ((hB.tendsto_integral_sq_partialSups_quadraticError ht hT hδnonneg hmesh hδ).div_const (ε ^ 2))
+    ((hB.tendsto_integral_sq_partialSups_quadraticError ht hT hmesh hδ).div_const (ε ^ 2))
   simp only [zero_div, ENNReal.ofReal_zero, Function.comp_def] at hlim
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim
     (fun _ ↦ zero_le) fun k ↦ ?_
