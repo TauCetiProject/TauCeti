@@ -25,7 +25,7 @@ Morphisms of stacks in groupoids are strong transformations of the underlying ps
 * `TauCeti.AlgebraicGeometry.StackInGroupoids.Hom`: morphisms of stacks in groupoids, the strong
   transformations of the underlying pseudofunctors. Identities and composites are Mathlib's
   `Pseudofunctor.StrongTrans.id` and `Pseudofunctor.StrongTrans.vcomp`.
-* `TauCeti.AlgebraicGeometry.StackInGroupoids.Hom.IsFibrewiseEquiv`: a morphism whose component
+* `TauCeti.AlgebraicGeometry.StackInGroupoids.Hom.IsFiberwiseEquiv`: a morphism whose component
   on every scheme is an equivalence of fibre groupoids. It holds for identities, is closed under
   composition, and satisfies two-out-of-three.
 
@@ -67,41 +67,41 @@ abbrev Hom (X Y : StackInGroupoids.{u}) : Type (u + 1) :=
 
 namespace Hom
 
-/-- A morphism of stacks in groupoids is a fibrewise equivalence if its component on every
+/-- A morphism of stacks in groupoids is a fiberwise equivalence if its component on every
 scheme is an equivalence of fibre groupoids. -/
-def IsFibrewiseEquiv {X Y : StackInGroupoids.{u}} (f : Hom X Y) : Prop :=
+def IsFiberwiseEquiv {X Y : StackInGroupoids.{u}} (f : Hom X Y) : Prop :=
   ∀ T : Scheme.{u}, (f.app (.mk (op T))).toFunctor.IsEquivalence
 
-lemma isFibrewiseEquiv_iff {X Y : StackInGroupoids.{u}} (f : Hom X Y) :
-    f.IsFibrewiseEquiv ↔ ∀ T : Scheme.{u}, (f.app (.mk (op T))).toFunctor.IsEquivalence :=
+lemma isFiberwiseEquiv_iff {X Y : StackInGroupoids.{u}} (f : Hom X Y) :
+    f.IsFiberwiseEquiv ↔ ∀ T : Scheme.{u}, (f.app (.mk (op T))).toFunctor.IsEquivalence :=
   Iff.rfl
 
 @[simp]
-lemma isFibrewiseEquiv_id (X : StackInGroupoids.{u}) :
-    IsFibrewiseEquiv (Pseudofunctor.StrongTrans.id X.toSchPseudofunctor) := fun _ ↦
+lemma isFiberwiseEquiv_id (X : StackInGroupoids.{u}) :
+    IsFiberwiseEquiv (Pseudofunctor.StrongTrans.id X.toSchPseudofunctor) := fun _ ↦
   inferInstanceAs (Functor.id _).IsEquivalence
 
 variable {X Y Z : StackInGroupoids.{u}} {f : Hom X Y} {g : Hom Y Z}
 
-lemma IsFibrewiseEquiv.comp (hf : f.IsFibrewiseEquiv) (hg : g.IsFibrewiseEquiv) :
-    IsFibrewiseEquiv (Pseudofunctor.StrongTrans.vcomp f g) := fun T ↦
+lemma IsFiberwiseEquiv.comp (hf : f.IsFiberwiseEquiv) (hg : g.IsFiberwiseEquiv) :
+    IsFiberwiseEquiv (Pseudofunctor.StrongTrans.vcomp f g) := fun T ↦
   have := hf T
   have := hg T
   inferInstanceAs ((f.app (.mk (op T))).toFunctor ⋙ (g.app (.mk (op T))).toFunctor).IsEquivalence
 
-/-- If `g` and the composite `Pseudofunctor.StrongTrans.vcomp f g` are fibrewise equivalences,
+/-- If `g` and the composite `Pseudofunctor.StrongTrans.vcomp f g` are fiberwise equivalences,
 so is `f`. -/
-lemma IsFibrewiseEquiv.of_comp_right (hg : g.IsFibrewiseEquiv)
-    (hfg : IsFibrewiseEquiv (Pseudofunctor.StrongTrans.vcomp f g)) : f.IsFibrewiseEquiv := fun T ↦
+lemma IsFiberwiseEquiv.of_comp_right (hg : g.IsFiberwiseEquiv)
+    (hfg : IsFiberwiseEquiv (Pseudofunctor.StrongTrans.vcomp f g)) : f.IsFiberwiseEquiv := fun T ↦
   have := hg T
   have : ((f.app (.mk (op T))).toFunctor ⋙ (g.app (.mk (op T))).toFunctor).IsEquivalence :=
     hfg T
   Functor.isEquivalence_of_comp_right _ (g.app (.mk (op T))).toFunctor
 
-/-- If `f` and the composite `Pseudofunctor.StrongTrans.vcomp f g` are fibrewise equivalences,
+/-- If `f` and the composite `Pseudofunctor.StrongTrans.vcomp f g` are fiberwise equivalences,
 so is `g`. -/
-lemma IsFibrewiseEquiv.of_comp_left (hf : f.IsFibrewiseEquiv)
-    (hfg : IsFibrewiseEquiv (Pseudofunctor.StrongTrans.vcomp f g)) : g.IsFibrewiseEquiv := fun T ↦
+lemma IsFiberwiseEquiv.of_comp_left (hf : f.IsFiberwiseEquiv)
+    (hfg : IsFiberwiseEquiv (Pseudofunctor.StrongTrans.vcomp f g)) : g.IsFiberwiseEquiv := fun T ↦
   have := hf T
   have : ((f.app (.mk (op T))).toFunctor ⋙ (g.app (.mk (op T))).toFunctor).IsEquivalence :=
     hfg T
