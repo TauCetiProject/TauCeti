@@ -154,8 +154,9 @@ variable {E k} in
 /-- At an orthonormal family, the derivative of the Gram map has index
 `k n - (k + 1).choose 2`, where `n = finrank ℝ E` and `(k + 1).choose 2` is the number of
 unordered pairs of indices. The truncated subtraction is harmless: the index is the dimension
-of the kernel, as the derivative is surjective. When `E` is infinite-dimensional the kernel is
-infinite-dimensional too, and both sides are `0`. -/
+of the kernel, as the derivative is surjective. When `E` is infinite-dimensional and `k > 0` the
+kernel is infinite-dimensional too, and both sides are `0`; for `k = 0` the domain and the kernel
+are zero-dimensional and both sides vanish as well. -/
 theorem index_gramSym2Deriv {v : Fin k → E} (hv : Orthonormal ℝ v) :
     (gramSym2Deriv E k v).index = (k * finrank ℝ E - (k + 1).choose 2 : ℕ) := by
   have h₁ := (gramSym2Deriv E k v).index_of_surjective (gramSym2Deriv_surjective hv)
@@ -174,8 +175,7 @@ theorem index_gramSym2Deriv {v : Fin k → E} (hv : Orthonormal ℝ v) :
         let T : (Fin k → E) →ₗ[ℝ] (Sym2 (Fin k) → ℝ) := gramSym2Deriv E k v
         have : Module.Finite ℝ ((Fin k → E) ⧸ T.ker) := .equiv T.quotKerEquivRange.symm
         have : Module.Finite ℝ (Fin k → E) := .of_submodule_quotient T.ker
-        exact .of_surjective (LinearMap.proj (R := ℝ) (φ := fun _ : Fin k ↦ E) ⟨0, hk⟩)
-          fun e ↦ ⟨Pi.single ⟨0, hk⟩ e, by simp⟩
+        exact Module.Finite.of_pi (fun _ : Fin k ↦ E) ⟨0, hk⟩
       simp [Module.finrank_of_not_finite this]
 
 /-! ### The Stiefel manifold -/
