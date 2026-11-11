@@ -59,10 +59,9 @@ private theorem exists_eq_tmul_one_of_isIdempotentElem_of_isReduced
         one_smul]
     exact h.trans (by simp [hc, Algebra.TensorProduct.one_def])
 
-/-- An idempotent in a family over a finite-type parameter algebra is scalar when the other
-factor has connected spectrum and the ground field is algebraically closed. The nilradical of
-the parameter algebra is nilpotent, so the reduced case lifts. -/
-theorem exists_eq_tmul_one_of_isIdempotentElem
+/-- The finite-type case of `exists_eq_tmul_one_of_isIdempotentElem`: the nilradical of the
+parameter algebra is nilpotent, so the reduced case lifts. -/
+private theorem exists_eq_tmul_one_of_isIdempotentElem_of_finiteType
     {k A B : Type*} [Field k] [IsAlgClosed k]
     [CommRing A] [Algebra k A] [ConnectedSpace (PrimeSpectrum A)]
     [CommRing B] [Algebra k B] [Algebra.FiniteType k B]
@@ -97,6 +96,26 @@ theorem exists_eq_tmul_one_of_isIdempotentElem
   · rw [RingHom.mem_ker, map_sub, hcb, sub_eq_zero]
     simp [G, ← hcq]
 
+/-- An idempotent in a family over any parameter algebra is scalar when the other factor has
+connected spectrum and the ground field is algebraically closed. The idempotent comes from a
+finitely generated subalgebra of the parameter algebra, into which tensoring over the field
+embeds injectively, so the finite-type case applies. -/
+theorem exists_eq_tmul_one_of_isIdempotentElem
+    {k A B : Type*} [Field k] [IsAlgClosed k]
+    [CommRing A] [Algebra k A] [ConnectedSpace (PrimeSpectrum A)]
+    [CommRing B] [Algebra k B]
+    {e : B ⊗[k] A} (he : IsIdempotentElem e) :
+    ∃ c : B, e = c ⊗ₜ[k] (1 : A) := by
+  obtain ⟨B', hB', x, hx⟩ := TensorProduct.Algebra.exists_of_fg e
+  let : Algebra.FiniteType k B' := B'.fg_iff_finiteType.mp hB'
+  let F := Algebra.TensorProduct.map B'.val (AlgHom.id k A)
+  have hF : Function.Injective F :=
+    Module.Flat.rTensor_preserves_injective_linearMap B'.val.toLinearMap Subtype.val_injective
+  have hxe : F x = e := hx
+  obtain ⟨c, hc⟩ := exists_eq_tmul_one_of_isIdempotentElem_of_finiteType (A := A) (e := x)
+    (hF <| by simpa only [map_mul, hxe] using he.eq)
+  exact ⟨c, by rw [← hxe, hc]; simp [F]⟩
+
 /-- A connected algebra over an algebraically closed field remains connected after every field
 extension, without finite-type or reducedness assumptions. -/
 theorem connectedSpace_primeSpectrum_tensorProduct_of_isAlgClosed
@@ -112,22 +131,10 @@ theorem connectedSpace_primeSpectrum_tensorProduct_of_isAlgClosed
       (FaithfulSMul.algebraMap_injective k A)
   apply connectedSpace_primeSpectrum_iff_idempotent_eq_zero_or_one.mpr
   intro e he
-  obtain ⟨B, hB, x, hx⟩ := TensorProduct.Algebra.exists_of_fg e
-  let : Algebra.FiniteType k B := B.fg_iff_finiteType.mp hB
-  let F := Algebra.TensorProduct.map B.val (AlgHom.id k A)
-  have hF : Function.Injective F :=
-    Module.Flat.rTensor_preserves_injective_linearMap B.val.toLinearMap Subtype.val_injective
-  have hxe : F x = e := hx
-  have hxid : IsIdempotentElem x := by
-    apply hF
-    simpa only [map_mul, hxe] using he.eq
-  obtain ⟨c, hc⟩ := exists_eq_tmul_one_of_isIdempotentElem hxid
-  have hec : e = (c : K) ⊗ₜ[k] (1 : A) := by
-    rw [← hxe, hc]
-    simp [F]
+  obtain ⟨c, hec⟩ := exists_eq_tmul_one_of_isIdempotentElem he
   have hinj : Function.Injective (Algebra.TensorProduct.includeLeft : K →ₐ[k] K ⊗[k] A) :=
     (Algebra.TensorProduct.includeLeft : K →ₐ[k] K ⊗[k] A).injective
-  have hcid : IsIdempotentElem (c : K) := by
+  have hcid : IsIdempotentElem c := by
     apply hinj
     simpa only [map_mul, Algebra.TensorProduct.includeLeft_apply, ← hec] using he.eq
   rcases IsIdempotentElem.iff_eq_zero_or_one.mp hcid with h | h <;>
