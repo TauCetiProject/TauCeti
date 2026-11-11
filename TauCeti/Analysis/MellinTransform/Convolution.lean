@@ -68,7 +68,7 @@ theorem mellinConvergent_iff_integrable_exp_mul (f : ℝ → ℂ) (s : ℂ) :
   rw [← cpow_add _ _ (Complex.exp_ne_zero _)]
   rw [show (1 : ℂ) + (s - 1) = s by ring,
     cpow_def_of_ne_zero (Complex.exp_ne_zero _), Complex.log_exp]
-  · congr 1; ring
+  · congr 1; ring_nf
   · simp [Real.pi_pos]
   · simp [Real.pi_nonneg]
 
