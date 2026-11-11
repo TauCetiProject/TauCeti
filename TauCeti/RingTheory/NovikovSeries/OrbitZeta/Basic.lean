@@ -305,54 +305,6 @@ private theorem nsmul_single_algebraMap (n : ℕ) (h : H) (q : ℚ) :
       single h (algebraMap ℚ K (n * q)) := by
   rw [smul_single, nsmul_eq_mul, ← map_natCast (algebraMap ℚ K) n, ← _root_.map_mul]
 
-omit [Algebra ℚ K] in
-/-- A monomial lies in a period neighbourhood of `0` exactly when its coefficient vanishes or its
-exponent has weight at least the cutoff. -/
-private theorem single_mem_periodFiltration_iff (C : ℝ) (g : H) (r : K) :
-    (single g r : NovikovSeries K H N) ∈ periodFiltration K N C ↔ r = 0 ∨ C ≤ N g := by
-  refine ⟨fun h => ?_, fun h => ?_⟩
-  · by_contra hcon
-    rw [not_or, not_le] at hcon
-    exact hcon.1 (by simpa using mem_periodFiltration.1 h g hcon.2)
-  · rcases h with rfl | h
-    · simp
-    · exact antitone_periodFiltration h (single_mem_periodFiltration _ _)
-
-/-- A nonzero natural multiple of a monomial with rational coefficient lies in a period
-neighbourhood of `0` exactly when the monomial does. -/
-private theorem single_algebraMap_mul_mem_periodFiltration_iff (C : ℝ) (g : H) (q : ℚ) {n : ℕ}
-    (hn : n ≠ 0) :
-    (single g (algebraMap ℚ K (n * q)) : NovikovSeries K H N) ∈ periodFiltration K N C ↔
-      (single g (algebraMap ℚ K q) : NovikovSeries K H N) ∈ periodFiltration K N C := by
-  rw [single_mem_periodFiltration_iff, single_mem_periodFiltration_iff]
-  refine or_congr_left ⟨fun h0 => ?_, fun h0 => ?_⟩
-  · -- `q = n⁻¹ * (n * q)`, since `n` is invertible in `ℚ`
-    have hq : q = (n : ℚ)⁻¹ * (n * q) := (inv_mul_cancel_left₀ (by exact_mod_cast hn) q).symm
-    rw [hq, _root_.map_mul, h0, mul_zero]
-  · rw [_root_.map_mul, h0, mul_zero]
-
-/-- Listing each monomial `c p.1` times does not change which of the terms escape a period
-neighbourhood of `0` (up to finiteness): the repeated family has finitely many bad terms exactly
-when the family scaled by `c` does, since each fibre over `p` is finite. -/
-private theorem finite_notMem_periodFiltration_sigma_iff (c : ι → ℕ) (C : ℝ) (g : ι × ℕ → H)
-    (q : ι × ℕ → ℚ) :
-    {x : (p : ι × ℕ) × Fin (c p.1) | (single (g x.1) (algebraMap ℚ K (q x.1)) :
-      NovikovSeries K H N) ∉ periodFiltration K N C}.Finite ↔
-    {p : ι × ℕ | (single (g p) (algebraMap ℚ K ((c p.1 : ℕ) * q p)) :
-      NovikovSeries K H N) ∉ periodFiltration K N C}.Finite := by
-  have hB (p : ι × ℕ) : (single (g p) (algebraMap ℚ K ((c p.1 : ℕ) * q p)) :
-      NovikovSeries K H N) ∉ periodFiltration K N C ↔
-      c p.1 ≠ 0 ∧ (single (g p) (algebraMap ℚ K (q p)) :
-        NovikovSeries K H N) ∉ periodFiltration K N C := by
-    by_cases h0 : c p.1 = 0
-    · simp [h0]
-    · rw [not_congr (single_algebraMap_mul_mem_periodFiltration_iff C _ _ h0), and_iff_right h0]
-  refine ⟨fun hA => (hA.image Sigma.fst).subset fun p hp => ?_, fun hB' => ?_⟩
-  · obtain ⟨hc, hT⟩ := (hB p).1 hp
-    exact ⟨⟨p, ⟨0, Nat.pos_of_ne_zero hc⟩⟩, hT, rfl⟩
-  · refine (hB'.biUnion fun p _ => Set.finite_range (Sigma.mk p)).subset fun x hx => ?_
-    exact Set.mem_biUnion ((hB x.1).2 ⟨(Fin.pos x.2).ne', hx⟩) ⟨x.2, rfl⟩
-
 /-- Listing an orbit `c i` times does not change whether the terms of the orbit logarithm are
 summable: the terms of the repeated family are those of the original one, and a nonzero natural
 multiple of a monomial with rational coefficient lies in a period neighbourhood of `0` exactly
