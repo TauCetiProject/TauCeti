@@ -50,9 +50,8 @@ theorem tendsto_tvDist_pow_comp_of_ae_meeting [MeasurableEq α]
     Tendsto (fun n : ℕ => tvDist ((κ ^ n : Kernel α α) ∘ₘ ν)
       ((κ ^ n : Kernel α α) ∘ₘ ν')) atTop (𝓝 0) := by
   -- the coupling hypothesis forces `κ x` to be a probability measure for every `x`
-  have : IsMarkovKernel κ := ⟨fun x => by
-    have h := (hη (x, x)).fst_eq
-    exact ⟨by simpa using congrArg (fun m : Measure α => m Set.univ) h.symm⟩⟩
+  have : IsMarkovKernel κ :=
+    ⟨fun x => ⟨by rw [(hη (x, x)).measure_univ_left, measure_univ]⟩⟩
   let P := markovChainLaw ρ η
   let A (n : ℕ) := {ω : ℕ → α × α | ∀ k ≤ n, (ω k).1 ≠ (ω k).2}
   have hA (n : ℕ) : MeasurableSet (A n) := by
@@ -102,14 +101,11 @@ theorem tendsto_tvDist_pow_comp_of_parallelComp_isRecurrent [MeasurableEq α]
     (ν ν' : Measure α) (hmass : ν Set.univ = ν' Set.univ) :
     Tendsto (fun n : ℕ => tvDist ((κ ^ n : Kernel α α) ∘ₘ ν)
       ((κ ^ n : Kernel α α) ∘ₘ ν')) atTop (𝓝 0) := by
-  have hmass' (m : ℕ) : ((κ ^ m : Kernel α α) ∘ₘ ν) Set.univ = ν Set.univ := by
-    rw [Measure.bind_apply .univ (Kernel.aemeasurable _)]
-    simp
   by_cases hfin : IsFiniteMeasure ν
   swap
   · -- an infinite measure stays infinite under a Markov kernel, and `tvDist` then vanishes
     have hn (m : ℕ) : ¬ IsFiniteMeasure ((κ ^ m : Kernel α α) ∘ₘ ν) := fun h =>
-      hfin ⟨by rw [← hmass' m]; exact measure_lt_top _ _⟩
+      hfin ⟨by rw [← Measure.comp_apply_univ (κ := (κ ^ m : Kernel α α))]; exact measure_lt_top _ _⟩
     simp [tvDist, etvDist_of_not_isFiniteMeasure_left (hn _)]
   have hρ : IsCoupling ((ν Set.univ)⁻¹ • ν.prod ν') ν ν' := isCoupling_inv_smul_prod hmass
   have := hρ.isFiniteMeasure
@@ -129,10 +125,7 @@ theorem tendsto_tvDist_pow_comp_pow_add_comp_of_parallelComp_isRecurrent [Measur
     Tendsto (fun n : ℕ => tvDist ((κ ^ n : Kernel α α) ∘ₘ ν)
       ((κ ^ (n + i) : Kernel α α) ∘ₘ ν))
       atTop (𝓝 0) := by
-  have hmass : ν Set.univ = ((κ ^ i : Kernel α α) ∘ₘ ν) Set.univ := by
-    rw [Measure.bind_apply .univ (Kernel.aemeasurable _)]
-    simp
   simpa only [Kernel.pow_add, Measure.comp_assoc] using
-    κ.tendsto_tvDist_pow_comp_of_parallelComp_isRecurrent hz ν _ hmass
+    κ.tendsto_tvDist_pow_comp_of_parallelComp_isRecurrent hz ν _ Measure.comp_apply_univ.symm
 
 end ProbabilityTheory.Kernel
