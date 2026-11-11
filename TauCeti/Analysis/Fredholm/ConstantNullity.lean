@@ -155,26 +155,16 @@ theorem IsFredholm.exists_stabilization_isTopCompl_range_iff (hT₀ : IsFredholm
   · intro hker
     exact isTopCompl_of_isInvertible_prod_coprod hinv (by omega)
 
-/-- The model kernel at the base point embeds in the stabilized kernel there as `v ↦ (v, 0)`. -/
-private noncomputable def kerToStabilizedKer (T : E →L[𝕜] F) (S : Submodule 𝕜 F) :
-    T.ker →L[𝕜] (T.coprod S.subtypeL).ker :=
-  (inl 𝕜 E S ∘L T.ker.subtypeL).codRestrict _ fun v ↦ by simp
-
-omit [CompleteSpace 𝕜] [CompleteSpace E] [CompleteSpace F] in
-private theorem coe_kerToStabilizedKer_apply (T : E →L[𝕜] F) (S : Submodule 𝕜 F) (v : T.ker) :
-    (kerToStabilizedKer T S v : E × S) = ((v : E), 0) :=
-  (rfl)
-
 omit [CompleteSpace 𝕜] [CompleteSpace E] [CompleteSpace F] in
 /-- The algebra behind the kernel parametrization: if `S` meets the ranges of both `T₀` and `T`
 trivially, the `E`-component of the kernel section of `T + inclusion_S`, precomposed with
-`kerToStabilizedKer`, is injective with range `ker T`. -/
+`ContinuousLinearMap.kerCoprodHom`, is injective with range `ker T`. -/
 private theorem injective_and_range_fst_comp_kerSection {S : Submodule 𝕜 F} {T₀ T : E →L[𝕜] F}
     {q : (E × S) →L[𝕜] (T₀.coprod S.subtypeL).ker}
     (hinv : ((T.coprod S.subtypeL).prod q).IsInvertible) (hS₀ : Disjoint S T₀.range)
     (hS : Disjoint S T.range) :
-    Injective (fst 𝕜 E S ∘L (T.coprod S.subtypeL).kerSection q ∘L kerToStabilizedKer T₀ S) ∧
-      (fst 𝕜 E S ∘L (T.coprod S.subtypeL).kerSection q ∘L kerToStabilizedKer T₀ S).range =
+    Injective (fst 𝕜 E S ∘L (T.coprod S.subtypeL).kerSection q ∘L kerCoprodHom T₀ S.subtypeL) ∧
+      (fst 𝕜 E S ∘L (T.coprod S.subtypeL).kerSection q ∘L kerCoprodHom T₀ S.subtypeL).range =
         T.ker := by
   -- Where `S` meets the range of an operator trivially, the stabilized kernel is `ker × 0`.
   have hprod {T' : E →L[𝕜] F} (h : Disjoint S T'.range) :
@@ -185,12 +175,12 @@ private theorem injective_and_range_fst_comp_kerSection {S : Submodule 𝕜 F} {
   have hmem (g) : (T.coprod S.subtypeL).kerSection q g ∈ T.ker.prod ⊥ :=
     hker ▸ kerSection_mem_ker g
   refine ⟨fun v w hvw ↦ ?_, le_antisymm ?_ fun e he ↦ ?_⟩
-  · have h : (T.coprod S.subtypeL).kerSection q (kerToStabilizedKer T₀ S v) =
-        (T.coprod S.subtypeL).kerSection q (kerToStabilizedKer T₀ S w) :=
+  · have h : (T.coprod S.subtypeL).kerSection q (kerCoprodHom T₀ S.subtypeL v) =
+        (T.coprod S.subtypeL).kerSection q (kerCoprodHom T₀ S.subtypeL w) :=
       Prod.ext hvw (((hmem _).2).trans ((hmem _).2).symm)
     have h' := congrArg (fun g : (T₀.coprod S.subtypeL).ker ↦ (g : E × S).1)
       (kerSection_injective hinv h)
-    simp only [coe_kerToStabilizedKer_apply] at h'
+    simp only [kerCoprodHom_apply] at h'
     exact Subtype.ext h'
   · rintro _ ⟨v, rfl⟩
     exact (hmem _).1
@@ -201,8 +191,9 @@ private theorem injective_and_range_fst_comp_kerSection {S : Submodule 𝕜 F} {
     obtain ⟨g, hg⟩ := he'
     have hg₀ := (hprod hS₀ ▸ g.2 : (g : E × S) ∈ T₀.ker.prod ⊥)
     refine ⟨⟨(g : E × S).1, hg₀.1⟩, ?_⟩
-    have hgv : kerToStabilizedKer T₀ S ⟨(g : E × S).1, hg₀.1⟩ = g :=
-      Subtype.ext (Prod.ext rfl (Submodule.mem_bot 𝕜 |>.mp hg₀.2).symm)
+    have hgv : kerCoprodHom T₀ S.subtypeL ⟨(g : E × S).1, hg₀.1⟩ = g :=
+      Subtype.ext <| (kerCoprodHom_apply _ _ _).trans
+        (Prod.ext rfl (Submodule.mem_bot 𝕜 |>.mp hg₀.2).symm)
     simpa [hgv] using congrArg Prod.fst hg
 
 /-- The kernel parametrization of a family of constant nullity, as an explicit formula: on a
@@ -216,9 +207,9 @@ private theorem IsFredholm.exists_ker_parametrization (hT₀ : IsFredholm (T x�
           (((T x).coprod S.subtypeL).prod q).IsInvertible ∧
             (finrank 𝕜 (T x).ker = finrank 𝕜 (T x₀).ker →
               Injective (fst 𝕜 E S ∘L ((T x).coprod S.subtypeL).kerSection q ∘L
-                kerToStabilizedKer (T x₀) S) ∧
+                kerCoprodHom (T x₀) S.subtypeL) ∧
               (fst 𝕜 E S ∘L ((T x).coprod S.subtypeL).kerSection q ∘L
-                kerToStabilizedKer (T x₀) S).range = (T x).ker) := by
+                kerCoprodHom (T x₀) S.subtypeL).range = (T x).ker) := by
   obtain ⟨S, -, hSfin, q, U, hU, hx₀, hU'⟩ :=
     hT₀.exists_stabilization_isTopCompl_range_iff hT (D := ⊤) (by simp)
   have hS₀ := ((hU' x₀ hx₀).2.2.mpr rfl).isCompl.disjoint
@@ -241,10 +232,9 @@ theorem IsFredholm.exists_continuousOn_ker_parametrization {s : Set X} (hT₀ : 
   have : CompleteSpace S := FiniteDimensional.complete 𝕜 S
   refine ⟨U ∩ s, inter_subset_right, hU.inter hs, ⟨hx₀U, hx₀⟩, _, fun x hx ↦ ?_,
     fun x hx ↦ (hU' x hx.1).2⟩
-  have hA : ContinuousAt (fun y ↦ (T y).coprod S.subtypeL) x :=
-    (hT.continuousAt (hs.mem_nhds hx.2)).continuousLinearMapCoprod continuousAt_const
-  have hsec := (contDiffAt_kerSection (n := 0) (hU' x hx.1).1).continuousAt.comp
-    (f := fun y ↦ ((T y).coprod S.subtypeL, q)) (hA.prodMk continuousAt_const)
+  have hsec : ContinuousAt (fun y ↦ ((T y).coprod S.subtypeL).kerSection q) x :=
+    ((hT.continuousAt (hs.mem_nhds hx.2)).continuousLinearMapCoprod
+      continuousAt_const).kerSection continuousAt_const (hU' x hx.1).1
   exact (continuousAt_const.clm_comp (hsec.clm_comp continuousAt_const)).continuousWithinAt
 
 /-- **Kernels of a `C^n` Fredholm family of constant nullity move `C^n`.** The parametrization of
@@ -261,11 +251,9 @@ theorem IsFredholm.exists_contDiffOn_ker_parametrization {X : Type*} [NormedAddC
   have : CompleteSpace S := FiniteDimensional.complete 𝕜 S
   refine ⟨U ∩ s, inter_subset_right, hU.inter hs, ⟨hx₀U, hx₀⟩, _, fun x hx ↦ ?_,
     fun x hx ↦ (hU' x hx.1).2⟩
-  have hA : ContDiffAt 𝕜 n (fun y ↦ (T y).coprod S.subtypeL) x := by
-    simp_rw [← comp_fst_add_comp_snd]
-    exact ((hT.contDiffAt (hs.mem_nhds hx.2)).clm_comp contDiffAt_const).add contDiffAt_const
-  have hsec := (contDiffAt_kerSection (n := n) (hU' x hx.1).1).comp
-    (f := fun y ↦ ((T y).coprod S.subtypeL, q)) x (hA.prodMk contDiffAt_const)
+  have hsec : ContDiffAt 𝕜 n (fun y ↦ ((T y).coprod S.subtypeL).kerSection q) x :=
+    ((hT.contDiffAt (hs.mem_nhds hx.2)).continuousLinearMapCoprod
+      contDiffAt_const).kerSection contDiffAt_const (hU' x hx.1).1
   exact (contDiffAt_const.clm_comp (hsec.clm_comp contDiffAt_const)).contDiffWithinAt
 
 /-- The splitting of a family of constant nullity, as an explicit formula: on a neighbourhood
@@ -277,7 +265,7 @@ private theorem IsFredholm.exists_splitting (hT₀ : IsFredholm (T x₀)) (hT : 
     ∃ S : Submodule 𝕜 F, S ≤ D ∧ FiniteDimensional 𝕜 S ∧
       ∃ q : (E × S) →L[𝕜] ((T x₀).coprod S.subtypeL).ker,
         ∃ U : Set X, IsOpen U ∧ x₀ ∈ U ∧ ∀ x ∈ U,
-          ((q.prod ((T x).coprod S.subtypeL)).IsInvertible) ∧
+          (((T x).coprod S.subtypeL).prod q).IsInvertible ∧
             (∀ y, T x ((fst 𝕜 E S ∘L q.kerSection ((T x).coprod S.subtypeL)) y) +
               (snd 𝕜 E S ∘L q.kerSection ((T x).coprod S.subtypeL)) y = y) ∧
             (finrank 𝕜 (T x).ker = finrank 𝕜 (T x₀).ker →
@@ -286,7 +274,7 @@ private theorem IsFredholm.exists_splitting (hT₀ : IsFredholm (T x₀)) (hT : 
                   S.projectionOntoL (T x).range hS) := by
   obtain ⟨S, hSD, hSfin, q, U, hU, hx₀U, hU'⟩ :=
     hT₀.exists_stabilization_isTopCompl_range_iff hT hD
-  refine ⟨S, hSD, hSfin, q, U, hU, hx₀U, fun x hx ↦ ⟨isInvertible_prod_comm.mp (hU' x hx).1,
+  refine ⟨S, hSD, hSfin, q, U, hU, hx₀U, fun x hx ↦ ⟨(hU' x hx).1,
     fun y ↦ by simpa using apply_fst_kerSection_coprod_add_snd (hU' x hx).1 y, fun hker ↦ ?_⟩⟩
   have hS := (hU' x hx).2.2.mpr hker
   exact ⟨hS, (projectionOntoL_eq_snd_comp_kerSection_coprod (hU' x hx).1 hS).symm⟩
@@ -311,12 +299,8 @@ theorem IsFredholm.exists_continuousOn_rightInverse {s : Set X} (hT₀ : IsFredh
   obtain ⟨S, hSD, hSfin, q, U, hU, hx₀U, hU'⟩ :=
     hT₀.exists_splitting (hT.continuousAt (hs.mem_nhds hx₀)) hD
   have : CompleteSpace S := FiniteDimensional.complete 𝕜 S
-  have hsec {x} (hx : x ∈ U ∩ s) :
-      ContinuousAt (fun y ↦ q.kerSection ((T y).coprod S.subtypeL)) x := by
-    have hA : ContinuousAt (fun y ↦ (T y).coprod S.subtypeL) x :=
-      (hT.continuousAt (hs.mem_nhds hx.2)).continuousLinearMapCoprod continuousAt_const
-    exact (contDiffAt_kerSection (n := 0) (hU' x hx.1).1).continuousAt.comp
-      (f := fun y ↦ (q, (T y).coprod S.subtypeL)) (continuousAt_const.prodMk hA)
+  have hsec {x} (hx : x ∈ U ∩ s) :=
+    continuousAt_kerSection_coprod (hT.continuousAt (hs.mem_nhds hx.2)) (hU' x hx.1).1
   exact ⟨S, hSD, hSfin, U ∩ s, inter_subset_right, hU.inter hs, ⟨hx₀U, hx₀⟩, _, _,
     fun x hx ↦ (continuousAt_const.clm_comp (hsec hx)).continuousWithinAt,
     fun x hx ↦ (continuousAt_const.clm_comp (hsec hx)).continuousWithinAt,
@@ -337,13 +321,8 @@ theorem IsFredholm.exists_contDiffOn_rightInverse {X : Type*} [NormedAddCommGrou
   obtain ⟨S, hSD, hSfin, q, U, hU, hx₀U, hU'⟩ :=
     hT₀.exists_splitting (hT.continuousOn.continuousAt (hs.mem_nhds hx₀)) hD
   have : CompleteSpace S := FiniteDimensional.complete 𝕜 S
-  have hsec {x} (hx : x ∈ U ∩ s) :
-      ContDiffAt 𝕜 n (fun y ↦ q.kerSection ((T y).coprod S.subtypeL)) x := by
-    have hA : ContDiffAt 𝕜 n (fun y ↦ (T y).coprod S.subtypeL) x := by
-      simp_rw [← comp_fst_add_comp_snd]
-      exact ((hT.contDiffAt (hs.mem_nhds hx.2)).clm_comp contDiffAt_const).add contDiffAt_const
-    exact (contDiffAt_kerSection (n := n) (hU' x hx.1).1).comp
-      (f := fun y ↦ (q, (T y).coprod S.subtypeL)) x (contDiffAt_const.prodMk hA)
+  have hsec {x} (hx : x ∈ U ∩ s) :=
+    contDiffAt_kerSection_coprod (hT.contDiffAt (hs.mem_nhds hx.2)) (hU' x hx.1).1
   exact ⟨S, hSD, hSfin, U ∩ s, inter_subset_right, hU.inter hs, ⟨hx₀U, hx₀⟩, _, _,
     fun x hx ↦ (contDiffAt_const.clm_comp (hsec hx)).contDiffWithinAt,
     fun x hx ↦ (contDiffAt_const.clm_comp (hsec hx)).contDiffWithinAt,
