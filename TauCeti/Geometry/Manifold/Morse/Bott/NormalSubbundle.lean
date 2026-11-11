@@ -285,49 +285,11 @@ theorem hasLocalContMDiffSubbundleFrames_positiveNormalSpace_of_preconnectedSpac
 
 section Projection
 
-omit [FiniteDimensional ℝ E']
-
-/-- The projection of the normal space onto the negative normal space along the positive normal
-space, relative to a fibre metric `g`. -/
-private def negativeNormalProjection [IsManifold I 2 M] (h : i.IsNondegenerateCriticalSubmanifold f)
-    (g : RiemannianMetric fun s ↦ i.NormalSpace s hn) (s : S) :
-    i.NormalSpace s hn →L[ℝ] i.NormalSpace s hn :=
-  LinearMap.toContinuousLinearMap ((h.negativeNormalSpace hn g s).projection
-    (h.positiveNormalSpace hn g s) (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g s))
+omit [FiniteDimensional ℝ E'] [FiniteDimensional ℝ P]
 
 variable [IsManifold I 2 M] (h : i.IsNondegenerateCriticalSubmanifold f)
   (g : RiemannianMetric fun s ↦ i.NormalSpace s hn) (s : S)
 
-private theorem coe_negativeNormalProjection :
-    (h.negativeNormalProjection hn g s : i.NormalSpace s hn →ₗ[ℝ] i.NormalSpace s hn) =
-      (h.negativeNormalSpace hn g s).projection (h.positiveNormalSpace hn g s)
-        (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g s) :=
-  LinearMap.coe_toContinuousLinearMap _
-
-private theorem isIdempotentElem_negativeNormalProjection :
-    IsIdempotentElem (h.negativeNormalProjection hn g s) := by
-  rw [← ContinuousLinearMap.isIdempotentElem_toLinearMap_iff, coe_negativeNormalProjection]
-  exact Submodule.isIdempotentElem_projection _
-
-private theorem range_negativeNormalProjection :
-    (h.negativeNormalProjection hn g s).range = h.negativeNormalSpace hn g s := by
-  rw [coe_negativeNormalProjection, Submodule.range_projection]
-
-private theorem ker_negativeNormalProjection :
-    (h.negativeNormalProjection hn g s).ker = h.positiveNormalSpace hn g s := by
-  rw [coe_negativeNormalProjection, Submodule.ker_projection]
-
-/-- The negative normal space relative to one fibre metric meets the positive normal space relative
-to another only in `0`: the normal Hessian is negative definite on the first and positive definite
-on the second. -/
-private theorem disjoint_negativeNormalSpace_positiveNormalSpace_of_metric
-    (g' : RiemannianMetric fun s ↦ i.NormalSpace s hn) :
-    Disjoint (h.negativeNormalSpace hn g s) (h.positiveNormalSpace hn g' s) := by
-  refine Submodule.disjoint_def.2 fun v hv hv' ↦ by_contra fun hv0 ↦ ?_
-  exact (h.normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn g hv hv0).not_gt
-    (h.normalHessian_apply_self_pos_of_mem_positiveNormalSpace hn g' hv' hv0)
-
-omit [FiniteDimensional ℝ P] in
 /-- Read in a linear isomorphism `L` which carries the negative and positive normal spaces onto
 the range and the kernel of an idempotent `p`, the projection onto the negative normal space is
 `p`. -/
@@ -464,9 +426,9 @@ theorem exists_contMDiff_equiv_map_negativeNormalSpace
     refine (ContinuousLinearMap.IsIdempotentElem.isUnit_mul_add_one_sub_mul_one_sub_iff (hP₀ s)
       (hP₁ s)).2 ⟨?_, ?_⟩
     · rw [range_negativeNormalProjection, ker_negativeNormalProjection]
-      exact h.disjoint_negativeNormalSpace_positiveNormalSpace_of_metric hn _ s _
+      exact h.disjoint_negativeNormalSpace_positiveNormalSpace_of_metric hn _ _
     · rw [ker_negativeNormalProjection, range_negativeNormalProjection]
-      exact (h.disjoint_negativeNormalSpace_positiveNormalSpace_of_metric hn _ s _).symm
+      exact (h.disjoint_negativeNormalSpace_positiveNormalSpace_of_metric hn _ _).symm
   let T (s : S) := ContinuousLinearEquiv.unitsEquiv ℝ _ (hU s).unit
   have hT (s : S) : (T s : i.NormalSpace s hn →L[ℝ] i.NormalSpace s hn) =
       P₁ s * P₀ s + (1 - P₁ s) * (1 - P₀ s) :=
