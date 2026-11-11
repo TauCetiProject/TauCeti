@@ -45,6 +45,10 @@ In the namespace `TauCeti.SmoothEmbedding`:
   orthogonal for the metric and for the normal Hessian.
 * `IsNondegenerateCriticalSubmanifold.isCompl_negativeNormalSpace_positiveNormalSpace`: for a
   Morse–Bott submanifold the normal space is their direct sum.
+* `IsNondegenerateCriticalSubmanifold.negativeNormalProjection`: the projection onto the negative
+  normal space along the positive one, and
+  `IsNondegenerateCriticalSubmanifold.normalHessian_apply_eq_add`: the normal Hessian splits along
+  it.
 * `IsNondegenerateCriticalSubmanifold.finrank_negativeNormalSpace` and
   `IsNondegenerateCriticalSubmanifold.finrank_positiveNormalSpace`: their dimensions are the
   Morse indices of `f` and of `-f`.
@@ -152,6 +156,73 @@ theorem isCompl_negativeNormalSpace_positiveNormalSpace (s : S) :
   LinearMap.BilinForm.isCompl_relativeSpectralSubspace_Iio_Ioi
     (g.isSymm_toBilinForm_inner s) (g.pos s)
     (h.isSymm_normalHessian hn s) (h.ker_normalHessian hn s)
+
+/-- The projection of the normal space of a Morse–Bott submanifold onto its negative normal space
+along its positive normal space, relative to the fibre metric `g`. -/
+def negativeNormalProjection (s : S) : Module.End ℝ (i.NormalSpace s hn) :=
+  (h.negativeNormalSpace hn g s).projection (h.positiveNormalSpace hn g s)
+    (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g s)
+
+/-- The projection onto the negative normal space is the projection along the positive one. -/
+theorem negativeNormalProjection_def (s : S) :
+    h.negativeNormalProjection hn g s =
+      (h.negativeNormalSpace hn g s).projection (h.positiveNormalSpace hn g s)
+        (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g s) :=
+  (rfl)
+
+/-- The range of the projection is the negative normal space. -/
+@[simp]
+theorem range_negativeNormalProjection (s : S) :
+    LinearMap.range (h.negativeNormalProjection hn g s) = h.negativeNormalSpace hn g s :=
+  Submodule.range_projection _
+
+/-- The kernel of the projection is the positive normal space. -/
+@[simp]
+theorem ker_negativeNormalProjection (s : S) :
+    LinearMap.ker (h.negativeNormalProjection hn g s) = h.positiveNormalSpace hn g s :=
+  Submodule.ker_projection _
+
+/-- The component of a normal vector along the negative normal space lies in it. -/
+@[simp]
+theorem negativeNormalProjection_apply_mem {s : S} (v : i.NormalSpace s hn) :
+    h.negativeNormalProjection hn g s v ∈ h.negativeNormalSpace hn g s :=
+  Submodule.projection_apply_mem _ v
+
+/-- The component of a normal vector along the positive normal space lies in it. -/
+@[simp]
+theorem sub_negativeNormalProjection_apply_mem {s : S} (v : i.NormalSpace s hn) :
+    v - h.negativeNormalProjection hn g s v ∈ h.positiveNormalSpace hn g s :=
+  Submodule.sub_projection_mem _ v
+
+/-- The projection fixes the negative normal space. -/
+theorem negativeNormalProjection_apply_of_mem {s : S} {v : i.NormalSpace s hn}
+    (hv : v ∈ h.negativeNormalSpace hn g s) : h.negativeNormalProjection hn g s v = v :=
+  Submodule.projection_apply_of_mem_left _ hv
+
+/-- The projection vanishes exactly on the positive normal space. -/
+@[simp]
+theorem negativeNormalProjection_apply_eq_zero_iff {s : S} {v : i.NormalSpace s hn} :
+    h.negativeNormalProjection hn g s v = 0 ↔ v ∈ h.positiveNormalSpace hn g s :=
+  Submodule.projection_apply_eq_zero_iff _
+
+/-- **The normal Hessian splits along the negative and positive normal spaces**: it is the sum of
+its values on the negative components and on the positive components, the cross terms vanishing
+by `IsCriticalSubmanifold.normalHessian_eq_zero_of_mem_negativeNormalSpace`. -/
+theorem normalHessian_apply_eq_add {s : S} (v w : i.NormalSpace s hn) :
+    h.normalHessian hn s v w =
+      h.normalHessian hn s (h.negativeNormalProjection hn g s v)
+          (h.negativeNormalProjection hn g s w) +
+        h.normalHessian hn s (v - h.negativeNormalProjection hn g s v)
+          (w - h.negativeNormalProjection hn g s w) := by
+  have h₁ := h.normalHessian_eq_zero_of_mem_negativeNormalSpace hn g
+    (h.negativeNormalProjection_apply_mem hn g v) (h.sub_negativeNormalProjection_apply_mem hn g w)
+  have h₂ := h.normalHessian_eq_zero_of_mem_negativeNormalSpace hn g
+    (h.negativeNormalProjection_apply_mem hn g w) (h.sub_negativeNormalProjection_apply_mem hn g v)
+  rw [(h.isSymm_normalHessian hn s).eq] at h₂
+  set P := h.negativeNormalProjection hn g s
+  conv_lhs => rw [← add_sub_cancel (P v) v, ← add_sub_cancel (P w) w]
+  simp only [map_add, LinearMap.add_apply, h₁, h₂]
+  ring
 
 /-- **The negative normal space has the dimension of the Morse index**, for every fibre metric. -/
 theorem finrank_negativeNormalSpace (s : S) :

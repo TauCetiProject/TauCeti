@@ -75,7 +75,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 /-- In the preferred normal-bundle trivialization at `s₀`, the negative and positive normal
 spaces relative to a `C^k` fibre metric are the images of the range and of the kernel of a `C^k`
 family of projections of the fibre model. -/
-private theorem exists_contMDiffOn_negativeNormalSpace_eq_map
+theorem exists_contMDiffOn_negativeNormalSpace_eq_map
     (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n)
     (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
     (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
