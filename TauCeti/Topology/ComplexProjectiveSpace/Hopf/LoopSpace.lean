@@ -47,6 +47,8 @@ the integral homology of `ΩCPⁿ` to that of `S¹ × ΩS²ⁿ⁺¹`.
 ## Main definitions
 
 * `TauCeti.ComplexProjectiveSpace.hopfProduct`: the based Hopf product `j ⋆ Ωq`.
+* `TauCeti.ComplexProjectiveSpace.mooreLoopSpaceFundamentalGroupMulEquiv`: for `n ≥ 1`, the
+  isomorphism `π₁(ΩCPⁿ) ≃* ℤ` through `π₂(CPⁿ)` and the boundary map of the Hopf fibration.
 
 ## Main results
 
@@ -91,28 +93,6 @@ theorem hopfProduct_apply (j : C(Circle, MooreLoopSpace (ComplexProjectiveSpace 
 
 variable {v}
 
-/-- The Moore loop map of the Hopf fibration induces isomorphisms `πₖ(ΩS²ⁿ⁺¹) ≅ πₖ(ΩCPⁿ)` for
-`k ≥ 2`: the loop-space shift identifies it with `q_* : πₖ₊₁(S²ⁿ⁺¹) → πₖ₊₁(CPⁿ)`. -/
-private theorem bijective_homotopyGroupMap_mooreLoopSpaceMap_mk (k : ℕ) :
-    Function.Bijective (HomotopyGroup.map (N := Fin (k + 2))
-      (MooreLoopSpace.map (x := v) ⟨mk n, continuous_mk n⟩ rfl).toContinuousMap
-      (map_one (MooreLoopSpace.map _ _))) := by
-  let eS := MooreLoopSpace.homotopyGroupMulEquiv v (k + 1)
-  let eP := MooreLoopSpace.homotopyGroupMulEquiv (mk n v) (k + 1)
-  have hq : Function.Bijective
-      (HomotopyGroup.map (N := Fin (k + 3)) (x := v) ⟨mk n, continuous_mk n⟩ rfl) :=
-    (HomotopyGroup.bijective_map_iff_of_equiv _ rfl (finSuccEquiv (k + 2)).symm).1
-      (bijective_homotopyGroupMap_mk (N := Fin (k + 2)) v)
-  have h : HomotopyGroup.map (N := Fin (k + 2))
-      (MooreLoopSpace.map (x := v) ⟨mk n, continuous_mk n⟩ rfl).toContinuousMap
-        (map_one (MooreLoopSpace.map _ _)) =
-        eP.symm ∘ HomotopyGroup.map (x := v) ⟨mk n, continuous_mk n⟩ rfl ∘ eS := by
-    funext a
-    rw [Function.comp_apply, Function.comp_apply, eq_comm, MulEquiv.symm_apply_eq]
-    exact (MooreLoopSpace.homotopyGroupMulEquiv_map ⟨mk n, continuous_mk n⟩ (k + 1) a).symm
-  rw [h]
-  exact eP.symm.bijective.comp (hq.comp eS.bijective)
-
 /-- **The loop space of `CPⁿ` splits as `S¹ × ΩS²ⁿ⁺¹`.** For `n ≥ 1` and a based map
 `j : S¹ → ΩCPⁿ` inducing an isomorphism of fundamental groups, the based Hopf product
 `j ⋆ Ωq : S¹ × ΩS²ⁿ⁺¹ → ΩCPⁿ`, `(z, γ) ↦ j z * Ωq γ`, is a weak homotopy equivalence. -/
@@ -154,14 +134,17 @@ theorem isWeakHomotopyEquivalence_hopfProduct (hn : n ≠ 0)
       (map_one (MooreLoopSpace.map _ _))
       ((HomotopyGroup.bijective_map_iff_bijective_mapOfEq j hj).2 hjb)
   · -- Degrees `k + 2 ≥ 2`: the higher homotopy groups of the circle vanish.
+    -- The loop-space shift identifies `(Ωq)_*` on `πₖ₊₂` with `q_*` on `πₖ₊₃`, an isomorphism.
     exact HomotopyGroup.bijective_map_mul_of_subsingleton_of_bijective hj
       (map_one (MooreLoopSpace.map _ _))
-      (bijective_homotopyGroupMap_mooreLoopSpaceMap_mk k)
+      ((MooreLoopSpace.bijective_homotopyGroup_map_iff _ rfl (k + 1)).2
+        ((HomotopyGroup.bijective_map_iff_of_equiv _ rfl (finSuccEquiv (k + 2)).symm).1
+          (bijective_homotopyGroupMap_mk (N := Fin (k + 2)) v)))
 
 variable (v) in
 /-- For `n ≥ 1`, `π₁(ΩCPⁿ) ≅ ℤ`: the loop-space shift gives `π₁(ΩCPⁿ) ≅ π₂(CPⁿ)`, the boundary map
-of the Hopf fibration gives `π₂(CPⁿ) ≅ π₁(S¹)`, and `π₁(S¹) ≅ ℤ`. -/
-private def fundamentalGroupLoopMulEquiv (hn : n ≠ 0) :
+of the Hopf fibration gives `π₂(CPⁿ) ≅ π₁(S¹)`, and `π₁(S¹) ≅ ℤ` by the degree. -/
+def mooreLoopSpaceFundamentalGroupMulEquiv (hn : n ≠ 0) :
     FundamentalGroup (MooreLoopSpace (ComplexProjectiveSpace n) (mk n v)) 1 ≃*
       Multiplicative ℤ :=
   HomotopyGroup.pi1MulEquivFundamentalGroup.symm.trans <|
@@ -177,31 +160,9 @@ variable (v) in
 generating loop of `π₁(ΩCPⁿ) ≅ ℤ`, read as a map from the circle. -/
 theorem exists_isWeakHomotopyEquivalence_hopfProduct (hn : n ≠ 0) :
     ∃ j : C(Circle, MooreLoopSpace (ComplexProjectiveSpace n) (mk n v)),
-      j 1 = 1 ∧ (hopfProduct v j).IsWeakHomotopyEquivalence := by
-  let e := fundamentalGroupLoopMulEquiv v hn
-  let c := Circle.fundamentalGroupMulEquiv 1
-  -- A loop `γ` whose class generates `π₁(ΩCPⁿ)`, read as the map `j` from the circle.
-  obtain ⟨γ, hγ⟩ := Quotient.exists_rep (FundamentalGroup.toPath (e.symm (.ofAdd 1)))
-  let j := γ.toCircle
-  have hj : j 1 = 1 := γ.toCircle_one
-  -- `e ∘ j_* ∘ c⁻¹ : ℤ → ℤ` fixes the generator, so it is the identity.
-  have hid : e.toMonoidHom.comp ((FundamentalGroup.mapOfEq j hj).comp c.symm.toMonoidHom) =
-      MonoidHom.id _ := by
-    refine MonoidHom.ext_mint ?_
-    have hc : c.symm (.ofAdd 1) =
-        FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk Circle.expLoop) :=
-      c.symm_apply_eq.2 (Circle.fundamentalGroupMulEquiv_expLoop).symm
-    have hγ' : FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ) = e.symm (.ofAdd 1) :=
-      congrArg FundamentalGroup.fromPath hγ
-    simp only [MonoidHom.coe_comp, MulEquiv.coe_toMonoidHom, Function.comp_apply, hc,
-      MonoidHom.id_apply]
-    rw [Circle.mapOfEq_toCircle_expLoop γ, hγ', e.apply_symm_apply]
-  have hjc : ⇑(FundamentalGroup.mapOfEq j hj) = e.symm ∘ c := by
-    funext a
-    rw [Function.comp_apply, MulEquiv.eq_symm_apply]
-    simpa using DFunLike.congr_fun hid (c a)
-  refine ⟨j, hj, isWeakHomotopyEquivalence_hopfProduct hn hj ?_⟩
-  rw [hjc]
-  exact e.symm.bijective.comp c.bijective
+      j 1 = 1 ∧ (hopfProduct v j).IsWeakHomotopyEquivalence :=
+  ⟨_, Path.toCircle_one _, isWeakHomotopyEquivalence_hopfProduct hn _
+    (Circle.bijective_mapOfEq_toCircle_out_symm_ofAdd_one
+      (mooreLoopSpaceFundamentalGroupMulEquiv v hn))⟩
 
 end TauCeti.ComplexProjectiveSpace
