@@ -8,6 +8,7 @@ module
 public import Mathlib.ModelTheory.Semantics
 import Mathlib.Data.Set.Finite.Lattice
 import Mathlib.Data.Set.Finite.Lemmas
+import TauCeti.ModelTheory.Syntax
 
 /-!
 # Abstracting constants out of terms
@@ -24,6 +25,8 @@ values of the constants.
 * `FirstOrder.Language.Term.exists_onTerm_subst_eq`: every term of `L[[γ]]` without bound
   positions is obtained from a term of `L` by substituting constants for its bound positions.
 * `FirstOrder.Language.Term.realize_onTerm_subst_con`: the value of such a term in an expansion.
+* `FirstOrder.Language.Term.exists_eq_con_of_isRelational`: over a relational language, a closed
+  term of `L[[γ]]` is a constant.
 * `FirstOrder.Language.coe_con_constantsOn_structure`: in the expansion interpreting each
   constant `c` as `e c`, the constant `L.con c` is interpreted as `e c`.
 -/
@@ -90,6 +93,13 @@ theorem exists_onTerm_subst_eq (t : L[[γ]].Term (α ⊕ Fin 0)) :
   obtain ⟨n, c, hc⟩ := Set.Finite.fin_embedding hS
   obtain ⟨s, hs⟩ := hs c hc.ge
   exact ⟨n, s, c, hs⟩
+
+/-- Over a relational language, a term of `L[[γ]]` without variables is one of the constants. -/
+theorem exists_eq_con_of_isRelational [L.IsRelational] [IsEmpty α]
+    (t : L[[γ]].Term (α ⊕ Fin 0)) : ∃ c, t = (L.con c).term := by
+  obtain ⟨n, s, c, rfl⟩ := exists_onTerm_subst_eq t
+  obtain ⟨i, rfl⟩ := s.exists_eq_var_inr_of_isRelational
+  exact ⟨c i, by simp [LHom.onTerm]⟩
 
 /-- The value of a term of `L` with constants substituted for its bound positions, in an expansion
 of an `L`-structure, is its value at the values of the constants. -/

@@ -57,6 +57,8 @@ already cut down to `TauCeti.levelSetImplicitCoordSource` so that they can be co
 
 * `TauCeti.levelSetChart`: the chart `{x | f x = c} → ker f'` at a regular point `a`, given by
   projecting `x - a` onto `ker f'` along the chosen complement.
+* `TauCeti.exists_mem_nhds_forall_mem_source_and_levelSetChart_mem`: a neighbourhood of the chart
+  origin pulls back to a neighbourhood of the base point on which the chart is defined.
 * `ContinuousLinearMap.kerModelEquiv`: the identification of `ker f'` with the model space
   `Fin n → 𝕜`, when `ker f'` is finite-dimensional of dimension `n`.
 * `TauCeti.levelSetChartModel`: the chart read through that identification.
@@ -200,6 +202,24 @@ theorem levelSetChart_symm_zero (hf : HasStrictFDerivAt f f' a) (hf' : f'.range 
     (levelSetChart hf hf' hker ha).symm 0 = ⟨a, ha⟩ := by
   rw [← levelSetChart_apply_self hf hf' hker ha]
   exact (levelSetChart hf hf' hker ha).left_inv (mem_levelSetChart_source hf hf' hker ha)
+
+/-- A neighbourhood `N` of the chart origin pulls back along the level-set chart to a
+neighbourhood `Q` of the base point in the ambient space: every point of the level set in `Q` lies
+in the source of the chart, and its chart image lies in `N`. This confines a statement about the
+chart, near its origin, to a neighbourhood of the base point itself. -/
+theorem exists_mem_nhds_forall_mem_source_and_levelSetChart_mem
+    (hf : HasStrictFDerivAt f f' a) (hf' : f'.range = ⊤)
+    (hker : f'.ker.ClosedComplemented) (ha : f a = c) {N : Set f'.ker}
+    (hN : N ∈ 𝓝 (0 : f'.ker)) :
+    ∃ Q ∈ 𝓝 a, ∀ w : ↥{z | f z = c}, (w : E) ∈ Q →
+      w ∈ (levelSetChart hf hf' hker ha).source ∧ levelSetChart hf hf' hker ha w ∈ N := by
+  set Φ := levelSetChart hf hf' hker ha
+  have hz0 : (⟨a, ha⟩ : ↥{z | f z = c}) ∈ Φ.source := mem_levelSetChart_source hf hf' hker ha
+  have hΦ0 : Φ ⟨a, ha⟩ = 0 := levelSetChart_apply_self hf hf' hker ha
+  have hQ' : Φ.source ∩ Φ ⁻¹' N ∈ 𝓝 (⟨a, ha⟩ : ↥{z | f z = c}) :=
+    Filter.inter_mem (Φ.open_source.mem_nhds hz0) (Φ.continuousAt hz0 (hΦ0 ▸ hN))
+  obtain ⟨Q, hQnhds, hQsub⟩ := (mem_nhds_subtype _ _ _).1 hQ'
+  exact ⟨Q, hQnhds, fun w hw ↦ hQsub hw⟩
 
 /-! ### The chart in the model space -/
 

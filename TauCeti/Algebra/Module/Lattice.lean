@@ -58,6 +58,8 @@ space over the fraction field.
   divisors.
 * `Submodule.IsLattice.exists_ne_zero_smul_mem`: some nonzero multiple of every ambient vector
   lies in such a submodule.
+* `Submodule.exists_ne_zero_smul_mem_baseChange`: the same holds for every element of a scalar
+  extension and the base change of such a submodule.
 * `Submodule.IsLattice.exists_ne_zero_forall_smul_mem`: a single nonzero scalar multiplies a
   finitely generated submodule into a submodule spanning the ambient space over `K`.
 * `Submodule.IsLattice.exists_maximalIdeal_pow_smul_le`: over a discrete valuation ring, a power
@@ -238,14 +240,16 @@ namespace Submodule
 section Rationalization
 
 variable {R : Type u} {K : Type v} {V' : Type w}
-variable [CommRing R] [IsDomain R]
+variable [CommRing R]
 variable [Field K] [Algebra R K] [IsFractionRing R K]
 variable [AddCommGroup V'] [Module R V'] [Module K V'] [IsScalarTower R K V']
 
-/-- The inclusion of a free full lattice submodule over an integral domain into its ambient vector
-space over the fraction field exhibits that space as base change from `R` to `K`. -/
+/-- The inclusion of a free full lattice submodule into its ambient vector space over the fraction
+field exhibits that space as base change from `R` to `K`. (`R` is a domain anyway, embedding in
+the field `K`, so no domain hypothesis is needed.) -/
 theorem isBaseChange_subtype (S : Submodule R V') [Module.Free R S] [S.IsLattice K] :
     IsBaseChange K S.subtype := by
+  have : IsDomain R := (IsFractionRing.injective R K).isDomain (algebraMap R K)
   have : Module.IsTorsionFree R K :=
     Module.isTorsionFree_iff_algebraMap_injective.2 (IsFractionRing.injective R K)
   let b := Module.Free.chooseBasis R S
@@ -281,7 +285,6 @@ theorem rationalizationEquiv_symm_coe (S : Submodule R V') [Module.Free R S] [S.
     (x : S) : (rationalizationEquiv S).symm (x : V') = 1 ⊗ₜ[R] x :=
   (isBaseChange_subtype S).equiv_symm_apply x
 
-omit [IsDomain R] in
 /-- A `K`-linear endomorphism of the ambient space which restricts to an endomorphism `g` of a
 free full lattice `S` has the determinant of `g`, read in `K`. -/
 theorem _root_.LinearMap.det_eq_algebraMap_det_of_isLattice {S : Submodule R V'}
@@ -411,7 +414,7 @@ instance isLattice_range_mk_one [AddCommMonoid M] [Module R M] [Module.Finite R 
 end CommRing
 
 variable [CommRing R] [Field K] [Algebra R K] [IsFractionRing R K]
-variable [AddCommGroup M] [Module R M] [Module.Free R M] [IsDomain R] [Module.Finite R M]
+variable [AddCommGroup M] [Module R M] [Module.Free R M] [Module.Finite R M]
 
 /-- Rationalizing the unit-tensor lattice recovers the scalar extension it sits in: base-changing
 the unit-tensor equivalence and then rationalizing is the identity. -/
@@ -458,6 +461,26 @@ theorem exists_ne_zero_smul_mem (S : Submodule R V') (hS : Submodule.span K (S :
     (S : Set V') v hv
   rw [Submodule.span_eq] at hr
   exact ⟨r, nonZeroDivisors.coe_ne_zero r, hr⟩
+
+variable (K) in
+/-- Every element of a scalar extension `T ⊗[R] V'` has a nonzero multiple in the base change of a
+submodule spanning `V'` over the fraction field `K`. -/
+theorem _root_.Submodule.exists_ne_zero_smul_mem_baseChange {T : Type*} [CommSemiring T]
+    [Algebra R T] (S : Submodule R V') (hS : Submodule.span K (S : Set V') = ⊤) (z : T ⊗[R] V') :
+    ∃ r : R, r ≠ 0 ∧ r • z ∈ S.baseChange T := by
+  induction z using TensorProduct.inductionOn with
+  | tmul t x =>
+    obtain ⟨r, hr, hrx⟩ := exists_ne_zero_smul_mem K S hS x
+    refine ⟨r, hr, ?_⟩
+    rw [← TensorProduct.tmul_smul]
+    exact Submodule.tmul_mem_baseChange_of_mem t hrx
+  | add z₁ z₂ h₁ h₂ =>
+    obtain ⟨r₁, hr₁, h₁⟩ := h₁
+    obtain ⟨r₂, hr₂, h₂⟩ := h₂
+    refine ⟨r₂ * r₁, mul_ne_zero hr₂ hr₁, ?_⟩
+    rw [smul_add, mul_smul, mul_comm, mul_smul]
+    exact add_mem ((S.baseChange T).smul_of_tower_mem r₂ h₁)
+      ((S.baseChange T).smul_of_tower_mem r₁ h₂)
 
 variable (K) in
 omit [IsDomain R] in

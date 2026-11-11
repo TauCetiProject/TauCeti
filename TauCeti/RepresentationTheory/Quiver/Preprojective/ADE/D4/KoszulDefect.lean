@@ -40,7 +40,7 @@ namespace TauCeti
 
 open _root_.Quiver PathAlgebra DoubledQuiver
 
-attribute [local instance] d4NeighborSetFintype
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 private def d4SocleWalk : Fin 4 → List (Fin 4)
   | 0 => [0, 1, 2, 1, 0]

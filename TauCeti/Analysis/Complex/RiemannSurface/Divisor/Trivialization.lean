@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Sheaf
+import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Normalize
 public import TauCeti.Analysis.Complex.RiemannSurface.SphereMap
 public import Mathlib.Topology.Sheaves.Functors
 
@@ -42,53 +43,26 @@ universe u
 variable {X : Type u} [TopologicalSpace X] [ChartedSpace ℂ X]
   [IsManifold 𝓘(ℂ) 1 X]
 
-private def normalizedProduct (E : WeilDivisor X) (h f : X → ℂ) : X → ℂ :=
-  {y | E y ≤ 0}.indicator (fun y ↦ affineChart (sphereMap (h * f) y))
-
-private theorem normalizedProduct_eventuallyEq (E : WeilDivisor X) {h f : X → ℂ} {x : X}
-    (hh : MeromorphicAt h x) (hf : MeromorphicAt f x) :
-    normalizedProduct E h f =ᶠ[𝓝[≠] x] h * f := by
-  have := ChartedSpace.t1Space ℂ X
-  filter_upwards [E.eventually_eq_zero_nhdsNE x,
-    affineChart_sphereMap_eventuallyEq (hh.mul hf)] with y hy heq
-  simp [normalizedProduct, hy, heq]
-
-private theorem isDivisorSectionAt_normalizedProduct {D E : WeilDivisor X}
+private theorem isDivisorSectionAt_toDivisorSection_mul {D E : WeilDivisor X}
     {h f : X → ℂ} {x : X} (hh : MeromorphicAt h x)
     (ho : meromorphicOrderAt h x = ((D x - E x : ℤ) : WithTop ℤ))
     (hf : IsDivisorSectionAt D f x) :
-    IsDivisorSectionAt E (normalizedProduct E h f) x := by
-  have hraw := hh.mul hf.meromorphicAt
-  have heq := normalizedProduct_eventuallyEq E hh hf.meromorphicAt
-  have hbound : ((-E x : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt (h * f) x := by
-    rw [meromorphicOrderAt_mul hh hf.meromorphicAt, ho]
-    calc
-      ((-E x : ℤ) : WithTop ℤ) =
-          ((D x - E x : ℤ) : WithTop ℤ) + ((-D x : ℤ) : WithTop ℤ) := by
-        norm_cast
-        ring
-      _ ≤ _ := add_le_add le_rfl hf.neg_le_meromorphicOrderAt
-  refine ⟨hraw.congr heq.symm, ?_, ?_, ?_⟩
-  · rwa [meromorphicOrderAt_congr heq]
-  · intro hx
-    have he : (0 : WithTop ℤ) ≤ ((-E x : ℤ) : WithTop ℤ) := by
-      exact_mod_cast neg_nonneg.mpr hx
-    have hn := he.trans hbound
-    apply (contMDiffAt_affineChart_sphereMap hraw hn).congr_of_eventuallyEq
-    apply eventuallyEq_nhds_of_eventuallyEq_nhdsNE
-    · have := ChartedSpace.t1Space ℂ X
-      filter_upwards [E.eventually_eq_zero_nhdsNE x] with y hy
-      simp [normalizedProduct, hy]
-    · simp [normalizedProduct, hx]
-  · intro hx
-    simp [normalizedProduct, not_le.mpr hx]
+    IsDivisorSectionAt E (toDivisorSection E (h * f)) x := by
+  refine isDivisorSectionAt_toDivisorSection (hh.mul hf.meromorphicAt) ?_
+  rw [meromorphicOrderAt_mul hh hf.meromorphicAt, ho]
+  calc
+    ((-E x : ℤ) : WithTop ℤ) =
+        ((D x - E x : ℤ) : WithTop ℤ) + ((-D x : ℤ) : WithTop ℤ) := by
+      norm_cast
+      ring
+    _ ≤ _ := add_le_add le_rfl hf.neg_le_meromorphicOrderAt
 
 private def multiplySection {D E : WeilDivisor X} {U : Opens X} (h : X → ℂ)
     (hh : ∀ x ∈ U, MeromorphicAt h x)
     (ho : ∀ x ∈ U, meromorphicOrderAt h x = ((D x - E x : ℤ) : WithTop ℤ))
     (f : divisorSections D U) : divisorSections E U :=
-  ⟨normalizedProduct E h (Subtype.val.extend f.1 0) ∘ Subtype.val,
-    comp_val_mem_divisorSections fun x hx ↦ isDivisorSectionAt_normalizedProduct
+  ⟨toDivisorSection E (h * Subtype.val.extend f.1 0) ∘ Subtype.val,
+    comp_val_mem_divisorSections fun x hx ↦ isDivisorSectionAt_toDivisorSection_mul
       (hh x hx) (ho x hx) (isDivisorSectionAt_extend f.property ⟨x, hx⟩)⟩
 
 private theorem multiplySection_eventuallyEq {D E : WeilDivisor X} {U : Opens X}
@@ -99,8 +73,8 @@ private theorem multiplySection_eventuallyEq {D E : WeilDivisor X} {U : Opens X}
   have ht : Tendsto (Subtype.val : U → X) (𝓝[≠] x) (𝓝[≠] (x : X)) :=
     continuous_subtype_val.continuousAt.continuousWithinAt.tendsto_nhdsWithin
       (fun _ hy hxy ↦ hy (Subtype.ext hxy))
-  filter_upwards [(normalizedProduct_eventuallyEq E (hh x x.2)
-    (isDivisorSectionAt_extend f.property x).meromorphicAt).comp_tendsto ht] with y hy
+  filter_upwards [(toDivisorSection_eventuallyEq E ((hh x x.2).mul
+    (isDivisorSectionAt_extend f.property x).meromorphicAt)).comp_tendsto ht] with y hy
   simpa [multiplySection, Subtype.val_injective.extend_apply] using hy
 
 omit [IsManifold 𝓘(ℂ) 1 X] in
@@ -279,7 +253,7 @@ theorem divisorSheafMulIso_hom_app {D E : WeilDivisor X} (U : Opens X) (h : X �
   change (divisorSheafSectionsEquiv E _ ((multiplyComponent h _ _).hom f)).1 = _
   rw [multiplyComponent_hom_apply]
   funext y
-  simp [multiplySection, normalizedProduct, Set.indicator]
+  simp [multiplySection, toDivisorSection_apply]
 
 /-- The inverse section map uses multiplication by the reciprocal generator, with the same
 normalization. In particular it fills removable values which a pointwise product would lose. -/
@@ -298,7 +272,7 @@ theorem divisorSheafMulIso_inv_app {D E : WeilDivisor X} (U : Opens X) (h : X �
   change (divisorSheafSectionsEquiv D _ ((multiplyComponent h _ _).inv f)).1 = _
   rw [multiplyComponent_inv_apply]
   funext y
-  simp [multiplySection, normalizedProduct, Set.indicator]
+  simp [multiplySection, toDivisorSection_apply]
 
 section Coordinate
 
@@ -348,7 +322,7 @@ theorem divisorSheafCoordinateIso_hom_app_apply (D : WeilDivisor Y)
       ((multiplyComponent (fun z ↦ (e z - e x) ^ D x) _ _).hom f)) y = _
   rw [holomorphicStructureSheafModules.sectionsLinearEquiv_apply,
     divisorSheafZeroIso_hom_app_apply, multiplyComponent_hom_apply]
-  simp [multiplySection, normalizedProduct]
+  simp [multiplySection, toDivisorSection_apply]
 
 /-- The inverse coordinate trivialization multiplies a holomorphic section by the reciprocal
 coordinate power, fills removable singularities, and normalizes values at allowed poles. -/
@@ -371,8 +345,8 @@ theorem divisorSheafCoordinateIso_inv_app (D : WeilDivisor Y)
       ((divisorSheafZeroIso Y).inv.hom.app _ f))).1 = _
   rw [multiplyComponent_inv_apply]
   funext y
-  simp only [multiplySection, normalizedProduct, Function.comp_apply,
-    divisorSheafZeroIso_inv_app_apply, Set.indicator_apply, mem_ofPred_eq]
+  simp only [multiplySection, toDivisorSection_apply, Function.comp_apply,
+    divisorSheafZeroIso_inv_app_apply]
   rfl
 
 /-- Every point of a complex curve has a neighbourhood on which its divisor sheaf is

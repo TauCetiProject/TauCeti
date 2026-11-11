@@ -90,8 +90,7 @@ theorem _root_.PartialDiffeomorph.exists_isIntegralManifold
   have hderiv (w : U) : mfderiv 𝓘(ℝ, W) 𝓘(ℝ, E) (Φ ∘ f) w = W.subtypeL := by
     rw [hcomp]
     ext v
-    exact (TauCeti.Manifold.mfderiv_comp_subtype_val_apply
-      ((hp _).mdifferentiableAt hn0) v).trans (hdpm w v)
+    exact (TauCeti.Manifold.mfderiv_comp_subtype_val_apply v).trans (hdpm w v)
   have hchain (w : U) :
       (mfderiv I 𝓘(ℝ, E) Φ (f w)).comp (mfderiv 𝓘(ℝ, W) I f w) = W.subtypeL := by
     rw [← mfderiv_comp w (Φ.mdifferentiableAt hn0 (hfx w)) ((hf w).mdifferentiableAt hn0)]

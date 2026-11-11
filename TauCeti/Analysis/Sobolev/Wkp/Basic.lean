@@ -326,6 +326,21 @@ theorem iteratedGradient_zero (u : Wkp mu Omega p 1) :
   | zero => exact (value_one u).symm
   | succ k ih => rw [firstOrder_succ, ih, value_succ (k + 1) u]
 
+/-- At second order, the first-order part is the lower-order part. -/
+@[simp] theorem firstOrder_one (u : Wkp mu Omega p 2) : firstOrder 1 u = lowerOrder 1 u :=
+  (firstOrder_succ 0 u).trans (firstOrder_zero _)
+
+/-- At second order, the weak gradient of the first-order part is the highest derivative of the
+lower-order part. -/
+theorem gradient_firstOrder_one (u : Wkp mu Omega p 2) :
+    W1p.gradient (firstOrder 1 u) = iteratedGradient 0 (lowerOrder 1 u) := by
+  rw [firstOrder_one, iteratedGradient_zero]
+
+/-- At second order, the `Lᵖ` value of the lower-order part is the `Lᵖ` value. -/
+@[simp] theorem value_lowerOrder_one (u : Wkp mu Omega p 2) :
+    W1p.value (lowerOrder 1 u) = value 2 u :=
+  (congrArg W1p.value (firstOrder_one u)).symm.trans (value_firstOrder 1 u)
+
 /-- The highest derivative projection is the one stored in the corresponding recursive stage. -/
 theorem iteratedGradient_eq_sobolevStage_iteratedGradientL
     (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
@@ -513,9 +528,9 @@ theorem norm_le_norm_lowerOrder_add_norm_iteratedGradient (k : ℕ)
       rw [lowerOrder_zero, iteratedGradient_zero]
       exact W1p.norm_le_norm_value_add_norm_gradient u
   | succ k =>
-      have h := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u
-      nlinarith [norm_nonneg u, norm_nonneg (lowerOrder (k + 1) u),
-        norm_nonneg (iteratedGradient (k + 1) u)]
+      rw [lowerOrder_succ, iteratedGradient_succ]
+      exact WeakDerivStep.norm_le_norm_prev_add_norm_weakFDeriv
+        (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u
 
 /-- At exponent two, the squared graph norm at every positive order is the sum of the squared
 norm of the lower-order component and the squared norm of the highest weak derivative.  The
@@ -560,6 +575,28 @@ theorem continuous_iff_lowerOrder_iteratedGradient (k : ℕ) {Y : Type*} [Topolo
   exact ⟨fun h => ⟨fun y => ((tendsto_iff_lowerOrder_iteratedGradient k).1 (h y)).1,
       fun y => ((tendsto_iff_lowerOrder_iteratedGradient k).1 (h y)).2⟩,
     fun h y => (tendsto_iff_lowerOrder_iteratedGradient k).2 ⟨h.1 y, h.2 y⟩⟩
+
+/-- Approximations defined at every order converge at every order once they converge at order
+zero and in each highest weak derivative, provided they commute with `lowerOrder`. For each `u`
+of order `k` satisfying a side condition `P k u` inherited by `lowerOrder`, `v k u hu` is a family
+of approximations of `w k u`. -/
+theorem tendsto_of_tendsto_iteratedGradient {U : Opens E} {I : Type*} {l : Filter I}
+    {P : ∀ k, Wkp mu Omega p k → Prop} (hP : ∀ k u, P (k + 1) u → P k (lowerOrder k u))
+    {v : ∀ k (u : Wkp mu Omega p k), P k u → I → Wkp mu U p k}
+    {w : ∀ k, Wkp mu Omega p k → Wkp mu U p k}
+    (hv : ∀ k u hu i, lowerOrder k (v (k + 1) u hu i) = v k (lowerOrder k u) (hP k u hu) i)
+    (hw : ∀ k u, lowerOrder k (w (k + 1) u) = w k (lowerOrder k u))
+    (hzero : ∀ u hu, Filter.Tendsto (v 0 u hu) l (nhds (w 0 u)))
+    (hgrad : ∀ k u hu, Filter.Tendsto (fun i => iteratedGradient k (v (k + 1) u hu i)) l
+      (nhds (iteratedGradient k (w (k + 1) u)))) :
+    ∀ k u hu, Filter.Tendsto (v k u hu) l (nhds (w k u)) := by
+  intro k
+  induction k with
+  | zero => exact hzero
+  | succ k ih =>
+      intro u hu
+      refine (tendsto_iff_lowerOrder_iteratedGradient k).2 ⟨?_, hgrad k u hu⟩
+      simpa only [hv, hw] using ih _ (hP k u hu)
 
 end Wkp
 

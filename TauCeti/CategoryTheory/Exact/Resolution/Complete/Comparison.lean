@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.HomotopyCategory
 public import TauCeti.Algebra.Homology.Homotopy
 public import TauCeti.CategoryTheory.Exact.Resolution.Complete.Basic
+public import TauCeti.CategoryTheory.Exact.HomologicalComplex.Injective.Basic
 
 /-!
 # The comparison theorem for complete resolutions
@@ -207,6 +208,8 @@ components come from two steps, each stated for an arbitrary degree `n`.
 Upwards, a correction `χ : Xⁿ⁺¹ ⟶ X'ⁿ⁺¹` vanishing on `Zⁿ⁺¹`, and agreeing with `φⁿ⁺¹` after the
 differential, induces `Zⁿ⁺² ⟶ X'ⁿ⁺¹`. Its extension across `Zⁿ⁺² ↪ Xⁿ⁺²`, into the injective
 `X'ⁿ⁺¹`, is a component `h'` with `d ≫ h' = χ`. The next correction is `φⁿ⁺² - h' ≫ d`.
+This is the step `TauCeti.ExactStructure.AcyclicData.homotopyStep`, shared with maps from
+acyclic complexes to complexes of injectives, applied to `r.acyclicData`.
 
 Downwards, a correction `ω : Xⁿ⁺¹ ⟶ X'ⁿ⁺¹` vanishing after `X'ⁿ⁺¹ ↠ Z'ⁿ⁺²`, and agreeing with `φⁿ⁺¹`
 before the differential, corestricts to `Xⁿ⁺¹ ⟶ Z'ⁿ⁺¹`; its lift along `X'ⁿ ↠ Z'ⁿ⁺¹`, out of the
@@ -216,14 +219,6 @@ The corrections in degree zero and `-1` are `φ⁰ - c ≫ d` and `φ⁻¹ - d �
 
 variable (φ : r.complex ⟶ r'.complex)
 
-/-- The cancellation behind the upward step: if `d ≫ h' ≫ d = φ ≫ d` in degree `m`, then
-`φᵐ⁺¹ - h' ≫ d` vanishes on `Zᵐ⁺¹`, since `Xᵐ ↠ Zᵐ⁺¹` is an epimorphism. -/
-private theorem ι_comp_sub_eq_zero_of (m : ℤ) (h' : r.X (m + 1) ⟶ r'.X m)
-    (H : r.d m ≫ h' ≫ r'.d m = φ.f m ≫ r'.d m) :
-    r.ι (m + 1) ≫ (φ.f (m + 1) - h' ≫ r'.d m) = 0 := by
-  rw [← cancel_epi (r.π m), comp_zero, ← Category.assoc, ← d_def, Preadditive.comp_sub,
-    ← f_comp_d, H, sub_self]
-
 /-- The cancellation behind the downward step: if `d ≫ h' ≫ d = d ≫ φ` in degree `m`, then
 `φᵐ - d ≫ h'` vanishes after `X'ᵐ ↠ Z'ᵐ⁺¹`, since `Z'ᵐ⁺¹ ↪ X'ᵐ⁺¹` is a monomorphism. -/
 private theorem sub_comp_π_eq_zero_of (m : ℤ) (h' : r.X (m + 1) ⟶ r'.X m)
@@ -232,20 +227,22 @@ private theorem sub_comp_π_eq_zero_of (m : ℤ) (h' : r.X (m + 1) ⟶ r'.X m)
   rw [← cancel_mono (r'.ι (m + 1)), zero_comp, Category.assoc, ← d_def, Preadditive.sub_comp,
     f_comp_d, Category.assoc, H, sub_self]
 
-/-- The upward step of the null-homotopy. -/
-private noncomputable def homUp (n : ℤ) (χ : r.X (n + 1) ⟶ r'.X (n + 1))
-    (hχ : r.ι (n + 1) ≫ χ = 0) (hχd : χ ≫ r'.d (n + 1) = φ.f (n + 1) ≫ r'.d (n + 1)) :
+/-- The upward step of the null-homotopy: the shared step
+`TauCeti.ExactStructure.AcyclicData.homotopyStep` for the acyclicity data of `r` and the injective
+terms of `r'`, with the differentials of the spliced complexes written as those of the
+resolutions. -/
+private noncomputable def homUp (n : ℤ) (h : r.X (n + 1) ⟶ r'.X n)
+    (hh : r.ι (n + 1) ≫ (φ.f (n + 1) - h ≫ r'.d n) = 0) :
     { h' : r.X (n + 1 + 1) ⟶ r'.X (n + 1) //
-      r.d (n + 1) ≫ h' = χ ∧ r.ι (n + 1 + 1) ≫ (φ.f (n + 1 + 1) - h' ≫ r'.d (n + 1)) = 0 } :=
-  let h' := (r'.isInjective_X (n + 1)).factorThru (r.isInflation_ι (n + 1 + 1))
-    (r.descZ (n + 1) χ hχ)
-  have hd : r.d (n + 1) ≫ h' = χ := by simp [h', d_def]
-  ⟨h', hd, ι_comp_sub_eq_zero_of φ (n + 1) h' (by rw [reassoc_of% hd, hχd])⟩
-
-/-- The correction following an upward step agrees with `φ` after the differential. -/
-private theorem sub_comp_d_eq (n : ℤ) (h' : r.X (n + 1) ⟶ r'.X n) :
-    (φ.f (n + 1) - h' ≫ r'.d n) ≫ r'.d (n + 1) = φ.f (n + 1) ≫ r'.d (n + 1) := by
-  rw [Preadditive.sub_comp, Category.assoc, d_d, comp_zero, sub_zero]
+      r.d (n + 1) ≫ h' = φ.f (n + 1) - h ≫ r'.d n ∧
+        r.ι (n + 1 + 1) ≫ (φ.f (n + 1 + 1) - h' ≫ r'.d (n + 1)) = 0 } :=
+  have hh' : r.acyclicData.i (n + 1) ≫ (φ.f (n + 1) - h ≫ r'.complex.d n (n + 1)) = 0 := by
+    rwa [r'.complex_d]
+  ⟨r.acyclicData.homotopyStep φ (r'.isInjective_X (n + 1)) h hh', by
+    rw [← r.complex_d, ← r'.complex_d]
+    exact r.acyclicData.d_comp_homotopyStep φ _ h hh', by
+    rw [← r'.complex_d]
+    exact r.acyclicData.i_comp_sub_homotopyStep_comp_d φ _ h hh'⟩
 
 /-- The downward step of the null-homotopy. -/
 private noncomputable def homDown (n : ℤ) (ω : r.X (n + 1) ⟶ r'.X (n + 1))
@@ -274,10 +271,15 @@ private theorem ι_comp_sub_eq_zero :
   rw [Preadditive.comp_sub, hφ, hc]
   simp
 
-private theorem sub_comp_d_eq_zero :
-    (φ.f 0 - c ≫ r'.π (Int.negSucc 0) ≫ r'.ι 0) ≫ r'.d 0 = φ.f 0 ≫ r'.d 0 := by
-  rw [Preadditive.sub_comp, d_def]
-  simp
+include hφ hc in
+/-- The start of the upward recursion: `ι_comp_sub_eq_zero` in the form taken by `homUp` in degree
+`-1`, whose differential `π₋₁ ≫ ι₀` is `r'.d (-1)`. The source of `c` is stated as degree `-1 + 1`,
+as in `homUp`, so that the difference is formed in a single morphism type. -/
+private theorem ι_comp_sub_d_eq_zero :
+    r.ι (Int.negSucc 0 + 1) ≫ (φ.f (Int.negSucc 0 + 1) -
+      (show r.X (Int.negSucc 0 + 1) ⟶ r'.X (Int.negSucc 0) from c) ≫ r'.d (Int.negSucc 0)) = 0 := by
+  rw [d_negSucc_zero]
+  exact ι_comp_sub_eq_zero φ hφ c hc
 
 include hφ hc in
 /-- The start of the downward recursion, from `ι_comp_sub_eq_zero` through
@@ -301,10 +303,10 @@ private noncomputable def homPos : ∀ k : ℕ,
     { h : r.X ((k : ℤ) + 1) ⟶ r'.X k //
       r.ι ((k : ℤ) + 1) ≫ (φ.f ((k : ℤ) + 1) - h ≫ r'.d k) = 0 }
   | 0 =>
-      let H := homUp φ (Int.negSucc 0) _ (ι_comp_sub_eq_zero φ hφ c hc) (sub_comp_d_eq_zero φ c)
+      let H := homUp φ (Int.negSucc 0) c (ι_comp_sub_d_eq_zero φ hφ c hc)
       ⟨H.1, H.2.2⟩
   | k + 1 =>
-      let H := homUp φ k _ (homPos k).2 (sub_comp_d_eq φ k (homPos k).1)
+      let H := homUp φ k (homPos k).1 (homPos k).2
       ⟨H.1, H.2.2⟩
 
 /-- The components `Xⁿ⁺¹ ⟶ X'ⁿ` of the null-homotopy in degrees `n = Int.negSucc (k + 1)`, by
@@ -332,12 +334,12 @@ private noncomputable def homotopyHom : ∀ n : ℤ, r.X (n + 1) ⟶ r'.X n
 
 private theorem homPos_zero :
     (homPos φ hφ c hc 0).1 =
-      (homUp φ (Int.negSucc 0) _ (ι_comp_sub_eq_zero φ hφ c hc) (sub_comp_d_eq_zero φ c)).1 :=
+      (homUp φ (Int.negSucc 0) c (ι_comp_sub_d_eq_zero φ hφ c hc)).1 :=
   rfl
 
 private theorem homPos_succ (k : ℕ) :
-    (homPos φ hφ c hc (k + 1)).1 = (homUp φ k _ (homPos φ hφ c hc k).2
-      (sub_comp_d_eq φ k (homPos φ hφ c hc k).1)).1 :=
+    (homPos φ hφ c hc (k + 1)).1 =
+      (homUp φ k (homPos φ hφ c hc k).1 (homPos φ hφ c hc k).2).1 :=
   rfl
 
 private theorem homNeg_zero :
@@ -379,16 +381,14 @@ private theorem comm_ofNat (k : ℕ) :
     φ.f (Int.ofNat k + 1) = r.d (Int.ofNat k + 1) ≫ homotopyHom φ hφ c hc (Int.ofNat k + 1) +
       homotopyHom φ hφ c hc (Int.ofNat k) ≫ r'.d (Int.ofNat k) := by
   rw [← sub_eq_iff_eq_add, homotopyHom_ofNat_add_one, homotopyHom_ofNat, homPos_succ]
-  exact (homUp φ k _ (homPos φ hφ c hc k).2 (sub_comp_d_eq φ k (homPos φ hφ c hc k).1)).2.1.symm
+  exact (homUp φ k (homPos φ hφ c hc k).1 (homPos φ hφ c hc k).2).2.1.symm
 
 private theorem comm_negSucc_zero :
     φ.f (Int.negSucc 0 + 1) =
       r.d (Int.negSucc 0 + 1) ≫ homotopyHom φ hφ c hc (Int.negSucc 0 + 1) +
         homotopyHom φ hφ c hc (Int.negSucc 0) ≫ r'.d (Int.negSucc 0) := by
-  rw [← sub_eq_iff_eq_add, d_negSucc_zero, homotopyHom_negSucc_zero_add_one,
-    homotopyHom_negSucc_zero, homPos_zero]
-  exact (homUp φ (Int.negSucc 0) _ (ι_comp_sub_eq_zero φ hφ c hc)
-    (sub_comp_d_eq_zero φ c)).2.1.symm
+  rw [← sub_eq_iff_eq_add, homotopyHom_negSucc_zero_add_one, homotopyHom_negSucc_zero, homPos_zero]
+  exact (homUp φ (Int.negSucc 0) c (ι_comp_sub_d_eq_zero φ hφ c hc)).2.1.symm
 
 private theorem comm_negSucc_one :
     φ.f (Int.negSucc 1 + 1) =
