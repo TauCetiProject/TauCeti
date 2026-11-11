@@ -212,14 +212,8 @@ theorem normalSpaceTrivialization_symm_negativeSpectralProjection_apply [IsManif
   -- the fibre metric are.
   have hQsymm (w w' : P) : Q w w' = Q w' w := by
     rw [hQ', hQ', (h.isSymm_normalHessian hn s).eq]
-  have hQinj : Injective Q := fun w w' hww' ↦ by
-    have hker : L.symm (w - w') ∈ LinearMap.ker (h.normalHessian hn s) := by
-      rw [LinearMap.mem_ker]
-      ext x
-      obtain ⟨v, rfl⟩ := L.symm.surjective x
-      rw [map_sub, LinearMap.map_sub₂, LinearMap.zero_apply, ← hQ', ← hQ', hww', sub_self]
-    rwa [h.ker_normalHessian hn s, Submodule.mem_bot, map_eq_zero_iff _ L.symm.injective,
-      sub_eq_zero] at hker
+  have hQinj : Injective Q := h.injective_of_normalHessian_eq hn L.symm fun u v ↦ by
+    rw [hL, hL, hQ]
   have hG : IsStrictlyPositive (continuousLinearMapOfBilin (𝕜 := ℝ) G) :=
     isStrictlyPositive_continuousLinearMapOfBilin_iff.mpr
       ⟨fun w w' ↦ by rw [hG', hG', g.symm], fun w hw ↦ by rw [hG']; exact g.pos s _ (hne hw)⟩
