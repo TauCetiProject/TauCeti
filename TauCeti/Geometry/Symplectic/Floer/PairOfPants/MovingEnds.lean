@@ -284,13 +284,8 @@ theorem puncturedSpherePerturbation_cylindricalEndLift_of_pos
         (a i * (deriv zero.cylindricalEndLift z * v)) =
       v.im * (smoothTransition (z.re - 1) * H i z.im x) := by
   have hlt : ‖c i + a i * zero.cylindricalEndLift z - c i‖ < ‖a i‖ / 2 := by
-    have h := norm_cylindricalEndLift_sub_endCenter zero z
-    rw [endCenter_zero, sub_zero, endScale_zero] at h
-    have h2 : ‖(1 / 2 : ℂ)‖ = 1 / 2 := by norm_num
-    rw [add_sub_cancel_left, norm_mul, h, h2]
-    have : Real.exp (-(2 * π * z.re)) < 1 :=
-      Real.exp_lt_one_iff.2 (by nlinarith [Real.pi_pos])
-    nlinarith [norm_pos_iff.2 ha]
+    rw [add_sub_cancel_left]
+    exact norm_mul_cylindricalEndLift_zero_lt ha hz
   rw [puncturedSpherePerturbation_eq_inputEndPerturbation hsep hout hlt,
     inputEndPerturbation_cylindricalEndLift_apply hH ha]
 

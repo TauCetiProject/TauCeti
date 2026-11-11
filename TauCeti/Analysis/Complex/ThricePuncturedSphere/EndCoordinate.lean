@@ -254,6 +254,17 @@ theorem two_mul_exp_le_norm_cylindricalEndLift_inf {R : ℝ} {z : ℂ} (hz : z.r
   have h : 2 * π * R ≤ -(2 * π) * z.re := by nlinarith [Real.pi_pos]
   linarith [Real.exp_le_exp.2 h]
 
+/-- On the part `s > 0` of the end at `0`, the end lift `φ₀(z) = exp (-2πz) / 2` scaled by a
+nonzero `a` stays in the open disc of radius `‖a‖ / 2` about `0`. -/
+theorem norm_mul_cylindricalEndLift_zero_lt {a z : ℂ} (ha : a ≠ 0) (hz : 0 < z.re) :
+    ‖a * zero.cylindricalEndLift z‖ < ‖a‖ / 2 := by
+  have h := norm_cylindricalEndLift_sub_endCenter zero z
+  rw [endCenter_zero, sub_zero, endScale_zero] at h
+  have h2 : ‖(1 / 2 : ℂ)‖ = 1 / 2 := by norm_num
+  rw [norm_mul, h, h2]
+  have : Real.exp (-(2 * π * z.re)) < 1 := Real.exp_lt_one_iff.2 (by nlinarith [Real.pi_pos])
+  nlinarith [norm_pos_iff.2 ha]
+
 /-- The logarithmic end coordinate `ζ_q(w) = -log ((w - c_q) / b_q) / (2π)`. It inverts the end
 lift (`cylindricalEndLift_endCoord`); its real part is the longitudinal coordinate and its
 imaginary part an angular coordinate, determined by the point only modulo `1`. -/
@@ -263,6 +274,16 @@ def endCoord (q : Puncture) (w : ℂ) : ℂ :=
 theorem endCoord_def (q : Puncture) (w : ℂ) :
     q.endCoord w = -Complex.log ((w - q.endCenter) / q.endScale) / (2 * π) :=
   (rfl)
+
+/-- Every end is the end at `0` moved by an affine map: the end coordinate of `q` at `w` is the
+end coordinate of the end at `0` at `(w - c_q) / (2 b_q)`, since the end lift of `q` is
+`z ↦ c_q + 2 b_q φ₀(z)` for the end lift `φ₀` of the end at `0`. -/
+theorem endCoord_zero_sub_endCenter_div (q : Puncture) (w : ℂ) :
+    zero.endCoord ((w - q.endCenter) / (2 * q.endScale)) = q.endCoord w := by
+  have h := q.endScale_ne_zero
+  rw [endCoord_def, endCoord_def]
+  congr 3
+  cases q <;> simp <;> field_simp
 
 /-- The longitudinal coordinate of a point of an end. -/
 theorem re_endCoord (q : Puncture) (w : ℂ) :
