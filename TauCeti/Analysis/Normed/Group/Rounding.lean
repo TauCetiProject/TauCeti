@@ -142,11 +142,6 @@ theorem existsUnique_zpow_mul_mem_Ioc {r a : ℝ} (hr0 : 0 < r) (hr1 : r < 1) (h
 
 end Shell
 
-/-- A nontrivial base `c` has `logb c (c ^ n) = n`. -/
-private theorem logb_zpow_self_of_ne_one (hc₀ : 0 < c) (hc : c ≠ 1) (n : ℤ) :
-    logb c (c ^ n) = n := by
-  rw [← Real.rpow_intCast, Real.logb_rpow hc₀ hc]
-
 section BasePos
 
 variable (hc₀ : 0 < c)
@@ -157,7 +152,7 @@ include hc₀
 theorem zpowCeil_zpow (n : ℤ) : zpowCeil c (c ^ n) = c ^ n := by
   rcases eq_or_ne c 1 with rfl | hc
   · simp [zpowCeil]
-  · rw [zpowCeil_of_pos (zpow_pos hc₀ n), logb_zpow_self_of_ne_one hc₀ hc, Int.floor_intCast]
+  · rw [zpowCeil_of_pos (zpow_pos hc₀ n), logb_zpow_self hc₀ hc, Int.floor_intCast]
 
 /-- The constant `c` is its own rounding. -/
 @[simp]
@@ -210,7 +205,7 @@ theorem zpowCeil_zpow_mul (n : ℤ) (x : ℝ) : zpowCeil c (c ^ n * x) = c ^ n *
   · rcases eq_or_ne c 1 with rfl | hc
     · simp [zpowCeil, hx]
     · rw [zpowCeil_of_pos hx, zpowCeil_of_pos (mul_pos hcn hx), Real.logb_mul hcn.ne' hx.ne',
-        logb_zpow_self_of_ne_one hc₀ hc, Int.floor_intCast_add, zpow_add₀ hc₀.ne']
+        logb_zpow_self hc₀ hc, Int.floor_intCast_add, zpow_add₀ hc₀.ne']
 
 section Group
 
