@@ -298,6 +298,17 @@ instance : Module ℂ (ClassicalSymbol n V W m) :=
   toSymbol_injective.module ℂ ⟨⟨toSymbol, toSymbol_zero⟩, toSymbol_add⟩
     fun c a => toSymbol_smul a c
 
+@[simp]
+theorem toSymbol_sum {ι : Type*} (s : Finset ι) (f : ι → ClassicalSymbol n V W m) :
+    (∑ i ∈ s, f i).toSymbol = ∑ i ∈ s, (f i).toSymbol :=
+  map_sum (AddMonoidHom.mk' toSymbol toSymbol_add) f s
+
+@[simp]
+theorem term_sum {ι : Type*} (s : Finset ι) (f : ι → ClassicalSymbol n V W m) :
+    (∑ i ∈ s, f i).term j = ∑ i ∈ s, (f i).term j :=
+  map_sum (AddMonoidHom.mk' (fun a : ClassicalSymbol n V W m => a.term j)
+    fun a b => term_add a b j) f s
+
 end Module
 
 /-! ### The principal symbol -/
@@ -508,6 +519,14 @@ theorem term_inclusion_add (j : ℕ) :
   ext1
   simp only [term_inclusion, Nat.le_add_right, ↓reduceDIte, coefficient_castDegree]
   rw [coefficient_congr_index b.term (Nat.add_sub_cancel_left k j)]
+
+/-- Including a classical symbol into an equal order does not change its homogeneous terms. -/
+@[simp]
+theorem term_inclusion_zero (hk : m' = m - (0 : ℕ)) (j : ℕ) :
+    (inclusion 0 hk b).term j = (b.term j).castDegree (by rw [hk]; simp) := by
+  ext1
+  rw [term_inclusion, dite_eq_left (Nat.zero_le j), coefficient_castDegree,
+    coefficient_castDegree, coefficient_congr_index b.term (Nat.sub_zero j)]
 
 /-- Including a classical symbol into a strictly larger order kills its principal symbol. -/
 @[simp]

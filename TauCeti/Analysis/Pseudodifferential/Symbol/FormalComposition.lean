@@ -27,7 +27,8 @@ composition of expansions.
   derivatives of the factors.
 
 Everything here is a statement about homogeneous terms. That `sharpTerms` gives the expansion of
-the symbol of the composed operators is the composition theorem of the symbol calculus.
+the symbol of the composed operators is the composition theorem of the symbol calculus,
+`TauCeti.ClassicalSymbol.sharp`.
 
 ## References
 
@@ -74,6 +75,14 @@ theorem sharpTerm_succ (k : ℕ) :
       (sharpTerm k (b.frequencyDeriv (EuclideanSpace.single j 1))
         (a.spatialDeriv (EuclideanSpace.single j 1))).castDegree (by push_cast; ring) :=
   (rfl)
+
+/-- Transporting the degree of the left factor transports the degree of every term of the formal
+composition. -/
+@[simp]
+theorem sharpTerm_castDegree_left {m'' : ℝ} (h : m' = m'') (k : ℕ) :
+    sharpTerm k (b.castDegree h) a = (sharpTerm k b a).castDegree (by rw [h]) := by
+  subst h
+  rw [castDegree_rfl, castDegree_rfl]
 
 @[simp]
 theorem coefficient_sharpTerm_zero (p : CoordinateSpace n × CoordinateSpace n) :

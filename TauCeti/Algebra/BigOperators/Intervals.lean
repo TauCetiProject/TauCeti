@@ -28,7 +28,8 @@ For a symmetric integer interval `[-N, N]`, adding the middle term `F 0` to
 and the nonpositive half `∑ j ∈ range (N + 1), F (-(j : ℤ))`. In a ring, the partial sums
 `∑_{1 ≤ k ≤ n} (-1) ^ (k + 1)` of the alternating sequence `1, -1, 1, …` are `0` or `1`.
 Counted with sign, the integers between `0` and any `k : ℤ` sum to `k (k - 1) / 2`, the signed
-form of Gauss's sum.
+form of Gauss's sum. A sum over the triples `k + i + j < N` can be ordered by `k` and `i + j`, or by
+`k + i + j`, as in the collection of the terms of a product of two expansions with a third index.
 
 ## Main results
 
@@ -42,6 +43,8 @@ form of Gauss's sum.
   `1` for odd `n`.
 * `Finset.two_mul_sum_Ico_zero_sub_sum_Ico_zero`: twice `∑_{0 ≤ j < k} j - ∑_{k ≤ j < 0} j` is
   `k (k - 1)` for every `k : ℤ`.
+* `Finset.sum_range_diag_flip_triple`: the two orderings of a sum over the triples
+  `k + i + j < N`, a three-index form of Mathlib's `Finset.sum_range_diag_flip`.
 -/
 
 public section
@@ -144,5 +147,39 @@ theorem two_mul_sum_Ico_zero_sub_sum_Ico_zero (k : ℤ) :
     rw [Ico_eq_empty_of_le hi] at ih
     simp only [sum_empty, zero_sub] at ih ⊢
     linear_combination ih
+
+/-- **Reordering a sum over the triples `k + i + j < N`.** Summing first over `k`, then over
+`l = i + j < N - k`, gives the same as summing over `r = k + i + j < N` and the pairs `i + j ≤ r`.
+This is a three-index form of `Finset.sum_range_diag_flip`. -/
+theorem sum_range_diag_flip_triple {M : Type*} [AddCommMonoid M] (F : ℕ → ℕ → ℕ → M) (N : ℕ) :
+    ∑ k ∈ range N, ∑ l ∈ range (N - k), ∑ i ∈ range (l + 1), F k i (l - i) =
+      ∑ r ∈ range N, ∑ i ∈ range (r + 1), ∑ j ∈ range (r + 1),
+        if i + j ≤ r then F (r - (i + j)) i j else 0 := by
+  rw [← sum_range_diag_flip N fun k l ↦ ∑ i ∈ range (l + 1), F k i (l - i)]
+  refine sum_congr rfl fun r _ ↦ ?_
+  -- Write both sides as sums over `k, i, j ≤ r` restricted to `k + i + j = r`.
+  have hL : ∀ k ∈ range (r + 1), ∑ i ∈ range (r - k + 1), F k i (r - k - i) =
+      ∑ i ∈ range (r + 1), ∑ j ∈ range (r + 1), if k + i + j = r then F k i j else 0 := by
+    intro k hk
+    have hk' := Nat.lt_succ_iff.1 (mem_range.1 hk)
+    rw [← sum_range_add_sum_Ico
+      (fun i ↦ ∑ j ∈ range (r + 1), if k + i + j = r then F k i j else 0)
+      (show r - k + 1 ≤ r + 1 by omega)]
+    rw [sum_eq_zero (s := Ico _ _) fun i hi ↦ sum_eq_zero fun j _ ↦ ite_eq_right (by
+      simp only [mem_Ico] at hi; omega), add_zero]
+    refine sum_congr rfl fun i hi ↦ ?_
+    have hi' := mem_range.1 hi
+    rw [sum_eq_single (r - k - i) (fun j _ hj ↦ ite_eq_right (by omega)) (fun h ↦ by
+      simp only [mem_range] at h; omega), ite_eq_left (by omega)]
+  have hR : ∀ i ∈ range (r + 1), ∀ j ∈ range (r + 1),
+      (if i + j ≤ r then F (r - (i + j)) i j else 0) =
+        ∑ k ∈ range (r + 1), if k + i + j = r then F k i j else 0 := by
+    intro i _ j _
+    split_ifs with h
+    · rw [sum_eq_single (r - (i + j)) (fun k _ hk ↦ ite_eq_right (by omega)) (fun h' ↦ by
+        simp only [mem_range] at h'; omega), ite_eq_left (by omega)]
+    · exact (sum_eq_zero fun k _ ↦ ite_eq_right (by omega)).symm
+  rw [sum_congr rfl hL, sum_congr rfl fun i hi ↦ sum_congr rfl (hR i hi)]
+  exact sum_comm.trans (sum_congr rfl fun i _ ↦ sum_comm)
 
 end Finset
