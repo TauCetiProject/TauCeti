@@ -139,19 +139,13 @@ theorem exponentialVariation_neg (s : ℝ) :
   funext t
   simp only [exponentialVariation_apply, Pi.neg_apply, smul_neg, neg_smul]
 
-/-- The point `exp_(γ t) (s • V t)` of the exponential variation is the point at time `s` of the
-maximal geodesic from `γ t` with initial velocity `V t`. -/
-theorem exponentialVariation_eq_maximalGeodesic (s t : ℝ) :
-    exponentialVariation I γ V s t = maximalGeodesic I M (γ t) (V t) s :=
-  riemannianExp_smul (γ t) (V t) s
-
 /-- For each `t`, the transverse curve `s ↦ exp_(γ t) (s • V t)` of the exponential variation is a
 geodesic on the maximal geodesic interval of `V t`, leaving `γ t` with velocity `V t`. -/
 theorem isGeodesicCurveOnFrom_exponentialVariation (t : ℝ) :
     IsGeodesicCurveOnFrom I (fun s ↦ exponentialVariation I γ V s t)
       (geodesicInterval I M (γ t) (V t)) (γ t) (V t) := by
   have hcurve : (fun s ↦ exponentialVariation I γ V s t) = maximalGeodesic I M (γ t) (V t) :=
-    funext fun s ↦ exponentialVariation_eq_maximalGeodesic γ V s t
+    funext fun s ↦ riemannianExp_smul (γ t) (V t) s
   rw [hcurve]
   exact isGeodesicCurveOnFrom_maximalGeodesic (γ t) (V t)
 
