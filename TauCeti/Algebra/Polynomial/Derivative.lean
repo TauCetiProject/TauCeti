@@ -227,9 +227,10 @@ theorem eval_divByMonic_X_sub_C_self {R : Type*} [CommRing R] (p : R[X]) (a : R)
   simpa using congrArg (eval a) (divByMonic_add_X_sub_C_mul_derivative_divByMonic_eq_derivative p a)
 
 /-- The coefficient of `p * q'` in degree `deg p + deg q - 1` is
-`leadingCoeff p · leadingCoeff q · deg q`: it is the product of the top coefficients of `p` and
-`q'`. If `q` is constant, both sides are `0`, as `q' = 0`; this includes `q = 0`. If `p = 0`,
-both sides are `0` too. -/
+`leadingCoeff p · leadingCoeff q · deg q`, that is, `leadingCoeff p` times the coefficient of
+`q'` in degree `deg q - 1`. That coefficient of `q'` need not be its leading coefficient: it
+vanishes when the characteristic of `R` divides `deg q`, even if `q' ≠ 0`. If `q` is constant,
+both sides are `0`, as `q' = 0`; this includes `q = 0`. If `p = 0`, both sides are `0` too. -/
 theorem coeff_mul_derivative_natDegree_add_natDegree_sub_one {R : Type*} [Semiring R]
     (p q : R[X]) :
     (p * derivative q).coeff (p.natDegree + q.natDegree - 1) =
