@@ -576,6 +576,24 @@ theorem contDiff_gaugeFixedOperator {n : WithTop ℕ∞}
   fin_cases i
   exacts [h₀, h₁, h₂, h₃]
 
+/-- The gauge-fixed operator preserves compact support, with no regularity assumption on the
+field. -/
+theorem hasCompactSupport_gaugeFixedOperator (hy : HasCompactSupport y) :
+    HasCompactSupport (gaugeFixedOperator x y) := by
+  apply hy.mono'
+  intro z hz
+  by_contra hn
+  have hd (i : Fin 4) : fderiv ℝ (fun w ↦ y w i) z = 0 :=
+    fderiv_of_notMem_tsupport ℝ fun h ↦
+      hn (tsupport_comp_subset (g := fun v : EuclideanSpace ℝ (Fin 4) ↦ v i) (by simp) y h)
+  apply hz
+  ext i
+  fin_cases i <;>
+    simp [gaugeFixedOperator_apply_zero, gaugeFixedOperator_apply_one,
+      gaugeFixedOperator_apply_two, gaugeFixedOperator_apply_three, gaugeAdjoint_def,
+      linearizedEquation_apply_zero, linearizedEquation_apply_one, linearizedEquation_apply_two,
+      hd, image_eq_zero_of_notMem_tsupport hn]
+
 /-- `L_x y` is continuous for a continuous field and a `C¹` argument. -/
 theorem continuous_gaugeFixedOperator (hx : Continuous x) (hy : ContDiff ℝ 1 y) :
     Continuous (gaugeFixedOperator x y) :=
