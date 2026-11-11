@@ -109,6 +109,12 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture �
 @[expose] def thricePuncturedSphereReal : Set (ℝ × ℝ) :=
   {z | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1}
 
+/-- The defining equation of `S` in real coordinates, for rewriting between `S` and the set of
+points that are neither `0` nor `1` as complex numbers. -/
+theorem thricePuncturedSphereReal_def : thricePuncturedSphereReal =
+    {z | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1} :=
+  (rfl)
+
 /-- A point lies in `S` when, as a complex number, it is neither `0` nor `1`. -/
 @[simp]
 theorem mem_thricePuncturedSphereReal_iff {z : ℝ × ℝ} :

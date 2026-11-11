@@ -80,6 +80,10 @@ form they recover the vector-space definitions.
 * `SmoothTwoForm.hamiltonianCurvature_eq_zero_of_cylindrical`: the curvature vanishes along a line
   near which the perturbation is cylindrical; the vector-space case is
   `SymplecticForm.hamiltonianCurvature_eq_zero_of_cylindrical`.
+* `SmoothTwoForm.hamiltonianCurvature_add_const`, `SmoothTwoForm.perturbedMFDeriv_add_const`,
+  `SmoothTwoForm.floerEnergyDensity_add_const`: adding a target-independent one-form to the
+  perturbation adds its exterior derivative to the curvature, and changes neither the Floer
+  equation nor the energy density.
 * `SmoothTwoForm.IsNondegenerate.floerEnergyDensity_eq`: the pointwise energy identity.
 * `SmoothTwoForm.IsNondegenerate.floerEnergyDensity_zero_left_nonneg`,
   `SmoothTwoForm.continuous_hamiltonianCurvature_zero_left_comp` and
@@ -443,6 +447,64 @@ theorem hamiltonianCurvature_eq_zero_of_cylindrical (ω : SmoothTwoForm I M)
   exact ω.hamiltonianCurvature_cylindrical (fun t ↦ Kt (c, t)) (c, t) x
 
 end Curvature
+
+section TargetIndependent
+
+/-! ### Target-independent perturbations
+
+Adding to `K` a one-form `k = k_s ds + k_t dt` whose components are functions of the domain point
+alone changes no Hamiltonian vector field. The perturbed derivative, and with it the Floer equation
+and the energy density, are unchanged, while the curvature changes by the exterior derivative
+`∂_s k_t - ∂_t k_s` of `k`. Normalizing the Hamiltonians on the ends by functions of time is the
+main example. These are the manifold-target versions of the identities of
+`TauCeti.Geometry.Symplectic.Floer.Energy`. -/
+
+/-- The curvature of a target-independent perturbation `k = k_s ds + k_t dt` is the exterior
+derivative `∂_s k_t - ∂_t k_s`; the Poisson bracket term vanishes. -/
+@[simp]
+theorem hamiltonianCurvature_const (ω : SmoothTwoForm I M) (ks kt : ℝ × ℝ → ℝ) (z : ℝ × ℝ)
+    (x : M) :
+    ω.hamiltonianCurvature (fun w _ ↦ ks w) (fun w _ ↦ kt w) z x =
+      fderiv ℝ kt z stdComplexLineReal - fderiv ℝ ks z stdComplexLineImag := by
+  simp [hamiltonianCurvature_def]
+
+/-- Adding a target-independent one-form to the perturbation adds its exterior derivative to the
+curvature: `R_{K + k} = R_K + ∂_s k_t - ∂_t k_s`, at a point where the components are
+differentiable in the domain. -/
+theorem hamiltonianCurvature_add_const (ω : SmoothTwoForm I M) {Ks Kt : ℝ × ℝ → M → ℝ}
+    {ks kt : ℝ × ℝ → ℝ} {z : ℝ × ℝ} {x : M} (hKs : DifferentiableAt ℝ (fun w ↦ Ks w x) z)
+    (hKt : DifferentiableAt ℝ (fun w ↦ Kt w x) z) (hks : DifferentiableAt ℝ ks z)
+    (hkt : DifferentiableAt ℝ kt z) :
+    ω.hamiltonianCurvature (fun w y ↦ Ks w y + ks w) (fun w y ↦ Kt w y + kt w) z x =
+      ω.hamiltonianCurvature Ks Kt z x +
+        ω.hamiltonianCurvature (fun w _ ↦ ks w) (fun w _ ↦ kt w) z x := by
+  rw [hamiltonianCurvature_const, hamiltonianCurvature_def, hamiltonianCurvature_def,
+    fderiv_fun_add hKt hkt, fderiv_fun_add hKs hks]
+  simp only [add_apply, poissonBracket_add_const_left,
+    poissonBracket_add_const_right]
+  ring
+
+/-- Adding a target-independent one-form to the perturbation does not change the perturbed
+derivative, so a map solves the Floer equation for `K + k` exactly when it solves it for `K`. -/
+@[simp]
+theorem perturbedMFDeriv_add_const (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
+    (ks kt : ℝ × ℝ → ℝ) (u : ℝ × ℝ → M) :
+    ω.perturbedMFDeriv (fun w y ↦ Ks w y + ks w) (fun w y ↦ Kt w y + kt w) u =
+      ω.perturbedMFDeriv Ks Kt u := by
+  funext z
+  simp only [perturbedMFDeriv, hamiltonianVectorField_add_const]
+
+/-- Adding a target-independent one-form to the perturbation does not change the Floer energy
+density. -/
+@[simp]
+theorem floerEnergyDensity_add_const (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
+    (ks kt : ℝ × ℝ → ℝ) (u : ℝ × ℝ → M) :
+    ω.floerEnergyDensity (fun w y ↦ Ks w y + ks w) (fun w y ↦ Kt w y + kt w) u =
+      ω.floerEnergyDensity Ks Kt u := by
+  funext z
+  rw [floerEnergyDensity_def, floerEnergyDensity_def, perturbedMFDeriv_add_const]
+
+end TargetIndependent
 
 /-! ### Changes of domain coordinates -/
 

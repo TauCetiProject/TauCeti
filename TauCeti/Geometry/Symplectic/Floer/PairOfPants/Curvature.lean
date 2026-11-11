@@ -217,19 +217,12 @@ private theorem intervalIntegral_endChart_boundary_eq {M : Type*} {H : Puncture 
   simp only [endChart_apply, Complex.equivRealProdCLM_symm_apply]
   convert h using 1 <;> norm_num
 
-end Floer
-
-namespace SmoothTwoForm
-
-open Floer
-
-variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
-  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
-  {H : Puncture → ℝ → M → ℝ}
-
 /-- The components of the perturbation in real coordinates are differentiable in the domain
 point, at points of `S`, for `C¹` Hamiltonians on a manifold. -/
-private theorem differentiableAt_pairOfPantsPerturbation_domain (hH : ∀ q, Periodic (H q) 1)
+theorem differentiableAt_pairOfPantsPerturbation_domain {E G M : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace G] {I : ModelWithCorners ℝ E G} [TopologicalSpace M]
+    [ChartedSpace G M]
+    {H : Puncture → ℝ → M → ℝ} (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {z : ℝ × ℝ}
     (hz : z ∈ thricePuncturedSphereReal) (x : M) (v : ℂ) :
     DifferentiableAt ℝ
@@ -244,7 +237,10 @@ private theorem differentiableAt_pairOfPantsPerturbation_domain (hH : ∀ q, Per
 
 /-- The components of the perturbation are differentiable in the target point, at points
 of `S`, for `C¹` Hamiltonians on a manifold. -/
-private theorem mdifferentiableAt_pairOfPantsPerturbation_target (hH : ∀ q, Periodic (H q) 1)
+theorem mdifferentiableAt_pairOfPantsPerturbation_target {E G M : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace G] {I : ModelWithCorners ℝ E G} [TopologicalSpace M]
+    [ChartedSpace G M]
+    {H : Puncture → ℝ → M → ℝ} (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {z : ℝ × ℝ}
     (hz : z ∈ thricePuncturedSphereReal) (x : M) (v : ℂ) :
     MDifferentiableAt I 𝓘(ℝ)
@@ -254,6 +250,16 @@ private theorem mdifferentiableAt_pairOfPantsPerturbation_target (hH : ∀ q, Pe
       (f := fun y : M ↦ (Complex.equivRealProdCLM.symm z, y)) x
       (contMDiffAt_const.prodMk contMDiffAt_id)).clm_apply contMDiffAt_const).mdifferentiableAt
     one_ne_zero
+
+end Floer
+
+namespace SmoothTwoForm
+
+open Floer
+
+variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
+  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
+  {H : Puncture → ℝ → M → ℝ}
 
 variable [IsManifold I ⊤ M]
 
@@ -813,7 +819,7 @@ private theorem differentiableAt_pairOfPantsPerturbation_domain (hH : ∀ q, Per
     (x : V) (v : ℂ) :
     DifferentiableAt ℝ
       (fun z' => pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z') x v) z :=
-  SmoothTwoForm.differentiableAt_pairOfPantsPerturbation_domain hH
+  Floer.differentiableAt_pairOfPantsPerturbation_domain hH
     (contMDiff_uncurry_of_contDiff hHs) hz x v
 
 /-- The components of the perturbation are differentiable in the target point, at points
@@ -824,7 +830,7 @@ private theorem differentiableAt_pairOfPantsPerturbation_target (hH : ∀ q, Per
     DifferentiableAt ℝ (fun y => pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) y v)
       x :=
   mdifferentiableAt_iff_differentiableAt.1
-    (SmoothTwoForm.mdifferentiableAt_pairOfPantsPerturbation_target hH
+    (Floer.mdifferentiableAt_pairOfPantsPerturbation_target hH
       (contMDiff_uncurry_of_contDiff hHs) hz x v)
 
 variable [FiniteDimensional ℝ V]

@@ -41,6 +41,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
 * `TauCeti.mvfderiv_const_smul`: `mvfderiv` commutes with multiplication by a constant scalar.
 * `TauCeti.mvfderiv_const_smul_field`: the same for a scalar in the base field, without a
   differentiability hypothesis.
+* `TauCeti.mvfderiv_add_const`: adding a constant does not change `mvfderiv`, without a
+  differentiability hypothesis.
 * `TauCeti.mvfderiv_fun_sum`: `mvfderiv` of a finite sum of differentiable functions is the sum of
   their `mvfderiv`s.
 * `Filter.EventuallyEq.mvfderiv_eq`: `mvfderiv` depends only on the germ of the function.
@@ -242,6 +244,23 @@ theorem mvfderiv_const_smul_field (g : M → F) (x : M) (c : 𝕜) :
     hg (by simpa [smul_smul, inv_mul_cancel₀ hc] using hcg.const_smul c⁻¹)
   simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hg,
     mfderiv_zero_of_not_mdifferentiableAt hcg]
+
+/-- Adding a constant does not change the derivative of a vector-valued function, read in the
+target space. No differentiability is needed: `g` and `g + c` are differentiable at the same
+points. This is the manifold version of `fderiv_add_const`. -/
+@[simp]
+theorem mvfderiv_add_const (g : M → F) (c : F) (x : M) :
+    mvfderiv I (fun y ↦ g y + c) x = mvfderiv I g x := by
+  by_cases hg : MDiffAt g x
+  · rw [mvfderiv_fun_add hg mdifferentiableAt_const, mvfderiv_const, add_zero]
+  -- Neither `g` nor `g + c` is differentiable at `x`, so both derivatives vanish.
+  have hgc : ¬MDiffAt (fun y ↦ g y + c) x := fun hgc ↦ by
+    have hfun : ((fun y ↦ g y + c) + fun _ : M ↦ -c) = g := by
+      funext y
+      simp
+    exact hg (hfun ▸ hgc.add mdifferentiableAt_const)
+  simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hg,
+    mfderiv_zero_of_not_mdifferentiableAt hgc]
 
 /-- The derivative of a finite sum of vector-valued functions, read in the target space, is the
 sum of their derivatives at a point where each summand is differentiable. This is the manifold
