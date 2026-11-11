@@ -82,27 +82,21 @@ noncomputable instance instFiniteDimensionalDerivationCounitAlgebra
 /-- **Tangent dimension is invariant under extension of the coefficient field.**
 
 Here `Derivation k H (CounitAlgebra k H K)` is the `K`-valued tangent space of the affine
-monoid represented by `H`. Finite-dimensionality gives its canonical scalar-extension
-description, since modules over a field are projective. -/
+monoid represented by `H`. This holds without finiteness of the augmentation cotangent space,
+in Mathlib's finite-rank convention, where infinite-dimensional spaces have `finrank` zero. -/
 @[simp]
-theorem finrank_tangent_baseChange
-    [Module.Finite k (Bialgebra.CotangentSpace k H)] :
+theorem finrank_tangent_baseChange :
     Module.finrank K
         (Derivation k H (Bialgebra.CounitAlgebra k H K)) =
       Module.finrank k
-        (Derivation k H (Bialgebra.CounitAlgebra k H k)) := by
-  let _ : Module.Projective k (Bialgebra.CotangentSpace k H) :=
-    Module.projective_of_isSemisimpleRing _ _
+        (Derivation k H (Bialgebra.CounitAlgebra k H k)) :=
   calc
-    Module.finrank K
-          (Derivation k H (Bialgebra.CounitAlgebra k H K)) =
-        Module.finrank K
-          (K ⊗[k] Module.Dual k (Bialgebra.CotangentSpace k H)) :=
-      (tangentScalarExtensionEquiv (R := k) (A := H) (B := K)).finrank_eq.symm
-    _ = Module.finrank k (Module.Dual k (Bialgebra.CotangentSpace k H)) :=
-      Module.finrank_baseChange
-    _ = Module.finrank k
-          (Derivation k H (Bialgebra.CounitAlgebra k H k)) :=
-      (cotangentLinearEquiv (R := k) (A := H) (B := k)).finrank_eq
+    _ = Module.finrank K (Bialgebra.CotangentSpace k H →ₗ[k] K) :=
+      (cotangentLinearEquiv (R := k) (A := H) (B := K)).finrank_eq.symm
+    _ = Module.finrank K (K ⊗[k] Bialgebra.CotangentSpace k H →ₗ[K] K) :=
+      (LinearMap.liftBaseChangeEquiv K).finrank_eq
+    _ = Module.finrank K (K ⊗[k] Bialgebra.CotangentSpace k H) := Subspace.dual_finrank_eq
+    _ = Module.finrank k (Bialgebra.CotangentSpace k H) := Module.finrank_baseChange
+    _ = _ := finrank_eq_finrank_cotangentSpace.symm
 
 end Derivation
