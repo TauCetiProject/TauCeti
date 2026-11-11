@@ -170,7 +170,7 @@ variable [OpensMeasurableSpace E]
 
 /-- The Laplacian of a test function on `Ω` scales a function locally integrable on `Ω` to a
 globally integrable one. -/
-private theorem integrable_laplacian_smul (hw : LocallyIntegrableOn w Ω μ) (φ : 𝓓(Ω, ℝ)) :
+theorem integrable_laplacian_smul (hw : LocallyIntegrableOn w Ω μ) (φ : 𝓓(Ω, ℝ)) :
     Integrable (fun x ↦ Δ (φ : E → ℝ) x • w x) μ := by
   simpa only [TestFunction.laplacianCLM_apply] using
     TestFunction.integrable_smul (LineDeriv.laplacianCLM ℝ E (𝓓(Ω, ℝ)) φ) hw

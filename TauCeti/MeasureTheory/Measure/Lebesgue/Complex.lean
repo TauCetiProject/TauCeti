@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.IntegrableOn
+public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.Analysis.Complex.Coordinates
 public import TauCeti.Analysis.Complex.Euclidean.Space
@@ -18,6 +18,8 @@ import Mathlib.Topology.Order.Compact
 The set `s ×ℂ t = {z | z.re ∈ s ∧ z.im ∈ t}` is measurable when `s` and `t` are
 (`MeasurableSet.reProdIm`).
 Coordinate lines and continuous graphs over compact intervals have zero planar Lebesgue measure.
+Precomposition with complex conjugation preserves local integrability on a conjugation-invariant
+set (`Complex.locallyIntegrableOn_comp_conj`).
 Interchanging the real and imaginary coordinates preserves planar area. On a rectangle
 `s ×ℂ t`, planar measure is the product of the restrictions to the sides, so a function of the
 imaginary part integrable on a rectangle of positive width is integrable on the vertical side,
@@ -31,8 +33,8 @@ Mathlib's `Complex.volume_preserving_equiv_real_prod` coordinatewise and
 
 public section
 
-open MeasureTheory Set
-open scoped ENNReal
+open MeasureTheory Set Filter
+open scoped ENNReal ComplexConjugate Topology
 
 /-- The set `s ×ℂ t` is measurable when `s` and `t` are. -/
 theorem MeasurableSet.reProdIm {s t : Set ℝ} (hs : MeasurableSet s) (ht : MeasurableSet t) :
@@ -61,6 +63,19 @@ theorem volume_setOf_im_eq (c : ℝ) : volume {z : ℂ | z.im = c} = 0 := by
   ext z
   simp only [mem_preimage, measurableEquivRealProd_apply, mem_prod,
     mem_singleton_iff, mem_univ, true_and, mem_ofPred_eq]
+
+/-- Precomposition with complex conjugation preserves local integrability on a
+conjugation-invariant set. -/
+theorem locallyIntegrableOn_comp_conj {E : Type*} [NormedAddCommGroup E] {s : Set ℂ}
+    (hs : ∀ z ∈ s, conj z ∈ s) {f : ℂ → E} (hf : LocallyIntegrableOn f s) :
+    LocallyIntegrableOn (fun z ↦ f (conj z)) s := by
+  intro x hx
+  obtain ⟨t, ht, hft⟩ := hf (conj x) (hs x hx)
+  have hc : Tendsto (conj : ℂ → ℂ) (𝓝[s] x) (𝓝[s] (conj x)) :=
+    tendsto_nhdsWithin_iff.2 ⟨(continuous_conj.tendsto x).mono_left nhdsWithin_le_nhds,
+      eventually_mem_nhdsWithin.mono hs⟩
+  exact ⟨conjLIE ⁻¹' t, hc ht, (conjLIE.measurePreserving.integrableOn_comp_preimage
+    conjLIE.toMeasurableEquiv.measurableEmbedding).2 hft⟩
 
 /-- A continuous graph over a compact interval has zero planar area. -/
 theorem volume_setOf_re_mem_Icc_im_eq {a b : ℝ} {f : ℝ → ℝ} (hf : ContinuousOn f (Icc a b)) :
