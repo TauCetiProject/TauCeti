@@ -118,14 +118,16 @@ theorem yamabeQuotient_def (u : M → ℝ) :
 
 variable {I}
 
-/-- Nonnegative scalar curvature makes the total Yamabe quotient nonnegative in dimension
-`n > 2`, even without regularity or integrability assumptions on the function. -/
-theorem yamabeQuotient_nonneg_of_scalarCurvature_nonneg (hn : 2 < finrank ℝ E) (u : M → ℝ)
+/-- Nonnegative scalar curvature makes the total Yamabe quotient nonnegative, even without
+regularity or integrability assumptions on the function. In dimension `n = 2` the coefficient and
+exponent are junk values of the real division by zero; for `n = 0, 1` they are the algebraic
+extensions of the formulas `4 (n - 1) / (n - 2)` and `2 n / (n - 2)`. -/
+theorem yamabeQuotient_nonneg_of_scalarCurvature_nonneg (u : M → ℝ)
     (hS : ∀ x, 0 ≤ (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x) :
     0 ≤ yamabeQuotient I u := by
   rw [yamabeQuotient_def]
   exact div_nonneg (integral_nonneg fun x ↦ add_nonneg
-    (mul_nonneg (conformalCoefficient_pos hn).le (sq_nonneg _))
+    (mul_nonneg (conformalCoefficient_nonneg _) (sq_nonneg _))
     (mul_nonneg (hS x) (sq_nonneg _)))
     (Real.rpow_nonneg (integral_nonneg fun x ↦ Real.rpow_nonneg (abs_nonneg _) _) _)
 

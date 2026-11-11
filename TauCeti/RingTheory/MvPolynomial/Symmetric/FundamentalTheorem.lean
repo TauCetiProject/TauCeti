@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.AlgebraicIndependent.Defs
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 
 /-!
@@ -16,12 +17,15 @@ into polynomials in `n` variables is injective when `n ≤ card σ`. This file r
 elementary symmetric polynomials written as `Multiset.esymm` of the multiset of variables. In this
 form, an identity between polynomials in `e₁, …, eₙ` follows from the same identity between
 values at the elementary symmetric functions of a multiset of roots, specialized to the
-variables.
+variables. It also restates the theorem as the algebraic independence of `e₁, …, eₙ`, the form in
+which it combines with other algebraically independent families.
 
 ## Main results
 
 * `MvPolynomial.aeval_multiset_esymm_X_injective`: substituting the elementary symmetric
   functions of the multiset of variables is injective.
+* `MvPolynomial.algebraicIndependent_esymm`: the elementary symmetric polynomials `e₁, …, eₙ` are
+  algebraically independent when `n ≤ card σ`.
 -/
 
 public section
@@ -40,5 +44,18 @@ theorem aeval_multiset_esymm_X_injective (R : Type*) [CommRing R] {σ : Type*} [
   intro p q h
   refine esymmAlgHom_injective R hn (Subtype.ext ?_)
   simpa [esymmAlgHom_apply, esymm_eq_multiset_esymm] using h
+
+/-- **The elementary symmetric polynomials are algebraically independent**: if `n ≤ card σ`, the
+elementary symmetric polynomials `e₁, …, eₙ` of the variables of `σ` are algebraically independent
+over the coefficient ring. -/
+theorem algebraicIndependent_esymm (R : Type*) [CommRing R] {σ : Type*} [Fintype σ] {n : ℕ}
+    (hn : n ≤ Fintype.card σ) :
+    AlgebraicIndependent R fun i : Fin n => esymm σ R ((i : ℕ) + 1) := by
+  rw [algebraicIndependent_iff_injective_aeval]
+  have h : (aeval fun i : Fin n => esymm σ R ((i : ℕ) + 1) :
+      MvPolynomial (Fin n) R → MvPolynomial σ R) = Subtype.val ∘ esymmAlgHom σ R n :=
+    funext fun p => (esymmAlgHom_apply p).symm
+  rw [h]
+  exact Subtype.val_injective.comp (esymmAlgHom_injective R hn)
 
 end MvPolynomial
