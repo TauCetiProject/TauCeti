@@ -9,7 +9,7 @@ public import Mathlib.FieldTheory.Galois.Basic
 import TauCeti.FieldTheory.Minpoly
 
 /-!
-# Conjugating square roots by algebra homomorphisms
+# Moving roots by algebra homomorphisms
 
 If `y` and `z` are square roots of the same scalar `r : K` and `K(y)` is quadratic, any
 `K`-algebra homomorphism from the algebra containing `z` into the normal field containing `y`
@@ -19,6 +19,8 @@ power.
 
 ## Main statements
 
+* `TauCeti.exists_algHom_apply_eq_of_sq_eq`: a `K`-algebra homomorphism can be adjusted by an
+  automorphism of the target to carry one square root of a scalar to another.
 * `AlgHom.exists_unit_pow_eq_map`: an embedding carries an `n`th root of a unit of `K` to the
   underlying element of a unit of the target.
 -/
