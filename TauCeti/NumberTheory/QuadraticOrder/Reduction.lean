@@ -137,23 +137,9 @@ noncomputable def quotientSpanNatCastEquiv :
 @[simp]
 theorem quotientSpanNatCastEquiv_mk (z : QuadraticAlgebra ℤ a b) :
     quotientSpanNatCastEquiv a b m (Ideal.Quotient.mk _ z) =
-      mapRingHom (Int.castRingHom (ZMod m)) a b z :=
-  (rfl)
-
-/-- The first coordinate of the image of the class of `z` is `z.re` reduced modulo `m`. -/
-theorem re_quotientSpanNatCastEquiv_mk (z : QuadraticAlgebra ℤ a b) :
-    (quotientSpanNatCastEquiv a b m (Ideal.Quotient.mk _ z)).re = z.re := by
-  rw [quotientSpanNatCastEquiv_mk, re_mapRingHom_intCastRingHom]
-
-/-- The second coordinate of the image of the class of `z` is `z.im` reduced modulo `m`. -/
-theorem im_quotientSpanNatCastEquiv_mk (z : QuadraticAlgebra ℤ a b) :
-    (quotientSpanNatCastEquiv a b m (Ideal.Quotient.mk _ z)).im = z.im := by
-  rw [quotientSpanNatCastEquiv_mk, im_mapRingHom_intCastRingHom]
-
-/-- `quotientSpanNatCastEquiv` sends the class of `ω` to `ω`. -/
-theorem quotientSpanNatCastEquiv_omega :
-    quotientSpanNatCastEquiv a b m (Ideal.Quotient.mk _ ω) = ω := by
-  rw [quotientSpanNatCastEquiv_mk, mapRingHom_omega]
+      mapRingHom (Int.castRingHom (ZMod m)) a b z := by
+  rw [quotientSpanNatCastEquiv, RingEquiv.trans_apply, Ideal.quotEquivOfEq_mk,
+    RingHom.quotientKerEquivOfSurjective_apply_mk]
 
 /-- **Change of modulus.** For `m ∣ n`, the quotient map `ℤ[ω]/(n) → ℤ[ω]/(m)` corresponds under
 `quotientSpanNatCastEquiv` to reducing both coordinates from `ℤ/n` to `ℤ/m`. -/
