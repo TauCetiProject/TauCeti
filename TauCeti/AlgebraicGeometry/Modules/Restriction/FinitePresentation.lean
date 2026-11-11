@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Presentation
+public import TauCeti.AlgebraicGeometry.Modules.Restriction.FiniteType
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.FinitePresentationDescent
 
 /-!
@@ -17,11 +18,16 @@ Conversely, finite presentation can be checked on restrictions to any open cover
 open contained in a member of the cover carries a finite global presentation, and these
 presentations descend. This is the finite-presentation analogue of
 `TauCeti.AlgebraicGeometry.isFiniteType_of_isFiniteType_restrict`.
+
+As an application, the cokernel of a morphism from a quasi-coherent module of finite type to a
+finitely presented module is finitely presented on every scheme: restriction to an open
+subscheme preserves cokernels, and over the spectra of the affine opens this is
+`TauCeti.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_cokernel_spec`.
 -/
 
 public section
 
-open CategoryTheory AlgebraicGeometry
+open CategoryTheory Limits AlgebraicGeometry
 
 universe u
 
@@ -91,5 +97,25 @@ theorem isFinitePresentation_restrict_iSup {X : Scheme.{u}} (M : X.Modules) {ι 
       (((restrictFunctorComp f (U i).ι).app M).symm ≪≫
         (restrictFunctorCongr (V.ι.resLE_comp_ι le_rfl)).app M ≪≫
         (restrictFunctorComp (W i).ι V.ι).app M) this
+
+/-- The cokernel of a morphism from a quasi-coherent module of finite type to a finitely presented
+module is finitely presented. There is no Noetherian hypothesis. -/
+instance isFinitePresentation_cokernel {X : Scheme.{u}} {M N : X.Modules} (f : M ⟶ N)
+    [M.IsQuasicoherent] [M.IsFiniteType] [N.IsFinitePresentation] :
+    (cokernel f).IsFinitePresentation := by
+  refine isFinitePresentation_of_isFinitePresentation_restrict _ (fun U : X.affineOpens ↦ U.1)
+    (iSup_affineOpens_eq_top X) fun U ↦ ?_
+  have hU := U.2
+  have : IsOpenImmersion hU.fromSpec := hU.isOpenImmersion_fromSpec
+  -- Over the spectrum `Spec Γ(X, U)`, restriction preserves the cokernel.
+  let R := restrictFunctor hU.fromSpec
+  have : (R.obj M).IsQuasicoherent := isQuasicoherent_restrictFunctor _ _
+  have : ((cokernel f).restrict hU.fromSpec).IsFinitePresentation :=
+    (SheafOfModules.isFinitePresentation (Spec Γ(X, U.1)).ringCatSheaf).prop_of_iso
+      (PreservesCokernel.iso R f).symm inferInstance
+  exact (SheafOfModules.isFinitePresentation U.1.toScheme.ringCatSheaf).prop_of_iso
+    (((restrictFunctorComp hU.isoSpec.hom hU.fromSpec).app _).symm ≪≫
+      (restrictFunctorCongr hU.isoSpec_hom_fromSpec).app _)
+    (isFinitePresentation_restrict hU.isoSpec.hom ((cokernel f).restrict hU.fromSpec))
 
 end AlgebraicGeometry.Scheme.Modules
