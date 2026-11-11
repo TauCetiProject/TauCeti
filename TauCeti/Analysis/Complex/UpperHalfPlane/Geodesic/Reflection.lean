@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.UpperHalfPlane.HalfPlane
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.FromTo
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.VertexAngle
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Isometry
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.ConjJ
 import Mathlib.Analysis.Calculus.Deriv.Star
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Semicircle
@@ -37,7 +38,6 @@ is acute; this is the convexity condition for gluing a triangle to its mirror im
 
 ## Main declarations
 
-* `TauCeti.UpperHalfPlane.isometry_J_smul`: the action of `UpperHalfPlane.J` is an isometry.
 * `TauCeti.UpperHalfPlane.imaginaryAxisReflection`: reflection in the imaginary axis, the action
   of `UpperHalfPlane.J`.
 * `TauCeti.UpperHalfPlane.geodesicReflection`: reflection in `geodesicLine g`, obtained by
@@ -88,13 +88,6 @@ open Matrix.SpecialLinearGroup (dilation)
 open scoped MatrixGroups Pointwise OnePoint Real ComplexConjugate
 
 namespace TauCeti.UpperHalfPlane
-
-/-- The orientation-reversing involution `UpperHalfPlane.J : z ↦ -conj z` acts on `ℍ` by an
-isometry. -/
-theorem isometry_J_smul : Isometry (J • · : ℍ → ℍ) :=
-  Isometry.of_dist_eq fun z w ↦ by
-    rw [UpperHalfPlane.dist_eq, UpperHalfPlane.dist_eq, coe_J_smul, coe_J_smul, dist_neg_neg,
-      Complex.dist_conj_conj, J_smul_im, J_smul_im]
 
 /-- Reflection in the imaginary axis of the upper half-plane, `x + iy ↦ -x + iy`, packaged as
 an isometry. It is the action of Mathlib's orientation-reversing involution
