@@ -29,7 +29,7 @@ public import Mathlib.LinearAlgebra.Basis.Defs
 /-!
 # Weak derivatives on an open set
 
-Lane A of the PDE roadmap builds the Sobolev spaces `W^{k,p}(Ω)` of a domain out of *weak*
+The Sobolev spaces `W^{k,p}(Ω)` of a domain (`TauCeti.W1p`, `TauCeti.Wkp`) are built out of *weak*
 derivatives, rather than out of Mathlib's whole-space Bessel-potential scale. This file supplies
 the underlying differentiation notion: for an open set `Ω` in a real normed space `E`, a measure
 `μ` on `E`, functions `u, u' : E → F` and a direction `v : E`,
