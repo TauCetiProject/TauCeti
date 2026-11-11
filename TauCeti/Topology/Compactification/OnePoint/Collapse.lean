@@ -29,8 +29,7 @@ source of homotopies between collapse maps.
 
 * `TauCeti.onePointCollapse e g`: the collapse of `M` onto `OnePoint V` along `e` and `g`.
 * `TauCeti.onePointCollapse_apply`, `TauCeti.onePointCollapse_eq_infty_iff`: its values.
-* `TauCeti.onePointCollapse_eq_onePointCollapse_iff`, `TauCeti.surjective_onePointCollapse`: its
-  fibres and its surjectivity.
+* `TauCeti.onePointCollapse_eq_onePointCollapse_iff`: its fibres, for injective `e` and `g`.
 * `TauCeti.preimage_onePointCollapse`: the preimage of a set not containing `∞`.
 * `TauCeti.continuous_onePointCollapse`: continuity for an open embedding `e` into a Hausdorff
   space and a proper map `g`.
@@ -87,33 +86,17 @@ theorem onePointCollapse_eq_coe_iff (he : Injective e) {m : M} {v : V} :
 
 /-- For injective `e` and `g`, two points have the same image under the collapse exactly when they
 are equal or both lie outside the range of `e`. -/
-theorem onePointCollapse_eq_onePointCollapse_iff (he : Injective e) (hg : Injective g)
-    {m m' : M} :
-    onePointCollapse e g m = onePointCollapse e g m' ↔ m = m' ∨ m ∉ range e ∧ m' ∉ range e := by
-  by_cases hm : m ∈ range e <;> by_cases hm' : m' ∈ range e
+theorem onePointCollapse_eq_onePointCollapse_iff (he : Injective e) (hg : Injective g) {m n : M} :
+    onePointCollapse e g m = onePointCollapse e g n ↔ m = n ∨ m ∉ range e ∧ n ∉ range e := by
+  by_cases hm : m ∈ range e <;> by_cases hn : n ∈ range e
   · obtain ⟨x, rfl⟩ := hm
-    obtain ⟨x', rfl⟩ := hm'
-    simp [he, he.eq_iff, hg.eq_iff]
+    obtain ⟨y, rfl⟩ := hn
+    simp [he, hg.eq_iff, he.eq_iff]
   · obtain ⟨x, rfl⟩ := hm
-    rw [onePointCollapse_apply he, onePointCollapse_of_notMem_range hm']
-    exact iff_of_false (coe_ne_infty _) fun h ↦ h.elim (fun h ↦ hm' ⟨x, h⟩) fun h ↦ h.1 ⟨x, rfl⟩
-  · obtain ⟨x', rfl⟩ := hm'
-    rw [onePointCollapse_of_notMem_range hm, onePointCollapse_apply he]
-    exact iff_of_false (infty_ne_coe _) fun h ↦
-      h.elim (fun h ↦ hm ⟨x', h.symm⟩) fun h ↦ h.2 ⟨x', rfl⟩
-  · simp [hm, hm']
-
-/-- The collapse along an injective `e` and a surjective `g` is surjective as soon as `e` is not
-surjective. -/
-theorem surjective_onePointCollapse (he : Injective e) (hg : Surjective g) (hr : range e ≠ univ) :
-    Surjective (onePointCollapse e g) := by
-  obtain ⟨m, hm⟩ := (ne_univ_iff_exists_notMem _).1 hr
-  intro p
-  induction p using OnePoint.rec with
-  | infty => exact ⟨m, onePointCollapse_of_notMem_range hm⟩
-  | coe v =>
-    obtain ⟨x, rfl⟩ := hg v
-    exact ⟨e x, onePointCollapse_apply he g x⟩
+    simpa [he, hn] using fun h : e x = n ↦ hn ⟨x, h⟩
+  · obtain ⟨y, rfl⟩ := hn
+    simpa [he, hm] using fun h : m = e y ↦ hm ⟨y, h.symm⟩
+  · simp [onePointCollapse_of_notMem_range, hm, hn]
 
 /-- The preimage under the collapse of a set `s` not containing `∞` is the image under `e` of the
 preimage of `s` under `g`. -/
