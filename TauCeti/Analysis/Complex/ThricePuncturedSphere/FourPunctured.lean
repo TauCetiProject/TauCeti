@@ -61,69 +61,31 @@ open scoped OnePoint
 
 namespace TauCeti.ThricePuncturedSphere
 
-namespace Puncture
-
-/-- Plumbing into the input at `0` places the second input of the inserted pair of pants at
-`ε = e^{-2πL} / 4`. -/
-theorem zero_plumbingMap_one (L : ℝ) :
-    zero.plumbingMap L 1 = ((Real.exp (-(2 * π * L)) / 4 : ℝ) : ℂ) := by
-  rw [plumbingMap_apply, plumbingFactor_eq_mul_ofReal, endCenter_zero, endScale_zero]
-  push_cast
-  ring
-
-/-- Plumbing into the input at `1` places the second input of the inserted pair of pants at
-`1 - ε`, with `ε = e^{-2πL} / 4`. -/
-theorem one_plumbingMap_one (L : ℝ) :
-    one.plumbingMap L 1 = 1 - ((Real.exp (-(2 * π * L)) / 4 : ℝ) : ℂ) := by
-  rw [plumbingMap_apply, plumbingFactor_eq_mul_ofReal, endCenter_one, endScale_one]
-  push_cast
-  ring
-
-end Puncture
-
 open Puncture
 
-/-- For a nonnegative neck length the inserted puncture `ε = e^{-2πL} / 4` lies in `(0, 1/4]`. -/
-private lemma exp_div_four_mem {L : ℝ} (hL : 0 ≤ L) :
-    0 < Real.exp (-(2 * π * L)) / 4 ∧ Real.exp (-(2 * π * L)) / 4 ≤ 1 / 4 := by
-  refine ⟨by positivity, div_le_div_of_nonneg_right ?_ (by norm_num)⟩
-  exact Real.exp_le_one_iff.2 (by nlinarith [pi_pos])
-
-private lemma exp_div_four_injOn :
-    Set.InjOn (fun L : ℝ => Real.exp (-(2 * π * L)) / 4) (Set.Ici 0) := fun L _ L' _ h => by
-  have h' : -(2 * π * L) = -(2 * π * L') := Real.exp_injective (by linarith [h])
-  nlinarith [pi_pos]
-
-/-- The inserted puncture `ε = e^{-2πL} / 4` tends to `0` as the neck grows. -/
-private lemma tendsto_exp_div_four_atTop :
-    Tendsto (fun L : ℝ => Real.exp (-(2 * π * L)) / 4) atTop (𝓝 0) := by
-  have h : Tendsto (fun L : ℝ => -(2 * π * L)) atTop atBot :=
-    tendsto_neg_atTop_atBot.comp (tendsto_id.const_mul_atTop (by positivity))
-  simpa using (Real.tendsto_exp_atBot.comp h).div_const 4
-
 /-- The inputs `0, ε, 1` of the composition `(x₁ x₂) x₃` are distinct for `L ≥ 0`. -/
-private lemma injective_zero {L : ℝ} (hL : 0 ≤ L) :
+theorem injective_zero_plumbingMap_inputs {L : ℝ} (hL : 0 ≤ L) :
     Injective ![(0 : ℂ), zero.plumbingMap L 1, 1] := by
-  obtain ⟨hpos, hle⟩ := exp_div_four_mem hL
+  have hε : Real.exp (-(2 * π * L)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [pi_pos])
   have h0 : zero.plumbingMap L 1 ≠ 0 := by
     rw [zero_plumbingMap_one]
-    exact_mod_cast hpos.ne'
+    exact_mod_cast (by positivity : 0 < Real.exp (-(2 * π * L)) / 4).ne'
   have h1 : zero.plumbingMap L 1 ≠ 1 := by
     rw [zero_plumbingMap_one]
-    exact_mod_cast (hle.trans_lt (by norm_num)).ne
+    exact_mod_cast (by linarith : Real.exp (-(2 * π * L)) / 4 < 1).ne
   intro i j h
   fin_cases i <;> fin_cases j <;> simp_all [eq_comm]
 
 /-- The inputs `0, 1, 1 - ε` of the composition `x₁ (x₂ x₃)` are distinct for `L ≥ 0`. -/
-private lemma injective_one {L : ℝ} (hL : 0 ≤ L) :
+theorem injective_one_plumbingMap_inputs {L : ℝ} (hL : 0 ≤ L) :
     Injective ![(0 : ℂ), 1, one.plumbingMap L 1] := by
-  obtain ⟨hpos, hle⟩ := exp_div_four_mem hL
+  have hε : Real.exp (-(2 * π * L)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [pi_pos])
   have h0 : one.plumbingMap L 1 ≠ 0 := by
     rw [one_plumbingMap_one, sub_ne_zero]
-    exact_mod_cast (hle.trans_lt (by norm_num)).ne'
+    exact_mod_cast (by linarith : Real.exp (-(2 * π * L)) / 4 < 1).ne'
   have h1 : one.plumbingMap L 1 ≠ 1 := by
     rw [one_plumbingMap_one, Ne, sub_eq_self]
-    exact_mod_cast hpos.ne'
+    exact_mod_cast (by positivity : 0 < Real.exp (-(2 * π * L)) / 4).ne'
   intro i j h
   fin_cases i <;> fin_cases j <;> simp_all [eq_comm]
 
@@ -139,7 +101,8 @@ with `ε = e^{-2πL} / 4`. -/
 theorem crossRatio_one_plumbingMap {L : ℝ} (hL : 0 ≤ L) :
     OnePoint.crossRatio ((0 : ℂ) : OnePoint ℂ) (one.plumbingMap L 1) ∞ (1 : ℂ) =
       ((((1 - Real.exp (-(2 * π * L)) / 4)⁻¹ : ℝ) : ℂ) : OnePoint ℂ) := by
-  have hne : (0 : ℂ) ≠ one.plumbingMap L 1 := (injective_one hL).ne (by decide : (0 : Fin 3) ≠ 2)
+  have hne : (0 : ℂ) ≠ one.plumbingMap L 1 :=
+    (injective_one_plumbingMap_inputs hL).ne (by decide : (0 : Fin 3) ≠ 2)
   rw [OnePoint.crossRatio_coe_coe_infty_coe hne, OnePoint.coe_eq_coe, one_plumbingMap_one]
   push_cast
   ring
@@ -150,11 +113,14 @@ when `L = L'`. -/
 theorem exists_isPuncturedEmbedding_zero_plumbingMap_iff {L L' : ℝ} (hL : 0 ≤ L) (hL' : 0 ≤ L') :
     (∃ f, IsPuncturedEmbedding ![(0 : ℂ), zero.plumbingMap L 1, 1]
       ![(0 : ℂ), zero.plumbingMap L' 1, 1] f) ↔ L = L' := by
-  rw [exists_isPuncturedEmbedding_iff_crossRatio_eq (injective_zero hL) (injective_zero hL')]
+  rw [exists_isPuncturedEmbedding_iff_crossRatio_eq (injective_zero_plumbingMap_inputs hL)
+    (injective_zero_plumbingMap_inputs hL')]
   simp only [Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
     Matrix.head_cons, Matrix.tail_cons, crossRatio_zero_plumbingMap, OnePoint.coe_eq_coe,
     Complex.ofReal_inj]
-  exact ⟨fun h => (exp_div_four_injOn hL' hL h).symm, fun h => h ▸ rfl⟩
+  refine ⟨fun h => ?_, fun h => h ▸ rfl⟩
+  have h' : -(2 * π * L) = -(2 * π * L') := Real.exp_injective (by linarith [h])
+  nlinarith [pi_pos]
 
 /-- **Different neck lengths give different conformal types.** For `L, L' ≥ 0` the compositions
 `x₁ (x₂ x₃)` with neck lengths `L` and `L'` admit a label-preserving holomorphic embedding exactly
@@ -162,12 +128,15 @@ when `L = L'`. -/
 theorem exists_isPuncturedEmbedding_one_plumbingMap_iff {L L' : ℝ} (hL : 0 ≤ L) (hL' : 0 ≤ L') :
     (∃ f, IsPuncturedEmbedding ![(0 : ℂ), 1, one.plumbingMap L 1]
       ![(0 : ℂ), 1, one.plumbingMap L' 1] f) ↔ L = L' := by
-  rw [exists_isPuncturedEmbedding_iff_crossRatio_eq (injective_one hL) (injective_one hL')]
+  rw [exists_isPuncturedEmbedding_iff_crossRatio_eq (injective_one_plumbingMap_inputs hL)
+    (injective_one_plumbingMap_inputs hL')]
   simp only [Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
     Matrix.head_cons, Matrix.tail_cons, crossRatio_one_plumbingMap hL,
     crossRatio_one_plumbingMap hL', OnePoint.coe_eq_coe, Complex.ofReal_inj, inv_inj,
     sub_right_inj]
-  exact ⟨fun h => (exp_div_four_injOn hL' hL h).symm, fun h => h ▸ rfl⟩
+  refine ⟨fun h => ?_, fun h => h ▸ rfl⟩
+  have h' : -(2 * π * L) = -(2 * π * L') := Real.exp_injective (by linarith [h])
+  nlinarith [pi_pos]
 
 /-- **The two compositions have different conformal types.** For neck lengths `L, L' ≥ 0` there is
 no label-preserving holomorphic embedding of the composition `(x₁ x₂) x₃` into the composition
@@ -176,12 +145,14 @@ theorem not_exists_isPuncturedEmbedding_zero_one_plumbingMap {L L' : ℝ} (hL : 
     (hL' : 0 ≤ L') :
     ¬∃ f, IsPuncturedEmbedding ![(0 : ℂ), zero.plumbingMap L 1, 1]
       ![(0 : ℂ), 1, one.plumbingMap L' 1] f := by
-  rw [exists_isPuncturedEmbedding_iff_crossRatio_eq (injective_zero hL) (injective_one hL')]
+  rw [exists_isPuncturedEmbedding_iff_crossRatio_eq (injective_zero_plumbingMap_inputs hL)
+    (injective_one_plumbingMap_inputs hL')]
   simp only [Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
     Matrix.head_cons, Matrix.tail_cons, crossRatio_zero_plumbingMap,
     crossRatio_one_plumbingMap hL', OnePoint.coe_eq_coe, Complex.ofReal_inj]
-  obtain ⟨-, hle⟩ := exp_div_four_mem hL
-  obtain ⟨hpos', hle'⟩ := exp_div_four_mem hL'
+  have hε : Real.exp (-(2 * π * L)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [pi_pos])
+  have hε' : Real.exp (-(2 * π * L')) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [pi_pos])
+  have hpos' := Real.exp_pos (-(2 * π * L'))
   intro h
   have hone : 1 < (1 - Real.exp (-(2 * π * L')) / 4)⁻¹ :=
     one_lt_inv₀ (by linarith) |>.2 (by linarith)
@@ -191,18 +162,24 @@ theorem not_exists_isPuncturedEmbedding_zero_one_plumbingMap {L L' : ℝ} (hL : 
 theorem tendsto_crossRatio_zero_plumbingMap_atTop :
     Tendsto (fun L : ℝ => OnePoint.crossRatio ((0 : ℂ) : OnePoint ℂ) (1 : ℂ) ∞
       (zero.plumbingMap L 1)) atTop (𝓝 ((0 : ℂ) : OnePoint ℂ)) := by
+  have hε : Tendsto (fun L : ℝ => Real.exp (-(2 * π * L)) / 4) atTop (𝓝 0) := by
+    simpa using (Real.tendsto_exp_neg_atTop_nhds_zero.comp
+      (tendsto_id.const_mul_atTop (by positivity : (0 : ℝ) < 2 * π))).div_const 4
   simp only [crossRatio_zero_plumbingMap]
   exact (OnePoint.continuous_coe.tendsto 0).comp
-    ((Complex.continuous_ofReal.tendsto' 0 0 Complex.ofReal_zero).comp tendsto_exp_div_four_atTop)
+    ((Complex.continuous_ofReal.tendsto' 0 0 Complex.ofReal_zero).comp hε)
 
 /-- As the neck of the composition `x₁ (x₂ x₃)` grows, its cross ratio tends to `1`. -/
 theorem tendsto_crossRatio_one_plumbingMap_atTop :
     Tendsto (fun L : ℝ => OnePoint.crossRatio ((0 : ℂ) : OnePoint ℂ) (one.plumbingMap L 1) ∞
       (1 : ℂ)) atTop (𝓝 ((1 : ℂ) : OnePoint ℂ)) := by
-  have hε : Tendsto (fun L : ℝ => (1 - Real.exp (-(2 * π * L)) / 4)⁻¹) atTop (𝓝 1) := by
-    simpa using (tendsto_exp_div_four_atTop.const_sub 1).inv₀ (by norm_num)
+  have hε : Tendsto (fun L : ℝ => Real.exp (-(2 * π * L)) / 4) atTop (𝓝 0) := by
+    simpa using (Real.tendsto_exp_neg_atTop_nhds_zero.comp
+      (tendsto_id.const_mul_atTop (by positivity : (0 : ℝ) < 2 * π))).div_const 4
+  have hinv : Tendsto (fun L : ℝ => (1 - Real.exp (-(2 * π * L)) / 4)⁻¹) atTop (𝓝 1) := by
+    simpa using (hε.const_sub 1).inv₀ (by norm_num)
   refine ((OnePoint.continuous_coe.tendsto 1).comp
-    ((Complex.continuous_ofReal.tendsto' 1 1 Complex.ofReal_one).comp hε)).congr' ?_
+    ((Complex.continuous_ofReal.tendsto' 1 1 Complex.ofReal_one).comp hinv)).congr' ?_
   filter_upwards [eventually_ge_atTop 0] with L hL
   simp [crossRatio_one_plumbingMap hL]
 
