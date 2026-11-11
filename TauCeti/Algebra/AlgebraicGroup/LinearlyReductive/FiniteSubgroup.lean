@@ -21,10 +21,11 @@ import TauCeti.RingTheory.Invariant.Free
 
 Let `H` be the coordinate Hopf algebra of an affine group over a field `k`. If the
 group is linearly reductive, then every finite subgroup `Γ` of its group of rational points has
-order invertible in `k`. Consequently every rational point of finite order is semisimple. In
-characteristic `p` a nonidentity unipotent rational point would have order a nontrivial power of
-`p`, so there is none; over a perfect field of characteristic `p` every rational point of a
-linearly reductive group is therefore semisimple.
+order invertible in `k`. Consequently every rational point of finite order is semisimple. If
+moreover the coordinate algebra is of finite type (an algebraic group) and the characteristic is
+`p`, a nonidentity unipotent rational point would have order a nontrivial power of `p`, so there is
+none; over a perfect field of characteristic `p` every rational point of a linearly reductive
+algebraic group is therefore semisimple.
 
 Left translation by `Γ` is a free action on the coordinate algebra: a translate of a geometric
 point is the point itself only for the identity translation. By the theory of free actions of
@@ -43,10 +44,10 @@ constants by the order of `Γ`. Hence that order is nonzero in `k`.
   finite-order rational point is nonzero in the base field.
 * `TauCeti.HopfAlgebra.isSemisimplePoint_of_isLinearlyReductive_of_isOfFinOrder`: every rational
   point of finite order is semisimple.
-* `TauCeti.HopfAlgebra.IsUnipotentPoint.eq_one_of_isLinearlyReductive`: in characteristic `p`,
-  the only unipotent rational point is the identity.
-* `TauCeti.HopfAlgebra.isSemisimplePoint_of_isLinearlyReductive_of_charP`: over a perfect field
-  of characteristic `p`, every rational point is semisimple.
+* `TauCeti.HopfAlgebra.IsUnipotentPoint.eq_one_of_isLinearlyReductive`: for a coordinate algebra
+  of finite type in characteristic `p`, the only unipotent rational point is the identity.
+* `TauCeti.HopfAlgebra.isSemisimplePoint_of_isLinearlyReductive_of_charP`: for a coordinate algebra
+  of finite type over a perfect field of characteristic `p`, every rational point is semisimple.
 
 ## References
 
@@ -105,8 +106,7 @@ theorem natCast_card_ne_zero_of_isLinearlyReductive
         have h : γ • a - a ∈ m := hle (Ideal.subset_span ⟨a, rfl⟩)
         have h2 : Ideal.Quotient.mk m (γ • a) = Ideal.Quotient.mk m a :=
           Ideal.Quotient.eq.mpr h
-        change x (leftTranslationAlgEquiv ((γ⁻¹ : Γ) : WithConv (H →ₐ[k] k)) a) = x a
-        rw [← hsmul]
+        rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, ← hsmul]
         simp [x, h2]
       exact hγ <| by simpa using (comp_leftTranslationAlgEquiv_eq_self_iff
         (algebraMap k (AlgebraicClosure (H ⧸ m))).injective _ x).mp hfix
