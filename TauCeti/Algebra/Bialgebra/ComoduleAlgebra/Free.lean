@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.HopfAlgebra.Convolution
 public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 public import TauCeti.Algebra.Bialgebra.ComoduleAlgebra
 public import TauCeti.RingTheory.Invariant.EquivalenceRelation.Quotient
-public import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
 # Free actions of finite locally free group schemes are torsors over their invariants
