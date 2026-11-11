@@ -8,9 +8,12 @@ module
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.Calculus.Deriv.Linear
+import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.Tactic.Module
 
 /-!
-# Absolutely continuous solutions of a scalar linear equation in a complex normed space
+# Solutions of a scalar linear equation
 
 An absolutely continuous solution of `f' = k • f` almost everywhere on a compact real interval
 is the exponential solution with its prescribed initial value. No differentiability at every
@@ -21,6 +24,10 @@ fundamental theorem of calculus makes this product constant on the entire interv
 For imaginary `k`, this identifies plane curves whose velocity is a fixed rotation and scaling
 of their position relative to a center. Such equations describe equality in the area–energy
 inequality for closed plane curves.
+
+For a continuous, time-dependent real coefficient `g`, a differentiable solution of `P' = g • P`
+on an open interval `J` is `P t = exp (∫ₛᵗ g) • P s` for all `s, t ∈ J`
+(`TauCeti.eq_exp_integral_smul_of_hasDerivAt_smul`), by the integrating factor `exp (-∫ₛᵘ g)`.
 -/
 
 public section
@@ -100,3 +107,35 @@ theorem ae_hasDerivAt_smul_sub_iff (hf : AbsolutelyContinuousOnInterval f a b) (
     simp [smul_smul, mul_comm]
 
 end AbsolutelyContinuousOnInterval
+
+namespace TauCeti
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+/-- **Integrating factor.** On an open interval `J`, a solution of the linear equation
+`P' = g • P` with continuous real coefficient `g` satisfies `P t = exp (∫ₛᵗ g) • P s` for all
+`s, t ∈ J`. -/
+theorem eq_exp_integral_smul_of_hasDerivAt_smul {J : Set ℝ} (hJo : IsOpen J)
+    (hJc : J.OrdConnected) {g : ℝ → ℝ} (hg : ContinuousOn g J) {P : ℝ → V}
+    (hP : ∀ u ∈ J, HasDerivAt P (g u • P u) u) {s t : ℝ} (hs : s ∈ J) (ht : t ∈ J) :
+    P t = Real.exp (∫ u in s..t, g u) • P s := by
+  set G : ℝ → ℝ := fun u ↦ ∫ τ in s..u, g τ
+  have hG (u : ℝ) (hu : u ∈ J) : HasDerivAt G (g u) u :=
+    intervalIntegral.integral_hasDerivAt_right
+      ((hg.mono (hJc.uIcc_subset hs hu)).intervalIntegrable)
+      (hg.stronglyMeasurableAtFilter hJo u hu) (hg.continuousAt (hJo.mem_nhds hu))
+  -- `u ↦ e^{-G u} P u` has zero derivative on the interval `J`, so it is constant there.
+  have hderiv (u : ℝ) (hu : u ∈ J) : HasDerivAt (fun u ↦ Real.exp (-G u) • P u) 0 u := by
+    refine ((hG u hu).neg.exp.smul (hP u hu)).congr_deriv ?_
+    module
+  have hconst := hJo.is_const_of_deriv_eq_zero hJc.isPreconnected
+    (fun u hu ↦ (hderiv u hu).differentiableAt.differentiableWithinAt)
+    (fun u hu ↦ (hderiv u hu).deriv) ht hs
+  have hG0 : G s = 0 := intervalIntegral.integral_same
+  rw [hG0, neg_zero, Real.exp_zero, one_smul] at hconst
+  have hPt : P t = Real.exp (G t) • (Real.exp (-G t) • P t) := by
+    rw [smul_smul, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_smul]
+  rw [hconst] at hPt
+  exact hPt
+
+end TauCeti

@@ -1,8 +1,8 @@
 """Ensure TauCeti runs and reads one TauCetiReview commit everywhere.
 
 The policy commit appears in reusable-workflow `uses:` lines and their required
-`review_ref` inputs, and in the checkout-merge-policy action used by the merge batch. Other policy readers
-go through that action; every explicit reference must agree.
+`review_ref` inputs, and in the checkout-merge-policy action used by read-only readiness/reporting consumers.
+Other policy readers go through that action; every explicit reference must agree.
 
 Run with: python3 scripts/test_workflow_pins.py
 """
@@ -16,12 +16,11 @@ import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 WORKFLOW_DIR = ROOT / ".github/workflows"
-CALLERS = ("merge-sweep.yml", "review.yml")
+CALLERS = ("review.yml",)
 ACTION = ROOT / ".github/actions/checkout-merge-policy/action.yml"
 LOCAL_ACTION = "./.github/actions/checkout-merge-policy"
 # Each job that reads the merge policy, with how many times it does so.
 POLICY_READERS = {
-    ("auto-merge.yml", "sweep"): 1,
     ("infrastructure-tests.yml", "python-tests"): 1,
     ("pages.yml", "build-data"): 1,
     ("pr-labels.yml", "label-resolved"): 1,
@@ -72,6 +71,21 @@ def covers(sparse_entry, path):
 
 
 class WorkflowPins(unittest.TestCase):
+    def test_stack_policy_regressions_use_production_tools(self):
+        pins = []
+        for workflow, job, name in (
+            ("stack-policy.yml", "enforce", "Prepare pinned shared tools"),
+            ("infrastructure-tests.yml", "python-tests", "Prepare stack-policy tools at the production pin"),
+        ):
+            with self.subTest(workflow=workflow):
+                step = next(s for s in workflow_jobs(workflow)[job]["steps"] if s.get("name") == name)
+                self.assertEqual(step["with"]["tools-repository"], "TauCetiProject/TauCetiTools")
+                match = re.fullmatch(
+                    r"TauCetiProject/TauCetiTools/\.github/actions/setup@([0-9a-f]{40})", step["uses"])
+                self.assertIsNotNone(match)
+                pins.extend((match[1], step["with"]["tools-ref"]))
+        self.assertEqual(len(set(pins)), 1, "production and regression tests select different stack-policy tools")
+
     def test_reusable_calls_and_action_share_one_sha(self):
         pin = action_pin()
         self.assertRegex(pin, r"^[0-9a-f]{40}$")

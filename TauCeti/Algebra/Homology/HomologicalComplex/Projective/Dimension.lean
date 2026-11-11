@@ -74,10 +74,10 @@ theorem projective_homology_of_d_eq_zero_of_hasProjectiveDimensionLE_one [Projec
 
 /-- If every object has projective dimension at most one and every term with a differential into
 `K.X i` is zero, the homology at `i` of a projective term is projective. -/
-theorem projective_homology_of_isZero_X [Projective (K.X i)]
+theorem projective_homology_of_isZero_X_of_hasProjectiveDimensionLE_one [Projective (K.X i)]
     (h : ∀ j, c.Rel j i → IsZero (K.X j)) : Projective (K.homology i) :=
-  K.projective_homology_of_d_eq_zero_of_hasProjectiveDimensionLE_one i
-    fun j hj ↦ (h j hj).eq_of_src _ _
+  K.projective_homology_of_d_eq_zero_of_hasProjectiveDimensionLE_one i fun j hj ↦
+    (h j hj).eq_of_src _ _
 
 end HomologicalComplex
 
@@ -88,15 +88,15 @@ variable {C : Type*} [Category* C] [Abelian C] [∀ X : C, HasProjectiveDimensio
 
 /-- In an abelian category of projective dimension at most one, if the differential into degree `n`
 of a chain complex vanishes and `K.X n` is projective, then `K.homology n` is projective. -/
-theorem projective_homology_of_d_eq_zero [Projective (K.X n)] (h : K.d (n + 1) n = 0) :
-    Projective (K.homology n) :=
+theorem projective_homology_of_d_eq_zero_of_hasProjectiveDimensionLE_one [Projective (K.X n)]
+    (h : K.d (n + 1) n = 0) : Projective (K.homology n) :=
   HomologicalComplex.projective_homology_of_d_eq_zero_of_hasProjectiveDimensionLE_one K n
     fun _ hj ↦ hj ▸ h
 
 /-- In an abelian category of projective dimension at most one, if `K.X (n + 1)` is zero and
 `K.X n` is projective, then `K.homology n` is projective. -/
-theorem projective_homology_of_isZero_X_succ [Projective (K.X n)] (h : IsZero (K.X (n + 1))) :
-    Projective (K.homology n) :=
-  K.projective_homology_of_d_eq_zero n (h.eq_of_src _ _)
+theorem projective_homology_of_isZero_X_succ_of_hasProjectiveDimensionLE_one [Projective (K.X n)]
+    (h : IsZero (K.X (n + 1))) : Projective (K.homology n) :=
+  K.projective_homology_of_d_eq_zero_of_hasProjectiveDimensionLE_one n (h.eq_of_src _ _)
 
 end ChainComplex

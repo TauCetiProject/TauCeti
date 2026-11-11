@@ -59,7 +59,7 @@ isometries of the wedge form. -/
 noncomputable def spinSixSpecialLinearToSpecialIsometryGroup :
     Matrix.SpecialLinearGroup (Fin 4) K →*
       LinearMap.BilinForm.specialIsometryGroup (spinSixWedgeForm K) :=
-  ((BilinForm.isometryGroup (spinSixWedgeForm K)).subtype.comp
+  (((spinSixWedgeForm K).isometryGroup).subtype.comp
     (spinSixSpecialLinearToIsometryGroup K)).codRestrict
       (LinearMap.BilinForm.specialIsometryGroup (spinSixWedgeForm K))
       (fun g ↦ LinearMap.BilinForm.mem_specialIsometryGroup_iff.mpr

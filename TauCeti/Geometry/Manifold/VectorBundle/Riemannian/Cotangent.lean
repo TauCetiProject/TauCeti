@@ -153,40 +153,21 @@ theorem mfderiv_norm_snd_vectorBundleEulerField {z : CotangentBundle I M} (hz : 
     mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) (fun z : CotangentBundle I M ↦ ‖z.2‖) z
       (vectorBundleEulerField I z) = ‖z.2‖ := by
   set f : CotangentBundle I M → ℝ := fun z ↦ ‖z.2‖
-  set γ : ℝ → CotangentBundle I M := fun t ↦ ⟨z.proj, t • z.2⟩
-  have hγ : HasMFDerivAt 𝓘(ℝ) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) γ 1
-      ((1 : ℝ →L[ℝ] ℝ).smulRight (vectorBundleEulerField I z)) :=
-    hasMFDerivAt_vectorBundleEulerField z
-  have hγ1 : γ 1 = z := by simp [γ]
-  have hf : MDifferentiableAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) f (γ 1) := by
-    rw [hγ1]
+  have hf : MDifferentiableAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) f z := by
     have : IsManifold I (1 + 1) M := by norm_num; infer_instance
     exact (contMDiffAt_norm_snd (n := 1) hz).mdifferentiableAt one_ne_zero
   -- Near `t = 1`, the norm along the ray is `t ↦ t * ‖z.2‖`.
-  have hray : HasDerivAt (f ∘ γ) ‖z.2‖ 1 := by
+  have hray : HasDerivAt (f ∘ fun t : ℝ ↦ (⟨z.proj, t • z.2⟩ : CotangentBundle I M)) ‖z.2‖ 1 := by
     refine (hasDerivAt_mul_const ‖z.2‖).congr_of_eventuallyEq ?_
     filter_upwards [lt_mem_nhds one_pos] with t ht
     -- This is `norm_smul`; instance search does not find `NormSMulClass` for covectors of the
     -- Riemannian fibre norm, so it is supplied from the `NormedSpace` instance.
     exact ((NormedSpace.toNormSMulClass (𝕜 := ℝ) (E := TangentSpace I z.proj →L[ℝ] ℝ)).norm_smul
       t z.2).trans (by rw [Real.norm_of_nonneg ht.le])
-  -- The velocity of the ray at `t = 1`, for the unit tangent vector of `ℝ`, is the Euler field.
-  have hv : mfderiv 𝓘(ℝ) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) γ 1
-      ((NormedSpace.fromTangentSpace (𝕜 := ℝ) (1 : ℝ)).symm 1) = vectorBundleEulerField I z := by
-    rw [hγ.mfderiv]
-    -- `smulRight 1 v` applied to `t` is `t • v` by definition, and `NormedSpace.fromTangentSpace`
-    -- is the identity of `ℝ`, so the scalar is `1`. The lemma `smulRight_apply` cannot be used by
-    -- `rw` or `simp` here, since `v` lives in the tangent space at `z` rather than at `γ 1`.
-    exact one_smul ℝ _
-  have hd : mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) f (γ 1) (mfderiv 𝓘(ℝ) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ))
-      γ 1 ((NormedSpace.fromTangentSpace (𝕜 := ℝ) (1 : ℝ)).symm 1)) = ‖z.2‖ := by
-    rw [← ContinuousLinearMap.comp_apply, ← mfderiv_comp 1 hf hγ.mdifferentiableAt,
-      mfderiv_eq_fderiv, hray.hasFDerivAt.fderiv]
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearMap.toSpanSingleton_apply, one_smul]
-    -- `NormedSpace.fromTangentSpace` is the identity of `ℝ`.
-    rfl
-  rwa [hv, hγ1] at hd
+  rw [mfderiv_vectorBundleEulerField hf, hray.hasFDerivAt.hasMFDerivAt.mfderiv]
+  -- `toSpanSingleton ℝ v` sends `1` to `1 • v`. The lemma `toSpanSingleton_apply` cannot be used by
+  -- `rw` here, since the derivative is typed as a map between tangent spaces of `ℝ`.
+  exact one_smul ℝ _
 
 /-- **Covectors other than zero are regular points of the norm.** Every covector `z` with
 `z.2 ≠ 0` is a regular point of `z ↦ ‖z.2‖`. -/

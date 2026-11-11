@@ -1,0 +1,997 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Sobolev.Trace.HalfSpace
+public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
+public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.Analysis.Sobolev.WeakDeriv.MeasurePreserving
+import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
+
+/-!
+# Even reflection across a hyperplane preserves weak differentiability
+
+Let `H = normalHalfSpace a = {x | a < x.fst}` in the Euclidean product `ℝ × E`, and let
+`ρ (t, y) = (2a - t, y)` be the reflection in its boundary hyperplane `{a} × E`. If `w` is weakly
+differentiable on `H` with weak gradient `G`, and `w` and `G` are locally integrable up to the
+boundary (we extend them by zero off `H`), then the even reflection
+
+`x ↦ w x + w (ρ x)`
+
+is weakly differentiable on the whole space, with weak gradient `x ↦ G x + R (G (ρ x))`, where
+`R (s, z) = (-s, z)` is the linear part of `ρ`. No boundary condition on `w` is needed: the
+reflection is what makes the two one-sided traces match. This is the analytic content of the
+extension operator `W^{1,p}(H) → W^{1,p}(ℝ × E)` constructed in
+`TauCeti.Analysis.Sobolev.Trace.Extension`.
+
+The proof follows H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential
+Equations*, Lemma 9.2. A test function `φ` on the whole space is tested against the even
+reflection; after the change of variables `x ↦ ρ x` this becomes the pairing of `w` on `H` with
+`χ = φ ± φ ∘ ρ`, where the sign is `+` for directions tangent to the boundary and `-` for the
+normal direction. Such a `χ` is not supported inside `H`, so it is multiplied by cutoffs
+`η_n (x.fst)` vanishing near the boundary. In tangential directions the cutoff commutes with
+differentiation. In the normal direction `χ` vanishes on the boundary, so `|χ| ≤ M (x.fst - a)`
+there, which exactly compensates the size `O(n)` of `η_n'` on its support of width `O(1/n)`.
+Dominated convergence then passes to the limit.
+
+## Main declarations
+
+* `TauCeti.normalLinearReflection`: the linear reflection `(t, y) ↦ (-t, y)`, which is Mathlib's
+  `Submodule.reflection` in the hyperplane `{0} × E`.
+* `TauCeti.normalReflection`: the affine reflection `(t, y) ↦ (2a - t, y)` in `{a} × E`, with
+  its measure preservation and derivative.
+* `TauCeti.gradient_normalReflection_of_forall_eq_neg`: the gradient of a function odd under the
+  normal reflection `ρ` satisfies `∇h (ρ x) = -R (∇h x)`, where `R` is the linear part of `ρ`.
+* `TauCeti.integrableOn_of_integrableOn_inter_normalHalfSpace` and
+  `TauCeti.setIntegral_eq_two_smul_setIntegral_inter_normalHalfSpace`: a reflection-invariant
+  function on a reflection-invariant set is integrable there as soon as it is integrable on the
+  half in `H`, and its integral is twice the integral over that half.
+* `TauCeti.normalCutoff`: the smooth cutoff `σ(c (x.fst - a) - 1)` of the normal coordinate,
+  supported a positive distance inside the half-space, with the common bound
+  `TauCeti.exists_normalCutoff_bound` on it and its gradient.
+* `TauCeti.tendsto_integral_normalCutoff_mul` and
+  `TauCeti.tendsto_integral_mul_fderiv_normalCutoff_apply`: the two limits behind integration by
+  parts up to the boundary. Multiplying by the cutoffs does not change integrals over the
+  half-space in the limit, and the error from differentiating them vanishes against a function
+  that is zero on the boundary.
+* `TauCeti.HasWeakFDerivOn.add_comp_normalReflection`: the even reflection of a weakly
+  differentiable function on the half-space is weakly differentiable on the whole space.
+* `TauCeti.HasWeakLineDerivOn.top_of_normalHalfSpace`: in a direction tangent to the boundary,
+  the extension by zero of a weakly differentiable function on the half-space is weakly
+  differentiable on the whole space.
+* `TauCeti.HasWeakFDerivOn.hasWeakLineDerivOn_sub_comp_normalReflection`: in a direction tangent
+  to the boundary, the odd reflection is weakly differentiable on the whole space.
+* `TauCeti.HasWeakFDerivOn.comp_normalReflection`: precomposition with the reflection on the
+  whole space.
+
+## References
+
+H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential Equations*, Lemma 9.2.
+-/
+
+public section
+
+noncomputable section
+
+open MeasureTheory Set TopologicalSpace Filter
+open scoped ContDiff Topology Distributions Gradient InnerProductSpace
+
+namespace TauCeti
+
+/-! ### The reflection in the boundary hyperplane -/
+
+section Reflection
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+
+variable (E) in
+/-- The linear reflection `(t, y) ↦ (-t, y)` of the Euclidean product `ℝ × E` in the hyperplane
+`{0} × E`, the kernel of the normal coordinate. It transforms the gradient of a function under
+`TauCeti.normalReflection`. -/
+def normalLinearReflection : WithLp 2 (ℝ × E) ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E) :=
+  (LinearMap.ker (WithLp.fstₗ 2 ℝ ℝ E)).reflection
+
+/-- The linear normal reflection negates the normal coordinate. -/
+@[simp]
+theorem normalLinearReflection_apply (x : WithLp 2 (ℝ × E)) :
+    normalLinearReflection E x = WithLp.toLp 2 (-x.fst, x.snd) := by
+  have h : (LinearMap.ker (WithLp.fstₗ 2 ℝ ℝ E)).starProjection x =
+      WithLp.toLp 2 (0, x.snd) := by
+    apply Submodule.eq_starProjection_of_mem_of_inner_eq_zero
+    · simp
+    · intro w hw
+      simp only [LinearMap.mem_ker, WithLp.fstₗ_apply] at hw
+      cases x
+      simp [← WithLp.toLp_sub, WithLp.prod_inner_apply, hw]
+  rw [normalLinearReflection, Submodule.reflection_apply, h]
+  obtain ⟨⟨t, y⟩⟩ := x
+  rw [two_smul, ← WithLp.toLp_add, ← WithLp.toLp_sub]
+  simp
+
+/-- The linear normal reflection is an involution. -/
+theorem normalLinearReflection_normalLinearReflection (x : WithLp 2 (ℝ × E)) :
+    normalLinearReflection E (normalLinearReflection E x) = x :=
+  Submodule.reflection_reflection _ x
+
+/-- The linear normal reflection is its own inverse. -/
+@[simp]
+theorem normalLinearReflection_symm : (normalLinearReflection E).symm = normalLinearReflection E :=
+  Submodule.reflection_symm
+
+/-- The linear normal reflection is self-adjoint. -/
+theorem inner_normalLinearReflection_left_eq_right (x y : WithLp 2 (ℝ × E)) :
+    inner ℝ (normalLinearReflection E x) y = inner ℝ x (normalLinearReflection E y) := by
+  rw [← (normalLinearReflection E).inner_map_map, normalLinearReflection_normalLinearReflection]
+
+/-- The reflection `R` reverses the normal direction `ν = (1, 0)`. -/
+theorem normalLinearReflection_toLp_one_zero :
+    normalLinearReflection E (WithLp.toLp 2 ((1 : ℝ), (0 : E))) =
+      -WithLp.toLp 2 ((1 : ℝ), (0 : E)) := by
+  simp [normalLinearReflection_apply, ← WithLp.toLp_neg]
+
+/-- The reflection `R` fixes every tangential direction `τ y = (0, y)`. -/
+theorem normalLinearReflection_toLp_zero (y : E) :
+    normalLinearReflection E (WithLp.toLp 2 ((0 : ℝ), y)) = WithLp.toLp 2 ((0 : ℝ), y) := by
+  simp [normalLinearReflection_apply]
+
+/-- Pairing `w - R w'` with the normal direction `ν = (1, 0)` adds the normal components of `w`
+and `w'`. -/
+theorem inner_sub_normalLinearReflection_normal (w w' : WithLp 2 (ℝ × E)) :
+    ⟪w - normalLinearReflection E w', WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ =
+      ⟪w, WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ + ⟪w', WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ := by
+  rw [inner_sub_left, inner_normalLinearReflection_left_eq_right,
+    normalLinearReflection_toLp_one_zero, inner_neg_right, sub_neg_eq_add]
+
+/-- Pairing `w - R w'` with a tangential direction `τ y = (0, y)` subtracts the tangential
+components of `w'` from those of `w`. -/
+theorem inner_sub_normalLinearReflection_tangent (w w' : WithLp 2 (ℝ × E)) (y : E) :
+    ⟪w - normalLinearReflection E w', WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ =
+      ⟪w, WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ - ⟪w', WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ := by
+  rw [inner_sub_left, inner_normalLinearReflection_left_eq_right,
+    normalLinearReflection_toLp_zero]
+
+variable (E) in
+/-- The reflection `(t, y) ↦ (2a - t, y)` of the Euclidean product `ℝ × E` in the hyperplane
+`{a} × E`, the boundary of `TauCeti.normalHalfSpace a`. Its linear part is
+`TauCeti.normalLinearReflection`. -/
+def normalReflection (a : ℝ) : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E) :=
+  (normalLinearReflection E).toAffineIsometryEquiv.trans
+    (AffineIsometryEquiv.constVAdd ℝ (WithLp 2 (ℝ × E)) (WithLp.toLp 2 (2 * a, 0)))
+
+/-- The normal reflection in `{a} × E` replaces the normal coordinate `t` by `2a - t`. -/
+@[simp]
+theorem normalReflection_apply (a : ℝ) (x : WithLp 2 (ℝ × E)) :
+    normalReflection E a x = WithLp.toLp 2 (2 * a - x.fst, x.snd) := by
+  cases x
+  simp [normalReflection, vadd_eq_add, ← WithLp.toLp_add, sub_eq_add_neg]
+
+/-- The normal reflection is an involution. -/
+theorem normalReflection_normalReflection (a : ℝ) (x : WithLp 2 (ℝ × E)) :
+    normalReflection E a (normalReflection E a x) = x := by
+  cases x; simp
+
+/-- The normal reflection is its own inverse. -/
+@[simp]
+theorem normalReflection_symm (a : ℝ) : (normalReflection E a).symm = normalReflection E a :=
+  AffineIsometryEquiv.ext fun x =>
+    (normalReflection E a).symm_apply_eq.2 (normalReflection_normalReflection a x).symm
+
+/-- The fixed points of the normal reflection in `{a} × E` are the points of that hyperplane. -/
+theorem normalReflection_eq_self_iff (a : ℝ) (x : WithLp 2 (ℝ × E)) :
+    normalReflection E a x = x ↔ x.fst = a := by
+  obtain ⟨⟨t, y⟩⟩ := x
+  simp only [normalReflection_apply, WithLp.toLp_fst, WithLp.toLp_snd]
+  constructor
+  · intro h
+    have := congrArg WithLp.fst h
+    simp only [WithLp.toLp_fst] at this
+    linarith
+  · intro h
+    rw [h]
+    congr 2
+    ring
+
+/-- The normal reflection in `{a} × E` exchanges the open half-spaces on either side. -/
+theorem normalReflection_mem_normalHalfSpace_iff (a : ℝ) (x : WithLp 2 (ℝ × E)) :
+    normalReflection E a x ∈ normalHalfSpace (E := E) a ↔ x.fst < a := by
+  simp only [mem_normalHalfSpace, normalReflection_apply]
+  constructor <;> intro h <;> linarith
+
+/-- The normal reflection in `{a} × E` is its linear part `TauCeti.normalLinearReflection`
+followed by the translation by `(2a, 0)`. -/
+theorem normalReflection_eq_add (a : ℝ) :
+    (normalReflection E a : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)) =
+      fun y => normalLinearReflection E y + WithLp.toLp 2 (2 * a, 0) := by
+  funext y
+  simp [normalReflection, vadd_eq_add, add_comm]
+
+/-- The derivative of the normal reflection is its linear part. -/
+theorem hasFDerivAt_normalReflection (a : ℝ) (x : WithLp 2 (ℝ × E)) :
+    HasFDerivAt (normalReflection E a)
+      ((normalLinearReflection E).toContinuousLinearEquiv :
+        WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) x := by
+  rw [normalReflection_eq_add]
+  exact (normalLinearReflection E).toContinuousLinearEquiv.hasFDerivAt.add_const _
+
+/-- The normal reflection is smooth. -/
+theorem contDiff_normalReflection (a : ℝ) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (normalReflection E a) := by
+  rw [normalReflection_eq_add]
+  exact (normalLinearReflection E).toContinuousLinearEquiv.contDiff.add contDiff_const
+
+/-- **Gradients of odd functions.** Let `h` be odd under the reflection `ρ` in `{a} × E` on an
+open set `U`, that is `h (ρ x) = -h x` for `x ∈ U`. If `h` is differentiable at `ρ x`, then its
+gradient transforms by minus the linear part `R` of `ρ`: `∇h (ρ x) = -R (∇h x)`. The normal
+component of `∇h` is therefore even under `ρ` and its tangential components are odd. -/
+theorem gradient_normalReflection_of_forall_eq_neg {a : ℝ} {U : Set (WithLp 2 (ℝ × E))}
+    (hU : IsOpen U) {h : WithLp 2 (ℝ × E) → ℝ} (hodd : ∀ x ∈ U, h (normalReflection E a x) = -h x)
+    {x : WithLp 2 (ℝ × E)} (hx : x ∈ U) (hd : DifferentiableAt ℝ h (normalReflection E a x)) :
+    ∇ h (normalReflection E a x) = -normalLinearReflection E (∇ h x) := by
+  set R := normalLinearReflection E
+  have hcomp : HasFDerivAt (fun y => h (normalReflection E a y))
+      ((fderiv ℝ h (normalReflection E a x)).comp
+        (R.toContinuousLinearEquiv : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))) x :=
+    hd.hasFDerivAt.comp x (hasFDerivAt_normalReflection a x)
+  have heq : (fun y => h (normalReflection E a y)) =ᶠ[𝓝 x] -h :=
+    Filter.eventually_of_mem (hU.mem_nhds hx) hodd
+  have hD : -fderiv ℝ h x = (fderiv ℝ h (normalReflection E a x)).comp
+      (R.toContinuousLinearEquiv : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) := by
+    rw [← fderiv_neg, ← (hcomp.congr_of_eventuallyEq heq.symm).fderiv]
+  refine ext_inner_right ℝ fun v => ?_
+  have hv := congrArg (fun L : WithLp 2 (ℝ × E) →L[ℝ] ℝ => L (R v)) hD
+  simp only [neg_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv, R,
+    normalLinearReflection_normalLinearReflection] at hv
+  rw [inner_gradient_left, ← hv, ← inner_gradient_left, inner_neg_left,
+    inner_normalLinearReflection_left_eq_right]
+
+/-- The normal reflection in `{a} × E` maps every ball centred on that hyperplane into itself. -/
+theorem mapsTo_normalReflection_ball {a : ℝ} {x₀ : WithLp 2 (ℝ × E)} (hx₀ : x₀.fst = a) (r : ℝ) :
+    MapsTo (normalReflection E a) (Metric.ball x₀ r) (Metric.ball x₀ r) := fun x hx => by
+  rw [Metric.mem_ball, ← (normalReflection_eq_self_iff a x₀).2 hx₀,
+    (normalReflection E a).dist_map]
+  exact hx
+
+variable [MeasurableSpace E] [BorelSpace E]
+
+/-- The normal reflection preserves Lebesgue measure. -/
+theorem measurePreserving_normalReflection (a : ℝ) :
+    MeasurePreserving (normalReflection E a) := by
+  rw [normalReflection_eq_add]
+  exact (measurePreserving_add_right (volume : Measure (WithLp 2 (ℝ × E)))
+    (WithLp.toLp 2 (2 * a, 0))).comp (normalLinearReflection E).measurePreserving
+
+/-- Change of variables by the normal reflection: integrals against Lebesgue measure are
+invariant under it. -/
+theorem integral_comp_normalReflection (a : ℝ) {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (g : WithLp 2 (ℝ × E) → F) :
+    ∫ x, g (normalReflection E a x) = ∫ x, g x :=
+  (measurePreserving_normalReflection a).integral_comp
+    (normalReflection E a).toHomeomorph.measurableEmbedding g
+
+/-- Precomposition with the normal reflection preserves local integrability. -/
+theorem locallyIntegrable_comp_normalReflection (a : ℝ) {F : Type*}
+    [NormedAddCommGroup F] {g : WithLp 2 (ℝ × E) → F} (hg : LocallyIntegrable g) :
+    LocallyIntegrable fun x => g (normalReflection E a x) :=
+  (locallyIntegrable_map_homeomorph (normalReflection E a).toHomeomorph).1 <| by
+    rwa [AffineIsometryEquiv.coe_toHomeomorph, (measurePreserving_normalReflection a).map_eq]
+
+/-- On a set `U` mapped into itself by the normal reflection `ρ`, the indicator of `U` splits off
+the hyperplane `{a} × E` into the indicators of `U ∩ H` and of its mirror image
+`U ∩ ρ⁻¹ H`. The hyperplane is null, so the splitting holds almost everywhere. -/
+private theorem indicator_ae_eq_add_indicator_comp_normalReflection {a : ℝ}
+    {U : Set (WithLp 2 (ℝ × E))} (hU : MapsTo (normalReflection E a) U U)
+    {F : Type*} [AddZeroClass F] {g : WithLp 2 (ℝ × E) → F}
+    (hg : ∀ x ∈ U, g (normalReflection E a x) = g x) :
+    U.indicator g =ᵐ[volume] fun x => (U ∩ (normalHalfSpace (E := E) a : Set _)).indicator g x +
+      (U ∩ (normalHalfSpace (E := E) a : Set _)).indicator g (normalReflection E a x) := by
+  set H : Set (WithLp 2 (ℝ × E)) := ↑(normalHalfSpace (E := E) a)
+  filter_upwards [measure_eq_zero_iff_ae_notMem.1
+    (Measure.addHaar_setOf_fst_eq (E := E) volume a)] with x hx
+  have hx' : x.fst ≠ a := hx
+  have hρU : normalReflection E a x ∈ U ↔ x ∈ U :=
+    ⟨fun h => normalReflection_normalReflection a x ▸ hU h, fun h => hU h⟩
+  by_cases hxU : x ∈ U
+  · rcases lt_or_gt_of_ne hx' with hlt | hgt
+    · have h1 : x ∉ U ∩ H := fun h => absurd hlt (not_lt.2 ((mem_normalHalfSpace a x).1 h.2).le)
+      have h2 : normalReflection E a x ∈ U ∩ H :=
+        ⟨hU hxU, (normalReflection_mem_normalHalfSpace_iff a x).2 hlt⟩
+      rw [indicator_of_mem hxU, indicator_of_notMem h1, indicator_of_mem h2, hg x hxU, zero_add]
+    · have h1 : x ∈ U ∩ H := ⟨hxU, (mem_normalHalfSpace a x).2 hgt⟩
+      have h2 : normalReflection E a x ∉ U ∩ H := fun h =>
+        absurd ((normalReflection_mem_normalHalfSpace_iff a x).1 h.2) (not_lt.2 hgt.le)
+      rw [indicator_of_mem hxU, indicator_of_mem h1, indicator_of_notMem h2, add_zero]
+  · have h1 : x ∉ U ∩ H := fun h => hxU h.1
+    have h2 : normalReflection E a x ∉ U ∩ H := fun h => hxU (hρU.1 h.1)
+    rw [indicator_of_notMem hxU, indicator_of_notMem h1, indicator_of_notMem h2, add_zero]
+
+/-- The two halves of the splitting `indicator_ae_eq_add_indicator_comp_normalReflection` are
+integrable when `g` is integrable on `U ∩ H`. -/
+private theorem integrable_indicator_inter_normalHalfSpace {a : ℝ} {U : Set (WithLp 2 (ℝ × E))}
+    (hUm : MeasurableSet U) {F : Type*} [NormedAddCommGroup F] {g : WithLp 2 (ℝ × E) → F}
+    (hint : IntegrableOn g (U ∩ (normalHalfSpace (E := E) a : Set _))) :
+    Integrable ((U ∩ (normalHalfSpace (E := E) a : Set _)).indicator g) ∧
+      Integrable fun x =>
+        (U ∩ (normalHalfSpace (E := E) a : Set _)).indicator g (normalReflection E a x) := by
+  have h1 := (integrable_indicator_iff (hUm.inter (normalHalfSpace a).isOpen.measurableSet)).2 hint
+  exact ⟨h1, ((measurePreserving_normalReflection a).integrable_comp_emb
+    (normalReflection E a).toHomeomorph.measurableEmbedding).2 h1⟩
+
+/-- A function invariant under the normal reflection `ρ` on a measurable set `U` mapped into
+itself by `ρ` is integrable on `U` as soon as it is integrable on the half `U ∩ H`. -/
+theorem integrableOn_of_integrableOn_inter_normalHalfSpace {a : ℝ}
+    {U : Set (WithLp 2 (ℝ × E))} (hUm : MeasurableSet U) (hU : MapsTo (normalReflection E a) U U)
+    {F : Type*} [NormedAddCommGroup F] {g : WithLp 2 (ℝ × E) → F}
+    (hg : ∀ x ∈ U, g (normalReflection E a x) = g x)
+    (hint : IntegrableOn g (U ∩ (normalHalfSpace (E := E) a : Set _))) : IntegrableOn g U := by
+  obtain ⟨h1, h2⟩ := integrable_indicator_inter_normalHalfSpace hUm hint
+  exact (integrable_indicator_iff hUm).1 <|
+    (h1.add h2).congr (indicator_ae_eq_add_indicator_comp_normalReflection hU hg).symm
+
+/-- **Integrals of reflection-invariant functions.** If `U` is a measurable set mapped into
+itself by the normal reflection `ρ` in `{a} × E`, for instance a ball centred on that hyperplane,
+and `g` is integrable on `U ∩ H` and invariant under `ρ` on `U`, then the integral of `g` over `U`
+is twice its integral over `U ∩ H`. -/
+theorem setIntegral_eq_two_smul_setIntegral_inter_normalHalfSpace {a : ℝ}
+    {U : Set (WithLp 2 (ℝ × E))} (hUm : MeasurableSet U) (hU : MapsTo (normalReflection E a) U U)
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {g : WithLp 2 (ℝ × E) → F}
+    (hg : ∀ x ∈ U, g (normalReflection E a x) = g x)
+    (hint : IntegrableOn g (U ∩ (normalHalfSpace (E := E) a : Set _))) :
+    ∫ x in U, g x = (2 : ℝ) • ∫ x in U ∩ (normalHalfSpace (E := E) a : Set _), g x := by
+  obtain ⟨h1, h2⟩ := integrable_indicator_inter_normalHalfSpace hUm hint
+  rw [← integral_indicator hUm,
+    integral_congr_ae (indicator_ae_eq_add_indicator_comp_normalReflection hU hg),
+    integral_add h1 h2, integral_comp_normalReflection a,
+    integral_indicator (hUm.inter (normalHalfSpace a).isOpen.measurableSet), two_smul]
+
+omit [BorelSpace E] in
+/-- Two continuous linear endomorphisms agree as soon as their pairings agree with the normal
+direction on every vector and with the tangential directions on the normal and tangential
+directions. -/
+theorem ae_clm_eq_of_forall_inner_normal_tangent
+    {Φ Ψ : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
+    {μ : Measure (WithLp 2 (ℝ × E))}
+    (h1 : ∀ v, ∀ᵐ x ∂μ, ⟪Φ x v, WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ =
+      ⟪Ψ x v, WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ)
+    (h2 : ∀ y : E, ∀ᵐ x ∂μ, ⟪Φ x (WithLp.toLp 2 ((1 : ℝ), (0 : E))), WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ =
+      ⟪Ψ x (WithLp.toLp 2 ((1 : ℝ), (0 : E))), WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ)
+    (h3 : ∀ y z : E, ∀ᵐ x ∂μ, ⟪Φ x (WithLp.toLp 2 ((0 : ℝ), z)), WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ =
+      ⟪Ψ x (WithLp.toLp 2 ((0 : ℝ), z)), WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ) :
+    ∀ᵐ x ∂μ, Φ x = Ψ x := by
+  set b := (OrthonormalBasis.singleton Unit ℝ).prod (stdOrthonormalBasis ℝ E)
+  have hb_inl : b (Sum.inl ()) = WithLp.toLp 2 ((1 : ℝ), (0 : E)) := by simp [b]
+  have hb_inr (j : Fin (Module.finrank ℝ E)) :
+      b (Sum.inr j) = WithLp.toLp 2 ((0 : ℝ), stdOrthonormalBasis ℝ E j) := by simp [b]
+  have hentry (i j : Unit ⊕ Fin (Module.finrank ℝ E)) :
+      ∀ᵐ x ∂μ, ⟪Φ x (b i), b j⟫_ℝ = ⟪Ψ x (b i), b j⟫_ℝ := by
+    rcases j with ⟨⟩ | j
+    · rw [hb_inl]
+      exact h1 _
+    · rcases i with ⟨⟩ | i
+      · rw [hb_inl, hb_inr]
+        exact h2 _
+      · rw [hb_inr, hb_inr]
+        exact h3 _ _
+  filter_upwards [ae_all_iff.2 fun i => ae_all_iff.2 fun j => hentry i j] with x hx
+  exact ContinuousLinearMap.coe_injective (b.toBasis.ext fun i =>
+    InnerProductSpace.ext_inner_right_basis b.toBasis fun j => by simpa using hx i j)
+
+end Reflection
+
+/-! ### Cutoffs vanishing near the boundary hyperplane -/
+
+section Cutoff
+
+variable {E : Type*}
+
+/-- The boundary-layer cutoff `x ↦ σ(c (x.fst - a) - 1)` of slope `c` in the normal coordinate,
+where `σ` is `Real.smoothTransition`. For `0 < c` it vanishes when `x.fst ≤ a + 1 / c` and is one
+when `x.fst ≥ a + 2 / c`, so it is supported a positive distance inside the half-space
+`TauCeti.normalHalfSpace a`. -/
+def normalCutoff (a c : ℝ) (x : WithLp 2 (ℝ × E)) : ℝ :=
+  Real.smoothTransition (c * (x.fst - a) - 1)
+
+/-- The defining formula of the boundary-layer cutoff. -/
+theorem normalCutoff_def (a c : ℝ) (x : WithLp 2 (ℝ × E)) :
+    normalCutoff a c x = Real.smoothTransition (c * (x.fst - a) - 1) :=
+  normalCutoff.eq_1 a c x
+
+/-- The boundary-layer cutoff is nonnegative. -/
+theorem normalCutoff_nonneg (a c : ℝ) (x : WithLp 2 (ℝ × E)) : 0 ≤ normalCutoff a c x :=
+  Real.smoothTransition.nonneg _
+
+/-- The boundary-layer cutoff is at most one. -/
+theorem normalCutoff_le_one (a c : ℝ) (x : WithLp 2 (ℝ × E)) : normalCutoff a c x ≤ 1 :=
+  Real.smoothTransition.le_one _
+
+/-- The boundary-layer cutoff is zero where `c (x.fst - a) ≤ 1`. -/
+@[simp]
+theorem normalCutoff_eq_zero {a c : ℝ} {x : WithLp 2 (ℝ × E)} (hx : c * (x.fst - a) ≤ 1) :
+    normalCutoff a c x = 0 :=
+  Real.smoothTransition.zero_of_nonpos (by linarith)
+
+/-- The boundary-layer cutoff is one where `c (x.fst - a) ≥ 2`. -/
+@[simp]
+theorem normalCutoff_eq_one {a c : ℝ} {x : WithLp 2 (ℝ × E)} (hx : 2 ≤ c * (x.fst - a)) :
+    normalCutoff a c x = 1 :=
+  Real.smoothTransition.one_of_one_le (by linarith)
+
+/-- The argument `(n + 1) (x.fst - a) - 1` of the boundary cutoff of slope `n + 1`. -/
+private def cutoffArg (a : ℝ) (n : ℕ) (x : WithLp 2 (ℝ × E)) : ℝ :=
+  ((n : ℝ) + 1) * (x.fst - a) - 1
+
+private theorem eventually_lt_cutoffArg {a : ℝ} {x : WithLp 2 (ℝ × E)} (hx : a < x.fst) (c : ℝ) :
+    ∀ᶠ n : ℕ in atTop, c < cutoffArg a n x := by
+  have h : Tendsto (fun n : ℕ => ((n : ℝ) + 1) * (x.fst - a) - 1) atTop atTop :=
+    tendsto_atTop_add_const_right _ _
+      (((tendsto_natCast_atTop_atTop).atTop_add tendsto_const_nhds).atTop_mul_const
+        (sub_pos.2 hx))
+  exact h.eventually_gt_atTop c
+
+/-- Left of the boundary hyperplane the cutoff argument is negative. -/
+private theorem cutoffArg_neg_of_not_lt {a : ℝ} {x : WithLp 2 (ℝ × E)} (n : ℕ)
+    (hx : ¬ a < x.fst) : cutoffArg a n x < 0 := by
+  have hmul : ((n : ℝ) + 1) * (x.fst - a) ≤ 0 :=
+    mul_nonpos_of_nonneg_of_nonpos (by positivity) (sub_nonpos.2 (le_of_not_gt hx))
+  dsimp only [cutoffArg]
+  linarith
+
+private theorem eventually_normalCutoff_eq_one {a : ℝ} {x : WithLp 2 (ℝ × E)} (hx : a < x.fst) :
+    ∀ᶠ n : ℕ in atTop, normalCutoff a ((n : ℝ) + 1) x = 1 :=
+  (eventually_lt_cutoffArg hx 1).mono fun _ hn => Real.smoothTransition.one_of_one_le hn.le
+
+variable [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+private theorem contDiff_cutoffArg (a : ℝ) (n : ℕ) :
+    ContDiff ℝ ∞ (cutoffArg (E := E) a n) :=
+  (contDiff_const.mul ((WithLp.fstL 2 ℝ ℝ E).contDiff.sub contDiff_const)).sub contDiff_const
+
+/-- The boundary-layer cutoff is smooth. -/
+theorem contDiff_normalCutoff (a c : ℝ) : ContDiff ℝ ∞ (normalCutoff (E := E) a c) :=
+  Real.smoothTransition.contDiff.comp
+    ((contDiff_const.mul ((WithLp.fstL 2 ℝ ℝ E).contDiff.sub contDiff_const)).sub contDiff_const)
+
+/-- The derivative of the boundary-layer cutoff is `σ'(c (x.fst - a) - 1) c` times the normal
+coordinate. -/
+theorem hasFDerivAt_normalCutoff (a c : ℝ) (x : WithLp 2 (ℝ × E)) :
+    HasFDerivAt (normalCutoff a c)
+      ((deriv Real.smoothTransition (c * (x.fst - a) - 1) * c) • WithLp.fstL 2 ℝ ℝ E) x := by
+  have hℓ : HasFDerivAt (fun y : WithLp 2 (ℝ × E) => c * (y.fst - a) - 1)
+      (c • WithLp.fstL 2 ℝ ℝ E) x :=
+    (((WithLp.fstL 2 ℝ ℝ E).hasFDerivAt.sub_const a).const_mul c).sub_const 1
+  have hst : HasDerivAt Real.smoothTransition
+      (deriv Real.smoothTransition (c * (x.fst - a) - 1)) (c * (x.fst - a) - 1) :=
+    ((Real.smoothTransition.contDiff (n := 1)).differentiable one_ne_zero _).hasDerivAt
+  exact (hst.comp_hasFDerivAt x hℓ).congr_fderiv (by rw [smul_smul])
+
+/-- The product rule for a cutoff times a differentiable function. -/
+private theorem lineDeriv_normalCutoff_mul (a : ℝ) (n : ℕ) {χ : WithLp 2 (ℝ × E) → ℝ}
+    (hχ : Differentiable ℝ χ) (x v : WithLp 2 (ℝ × E)) :
+    lineDeriv ℝ (normalCutoff a ((n : ℝ) + 1) * χ) x v =
+      normalCutoff a ((n : ℝ) + 1) x * fderiv ℝ χ x v +
+        χ x * (deriv Real.smoothTransition (cutoffArg a n x) * (((n : ℝ) + 1) * v.fst)) := by
+  rw [((hasFDerivAt_normalCutoff a _ x).mul (hχ x).hasFDerivAt).hasLineDerivAt v |>.lineDeriv]
+  simp only [FunLike.coe_add, Pi.add_apply, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul,
+    WithLp.fstL_apply, cutoffArg]
+  ring
+
+/-- A differentiable function vanishing on the hyperplane `{a} × E`, with derivative bounded by
+`M`, is bounded by `M (x.fst - a)` on the side `a ≤ x.fst`. -/
+private theorem abs_le_mul_sub_of_eq_zero_on_hyperplane {a M : ℝ} {χ : WithLp 2 (ℝ × E) → ℝ}
+    (hχ : Differentiable ℝ χ) (hM : ∀ y, ‖fderiv ℝ χ y‖ ≤ M)
+    (hχa : ∀ y : E, χ (WithLp.toLp 2 (a, y)) = 0) {x : WithLp 2 (ℝ × E)} (hx : a ≤ x.fst) :
+    |χ x| ≤ M * (x.fst - a) := by
+  have hmv := Convex.norm_image_sub_le_of_norm_fderiv_le (s := univ)
+    (fun y _ => hχ y) (fun y _ => hM y) convex_univ
+    (mem_univ (WithLp.toLp 2 (a, x.snd))) (mem_univ x)
+  have hx' : x - WithLp.toLp 2 (a, x.snd) = WithLp.toLp 2 (x.fst - a, (0 : E)) := by
+    obtain ⟨⟨t, y⟩⟩ := x; simp [← WithLp.toLp_sub]
+  rwa [hχa x.snd, sub_zero, hx', WithLp.norm_toLp_fst, Real.norm_of_nonneg (sub_nonneg.2 hx),
+    Real.norm_eq_abs] at hmv
+
+/-- For a positive slope `c`, the boundary-layer cutoff has topological support inside the
+half-space `TauCeti.normalHalfSpace a`. -/
+theorem tsupport_normalCutoff_subset (a : ℝ) {c : ℝ} (hc : 0 < c) :
+    tsupport (normalCutoff (E := E) a c) ⊆ normalHalfSpace (E := E) a := by
+  have hclosed : IsClosed {x : WithLp 2 (ℝ × E) | a + c⁻¹ ≤ x.fst} :=
+    isClosed_le continuous_const (WithLp.fstL 2 ℝ ℝ E).continuous
+  refine (closure_minimal (fun x hx => ?_) hclosed).trans fun x hx => ?_
+  · have h0 : 0 < c * (x.fst - a) - 1 := by
+      by_contra h
+      exact hx (normalCutoff_eq_zero (by linarith [not_lt.1 h]))
+    rw [mem_ofPred_eq, inv_eq_one_div, ← le_sub_iff_add_le', div_le_iff₀ hc]
+    linarith
+  · have : a < x.fst := lt_of_lt_of_le (lt_add_of_pos_right a (inv_pos.2 hc)) hx
+    simpa using this
+
+end Cutoff
+
+section CutoffBound
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+
+/-- The boundary-layer cutoff and its gradient are bounded by a common constant. -/
+theorem exists_normalCutoff_bound (a : ℝ) {c : ℝ} (hc : 0 ≤ c) :
+    ∃ M, 0 ≤ M ∧ (∀ x, |normalCutoff (E := E) a c x| ≤ M) ∧
+      ∀ x, ‖∇ (normalCutoff (E := E) a c) x‖ ≤ M := by
+  obtain ⟨B, hB⟩ := (Real.smoothTransition.contDiff.continuous_deriv le_rfl).norm
+    |>.bddAbove_range_of_hasCompactSupport Real.smoothTransition.hasCompactSupport_deriv.norm
+  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB ⟨0, rfl⟩)
+  refine ⟨max 1 (B * c), zero_le_one.trans (le_max_left _ _), fun x => ?_, fun x => ?_⟩
+  · rw [abs_of_nonneg (normalCutoff_nonneg a c x)]
+    exact (normalCutoff_le_one a c x).trans (le_max_left _ _)
+  · have hfst : ‖WithLp.fstL 2 ℝ ℝ E‖ ≤ 1 :=
+      ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun y => by
+        rw [one_mul]
+        exact WithLp.norm_fst_le ℝ y
+    rw [norm_gradient_eq_norm_fderiv, (hasFDerivAt_normalCutoff a c x).fderiv, norm_smul,
+      norm_mul, Real.norm_of_nonneg hc]
+    calc ‖deriv Real.smoothTransition (c * (x.fst - a) - 1)‖ * c * ‖WithLp.fstL 2 ℝ ℝ E‖
+        ≤ B * c * 1 := by
+          gcongr
+          exact hB ⟨_, rfl⟩
+      _ ≤ max 1 (B * c) := by
+          rw [mul_one]
+          exact le_max_right _ _
+
+end CutoffBound
+
+/-! ### Integration by parts up to the boundary -/
+
+section HalfSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+
+/-- Multiplying by the boundary cutoffs of slope `n + 1` does not change, in the limit `n → ∞`,
+the integral of an integrable function vanishing off the half-space. -/
+theorem tendsto_integral_normalCutoff_mul {a : ℝ} {F : WithLp 2 (ℝ × E) → ℝ}
+    (hF : Integrable F) (hF0 : ∀ x ∉ normalHalfSpace (E := E) a, F x = 0) :
+    Tendsto (fun n : ℕ => ∫ x, normalCutoff a ((n : ℝ) + 1) x * F x) atTop (𝓝 (∫ x, F x)) := by
+  refine tendsto_integral_of_dominated_convergence (fun x => ‖F x‖)
+    (fun n => (contDiff_normalCutoff a _).continuous.aestronglyMeasurable.mul hF.1) hF.norm
+    (fun n => Eventually.of_forall fun x => ?_) (Eventually.of_forall fun x => ?_)
+  · rw [norm_mul]
+    exact mul_le_of_le_one_left (norm_nonneg _)
+      (by rw [Real.norm_of_nonneg (normalCutoff_nonneg a _ x)]; exact normalCutoff_le_one a _ x)
+  · by_cases hx : a < x.fst
+    · exact tendsto_const_nhds.congr' <|
+        (eventually_normalCutoff_eq_one hx).mono fun n hn => by simp [hn]
+    · simp [hF0 x (by simpa using hx)]
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- Pointwise domination of the cutoff-derivative error term, where `C` bounds the derivative of
+`smoothTransition` on `[-1, 1]` and `M` bounds the derivative of `χ`. The bound is uniform in `n`
+and supported on `tsupport χ`. -/
+private theorem norm_mul_deriv_cutoff_le {a : ℝ} {w : WithLp 2 (ℝ × E) → ℝ}
+    {χ : WithLp 2 (ℝ × E) → ℝ} (hχ : ContDiff ℝ ∞ χ)
+    (hχa : ∀ y : E, χ (WithLp.toLp 2 (a, y)) = 0) (c : ℝ) {C M : ℝ} (hC0 : 0 ≤ C) (hM0 : 0 ≤ M)
+    (hC : ∀ t ∈ Icc (-1 : ℝ) 1, ‖deriv Real.smoothTransition t‖ ≤ C)
+    (hM : ∀ x, ‖fderiv ℝ χ x‖ ≤ M) (n : ℕ) (x : WithLp 2 (ℝ × E)) :
+    ‖χ x * (deriv Real.smoothTransition (cutoffArg a n x) * (((n : ℝ) + 1) * c)) * w x‖ ≤
+      2 * (C * M * |c|) * (tsupport χ).indicator (fun x => ‖w x‖) x := by
+  have hb0 : 0 ≤ 2 * (C * M * |c|) * (tsupport χ).indicator (fun x => ‖w x‖) x :=
+    mul_nonneg (by positivity) (indicator_nonneg (fun _ _ => norm_nonneg _) _)
+  -- The integrand vanishes off `tsupport χ`, off the half-space, and where the cutoff argument
+  -- exceeds `1` (there `smoothTransition` is constant). On the remaining band the cutoff argument
+  -- lies in `[-1, 1]`, so the derivative is at most `C`, and `(n + 1) (x.fst - a) ≤ 2` absorbs the
+  -- factor `n + 1` against `|χ x| ≤ M (x.fst - a)`.
+  by_cases hxK : x ∈ tsupport χ
+  swap
+  · simpa [image_eq_zero_of_notMem_tsupport hxK] using hb0
+  by_cases hxa : a < x.fst
+  swap
+  · simpa [Real.smoothTransition.deriv_of_neg (cutoffArg_neg_of_not_lt n hxa)] using hb0
+  by_cases hs : 1 < cutoffArg a n x
+  · simpa [Real.smoothTransition.deriv_of_one_lt hs] using hb0
+  push Not at hs
+  have hpos : (0 : ℝ) < (n : ℝ) + 1 := by positivity
+  have hs' : -1 ≤ cutoffArg a n x := by
+    simp only [cutoffArg]; nlinarith [mul_pos hpos (sub_pos.2 hxa)]
+  have hCs := hC _ ⟨hs', hs⟩
+  have h2 : ((n : ℝ) + 1) * (x.fst - a) ≤ 2 := by simp only [cutoffArg] at hs; linarith
+  rw [indicator_of_mem hxK]
+  simp only [norm_mul, Real.norm_eq_abs, abs_of_pos hpos] at hCs ⊢
+  calc |χ x| * (|deriv Real.smoothTransition (cutoffArg a n x)| *
+        (((n : ℝ) + 1) * |c|)) * |w x|
+      ≤ (M * (x.fst - a)) * (C * (((n : ℝ) + 1) * |c|)) * |w x| := by
+        gcongr
+        exact abs_le_mul_sub_of_eq_zero_on_hyperplane (hχ.differentiable (by simp)) hM hχa
+          hxa.le
+    _ = C * M * |c| * |w x| * (((n : ℝ) + 1) * (x.fst - a)) := by ring
+    _ ≤ C * M * |c| * |w x| * 2 := by gcongr
+    _ = 2 * (C * M * |c|) * |w x| := by ring
+
+/-- The error term created by differentiating the cutoff in the normal direction tends to zero
+when `χ` vanishes on the boundary hyperplane: there `|χ| ≤ M (x.fst - a)`, which compensates the
+size of the derivative of the cutoff. -/
+private theorem tendsto_integral_mul_deriv_cutoff {a : ℝ} {w : WithLp 2 (ℝ × E) → ℝ}
+    (hw : LocallyIntegrable w)
+    {χ : WithLp 2 (ℝ × E) → ℝ} (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
+    (hχa : ∀ y : E, χ (WithLp.toLp 2 (a, y)) = 0) (c : ℝ) :
+    Tendsto (fun n : ℕ => ∫ x, χ x *
+      (deriv Real.smoothTransition (cutoffArg a n x) * (((n : ℝ) + 1) * c)) * w x)
+      atTop (𝓝 0) := by
+  have hdst : Continuous (deriv Real.smoothTransition) :=
+    (Real.smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl
+  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn hdst.continuousOn
+    (s := Icc (-1 : ℝ) 1)
+  obtain ⟨M, hM⟩ :=
+    (hχ.continuous_fderiv (by simp)).bounded_above_of_compact_support (hχc.fderiv (𝕜 := ℝ))
+  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0 ⟨by norm_num, by norm_num⟩)
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM 0)
+  have hK : MeasurableSet (tsupport χ) := hχc.isCompact.measurableSet
+  have hbound : Integrable fun x => 2 * (C * M * |c|) * (tsupport χ).indicator
+      (fun x => ‖w x‖) x :=
+    (IntegrableOn.integrable_indicator (hw.integrableOn_isCompact hχc.isCompact).norm
+      hK).const_mul _
+  have hmeas (n : ℕ) : AEStronglyMeasurable (fun x => χ x *
+      (deriv Real.smoothTransition (cutoffArg a n x) * (((n : ℝ) + 1) * c)) * w x) :=
+    (hχ.continuous.mul ((hdst.comp (contDiff_cutoffArg a n).continuous).mul
+      continuous_const)).aestronglyMeasurable.mul hw.aestronglyMeasurable
+  have hlim := tendsto_integral_of_dominated_convergence (f := fun _ => (0 : ℝ)) _
+    hmeas hbound (fun n => Eventually.of_forall fun x => ?_) (Eventually.of_forall fun x => ?_)
+  · simpa using hlim
+  · exact norm_mul_deriv_cutoff_le hχ hχa c hC0 hM0 hC hM n x
+  -- Pointwise limit: inside the half-space the cutoff argument eventually exceeds `1`, where the
+  -- derivative of `smoothTransition` vanishes; outside it the cutoff argument is negative.
+  · by_cases hxa : a < x.fst
+    · exact tendsto_const_nhds.congr' <| (eventually_lt_cutoffArg hxa 1).mono fun n hn => by
+        simp [Real.smoothTransition.deriv_of_one_lt hn]
+    · exact tendsto_const_nhds.congr fun n => by
+        simp [Real.smoothTransition.deriv_of_neg (cutoffArg_neg_of_not_lt n hxa)]
+
+/-- **The boundary-layer error vanishes in the limit.** Let `G` be a locally integrable vector
+field, and let `χ` be smooth with compact support and vanishing on the
+boundary hyperplane `{a} × E`. Then `∫ χ ⟪∇η_n, G⟫ → 0` as `n → ∞`, where `η_n` is the boundary
+cutoff of slope `n + 1`, even though `∇η_n` grows like `n` on the boundary layer. -/
+theorem tendsto_integral_mul_fderiv_normalCutoff_apply {a : ℝ}
+    {G : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)} (hG : LocallyIntegrable G)
+    {χ : WithLp 2 (ℝ × E) → ℝ} (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
+    (hχa : ∀ y : E, χ (WithLp.toLp 2 (a, y)) = 0) :
+    Tendsto (fun n : ℕ => ∫ x, χ x * fderiv ℝ (normalCutoff a ((n : ℝ) + 1)) x (G x)) atTop
+      (𝓝 0) := by
+  have hGfst : LocallyIntegrable fun x => (G x).fst := locallyIntegrableOn_univ.1 <|
+    (WithLp.fstL 2 ℝ ℝ E).locallyIntegrableOn_comp (hG.locallyIntegrableOn univ)
+  refine (tendsto_integral_mul_deriv_cutoff hGfst hχ hχc hχa 1).congr fun n =>
+      integral_congr_ae (Eventually.of_forall fun x => ?_)
+  simp only [(hasFDerivAt_normalCutoff a _ x).fderiv, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul,
+    WithLp.fstL_apply, cutoffArg]
+  ring
+
+/-- **Integration by parts up to the boundary.** Let `w` have weak derivative `w'` in the
+direction `v` on the half-space, both vanishing off it and locally integrable on the whole space.
+Then the integration-by-parts identity holds against every smooth compactly supported `χ`, not
+only those supported in the half-space, provided `v` is tangent to the boundary or `χ` vanishes
+on the boundary. -/
+private theorem integral_fderiv_mul_eq_neg_of_halfSpace {a : ℝ} {v : WithLp 2 (ℝ × E)}
+    {w w' : WithLp 2 (ℝ × E) → ℝ}
+    (h : HasWeakLineDerivOn volume (normalHalfSpace a) w w' v)
+    (hw : LocallyIntegrable w) (hw' : LocallyIntegrable w')
+    (hw0 : ∀ x, ¬ a < x.fst → w x = 0) (hw'0 : ∀ x, ¬ a < x.fst → w' x = 0)
+    {χ : WithLp 2 (ℝ × E) → ℝ} (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
+    (hv : v.fst = 0 ∨ ∀ y : E, χ (WithLp.toLp 2 (a, y)) = 0) :
+    ∫ x, fderiv ℝ χ x v * w x = -∫ x, χ x * w' x := by
+  have hdχ : Continuous fun x => fderiv ℝ χ x v :=
+    (hχ.continuous_fderiv (by simp)).clm_apply continuous_const
+  have hdst : Continuous (deriv Real.smoothTransition) :=
+    (Real.smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl
+  -- `D n` is the derivative of the `n`-th cutoff in the direction `v`.
+  set D : ℕ → WithLp 2 (ℝ × E) → ℝ := fun n x =>
+    deriv Real.smoothTransition (cutoffArg a n x) * (((n : ℝ) + 1) * v.fst) with hD
+  have hint1 : Integrable fun x => fderiv ℝ χ x v * w x := by
+    simpa using hw.integrable_smul_left_of_hasCompactSupport hdχ (hχc.fderiv_apply (𝕜 := ℝ) v)
+  have hint3 : Integrable fun x => χ x * w' x := by
+    simpa using hw'.integrable_smul_left_of_hasCompactSupport hχ.continuous hχc
+  have hint2 (n : ℕ) : Integrable fun x => χ x * D n x * w x := by
+    simpa using hw.integrable_smul_left_of_hasCompactSupport (hχ.continuous.mul
+      ((hdst.comp (contDiff_cutoffArg a n).continuous).mul continuous_const)) hχc.mul_right
+  have hint1' (n : ℕ) :
+      Integrable fun x => normalCutoff a ((n : ℝ) + 1) x * (fderiv ℝ χ x v * w x) :=
+    hint1.bdd_mul (contDiff_normalCutoff a _).continuous.aestronglyMeasurable
+      (Eventually.of_forall fun x => by
+        rw [Real.norm_of_nonneg (normalCutoff_nonneg a _ x)]; exact normalCutoff_le_one a _ x)
+  -- The weak derivative identity on the half-space, tested against `normalCutoff a (n + 1) * χ`.
+  have key (n : ℕ) : (∫ x, normalCutoff a ((n : ℝ) + 1) x * (fderiv ℝ χ x v * w x)) +
+      ∫ x, χ x * D n x * w x = -∫ x, normalCutoff a ((n : ℝ) + 1) x * (χ x * w' x) := by
+    let θ : 𝓓(normalHalfSpace (E := E) a, ℝ) :=
+      ⟨normalCutoff a ((n : ℝ) + 1) * χ, (contDiff_normalCutoff a _).mul hχ, hχc.mul_left,
+        tsupport_mul_subset_left.trans (tsupport_normalCutoff_subset a (by positivity))⟩
+    have hθ := h.integral_lineDeriv_smul_eq_neg_integral_smul θ
+    have hcoe : ((θ : 𝓓(normalHalfSpace (E := E) a, ℝ)) : WithLp 2 (ℝ × E) → ℝ) =
+        normalCutoff a ((n : ℝ) + 1) * χ := rfl
+    simp only [hcoe, lineDeriv_normalCutoff_mul a n (hχ.differentiable (by simp)), smul_eq_mul,
+      Pi.mul_apply] at hθ
+    rw [← integral_add (hint1' n) (hint2 n)]
+    convert hθ using 2
+    · funext x; simp only [hD]; ring
+    · congr 1; funext x; ring
+  -- Pass to the limit `n → ∞` in each of the three integrals.
+  have h1 := tendsto_integral_normalCutoff_mul (a := a) hint1
+    (fun x hx => by simp [hw0 x (by simpa using hx)])
+  have h3 := tendsto_integral_normalCutoff_mul (a := a) hint3
+    (fun x hx => by simp [hw'0 x (by simpa using hx)])
+  have h2 : Tendsto (fun n : ℕ => ∫ x, χ x * D n x * w x) atTop (𝓝 0) := by
+    rcases hv with hv | hv
+    · simp [hD, hv]
+    · exact tendsto_integral_mul_deriv_cutoff hw hχ hχc hv v.fst
+  have hlim := h1.add h2
+  rw [add_zero] at hlim
+  exact tendsto_nhds_unique (hlim.congr key) h3.neg
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- The chain rule for precomposition with the normal reflection. -/
+private theorem fderiv_comp_normalReflection_apply (a : ℝ) {φ : WithLp 2 (ℝ × E) → ℝ}
+    (hφ : Differentiable ℝ φ) (y d : WithLp 2 (ℝ × E)) :
+    fderiv ℝ (fun x => φ (normalReflection E a x)) y d =
+      fderiv ℝ φ (normalReflection E a y) (normalLinearReflection E d) := by
+  have h : HasFDerivAt (fun x => φ (normalReflection E a x)) _ y :=
+    (hφ (normalReflection E a y)).hasFDerivAt.comp y (hasFDerivAt_normalReflection a y)
+  rw [h.fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv]
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- On the boundary hyperplane the combination `φ + ε (φ ∘ ρ)` (odd under `ρ` when
+`ε = -1`) vanishes in the normal direction `ε = -1`, because `ρ` fixes the hyperplane; in the
+tangential direction `ε = 1` the direction has no normal component. -/
+private theorem fst_eq_zero_or_add_comp_normalReflection_eq_zero {a : ℝ} {d : WithLp 2 (ℝ × E)}
+    {ε : ℝ} (hε : ε = 1 ∨ ε = -1) (hd : normalLinearReflection E d = ε • d)
+    (φ : WithLp 2 (ℝ × E) → ℝ) :
+    d.fst = 0 ∨ ∀ y : E,
+      φ (WithLp.toLp 2 (a, y)) + ε * φ (normalReflection E a (WithLp.toLp 2 (a, y))) = 0 := by
+  rcases hε with rfl | rfl
+  · left
+    have h := congrArg WithLp.fst hd
+    simp only [normalLinearReflection_apply, WithLp.toLp_fst, one_smul] at h
+    linarith
+  · right
+    intro y
+    have hy : normalReflection E a (WithLp.toLp 2 (a, y)) = WithLp.toLp 2 (a, y) :=
+      (normalReflection_eq_self_iff a _).2 rfl
+    simp only [hy]
+    ring
+
+/-- The left side of `integral_lineDeriv_smul_add_comp_normalReflection`: changing variables by the
+reflection turns the pairing of `w + w ∘ ρ` with `∂_d φ` into the pairing of `w` with `∂_d` of the
+combination `φ + ε (φ ∘ ρ)` (odd under `ρ` when `ε = -1`). -/
+private theorem integral_lineDeriv_smul_add_comp_normalReflection_eq_fderiv {a : ℝ}
+    {w : WithLp 2 (ℝ × E) → ℝ} (hwl : LocallyIntegrable w)
+    {d : WithLp 2 (ℝ × E)} {ε : ℝ} (hε : ε = 1 ∨ ε = -1)
+    (hd : normalLinearReflection E d = ε • d)
+    {φ : WithLp 2 (ℝ × E) → ℝ} (hφ : ContDiff ℝ ∞ φ) (hφc : HasCompactSupport φ) :
+    ∫ x, lineDeriv ℝ φ x d • (w x + w (normalReflection E a x)) =
+      ∫ x, fderiv ℝ (fun x => φ x + ε * φ (normalReflection E a x)) x d * w x := by
+  set ρ := normalReflection E a
+  have hεε : ε * ε = 1 := by rcases hε with rfl | rfl <;> norm_num
+  have hwρ : LocallyIntegrable fun x => w (ρ x) := locallyIntegrable_comp_normalReflection a hwl
+  have hφd : Differentiable ℝ φ := hφ.differentiable (by simp)
+  set ψ : WithLp 2 (ℝ × E) → ℝ := fun x => φ (ρ x) with hψdef
+  have hψ : ContDiff ℝ ∞ ψ := hφ.comp (contDiff_normalReflection a)
+  have hψc : HasCompactSupport ψ := hφc.comp_homeomorph ρ.toHomeomorph
+  have hfdφρ (y : WithLp 2 (ℝ × E)) : fderiv ℝ φ (ρ y) d = ε * fderiv ℝ ψ y d := by
+    rw [hψdef, fderiv_comp_normalReflection_apply a hφd, hd, map_smul, smul_eq_mul, ← mul_assoc,
+      hεε, one_mul]
+  have hfdχ (x : WithLp 2 (ℝ × E)) :
+      fderiv ℝ (fun x => φ x + ε * ψ x) x d = fderiv ℝ φ x d + ε * fderiv ℝ ψ x d := by
+    have h : HasFDerivAt (fun x => φ x + ε * ψ x) _ x :=
+      (hφd x).hasFDerivAt.add ((hψ.differentiable (by simp) x).hasFDerivAt.const_mul ε)
+    rw [h.fderiv]
+    simp
+  have hcφ : Continuous fun x => fderiv ℝ φ x d :=
+    (hφ.continuous_fderiv (by simp)).clm_apply continuous_const
+  have hcψ : Continuous fun x => fderiv ℝ ψ x d :=
+    (hψ.continuous_fderiv (by simp)).clm_apply continuous_const
+  have I1 : Integrable fun x => fderiv ℝ φ x d * w x := by
+    simpa using hwl.integrable_smul_left_of_hasCompactSupport hcφ (hφc.fderiv_apply (𝕜 := ℝ) d)
+  have I2 : Integrable fun x => fderiv ℝ φ x d * w (ρ x) := by
+    simpa using hwρ.integrable_smul_left_of_hasCompactSupport hcφ (hφc.fderiv_apply (𝕜 := ℝ) d)
+  have I3 : Integrable fun x => ε * fderiv ℝ ψ x d * w x := by
+    simpa using hwl.integrable_smul_left_of_hasCompactSupport (continuous_const.mul hcψ)
+      (hψc.fderiv_apply (𝕜 := ℝ) d).mul_left
+  have hcv1 : ∫ x, fderiv ℝ φ x d * w (ρ x) = ∫ x, ε * fderiv ℝ ψ x d * w x := by
+    rw [← integral_comp_normalReflection a (fun y => ε * fderiv ℝ ψ y d * w y)]
+    simp only [← hfdφρ, ρ, normalReflection_normalReflection]
+  calc ∫ x, lineDeriv ℝ φ x d • (w x + w (ρ x))
+      = ∫ x, (fderiv ℝ φ x d * w x + fderiv ℝ φ x d * w (ρ x)) := by
+        refine integral_congr_ae (Eventually.of_forall fun x => ?_)
+        simp only [(hφd x).lineDeriv_eq_fderiv, smul_eq_mul, mul_add]
+    _ = ∫ x, fderiv ℝ (fun x => φ x + ε * ψ x) x d * w x := by
+        rw [integral_add I1 I2, hcv1, ← integral_add I1 I3]
+        refine integral_congr_ae (Eventually.of_forall fun x => ?_)
+        simp only [hfdχ]
+        ring
+
+/-- The right side of `integral_lineDeriv_smul_add_comp_normalReflection`: changing variables by the
+reflection turns the pairing of `G` with the combination `φ + ε (φ ∘ ρ)` (odd under `ρ` when
+`ε = -1`) into the pairing of `G + R (G ∘ ρ)` with `φ`, where `R` is the linear normal
+reflection. -/
+private theorem integral_add_comp_normalReflection_mul_inner {a : ℝ}
+    {G : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)} (hGl : LocallyIntegrable G)
+    {d : WithLp 2 (ℝ × E)} {ε : ℝ} (hd : normalLinearReflection E d = ε • d)
+    {φ : WithLp 2 (ℝ × E) → ℝ} (hφ : ContDiff ℝ ∞ φ) (hφc : HasCompactSupport φ) :
+    ∫ x, (φ x + ε * φ (normalReflection E a x)) * inner ℝ (G x) d =
+      ∫ x, φ x • inner ℝ (G x + normalLinearReflection E (G (normalReflection E a x))) d := by
+  set ρ := normalReflection E a
+  have hGd := hGl.inner_const (𝕜 := ℝ) d
+  have hGρd : LocallyIntegrable fun x => inner ℝ (G (ρ x)) d :=
+    (locallyIntegrable_comp_normalReflection a hGl).inner_const d
+  have hinner (x : WithLp 2 (ℝ × E)) :
+      inner ℝ (G x + normalLinearReflection E (G (ρ x))) d =
+        inner ℝ (G x) d + ε * inner ℝ (G (ρ x)) d := by
+    rw [inner_add_left, inner_normalLinearReflection_left_eq_right, hd, real_inner_smul_right]
+  set ψ : WithLp 2 (ℝ × E) → ℝ := fun x => φ (ρ x) with hψdef
+  have hψ : ContDiff ℝ ∞ ψ := hφ.comp (contDiff_normalReflection a)
+  have hψc : HasCompactSupport ψ := hφc.comp_homeomorph ρ.toHomeomorph
+  have J1 : Integrable fun x => φ x * inner ℝ (G x) d := by
+    simpa using hGd.integrable_smul_left_of_hasCompactSupport hφ.continuous hφc
+  have J2 : Integrable fun x => φ x * (ε * inner ℝ (G (ρ x)) d) := by
+    simpa only [smul_eq_mul, mul_left_comm] using
+      (hGρd.integrable_smul_left_of_hasCompactSupport hφ.continuous hφc).const_mul ε
+  have J3 : Integrable fun x => ε * ψ x * inner ℝ (G x) d := by
+    simpa using hGd.integrable_smul_left_of_hasCompactSupport (continuous_const.mul hψ.continuous)
+      hψc.mul_left
+  have hcv2 : ∫ x, φ x * (ε * inner ℝ (G (ρ x)) d) = ∫ x, ε * ψ x * inner ℝ (G x) d := by
+    rw [← integral_comp_normalReflection a (fun y => ε * ψ y * inner ℝ (G y) d)]
+    refine integral_congr_ae (Eventually.of_forall fun x => ?_)
+    simp only [ψ, ρ, normalReflection_normalReflection]
+    ring
+  calc ∫ x, (φ x + ε * ψ x) * inner ℝ (G x) d
+      = (∫ x, φ x * inner ℝ (G x) d) + ∫ x, φ x * (ε * inner ℝ (G (ρ x)) d) := by
+        rw [hcv2, ← integral_add J1 J3]
+        refine integral_congr_ae (Eventually.of_forall fun x => ?_)
+        ring
+    _ = ∫ x, φ x • inner ℝ (G x + normalLinearReflection E (G (ρ x))) d := by
+        rw [← integral_add J1 J2]
+        refine integral_congr_ae (Eventually.of_forall fun x => ?_)
+        simp only [hinner, smul_eq_mul]
+        ring
+
+/-- The integral identity behind `hasWeakLineDerivOn_add_comp_normalReflection_of_eq_smul`, for
+a single test function `φ`. Changing variables by the reflection turns both sides into pairings
+on the half-space with `χ = φ + ε (φ ∘ ρ)`, where integration by parts up to the boundary
+applies. -/
+private theorem integral_lineDeriv_smul_add_comp_normalReflection {a : ℝ}
+    {w : WithLp 2 (ℝ × E) → ℝ} {G : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)}
+    (hw : HasWeakFDerivOn volume (normalHalfSpace a) w fun x => innerSL ℝ (G x))
+    (hwl : LocallyIntegrable w) (hGl : LocallyIntegrable G)
+    (hw0 : ∀ x, ¬ a < x.fst → w x = 0) (hG0 : ∀ x, ¬ a < x.fst → G x = 0)
+    {d : WithLp 2 (ℝ × E)} {ε : ℝ} (hε : ε = 1 ∨ ε = -1)
+    (hd : normalLinearReflection E d = ε • d)
+    {φ : WithLp 2 (ℝ × E) → ℝ} (hφ : ContDiff ℝ ∞ φ) (hφc : HasCompactSupport φ) :
+    ∫ x, lineDeriv ℝ φ x d • (w x + w (normalReflection E a x)) =
+      -∫ x, φ x • inner ℝ (G x + normalLinearReflection E (G (normalReflection E a x))) d := by
+  have hC : ∫ x, fderiv ℝ (fun x => φ x + ε * φ (normalReflection E a x)) x d * w x =
+      -∫ x, (φ x + ε * φ (normalReflection E a x)) * inner ℝ (G x) d :=
+    integral_fderiv_mul_eq_neg_of_halfSpace (by simpa using hw.hasWeakLineDerivOn d) hwl
+      (hGl.inner_const (𝕜 := ℝ) d) hw0 (fun x hx => by simp [hG0 x hx])
+      (hφ.add (contDiff_const.mul (hφ.comp (contDiff_normalReflection a))))
+      (hφc.add (hφc.comp_homeomorph (normalReflection E a).toHomeomorph).mul_left)
+      (fst_eq_zero_or_add_comp_normalReflection_eq_zero hε hd φ)
+  rw [integral_lineDeriv_smul_add_comp_normalReflection_eq_fderiv hwl hε hd hφ hφc, hC,
+    integral_add_comp_normalReflection_mul_inner hGl hd hφ hφc]
+
+/-- The even reflection is weakly differentiable in every direction `d` which the linear normal
+reflection maps to `ε • d` with `ε = ±1`: the tangential directions (`ε = 1`) and the normal
+direction (`ε = -1`). -/
+private theorem hasWeakLineDerivOn_add_comp_normalReflection_of_eq_smul {a : ℝ}
+    {w : WithLp 2 (ℝ × E) → ℝ} {G : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)}
+    (hw : HasWeakFDerivOn volume (normalHalfSpace a) w fun x => innerSL ℝ (G x))
+    (hwl : LocallyIntegrable w) (hGl : LocallyIntegrable G)
+    (hw0 : ∀ x, ¬ a < x.fst → w x = 0) (hG0 : ∀ x, ¬ a < x.fst → G x = 0)
+    {d : WithLp 2 (ℝ × E)} {ε : ℝ} (hε : ε = 1 ∨ ε = -1)
+    (hd : normalLinearReflection E d = ε • d) :
+    HasWeakLineDerivOn volume ⊤ (fun x => w x + w (normalReflection E a x))
+      (fun x => inner ℝ (G x + normalLinearReflection E (G (normalReflection E a x))) d) d := by
+  have hderiv : LocallyIntegrable
+      (fun x => inner ℝ (G x + normalLinearReflection E (G (normalReflection E a x))) d) := by
+    simpa only [Pi.add_apply, Function.comp_apply, ContinuousLinearEquiv.coe_coe,
+      LinearIsometryEquiv.coe_toContinuousLinearEquiv] using LocallyIntegrable.inner_const (hGl.add
+        (locallyIntegrableOn_univ.1 <|
+          ((normalLinearReflection E).toContinuousLinearEquiv : WithLp 2 (ℝ × E) →L[ℝ] _)
+            |>.locallyIntegrableOn_comp
+              ((locallyIntegrable_comp_normalReflection a hGl).locallyIntegrableOn univ))) d
+  exact (hasWeakLineDerivOn_iff ((hwl.add (locallyIntegrable_comp_normalReflection a hwl))
+    |>.locallyIntegrableOn _) (hderiv.locallyIntegrableOn _)).2 fun φ hφ hφc _ =>
+      integral_lineDeriv_smul_add_comp_normalReflection hw hwl hGl hw0 hG0 hε hd hφ hφc
+
+/-- **Even reflection across the boundary of a half-space preserves weak differentiability.**
+Let `w` have weak gradient `G` on the half-space `{x | a < x.fst}`, with `w` and `G` vanishing
+off the half-space and locally integrable on the whole space (so integrable up to the boundary on
+bounded sets). Then `x ↦ w x + w (ρ x)`, where `ρ` is the reflection in the boundary hyperplane,
+is weakly differentiable on the whole space with weak gradient `x ↦ G x + R (G (ρ x))`, `R` the
+linear part of `ρ`. No boundary condition on `w` is assumed. -/
+theorem HasWeakFDerivOn.add_comp_normalReflection {a : ℝ}
+    {w : WithLp 2 (ℝ × E) → ℝ} {G : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)}
+    (hw : HasWeakFDerivOn volume (normalHalfSpace a) w fun x => innerSL ℝ (G x))
+    (hwl : LocallyIntegrable w) (hGl : LocallyIntegrable G)
+    (hw0 : ∀ x ∉ normalHalfSpace (E := E) a, w x = 0)
+    (hG0 : ∀ x ∉ normalHalfSpace (E := E) a, G x = 0) :
+    HasWeakFDerivOn volume ⊤ (fun x => w x + w (normalReflection E a x))
+      fun x => innerSL ℝ (G x + normalLinearReflection E (G (normalReflection E a x))) := by
+  have hw0' (x : WithLp 2 (ℝ × E)) (hx : ¬ a < x.fst) : w x = 0 := hw0 x (by simpa using hx)
+  have hG0' (x : WithLp 2 (ℝ × E)) (hx : ¬ a < x.fst) : G x = 0 := hG0 x (by simpa using hx)
+  rw [hasWeakFDerivOn_iff]
+  intro v
+  -- Split `v` into its normal and tangential parts and add the two directional derivatives.
+  have hv : v = WithLp.toLp 2 (v.fst, (0 : E)) + WithLp.toLp 2 ((0 : ℝ), v.snd) := by
+    cases v; simp [← WithLp.toLp_add]
+  have hn := hasWeakLineDerivOn_add_comp_normalReflection_of_eq_smul hw hwl hGl hw0' hG0'
+    (d := WithLp.toLp 2 (v.fst, (0 : E))) (Or.inr rfl) (by simp [← WithLp.toLp_neg])
+  have ht := hasWeakLineDerivOn_add_comp_normalReflection_of_eq_smul hw hwl hGl hw0' hG0'
+    (d := WithLp.toLp 2 ((0 : ℝ), v.snd)) (Or.inl rfl) (by simp)
+  have h := hn.add_direction ht
+  rw [← hv] at h
+  convert h using 1
+  funext x
+  rw [Pi.add_apply, ← inner_add_right, ← hv, innerSL_apply_apply]
+
+/-- **Extension by zero in a tangential direction.** Let `w` have weak derivative `w'` on the
+half-space `{x | a < x.fst}` in a direction `v` tangent to the boundary hyperplane, with `w` and
+`w'` vanishing off the half-space and locally integrable on the whole space. Then `w'` is a weak
+derivative of `w` in the direction `v` on the whole space. No boundary condition on `w` is needed:
+integration by parts in a tangential direction produces no boundary term. -/
+theorem HasWeakLineDerivOn.top_of_normalHalfSpace {a : ℝ} {v : WithLp 2 (ℝ × E)}
+    {w w' : WithLp 2 (ℝ × E) → ℝ} (h : HasWeakLineDerivOn volume (normalHalfSpace a) w w' v)
+    (hv : v.fst = 0) (hwl : LocallyIntegrable w) (hw'l : LocallyIntegrable w')
+    (hw0 : ∀ x ∉ normalHalfSpace (E := E) a, w x = 0)
+    (hw'0 : ∀ x ∉ normalHalfSpace (E := E) a, w' x = 0) :
+    HasWeakLineDerivOn volume ⊤ w w' v := by
+  refine (hasWeakLineDerivOn_iff (hwl.locallyIntegrableOn _) (hw'l.locallyIntegrableOn _)).2
+    fun φ hφ hφc _ => ?_
+  have hC := integral_fderiv_mul_eq_neg_of_halfSpace h hwl hw'l
+    (fun x hx => hw0 x (by simpa using hx)) (fun x hx => hw'0 x (by simpa using hx)) hφ hφc
+    (Or.inl hv)
+  simpa only [(hφ.differentiable (by simp) _).lineDeriv_eq_fderiv, smul_eq_mul] using hC
+
+/-- **Odd reflection in a tangential direction.** Let `w` have weak gradient `G` on the
+half-space `{x | a < x.fst}`, with `w` and `G` vanishing off the half-space and locally integrable
+on the whole space. Then, in every direction `d` tangent to the boundary hyperplane, the odd
+reflection `x ↦ w x - w (ρ x)` is weakly differentiable on the whole space, with weak derivative
+`x ↦ ⟪G x - R (G (ρ x)), d⟫`. No boundary condition on `w` is assumed; in the normal direction
+the odd reflection is weakly differentiable only when `w` has zero trace. -/
+theorem HasWeakFDerivOn.hasWeakLineDerivOn_sub_comp_normalReflection {a : ℝ}
+    {w : WithLp 2 (ℝ × E) → ℝ} {G : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)}
+    (hw : HasWeakFDerivOn volume (normalHalfSpace a) w fun x => innerSL ℝ (G x))
+    (hwl : LocallyIntegrable w) (hGl : LocallyIntegrable G)
+    (hw0 : ∀ x ∉ normalHalfSpace (E := E) a, w x = 0)
+    (hG0 : ∀ x ∉ normalHalfSpace (E := E) a, G x = 0) {d : WithLp 2 (ℝ × E)} (hd : d.fst = 0) :
+    HasWeakLineDerivOn volume ⊤ (fun x => w x - w (normalReflection E a x))
+      (fun x => inner ℝ (G x - normalLinearReflection E (G (normalReflection E a x))) d) d := by
+  -- The odd reflection is twice the extension by zero minus the even reflection.
+  have hz := (hw.hasWeakLineDerivOn d).top_of_normalHalfSpace hd hwl (hGl.inner_const d) hw0
+    fun x hx => by simp [hG0 x hx]
+  have h := (hz.const_smul 2).sub
+    ((hw.add_comp_normalReflection hwl hGl hw0 hG0).hasWeakLineDerivOn d)
+  convert h using 1
+  · funext x
+    simp only [Pi.sub_apply, Pi.smul_apply, smul_eq_mul]
+    ring
+  · funext x
+    simp only [Pi.sub_apply, Pi.smul_apply, smul_eq_mul, innerSL_apply_apply, inner_sub_left,
+      inner_add_left]
+    ring
+
+/-- **Precomposition with the reflection on the whole space.** If `w` has weak gradient `G` on
+the whole space, then `w ∘ ρ` has weak gradient `x ↦ R (G (ρ x))`, where `ρ` is the reflection in
+`{a} × E` and `R` its linear part. -/
+theorem HasWeakFDerivOn.comp_normalReflection {a : ℝ} {w : WithLp 2 (ℝ × E) → ℝ}
+    {G : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)}
+    (hw : HasWeakFDerivOn volume ⊤ w fun x => innerSL ℝ (G x)) :
+    HasWeakFDerivOn volume ⊤ (fun x => w (normalReflection E a x))
+      fun x => innerSL ℝ (normalLinearReflection E (G (normalReflection E a x))) := by
+  have h := hw.comp_measurePreserving (U := ⊤) (measurePreserving_normalReflection a)
+    (normalReflection E a).isometry.lipschitzWith.locallyLipschitz.locallyLipschitzOn
+    (mapsTo_univ _ _)
+  refine h.congr_ae_deriv (Eventually.of_forall fun x => ?_)
+  ext d
+  simp only [ContinuousLinearMap.comp_apply, (hasFDerivAt_normalReflection a x).fderiv]
+  simp
+
+end HalfSpace
+
+end TauCeti

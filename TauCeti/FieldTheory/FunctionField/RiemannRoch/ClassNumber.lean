@@ -14,7 +14,7 @@ public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Genus
 Let `F / k` be an algebraic function field. Riemann's theorem produces, from a divisor `B` and an
 `n` with `n · deg B ≥ g`, an **effective** representative of degree `n · deg B` in the class of
 `D + n·B` for every degree-zero divisor `D`
-(`TauCeti.Divisor.exists_isEffective_linearlyEquivalent_add_nsmul`): so the class of a degree-zero
+(`TauCeti.Divisor.exists_nonneg_linearlyEquivalent_add_nsmul`): so the class of a degree-zero
 divisor is the class of `A - n·B` with `A` effective of one fixed degree.  Taking `B` to be a
 place makes `deg B` positive, so such an `n` exists.
 
@@ -47,9 +47,9 @@ proved here to the ideal class group of an arbitrary affine model.
 
 ## Main results
 
-* `TauCeti.Divisor.finite_setOf_isEffective_degree_le`: over a finite constant field there are
+* `TauCeti.Divisor.finite_setOf_nonneg_degree_le`: over a finite constant field there are
   finitely many effective divisors of bounded degree (Lemma 5.1.1).
-* `TauCeti.Divisor.exists_isEffective_linearlyEquivalent_add_nsmul`: the effective representative
+* `TauCeti.Divisor.exists_nonneg_linearlyEquivalent_add_nsmul`: the effective representative
   of fixed degree in a degree-zero class, from Riemann's theorem.
 * `TauCeti.Divisor.finite_ker_degreeClass`: **`Cl⁰(F)` is finite** (Proposition 5.1.3), with
   `TauCeti.Divisor.classNumber_pos` recording that the class number is then positive.
@@ -79,14 +79,13 @@ namespace Divisor
 /-- **Over a finite constant field there are only finitely many effective divisors of degree at
 most `n`** (Stichtenoth, Lemma 5.1.1): such a divisor is supported on the finitely many places of
 degree at most `n`, and its coefficients lie in `[0, n]`. -/
-theorem finite_setOf_isEffective_degree_le (hF : IsFunctionField k F) [Finite k] (n : ℕ) :
-    {D : Divisor k F | WeilDivisor.IsEffective D ∧ degree D ≤ (n : ℤ)}.Finite := by
-  set E : Set (Divisor k F) := {D | WeilDivisor.IsEffective D ∧ degree D ≤ (n : ℤ)}
+theorem finite_setOf_nonneg_degree_le (hF : IsFunctionField k F) [Finite k] (n : ℕ) :
+    {D : Divisor k F | 0 ≤ D ∧ degree D ≤ (n : ℤ)}.Finite := by
+  set E : Set (Divisor k F) := {D | 0 ≤ D ∧ degree D ≤ (n : ℤ)}
   set S : Set (Place k F) := {P | P.degree ≤ n}
   have : Finite S := (Place.finite_setOf_degree_le hF n).to_subtype
   have : Finite (Set.Icc (0 : ℤ) n) := (Set.finite_Icc _ _).to_subtype
-  have hle : ∀ D ∈ E, (0 : Divisor k F) ≤ D := fun _ hD ↦
-    WeilDivisor.isEffective_iff_zero_le.mp hD.1
+  have hle : ∀ D ∈ E, (0 : Divisor k F) ≤ D := fun _ hD ↦ hD.1
   have hmem : ∀ D ∈ E, ∀ P : Place k F, (D : Divisor k F).coeff P ∈ Set.Icc (0 : ℤ) n :=
     fun D hD P ↦ ⟨WeilDivisor.coeff_le_coeff (hle D hD) P,
       (coeff_le_degree hF (hle D hD) P).trans hD.2⟩
@@ -111,9 +110,9 @@ of degree `n · deg B`** — for any divisor `B` and any `n` with `n · deg B` a
 (Stichtenoth, the representative step in the proof of Proposition 5.1.3). Riemann's theorem makes
 `L(D + n·B)` nonzero, and a nonzero function in it moves `D + n·B` to an effective divisor of the
 same degree. -/
-theorem exists_isEffective_linearlyEquivalent_add_nsmul (hF : IsFunctionField k F)
+theorem exists_nonneg_linearlyEquivalent_add_nsmul (hF : IsFunctionField k F)
     {B D : Divisor k F} {n : ℕ} (hn : (genus k F : ℤ) ≤ n * degree B) (hD : degree D = 0) :
-    ∃ A : Divisor k F, WeilDivisor.IsEffective A ∧ degree A = n * degree B ∧
+    ∃ A : Divisor k F, 0 ≤ A ∧ degree A = n * degree B ∧
       (Place.orderSystem hF).LinearlyEquivalent A (D + n • B) := by
   have hnB : degree (n • B) = n * degree B := by rw [map_nsmul, nsmul_eq_mul]
   have hdeg : degree (D + n • B) = n * degree B := by rw [degree_add, hD, zero_add, hnB]
@@ -125,7 +124,7 @@ theorem exists_isEffective_linearlyEquivalent_add_nsmul (hF : IsFunctionField k 
     Submodule.exists_mem_ne_zero_of_ne_bot
       ((Divisor.one_le_dim_iff_riemannRochSpace_ne_bot hF _).mp (mod_cast hdim))
   refine ⟨principal hF (Units.mk0 z hz0) + (D + n • B), ?_, ?_, ?_⟩
-  · refine (WeilDivisor.isEffective_iff _).mpr fun P ↦ ?_
+  · refine (WeilDivisor.nonneg_iff _).mpr fun P ↦ ?_
     have hord := (mem_riemannRochSpace_iff_neg_le_ord hz0).mp hz P
     rw [WeilDivisor.coeff_add, coeff_principal, Units.val_mk0]
     omega
@@ -151,9 +150,9 @@ theorem finite_ker_degreeClass (hF : IsFunctionField k F) [Finite k] :
   have hgen : (genus k F : ℤ) ≤ n * degree B := by nlinarith [Int.natCast_nonneg (genus k F)]
   set m : ℕ := (n * degree B).toNat
   have hmcast : (m : ℤ) = n * degree B := Int.toNat_of_nonneg (by positivity)
-  set T : Set (Divisor k F) := {D | WeilDivisor.IsEffective D ∧ degree D = (m : ℤ)}
+  set T : Set (Divisor k F) := {D | 0 ≤ D ∧ degree D = (m : ℤ)}
   have : Finite T :=
-    ((finite_setOf_isEffective_degree_le hF m).subset (t := T) fun _ hD ↦
+    ((finite_setOf_nonneg_degree_le hF m).subset (t := T) fun _ hD ↦
       ⟨hD.1, hD.2.le⟩).to_subtype
   have hnB : degree (n • B) = n * degree B := by rw [map_nsmul, nsmul_eq_mul]
   have hker : ∀ A : T, (Place.orderSystem hF).divisorClass ((A : Divisor k F) - n • B) ∈
@@ -164,7 +163,7 @@ theorem finite_ker_degreeClass (hF : IsFunctionField k F) [Finite k] :
   rintro ⟨c, hc⟩
   obtain ⟨D, rfl⟩ := (Place.orderSystem hF).divisorClass_surjective c
   rw [AddMonoidHom.mem_ker, degreeClass_divisorClass] at hc
-  obtain ⟨A, hA0, hAdeg, hAeq⟩ := exists_isEffective_linearlyEquivalent_add_nsmul hF hgen hc
+  obtain ⟨A, hA0, hAdeg, hAeq⟩ := exists_nonneg_linearlyEquivalent_add_nsmul hF hgen hc
   refine ⟨⟨A, hA0, by rw [hAdeg, hmcast]⟩, Subtype.ext ?_⟩
   have hclass : (Place.orderSystem hF).divisorClass A =
       (Place.orderSystem hF).divisorClass (D + n • B) :=

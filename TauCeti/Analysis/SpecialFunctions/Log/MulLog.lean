@@ -31,6 +31,11 @@ up a small amount of its value is bounded by that same tangent line.
 * `Real.sq_sub_le_mul_sub_mul_log_sub_log`: for `0 < p, q ≤ M`,
   `(p - q) ^ 2 ≤ M * ((p - q) * (log p - log q))`, the strong monotonicity of the logarithm on
   `(0, M]`.
+* `Real.mul_sq_log_sub_log_le_sub_mul_log_sub_log`: for `m ≤ p, q` with `0 < p, q`,
+  `m * (log p - log q) ^ 2 ≤ (p - q) * (log p - log q)`, the strong monotonicity of the
+  exponential on `[log m, ∞)`.
+* `Real.le_sub_div_log_sub_log`: for `m ≤ a, b` with `0 < a, b` and `log a ≠ log b`,
+  `m ≤ (a - b) / (log a - log b)`, the difference quotient form of the preceding estimate.
 
 The first estimate is the tangent line at `a`, whose slope `log a + 1` is the derivative
 `Real.deriv_mul_log` of the function. It is stated for `u = 0` as well, where the convention
@@ -129,6 +134,43 @@ theorem sq_sub_le_mul_sub_mul_log_sub_log {p q M : ℝ} (hp : 0 < p) (hq : 0 < q
   calc p * ((p - q) * (1 - q / p)) ≤ p * ((p - q) * (Real.log p - Real.log q)) :=
         mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hlog hpq) hp.le
     _ ≤ M * ((p - q) * (Real.log p - Real.log q)) := mul_le_mul_of_nonneg_right hpM hgap
+
+/-- The exponential is strongly monotone on `[log m, ∞)`: for `0 < p, q` with `m ≤ p, q`,
+`m * (log p - log q) ^ 2 ≤ (p - q) * (log p - log q)`. Equivalently, for `log p ≠ log q` the
+difference quotient `(p - q) / (log p - log q)` of `exp` between `log q` and `log p` is at least
+`m`. This is the counterpart of `Real.sq_sub_le_mul_sub_mul_log_sub_log`, with the roles of a
+point and its logarithm exchanged. -/
+theorem mul_sq_log_sub_log_le_sub_mul_log_sub_log {p q m : ℝ} (hp : 0 < p) (hq : 0 < q)
+    (hmp : m ≤ p) (hmq : m ≤ q) :
+    m * (Real.log p - Real.log q) ^ 2 ≤ (p - q) * (Real.log p - Real.log q) := by
+  wlog hqp : q ≤ p generalizing p q
+  · have h := this hq hp hmq hmp (le_of_not_ge hqp)
+    linarith
+  -- Scale `q (log p - log q) ≤ p - q`, from `log y ≤ y - 1`, by `log p - log q ≥ 0`.
+  have hlog : q * (Real.log p - Real.log q) ≤ p - q := by
+    have h := Real.log_le_sub_one_of_pos (div_pos hp hq)
+    rw [Real.log_div hp.ne' hq.ne'] at h
+    calc q * (Real.log p - Real.log q) ≤ q * (p / q - 1) := mul_le_mul_of_nonneg_left h hq.le
+      _ = p - q := by field_simp
+  have hgap : 0 ≤ Real.log p - Real.log q := sub_nonneg.2 (Real.log_le_log hq hqp)
+  calc m * (Real.log p - Real.log q) ^ 2 ≤ q * (Real.log p - Real.log q) ^ 2 :=
+        mul_le_mul_of_nonneg_right hmq (sq_nonneg _)
+    _ = (q * (Real.log p - Real.log q)) * (Real.log p - Real.log q) := by ring
+    _ ≤ (p - q) * (Real.log p - Real.log q) := mul_le_mul_of_nonneg_right hlog hgap
+
+/-- The difference quotient of `exp` between `log b` and `log a` is at least `m` when `m ≤ a, b`:
+for `log a ≠ log b`, `m ≤ (a - b) / (log a - log b)`. -/
+theorem le_sub_div_log_sub_log {a b m : ℝ} (ha : 0 < a) (hb : 0 < b)
+    (hma : m ≤ a) (hmb : m ≤ b) (h₀ : Real.log a - Real.log b ≠ 0) :
+    m ≤ (a - b) / (Real.log a - Real.log b) := by
+  have hmono := Real.mul_sq_log_sub_log_le_sub_mul_log_sub_log ha hb hma hmb
+  have hD2 : 0 < (Real.log a - Real.log b) ^ 2 :=
+    lt_of_le_of_ne (sq_nonneg _) (pow_ne_zero 2 h₀).symm
+  have hquot : (a - b) / (Real.log a - Real.log b) =
+      (a - b) * (Real.log a - Real.log b) / (Real.log a - Real.log b) ^ 2 := by
+    field_simp
+  rw [hquot, le_div_iff₀ hD2]
+  exact hmono
 
 end Real
 

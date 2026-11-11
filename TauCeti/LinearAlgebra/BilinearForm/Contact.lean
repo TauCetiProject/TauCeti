@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.LinearAlgebra.BilinearForm.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 
 /-!
@@ -26,7 +27,10 @@ scalar. Together these give the pointwise form of the rescaling law for contact 
 contact together whenever `f` vanishes nowhere.
 
 For an alternating `B`, the hyperplane `ker a` carries a nondegenerate alternating form, so it has
-even dimension and `V` has odd dimension (`Module.Dual.IsContact.odd_finrank`).
+even dimension and `V` has odd dimension (`Module.Dual.IsContact.odd_finrank`). A subspace of
+`ker a` on which `B` vanishes has at most half the dimension of `ker a`, so `2 dim W + 1 ≤ dim V`
+(`Module.Dual.IsContact.two_mul_finrank_add_one_le`). This is the dimension bound for isotropic and
+Legendrian submanifolds of a contact manifold.
 
 Contact covectors arise on hyperplanes transverse to a vector. If `B` is nondegenerate and
 alternating, `L : U → V` is injective and `z` is a vector outside the range of `L` which together
@@ -64,6 +68,8 @@ pointwise form of the Reeb vector field of a contact form and of its rescaling l
   under nonzero rescaling of `a` and of `B`.
 * `Module.Dual.IsContact.even_finrank_ker`, `Module.Dual.IsContact.odd_finrank`: the dimension
   count.
+* `Module.Dual.IsContact.two_mul_finrank_add_one_le`: the dimension bound for subspaces of `ker a`
+  on which `B` vanishes.
 * `Module.Dual.isContact_comp_compl₁₂`: the covector `B z` restricted to a hyperplane transverse to
   `z` is contact for the restriction of a nondegenerate alternating `B`.
 * `Module.Dual.isContact_comp_linearEquiv_compl₁₂_iff`,
@@ -162,6 +168,22 @@ theorem IsContact.odd_finrank [FiniteDimensional K V] (hB : B.IsAlt) (h : a.IsCo
     Odd (finrank K V) := by
   rw [← finrank_ker_add_one_of_ne_zero h.ne_zero]
   exact (h.even_finrank_ker hB).add_one
+
+/-- **Isotropic subspaces of a contact hyperplane.** If `a` is contact for `B`, then a subspace `W`
+of `ker a` on which `B` vanishes identically satisfies `2 dim W + 1 ≤ dim V`. No symmetry
+assumption on `B` is needed. -/
+theorem IsContact.two_mul_finrank_add_one_le [FiniteDimensional K V] (h : a.IsContact B)
+    {W : Submodule K V} (hWa : W ≤ LinearMap.ker a) (hWB : ∀ v ∈ W, ∀ w ∈ W, B v w = 0) :
+    2 * finrank K W + 1 ≤ finrank K V := by
+  -- `W`, read inside `ker a`, is contained in its orthogonal for the nondegenerate restriction.
+  have hle : W.comap (LinearMap.ker a).subtype ≤
+      (B.restrict (LinearMap.ker a)).orthogonal (W.comap (LinearMap.ker a).subtype) :=
+    fun v hv ↦ LinearMap.BilinForm.mem_orthogonal_iff.2 fun w hw ↦ hWB w hw v hv
+  have hW := LinearMap.BilinForm.two_mul_finrank_le_finrank_of_le_orthogonal
+    h.nondegenerate_restrict hle
+  rw [(Submodule.comapSubtypeEquivOfLe hWa).finrank_eq] at hW
+  have hker := finrank_ker_add_one_of_ne_zero h.ne_zero
+  omega
 
 /-! ### Hyperplanes transverse to a vector -/
 
@@ -418,6 +440,46 @@ private theorem IsContact.eq_of_apply_eq_one (h : a.IsContact B) {r r' : V} (hr 
     simp [hrB w w.2, hrB' w w.2]
   exact sub_eq_zero.1 (congrArg Subtype.val this)
 
+open Classical in
+/-- If a vector takes the value `1` under `a` and is `B`-orthogonal to `ker a`, the Reeb vector is
+such a vector. -/
+theorem reebVector_spec_of_exists (hex : ∃ r, a r = 1 ∧ ∀ w, a w = 0 → B r w = 0) :
+    a (a.reebVector B) = 1 ∧ ∀ w, a w = 0 → B (a.reebVector B) w = 0 := by
+  rw [reebVector, dite_eq_left_of_eq_true (eq_true hex)]
+  exact hex.choose_spec
+
+open Classical in
+/-- If no vector takes the value `1` under `a` while being `B`-orthogonal to `ker a`, the Reeb
+vector is the junk value `0`. -/
+theorem reebVector_eq_zero_of_not_exists
+    (hex : ¬∃ r, a r = 1 ∧ ∀ w, a w = 0 → B r w = 0) : a.reebVector B = 0 := by
+  rw [reebVector, dite_eq_right_iff]
+  exact fun h ↦ (hex h).elim
+
+/-- Rescaling a contact covector by a nonzero scalar `c` divides its Reeb vector by `c`. This holds
+in every dimension: without a Reeb vector, both sides are the junk value `0`. -/
+theorem IsContact.reebVector_smul (h : a.IsContact B) {c : K} (hc : c ≠ 0) :
+    (c • a).reebVector B = c⁻¹ • a.reebVector B := by
+  have hker : ∀ w, (c • a) w = 0 ↔ a w = 0 := fun w ↦ by
+    rw [LinearMap.smul_apply, smul_eq_mul, mul_eq_zero, or_iff_right hc]
+  by_cases hex : ∃ r, a r = 1 ∧ ∀ w, a w = 0 → B r w = 0
+  · obtain ⟨h1, h2⟩ := reebVector_spec_of_exists hex
+    have h1' : (c • a) (c⁻¹ • a.reebVector B) = 1 := by
+      rw [LinearMap.smul_apply, map_smul, h1, smul_eq_mul, smul_eq_mul, mul_one,
+        mul_inv_cancel₀ hc]
+    have h2' : ∀ w, (c • a) w = 0 → B (c⁻¹ • a.reebVector B) w = 0 := fun w hw ↦ by
+      rw [map_smul, LinearMap.smul_apply, h2 w ((hker w).1 hw), smul_zero]
+    obtain ⟨h1'', h2''⟩ := reebVector_spec_of_exists (a := c • a) (B := B) ⟨_, h1', h2'⟩
+    exact ((isContact_smul_iff hc).2 h).eq_of_apply_eq_one h1'' h2'' h1' h2'
+  · have hex' : ¬∃ r, (c • a) r = 1 ∧ ∀ w, (c • a) w = 0 → B r w = 0 := by
+      rintro ⟨r, hr1, hr2⟩
+      have har : a r = c⁻¹ := by
+        rw [LinearMap.smul_apply, smul_eq_mul] at hr1
+        exact eq_inv_of_mul_eq_one_right hr1
+      exact hex ⟨c • r, by rw [map_smul, har, smul_eq_mul, mul_inv_cancel₀ hc],
+        fun w hw ↦ by rw [map_smul, LinearMap.smul_apply, hr2 w ((hker w).2 hw), smul_zero]⟩
+    rw [reebVector_eq_zero_of_not_exists hex', reebVector_eq_zero_of_not_exists hex, smul_zero]
+
 variable [FiniteDimensional K V]
 
 /-- A contact covector has a vector on which it takes the value `1` and which is `B`-orthogonal
@@ -442,10 +504,7 @@ private theorem IsContact.exists_apply_eq_one (h : a.IsContact B) :
 unique vector `r` with `a r = 1` which is `B`-orthogonal to `ker a`. -/
 theorem IsContact.eq_reebVector_iff (h : a.IsContact B) {r : V} :
     r = a.reebVector B ↔ a r = 1 ∧ ∀ w, a w = 0 → B r w = 0 := by
-  have hex := h.exists_apply_eq_one
-  have hspec : a (a.reebVector B) = 1 ∧ ∀ w, a w = 0 → B (a.reebVector B) w = 0 := by
-    rw [reebVector, dite_eq_left_of_eq_true (eq_true hex)]
-    exact hex.choose_spec
+  have hspec := reebVector_spec_of_exists h.exists_apply_eq_one
   refine ⟨fun hr ↦ hr ▸ hspec, fun hr ↦ ?_⟩
   exact h.eq_of_apply_eq_one hr.1 hr.2 hspec.1 hspec.2
 
@@ -478,15 +537,6 @@ theorem IsContact.isCompl_ker_span_reebVector (h : a.IsContact B) :
   obtain ⟨t, rfl⟩ := Submodule.mem_span_singleton.1 hvr
   rw [LinearMap.mem_ker, map_smul, h.apply_reebVector, smul_eq_mul, mul_one] at hv
   rw [hv, zero_smul]
-
-/-- Rescaling a contact covector by a nonzero scalar `c` divides its Reeb vector by `c`. -/
-theorem IsContact.reebVector_smul (h : a.IsContact B) {c : K} (hc : c ≠ 0) :
-    (c • a).reebVector B = c⁻¹ • a.reebVector B := by
-  refine (((isContact_smul_iff hc).2 h).eq_reebVector_iff.2 ⟨?_, fun w hw ↦ ?_⟩).symm
-  · rw [LinearMap.smul_apply, map_smul, h.apply_reebVector, smul_eq_mul, smul_eq_mul, mul_one,
-      mul_inv_cancel₀ hc]
-  · rw [LinearMap.smul_apply, smul_eq_mul, mul_eq_zero, or_iff_right hc] at hw
-    rw [map_smul, LinearMap.smul_apply, h.apply_reebVector_of_apply_eq_zero hw, smul_zero]
 
 /-- **The Reeb vector is transported by linear equivalences.** If `a'` is contact for `B'`,
 then the Reeb vector of the pullback `a' ∘ e` for `B' ∘ (e × e)` is `e⁻¹` of the Reeb vector of

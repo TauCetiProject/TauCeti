@@ -140,23 +140,33 @@ original measure along `f`. -/
 @[to_additive /-- Pushing a negated measure forward along `f` after negation gives the pushforward
 of the original measure along `f`. -/]
 theorem map_inv_comp {G H : Type*} [MeasurableSpace G] [MeasurableSpace H] [InvolutiveInv G]
-    [MeasurableInv G] (μ : Measure G) {f : G → H} (hf : AEMeasurable (f ∘ Inv.inv) μ.inv) :
+    [MeasurableInv G] (μ : Measure G) {f : G → H} :
     μ.inv.map (f ∘ Inv.inv) = μ.map f := by
-  rw [inv_def] at hf ⊢
-  rw [AEMeasurable.map_map_of_aemeasurable hf measurable_inv.aemeasurable]
-  congr 1
-  ext x
-  simp
+  have he : MeasurableEmbedding (Inv.inv : G → G) := (MeasurableEquiv.inv G).measurableEmbedding
+  have hiff : AEMeasurable (f ∘ Inv.inv) μ.inv ↔ AEMeasurable f μ := by
+    rw [inv_def, he.aemeasurable_map_iff]
+    simp [Function.comp_def]
+  by_cases hf : AEMeasurable f μ
+  · rw [inv_def, AEMeasurable.map_map_of_aemeasurable (inv_def μ ▸ hiff.2 hf)
+      measurable_inv.aemeasurable]
+    congr 1
+    ext x
+    simp
+  · obtain rfl | hμ := eq_or_ne μ 0
+    · simp [inv_def]
+    have hμ' : μ.inv ≠ 0 := fun h ↦ hμ (by rw [← Measure.inv_inv μ, h, inv_def, Measure.map_zero])
+    rw [Measure.map_of_not_aemeasurable_of_ne_zero (hiff.not.2 hf) hμ',
+      Measure.map_of_not_aemeasurable_of_ne_zero hf hμ]
 
 /-- A set of full measure reflects to a set of full measure for the inverted measure. -/
 @[to_additive /-- A set of full measure reflects to a set of full measure for the negated
 measure. -/]
 theorem ae_inv_mem_preimage {G : Type*} [MeasurableSpace G] [InvolutiveInv G] [MeasurableInv G]
-    (μ : Measure G) {s : Set G} (hs : MeasurableSet s) (hμs : ∀ᵐ x ∂μ, x ∈ s) :
+    (μ : Measure G) {s : Set G} (hμs : ∀ᵐ x ∂μ, x ∈ s) :
     ∀ᵐ x ∂μ.inv, x ∈ Inv.inv ⁻¹' s := by
-  simp only [Set.mem_preimage]
-  rw [inv_def, ae_map_iff measurable_inv.aemeasurable (measurable_inv hs)]
-  simpa only [inv_inv] using hμs
+  have he : MeasurableEmbedding (Inv.inv : G → G) := (MeasurableEquiv.inv G).measurableEmbedding
+  rw [inv_def, he.ae_map_iff]
+  simpa only [Set.mem_preimage, inv_inv] using hμs
 
 section InvolutiveInv
 

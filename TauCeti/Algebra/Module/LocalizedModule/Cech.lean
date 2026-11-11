@@ -175,6 +175,35 @@ end Signs
 
 variable (M : Type*) [AddCommGroup M] [Module R M] {ι : Type*} (f : ι → R)
 
+/-- The localization homomorphism from a face with one vertex deleted to the full face. -/
+noncomputable def cechLocalizationEraseRingHom [DecidableEq ι] (S : Finset ι) (a : S) :
+    Localization.Away (∏ i ∈ S.erase a.1, f i) →+* Localization.Away (∏ i ∈ S, f i) :=
+  IsLocalization.Away.lift _ (IsLocalization.Away.isUnit_of_dvd _
+    ⟨f a.1, (Finset.prod_erase_mul S f a.2).symm⟩)
+
+/-- The deleted-face homomorphism is the canonical lift between the two localizations. -/
+theorem cechLocalizationEraseRingHom_eq_awayLift [DecidableEq ι] (S : Finset ι) (a : S) :
+    cechLocalizationEraseRingHom f S a =
+      IsLocalization.Away.lift _ (IsLocalization.Away.isUnit_of_dvd _
+        ⟨f a.1, (Finset.prod_erase_mul S f a.2).symm⟩) :=
+  (rfl)
+
+/-- Restricting the localized module action along `cechLocalizationEraseRingHom` respects the
+original coefficient-ring action. -/
+theorem isScalarTower_compHom_cechLocalizationEraseRingHom [DecidableEq ι]
+    (S : Finset ι) (a : S) :
+    letI := Module.compHom (LocalizedModule (.powers (∏ i ∈ S, f i)) M)
+      (cechLocalizationEraseRingHom f S a)
+    IsScalarTower R (Localization.Away (∏ i ∈ S.erase a.1, f i))
+      (LocalizedModule (.powers (∏ i ∈ S, f i)) M) := by
+  let _ := Module.compHom (LocalizedModule (.powers (∏ i ∈ S, f i)) M)
+    (cechLocalizationEraseRingHom f S a)
+  refine IsScalarTower.of_algebraMap_smul fun b x ↦ ?_
+  -- The restricted action is defined by the canonical localization homomorphism.
+  change cechLocalizationEraseRingHom f S a (algebraMap R _ b) • x = b • x
+  simp only [cechLocalizationEraseRingHom, IsLocalization.Away.lift_eq]
+  exact IsScalarTower.algebraMap_smul (Localization.Away (∏ i ∈ S, f i)) b x
+
 /-! ### The complex -/
 
 /-- The degree `p` term of the Čech complex of localizations: the product of the localizations

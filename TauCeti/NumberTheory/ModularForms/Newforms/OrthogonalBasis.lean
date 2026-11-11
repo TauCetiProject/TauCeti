@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.ModularForms.Newforms.Hecke.Stability
 public import TauCeti.NumberTheory.ModularForms.Newforms.Nebentypus
 public import TauCeti.NumberTheory.ModularForms.Newforms.PeterssonAdjoint
-public import TauCeti.NumberTheory.ModularForms.Newforms.StrongMultiplicityOne
+public import TauCeti.NumberTheory.ModularForms.Newforms.StrongMultiplicityOne.Basic
 public import TauCeti.NumberTheory.ModularForms.Petersson.Eigenbasis
 import TauCeti.NumberTheory.ModularForms.SturmBound
 

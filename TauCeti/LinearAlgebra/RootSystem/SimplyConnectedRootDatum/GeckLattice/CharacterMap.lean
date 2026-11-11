@@ -81,12 +81,14 @@ theorem isCharacterMap_geckFrobenius (p k : ℕ) (A : Type v) [CommRing A] [ExpC
 whose units are divisible, for instance an algebraically closed field, if `φ` is a character map
 of an endomorphism `F` with `φ ^ n = p ^ r • 1` for some `r > 0`, then every point of the weight
 torus is `T u * (F (T u))⁻¹` for some `u`. -/
-theorem exists_geckWeightTorusPoints_eq_mul_inv {K : Type v} [CommRing K] [Nontrivial K]
+theorem exists_geckWeightTorusPoints_eq_mul_inv {K : Type v} [CommRing K]
     [RootableBy Kˣ ℕ] (p : ℕ) [CharP K p] {F : t.geckPoints ht K →* t.geckPoints ht K}
     {φ : Module.End ℤ (Fin t.rank → ℤ)} (hF : IsCharacterMap (t.geckWeightTorusPoints ht K) F φ)
     {n r : ℕ} (hr : 0 < r) (hφ : φ ^ n = (p ^ r : ℕ) • 1) (s : Fin t.rank → Kˣ) :
     ∃ u, t.geckWeightTorusPoints ht K s =
       t.geckWeightTorusPoints ht K u * (F (t.geckWeightTorusPoints ht K u))⁻¹ := by
+  obtain hK | _ := subsingleton_or_nontrivial K
+  · exact ⟨s, Subsingleton.elim _ _⟩
   have hpr : ((p ^ r : ℕ) : ℤ) ≠ 1 := by
     rw [Nat.cast_ne_one, Ne, pow_eq_one_iff, not_or]
     exact ⟨CharP.char_ne_one K p, hr.ne'⟩
@@ -98,7 +100,7 @@ theorem exists_geckWeightTorusPoints_eq_mul_inv {K : Type v} [CommRing K] [Nontr
 point of the weight torus of the Geck carrier is `T u * (F (T u))⁻¹` for the `p ^ k`-power
 Frobenius `F`: the equation `s = u * u ^ (-p ^ k)` is solvable coordinatewise. -/
 theorem exists_geckWeightTorusPoints_eq_mul_inv_geckFrobenius {K : Type v} [CommRing K]
-    [Nontrivial K] [RootableBy Kˣ ℕ] (p : ℕ) [Fact p.Prime] [CharP K p] {k : ℕ} (hk : 0 < k)
+    [RootableBy Kˣ ℕ] (p : ℕ) [Fact p.Prime] [CharP K p] {k : ℕ} (hk : 0 < k)
     (s : Fin t.rank → Kˣ) :
     ∃ u, t.geckWeightTorusPoints ht K s =
       t.geckWeightTorusPoints ht K u *
@@ -118,15 +120,9 @@ theorem isCharacterMap_geckGraphAutPoints (A : Type v) [CommRing A] :
     IsCharacterMap (t.geckWeightTorusPoints ht A) (t.geckGraphAutPoints ht hsigma A).toMonoidHom
       (diagramAut ht hsigma)⁻¹.toHom.weightMap :=
   isCharacterMap_iff.mpr fun s => by
-    have hsingle (j : Fin t.rank) : LinearMap.funLeft ℤ ℤ sigma (Pi.single j 1) =
-        (Pi.single (sigma⁻¹ j) 1 : Fin t.rank → ℤ) := by
-      ext i
-      simp [LinearMap.funLeft_apply, Pi.single_apply, Equiv.Perm.inv_def, Equiv.eq_symm_apply]
-    rw [MulEquiv.coe_toMonoidHom, geckGraphAutPoints_geckWeightTorusPoints]
-    congr 1
-    funext j
-    rw [torusPointMap_apply, diagramAut_inv_weightMap, LinearEquiv.coe_coe,
-      LinearEquiv.funCongrLeft_apply, hsingle, torusCharacter_single, zpow_one]
+    rw [MulEquiv.coe_toMonoidHom, geckGraphAutPoints_geckWeightTorusPoints,
+      diagramAut_inv_weightMap, torusPointMap_funCongrLeft]
+    simp only [Equiv.Perm.inv_def]
 
 /-- **The graph-twisted Frobenius acts on the weight torus of the Geck carrier through
 `p ^ k • (diagramAut σ)⁻¹.weightMap`**, the composite of the character maps of its two factors. -/
@@ -146,7 +142,7 @@ characteristic `p` whose units are divisible, for instance an algebraically clos
 graph-twisted `p ^ k`-power Frobenius `F`. Its character map raised to the order `e` of `σ` is
 `p ^ (k * e) • 1`. -/
 theorem exists_geckWeightTorusPoints_eq_mul_inv_geckTwistedFrobenius {K : Type v} [CommRing K]
-    [Nontrivial K] [RootableBy Kˣ ℕ] (p : ℕ) [Fact p.Prime] [CharP K p] {k : ℕ} (hk : 0 < k)
+    [RootableBy Kˣ ℕ] (p : ℕ) [Fact p.Prime] [CharP K p] {k : ℕ} (hk : 0 < k)
     (s : Fin t.rank → Kˣ) :
     ∃ u, t.geckWeightTorusPoints ht K s =
       t.geckWeightTorusPoints ht K u *

@@ -5,55 +5,47 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.HomologicalComplex.Projective.Dimension
-public import TauCeti.Algebra.Homology.PrincipalIdealRing
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Singular
+public import TauCeti.AlgebraicTopology.Cellular.TopHomology
 public import TauCeti.AlgebraicTopology.Cohomology.HomotopyInvariance
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
 public import TauCeti.Topology.CWComplex.Classical.Finite
 
 /-!
-# Top cellular homology and dimension bounds for CW complexes and CW models
+# Cohomology vanishing and dimension bounds for CW complexes and CW models
 
-Let `(C, D)` be a relative CW complex in a Hausdorff space `X`. In degree `d`, the cellular chain
-group `C_d(C, D; R) = H_d(C^d, C^{d-1}; R)` is a coproduct of copies of the coefficients `R`, one
-for each `d`-cell (`TauCeti.cellularChainGroupIso`), so it is projective when `R` is
-(`TauCeti.projective_cellularChainGroup`).
+Let `(C, D)` be a relative CW complex in a Hausdorff space `X`. Building on the projectivity and
+freeness of degree-`d` homology when there are no `(d + 1)`-cells
+(`TauCeti.AlgebraicTopology.Cellular.TopHomology`) and the vanishing of homology in empty cell
+degrees (`TauCeti.isZero_singularHomology_complexBasePair_of_isEmpty_cell`), this file establishes
+cohomology vanishing at missing cells, dimension-bound vanishing above `d`, and the transfers to
+CW homotopy models and whole-space CW structures:
 
-When `(C, D)` has **no `(d + 1)`-cells** (`[IsEmpty (cell C (d + 1))]`), with no finiteness
-assumption on the number of cells in any degree (in particular allowing countably or uncountably
-infinitely many `d`-cells) and no assumption on cells above degree `d + 1`:
-
-* No boundary enters degree `d`, so `H_d(C_*(C, D; R))` is isomorphic to the `d`-cycles, a
-  subobject of `C_d(C, D; R)`. Over a hereditary abelian category it is therefore projective when
-  `R` is (`TauCeti.projective_homology_cellularChainComplex_of_isEmpty_cell_succ`), and over a
-  principal ideal ring without zero divisors (in any universe, including `ℤ`) it is a free module
-  for any projective coefficient module
-  (`TauCeti.free_homology_cellularChainComplex_of_isEmpty_cell_succ`).
-* Via the cellular--singular comparison `TauCeti.cellularSingularHomologyIso` (which needs no
-  dimension bound on `C` for modules over any ring, since sequential colimits of modules are exact
-  by `TauCeti.moduleCat_ab5OfSize`), the same holds for `H_d(C, D; R)`, for `H_d(C; R)` of an
-  absolute CW complex, and for `H_d(Y; R)` of any space `Y` homotopy equivalent to `C`.
-* In degree `d + 1`, both terms of the universal coefficient sequence
+* When `(C, D)` has **no `(d + 1)`-cells** (`[IsEmpty (cell C (d + 1))]`), with no finiteness
+  assumption on cell counts and no assumption above degree `d + 1`, both terms of the universal
+  coefficient sequence
   `0 ⟶ Ext¹_k(H_d, M) ⟶ H^{d+1}(-; R, M) ⟶ Hom_k(H_{d+1}, M) ⟶ 0` vanish over a hereditary
-  commutative ring `k` (including `ℤ` in every universe) when `R` is projective:
-  `Ext¹_k(H_d, M) = 0` because `H_d` is projective, and `Hom_k(H_{d+1}, M) = 0` because
-  `H_{d+1} = 0`. Thus `H^{d+1}(C, D; R, M)`, `H^{d+1}(C; R, M)`, and `H^{d+1}(Y; R, M)` vanish
-  whenever there are no `(d + 1)`-cells
+  commutative ring `k` (in any universe, including `ℤ`) when `R` is projective: `H_d` is projective
+  so `Ext¹_k(H_d, M) = 0`, and `H_{d+1} = 0` so `Hom_k(H_{d+1}, M) = 0`. Thus
+  `H^{d+1}(C, D; R, M)`, `H^{d+1}(C; R, M)` and `H^{d+1}(Y; R, M)` (for any space `Y` homotopy
+  equivalent to `C`) vanish
   (`TauCeti.isZero_singularCohomology_complexBasePair_succ_of_isEmpty_cell`,
   `TauCeti.isZero_singularCohomology_succ_of_isEmpty_cell`,
   `ContinuousMap.HomotopyEquiv.isZero_singularCohomology_succ_of_isEmpty_cell`).
-
-Note that degree-`d` integral cohomology `H^d(C; ℤ)` need **not** be free or torsion-free: the
-universal coefficient sequence in degree `d` contains `Ext¹_ℤ(H_{d-1}(C; ℤ), ℤ)`, which carries the
-torsion of `H_{d-1}` (for instance `H^2(ℝP²; ℤ) ≅ ℤ/2ℤ`).
-
-When `(C, D)` has **no cells in dimensions strictly above `d`** (`∀ m, d < m → IsEmpty (cell C m)`),
-it is finite-dimensional (`Topology.RelCWComplex.finiteDimensional_of_isEmpty_cell_gt`), and both
-singular homology (with coefficients in any abelian category with exact cell coproducts) and
-singular cohomology (over any hereditary commutative ring `k`, including `ℤ`, for projective `R`
-and any coefficient module `M`) vanish in every degree `n > d` — for `(C, D)`, for `C`, for a space
-with a CW structure on `Set.univ`, and for any space homotopy equivalent to `C`.
+* Note that degree-`d` integral cohomology `H^d(C; ℤ)` need **not** be torsion-free: the universal
+  coefficient sequence in degree `d` contains `Ext¹_ℤ(H_{d-1}(C; ℤ), ℤ)`, which carries the torsion
+  of `H_{d-1}` (for instance `H^2(ℝP²; ℤ) ≅ ℤ/2ℤ`).
+* For a **CW homotopy model** `e : ContinuousMap.HomotopyEquiv Y C`, projectivity and freeness of
+  `H_d(Y; -)` when `C` has no `(d + 1)`-cells, as well as vanishing of homology and cohomology above
+  `d`, transfer directly across `e`
+  (`ContinuousMap.HomotopyEquiv.free_singularHomology_of_isEmpty_cell_succ`,
+  `ContinuousMap.HomotopyEquiv.isZero_singularHomology_of_isEmpty_cell_gt`,
+  `ContinuousMap.HomotopyEquiv.isZero_singularCohomology_of_isEmpty_cell_gt`).
+* When `(C, D)` has **no cells in dimensions strictly above `d`**
+  (`∀ m, d < m → IsEmpty (cell C m)`), it is finite-dimensional
+  (`Topology.RelCWComplex.finiteDimensional_of_isEmpty_cell_gt`), and both singular homology and
+  singular cohomology vanish in every degree `n > d` — for `(C, D)`, for `C`, for a space with a CW
+  structure on `Set.univ`, and for any space homotopy equivalent to `C`.
 
 ## References
 
@@ -73,127 +65,29 @@ universe w v u
 
 namespace TauCeti
 
-section RelativeMissingCell
+section MissingCellCohomology
 
-variable {X : Type w} [TopologicalSpace X] [T2Space X] {D : Set X} (C : Set X) [RelCWComplex C D]
-
-section Abelian
-
-variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A]
-  [∀ V : A, HasProjectiveDimensionLE V 1] (R : A) [Projective R]
-
-/-- Over a hereditary abelian category, cellular homology in degree `d` is projective whenever
-there are no `(d + 1)`-cells and coproducts indexed by the `d`-cells are exact, with no finiteness
-assumption on the number of `d`-cells. -/
-theorem projective_homology_cellularChainComplex_of_isEmpty_cell_succ (d : ℕ)
-    [HasExactColimitsOfShape (Discrete (cell C d)) A] [IsEmpty (cell C (d + 1))] :
-    Projective ((cellularChainComplex C R).homology d) := by
-  refine ChainComplex.projective_homology_of_isZero_X_succ (cellularChainComplex C R) d ?_
-  rw [cellularChainComplex_X]
-  exact isZero_cellularChainGroup C (d + 1) R
-
-/-- Over a hereditary abelian category, relative singular homology `H_d(C, D; R)` of a CW pair is
-projective whenever there are no `(d + 1)`-cells and the `(d + 1)`-skeleton comparison map is an
-isomorphism on `H_d` (as holds for every finite-dimensional CW pair and whenever sequential
-colimits are exact in `A`, for instance for modules over any ring). -/
-theorem projective_singularHomology_complexBasePair_of_isEmpty_cell_succ
-    [∀ m, HasExactColimitsOfShape (Discrete (cell C m)) A] (d : ℕ)
-    [IsIso ((skeletonBasePair C (d + 1)).singularHomologyMap
-      (skeletonBasePairToComplex C (d + 1)) R d)]
-    [IsEmpty (cell C (d + 1))] :
-    Projective ((complexBasePair C).singularHomology R d) :=
-  Projective.of_iso (cellularSingularHomologyIso C R d)
-    (projective_homology_cellularChainComplex_of_isEmpty_cell_succ C R d)
-
-end Abelian
-
-section PID
-
-variable {k : Type u} [CommRing k] [NoZeroDivisors k] [IsPrincipalIdealRing k]
-  (M : ModuleCat.{w} k) [Module.Projective k M]
-
-/-- Over a principal ideal ring without zero divisors (in any universe, including `ℤ`), cellular
-homology in degree `d` with projective coefficients `M` is a free `k`-module whenever there are no
-`(d + 1)`-cells, regardless of the cardinality of the `d`-cells. -/
-theorem free_homology_cellularChainComplex_of_isEmpty_cell_succ (d : ℕ)
-    [IsEmpty (cell C (d + 1))] :
-    Module.Free k ((cellularChainComplex C M).homology d : ModuleCat k) := by
-  refine ChainComplex.free_homology_of_isZero_X_succ (cellularChainComplex C M) d ?_
-  rw [cellularChainComplex_X]
-  exact isZero_cellularChainGroup C (d + 1) M
-
-/-- **Top relative homology of a CW pair is free over a PID.** Over a principal ideal ring without
-zero divisors (in any universe, including `ℤ`), the relative singular homology `H_d(C, D; M)` of a
-CW pair with projective coefficients `M` (for instance `M = k`) is a free `k`-module whenever there
-are no `(d + 1)`-cells, with no finiteness assumption on cell counts and no dimension bound on `C`
-above `d + 1`. -/
-theorem free_singularHomology_complexBasePair_of_isEmpty_cell_succ (d : ℕ)
-    [IsEmpty (cell C (d + 1))] :
-    Module.Free k ((complexBasePair C).singularHomology M d : ModuleCat k) :=
-  have := free_homology_cellularChainComplex_of_isEmpty_cell_succ C M d
-  .of_equiv (cellularSingularHomologyIso C M d).toLinearEquiv
-
-end PID
-
-section Cohomology
-
-variable {k : Type u} [CommRing k] [∀ V : ModuleCat.{w} k, HasProjectiveDimensionLE V 1]
+variable {X : Type w} [TopologicalSpace X] [T2Space X]
+  {k : Type u} [CommRing k] [∀ V : ModuleCat.{w} k, HasProjectiveDimensionLE V 1]
   (R M : ModuleCat.{w} k) [Module.Projective k R]
 
 /-- **Relative singular cohomology of a CW pair vanishes in degree `d + 1` when there are no
 `(d + 1)`-cells**, over any hereditary commutative ring `k` (in any universe, including `ℤ`), with
 no finiteness assumption on cell counts and no dimension bound on `C`: `H_d(C, D; R)` is projective
 so `Ext¹_k(H_d, M) = 0`, and `H_{d+1}(C, D; R) = 0` so `Hom_k(H_{d+1}, M) = 0`. -/
-theorem isZero_singularCohomology_complexBasePair_succ_of_isEmpty_cell (d : ℕ)
-    [IsEmpty (cell C (d + 1))] :
+theorem isZero_singularCohomology_complexBasePair_succ_of_isEmpty_cell {D : Set X} (C : Set X)
+    [RelCWComplex C D] (d : ℕ) [IsEmpty (cell C (d + 1))] :
     IsZero ((complexBasePair C).singularCohomology R k M (d + 1)) := by
   have : Projective ((complexBasePair C).singularHomology R d) :=
-    projective_singularHomology_complexBasePair_of_isEmpty_cell_succ C R d
+    projective_singularHomology_complexBasePair_of_isEmpty_cell C R d
   exact (complexBasePair C).isZero_singularCohomology_succ_of_projective_homology R M d
     (isZero_singularHomology_complexBasePair_of_isEmpty_cell C R (d + 1))
-
-end Cohomology
-
-end RelativeMissingCell
-
-section AbsoluteMissingCell
-
-variable {X : Type w} [TopologicalSpace X] [T2Space X] (C : Set X) [CWComplex C]
-
-/-- Over a hereditary abelian category, ordinary singular homology `H_d(C; R)` of a CW complex is
-projective whenever there are no `(d + 1)`-cells and the `(d + 1)`-skeleton comparison map is an
-isomorphism on `H_d`. -/
-theorem projective_singularHomology_of_isEmpty_cell_succ {A : Type u} [Category.{v} A]
-    [HasCoproducts.{w} A] [Abelian A] [∀ V : A, HasProjectiveDimensionLE V 1]
-    [∀ m, HasExactColimitsOfShape (Discrete (cell C m)) A] (R : A) [Projective R] (d : ℕ)
-    [IsIso ((skeletonBasePair C (d + 1)).singularHomologyMap
-      (skeletonBasePairToComplex C (d + 1)) R d)]
-    [IsEmpty (cell C (d + 1))] :
-    Projective (((AlgebraicTopology.singularHomologyFunctor.{w} A d).obj R).obj (TopCat.of C)) :=
-  Projective.of_iso (asIso ((complexBasePair C).singularHomologyπ R d)).symm
-    (projective_singularHomology_complexBasePair_of_isEmpty_cell_succ C R d)
-
-/-- **Top singular homology of a CW complex is free over a PID.** Over a principal ideal ring
-without zero divisors (in any universe, including `ℤ`), ordinary singular homology `H_d(C; M)` with
-projective coefficients `M` (for instance `M = k`) is a free `k`-module whenever `C` has no
-`(d + 1)`-cells, with no finiteness assumption on cell counts and no dimension bound above
-`d + 1`. -/
-theorem free_singularHomology_of_isEmpty_cell_succ {k : Type u} [CommRing k] [NoZeroDivisors k]
-    [IsPrincipalIdealRing k] (M : ModuleCat.{w} k) [Module.Projective k M] (d : ℕ)
-    [IsEmpty (cell C (d + 1))] :
-    Module.Free k
-      (((AlgebraicTopology.singularHomologyFunctor.{w} (ModuleCat.{w} k) d).obj M).obj
-        (TopCat.of C)) :=
-  have := free_singularHomology_complexBasePair_of_isEmpty_cell_succ C M d
-  .of_equiv
-    (asIso ((complexBasePair C).singularHomologyπ (C := ModuleCat.{w} k) M d)).symm.toLinearEquiv
 
 /-- **Singular cohomology of a CW complex vanishes in degree `d + 1` when there are no
 `(d + 1)`-cells**, over any hereditary commutative ring `k` (in any universe, including `ℤ`), with
 no finiteness assumption on cell counts and no dimension bound on `C`. -/
-theorem isZero_singularCohomology_succ_of_isEmpty_cell {k : Type u} [CommRing k]
-    [∀ V : ModuleCat.{w} k, HasProjectiveDimensionLE V 1] (R M : ModuleCat.{w} k)
-    [Module.Projective k R] (d : ℕ) [IsEmpty (cell C (d + 1))] :
+theorem isZero_singularCohomology_succ_of_isEmpty_cell (C : Set X) [CWComplex C] (d : ℕ)
+    [IsEmpty (cell C (d + 1))] :
     IsZero ((TopCat.of C).singularCohomology R k M (d + 1)) := by
   have : Projective
       (((AlgebraicTopology.singularHomologyFunctor.{w} (ModuleCat.{w} k) d).obj R).obj
@@ -202,7 +96,7 @@ theorem isZero_singularCohomology_succ_of_isEmpty_cell {k : Type u} [CommRing k]
   exact (TopCat.of C).isZero_singularCohomology_succ_of_projective_homology R M d
     (isZero_singularHomology_of_isEmpty_cell C R (d + 1))
 
-end AbsoluteMissingCell
+end MissingCellCohomology
 
 end TauCeti
 
@@ -256,7 +150,7 @@ theorem isZero_singularCohomology_succ_of_isEmpty_cell {k : Type u} [CommRing k]
     [∀ V : ModuleCat.{w} k, HasProjectiveDimensionLE V 1] (R M : ModuleCat.{w} k)
     [Module.Projective k R] (d : ℕ) [IsEmpty (cell C (d + 1))] :
     IsZero ((TopCat.of Y).singularCohomology R k M (d + 1)) :=
-  (TauCeti.isZero_singularCohomology_succ_of_isEmpty_cell C R M d).of_iso
+  (TauCeti.isZero_singularCohomology_succ_of_isEmpty_cell R M C d).of_iso
     (e.singularCohomologyIso R k M (d + 1)).symm
 
 /-- **Singular homology vanishes above the CW dimension of a homotopy model.** If `Y` is homotopy
@@ -281,8 +175,7 @@ theorem isZero_singularCohomology_of_isEmpty_cell_gt {k : Type u} [CommRing k]
     [∀ V : ModuleCat.{w} k, HasProjectiveDimensionLE V 1] (R M : ModuleCat.{w} k)
     [Module.Projective k R] {d n : ℕ} (h : ∀ m, d < m → IsEmpty (cell C m)) (hn : d < n) :
     IsZero ((TopCat.of Y).singularCohomology R k M n) := by
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 :=
-    ⟨n - 1, (Nat.succ_pred_eq_of_pos (Nat.zero_le d |>.trans_lt hn)).symm⟩
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by lia⟩
   have := h (m + 1) hn
   exact e.isZero_singularCohomology_succ_of_isEmpty_cell R M m
 
@@ -313,10 +206,9 @@ theorem isZero_singularCohomology_complexBasePair_of_isEmpty_cell_gt {D : Set X}
     [∀ V : ModuleCat.{w} k, HasProjectiveDimensionLE V 1] (R M : ModuleCat.{w} k)
     [Module.Projective k R] {d n : ℕ} (h : ∀ m, d < m → IsEmpty (cell C m)) (hn : d < n) :
     IsZero ((complexBasePair C).singularCohomology R k M n) := by
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 :=
-    ⟨n - 1, (Nat.succ_pred_eq_of_pos (Nat.zero_le d |>.trans_lt hn)).symm⟩
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by lia⟩
   have := h (m + 1) hn
-  exact isZero_singularCohomology_complexBasePair_succ_of_isEmpty_cell C R M m
+  exact isZero_singularCohomology_complexBasePair_succ_of_isEmpty_cell R M C m
 
 /-- **Singular homology of a `d`-dimensional CW complex vanishes above `d`**, in any abelian
 category with exact cell coproducts, with no finiteness assumption on cell counts. -/

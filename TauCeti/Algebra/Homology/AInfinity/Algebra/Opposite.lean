@@ -297,7 +297,7 @@ private theorem stasheffTerm_opOperation (𝒜 : AInfinityAlgebra R A) (d : ℕ 
 /-- The opposite operations satisfy every Stasheff identity on homogeneous inputs: the arity-`n`
 Stasheff sum of the opposite is the opposite sign of the word times the Stasheff sum of the
 original operations on the reversed word. -/
-private theorem stasheffSum_opOperation (𝒜 : AInfinityAlgebra R A) (n : ℕ) (hn : 0 < n)
+private theorem stasheffSum_opOperation (𝒜 : AInfinityAlgebra R A) (n : ℕ)
     (d : ℕ → ℤ) (x : ℕ → A) (hx : ∀ i < n, x i ∈ 𝒜.grading.piece (d i)) :
     AInfinity.stasheffSum (opOperation 𝒜) d x n = 0 := by
   have hrefl := AInfinity.sum_stasheff_reflect n fun a b c ↦
@@ -314,7 +314,7 @@ private theorem stasheffSum_opOperation (𝒜 : AInfinityAlgebra R A) (n : ℕ) 
     rw [Finset.mem_Icc] at hs
     have harity : p + s + (n - p - s) = n := by omega
     rw [stasheffTerm_opOperation 𝒜 d x hs.1 (by rwa [harity]), harity]
-  rw [h, 𝒜.stasheff n hn _ _ fun i hi ↦ hx _ (by omega), smul_zero]
+  rw [h, 𝒜.stasheff n _ _ fun i hi ↦ hx _ (by omega), smul_zero]
 
 /-- The **opposite** of an `A∞` algebra: the same graded module, with the operations
 
@@ -325,7 +325,7 @@ on homogeneous inputs of degrees `d`, where `AInfinity.opExp n d` is the Koszul 
 noncomputable def op (𝒜 : AInfinityAlgebra R A) : AInfinityAlgebra R A :=
   ofStasheff 𝒜.grading (opOperation 𝒜) (opOperation_zero 𝒜) (isHomogeneous_opOperation 𝒜)
     (AInfinity.suspensionTaylor 𝒜.grading (opOperation 𝒜))
-    (AInfinity.isSuspension_suspensionTaylor _ _) (stasheffSum_opOperation 𝒜)
+    (AInfinity.isSuspension_suspensionTaylor _ _) (fun n _ ↦ stasheffSum_opOperation 𝒜 n)
 
 /-- The opposite has the same grading. -/
 @[simp]

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Lie.Subgroup.Atlas
 public import TauCeti.Geometry.Lie.Subgroup.Immersion
+public import Mathlib.Geometry.Manifold.SmoothEmbedding
+import TauCeti.Geometry.Manifold.Immersion.Differential
 
 /-!
 # Embedded Lie subgroups and the closed-subgroup theorem
@@ -36,6 +38,9 @@ differential of the inclusion is not proved here.
 * `TauCeti.Lie.EmbeddedLieSubgroupData.injective_mfderiv_subtypeVal`: the immersion half of being
   an embedded submanifold, read off from the data.  The topological-embedding half is
   `Topology.IsEmbedding.subtypeVal`, since `K` carries the subspace topology.
+* `TauCeti.Lie.EmbeddedLieSubgroupData.isSmoothEmbedding_subtypeVal`: the smooth embedding of
+  a subgroup with a finite-dimensional boundaryless ambient model.
+* `TauCeti.Lie.EmbeddedLieSubgroupData.ofIsClosed`: selected data for a closed subgroup.
 * `TauCeti.Lie.IsEmbeddedLieSubgroup`: a subgroup admits such data, with
   `TauCeti.Lie.isEmbeddedLieSubgroup_iff` its characterization.
 * `TauCeti.Lie.EmbeddedLieSubgroupData.isEmbeddedLieSubgroup`: data for a model space in the
@@ -104,6 +109,16 @@ theorem injective_mfderiv_subtypeVal (d : EmbeddedLieSubgroupData I K E') (k : K
   let _ : ChartedSpace E' K := d.chartedSpace
   exact (d.isDiffImmersionAt_subtypeVal k).mfderiv_injective
 
+/-- The inclusion of an embedded Lie subgroup is a smooth embedding. -/
+theorem isSmoothEmbedding_subtypeVal [FiniteDimensional ℝ E] [LieGroup I ∞ G]
+    [I.Boundaryless] (d : EmbeddedLieSubgroupData I K E') :
+    let _ := d.chartedSpace
+    Manifold.IsSmoothEmbedding 𝓘(ℝ, E') I ∞ (fun k : K ↦ (k : G)) := by
+  let _ := d.chartedSpace
+  let _ := d.lieGroup
+  exact ⟨d.contMDiff_subtypeVal.isImmersion_of_injective_mfderiv (by simp)
+    d.injective_mfderiv_subtypeVal, Topology.IsEmbedding.subtypeVal⟩
+
 end EmbeddedLieSubgroupData
 
 /-- **`K` is an embedded Lie subgroup**: it carries `TauCeti.Lie.EmbeddedLieSubgroupData` for some
@@ -153,6 +168,14 @@ theorem nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed {K 
            isDiffImmersionAt_subtypeVal := fun k ↦
              Subgroup.isDiffImmersionAt_subtypeVal_chartedSpaceOfIsSliceChart K Φ hslice h1 hΦ
                hΦsymm (by simp) k }⟩
+
+/-- The embedded Lie-subgroup structure selected for a closed subgroup, with its Lie algebra
+as model space. -/
+def EmbeddedLieSubgroupData.ofIsClosed [T2Space G] {K : Subgroup G}
+    (hK : IsClosed (K : Set G)) :
+    EmbeddedLieSubgroupData I K (lieSubalgebraOfSubgroup (I := I) K).toSubmodule :=
+  Classical.choice
+    (nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed (I := I) hK)
 
 /-- **The closed-subgroup (Cartan) theorem.** A closed subgroup of a finite-dimensional real Lie
 group is an embedded Lie subgroup: it is a Lie group for its subspace topology, and its inclusion

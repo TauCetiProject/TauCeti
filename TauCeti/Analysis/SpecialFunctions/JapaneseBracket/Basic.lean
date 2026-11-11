@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Group.Integral
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # The integral and the moments of the Japanese bracket
@@ -44,8 +45,16 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
 
 ## Main declarations
 
+* `TauCeti.one_add_norm_sq_rpow_mul_norm_le`: one power of `‖x‖` costs one order of the
+  Japanese bracket, `⟨x⟩ ^ m ‖x‖ ≤ ⟨x⟩ ^ (m + 1)`.
+* `TauCeti.one_add_mul_norm_pow_le`: the linear weight `(1 + c ‖x‖) ^ i` is at most
+  `(1 + c) ^ i ⟨x⟩ ^ i` for `c ≥ 0`.
 * `TauCeti.integrable_rpow_neg_sq_add_norm_sq`: the rescaled bracket
   `x ↦ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2)`, `c ≠ 0`, is integrable for every additive Haar measure.
+* `TauCeti.integrable_one_add_norm_sq_rpow_neg_succ_div_two`: on `ℝⁿ` the weight
+  `x ↦ (1 + ‖x‖ ^ 2) ^ (-(n + 1) / 2)` is integrable.
+* `TauCeti.integrable_one_add_mul_norm_pow_mul_rpow_neg_one_add_norm_sq`: the weight
+  `(1 + c ‖x‖) ^ i` times `(1 + ‖x‖ ^ 2) ^ (-r / 2)` is integrable when `dim V + i < r`.
 * `TauCeti.integrable_norm_rpow_mul_rpow_neg_one_add_norm_sq`,
   `TauCeti.integral_norm_rpow_mul_rpow_neg_one_add_norm_sq`: integrability and value of the
   radial moments of the Japanese bracket, for every additive Haar measure.
@@ -66,6 +75,28 @@ public section
 namespace TauCeti
 
 open Filter MeasureTheory Metric Module ProbabilityTheory Real Set Topology
+
+/-- One power of `‖x‖` costs one order of the Japanese bracket `⟨x⟩ = (1 + ‖x‖ ^ 2) ^ (1 / 2)`:
+`⟨x⟩ ^ m ‖x‖ ≤ ⟨x⟩ ^ (m + 1)` for every real `m`. -/
+theorem one_add_norm_sq_rpow_mul_norm_le {E : Type*} [NormedAddCommGroup E] (x : E) (m : ℝ) :
+    (1 + ‖x‖ ^ 2) ^ (m / 2) * ‖x‖ ≤ (1 + ‖x‖ ^ 2) ^ ((m + 1) / 2) := by
+  rw [add_div, Real.rpow_add (by positivity), ← Real.sqrt_eq_rpow]
+  gcongr
+  exact Real.le_sqrt_of_sq_le (by linarith)
+
+/-- A linear weight is dominated by the Japanese bracket `⟨x⟩ = (1 + ‖x‖ ^ 2) ^ (1 / 2)`:
+`(1 + c ‖x‖) ^ i ≤ (1 + c) ^ i ⟨x⟩ ^ i` for `c ≥ 0`. -/
+theorem one_add_mul_norm_pow_le {E : Type*} [NormedAddCommGroup E] {c : ℝ} (hc : 0 ≤ c) (x : E)
+    (i : ℕ) : (1 + c * ‖x‖) ^ i ≤ (1 + c) ^ i * (1 + ‖x‖ ^ 2) ^ ((i : ℝ) / 2) := by
+  have hle : 1 + c * ‖x‖ ≤ (1 + c) * √(1 + ‖x‖ ^ 2) := by
+    have h1 : 1 ≤ √(1 + ‖x‖ ^ 2) := Real.one_le_sqrt.2 (by nlinarith [sq_nonneg ‖x‖])
+    have h2 : ‖x‖ ≤ √(1 + ‖x‖ ^ 2) := Real.le_sqrt_of_sq_le (by linarith)
+    nlinarith
+  have hsqrt : (1 + ‖x‖ ^ 2) ^ ((i : ℝ) / 2) = √(1 + ‖x‖ ^ 2) ^ i := by
+    rw [Real.sqrt_eq_rpow, ← Real.rpow_mul_natCast (by positivity)]
+    ring_nf
+  rw [hsqrt, ← mul_pow]
+  exact pow_le_pow_left₀ (by positivity) hle i
 
 variable {V : Type*} [NormedAddCommGroup V] [MeasurableSpace V] [BorelSpace V]
 
@@ -110,6 +141,34 @@ theorem integrable_norm_rpow_mul_rpow_neg_one_add_norm_sq (μ : Measure V) [μ.I
         ≤ (1 + ‖x‖ ^ 2) ^ (p / 2) * (1 + ‖x‖ ^ 2) ^ (-r / 2) := by gcongr
     _ = (1 + ‖x‖ ^ 2) ^ (-(r - p) / 2) := by rw [← Real.rpow_add hA, hexp]
 
+/-- On `ℝⁿ` the Japanese bracket weight `⟨x⟩ ^ (-(n + 1))` is integrable for every additive Haar
+measure, its decay exponent exceeding the dimension by one. -/
+theorem integrable_one_add_norm_sq_rpow_neg_succ_div_two {n : ℕ}
+    {μ : Measure (EuclideanSpace ℝ (Fin n))} [μ.IsAddHaarMeasure] :
+    Integrable (fun x : EuclideanSpace ℝ (Fin n) ↦ (1 + ‖x‖ ^ 2) ^ (-((n : ℝ) + 1) / 2)) μ :=
+  integrable_rpow_neg_one_add_norm_sq (by rw [finrank_euclideanSpace_fin]; linarith)
+
+/-- A polynomial weight `(1 + c ‖x‖) ^ i`, `c ≥ 0`, times the Japanese bracket
+`(1 + ‖x‖ ^ 2) ^ (-r / 2)` is integrable for every additive Haar measure when the decay exponent
+exceeds `dim V + i`. -/
+theorem integrable_one_add_mul_norm_pow_mul_rpow_neg_one_add_norm_sq (μ : Measure V)
+    [μ.IsAddHaarMeasure] {c : ℝ} (hc : 0 ≤ c) (i : ℕ) {r : ℝ}
+    (hr : (finrank ℝ V : ℝ) + i < r) :
+    Integrable (fun x : V ↦ (1 + c * ‖x‖) ^ i * (1 + ‖x‖ ^ 2) ^ (-r / 2)) μ := by
+  have hmajorant := (integrable_rpow_neg_one_add_norm_sq (E := V) (μ := μ)
+    (show (finrank ℝ V : ℝ) < r - i by linarith)).const_mul ((1 + c) ^ i)
+  refine hmajorant.mono' (by fun_prop) (.of_forall fun x ↦ ?_)
+  have hA : 0 < 1 + ‖x‖ ^ 2 := by positivity
+  rw [Real.norm_of_nonneg (by positivity)]
+  calc
+    (1 + c * ‖x‖) ^ i * (1 + ‖x‖ ^ 2) ^ (-r / 2)
+        ≤ (1 + c) ^ i * (1 + ‖x‖ ^ 2) ^ ((i : ℝ) / 2) * (1 + ‖x‖ ^ 2) ^ (-r / 2) := by
+          gcongr
+          exact one_add_mul_norm_pow_le hc x i
+    _ = (1 + c) ^ i * (1 + ‖x‖ ^ 2) ^ (-(r - i) / 2) := by
+          rw [mul_assoc, ← Real.rpow_add hA]
+          ring_nf
+
 end Integrability
 
 section Moment
@@ -143,6 +202,65 @@ theorem integral_norm_rpow_mul_rpow_neg_one_add_norm_sq (μ : Measure V) [μ.IsA
 
 end Moment
 
+/-- The derivative of `r ↦ r ^ (m + 3) * (t² + r²) * ψ(r)`, where
+`ψ(r) = (2 t / (t² + r²)) ^ (m + 3)` is the rescaled Japanese bracket profile. -/
+private theorem hasDerivAt_pow_mul_sq_add_mul_rescaledBracket {m : ℕ} {t : ℝ} (ht : 0 < t)
+    (r : ℝ) :
+    HasDerivAt (fun r : ℝ ↦ r ^ (m + 3) * (t ^ 2 + r ^ 2) * (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 3))
+      (((m + 3 : ℕ) : ℝ) * t ^ 2 * (r ^ (m + 2) * (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 3)) -
+        (((m + 3 : ℕ) : ℝ) - 2) *
+          (r ^ (m + 2) * (r ^ 2 * (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 3)))) r := by
+  have hQr : t ^ 2 + r ^ 2 ≠ 0 := by positivity
+  have hq : HasDerivAt (fun r : ℝ ↦ t ^ 2 + r ^ 2) (2 * r) r := by
+    simpa using (hasDerivAt_pow 2 r).const_add (t ^ 2)
+  have hψ : HasDerivAt (fun r : ℝ ↦ (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 3))
+      (-(2 * ((m + 3 : ℕ) : ℝ) * r / (t ^ 2 + r ^ 2)) * (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 3))
+      r := by
+    convert ((hasDerivAt_const r (2 * t)).div hq hQr).pow (m + 3) using 1
+    simp only [Pi.div_apply, show m + 3 - 1 = m + 2 by omega]
+    rw [pow_succ _ (m + 2)]
+    generalize (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 2) = X
+    field_simp
+    ring
+  convert ((hasDerivAt_pow (m + 3) r).mul hq).mul hψ using 1
+  simp only [Pi.mul_apply, show m + 3 - 1 = m + 2 by omega]
+  rw [pow_succ r (m + 2)]
+  generalize (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 3) = P
+  generalize r ^ (m + 2) = R
+  push_cast
+  field_simp
+  ring
+
+/-- The function `r ↦ r ^ (m + 3) * (t² + r²) * (2 t / (t² + r²)) ^ (m + 3)` tends to `0` at
+infinity. -/
+private theorem tendsto_pow_mul_sq_add_mul_rescaledBracket {m : ℕ} {t : ℝ} (ht : 0 < t) :
+    Tendsto (fun r : ℝ ↦ r ^ (m + 3) * (t ^ 2 + r ^ 2) * (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 3))
+      atTop (𝓝 0) := by
+  have hQ : ∀ r : ℝ, 0 < t ^ 2 + r ^ 2 := fun r ↦ by positivity
+  -- For `r > 0`, the function is `(2 t) ^ (m + 3) (r / (t² + r²)) ^ (m + 1) (r² / (t² + r²))`,
+  -- which is at most `(2 t) ^ (m + 3) r⁻¹ ^ (m + 1)`.
+  have hlim : Tendsto (fun r : ℝ ↦ (2 * t) ^ (m + 3) * r⁻¹ ^ (m + 1)) atTop (𝓝 0) := by
+    simpa using (tendsto_inv_atTop_zero.pow (m + 1)).const_mul ((2 * t) ^ (m + 3))
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlim
+    ((eventually_gt_atTop 0).mono fun r hr ↦ by positivity)
+    ((eventually_gt_atTop 0).mono fun r hr ↦ ?_)
+  have hF : r ^ (m + 3) * (t ^ 2 + r ^ 2) * (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 3) =
+      (2 * t) ^ (m + 3) * (r / (t ^ 2 + r ^ 2)) ^ (m + 1) * (r ^ 2 / (t ^ 2 + r ^ 2)) := by
+    have := (hQ r).ne'
+    rw [div_pow, div_pow]
+    field_simp
+    ring
+  have h₁ : r / (t ^ 2 + r ^ 2) ≤ r⁻¹ := by
+    rw [div_le_iff₀ (hQ r), inv_mul_eq_div, le_div_iff₀ hr]
+    nlinarith [sq_nonneg t]
+  have h₂ : r ^ 2 / (t ^ 2 + r ^ 2) ≤ 1 := by
+    rw [div_le_one (hQ r)]
+    nlinarith [sq_nonneg t]
+  rw [hF]
+  calc (2 * t) ^ (m + 3) * (r / (t ^ 2 + r ^ 2)) ^ (m + 1) * (r ^ 2 / (t ^ 2 + r ^ 2))
+      ≤ (2 * t) ^ (m + 3) * r⁻¹ ^ (m + 1) * 1 := by gcongr
+    _ = (2 * t) ^ (m + 3) * r⁻¹ ^ (m + 1) := mul_one _
+
 /-- For `n > 2`, the two radial moments of the rescaled Japanese bracket satisfy
 `(n - 2) ∫₀^∞ r ^ (n - 1) r² ψ(r) = n t² ∫₀^∞ r ^ (n - 1) ψ(r)`, where
 `ψ(r) = (2 t / (t² + r²)) ^ n`. This follows by integrating the derivative of
@@ -155,60 +273,10 @@ theorem sub_two_mul_integral_radial {n : ℕ} (hn : 2 < n) {t : ℝ} (ht : 0 < t
       n * t ^ 2 * ∫ r in Ioi 0, r ^ (n - 1) * (2 * t / (t ^ 2 + r ^ 2)) ^ n := by
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 3 := ⟨n - 3, by omega⟩
   simp only [show m + 3 - 1 = m + 2 by omega] at h₁ h₂ ⊢
-  have hQ : ∀ r : ℝ, 0 < t ^ 2 + r ^ 2 := fun r ↦ by positivity
   set F : ℝ → ℝ := fun r ↦ r ^ (m + 3) * (t ^ 2 + r ^ 2) * (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 3)
-  have hderiv : ∀ r ∈ Ici (0 : ℝ), HasDerivAt F
-      (((m + 3 : ℕ) : ℝ) * t ^ 2 * (r ^ (m + 2) * (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 3)) -
-        (((m + 3 : ℕ) : ℝ) - 2) *
-          (r ^ (m + 2) * (r ^ 2 * (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 3)))) r := by
-    intro r _
-    have hQr : t ^ 2 + r ^ 2 ≠ 0 := (hQ r).ne'
-    have hq : HasDerivAt (fun r : ℝ ↦ t ^ 2 + r ^ 2) (2 * r) r := by
-      simpa using (hasDerivAt_pow 2 r).const_add (t ^ 2)
-    have hψ : HasDerivAt (fun r : ℝ ↦ (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 3))
-        (-(2 * ((m + 3 : ℕ) : ℝ) * r / (t ^ 2 + r ^ 2)) * (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 3))
-        r := by
-      convert ((hasDerivAt_const r (2 * t)).div hq hQr).pow (m + 3) using 1
-      simp only [Pi.div_apply, show m + 3 - 1 = m + 2 by omega]
-      rw [pow_succ _ (m + 2)]
-      generalize (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 2) = X
-      field_simp
-      ring
-    convert ((hasDerivAt_pow (m + 3) r).mul hq).mul hψ using 1
-    simp only [Pi.mul_apply, show m + 3 - 1 = m + 2 by omega]
-    rw [pow_succ r (m + 2)]
-    generalize (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 3) = P
-    generalize r ^ (m + 2) = R
-    push_cast
-    field_simp
-    ring
-  -- For `r > 0`, `F r = (2 t) ^ (m + 3) (r / (t² + r²)) ^ (m + 1) (r² / (t² + r²))`, which is at
-  -- most `(2 t) ^ (m + 3) r⁻¹ ^ (m + 1)`.
-  have htend : Tendsto F atTop (𝓝 0) := by
-    have hlim : Tendsto (fun r : ℝ ↦ (2 * t) ^ (m + 3) * r⁻¹ ^ (m + 1)) atTop (𝓝 0) := by
-      simpa using (tendsto_inv_atTop_zero.pow (m + 1)).const_mul ((2 * t) ^ (m + 3))
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlim
-      ((eventually_gt_atTop 0).mono fun r hr ↦ by positivity)
-      ((eventually_gt_atTop 0).mono fun r hr ↦ ?_)
-    · have hF : F r = (2 * t) ^ (m + 3) * (r / (t ^ 2 + r ^ 2)) ^ (m + 1) *
-          (r ^ 2 / (t ^ 2 + r ^ 2)) := by
-        have := (hQ r).ne'
-        simp only [F]
-        rw [div_pow, div_pow]
-        field_simp
-        ring
-      have h₁ : r / (t ^ 2 + r ^ 2) ≤ r⁻¹ := by
-        rw [div_le_iff₀ (hQ r), inv_mul_eq_div, le_div_iff₀ hr]
-        nlinarith [sq_nonneg t]
-      have h₂ : r ^ 2 / (t ^ 2 + r ^ 2) ≤ 1 := by
-        rw [div_le_one (hQ r)]
-        nlinarith [sq_nonneg t]
-      rw [hF]
-      calc (2 * t) ^ (m + 3) * (r / (t ^ 2 + r ^ 2)) ^ (m + 1) * (r ^ 2 / (t ^ 2 + r ^ 2))
-          ≤ (2 * t) ^ (m + 3) * r⁻¹ ^ (m + 1) * 1 := by gcongr
-        _ = (2 * t) ^ (m + 3) * r⁻¹ ^ (m + 1) := mul_one _
-  have h := integral_Ioi_of_hasDerivAt_of_tendsto' hderiv
-    ((h₁.const_mul _).sub (h₂.const_mul _)) htend
+  have h := integral_Ioi_of_hasDerivAt_of_tendsto' (f := F)
+    (fun r _ ↦ hasDerivAt_pow_mul_sq_add_mul_rescaledBracket ht r)
+    ((h₁.const_mul _).sub (h₂.const_mul _)) (tendsto_pow_mul_sq_add_mul_rescaledBracket ht)
   rw [integral_sub (h₁.const_mul _) (h₂.const_mul _), integral_const_mul, integral_const_mul,
     show F 0 = 0 by simp [F], sub_zero] at h
   push_cast at h ⊢
@@ -381,10 +449,7 @@ theorem integral_rpow_neg_one_add_norm_sq {r : ℝ} (hr : (finrank ℝ V : ℝ) 
   rcases subsingleton_or_nontrivial V with hV | hV
   · -- In dimension zero the integral is the value at the only point, of volume one.
     have hvol : volume.real (univ : Set V) = 1 := by
-      have h := (stdOrthonormalBasis ℝ V).volume_parallelepiped
-      rw [Subsingleton.eq_univ_of_nonempty
-        ⟨0, (mem_parallelepiped_iff _ _).2 ⟨0, ⟨le_rfl, zero_le_one⟩, by simp⟩⟩] at h
-      rw [measureReal_def, h, ENNReal.toReal_one]
+      rw [measureReal_def, volume_eq_one_of_subsingleton univ_nonempty, ENNReal.toReal_one]
     have : Unique V := uniqueOfSubsingleton 0
     rw [integral_unique, hvol, finrank_zero_of_subsingleton, Subsingleton.elim (default : V) 0]
     simp [(Gamma_pos_of_pos (half_pos hr0)).ne']

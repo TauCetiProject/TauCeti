@@ -9,6 +9,8 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Module.Multilinear.Basic
 public import Mathlib.Topology.MetricSpace.Holder
 import TauCeti.Topology.MetricSpace.Holder
+import Mathlib.Algebra.Order.Chebyshev
+import TauCeti.LinearAlgebra.Multilinear.Basis
 
 /-!
 # The norm of a multilinear map on an orthonormal basis
@@ -20,7 +22,10 @@ them: `‖M‖ ≤ ∑_r ‖M (fun j => b j (r j))‖`, the sum running over all
 this bounds the norm of the Hessian by the sum of the absolute values of its matrix entries.
 The linear case, `‖L‖ ≤ ∑ i, ‖L (b i)‖`, is
 `ContinuousLinearMap.opNorm_le_sum_norm_apply_orthonormalBasis`; for a first derivative it bounds
-the norm of the gradient by the sum of the absolute values of the partial derivatives.
+the norm of the gradient by the sum of the absolute values of the partial derivatives. Its square
+form `‖L‖² ≤ (card ι) ∑ i, ‖L (b i)‖²`
+(`ContinuousLinearMap.opNorm_sq_le_card_mul_sum_norm_apply_sq_orthonormalBasis`) bounds the norm
+of a matrix by its columns in square mean.
 
 Conversely, the entries `H ![b i, b j]` of a bilinear map on an orthonormal basis are bounded by
 the operator norm (`ContinuousMultilinearMap.norm_apply_orthonormalBasis_le`). For a bilinear map
@@ -52,6 +57,16 @@ theorem opNorm_le_sum_norm_apply_orthonormalBasis (L : E →L[𝕜] G) (b : Orth
   gcongr
   exact (PiLp.norm_apply_le (b.repr x) i).trans_eq (b.repr.norm_map x)
 
+/-- The squared operator norm of a continuous linear map on an inner product space is at most the
+number of vectors of an orthonormal basis times the sum of the squared norms of its values on
+them. -/
+theorem opNorm_sq_le_card_mul_sum_norm_apply_sq_orthonormalBasis (L : E →L[𝕜] G)
+    (b : OrthonormalBasis ι 𝕜 E) : ‖L‖ ^ 2 ≤ Fintype.card ι * ∑ i, ‖L (b i)‖ ^ 2 := by
+  refine (pow_le_pow_left₀ (norm_nonneg _) (L.opNorm_le_sum_norm_apply_orthonormalBasis b) 2).trans
+    ?_
+  simpa only [Finset.card_univ] using
+    sq_sum_le_card_mul_sum_sq (s := Finset.univ) (f := fun i => ‖L (b i)‖)
+
 end ContinuousLinearMap
 
 namespace ContinuousMultilinearMap
@@ -70,9 +85,9 @@ theorem opNorm_le_sum_norm_apply_orthonormalBasis
   -- Expand each argument in the basis and use multilinearity.
   have hM : M m = ∑ r : ∀ j, ι j, (∏ j, (b j).repr (m j) (r j)) •
       M fun j => b j (r j) := by
-    conv_lhs => rw [← funext fun j => (b j).sum_repr (m j)]
-    rw [M.map_sum]
-    exact Finset.sum_congr rfl fun r _ => M.map_smul_univ _ _
+    simpa only [OrthonormalBasis.coe_toBasis_repr_apply, OrthonormalBasis.coe_toBasis,
+      ContinuousMultilinearMap.coe_coe] using
+      M.toMultilinearMap.apply_eq_sum_prod_repr_smul (fun j => (b j).toBasis) m
   rw [hM, Finset.sum_mul]
   refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun r _ => ?_)
   rw [norm_smul, norm_prod, mul_comm]

@@ -60,15 +60,15 @@ open Finset
 
 namespace TauCeti
 
-variable {R A α β : Type*} [LinearOrder α] [LinearOrder β] {s : Finset α} {f : α → β}
+variable {R A α β : Type*} [LinearOrder α] {s : Finset α} {f : α → β}
 
-section Moment
+section FiberProd
 
-variable [Monoid A]
+variable [Monoid A] [DecidableEq β]
 
 /-- The word obtained from `a` by grouping along the fibres of `f`: its letter at `y` is the
-product `a_{x₁} * ⋯ * a_{xₖ}` over the positions `x₁ < ⋯ < xₖ` of `s` with `f xᵢ = y`. When `f` is
-monotone on `s` these positions are consecutive in `s`. -/
+product `a_{x₁} * ⋯ * a_{xₖ}` over the positions `x₁ < ⋯ < xₖ` of `s` with `f xᵢ = y`. When `β` is
+linearly ordered and `f` is monotone on `s` these positions are consecutive in `s`. -/
 def fiberProd (a : α → A) (s : Finset α) (f : α → β) (y : β) : A :=
   ({x ∈ s | f x = y}.sort.map a).prod
 
@@ -76,6 +76,14 @@ def fiberProd (a : α → A) (s : Finset α) (f : α → β) (y : β) : A :=
 theorem fiberProd_def (a : α → A) (s : Finset α) (f : α → β) (y : β) :
     fiberProd a s f y = ({x ∈ s | f x = y}.sort.map a).prod := by
   rw [fiberProd]
+
+end FiberProd
+
+variable [LinearOrder β]
+
+section Moment
+
+variable [Monoid A]
 
 /-- For `f` monotone on `s`, the product of a word along the positions of `s` over a set `C` is
 the product of the word grouped along the fibres of `f` over the values of `f` at those

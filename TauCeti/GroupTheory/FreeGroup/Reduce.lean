@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.FreeGroup.Reduce
 public import TauCeti.Data.List.CommonPrefix
+import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 
 /-!
 # Reduced words in free groups
@@ -77,6 +78,18 @@ theorem IsReduced.append_append_invRev {w u : List (α × Bool)} (hw : IsReduced
     rw [Option.mem_def.mp hx] at this
     cases x; cases z
     simp_all [Bool.eq_not]
+
+/-- A nonempty reduced word is never its own formal inverse: otherwise it would represent an
+element of order at most two of the torsion-free group `FreeGroup α`. -/
+theorem IsReduced.invRev_ne_self {w : List (α × Bool)} (hw : IsReduced w) (hw₀ : w ≠ []) :
+    FreeGroup.invRev w ≠ w := by
+  intro h
+  have hsq : mk w ^ 2 = 1 := by
+    rw [pow_two]
+    nth_rw 1 [← h]
+    rw [← inv_mk, inv_mul_cancel]
+  rw [pow_eq_one_iff_left (Nat.succ_ne_zero 1), one_eq_mk] at hsq
+  exact hw₀ (hw.eq_of_mk_eq IsReduced.nil hsq)
 
 section Prefix
 
@@ -212,5 +225,31 @@ theorem norm_inv_mul_add_two_mul_commonPrefixLength (g f : FreeGroup α) :
   rwa [mk_toWord, mk_toWord] at h
 
 end CommonPrefix
+
+section Induction
+
+variable [DecidableEq α]
+
+/-- Induction along reduced words: a property of `1` that passes from `g` to `g * mk [x]`
+whenever the reduced word of `g * mk [x]` is that of `g` followed by `x` holds for every element
+of the free group. -/
+@[elab_as_elim]
+theorem induction_on_reduced {motive : FreeGroup α → Prop} (g : FreeGroup α) (one : motive 1)
+    (mul_mk_singleton : ∀ g x, (g * mk [x]).toWord = g.toWord ++ [x] → motive g →
+      motive (g * mk [x])) :
+    motive g := by
+  suffices ∀ L : List (α × Bool), IsReduced L → motive (mk L) by
+    simpa only [mk_toWord] using this g.toWord isReduced_toWord
+  intro L
+  induction L using List.reverseRecOn with
+  | nil => exact fun _ => one_eq_mk (α := α) ▸ one
+  | append_singleton L x ih =>
+    intro hL
+    have hL' : IsReduced L := hL.infix (List.prefix_append L [x]).isInfix
+    rw [← mul_mk]
+    refine mul_mk_singleton _ _ ?_ (ih hL')
+    rw [mul_mk, toWord_mk, hL.reduce_eq, toWord_mk, hL'.reduce_eq]
+
+end Induction
 
 end FreeGroup

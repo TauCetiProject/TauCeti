@@ -8,7 +8,7 @@ module
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import TauCeti.RingTheory.DiscreteValuationRing.TamelyRamified
 import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
-import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.FieldTheory.Kummer.Extension
 import TauCeti.RingTheory.DiscreteValuationRing.Eisenstein
@@ -88,11 +88,12 @@ variable {A : Type*} [CommRing A] [IsDomain A] [IsDiscreteValuationRing A] {π :
 theorem minpoly_eq_of_pow_eq_of_irreducible {L : Type*} [CommRing L] [IsDomain L] [Algebra A L]
     [Module.IsTorsionFree A L] {α : L} (hπ : Irreducible π) (hn : n ≠ 0)
     (hα : α ^ n = algebraMap A L π) : minpoly A α = X ^ n - C π := by
+  have hmonic := monic_X_pow_sub_C π hn
   refine eq_of_monic_of_associated
     (minpoly.monic (IsIntegral.of_pow (Nat.pos_of_ne_zero hn) (hα ▸ isIntegral_algebraMap)))
-    (monic_X_pow_sub_C π hn) ?_
-  refine associated_minpoly_of_eisenstein_isRoot α _
-    (isEisensteinAt_X_pow_sub_C_of_irreducible hπ (Nat.pos_of_ne_zero hn)) ?_
+    hmonic ?_
+  refine (isEisensteinAt_X_pow_sub_C_of_irreducible hπ (Nat.pos_of_ne_zero hn)).associated_minpoly
+    (hmonic.leadingCoeff ▸ isUnit_one) ?_
   simp [hα]
 
 variable {K L : Type*} [Field K] [Algebra A K] [IsFractionRing A K] [Field L] [Algebra K L]

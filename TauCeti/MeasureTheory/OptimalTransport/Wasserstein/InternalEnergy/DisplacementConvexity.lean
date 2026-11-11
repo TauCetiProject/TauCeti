@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.InternalEnergy.
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic.Basic
 public import TauCeti.Analysis.GradientFlow.GeodesicConvex
 import TauCeti.Analysis.Convex.McCannCondition
+import TauCeti.MeasureTheory.Measure.Decomposition.Lebesgue
 import TauCeti.MeasureTheory.OptimalTransport.Brenier
 import TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic
 
@@ -241,18 +242,7 @@ theorem internalEnergy_map_gradient (hU0 : U 0 = 0) (hf : Convex ℝ {p : E × �
   have hsing (ε : ℝ) : (ε * recessionConstant U).toENNReal * (μ.map G).singularPart ρ univ =
       ∫⁻ x in Z₀, ENNReal.ofReal (ε * (L * (μ.rnDeriv ρ x).toReal)) ∂ρ := by
     rw [hσ]
-    rcases hL with hL | hL
-    · rw [hL, ← EReal.coe_mul, EReal.real_coe_toENNReal, ← setLIntegral_rnDeriv hμ Z₀,
-        ← lintegral_const_mul _ (measurable_rnDeriv _ _)]
-      refine setLIntegral_congr_fun_ae hZ₀m ((rnDeriv_ne_top μ ρ).mono fun x hx _ => ?_)
-      rw [← mul_assoc, ENNReal.ofReal_mul' ENNReal.toReal_nonneg, ENNReal.ofReal_toReal hx]
-    · rw [hL, mul_zero]
-      have h0 := setLIntegral_rnDeriv hμ Z₀
-      rw [hL, setLIntegral_eq_zero_iff hZ₀m (measurable_rnDeriv _ _)] at h0
-      symm
-      rw [setLIntegral_eq_zero_iff hZ₀m (by fun_prop)]
-      filter_upwards [h0] with x hx hxZ
-      simp [hx hxZ]
+    exact Measure.toENNReal_mul_measure_eq_setLIntegral_ofReal_mul_rnDeriv hμ hZ₀m hL ε
   -- The absolutely continuous part, by the change of variables along the gradient.
   have hac (ε : ℝ) : ∫⁻ y, ENNReal.ofReal (ε * U ((μ.map G).rnDeriv ρ y).toReal) ∂ρ =
       ∫⁻ x, ENNReal.ofReal (ε * D.indicator (fun x =>
@@ -283,72 +273,31 @@ theorem internalEnergy_map_gradient (hU0 : U 0 = 0) (hf : Convex ℝ {p : E × �
         simp [h0, indicator_of_notMem hxZ]
     · have hxZ : x ∉ Z₀ := fun hxZ => hxD (hSD hxZ.1)
       simp [indicator_of_notMem hxD, indicator_of_notMem hxZ]
-  have hpos := hsum 1
-  have hneg := hsum (-1)
-  simp only [EReal.coe_one, EReal.coe_neg, one_mul, neg_one_mul] at hpos hneg
-  rw [internalEnergy_def, hpos, hneg]
-  by_cases h : ∫⁻ x, ENNReal.ofReal (D.indicator (fun x =>
-      if (H x).det = 0 then L * (μ.rnDeriv ρ x).toReal
-      else (H x).det * U ((μ.rnDeriv ρ x).toReal / (H x).det)) x) ∂ρ = ∞
-  · simp only [h, ↓reduceIte, potentialEnergy_eq_top_iff.2 h]
-  · simp only [h, ↓reduceIte, potentialEnergy_of_lintegral_ne_top h]
+  refine internalEnergy_eq_potentialEnergy_of_lintegral_eq ?_ ?_
+  · simpa only [EReal.coe_one, one_mul] using hsum 1
+  · simpa only [EReal.coe_neg, EReal.coe_one, neg_one_mul] using hsum (-1)
 
-/-- **McCann's displacement convexity of internal energies.** Let `E` be a real inner product space
-of finite dimension `n ≥ 1` with an additive Haar measure `ρ`, and let `U : ℝ → ℝ` satisfy
-`U 0 = 0` and McCann's condition: `s ↦ sⁿ U(s⁻ⁿ)` is convex and nonincreasing on `(0, ∞)`. Let
-`f : E → EReal` be convex (convex real epigraph, never `⊥`), with real representative `F`, and let
-`μ` be a σ-finite measure, absolutely continuous with respect to `ρ` and carried by the interior of
-the effective domain of `f`. Then the internal energy is convex along the interpolation
-`μₜ = (Tₜ)₊ μ`, `Tₜ x = (1 - t) • x + t • ∇F x`:
-`𝓤(μₜ) ≤ (1 - t) 𝓤(μ) + t 𝓤((∇F)₊ μ)` for `t ∈ [0, 1]`, provided neither endpoint has energy `⊥`.
-The endpoint `(∇F)₊ μ` need not be absolutely continuous; its singular part is charged at the
-recession constant `U'(∞)`. -/
-theorem internalEnergy_map_smul_add_smul_gradient_le [Nontrivial E] (hU0 : U 0 = 0)
+/-- McCann's displacement convexity of internal energies, for the endpoint formula of
+`internalEnergy_map_gradient` with a real `L`: the energy of the endpoint is the potential energy
+of the potential with `L * dμ/dρ` on the degenerate set `{x | det (H x) = 0}`. -/
+private theorem internalEnergy_map_smul_add_smul_gradient_le_of_hessian [Nontrivial E]
+    (hU0 : U 0 = 0)
     (hc : ConvexOn ℝ (Ioi 0) fun s : ℝ => s ^ finrank ℝ E * U (s ^ finrank ℝ E)⁻¹)
     (ha : AntitoneOn (fun s : ℝ => s ^ finrank ℝ E * U (s ^ finrank ℝ E)⁻¹) (Ioi 0))
-    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) {μ : Measure E}
+    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) {H : E → E →L[ℝ] E}
+    (hH : ∀ᵐ x ∂ρ, x ∈ interior {x | f x ≠ ⊤} → ∃ y, ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
+      ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y - H x (x' - x)‖ ≤ ε * ‖x' - x‖)
+    {L : ℝ} {μ : Measure E}
     [SigmaFinite μ] (hμ : μ ≪ ρ) (hμD : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤})
+    (hL : recessionConstant U = L ∨ μ {x | (H x).det = 0} = 0)
     (h₀ : internalEnergy U ρ μ ≠ ⊥)
     (h₁ : internalEnergy U ρ (μ.map (∇ fun x' => (f x').toReal)) ≠ ⊥) {t : ℝ}
-    (ht : t ∈ Icc (0 : ℝ) 1) :
+    (ht₀ : 0 < t) (ht₁ : t < 1) :
     internalEnergy U ρ (μ.map fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x) ≤
       ((1 - t : ℝ) : EReal) * internalEnergy U ρ μ +
         (t : EReal) * internalEnergy U ρ (μ.map (∇ fun x' => (f x').toReal)) := by
   set D := interior {x | f x ≠ ⊤}
   set G := ∇ fun x' => (f x').toReal
-  set n := finrank ℝ E
-  have hn : n ≠ 0 := finrank_pos.ne'
-  -- After the trivial endpoints `t = 0, 1` and the case where the endpoint has energy `⊤`, all
-  -- three energies are potential energies against `ρ` of explicit functions on `D`
-  -- (`internalEnergy_map_smul_add_smul_gradient`, `internalEnergy_map_gradient`), and the claim
-  -- follows by integrating McCann's pointwise inequality
-  -- (`ContinuousLinearMap.IsPositive.det_mul_apply_div_det_le`).
-  rcases ht.1.eq_or_lt with rfl | ht₀
-  · simp [Measure.map_id']
-  rcases ht.2.eq_or_lt with rfl | ht₁
-  · simp
-  obtain ⟨H, hH₀, -⟩ := exists_mongeAmpereMeasure_eq_singularPart_add_withDensity ρ hf hbot
-  have hH : ∀ᵐ x ∂ρ, x ∈ D → ∃ y, ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
-      ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y - H x (x' - x)‖ ≤ ε * ‖x' - x‖ := by
-    filter_upwards [hH₀] with x hx hxD
-    exact ⟨_, (hx (interior_subset hxD)).2⟩
-  -- If the recession constant is `⊤` and the degenerate set has positive mass, the endpoint has
-  -- energy `⊤`.
-  by_cases hA : recessionConstant U = ⊤ ∧ μ {x | (H x).det = 0} ≠ 0
-  · have hσ : (μ.map G).singularPart ρ ≠ 0 := fun h => hA.2 (by
-      rw [← singularPart_map_gradient_apply_univ ρ hf hbot hH hμ hμD, h, FunLike.coe_zero,
-        Pi.zero_apply])
-    rw [internalEnergy_eq_top_of_recessionConstant_eq_top hA.1 hσ,
-      EReal.coe_mul_add_coe_mul_eq_top (sub_pos.2 ht₁) ht₀ h₀ top_ne_bot (.inr rfl)]
-    exact le_top
-  -- Otherwise the endpoint is described by `internalEnergy_map_gradient` with a real `L`.
-  set L := (recessionConstant U).toReal
-  have hL : recessionConstant U = L ∨ μ {x | (H x).det = 0} = 0 := by
-    by_cases htop : recessionConstant U = ⊤
-    · exact .inr (not_not.1 fun h => hA ⟨htop, h⟩)
-    · exact .inl (EReal.coe_toReal htop
-        (ne_bot_of_le_ne_bot (EReal.coe_ne_bot _)
-          (pow_mul_apply_inv_pow_le_recessionConstant hn ha one_pos))).symm
   obtain ⟨S, hSm, hSD, hDS, hS, H', hH'm, hHS⟩ :=
     exists_measurableSet_ae_eq_interior_subdifferential_eq_gradient ρ hf hbot hH
   have hE₀ := internalEnergy_map_smul_add_smul_gradient ρ hU0 hf hbot hH hμ hμD le_rfl one_pos
@@ -358,7 +307,7 @@ theorem internalEnergy_map_smul_add_smul_gradient_le [Nontrivial E] (hU0 : U 0 =
     internalEnergy_map_gradient ρ hU0 hf hbot hH hμ hμD hL]
   rw [hE₀] at h₀
   rw [internalEnergy_map_gradient ρ hU0 hf hbot hH hμ hμD hL] at h₁
-  have hUm := measurable_apply_max_of_convexOn hn hc
+  have hUm := measurable_apply_max_of_convexOn finrank_pos.ne' hc
   have hr : Measurable fun x => (μ.rnDeriv ρ x).toReal := (measurable_rnDeriv _ _).ennreal_toReal
   have hV₀ : Measurable fun x => U (μ.rnDeriv ρ x).toReal := by
     convert hUm.comp hr using 2 with x
@@ -387,9 +336,65 @@ theorem internalEnergy_map_smul_add_smul_gradient_le [Nontrivial E] (hU0 : U 0 =
     fun h0 hr s hs => ?_
   -- The bound `φ ≤ L` is needed only where the density is positive and `det (H x) = 0`.
   by_cases hrec : recessionConstant U = L
-  · exact EReal.coe_le_coe_iff.1 (hrec ▸ pow_mul_apply_inv_pow_le_recessionConstant hn ha hs)
+  · exact EReal.coe_le_coe_iff.1
+      (hrec ▸ pow_mul_apply_inv_pow_le_recessionConstant finrank_pos.ne' ha hs)
   · rw [hHS x hxS'] at h0
     simp [hr0x hxS' h0 hrec] at hr
+
+/-- **McCann's displacement convexity of internal energies.** Let `E` be a real inner product space
+of finite dimension `n ≥ 1` with an additive Haar measure `ρ`, and let `U : ℝ → ℝ` satisfy
+`U 0 = 0` and McCann's condition: `s ↦ sⁿ U(s⁻ⁿ)` is convex and nonincreasing on `(0, ∞)`. Let
+`f : E → EReal` be convex (convex real epigraph, never `⊥`), with real representative `F`, and let
+`μ` be a σ-finite measure, absolutely continuous with respect to `ρ` and carried by the interior of
+the effective domain of `f`. Then the internal energy is convex along the interpolation
+`μₜ = (Tₜ)₊ μ`, `Tₜ x = (1 - t) • x + t • ∇F x`:
+`𝓤(μₜ) ≤ (1 - t) 𝓤(μ) + t 𝓤((∇F)₊ μ)` for `t ∈ [0, 1]`, provided neither endpoint has energy `⊥`.
+The endpoint `(∇F)₊ μ` need not be absolutely continuous; its singular part is charged at the
+recession constant `U'(∞)`. -/
+theorem internalEnergy_map_smul_add_smul_gradient_le [Nontrivial E] (hU0 : U 0 = 0)
+    (hc : ConvexOn ℝ (Ioi 0) fun s : ℝ => s ^ finrank ℝ E * U (s ^ finrank ℝ E)⁻¹)
+    (ha : AntitoneOn (fun s : ℝ => s ^ finrank ℝ E * U (s ^ finrank ℝ E)⁻¹) (Ioi 0))
+    (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) {μ : Measure E}
+    [SigmaFinite μ] (hμ : μ ≪ ρ) (hμD : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤})
+    (h₀ : internalEnergy U ρ μ ≠ ⊥)
+    (h₁ : internalEnergy U ρ (μ.map (∇ fun x' => (f x').toReal)) ≠ ⊥) {t : ℝ}
+    (ht : t ∈ Icc (0 : ℝ) 1) :
+    internalEnergy U ρ (μ.map fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x) ≤
+      ((1 - t : ℝ) : EReal) * internalEnergy U ρ μ +
+        (t : EReal) * internalEnergy U ρ (μ.map (∇ fun x' => (f x').toReal)) := by
+  set D := interior {x | f x ≠ ⊤}
+  set G := ∇ fun x' => (f x').toReal
+  -- After the trivial endpoints `t = 0, 1` and the case where the endpoint has energy `⊤`, all
+  -- three energies are potential energies against `ρ` of explicit functions on `D`
+  -- (`internalEnergy_map_smul_add_smul_gradient`, `internalEnergy_map_gradient`), and the claim
+  -- follows by integrating McCann's pointwise inequality
+  -- (`ContinuousLinearMap.IsPositive.det_mul_apply_div_det_le`).
+  rcases ht.1.eq_or_lt with rfl | ht₀
+  · simp [Measure.map_id']
+  rcases ht.2.eq_or_lt with rfl | ht₁
+  · simp
+  obtain ⟨H, hH₀, -⟩ := exists_mongeAmpereMeasure_eq_singularPart_add_withDensity ρ hf hbot
+  have hH : ∀ᵐ x ∂ρ, x ∈ D → ∃ y, ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
+      ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y - H x (x' - x)‖ ≤ ε * ‖x' - x‖ := by
+    filter_upwards [hH₀] with x hx hxD
+    exact ⟨_, (hx (interior_subset hxD)).2⟩
+  -- If the recession constant is `⊤` and the degenerate set has positive mass, the endpoint has
+  -- energy `⊤`.
+  by_cases hA : recessionConstant U = ⊤ ∧ μ {x | (H x).det = 0} ≠ 0
+  · have hσ : (μ.map G).singularPart ρ ≠ 0 := fun h => hA.2 (by
+      rw [← singularPart_map_gradient_apply_univ ρ hf hbot hH hμ hμD, h, FunLike.coe_zero,
+        Pi.zero_apply])
+    rw [internalEnergy_eq_top_of_recessionConstant_eq_top hA.1 hσ,
+      EReal.coe_mul_add_coe_mul_eq_top (sub_pos.2 ht₁) ht₀ h₀ top_ne_bot (.inr rfl)]
+    exact le_top
+  -- Otherwise the endpoint is described by `internalEnergy_map_gradient` with a real `L`.
+  refine internalEnergy_map_smul_add_smul_gradient_le_of_hessian ρ hU0 hc ha hf hbot hH hμ hμD
+    (L := (recessionConstant U).toReal) ?_ h₀ h₁ ht₀ ht₁
+  by_cases htop : recessionConstant U = ⊤
+  · exact .inr (not_not.1 fun h => hA ⟨htop, h⟩)
+  · exact .inl (EReal.coe_toReal htop
+      (ne_bot_of_le_ne_bot (EReal.coe_ne_bot _)
+        (pow_mul_apply_inv_pow_le_recessionConstant (finrank_pos.ne') ha one_pos))).symm
 
 /-- **McCann's displacement convexity in the quadratic Wasserstein space.** Let `E` be a real
 inner product space of finite dimension `n ≥ 1` with an additive Haar measure `ρ`, and let `U`

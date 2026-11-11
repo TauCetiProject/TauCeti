@@ -78,8 +78,7 @@ theorem finrank_adjoin_eq_three_of_sq_eq_pow_three_add : Module.finrank k⟮y⟯
   have := isScalarTower_ratFuncAlgebraOfTranscendental hy
   rw [← algebraMap_ratFuncAlgebraOfTranscendental_X hy, finrank_adjoin_algebraMap_X]
   refine (Place.infty k).valuation.finrank_eq_of_pow_eq_of_gcd_ord_eq_one
-    (adjoin_eq_top_ratFunc_of_adjoin_pair_eq_top hy hgen) (pow_three_eq_algebraMap hy heq)
-    three_ne_zero ?_
+    (adjoin_eq_top_ratFunc_of_adjoin_pair_eq_top hy hgen) (pow_three_eq_algebraMap hy heq) ?_
   rw [Valuation.ord_def, ← Place.ord_def]
   exact gcd_ord_infty
 

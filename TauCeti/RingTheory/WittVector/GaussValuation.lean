@@ -91,8 +91,8 @@ theorem mem_span_teichmuller_pow_iff (hv : v.Integers R) {c : R} {x : 𝕎 R} {n
       ∀ i ≤ n, v (algebraMap R K (x.teichmullerCoeff i)) ≤ v (algebraMap R K c) := by
   refine ⟨fun hx i hi ↦ ?_, fun hx ↦ ?_⟩
   · obtain ⟨a, b, rfl⟩ := Ideal.mem_span_pair.mp hx
-    rw [teichmullerCoeff_eq_of_dvd_sub (y := teichmuller p c * a) ⟨b, by ring⟩ hi,
-      teichmullerCoeff_teichmuller_mul, map_mul, map_mul]
+    rw [(pow_dvd_sub_iff_forall_teichmullerCoeff_eq (y := teichmuller p c * a)).mp ⟨b, by ring⟩
+      i hi, teichmullerCoeff_teichmuller_mul, map_mul, map_mul]
     exact mul_le_of_le_one_right' (hv.map_le_one _)
   · choose u hu using fun i : Finset.Iic n ↦
       hv.dvd_of_le (hx i (Finset.mem_Iic.mp i.2))
@@ -139,12 +139,13 @@ private theorem gaussTrunc_mono (x : 𝕎 O) {m n : ℕ} (h : m ≤ n) :
 private theorem gaussTrunc_congr {x y : 𝕎 O} {n : ℕ} (h : (p : 𝕎 O) ^ (n + 1) ∣ x - y) :
     gaussTrunc p v ρ n x = gaussTrunc p v ρ n y :=
   Finset.sup_congr rfl fun i hi ↦ by
-    rw [gaussTerm, gaussTerm, teichmullerCoeff_eq_of_dvd_sub h (Finset.mem_Iic.mp hi)]
+    rw [gaussTerm, gaussTerm,
+      pow_dvd_sub_iff_forall_teichmullerCoeff_eq.mp h i (Finset.mem_Iic.mp hi)]
 
 private theorem gaussTerm_teichmuller_mul_pow (a : O) (m i : ℕ) :
     gaussTerm p v ρ (teichmuller p a * (p : 𝕎 O) ^ m) i =
       if i = m then v (algebraMap O K a) * ρ ^ m else 0 := by
-  rw [gaussTerm, teichmullerCoeff_teichmuller_mul_pow]
+  rw [gaussTerm, teichmullerCoeff_teichmuller_mul, teichmullerCoeff_natCast_pow]
   split_ifs with h <;> simp [h]
 
 private theorem gaussTrunc_teichmuller_mul_pow (a : O) (m n : ℕ) :
@@ -754,8 +755,8 @@ theorem gaussDegree_sum_range_teichmuller_mul_pow_lt (hv : v.Integers O) (hρ₀
   by_contra! hn
   have := gaussValuation_eq_mul_pow_gaussDegree hv hρ
     (∑ j ∈ Finset.range n, teichmuller p (a j) * (p : 𝕎 O) ^ j)
-  simp only [teichmullerCoeff_sum_range_teichmuller_mul_pow, hn.not_gt, ↓reduceIte, map_zero,
-    zero_mul, gaussValuation_eq_zero_iff hv hρ₀ hρ] at this
+  simp only [teichmullerCoeff_sum_teichmuller_mul_pow, Finset.mem_range, hn.not_gt, ↓reduceIte,
+    map_zero, zero_mul, gaussValuation_eq_zero_iff hv hρ₀ hρ] at this
   exact h this
 
 end Degree

@@ -33,7 +33,8 @@ For a family of opens `V i` covering `W`, restriction to the cover
 containing the pairwise intersections (`Scheme.Modules.sectionsDiffPiBaseLinear`) are `R`-linear.
 By the sheaf condition the first is injective and its image is the kernel of the second
 (`Scheme.Modules.sectionsRestrictPiBaseLinear_injective`,
-`Scheme.Modules.exact_sectionsRestrictPiBaseLinear`).
+`Scheme.Modules.exact_sectionsRestrictPiBaseLinear`). In particular, sections are determined by
+their restrictions to affine opens (`Scheme.Modules.sections_ext_of_isAffineOpen`).
 
 Compatible families of sections of `M` are its global sections (`Scheme.Modules.sectionsEquivTop`),
 and so are the morphisms `𝒪_X ⟶ M` out of the structure sheaf (`Scheme.Modules.unitHomEquivTop`).
@@ -352,6 +353,25 @@ lemma pushforwardSectionsBaseLinearEquiv_symm_apply (M : X.Modules) (U : Y.Opens
   rfl
 
 end
+
+section AffineExt
+
+variable {X : Scheme.{u}}
+
+/-- Sections of an `𝒪_X`-module over `V` agree if their restrictions to all affine opens contained
+in `V` agree. -/
+lemma sections_ext_of_isAffineOpen {M : X.Modules} {V : X.Opens} {s t : Γ(M, V)}
+    (h : ∀ (U : X.Opens), IsAffineOpen U → ∀ hUV : U ≤ V,
+      M.presheaf.map (homOfLE hUV).op s = M.presheaf.map (homOfLE hUV).op t) : s = t :=
+  TopCat.Sheaf.eq_of_locally_eq' (⟨M.presheaf, M.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X)
+    (fun U : {U : X.affineOpens // U.1 ≤ V} ↦ U.1.1) V (fun U ↦ homOfLE U.2)
+    (fun x hx ↦ by
+      obtain ⟨_, ⟨U, hU, rfl⟩, hxU, hUV⟩ :=
+        X.isBasis_affineOpens.exists_subset_of_mem_open hx V.2
+      exact TopologicalSpace.Opens.mem_iSup.2 ⟨⟨⟨U, hU⟩, hUV⟩, hxU⟩)
+    s t fun U ↦ h _ U.1.2 U.2
+
+end AffineExt
 
 section UnitHom
 

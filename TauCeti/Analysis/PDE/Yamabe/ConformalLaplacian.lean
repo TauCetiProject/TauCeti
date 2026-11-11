@@ -12,7 +12,7 @@ import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Geometry.Manifold.ContMDiff.Log
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
 import TauCeti.Geometry.Manifold.Riemannian.Hessian.Conformal
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Conformal
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Conformal.Basic
 
 /-!
 # The conformal Laplacian
@@ -62,6 +62,10 @@ examples, and the transformation law of scalar curvature:
   curvature `c` exactly where `L_g u = c u ^ (pₙ - 1)`.
 * `TauCeti.Yamabe.conformalLaplacian_rescale`: the conformal covariance
   `L_ĝ v = u ^ (-(n + 2) / (n - 2)) L_g (u v)`.
+* `Bundle.ContMDiffRiemannianMetric.scalarCurvature_rescale_of_conformalLaplacian_eq_mul`: if
+  `L_g u = λ u`, then `Scal_ĝ = λ u ^ (-4 / (n - 2))`, and
+  `Bundle.ContMDiffRiemannianMetric.sign_scalarCurvature_rescale_of_conformalLaplacian_eq_mul`: its
+  sign is that of `λ`.
 
 ## References
 
@@ -226,9 +230,9 @@ theorem scalarCurvature_rescale_eq_rpow_mul_conformalLaplacian
       Real.rpow_add hux, Real.rpow_neg hux.le, Real.rpow_neg_one]
   let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
   rw [g.scalarCurvature_rescale hf hf_pos hfφ x, laplaceBeltrami_smul I _ hlog,
-    mgradient_smul _ (hlog.mdifferentiable (by simp)), Pi.smul_apply,
+    mgradient_smul _, Pi.smul_apply,
     laplaceBeltrami_log I (hu.of_le (by simp)) (fun y ↦ (hu_pos y).ne'),
-    mgradient_log (hu.mdifferentiableAt (by simp)) hux.ne', hpow, conformalLaplacian_def,
+    mgradient_log (hu.mdifferentiableAt (by simp)), hpow, conformalLaplacian_def,
     conformalCoefficient_def, ← g.scalarCurvature_def x]
   simp only [norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
   field_simp
@@ -307,3 +311,47 @@ theorem conformalLaplacian_rescale
 end Rescale
 
 end TauCeti.Yamabe
+
+namespace Bundle.ContMDiffRiemannianMetric
+
+open TauCeti.Yamabe
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+  (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+
+/-- **Scalar curvature from an eigenfunction of the conformal Laplacian.** In dimension `n ≠ 2`,
+let `u` be a positive function such that `ĝ = u ^ (4 / (n - 2)) g` is a smooth metric. At a point
+where `L_g u = λ u`, the scalar curvature of `ĝ` is `Scal_ĝ = λ u ^ (-4 / (n - 2))`. -/
+theorem scalarCurvature_rescale_of_conformalLaplacian_eq_mul
+    (hn : finrank ℝ E ≠ 2) {u : M → ℝ} (hu_pos : ∀ x, 0 < u x)
+    {hf : ContMDiff I 𝓘(ℝ) ∞ fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))}
+    {hf_pos : ∀ x, 0 < u x ^ (4 / ((finrank ℝ E : ℝ) - 2))} {c : ℝ} {x : M}
+    (h : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      conformalLaplacian I u x) = c * u x) :
+    (g.rescale (fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))) hf hf_pos).scalarCurvature x =
+      c * u x ^ (-(4 / ((finrank ℝ E : ℝ) - 2))) := by
+  have hn' : (finrank ℝ E : ℝ) - 2 ≠ 0 := sub_ne_zero.2 (by exact_mod_cast hn)
+  rw [scalarCurvature_rescale_eq_rpow_mul_conformalLaplacian g hn hu_pos x, h, mul_left_comm,
+    ← Real.rpow_add_one (hu_pos x).ne']
+  congr 2
+  field_simp
+  ring
+
+/-- **The sign of the scalar curvature from an eigenfunction.** In dimension `n ≠ 2`, let `u` be a
+positive function such that `ĝ = u ^ (4 / (n - 2)) g` is a smooth metric. At a point where
+`L_g u = λ u`, the scalar curvature of `ĝ` has the sign of `λ`. -/
+theorem sign_scalarCurvature_rescale_of_conformalLaplacian_eq_mul
+    (hn : finrank ℝ E ≠ 2) {u : M → ℝ} (hu_pos : ∀ x, 0 < u x)
+    {hf : ContMDiff I 𝓘(ℝ) ∞ fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))}
+    {hf_pos : ∀ x, 0 < u x ^ (4 / ((finrank ℝ E : ℝ) - 2))} {c : ℝ} {x : M}
+    (h : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      conformalLaplacian I u x) = c * u x) :
+    SignType.sign
+        ((g.rescale (fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))) hf hf_pos).scalarCurvature x) =
+      SignType.sign c := by
+  rw [g.scalarCurvature_rescale_of_conformalLaplacian_eq_mul hn hu_pos h, sign_mul,
+    sign_pos (Real.rpow_pos_of_pos (hu_pos x) _), mul_one]
+
+end Bundle.ContMDiffRiemannianMetric

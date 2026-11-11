@@ -215,9 +215,6 @@ theorem finrank_continuousCohomology_one_fdGalRepOfQuotient [Fact ℓ.Prime]
         (V := TensorProduct (ZMod ℓ) (H1 W.toSubgroup (ZMod ℓ)) A)
         ((h1ConjRepresentation (p := ℓ) (G := Field.absoluteGaloisGroup F)
           (N := W.toSubgroup)).tprod A.ρ)) := by
-  have hℓ : ℓ.Prime := Fact.out
-  have : W.toSubgroup.FiniteIndex :=
-    ⟨fun h ↦ hℓ.one_lt.ne' (Nat.coprime_zero_left ℓ |>.1 (h ▸ hW))⟩
   rw [fdGalRepOfQuotient_obj]
   let X := (galRepOfQuotient ℓ F W).obj
     ((forget₂ (FDRep (ZMod ℓ) _) (Rep (ZMod ℓ) (Field.absoluteGaloisGroup F ⧸ W.toSubgroup))).obj A)

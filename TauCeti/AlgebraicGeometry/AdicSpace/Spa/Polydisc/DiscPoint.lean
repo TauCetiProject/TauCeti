@@ -50,8 +50,8 @@ since translating `T` by an element of norm `r` moves the first degree attaining
 from `1` to `0`. So `η_{a,r⁻}` depends exactly on the open disc `{y : ‖y - a‖ < r}`, and the open
 discs of radius `r` inside `D(a, r)` give pairwise distinct points next to `η_{a,r}`. All three
 invariance statements come from `TauCeti.ValuationSpectrum.valuation_taylorHom_eq`: a continuous
-valuation that bounds every monomial of a series by the series, and the shifted variables `T + c`
-and `T - c` by `T`, is invariant under translation by `c`.
+valuation that bounds every monomial of a series by the series, and the shifted variable `T + c`
+by `T`, is invariant under translation by `c`.
 
 ## Main definitions
 
@@ -169,7 +169,7 @@ theorem closedDiscGaussValuation_taylorHom (hr₀ : 0 < r) (hr₁ : r ≤ 1) (a 
       closedDiscGaussValuation_weightedC, coe_nnnorm]
     exact max_le le_rfl hc
   refine valuation_taylorHom_eq a ha (isContinuous_closedDiscGaussValuation hr₀ hr₁)
-    (Fin.forall_fin_one.2 (hX har)) (Fin.forall_fin_one.2 (hX (by rwa [norm_neg])))
+    (Fin.forall_fin_one.2 (hX har))
     (valuation_monomial_le_of_forall_pow fun g n ↦ ?_) f
   rw [← NNReal.coe_le_coe, map_mul, map_pow, NNReal.coe_mul, NNReal.coe_pow,
     closedDiscGaussValuation_weightedC, coe_closedDiscGaussValuation_weightedX, coe_nnnorm]
@@ -187,8 +187,6 @@ theorem closedDiscGaussValuationAbove_taylorHom (hr₀ : 0 < r) (hr₁ : r ≤ 1
     (v := closedDiscGaussValuationAbove hr₀ hr₁) a ha
     (isContinuous_closedDiscGaussValuationAbove hr₀ hr₁)
     (Fin.forall_fin_one.2 (closedDiscGaussValuationAbove_weightedX_add_weightedC hr₀ hr₁ har).le)
-    (Fin.forall_fin_one.2 (closedDiscGaussValuationAbove_weightedX_add_weightedC hr₀ hr₁
-      (c := -a 0) (by rwa [norm_neg])).le)
     (valuation_monomial_le_of_forall_pow
       (closedDiscGaussValuationAbove_weightedC_mul_weightedX_pow_le hr₀ hr₁)) f
 
@@ -206,8 +204,6 @@ theorem closedDiscGaussValuationBelow_taylorHom (hr₀ : 0 < r) (hr₁ : r ≤ 1
     (v := closedDiscGaussValuationBelow hr₀ hr₁) a ha
     (isContinuous_closedDiscGaussValuationBelow hr₀ hr₁)
     (Fin.forall_fin_one.2 (closedDiscGaussValuationBelow_weightedX_add_weightedC hr₀ hr₁ har).le)
-    (Fin.forall_fin_one.2 (closedDiscGaussValuationBelow_weightedX_add_weightedC hr₀ hr₁
-      (c := -a 0) (by rwa [norm_neg])).le)
     (valuation_monomial_le_of_forall_pow
       (closedDiscGaussValuationBelow_weightedC_mul_weightedX_pow_le hr₀ hr₁)) f
 

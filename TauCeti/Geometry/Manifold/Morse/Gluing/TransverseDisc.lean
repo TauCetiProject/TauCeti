@@ -65,6 +65,7 @@ namespace MorseChart
 
 variable (φ : MorseChart E f x)
 
+omit [FiniteDimensional ℝ E] in
 /-- If, on the open coordinate cube of radius `ε` of a Morse chart, membership in `s` is read off
 the chart image by a predicate `P`, then it is read off by `P` on a neighbourhood of each point of
 that cube. -/
@@ -72,10 +73,8 @@ private theorem eventually_iff_of_norm_lt {ε : ℝ} {s : Set M} {P : E → Prop
     (h : ∀ y ∈ φ.toChart.source, ‖φ.coord (φ.toChart y)‖ < ε → (y ∈ s ↔ P (φ.toChart y)))
     {y : M} (hy : y ∈ φ.toChart.source) (hyε : ‖φ.coord (φ.toChart y)‖ < ε) :
     ∀ᶠ z in 𝓝 y, z ∈ s ↔ P (φ.toChart z) := by
-  have hcoord : Continuous φ.coord :=
-    LinearMap.continuous_of_finiteDimensional (φ.coord : E →ₗ[ℝ] Fin (Module.finrank ℝ E) → ℝ)
   have hc : ContinuousAt (fun z ↦ ‖φ.coord (φ.toChart z)‖) y :=
-    (hcoord.continuousAt.comp (φ.toChart.continuousAt hy)).norm
+    (φ.continuous_coord.continuousAt.comp (φ.toChart.continuousAt hy)).norm
   filter_upwards [φ.toChart.open_source.mem_nhds hy, hc.eventually_lt continuousAt_const hyε]
     with z hz hzε
   exact h z hz hzε

@@ -146,7 +146,7 @@ generated source over a Noetherian commutative ring. -/
 theorem finite_lieModuleHom_of_isIrreducible [IsNoetherian R M] :
     Module.Finite R (M →ₗ⁅R,L⁆ N) := by
   by_cases h : Nonempty (M ≃ₗ⁅R,L⁆ N)
-  · exact Module.Finite.equiv (LieModuleEquiv.congrRight (M := M) h.some)
+  · exact Module.Finite.equiv (h.some.congrRight (M := M))
   · have : Subsingleton (M →ₗ⁅R,L⁆ N) :=
       subsingleton_lieModuleHom_of_isEmpty_lieModuleEquiv (not_nonempty_iff.mp h)
     exact Module.Finite.of_surjective (0 : R →ₗ[R] (M →ₗ⁅R,L⁆ N))
@@ -183,7 +183,7 @@ variable {M}
 postcomposing with the equivalence identifies it with the endomorphism space. -/
 theorem finrank_lieModuleHom_eq_one_of_nonempty_lieModuleEquiv (h : Nonempty (M ≃ₗ⁅K,L⁆ N)) :
     finrank K (M →ₗ⁅K,L⁆ N) = 1 := by
-  rw [← (LieModuleEquiv.congrRight (M := M) h.some).finrank_eq]
+  rw [← (h.some.congrRight (M := M)).finrank_eq]
   exact finrank_lieModuleHom_self K L M
 
 variable [_root_.LieModule.IsIrreducible K L N]
@@ -231,3 +231,25 @@ theorem finrank_lieModuleHom :
 end IsAlgClosed
 
 end TauCeti.LieModule
+
+namespace LieModule
+
+variable {R : Type u} {L : Type v} {M : Type w} {S : Type w₁} [CommRing R] [LieRing L]
+variable [AddCommGroup M] [Module R M] [LieRingModule L M] [IsNoetherian R M]
+variable [AddCommGroup S] [Module R S] [LieRingModule L S] [IsIrreducible R L S]
+
+/-- **A Noetherian module has no morphism from an irreducible module that is not finitely
+generated.** A morphism out of an irreducible `S` has kernel `⊥` or `⊤`, so it is either zero or
+injective, and an injective one would make `S` finitely generated. -/
+theorem subsingleton_lieModuleHom_of_not_finite (hS : ¬ Module.Finite R S) :
+    Subsingleton (S →ₗ⁅R,L⁆ M) := by
+  have h0 : ∀ f : S →ₗ⁅R,L⁆ M, f = 0 := fun f ↦ by
+    rcases eq_bot_or_eq_top f.ker with h | h
+    · exact absurd (Module.Finite.of_injective f.toLinearMap
+        ((LieModuleHom.ker_eq_bot f).mp h)) hS
+    · exact LieModuleHom.ext fun x ↦ by
+        have : x ∈ f.ker := h ▸ LieSubmodule.mem_top x
+        simpa using this
+  exact ⟨fun f g ↦ (h0 f).trans (h0 g).symm⟩
+
+end LieModule

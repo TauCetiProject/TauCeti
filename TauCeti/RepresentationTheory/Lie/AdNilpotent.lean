@@ -83,7 +83,7 @@ theorem isNilpotent_apply_of_lie_eq_smul {ρ : L →ₗ⁅K⁆ Module.End K M}
 
 /-- An ad-nilpotent element has nilpotent image under every finite-dimensional representation
 of a Killing Lie algebra over a characteristic-zero field. -/
-theorem isNilpotent_apply_of_isNilpotent_ad [FiniteDimensional K L] [IsKilling K L]
+theorem isNilpotent_apply_of_isNilpotent_ad [IsKilling K L]
     {ρ : L →ₗ⁅K⁆ Module.End K M} {x : L} (hx : IsNilpotent (ad K L x)) :
     IsNilpotent (ρ x) := by
   obtain ⟨t, ht⟩ := exists_lie_eq_self_of_isNilpotent_ad hx
@@ -93,7 +93,7 @@ theorem isNilpotent_apply_of_isNilpotent_ad [FiniteDimensional K L] [IsKilling K
 /-- An ad-nilpotent element of a finite-dimensional Killing Lie algebra acts nilpotently in
 every finite-dimensional Lie module over a characteristic-zero field. -/
 theorem isNilpotent_toEnd_of_isNilpotent_ad [LieRingModule L M] [LieModule K L M]
-    [FiniteDimensional K L] [IsKilling K L] {x : L} (hx : IsNilpotent (ad K L x)) :
+    [IsKilling K L] {x : L} (hx : IsNilpotent (ad K L x)) :
     IsNilpotent (toEnd K L M x) :=
   isNilpotent_apply_of_isNilpotent_ad hx
 
@@ -102,7 +102,7 @@ end TauCeti
 namespace LieHom
 
 variable {K L M : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
-  [FiniteDimensional K L] [IsKilling K L] [AddCommGroup M] [Module K M] [FiniteDimensional K M]
+  [IsKilling K L] [AddCommGroup M] [Module K M] [FiniteDimensional K M]
 
 -- Endomorphism algebras carry the associative commutator bracket locally.
 attribute [local instance 100] LieRing.ofAssociativeRing

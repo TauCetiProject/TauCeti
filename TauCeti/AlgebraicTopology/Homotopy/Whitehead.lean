@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Disk
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Exact
-public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
+public import TauCeti.Topology.Homotopy.HomotopyGroup.ConnectedMap
 public import TauCeti.Topology.Homotopy.MappingCylinder
 public import TauCeti.Topology.CWComplex.Classical.CWType
 public import TauCeti.Topology.CWComplex.Classical.Cylinder
@@ -64,6 +64,8 @@ the skeletal induction inside the compression lemma.
 
 ## Main declarations
 
+* `ContinuousMap.IsNConnected.subsingleton_relHomotopyGroup_mappingCylinder`: the relative
+  homotopy groups of the mapping cylinder of an `n`-connected map vanish up to dimension `n`.
 * `ContinuousMap.IsWeakHomotopyEquivalence.subsingleton_relHomotopyGroup_mappingCylinder`: the
   relative homotopy groups of the mapping cylinder of a weak homotopy equivalence vanish.
 * `ContinuousMap.IsWeakHomotopyEquivalence.exists_comp_homotopic`: maps out of spaces of CW
@@ -97,15 +99,16 @@ universe w
 open Set Topology Topology.RelCWComplex
 open scoped unitInterval
 
-namespace ContinuousMap.IsWeakHomotopyEquivalence
+namespace ContinuousMap
 
 variable {X : Type*} [TopologicalSpace X] {Y : Type*} [TopologicalSpace Y] {f : C(X, Y)}
 
-/-- The relative homotopy groups `π_{n+1}(M_f, X, x)` of the mapping cylinder of a weak homotopy
-equivalence `f : X → Y`, relative to its bottom face `X`, are trivial at every basepoint of the
-bottom face. -/
-theorem subsingleton_relHomotopyGroup_mappingCylinder (hf : f.IsWeakHomotopyEquivalence)
-    (N : Type w) [Finite N] (b : range (TauCeti.MappingCylinder.incl f)) :
+/-- The relative homotopy groups `π_{k+1}(M_f, X, x)` of the mapping cylinder of an `n`-connected
+map `f : X → Y`, relative to its bottom face `X`, are trivial for `k < n` at every basepoint of the
+bottom face. Here `k` is the number of cube directions `N`. -/
+theorem IsNConnected.subsingleton_relHomotopyGroup_mappingCylinder {n : ℕ}
+    (hf : f.IsNConnected n) (N : Type w) [Finite N] (hN : Nat.card N < n)
+    (b : range (TauCeti.MappingCylinder.incl f)) :
     Subsingleton (TauCeti.RelHomotopyGroup N
       ⟨TopPair.ofSubset (X := TopCat.of (TauCeti.MappingCylinder f))
         (range (TauCeti.MappingCylinder.incl f)), b⟩) := by
@@ -114,18 +117,37 @@ theorem subsingleton_relHomotopyGroup_mappingCylinder (hf : f.IsWeakHomotopyEqui
   -- The inclusion `ι` of the bottom face, composed with `ψ : X ≃ₜ range (incl f)` and with the
   -- projection `M_f → Y`, is `f`; the outer two maps are homotopy equivalences.
   let ι := ContinuousMap.subtypeVal (range (incl f))
-  -- By two out of three `ι ∘ ψ` is a weak homotopy equivalence, hence so is `ι = ι ∘ ψ ∘ ψ⁻¹`.
-  have hιψ : (ι.comp (ψ : C(X, range (incl f)))).IsWeakHomotopyEquivalence :=
-    (homotopyEquiv_toFun (f := f) ▸ (homotopyEquiv f).isWeakHomotopyEquivalence).of_postcomp
-      (by rwa [proj_comp_subtypeVal_comp_inclHomeomorph])
-  have hι : ι.IsWeakHomotopyEquivalence := by
+  have hιψ : (ι.comp (ψ : C(X, range (incl f)))).IsNConnected n :=
+    (homotopyEquiv_toFun (f := f) ▸
+      (homotopyEquiv f).isWeakHomotopyEquivalence).isNConnected_comp_iff.1
+        (by rwa [proj_comp_subtypeVal_comp_inclHomeomorph])
+  -- Hence so is `ι = ι ∘ ψ ∘ ψ⁻¹`.
+  have hι : ι.IsNConnected n := by
     have h : (ι.comp (ψ : C(X, range (incl f)))).comp (ψ.symm : C(range (incl f), X)) = ι := by
       ext m
       exact congrArg ι (ψ.apply_symm_apply m)
     rw [← h]
-    exact hιψ.comp ψ.symm.toHomotopyEquiv.isWeakHomotopyEquivalence
+    exact (ψ.symm.toHomotopyEquiv.isWeakHomotopyEquivalence.isNConnected_comp_iff').2 hιψ
   exact TauCeti.RelHomotopyGroup.subsingleton_of_injective_of_surjective
-    (hι.map_bijective N b).injective (hι.map_bijective (Option N) b).surjective
+    (hι.map_injective N hN b) (hι.map_surjective (Option N) (by rw [Finite.card_option]; lia) b)
+
+/-- The relative homotopy groups `π_{n+1}(M_f, X, x)` of the mapping cylinder of a weak homotopy
+equivalence `f : X → Y`, relative to its bottom face `X`, are trivial at every basepoint of the
+bottom face. -/
+theorem IsWeakHomotopyEquivalence.subsingleton_relHomotopyGroup_mappingCylinder
+    (hf : f.IsWeakHomotopyEquivalence) (N : Type w) [Finite N]
+    (b : range (TauCeti.MappingCylinder.incl f)) :
+    Subsingleton (TauCeti.RelHomotopyGroup N
+      ⟨TopPair.ofSubset (X := TopCat.of (TauCeti.MappingCylinder f))
+        (range (TauCeti.MappingCylinder.incl f)), b⟩) :=
+  (hf.isNConnected (Nat.card N + 1)).subsingleton_relHomotopyGroup_mappingCylinder N
+    (Nat.lt_add_one _) b
+
+end ContinuousMap
+
+namespace ContinuousMap.IsWeakHomotopyEquivalence
+
+variable {X : Type*} [TopologicalSpace X] {Y : Type*} [TopologicalSpace Y] {f : C(X, Y)}
 
 variable {X' : Type*} [TopologicalSpace X'] [T2Space X'] {C : Set X'} [CWComplex C]
 
