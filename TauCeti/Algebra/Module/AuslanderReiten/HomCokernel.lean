@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.AuslanderReiten.TensorCokernel
-public import TauCeti.Algebra.Module.AuslanderReiten.Translate
 public import TauCeti.RingTheory.MatlisDuality.Basic
 
 /-!

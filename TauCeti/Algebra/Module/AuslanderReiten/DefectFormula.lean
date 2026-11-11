@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Module.SnakeLemma
 public import TauCeti.Algebra.Module.AuslanderReiten.HomCokernel
 public import TauCeti.Algebra.Module.Injective.Hom
-import TauCeti.LinearAlgebra.Exact
+public import TauCeti.LinearAlgebra.Exact
 
 /-!
 # Auslander's defect formula
@@ -30,7 +30,7 @@ We follow Krause's short proof. For a module `N`, let `H(N)` be the cokernel of
 `0 → Hom_A(X, N) → Hom_A(P₀, N) → Hom_A(P₁, N) → H(N) → 0`, and `δ` gives exact columns, since
 `P₀` and `P₁` are projective. The snake lemma identifies `δ^*(X)` with the kernel of
 `H(φ) : H(M₁) → H(M₂)`. As `E` is injective, `D` turns this kernel into the cokernel of
-`D H(φ)`. Finally `D H(N) ≅ Hom_A(N, D Tr X)` naturally in `N`
+`D H(φ)` (`LinearMap.cokernelEquivDualKer`). Finally `D H(N) ≅ Hom_A(N, D Tr X)` naturally in `N`
 (`LinearMap.auslanderReitenHomCokernelDualEquiv`), so the cokernel of `D H(φ)` is `δ_*(D Tr X)`.
 
 No finiteness of `k` or `A`, and no minimality of the presentation, is needed. The snake lemma is
@@ -39,8 +39,9 @@ Mathlib's `SnakeLemma.δ'`, in its module form.
 ## Main definitions
 
 * `LinearMap.contravariantDefect` and `LinearMap.covariantDefect`: the two defects.
+* `LinearMap.homCokernelMap`: the map `H(φ)` on the cokernels of `Hom_A(P₀, -) → Hom_A(P₁, -)`,
+  with `homCokernelMap_mk`, `homCokernelMap_id` and `homCokernelMap_comp`.
 * `LinearMap.contravariantDefectEquivKer`: `δ^*(X) ≅ ker H(φ)`, from the snake lemma.
-* `LinearMap.dualKerEquivCokernel`: for an injective `E`, `D (ker G) ≅ coker (D G)`.
 * `LinearMap.defectFormula`: **Auslander's defect formula** `D δ^*(X) ≅ δ_*(D Tr X)`.
 
 ## References
@@ -80,30 +81,6 @@ abbrev covariantDefect (φ : M₁ →ₗ[A] M₂) (Y : Type*) [AddCommGroup Y] [
 
 end Defects
 
-section DualKer
-
-variable {k : Type*} [CommRing k] {C₁ C₂ : Type*} [AddCommGroup C₁] [Module k C₁]
-  [AddCommGroup C₂] [Module k C₂] {E : Type w} [AddCommGroup E] [Module k E]
-  [Small.{w} k] [Module.Injective k E]
-
-/-- **`D` turns kernels into cokernels.** For an injective `k`-module `E` and `G : C₁ → C₂`,
-restriction identifies the cokernel of `Hom_k(G, E)` with `Hom_k(ker G, E)`: restriction to
-`ker G` is surjective since `E` is injective, and its kernel is the image of `Hom_k(G, E)`. -/
-noncomputable def dualKerEquivCokernel (G : C₁ →ₗ[k] C₂) :
-    ((C₁ →ₗ[k] E) ⧸ range (G.lcomp k E)) ≃ₗ[k] (ker G →ₗ[k] E) :=
-  Submodule.quotEquivOfEq _ _ (range_lcomp_eq_ker_lcomp_ker_subtype G) ≪≫ₗ
-    ((ker G).subtype.lcomp k E).quotKerEquivOfSurjective fun u ↦
-      Module.Injective.extension_property k E (ker G) C₁ (ker G).subtype
-        (ker G).injective_subtype u
-
-@[simp]
-theorem dualKerEquivCokernel_mk (G : C₁ →ₗ[k] C₂) (u : C₁ →ₗ[k] E) :
-    dualKerEquivCokernel G (Submodule.Quotient.mk u) = u.comp (ker G).subtype := by
-  simp only [dualKerEquivCokernel, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk]
-  exact quotKerEquivOfSurjective_apply_mk _ _ u
-
-end DualKer
-
 section Defect
 
 variable {k A : Type*} [CommRing k] [Ring A] [Algebra k A]
@@ -122,22 +99,21 @@ noncomputable def homCokernelMap (f : P₁ →ₗ[A] P₀) (φ : M₁ →ₗ[A] 
     rintro _ ⟨F, rfl⟩
     exact ⟨φ.comp F, rfl⟩)
 
-/-- `Hom_A(P, -)` is left exact. -/
-private theorem exact_compRight_compRight {φ : M₁ →ₗ[A] M₂} {ψ : M₂ →ₗ[A] M₃} (hφ : Injective φ)
-    (hφψ : Exact φ ψ) (P : Type*) [AddCommGroup P] [Module A P] :
-    Exact (φ.compRight k : (P →ₗ[A] M₁) →ₗ[k] (P →ₗ[A] M₂))
-      (ψ.compRight k : (P →ₗ[A] M₂) →ₗ[k] (P →ₗ[A] M₃)) := by
-  intro h
-  refine ⟨fun hh ↦ ?_, ?_⟩
-  · have hmem : ∀ x, h x ∈ range φ := fun x ↦
-      (hφψ (h x)).mp (by simpa using LinearMap.congr_fun hh x)
-    refine ⟨(LinearEquiv.ofInjective φ hφ).symm.toLinearMap.comp
-      (h.codRestrict (range φ) hmem), ?_⟩
-    ext x
-    simp
-  · rintro ⟨g, rfl⟩
-    ext x
-    simp [hφψ.apply_apply_eq_zero]
+@[simp]
+theorem homCokernelMap_mk (f : P₁ →ₗ[A] P₀) (φ : M₁ →ₗ[A] M₂) (g : P₁ →ₗ[A] M₁) :
+    homCokernelMap k f φ (Submodule.Quotient.mk g) = Submodule.Quotient.mk (φ.comp g) := by
+  simp [homCokernelMap]
+
+@[simp]
+theorem homCokernelMap_id (f : P₁ →ₗ[A] P₀) :
+    homCokernelMap k f (LinearMap.id : M₁ →ₗ[A] M₁) = LinearMap.id := by
+  ext g
+  simp
+
+theorem homCokernelMap_comp (f : P₁ →ₗ[A] P₀) (φ : M₁ →ₗ[A] M₂) (ψ : M₂ →ₗ[A] M₃) :
+    homCokernelMap k f (ψ.comp φ) = (homCokernelMap k f ψ).comp (homCokernelMap k f φ) := by
+  ext g
+  simp [LinearMap.comp_assoc]
 
 variable [Module.Finite A P₀] [Module.Projective A P₀] [Module.Finite A P₁]
   [Module.Projective A P₁]
@@ -150,8 +126,8 @@ noncomputable def contravariantDefectEquivKer {f : P₁ →ₗ[A] P₀} {p : P�
     (hφ : Injective φ) (hψ : Surjective ψ) (hφψ : Exact φ ψ) :
     contravariantDefect k ψ X ≃ₗ[k] ker (homCokernelMap k f φ) :=
   let δ := SnakeLemma.δ' (f.lcomp k M₁) (f.lcomp k M₂) (f.lcomp k M₃)
-    (φ.compRight k) (ψ.compRight k) (exact_compRight_compRight hφ hφψ P₀)
-    (φ.compRight k) (ψ.compRight k) (exact_compRight_compRight hφ hφψ P₁) rfl rfl
+    (φ.compRight k) (ψ.compRight k) (hφψ.compRight_of_injective (T := k) P₀ hφ)
+    (φ.compRight k) (ψ.compRight k) (hφψ.compRight_of_injective (T := k) P₁ hφ) rfl rfl
     (p.lcomp k M₃) (hfp.lcomp_of_surjective (T := k) M₃ hp) (range (f.lcomp k M₁)).mkQ
     (exact_map_mkQ_range _)
     (fun g ↦ Module.projective_lifting_property ψ g hψ)
@@ -178,7 +154,7 @@ noncomputable def defectFormula {f : P₁ →ₗ[A] P₀} {p : P₀ →ₗ[A] X}
     (contravariantDefect k ψ X →ₗ[k] E) ≃ₗ[k]
       covariantDefect k φ (MatlisDual k E (AuslanderReitenTranspose f)) :=
   LinearEquiv.arrowCongr (contravariantDefectEquivKer hfp hp hφ hψ hφψ) (LinearEquiv.refl k E) ≪≫ₗ
-    (dualKerEquivCokernel (homCokernelMap k f φ)).symm ≪≫ₗ
+    (cokernelEquivDualKer (homCokernelMap k f φ)).symm ≪≫ₗ
       Submodule.Quotient.equiv _ _ (auslanderReitenHomCokernelDualEquiv f) (by
         ext g
         simp only [Submodule.mem_map, mem_range, lcomp_apply']
