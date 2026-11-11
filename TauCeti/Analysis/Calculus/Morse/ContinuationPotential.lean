@@ -216,17 +216,9 @@ theorem isNondegenerateCriticalPoint_continuationPotential_iff {p : E} {t₀ : �
       IsNondegenerateCriticalPoint (fun x ↦ f (x, t₀)) p ∧
         IsNondegenerateCriticalPoint (intervalBasePotential C) t₀ := by
   have hE := continuationPotential_eventuallyEq (C := C) hf
-  have hh : ContDiffAt ℝ 2 (intervalBasePotential C) t₀ :=
-    (contDiff_intervalBasePotential C).contDiffAt
   constructor
   · intro h
-    have h' := h.congr_of_eventuallyEq hE
-    -- The slice is the restriction of the separated sum to `t = t₀`, up to a constant.
-    have hslice : ContDiffAt ℝ 2 (fun x ↦ f (x, t₀) + intervalBasePotential C t₀) p :=
-      h'.contDiffAt.comp (f := fun x : E ↦ (x, t₀)) p (by fun_prop)
-    have hp : ContDiffAt ℝ 2 (fun x ↦ f (x, t₀)) p := by
-      simpa using hslice.sub (contDiffAt_const (c := intervalBasePotential C t₀))
-    exact (isNondegenerateCriticalPoint_comp_fst_add_comp_snd_iff hp hh).1 h'
+    exact isNondegenerateCriticalPoint_comp_fst_add_comp_snd_iff.1 (h.congr_of_eventuallyEq hE)
   · rintro ⟨h₁, h₂⟩
     exact (h₁.comp_fst_add_comp_snd h₂).congr_of_eventuallyEq hE.symm
 

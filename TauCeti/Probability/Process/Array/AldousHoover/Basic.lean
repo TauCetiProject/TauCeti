@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.Data.Sym.Sym2
+public import TauCeti.Data.Sym.Sym2
 public import Mathlib.MeasureTheory.Constructions.UnitInterval
 public import Mathlib.Probability.Independence.InfinitePi
 
@@ -226,22 +226,11 @@ theorem map_separateNoiseCongr_noiseMeasure (rowPerm colPerm : Equiv.Perm ℕ) :
       noiseMeasure Axis (ℕ × ℕ) :=
   map_noiseCongr_noiseMeasure _ _
 
-/-- The action on unordered-pair cell indices associated to a permutation of the vertex indices. -/
-def jointCellPerm (perm : Equiv.Perm ℕ) : Sym2 ℕ ≃ Sym2 ℕ where
-  toFun := Sym2.map perm
-  invFun := Sym2.map perm.symm
-  left_inv p := by simp [Sym2.map_map]
-  right_inv p := by simp [Sym2.map_map]
-
-@[simp]
-theorem jointCellPerm_apply (perm : Equiv.Perm ℕ) (p : Sym2 ℕ) :
-    jointCellPerm perm p = Sym2.map perm p :=
-  by simp [jointCellPerm]
-
-/-- The measurable equivalence reindexing the joint-coding noise by one vertex permutation. -/
+/-- The measurable equivalence reindexing the joint-coding noise by one vertex permutation, acting
+on the unordered-pair cell indices through `Sym2.equivCongr`. -/
 def jointNoiseCongr (perm : Equiv.Perm ℕ) :
     (NoiseIndex Unit (Sym2 ℕ) → I) ≃ᵐ (NoiseIndex Unit (Sym2 ℕ) → I) :=
-  noiseCongr (fun _ : Unit => perm) (jointCellPerm perm)
+  noiseCongr (fun _ : Unit => perm) (Sym2.equivCongr perm)
 
 @[simp]
 theorem jointNoiseCongr_apply_global (perm : Equiv.Perm ℕ)
@@ -258,7 +247,7 @@ theorem jointNoiseCongr_apply_vertex (perm : Equiv.Perm ℕ)
 @[simp]
 theorem jointNoiseCongr_apply_cell (perm : Equiv.Perm ℕ)
     (u : NoiseIndex Unit (Sym2 ℕ) → I) (p : Sym2 ℕ) :
-    jointNoiseCongr perm u (.cell p) = u (.cell (jointCellPerm perm p)) := by
+    jointNoiseCongr perm u (.cell p) = u (.cell (Sym2.equivCongr perm p)) := by
   simp [jointNoiseCongr]
 
 /-- The joint noise reindexing preserves the canonical independent-uniform noise law. -/
@@ -324,7 +313,7 @@ theorem jointArray_reindex (f : I × I × I × I → α)
     jointArray f (perm p.1, perm p.2) u =
       jointArray f p (jointNoiseCongr perm u) := by
   simp only [jointArray_apply, jointNoiseCongr_apply_global, jointNoiseCongr_apply_vertex,
-    jointNoiseCongr_apply_cell, jointCellPerm_apply, Sym2.map_mk]
+    jointNoiseCongr_apply_cell, Sym2.equivCongr_apply, Sym2.map_mk]
 
 /-- Swapping the two indices of a joint coding only swaps its two vertex-noise arguments.  The
 cell-noise argument is unchanged because it is indexed by the unordered pair `Sym2.mk i j`. -/

@@ -104,8 +104,7 @@ theorem differentiableOn_dirichletIntegrand (a : ℝ) :
 theorem consumes. -/
 theorem neg_one_le_meromorphicOrderAt_dirichletIntegrand (a : ℝ) :
     ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt (dirichletIntegrand a) 0 :=
-  neg_one_le_meromorphicOrderAt_of_tendsto_sub_mul (meromorphicAt_dirichletIntegrand a)
-    (tendsto_sub_mul_dirichletIntegrand a)
+  neg_one_le_meromorphicOrderAt_of_tendsto_sub_mul (tendsto_sub_mul_dirichletIntegrand a)
 
 /-- **The identity along the real segment.** For each positive radius the principal value of
 `e^{iaz}/z` along `[-R, R]` on the real axis is `π i` minus the arc contribution. The pole sits on

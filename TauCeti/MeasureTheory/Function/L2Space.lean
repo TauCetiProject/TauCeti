@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 public import TauCeti.MeasureTheory.Integral.PiSystem
+import Mathlib.Analysis.Normed.Affine.MazurUlam
 
 /-!
 # Inner products of square-integrable functions
@@ -30,7 +31,9 @@ product space is the sum of their second moments
 (`TauCeti.integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero`), with a scalar specialization
 `TauCeti.integral_sq_sum_of_pairwise_integral_mul_eq_zero`.
 The integral of `⟪f x, c⟫` is `⟪∫ f, c⟫` (`integral_inner_left`), the counterpart of Mathlib's
-`integral_inner` with the integrand in the left slot.
+`integral_inner` with the integrand in the left slot, and the integral of the Hilbert space
+adjoints `(f x)†` of an operator-valued function is `(∫ f)†`
+(`ContinuousLinearMap.integral_adjoint`).
 Indicators of any countably spanning generating π-system of finite-measure sets have
 dense real linear span in L².
 
@@ -224,31 +227,6 @@ theorem integral_sq_sum_of_pairwise_integral_mul_eq_zero
 
 end TauCeti
 
-namespace ContinuousLinearMap
-
-open MeasureTheory
-
-/-- A continuous linear map out of counting-measure L² that vanishes on all
-singleton-supported vectors is zero. No countability of the index space is needed. -/
-theorem eq_zero_of_apply_indicatorConstLp_singleton
-    {α 𝕜 E F : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] [RCLike 𝕜]
-    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
-    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
-    (T : Lp E 2 (Measure.count : Measure α) →L[𝕜] F)
-    (h : ∀ (i : α) (v : E),
-      T (indicatorConstLp 2 (measurableSet_singleton i) (by simp) v) = 0) : T = 0 := by
-  have ht : T.adjoint = 0 := by
-    apply ContinuousLinearMap.ext
-    intro η
-    rw [zero_apply]
-    refine Lp.eq_zero_of_inner_indicatorConstLp_singleton (𝕜 := 𝕜) _ fun i v => ?_
-    rw [adjoint_inner_right, h, inner_zero_left]
-  calc
-    T = T.adjoint.adjoint := (adjoint_adjoint T).symm
-    _ = 0 := by rw [ht, map_zero]
-
-end ContinuousLinearMap
-
 section IntegralInner
 
 variable {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} [RCLike 𝕜]
@@ -260,6 +238,17 @@ theorem integral_inner_left {f : α → E} (hf : Integrable f μ) (c : E) :
     ∫ x, ⟪f x, c⟫_𝕜 ∂μ = ⟪∫ x, f x ∂μ, c⟫_𝕜 := by
   simpa only [innerSLFlip_apply_apply] using
     (innerSLFlip 𝕜 c).integral_comp_commSL RCLike.conj_smul hf
+
+/-- The Hilbert space adjoint commutes with the integral of an operator-valued function:
+`∫ (f x)† = (∫ f)†`, the counterpart of Mathlib's `integral_conj`. No integrability is needed,
+since the adjoint is a real-linear isometric equivalence. -/
+theorem ContinuousLinearMap.integral_adjoint {V W : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℂ V] [CompleteSpace V] [NormedAddCommGroup W] [InnerProductSpace ℂ W]
+    [CompleteSpace W] (f : α → V →L[ℂ] W) :
+    ∫ x, ContinuousLinearMap.adjoint (f x) ∂μ = ContinuousLinearMap.adjoint (∫ x, f x ∂μ) :=
+  (IsometryEquiv.toRealLinearIsometryEquivOfMapZero
+    (ContinuousLinearMap.adjoint (𝕜 := ℂ) (E := V) (F := W)).toIsometryEquiv
+    (by simp)).toContinuousLinearEquiv.integral_comp_comm f
 
 end IntegralInner
 

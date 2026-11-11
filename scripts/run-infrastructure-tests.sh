@@ -53,9 +53,8 @@ python3 scripts/test_ci_checkout.py
 python3 scripts/test_profile_workflow.py
 python3 scripts/test_lake_cache_probe.py
 python3 scripts/test_lake_cache_get.py
-python3 scripts/test_bulk_unpack_cache.py
-python3 scripts/test_lake_cache_reuse.py
 python3 scripts/test_lake_cache_publish.py
+python3 scripts/test_merge_queue_throughput.py
 python3 scripts/test_docs_facts.py
 python3 scripts/test_finalize_batch.py
 python3 scripts/perf/test_perf.py
