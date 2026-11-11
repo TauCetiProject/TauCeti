@@ -44,10 +44,7 @@ infinite cyclic group, the free group of rank one. -/
   toSerreGraph := SerreGraph.line
   isTree := line_isTree
   action := lineShift
-  action_smul_ne_rev k e h := by
-    -- Translation keeps the orientation of a dart, while reversal changes it.
-    rw [← Aut.smul_dart_def, lineShift_smul_dart] at h
-    exact (Bool.eq_not_self _).mp (congrArg Prod.snd (h.trans (line_rev e)))
+  action_smul_ne_rev := lineShift_smul_ne_rev
 
 /-- The source of a dart of the line, as an integer. -/
 @[simp] theorem lineVertexEquiv_line_src (e : ℤ × Bool) :

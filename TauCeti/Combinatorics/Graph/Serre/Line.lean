@@ -185,5 +185,12 @@ def lineShift : Multiplicative ℤ →* line.Aut where
 @[simp] theorem lineShift_smul_dart (k : Multiplicative ℤ) (e : line.E) :
     lineShift k • e = Prod.mk (k.toAdd + Prod.fst e) (Prod.snd e) := (rfl)
 
+/-- Translation keeps the orientation of a dart, while reversal changes it: the integers act on
+the line without inversions. -/
+theorem lineShift_smul_ne_rev (k : Multiplicative ℤ) (e : line.E) :
+    lineShift k • e ≠ line.rev e := fun h =>
+  (Bool.eq_not_self _).mp (congrArg Prod.snd ((lineShift_smul_dart k e).symm.trans
+    (h.trans (line_rev e))))
+
 end SerreGraph
 end TauCeti
