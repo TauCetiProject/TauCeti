@@ -11,12 +11,12 @@ public import TauCeti.Analysis.InnerProductSpace.Spectral.ContinuousFunctionalCa
 /-!
 # Spectral projections of self-adjoint Fredholm operators
 
-A self-adjoint Fredholm operator `T` on a complex Hilbert space has some `a > 0` such that for every
-self-adjoint `S` near `T` the numbers `±a` are not in the spectrum of `S` and the spectral
-projection `cfc ((Icc (-a) a).indicator 1) S` has finite rank equal to the dimension of the kernel
-of `T`. This combines the spectral gap of `T` at `0`, the identification of its spectral projection
-with the projection onto its kernel, and the local constancy of the rank of spectral projections,
-all proved for general self-adjoint operators in
+A self-adjoint Fredholm operator `T` on a real or complex Hilbert space has some `a > 0` such that
+for every self-adjoint `S` near `T` the numbers `±a` are not in the spectrum of `S` and the
+spectral projection `cfc ((Icc (-a) a).indicator 1) S` has finite rank equal to the dimension of
+the kernel of `T`. This combines the spectral gap of `T` at `0`, the identification of its
+spectral projection with the projection onto its kernel, and the local constancy of the rank of
+spectral projections, all proved for general self-adjoint operators in
 `TauCeti.Analysis.InnerProductSpace.Spectral.ContinuousFunctionalCalculus`.
 This is the local input in Phillips' construction of the spectral flow: the spectral flow of a path
 counts, along a partition, the changes of the ranks of the spectral projections for `[0, a]`.
@@ -39,11 +39,13 @@ public section
 
 open Filter Set Topology
 
-variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
+  [NormedAlgebra ℝ (H →L[𝕜] H)] [IsScalarTower ℝ 𝕜 (H →L[𝕜] H)]
+  [IsometricContinuousFunctionalCalculus ℝ (H →L[𝕜] H) IsSelfAdjoint]
 
 namespace IsSelfAdjoint
 
-variable {T : H →L[ℂ] H}
+variable {T : H →L[𝕜] H}
 
 /-- **Finite spectral projections near a self-adjoint Fredholm operator.** For a self-adjoint
 Fredholm operator `T` there is `a > 0` such that every self-adjoint `S` near `T` has neither `-a`
@@ -53,9 +55,9 @@ theorem exists_pos_eventually_finrank_range_cfc_indicator_Icc_eq_of_isFredholm
     (hT : IsSelfAdjoint T) (hF : T.IsFredholm) :
     ∃ a > 0, ∀ᶠ S in 𝓝[{S | IsSelfAdjoint S}] T,
       -a ∉ spectrum ℝ S ∧ a ∉ spectrum ℝ S ∧
-        FiniteDimensional ℂ (cfc ((Icc (-a) a).indicator (1 : ℝ → ℝ)) S).range ∧
-        Module.finrank ℂ (cfc ((Icc (-a) a).indicator (1 : ℝ → ℝ)) S).range =
-          Module.finrank ℂ T.ker := by
+        FiniteDimensional 𝕜 (cfc ((Icc (-a) a).indicator (1 : ℝ → ℝ)) S).range ∧
+        Module.finrank 𝕜 (cfc ((Icc (-a) a).indicator (1 : ℝ → ℝ)) S).range =
+          Module.finrank 𝕜 T.ker := by
   obtain ⟨c, hc, hgap⟩ :=
     hT.exists_pos_spectrum_inter_Ioo_subset_of_isClosed_range hF.isClosed_range
   rw [spectrum.preimage_algebraMap] at hgap
@@ -72,7 +74,7 @@ theorem exists_pos_eventually_finrank_range_cfc_indicator_Icc_eq_of_isFredholm
     rcases hr with rfl | rfl <;> constructor <;> linarith
   have hker := hT.cfc_indicator_eq_starProjection_ker
     (by rw [mem_Icc]; constructor <;> linarith) hsub hdisj
-  have : FiniteDimensional ℂ T.ker := hF.finite_ker
+  have : FiniteDimensional 𝕜 T.ker := hF.finite_ker
   filter_upwards [hT.eventually_rank_range_cfc_indicator_eq hdisj,
     nhdsWithin_le_nhds (spectrum.eventually_disjoint_of_isClosed isClosed_frontier hdisj)]
     with S hrank hS
@@ -80,6 +82,6 @@ theorem exists_pos_eventually_finrank_range_cfc_indicator_Icc_eq_of_isFredholm
   rw [hfr] at hS
   refine ⟨hS.notMem_of_mem_left (by simp), hS.notMem_of_mem_left (by simp), ?_,
     congr_arg Cardinal.toNat hrank⟩
-  exact Module.rank_lt_aleph0_iff.1 (hrank ▸ Module.rank_lt_aleph0 ℂ T.ker)
+  exact Module.rank_lt_aleph0_iff.1 (hrank ▸ Module.rank_lt_aleph0 𝕜 T.ker)
 
 end IsSelfAdjoint

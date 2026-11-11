@@ -18,11 +18,12 @@ import TauCeti.Topology.Algebra.Indicator
 /-!
 # Spectral projections of self-adjoint operators
 
-Let `T` be a self-adjoint operator on a complex Hilbert space `H`. For a set `Ω ⊆ ℝ` whose frontier
-avoids the spectrum of `T`, the indicator of `Ω` is continuous on the spectrum, so the continuous
-functional calculus gives the spectral projection `cfc (Ω.indicator 1) T` onto the part of the
-spectrum in `Ω`. This file proves the facts about these projections from which the spectral flow
-of a path of self-adjoint Fredholm operators is built:
+Let `T` be a self-adjoint operator on a real or complex Hilbert space `H`, over `RCLike 𝕜`. For a
+set `Ω ⊆ ℝ` whose frontier avoids the spectrum of `T`, the indicator of `Ω` is continuous on the
+spectrum, so the continuous functional calculus gives the spectral projection
+`cfc (Ω.indicator 1) T` onto the part of the spectrum in `Ω`. This file proves the facts about
+these projections from which the spectral flow of a path of self-adjoint Fredholm operators is
+built:
 
 * **The kernel projection.** If `0 ∈ Ω`, the spectrum meets `Ω` at most in `0` and the frontier of
   `Ω` avoids the spectrum, then the spectral projection for `Ω` is the orthogonal projection onto
@@ -32,6 +33,10 @@ of a path of self-adjoint Fredholm operators is built:
   proved for C⋆-algebras), so the rank of its range is locally constant, and it
   is constant along a continuous path of self-adjoint operators over a preconnected parameter space
   as long as the frontier of `Ω` avoids every spectrum along the path.
+
+The real functional calculus on `H →L[𝕜] H` is taken as an assumption, as is its isometry for the
+stability results. Mathlib provides both over `ℂ`, and
+`TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus` provides them over `ℝ`.
 
 Sets `Ω` meeting the spectrum at most in `0` come from the spectral gap of a self-adjoint operator
 with closed range (`IsSelfAdjoint.exists_pos_spectrum_inter_Ioo_subset_of_isClosed_range`).
@@ -57,35 +62,34 @@ public section
 open Filter Set Topology
 open scoped InnerProductSpace
 
-section Complex
+variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
 
-variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+section Projection
 
-/-- The range of a spectral projection of an operator on a complex Hilbert space admits an
-orthogonal projection, since the spectral projection is idempotent and hence has closed range. -/
-instance ContinuousLinearMap.hasOrthogonalProjection_range_cfc_indicator (T : H →L[ℂ] H)
+variable [Algebra ℝ (H →L[𝕜] H)] [ContinuousFunctionalCalculus ℝ (H →L[𝕜] H) IsSelfAdjoint]
+
+/-- The range of a spectral projection of an operator on a Hilbert space admits an orthogonal
+projection, since the spectral projection is idempotent and hence has closed range. -/
+instance ContinuousLinearMap.hasOrthogonalProjection_range_cfc_indicator (T : H →L[𝕜] H)
     (Ω : Set ℝ) : (cfc (Ω.indicator (1 : ℝ → ℝ)) T).range.HasOrthogonalProjection :=
   ContinuousLinearMap.IsIdempotentElem.hasOrthogonalProjection_range
     (TauCeti.isStarProjection_cfc_indicator T Ω).isIdempotentElem
 
-/-- A spectral projection of an operator on a complex Hilbert space is the orthogonal projection
-onto its own range. -/
-theorem ContinuousLinearMap.cfc_indicator_eq_starProjection_range (T : H →L[ℂ] H) (Ω : Set ℝ) :
+/-- A spectral projection of an operator on a Hilbert space is the orthogonal projection onto its
+own range. -/
+theorem ContinuousLinearMap.cfc_indicator_eq_starProjection_range (T : H →L[𝕜] H) (Ω : Set ℝ) :
     cfc (Ω.indicator (1 : ℝ → ℝ)) T = (cfc (Ω.indicator (1 : ℝ → ℝ)) T).range.starProjection :=
   (isStarProjection_iff_eq_starProjection_range.mp
     (TauCeti.isStarProjection_cfc_indicator T Ω)).2
-
-namespace IsSelfAdjoint
-
-variable {T : H →L[ℂ] H}
 
 /-! ### The spectral projection onto the kernel -/
 
 /-- If `0 ∈ Ω`, the spectrum of a self-adjoint operator `T` meets `Ω` at most in `0`, and the
 frontier of `Ω` avoids the spectrum, then the spectral projection of `T` for `Ω` is the orthogonal
 projection onto the kernel of `T`. -/
-theorem cfc_indicator_eq_starProjection_ker (hT : IsSelfAdjoint T) {Ω : Set ℝ} (h0 : (0 : ℝ) ∈ Ω)
-    (hΩ : spectrum ℝ T ∩ Ω ⊆ {0}) (hfr : Disjoint (frontier Ω) (spectrum ℝ T)) :
+theorem IsSelfAdjoint.cfc_indicator_eq_starProjection_ker {T : H →L[𝕜] H} (hT : IsSelfAdjoint T)
+    {Ω : Set ℝ} (h0 : (0 : ℝ) ∈ Ω) (hΩ : spectrum ℝ T ∩ Ω ⊆ {0})
+    (hfr : Disjoint (frontier Ω) (spectrum ℝ T)) :
     cfc (Ω.indicator (1 : ℝ → ℝ)) T = T.ker.starProjection := by
   set f := Ω.indicator (1 : ℝ → ℝ)
   have hf : ContinuousOn f (spectrum ℝ T) :=
@@ -132,7 +136,18 @@ theorem cfc_indicator_eq_starProjection_ker (hT : IsSelfAdjoint T) {Ω : Set ℝ
       exact (sub_eq_zero.1 h).symm
   exact (T.cfc_indicator_eq_starProjection_range Ω).trans (Submodule.starProjection_inj.2 hrange)
 
+end Projection
+
 /-! ### Continuity and rank of spectral projections -/
+
+section Rank
+
+variable [NormedAlgebra ℝ (H →L[𝕜] H)]
+  [IsometricContinuousFunctionalCalculus ℝ (H →L[𝕜] H) IsSelfAdjoint]
+
+namespace IsSelfAdjoint
+
+variable {T : H →L[𝕜] H}
 
 /-- The rank of the spectral projection for a set `Ω` is locally constant on the self-adjoint
 operators whose spectrum avoids the frontier of `Ω`: nearby spectral projections are at distance
@@ -140,8 +155,8 @@ less than `1`. -/
 theorem eventually_rank_range_cfc_indicator_eq (hT : IsSelfAdjoint T) {Ω : Set ℝ}
     (hΩ : Disjoint (frontier Ω) (spectrum ℝ T)) :
     ∀ᶠ S in 𝓝[{S | IsSelfAdjoint S}] T,
-      Module.rank ℂ (cfc (Ω.indicator (1 : ℝ → ℝ)) S).range =
-        Module.rank ℂ (cfc (Ω.indicator (1 : ℝ → ℝ)) T).range := by
+      Module.rank 𝕜 (cfc (Ω.indicator (1 : ℝ → ℝ)) S).range =
+        Module.rank 𝕜 (cfc (Ω.indicator (1 : ℝ → ℝ)) T).range := by
   filter_upwards [hT.continuousWithinAt_cfc_indicator hΩ (Metric.ball_mem_nhds _ one_pos)]
     with S hS
   refine Submodule.rank_eq_of_projectionGap_lt_one _ _ ?_
@@ -155,14 +170,14 @@ end IsSelfAdjoint
 self-adjoint operators over a preconnected parameter set, as long as no spectrum along the path
 meets the frontier of `Ω`. -/
 theorem IsPreconnected.rank_range_cfc_indicator_eq {X : Type*} [TopologicalSpace X]
-    {s : Set X} (hs : IsPreconnected s) {A : X → H →L[ℂ] H} (hA : ContinuousOn A s)
+    {s : Set X} (hs : IsPreconnected s) {A : X → H →L[𝕜] H} (hA : ContinuousOn A s)
     (hsa : ∀ x ∈ s, IsSelfAdjoint (A x)) {Ω : Set ℝ}
     (hΩ : ∀ x ∈ s, Disjoint (frontier Ω) (spectrum ℝ (A x))) {x y : X} (hx : x ∈ s)
     (hy : y ∈ s) :
-    Module.rank ℂ (cfc (Ω.indicator (1 : ℝ → ℝ)) (A x)).range =
-      Module.rank ℂ (cfc (Ω.indicator (1 : ℝ → ℝ)) (A y)).range := by
+    Module.rank 𝕜 (cfc (Ω.indicator (1 : ℝ → ℝ)) (A x)).range =
+      Module.rank 𝕜 (cfc (Ω.indicator (1 : ℝ → ℝ)) (A y)).range := by
   have := isPreconnected_iff_preconnectedSpace.mp hs
-  let g : s → Cardinal := fun z ↦ Module.rank ℂ (cfc (Ω.indicator (1 : ℝ → ℝ)) (A z)).range
+  let g : s → Cardinal := fun z ↦ Module.rank 𝕜 (cfc (Ω.indicator (1 : ℝ → ℝ)) (A z)).range
   have hg : IsLocallyConstant g := by
     rw [IsLocallyConstant.iff_eventually_eq]
     intro z
@@ -172,4 +187,4 @@ theorem IsPreconnected.rank_range_cfc_indicator_eq {X : Type*} [TopologicalSpace
     exact hz.eventually ((hsa z z.2).eventually_rank_range_cfc_indicator_eq (hΩ z z.2))
   exact hg.apply_eq_of_preconnectedSpace ⟨x, hx⟩ ⟨y, hy⟩
 
-end Complex
+end Rank
