@@ -16,9 +16,11 @@ and injectively trivial morphisms, and `D = Hom_R(-, Q)` a duality preserving le
 equivalence `τ : E/𝒫 ≌ E/ℐ` together with isomorphisms
 `Ext¹_E(Z, X) ≅ D ((E/ℐ)(X, τ Z))` natural in `X` and in `Z`.
 
-This file constructs one when the category is Krull–Schmidt, every `Ext¹` has finite length, and
-almost-split conflations end at every indecomposable non-projective object and start at every
-indecomposable non-injective object. No enough projectives or injectives are assumed.
+For a Krull–Schmidt category in which every `Ext¹` has finite length, this file shows that such a
+duality exists exactly when almost-split conflations end at every indecomposable non-projective
+object and start at every indecomposable non-injective object, and that the left-hand end of the
+almost-split conflation ending at `Z` is then `τ Z`. No enough projectives or injectives are
+assumed.
 
 The construction follows [INP, Prop. 3.7 and Thm. 3.6]. A dualizing form
 `φ_Z : Ext¹_E(Z, T_Z) → Q` at every object (`TauCeti.ExactStructure.exists_isDualizingForm`) makes
@@ -29,6 +31,11 @@ morphisms `τ` is the composite of the two bijective pairings
 surjective because the left-hand end `X` of an almost-split conflation ending at `Z` also
 represents `D Ext¹_E(Z, -)`, so that `T_Z ≅ X` in `E/ℐ`.
 
+Conversely, given a duality, `τ Z` represents `D Ext¹_E(Z, -)` on `E/ℐ` with universal element
+`ξ ↦ (iso ξ)(𝟙)`. For `Z` indecomposable and not projective, `τ Z` has a local endomorphism ring,
+so it is isomorphic in `E/ℐ` to an indecomposable summand of any representative, and the local
+theorem gives an almost-split conflation ending at `Z`; dually through `τ⁻¹`.
+
 ## Main definitions
 
 * `TauCeti.ExactStructure.AuslanderReitenDuality E R Q`: an Auslander–Reiten duality.
@@ -38,8 +45,16 @@ represents `D Ext¹_E(Z, -)`, so that `T_Z ≅ X` in `E/ℐ`.
 ## Main results
 
 * `TauCeti.ExactStructure.DualizingForms.fullyFaithfulFunctor`: the translate is fully faithful.
-* `TauCeti.ExactStructure.nonempty_auslanderReitenDuality`: **existence of almost-split
-  conflations gives an Auslander–Reiten duality.**
+* `TauCeti.ExactStructure.nonempty_auslanderReitenDuality`: existence of almost-split
+  conflations gives an Auslander–Reiten duality.
+* `AuslanderReitenDuality.exists_isAlmostSplit_of_indecomposable_of_not_isProjective` and
+  `AuslanderReitenDuality.exists_isAlmostSplit_of_indecomposable_of_not_isInjective`, in
+  `TauCeti.ExactStructure`: the converse.
+* `TauCeti.ExactStructure.nonempty_auslanderReitenDuality_iff`: **the existence theorem**.
+* `TauCeti.ExactStructure.AuslanderReitenDuality.isoTranslateOfIsAlmostSplit`: the left-hand end of
+  the almost-split conflation ending at `Z` is `τ Z` in `E/ℐ`.
+* `TauCeti.ExactStructure.costableIsoOfBijective`: objects representing `D Ext¹_E(Z, -)` on `E/ℐ`
+  are isomorphic there.
 
 ## References
 
@@ -351,6 +366,218 @@ theorem nonempty_auslanderReitenDuality [HasFiniteBiproducts C] [IsKrullSchmidt 
            iso := D.iso hQ hfin
            iso_pushout := D.iso_pushout hQ hfin
            iso_pullback := D.iso_pullback hQ hfin }⟩
+
+/-! ### The converse -/
+
+omit [HasZeroObject C] [HasBinaryBiproducts C] in
+/-- An object with a local endomorphism ring that is isomorphic to a finite biproduct is
+isomorphic to one of the summands, through the projection: the identity is the sum of the
+composites through the summands, so one of them is invertible. -/
+private theorem exists_isIso_comp_π {D : Type*} [Category D] [Preadditive D] {Y : D}
+    [IsLocalRing (End Y)] {J : Type} [Finite J] (P : J → D) [HasBiproduct P] (i : Y ≅ ⨁ P) :
+    ∃ j, IsIso (i.hom ≫ biproduct.π P j) := by
+  classical
+  let := Fintype.ofFinite J
+  have h1 : (∑ j, End.of ((i.hom ≫ biproduct.π P j) ≫ biproduct.ι P j ≫ i.inv) : End Y) = 1 := by
+    refine End.ext ?_
+    rw [End.sum_asHom, End.one_asHom]
+    calc ∑ j, (End.of ((i.hom ≫ biproduct.π P j) ≫ biproduct.ι P j ≫ i.inv)).asHom
+        = i.hom ≫ (∑ j, biproduct.π P j ≫ biproduct.ι P j) ≫ i.inv := by
+          rw [Preadditive.sum_comp, Preadditive.comp_sum]
+          simp only [Category.assoc]
+      _ = 𝟙 Y := by simp [biproduct.total]
+  obtain ⟨j, -, hj⟩ := IsLocalRing.exists_of_isUnit_sum (h1 ▸ isUnit_one :
+    IsUnit (∑ j, End.of ((i.hom ≫ biproduct.π P j) ≫ biproduct.ι P j ≫ i.inv) : End Y))
+  rw [isUnit_iff_isIso] at hj
+  refine ⟨j, ?_⟩
+  have : IsSplitEpi (i.hom ≫ biproduct.π P j) :=
+    IsSplitEpi.mk' ⟨biproduct.ι P j ≫ i.inv, by simp⟩
+  have : IsSplitMono (i.hom ≫ biproduct.π P j) :=
+    IsSplitMono.mk' ⟨(biproduct.ι P j ≫ i.inv) ≫
+      inv ((i.hom ≫ biproduct.π P j) ≫ biproduct.ι P j ≫ i.inv), by
+        rw [← Category.assoc, IsIso.hom_inv_id]⟩
+  exact isIso_of_mono_of_isSplitEpi _
+
+omit [HasZeroObject C] [HasBinaryBiproducts C] in
+/-- An object with a local endomorphism ring stays so in an ideal quotient, unless it becomes zero.
+-/
+theorem MorphismIdeal.isLocalRing_end_quotientFunctor_obj (I : MorphismIdeal C) {Z : C}
+    [IsLocalRing (End Z)] (hZ : 𝟙 Z ∉ I.hom Z Z) : IsLocalRing (End (I.quotientFunctor.obj Z)) :=
+  have : Nontrivial (End (I.quotientFunctor.obj Z)) := nontrivial_of_ne 1 0 fun h ↦ hZ <| by
+    rw [← I.isZero_quotientFunctor_obj_iff, IsZero.iff_id_eq_zero]
+    exact congrArg End.asHom h
+  .of_surjective' (I.quotientFunctor.mapEndRingHom Z)
+    (I.quotientFunctor.mapEndRingHom_surjective Z)
+
+variable {E R Q} in
+/-- **Transport of a representing object along an isomorphism of `E/ℐ`.** If `T` represents
+`D Ext¹_E(Z, -)` on `E/ℐ` with universal element `φ`, and `b : T' ⟶ T` becomes invertible in
+`E/ℐ`, then `T'` represents it with universal element `ξ ↦ φ(b_* ξ)`. -/
+theorem bijective_costablePairing_comp_pushout {Z T T' : C} {φ : E.Ext1 Z T →ₗ[R] Q}
+    (h : ∀ X, Function.Bijective (costablePairing φ X)) {b : T' ⟶ T}
+    (hb : IsIso (E.injectivelyTrivialIdeal.quotientFunctor.map b)) (X : C) :
+    Function.Bijective (costablePairing (φ ∘ₗ Ext1.pushoutLinearMap R b) X) := by
+  have : ⇑(costablePairing (φ ∘ₗ Ext1.pushoutLinearMap R b) X) = ⇑(costablePairing φ X) ∘
+      ⇑((Iso.refl _).homCongr (asIso (E.injectivelyTrivialIdeal.quotientFunctor.map b))) := by
+    funext x
+    obtain ⟨a, rfl⟩ := E.injectivelyTrivialIdeal.quotientFunctor.map_surjective x
+    ext ξ
+    simp [Iso.homCongr_apply, ← Functor.map_comp]
+  rw [this]
+  exact (h X).comp (Equiv.bijective _)
+
+namespace AuslanderReitenDuality
+
+variable {E R Q} (A : E.AuslanderReitenDuality R Q)
+
+/-- The translate `τ Z`, as an object of `C`. -/
+abbrev translateObj (Z : C) : C :=
+  (A.functor.obj (E.projectivelyTrivialIdeal.quotientFunctor.obj Z)).as
+
+/-- The universal element `ξ ↦ (iso ξ)(𝟙)` of `D Ext¹_E(Z, τ Z)`. -/
+noncomputable def form (Z : C) : E.Ext1 Z (A.translateObj Z) →ₗ[R] Q :=
+  LinearMap.applyₗ (𝟙 (A.functor.obj (E.projectivelyTrivialIdeal.quotientFunctor.obj Z))) ∘ₗ
+    (A.iso Z (A.translateObj Z)).toLinearMap
+
+theorem costablePairing_form (Z X : C)
+    (x : E.injectivelyTrivialIdeal.quotientFunctor.obj X ⟶
+      A.functor.obj (E.projectivelyTrivialIdeal.quotientFunctor.obj Z)) (ξ : E.Ext1 Z X) :
+    costablePairing (A.form Z) X x ξ = A.iso Z X ξ x := by
+  obtain ⟨a, rfl⟩ := E.injectivelyTrivialIdeal.quotientFunctor.map_surjective (X := X)
+    (Y := A.translateObj Z) x
+  rw [costablePairing_map, form, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    LinearMap.applyₗ_apply_apply, A.iso_pushout]
+  exact congrArg (A.iso Z X ξ) (Category.comp_id _)
+
+section Converse
+
+variable [Module.Injective R Q] [Small.{w} R]
+  (hQ : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] Q) = 1)
+  (hfin : ∀ Z X : C, IsFiniteLength R (E.Ext1 Z X))
+include A hQ hfin
+
+/-- **`τ Z` represents `D Ext¹_E(Z, -)` on `E/ℐ`**, with universal element `A.form Z`. -/
+theorem bijective_costablePairing_form (Z X : C) :
+    Function.Bijective (costablePairing (A.form Z) X) := by
+  have hflip : (costablePairing (A.form Z) X) = (A.iso Z X).toLinearMap.flip :=
+    LinearMap.ext fun x ↦ LinearMap.ext fun ξ ↦ A.costablePairing_form Z X x ξ
+  rw [hflip]
+  exact (bijective_of_injective_of_injective_flip hQ
+    (injective_flip_of_surjective hQ (A.iso Z X).surjective) (A.iso Z X).injective
+    (hfin Z X)).2.1
+
+variable [HasFiniteBiproducts C] [IsKrullSchmidt C]
+
+/-- **An Auslander–Reiten duality gives almost-split conflations ending at every indecomposable
+non-projective object `Z`.** `τ Z` has a local endomorphism ring in `E/ℐ`, so it is isomorphic in
+`E/ℐ` to an indecomposable summand `T` of its representative, which then represents
+`D Ext¹_E(Z, -)`; the local theorem gives an almost-split conflation `T ⟶ Y ⟶ Z`. -/
+theorem exists_isAlmostSplit_of_indecomposable_of_not_isProjective {Z : C}
+    (hZ : Indecomposable Z) (hZp : ¬ E.isProjective Z) :
+    ∃ (T : C) (e : E.Extension Z T), e.shortComplex.IsAlmostSplit := by
+  have := A.isEquivalence
+  have : A.functor.Additive := Functor.additive_of_preserves_binary_products _
+  have := (IsKrullSchmidt.indecomposable_iff_isLocalRing_end Z).mp hZ
+  have := MorphismIdeal.isLocalRing_end_quotientFunctor_obj _
+    ((id_mem_projectivelyTrivialIdeal_iff Z).not.mpr hZp)
+  have hτ : IsLocalRing (End (A.functor.obj (E.projectivelyTrivialIdeal.quotientFunctor.obj Z))) :=
+    have : Nontrivial (End (A.functor.obj (E.projectivelyTrivialIdeal.quotientFunctor.obj Z))) :=
+      nontrivial_of_ne 1 0 fun h ↦ one_ne_zero (α := End
+        (E.projectivelyTrivialIdeal.quotientFunctor.obj Z)) <| End.ext <| A.functor.map_injective
+          (show A.functor.map (𝟙 _) = A.functor.map 0 by
+            rw [CategoryTheory.Functor.map_id, Functor.map_zero]; exact congrArg End.asHom h)
+    .of_surjective' (A.functor.mapEndRingHom _) (A.functor.mapEndRingHom_surjective _)
+  have : IsLocalRing (End (E.injectivelyTrivialIdeal.quotientFunctor.obj (A.translateObj Z))) := hτ
+  obtain ⟨n, P, hP, ⟨i⟩⟩ := IsKrullSchmidt.exists_iso_biproduct (A.translateObj Z)
+  obtain ⟨k, hk⟩ := exists_isIso_comp_π _ (E.injectivelyTrivialIdeal.quotientFunctor.mapIso i ≪≫
+    E.injectivelyTrivialIdeal.quotientFunctor.mapBiproduct P)
+  obtain ⟨b, hb⟩ := E.injectivelyTrivialIdeal.quotientFunctor.map_surjective
+    (inv ((E.injectivelyTrivialIdeal.quotientFunctor.mapIso i ≪≫
+      E.injectivelyTrivialIdeal.quotientFunctor.mapBiproduct P).hom ≫ biproduct.π _ k))
+  have hb' : IsIso (E.injectivelyTrivialIdeal.quotientFunctor.map b) := hb ▸ inferInstance
+  have := hP k
+  refine ⟨P k, exists_isAlmostSplit_of_bijective_costablePairing hQ ?_ (hfin Z (P k))
+    (bijective_costablePairing_comp_pushout (A.bijective_costablePairing_form hQ hfin Z) hb')⟩
+  -- `P k` is not injective: in `E/ℐ` it is isomorphic to `τ Z`, which is nonzero.
+  intro hPk
+  rw [← MorphismIdeal.isZero_quotientFunctor_obj_iff] at hPk
+  have h0 : IsZero (E.injectivelyTrivialIdeal.quotientFunctor.obj (A.translateObj Z)) :=
+    hPk.of_iso (asIso (E.injectivelyTrivialIdeal.quotientFunctor.map b)).symm
+  exact one_ne_zero (α := End (E.injectivelyTrivialIdeal.quotientFunctor.obj (A.translateObj Z)))
+    (End.ext (h0.eq_of_src _ _))
+
+/-- **An Auslander–Reiten duality gives almost-split conflations starting at every indecomposable
+non-injective object `X`.** Its class in `E/ℐ` is `τ W` for some `W`, which has a local
+endomorphism ring in `E/𝒫` and is therefore isomorphic in `E/𝒫` to an indecomposable summand `Z`
+of its representative; then `X` represents `D Ext¹_E(Z, -)` on `E/ℐ`, and the local theorem gives
+an almost-split conflation `X ⟶ Y ⟶ Z`. -/
+theorem exists_isAlmostSplit_of_indecomposable_of_not_isInjective {X : C}
+    (hX : Indecomposable X) (hXi : ¬ E.isInjective X) :
+    ∃ (Z : C) (e : E.Extension Z X), e.shortComplex.IsAlmostSplit := by
+  have := A.isEquivalence
+  have : A.functor.Additive := Functor.additive_of_preserves_binary_products _
+  have := (IsKrullSchmidt.indecomposable_iff_isLocalRing_end X).mp hX
+  have := MorphismIdeal.isLocalRing_end_quotientFunctor_obj _
+    ((id_mem_injectivelyTrivialIdeal_iff X).not.mpr hXi)
+  set W := A.functor.objPreimage (E.injectivelyTrivialIdeal.quotientFunctor.obj X)
+  let w := A.functor.objObjPreimageIso (E.injectivelyTrivialIdeal.quotientFunctor.obj X)
+  -- `W` has a local endomorphism ring, as `τ` is fully faithful.
+  have hW : IsLocalRing (End W) := by
+    have hbij : Function.Bijective (A.functor.mapEndRingHom W) :=
+      ⟨fun f g h ↦ End.ext (A.functor.map_injective (by
+        simpa only [Functor.mapEndRingHom_apply_asHom] using congrArg End.asHom h)),
+        A.functor.mapEndRingHom_surjective W⟩
+    let e := (RingEquiv.ofBijective _ hbij).trans w.endRingEquiv
+    have : Nontrivial (End W) := e.symm.injective.nontrivial
+    exact .of_surjective' e.symm.toRingHom e.symm.surjective
+  have : IsLocalRing (End (E.projectivelyTrivialIdeal.quotientFunctor.obj W.as)) := hW
+  obtain ⟨n, P, hP, ⟨i⟩⟩ := IsKrullSchmidt.exists_iso_biproduct W.as
+  obtain ⟨k, hk⟩ := exists_isIso_comp_π _ (E.projectivelyTrivialIdeal.quotientFunctor.mapIso i ≪≫
+    E.projectivelyTrivialIdeal.quotientFunctor.mapBiproduct P)
+  have := hP k
+  let θ := A.functor.mapIso (asIso ((E.projectivelyTrivialIdeal.quotientFunctor.mapIso i ≪≫
+    E.projectivelyTrivialIdeal.quotientFunctor.mapBiproduct P).hom ≫ biproduct.π _ k)).symm ≪≫ w
+  obtain ⟨b, hb⟩ := E.injectivelyTrivialIdeal.quotientFunctor.map_surjective (X := X)
+    (Y := A.translateObj (P k)) θ.inv
+  have hb' : IsIso (E.injectivelyTrivialIdeal.quotientFunctor.map b) := hb ▸ inferInstance
+  exact ⟨P k, exists_isAlmostSplit_of_bijective_costablePairing hQ
+    ((id_mem_injectivelyTrivialIdeal_iff X).not.mpr hXi) (hfin (P k) X)
+    (bijective_costablePairing_comp_pushout (A.bijective_costablePairing_form hQ hfin (P k)) hb')⟩
+
+/-- **The translate is the left-hand end of the almost-split conflation**: if `T ⟶ Y ⟶ Z` is
+almost split, then `T ≅ τ Z` in `E/ℐ`, both representing `D Ext¹_E(Z, -)`. -/
+noncomputable def isoTranslateOfIsAlmostSplit {Z T : C} (e : E.Extension Z T)
+    (he : e.shortComplex.IsAlmostSplit) :
+    E.injectivelyTrivialIdeal.quotientFunctor.obj T ≅
+      A.functor.obj (E.projectivelyTrivialIdeal.quotientFunctor.obj Z) :=
+  costableIsoOfBijective
+    (fun X ↦ (bijective_costablePairing_of_isAlmostSplit hQ e he
+      (exists_apply_ne_zero_of_forall_isMaximal hQ
+        (fun h0 ↦ e.not_isAlmostSplit_of_mk_eq_zero h0 he)).choose_spec (hfin Z X)).1)
+    (A.bijective_costablePairing_form hQ hfin Z)
+
+end Converse
+
+end AuslanderReitenDuality
+
+/-- **Existence of almost-split conflations is equivalent to an Auslander–Reiten duality.** For an
+exact structure on a Krull–Schmidt `R`-linear category with every `Ext¹` of finite length,
+almost-split conflations end at every indecomposable non-projective object and start at every
+indecomposable non-injective object exactly when there is an Auslander–Reiten duality
+`τ : E/𝒫 ≌ E/ℐ`, `Ext¹_E(Z, X) ≅ D ((E/ℐ)(X, τ Z))`. -/
+theorem nonempty_auslanderReitenDuality_iff [HasFiniteBiproducts C] [IsKrullSchmidt C]
+    [Module.Injective R Q] [Small.{w} R]
+    (hQ : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] Q) = 1)
+    (hfin : ∀ Z X : C, IsFiniteLength R (E.Ext1 Z X)) :
+    Nonempty (E.AuslanderReitenDuality R Q) ↔
+      (∀ Z : C, Indecomposable Z → ¬ E.isProjective Z →
+        ∃ (T : C) (e : E.Extension Z T), e.shortComplex.IsAlmostSplit) ∧
+      (∀ X : C, Indecomposable X → ¬ E.isInjective X →
+        ∃ (Z : C) (e : E.Extension Z X), e.shortComplex.IsAlmostSplit) :=
+  ⟨fun ⟨A⟩ ↦ ⟨fun _ hZ hZp ↦
+      A.exists_isAlmostSplit_of_indecomposable_of_not_isProjective hQ hfin hZ hZp,
+    fun _ hX hXi ↦ A.exists_isAlmostSplit_of_indecomposable_of_not_isInjective hQ hfin hX hXi⟩,
+    fun ⟨h₁, h₂⟩ ↦ nonempty_auslanderReitenDuality E R Q hQ hfin h₁ h₂⟩
 
 end ExactStructure
 
