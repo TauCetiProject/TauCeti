@@ -92,6 +92,8 @@ spaces are to supply; no moduli space, orientation or count is constructed here.
 
 * S. Piunikhin, D. Salamon and M. Schwarz, *Symplectic Floer–Donaldson theory and quantum
   cohomology*, in *Contact and symplectic geometry*, Publ. Newton Inst. 8 (1996), 171–200.
+* M. Schwarz, *Cohomology operations from S¹-cobordisms in Floer homology*, PhD thesis,
+  ETH Zürich, 1995, for the associativity of the pair-of-pants product.
 * D. McDuff and D. Salamon, *J-holomorphic curves and symplectic topology*, the chapter on
   Floer homology and the pair-of-pants product.
 -/
