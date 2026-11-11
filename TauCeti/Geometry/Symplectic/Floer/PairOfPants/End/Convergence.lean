@@ -35,7 +35,7 @@ backwards in time. Time reversal preserves isolation among periodic orbits, and 
 the convergence theorem `TauCeti.exists_periodic_hasDerivAt_tendstoUniformly_atTop` for loops with
 square-integrable defect uses.
 
-**Cylindrical ends.** Suppose that on each end beyond `T₀` the almost complex structure is
+**Cylindrical ends.** Suppose that on the end `q` beyond `T₀` the almost complex structure is
 cylindrical, `J(φ_q(±s, t)) = J_q(t, u(φ_q(±s, t)))`, for a `C²` period-one family `J_q(t, x)`
 tamed by `ω` on `B`, and that `H_q` and `u` are `C³`. Then `u ∘ φ'_q` has bounded derivative on
 every half-cylinder `s ≥ b` with `b > max T₀ 0`
@@ -251,28 +251,28 @@ section InnerProductSpace
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {K : ℂ → V → ℂ →L[ℝ] ℝ} {H : Puncture → ℝ → V → ℝ} {T₀ : ℝ}
   {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V} {B : Set V} {W : Set (ℝ × V)}
-  {Jq : Puncture → ℝ → V → AlmostComplexStructure V}
+  {Jq : ℝ → V → AlmostComplexStructure V}
 
 omit [FiniteDimensional ℝ V] in
 /-- A structure which is `J_q(t)` along the end `q` beyond `T₀` is `J_q(±t)` in the positive end
 chart. -/
-private theorem eq_comp_positiveEndChart
-    (hJ : ∀ q s t, T₀ ≤ s →
-      J (endChart q (q.endSign * s, t)) = Jq q t (u (endChart q (q.endSign * s, t))))
-    {q : Puncture} {z : ℝ × ℝ} (hz : T₀ ≤ z.1) :
-    J (positiveEndChart q z) = Jq q (q.endSign * z.2) ((u ∘ positiveEndChart q) z) := by
+private theorem eq_comp_positiveEndChart {q : Puncture}
+    (hJ : ∀ s t, T₀ ≤ s →
+      J (endChart q (q.endSign * s, t)) = Jq t (u (endChart q (q.endSign * s, t))))
+    {z : ℝ × ℝ} (hz : T₀ ≤ z.1) :
+    J (positiveEndChart q z) = Jq (q.endSign * z.2) ((u ∘ positiveEndChart q) z) := by
   obtain ⟨s, t⟩ := z
   simp only [comp_apply, positiveEndChart_mk]
-  exact hJ q s _ hz
+  exact hJ s _ hz
 
 /-- **The ends of a finite-energy Floer pair of pants have bounded derivatives.** Let `K` be equal
 to `H_q(t) dt` beyond `T₀` on each end `q`, for `1`-periodic `C³` Hamiltonians `H_q`, and let `u`
 be `C³` on `S`, with image in a compact set `B`, solving the Floer equation
-`(du - X_K)^{0,1} = 0` on `S` with finite energy. Suppose that on each end beyond `T₀` the almost
-complex structure is cylindrical, `J(φ_q(±s, t)) = J_q(t, u(φ_q(±s, t)))`, for `1`-periodic
-families `J_q(t, x)` which are `C²` on an open set `W ⊇ ℝ × B` and tamed by `ω` on `ℝ × B`. Then
-for every `b > max T₀ 0` the derivative of `u ∘ φ'_q` is bounded on the half-cylinder `s ≥ b`,
-where `φ'_q` is the positive end chart. -/
+`(du - X_K)^{0,1} = 0` on `S` with finite energy. Fix an end `q`, and suppose that on it beyond `T₀`
+the almost complex structure is cylindrical, `J(φ_q(±s, t)) = J_q(t, u(φ_q(±s, t)))`, for a
+`1`-periodic family `J_q(t, x)` which is `C²` on an open set `W ⊇ ℝ × B` and tamed by `ω` on
+`ℝ × B`. Then for every `b > max T₀ 0` the derivative of `u ∘ φ'_q` is bounded on the
+half-cylinder `s ≥ b`, where `φ'_q` is the positive end chart. -/
 theorem exists_forall_norm_fderiv_comp_positiveEndChart_le
     (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
@@ -286,14 +286,12 @@ theorem exists_forall_norm_fderiv_comp_positiveEndChart_le
     (hE : ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤)
-    (hW : IsOpen W)
-    (hJq : ∀ q, ContDiffOn ℝ 2
-      (fun p : ℝ × V ↦ (Jq q p.1 p.2).toLinearMap.toContinuousLinearMap) W)
-    (hJqper : ∀ q, Periodic (Jq q) 1) (hBW : univ ×ˢ B ⊆ W)
-    (hJqt : ∀ q t, ∀ x ∈ B, ω.Tames (Jq q t x))
-    (hJ : ∀ q s t, T₀ ≤ s →
-      J (endChart q (q.endSign * s, t)) = Jq q t (u (endChart q (q.endSign * s, t))))
-    (q : Puncture) {b : ℝ} (hb : max T₀ 0 < b) :
+    (q : Puncture) (hW : IsOpen W)
+    (hJq : ContDiffOn ℝ 2 (fun p : ℝ × V ↦ (Jq p.1 p.2).toLinearMap.toContinuousLinearMap) W)
+    (hJqper : Periodic Jq 1) (hBW : univ ×ˢ B ⊆ W) (hJqt : ∀ t, ∀ x ∈ B, ω.Tames (Jq t x))
+    (hJ : ∀ s t, T₀ ≤ s →
+      J (endChart q (q.endSign * s, t)) = Jq t (u (endChart q (q.endSign * s, t))))
+    {b : ℝ} (hb : max T₀ 0 < b) :
     ∃ C, ∀ z : ℝ × ℝ, b ≤ z.1 → ‖fderiv ℝ (u ∘ positiveEndChart q) z‖ ≤ C := by
   set a := max T₀ 0
   have hHd : ∀ q t, Differentiable ℝ (H q t) := fun q t ↦
@@ -304,11 +302,11 @@ theorem exists_forall_norm_fderiv_comp_positiveEndChart_le
   set g : ℝ × V → ℝ × V := fun p ↦ (q.endSign * p.1, p.2)
   have hg : ContDiff ℝ 2 g := (contDiff_const.mul contDiff_fst).prodMk contDiff_snd
   exact exists_forall_norm_fderiv_le_of_floer (u := u ∘ positiveEndChart q)
-    (J := fun t x ↦ Jq q (q.endSign * t) x) (W := g ⁻¹' W)
+    (J := fun t x ↦ Jq (q.endSign * t) x) (W := g ⁻¹' W)
     (contDiff_uncurry_positiveEndHamiltonian (hHs q)) (periodic_positiveEndHamiltonian (hH q))
-    (hW.preimage hg.continuous) ((hJq q).comp hg.contDiffOn (mapsTo_preimage g W))
-    (periodic_comp_endSign_mul (hJqper q)) hB
-    (fun p hp ↦ hBW ⟨mem_univ _, hp.2⟩) (fun t x hx ↦ hJqt q _ x hx)
+    (hW.preimage hg.continuous) (hJq.comp hg.contDiffOn (mapsTo_preimage g W))
+    (periodic_comp_endSign_mul hJqper) hB
+    (fun p hp ↦ hBW ⟨mem_univ _, hp.2⟩) (fun t x hx ↦ hJqt _ x hx)
     (hu.comp (contDiff_positiveEndChart q 3).contDiffOn fun z hz ↦ hmem z hz.1)
     (fun s _ t ↦ by simp only [comp_apply, positiveEndChart_add_one])
     (fun s hs t ↦ huB _ (hmem (s, t) hs))
@@ -325,10 +323,10 @@ theorem exists_forall_norm_fderiv_comp_positiveEndChart_le
 /-- **The ends of a Floer pair of pants with cylindrical ends converge to nondegenerate orbits.**
 Let `K` be equal to `H_q(t) dt` beyond `T₀` on each end `q`, for `1`-periodic `C³` Hamiltonians
 `H_q`, and let `u` be `C³` on `S`, with image in a compact set `B`, solving the Floer equation
-`(du - X_K)^{0,1} = 0` on `S` with finite energy. Suppose that on each end beyond `T₀` the almost
-complex structure is cylindrical, `J(φ_q(±s, t)) = J_q(t, u(φ_q(±s, t)))`, for `1`-periodic
-families `J_q(t, x)` which are `C²` on an open set `W ⊇ ℝ × B` and tamed by `ω` on `ℝ × B`. Fix an
-end `q`, suppose that the suspension of the Hamiltonian vector field of `H_q` is globally
+`(du - X_K)^{0,1} = 0` on `S` with finite energy. Fix an end `q`, and suppose that on it beyond `T₀`
+the almost complex structure is cylindrical, `J(φ_q(±s, t)) = J_q(t, u(φ_q(±s, t)))`, for a
+`1`-periodic family `J_q(t, x)` which is `C²` on an open set `W ⊇ ℝ × B` and tamed by `ω` on
+`ℝ × B`. Suppose moreover that the suspension of the Hamiltonian vector field of `H_q` is globally
 Lipschitz and that every `1`-periodic orbit `y` of `H_q` in `B` is nondegenerate: `y(0)` is a
 nondegenerate fixed point of the time-one map. Then the loops `t ↦ u(φ_q(±s, t))` converge
 uniformly, as `s → ∞`, to a single `1`-periodic orbit of `H_q`. -/
@@ -345,14 +343,12 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_endChart_atTop_of_floer_of_c
     (hE : ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤)
-    (hW : IsOpen W)
-    (hJq : ∀ q, ContDiffOn ℝ 2
-      (fun p : ℝ × V ↦ (Jq q p.1 p.2).toLinearMap.toContinuousLinearMap) W)
-    (hJqper : ∀ q, Periodic (Jq q) 1) (hBW : univ ×ˢ B ⊆ W)
-    (hJqt : ∀ q t, ∀ x ∈ B, ω.Tames (Jq q t x))
-    (hJ : ∀ q s t, T₀ ≤ s →
-      J (endChart q (q.endSign * s, t)) = Jq q t (u (endChart q (q.endSign * s, t))))
-    (q : Puncture) {L : ℝ≥0} (hL : LipschitzWith L (ω.timeDependentHamiltonianSuspension (H q)))
+    (q : Puncture) (hW : IsOpen W)
+    (hJq : ContDiffOn ℝ 2 (fun p : ℝ × V ↦ (Jq p.1 p.2).toLinearMap.toContinuousLinearMap) W)
+    (hJqper : Periodic Jq 1) (hBW : univ ×ˢ B ⊆ W) (hJqt : ∀ t, ∀ x ∈ B, ω.Tames (Jq t x))
+    (hJ : ∀ s t, T₀ ≤ s →
+      J (endChart q (q.endSign * s, t)) = Jq t (u (endChart q (q.endSign * s, t))))
+    {L : ℝ≥0} (hL : LipschitzWith L (ω.timeDependentHamiltonianSuspension (H q)))
     (hnd : ∀ y : ℝ → V, Periodic y 1 →
       (∀ t, HasDerivAt y (ω.hamiltonianVectorField (H q t) (y t)) t) → (∀ t, y t ∈ B) →
       IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow (H q) hL 0 1) (y 0)) :
@@ -361,10 +357,10 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_endChart_atTop_of_floer_of_c
   set b := max T₀ 0 + 1
   have hb : max T₀ 0 < b := lt_add_one _
   obtain ⟨C, hC⟩ := exists_forall_norm_fderiv_comp_positiveEndChart_le hKH hH hHs hu hB huB
-    hfloer hE hW hJq hJqper hBW hJqt hJ q hb
+    hfloer hE q hW hJq hJqper hBW hJqt hJ hb
   -- The end structures `J_q` have uniform taming constants on `ℝ × B`.
   obtain ⟨c, hc, M, hcM⟩ := exists_pos_forall_mul_norm_sq_le_and_norm_le hB
-    ((hJq q).continuousOn.mono hBW) (hJqper q) (hJqt q)
+    (hJq.continuousOn.mono hBW) hJqper hJqt
   have hbT (z : ℝ × ℝ) (hz : b < z.1) : T₀ ≤ z.1 :=
     (le_max_left _ _).trans ((lt_add_one _).trans hz).le
   have huB' (z : ℝ × ℝ) (hz : b < z.1) : (u ∘ positiveEndChart q) z ∈ B :=
