@@ -139,8 +139,8 @@ open Module (finrank)
 local notation "U" => _root_.UniversalEnvelopingAlgebra K L
 
 /-- **An isotypic component is the power of its irreducible type counted by its multiplicity.**
-For a finite-dimensional Lie module `M` over an algebraically closed field and a
-finite-dimensional irreducible `S`, its `S`-isotypic component is Lie-equivalent to
+For a finite-dimensional Lie module `M` over an algebraically closed field and an
+irreducible `S`, its `S`-isotypic component is Lie-equivalent to
 the direct sum of `isotypicMultiplicity K L M S` copies of `S`.
 
 The equivalence is obtained from the corresponding ring-level result for `U(L)`: the submodule
@@ -149,7 +149,7 @@ multiplicities, and the equivalence dictionary transports the resulting `U(L)`-l
 equivalence back to Lie modules. Complete reducibility of `M` is not required. -/
 theorem nonempty_lieModuleEquiv_isotypicComponent
     (S : Type w₁) [AddCommGroup S] [Module K S] [LieRingModule L S]
-    [LieModule K L S] [FiniteDimensional K S] [IsIrreducible K L S] :
+    [LieModule K L S] [IsIrreducible K L S] :
     Nonempty (isotypicComponent K L M S ≃ₗ⁅K,L⁆
       (⨁ (_ : Fin (isotypicMultiplicity K L M S)), S)) := by
   let := asModule K L M
@@ -182,7 +182,7 @@ If the `S`-isotypic component is all of `M`, then `M` is Lie-equivalent to the d
 `isotypicMultiplicity K L M S` copies of `S`. No complete reducibility hypothesis is needed. -/
 theorem nonempty_lieModuleEquiv_of_isotypicComponent_eq_top
     (S : Type w₁) [AddCommGroup S] [Module K S] [LieRingModule L S]
-    [LieModule K L S] [FiniteDimensional K S] [IsIrreducible K L S]
+    [LieModule K L S] [IsIrreducible K L S]
     (h : isotypicComponent K L M S = ⊤) :
     Nonempty (M ≃ₗ⁅K,L⁆ (⨁ (_ : Fin (isotypicMultiplicity K L M S)), S)) := by
   obtain ⟨e⟩ := nonempty_lieModuleEquiv_isotypicComponent (K := K) (L := L) (M := M) S
@@ -194,7 +194,7 @@ multiplicity.** If every irreducible Lie submodule of `M` is equivalent to `S`, 
 Lie-equivalent to the direct sum of `isotypicMultiplicity K L M S` copies of `S`. -/
 theorem nonempty_lieModuleEquiv_of_isIsotypicOfType
     (S : Type w₁) [AddCommGroup S] [Module K S] [LieRingModule L S]
-    [LieModule K L S] [FiniteDimensional K S] [IsIrreducible K L S]
+    [LieModule K L S] [IsIrreducible K L S]
     [ComplementedLattice (LieSubmodule K L M)] (h : IsIsotypicOfType K L M S) :
     Nonempty (M ≃ₗ⁅K,L⁆ (⨁ (_ : Fin (isotypicMultiplicity K L M S)), S)) := by
   let := asModule K L M
