@@ -264,9 +264,6 @@ theorem image_inter_ball_subset_filledHull_or_image_sdiff_closedBall_subset_fill
     hK.closure_subset_iff.mpr hγK
   set p := f z₀
   set v := deriv f z₀ * (z₀ - ζ)
-  have hv : v ≠ 0 :=
-    mul_ne_zero (deriv_ne_zero_of_injOn hf hUo hinj hz₀.1)
-      (sub_ne_zero.mpr (Metric.ne_of_mem_sphere hz₀.2 hρ.ne'))
   obtain ⟨η, hη, hnear, hfar⟩ :=
     exists_pos_forall_mem_image_inter_ball_and_image_sdiff_closedBall hf hUo hinj hz₀ hρ
   obtain ⟨hleft, hright⟩ :=
