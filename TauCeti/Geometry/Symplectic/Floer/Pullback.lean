@@ -53,8 +53,6 @@ domain.
   part `∂_s K_t - ∂_t K_s` of the curvature scales by `det dφ`, for any target.
 * `TauCeti.Floer.perturbationPullback_realChart`: the pullback of a datum on `ℂ` along a
   holomorphic map `f` evaluates the datum at `f w` on `f'(w) v`.
-* `TauCeti.Complex.isComplexLinearMap_fderiv_realChart`: in real coordinates a holomorphic map has
-  complex-linear derivative, so it preserves the Floer equation.
 * `TauCeti.Floer.differentiableAt_domain_of_differentiableAt`,
   `TauCeti.Floer.differentiableAt_target_of_differentiableAt`: a datum on `ℂ` that is
   differentiable jointly in the domain and target points is differentiable in each of them, in
@@ -241,23 +239,6 @@ theorem differentiableAt_target_of_differentiableAt
 end Differentiable
 
 end Floer
-
-namespace Complex
-
-/-- The real chart of a map with a complex derivative has a complex-linear real derivative: it
-intertwines the standard complex structure `(a, b) ↦ (-b, a)` of `ℝ × ℝ` with itself. This is
-the hypothesis under which holomorphic changes of coordinates preserve the Floer equation
-(`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_perturbationPullback`). -/
-theorem isComplexLinearMap_fderiv_realChart {f : ℂ → ℂ} {f' : ℂ} {w : ℝ × ℝ}
-    (hf : HasDerivAt f f' (Complex.equivRealProdCLM.symm w)) :
-    IsComplexLinearMap (AlmostComplexStructure.product ℝ) (AlmostComplexStructure.product ℝ)
-      (fderiv ℝ (realChart f) w : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) := by
-  refine (isComplexLinearMap_iff_apply _ _ _).2 fun v ↦ ?_
-  simp only [ContinuousLinearMap.coe_coe, fderiv_realChart_apply hf,
-    AlmostComplexStructure.product_apply]
-  ext <;> simp <;> ring
-
-end Complex
 
 namespace SymplecticForm
 

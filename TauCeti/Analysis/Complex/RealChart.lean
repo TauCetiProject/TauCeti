@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Topology.Algebra.Module.Determinant
+public import TauCeti.Geometry.Symplectic.AlmostComplex
 import Mathlib.RingTheory.Complex
 import Mathlib.RingTheory.Norm.Transitivity
 
@@ -19,7 +20,9 @@ import Mathlib.RingTheory.Norm.Transitivity
 A map `f : ℂ → ℂ` of the plane, read in the real coordinates `ℝ × ℝ ≃ ℂ` given by
 `Complex.equivRealProdCLM`, is `TauCeti.Complex.realChart f`. When `f` has complex derivative
 `f'`, the real derivative of its real chart is multiplication by `f'`
-(`TauCeti.Complex.hasFDerivAt_realChart`, `TauCeti.Complex.fderiv_realChart_apply`), whose real
+(`TauCeti.Complex.hasFDerivAt_realChart`, `TauCeti.Complex.fderiv_realChart_apply`), which is
+complex-linear for the standard complex structure of `ℝ × ℝ`
+(`TauCeti.Complex.isComplexLinearMap_fderiv_realChart`) and whose real
 determinant is `|f'|²`, so the Jacobian determinant of the real chart is nonnegative
 (`TauCeti.Complex.det_fderiv_realChart`, `TauCeti.Complex.det_fderiv_realChart_nonneg`), and a map
 that is `C^n` over `ℂ` is `C^n` over `ℝ` in real coordinates (`TauCeti.Complex.contDiff_realChart`).
@@ -66,6 +69,19 @@ theorem fderiv_realChart_apply {f : ℂ → ℂ} {f' : ℂ} {w : ℝ × ℝ}
       Complex.equivRealProdCLM (f' * Complex.equivRealProdCLM.symm v) := by
   rw [(hasFDerivAt_realChart hf).fderiv]
   simp [mul_comm]
+
+/-- The real chart of a map with a complex derivative has a complex-linear real derivative: it
+intertwines the standard complex structure `(a, b) ↦ (-b, a)` of `ℝ × ℝ` with itself. This is
+the hypothesis under which holomorphic changes of coordinates preserve the Floer equation
+(`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_perturbationPullback`). -/
+theorem isComplexLinearMap_fderiv_realChart {f : ℂ → ℂ} {f' : ℂ} {w : ℝ × ℝ}
+    (hf : HasDerivAt f f' (Complex.equivRealProdCLM.symm w)) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ) (AlmostComplexStructure.product ℝ)
+      (fderiv ℝ (realChart f) w : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) := by
+  refine (isComplexLinearMap_iff_apply _ _ _).2 fun v ↦ ?_
+  simp only [ContinuousLinearMap.coe_coe, fderiv_realChart_apply hf,
+    AlmostComplexStructure.product_apply]
+  ext <;> simp <;> ring
 
 /-- In real coordinates, the Jacobian determinant of a map with complex derivative `f'` is
 `|f'|²`. -/
