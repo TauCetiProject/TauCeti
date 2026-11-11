@@ -440,12 +440,7 @@ theorem isIso_singularHomologyMap_compl_of_starConvex (hK : StarConvex ℝ y K) 
       TopCat.ofHom e₁.toFun
     let g₂ : TopCat.of (sphere y r) ⟶ (TopPair.ofSubset ({y}ᶜ : Set (TopCat.of E))).snd :=
       TopCat.ofHom e₂.toFun
-    have hfac : g₁ ≫ TopPair.Hom.snd f = g₂ := by
-      ext z
-      rw [ConcreteCategory.comp_apply]
-      exact Subtype.ext <| (TopPair.ofSubsetMap_snd_apply _ _ _).trans <|
-        (hK.coe_complSphereHomotopyEquiv_apply hy hKr z).trans
-          ((starConvex_singleton y).coe_complSphereHomotopyEquiv_apply rfl _ z).symm
+    have hfac : g₁ ≫ TopPair.Hom.snd f = g₂ := hK.ofHom_complSphereHomotopyEquiv_comp_snd hy hKr
     have h₁ : IsIso (SSet.homologyMap (TopCat.toSSet.map g₁) R n) := e₁.isIso_homologyMap R n
     have h₂ : IsIso (SSet.homologyMap (TopCat.toSSet.map g₁) R n ≫
         SSet.homologyMap (TopCat.toSSet.map (TopPair.Hom.snd f)) R n) := by
