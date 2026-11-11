@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Orthogonal.Basic
+public import TauCeti.Algebra.Lie.SpecialUnitary
 public import TauCeti.Analysis.Matrix.Normed
 public import TauCeti.Geometry.Lie.Subgroup.SpecialLinear
 public import TauCeti.Geometry.Lie.Subgroup.Unitary
@@ -153,35 +154,16 @@ theorem isEmbeddedLieSubgroup_GLSpecialUnitary :
       (GLSpecialUnitary n 𝕜 : Subgroup (Matrix n n 𝕜)ˣ) :=
   isEmbeddedLieSubgroup_of_isClosed (isClosed_GLSpecialUnitary n 𝕜)
 
-variable (n 𝕜) in
-/-- The real Lie algebra of trace-free skew-Hermitian matrices. -/
-def specialUnitaryMatrixLieAlgebra : LieSubalgebra ℝ (Matrix n n 𝕜) :=
-  (lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜)) (GLSpecialUnitary n 𝕜)).map
-    (unitsLieAlgebraLieEquiv (R := Matrix n n 𝕜)).toLieHom
-
 /-- The units Lie equivalence sends the special unitary subgroup Lie algebra to its
-matrix-coordinate Lie subalgebra. -/
+algebraically defined trace-free skew-Hermitian Lie subalgebra. -/
 @[simp]
 theorem unitsLieAlgebraLieEquiv_map_lieSubalgebraOfSubgroup_GLSpecialUnitary :
     (lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜)) (GLSpecialUnitary n 𝕜)).map
         (unitsLieAlgebraLieEquiv (R := Matrix n n 𝕜)).toLieHom =
-      specialUnitaryMatrixLieAlgebra n 𝕜 := by
-  rw [specialUnitaryMatrixLieAlgebra]
-
-/-- Membership in the special unitary matrix Lie algebra is the trace-zero skew-Hermitian
-condition. -/
-@[simp]
-theorem mem_specialUnitaryMatrixLieAlgebra_iff (A : Matrix n n 𝕜) :
-    A ∈ specialUnitaryMatrixLieAlgebra n 𝕜 ↔ Aᴴ = -A ∧ A.trace = 0 := by
-  rw [specialUnitaryMatrixLieAlgebra, LieSubalgebra.mem_map_submodule, Submodule.mem_map_equiv]
-  exact unitsLieAlgebraLieEquiv_symm_mem_GLSpecialUnitary_lieSubalgebra_iff A
-
-/-- Over the reals the special unitary matrix Lie algebra is Mathlib's orthogonal Lie algebra. -/
-@[simp]
-theorem specialUnitaryMatrixLieAlgebra_real_eq_so :
-    specialUnitaryMatrixLieAlgebra n ℝ = LieAlgebra.Orthogonal.so n ℝ := by
+      specialUnitaryMatrixLieAlgebra ℝ n 𝕜 := by
   ext A
-  rw [specialUnitaryMatrixLieAlgebra, LieSubalgebra.mem_map_submodule, Submodule.mem_map_equiv]
-  exact unitsLieAlgebraLieEquiv_symm_mem_GLSpecialUnitary_lieSubalgebra_iff_mem_so A
+  rw [LieSubalgebra.mem_map_submodule, Submodule.mem_map_equiv,
+    mem_specialUnitaryMatrixLieAlgebra_iff]
+  exact unitsLieAlgebraLieEquiv_symm_mem_GLSpecialUnitary_lieSubalgebra_iff A
 
 end TauCeti.Lie

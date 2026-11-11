@@ -84,6 +84,7 @@ private def pullbackToSubgroup :
       contMDiff_toFun := by
         have h := (pullbackDiffeomorph d e).contMDiff
         rw [coe_pullbackDiffeomorph] at h
+        -- The monoid homomorphism stores the same function as the continuous equivalence.
         exact h }
 
 private theorem pullbackToSubgroup_apply (a : A) :
@@ -94,6 +95,7 @@ private theorem pullbackToSubgroup_apply (a : A) :
   let _ := d.chartedSpace
   let _ := e.toHomeomorph.pullbackChartedSpace (H := V)
   unfold pullbackToSubgroup
+  -- Evaluation of the stored monoid homomorphism reduces to evaluation of the equivalence.
   rfl
 
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ V] [LieGroup I ∞ G] [T2Space G]

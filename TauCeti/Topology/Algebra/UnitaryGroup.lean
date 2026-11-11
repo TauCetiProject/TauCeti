@@ -12,7 +12,7 @@ public import Mathlib.Topology.Algebra.Star.Unitary
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.SpecialUnitary
 public import TauCeti.Topology.Algebra.Star.Unitary
 
-import TauCeti.Topology.Algebra.Group.Units.ContinuousMulEquiv
+import TauCeti.Topology.Algebra.Group.Units
 
 /-!
 # Topology and native carriers of unitary matrix groups

@@ -164,12 +164,12 @@ theorem isBaseChange_complex_GLSpecialUnitary :
   · rw [LieSubalgebra.mem_toSubmodule, LieAlgebra.SpecialLinear.mem_sl_iff] at hA ⊢
     rw [Matrix.star_eq_conjTranspose, Matrix.trace_conjTranspose, hA, star_zero]
   · have hmem : unitsLieAlgebraLieEquiv (R := Matrix n n ℂ) X.1 ∈
-        specialUnitaryMatrixLieAlgebra n ℂ := by
+        specialUnitaryMatrixLieAlgebra ℝ n ℂ := by
       rw [← unitsLieAlgebraLieEquiv_map_lieSubalgebraOfSubgroup_GLSpecialUnitary]
       exact (LieSubalgebra.mem_map _ _ _).mpr ⟨X.1, X.2, rfl⟩
-    exact ((mem_specialUnitaryMatrixLieAlgebra_iff _).mp hmem).1
+    exact ((mem_specialUnitaryMatrixLieAlgebra_iff ℝ _).mp hmem).1
   · rw [LieSubalgebra.mem_toSubmodule, LieAlgebra.SpecialLinear.mem_sl_iff] at hA
-    have hmem := (mem_specialUnitaryMatrixLieAlgebra_iff A).mpr ⟨hskew, hA⟩
+    have hmem := (mem_specialUnitaryMatrixLieAlgebra_iff ℝ A).mpr ⟨hskew, hA⟩
     rw [← unitsLieAlgebraLieEquiv_map_lieSubalgebraOfSubgroup_GLSpecialUnitary,
       LieSubalgebra.mem_map] at hmem
     obtain ⟨X, hX, hval⟩ := hmem

@@ -152,14 +152,14 @@ theorem isSmoothEmbedding_ofSpecialUnitaryGroup :
 
 private def coordinateEquiv :
     lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜)) K ≃ₗ⁅ℝ⁆
-      specialUnitaryMatrixLieAlgebra n 𝕜 :=
+      specialUnitaryMatrixLieAlgebra ℝ n 𝕜 :=
   (unitsLieAlgebraLieEquiv (R := Matrix n n 𝕜)).ofSubalgebras _ _
     unitsLieAlgebraLieEquiv_map_lieSubalgebraOfSubgroup_GLSpecialUnitary
 
 /-- The real Lie algebra of the native special unitary group consists of trace-free
 skew-Hermitian matrices. -/
 def specialUnitaryGroupLieAlgebraEquiv :
-    LeftInvariantDerivation 𝓘(ℝ, E) S ≃ₗ⁅ℝ⁆ specialUnitaryMatrixLieAlgebra n 𝕜 :=
+    LeftInvariantDerivation 𝓘(ℝ, E) S ≃ₗ⁅ℝ⁆ specialUnitaryMatrixLieAlgebra ℝ n 𝕜 :=
   ((specialUnitaryEmbeddedData n 𝕜).pullbackLieEquiv
     (GLSpecialUnitary.specialUnitaryGroupContinuousMulEquiv n 𝕜)).trans
       (coordinateEquiv n 𝕜)
@@ -192,7 +192,7 @@ def specialOrthogonalGroupLieAlgebraEquiv :
     LeftInvariantDerivation 𝓘(ℝ, SpecialUnitaryGroupModel n ℝ) (Matrix.specialOrthogonalGroup n ℝ)
       ≃ₗ⁅ℝ⁆ LieAlgebra.Orthogonal.so n ℝ :=
   (specialUnitaryGroupLieAlgebraEquiv n ℝ).trans
-    (LieEquiv.ofEq _ _ (by rw [specialUnitaryMatrixLieAlgebra_real_eq_so]))
+    (LieEquiv.ofEq _ _ (by rw [specialUnitaryMatrixLieAlgebra_self_eq_so]))
 
 /-- In matrix coordinates the real equivalence is the differential of the actual inclusion. -/
 @[simp↓]
