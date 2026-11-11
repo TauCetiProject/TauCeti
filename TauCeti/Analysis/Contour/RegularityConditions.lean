@@ -341,6 +341,12 @@ theorem conditionAprime_iff {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {S 
           FlatOfOrderBasepoint γ (min a b) (max a b) n) :=
   ⟨fun h => ⟨h.finite_crossings, h.interior, h.basepoint⟩, fun h => ⟨h.1, h.2.1, h.2.2⟩⟩
 
+/-- Condition (A′) restricts to any subset of the prescribed singularities. -/
+theorem ConditionAprime.mono {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {S T : Finset ℂ}
+    (hA : ConditionAprime γ a b f S) (hTS : T ⊆ S) : ConditionAprime γ a b f T :=
+  ⟨fun s hs ↦ hA.finite_crossings s (hTS hs), fun t ht hmem ↦ hA.interior t ht (hTS hmem),
+    fun hmem ↦ hA.basepoint (hTS hmem)⟩
+
 /-- Condition (A′) is invariant under swapping the endpoints: all its clauses are stated over
 `min`/`max`. -/
 theorem conditionAprime_comm {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {S : Finset ℂ} :
