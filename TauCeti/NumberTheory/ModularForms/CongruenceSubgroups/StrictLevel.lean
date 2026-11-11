@@ -101,13 +101,9 @@ when there is none. -/
 theorem strictLevel_eq_sInf :
     Γ.strictLevel =
       sInf {N : ℕ | 0 < N ∧ ∀ σ : SL(2, ℤ), σ * ModularGroup.T ^ N * σ⁻¹ ∈ Γ} := by
-  rcases Nat.eq_zero_or_pos Γ.strictLevel with h | h
-  · refine h.trans (Nat.sInf_eq_zero.mpr (Or.inr (Set.eq_empty_of_forall_notMem ?_))).symm
-    rintro N ⟨hN, hmem⟩
-    rw [← strictLevel_dvd_iff, h, zero_dvd_iff] at hmem
-    exact hN.ne' hmem
-  · exact le_antisymm (le_csInf ⟨_, h, conj_T_pow_strictLevel_mem⟩ fun N hN ↦
-      strictLevel_le hN.1 hN.2) (Nat.sInf_le ⟨h, conj_T_pow_strictLevel_mem⟩)
+  rw [strictLevel, orderOf, Function.minimalPeriod_eq_sInf_n_pos_IsPeriodicPt]
+  simp only [isPeriodicPt_mul_iff_pow_eq_one, ← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff,
+    ← strictLevel_dvd_iff_T_pow_mem_normalCore, strictLevel_dvd_iff, gt_iff_lt]
 
 /-- A subgroup of finite index has positive strict level. -/
 theorem strictLevel_pos [Γ.FiniteIndex] : 0 < Γ.strictLevel :=
