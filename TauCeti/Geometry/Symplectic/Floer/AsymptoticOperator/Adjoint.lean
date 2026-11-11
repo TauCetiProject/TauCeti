@@ -37,7 +37,7 @@ uses it to show that `D` has no classical cokernel on decaying maps.
   (`Floer.setIntegral_associatedBilinForm_stationaryCylinderOperator_eq_of_periodic`), and for a
   compactly supported `ξ` it holds over the whole plane
   (`Floer.integral_associatedBilinForm_stationaryCylinderOperator_eq_of_hasCompactSupport`).
-* **Weak solutions of the adjoint equation.** For compatible `J_t`, a `C¹` map `η` such that
+* **Weak solutions of the adjoint equation.** For `ω`-invariant `J_t`, a `C¹` map `η` such that
   `∫∫ g(D ξ, η) = 0` for every smooth `ξ` compactly supported in an open set `U` solves
   `D† η = 0` on `U` (`Floer.eqOn_stationaryCylinderAdjoint_eq_zero_of_forall_integral_eq_zero`).
   This is the fundamental lemma of the calculus of variations
@@ -167,7 +167,7 @@ theorem continuous_stationaryCylinderAdjoint (hJc : Continuous fun p : ℝ × V 
     (hSc : Continuous S) (hη : ContDiff ℝ 1 η) :
     Continuous (stationaryCylinderAdjoint J S η) := by
   have hdη : Continuous (fderiv ℝ η) := hη.continuous_fderiv one_ne_zero
-  rw [show stationaryCylinderAdjoint J S η = _ from funext (stationaryCylinderAdjoint_def J S η)]
+  rw [funext (stationaryCylinderAdjoint_def J S η)]
   exact (hdη.clm_apply continuous_const).neg.add (hJc.comp (continuous_snd.prodMk
     ((hdη.clm_apply continuous_const).sub ((hSc.comp continuous_snd).clm_apply hη.continuous))))
 
@@ -321,12 +321,13 @@ theorem integral_associatedBilinForm_stationaryCylinderOperator_eq_of_hasCompact
   simp only [h₁, h₂, h₃, h₄]
   simp
 
-/-- **Weak solutions of the adjoint equation are strong solutions.** Let each `J_t` be
-`ω`-compatible and depend continuously on `t`, and let each `S_t` be infinitesimally symplectic.
+/-- **Weak solutions of the adjoint equation are strong solutions.** Let each `J_t` leave `ω`
+invariant and depend continuously on `t`, and let each `S_t` be infinitesimally symplectic.
 If a `C¹` map `η` is `L²`-orthogonal to `D ξ` for every smooth map `ξ` compactly supported in an
-open set `U`, for the pairing `∫∫ g(·, ·)` with `g_t = ω(·, J_t ·)`, then `D† η = 0` on `U`. -/
+open set `U`, for the pairing `∫∫ g(·, ·)` with `g_t = ω(·, J_t ·)`, then `D† η = 0` on `U`. The
+pairing need not be positive: only its nondegeneracy is used. -/
 theorem eqOn_stationaryCylinderAdjoint_eq_zero_of_forall_integral_eq_zero
-    (hJ : ∀ t, ω.Compatible (J t)) (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2)
+    (hJ : ∀ t, ω.Invariant (J t)) (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2)
     (hS : ∀ t v w, ω (S t v) w + ω v (S t w) = 0) (hSc : Continuous S) (hη : ContDiff ℝ 1 η)
     {U : Set (ℝ × ℝ)} (hU : IsOpen U)
     (h : ∀ ξ : ℝ × ℝ → V, ContDiff ℝ (⊤ : ℕ∞) ξ → HasCompactSupport ξ → tsupport ξ ⊆ U →
@@ -344,15 +345,12 @@ theorem eqOn_stationaryCylinderAdjoint_eq_zero_of_forall_integral_eq_zero
         have hξc : HasCompactSupport fun z ↦ φ z • v := hφc.smul_right (f' := fun _ ↦ v)
         have h₀ := h _ hξ hξc ((tsupport_smul_subset_left φ fun _ ↦ v).trans hφU)
         rw [integral_associatedBilinForm_stationaryCylinderOperator_eq_of_hasCompactSupport
-          (fun t ↦ (hJ t).invariant) hJc hS hSc (hξ.of_le (by simp)) hη hξc] at h₀
+          hJ hJc hS hSc (hξ.of_le (by simp)) hη hξc] at h₀
         simpa [smul_eq_mul] using h₀
     exact Measure.eqOn_open_of_ae_eq ((ae_restrict_iff' hU.measurableSet).2 hae) hU
       hF.continuousOn continuousOn_const
-  intro z hz
-  by_contra hne
-  have h₀ := hv (f z) hz
-  simp only [SymplecticForm.associatedBilinForm_apply, Pi.zero_apply] at h₀
-  exact ((hJ z.2).associated_pos hne).ne' h₀
+  -- The associated form `g_t` is nondegenerate, so `D† η = 0` on `U`.
+  exact fun z hz ↦ (ω.associatedBilinForm_nondegenerate (J z.2)).2 (f z) fun v ↦ hv v hz
 
 /-- **Decaying solutions of the adjoint equation vanish.** Let each `J_t` be `ω`-compatible and
 depend continuously on `t`, and let each `S_t` be infinitesimally symplectic. A `C²` solution `η`
@@ -374,8 +372,9 @@ theorem eq_zero_of_stationaryCylinderAdjoint_eq_zero (hJ : ∀ t, ω.Compatible 
     rw [ρ.comp_right_fderiv]
     simp [hρ, stdComplexLineImag_eq]
   have hρF : Tendsto ρ (comap Prod.fst (cocompact ℝ)) (comap Prod.fst (cocompact ℝ)) := by
-    rw [tendsto_comap_iff, show Prod.fst ∘ ρ = Neg.neg ∘ Prod.fst from funext fun z ↦ rfl]
-    exact (Homeomorph.neg ℝ).isClosedEmbedding.tendsto_cocompact.comp tendsto_comap
+    -- `Prod.fst ∘ ρ` is `Neg.neg ∘ Prod.fst` by definition of `ρ`.
+    exact tendsto_comap_iff.2
+      ((Homeomorph.neg ℝ).isClosedEmbedding.tendsto_cocompact.comp tendsto_comap)
   have h₀ : η ∘ ρ = 0 := by
     refine eq_zero_of_stationaryCylinderOperator_eq_zero hJ hJc hS hSc (hη.comp ρ.contDiff)
       (fun s t ↦ hper (-s) t) (fun z ↦ ?_) ?_
@@ -401,8 +400,9 @@ theorem eq_zero_of_forall_integral_associatedBilinForm_stationaryCylinderOperato
       ∫ z, ω.associatedBilinForm (J z.2) (stationaryCylinderOperator J S ξ z) (η z) = 0) :
     η = 0 :=
   eq_zero_of_stationaryCylinderAdjoint_eq_zero hJ hJc hS hSc hη hper
-    (fun z ↦ eqOn_stationaryCylinderAdjoint_eq_zero_of_forall_integral_eq_zero hJ hJc hS hSc
-      (hη.of_le (by norm_num)) isOpen_univ (fun ξ hξ hξc _ ↦ h ξ hξ hξc) (mem_univ z))
+    (fun z ↦ eqOn_stationaryCylinderAdjoint_eq_zero_of_forall_integral_eq_zero
+      (fun t ↦ (hJ t).invariant) hJc hS hSc (hη.of_le (by norm_num)) isOpen_univ
+      (fun ξ hξ hξc _ ↦ h ξ hξ hξc) (mem_univ z))
     hdecay
 
 end Green
