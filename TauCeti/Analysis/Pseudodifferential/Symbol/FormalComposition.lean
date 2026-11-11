@@ -28,7 +28,7 @@ composition of expansions.
 
 Everything here is a statement about homogeneous terms. That `sharpTerms` gives the expansion of
 the symbol of the composed operators is the composition theorem of the symbol calculus,
-`TauCeti.ClassicalSymbol.sharp`.
+`TauCeti.ClassicalSymbol.homogeneousSharpTerms_eq_sharpTerms`.
 
 ## References
 

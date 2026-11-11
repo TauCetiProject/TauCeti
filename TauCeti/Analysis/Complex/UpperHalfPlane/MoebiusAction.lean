@@ -281,9 +281,6 @@ theorem sq_smul_smul_eq_vadd_S_smul_vadd (g : SL(2, ℤ)) (hc : g 1 0 ≠ 0) (τ
   have hc' : (g 1 0 : ℂ) ≠ 0 := Int.cast_ne_zero.mpr hc
   have hden : (g 1 0 : ℂ) * τ + g 1 1 ≠ 0 := by
     simpa [denom_apply] using denom_ne_zero g τ
-  have hden' : (τ : ℂ) + (g 1 1 : ℂ) / g 1 0 ≠ 0 := by
-    rw [show (τ : ℂ) + (g 1 1 : ℂ) / g 1 0 = (g 1 0 * τ + g 1 1) / g 1 0 by field_simp]
-    exact div_ne_zero hden hc'
   have hS : ((S • (((g 1 1 : ℝ) / g 1 0) +ᵥ τ) : ℍ) : ℂ) = -((τ : ℂ) + (g 1 1 : ℂ) / g 1 0)⁻¹ := by
     rw [modular_S_smul, coe_mk, coe_vadd, inv_neg]
     push_cast

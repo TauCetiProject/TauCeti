@@ -231,7 +231,7 @@ theorem ae_map_jointArray_eq_of_jointlyDissociated [StandardBorelSpace α]
     hf.comp (measurable_const.prodMk measurable_id)
   exact ae_map_eq_of_jointlyDissociated hρ (measurable_map_jointArray_frozen hf)
     (fun t => measurable_jointArray _ ((hft t).comp measurable_snd))
-    (fun t => jointlyExchangeable_jointArray _ ((hft t).comp measurable_snd))
+    (fun t => jointlyExchangeable_jointArray _)
     ((map_jointArray_eq_bind_frozen hf).symm.trans hcode)
 
 /-- **A dissociated law with an Aldous--Hoover coding has one that ignores its global
@@ -263,8 +263,7 @@ theorem ae_map_separateArray_eq_of_jointlyDissociated [StandardBorelSpace α]
     hf.comp (measurable_const.prodMk measurable_id)
   exact ae_map_eq_of_jointlyDissociated hρ (measurable_map_separateArray_frozen hf)
     (fun t => measurable_separateArray _ ((hft t).comp measurable_snd))
-    (fun t => (separatelyExchangeable_separateArray _
-      ((hft t).comp measurable_snd)).jointlyExchangeable)
+    (fun t => (separatelyExchangeable_separateArray _).jointlyExchangeable)
     ((map_separateArray_eq_bind_frozen hf).symm.trans hcode)
 
 /-- **A dissociated law with a separate Aldous--Hoover coding has one that ignores its global

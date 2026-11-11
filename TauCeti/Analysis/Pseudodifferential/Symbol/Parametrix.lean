@@ -36,8 +36,8 @@ these are the expansions of a left and a right parametrix of `Op(a)`.
 
 Everything here is a statement about homogeneous terms. That `sharpTerms` gives the expansion of
 the symbol of the composed operators is the composition theorem of the symbol calculus,
-`TauCeti.ClassicalSymbol.sharp`, and the formal inverses become parametrices of `Op(a)` through it
-(`TauCeti.ClassicalSymbol.exists_leftParametrix`).
+`TauCeti.ClassicalSymbol.homogeneousSharpTerms_eq_sharpTerms`, and the formal inverses become
+parametrices of `Op(a)` through it (`TauCeti.ClassicalSymbol.exists_leftParametrix`).
 
 ## References
 
