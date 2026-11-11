@@ -39,14 +39,16 @@ in `G`-indexed series. This file proves:
   (`TauCeti.Floer.novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_sub_eq_add`).
 * **On cocycles.** If every class counted by `K` satisfies the index condition of rigid members of
   the family, whose Fredholm index at a fixed parameter is `-1`, then for cocycles `a` and `b` the
-  difference `Φ₀ (a ⋆ b) - Φ₁ a ⋆' Φ₂ b` is a coboundary, so the continuation maps intertwine the
-  two products on cohomology (see
-  `novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_sub_mem_coboundaries`).
+  difference `Φ₀ (a ⋆ b) - Φ₁ a ⋆' Φ₂ b` is a coboundary (see
+  `novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_sub_mem_coboundaries`). Once
+  the differentials square to zero and the products and continuation maps are known to descend to
+  cohomology, this says that the continuation maps intertwine the two products there.
 * **Independence of the perturbation data.** For two choices of perturbation data on the pair of
   pants with the same ends, the continuation maps are the identity, and the identity
   `Qᵢⱼₗ - Q'ᵢⱼₗ = ∑ₖ Kᵢⱼₖ D₀ₖₗ + ∑ₖ D₁ᵢₖ Kₖⱼₗ + (-1)^(n - μ₁(r₁ i)) ∑ₖ D₂ⱼₖ Kᵢₖₗ` makes
-  `a ⋆ b - a ⋆' b` a coboundary for cocycles `a` and `b`: the two products agree on cohomology
-  (see `novikovProductOfMatrix_coefficientComparison_sub_novikovProductOfMatrix_mem_coboundaries`).
+  `a ⋆ b - a ⋆' b` a coboundary for cocycles `a` and `b` (see
+  `novikovProductOfMatrix_coefficientComparison_sub_novikovProductOfMatrix_mem_coboundaries`).
+  Once the products are known to descend to cohomology, they therefore agree there.
 
 The count identity and the index condition are the input the geometric moduli spaces are to
 supply; no moduli space, orientation or count is constructed here.
@@ -155,15 +157,17 @@ theorem novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_sub_eq_a
     exact h
 
 include hμ₁ hμ₂ in
-/-- **Continuation maps intertwine the products of class-indexed counts on cohomology.** Under the
-identity of `novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_sub_eq_add`, suppose
-that every class counted by `K` satisfies the index condition
+/-- **Continuation maps intertwine the products of class-indexed counts up to coboundaries.**
+Under the identity of `novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_sub_eq_add`,
+suppose that every class counted by `K` satisfies the index condition
 `μ₀'(r₀') - 2 c₁(A) = μ₁(r₁) + μ₂(r₂) - n + 1` of rigid members of the continuation family, whose
 Fredholm index at a fixed parameter is `-1`, so that `K` lowers the cochain degree by one. Then for
 cocycles `a` and `b` of the cylinder differentials of the first choice, of cochain degrees `e` and
 `f`, the difference `Φ₀ (a ⋆ b) - Φ₁ a ⋆' Φ₂ b` is the coboundary of `K(a, b)` in cochain degree
 `e + f` for the output differential of the second choice. The differentials are the ground-ring
-linear maps of the cylinder counts, for any potential bounds of their kernels. -/
+linear maps of the cylinder counts, for any potential bounds of their kernels. This is a comparison
+on cocycles only: it gives multiplicativity of the continuation maps on cohomology once the
+differentials square to zero and the products and continuation maps descend to cohomology. -/
 theorem novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_sub_mem_coboundaries
     {μ₀' : (Σ k, P₀' k) → ℤ}
     (hμ₀' : ∀ k γ (D : P₀' k), μ₀' ⟨k, γ +ᵥ D⟩ = degree ω c γ + μ₀' ⟨k, D⟩)
@@ -221,8 +225,8 @@ theorem novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_sub_mem_
   let := module (R := R) hF₀'
   rw [novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_sub_eq_add r₁ r₂ r₀ r₁' r₂'
       r₀' hF₁ hF₂ hF₀ hF₁' hF₂' hF₀' q hq hμ₁ n Q Q' Φ₁ Φ₂ Φ₀ K D₁ D₂ D₀' hcont ha.2 b,
-    hDa, hDb, map_zero, LinearMap.zero_apply, map_zero, smul_zero, add_zero, add_zero,
-    novikovMapOfMatrix_eq_kernelMap hF₀' hF₀' r₀' r₀' _ hδ₀]
+    hDa, hDb, novikovMapOfMatrix_eq_kernelMap hF₀' hF₀' r₀' r₀' _ hδ₀]
+  simp only [map_zero, LinearMap.zero_apply, smul_zero, add_zero]
 
 end Homotopy
 
@@ -245,17 +249,19 @@ private theorem novikovMapOfMatrix_coefficientComparison_one_apply [Finite ι₀
   rw [h1, novikovMapOfMatrix_one, LinearMap.id_apply]
 
 include hμ₁ hμ₂ in
-/-- **The product of class-indexed counts on cohomology does not depend on the perturbation
-data.** Let `Q` and `Q'` be the generating series of rigid pairs of pants for two choices of
-perturbation data with the same ends, so that the continuation maps are the identity, and let `K`
-be those of the rigid members of a family of perturbation data joining them, with
+/-- **On cocycles, the products of class-indexed counts for two choices of perturbation data
+differ by coboundaries.** Let `Q` and `Q'` be the generating series of rigid pairs of pants for
+two choices of perturbation data with the same ends, so that the continuation maps are the
+identity, and let `K` be those of the rigid members of a family of perturbation data joining them,
+with
 `μ₀(r₀) - 2 c₁(A) = μ₁(r₁) + μ₂(r₂) - n + 1` for every counted class. If the series obey the
 identity
 
 `Qᵢⱼₗ - Q'ᵢⱼₗ = ∑ₖ Kᵢⱼₖ D₀ₖₗ + ∑ₖ D₁ᵢₖ Kₖⱼₗ + (-1)^(n - μ₁(r₁ i)) ∑ₖ D₂ⱼₖ Kᵢₖₗ`
 
 in `G`-indexed series, then for cocycles `a` and `b` of cochain degrees `e` and `f`, the
-difference `a ⋆ b - a ⋆' b` is a coboundary in cochain degree `e + f`. -/
+difference `a ⋆ b - a ⋆' b` is a coboundary in cochain degree `e + f`. Once the differentials
+square to zero and both products descend to cohomology, the two products therefore agree there. -/
 theorem novikovProductOfMatrix_coefficientComparison_sub_novikovProductOfMatrix_mem_coboundaries
     {μ₀ : (Σ k, P₀ k) → ℤ}
     (hμ₀ : ∀ k γ (D : P₀ k), μ₀ ⟨k, γ +ᵥ D⟩ = degree ω c γ + μ₀ ⟨k, D⟩)

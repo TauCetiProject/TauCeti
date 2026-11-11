@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.NovikovModule.Grading
 public import TauCeti.RingTheory.NovikovModule.MapOfMatrix
 public import TauCeti.Algebra.Ring.NegOnePow
+public import TauCeti.Algebra.BigOperators.Ring.Finset
 
 /-!
 # The Leibniz rule for supported products
@@ -207,28 +208,11 @@ theorem novikovMapOfMatrix_novikovProductOfMatrix_eq_add
   set y := coordinates hF₂ r₂ b
   -- Each of the three sums is regrouped as `∑ᵢ ∑ⱼ xᵢ yⱼ c(i, j)`, with `c(i, j)` one of the
   -- three sums over `k` of the Leibniz identity.
-  have h₀ : ∑ k, (∑ i, ∑ j, x i * y j * Q i j k) * D₀ k l =
-      ∑ i, ∑ j, x i * y j * ∑ k, Q i j k * D₀ k l := by
-    simp only [Finset.sum_mul, Finset.mul_sum, mul_assoc]
-    rw [Finset.sum_comm]
-    exact Finset.sum_congr rfl fun i _ => Finset.sum_comm
-  have h₁ : ∑ k, ∑ j, (∑ i, x i * D₁ i k) * y j * Q k j l =
-      ∑ i, ∑ j, x i * y j * ∑ k, D₁ i k * Q k j l := by
-    simp only [Finset.sum_mul, Finset.mul_sum]
-    rw [Finset.sum_comm]
-    refine (Finset.sum_congr rfl fun j _ => Finset.sum_comm).trans ?_
-    rw [Finset.sum_comm]
-    exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ =>
-      Finset.sum_congr rfl fun k _ => by ring
-  have h₂ : ∑ i, ∑ j, (x i * ∑ m, y m * D₂ m j) * Q i j l =
-      ∑ i, ∑ j, x i * y j * ∑ k, D₂ j k * Q i k l := by
-    simp only [Finset.sum_mul, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun i _ => ?_
-    rw [Finset.sum_comm]
-    exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun k _ => by ring
+  rw [sum_sum_sum_mul_mul_eq x y Q (D₀ · l), sum_sum_sum_mul_mul_eq_left x y D₁ (Q · · l),
+    sum_sum_sum_mul_mul_eq_right x y D₂ (Q · · l)]
   -- Termwise, this is the Leibniz identity, with the sign of the orbit of `i` replaced by the
   -- sign of the degree of `a` on its nonzero coordinates.
-  rw [h₀, h₁, h₂, Finset.smul_sum, ← Finset.sum_add_distrib]
+  rw [Finset.smul_sum, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [Finset.smul_sum, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun j _ => ?_

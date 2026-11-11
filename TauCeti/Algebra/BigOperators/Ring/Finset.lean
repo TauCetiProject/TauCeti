@@ -25,6 +25,14 @@ inequalities with coefficients in a `d`-dimensional space, into inequalities for
 `TauCeti.sum_sum_sum_mul_sub_eq` writes the difference between a triple sum
 `∑ x, ∑ y, ∑ z, a x y * b x z * c y z` and the sum of the constant product of the three constants
 over all triples, `(#s₀ * #s₁ * #s₂) * (p * q * r)`, as a sum of three one-factor discrepancies.
+
+## Regrouping coordinates of a bilinear operation
+
+For a bilinear operation with structure constants `Mᵢⱼₖ`, composing with a matrix on its output
+or on one of its inputs regroups, in coordinates `xᵢ`, `yⱼ`, as a double sum `∑ᵢ ∑ⱼ xᵢ yⱼ c(i, j)`
+whose coefficients `c(i, j)` are the composite structure constants
+(`TauCeti.sum_sum_sum_mul_mul_eq`, `TauCeti.sum_sum_sum_mul_mul_eq_left`,
+`TauCeti.sum_sum_sum_mul_mul_eq_right`).
 -/
 
 public section
@@ -69,5 +77,43 @@ theorem sum_sum_sum_mul_sub_eq {α β γ R : Type*} [CommRing R] (a : α → β 
   simp only [mul_sum, ← sum_add_distrib, ← sum_sub_distrib]
   refine sum_congr rfl fun x _ ↦ sum_congr rfl fun y _ ↦ sum_congr rfl fun z _ ↦ ?_
   ring
+
+section Regroup
+
+open Finset
+
+variable {ι κ ν R : Type*} [CommSemiring R] {s : Finset ι} {t : Finset κ} {u : Finset ν}
+
+/-- Applying `Ψ` to the output of the bilinear operation with structure constants `M` regroups in
+coordinates as `∑ₖ (∑ᵢ ∑ⱼ xᵢ yⱼ Mᵢⱼₖ) Ψₖ = ∑ᵢ ∑ⱼ xᵢ yⱼ ∑ₖ Mᵢⱼₖ Ψₖ`. -/
+theorem sum_sum_sum_mul_mul_eq (x : ι → R) (y : κ → R) (M : ι → κ → ν → R) (Ψ : ν → R) :
+    ∑ k ∈ u, (∑ i ∈ s, ∑ j ∈ t, x i * y j * M i j k) * Ψ k =
+      ∑ i ∈ s, ∑ j ∈ t, x i * y j * ∑ k ∈ u, M i j k * Ψ k := by
+  simp only [sum_mul, mul_sum, mul_assoc]
+  rw [sum_comm]
+  exact sum_congr rfl fun i _ => sum_comm
+
+/-- Applying the matrix `D` to the first input of the bilinear operation with structure constants
+`M` regroups in coordinates as `∑ₖ ∑ⱼ (∑ᵢ xᵢ Dᵢₖ) yⱼ Mₖⱼ = ∑ᵢ ∑ⱼ xᵢ yⱼ ∑ₖ Dᵢₖ Mₖⱼ`. -/
+theorem sum_sum_sum_mul_mul_eq_left (x : ι → R) (y : κ → R) (D : ι → ν → R) (M : ν → κ → R) :
+    ∑ k ∈ u, ∑ j ∈ t, (∑ i ∈ s, x i * D i k) * y j * M k j =
+      ∑ i ∈ s, ∑ j ∈ t, x i * y j * ∑ k ∈ u, D i k * M k j := by
+  simp only [sum_mul, mul_sum]
+  rw [sum_comm]
+  refine (sum_congr rfl fun j _ => sum_comm).trans ?_
+  rw [sum_comm]
+  exact sum_congr rfl fun i _ => sum_congr rfl fun j _ => sum_congr rfl fun k _ => by ring
+
+/-- Applying the matrix `D` to the second input of the bilinear operation with structure constants
+`M` regroups in coordinates as `∑ᵢ ∑ₖ xᵢ (∑ⱼ yⱼ Dⱼₖ) Mᵢₖ = ∑ᵢ ∑ⱼ xᵢ yⱼ ∑ₖ Dⱼₖ Mᵢₖ`. -/
+theorem sum_sum_sum_mul_mul_eq_right (x : ι → R) (y : κ → R) (D : κ → ν → R) (M : ι → ν → R) :
+    ∑ i ∈ s, ∑ k ∈ u, x i * (∑ j ∈ t, y j * D j k) * M i k =
+      ∑ i ∈ s, ∑ j ∈ t, x i * y j * ∑ k ∈ u, D j k * M i k := by
+  simp only [sum_mul, mul_sum]
+  refine sum_congr rfl fun i _ => ?_
+  rw [sum_comm]
+  exact sum_congr rfl fun j _ => sum_congr rfl fun k _ => by ring
+
+end Regroup
 
 end TauCeti

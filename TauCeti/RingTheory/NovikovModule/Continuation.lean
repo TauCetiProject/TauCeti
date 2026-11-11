@@ -304,15 +304,6 @@ end Cohomology
 
 section Matrix
 
-/-- Applying a matrix `Ψ` after the product of a matrix `M`, in coordinates, regroups as
-`∑ₖ (∑ᵢ ∑ⱼ xᵢ yⱼ Mᵢⱼₖ) Ψₖ = ∑ᵢ ∑ⱼ xᵢ yⱼ ∑ₖ Mᵢⱼₖ Ψₖ`. -/
-private theorem sum_sum_sum_mul_mul_eq {A ι₁ ι₂ ι₀ : Type*} [CommSemiring A] [Fintype ι₁]
-    [Fintype ι₂] [Fintype ι₀] (x : ι₁ → A) (y : ι₂ → A) (M : ι₁ → ι₂ → ι₀ → A) (Ψ : ι₀ → A) :
-    ∑ k, (∑ i, ∑ j, x i * y j * M i j k) * Ψ k = ∑ i, ∑ j, x i * y j * ∑ k, M i j k * Ψ k := by
-  simp only [Finset.sum_mul, Finset.mul_sum, mul_assoc]
-  rw [Finset.sum_comm]
-  exact Finset.sum_congr rfl fun i _ => Finset.sum_comm
-
 variable {R H ι₁ ι₂ ι₀ κ₁ κ₂ κ₀ : Type*} [CommRing R] [AddCommGroup H] {N : H →+ ℝ}
   {P₁ : ι₁ → Type*} {P₂ : ι₂ → Type*} {P₀ : ι₀ → Type*}
   {P₁' : κ₁ → Type*} {P₂' : κ₂ → Type*} {P₀' : κ₀ → Type*}
@@ -388,30 +379,14 @@ theorem novikovMapOfMatrix_novikovProductOfMatrix_sub_novikovProductOfMatrix_nov
           Finset.sum_congr rfl fun i _ =>
             (Finset.sum_congr rfl fun i' _ => Finset.sum_comm).trans Finset.sum_comm
       _ = _ := by simp only [Finset.mul_sum]
-  have hD₁ : ∑ k, ∑ j, (∑ i, x i * D₁ i k) * y j * K k j l =
-      ∑ i, ∑ j, x i * y j * ∑ k, D₁ i k * K k j l := by
-    simp only [Finset.sum_mul, Finset.mul_sum]
-    rw [Finset.sum_comm]
-    refine (Finset.sum_congr rfl fun j _ => Finset.sum_comm).trans ?_
-    rw [Finset.sum_comm]
-    exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ =>
-      Finset.sum_congr rfl fun k _ => by ring
-  have hD₂ : ∑ i, ∑ j, x i * (∑ m, y m * D₂ m j) * K i j l =
-      ∑ i, ∑ j, x i * y j * ∑ k, D₂ j k * K i k l := by
-    simp only [Finset.sum_mul, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun i _ => ?_
-    rw [Finset.sum_comm]
-    exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun k _ => by ring
+  rw [sum_sum_sum_mul_mul_eq x y Q (Φ₀ · l), hΦ, sum_sum_sum_mul_mul_eq x y K (D₀' · l),
+    sum_sum_sum_mul_mul_eq_left x y D₁ (K · · l), sum_sum_sum_mul_mul_eq_right x y D₂ (K · · l)]
+  simp only [← Finset.sum_sub_distrib, Finset.smul_sum, ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
   -- Termwise, this is the continuation identity, with the sign of the orbit of `i` replaced by
   -- the sign of the degree of `a` on its nonzero coordinates.
-  rw [sum_sum_sum_mul_mul_eq x y Q (Φ₀ · l), sum_sum_sum_mul_mul_eq x y K (D₀' · l), hΦ, hD₁,
-    hD₂, ← Finset.sum_sub_distrib, Finset.smul_sum, ← Finset.sum_add_distrib,
-    ← Finset.sum_add_distrib]
-  refine Finset.sum_congr rfl fun i _ => ?_
-  rw [← Finset.sum_sub_distrib, Finset.smul_sum, ← Finset.sum_add_distrib, ← Finset.sum_add_distrib]
-  refine Finset.sum_congr rfl fun j _ => ?_
-  rw [← mul_sub, hcont, mul_add, mul_add, mul_smul_comm, ← smul_mul_assoc, ← smul_mul_assoc, hs,
-    smul_mul_assoc, smul_mul_assoc]
+  rw [← mul_sub, hcont, ← smul_mul_assoc, ← smul_mul_assoc, ← hs]
+  simp only [mul_add, mul_smul_comm, smul_mul_assoc]
 
 end Matrix
 
