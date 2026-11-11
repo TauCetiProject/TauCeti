@@ -134,8 +134,8 @@ theorem upperSemicontinuous_rayCutTime_maximalGeodesic (hZ : Continuous Z) (hK :
     (fun q ↦ by rw [maximalGeodesic_zero]; exact hZS q)
     (fun q ↦ (hmem q).2.1 (right_mem_Icc.2 (hmem q).1.1))
     (fun t _ ↦ isClosed_setOfPred_Icc_subset_geodesicInterval_inter_preimage hZ hK t)
-    fun t ht q hq ↦ continuousAt_maximalGeodesic_comp hZ.continuousAt continuousAt_const
-      (hq (right_mem_Icc.2 ht.1)).1
+    fun t ht q hq ↦ (continuousAt_maximalGeodesic_comp hZ.continuousAt continuousAt_const
+      (hq (right_mem_Icc.2 ht.1)).1).continuousWithinAt
 
 /-- The cut time in a compact set `K` of the maximal geodesics of a continuous family of tangent
 vectors of norm at most one, based at points of `S` and of `K`, is a measurable function of the

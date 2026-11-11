@@ -281,7 +281,7 @@ theorem upperSemicontinuous_rayCutTime {P : Type*} [TopologicalSpace P] {Γ : P 
     (hR : 0 ≤ R) (h0T : ∀ p, 0 ∈ T p) (h0S : ∀ p, Γ p 0 ∈ S)
     (hcut : ∀ p, rayCutTime (Γ p) S (T p) R ∈ T p)
     (hT : ∀ t ∈ Icc 0 R, IsClosed {p | Icc 0 t ⊆ T p})
-    (hc : ∀ t ∈ Icc 0 R, ∀ p, Icc 0 t ⊆ T p → ContinuousAt (fun p ↦ Γ p t) p) :
+    (hc : ∀ t ∈ Icc 0 R, ContinuousOn (fun p ↦ Γ p t) {p | Icc 0 t ⊆ T p}) :
     UpperSemicontinuous fun p ↦ rayCutTime (Γ p) S (T p) R := by
   have hI (p : P) : rayCutTime (Γ p) S (T p) R ∈ Icc 0 R := rayCutTime_mem_Icc hR (h0T p) (h0S p)
   rw [upperSemicontinuous_iff_isClosed_preimage]
@@ -300,8 +300,8 @@ theorem upperSemicontinuous_rayCutTime {P : Type*} [TopologicalSpace P] {Γ : P 
     refine isClosed_of_closure_subset fun p hp ↦ ?_
     have hpT : Icc 0 t ⊆ T p := (hT t ht).closure_subset (closure_mono inter_subset_left hp)
     exact ⟨hpT, isClosed_singleton.closure_subset
-      ((continuous_infEDist.continuousAt.comp (hc t ht p hpT)).continuousWithinAt.mem_closure hp
-        fun _ hq ↦ hq.2)⟩
+      (((continuous_infEDist.comp_continuousOn (hc t ht)) p hpT).mono
+        inter_subset_left |>.mem_closure hp fun _ hq ↦ hq.2)⟩
   · convert isClosed_empty
     exact eq_empty_of_forall_notMem fun p hp ↦ (htR.trans_le hp).not_ge (hI p).2
 
@@ -346,7 +346,7 @@ theorem upperSemicontinuous_rayCutTime_preimage {P : Type*} [TopologicalSpace P]
     h0S (fun p ↦ (rayCutTime_preimage_mem_rayMinimizingTimes hD hR (hΓ p) (h0S p)
       (h0D p)).2.1 (right_mem_Icc.mpr (rayCutTime_mem_Icc hR (h0D p) (h0S p)).1))
     (fun _ ht ↦ hD.setOfPred_mapsTo fun u hu ↦ hc u ⟨hu.1, hu.2.trans ht.2⟩)
-    fun t ht _ _ ↦ (hc t ht).continuousAt
+    fun t ht ↦ (hc t ht).continuousOn
 
 end ClosedSet
 
