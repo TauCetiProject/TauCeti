@@ -62,7 +62,7 @@ theorem finite_spectrum (S : Type*) [Field S] [Algebra S 𝕜] [Algebra S (V →
 eigenvector of eigenvalue `c`. -/
 theorem isUnit_smul_one_sub {T : V →L[𝕜] V} {c : 𝕜} (h : ∀ v, T v = c • v → v = 0) :
     IsUnit (c • 1 - T) := by
-  have := FiniteDimensional.complete 𝕜 V
+  have := FiniteDimensional.completeSpace 𝕜 V
   refine isUnit_iff_isUnit_toLinearMap.2
     ((LinearMap.isUnit_iff_ker_eq_bot _).2 (LinearMap.ker_eq_bot'.2 fun v hv ↦ h v ?_))
   have hv' : c • v - T v = 0 := by simpa using hv

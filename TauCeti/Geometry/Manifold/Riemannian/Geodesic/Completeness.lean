@@ -140,7 +140,7 @@ theorem closedBall_subset_expDomain_of_isCompact_closedBall {p : M} {R : ℝ}
   have hd := (lipschitzOnWith_maximalGeodesic (I := I) (M := M) (p := p) (v := v)).dist_le_mul
     0 h0 t (hsub ⟨ha.trans ht.1, ht.2⟩)
   rw [(isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v).base_eq] at hd
-  simp only [coe_nnnorm, Real.dist_eq, zero_sub, abs_neg, abs_of_nonneg ht.1.le] at hd
+  simp only [coe_nnNorm, Real.dist_eq, zero_sub, abs_neg, abs_of_nonneg ht.1.le] at hd
   refine hnot (Metric.mem_closedBall'.mpr (hd.trans ?_))
   calc ‖v‖ * t ≤ ‖v‖ * 1 := mul_le_mul_of_nonneg_left (ht.2.le.trans hb1) (norm_nonneg _)
     _ ≤ R := by rwa [mul_one]

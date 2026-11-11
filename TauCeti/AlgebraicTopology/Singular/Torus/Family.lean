@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Module.ZLattice.Family.AffineAction
 public import TauCeti.Algebra.Module.ZLattice.Family.Fiber
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import TauCeti.AlgebraicTopology.Singular.Torus.Lattice
+import Mathlib.Tactic.DSimpPercent
 
 /-!
 # The canonical marking of the fibres of a family of tori
@@ -496,8 +497,11 @@ variable [IsTopologicalAddGroup E] [SimplyConnectedSpace E]
 /-- The period loop of `l` is marked by `l`: its period displacement is `P y l`. -/
 @[simp]
 theorem torusFamilyMarking_periodLoop (y : Y) (l : Λ) :
-    torusFamilyMarking P hcont hinj y
-      (H₁AddEquivHomology _ (loopClass (torusFamilyPeriodLoop P y l))) = l := by
+    dsimp% (torusFamilyMarking P hcont hinj y
+      (H₁AddEquivHomology _ (loopClass (torusFamilyPeriodLoop P y l)))) = l := by
+  -- Normalize the homology carrier in the statement so this simp rule matches after simplification.
+  change torusFamilyMarking P hcont hinj y
+    (H₁AddEquivHomology _ (loopClass (torusFamilyPeriodLoop P y l))) = l
   refine hinj y ?_
   rw [torusFamilyMarking_loopClass P hcont hinj y _
     ⟨fun t ↦ (t : ℝ) • P y l, continuous_subtype_val.smul continuous_const⟩

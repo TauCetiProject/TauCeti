@@ -351,7 +351,7 @@ theorem measure_exists_le_norm_lt_le (hM : Martingale M ℱ μ) {T : ι}
     have heq : {ω | ∃ t ≤ T, ((0 : ℝ≥0) : ℝ) < ‖M t ω‖} =ᵐ[μ]
         {ω | ∃ t ∈ S, ((0 : ℝ≥0) : ℝ) < ‖M t ω‖} := by
       filter_upwards [hcont] with ω hω
-      exact propext ⟨fun ⟨t, ht, h⟩ ↦ by
+      exact ⟨fun ⟨t, ht, h⟩ ↦ by
         obtain ⟨s, hs, hεs⟩ := hS (fun t ht ↦ (hω t ht).norm) ht h
         exact ⟨s, hs, hεs⟩,
         fun ⟨t, ht, h⟩ ↦ ⟨t, hST ht, h⟩⟩

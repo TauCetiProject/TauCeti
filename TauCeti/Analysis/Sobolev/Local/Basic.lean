@@ -164,7 +164,7 @@ null set, including on compact subsets of `U` that leave `W`. -/
 theorem _root_.MeasureTheory.MemLp.memLpLoc_of_ae_le {W : Set ℂ}
     (hf : MemLp f p (volume.restrict W)) (hUW : U ≤ᵐ[volume] W) : MemLpLoc p U f :=
   memLpLoc_iff.2 fun _ hK _ => hf.mono_measure
-    (Measure.restrict_mono_ae (Filter.EventuallyLE.trans (Filter.Eventually.of_forall hK) hUW))
+    (Measure.restrict_mono_ae ((Filter.EventuallySubset.of_subset hK).trans hUW))
 
 variable [NormedSpace ℝ F] [NormedSpace ℝ G]
 
