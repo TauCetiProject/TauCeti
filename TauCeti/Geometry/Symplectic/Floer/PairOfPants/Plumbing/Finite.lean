@@ -66,8 +66,7 @@ public section
 
 open Set Real Function MeasureTheory Filter TauCeti.ThricePuncturedSphere
   TauCeti.ThricePuncturedSphere.Puncture
-open TauCeti.Complex (realChart realChart_equivRealProdCLM equivRealProdCLM_symm_realChart
-  isComplexLinearMap_fderiv_realChart)
+open TauCeti.Complex (realChart realChart_equivRealProdCLM equivRealProdCLM_symm_realChart)
 open scoped Topology
 
 namespace TauCeti.SymplecticForm

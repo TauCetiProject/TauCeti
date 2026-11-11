@@ -434,21 +434,4 @@ end Integral
 
 end SymplecticForm
 
-namespace Complex
-
-/-- A map with a complex derivative is holomorphic in the real coordinates: the derivative of its
-real chart is complex linear. -/
-theorem isComplexLinearMap_fderiv_realChart {f : ℂ → ℂ} {f' : ℂ} {w : ℝ × ℝ}
-    (hf : HasDerivAt f f' (Complex.equivRealProdCLM.symm w)) :
-    IsComplexLinearMap (AlmostComplexStructure.product ℝ) (AlmostComplexStructure.product ℝ)
-      (fderiv ℝ (realChart f) w : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) := by
-  rw [isComplexLinearMap_iff_apply]
-  intro v
-  simp only [ContinuousLinearMap.coe_coe, fderiv_realChart_apply hf,
-    AlmostComplexStructure.product_apply]
-  apply Prod.ext <;>
-    simp [Complex.equivRealProdCLM_symm_apply, Complex.mul_re, Complex.mul_im] <;> ring
-
-end Complex
-
 end TauCeti
