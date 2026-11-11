@@ -19,10 +19,11 @@ Let `N` be an abelian normal subgroup of `G` and `N ≤ H`. The quotient `H ⧸ 
 extension of `G` by `N` in `H²(G ⧸ N, N)` restricts, on that image, to the class of the
 quotient extension of `H` by `N`.
 
-As a consequence, if `N` has a local complement in a subgroup `H` of finite index, then
-`[G : H]` kills the class of the quotient extension of `G`: the restricted class vanishes by
+As a consequence, if `N` has a local complement in a subgroup `H`, then `[G : H]` kills the
+class of the quotient extension of `G`: the restricted class vanishes by
 `Subgroup.exists_complement_iff_cohomologyClass_eq_zero` applied to `H`, and restriction
-followed by corestriction is multiplication by the index. This is the step of the cohomological
+followed by corestriction is multiplication by the index (when `H` has infinite index,
+`H.index = 0` and there is nothing to prove). This is the step of the cohomological
 proof of Gaschütz's splitting theorem that uses the local complement; no finiteness of `G` or
 of `N` is needed for it.
 
@@ -49,7 +50,6 @@ public section
 namespace Subgroup
 
 open groupCohomology CategoryTheory
-open TauCeti.QuotientGroup (quotientSubgroupOfMulEquivMap coe_quotientSubgroupOfMulEquivMap_mk)
 open scoped IsMulCommutative
 
 section
@@ -75,7 +75,7 @@ attribute [local instance] quotientConjugationAction
 
 /-- Identifying `N.subgroupOf H` with `N` is a morphism of representations of the image of `H`
 in `G ⧸ N`. That image acts on `N.subgroupOf H` through
-`TauCeti.QuotientGroup.quotientSubgroupOfMulEquivMap` and the quotient conjugation action of `H`,
+`Subgroup.quotientSubgroupOfMulEquivMap` and the quotient conjugation action of `H`,
 and on `N` by restricting the quotient conjugation action of `G`. -/
 noncomputable def subgroupOfRepHom (hNH : N ≤ H) :
     Rep.res (quotientSubgroupOfMulEquivMap N H).symm.toMonoidHom
@@ -138,7 +138,7 @@ private theorem coe_factorSet_restrictSection (hNH : N ≤ H) (σ : N.quotientEx
 /-- **The restriction formula for the class of the quotient extension.** Restricted to the
 image of `H ≥ N` in `G ⧸ N`, the class of the quotient extension of `G` by `N` is the class of
 the quotient extension of `H` by `N.subgroupOf H`, transported along
-`TauCeti.QuotientGroup.quotientSubgroupOfMulEquivMap` and `Subgroup.subgroupOfRepHom`. Both
+`Subgroup.quotientSubgroupOfMulEquivMap` and `Subgroup.subgroupOfRepHom`. Both
 classes are presented by the factor sets of arbitrary normalized sections. -/
 theorem map_subtype_cohomologyClass_factorSet_quotientExtension (hNH : N ≤ H)
     (σ : N.quotientExtension.Section) (hσ : σ 1 = 1)
@@ -171,22 +171,24 @@ theorem map_subtype_cohomologyClass_factorSet_quotientExtension (hNH : N ≤ H)
   -- The identity morphism acts as the identity and `Additive.toMul ∘ Additive.ofMul = id`.
   exact congrArg Additive.ofMul key
 
-/-- **A local complement in a subgroup of finite index forces the index to kill the class of the
-quotient extension.** If `N` has a local complement in `H` and `[G : H]` is finite, then
-`[G : H]` kills the class in `H²(G ⧸ N, N)` of the quotient extension of `G` by `N`: the
-restriction of the class to the image of `H` is the class of the split quotient extension of `H`,
-and restriction followed by corestriction is multiplication by the index. Neither `G` nor `N`
-need be finite. -/
+/-- **A local complement in `H` forces the index of `H` to kill the class of the quotient
+extension.** If `N` has a local complement in `H`, then `[G : H]` kills the class in
+`H²(G ⧸ N, N)` of the quotient extension of `G` by `N`: the restriction of the class to the image
+of `H` is the class of the split quotient extension of `H`, and restriction followed by
+corestriction is multiplication by the index. When `H` has infinite index, `H.index = 0` and the
+statement is trivial. Neither `G` nor `N` need be finite. -/
 theorem IsLocalComplement.index_nsmul_cohomologyClass_eq_zero {K : Subgroup G}
-    (hK : N.IsLocalComplement K H) [H.FiniteIndex] (σ : N.quotientExtension.Section)
-    (hσ : σ 1 = 1) :
+    (hK : N.IsLocalComplement K H) (σ : N.quotientExtension.Section) (hσ : σ 1 = 1) :
     H.index •
       (TauCeti.GroupExtension.factorSet σ hσ N.quotientExtension_inducesAction).cohomologyClass =
         0 := by
+  by_cases hH : H.FiniteIndex
+  swap
+  · rw [not_finiteIndex_iff.1 hH, zero_smul]
   let τ := TauCeti.GroupExtension.normalizeSection
     (N.subgroupOf H).quotientExtension.surjInvRightHom
   have hτ : τ 1 = 1 := TauCeti.GroupExtension.normalizeSection_one _
-  have hH : (TauCeti.GroupExtension.factorSet τ hτ
+  have hτ0 : (TauCeti.GroupExtension.factorSet τ hτ
       (N.subgroupOf H).quotientExtension_inducesAction).cohomologyClass = 0 :=
     ((N.subgroupOf H).exists_complement_iff_cohomologyClass_eq_zero τ hτ).1
       ⟨_, hK.isComplement'_subgroupOf⟩
@@ -196,6 +198,6 @@ theorem IsLocalComplement.index_nsmul_cohomologyClass_eq_zero {K : Subgroup G}
     FiniteIndex.map_of_surjective H (QuotientGroup.mk'_surjective N)
   rw [← hindex]
   refine TauCeti.groupCohomology.index_nsmul_eq_zero_of_map_eq_zero _ ?_
-  rw [map_subtype_cohomologyClass_factorSet_quotientExtension hK.left_le σ hσ τ hτ, hH, map_zero]
+  rw [map_subtype_cohomologyClass_factorSet_quotientExtension hK.left_le σ hσ τ hτ, hτ0, map_zero]
 
 end Subgroup

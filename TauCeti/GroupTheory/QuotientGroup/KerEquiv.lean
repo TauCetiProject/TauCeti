@@ -38,8 +38,8 @@ Mathlib.
 
 The first isomorphism theorem for the composite `H → G → G ⧸ N` of the inclusion of a subgroup
 and a quotient map identifies `H ⧸ N.subgroupOf H` with the image of `H` in `G ⧸ N`; this is
-`TauCeti.QuotientGroup.quotientSubgroupOfMulEquivMap`, with evaluation rule
-`TauCeti.QuotientGroup.coe_quotientSubgroupOfMulEquivMap_mk`.
+`Subgroup.quotientSubgroupOfMulEquivMap`, with evaluation rule
+`Subgroup.coe_quotientSubgroupOfMulEquivMap_mk`.
 -/
 
 public section
@@ -75,6 +75,12 @@ theorem quotientKerEquivRange_apply_mk (g : G) :
     QuotientGroup.quotientKerEquivRange φ g = ⟨φ g, g, rfl⟩ :=
   rfl
 
+end QuotientGroup
+
+end TauCeti
+
+namespace Subgroup
+
 /-- For a normal subgroup `N` and any subgroup `H` of `G`, the quotient `H ⧸ N.subgroupOf H` is
 isomorphic to the image `H.map (mk' N)` of `H` in `G ⧸ N`: this is the first isomorphism theorem
 for the composite `H → G → G ⧸ N`, whose kernel is `N.subgroupOf H`. -/
@@ -90,6 +96,4 @@ theorem coe_quotientSubgroupOfMulEquivMap_mk {G : Type*} [Group G] (N H : Subgro
     (quotientSubgroupOfMulEquivMap N H (h : H ⧸ N.subgroupOf H) : G ⧸ N) = (h : G) :=
   (rfl)
 
-end QuotientGroup
-
-end TauCeti
+end Subgroup
