@@ -175,6 +175,31 @@ theorem symmOfBijective_comp (φ : GHom ιH ιK) (hφ : Function.Bijective φ) :
   ext x
   exact φ.symmOfBijective_apply_apply hφ x
 
+/-- A group isomorphism commuting with the coefficient maps, as a `G`-homomorphism. -/
+def ofMulEquiv (e : H ≃* K) (he : ∀ g, e (ιH g) = ιK g) : GHom ιH ιK where
+  toMonoidHom := e.toMonoidHom
+  map_coeff' := he
+
+@[simp]
+theorem coe_ofMulEquiv (e : H ≃* K) (he : ∀ g, e (ιH g) = ιK g) : ⇑(ofMulEquiv e he) = e := (rfl)
+
+theorem ofMulEquiv_bijective (e : H ≃* K) (he : ∀ g, e (ιH g) = ιK g) :
+    Function.Bijective (ofMulEquiv e he) := by
+  simpa using e.bijective
+
+/-- The inverse of an isomorphism commuting with the coefficient maps commutes with them. -/
+theorem _root_.MulEquiv.symm_apply_coeff (e : H ≃* K) (he : ∀ g, e (ιH g) = ιK g) (g : G) :
+    e.symm (ιK g) = ιH g := by
+  simp [MulEquiv.symm_apply_eq, he]
+
+@[simp]
+theorem symmOfBijective_ofMulEquiv (e : H ≃* K) (he : ∀ g, e (ιH g) = ιK g)
+    (h : Function.Bijective (ofMulEquiv e he)) :
+    (ofMulEquiv e he).symmOfBijective h = ofMulEquiv e.symm (e.symm_apply_coeff he) := by
+  ext x
+  apply h.1
+  simp
+
 end GHom
 
 /-! ### `G`-groups -/
@@ -291,6 +316,13 @@ theorem GX.gHom_ext {φ ψ : GHom (inl : G →* GX G X) ι}
     (h : ∀ x, φ (inr (FreeGroup.of x)) = ψ (inr (FreeGroup.of x))) : φ = ψ :=
   (homEquiv ι).injective (funext h)
 
+/-- Two isomorphisms out of `G[X]` agreeing on the coefficients and on the variables are
+equal. -/
+theorem GX.mulEquiv_ext {φ ψ : GX G X ≃* H} (hinl : ∀ g, φ (inl g) = ψ (inl g))
+    (hinr : ∀ x, φ (inr (FreeGroup.of x)) = ψ (inr (FreeGroup.of x))) : φ = ψ :=
+  MulEquiv.toMonoidHom_injective <|
+    hom_ext (MonoidHom.ext hinl) (FreeGroup.ext_hom _ _ hinr)
+
 variable {ι v}
 
 /-- A homomorphism out of `G[X]` that restricts to `ι` on the coefficients is evaluation at its
@@ -353,6 +385,16 @@ theorem eval_wordMap (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X)) (v 
     wordMap ι (fun x => inr (FreeGroup.of x)) v = v := by
   funext x
   simp
+
+/-- Changing one of the words of a tuple changes the corresponding coordinate of its word
+map. -/
+theorem wordMap_update {Y : Type*} [DecidableEq Y] (w : Y → GX G X) (y : Y) (c : GX G X)
+    (v : X → H) :
+    wordMap ι (Function.update w y c) v = Function.update (wordMap ι w v) y (eval ι v c) := by
+  funext z
+  by_cases hz : z = y
+  · subst hz; simp
+  · simp [hz]
 
 /-- Word maps compose in the opposite order to word homomorphisms. -/
 theorem wordMap_comp (σ : GHom (inl : G →* GX G Z) (inl : G →* GX G Y))
