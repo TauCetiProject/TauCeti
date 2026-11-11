@@ -288,24 +288,17 @@ theorem mem_V_oneCommutatorEquation :
     v ∈ V ι {oneCommutatorEquation a b} ↔ ⁅(v 0)⁻¹, (v 1)⁻¹⁆ = ⁅(ι a)⁻¹, (ι b)⁻¹⁆ := by
   simp [mul_eq_one_iff_eq_inv]
 
-/-- If `a` and `b` do not commute, `[x, y] = [a, b]` is a standard orientable quadratic equation
-of genus one. -/
-theorem isStandard_oneCommutatorEquation (hab : ¬Commute a b) :
+/-- The equation `[x, y] = [a, b]` is a standard orientable quadratic equation of genus one: it
+has a nontrivial constant if `a` and `b` do not commute, and is `[x, y] = 1` otherwise. -/
+theorem isStandard_oneCommutatorEquation (a b : G) :
     ∃ S : Quadratic.Standard G (Fin 2),
       S.toWord = oneCommutatorEquation a b ∧ S.IsOrientable ∧ S.genus = 1 := by
-  have hd : ⁅a⁻¹, b⁻¹⁆⁻¹ ≠ 1 := by
-    simpa [commutatorElement_eq_one_iff_commute] using fun h : Commute b a => hab h.symm
-  exact ⟨.orientableCoeff 1 0 one_pos ![0] ![1] Fin.elim0 (by decide) Fin.elim0
-    (fun j => j.elim0) _ hd, by simp [Quadratic.Standard.toWord_def, oneCommutatorEquation_def],
-    by simp, by simp⟩
-
-/-- Over the free group `F(a, b)`, the equation `[x, y] = [a, b]` is a standard orientable
-quadratic equation of genus one. -/
-theorem isStandard_oneCommutatorEquation_of :
-    ∃ S : Quadratic.Standard (FreeGroup (Fin 2)) (Fin 2),
-      S.toWord = oneCommutatorEquation (FreeGroup.of 0) (FreeGroup.of 1) ∧
-        S.IsOrientable ∧ S.genus = 1 :=
-  isStandard_oneCommutatorEquation fun h => absurd (FreeGroup.eq_of_commute_of_of h) (by decide)
+  by_cases hd : ⁅a⁻¹, b⁻¹⁆⁻¹ = 1
+  · exact ⟨.orientable 1 one_pos ![0] ![1] (by decide),
+      by simp [Quadratic.Standard.toWord_def, oneCommutatorEquation_def, hd], by simp, by simp⟩
+  · exact ⟨.orientableCoeff 1 0 one_pos ![0] ![1] Fin.elim0 (by decide) Fin.elim0
+      (fun j => j.elim0) _ hd, by simp [Quadratic.Standard.toWord_def, oneCommutatorEquation_def],
+      by simp, by simp⟩
 
 /-- The solutions of the bounded-twist system: the multipliers commute with the pivots of the
 twist moves of `(a, b)`, and `(x, y)` is the pair reached by the six moves. -/
