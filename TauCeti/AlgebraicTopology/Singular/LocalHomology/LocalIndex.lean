@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Degree
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.OpenEmbedding
+import Mathlib.Topology.Homotopy.Affine
 
 /-!
 # The local index of a map at an isolated point of its fibre
@@ -52,6 +53,8 @@ proper map whose fibre over a point of a connected target is a single such point
   local homeomorphism has local index `±1`.
 * `TauCeti.HomologicalOrientation.degree_eq_one_or_eq_neg_one_of_isLocalHomeomorphOn`: a proper
   map with a one-point fibre, at whose point it is a local homeomorphism, has degree `±1`.
+* `TauCeti.HomologicalOrientation.localIndex_addRight`: translations of a finite-dimensional real
+  normed space have local index one, being properly homotopic to the identity.
 
 ## References
 
@@ -368,6 +371,42 @@ theorem degree_eq_one_or_eq_neg_one_of_isLocalHomeomorphOn [PreconnectedSpace N]
     o.degree o' hE f = 1 ∨ o.degree o' hE f = -1 := by
   rw [← o.localDegree_eq_degree o' hE hF hf (f x), o.localDegree_eq_localIndex o' hE hF f hfib]
   exact o.localIndex_eq_one_or_eq_neg_one_of_isLocalHomeomorphOn o' hF hs hx
+
+end HomologicalOrientation
+
+namespace HomologicalOrientation
+
+variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] {n : ℕ}
+  (o : HomologicalOrientation E E n) (hE : finrank ℝ E = n)
+
+include hE in
+/-- Translations preserve every orientation of a finite-dimensional real normed space: the
+translation by `v` has local index `1` at every point, since it is properly homotopic to the
+identity. -/
+@[simp]
+theorem localIndex_addRight (v x : E) : o.localIndex o (ContinuousMap.addRight v) x = 1 := by
+  -- The straight-line homotopy from the identity to the translation is proper: it is the
+  -- projection `[0, 1] × E → E` composed with the homeomorphism `(t, y) ↦ (t, y + t v)`.
+  have hH : IsProperMap (ContinuousMap.Homotopy.affine (ContinuousMap.id E)
+      (ContinuousMap.addRight v)) := by
+    let Φ : unitInterval × E ≃ₜ unitInterval × E :=
+      { toFun := fun p ↦ (p.1, p.2 + (p.1 : ℝ) • v)
+        invFun := fun p ↦ (p.1, p.2 - (p.1 : ℝ) • v)
+        left_inv := fun p ↦ by simp
+        right_inv := fun p ↦ by simp
+        continuous_toFun := by fun_prop
+        continuous_invFun := by fun_prop }
+    have h : ⇑(ContinuousMap.Homotopy.affine (ContinuousMap.id E) (ContinuousMap.addRight v)) =
+        Prod.snd ∘ Φ := by
+      ext p
+      simp [Φ, AffineMap.lineMap_apply_module', add_comm]
+    rw [h]
+    exact isProperMap_snd_of_compactSpace.comp Φ.isProperMap
+  have hdeg := o.degree_eq_of_homotopy o hE hE (ContinuousMap.Homotopy.affine _ _) hH
+  rw [degree_id] at hdeg
+  have hfib : ContinuousMap.addRight v ⁻¹' {x + v} = {x} := by ext; simp
+  rw [← o.localDegree_eq_localIndex o hE hE _ hfib,
+    o.localDegree_eq_degree o hE hE (Homeomorph.addRight v).isProperMap, ← hdeg]
 
 end HomologicalOrientation
 
