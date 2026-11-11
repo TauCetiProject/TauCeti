@@ -71,7 +71,7 @@ theorem monotoneOn_elementaryEnergy (hτ : MonotoneOn τ (Iic n)) (ω : Ω) :
   intro k hk _
   have hk' := mem_range.mp hk
   exact mul_nonneg (sq_nonneg _) (sub_nonneg.mpr (NNReal.coe_le_coe.mpr
-    (hτ (by simp only [mem_Iic]; omega) (by simpa using (mem_range.mp hk).trans_le hj)
+    (hτ (by simp only [mem_Iic]; omega) (by simpa using hk'.trans_le hj)
       (Nat.le_succ k))))
 
 /-- On a nondecreasing grid energy is nonnegative. -/
@@ -107,7 +107,8 @@ theorem stronglyMeasurable_elementaryEnergy (hτ : MonotoneOn τ (Iic n))
   intro i hi
   have hij : i ≤ j := Nat.lt_succ_iff.mp (mem_range.mp hi)
   exact (((ha i (hij.trans_lt hj)).mono
-    (ℱ.mono (hτ (hij.trans hj.le) hj.le hij))).pow 2).mul stronglyMeasurable_const
+    (ℱ.mono (hτ (mem_Iic.mpr (hij.trans hj.le)) (mem_Iic.mpr hj.le) hij))).pow 2).mul
+      stronglyMeasurable_const
 
 /-- Retain precisely the intervals whose inclusion stays within the original cumulative
 energy budget, setting heights on zero-length intervals to zero as well.
@@ -120,8 +121,21 @@ private theorem energyCutoff_eq_of_elementaryEnergy_le (hτ : MonotoneOn τ (Iic
     {δ : ℝ} {ω : Ω} (hE : elementaryEnergy τ a n ω ≤ δ) {i : ℕ} (hi : i < n) :
     energyCutoff τ a δ i ω = if τ i < τ (i + 1) then a i ω else 0 := by
   have hiδ := (monotoneOn_elementaryEnergy (a := a) hτ ω
-    hi (by simp) hi).trans hE
+    (mem_Iic.mpr (Nat.succ_le_of_lt hi)) (by simp) (Nat.succ_le_of_lt hi)).trans hE
   by_cases hstep : τ i < τ (i + 1) <;> simp [energyCutoff, hstep, hiδ]
+
+private theorem energyCutoff_mul_sub_eq_of_elementaryEnergy_le
+    (hτ : MonotoneOn τ (Iic n)) {δ : ℝ} {ω : Ω}
+    (hE : elementaryEnergy τ a n ω ≤ δ) {i : ℕ} (hi : i < n)
+    (g : ℝ → ℝ) (f : ℝ≥0 → ℝ) :
+    g (energyCutoff τ a δ i ω) * (f (τ (i + 1)) - f (τ i)) =
+      g (a i ω) * (f (τ (i + 1)) - f (τ i)) := by
+  rw [energyCutoff_eq_of_elementaryEnergy_le hτ hE hi]
+  split_ifs with hstep
+  · rfl
+  · have heq : τ (i + 1) = τ i := le_antisymm (le_of_not_gt hstep)
+      (hτ (mem_Iic.mpr hi.le) (mem_Iic.mpr (Nat.succ_le_of_lt hi)) (Nat.le_succ i))
+    simp [heq]
 
 private theorem stronglyMeasurable_energyCutoff (hτ : MonotoneOn τ (Iic n))
     (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i)) (δ : ℝ) {i : ℕ} (hi : i < n) :
@@ -164,13 +178,8 @@ private theorem elementaryEnergy_energyCutoff_le (hτ : MonotoneOn τ (Iic n))
           elementaryEnergy τ a (n + 1) ω := by
         apply sum_congr rfl
         intro i hi
-        have hi' := mem_range.mp hi
-        rw [energyCutoff_eq_of_elementaryEnergy_le hτ hn hi']
-        split_ifs with hstep
-        · rfl
-        · have heq : τ (i + 1) = τ i := le_antisymm (le_of_not_gt hstep)
-            (hτ hi'.le hi' (Nat.le_succ i))
-          simp [heq]
+        exact energyCutoff_mul_sub_eq_of_elementaryEnergy_le hτ hn (mem_range.mp hi)
+          (fun x ↦ x ^ 2) (fun t ↦ (t : ℝ))
       rw [heq]
       exact hn
     · rw [elementaryEnergy_succ]
@@ -226,14 +235,8 @@ theorem IsFilteredPreBrownianReal.measure_abs_sum_mul_sub_ge_le
           ∑ i ∈ range n, a i ω * (W (τ (i + 1)) ω - W (τ i) ω) := by
         apply sum_congr rfl
         intro i hi
-        have hi' := mem_range.mp hi
-        dsimp only [b]
-        rw [energyCutoff_eq_of_elementaryEnergy_le hτ (le_of_not_gt hE) hi']
-        split_ifs with hstep
-        · rfl
-        · have heq : τ (i + 1) = τ i := le_antisymm (le_of_not_gt hstep)
-            (hτ hi'.le hi' (Nat.le_succ i))
-          simp [heq]
+        exact energyCutoff_mul_sub_eq_of_elementaryEnergy_le hτ (le_of_not_gt hE)
+          (mem_range.mp hi) id (fun t ↦ W t ω)
       simpa only [mem_ofPred_eq, hsum] using hω
   calc
     _ ≤ P ({ω | ε ≤ |∑ i ∈ range n, b i ω * (W (τ (i + 1)) ω - W (τ i) ω)|} ∪
