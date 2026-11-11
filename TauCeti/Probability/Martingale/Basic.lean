@@ -161,16 +161,23 @@ variable {Ω ι E : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [LinearO
   [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   {ℱ : Filtration ι mΩ} {X : ι → Ω → E} {Y : ι → Ω → ℝ}
 
+omit [CompleteSpace E] in
 /-- A martingale frozen at a fixed date `w`, `t ↦ X (min w t)`, is a martingale. -/
 theorem Martingale.const_min [SigmaFiniteFiltration μ ℱ] (hX : Martingale X ℱ μ) (w : ι) :
     Martingale (fun t ↦ X (min w t)) ℱ μ := by
+  -- `X w` is integrable: otherwise its conditional expectation would vanish, forcing `X w = 0`
+  have hint : Integrable (X w) μ := by
+    by_contra h
+    have h0 := hX.condExp_ae_eq (le_refl w)
+    rw [condExp_of_not_integrable h] at h0
+    exact h ((integrable_zero _ _ _).congr h0)
   refine ⟨fun t ↦ hX.stronglyAdapted.stronglyMeasurable_le (min_le_right _ _),
     fun s t hst ↦ ?_⟩
   beta_reduce
   rcases le_or_gt w s with hws | hsw
   · rw [min_eq_left (hws.trans hst), min_eq_left hws,
       condExp_of_stronglyMeasurable (ℱ.le s) ((hX.stronglyAdapted w).mono (ℱ.mono hws))
-        (hX.integrable w)]
+        hint]
   · rw [min_eq_right hsw.le]
     exact hX.condExp_ae_eq (le_min hsw.le hst)
 
