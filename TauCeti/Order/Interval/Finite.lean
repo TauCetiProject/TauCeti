@@ -6,13 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fintype.Order
-public import Mathlib.Order.Interval.Finset.Defs
 
 /-!
 # Intervals avoiding a finite set of points
-
-Every finite linear order is a `LocallyFiniteOrderBot` (`TauCeti.locallyFiniteOrderBotOfFintype`,
-not an instance).
 
 A finite family of points of a directed order without a top element is bounded above, so an
 open interval beyond it contains a point.
@@ -27,14 +23,6 @@ public section
 open Set
 
 namespace TauCeti
-
-/-- Every finite linear order is a `LocallyFiniteOrderBot`, with `Finset.Iic a` the elements below
-`a`. Mathlib's `LDL` decomposition is stated for such an index type; the results below do not depend
-on the choice of instance, so they build this one inside their proofs. It is not an instance, so it
-never competes with a `LocallyFiniteOrderBot` that the index type already carries. -/
-abbrev locallyFiniteOrderBotOfFintype (n : Type*) [LinearOrder n] [Fintype n] :
-    LocallyFiniteOrderBot n :=
-  LocallyFiniteOrderBot.ofIic n (fun a => Finset.univ.filter (· ≤ a)) (by simp)
 
 /-- There is a nonempty open interval avoiding a finite family of points in a nonempty directed
 order without a maximal element. -/

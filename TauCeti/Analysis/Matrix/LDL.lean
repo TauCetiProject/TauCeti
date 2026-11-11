@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Matrix.LDL
 import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
 import TauCeti.LinearAlgebra.Matrix.Triangular
-import TauCeti.Order.Interval.Finite
 
 /-!
 # The diagonals of the LDL decomposition
@@ -36,6 +35,14 @@ Together these give the Cholesky factorization over `ℝ` or `ℂ`: writing `S =
 public section
 
 open scoped ComplexOrder Matrix
+
+/-- Every finite linear order is a `LocallyFiniteOrderBot`, with `Finset.Iic a` the elements below
+`a`. This is useful for applying results stated for a `LocallyFiniteOrderBot` index type, such as
+Mathlib's `LDL` decomposition, to any finite linear order. It is not an instance, so it never
+competes with a `LocallyFiniteOrderBot` that the index type already carries. -/
+abbrev Fintype.toLocallyFiniteOrderBot (n : Type*) [LinearOrder n] [Fintype n] :
+    LocallyFiniteOrderBot n :=
+  LocallyFiniteOrderBot.ofIic n (fun a => Finset.univ.filter (· ≤ a)) (by simp)
 
 namespace TauCeti
 
@@ -79,7 +86,7 @@ triangular `B` with positive diagonal. Writing the LDL decomposition as `S = L D
 lower unitriangular and `D` diagonal with positive real entries, take `B = √D Lᴴ`. -/
 theorem _root_.Matrix.PosDef.exists_isUpperTriangular_conjTranspose_mul_self_eq :
     ∃ B : Matrix n n 𝕜, B.IsUpperTriangular ∧ (∀ i, 0 < B i i) ∧ Bᴴ * B = S := by
-  let := TauCeti.locallyFiniteOrderBotOfFintype n
+  let := Fintype.toLocallyFiniteOrderBot n
   have hd := LDL.diagEntries_pos hS
   -- the diagonal entries of `D` are the positive reals `re (d i)`
   have hre (i : n) : ((RCLike.re (LDL.diagEntries hS i) : ℝ) : 𝕜) = LDL.diagEntries hS i := by
@@ -116,7 +123,7 @@ there is an upper triangular `P` with `Pᴴ * S * P = 1`. If `L * S * Lᴴ = D` 
 decomposition, then `P = Lᴴ * D^{-1/2}`. -/
 theorem exists_isUpperTriangular_conjTranspose_mul_mul_eq_one (hS : S.PosDef) :
     ∃ P : Matrix n n 𝕜, P.IsUpperTriangular ∧ Pᴴ * S * P = 1 := by
-  let := TauCeti.locallyFiniteOrderBotOfFintype n
+  let := Fintype.toLocallyFiniteOrderBot n
   have hd : ∀ i, ∃ x : ℝ, 0 < x ∧ (x : 𝕜) = LDL.diagEntries hS i := fun i =>
     RCLike.pos_iff_exists_ofReal.1 (LDL.diagEntries_pos hS i)
   choose x hx hxd using hd
