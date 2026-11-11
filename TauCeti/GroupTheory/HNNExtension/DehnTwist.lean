@@ -88,6 +88,11 @@ def dehnTwist (z : Subgroup.centralizer (A : Set G)) : MulAut (HNNExtension G A 
   apply eq_inv_of_mul_eq_one_left
   rw [← dehnTwist_mul, inv_mul_cancel, dehnTwist_one]
 
+/-- Powers of an HNN twist are the twists by the powers of its parameter. -/
+@[simp] theorem dehnTwist_zpow (z : Subgroup.centralizer (A : Set G)) (k : ℤ) :
+    dehnTwist φ (z ^ k) = dehnTwist φ z ^ k :=
+  map_zpow (MonoidHom.mk' (dehnTwist φ) (dehnTwist_mul φ)) z k
+
 /-- The stable-letter formula recovers the parameter, so the family of twists is faithful. -/
 theorem dehnTwist_injective : Function.Injective (dehnTwist φ) := by
   intro z w h
