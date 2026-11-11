@@ -262,16 +262,23 @@ end Lift
 
 /-! ### The trivial action -/
 
+/-- The trivial action of a monoid on a graph inverts no dart. -/
+theorem one_apply_smul_ne_rev (M : Type*) [MulOneClass M] (Γ : SerreGraph.{u, v}) (g : M)
+    (e : Γ.E) : (1 : M →* Γ.Aut) g • e ≠ Γ.rev e := by
+  simpa using (Γ.rev_ne e).symm
+
 variable (Γ) in
 /-- For the trivial action the projection onto the quotient graph is bijective on vertices: the
 quotient is the graph itself. -/
-theorem quotientMap_one_mapV_bijective (h : ∀ (g : G) (e : Γ.E), (1 : G →* Γ.Aut) g • e ≠ Γ.rev e) :
+theorem quotientMap_one_mapV_bijective
+    (h : ∀ (g : G) (e : Γ.E), (1 : G →* Γ.Aut) g • e ≠ Γ.rev e := one_apply_smul_ne_rev G Γ) :
     Function.Bijective (Γ.quotientMap (1 : G →* Γ.Aut) h).mapV :=
   ⟨quotientMap_mapV_injective_iff.mpr fun _ _ => one_smul _ _, quotientMap_mapV_surjective _ _ _⟩
 
 variable (Γ) in
 /-- For the trivial action the projection onto the quotient graph is bijective on darts. -/
-theorem quotientMap_one_mapE_bijective (h : ∀ (g : G) (e : Γ.E), (1 : G →* Γ.Aut) g • e ≠ Γ.rev e) :
+theorem quotientMap_one_mapE_bijective
+    (h : ∀ (g : G) (e : Γ.E), (1 : G →* Γ.Aut) g • e ≠ Γ.rev e := one_apply_smul_ne_rev G Γ) :
     Function.Bijective (Γ.quotientMap (1 : G →* Γ.Aut) h).mapE :=
   ⟨quotientMap_mapE_injective_iff.mpr fun _ _ => one_smul _ _, quotientMap_mapE_surjective _ _ _⟩
 
