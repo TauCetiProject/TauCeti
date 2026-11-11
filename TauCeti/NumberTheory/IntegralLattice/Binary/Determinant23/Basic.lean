@@ -243,7 +243,6 @@ private theorem isometry_eq_one_of_first_basis
     rcases mul_eq_zero.mp hprod with hm | hm
     · exact hm
     · omega
-  have hn' : n = 1 := by omega
   have hx : x = binaryDeterminant23Basis 1 := by
     apply binaryDeterminant23Basis.repr.injective
     ext i
