@@ -74,7 +74,7 @@ theorem regularizedAbs_eq_abs (δ : ℝ) (hδ : 0 < δ) {x : ℝ}
     (hx : δ ≤ |x|) : regularizedAbs δ hδ x = |x| := by
   have hpos (x : ℝ) (hx : δ ≤ x) : regularizedAbs δ hδ x = x := by
     let φ := absoluteValueBump δ hδ
-    rw [regularizedAbs_eq_integral]
+    simp only [regularizedAbs_eq_integral]
     have heq : (fun t : ℝ ↦ φ.normed volume t * |x - t|) =
         fun t : ℝ ↦ φ.normed volume t * x - φ.normed volume t * t := by
       funext t
@@ -108,7 +108,7 @@ theorem abs_le_regularizedAbs (δ : ℝ) (hδ : 0 < δ) (x : ℝ) :
         ∫ t : ℝ, |φ.normed volume t * (x - t)| := abs_integral_le_integral_abs
     _ = regularizedAbs δ hδ x := by
       simp only [abs_mul, abs_of_nonneg (φ.nonneg_normed _)]
-      rw [regularizedAbs_eq_integral]
+      simp only [regularizedAbs_eq_integral]
       rfl
 
 /-- The value error of regularized absolute value is at most the smoothing radius. -/
@@ -129,15 +129,16 @@ theorem regularizedAbs_le_abs_add (δ : ℝ) (hδ : 0 < δ) (x : ℝ) :
 theorem convexOn_regularizedAbs (δ : ℝ) (hδ : 0 < δ) :
     ConvexOn ℝ univ (regularizedAbs δ hδ) := by
   let φ := absoluteValueBump δ hδ
-  simp_rw [regularizedAbs_eq_integral]
+  simp_simp only [regularizedAbs_eq_integral]
   apply integral_convexOn_of_integrand_ae convex_univ
   · apply Filter.Eventually.of_forall
     intro t
     have hc : ConvexOn ℝ (univ : Set ℝ) (fun x ↦ |x - t|) := by
       simpa only [Real.norm_eq_abs, preimage_univ, Function.comp_def, sub_eq_add_neg] using
         (convexOn_norm (E := ℝ) convex_univ).translate_left (-t)
-    simpa only [smul_eq_mul] using hc.smul (φ.nonneg_normed t)
-  · exact fun x _ ↦ φ.integrable_normed_mul_abs_sub x
+    simpa +instances only [smul_eq_mul, φ, absoluteValueBump] using hc.smul (φ.nonneg_normed t)
+  · intro x _
+    simpa only [φ, absoluteValueBump] using φ.integrable_normed_mul_abs_sub x
 
 /-- The derivative of the smooth regularization has magnitude at most one. -/
 theorem abs_deriv_regularizedAbs_le_one (δ : ℝ) (hδ : 0 < δ) (x : ℝ) :
