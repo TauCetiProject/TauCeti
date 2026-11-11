@@ -40,6 +40,9 @@ the position and the frequency.
 * `TauCeti.Symbol.sharpTerm`: the terms of the expansion, with their closed form
   `TauCeti.Symbol.coefficient_sharpTerm` and the Leibniz rules
   `TauCeti.Symbol.spatialDeriv_sharpTerm` and `TauCeti.Symbol.coefficient_frequencyDeriv_sharpTerm`.
+  The terms are local in the right factor over the positions where the left factor is nonzero
+  (`TauCeti.Symbol.sharpTerm_congr_right`), and a left factor depending only on the position
+  passes through them (`TauCeti.Symbol.coefficient_sharpTerm_ofSpatial_comp`).
 * `TauCeti.Symbol.sharpRemainder a b hb N`: the remainder `a # b - ∑_{k < N} sharpTerm a b k`, a
   symbol of order `m' + m - N`.
 * `TauCeti.Symbol.sharp_eq_sum_sharpTerm_add_sharpRemainder`: **the composition expansion**
@@ -190,6 +193,41 @@ theorem coefficient_frequencyDeriv_sharpTerm (l : Fin n) (a : Symbol n W U m')
       ← Finset.sum_add_distrib]
     refine congrArg _ (Finset.sum_congr rfl fun j _ ↦ ?_)
     rw [ih, frequencyDeriv_comm, spatialDeriv_frequencyDeriv_comm]
+
+/-- **Locality of the composition expansion in the right factor.** If `c` vanishes at every
+position outside a set `S`, and `a₁` and `a₂` agree near every point `(x, ξ)` with `x ∈ S`, then
+the terms `sharpTerm c a₁ k` and `sharpTerm c a₂ k` of the composition expansion agree. -/
+theorem sharpTerm_congr_right {S : Set (CoordinateSpace n)} {c : Symbol n W U m'}
+    {a₁ a₂ : Symbol n V W m} (hc : ∀ x ∉ S, ∀ ξ, c.coefficient (x, ξ) = 0)
+    (ha : ∀ x ∈ S, ∀ ξ, a₁.coefficient =ᶠ[nhds (x, ξ)] a₂.coefficient) (k : ℕ) :
+    c.sharpTerm a₁ k = c.sharpTerm a₂ k := by
+  ext1
+  funext ⟨x, ξ⟩
+  rw [coefficient_sharpTerm, coefficient_sharpTerm]
+  refine congrArg _ (Finset.sum_congr rfl fun w _ ↦ ?_)
+  by_cases hx : x ∈ S
+  · rw [(ha x hx ξ).mixedDeriv_eq]
+  · have h0 : (fun η ↦ c.coefficient (x, η)) = 0 := funext (hc x hx)
+    simp only [mixedDeriv_def, coordinateDeriv_nil, h0, coordinateDeriv_zero, Pi.zero_apply,
+      ContinuousLinearMap.zero_comp]
+
+/-- A left factor `f(x)` depending only on the position passes through the terms of the
+composition expansion: the term of `(f ∘ b, a)` is `f(x)` composed with the term of `(b, a)`. -/
+theorem coefficient_sharpTerm_ofSpatial_comp {U' : Type*} [NormedAddCommGroup U']
+    [NormedSpace ℂ U'] {f : CoordinateSpace n → U →L[ℂ] U'} (hf : ContDiff ℝ ∞ f)
+    (b : Symbol n W U m') (a : Symbol n V W m) (k : ℕ) (x ξ : CoordinateSpace n) :
+    (((ofSpatial f hf).comp b).sharpTerm a k).coefficient (x, ξ) =
+      (f x).comp ((b.sharpTerm a k).coefficient (x, ξ)) := by
+  have h : ∀ w : Fin k → Fin n,
+      coordinateDeriv (List.ofFn w) (fun η ↦ (f x).comp (b.coefficient (x, η))) ξ =
+        (f x).comp (coordinateDeriv (List.ofFn w) (fun η ↦ b.coefficient (x, η)) ξ) := fun w ↦
+    (((ContinuousLinearMap.compL ℂ W U U') (f x)).restrictScalars ℝ).coordinateDeriv_comp_left
+      (List.ofFn w) ((b.contDiff_coefficient.comp (contDiff_prodMk_right x)).of_le
+        (by exact_mod_cast le_top)) ξ
+  rw [coefficient_sharpTerm, coefficient_sharpTerm]
+  ext v
+  simp only [smul_apply, sum_apply, ContinuousLinearMap.comp_apply, map_smul, map_sum,
+    mixedDeriv_def, coordinateDeriv_nil, coefficient_comp, coefficient_ofSpatial, h]
 
 end Term
 

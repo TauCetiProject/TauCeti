@@ -12,6 +12,7 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.Continuous
 import TauCeti.Analysis.Fourier.Parametric
+import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.MeasureTheory.Integral.SchurTest
 
@@ -97,6 +98,8 @@ families of operators.
   uniformly over the symbols vanishing outside a fixed compact set.
 * `TauCeti.Symbol.quantizeSobolev_add`, `TauCeti.Symbol.quantizeSobolev_smul`,
   `TauCeti.Symbol.quantizeSobolev_sub`: linearity of `Op(a)` in the symbol.
+* `TauCeti.Symbol.toDistr_quantizeSobolev_eq`: the operators `Op(a)` on the different spaces
+  `H^s` are compatible: the distribution `Op(a) u` depends only on the distribution `u`.
 * `TauCeti.Symbol.continuous_quantizeSobolev`: continuity in operator norm along continuous
   families of symbols vanishing outside a fixed compact set.
 
@@ -865,6 +868,30 @@ theorem quantizeSobolev_sub {b : Symbol n V W m} (ha : a.HasCompactSpatialSuppor
     (a - b).quantizeSobolev hab s = a.quantizeSobolev ha s - b.quantizeSobolev hb s := by
   rw [eq_sub_iff_add_eq, ← quantizeSobolev_add hab hb (by rwa [sub_add_cancel]) s]
   exact quantizeSobolev_congr (sub_add_cancel a b) _ _ s
+
+/-- **Compatibility across the Sobolev scale.** The tempered distribution `Op(a) u` depends only
+on the coefficient of `a` and on the tempered distribution `u`: symbols with equal coefficients,
+possibly of different orders, applied to the same distribution viewed in `H^s` and in `H^{s'}`, give
+the same distribution. -/
+theorem toDistr_quantizeSobolev_eq {m' : ℝ} {a' : Symbol n V W m'}
+    (ha : a.HasCompactSpatialSupport) (ha' : a'.HasCompactSpatialSupport)
+    (h : a.coefficient = a'.coefficient) {s s' : ℝ} {u : H^{s}(CoordinateSpace n, V)}
+    {u' : H^{s'}(CoordinateSpace n, V)} (hu : u.toDistr = u'.toDistr) :
+    (a.quantizeSobolev ha s u).toDistr = (a'.quantizeSobolev ha' s' u').toDistr := by
+  wlog hss : s ≤ s' generalizing m m' a a' s s'
+  · exact (this ha' ha h.symm hu.symm (le_of_not_ge hss)).symm
+  obtain rfl : u = BesselPotentialSpace.inclusion hss u' := BesselPotentialSpace.ext (by simp [hu])
+  -- Both sides, followed by the inclusion into `H^{min (s - m) (s' - m')}`, are continuous linear
+  -- maps on `H^{s'}` which agree on Schwartz functions.
+  have key : (BesselPotentialSpace.inclusion (min_le_left (s - m) (s' - m'))).comp
+      ((a.quantizeSobolev ha s).comp (BesselPotentialSpace.inclusion hss)) =
+      (BesselPotentialSpace.inclusion (min_le_right (s - m) (s' - m'))).comp
+        (a'.quantizeSobolev ha' s') := by
+    refine BesselPotentialSpace.continuousLinearMap_ext (p := 2) ENNReal.ofNat_ne_top fun v ↦
+      BesselPotentialSpace.ext ?_
+    ext φ
+    simp [h]
+  simpa using congrArg (fun T ↦ (T u').toDistr) key
 
 /-- **Continuity in the symbol.** If `t ↦ a t` is a continuous family of symbols of order `m`
 that all vanish at positions outside a fixed compact set `K`, then `t ↦ Op(a t)` is continuous
