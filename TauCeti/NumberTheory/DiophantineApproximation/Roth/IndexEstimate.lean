@@ -77,11 +77,11 @@ variable {K : Type*} [Field K] [NumberField K]
 weights `r` sum to at most `2 r₀` and `m ≤ r₀ + 1`, the height of an `m × m` determinant of
 Hasse derivatives of `P` is at most `m (h(P) + 4 r₀ [K : ℚ])`. -/
 private theorem logHeight_det_hasseDeriv_le_mul {n m : ℕ} {r : Fin (n + 1) → ℕ}
-    {P : MvPolynomial (Fin (n + 1)) K} (hP : P ≠ 0) (hdeg : ∀ j, P.degreeOf j ≤ r j)
+    {P : MvPolynomial (Fin (n + 1)) K} (hdeg : ∀ j, P.degreeOf j ≤ r j)
     (hsum : ∑ j, (r j : ℝ) ≤ 2 * r 0) (hm : m ≤ r 0 + 1) (E : Fin m → Fin m → Fin (n + 1) →₀ ℕ) :
     (Matrix.of fun k l ↦ hasseDeriv (E k l) P).det.logHeight ≤
       m * (P.logHeight + 4 * r 0 * finrank ℚ K) := by
-  have h := logHeight_det_hasseDeriv_le hP hdeg E
+  have h := logHeight_det_hasseDeriv_le hdeg E
   rw [Fintype.card_fin, NumberField.totalWeight_eq_finrank, ← sum_mul] at h
   have hD : (0 : ℝ) ≤ finrank ℚ K := Nat.cast_nonneg _
   have hm' : (m : ℝ) ≤ r 0 + 1 := by exact_mod_cast hm
@@ -201,7 +201,7 @@ private theorem weightedIndex_le_ofReal_of_half_le {n : ℕ} {r : Fin (n + 1 + 1
 /-- The heights of the two Wronskians in the separation `P = ∑ fₖ gₖ(Xₙ)` are each at most
 `m (h(P) + 4 r₀ [K : ℚ])`, as their product is a determinant of Hasse derivatives of `P`. -/
 private theorem logHeight_wronskians_le {n m : ℕ} {r : Fin (n + 1 + 1) → ℕ}
-    {P : MvPolynomial (Fin (n + 1 + 1)) K} (hP : P ≠ 0) (hdeg : ∀ j, P.degreeOf j ≤ r j)
+    {P : MvPolynomial (Fin (n + 1 + 1)) K} (hdeg : ∀ j, P.degreeOf j ≤ r j)
     (hsum : ∑ j, (r j : ℝ) ≤ 2 * r 0) (hm : m ≤ r 0 + 1)
     {μ : Fin m → Fin (n + 1 + 1) →₀ ℕ} {f : Fin m → MvPolynomial (Fin (n + 1 + 1)) K}
     {g : Fin m → Polynomial K} (hμl : ∀ k, μ k (Fin.last (n + 1)) = 0)
@@ -211,7 +211,7 @@ private theorem logHeight_wronskians_le {n m : ℕ} {r : Fin (n + 1 + 1) → ℕ
     (hWg : Polynomial.hasseWronskian g ≠ 0) :
     (genWronskian μ f).logHeight ≤ m * (P.logHeight + 4 * r 0 * finrank ℚ K) ∧
       (Polynomial.hasseWronskian g).logHeight ≤ m * (P.logHeight + 4 * r 0 * finrank ℚ K) := by
-  have hheight := logHeight_det_hasseDeriv_le_mul hP hdeg hsum hm
+  have hheight := logHeight_det_hasseDeriv_le_mul hdeg hsum hm
     (fun k l ↦ μ k + Finsupp.single (Fin.last (n + 1)) (l : ℕ))
   have hdet : (Matrix.of fun k l : Fin m ↦
       hasseDeriv (μ k + Finsupp.single (Fin.last (n + 1)) (l : ℕ)) P).det =
@@ -364,7 +364,7 @@ private theorem indexBound_succ {n : ℕ} (ih : IndexBound K n) : IndexBound K (
   have hsum : ∑ j, (r j : ℝ) ≤ 2 * r 0 :=
     Fin.sum_le_two_mul_of_two_mul_succ_le (fun _ ↦ Nat.cast_nonneg _) fun i ↦ by
       nlinarith [hratio i, Nat.cast_nonneg (α := ℝ) (r i.castSucc)]
-  obtain ⟨hWfh, hWgh⟩ := logHeight_wronskians_le hP hdeg hsum
+  obtain ⟨hWfh, hWgh⟩ := logHeight_wronskians_le hdeg hsum
     (hm'.trans (by have := hanti (Fin.zero_le (Fin.last (n + 1))); omega)) hμl hfv hPfg hWfl hWf
     hWg
   -- Lower bound: the indices of the two Wronskians add up to at least `m min (δ / 2) (δ² / 2)`,

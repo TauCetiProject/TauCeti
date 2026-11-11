@@ -71,6 +71,13 @@ theorem orderOf_ratio_dvd_sub_one {p : ℕ} (hp : p.Prime)
     hab (dvd_mul_of_dvd_right ((ZMod.natCast_eq_zero_iff b p).mp h) a)
   exact ZMod.orderOf_dvd_card_sub_one (mul_ne_zero ha (inv_ne_zero hb))
 
+/-- A prime does not divide the order of the ratio of two bases nonzero modulo it. -/
+theorem not_dvd_orderOf_ratio {p : ℕ} (hp : p.Prime)
+    {a b : ℕ} (hab : ¬ p ∣ a * b) :
+    ¬ p ∣ orderOf ((a : ZMod p) * (b : ZMod p)⁻¹) :=
+  fun h => Nat.not_dvd_of_pos_of_lt (Nat.sub_pos_of_lt hp.one_lt)
+    (Nat.sub_lt hp.pos one_pos) (h.trans (hp.orderOf_ratio_dvd_sub_one hab))
+
 /-- If neither base vanishes modulo a prime, the order of their ratio is positive. -/
 theorem orderOf_ratio_pos {p : ℕ} (hp : p.Prime)
     {a b : ℕ} (hab : ¬ p ∣ a * b) :

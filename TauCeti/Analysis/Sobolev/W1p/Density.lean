@@ -105,7 +105,7 @@ private theorem norm_gradient_truncCutoff_le {C : ℝ}
     (hbound : ∀ x, ‖fderiv ℝ (unitBump (E := E)) x‖ ≤ C) (n : ℕ) (x : E) :
     ‖∇ (truncCutoff n) x‖ ≤ C := by
   have hn : (0 : ℝ) < (n : ℝ) + 1 := by positivity
-  rw [gradient, LinearIsometryEquiv.norm_map]
+  rw [norm_gradient_eq_norm_fderiv]
   unfold truncCutoff
   rw [fderiv_comp_smul, norm_smul, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hn)]
   calc ((n : ℝ) + 1)⁻¹ * ‖fderiv ℝ (unitBump (E := E)) (((n : ℝ) + 1)⁻¹ • x)‖

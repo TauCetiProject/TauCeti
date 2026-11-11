@@ -267,7 +267,7 @@ theorem volume_carrier_inter_strip (h₀ : P.vertex 0 = .inr ∞) {i : Fin n} (h
   have hv := P.vertex_ne_inr_infty_of_vertex_zero h₀ hi
   have hv' := P.vertex_ne_inr_infty_of_vertex_zero h₀ hi'
   have hlt := P.re_toComplex_vertex_lt_of_vertex_zero h₀ hi hi'
-  rw [heq, volume_idealRegionAbove hρ (Complex.re_mem_Icc_of_normSq_sub_eq hρ.le hi₁).1 hlt.le
+  rw [heq, volume_idealRegionAbove hρ (Complex.re_mem_Icc_of_normSq_sub_eq hρ.le hi₁).1
     (Complex.re_mem_Icc_of_normSq_sub_eq hρ.le hi₂).2,
     vertexAngle_infty_of_re_lt hρ hv hv' hi₁ hi₂ hlt,
     vertexAngle_infty_of_lt_re hρ hv hv' hi₁ hi₂ hlt]
