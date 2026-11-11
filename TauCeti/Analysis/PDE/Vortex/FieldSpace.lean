@@ -419,17 +419,17 @@ theorem tendsto_normSq_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m :
   tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow (tendsto_sectionValue_mul_inv_pow hs hx hcont)
 
 /-- **The modulus bound in the affine field space.** For `s > 1`, every vortex in `A_m^s` with
-differentiable connection and `C²` section satisfies `|α| ≤ 1` everywhere. -/
+continuous connection and `C²` section satisfies `|α| ≤ 1` everywhere. -/
 theorem normSq_le_one_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m : ℕ} {s : ℝ}
     (hs : 1 < s) {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : x ∈ framedFieldSpace f m s)
-    (hb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hb₂ : Differentiable ℝ (fun w ↦ x w 1))
+    (hb₁ : Continuous (fun w ↦ x w 0)) (hb₂ : Continuous (fun w ↦ x w 1))
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0) (z : ℂ) :
     4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ 1 := by
   have hcont : Continuous x := by
     refine contDiff_zero.1 (contDiff_euclidean.2 fun i ↦ contDiff_zero.2 ?_)
     fin_cases i
-    exacts [hb₁.continuous, hb₂.continuous, hp.continuous, hq.continuous]
+    exacts [hb₁, hb₂, hp.continuous, hq.continuous]
   exact normSq_le_one_of_tendsto hp hq hsol
     (tendsto_normSq_of_mem_framedFieldSpace hs hx hcont) z
 

@@ -43,7 +43,7 @@ of the second section is required to have empty interior. This theorem does not 
 the factor from a prescribed zero divisor. -/
 theorem existsUnique_framedGauge_of_forall_section_eq_mul
     {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {h phase : ℂ → ℂ}
-    (hxb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hxb₂ : Differentiable ℝ (fun w ↦ x w 1))
+    (hxb₁ : Continuous (fun w ↦ x w 0)) (hxb₂ : Continuous (fun w ↦ x w 1))
     (hyb₁ : Differentiable ℝ (fun w ↦ y w 0)) (hyb₂ : Differentiable ℝ (fun w ↦ y w 1))
     (hyp : ContDiff ℝ 2 (fun w ↦ y w 2)) (hyq : ContDiff ℝ 2 (fun w ↦ y w 3))
     (hxsol : ∀ z, equation x z = 0) (hysol : ∀ z, equation y z = 0)
