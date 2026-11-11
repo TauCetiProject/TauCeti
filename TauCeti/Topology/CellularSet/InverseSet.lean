@@ -76,6 +76,7 @@ private theorem eq_of_apply_eq (hinj : InjOn f (closedBall 0 1 \ f ⁻¹' {y})) 
     x = x' :=
   hinj ⟨hx, hy⟩ ⟨hx', fun h' ↦ hy (h.trans h')⟩ h
 
+omit [FiniteDimensional ℝ E] in
 /-- **The image of the closed ball is not the whole sphere.** By the Jordan–Brouwer separation
 theorem the embedded sphere `f(∂Q)` separates `Sⁿ`, while `f` maps the open ball onto a connected
 set disjoint from `f(∂Q)`. -/
