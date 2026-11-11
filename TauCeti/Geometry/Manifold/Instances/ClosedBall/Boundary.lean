@@ -51,7 +51,7 @@ def sphereDiffeomorphBoundaryClosedBall :
       left_inv := fun _ ↦ rfl
       right_inv := fun _ ↦ rfl }
   contMDiff_toFun := by
-    apply (contMDiff_iff_comp_subtypeVal_boundary (n := n) (by simp)).mpr
+    apply (contMDiff_iff_comp_subtypeVal_boundary (n := n)).mpr
     apply (contMDiff_iff_comp_subtypeVal_closedBall (n := n + 1)).mpr
     exact contMDiff_coe_sphere
   contMDiff_invFun := by
