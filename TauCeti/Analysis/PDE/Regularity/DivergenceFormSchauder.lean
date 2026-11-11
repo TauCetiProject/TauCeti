@@ -831,54 +831,22 @@ private theorem mul_setIntegral_sq_le {f : EuclideanSpace ℝ (Fin (n + 1)) → 
           ((eLpNorm f q (volume.restrict T)).toReal ^ 2 * r ^ ((n : ℝ) + 1))) := by
   set ω := volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)
   have hω : 0 < ω := measureReal_ball_pos volume _ one_pos
-  have hq0 : (0 : ℝ) < q := by exact_mod_cast two_pos.trans_le hq
-  have : IsFiniteMeasure (volume.restrict (ball z r)) :=
-    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have hfB : MemLp f q (volume.restrict (ball z r)) :=
-    hf.mono_measure (Measure.restrict_mono hsub le_rfl)
-  have hf2 : MemLp f 2 (volume.restrict (ball z r)) :=
-    hfB.mono_exponent (by exact_mod_cast hq)
-  -- `∫_{B_r} f² = ‖f‖²_{L²(B_r)}`.
-  have hI : ∫ x in ball z r, f x ^ 2 = (eLpNorm f 2 (volume.restrict (ball z r))).toReal ^ 2 := by
-    rw [← Lp.norm_toLp f hf2, ← Lp.integral_norm_sq_eq_norm_sq]
-    refine integral_congr_ae ?_
-    filter_upwards [hf2.coeFn_toLp] with x hx
-    rw [hx, Real.norm_eq_abs, sq_abs]
-  -- Hölder's inequality on `B_r`: `‖f‖_{L²(B_r)} ≤ ‖f‖_{L^q(T)} |B_r|^{1/2-1/q}`.
-  have hH : (eLpNorm f 2 (volume.restrict (ball z r))).toReal ≤
-      (eLpNorm f q (volume.restrict T)).toReal *
-        volume.real (ball z r) ^ (1 / 2 - 1 / (q : ℝ)) := by
-    have h := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (μ := volume.restrict (ball z r))
-      (p := 2) (q := q) (by exact_mod_cast hq) hfB.aestronglyMeasurable
-    have hmono := eLpNorm_mono_measure f (p := (q : ENNReal))
-      (Measure.restrict_mono hsub (le_refl (volume : Measure (EuclideanSpace ℝ (Fin (n + 1))))))
-    rw [Measure.restrict_apply_univ, ENNReal.toReal_ofNat, ENNReal.coe_toReal] at h
-    have hT : eLpNorm f q (volume.restrict T) ≠ ⊤ := hf.eLpNorm_ne_top
-    refine (ENNReal.toReal_mono (ENNReal.mul_ne_top hT
-      (ENNReal.rpow_ne_top_of_nonneg ?_ measure_ball_lt_top.ne)) (h.trans
-        (mul_le_mul_left hmono _))).trans_eq ?_
-    · rw [sub_nonneg]
-      exact one_div_le_one_div_of_le two_pos (by exact_mod_cast hq)
-    · rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow]
-      rfl
   have hBr : volume.real (ball z r) = ω * r ^ ((n : ℝ) + 1) := by
     rw [Measure.addHaar_real_ball_of_pos _ z hr, finrank_euclideanSpace_fin, mul_comm,
       ← Real.rpow_natCast]
     push_cast
     rfl
-  have hsq : (volume.real (ball z r) ^ (1 / 2 - 1 / (q : ℝ))) ^ 2 =
-      ω ^ (1 - 2 / (q : ℝ)) * r ^ (((n : ℝ) + 1) * (1 - 2 / (q : ℝ))) := by
-    rw [hBr, ← Real.rpow_natCast, ← Real.rpow_mul (by positivity),
-      Real.mul_rpow hω.le (by positivity), ← Real.rpow_mul hr.le]
-    congr 2 <;> push_cast <;> ring
+  -- Hölder's inequality on `B_r`: `∫_{B_r} f² ≤ ‖f‖²_{L^q(T)} |B_r|^{1-2/q}`.
+  have h2 := hf.setIntegral_norm_sq_le_eLpNorm_sq_mul_measureReal_rpow (by exact_mod_cast hq)
+    hsub measure_ball_lt_top.ne
+  simp only [Real.norm_eq_abs, sq_abs, ENNReal.coe_toReal] at h2
+  rw [hBr, Real.mul_rpow hω.le (by positivity), ← Real.rpow_mul hr.le] at h2
   have hr2 : r ^ 2 * r ^ (((n : ℝ) + 1) * (1 - 2 / (q : ℝ))) =
       r ^ (2 * (1 - ((n : ℝ) + 1) / q)) * r ^ ((n : ℝ) + 1) := by
     rw [← Real.rpow_natCast r 2, ← Real.rpow_add hr, ← Real.rpow_add hr]
     congr 1
     push_cast
     ring
-  have h2 := pow_le_pow_left₀ ENNReal.toReal_nonneg hH 2
-  rw [mul_pow, hsq, ← hI] at h2
   calc 4 * r ^ 2 * ∫ x in ball z r, f x ^ 2
       ≤ 4 * r ^ 2 * ((eLpNorm f q (volume.restrict T)).toReal ^ 2 *
           (ω ^ (1 - 2 / (q : ℝ)) * r ^ (((n : ℝ) + 1) * (1 - 2 / (q : ℝ))))) := by gcongr
