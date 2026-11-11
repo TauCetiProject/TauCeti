@@ -219,11 +219,13 @@ variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {3} ℚ K]
 
 omit [IsCyclotomicExtension {3} ℚ K] in
 /-- A primary element `x` of the ring of integers of a number field generates an ideal whose norm
-is prime to `3`: a maximal ideal over `3` containing `x` would contain `x`, `3` and hence
-`x - 3 y = 2`, so `1 = 3 - 2`. (In `𝓞 K = ℤ[ω]`, writing `x = a + b ω` with `a ≡ 2` and `b ≡ 0`
-modulo `3`, the norm `a ^ 2 - a b + b ^ 2` is `1` modulo `3`.) -/
+is prime to `3`, in every number field `K`. (When `K = ℚ(ω)`, so `𝓞 K = ℤ[ω]`, writing
+`x = a + b ω` with `a ≡ 2` and `b ≡ 0` modulo `3` shows directly that the norm `a ^ 2 - a b + b ^ 2`
+is `1` modulo `3`.) -/
 theorem IsPrimaryEisenstein.absNorm_span_singleton_coprime_three {x : 𝓞 K}
     (hx : IsPrimaryEisenstein x) : (Ideal.absNorm (Ideal.span {x})).Coprime 3 := by
+  -- A maximal ideal over `3` containing `x` would contain `x`, `3` and hence `x - 3 y = 2`
+  -- (where `x = 2 + 3 y`), so `1 = 3 - 2`.
   refine ((Nat.Prime.coprime_iff_not_dvd Nat.prime_three).mpr fun h3 => ?_).symm
   obtain ⟨P, hPmax, hunder, hPdvd⟩ :=
     Ideal.exists_isMaximal_dvd_of_dvd_absNorm' Nat.prime_three _ h3
