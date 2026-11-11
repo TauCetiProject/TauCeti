@@ -95,7 +95,7 @@ theorem cutNorm_finiteGraphGraphon_sub_stepGraphonAvg (G : SimpleGraph (Fin m))
       (G.abs_card_interedges_sub_steppedCount_le_cutDiscrepancy P _ _) hm.le
   · rw [div_le_iff₀ hm]
     refine cutDiscrepancy_le_iff.2 fun S T => ?_
-    have h := abs_rectIntegral_le_cutNorm _ K S.measurableSet T.measurableSet
+    have h := abs_rectIntegral_le_cutNorm _ K S T
     rwa [hrect, abs_div, abs_of_pos hm, div_le_iff₀ hm] at h
 
 end SimpleGraph
