@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.ContMDiffMap
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
 /-!
@@ -27,7 +28,8 @@ and has injective derivative. Moreover, every atlas trivialization of a `C^n`
 vector bundle is a `C^n` partial diffeomorphism between its source in `TotalSpace F E` and its
 target `e.baseSet ×ˢ univ` in `B × F`, and hence a `C^n` local diffeomorphism in both directions.
 Read back through such a trivialization, a `C^n` family of vectors of the model fibre is a `C^n`
-section.
+section. Read in two linear trivializations, the restrictions of a function to a fibre differ by
+the coordinate change, so their first and second derivatives are transported by it.
 
 ## Main results
 
@@ -44,6 +46,9 @@ section.
   bundle as a `C^n` partial diffeomorphism and local diffeomorphism.
 * `Bundle.Trivialization.contMDiffOn_section_symm`: a `C^n` family of vectors of the model fibre,
   read through an atlas trivialization, is a `C^n` section over its base set.
+* `Bundle.Trivialization.fderiv_fiber_coordChangeL`,
+  `Bundle.Trivialization.fderiv_fderiv_fiber_coordChangeL_apply_apply`: first and second
+  derivatives along a fibre, read in two linear trivializations.
 -/
 
 public noncomputable section
@@ -250,5 +255,54 @@ theorem contMDiffOn_section_symm {U : Set B} (hU : IsOpen U) (hUe : U ⊆ e.base
     (hu : ContMDiffOn IB 𝓘(𝕜, F) n u U) :
     ContMDiffOn IB (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F x (e.symm x (u x))) U :=
   (e.contMDiffOn_section_iff hU hUe).mpr (hu.congr fun x hx ↦ by simp [e.apply_mk_symm (hUe hx)])
+
+end Bundle.Trivialization
+
+namespace Bundle.Trivialization
+
+section Fiber
+
+variable {R B F : Type*} {E : B → Type*} [Semiring R] [TopologicalSpace F] [AddCommMonoid F]
+  [Module R F] [TopologicalSpace B] [∀ x, AddCommMonoid (E x)] [∀ x, Module R (E x)]
+  [TopologicalSpace (TotalSpace F E)] (e e' : Trivialization F (π F E)) [e.IsLinear R]
+  [e'.IsLinear R] {b : B}
+
+/-- Read in two linear trivializations, the restrictions of a function to a fibre differ by the
+coordinate change of the trivializations. -/
+theorem fiber_comp_coordChangeL {X : Type*} (hb : b ∈ e.baseSet ∩ e'.baseSet)
+    (g : TotalSpace F E → X) :
+    (fun w ↦ g ⟨b, e'.symm b w⟩) ∘ e.coordChangeL R e' b = fun w ↦ g ⟨b, e.symm b w⟩ := by
+  funext w
+  simp [e.coordChangeL_apply e' hb, e'.symm_apply_apply_mk hb.2]
+
+end Fiber
+
+variable {𝕜 B F : Type*} {E : B → Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace B] [∀ x, AddCommMonoid (E x)]
+  [∀ x, Module 𝕜 (E x)] [TopologicalSpace (TotalSpace F E)] (e e' : Trivialization F (π F E))
+  [e.IsLinear 𝕜] [e'.IsLinear 𝕜] {b : B}
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- **First derivatives along a fibre in two trivializations.** The derivative of the
+restriction of a function to a fibre, read in the linear trivialization `e`, is its derivative
+read in `e'`, at the corresponding point, composed with the coordinate change. -/
+theorem fderiv_fiber_coordChangeL (hb : b ∈ e.baseSet ∩ e'.baseSet) (g : TotalSpace F E → G)
+    (w : F) :
+    fderiv 𝕜 (fun w ↦ g ⟨b, e.symm b w⟩) w =
+      (fderiv 𝕜 (fun w ↦ g ⟨b, e'.symm b w⟩) (e.coordChangeL 𝕜 e' b w)).comp
+        (e.coordChangeL 𝕜 e' b : F →L[𝕜] F) := by
+  rw [← e.fiber_comp_coordChangeL (R := 𝕜) e' hb g, ContinuousLinearEquiv.comp_right_fderiv]
+
+/-- **Second derivatives along a fibre in two trivializations.** The second derivative of the
+restriction of a function to a fibre, read in the linear trivialization `e`, is its second
+derivative read in `e'`, at the corresponding point and on the corresponding vectors. -/
+theorem fderiv_fderiv_fiber_coordChangeL_apply_apply (hb : b ∈ e.baseSet ∩ e'.baseSet)
+    (g : TotalSpace F E → G) (w u u' : F) :
+    fderiv 𝕜 (fderiv 𝕜 fun w ↦ g ⟨b, e.symm b w⟩) w u u' =
+      fderiv 𝕜 (fderiv 𝕜 fun w ↦ g ⟨b, e'.symm b w⟩) (e.coordChangeL 𝕜 e' b w)
+        (e.coordChangeL 𝕜 e' b u) (e.coordChangeL 𝕜 e' b u') := by
+  rw [← e.fiber_comp_coordChangeL (R := 𝕜) e' hb g,
+    ContinuousLinearEquiv.fderiv_fderiv_comp_right_apply_apply]
 
 end Bundle.Trivialization

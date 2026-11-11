@@ -40,7 +40,10 @@ bundle, the canonical coordinates of a function therefore agree near the zero se
 compatibility with bundle transitions needed to patch the local normal forms of a Morse–Bott
 function along its critical submanifold. Far from the zero section the trivializations need not be
 close, and the patching on a vector bundle, `TauCeti.exists_bundle_morse_normal_form`, compares the
-coordinates along fibre segments instead.
+coordinates along fibre segments instead
+(`TauCeti.parametricMorseCoord_eq_of_isParametricMorseCongruencePoint`): there both are given by
+continuous families of square roots of the same comparison operators, equal to the identity at
+`0`, one of which stays where `TauCeti.sqrtNearOne` inverts squaring.
 
 ## Main declarations
 
@@ -58,6 +61,10 @@ coordinates along fibre segments instead.
   family along the zero section.
 * `TauCeti.eventually_parametricMorseCoord_transition`: compatibility with changes of
   trivialization, allowing a change of parameter and only a local relation between the families.
+* `TauCeti.parametricMorseCongruence`, `TauCeti.IsParametricMorseCongruencePoint` and
+  `TauCeti.parametricMorseCoord_eq_of_isParametricMorseCongruencePoint`: the canonical
+  congruence of a family, and the comparison of canonical coordinates in two linear coordinate
+  systems along whole fibre segments.
 * `TauCeti.exists_parametric_morse_normal_form` and `TauCeti.exists_parametric_morse_chart`: the
   resulting coordinate change and local chart on a product neighbourhood, given by the canonical
   coordinate.
@@ -333,6 +340,136 @@ theorem eventually_parametricMorseCoord_transition (hf : ContDiff ℝ 2 f)
   simp
 
 end Transition
+
+section Congruence
+
+/-- The **canonical congruence of a family** `f` at `z`: the canonical congruence
+`TauCeti.morseCongruence` comparing the averaged vertical Hessian at `z` with the vertical Hessian
+at `(z.1, 0)`. The canonical parametric Morse coordinate of `f` at `z` is its value on `z.2`
+(`TauCeti.parametricMorseCoord_eq_parametricMorseCongruence`). -/
+def parametricMorseCongruence (f : P × E → ℝ) (z : P × E) : E →L[ℝ] E :=
+  morseCongruence (fderiv ℝ (fderiv ℝ fun v ↦ f (z.1, v)) 0)
+    (hessianAverage (fun v ↦ f (z.1, v)) 0 z.2)
+
+omit [NormedAddCommGroup P] [NormedSpace ℝ P] in
+/-- The canonical parametric Morse coordinate is the canonical congruence of the family applied
+to the fibre vector. -/
+theorem parametricMorseCoord_eq_parametricMorseCongruence (f : P × E → ℝ) (z : P × E) :
+    parametricMorseCoord f z = parametricMorseCongruence f z z.2 := by
+  rw [parametricMorseCoord_def, parametricMorseCongruence]
+
+/-- The points at which the canonical congruence of `f` is continuous, is a square root of the
+comparison operator of the vertical Hessian and the averaged vertical Hessian, and lies where
+`TauCeti.sqrtNearOne` inverts squaring, and at which the vertical Hessian is invertible. Along
+fibre segments made of such points, the canonical coordinates of a family read in two linear
+coordinate systems can be compared
+(`TauCeti.parametricMorseCoord_eq_of_isParametricMorseCongruencePoint`). -/
+def IsParametricMorseCongruencePoint (f : P × E → ℝ) (z : P × E) : Prop :=
+  ContinuousAt (parametricMorseCongruence f) z ∧
+    parametricMorseCongruence f z * parametricMorseCongruence f z =
+      (fderiv ℝ (fderiv ℝ fun v ↦ f (z.1, v)) 0).inverse ∘L
+        hessianAverage (fun v ↦ f (z.1, v)) 0 z.2 ∧
+    parametricMorseCongruence f z ∈
+      interior {r : E →L[ℝ] E | sqrtNearOne (E →L[ℝ] E) (r * r) = r} ∧
+    (fderiv ℝ (fderiv ℝ fun v ↦ f (z.1, v)) 0).IsInvertible
+
+/-- Near a point of the zero section at which a `C^2` family has invertible vertical Hessian,
+every point is a congruence point of the family. -/
+theorem eventually_isParametricMorseCongruencePoint (hf : ContDiff ℝ 2 f)
+    (hH : (fderiv ℝ (fderiv ℝ fun v ↦ f (a, v)) 0).IsInvertible) :
+    ∀ᶠ z in 𝓝 (a, (0 : E)), IsParametricMorseCongruencePoint f z := by
+  have hpair := (contDiff_verticalHessianPair (n := 0) (by simpa using hf)).continuous
+  have hT := tendsto_verticalHessianPair (a := a) hf
+  have hW : interior {r : E →L[ℝ] E | sqrtNearOne (E →L[ℝ] E) (r * r) = r} ∈ 𝓝 1 :=
+    interior_mem_nhds.2 eventually_sqrtNearOne_mul_self
+  filter_upwards [hT.eventually (eventually_contDiffAt_morseCongruence hH (n := 0)),
+    hT.eventually (eventually_morseCongruence_mul_self hH),
+    ((tendsto_morseCongruence hH).comp hT).eventually hW,
+    hT.fst_nhds.eventually hH.eventually_nhds] with z hz hsq hzW hinv
+  exact ⟨hz.continuousAt.comp (f := fun z : P × E ↦ (fderiv ℝ (fderiv ℝ fun v ↦ f (z.1, v)) 0,
+    hessianAverage (fun v ↦ f (z.1, v)) 0 z.2)) hpair.continuousAt, hsq, hzW, hinv⟩
+
+/-- **Comparison of canonical coordinates in two linear coordinate systems.** Let `f₀` and `f₁`
+be families, `f₁` being `C^2`, whose fibres over `x₀` and `x₁` correspond on balls about `0`
+through a linear isomorphism `T`, and suppose that all points of these fibre balls are congruence
+points. Then the canonical coordinates correspond through `T` at every pair of corresponding
+points of the two balls. Unlike `TauCeti.eventually_parametricMorseCoord_transition`, nothing
+here is restricted to a neighbourhood of the zero section: the coordinates are compared along the
+fibre segment from `0` to the given point (`TauCeti.eqOn_morseCongruence_bilinearComp`). -/
+theorem parametricMorseCoord_eq_of_isParametricMorseCongruencePoint {f₀ f₁ : P × E → ℝ}
+    (hf₁ : ContDiff ℝ 2 f₁) {x₀ x₁ : P} {r₀ r₁ : ℝ} (T : E ≃L[ℝ] E)
+    (hf : ∀ w ∈ Metric.ball (0 : E) r₀, T w ∈ Metric.ball (0 : E) r₁ → f₀ (x₀, w) = f₁ (x₁, T w))
+    (h₀ : ∀ w ∈ Metric.ball (0 : E) r₀, IsParametricMorseCongruencePoint f₀ (x₀, w))
+    (h₁ : ∀ w ∈ Metric.ball (0 : E) r₁, IsParametricMorseCongruencePoint f₁ (x₁, w))
+    {w₀ : E} (hw₀ : w₀ ∈ Metric.ball (0 : E) r₀) (hw₁ : T w₀ ∈ Metric.ball (0 : E) r₁) :
+    parametricMorseCoord f₁ (x₁, T w₀) = T (parametricMorseCoord f₀ (x₀, w₀)) := by
+  set k₀ : E → ℝ := fun w ↦ f₀ (x₀, w) with hk₀def
+  set k₁ : E → ℝ := fun w ↦ f₁ (x₁, w) with hk₁def
+  -- The fibres correspond on the convex open set `D` of points of the first ball sent into the
+  -- second ball, which contains the segment from `0` to `w₀`.
+  set D : Set E := Metric.ball (0 : E) r₀ ∩ T ⁻¹' Metric.ball (0 : E) r₁ with hD
+  have hDo : IsOpen D := Metric.isOpen_ball.inter (Metric.isOpen_ball.preimage T.continuous)
+  have hDc : Convex ℝ D :=
+    (convex_ball 0 r₀).inter ((convex_ball 0 r₁).linear_preimage (T : E →ₗ[ℝ] E))
+  have hD₀ : (0 : E) ∈ D :=
+    ⟨Metric.mem_ball_self (Metric.pos_of_mem_ball hw₀), by simp [Metric.pos_of_mem_ball hw₁]⟩
+  have hDw : w₀ ∈ D := ⟨hw₀, hw₁⟩
+  have hseg {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) : t • w₀ ∈ D :=
+    (hDc.starConvex hD₀).smul_mem hDw ht.1 ht.2
+  have hloc {y : E} (hy : y ∈ D) : k₀ =ᶠ[𝓝 y] k₁ ∘ T :=
+    Filter.eventuallyEq_of_mem (hDo.mem_nhds hy) fun w hw ↦ hf w hw.1 hw.2
+  have hk₁ : ContDiff ℝ 2 k₁ := hf₁.comp (contDiff_const.prodMk contDiff_id)
+  -- The Hessians and averaged Hessians of the two fibres are pulled back from each other.
+  have hHess : fderiv ℝ (fderiv ℝ k₀) 0 = (fderiv ℝ (fderiv ℝ k₁) 0).bilinearComp
+      (T : E →L[ℝ] E) (T : E →L[ℝ] E) := by
+    rw [(hloc hD₀).fderiv.fderiv_eq]
+    ext u u'
+    simpa using T.fderiv_fderiv_comp_right_apply_apply k₁ 0 u u'
+  have havg {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) : hessianAverage k₀ 0 (t • w₀) =
+      (hessianAverage k₁ 0 (t • T w₀)).bilinearComp (T : E →L[ℝ] E) (T : E →L[ℝ] E) := by
+    rw [hessianAverage_congr_of_eventuallyEq (f₂ := k₁ ∘ T) fun s hs ↦ hloc (by
+      simpa [smul_smul] using
+        hseg ⟨mul_nonneg hs.1 ht.1, (mul_le_of_le_one_left ht.1 hs.2).trans ht.2⟩)]
+    ext u u'
+    simpa using hessianAverage_comp_continuousLinearEquiv_apply hk₁ T 0 (t • w₀) u u'
+  have hmem₁ {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) : t • T w₀ ∈ Metric.ball (0 : E) r₁ := by
+    simpa using (hseg ht).2
+  have hmem₀ {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) : t • w₀ ∈ Metric.ball (0 : E) r₀ := (hseg ht).1
+  -- The two congruences along the segments, read as functions of the time `t`.
+  have hpath₁ : Continuous fun t : ℝ ↦ (x₁, t • T w₀) := by fun_prop
+  have hpath₀ : Continuous fun t : ℝ ↦ (x₀, t • w₀) := by fun_prop
+  have hR : ContinuousOn (fun t : ℝ ↦ morseCongruence (fderiv ℝ (fderiv ℝ k₁) 0)
+      (hessianAverage k₁ 0 (t • T w₀))) (Icc 0 1) := fun t ht ↦
+    ((h₁ _ (hmem₁ ht)).1.comp (f := fun t : ℝ ↦ (x₁, t • T w₀))
+      hpath₁.continuousAt).continuousWithinAt
+  have hR' : ContinuousOn (fun t : ℝ ↦ morseCongruence ((fderiv ℝ (fderiv ℝ k₁) 0).bilinearComp
+      (T : E →L[ℝ] E) (T : E →L[ℝ] E))
+      ((hessianAverage k₁ 0 (t • T w₀)).bilinearComp (T : E →L[ℝ] E) (T : E →L[ℝ] E)))
+      (Icc 0 1) := by
+    refine ContinuousOn.congr (f := fun t : ℝ ↦ parametricMorseCongruence f₀ (x₀, t • w₀))
+      (fun t ht ↦ ((h₀ _ (hmem₀ ht)).1.comp (f := fun t : ℝ ↦ (x₀, t • w₀))
+        hpath₀.continuousAt).continuousWithinAt) fun t ht ↦ ?_
+    simp only [parametricMorseCongruence, ← hk₀def]
+    rw [← hHess, ← havg ht]
+  have hEq := eqOn_morseCongruence_bilinearComp isPreconnected_Icc
+    (left_mem_Icc.2 zero_le_one) (B₀ := fderiv ℝ (fderiv ℝ k₁) 0)
+    (B := fun t : ℝ ↦ hessianAverage k₁ 0 (t • T w₀))
+    (h₁ 0 (Metric.mem_ball_self (Metric.pos_of_mem_ball hw₁))).2.2.2
+    (by simp) T hR hR' (fun t ht ↦ (h₁ _ (hmem₁ ht)).2.1)
+    (fun t ht ↦ by
+      have h := (h₀ _ (hmem₀ ht)).2.1
+      simp only [parametricMorseCongruence, ← hk₀def] at h
+      rwa [hHess, havg ht] at h)
+    (fun t ht ↦ (h₁ _ (hmem₁ ht)).2.2.1) (right_mem_Icc.2 zero_le_one)
+  have havg₁ := havg (right_mem_Icc.2 zero_le_one)
+  simp only [one_smul] at hEq havg₁
+  rw [← hHess, ← havg₁] at hEq
+  rw [parametricMorseCoord_eq_parametricMorseCongruence,
+    parametricMorseCoord_eq_parametricMorseCongruence]
+  simp only [parametricMorseCongruence, ← hk₀def, ← hk₁def, hEq]
+  simp
+
+end Congruence
 
 /-- **Parametric Morse normal form.** A jointly `C^{n+2}` family with a critical zero section
 near `a` and invertible vertical Hessian at `(a, 0)` has a jointly `C^n` fiber coordinate change

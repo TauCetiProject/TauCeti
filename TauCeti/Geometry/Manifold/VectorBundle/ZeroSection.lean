@@ -26,6 +26,12 @@ The horizontal computation generalizes Mathlib's
 from tangent bundles to vector bundles. The vertical computation uses the scalar-curve case
 `Bundle.TotalSpace.hasMFDerivAt_smul_curve` of the total-space curve criterion.
 
+The chart of the total space at a point `0_{b₀}` of the zero section reads a vector as its base
+point in the chart at `b₀` and its fibre coordinate in the trivialization at `b₀`
+(`TauCeti.Bundle.extChartAt_zeroSection_apply`); its inverse and source are described by
+`TauCeti.Bundle.extChartAt_zeroSection_symm_apply` and
+`TauCeti.Bundle.mem_extChartAt_zeroSection_source`.
+
 ## References
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, second edition, Theorem 6.24.
@@ -153,5 +159,60 @@ theorem zeroSectionTangentEquiv_symm_eq (b : B) (u : TangentSpace I b) (v : V b)
         (zeroSectionTangentEquiv (I := I) b).symm (0, v) := by
   apply (zeroSectionTangentEquiv (I := I) b).injective
   simp
+
+end TauCeti.Bundle
+
+/-! ### The chart of the total space at a point of the zero section -/
+
+namespace TauCeti.Bundle
+
+variable {𝕜 B EB HB F : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] [TopologicalSpace HB]
+  {IB : ModelWithCorners 𝕜 EB HB} [TopologicalSpace B] [ChartedSpace HB B]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {V : B → Type*} [∀ b, Zero (V b)] [∀ b, TopologicalSpace (V b)]
+  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V]
+
+/-- The chart of the total space at a point `0_{b₀}` of the zero section reads a vector over the
+base set of the trivialization at `b₀` as its base point in the chart at `b₀` and its fibre
+coordinate in the trivialization at `b₀`. -/
+theorem extChartAt_zeroSection_apply (b₀ : B) {v : TotalSpace F V}
+    (hv : v.proj ∈ (trivializationAt F V b₀).baseSet) :
+    extChartAt (IB.prod 𝓘(𝕜, F)) (zeroSection F V b₀) v =
+      (extChartAt IB b₀ v.proj, (trivializationAt F V b₀ v).2) := by
+  rw [FiberBundle.extChartAt]
+  simp [(trivializationAt F V b₀).coe_fst' hv]
+
+/-- The inverse of the chart of the total space at a point `0_{b₀}` of the zero section. -/
+theorem extChartAt_zeroSection_symm_apply (b₀ : B) {x : EB}
+    (hx : (extChartAt IB b₀).symm x ∈ (trivializationAt F V b₀).baseSet) (w : F) :
+    (extChartAt (IB.prod 𝓘(𝕜, F)) (zeroSection F V b₀)).symm (x, w) =
+      ⟨(extChartAt IB b₀).symm x,
+        (trivializationAt F V b₀).symm ((extChartAt IB b₀).symm x) w⟩ := by
+  rw [FiberBundle.extChartAt]
+  exact ((trivializationAt F V b₀).mk_symm hx w).symm
+
+/-- A vector lies in the source of the chart of the total space at a point `0_{b₀}` of the zero
+section exactly when its base point lies in the source of the chart at `b₀` and in the base set
+of the trivialization at `b₀`. -/
+theorem mem_extChartAt_zeroSection_source (b₀ : B) (v : TotalSpace F V) :
+    v ∈ (extChartAt (IB.prod 𝓘(𝕜, F)) (zeroSection F V b₀)).source ↔
+      v.proj ∈ (extChartAt IB b₀).source ∩ (trivializationAt F V b₀).baseSet := by
+  rw [FiberBundle.extChartAt]
+  simp only [PartialEquiv.trans_source, mem_inter_iff,
+    Trivialization.mem_source, mem_preimage, PartialEquiv.prod_source, PartialEquiv.refl_source,
+    mem_prod, mem_univ, and_true, zeroSection_proj]
+  exact ⟨fun h ↦ ⟨(trivializationAt F V b₀).coe_fst' h.1 ▸ h.2, h.1⟩,
+    fun h ↦ ⟨h.2, ((trivializationAt F V b₀).coe_fst' h.2).symm ▸ h.1⟩⟩
+
+/-- The inverse of the chart of the total space at a point `0_{b₀}` of the zero section, at a
+point `(φ b, w)` of the image of the fibre over `b`, where `φ` is the chart at `b₀`, is the
+vector of fibre coordinate `w` over `b` in the trivialization at `b₀`. -/
+theorem extChartAt_zeroSection_symm_apply_extChartAt (b₀ : B) {b : B}
+    (hb : b ∈ (extChartAt IB b₀).source ∩ (trivializationAt F V b₀).baseSet) (w : F) :
+    (extChartAt (IB.prod 𝓘(𝕜, F)) (zeroSection F V b₀)).symm (extChartAt IB b₀ b, w) =
+      ⟨b, (trivializationAt F V b₀).symm b w⟩ := by
+  have h := (extChartAt IB b₀).left_inv hb.1
+  rw [extChartAt_zeroSection_symm_apply b₀ (by rw [h]; exact hb.2) w, h]
 
 end TauCeti.Bundle
