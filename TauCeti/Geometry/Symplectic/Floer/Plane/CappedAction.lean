@@ -410,54 +410,22 @@ theorem lintegral_floerEnergyDensity_pssPlanePerturbation_eq
       ENNReal.ofReal (p.endSign * a - ∫ z, ω.hamiltonianCurvature
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)) := by
-  -- Exhaust the plane by the discs `D_(n+2)`.
-  set T : ℕ → Set (ℝ × ℝ) := fun n ↦
-    Complex.equivRealProdCLM.symm ⁻¹' Metric.closedBall 0 (Real.exp (2 * π * (n + 2)))
-  have hmono : Monotone T := fun m n hmn ↦ preimage_mono (Metric.closedBall_subset_closedBall
-    (Real.exp_le_exp.2 (by gcongr)))
-  have hunion : ⋃ n, T n = univ := by
-    refine eq_univ_of_forall fun z ↦ mem_iUnion.2 ?_
-    obtain ⟨n, hn⟩ := exists_nat_ge ‖Complex.equivRealProdCLM.symm z‖
-    refine ⟨n, ?_⟩
-    simp only [T, mem_preimage, Metric.mem_closedBall, dist_zero_right]
-    have h := Real.add_one_le_exp (2 * π * (n + 2))
-    nlinarith [Real.one_le_pi_div_two, n.cast_nonneg (α := ℝ)]
-  have hT (n : ℕ) : IsCompact (T n) :=
-    Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_closedBall _ _)
-  -- On each disc the energy density is integrable and nonnegative.
-  have hE (n : ℕ) : ∫⁻ z in T n, ENNReal.ofReal (ω.floerEnergyDensity
-      (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z) =
-      ENNReal.ofReal (∫ z in T n, ω.floerEnergyDensity
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z) :=
-    (ofReal_integral_eq_lintegral_ofReal
-      (hω.integrableOn_floerEnergyDensity isOpen_univ hu.contMDiffOn
+  -- Exhaust the plane by the discs `D_R`, on which the energy is `ε` times the capped action
+  -- minus the integrated curvature.
+  refine lintegral_ofReal_eq_of_tendsto_setIntegral_closedBall
+    (r := fun R ↦ Real.exp (2 * π * R))
+    (Real.tendsto_exp_atTop.comp (tendsto_id.const_mul_atTop Real.two_pi_pos))
+    (ae_of_all _ fun z ↦ floerEnergyDensity_nonneg hω (hJ z) (hfloer z)) (fun _ ↦
+      hω.integrableOn_floerEnergyDensity isOpen_univ hu.contMDiffOn
         (contMDiff_uncurry_perturbation hH hHs 1).contMDiffOn
-        (contMDiff_uncurry_perturbation hH hHs Complex.I).contMDiffOn (hT n) (subset_univ _)
+        (contMDiff_uncurry_perturbation hH hHs Complex.I).contMDiffOn
+        (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
+          (isCompact_closedBall _ _)) (subset_univ _)
         (ω.integrableOn_hamiltonianCurvature_pssPlanePerturbation_closedBall hH hHs hu.continuous
-          _))
-      (ae_of_all _ fun z ↦ floerEnergyDensity_nonneg hω (hJ z) (hfloer z))).symm
-  have hlim : Tendsto (fun n ↦ ∫⁻ z in T n, ENNReal.ofReal (ω.floerEnergyDensity
-      (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z)) atTop
-      (𝓝 (∫⁻ z, ENNReal.ofReal (ω.floerEnergyDensity
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z))) := by
-    rw [← setLIntegral_univ, ← hunion, setLIntegral_iUnion_of_directed _ hmono.directed_le]
-    exact tendsto_atTop_iSup fun m n hmn ↦
-      lintegral_mono' (Measure.restrict_mono (hmono hmn) le_rfl) le_rfl
-  refine tendsto_nhds_unique hlim ?_
-  simp only [hE]
-  refine (ENNReal.continuous_ofReal.tendsto _).comp ?_
-  -- On the discs, the energy is `ε` times the capped action minus the integrated curvature.
-  have hn : Tendsto (fun n : ℕ ↦ (n : ℝ) + 2) atTop atTop :=
-    tendsto_atTop_add_const_right _ _ tendsto_natCast_atTop_atTop
-  refine (((ha.comp hn).const_mul p.endSign).sub_const _).congr fun n ↦ ?_
-  rw [Function.comp_apply,
-    hω.integral_floerEnergyDensity_pssPlanePerturbation_closedBall_eq_endSign_mul_cappedLoopAction
-      hH hHs hu
-      (by linarith [n.cast_nonneg (α := ℝ)])]
+          _)) <|
+    ((ha.const_mul p.endSign).sub_const _).congr' <| (eventually_ge_atTop 2).mono fun _ hR ↦
+      (integral_floerEnergyDensity_pssPlanePerturbation_closedBall_eq_endSign_mul_cappedLoopAction
+        hω hH hHs hu hR).symm
 
 /-- **The energy bound for a PSS plane in a manifold.** Under the hypotheses of
 `SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_pssPlanePerturbation_eq`, if moreover

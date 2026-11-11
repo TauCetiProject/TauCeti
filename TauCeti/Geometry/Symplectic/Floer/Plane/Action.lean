@@ -182,25 +182,21 @@ theorem neg_le_endSign_mul_hamiltonianAction_pssPlanePerturbation (ω : Symplect
   linarith
 
 /-- Under convergence of the actions of the boundary loops, the energy over the discs
-`‖w‖ ≤ exp (2π(n + 2))` converges to `ε` times the limiting action minus the integrated
-curvature. -/
+`‖w‖ ≤ exp (2πR)` converges to `ε` times the limiting action minus the integrated curvature. -/
 private theorem tendsto_integral_floerEnergyDensity_closedBall (ω : SymplecticForm V)
     (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) {u : ℝ × ℝ → V} (hu : ContDiff ℝ 2 u)
     {a : ℝ} (ha : Tendsto (fun R ↦ ω.hamiltonianAction H (fun t ↦ u (Complex.equivRealProdCLM
       (p.cylindricalEndLift (↑(p.endSign * R) + ↑t * Complex.I))))) atTop (𝓝 a)) :
-    Tendsto (fun n : ℕ ↦ ∫ z in Complex.equivRealProdCLM.symm ⁻¹'
-        Metric.closedBall 0 (Real.exp (2 * π * (n + 2))), ω.floerEnergyDensity
+    Tendsto (fun R : ℝ ↦ ∫ z in Complex.equivRealProdCLM.symm ⁻¹'
+        Metric.closedBall 0 (Real.exp (2 * π * R)), ω.floerEnergyDensity
           (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z) atTop
       (𝓝 (p.endSign * a - ∫ z, ω.hamiltonianCurvature
           (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z))) := by
-  have hn : Tendsto (fun n : ℕ ↦ (n : ℝ) + 2) atTop atTop :=
-    tendsto_atTop_add_const_right _ _ tendsto_natCast_atTop_atTop
-  refine (((ha.comp hn).const_mul p.endSign).sub_const _).congr fun n ↦ ?_
-  rw [Function.comp_apply,
-    integral_floerEnergyDensity_pssPlanePerturbation_closedBall_eq_endSign_mul_hamiltonianAction
-      ω hH hHs hu (by linarith [n.cast_nonneg (α := ℝ)])]
+          (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z))) :=
+  ((ha.const_mul p.endSign).sub_const _).congr' <| (eventually_ge_atTop 2).mono fun _ hR ↦
+    (integral_floerEnergyDensity_pssPlanePerturbation_closedBall_eq_endSign_mul_hamiltonianAction
+      ω hH hHs hu hR).symm
 
 /-- **The energy of a PSS plane.** Let `K` be the perturbation of a PSS plane given by a
 period-one `C¹` Hamiltonian `H`, and let `u` be a `C²` map solving the Floer equation
@@ -225,21 +221,7 @@ theorem lintegral_floerEnergyDensity_pssPlanePerturbation_eq (ω : SymplecticFor
       ENNReal.ofReal (p.endSign * a - ∫ z, ω.hamiltonianCurvature
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)) := by
-  -- Exhaust the plane by the discs `D_(n+2)`.
-  set T : ℕ → Set (ℝ × ℝ) := fun n ↦
-    Complex.equivRealProdCLM.symm ⁻¹' Metric.closedBall 0 (Real.exp (2 * π * (n + 2)))
-  have hmono : Monotone T := fun m n hmn ↦ preimage_mono (Metric.closedBall_subset_closedBall
-    (Real.exp_le_exp.2 (by gcongr)))
-  have hunion : ⋃ n, T n = univ := by
-    refine eq_univ_of_forall fun z ↦ mem_iUnion.2 ?_
-    obtain ⟨n, hn⟩ := exists_nat_ge ‖Complex.equivRealProdCLM.symm z‖
-    refine ⟨n, ?_⟩
-    simp only [T, mem_preimage, Metric.mem_closedBall, dist_zero_right]
-    have h := Real.add_one_le_exp (2 * π * (n + 2))
-    nlinarith [Real.one_le_pi_div_two, n.cast_nonneg (α := ℝ)]
-  have hT (n : ℕ) : IsCompact (T n) :=
-    Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_closedBall _ _)
-  -- On each disc the energy is the integral of a nonnegative continuous function.
+  -- Exhaust the plane by the discs `D_R`, on which the energy density is continuous.
   have hEc : Continuous (ω.floerEnergyDensity
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u) :=
@@ -247,26 +229,11 @@ theorem lintegral_floerEnergyDensity_pssPlanePerturbation_eq (ω : SymplecticFor
       (hu.of_le one_le_two).contDiffOn
       (by simpa using (contDiff_uncurry_perturbation (p := p) hH hHs 1).contDiffOn)
       (by simpa using (contDiff_uncurry_perturbation (p := p) hH hHs Complex.I).contDiffOn))
-  have hE (n : ℕ) : ∫⁻ z in T n, ENNReal.ofReal (ω.floerEnergyDensity
-      (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z) =
-      ENNReal.ofReal (∫ z in T n, ω.floerEnergyDensity
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z) :=
-    (ofReal_integral_eq_lintegral_ofReal (hEc.continuousOn.integrableOn_compact (hT n))
-      (ae_of_all _ fun z ↦ ω.floerEnergyDensity_nonneg (hJ z) (hfloer z))).symm
-  have hlim : Tendsto (fun n ↦ ∫⁻ z in T n, ENNReal.ofReal (ω.floerEnergyDensity
-      (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z)) atTop
-      (𝓝 (∫⁻ z, ENNReal.ofReal (ω.floerEnergyDensity
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z))) := by
-    rw [← setLIntegral_univ, ← hunion, setLIntegral_iUnion_of_directed _ hmono.directed_le]
-    exact tendsto_atTop_iSup fun m n hmn ↦
-      lintegral_mono' (Measure.restrict_mono (hmono hmn) le_rfl) le_rfl
-  refine tendsto_nhds_unique hlim ?_
-  simp only [hE]
-  exact (ENNReal.continuous_ofReal.tendsto _).comp
+  exact lintegral_ofReal_eq_of_tendsto_setIntegral_closedBall (r := fun R ↦ Real.exp (2 * π * R))
+    (Real.tendsto_exp_atTop.comp (tendsto_id.const_mul_atTop Real.two_pi_pos))
+    (ae_of_all _ fun z ↦ ω.floerEnergyDensity_nonneg (hJ z) (hfloer z))
+    (fun _ ↦ hEc.continuousOn.integrableOn_compact
+      (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_closedBall _ _)))
     (tendsto_integral_floerEnergyDensity_closedBall ω hH hHs hu ha)
 
 /-- **The energy bound for a PSS plane.** Under the hypotheses of
