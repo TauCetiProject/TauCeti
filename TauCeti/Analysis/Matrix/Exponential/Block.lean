@@ -96,7 +96,9 @@ variable [NormedAlgebra ℚ R]
   intro k
   rw [fromBlocks_zero₂₁_pow, fromBlocks_apply₂₂]
 
-private theorem exp_fromBlocks_zero₂₁_eq_fromBlocks
+/-- The exponential of an upper two-block matrix has the exponential diagonal blocks,
+zero lower-left block, and its own upper-right block. -/
+theorem exp_fromBlocks_zero₂₁_eq_fromBlocks
     (A : Matrix m m R) (B : Matrix m n R) (D : Matrix n n R) :
     exp (fromBlocks A B 0 D) =
       fromBlocks (exp A) (exp (fromBlocks A B 0 D)).toBlocks₁₂ 0 (exp D) := by
