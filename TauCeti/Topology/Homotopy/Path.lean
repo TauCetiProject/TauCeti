@@ -31,7 +31,11 @@ ambient space whose intermediate paths all stay in `V`. Analytic continuation co
 `Path.homotopic_of_continuous_square` is likewise adapted from Kim Morrison's
 [#38292](https://github.com/leanprover-community/mathlib4/pull/38292). It is used by
 `AlgebraicTopology/UniversalCover/BasedPath.lean`, where it previously lived privately, and by
-`AlgebraicTopology/Sphere/Puncture.lean`. The lemma
+`AlgebraicTopology/Sphere/Puncture.lean`. Its moving-basepoint variant
+`Path.exists_trans_homotopic_trans_of_homotopicWith` reads a homotopy of loops through closed paths
+as the square `γ₀ · δ ≃ δ · γ₁` along the track `δ` of the base point; it identifies free homotopy
+classes of loops with conjugacy classes in
+`AlgebraicTopology/FundamentalGroup/FreeLoop.lean`. The lemma
 `Path.Homotopic.refl_of_forall_mem_of_nullhomotopic` is not from #38292; it was factored out of
 `AlgebraicTopology/SemilocallySimplyConnected/Basic.lean`.
 
@@ -258,6 +262,68 @@ theorem homotopic_of_continuous_square {a b : X} {p q : Path a b} (K : I × I �
        · rw [Set.mem_singleton_iff] at hs
          subst hs
          exact (hK_right t).trans p.target.symm }⟩
+
+/-- **A homotopy through closed paths is a square.** If the loop `γ₀` at `x` is homotopic to the
+loop `γ₁` at `y` through closed paths, then along the track `δ` of the base point,
+`γ₀ · δ` and `δ · γ₁` are homotopic paths from `x` to `y`. -/
+theorem exists_trans_homotopic_trans_of_homotopicWith {x y : X} {γ₀ : Path x x} {γ₁ : Path y y}
+    (h : (γ₀ : C(I, X)).HomotopicWith (γ₁ : C(I, X)) fun p ↦ p 0 = p 1) :
+    ∃ δ : Path x y, (γ₀.trans δ).Homotopic (δ.trans γ₁) := by
+  obtain ⟨H⟩ := h
+  -- The track of the base point, along the edge `t = 0` (equivalently `t = 1`) of the square.
+  have hH (s : I) : H (s, 0) = H (s, 1) := H.prop s
+  let δ : Path x y :=
+    { toFun s := H (s, 0)
+      continuous_toFun := by fun_prop
+      source' := by simp
+      target' := by simp }
+  refine ⟨δ, ?_⟩
+  -- The two boundary paths of the square `I × I` from `(0, 0)` to `(1, 1)`, interpolated linearly
+  -- and read through `H`. The edges are written with `max` and `min`, so no case split is needed
+  -- for continuity.
+  let c₀ : I → ℝ × ℝ := fun t ↦ (max 0 (2 * t - 1), min 1 (2 * t))
+  let c₁ : I → ℝ × ℝ := fun t ↦ (min 1 (2 * t), max 0 (2 * t - 1))
+  let φ : I × I → I × I := fun q ↦
+    (Set.projIcc 0 1 zero_le_one ((1 - q.1) * (c₀ q.2).1 + q.1 * (c₁ q.2).1),
+      Set.projIcc 0 1 zero_le_one ((1 - q.1) * (c₀ q.2).2 + q.1 * (c₁ q.2).2))
+  have hφ : Continuous φ := by
+    refine (continuous_projIcc.comp ?_).prodMk (continuous_projIcc.comp ?_) <;>
+      simp only [c₀, c₁] <;> fun_prop
+  -- The values of `φ` on the four edges of the square.
+  have hφ₀₀ (s : I) : φ (s, 0) = (0, 0) :=
+    Prod.ext (Subtype.ext (by norm_num [φ, c₀, c₁])) (Subtype.ext (by norm_num [φ, c₀, c₁]))
+  have hφ₁₁ (s : I) : φ (s, 1) = (1, 1) :=
+    Prod.ext (Subtype.ext (by norm_num [φ, c₀, c₁])) (Subtype.ext (by norm_num [φ, c₀, c₁]))
+  have hφ_left (t : I) (ht : (t : ℝ) ≤ 1 / 2) :
+      φ (0, t) = (0, ⟨2 * t, by constructor <;> linarith [t.2.1]⟩) ∧
+        φ (1, t) = (⟨2 * t, by constructor <;> linarith [t.2.1]⟩, 0) := by
+    have h₁ : max (0 : ℝ) (2 * t - 1) = 0 := max_eq_left (by linarith)
+    have h₂ : min (1 : ℝ) (2 * t) = 2 * t := min_eq_right (by linarith)
+    have h₃ : max (0 : ℝ) (2 * t) = 2 * t := max_eq_right (by linarith [t.2.1])
+    refine ⟨Prod.ext (Subtype.ext ?_) (Subtype.ext ?_),
+      Prod.ext (Subtype.ext ?_) (Subtype.ext ?_)⟩ <;> simp [φ, c₀, c₁, Set.coe_projIcc, h₁, h₂, h₃]
+  have hφ_right (t : I) (ht : ¬ (t : ℝ) ≤ 1 / 2) :
+      φ (0, t) = (⟨2 * t - 1, by constructor <;> linarith [t.2.2]⟩, 1) ∧
+        φ (1, t) = (1, ⟨2 * t - 1, by constructor <;> linarith [t.2.2]⟩) := by
+    have h₁ : max (0 : ℝ) (2 * t - 1) = 2 * t - 1 := max_eq_right (by linarith)
+    have h₂ : min (1 : ℝ) (2 * t) = 1 := min_eq_left (by linarith)
+    have h₃ : min (1 : ℝ) (2 * t - 1) = 2 * t - 1 := min_eq_right (by linarith [t.2.2])
+    refine ⟨Prod.ext (Subtype.ext ?_) (Subtype.ext ?_),
+      Prod.ext (Subtype.ext ?_) (Subtype.ext ?_)⟩ <;> simp [φ, c₀, c₁, Set.coe_projIcc, h₁, h₂, h₃]
+  refine homotopic_of_continuous_square (H ∘ φ) (H.continuous.comp hφ) (fun t ↦ ?_)
+    (fun t ↦ ?_) (fun s ↦ by simp [hφ₀₀]) (fun s ↦ by simp [hφ₁₁])
+  · rw [Function.comp_apply, Path.trans_apply]
+    split_ifs with ht
+    · rw [(hφ_left t ht).1]
+      exact H.apply_zero _
+    · rw [(hφ_right t ht).1]
+      exact (hH _).symm
+  · rw [Function.comp_apply, Path.trans_apply]
+    split_ifs with ht
+    · rw [(hφ_left t ht).2]
+      rfl
+    · rw [(hφ_right t ht).2]
+      exact H.apply_one _
 
 /-- If every parameter `s` has some `γ ⁻¹' U i` as a neighbourhood, then `γ` can be subdivided
 at finitely many monotone times, starting at `0` and ending at `1`, so that the subpath between

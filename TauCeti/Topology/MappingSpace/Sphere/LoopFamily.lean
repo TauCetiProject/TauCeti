@@ -42,6 +42,8 @@ the conjugated family on the circle with that of the original one.
   of loops as a map `A × S¹ → Z`.
 * `TauCeti.homotopic_loopFamilyCircleMap_trans_symm`: conjugate families of loops are homotopic as
   maps `A × S¹ → Z`.
+* `Path.homotopicWith_trans_trans_symm`: a conjugate loop is homotopic to the loop through closed
+  paths `I → Z`.
 -/
 
 public section
@@ -208,5 +210,22 @@ theorem homotopic_loopFamilyCircleMap_trans_symm (χ : ∀ a, Path (x a) (y a)) 
     rintro ⟨a, z⟩
     obtain ⟨t, rfl⟩ := circleLoop_surjective z
     simp [H, conjHomotopyFun_zero, conjHomotopyFun_one]
+
+/-- **A conjugate loop is homotopic through closed paths to the loop.** For a path `χ` from `a`
+to `b` and a loop `ℓ` at `b`, the loop `χ · ℓ · χ⁻¹` at `a` and `ℓ` are homotopic as maps
+`I → Z` through maps taking the same value at `0` and at `1`. This is the explicit homotopy of
+`TauCeti.homotopic_loopFamilyCircleMap_trans_symm` for a single loop, before it descends to a
+circle; through `TauCeti.circleMapHomeomorphClosedUnitPath` it gives the same statement on the
+complex circle. -/
+theorem _root_.Path.homotopicWith_trans_trans_symm {a b : Z} (χ : Path a b) (ℓ : Path b b) :
+    ((((χ.trans ℓ).trans χ.symm : Path a a)) : C(I, Z)).HomotopicWith (ℓ : C(I, Z))
+      fun p ↦ p 0 = p 1 :=
+  ⟨{ toFun q := conjHomotopyFun (A := Unit) (fun _ ↦ χ) (fun _ ↦ ℓ) ((q.1, ()), q.2)
+     continuous_toFun := (continuous_conjHomotopyFun (A := Unit) _
+        (χ.continuous.comp continuous_snd) _ (ℓ.continuous.comp continuous_snd)).comp
+          (by fun_prop)
+     map_zero_left t := conjHomotopyFun_zero (A := Unit) (fun _ ↦ χ) (fun _ ↦ ℓ) () t
+     map_one_left t := conjHomotopyFun_one (A := Unit) (fun _ ↦ χ) (fun _ ↦ ℓ) () t
+     prop' s := conjHomotopyFun_zero_eq_one (A := Unit) (fun _ ↦ χ) (fun _ ↦ ℓ) (s, ()) }⟩
 
 end TauCeti
