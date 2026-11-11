@@ -209,13 +209,14 @@ section LevelNorm
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 
-variable {E : Type*} [Field E] [Algebra K E] [FiniteDimensional K E]
+variable {E : Type*} [Field E] [Algebra K E]
 
 /-- **The norm from the level of a finite extension is the field norm**: if the fixed field of the
-open subgroup `W` is the image of a `K`-embedding `ι : E →ₐ[K] Kˢ` of a finite extension `E/K`, and
-that of `W₀ ⊇ W` is `K`, then under the identifications `unitsLevelEquiv` of the two levels with
-`Eˣ` and `Kˣ`, the norm `Formation.levelNorm` from `((Kˢ)ˣ)^W` to `((Kˢ)ˣ)^{W₀}` is `N_{E/K}`. The
-extension `E/K` need not be normal. -/
+open subgroup `W` is the image of a `K`-embedding `ι : E →ₐ[K] Kˢ` of an extension `E/K` (finite,
+as it is isomorphic to that fixed field), and that of `W₀ ⊇ W` is `K`, then under the
+identifications `unitsLevelEquiv` of the two levels with `Eˣ` and `Kˣ`, the norm
+`Formation.levelNorm` from `((Kˢ)ˣ)^W` to `((Kˢ)ˣ)^{W₀}` is `N_{E/K}`. The extension `E/K` need
+not be normal. -/
 theorem levelNorm_unitsLevelEquiv (ι : E →ₐ[K] SeparableClosure K)
     {W W₀ : OpenSubgroup (AbsoluteGaloisGroup K)} (h : W ≤ W₀)
     (hW : fixedField W.toSubgroup = ι.fieldRange)
@@ -225,6 +226,11 @@ theorem levelNorm_unitsLevelEquiv (ι : E →ₐ[K] SeparableClosure K)
       unitsLevelEquiv (Algebra.ofId K (SeparableClosure K)) hW₀
         (Additive.ofMul (Algebra.normUnits K y.toMul)) := by
   obtain rfl : W₀ = ⊤ := eq_top_of_fixedField_toSubgroup_eq hW₀
+  -- `E` is finite over `K`: it is isomorphic to the fixed field of the open subgroup `W`.
+  have hfin : FiniteDimensional K ι.fieldRange := hW ▸ finiteDimensional_fixedField_toSubgroup W
+  have : FiniteDimensional K E :=
+    have : Module.Finite K ι.range := hfin
+    Module.Finite.equiv (AlgEquiv.ofInjectiveField ι).symm.toLinearEquiv
   -- The representatives of the cosets of `W` in `G_K` are a transversal of `Gal(Kˢ/ι(E))`, so the
   -- norm is the product of the conjugates of `ι y` (`TauCeti.algebraMap_norm_eq_prod_transversal`).
   have hfix := toSubgroup_eq_fixingSubgroup_of_fixedField_eq hW

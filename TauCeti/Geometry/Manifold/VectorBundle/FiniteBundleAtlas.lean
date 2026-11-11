@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
+public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import Mathlib.MeasureTheory.Function.Jacobian
 public import Mathlib.Topology.VectorBundle.Basic
 
@@ -44,6 +45,9 @@ the transition (`TauCeti.FiniteBundleAtlas.ae_restrict_overlap_transition`).
 * `TauCeti.FiniteBundleAtlas.coord_eq_coordChange`: coordinates in two charts differ by the
   coordinate change of the bundle.
 * `TauCeti.FiniteBundleAtlas.ae_restrict_overlap_transition`: chart transitions preserve null sets.
+* `TauCeti.FiniteBundleAtlas.contDiffOn_coord`: the chart coordinates of a `Cᵏ` section of a `Cᵏ`
+  vector bundle are `Cᵏ`, on an open set containing the compact image of the closure of the chart
+  domain (`TauCeti.FiniteBundleAtlas.chart_image_closure_dom_subset`).
 -/
 
 public section
@@ -176,6 +180,10 @@ on the model space of `M`. -/
 def coord (i : Fin A.n) (s : ∀ x, V x) (y : E) : F :=
   (A.triv i ⟨(A.chart i).symm y, s ((A.chart i).symm y)⟩).2
 
+theorem coord_def (i : Fin A.n) (s : ∀ x, V x) (y : E) :
+    A.coord i s y = (A.triv i ⟨(A.chart i).symm y, s ((A.chart i).symm y)⟩).2 :=
+  (rfl)
+
 theorem coord_chart {i : Fin A.n} (s : ∀ x, V x) {x : M} (hx : x ∈ A.dom i) :
     A.coord i s (A.chart i x) = (A.triv i ⟨x, s x⟩).2 := by
   rw [coord, (A.chart i).left_inv (A.dom_subset_chart_source i hx)]
@@ -183,6 +191,46 @@ theorem coord_chart {i : Fin A.n} (s : ∀ x, V x) {x : M} (hx : x ∈ A.dom i) 
 theorem symm_mem_dom {i : Fin A.n} {y : E} (hy : y ∈ A.image i) : (A.chart i).symm y ∈ A.dom i := by
   obtain ⟨x, hx, rfl⟩ := hy
   rwa [(A.chart i).left_inv (A.dom_subset_chart_source i hx)]
+
+/-- The image under chart `i` of the closure of its domain is a compact set. -/
+theorem isCompact_chart_image_closure_dom (i : Fin A.n) :
+    IsCompact (A.chart i '' closure (A.dom i)) :=
+  (A.isCompact_closure_dom i).image_of_continuousOn
+    ((A.chart i).continuousOn.mono (A.closure_dom_subset_source i))
+
+/-- The image of chart `i` lies in the image of the closure of the chart domain. -/
+theorem image_subset_chart_image_closure_dom (i : Fin A.n) :
+    (A.image i : Set E) ⊆ A.chart i '' closure (A.dom i) := fun _ hy ↦
+  image_mono subset_closure (A.mem_image.1 hy)
+
+/-- The image under chart `i` of the closure of its domain consists of points of the chart target
+whose preimage lies in the base set of the bundle chart. -/
+theorem chart_image_closure_dom_subset (i : Fin A.n) :
+    A.chart i '' closure (A.dom i) ⊆
+      (A.chart i).target ∩ (A.chart i).symm ⁻¹' (A.triv i).baseSet := by
+  rintro _ ⟨x, hx, rfl⟩
+  have hs := A.closure_dom_subset_source i hx
+  refine ⟨(A.chart i).map_source hs, ?_⟩
+  rw [mem_preimage, (A.chart i).left_inv hs]
+  exact A.closure_dom_subset_baseSet i hx
+
+/-- The closure of the image of chart `i` lies in the image of the closure of the chart domain. -/
+theorem closure_image_subset_chart_image_closure_dom [T2Space E] (i : Fin A.n) :
+    closure (A.image i : Set E) ⊆ A.chart i '' closure (A.dom i) :=
+  closure_minimal (A.image_subset_chart_image_closure_dom i)
+    (A.isCompact_chart_image_closure_dom i).isClosed
+
+/-- The image of chart `i` has compact closure. -/
+theorem isCompact_closure_image [T2Space E] (i : Fin A.n) :
+    IsCompact (closure (A.image i : Set E)) :=
+  (A.isCompact_chart_image_closure_dom i).closure_of_subset
+    (A.image_subset_chart_image_closure_dom i)
+
+/-- The closure of the image of chart `i` lies in the chart target. -/
+theorem closure_image_subset_target [T2Space E] (i : Fin A.n) :
+    closure (A.image i : Set E) ⊆ (A.chart i).target :=
+  (A.closure_image_subset_chart_image_closure_dom i).trans
+    ((A.chart_image_closure_dom_subset i).trans inter_subset_left)
 
 end FiniteBundleAtlas
 
@@ -211,6 +259,14 @@ theorem differentiableOn_transition [IsManifold 𝓘(ℝ, E) 1 M] (i i' : Fin A.
     preimage_id_eq]
   exact ⟨(A.chart i').map_source hx', by
     rw [(A.chart i').left_inv hx']; exact A.dom_subset_chart_source i hx.1⟩
+
+/-- A `Cⁿ` function on `M`, read in chart `i`, is `Cⁿ` on the chart target. -/
+theorem contDiffOn_comp_chart_symm {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {n : WithTop ℕ∞} [IsManifold 𝓘(ℝ, E) n M] {φ : M → G} (hφ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, G) n φ)
+    (i : Fin A.n) :
+    ContDiffOn ℝ n (fun y ↦ φ ((A.chart i).symm y)) (A.chart i).target := by
+  rw [← contMDiffOn_iff_contDiffOn]
+  exact hφ.contMDiffOn.comp (t := univ) contMDiffOn_chart_symm fun _ _ ↦ mem_univ _
 
 /-- **Chart transitions preserve null sets.** A property holding almost everywhere on the image of
 chart `i` holds, after composition with the chart transition, almost everywhere on the overlap of
@@ -250,11 +306,16 @@ theorem coord_add (i : Fin A.n) (s t : ∀ x, V x) {y : E} (hy : y ∈ A.image i
   simp only [coord, Pi.add_apply, ← (A.triv i).continuousLinearMapAt_apply_of_mem (R := ℝ) h,
     map_add]
 
-theorem coord_smul (i : Fin A.n) (c : ℝ) (s : ∀ x, V x) {y : E} (hy : y ∈ A.image i) :
-    A.coord i (c • s) y = c • A.coord i s y := by
+/-- The chart coordinates of `x ↦ φ x • s x` are those of `s` multiplied by `φ` read in the
+chart, because the bundle chart is fibrewise linear. -/
+theorem coord_fun_smul (i : Fin A.n) (φ : M → ℝ) (s : ∀ x, V x) {y : E} (hy : y ∈ A.image i) :
+    A.coord i (fun x ↦ φ x • s x) y = φ ((A.chart i).symm y) • A.coord i s y := by
   have h := A.dom_subset_baseSet i (A.symm_mem_dom hy)
-  simp only [coord, Pi.smul_apply, ← (A.triv i).continuousLinearMapAt_apply_of_mem (R := ℝ) h,
-    map_smul]
+  simp only [coord, ← (A.triv i).continuousLinearMapAt_apply_of_mem (R := ℝ) h, map_smul]
+
+theorem coord_smul (i : Fin A.n) (c : ℝ) (s : ∀ x, V x) {y : E} (hy : y ∈ A.image i) :
+    A.coord i (c • s) y = c • A.coord i s y :=
+  A.coord_fun_smul i (fun _ ↦ c) s hy
 
 theorem coord_zero (i : Fin A.n) {y : E} (hy : y ∈ A.image i) : A.coord i (0 : ∀ x, V x) y = 0 := by
   simpa using A.coord_smul i 0 0 hy
@@ -274,5 +335,33 @@ theorem coord_eq_coordChange {i i' : Fin A.n} (s : ∀ x, V x) {y : E} (hy : y �
 end FiniteBundleAtlas
 
 end Linear
+
+section Smooth
+
+variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] {M : Type*} [TopologicalSpace M]
+  [ChartedSpace E M] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {V : M → Type*}
+  [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
+  {k : ℕ} [IsManifold 𝓘(ℝ, E) k M] [ContMDiffVectorBundle k F V 𝓘(ℝ, E)]
+
+namespace FiniteBundleAtlas
+
+variable (A : FiniteBundleAtlas E M F V)
+
+/-- **The chart coordinates of a `Cᵏ` section are `Cᵏ`** on the open set of points of the chart
+target whose preimage lies in the base set of the bundle chart. -/
+theorem contDiffOn_coord {s : ∀ x, V x}
+    (hs : ContMDiff 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, F)) k fun x ↦ TotalSpace.mk' F x (s x))
+    (i : Fin A.n) :
+    ContDiffOn ℝ k (A.coord i s)
+      ((A.chart i).target ∩ (A.chart i).symm ⁻¹' (A.triv i).baseSet) := by
+  rw [← contMDiffOn_iff_contDiffOn]
+  exact (((A.triv i).contMDiffOn_section_baseSet_iff.1 hs.contMDiffOn).comp
+    (contMDiffOn_chart_symm.mono inter_subset_left) fun _ hy ↦ hy.2).congr fun y _ ↦
+      A.coord_def i s y
+
+end FiniteBundleAtlas
+
+end Smooth
 
 end TauCeti

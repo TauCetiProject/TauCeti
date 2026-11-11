@@ -127,6 +127,16 @@ theorem simpleGains_def (τ : ℕ → ι) (n : ℕ) (a : ℕ → Ω → ℝ) (X 
       ∑ j ∈ range n, a j ω * (X (min (τ (j + 1)) t) ω - X (min (τ j) t) ω) :=
   (rfl)
 
+/-- Elementary gains only inspect the price at the clipped endpoints of the grid.
+No order condition on the grid is needed for this identity. -/
+theorem simpleGains_congr_price {X Y : ι → Ω → ℝ} (ω : Ω)
+    (hXY : ∀ j ≤ n, X (min (τ j) t) ω = Y (min (τ j) t) ω) :
+    simpleGains τ n a X t ω = simpleGains τ n a Y t ω := by
+  rw [simpleGains_def, simpleGains_def]
+  refine sum_congr rfl fun j hj ↦ ?_
+  have hj := mem_range.mp hj
+  rw [hXY _ hj, hXY _ (by omega)]
+
 /-- On the interval `(τ j, τ (j + 1)]` of a partition monotone up to `n`, the simple holding is
 `a j`. -/
 theorem simpleHolding_of_mem_Ioc (hτ : MonotoneOn τ (Set.Iic n)) (hj : j < n)

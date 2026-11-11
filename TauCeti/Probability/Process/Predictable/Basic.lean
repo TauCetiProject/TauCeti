@@ -301,10 +301,13 @@ indistinguishable version on the same raw filtration. No completeness or right c
 the filtration is required. The selected version need not be left-continuous on exceptional
 paths. -/
 theorem MeasureTheory.StronglyAdapted.exists_isStronglyPredictable_indist_of_ae_isLeftContinuous
-    [Nonempty E] [IsCompletelyMetrizableSpace E]
+    [IsCompletelyMetrizableSpace E]
     {ℱ : Filtration ℝ≥0 m} {u : ℝ≥0 → Ω → E} {P : Measure Ω}
     (hu : StronglyAdapted ℱ u) (hc : ∀ᵐ ω ∂P, IsLeftContinuous (fun t => u t ω)) :
     ∃ v : ℝ≥0 → Ω → E, IsStronglyPredictable ℱ v ∧ v ≡ᵐ[P] u := by
+  rcases isEmpty_or_nonempty E with hE | hE
+  · refine ⟨u, ?_, .rfl⟩
+    exact .of_subsingleton_cod
   borelize E
   let v t ω := limUnder atTop (fun n => u (leftSample n t) ω)
   refine ⟨v, ?_, ?_⟩

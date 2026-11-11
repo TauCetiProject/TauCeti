@@ -15,9 +15,9 @@ nonpositive real, so it lies in `Complex.slitPlane`. The half-plane is encoded b
 direction `a`: its members are the `z` with `0 < (conj a * z).re`. Specializations to the
 four axis-aligned half-planes cover the common cases. Points within distance `1` of `1` lie in
 the right half-plane, so this applies to quotients of nearly equal points. A relative
-displacement smaller than the distance to a pole also gives a slit-plane quotient. A product of
-two points in the right half-plane lies in the slit plane as well, and positive real scaling
-preserves it.
+displacement smaller than the distance to a pole also gives a slit-plane quotient; in particular
+`1 + a / z` lies in the slit plane when `‖a‖ < ‖z‖`. A product of two points in the right
+half-plane lies in the slit plane as well, and positive real scaling preserves it.
 
 Translating a point of the slit plane by a nonnegative real number keeps it in the slit plane,
 and translating a point of `slitPlane ∪ {0}` by a positive one lands in the slit plane.
@@ -36,7 +36,7 @@ is a principal logarithm.
 
 ## Main declarations
 
-* `TauCeti.div_sub_mem_slitPlane_of_dist_lt_dist`
+* `TauCeti.div_sub_mem_slitPlane_of_dist_lt_dist`, `TauCeti.one_add_div_mem_slitPlane`
 * `TauCeti.div_mem_slitPlane_of_re_conj_mul_pos`
 * `TauCeti.re_pos_of_norm_sub_one_lt_one`
 * `TauCeti.div_mem_slitPlane_of_re_pos`, `…_of_re_neg`, `…_of_im_pos`, `…_of_im_neg`
@@ -62,23 +62,22 @@ namespace TauCeti
 strictly above the real axis. -/
 theorem sub_mem_slitPlane_of_im_le_zero {s z : ℂ} (him : 0 < s.im) (hz : z.im ≤ 0) :
     z - s ∈ slitPlane :=
-  Or.inr (by
-    simp only [Complex.sub_im, ne_eq, sub_eq_zero]
-    exact fun h ↦ absurd (h ▸ hz) (not_le.mpr him))
+  Or.inr (by rw [sub_im]; linarith : (z - s).im < 0).ne
 
-/-- The quotient under the proximity inequality lies in the slit plane. -/
+/-- If `‖a‖ < ‖z‖`, then `1 + a / z` lies in the slit plane. -/
+theorem one_add_div_mem_slitPlane {a z : ℂ} (h : ‖a‖ < ‖z‖) : 1 + a / z ∈ slitPlane :=
+  mem_slitPlane_of_norm_lt_one <| by
+    rwa [norm_div, div_lt_one ((norm_nonneg a).trans_lt h)]
+
+/-- If `y` is closer to `x` than `x` is to `w`, then the quotient `(y - w) / (x - w)` lies in the
+slit plane. -/
 theorem div_sub_mem_slitPlane_of_dist_lt_dist
     {x y w : ℂ} (h : dist y x < dist x w) :
     (y - w) / (x - w) ∈ slitPlane := by
-  have hne : x - w ≠ 0 := sub_ne_zero.mpr
-    (dist_pos.mp (lt_of_le_of_lt dist_nonneg h))
-  have hsub : (y - w) / (x - w) - 1 = (y - x) / (x - w) := by
-    field_simp
-    ring
-  apply Complex.ball_one_subset_slitPlane
-  rw [Metric.mem_ball, dist_eq_norm, hsub, norm_div, div_lt_one (norm_pos_iff.mpr hne)]
-  simpa only [dist_eq_norm] using h
-
+  have hne : x - w ≠ 0 := sub_ne_zero.mpr (dist_pos.mp (dist_nonneg.trans_lt h))
+  have hsub : (y - w) / (x - w) = 1 + (y - x) / (x - w) := by field_simp; ring
+  rw [hsub]
+  exact one_add_div_mem_slitPlane (by simpa only [dist_eq_norm] using h)
 
 /-- The ratio of two members of an open half-plane through the origin lies in the slit
 plane. The half-plane with normal direction `a` is `{z | 0 < (conj a * z).re}`; degenerate
@@ -90,12 +89,8 @@ theorem div_mem_slitPlane_of_re_conj_mul_pos {a z₁ z₂ : ℂ}
   by_contra hmem
   rw [mem_slitPlane_iff, not_or, not_lt, not_ne_iff] at hmem
   obtain ⟨hre, him⟩ := hmem
-  have heq : z₂ / z₁ = (((z₂ / z₁).re : ℝ) : ℂ) := Complex.ext (by simp) (by simpa using him)
-  have hz₂ : z₂ = (((z₂ / z₁).re : ℝ) : ℂ) * z₁ := by
-    rw [← heq, div_mul_cancel₀ _ hz₁]
-  have hkey : ((starRingEnd ℂ) a) * ((((z₂ / z₁).re : ℝ) : ℂ) * z₁) =
-      (((z₂ / z₁).re : ℝ) : ℂ) * ((starRingEnd ℂ) a * z₁) := by ring
-  rw [hz₂, hkey, Complex.re_ofReal_mul] at h₂
+  have hkey : (starRingEnd ℂ) a * z₂ = z₂ / z₁ * ((starRingEnd ℂ) a * z₁) := by field_simp
+  rw [hkey, mul_re, him, zero_mul, sub_zero] at h₂
   nlinarith
 
 /-- A complex number at distance less than `1` from `1` lies in the open right half-plane. -/
@@ -154,24 +149,22 @@ theorem div_ofReal_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) {c : ℝ} (hc 
 plane. -/
 theorem ofReal_add_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) {t : ℝ} (ht : 0 ≤ t) :
     (t : ℂ) + z ∈ slitPlane := by
-  rcases mem_slitPlane_iff.mp hz with h | h
-  · exact mem_slitPlane_iff.mpr (Or.inl (by
-      simp only [Complex.add_re, Complex.ofReal_re]; linarith))
-  · exact mem_slitPlane_iff.mpr (Or.inr (by simpa using h))
+  refine (mem_slitPlane_iff.mp hz).imp (fun h ↦ ?_) (fun h ↦ by simpa using h)
+  rw [add_re, ofReal_re]
+  positivity
 
 /-- Translating a point of `slitPlane ∪ {0}` by a positive real number lands in the slit
 plane. -/
 theorem ofReal_add_mem_slitPlane_of_mem_union {z : ℂ} (hz : z ∈ slitPlane ∪ {0}) {t : ℝ}
     (ht : 0 < t) : (t : ℂ) + z ∈ slitPlane := by
-  rcases hz with hz | hz
+  rcases hz with hz | rfl
   · exact ofReal_add_mem_slitPlane hz ht.le
-  · rw [Set.mem_singleton_iff.mp hz, add_zero]
-    exact ofReal_mem_slitPlane.mpr ht
+  · simpa using ht
 
 /-- A nonnegative real number lies in `slitPlane ∪ {0}`. -/
 theorem ofReal_mem_slitPlane_union_zero {x : ℝ} (hx : 0 ≤ x) : (x : ℂ) ∈ slitPlane ∪ {0} := by
-  rcases hx.eq_or_lt with h | h
-  · exact Or.inr (by simp [← h])
+  rcases hx.eq_or_lt with rfl | h
+  · exact Or.inr (by simp)
   · exact Or.inl (ofReal_mem_slitPlane.mpr h)
 
 open scoped ComplexOrder in
@@ -213,11 +206,10 @@ theorem exists_pos_forall_mem_ball_mul_one_add_le_norm_add {z : ℂ} (hz : z ∈
           lt_min_iff.mp (lt_min (by positivity : (0 : ℝ) < |z.im| / (2 * |z.re| + 2))
             (by norm_num : (0 : ℝ) < 1 / 4))]
   refine ⟨c / 2, half_pos hc, fun w hw x => ?_⟩
-  have hwz : ‖z - w‖ < c / 2 := by rw [← dist_eq_norm, dist_comm]; exact hw
+  have hwz : ‖z - w‖ < c / 2 := by rwa [← dist_eq_norm, dist_comm]
   have htri : ‖z + ((x : ℝ) : ℂ)‖ ≤ ‖w + ((x : ℝ) : ℂ)‖ + ‖z - w‖ := by
-    calc
-      ‖z + ((x : ℝ) : ℂ)‖ = ‖(w + ((x : ℝ) : ℂ)) + (z - w)‖ := by congr 1; ring
-      _ ≤ ‖w + ((x : ℝ) : ℂ)‖ + ‖z - w‖ := norm_add_le _ _
+    convert norm_add_le (w + ((x : ℝ) : ℂ)) (z - w) using 2
+    ring
   nlinarith [hzc x x.coe_nonneg, x.coe_nonneg]
 
 /-- For `x ∈ slitPlane`, `‖t + x‖` grows at least linearly: `c (1 + t) ≤ ‖t + x‖` for `t ≥ 0`. -/

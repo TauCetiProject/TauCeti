@@ -107,7 +107,7 @@ theorem isFiniteUnramifiedSubextension_iff_exists_eq_unramifiedExtension
     have _ := finiteIntermediateField_isNonarchimedeanLocalField K Ω
       (unramifiedExtension K Ω f)
     have _ := finiteIntermediateField_valuativeExtension K Ω (unramifiedExtension K Ω f)
-    exact isUnramified_unramifiedExtension f.ne_zero
+    exact isUnramified_unramifiedExtension
 
 /-- The type of finite unramified intermediate fields of a fixed separably closed extension. -/
 abbrev FiniteUnramifiedSubextension :=

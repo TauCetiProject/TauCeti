@@ -12,8 +12,9 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 /-!
 # Trigonometric bounds and nonvanishing criteria
 
-The sine of `π / x` is positive for real `x > 1`. The sine of `π * x` is nonzero for nonzero
-`x ∈ (-1, 1)`, a criterion used to detect nonflat Schwarz–Christoffel turns. The sine is
+The sine of `π / x` is positive for real `x > 1`, and the cosine of `π / x` for real `x > 2`.
+The sine of `π * x` is nonzero for nonzero `x ∈ (-1, 1)`, a criterion used to detect nonflat
+Schwarz–Christoffel turns. The sine is
 nonpositive on `[π, 2π]`. For real `a < 1` the quantity `1 - a sin² θ` is positive, a bound
 `a sin² φ < 1` with `φ ≤ π / 2` gives `a sin² θ < 1` for `|θ| ≤ φ`, and
 `1 - k² ≤ 1 - k² sin² θ ≤ 1` for every real `k`. Jordan's inequality gives `θ ≤ π / 2 * sin θ` on
@@ -46,6 +47,39 @@ theorem cos_pos_of_mem_uIoo {a b θ : ℝ}
 theorem sin_nonpos_of_pi_le_of_le_two_pi {x : ℝ} (hpx : π ≤ x) (hxp : x ≤ 2 * π) : sin x ≤ 0 := by
   rw [← sin_sub_two_pi]
   exact sin_nonpos_of_nonpos_of_neg_pi_le (by linarith) (by linarith)
+
+/-- A step of nonnegative length whose direction `x` lies in `[θ, θ + π]` does not lower the
+height. -/
+theorem nonneg_of_step_of_le_add_pi {D x θ : ℝ}
+    (h : ∃ d, 0 ≤ d ∧ D = d * Real.sin (x - θ)) (h₁ : θ ≤ x) (h₂ : x ≤ θ + Real.pi) : 0 ≤ D := by
+  obtain ⟨d, hd, rfl⟩ := h
+  exact mul_nonneg hd (Real.sin_nonneg_of_nonneg_of_le_pi (by linarith) (by linarith))
+
+/-- A step of nonnegative length whose direction `x ∈ [θ - 2π, θ - π]` does not lower the
+height. -/
+theorem nonneg_of_step_of_le_sub_pi {D x θ : ℝ}
+    (h : ∃ d, 0 ≤ d ∧ D = d * Real.sin (x - θ)) (h₁ : θ - 2 * Real.pi ≤ x)
+    (h₂ : x ≤ θ - Real.pi) : 0 ≤ D := by
+  obtain ⟨d, hd, rfl⟩ := h
+  rw [← Real.sin_add_two_pi]
+  exact mul_nonneg hd (Real.sin_nonneg_of_nonneg_of_le_pi (by linarith) (by linarith))
+
+/-- A step of nonnegative length whose direction `x` lies in `[θ - π, θ]` does not raise the
+height. -/
+theorem nonpos_of_step_of_sub_pi_le {D x θ : ℝ}
+    (h : ∃ d, 0 ≤ d ∧ D = d * Real.sin (x - θ)) (h₁ : θ - Real.pi ≤ x) (h₂ : x ≤ θ) : D ≤ 0 := by
+  obtain ⟨d, hd, rfl⟩ := h
+  exact mul_nonpos_of_nonneg_of_nonpos hd
+    (Real.sin_nonpos_of_nonpos_of_neg_pi_le (by linarith) (by linarith))
+
+/-- A step of nonnegative length whose direction `x ∈ [θ + π, θ + 2π]` does not raise the
+height. -/
+theorem nonpos_of_step_of_add_pi_le {D x θ : ℝ}
+    (h : ∃ d, 0 ≤ d ∧ D = d * Real.sin (x - θ)) (h₁ : θ + Real.pi ≤ x)
+    (h₂ : x ≤ θ + 2 * Real.pi) : D ≤ 0 := by
+  obtain ⟨d, hd, rfl⟩ := h
+  exact mul_nonpos_of_nonneg_of_nonpos hd
+    (sin_nonpos_of_pi_le_of_le_two_pi (by linarith) (by linarith))
 
 /-- The quantity `1 - a sin² θ` is positive when `a < 1`. -/
 theorem one_sub_mul_sin_sq_pos {a : ℝ} (ha : a < 1) (θ : ℝ) : 0 < 1 - a * sin θ ^ 2 := by
@@ -93,6 +127,12 @@ theorem sin_pi_mul_ne_zero_of_mem_Ioo_of_ne_zero {x : ℝ}
 /-- For a real denominator greater than one, the sine of `π / x` is positive. -/
 theorem sin_pi_div_pos {x : ℝ} (hx : 1 < x) : 0 < sin (π / x) :=
   sin_pos_of_pos_of_lt_pi (div_pos pi_pos (by linarith)) (div_lt_self pi_pos hx)
+
+/-- For a real denominator greater than two, the cosine of `π / x` is positive. -/
+theorem cos_pi_div_pos {x : ℝ} (hx : 2 < x) : 0 < cos (π / x) := by
+  have hx₀ : 0 < x := by linarith
+  refine cos_pos_of_mem_Ioo ⟨by linarith [div_pos pi_pos hx₀, pi_pos], ?_⟩
+  rwa [div_lt_div_iff_of_pos_left pi_pos hx₀ two_pos]
 
 /-- If `α, β > 0`, `γ ≥ 0` and `α + β + γ < π`, then `(cos α cos β + cos γ) / (sin α sin β) > 1`.
 Indeed `cos α cos β - sin α sin β = -cos (π - α - β)`, and `cos (π - α - β) < cos γ` because

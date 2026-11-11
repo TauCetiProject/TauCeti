@@ -39,6 +39,8 @@ wrapped in a named predicate, matching how the roadmap states it. A `Prop`-value
 * `TauCeti.eventually_isUnramifiedAt_liesOver`: almost every finite place has only
   unramified places above it.
 * `NumberField.Chebotarev.mem_ramifiedPrimes_iff`: the defining condition for membership.
+* `NumberField.Chebotarev.isUnramifiedAt_of_under_eq`: a prime of `L` over a prime of `K` above
+  which every prime of `L` is unramified is unramified over `K`.
 * `NumberField.Chebotarev.under_notMem_ramifiedPrimes_iff_isUnramifiedAt`: in a Galois
   extension, unramifiedness can be tested at one prime above the base prime.
 * `NumberField.Chebotarev.ramifiedPrimes_subset_ramifiedPrimes`: for a tower `K ⊆ L ⊆ M`, every
@@ -130,6 +132,17 @@ variable {K L}
 theorem mem_ramifiedPrimes_iff (𝔭 : HeightOneSpectrum (𝓞 K)) : 𝔭 ∈ ramifiedPrimes K L ↔
     ¬ ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal], Algebra.IsUnramifiedAt (𝓞 K) Q :=
   Set.Finite.mem_toFinset _
+
+omit [NumberField K] [NumberField L] in
+/-- A prime of `L` over a prime `p` of `K` above which every prime of `L` is unramified is
+unramified over `K`. -/
+theorem isUnramifiedAt_of_under_eq (p : HeightOneSpectrum (𝓞 K))
+    (hur : ∀ (R : Ideal (𝓞 L)) [R.IsPrime] [R.LiesOver p.asIdeal],
+      Algebra.IsUnramifiedAt (𝓞 K) R)
+    (Q : HeightOneSpectrum (𝓞 L)) (hQp : Q.under (𝓞 K) = p) :
+    Algebra.IsUnramifiedAt (𝓞 K) Q.asIdeal :=
+  haveI : Q.asIdeal.LiesOver p.asIdeal := ⟨(congrArg HeightOneSpectrum.asIdeal hQp).symm⟩
+  hur Q.asIdeal
 
 /-- In a Galois extension, a prime of the base is unramified exactly when one prime above it
 is unramified. -/

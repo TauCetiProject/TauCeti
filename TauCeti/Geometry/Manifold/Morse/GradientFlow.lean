@@ -138,7 +138,7 @@ theorem mapsTo_maximalIntegralCurve_neg_mgradient_preimage_Iic (hf : ContMDiff I
   have h : f (maximalIntegralCurve (-mgradient I f) x s) ≤
       f (maximalIntegralCurve (-mgradient I f) x 0) :=
     antitoneOn_comp_maximalIntegralCurve_neg_mgradient hf h0 hs hs0
-  rwa [maximalIntegralCurve_zero h0] at h
+  rwa [maximalIntegralCurve_zero] at h
 
 /-- The function `-f` increases along a negative gradient trajectory at rate `‖grad f‖²`. -/
 private theorem hasDerivAt_neg_comp_maximalIntegralCurve_neg_mgradient
@@ -206,7 +206,7 @@ theorem integral_Ioi_norm_mgradient_sq_maximalIntegralCurve (hf : ContMDiff I �
   rw [integral_Ioi_of_hasDerivAt_of_nonneg'
     (g := fun s ↦ -f (maximalIntegralCurve (-mgradient I f) x s))
     (fun _ hs ↦ hasDerivAt_neg_comp_maximalIntegralCurve_neg_mgradient hf (hx hs))
-    (fun _ _ ↦ by positivity) hc.neg, maximalIntegralCurve_zero (hx self_mem_Ici)]
+    (fun _ _ ↦ by positivity) hc.neg, maximalIntegralCurve_zero]
   ring
 
 omit hx hc
@@ -225,8 +225,7 @@ theorem Ici_subset_maximalIntegralCurveInterval_neg_mgradient (hf : ContMDiff I 
     Ici 0 ⊆ maximalIntegralCurveInterval (-mgradient I f) x :=
   have : CompleteSpace E := FiniteDimensional.complete ℝ E
   Ici_subset_maximalIntegralCurveInterval_of_isCompact_of_mapsTo
-    (contMDiff_neg_mgradient_one hf)
-    (zero_mem_maximalIntegralCurveInterval (contMDiff_neg_mgradient_one hf).contMDiffAt) hK hmem
+    (contMDiff_neg_mgradient_one hf) hK hmem
 
 /-- Along a trapped forward trajectory of `-grad f`, the function `f` converges to its value at
 every ω-limit point. -/
@@ -265,7 +264,7 @@ theorem mem_criticalPoints_of_mapClusterPt_maximalIntegralCurve_neg_mgradient
       (mapClusterPt_atTop_maximalIntegralCurve (contMDiff_neg_mgradient_one hf) hx hz hs)) hlim
   -- Hence the derivative `-‖grad f z‖²` of `f` along that trajectory at time `0` vanishes.
   have hderiv := hasDerivAt_comp_maximalIntegralCurve_neg_mgradient hf hz0
-  rw [maximalIntegralCurve_zero hz0] at hderiv
+  rw [maximalIntegralCurve_zero] at hderiv
   have h0 := hderiv.unique ((hasDerivAt_const 0 (f z)).congr_of_eventuallyEq hconst)
   rw [neg_eq_zero, sq_eq_zero_iff, norm_eq_zero, mgradient_eq_zero_iff] at h0
   exact mem_criticalPoints.mpr h0

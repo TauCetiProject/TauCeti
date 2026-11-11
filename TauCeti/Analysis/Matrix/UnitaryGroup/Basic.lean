@@ -10,6 +10,7 @@ public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import Mathlib.Topology.Instances.Matrix
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
 
 /-!
 # `U(n) = Circle · SU(n)`
@@ -35,7 +36,8 @@ unitary group. Rescaling by a scalar of modulus one keeps a matrix unitary, so n
 ## Main definitions
 
 * `Matrix.UnitaryGroup.detCircle`: the determinant of a complex unitary matrix, as a continuous
-  group morphism `U(n) →* Circle`.
+  group morphism `U(n) →* Circle`. It is multiplicative on block-diagonal sums
+  (`Matrix.UnitaryGroup.detCircle_sum`).
 -/
 
 public section
@@ -162,5 +164,28 @@ theorem coe_detCircle (U : unitaryGroup n ℂ) : (detCircle U : ℂ) = (U : Matr
 /-- The determinant of a unitary matrix depends continuously on the matrix. -/
 theorem continuous_detCircle : Continuous (detCircle : unitaryGroup n ℂ → Circle) :=
   Continuous.subtype_mk (continuous_subtype_val.matrix_det) _
+
+section Sum
+
+variable {m : Type*} [Fintype m] [DecidableEq m]
+
+/-- The block-diagonal sum of unitary matrices depends continuously on the two blocks. -/
+theorem continuous_sum {α : Type*} [CommRing α] [StarRing α] [TopologicalSpace α] :
+    Continuous (sum : unitaryGroup n α × unitaryGroup m α →* unitaryGroup (n ⊕ m) α) := by
+  refine continuous_induced_rng.2 ?_
+  simpa only [Function.comp_def, coe_sum] using
+    Continuous.matrix_fromBlocks (continuous_subtype_val.comp continuous_fst) continuous_const
+      continuous_const (continuous_subtype_val.comp continuous_snd)
+
+/-- The determinant of a block-diagonal sum of unitary matrices is the product of the
+determinants. -/
+@[simp]
+theorem detCircle_sum (p : unitaryGroup n ℂ × unitaryGroup m ℂ) :
+    detCircle (sum p) = detCircle p.1 * detCircle p.2 := by
+  refine Circle.ext ?_
+  rw [Circle.coe_mul, coe_detCircle, coe_detCircle, coe_detCircle, coe_sum]
+  exact det_fromBlocks_zero₂₁ _ _ _
+
+end Sum
 
 end Matrix.UnitaryGroup

@@ -47,6 +47,8 @@ with `1 / f` vanish with the convention `a / 0 = 0`.
   product on product fields.
 * `TauCeti.Manifold.IsWarpedProduct.tangentSpaceProdEquiv_leviCivitaConnection_prodVectorField`:
   the Levi-Civita connection of a warped product on product fields, in any direction.
+* `TauCeti.Manifold.IsWarpedProduct.tangentSpaceProdEquiv_leviCivitaConnection_prodVectorField_zero`
+  : its restriction to horizontal fields.
 
 ## References
 
@@ -194,5 +196,20 @@ theorem IsWarpedProduct.tangentSpaceProdEquiv_leviCivitaConnection_prodVectorFie
   rw [real_inner_comm (e v).2 (e w).2] at hkoszul
   simp only [mul_add, hdiv]
   linear_combination hkoszul / 2
+
+/-- On a horizontal section `W`, the Levi-Civita connection of the warped product differs from
+the base connection only by the factor `W f / f` on the vertical component. -/
+theorem IsWarpedProduct.tangentSpaceProdEquiv_leviCivitaConnection_prodVectorField_zero
+    [IsContMDiffRiemannianBundle (I.prod J) 1 (E × F) (fun p : M × N ↦ TangentSpace (I.prod J) p)]
+    (h : IsWarpedProduct I J N f) {W : Π x : M, TangentSpace I x}
+    (hf : MDiffAt f p.1) (hW : MDiffAt (T% W) p.1) (u : TangentSpace (I.prod J) p) :
+    tangentSpaceProdEquiv p
+        ((leviCivitaConnection (I.prod J) (M × N)) (prodVectorField W 0) p u) =
+      (leviCivitaConnection I M W p.1 (tangentSpaceProdEquiv p u).1,
+        (mvfderiv I f p.1 (W p.1) / f p.1) • (tangentSpaceProdEquiv p u).2) := by
+  have h0N : MDiffAt (T% (0 : Π y : N, TangentSpace J y)) p.2 :=
+    (contMDiff_zeroSection ℝ (TangentSpace J)).mdifferentiableAt one_ne_zero
+  simpa [(leviCivitaConnection J N).isCovariantDerivativeOnUniv.zero] using
+    h.tangentSpaceProdEquiv_leviCivitaConnection_prodVectorField hf hW h0N u
 
 end TauCeti.Manifold

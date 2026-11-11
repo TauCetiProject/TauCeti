@@ -88,6 +88,9 @@ functions are dense, the uniqueness part of the Schwartz kernel theorem.
 * `TauCeti.UnitAddTorus.exists_tendstoUniformlyOn_iteratedFDeriv_sum_cexp`: a smooth function
   supported in the open unit cube is a `C^k` limit of trigonometric polynomials on the cube, for
   every `k`.
+* `TauCeti.UnitAddTorus.mFourierCoeff_mFourier` and
+  `TauCeti.UnitAddTorus.mFourierCoeff_tsum_smul_mFourier`: the Fourier coefficients of a monomial
+  and of an absolutely convergent trigonometric series.
 
 ## References
 
@@ -610,5 +613,49 @@ theorem exists_tendstoUniformlyOn_iteratedFDeriv_sum_cexp
   -- On the open cube the periodic extension agrees with `g` near every point.
   refine (Filter.EventuallyEq.iteratedFDeriv ℝ (Filter.eventually_of_mem
     (Metric.isOpen_ball.mem_nhds hx) fun y hy ↦ periodize_eq_of_mem_ball hsupp hy) k).eq_of_nhds
+
+/-! ### Fourier coefficients of trigonometric series -/
+
+/-- The Fourier coefficients of the monomial `mFourier n` are those of the Kronecker delta at
+`n`. -/
+@[simp]
+theorem mFourierCoeff_mFourier (n m : d → ℤ) :
+    mFourierCoeff (mFourier n) m = (Pi.single n 1 : (d → ℤ) → ℂ) m := by
+  have h : mFourierBasis.repr (mFourierBasis n) m = _ := mFourierBasis_repr _ m
+  rw [HilbertBasis.repr_self, lp.single_apply, coe_mFourierBasis, mFourierCoeff_toLp] at h
+  exact h.symm
+
+/-- The Fourier coefficients of an absolutely convergent trigonometric series
+`∑ n, c n • mFourier n` are the coefficients `c`. -/
+theorem mFourierCoeff_tsum_smul_mFourier {c : (d → ℤ) → ℂ} (hc : Summable fun n ↦ ‖c n‖)
+    (m : d → ℤ) : mFourierCoeff (fun z ↦ ∑' n, c n • mFourier n z) m = c m := by
+  classical
+  have hint (n : d → ℤ) : MeasureTheory.Integrable
+      (fun z : UnitAddTorus d ↦ mFourier (-m) z • (c n • mFourier n z)) :=
+    (by fun_prop : Continuous fun z : UnitAddTorus d ↦ mFourier (-m) z • (c n • mFourier n z))
+      |>.integrable_of_hasCompactSupport (.of_compactSpace _)
+  have hnorm (n : d → ℤ) :
+      ∫ z, ‖mFourier (-m) z • (c n • mFourier n z)‖ = ‖c n‖ := by
+    simp [norm_mFourier_apply, MeasureTheory.probReal_univ]
+  have hsum (z : UnitAddTorus d) : Summable fun n ↦ c n • mFourier n z :=
+    Summable.of_norm <| by simpa [norm_smul, norm_mFourier_apply] using hc
+  calc mFourierCoeff (fun z ↦ ∑' n, c n • mFourier n z) m
+      = ∫ z, ∑' n, mFourier (-m) z • (c n • mFourier n z) := by
+        rw [mFourierCoeff_eq_integral_volume]
+        refine MeasureTheory.integral_congr_ae (.of_forall fun z ↦ ?_)
+        exact ((hsum z).tsum_const_smul (mFourier (-m) z)).symm
+    _ = ∑' n, ∫ z, mFourier (-m) z • (c n • mFourier n z) :=
+        (MeasureTheory.integral_tsum_of_summable_integral_norm hint
+          (by simpa only [hnorm] using hc)).symm
+    _ = ∑' n, c n * (Pi.single n 1 : (d → ℤ) → ℂ) m := by
+        congr 1 with n
+        rw [← mFourierCoeff_mFourier, mFourierCoeff_eq_integral_volume, ← smul_eq_mul,
+          ← MeasureTheory.integral_smul]
+        refine MeasureTheory.integral_congr_ae (.of_forall fun z ↦ ?_)
+        simp only [smul_eq_mul]
+        ring
+    _ = c m := by
+        rw [tsum_eq_single m fun n hn ↦ by simp [Ne.symm hn]]
+        simp
 
 end TauCeti.UnitAddTorus

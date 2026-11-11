@@ -5,9 +5,12 @@ Authors: Chris Birkbeck
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Rat
+public import Mathlib.Basic.Real.Basic
 public import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.NumberTheory.ArithmeticFunction.Misc
+public import TauCeti.Algebra.Module.Primitive
 
 /-!
 # Upper-triangular representatives of integral matrices of fixed determinant
@@ -18,7 +21,9 @@ Mathlib's `FixedDetMatrices.reps n` is the set of integral matrices `(a b; 0 d)`
 that to the statement that `FixedDetMatrices.reps n` is a set of representatives for the action of
 `SL(2, ℤ)` by left multiplication on the determinant-`n` matrices, `n ≠ 0`, and counts it.
 It also records that only finitely many integral matrices of a given determinant have entries
-bounded by a given constant.
+bounded by a given constant. Restricted to the primitive matrices, those whose entries have greatest
+common divisor one, the representatives `FixedDetMatrices.primitiveReps n` are the
+`(a b; 0 d)` with `gcd(a, b, d) = 1`.
 
 ## Main results
 
@@ -37,7 +42,12 @@ bounded by a given constant.
   determinant `n` whose entries are at most `B` in absolute value.
 * `FixedDetMatrices.toGL`: for `n ≠ 0`, an integral matrix of determinant `n` as an element of
   `GL(m, ℚ)`, on which left multiplication by `SL(m, ℤ)` is multiplication by its image
-  (`FixedDetMatrices.toGL_smul`).
+  (`FixedDetMatrices.toGL_smul`), and `FixedDetMatrices.toGLReal`, its image in `GL(m, ℝ)`.
+* `FixedDetMatrices.isPrimitive_smul_iff`: left multiplication by `SL(m, ℤ)` preserves
+  primitivity.
+* `FixedDetMatrices.primitiveReps`: the primitive matrices of `FixedDetMatrices.reps n`, and
+  `FixedDetMatrices.exists_smul_mem_primitiveReps`: for `n ≠ 0` every primitive matrix of
+  determinant `n` can be moved into them by `SL(2, ℤ)`.
 
 ## References
 
@@ -239,6 +249,70 @@ theorem toGL_smul (hn : n ≠ 0) (g : SpecialLinearGroup m ℤ) (A : FixedDetMat
   simpa [smul_coe] using
     Matrix.map_mul (f := Int.castRingHom ℚ) (L := (g : Matrix m m ℤ)) (M := A.1)
 
+/-! ### Integral matrices of nonzero determinant as real invertible matrices -/
+
+/-- For `n ≠ 0`, an integral matrix of determinant `n` as an invertible real matrix. For `2 × 2`
+matrices and `0 < n` this is the form in which it acts on the upper half-plane, by the Möbius
+transformation `τ ↦ (a τ + b) / (c τ + d)`. -/
+noncomputable def toGLReal (hn : n ≠ 0) (A : FixedDetMatrix m ℤ n) : GL m ℝ :=
+  GeneralLinearGroup.map (algebraMap ℚ ℝ) (toGL hn A)
+
+/-- `toGLReal hn A` is the image of `toGL hn A` under `ℚ → ℝ`. -/
+theorem toGLReal_eq_map_toGL (hn : n ≠ 0) (A : FixedDetMatrix m ℤ n) :
+    toGLReal hn A = GeneralLinearGroup.map (algebraMap ℚ ℝ) (toGL hn A) := (rfl)
+
+/-- The underlying matrix of `toGLReal hn A` is the entrywise cast of `A`. -/
+@[simp]
+theorem coe_toGLReal (hn : n ≠ 0) (A : FixedDetMatrix m ℤ n) :
+    (toGLReal hn A : Matrix m m ℝ) = A.1.map (Int.cast : ℤ → ℝ) := by
+  ext i j
+  simp [toGLReal_eq_map_toGL]
+
+/-- The entries of `toGLReal hn A` are the casts of the entries of `A`. -/
+theorem toGLReal_apply (hn : n ≠ 0) (A : FixedDetMatrix m ℤ n) (i j : m) :
+    (toGLReal hn A : Matrix m m ℝ) i j = A.1 i j := by
+  rw [coe_toGLReal, map_apply]
+
+/-- The determinant of `toGLReal hn A` is `n`. -/
+theorem det_toGLReal (hn : n ≠ 0) (A : FixedDetMatrix m ℤ n) :
+    ((toGLReal hn A).det : ℝ) = n := by
+  rw [GeneralLinearGroup.val_det_apply, coe_toGLReal, ← Int.cast_det, A.2]
+
+/-- Left multiplication by `g ∈ SL(m, ℤ)` becomes multiplication by its image in `GL(m, ℝ)`. -/
+theorem toGLReal_smul (hn : n ≠ 0) (g : SpecialLinearGroup m ℤ) (A : FixedDetMatrix m ℤ n) :
+    toGLReal hn (g • A) = SpecialLinearGroup.mapGL ℝ g * toGLReal hn A := by
+  rw [toGLReal_eq_map_toGL, toGL_smul, map_mul, SpecialLinearGroup.map_mapGL,
+    toGLReal_eq_map_toGL]
+
+/-- Left multiplication by `SL(m, ℤ)` preserves and reflects primitivity: the greatest common
+divisor of the entries is unchanged. -/
+@[simp]
+theorem isPrimitive_smul_iff (g : SpecialLinearGroup m ℤ) (A : FixedDetMatrix m ℤ n) :
+    TauCeti.IsPrimitive (g • A).1 ↔ TauCeti.IsPrimitive A.1 := by
+  rw [smul_coe, ← SpecialLinearGroup.coe_GL_coe_matrix, Units.isPrimitive_units_mul_iff]
+
 end ToGL
+
+/-! ### Primitive representatives -/
+
+open scoped Classical in
+/-- The primitive matrices among the upper-triangular representatives `reps n`: the matrices
+`(a b; 0 d)` with `ad = n`, `0 < a`, `0 ≤ b < |d|` and `gcd(a, b, d) = 1`. For `n ≠ 0` they
+represent the orbits of `SL(2, ℤ)` on the primitive integral matrices of determinant `n`. -/
+noncomputable def primitiveReps (n : ℤ) : Finset (FixedDetMatrix (Fin 2) ℤ n) :=
+  {A ∈ (reps n).toFinset | TauCeti.IsPrimitive A.1}
+
+/-- A matrix lies in `primitiveReps n` exactly when it is a primitive matrix of `reps n`. -/
+@[simp]
+theorem mem_primitiveReps {A : FixedDetMatrix (Fin 2) ℤ n} :
+    A ∈ primitiveReps n ↔ A ∈ reps n ∧ TauCeti.IsPrimitive A.1 := by
+  simp [primitiveReps]
+
+/-- For `n ≠ 0`, every primitive matrix of determinant `n` can be moved into
+`primitiveReps n` by left multiplication by `SL(2, ℤ)`. -/
+theorem exists_smul_mem_primitiveReps (hn : n ≠ 0) {A : FixedDetMatrix (Fin 2) ℤ n}
+    (hA : TauCeti.IsPrimitive A.1) : ∃ g : SL(2, ℤ), g • A ∈ primitiveReps n := by
+  obtain ⟨g, hg⟩ := exists_smul_mem_reps hn A
+  exact ⟨g, mem_primitiveReps.2 ⟨hg, (isPrimitive_smul_iff g A).2 hA⟩⟩
 
 end FixedDetMatrices
