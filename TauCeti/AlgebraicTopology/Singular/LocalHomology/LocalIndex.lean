@@ -408,6 +408,24 @@ theorem localIndex_addRight (v x : E) : o.localIndex o (ContinuousMap.addRight v
   rw [← o.localDegree_eq_localIndex o hE hE _ hfib,
     o.localDegree_eq_degree o hE hE (Homeomorph.addRight v).isProperMap, ← hdeg]
 
+section CongrModel
+
+variable {M N E F E₁ F₁ : Type} [TopologicalSpace M] [T2Space M] [TopologicalSpace N] [T2Space N]
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] [ChartedSpace F N]
+  [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [FiniteDimensional ℝ E₁] [ChartedSpace E₁ M]
+  [NormedAddCommGroup F₁] [NormedSpace ℝ F₁] [FiniteDimensional ℝ F₁] [ChartedSpace F₁ N]
+  {n : ℕ} (o : HomologicalOrientation M E n) (o' : HomologicalOrientation N F n)
+
+/-- The local index only depends on the local orientations, not on the models. -/
+@[simp]
+theorem localIndex_congrModel (hM : finrank ℝ E₁ = finrank ℝ E) (hN : finrank ℝ F₁ = finrank ℝ F)
+    (f : C(M, N)) (x : M) :
+    (congrModel hM o).localIndex (congrModel hN o') f x = o.localIndex o' f x := by
+  simp only [localIndex, localIndexClass, congrModel_apply]
+
+end CongrModel
+
 end HomologicalOrientation
 
 end TauCeti

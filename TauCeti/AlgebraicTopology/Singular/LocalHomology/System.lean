@@ -561,6 +561,31 @@ theorem eq_localHomologyTransport (k : ℕ)
       (P.localHomologyTransport_mk R (γ.map continuous_subtype_val) (fun s ↦ (γ s).2) k).symm
   exact eq_of_heq (Functor.hcongr_hom hG f)
 
+/-- **The transport does not depend on the model.** If `M` is modelled both on `E` and on a real
+normed space `F` of the same finite dimension, the transports of local homology computed from the
+two structures agree: both are characterized by compact convex sets in open partial
+homeomorphisms to the model (`TauCeti.eq_localHomologyTransport`), and a linear equivalence
+`E ≃L[ℝ] F` carries those of one model to those of the other. -/
+theorem localHomologyTransport_eq_of_finrank_eq {F : Type w} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [FiniteDimensional ℝ F] [ChartedSpace F M]
+    (h : Module.finrank ℝ F = Module.finrank ℝ E) (k : ℕ) {x y : FundamentalGroupoid M}
+    (f : x ⟶ y) : localHomologyTransport R M F k f = localHomologyTransport R M E k f := by
+  let L : E ≃L[ℝ] F := ContinuousLinearEquiv.ofFinrankEq h.symm
+  refine eq_localHomologyTransport R k (fun g ↦ localHomologyTransport R M F k g)
+    (fun g g' ↦ localHomologyTransport_comp R M F k g g') (fun φ K hK hKc hKφ a b γ hγ ↦ ?_) f
+  -- Carry the chart `φ` and the set `K` to the model `F` through `L`.
+  let ψ := φ.trans L.toHomeomorph.toOpenPartialHomeomorph
+  have hset : ψ.symm '' (L '' K) = φ.symm '' K := by
+    rw [OpenPartialHomeomorph.coe_trans_symm, Set.image_image]
+    simp
+  have hKψ : L '' K ⊆ ψ.target := by
+    rintro _ ⟨z, hz, rfl⟩
+    simpa [ψ, OpenPartialHomeomorph.trans_target] using hKφ hz
+  have hconv : Convex ℝ (L '' K) := hK.linear_image (L : E →ₗ[ℝ] F)
+  have key := localHomologyRestriction_comp_localHomologyTransport R ψ hconv
+    (hKc.image L.continuous) hKψ γ (fun s ↦ hset.symm ▸ hγ s) k
+  convert key using 3 <;> exact hset.symm
+
 /-- **Restrictions of a global class are parallel.** The restrictions
 `Hₖ(M, M ∖ M) ⟶ Hₖ(M, M ∖ {x})` to the points of `M` are compatible with the transport of local
 homology along every path class, in every degree. -/

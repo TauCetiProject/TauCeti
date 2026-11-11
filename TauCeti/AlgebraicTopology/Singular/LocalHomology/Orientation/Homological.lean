@@ -124,6 +124,44 @@ instance : InvolutiveNeg (HomologicalOrientation M E d) where
 theorem neg_apply (o : HomologicalOrientation M E d) (x : M) : (-o) x = -o x :=
   (rfl)
 
+section CongrModel
+
+variable {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [ChartedSpace F M]
+
+/-- **Homological orientations do not depend on the model.** If `M` is modelled both on `E` and
+on a real normed space `F` of the same finite dimension, a homological orientation for one model
+is one for the other, with the same local orientations: the two transports of local orientations
+agree (`TauCeti.localOrientationTransport_eq_of_finrank_eq`). -/
+def congrModel (h : finrank ℝ F = finrank ℝ E) :
+    HomologicalOrientation M E d ≃ HomologicalOrientation M F d where
+  toFun o := ⟨o, fun f ↦ by
+    rw [localOrientationTransport_eq_of_finrank_eq M E d h, localOrientationTransport_apply]⟩
+  invFun o := ⟨o, fun f ↦ by
+    rw [← localOrientationTransport_eq_of_finrank_eq M E d h, localOrientationTransport_apply]⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+/-- The change of model keeps every local orientation. -/
+@[simp]
+theorem congrModel_apply (h : finrank ℝ F = finrank ℝ E) (o : HomologicalOrientation M E d)
+    (x : M) : congrModel h o x = o x :=
+  (rfl)
+
+/-- The inverse change of model keeps every local orientation. -/
+@[simp]
+theorem congrModel_symm_apply (h : finrank ℝ F = finrank ℝ E) (o : HomologicalOrientation M F d)
+    (x : M) : (congrModel h).symm o x = o x :=
+  (rfl)
+
+/-- The change of model commutes with reversal. -/
+@[simp]
+theorem congrModel_neg (h : finrank ℝ F = finrank ℝ E) (o : HomologicalOrientation M E d) :
+    congrModel h (-o) = -congrModel h o :=
+  (rfl)
+
+end CongrModel
+
 /-- **An orientation of a connected manifold is determined by its value at one point.** -/
 theorem eq_of_apply_eq [ConnectedSpace M] {o o' : HomologicalOrientation M E d} {x : M}
     (h : o x = o' x) : o = o' := by
