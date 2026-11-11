@@ -145,7 +145,7 @@ theorem scalarMixedIndexDensity_add_right (B C f g h : ℝ → ℝ) (s : ℝ)
 /-- Scalar multiplication in the first weight factors out of the mixed density. -/
 theorem scalarMixedIndexDensity_smul_left (B C f g : ℝ → ℝ) (s a : ℝ) :
     scalarMixedIndexDensity B C (a • f) g s = a * scalarMixedIndexDensity B C f g s := by
-  simp only [scalarMixedIndexDensity_def, Pi.smul_apply, smul_eq_mul, deriv_const_mul_field]
+  simp only [scalarMixedIndexDensity_def, deriv_const_smul_field, Pi.smul_apply, smul_eq_mul]
   ring
 
 /-- Scalar multiplication in the second weight factors out of the mixed density. -/
@@ -176,8 +176,8 @@ theorem scalarMixedIndex_add_right (B C f g h : ℝ → ℝ) (c : ℝ)
     scalarMixedIndex B C c f (g + h) =
       scalarMixedIndex B C c f g + scalarMixedIndex B C c f h := by
   rw [scalarMixedIndex_comm B C c f, scalarMixedIndex_add_left B C g h f c hg hh
-    (by simpa only [scalarMixedIndexDensity_comm B C g f] using hgi)
-    (by simpa only [scalarMixedIndexDensity_comm B C h f] using hhi),
+    (by simpa only [funext (scalarMixedIndexDensity_comm B C g f)] using hgi)
+    (by simpa only [funext (scalarMixedIndexDensity_comm B C h f)] using hhi),
     scalarMixedIndex_comm B C c g, scalarMixedIndex_comm B C c h]
 
 /-- Scalar multiplication in the first weight factors out of the mixed index. -/
