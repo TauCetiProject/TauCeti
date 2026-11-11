@@ -235,11 +235,9 @@ theorem prodMap [inst : MulAction (G × G₂) (M × N)]
   let _ : MulAction (G × G₂) M := MulAction.compHom M (MonoidHom.fst G G₂)
   let _ : MulAction (G × G₂) N := MulAction.compHom N (MonoidHom.snd G G₂)
   have _ : ContMDiffSMul (I.prod I₂) I' ∞ (G × G₂) M :=
-    ⟨(ContMDiffSMul.contMDiff_smul (I := I) (I' := I') (G := G) (M := M)).comp
-      ((contMDiff_fst.comp contMDiff_fst).prodMk contMDiff_snd)⟩
+    MulAction.contMDiffSMul_compHom (I := I) (f := MonoidHom.fst G G₂) contMDiff_fst
   have _ : ContMDiffSMul (I.prod I₂) J ∞ (G × G₂) N :=
-    ⟨(ContMDiffSMul.contMDiff_smul (I := I₂) (I' := J) (G := G₂) (M := N)).comp
-      ((contMDiff_snd.comp contMDiff_fst).prodMk contMDiff_snd)⟩
+    MulAction.contMDiffSMul_compHom (I := I₂) (f := MonoidHom.snd G G₂) contMDiff_snd
   -- By definition of `MulAction.compHom`, `g • x = g.1 • x` on `M` and `g • y = g.2 • y` on `N`.
   obtain rfl : inst = Prod.mulAction := MulAction.ext (funext₂ hsmul)
   exact (h.comp_monoidHom (MonoidHom.fst G G₂) mdifferentiableAt_fst fun _ _ ↦ rfl).prod
