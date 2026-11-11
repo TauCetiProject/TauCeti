@@ -8,6 +8,7 @@ module
 public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.Data.Finset.Card
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
+import Mathlib.Data.Fintype.Pigeonhole
 import Mathlib.Data.ZMod.QuotientGroup
 import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.GroupTheory.Perm.ViaEmbedding
@@ -55,10 +56,11 @@ front or to any other slot (`TauCeti.sum_sign_smul_comp_eq_sum_cons_removeNth`,
 involution `σ` by left multiplication with `Equiv.swap a (σ a)` leaves an involution that agrees
 with `σ` off the pair (`Function.Involutive.swap_mul`,
 `Function.Involutive.swap_mul_apply_eq_self_or`), and multiplying back on the right recovers `σ`
-(`Function.Involutive.swap_mul_mul_swap`). A permutation of a finite type sends as many points
-into a set as out of it (`Equiv.Perm.card_filter_not_and_apply_eq`), and the total decrease of a
-natural-number valued function along it equals the total increase
-(`Equiv.Perm.sum_tsub_comp_eq_sum_comp_tsub`).
+(`Function.Involutive.swap_mul_mul_swap`). An involutive permutation of an infinite type has
+infinitely many cycles (`Equiv.Perm.infinite_quotient_sameCycle_of_involutive`). A permutation of a
+finite type sends as many points into a set as out of it
+(`Equiv.Perm.card_filter_not_and_apply_eq`), and the total decrease of a natural-number valued
+function along it equals the total increase (`Equiv.Perm.sum_tsub_comp_eq_sum_comp_tsub`).
 -/
 
 public section
@@ -523,6 +525,20 @@ theorem _root_.Function.Involutive.sameCycle_iff {α : Type*} {f : Equiv.Perm α
     f.SameCycle x y ↔ x = y ∨ x = f y := by
   have he : Function.Involutive.toPerm f hf = f := Equiv.ext fun _ ↦ rfl
   exact he ▸ sameCycle_toPerm_iff _ hf x y
+
+/-- An involutive permutation of an infinite type has infinitely many orbits, since each orbit has
+at most two points. -/
+theorem _root_.Equiv.Perm.infinite_quotient_sameCycle_of_involutive {α : Type*} [Infinite α]
+    {f : Equiv.Perm α} (hf : Function.Involutive f) :
+    Infinite (Quotient (Equiv.Perm.SameCycle.setoid f)) := by
+  by_contra hQ
+  rw [not_infinite_iff_finite] at hQ
+  obtain ⟨q, hq⟩ := Finite.exists_infinite_fiber
+    (Quotient.mk (Equiv.Perm.SameCycle.setoid f) : α → _)
+  refine (Set.infinite_coe_iff.mp hq) ((Set.toFinite {q.out, f q.out}).subset fun a ha => ?_)
+  have hq' : f.SameCycle q.out a :=
+    Quotient.exact (s := Equiv.Perm.SameCycle.setoid f) (q.out_eq.trans ha.symm)
+  exact (hf.sameCycle_iff a q.out).mp hq'.symm
 
 variable {α : Type*} [Fintype α] [DecidableEq α]
 

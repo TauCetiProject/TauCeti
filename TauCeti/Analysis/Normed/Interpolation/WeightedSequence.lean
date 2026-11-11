@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import TauCeti.Analysis.Normed.Interpolation.RealMethod
 import TauCeti.Analysis.Normed.Lp.Basic
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.LpSeminorm.Count
 import TauCeti.MeasureTheory.Integral.SchurTest
 
@@ -210,7 +211,6 @@ private theorem exists_decomposition (hs : s = (1 - θ) * s₀ + θ * s₁) {t :
     simp only [hc_def]
     rw [min_rpow_eq hs ht]
     ring
-  have hB0 : 0 ≤ B := le_trans (by positivity) (hB 0)
   -- the costs are dominated by the convergent series `t ^ θ B ∑ j, φ(t 2 ^ ((s₁ - s₀) j))`
   have hsum : Summable c := by
     refine Summable.of_nonneg_of_le (fun j ↦ ?_) (fun j ↦ ?_) ((hφ.mul_left B).mul_left (t ^ θ))
@@ -464,7 +464,6 @@ theorem kMethodENorm_weightedLp_le (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1) (
   have hK0 : K ≠ 0 := kMethodConst_ne_zero θ one_ne_zero
   rcases eq_or_ne (eLpNorm v q Measure.count) ∞ with hv | hv
   · -- an infinite right-hand side
-    have hL : 0 < |μ| * Real.log 2 := mul_pos (abs_pos.2 hμ) (Real.log_pos one_lt_two)
     rw [hv, ENNReal.mul_top (mul_ne_zero (ENNReal.rpow_pos (ENNReal.ofReal_pos.2 (by positivity))
       ENNReal.ofReal_ne_top).ne' hK0)]
     exact le_top
@@ -499,8 +498,9 @@ theorem kMethodENorm_weightedLp_le (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1) (
     _ ≤ (D * K) ^ (1 - q.toReal⁻¹) * K ^ q.toReal⁻¹ * eLpNorm (fun j ↦ ‖v j‖ₑ) q Measure.count :=
         TauCeti.eLpNorm_lintegral_mul_le hk measurable_from_nat.aemeasurable hq hrow hcol
     _ = D ^ (1 - q.toReal⁻¹) * K * eLpNorm v q Measure.count := by
-        rw [eLpNorm_enorm _ .of_discrete,
-          ENNReal.mul_rpow_of_nonneg _ _ (TauCeti.one_sub_toReal_inv_nonneg hq), mul_assoc (D ^ _),
+        rw [eLpNorm_enorm _ .of_discrete, ENNReal.mul_rpow_of_nonneg _ _
+            (by simpa only [one_div] using ENNReal.one_sub_one_div_toReal_nonneg hq),
+          mul_assoc (D ^ _),
           ← ENNReal.rpow_add _ _ hK0 (kMethodConst_lt_top hθ 1).ne, sub_add_cancel,
           ENNReal.rpow_one]
 
@@ -527,8 +527,6 @@ theorem mem_kMethod_weightedLp_iff (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1) (
       Memℓp (fun j : ℕ ↦ (((2 : ℝ) ^ (((1 - θ) * s₀ + θ * s₁) * j) : ℝ) : 𝕜) •
         (weightedLp 𝕜 A q₀ q₁ s₀ s₁).sumSpaceEmbed u j) q := by
   have hq0 : q ≠ 0 := (zero_lt_one.trans_le hq).ne'
-  have hμ : 0 < |s₁ - s₀| * Real.log 2 :=
-    mul_pos (abs_pos.2 (sub_ne_zero.2 hs.symm)) (Real.log_pos one_lt_two)
   rw [memℓp_iff_eLpNorm_count_lt_top hq0, mem_kMethod_iff]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · have hle := ofReal_mul_eLpNorm_le_kMethodENorm_weightedLp hs hθ.1.le hq0 u
@@ -536,7 +534,8 @@ theorem mem_kMethod_weightedLp_iff (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1) (
     rw [htop, ENNReal.mul_top (ENNReal.ofReal_pos.2 (by positivity)).ne'] at hle
     exact h.ne (top_le_iff.1 hle)
   · refine (kMethodENorm_weightedLp_le hs hθ hq u).trans_lt (ENNReal.mul_lt_top
-      (ENNReal.mul_lt_top (ENNReal.rpow_lt_top_of_nonneg (TauCeti.one_sub_toReal_inv_nonneg hq)
+      (ENNReal.mul_lt_top (ENNReal.rpow_lt_top_of_nonneg
+        (by simpa only [one_div] using ENNReal.one_sub_one_div_toReal_nonneg hq)
         ENNReal.ofReal_ne_top) (kMethodConst_lt_top hθ 1)) h)
 
 /-! ### The isomorphism with `ℓ^q` -/
@@ -627,7 +626,8 @@ def weightedLpKMethodEquiv (hs : s₀ ≠ s₁) (hθ : θ ∈ Ioo 0 1) :
       have hU : ENNReal.ofReal (2 ^ (θ * |s₁ - s₀|) / (|s₁ - s₀| * Real.log 2)) ^
           (1 - q.toReal⁻¹) * kMethodConst θ 1 ≠ ∞ :=
         ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg
-          (TauCeti.one_sub_toReal_inv_nonneg Fact.out) ENNReal.ofReal_ne_top)
+          (by simpa only [one_div] using ENNReal.one_sub_one_div_toReal_nonneg (Fact.out : 1 ≤ q))
+          ENNReal.ofReal_ne_top)
           (kMethodConst_lt_top hθ 1).ne
       have h := kMethodENorm_weightedLp_le hs hθ (Fact.out : 1 ≤ q) (toSumₗ u)
       rw [eLpNorm_toWeightedLp hs hθ, hc, ← KMethodSpace.ofReal_norm u, ← _root_.ofReal_norm,

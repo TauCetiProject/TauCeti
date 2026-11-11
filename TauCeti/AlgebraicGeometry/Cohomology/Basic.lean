@@ -144,6 +144,14 @@ def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnZeroEquiv (U : Opens X) 
   TauCeti.CategoryTheory.cohomologyZeroSectionsEquiv
     ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) U
 
+/-- The identification of `H⁰(U, M)` with sections is the degree-zero sections equivalence
+of the underlying abelian sheaf. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnZeroEquiv_apply (U : Opens X)
+    (x : cohomologyOn M 0 U) :
+    M.cohomologyOnZeroEquiv U x = TauCeti.CategoryTheory.cohomologyZeroSectionsEquiv
+      ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) U x :=
+  (rfl)
+
 /-- The identification of degree-zero cohomology with sections commutes with restriction. -/
 lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnZeroEquiv_cohomologyOnRes
     {U V : Opens X} (h : U ≤ V) (x : cohomologyOn M 0 V) :

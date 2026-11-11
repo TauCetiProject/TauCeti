@@ -17,7 +17,7 @@ The file also bounds the inverse of a continuous linear equivalence from a quadr
 bound on the equivalence itself.
 
 Rescaling a continuous linear equivalence `T` between normed spaces by a nonzero scalar does not
-change `‖T‖ * ‖T⁻¹‖`. Using Mathlib's `rescale_to_shell`, every equivalence from a nonzero space
+change `‖T‖ * ‖T⁻¹‖`. Using Mathlib's `rescale_to_shell`, every equivalence
 can be rescaled to have norm at most `1`, with its inverse then of norm at most
 `‖c‖ * ‖T‖ * ‖T⁻¹‖` for any scalar `c` with `1 < ‖c‖`. This bounds both operators at once, as
 needed in compactness arguments over the set of equivalences.
@@ -35,15 +35,19 @@ namespace ContinuousLinearEquiv
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-/-- Given a scalar with `1 < ‖c‖`, every continuous linear equivalence `T` from a nonzero space
-can be rescaled, without changing `‖T‖ * ‖T⁻¹‖`, to have norm at most `1` and inverse of norm at
-most `‖c‖ * ‖T‖ * ‖T⁻¹‖`. -/
-theorem exists_norm_le_one_and_norm_symm_le [Nontrivial E] {c : 𝕜} (hc : 1 < ‖c‖)
+/-- Given a scalar with `1 < ‖c‖`, every continuous linear equivalence `T` can be rescaled, without
+changing `‖T‖ * ‖T⁻¹‖`, to have norm at most `1` and inverse of norm at most
+`‖c‖ * ‖T‖ * ‖T⁻¹‖`. -/
+theorem exists_norm_le_one_and_norm_symm_le {c : 𝕜} (hc : 1 < ‖c‖)
     (T : E ≃L[𝕜] F) :
     ∃ U : E ≃L[𝕜] F, ‖(U : E →L[𝕜] F)‖ ≤ 1 ∧
       ‖(U.symm : F →L[𝕜] E)‖ ≤ ‖c‖ * (‖(T : E →L[𝕜] F)‖ * ‖(T.symm : F →L[𝕜] E)‖) ∧
       ‖(U : E →L[𝕜] F)‖ * ‖(U.symm : F →L[𝕜] E)‖ =
         ‖(T : E →L[𝕜] F)‖ * ‖(T.symm : F →L[𝕜] E)‖ := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · have : Subsingleton F := T.toEquiv.symm.subsingleton
+    refine ⟨T, ?_, ?_, ?_⟩ <;>
+      simp [ContinuousLinearMap.opNorm_subsingleton]
   have hT : (T : E →L[𝕜] F) ≠ 0 := fun h ↦ by
     obtain ⟨x, hx⟩ := exists_ne (0 : E)
     exact hx (T.injective (by simpa using congr($h x)))
