@@ -47,7 +47,10 @@ Integrating the identity gives **Moser's principle** for families of forms: if t
 `g = 0` is the invariance `φ_{s,t}^* α_t = α_s` of Moser's argument for symplectic forms
 (`TauCeti.mpullback_timeDependentFlowOf_mpullback_prodMk_eq`). A nonzero `g` is the shape of the
 rate in Gray's argument for a family of contact forms, where the time-dependent field is chosen
-to make the rate a multiple of the contact form.
+to make the rate a multiple of the contact form. The invariance also holds pointwise: it only needs
+the rate to vanish along the trajectory of the point
+(`TauCeti.mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_forall_mem_Icc`), which is how
+Moser's argument runs with a field cut off away from a region of interest.
 
 ## Main results
 
@@ -63,6 +66,9 @@ to make the rate a multiple of the contact form.
   rate is `g_t • α_t`, the flow rescales the slices by `exp (∫ₛᵗ g (u, φ_{s,u} x) du)`.
 * `TauCeti.mpullback_timeDependentFlowOf_mpullback_prodMk_eq`: if the rate vanishes, then
   `φ_{s,t}^* α_t = α_s`.
+* `TauCeti.mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_forall_mem_Icc`: if the rate
+  vanishes along the trajectory of `x` from time `s` to time `t`, then
+  `(φ_{s,t}^* α_t)ₓ = (α_s)ₓ`.
 
 ## References
 
@@ -434,5 +440,33 @@ theorem mpullback_timeDependentFlowOf_mpullback_prodMk_eq
   have h := mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smul hX hc
     (g := 0) continuous_const hα (fun t ↦ by rw [hL t]; funext y; simp) s t x
   simpa using h
+
+/-- **Moser's principle along a trajectory.** Let `X` be a jointly `C²` time-dependent vector
+field with complete suspension and time-dependent flow `φ`, and let `α` be a `C¹` form on `ℝ × M`
+with slices `α_u = ι_u^* α`. If the rate `ι_u^* L_{∂_t} α + L_{X_u} α_u` vanishes at the point
+`φ_{s,u} x` for every time `u ∈ [s, t]`, then `(φ_{s,t}^* α_t)ₓ = (α_s)ₓ`. Nothing is assumed
+away from the trajectory of `x`. -/
+theorem mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_of_forall_mem_Icc
+    (hα : ContMDiff (𝓘(ℝ, ℝ).prod I) ((𝓘(ℝ, ℝ).prod I).prod 𝓘(ℝ, (ℝ × E) [⋀^Fin k]→L[ℝ] F)) 1
+      (fun p ↦ TotalSpace.mk' ((ℝ × E) [⋀^Fin k]→L[ℝ] F) p (α p)))
+    {s t : ℝ} (hst : s ≤ t) (x : M)
+    (hL : ∀ u ∈ Icc s t, (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk u)
+          (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α) +
+        mlieDerivForm (X u) (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk u) α))
+          (timeDependentFlowOf X s u x) = 0) :
+    mpullback I I (timeDependentFlowOf X s t) (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α) x =
+      mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α x := by
+  have hd (u : ℝ) :=
+    hasDerivAt_mpullback_timeDependentFlowOf_mpullback_prodMk hX hc s u x (hα _)
+  -- The pullbacks `(φ_{s,u}^* α_u)ₓ` have zero velocity on `[s, t]`, so they are constant there.
+  have hconst := constant_of_has_deriv_right_zero
+    (fun u _ ↦ (hd u).continuousAt.continuousWithinAt) (fun u hu ↦ ?_) t ⟨hst, le_rfl⟩
+  · rw [hconst, show timeDependentFlowOf X s s = id from funext (timeDependentFlowOf_self X s),
+      mpullback_id]
+  · refine ((hd u).congr_deriv ?_).hasDerivWithinAt
+    rw [mpullback_apply_eq_compContinuousLinearMapCLM, hL u (Ico_subset_Icc_self hu),
+      _root_.map_zero]
+    -- The two zeros are those of the fibre `T_x M` and of the model space `E` of forms.
+    rfl
 
 end TauCeti

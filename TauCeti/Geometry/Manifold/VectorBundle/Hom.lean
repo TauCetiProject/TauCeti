@@ -41,7 +41,9 @@ trivialization of a `C^n` vector bundle, a `C^n` field of bilinear forms reads a
 bilinear forms on the model fibre (`Bundle.Trivialization.contMDiffOn_compl₁₂_symmₗ`). Fibrewise
 inversion preserves smoothness of a hom-bundle section at every point where the section is
 invertible (`ContMDiffWithinAt.clm_bundle_inverse` and its variants). The latter is the bundle
-form of the smoothness of inversion of continuous linear maps between Banach spaces. A constant
+form of the smoothness of inversion of continuous linear maps between Banach spaces. Likewise,
+invertibility of a continuous hom-bundle section is an open condition
+(`ContMDiffAt.eventually_isInvertible_clm_bundle`). A constant
 bilinear pairing between trivial bundles is a smooth hom-bundle section
 (`TauCeti.contMDiff_const_bundlePairing`). A hom-bundle section whose coordinate expressions are
 constant on the common frame domains is smooth
@@ -476,6 +478,34 @@ theorem ContMDiff.clm_bundle_inverse
       (fun m ↦ TotalSpace.mk' (F₂ →L[𝕜] F₁) (E := fun (x : B) ↦ (E₂ x →L[𝕜] E₁ x)) (b m)
         (ϕ m).inverse) :=
   fun x ↦ (hϕ x).clm_bundle_inverse (hinv x)
+
+omit [∀ x, IsTopologicalAddGroup (E₁ x)] [∀ x, ContinuousSMul 𝕜 (E₁ x)] in
+/-- Consider linear maps `ϕ m : E₁ (b m) → E₂ (b m)` depending continuously on `m`, over a base
+map `b : M → B`, with `ϕ x` invertible. Then `ϕ m` is invertible for every `m` near `x`. -/
+theorem ContMDiffAt.eventually_isInvertible_clm_bundle
+    (hϕ : CMDiffAt n
+      (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun (x : B) ↦ (E₁ x →L[𝕜] E₂ x)) (b m) (ϕ m)) x)
+    (hx : (ϕ x).IsInvertible) : ∀ᶠ m in 𝓝 x, (ϕ m).IsInvertible := by
+  rw [contMDiffAt_hom_bundle] at hϕ
+  have h₁ := mem_baseSet_trivializationAt F₁ E₁ (b x)
+  have h₂ := mem_baseSet_trivializationAt F₂ E₂ (b x)
+  -- In coordinates centred at `b x`, the coordinate expression of `ϕ x` is invertible, and
+  -- invertibility is an open condition on continuous linear maps.
+  have hinv : (ContinuousLinearMap.inCoordinates F₁ E₁ F₂ E₂ (b x) (b x) (b x) (b x)
+      (ϕ x)).IsInvertible := by
+    rw [ContinuousLinearMap.inCoordinates_eq h₁ h₂]
+    exact ContinuousLinearMap.isInvertible_equiv.comp
+      (hx.comp ContinuousLinearMap.isInvertible_equiv)
+  have hb := hϕ.1.continuousAt
+  filter_upwards [hϕ.2.continuousAt.eventually
+      (ContinuousLinearMap.isOpen_setOfPred_isInvertible.mem_nhds hinv),
+    hb.preimage_mem_nhds ((trivializationAt F₁ E₁ (b x)).open_baseSet.mem_nhds h₁),
+    hb.preimage_mem_nhds ((trivializationAt F₂ E₂ (b x)).open_baseSet.mem_nhds h₂)]
+    with m hm hm₁ hm₂
+  -- Over the common base set the coordinate expression is `ϕ m` between two isomorphisms.
+  rw [ContinuousLinearMap.inCoordinates_eq hm₁ hm₂] at hm
+  simpa only [ContinuousLinearMap.isInvertible_equiv_comp,
+    ContinuousLinearMap.isInvertible_comp_equiv] using hm
 
 end Inverse
 
