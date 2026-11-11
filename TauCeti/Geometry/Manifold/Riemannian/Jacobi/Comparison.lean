@@ -12,7 +12,6 @@ import TauCeti.Analysis.InnerProductSpace.Gram.Pair
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed
 import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Tangential
-import Mathlib.Analysis.Calculus.LHopital
 
 /-!
 # Comparison estimates for Jacobi fields
@@ -39,9 +38,11 @@ derivatives are taken within the parameter set, so the statements apply to close
 ## Rauch comparison
 
 Integrating the cotangent comparison: since `(s_κ(t - a)²)' = 2 ct_κ(t - a) s_κ(t - a)²` and
-`(|J|²)' = 2⟨D_t J, J⟩`, the ratio `|J(t)|² / s_κ(t - a)²` is nondecreasing on
-`(a, a + π/√κ)`, including across any zero of `J`. As `t` decreases to `a` both `|J(t)| / (t - a)`
-and `s_κ(t - a) / (t - a)` have limits, `|D_t J(a)|` and `1`. Hence
+`(|J|²)' = 2⟨D_t J, J⟩`, the ratio `|J(t)|² / s_κ(t - a)²` is nondecreasing for `t > a` before
+the first positive zero of `s_κ`, that is on `(a, a + π/√κ)` if `κ > 0` and for all `t > a` if
+`κ ≤ 0`, within the parameter set. This includes any zero of `J`. As `t` decreases to `a`,
+`|J(t)| / (t - a)` tends to `|D_t J(a)|` by `IsJacobiFieldOn.tendsto_norm_div_sub_nhdsGT` and
+`s_κ(t - a) / (t - a)` tends to `1`. Hence
 
 `s_κ(t - a) |D_t J(a)| ≤ |J(t)|`,
 
@@ -195,45 +196,6 @@ theorem curvatureCotangent_mul_norm_sq_le_inner_alongCurveWithin_self
     (h.tendsto_inner_alongCurveWithin_self_sub_curvatureCotangent_mul_norm_sq hab hs hVa κ) ?_)
   filter_upwards [Ioc_mem_nhdsGT hab] with t ht
   exact hmono ht (right_mem_Ioc.2 hab) ht.2
-
-/-- A Jacobi field vanishing at `a` grows at `a⁺` with rate the norm of its initial covariant
-derivative: `|J(t)| / (t - a) → |D_t J(a)|` as `t` decreases to `a`. -/
-theorem tendsto_norm_div_sub_nhdsGT (h : IsJacobiFieldOn I γ V s) (hab : a < b)
-    (hs : Icc a b ⊆ s) (hVa : V a = 0) :
-    Tendsto (fun t ↦ ‖V t‖ / (t - a)) (𝓝[>] a)
-      (𝓝 ‖alongCurveWithin (leviCivitaConnection I M) γ V s a‖) := by
-  have ha : a ∈ s := hs (left_mem_Icc.2 hab.le)
-  have hle : 𝓝[>] a ≤ 𝓝[s \ {a}] a := by
-    rw [← nhdsWithin_Ioc_eq_nhdsGT hab]
-    exact nhdsWithin_mono a fun t ht ↦ ⟨hs (Ioc_subset_Icc_self ht), ht.1.ne'⟩
-  have hslope : Tendsto
-      (fun t ↦ ⟪alongCurveWithin (leviCivitaConnection I M) γ V s t, V t⟫_ℝ / (t - a)) (𝓝[>] a)
-      (𝓝 (‖alongCurveWithin (leviCivitaConnection I M) γ V s a‖ ^ 2)) := by
-    have hd := h.hasDerivWithinAt_inner_alongCurveWithin_self ha
-    simp only [hVa, map_zero, inner_zero_right, sub_zero] at hd
-    refine ((hasDerivWithinAt_iff_tendsto_slope.1 hd).mono_left hle).congr fun t ↦ ?_
-    simp [slope_def_field, hVa]
-  have hsq : Tendsto (fun t ↦ ‖V t‖ ^ 2 / (t - a) ^ 2) (𝓝[>] a)
-      (𝓝 (‖alongCurveWithin (leviCivitaConnection I M) γ V s a‖ ^ 2)) := by
-    refine HasDerivAt.lhopital_zero_right_on_Ioo hab
-      (f' := fun t ↦ 2 * ⟪alongCurveWithin (leviCivitaConnection I M) γ V s t, V t⟫_ℝ)
-      (g' := fun t ↦ 2 * (t - a))
-      (fun t ht ↦ (h.hasDerivWithinAt_norm_sq (hs (Ioo_subset_Icc_self ht))).hasDerivAt
-        (mem_of_superset (Icc_mem_nhds ht.1 ht.2) hs))
-      (fun t _ ↦ by simpa using (hasDerivAt_pow 2 (t - a)).comp_sub_const t a)
-      (fun t ht ↦ mul_ne_zero two_ne_zero (sub_ne_zero.2 ht.1.ne'))
-      ?_ ?_ (hslope.congr fun t ↦ (mul_div_mul_left _ _ two_ne_zero).symm)
-    · have hc := (h.hasDerivWithinAt_norm_sq ha).continuousWithinAt.tendsto
-      rw [hVa, norm_zero, zero_pow two_ne_zero] at hc
-      exact hc.mono_left (hle.trans (nhdsWithin_mono a sdiff_subset))
-    · have hc := (by fun_prop : Continuous fun t : ℝ ↦ (t - a) ^ 2).tendsto a
-      rw [sub_self, zero_pow two_ne_zero] at hc
-      exact hc.mono_left nhdsWithin_le_nhds
-  have hsqrt := hsq.sqrt
-  rw [Real.sqrt_sq (norm_nonneg _)] at hsqrt
-  refine hsqrt.congr' ?_
-  filter_upwards [self_mem_nhdsWithin] with t ht
-  rw [← div_pow, Real.sqrt_sq (div_nonneg (norm_nonneg _) (sub_pos.2 ht).le)]
 
 /-- Let `J` be a Jacobi field along a geodesic `γ` with `J(a) = 0` and
 `⟨R(J, γ')γ', J⟩ ≤ κ |J|²` on `(a, b)`, where `b - a < π / √κ` if `κ > 0`. Then
