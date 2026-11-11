@@ -88,12 +88,9 @@ the classes *split* by the extension.
 
 ## References
 
-This is the second bullet of Layer 6 ("The Brauer group as a group") of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md),
-pinned there as `brauerCommGroup`, together with the Brauer-group half of its Hamilton-quaternion
-worked example. It also settles the first TODO of Mathlib's `Mathlib/Algebra/BrauerGroup/Defs.lean`.
-See P. Gille, T. Szamuely, *Central Simple Algebras and Galois Cohomology*, CUP (2006), §2.4, and
-R. S. Pierce, *Associative Algebras*, Springer GTM 88 (1982), Chapter 12.
+This settles the first TODO of Mathlib's `Mathlib/Algebra/BrauerGroup/Defs.lean`. See P. Gille,
+T. Szamuely, *Central Simple Algebras and Galois Cohomology*, CUP (2006), §2.4, and R. S. Pierce,
+*Associative Algebras*, Springer GTM 88 (1982), Chapter 12.
 -/
 
 public section
