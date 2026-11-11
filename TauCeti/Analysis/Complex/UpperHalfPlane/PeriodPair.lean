@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Elliptic.Weierstrass
 public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.QExpansion
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
-public import TauCeti.Analysis.SpecialFunctions.Elliptic.PeriodMap
+public import TauCeti.Analysis.SpecialFunctions.Elliptic.Period.Map
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.WeierstrassZeta
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Cotangent
