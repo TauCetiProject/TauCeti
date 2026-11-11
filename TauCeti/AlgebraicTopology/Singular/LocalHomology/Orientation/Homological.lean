@@ -158,6 +158,16 @@ theorem neg_ne [Nonempty M] (hd : finrank ℝ E = d) (o : HomologicalOrientation
     (singularHomologyComplSingletonFinrankIso _ (chartAt E x) (mem_chart_source E x))
     (o x).property (congrArg Subtype.val (DFunLike.congr_fun h x))
 
+/-- In the dimension of the manifold, a local orientation has infinite order: integral multiples
+of `o x` with distinct coefficients are distinct. -/
+theorem zsmul_left_injective (hd : finrank ℝ E = d) (o : HomologicalOrientation M E d) (x : M) :
+    Function.Injective fun c : ℤ ↦ c • (o x).val := by
+  subst hd
+  intro c c' (h : c • (o x).val = c' • (o x).val)
+  rw [← sub_eq_zero, ← (o x).property.zsmul_eq_zero_iff
+    (singularHomologyComplSingletonFinrankIso _ (chartAt E x) (mem_chart_source E x)), sub_zsmul, h]
+  simp
+
 section SimplyConnected
 
 variable [SimplyConnectedSpace M]

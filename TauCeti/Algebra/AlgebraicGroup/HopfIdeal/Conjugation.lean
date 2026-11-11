@@ -47,6 +47,10 @@ ambient group.
   the subgroup, as a bialgebra endomorphism of its coordinate algebra.
 * `TauCeti.CommHopfAlgCat.mapDomain_pointConjugation_mem_conjugate_iff`: the pointwise
   interpretation of the conjugated ideal.
+* `TauCeti.HopfIdeal.conjugate_eq_self_of_mem_quotientPointsSubgroup`: a subgroup's own
+  rational points fix its defining ideal, without reducedness assumptions.
+* `TauCeti.HopfIdeal.mem_normalizer_quotientPointsSubgroup_of_conjugate_eq_self`: fixing
+  the ideal implies normalizing its rational-point subgroup.
 * `TauCeti.HopfIdeal.eq_conjugate_of_forall_mem_iff`: recognizing a conjugated ideal by its
   points.
 
@@ -385,5 +389,41 @@ theorem _root_.TauCeti.HopfIdeal.eq_conjugate_of_forall_mem_iff {I J : HopfIdeal
   rw [MulAut.conj_apply, h, pointConjugation_mem_conjugate_iff]
 
 end CommHopfAlgCat
+
+namespace HopfIdeal
+
+variable {R : Type u} [CommRing R]
+variable {H : Type v} [CommRing H] [HopfAlgebra R H]
+
+/-- A rational point of a closed subgroup conjugates that subgroup to itself. This holds
+scheme-theoretically, without reducedness or finite-type assumptions. -/
+theorem conjugate_eq_self_of_mem_quotientPointsSubgroup (I : HopfIdeal R H)
+    {g : WithConv (H →ₐ[R] R)}
+    (hg : g ∈ CommHopfAlgCat.quotientPointsSubgroup
+      (_root_.CommHopfAlgCat.of R H) I (CommAlgCat.of R R)) :
+    I.conjugate g = I := by
+  refine (eq_conjugate_of_forall_mem_iff (I := I) (J := I) g ?_).symm
+  intro A x
+  let P := CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) I A
+  have hgA : AlgHom.mapValue (Algebra.ofId R A) g ∈ P :=
+    CommHopfAlgCat.mapValue_mem_quotientPointsSubgroup
+      (_root_.CommHopfAlgCat.of R H) I (Algebra.ofId R A) hg
+  exact (P.mul_mem_cancel_right (P.inv_mem hgA)).trans (P.mul_mem_cancel_left hgA)
+
+/-- A rational point fixing a closed subgroup scheme under conjugation normalizes its
+subgroup of rational points. No point-separation hypothesis is needed in this direction. -/
+theorem mem_normalizer_quotientPointsSubgroup_of_conjugate_eq_self
+    {K : _root_.CommHopfAlgCat.{v} R} (I : HopfIdeal R K)
+    (g : WithConv (K →ₐ[R] R)) (hg : I.conjugate g = I) :
+    g ∈ Subgroup.normalizer
+      (CommHopfAlgCat.quotientPointsSubgroup K I (CommAlgCat.of R R) : Set _) := by
+  -- Destruct the bundle so the type-level conjugation API uses the same bundled algebra.
+  cases K
+  rw [Subgroup.mem_normalizer_iff]
+  intro x
+  simpa only [Algebra.ofId_self, AlgHom.mapValue_id, MonoidHom.id_apply, hg] using
+    (CommHopfAlgCat.pointConjugation_mem_conjugate_iff I g (CommAlgCat.of R R) x).symm
+
+end HopfIdeal
 
 end TauCeti

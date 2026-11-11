@@ -7,6 +7,8 @@ module
 
 public import Mathlib.RingTheory.Trace.Defs
 
+import TauCeti.LinearAlgebra.Trace.Basic
+
 /-!
 # The trace along a tower of scalars
 
@@ -36,32 +38,21 @@ theorem trace_restrictScalars (f : M →ₗ[A] M) :
     trace R M (f.restrictScalars R) = Algebra.trace R A (trace A M f) := by
   classical
   nontriviality R
-  cases subsingleton_or_nontrivial M
-  · let bR : Basis (Fin 0) R M := Basis.empty M
-    let bA : Basis (Fin 0) A M := Basis.empty M
-    rw [trace_eq_matrix_trace R bR, trace_eq_matrix_trace A bA]
-    simp [Matrix.trace]
+  nontriviality M using Subsingleton.elim f 0
   have := Module.nontrivial A M
-  let ⟨ιA, bA⟩ := Module.Free.exists_basis (R := R) (M := A)
-  let ⟨ιM, bM⟩ := Module.Free.exists_basis (R := A) (M := M)
+  obtain ⟨ιA, bA⟩ := Free.exists_basis (R := R) (M := A)
+  obtain ⟨ιM, bM⟩ := Free.exists_basis (R := A) (M := M)
   have := bA.index_nonempty
   have := bM.index_nonempty
   cases fintypeOrInfinite ιA; swap
-  · have hA := Module.not_finite_of_infinite_basis bA
-    have hM := Module.not_finite_of_infinite_basis (bA.smulTower' bM)
-    have hA' : ¬∃ s : Finset A, Nonempty (Basis s R A) :=
-      fun ⟨_, ⟨b⟩⟩ ↦ hA (Module.Finite.of_basis b)
-    have hM' : ¬∃ s : Finset M, Nonempty (Basis s R M) :=
-      fun ⟨_, ⟨b⟩⟩ ↦ hM (Module.Finite.of_basis b)
-    simp [LinearMap.trace, Algebra.trace, hA', hM']
+  · simp [Algebra.trace_eq_zero_of_not_exists_basis R
+      fun ⟨_, ⟨b⟩⟩ ↦ not_finite_of_infinite_basis bA (.of_basis b),
+      TauCeti.LinearMap.trace_eq_zero_of_not_finite
+        (not_finite_of_infinite_basis (bA.smulTower bM))]
   cases fintypeOrInfinite ιM; swap
-  · have hAM := Module.not_finite_of_infinite_basis bM
-    have hRM := Module.not_finite_of_infinite_basis (bA.smulTower' bM)
-    have hAM' : ¬∃ s : Finset M, Nonempty (Basis s A M) :=
-      fun ⟨_, ⟨b⟩⟩ ↦ hAM (Module.Finite.of_basis b)
-    have hRM' : ¬∃ s : Finset M, Nonempty (Basis s R M) :=
-      fun ⟨_, ⟨b⟩⟩ ↦ hRM (Module.Finite.of_basis b)
-    simp [LinearMap.trace, Algebra.trace, hAM', hRM']
+  · simp [TauCeti.LinearMap.trace_eq_zero_of_not_finite (not_finite_of_infinite_basis bM),
+      TauCeti.LinearMap.trace_eq_zero_of_not_finite
+        (not_finite_of_infinite_basis (bA.smulTower bM))]
   rw [trace_eq_matrix_trace R (bA.smulTower' bM), restrictScalars_toMatrix,
     trace_eq_matrix_trace A bM, Matrix.trace, Matrix.trace, map_sum, Fintype.sum_prod_type]
   simp [Algebra.trace_eq_matrix_trace bA, Matrix.trace]

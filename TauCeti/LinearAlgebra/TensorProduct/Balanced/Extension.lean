@@ -7,9 +7,9 @@ module
 
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Actions
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Pi
-public import TauCeti.Algebra.Module.Projective.Semilinear
 public import TauCeti.LinearAlgebra.Matrix.Idempotent
-public import Mathlib.RingTheory.Finiteness.Cardinality
+
+import TauCeti.Algebra.Module.Projective.Semilinear
 
 /-!
 # Extension of scalars along a ring homomorphism of noncommutative rings
@@ -123,7 +123,15 @@ namespace BalancedExtension
 
 variable (f : R →+* S) (P : Type v) [AddCommGroup P] [Module R P]
 
-/-- The left `S`-module structure of `S ⊗_R P`, by multiplication on the first factor. -/
+/-- The left `S`-module structure of `S ⊗_R P`, by multiplication on the first factor.
+
+When `S = ℤ` (extension along a ring homomorphism `R →+* ℤ`, such as an augmentation) this is a
+second `Module ℤ` structure on `ℤ ⊗_R P`, besides `AddCommGroup.toIntModule`, and the two are not
+definitionally equal: `rfl` does not identify them, although `Subsingleton.elim` does, and
+elementwise `int_smul_eq_zsmul` rewrites this action to `zsmul`. Instance search for
+`Module ℤ (BalancedExtension f P)` finds `AddCommGroup.toIntModule`, so the `Module.Finite S` and
+`Module.Projective S` instances below, which are stated for this structure, do not fire at `S = ℤ`
+unless this instance is supplied by hand. -/
 instance : Module S (BalancedExtension f P) :=
   BalancedTensorProduct.leftModule (k := ℤ) (A := R) (M := Scalars f) (N := P) S
 

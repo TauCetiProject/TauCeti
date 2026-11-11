@@ -180,7 +180,7 @@ theorem IsCompactOperator.precomp [NontriviallyNormedField 𝕜] [ProperSpace �
     [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
     {T : E →L[𝕜] F} (hT : IsCompactOperator T) :
     IsCompactOperator (ContinuousLinearMap.precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) :=
-  isCompactOperator_of_totallyBounded_image_closedBall (σ₁₂ := RingHom.id 𝕜) one_pos <|
+  (isCompactOperator_iff_totallyBounded_image_closedBall _ one_pos).mpr <|
     totallyBounded_precomp_image_closedBall <|
       hT.totallyBounded_image_closedBall (σ₁₂ := RingHom.id 𝕜) 1
 
@@ -192,7 +192,7 @@ theorem IsCompactOperator.of_precomp [RCLike 𝕜]
     (hT : IsCompactOperator
       (ContinuousLinearMap.precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E)) :
     IsCompactOperator T :=
-  isCompactOperator_of_totallyBounded_image_closedBall (σ₁₂ := RingHom.id 𝕜) one_pos <|
+  (isCompactOperator_iff_totallyBounded_image_closedBall _ one_pos).mpr <|
     totallyBounded_precomp_image_closedBall_iff.mp <|
       hT.totallyBounded_image_closedBall (σ₁₂ := RingHom.id 𝕜) 1
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Cartan.Basic
 public import TauCeti.LinearAlgebra.Matrix.NormTwoShell.Basic
 public import TauCeti.LinearAlgebra.Matrix.OrderedSignCover
+public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A
 import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
 import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classical
@@ -52,6 +53,8 @@ with the trace-zero matrices rests.
   `typeAPairRoot r p q` are `ε_p - ε_q`.
 * `TauCeti.typeAPairRoot_dotProduct_cartanMatrix_A_mulVec`: the pairing of two pair roots.
 * `TauCeti.exists_typeAPairRoot_eq_of_mem_normTwoShell`: every root is a pair root.
+* `TauCeti.normTwoShellCongr_graphPermA_typeAPairRoot`: the reversal `TauCeti.graphPermA r` of
+  the chain carries the root `ε_p - ε_q` to `ε_(rev q) - ε_(rev p)`.
 * `TauCeti.typeAPairRoot_eq_coroot`: the pair roots are the coroots of the pinned root datum
   `TauCeti.DynkinType.typeASimplyConnectedRootDatum r`, with the same index pairs.
 * `TauCeti.orderedSignForm_cartanMatrix_A_typeAPairRoot`: the ordered sign form on pair roots.
@@ -210,6 +213,30 @@ theorem typeAPairRoot_inj {p q p' q' : Fin (r + 1)} (hpq : p ≠ q) :
     split_ifs at hp <;> omega
   · simp only [hne, ↓reduceIte] at hq
     split_ifs at hq <;> omega
+
+/-- The reversal of the chain relabels the type-`A` root `ε_p - ε_q`, in simple-root coordinates,
+as the root `ε_(rev q) - ε_(rev p)`. -/
+@[simp]
+theorem typeAPairRoot_comp_graphPermA (p q : Fin (r + 1)) :
+    typeAPairRoot r p q ∘ graphPermA r = typeAPairRoot r q.rev p.rev := by
+  ext k
+  have := k.isLt
+  have := p.isLt
+  have := q.isLt
+  simp only [Function.comp_apply, graphPermA_apply, typeAPairRoot_apply, Fin.le_def,
+    Fin.val_castSucc, Fin.val_rev]
+  split_ifs <;> omega
+
+/-- The reversal of the chain carries the root `ε_p - ε_q` of the norm-two shell to the root
+`ε_(rev q) - ε_(rev p)`. -/
+@[simp]
+theorem normTwoShellCongr_graphPermA_typeAPairRoot {p q : Fin (r + 1)} (hpq : p ≠ q) :
+    normTwoShellCongr (reindex_cartanMatrix_A_graphPermA r)
+        ⟨typeAPairRoot r p q, typeAPairRoot_mem_normTwoShell r hpq⟩ =
+      ⟨typeAPairRoot r q.rev p.rev,
+        typeAPairRoot_mem_normTwoShell r (Fin.rev_injective.ne hpq.symm)⟩ :=
+  Subtype.ext <| by
+    rw [coe_normTwoShellCongr_apply, graphPermA_symm, typeAPairRoot_comp_graphPermA]
 
 /-- **The pair root of `(p, q)` is the coroot of the pinned root datum of type `A_r`** indexed by
 `(p, q)`, in simple-coroot coordinates; the Cartan matrix being symmetric, this is also the root

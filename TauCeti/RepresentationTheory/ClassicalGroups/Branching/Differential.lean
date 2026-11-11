@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.BlockSucc
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Functoriality
 public import TauCeti.RepresentationTheory.ClassicalGroups.Branching.Rationality
-public import TauCeti.RepresentationTheory.ClassicalGroups.Differential
+public import TauCeti.RepresentationTheory.ClassicalGroups.Differential.Basic
 
 /-!
 # Differentiating a rational representation restricted along the block inclusion

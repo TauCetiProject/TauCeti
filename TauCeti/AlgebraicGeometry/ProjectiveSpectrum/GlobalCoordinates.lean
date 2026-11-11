@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
+public import TauCeti.AlgebraicGeometry.Scheme.Opens
 
 /-!
 # Unit rescaling of global projective coordinates
@@ -69,20 +70,8 @@ theorem toBasicOpenOfGlobalSections_eq (f : A →+* Γ(X, ⊤))
           X.toSpecΓ ∣_ PrimeSpectrum.basicOpen (f t) ≫
           (basicOpenIsoSpecAway (f t)).hom =
         U.toSpecΓ ≫ Spec.map (CommRingCat.ofHom l) := by
-    rw [← cancel_mono (Spec.map (CommRingCat.ofHom
-      (algebraMap Γ(X, ⊤) (Localization.Away (f t)))))]
-    simp only [Category.assoc, basicOpenIsoSpecAway_hom_SpecMap]
-    have hrest := congrArg
-      (fun e ↦ (X.isoOfEq (X.toSpecΓ_preimage_basicOpen (f t))).inv ≫ e)
-      (morphismRestrict_ι X.toSpecΓ
-        (PrimeSpectrum.basicOpen (f t) : (Spec Γ(X, ⊤)).Opens))
-    simp only [Scheme.isoOfEq_inv_ι_assoc] at hrest
-    refine hrest.trans ?_
-    rw [← Spec.map_comp, ← CommRingCat.ofHom_comp]
-    have hl : l.comp (algebraMap Γ(X, ⊤) (Localization.Away (f t))) = r :=
-      IsLocalization.Away.lift_comp (f t) hu
-    rw [hl]
-    exact (Scheme.Opens.toSpecΓ_SpecMap_presheaf_map_top U).symm
+    exact Scheme.toSpecΓ_morphismRestrict_comp_basicOpenIsoSpecAway_hom (f t) l
+      (IsLocalization.Away.lift_comp (f t) hu)
   rw [← Category.assoc, ← Category.assoc, Category.assoc
     (X.isoOfEq (X.toSpecΓ_preimage_basicOpen (f t))).inv, hlocal]
   simp only [Category.assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp]

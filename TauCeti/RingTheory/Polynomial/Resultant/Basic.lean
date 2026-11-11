@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Jacobson.Ideal
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.Algebra.Polynomial.Degree.Operations
 
@@ -27,11 +28,18 @@ The resultant with `1 - t X` at a degree bound `n` for `f` is the value at `t` o
 `reflect n f`, and the multiplicativity `Res(f₁ * f₂, g) = Res(f₁, g) * Res(f₂, g)` holds for
 arbitrary valid degree bounds, the bounds adding. These are the identities behind Coleman's
 spectral transform, whose rank is a specified degree bound rather than an actual degree.
+Reversing both arguments at their degree bounds changes the resultant only by the sign
+`(-1) ^ (m * n)`, with no degree hypothesis: the reversals permute the rows of the Sylvester
+matrix and the columns within each of its two blocks.
 
 Resultants taken at the actual degrees commute with any coefficient map preserving both
 degrees, the form of base change used when comparing a resultant with its specializations.
 Finally, the entries of the Sylvester matrix are written out explicitly, column by column, for
 expanding its determinant term by term.
+
+Since a resultant with a monic left argument is a unit exactly when the two polynomials are
+coprime, coprimality can be read off a unit resultant: against `X - C a` this is a unit value at
+`a`, and modulo an ideal in the Jacobson radical it lifts from the reductions.
 
 ## Main results
 
@@ -41,10 +49,16 @@ expanding its determinant term by term.
 * `Polynomial.resultant_one_sub_C_mul_X_right`: `Res_(n,1)(f, 1 - t X) = (reflect n f)(t)`.
 * `Polynomial.resultant_mul_left_of_natDegree_le`: multiplicativity in the left argument at
   arbitrary degree bounds.
+* `Polynomial.resultant_reflect`: reversing both arguments at their degree bounds multiplies the
+  resultant by `(-1) ^ (m * n)`.
 * `Polynomial.resultant_map_of_natDegree_eq`: resultants at the actual degrees commute with a
   coefficient map that preserves both degrees.
 * `Polynomial.Monic.resultant_of_le`: for a monic left argument, the resultant is independent of
   the valid degree bound supplied for the right argument.
+* `Polynomial.isCoprime_X_sub_C_of_isUnit_eval`: `X - C a` is coprime to any polynomial whose value
+  at `a` is a unit.
+* `Polynomial.isCoprime_of_isCoprime_map`: a monic polynomial and any polynomial whose reductions
+  modulo an ideal in the Jacobson radical are coprime are themselves coprime.
 
 ## Provenance
 
@@ -83,6 +97,41 @@ theorem sylvester_apply_of_le (f g : S[X]) {n m : ℕ} (i x : Fin (n + m))
   congr 1
   · exact propext (by omega)
   · congr 1; omega
+
+/-- The permutation of `Fin (m + n)` reversing each of the blocks `Fin m` and `Fin n`. -/
+private def blockRevPerm (m n : ℕ) : Equiv.Perm (Fin (m + n)) :=
+  finSumFinEquiv.symm.trans ((Equiv.sumCongr Fin.revPerm Fin.revPerm).trans finSumFinEquiv)
+
+/-- Reversing both polynomials at their degree bounds reverses the rows of the Sylvester matrix
+and the columns within each of its two blocks. -/
+private theorem sylvester_reflect (f g : S[X]) (m n : ℕ) :
+    sylvester (f.reflect m) (g.reflect n) m n =
+      (sylvester f g m n).submatrix Fin.revPerm (blockRevPerm m n) := by
+  ext i j
+  have hi := i.isLt
+  induction j using Fin.addCases with
+  | left j =>
+    simp only [sylvester, blockRevPerm, Matrix.submatrix_apply, Matrix.of_apply,
+      Equiv.trans_apply, finSumFinEquiv_symm_apply_castAdd, Equiv.sumCongr_apply, Sum.map_inl,
+      finSumFinEquiv_apply_left, Fin.addCases_left, Fin.revPerm_apply, Set.mem_Icc, Fin.val_rev,
+      coeff_reflect]
+    have hj := j.isLt
+    by_cases h : (j : ℕ) ≤ i ∧ (i : ℕ) ≤ j + n
+    · rw [ite_eq_left h, ite_eq_left (by omega), revAt_le (by omega)]
+      congr 1
+      omega
+    · rw [ite_eq_right h, ite_eq_right (by omega)]
+  | right j =>
+    simp only [sylvester, blockRevPerm, Matrix.submatrix_apply, Matrix.of_apply,
+      Equiv.trans_apply, finSumFinEquiv_symm_apply_natAdd, Equiv.sumCongr_apply, Sum.map_inr,
+      finSumFinEquiv_apply_right, Fin.addCases_right, Fin.revPerm_apply, Set.mem_Icc,
+      Fin.val_rev, coeff_reflect]
+    have hj := j.isLt
+    by_cases h : (j : ℕ) ≤ i ∧ (i : ℕ) ≤ j + m
+    · rw [ite_eq_left h, ite_eq_left (by omega), revAt_le (by omega)]
+      congr 1
+      omega
+    · rw [ite_eq_right h, ite_eq_right (by omega)]
 
 end Sylvester
 
@@ -164,6 +213,33 @@ theorem resultant_map_of_natDegree_eq {S : Type*} [CommRing S] (φ : R →+* S) 
     (f.map φ).resultant (g.map φ) = φ (f.resultant g) := by
   rw [hf, hg, resultant_map_map]
 
+/-- The resultant of the reversals is the resultant up to the sign of the permutation of the
+Sylvester matrix that the reversals induce. -/
+private theorem resultant_reflect_eq_sign_mul (f g : R[X]) (m n : ℕ) :
+    resultant (f.reflect m) (g.reflect n) m n =
+      ((Equiv.Perm.sign (blockRevPerm m n) * Equiv.Perm.sign (Fin.revPerm (n := m + n)) : ℤˣ) :
+        R) * resultant f g m n := by
+  have h := Matrix.det_permute' (blockRevPerm m n) ((sylvester f g m n).submatrix Fin.revPerm id)
+  rw [Matrix.submatrix_submatrix, Matrix.det_permute] at h
+  rw [resultant, sylvester_reflect, resultant, Units.val_mul, Int.cast_mul, mul_assoc]
+  exact h
+
+/-- **Resultant of reversals.** Reversing both arguments of a resultant at their degree bounds
+multiplies it by `(-1) ^ (m * n)`. No degree hypothesis is needed: only the coefficients in
+degrees at most the bounds enter the Sylvester matrix, and the reversals permute its rows and
+columns. For instance `Res(1 - a X, 1 - b X) = b - a = -Res(X - a, X - b)` at the bounds
+`m = n = 1`. -/
+theorem resultant_reflect (f g : R[X]) (m n : ℕ) :
+    resultant (f.reflect m) (g.reflect n) m n = (-1) ^ (m * n) * resultant f g m n := by
+  -- the sign does not depend on the polynomials; `f = X ^ m` and `g = 1` over `ℤ` compute it
+  have hsign : ((Equiv.Perm.sign (blockRevPerm m n) *
+      Equiv.Perm.sign (Fin.revPerm (n := m + n)) : ℤˣ) : ℤ) = (-1) ^ (m * n) := by
+    have h := resultant_reflect_eq_sign_mul (X ^ m : ℤ[X]) 1 m n
+    rw [reflect_monomial, revAt_le le_rfl, Nat.sub_self, pow_zero, ← C_1, reflect_C,
+      resultant_C_left, resultant_C_right] at h
+    simpa using h.symm
+  rw [resultant_reflect_eq_sign_mul, hsign, Int.cast_pow, Int.cast_neg, Int.cast_one]
+
 end Polynomial
 
 namespace TauCeti
@@ -183,3 +259,34 @@ theorem _root_.Polynomial.Monic.resultant_of_le {f g : R[X]} (hf : f.Monic) {n :
     hf.leadingCoeff, one_pow, one_mul]
 
 end TauCeti
+
+namespace Polynomial
+
+variable {R : Type*} [CommRing R]
+
+/-- `X - C a` is coprime to every polynomial whose value at `a` is a unit, over any commutative
+ring: the resultant of the two is that value. -/
+theorem isCoprime_X_sub_C_of_isUnit_eval {p : R[X]} {a : R} (h : IsUnit (p.eval a)) :
+    IsCoprime (X - C a) p := by
+  cases subsingleton_or_nontrivial R with
+  | inl _ => rw [Subsingleton.elim (X - C a) 1]; exact isCoprime_one_left
+  | inr _ =>
+    rwa [← isUnit_resultant_iff_isCoprime (monic_X_sub_C a), natDegree_X_sub_C,
+      resultant_X_sub_C_left (hg := le_rfl)]
+
+/-- **Coprimality lifts along the Jacobson radical.** If `g` is monic and the reductions of `g`
+and `h` modulo an ideal `I` in the Jacobson radical are coprime, then `g` and `h` are coprime. -/
+theorem isCoprime_of_isCoprime_map {I : Ideal R} (hI : I ≤ Ring.jacobson R) {g h : R[X]}
+    (hg : g.Monic) (hgh : IsCoprime (g.map (Ideal.Quotient.mk I)) (h.map (Ideal.Quotient.mk I))) :
+    IsCoprime g h := by
+  have : IsLocalHom (Ideal.Quotient.mk I) := isLocalHom_of_le_jacobson hI
+  rw [← isUnit_resultant_iff_isCoprime hg]
+  refine IsUnit.of_map (Ideal.Quotient.mk I) _ ?_
+  cases subsingleton_or_nontrivial (R ⧸ I) with
+  | inl _ => exact isUnit_of_subsingleton _
+  | inr _ =>
+    rwa [← isUnit_resultant_iff_isCoprime (hg.map _),
+      ← (hg.map _).resultant_of_le (natDegree_map_le (f := Ideal.Quotient.mk I) (p := h)),
+      hg.natDegree_map, resultant_map_map] at hgh
+
+end Polynomial

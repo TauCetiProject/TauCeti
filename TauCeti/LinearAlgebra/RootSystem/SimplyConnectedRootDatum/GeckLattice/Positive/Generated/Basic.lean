@@ -42,6 +42,10 @@ pinning of the Geck carrier.
   smoothness over every field.
 * `geometricallyConnectedCommHopfAlgProperty_geckPositiveGeneratedCoordinateHopfAlgebra`:
   geometric connectedness over every field.
+* `geckPositiveGeneratedRestriction` and `geckPositiveGeneratedCarrierDefiningIdeal`:
+  restriction to the positive subgroup and its ideal inside the full generated group.
+* `geckPositiveGeneratedCarrierQuotientIso`: the intrinsic quotient is the positive
+  coordinate algebra.
 
 ## References
 
@@ -49,6 +53,9 @@ pinning of the Geck carrier.
   Proc. Amer. Math. Soc. **145** (2017), 3233--3247.
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--28.
 * J. S. Milne, *Algebraic Groups* (2017), Propositions 2.37 and 2.48.
+
+The intrinsic positive ideal and its quotient identification follow the parallel construction in
+`TauCeti.Algebra.Lie.E6.Minuscule.Generated.Positive.Basic`.
 -/
 
 public section
@@ -212,10 +219,98 @@ theorem existsUnique_geckPositiveGeneratedCoordinateMap_comp_eq_generator
       exact CommHopfAlgCat.commonKernelHopfIdeal_toIdeal_le_ker
         (t.geckPositiveGeneratorCoordinateMap ht A) j
 
+/-- Restriction to a positive numbered root subgroup or to the weight torus. -/
+noncomputable def geckPositiveGeneratedCoordinateLift (j : Sum (Fin t.rank) Unit) :
+    t.geckPositiveGeneratedCoordinateHopfAlgebra ht A ⟶
+      t.geckPositiveGeneratorCoordinateAlgebra A j :=
+  CommHopfAlgCat.liftQuotient (t.geckPositiveGeneratedDefiningIdeal ht A)
+    (t.geckPositiveGeneratorCoordinateMap ht A j) <| by
+      rw [geckPositiveGeneratedDefiningIdeal_def]
+      exact CommHopfAlgCat.commonKernelHopfIdeal_toIdeal_le_ker
+        (t.geckPositiveGeneratorCoordinateMap ht A) j
+
+/-- Restricting the ambient coordinates through the positive generated subgroup recovers the
+original generator map. -/
+@[reassoc (attr := simp)]
+theorem geckPositiveGeneratedCoordinateMap_comp_lift (j : Sum (Fin t.rank) Unit) :
+    t.geckPositiveGeneratedCoordinateMap ht A ≫
+        t.geckPositiveGeneratedCoordinateLift ht A j =
+      t.geckPositiveGeneratorCoordinateMap ht A j :=
+  CommHopfAlgCat.mkQuotient_comp_liftQuotient _ _ _
+
 /-- The positive generated coordinate Hopf algebra is of finite type over the base ring. -/
 instance : Algebra.FiniteType A (t.geckPositiveGeneratedCoordinateHopfAlgebra ht A) := by
   rw [geckPositiveGeneratedCoordinateHopfAlgebra_def]
   infer_instance
+
+/-! ## The positive subgroup inside the full generated group -/
+
+/-- Restriction from the full generated Geck group to its generated positive subgroup. -/
+def geckPositiveGeneratedRestriction :
+    t.geckGeneratedCoordinateHopfAlgebra ht A ⟶
+      t.geckPositiveGeneratedCoordinateHopfAlgebra ht A :=
+  eqToHom (t.geckGeneratedCoordinateHopfAlgebra_def ht A) ≫
+    CommHopfAlgCat.quotientMapOfLe _
+      (t.geckGeneratedDefiningIdeal_le_geckPositiveGeneratedDefiningIdeal ht A) ≫
+    eqToHom (t.geckPositiveGeneratedCoordinateHopfAlgebra_def ht A).symm
+
+/-- The positive restriction agrees with the quotient maps from general-linear coordinates. -/
+@[reassoc (attr := simp)]
+theorem geckGeneratedCoordinateMap_comp_geckPositiveGeneratedRestriction :
+    t.geckGeneratedCoordinateMap ht A ≫ t.geckPositiveGeneratedRestriction ht A =
+      t.geckPositiveGeneratedCoordinateMap ht A := by
+  rw [geckGeneratedCoordinateMap_def, geckPositiveGeneratedRestriction,
+    geckPositiveGeneratedCoordinateMap_def]
+  simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
+    CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe_assoc]
+
+/-- The positive restriction is surjective, so it represents a closed subgroup inclusion. -/
+theorem geckPositiveGeneratedRestriction_surjective :
+    Function.Surjective (t.geckPositiveGeneratedRestriction ht A).hom := by
+  have h := t.geckPositiveGeneratedCoordinateMap_surjective ht A
+  rw [← t.geckGeneratedCoordinateMap_comp_geckPositiveGeneratedRestriction ht A,
+    _root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp] at h
+  exact h.of_comp
+
+/-- The Hopf ideal of the positive subgroup inside the full generated Geck group's coordinate
+algebra. It is the kernel of restriction to the positive subgroup. -/
+def geckPositiveGeneratedCarrierDefiningIdeal :
+    HopfIdeal A (t.geckGeneratedCoordinateHopfAlgebra ht A) :=
+  HopfIdeal.kerOfSurjective (t.geckPositiveGeneratedRestriction ht A).hom
+    (t.geckPositiveGeneratedRestriction_surjective ht A)
+
+/-- The intrinsic positive ideal is the kernel of restriction to the positive subgroup. -/
+theorem geckPositiveGeneratedCarrierDefiningIdeal_def :
+    t.geckPositiveGeneratedCarrierDefiningIdeal ht A =
+      HopfIdeal.kerOfSurjective (t.geckPositiveGeneratedRestriction ht A).hom
+        (t.geckPositiveGeneratedRestriction_surjective ht A) :=
+  (rfl)
+
+/-- Membership in the intrinsic positive ideal means vanishing on the positive subgroup. -/
+@[simp]
+theorem mem_geckPositiveGeneratedCarrierDefiningIdeal
+    (x : t.geckGeneratedCoordinateHopfAlgebra ht A) :
+    x ∈ t.geckPositiveGeneratedCarrierDefiningIdeal ht A ↔
+      (t.geckPositiveGeneratedRestriction ht A).hom x = 0 :=
+  HopfIdeal.mem_kerOfSurjective _ _
+
+/-- Quotienting the coordinate algebra of the full generated group by the intrinsic positive ideal
+recovers the coordinate algebra of the positive generated subgroup. -/
+def geckPositiveGeneratedCarrierQuotientIso :
+    CommHopfAlgCat.quotient (t.geckGeneratedCoordinateHopfAlgebra ht A)
+        (t.geckPositiveGeneratedCarrierDefiningIdeal ht A) ≅
+      t.geckPositiveGeneratedCoordinateHopfAlgebra ht A :=
+  CommHopfAlgCat.Hom.quotientKerOfSurjectiveIso (t.geckPositiveGeneratedRestriction ht A)
+    (t.geckPositiveGeneratedRestriction_surjective ht A)
+
+/-- The quotient identification is compatible with restriction from the full generated group. -/
+@[reassoc (attr := simp)]
+theorem mkQuotient_comp_geckPositiveGeneratedCarrierQuotientIso_hom :
+    CommHopfAlgCat.mkQuotient (t.geckGeneratedCoordinateHopfAlgebra ht A)
+        (t.geckPositiveGeneratedCarrierDefiningIdeal ht A) ≫
+        (t.geckPositiveGeneratedCarrierQuotientIso ht A).hom =
+      t.geckPositiveGeneratedRestriction ht A :=
+  CommHopfAlgCat.Hom.mkQuotient_comp_quotientKerOfSurjectiveIso_hom _ _
 
 /-! ## Geometry over fields -/
 
@@ -224,8 +319,6 @@ variable (k : Type v) [Field k]
 private theorem isGeometricallyReduced_geckPositiveGeneratorCoordinateAlgebra :
     ∀ j, Algebra.IsGeometricallyReduced k
       (t.geckPositiveGeneratorCoordinateAlgebra k j) := by
-  let : Algebra.IsGeometricallyReduced k (AdditiveGroup.coordinateHopfAlgebra k) :=
-    isGeometricallyReduced_of_smooth k _
   let : Algebra.IsGeometricallyReduced k (DiagonalizableGroup.coordinateRing k
       (SplitTorus.characterGroup (Fin t.rank))).obj := by
     rw [Algebra.isGeometricallyReduced_field_iff]

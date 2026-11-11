@@ -32,15 +32,18 @@ an equivalence relation with the Baire property and meagre classes is meagre in 
   dense set are nowhere dense.
 * `TauCeti.curry_le_residual`: `(residual X).curry (residual Y) ≤ residual (X × Y)`, that is, a
   comeagre subset of `X × Y` has comeagre sections over a comeagre set of `x`.
-* `IsMeagre.eventually_isMeagre_curry_left`: comeagrely many sections of a meagre set are meagre.
+* `IsMeagre.eventually_isMeagre_curry_left`, `IsMeagre.eventually_isMeagre_curry_right`:
+  comeagrely many sections of a meagre set are meagre.
 * `IsMeagre.prod_left`, `IsMeagre.prod_right`: a product with a meagre factor is meagre.
 * `BaireMeasurableSet.baireMeasurableSet_curry_left`: comeagrely many sections of a set with the
   Baire property have the Baire property.
-* `BaireMeasurableSet.mem_curry_iff_mem_residual`: **the Kuratowski–Ulam theorem**, with the
-  right-hand form `eventually_eventually_right_iff_mem_residual` and the
+* `BaireMeasurableSet.eventually_eventually_left_iff_mem_residual`: **the Kuratowski–Ulam
+  theorem**, with the right-hand form `eventually_eventually_right_iff_mem_residual` and the
   exchange of quantifiers `eventually_eventually_swap`.
-* `BaireMeasurableSet.eventually_isMeagre_curry_left_iff_isMeagre` and
-  `BaireMeasurableSet.isMeagre_of_forall_isMeagre_curry_left`: the meagre-sections forms.
+* `BaireMeasurableSet.eventually_isMeagre_curry_left_iff_isMeagre`,
+  `BaireMeasurableSet.isMeagre_of_forall_isMeagre_curry_left` and their right-hand forms
+  `eventually_isMeagre_curry_right_iff_isMeagre`, `isMeagre_of_forall_isMeagre_curry_right`: the
+  meagre-sections forms.
 
 ## References
 
@@ -139,6 +142,12 @@ theorem eventually_eventually_right_of_mem_residual [SecondCountableTopology X]
 
 end TauCeti
 
+/-- If `X` is second countable and `s` is meagre in `X × Y`, then comeagrely many sections
+`(·, y) ⁻¹' s` are meagre. -/
+theorem IsMeagre.eventually_isMeagre_curry_right [SecondCountableTopology X] {s : Set (X × Y)}
+    (hs : IsMeagre s) : ∀ᵇ y : Y, IsMeagre ((·, y) ⁻¹' s) :=
+  TauCeti.eventually_eventually_right_of_mem_residual hs
+
 /-- A product whose left factor is meagre is meagre. -/
 theorem IsMeagre.prod_left {s : Set X} (hs : IsMeagre s) (t : Set Y) : IsMeagre (s ×ˢ t) :=
   (hs.preimage_of_isOpenMap continuous_fst isOpenMap_fst).mono (prod_subset_preimage_fst s t)
@@ -184,10 +193,11 @@ theorem frequently_curry_of_not_isMeagre (hs : BaireMeasurableSet s) (hn : ¬ Is
   exact hpsu.2 (hx y hy)
 
 /-- **The Kuratowski–Ulam theorem.** If `Y` is second countable, a set `s` with the Baire property
-in `X × Y` is comeagre if and only if it belongs to the curried residual filter, that is, if and
-only if comeagrely many sections `(x, ·) ⁻¹' s` are comeagre. -/
-theorem mem_curry_iff_mem_residual (hs : BaireMeasurableSet s) :
-    s ∈ (residual X).curry (residual Y) ↔ s ∈ residual (X × Y) := by
+in `X × Y` is comeagre if and only if comeagrely many sections `(x, ·) ⁻¹' s` are comeagre, that
+is, if and only if it belongs to the curried residual filter `(residual X).curry (residual Y)`. -/
+theorem eventually_eventually_left_iff_mem_residual (hs : BaireMeasurableSet s) :
+    (∀ᵇ x : X, ∀ᵇ y : Y, (x, y) ∈ s) ↔ s ∈ residual (X × Y) := by
+  rw [← mem_curry_iff]
   refine ⟨fun h ↦ ?_, fun h ↦ TauCeti.curry_le_residual h⟩
   by_contra hns
   have hn : ¬ IsMeagre sᶜ := by rwa [IsMeagre, compl_compl]
@@ -198,7 +208,7 @@ Baire property in `X × Y` is meagre if and only if comeagrely many sections `(x
 meagre. -/
 theorem eventually_isMeagre_curry_left_iff_isMeagre (hs : BaireMeasurableSet s) :
     (∀ᵇ x : X, IsMeagre ((x, ·) ⁻¹' s)) ↔ IsMeagre s :=
-  hs.compl.mem_curry_iff_mem_residual
+  hs.compl.eventually_eventually_left_iff_mem_residual
 
 /-- If `Y` is second countable, a set with the Baire property in `X × Y` all of whose sections
 `(x, ·) ⁻¹' s` are meagre is meagre. -/
@@ -215,14 +225,29 @@ theorem eventually_eventually_right_iff_mem_residual [SecondCountableTopology X]
     {s : Set (X × Y)} (hs : BaireMeasurableSet s) :
     (∀ᵇ y : Y, ∀ᵇ x : X, (x, y) ∈ s) ↔ s ∈ residual (X × Y) := by
   rw [← (Homeomorph.prodComm Y X).residual_map_eq]
-  exact (hs.preimage continuous_swap (Homeomorph.prodComm Y X).isOpenMap).mem_curry_iff_mem_residual
+  exact (hs.preimage continuous_swap
+    (Homeomorph.prodComm Y X).isOpenMap).eventually_eventually_left_iff_mem_residual
 
 /-- For a set with the Baire property in a product of second countable spaces, the two orders of
 the category quantifiers agree. -/
 theorem eventually_eventually_swap [SecondCountableTopology X] [SecondCountableTopology Y]
     {s : Set (X × Y)} (hs : BaireMeasurableSet s) :
     (∀ᵇ x : X, ∀ᵇ y : Y, (x, y) ∈ s) ↔ ∀ᵇ y : Y, ∀ᵇ x : X, (x, y) ∈ s :=
-  hs.mem_curry_iff_mem_residual.trans
+  hs.eventually_eventually_left_iff_mem_residual.trans
     hs.eventually_eventually_right_iff_mem_residual.symm
+
+/-- **The Kuratowski–Ulam theorem**, right-hand meagre form. If `X` is second countable, a set `s`
+with the Baire property in `X × Y` is meagre if and only if comeagrely many sections
+`(·, y) ⁻¹' s` are meagre. -/
+theorem eventually_isMeagre_curry_right_iff_isMeagre [SecondCountableTopology X]
+    {s : Set (X × Y)} (hs : BaireMeasurableSet s) :
+    (∀ᵇ y : Y, IsMeagre ((·, y) ⁻¹' s)) ↔ IsMeagre s :=
+  hs.compl.eventually_eventually_right_iff_mem_residual
+
+/-- If `X` is second countable, a set with the Baire property in `X × Y` all of whose sections
+`(·, y) ⁻¹' s` are meagre is meagre. -/
+theorem isMeagre_of_forall_isMeagre_curry_right [SecondCountableTopology X] {s : Set (X × Y)}
+    (hs : BaireMeasurableSet s) (h : ∀ y, IsMeagre ((·, y) ⁻¹' s)) : IsMeagre s :=
+  hs.eventually_isMeagre_curry_right_iff_isMeagre.1 (Eventually.of_forall h)
 
 end BaireMeasurableSet

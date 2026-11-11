@@ -30,25 +30,19 @@ universe uι uR us ut
 
 namespace TauCeti.PiTensorProduct
 
-variable {ι : Type uι} {R : Type uR} {s : ι → Type us} {t : ι → Type ut} [DecidableEq ι]
+variable {ι : Type uι} {R : Type uR} {s : ι → Type us} {t : ι → Type ut}
   [CommSemiring R] [∀ i, AddCommMonoid (s i)] [∀ i, Module R (s i)] [∀ i, AddCommMonoid (t i)]
   [∀ i, Module R (t i)]
 
 /-- Two tensor maps whose factors agree away from one index `k` add up to the tensor map with the
 sum of their factors at `k`. -/
-theorem map_add_map_eq_map_update (f g : ∀ i, s i →ₗ[R] t i) (k : ι)
+theorem map_add_map_eq_map_update [DecidableEq ι] (f g : ∀ i, s i →ₗ[R] t i) (k : ι)
     (h : ∀ i, i ≠ k → f i = g i) :
     PiTensorProduct.map f + PiTensorProduct.map g =
       PiTensorProduct.map (Function.update f k (f k + g k)) := by
-  have hg : g = Function.update f k (g k) := by
-    funext i
-    by_cases hi : i = k
-    · subst hi
-      simp
-    · simp [Function.update_of_ne hi, h i hi]
-  rw [PiTensorProduct.map_update_add, Function.update_eq_self, ← hg]
+  rw [PiTensorProduct.map_update_add, Function.update_eq_self,
+    ← Function.eq_update_iff.2 ⟨rfl, fun i hi ↦ (h i hi).symm⟩]
 
-omit [DecidableEq ι] in
 /-- Over an empty index type, every tensor map of endomorphisms is the identity. -/
 @[simp]
 theorem map_of_isEmpty [IsEmpty ι] (f : ∀ i, s i →ₗ[R] s i) :

@@ -11,7 +11,9 @@ public import Mathlib.Analysis.SpecialFunctions.Exponential
 public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.Trace
-public import TauCeti.Analysis.Calculus.FDeriv.Det
+public import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
+public import TauCeti.Analysis.Matrix.Normed
+public import TauCeti.LinearAlgebra.Matrix.Triangular
 
 /-!
 # The matrix exponential
@@ -29,7 +31,8 @@ laws `exp A * exp (-A) = 1` and `exp (-A) * exp A = 1`, together with their form
 arbitrary factor, for an arbitrary matrix over any complete normed entry ring; the invariance of
 the trace under conjugation by the two exponential weights in either order, which needs
 commutative entries; the half-split identity `exp A = exp (A / 2) * exp (A / 2)`; and, for a
-Hermitian matrix `K`, the positivity of `Tr (exp K)` and of `x ↦ Tr (exp K * x)`.
+Hermitian matrix `K`, the positivity of `Tr (exp K)` and of `x ↦ Tr (exp K * x)`, and the
+criterion `det (exp K) = 1 ↔ trace K = 0`.
 
 ## The argument
 
@@ -41,8 +44,15 @@ velocity `A`, and the derivative of the determinant at the identity is the trace
 `f' = trace A • f`, and then `t ↦ f t * exp (-t • trace A)` has vanishing derivative and is the
 constant `1`. Evaluating at `t = 1` gives the identity.
 
+The rational exponential series converges entrywise over any complete normed rational-algebra
+coefficient ring. In particular, two matrices have the same indicated entry in their
+exponentials whenever all their powers agree at those entries.
+
 ## Main results
 
+* `Matrix.exp_series_hasSum_exp_apply`: the rational exponential series at a matrix entry.
+* `Matrix.exp_apply_eq_of_forall_pow_apply_eq`: comparison of exponential entries through powers.
+* `Matrix.IsUpperTriangular.exp_apply_diag`: diagonal entries of a triangular exponential.
 * `Matrix.det_exp`: `det (exp A) = exp (trace A)`.
 * `Matrix.exp_mul_exp_neg`, `Matrix.exp_neg_mul_exp`, `Matrix.exp_mul_exp_neg_mul`,
   `Matrix.exp_neg_mul_exp_mul`: the reciprocal laws for the exponential of an arbitrary matrix,
@@ -52,6 +62,8 @@ constant `1`. Evaluating at `t = 1` gives the identity.
 * `Matrix.exp_eq_mul_exp_half`: the exponential of a matrix is the square of its half.
 * `Matrix.IsHermitian.trace_exp_mul_nonneg` and `Matrix.IsHermitian.trace_exp_pos`: positivity of
   the trace of the exponential of a Hermitian matrix and of the functional `x ↦ Tr (exp K * x)`.
+* `Matrix.IsHermitian.det_exp_eq_one_iff`: the exponential of a Hermitian matrix has determinant
+  one exactly when the matrix is trace-free.
 
 ## References
 
@@ -68,6 +80,42 @@ open NormedSpace
 open scoped ComplexOrder Matrix Matrix.Norms.Operator MatrixOrder
 
 namespace Matrix
+
+section EntrySeries
+
+variable {R : Type*} [NormedRing R] [NormedAlgebra ℚ R] [CompleteSpace R]
+
+/-- The rational exponential series converges to each entry of the matrix exponential. -/
+theorem exp_series_hasSum_exp_apply {l : Type*} [Fintype l] [DecidableEq l]
+    (M : Matrix l l R) (i j : l) :
+    HasSum (fun k : ℕ ↦ (k.factorial⁻¹ : ℚ) • (M^k) i j) (exp M i j) := by
+  let e := Matrix.entryLinearMap ℚ R i j
+  have he : Continuous e := continuous_id.matrix_elem i j
+  have h := (NormedSpace.exp_series_hasSum_exp' (𝕂 := ℚ) M).map e.toAddMonoidHom he
+  refine h.congr (fun k ↦ ?_)
+  simp [e]
+
+/-- Equal entries in every power give equal entries in the matrix exponentials. -/
+theorem exp_apply_eq_of_forall_pow_apply_eq {p q : Type*}
+    [Fintype p] [Fintype q] [DecidableEq p] [DecidableEq q]
+    (M : Matrix p p R) (N : Matrix q q R) (i j : p) (u v : q)
+    (hp : ∀ k : ℕ, (M ^ k) i j = (N ^ k) u v) : exp M i j = exp N u v := by
+  have h := exp_series_hasSum_exp_apply M i j
+  simp only [hp] at h
+  exact h.unique (exp_series_hasSum_exp_apply N u v)
+
+/-- On the diagonal, exponentiating an upper-triangular matrix exponentiates each entry. -/
+@[simp]
+theorem IsUpperTriangular.exp_apply_diag {n : Type*} [Fintype n] [LinearOrder n]
+    {A : Matrix n n R} (hA : A.IsUpperTriangular) (i : n) : exp A i i = exp (A i i) := by
+  have h := exp_apply_eq_of_forall_pow_apply_eq A (diagonal (fun j ↦ A j j)) i i i i
+    (fun k ↦ by
+      simp only [pow_apply_diag_of_isUpperTriangular hA, diagonal_pow, diagonal_apply_eq,
+        Pi.pow_apply])
+  simpa only [exp_diagonal, diagonal_apply_eq, Pi.coe_exp] using h
+
+end EntrySeries
+
 
 variable {n : Type*} [Fintype n] [DecidableEq n] {𝕂 : Type*} [RCLike 𝕂]
 
@@ -191,6 +239,17 @@ theorem trace_exp_mul_nonneg (hK : K.IsHermitian) {x : Matrix m m 𝕜}
   refine Matrix.PosSemidef.trace_nonneg (Matrix.nonneg_iff_posSemidef.mp ?_)
   simpa only [hF, Matrix.mul_assoc] using
     star_left_conjugate_nonneg hx (NormedSpace.exp ((1 / 2 : ℝ) • K))
+
+/-- The exponential of a Hermitian matrix `K` has determinant one exactly when `K` is trace-free:
+`det (exp K) = exp (trace K)` and the trace of `K` is real. -/
+theorem det_exp_eq_one_iff (hK : K.IsHermitian) :
+    (NormedSpace.exp K).det = 1 ↔ K.trace = 0 := by
+  have hre : ((RCLike.re K.trace : ℝ) : 𝕜) = K.trace :=
+    RCLike.conj_eq_iff_re.1 (by rw [← RCLike.star_def, ← trace_conjTranspose, hK.eq])
+  rw [det_exp, ← hre, ← RCLike.algebraMap_eq_ofReal, ← NormedSpace.algebraMap_exp_comm,
+    ← Real.exp_eq_exp_ℝ, RCLike.algebraMap_eq_ofReal]
+  norm_cast
+  exact Real.exp_eq_one_iff _
 
 variable [Nonempty m]
 

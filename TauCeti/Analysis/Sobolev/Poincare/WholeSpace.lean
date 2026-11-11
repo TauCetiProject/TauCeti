@@ -29,12 +29,12 @@ space no single constant works even for compactly supported smooth functions, so
 of the support is load-bearing rather than an artefact of the proof.
 
 The obstruction is scaling. Dilating the variable by `r > 0` multiplies `‖u‖_p` by `r ^ (n / p)`
-and `‖Du‖_p` by `r ^ (n / p - 1)` (`TauCeti.eLpNorm_comp_inv_smul` and
-`TauCeti.eLpNorm_fderiv_comp_inv_smul`), so applying a putative inequality to the dilates of one
-fixed bump function forces `‖u‖_p ≤ C r⁻¹ ‖Du‖_p` for every `r`, and letting `r → ∞` makes the
-bump's own seminorm vanish. Note that `p ≠ 0` is the only hypothesis needed: the failure is not
-confined to the subcritical range `p < n` in which the positive result lives, and includes
-`p = ∞`.
+and `‖Du‖_p` by `r ^ (n / p - 1)` (`MeasureTheory.Measure.eLpNorm_comp_inv_smul` and
+`MeasureTheory.Measure.eLpNorm_fderiv_comp_inv_smul`), so applying a putative inequality to the
+dilates of one fixed bump function forces `‖u‖_p ≤ C r⁻¹ ‖Du‖_p` for every `r`, and letting
+`r → ∞` makes the bump's own seminorm vanish. Note that `p ≠ 0` is the only hypothesis needed:
+the failure is not confined to the subcritical range `p < n` in which the positive result lives,
+and includes `p = ∞`.
 
 `TauCeti.Analysis.Sobolev.Poincare.Slab` proves the matching positive statement: bounding the
 support in a single direction already suffices, and the constant is then the width of the slab.
@@ -71,7 +71,8 @@ private theorem eLpNorm_le_ofReal_inv_mul_of_forall {p : ℝ≥0∞} {k : ℕ∞
   have h1 := hC (fun x => φ (r⁻¹ • x))
     (hφ.comp (ContDiff.const_smul r⁻¹ (contDiff_id (𝕜 := ℝ) (E := E))))
     (φ.hasCompactSupport.comp_homeomorph (Homeomorph.smul (Units.mk0 r⁻¹ (inv_ne_zero hr.ne'))))
-  rw [eLpNorm_comp_inv_smul μ _ hr p, eLpNorm_fderiv_comp_inv_smul μ _ hr p] at h1
+  rw [μ.eLpNorm_comp_inv_smul _ hr.ne' p, μ.eLpNorm_fderiv_comp_inv_smul _ hr.ne' p,
+    abs_of_pos hr] at h1
   set s := ENNReal.ofReal (r ^ ((finrank ℝ E : ℝ) / p.toReal)) with hs_def
   have hs0 : s ≠ 0 := by
     rw [hs_def, Ne, ENNReal.ofReal_eq_zero, not_le]

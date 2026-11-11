@@ -146,7 +146,7 @@ generated source over a Noetherian commutative ring. -/
 theorem finite_lieModuleHom_of_isIrreducible [IsNoetherian R M] :
     Module.Finite R (M →ₗ⁅R,L⁆ N) := by
   by_cases h : Nonempty (M ≃ₗ⁅R,L⁆ N)
-  · exact Module.Finite.equiv (LieModuleEquiv.congrRight (M := M) h.some)
+  · exact Module.Finite.equiv (h.some.congrRight (M := M))
   · have : Subsingleton (M →ₗ⁅R,L⁆ N) :=
       subsingleton_lieModuleHom_of_isEmpty_lieModuleEquiv (not_nonempty_iff.mp h)
     exact Module.Finite.of_surjective (0 : R →ₗ[R] (M →ₗ⁅R,L⁆ N))
@@ -183,7 +183,7 @@ variable {M}
 postcomposing with the equivalence identifies it with the endomorphism space. -/
 theorem finrank_lieModuleHom_eq_one_of_nonempty_lieModuleEquiv (h : Nonempty (M ≃ₗ⁅K,L⁆ N)) :
     finrank K (M →ₗ⁅K,L⁆ N) = 1 := by
-  rw [← (LieModuleEquiv.congrRight (M := M) h.some).finrank_eq]
+  rw [← (h.some.congrRight (M := M)).finrank_eq]
   exact finrank_lieModuleHom_self K L M
 
 variable [_root_.LieModule.IsIrreducible K L N]

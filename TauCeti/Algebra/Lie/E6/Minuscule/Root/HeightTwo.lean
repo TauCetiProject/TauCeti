@@ -43,7 +43,8 @@ theorem exists_lie_raisingMatrix_apply_eq_one {i j : Fin 6}
     (hij : CartanMatrix.E 6 i j = -1) :
     ∃ a b, ⁅raisingMatrix i, raisingMatrix j⁆ a b = 1 := by
   obtain ⟨b, hbi, hbj⟩ :=
-    DynkinType.exists_e6MinusculeWeight_apply_eq_zero_and_eq_neg_one i j hij
+    DynkinType.exists_e6MinusculeWeight_apply_eq_zero_and_eq_neg_one (i := i) (j := j)
+      (by rintro rfl; simp [CartanMatrix.E_diag] at hij)
   have hji : CartanMatrix.E 6 j i = -1 :=
     ((CartanMatrix.E_isSymm 6).apply i j).trans hij
   have hstep : DynkinType.e6MinusculeWeight (DynkinType.e6MinusculeReflection j b) i = -1 := by

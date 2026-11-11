@@ -13,7 +13,10 @@ public import Mathlib.LinearAlgebra.Prod
 
 A submodule of `M × N` is a linear relation from `M` to `N`. Relational composition
 eliminates the shared coordinate. It is associative, has the diagonal as identity,
-and agrees with composition of linear maps on graphs. Unlike a partial linear map,
+and agrees with composition of linear maps on graphs. When a map `(S, T) : Z → X × Y`
+parametrizes the pairs whose images under `A : X → M × N` and `B : Y → N × P` match in `N`,
+the composite of the ranges of `A` and `B` is the range of the induced map `Z → M × P`
+(`Submodule.range_prod_eq_relComp_range`). Unlike a partial linear map,
 a linear relation can have several outputs for one input. The underlying set of the
 composite is Mathlib's `SetRel.comp` of the underlying sets, and the laws below are
 transported from the corresponding `SetRel` lemmas.
@@ -95,5 +98,35 @@ theorem _root_.LinearMap.graph_relComp_graph (f : M →ₗ[R] N) (g : N →ₗ[R
   SetLike.coe_injective <| by
     rw [coe_relComp, LinearMap.coe_graph, LinearMap.coe_graph, LinearMap.coe_graph]
     exact (Function.graph_comp g f).symm
+
+section Range
+
+variable {X Y Z : Type*} [AddCommMonoid X] [Module R X] [AddCommMonoid Y] [Module R Y]
+  [AddCommMonoid Z] [Module R Z]
+
+/-- If `S` and `T` send every `z` to a pair whose images under `A` and `B` match in the middle
+coordinate, then the outer coordinates of `z ↦ (A (S z), B (T z))` lie in the composite of the
+ranges of `A` and `B`. -/
+theorem range_prod_le_relComp_range {A : X →ₗ[R] M × N} {B : Y →ₗ[R] N × P} {S : Z →ₗ[R] X}
+    {T : Z →ₗ[R] Y} (hST : ∀ z, (A (S z)).2 = (B (T z)).1) :
+    LinearMap.range ((LinearMap.fst R M N ∘ₗ A ∘ₗ S).prod (LinearMap.snd R N P ∘ₗ B ∘ₗ T)) ≤
+      (LinearMap.range A).relComp (LinearMap.range B) := by
+  rintro _ ⟨z, rfl⟩
+  exact ⟨(A (S z)).2, ⟨S z, rfl⟩, ⟨T z, by simp [hST]⟩⟩
+
+/-- **Ranges of a fibre-product presentation.** Suppose `(S, T) : Z → X × Y` maps onto the pairs
+`(x, y)` with `(A x).2 = (B y).1`. Then the composite of the ranges of `A` and `B` is exactly
+the range of the map `z ↦ ((A (S z)).1, (B (T z)).2)`. -/
+theorem range_prod_eq_relComp_range {A : X →ₗ[R] M × N} {B : Y →ₗ[R] N × P} {S : Z →ₗ[R] X}
+    {T : Z →ₗ[R] Y} (hST : ∀ z, (A (S z)).2 = (B (T z)).1)
+    (hsurj : ∀ x y, (A x).2 = (B y).1 → ∃ z, S z = x ∧ T z = y) :
+    LinearMap.range ((LinearMap.fst R M N ∘ₗ A ∘ₗ S).prod (LinearMap.snd R N P ∘ₗ B ∘ₗ T)) =
+      (LinearMap.range A).relComp (LinearMap.range B) := by
+  refine le_antisymm (range_prod_le_relComp_range hST) ?_
+  rintro v ⟨n, ⟨x, hx⟩, ⟨y, hy⟩⟩
+  obtain ⟨z, rfl, rfl⟩ := hsurj x y (by rw [hx, hy])
+  exact ⟨z, by simp [hx, hy]⟩
+
+end Range
 
 end Submodule

@@ -89,8 +89,6 @@ theorem summable_mul_envelopingι_single (P : ℕ → UK) (x : ℕ → L) :
       (P n * envelopingι c a ((HahnSeries.single (n + 1 : ℤ) 1) ⊗ₜ[R] x n)) := by
   apply summable_mul_envelopingι P
   intro n
-  exact tmul_mem_orderSubmodule R L n
-    ((WithTop.coe_le_coe.mpr (by omega : (n : ℤ) ≤ n + 1)).trans
-      HahnSeries.orderTop_single_le) (x n)
+  exact single_tmul_mem_orderSubmodule R L (by omega) 1 (x n)
 
 end TauCeti.CurrentAlgebra

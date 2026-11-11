@@ -126,6 +126,16 @@ def twistedAffineSimplex (σ : (TopCat.toSSet.obj X).obj n) (z : toTop.{v}.obj n
       (pathTransport σ z (affineToTop v (toTopInitialVertex ⦋k⦌))))
     (ιTwistedChainComplex L k (affineSimplex σ v))
 
+/-- The affine summand transports its coefficient to the initial vertex of the affine simplex
+and then includes that simplex's coefficient fibre. -/
+lemma twistedAffineSimplex_def (σ : (TopCat.toSSet.obj X).obj n) (z : toTop.{v}.obj n.unop)
+    {k : ℕ} (v : Fin (k + 1) → StdSimplex ℝ (Fin (n.unop.len + 1))) :
+    twistedAffineSimplex L σ z v =
+      L.map (pathTransport σ z (ULift.up
+        (StdSimplex.continuousAffineMapMk v (toTopInitialVertex.{v} ⦋k⦌).down))) ≫
+      ιTwistedChainComplex L k ((X.toSSetObjEquiv _).symm
+        ((X.toSSetObjEquiv n σ).comp (StdSimplex.continuousAffineMapMk v))) := (rfl)
+
 /-- The boundary of the summand of an affine simplex of `σ` is the alternating sum of the summands
 of its facets, all with coefficients transported from the same point of `σ`. -/
 @[simp]

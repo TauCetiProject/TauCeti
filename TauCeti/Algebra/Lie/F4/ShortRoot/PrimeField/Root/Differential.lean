@@ -55,6 +55,8 @@ namespace TauCeti.F4ShortRoot.PrimeField
 
 open DynkinType
 
+attribute [local instance 100] LieRing.ofAssociativeRing
+
 noncomputable section
 
 local instance : Fact (Nat.Prime 2) := ⟨by decide⟩
@@ -63,29 +65,45 @@ local notation "H₂₆" => GeneralLinear.coordinateHopfAlgebra (ZMod 2) 26
 local notation "J" => CommHopfAlgCat.commonKernelHopfIdeal generator
 local notation "Q" => CommHopfAlgCat.quotient H₂₆ J
 
+variable (B : Type*) [CommRing B] [Algebra (ZMod 2) B]
+
+/-- The differential of the carrier's closed immersion into `GL₂₆`, in matrix form. -/
+def tangentMatrixLieHom :
+    Derivation (ZMod 2) Q (Bialgebra.CounitAlgebra (ZMod 2) Q B) →ₗ⁅B⁆
+      Matrix (Fin 26) (Fin 26) B :=
+  (GeneralLinear.tangentLieEquivMatrix (R := ZMod 2) (B := B) 26).toLieHom.comp
+    (HopfIdeal.quotientLieHom (B := B) J)
+
+/-- The tangent inclusion evaluates the included derivation on the generic matrix. -/
+theorem tangentMatrixLieHom_apply
+    (d : Derivation (ZMod 2) Q (Bialgebra.CounitAlgebra (ZMod 2) Q B)) :
+    tangentMatrixLieHom B d = GeneralLinear.tangentMatrix 26
+      (HopfIdeal.quotientLieHom J d) := by
+  simp only [tangentMatrixLieHom, LieHom.comp_apply, LieEquiv.coe_toLieHom,
+    GeneralLinear.tangentLieEquivMatrix_apply]
+
+/-- The closed-immersion differential is injective for arbitrary tangent coefficients. -/
+theorem tangentMatrixLieHom_injective : Function.Injective (tangentMatrixLieHom B) :=
+  (GeneralLinear.tangentLieEquivMatrix (R := ZMod 2) (B := B) 26).injective.comp
+    (HopfIdeal.quotientLieHom_injective J)
+
 /-- The tangent matrix of a vector of the prime-field carrier: the differential of its closed
 embedding in `GL₂₆`, after cotangent duality. -/
 def tangentMatrix : Module.Dual (ZMod 2) (Bialgebra.CotangentSpace (ZMod 2) Q) →ₗ[ZMod 2]
     Matrix (Fin 26) (Fin 26) (ZMod 2) :=
-  (GeneralLinear.tangentMatrix 26).comp
-    ((HopfIdeal.quotientLieHom (B := ZMod 2) J).toLinearMap.comp
-      (Derivation.cotangentLinearEquiv (B := ZMod 2)).toLinearMap)
+  (tangentMatrixLieHom (ZMod 2)).toLinearMap.comp
+    (Derivation.cotangentLinearEquiv (B := ZMod 2)).toLinearMap
 
 /-- The carrier's tangent matrix is the ambient matrix of its included derivation. -/
 theorem tangentMatrix_apply (x : Module.Dual (ZMod 2) (Bialgebra.CotangentSpace (ZMod 2) Q)) :
     tangentMatrix x = GeneralLinear.tangentMatrix 26
-      (HopfIdeal.quotientLieHom J (Derivation.cotangentLinearEquiv (B := ZMod 2) x)) :=
-  (rfl)
+      (HopfIdeal.quotientLieHom J (Derivation.cotangentLinearEquiv (B := ZMod 2) x)) := by
+  exact tangentMatrixLieHom_apply (ZMod 2) _
 
 /-- A tangent vector of the carrier is determined by its matrix. -/
-theorem tangentMatrix_injective : Function.Injective tangentMatrix := by
-  intro x y h
-  rw [tangentMatrix_apply, tangentMatrix_apply,
-    ← GeneralLinear.tangentLinearEquivMatrix_apply,
-    ← GeneralLinear.tangentLinearEquivMatrix_apply] at h
-  exact (Derivation.cotangentLinearEquiv (B := ZMod 2)).injective
-    (HopfIdeal.quotientLieHom_injective J
-      ((GeneralLinear.tangentLinearEquivMatrix 26).injective h))
+theorem tangentMatrix_injective : Function.Injective tangentMatrix :=
+  (tangentMatrixLieHom_injective (ZMod 2)).comp
+    (Derivation.cotangentLinearEquiv (B := ZMod 2)).injective
 
 /-- Restricting the ambient generic matrix to a numbered root subgroup gives its matrix at
 the universal additive coordinate. -/
@@ -135,13 +153,37 @@ theorem tangentMatrix_derivationComp_generator_inl
     add_zero, zsmul_eq_mul, map_mul, map_intCast, AdditiveGroup.gaTangentLinearEquiv_apply]
   ring
 
+/-- The normalized differential of a numbered signed simple-root subgroup. -/
+def rootDerivation (k : Fin 4 ⊕ Fin 4) :
+    Derivation (ZMod 2) Q (Bialgebra.CounitAlgebra (ZMod 2) Q B) :=
+  derivationComp (B := B) (CommHopfAlgCat.commonKernelLift generator (.inl k)).hom
+    ((AdditiveGroup.gaTangentLinearEquiv (R := ZMod 2) (B := B)).symm 1)
+
+/-- The normalized root differential is the image of the additive unit tangent vector. -/
+theorem rootDerivation_def (k : Fin 4 ⊕ Fin 4) :
+    rootDerivation B k =
+      derivationComp (B := B) (CommHopfAlgCat.commonKernelLift generator (.inl k)).hom
+        ((AdditiveGroup.gaTangentLinearEquiv (R := ZMod 2) (B := B)).symm 1) :=
+  (rfl)
+
+/-- The normalized differential has the integral Chevalley matrix with coefficients in `B`. -/
+@[simp]
+theorem tangentMatrixLieHom_rootDerivation (k : Fin 4 ⊕ Fin 4) :
+    tangentMatrixLieHom B (rootDerivation B k) =
+      (rootMatrix k).map (Int.cast : ℤ → B) := by
+  have hcomp : (CommHopfAlgCat.commonKernelLift generator (.inl k)).hom.comp
+      (Bialgebra.Quotient.mkBialgHom (J).toIdeal) = (generator (.inl k)).hom := by
+    rw [← CommHopfAlgCat.hom_mkQuotient, ← CommHopfAlgCat.hom_comp,
+      CommHopfAlgCat.mkQuotient_comp_commonKernelLift]
+  rw [tangentMatrixLieHom_apply, rootDerivation_def, HopfIdeal.quotientLieHom_apply,
+    ← LinearMap.comp_apply, ← derivationComp_comp, hcomp,
+    tangentMatrix_derivationComp_generator_inl, LinearEquiv.apply_symm_apply, one_smul]
+
 /-- The tangent vector obtained by differentiating the numbered root subgroup at additive
 parameter one. -/
 def rootVector (k : Fin 4 ⊕ Fin 4) :
     Module.Dual (ZMod 2) (Bialgebra.CotangentSpace (ZMod 2) Q) :=
-  (Derivation.cotangentLinearEquiv (B := ZMod 2)).symm
-    (derivationComp (B := ZMod 2) (CommHopfAlgCat.commonKernelLift generator (.inl k)).hom
-      ((AdditiveGroup.gaTangentLinearEquiv (R := ZMod 2) (B := ZMod 2)).symm 1))
+  (Derivation.cotangentLinearEquiv (B := ZMod 2)).symm (rootDerivation (ZMod 2) k)
 
 /-- Cotangent duality sends a root vector to the differential of its root parametrization. -/
 @[simp↓]
@@ -149,7 +191,7 @@ theorem cotangentLinearEquiv_rootVector (k : Fin 4 ⊕ Fin 4) :
     Derivation.cotangentLinearEquiv (B := ZMod 2) (rootVector k) =
       derivationComp (B := ZMod 2) (CommHopfAlgCat.commonKernelLift generator (.inl k)).hom
         ((AdditiveGroup.gaTangentLinearEquiv (R := ZMod 2) (B := ZMod 2)).symm 1) := by
-  simp [rootVector]
+  simp [rootVector, rootDerivation_def]
 
 /-- The matrix of a normalized numbered root vector is its integral Chevalley matrix
 reduced modulo two. -/
@@ -157,13 +199,11 @@ reduced modulo two. -/
 @[simp↓]
 theorem tangentMatrix_rootVector (k : Fin 4 ⊕ Fin 4) :
     tangentMatrix (rootVector k) = (rootMatrix k).map (Int.cast : ℤ → ZMod 2) := by
-  have hcomp : (CommHopfAlgCat.commonKernelLift generator (.inl k)).hom.comp
-      (Bialgebra.Quotient.mkBialgHom (J).toIdeal) = (generator (.inl k)).hom := by
-    rw [← CommHopfAlgCat.hom_mkQuotient, ← CommHopfAlgCat.hom_comp,
-      CommHopfAlgCat.mkQuotient_comp_commonKernelLift]
-  rw [tangentMatrix_apply, cotangentLinearEquiv_rootVector,
-    HopfIdeal.quotientLieHom_apply, ← LinearMap.comp_apply, ← derivationComp_comp, hcomp,
-    tangentMatrix_derivationComp_generator_inl, LinearEquiv.apply_symm_apply, one_smul]
+  change tangentMatrixLieHom (ZMod 2)
+    (Derivation.cotangentLinearEquiv (B := ZMod 2)
+      ((Derivation.cotangentLinearEquiv (B := ZMod 2)).symm
+        (rootDerivation (ZMod 2) k))) = _
+  rw [LinearEquiv.apply_symm_apply, tangentMatrixLieHom_rootDerivation]
 
 /-- Every numbered root vector is nonzero, since its root subgroup is a closed immersion. -/
 @[simp↓]
@@ -191,6 +231,7 @@ theorem mem_adjointWeightSpace_iff (α : Multiplicative (Fin 4 →₀ ℤ))
     rw [← CommHopfAlgCat.hom_mkQuotient, ← CommHopfAlgCat.hom_comp,
       CommHopfAlgCat.mkQuotient_comp_commonKernelLift, generator_inr,
       GeneralLinear.weightTorusBaseChangeCoordinateMap_eq]
+  rw [tangentMatrix_apply]
   exact HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorus J f4ShortRootWeight _ hπ α x
 
 /-- Each numbered root vector has its prescribed signed-simple-root torus character. The integral

@@ -91,14 +91,10 @@ private theorem derivative_precompOneEquivOfLift_eq {f' : AddCircle T → ℂ}
       mulFourierSeries (fourierCoeff f')
         (precompEquivOfLift hF hper hφ hc hcF hMF
           (derivative T (show (0 : ℝ) + 1 ≤ 1 by norm_num) a)) := by
-  have hf'c : (fun x : ℝ ↦ f' x) = fun x ↦ (F' x : ℂ) := funext hf'
-  let g : C(AddCircle T, ℂ) := ⟨f', (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.2
-    (by rw [Function.comp_def, hf'c]; exact continuous_ofReal.comp hF'.continuous)⟩
-  have hg : ContDiff ℝ ∞ fun x : ℝ ↦ g x := by
-    simp only [g, ContinuousMap.coe_mk, hf'c]
-    exact ofRealCLM.contDiff.comp hF'
-  have hfg : ⇑g = f' := rfl
-  rw [← hfg, mulFourierSeries_fourierCoeff_eq_multiplicationOperator hg]
+  set g := derivOfLift hF hper hF'.continuous
+  have hfg : ⇑g = f' := (eq_derivOfLift_of_coe hF hper _ hf').symm
+  rw [← hfg, mulFourierSeries_fourierCoeff_eq_multiplicationOperator
+    (contDiff_derivOfLift hF hper hF' _)]
   refine (toLpₗᵢ T).injective (Lp.ext ?_)
   filter_upwards [toLpₗᵢ_derivative_precompOneEquivOfLift hF hper hφ hc hcF hMF hF'.continuous
       (f' := (periodic_deriv_of_lift hF hper).lift) (fun _ ↦ rfl) a,
@@ -110,7 +106,7 @@ private theorem derivative_precompOneEquivOfLift_eq {f' : AddCircle T → ℂ}
       (derivative T (show (0 : ℝ) + 1 ≤ 1 by norm_num) a)] with x h₁ h₂ h₃ h₄
   rw [h₁, h₂, h₃, h₄]
   obtain ⟨y, rfl⟩ := QuotientAddGroup.mk_surjective x
-  simp [g, hf', Function.Periodic.lift_coe]
+  simp [g, Function.Periodic.lift_coe]
 
 include hF' in
 /-- **Precomposition passes from `H^s` to `H^(s + 1)`.** If precomposition with `φ` preserves
@@ -127,10 +123,10 @@ private theorem exists_inclusion_eq_precompEquivOfLift_of_eq_add_one {s t : ℝ}
   subst ht
   have h₁ : (1 : ℝ) ≤ s + 1 := by linarith
   -- `f'` is the derivative `F'`, regarded as a smooth function on the circle.
-  set f' : AddCircle T → ℂ := fun z ↦ ((periodic_deriv_of_lift hF hper).lift z : ℂ)
-  have hf' (x : ℝ) : f' x = F' x := rfl
+  set f' := derivOfLift hF hper hF'.continuous
+  have hf' (x : ℝ) : f' x = F' x := derivOfLift_coe hF hper _ x
   have hsum := summable_weight_mul_norm_fourierCoeff_of_contDiff (f := f')
-    (ofRealCLM.contDiff.comp hF')
+    (contDiff_derivOfLift hF hper hF' _)
   obtain ⟨v, hv⟩ := ih (inclusion (by linarith) a)
   obtain ⟨w, hw⟩ := ih (derivative T le_rfl a)
   -- The weak derivative `F' · (u' ∘ φ)` of `u ∘ φ` lies in `H^s`.

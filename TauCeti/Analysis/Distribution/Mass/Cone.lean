@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Distribution.Cone
+public import TauCeti.Analysis.Distribution.TestFunction.Cone
 public import TauCeti.Analysis.Distribution.Mass.Augmentation
 public import TauCeti.Analysis.Distribution.Mass.Normal
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
@@ -15,8 +15,9 @@ import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 
 Let `Ω` be an open subset of a finite-dimensional real normed space `E` and let `x₀ : E` be a
 cone apex. Pairing the Euclidean cone `Distribution.cone x₀ T` with a test `(k + 1)`-form `ω` of
-supremum norm at most `1` evaluates `T` on `χ • poincareHomotopy x₀ ω`, where `χ : 𝓓(Ω, ℝ)` is a
-cutoff equal to `1` near `dsupport T` with values in `[0, 1]`. By the sharp radial estimate
+supremum norm at most `1` evaluates `T` on `TestFunction.coneCLM x₀ χ ω`
+(`χ • poincareHomotopy x₀ ω`), where `χ : 𝓓(Ω, ℝ)` is a cutoff equal to `1` near `dsupport T`
+with values in `[0, 1]`. By the sharp radial estimate
 `‖poincareHomotopy x₀ ω x‖ ≤ ‖x - x₀‖ / (k + 1)`, localizing `χ` to a ball around `x₀` yields the
 sharp Euclidean radius mass bound
 
@@ -108,32 +109,17 @@ theorem mass_cone_le_of_subset_ball (x₀ : E) {r : ℝ}
       have hUΩ : U ≤ Ω := inf_le_left
       have hcoe : (χ : E → ℝ) = ψ := by simp [χ, TestFunction.monoCLM_apply, hUΩ]
       have hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1 := hψ.mono fun x hx ↦ by simp [hcoe, hx]
-      have hχball : tsupport (χ : E → ℝ) ⊆ Metric.ball x₀ r := by
-        rw [hcoe]
-        exact ψ.tsupport_subset.trans inter_subset_right
-      refine mass_le_iff.2 fun ω hω ↦ ?_
-      rw [cone_apply x₀ T hχ ω, mul_comm, ← localMass_univ]
-      refine enorm_apply_le_localMass_mul_of_forall_enorm_le T (subset_univ _) fun x ↦ ?_
-      by_cases hx : x ∈ tsupport (χ : E → ℝ)
-      · have hdist : ‖x - x₀‖ ≤ r := (mem_ball_iff_norm.1 (hχball hx)).le
-        have hχx : |χ x| ≤ 1 := by
-          rw [hcoe, abs_of_nonneg (hψ01 x).1]
-          exact (hψ01 x).2
-        rw [← ofReal_norm]
-        refine ENNReal.ofReal_le_ofReal ?_
-        refine (TestFunction.norm_smulPoincareHomotopyCLM_apply_le x₀ χ ω
-          (fun y _ ↦ hω y)).trans ?_
-        have hpos : (0 : ℝ) ≤ (k + 1 : ℝ) := by positivity
-        calc |χ x| * (1 * ‖x - x₀‖ / (k + 1))
-            ≤ 1 * (1 * r / (k + 1)) := by
-              gcongr
-          _ = r / (k + 1) := by ring
-      · have hzero : TestFunction.smulPoincareHomotopyCLM x₀ χ ω x = 0 :=
-          image_eq_zero_of_notMem_tsupport fun hmem ↦
-            hx (TestFunction.tsupport_smulPoincareHomotopyCLM_subset_left x₀ χ ω hmem)
-        rw [hzero, ← ofReal_norm, norm_zero, ENNReal.ofReal_zero]
-        exact zero_le
-  · simp [cone_of_not_isCompact_and_subset x₀ hc]
+      let r₀ : ℝ≥0 := ⟨r, hr.le⟩
+      rw [cone_eq hχ, coe_comp]
+      refine (mass_comp_coneCLM_le T (r := r₀) (fun x ↦ ?_) (fun x hx ↦ ?_)).trans_eq ?_
+      · rw [hcoe, abs_of_nonneg (hψ01 x).1]
+        exact (hψ01 x).2
+      · rw [hcoe] at hx
+        exact (mem_ball_iff_norm.1 (ψ.tsupport_subset hx).2).le
+      · congr 1
+        rw [← ENNReal.ofReal_coe_nnreal]
+        congr 1
+  · simp [cone_of_not_isCompact_and_subset hc]
 
 /-- **Sharp Euclidean closed-ball mass bound for the cone.** If
 `dsupport T ⊆ Metric.closedBall x₀ r` and either `0 < r` or `mass T ≠ ⊤`, then
@@ -167,7 +153,7 @@ theorem HasLocallyFiniteMass.mass_cone_le (x₀ : E) {r : ℝ}
     mass (cone x₀ T) ≤ ENNReal.ofReal (r / (k + 1)) * mass T := by
   by_cases hc : IsCompact (dsupport T) ∧ dsupport T ⊆ Ω
   · exact mass_cone_le_of_subset_closedBall x₀ hsub (Or.inr (hT.mass_ne_top hc.1 hc.2))
-  · simp [cone_of_not_isCompact_and_subset x₀ hc]
+  · simp [cone_of_not_isCompact_and_subset hc]
 
 /-- `ℝ≥0`-radius form of `Distribution.HasLocallyFiniteMass.mass_cone_le`. -/
 theorem HasLocallyFiniteMass.mass_cone_le_nnreal (x₀ : E) {r : ℝ≥0}
@@ -198,7 +184,7 @@ theorem mass_cone_ne_top (x₀ : E) {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L
   · obtain ⟨r, hr⟩ := hc.isBounded.subset_ball x₀
     exact ne_top_of_le_ne_top (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hT)
       (mass_cone_le_of_subset_ball x₀ hr)
-  · simp [cone_of_not_isCompact x₀ hc]
+  · simp [cone_of_not_isCompact hc]
 
 /-- If `T` has locally finite mass, then `cone x₀ T` has finite total mass. -/
 theorem HasLocallyFiniteMass.mass_cone_ne_top (x₀ : E)
@@ -206,7 +192,7 @@ theorem HasLocallyFiniteMass.mass_cone_ne_top (x₀ : E)
     (hT : HasLocallyFiniteMass T) : mass (cone x₀ T) ≠ ⊤ := by
   by_cases hc : IsCompact (dsupport T) ∧ dsupport T ⊆ Ω
   · exact Distribution.mass_cone_ne_top x₀ (hT.mass_ne_top hc.1 hc.2)
-  · simp [cone_of_not_isCompact_and_subset x₀ hc]
+  · simp [cone_of_not_isCompact_and_subset hc]
 
 /-- **Degree-zero cone boundary mass bound.** For a `0`-current `T` with compact support in `Ω`,
 `∂ (cone x₀ T) = T - (ev_{x₀})^* (augmentation T)` has mass at most `2 * mass T`. -/
@@ -216,7 +202,7 @@ theorem mass_cone_finZero_comp_extDerivCLM_le (x₀ : E)
     mass ((cone x₀ T) ∘L TestFunction.extDerivCLM) ≤ 2 * mass T := by
   rw [two_mul]
   refine mass_le_iff.2 fun ω hω ↦ ?_
-  rw [cone_comp_extDerivCLM_finZero_apply x₀ hT hTΩ ω]
+  rw [comp_apply, cone_extDerivCLM_finZero T hT hTΩ ω]
   refine (enorm_sub_le).trans (add_le_add (enorm_le_mass hω) ?_)
   have haug := enorm_augmentation_le_mass_mul T hT hTΩ (ω x₀)
   have hωx₀ : ‖ω x₀‖ₑ ≤ 1 := by simpa [← ofReal_norm] using hω x₀
@@ -231,7 +217,7 @@ theorem mass_cone_comp_extDerivCLM_le_of_subset_ball (x₀ : E) {r : ℝ}
     (hball : dsupport T ⊆ Metric.ball x₀ r) :
     mass ((cone x₀ T) ∘L TestFunction.extDerivCLM) ≤
       mass T + ENNReal.ofReal (r / (k + 1)) * mass (T ∘L TestFunction.extDerivCLM) := by
-  rw [cone_comp_extDerivCLM x₀ hT hTΩ, FunLike.coe_sub]
+  rw [cone_comp_extDerivCLM T hT hTΩ, FunLike.coe_sub]
   refine mass_sub_le.trans (add_le_add le_rfl ?_)
   have hsub : dsupport (T ∘L TestFunction.extDerivCLM) ⊆ Metric.ball x₀ r := by
     rw [coe_comp]
@@ -252,10 +238,10 @@ theorem IsLocallyNormal.isNormal_cone (x₀ : E) {T : 𝓓(Ω, E [⋀^Fin k]→L
         (mass_cone_finZero_comp_extDerivCLM_le x₀ hc.1 hc.2)
     | succ j =>
       obtain ⟨hM1, hM2⟩ := isNormal_succ_iff.1 hTN
-      rw [cone_comp_extDerivCLM x₀ hc.1 hc.2, FunLike.coe_sub]
+      rw [cone_comp_extDerivCLM T hc.1 hc.2, FunLike.coe_sub]
       exact ne_top_of_le_ne_top
         (ENNReal.add_ne_top.2 ⟨hM1, Distribution.mass_cone_ne_top x₀ hM2⟩) mass_sub_le
-  · rw [cone_of_not_isCompact_and_subset x₀ hc]
+  · rw [cone_of_not_isCompact_and_subset hc]
     exact isNormal_zero
 
 /-- **The Euclidean cone over a normal current is normal.** -/
@@ -268,13 +254,13 @@ end MassBounds
 section Filling
 
 /-- **Small-ball cycle filling in positive degree.** Every closed `(k + 1)`-current `T` (`∂ T = 0`)
-of locally finite mass whose support is a compact subset of `Metric.ball x₀ r ⊆ Ω` bounds a normal
-`(k + 2)`-current `Q` (namely `cone x₀ T`) with compact support in `Metric.ball x₀ r` and
-`mass Q ≤ ENNReal.ofReal (r / (k + 2)) * mass T`. -/
+of locally finite mass whose support is a compact subset of `Ω` contained in `Metric.ball x₀ r`
+bounds a normal `(k + 2)`-current `Q` (namely `cone x₀ T`) with compact support in
+`Metric.ball x₀ r` and `mass Q ≤ ENNReal.ofReal (r / (k + 2)) * mass T` (so `dsupport Q ⊆ Ω`
+whenever `Metric.ball x₀ r ⊆ Ω`). -/
 theorem exists_isNormal_comp_extDerivCLM_eq_of_subset_ball {x₀ : E} {r : ℝ}
-    (hballΩ : Metric.ball x₀ r ⊆ Ω)
     {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] V}
-    (hT : HasLocallyFiniteMass T) (hc : IsCompact (dsupport T))
+    (hT : HasLocallyFiniteMass T) (hc : IsCompact (dsupport T)) (hTΩ : dsupport T ⊆ Ω)
     (hsub : dsupport T ⊆ Metric.ball x₀ r) (hcycle : T ∘L TestFunction.extDerivCLM = 0) :
     ∃ Q : 𝓓(Ω, E [⋀^Fin (k + 2)]→L[ℝ] F) →L[ℝ] V,
       IsNormal Q ∧ IsCompact (dsupport Q) ∧ dsupport Q ⊆ Metric.ball x₀ r ∧
@@ -285,25 +271,25 @@ theorem exists_isNormal_comp_extDerivCLM_eq_of_subset_ball {x₀ : E} {r : ℝ}
     exact ⟨hT, by simpa using hasLocallyFiniteMass_zero⟩
   refine ⟨cone x₀ T, hln.isNormal_cone x₀, isCompact_dsupport_cone x₀ T,
     dsupport_cone_subset_ball hsub,
-    cone_comp_extDerivCLM_of_comp_extDerivCLM_eq_zero x₀ hc (hsub.trans hballΩ) hcycle, ?_⟩
+    cone_comp_extDerivCLM_of_comp_extDerivCLM_eq_zero T hc hTΩ hcycle, ?_⟩
   simpa [Nat.cast_add, Nat.cast_one, add_assoc, one_add_one_eq_two] using
     mass_cone_le_of_subset_ball x₀ hsub
 
 /-- **Small-ball filling of augmented-zero `0`-currents.** Every `0`-current `T` of locally finite
-mass whose support is a compact subset of `Metric.ball x₀ r ⊆ Ω` and whose augmentation vanishes at
-every constant `0`-form bounds a normal `1`-current `Q` (namely `cone x₀ T`) with compact support
-in `Metric.ball x₀ r` and `mass Q ≤ ENNReal.ofReal r * mass T`. -/
+mass whose support is a compact subset of `Ω` contained in `Metric.ball x₀ r` and whose
+augmentation vanishes at every constant `0`-form bounds a normal `1`-current `Q` (namely
+`cone x₀ T`) with compact support in `Metric.ball x₀ r` and
+`mass Q ≤ ENNReal.ofReal r * mass T`. -/
 theorem exists_isNormal_comp_extDerivCLM_finZero_eq_of_subset_ball {x₀ : E} {r : ℝ}
-    (hballΩ : Metric.ball x₀ r ⊆ Ω)
     {T : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] F) →L[ℝ] V}
-    (hT : HasLocallyFiniteMass T) (hc : IsCompact (dsupport T))
+    (hT : HasLocallyFiniteMass T) (hc : IsCompact (dsupport T)) (hTΩ : dsupport T ⊆ Ω)
     (hsub : dsupport T ⊆ Metric.ball x₀ r) (haug : ∀ c, augmentation T c = 0) :
     ∃ Q : 𝓓(Ω, E [⋀^Fin 1]→L[ℝ] F) →L[ℝ] V,
       IsNormal Q ∧ IsCompact (dsupport Q) ∧ dsupport Q ⊆ Metric.ball x₀ r ∧
         Q ∘L TestFunction.extDerivCLM = T ∧ mass Q ≤ ENNReal.ofReal r * mass T := by
   refine ⟨cone x₀ T, (isLocallyNormal_finZero_iff.2 hT).isNormal_cone x₀,
     isCompact_dsupport_cone x₀ T, dsupport_cone_subset_ball hsub,
-    cone_comp_extDerivCLM_finZero_of_augmentation_eq_zero x₀ hc (hsub.trans hballΩ) haug, ?_⟩
+    cone_comp_extDerivCLM_finZero_of_augmentation_eq_zero T hc hTΩ haug, ?_⟩
   simpa using mass_cone_le_of_subset_ball x₀ hsub
 
 /-- **Mass of the cone over a point current.** For any `x₀, p : E` and `ℓ` on `k`-forms,
@@ -354,7 +340,7 @@ theorem exists_isNormal_comp_extDerivCLM_eq_sub_comp_evalCLM_finZero
   have hc (z : E) : IsCompact (dsupport (δ z)) :=
     isCompact_dsupport_comp_evalCLM_comp_toBoundedContinuousFunctionCLM z ℓ
   have hcone_eq : cone p (δ q - δ p) = cone p (δ q) := by
-    rw [cone_sub p (hc q) ((hsub q).trans (singleton_subset_iff.2 hq))
+    rw [cone_sub (δ q) (δ p) (hc q) ((hsub q).trans (singleton_subset_iff.2 hq))
       (hc p) ((hsub p).trans (singleton_subset_iff.2 hp)),
       cone_comp_evalCLM_self hp ℓ, sub_zero]
   have hseg : dsupport (cone p (δ q)) ⊆ segment ℝ p q :=
@@ -371,7 +357,7 @@ theorem exists_isNormal_comp_extDerivCLM_eq_sub_comp_evalCLM_finZero
 (`Distribution.not_exists_comp_extDerivCLM_eq_comp_evalCLM`), for any two points
 `p, q ∈ Metric.ball x₀ r` in a ball `Metric.ball x₀ r ⊆ Ω`, the augmented-zero difference
 `δ_q - δ_p` is filled by a normal `1`-current `Q` (namely `cone p (δ_q - δ_p)`) supported in
-`segment ℝ p q ⊆ Metric.ball x₀ r` with `mass Q ≤ ENNReal.ofReal (dist q p) * ‖ℓ‖ₑ` and
+`segment ℝ p q ⊆ Metric.ball x₀ r ⊆ Ω` with `mass Q ≤ ENNReal.ofReal (dist q p) * ‖ℓ‖ₑ` and
 `mass Q ≤ 2 * ENNReal.ofReal r * ‖ℓ‖ₑ`. -/
 theorem exists_isNormal_comp_extDerivCLM_eq_sub_comp_evalCLM_finZero_of_mem_ball
     {x₀ p q : E} {r : ℝ} (hballΩ : Metric.ball x₀ r ⊆ Ω)
@@ -379,7 +365,7 @@ theorem exists_isNormal_comp_extDerivCLM_eq_sub_comp_evalCLM_finZero_of_mem_ball
     (ℓ : (E [⋀^Fin 0]→L[ℝ] F) →L[ℝ] V) :
     ∃ Q : 𝓓(Ω, E [⋀^Fin 1]→L[ℝ] F) →L[ℝ] V,
       IsNormal Q ∧ IsCompact (dsupport Q) ∧ dsupport Q ⊆ segment ℝ p q ∧
-        dsupport Q ⊆ Metric.ball x₀ r ∧
+        dsupport Q ⊆ Metric.ball x₀ r ∧ dsupport Q ⊆ Ω ∧
         Q ∘L TestFunction.extDerivCLM =
           (ℓ ∘L BoundedContinuousFunction.evalCLM ℝ q ∘L
               TestFunction.toBoundedContinuousFunctionCLM ℝ) -
@@ -389,6 +375,8 @@ theorem exists_isNormal_comp_extDerivCLM_eq_sub_comp_evalCLM_finZero_of_mem_ball
         mass Q ≤ 2 * ENNReal.ofReal r * ‖ℓ‖ₑ := by
   obtain ⟨Q, hQN, hQc, hQseg, hQbd, hQmass⟩ :=
     exists_isNormal_comp_extDerivCLM_eq_sub_comp_evalCLM_finZero (hballΩ hp) (hballΩ hq) ℓ
+  have hQball : dsupport Q ⊆ Metric.ball x₀ r :=
+    hQseg.trans ((convex_ball x₀ r).segment_subset hp hq)
   have hdist2r : dist q p ≤ 2 * r := by
     calc dist q p ≤ dist q x₀ + dist x₀ p := dist_triangle q x₀ p
       _ = dist q x₀ + dist p x₀ := by rw [dist_comm x₀ p]
@@ -396,8 +384,7 @@ theorem exists_isNormal_comp_extDerivCLM_eq_sub_comp_evalCLM_finZero_of_mem_ball
       _ = 2 * r := (two_mul r).symm
   have h2 : ENNReal.ofReal (2 * r) = 2 * ENNReal.ofReal r := by
     rw [ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat]
-  refine ⟨Q, hQN, hQc, hQseg, hQseg.trans ((convex_ball x₀ r).segment_subset hp hq), hQbd, hQmass,
-    hQmass.trans ?_⟩
+  refine ⟨Q, hQN, hQc, hQseg, hQball, hQball.trans hballΩ, hQbd, hQmass, hQmass.trans ?_⟩
   rw [← h2]
   exact mul_le_mul_of_nonneg_right (ENNReal.ofReal_le_ofReal hdist2r) zero_le
 

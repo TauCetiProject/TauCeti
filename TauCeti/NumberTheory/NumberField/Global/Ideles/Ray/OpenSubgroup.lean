@@ -37,7 +37,10 @@ idele class group or of the idele group is open exactly when it contains one of 
 As the ray subgroups of two moduli generate the ray subgroup of their greatest common divisor,
 the moduli whose ray subgroup lies in a given open subgroup `U` are exactly the multiples of a
 least one, the **conductor** of `U` (`OpenSubgroup.ideleClassConductor`). Applied to the norm
-group of an extension of number fields, it is the conductor of that extension.
+group of an extension of number fields, it is the conductor of that extension. Its exponent at a
+finite place `v` is read off at `v` alone: it is the least `n` such that `U` contains the ideles
+concentrated at `v` with component in `U(K_v, n)`
+(`OpenSubgroup.exponent_ideleClassConductor_le_iff`).
 
 ## Main definitions
 
@@ -67,6 +70,9 @@ group of an extension of number fields, it is the conductor of that extension.
   ray subgroup of `𝔪` lies in `U`.
 * `OpenSubgroup.ideleClassConductor_inf`: the conductor of `U ⊓ V` is the least common multiple of
   the conductors of `U` and `V`.
+* `OpenSubgroup.exponent_ideleClassConductor_le_iff`: the exponent of a finite place `v` in the
+  conductor of `U` is at most `n` exactly when `U` contains the ideles concentrated at `v` with
+  component in `U(K_v, n)`.
 
 ## References
 
@@ -285,5 +291,30 @@ theorem ideleClassConductor_inf (U V : OpenSubgroup (IdeleClassGroup (𝓞 K) K)
           (raySubgroup_ideleClassConductor_le V))))
     (Modulus.lcm_dvd (ideleClassConductor_dvd_of_le inf_le_left)
       (ideleClassConductor_dvd_of_le inf_le_right))
+
+/-- **The exponents of the conductor are local.** The exponent of a finite place `v` in the
+conductor of `U` is at most `n` exactly when `U` contains the class of every idele concentrated at
+`v` whose component lies in `U(K_v, n)`. -/
+theorem exponent_ideleClassConductor_le_iff {U : OpenSubgroup (IdeleClassGroup (𝓞 K) K)}
+    {v : HeightOneSpectrum (𝓞 K)} {n : ℕ} :
+    U.ideleClassConductor.exponent v ≤ n ↔
+      ∀ u ∈ TauCeti.unitFiltration (v.adicCompletion K) n,
+        (IdeleGroup.ofAdicCompletion (𝓞 K) K v u : IdeleClassGroup (𝓞 K) K) ∈ U := by
+  refine ⟨fun h u hu ↦ raySubgroup_ideleClassConductor_le U <| mem_raySubgroup_iff.2
+    ⟨_, ofAdicCompletion_mem_ideleCongruenceSubgroup_iff.2
+      (TauCeti.unitFiltration_antitone h hu), rfl⟩, fun h ↦ ?_⟩
+  -- Lower the exponent of `v` in the conductor to `n`. A congruence idele for the resulting
+  -- modulus `𝔫` is its component at `v`, which lies in `U` by hypothesis, times a congruence
+  -- idele for the conductor, so `𝔫` is a multiple of the conductor.
+  obtain ⟨𝔫, hinf, hv, hne⟩ := U.ideleClassConductor.exists_exponent_eq_and_forall_ne v n
+  have hray : raySubgroup 𝔫 ≤ U.toSubgroup := fun c hc ↦ by
+    obtain ⟨x, hx, rfl⟩ := mem_raySubgroup_iff.1 hc
+    have hy := ideleCongruenceSubgroup.inv_ofAdicCompletion_mul_mem
+      (fun v' hv' ↦ (hne v' hv').ge) hinf.ge hx
+    have hmem := U.mul_mem
+      (h _ (hv ▸ ideleCongruenceSubgroup.ideleFiniteCoord_mem_unitFiltration hx v))
+      (raySubgroup_ideleClassConductor_le U (mem_raySubgroup_iff.2 ⟨_, hy, rfl⟩))
+    rwa [map_mul, map_inv, QuotientGroup.mk'_apply, mul_inv_cancel_left] at hmem
+  exact hv ▸ Modulus.exponent_mono (ideleClassConductor_dvd_iff.2 hray) v
 
 end OpenSubgroup

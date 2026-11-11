@@ -6,27 +6,43 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.ModularSymbols.Hecke.Diamond
-import TauCeti.NumberTheory.HeckeRing.GL2.Gamma1.Gamma0Conjugation
+import TauCeti.NumberTheory.HeckeRing.GL2.Gamma1.AtkinLehner
 
 /-!
-# Hecke operators commute with diamonds on modular symbols
+# The Hecke operators on modular symbols commute
 
-The prime Hecke operator `T_p` commutes with every diamond operator on
-`𝕄_w(Γ₁(N); R)`, including when `p` divides `N`. The coefficient ring is any commutative ring,
-so the relation holds on the integral symbol module, before passing to complex periods.
+Any two Hecke operators of level `Γ₁(N)` on `𝕄_w(Γ₁(N); R)`, attached to double cosets in
+`Δ₀(N)`, commute. In particular the operators `T_m` and `T_n` commute for all indices `m` and
+`n`, whatever their prime factors and their relation to the level, and every `T_n` commutes with
+every diamond operator. The coefficient ring is any commutative ring, so these relations hold on
+the integral symbol module, before passing to complex periods.
 
-More generally, a diamond commutes with the operator of any integral double coset fixed by
-conjugation by a lift of its label. The relation follows from normalizer covariance of Hecke
-sums on representations. For the prime operators the requisite double-coset stability is
-`HeckeRing.GL2.conj_natDiagGL_mem_doubleCoset_of_prime`.
+The composite of two Hecke operators is the sum `∑_D m(D₁, D₂; D) • T_D` over the double cosets
+met by the products of right-coset representatives
+(`TauCeti.ModularSymbols.heckeSymbol_comp_heckeSymbol_eq_sum_nsmul`), with coefficients the
+multiplicities `m(δ₂⁻¹, δ₁⁻¹; d⁻¹)`. These are symmetric in `δ₁` and `δ₂`
+(`HeckeRing.GL2.multiplicity_inv_comm_Gamma1`) because the Atkin–Lehner anti-involution fixes
+every double coset of `Γ₁(N)` in `Δ₀(N)`. This is Shimura's Proposition 3.8, transported to the
+action on symbols. A double coset met in one order but not the other has multiplicity zero, so
+the two sums agree term by term.
 
-These are the mixed generator relations between the Hecke and diamond actions on symbols;
-commutation between two Hecke operators is a separate assertion.
+For a double coset in an arbitrary monoid `Δ`, a diamond still commutes with its operator when
+the double coset is fixed by conjugation by a lift of the diamond label
+(`TauCeti.ModularSymbols.commute_heckeSymbol_diamondSymbol`), by normalizer covariance of Hecke
+sums on representations.
+
+## Main results
+
+* `TauCeti.ModularSymbols.commute_heckeSymbol_heckeSymbol`: the Hecke operators of any two
+  double cosets of `Γ₁(N)` in `Δ₀(N)` commute.
+* `TauCeti.ModularSymbols.commute_heckeTSymbol`: `T_m` and `T_n` commute.
+* `TauCeti.ModularSymbols.commute_heckeTSymbol_diamondSymbol`: `T_n` commutes with every
+  diamond operator.
 
 ## References
 
 * [G. Shimura, *Introduction to the arithmetic theory of automorphic functions*][shimura1971],
-  §3.4.
+  §3.4, and Proposition 3.8.
 * W. Stein, *Modular Forms: A Computational Approach*, §8.3.
 -/
 
@@ -69,21 +85,58 @@ theorem commute_heckeSymbol_diamondSymbol {Δ : Submonoid (GL (Fin 2) ℚ)}
   rw [diamondSymbol_mk g rfl, heckeSymbol_mk_eq_heckeSum, heckeSymbol_mk_eq_heckeSum]
   exact LinearMap.congr_fun h x
 
-/-- Every prime Hecke operator commutes with every diamond on modular symbols, at good and
-bad primes alike. In particular this relation holds over `ℤ`. -/
-theorem commute_heckeTSymbol_diamondSymbol {p : ℕ} [NeZero p] (hp : p.Prime)
-    (d : (ZMod N)ˣ) :
-    Commute (heckeTSymbol R w N p) (diamondSymbol R w N d) := by
-  obtain ⟨g, rfl⟩ := Gamma0Map_toHomUnits_surjective d
-  rw [heckeTSymbol_def]
-  apply commute_heckeSymbol_diamondSymbol
-  have hnorm := mapGL_mem_normalizer_Gamma1_map ℚ g
-  have hconj := conj_natDiagGL_mem_doubleCoset_of_prime hp (inv_mem g.2)
-  simp only [map_inv] at hconj
-  have hdc := doubleCoset_eq_of_mem hconj
-  rw [doubleCoset_out_diagCosetGamma1_eq_doubleCoset_natDiagGL, ← hdc]
-  exact (conj_mem_doubleCoset_conj_iff_of_mem_normalizer hnorm hnorm _ _).mpr (by
-    rw [← doubleCoset_out_diagCosetGamma1_eq_doubleCoset_natDiagGL]
-    exact mem_doubleCoset_self _ _ _)
+attribute [local instance] Fintype.ofFinite in
+/-- **Any two Hecke operators of level `Γ₁(N)` commute on modular symbols.** For double cosets
+`D₁`, `D₂` of `Γ₁(N)` in `Δ₀(N)`, both composites are `∑_D m • T_D` with the same coefficients,
+by the symmetry of the multiplicity under the Atkin–Lehner anti-involution. -/
+theorem commute_heckeSymbol_heckeSymbol
+    (D₁ D₂ : HeckeCoset (Delta0 N) ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ))) :
+    Commute (heckeSymbol (R := R) (w := w) (Gamma1 N) (Gamma1 N) D₁
+        (Delta0_le_intEntries N D₁.out.2))
+      (heckeSymbol (Gamma1 N) (Gamma1 N) D₂ (Delta0_le_intEntries N D₂.out.2)) := by
+  classical
+  -- the term of the double coset `D` in the composite `T_{E₁} ∘ T_{E₂}`
+  let f (E₁ E₂ D : HeckeCoset (Delta0 N) ((Gamma1 N).map (mapGL ℚ))
+      ((Gamma1 N).map (mapGL ℚ))) : Module.End R (ModularSymbols R (Gamma1 N) w) :=
+    multiplicity ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ))
+        ((Gamma1 N).map (mapGL ℚ)) (E₂.out : GL (Fin 2) ℚ)⁻¹ (E₁.out : GL (Fin 2) ℚ)⁻¹
+        (D.out : GL (Fin 2) ℚ)⁻¹ •
+      heckeSymbol (Gamma1 N) (Gamma1 N) D (Delta0_le_intEntries N D.out.2)
+  -- a composite is the sum of its terms over any finset containing the double cosets it meets
+  have hcomp (E₁ E₂ : HeckeCoset (Delta0 N) ((Gamma1 N).map (mapGL ℚ))
+      ((Gamma1 N).map (mapGL ℚ))) (hE₁ : (E₁.out : GL (Fin 2) ℚ) ∈ intEntries 2)
+      (hE₂ : (E₂.out : GL (Fin 2) ℚ) ∈ intEntries 2) (S : Finset _)
+      (hS : Finset.univ.image (pairCoset E₁ E₂) ⊆ S) :
+      heckeSymbol (R := R) (w := w) (Gamma1 N) (Gamma1 N) E₁ hE₁ *
+        heckeSymbol (Gamma1 N) (Gamma1 N) E₂ hE₂ = ∑ D ∈ S, f E₁ E₂ D := by
+    rw [Module.End.mul_eq_comp, heckeSymbol_comp_heckeSymbol_eq_sum_nsmul]
+    refine (Finset.sum_attach _ (f E₁ E₂)).trans (Finset.sum_subset hS fun D _ hD ↦ ?_)
+    -- a double coset met by no pair of representatives has multiplicity zero
+    have : IsEmpty (PairCosetFiber E₁ E₂ D (D.out : GL (Fin 2) ℚ)) :=
+      ⟨fun i ↦ hD (Finset.mem_image.mpr ⟨i.1.1, Finset.mem_univ _, i.1.2⟩)⟩
+    simp only [f]
+    rw [← card_pairs_pairCoset_rightCoset_eq_multiplicity (mem_doubleCoset_self _ _ _),
+      Nat.card_of_isEmpty, zero_smul]
+  rw [commute_iff_eq,
+    hcomp D₁ D₂ _ _ _ (Finset.subset_union_left (s₂ := Finset.univ.image (pairCoset D₂ D₁))),
+    hcomp D₂ D₁ _ _ _ Finset.subset_union_right]
+  refine Finset.sum_congr rfl fun D _ ↦ ?_
+  simp only [f]
+  rw [multiplicity_inv_comm_Gamma1 N D₁.out.2 D₂.out.2 D.out.2]
+
+/-- **The Hecke operators `T_m` and `T_n` on modular symbols commute**, for all positive indices
+`m` and `n`, with no condition relating them to each other or to the level. -/
+theorem commute_heckeTSymbol (m n : ℕ) [NeZero m] [NeZero n] :
+    Commute (heckeTSymbol R w N m) (heckeTSymbol R w N n) := by
+  rw [heckeTSymbol_def, heckeTSymbol_def]
+  exact commute_heckeSymbol_heckeSymbol _ _
+
+/-- **Every Hecke operator `T_n` commutes with every diamond on modular symbols**, at every index
+`n`, whether or not it is prime to the level. In particular this relation holds over `ℤ`. -/
+theorem commute_heckeTSymbol_diamondSymbol (n : ℕ) [NeZero n] (d : (ZMod N)ˣ) :
+    Commute (heckeTSymbol R w N n) (diamondSymbol R w N d) := by
+  obtain ⟨g, hg⟩ := Gamma0Map_toHomUnits_surjective d
+  rw [heckeTSymbol_def, diamondSymbol_eq_heckeSymbol g hg]
+  exact commute_heckeSymbol_heckeSymbol _ _
 
 end TauCeti.ModularSymbols

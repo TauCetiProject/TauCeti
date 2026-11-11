@@ -28,12 +28,12 @@ natural primes, which is the form in which `t` is counted.
 
 * `NumberField.mem_ramifiedPrimes_iff_dvd_discr`: a prime ramifies iff it divides the
   discriminant.
-* `NumberField.coprime_natAbs_discr_of_isUnramifiedIn`: an unramified prime is coprime to the
-  discriminant.
+* `NumberField.coprime_natAbs_discr_iff_isUnramifiedIn`: a prime is unramified iff it is coprime
+  to the discriminant.
 * `AlgEquiv.ramifiedPrimes_eq`: isomorphic number fields have the same ramified primes.
 * `NumberField.ramifiedPrimes_rat`: no prime ramifies in `ℚ`.
 * `NumberField.finite_ramifiedPrimes`: only finitely many primes ramify.
-* `NumberField.ramifiedPrimes_nonempty`: some prime ramifies, unless `K = ℚ`
+* `NumberField.ramifiedPrimes_nonempty_iff`: some prime ramifies iff `K` is not `ℚ`
   (Minkowski, via `NumberField.exists_not_isUnramifiedIn`).
 -/
 
@@ -88,13 +88,11 @@ theorem _root_.AlgEquiv.ramifiedPrimes_eq {L : Type*} [Field L] [NumberField L]
 
 /-- **No prime ramifies in `ℚ`**, whose discriminant is `1`. -/
 @[simp]
-theorem ramifiedPrimes_rat : ramifiedPrimes ℚ = ∅ := by
-  ext p
-  simp only [Set.mem_empty_iff_false, iff_false]
-  intro hp
-  have h := (mem_ramifiedPrimes_iff_dvd_discr hp.1).mp hp
-  rw [NumberField.discr_rat] at h
-  exact hp.1.not_dvd_one (Int.natCast_dvd_natCast.mp (by exact_mod_cast h))
+theorem ramifiedPrimes_rat : ramifiedPrimes ℚ = ∅ :=
+  Set.eq_empty_of_forall_notMem fun p hp => by
+    have hp' := prime_of_mem_ramifiedPrimes hp
+    simpa [discr_rat, Int.natCast_dvd, hp'.ne_one] using
+      (mem_ramifiedPrimes_iff_dvd_discr hp').mp hp
 
 -- Source. The hypothesis this discharges is
 -- `hcop : ((NumberField.discr L).natAbs).Coprime m` in the Birkbeck--Brasca Chebotarev
@@ -104,35 +102,35 @@ theorem ramifiedPrimes_rat : ramifiedPrimes ℚ = ∅ := by
 -- `NumberField.not_dvd_discr_iff_forall_liesOver` inline. The statement below is that hypothesis;
 -- deriving it from `Algebra.IsUnramifiedIn` is not done in the source, which propagates it.
 
-/-- **An unramified prime is coprime to the discriminant.** If the rational prime `p` is
-unramified in `K` then it does not divide `NumberField.discr K`, so `|discr K|` and `p` are
-coprime.
-
-This is `mem_ramifiedPrimes_iff_dvd_discr` in the form the cyclotomic-crossing lemmas consume.
-They take `((NumberField.discr _).natAbs).Coprime m` as an undischarged hypothesis, and
-`IsCyclotomicExtension.finrank_eq_totient` records in its implementation notes that a caller is
-expected to arrange it "by choosing `m` to be a prime unramified in `K`". This is that sentence
-as a lemma, so the hypothesis can be discharged rather than propagated. -/
-theorem coprime_natAbs_discr_of_isUnramifiedIn {p : ℕ} (hp : p.Prime)
-    (hur : Algebra.IsUnramifiedIn (𝓞 K) (Ideal.span {(p : ℤ)})) :
-    (NumberField.discr K).natAbs.Coprime p := by
-  refine (hp.coprime_iff_not_dvd.mpr fun hdvd => ?_).symm
-  exact (mem_ramifiedPrimes_iff.mp
-    ((mem_ramifiedPrimes_iff_dvd_discr hp).mpr (Int.natCast_dvd.mpr hdvd))).2 hur
+/-- **A prime is unramified iff it is coprime to the discriminant.** A natural prime `p` is
+unramified in `K` iff `|discr K|` and `p` are coprime. This is
+`NumberField.not_dvd_discr_iff_isUnramifiedIn` in the form `((discr _).natAbs).Coprime m` that the
+Chebotarev crossing lemmas take as a hypothesis, so that hypothesis can be discharged from
+unramifiedness. -/
+theorem coprime_natAbs_discr_iff_isUnramifiedIn {p : ℕ} (hp : p.Prime) :
+    (discr K).natAbs.Coprime p ↔ Algebra.IsUnramifiedIn (𝓞 K) (Ideal.span {(p : ℤ)}) := by
+  rw [Nat.coprime_comm, hp.coprime_iff_not_dvd, ← Int.natCast_dvd,
+    not_dvd_discr_iff_isUnramifiedIn K (𝓞 K) (Nat.prime_iff_prime_int.mp hp)]
 
 /-- **Only finitely many primes ramify**, since they all divide the nonzero integer
 `NumberField.discr K`. -/
-theorem finite_ramifiedPrimes : (ramifiedPrimes K).Finite := by
-  have hne : (NumberField.discr K).natAbs ≠ 0 :=
-    Int.natAbs_ne_zero.mpr (NumberField.discr_ne_zero K)
-  refine Set.Finite.subset (NumberField.discr K).natAbs.divisors.finite_toSet fun p hp => ?_
-  exact Finset.mem_coe.mpr (Nat.mem_divisors.mpr
-    ⟨Int.natCast_dvd.mp ((mem_ramifiedPrimes_iff_dvd_discr hp.1).mp hp), hne⟩)
+theorem finite_ramifiedPrimes : (ramifiedPrimes K).Finite :=
+  (discr K).natAbs.primeFactors.finite_toSet.subset fun _ hp =>
+    have hp' := prime_of_mem_ramifiedPrimes hp
+    Nat.mem_primeFactors.mpr ⟨hp',
+      Int.natCast_dvd.mp ((mem_ramifiedPrimes_iff_dvd_discr hp').mp hp),
+      Int.natAbs_ne_zero.mpr (discr_ne_zero K)⟩
 
-/-- **Some prime ramifies in a number field other than `ℚ`.** This is Minkowski's bound in the form
+/-- **Some prime ramifies in a number field iff it is not `ℚ`**, i.e. iff its degree over `ℚ` is
+not `1`. The nontrivial direction is Minkowski's bound in the form
 `NumberField.exists_not_isUnramifiedIn`. -/
-theorem ramifiedPrimes_nonempty (h : Module.finrank ℚ K ≠ 1) : (ramifiedPrimes K).Nonempty := by
-  simpa only [Set.nonempty_def, mem_ramifiedPrimes_iff] using
-    NumberField.exists_not_isUnramifiedIn (𝒪 := 𝓞 K) h
+theorem ramifiedPrimes_nonempty_iff : (ramifiedPrimes K).Nonempty ↔ Module.finrank ℚ K ≠ 1 := by
+  refine ⟨fun hne h => ?_, fun h => ?_⟩
+  · rw [← (AlgEquiv.ofBijective (Algebra.ofId ℚ K)
+      (Algebra.finrank_eq_one_iff_bijective_algebraMap.mp h)).ramifiedPrimes_eq,
+      ramifiedPrimes_rat] at hne
+    exact Set.not_nonempty_empty hne
+  · simpa only [Set.nonempty_def, mem_ramifiedPrimes_iff] using
+      exists_not_isUnramifiedIn (𝒪 := 𝓞 K) h
 
 end NumberField

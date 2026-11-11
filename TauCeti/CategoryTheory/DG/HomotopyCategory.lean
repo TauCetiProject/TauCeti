@@ -36,6 +36,8 @@ preadditive and linear over the ground ring.
 
 ## Main results
 
+* `TauCeti.exactAt_iff_forall_exists_dgDifferential_eq`: a Hom complex is exact in a degree
+  exactly when every cycle of that degree is a boundary.
 * `TauCeti.dgHomotopyClass_eq_iff`: two cocycles have the same class exactly when their difference
   is a coboundary.
 * `TauCeti.dgHomotopyClass_eq_homologyπ`: a homotopy class is the image of any lifting cycle under
@@ -94,6 +96,16 @@ theorem dgBoundaries_le_dgCycles (X Y : C) :
     dgBoundaries R X Y ≤ dgCycles R X Y := by
   rintro _ ⟨h, rfl⟩
   exact dgDifferential_dgDifferential R h
+
+/-- A Hom complex is exact in degree `p + 1` exactly when every cycle of degree `p + 1` is a
+boundary. -/
+theorem exactAt_iff_forall_exists_dgDifferential_eq {X Y : C} {p : ℤ} :
+    (dgHomComplex R X Y).ExactAt (p + 1) ↔ ∀ z : DGHom R (p + 1) X Y,
+      dgDifferential R (p + 1) z = 0 → ∃ g : DGHom R p X Y, dgDifferential R p g = z := by
+  rw [HomologicalComplex.exactAt_iff' _ p (p + 1) (p + 1 + 1) (by simp) (by simp),
+    ShortComplex.moduleCat_exact_iff]
+  -- The maps of the short complex `sc'` are the differentials, by definition.
+  rfl
 
 private noncomputable def dgCyclesConcreteEquiv (X Y : C) :
     dgCycles R X Y ≃ₗ[R]

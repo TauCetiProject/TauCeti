@@ -175,6 +175,13 @@ theorem del_delBar_add_delBar_del_ofComplexManifold (φ : SmoothForm 𝓘(ℝ, E
   del_delBar_add_delBar_del_of_mextDerivₗ_eq_del_add_delBar
     mextDerivₗ_eq_del_add_delBar_ofComplexManifold mextDerivₗ_eq_del_add_delBar_ofComplexManifold φ
 
+/-- On a complex manifold, `∂bar ∂φ = -∂ ∂bar φ`. -/
+theorem delBar_del_ofComplexManifold (φ : SmoothForm 𝓘(ℝ, E) M F k) :
+    (ofComplexManifold E M).delBar ((ofComplexManifold E M).del φ) =
+      -(ofComplexManifold E M).del ((ofComplexManifold E M).delBar φ) :=
+  delBar_del_of_mextDerivₗ_eq_del_add_delBar mextDerivₗ_eq_del_add_delBar_ofComplexManifold
+    mextDerivₗ_eq_del_add_delBar_ofComplexManifold φ
+
 end SmoothAlmostComplexStructure
 
 end TauCeti

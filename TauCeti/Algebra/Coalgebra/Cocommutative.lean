@@ -15,25 +15,23 @@ transfers across coalgebra equivalences without requiring compatible algebra str
 
 ## Main declarations
 
-* `CoalgHom.isCocomm_of_surjective`: a surjective image of a cocommutative coalgebra is
+* `TauCeti.Coalgebra.IsCocomm.of_surjective`: a surjective image of a cocommutative coalgebra is
   cocommutative.
 -/
 
 public section
 
-namespace CoalgHom
+namespace TauCeti.Coalgebra.IsCocomm
 
-variable {R A B : Type*} [CommSemiring R] [AddCommMonoid A] [AddCommMonoid B]
-  [Module R A] [Module R B] [Coalgebra R A] [Coalgebra R B]
+variable {R A B F : Type*} [CommSemiring R] [AddCommMonoid A] [AddCommMonoid B]
+  [Module R A] [Module R B] [Coalgebra R A] [Coalgebra R B] [FunLike F A B]
+  [CoalgHomClass F R A B]
 
 /-- A surjective image of a cocommutative coalgebra is cocommutative. -/
-theorem isCocomm_of_surjective (f : A →ₗc[R] B) (hf : Function.Surjective f)
-    [hA : Coalgebra.IsCocomm R A] : Coalgebra.IsCocomm R B := by
-  constructor
-  ext b
+theorem of_surjective [hA : _root_.Coalgebra.IsCocomm R A] (f : F)
+    (hf : Function.Surjective f) : _root_.Coalgebra.IsCocomm R B := by
+  refine ⟨LinearMap.ext fun b ↦ ?_⟩
   obtain ⟨a, rfl⟩ := hf b
-  simpa only [CoalgHom.toLinearMap_eq_ofClass, CoalgHomClass.map_comp_comul_apply,
-    Coalgebra.comm_comul, LinearMap.comp_apply, LinearEquiv.coe_coe] using
-    (TensorProduct.map_comm f.toLinearMap f.toLinearMap (Coalgebra.comul a)).symm
+  simp [← CoalgHomClass.map_comp_comul_apply, ← TensorProduct.map_comm]
 
-end CoalgHom
+end TauCeti.Coalgebra.IsCocomm

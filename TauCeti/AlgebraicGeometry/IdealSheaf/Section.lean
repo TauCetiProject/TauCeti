@@ -24,7 +24,7 @@ of a unique section.
 
 * `AlgebraicGeometry.Scheme.Hom.isClosedImmersion_of_comp_eq_id`: a section of a separated
   morphism is a closed immersion;
-* `AlgebraicGeometry.Scheme.Hom.eq_of_ker_le_of_comp_eq_id`: a section of `f` which is a closed
+* `AlgebraicGeometry.Scheme.Hom.ker_le_ker_iff_of_comp_eq_id`: a section of `f` which is a closed
   immersion is determined by its ideal sheaf;
 * `AlgebraicGeometry.Scheme.Hom.ker_eq_ker_iff_of_comp_eq_id`: two sections of a separated
   morphism are equal exactly when their ideal sheaves are;
@@ -50,26 +50,26 @@ namespace Scheme.Hom
 
 /-- **A section of a separated morphism is a closed immersion.** -/
 theorem isClosedImmersion_of_comp_eq_id (s : S ⟶ X) {f : X ⟶ S} [IsSeparated f] (hs : s ≫ f = 𝟙 S) :
-    IsClosedImmersion s := by
+    IsClosedImmersion s :=
   have : IsClosedImmersion (s ≫ f) := hs ▸ inferInstance
-  exact IsClosedImmersion.of_comp s f
+  .of_comp s f
 
 /-- **A closed-immersion section is determined by its ideal sheaf.** If `s` and `t` are sections
-of `f : X ⟶ S`, `t` is a closed immersion, and the ideal sheaf of `t` is contained in that of `s`,
-then `s = t`. -/
-theorem eq_of_ker_le_of_comp_eq_id (s t : S ⟶ X) {f : X ⟶ S} [IsClosedImmersion t]
-    (hs : s ≫ f = 𝟙 S) (ht : t ≫ f = 𝟙 S) (h : t.ker ≤ s.ker) : s = t := by
-  -- `s` factors through the closed immersion `t`, by an endomorphism of `S` that is then `𝟙 S`.
-  have hl : IsClosedImmersion.lift t s h = 𝟙 S := by
-    simpa [hs] using congr(IsClosedImmersion.lift t s h ≫ $ht).symm
-  rw [← IsClosedImmersion.lift_fac t s h, hl, Category.id_comp]
+of `f : X ⟶ S` and `s` is a closed immersion, then the ideal sheaf of `s` is contained in that of
+`t` exactly when `s = t`. -/
+theorem ker_le_ker_iff_of_comp_eq_id (s t : S ⟶ X) {f : X ⟶ S} [IsClosedImmersion s]
+    (hs : s ≫ f = 𝟙 S) (ht : t ≫ f = 𝟙 S) : s.ker ≤ t.ker ↔ s = t := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ le_rfl⟩
+  -- `t` factors through the closed immersion `s`, by an endomorphism of `S` that is then `𝟙 S`.
+  have hl : IsClosedImmersion.lift s t h = 𝟙 S := by
+    simpa [ht] using congr(IsClosedImmersion.lift s t h ≫ $hs).symm
+  rw [← IsClosedImmersion.lift_fac s t h, hl, Category.id_comp]
 
 /-- **Two sections of a separated morphism are equal exactly when their ideal sheaves are.** -/
 theorem ker_eq_ker_iff_of_comp_eq_id (s t : S ⟶ X) {f : X ⟶ S} [IsSeparated f] (hs : s ≫ f = 𝟙 S)
     (ht : t ≫ f = 𝟙 S) : s.ker = t.ker ↔ s = t := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ rfl⟩
-  have := t.isClosedImmersion_of_comp_eq_id ht
-  exact s.eq_of_ker_le_of_comp_eq_id t hs ht h.ge
+  have := s.isClosedImmersion_of_comp_eq_id hs
+  exact ⟨fun h ↦ (s.ker_le_ker_iff_of_comp_eq_id t hs ht).mp h.le, congrArg _⟩
 
 /-- The closed subscheme cut out by a closed-immersion section `s` of `f : X ⟶ S` maps
 isomorphically to `S`. -/
@@ -120,8 +120,8 @@ theorem ker_sectionOfIsIso : (I.sectionOfIsIso f).ker = I := by
 `f` is the section cut out by `I` exactly when its ideal sheaf is `I`. -/
 theorem eq_sectionOfIsIso_iff {s : S ⟶ X} (hs : s ≫ f = 𝟙 S) :
     s = I.sectionOfIsIso f ↔ s.ker = I := by
-  refine ⟨fun h ↦ h ▸ I.ker_sectionOfIsIso f, fun h ↦ ?_⟩
-  exact s.eq_of_ker_le_of_comp_eq_id _ hs (I.sectionOfIsIso_comp f) (by simp [h])
+  refine ⟨fun h ↦ h ▸ I.ker_sectionOfIsIso f, fun h ↦ Eq.symm ?_⟩
+  exact (Scheme.Hom.ker_le_ker_iff_of_comp_eq_id _ s (I.sectionOfIsIso_comp f) hs).mp (by simp [h])
 
 end sectionOfIsIso
 
