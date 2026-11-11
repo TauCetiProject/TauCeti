@@ -10,10 +10,11 @@ public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 /-!
 # Gram matrices under a change of family
 
-For a finite family `v` in an inner product space over `𝕜` (`ℝ` or `ℂ`) and a square matrix `U`,
-the family `w i = ∑ j, U i j • v j` has Gram matrix `U.map conj * gram 𝕜 v * Uᵀ`, by
-sesquilinearity of the inner product (conjugate-linear in the first argument). Taking
-determinants, `det (gram 𝕜 w) = ‖det U‖ ^ 2 * det (gram 𝕜 v)`, and over `ℝ` this reads
+For a finite family `v` in an inner product space over `𝕜` (`ℝ` or `ℂ`) and a matrix `U`, the
+family `w k = ∑ j, U k j • v j` has Gram matrix `U.map conj * gram 𝕜 v * Uᵀ`, by
+sesquilinearity of the inner product (conjugate-linear in the first argument); `U` may be
+rectangular. For square `U`, taking determinants,
+`det (gram 𝕜 w) = ‖det U‖ ^ 2 * det (gram 𝕜 v)`, and over `ℝ` this reads
 `det (gram ℝ w) = (det U) ^ 2 * det (gram ℝ v)`.
 
 Neither linear independence of `v` nor any hypothesis on the dimension of the space is needed: for
@@ -24,8 +25,8 @@ product space, where no coordinate matrix is given.
 
 ## Main results
 
-* `Matrix.gram_sum_smul`: the Gram matrix of `fun i ↦ ∑ j, U i j • v j` is
-  `U.map conj * gram 𝕜 v * Uᵀ`.
+* `Matrix.gram_sum_smul`: the Gram matrix of `fun k ↦ ∑ j, U k j • v j` is
+  `U.map conj * gram 𝕜 v * Uᵀ`, for a possibly rectangular `U`.
 * `Matrix.det_gram_sum_smul`: its determinant is `‖det U‖ ^ 2 * det (gram 𝕜 v)`.
 * `Matrix.det_gram_matrix_smul`: over `ℝ`, the determinant is `det U ^ 2 * det (gram ℝ v)`.
 * `Matrix.det_gram_sum_smul_of_det_eq_one`, `Matrix.det_gram_smul`: a change of determinant one,
@@ -48,10 +49,11 @@ open Finset
 variable {ι 𝕜 E : Type*} [Fintype ι] [RCLike 𝕜] [SeminormedAddCommGroup E]
   [InnerProductSpace 𝕜 E]
 
-/-- **The Gram matrix under a change of family.** The Gram matrix of `w i = ∑ j, U i j • v j` is
+/-- **The Gram matrix under a change of family.** The Gram matrix of `w k = ∑ j, U k j • v j` is
 `U.map conj * gram 𝕜 v * Uᵀ`; the conjugate appears because the inner product is conjugate-linear
-in its first argument. -/
-theorem gram_sum_smul (U : Matrix ι ι 𝕜) (v : ι → E) :
+in its first argument. The coefficient matrix `U` may be rectangular: the new family `w` can have
+any index type `κ`. -/
+theorem gram_sum_smul {κ : Type*} (U : Matrix κ ι 𝕜) (v : ι → E) :
     gram 𝕜 (fun i ↦ ∑ j, U i j • v j) = U.map (starRingEnd 𝕜) * gram 𝕜 v * Uᵀ := by
   ext i k
   simp only [gram_apply, sum_inner, inner_sum, inner_smul_left, inner_smul_right,
