@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 
 /-!
 # `Lᵖ` seminorm bounds out of bounds between the integrals `∫⁻ ‖·‖ₑ ^ p`
@@ -38,6 +39,9 @@ covers comparing a function with its derivative.
 * `TauCeti.rpow_lintegral_le_measure_univ_rpow_mul`: Hölder's extended-valued integral inequality
   `(∫⁻ u) ^ r ≤ μ univ ^ (r - 1) * ∫⁻ u ^ r` for `u : α → ℝ≥0∞`.  On a finite measure space it
   expresses the nesting `L^r ⊆ L¹`; for a general `μ` it is only the inequality.
+* `TauCeti.lintegral_le_measure_univ_add_lintegral_rpow`: the additive form
+  `∫⁻ u ≤ μ univ + ∫⁻ u ^ r` for `r ≥ 1`, from `u ≤ 1 + u ^ r`. It needs no measurability, so
+  restricted to sets of finite measure it shows that `∫⁻ u ^ r < ∞` makes `u` locally integrable.
 -/
 
 public section
@@ -213,5 +217,15 @@ theorem rpow_lintegral_le_measure_univ_rpow_mul {α : Type*} [MeasurableSpace α
     _ = (∫⁻ x, u x ^ r ∂μ) * μ Set.univ ^ (r - 1) := by
         rw [← ENNReal.rpow_mul, ← ENNReal.rpow_mul, hinv, hexp, ENNReal.rpow_one]
     _ = μ Set.univ ^ (r - 1) * ∫⁻ x, u x ^ r ∂μ := mul_comm _ _
+
+/-- For `r ≥ 1`, the integral of `u : α → ℝ≥0∞` is at most `μ univ + ∫⁻ u ^ r`, since
+`u ≤ 1 + u ^ r` pointwise. No measurability of `u` is needed. -/
+theorem lintegral_le_measure_univ_add_lintegral_rpow {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} (u : α → ℝ≥0∞) {r : ℝ} (hr : 1 ≤ r) :
+    ∫⁻ x, u x ∂μ ≤ μ Set.univ + ∫⁻ x, u x ^ r ∂μ :=
+  calc ∫⁻ x, u x ∂μ ≤ ∫⁻ x, (1 + u x ^ r) ∂μ := lintegral_mono fun x => by
+        simpa using ENNReal.le_add_rpow_mul_rpow (u x) 1 hr
+    _ = μ Set.univ + ∫⁻ x, u x ^ r ∂μ := by
+        rw [lintegral_add_left measurable_const, lintegral_const, one_mul]
 
 end TauCeti

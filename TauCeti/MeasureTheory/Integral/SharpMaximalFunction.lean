@@ -429,52 +429,56 @@ private theorem czUnion_subset_setOf_lt_two_pow_mul_maximalFunction (f : (ι →
     ((setLAverage_le_dyadicMaximalFunction f hx).trans
       (dyadicMaximalFunction_le_two_pow_mul_maximalFunction f x))
 
-/-- For `f` with `∫ ‖f‖ ^ p₀ < ∞`, where `1 ≤ p₀ ≤ p` and `1 < p`, the truncated layer cake
-integral `∫₀ᴺ m(t) t^(p-1) dt` of the measures `m(t)` of the Calderón–Zygmund unions is finite.
-For `p₀ = 1` this follows from `m(t) ≤ ‖f‖₁ / t`. For `p₀ > 1`, `m(t)` is at most the measure of
-`{2ⁿ M f > t}` and `t^(p-1) ≤ N^(p-p₀) t^(p₀-1)` on `(0, N)`, so the integral is at most
-`N^(p-p₀)` times the layer cake integral of `∫ (2ⁿ M f)^p₀`, which is finite by the maximal
-theorem. -/
-private theorem setLIntegral_volume_czUnion_mul_rpow_ne_top {f : (ι → ℝ) → F}
-    (hf : AEStronglyMeasurable f) {p₀ p : ℝ} (hp₀ : 1 ≤ p₀) (hp₀p : p₀ ≤ p) (hp : 1 < p)
+/-- For `f` with `∫ ‖f‖ < ∞` and `1 < p`, the truncated layer cake integral
+`∫₀ᴺ m(t) t^(p-1) dt` of the measures `m(t)` of the Calderón–Zygmund unions is finite, since
+`m(t) ≤ ‖f‖₁ / t`. -/
+private theorem setLIntegral_volume_czUnion_mul_rpow_ne_top_of_lintegral_enorm_ne_top
+    {f : (ι → ℝ) → F} {p : ℝ} (hp : 1 < p) (hf : ∫⁻ x, ‖f x‖ₑ ≠ ∞) {N : ℝ} (hN : 0 ≤ N) :
+    ∫⁻ t in Ioo 0 N, volume (czUnion f (ENNReal.ofReal t)) * ENNReal.ofReal (t ^ (p - 1)) ≠ ∞ := by
+  refine ne_top_of_le_ne_top ?_ (setLIntegral_mono' (g := fun t =>
+    (∫⁻ x, ‖f x‖ₑ) * ENNReal.ofReal (t ^ (p - 2))) measurableSet_Ioo fun t ht => ?_)
+  · rw [lintegral_const_mul' _ _ hf, lintegral_ofReal_rpow_Ioo (by linarith) hN]
+    exact ENNReal.mul_ne_top hf ENNReal.ofReal_ne_top
+  have hsplit : ENNReal.ofReal (t ^ (p - 1)) =
+      ENNReal.ofReal (t ^ (p - 2)) * ENNReal.ofReal t := by
+    rw [← ENNReal.ofReal_mul (Real.rpow_nonneg ht.1.le _), ← Real.rpow_add_one ht.1.ne']
+    ring_nf
+  calc volume (czUnion f (ENNReal.ofReal t)) * ENNReal.ofReal (t ^ (p - 1))
+      = ENNReal.ofReal (t ^ (p - 2)) *
+          (ENNReal.ofReal t * volume (czUnion f (ENNReal.ofReal t))) := by
+        rw [hsplit]
+        ring
+    _ ≤ ENNReal.ofReal (t ^ (p - 2)) * ∫⁻ x, ‖f x‖ₑ := by
+        gcongr
+        exact mul_volume_czUnion_le f _
+    _ = (∫⁻ x, ‖f x‖ₑ) * ENNReal.ofReal (t ^ (p - 2)) := mul_comm _ _
+
+/-- For `f` with `∫ ‖f‖ ^ p₀ < ∞`, where `1 < p₀ ≤ p`, the truncated layer cake integral
+`∫₀ᴺ m(t) t^(p-1) dt` of the measures `m(t)` of the Calderón–Zygmund unions is finite: `m(t)` is
+at most the measure of `{2ⁿ M f > t}` and `t^(p-1) ≤ N^(p-p₀) t^(p₀-1)` on `(0, N)`, so the
+integral is at most `N^(p-p₀)` times the layer cake integral of `∫ (2ⁿ M f)^p₀`, which is finite
+by the maximal theorem. -/
+private theorem setLIntegral_volume_czUnion_mul_rpow_ne_top_of_one_lt {f : (ι → ℝ) → F}
+    (hf : AEStronglyMeasurable f) {p₀ p : ℝ} (hp₀ : 1 < p₀) (hp₀p : p₀ ≤ p)
     (hfp₀ : ∫⁻ x, ‖f x‖ₑ ^ p₀ ≠ ∞) {N : ℝ} (hN : 0 ≤ N) :
     ∫⁻ t in Ioo 0 N, volume (czUnion f (ENNReal.ofReal t)) * ENNReal.ofReal (t ^ (p - 1)) ≠ ∞ := by
-  rcases hp₀.eq_or_lt with rfl | hp₀'
-  · simp only [ENNReal.rpow_one] at hfp₀
-    refine ne_top_of_le_ne_top ?_ (setLIntegral_mono' (g := fun t =>
-      (∫⁻ x, ‖f x‖ₑ) * ENNReal.ofReal (t ^ (p - 2))) measurableSet_Ioo fun t ht => ?_)
-    · rw [lintegral_const_mul' _ _ hfp₀, lintegral_ofReal_rpow_Ioo (by linarith) hN]
-      exact ENNReal.mul_ne_top hfp₀ ENNReal.ofReal_ne_top
-    have hsplit : ENNReal.ofReal (t ^ (p - 1)) =
-        ENNReal.ofReal (t ^ (p - 2)) * ENNReal.ofReal t := by
-      rw [← ENNReal.ofReal_mul (Real.rpow_nonneg ht.1.le _), ← Real.rpow_add_one ht.1.ne']
-      ring_nf
-    calc volume (czUnion f (ENNReal.ofReal t)) * ENNReal.ofReal (t ^ (p - 1))
-        = ENNReal.ofReal (t ^ (p - 2)) *
-            (ENNReal.ofReal t * volume (czUnion f (ENNReal.ofReal t))) := by
-          rw [hsplit]
-          ring
-      _ ≤ ENNReal.ofReal (t ^ (p - 2)) * ∫⁻ x, ‖f x‖ₑ := by
-          gcongr
-          exact mul_volume_czUnion_le f _
-      _ = (∫⁻ x, ‖f x‖ₑ) * ENNReal.ofReal (t ^ (p - 2)) := mul_comm _ _
   set g : (ι → ℝ) → ℝ≥0∞ := fun x => 2 ^ Fintype.card ι * maximalFunction volume f x
   have hMf := measurable_maximalFunction volume f
   have hgm : Measurable g := hMf.const_mul _
   -- By the maximal theorem, `∫ g ^ p₀ < ∞`.
   have hg : ∫⁻ x, g x ^ p₀ ≠ ∞ := by
-    simp_rw [g, ENNReal.mul_rpow_of_nonneg _ _ (zero_le_one.trans hp₀)]
+    simp_rw [g, ENNReal.mul_rpow_of_nonneg _ _ (zero_le_one.trans hp₀.le)]
     rw [lintegral_const_mul _ (hMf.pow_const _)]
     refine ENNReal.mul_ne_top (by simp) (ne_top_of_le_ne_top ?_
-      (lintegral_rpow_maximalFunction_le volume hf.enorm hp₀'))
+      (lintegral_rpow_maximalFunction_le volume hf.enorm hp₀))
     exact ENNReal.mul_ne_top (ENNReal.mul_ne_top ENNReal.ofReal_ne_top (by simp)) hfp₀
   -- Hence its layer cake integral is finite.
   have hJ : ∫⁻ t in Ioi (0 : ℝ), volume {x | ENNReal.ofReal t < g x} *
       ENNReal.ofReal (t ^ (p₀ - 1)) ≠ ∞ := by
     intro hJ
     have h := lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul volume hgm.aemeasurable
-      (zero_lt_one.trans_le hp₀)
-    rw [hJ, ENNReal.mul_top (ENNReal.ofReal_pos.2 (zero_lt_one.trans_le hp₀)).ne'] at h
+      (zero_lt_one.trans hp₀)
+    rw [hJ, ENNReal.mul_top (ENNReal.ofReal_pos.2 (zero_lt_one.trans hp₀)).ne'] at h
     exact hg h
   refine ne_top_of_le_ne_top
     (ENNReal.mul_ne_top (ENNReal.ofReal_ne_top (r := N ^ (p - p₀))) hJ) ?_
@@ -497,6 +501,17 @@ private theorem setLIntegral_volume_czUnion_mul_rpow_ne_top {f : (ι → ℝ) �
     _ = ENNReal.ofReal (N ^ (p - p₀)) *
           (volume {x | ENNReal.ofReal t < g x} * ENNReal.ofReal (t ^ (p₀ - 1))) := by
         ring
+
+/-- For `f` with `∫ ‖f‖ ^ p₀ < ∞`, where `1 ≤ p₀ ≤ p` and `1 < p`, the truncated layer cake
+integral `∫₀ᴺ m(t) t^(p-1) dt` of the measures `m(t)` of the Calderón–Zygmund unions is finite. -/
+private theorem setLIntegral_volume_czUnion_mul_rpow_ne_top {f : (ι → ℝ) → F}
+    (hf : AEStronglyMeasurable f) {p₀ p : ℝ} (hp₀ : 1 ≤ p₀) (hp₀p : p₀ ≤ p) (hp : 1 < p)
+    (hfp₀ : ∫⁻ x, ‖f x‖ₑ ^ p₀ ≠ ∞) {N : ℝ} (hN : 0 ≤ N) :
+    ∫⁻ t in Ioo 0 N, volume (czUnion f (ENNReal.ofReal t)) * ENNReal.ofReal (t ^ (p - 1)) ≠ ∞ := by
+  rcases hp₀.eq_or_lt with rfl | hp₀'
+  · exact setLIntegral_volume_czUnion_mul_rpow_ne_top_of_lintegral_enorm_ne_top hp
+      (by simpa only [ENNReal.rpow_one] using hfp₀) hN
+  · exact setLIntegral_volume_czUnion_mul_rpow_ne_top_of_one_lt hf hp₀' hp₀p hfp₀ hN
 
 /-- The choice `γ = 2^(-(p + 2n + 2))` of the good-`λ` parameter makes the constant
 `2^p 2²ⁿ⁺¹ γ` of the rescaled good-`λ` inequality equal to `1 / 2`. -/

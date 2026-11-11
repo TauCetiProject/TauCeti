@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Measure.Lebesgue.DyadicCube
 import TauCeti.Analysis.Normed.Group.InfiniteSum
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
+import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 
 /-!
 # The Calderón–Zygmund decomposition
@@ -279,17 +280,14 @@ everywhere off its Calderón–Zygmund cubes at a positive height `t`. -/
 theorem ae_le_of_forall_notMem_calderonZygmundCubes [Nonempty ι] (hg : AEMeasurable g) {p : ℝ}
     (hp : 1 ≤ p) (hg' : ∫⁻ x, g x ^ p ≠ ∞) (ht : t ≠ 0) :
     ∀ᵐ x, (∀ q ∈ calderonZygmundCubes g t, x ∉ dyadicCube q.1 q.2) → g x ≤ t := by
-  -- `g` is locally integrable, since `g ≤ 1 + g ^ p`.
+  -- `g` is locally integrable, since `∫_K g ≤ |K| + ∫ g ^ p`.
   have hloc (K : Set (ι → ℝ)) (hK : IsCompact K) : ∫⁻ x in K, g x ≠ ∞ := by
-    refine ne_top_of_le_ne_top (b := volume K + ∫⁻ x, g x ^ p) ?_ ?_
-    · exact ENNReal.add_ne_top.2 ⟨hK.measure_lt_top.ne, hg'⟩
-    calc ∫⁻ x in K, g x ≤ ∫⁻ x in K, (1 + g x ^ p) := by
-          gcongr with x
-          simpa using ENNReal.le_add_rpow_mul_rpow (g x) 1 hp
-      _ ≤ volume K + ∫⁻ x, g x ^ p := by
-          rw [lintegral_add_left measurable_const, setLIntegral_const, one_mul]
-          gcongr
-          exact Measure.restrict_le_self
+    refine ne_top_of_le_ne_top (b := volume K + ∫⁻ x, g x ^ p)
+      (ENNReal.add_ne_top.2 ⟨hK.measure_lt_top.ne, hg'⟩)
+      ((lintegral_le_measure_univ_add_lintegral_rpow g hp).trans ?_)
+    rw [Measure.restrict_apply_univ]
+    gcongr
+    exact Measure.restrict_le_self
   filter_upwards [ae_tendsto_setLAverage_dyadicCube hg hloc] with x hx hnot
   refine le_of_tendsto hx (Eventually.of_forall fun k => le_of_not_gt fun hlt => ?_)
   obtain ⟨q, hq, -, hsub⟩ := exists_mem_calderonZygmundCubes_of_lt_setLAverage hp hg' ht hlt
