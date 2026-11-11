@@ -345,7 +345,7 @@ namespace TensorProduct
 
 section Monoid
 
-variable {R S M : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S] [AddCommMonoid M]
+variable {R S M : Type*} [CommSemiring R] [Semiring S] [Algebra R S] [AddCommMonoid M]
   [Module R M]
 
 /-- If `m ∈ J M` for an ideal `J` of `R`, then `1 ⊗ m ∈ (J S) (S ⊗[R] M)`. -/
