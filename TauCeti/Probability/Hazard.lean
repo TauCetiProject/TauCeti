@@ -72,15 +72,30 @@ private theorem ae_hasDerivAt_one_sub_cdf
   filter_upwards [hf] with t ht hmem
   exact (ht hmem).const_sub 1
 
-/-- **Integrability of the hazard rate.** If the cdf is absolutely continuous on the interval
-between `a` and `x`, survival is positive there, and `f` is the derivative of the cdf almost
-everywhere, then the hazard rate `f / (1 - cdf μ)` is interval integrable on `a..x`. -/
-theorem intervalIntegrable_div_one_sub_cdf (hac : AbsolutelyContinuousOnInterval (cdf μ) a x)
-    (hS : ∀ t ∈ uIcc a x, cdf μ t < 1)
+/-- **Integrability of the hazard rate.** If survival is positive on the interval between `a` and
+`x` and `f` is the derivative of the cdf almost everywhere, then the hazard rate
+`f / (1 - cdf μ)` is interval integrable on `a..x`: `f` is the derivative of a monotone function,
+and `1 / (1 - cdf μ)` is bounded there. -/
+theorem intervalIntegrable_div_one_sub_cdf (hS : ∀ t ∈ uIcc a x, cdf μ t < 1)
     (hf : ∀ᵐ t, t ∈ uIoc a x → HasDerivAt (cdf μ) (f t) t) :
     IntervalIntegrable (fun t => f t / (1 - cdf μ t)) volume a x := by
-  exact (survival_eq_exp_integral_hazard (absolutelyContinuousOnInterval_one_sub_cdf hac)
-    (fun t ht => sub_pos.2 (hS t ht)) (ae_hasDerivAt_one_sub_cdf hf)).1
+  have hint : IntervalIntegrable f volume a x :=
+    ((monotone_cdf μ).monotoneOn (uIcc a x)).intervalIntegrable_deriv.congr_ae
+      (by filter_upwards [ae_restrict_of_ae hf, ae_restrict_mem measurableSet_uIoc] with t ht hmem
+          exact (ht hmem).deriv)
+  have hmax : cdf μ (max a x) < 1 := hS _ ⟨min_le_max, le_rfl⟩
+  have hbound : ∀ᵐ t ∂(volume.restrict (uIoc a x)),
+      ‖(1 - cdf μ t)⁻¹‖ ≤ (1 - cdf μ (max a x))⁻¹ := by
+    filter_upwards [ae_restrict_mem measurableSet_uIoc] with t ht
+    have ht' : t ∈ uIcc a x := uIoc_subset_uIcc ht
+    have hpos : 0 < 1 - cdf μ t := sub_pos.2 (hS t ht')
+    rw [norm_inv, Real.norm_of_nonneg hpos.le]
+    exact inv_anti₀ (sub_pos.2 hmax)
+      (sub_le_sub_left (monotone_cdf μ ht'.2) 1)
+  have hmeas : AEStronglyMeasurable (fun t => (1 - cdf μ t)⁻¹) (volume.restrict (uIoc a x)) :=
+    (measurable_const.sub (monotone_cdf μ).measurable).inv.aestronglyMeasurable
+  simpa only [div_eq_mul_inv] using
+    (intervalIntegrable_iff.1 hint |>.mul_bdd hmeas hbound |> intervalIntegrable_iff.2)
 
 /-- **Hazard reconstruction of the survival function.** If the cdf is absolutely continuous on the
 interval between `a` and `x`, survival is positive there, and `f` is the derivative of the cdf
@@ -105,8 +120,7 @@ theorem intervalIntegrable_div_one_sub_cdf_of_eq_withDensity
     (hμ : μ = volume.withDensity fun t => ENNReal.ofReal (f t)) (hfm : AEMeasurable f)
     (hnn : 0 ≤ᵐ[volume] f) (a b : ℝ) (hS : ∀ t ∈ uIcc a b, cdf μ t < 1) :
     IntervalIntegrable (fun t => f t / (1 - cdf μ t)) volume a b :=
-  intervalIntegrable_div_one_sub_cdf
-    (absolutelyContinuousOnInterval_cdf_of_eq_withDensity hμ hfm hnn a b) hS
+  intervalIntegrable_div_one_sub_cdf hS
     ((ae_hasDerivAt_cdf_of_eq_withDensity hμ hfm hnn).mono fun _ ht _ => ht)
 
 /-- **Survival on the half-line from the cumulative hazard.** For a law with a nonnegative density
