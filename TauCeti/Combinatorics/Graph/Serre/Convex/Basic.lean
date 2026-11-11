@@ -19,7 +19,8 @@ convex.
 
 In a tree, a union of convex sets with a common vertex is convex, and a dart between two convex
 sets with a common vertex has both endpoints in one of them: subtrees through a common vertex
-glue to a subtree, without creating new edges. Here the edges of the subgraph on a set of vertices
+glue to a subtree, without creating new edges. In particular the vertices of a path in a tree form
+a convex set. Here the edges of the subgraph on a set of vertices
 are its induced darts, `SerreGraph.inducedDarts`; a finite set of vertices of an acyclic graph
 induces finitely many of them.
 
@@ -152,6 +153,23 @@ theorem IsTree.tgt_mem_or_src_mem (h : Γ.IsTree) {A B : Set Γ.V} (hA : Γ.IsCo
     (by rw [Path.darts_toPath, dart_val]; exact List.mem_singleton_self e)
   rw [Path.darts_comp, List.mem_append] at he
   exact he.imp (hA.tgt_mem hs hcA hq) (hB c hcB _ ht r hr e)
+
+/-- In a tree, the vertices of a path form a convex set. -/
+theorem IsTree.isConvex_setOf_mem_vertices (h : Γ.IsTree) {a b : Γ.V} (p : Γ.Path a b) :
+    Γ.IsConvex {v | v ∈ p.vertices} := by
+  induction p with
+  | nil => simpa using h.isAcyclic.isConvex_singleton a
+  | @cons b c p e ih =>
+    -- The vertices of `p.cons e` are those of `p` together with the endpoints of `e`.
+    have hU : {v | v ∈ (p.cons e).vertices} = {v | v ∈ p.vertices} ∪ {Γ.src e.1, Γ.tgt e.1} := by
+      ext v
+      simp only [Set.mem_ofPred_eq, Quiver.Path.mem_vertices_cons, Set.mem_union,
+        Set.mem_insert_iff, Set.mem_singleton_iff, e.2.1, e.2.2]
+      exact ⟨fun hv => hv.imp_right Or.inr, fun hv => hv.elim Or.inl fun hv =>
+        hv.elim (fun hv => Or.inl (hv ▸ p.end_mem_vertices)) Or.inr⟩
+    rw [hU]
+    exact h.isConvex_union ih (h.isAcyclic.isConvex_pair_src_tgt e.1)
+      ⟨b, p.end_mem_vertices, Or.inl e.2.1.symm⟩
 
 /-! ### The darts induced by a set of vertices -/
 

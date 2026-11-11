@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Serre.ConvexHull
+public import TauCeti.Combinatorics.Graph.Serre.Convex.Hull
 public import TauCeti.GroupTheory.GTree.Line
 public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.GroupTheory.Finiteness
@@ -105,7 +105,7 @@ theorem smul_mem_orbitHull {h : G} (hh : h ∈ H) : h • x ∈ T.orbitHull H x 
 
 variable (T H x)
 
-theorem self_mem_orbitHull : x ∈ T.orbitHull H x :=
+@[simp] theorem self_mem_orbitHull : x ∈ T.orbitHull H x :=
   mem_orbitHull_iff.mpr ⟨1, H.one_mem, left_mem_convexHull_pair x _⟩
 
 theorem orbitHull_nonempty : (T.orbitHull H x).Nonempty :=

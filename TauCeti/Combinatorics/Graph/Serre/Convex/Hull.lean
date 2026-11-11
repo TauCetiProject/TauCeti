@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Aut
-public import Mathlib.Combinatorics.Quiver.Path.Vertices
 public import Mathlib.Data.Set.Finite.Lattice
 public import Mathlib.Data.Set.Finite.List
 
@@ -93,10 +92,10 @@ theorem convexHull_mono {S T : Set Γ.V} (h : S ⊆ T) : Γ.convexHull S ⊆ Γ.
     Γ.convexHull {v} = {v} :=
   (h.isConvex_singleton v).convexHull_eq
 
-theorem left_mem_convexHull_pair (a b : Γ.V) : a ∈ Γ.convexHull {a, b} :=
+@[simp] theorem left_mem_convexHull_pair (a b : Γ.V) : a ∈ Γ.convexHull {a, b} :=
   subset_convexHull _ (Set.mem_insert a _)
 
-theorem right_mem_convexHull_pair (a b : Γ.V) : b ∈ Γ.convexHull {a, b} :=
+@[simp] theorem right_mem_convexHull_pair (a b : Γ.V) : b ∈ Γ.convexHull {a, b} :=
   subset_convexHull _ (Set.mem_insert_of_mem a rfl)
 
 /-! ### Convex hulls in a tree -/
@@ -132,40 +131,13 @@ theorem IsTree.convexHull_pair_subset_union (h : Γ.IsTree) (a b c : Γ.V) :
       (Set.pair_subset (Or.inl (left_mem_convexHull_pair a b))
         (Or.inr (right_mem_convexHull_pair b c)))
 
-/-- A vertex of a path is its start or the end of one of its darts. -/
-theorem Path.eq_or_exists_tgt_eq_of_mem_vertices {a b : Γ.V} (p : Γ.Path a b) {v : Γ.V}
-    (hv : v ∈ p.vertices) : v = a ∨ ∃ e ∈ Path.darts Γ p, Γ.tgt e = v := by
-  induction p with
-  | nil => exact Or.inl (by simpa using hv)
-  | cons p e ih =>
-    rcases (Quiver.Path.mem_vertices_cons p e).mp hv with hv | rfl
-    · exact (ih hv).imp_right fun ⟨f, hf, hfv⟩ => ⟨f, by simp [hf], hfv⟩
-    · exact Or.inr ⟨e.1, by simp, e.2.2⟩
-
-/-- In a tree, the vertices of a reduced path form a convex set. -/
-theorem IsTree.isConvex_setOf_mem_vertices (h : Γ.IsTree) {a b : Γ.V} {p : Γ.Path a b}
-    (hp : Path.IsReduced Γ p) : Γ.IsConvex {v | v ∈ p.vertices} := by
-  induction p with
-  | nil => simpa using h.isAcyclic.isConvex_singleton a
-  | @cons b c p e ih =>
-    -- The vertices of `p.cons e` are those of `p` together with the endpoints of `e`.
-    have hU : {v | v ∈ (p.cons e).vertices} = {v | v ∈ p.vertices} ∪ {Γ.src e.1, Γ.tgt e.1} := by
-      ext v
-      simp only [Set.mem_ofPred_eq, Quiver.Path.mem_vertices_cons, Set.mem_union,
-        Set.mem_insert_iff, Set.mem_singleton_iff, e.2.1, e.2.2]
-      exact ⟨fun hv => hv.imp_right Or.inr, fun hv => hv.elim Or.inl fun hv =>
-        hv.elim (fun hv => Or.inl (hv ▸ p.end_mem_vertices)) Or.inr⟩
-    rw [hU]
-    exact h.isConvex_union (ih (hp.of_cons Γ)) (h.isAcyclic.isConvex_pair_src_tgt e.1)
-      ⟨b, p.end_mem_vertices, Or.inl e.2.1.symm⟩
-
 /-- In a tree, the convex hull of two vertices is the set of vertices of the reduced path joining
 them. -/
 theorem IsTree.convexHull_pair (h : Γ.IsTree) {a b : Γ.V} {p : Γ.Path a b}
     (hp : Path.IsReduced Γ p) : Γ.convexHull {a, b} = {v | v ∈ p.vertices} := by
-  refine ((h.isConvex_setOf_mem_vertices hp).convexHull_subset
+  refine ((h.isConvex_setOf_mem_vertices p).convexHull_subset
     (Set.pair_subset p.start_mem_vertices p.end_mem_vertices)).antisymm fun v hv => ?_
-  rcases Path.eq_or_exists_tgt_eq_of_mem_vertices p hv with rfl | ⟨e, he, rfl⟩
+  rcases Path.eq_or_exists_tgt_eq_of_mem_vertices Γ p hv with rfl | ⟨e, he, rfl⟩
   · exact left_mem_convexHull_pair v b
   · exact (isConvex_convexHull _).tgt_mem (left_mem_convexHull_pair a b)
       (right_mem_convexHull_pair a b) hp he
