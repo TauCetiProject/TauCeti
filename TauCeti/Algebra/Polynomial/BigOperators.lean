@@ -22,7 +22,9 @@ degree bounds.
 
 This file also groups products of linear factors according to their constant terms, records
 that a sum `∑ j ∈ range N, C (c j) * X ^ (N - j)` has no constant term, and computes the degree
-of geometric sums of mixed powers of equal-degree monic polynomials.
+of geometric sums of mixed powers of equal-degree monic polynomials. It packages the monic
+polynomial `∏_{a ∈ s} (X - a)`, of degree `|s|` and evaluating to `x ↦ ∏_{a ∈ s} (x - a)`
+(`Polynomial.exists_monic_natDegree_eq_eval_eq_prod_sub`).
 
 It also records that the image of a finite product of polynomials under a ring homomorphism into a
 ring without zero divisors has degree the sum of the factors' degrees when each factor's image is
@@ -114,6 +116,18 @@ theorem prod_X_add_C_eq_pow_card_filter_mul_prod_filter_ne (f : ι → R) (a : R
   rw [pow_card_filter_eq_prod_X_add_C, prod_filter_mul_prod_filter_not]
 
 end ProductGrouping
+
+/-- The monic polynomial `∏_{a ∈ s} (X - a)` has degree `|s|` and evaluates to
+`x ↦ ∏_{a ∈ s} (x - a)`. -/
+theorem exists_monic_natDegree_eq_eval_eq_prod_sub {R : Type*} [CommRing R] [Nontrivial R]
+    (s : Multiset R) :
+    ∃ P : R[X], P.Monic ∧ P.natDegree = Multiset.card s ∧
+      P.eval = fun x ↦ (s.map fun a ↦ x - a).prod := by
+  refine ⟨(s.map fun a ↦ X - C a).prod,
+    monic_multiset_prod_of_monic _ _ fun a _ ↦ monic_X_sub_C a,
+    natDegree_multiset_prod_X_sub_C_eq_card s, ?_⟩
+  funext x
+  simp [eval_multiset_prod, Multiset.map_map]
 
 /-- The geometric sum of mixed powers of two monic polynomials of equal degree has the
 expected degree in characteristic zero. -/
