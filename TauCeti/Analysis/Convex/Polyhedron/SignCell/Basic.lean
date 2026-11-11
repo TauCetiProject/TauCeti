@@ -423,17 +423,8 @@ theorem commonSignPattern_specializes_right (σ τ : ι → SignType) :
 theorem weakSignCell_inter (g : ι → (V →ᴬ[ℝ] ℝ)) (σ τ : ι → SignType) :
     weakSignCell g σ ∩ weakSignCell g τ = weakSignCell g (commonSignPattern σ τ) := by
   ext x
-  constructor
-  · intro hx j
-    by_cases heq : σ j = τ j
-    · simpa only [commonSignPattern_apply, ite_eq_left heq] using hx.1 j
-    · simp only [commonSignPattern_apply, ite_eq_right heq]
-      have hxj := hx.1 j
-      have hyj := hx.2 j
-      cases hs : σ j <;> cases ht : τ j <;> simp_all [-mem_weakSignCell] <;> linarith
-  · intro hx
-    exact ⟨weakSignCell_subset_of_specializes (commonSignPattern_specializes_left σ τ) hx,
-      weakSignCell_subset_of_specializes (commonSignPattern_specializes_right σ τ) hx⟩
+  simp only [Set.mem_inter_iff, mem_weakSignCell_iff_specializes,
+    signSpecializes_commonSignPattern_iff]
 
 /-- Every intersection of weak sign cells is an extreme subset of the first cell,
 including when the intersection is empty. -/
