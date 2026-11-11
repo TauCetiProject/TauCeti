@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.LinearAlgebra.Matrix.Rank
 public import TauCeti.Analysis.Normed.Lp.PiLp
+public import TauCeti.Geometry.Sphere.LinearIsometry
 
 /-!
 # The map of a matrix on Euclidean space
@@ -35,7 +36,9 @@ Conversely, every continuous linear automorphism of Euclidean space is the map o
 matrix. This correspondence is a group isomorphism, and the matrix depends continuously on the
 automorphism.
 
-A square matrix is unitary exactly when its continuous linear map preserves the inner product.
+A square matrix is unitary exactly when its continuous linear map preserves the inner product,
+and a unitary matrix acts as a linear isometry equivalence of Euclidean space; every linear
+isometry equivalence arises in this way.
 The rows of a unitary matrix form an orthonormal basis, so the values of the quadratic form of a
 matrix `A` on an orthonormal basis are the diagonal entries of a unitary conjugate of `A`; for a
 diagonal matrix `diag(w)` the quadratic form is `x ↦ ∑ᵢ |xᵢ|² wᵢ`.
@@ -60,6 +63,15 @@ diagonal matrix `diag(w)` the quadratic form is `x ↦ ∑ᵢ |xᵢ|² wᵢ`.
   of the induced continuous linear map are those of the conjugate transpose and of the matrix;
 * `Matrix.inner_toEuclideanCLM_mul_mul_conjTranspose` — the sesquilinear form of `A * B * Aᴴ`
   at `x, y` is that of `B` at `Aᴴ x, Aᴴ y`;
+* `Matrix.UnitaryGroup.toLinearIsometryEquiv` — the group homomorphism from the unitary group to
+  the linear isometry group of Euclidean space, acting as the matrix does
+  (`Matrix.UnitaryGroup.toLinearIsometryEquiv_apply`); it is bijective
+  (`Matrix.UnitaryGroup.toLinearIsometryEquiv_injective`,
+  `Matrix.UnitaryGroup.toLinearIsometryEquiv_surjective`), preserves determinants
+  (`Matrix.UnitaryGroup.det_toLinearIsometryEquiv`) and is continuous for the operator-norm
+  topology (`Matrix.UnitaryGroup.continuous_toLinearIsometryEquiv`), and its action on the unit
+  sphere is jointly continuous
+  (`Matrix.UnitaryGroup.continuous_toLinearIsometryEquiv_smul_unitSphere`);
 * `Matrix.toEuclideanCLM_apply_apply` — the coordinate formula for the continuous linear map of
   a matrix, which depends continuously on the matrix (`Matrix.continuous_toEuclideanCLM`) and
   conversely (`Matrix.continuous_toEuclideanCLM_symm`);
@@ -142,12 +154,14 @@ theorem exists_mem_unitaryGroup_mul_mul_star_apply_self_eq_inner (A : Matrix ι 
 omit [Fintype κ] [DecidableEq κ] in
 /-- The rank of a matrix is the dimension of the range of the linear map it induces on Euclidean
 space. -/
-theorem rank_eq_finrank_range_toEuclideanLin [Finite κ] (A : Matrix κ ι 𝕜) :
+theorem rank_eq_finrank_range_toEuclideanLin (A : Matrix κ ι 𝕜) :
     A.rank = Module.finrank 𝕜 (LinearMap.range (toEuclideanLin A)) := by
-  have : Fintype κ := Fintype.ofFinite κ
-  rw [toEuclideanLin_eq_toLin_orthonormal]
-  exact A.rank_eq_finrank_range_toLin (EuclideanSpace.basisFun κ 𝕜).toBasis
-    (EuclideanSpace.basisFun ι 𝕜).toBasis
+  -- `toEuclideanLin` is by definition the `arrowCongr` of `toLin'` with the `WithLp` equivalences,
+  -- and `toLin'` is `mulVecLin`
+  have h : toEuclideanLin A = (WithLp.linearEquiv 2 𝕜 (κ → 𝕜)).symm.toLinearMap ∘ₗ
+      A.mulVecLin ∘ₗ (WithLp.linearEquiv 2 𝕜 (ι → 𝕜)).toLinearMap := rfl
+  rw [h, LinearMap.range_comp, LinearEquiv.range_comp, LinearEquiv.finrank_map_eq]
+  rfl
 
 /-- The `Cardinal`-valued rank of the continuous linear map of a square matrix is its matrix rank.
 This is the bridge that turns an operator-rank statement into a matrix-rank one. -/
@@ -210,6 +224,102 @@ theorem inner_toEuclideanCLM_mul_mul_conjTranspose (A B : Matrix ι ι 𝕜)
         toEuclideanCLM (𝕜 := 𝕜) B (toEuclideanCLM (𝕜 := 𝕜) Aᴴ y)⟫_𝕜 := by
   rw [map_mul, map_mul, mul_apply_eq_comp, mul_apply_eq_comp, ← adjoint_toEuclideanCLM,
     ContinuousLinearMap.adjoint_inner_left]
+
+
+/-- A unitary matrix acts on `EuclideanSpace 𝕜 ι` as a linear isometry equivalence, and this is a
+group homomorphism from the unitary group to the linear isometry group: the continuous linear map
+of a unitary matrix is a unitary operator. -/
+noncomputable def UnitaryGroup.toLinearIsometryEquiv :
+    unitaryGroup ι 𝕜 →* (EuclideanSpace 𝕜 ι ≃ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) :=
+  Unitary.linearIsometryEquiv.toMonoidHom.comp
+    (Unitary.map (.ofClass (toEuclideanCLM (n := ι) (𝕜 := 𝕜)))).toMonoidHom
+
+/-- The linear isometry of a unitary matrix acts by matrix-vector multiplication in Euclidean
+coordinates. -/
+@[simp]
+theorem UnitaryGroup.toLinearIsometryEquiv_apply (A : unitaryGroup ι 𝕜)
+    (x : EuclideanSpace 𝕜 ι) :
+    UnitaryGroup.toLinearIsometryEquiv A x = WithLp.toLp 2 ((A : Matrix ι ι 𝕜) *ᵥ x.ofLp) :=
+  (rfl)
+
+/-- The linear isometry of a unitary matrix sends the standard basis vector `e_j` to the column
+`j` of the matrix. -/
+theorem UnitaryGroup.toLinearIsometryEquiv_single (A : unitaryGroup ι 𝕜) (j : ι) :
+    UnitaryGroup.toLinearIsometryEquiv A (EuclideanSpace.single j 1) =
+      WithLp.toLp 2 ((A : Matrix ι ι 𝕜).col j) := by
+  rw [UnitaryGroup.toLinearIsometryEquiv_apply, EuclideanSpace.single, PiLp.ofLp_single,
+    mulVec_single_one]
+
+/-- The linear isometry of a product of unitary matrices acts as the composite of the actions of
+the factors. -/
+theorem UnitaryGroup.toLinearIsometryEquiv_mul_apply (A B : unitaryGroup ι 𝕜)
+    (x : EuclideanSpace 𝕜 ι) :
+    UnitaryGroup.toLinearIsometryEquiv (A * B) x =
+      UnitaryGroup.toLinearIsometryEquiv A (UnitaryGroup.toLinearIsometryEquiv B x) := by
+  rw [map_mul, LinearIsometryEquiv.coe_mul, Function.comp_apply]
+
+/-- The linear isometry of the inverse of a unitary matrix is the inverse of its linear
+isometry. -/
+theorem UnitaryGroup.toLinearIsometryEquiv_inv_apply (A : unitaryGroup ι 𝕜)
+    (x : EuclideanSpace 𝕜 ι) :
+    UnitaryGroup.toLinearIsometryEquiv A⁻¹ x = (UnitaryGroup.toLinearIsometryEquiv A).symm x := by
+  rw [map_inv, LinearIsometryEquiv.coe_inv]
+
+/-- The conversion from unitary matrices to linear isometries of Euclidean space is injective. -/
+theorem UnitaryGroup.toLinearIsometryEquiv_injective :
+    Function.Injective (UnitaryGroup.toLinearIsometryEquiv (ι := ι) (𝕜 := 𝕜)) := by
+  intro A B h
+  apply Subtype.ext
+  apply toEuclideanLin.injective
+  exact LinearMap.ext fun x ↦ by
+    simpa only [UnitaryGroup.toLinearIsometryEquiv_apply, toLpLin_apply] using
+      LinearIsometryEquiv.congr_fun h x
+
+/-- Every linear isometry of Euclidean space is the action of a unitary matrix, namely its matrix
+in the standard basis. -/
+theorem UnitaryGroup.toLinearIsometryEquiv_surjective :
+    Function.Surjective (UnitaryGroup.toLinearIsometryEquiv (ι := ι) (𝕜 := 𝕜)) := by
+  intro g
+  set B := toEuclideanLin.symm g.toLinearIsometry.toLinearMap with hBdef
+  have hB : toEuclideanLin B = g.toLinearIsometry.toLinearMap :=
+    toEuclideanLin.apply_symm_apply _
+  have hmem : B ∈ unitaryGroup ι 𝕜 := by
+    rw [hBdef, toEuclideanLin_eq_toLin_orthonormal]
+    exact g.toMatrix_mem_unitaryGroup (EuclideanSpace.basisFun ι 𝕜) (EuclideanSpace.basisFun ι 𝕜)
+  refine ⟨⟨B, hmem⟩, LinearIsometryEquiv.ext fun x ↦ ?_⟩
+  rw [UnitaryGroup.toLinearIsometryEquiv_apply]
+  exact LinearMap.congr_fun hB x
+
+/-- The linear isometry of a unitary matrix has the determinant of the matrix. -/
+@[simp]
+theorem UnitaryGroup.det_toLinearIsometryEquiv (A : unitaryGroup ι 𝕜) :
+    LinearMap.det (UnitaryGroup.toLinearIsometryEquiv A).toLinearIsometry.toLinearMap =
+      (A : Matrix ι ι 𝕜).det := by
+  have : (UnitaryGroup.toLinearIsometryEquiv A).toLinearIsometry.toLinearMap =
+      toEuclideanLin (A : Matrix ι ι 𝕜) := by
+    ext x
+    simp [toLpLin_apply]
+  rw [this, LinearMap.det_toLpLin]
+
+/-- The linear isometry of a unitary matrix depends continuously on the matrix, for the subspace
+topology on the unitary group and the operator-norm topology. -/
+theorem UnitaryGroup.continuous_toLinearIsometryEquiv :
+    Continuous fun A : unitaryGroup ι 𝕜 ↦
+      ((UnitaryGroup.toLinearIsometryEquiv A).toContinuousLinearEquiv :
+        EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) := by
+  refine (continuous_toEuclideanCLM.comp continuous_subtype_val).congr fun A ↦ ?_
+  ext x
+  simp
+
+/-- The action of the unitary group on the unit sphere of Euclidean space, through the linear
+isometries of unitary matrices, is jointly continuous. -/
+theorem UnitaryGroup.continuous_toLinearIsometryEquiv_smul_unitSphere :
+    Continuous fun p : unitaryGroup ι 𝕜 × Metric.sphere (0 : EuclideanSpace 𝕜 ι) 1 ↦
+      UnitaryGroup.toLinearIsometryEquiv p.1 • p.2 := by
+  refine continuous_induced_rng.2 <| (continuous_uncurry_toEuclideanCLM.comp
+    ((continuous_subtype_val.comp continuous_fst).prodMk
+      (continuous_subtype_val.comp continuous_snd))).congr fun p ↦ ?_
+  simp [toLpLin_apply]
 
 /-- The determinant of the continuous linear map of a square matrix is the determinant of the
 matrix. -/

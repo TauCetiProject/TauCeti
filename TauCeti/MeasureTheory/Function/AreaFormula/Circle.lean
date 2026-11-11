@@ -83,11 +83,13 @@ private theorem hausdorffMeasure_sphere_zero (c : ℂ) : μHE[1] (sphere c |(0 :
   have := Measure.nullSingletonClass_hausdorff ℂ (show (0 : ℝ) < 1 by norm_num)
   exact measure_singleton c
 
-/-- **The circumference of a circle.** A circle of radius `r ≥ 0` in `ℂ` has one-dimensional
-Hausdorff measure `2 π r`. -/
-theorem _root_.Complex.euclideanHausdorffMeasure_sphere (c : ℂ) {r : ℝ} (hr : 0 ≤ r) :
+/-- **The circumference of a circle.** A circle of radius `r` in `ℂ` has one-dimensional
+Hausdorff measure `2 π r`; for negative `r` both sides vanish. -/
+theorem _root_.Complex.euclideanHausdorffMeasure_sphere (c : ℂ) {r : ℝ} :
     μHE[1] (sphere c r) = ENNReal.ofReal (2 * π * r) := by
-  rcases hr.eq_or_lt with rfl | hr
+  rcases lt_trichotomy r 0 with hr | rfl | hr
+  · rw [sphere_eq_empty_of_neg hr, measure_empty,
+      ENNReal.ofReal_of_nonpos (by nlinarith [pi_pos])]
   · simpa using hausdorffMeasure_sphere_zero c
   have h := TauCeti.euclideanHausdorffMeasure_sphere c hr
   rw [Complex.finrank_real_complex] at h
@@ -99,10 +101,10 @@ theorem _root_.Complex.euclideanHausdorffMeasure_sphere (c : ℂ) {r : ℝ} (hr 
 `sphere c r` has length `2 π r`. In particular such a parametrization is rectifiable. -/
 theorem _root_.ContinuousOn.eVariationOn_eq_of_image_eq_sphere {γ : ℝ → ℂ} {a b : ℝ} {c : ℂ}
     {r : ℝ} (hcont : ContinuousOn γ (Icc a b)) (hinj : InjOn γ (Ioo a b))
-    (himage : γ '' Icc a b = sphere c r) (hr : 0 ≤ r) :
+    (himage : γ '' Icc a b = sphere c r) :
     eVariationOn γ (Icc a b) = ENNReal.ofReal (2 * π * r) := by
   rw [hcont.eVariationOn_eq_euclideanHausdorffMeasure_image hinj, himage,
-    _root_.Complex.euclideanHausdorffMeasure_sphere c hr]
+    _root_.Complex.euclideanHausdorffMeasure_sphere c]
 
 /-- The parametrization of a circle of radius zero is constant, so it has zero variation. -/
 private theorem eVariationOn_circleMap_zero (c : ℂ) (s : Set ℝ) :
