@@ -31,13 +31,15 @@ The main results are:
   reduced closed path as soon as two distinct darts leave it.
 * `SerreGraph.IsCore.cyclicDarts_eq_univ` and `SerreGraph.IsCore.cyclicVertices_eq_univ`: a core
   whose base vertex lies on a cyclically reduced closed path consists of such paths;
-* `SerreGraph.Preconnected.mem_cyclicDarts_core_iff` and
-  `SerreGraph.Preconnected.mem_cyclicVertices_core_iff`: passing to a based core does not change
-  the darts and vertices on cyclically reduced closed paths.
+* `SerreGraph.Path.IsCyclicallyReduced.mem_coreDarts`: a cyclically reduced closed path whose
+  base vertex is reachable from `v` lies in the based core at `v`;
+* `SerreGraph.mem_cyclicDarts_core_iff` and `SerreGraph.mem_cyclicVertices_core_iff`: passing to
+  a based core does not change the darts and vertices on cyclically reduced closed paths.
 
 This is the graph-theoretic content of the type of a core graph, obtained from a based core by
-deleting the path that hangs from the base vertex: the type consists of the darts and vertices on
-cyclically reduced closed paths.
+deleting the path that hangs from the base vertex: for a core graph with at least one dart, the
+type consists of the darts and vertices on cyclically reduced closed paths. The type of the
+one-vertex graph is that vertex, which lies on no nonempty cyclically reduced closed path.
 
 ## References
 
@@ -349,12 +351,11 @@ theorem cyclicVertices_eq_empty_iff : Γ.cyclicVertices = ∅ ↔ Γ.IsAcyclic :
 
 variable {Γ}
 
-/-- In a preconnected graph every dart on a cyclically reduced closed path lies in the based
-core at every vertex. -/
-theorem Preconnected.cyclicDarts_subset_coreDarts (h : Γ.Preconnected) (v : Γ.V) :
-    Γ.cyclicDarts ⊆ Γ.coreDarts v := by
-  rintro e ⟨a, c, hc, he⟩
-  obtain ⟨q⟩ := (Γ.preconnected_iff.mp h) v a
+/-- The darts of a cyclically reduced closed path whose base vertex can be reached from `v` lie
+in the based core at `v`. -/
+theorem Path.IsCyclicallyReduced.mem_coreDarts {v a : Γ.V} {c : Γ.Path a a}
+    (hc : Path.IsCyclicallyReduced Γ c) (q : Γ.Path v a) {e : Γ.E} (he : e ∈ Path.darts Γ c) :
+    e ∈ Γ.coreDarts v := by
   obtain ⟨b, q', r, c', -, -, -, -, hcc', hred⟩ :=
     Γ.exists_isReduced_comp_comp_reverse (Path.reduce Γ q) (Path.isReduced_reduce Γ q) c hc
       (List.ne_nil_of_mem he)
@@ -363,6 +364,50 @@ theorem Preconnected.cyclicDarts_subset_coreDarts (h : Γ.Preconnected) (v : Γ.
   rcases hcc' e he with h1 | h1
   · exact key e h1
   · exact (Γ.rev_mem_coreDarts_iff v e).mp (key _ h1)
+
+/-- A cyclically reduced closed path based at a vertex of a based core is a cyclically reduced
+closed path of the core. -/
+private theorem Path.IsCyclicallyReduced.exists_core_path {v : Γ.V} {a : (Γ.core v).V}
+    {c : Γ.Path a.1 a.1} (hc : Path.IsCyclicallyReduced Γ c) :
+    ∃ q : (Γ.core v).Path a a, Path.IsCyclicallyReduced (Γ.core v) q ∧
+      (Γ.coreInclusion v).toPrefunctor.mapPath q = c := by
+  obtain ⟨q₀⟩ := Γ.core_reachable v a
+  obtain ⟨q, rfl⟩ := Γ.exists_core_path v c
+    (fun e he => hc.mem_coreDarts ((Γ.coreInclusion v).toPrefunctor.mapPath q₀) he) a.2 a.2
+  exact ⟨q, ((Γ.coreInclusion v).isCyclicallyReduced_mapPath_iff _ Subtype.val_injective q).mp hc,
+    rfl⟩
+
+/-- A vertex of a based core lies on a cyclically reduced closed path of the core exactly when it
+does so in the ambient graph. -/
+theorem mem_cyclicVertices_core_iff (v : Γ.V) (a : (Γ.core v).V) :
+    a ∈ (Γ.core v).cyclicVertices ↔ a.1 ∈ Γ.cyclicVertices := by
+  refine ⟨(Γ.coreInclusion v).map_mem_cyclicVertices _ Subtype.val_injective, ?_⟩
+  rintro ⟨c, h0, hc⟩
+  obtain ⟨q, hq, rfl⟩ := hc.exists_core_path
+  exact ⟨q, h0.trans_eq (Prefunctor.length_mapPath _ q), hq⟩
+
+/-- A dart of a based core lies on a cyclically reduced closed path of the core exactly when it
+does so in the ambient graph. -/
+theorem mem_cyclicDarts_core_iff (v : Γ.V) (e : (Γ.core v).E) :
+    e ∈ (Γ.core v).cyclicDarts ↔ e.1 ∈ Γ.cyclicDarts := by
+  refine ⟨(Γ.coreInclusion v).map_mem_cyclicDarts _ Subtype.val_injective, ?_⟩
+  rintro ⟨a, c, hc, he⟩
+  -- Restart the closed path at `e`, whose initial vertex lies in the core.
+  obtain ⟨c', hc', -, hcc'⟩ := hc.exists_rotate Γ he
+  obtain ⟨q, hq, rfl⟩ := hc'.exists_core_path (a := (Γ.core v).src e)
+  refine ⟨_, q, hq, ?_⟩
+  have hd := Hom.darts_mapPath (Γ.core v) (Γ.coreInclusion v) q
+  obtain ⟨f, hf, hfe⟩ :=
+    List.mem_map.mp (Eq.mp (congrArg (fun l => e.1 ∈ l) hd) ((hcc' e.1).mpr he))
+  exact Subtype.ext hfe ▸ hf
+
+/-- In a preconnected graph every dart on a cyclically reduced closed path lies in the based
+core at every vertex. -/
+theorem Preconnected.cyclicDarts_subset_coreDarts (h : Γ.Preconnected) (v : Γ.V) :
+    Γ.cyclicDarts ⊆ Γ.coreDarts v := by
+  rintro e ⟨a, c, hc, he⟩
+  obtain ⟨q⟩ := (Γ.preconnected_iff.mp h) v a
+  exact hc.mem_coreDarts q he
 
 /-- In a preconnected graph the based core at a vertex on a cyclically reduced closed path
 consists of the darts on cyclically reduced closed paths. -/
@@ -381,17 +426,6 @@ theorem Preconnected.coreVertices_eq_cyclicVertices (h : Γ.Preconnected) {a : �
   exact ⟨fun hb => hb.elim (fun hba => hba ▸ (Γ.mem_cyclicVertices_iff_exists_src a).mp ha) id,
     Or.inr⟩
 
-/-- In a preconnected graph a vertex of a based core lies on a cyclically reduced closed path of
-the core exactly when it does so in the ambient graph. -/
-theorem Preconnected.mem_cyclicVertices_core_iff (h : Γ.Preconnected) (v : Γ.V)
-    (a : (Γ.core v).V) : a ∈ (Γ.core v).cyclicVertices ↔ a.1 ∈ Γ.cyclicVertices := by
-  refine ⟨(Γ.coreInclusion v).map_mem_cyclicVertices _ Subtype.val_injective, ?_⟩
-  rintro ⟨c, h0, hc⟩
-  obtain ⟨q, rfl⟩ := Γ.exists_core_path v c
-    (fun e he => h.cyclicDarts_subset_coreDarts v ⟨_, c, hc, he⟩) a.2 a.2
-  exact ⟨q, h0.trans_eq (Prefunctor.length_mapPath (Γ.coreInclusion v).toPrefunctor q),
-    ((Γ.coreInclusion v).isCyclicallyReduced_mapPath_iff _ Subtype.val_injective q).mp hc⟩
-
 /-- In a preconnected graph every vertex on a cyclically reduced closed path lies in the based
 core at every vertex. -/
 theorem Preconnected.cyclicVertices_subset_coreVertices (h : Γ.Preconnected) (v : Γ.V) :
@@ -400,33 +434,14 @@ theorem Preconnected.cyclicVertices_subset_coreVertices (h : Γ.Preconnected) (v
   obtain ⟨e, he, rfl⟩ := (Γ.mem_cyclicVertices_iff_exists_src a).mp ha
   exact Γ.src_mem_coreVertices v (h.cyclicDarts_subset_coreDarts v he)
 
-/-- In a preconnected graph a dart of a based core lies on a cyclically reduced closed path of
-the core exactly when it does so in the ambient graph. -/
-theorem Preconnected.mem_cyclicDarts_core_iff (h : Γ.Preconnected) (v : Γ.V)
-    (e : (Γ.core v).E) : e ∈ (Γ.core v).cyclicDarts ↔ e.1 ∈ Γ.cyclicDarts := by
-  refine ⟨(Γ.coreInclusion v).map_mem_cyclicDarts _ Subtype.val_injective, ?_⟩
-  rintro ⟨a, c, hc, he⟩
-  have ha : a ∈ Γ.coreVertices v :=
-    h.cyclicVertices_subset_coreVertices v
-      ((Γ.mem_cyclicVertices_iff_exists_src a).mpr
-        ⟨_, ⟨a, c, hc, List.mem_of_mem_head? (List.head?_eq_some_head (List.ne_nil_of_mem he))⟩,
-          Path.src_eq_of_mem_head?_darts Γ c (List.head?_eq_some_head (List.ne_nil_of_mem he))⟩)
-  obtain ⟨q, rfl⟩ := Γ.exists_core_path v c
-    (fun f hf => h.cyclicDarts_subset_coreDarts v ⟨_, c, hc, hf⟩) ha ha
-  refine ⟨_, q, ((Γ.coreInclusion v).isCyclicallyReduced_mapPath_iff _
-    Subtype.val_injective q).mp hc, ?_⟩
-  have hd := Hom.darts_mapPath (Γ.core v) (Γ.coreInclusion v) q
-  obtain ⟨f, hf, hfe⟩ := List.mem_map.mp (Eq.mp (congrArg (fun l => e.1 ∈ l) hd) he)
-  exact Subtype.ext hfe ▸ hf
-
 /-- A preconnected graph is acyclic exactly when its based cores are. -/
 theorem Preconnected.isAcyclic_core_iff (h : Γ.Preconnected) (v : Γ.V) :
     (Γ.core v).IsAcyclic ↔ Γ.IsAcyclic := by
   rw [← cyclicVertices_eq_empty_iff, ← cyclicVertices_eq_empty_iff,
     Set.eq_empty_iff_forall_notMem, Set.eq_empty_iff_forall_notMem]
   exact ⟨fun hc a ha => hc ⟨a, h.cyclicVertices_subset_coreVertices v ha⟩
-    ((h.mem_cyclicVertices_core_iff v _).mpr ha),
-    fun hc a ha => hc a.1 ((h.mem_cyclicVertices_core_iff v a).mp ha)⟩
+    ((Γ.mem_cyclicVertices_core_iff v _).mpr ha),
+    fun hc a ha => hc a.1 ((Γ.mem_cyclicVertices_core_iff v a).mp ha)⟩
 
 /-- An acyclic graph has no dart on a cyclically reduced closed path. -/
 theorem IsAcyclic.cyclicDarts_eq_empty (h : Γ.IsAcyclic) : Γ.cyclicDarts = ∅ :=
