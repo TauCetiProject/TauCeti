@@ -31,6 +31,8 @@ open set.
 * `TauCeti.mfderiv_eq_fderiv_comp_of_eqOn`: `df_y = dh_{e y} ∘ de_y` where `f = h ∘ e`.
 * `TauCeti.isInvertible_mfderiv_chart`: the derivative of a chart of the `C^1` maximal atlas is
   invertible.
+* `TauCeti.mfderiv_eq_of_hasFDerivAt_chartAt_symm_trans`: the differential of a map into the model
+  space is the derivative of its expression in the preferred chart.
 * `TauCeti.contDiffAt_symm_trans_of_mem_maximalAtlas`: a transition map between two charts of the
   `C^n` maximal atlas is `C^n` on its source, and
   `TauCeti.contDiffAt_symm_trans_symm_of_mem_maximalAtlas`: its inverse is `C^n` on its target.
@@ -115,6 +117,21 @@ theorem mfderiv_eq_zero_iff_of_eqOn (he : e ∈ IsManifold.maximalAtlas 𝓘(�
   · intro h0
     rw [h0]
     rfl
+
+/-- The differential of a map `q : M → E` into the model space is the derivative of its expression
+`q ∘ (chartAt E y)⁻¹` in the preferred chart at `y`. -/
+theorem mfderiv_eq_of_hasFDerivAt_chartAt_symm_trans {q : OpenPartialHomeomorph M E} {y : M}
+    (hy : y ∈ q.source) {A : E →L[𝕜] E}
+    (hA : HasFDerivAt ((chartAt E y).symm.trans q) A (chartAt E y y)) :
+    mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E) q y = A := by
+  rw [OpenPartialHomeomorph.coe_trans] at hA
+  refine HasMFDerivAt.mfderiv ⟨q.continuousAt hy, ?_⟩
+  simp only [writtenInExtChartAt, modelWithCornersSelf_coe, range_id, extChartAt,
+    OpenPartialHomeomorph.extend, PartialEquiv.coe_trans_symm,
+    OpenPartialHomeomorph.coe_toPartialEquiv_symm, PartialEquiv.coe_trans,
+    OpenPartialHomeomorph.toFun_eq_coe]
+  -- The casts `tangentSpaceCastModel` identify the model space with its tangent spaces.
+  exact hA.hasFDerivWithinAt
 
 end Chart
 

@@ -33,6 +33,8 @@ reversed flow.
 
 * `TauCeti.MorseChart.stableSubspace`: the coordinate subspace of the positive weights of a Morse
   chart, of dimension `n - k`.
+* `TauCeti.IsAdaptedPseudoGradient.exists_isSliceChart_stableSet_flow`: the slice charts of `W^s(x)`
+  given by a Morse chart composed with the time-`T` maps of the flow.
 * `TauCeti.IsAdaptedPseudoGradient.exists_stableSet_chart`: slice charts for `W^s(x)`.
 * `TauCeti.IsAdaptedPseudoGradient.exists_isSliceChart_stableSet` and
   `TauCeti.IsAdaptedPseudoGradient.exists_isSliceChart_unstableSet`: slice charts for `W^s(x)` and,
@@ -124,6 +126,31 @@ namespace IsAdaptedPseudoGradient
 
 variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]
 
+/-- **The slice charts of the stable manifold along the flow.** Let `φ` be a Morse chart at `x` in
+which `X` is linear. There is an open neighbourhood `D` of `x` in the chart such that for every
+time `T`, the chart `φ` restricted to `D`, composed with the time-`T` map of the flow, flattens
+`W^s(x)` onto the stable subspace of `φ`. -/
+theorem exists_isSliceChart_stableSet_flow (hX : IsAdaptedPseudoGradient f X)
+    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) (φ : MorseChart E f x)
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i)) :
+    ∃ D : Set M, IsOpen D ∧ x ∈ D ∧ D ⊆ φ.toChart.source ∧ ∀ T : ℝ,
+      IsSliceChart ((hX.flowDiffeomorph T).toHomeomorph.transOpenPartialHomeomorph
+        (φ.toChart.restr D)) (φ.stableSubspace : Set E) (hX.flow.stableSet x) := by
+  obtain ⟨ε, hε, hloc⟩ := hX.exists_forall_mem_stableSet_iff φ hφ hf
+  set D := φ.toChart.source ∩ φ.toChart ⁻¹' {v : E | ‖φ.coord v‖ < ε} with hDdef
+  have hD : IsOpen D := φ.toChart.continuousOn.isOpen_inter_preimage φ.toChart.open_source
+    (isOpen_lt (continuous_norm.comp φ.continuous_coord) continuous_const)
+  refine ⟨D, hD, ⟨φ.mem_source, by simpa using hε⟩, inter_subset_left,
+    fun T ↦ isSliceChart_iff.2 fun z hz ↦ ?_⟩
+  simp only [Homeomorph.transOpenPartialHomeomorph_source, OpenPartialHomeomorph.restr_source,
+    hD.interior_eq, mem_preimage, Diffeomorph.coe_toHomeomorph, flowDiffeomorph_apply] at hz
+  have hzD : hX.flow T z ∈ D := hz.2
+  simp only [Homeomorph.transOpenPartialHomeomorph_apply, OpenPartialHomeomorph.restr_apply,
+    Diffeomorph.coe_toHomeomorph, comp_apply, flowDiffeomorph_apply, SetLike.mem_coe,
+    φ.mem_stableSubspace]
+  rw [← hloc _ hzD.1 hzD.2, Flow.apply_mem_stableSet_iff]
+
 /-- **Slice charts for the stable manifold.** Let `φ` be a Morse chart at `x` in which `X` is
 linear. Every point of `W^s(x)` lies in the source of a chart of the maximal atlas that flattens
 `W^s(x)` onto the stable subspace of `φ`. -/
@@ -135,26 +162,14 @@ theorem exists_stableSet_chart (hX : IsAdaptedPseudoGradient f X)
     ∃ q : OpenPartialHomeomorph M E, p ∈ q.source ∧
       q ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M ∧
       ∀ z ∈ q.source, z ∈ hX.flow.stableSet x ↔ q z ∈ φ.stableSubspace := by
-  obtain ⟨ε, hε, hloc⟩ := hX.exists_forall_mem_stableSet_iff φ hφ hf
-  set D := φ.toChart.source ∩ φ.toChart ⁻¹' {v : E | ‖φ.coord v‖ < ε} with hDdef
-  have hD : IsOpen D := φ.toChart.continuousOn.isOpen_inter_preimage φ.toChart.open_source
-    (isOpen_lt (continuous_norm.comp φ.continuous_coord) continuous_const)
-  have hxD : x ∈ D := ⟨φ.mem_source, by simpa using hε⟩
+  obtain ⟨D, hD, hxD, hDs, hslice⟩ := hX.exists_isSliceChart_stableSet_flow hf φ hφ
   obtain ⟨T, hT⟩ := ((Flow.mem_stableSet.1 hp).eventually (hD.mem_nhds hxD)).exists
   refine ⟨(hX.flowDiffeomorph T).toHomeomorph.transOpenPartialHomeomorph (φ.toChart.restr D),
-    ?_, ?_, ?_⟩
-  · rw [Homeomorph.transOpenPartialHomeomorph_source, OpenPartialHomeomorph.restr_source,
-      hD.interior_eq, mem_preimage, Diffeomorph.coe_toHomeomorph, flowDiffeomorph_apply]
-    exact ⟨hT.1, hT⟩
-  · exact (hX.flowDiffeomorph T).transOpenPartialHomeomorph_mem_maximalAtlas
-      (restr_mem_maximalAtlas _ φ.mem_maximalAtlas hD)
-  · intro z hz
-    simp only [Homeomorph.transOpenPartialHomeomorph_source, OpenPartialHomeomorph.restr_source,
-      hD.interior_eq, mem_preimage, Diffeomorph.coe_toHomeomorph, flowDiffeomorph_apply] at hz
-    have hzD : hX.flow T z ∈ D := hz.2
-    simp only [Homeomorph.transOpenPartialHomeomorph_apply, OpenPartialHomeomorph.restr_apply,
-      Diffeomorph.coe_toHomeomorph, comp_apply, flowDiffeomorph_apply, φ.mem_stableSubspace]
-    rw [← hloc _ hzD.1 hzD.2, Flow.apply_mem_stableSet_iff]
+    ?_, (hX.flowDiffeomorph T).transOpenPartialHomeomorph_mem_maximalAtlas
+      (restr_mem_maximalAtlas _ φ.mem_maximalAtlas hD), isSliceChart_iff.1 (hslice T)⟩
+  rw [Homeomorph.transOpenPartialHomeomorph_source, OpenPartialHomeomorph.restr_source,
+    hD.interior_eq, mem_preimage, Diffeomorph.coe_toHomeomorph, flowDiffeomorph_apply]
+  exact ⟨hDs hT, hT⟩
 
 /-- **Slice charts for the stable manifold of a critical point.** Every point of the stable
 manifold of a critical point `x` lies in the source of a chart of the maximal atlas that flattens
