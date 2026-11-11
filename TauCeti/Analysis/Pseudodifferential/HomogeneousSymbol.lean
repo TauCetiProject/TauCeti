@@ -11,6 +11,7 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Analysis.Calculus.CoordinateDeriv
+public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Pseudodifferential.Frequency.Cutoff
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
@@ -62,6 +63,9 @@ The file develops:
   (`HomogeneousSymbol.exists_norm_iteratedFDeriv_sub_smul_coefficient_le`);
 * on an inner product space, the symbol `HomogeneousSymbol.normRpow`, which is `‖ξ‖ ^ m` times
   the identity and is homogeneous of every real degree `m`.
+* between Hilbert spaces, the pointwise adjoint `HomogeneousSymbol.adjoint`,
+  `(x, ξ) ↦ a (x, ξ)†`, of the same degree; it reverses composition
+  (`HomogeneousSymbol.adjoint_comp`).
 
 Higher derivatives are full Fréchet derivatives on `X × E`; a derivative in `j` position
 directions `u` and `l` frequency directions `w` is the iterated derivative evaluated on
@@ -1023,6 +1027,72 @@ theorem normRpow_comp_normRpow (m m' : ℝ) :
   ext_of_ne_zero fun x ξ hξ ↦ by
     ext v
     simp [hξ, Real.rpow_add (norm_pos_iff.mpr hξ), mul_smul, smul_comm (‖ξ‖ ^ m)]
+
+end HomogeneousSymbol
+
+/-! ### Pointwise adjoints -/
+
+namespace HomogeneousSymbol
+
+variable {X E : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup E]
+  [NormedSpace ℝ E] {U V W : Type*} [NormedAddCommGroup U] [InnerProductSpace ℂ U]
+  [CompleteSpace U] [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W] {m m' : ℝ}
+
+/-- The pointwise adjoint `(x, ξ) ↦ a (x, ξ)†` of a homogeneous symbol between Hilbert spaces.
+Since positive homogeneity only involves real scalars, it is a homogeneous symbol of the same
+degree. -/
+noncomputable def adjoint (a : HomogeneousSymbol X E V W m) : HomogeneousSymbol X E W V m where
+  coefficient := ContinuousLinearMap.adjointRealCLM ∘ a.coefficient
+  zero_covector x := by simp
+  contDiffOn_coefficient :=
+    ContinuousLinearMap.adjointRealCLM.contDiff.comp_contDiffOn a.contDiffOn_coefficient
+  homogeneous x ξ t ht := by
+    rw [Function.comp_apply, a.homogeneous x ξ t ht, map_smul, Function.comp_apply]
+
+@[simp]
+theorem coefficient_adjoint (a : HomogeneousSymbol X E V W m) (p : X × E) :
+    a.adjoint.coefficient p = ContinuousLinearMap.adjoint (a.coefficient p) :=
+  ContinuousLinearMap.adjointRealCLM_apply _
+
+@[simp]
+theorem adjoint_adjoint (a : HomogeneousSymbol X E V W m) : a.adjoint.adjoint = a := by
+  ext1; funext p; simp
+
+@[simp]
+theorem adjoint_zero : (0 : HomogeneousSymbol X E V W m).adjoint = 0 := by
+  ext1; funext p; simp
+
+@[simp]
+theorem adjoint_add (a b : HomogeneousSymbol X E V W m) :
+    (a + b).adjoint = a.adjoint + b.adjoint := by
+  ext1; funext p; simp
+
+@[simp]
+theorem adjoint_neg (a : HomogeneousSymbol X E V W m) : (-a).adjoint = -a.adjoint := by
+  ext1; funext p; simp
+
+@[simp]
+theorem adjoint_sub (a b : HomogeneousSymbol X E V W m) :
+    (a - b).adjoint = a.adjoint - b.adjoint := by
+  ext1; funext p; simp
+
+@[simp]
+theorem adjoint_castDegree (h : m = m') (a : HomogeneousSymbol X E V W m) :
+    (a.castDegree h).adjoint = a.adjoint.castDegree h :=
+  (rfl)
+
+/-- The adjoint of a composition is the composition of the adjoints in the reverse order, up to
+transport of the degree. -/
+@[simp]
+theorem adjoint_comp (b : HomogeneousSymbol X E W U m') (a : HomogeneousSymbol X E V W m) :
+    (b.comp a).adjoint = (a.adjoint.comp b.adjoint).castDegree (add_comm m m') := by
+  ext1; funext p; simp [ContinuousLinearMap.adjoint_comp]
+
+variable (X E V) in
+@[simp]
+theorem adjoint_id : (id X E V).adjoint = id X E V :=
+  ext_of_ne_zero fun _ _ hξ ↦ by simp [hξ, ContinuousLinearMap.adjoint_id]
 
 end HomogeneousSymbol
 

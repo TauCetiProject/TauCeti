@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Fintype.Card
 public import Mathlib.Order.WellFounded
 
 /-!
@@ -15,11 +16,16 @@ admissible values at a point only depend on the values already chosen at its `r`
 This is the existence statement behind such constructions, with the recursion itself hidden: it
 runs along the transitive closure of `r`, so `r` need not be transitive.
 
+Dually, a nonempty finite set has an element that is `r`-related to no element of the set, the
+starting point of a descent that removes such elements one at a time.
+
 ## Main results
 
 * `WellFounded.exists_forall_of_forall_exists`: if an admissible value exists at every point as
   soon as the values at its `r`-predecessors are admissible, then some function takes admissible
   values everywhere.
+* `WellFounded.exists_mem_forall_not_rel`: a nonempty finite set has an element `a` with `r a b`
+  for no `b` in the set.
 -/
 
 public section
@@ -59,5 +65,21 @@ theorem exists_forall_of_forall_exists {α : Type u} {X : Sort v} [Nonempty X]
   dsimp only [step]
   rw [dite_eq_left hc]
   exact hV (fun y hy ↦ hF y (.single hy)) (hex x _ hc).choose_spec
+
+/-- **Maximal elements for a well-founded relation.** A nonempty finite set contains an element `a`
+that is related to no element of the set: `r a b` fails for every `b` in it. This is the converse
+direction of `WellFounded.has_min`, and it needs finiteness: on `ℕ` with `<`, the whole set has no
+such element. -/
+theorem exists_mem_forall_not_rel {α : Type u} {r : α → α → Prop} (hr : WellFounded r)
+    {s : Set α} (hs : s.Finite) (hne : s.Nonempty) : ∃ a ∈ s, ∀ b ∈ s, ¬r a b := by
+  -- On the finite set `s`, the converse of the transitive closure of `r` is a strict order,
+  -- hence well-founded, and a minimal element for it is related to nothing in `s`.
+  have := hs.to_subtype
+  let rel : s → s → Prop := fun a b ↦ TransGen r b.1 a.1
+  have : IsTrans s rel := ⟨fun _ _ _ hab hbc ↦ hbc.trans hab⟩
+  have : Std.Irrefl rel := ⟨fun a ↦ hr.transGen.irrefl.irrefl a.1⟩
+  obtain ⟨a, -, ha⟩ := (Finite.wellFounded_of_trans_of_irrefl rel).has_min Set.univ
+    ⟨⟨hne.some, hne.some_mem⟩, Set.mem_univ _⟩
+  exact ⟨a.1, a.2, fun b hb hab ↦ ha ⟨b, hb⟩ (Set.mem_univ _) (.single hab)⟩
 
 end WellFounded
