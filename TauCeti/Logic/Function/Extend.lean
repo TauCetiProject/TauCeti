@@ -28,7 +28,7 @@ the points which lie in `s` as soon as they lie in `t`.
 
 * `Function.extend_natCast_of_neg`: the extension of `a` along `ℕ → ℤ` with fallback `e` takes
   the value `e n` at every negative integer `n`.
-* `Function.extend_comp_of_injective_left`: extension along a composite `f₂₃ ∘ f₁₂` is the iterated
+* `Function.Injective.extend_comp_extend`: extension along a composite `f₂₃ ∘ f₁₂` is the iterated
   extension, provided only the outer map `f₂₃` is injective.
 * `Function.extend_subtypeVal_comp_inclusion`: extending a function on `t` and extending its
   restriction to `s ⊆ t` agree at every point of `s` and every point outside `t`.
@@ -94,7 +94,7 @@ theorem extend_subtypeVal_comp_inclusion {α β : Type*} {s t : Set α} (h : s �
 outer map `f₂₃` is injective. The inner extension of `g` along `f₁₂` uses the fallback `e' ∘ f₂₃`,
 and the outer extension uses the fallback `e'`. This generalizes Mathlib's
 `Function.Injective.extend_comp`, dropping injectivity of the inner map `f₁₂`. -/
-theorem extend_comp_of_injective_left {α β γ δ : Type*} {f₁₂ : α → β} {f₂₃ : β → γ}
+theorem Injective.extend_comp_extend {α β γ δ : Type*} {f₁₂ : α → β} {f₂₃ : β → γ}
     (h : Function.Injective f₂₃) (g : α → δ) (e' : γ → δ) :
     extend (f₂₃ ∘ f₁₂) g e' = extend f₂₃ (extend f₁₂ g (e' ∘ f₂₃)) e' := by
   classical

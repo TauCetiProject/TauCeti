@@ -47,7 +47,7 @@ theorem linearMap_single {ι κ : Type*} [DecidableEq ι] [DecidableEq κ] {e : 
 theorem linearMap_comp {ι κ η : Type*} {e : ι → κ} {e' : κ → η} (he' : Injective e') :
     linearMap R M (e' ∘ e) = linearMap R M e' ∘ₗ linearMap R M e := by
   ext v : 1
-  exact Function.extend_comp_of_injective_left he' v 0
+  exact he'.extend_comp_extend v 0
 
 /-- Extension by zero along the identity is the identity. -/
 @[simp]
