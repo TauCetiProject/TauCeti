@@ -675,7 +675,10 @@ theorem map_lambda (e : α ≃o β) : map e lambda = lambda := by
 @[simp]
 theorem map_mem_gPrime_iff (e : α ≃o β) {g : StrandGradingGroup α} :
     map e g ∈ gPrime ↔ g ∈ gPrime := by
-  simp only [mem_gPrime, map_maslov, map_boundary]
+  have h : #{y | Odd (g.boundary (e.symm y))} = #{x | Odd (g.boundary x)} := by
+    simp only [Finset.card_filter]
+    exact Fintype.sum_equiv e.symm.toEquiv _ _ fun _ ↦ rfl
+  simp only [mem_gPrime, map_maslov, map_boundary, h]
   rw [Fintype.sum_equiv e.symm.toEquiv (fun y ↦ g.boundary (e.symm y)) g.boundary fun _ ↦ rfl]
 
 /-- The multiplicity of the reversed class, with boundary `x ↦ -δ x`, at `p` for the reversed
@@ -751,7 +754,11 @@ total sum zero. -/
 @[simp]
 theorem unop_reverse_mem_gPrime_iff {g : StrandGradingGroup α} :
     (reverse g).unop ∈ gPrime ↔ g ∈ gPrime := by
-  simp only [mem_gPrime, reverse_maslov, reverse_boundary, Finset.sum_neg_distrib, neg_eq_zero]
+  have h : #{x : αᵒᵈ | Odd (g.boundary (ofDual x))} = #{x | Odd (g.boundary x)} := by
+    simp only [Finset.card_filter]
+    exact Fintype.sum_equiv ofDual _ _ fun _ ↦ rfl
+  simp only [mem_gPrime, reverse_maslov, reverse_boundary, Finset.sum_neg_distrib, neg_eq_zero,
+    odd_neg, h]
   rw [Fintype.sum_equiv ofDual (fun x ↦ g.boundary (ofDual x)) g.boundary fun _ ↦ rfl]
 
 variable (n : ℕ)
