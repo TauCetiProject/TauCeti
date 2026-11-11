@@ -49,12 +49,10 @@ noncomputable def toGraphOrientation (ear : G.Ear H) : ear.toGraph.Orientation :
 orientation of that trace. -/
 theorem followsOrientation_toGraphOrientation (ear : G.Ear H) :
     (ear.toWalk.2.2.transfer ear.toGraph_le fun e he ↦
-      (by rw [ear.edgeSet_toGraph]; exact he)).FollowsOrientation
+      ear.edges_subset_edgeSet_toGraph e he).FollowsOrientation
         ear.toGraphOrientation := by
   exact (ear.toWalk.2.2.followsOrientation_orientation ear.isTrail).transfer
-    ear.toGraph_le fun e he ↦ by
-      rw [ear.edgeSet_toGraph]
-      exact he
+    ear.toGraph_le ear.edges_subset_edgeSet_toGraph
 
 end Ear
 
@@ -86,9 +84,7 @@ private theorem nonempty_arrowWalk_of_mem_toGraph (o : H.Orientation) (ear : G.E
       Nonempty (ArrowWalk (o.addEar ear).Hom x
         (Set.inclusion ear.base_le_add.vertexSet_mono ⟨ear.toWalk.2.1, ear.toWalk_snd_mem⟩)) := by
   let p := ear.toWalk.2.2
-  let q := p.transfer ear.toGraph_le fun e he ↦ by
-    rw [ear.edgeSet_toGraph]
-    exact he
+  let q := p.transfer ear.toGraph_le ear.edges_subset_edgeSet_toGraph
   have hq : q.FollowsOrientation ear.toGraphOrientation := by
     simpa only [p, q] using ear.followsOrientation_toGraphOrientation
   have hqAdd : (q.mapLe ear.toGraph_le_add).FollowsOrientation (o.addEar ear) := by
@@ -112,11 +108,8 @@ private theorem nonempty_arrowWalk_addEar_of_base (o : H.Orientation) (ear : G.E
     {a b : H.vertexSet} (r : ArrowWalk o.Hom a b) :
     Nonempty (ArrowWalk (o.addEar ear).Hom (Set.inclusion ear.base_le_add.vertexSet_mono a)
       (Set.inclusion ear.base_le_add.vertexSet_mono b)) := by
-  let w := o.forgetWalk r
-  have hwAdd : (w.mapLe ear.base_le_add).FollowsOrientation (o.addEar ear) := by
-    apply (Walk.followsOrientation_mapLe_iff ear.base_le_add w (o.addEar ear)).2
-    simpa only [restrict_addEar_base] using o.followsOrientation_forgetWalk r
-  exact ⟨(w.mapLe ear.base_le_add).toOriented hwAdd (ear.base_le_add.vertexSet_mono a.2)⟩
+  rw [← restrict_addEar_base o ear] at r
+  exact (o.addEar ear).nonempty_arrowWalk_of_restrict ear.base_le_add r
 
 /-- Every vertex of the extended graph is reachable from a base vertex and reaches a base
 vertex. -/
@@ -163,7 +156,10 @@ theorem exists_stronglyConnected_orientation (d : G.EarDecomposition H)
       let o := Orientation.ofEdgeEnds (Graph.noEdge {x.1} β)
       refine ⟨o, ?_⟩
       intro a b
-      have hab : a = b := Subtype.ext (by simpa using a.2.trans b.2.symm)
+      have ha := a.2
+      have hb := b.2
+      simp only [vertexSet_noEdge, Set.mem_singleton_iff] at ha hb
+      have hab : a = b := Subtype.ext (ha.trans hb.symm)
       subst b
       exact ⟨TauCeti.ArrowWalk.nil a⟩)
     (fun i hi ↦ by

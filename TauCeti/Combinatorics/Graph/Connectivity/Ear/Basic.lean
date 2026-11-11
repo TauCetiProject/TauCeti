@@ -166,6 +166,13 @@ theorem edgeSet_toGraph (e : G.Ear H) :
     E(e.toGraph) = {f | f ∈ e.toWalk.2.2.edges} :=
   e.toWalk.2.2.edgeSet_walkGraph
 
+/-- Every edge traversed by an ear belongs to the graph traced by that ear. -/
+theorem edges_subset_edgeSet_toGraph (e : G.Ear H) :
+    ∀ f ∈ e.toWalk.2.2.edges, f ∈ E(e.toGraph) := by
+  intro f hf
+  rw [edgeSet_toGraph]
+  exact hf
+
 /-- The base of an ear is a subgraph of its ambient graph. -/
 theorem base_le : ∀ _e : G.Ear H, H ≤ G
   | .open hHG .. => hHG

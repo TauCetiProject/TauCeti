@@ -18,7 +18,8 @@ compatible graphs combine into an orientation of their union, taking the directi
 edge from the first orientation. When the edge sets are disjoint, restricting the combined
 orientation recovers both inputs, so orientations of the union are exactly pairs of orientations.
 A walk in a subgraph follows the restricted orientation exactly when its image in the larger
-graph follows the original orientation.
+graph follows the original orientation. Consequently every directed walk of a restricted
+orientation lifts to a directed walk of the original orientation.
 
 Restriction keeps the head of every remaining edge. Hence deleting a set of edges lowers the
 indegree of a vertex by the number of deleted edges with their head there. In a union, a vertex
@@ -30,6 +31,8 @@ for every vertex of a vertex-disjoint union.
 * `Graph.Orientation.restrict`: the orientation of a subgraph induced by an orientation.
 * `Graph.Walk.followsOrientation_mapLe_iff`: walks in a subgraph follow the restricted
   orientation exactly when their images follow the original one.
+* `Graph.Orientation.nonempty_arrowWalk_of_restrict`: directed walks of a restricted orientation
+  lift to directed walks of the original orientation.
 * `Graph.Orientation.union`: the orientation of a compatible union built from two orientations.
 * `Graph.Orientation.unionEquiv`: orientations of an edge-disjoint union are pairs of
   orientations.
@@ -120,6 +123,17 @@ end Graph.Walk
 namespace Graph.Orientation
 
 variable {V : Type u} {E : Type v} {G H K : Graph V E}
+
+/-- A directed walk of a restricted orientation lifts to a directed walk of the original
+orientation. -/
+theorem nonempty_arrowWalk_of_restrict (o : G.Orientation) (h : H ≤ G) {a b : H.vertexSet}
+    (r : TauCeti.ArrowWalk (o.restrict h).Hom a b) :
+    Nonempty (TauCeti.ArrowWalk o.Hom (Set.inclusion h.vertexSet_mono a)
+      (Set.inclusion h.vertexSet_mono b)) := by
+  let w := (o.restrict h).forgetWalk r
+  have hw : (w.mapLe h).FollowsOrientation o :=
+    (Walk.followsOrientation_mapLe_iff h w o).2 ((o.restrict h).followsOrientation_forgetWalk r)
+  exact ⟨(w.mapLe h).toOriented hw (h.vertexSet_mono a.2)⟩
 
 section Union
 
