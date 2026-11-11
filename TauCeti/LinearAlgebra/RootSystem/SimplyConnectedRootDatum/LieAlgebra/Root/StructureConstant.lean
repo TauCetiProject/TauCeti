@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Vector
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.DoubleChain
+public import TauCeti.LinearAlgebra.RootSystem.DoubleChain
 import TauCeti.LinearAlgebra.RootSystem.InvariantForm.RootString
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 import Mathlib.Algebra.Ring.Parity

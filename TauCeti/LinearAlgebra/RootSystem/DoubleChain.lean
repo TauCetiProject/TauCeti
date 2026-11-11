@@ -41,7 +41,9 @@ include hbound
 
 omit [P.IsReduced] in
 /-- If every Cartan integer lies between minus two and two, each root string has
-ascending and descending coefficients summing to at most two. -/
+ascending and descending coefficients summing to at most two.
+This generalizes Mathlib's `RootPairing.chainBotCoeff_add_chainTopCoeff_le_two` in
+`Mathlib.LinearAlgebra.RootSystem.Finite.G2` from `IsNotG2` to an explicit pairing bound. -/
 theorem chainBotCoeff_add_chainTopCoeff_le_two_of_pairing_bound (α β : ι) :
     P.chainBotCoeff α β + P.chainTopCoeff α β ≤ 2 := by
   by_cases hli : LinearIndependent R ![P.root α, P.root β]
@@ -75,7 +77,7 @@ theorem chainBotCoeff_eq_one_of_double_chain {α β γ δ : ι}
 
 /-- The Cartan pairings along a double chain with Cartan integers bounded by two are
 `⟨β, α∨⟩ = -2` and `⟨α, β∨⟩ = -1`. -/
-theorem pairings_of_double_chain {α β γ δ : ι}
+theorem pairing_eq_neg_two_and_pairing_eq_neg_one_of_double_chain {α β γ δ : ι}
     (hγ : P.root γ = P.root α + P.root β)
     (hδ : P.root δ = P.root α + P.root γ) :
     P.pairing β α = -2 ∧ P.pairing α β = -1 := by
@@ -127,7 +129,7 @@ theorem root_add_last_notMem_of_double_chain {α β γ δ : ι}
     (hγ : P.root γ = P.root α + P.root β)
     (hδ : P.root δ = P.root α + P.root γ) :
     P.root α + P.root δ ∉ Set.range P.root ∧ P.root α + P.root δ ≠ 0 := by
-  have hp := (P.pairings_of_double_chain hbound hγ hδ).1
+  have hp := (P.pairing_eq_neg_two_and_pairing_eq_neg_one_of_double_chain hbound hγ hδ).1
   have heval : P.coroot' α (P.root α + P.root δ) = 4 := by
     norm_num [hδ, hγ, map_add, hp]
   exact P.notMem_range_root_and_ne_zero_of_coroot_notMem hbound α (by norm_num [heval])
@@ -138,7 +140,7 @@ theorem root_initial_add_middle_notMem_of_double_chain {α β γ δ : ι}
     (hγ : P.root γ = P.root α + P.root β)
     (hδ : P.root δ = P.root α + P.root γ) :
     P.root β + P.root γ ∉ Set.range P.root ∧ P.root β + P.root γ ≠ 0 := by
-  have hp := (P.pairings_of_double_chain hbound hγ hδ).2
+  have hp := (P.pairing_eq_neg_two_and_pairing_eq_neg_one_of_double_chain hbound hγ hδ).2
   have heval : P.coroot' β (P.root β + P.root γ) = 3 := by
     norm_num [hγ, map_add, hp]
   exact P.notMem_range_root_and_ne_zero_of_coroot_notMem hbound β (by norm_num [heval])

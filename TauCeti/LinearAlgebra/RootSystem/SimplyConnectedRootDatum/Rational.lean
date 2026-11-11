@@ -217,6 +217,16 @@ theorem isNotG2_rationalRootSystem (h : t ≠ .G2) :
   exact h ((t.hasCartanType_rationalRootSystem ht).eq_of_valid
     (hasCartanType_G2_of_isG2 hG2 (t.rationalBase ht)) ht (by simp))
 
+variable {t ht} in
+/-- Outside type `G₂`, the pinned datum has Cartan integers bounded by two, as required
+by the general double-chain lemmas. -/
+theorem pairingIn_mem_zero_one_two_of_ne_G2
+    (h : t ≠ .G2) (α β : Fin t.numRoots) :
+    (t.simplyConnectedRootDatum ht).pairingIn ℤ α β ∈ ({-2, -1, 0, 1, 2} : Set ℤ) := by
+  let := t.isNotG2_rationalRootSystem ht h
+  simpa using RootPairing.IsNotG2.pairingIn_mem_zero_one_two
+    (P := t.rationalRootSystem ht) α β
+
 /-! ## The Bourbaki numbering of the base support -/
 
 theorem mem_support_rationalBase {k : Fin t.numRoots} :
