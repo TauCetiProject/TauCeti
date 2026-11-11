@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.Int
+public import TauCeti.Algebra.Category.ModuleCat.OrzechProperty
 public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Homology
 public import TauCeti.AlgebraicTopology.Singular.Sublevel
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
@@ -268,14 +270,6 @@ private theorem isZero_singularHomology_two :
   RealProjectiveSpace.isZero_singularHomology_projectivization_of_even (N := 2) ℤ
     (isRegular_iff_ne_zero.2 two_ne_zero).right even_two two_ne_zero
 
-/-- An epimorphism to `ℤ` from a module isomorphic to `ℤ` is a monomorphism. -/
-private theorem mono_of_iso_int {Y : ModuleCat.{0} ℤ} (e : Y ≅ ModuleCat.of ℤ ℤ)
-    (g : Y ⟶ ModuleCat.of ℤ ℤ) [Epi g] : Mono g := by
-  have : Mono (e.inv ≫ g) := (ModuleCat.mono_iff_injective _).2
-    (OrzechProperty.injective_of_surjective_endomorphism (e.inv ≫ g).hom
-      ((ModuleCat.epi_iff_surjective _).1 (epi_comp _ _)))
-  simpa using mono_comp e.hom (e.inv ≫ g)
-
 /-- Below the second critical value, the zeroth homology of the sublevel injects into that of
 every larger sublevel, relative to an empty sublevel. -/
 private theorem mono_singularHomologyMap_innerToTotal_zero (hw : StrictMono w) {s₀ s₁ t : ℝ}
@@ -309,7 +303,7 @@ private theorem mono_singularHomologyMap_innerToTotal_zero (hw : StrictMono w) {
       rw [projectiveMomentFunction_mk_single]; exact h₁.le⟩
   have hε₁ : Mono (SSet.homology₀ε (TopCat.toSSet.obj (TopTriple.innerPair.obj T).fst)
       (ModuleCat.of ℤ ℤ)) :=
-    @mono_of_iso_int _ (asIso ((TopTriple.innerPair.obj T).singularHomologyπ
+    @ModuleCat.mono_of_epi_of_iso _ _ _ _ _ _ (asIso ((TopTriple.innerPair.obj T).singularHomologyπ
       (ModuleCat.of ℤ ℤ) 0) ≪≫ e) _
       (@IsSplitEpi.epi _ _ _ _ _
         (IsSplitEpi.mk' ⟨_, singularHomology₀Section_singularHomology₀ε _ x₀⟩))
@@ -360,7 +354,7 @@ private theorem eq_one_of_mem_Icc : ∀ i, w i ∈ Icc s₁ s₂ → i = 1 := fu
 include h₂ in
 private theorem eq_two_of_mem_Icc : ∀ i, w i ∈ Icc s₂ s₃ → i = 2 := fun i hi ↦ by
   fin_cases i
-  · exact absurd ((hw (show (0 : Fin 3) < 1 by decide)).trans (h₂.trans_le hi.1)) (lt_irrefl _)
+  · exact absurd (h₂.trans_le hi.1) (hw.monotone (Fin.zero_le 1)).not_gt
   · exact absurd (h₂.trans_le hi.1) (lt_irrefl _)
   · rfl
 
@@ -472,14 +466,12 @@ theorem mono_filteredSpaceSpectralSequence_page_two_d_projectiveMomentFunction
   have hδ := mono_singularHomologyδ_two (strictMono_of_mem_Ioo hcut) h₀ (s₁ := a (2 - 1))
     (s₂ := a 2) (s₃ := a (2 + 1)) (by norm_num; exact h₁) (by norm_num; exact h₁') h₂ h₂'
     (by norm_num; exact h₃)
+  -- `hd` states the differential with target `(-4 + 2, 2 - 1)`. That index also appears in the
+  -- types of the isomorphisms on its right-hand side, so `hd` cannot be normalized; instead the
+  -- target `(-2, 1)` of the goal is rewritten into the same unnormalized form.
   rw [show ((-2, 1) : ℤ × ℤ) = (-4 + 2, 2 - 1) by norm_num, hd]
   exact @mono_comp _ _ _ _ _ _ inferInstance _
     (@mono_comp _ _ _ _ _ _ hδ _ (@IsIso.mono_of_iso _ _ _ _ _ (Iso.isIso_inv _)))
-
-/-- Conjugating a morphism by isomorphisms does not change its cokernel. -/
-private def cokernelIsoOfIso {C : Type*} [Category C] [Abelian C] {X Y X' Y' : C} (e₁ : X ≅ X')
-    (δ : X' ⟶ Y') (e₂ : Y ≅ Y') : cokernel (e₁.hom ≫ δ ≫ e₂.inv) ≅ cokernel δ :=
-  cokernel.mapIso _ _ e₁ e₂ (by simp)
 
 /-- **The differential of index two on the first page of `ℝℙ²` has cokernel `ℤ/2`.** Under the
 hypotheses of
@@ -500,29 +492,12 @@ theorem nonempty_cokernel_filteredSpaceSpectralSequence_page_two_d_iso_projectiv
   obtain ⟨e⟩ := nonempty_cokernel_singularHomologyδ_two_iso (strictMono_of_mem_Ioo hcut) h₀
     (s₁ := a (2 - 1)) (s₂ := a 2) (s₃ := a (2 + 1)) (by norm_num; exact h₁)
     (by norm_num; exact h₁') h₂ h₂' (by norm_num; exact h₃)
+  -- `hd` states the differential with target `(-4 + 2, 2 - 1)`. That index also appears in the
+  -- types of the isomorphisms on its right-hand side, so `hd` cannot be normalized; instead the
+  -- target `(-2, 1)` of the goal is rewritten into the same unnormalized form.
   rw [show ((-2, 1) : ℤ × ℤ) = (-4 + 2, 2 - 1) by norm_num, hd]
-  exact ⟨cokernelIsoOfIso _ _ _ ≪≫ e⟩
-
-/-- An endomorphism of `ℤ` whose cokernel is `ℤ/2` is multiplication by `2` or by `-2`. -/
-private theorem eq_two_smul_or_eq_neg_two_smul (φ : ModuleCat.of ℤ ℤ ⟶ ModuleCat.of ℤ ℤ)
-    (e : cokernel φ ≅ ModuleCat.of ℤ (ZMod 2)) :
-    φ = (2 : ℤ) • 𝟙 _ ∨ φ = (-2 : ℤ) • 𝟙 _ := by
-  -- `φ` is multiplication by `m = φ 1`, whose range is the ideal `(m)`.
-  set m := φ.hom 1
-  have hφ : φ.hom = LinearMap.toSpanSingleton ℤ ℤ m := LinearMap.ext_ring (by simp [m])
-  have hrange : φ.hom.range = Ideal.span {m} := by
-    rw [hφ, LinearMap.range_toSpanSingleton]
-  -- Counting the cokernel `ℤ/(m) ≅ ℤ/|m|` gives `|m| = 2`.
-  have hcard : m.natAbs = 2 := by
-    rw [← Nat.card_zmod m.natAbs, ← Nat.card_zmod 2,
-      ← Nat.card_congr (Int.quotientSpanEquivZMod m).toEquiv, ← hrange]
-    exact Nat.card_congr ((ModuleCat.cokernelIsoRangeQuotient φ).symm ≪≫ e).toLinearEquiv.toEquiv
-  have hφ' : ∀ c : ℤ, m = c → φ = c • 𝟙 _ := fun c hc ↦ by
-    ext : 1
-    exact LinearMap.ext_ring (by simp [← hc, m])
-  rcases Int.natAbs_eq m with h | h
-  · exact .inl (hφ' 2 (by rw [h, hcard]; rfl))
-  · exact .inr (hφ' (-2) (by rw [h, hcard]; rfl))
+  exact ⟨cokernelEpiComp _ _ ≪≫
+    @cokernelCompIsIso _ _ _ _ _ _ _ _ _ (Iso.isIso_inv _) ≪≫ e⟩
 
 /-- **The differential of index two on the first page of `ℝℙ²` is multiplication by `±2`.**
 Under the hypotheses of
@@ -546,7 +521,8 @@ theorem filteredSpaceSpectralSequence_page_two_d_eq_two_smul_or_eq_neg_two_smul
           (-4, 2) (-2, 1) ≫ e₁.hom = (-2 : ℤ) • 𝟙 _ := by
   obtain ⟨e⟩ :=
     nonempty_cokernel_filteredSpaceSpectralSequence_page_two_d_iso_projectiveMomentFunction ha hcut
-  exact eq_two_smul_or_eq_neg_two_smul _ (cokernelIsoOfIso e₂.symm _ e₁.symm ≪≫ e)
+  exact ModuleCat.eq_smul_id_or_eq_neg_smul_id_of_cokernel_iso_zmod (n := 2) _
+    (cokernelEpiComp _ _ ≪≫ cokernelCompIsIso _ _ ≪≫ e)
 
 /-- **The differential of index one on the first page of `ℝℙ²` vanishes.** Under the hypotheses
 of `TauCeti.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_projectiveMomentFunction`, with
@@ -563,6 +539,8 @@ theorem filteredSpaceSpectralSequence_page_two_d_eq_zero_projectiveMomentFunctio
     (by norm_num)
   have hδ := singularHomologyδ_one_eq_zero (strictMono_of_mem_Ioo hcut) (s₀ := a (1 - 1))
     (s₁ := a 1) (s₂ := a (1 + 1)) (by norm_num; exact h₀) h₁ h₁' (by norm_num; exact h₂)
+  -- As above, `hd` has target `(-2 + 2, 1 - 1)`, which also indexes its right-hand side, so the
+  -- target `(0, 0)` of the goal is rewritten into that form.
   rw [show ((0, 0) : ℤ × ℤ) = (-2 + 2, 1 - 1) by norm_num, hd]
   -- The middle factor is the connecting map of `sublevelTriple`, up to unfolding the filtration
   -- `(fun s ↦ {f ≤ s}) ∘ a` and the degree `0 + 1`; `erw` matches it up to that unfolding.
