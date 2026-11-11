@@ -141,7 +141,7 @@ every `x₀`, for the denominator `D` of `r = φ.xRatFunc`,
 
   `w(x₀)² Ψ₂Sq₁(x₀) = c² D(x₀)⁴ Ψ₂Sq₂(N(x₀) / D(x₀))`.
 
-When `c ≠ 0` (`φ` separable), with `s = w / (c D²)` this is
+When `c ≠ 0` (`φ` separable) and `D(x₀) ≠ 0`, with `s = w / (c D²)` this is
 `Ψ₂Sq₂(r(x₀)) = s(x₀)² Ψ₂Sq₁(x₀)`. -/
 theorem eval_wronskian_xRatFunc_sq_mul_eval_Ψ₂Sq (x₀ : F) :
     (wronskian φ.xRatFunc.denom φ.xRatFunc.num).eval x₀ ^ 2 * W₁.Ψ₂Sq.eval x₀ =
