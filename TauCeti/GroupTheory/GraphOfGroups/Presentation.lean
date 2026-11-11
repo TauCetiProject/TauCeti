@@ -39,6 +39,8 @@ homomorphism arises in this way from exactly one such family.
 * `TauCeti.GraphOfGroups.π₁Tree.of`: the homomorphism `A_v →* π₁(𝔸, T)`.
 * `TauCeti.GraphOfGroups.π₁Tree.edge`: the element of `π₁(𝔸, T)` given by a dart.
 * `TauCeti.GraphOfGroups.π₁Tree.lift`: the universal property.
+* `TauCeti.GraphOfGroups.π₁Tree.ofCoprod`: the homomorphism to `π₁(𝔸, T)` from the free product
+  of the vertex groups and of the free group on the darts of `O \ T`.
 
 ## Main results
 
@@ -49,12 +51,18 @@ homomorphism arises in this way from exactly one such family.
 * `TauCeti.GraphOfGroups.π₁Tree.equivFreeGroup`: with trivial vertex groups and `T` closed under
   reversal, `π₁(𝔸, T)` is the free group on the darts of `O \ T` for any orientation `O`. For
   the rose, whose maximal tree is empty, this is the free group on the petals.
+* `TauCeti.GraphOfGroups.π₁Tree.ofCoprod_bijective`: with trivial edge groups and `T` closed
+  under reversal, `π₁(𝔸, T)` is the free product of the vertex groups and of the free group on
+  the darts of `O \ T` for any orientation `O`, since the relations `e ω_e(c) e⁻¹ = α_e(c)`
+  become trivial. For a segment with trivial edge group and `T` its two darts this is the free
+  product of the two vertex groups. Through the structure theorem for groups acting on trees,
+  this is the algebraic input of the proof of Kurosh's subgroup theorem.
 
 ## References
 
-* J.-P. Serre, *Trees*, Chapter I, §5.1.
+* J.-P. Serre, *Trees*, Chapter I, §5.1, and §5.5, Theorem 14.
 * I. Kapovich, R. Weidmann, A. Myasnikov, *Foldings, graphs of groups and the membership problem*,
-  Internat. J. Algebra Comput. 15 (2005), §2.
+  Internat. J. Algebra Comput. 15 (2005), §2, and §6, proof of Theorem 6.2.
 -/
 
 public section
@@ -255,9 +263,9 @@ def vertexEquivOfIsEmpty : 𝔸.vertexGroup default ≃* π₁Tree 𝔸 T :=
 
 end isEmpty
 
-section trivialVertexGroups
+section trivialEdgeGroups
 
-variable [∀ v, Subsingleton (𝔸.vertexGroup v)] {O : Set Γ.E}
+variable {O : Set Γ.E}
 
 open Classical in
 /-- The image of a dart in the free group on the darts of `O \ T`: the generator `e` if
@@ -294,6 +302,57 @@ private theorem dartWord_of_mem_tree (hT : ∀ e ∈ T, Γ.rev e ∈ T) {e : Γ.
     dartWord O T e = 1 :=
   dartWord_of_notMem (fun h => h.2 he) (fun h => h.2 (hT e he))
 
+private theorem lift_dartWord (hO : Γ.IsOrientation O) (hT : ∀ e ∈ T, Γ.rev e ∈ T) (e : Γ.E) :
+    FreeGroup.lift (fun x : ↥(O \ T) => (edge T x.1 : π₁Tree 𝔸 T)) (dartWord O T e) = edge T e := by
+  by_cases he : e ∈ O \ T
+  · simp [dartWord_of_mem he]
+  by_cases hr : Γ.rev e ∈ O \ T
+  · simp [dartWord_of_rev_mem he hr]
+  -- Neither `e` nor `rev e` lies in `O \ T`, and one of them lies in `O`, so `e ∈ T`.
+  have heT : e ∈ T := by
+    grind [SerreGraph.IsOrientation.mem_rev_iff _ hO e, hT (Γ.rev e), SerreGraph.rev_rev]
+  simp [dartWord_of_mem_tree hT heT, edge_eq_one heT]
+
+variable (𝔸 T O) in
+/-- The homomorphism from the free product of the vertex groups and of the free group on the
+darts of `O` outside `T` to `π₁(𝔸, T)`: the inclusions of the vertex groups, and the dart `e` on
+the generator `e`. -/
+noncomputable def ofCoprod :
+    Monoid.Coprod (Monoid.CoprodI 𝔸.vertexGroup) (FreeGroup ↥(O \ T)) →* π₁Tree 𝔸 T :=
+  Monoid.Coprod.lift (Monoid.CoprodI.lift (of T)) (FreeGroup.lift fun y => edge T y.1)
+
+/-- `ofCoprod` sends an element of the factor `A_a` to its image in `π₁(𝔸, T)`. -/
+@[simp] theorem ofCoprod_inl_of (a : Γ.V) (g : 𝔸.vertexGroup a) :
+    ofCoprod 𝔸 T O (Monoid.Coprod.inl (Monoid.CoprodI.of g)) = of T a g := by
+  simp [ofCoprod]
+
+/-- `ofCoprod` sends the free generator `y ∈ O \ T` to the dart `y`. -/
+@[simp] theorem ofCoprod_inr_of (y : ↥(O \ T)) :
+    ofCoprod 𝔸 T O (Monoid.Coprod.inr (FreeGroup.of y)) = edge T y.1 := by
+  simp [ofCoprod]
+
+variable (𝔸) in
+/-- With trivial edge groups, the fundamental group relative to a reversal-closed set `T` of
+darts is the free product of the vertex groups and of the free group on the darts of an
+orientation `O` outside `T`. -/
+theorem ofCoprod_bijective [∀ y, Subsingleton (𝔸.edgeGroup y)] (hO : Γ.IsOrientation O)
+    (hT : ∀ e ∈ T, Γ.rev e ∈ T) : Function.Bijective (ofCoprod 𝔸 T O) :=
+  -- The inverse sends `A_v` to its factor and a dart to its dart word: with trivial edge
+  -- groups the relations `e ω_e(c) e⁻¹ = α_e(c)` are `1 = 1`.
+  (MonoidHom.toMulEquiv (ofCoprod 𝔸 T O)
+    (lift (fun v => Monoid.Coprod.inl.comp Monoid.CoprodI.of)
+      (fun e => Monoid.Coprod.inr (dartWord O T e))
+      (fun _ he => by simp [dartWord_of_mem_tree hT he]) (fun e => by simp [dartWord_rev hO])
+      (fun _ c => by simp [Subsingleton.elim c 1]))
+    (by ext <;> simp [dartWord_of_mem])
+    (by ext <;> simp [ofCoprod, lift_dartWord hO hT])).bijective
+
+end trivialEdgeGroups
+
+section trivialVertexGroups
+
+variable [∀ v, Subsingleton (𝔸.vertexGroup v)] {O : Set Γ.E}
+
 variable (𝔸) in
 /-- A graph of groups with trivial vertex groups, relative to a set `T` of darts closed under
 reversal, has fundamental group free on the darts of `O \ T` for any orientation `O`; the dart
@@ -308,18 +367,7 @@ noncomputable def equivFreeGroup (hO : Γ.IsOrientation O)
       (fun _ _ => by simp))
     (FreeGroup.lift fun x => edge T x.1)
     (hom_ext (fun v => MonoidHom.ext fun a => by simp [Subsingleton.elim a 1]) fun e => by
-      by_cases he : e ∈ O \ T
-      · simp [dartWord_of_mem he]
-      by_cases hr : Γ.rev e ∈ O \ T
-      · simp [dartWord_of_rev_mem he hr]
-      -- Neither `e` nor `rev e` lies in `O \ T`, and one of them lies in `O`, so `e ∈ T`.
-      have heT : e ∈ T := by
-        by_cases heO : e ∈ O
-        · exact not_not.1 fun h => he ⟨heO, h⟩
-        · have hrO := (SerreGraph.IsOrientation.mem_rev_iff _ hO e).2 heO
-          have := hT _ (not_not.1 fun h => hr ⟨hrO, h⟩)
-          rwa [Γ.rev_rev] at this
-      simp [edge_eq_one heT])
+      simpa using lift_dartWord hO hT e)
     (FreeGroup.ext_hom _ _ fun x => by simp [dartWord_of_mem x.2])
 
 @[simp] theorem equivFreeGroup_edge (hO : Γ.IsOrientation O)
