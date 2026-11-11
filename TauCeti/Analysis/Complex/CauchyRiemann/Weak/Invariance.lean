@@ -1,0 +1,313 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
+public import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables
+import Mathlib.Analysis.Complex.CauchyIntegral
+import Mathlib.MeasureTheory.Function.Jacobian
+import TauCeti.Analysis.Calculus.InverseFunctionTheorem
+
+/-!
+# Invariance of the planar weak Cauchy–Riemann equation
+
+The weak equation `TauCeti.IsWeakCauchyRiemannOn p U J η u`, that is
+`∂ₛu + J(z, u) ∂ₜu = η(z, u)` almost everywhere, is invariant under biholomorphic changes of the
+domain variable and under real-linear isomorphisms of the target, with `J` and `η` transported.
+
+For a holomorphic map `φ` with nonvanishing derivative `φ' = a + b i`, the weak derivative of
+`u ∘ φ` is `D(φ z) ∘ (φ' ·)`, so it sends `1` to `a D 1 + b D i` and `i` to `a D i - b D 1`.
+Hence `∂ₛ(u ∘ φ) + J ∂ₜ(u ∘ φ) = a (D 1 + J D i) + b (D i - J D 1)`, and when `J² = -1` the
+second bracket is `-J η` (`TauCeti.add_apply_eq_iff_sub_apply_eq_neg_apply`). The pulled back map
+solves the equation with the same field `J ∘ φ` and the inhomogeneous term
+`a η(φ z, x) - b J(φ z, x) η(φ z, x)`. Since `η` enters as the coordinate form of `2ν(∂ₛ)`, this
+is the coordinate form of `2ν(dφ ∂ₛ)`; for `η = 0` the equation is unchanged, and for real
+dilations `z ↦ c z + b` the term is simply scaled by `c`, with no hypothesis on `J`.
+
+Almost-everywhere identities are transported along `φ` with the change of variables formula
+`map_withDensity_abs_det_fderiv_eq_addHaar`: the image of the Lebesgue measure under a map with
+invertible derivative has a density, so preimages of null sets are null.
+
+## Main results
+
+* `TauCeti.add_apply_eq_iff_sub_apply_eq_neg_apply`: for `J² = -1`, the equation tested on `∂ₛ`,
+  `D 1 + J D i = η`, is the equation tested on `∂ₜ`, `D i - J D 1 = -J η`.
+* `TauCeti.IsWeakCauchyRiemannOn.comp_differentiableOn`: invariance under a holomorphic map,
+  injective with nonvanishing derivative, between arbitrary sets `U → U'` (half-discs allowed),
+  holomorphic on an open neighbourhood of `U`; `comp_differentiableOn_of_isOpen` is the open form.
+* `TauCeti.IsWeakCauchyRiemannOn.comp_differentiableOn_homogeneous`: the homogeneous equation is
+  invariant.
+* `TauCeti.IsWeakCauchyRiemannOn.comp_real_mul_add`: real dilations and translations, with the
+  inhomogeneous term scaled, for every field `J`.
+* `TauCeti.isWeakCauchyRiemannOn_continuousLinearEquiv_comp_iff`: transport along a real-linear
+  isomorphism `A : V ≃L[ℝ] W` of the target, `u ↦ A ∘ u`, `J ↦ A J A⁻¹`, `η ↦ A η(z, A⁻¹ x)`.
+* Checks: the dilation `z ↦ 2 z` doubles the inhomogeneous term, and the rotation `z ↦ i z`
+  carries the solution `z̄` of `∂ₛu + i ∂ₜu = 2` to the solution `z ↦ conj (i z)` of
+  `∂ₛu + i ∂ₜu = -2 i`, which pins the sign of the `J η` term.
+
+## References
+
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
+  Sections 2.2 and 3.1.
+-/
+
+public noncomputable section
+
+open Complex MeasureTheory Set TopologicalSpace
+open scoped ComplexConjugate
+
+namespace TauCeti
+
+variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W]
+  [NormedSpace ℝ W] {p : ENNReal} {U U' O : Set ℂ} {J : ℂ → V → V →L[ℝ] V} {η : ℂ → V → V}
+  {u : ℂ → V} {φ : ℂ → ℂ}
+
+/-! ### Pointwise algebra -/
+
+/-- **Testing on `∂ₜ` instead of `∂ₛ`.** For a complex structure `J`, the identity
+`a + J b = y` holds exactly when `b - J a = -J y`: apply `J` and use `J² = -1`. With `a = D 1` and
+`b = D i` this rewrites the Cauchy–Riemann equation tested on `∂ₛ` as the one tested on `∂ₜ`. -/
+theorem add_apply_eq_iff_sub_apply_eq_neg_apply {A : V →L[ℝ] V} (hA : A * A = -1) {a b y : V} :
+    a + A b = y ↔ b - A a = -A y := by
+  have hAA : ∀ x, A (A x) = -x := fun x => by
+    simpa using congrArg (fun T : V →L[ℝ] V => T x) hA
+  constructor
+  · rintro rfl
+    simp [hAA, sub_eq_add_neg]
+  · intro h
+    have h' := congrArg A h
+    simp only [map_sub, map_neg, hAA] at h'
+    rw [neg_neg] at h'
+    rw [← h']
+    abel
+
+/-- A real-linear map `D` on `ℂ`, precomposed with multiplication by `c = a + b i`, tested in the
+Cauchy–Riemann combination: `D (c·1) + A D (c·i) = a (D 1 + A D i) + b (D i - A D 1)`. -/
+private theorem apply_mul_one_add_apply_mul_I (D : ℂ →L[ℝ] V) (A : V →L[ℝ] V) (c : ℂ) :
+    D (c * 1) + A (D (c * I)) = c.re • (D 1 + A (D I)) + c.im • (D I - A (D 1)) := by
+  have h1 : c * 1 = c.re • (1 : ℂ) + c.im • I := by apply Complex.ext <;> simp
+  have h2 : c * I = c.re • I - c.im • (1 : ℂ) := by apply Complex.ext <;> simp
+  rw [h1, h2]
+  simp only [map_add, map_sub, map_smul, smul_add, smul_sub]
+  abel
+
+/-! ### Changes of the domain variable -/
+
+/-- Almost-everywhere statements are transported along a `C¹` map, injective with invertible
+derivative on an open set `O` and mapping `O` into `U'`: the pushforward of the Lebesgue measure
+on `O`, weighted by the Jacobian, is the Lebesgue measure on the image. -/
+private theorem ae_restrict_comp_of_contDiffOn {P : ℂ → Prop} (hO : IsOpen O)
+    (hφ : ContDiffOn ℝ 1 φ O) (hinj : InjOn φ O) (hdet : ∀ z ∈ O, (fderiv ℝ φ z).det ≠ 0)
+    (hmaps : MapsTo φ O U') (h : ∀ᵐ w ∂volume.restrict U', P w) :
+    ∀ᵐ z ∂volume.restrict O, P (φ z) := by
+  have hf' : ∀ z ∈ O, HasFDerivWithinAt φ (fderiv ℝ φ z) O z := fun z hz =>
+    ((hφ.differentiableOn one_ne_zero).differentiableAt
+      (hO.mem_nhds hz)).hasFDerivAt.hasFDerivWithinAt
+  have himage : ∀ᵐ w ∂volume.restrict (φ '' O), P w :=
+    ae_restrict_of_ae_restrict_of_subset hmaps.image_subset h
+  rw [← map_withDensity_abs_det_fderiv_eq_addHaar volume hO.measurableSet.nullMeasurableSet hf'
+    hinj] at himage
+  have hdens := aemeasurable_ofReal_abs_det_fderivWithin volume hO.measurableSet hf'
+  have hφm : AEMeasurable φ ((volume.restrict O).withDensity
+      fun z => ENNReal.ofReal |(fderiv ℝ φ z).det|) :=
+    (hφ.continuousOn.aemeasurable hO.measurableSet).mono_ac
+      (withDensity_absolutelyContinuous _ _)
+  refine (withDensity_absolutelyContinuous' hdens ?_).ae_le (ae_of_ae_map hφm himage)
+  filter_upwards [self_mem_ae_restrict hO.measurableSet] with z hz
+  simpa using hdet z hz
+
+/-- The data of a weak solution pulled back along a `C¹` change of variables, with the equation
+still evaluated at the image point. -/
+private theorem IsWeakCauchyRiemannOn.exists_comp (h : IsWeakCauchyRiemannOn p U' J η u)
+    (hO : IsOpen O) (hφ : ContDiffOn ℝ 1 φ O) (hUO : U ⊆ O) (hinj : InjOn φ U)
+    (hdet : ∀ z ∈ U, (fderiv ℝ φ z).det ≠ 0) (hmaps : MapsTo φ U U') :
+    ContinuousOn (fun z => u (φ z)) U ∧ MemLpLoc p U (fun z => u (φ z)) ∧
+      ∃ D : ℂ → ℂ →L[ℝ] V,
+        HasWeakFDerivOn volume (Opens.interior U) (fun z => u (φ z))
+          (fun z => (D (φ z)).comp (fderiv ℝ φ z)) ∧
+        MemLpLoc p U (fun z => (D (φ z)).comp (fderiv ℝ φ z)) ∧
+        ∀ᵐ z ∂volume.restrict (interior U),
+          D (φ z) 1 + J (φ z) (u (φ z)) (D (φ z) I) = η (φ z) (u (φ z)) := by
+  obtain ⟨hc, hu, D, hD, hDp, hae⟩ := isWeakCauchyRiemannOn_iff.1 h
+  have hφi : ContDiffOn ℝ 1 φ (interior U) := hφ.mono (interior_subset.trans hUO)
+  have hdeti : ∀ z ∈ interior U, (fderiv ℝ φ z).det ≠ 0 := fun z hz =>
+    hdet z (interior_subset hz)
+  have hint : MapsTo φ (interior U) (interior U') :=
+    hmaps.interior_of_contDiffOn (hφ.mono hUO) le_rfl fun z hz =>
+      ⟨(fderiv ℝ φ z).toContinuousLinearEquivOfDetNeZero (hdeti z hz),
+        ContinuousLinearMap.coe_toContinuousLinearEquivOfDetNeZero _ _⟩
+  exact ⟨hc.comp (hφ.continuousOn.mono hUO) hmaps,
+    hu.comp_contDiffOn_diffeo hO hφ hinj hdet hUO hmaps, D,
+    hD.comp_contDiffOn_diffeo hφi (hinj.mono interior_subset) hdeti (by simpa using hint),
+    hDp.comp_fderiv_contDiffOn_diffeo hO hφ hinj hdet hUO hmaps,
+    ae_restrict_comp_of_contDiffOn isOpen_interior hφi (hinj.mono interior_subset) hdeti hint hae⟩
+
+/-- The real derivative of a map holomorphic near `z` is multiplication by its complex
+derivative. -/
+private theorem fderiv_apply_eq_deriv_mul (hO : IsOpen O) (hφ : DifferentiableOn ℂ φ O)
+    {z : ℂ} (hz : z ∈ O) (w : ℂ) : fderiv ℝ φ z w = deriv φ z * w := by
+  have hd := hφ.differentiableAt (hO.mem_nhds hz)
+  rw [hd.fderiv_restrictScalars ℝ, ContinuousLinearMap.coe_restrictScalars',
+    hd.hasDerivAt.hasFDerivAt.fderiv]
+  simp [mul_comm]
+
+/-- The real derivative of a map holomorphic near `z` with nonzero complex derivative has nonzero
+determinant. -/
+private theorem det_fderiv_ne_zero (hO : IsOpen O) (hφ : DifferentiableOn ℂ φ O) {z : ℂ}
+    (hz : z ∈ O) (hφ' : deriv φ z ≠ 0) : (fderiv ℝ φ z).det ≠ 0 := by
+  set A : ℂ ≃L[ℝ] ℂ := (ContinuousLinearEquiv.unitsEquivAut ℂ (Units.mk0 _ hφ')).restrictScalars ℝ
+  have hA : fderiv ℝ φ z = (A : ℂ →L[ℝ] ℂ) := ContinuousLinearMap.ext fun w => by
+    simp [A, fderiv_apply_eq_deriv_mul hO hφ hz, mul_comm]
+  rw [hA]
+  exact A.toLinearEquiv.isUnit_det'.ne_zero
+
+/-- **Invariance under biholomorphic changes of the domain variable.** Let `φ` be holomorphic on
+an open neighbourhood `O` of `U`, injective with nonvanishing derivative on `U` and mapping `U`
+into `U'`, and let `J(φ z, u(φ z))` square to `-1` on the interior of `U`. If `u` is a weak
+solution on `U'`, then `u ∘ φ` is a weak solution on `U` for the field `J ∘ φ` and the
+inhomogeneous term `a η(φ z, x) - b J(φ z, x) η(φ z, x)`, where `φ'(z) = a + b i`. The sets may
+reach their boundaries, as half-discs do. -/
+theorem IsWeakCauchyRiemannOn.comp_differentiableOn (h : IsWeakCauchyRiemannOn p U' J η u)
+    (hO : IsOpen O) (hφ : DifferentiableOn ℂ φ O) (hUO : U ⊆ O) (hinj : InjOn φ U)
+    (hφ' : ∀ z ∈ U, deriv φ z ≠ 0) (hmaps : MapsTo φ U U')
+    (hJ : ∀ z ∈ interior U, J (φ z) (u (φ z)) * J (φ z) (u (φ z)) = -1) :
+    IsWeakCauchyRiemannOn p U (fun z => J (φ z))
+      (fun z x => (deriv φ z).re • η (φ z) x - (deriv φ z).im • J (φ z) x (η (φ z) x))
+      (fun z => u (φ z)) := by
+  obtain ⟨hc, hu, D, hD, hDp, hae⟩ := h.exists_comp hO
+    ((hφ.contDiffOn hO).restrict_scalars ℝ) hUO hinj
+    (fun z hz => det_fderiv_ne_zero hO hφ (hUO hz) (hφ' z hz)) hmaps
+  refine isWeakCauchyRiemannOn_iff.2 ⟨hc, hu, _, hD, hDp, ?_⟩
+  filter_upwards [hae, self_mem_ae_restrict isOpen_interior.measurableSet] with z hz hzU
+  have hzO : z ∈ O := hUO (interior_subset hzU)
+  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+    fderiv_apply_eq_deriv_mul hO hφ hzO, fderiv_apply_eq_deriv_mul hO hφ hzO,
+    apply_mul_one_add_apply_mul_I, hz,
+    ((add_apply_eq_iff_sub_apply_eq_neg_apply (hJ z hzU)).1 hz), smul_neg, ← sub_eq_add_neg]
+
+/-- **Invariance under biholomorphisms of open sets.** The form of
+`TauCeti.IsWeakCauchyRiemannOn.comp_differentiableOn` for open sets `Ω` and `Ω'`. -/
+theorem IsWeakCauchyRiemannOn.comp_differentiableOn_of_isOpen {Ω Ω' : Opens ℂ}
+    (h : IsWeakCauchyRiemannOn p Ω' J η u) (hφ : DifferentiableOn ℂ φ Ω) (hinj : InjOn φ Ω)
+    (hφ' : ∀ z ∈ (Ω : Set ℂ), deriv φ z ≠ 0) (hmaps : MapsTo φ Ω Ω')
+    (hJ : ∀ z ∈ (Ω : Set ℂ), J (φ z) (u (φ z)) * J (φ z) (u (φ z)) = -1) :
+    IsWeakCauchyRiemannOn p Ω (fun z => J (φ z))
+      (fun z x => (deriv φ z).re • η (φ z) x - (deriv φ z).im • J (φ z) x (η (φ z) x))
+      (fun z => u (φ z)) :=
+  h.comp_differentiableOn Ω.isOpen hφ subset_rfl hinj hφ' hmaps fun z hz =>
+    hJ z (interior_subset hz)
+
+/-- **The homogeneous equation is invariant** under biholomorphic changes of the domain variable,
+with the field `J ∘ φ`. -/
+theorem IsWeakCauchyRiemannOn.comp_differentiableOn_homogeneous
+    (h : IsWeakCauchyRiemannOn p U' J (fun _ _ => 0) u) (hO : IsOpen O)
+    (hφ : DifferentiableOn ℂ φ O) (hUO : U ⊆ O) (hinj : InjOn φ U)
+    (hφ' : ∀ z ∈ U, deriv φ z ≠ 0) (hmaps : MapsTo φ U U')
+    (hJ : ∀ z ∈ interior U, J (φ z) (u (φ z)) * J (φ z) (u (φ z)) = -1) :
+    IsWeakCauchyRiemannOn p U (fun z => J (φ z)) (fun _ _ => 0) (fun z => u (φ z)) := by
+  simpa using h.comp_differentiableOn hO hφ hUO hinj hφ' hmaps hJ
+
+/-- **Real dilations and translations.** For `c : ℝ` nonzero and `b : ℂ` with `z ↦ c z + b`
+mapping `U` into `U'`, a weak solution `u` on `U'` pulls back to a weak solution on `U` with the
+field `J(c z + b, ·)` and the inhomogeneous term `c η(c z + b, ·)`. No hypothesis on `J` is
+needed, since the derivative is real. -/
+theorem IsWeakCauchyRiemannOn.comp_real_mul_add (h : IsWeakCauchyRiemannOn p U' J η u) {c : ℝ}
+    (hc : c ≠ 0) (b : ℂ) (hmaps : MapsTo (fun z => (c : ℂ) * z + b) U U') :
+    IsWeakCauchyRiemannOn p U (fun z => J (c * z + b)) (fun z x => c • η (c * z + b) x)
+      (fun z => u (c * z + b)) := by
+  have hφ : DifferentiableOn ℂ (fun z : ℂ => (c : ℂ) * z + b) univ :=
+    ((differentiable_id.const_mul _).add_const _).differentiableOn
+  have hderiv : ∀ z, deriv (fun z : ℂ => (c : ℂ) * z + b) z = c := fun z => by
+    simp
+  obtain ⟨hcU, hu, D, hD, hDp, hae⟩ := h.exists_comp isOpen_univ
+    ((hφ.contDiffOn isOpen_univ).restrict_scalars ℝ) (subset_univ U)
+    (((add_left_injective b).comp (mul_right_injective₀ (ofReal_ne_zero.2 hc))).injOn)
+    (fun z _ => det_fderiv_ne_zero isOpen_univ hφ (mem_univ z) (by simpa [hderiv] using hc))
+    hmaps
+  refine isWeakCauchyRiemannOn_iff.2 ⟨hcU, hu, _, hD, hDp, ?_⟩
+  filter_upwards [hae] with z hz
+  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+    fderiv_apply_eq_deriv_mul isOpen_univ hφ (mem_univ z),
+    fderiv_apply_eq_deriv_mul isOpen_univ hφ (mem_univ z), apply_mul_one_add_apply_mul_I, hz,
+    hderiv]
+  simp
+
+/-! ### Changes of the target -/
+
+/-- **Transport along a linear isomorphism of the target.** For `A : V ≃L[ℝ] W`, a weak solution
+`u` for `(J, η)` gives the weak solution `A ∘ u` for the conjugated field `A J(z, A⁻¹ y) A⁻¹` and
+the inhomogeneous term `A η(z, A⁻¹ y)`, on any set `U`. -/
+theorem IsWeakCauchyRiemannOn.continuousLinearEquiv_comp (h : IsWeakCauchyRiemannOn p U J η u)
+    (A : V ≃L[ℝ] W) :
+    IsWeakCauchyRiemannOn p U
+      (fun z y => (A : V →L[ℝ] W) ∘L J z (A.symm y) ∘L (A.symm : W →L[ℝ] V))
+      (fun z y => A (η z (A.symm y))) (fun z => A (u z)) := by
+  obtain ⟨hc, hu, D, hD, hDp, hae⟩ := isWeakCauchyRiemannOn_iff.1 h
+  have := hD.completeSpace
+  have : CompleteSpace W :=
+    (completeSpace_congr (e := A.toLinearEquiv.toEquiv) A.isUniformEmbedding).1 ‹_›
+  refine isWeakCauchyRiemannOn_iff.2 ⟨A.continuous.comp_continuousOn hc,
+    hu.clm_comp (A : V →L[ℝ] W), fun z => (A : V →L[ℝ] W).comp (D z),
+    by simpa using hD.clm_comp (A : V →L[ℝ] W),
+    hDp.clm_comp (ContinuousLinearMap.compL ℝ ℂ V W (A : V →L[ℝ] W)), ?_⟩
+  filter_upwards [hae] with z hz
+  simp [← hz]
+
+/-- **Invariance under linear isomorphisms of the target.** For `A : V ≃L[ℝ] W`, the map `A ∘ u`
+solves the weak equation for the transported data `A J(z, A⁻¹ y) A⁻¹` and `A η(z, A⁻¹ y)` exactly
+when `u` solves it for `(J, η)`. -/
+theorem isWeakCauchyRiemannOn_continuousLinearEquiv_comp_iff (A : V ≃L[ℝ] W) :
+    IsWeakCauchyRiemannOn p U
+        (fun z y => (A : V →L[ℝ] W) ∘L J z (A.symm y) ∘L (A.symm : W →L[ℝ] V))
+        (fun z y => A (η z (A.symm y))) (fun z => A (u z)) ↔
+      IsWeakCauchyRiemannOn p U J η u := by
+  refine ⟨fun h => ?_, fun h => h.continuousLinearEquiv_comp A⟩
+  convert h.continuousLinearEquiv_comp A.symm using 2 with z y
+  · ext x
+    simp
+  · simp
+  · simp
+
+/-! ### Checks -/
+
+/-- **Check: dilation.** Pulling back along `z ↦ 2 z` from the disc of radius `2` to the unit
+disc keeps the field, evaluated at `2 z`, and doubles the inhomogeneous term. -/
+theorem IsWeakCauchyRiemannOn.ball_one_comp_two_mul
+    (h : IsWeakCauchyRiemannOn p (Metric.ball 0 2) J η u) :
+    IsWeakCauchyRiemannOn p (Metric.ball 0 1) (fun z => J (2 * z))
+      (fun z x => (2 : ℝ) • η (2 * z) x) (fun z => u (2 * z)) := by
+  have hmaps : MapsTo (fun z : ℂ => ((2 : ℝ) : ℂ) * z + 0) (Metric.ball 0 1) (Metric.ball 0 2) :=
+    fun z hz => by
+      simp only [Metric.mem_ball, dist_zero_right, add_zero, norm_mul, ofReal_ofNat,
+        Complex.norm_ofNat] at hz ⊢
+      linarith
+  simpa using h.comp_real_mul_add (c := 2) two_ne_zero 0 hmaps
+
+/-- Conjugation solves `∂ₛu + i ∂ₜu = 2` on every open set: `1 + i·(-i) = 2`. -/
+private theorem isWeakCauchyRiemannOn_conj_two {Ω : Opens ℂ} :
+    IsWeakCauchyRiemannOn p Ω (fun _ _ => I • ContinuousLinearMap.id ℝ ℂ) (fun _ _ => 2)
+      conj := by
+  refine isWeakCauchyRiemannOn_of_contDiffOn conjCLE.contDiff.contDiffOn fun z _ => ?_
+  have hconj : (conj : ℂ → ℂ) = conjCLE := funext fun x => (conjCLE_apply x).symm
+  rw [hconj, conjCLE.fderiv]
+  norm_num [Complex.ext_iff]
+
+/-- **Check: rotation.** The rotation `φ z = i z` has `φ' = i`, so `a = 0`, `b = 1`, and it
+carries the solution `z̄` of `∂ₛu + i ∂ₜu = 2` to the solution `z ↦ conj (i z)` of
+`∂ₛu + i ∂ₜu = -2 i`. Since the inhomogeneous term of a weak solution is determined almost
+everywhere, the opposite sign `+ b J η` in the transformed term would give `2 i` and is ruled
+out. -/
+theorem isWeakCauchyRiemannOn_conj_I_mul {Ω : Opens ℂ} :
+    IsWeakCauchyRiemannOn p Ω (fun _ _ => I • ContinuousLinearMap.id ℝ ℂ) (fun _ _ => -2 * I)
+      (fun z => conj (I * z)) := by
+  have h := (isWeakCauchyRiemannOn_conj_two (p := p) (Ω := ⊤)).comp_differentiableOn_of_isOpen
+    (Ω := Ω) (φ := fun z => I * z) (differentiable_id.const_mul _).differentiableOn
+    ((mul_right_injective₀ I_ne_zero).injOn) (fun z _ => by simp) (mapsTo_univ _ _)
+    fun z _ => by ext x; simp [← mul_assoc]
+  convert h using 2 with z x
+  simp [mul_comm]
+
+end TauCeti
