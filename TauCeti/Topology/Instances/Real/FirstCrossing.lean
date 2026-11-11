@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Instances.Real.Lemmas
 import TauCeti.Topology.Compactness.Compact
+import TauCeti.Topology.MetricSpace.Lebesgue
 
 /-!
 # First self-intersections and first crossings of curves
@@ -51,15 +52,13 @@ theorem exists_eq_injOn_Ico_of_not_injOn [T2Space X] {σ : ℝ → X} {c d : ℝ
     (hnot : ¬ InjOn σ (Icc c d)) :
     ∃ a b, c ≤ a ∧ a < b ∧ b ≤ d ∧ σ a = σ b ∧ InjOn σ (Ico c b) := by
   choose! U hU hinj using hloc
-  obtain ⟨δ, hδ, hball⟩ := lebesgue_number_lemma_of_metric (isCompact_Icc (a := c) (b := d))
-    (c := fun i : Icc c d ↦ interior (U i)) (fun _ ↦ isOpen_interior)
-    (fun t ht ↦ mem_iUnion.2 ⟨⟨t, ht⟩, mem_interior_iff_mem_nhds.2 (hU t ht)⟩)
+  obtain ⟨δ, hδ, hball⟩ := lebesgue_number_lemma_of_metric_of_mem_nhds
+    (isCompact_Icc (a := c) (b := d)) (c := fun i : Icc c d ↦ U i)
+    (fun t ht ↦ ⟨⟨t, ht⟩, hU t ht⟩)
   have hnear {s t : ℝ} (hs : s ∈ Icc c d) (ht : t ∈ Icc c d) (hst : |t - s| < δ)
       (heq : σ s = σ t) : s = t := by
     obtain ⟨i, hi⟩ := hball s hs
-    have hsub := hi.trans interior_subset
-    exact hinj i i.2 ⟨hsub (mem_ball_self hδ), hs⟩
-      ⟨hsub (by rwa [mem_ball, Real.dist_eq]), ht⟩ heq
+    exact hinj i i.2 ⟨hi (mem_ball_self hδ), hs⟩ ⟨hi (by rwa [mem_ball, Real.dist_eq]), ht⟩ heq
   set K := (Icc c d ×ˢ Icc c d) ∩ {z : ℝ × ℝ | σ z.1 = σ z.2} ∩ {z | z.1 + δ ≤ z.2}
   have hmem {s t : ℝ} (hs : s ∈ Icc c d) (ht : t ∈ Icc c d) (hst : s < t) (heq : σ s = σ t) :
       (s, t) ∈ K := by
