@@ -305,9 +305,8 @@ theorem Nat.prod_unitsEquivProd_symm_primePow {N : ℕ} (hN : N ≠ 0) (u : (ZMo
       MonoidHom.id_apply]
   · intro p hp hpq
     exact isExactDivisor_primePow.unitsMap_unitsEquivProd_symm_of_dvd_div
-      (Nat.dvd_ordCompl_of_dvd_not_dvd (Nat.ordProj_dvd N q) fun h ↦ hpq <|
-        Nat.prime_eq_prime_of_dvd_pow (Nat.prime_of_mem_primeFactors hp)
-          (Nat.prime_of_mem_primeFactors hq) h) _ _ |>.trans (map_one _)
+      (ordProj_dvd_ordCompl_of_ne (Nat.prime_of_mem_primeFactors hp) hpq.symm) _ _ |>.trans
+        (map_one _)
   · exact fun h ↦ (h hq).elim
 
 end TauCeti

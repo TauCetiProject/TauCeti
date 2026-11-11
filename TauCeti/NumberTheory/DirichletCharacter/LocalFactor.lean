@@ -76,6 +76,7 @@ noncomputable def localFactor (p : ℕ) :
 
 /-- The value of the local factor at a unit `a` is the value of `χ` at the Chinese remainder lift
 of `(a, 1)`. -/
+@[simp]
 theorem localFactor_apply_unit (p : ℕ) (χ : DirichletCharacter R N)
     (a : (ZMod (ordProj[p] N))ˣ) :
     localFactor p χ a = χ (isExactDivisor_primePow.unitsEquivProd.symm (a, 1) : ZMod N) := by
@@ -119,15 +120,12 @@ theorem localFactor_prod_changeLevel (ψ : ∀ p, DirichletCharacter R (ordProj[
       isExactDivisor_primePow.unitsMap_unitsEquivProd_symm_of_dvd dvd_rfl, ZMod.unitsMap_self,
       MonoidHom.id_apply]
   · -- for `p ≠ q`, the lift of `(a, 1)` is `1` modulo `p ^ v_p(N)`
-    intro p hp hpq
-    have hpq' : ordProj[p] N ∣ N / ordProj[q] N :=
-      Nat.dvd_ordCompl_of_dvd_not_dvd (Nat.ordProj_dvd N p) fun h ↦ hpq.symm <|
-        Nat.prime_eq_prime_of_dvd_pow (Nat.prime_of_mem_primeFactors hq)
-          (Nat.prime_of_mem_primeFactors hp) h
+    intro p _ hpq
     refine MulChar.ext fun a ↦ ?_
     rw [localFactor_apply_unit, changeLevel_eq_cast_of_dvd,
       ← ZMod.unitsMap_val (Nat.ordProj_dvd N p),
-      isExactDivisor_primePow.unitsMap_unitsEquivProd_symm_of_dvd_div hpq', map_one,
+      isExactDivisor_primePow.unitsMap_unitsEquivProd_symm_of_dvd_div
+        (ordProj_dvd_ordCompl_of_ne (Nat.prime_of_mem_primeFactors hq) hpq), map_one,
       MulChar.one_apply_coe, Units.val_one, map_one]
   · exact fun h ↦ (h hq).elim
 
