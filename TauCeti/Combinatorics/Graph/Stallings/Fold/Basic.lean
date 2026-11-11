@@ -6,13 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Stallings.Basic
+public import TauCeti.Combinatorics.Graph.Stallings.Folded
 
 /-!
 # Folding a pair of equally labelled darts
 
 A Stallings fold identifies two darts with the same source and label, their reverses, and
 their target vertices. The resulting labelled graph comes with a surjective morphism from
-the original graph. This construction also handles loop darts and parallel darts.
+the original graph. This construction also handles loop darts and parallel darts. The fibres
+of this morphism are explicit, and they decide whether the fold is a folded graph.
 
 The quotient follows I. Kapovich and A. Myasnikov, *Stallings foldings and subgroups of free
 groups*, §2, Definition 2.4 and Lemma 2.5.
@@ -208,6 +210,18 @@ theorem connected_foldAt (hS : S.graph.Connected) :
 theorem foldHom_mapE_surjective :
     Function.Surjective (S.foldHom f₁ f₂ hsrc hlabel).graphHom.mapE :=
   Quot.mk_surjective
+
+/-- A fold is folded exactly when equally labelled darts of the original graph whose origins
+are identified by the fold are themselves identified. -/
+theorem isFolded_foldAt_iff :
+    (S.foldAt f₁ f₂ hsrc hlabel).IsFolded ↔ ∀ d d' : S.graph.E,
+      (S.foldHom f₁ f₂ hsrc hlabel).graphHom.mapV (S.graph.src d) =
+        (S.foldHom f₁ f₂ hsrc hlabel).graphHom.mapV (S.graph.src d') →
+      S.label d = S.label d' →
+      (S.foldHom f₁ f₂ hsrc hlabel).graphHom.mapE d =
+        (S.foldHom f₁ f₂ hsrc hlabel).graphHom.mapE d' := by
+  simp only [isFolded_def, (S.foldHom_mapE_surjective f₁ f₂ hsrc hlabel).forall,
+    ← SerreGraph.Hom.map_src, Hom.map_label]
 
 /-- A labelled morphism that identifies the folded darts factors through their fold. -/
 def foldLift {T : StallingsGraph α} (g : S.Hom T)

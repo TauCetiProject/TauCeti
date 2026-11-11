@@ -83,7 +83,7 @@ edges, and a one-letter word contributes a loop at the base vertex. -/
 position, with the same direction. -/
 -- The equality is stated in the dart type of the flower, the type in which equations between
 -- darts of the graph arise, so that the lemma rewrites them.
-theorem flower_dart_eq_iff (ws : List (List (α × Bool))) (i i' : Fin ws.length)
+@[simp] theorem flower_dart_eq_iff (ws : List (List (α × Bool))) (i i' : Fin ws.length)
     (j : Fin ws[i].length) (j' : Fin ws[i'].length) (s s' : Bool) :
     @Eq (flower ws).graph.E (⟨i, j⟩, s) (⟨i', j'⟩, s') ↔
       i = i' ∧ j.val = j'.val ∧ s = s' := by
@@ -136,8 +136,10 @@ theorem flowerPos_of_pos_of_lt (ws : List (List (α × Bool))) (i : Fin ws.lengt
   exact dite_eq_left ⟨h0, hk⟩
 
 /-- A position on a petal is the base vertex exactly when it is not interior. -/
-theorem flowerPos_eq_none_iff (ws : List (List (α × Bool))) (i : Fin ws.length) (k : ℕ) :
-    flowerPos ws i k = none ↔ k = 0 ∨ ws[i].length ≤ k := by
+-- The equality is stated in the vertex type of the flower, the type in which equations between
+-- origins and termini of darts arise, so that the lemma rewrites them.
+@[simp] theorem flowerPos_eq_none_iff (ws : List (List (α × Bool))) (i : Fin ws.length) (k : ℕ) :
+    @Eq (flower ws).graph.V (flowerPos ws i k) none ↔ k = 0 ∨ ws[i].length ≤ k := by
   by_cases h : 0 < k ∧ k < ws[i].length
   · simp only [flowerPos_of_pos_of_lt ws i k h.1 h.2, reduceCtorEq, false_iff]
     omega

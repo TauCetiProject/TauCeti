@@ -109,19 +109,6 @@ theorem FoldSequence.exists_surjective_hom {S T : StallingsGraph.{u, v, w} α}
     · simpa only [Hom.comp_graphHom, SerreGraph.Hom.comp_mapE] using
         (foldHom_mapE_surjective _ e f hsrc hlabel).comp hge
 
-/-- A fold is folded exactly when equally labelled darts of the original graph whose origins
-are identified by the fold are themselves identified. -/
-theorem isFolded_foldAt_iff (S : StallingsGraph.{u, v, w} α) (e f : S.graph.E)
-    (hsrc : S.graph.src e = S.graph.src f) (hlabel : S.label e = S.label f) :
-    (S.foldAt e f hsrc hlabel).IsFolded ↔ ∀ d d' : S.graph.E,
-      (S.foldHom e f hsrc hlabel).graphHom.mapV (S.graph.src d) =
-        (S.foldHom e f hsrc hlabel).graphHom.mapV (S.graph.src d') →
-      S.label d = S.label d' →
-      (S.foldHom e f hsrc hlabel).graphHom.mapE d =
-        (S.foldHom e f hsrc hlabel).graphHom.mapE d' := by
-  have hsurj := S.foldHom_mapE_surjective e f hsrc hlabel
-  simp only [isFolded_def, hsurj.forall, ← SerreGraph.Hom.map_src, Hom.map_label]
-
 /-- Folding two distinct darts removes exactly one pair of mutually reverse darts. -/
 theorem card_foldAt_E_add_two (S : StallingsGraph.{u, v, w} α) [Finite S.graph.E]
     (e f : S.graph.E) (hne : e ≠ f) (hsrc : S.graph.src e = S.graph.src f)

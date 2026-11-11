@@ -95,7 +95,7 @@ private theorem fork_getElem (i j : ℕ) (hi : i < [[a, b], [a, c]].length)
 /-- The fold of the petals `a b` and `a c` along their initial darts is folded as soon as `b`
 and `c` are distinct and neither is the inverse of `a`: the labels leaving the base vertex are
 `a`, `b⁻¹`, `c⁻¹` and those leaving the other vertex are `a⁻¹`, `b`, `c`. In particular this
-holds for three distinct letters. -/
+holds when the underlying generators of `a`, `b` and `c` are pairwise distinct. -/
 theorem isFolded_foldAt_flower_fork (hbc : b ≠ c) (hab : b ≠ (a.1, !a.2))
     (hac : c ≠ (a.1, !a.2)) :
     ((flower [[a, b], [a, c]]).foldAt (⟨⟨0, by simp⟩, ⟨0, by simp⟩⟩, true)
