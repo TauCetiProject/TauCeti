@@ -127,7 +127,7 @@ theorem laurentQExpansion_aeval_j (P : R[X]) :
       eval₂ (HahnSeries.C.comp (algebraMap R ℂ)) (UpperHalfPlane.laurentQExpansion 1 j) P := by
   induction P using Polynomial.induction_on' with
   | add p q hp hq =>
-    rw [aeval_j_add, UpperHalfPlane.laurentQExpansion_add one_pos
+    rw [aeval_j_add, UpperHalfPlane.laurentQExpansion_add
       (meromorphicAt_cuspFunction_aeval_j p) (meromorphicAt_cuspFunction_aeval_j q)]
     simp [hp, hq]
   | monomial n a =>
@@ -224,7 +224,7 @@ theorem exists_natDegree_le_and_aeval_j_eq {f : ℍ → ℂ} (hf : MDiff f)
     have hcoeff (n : ℤ) : (UpperHalfPlane.laurentQExpansion 1 g).coeff n =
         (UpperHalfPlane.laurentQExpansion 1 f).coeff n -
           algebraMap R ℂ c * (UpperHalfPlane.laurentQExpansion 1 j ^ (N + 1)).coeff n := by
-      rw [UpperHalfPlane.laurentQExpansion_sub one_pos hmer (meromorphicAt_cuspFunction_aeval_j Q),
+      rw [UpperHalfPlane.laurentQExpansion_sub hmer (meromorphicAt_cuspFunction_aeval_j Q),
         laurentQExpansion_aeval_j, HahnSeries.coeff_sub]
       simp [Q, Algebra.smul_def]
     have hfN := (HahnSeries.le_orderTop_iff_forall.mp

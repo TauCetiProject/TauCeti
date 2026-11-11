@@ -86,22 +86,6 @@ local notation "𝕢" => Function.Periodic.qParam
 
 /-! ### Twisting by powers of the `q`-parameter -/
 
-/-- For `h ≤ 0` the cusp function of `f` is constant near `0`: `invQParam h q` has nonpositive
-imaginary part, where `ofComplex` takes its default value. -/
-theorem cuspFunction_eventuallyEq_const_of_nonpos (hh : h ≤ 0) (f : ℍ → ℂ) :
-    cuspFunction h f =ᶠ[𝓝 0] fun _ ↦ f (Classical.choice inferInstance) := by
-  refine cuspFunction_eventuallyEq_nhds_of_continuousAt ?_ continuousAt_const
-  filter_upwards [self_mem_nhdsWithin,
-    nhdsWithin_le_nhds (Metric.ball_mem_nhds (0 : ℂ) zero_lt_one)] with q hq hqn
-  simp only [Set.mem_compl_iff, Set.mem_singleton_iff] at hq
-  have hlog : Real.log ‖q‖ ≤ 0 :=
-    Real.log_nonpos (norm_nonneg _) (mem_ball_zero_iff.mp hqn).le
-  have him : (Function.Periodic.invQParam h q).im ≤ 0 := by
-    rw [Function.Periodic.im_invQParam]
-    exact mul_nonpos_of_nonneg_of_nonpos
-      (div_nonneg (neg_nonneg.2 hh) (by positivity)) hlog
-  rw [cuspFunction_of_ne_zero hq, ofComplex_apply_of_im_nonpos him]
-
 /-- The cusp function of `f` has a pole of order at most `k` at `0` exactly when twisting it by
 `q ^ k` gives a nonnegative order. -/
 private theorem neg_le_meromorphicOrderAt_iff {k : ℕ} (hf : MeromorphicAt (cuspFunction h f) 0) :
@@ -205,6 +189,11 @@ private theorem cuspPoleOrder_const (h : ℝ) (c : ℂ) : cuspPoleOrder h (fun _
   simp only [cuspPoleOrder, cuspFunction_const, meromorphicOrderAt_const]
   split_ifs <;> simp
 
+/-- The pole order only depends on the cusp function off `q = 0`. -/
+private theorem cuspPoleOrder_congr (hfg : cuspFunction h f =ᶠ[𝓝[≠] 0] cuspFunction h g) :
+    cuspPoleOrder h f = cuspPoleOrder h g := by
+  simp only [cuspPoleOrder, meromorphicOrderAt_congr hfg]
+
 /-- The Laurent `q`-expansion of a constant function is the constant Laurent series. -/
 @[simp]
 theorem laurentQExpansion_const (h : ℝ) (c : ℂ) :
@@ -238,9 +227,7 @@ theorem laurentQExpansion_of_nonpos (hh : h ≤ 0) (f : ℍ → ℂ) :
       cuspFunction h fun _ : ℍ ↦ f (Classical.choice inferInstance) := by
     simpa using ((cuspFunction_eventuallyEq_const_of_nonpos hh f).filter_mono
       nhdsWithin_le_nhds : cuspFunction h f =ᶠ[𝓝[≠] 0] _)
-  rw [← laurentQExpansion_const h, laurentQExpansion, laurentQExpansion,
-    show cuspPoleOrder h f = cuspPoleOrder h fun _ : ℍ ↦ f (Classical.choice inferInstance) by
-      simp only [cuspPoleOrder, meromorphicOrderAt_congr hc],
+  rw [← laurentQExpansion_const h, laurentQExpansion, laurentQExpansion, cuspPoleOrder_congr hc,
     cuspPoleOrder_const]
   simp only [CharP.cast_eq_zero, neg_zero, pow_zero, one_mul, qExpansion_congr hc]
 
@@ -255,9 +242,7 @@ theorem laurentQExpansion_congr (hfg : cuspFunction h f =ᶠ[𝓝[≠] 0] cuspFu
     obtain ⟨q, hq⟩ := (hf0.symm.trans (hfg.trans hg0)).exists
     rw [laurentQExpansion_of_nonpos hh, laurentQExpansion_of_nonpos hh]
     exact congrArg HahnSeries.C hq
-  have hk : cuspPoleOrder h f = cuspPoleOrder h g := by
-    simp only [cuspPoleOrder, meromorphicOrderAt_congr hfg]
-  rw [laurentQExpansion, laurentQExpansion, hk, qExpansion_congr]
+  rw [laurentQExpansion, laurentQExpansion, cuspPoleOrder_congr hfg, qExpansion_congr]
   refine (cuspFunction_qParam_pow_mul_eventuallyEq hh _ f).trans ?_
   refine EventuallyEq.trans ?_ (cuspFunction_qParam_pow_mul_eventuallyEq hh _ g).symm
   filter_upwards [hfg] with q hq
@@ -386,9 +371,12 @@ theorem laurentQExpansion_mul (hf : MeromorphicAt (cuspFunction h f) 0)
   ring
 
 /-- The Laurent `q`-expansion is additive. -/
-theorem laurentQExpansion_add (hh : 0 < h) (hf : MeromorphicAt (cuspFunction h f) 0)
+theorem laurentQExpansion_add (hf : MeromorphicAt (cuspFunction h f) 0)
     (hg : MeromorphicAt (cuspFunction h g) 0) :
     laurentQExpansion h (f + g) = laurentQExpansion h f + laurentQExpansion h g := by
+  rcases le_or_gt h 0 with hh | hh
+  · rw [laurentQExpansion_of_nonpos hh, laurentQExpansion_of_nonpos hh,
+      laurentQExpansion_of_nonpos hh, Pi.add_apply, map_add]
   have heq : cuspFunction h (f + g) =ᶠ[𝓝[≠] 0] cuspFunction h f + cuspFunction h g :=
     cuspFunction_map₂_eventuallyEq (· + ·) f g
   have hfg : MeromorphicAt (cuspFunction h (f + g)) 0 := meromorphicAt_cuspFunction_add hf hg
@@ -427,10 +415,10 @@ theorem laurentQExpansion_neg (hf : MeromorphicAt (cuspFunction h f) 0) :
   exact neg_one_smul ℂ (laurentQExpansion h f)
 
 /-- The Laurent `q`-expansion commutes with subtraction. -/
-theorem laurentQExpansion_sub (hh : 0 < h) (hf : MeromorphicAt (cuspFunction h f) 0)
+theorem laurentQExpansion_sub (hf : MeromorphicAt (cuspFunction h f) 0)
     (hg : MeromorphicAt (cuspFunction h g) 0) :
     laurentQExpansion h (f - g) = laurentQExpansion h f - laurentQExpansion h g := by
-  rw [sub_eq_add_neg, laurentQExpansion_add hh hf (meromorphicAt_cuspFunction_neg hg),
+  rw [sub_eq_add_neg, laurentQExpansion_add hf (meromorphicAt_cuspFunction_neg hg),
     laurentQExpansion_neg hg, sub_eq_add_neg]
 
 /-- The Laurent `q`-expansion commutes with powers. -/
@@ -522,7 +510,7 @@ theorem laurentQExpansion_eq_laurentQExpansion_iff (hh : 0 < h)
     laurentQExpansion h f = laurentQExpansion h g ↔ f =ᶠ[atImInfty] g := by
   refine ⟨fun H ↦ ?_, laurentQExpansion_eq_of_eventuallyEq hh⟩
   have hzero := (laurentQExpansion_eq_zero_iff (meromorphicAt_cuspFunction_sub hf hg)).mp
-    (by rw [laurentQExpansion_sub hh hf hg, H, sub_self])
+    (by rw [laurentQExpansion_sub hf hg, H, sub_self])
   have hq : Tendsto (fun τ : ℍ ↦ 𝕢 h τ) atImInfty (𝓝[≠] 0) :=
     tendsto_nhdsWithin_iff.mpr
       ⟨qParam_tendsto_atImInfty hh, .of_forall fun τ ↦ Periodic.qParam_ne_zero _⟩

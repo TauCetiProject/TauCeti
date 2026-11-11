@@ -138,7 +138,7 @@ def laurentQExpansion : MeromorphicFunction Γ.CompactifiedQuotient →ₐ[ℂ] 
     rw [TauCeti.UpperHalfPlane.laurentQExpansion_congr
       (cuspFunction_eventuallyEq_of_eventuallyEq D
         (MeromorphicFunction.finitePart_add_eventuallyEq F G _))]
-    exact TauCeti.UpperHalfPlane.laurentQExpansion_add D.width_pos
+    exact TauCeti.UpperHalfPlane.laurentQExpansion_add
       (meromorphicAt_cuspFunction_finitePart D F) (meromorphicAt_cuspFunction_finitePart D G)
   commutes' c := by
     simp only [MeromorphicFunction.finitePart_algebraMap]

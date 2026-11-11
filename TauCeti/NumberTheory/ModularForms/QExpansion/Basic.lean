@@ -246,6 +246,22 @@ theorem UpperHalfPlane.cuspFunction_const (h : ℝ) (c : ℂ) :
   rw [cuspFunction, Function.Periodic.cuspFunction, h_lim]
   exact Function.update_eq_self 0 (fun _ ↦ c)
 
+/-- For `h ≤ 0` the cusp function of `f` is constant near `0`: `invQParam h q` has nonpositive
+imaginary part, where `ofComplex` takes its default value. -/
+theorem UpperHalfPlane.cuspFunction_eventuallyEq_const_of_nonpos (hh : h ≤ 0) (f : ℍ → ℂ) :
+    cuspFunction h f =ᶠ[𝓝 0] fun _ ↦ f (Classical.choice inferInstance) := by
+  refine cuspFunction_eventuallyEq_nhds_of_continuousAt ?_ continuousAt_const
+  filter_upwards [self_mem_nhdsWithin,
+    nhdsWithin_le_nhds (Metric.ball_mem_nhds (0 : ℂ) zero_lt_one)] with q hq hqn
+  simp only [Set.mem_compl_iff, Set.mem_singleton_iff] at hq
+  have hlog : Real.log ‖q‖ ≤ 0 :=
+    Real.log_nonpos (norm_nonneg _) (mem_ball_zero_iff.mp hqn).le
+  have him : (Function.Periodic.invQParam h q).im ≤ 0 := by
+    rw [Function.Periodic.im_invQParam]
+    exact mul_nonpos_of_nonneg_of_nonpos
+      (div_nonneg (neg_nonneg.2 hh) (by positivity)) hlog
+  rw [cuspFunction_of_ne_zero hq, ofComplex_apply_of_im_nonpos him]
+
 /-- The cusp function of `1` is `1`. -/
 @[simp]
 theorem UpperHalfPlane.cuspFunction_one (h : ℝ) : cuspFunction h (1 : ℍ → ℂ) = 1 :=
