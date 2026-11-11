@@ -75,15 +75,6 @@ namespace IsSl2Triple
 
 open LieAlgebra LieAlgebra.IsKilling LieModule TauCeti
 
-/-- An inner automorphism `g ∈ Int(L)` carries an `sl₂` triple `(h, e, f)` to the `sl₂` triple
-`(g h, g e, g f)`. -/
-theorem smul_of_mem_intLieAlgebra {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L]
-    [LieAlgebra ℚ L] {g : LinearMap.GeneralLinearGroup K L} (hg : g ∈ intLieAlgebra K L)
-    {h e f : L} (t : IsSl2Triple h e f) : IsSl2Triple (g • h) (g • e) (g • f) := by
-  have := t.map (intLieAlgebraLieEquiv ⟨g, hg⟩).toLieHom
-  simp only [LieEquiv.coe_toLieHom, intLieAlgebraLieEquiv_apply] at this
-  exact this ((smul_ne_zero_iff_ne g).mpr t.h_ne_zero)
-
 section Split
 
 variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] [LieAlgebra ℚ L]
