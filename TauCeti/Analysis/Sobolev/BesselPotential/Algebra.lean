@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.Sobolev
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
+public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import TauCeti.Analysis.Convolution.Weighted
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.Convolution
@@ -75,6 +76,8 @@ estimate with `C = 2 ^ (s + 1) ‖⟨·⟩ ^ (-s)‖₂`.
 * `TemperedDistribution.exists_mem_realSobolevSubmodule_ae_eq_mul`: the real form of
   `TemperedDistribution.MemSobolev.mul`.
 * `TemperedDistribution.mul_mem_realSobolevFunctions`: the same for pointwise representatives.
+* `BesselPotentialSpace.mulCLM`: the pointwise product on `H^s(E)`, `s > n / 2`, as a continuous
+  bilinear map, characterized by `BesselPotentialSpace.toDistr_mulCLM_of_ae_eq`.
 
 ## References
 
@@ -270,3 +273,134 @@ theorem mul_mem_realSobolevFunctions {s : ℝ} (hs : finrank ℝ E < 2 * s) {f g
   rw [h, h₁, h₂, Pi.mul_apply]
 
 end TemperedDistribution
+
+namespace BesselPotentialSpace
+
+open TemperedDistribution
+
+variable {s : ℝ}
+
+omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
+private theorem nonneg_of_finrank_lt (hs : finrank ℝ E < 2 * s) : 0 ≤ s := by
+  have := (finrank ℝ E).cast_nonneg (α := ℝ)
+  linarith
+
+/-- The `L²` function of `u ∈ H^s`, `s > n / 2`. -/
+private abbrev rep (hs : finrank ℝ E < 2 * s) (u : H^{s}(E)) : Lp ℂ 2 (volume : Measure E) :=
+  (inclusion (nonneg_of_finrank_lt hs) u).toLp
+
+private theorem toDistr_eq_rep (hs : finrank ℝ E < 2 * s) (u : H^{s}(E)) :
+    u.toDistr = (rep hs u : 𝓢'(E, ℂ)) :=
+  (toTemperedDistribution_toLp_inclusion _ u).symm
+
+private theorem rep_add (hs : finrank ℝ E < 2 * s) (u v : H^{s}(E)) :
+    rep hs (u + v) = rep hs u + rep hs v := by
+  simp only [rep, map_add, toLp_add]
+
+private theorem rep_smul (hs : finrank ℝ E < 2 * s) (c : ℂ) (u : H^{s}(E)) :
+    rep hs (c • u) = c • rep hs u := by
+  simp only [rep, map_smul, toLp_smul]
+
+/-- Elements of `H^s`, `s > n / 2`, with the same `L²` function are equal. -/
+private theorem eq_of_rep_ae_eq (hs : finrank ℝ E < 2 * s) {u v : H^{s}(E)}
+    (h : rep hs u =ᵐ[volume] rep hs v) : u = v := by
+  ext1
+  rw [toDistr_eq_rep hs u, toDistr_eq_rep hs v, Lp.ext h]
+
+/-- The `L²` function of `u ∈ H^s`, `s > n / 2`, lies in `H^s`. -/
+private theorem memSobolev_rep (hs : finrank ℝ E < 2 * s) (u : H^{s}(E)) :
+    MemSobolev s 2 (rep hs u : 𝓢'(E, ℂ)) := by
+  rw [← toDistr_eq_rep]
+  exact u.memSobolev_toDistr
+
+/-- The pointwise product of the `L²` functions of `u, v ∈ H^s`, `s > n / 2`, as an element of
+`H^s`. -/
+private def mulAux (hs : finrank ℝ E < 2 * s) (u v : H^{s}(E)) : H^{s}(E) :=
+  ((memSobolev_rep hs u).mul hs (memSobolev_rep hs v)).toBesselPotentialSpace
+
+private theorem rep_mulAux (hs : finrank ℝ E < 2 * s) (u v : H^{s}(E)) :
+    rep hs (mulAux hs u v) =ᵐ[volume] fun x ↦ rep hs u x * rep hs v x := by
+  have h : rep hs (mulAux hs u v) = ((memSobolev_rep hs u).memLp_mul hs (rep hs v)).toLp _ :=
+    LinearMap.ker_eq_bot.mp Lp.ker_toTemperedDistributionCLM_eq_bot <| by
+      rw [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply,
+        Lp.toTemperedDistributionCLM_apply, ← toDistr_eq_rep, mulAux,
+        MemSobolev.toBesselPotentialSpace_toDistr]
+  rw [h]
+  exact MemLp.coeFn_toLp _
+
+private theorem mulAux_add_left (hs : finrank ℝ E < 2 * s) (u u' v : H^{s}(E)) :
+    mulAux hs (u + u') v = mulAux hs u v + mulAux hs u' v := by
+  refine eq_of_rep_ae_eq hs ?_
+  rw [rep_add hs (mulAux hs u v)]
+  filter_upwards [rep_mulAux hs (u + u') v, rep_mulAux hs u v, rep_mulAux hs u' v,
+    Lp.coeFn_add (rep hs (mulAux hs u v)) (rep hs (mulAux hs u' v)),
+    Lp.coeFn_add (rep hs u) (rep hs u')] with x h h₁ h₂ h₃ h₄
+  rw [h, h₃, Pi.add_apply, h₁, h₂, rep_add, h₄, Pi.add_apply, add_mul]
+
+private theorem mulAux_add_right (hs : finrank ℝ E < 2 * s) (u v v' : H^{s}(E)) :
+    mulAux hs u (v + v') = mulAux hs u v + mulAux hs u v' := by
+  refine eq_of_rep_ae_eq hs ?_
+  rw [rep_add hs (mulAux hs u v)]
+  filter_upwards [rep_mulAux hs u (v + v'), rep_mulAux hs u v, rep_mulAux hs u v',
+    Lp.coeFn_add (rep hs (mulAux hs u v)) (rep hs (mulAux hs u v')),
+    Lp.coeFn_add (rep hs v) (rep hs v')] with x h h₁ h₂ h₃ h₄
+  rw [h, h₃, Pi.add_apply, h₁, h₂, rep_add, h₄, Pi.add_apply, mul_add]
+
+private theorem mulAux_smul_left (hs : finrank ℝ E < 2 * s) (c : ℂ) (u v : H^{s}(E)) :
+    mulAux hs (c • u) v = c • mulAux hs u v := by
+  refine eq_of_rep_ae_eq hs ?_
+  rw [rep_smul hs c (mulAux hs u v)]
+  filter_upwards [rep_mulAux hs (c • u) v, rep_mulAux hs u v,
+    Lp.coeFn_smul c (rep hs (mulAux hs u v)), Lp.coeFn_smul c (rep hs u)] with x h h₁ h₂ h₃
+  rw [h, h₂, Pi.smul_apply, h₁, rep_smul, h₃, Pi.smul_apply, smul_eq_mul, smul_eq_mul, mul_assoc]
+
+private theorem mulAux_smul_right (hs : finrank ℝ E < 2 * s) (c : ℂ) (u v : H^{s}(E)) :
+    mulAux hs u (c • v) = c • mulAux hs u v := by
+  refine eq_of_rep_ae_eq hs ?_
+  rw [rep_smul hs c (mulAux hs u v)]
+  filter_upwards [rep_mulAux hs u (c • v), rep_mulAux hs u v,
+    Lp.coeFn_smul c (rep hs (mulAux hs u v)), Lp.coeFn_smul c (rep hs v)] with x h h₁ h₂ h₃
+  rw [h, h₂, Pi.smul_apply, h₁, rep_smul, h₃, Pi.smul_apply, smul_eq_mul, smul_eq_mul,
+    mul_left_comm]
+
+/-- **The product on `H^s(E)`, `s > n / 2`, as a continuous bilinear map.** It sends `u, v ∈ H^s`
+to their pointwise product, which lies in `H^s` by `TemperedDistribution.MemSobolev.mul`
+(`BesselPotentialSpace.toDistr_mulCLM_of_ae_eq`). Its continuity is the algebra estimate
+`TemperedDistribution.exists_norm_toBesselPotentialSpace_mul_le`. -/
+def mulCLM (hs : finrank ℝ E < 2 * s) : H^{s}(E) →L[ℂ] H^{s}(E) →L[ℂ] H^{s}(E) :=
+  LinearMap.mkContinuous₂
+    (LinearMap.mk₂ ℂ (mulAux hs) (mulAux_add_left hs) (mulAux_smul_left hs)
+      (mulAux_add_right hs) (mulAux_smul_right hs))
+    (exists_norm_toBesselPotentialSpace_mul_le hs).choose fun u v ↦ by
+      have hu : (memSobolev_rep hs u).toBesselPotentialSpace = u :=
+        ext (by rw [MemSobolev.toBesselPotentialSpace_toDistr, toDistr_eq_rep])
+      have hv : (memSobolev_rep hs v).toBesselPotentialSpace = v :=
+        ext (by rw [MemSobolev.toBesselPotentialSpace_toDistr, toDistr_eq_rep])
+      have h := (exists_norm_toBesselPotentialSpace_mul_le hs).choose_spec.2
+        (memSobolev_rep hs u) (memSobolev_rep hs v)
+      rwa [hu, hv] at h
+
+private theorem mulCLM_apply (hs : finrank ℝ E < 2 * s) (u v : H^{s}(E)) :
+    mulCLM hs u v = mulAux hs u v :=
+  rfl
+
+/-- **Characterization of the product on `H^s(E)`, `s > n / 2`.** If `u, v ∈ H^s` are the `L²`
+functions `f` and `g`, then `mulCLM hs u v` is every `L²` function equal to `f g` almost
+everywhere. -/
+theorem toDistr_mulCLM_of_ae_eq (hs : finrank ℝ E < 2 * s) {u v : H^{s}(E)}
+    {f g h : Lp ℂ 2 (volume : Measure E)} (hf : u.toDistr = f) (hg : v.toDistr = g)
+    (hh : h =ᵐ[volume] fun x ↦ f x * g x) :
+    (mulCLM hs u v).toDistr = h := by
+  have hf' : rep hs u = f := LinearMap.ker_eq_bot.mp Lp.ker_toTemperedDistributionCLM_eq_bot <| by
+    rw [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply,
+      Lp.toTemperedDistributionCLM_apply, ← toDistr_eq_rep, hf]
+  have hg' : rep hs v = g := LinearMap.ker_eq_bot.mp Lp.ker_toTemperedDistributionCLM_eq_bot <| by
+    rw [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply,
+      Lp.toTemperedDistributionCLM_apply, ← toDistr_eq_rep, hg]
+  rw [toDistr_eq_rep hs, mulCLM_apply]
+  congr 1
+  refine Lp.ext ?_
+  filter_upwards [rep_mulAux hs u v, hh] with x h₁ h₂
+  rw [h₁, h₂, hf', hg']
+
+end BesselPotentialSpace
