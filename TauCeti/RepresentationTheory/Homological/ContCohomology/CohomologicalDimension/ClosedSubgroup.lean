@@ -19,7 +19,7 @@ closed subgroup (NSW (3.3.5)).
 For a discrete `p`-primary torsion `U`-module `M`, Shapiro's lemma identifies `Hⁿ⁺¹(U, M)` with
 `Hⁿ⁺¹(G, Coind_U^G M)` in every degree (`TauCeti.ContinuousCohomology.bijective_shapiroMap`), and
 the coinduced module is again a discrete `p`-primary torsion `G`-module
-(`TauCeti.isPPrimaryTorsion_discreteCoind`), so `Hⁿ⁺¹(G, Coind_U^G M)` vanishes when `cd_p G ≤ n`.
+(`TauCeti.isAddPGroup_discreteCoind`), so `Hⁿ⁺¹(G, Coind_U^G M)` vanishes when `cd_p G ≤ n`.
 Since the `p`-cohomological dimension of a compact group is detected in a single degree
 (`TauCeti.cohomologicalDimensionLE_iff_forall_subsingleton_succ`), this vanishing of `Hⁿ⁺¹(U, -)`
 is the statement `cd_p U ≤ n`. The coinduced module need not be finite when `U` is not open, which
@@ -72,7 +72,7 @@ theorem CohomologicalDimensionLE.of_isClosed {n : ℕ} (h : CohomologicalDimensi
   intro M _ _ _ _ _ hM
   -- `Hⁿ⁺¹(G, Coind_U^G M)` vanishes, since `Coind_U^G M` is discrete `p`-primary torsion, and
   -- `Hⁿ⁺¹(U, M) ≅ Hⁿ⁺¹(G, Coind_U^G M)` by Shapiro's lemma.
-  have := h (DiscreteCoind G U M) (isPPrimaryTorsion_discreteCoind G U M hM)
+  have := h (DiscreteCoind G U M) (isAddPGroup_discreteCoind G U M hM)
   exact (subsingleton_continuousCohomology_discreteCoind_iff U hU M (n + 1)).1 this
 
 /-- **`cd_p U ≤ cd_p G` for a closed subgroup `U` of a profinite group `G`**: the `p`-cohomological

@@ -405,6 +405,13 @@ theorem a_ne_zero_of_not_isSquare_discrim {f : BinaryQuadraticForm ℤ}
   apply hf
   exact ⟨f.b, by simp [discrim_def, _root_.discrim, ha, pow_two]⟩
 
+/-- A form of nonsquare discriminant has nonzero last coefficient. -/
+theorem c_ne_zero_of_not_isSquare_discrim {f : BinaryQuadraticForm ℤ}
+    (hf : ¬ IsSquare f.discrim) : f.c ≠ 0 := by
+  intro hc
+  apply hf
+  exact ⟨f.b, by simp [discrim_def, _root_.discrim, hc, pow_two]⟩
+
 /-- A nonsquare discriminant is nonzero, since `0 = 0 * 0` is a square. This lets results stated
 under `[NeZero D]` apply under the standing assumption `[Fact (¬ IsSquare D)]`. -/
 instance neZero_of_fact_not_isSquare {D : ℤ} [Fact (¬ IsSquare D)] : NeZero D :=
@@ -565,6 +572,12 @@ theorem T_smul (f : BinaryQuadraticForm ℤ) :
 @[simp]
 theorem S_smul (f : BinaryQuadraticForm ℤ) : ModularGroup.S • f = ⟨f.c, -f.b, f.a⟩ := by
   ext <;> simp [ModularGroup.coe_S]
+
+/-- Exchanging the outer coefficients of `a x² + b x y + c y²` preserves the discriminant. -/
+theorem discrim_swap (f : BinaryQuadraticForm R) :
+    (⟨f.c, f.b, f.a⟩ : BinaryQuadraticForm R).discrim = f.discrim := by
+  simp only [discrim_def, discrim]
+  ring
 
 end BinaryQuadraticForm
 

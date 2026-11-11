@@ -195,10 +195,10 @@ variable {R} {F : Type*} [SeminormedAddCommGroup F] [Module R F] [IsBoundedSMul 
 
 /-- Iteration commutes with bounded coefficient linear maps, acting on both levels of the
 iterated family. -/
-theorem sumLinearIsometryEquiv_mapLinearMap (φ : E →ₗ[R] F) {C : ℝ} (hC : 0 ≤ C)
+theorem sumLinearIsometryEquiv_mapLinearMap (φ : E →ₗ[R] F) {C : ℝ}
     (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖) (a : Gauss (Sum.elim c d) E) :
     sumLinearIsometryEquiv R (mapLinearMap φ hφ a) =
-      mapLinearMap (mapLinearMap (c := d) φ hφ) (norm_mapLinearMap_le φ hC hφ)
+      mapLinearMap (mapLinearMap (c := d) φ hφ) (norm_mapLinearMap_le φ hφ)
         (sumLinearIsometryEquiv R a) := by
   ext s t
   simp

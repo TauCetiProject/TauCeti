@@ -76,6 +76,11 @@ variable {R : Type uR} {A : Type uA} {B : Type uB} {M : Type uM}
 
 namespace AInfinityBimodule
 
+/-- Additive inverses on the two-sided bar carrier, supplied by the ground ring. -/
+noncomputable instance barCarrierAddCommGroup {X : Type*} [AddCommMonoid X] [Module R X] :
+    AddCommGroup ((TensorWords R A ⊗[R] X) ⊗[R] TensorWords R B) :=
+  Module.addCommMonoidToAddCommGroup R
+
 /-- The total suspended grading on the cofree bar bicomodule `Tᶜ(sA) ⊗ sM ⊗ Tᶜ(sB)`. -/
 noncomputable def barGrading (AA : AInfinityAlgebra R A) (BB : AInfinityAlgebra R B)
     (G : InternalGrading R M) :
@@ -142,6 +147,22 @@ theorem isHomogeneous_leftCoact (AA : AInfinityAlgebra R A) (BB : AInfinityAlgeb
         (LinearMap.isHomogeneous_id (G.shift 1).piece))).tensorProduct
           (LinearMap.isHomogeneous_id V.piece)))
 
+/-- The right coaction on the bar bicomodule preserves total suspended degree. -/
+theorem isHomogeneous_rightCoact (AA : AInfinityAlgebra R A) (BB : AInfinityAlgebra R B)
+    (G : InternalGrading R M) :
+    LinearMap.IsHomogeneous
+      (Comodule.cofreeCoact R (TensorWords R B) (TensorWords R A ⊗[R] M))
+      (barGrading AA BB G).piece
+      ((barGrading AA BB G).tensorProduct (TensorWords.grading (BB.grading.shift 1))).piece
+      0 := by
+  let Y := (TensorWords.grading (AA.grading.shift 1)).tensorProduct (G.shift 1)
+  let V := TensorWords.grading (BB.grading.shift 1)
+  rw [barGrading_def, Comodule.cofreeCoact_def, LinearMap.lTensor_def,
+    TensorWords.comul_eq_deconcatenation]
+  simpa only [zero_add] using (InternalGrading.isHomogeneous_assoc_symm Y V V).comp
+    ((LinearMap.isHomogeneous_id Y.piece).tensorProduct
+      (TensorWords.isHomogeneous_deconcatenation (BB.grading.shift 1)))
+
 variable (R A B M) in
 /-- The two-sided counit projection of the cofree bar bicomodule `Tᶜ(sA) ⊗ sM ⊗ Tᶜ(sB)` onto
 `sM`: the counit of `Tᶜ(sB)` forgets the right word, and then the cofree counit projection of
@@ -167,6 +188,24 @@ theorem taylorProj_tmul (w : TensorWords R A) (m : M) (v : TensorWords R B) :
     taylorProj R A B M ((w ⊗ₜ m) ⊗ₜ v) =
       Coalgebra.counit (R := R) v • Coalgebra.counit (R := R) w • m := by
   simp [taylorProj_def]
+
+/-- Applying both output counits preserves the degree of a homogeneous bar map. -/
+theorem isHomogeneous_taylorProj_comp {N : Type*} [AddCommGroup N] [Module R N]
+    {AA : AInfinityAlgebra R A} {BB : AInfinityAlgebra R B}
+    {G : InternalGrading R M} {H : InternalGrading R N} {p : ℤ}
+    {F : (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B →ₗ[R]
+      (TensorWords R A ⊗[R] N) ⊗[R] TensorWords R B}
+    (hF : LinearMap.IsHomogeneous F (barGrading AA BB G).piece
+      (barGrading AA BB H).piece p) :
+    LinearMap.IsHomogeneous (taylorProj R A B N ∘ₗ F)
+      (barGrading AA BB G).piece (H.shift 1).piece p := by
+  simp only [barGrading_def] at hF ⊢
+  rw [taylorProj_def, Comodule.leftCofreeCounit_def]
+  simpa only [LinearMap.comp_assoc, add_zero] using
+    ((TensorWords.isHomogeneous_lid_comp_rTensor_counit (AA.grading.shift 1)
+      (H.shift 1)).comp (TensorWords.isHomogeneous_rid_comp_lTensor_counit
+        ((TensorWords.grading (AA.grading.shift 1)).tensorProduct (H.shift 1))
+        (BB.grading.shift 1))).comp hF
 
 end AInfinityBimodule
 
@@ -236,15 +275,8 @@ theorem taylor_apply (MM : AInfinityBimodule AA BB M)
 module grading. -/
 theorem isHomogeneous_taylor (MM : AInfinityBimodule AA BB M) :
     LinearMap.IsHomogeneous MM.taylor (barGrading AA BB MM.grading).piece
-      (MM.grading.shift 1).piece 1 := by
-  have hD := MM.isHomogeneous_barDifferential
-  rw [barGrading_def] at hD ⊢
-  rw [taylor_def, taylorProj_def, Comodule.leftCofreeCounit_def]
-  simpa only [LinearMap.comp_assoc, add_zero] using
-    ((TensorWords.isHomogeneous_lid_comp_rTensor_counit (AA.grading.shift 1)
-      (MM.grading.shift 1)).comp (TensorWords.isHomogeneous_rid_comp_lTensor_counit
-        ((TensorWords.grading (AA.grading.shift 1)).tensorProduct (MM.grading.shift 1))
-        (BB.grading.shift 1))).comp hD
+      (MM.grading.shift 1).piece 1 :=
+  isHomogeneous_taylorProj_comp MM.isHomogeneous_barDifferential
 
 /-- The stored bimodule bar differential squares to zero. -/
 @[simp]

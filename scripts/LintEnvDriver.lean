@@ -70,7 +70,10 @@ def linterOrigins (modules : Array Name)
           pure <| Json.mkObj [("unknown", toJson "unsupported_name")]
         else if let some idx := env.getModuleIdxFor? decl then
           let mod := env.header.moduleNames[idx.toNat]!
-          if !modules.contains mod then
+          -- Any module of the linted package is a usable origin, listed or not: the
+          -- `unusedArguments` pass also lints transitive importers of the listed modules,
+          -- and `lint-env.sh` validates the module against the full project inventory.
+          if !lintedPackage.isPrefixOf mod then
             pure <| unknown "unsupported_module"
           else
             -- A private or generated declaration still has a defining module, which is

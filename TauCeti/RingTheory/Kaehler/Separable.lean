@@ -7,7 +7,8 @@ module
 
 public import Mathlib.FieldTheory.Perfect
 public import Mathlib.RingTheory.Etale.Field
-public import TauCeti.RingTheory.Kaehler.BaseChange
+import TauCeti.LinearAlgebra.Dimension.FinrankOne
+import Mathlib.RingTheory.Algebraic.Integral
 
 /-!
 # Kähler differentials of separable elements
@@ -23,6 +24,10 @@ extensions.
   with nonzero differential is a separating subfield when the differential module has dimension one.
 * `TauCeti.isSeparable_left_or_right_of_adjoin_eq_top`: if the differential module is
   one-dimensional, at least one of two generating subfields is separating.
+* `Algebra.FormallyUnramified.of_finrank_kaehlerDifferential_eq_one`: the intermediate-ring
+  version, with no finite-type hypothesis.
+* `TauCeti.exists_transcendental_and_D_ne_zero`: choose a transcendental element detected by
+  a nonzero universal derivation, without perfectness.
 * `TauCeti.D_eq_zero_of_isSeparable`: a separable algebraic element has vanishing differential.
 * `TauCeti.transcendental_of_D_ne_zero`: over a perfect base field, an element with nonzero
   differential is transcendental.
@@ -47,18 +52,27 @@ theorem D_eq_zero_of_isSeparable (hx : IsSeparable k x) : D k F x = 0 := by
   rw [minpoly.aeval, map_zero] at hder
   exact (smul_eq_zero.mp hder.symm).resolve_left hcoeff
 
+/-- An intermediate ring containing an element with nonzero differential makes a field
+extension formally unramified when its differential module has dimension one. -/
+theorem _root_.Algebra.FormallyUnramified.of_finrank_kaehlerDifferential_eq_one
+    {R A F : Type*} [CommRing R] [CommRing A] [Field F]
+    [Algebra R A] [Algebra A F] [Algebra R F] [IsScalarTower R A F]
+    (h : finrank F Ω[F⁄R] = 1) {y : F} (hy : D R F y ≠ 0)
+    (hyA : y ∈ Set.range (algebraMap A F)) : Algebra.FormallyUnramified A F := by
+  refine ⟨subsingleton_of_forall_eq 0 fun ω ↦ ?_⟩
+  obtain ⟨η, rfl⟩ := KaehlerDifferential.map_surjective R A F ω
+  obtain ⟨a, rfl⟩ := (finrank_eq_one_iff_of_ne_zero' _ hy).mp h η
+  obtain ⟨y, rfl⟩ := hyA
+  rw [LinearMap.map_smul, KaehlerDifferential.map_D, Algebra.algebraMap_self, RingHom.id_apply,
+    Derivation.map_algebraMap, smul_zero]
+
 /-- If `Ω[F⁄k]` is one-dimensional, every intermediate field containing an element with nonzero
 `k`-differential makes `F` separable algebraic over it. -/
 theorem isSeparable_of_finrank_kaehlerDifferential_eq_one {E : Type*} [Field E]
     [Algebra k E] [Algebra E F] [IsScalarTower k E F] [Algebra.EssFiniteType E F]
     (h : finrank F Ω[F⁄k] = 1) {y : E} (hy : D k F (algebraMap E F y) ≠ 0) :
     Algebra.IsSeparable E F := by
-  have hrange : (mapBaseChange k E F).range = ⊤ := by
-    rw [eq_top_iff, ← (span_singleton_eq_top_iff_ne_zero_of_finrank_eq_one h _).mpr hy,
-      Submodule.span_le, Set.singleton_subset_iff]
-    exact ⟨1 ⊗ₜ D k E y, by simp⟩
-  have : Algebra.FormallyUnramified E F :=
-    ⟨(subsingleton_kaehlerDifferential_iff_range_mapBaseChange_eq_top k E F).mpr hrange⟩
+  have := Algebra.FormallyUnramified.of_finrank_kaehlerDifferential_eq_one h hy ⟨y, rfl⟩
   exact Algebra.FormallyUnramified.isSeparable E F
 
 /-- If `Ω[F⁄k]` is one-dimensional and two intermediate fields generate `F`, then `F` is
@@ -93,6 +107,29 @@ theorem isSeparable_left_or_right_of_adjoin_eq_top {E₁ E₂ : Type*} [Field E�
     exact hD y
   have : finrank F Ω[F⁄k] = 0 := by rw [← finrank_top F Ω[F⁄k], hzero, finrank_bot]
   omega
+
+/-- If the universal derivation is nonzero, a field extension with a transcendental element
+has a transcendental element with nonzero differential. No perfectness assumption is needed. -/
+theorem exists_transcendental_and_D_ne_zero {R : Type*} [CommRing R] [Algebra R F]
+    (hD : KaehlerDifferential.D R F ≠ 0) {x : F} (hx : Transcendental k x) :
+    ∃ y : F, Transcendental k y ∧ KaehlerDifferential.D R F y ≠ 0 := by
+  obtain ⟨y, hy⟩ : ∃ y : F, KaehlerDifferential.D R F y ≠ 0 := by
+    by_contra! h
+    exact hD (Derivation.ext h)
+  by_cases hDx : KaehlerDifferential.D R F x = 0
+  swap
+  · exact ⟨x, hx, hDx⟩
+  by_cases hytrans : Transcendental k y
+  · exact ⟨y, hytrans, hy⟩
+  rw [Transcendental, not_not] at hytrans
+  have hy0 : y ≠ 0 := fun h ↦ hy (by rw [h, map_zero])
+  have hx0 : x ≠ 0 := fun h ↦ hx (h ▸ isAlgebraic_zero)
+  refine ⟨y * x, fun h ↦ hx ?_, ?_⟩
+  · have heq : x = y * x * y⁻¹ := by field_simp
+    rw [heq]
+    exact h.mul hytrans.inv
+  · rw [Derivation.leibniz, hDx, smul_zero, zero_add]
+    exact smul_ne_zero hx0 hy
 
 section Transcendental
 

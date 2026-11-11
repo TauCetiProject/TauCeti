@@ -77,8 +77,7 @@ theorem range_brLocalization : (brLocalization K).range = (sumLocalInv K).ker :=
   -- The family is the localization of an idele class `z` over `G_K`, which is the class over
   -- `G_K` of a class `z'` of a layer `V ◁ G_K`.
   obtain ⟨z, rfl⟩ := ideleLocalization_surjective K y
-  let L : NormalLayer (AbsoluteGaloisGroup K) := NormalLayer.ofOpenNormal
-    { toOpenSubgroup := ⊤, isNormal' := inferInstanceAs (⊤ : Subgroup _).Normal }
+  let L : NormalLayer (AbsoluteGaloisGroup K) := NormalLayer.ofOpenNormal ⊤
   obtain ⟨L', -, z', hz'⟩ := exists_refinement_ideleLayerCorInfl_eq_index_nsmul K L z
   rw [NormalLayer.ground_ofOpenNormal, OpenSubgroup.toSubgroup_top, Subgroup.index_top,
     one_nsmul] at hz'
@@ -112,9 +111,9 @@ theorem exists_br_of_sum_eq_zero (S : Finset (HeightOneSpectrum (𝓞 K)))
   choose b hb using hb
   have hfin : {v | (invMap (v.adicCompletion K)).symm (f v) ≠ 0}.Finite :=
     S.finite_toSet.subset fun v hv ↦ not_not.1 fun hvS ↦ hv (by rw [hS v hvS, map_zero])
-  let y := (dfinsuppOfFiniteSupport _ hfin, b)
+  let y := (DFinsupp.ofSupportFinite _ hfin, b)
   have hy (v : HeightOneSpectrum (𝓞 K)) : invMap (v.adicCompletion K) (y.1 v) = f v := by
-    rw [dfinsuppOfFiniteSupport_apply, AddEquiv.apply_symm_apply]
+    rw [DFinsupp.ofSupportFinite_apply, AddEquiv.apply_symm_apply]
   -- Their invariants sum to zero, so they are the localizations of a global class.
   obtain ⟨x, hx⟩ : y ∈ (brLocalization K).range := by
     rw [range_brLocalization, AddMonoidHom.mem_ker,

@@ -12,7 +12,7 @@ public import TauCeti.NumberTheory.LocalField.NatCastValuation
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
-import TauCeti.RingTheory.DiscreteValuationRing.Orthogonality
+import TauCeti.RingTheory.Valuation.Orthogonality
 import Mathlib.Algebra.Polynomial.Derivative
 
 /-!
@@ -85,7 +85,12 @@ The definition only uses the algebra map and the two normalized valuations, so i
 the compatibility hypothesis `ValuativeExtension K L`. Apart from the unfolding lemma
 `ramificationIndex_def` and the reformulations of tame and wild ramification, every public theorem
 about it assumes compatibility, which makes the restricted valuation trivial on the units of
-`𝒪[K]` and hence a power of `v_K`. Finiteness of `L/K` is used by no statement in this file.
+`𝒪[K]` and hence a power of `v_K`. The multiplicativity theorem `ramificationIndex_tower` is the
+exception: it assumes compatibility only for the top step `M/L`, as it compares indices through
+the valuations of `L` and `M` and never uses a valuation of `K`. The tame tower results
+`isTamelyRamified_tower_iff` and `IsTamelyRamified.tower_bot` still require the compatible bottom
+step `L/K` and its residue field. Finiteness of `L/K` is used by no statement in this
+file.
 
 ## References
 
@@ -440,12 +445,12 @@ theorem addVal_sum_algebraMap_mul_pow_of_irreducible {ϖ : 𝒪[L]} (hϖ : Irred
         ramificationIndex K L • IsDiscreteValuationRing.addVal 𝒪[K] (c i) + (i : ℕ) := by
     rw [IsDiscreteValuationRing.addVal_mul, IsDiscreteValuationRing.addVal_pow,
       addVal_algebraMap, IsDiscreteValuationRing.addVal_uniformizer hϖ, nsmul_one]
-  have hdistinct : ∀ i j : Fin n, i ≠ j →
-      algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ) ≠ 0 →
-      algebraMap 𝒪[K] 𝒪[L] (c j) * ϖ ^ (j : ℕ) ≠ 0 →
+  have hdistinct : ∀ i ∈ Finset.univ, ∀ j ∈ Finset.univ, i ≠ j →
+      IsDiscreteValuationRing.addVal 𝒪[L] (algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ)) ≠ ⊤ →
+      IsDiscreteValuationRing.addVal 𝒪[L] (algebraMap 𝒪[K] 𝒪[L] (c j) * ϖ ^ (j : ℕ)) ≠ ⊤ →
       IsDiscreteValuationRing.addVal 𝒪[L] (algebraMap 𝒪[K] 𝒪[L] (c i) * ϖ ^ (i : ℕ)) ≠
         IsDiscreteValuationRing.addVal 𝒪[L] (algebraMap 𝒪[K] 𝒪[L] (c j) * ϖ ^ (j : ℕ)) := by
-    intro i j hij hi0 hj0 hval
+    intro i _ j _ hij hi0 hj0 hval
     have hci : c i ≠ 0 := by
       intro h
       apply hi0
@@ -468,7 +473,7 @@ theorem addVal_sum_algebraMap_mul_pow_of_irreducible {ϖ : 𝒪[L]} (hϖ : Irred
       simpa [Nat.add_mod, Nat.mod_eq_of_lt (i.isLt.trans_le hn),
         Nat.mod_eq_of_lt (j.isLt.trans_le hn)] using hmod
     exact hij (Fin.ext hijval)
-  rw [IsDiscreteValuationRing.addVal_sum_eq_iInf_of_ne _ hdistinct]
+  rw [AddValuation.map_sum_eq_inf_of_ne _ _ _ hdistinct, Finset.inf_univ_eq_iInf]
   exact iInf_congr hterm
 
 /-- **Valuation balls in uniformizer coordinates.** For a uniformizer `ϖ` of `L` and `n ≤ e(L/K)`,
@@ -567,19 +572,40 @@ theorem ramificationIndex_eq_ramificationIdx :
     pow_dvd_pow_iff hϖ.ne_zero hϖ.not_isUnit] at hle
   omega
 
+/-- The normalized valuation of `M` on the image of `Lˣ` is that of `L` composed with the
+ramification-index power map. -/
+theorem normalizedValuation_comp_unitsMap_algebraMap (L M : Type*) [Field L] [ValuativeRel L]
+    [TopologicalSpace L] [IsNonarchimedeanLocalField L] [Field M] [ValuativeRel M]
+    [TopologicalSpace M] [IsNonarchimedeanLocalField M] [Algebra L M] [ValuativeExtension L M] :
+    (normalizedValuation M).comp (Units.map (algebraMap L M : L →* M)) =
+      (powMonoidHom (ramificationIndex L M)).comp (normalizedValuation L) := by
+  ext x
+  simp
+
+omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+  [ValuativeExtension K L] in
 /-- **Multiplicativity of the ramification index in a tower** `M/L/K`:
-`e(M/K) = e(L/K) · e(M/L)`. -/
+`e(M/K) = e(L/K) · e(M/L)`. Only the compatibility of the top step `M/L` is needed. -/
 theorem ramificationIndex_tower (M : Type*) [Field M] [ValuativeRel M] [TopologicalSpace M]
     [IsNonarchimedeanLocalField M] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
     [ValuativeExtension L M] :
     ramificationIndex K M = ramificationIndex K L * ramificationIndex L M := by
-  have := ValuativeExtension.trans K L M
-  refine ramificationIndex_eq_iff.2 fun x ↦ ?_
-  have hx : Units.map (algebraMap K M : K →* M) x =
-      Units.map (algebraMap L M : L →* M) (Units.map (algebraMap K L : K →* L) x) := by
-    ext
-    simp [← IsScalarTower.algebraMap_apply]
-  rw [hx, normalizedValuation_algebraMap, normalizedValuation_algebraMap, pow_mul]
+  have hcomp : (normalizedValuation M).comp (Units.map (algebraMap K M : K →* M)) =
+      (powMonoidHom (ramificationIndex L M)).comp
+        ((normalizedValuation L).comp (Units.map (algebraMap K L : K →* L))) := by
+    rw [normalizedValuation_comp_unitsMap_tower K L M,
+      normalizedValuation_comp_unitsMap_algebraMap L M, MonoidHom.comp_assoc]
+  have hLM : ramificationIndex L M = (powMonoidHom (ramificationIndex L M) :
+      Multiplicative ℤ →* Multiplicative ℤ).range.index := by
+    refine ramificationIndex_def.trans ?_
+    rw [normalizedValuation_comp_unitsMap_algebraMap L M, MonoidHom.range_comp,
+      MonoidHom.range_eq_top.2 normalizedValuation_surjective, Subgroup.map_top]
+  have hinj : Function.Injective (powMonoidHom (ramificationIndex L M) :
+      Multiplicative ℤ →* Multiplicative ℤ) :=
+    pow_left_injective ramificationIndex_pos.ne'
+  rw [ramificationIndex_def, hcomp, MonoidHom.range_comp]
+  refine (Subgroup.index_map_of_injective _ hinj).trans ?_
+  rw [← hLM, ← ramificationIndex_def]
 
 /-- A tower of nonarchimedean local fields is tamely ramified exactly when each of its two
 steps is tamely ramified. The residue characteristics of `K` and `L` agree, and their

@@ -17,7 +17,7 @@ The multiplicative type tag of a product of additive topological groups is topol
 isomorphic to the product of the multiplicative type tags, both for binary products and for
 dependent products, and when `T` has a unique element, `Multiplicative (M × T)` is topologically
 isomorphic to `Multiplicative M`. These are `MulEquiv.prodMultiplicative`,
-`MulEquiv.piMultiplicative` and `AddEquiv.prodUnique` between the multiplicative type tags,
+`MulEquiv.piMultiplicative` and `Equiv.prodUnique` between the multiplicative type tags,
 upgraded to `ContinuousMulEquiv`s: the first two transport properties of topological groups, such
 as being pro-`p`, between the two shapes of a product, and the last collapses a product
 decomposition of a topological group whose second factor turns out to be trivial. The universe
@@ -106,18 +106,17 @@ end Pi
 
 section Unique
 
-variable (M T : Type*) [AddZeroClass M] [AddZeroClass T] [TopologicalSpace M] [TopologicalSpace T]
-  [Unique T]
+variable (M T : Type*) [Add M] [Add T] [TopologicalSpace M] [TopologicalSpace T] [Unique T]
 
 /-- Dropping a trivial factor: when `T` has a unique element, `Multiplicative (M × T)` is
-topologically isomorphic to `Multiplicative M`. This is `AddEquiv.prodUnique` as a
-`ContinuousMulEquiv` between the multiplicative type tags. -/
+topologically isomorphic to `Multiplicative M`. This is `Equiv.prodUnique` between the
+multiplicative type tags, as a `ContinuousMulEquiv`; unlike `AddEquiv.prodUnique` it needs no
+zero on `M` or `T`. -/
 def ContinuousMulEquiv.multiplicativeProdUnique : Multiplicative (M × T) ≃ₜ* Multiplicative M where
-  toMulEquiv := AddEquiv.toMultiplicative AddEquiv.prodUnique
-  continuous_toFun := (continuous_ofAdd.comp (continuous_fst.comp continuous_toAdd)).congr
-    fun x ↦ by simp [AddEquiv.prodUnique_apply]
-  continuous_invFun := (continuous_ofAdd.comp (continuous_toAdd.prodMk
-    (continuous_const (y := (default : T))))).congr fun v ↦ by simp [AddEquiv.prodUnique_symm_apply]
+  toEquiv := toAdd.trans ((Equiv.prodUnique M T).trans ofAdd)
+  map_mul' _ _ := rfl
+  continuous_toFun := continuous_ofAdd.comp (continuous_fst.comp continuous_toAdd)
+  continuous_invFun := continuous_ofAdd.comp (continuous_toAdd.prodMk continuous_const)
 
 variable {M T}
 

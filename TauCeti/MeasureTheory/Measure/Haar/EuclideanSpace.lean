@@ -141,4 +141,12 @@ theorem measurableEmbedding_euclideanSpace_proj {ι : Type*} [Unique ι] (i : ι
   funext z
   exact congrArg (fun j ↦ z j) (Subsingleton.elim i default)
 
+/-- Integrating a function of the unique coordinate of a Euclidean line over the preimage of `s`
+is integrating it over `s`. -/
+theorem setIntegral_comp_euclideanSpace_proj_preimage {ι : Type*} [Fintype ι] [Unique ι]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] (g : ℝ → G) (s : Set ℝ) (i : ι) :
+    ∫ z in proj (𝕜 := ℝ) i ⁻¹' s, g (z i) = ∫ t in s, g t :=
+  (volume_preserving_euclideanSpace_proj i).setIntegral_preimage_emb
+    (measurableEmbedding_euclideanSpace_proj i) g s
+
 end TauCeti

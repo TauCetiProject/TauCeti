@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.GeneralLinear.CAR.HighestWeight
 import TauCeti.Algebra.Lie.GeneralLinear.CAR.Occupation
+import TauCeti.Data.Fin.Basic
 import TauCeti.RingTheory.Idempotents.Eigenvalue
 
 /-!
@@ -206,6 +207,39 @@ theorem exists_weight_apply_eq_natCast_add_inv_two [DecidableEq n] {μ : n → K
     ∃ m : ℕ, m < Fintype.card n ∧ μ i = (m : K) + (2 : K)⁻¹ := by
   exact exists_eq_natCast_add_inv_two_of_lie_single_self_eq_smul hv.ne_zero
     (hv.lie_single_self_eq_smul i)
+
+variable {N : ℕ} [CharZero K]
+
+/-- The coordinates of a CAR highest-weight vector, written as `a i + 1/2`, have prefix sums at
+most those of the reversed staircase. -/
+theorem prefix_sum_le_rev {μ : Fin N → K}
+    {v : CliffordAlgebra (traceQuadraticForm K (Fin N))}
+    (hv : IsGlHighestWeightVector μ v) {a : Fin N → ℕ} (hμ : ∀ i, μ i = (a i : K) + (2 : K)⁻¹)
+    (k : ℕ) (hk : k < N) :
+    (∑ i : Fin k, (a (Fin.castLE hk.le i) : ℤ)) ≤
+      ∑ i : Fin k, ((Fin.rev (Fin.castLE hk.le i) : ℕ) : ℤ) := by
+  let s : Finset (Fin N) := Finset.univ.map (Fin.castLEEmb hk.le)
+  have hbound := sum_le_choose_two_add_card_mul_sub_of_lie_single_self_eq_smul
+    (K := K) (n := Fin N) (μ := μ) (a := a) (v := v) s hv.ne_zero
+    (fun i _ => hv.lie_single_self_eq_smul i) (fun i _ => hμ i)
+  have hnat : (∑ i : Fin k, a (Fin.castLE hk.le i)) ≤
+      ∑ i : Fin k, (Fin.rev (Fin.castLE hk.le i) : ℕ) := by
+    rw [Fin.sum_rev_castLE N k hk.le]
+    simpa [s] using hbound
+  exact_mod_cast hnat
+
+/-- The coordinates of a CAR highest-weight vector, written as `a i + 1/2`, sum to the sum of the
+reversed staircase. -/
+theorem sum_eq_rev {μ : Fin N → K} {v : CliffordAlgebra (traceQuadraticForm K (Fin N))}
+    (hv : IsGlHighestWeightVector μ v) {a : Fin N → ℕ} (hμ : ∀ i, μ i = (a i : K) + (2 : K)⁻¹) :
+    (∑ i : Fin N, (a i : ℤ)) = ∑ i : Fin N, ((Fin.rev i : ℕ) : ℤ) := by
+  have hsum' := sum_univ_eq_choose_two_of_lie_single_self_eq_smul
+    (K := K) (n := Fin N) (μ := μ) (a := a) (v := v) hv.ne_zero
+    hv.lie_single_self_eq_smul hμ
+  have hnat : (∑ i : Fin N, a i) = ∑ i : Fin N, (Fin.rev i : ℕ) := by
+    rw [hsum']
+    simpa using (Fin.sum_rev_castLE N N le_rfl).symm
+  exact_mod_cast hnat
 
 end IsGlHighestWeightVector
 

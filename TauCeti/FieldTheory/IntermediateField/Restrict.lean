@@ -54,8 +54,7 @@ noncomputable def restrictAlgEquivHom : (L ≃ₐ[K] L) →* (E ≃ₐ[K] E) whe
 @[simp]
 theorem coe_restrictAlgEquivHom_apply (σ : L ≃ₐ[K] L) (y : E) :
     (restrictAlgEquivHom E hE σ y : L) = σ y := by
-  simp [restrictAlgEquivHom, coe_equivMap_apply,
-    equivOfEq_apply]
+  simp [restrictAlgEquivHom, coe_equivMap_apply, equivOfEq_apply]
 
 /-- The inverse of the restriction of `σ` to `E` acts as `σ⁻¹`. -/
 @[simp]
@@ -63,25 +62,17 @@ theorem coe_restrictAlgEquivHom_symm_apply (σ : L ≃ₐ[K] L) (y : E) :
     ((restrictAlgEquivHom E hE σ).symm y : L) = σ.symm y := by
   rw [← AlgEquiv.aut_inv, ← map_inv, coe_restrictAlgEquivHom_apply, AlgEquiv.aut_inv]
 
-/-- Restriction commutes with inverses, read in `L`: `σ⁻¹` carries an element of `E` to the
-image of its `σ|_E⁻¹`-preimage. -/
+/-- Restriction commutes with inverses, read in `L` through `algebraMap E L`: `σ⁻¹` carries an
+element `y` of `E` to the image in `L` of `(σ|_E)⁻¹ y`. -/
 theorem symm_apply_algebraMap_eq_algebraMap_restrictAlgEquivHom_symm_apply (σ : L ≃ₐ[K] L)
     (y : E) : σ.symm (algebraMap E L y) = algebraMap E L ((restrictAlgEquivHom E hE σ).symm y) := by
-  rw [IntermediateField.algebraMap_apply, IntermediateField.algebraMap_apply,
-    coe_restrictAlgEquivHom_symm_apply]
+  simp
 
 /-- **The kernel of restriction is the fixing subgroup**: an automorphism restricts to the identity
 of `E` exactly when it fixes `E` pointwise. -/
 theorem ker_restrictAlgEquivHom : (restrictAlgEquivHom E hE).ker = E.fixingSubgroup := by
   ext σ
-  rw [MonoidHom.mem_ker, mem_fixingSubgroup_iff]
-  constructor
-  · intro h y hy
-    have := congrArg (fun τ : E ≃ₐ[K] E ↦ (τ ⟨y, hy⟩ : L)) h
-    simpa using this
-  · intro h
-    ext y
-    simpa using h y y.2
+  simp [mem_fixingSubgroup_iff, AlgEquiv.ext_iff, Subtype.ext_iff]
 
 /-- **The fixing subgroup of a separable quadratic subextension has order two**: a separable
 quadratic extension is Galois, with Galois group of order `[L : E] = 2`. -/

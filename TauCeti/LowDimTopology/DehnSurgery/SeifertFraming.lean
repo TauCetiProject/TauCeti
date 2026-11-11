@@ -38,9 +38,9 @@ complement `X ∖ K`, `K` the image of `f`
   (`TauCeti.IsSolidTorusNeighborhood.preferredFramedBoundaryTorus`). The preferred longitude `λ₀`
   is null-homologous in `X ∖ K`, and it generates the kernel of `H₁(T) → H₁(X ∖ K)`: in the
   preferred framing a class goes to its meridian coordinate. For a knot in `S³` this is the
-  classical Seifert framing, whose longitude bounds a Seifert surface (Seifert surfaces are not
-  formalized here); the `0`-framing of surgery theory and the `ℚ ∪ {∞}` surgery coefficients
-  refer to it.
+  classical Seifert framing, whose longitude bounds a Seifert surface (`TauCeti.SeifertSurface`,
+  which this file does not use); the `0`-framing of surgery theory and the `ℚ ∪ {∞}` surgery
+  coefficients refer to it.
 
 The homology hypotheses are stated for reduced singular homology in degrees `1` and `2`. For the
 unit sphere of a four-dimensional real inner product space they are
@@ -66,6 +66,9 @@ radius `1 / 2`, which is homotopic in `X ∖ K` to the meridian on the boundary 
 
 ## Main results
 
+* `TauCeti.IsSolidTorusNeighborhood.boundaryHomologyMap_basis_one_eq_zero_of_map`: a
+  null-homologous longitude stays null-homologous under a reparametrization of the core circle
+  followed by a map of knot complements.
 * `TauCeti.IsSolidTorusNeighborhood.complementHomologyEquiv_boundaryHomologyMap`: a class with
   `(μ, λ)`-coordinates `(p, q)` goes to `p + n q`.
 * `TauCeti.IsSolidTorusNeighborhood.complementHomologyEquiv_boundaryHomologyMap_preferred`: a
@@ -270,8 +273,8 @@ private theorem openToTorus_puncturedToOpen (h : IsSolidTorusNeighborhood f Φ)
   simp [openToTorus, this]
 
 /-- The meridian at radius `1 / 2` dies in the open solid torus. -/
-private theorem H1map_puncturedToOpen_torusClass_zero (h : IsSolidTorusNeighborhood f Φ)
-    (p : ℤ) :
+private theorem singularHomologyMap_puncturedToOpen_torusClass_eq_zero
+    (h : IsSolidTorusNeighborhood f Φ) (p : ℤ) :
     singularHomologyMap ℤ 1 (puncturedToOpen f Φ)
       (singularHomologyMap ℤ 1 h.torusHomotopyEquiv.toFun (torusClass p 0)) = 0 := by
   rw [← singularHomologyMap_comp, singularHomologyMap_eq_of_homotopic ℤ 1 ⟨h.contractHomotopy⟩,
@@ -283,8 +286,8 @@ private theorem H1map_puncturedToOpen_torusClass_zero (h : IsSolidTorusNeighborh
 
 /-- A class at radius `1 / 2` with a nonzero longitude coordinate survives in the open solid
 torus. -/
-private theorem eq_zero_of_H1map_puncturedToOpen_eq_zero (h : IsSolidTorusNeighborhood f Φ)
-    {p q : ℤ}
+private theorem eq_zero_of_singularHomologyMap_puncturedToOpen_torusClass_eq_zero
+    (h : IsSolidTorusNeighborhood f Φ) {p q : ℤ}
     (hpq : singularHomologyMap ℤ 1 (puncturedToOpen f Φ)
       (singularHomologyMap ℤ 1 h.torusHomotopyEquiv.toFun (torusClass p q)) = 0) :
     q = 0 := by
@@ -331,7 +334,11 @@ private def expandHomotopy (h : IsSolidTorusNeighborhood f Φ) :
         (radialPoint_one q _)).symm)
 
 include h₁ h₂ in
-private theorem mayerVietoris (h : IsSolidTorusNeighborhood f Φ) :
+/-- The Mayer–Vietoris consequences for `H₁` of the punctured open solid torus: a class killed in
+both the open solid torus and the knot complement is zero, and every class of the knot complement
+is the image of a class killed in the open solid torus. -/
+private theorem eq_zero_and_exists_of_map_puncturedToOpen_eq_zero
+    (h : IsSolidTorusNeighborhood f Φ) :
     (∀ x, singularHomologyMap ℤ 1 (puncturedToOpen f Φ) x = 0 →
       singularHomologyMap ℤ 1 (puncturedToComplement f Φ) x = 0 → x = 0) ∧
     ∀ c, ∃ x, singularHomologyMap ℤ 1 (puncturedToOpen f Φ) x = 0 ∧
@@ -352,10 +359,11 @@ private theorem exists_zsmul_eq (h : IsSolidTorusNeighborhood f Φ)
     (c : ((singularChains ℤ).obj (TopCat.of ↥(range f)ᶜ)).homology 1) :
     ∃ k : ℤ, k • singularHomologyMap ℤ 1 (puncturedToComplement f Φ)
       (singularHomologyMap ℤ 1 h.torusHomotopyEquiv.toFun (torusClass 1 0)) = c := by
-  obtain ⟨x, hxU, rfl⟩ := (h.mayerVietoris h₁ h₂).2 c
+  obtain ⟨x, hxU, rfl⟩ :=
+    (h.eq_zero_and_exists_of_map_puncturedToOpen_eq_zero h₁ h₂).2 c
   obtain ⟨y, rfl⟩ := (h.torusHomotopyEquiv.bijective_singularHomologyMap ℤ 1).2 x
   obtain ⟨p, q, rfl⟩ := exists_eq_torusClass y
-  obtain rfl := h.eq_zero_of_H1map_puncturedToOpen_eq_zero hxU
+  obtain rfl := h.eq_zero_of_singularHomologyMap_puncturedToOpen_torusClass_eq_zero hxU
   refine ⟨p, ?_⟩
   rw [torusClass_eq p 0, zero_smul, add_zero, map_zsmul, map_zsmul]
 
@@ -364,9 +372,11 @@ include h₁ h₂ in
 private theorem eq_zero_of_zsmul_eq_zero (h : IsSolidTorusNeighborhood f Φ) {k : ℤ}
     (hk : k • singularHomologyMap ℤ 1 (puncturedToComplement f Φ)
       (singularHomologyMap ℤ 1 h.torusHomotopyEquiv.toFun (torusClass 1 0)) = 0) : k = 0 := by
-  have hx := (h.mayerVietoris h₁ h₂).1
+  have hx := (h.eq_zero_and_exists_of_map_puncturedToOpen_eq_zero h₁ h₂).1
     (singularHomologyMap ℤ 1 h.torusHomotopyEquiv.toFun (k • torusClass 1 0))
-    (by rw [map_zsmul, map_zsmul, h.H1map_puncturedToOpen_torusClass_zero]; exact zsmul_zero k)
+    (by
+      rw [map_zsmul, map_zsmul, h.singularHomologyMap_puncturedToOpen_torusClass_eq_zero]
+      exact zsmul_zero k)
     (by rw [map_zsmul, map_zsmul, hk])
   rw [← map_zero (singularHomologyMap ℤ 1 h.torusHomotopyEquiv.toFun)] at hx
   have hk0 : torusClass k 0 = 0 := by
@@ -388,6 +398,45 @@ theorem boundaryHomologyMap_def (h : IsSolidTorusNeighborhood f Φ) :
     h.boundaryHomologyMap = (HomologicalComplex.homologyMap ((singularChains ℤ).map
       (TopCat.ofHom (ContinuousMap.inclusion h.frontier_subset_compl_range))) 1).hom :=
   (rfl)
+
+/-- The boundary longitude is the image of the `(0, 1)` curve under the boundary torus of the
+exterior, parametrized by the framing and read in the knot complement. -/
+private theorem boundaryHomologyMap_basis_one (h : IsSolidTorusNeighborhood f Φ) :
+    h.boundaryHomologyMap (h.framedBoundaryTorus.basis 1) =
+      singularHomologyMap ℤ 1
+        (h.frontierToComplement.comp (h.exteriorFrontierHomeomorph : C(Circle × Circle, _)))
+        (torusClass 0 1) := by
+  rw [singularHomologyMap_comp, FramedBoundaryTorus.ofHomeomorph_basis_one,
+    FramedBoundaryTorus.torusCurveClass_eq_singularHomologyMap]
+  rfl
+
+/-- A null-homologous longitude stays null-homologous under a reparametrization of the core
+circle followed by a map of knot complements. Let `Φ'` be a solid torus neighbourhood of a loop
+`f'` in a Hausdorff space `Y`, `g` a self-map of the circle and `m` a map from the complement of
+`f` to the complement of `f'` sending `Φ (w, g z)` to `Φ' (w, z)` on the boundary torus. If the
+longitude of `Φ` is null-homologous in the complement of `f`, then the longitude of `Φ'` is
+null-homologous in the complement of `f'`. -/
+theorem boundaryHomologyMap_basis_one_eq_zero_of_map {Y : Type} [TopologicalSpace Y] [T2Space Y]
+    {f' : Circle → Y} {Φ' : SolidTorus → Y} (h : IsSolidTorusNeighborhood f Φ)
+    (h' : IsSolidTorusNeighborhood f' Φ') (g : C(Circle, Circle))
+    (m : C(↥(range f)ᶜ, ↥(range f')ᶜ))
+    (hm : ∀ (x : ↥(range f)ᶜ) (q : Circle × Circle),
+      (x : X) = Φ (SolidTorus.boundaryInclusion (q.1, g q.2)) →
+        (m x : Y) = Φ' (SolidTorus.boundaryInclusion q))
+    (hΦ : h.boundaryHomologyMap (h.framedBoundaryTorus.basis 1) = 0) :
+    h'.boundaryHomologyMap (h'.framedBoundaryTorus.basis 1) = 0 := by
+  -- The boundary torus of `Φ'`, read in the complement of `f'`, factors through that of `Φ`.
+  have hcomp : h'.frontierToComplement.comp (h'.exteriorFrontierHomeomorph : C(Circle × Circle, _))
+      = m.comp ((h.frontierToComplement.comp (h.exteriorFrontierHomeomorph : C(_, _))).comp
+        ((ContinuousMap.id Circle).prodMap g)) := by
+    refine ContinuousMap.ext fun q ↦ Subtype.ext ?_
+    exact (h'.coe_exteriorFrontierHomeomorph_apply q).trans
+      (hm _ q (h.coe_exteriorFrontierHomeomorph_apply (q.1, g q.2))).symm
+  obtain ⟨n, hn⟩ := g.exists_singularHomologyMap_prodMap_torusClass_zero_one
+  rw [h.boundaryHomologyMap_basis_one] at hΦ
+  rw [h'.boundaryHomologyMap_basis_one, hcomp, singularHomologyMap_comp, singularHomologyMap_comp,
+    hn, torusClass_eq]
+  simp only [zero_smul, zero_add, map_zsmul, hΦ, zsmul_zero, map_zero]
 
 /-- On the boundary torus, the `(p, q)` curve is homologous in the knot complement to the
 `(p, q)` curve at radius `1 / 2`. -/
@@ -491,6 +540,12 @@ theorem framingNumber_eq_iff (h : IsSolidTorusNeighborhood f Φ) (n : ℤ) :
     rw [framingNumber]
     simpa only [map_zsmul, complementHomologyEquiv_boundaryHomologyMap_basis_zero, smul_eq_mul,
       mul_one] using hlongitude
+
+/-- The framing number vanishes exactly when the longitude is null-homologous in the knot
+complement, that is, when the framing is the preferred (Seifert) framing. -/
+theorem framingNumber_eq_zero_iff (h : IsSolidTorusNeighborhood f Φ) :
+    h.framingNumber h₁ h₂ = 0 ↔ h.boundaryHomologyMap (h.framedBoundaryTorus.basis 1) = 0 := by
+  rw [framingNumber_eq_iff, zero_smul]
 
 /-- A class of the boundary torus with `(μ, λ)`-coordinates `(p, q)` is homologous in the knot
 complement to `p + n q` times the meridian, `n` the framing number. -/

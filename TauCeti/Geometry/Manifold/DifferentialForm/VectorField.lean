@@ -18,6 +18,8 @@ import Mathlib.Analysis.Calculus.FDeriv.ContinuousAlternatingMap
 The invariant formula for the exterior derivative expresses its evaluation on differentiable
 vector fields as an alternating sum of directional derivatives and a sum of Lie-bracket terms.
 It is useful when the fields are adapted to a distribution rather than to a coordinate chart.
+For pairwise commuting fields, such as a coordinate frame, the bracket terms drop out and the
+formula holds in every degree (`TauCeti.mextDeriv_apply_vectorField_of_mlieBracket_eq_zero`).
 The within-set statements also apply at boundary and corner points.
 
 For vector fields `V` and `W` tangent to the kernel of a real one-form `α` near `x`, the formula
@@ -153,6 +155,31 @@ theorem mextDeriv_apply_vectorField {n : ℕ} {φ : RoughForm I M F (n + 1)}
   simpa only [mextDerivWithin_univ, mvfderivWithin_univ, mlieBracketWithin_univ] using
     mextDerivWithin_apply_vectorField hφ.mdifferentiableWithinAt
       (fun i ↦ (hV i).mdifferentiableWithinAt) (uniqueMDiffWithinAt_univ I)
+
+/-- The invariant exterior-derivative formula for pairwise commuting vector fields, in every
+degree: `dφ(V₀, …, Vₙ) = ∑ᵢ (-1)ⁱ Vᵢ(φ(V₀, …, V̂ᵢ, …, Vₙ))`. -/
+theorem mextDeriv_apply_vectorField_of_mlieBracket_eq_zero {n : ℕ} {φ : RoughForm I M F n}
+    {V : Fin (n + 1) → (y : M) → TangentSpace I y}
+    (hφ : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin n]→L[ℝ] F))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin n]→L[ℝ] F) y (φ y)) x)
+    (hV : ∀ i, MDifferentiableAt I I.tangent (fun y ↦ (V i y : TangentBundle I M)) x)
+    (hVV : ∀ i j, mlieBracket I (V i) (V j) x = 0) :
+    mextDeriv φ x (V · x) =
+      ∑ i, (-1) ^ i.val • mvfderiv I (fun y ↦ φ y (i.removeNth (V · y))) x (V i x) := by
+  cases n with
+  | zero =>
+    have h := mextDeriv_ofFunction_apply (I := I) (fun y ↦ φ y 0) x (V 0 x)
+    rw [← φ.eq_ofFunction] at h
+    rw [Fin.sum_univ_one, Fin.val_zero, pow_zero, one_smul, mvfderiv_apply_eq_mfderiv_apply]
+    have hv : (V · x) = ![V 0 x] := funext fun i ↦ by fin_cases i; rfl
+    have hf : (fun y ↦ φ y (Fin.removeNth 0 (V · y))) = fun y ↦ φ y 0 :=
+      funext fun y ↦ congrArg (φ y) (Subsingleton.elim _ _)
+    rw [hv, hf]
+    exact h
+  | succ n =>
+    rw [mextDeriv_apply_vectorField hφ hV, sub_eq_self]
+    refine Finset.sum_eq_zero fun i _ ↦ Finset.sum_eq_zero fun j _ ↦ ?_
+    rw [hVV, (φ x).map_coord_zero 0 (Matrix.cons_val_zero _ _), smul_zero]
 
 /-- The exterior derivative of a one-form on two differentiable vector fields, within a subset:
 `dφ(V, W) = V(φ(W)) - W(φ(V)) - φ([V, W])`. -/

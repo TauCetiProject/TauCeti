@@ -59,6 +59,8 @@ in `T`; the isomorphism is the one that the Yoneda lemma produces.
 * `TauCeti.Bialgebra.HomAlgebra.homEquiv_comp_one_tmul`: `homEquiv` is natural in `T`.
 * `TauCeti.Bialgebra.HomAlgebra.instFinitePresentation`: `HomAlgebra R H G` is of finite
   presentation over `R`.
+* `TauCeti.Bialgebra.HomAlgebra.instModuleFinite`: `HomAlgebra R H G` is module-finite over
+  `R` whenever the ambient Weil restriction `WeilRestriction R G (G ⊗[R] H)` is.
 * `TauCeti.Bialgebra.HomAlgebra.homEquiv_comp_baseChangeAlgEquiv`: `baseChangeAlgEquiv` is
   compatible with the universal properties.
 
@@ -282,6 +284,12 @@ theorem homEquiv_comp_one_tmul {T' : Type*} [CommRing T'] [Algebra R T']
 /-- `HomAlgebra R H G` is of finite presentation over `R`. -/
 instance instFinitePresentation : Algebra.FinitePresentation R (HomAlgebra R H G) :=
   Algebra.FinitePresentation.quotient (ideal_fg R H G)
+
+/-- The closed locus of monoid homomorphisms is finite whenever the ambient scheme of
+maps is finite. -/
+instance instModuleFinite [Module.Finite R (TauCeti.Algebra.WeilRestriction R G (G ⊗[R] H))] :
+    Module.Finite R (HomAlgebra R H G) :=
+  inferInstanceAs (Module.Finite R (Ambient R H G ⧸ ideal R H G))
 
 section BaseChange
 

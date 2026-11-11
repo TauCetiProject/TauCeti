@@ -44,6 +44,8 @@ depends only on the isomorphism class of `G`.
 * `TauCeti.DerivedCentralQuotient.congr`: transport of the derived central quotient along an
   isomorphism of groups, built from the transport `MulEquiv.commutatorCongr` of the derived
   subgroup.
+* `TauCeti.DerivedCentralQuotient.quotientCenterEquivOfPerfect`: a perfect group modulo its centre
+  is the derived central quotient of every isomorphic group.
 
 ## Main results
 
@@ -270,6 +272,24 @@ theorem congr_symm (ψ : G ≃* G') :
   MulEquiv.ext fun x => QuotientGroup.induction_on x fun y => by
     simp only [DerivedCentralQuotient.congr, QuotientGroup.congr_symm, QuotientGroup.congr_mk,
       MulEquiv.commutatorCongr_symm]
+
+/-- **A perfect group modulo its centre is the derived central quotient of any isomorphic
+group.** This identifies the derived central quotient of the fixed points of a Steinberg
+endomorphism with the central quotient of a perfect matrix group isomorphic to them, as for
+`PSL_n(𝔽_q)` and `PSp_{2n}(𝔽_q)`. -/
+def quotientCenterEquivOfPerfect (h : commutator G = ⊤) (ψ : G ≃* G') :
+    G ⧸ center G ≃* DerivedCentralQuotient G' :=
+  letI : Group.IsPerfect G := ⟨h⟩
+  mulEquivQuotientCenter.symm.trans (congr ψ)
+
+@[simp]
+theorem quotientCenterEquivOfPerfect_mk (h : commutator G = ⊤) (ψ : G ≃* G')
+    (x : ↥(commutator G)) :
+    quotientCenterEquivOfPerfect h ψ ((x : G) : G ⧸ center G) =
+      (MulEquiv.commutatorCongr ψ x : DerivedCentralQuotient G') := by
+  let _ : Group.IsPerfect G := ⟨h⟩
+  rw [quotientCenterEquivOfPerfect, MulEquiv.trans_apply, ← mulEquivQuotientCenter_mk,
+    MulEquiv.symm_apply_apply, congr_mk]
 
 end DerivedCentralQuotient
 

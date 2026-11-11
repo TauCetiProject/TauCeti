@@ -40,24 +40,12 @@ from Mathlib.
 * `TauCeti.Relator.commInvInv`: the commutator `r⁻¹ s⁻¹ r s` of the presentation literature.
 * `TauCeti.Relator.relatorSet`: the free-group elements denoted by a list of expressions.
 
-## Main result
+## Main results
 
 * `TauCeti.Relator.toWord_toFreeGroup`: compilation preserves the free-group element denoted by an
   expression.
 * `TauCeti.Relator.relatorSet_eq_of_mem_map_toWord_iff`: relator lists with the same compiled-word
   membership denote the same relations.
-
-## References
-
-This file supplies the "relator expression type compiling to signed words" target of milestone S0
-of `TauCetiRoadmap/CFSGStatement/README.md`. The design is not original here: the expression
-language, its five constructors, the names `PresentationWord`, `Relator.toWord`,
-`Relator.toFreeGroup`, and the statement of `Relator.toWord_toFreeGroup` are adapted from the
-human-owned roadmap formalization in the accompanying `TauCetiRoadmap/CFSGStatement/Suggested.lean`,
-where they are pinned as target signatures (with `sorry`ed proofs) by the roadmap's authors. The
-adaptation replaces that file's bespoke `GeneratorLetter`/`PresentationWord.toFreeGroup` pair by
-Mathlib's `List (α × Bool)` words and `FreeGroup.mk`, generalizes the generator type from `Fin n` to
-an arbitrary `α`, and discharges the compilation theorem.
 -/
 
 public section
@@ -144,7 +132,7 @@ theorem map_map {α β γ : Type*} (f : α → β) (g : β → γ) (r : Relator 
 
 Inversion uses Mathlib's `FreeGroup.invRev`, which reverses the word and flips every sign. Powers
 are compiled by repeating the whole word, rather than by expanding the expression recursively. The
-five equation lemmas below are the public interface: the body itself stays private. -/
+five equation lemmas below are the public interface: the body itself is not exposed. -/
 def toWord {α : Type*} : Relator α → PresentationWord α
   | .gen x => [(x, true)]
   | .inv r => FreeGroup.invRev r.toWord
@@ -337,16 +325,15 @@ theorem toFreeGroup_comm {α : Type*} (r s : Relator α) :
 
 /-- Group homomorphisms commute with evaluation of relator expressions. -/
 @[simp]
-theorem map_eval {α G H : Type*} [Group G] [Group H] (φ : G →* H)
-    (f : α → G) (r : Relator α) : φ (eval f r) = eval (φ ∘ f) r := by
+theorem map_eval {α G H F : Type*} [Group G] [Group H] [FunLike F G H] [MonoidHomClass F G H]
+    (φ : F) (f : α → G) (r : Relator α) : φ (eval f r) = eval (φ ∘ f) r := by
   induction r <;> simp_all [commutatorElement_def]
 
 /-- The free-group universal map evaluates the expression at the assigned generators. -/
 @[simp]
 theorem lift_toFreeGroup {α G : Type*} [Group G] (f : α → G) (r : Relator α) :
     FreeGroup.lift f r.toFreeGroup = eval f r := by
-  simpa only [toFreeGroup, Function.comp_def, FreeGroup.lift_apply_of] using
-    map_eval (FreeGroup.lift f) FreeGroup.of r
+  simp [toFreeGroup, Function.comp_def]
 
 /-- The conjugate `s⁻¹ * r * s`, written `r ^ s` by most of the presentation literature.
 
@@ -443,6 +430,7 @@ theorem toWord_commInvInv {α : Type*} (r s : Relator α) :
 def relatorSet {α : Type*} (l : List (Relator α)) : Set (FreeGroup α) :=
   toFreeGroup '' {x | x ∈ l}
 
+/-- Membership in a relator set: being denoted by some expression of the list. -/
 @[simp]
 theorem mem_relatorSet {α : Type*} {l : List (Relator α)} {r : FreeGroup α} :
     r ∈ relatorSet l ↔ ∃ t ∈ l, t.toFreeGroup = r :=
@@ -457,18 +445,15 @@ theorem relatorSet_append {α : Type*} (l l' : List (Relator α)) :
 /-- **The compiled word denotes the direct interpretation of the relator expression.**
 
 Consequently, a reviewer may check the structured `Relator` against a published presentation while
-the eventual `PresentedGroup` safely uses `FreeGroup.mk r.toWord` as its defining relation. -/
+a `PresentedGroup` safely uses `FreeGroup.mk r.toWord` as its defining relation. -/
 @[simp]
 theorem toWord_toFreeGroup {α : Type*} (r : Relator α) :
     FreeGroup.mk r.toWord = r.toFreeGroup := by
   induction r with
   | gen => rfl
-  | inv r ih => rw [toWord_inv, toFreeGroup_inv, ← FreeGroup.inv_mk, ih]
-  | mul r s ihr ihs => rw [toWord_mul, toFreeGroup_mul, ← FreeGroup.mul_mk, ihr, ihs]
-  | pow r n ih => rw [toWord_pow, toFreeGroup_pow, ← FreeGroup.pow_mk, ih]
-  | comm r s ihr ihs =>
-    rw [toWord_comm, toFreeGroup_comm, commutatorElement_def, ← FreeGroup.mul_mk,
-      ← FreeGroup.mul_mk, ← FreeGroup.mul_mk, ← FreeGroup.inv_mk, ← FreeGroup.inv_mk, ihr, ihs]
+  | _ =>
+    simp_all [← FreeGroup.mul_mk, ← FreeGroup.inv_mk, ← FreeGroup.pow_mk, commutatorElement_def,
+      mul_assoc]
 
 /-- Renaming commutes with compilation: each signed letter keeps its sign. -/
 @[simp]
@@ -488,8 +473,7 @@ theorem length_map {α β : Type*} (f : α → β) (r : Relator α) :
 @[simp]
 theorem toFreeGroup_map {α β : Type*} (f : α → β) (r : Relator α) :
     (r.map f).toFreeGroup = FreeGroup.map f r.toFreeGroup := by
-  rw [← toWord_toFreeGroup, toWord_map, ← toWord_toFreeGroup r, FreeGroup.map.mk]
-  rfl
+  simp [toFreeGroup, Function.comp_def]
 
 /-- **Two relator lists with the same compiled-word membership denote the same relations.**
 
@@ -501,12 +485,10 @@ list letter by letter, which is decidable, rather than expression by expression,
 both differences. Multiplicity is irrelevant because `relatorSet` is a set. -/
 theorem relatorSet_eq_of_mem_map_toWord_iff {α : Type*} {l l' : List (Relator α)}
     (h : ∀ w, w ∈ l.map toWord ↔ w ∈ l'.map toWord) : relatorSet l = relatorSet l' := by
-  have key : ∀ {m m' : List (Relator α)},
-      (∀ w, w ∈ m.map toWord → w ∈ m'.map toWord) → relatorSet m ⊆ relatorSet m' := by
-    rintro m m' hm r ⟨t, ht, rfl⟩
-    obtain ⟨s, hs, hst⟩ := List.mem_map.mp (hm _ (List.mem_map_of_mem ht))
-    exact ⟨s, hs, by rw [← toWord_toFreeGroup s, ← toWord_toFreeGroup t, hst]⟩
-  exact Set.Subset.antisymm (key fun w => (h w).mp) (key fun w => (h w).mpr)
+  have key (m : List (Relator α)) : relatorSet m = FreeGroup.mk '' {w | w ∈ m.map toWord} := by
+    ext; simp [← toWord_toFreeGroup]
+  rw [key, key]
+  exact congrArg _ (Set.ext h)
 
 end Relator
 

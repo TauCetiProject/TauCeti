@@ -112,6 +112,28 @@ private theorem abs_le_of_add_mul_eq_one {u : Fin (rank K) → (𝓞 K)ˣ} (hu :
       (by positivity))
 
 open scoped Classical in
+/-- The multiplicative lower bound for linear forms in logarithms, with `max 1 (maxⱼ |e j|)`
+enlarged to `max 1 Bn` for a bound `Bn` on the exponents. -/
+private theorem lowerBound_of_sup_le {u : Fin (rank K) → (𝓞 K)ˣ} {α β : K} {C : ℝ} (hC : 0 ≤ C)
+    (hLB : ∀ σ : K →+* ℂ, ∀ γ ∈ ({α, β} : Set K), ∀ ζ ∈ torsion K, ∀ e : Fin (rank K) → ℤ,
+      σ (γ * ζ * ∏ j, (u j : K) ^ e j) ≠ 1 →
+        (Real.exp 1 * max 1 ((Finset.univ.sup fun j ↦ (e j).natAbs : ℕ) : ℝ)) ^ (-C) ≤
+          ‖σ (γ * ζ * ∏ j, (u j : K) ^ e j) - 1‖)
+    {Bn : ℕ} {γ : K} (hγ : γ ∈ ({α, β} : Set K)) {ζ : (𝓞 K)ˣ} (hζ : ζ ∈ torsion K)
+    {e : Fin (rank K) → ℤ} (he : (Finset.univ.sup fun j ↦ (e j).natAbs) ≤ Bn)
+    {w : (𝓞 K)ˣ} (hw : w = ζ * ∏ j, u j ^ e j) (σ : K →+* ℂ) (hσ : σ (γ * w) ≠ 1) :
+    (Real.exp 1 * max 1 (Bn : ℝ)) ^ (-C) ≤ ‖σ (γ * w) - 1‖ := by
+  have hcoe : ((∏ j, u j ^ e j : (𝓞 K)ˣ) : K) = ∏ j, (u j : K) ^ e j := by
+    simp only [← coe_zpow]
+    exact map_prod ((Units.coeHom K).comp (Units.map (algebraMap (𝓞 K) K).toMonoidHom)) _ _
+  have hγw : γ * (w : K) = γ * ζ * ∏ j, (u j : K) ^ e j := by
+    rw [hw, coe_mul, hcoe, mul_assoc]
+  rw [hγw] at hσ ⊢
+  refine (Real.rpow_le_rpow_of_nonpos (by positivity) ?_ (neg_nonpos.mpr hC)).trans
+    (hLB σ γ hγ ζ hζ e hσ)
+  gcongr
+
+open scoped Classical in
 /-- **Exponent bound for the unit equation.** Let `u` be a family of units of maximal rank in a
 number field `K` of degree `d`, let `α, β ≠ 0`, and let `C ≥ 0` be such that for every complex
 embedding `σ`, every `γ ∈ {α, β}`, every root of unity `ζ` and every `e ∈ ℤ^r`,
@@ -155,22 +177,6 @@ theorem max_abs_le_of_mul_add_mul_eq_one {u : Fin (rank K) → (𝓞 K)ˣ} (hu :
       rw [sub_nonneg, Nat.one_le_cast]
       omega
     positivity
-  have hcoe (e : Fin (rank K) → ℤ) :
-      ((∏ j, u j ^ e j : (𝓞 K)ˣ) : K) = ∏ j, (u j : K) ^ e j := by
-    simp only [← coe_zpow]
-    exact map_prod ((Units.coeHom K).comp (Units.map (algebraMap (𝓞 K) K).toMonoidHom)) _ _
-  -- The lower bound, with `max 1 (maxⱼ |e j|)` enlarged to `M`.
-  have hLB' {γ : K} (hγ : γ ∈ ({α, β} : Set K)) {ζ : (𝓞 K)ˣ} (hζ : ζ ∈ torsion K)
-      {e : Fin (rank K) → ℤ} (he : (Finset.univ.sup fun j ↦ (e j).natAbs) ≤ Bn)
-      {w : (𝓞 K)ˣ} (hw : w = ζ * ∏ j, u j ^ e j) (σ : K →+* ℂ) (hσ : σ (γ * w) ≠ 1) :
-      (Real.exp 1 * M) ^ (-C) ≤ ‖σ (γ * w) - 1‖ := by
-    have hγw : γ * (w : K) = γ * ζ * ∏ j, (u j : K) ^ e j := by
-      rw [hw, coe_mul, hcoe, mul_assoc]
-    rw [hγw] at hσ ⊢
-    refine (Real.rpow_le_rpow_of_nonpos (by positivity) ?_ (neg_nonpos.mpr hC)).trans
-      (hLB σ γ hγ ζ hζ e hσ)
-    gcongr
-    exact max_le_max le_rfl (by exact_mod_cast he)
   -- Hence every exponent is at most `A + B₀ log M`.
   have hexp (j : Fin (rank K)) : max |(ex j : ℝ)| |(ey j : ℝ)| ≤ A + B₀ * Real.log M := by
     have hAB : κ * ((finrank ℚ K - 1 : ℝ) * (Real.log H + C * (1 + Real.log M))) =
@@ -180,9 +186,11 @@ theorem max_abs_le_of_mul_add_mul_eq_one {u : Fin (rank K) → (𝓞 K)ˣ} (hu :
     rw [← hAB]
     exact max_le
       (abs_le_of_add_mul_eq_one hu hd hα (le_max_left _ _) hζx hx (by rwa [add_comm]) hM
-        (hLB' (by simp) hζy (Finset.sup_mono_fun fun j _ ↦ le_max_right _ _) hy) j)
+        (lowerBound_of_sup_le hC hLB (by simp) hζy
+          (Finset.sup_mono_fun fun j _ ↦ le_max_right _ _) hy) j)
       (abs_le_of_add_mul_eq_one hu hd hβ (le_max_right _ _) hζy hy hxy hM
-        (hLB' (by simp) hζx (Finset.sup_mono_fun fun j _ ↦ le_max_left _ _) hx) j)
+        (lowerBound_of_sup_le hC hLB (by simp) hζx
+          (Finset.sup_mono_fun fun j _ ↦ le_max_left _ _) hx) j)
   -- The largest exponent `Bn` satisfies `Bn ≤ A + B₀ log (max 1 Bn)`.
   have hcast (j : Fin (rank K)) :
       ((max (ex j).natAbs (ey j).natAbs : ℕ) : ℝ) = max |(ex j : ℝ)| |(ey j : ℝ)| := by

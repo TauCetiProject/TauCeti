@@ -102,11 +102,9 @@ theorem isNondegenerateCriticalPoint_sub_iff (hf : ContDiffAt ℝ 2 f x) (a : E 
   have hax : ContDiffAt ℝ 2 (fun y : E ↦ a y) x := a.contDiff.contDiffAt
   have h1 : fderiv ℝ (fun y ↦ f y - a y) x = fderiv ℝ f x - a := by
     simpa using fderiv_fun_sub (hf.differentiableAt (by norm_num)) a.differentiableAt
-  have hEq : (fderiv ℝ fun y ↦ f y - a y) =ᶠ[nhds x] fun y ↦ fderiv ℝ f y - a := by
-    filter_upwards [hf.eventually (by norm_num)] with y hy using by
-      simpa using fderiv_fun_sub (hy.differentiableAt (by norm_num)) a.differentiableAt
-  have h2 : fderiv ℝ (fderiv ℝ fun y ↦ f y - a y) x = fderiv ℝ (fderiv ℝ f) x := by
-    rw [hEq.fderiv_eq, fderiv_sub_const]
+  have h2 : fderiv ℝ (fderiv ℝ fun y ↦ f y - a y) x = fderiv ℝ (fderiv ℝ f) x :=
+    fderiv_fderiv_sub_clm ((hf.eventually (by norm_num)).mono fun y hy ↦
+      hy.differentiableAt (by norm_num)) a
   constructor
   · rintro ⟨-, h0, hinv⟩
     rw [h1, sub_eq_zero] at h0

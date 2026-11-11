@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
-public import TauCeti.Analysis.Normed.Operator.Compact.FiniteRank
+public import TauCeti.Analysis.Normed.Operator.Compact.Finite.Rank
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Basic
 
 /-!

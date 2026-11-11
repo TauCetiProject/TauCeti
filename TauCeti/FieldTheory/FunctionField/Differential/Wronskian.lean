@@ -8,8 +8,8 @@ module
 public import TauCeti.FieldTheory.FunctionField.Differential.Kaehler
 public import TauCeti.FieldTheory.FunctionField.Place.Expansion.Laurent.Derivative
 public import TauCeti.RingTheory.Derivation.Wronskian.Rescale
-import Mathlib.LinearAlgebra.Vandermonde
 import TauCeti.FieldTheory.FunctionField.Place.Degree
+import TauCeti.LinearAlgebra.Vandermonde
 
 /-!
 # Wronskians in function fields
@@ -142,18 +142,7 @@ private lemma det_normalized {n : ℕ} {f : Fin n → F} (hf : ∀ j, f j ≠ 0)
   let c : Matrix (Fin n) (Fin n) ℤ := of fun i j ↦ (descPochhammer ℤ i).eval (P.ord (f j))
   -- Each normalized entry is congruent to the integer `(ord f_j)(ord f_j - 1)⋯` modulo `𝔪_P`.
   have hentry (i j : Fin n) : N i j - (c i j : F) ∈ P.filtration 1 := by
-    have hE := P.iterate_derivativeOfSeparating_sub_zsmul_mem_filtration ht htr
-      (P.mem_filtration_ord (f j)) i
-    have hw : t ^ (i : ℕ) * (f j)⁻¹ ∈ P.filtration (i - P.ord (f j)) := by
-      convert P.mul_mem_filtration (P.mem_filtration_ord (t ^ (i : ℕ)))
-        (P.mem_filtration_ord (f j)⁻¹) using 2
-      simp [ht, sub_eq_add_neg]
-    convert P.mul_mem_filtration hw hE using 1
-    · congr 1
-      omega
-    · have := hf j
-      simp only [← hNdef, c, of_apply, zsmul_eq_mul, inv_pow]
-      field_simp
+    simpa [← hNdef, c] using P.normalized_entry_sub_mem_filtration_one ht htr (hf j) i
   have hint (i j : Fin n) : N i j ∈ P.integers := by
     rw [← mem_filtration_zero_iff, ← sub_add_cancel (N i j) (c i j : F)]
     refine add_mem (P.filtration_antitone (by omega) (hentry i j)) ?_
@@ -175,16 +164,12 @@ private lemma det_normalized {n : ℕ} {f : Fin n → F} (hf : ∀ j, f j ≠ 0)
     exact (residue_eq_iff_sub_mem_filtration_one P).mpr (by simpa [N'] using hentry i j)
   have hc : ((c.det : ℤ) : k) ≠ 0 := by
     -- The reduction of `c` is the transpose of a Vandermonde matrix in the orders.
-    have hv : ((c.det : ℤ) : k) = (vandermonde fun j ↦ (P.ord (f j) : k)).det := by
-      have h := RingHom.map_det (Int.castRingHom k) cᵀ
-      rw [eq_intCast, det_transpose] at h
-      rw [h, det_eval_matrixOfPolynomials_eq_det_vandermonde _ (fun i ↦ descPochhammer k i)
-        (fun i ↦ descPochhammer_natDegree k i) (fun i ↦ monic_descPochhammer k i)]
-      congr 1
-      ext i j
-      simp [c, descPochhammer_eval_cast]
-    rw [hv]
-    exact det_vandermonde_ne_zero_iff.mpr hinj
+    have h := RingHom.map_det (Int.castRingHom k) c
+    rw [eq_intCast] at h
+    rw [h]
+    convert det_descPochhammer_eval_ne_zero hinj using 2
+    ext i j
+    simp [c, descPochhammer_eval_cast]
   have hcmem : ((c.det : ℤ) : F) ∉ P.filtration 1 := by
     rw [← map_intCast (algebraMap k F),
       P.mem_filtration_iff_le_ord ((map_ne_zero _).mpr hc), ord_algebraMap]

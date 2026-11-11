@@ -456,6 +456,18 @@ private structure IsSides (P : Set M) (p : M) (J : Bool → Set M) (N : Set M) (
   mem_nhds : p ∈ N
   diff_subset : N \ {p} ⊆ J true ∪ J false
 
+/-- The two half-intervals `(t, t + η]` and `[t - η, t)` lie in `[t - η, t + η]`, miss `t`, and
+have `t` in their closure. -/
+private theorem cond_Ioc_Ico_facts {t η : ℝ} (hη : 0 < η) (b : Bool) :
+    cond b (Ioc t (t + η)) (Ico (t - η) t) ⊆ Icc (t - η) (t + η) ∧
+      t ∉ cond b (Ioc t (t + η)) (Ico (t - η) t) ∧
+      t ∈ closure (cond b (Ioc t (t + η)) (Ico (t - η) t)) := by
+  cases b
+  · exact ⟨Ico_subset_Icc_self.trans (Icc_subset_Icc_right (by linarith)), fun h ↦ h.2.false,
+      by simp [closure_Ico (by linarith : t - η ≠ t), hη.le]⟩
+  · exact ⟨Ioc_subset_Icc_self.trans (Icc_subset_Icc_left (by linarith)), fun h ↦ h.1.false,
+      by simp [closure_Ioc (by linarith : t ≠ t + η), hη.le]⟩
+
 /-- An interior point has two sides relative to any finite set: the two half-intervals around it
 in a chart. -/
 private theorem exists_isSides [T1Space M] {P : Set M} (hP : P.Finite) {p : M}
@@ -481,13 +493,8 @@ private theorem exists_isSides [T1Space M] {P : Set M} (hP : P.Finite) {p : M}
     exact hsV.2 ⟨hsP, fun hsp ↦ hne (by rw [← hcoord, mem_singleton_iff.1 hsp])⟩
   have hcont := continuousOn_symm_normalRay fun s hs ↦ (hγ s hs).1
   set D : Bool → Set ℝ := fun b ↦ cond b (Ioc t (t + η)) (Ico (t - η) t)
-  have hD : ∀ b, D b ⊆ Icc (t - η) (t + η) ∧ t ∉ D b ∧ t ∈ closure (D b) := by
-    intro b
-    cases b
-    · exact ⟨Ico_subset_Icc_self.trans (Icc_subset_Icc_right (by linarith)), fun h ↦ h.2.false,
-        by simp [D, closure_Ico (by linarith : t - η ≠ t), hη.le]⟩
-    · exact ⟨Ioc_subset_Icc_self.trans (Icc_subset_Icc_left (by linarith)), fun h ↦ h.1.false,
-        by simp [D, closure_Ioc (by linarith : t ≠ t + η), hη.le]⟩
+  have hD : ∀ b, D b ⊆ Icc (t - η) (t + η) ∧ t ∉ D b ∧ t ∈ closure (D b) :=
+    cond_Ioc_Ico_facts hη
   refine ⟨fun b ↦ (fun s ↦ e.symm (normalRay s)) '' D b,
     e.source ∩ (fun y ↦ (e y).1 0) ⁻¹' Ioo (t - η) (t + η),
     fun b ↦ e.symm (normalRay (cond b (t + η) (t - η))), ⟨fun b ↦ ?_, fun b ↦ ?_, fun b ↦ ?_,
@@ -664,16 +671,14 @@ private theorem CutData.card_filter_arcOf_eq_two [T2Space M] (D : CutData M)
   -- A side in the arc belongs to a point of `P` with an unattained endpoint as coordinate.
   have hinl : ∀ p c, (.inl (p, c) : M × Bool ⊕ M) ∈ Ω → D.arcOf (.inl (p, c)) = K →
       p ∈ D.P ∧ D.J p c ⊆ K ∧ p ∈ e.source ∧ v (.inl (p, c)) ∉ I ∧
-        (v (.inl (p, c)) = sInf I ∨ v (.inl (p, c)) = sSup I) := by
-    intro p c hω hK
+        (v (.inl (p, c)) = sInf I ∨ v (.inl (p, c)) = sSup I) := fun p c hω hK ↦ by
     have hp : p ∈ D.P := by simpa [Ω] using hω
     have hJ : D.J p c ⊆ K := by rw [← hK]; exact D.J_subset_arcOf hp c
     exact ⟨hp, hJ, h.coord_of_mem_closure (closure_mono hJ ((D.sides p hp).mem_closure c))
       (disjoint_right.1 hKP hp)⟩
   -- A boundary point in the arc has coordinate `0`, the attained infimum.
   have hinr : ∀ y, (.inr y : M × Bool ⊕ M) ∈ Ω → D.arcOf (.inr y) = K →
-      y ∈ e.source ∧ v (.inr y) ∈ I ∧ v (.inr y) = sInf I := by
-    intro y hω hK
+      y ∈ e.source ∧ v (.inr y) ∈ I ∧ v (.inr y) = sInf I := fun y hω hK ↦ by
     have hyK : y ∈ K := by rw [← hK]; exact mem_connectedComponentIn (hbase _ hω)
     exact ⟨(h.mem y hyK).1, h.coord_eq_sInf_of_mem_boundary hyK (by simpa [Ω] using hω)⟩
   have hinj : Set.InjOn v (Ω.filter fun ω ↦ D.arcOf ω = K) := by

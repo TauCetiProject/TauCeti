@@ -10,6 +10,8 @@ public import TauCeti.KnotTheory.BraidWord.FreeCancellation.SeifertMatrix
 public import TauCeti.KnotTheory.BraidWord.SeifertMatrix.BraidRelation
 public import TauCeti.KnotTheory.SeifertMatrix.Polynomial.Conway
 
+import TauCeti.KnotTheory.BraidWord.SeifertMatrix.Conway
+
 /-!
 # The Conway polynomial from a braid word
 
@@ -25,6 +27,11 @@ relations and free cancellation. Consequently any word representing the same bra
 the same polynomial. On an unused level, inserting an inverse pair can join components of
 the surface, but then the new Seifert matrix has a zero row and column, so its polynomial
 vanishes. This case is essential for word independence.
+
+The polynomial satisfies the Conway skein relation `∇₊ - ∇₋ = z ∇₀` for every crossing of the
+word (`TauCeti.BraidWord.conwayPolynomial_skein`). When the changed letter is alone on its level,
+both sides vanish: the smoothed word leaves that level unused, and the sign of a lone letter only
+relabels the Seifert matrix.
 
 The construction uses the canonical matrices and their elementary changes from
 `TauCeti.KnotTheory.BraidWord.SeifertMatrix.Equivalence`, and the matrix polynomial from
@@ -198,6 +205,46 @@ theorem conwayPolynomial_nil : conwayPolynomial (n := n) [] = if n = 0 then 1 el
   | succ n =>
     rw [conwayPolynomial_of_not_exists _ ⟨0, by omega⟩ (by simp)]
     simp
+
+/-- A word with an uncrossed strand added closes to a split link, of Conway polynomial zero. -/
+@[simp]
+theorem conwayPolynomial_strandIncl (w : BraidWord (n + 1)) : w.strandIncl.conwayPolynomial = 0 :=
+  conwayPolynomial_of_not_exists _ (Fin.last n) fun ⟨x, hx, hxi⟩ ↦ by
+    rw [strandIncl_def] at hx
+    obtain ⟨y, -, rfl⟩ := List.mem_map.1 hx
+    exact Fin.castSucc_ne_last _ hxi
+
+/-- **The Conway skein relation for braid words.** The closures of `u σᵢ v`, `u σᵢ⁻¹ v` and
+`u v` satisfy `∇₊ - ∇₋ = z ∇₀`. -/
+theorem conwayPolynomial_skein (u v : BraidWord (n + 1)) (i : Fin (n + 1 - 1)) :
+    (u ++ (i, 1) :: v).conwayPolynomial - (u ++ (i, -1) :: v).conwayPolynomial =
+      Polynomial.X * (u ++ v).conwayPolynomial := by
+  by_cases hi : ∃ x ∈ u ++ v, x.1 = i
+  · -- All three words use the same levels.
+    have hlevel (ε : ℤˣ) (l : Fin (n + 1 - 1)) :
+        (∃ x ∈ u ++ (i, ε) :: v, x.1 = l) ↔ ∃ x ∈ u ++ v, x.1 = l := by
+      obtain ⟨y, hy, hyi⟩ := hi
+      simp only [List.mem_append, List.mem_cons] at hy ⊢
+      grind
+    by_cases h : ∀ l, ∃ x ∈ u ++ v, x.1 = l
+    · rw [conwayPolynomial_of_forall _ h,
+        conwayPolynomial_of_forall _ fun l ↦ (hlevel 1 l).2 (h l),
+        conwayPolynomial_of_forall _ fun l ↦ (hlevel (-1) l).2 (h l)]
+      apply LaurentPolynomial.eval₂_C_T_neg_sub_T_injective
+      simp only [Polynomial.eval₂_sub, Polynomial.eval₂_mul, Polynomial.eval₂_X,
+        Matrix.eval₂_C_conwayPolynomial]
+      exact seifertConwayDeterminant_seifertMatrix_skein u v i hi
+    · obtain ⟨l, hl⟩ := not_forall.1 h
+      rw [conwayPolynomial_of_not_exists _ l hl,
+        conwayPolynomial_of_not_exists _ l (mt (hlevel 1 l).1 hl),
+        conwayPolynomial_of_not_exists _ l (mt (hlevel (-1) l).1 hl), sub_zero, mul_zero]
+  · -- The changed letter is alone on its level, so its sign only relabels the Seifert matrix.
+    rw [conwayPolynomial_of_not_exists _ i hi, mul_zero, sub_eq_zero]
+    apply conwayPolynomial_eq_of_forall_mem_map_iff
+    · simp only [List.map_append, List.map_cons, List.mem_append, List.mem_cons]
+    · intro _
+      obtain ⟨e, he⟩ := exists_seifertMatrix_append_cons_of_not_exists u v i 1 (-1) hi
+      rw [he, Matrix.conwayPolynomial_submatrix_equiv_self]
 
 /-- The right-handed trefoil, presented as the closure of `σ₀³`, has polynomial `1 + X²`. -/
 @[simp]

@@ -137,6 +137,77 @@ theorem exists_partialDiffeomorph_normalExp_subset [SecondCountableTopology N] [
   rintro _ ⟨p, hp, rfl⟩
   exact (hΦS hp).2
 
+omit [ENat.LEInfty m] [IsManifold I (m + 1) M] [I.Boundaryless] in
+/-- The radial compression step of the Riemannian tubular neighbourhood theorem: a partial
+diffeomorphism extending the normal exponential on a neighbourhood of the zero section, with
+target in `O`, is precomposed with a fibrewise radial compression to give a diffeomorphism
+of the whole normal bundle onto an open subset of `O`. -/
+private theorem exists_diffeomorph_normalBundle_of_partialDiffeomorph
+    [IsManifold I ∞ M] [T2Space M]
+    [SecondCountableTopology M] [LocallyCompactSpace M]
+    (f : SmoothEmbedding I J ∞ M N)
+    (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E) {O : Set N} :
+    let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
+    letI := f.normalSpaceFiberBundle hn hdim
+    ∀ Ψ : PartialDiffeomorph (I.prod 𝓘(ℝ, P)) J (TotalSpace P (fun x ↦ f.NormalSpace x hn)) N ∞,
+      (∀ x, zeroSection P (fun x ↦ f.NormalSpace x hn) x ∈ Ψ.source) → Ψ.target ⊆ O →
+      ⇑Ψ = f.normalExp hn →
+      ∃ W : TopologicalSpace.Opens N, (W : Set N) ⊆ O ∧
+        ∃ Φ : TotalSpace P (fun x ↦ f.NormalSpace x hn) ≃ₘ^∞⟮I.prod 𝓘(ℝ, P), J⟯ W,
+          ∀ x, (Φ (zeroSection P (fun x ↦ f.NormalSpace x hn) x) : N) = f x := by
+  intro hn
+  let := f.normalSpaceFiberBundle hn hdim
+  intro Ψ hzero htarget hΨ
+  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  have : IsManifold J (∞ + 1) N := by simpa using (inferInstance : IsManifold J ∞ N)
+  let := f.normalSpaceVectorBundle hn hdim
+  let := f.normalSpaceContMDiffVectorBundle (m := ∞) hn (by simp) hdim
+  -- A smooth auxiliary metric provides fibrewise radial compression, without changing
+  -- the quotient topology or the complementary-coordinate atlas of the normal bundle.
+  obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := I) (n := ⊤) (F := P)
+    (E := fun x ↦ f.NormalSpace x hn)
+  -- Name the family so instance search can infer it before selecting a particular fibre.
+  let ν : M → Type _ := fun x ↦ f.NormalSpace x hn
+  let : RiemannianBundle ν := ⟨g.toRiemannianMetric⟩
+  let : ∀ x, NormedAddCommGroup (ν x) := fun x => inferInstance
+  let : ∀ x, InnerProductSpace ℝ (ν x) := fun x => inferInstance
+  let : IsContMDiffRiemannianBundle I ∞ P ν := Bundle.instIsContMDiffRiemannianBundle g
+  obtain ⟨W₀, hW₀, Φ₀, -, hzero₀⟩ := TauCeti.exists_diffeomorph_subset_zeroSection
+    (I := I) (n := ⊤) (F := P) (V := ν) Ψ.open_source hzero
+  have hW₀src : ∀ p ∈ W₀, p ∈ Ψ.source := fun p hp => hW₀ hp
+  let W : TopologicalSpace.Opens N :=
+    ⟨Ψ '' W₀, Ψ.toOpenPartialHomeomorph.isOpen_image_of_subset_source W₀.isOpen hW₀⟩
+  have hWt : ∀ y ∈ W, y ∈ Ψ.target := by
+    rintro _ ⟨w, hw, rfl⟩
+    exact Ψ.map_source (hW₀src w hw)
+  have hsymm : ∀ y ∈ W, Ψ.symm y ∈ W₀ := by
+    rintro _ ⟨w, hw, rfl⟩
+    simpa [Ψ.left_inv (hW₀src w hw)] using hw
+  let Φ : TotalSpace P (fun x ↦ f.NormalSpace x hn) ≃ₘ^∞⟮I.prod 𝓘(ℝ, P), J⟯ W :=
+    { toFun := fun p => ⟨Ψ (Φ₀ p), Φ₀ p, (Φ₀ p).2, rfl⟩
+      invFun := fun y => Φ₀.symm ⟨Ψ.symm y, hsymm y y.2⟩
+      left_inv := fun p => by
+        have := Ψ.left_inv (hW₀src _ (Φ₀ p).2)
+        simp [this]
+      right_inv := fun y => by
+        obtain ⟨y, w, hw, rfl⟩ := y
+        refine Subtype.ext ?_
+        simp only [Φ₀.apply_symm_apply]
+        exact Ψ.right_inv (hWt _ ⟨w, hw, rfl⟩)
+      contMDiff_toFun := (TauCeti.ContMDiff.subtypeVal_comp_iff W _).mp
+        (Ψ.contMDiffOn.comp_contMDiff (contMDiff_subtype_val.comp Φ₀.contMDiff)
+          fun p => hW₀src _ (Φ₀ p).2)
+      contMDiff_invFun := Φ₀.contMDiff_invFun.comp
+        ((TauCeti.ContMDiff.subtypeVal_comp_iff W₀ _).mp
+          (Ψ.symm.contMDiffOn.comp_contMDiff contMDiff_subtype_val
+            fun y => hWt y y.2)) }
+  refine ⟨W, fun y hy => htarget (hWt y hy), Φ, fun x => ?_⟩
+  -- the value of `Φ` is the `toFun` field above, so this holds by `rfl`
+  have hΦ : ((Φ (zeroSection P (fun x ↦ f.NormalSpace x hn) x) : W) : N) =
+      Ψ (Φ₀ (zeroSection P (fun x ↦ f.NormalSpace x hn) x)).val := rfl
+  rw [hΦ, hzero₀]
+  exact (congrFun hΨ _).trans (f.normalExp_zeroSection hn x)
+
 omit [ENat.LEInfty m] [IsManifold I (m + 1) M] in
 /-- **Smooth Riemannian tubular neighbourhood theorem.** The entire intrinsic normal bundle
 of a smooth embedding is diffeomorphic to an open neighbourhood inside any prescribed open
@@ -177,51 +248,6 @@ theorem exists_diffeomorph_normalBundle_riemannian_subset
     have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
     obtain ⟨Ψ, hzero, -, htarget, -, hΨ⟩ :=
       f.exists_partialDiffeomorph_normalExp_subset (m := ∞) hn (by simp) (by simp) hdim hO hfO
-    -- A smooth auxiliary metric provides fibrewise radial compression, without changing
-    -- the quotient topology or the complementary-coordinate atlas of the normal bundle.
-    obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := I) (n := ⊤) (F := P)
-      (E := fun x ↦ f.NormalSpace x hn)
-    -- Name the family so instance search can infer it before selecting a particular fibre.
-    let ν : M → Type _ := fun x ↦ f.NormalSpace x hn
-    let : RiemannianBundle ν := ⟨g.toRiemannianMetric⟩
-    let : ∀ x, NormedAddCommGroup (ν x) := fun x => inferInstance
-    let : ∀ x, InnerProductSpace ℝ (ν x) := fun x => inferInstance
-    let : IsContMDiffRiemannianBundle I ∞ P ν := Bundle.instIsContMDiffRiemannianBundle g
-    let : IsContinuousRiemannianBundle P ν :=
-      Bundle.instIsContinuousRiemannianBundle g.toContinuousRiemannianMetric
-    obtain ⟨r, hr, -, hdisc⟩ := Ψ.open_source.exists_contMDiffMap_norm_le_subset_bundle
-      (I := I) (V := ν) (n := ⊤) hzero (continuous_const (y := (1 : ℝ))) (fun _ => zero_lt_one)
-    let R := vectorBundleRadialPartialDiffeomorphOfRadius (F := P) (V := ν) r.contMDiff hr
-    have hRsource : R.source = univ := vectorBundleRadialPartialDiffeomorphOfRadius_source _ _
-    have hRtarget : R.target ⊆ Ψ.source := by
-      rw [vectorBundleRadialPartialDiffeomorphOfRadius_target]
-      exact fun p hp => hdisc p.proj p.2 hp.le
-    have hsource : (R.trans Ψ).source = univ := by
-      have hpreimage : R ⁻¹' Ψ.source = univ :=
-        eq_univ_of_forall fun p => hRtarget (R.map_source (hRsource ▸ mem_univ p))
-      simp [hRsource, hpreimage]
-    let Θ := R.trans Ψ
-    have hforward : ContMDiff (I.prod 𝓘(ℝ, P)) J ∞ Θ := by
-      rw [← contMDiffOn_univ, ← hsource]
-      exact Θ.contMDiffOn
-    let W : TopologicalSpace.Opens N := ⟨Θ.target, Θ.open_target⟩
-    let Φ : TotalSpace P (fun x ↦ f.NormalSpace x hn) ≃ₘ^∞⟮I.prod 𝓘(ℝ, P), J⟯ W :=
-      { toFun := fun p => ⟨Θ p, Θ.toPartialEquiv.map_source (hsource ▸ mem_univ p)⟩
-        invFun := fun y => Θ.toPartialEquiv.symm y
-        left_inv := fun p => Θ.toPartialEquiv.left_inv (hsource ▸ mem_univ p)
-        right_inv := fun y => Subtype.ext (Θ.toPartialEquiv.right_inv y.property)
-        contMDiff_toFun := (TauCeti.ContMDiff.subtypeVal_comp_iff W _).mp hforward
-        contMDiff_invFun := Θ.contMDiffOn_invFun.comp_contMDiff contMDiff_subtype_val
-          (fun y => y.property) }
-    refine ⟨W, fun y hy => htarget hy.1, Φ, ?_⟩
-    intro x
-    have hΦ (p : TotalSpace P (fun x ↦ f.NormalSpace x hn)) : (Φ p : N) = Ψ (R p) := rfl
-    have hRzero : R (zeroSection P (fun x ↦ f.NormalSpace x hn) x) =
-        zeroSection P (fun x ↦ f.NormalSpace x hn) x := by
-      simp only [R, vectorBundleRadialPartialDiffeomorphOfRadius_apply,
-        TotalSpace.radialMap_zeroSection, vectorBundleScalarDiffeomorph_apply]
-      exact congrArg (fun v : ν x => (⟨x, v⟩ : TotalSpace P ν)) (smul_zero (r x))
-    rw [hΦ, hRzero]
-    exact (congrFun hΨ _).trans (f.normalExp_zeroSection hn x)
+    exact f.exists_diffeomorph_normalBundle_of_partialDiffeomorph hdim Ψ hzero htarget hΨ
 
 end TauCeti.SmoothEmbedding

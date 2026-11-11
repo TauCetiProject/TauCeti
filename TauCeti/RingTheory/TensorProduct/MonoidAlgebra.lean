@@ -62,44 +62,31 @@ private noncomputable def toMonoidAlgebra :
 `single m s ↦ single m 1 ⊗ s`. -/
 private noncomputable def ofMonoidAlgebra :
     MonoidAlgebra S G →ₐ[R] MonoidAlgebra R G ⊗[R] S :=
-  liftNCAlgHom
-    (Algebra.TensorProduct.includeRight (R := R) (A := MonoidAlgebra R G) (B := S))
-    ((Algebra.TensorProduct.includeLeftRingHom (R := R) (A := MonoidAlgebra R G)
-      (B := S)).toMonoidHom.comp (of R G))
+  liftNCAlgHom Algebra.TensorProduct.includeRight
+    ((Algebra.TensorProduct.includeLeft (S := R)).toMonoidHom.comp (of R G))
     fun s m ↦ (Commute.one_left (of R G m)).tmul (Commute.one_right s)
 
 private theorem toMonoidAlgebra_tmul (x : MonoidAlgebra R G) (s : S) :
-    toMonoidAlgebra R S G (x ⊗ₜ s) = mapAlgHom G (Algebra.ofId R S) x * single 1 s := by
-  exact Algebra.TensorProduct.lift_tmul (mapAlgHom G (Algebra.ofId R S))
-    singleOneAlgHom (commute_mapAlgHom_single R S G) x s
+    toMonoidAlgebra R S G (x ⊗ₜ s) = mapAlgHom G (Algebra.ofId R S) x * single 1 s :=
+  Algebra.TensorProduct.lift_tmul ..
 
 private theorem ofMonoidAlgebra_single (m : G) (s : S) :
     ofMonoidAlgebra R S G (single m s) = single m 1 ⊗ₜ s := by
   simp [ofMonoidAlgebra, Algebra.TensorProduct.tmul_mul_tmul]
 
-private theorem toMonoidAlgebra_comp_ofMonoidAlgebra :
-    (toMonoidAlgebra R S G).comp (ofMonoidAlgebra R S G) = AlgHom.id R _ := by
-  ext <;> simp [ofMonoidAlgebra_single, toMonoidAlgebra_tmul]
-
-private theorem ofMonoidAlgebra_comp_toMonoidAlgebra :
-    (ofMonoidAlgebra R S G).comp (toMonoidAlgebra R S G) = AlgHom.id R _ := by
-  ext <;> simp [ofMonoidAlgebra_single, toMonoidAlgebra_tmul, ← one_def]
-
 /-- **Base change of a monoid algebra.** For an `R`-algebra `S`, the base change
 `R[G] ⊗[R] S` of the monoid algebra of an arbitrary monoid `G` is the monoid algebra `S[G]`,
 by `x ⊗ s ↦ s • x'` where `x'` has the coefficients of `x` pushed forward to `S`. -/
 noncomputable def tensorAlgEquiv : MonoidAlgebra R G ⊗[R] S ≃ₐ[R] MonoidAlgebra S G :=
-  AlgEquiv.ofAlgHom (toMonoidAlgebra R S G)
-    (ofMonoidAlgebra R S G) (toMonoidAlgebra_comp_ofMonoidAlgebra R S G)
-    (ofMonoidAlgebra_comp_toMonoidAlgebra R S G)
+  AlgEquiv.ofAlgHom (toMonoidAlgebra R S G) (ofMonoidAlgebra R S G)
+    (by ext <;> simp [ofMonoidAlgebra_single, toMonoidAlgebra_tmul])
+    (by ext <;> simp [ofMonoidAlgebra_single, toMonoidAlgebra_tmul, ← one_def])
 
 @[simp]
 theorem tensorAlgEquiv_tmul (x : MonoidAlgebra R G) (s : S) :
     tensorAlgEquiv R S G (x ⊗ₜ s) = s • mapAlgHom G (Algebra.ofId R S) x := by
-  rw [tensorAlgEquiv, AlgEquiv.ofAlgHom_apply, toMonoidAlgebra_tmul,
-    (commute_mapAlgHom_single R S G x s).eq]
   ext m
-  simp [coeff_single_one_mul]
+  simp [tensorAlgEquiv, toMonoidAlgebra_tmul, coeff_mul_single_one, Algebra.commutes]
 
 @[simp]
 theorem tensorAlgEquiv_symm_single (m : G) (s : S) :

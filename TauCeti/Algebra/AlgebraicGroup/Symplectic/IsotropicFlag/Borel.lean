@@ -110,11 +110,6 @@ private theorem isAlt_toBilin'_JFin : (Matrix.toBilin' (JFin m k)).IsAlt := by
   rw [toBilin'_JFin_eq_congr, LinearMap.BilinForm.congr_apply]
   exact isAlt_stdSymplecticBilinForm k m _
 
-/-- The standard symplectic form in `Fin (m + m)` coordinates is nondegenerate. -/
-private theorem nondegenerate_toBilin'_JFin : (Matrix.toBilin' (JFin m k)).Nondegenerate := by
-  rw [toBilin'_JFin_eq_congr]
-  exact (stdSymplecticBilinForm_nondegenerate k m).congr _
-
 /-- Read through the symplectic coordinate morphism, the general-linear matrix of a point of
 `Sp₂ₘ` is its symplectic matrix. -/
 private theorem pointsMulEquiv_comp_coordinateMap {A : Type v} [CommRing A] [Algebra k A]
@@ -201,7 +196,7 @@ private theorem exists_basis_castAdd_eq [IsAlgClosed k] [Algebra.FiniteType k Q]
   -- The basis `e` of `N` is also a basis of the submodule `N.toSubmodule`, with the same
   -- underlying vectors.
   obtain ⟨b, hbJ, hbe⟩ := isAlt_toBilin'_JFin.exists_basis_toMatrix_eq_J_inl_eq
-    nondegenerate_toBilin'_JFin (U := N.toSubmodule) e hN
+    nondegenerate_JFin.toBilin' (U := N.toSubmodule) e hN
   obtain rfl : r = m := by
     have h := Module.finrank_eq_card_basis b
     simp only [Module.finrank_fin_fun, Fintype.card_sum, Fintype.card_fin] at h

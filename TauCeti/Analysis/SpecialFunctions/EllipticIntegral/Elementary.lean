@@ -14,6 +14,7 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Analysis.SpecialFunctions.Artanh
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Topology.Algebra.Order.Field
 
 /-!
 # Elementary evaluations of Legendre's elliptic integrals
@@ -23,7 +24,8 @@ elementary functions. This file proves those reductions.
 
 * **Modulus one.** For `|φ| < π / 2`, `F(φ, 1) = artanh (sin φ)`, and for `|φ| ≤ π / 2`,
   `E(φ, 1) = sin φ`; hence `E(1) = 1`. The complete integral of the first kind has no finite value
-  at `k = 1`: `K(k) → +∞` as `k → 1⁻`.
+  at `k = 1`: `K(k) → +∞` as `k → 1⁻`. At every fixed `|φ| < π / 2`, however,
+  `F(φ, k) → artanh (sin φ)` as `k → 1⁻`.
 * **Third kind** (DLMF 19.6.11, 19.6.13). For `α2 < 1` and `|φ| < π / 2`,
   `Π(φ, 0, α²) = arctan (√(1 - α²) tan φ) / √(1 - α²)`, hence `Π(0, α²) = π / (2 √(1 - α²))`;
   and for `k ^ 2 < 1`,
@@ -80,6 +82,40 @@ theorem legendreF_one_modulus {φ : ℝ} (hφ : |φ| < π / 2) :
     exact (pow_pos (cos_pos_of_mem_Ioo (hsub hθ)) 2).ne'
   rw [legendreF_def, integral_eq_sub_of_hasDerivAt hderiv hcont.intervalIntegrable, sin_zero,
     artanh_zero, sub_zero]
+
+/-- At an amplitude strictly between `-π/2` and `π/2`, the first-kind integral tends to
+`artanh (sin φ)` as the modulus tends to one from below. -/
+theorem tendsto_legendreF_nhdsLT_one {φ : ℝ} (hφ : |φ| < π / 2) :
+    Tendsto (legendreF φ) (𝓝[<] 1) (𝓝 (artanh (sin φ))) := by
+  have hsub : uIcc 0 φ ⊆ Ioo (-(π / 2)) (π / 2) :=
+    ordConnected_Ioo.uIcc_subset (by simp [pi_pos]) (abs_lt.1 hφ)
+  have hpos : ∀ θ ∈ uIcc 0 φ, 0 < 1 - sin θ ^ 2 := by
+    intro θ hθ
+    rw [← cos_sq']
+    exact pow_pos (cos_pos_of_mem_Ioo (hsub hθ)) 2
+  have hcont : ContinuousOn (fun θ ↦ (1 - sin θ ^ 2) ^ (-1 / 2 : ℝ)) (uIcc 0 φ) :=
+    ContinuousOn.rpow_const (by fun_prop) fun θ hθ ↦ Or.inl (hpos θ hθ).ne'
+  have hmem : ∀ᶠ k : ℝ in 𝓝[<] 1, k ^ 2 < 1 := eventually_sq_lt_one_nhdsLT_one
+  have hlim : Tendsto (fun k : ℝ ↦ ∫ θ in 0..φ,
+      (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ)) (𝓝[<] 1)
+      (𝓝 (∫ θ in 0..φ, (1 - 1 ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ))) := by
+    refine intervalIntegral.tendsto_integral_filter_of_dominated_convergence
+      (fun θ ↦ (1 - sin θ ^ 2) ^ (-1 / 2 : ℝ)) ?_ ?_ hcont.intervalIntegrable ?_
+    · filter_upwards [hmem] with k hk
+      exact (intervalIntegrable_legendreF_integrand hk 0 φ).aestronglyMeasurable_restrict_uIoc
+    · filter_upwards [hmem] with k hk
+      exact Filter.Eventually.of_forall fun θ hθ ↦ by
+        rw [Real.norm_eq_abs, abs_of_nonneg (rpow_nonneg
+          (one_sub_mul_sin_sq_pos hk θ).le _)]
+        have hle : 1 - sin θ ^ 2 ≤ 1 - k ^ 2 * sin θ ^ 2 := by
+          nlinarith [mul_nonneg (sub_nonneg.mpr hk.le) (sq_nonneg (sin θ))]
+        exact rpow_le_rpow_of_nonpos (hpos θ (uIoc_subset_uIcc hθ)) hle (by norm_num)
+    · exact Filter.Eventually.of_forall fun θ hθ ↦ by
+        have hc : ContinuousAt (fun k : ℝ ↦ (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ)) 1 :=
+          ContinuousAt.rpow_const (by fun_prop) (Or.inl (by
+            simpa using (hpos θ (uIoc_subset_uIcc hθ)).ne'))
+        exact hc.tendsto.mono_left nhdsWithin_le_nhds
+  simpa only [← legendreF_def, legendreF_one_modulus hφ] using hlim
 
 /-- **The integral of the second kind at modulus one**: for `|φ| ≤ π / 2`,
 `E(φ, 1) = ∫₀^φ cos θ dθ = sin φ`. -/

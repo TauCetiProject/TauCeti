@@ -599,6 +599,21 @@ theorem rename_pentagonWeight {x y : GridState n} (C : ColumnTurn n)
   refine Finset.prod_congr rfl fun p _ => ?_
   split_ifs <;> simp
 
+/-- The weight of a pentagon turning in column `C.column`, counted in the diagram obtained
+by exchanging that column with the next one, is the product, over the squares it covers read in
+`G` by exchanging the two columns, of the variable of the square's column at the `O`-marked squares
+of `G` and of `1` elsewhere. -/
+theorem pentagonWeight_swapColumns {y z : GridState n} (C : ColumnTurn n)
+    (Q : GridPentagonBetween C.column C.turnRow y z) :
+    (G.swapColumns C.column (finRotate n C.column)).pentagonWeight R C Q =
+      ∏ p ∈ Q.coveredSquares.map
+          ((Equiv.swap C.column (finRotate n C.column)).prodCongr (Equiv.refl (Fin n))).toEmbedding,
+        if p ∈ G.OSet then MvPolynomial.X p.1 else (1 : MvPolynomial (Fin n) R) := by
+  rw [pentagonWeight_eq_prod_coveredSquares, Finset.prod_map]
+  refine Finset.prod_congr rfl fun p _ => ?_
+  simp only [mem_OSet_swapColumns, Function.Embedding.coeFn_mk, Equiv.prodCongr_apply,
+    Equiv.coe_refl, Prod.map, id_eq]
+
 /-- The weight of a pentagon of the reverse commutation, which turns at the opposite intersection
 and is counted in the commuted diagram, is the product, over the squares it covers read in `G` by
 exchanging the two commuted columns, of the variable of the square's column at the `O`-marked
@@ -609,9 +624,8 @@ theorem pentagonWeight_reverse {y z : GridState n} (C : ColumnCommutationData G)
       ∏ p ∈ Q.coveredSquares.map
           ((Equiv.swap C.column (finRotate n C.column)).prodCongr (Equiv.refl (Fin n))).toEmbedding,
         if p ∈ G.OSet then MvPolynomial.X p.1 else (1 : MvPolynomial (Fin n) R) := by
-  rw [pentagonWeight_eq_prod_coveredSquares, Finset.prod_map]
-  refine Finset.prod_congr rfl fun p _ => ?_
-  simp [ColumnCommutationData.reverse_column]
+  simpa only [ColumnCommutationData.reverse_column] using
+    G.pentagonWeight_swapColumns R C.reverse.toColumnTurn Q
 
 /-! ### The pentagon map -/
 
