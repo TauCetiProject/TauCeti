@@ -18,7 +18,7 @@ public import TauCeti.RingTheory.Support.BaseChange
 
 For a polynomial quotient finite over its coefficient ring, a family of polynomial classes
 spans after coefficient extension exactly when its cokernel annihilator generates the unit ideal
-after that extension. For finitely presented flat
+after that extension. For finite flat
 quotients, monomial spanning loci cover the base. These results supply the open basis loci
 for affine Hilbert charts.
 -/
@@ -51,6 +51,8 @@ theorem _root_.RingHom.span_range_mk_map_eq_top_iff (φ : A →+* B) (I : Ideal 
     congr 2
     ext i
     apply e.injective
+    -- Unfold the base-change generator and the linear-equivalence coercions to
+    -- expose the pure tensor in the tensor-quotient evaluation law.
     change e ((1 : B) ⊗ₜ[A] Ideal.Quotient.mk I (v i)) = e (e.symm _)
     rw [e.apply_symm_apply]
     simpa only [e, one_smul, RingHom.algebraMap_toAlgebra] using
@@ -60,11 +62,11 @@ theorem _root_.RingHom.span_range_mk_map_eq_top_iff (φ : A →+* B) (I : Ideal 
   exact TauCeti.Module.annihilator_map_eq_top_iff_subsingleton_tensorProduct.symm
 
 attribute [local instance] Module.free_of_flat_of_isLocalRing in
-/-- Monomial bases exist locally. If `A[n] ⧸ I` is a finitely presented flat `A`-module of rank `d`
+/-- Monomial bases exist locally. If `A[n] ⧸ I` is a finite flat `A`-module of rank `d`
 at the prime `p`, then there are `d` monomials whose images span `A[n] ⧸ I` near `p`: the
 annihilator of the cokernel of their images is not contained in `p`. -/
 theorem _root_.Ideal.exists_monomials_annihilator_not_le (I : Ideal (MvPolynomial n A))
-    [Module.FinitePresentation A (MvPolynomial n A ⧸ I)] [Module.Flat A (MvPolynomial n A ⧸ I)]
+    [Module.Finite A (MvPolynomial n A ⧸ I)] [Module.Flat A (MvPolynomial n A ⧸ I)]
     (p : PrimeSpectrum A) {d : ℕ} (hp : Module.rankAtStalk (MvPolynomial n A ⧸ I) p = d) :
     ∃ v : Fin d → (n →₀ ℕ), ¬ Module.annihilator A ((MvPolynomial n A ⧸ I) ⧸
       Submodule.span A (Set.range fun l ↦ Ideal.Quotient.mk I (monomial (v l) 1))) ≤
@@ -76,6 +78,9 @@ theorem _root_.Ideal.exists_monomials_annihilator_not_le (I : Ideal (MvPolynomia
     rw [Set.range_comp' f, ← Submodule.localized'_span (S := Localization.AtPrime p.asIdeal)
       (p := p.asIdeal.primeCompl) (f := f), Ideal.span_range_mk_monomial_eq_top,
       Submodule.localized'_top]
+  have : Module.FinitePresentation (Localization.AtPrime p.asIdeal)
+      (LocalizedModule p.asIdeal.primeCompl (MvPolynomial n A ⧸ I)) :=
+    Module.finitePresentation_of_projective _ _
   obtain ⟨κ, a, b, hb⟩ := Module.exists_basis_of_span_of_flat _ hspan
   have : Fintype κ :=
     have := Module.Finite.finite_basis b
