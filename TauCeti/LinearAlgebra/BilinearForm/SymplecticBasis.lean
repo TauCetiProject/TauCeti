@@ -168,7 +168,7 @@ private theorem IsAlt.apply_cons_cons_eq_J {m : ℕ}
     B (Sum.elim (Fin.cons e fun a => c (Sum.inl a)) (Fin.cons f fun a => c (Sum.inr a)) x)
         (Sum.elim (Fin.cons e fun a => c (Sum.inl a)) (Fin.cons f fun a => c (Sum.inr a)) y) =
       Matrix.J (Fin (m + 1)) R x y := by
-  have hef : B e f = -1 := by rw [← hB.neg_eq, hfe]
+  have hef : B e f = -1 := hB.apply_eq_neg_one_of_apply_eq_one hfe
   have hce : ∀ x, B (c x) e = 0 := fun x => by rw [← hB.neg_eq, hec, neg_zero]
   have hcf : ∀ x, B (c x) f = 0 := fun x => by rw [← hB.neg_eq, hfc, neg_zero]
   rcases x with x | x <;> rcases y with y | y <;>
@@ -211,7 +211,7 @@ theorem IsAlt.nondegenerate_iff_ne_zero_of_finrank_eq_two {B : BilinForm K V} (h
   set f := (B w e)⁻¹ • w
   have hfe : B f e = 1 := by
     rw [map_smul, LinearMap.smul_apply, smul_eq_mul, inv_mul_cancel₀ hwe]
-  have hef : B e f = -1 := by rw [← hB.neg_eq, hfe]
+  have hef : B e f = -1 := hB.apply_eq_neg_one_of_apply_eq_one hfe
   have hspan : span K {e, f} = ⊤ := by
     rw [← Matrix.range_cons_cons_empty e f ![]]
     exact (hB.linearIndependent_pair_of_apply_eq_one hfe).span_eq_top_of_card_eq_finrank

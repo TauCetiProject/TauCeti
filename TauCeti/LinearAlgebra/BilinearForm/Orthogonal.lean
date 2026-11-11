@@ -600,36 +600,44 @@ open Submodule
 variable {B : LinearMap.BilinForm R M} (hB : B.IsAlt) {e f : M} (hfe : B f e = 1)
 include hB hfe
 
+/-- If `B f e = 1` for an alternating form, then `B e f = -1`. -/
+theorem IsAlt.apply_eq_neg_one_of_apply_eq_one : B e f = -1 := by rw [← hB.neg_eq, hfe]
+
+/-- Pairing `e` of a hyperbolic pair `e, f` with `a • e + b • f` gives `-b`. -/
+theorem IsAlt.apply_smul_add_smul_fst (a b : R) : B e (a • e + b • f) = -b := by
+  simp [hB.apply_eq_neg_one_of_apply_eq_one hfe, hB.self_eq_zero]
+
+/-- Pairing `f` of a hyperbolic pair `e, f` with `a • e + b • f` gives `a`. -/
+theorem IsAlt.apply_smul_add_smul_snd (a b : R) : B f (a • e + b • f) = a := by
+  simp [hfe, hB.self_eq_zero]
+
 /-- Two vectors pairing to `1` under an alternating form are linearly independent. -/
 theorem IsAlt.linearIndependent_pair_of_apply_eq_one : LinearIndependent R ![e, f] := by
-  have hef : B e f = -1 := by rw [← hB.neg_eq, hfe]
   rw [LinearIndependent.pair_iff]
   intro s t hst
   have h1 := congrArg (B f) hst
   have h2 := congrArg (B e) hst
-  simp only [map_add, map_smul, hfe, hef, hB.self_eq_zero, smul_eq_mul, mul_one, mul_zero,
-    add_zero, zero_add, mul_neg, map_zero, neg_eq_zero] at h1 h2
+  rw [hB.apply_smul_add_smul_snd hfe, map_zero] at h1
+  rw [hB.apply_smul_add_smul_fst hfe, map_zero, neg_eq_zero] at h2
   exact ⟨h1, h2⟩
 
 /-- The projection `u ↦ u - B f u • e + B e u • f` lands in the orthogonal complement of the span
 of the hyperbolic pair `e, f`. -/
 theorem IsAlt.sub_smul_add_smul_mem_orthogonal_span_pair (u : M) :
     u - B f u • e + B e u • f ∈ B.orthogonal (span R {e, f}) := by
-  have hef : B e f = -1 := by rw [← hB.neg_eq, hfe]
-  simp [orthogonal, hfe, hef, hB.self_eq_zero]
+  simp [orthogonal, hfe, hB.apply_eq_neg_one_of_apply_eq_one hfe, hB.self_eq_zero]
 
 /-- The span of a hyperbolic pair `e, f` and its orthogonal complement are complementary: the
 span carries a nondegenerate form, so no nondegeneracy of the ambient form is needed. -/
 theorem IsAlt.isCompl_span_pair_orthogonal :
     IsCompl (span R {e, f}) (B.orthogonal (span R {e, f})) := by
-  have hef : B e f = -1 := by rw [← hB.neg_eq, hfe]
   refine ⟨disjoint_iff_inf_le.2 fun v ⟨hv, hv'⟩ => ?_,
     codisjoint_iff.2 (eq_top_iff.2 fun u _ => ?_)⟩
   · obtain ⟨a, b, rfl⟩ := mem_span_pair.1 hv
     obtain ⟨he, hf⟩ : B e (a • e + b • f) = 0 ∧ B f (a • e + b • f) = 0 := by
       simpa [orthogonal] using hv'
-    simp only [map_add, map_smul, hfe, hef, hB.self_eq_zero, smul_eq_mul, mul_one, mul_zero,
-      add_zero, zero_add, mul_neg, neg_eq_zero] at he hf
+    rw [hB.apply_smul_add_smul_fst hfe, neg_eq_zero] at he
+    rw [hB.apply_smul_add_smul_snd hfe] at hf
     simp [he, hf]
   · refine mem_sup.2 ⟨B f u • e - B e u • f, sub_mem (smul_mem _ _ (subset_span (by simp)))
       (smul_mem _ _ (subset_span (by simp))), u - B f u • e + B e u • f,
