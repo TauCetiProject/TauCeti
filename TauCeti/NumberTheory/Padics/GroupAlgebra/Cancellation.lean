@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.NumberTheory.Padics.PadicIntegers
-public import TauCeti.RingTheory.KrullSchmidt.AdicComplete
+public import TauCeti.RingTheory.KrullSchmidt.Henselian
 import TauCeti.Algebra.Module.Projective.Schanuel
 
 /-!
@@ -17,8 +17,9 @@ import TauCeti.Algebra.Module.Projective.Schanuel
 For a finite monoid `G`, in particular a finite group, finitely generated modules over the group
 algebra `ℤ_p[G]` cancel from direct sums: `M × P ≃ N × P` with `P` finitely generated gives
 `M ≃ N`. This is the specialization to `R = ℤ_p` and `A = ℤ_p[G]` of
-`TauCeti.nonempty_linearEquiv_of_prod_linearEquiv_of_isAdicComplete`; a finitely generated
-`ℤ_p[G]`-module is finitely generated over `ℤ_p` because `ℤ_p[G]` is.
+`TauCeti.nonempty_linearEquiv_of_prod_linearEquiv_of_henselianRing`, as the complete local ring
+`ℤ_p` is Henselian; a finitely generated `ℤ_p[G]`-module is finitely generated over `ℤ_p` because
+`ℤ_p[G]` is.
 
 ⚠ The corresponding statement over `ℤ[G]` fails in general: Swan's stably free, non-free modules
 over the integral group rings of generalized quaternion groups. The completeness of `ℤ_p` is what
@@ -65,7 +66,7 @@ theorem nonempty_linearEquiv_of_prod_linearEquiv (M : Type v) (N : Type w) (P : 
   have : IsScalarTower ℤ_[p] (MonoidAlgebra ℤ_[p] G) P :=
     IsScalarTower.of_compHom ℤ_[p] (MonoidAlgebra ℤ_[p] G) P
   have : Module.Finite ℤ_[p] P := .trans (MonoidAlgebra ℤ_[p] G) P
-  exact nonempty_linearEquiv_of_prod_linearEquiv_of_isAdicComplete ℤ_[p] h
+  exact nonempty_linearEquiv_of_prod_linearEquiv_of_henselianRing ℤ_[p] h
 
 variable {p G}
 

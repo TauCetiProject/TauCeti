@@ -164,6 +164,12 @@ theorem ext_fst_height {x y : UpperHalfSpace E}
     (hheight : height x = height y) : x = y :=
   ext ((WithLp.ext_iff 2).2 (Prod.ext hfst hheight))
 
+/-- Every chart of the upper half-space is its inclusion in the model space. -/
+@[simp]
+theorem chartAt_apply (x y : UpperHalfSpace E) :
+    chartAt (WithLp 2 (E × ℝ)) x y = (y : WithLp 2 (E × ℝ)) :=
+  (rfl)
+
 section NormedSpace
 
 variable (E) [NormedSpace ℝ E]

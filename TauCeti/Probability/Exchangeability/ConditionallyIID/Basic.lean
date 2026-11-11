@@ -27,8 +27,8 @@ measure also witnesses `MixedIIDWith`, while the process is not conditionally i.
 copy. The arrow runs one way only, and `mixedIIDWith_of_conditionallyIIDWith` is that arrow —
 obtained by integrating the `ν` coordinate out.
 
-Terminology follows the roadmap: a `ν` witnessing only the mixture identity is a *mixing
-representative*, whereas `ν` here is a genuine **directing measure**.
+A `ν` witnessing only the mixture identity is called a *mixing representative*, whereas `ν` here
+is a genuine **directing measure**.
 
 ## Main results
 
@@ -37,13 +37,11 @@ representative*, whereas `ν` here is a genuine **directing measure**.
 * `mixedIIDWith_of_conditionallyIIDWith`, `mixedIID_of_conditionallyIID` — the easy projection down
   to the mixture identity. Both predicates are index-generic, so the projection is too.
 
-This is a **Layer 0** contribution to `TauCetiRoadmap/Exchangeability/README.md` — the conditional
-predicate for which the roadmap reserves the `ConditionallyIID` name, together with the easy
-projection it pins alongside — which rests on the Layer 1 joint-kernel lemma
+The projection rests on the joint-kernel lemma
 `measurable_dirac_prod_probabilityMeasure_pi_const_toMeasure`.
 
-The Layer 1 joint-rectangle common ending `conditionallyIID_of_jointRectangles` lives in
-`TauCeti.Probability.DeFinetti.ConditionalCommonEnding`. The Layer 6 summit theorems that conclude
+The joint-rectangle common ending `conditionallyIID_of_jointRectangles` lives in
+`TauCeti.Probability.DeFinetti.ConditionalCommonEnding`. The de Finetti theorems that conclude
 this predicate, together with the `deFinetti*` equivalence handles, live in
 `TauCeti.Probability.DeFinetti.Theorem`. A.e. uniqueness of the directing measure
 (`conditionallyIID_ae_unique`) lives in
