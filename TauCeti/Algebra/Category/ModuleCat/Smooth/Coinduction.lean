@@ -229,14 +229,14 @@ end Coinduction
 
 section EnoughInjectives
 
-variable [Nonempty ι]
-
 /-- For a directed family `J` of left ideals of `A : Type u`, the smooth `A`-modules in universe
 `max u w` have enough injectives: every smooth module embeds, through the unit of the coinduction
 adjunction along `ℤ →+* A`, into the coinduction of an injective abelian group. -/
 theorem enoughInjectives_smoothModules (hJ : Directed (· ≥ ·) J) :
-    EnoughInjectives (smoothModules.{max u w} J).FullSubcategory :=
-  EnoughInjectives.of_adjunction (coinductionAdjunction (Int.castRingHom A) hJ)
+    EnoughInjectives (smoothModules.{max u w} J).FullSubcategory := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · exact ⟨fun X => (hι.false (smoothModules_iff.1 X.property 0).choose).elim⟩
+  · exact EnoughInjectives.of_adjunction (coinductionAdjunction (Int.castRingHom A) hJ)
 
 /-- For a directed family `J` of left ideals of `A : Type u`, the abelian category of smooth
 `A`-modules in universe `max u w` has `Ext` groups in the universe `max u w` of its morphisms.
