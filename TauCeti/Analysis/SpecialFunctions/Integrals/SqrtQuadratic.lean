@@ -34,9 +34,10 @@ The antiderivatives are `arcsin ((2 x - a - b) / (b - a))` for `1 / √((x - a) 
 `arcsin (((a + b) x - 2 a b) / ((b - a) x)) / √(a b)` for `1 / (x √((x - a) (b - x)))`.
 
 The quadratic is the model for every function with simple zeros at `a` and `b`. If `g` is continuous
-on `[a, b]`, positive on `(a, b)`, and vanishes at `a` and `b` with nonzero one-sided derivatives
-there, then `g` dominates a positive multiple of `(x - a) (b - x)` on `[a, b]`, so by comparison
-`1 / √(g x)` is interval integrable as well. This is the convergence of the time quadrature of a
+on `[a, b]`, positive on `(a, b)`, has one-sided derivatives at `a` and `b`, and at each end either
+is positive or has a simple zero (a nonzero one-sided derivative), then `g` dominates a positive
+multiple of `(x - a) (b - x)` on `[a, b]`, so by comparison `1 / √(g x)` is interval integrable as
+well. This is the convergence of the time quadrature of a
 one-dimensional motion between two simple turning points.
 
 ## Main declarations
@@ -52,8 +53,8 @@ one-dimensional motion between two simple turning points.
   integrands that are in general unbounded at the endpoints.
 * `TauCeti.exists_pos_forall_mul_mul_sub_mul_sub_le` and
   `TauCeti.intervalIntegrable_one_div_sqrt_of_hasDerivWithinAt`: domination by the quadratic and
-  integrability of `1 / √g` for a function `g` with nonzero one-sided derivatives at both ends,
-  in particular with simple zeros there.
+  integrability of `1 / √g` for a function `g` with one-sided derivatives at both ends that are
+  nonzero wherever `g` vanishes, that is, at each end `g` is positive or has a simple zero.
 * `TauCeti.hasDerivAt_arcsin_two_mul_sub_sub_div_sub`,
   `TauCeti.hasDerivAt_arcsin_add_mul_sub_div_sub_mul` and
   `TauCeti.hasDerivAt_sqrt_mul_sub_mul_sub`: the derivatives of the antiderivatives on `(a, b)`.
@@ -378,7 +379,7 @@ theorem integral_sqrt_mul_sub_mul_sub_div (ha : 0 ≤ a) (hab : a ≤ b) :
   rw [arcsin_add_mul_sub_div_sub_mul_left ha hab, arcsin_add_mul_sub_div_sub_mul_right ha hab]
   ring
 
-/-! ### Functions with simple zeros at both ends -/
+/-! ### Functions that are positive or have a simple zero at each end -/
 
 section SimpleZero
 
