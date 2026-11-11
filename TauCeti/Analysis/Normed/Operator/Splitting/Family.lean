@@ -109,7 +109,7 @@ noncomputable def kernelHomeomorph (A : X → E →L[𝕜] F) (q : E →L[𝕜] 
     (hA : Continuous A) (h : ∀ x, ((A x).prod q).IsInvertible) :
     {p : X × E | A p.1 p.2 = 0} ≃ₜ X × G where
   toFun p := (p.val.1, q p.val.2)
-  invFun p := ⟨(p.1, (A p.1).kerSection q p.2), apply_kerSection (h p.1) p.2⟩
+  invFun p := ⟨(p.1, (A p.1).kerSection q p.2), apply_kerSection p.2⟩
   left_inv p := Subtype.ext (Prod.ext rfl (kerSection_apply_of_mem_ker (h p.val.1) p.property))
   right_inv p := Prod.ext rfl (apply_kerSection_right (h p.1) p.2)
   continuous_toFun := by fun_prop
