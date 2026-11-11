@@ -343,6 +343,7 @@ instance instIsNondegenerateOrthogonalSum (L : IntegralLattice V) (M : IntegralL
     ⟨L.form_nondegenerate, M.form_nondegenerate⟩⟩
 
 /-- An orthogonal sum of integral lattices is nondegenerate exactly when both summands are. -/
+@[simp]
 theorem isNondegenerate_orthogonalSum_iff (L : IntegralLattice V) (M : IntegralLattice W) :
     (L.orthogonalSum M).IsNondegenerate ↔ L.IsNondegenerate ∧ M.IsNondegenerate := by
   refine ⟨fun h ↦ ?_, fun ⟨hL, hM⟩ ↦ inferInstance⟩
