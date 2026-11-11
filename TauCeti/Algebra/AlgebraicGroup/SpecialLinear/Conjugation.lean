@@ -123,8 +123,6 @@ theorem kernelHopfIdeal_conjugationMap {k : Type u} [Field k] :
     intro A g
     rcases Nat.eq_zero_or_pos n with rfl | hn
     · -- Over `Fin 0` the points group is trivial, so both subgroups contain `g = 1`.
-      have : Subsingleton (Matrix.SpecialLinearGroup (Fin 0) A) :=
-        ⟨fun a b ↦ Subtype.ext (Subsingleton.elim _ _)⟩
       have hg : g = 1 := (pointsMulEquiv (R := k) (A := A) 0).injective (Subsingleton.elim _ _)
       subst hg
       exact ⟨fun _ ↦ Subgroup.one_mem _, fun _ ↦ Subgroup.one_mem _⟩
