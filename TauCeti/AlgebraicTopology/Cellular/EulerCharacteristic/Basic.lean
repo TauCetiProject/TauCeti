@@ -25,8 +25,8 @@ chain group `Hₙ(Xⁿ, Xⁿ⁻¹; M)` is the direct sum of one copy of `M` for 
   finitely many `n`-cells (`TauCeti.finite_cellularChainGroup`). For free `M` it satisfies
   `finrank = #(n-cells) · finrank M` with no finiteness hypothesis
   (`TauCeti.finrank_cellularChainGroup`); both sides are `0` in the infinite case.
-* For free coefficients over a ring with the strong rank condition and a finite-dimensional
-  complex, the Euler characteristic of the cellular chain complex is `finrank M · cwEulerChar C`
+* For free coefficients over a ring with the strong rank condition, the Euler characteristic of
+  the cellular chain complex is `finrank M · cwEulerChar C`, with no finiteness hypothesis
   (`TauCeti.eulerChar_cellularChainComplex`).
 * Over a noetherian ring, the cellular homology in degree `n` of a complex with finitely many
   `n`-cells is finitely generated when `M` is (`TauCeti.finite_cellularHomology`).
@@ -121,26 +121,16 @@ theorem finrank_cellularChainComplex_X [StrongRankCondition k] [Module.Free k M]
     finrank k ((cellularChainComplex C M).X i) = Nat.card (cell C i) * finrank k M := by
   rw [cellularChainComplex_X, finrank_cellularChainGroup]
 
-/-- For free coefficients `M` and a finite-dimensional relative CW complex, the Euler
-characteristic `∑ᶠ i, (-1)ⁱ · finrank k (Cᵢ)` of the cellular chain complex is
-`finrank k M · cwEulerChar C`. It is the expected identity when `M` is finitely generated and every
-degree has finitely many cells; a degree with infinitely many cells contributes `0` to both sides,
-and if `M` is not finitely generated both sides are `0`. -/
-theorem eulerChar_cellularChainComplex [StrongRankCondition k] [Module.Free k M]
-    [RelCWComplex.FiniteDimensional C] :
+/-- For free coefficients `M`, the Euler characteristic `∑ᶠ i, (-1)ⁱ · finrank k (Cᵢ)` of the
+cellular chain complex is `finrank k M · cwEulerChar C`. No finiteness is assumed: both sides are
+sums over all degrees with the `finsum` convention (an infinite support gives `0`), and it is the
+expected identity when `M` is finitely generated and every degree has finitely many cells, with
+finitely many nonempty degrees. -/
+theorem eulerChar_cellularChainComplex [StrongRankCondition k] [Module.Free k M] :
     (cellularChainComplex C M).eulerChar =
       finrank k M * cwEulerChar C := by
-  obtain ⟨n, hn⟩ :=
-    Filter.eventually_atTop.1 (FiniteDimensional.eventually_isEmpty_cell (C := C) (D := D))
-  have hcell : ∀ i ∉ Finset.range n, IsEmpty (cell C i) := fun i hi ↦
-    hn i (by simpa using hi)
-  rw [HomologicalComplex.eulerChar_eq_sum_finSet_of_finrankSupport_subset _ (Finset.range n)
-      ((GradedObject.finrankSupport_subset_iff _ _).2 fun i hi ↦
-        have := hcell i hi
-        ModuleCat.finrank_eq_zero_of_isZero
-          (by rw [cellularChainComplex_X]; exact isZero_cellularChainGroup C i M)),
-    cwEulerChar_eq_sum_range C hn, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [HomologicalComplex.eulerChar, GradedObject.eulerChar, cwEulerChar, mul_finsum]
+  refine finsum_congr fun i ↦ ?_
   rw [finrank_cellularChainComplex_X]
   simp only [ComplexShape.eulerCharSignsDownNat_χ, Units.val_pow_eq_pow_val, Units.val_neg,
     Units.val_one]
