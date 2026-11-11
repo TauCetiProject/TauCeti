@@ -191,6 +191,7 @@ private theorem inner_smul_self (i j : ι) : ⟪b j, c i • b i⟫_𝕜 = c j *
   split_ifs with h <;> simp [h]
 
 /-- Every vector of the Hilbert basis lies in the domain of a diagonal operator. -/
+@[simp]
 theorem self_mem_diagonal_domain (i : ι) : b i ∈ (b.diagonal c).domain :=
   mem_domain_of_mem_graph <| (b.mem_graph_diagonal_iff c).2 (b.inner_smul_self c i)
 
