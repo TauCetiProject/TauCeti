@@ -232,7 +232,6 @@ theorem map_d4SixGlueSubgroup_d4SixQuaternaryIsometry :
       (Submodule.span F
         ((fun d j ↦ ![0, ω, 1, ω ^ 2] (d j)) '' d4SixPrintedDigits)).toAddSubgroup := by
   have h2 := two_eq_zero_of_natCard_eq_four hF
-  have h3 := pow_three_eq_one_of_sq_add_self_add_one_eq_zero hω
   have hlabel (d : Fin 6 → Fin 4) :
       d4SixQuaternaryIsometry hF hω (fun j ↦ (D 4).glueLabelEquiv (isSimplyLaced_D 4) (d j)) =
         fun j ↦ ![0, ω, 1, ω ^ 2] (d j) :=
