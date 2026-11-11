@@ -71,8 +71,10 @@ theorem isCompactOperator_lowerOrderL_of_isLipschitzDomainWith_image
   convert hK using 1
   ext1 u
   obtain ⟨v, rfl⟩ := (T (k + 1)).surjective u
-  change lowerOrderL k (T (k + 1) v) = T k (lowerOrderL k ((T (k + 1)).symm (T (k + 1) v)))
-  rw [LinearIsometryEquiv.symm_apply_apply, lowerOrderL_apply, lowerOrderL_apply]
+  rw [Function.comp_apply, Function.comp_apply, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv, LinearIsometryEquiv.symm_apply_apply,
+    lowerOrderL_apply, lowerOrderL_apply]
   exact lowerOrder_compLinearIsometryEquiv _ hUW k v
 
 /-- On a bounded open set whose isometric image in the model space is a Lipschitz domain, a
