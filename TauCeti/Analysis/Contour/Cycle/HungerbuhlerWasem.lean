@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Contour.Cycle.HomologyCauchy
 public import TauCeti.Analysis.Contour.Cycle.PrincipalValue
 public import TauCeti.Analysis.Contour.HungerbuhlerWasem
+import TauCeti.Algebra.BigOperators.Ring.Finset
+import TauCeti.Data.Finset.Basic
 
 /-!
 # The Hungerbühler–Wasem generalized residue theorem for contour cycles

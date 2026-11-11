@@ -20,6 +20,8 @@ import TauCeti.Analysis.Contour.InvSubCPVExistence
 import TauCeti.Analysis.Contour.Residue.Assembly
 import TauCeti.Analysis.Contour.Winding.Number.Reverse
 import TauCeti.Analysis.Meromorphic.Order
+import TauCeti.Algebra.BigOperators.Ring.Finset
+import TauCeti.Data.Finset.Basic
 import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.Contour.Crossing.Finiteness
 import TauCeti.Analysis.Contour.FlatnessOne
@@ -70,24 +72,6 @@ Thm 3.3.
 public section
 
 noncomputable section
-
-namespace Finset
-
-/-- Removing from `U` the points of the finite set `S` that lie in `U` is removing all of `S`. -/
-theorem sdiff_coe_filter_mem_eq {α : Type*} (S : Finset α) (U : Set α) [DecidablePred (· ∈ U)] :
-    U \ ↑(S.filter (· ∈ U)) = U \ ↑S := by
-  ext z
-  simp only [Set.mem_sdiff, coe_filter, Set.mem_ofPred_eq, mem_coe]
-  tauto
-
-/-- If the weight `w` vanishes outside `U`, then the weighted sum over the points of `S` lying in
-`U` is the weighted sum over all of `S`. -/
-theorem sum_filter_mem_mul_eq {α R : Type*} [NonUnitalNonAssocSemiring R] (S : Finset α)
-    (U : Set α) [DecidablePred (· ∈ U)] {w r : α → R} (hw : ∀ s ∉ U, w s = 0) :
-    ∑ s ∈ S.filter (· ∈ U), w s * r s = ∑ s ∈ S, w s * r s :=
-  sum_filter_of_ne fun s _ hs ↦ by_contra fun hsU ↦ hs <| by rw [hw s hsU, zero_mul]
-
-end Finset
 
 namespace TauCeti.Contour
 
@@ -267,7 +251,7 @@ theorem conditionB_of_simple_poles {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → �
     (hf : DifferentiableOn ℂ f (U \ (S : Set ℂ)))
     (h_simple : ∀ s ∈ S, s ∈ U → ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s) :
     ConditionB γ a b f := by
-  have h_ge := hf.neg_one_le_meromorphicOrderAt hU S.finite_toSet h_simple
+  have h_ge := hf.neg_one_le_meromorphicOrderAt hU S.finite_toSet.isClosed h_simple
   refine ⟨fun t₀ ht₀ h_lt => absurd h_lt (not_lt.mpr
       (h_ge (γ t₀) (hγU t₀ (by rw [← Set.Icc_min_max]; exact Set.Ioo_subset_Icc_self ht₀)))),
     fun h_lt => absurd h_lt (not_lt.mpr (h_ge (γ (min a b))
