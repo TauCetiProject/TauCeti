@@ -9,7 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 public import Mathlib.Basic.Real.Sign
 
 /-!
-# Complementary arctangents at the corners of a rectangle
+# Complementary arctangents at the corners of a rectangle, and the bound on `arctan`
 
 Mathlib's `Real.arctan_inv_of_pos` gives `arctan x⁻¹ = π / 2 - arctan x`; the quotient form
 `arctan (u / v) + arctan (v / u) = π / 2` that occurs when the two legs of a right angle are named
@@ -17,6 +17,8 @@ separately is not stated there.
 
 ## Main results
 
+* `Real.abs_arctan_lt_pi_div_two`: `|arctan x| < π / 2`, the two bounds of `Real.arctan_mem_Ioo`
+  in absolute-value form, as used to dominate integrals of `arctan`.
 * `Real.arctan_div_add_arctan_div`: the quotient form of the complementary-angle law.
 * `Real.tendsto_arctan_div_nhdsGT_zero`: `arctan (c / η) → (π / 2) * sign c` as `η → 0⁺`.
 * `TauCeti.arctan_corner_sum_eq_two_mul_pi_mul_I`: the four corner angles of a rectangle straddling
@@ -30,6 +32,10 @@ open Complex Filter
 open scoped Real Topology
 
 namespace Real
+
+/-- The arctangent is bounded in absolute value by `π / 2`. -/
+theorem abs_arctan_lt_pi_div_two (x : ℝ) : |arctan x| < π / 2 :=
+  abs_lt.2 (arctan_mem_Ioo x)
 
 /-- **Complementary angles, in quotient form.**  When `u / v` is positive (for instance when `u`
 and `v` are both positive) the angles `arctan (u / v)` and `arctan (v / u)` are complementary. -/

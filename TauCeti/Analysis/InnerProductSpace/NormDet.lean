@@ -190,29 +190,33 @@ theorem ContinuousLinearMap.continuous_normDet_adjoint [CompleteSpace U] :
 
 namespace ContinuousLinearMap
 
-/-- The Jacobian of the adjoint of a continuous linear map is positive exactly when the map is
-surjective. -/
+/-- The Jacobian of the adjoint of a continuous linear map into a finite-dimensional inner product
+space is positive exactly when the map is surjective. The domain need only be complete, not
+finite-dimensional. -/
 theorem normDet_adjoint_pos_iff {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
-    [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] [CompleteSpace E] [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 E] [CompleteSpace E] [NormedAddCommGroup F]
     [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F] [CompleteSpace F] {f : E →L[𝕜] F} :
     0 < f.adjoint.normDet ↔ Function.Surjective f := by
-  rw [← adjoint_toLinearMap, LinearMap.normDet_adjoint_pos_iff, coe_coe]
+  rw [f.adjoint.normDet_nonneg.lt_iff_ne', Ne, LinearMap.normDet_eq_zero_iff_ker_ne_bot, not_not,
+    ← f.orthogonal_range, Submodule.orthogonal_eq_bot_iff, LinearMap.range_eq_top, coe_coe]
 
-/-- The Jacobian of the adjoint of a continuous linear map is nonzero exactly when the map is
-surjective. -/
+/-- The Jacobian of the adjoint of a continuous linear map into a finite-dimensional inner product
+space is nonzero exactly when the map is surjective. The domain need only be complete, not
+finite-dimensional. -/
 theorem normDet_adjoint_ne_zero_iff {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
-    [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] [CompleteSpace E] [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 E] [CompleteSpace E] [NormedAddCommGroup F]
     [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F] [CompleteSpace F] {f : E →L[𝕜] F} :
     f.adjoint.normDet ≠ 0 ↔ Function.Surjective f := by
-  rw [← adjoint_toLinearMap, LinearMap.normDet_adjoint_ne_zero_iff, coe_coe]
+  rw [← f.adjoint.normDet_nonneg.lt_iff_ne', normDet_adjoint_pos_iff]
 
-/-- The Jacobian of the adjoint of a continuous linear map vanishes exactly when the map is not
-surjective. -/
+/-- The Jacobian of the adjoint of a continuous linear map into a finite-dimensional inner product
+space vanishes exactly when the map is not surjective. The domain need only be complete, not
+finite-dimensional. -/
 theorem normDet_adjoint_eq_zero_iff {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
-    [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] [CompleteSpace E] [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 E] [CompleteSpace E] [NormedAddCommGroup F]
     [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F] [CompleteSpace F] {f : E →L[𝕜] F} :
     f.adjoint.normDet = 0 ↔ ¬Function.Surjective f := by
-  rw [← adjoint_toLinearMap, LinearMap.normDet_adjoint_eq_zero_iff, coe_coe]
+  simpa using (normDet_adjoint_ne_zero_iff (f := f)).not
 
 omit [FiniteDimensional ℝ V] in
 /-- Around an injective linear map `B` there is a ball on which the antilipschitz constant is

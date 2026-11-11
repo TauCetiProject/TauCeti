@@ -152,22 +152,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
   [MeasurableSpace E] [BorelSpace E] [MeasurableSpace F] [BorelSpace F]
   {f : E → F} {s : Set E}
 
-omit [MeasurableSpace F] [BorelSpace F] in
-/-- The set of differentiability points with nonzero coarea Jacobian is Borel measurable. -/
-theorem measurableSet_setOf_differentiableAt_normDet_adjoint_ne_zero (f : E → F) :
-    MeasurableSet {x | DifferentiableAt ℝ f x ∧ (fderiv ℝ f x).adjoint.normDet ≠ 0} :=
-  (measurableSet_of_differentiableAt ℝ f).inter
-    (measurableSet_eq_fun (measurable_normDet_adjoint_fderiv f) measurable_const).compl
-
-omit [MeasurableSpace F] [BorelSpace F] in
-/-- The regular coarea locus, where `f` is differentiable with surjective derivative, is Borel
-measurable. -/
-theorem measurableSet_setOf_differentiableAt_surjective_fderiv (f : E → F) :
-    MeasurableSet {x | DifferentiableAt ℝ f x ∧ Surjective (fderiv ℝ f x)} := by
-  convert measurableSet_setOf_differentiableAt_normDet_adjoint_ne_zero f using 1
-  ext x
-  exact and_congr_right' ContinuousLinearMap.normDet_adjoint_ne_zero_iff.symm
-
 omit [FiniteDimensional ℝ E] in
 /-- Slicing a `(w ↦ f w.fst + ε • w.snd)`-fibre of `coareaPerturbSlab F K` along `WithLp.snd`
 bounds `∫⁻ z in ball 0 1, μH[dim E - dim F] (K ∩ f ⁻¹' {y - ε • z})` via Eilenberg's inequality. -/

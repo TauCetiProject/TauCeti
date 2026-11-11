@@ -13,12 +13,12 @@ public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 # Lipschitz maps from extended metric spaces
 
 This file gives a real-valued Lipschitz estimate for the extended distance from a fixed point,
-records that a map Lipschitz on a set is locally Lipschitz on that set
-(`LipschitzOnWith.locallyLipschitzOn`), covers any set in a second-countable space on which a map
-is locally Lipschitz by countably many open sets on whose intersections with the set the map is
-Lipschitz (`LocallyLipschitzOn.exists_open_cover_lipschitzOnWith`), and shows that composing a
-function locally Lipschitz on a set with a locally Lipschitz map keeps it locally Lipschitz on
-that set.
+shows that the inclusion of a subset into a larger subset is `1`-Lipschitz, records that a map
+Lipschitz on a set is locally Lipschitz on that set (`LipschitzOnWith.locallyLipschitzOn`), covers
+any set in a second-countable space on which a map is locally Lipschitz by countably many open sets
+on whose intersections with the set the map is Lipschitz
+(`LocallyLipschitzOn.exists_open_cover_lipschitzOnWith`), and shows that composing a function
+locally Lipschitz on a set with a locally Lipschitz map keeps it locally Lipschitz on that set.
 
 The declaration `TauCeti.lipschitzWith_toReal_edist` and its proof follow
 [Mathlib pull request #41839](https://github.com/leanprover-community/mathlib4/pull/41839),
@@ -58,6 +58,11 @@ theorem lipschitzWith_toReal_edist {X : Type*} [PseudoEMetricSpace X] (a : X) :
   constructor <;> linarith
 
 end TauCeti
+
+/-- The inclusion of a subset into a larger subset is `1`-Lipschitz. -/
+protected theorem LipschitzWith.inclusion {α : Type*} [PseudoEMetricSpace α] {s t : Set α}
+    (h : s ⊆ t) : LipschitzWith 1 (Set.inclusion h) :=
+  LipschitzWith.of_edist_le fun _ _ ↦ le_rfl
 
 /-- A function that is Lipschitz on `s` is locally Lipschitz on `s`. -/
 protected theorem LipschitzOnWith.locallyLipschitzOn {α β : Type*} [PseudoEMetricSpace α]

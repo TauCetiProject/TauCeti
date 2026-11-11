@@ -76,6 +76,10 @@ theorem isInvertible_prod_comm : (A.prod q).IsInvertible ↔ (q.prod A).IsInvert
     ext <;> simp
   rw [this, isInvertible_equiv_comp]
 
+/-- The first component of an invertible pair is surjective. -/
+theorem surjective_of_isInvertible_prod (h : (A.prod q).IsInvertible) : Function.Surjective A :=
+  fun y ↦ (h.surjective (y, 0)).imp fun _ hx ↦ congrArg Prod.fst hx
+
 /-- The section of `q` with values in the kernel of `A`: it sends `v : G` to the unique `x : M`
 with `A x = 0` and `q x = v`.
 
@@ -165,6 +169,12 @@ theorem coe_kerEquivOfProd_apply (h : (A.prod q).IsInvertible) (v : G) :
 theorem kerEquivOfProd_symm_apply (h : (A.prod q).IsInvertible) (x : ↥A.ker) :
     (kerEquivOfProd A q h).symm x = q x :=
   (rfl)
+
+/-- The kernel of the first component of an invertible pair is a finite module whenever the
+codomain of the second component is. -/
+theorem finite_ker_of_isInvertible_prod [Module.Finite R G] (h : (A.prod q).IsInvertible) :
+    Module.Finite R A.ker :=
+  Module.Finite.equiv (kerEquivOfProd A q h).toLinearEquiv
 
 section Projections
 

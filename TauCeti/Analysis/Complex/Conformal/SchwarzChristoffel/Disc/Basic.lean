@@ -258,16 +258,14 @@ private theorem exists_affine_transport_with_infty
     (((hasDerivAt_schwarzChristoffelPrimitive a e z₀ (hmaps hζ)).comp ζ (hcd ζ hζ)).deriv).trans
       (by rw [deriv_schwarzChristoffelPrimitive a e z₀ (hmaps hζ)])
   refine (exists_eqOn_const_mul_add_iff_logDeriv_deriv_eqOn isOpen_ball
-    (convex_ball 0 1).isPreconnected (hFdiff.comp hcdiff hmaps)
-    (differentiableOn_schwarzChristoffelDiscPrimitive w (Option.elim' (-∑ i, e i - 2) e))
+    (convex_ball 0 1).isPreconnected
     (fun ζ hζ => hderiv ζ hζ ▸ mul_ne_zero (hFn _ (hmaps hζ)) (hcne ζ hζ))
     (fun ζ hζ => deriv_schwarzChristoffelDiscPrimitive w (Option.elim' (-∑ i, e i - 2) e) hζ ▸
       schwarzChristoffelDiscIntegrand_ne_zero w
         (Option.elim' (-∑ i, e i - 2) e) hζ)).mpr fun ζ hζ => ?_
   -- the pre-Schwarzian chain rule for `F ∘ c`
   refine (logDeriv_deriv_comp (hFdiff.analyticAt (isOpen_upperHalfPlaneSet.mem_nhds (hmaps hζ)))
-    (hcdiff.analyticAt (isOpen_ball.mem_nhds hζ)) (hFn _ (hmaps hζ))
-    ((hcd ζ hζ).deriv ▸ hcne ζ hζ)).trans ?_
+    (hcdiff.analyticAt (isOpen_ball.mem_nhds hζ)) (hFn _ (hmaps hζ))).trans ?_
   rw [logDeriv_deriv_schwarzChristoffelPrimitive a e z₀ (hmaps hζ), (hcd ζ hζ).deriv,
     logDeriv_deriv_I_mul_one_add_div_one_sub (hne ζ hζ),
     logDeriv_deriv_schwarzChristoffelDiscPrimitive w (Option.elim' (-∑ i, e i - 2) e) hζ]

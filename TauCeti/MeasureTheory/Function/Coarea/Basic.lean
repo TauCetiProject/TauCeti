@@ -60,7 +60,10 @@ The structure follows the proof of the area formula in
 * `ApproximatesLinearOn.lintegral_euclideanHausdorffMeasure_inter_preimage_le`,
   `ApproximatesLinearOn.ofReal_normDet_adjoint_mul_volume_le`: the coarea formula up to a
   controlled factor for a map approximated by a linear map with a right inverse.
-* `TauCeti.measurable_normDet_adjoint_fderiv`: Borel measurability of the coarea Jacobian.
+* `TauCeti.measurable_normDet_adjoint_fderiv`,
+  `TauCeti.measurableSet_setOf_differentiableAt_normDet_adjoint_ne_zero`,
+  `TauCeti.measurableSet_setOf_differentiableAt_surjective_fderiv`: Borel measurability of the
+  coarea Jacobian and of the regular coarea locus.
 * `lintegral_euclideanHausdorffMeasure_inter_preimage_eq_lintegral_normDet_adjoint_fderiv`:
   the coarea formula for maps with surjective derivative.
 * `ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_hasFDerivWithinAt`: almost every
@@ -200,6 +203,26 @@ theorem measurable_normDet_adjoint_fderiv {E F : Type*} [NormedAddCommGroup E]
     [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] (f : E → F) :
     Measurable fun x ↦ (fderiv ℝ f x).adjoint.normDet :=
   ContinuousLinearMap.continuous_normDet_adjoint.measurable.comp (measurable_fderiv ℝ f)
+
+/-- The set of differentiability points with nonzero coarea Jacobian is Borel measurable. -/
+theorem measurableSet_setOf_differentiableAt_normDet_adjoint_ne_zero {E F : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E]
+    [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    (f : E → F) :
+    MeasurableSet {x | DifferentiableAt ℝ f x ∧ (fderiv ℝ f x).adjoint.normDet ≠ 0} :=
+  (measurableSet_of_differentiableAt ℝ f).inter
+    (measurableSet_eq_fun (measurable_normDet_adjoint_fderiv f) measurable_const).compl
+
+/-- The regular coarea locus, where `f` is differentiable with surjective derivative, is Borel
+measurable. -/
+theorem measurableSet_setOf_differentiableAt_surjective_fderiv {E F : Type*}
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E]
+    [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    (f : E → F) :
+    MeasurableSet {x | DifferentiableAt ℝ f x ∧ Surjective (fderiv ℝ f x)} := by
+  convert measurableSet_setOf_differentiableAt_normDet_adjoint_ne_zero f using 1
+  ext x
+  exact and_congr_right' ContinuousLinearMap.normDet_adjoint_ne_zero_iff.symm
 
 end TauCeti
 
