@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Coalgebra.Subcoalgebra.Basic
 public import Mathlib.LinearAlgebra.Basis.Basic
 
 import Mathlib.LinearAlgebra.Span.Basic
+import TauCeti.Algebra.Coalgebra.Finsupp.Coderivation
 
 /-!
 # Subcoalgebras spanned by group-like elements
@@ -23,7 +24,9 @@ The subcoalgebra spanned by all group-like elements is the full subcoalgebra exa
 group-like elements span the carrier as a module, a condition invariant under coalgebra
 equivalence and preserved by surjective coalgebra morphisms
 (`CoalgHom.groupLikeSetSpan_eq_top_of_surjective`). Over a domain the group-like elements are
-linearly independent, so they then form a basis, `groupLikeBasis`.
+linearly independent, so they then form a basis, `groupLikeBasis`. Its coordinates identify the
+coalgebra with the diagonal coalgebra on its group-like elements, so an element primitive
+relative to a group-like element is zero (`eq_zero_of_comul_eq_of_groupLikeSetSpan_eq_top`).
 
 ## References
 
@@ -212,6 +215,33 @@ noncomputable def groupLikeBasis (h : groupLikeSetSpan (R := S) (C := D) Set.uni
 theorem groupLikeBasis_apply (h : groupLikeSetSpan (R := S) (C := D) Set.univ = ⊤)
     (g : GroupLike S D) : groupLikeBasis h g = g.val :=
   Module.Basis.mk_apply _ _ g
+
+/-- **A coalgebra spanned by its group-like elements has no nonzero skew-primitive elements at a
+single group-like element.** Over a domain, if the group-like elements span a torsion-free
+coalgebra `D`, `g` is group-like, and `Δ x = x ⊗ g + g ⊗ x`, then `x = 0`. The coordinates in
+`groupLikeBasis` carry `D` onto the diagonal coalgebra, where this is
+`Finsupp.eq_zero_of_comul_eq_tmul_add_tmul`. -/
+theorem eq_zero_of_comul_eq_of_groupLikeSetSpan_eq_top
+    (h : groupLikeSetSpan (R := S) (C := D) Set.univ = ⊤) (g : GroupLike S D) {x : D}
+    (hx : Coalgebra.comul (R := S) x = x ⊗ₜ[S] g.val + g.val ⊗ₜ[S] x) : x = 0 := by
+  let r : D →ₗ[S] (GroupLike S D →₀ S) := (groupLikeBasis h).repr.toLinearMap
+  have hr₁ (g' : GroupLike S D) : r g'.val = Finsupp.single g' 1 := by
+    rw [← groupLikeBasis_apply h g']
+    exact (groupLikeBasis h).repr_self g'
+  -- The coordinates intertwine the comultiplications, as they do on the basis.
+  have hr : Coalgebra.comul ∘ₗ r = TensorProduct.map r r ∘ₗ Coalgebra.comul :=
+    (groupLikeBasis h).ext fun g' ↦ by
+      rw [groupLikeBasis_apply, LinearMap.comp_apply, LinearMap.comp_apply,
+        g'.isGroupLikeElem_val.comul_eq_tmul_self, TensorProduct.map_tmul, hr₁]
+      simp
+  refine (groupLikeBasis h).repr.map_eq_zero_iff.mp
+    (Finsupp.eq_zero_of_comul_eq_tmul_add_tmul (g := r g.val) ?_ ?_)
+  · rw [hr₁]
+    simp
+  · have := LinearMap.congr_fun hr x
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, hx, map_add, TensorProduct.map_tmul,
+      TensorProduct.map_tmul] at this
+    exact this
 
 end Domain
 

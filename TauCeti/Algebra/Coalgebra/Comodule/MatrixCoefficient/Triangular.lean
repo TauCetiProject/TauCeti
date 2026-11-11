@@ -8,6 +8,10 @@ module
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Matrix
 public import Mathlib.LinearAlgebra.Matrix.Block
 public import Mathlib.RingTheory.Coalgebra.GroupLike
+public import Mathlib.RingTheory.Bialgebra.Basic
+public import TauCeti.Algebra.Coalgebra.Subcoalgebra.GroupLike
+public import TauCeti.LinearAlgebra.Matrix.Triangular
+import Mathlib.RingTheory.Bialgebra.GroupLike
 import Mathlib.Data.Finset.Max
 
 /-!
@@ -21,6 +25,13 @@ matrix coefficient of every nonzero vector.
 For a Hopf algebra, this coefficient is a unit. Thus the projective orbit of the vector
 avoids a hyperplane, the affine-chart input to the fixed-point argument for solvable groups.
 The coefficient calculation itself needs only a coalgebra.
+
+A coalgebra morphism into a bialgebra spanned by its group-like elements that sends the diagonal
+coefficients of an upper-unitriangular basis to `1` sends the whole coefficient matrix to the
+identity matrix (`TauCeti.Comodule.map_coefficientMatrix_eq_one_of_isUpperUnitriangular`): the
+comultiplication `Δ cᵢⱼ = ∑ₗ cᵢₗ ⊗ cₗⱼ` and an induction on `j - i` exhibit each image of an
+off-diagonal coefficient as a primitive element, and such a bialgebra has none but `0`
+(`TauCeti.Subcoalgebra.eq_zero_of_comul_eq_of_groupLikeSetSpan_eq_top`).
 -/
 
 public section
@@ -92,3 +103,62 @@ theorem exists_isGroupLikeElem_matrixCoefficient_of_isUpperTriangular
 end GroupLike
 
 end Module.Basis
+
+namespace TauCeti.Comodule
+
+open scoped TensorProduct
+
+universe u v
+
+variable {k : Type u} {H : Type*} {K : Type v} {M : Type*}
+variable [Field k] [Semiring H] [Module k H] [Coalgebra k H]
+variable [Ring K] [Bialgebra k K]
+variable [AddCommGroup M] [Module k M] [Comodule k H M]
+
+/-- **A coalgebra morphism to a group-like-spanned bialgebra trivializes an upper-unitriangular
+representation.** If `f` preserves `1` on the diagonal coefficients, then it sends the
+coefficient matrix of an upper-unitriangular basis to the identity matrix. -/
+theorem map_coefficientMatrix_eq_one_of_isUpperUnitriangular {n : ℕ}
+    (b : Module.Basis (Fin n) k M)
+    (hb : (coefficientMatrix (C := H) b).IsUpperUnitriangular)
+    (hK : Subcoalgebra.groupLikeSetSpan (R := k) (C := K) Set.univ = ⊤)
+    (f : H →ₗc[k] K) (hf : ∀ i, f (coefficientMatrix (C := H) b i i) = 1) :
+    (coefficientMatrix (C := H) b).map f = 1 := by
+  -- Entries below the diagonal vanish, and the diagonal maps to `1`.
+  have hlow {i j : Fin n} (h : j < i) : f (coefficientMatrix (C := H) b i j) = 0 := by
+    rw [hb.isUpperTriangular h, map_zero]
+  -- Above the diagonal, induct on the distance `j - i` to the diagonal.
+  suffices h : ∀ d : ℕ, ∀ i j : Fin n, (j : ℕ) - i = d → i < j →
+      f (coefficientMatrix (C := H) b i j) = 0 by
+    ext i j
+    rw [Matrix.map_apply]
+    rcases lt_trichotomy i j with hij | rfl | hij
+    · rw [Matrix.one_apply_ne hij.ne, h _ i j rfl hij]
+    · rw [Matrix.one_apply_eq, hf]
+    · rw [Matrix.one_apply_ne hij.ne', hlow hij]
+  intro d
+  induction d using Nat.strong_induction_on with
+  | _ d ih =>
+    intro i j hd hij
+    refine Subcoalgebra.eq_zero_of_comul_eq_of_groupLikeSetSpan_eq_top hK
+      ⟨1, IsGroupLikeElem.one⟩ ?_
+    dsimp only
+    rw [← CoalgHomClass.map_comp_comul_apply, comul_coefficientMatrix_eq_sum, map_sum]
+    simp only [TensorProduct.map_tmul, CoalgHom.coe_linearMapOfClass]
+    rw [← Finset.add_sum_erase _ _ (Finset.mem_univ j),
+      ← Finset.add_sum_erase _ _ (Finset.mem_erase.mpr ⟨hij.ne, Finset.mem_univ i⟩)]
+    -- The intermediate terms vanish: below the diagonal, or by the inductive hypothesis.
+    have hrest : ∑ l ∈ (Finset.univ.erase j).erase i,
+        f (coefficientMatrix (C := H) b i l) ⊗ₜ[k] f (coefficientMatrix (C := H) b l j) = 0 := by
+      refine Finset.sum_eq_zero fun l hl ↦ ?_
+      simp only [Finset.mem_erase] at hl
+      rcases lt_or_gt_of_ne hl.1 with hl' | hl'
+      · rw [hlow hl', TensorProduct.zero_tmul]
+      rcases lt_or_gt_of_ne hl.2.1 with hl'' | hl''
+      · rw [ih ((j : ℕ) - l) (by omega) l j rfl hl'', TensorProduct.tmul_zero]
+      · rw [hlow hl'', TensorProduct.tmul_zero]
+    have hi := hf i
+    have hj := hf j
+    rw [hrest, hi, hj, add_zero, add_comm]
+
+end TauCeti.Comodule
