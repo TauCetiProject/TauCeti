@@ -242,6 +242,17 @@ theorem IsIntegralLattice.eq_realCharacter (h : IsIntegralLattice i) {m : N →+
   h.isBaseChange.algHom_ext φ (h.realCharacter m) fun n ↦ by
     simp only [AddMonoidHom.coe_toIntLinearMap, hφ, IsIntegralLattice.realCharacter_apply]
 
+/-- The real extension of an integral coordinate character is the corresponding coordinate of the
+real basis attached to an integral basis. -/
+theorem IsIntegralLattice.realCharacter_coord {ι : Type*} (h : IsIntegralLattice i)
+    (b : Module.Basis ι ℤ N) (j : ι) :
+    h.realCharacter (b.coord j).toAddMonoidHom = (h.isBaseChange.basis b).coord j := by
+  classical
+  refine (h.isBaseChange.basis b).ext fun k ↦ ?_
+  rw [Module.Basis.coord_apply, Module.Basis.repr_self, h.isBaseChange.basis_apply,
+    AddMonoidHom.coe_toIntLinearMap, h.realCharacter_apply, Finsupp.single_apply]
+  simp [Module.Basis.coord_apply, Finsupp.single_apply, eq_comm]
+
 /-- A real-linear functional is the real extension of an integral character exactly when it takes
 integer values at every lattice point. -/
 theorem IsIntegralLattice.exists_realCharacter_eq_iff (h : IsIntegralLattice i)

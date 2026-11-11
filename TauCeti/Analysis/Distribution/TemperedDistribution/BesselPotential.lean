@@ -7,13 +7,14 @@ module
 
 public import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
 import TauCeti.Analysis.Distribution.SchwartzSpace.BesselPotential
+import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 
 /-!
 # Bessel potentials on Littlewood–Paley blocks
 
 The Bessel potential `J^s = 𝓕⁻ (1 + ‖ξ‖ ^ 2) ^ (s / 2) 𝓕` of order `s` acts on a function whose
 Fourier transform lives at frequencies `‖ξ‖ ~ R` essentially as multiplication by `R ^ s`. This file
-makes that precise at the level of convolution kernels, which is what gives the localized estimates
+makes that precise at the level of convolution kernels, and deduces the localized estimates
 
 `‖J^s Δⱼ u‖_p ≤ C 2^{js} ‖Δⱼ u‖_p`, `1 ≤ p ≤ ∞`,
 
@@ -32,9 +33,10 @@ norms are weighted sequence norms of the `‖Δⱼ u‖_p`.
   `(1 + ‖ξ‖ ^ 2) ^ (s / 2) χ ξ` has `L¹` norm at most `C R ^ s`, with `C` independent of `R` and
   `χ`.
 
-A Fourier multiplier with Schwartz symbol `σ` is the convolution with `𝓕⁻ σ`, so Young's
-inequality bounds it on every `Lᵖ` by `‖𝓕⁻ σ‖₁`. Applying that bound to `Δⱼ u` turns the
-factorization into the localized estimates above; the `Lᵖ` bound itself is not proved here.
+* `TemperedDistribution.exists_besselPotential_littlewoodPaleyBlock_eq_and_norm_le`: the
+  localized estimates themselves. A Fourier multiplier with Schwartz symbol `σ` is the convolution
+  with `𝓕⁻ σ`, so Young's inequality bounds it on every `Lᵖ` by `‖𝓕⁻ σ‖₁`; applied to `Δⱼ u`, the
+  factorization gives `‖J^s Δⱼ u‖_p ≤ C 2^{js} ‖Δⱼ u‖_p` whenever `Δⱼ u` is an `Lᵖ` function.
 
 ## References
 
@@ -45,7 +47,7 @@ factorization into the localized estimates above; the `Lᵖ` bound itself is not
 
 public section
 
-open scoped FourierTransform SchwartzMap LineDeriv ContDiff
+open scoped FourierTransform SchwartzMap LineDeriv ContDiff ENNReal
 open FourierTransform MeasureTheory Metric Module
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
@@ -102,5 +104,31 @@ theorem exists_besselPotential_compL_littlewoodPaleyBlock_eq (s : ℝ) :
     exact_mod_cast h'
   · rw [hσ]
     exact hC (2 ^ j) χ (by positivity) hχ (hab j) fun k _ ξ ↦ hB k j ξ
+
+/-- **Bessel potentials of Littlewood–Paley blocks in `Lᵖ`.** There is a constant `C ≥ 0`,
+depending only on `s` and `φ`, such that for every `1 ≤ p ≤ ∞` and every `j`: if the block
+`Δⱼ u` of a tempered distribution `u` is an `Lᵖ` function `f`, then `J^s Δⱼ u` is an `Lᵖ`
+function `g` with
+
+`‖g‖_p ≤ C 2^{js} ‖f‖_p`. -/
+theorem exists_besselPotential_littlewoodPaleyBlock_eq_and_norm_le [CompleteSpace F] (s : ℝ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (j : ℕ) (u : 𝓢'(E, F))
+      (f : Lp F p (volume : Measure E)), littlewoodPaleyBlock F φ j u = f →
+      ∃ g : Lp F p (volume : Measure E),
+        besselPotential E F s (littlewoodPaleyBlock F φ j u) = g ∧
+          ‖g‖ ≤ C * 2 ^ (s * j) * ‖f‖ := by
+  obtain ⟨C, hC⟩ := exists_besselPotential_compL_littlewoodPaleyBlock_eq (F := F) φ s
+  refine ⟨max C 0, le_max_right _ _, fun {p} _ j u f hf ↦ ?_⟩
+  obtain ⟨σ, hσ, hσC⟩ := hC j
+  obtain ⟨g, hg, hgf⟩ := exists_fourierMultiplierCLM_eq_and_norm_le σ f
+  refine ⟨g, ?_, ?_⟩
+  · rw [← ContinuousLinearMap.comp_apply, hσ, ContinuousLinearMap.comp_apply, hf, hg]
+  · have h2 : ((2 : ℝ) ^ j) ^ s = 2 ^ (s * j) := by
+      rw [← Real.rpow_natCast, ← Real.rpow_mul zero_le_two, mul_comm]
+    calc ‖g‖ ≤ (∫ x, ‖𝓕⁻ (σ : E → ℂ) x‖) * ‖f‖ := hgf
+      _ ≤ max C 0 * 2 ^ (s * j) * ‖f‖ := by
+        rw [← h2]
+        gcongr
+        exact hσC.trans (by gcongr; exact le_max_left _ _)
 
 end TemperedDistribution
