@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Network.AuxiliaryTerminals
 public import TauCeti.Combinatorics.Network.Menger.Vertex
+import TauCeti.Combinatorics.Network.PathTrimming
 import Mathlib.Basic.Finite.Sum
 
 /-!
@@ -51,7 +52,7 @@ every vertex of `A` and a fresh sink `τ` with an arrow from every vertex of `B`
 vertices keep their capacities. Walks from `A` to `B` lift to `σ`–`τ` walks through the same
 original vertices, and every `σ`–`τ` walk projects to a walk from `A` to `B`
 (`TauCeti.reachableAvoiding_auxTerminalHom_iff`). Each `σ`–`τ` path of a packing is then trimmed to
-an `A`–`B` path (`TauCeti.ArrowWalk.exists_isPath_interior_notMem`), which visits no new vertex.
+an `A`–`B` path (`TauCeti.ArrowWalk.trimToSets`), which visits no new vertex.
 
 ## References
 
@@ -118,10 +119,13 @@ theorem exists_paths_setSeparator_sum_eq [Finite V] [DecidableEq V] (c : V → �
       q.vertices.map inl ⊆ (P' i).vertices ∧
       ∀ v ∈ q.vertices, v ≠ a → v ≠ b → v ∉ A ∧ v ∉ B := by
     obtain ⟨a, ha, b, hb, q, hq⟩ := AuxTerminalHom.exists_arrowWalk_map_vertices_subset (P' i)
-    obtain ⟨a', ha', b', hb', r, hr, hrq, -, hint⟩ :=
-      ArrowWalk.exists_isPath_interior_notMem (A := (A : Set V)) (B := (B : Set V)) q ha hb
-    exact ⟨a', ha', b', hb', r, hr, List.Subset.trans (List.map_subset _ hrq) hq,
-      by simpa using hint⟩
+    obtain ⟨r, hr, hrq⟩ := q.exists_isPath_vertices_subset
+    exact ⟨r.trimToSetsSource hr ha hb, r.trimToSetsSource_mem hr ha hb,
+      r.trimToSetsTarget hr ha hb, r.trimToSetsTarget_mem hr ha hb, r.trimToSets hr ha hb,
+      r.trimToSets_isPath hr ha hb,
+      List.Subset.trans
+        (List.map_subset _ (List.Subset.trans (r.trimToSets_vertices_subset hr ha hb) hrq)) hq,
+      fun v hv hva hvb ↦ r.trimToSets_interior_notMem hr ha hb hv hva hvb⟩
   choose a ha b hb P hP hsub hint using h
   have hpre : inl ⁻¹' (X' : Set (V ⊕ Bool)) = (X'.toLeft : Set V) := by
     ext

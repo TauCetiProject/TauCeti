@@ -8,6 +8,7 @@ module
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Combinatorics.Network.Decomposition
 public import TauCeti.Combinatorics.Network.SetFlow
+import TauCeti.Combinatorics.Network.PathTrimming
 import Mathlib.Tactic.Linarith
 
 /-!
@@ -40,7 +41,7 @@ path–cycle decomposition of the flow has paths from supply to demand vertices 
 up to the value. Every arrow carries at most one unit, so every path has weight one and no two
 paths share an arrow (`TauCeti.PathCycleDecomposition.pairwise_disjoint_arrows`). In the
 set-to-set case each path is finally trimmed to an `A`–`B` path, which traverses only arrows of
-the original path (`TauCeti.ArrowWalk.exists_isPath_interior_notMem`).
+the original path (`TauCeti.ArrowWalk.trimToSets`).
 
 ## Main results
 
@@ -221,10 +222,16 @@ theorem SetFlow.exists_paths_card_eq_val [Fintype V] [∀ x y, Fintype (Q x y)]
   have htrim (i : Fin D.paths.length) :
       ∃ a ∈ A, ∃ b ∈ B, ∃ q : ArrowWalk Q a b, q.IsPath ∧ q.arrows ⊆ (P i).arrows ∧
         ∀ v ∈ q.vertices, v ≠ a → v ≠ b → v ∉ A ∧ v ∉ B := by
-    obtain ⟨a, ha, b, hb, q, hq, -, hsub, hint⟩ :=
-      ArrowWalk.exists_isPath_interior_notMem (A := (A : Set V)) (B := (B : Set V)) (P i)
-        (hsource _ (List.getElem_mem _)).1 (htarget _ (List.getElem_mem _))
-    exact ⟨a, ha, b, hb, q, hq, hsub, by simpa using hint⟩
+    let hp : (P i).IsPath := D.isPath_walk _ (List.getElem_mem i.isLt)
+    let ha : D.paths[(i : ℕ)].source ∈ A :=
+      (hsource D.paths[(i : ℕ)] (List.getElem_mem i.isLt)).1
+    let hb : D.paths[(i : ℕ)].target ∈ B :=
+      htarget D.paths[(i : ℕ)] (List.getElem_mem i.isLt)
+    exact ⟨(P i).trimToSetsSource hp ha hb, (P i).trimToSetsSource_mem hp ha hb,
+      (P i).trimToSetsTarget hp ha hb, (P i).trimToSetsTarget_mem hp ha hb,
+      (P i).trimToSets hp ha hb, (P i).trimToSets_isPath hp ha hb,
+      (P i).trimToSets_arrows_subset hp ha hb,
+      fun v hv hva hvb ↦ (P i).trimToSets_interior_notMem hp ha hb hv hva hvb⟩
   choose a ha b hb P' hP' hsub hint using htrim
   refine ⟨D.paths.length, a, b, P', ?_, ha, hb, hP', hint,
     fun i e he ↦ D.apply_eq_one_of_mem_arrows hf (List.getElem_mem _) (hsub i he),

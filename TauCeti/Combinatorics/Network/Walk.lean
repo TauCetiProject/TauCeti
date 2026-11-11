@@ -479,14 +479,33 @@ of `B` whose other vertices lie in neither `A` nor `B`, visiting only vertices a
 arrows of the original path. -/
 private theorem IsPath.exists_isPath_interior_notMem {A B : Set V} :
     ∀ (n : ℕ) {s t : V} (p : ArrowWalk Q s t), p.length = n → p.IsPath → s ∈ A → t ∈ B →
-      ∃ a ∈ A, ∃ b ∈ B, ∃ q : ArrowWalk Q a b, q.IsPath ∧ q.vertices ⊆ p.vertices ∧
-        q.arrows ⊆ p.arrows ∧ ∀ v ∈ q.vertices, v ≠ a → v ≠ b → v ∉ A ∧ v ∉ B := by
+      ∃ a ∈ A, ∃ b ∈ B, ∃ q : ArrowWalk Q a b, q.IsPath ∧
+        (∃ (before : ArrowWalk Q s a) (after : ArrowWalk Q b t),
+          p = before.comp (q.comp after)) ∧
+        q.vertices ⊆ p.vertices ∧ q.arrows ⊆ p.arrows ∧
+          (∀ v ∈ q.vertices, v ≠ a → v ∉ A) ∧
+            ∀ v ∈ q.vertices, v ≠ b → v ∉ B := by
   intro n
   induction n using Nat.strong_induction_on with
   | _ n ih =>
   intro s t p hn hp hs ht
+  by_cases hsB : s ∈ B
+  · exact ⟨s, hs, s, hsB, .nil s, isPath_nil s, ⟨.nil s, p, by simp⟩,
+      by simpa using (@Quiver.Path.start_mem_vertices V ⟨Q⟩ _ _ p), by simp, by simp⟩
+  by_cases htA : t ∈ A
+  · exact ⟨t, htA, t, ht, .nil t, isPath_nil t, ⟨p, .nil t, by simp⟩,
+      by simp, by simp, by simp⟩
   by_cases hint : ∀ v ∈ p.vertices, v ≠ s → v ≠ t → v ∉ A ∧ v ∉ B
-  · exact ⟨s, hs, t, ht, p, hp, List.Subset.refl _, List.Subset.refl _, hint⟩
+  · exact ⟨s, hs, t, ht, p, hp, ⟨.nil s, .nil t, by simp⟩,
+      List.Subset.refl _, List.Subset.refl _,
+      ⟨fun v hv hvs ↦ by
+          by_cases hvt : v = t
+          · exact hvt ▸ htA
+          · exact (hint v hv hvs hvt).1,
+        fun v hv hvt ↦ by
+          by_cases hvs : v = s
+          · exact hvs ▸ hsB
+          · exact (hint v hv hvs hvt).2⟩⟩
   push Not at hint
   obtain ⟨v, hv, hvs, hvt, hvAB⟩ := hint
   -- Split `p` at the offending vertex `v` and keep the shorter piece that still runs from `A`
@@ -500,17 +519,23 @@ private theorem IsPath.exists_isPath_interior_notMem {A B : Set V} :
     vertices_comp p₁ p₂
   by_cases hvA : v ∈ A
   · have h₁ : p₁.length ≠ 0 := fun h ↦ hvs (@Quiver.Path.eq_of_length_zero V ⟨Q⟩ _ _ p₁ h).symm
-    obtain ⟨a, ha, b, hb, q, hq, hsub, hasub, hint⟩ :=
+    obtain ⟨a, ha, b, hb, q, hq, ⟨before, after, hfactor⟩, hsub, hasub, hqA, hqB⟩ :=
       ih p₂.length (by omega) p₂ rfl hp.of_comp_right hvA ht
-    refine ⟨a, ha, b, hb, q, hq, List.Subset.trans hsub ?_, ?_, hint⟩
+    refine ⟨a, ha, b, hb, q, hq, ⟨p₁.comp before, after, ?_⟩,
+      List.Subset.trans hsub ?_, ?_, hqA, hqB⟩
+    · rw [hfactor]
+      simp
     · rw [hcomp]
       exact List.subset_append_right _ _
     · rw [arrows_comp]
       exact List.Subset.trans hasub (List.subset_append_right _ _)
   · have h₂ : p₂.length ≠ 0 := fun h ↦ hvt (@Quiver.Path.eq_of_length_zero V ⟨Q⟩ _ _ p₂ h)
-    obtain ⟨a, ha, b, hb, q, hq, hsub, hasub, hint⟩ :=
+    obtain ⟨a, ha, b, hb, q, hq, ⟨before, after, hfactor⟩, hsub, hasub, hqA, hqB⟩ :=
       ih p₁.length (by omega) p₁ rfl hp.of_comp_left hs (hvAB hvA)
-    refine ⟨a, ha, b, hb, q, hq, fun x hx ↦ ?_, ?_, hint⟩
+    refine ⟨a, ha, b, hb, q, hq, ⟨before, after.comp p₂, ?_⟩,
+      fun x hx ↦ ?_, ?_, hqA, hqB⟩
+    · rw [hfactor]
+      simp
     · have hend : p₁.vertices.dropLast ++ [v] = p₁.vertices :=
         @Quiver.Path.dropLast_append_end_eq V ⟨Q⟩ _ _ p₁
       have hx := hsub hx
@@ -522,6 +547,18 @@ private theorem IsPath.exists_isPath_interior_notMem {A B : Set V} :
     · rw [arrows_comp]
       exact List.Subset.trans hasub (List.subset_append_left _ _)
 
+/-- A path from a vertex of `A` to a vertex of `B` has a contiguous subpath whose endpoints lie
+in the respective sets and whose other vertices lie in neither set. -/
+theorem IsPath.exists_infix_interior_notMem {A B : Set V} {s t : V} {p : ArrowWalk Q s t}
+    (hp : p.IsPath) (hs : s ∈ A) (ht : t ∈ B) :
+    ∃ a ∈ A, ∃ b ∈ B, ∃ q : ArrowWalk Q a b, q.IsPath ∧
+      (∃ (before : ArrowWalk Q s a) (after : ArrowWalk Q b t),
+        p = before.comp (q.comp after)) ∧
+      q.vertices ⊆ p.vertices ∧ q.arrows ⊆ p.arrows ∧
+        (∀ v ∈ q.vertices, v ≠ a → v ∉ A) ∧
+          ∀ v ∈ q.vertices, v ≠ b → v ∉ B :=
+  IsPath.exists_isPath_interior_notMem p.length p rfl hp hs ht
+
 /-- **Trimming a walk between two vertex sets.** A walk from a vertex of `A` to a vertex of `B`
 contains a path from a vertex `a ∈ A` to a vertex `b ∈ B` whose vertices other than `a` and `b`
 lie in neither `A` nor `B`, and which visits only vertices and traverses only arrows of the
@@ -531,10 +568,10 @@ theorem exists_isPath_interior_notMem {A B : Set V} {s t : V} (p : ArrowWalk Q s
     ∃ a ∈ A, ∃ b ∈ B, ∃ q : ArrowWalk Q a b, q.IsPath ∧ q.vertices ⊆ p.vertices ∧
       q.arrows ⊆ p.arrows ∧ ∀ v ∈ q.vertices, v ≠ a → v ≠ b → v ∉ A ∧ v ∉ B := by
   obtain ⟨p', hp', hsub⟩ := exists_isPath_arrows_subset p
-  obtain ⟨a, ha, b, hb, q, hq, hqsub, hqasub, hint⟩ :=
+  obtain ⟨a, ha, b, hb, q, hq, -, hqsub, hqasub, hqA, hqB⟩ :=
     IsPath.exists_isPath_interior_notMem _ p' rfl hp' hs ht
   exact ⟨a, ha, b, hb, q, hq, List.Subset.trans hqsub (vertices_subset_of_arrows_subset hsub),
-    List.Subset.trans hqasub hsub, hint⟩
+    List.Subset.trans hqasub hsub, fun v hv hva hvb ↦ ⟨hqA v hv hva, hqB v hv hvb⟩⟩
 
 /-- **Cycle extraction.** Every closed walk of positive length contains a cycle at the same vertex
 that traverses only arrows of the walk. -/
