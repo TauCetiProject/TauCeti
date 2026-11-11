@@ -74,8 +74,9 @@ By subadditivity of `t ↦ t ^ α`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölde
 * `HolderOnWith.add`: sums of Hölder functions on a set.
 * `holderWith_zero_of_nnnorm_le`: a function bounded by `M` is Hölder of exponent zero with
   constant `2 M`.
-* `exists_holderWith_tsum_of_rpow_mul_le`: for `0 < α < 1`, a series `∑ⱼ fⱼ` whose terms satisfy
-  `‖fⱼ‖_∞ ≤ a 2^{-jα}` and are `b 2^{j(1-α)}`-Lipschitz is `α`-Hölder with constant `C (a + b)`.
+* `TauCeti.exists_holderWith_tsum_of_rpow_mul_le`: for `0 < α < 1`, a series `∑ⱼ fⱼ` whose terms
+  satisfy `‖fⱼ‖_∞ ≤ a 2^{-jα}` and are `b 2^{j(1-α)}`-Lipschitz is `α`-Hölder with constant
+  `C (a + b)`.
 * `IsCompact.exists_holderOnWith_thickening_and_norm_le`: a function which is Hölder on a ball
   around each point of a compact set `K` is Hölder with one constant, and bounded, on a thickening
   of `K`.
@@ -332,6 +333,8 @@ theorem IsCompact.exists_holderOnWith_thickening_and_norm_le {X Y : Type*} [Pseu
   · push_cast
     linarith [dist_le_norm_add_norm (f y) (f y'), hM y hy, hM y' hy']
 
+namespace TauCeti
+
 /-- **Dyadic sums of smooth pieces are Hölder.** For `0 < α < 1` there is `C` such that, if the
 functions `fⱼ`, `j ∈ ℕ`, satisfy `‖fⱼ‖_∞ ≤ a 2^{-jα}` and are Lipschitz with constants
 `b 2^{j(1-α)}`, then `∑ⱼ fⱼ` is `α`-Hölder with constant `C (a + b)`. This is how the
@@ -342,7 +345,7 @@ theorem exists_holderWith_tsum_of_rpow_mul_le {X Y : Type*} [PseudoMetricSpace X
       (∀ (j : ℕ) x, 2 ^ ((α : ℝ) * j) * ‖f j x‖ ≤ a) →
       (∀ (j : ℕ) x y, 2 ^ ((α : ℝ) * j) * dist (f j x) (f j y) ≤ b * 2 ^ j * dist x y) →
       HolderWith (C * (a + b)) α fun x ↦ ∑' j, f j x := by
-  obtain ⟨C, hC0, hC⟩ := TauCeti.exists_tsum_le_mul_rpow_of_rpow_mul_le (α := α) hα0 hα1
+  obtain ⟨C, hC0, hC⟩ := exists_tsum_le_mul_rpow_of_rpow_mul_le (α := α) hα0 hα1
   refine ⟨(2 * C).toNNReal, fun f a b ha hb ↦ ?_⟩
   -- Each `f · x` is summable: its terms satisfy both bounds with `b = a` and `d = 1`.
   have hsum : ∀ x, Summable fun j ↦ f j x := fun x ↦
@@ -367,6 +370,8 @@ theorem exists_holderWith_tsum_of_rpow_mul_le {X Y : Type*} [PseudoMetricSpace X
         rw [NNReal.coe_mul, Real.coe_toNNReal _ (by positivity), NNReal.coe_add]
         exact mul_le_mul_of_nonneg_right (by nlinarith [a.coe_nonneg, b.coe_nonneg])
           (by positivity)
+
+end TauCeti
 
 /-- Between distinct points `x ≠ y` of a metric space, a bound `a ≤ C * edist x y ^ r` is
 equivalent to the bound `a / edist x y ^ r ≤ C` on the difference quotient. -/
