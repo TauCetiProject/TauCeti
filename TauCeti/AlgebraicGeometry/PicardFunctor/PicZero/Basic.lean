@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Curves.Degree
+public import TauCeti.AlgebraicGeometry.Curves.Degree.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.PicZero
 public import TauCeti.AlgebraicGeometry.LineBundle.LocalRing
 public import TauCeti.AlgebraicGeometry.PicardFunctor.Relative

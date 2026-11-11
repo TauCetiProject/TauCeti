@@ -49,6 +49,9 @@ On the unit disc `D₁` this gives `TauCeti.memWkpLoc_ball_one_iff`: membership 
 * `TauCeti.MemWkpLoc.exists_wkp_iteratedGradient_ae_eq`, `TauCeti.MemWkpLoc.exists_wkp`: a member
   is represented by an element of `Wkp` on every relatively compact open subset.
 * `TauCeti.memWkpLoc_of_forall_wkp`, `TauCeti.memWkpLoc_iff_forall_wkp`: the comparison.
+* `TauCeti.Wkp.memWkpLoc_value_of_ae_le`: an element of `Wkp` on the interior of a set `U` that
+  differs from `U` by a null set lies in `MemWkpLoc p U k`, as for a relatively open subset of the
+  closed upper half-plane.
 * `TauCeti.memWkpLoc_ball_one_iff`, `TauCeti.MemWkpLoc.exists_wkp_ball_half`: the unit disc.
 
 ## References
@@ -175,7 +178,37 @@ private theorem memWkpLoc_of_forall_chain (n : ℕ) : ∀ (j : ℕ) (g : ℂ →
     obtain ⟨G, hG0, hG, hGp⟩ := hloc W hWc hWΩ
     exact ⟨G, hG0.ae_eq (hD.mono (SetLike.coe_subset_coe.1 (subset_closure.trans hWΩ))), hG, hGp⟩
 
+/-- A chain of iterated gradients `G j, …, G n` on an open set `O`, each the weak derivative of the
+previous one and each `Lᵖ` on `O`, gives local Sobolev classes on every set `U` with interior `O`
+that is contained in `O` up to a null set, such as a relatively open subset of the closed upper
+half-plane and its interior. -/
+theorem memWkpLoc_of_iteratedGradient_chain {U : Set ℂ} {O : Opens ℂ}
+    (hO : Opens.interior U = O) (hUO : U ≤ᵐ[volume] (O : Set ℂ)) {n : ℕ}
+    {G : (i : ℕ) → ℂ → IteratedGradient ℂ i}
+    (hG : ∀ i < n, HasWeakFDerivOn volume O (G i) (G (i + 1)))
+    (hGp : ∀ i ≤ n, MemLp (G i) p (volume.restrict O)) :
+    ∀ m j, j + m ≤ n → MemWkpLoc p U m (G j)
+  | 0, j, h => memWkpLoc_zero_iff.2 ((hGp j (by omega)).memLpLoc_of_ae_le hUO)
+  | m + 1, j, h => memWkpLoc_succ_iff.2 ⟨(hGp j (by omega)).memLpLoc_of_ae_le hUO,
+      G (j + 1), hO ▸ hG j (by omega),
+      memWkpLoc_of_iteratedGradient_chain hO hUO hG hGp m (j + 1) (by omega)⟩
+
 variable [Fact (1 ≤ p)]
+
+/-- **Sobolev functions on the interior are locally Sobolev on the whole set.** If a set `U` with
+interior `O` is contained in `O` up to a null set, every element of `W^{k,p}(O)` lies in the local
+Sobolev class `MemWkpLoc p U k`, whose `Lᵖ` bounds are taken on compact subsets of `U`, including
+those leaving `O`. -/
+theorem Wkp.memWkpLoc_value_of_ae_le {U : Set ℂ} {O : Opens ℂ} (hO : Opens.interior U = O)
+    (hUO : U ≤ᵐ[volume] (O : Set ℂ)) (v : Wkp volume O p k) :
+    MemWkpLoc p U k (Wkp.value k v : ℂ → ℝ) := by
+  cases k with
+  | zero => exact memWkpLoc_zero_iff.2 ((Lp.memLp _).memLpLoc_of_ae_le hUO)
+  | succ n =>
+    obtain ⟨G, h0, hG, hGp, -⟩ := Wkp.exists_iteratedGradient_chain n v
+    exact memWkpLoc_succ_iff.2 ⟨(Lp.memLp _).memLpLoc_of_ae_le hUO, _, hO ▸ h0,
+      (memWkpLoc_of_iteratedGradient_chain hO hUO hG hGp n 0 (by omega)).clm_comp
+        (innerSL ℝ (E := ℂ))⟩
 
 /-- **Local Sobolev functions are Sobolev on relatively compact subdomains, with matching
 derivatives.** Let `u ∈ MemWkpLoc p Ω (n + 1)` be real, with iterated weak gradients `G` on `Ω` as

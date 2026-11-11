@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Independence.Process.HasIndepIncrements.Basic
 public import Mathlib.Probability.IdentDistrib
+public import TauCeti.MeasureTheory.Group.Arithmetic
 import Mathlib.Probability.Independence.Process.Basic
 import Mathlib.Probability.IdentDistribIndep
 import Mathlib.Probability.Process.FiniteDimensionalLaws
@@ -53,8 +54,10 @@ theorem HasIndepIncrements.shift {T Ω E : Type*} [Preorder T] [Add T] [AddLeftM
   refine h.congr fun i ↦ ae_of_all _ fun ω ↦ ?_
   exact (sub_sub_sub_cancel_right _ _ _).symm
 
+attribute [local instance] TauCeti.measurableAdd₂_of_measurableSub₂
+
 variable {T Ω E : Type*} [LinearOrder T] [OrderBot T] [MeasurableSpace Ω]
-  [MeasurableSpace E] [AddCommGroup E] [MeasurableAdd₂ E] [MeasurableSub₂ E]
+  [MeasurableSpace E] [AddCommGroup E] [MeasurableSub₂ E]
   {P : Measure Ω} {X : T → Ω → E}
 
 /-- A finite vector of past values is independent of a later increment. -/
@@ -202,7 +205,6 @@ theorem HasIndepIncrements.indepFun_future_past (hX : HasIndepIncrements X P)
         simp [hi]
     exact hX.indepFun_future_past_insert hm h0 s J hJ a haJ ih
 
-omit [MeasurableAdd₂ E] in
 /-- Two processes starting at zero with equal increment laws have the same law at one time. -/
 private theorem identDistrib_singleton {Ω' : Type*} [MeasurableSpace Ω']
     {Q : Measure Ω'} {Y : T → Ω' → E} (a : T) (hmX : ∀ t, Measurable (X t))
@@ -336,7 +338,7 @@ path law after shifting time by `t` and subtracting its current value, provided 
 laws are invariant under this fixed shift. -/
 theorem HasIndepIncrements.identDistrib_shift {T Ω E : Type*} [LinearOrder T]
     [AddCommMonoid T] [CanonicallyOrderedAdd T] [MeasurableSpace Ω] [MeasurableSpace E]
-    [AddCommGroup E] [MeasurableAdd₂ E] [MeasurableSub₂ E]
+    [AddCommGroup E] [MeasurableSub₂ E]
     {P : Measure Ω} {X : T → Ω → E} (hX : HasIndepIncrements X P)
     (hm : ∀ s, Measurable (X s)) (h0 : ∀ᵐ ω ∂P, X 0 ω = 0) (t : T)
     (hlaw : ∀ s u, s ≤ u → IdentDistrib (fun ω ↦ X (t + u) ω - X (t + s) ω)
