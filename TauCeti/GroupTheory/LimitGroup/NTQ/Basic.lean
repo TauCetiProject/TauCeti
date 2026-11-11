@@ -7,7 +7,6 @@ module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.Quadratic.Basic
 public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Basic
-import TauCeti.GroupTheory.FreeGroup.Centralizer
 import TauCeti.GroupTheory.FreeGroup.MaximalRoot.Basic
 
 /-!
@@ -272,6 +271,7 @@ theorem isNondegenerate_cons {Y X : Type v} [Finite X] {S : System G Y} {L : Lev
   Iff.rfl
 
 /-- A level of type (2) never obstructs nondegeneracy: the trivial point solves it. -/
+@[simp high]
 theorem isNondegenerate_cons_centralizer {Y X : Type v} [Finite X] {S : System G Y}
     {U : Set (GX G Y)} {hU : U.Finite} :
     (cons S X (.centralizer U hU)).IsNondegenerate ↔ S.IsNondegenerate :=
@@ -279,11 +279,13 @@ theorem isNondegenerate_cons_centralizer {Y X : Type v} [Finite X] {S : System G
     ⟨1, Level.mem_V_centralizer.2 ⟨fun _ _ ↦ .one_left _, fun _ _ _ ↦ .one_left _⟩⟩
 
 /-- A level of type (3) never obstructs nondegeneracy: the trivial point solves it. -/
+@[simp high]
 theorem isNondegenerate_cons_abelian {Y X : Type v} [Finite X] {S : System G Y} :
     (cons S X .abelian).IsNondegenerate ↔ S.IsNondegenerate :=
   isNondegenerate_cons.trans <| and_iff_left ⟨1, Level.mem_V_abelian.2 fun _ _ ↦ .one_left _⟩
 
 /-- A level of type (4) never obstructs nondegeneracy. -/
+@[simp high]
 theorem isNondegenerate_cons_empty {Y X : Type v} [Finite X] {S : System G Y} :
     (cons S X .empty).IsNondegenerate ↔ S.IsNondegenerate :=
   isNondegenerate_cons.trans <| and_iff_left <| by simp
@@ -389,8 +391,9 @@ theorem normalClosure_lt_Rad_commute_basis :
 
 /-- The two-level system with lower level `[u, v] = 1` (of type (3)) and upper level the standard
 quadratic equation `x⁻¹ u x · u⁻¹ = 1` (orientable of genus zero, with coefficients `c = u` and
-`d = u⁻¹` in the lower variables) is nondegenerate: `u = v = 1` and `x = 1` solve the two
-levels. -/
+`d = u⁻¹` in the lower variables) is nondegenerate: the lower level is solved in `G` by
+`u = v = 1`, and the upper level is solved in the coordinate group of the lower level by `x = 1`,
+its coefficients remaining the images of `u` and `u⁻¹` in that group. -/
 theorem isNondegenerate_conj_over_commute {G : Type*} [Group G] :
     let Q : Quadratic.Standard (GX G (Fin 2 ⊕ PEmpty)) Unit :=
       .orientableCoeff 0 1 one_pos Fin.elim0 Fin.elim0 (fun _ ↦ ()) (by decide)
