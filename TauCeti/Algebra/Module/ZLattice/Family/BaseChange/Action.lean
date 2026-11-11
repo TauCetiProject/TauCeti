@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Module.ZLattice.Family.Action
 public import TauCeti.Algebra.Module.ZLattice.Family.BaseChange.AffineAction
 public import TauCeti.Algebra.Module.ZLattice.Family.BaseChange.ContMDiff
-public import TauCeti.Algebra.Module.ZLattice.Family.Topology
 public import TauCeti.Geometry.Manifold.Quotient.Descent
 
 /-!
@@ -24,9 +23,8 @@ quotients `((Z × E)/Λ)/Γ' → ((Y × E)/Λ)/Γ`, and restricts any properly d
 action over `Y` to a free properly discontinuous `C^n` action over `TauCeti.freeLocus Γ Y`.
 
 * `TauCeti.contMDiff_torusFamilyBaseChangeTranslation` proves that the pulled-back torus-valued
-  translation section `TauCeti.torusFamilyBaseChangeTranslation` is `C^n`, using the smooth
-  universal property `TauCeti.contMDiff_torusFamilyBaseChangeEquiv_symm` rather than vector-space
-  lifts.
+  translation section `TauCeti.torusFamilyBaseChangeTranslation` is `C^n` without requiring
+  vector-space lifts.
 * `TauCeti.contMDiff_torusFamilyBaseChangeAffineMap`,
   `TauCeti.contMDiffConstSMul_torusFamilyBaseChangeAffineMulAction`, and
   `TauCeti.contMDiffConstSMul_torusFamilyBaseChangeLinearMulAction` give `C^n` regularity of the
@@ -78,7 +76,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {HY : Type*} [TopologicalSpace HY]
   {I : ModelWithCorners 𝕜 EY HY}
   {Y : Type*} [TopologicalSpace Y] [ChartedSpace HY Y] [T2Space Y] [LocallyCompactSpace Y]
-  {Λ : Type*} [AddCommGroup Λ] [Module.Free ℤ Λ] [Module.Finite ℤ Λ]
+  {Λ : Type*} [AddCommGroup Λ]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedSpace 𝕜 E] {n : ℕ∞ω} [IsManifold I n Y]
 
@@ -129,10 +127,12 @@ theorem contMDiff_torusFamilyBaseChangeTranslation {Γ Γ' : Type*} [SMul Γ Y] 
   letI := torusFamilyChartedSpace (H := HY) P (fun l ↦ (hP l).continuous) hinj
   letI := torusFamilyChartedSpace (H := HZ) (P ∘ f)
     (fun l ↦ ((hP l).comp hf_diff).continuous) (fun z ↦ hinj (f z))
-  (contMDiff_torusFamilyBaseChangeEquiv_symm P hinj hP f hf_diff (g • ·)
+  (contMDiff_torusFamilyBaseChangeHomeomorph_symm P hinj hP f hf_diff (g • ·)
     (fun z ↦ b (σ g) (f z)) (fun z ↦ (hb (σ g) (f z)).trans (hf g z).symm)
-    hg (hbc.comp hf_diff)).congr fun z ↦
-      ((eq_torusFamilyBaseChangeTranslation_iff P f σ hf b hb g z).2
+    hg (hbc.comp hf_diff)).congr fun z ↦ by
+      rw [coe_torusFamilyBaseChangeHomeomorph_symm P f (fun l ↦ (hP l).continuous)
+        hf_diff.continuous]
+      exact ((eq_torusFamilyBaseChangeTranslation_iff P f σ hf b hb g z).2
         ⟨torusFamilyProjection_baseChangeEquiv_symm P f _,
           torusFamilyBaseChangeMap_baseChangeEquiv_symm P f _⟩).symm
 
@@ -331,12 +331,16 @@ theorem contMDiff_orbitRelQuotientMap_torusFamilyAffineBaseChangeHom
     letI := torusFamilyChartedSpace (H := HY) P (fun l ↦ (hP l).continuous) hinj
     letI := torusFamilyChartedSpace (H := HZ) (P ∘ f)
       (fun l ↦ ((hP l).comp hf_diff).continuous) (fun z ↦ hinj (f z))
-    letI := t2Space_torusFamily P (fun l ↦ (hP l).continuous) hinj
-    letI := t2Space_torusFamily (P ∘ f)
-      (fun l ↦ ((hP l).comp hf_diff).continuous) (fun z ↦ hinj (f z))
     letI := continuousConstVAdd_periodAddAction P (fun l ↦ (hP l).continuous)
     letI := continuousConstVAdd_periodAddAction (P ∘ f)
       (fun l ↦ ((hP l).comp hf_diff).continuous)
+    haveI := properlyDiscontinuousVAdd_periodAddAction P (fun l ↦ (hP l).continuous) hinj
+    haveI := properlyDiscontinuousVAdd_periodAddAction (P ∘ f)
+      (fun l ↦ ((hP l).comp hf_diff).continuous) (fun z ↦ hinj (f z))
+    haveI : T2Space (AddAction.orbitRel.Quotient Λ (Y × E)) :=
+      t2Space_of_properlyDiscontinuousVAdd_of_t2Space
+    haveI : T2Space (AddAction.orbitRel.Quotient Λ (Z × E)) :=
+      t2Space_of_properlyDiscontinuousVAdd_of_t2Space
     letI : LocallyCompactSpace (AddAction.orbitRel.Quotient Λ (Y × E)) :=
       AddAction.isOpenQuotientMap_quotientMk.locallyCompactSpace
     letI : LocallyCompactSpace (AddAction.orbitRel.Quotient Λ (Z × E)) :=
@@ -375,12 +379,16 @@ theorem contMDiff_orbitRelQuotientMap_torusFamilyAffineBaseChangeHom
   let _ := torusFamilyChartedSpace (H := HY) P (fun l ↦ (hP l).continuous) hinj
   let _ := torusFamilyChartedSpace (H := HZ) (P ∘ f)
     (fun l ↦ ((hP l).comp hf_diff).continuous) (fun z ↦ hinj (f z))
-  have := t2Space_torusFamily P (fun l ↦ (hP l).continuous) hinj
-  have := t2Space_torusFamily (P ∘ f)
-    (fun l ↦ ((hP l).comp hf_diff).continuous) (fun z ↦ hinj (f z))
   have := continuousConstVAdd_periodAddAction P (fun l ↦ (hP l).continuous)
   have := continuousConstVAdd_periodAddAction (P ∘ f)
     (fun l ↦ ((hP l).comp hf_diff).continuous)
+  have := properlyDiscontinuousVAdd_periodAddAction P (fun l ↦ (hP l).continuous) hinj
+  have := properlyDiscontinuousVAdd_periodAddAction (P ∘ f)
+    (fun l ↦ ((hP l).comp hf_diff).continuous) (fun z ↦ hinj (f z))
+  have : T2Space (AddAction.orbitRel.Quotient Λ (Y × E)) :=
+    t2Space_of_properlyDiscontinuousVAdd_of_t2Space
+  have : T2Space (AddAction.orbitRel.Quotient Λ (Z × E)) :=
+    t2Space_of_properlyDiscontinuousVAdd_of_t2Space
   have : LocallyCompactSpace (AddAction.orbitRel.Quotient Λ (Y × E)) :=
     AddAction.isOpenQuotientMap_quotientMk.locallyCompactSpace
   have : LocallyCompactSpace (AddAction.orbitRel.Quotient Λ (Z × E)) :=
@@ -458,10 +466,12 @@ theorem isManifold_torusFamilyAffineQuotient_freeLocus
     letI := torusFamilyChartedSpace (H := HY) P (fun l ↦ (hP l).continuous) hinj
     letI := torusFamilyChartedSpace (H := HY) (P ∘ (Subtype.val : freeLocus Γ Y → Y))
       (fun l ↦ (hP l).continuous.comp continuous_subtype_val) (fun z ↦ hinj z.1)
-    letI := t2Space_torusFamily (P ∘ (Subtype.val : freeLocus Γ Y → Y))
-      (fun l ↦ (hP l).continuous.comp continuous_subtype_val) (fun z ↦ hinj z.1)
     letI := continuousConstVAdd_periodAddAction (P ∘ (Subtype.val : freeLocus Γ Y → Y))
       (fun l ↦ (hP l).continuous.comp continuous_subtype_val)
+    haveI := properlyDiscontinuousVAdd_periodAddAction (P ∘ (Subtype.val : freeLocus Γ Y → Y))
+      (fun l ↦ (hP l).continuous.comp continuous_subtype_val) (fun z ↦ hinj z.1)
+    haveI : T2Space (AddAction.orbitRel.Quotient Λ (freeLocus Γ Y × E)) :=
+      t2Space_of_properlyDiscontinuousVAdd_of_t2Space
     letI : LocallyCompactSpace (AddAction.orbitRel.Quotient Λ (freeLocus Γ Y × E)) :=
       AddAction.isOpenQuotientMap_quotientMk.locallyCompactSpace
     letI := torusFamilyAffineMulAction
@@ -500,10 +510,12 @@ theorem isManifold_torusFamilyAffineQuotient_freeLocus
   let _ := torusFamilyChartedSpace (H := HY) P (fun l ↦ (hP l).continuous) hinj
   let _ := torusFamilyChartedSpace (H := HY) (P ∘ f)
     (fun l ↦ ((hP l).comp hf_diff).continuous) (fun z ↦ hinj z.1)
-  have := t2Space_torusFamily (P ∘ f)
-    (fun l ↦ ((hP l).comp hf_diff).continuous) (fun z ↦ hinj z.1)
   have := continuousConstVAdd_periodAddAction (P ∘ f)
     (fun l ↦ ((hP l).comp hf_diff).continuous)
+  have := properlyDiscontinuousVAdd_periodAddAction (P ∘ f)
+    (fun l ↦ ((hP l).comp hf_diff).continuous) (fun z ↦ hinj z.1)
+  have : T2Space (AddAction.orbitRel.Quotient Λ (freeLocus Γ Y × E)) :=
+    t2Space_of_properlyDiscontinuousVAdd_of_t2Space
   have : LocallyCompactSpace (AddAction.orbitRel.Quotient Λ (freeLocus Γ Y × E)) :=
     AddAction.isOpenQuotientMap_quotientMk.locallyCompactSpace
   have := isManifold_torusFamily (P ∘ f) (fun z ↦ hinj z.1) (fun l ↦ (hP l).comp hf_diff)
@@ -552,12 +564,16 @@ theorem contMDiff_orbitRelQuotientMap_torusFamilyAffineBaseChangeHom_freeLocus
     letI := torusFamilyChartedSpace (H := HY) P (fun l ↦ (hP l).continuous) hinj
     letI := torusFamilyChartedSpace (H := HY) (P ∘ (Subtype.val : freeLocus Γ Y → Y))
       (fun l ↦ (hP l).continuous.comp continuous_subtype_val) (fun z ↦ hinj z.1)
-    letI := t2Space_torusFamily P (fun l ↦ (hP l).continuous) hinj
-    letI := t2Space_torusFamily (P ∘ (Subtype.val : freeLocus Γ Y → Y))
-      (fun l ↦ (hP l).continuous.comp continuous_subtype_val) (fun z ↦ hinj z.1)
     letI := continuousConstVAdd_periodAddAction P (fun l ↦ (hP l).continuous)
     letI := continuousConstVAdd_periodAddAction (P ∘ (Subtype.val : freeLocus Γ Y → Y))
       (fun l ↦ (hP l).continuous.comp continuous_subtype_val)
+    haveI := properlyDiscontinuousVAdd_periodAddAction P (fun l ↦ (hP l).continuous) hinj
+    haveI := properlyDiscontinuousVAdd_periodAddAction (P ∘ (Subtype.val : freeLocus Γ Y → Y))
+      (fun l ↦ (hP l).continuous.comp continuous_subtype_val) (fun z ↦ hinj z.1)
+    haveI : T2Space (AddAction.orbitRel.Quotient Λ (Y × E)) :=
+      t2Space_of_properlyDiscontinuousVAdd_of_t2Space
+    haveI : T2Space (AddAction.orbitRel.Quotient Λ (freeLocus Γ Y × E)) :=
+      t2Space_of_properlyDiscontinuousVAdd_of_t2Space
     letI : LocallyCompactSpace (AddAction.orbitRel.Quotient Λ (Y × E)) :=
       AddAction.isOpenQuotientMap_quotientMk.locallyCompactSpace
     letI : LocallyCompactSpace (AddAction.orbitRel.Quotient Λ (freeLocus Γ Y × E)) :=

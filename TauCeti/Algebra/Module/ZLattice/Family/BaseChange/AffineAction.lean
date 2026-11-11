@@ -602,16 +602,19 @@ theorem orbitRelQuotientMap_torusFamilyAffineProjection_comp_baseChange
       (torusFamilyBaseChangeTranslation_one P b hb σ hf hbone)
       (torusFamilyBaseChangeTranslation_mul P b hb R ρ hP σ hf hbmul)
     MulActionHom.orbitRelQuotientMap
-        (⟨torusFamilyProjection P, fun g x ↦ by
-          rw [torusFamilyAffineMulAction_smul, torusFamilyProjection_affineMap]; rfl⟩ :
-          AddAction.orbitRel.Quotient Λ (Y × E) →[Γ] Y) ∘
+        (torusFamilyAffineProjectionHom R hone hmul P ρ hP b hb hbone hbmul) ∘
       MulActionHom.orbitRelQuotientMap
         (torusFamilyAffineBaseChangeHom P b hb R ρ hP hone hmul hbone hbmul σ f hf) =
       MulActionHom.orbitRelQuotientMap (σ := σ) ⟨f, hf⟩ ∘
         MulActionHom.orbitRelQuotientMap
-          (⟨torusFamilyProjection (P ∘ f), fun g x ↦ by
-            rw [torusFamilyAffineMulAction_smul, torusFamilyProjection_affineMap]; rfl⟩ :
-            AddAction.orbitRel.Quotient Λ (Z × E) →[Γ'] Z) := by
+          (torusFamilyAffineProjectionHom (fun g z ↦ R (σ g) (f z))
+            (linearCocycle_baseChange_one R hone σ f)
+            (linearCocycle_baseChange_mul R hmul σ hf) (P ∘ f) (ρ.comp σ)
+            (period_baseChange_equivariant R P ρ hP σ hf)
+            (torusFamilyBaseChangeTranslation P f σ hf b hb)
+            (torusFamilyProjection_baseChangeTranslation P f σ hf b hb)
+            (torusFamilyBaseChangeTranslation_one P b hb σ hf hbone)
+            (torusFamilyBaseChangeTranslation_mul P b hb R ρ hP σ hf hbmul)) := by
   let _ := periodAddAction P
   let _ := periodAddAction (P ∘ f)
   let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
@@ -619,7 +622,7 @@ theorem orbitRelQuotientMap_torusFamilyAffineProjection_comp_baseChange
   funext q
   induction q using Quotient.ind with | _ x =>
     simp only [comp_apply, MulActionHom.orbitRelQuotientMap_mk,
-      torusFamilyAffineBaseChangeHom_apply]
+      torusFamilyAffineBaseChangeHom_apply, coe_torusFamilyAffineProjectionHom]
     exact congrArg (Quotient.mk _) (torusFamilyProjection_baseChangeMap P f x)
 
 /-- **Injectivity on second quotients for equivariant slices.** If `f : Z → Y` is injective and
