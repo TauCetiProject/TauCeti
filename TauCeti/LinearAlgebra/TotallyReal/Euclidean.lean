@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.Star.Real
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 public import TauCeti.Analysis.Matrix.EuclideanLin
 public import TauCeti.LinearAlgebra.Matrix.OfReal
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
@@ -51,6 +52,8 @@ Lagrangian subspace transverse to `ℝⁿ` arises in this way, as the graph of a
 * `Matrix.lagrangianChartCLE`: for symmetric `S`, the automorphism `S + i` of `ℂⁿ`, mapping `ℝⁿ`
   onto the chart subspace (`Matrix.map_lagrangianChartCLE`) and continuous in `S`
   (`Matrix.continuous_lagrangianChartCLE`).
+* `Matrix.lagrangianChart_smul_one`: the chart subspace of a scalar matrix `s` is the rotation
+  `e^{iα} ℝⁿ` of `ℝⁿ` by the angle `α = π / 2 - arctan s` of `s + i`.
 
 ## References
 
@@ -443,5 +446,43 @@ theorem isMaximalTotallyReal_realImage_smul_one {z : ℂ} (hz : z ≠ 0) :
     IsMaximalTotallyReal ((LinearMap.lsmul ℂ (EuclideanSpace ℂ n) Complex.I).restrictScalars ℝ)
       (z • (1 : Matrix n n ℂ)).realImage :=
   isMaximalTotallyReal_realImage (by simp [hz])
+
+open Real in
+/-- The chart subspace `{s y + i y | y ∈ ℝⁿ}` of a scalar matrix is the rotation `e^{iα} ℝⁿ` of
+`ℝⁿ` by the angle `α = π / 2 - arctan s ∈ (0, π)` of `s + i`. -/
+theorem lagrangianChart_smul_one (s : ℝ) :
+    (s • (1 : Matrix n n ℝ)).lagrangianChart =
+      (Complex.exp ((π / 2 - arctan s : ℝ) * Complex.I) • (1 : Matrix n n ℂ)).realImage := by
+  have hpolar : (s : ℂ) + Complex.I =
+      (√(1 + s ^ 2) : ℂ) * Complex.exp ((π / 2 - arctan s : ℝ) * Complex.I) := by
+    rw [Complex.exp_mul_I, ← Complex.ofReal_cos, ← Complex.ofReal_sin, cos_pi_div_two_sub,
+      sin_pi_div_two_sub, sin_arctan, cos_arctan]
+    have h : √(1 + s ^ 2) ≠ 0 := by positivity
+    apply Complex.ext <;> simp <;> field_simp
+  rw [lagrangianChart_def, lagrangianChartFrame_smul_one, hpolar,
+    ← smul_smul, Complex.coe_smul, realImage_smul _ (by positivity)]
+
+open Real in
+/-- The chart subspace of `1` is `e^{iπ/4} ℝⁿ`. -/
+theorem lagrangianChart_one :
+    (1 : Matrix n n ℝ).lagrangianChart =
+      (Complex.exp ((π / 4 : ℝ) * Complex.I) • (1 : Matrix n n ℂ)).realImage := by
+  rw [← one_smul ℝ (1 : Matrix n n ℝ), lagrangianChart_smul_one, arctan_one,
+    show π / 2 - π / 4 = π / 4 by ring]
+
+open Real in
+/-- The chart subspace of `-1` is `e^{-iπ/4} ℝⁿ`. -/
+theorem lagrangianChart_neg_one :
+    (-1 : Matrix n n ℝ).lagrangianChart =
+      (Complex.exp ((-(π / 4) : ℝ) * Complex.I) • (1 : Matrix n n ℂ)).realImage := by
+  -- The angle of `-1 + i` is `3π/4`, and `e^{3πi/4} = -e^{-πi/4}`.
+  have h : Complex.exp ((π / 2 - -(π / 4) : ℝ) * Complex.I) =
+      ((-1 : ℝ) : ℂ) * Complex.exp ((-(π / 4) : ℝ) * Complex.I) := by
+    rw [show π / 2 - -(π / 4) = -(π / 4) + π by ring, Complex.ofReal_add, add_mul, Complex.exp_add,
+      Complex.exp_pi_mul_I]
+    push_cast
+    ring
+  rw [← neg_one_smul ℝ (1 : Matrix n n ℝ), lagrangianChart_smul_one, arctan_neg, arctan_one, h,
+    ← smul_smul, Complex.coe_smul, realImage_smul _ (by norm_num)]
 
 end Matrix

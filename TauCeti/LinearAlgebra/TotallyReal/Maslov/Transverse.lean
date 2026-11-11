@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Convex.PathConnected
-public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 public import TauCeti.LinearAlgebra.TotallyReal.Euclidean
+public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Euclidean
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Path
+public import TauCeti.Topology.Algebra.Matrix.Symmetric
 
 /-!
 # The Maslov index of paths with endpoints transverse to `ℝⁿ`
@@ -18,8 +18,9 @@ For a real `n × n` matrix `S`, the real subspace `{S y + i y | y ∈ ℝⁿ}` o
 under the complex matrix `S + i`. It meets `ℝⁿ` only in `0`, it determines `S`, and for symmetric
 `S` it is Lagrangian for the standard symplectic form `Im ⟪·, ·⟫` of `ℂⁿ`. For a scalar matrix it
 is a rotation of `ℝⁿ` (`Matrix.lagrangianChart_smul_one`), whose Maslov phase is computed in
-`Matrix.maslovPhase_realImage_smul_one`. The symmetric matrices form a convex set, so these chart
-subspaces form a contractible cell.
+`Matrix.maslovPhase_realImage_smul_one` (in `TauCeti.LinearAlgebra.TotallyReal.Maslov.Euclidean`).
+The symmetric matrices form a convex set, so these chart subspaces form a contractible cell; paths
+of symmetric matrices are handled in `TauCeti.Topology.Algebra.Matrix.Symmetric`.
 
 A continuous path `S t` of symmetric matrices gives a path of maximal totally real subspaces
 (`TauCeti.TotallyRealPath.ofLagrangianChart`). Any two such paths with the same endpoints have
@@ -68,99 +69,6 @@ open Module Real
 open scoped ComplexConjugate unitInterval
 
 noncomputable section
-
-namespace Matrix
-
-variable {n : Type*} [Fintype n] [DecidableEq n]
-
-open TauCeti
-
-/-- The chart subspace `{s y + i y | y ∈ ℝⁿ}` of a scalar matrix is the rotation `e^{iα} ℝⁿ` of
-`ℝⁿ` by the angle `α = π / 2 - arctan s ∈ (0, π)` of `s + i`. -/
-theorem lagrangianChart_smul_one (s : ℝ) :
-    (s • (1 : Matrix n n ℝ)).lagrangianChart =
-      (Complex.exp ((π / 2 - arctan s : ℝ) * Complex.I) • (1 : Matrix n n ℂ)).realImage := by
-  have hpolar : (s : ℂ) + Complex.I =
-      (√(1 + s ^ 2) : ℂ) * Complex.exp ((π / 2 - arctan s : ℝ) * Complex.I) := by
-    rw [Complex.exp_mul_I, ← Complex.ofReal_cos, ← Complex.ofReal_sin, cos_pi_div_two_sub,
-      sin_pi_div_two_sub, sin_arctan, cos_arctan]
-    have h : √(1 + s ^ 2) ≠ 0 := by positivity
-    apply Complex.ext <;> simp <;> field_simp
-  rw [lagrangianChart_def, lagrangianChartFrame_smul_one, hpolar,
-    ← smul_smul, Complex.coe_smul, realImage_smul _ (by positivity)]
-
-/-- The chart subspace of `1` is `e^{iπ/4} ℝⁿ`. -/
-theorem lagrangianChart_one :
-    (1 : Matrix n n ℝ).lagrangianChart =
-      (Complex.exp ((π / 4 : ℝ) * Complex.I) • (1 : Matrix n n ℂ)).realImage := by
-  rw [← one_smul ℝ (1 : Matrix n n ℝ), lagrangianChart_smul_one, arctan_one,
-    show π / 2 - π / 4 = π / 4 by ring]
-
-/-- The chart subspace of `-1` is `e^{-iπ/4} ℝⁿ`. -/
-theorem lagrangianChart_neg_one :
-    (-1 : Matrix n n ℝ).lagrangianChart =
-      (Complex.exp ((-(π / 4) : ℝ) * Complex.I) • (1 : Matrix n n ℂ)).realImage := by
-  -- The angle of `-1 + i` is `3π/4`, and `e^{3πi/4} = -e^{-πi/4}`.
-  have h : Complex.exp ((π / 2 - -(π / 4) : ℝ) * Complex.I) =
-      ((-1 : ℝ) : ℂ) * Complex.exp ((-(π / 4) : ℝ) * Complex.I) := by
-    rw [show π / 2 - -(π / 4) = -(π / 4) + π by ring, Complex.ofReal_add, add_mul, Complex.exp_add,
-      Complex.exp_pi_mul_I]
-    push_cast
-    ring
-  rw [← neg_one_smul ℝ (1 : Matrix n n ℝ), lagrangianChart_smul_one, arctan_neg, arctan_one, h,
-    ← smul_smul, Complex.coe_smul, realImage_smul _ (by norm_num)]
-
-/-- The Maslov phase of the rotated subspace `z ℝⁿ` relative to `ℝⁿ` is `(z / conj z) ^ n`. -/
-theorem maslovPhase_realImage_smul_one {z : ℂ} (hz : z ≠ 0) :
-    isMaximalTotallyReal_realSubspace.maslovPhase
-      (isMaximalTotallyReal_realImage_smul_one (n := n) hz) =
-      (z / conj z) ^ Fintype.card n := by
-  have h : (z • (1 : Matrix n n ℂ)).realImage = (realSubspace n).map
-      (((LinearEquiv.smulOfNeZero ℂ (EuclideanSpace ℂ n) z hz : _ ≃ₗ[ℂ] _) :
-        EuclideanSpace ℂ n →ₗ[ℂ] EuclideanSpace ℂ n).restrictScalars ℝ) := by
-    rw [realImage_eq_map_toEuclideanCLE (by simp [hz])]
-    congr 1
-    ext v
-    simp
-  rw [isMaximalTotallyReal_realSubspace.maslovPhase_congr _
-      (isMaximalTotallyReal_realSubspace.map_linearEquiv _) h,
-    isMaximalTotallyReal_realSubspace.maslovPhase_map_lsmul hz, finrank_euclideanSpace]
-
-/-- The Maslov phase of the rotated subspace `e^{iθ} ℝⁿ` relative to `ℝⁿ` is `e^{2inθ}`. -/
-theorem maslovPhase_realImage_exp_smul_one (θ : ℝ) :
-    isMaximalTotallyReal_realSubspace.maslovPhase
-      (isMaximalTotallyReal_realImage_smul_one (n := n) (Complex.exp_ne_zero (θ * Complex.I))) =
-      Complex.exp ((2 * Fintype.card n * θ : ℝ) * Complex.I) := by
-  rw [maslovPhase_realImage_smul_one (Complex.exp_ne_zero _), ← Complex.exp_conj, ← Complex.exp_sub,
-    ← Complex.exp_nat_mul]
-  congr 1
-  simp [Complex.conj_ofReal]
-  ring
-
-omit [Fintype n] [DecidableEq n] in
-/-- The catenation of two paths of symmetric matrices consists of symmetric matrices. -/
-theorem isSymm_path_trans {α : Type*} [TopologicalSpace α] {S₀ S₁ S₂ : Matrix n n α}
-    {S : Path S₀ S₁} {T : Path S₁ S₂} (hS : ∀ t, (S t).IsSymm) (hT : ∀ t, (T t).IsSymm)
-    (t : I) : ((S.trans T) t).IsSymm := by
-  rw [Path.trans_apply]
-  split_ifs
-  exacts [hS _, hT _]
-
-omit [Fintype n] [DecidableEq n] in
-/-- The reversal of a path of symmetric matrices consists of symmetric matrices. -/
-theorem isSymm_path_symm {α : Type*} [TopologicalSpace α] {S₀ S₁ : Matrix n n α}
-    {S : Path S₀ S₁} (hS : ∀ t, (S t).IsSymm) (t : I) : (S.symm t).IsSymm := by
-  rw [Path.symm_apply]
-  exact hS _
-
-omit [Fintype n] [DecidableEq n] in
-/-- The matrices along the segment between two symmetric matrices are symmetric. -/
-theorem isSymm_segment {S₀ S₁ : Matrix n n ℝ} (hS₀ : S₀.IsSymm) (hS₁ : S₁.IsSymm)
-    (t : I) : (Path.segment S₀ S₁ t).IsSymm := by
-  rw [Path.segment_apply, AffineMap.lineMap_apply_module]
-  exact (hS₀.smul _).add (hS₁.smul _)
-
-end Matrix
 
 namespace TauCeti
 
