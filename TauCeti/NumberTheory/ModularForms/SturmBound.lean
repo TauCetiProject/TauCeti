@@ -45,6 +45,15 @@ open UpperHalfPlane Complex Function SlashInvariantForm Periodic Subgroup
 
 open scoped ModularForm Topology Filter Manifold MatrixGroups
 
+/-- The index of a subgroup of `SL(2, ℤ)` equals the number of cosets of its real matrix
+image in `𝒮ℒ`. -/
+theorem Subgroup.card_quotient_mapGL_eq_index (Γ : Subgroup SL(2, ℤ)) :
+    Nat.card (𝒮ℒ ⧸ (Γ.map (Matrix.SpecialLinearGroup.mapGL ℝ)).subgroupOf 𝒮ℒ) = Γ.index := by
+  rw [← Subgroup.index_eq_card, ← Subgroup.relIndex,
+    MonoidHom.range_eq_map (Matrix.SpecialLinearGroup.mapGL ℝ), ← Subgroup.relIndex_comap,
+    Subgroup.comap_map_eq_self_of_injective Matrix.SpecialLinearGroup.mapGL_injective,
+    Subgroup.relIndex_top_right]
+
 namespace ModularForm
 
 variable {𝒢 : Subgroup (GL (Fin 2) ℝ)} [𝒢.IsFiniteRelIndex 𝒮ℒ] {k : ℤ} (f : ModularForm 𝒢 k)
@@ -65,13 +74,7 @@ theorem sturm_bound_finiteIndex_SL2Z {Γ : Subgroup SL(2, ℤ)} [Γ.FiniteIndex]
     (h : (↑((k * Γ.index).toNat / 12) : ℕ∞) <
       (qExpansion (Γ.map (Matrix.SpecialLinearGroup.mapGL ℝ)).strictWidthInfty f).order) :
     f = 0 := by
-  have h_index :
-      Nat.card (𝒮ℒ ⧸ (Γ.map (Matrix.SpecialLinearGroup.mapGL ℝ)).subgroupOf 𝒮ℒ) = Γ.index := by
-    rw [← Subgroup.index_eq_card, ← Subgroup.relIndex,
-      MonoidHom.range_eq_map (Matrix.SpecialLinearGroup.mapGL ℝ), ← Subgroup.relIndex_comap,
-      Subgroup.comap_map_eq_self_of_injective Matrix.SpecialLinearGroup.mapGL_injective,
-      Subgroup.relIndex_top_right]
-  exact sturm_bound_finiteIndex f (h_index ▸ h)
+  exact sturm_bound_finiteIndex f ((Γ.card_quotient_mapGL_eq_index).symm ▸ h)
 
 /-- **Modular forms agreeing up to the Sturm bound are equal**: two weight-`k` forms whose
 `q`-expansions at `∞` agree in every coefficient up to `k · [𝒮ℒ : 𝒢 ⊓ 𝒮ℒ] / 12` coincide. -/

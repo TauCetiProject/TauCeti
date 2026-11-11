@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Module.ZLattice.RootLattice
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.GeneralLevel
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.RealModel
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Basic
+import TauCeti.NumberTheory.ModularForms.TrivialNebentypus
 import TauCeti.NumberTheory.Divisors
 import TauCeti.NumberTheory.ModularForms.SturmBound
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
@@ -35,8 +36,7 @@ open scoped MatrixGroups ArithmeticFunction.sigma
 
 namespace TauCeti.IntegralLattice
 
-/-- The theta series of the real D₄ lattice is `2 E₂(2τ) - E₂(τ)`. The identity follows from
-modularity and the constant term, without counting roots. -/
+/-- The theta series of the real D₄ lattice is `2 E₂(2τ) - E₂(τ)`. -/
 @[simp]
 theorem thetaSeries_realModel_checkerboardLattice_four :
     ZLattice.thetaSeries ((checkerboardLattice 4).realModel (isPosDef_checkerboardLattice 4)) =
@@ -49,29 +49,22 @@ theorem thetaSeries_realModel_checkerboardLattice_four :
   have hχ : hL.thetaCharacter ⟨2, hk⟩ = 1 :=
     hL.thetaCharacter_eq_one_of_isSquare _
       ⟨2, by rw [signedDiscr_realModel_checkerboardLattice_four]; norm_num⟩
-  let f : ModularForm ((Gamma0 2).map (mapGL ℝ)) 2 :=
-    { toFun := ZLattice.thetaSeries L
-      slash_action_eq' := by
-        intro A hA
-        obtain ⟨A, hA, rfl⟩ := hA
-        rw [← TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← ModularForm.SL_slash]
-        have hA' : A ∈ Gamma0 (ZLattice.level L) := by rwa [hN]
-        have hs := hL.thetaSeries_slash_of_mem_Gamma0 hk hA'
-        have hd := MulChar.IsQuadratic.apply_one_one_eq_apply_zero_zero_of_mem_Gamma0
-          (hL.thetaCharacter_isQuadratic ⟨2, hk⟩) hA'
-        rw [hχ] at hs hd
-        rw [hd, MulChar.one_apply (isUnit_intCast_apply_zero_zero_of_mem_Gamma0 hA'),
-          one_smul] at hs
-        simpa only [Nat.cast_ofNat] using hs
-      holo' := ZLattice.mdifferentiable_thetaSeries L
-      bdd_at_cusps' := fun hc ↦ hL.isBoundedAt_thetaSeries hk
-        (hc.mono (Subgroup.map_le_range _ _)) }
-  have hf : ⇑f = ZLattice.thetaSeries L := rfl
+  obtain ⟨f, hf⟩ : ∃ f : ModularForm ((Gamma0 2).map (mapGL ℝ)) 2,
+      ⇑f = ZLattice.thetaSeries L := by
+    suffices h : ∃ f : ModularForm ((Gamma0 (ZLattice.level L)).map (mapGL ℝ)) 2,
+        ⇑f = ZLattice.thetaSeries L by
+      rw [hN] at h
+      exact h
+    have : NeZero (ZLattice.level L) := ⟨by omega⟩
+    have hg : ZLattice.thetaFormOfLevel hL hk ∈
+        TauCeti.modFormCharSpace 2 (1 : (ZMod (ZLattice.level L))ˣ →* ℂˣ) := by
+      simpa only [hχ, ← MulChar.mulEquivToUnitHom_apply, map_one, Nat.cast_ofNat] using
+        ZLattice.thetaFormOfLevel_mem_modFormCharSpace hL hk
+    refine ⟨TauCeti.modFormCharSpaceOneEquiv (ZLattice.level L) 2 ⟨_, hg⟩, ?_⟩
+    rw [TauCeti.coe_modFormCharSpaceOneEquiv_apply]
+    exact ZLattice.coe_thetaFormOfLevel hL hk
   have hi : Nat.card (𝒮ℒ ⧸ ((Gamma0 2).map (mapGL ℝ)).subgroupOf 𝒮ℒ) = 3 := by
-    rw [← Subgroup.index_eq_card, ← Subgroup.relIndex,
-      MonoidHom.range_eq_map (mapGL ℝ), ← Subgroup.relIndex_comap,
-      Subgroup.comap_map_eq_self_of_injective mapGL_injective, Subgroup.relIndex_top_right,
-      Gamma0_prime_index 2 Nat.prime_two]
+    rw [Subgroup.card_quotient_mapGL_eq_index, Gamma0_prime_index 2 Nat.prime_two]
   have heq : f = -EisensteinSeries.correctedE2 2 := by
     apply ModularForm.eq_of_sturm_bound
     intro i hi'
@@ -86,8 +79,8 @@ theorem thetaSeries_realModel_checkerboardLattice_four :
   exact hf.symm.trans (congrArg (DFunLike.coe (F := ModularForm
     ((Gamma0 2).map (mapGL ℝ)) 2)) heq)
 
-/-- The D₄ representation numbers are twenty-four times the sum of the odd divisors.
-The value is deduced from the Eisenstein identity, not from an enumeration of vectors. -/
+/-- For `m ≠ 0`, the number of vectors of norm `2m` in D₄ is `24` times the sum of the
+odd divisors of `m`. -/
 theorem representationNumber_checkerboardLattice_four_two_mul {m : ℕ} (hm : m ≠ 0) :
     (checkerboardLattice 4).representationNumber (2 * m) =
       24 * ∑ d ∈ m.divisors with Odd d, d := by
@@ -116,7 +109,7 @@ theorem representationNumber_checkerboardLattice_four_two_mul {m : ℕ} (hm : m 
   push_cast at hs ⊢
   linear_combination -hc + 24 * hs
 
-/-- The kissing number of D₄ is `24`, as a consequence of its theta series. -/
+/-- D₄ has `24` vectors of norm `2` (its minimal vectors). -/
 theorem representationNumber_checkerboardLattice_four_two :
     (checkerboardLattice 4).representationNumber 2 = 24 := by
   have h := representationNumber_checkerboardLattice_four_two_mul (m := 1) one_ne_zero
