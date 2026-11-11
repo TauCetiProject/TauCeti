@@ -67,12 +67,20 @@ radius fits in the ball, and this zero is the only zero of the map in the ball. 
 theorem exists_eq_zero_of_two_mul_norm_le [CompleteSpace E] {f : E → F} {f' : E ≃L[𝕜] F}
     {b : E} {r : ℝ} {c : ℝ≥0}
     (hf : ApproximatesLinearOn f (f' : E →L[𝕜] F) (Metric.closedBall b r) c) {C : ℝ}
-    (hC : 0 < C) (hf' : ‖(f'.symm : F →L[𝕜] E)‖ ≤ C) (hc : 2 * C * c ≤ 1)
+    (hf' : ‖(f'.symm : F →L[𝕜] E)‖ ≤ C) (hc : 2 * C * c ≤ 1)
     (hr : 2 * C * ‖f b‖ ≤ r) :
     ∃ a ∈ Metric.closedBall b (2 * C * ‖f b‖), f a = 0 ∧
       ∀ z ∈ Metric.closedBall b r, f z = 0 → z = a := by
   have hbound (v : F) : ‖f'.symm v‖ ≤ C * ‖v‖ :=
     ((f'.symm : F →L[𝕜] E).le_opNorm v).trans (mul_le_mul_of_nonneg_right hf' (norm_nonneg v))
+  rcases ((norm_nonneg _).trans hf').eq_or_lt with hC | hC
+  · -- `C = 0`: `f'.symm = 0`, so `E` and `F` are trivial.
+    subst hC
+    have hF : Subsingleton F := ⟨fun v w ↦ by
+      have h0 (u : F) : u = 0 := by simpa using hbound u
+      rw [h0 v, h0 w]⟩
+    have hE : Subsingleton E := f'.symm.toEquiv.symm.subsingleton
+    exact ⟨b, by simp, Subsingleton.elim _ _, fun z _ _ ↦ Subsingleton.elim _ _⟩
   -- A right inverse of `f'` with the bound `C` in place of `‖f'⁻¹‖`, which may vanish.
   let R : (f' : E →L[𝕜] F).NonlinearRightInverse :=
     { toFun := f'.symm
@@ -102,7 +110,7 @@ open Metric in
 /-- If `fderiv 𝕜 g` is `κ`-approximated by `L` on a set containing the closed ball of radius `ρ`
 about `x`, `g` is differentiable on that ball, and `g` has a critical point `y` in the ball, then
 `g` changes by at most `(‖L‖ + κ) * (2 * ρ) * ρ` between `x` and `y`. -/
-theorem norm_sub_le_of_fderiv_eq_zero [IsRCLikeNormedField 𝕜] [NormedSpace ℝ E]
+theorem norm_sub_le_of_fderiv_eq_zero [IsRCLikeNormedField 𝕜]
     {g : E → F} {L : E →L[𝕜] E →L[𝕜] F} {s : Set E}
     {κ : ℝ≥0} (happrox : ApproximatesLinearOn (fderiv 𝕜 g) L s κ) {x y : E} {ρ : ℝ}
     (hg : ∀ w ∈ closedBall x ρ, DifferentiableAt 𝕜 g w) (hsub : closedBall x ρ ⊆ s)
@@ -116,6 +124,8 @@ theorem norm_sub_le_of_fderiv_eq_zero [IsRCLikeNormedField 𝕜] [NormedSpace �
       _ ≤ (‖L‖ + κ) * (2 * ρ) := by
         gcongr
         linarith [dist_triangle_right w y x, mem_closedBall.1 hw, mem_closedBall.1 hy]
+  let : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
+  let : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
   have hval := (convex_closedBall x ρ).norm_image_sub_le_of_norm_fderiv_le hg hbound
     (mem_closedBall_self hρ) hy
   rw [← dist_eq_norm, ← dist_eq_norm] at hval

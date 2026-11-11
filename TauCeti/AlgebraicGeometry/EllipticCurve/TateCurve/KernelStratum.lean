@@ -222,7 +222,7 @@ theorem exists_tateUniformizationX_eq_and_tateUniformizationY_eq_of_one_lt_norm 
     exact (one_lt_inv₀ (by positivity)).mpr (pow_lt_one₀ hd.le hu two_ne_zero)
   have hu₁ : ‖(u : K)‖ = 1 := norm_eq_one_of_norm_one_sub_lt_one hu
   have hnot : u ∉ Subgroup.zpowers q :=
-    notMem_zpowers_of_norm_eq_one hq hu₁ fun h ↦ hu1 (by rw [h, Units.val_one])
+    notMem_zpowers_of_norm_eq_one hq.ne hu₁ fun h ↦ hu1 (by rw [h, Units.val_one])
   obtain ⟨hX, hY⟩ := eq_of_mul_eq_mul_of_one_lt_norm hA₄ hA₆ hx hXu
     ((tateCurveAt_equation_iff q hq).mp h) ((tateCurveAt_equation_iff q hq).mp
       (equation_tateUniformizationX_tateUniformizationY_of_notMem_zpowers q u hq hnot)) hcross
@@ -246,7 +246,7 @@ theorem exists_tateUniformization_eq_some_iff_one_lt_norm (q : Kˣ) (hq : ‖(q 
     have hu₁ : ‖(u : K)‖ = 1 := norm_eq_one_of_norm_one_sub_lt_one hu
     refine ⟨u, hu, (tateUniformization_eq_some_iff q hq _ h).mpr ⟨?_, ?_, ?_⟩⟩
     · rw [Ne, QuotientGroup.eq_one_iff]
-      exact notMem_zpowers_of_norm_eq_one hq hu₁ hu1
+      exact notMem_zpowers_of_norm_eq_one hq.ne hu₁ hu1
     · rw [tateQuotientCoordinates_mk, hX]
     · rw [tateQuotientCoordinates_mk, hY]
 

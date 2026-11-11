@@ -174,7 +174,7 @@ the closure of the stable manifold of a critical point `q` meets the stable mani
 critical point `b`, then `ind q < ind b`. -/
 theorem IsMorseSmale.manifoldMorseIndex_lt_of_mem_closure_stableSet_inter_stableSet
     {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {b q : M}
-    (hb : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f b = 0) (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0) (hbq : b ≠ q)
+    (hbq : b ≠ q)
     (hne : (closure (hX.flow.stableSet q) ∩ hX.flow.stableSet b).Nonempty) :
     manifoldMorseIndex 𝓘(ℝ, E) f q < manifoldMorseIndex 𝓘(ℝ, E) f b := by
   have hdf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
@@ -185,15 +185,15 @@ theorem IsMorseSmale.manifoldMorseIndex_lt_of_mem_closure_stableSet_inter_stable
     obtain ⟨y, hy⟩ := hne
     obtain ⟨z, hz, hzb⟩ := hX.exists_mem_closure_inter_unstableSet_of_mem_closure_inter_stableSet hf
       (Flow.isInvariant_stableSet _ q) (Flow.disjoint_stableSet hbq.symm) hy
-    obtain ⟨a, ha, hza⟩ := hX.exists_tendsto_atTop hf z
+    obtain ⟨a, -, hza⟩ := hX.exists_tendsto_atTop hf z
     have hza : z ∈ hX.flow.stableSet a := Flow.mem_stableSet.2 hza
     have hba : b ≠ a := fun hba ↦
       hzb (hX.eq_of_mem_unstableSet_inter_stableSet hdf ⟨hz.2, hba ▸ hza⟩)
-    have hlt := h.manifoldMorseIndex_lt hf hb ha hba ⟨z, hz.2, hza⟩
+    have hlt := h.manifoldMorseIndex_lt hf hba ⟨z, hz.2, hza⟩
     by_cases haq : a = q
     · subst haq
       omega
-    · have := ih _ (by omega) ha haq ⟨z, hz.1, hza⟩ rfl
+    · have := ih _ (by omega) haq ⟨z, hz.1, hza⟩ rfl
       omega
 
 omit hX in
@@ -202,7 +202,7 @@ the closure of the unstable manifold of a point `p` meets the unstable manifold 
 critical point `a`, then `ind a < ind p`. -/
 theorem IsMorseSmale.manifoldMorseIndex_lt_of_mem_closure_unstableSet_inter_unstableSet
     {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {a p : M}
-    (ha : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f a = 0) (hap : a ≠ p)
+    (hap : a ≠ p)
     (hne : (closure (hX.flow.unstableSet p) ∩ hX.flow.unstableSet a).Nonempty) :
     manifoldMorseIndex 𝓘(ℝ, E) f a < manifoldMorseIndex 𝓘(ℝ, E) f p := by
   have hdf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
@@ -214,16 +214,16 @@ theorem IsMorseSmale.manifoldMorseIndex_lt_of_mem_closure_unstableSet_inter_unst
     obtain ⟨y, hy⟩ := hne
     obtain ⟨z, hz, hza⟩ := hX.exists_mem_closure_inter_stableSet_of_mem_closure_inter_unstableSet hf
       (Flow.isInvariant_unstableSet _ p) (Flow.disjoint_unstableSet hap.symm) hy
-    obtain ⟨b, hb, hzb⟩ := hX.exists_tendsto_atBot hf z
+    obtain ⟨b, -, hzb⟩ := hX.exists_tendsto_atBot hf z
     have hzb : z ∈ hX.flow.unstableSet b := Flow.mem_unstableSet.2 hzb
     have hba : b ≠ a := fun hba ↦
       hza (hX.eq_of_mem_unstableSet_inter_stableSet hdf ⟨hba ▸ hzb, hz.2⟩)
-    have hlt := h.manifoldMorseIndex_lt hf hb ha hba ⟨z, hzb, hz.2⟩
+    have hlt := h.manifoldMorseIndex_lt hf hba ⟨z, hzb, hz.2⟩
     by_cases hbp : b = p
     · subst hbp
       exact hlt
     · have hle := manifoldMorseIndex_le_finrank (I := 𝓘(ℝ, E)) (f := f) (x := b)
-      exact hlt.trans (ih _ (by omega) hb hbp ⟨z, hz.1, hzb⟩ rfl)
+      exact hlt.trans (ih _ (by omega) hbp ⟨z, hz.1, hzb⟩ rfl)
 
 omit hX in
 /-- **An index-one level slice is closed.** Under the Morse–Smale condition, if the critical points
@@ -231,7 +231,6 @@ omit hX in
 lying on a level `c` strictly between `f q` and `f p` form a closed set. -/
 theorem IsMorseSmale.isClosed_unstableSet_inter_stableSet_inter_level
     {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {p q : M}
-    (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0) (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) {c : ℝ}
     (hc : f q < c ∧ c < f p) :
     IsClosed (hX.flow.unstableSet p ∩ hX.flow.stableSet q ∩ {z | f z = c}) := by
@@ -244,8 +243,8 @@ theorem IsMorseSmale.isClosed_unstableSet_inter_stableSet_inter_level
   have hyc : f y = c := (isClosed_eq hdf.continuous continuous_const).closure_subset
     (closure_mono inter_subset_right hy)
   -- The limit `y` lies on a trajectory from some critical point `a` to some critical point `b`.
-  obtain ⟨a, ha, hya⟩ := hX.exists_tendsto_atBot hf y
-  obtain ⟨b, hb, hyb⟩ := hX.exists_tendsto_atTop hf y
+  obtain ⟨a, -, hya⟩ := hX.exists_tendsto_atBot hf y
+  obtain ⟨b, -, hyb⟩ := hX.exists_tendsto_atTop hf y
   have hya : y ∈ hX.flow.unstableSet a := Flow.mem_unstableSet.2 hya
   have hyb : y ∈ hX.flow.stableSet b := Flow.mem_stableSet.2 hyb
   -- A trajectory from a critical point to itself is constant, and lies off the level `c`.
@@ -254,17 +253,17 @@ theorem IsMorseSmale.isClosed_unstableSet_inter_stableSet_inter_level
   have hba : manifoldMorseIndex 𝓘(ℝ, E) f b ≤ manifoldMorseIndex 𝓘(ℝ, E) f a := by
     by_cases hab : a = b
     · rw [hab]
-    · exact (h.manifoldMorseIndex_lt hf ha hb hab ⟨y, hya, hyb⟩).le
+    · exact (h.manifoldMorseIndex_lt hf hab ⟨y, hya, hyb⟩).le
   -- The index of `a` is at most that of `p`, with equality only if `a = p`, and the index of `b`
   -- is at least that of `q`, with equality only if `b = q`. As the two differ by one, `a = p` and
   -- `b = q`: any other configuration forces a constant trajectory through `y` at `p` or `q`.
   have hap : a = p ∨ manifoldMorseIndex 𝓘(ℝ, E) f a < manifoldMorseIndex 𝓘(ℝ, E) f p :=
     or_iff_not_imp_left.2 fun hap ↦
-      h.manifoldMorseIndex_lt_of_mem_closure_unstableSet_inter_unstableSet hf ha hap
+      h.manifoldMorseIndex_lt_of_mem_closure_unstableSet_inter_unstableSet hf hap
         ⟨y, hyU, hya⟩
   have hbq : b = q ∨ manifoldMorseIndex 𝓘(ℝ, E) f q < manifoldMorseIndex 𝓘(ℝ, E) f b :=
     or_iff_not_imp_left.2 fun hbq ↦
-      h.manifoldMorseIndex_lt_of_mem_closure_stableSet_inter_stableSet hf hb hq hbq ⟨y, hyS, hyb⟩
+      h.manifoldMorseIndex_lt_of_mem_closure_stableSet_inter_stableSet hf hbq ⟨y, hyS, hyb⟩
   have hab : a ≠ b := by
     rintro rfl
     rcases hap with rfl | hap
@@ -272,7 +271,7 @@ theorem IsMorseSmale.isClosed_unstableSet_inter_stableSet_inter_level
     rcases hbq with rfl | hbq
     · exact hne hc.1.ne ⟨hya, hyb⟩
     omega
-  have hlt := h.manifoldMorseIndex_lt hf ha hb hab ⟨y, hya, hyb⟩
+  have hlt := h.manifoldMorseIndex_lt hf hab ⟨y, hya, hyb⟩
   obtain rfl : a = p := by
     rcases hap with hap | hap
     · exact hap
@@ -291,13 +290,12 @@ strictly between `f q` and `f p`. This is the finiteness behind the coefficients
 Morse boundary. -/
 theorem IsMorseSmale.finite_unstableSet_inter_stableSet_inter_level
     {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {p q : M}
-    (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0) (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) (c : ℝ) :
     (hX.flow.unstableSet p ∩ hX.flow.stableSet q ∩ {z | f z = c}).Finite := by
   by_cases hc : f q < c ∧ c < f p
-  · exact (h.isClosed_unstableSet_inter_stableSet_inter_level hf hp hq hind hc).isCompact.finite
-      (hX.isDiscrete_unstableSet_inter_stableSet_level hf hp hq hind
-        fun _ hy ↦ h.span_mtangentConeAt_sup_eq_top hp hq hy.1)
+  · exact (h.isClosed_unstableSet_inter_stableSet_inter_level hf hind hc).isCompact.finite
+      (hX.isDiscrete_unstableSet_inter_stableSet_level hf hind
+        fun _ hy ↦ h.span_mtangentConeAt_sup_eq_top hy.1)
   · -- Outside `(f q, f p)` the slice is empty.
     have hpq : p ≠ q := by rintro rfl; omega
     refine finite_empty.subset fun y hy ↦ hc ?_

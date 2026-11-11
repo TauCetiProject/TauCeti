@@ -129,7 +129,7 @@ theorem setLIntegral_closedBall_lintegral_segment_le {g : E → ℝ≥0∞}
         ∫⁻ w, g w * ‖x - w‖ₑ ^ (1 - (finrank ℝ E : ℝ)) ∂μ := by
   rcases subsingleton_or_nontrivial E with hE | hE
   · have hzero : ∀ y : E, ‖x - y‖ₑ = 0 := fun y => by
-      rw [Subsingleton.elim x y, sub_self, eNorm_zero]
+      rw [Subsingleton.elim x y, sub_self, eNorm_one']
     simp [hzero]
   set n := finrank ℝ E
   have hn : 0 < n := finrank_pos
@@ -204,8 +204,6 @@ theorem setLIntegral_enorm_sub_le_of_starConvex (hΩ : IsOpen Ω) (hu : ContDiff
     have h := enorm_sub_le_lintegral_enorm_fderiv_apply (u := u) x (y - x)
       (fun t ht => (hu.differentiableOn one_ne_zero _ (hmem t ht)).differentiableAt
         (hΩ.mem_nhds (hmem t ht)))
-      ((hcont.comp (by fun_prop : Continuous fun t : ℝ => x + t • (y - x)).continuousOn
-        hmem).clm_apply continuousOn_const)
     rw [add_sub_cancel, eNorm_sub_rev] at h
     rw [← lintegral_mul_const' _ _ eNorm_ne_top, setLIntegral_congr Ioc_ae_eq_Icc]
     refine h.trans (setLIntegral_mono' measurableSet_Icc fun t ht => ?_)

@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.MeasureTheory.Function.L2Space
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 public import TauCeti.MeasureTheory.Integral.PiSystem
+import Mathlib.Analysis.Normed.Affine.MazurUlam
 
 /-!
 # Inner products of square-integrable functions
@@ -25,7 +27,9 @@ L² function with a continuous function is an integral
 More generally, the L² pairing of an L² function with the class of any square-integrable
 function is the integral of their pointwise inner product (`MeasureTheory.L2.inner_toLp`).
 The integral of `⟪f x, c⟫` is `⟪∫ f, c⟫` (`integral_inner_left`), the counterpart of Mathlib's
-`integral_inner` with the integrand in the left slot.
+`integral_inner` with the integrand in the left slot, and the integral of the Hilbert space
+adjoints `(f x)†` of an operator-valued function is `(∫ f)†`
+(`ContinuousLinearMap.integral_adjoint`).
 Indicators of any countably spanning generating π-system of finite-measure sets have
 dense real linear span in L².
 
@@ -197,6 +201,17 @@ theorem integral_inner_left {f : α → E} (hf : Integrable f μ) (c : E) :
     ∫ x, ⟪f x, c⟫_𝕜 ∂μ = ⟪∫ x, f x ∂μ, c⟫_𝕜 := by
   simpa only [innerSLFlip_apply_apply] using
     (innerSLFlip 𝕜 c).integral_comp_commSL RCLike.conj_smul hf
+
+/-- The Hilbert space adjoint commutes with the integral of an operator-valued function:
+`∫ (f x)† = (∫ f)†`, the counterpart of Mathlib's `integral_conj`. No integrability is needed,
+since the adjoint is a real-linear isometric equivalence. -/
+theorem ContinuousLinearMap.integral_adjoint {V W : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℂ V] [CompleteSpace V] [NormedAddCommGroup W] [InnerProductSpace ℂ W]
+    [CompleteSpace W] (f : α → V →L[ℂ] W) :
+    ∫ x, ContinuousLinearMap.adjoint (f x) ∂μ = ContinuousLinearMap.adjoint (∫ x, f x ∂μ) :=
+  (IsometryEquiv.toRealLinearIsometryEquivOfMapZero
+    (ContinuousLinearMap.adjoint (𝕜 := ℂ) (E := V) (F := W)).toIsometryEquiv
+    (by simp)).toContinuousLinearEquiv.integral_comp_comm f
 
 end IntegralInner
 

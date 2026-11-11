@@ -190,7 +190,7 @@ private theorem isWordPathCompatible_inducedTaylor :
     IsWordPathCompatible (fun X : InducedQuiver C F ↦ (⟨X.obj⟩ : InducedQuiver D (𝒢.obj ∘ F)))
       (inducedTaylor 𝒢 F) where
   mem_range_of_mem_composableWords {X Y} {w} hw := by
-    refine composableWords_induction (fun n hn a b z hz hab ha hb ↦ ?_) (by simp)
+    refine composableWords_induction (fun n hn a b z hz hab ha hb ↦ ?_)
       (fun x y hx hy ↦ by rw [map_add]; exact add_mem hx hy)
       (fun r x hx ↦ by rw [map_smul]; exact Submodule.smul_mem _ r hx) hw
     rw [inducedTaylor_of_isComposableString 𝒢 F hn hz hab, ← ha, ← hb]
@@ -208,7 +208,7 @@ private theorem totalHomMap_inducedTaylor {X Y : InducedQuiver C F}
     totalHomMap R (𝒢.obj ∘ F) (inducedTaylor 𝒢 F w) =
       (totalHomMap R 𝒢.obj ∘ₗ 𝒢.toAInfinityHom.taylor)
         (ReducedTensorWords.map (R := R) (totalHomMap R F) w) := by
-  refine composableWords_induction (fun n hn a b z hz hab _ _ ↦ ?_) (by simp)
+  refine composableWords_induction (fun n hn a b z hz hab _ _ ↦ ?_)
     (fun x y hx hy ↦ by simp only [map_add, hx, hy]) (fun r x hx ↦ by simp only [map_smul, hx]) hw
   have hmem := 𝒢.isWordPathCompatible_taylor.mem_range_of_mem_composableWords
     (map_mem_composableWords (φ := fun X : InducedQuiver C F ↦ F X.obj) (Θ := totalHomMap R F)

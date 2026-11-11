@@ -10,7 +10,7 @@ import Mathlib.Analysis.Complex.Convex
 import Mathlib.Topology.MetricSpace.UniformConvergence
 import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Analysis.Calculus.PeriodicDeriv
-import TauCeti.Analysis.Complex.OperatorNorm
+import TauCeti.Analysis.RCLike.OperatorNorm
 import TauCeti.Analysis.Complex.ReProdIm
 import TauCeti.MeasureTheory.Integral.Lebesgue.ReProdIm
 import TauCeti.Algebra.Order.Floor.Ring

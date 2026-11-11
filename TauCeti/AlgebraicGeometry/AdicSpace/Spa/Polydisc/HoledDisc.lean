@@ -726,7 +726,8 @@ private theorem isRat_setOf_vle_union_biUnion_closedSubdisc (F : Finset (K × K)
           ((hdist hq hq₀).trans hτq₀) ((hτc hq).trans hτq₀))
         (Set.subset_biUnion_of_mem (u := fun q : K × K ↦ closedSubdisc q.1 q.2) hq₀)
     obtain ⟨hc₀, hb₀, hs₀⟩ := hF q₀ hq₀
-    rw [hU, closedSubdisc_eq_setOf_vle _ hc₀, setOf_vle_eq_of_norm_sub_lt hb₀, Set.union_comm]
+    rw [hU, closedSubdisc_eq_setOf_vle _ (isUnit_iff_ne_zero.mpr hc₀),
+      setOf_vle_eq_of_norm_sub_lt hb₀, Set.union_comm]
     exact isRat_setOf_vle_or_vle _ hc₀ hs₀
   push Not at hA
   -- otherwise `τ` is the distance `q'.1 - q₁.1` between two centres
@@ -808,7 +809,7 @@ private theorem closedSubdisc_union_setOf_vle_eq_univ {a c b₀ d₀ : K} (hc : 
     (hd : ‖d₀‖ ≤ ‖c‖) (ha : ‖a - b₀‖ ≤ ‖c‖) :
     closedSubdisc a c ∪ {v | v.1.toValuativeRel.vle (C d₀) (T - C b₀)} = Set.univ := by
   refine Set.eq_univ_of_forall fun x ↦ ?_
-  rw [closedSubdisc_eq_setOf_vle a hc]
+  rw [closedSubdisc_eq_setOf_vle a (isUnit_iff_ne_zero.mpr hc)]
   simp only [Set.mem_union, Set.mem_ofPred_eq, ← valuation_le_iff]
   refine or_iff_not_imp_right.mpr fun h ↦ ?_
   rw [not_le] at h

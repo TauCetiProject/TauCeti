@@ -225,7 +225,7 @@ and the reverse Hölder inequality holds from `B` to `B'`. If `b ε + ε ^ q ≤
 `B'` is controlled by the parts of `g` and `h ^ q` on `B'` above the height `ε t`. -/
 private theorem measure_mul_rpow_le_of_le_setLAverage {μ : Measure α} {q : ℝ} (hq : 1 < q)
     {b ε : ℝ≥0∞} (hε : b * ε + ε ^ q ≤ 2⁻¹) {g h : α → ℝ≥0∞} {B B' : Set α}
-    (hg : AEMeasurable g (μ.restrict B')) (hB' : μ B' ≠ ∞) {t : ℝ≥0∞} (ht : t ≠ ∞)
+    (hB' : μ B' ≠ ∞) {t : ℝ≥0∞} (ht : t ≠ ∞)
     (hlow : t ^ q ≤ ⨍⁻ x in B, g x ^ q ∂μ) (hup : ⨍⁻ x in B', g x ^ q ∂μ ≤ t ^ q)
     (hRH : ⨍⁻ x in B, g x ^ q ∂μ ≤ b * (⨍⁻ x in B', g x ∂μ) ^ q + ⨍⁻ x in B', h x ^ q ∂μ) :
     μ B' * t ^ q ≤ 2 * (b * t ^ (q - 1) * ∫⁻ x in B', {x | ε * t < g x}.indicator g x ∂μ +
@@ -234,7 +234,7 @@ private theorem measure_mul_rpow_le_of_le_setLAverage {μ : Measure α} {q : ℝ
   set A := ⨍⁻ x in B', g x ∂μ
   -- Jensen's inequality bounds the average of `g` by `t`, so `A ^ q ≤ t ^ (q - 1) A`.
   have hA : A ≤ t := by
-    have := (rpow_laverage_le_laverage_rpow hg hq.le).trans hup
+    have := (rpow_laverage_le_laverage_rpow hq.le).trans hup
     exact (ENNReal.rpow_le_rpow_iff hq0).1 this
   have hAq : A ^ q ≤ t ^ (q - 1) * A := by
     calc A ^ q = A ^ (q - 1) * A ^ (1 : ℝ) := by
@@ -470,7 +470,7 @@ private theorem setLIntegral_indicator_rpow_le {q : ℝ} (hq : 1 < q) {b ε : �
       gcongr
       exact hρbig a ha.1 ha.2 _ (by linarith [hS.1]) (by linarith [hS.2.1])
     have hstopb := measure_mul_rpow_le_of_le_setLAverage hq hε (B := ball a (ρ a))
-      (B' := ball a (2 * ρ a)) hg.aemeasurable measure_ball_lt_top.ne ht hS.2.2.le
+      (B' := ball a (2 * ρ a)) measure_ball_lt_top.ne ht hS.2.2.le
       (hρbig a ha.1 ha.2 _ le_rfl (by linarith [hS.2.1]))
       (hRH a (ρ a) hS.1 ((hsub a ha.1 _ (by linarith [hS.2.1])).trans hsubR))
     calc _ ≤ t ^ q * μ (ball a (4 * (2 * ρ a))) := hint

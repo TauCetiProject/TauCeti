@@ -27,8 +27,9 @@ This is Theorem 3 of Brown's proof of the generalized Schoenflies theorem. Brown
 that both inverse sets of a map of `Sⁿ` onto itself with exactly two inverse sets are cellular (his
 Theorem 4, `TauCeti.isCellularSet_preimage_singleton_of_injOn`); with the collapse of cellular sets
 (`TauCeti.IsCellularSet.exists_collapse`) this identifies the closures of the complementary domains
-of a bicollared sphere with cells (his Theorem 5). The hypothesis `n ≥ 2` is used only through the
-connectedness of punctured balls.
+of a bicollared sphere with cells (his Theorem 5,
+`TauCeti.IsBicollar.exists_homeomorph_closure_connectedComponentIn_compl_range`). The hypothesis
+`n ≥ 2` is used only through the connectedness of punctured balls.
 
 The proof has three steps.
 
