@@ -18,6 +18,10 @@ loop was chosen. Path reachability and connectedness agree with those of the mul
 The directed paths remain necessary for the fundamental group of a graph: the two darts of a
 loop represent inverse generators, even though they give the same one-edge undirected walk.
 
+A set `O` of darts is itself a multigraph on all the vertices, `SerreGraph.endpointGraph`: its
+edges are the darts of `O`, each joining its source to its target, so loops and parallel darts
+remain distinct edges.
+
 ## References
 
 * J.-P. Serre, *Trees*, Chapter I, §§2.1–2.2.
@@ -180,7 +184,7 @@ theorem exists_hom_of_toGraph_isLink {u v : Γ.V} {q : Γ.Edge}
 
 /-- Two vertices are adjacent in the multigraph of reversal pairs exactly when some dart joins
 them. -/
-theorem toGraph_adj (x y : Γ.V) :
+@[simp] theorem toGraph_adj (x y : Γ.V) :
     Γ.toGraph.Adj x y ↔ ∃ e, Γ.src e = x ∧ Γ.tgt e = y := by
   constructor
   · rintro ⟨q, hq⟩
@@ -232,6 +236,56 @@ theorem toGraph_connectedComponentOf_eq_iff (u v : Γ.V) :
       Γ.toGraph.connectedComponentOf v (by simp) ↔ Nonempty (Γ.Path u v) := by
   rw [Graph.connectedComponentOf_eq_connectedComponentOf_iff]
   exact Γ.reachable_toGraph_iff u v
+
+section EndpointGraph
+
+variable (O : Set Γ.E)
+
+/-- The multigraph on all vertices whose edges are the darts in `O`, each joining its source
+and its target. Loops and parallel darts remain distinct edges. -/
+def endpointGraph : Graph Γ.V Γ.E where
+  vertexSet := Set.univ
+  edgeSet := O
+  IsLink e x y := e ∈ O ∧ s(Γ.src e, Γ.tgt e) = s(x, y)
+  isLink_symm _ _ := ⟨fun _ _ h => ⟨h.1, h.2.trans Sym2.eq_swap⟩⟩
+  eq_or_eq_of_isLink_of_isLink _ _ _ _ _ h k := by
+    rcases Sym2.eq_iff.mp (h.2.symm.trans k.2) with h | h
+    · exact Or.inl h.1
+    · exact Or.inr h.1
+  edge_mem_iff_exists_isLink e := ⟨fun he => ⟨_, _, he, rfl⟩, fun ⟨_, _, he, _⟩ => he⟩
+  left_mem_of_isLink _ _ _ _ := Set.mem_univ _
+
+@[simp] theorem vertexSet_endpointGraph : (Γ.endpointGraph O).vertexSet = Set.univ := (rfl)
+
+@[simp] theorem edgeSet_endpointGraph : (Γ.endpointGraph O).edgeSet = O := (rfl)
+
+@[simp] theorem endpointGraph_isLink (e : Γ.E) (x y : Γ.V) :
+    (Γ.endpointGraph O).IsLink e x y ↔ e ∈ O ∧ s(Γ.src e, Γ.tgt e) = s(x, y) := Iff.rfl
+
+/-- A chosen dart is an edge of the multigraph joining its source and its target. -/
+theorem endpointGraph_isLink_src_tgt {e : Γ.E} (he : e ∈ O) :
+    (Γ.endpointGraph O).IsLink e (Γ.src e) (Γ.tgt e) :=
+  ⟨he, rfl⟩
+
+/-- A dart is a loop of the multigraph exactly when it is chosen and its ends coincide. -/
+@[simp] theorem endpointGraph_isLoopAt_iff (e : Γ.E) (x : Γ.V) :
+    (Γ.endpointGraph O).IsLoopAt e x ↔ e ∈ O ∧ Γ.src e = x ∧ Γ.tgt e = x := by
+  simp [← Graph.isLink_self_iff]
+
+/-- Two vertices are adjacent in the multigraph exactly when a chosen dart joins them, in
+either direction. -/
+@[simp] theorem endpointGraph_adj (x y : Γ.V) :
+    (Γ.endpointGraph O).Adj x y ↔
+      (∃ e ∈ O, Γ.src e = x ∧ Γ.tgt e = y) ∨ ∃ e ∈ O, Γ.src e = y ∧ Γ.tgt e = x := by
+  simp only [Graph.Adj, endpointGraph_isLink, Sym2.eq_iff]
+  grind
+
+/-- Enlarging the dart set enlarges the multigraph. -/
+theorem endpointGraph_mono {O O' : Set Γ.E} (h : O ⊆ O') :
+    Γ.endpointGraph O ≤ Γ.endpointGraph O' :=
+  ⟨subset_rfl, fun _ _ _ hl => ⟨h hl.1, hl.2⟩⟩
+
+end EndpointGraph
 
 end SerreGraph
 end TauCeti
