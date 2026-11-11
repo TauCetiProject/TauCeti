@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Polynomial.Homogenize
-public import TauCeti.Analysis.Normed.Field.LinearForms
+public import TauCeti.Analysis.Normed.Ring.LinearForms
 public import TauCeti.NumberTheory.DiophantineApproximation.Roth.Theorem
 
 import TauCeti.Data.Int.MaxAbs
