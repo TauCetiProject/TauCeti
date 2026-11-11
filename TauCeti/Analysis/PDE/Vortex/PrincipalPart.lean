@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
 public import TauCeti.Analysis.Complex.Wirtinger.PrincipalPart
 public import TauCeti.Analysis.Complex.ZeroMultiplicity
-public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import TauCeti.Analysis.PDE.Vortex.Divisor
 import TauCeti.Analysis.PDE.Vortex.LogVariation
 import TauCeti.Analysis.PDE.Vortex.Zeros
@@ -56,7 +55,6 @@ treated here.
 
 ## Main definitions
 
-* `TauCeti.Vortex.gaugeFixedKernel x`: the `C²` square-integrable kernel of `L_x`.
 * `TauCeti.Vortex.kernelPrincipalPart`: the principal parts of `δα / α` at the zeros of `α`.
 
 ## Main results
@@ -87,29 +85,6 @@ namespace TauCeti.Vortex
 open Asymptotics Complex Filter MeasureTheory Module Set Topology
 
 variable {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
-
-/-! ### The kernel -/
-
-/-- The kernel of the gauge-fixed operator `L_x = d₀* ⊕ d₁` on `C²` square-integrable
-variations. -/
-def gaugeFixedKernel (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
-    Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4)) where
-  carrier := {y | ContDiff ℝ 2 y ∧ MemLp y 2 volume ∧ ∀ z, gaugeFixedOperator x y z = 0}
-  add_mem' := by
-    rintro y v ⟨hy, hy₂, hyk⟩ ⟨hv, hv₂, hvk⟩
-    refine ⟨hy.add hv, hy₂.add hv₂, fun z ↦ ?_⟩
-    rw [gaugeFixedOperator_add x (hy.differentiable (by simp) z) (hv.differentiable (by simp) z),
-      hyk, hvk, add_zero]
-  zero_mem' := ⟨contDiff_zero_fun, MemLp.zero, fun z ↦ by simp⟩
-  smul_mem' := by
-    rintro t y ⟨hy, hy₂, hyk⟩
-    exact ⟨hy.const_smul t, hy₂.const_smul t, fun z ↦ by
-      rw [gaugeFixedOperator_smul, hyk, smul_zero]⟩
-
-theorem mem_gaugeFixedKernel :
-    y ∈ gaugeFixedKernel x ↔
-      ContDiff ℝ 2 y ∧ MemLp y 2 volume ∧ ∀ z, gaugeFixedOperator x y z = 0 :=
-  Iff.rfl
 
 /-! ### The local form of `δα / α` at a zero -/
 
@@ -173,9 +148,10 @@ theorem exists_hasPrincipalPart_div_sectionValue (hx : Differentiable ℝ x)
     (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) (hy : y ∈ gaugeFixedKernel x)
     {n : ℂ → ℕ} (hn : IsZeroMultiplicity (sectionValue x) n) (z : ℂ) :
     ∃ c : Fin (n z) → ℂ, HasPrincipalPart (fun w ↦ sectionValue y w / sectionValue x w) z c := by
+  obtain ⟨hyc, -, hker⟩ := mem_gaugeFixedKernel.1 hy
   obtain ⟨V, hV, hV₀, hfac⟩ := isZeroMultiplicity_iff.1 hn z
   obtain ⟨c, g, hg, hηg⟩ := exists_contDiffAt_eventuallyEq_add_principalPartSum_div_sectionValue
-    hx hhol hy.1 (fun w ↦ by simp [hy.2.2 w]) hV hV₀ hfac
+    hx hhol hyc (fun w ↦ by simp [hker w]) hV hV₀ hfac
   exact ⟨c, hasPrincipalPart_of_eventuallyEq_add hg.continuousAt hηg⟩
 
 /-! ### Kernel elements with regular `δα / α` -/
@@ -190,7 +166,7 @@ theorem eq_zero_of_isBigO_div_sectionValue (hx : ContDiff ℝ 2 x)
     (hbdd : ∀ z, sectionValue x z = 0 →
       (fun w ↦ sectionValue y w / sectionValue x w) =O[𝓝[≠] z] (fun _ ↦ (1 : ℝ))) :
     y = 0 := by
-  obtain ⟨hyc, hy₂, hker⟩ := hy
+  obtain ⟨hyc, hy₂, hker⟩ := mem_gaugeFixedKernel.1 hy
   have hxi (i : Fin 4) : ContDiff ℝ 2 fun w ↦ x w i := contDiff_euclidean.1 hx i
   have hαc : Continuous (sectionValue x) := (contDiff_sectionValue (hxi 2) (hxi 3)).continuous
   have hδc : Continuous (sectionValue y) :=
@@ -325,26 +301,14 @@ theorem kernelPrincipalPart_injective (hx : ContDiff ℝ 2 x)
   rw [hy, Pi.zero_apply] at h
   exact hasPrincipalPart_zero_iff.mp h
 
-/-- A degree-`m` end framing gives the section a zero divisor of degree `m`, as a zero
-multiplicity function. -/
-private theorem exists_isZeroMultiplicity_of_tendsto (hx : ContDiff ℝ 2 x)
-    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) {m : ℕ}
-    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
-    ∃ D : Multiset ℂ, Multiset.card D = m ∧
-      IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z := by
-  have hxi (i : Fin 4) : ContDiff ℝ 2 fun w ↦ x w i := contDiff_euclidean.1 hx i
-  obtain ⟨D, hD⟩ := exists_sym_sectionValue_eq_pow_count_mul (k := 2) (by norm_num) (hxi 0)
-    (hxi 1) ((hxi 2).differentiable (by simp)) ((hxi 3).differentiable (by simp)) hhol hframe
-  refine ⟨D, D.2, isZeroMultiplicity_iff.2 fun z ↦ ?_⟩
-  obtain ⟨V, hV, hV₀, hf⟩ := hD z
-  exact ⟨V, hV.continuousAt, hV₀, hf⟩
-
 /-- **The kernel of `L_x` at a framed field is finite-dimensional.** -/
 theorem finiteDimensional_gaugeFixedKernel (hx : ContDiff ℝ 2 x)
     (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) {m : ℕ}
     (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
     FiniteDimensional ℝ (gaugeFixedKernel x) := by
-  obtain ⟨D, -, hD⟩ := exists_isZeroMultiplicity_of_tendsto hx hhol hframe
+  have hxi (i : Fin 4) : ContDiff ℝ 2 fun w ↦ x w i := contDiff_euclidean.1 hx i
+  obtain ⟨D, -, hD⟩ := exists_isZeroMultiplicity_of_tendsto (k := 2) (by norm_num) (hxi 0) (hxi 1)
+    ((hxi 2).differentiable (by simp)) ((hxi 3).differentiable (by simp)) hhol hframe
   exact FiniteDimensional.of_injective _ (kernelPrincipalPart_injective hx hhol
     (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) hD)
 
@@ -356,7 +320,9 @@ theorem finrank_gaugeFixedKernel_le (hx : ContDiff ℝ 2 x)
     (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) {m : ℕ}
     (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
     finrank ℝ (gaugeFixedKernel x) ≤ 2 * m := by
-  obtain ⟨D, rfl, hD⟩ := exists_isZeroMultiplicity_of_tendsto hx hhol hframe
+  have hxi (i : Fin 4) : ContDiff ℝ 2 fun w ↦ x w i := contDiff_euclidean.1 hx i
+  obtain ⟨D, rfl, hD⟩ := exists_isZeroMultiplicity_of_tendsto (k := 2) (by norm_num) (hxi 0)
+    (hxi 1) ((hxi 2).differentiable (by simp)) ((hxi 3).differentiable (by simp)) hhol hframe
   refine (LinearMap.finrank_le_finrank_of_injective (kernelPrincipalPart_injective hx hhol
     (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) hD)).trans_eq ?_
   -- The principal parts at the points of `D` form a real vector space of dimension `2 |D|`.

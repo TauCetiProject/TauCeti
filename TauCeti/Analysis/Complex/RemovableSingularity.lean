@@ -29,6 +29,10 @@ This extension theorem is the step of Puiseux-type arguments with parameters in 
 a polynomial with analytic coefficients, known to be analytic off a hyperplane and bounded near
 it, are shown to be analytic across it.
 
+In one variable, a function complex differentiable and bounded on a punctured neighbourhood of a
+point agrees there with a function analytic at the point
+(`TauCeti.exists_analyticAt_eventuallyEq_of_isBigO`).
+
 The file also records the one-variable removable singularity at infinity used to extend
 functions to the Riemann sphere: if a `C^n` map `u : ℂ → E` is holomorphic near infinity and
 tends to `0` there, then `s ↦ u (1 / s)`, extended by `0` at `s = 0`, is `C^n`
@@ -44,6 +48,8 @@ holomorphy, since then `s ↦ u (1 / s)` vanishes near `0`
   functions.
 * `TauCeti.eqOn_conj_extension`: compatibility of continuous extensions with complex conjugation
   of the punctured coordinate, carried through the exceptional hyperplane by continuity.
+* `TauCeti.exists_analyticAt_eventuallyEq_of_isBigO`: a bounded isolated singularity of a
+  holomorphic function is removable, in the form of an analytic representative near the point.
 * `TauCeti.bddAbove_slice_of_local`, `TauCeti.extension_ne_zero_of_local`: the transverse slices
   of a function locally equal off the hyperplane to a function continuous on it are bounded, and
   an extension across the hyperplane keeps a local nonvanishing witness nonvanishing there.
@@ -59,7 +65,7 @@ holomorphy, since then `s ↦ u (1 / s)` vanishes near `0`
 
 public section
 
-open Complex ComplexConjugate Filter Function Metric Real Set Topology
+open Asymptotics Complex ComplexConjugate Filter Function Metric Real Set Topology
 
 namespace TauCeti
 
@@ -205,6 +211,28 @@ theorem exists_analyticOnNhd_prod_eqOn (hU : IsOpen U) (hs : IsOpen s)
   rw [circleIntegral.integral_congr hρ.le fun ζ hζ => by
       rw [← update_of_ne (hne ζ hζ) (limUnder (𝓝[≠] z₀) fun z => f (w, z)) fun z => f (w, z)],
     hd.circleIntegral_sub_inv_smul hz, inv_smul_smul₀ two_pi_I_ne_zero, hg_def]
+
+/-! ### A bounded isolated singularity -/
+
+/-- **Riemann's removable singularity theorem, eventual form.** A function complex differentiable
+and bounded on a punctured neighbourhood of `z` agrees on a punctured neighbourhood of `z` with a
+function analytic at `z`. -/
+theorem exists_analyticAt_eventuallyEq_of_isBigO {g : ℂ → E} {z : ℂ}
+    (hd : ∀ᶠ w in 𝓝[≠] z, DifferentiableAt ℂ g w)
+    (hb : g =O[𝓝[≠] z] (fun _ ↦ (1 : ℝ))) :
+    ∃ G : ℂ → E, AnalyticAt ℂ G z ∧ g =ᶠ[𝓝[≠] z] G := by
+  obtain ⟨C, hC⟩ := hb.bound
+  have hev : ∀ᶠ w in 𝓝[≠] z, DifferentiableAt ℂ g w ∧ ‖g w‖ ≤ C := by
+    filter_upwards [hd, hC] with w hw hwC
+    exact ⟨hw, by simpa using hwC⟩
+  have hs := eventually_nhdsWithin_iff.mp hev
+  refine ⟨update g z (limUnder (𝓝[≠] z) g),
+    (differentiableOn_update_limUnder_of_bddAbove hs (fun w hw ↦ ?_) ⟨C, ?_⟩).analyticAt hs, ?_⟩
+  · exact (hw.1 hw.2).1.differentiableWithinAt
+  · rintro _ ⟨w, hw, rfl⟩
+    exact (hw.1 hw.2).2
+  · filter_upwards [self_mem_nhdsWithin] with w hw
+    exact (update_of_ne hw _ _).symm
 
 /-! ### A removable singularity at infinity -/
 
