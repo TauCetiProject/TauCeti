@@ -70,8 +70,9 @@ theorem isBounded_l1Ball : Bornology.IsBounded (l1Ball ι) :=
 /-- Zero is an interior point of the ℓ¹ unit ball. -/
 theorem zero_mem_interior_l1Ball : (0 : ι → ℝ) ∈ interior (l1Ball ι) := by
   rw [mem_interior_iff_mem_nhds, l1Ball_eq_preimage_closedBall]
-  exact (PiLp.continuous_toLp 1 _).continuousAt.preimage_mem_nhds
-    (by simpa using Metric.closedBall_mem_nhds (0 : PiLp 1 (fun _ : ι ↦ ℝ)) one_pos)
+  refine (PiLp.continuous_toLp 1 _).continuousAt.preimage_mem_nhds ?_
+  rw [WithLp.toLp_zero]
+  exact Metric.closedBall_mem_nhds 0 one_pos
 
 /-- The ℓ¹ unit ball absorbs every vector. -/
 theorem absorbent_l1Ball : Absorbent ℝ (l1Ball ι) :=
@@ -79,9 +80,14 @@ theorem absorbent_l1Ball : Absorbent ℝ (l1Ball ι) :=
 
 /-- The gauge of the ℓ¹ unit ball is the sum of absolute coordinates. -/
 theorem gauge_l1Ball (x : ι → ℝ) : gauge (l1Ball ι) x = ∑ i, |x i| := by
-  rw [l1Ball_eq_preimage_closedBall]
-  simpa [gauge_def', PiLp.norm_eq_of_L1] using
-    gauge_closedBall (E := PiLp 1 (fun _ : ι ↦ ℝ)) zero_le_one (WithLp.toLp 1 x)
+  -- Transport along `WithLp.toLp 1`, which commutes with scalar multiplication: the gauge of
+  -- the preimage ball at `x` is the gauge of the `PiLp 1` closed ball at `toLp 1 x`.
+  have hg : gauge (l1Ball ι) x =
+      gauge (Metric.closedBall (0 : PiLp 1 (fun _ : ι ↦ ℝ)) 1) (WithLp.toLp 1 x) := by
+    simp only [l1Ball_eq_preimage_closedBall, gauge_def', Set.mem_preimage, WithLp.toLp_smul]
+  -- The `PiLp 1` norm of `toLp 1 x` is the sum of the absolute coordinates of `x`.
+  rw [hg, gauge_closedBall zero_le_one, div_one, PiLp.norm_eq_of_L1]
+  simp
 
 /-- The ℓ¹ unit ball has volume `2 ^ n / n!` in dimension `n`, also when `n = 0`. -/
 theorem volume_l1Ball :
