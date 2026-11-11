@@ -39,7 +39,8 @@ The projection `P_U v` is the point of `v + Uᗮ` of least norm, and it is the o
 point `b + c`, with `b ∈ U` and `c ∈ Uᗮ`, into its components along `U` and `Uᗮ`.
 
 Since the kernel of `P_V` is `Vᗮ`, the projection `P_V` is injective on `U` exactly when no
-nonzero vector of `U` is orthogonal to `V`.
+nonzero vector of `U` is orthogonal to `V`. In that case the rank of `U` is at most that of
+`V`.
 
 Compressing the square of the difference `P_U - P_V` to `U`, from either side, gives
 `P_U - P_U P_V P_U`.
@@ -89,6 +90,7 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `b ∈ R` and `c ∈ Rᗮ`, split along `R` and `Rᗮ`.
 * `Submodule.injOn_starProjection_iff_disjoint`: `P_V` is injective on `U` if and only if
   `U ⊓ Vᗮ = ⊥`.
+* `Submodule.rank_le_of_disjoint_orthogonal`: if `U ⊓ Vᗮ = ⊥`, then `rank U ≤ rank V`.
 * `Submodule.starProjection_sub_starProjection_sq_mul_starProjection`,
   `Submodule.starProjection_mul_starProjection_sub_starProjection_sq`:
   `(P_U - P_V)² P_U = P_U (P_U - P_V)² = P_U - P_U P_V P_U`.
@@ -263,6 +265,18 @@ theorem injOn_starProjection_iff_disjoint :
     Set.InjOn V.starProjection U ↔ Disjoint U Vᗮ := by
   simpa using (LinearMap.disjoint_ker_iff_injOn (f := (V.starProjection : E →ₗ[𝕜] E))
     (p := U)).symm
+
+omit [U.HasOrthogonalProjection] in
+/-- If no nonzero vector of `U` is orthogonal to `V`, then the rank of `U` is at most that of `V`:
+the orthogonal projection onto `V` is injective on `U`. -/
+theorem rank_le_of_disjoint_orthogonal (h : Disjoint U Vᗮ) :
+    Module.rank 𝕜 U ≤ Module.rank 𝕜 V := by
+  refine LinearMap.rank_le_of_injective
+    ((V.orthogonalProjectionOnto : E →ₗ[𝕜] V) ∘ₗ U.subtype) fun x y hxy ↦ ?_
+  have hxy' : V.starProjection x = V.starProjection y := by
+    rw [starProjection_apply, starProjection_apply]
+    exact congr_arg ((↑) : V → E) hxy
+  exact Subtype.ext <| (injOn_starProjection_iff_disjoint U V).2 h x.2 y.2 hxy'
 
 /-- Compressing `(P_U - P_V)²` to `U` on the right gives `P_U - P_U P_V P_U`. -/
 theorem starProjection_sub_starProjection_sq_mul_starProjection :
