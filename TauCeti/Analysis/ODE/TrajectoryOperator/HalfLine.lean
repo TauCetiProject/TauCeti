@@ -316,6 +316,37 @@ private theorem squareIntegrableSolutions_neg_leftCap (hA : Continuous A)
       Real.volume_Iio).trans ?_))
   rw [squareIntegrableSolutionsOn_leftCap_Iio hA, Submodule.top_orthogonal_eq_bot]
 
+/-- The two index formulas for the trajectory operator of a continuous family of symmetric
+operators with invertible limits `A±`, equated: the square-integrable solutions of `v' + A v = 0`
+and `E` have the same total dimension as the square-integrable solutions of `w' = A w`, the
+negative spectral subspace of `A⁻` and the positive spectral subspace of `A⁺`. -/
+private theorem finrank_squareIntegrableSolutions_add_finrank (hA : Continuous A)
+    (hsym : ∀ τ, (A τ).toLinearMap.IsSymmetric) {Aminus Aplus : E →L[ℝ] E} {α : ℝ} (hα : 0 < α)
+    (hminus : ∀ v, α * ‖v‖ ≤ ‖Aminus v‖) (hplus : ∀ v, α * ‖v‖ ≤ ‖Aplus v‖)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus)) :
+    Module.finrank ℝ (squareIntegrableSolutions A) + Module.finrank ℝ E =
+      Module.finrank ℝ (squareIntegrableSolutions (-A)) +
+        Module.finrank ℝ (Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0)) +
+        Module.finrank ℝ (Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Ioi 0)) := by
+  -- A continuous family with limits at both ends is bounded, so it has an `L∞` class.
+  obtain ⟨M, hM⟩ := exists_forall_norm_le_of_tendsto hA hbot htop
+  set AL := (memLp_top_of_bound (μ := volume.restrict ((⊤ : Opens ℝ) : Set ℝ))
+    hA.aestronglyMeasurable M (.of_forall hM)).toLp A
+  have hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A := MemLp.coeFn_toLp _
+  have hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric :=
+    ContinuousLinearMap.isClosed_setOf_isSymmetric.mem_of_tendsto htop (.of_forall hsym)
+  have h1 := WeakDerivStep.index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
+    hA (ContinuousLinearMap.isClosed_setOf_isSymmetric.mem_of_tendsto hbot (.of_forall hsym))
+    hsymplus hα hminus hplus hbot htop AL hAL
+  have h2 := WeakDerivStep.index_trajectoryOperator_eq_finrank_sub_finrank hA hsym hα hminus hplus
+    hbot htop AL hAL
+  -- The spectral subspaces of the invertible symmetric `A⁺` are complementary.
+  have hker : LinearMap.ker (Aplus : E →ₗ[ℝ] E) = ⊥ := LinearMap.ker_eq_bot.2
+    (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦ (le_inv_mul_iff₀ hα).2 (hplus v))
+  have hcompl := Submodule.finrank_add_eq_of_isCompl
+    (hsymplus.isCompl_pointSpectralSubspace_Iio_zero_Ioi_zero hker)
+  omega
+
 /-- **The dimension of the stable solutions.** Let `A` be a continuous family of symmetric
 operators on a finite-dimensional real inner product space, with an invertible limit `A⁺` at
 `+∞`. Then the initial values of the solutions of `v' + A v = 0` square integrable on `(0, ∞)`
@@ -328,42 +359,22 @@ theorem finrank_squareIntegrableSolutionsOn_Ioi (hA : Continuous A)
       Module.finrank ℝ (Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Ioi 0)) := by
   -- Compute the index of the trajectory operator of the capped family in two ways.
   have hC := continuous_leftCap hA
-  have hCsym := isSymmetric_leftCap hsym
-  have hCbot : Tendsto (leftCap A) atBot (𝓝 (-ContinuousLinearMap.id ℝ E)) :=
-    tendsto_leftCap_atBot
-  have hCtop := tendsto_leftCap_atTop htop
-  have hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric :=
-    ContinuousLinearMap.isClosed_setOf_isSymmetric.mem_of_tendsto htop (.of_forall hsym)
-  have hsymid : ((-ContinuousLinearMap.id ℝ E : E →L[ℝ] E) : E →ₗ[ℝ] E).IsSymmetric :=
-    ContinuousLinearMap.isClosed_setOf_isSymmetric.mem_of_tendsto hCbot (.of_forall hCsym)
   have hβ : 0 < min α 1 := lt_min hα one_pos
   have hminus' : ∀ v : E, min α 1 * ‖v‖ ≤ ‖(-ContinuousLinearMap.id ℝ E) v‖ := fun v ↦ by
     simpa using mul_le_of_le_one_left (norm_nonneg v) (min_le_right α 1)
   have hplus' : ∀ v : E, min α 1 * ‖v‖ ≤ ‖Aplus v‖ := fun v ↦
     (mul_le_mul_of_nonneg_right (min_le_left α 1) (norm_nonneg v)).trans (hplus v)
-  -- A continuous family with limits at both ends is bounded, so it has an `L∞` class.
-  obtain ⟨M, hM⟩ := exists_forall_norm_le_of_tendsto hC hCbot hCtop
-  set CL := (memLp_top_of_bound (μ := volume.restrict ((⊤ : Opens ℝ) : Set ℝ))
-    hC.aestronglyMeasurable M (.of_forall hM)).toLp (leftCap A)
-  have hCL : CL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] leftCap A := MemLp.coeFn_toLp _
-  have h1 := WeakDerivStep.index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
-    hC hsymid hsymplus hβ hminus' hplus' hCbot hCtop CL hCL
-  have h2 := WeakDerivStep.index_trajectoryOperator_eq_finrank_sub_finrank hC hCsym hβ hminus'
-    hplus' hCbot hCtop CL hCL
-  -- The kernel is the stable solutions of `A`, and there is no cokernel.
-  rw [← squareIntegrableSolutionsOn_Iio_inf_Ioi hC, squareIntegrableSolutionsOn_leftCap_Iio hA,
-    top_inf_eq, squareIntegrableSolutionsOn_Ioi_congr hC hA fun τ hτ ↦ leftCap_of_nonneg hτ,
-    squareIntegrableSolutions_neg_leftCap hA hsym, finrank_bot] at h2
-  -- All eigenvalues of `-id` are negative, and the spectral subspaces of `A⁺` are complementary.
+  have h := finrank_squareIntegrableSolutions_add_finrank hC (isSymmetric_leftCap hsym) hβ hminus'
+    hplus' tendsto_leftCap_atBot (tendsto_leftCap_atTop htop)
+  -- All eigenvalues of `-id` are negative.
   have hid : Module.End.pointSpectralSubspace
       ((-ContinuousLinearMap.id ℝ E : E →L[ℝ] E) : E →ₗ[ℝ] E) (Iio 0) = ⊤ :=
     eq_top_iff.2 fun x _ ↦ Module.End.eigenspace_le_pointSpectralSubspace
       (show (-1 : ℝ) ∈ Iio 0 by norm_num) (Module.End.mem_eigenspace_iff.2 (by simp))
-  have hker : LinearMap.ker (Aplus : E →ₗ[ℝ] E) = ⊥ := LinearMap.ker_eq_bot.2
-    (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦ (le_inv_mul_iff₀ hα).2 (hplus v))
-  have hcompl := Submodule.finrank_add_eq_of_isCompl
-    (hsymplus.isCompl_pointSpectralSubspace_Iio_zero_Ioi_zero hker)
-  rw [hid, finrank_top] at h1
+  -- The kernel is the stable solutions of `A`, and there is no cokernel.
+  rw [← squareIntegrableSolutionsOn_Iio_inf_Ioi hC, squareIntegrableSolutionsOn_leftCap_Iio hA,
+    top_inf_eq, squareIntegrableSolutionsOn_Ioi_congr hC hA fun τ hτ ↦ leftCap_of_nonneg hτ,
+    squareIntegrableSolutions_neg_leftCap hA hsym, finrank_bot, hid, finrank_top] at h
   omega
 
 /-- **The dimension of the unstable solutions.** Let `A` be a continuous family of symmetric
@@ -410,22 +421,7 @@ theorem squareIntegrableSolutions_neg_eq_orthogonal_sup (hA : Continuous A)
         (squareIntegrableSolutionsOn_neg_le_orthogonal hsym Real.volume_Ioi))
   -- Equality by counting dimensions with the index formula.
   refine Submodule.eq_of_le_of_finrank_eq hle ?_
-  obtain ⟨M, hM⟩ := exists_forall_norm_le_of_tendsto hA hbot htop
-  set AL := (memLp_top_of_bound (μ := volume.restrict ((⊤ : Opens ℝ) : Set ℝ))
-    hA.aestronglyMeasurable M (.of_forall hM)).toLp A
-  have hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A := MemLp.coeFn_toLp _
-  have hsymminus : (Aminus : E →ₗ[ℝ] E).IsSymmetric :=
-    ContinuousLinearMap.isClosed_setOf_isSymmetric.mem_of_tendsto hbot (.of_forall hsym)
-  have hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric :=
-    ContinuousLinearMap.isClosed_setOf_isSymmetric.mem_of_tendsto htop (.of_forall hsym)
-  have h1 := WeakDerivStep.index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
-    hA hsymminus hsymplus hα hminus hplus hbot htop AL hAL
-  have h2 := WeakDerivStep.index_trajectoryOperator_eq_finrank_sub_finrank hA hsym hα hminus hplus
-    hbot htop AL hAL
-  have hker : LinearMap.ker (Aplus : E →ₗ[ℝ] E) = ⊥ := LinearMap.ker_eq_bot.2
-    (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦ (le_inv_mul_iff₀ hα).2 (hplus v))
-  have hcompl := Submodule.finrank_add_eq_of_isCompl
-    (hsymplus.isCompl_pointSpectralSubspace_Iio_zero_Ioi_zero hker)
+  have h := finrank_squareIntegrableSolutions_add_finrank hA hsym hα hminus hplus hbot htop
   have hsup := Submodule.finrank_sup_add_finrank_inf_eq U W
   have horth := (U ⊔ W).finrank_add_finrank_orthogonal
   rw [hinf] at hsup

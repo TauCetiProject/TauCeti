@@ -28,8 +28,8 @@ inequality for closed plane curves.
 For a continuous, time-dependent real coefficient `g`, a differentiable solution of `P' = g • P`
 on an interval `J`, open or closed, is `P t = exp (∫ₛᵗ g) • P s` for all `s, t ∈ J`
 (`TauCeti.eq_exp_integral_smul_of_hasDerivWithinAt_smul`), by the integrating factor
-`exp (-∫ₛᵘ g)`. For a constant coefficient `c`, a solution of `v' = c • v` on a closed
-half-line `(-∞, a]` is `v τ = exp (c (τ - a)) • v a` there
+`exp (-∫ₛᵘ g)`. For a constant coefficient `c`, a function with `v' = c • v` at every time
+`τ ≤ a` (with a two-sided derivative at `a`) is `v τ = exp (c (τ - a)) • v a` for `τ ≤ a`
 (`TauCeti.eq_exp_smul_of_hasDerivAt_smul_of_le`).
 -/
 
@@ -150,8 +150,8 @@ theorem eq_exp_integral_smul_of_hasDerivWithinAt_smul {J : Set ℝ} (hJc : J.Ord
   rw [← hconst, smul_smul, ← Real.exp_add, ← hGt, add_neg_cancel, Real.exp_zero, one_smul]
 
 /-- **Constant-coefficient solutions on a closed left half-line.** If `v' = c • v` at every time
-`τ ≤ a`, then `v τ = exp (c (τ - a)) • v a` for every `τ ≤ a`. The equation is only assumed on
-`(-∞, a]`, so nothing is required of `v` after time `a`. -/
+`τ ≤ a`, then `v τ = exp (c (τ - a)) • v a` for every `τ ≤ a`. The equation is only required at
+times `τ ≤ a` (with a two-sided derivative at `a`), so `v` need not solve it after time `a`. -/
 theorem eq_exp_smul_of_hasDerivAt_smul_of_le {v : ℝ → V} {c a : ℝ}
     (hv : ∀ τ, τ ≤ a → HasDerivAt v (c • v τ) τ) {τ : ℝ} (hτ : τ ≤ a) :
     v τ = Real.exp (c * (τ - a)) • v a := by

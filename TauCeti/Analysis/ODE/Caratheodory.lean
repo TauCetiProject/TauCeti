@@ -254,8 +254,8 @@ theorem Continuous.eq_of_hasDerivAt_clm_apply {X : Type*} [NormedAddCommGroup X]
 
 /-- **Forward uniqueness for time-dependent linear equations.** Two solutions of `v' = B(t) v` on
 the half-line `[a, ∞)`, for a continuous family `B` of bounded operators, that agree at time `a`
-agree on `[a, ∞)`. Nothing is assumed before time `a`, so the two solutions may come from
-equations that only agree on `[a, ∞)`. -/
+agree on `[a, ∞)`. The equation is only required at times `t ≥ a` (with a two-sided derivative at
+`a`), so the two solutions may come from equations that only agree on `[a, ∞)`. -/
 theorem Continuous.eqOn_Ici_of_hasDerivAt_clm_apply {X : Type*} [NormedAddCommGroup X]
     [NormedSpace ℝ X] {B : ℝ → X →L[ℝ] X} (hB : Continuous B) {v w : ℝ → X} {a : ℝ}
     (hv : ∀ t, a ≤ t → HasDerivAt v (B t (v t)) t) (hw : ∀ t, a ≤ t → HasDerivAt w (B t (w t)) t)
