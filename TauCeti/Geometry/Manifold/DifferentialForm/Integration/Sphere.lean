@@ -395,8 +395,8 @@ private theorem exists_contMDiff_homotopy {v w : ℝ × ℝ → M} (hv : IsSmoot
     ((isClosed_Icc.prod isClosed_Icc).preimage continuous_fst).isOpen_compl
   have hSU : S ⊆ {q | q.2 < 0} ∪ {q | 1 < q.2} ∪ {q | q.1 ∉ Icc δ (1 - δ) ×ˢ Icc δ (1 - δ)} := by
     rintro q ((hq | hq) | hq)
-    · exact Or.inl (Or.inl (show q.2 < 0 from lt_of_le_of_lt hq (by norm_num)))
-    · exact Or.inl (Or.inr (show 1 < q.2 from lt_of_lt_of_le (by norm_num) hq))
+    · exact Or.inl (Or.inl (by simp only [mem_ofPred_eq] at hq ⊢; linarith))
+    · exact Or.inl (Or.inr (by simp only [mem_ofPred_eq] at hq ⊢; linarith))
     · have hsub : Icc δ (1 - δ) ⊆ Ioo (δ / 2) (1 - δ / 2) :=
         Icc_subset_Ioo (by linarith) (by linarith)
       exact Or.inr fun hm ↦ hq (prod_mono hsub hsub hm)
@@ -447,9 +447,9 @@ theorem rectangleIntegral_eq_of_isSmoothSphere_of_homotopic {φ : RoughForm I M 
     (fun s _ c _ ↦ by
       rw [hΦx _ (fun hm ↦ hhi rfl hm.2), hΦx _ (fun hm ↦ hlo rfl hm.2)])
   have hΦ₁ : (fun z ↦ Φ (z, 1)) = w := funext fun z ↦ by
-    simpa only [Φ, show (3 : ℝ) * 1 - 1 = 2 by norm_num] using hGw z
+    convert hGw z using 3; norm_num
   have hΦ₀ : (fun z ↦ Φ (z, 0)) = v := funext fun z ↦ by
-    simpa only [Φ, show (3 : ℝ) * 0 - 1 = -1 by norm_num] using hGv z
+    convert hGv z using 3; norm_num
   rw [hΦ₁, hΦ₀] at key
   exact key.symm
 
