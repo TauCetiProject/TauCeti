@@ -167,6 +167,24 @@ theorem mem_flagPivots {i : Fin n} :
   · rintro ⟨x, hxW, hxF, hx⟩
     exact ⟨x, ⟨hxW, hxF⟩, fun h ↦ hx ((mem_flag_castSucc_iff_of_mem_flag_succ hxF).mp h)⟩
 
+/-- The last index in the support of the coordinates of a vector of `W` is a pivot of `W`. -/
+theorem max'_support_mem_flagPivots {x : M} (hx : x ∈ W) (hs : (b.repr x).support.Nonempty) :
+    (b.repr x).support.max' hs ∈ b.flagPivots W := by
+  refine mem_flagPivots.mpr ⟨x, hx, ?_,
+    Finsupp.mem_support_iff.mp ((b.repr x).support.max'_mem hs)⟩
+  rw [mem_flag_iff_repr_eq_zero]
+  intro j hj
+  by_contra hj'
+  exact (Fin.castSucc_lt_iff_succ_le.mpr hj).not_ge
+    (Fin.castSucc_le_castSucc_iff.mpr ((b.repr x).support.le_max' j (by simpa using hj')))
+
+/-- The coordinate at a pivot of `W` of the basis vector `single i 1` vanishes when `i` is not a
+pivot of `W`. -/
+private theorem single_apply_eq_zero_of_notMem_flagPivots {i j : Fin n}
+    (hi : i ∉ b.flagPivots W) (hj : j ∈ b.flagPivots W) :
+    (Finsupp.single i (1 : R) : Fin n →₀ R) j = 0 :=
+  Finsupp.single_eq_of_ne fun h : j = i ↦ hi (h ▸ hj)
+
 /-- The `k`-th subspace of the flag of a basis indexed by `Fin n`, spanned by its first `k`
 vectors, has dimension `k`. -/
 @[simp]
@@ -280,17 +298,6 @@ theorem flagPivots_eq_image_iff {r : ℕ} {p : Fin r → Fin n} (hp : StrictMono
   refine forall_congr' fun j ↦ ?_
   rw [filter_image, card_image_of_injective _ hp.injective]
 
-/-- The last index in the support of the coordinates of a vector of `W` is a pivot of `W`. -/
-theorem max_support_mem_flagPivots {x : V} (hx : x ∈ W) (hs : (b.repr x).support.Nonempty) :
-    (b.repr x).support.max' hs ∈ b.flagPivots W := by
-  refine mem_flagPivots.mpr ⟨x, hx, ?_,
-    Finsupp.mem_support_iff.mp ((b.repr x).support.max'_mem hs)⟩
-  rw [mem_flag_iff_repr_eq_zero]
-  intro j hj
-  by_contra hj'
-  exact (Fin.castSucc_lt_iff_succ_le.mpr hj).not_ge
-    (Fin.castSucc_le_castSucc_iff.mpr ((b.repr x).support.le_max' j (by simpa using hj')))
-
 /-- A vector of `W` whose coordinates at the pivots of `W` all vanish is zero. -/
 theorem eq_zero_of_repr_flagPivots_eq_zero {x : V} (hx : x ∈ W)
     (h : ∀ i ∈ b.flagPivots W, b.repr x i = 0) : x = 0 := by
@@ -298,8 +305,9 @@ theorem eq_zero_of_repr_flagPivots_eq_zero {x : V} (hx : x ∈ W)
   have hs : (b.repr x).support.Nonempty := by
     simpa [Finsupp.support_nonempty_iff] using hx₀
   exact (Finsupp.mem_support_iff.mp ((b.repr x).support.max'_mem hs))
-    (h _ (max_support_mem_flagPivots hx hs))
+    (h _ (max'_support_mem_flagPivots hx hs))
 
+variable (b W) in
 /-- There is a unique vector of `W ⊓ b.flag i.succ` whose coordinates at the pivots of `W` are
 those of `b i`. For a pivot `i` of `W` it is the row with pivot `i` of the reduced echelon basis of
 `W` adapted to the flag; otherwise it is `0`. -/
@@ -307,11 +315,10 @@ theorem existsUnique_flagEchelon (i : Fin n) :
     ∃! x, x ∈ W ⊓ b.flag i.succ ∧ ∀ j ∈ b.flagPivots W, b.repr x j = Finsupp.single i 1 j := by
   have := Module.Finite.of_basis b
   refine existsUnique_of_exists_of_unique ?_ fun x y hx hy ↦ ?_
-  · by_cases hi : i ∉ b.flagPivots W
+  · by_cases hi : i ∈ b.flagPivots W
+    swap
     · exact ⟨0, zero_mem _, fun j hj ↦ by
-        rw [map_zero, Finsupp.coe_zero, Pi.zero_apply,
-          Finsupp.single_eq_of_ne fun h : j = i ↦ hi (h ▸ hj)]⟩
-    rw [not_not] at hi
+        simp [single_apply_eq_zero_of_notMem_flagPivots hi hj]⟩
     -- The coordinates at the pivots up to `i` form an isomorphism on `W ⊓ b.flag i.succ`.
     set T : Finset (Fin n) := {j ∈ b.flagPivots W | j.castSucc < i.succ}
     let φ : ↥(W ⊓ b.flag i.succ) →ₗ[K] (T → K) :=
@@ -362,36 +369,37 @@ variable (b W) in
 unique vector of `W ⊓ b.flag i.succ` whose coordinates at the pivots of `W` are those of `b i`
 (see `Module.Basis.existsUnique_flagEchelon`); it is `0` at an index which is not a pivot. -/
 noncomputable def flagEchelon (i : Fin n) : V :=
-  if i ∈ b.flagPivots W then (existsUnique_flagEchelon (b := b) (W := W) i).exists.choose else 0
+  if i ∈ b.flagPivots W then (existsUnique_flagEchelon b W i).exists.choose else 0
+
+@[simp]
+theorem flagEchelon_of_notMem {i : Fin n} (hi : i ∉ b.flagPivots W) : b.flagEchelon W i = 0 := by
+  simp [flagEchelon, hi]
 
 private theorem flagEchelon_spec {i : Fin n} (hi : i ∈ b.flagPivots W) :
     b.flagEchelon W i ∈ W ⊓ b.flag i.succ ∧
       ∀ j ∈ b.flagPivots W, b.repr (b.flagEchelon W i) j = Finsupp.single i 1 j := by
-  rw [flagEchelon, ite_eq_left_iff.mpr fun h ↦ (h hi).elim]
-  exact (existsUnique_flagEchelon (b := b) (W := W) i).exists.choose_spec
+  rw [flagEchelon, ite_eq_left hi]
+  exact (existsUnique_flagEchelon b W i).exists.choose_spec
 
 theorem flagEchelon_mem (i : Fin n) : b.flagEchelon W i ∈ W := by
   by_cases hi : i ∈ b.flagPivots W
   · exact (flagEchelon_spec hi).1.1
-  · simp [flagEchelon, hi]
+  · rw [flagEchelon_of_notMem hi]
+    exact zero_mem _
 
 theorem flagEchelon_mem_flag (i : Fin n) : b.flagEchelon W i ∈ b.flag i.succ := by
   by_cases hi : i ∈ b.flagPivots W
   · exact (flagEchelon_spec hi).1.2
-  · simp [flagEchelon, hi]
+  · rw [flagEchelon_of_notMem hi]
+    exact zero_mem _
 
 @[simp]
 theorem repr_flagEchelon {i j : Fin n} (hj : j ∈ b.flagPivots W) :
     b.repr (b.flagEchelon W i) j = Finsupp.single i 1 j := by
   by_cases hi : i ∈ b.flagPivots W
   · exact (flagEchelon_spec hi).2 j hj
-  · have h0 : b.flagEchelon W i = 0 := by simp [flagEchelon, hi]
-    rw [h0, map_zero, Finsupp.coe_zero, Pi.zero_apply,
-      Finsupp.single_eq_of_ne fun h : j = i ↦ hi (h ▸ hj)]
-
-@[simp]
-theorem flagEchelon_of_notMem {i : Fin n} (hi : i ∉ b.flagPivots W) : b.flagEchelon W i = 0 := by
-  simp [flagEchelon, hi]
+  · rw [flagEchelon_of_notMem hi, map_zero, Finsupp.coe_zero, Pi.zero_apply,
+      single_apply_eq_zero_of_notMem_flagPivots hi hj]
 
 /-- The characterization of the reduced echelon basis vectors. -/
 theorem eq_flagEchelon {i : Fin n} {x : V} (hx : x ∈ W)
@@ -403,16 +411,16 @@ theorem eq_flagEchelon {i : Fin n} {x : V} (hx : x ∈ W)
       intro j hj
       by_contra hj'
       have hs : (b.repr x).support.Nonempty := ⟨j, by simpa using hj'⟩
-      have hk := h _ (max_support_mem_flagPivots hx hs)
+      have hk := h _ (max'_support_mem_flagPivots hx hs)
       have hij : i < j := Fin.succ_le_castSucc_iff.mp hj
       have hjk : j ≤ (b.repr x).support.max' hs :=
         (b.repr x).support.le_max' j (by simpa using hj')
       rw [Finsupp.single_eq_of_ne (hij.trans_le hjk).ne'] at hk
       exact (Finsupp.mem_support_iff.mp ((b.repr x).support.max'_mem hs)) hk
-    exact (existsUnique_flagEchelon (b := b) (W := W) i).unique ⟨⟨hx, hxF⟩, h⟩ (flagEchelon_spec hi)
+    exact (existsUnique_flagEchelon b W i).unique ⟨⟨hx, hxF⟩, h⟩ (flagEchelon_spec hi)
   · rw [flagEchelon_of_notMem hi]
     exact eq_zero_of_repr_flagPivots_eq_zero hx fun j hj ↦ by
-      rw [h j hj, Finsupp.single_eq_of_ne (fun e : j = i ↦ hi (e ▸ hj))]
+      rw [h j hj, single_apply_eq_zero_of_notMem_flagPivots hi hj]
 
 theorem linearIndependent_flagEchelon :
     LinearIndependent K fun i : b.flagPivots W ↦ b.flagEchelon W i :=
