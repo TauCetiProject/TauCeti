@@ -26,9 +26,9 @@ over `M` after pullback is `deg_y(f)` times integration over `N`
 (`TauCeti.compactlySupportedDeRhamCohomology.integral_map_eq_degreeAtRegularValue_mul`).
 
 The left side does not mention `y`, so the signed count is the same at every regular value
-(`TauCeti.degreeAtRegularValue_eq_of_isRegularValue`). This common value is the *mapping degree*
+(`TauCeti.degreeAtRegularValue_eq_of_isRegularValue`). Hence the *mapping degree*
 `TauCeti.degree o o' f`, defined as the signed count at some regular value (and `0` when there
-is none), and equal to the signed count at every regular value
+is none), equals the signed count at every regular value
 (`TauCeti.degree_eq_degreeAtRegularValue`). Regular values exist by Sard's theorem, so the
 formula `∫_M f^*φ = deg(f) ∫_N φ` holds with no regular value named
 (`TauCeti.integralTopForm_mpullback_eq_degree_mul`). A map of nonzero degree is surjective
@@ -43,10 +43,6 @@ isomorphism `H^k_c(N) ≃ ℝ` (`TauCeti.compactlySupportedDeRhamCohomology.inje
 every class is `(∫_N c) • [θ]`. Pullback along `f`, which is proper as `M` is compact, and
 integration over `M` are linear, and the integral over `M` of `f^*θ` is `deg_y(f)`.
 
-## Main definitions
-
-* `TauCeti.degree o o' f`: the mapping degree, the signed count of the fibre over a regular value.
-
 ## Main results
 
 * `TauCeti.compactlySupportedDeRhamCohomology.integral_map_eq_degreeAtRegularValue_mul`,
@@ -57,8 +53,6 @@ integration over `M` are linear, and the integral over `M` of `f^*θ` is `deg_y(
 * `TauCeti.degreeAtRegularValue_eq_of_isRegularValue`: the signed count does not depend on the
   regular value.
 * `TauCeti.degree_eq_degreeAtRegularValue`: the degree is the signed count at every regular value.
-* `TauCeti.degree_id`, `TauCeti.degree_const`: the identity of a nonempty manifold has degree `1`
-  and a constant map into a manifold of positive dimension has degree `0`.
 * `TauCeti.surjective_of_degree_ne_zero`: a map of nonzero degree is surjective.
 
 ## References
@@ -77,59 +71,6 @@ open Function Set
 open scoped Manifold ContDiff Topology
 
 namespace TauCeti
-
-section Definition
-
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I 1 M]
-  {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
-  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
-  [IsManifold J 1 N]
-  {ι : Type*} [Fintype ι]
-
-open Classical in
-/-- The *mapping degree* of `f : M → N` with respect to orientations `o` of `M` and `o'` of `N`:
-the signed count `degreeAtRegularValue o o' f y` of the fibre over a regular value `y`, chosen
-arbitrarily, and `0` if `f` has no regular value. For a smooth map from a compact boundaryless
-manifold to a connected boundaryless manifold of the same dimension the choice does not matter
-(`TauCeti.degree_eq_degreeAtRegularValue`). -/
-def degree (o : Manifold.Orientation I M ι) (o' : Manifold.Orientation J N ι) (f : M → N) : ℤ :=
-  if h : ∃ y, IsRegularValue I J f y then degreeAtRegularValue o o' f h.choose else 0
-
-variable {o : Manifold.Orientation I M ι} {o' : Manifold.Orientation J N ι} {f : M → N}
-
-/-- Reversing the orientation of the source negates the degree. -/
-@[simp]
-theorem degree_neg_left : degree (-o) o' f = -degree o o' f := by
-  unfold degree
-  split_ifs <;> simp
-
-/-- Reversing the orientation of the target negates the degree. -/
-@[simp]
-theorem degree_neg_right : degree o (-o') f = -degree o o' f := by
-  unfold degree
-  split_ifs <;> simp
-
-/-- The identity of a nonempty manifold has degree `1`. -/
-@[simp]
-theorem degree_id [Nonempty M] (o : Manifold.Orientation I M ι) :
-    degree (J := I) (N := M) o o id = 1 := by
-  have h : ∃ y, IsRegularValue I I (id : M → M) y :=
-    ⟨Classical.arbitrary M, isRegularValue_iff.2 fun x _ ↦ by
-      rw [isRegularPoint_iff, mfderiv_id]
-      exact surjective_id⟩
-  rw [degree, dite_eq_left h, degreeAtRegularValue_id]
-
-/-- A constant map into a manifold of positive dimension has degree `0`. -/
-theorem degree_const (hpos : 0 < Module.finrank ℝ E') (y₀ : N) :
-    degree o o' (fun _ : M ↦ y₀) = 0 := by
-  unfold degree
-  split_ifs
-  · exact degreeAtRegularValue_const hpos y₀ _
-  · rfl
-
-end Definition
 
 variable {E H H' M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
@@ -175,15 +116,14 @@ theorem integralTopForm_mpullback_eq_degreeAtRegularValue_mul
     (hφ : IsSmoothForm J ∞ φ) (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ)) :
     integralTopForm o (mpullback I J f φ) =
       degreeAtRegularValue o o' f y * integralTopForm o' φ := by
-  let ψ : compactlySupportedClosedForms J N k :=
-    ⟨⟨φ, hφ.mem_smoothBundleForms⟩, (mem_compactlySupportedClosedForms J).mpr
-      ⟨(mem_compactlySupportedForms J).mpr hc,
-        mem_closedForms_of_finrank_le J (by simpa using o'.card_eq.ge) _⟩⟩
+  let ψ := compactlySupportedForms.toClosedOfFinrankLe J (by simpa using o'.card_eq.ge)
+    ⟨⟨φ, hφ.mem_smoothBundleForms⟩, (mem_compactlySupportedForms J).mpr hc⟩
   have h := compactlySupportedDeRhamCohomology.integral_map_eq_degreeAtRegularValue_mul o o' hf hy
     (compactlySupportedDeRhamCohomology.mk J k ψ)
   rwa [compactlySupportedDeRhamCohomology.map_mk, compactlySupportedDeRhamCohomology.integral_mk,
     compactlySupportedDeRhamCohomology.integral_mk,
-    compactlySupportedClosedForms.coe_coe_mpullback] at h
+    compactlySupportedClosedForms.coe_coe_mpullback,
+    compactlySupportedForms.coe_toClosedOfFinrankLe] at h
 
 /-- **Independence of the regular value.** The signed counts of the fibres of `f` over any two
 regular values agree. -/
@@ -206,7 +146,7 @@ theorem degree_eq_degreeAtRegularValue (o : Manifold.Orientation I M (Fin k))
     (hy : IsRegularValue I J f y) :
     degree o o' f = degreeAtRegularValue o o' f y := by
   have h : ∃ y, IsRegularValue I J f y := ⟨y, hy⟩
-  rw [degree, dite_eq_left h]
+  rw [degree_eq_degreeAtRegularValue_choose h]
   exact degreeAtRegularValue_eq_of_isRegularValue o o' hf h.choose_spec hy
 
 /-- Pullback on top compactly supported cohomology, read through integration, is multiplication by
