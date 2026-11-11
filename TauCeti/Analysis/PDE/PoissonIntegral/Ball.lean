@@ -162,7 +162,7 @@ theorem ballPoissonIntegral_eq_zero_of_not_integrable
   have hK := continuous_ballPoissonKernel_on_sphere x
   have hne (y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1) : ballPoissonKernel n x y ≠ 0 := by
     have hy : ‖(y : EuclideanSpace ℝ (Fin n))‖ = 1 := norm_eq_of_mem_sphere y
-    have hn : 0 < n := pos_of_ne_zero_euclideanSpace (norm_ne_zero_iff.mp (hy ▸ one_ne_zero))
+    have hn : 0 < n := pos_of_ne_euclideanSpace (norm_ne_zero_iff.mp (hy ▸ one_ne_zero))
     have hsub : x - y ≠ 0 := fun h ↦ hx (by rw [sub_eq_zero.mp h]; exact hy)
     have hx' : 1 - ‖x‖ ^ 2 ≠ 0 := fun h ↦ hx (by nlinarith [norm_nonneg x])
     have hω := volume_real_unitBall_pos n
