@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.CompTypeclasses
 public import Mathlib.Data.ZMod.Units
 public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.NumberTheory.Padics.RingHoms
@@ -104,6 +105,10 @@ public section
 namespace PadicInt
 
 variable {p : ℕ} [hp : Fact p.Prime]
+
+/-- P-adic truncation is surjective, allowing semilinear submodule images along it. -/
+instance (n : ℕ) : RingHomSurjective (toZModPow (p := p) n) :=
+  ⟨ZMod.ringHom_surjective _⟩
 
 /-- The residue field of `ℤ_p` is finite, being `ℤ/pℤ`. -/
 instance finite_residueField : Finite (IsLocalRing.ResidueField ℤ_[p]) :=

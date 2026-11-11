@@ -185,12 +185,12 @@ open Classical in
 splitting of the dyadic localization `ℤ_2 ⊗[ℤ] L`
 (`TauCeti.IntegralLattice.dyadicJordanProfile_eq`); such a splitting exists whenever `L` is
 nondegenerate (`TauCeti.IntegralLattice.exists_isJordanSplitting_localIntegralForm`). If there is
-none, the profile is the empty profile. -/
+none, the profile is the zero profile. -/
 noncomputable def dyadicJordanProfile (L : IntegralLattice V) : DyadicJordanProfile :=
   if h : ∃ N, (L.localIntegralForm 2).IsJordanSplitting 2 N then
     h.choose_spec.dyadicJordanProfile (L.isSymm_localIntegralForm 2) two_ne_zero
       PadicInt.not_isUnit_two
-  else .empty
+  else 0
 
 /-- The dyadic profile of a lattice is the profile of any Jordan splitting of its dyadic
 localization. -/
@@ -283,8 +283,7 @@ theorem dyadicJordanProfile_rankOne_two_pow_mul (i : ℕ) {u : ℤ} (hu : Odd u)
       L.localIntegralForm 2 (b j) (b k) = 2 ^ i * Matrix.of (fun _ _ ↦ (u : ℤ_[2])) j k := by
     rw [Subsingleton.elim j 0, Subsingleton.elim k 0, hb, Matrix.of_apply]
   have hmod : (L.localIntegralForm 2).IsModular (2 ^ i) :=
-    b.isModular_of_isUnit_det (pow_mem (mem_nonZeroDivisors_of_ne_zero two_ne_zero) i) hb'
-      (by simpa using hu')
+    b.isModular_of_isUnit_det hb' (by simpa using hu')
   rw [dyadicJordanProfile_eq hmod.isJordanSplitting]
   ext j
   · rw [hmod.dyadicJordanProfile_ranks, Module.finrank_baseChange, finrank_rankOne,
