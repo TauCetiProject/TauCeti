@@ -24,8 +24,10 @@ The proof uses Mathlib's `ContinuousLinearEquiv.equivOfRightInverse` and opennes
 invertibility. Completeness of the nearby complements — the complete model fibres above —
 follows from `ContinuousLinearMap.completeSpace_of_isInvertible`, which transfers completeness
 of the codomain back to the domain of an invertible operator.
-Complementary coordinate operators are continuous on a domain of valid splittings, using
-Mathlib's regularity of operator inversion.
+For complementary coordinate operators, `ContinuousAt.quotientRangeCoordinate` uses Mathlib's
+regularity of operator inversion and requires completeness of `E × G` when invertibility is
+assumed only at one parameter. `Continuous.quotientRangeCoordinate` needs no completeness when
+the family is invertible at every parameter.
 
 Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition,
 the normal-bundle construction preceding Theorem 6.24.
