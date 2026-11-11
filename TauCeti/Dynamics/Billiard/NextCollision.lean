@@ -8,17 +8,15 @@ module
 public import Mathlib.Algebra.Ring.Periodic
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
-public import Mathlib.Analysis.InnerProductSpace.TwoDim
 public import Mathlib.Analysis.Real.Sqrt
 public import TauCeti.Analysis.InnerProductSpace.TwoDim
-import TauCeti.Algebra.Order.ToIntervalMod
-import TauCeti.Analysis.Calculus.PeriodicDeriv
 import Mathlib.Analysis.Calculus.Deriv.Comp
-import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.Calculus.FDeriv.Linear
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Algebra.Order.ToIntervalMod
+import TauCeti.Analysis.Calculus.PeriodicDeriv
 
 /-!
 # The next-collision map of a strictly convex billiard table
@@ -105,7 +103,7 @@ instance : CoeFun (StrictConvexBilliardTable o) fun _ ↦ ℝ → E :=
   ⟨toFun⟩
 
 theorem differentiableAt (s : ℝ) : DifferentiableAt ℝ χ s :=
-  differentiableAt_of_deriv_ne_zero (norm_ne_zero_iff.1 (by rw [χ.norm_deriv s]; exact one_ne_zero))
+  differentiableAt_of_deriv_ne_zero fun h ↦ by simpa [h] using χ.norm_deriv s
 
 theorem continuous : Continuous χ :=
   continuous_iff_continuousAt.2 fun s ↦ (χ.differentiableAt s).continuousAt
@@ -277,6 +275,8 @@ next state. -/
 def nextTangential (s v : ℝ) : ℝ :=
   ⟪χ.outgoingDir s v, deriv χ (χ.nextParam s v)⟫
 
+/-- The next tangential component is the inner product of the incoming velocity with the tangent
+at the next collision point. -/
 theorem nextTangential_def (s v : ℝ) :
     χ.nextTangential s v = ⟪χ.outgoingDir s v, deriv χ (χ.nextParam s v)⟫ :=
   (rfl)

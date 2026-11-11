@@ -57,8 +57,8 @@ theorem rightAngleRotation_basis_one (hb : b.toBasis.orientation = o) :
     o.rightAngleRotation (b 1) = -b 0 := by
   rw [← o.rightAngleRotation_basis_zero hb, rightAngleRotation_rightAngleRotation]
 
-/-- In an oriented plane, a vector `x` with `ω(a, x) = 0` satisfies `‖a‖² • x = ⟪a, x⟫ • a`; so for
-`a ≠ 0` it is the multiple `⟪a, x⟫ / ‖a‖²` of `a`. -/
+/-- In an oriented plane, `o.areaForm a x = 0` implies the scaled identity
+`‖a‖ ^ 2 • x = ⟪a, x⟫ • a`, including when `a = 0`. -/
 theorem sq_norm_smul_eq_of_areaForm_eq_zero {a x : E} (h : o.areaForm a x = 0) :
     ‖a‖ ^ 2 • x = inner ℝ a x • a := by
   refine ext_inner_right ℝ fun y ↦ ?_
