@@ -34,7 +34,7 @@ public section
 namespace Computable
 
 /-- The range of a total computable sequence is c.e. -/
-theorem rePred_range {α : Type*} [Primcodable α] {f : ℕ → α} (hf : Computable f) :
+theorem rePred_mem_range {α : Type*} [Primcodable α] {f : ℕ → α} (hf : Computable f) :
     REPred (· ∈ Set.range f) := by
   classical
   have heq : ComputablePred fun p : α × ℕ => f p.2 = p.1 :=
@@ -90,6 +90,9 @@ private def freshIndex (f : ℕ → α) (h : (Set.range f).Infinite) (l : List �
 
 private theorem freshIndex_spec {f : ℕ → α} (h : (Set.range f).Infinite) (l : List α) :
     f (freshIndex f h l) ∉ l := Nat.find_spec (exists_fresh_input h l)
+
+private theorem freshIndex_le {f : ℕ → α} (h : (Set.range f).Infinite) (l : List α)
+    {t : ℕ} (ht : f t ∉ l) : freshIndex f h l ≤ t := Nat.find_min' _ ht
 
 private theorem computable_freshIndex [Primcodable α] {f : ℕ → α} (hf : Computable f)
     (h : (Set.range f).Infinite) : Computable (freshIndex f h) := by
@@ -152,7 +155,7 @@ theorem exists_injective_range {α : Type*} [Primcodable α] {f : ℕ → α}
     -- A permanently omitted value bounds every least fresh input, forcing the
     -- injective enumeration into the finite image of an initial segment.
     have hbound (n) : freshIndex f h (freshHistory f h n) ≤ t := by
-      apply Nat.find_min'
+      apply freshIndex_le
       intro ht
       obtain ⟨k, -, hk⟩ := (hmem n (f t)).mp ht
       exact hx ⟨k, hk⟩
