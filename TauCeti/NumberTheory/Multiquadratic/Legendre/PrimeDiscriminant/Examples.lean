@@ -11,7 +11,7 @@ public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Examples.Li
 /-!
 # Concrete Legendre criteria for the first genus-field examples
 
-The multiquadratic roadmap's genus-field worked examples begin with the prime-discriminant
+The genus-field worked examples begin with the prime-discriminant
 lists `[-4, 5]` for `ℚ(√-5)` and `[-4, -3, -7]` for `ℚ(√-21)`. This file records the
 corresponding concrete Legendre-character criteria, so later worked-example code can consume
 the familiar congruence and reciprocal-symbol conditions directly.
