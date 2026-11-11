@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Vortex.Divisor
 public import TauCeti.Analysis.PDE.Vortex.EndFraming
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.Complex.CauchyIntegral
+import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
 
 /-!
 # Every framed plane vortex is a reconstructed amplitude field
@@ -39,14 +40,16 @@ sections have the same zero multiplicities, so `α_x = h f` for a smooth nowhere
 (`TauCeti.Vortex.exists_contDiff_sectionValue_eq_mul`). Off the zeros of `f`, the scalar equations
 `Δ log |α|² = (|α|² - 1) / 4` for `x` and `Δ log |f|² = 0` give the regularized equation for
 `u = log |h|` (`TauCeti.Vortex.laplacian_log_norm_eq`); it extends across the finitely many zeros
-by continuity. Hence `amplitudeField u f` is a smooth vortex with the same end framing and divisor
-as `x`, and Taubes's uniqueness theorem (`TauCeti.Vortex.existsUnique_framedGaugeGroup_smul_eq`)
-supplies the framed gauge.
+by continuity (`TauCeti.Vortex.laplacian_log_norm_eq_of_dense`). Hence `amplitudeField u f` is a
+smooth vortex with the same end framing and divisor as `x`, and Taubes's uniqueness theorem
+(`TauCeti.Vortex.existsUnique_framedGaugeGroup_smul_eq`) supplies the framed gauge.
 
 ## Main results
 
 * `TauCeti.Vortex.laplacian_log_norm_eq`: the regularized scalar equation for `log |h|`, where
   `α = h f` with `f` holomorphic and nonzero at the point.
+* `TauCeti.Vortex.laplacian_log_norm_eq_of_dense`: the same equation everywhere on the plane, when
+  `f` is entire and its zeros have dense complement.
 * `TauCeti.Vortex.exists_framedGaugeGroup_smul_amplitudeField_eq`: every smooth framed vortex with
   divisor `D` is a framed gauge transform of the amplitude field of a smooth solution of the
   scalar boundary problem for `D`.
@@ -84,55 +87,60 @@ theorem laplacian_log_norm_eq {x : ℂ → EuclideanSpace ℝ (Fin 4)} {h f : �
     (hf : AnalyticAt ℂ f z) (hfz : f z ≠ 0)
     (hα : ∀ᶠ w in 𝓝 z, sectionValue x w = h w * f w) :
     Δ (fun w ↦ Real.log ‖h w‖) z = (‖h z‖ ^ 2 * ‖f z‖ ^ 2 - 1) / 8 := by
-  -- Compare with the field `y` of section `f` and zero connection.
-  set y := amplitudeField (fun _ ↦ 0) f
-  have hfc : ContDiffAt ℝ 2 f z := (hf.contDiffAt (n := 2)).restrict_scalars ℝ
-  have hy₀ (w : ℂ) : y w 0 = 0 := by simp [y]
-  have hy₁ (w : ℂ) : y w 1 = 0 := by simp [y]
-  have hy₂ : ContDiffAt ℝ 2 (fun w ↦ y w 2) z := by
-    simpa [y] using (reCLM.contDiff.contDiffAt.comp z hfc).div_const 2
-  have hy₃ : ContDiffAt ℝ 2 (fun w ↦ y w 3) z := by
-    simpa [y] using (imCLM.contDiff.contDiffAt.comp z hfc).div_const 2
-  have hysec (w : ℂ) : sectionValue y w = f w := by simp [y, sectionValue_amplitudeField]
-  have hnorm (w : ℂ) (v : ℂ → EuclideanSpace ℝ (Fin 4)) :
-      4 * (v w 2 ^ 2 + v w 3 ^ 2) = ‖sectionValue v w‖ ^ 2 := (sq_norm_sectionValue v w).symm
-  have hyz : y z 2 ^ 2 + y z 3 ^ 2 ≠ 0 := fun h0 ↦
-    hfz (by rw [← hysec]; exact (sectionValue_eq_zero_iff y z).2 h0)
+  have hH := hf.harmonicAt_log_norm hfz
+  have hℓh : ContDiffAt ℝ 2 (fun w ↦ Real.log ‖h w‖) z :=
+    (hh.norm ℝ hhz).log (norm_ne_zero_iff.2 hhz)
+  have hnorm (w : ℂ) : 4 * (x w 2 ^ 2 + x w 3 ^ 2) = ‖sectionValue x w‖ ^ 2 :=
+    (sq_norm_sectionValue x w).symm
   have hxz : x z 2 ^ 2 + x z 3 ^ 2 ≠ 0 := fun h0 ↦ mul_ne_zero hhz hfz
     (by rw [← hα.self_of_nhds]; exact (sectionValue_eq_zero_iff x z).2 h0)
-  have hhz' : ‖h z‖ ^ 2 ≠ 0 := pow_ne_zero 2 (norm_ne_zero_iff.2 hhz)
-  have hw : ContDiffAt ℝ 2 (fun w ↦ Real.log (‖h w‖ ^ 2)) z := (hh.norm_sq ℝ).log hhz'
-  have hℓy : ContDiffAt ℝ 2 (fun w ↦ Real.log (4 * (y w 2 ^ 2 + y w 3 ^ 2))) z :=
-    (contDiffAt_const.mul ((hy₂.pow 2).add (hy₃.pow 2))).log (mul_ne_zero four_ne_zero hyz)
-  -- Near `z`, `log |α_x|² = log |h|² + log |f|²`.
+  -- Near `z`, `log |α|² = 2 (log |h| + log |f|)`, and `log |f|` is harmonic.
   have hev : (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) =ᶠ[𝓝 z]
-      (fun w ↦ Real.log (‖h w‖ ^ 2)) + fun w ↦ Real.log (4 * (y w 2 ^ 2 + y w 3 ^ 2)) := by
+      (2 : ℝ) • ((fun w ↦ Real.log ‖h w‖) + fun w ↦ Real.log ‖f w‖) := by
     filter_upwards [hα, hh.continuousAt.eventually_ne hhz,
       hf.continuousAt.eventually_ne hfz] with w hαw hhw hfw
-    rw [Pi.add_apply, hnorm, hnorm, hαw, hysec, norm_mul, mul_pow,
+    rw [Pi.smul_apply, Pi.add_apply, hnorm, hαw, norm_mul, mul_pow,
       Real.log_mul (pow_ne_zero 2 (norm_ne_zero_iff.2 hhw))
-        (pow_ne_zero 2 (norm_ne_zero_iff.2 hfw))]
-  -- The holomorphicity rows of `y` hold everywhere, and its curvature defect is
-  -- `(|f|² - 1) / 8`, so `Δ log |f|² = 0`.
-  have hyhol : ∀ᶠ w in 𝓝 z, equation y w 1 = 0 ∧ equation y w 2 = 0 :=
-    hf.eventually_analyticAt.mono fun w hw ↦
-      equation_amplitudeField_apply_one_eq_zero_and_apply_two_eq_zero (differentiableAt_const _)
-        hw.differentiableAt
-  have hΔy := laplacian_log_normSq (by simp only [hy₀]; exact differentiableAt_const _)
-    (by simp only [hy₁]; exact differentiableAt_const _) hy₂ hy₃ hyz hyhol
-  rw [equation_amplitudeField_apply_zero f contDiffAt_const, hnorm, hysec] at hΔy
+        (pow_ne_zero 2 (norm_ne_zero_iff.2 hfw)), Real.log_pow, Real.log_pow, smul_eq_mul]
+    push_cast
+    ring
   have hΔ := (laplacian_congr_nhds hev).eq_of_nhds
-  rw [hw.laplacian_add hℓy,
-    laplacian_log_normSq_of_equation_eq_zero hb₁ hb₂ hp hq hxz hsol, hΔy, hnorm,
+  rw [laplacian_log_normSq_of_equation_eq_zero hb₁ hb₂ hp hq hxz hsol,
+    laplacian_smul (f := (fun w ↦ Real.log ‖h w‖) + fun w ↦ Real.log ‖f w‖) _ (hℓh.add hH.1),
+    hℓh.laplacian_add hH.1, hH.2.eq_of_nhds, hnorm,
     hα.self_of_nhds, norm_mul, mul_pow] at hΔ
-  -- Finally `log |h| = (1 / 2) log |h|²`.
-  have hhalf : (fun w ↦ Real.log ‖h w‖) = (1 / 2 : ℝ) • fun w ↦ Real.log (‖h w‖ ^ 2) := by
-    funext w
-    simp [Real.log_pow]
-  rw [hhalf, laplacian_smul _ hw]
-  simp only [laplacian_const, Pi.zero_apply, neg_zero, mul_zero, Real.exp_zero, one_mul,
-    smul_eq_mul] at hΔ ⊢
+  simp only [Pi.zero_apply, add_zero, smul_eq_mul] at hΔ
   linarith
+
+/-- **The scalar equation for the amplitude, globally.** Let `x` be a `C²` solution of the vortex
+equation on the plane whose section is `α = h f`, where `h` is `C²` and nowhere zero and `f` is
+entire with zeros of dense complement. Then `u = log |h|` satisfies the regularized scalar equation
+`Δu = (|h|² |f|² - 1) / 8` everywhere, including at the zeros of `f`. -/
+theorem laplacian_log_norm_eq_of_dense {x : ℂ → EuclideanSpace ℝ (Fin 4)} {h f : ℂ → ℂ}
+    (hx : ContDiff ℝ 2 x) (hsol : ∀ z, equation x z = 0) (hh : ContDiff ℝ 2 h)
+    (hh₀ : ∀ z, h z ≠ 0) (hf : Differentiable ℂ f) (hfz : Dense {z | f z ≠ 0})
+    (hα : ∀ z, sectionValue x z = h z * f z) (z : ℂ) :
+    Δ (fun w ↦ Real.log ‖h w‖) z = (‖h z‖ ^ 2 * ‖f z‖ ^ 2 - 1) / 8 := by
+  have hxi (i : Fin 4) : ContDiff ℝ 2 fun w ↦ x w i := (contDiff_piLp 2).1 hx i
+  have hu : ContDiff ℝ 2 fun w ↦ Real.log ‖h w‖ :=
+    (hh.norm ℝ hh₀).log fun w ↦ norm_ne_zero_iff.2 (hh₀ w)
+  have hc : Continuous fun w ↦ (‖h w‖ ^ 2 * ‖f w‖ ^ 2 - 1) / 8 := by
+    have := hh.continuous; have := hf.continuous; fun_prop
+  refine congrFun (hu.continuous_laplacian.ext_on hfz hc fun w hw ↦ ?_) z
+  exact laplacian_log_norm_eq ((hxi 0).differentiable two_ne_zero w)
+    ((hxi 1).differentiable two_ne_zero w) (hxi 2).contDiffAt (hxi 3).contDiffAt
+    (.of_forall hsol) hh.contDiffAt (hh₀ w) (hf.analyticAt w) hw (.of_forall hα)
+
+/-- The monic polynomial `∏_{a ∈ D} (X - a)` has degree `|D|` and evaluates to
+`w ↦ ∏_{a ∈ D} (w - a)`. -/
+private theorem exists_monic_natDegree_eq_eval_eq_prod_sub (D : Multiset ℂ) :
+    ∃ P : ℂ[X], P.Monic ∧ P.natDegree = Multiset.card D ∧
+      P.eval = fun w ↦ (D.map fun a ↦ w - a).prod := by
+  refine ⟨(D.map fun a ↦ X - C a).prod,
+    monic_multiset_prod_of_monic _ _ fun a _ ↦ monic_X_sub_C a,
+    natDegree_multiset_prod_X_sub_C_eq_card D, ?_⟩
+  funext w
+  simp [eval_multiset_prod, Multiset.map_map]
 
 /-- **The amplitude is determined by the vortex.** If a framed gauge transform of the amplitude
 field `amplitudeField u f` is `x`, then `exp(u) |f| = |α_x|`. -/
@@ -168,15 +176,9 @@ theorem exists_framedGaugeGroup_smul_amplitudeField_eq {x : ℂ → EuclideanSpa
       (∀ z, Δ u z = (Real.exp (2 * u z) * ‖(D.map fun a ↦ z - a).prod‖ ^ 2 - 1) / 8) ∧
       Tendsto (fun z ↦ u z + m * Real.log ‖z‖) (cocompact ℂ) (𝓝 0) ∧
       ∃ g : framedGaugeGroup, g • amplitudeField u (fun w ↦ (D.map fun a ↦ w - a).prod) = x := by
+  obtain ⟨P, hPm, hPdeg, hPf⟩ := exists_monic_natDegree_eq_eval_eq_prod_sub D
   set f : ℂ → ℂ := fun w ↦ (D.map fun a ↦ w - a).prod
-  set P : ℂ[X] := (D.map fun a ↦ X - C a).prod
-  have hPf : P.eval = f := by
-    funext w
-    simp [P, f, eval_multiset_prod, Multiset.map_map]
-  have hPm : P.Monic := monic_multiset_prod_of_monic _ _ fun a _ ↦ monic_X_sub_C a
-  have hPdeg : P.natDegree = m := by
-    rw [natDegree_multiset_prod_X_sub_C_eq_card]
-    exact hD.card_eq_of_tendsto_mul_inv_pow hframe
+  rw [hD.card_eq_of_tendsto_mul_inv_pow hframe] at hPdeg
   have hfd : Differentiable ℂ f := hPf ▸ P.differentiable
   have hfs : ContDiff ℝ ∞ f := (hfd.contDiff (n := ∞)).restrict_scalars ℝ
   have hxi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w i := (contDiff_piLp 2).1 hx i
@@ -202,28 +204,24 @@ theorem exists_framedGaugeGroup_smul_amplitudeField_eq {x : ℂ → EuclideanSpa
   have hexp (z : ℂ) : Real.exp (u z) = ‖h z‖ := Real.exp_log (norm_pos_iff.2 (hh₀ z))
   have hexp2 (z : ℂ) : Real.exp (2 * u z) = ‖h z‖ ^ 2 := by
     rw [mul_comm, Real.exp_mul, hexp, Real.rpow_two]
-  have hΔ : Δ u = fun z ↦ (Real.exp (2 * u z) * ‖f z‖ ^ 2 - 1) / 8 := by
-    -- The zeros of `f` are the finitely many points of `D`.
-    have hdense : Dense {z | f z ≠ 0} :=
-      (dense_univ.sdiff_finite D.toFinset.finite_toSet).mono fun z hz ↦
-        (isZeroMultiplicity_prod_sub D).eq_zero_iff.1 (Multiset.count_eq_zero.2 (by simpa using hz))
-    refine (hu.of_le (by simp)).continuous_laplacian.ext_on hdense (by fun_prop) fun z hz ↦ ?_
-    rw [laplacian_log_norm_eq ((hd (hxi 0)) z) ((hd (hxi 1)) z)
-      (((hxi 2).contDiffAt).of_le (by simp)) (((hxi 3).contDiffAt).of_le (by simp))
-      (.of_forall hsol) ((hh.contDiffAt).of_le (by simp)) (hh₀ z) (hfd.analyticAt z) hz
-      (.of_forall hα'), hexp2]
+  -- The zeros of `f` are the finitely many points of `D`.
+  have hdense : Dense {z | f z ≠ 0} :=
+    (dense_univ.sdiff_finite D.toFinset.finite_toSet).mono fun z hz ↦
+      (isZeroMultiplicity_prod_sub D).eq_zero_iff.1 (Multiset.count_eq_zero.2 (by simpa using hz))
+  have hΔ (z : ℂ) : Δ u z = (Real.exp (2 * u z) * ‖f z‖ ^ 2 - 1) / 8 := by
+    rw [hexp2]
+    exact laplacian_log_norm_eq_of_dense (hx.of_le (by simp)) hsol (hh.of_le (by simp)) hh₀ hfd
+      hdense hα' z
   have hysol (z : ℂ) : equation (amplitudeField u f) z = 0 :=
     (equation_amplitudeField_eq_zero_iff ((hu.contDiffAt).of_le (by simp)) (hfd z)).2
-      (congrFun hΔ z)
+      (hΔ z)
   -- The amplitude field has the same end framing as `x`.
-  have hz : ∀ᶠ z : ℂ in cocompact ℂ, z ≠ 0 :=
-    (isCompact_singleton (x := (0 : ℂ))).compl_mem_cocompact
   have hxnorm : Tendsto (fun z ↦ ‖sectionValue x z‖) (cocompact ℂ) (𝓝 1) := by
     have hn := hframe.norm
     rw [norm_one] at hn
     refine hn.congr' ?_
-    filter_upwards [hz] with z hz
-    simp [norm_inv, norm_pow, norm_ne_zero_iff.mpr hz]
+    filter_upwards [eventually_norm_inv_phase_eq_one m] with z hz
+    rw [norm_mul, hz, mul_one]
   have hyfr : Tendsto (fun z ↦ sectionValue (amplitudeField u f) z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹)
       (cocompact ℂ) (𝓝 1) := by
     have := (tendsto_sectionValue_amplitudeField_mul_inv_phase_iff_norm hPm u).2 <| by
@@ -237,15 +235,13 @@ theorem exists_framedGaugeGroup_smul_amplitudeField_eq {x : ℂ → EuclideanSpa
       (by rwa [hPf, hPdeg])
     rwa [hPdeg] at this
   -- Taubes's uniqueness theorem supplies the framed gauge.
-  have hphase : Tendsto (fun z : ℂ ↦ ‖((z / (‖z‖ : ℂ)) ^ m)⁻¹‖) (cocompact ℂ) (𝓝 1) := by
-    refine tendsto_const_nhds.congr' ?_
-    filter_upwards [hz] with z hz
-    simp [norm_inv, norm_pow, norm_ne_zero_iff.mpr hz]
+  have hphase : Tendsto (fun z : ℂ ↦ ‖((z / (‖z‖ : ℂ)) ^ m)⁻¹‖) (cocompact ℂ) (𝓝 1) :=
+    tendsto_const_nhds.congr' ((eventually_norm_inv_phase_eq_one m).mono fun _ h ↦ h.symm)
   obtain ⟨g, hg, -⟩ := existsUnique_framedGaugeGroup_smul_eq hx (contDiff_amplitudeField hu hfs)
     hsol hysol hphase hframe hyfr (isZeroMultiplicity_iff.1 hD)
     (isZeroMultiplicity_iff.1 (isZeroMultiplicity_sectionValue_amplitudeField_prod_sub
       hu.continuous D))
-  exact ⟨u, hu, congrFun hΔ, hbc, g, hg⟩
+  exact ⟨u, hu, hΔ, hbc, g, hg⟩
 
 /-- **Framed vortices with divisor `D` exist exactly when the scalar boundary problem is
 solvable.** For an effective divisor `D` of degree `m` put `f(w) = ∏_{a ∈ D} (w - a)`. There is a
@@ -263,12 +259,7 @@ theorem exists_equation_eq_zero_iff_exists_laplacian_eq (D : Multiset ℂ) :
   refine ⟨fun ⟨x, hx, hsol, hframe, hD⟩ ↦ ?_, fun ⟨u, hu, hΔ, hbc⟩ ↦ ?_⟩
   · obtain ⟨u, hu, hΔ, hbc, -⟩ := exists_framedGaugeGroup_smul_amplitudeField_eq hx hsol hframe hD
     exact ⟨u, hu, hΔ, hbc⟩
-  · set P : ℂ[X] := (D.map fun a ↦ X - C a).prod
-    have hPm : P.Monic := monic_multiset_prod_of_monic _ _ fun a _ ↦ monic_X_sub_C a
-    have hPdeg : P.natDegree = Multiset.card D := natDegree_multiset_prod_X_sub_C_eq_card D
-    have hPf : P.eval = fun w ↦ (D.map fun a ↦ w - a).prod := by
-      funext w
-      simp [P, eval_multiset_prod, Multiset.map_map]
+  · obtain ⟨P, hPm, hPdeg, hPf⟩ := exists_monic_natDegree_eq_eval_eq_prod_sub D
     have hfd : Differentiable ℂ fun w ↦ (D.map fun a ↦ w - a).prod := hPf ▸ P.differentiable
     refine ⟨amplitudeField u fun w ↦ (D.map fun a ↦ w - a).prod,
       contDiff_amplitudeField hu ((hfd.contDiff (n := ∞)).restrict_scalars ℝ),
