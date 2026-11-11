@@ -100,7 +100,8 @@ variable (A : FiniteBundleAtlas ClosedUpperHalfPlane M F V)
 
 open Classical in
 /-- The chart data of a finite bundle atlas over a base with boundary: a section is read in chart
-`i` as `A.halfCoord i s` on the interior `A.halfImage i` of the image of the chart in `ℂ`. At each
+`i` as `A.halfCoord i s` on the interior `A.halfImage i` of the image of the chart in `ℂ` and on the
+images of the overlaps under the chart transitions to chart `i`, and as `0` elsewhere. At each
 point the gluing of a family of functions is read off from the function of any chart containing
 the point. -/
 @[expose] def halfSectionChartData : SectionChartData ℂ F (∀ x, V x) where
@@ -113,17 +114,23 @@ the point. -/
   coordChange i i' := (A.halfOverlap i i').piecewise (fun z ↦
     (A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm (closedUpperHalfPlaneModel.symm z)))
     1
-  coord := A.halfCoord
+  coord i s :=
+    ((A.halfImage i : Set ℂ) ∪ ⋃ i', A.halfTransition i i' '' A.halfOverlap i i').indicator
+      (A.halfCoord i s)
   transition_of_notMem _ _ _ hz := piecewise_eq_of_notMem _ _ _ hz
   coordChange_of_notMem _ _ _ hz := piecewise_eq_of_notMem _ _ _ hz
+  coord_of_notMem _ _ _ hz := indicator_of_notMem (by
+    simpa only [(piecewise_eqOn _ _ _).image_eq] using hz) _
   coord_add i s t _ hz := by
-    rw [halfCoord_def, halfCoord_def, halfCoord_def]
+    simp only [indicator_of_mem (mem_union_left _ hz), halfCoord_def]
     exact A.coord_add i s t (A.mem_halfImage.1 hz).1
   coord_smul i c s _ hz := by
-    rw [halfCoord_def, halfCoord_def]
+    simp only [indicator_of_mem (mem_union_left _ hz), halfCoord_def]
     exact A.coord_smul i c s (A.mem_halfImage.1 hz).1
-  coord_eq_coordChange _ _ s _ hz := by
-    rw [piecewise_eq_of_mem _ _ _ hz, piecewise_eq_of_mem _ _ _ hz]
+  coord_eq_coordChange i i' s _ hz := by
+    rw [piecewise_eq_of_mem _ _ _ hz, piecewise_eq_of_mem _ _ _ hz,
+      indicator_of_mem (mem_union_left _ (A.halfOverlap_subset_halfImage i i' hz)),
+      indicator_of_mem (mem_union_right _ (mem_iUnion.2 ⟨i', mem_image_of_mem _ hz⟩))]
     exact A.halfCoord_eq_coordChange s hz
   exists_glue f := by
     classical
@@ -139,8 +146,8 @@ the point. -/
       A.mem_halfOverlap.2 ⟨by rw [← hxz]; exact A.chart_mem_overlap (hidx x) hx, hz0⟩
     refine ⟨idx x, hov, ?_⟩
     rw [piecewise_eq_of_mem _ _ _ hov, piecewise_eq_of_mem _ _ _ hov,
-      A.halfCoord_eq_coordChange _ hov, hz', A.halfTransition_coe_chart hx,
-      A.halfCoord_coe_chart _ (hidx x),
+      indicator_of_mem (mem_union_left _ hz), A.halfCoord_eq_coordChange _ hov, hz',
+      A.halfTransition_coe_chart hx, A.halfCoord_coe_chart _ (hidx x),
       (A.triv (idx x)).apply_mk_symm (A.dom_subset_baseSet _ (hidx x))]
     rfl
 
@@ -149,6 +156,26 @@ theorem halfSectionChartData_transition_of_mem {i i' : Fin A.n} {z : ℂ}
     A.halfSectionChartData.transition i i' z = A.halfTransition i i' z := by
   classical
   exact piecewise_eq_of_mem _ _ _ hz
+
+theorem halfSectionChartData_coordChange_of_mem {i i' : Fin A.n} {z : ℂ}
+    (hz : z ∈ A.halfOverlap i i') :
+    A.halfSectionChartData.coordChange i i' z =
+      (A.triv i).coordChangeL ℝ (A.triv i')
+        ((A.chart i').symm (closedUpperHalfPlaneModel.symm z)) := by
+  classical
+  simp only [halfSectionChartData, piecewise_eq_of_mem _ _ _ hz]
+
+theorem halfSectionChartData_coord_of_mem {i : Fin A.n} (s : ∀ x, V x) {z : ℂ}
+    (hz : z ∈ A.halfImage i) : A.halfSectionChartData.coord i s z = A.halfCoord i s z :=
+  indicator_of_mem (mem_union_left _ hz) _
+
+/-- Almost everywhere on the interior of the image of chart `i`, a section is read in the chart
+data of the atlas as `A.halfCoord i s`. -/
+theorem halfSectionChartData_coord_ae_eq (i : Fin A.n) (s : ∀ x, V x) :
+    A.halfSectionChartData.coord i s =ᵐ[volume.restrict (A.halfImage i : Set ℂ)]
+      A.halfCoord i s := by
+  filter_upwards [ae_restrict_mem (A.halfImage i).isOpen.measurableSet] with z hz
+  exact A.halfSectionChartData_coord_of_mem s hz
 
 end FiniteBundleAtlas
 
@@ -221,8 +248,13 @@ private theorem exists_value_ae_eq_halfCoord (s : Cₛ^k⟮closedUpperHalfPlaneM
     (i : Fin A.n) (j : Fin (finrank ℝ F)) :
     ∃ w : Wkp volume (A.halfImage i) p k, (Wkp.value k w : ℂ → ℝ)
       =ᵐ[volume.restrict (A.halfImage i : Set ℂ)]
-        fun z ↦ (finBasis ℝ F).coord j (A.halfCoord i s z) := by
+        fun z ↦ (finBasis ℝ F).coord j (A.halfSectionChartData.coord i s z) := by
   have hf := contDiffOn_coord_halfCoord A k s i j
+  suffices h : ∃ w : Wkp volume (A.halfImage i) p k, (Wkp.value k w : ℂ → ℝ)
+      =ᵐ[volume.restrict (A.halfImage i : Set ℂ)]
+        fun z ↦ (finBasis ℝ F).coord j (A.halfCoord i s z) by
+    obtain ⟨w, hw⟩ := h
+    exact ⟨w, hw.trans ((A.halfSectionChartData_coord_ae_eq i s).fun_comp _).symm⟩
   refine Wkp.exists_value_ae_eq_of_contDiffOn k (hf.mono (A.halfImage_subset_halfChartSet i))
     fun l hl ↦ ?_
   have hc := hf.continuousOn_iteratedFDerivWithin (by exact_mod_cast hl)
@@ -257,7 +289,8 @@ theorem norm_ofContMDiffSection_le (s : Cₛ^k⟮closedUpperHalfPlaneModel; F, V
   A.halfSectionChartData.norm_le_sum_of_norm_le volume p k fun i j ↦
     Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn k _
       ((contDiffOn_coord_halfCoord A k s i j).mono (A.halfImage_subset_halfChartSet i))
-      (A.halfSectionChartData.value_ofComponents_ae volume p k _ _ s i j)
+      ((A.halfSectionChartData.value_ofComponents_ae volume p k _ _ s i j).trans
+        ((A.halfSectionChartData_coord_ae_eq i s).fun_comp _))
 
 /-- **Injectivity.** A `Cᵏ` section whose Sobolev section vanishes is zero: its chart coordinates
 vanish almost everywhere on the interiors of the chart images, hence everywhere there by
@@ -268,7 +301,8 @@ theorem ofContMDiffSection_injective : Function.Injective (ofContMDiffSection A 
   have hcont : ContinuousOn (A.halfCoord i s) (A.halfChartSet i) :=
     (A.contDiffOn_halfCoord s.contMDiff i).continuousOn
   have hae : A.halfCoord i s =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] 0 :=
-    A.halfSectionChartData.coord_ae_eq_zero_of_ofComponents_eq_zero volume p k _ _ hs i
+    (A.halfSectionChartData_coord_ae_eq i s).symm.trans
+      (A.halfSectionChartData.coord_ae_eq_zero_of_ofComponents_eq_zero volume p k _ _ hs i)
   have hzero : EqOn (A.halfCoord i s) 0 (A.halfImage i) :=
     Measure.eqOn_open_of_ae_eq hae (A.halfImage i).isOpen
       (hcont.mono (A.halfImage_subset_halfChartSet i)) continuousOn_const
@@ -324,7 +358,9 @@ theorem memWkpLoc_halfCoord (w : BorderedSobolevSection A p k) {s : ∀ x, V x}
     (Wkp.memWkpLoc_value_of_ae_le (A.interior_halfClosedImage i)
       (A.halfClosedImage_ae_le_halfImage i) _).congr_ae
         (ae_mono (Measure.restrict_mono_ae (A.halfClosedImage_ae_le_halfImage i))
-          ((A.halfSectionChartData.chartValueL_ae_eq_coord_iff volume p k).1 (hs i) j))
+          (((A.halfSectionChartData.chartValueL_ae_eq_coord_iff volume p k).1
+            ((hs i).trans (A.halfSectionChartData_coord_ae_eq i s).symm) j).trans
+              ((A.halfSectionChartData_coord_ae_eq i s).fun_comp _)))
 
 /-- **Localization up to the boundary.** Every element of `W^{k,p}(V)` consists of the components
 of a section whose chart expression in every chart `i` lies in the local Sobolev class
@@ -334,7 +370,8 @@ theorem exists_section_memWkpLoc (w : BorderedSobolevSection A p k) :
       =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i s) ∧
         ∀ i, MemWkpLoc p (A.halfClosedImage i) k (A.halfCoord i s) := by
   obtain ⟨s, hs⟩ := A.halfSectionChartData.exists_section volume p k w
-  exact ⟨s, hs, memWkpLoc_halfCoord w hs⟩
+  have hs' (i : Fin A.n) := (hs i).trans (A.halfSectionChartData_coord_ae_eq i s)
+  exact ⟨s, hs', memWkpLoc_halfCoord w hs'⟩
 
 end BorderedSobolevSection
 

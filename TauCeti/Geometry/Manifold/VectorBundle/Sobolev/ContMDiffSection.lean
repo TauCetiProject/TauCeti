@@ -77,13 +77,14 @@ variable [IsManifold 𝓘(ℝ, E) k M] [ContMDiffVectorBundle k F V 𝓘(ℝ, E)
 private theorem exists_value_ae_eq_coord (s : Cₛ^k⟮𝓘(ℝ, E); F, V⟯) (i : Fin A.n)
     (j : Fin (finrank ℝ F)) :
     ∃ w : Wkp μ (A.image i) p k, (Wkp.value k w : E → ℝ) =ᵐ[μ.restrict (A.image i)]
-      fun y ↦ (finBasis ℝ F).coord j (A.coord i s y) :=
-  Wkp.exists_value_ae_eq_of_contDiffOn_of_isCompact k
+      fun y ↦ (finBasis ℝ F).coord j (A.sectionChartData.coord i s y) := by
+  obtain ⟨w, hw⟩ := Wkp.exists_value_ae_eq_of_contDiffOn_of_isCompact k
     ((A.chart i).isOpen_inter_preimage_symm (A.triv i).open_baseSet)
     ((LinearMap.toContinuousLinearMap ((finBasis ℝ F).coord j)).contDiff.comp_contDiffOn
       (A.contDiffOn_coord s.contMDiff i))
     (A.isCompact_chart_image_closure_dom i) (A.image_subset_chart_image_closure_dom i)
-    (A.chart_image_closure_dom_subset i)
+    (A.chart_image_closure_dom_subset i) (mu := μ) (p := p)
+  exact ⟨w, hw.trans ((A.sectionChartData_coord_ae_eq μ i s).fun_comp _).symm⟩
 
 /-- **`Cᵏ` sections are Sobolev sections.** The linear map sending a `Cᵏ` section `s` of `V` to the
 element of `W^{k,p}(V)` whose components in chart `i` are the components of `A.coord i s` in the
@@ -106,7 +107,8 @@ theorem norm_ofContMDiffSection_le (s : Cₛ^k⟮𝓘(ℝ, E); F, V⟯) :
       (((LinearMap.toContinuousLinearMap ((finBasis ℝ F).coord j)).contDiff.comp_contDiffOn
         (A.contDiffOn_coord s.contMDiff i)).mono
           ((A.image_subset_chart_image_closure_dom i).trans (A.chart_image_closure_dom_subset i)))
-      (A.sectionChartData.value_ofComponents_ae μ p k _ _ s i j)
+      ((A.sectionChartData.value_ofComponents_ae μ p k _ _ s i j).trans
+        ((A.sectionChartData_coord_ae_eq μ i s).fun_comp _))
 
 /-- **Injectivity.** A `Cᵏ` section whose Sobolev section vanishes is zero: its chart coordinates
 are continuous and vanish almost everywhere on the open chart images, hence everywhere there. -/
@@ -118,7 +120,8 @@ theorem ofContMDiffSection_injective : Function.Injective (ofContMDiffSection A 
     ((A.contDiffOn_coord s.contMDiff i).continuousOn).mono
       ((A.image_subset_chart_image_closure_dom i).trans hO)
   have hae : A.coord i s =ᵐ[μ.restrict (A.image i)] 0 :=
-    A.sectionChartData.coord_ae_eq_zero_of_ofComponents_eq_zero μ p k _ _ hs i
+    (A.sectionChartData_coord_ae_eq μ i s).symm.trans
+      (A.sectionChartData.coord_ae_eq_zero_of_ofComponents_eq_zero μ p k _ _ hs i)
   have hzero := Measure.eqOn_open_of_ae_eq hae (A.image i).isOpen hcont continuousOn_const
     (A.mem_image.2 ⟨x, hx, rfl⟩)
   rw [A.coord_chart s hx] at hzero
