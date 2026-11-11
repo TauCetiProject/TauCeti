@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.HomotopyCategory.Acyclic
 public import Mathlib.Algebra.Homology.HomotopyCategory.Pretriangulated
 public import TauCeti.Algebra.Homology.HomotopyCategory.HomComplex.Basic
 public import TauCeti.Algebra.Homology.Homotopy
+import Mathlib.Algebra.Homology.DerivedCategory.Basic
 
 /-!
 # Mapping cones and homotopy equivalences
@@ -42,6 +43,9 @@ whose cones are acyclic.
   homotopy equivalence is contractible.
 * `CochainComplex.quasiIso_iff_acyclic_mappingCone`: in an abelian category, a morphism is a
   quasi-isomorphism exactly when its mapping cone is acyclic.
+* `CochainComplex.mappingCone.quasiIso_map`: in an abelian category, the map of mapping cones
+  induced by a commutative square whose two horizontal sides are quasi-isomorphisms is a
+  quasi-isomorphism (an instance).
 
 ## Mapping cones of natural transformations and shifts
 
@@ -466,6 +470,22 @@ theorem quasiIso_iff_acyclic_mappingCone {K L : CochainComplex C ℤ} (φ : K �
     ← HomotopyCategory.quotient_obj_mem_subcategoryAcyclic_iff_acyclic]
   exact ObjectProperty.trW_iff_of_distinguished _ _
     (HomotopyCategory.mappingCone_triangleh_distinguished φ)
+
+/-- The map of mapping cones induced by a commutative square of cochain complexes whose two
+horizontal sides `a` and `b` are quasi-isomorphisms is a quasi-isomorphism. -/
+instance mappingCone.quasiIso_map {K₁ L₁ K₂ L₂ : CochainComplex C ℤ} (φ₁ : K₁ ⟶ L₁)
+    (φ₂ : K₂ ⟶ L₂) (a : K₁ ⟶ K₂) (b : L₁ ⟶ L₂) (comm : φ₁ ≫ b = a ≫ φ₂) [QuasiIso a]
+    [QuasiIso b] : QuasiIso (mappingCone.map φ₁ φ₂ a b comm) := by
+  let _ := HasDerivedCategory.standard C
+  rw [← DerivedCategory.isIso_Q_map_iff_quasiIso]
+  -- The cone map is the third component of a morphism of distinguished mapping cone triangles
+  -- in the derived category whose first two components are isomorphisms.
+  exact Pretriangulated.isIso₃_of_isIso₁₂
+    (DerivedCategory.Q.mapTriangle.map (mappingCone.triangleMap φ₁ φ₂ a b comm))
+    (DerivedCategory.mappingCone_triangle_distinguished _)
+    (DerivedCategory.mappingCone_triangle_distinguished _)
+    (inferInstanceAs (IsIso (DerivedCategory.Q.map a)))
+    (inferInstanceAs (IsIso (DerivedCategory.Q.map b)))
 
 end CochainComplex
 
