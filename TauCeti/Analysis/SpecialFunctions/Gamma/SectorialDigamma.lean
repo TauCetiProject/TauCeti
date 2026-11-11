@@ -115,7 +115,7 @@ private theorem sum_inv_add_eq_sub_integral_floor {s : ℂ} (hs : s ∈ slitPlan
   have hA := sum_mul_eq_sub_integral_mul' (fun _ : ℕ ↦ (1 : ℂ)) N
     (fun t ht ↦ (hd t ht).differentiableAt)
     (hc.integrableOn_Icc.congr_fun (fun t ht ↦ (hd t ht).deriv.symm) measurableSet_Icc)
-  have hsum (m : ℕ) : ∑ k ∈ Finset.Icc 0 m, (1 : ℂ) = (m : ℂ) + 1 := by simp
+  have hsum (m : ℕ) : ∑ _ ∈ Finset.Icc 0 m, (1 : ℂ) = (m : ℂ) + 1 := by simp
   simp only [hsum, mul_one] at hA
   rw [setIntegral_congr_fun measurableSet_Ioc
     (fun t ht ↦ by rw [(hd t (Ioc_subset_Icc_self ht)).deriv])] at hA
