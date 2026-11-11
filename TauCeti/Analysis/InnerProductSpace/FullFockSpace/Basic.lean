@@ -27,13 +27,14 @@ infrastructure and the left creation and annihilation operators:
 
 Finite pure tensor words `FullFockSpace.wordVector 𝕜 [h₁, …, hₙ] = h₁ ⊗ ⋯ ⊗ hₙ` span a dense
 subspace of `FullFockSpace 𝕜 H`. The self-adjoint field operators
-`creation 𝕜 h + annihilation 𝕜 h` (`ℓ(h) + ℓ(h)*`) have exact operator norm `2 * ‖h‖`. Finally,
-for an orthonormal `HilbertBasis` `b` of `H`, the creation operators `creation 𝕜 (b i)` are
-isometries whose orthogonal range projections `creation 𝕜 (b i) ∘L annihilation 𝕜 (b i)` are
-pairwise orthogonal and sum in the strong operator topology to `1 - vacuumProj`.
+`creation 𝕜 h + annihilation 𝕜 h` (`ℓ(h) + ℓ(h)*`) have exact operator norm `2 * ‖h‖`. Unit
+vectors in `H` induce creation isometries and orthogonal range projections, finite orthonormal
+sums of creation range projections are self-adjoint projections, and for a `HilbertBasis` `b` of
+`H` the range projections `creation 𝕜 (b i) ∘L annihilation 𝕜 (b i)` sum in the strong operator
+topology to `1 - vacuumProj`.
 
-Gauge (differential second quantization) operators `Λ(T)` on `FullFockSpace 𝕜 H` are developed in
-`TauCeti.Analysis.InnerProductSpace.FullFockSpace.Gauge`.
+Free (left) gauge (conservation) operators `Λ(T)`, acting on the first tensor factor of
+`FullFockSpace 𝕜 H`, are developed in `TauCeti.Analysis.InnerProductSpace.FullFockSpace.Gauge`.
 
 ## Main definitions
 
@@ -224,6 +225,10 @@ private def creationRaw (h : H) (x : FullFockSpace 𝕜 H) : ∀ n, CompletedTen
   | 0 => 0
   | n + 1 => stepCreation 𝕜 h n (x n)
 
+private theorem norm_creationRaw_succ_rpow_two (h : H) (x : FullFockSpace 𝕜 H) (n : ℕ) :
+    ‖creationRaw h x (n + 1)‖ ^ (2 : ℝ) = ‖h‖ ^ (2 : ℝ) * ‖x n‖ ^ (2 : ℝ) := by
+  simp [creationRaw, norm_stepCreation_apply, Real.mul_rpow (norm_nonneg _) (norm_nonneg _)]
+
 private theorem memℓp_creationRaw (h : H) (x : FullFockSpace 𝕜 H) :
     Memℓp (creationRaw h x) 2 := by
   apply memℓp_gen
@@ -231,11 +236,7 @@ private theorem memℓp_creationRaw (h : H) (x : FullFockSpace 𝕜 H) :
   rw [← _root_.summable_nat_add_iff 1]
   have hx : Summable fun n => ‖x n‖ ^ (2 : ℝ) := by
     simpa using (lp.memℓp x).summable (by simp)
-  have heq : (fun n => ‖creationRaw h x (n + 1)‖ ^ (2 : ℝ)) =
-      fun n => ‖h‖ ^ (2 : ℝ) * ‖x n‖ ^ (2 : ℝ) := by
-    ext n
-    simp [creationRaw, norm_stepCreation_apply, Real.mul_rpow (norm_nonneg _) (norm_nonneg _)]
-  rw [heq]
+  simp_rw [norm_creationRaw_succ_rpow_two]
   exact hx.mul_left _
 
 end
@@ -260,13 +261,9 @@ def creation (𝕜 : Type u) {H : Type v} [RCLike 𝕜]
         simpa using (memℓp_creationRaw h x).summable (by simp)
       refine le_of_eq (hs.tsum_eq_zero_add.trans ?_)
       have hzero : ‖creationRaw h x 0‖ ^ (2 : ℝ) = 0 := by simp [creationRaw]
-      have htail : (∑' n, ‖creationRaw h x (n + 1)‖ ^ (2 : ℝ)) =
-          ∑' n, ‖h‖ ^ (2 : ℝ) * ‖x n‖ ^ (2 : ℝ) := by
-        congr 1; ext n
-        simp [creationRaw, norm_stepCreation_apply, Real.mul_rpow (norm_nonneg _) (norm_nonneg _)]
       have hx_tsum : (∑' n, ‖x n‖ ^ (2 : ℝ)) = ‖x‖ ^ (2 : ℝ) := by
         simpa using (lp.norm_rpow_eq_tsum (p := 2) (by simp) x).symm
-      rw [hzero, zero_add, htail, tsum_mul_left, hx_tsum,
+      simp_rw [hzero, zero_add, norm_creationRaw_succ_rpow_two, tsum_mul_left, hx_tsum,
         Real.mul_rpow (norm_nonneg h) (norm_nonneg x)]
 
 section
@@ -541,14 +538,12 @@ private def wordTensor : (w : List H) → CompletedTensorPower 𝕜 H w.length
 private theorem wordVector_eq_single (w : List H) :
     wordVector 𝕜 w = lp.single 2 w.length (wordTensor w) := by
   induction w with
-  | nil => rfl
-  | cons h w ih =>
-    rw [wordVector_cons, ih, creation_single]
-    rfl
+  | nil => simp [wordTensor, vacuum]
+  | cons h w ih => simp [ih, creation_single, wordTensor]
 
 /-- Pure tensor words of different lengths lie in distinct tensor grades and are therefore
 orthogonal. -/
-theorem inner_wordVector_of_length_ne {v w : List H} (h : v.length ≠ w.length) :
+theorem inner_wordVector_eq_zero_of_length_ne {v w : List H} (h : v.length ≠ w.length) :
     ⟪wordVector 𝕜 v, wordVector 𝕜 w⟫_𝕜 = 0 := by
   rw [wordVector_eq_single v, wordVector_eq_single w, lp.inner_single_left,
     lp.single_apply_ne 2 w.length _ h]
@@ -571,6 +566,21 @@ theorem inner_wordVector_of_length_eq {v w : List H} (h : v.length = w.length) :
       rw [wordVector_cons, wordVector_cons, inner_creation_creation, ih h, List.zipWith_cons_cons,
         List.prod_cons]
 
+private theorem creation_mem_topologicalClosure_span_range_wordVector (h : H)
+    {y : FullFockSpace 𝕜 H}
+    (hy : y ∈ (Submodule.span 𝕜 (Set.range (wordVector 𝕜 (H := H)))).topologicalClosure) :
+    creation 𝕜 h y ∈
+      (Submodule.span 𝕜 (Set.range (wordVector 𝕜 (H := H)))).topologicalClosure := by
+  set M := (Submodule.span 𝕜 (Set.range (wordVector 𝕜 (H := H)))).topologicalClosure
+  have hspan : Submodule.span 𝕜 (Set.range (wordVector 𝕜 (H := H))) ≤
+      M.comap (creation 𝕜 h).toLinearMap := by
+    rw [Submodule.span_le]
+    rintro _ ⟨w, rfl⟩
+    exact Submodule.le_topologicalClosure _
+      (Submodule.subset_span ⟨h :: w, (wordVector_cons (𝕜 := 𝕜) h w).symm⟩)
+  exact Submodule.topologicalClosure_minimal _ hspan
+    ((Submodule.isClosed_topologicalClosure _).preimage (creation 𝕜 h).continuous) hy
+
 /-- Finite linear combinations of pure tensor words `wordVector 𝕜 w` (`w : List H`) are dense in
 `FullFockSpace 𝕜 H`. -/
 theorem topologicalClosure_span_range_wordVector :
@@ -578,16 +588,7 @@ theorem topologicalClosure_span_range_wordVector :
   set M := (Submodule.span 𝕜 (Set.range (wordVector 𝕜 (H := H)))).topologicalClosure
   have hM_closed : IsClosed (M : Set (FullFockSpace 𝕜 H)) :=
     Submodule.isClosed_topologicalClosure _
-  have hcre : ∀ (h : H) {y : FullFockSpace 𝕜 H}, y ∈ M → creation 𝕜 h y ∈ M := by
-    intro h y hy
-    have hspan : Submodule.span 𝕜 (Set.range (wordVector 𝕜 (H := H))) ≤
-        M.comap (creation 𝕜 h).toLinearMap := by
-      rw [Submodule.span_le]
-      rintro _ ⟨w, rfl⟩
-      exact Submodule.le_topologicalClosure _
-        (Submodule.subset_span ⟨h :: w, (wordVector_cons (𝕜 := 𝕜) h w).symm⟩)
-    exact Submodule.topologicalClosure_minimal _ hspan
-      (hM_closed.preimage (creation 𝕜 h).continuous) hy
+  -- Show by induction on the tensor grade `n` that every single-grade vector lies in `M`.
   have hsingle : ∀ (n : ℕ) (x : CompletedTensorPower 𝕜 H n), lp.single 2 n x ∈ M := by
     intro n
     induction n with
@@ -613,12 +614,13 @@ theorem topologicalClosure_span_range_wordVector :
       refine TensorProduct.inductionOn u (fun h w => ?_) (fun u₁ u₂ hu₁ hu₂ => ?_)
       · have htmul : embed (h ⊗ₜ[𝕜] w : H ⊗[𝕜] CompletedTensorPower 𝕜 H n) =
             creation 𝕜 h (lp.single 2 n w) := by
-          rw [creation_single]
-          rfl
+          rw [creation_single, stepCreation_apply]
+          simp [embed]
         rw [htmul]
-        exact hcre h (ih w)
+        exact creation_mem_topologicalClosure_span_range_wordVector h (ih w)
       · rw [Completion.coe_add, map_add]
         exact M.add_mem hu₁ hu₂
+  -- Every `f : FullFockSpace 𝕜 H` is the norm-convergent sum of its single-grade components.
   rw [eq_top_iff]
   exact fun f _ => hM_closed.mem_of_tendsto (lp.hasSum_single (by simp) f)
     (Eventually.of_forall fun s => M.sum_mem fun n _ => hsingle n (f n))
@@ -633,36 +635,48 @@ section FieldNorm
 
 variable {𝕜 : Type u} {H : Type v} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
 
-private theorem two_le_norm_creation_add_annihilation_of_norm_eq_one {e : H} (he : ‖e‖ = 1) :
-    2 ≤ ‖creation 𝕜 e + annihilation 𝕜 e‖ := by
-  set S : FullFockSpace 𝕜 H →L[𝕜] FullFockSpace 𝕜 H := creation 𝕜 e + annihilation 𝕜 e
-  let v : ℕ → FullFockSpace 𝕜 H := fun k => wordVector 𝕜 (List.replicate k e)
-  have hv_norm : ∀ k, ‖v k‖ = 1 := fun k => by simp [v, he]
-  have hv_orth : Pairwise fun j k => ⟪v j, v k⟫_𝕜 = 0 := fun j k hjk =>
-    inner_wordVector_of_length_ne (by simpa [v] using hjk)
-  have hv_inner : ∀ j k, ⟪v j, v k⟫_𝕜 = if j = k then 1 else 0 := by
+private theorem norm_sum_wordVector_replicate_sq {e : H} (he : ‖e‖ = 1) (N : ℕ) :
+    ‖∑ k ∈ Finset.range (N + 1), wordVector 𝕜 (List.replicate k e)‖ ^ 2 = (N : ℝ) + 1 := by
+  have hv_orth : Pairwise fun j k =>
+      ⟪wordVector 𝕜 (List.replicate j e), wordVector 𝕜 (List.replicate k e)⟫_𝕜 = 0 :=
+    fun _ _ hjk => inner_wordVector_eq_zero_of_length_ne (by simpa using hjk)
+  have hsq := TauCeti.norm_sum_sq_eq_sum_norm_sq_of_pairwise_inner_eq_zero hv_orth
+    (Finset.range (N + 1))
+  simpa [he] using hsq
+
+private theorem inner_sum_wordVector_replicate_creation {e : H} (he : ‖e‖ = 1) (N : ℕ) :
+    ⟪∑ k ∈ Finset.range (N + 1), wordVector 𝕜 (List.replicate k e),
+      creation 𝕜 e (∑ k ∈ Finset.range (N + 1), wordVector 𝕜 (List.replicate k e))⟫_𝕜 =
+      (N : ℝ) := by
+  have hv_inner : ∀ j k,
+      ⟪wordVector 𝕜 (List.replicate j e), wordVector 𝕜 (List.replicate k e)⟫_𝕜 =
+        if j = k then 1 else 0 := by
     intro j k
     split_ifs with hjk
     · subst hjk
-      rw [inner_self_eq_norm_sq_to_K, hv_norm]
-      simp
-    · exact hv_orth hjk
+      simp [inner_self_eq_norm_sq_to_K, he]
+    · exact inner_wordVector_eq_zero_of_length_ne (by simpa using hjk)
+  have hv_sum : ∀ m,
+      ⟪∑ k ∈ Finset.range (N + 1), wordVector 𝕜 (List.replicate k e),
+        wordVector 𝕜 (List.replicate m e)⟫_𝕜 = if m < N + 1 then 1 else 0 :=
+    fun m => by simp [sum_inner, hv_inner]
+  have hcre : creation 𝕜 e (∑ k ∈ Finset.range (N + 1), wordVector 𝕜 (List.replicate k e)) =
+      ∑ k ∈ Finset.range (N + 1), wordVector 𝕜 (List.replicate (k + 1) e) := by
+    simp [map_sum, List.replicate_succ]
+  rw [hcre, inner_sum]
+  simp_rw [hv_sum]
+  rw [Finset.sum_range_succ]
+  simp [Finset.filter_true_of_mem fun _ hx => Finset.mem_range.mp hx]
+
+private theorem two_le_norm_creation_add_annihilation_of_norm_eq_one {e : H} (he : ‖e‖ = 1) :
+    2 ≤ ‖creation 𝕜 e + annihilation 𝕜 e‖ := by
+  set S : FullFockSpace 𝕜 H →L[𝕜] FullFockSpace 𝕜 H := creation 𝕜 e + annihilation 𝕜 e
+  -- Test `S` against the truncated word sums `x_N = ∑_{k=0}^N e^{⊗ k}` to get `2 N ≤ ‖S‖ (N + 1)`.
   have hbound : ∀ N : ℕ, (2 : ℝ) * N ≤ ‖S‖ * (N + 1) := by
     intro N
-    let x : FullFockSpace 𝕜 H := ∑ k ∈ Finset.range (N + 1), v k
-    have hx_sq : ‖x‖ ^ 2 = (N : ℝ) + 1 := by
-      have := TauCeti.norm_sum_sq_eq_sum_norm_sq_of_pairwise_inner_eq_zero hv_orth
-        (Finset.range (N + 1))
-      simpa [x, hv_norm] using this
-    have hcre_x : creation 𝕜 e x = ∑ k ∈ Finset.range (N + 1), v (k + 1) := by
-      simp [x, map_sum, v, List.replicate_succ]
-    have hv_x : ∀ m, ⟪x, v m⟫_𝕜 = if m < N + 1 then 1 else 0 := fun m => by
-      simp [x, sum_inner, hv_inner]
-    have hcre_inner : ⟪x, creation 𝕜 e x⟫_𝕜 = (N : ℝ) := by
-      rw [hcre_x, inner_sum]
-      simp_rw [hv_x]
-      rw [Finset.sum_range_succ]
-      simp [Finset.filter_true_of_mem fun _ hx => Finset.mem_range.mp hx]
+    let x : FullFockSpace 𝕜 H := ∑ k ∈ Finset.range (N + 1), wordVector 𝕜 (List.replicate k e)
+    have hcre_inner : ⟪x, creation 𝕜 e x⟫_𝕜 = (N : ℝ) :=
+      inner_sum_wordVector_replicate_creation he N
     have hann_inner : ⟪x, annihilation 𝕜 e x⟫_𝕜 = (N : ℝ) := by
       rw [inner_annihilation_right, ← inner_conj_symm, hcre_inner]
       simp
@@ -678,7 +692,8 @@ private theorem two_le_norm_creation_add_annihilation_of_norm_eq_one {e : H} (he
       _ ≤ ‖x‖ * (‖S‖ * ‖x‖) :=
         mul_le_mul_of_nonneg_left (S.le_opNorm x) (norm_nonneg x)
       _ = ‖S‖ * ‖x‖ ^ 2 := by ring
-      _ = ‖S‖ * (N + 1) := by rw [hx_sq]
+      _ = ‖S‖ * (N + 1) := by rw [norm_sum_wordVector_replicate_sq he N]
+  -- Pass `N → ∞` by an Archimedean choice to conclude `2 ≤ ‖S‖`.
   by_contra! hlt
   have hpos : 0 < 2 - ‖S‖ := sub_pos.mpr hlt
   obtain ⟨N, hN⟩ := exists_nat_gt (‖S‖ / (2 - ‖S‖))
@@ -741,7 +756,8 @@ theorem isStarProjection_creation_comp_annihilation {h : H} (hh : ‖h‖ = 1) :
     IsStarProjection (creation 𝕜 h ∘L annihilation 𝕜 h) :=
   ⟨isIdempotentElem_creation_comp_annihilation hh, isSelfAdjoint_creation_comp_annihilation h⟩
 
-theorem creation_comp_annihilation_comp_of_inner_eq_zero {h k : H} (horth : ⟪h, k⟫_𝕜 = 0) :
+theorem creation_comp_annihilation_comp_eq_zero_of_inner_eq_zero {h k : H}
+    (horth : ⟪h, k⟫_𝕜 = 0) :
     (creation 𝕜 h ∘L annihilation 𝕜 h) ∘L (creation 𝕜 k ∘L annihilation 𝕜 k) = 0 := by
   ext x : 1
   simp [ContinuousLinearMap.comp_apply, horth]
@@ -787,27 +803,40 @@ theorem _root_.Orthonormal.isStarProjection_sum_creation_comp_annihilation {v : 
   refine Finset.sum_congr rfl fun i hi => ?_
   rw [Finset.mul_sum, Finset.sum_eq_single i]
   · exact isIdempotentElem_creation_comp_annihilation (hv.1 i)
-  · exact fun j _ hji => creation_comp_annihilation_comp_of_inner_eq_zero (hv.2 hji.symm)
+  · exact fun j _ hji => creation_comp_annihilation_comp_eq_zero_of_inner_eq_zero (hv.2 hji.symm)
   · exact fun hi' => (hi' hi).elim
 
-/-- Each element of a `HilbertBasis` induces a creation isometry on `FullFockSpace 𝕜 H`. -/
-theorem _root_.HilbertBasis.isometry_creation (b : _root_.HilbertBasis ι 𝕜 H) (i : ι) :
-    Isometry (creation 𝕜 (b i)) :=
-  FullFockSpace.isometry_creation (b.orthonormal.1 i)
+private theorem isClosed_setOf_hasSum_creation_comp_annihilation
+    (b : _root_.HilbertBasis ι 𝕜 H) :
+    IsClosed {y : FullFockSpace 𝕜 H |
+      HasSum (fun i => (creation 𝕜 (b i) ∘L annihilation 𝕜 (b i)) y) ((1 - vacuumProj) y)} := by
+  classical
+  let Q : Finset ι → FullFockSpace 𝕜 H →L[𝕜] FullFockSpace 𝕜 H :=
+    fun s => ∑ i ∈ s, creation 𝕜 (b i) ∘L annihilation 𝕜 (b i)
+  have hQ_iff : (∃ C, ∀ s, ‖Q s‖ ≤ C) ↔ Equicontinuous ((↑) ∘ Q) :=
+    (NormedSpace.equicontinuous_tfae Q).out 6 2
+  have hQ_equi : Equicontinuous ((↑) ∘ Q) := hQ_iff.mp
+    ⟨1, fun s => (b.orthonormal.isStarProjection_sum_creation_comp_annihilation s).norm_le⟩
+  simpa [HasSum, Q] using hQ_equi.isClosed_setOfPred_tendsto (1 - vacuumProj).continuous
 
-/-- For a `HilbertBasis` `b`, `creation 𝕜 (b i) ∘L annihilation 𝕜 (b i)` is the orthogonal
-projection onto `(creation 𝕜 (b i)).range`. -/
-theorem _root_.HilbertBasis.creation_comp_annihilation_eq_starProjection
-    (b : _root_.HilbertBasis ι 𝕜 H) (i : ι) :
-    creation 𝕜 (b i) ∘L annihilation 𝕜 (b i) = (creation 𝕜 (b i)).range.starProjection :=
-  FullFockSpace.creation_comp_annihilation_eq_starProjection (b.orthonormal.1 i)
-
-/-- Distinct basis elements of a `HilbertBasis` have orthogonal creation range projections. -/
-theorem _root_.HilbertBasis.creation_comp_annihilation_comp_of_ne
-    (b : _root_.HilbertBasis ι 𝕜 H) {i j : ι} (hij : i ≠ j) :
-    (creation 𝕜 (b i) ∘L annihilation 𝕜 (b i)) ∘L
-      (creation 𝕜 (b j) ∘L annihilation 𝕜 (b j)) = 0 :=
-  creation_comp_annihilation_comp_of_inner_eq_zero (b.orthonormal.2 hij)
+private theorem hasSum_creation_comp_annihilation_wordVector
+    (b : _root_.HilbertBasis ι 𝕜 H) (w : List H) :
+    HasSum (fun i => (creation 𝕜 (b i) ∘L annihilation 𝕜 (b i)) (wordVector 𝕜 w))
+      ((1 - vacuumProj) (wordVector 𝕜 w)) := by
+  cases w with
+  | nil => simp [hasSum_zero]
+  | cons h ws =>
+    let evalCreation : H →L[𝕜] FullFockSpace 𝕜 H :=
+      (ContinuousLinearMap.apply 𝕜 (FullFockSpace 𝕜 H) (wordVector 𝕜 ws)).comp
+        (creationₗᵢ 𝕜 H).toContinuousLinearMap
+    have hsum := (b.hasSum_repr h).mapL evalCreation
+    have hterm :
+        (fun i => (creation 𝕜 (b i) ∘L annihilation 𝕜 (b i)) (creation 𝕜 h (wordVector 𝕜 ws))) =
+          fun i => evalCreation (b.repr h i • b i) := by
+      ext i
+      simp [evalCreation, ContinuousLinearMap.comp_apply, b.repr_apply_apply]
+    rw [wordVector_cons, hterm]
+    simpa [evalCreation] using hsum
 
 /-- For a `HilbertBasis` `b` of `H`, the pairwise orthogonal range projections
 `creation 𝕜 (b i) ∘L annihilation 𝕜 (b i)` sum in the strong operator topology to
@@ -815,50 +844,21 @@ theorem _root_.HilbertBasis.creation_comp_annihilation_comp_of_ne
 theorem _root_.HilbertBasis.hasSum_creation_comp_annihilation
     (b : _root_.HilbertBasis ι 𝕜 H) (x : FullFockSpace 𝕜 H) :
     HasSum (fun i => (creation 𝕜 (b i) ∘L annihilation 𝕜 (b i)) x) ((1 - vacuumProj) x) := by
-  classical
-  let P : ι → FullFockSpace 𝕜 H →L[𝕜] FullFockSpace 𝕜 H :=
-    fun i => creation 𝕜 (b i) ∘L annihilation 𝕜 (b i)
-  let Q : Finset ι → FullFockSpace 𝕜 H →L[𝕜] FullFockSpace 𝕜 H := fun s => ∑ i ∈ s, P i
-  have hQ_iff : (∃ C, ∀ s, ‖Q s‖ ≤ C) ↔ Equicontinuous ((↑) ∘ Q) :=
-    (NormedSpace.equicontinuous_tfae Q).out 6 2
-  have hQ_equi : Equicontinuous ((↑) ∘ Q) := hQ_iff.mp
-    ⟨1, fun s => (b.orthonormal.isStarProjection_sum_creation_comp_annihilation s).norm_le⟩
-  have hclosed : IsClosed {y : FullFockSpace 𝕜 H |
-      Tendsto (fun s => Q s y) atTop (𝓝 ((1 - vacuumProj) y))} :=
-    hQ_equi.isClosed_setOfPred_tendsto (1 - vacuumProj).continuous
-  let S : Submodule 𝕜 (FullFockSpace 𝕜 H) :=
-    { carrier := {y | HasSum (fun i => P i y) ((1 - vacuumProj) y)}
-      zero_mem' := by simp [hasSum_zero]
-      add_mem' ha hb := by simpa only [Set.mem_ofPred_eq, map_add] using ha.add hb
-      smul_mem' c y hy := by simpa only [Set.mem_ofPred_eq, map_smul] using hy.const_smul c }
-  have hS_closed : IsClosed (S : Set (FullFockSpace 𝕜 H)) := by
-    simpa [S, HasSum, Q] using hclosed
-  have hmem : ∀ y, y ∈ S ↔ HasSum (fun i => P i y) ((1 - vacuumProj) y) := fun _ => Iff.rfl
-  have hword : Submodule.span 𝕜 (Set.range (wordVector 𝕜 (H := H))) ≤ S := by
-    rw [Submodule.span_le]
-    rintro _ ⟨w, rfl⟩
-    rw [SetLike.mem_coe, hmem]
-    cases w with
-    | nil =>
-      simp [P, hasSum_zero]
-    | cons h ws =>
-      have heval : ((ContinuousLinearMap.apply 𝕜 (FullFockSpace 𝕜 H) (wordVector 𝕜 ws)).comp
-          (creationₗᵢ 𝕜 H).toContinuousLinearMap : H →L[𝕜] FullFockSpace 𝕜 H) h =
-            creation 𝕜 h (wordVector 𝕜 ws) := rfl
-      have hsum := (b.hasSum_repr h).mapL
-        ((ContinuousLinearMap.apply 𝕜 (FullFockSpace 𝕜 H) (wordVector 𝕜 ws)).comp
-          (creationₗᵢ 𝕜 H).toContinuousLinearMap)
-      rw [heval] at hsum
-      have hterm : (fun i => P i (creation 𝕜 h (wordVector 𝕜 ws))) =
-          fun i => creation 𝕜 (b.repr h i • b i) (wordVector 𝕜 ws) := by
-        ext i
-        simp [P, ContinuousLinearMap.comp_apply, b.repr_apply_apply]
-      rw [wordVector_cons, hterm]
-      simpa using hsum
-  have htop : (⊤ : Submodule 𝕜 (FullFockSpace 𝕜 H)) ≤ S := by
-    rw [← topologicalClosure_span_range_wordVector]
-    exact Submodule.topologicalClosure_minimal _ hword hS_closed
-  exact htop trivial
+  -- The partial sums have operator norm at most `1`, so pointwise convergence is closed and
+  -- extends from the dense span of pure tensor words to all of `FullFockSpace 𝕜 H`.
+  have hx : x ∈ closure (Submodule.span 𝕜 (Set.range (wordVector 𝕜 (H := H))) :
+      Set (FullFockSpace 𝕜 H)) := by
+    rw [← Submodule.topologicalClosure_coe, topologicalClosure_span_range_wordVector]
+    trivial
+  refine closure_minimal ?_ (isClosed_setOf_hasSum_creation_comp_annihilation b) hx
+  intro y hy
+  induction hy using Submodule.span_induction with
+  | mem y hy =>
+    rcases hy with ⟨w, rfl⟩
+    exact hasSum_creation_comp_annihilation_wordVector b w
+  | zero => simp [hasSum_zero]
+  | add _ _ _ _ ha hb => simpa only [Set.mem_ofPred_eq, map_add] using ha.add hb
+  | smul c _ _ hy => simpa only [Set.mem_ofPred_eq, map_smul] using hy.const_smul c
 
 /-- Pointwise norm-convergent expansion `(1 - vacuumProj) x = ∑' i, ℓ(b i) ℓ(b i)* x` for a
 `HilbertBasis` `b` of `H`. -/
