@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.Equiv
 public import Mathlib.Algebra.MvPolynomial.Variables
-public import TauCeti.LinearAlgebra.Finsupp.Supported
+public import TauCeti.Data.Finsupp.Filter
 
 /-!
 # Variables of products and renamings of multivariate polynomials
