@@ -14,8 +14,10 @@ public import TauCeti.Algebra.Module.Submodule.OrbitRelQuotient
 /-!
 # Discrete subgroups act properly discontinuously and have infinite index
 
-A discrete subgroup `S` of a `T₁` topological group `G` is closed, so it meets every compact set
-of `G` in a finite set. Hence `S` acts properly discontinuously on `G` by left multiplication.
+A discrete subgroup `S` of a topological group `G` meets every compact set of `G` in a finite set:
+its inclusion tends to the cocompact filter along the cofinite filter
+(`Subgroup.tendsto_coe_cofinite_of_isDiscrete`). Hence `S` acts properly discontinuously on `G` by
+left multiplication.
 Mathlib proves this from the hypothesis that the inclusion `S → G` tends to the cocompact filter
 along the cofinite filter (`Subgroup.properlyDiscontinuousSMul_of_tendsto_cofinite`); this file
 records it as an instance for subgroups carrying the discrete topology, and for discrete

@@ -156,7 +156,7 @@ theorem presentationImage_zero : presentationImage ⟨0, by simp⟩ = a⁻¹ := 
 @[simp]
 theorem presentationImage_one : presentationImage ⟨1, by simp⟩ = b⁻¹ := (rfl)
 
--- Check the long relators one row at a time with `TauCeti.perm_eq_one_of_rows`. Each kernel
+-- Check the long relators one row at a time with `Equiv.Perm.eq_one_of_rows`. Each kernel
 -- decision covers only fourteen points, avoiding the large intermediate terms from checking all
 -- 266 points together.
 private theorem relator_zero :
@@ -176,7 +176,7 @@ private theorem relator_two :
   simp only [Sporadic.j1Presentation_transcribed, List.getElem_cons_succ, List.getElem_cons_zero,
     Relator.eval_pow, Relator.eval_mul, Relator.eval_gen,
     presentationImage_zero, presentationImage_one]
-  apply TauCeti.perm_eq_one_of_rows (m := 19) (n := 14)
+  apply Equiv.Perm.eq_one_of_rows (m := 19) (n := 14)
   intro i
   fin_cases i <;> decide +kernel
 
@@ -185,7 +185,7 @@ private theorem relator_three :
   simp only [Sporadic.j1Presentation_transcribed, List.getElem_cons_succ, List.getElem_cons_zero,
     Relator.eval_pow, Relator.eval_mul, Relator.eval_inv, Relator.eval_gen,
     presentationImage_zero, presentationImage_one]
-  apply TauCeti.perm_eq_one_of_rows (m := 19) (n := 14)
+  apply Equiv.Perm.eq_one_of_rows (m := 19) (n := 14)
   intro i
   fin_cases i <;> decide +kernel
 
@@ -194,7 +194,7 @@ private theorem relator_four :
   simp only [Sporadic.j1Presentation_transcribed, List.getElem_cons_succ, List.getElem_cons_zero,
     Relator.eval_pow, Relator.eval_mul, Relator.eval_inv, Relator.eval_gen,
     presentationImage_zero, presentationImage_one]
-  apply TauCeti.perm_eq_one_of_rows (m := 19) (n := 14)
+  apply Equiv.Perm.eq_one_of_rows (m := 19) (n := 14)
   intro i
   fin_cases i <;> decide +kernel
 
