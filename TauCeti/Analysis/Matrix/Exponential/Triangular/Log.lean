@@ -66,7 +66,7 @@ private theorem exp_mapsTo_positiveDiagonal (m : ℕ) :
       {g | g.IsUpperTriangular ∧ ∀ i, RCLike.im (g i i) = 0 ∧ 0 < RCLike.re (g i i)} := by
   rintro X ⟨hX, hreal⟩
   refine ⟨hX.exp, fun i ↦ ?_⟩
-  have hdiag := RCLike.ofReal_re_of_im_eq_zero (hreal i)
+  have hdiag := RCLike.re_eq_self_of_im_eq_zero (hreal i)
   rw [hX.exp_apply_diag, ← hdiag, RCLike.exp_ofReal]
   refine ⟨RCLike.ofReal_im _, ?_⟩
   simpa only [RCLike.ofReal_re] using Real.exp_pos (RCLike.re (X i i))
@@ -78,28 +78,6 @@ private def leadingBlock {n : ℕ} (X : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜)
 private def lastColumn {n : ℕ} (X : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜) :
     Matrix (Fin n) (Fin 1) 𝕜 :=
   X.submatrix Fin.castSucc (fun _ : Fin 1 ↦ Fin.last n)
-
-private theorem isUpperTriangular_leadingBlock {n : ℕ}
-    {X : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜} (hX : X.IsUpperTriangular) :
-    (leadingBlock X).IsUpperTriangular := by
-  intro i j hji
-  exact hX (i := i.castSucc) (j := j.castSucc) (by exact_mod_cast hji)
-
-private theorem isUpperTriangular_assembleLastBlock {n : ℕ} {A : Matrix (Fin n) (Fin n) 𝕜}
-    (hA : A.IsUpperTriangular) (B : Matrix (Fin n) (Fin 1) 𝕜) (d : ℝ) :
-    (assembleLastBlock A B d).IsUpperTriangular := by
-  intro i j
-  refine Fin.lastCases ?_ (fun i ↦ ?_) i <;>
-    refine Fin.lastCases ?_ (fun j ↦ ?_) j
-  · intro h
-    exact (lt_irrefl _ h).elim
-  · intro _
-    simp only [assembleLastBlock_apply_last_castSucc]
-  · intro h
-    exact (not_lt_of_ge (le_of_lt (Fin.castSucc_lt_last _)) h).elim
-  · intro h
-    simpa only [assembleLastBlock_apply_castSucc_castSucc] using
-      hA (i := i) (j := j) (by exact_mod_cast h)
 
 /-- The real-diagonal logarithm of a matrix with positive real diagonal.
 
@@ -161,7 +139,7 @@ theorem isUpperTriangular_triangularLog (n : ℕ) (g : Matrix (Fin n) (Fin n) �
   | zero => exact fun {i} ↦ Fin.elim0 i
   | succ n ih =>
     rw [triangularLog_succ]
-    exact isUpperTriangular_assembleLastBlock (ih _) _ _
+    exact (ih _).assembleLastBlock _ _
 
 /-- The triangular logarithm has real diagonal for every input. -/
 theorem im_triangularLog_apply_diag (n : ℕ) (g : Matrix (Fin n) (Fin n) 𝕜) (i : Fin n) :
@@ -175,14 +153,14 @@ theorem triangularLog_exp {n : ℕ} {X : Matrix (Fin n) (Fin n) 𝕜}
   induction n with
   | zero => exact Subsingleton.elim _ _
   | succ n ih =>
-    have hLead := isUpperTriangular_leadingBlock hX
+    have hLead := hX.submatrix_of_strictMono Fin.strictMono_castSucc
     have hrLead (i : Fin n) : RCLike.im (leadingBlock X i i) = 0 := hreal i.castSucc
     have hA : triangularLog n (leadingBlock (exp X)) = leadingBlock X := by
       rw [leadingBlock, hX.exp_submatrix_castSucc]
       exact ih hLead hrLead
     have hd : Real.log (RCLike.re (exp X (Fin.last n) (Fin.last n))) =
         RCLike.re (X (Fin.last n) (Fin.last n)) := by
-      have hlast := RCLike.ofReal_re_of_im_eq_zero (hreal (Fin.last n))
+      have hlast := RCLike.re_eq_self_of_im_eq_zero (hreal (Fin.last n))
       have hexp := (congrArg NormedSpace.exp hlast.symm).trans (RCLike.exp_ofReal _)
       rw [hX.exp_apply_diag, hexp, RCLike.ofReal_re, Real.log_exp]
     have hcol : lastColumn (exp X) = expColumnCoefficient (leadingBlock X)
@@ -211,7 +189,7 @@ theorem exp_triangularLog {n : ℕ} {g : Matrix (Fin n) (Fin n) 𝕜}
         ((isUpperTriangular_triangularLog n (leadingBlock g)).isUnit_expColumnCoefficient
           (im_triangularLog_apply_diag n (leadingBlock g)) d)
     have heA : exp A = leadingBlock g :=
-      ih (isUpperTriangular_leadingBlock hg) (fun i ↦ hreal i.castSucc)
+      ih (hg.submatrix_of_strictMono Fin.strictMono_castSucc) (fun i ↦ hreal i.castSucc)
         (fun i ↦ hpos i.castSucc)
     have hd : Real.exp d = RCLike.re (g (Fin.last n) (Fin.last n)) :=
       Real.exp_log (hpos (Fin.last n))

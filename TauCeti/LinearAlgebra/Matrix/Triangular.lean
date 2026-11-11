@@ -124,13 +124,21 @@ theorem IsUpperUnitriangular.sub_one_apply_diag [LT m] [DecidableEq m] [AddGroup
     {M : Matrix m m R} (hM : M.IsUpperUnitriangular) (i : m) : (M - 1) i i = 0 := by
   simp [hM.apply_diag]
 
+/-- Selecting rows and columns by the same strictly increasing map preserves upper
+triangularity. -/
+theorem IsUpperTriangular.submatrix_of_strictMono {n : Type*} [Preorder m] [Preorder n]
+    [Zero R]
+    {M : Matrix m m R} (hM : M.IsUpperTriangular) {f : n → m} (hf : StrictMono f) :
+    (M.submatrix f f).IsUpperTriangular :=
+  fun _ _ hij ↦ hM (hf hij)
+
 /-- Selecting the same strictly increasing family of rows and columns preserves upper
 unitriangularity. In particular, this applies to principal submatrices and order-preserving
 reindexing. -/
 theorem IsUpperUnitriangular.submatrix {n : Type*} [Preorder m] [Preorder n] [Zero R] [One R]
     {M : Matrix m m R} (hM : M.IsUpperUnitriangular) {f : n → m} (hf : StrictMono f) :
     (M.submatrix f f).IsUpperUnitriangular :=
-  ⟨fun _ _ hij ↦ hM.isUpperTriangular (hf hij), fun i ↦ hM.apply_diag (f i)⟩
+  ⟨hM.isUpperTriangular.submatrix_of_strictMono hf, fun i ↦ hM.apply_diag (f i)⟩
 
 /-- Two upper-unitriangular matrices are equal if their entries strictly above the diagonal
 agree. -/

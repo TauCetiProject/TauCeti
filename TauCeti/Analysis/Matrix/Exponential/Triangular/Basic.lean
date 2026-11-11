@@ -261,7 +261,7 @@ theorem IsUpperTriangular.isUnit_expColumnCoefficient {A : Matrix n n 𝕜}
   apply Finset.prod_ne_zero_iff.mpr
   intro i _
   have hii : A i i = (RCLike.re (A i i) : 𝕜) := by
-    exact (RCLike.ofReal_re_of_im_eq_zero (hreal i)).symm
+    exact (RCLike.re_eq_self_of_im_eq_zero (hreal i)).symm
   rw [hA.expColumnCoefficient_apply_diag d (RCLike.re (A i i)) i hii]
   exact_mod_cast ne_of_gt (Real.dslope_exp_pos (RCLike.re (A i i)) d)
 
@@ -332,18 +332,36 @@ def assembleLastBlock {n : ℕ} (A : Matrix (Fin n) (Fin n) 𝕜) (B : Matrix (F
     assembleLastBlock A B d (Fin.last n) (Fin.last n) = (d : 𝕜) := by
   simp [assembleLastBlock, RCLike.real_smul_eq_coe_mul]
 
+/-- Appending a last column and a real final diagonal entry preserves upper
+triangularity. -/
+theorem IsUpperTriangular.assembleLastBlock {n : ℕ} {A : Matrix (Fin n) (Fin n) 𝕜}
+    (hA : A.IsUpperTriangular) (B : Matrix (Fin n) (Fin 1) 𝕜) (d : ℝ) :
+    (Matrix.assembleLastBlock A B d).IsUpperTriangular := by
+  intro i j
+  refine Fin.lastCases ?_ (fun i ↦ ?_) i <;>
+    refine Fin.lastCases ?_ (fun j ↦ ?_) j
+  · intro h
+    exact (lt_irrefl _ h).elim
+  · intro _
+    simp only [assembleLastBlock_apply_last_castSucc]
+  · intro h
+    exact (not_lt_of_ge (le_of_lt (Fin.castSucc_lt_last _)) h).elim
+  · intro h
+    simpa only [assembleLastBlock_apply_castSucc_castSucc] using
+      hA (i := i) (j := j) (by exact_mod_cast h)
+
 /-- An upper-triangular matrix with real final diagonal entry is recovered from its
 leading block, final column above the diagonal, and final diagonal entry. -/
 theorem IsUpperTriangular.assembleLastBlock_submatrix {n : ℕ}
     {X : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜} (hX : X.IsUpperTriangular)
     (hreal : RCLike.im (X (Fin.last n) (Fin.last n)) = 0) :
-    assembleLastBlock (X.submatrix Fin.castSucc Fin.castSucc)
+    Matrix.assembleLastBlock (X.submatrix Fin.castSucc Fin.castSucc)
       (X.submatrix Fin.castSucc (fun _ : Fin 1 ↦ Fin.last n))
       (RCLike.re (X (Fin.last n) (Fin.last n))) = X := by
   ext i j
   refine Fin.lastCases ?_ (fun i ↦ ?_) i <;> refine Fin.lastCases ?_ (fun j ↦ ?_) j
   · rw [assembleLastBlock_apply_last_last]
-    exact RCLike.ofReal_re_of_im_eq_zero hreal
+    exact RCLike.re_eq_self_of_im_eq_zero hreal
   · rw [assembleLastBlock_apply_last_castSucc]
     exact (hX (Fin.castSucc_lt_last j)).symm
   · simp only [assembleLastBlock_apply_castSucc_last, submatrix_apply]
@@ -429,9 +447,9 @@ private theorem triangular_corner_exp {n : ℕ} {X : Matrix (Fin (n + 2)) (Fin (
           (RCLike.re (X (Fin.last (n + 1)) (Fin.last (n + 1)))) : ℝ) : 𝕜) *
         X 0 (Fin.last (n + 1)) + expCornerRemainder X := by
   let A := X.submatrix Fin.castSucc Fin.castSucc
-  have hA : A.IsUpperTriangular := fun _ _ hji ↦ hX (Fin.strictMono_castSucc hji)
+  have hA : A.IsUpperTriangular := hX.submatrix_of_strictMono Fin.strictMono_castSucc
   have h00 : A 0 0 = (RCLike.re (A 0 0) : 𝕜) :=
-    (RCLike.ofReal_re_of_im_eq_zero (hreal (Fin.castSucc 0))).symm
+    (RCLike.re_eq_self_of_im_eq_zero (hreal (Fin.castSucc 0))).symm
   have hd := hA.expColumnCoefficient_apply_diag
     (RCLike.re (X (Fin.last (n + 1)) (Fin.last (n + 1)))) (RCLike.re (A 0 0)) 0 h00
   have hc := congrArg (fun M : Matrix (Fin (n + 1)) (Fin 1) 𝕜 ↦ M 0 0)
@@ -484,9 +502,8 @@ theorem IsUpperTriangular.exp_apply_eq_dslope_mul_add {m : ℕ} {X : Matrix (Fin
       ((dslope Real.exp (RCLike.re (X i i)) (RCLike.re (X j j)) : ℝ) : 𝕜) * X i j +
         triangularExpRemainder X i j hij := by
   let e := Fin.intervalOrderEmbOfLt i j hij
-  have hblock : (X.submatrix e e).IsUpperTriangular := by
-    intro a b hba
-    exact hX (e.strictMono hba)
+  have hblock : (X.submatrix e e).IsUpperTriangular :=
+    hX.submatrix_of_strictMono e.strictMono
   have hrange : Set.range e = Set.Icc i j := Fin.range_intervalOrderEmbOfLt i j hij
   have hc := triangular_corner_exp hblock (fun k ↦ hreal (e k) (hrange ▸ Set.mem_range_self k))
   have he : Set.OrdConnected (Set.range e) := hrange.symm ▸ Set.ordConnected_Icc
