@@ -22,7 +22,8 @@ This agrees with the convention in `TauCeti.CategoryTheory.AlmostSplit.Irreducib
 No finite-length or locality hypothesis is needed when minimality is supplied. If the opposite
 end has a local endomorphism ring, non-splitness already implies minimality, so a single
 almost-split lifting property suffices. Conversely, the maps of an almost-split sequence are
-minimal when the opposite end has a local endomorphism ring.
+always minimal, since its ends have local endomorphism rings by
+`TauCeti.IsLeftAlmostSplit.isLocalRing_end` and `TauCeti.IsRightAlmostSplit.isLocalRing_end`.
 
 The pushout argument uses `TauCeti.shortExact_cobaseChange`.
 
