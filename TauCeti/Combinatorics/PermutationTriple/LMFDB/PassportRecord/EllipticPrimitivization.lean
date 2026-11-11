@@ -402,16 +402,6 @@ private theorem exists_eq_pair_of_mem_orbit {C : Set (Fin 6)}
     rw [← h03, ← Perm.mul_apply, mul_finRotate_pow_three_comm g.2, Perm.mul_apply]
   simp only [Set.smul_set_insert, Set.smul_set_singleton, Subgroup.smul_def, Perm.smul_def, h3]
 
-/-- A permutation moving every sheet `a` off the pair `{a, r³ a}` maps no such pair to itself. -/
-private theorem image_pair_ne {σ : Perm (Fin 6)}
-    (hσ : ∀ a, σ a ≠ a ∧ σ a ≠ (finRotate 6 ^ 3) a) (a : Fin 6) :
-    σ '' {a, (finRotate 6 ^ 3) a} ≠ {a, (finRotate 6 ^ 3) a} := by
-  intro h
-  have ha : σ a ∈ ({a, (finRotate 6 ^ 3) a} : Set (Fin 6)) :=
-    h ▸ Set.mem_image_of_mem σ (Set.mem_insert a _)
-  rcases ha with ha | ha
-  exacts [(hσ a).1 ha, (hσ a).2 ha]
-
 /-- The pair `{0, 3}` is a block of the monodromy action of the triple of `6T6-6_6_3.3-a`: its
 translates are the orbits of the automorphism `r³`. -/
 theorem isBlock_toTriple_genusTwoStoredTriple :
@@ -455,7 +445,8 @@ theorem cycleData_blockQuotient_toTriple_genusTwoStoredTriple
     obtain ⟨a, ha⟩ := exists_eq_pair_of_mem_orbit (e.symm i).2
     have hi := hτ i
     rw [h, ha] at hi
-    exact image_pair_ne hσ a hi.symm
+    rcases Set.image_subset_iff.mp hi.symm.subset (Set.mem_insert a _) with h' | h'
+    exacts [(hσ a).1 h', (hσ a).2 h']
   -- Every component moves every pair `{a, r³ a}`.
   have hσ : ∀ σ ∈ [genusTwoStoredTriple.toTriple.σ0, genusTwoStoredTriple.toTriple.σ1,
       genusTwoStoredTriple.toTriple.σinf], ∀ a, σ a ≠ a ∧ σ a ≠ (finRotate 6 ^ 3) a := by
