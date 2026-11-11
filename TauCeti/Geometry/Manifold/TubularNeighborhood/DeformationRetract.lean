@@ -63,26 +63,6 @@ variable {B F N : Type*} {E : B → Type*}
   [∀ x, AddCommGroup (E x)] [∀ x, Module ℝ (E x)] [TopologicalSpace N]
   {f : B → N} {U : Set (TotalSpace F E)} {φ : U → N}
 
-/-- The core of the tube lies in the tube. -/
-theorem f_mem_range (T : IsTubularNeighborhood f U φ) (x : B) : f x ∈ range φ :=
-  ⟨_, T.map_zeroSection x⟩
-
-/-- The core lies in the tube. -/
-theorem range_f_subset (T : IsTubularNeighborhood f U φ) : range f ⊆ range φ :=
-  range_subset_iff.2 T.f_mem_range
-
-/-- The base projection is continuous on the tubular domain. This needs no fibre-bundle
-structure: composed with the core embedding it is the tubular chart of the radial contraction at
-time zero. -/
-theorem continuous_proj (T : IsTubularNeighborhood f U φ) :
-    Continuous fun u : U ↦ (u : TotalSpace F E).proj := by
-  refine T.isEmbedding_f.continuous_iff.2 ?_
-  have h : Continuous fun u : U ↦ φ (T.radialContraction ⟨0, u⟩) :=
-    T.isOpenEmbedding.continuous.comp
-      (T.continuous_radialContraction.comp (continuous_const.prodMk continuous_id))
-  refine h.congr fun u ↦ ?_
-  simp only [Function.comp_apply, radialContraction_zero, T.map_zeroSection]
-
 /-- The **retraction of a tube onto its base**: the point `φ u` of the tube goes to the base
 point of `u`. -/
 def retraction (T : IsTubularNeighborhood f U φ) : C(range φ, B) where
