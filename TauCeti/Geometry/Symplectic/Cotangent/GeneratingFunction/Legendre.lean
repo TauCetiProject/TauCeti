@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Cotangent.GeneratingFunction.Basic
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 
 /-!
 # The second-kind partial Legendre transform
@@ -97,16 +98,16 @@ theorem hasFDerivAt_cotangentLegendreProjection
   hasFDerivAt_fst.prodMk (hasFDerivAt_cotangentGeneratingTarget hS).snd
 
 /-- An invertible negative `Q,Q` Hessian gives the derivative of the mixed-variable projection even
-without assuming that `fderiv S` is differentiable at `x`. If it is not, its derivative is `0` by
-convention, so the Hessian is `0`; an invertible zero map forces `W` and `StrongDual ℝ W` to be
-subsingletons, and then the `P`-component of the projection is constant. -/
+without assuming that `fderiv S` is differentiable at `x`. -/
 theorem hasFDerivAt_cotangentLegendreProjection_of_isInvertible
     (hM : (cotangentLegendreHessian S x).IsInvertible) :
     HasFDerivAt (cotangentLegendreProjection S)
       ((fst ℝ V W).prod (-(precomp ℝ (inr ℝ V W) ∘L fderiv ℝ (fderiv ℝ S) x))) x := by
   by_cases hS : DifferentiableAt ℝ (fderiv ℝ S) x
   · exact hasFDerivAt_cotangentLegendreProjection hS
-  · -- the Hessian is `0` here, since `fderiv ℝ S` is not differentiable at `x`
+  · -- If `fderiv ℝ S` is not differentiable at `x`, its derivative is `0` by convention, so the
+    -- Hessian is `0`; an invertible zero map forces `W` and `StrongDual ℝ W` to be subsingletons,
+    -- and then the `P`-component of the projection is constant.
     have hzero : (0 : W →L[ℝ] StrongDual ℝ W).IsInvertible := by
       simpa [cotangentLegendreHessian, fderiv_zero_of_not_differentiableAt hS] using hM
     obtain ⟨hW, hP⟩ := ContinuousLinearMap.isInvertible_zero_iff.1 hzero
@@ -237,12 +238,14 @@ at the distinguished point. -/
 theorem contDiffAt_cotangentLegendreChart_symm {n : WithTop ℕ∞}
     (hSn : ContDiffAt ℝ (n + 1) S x₀) :
     ContDiffAt ℝ n (cotangentLegendreChart hS hM).symm (cotangentLegendreProjection S x₀) := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · exact contDiffAt_zero.2 ⟨_, (cotangentLegendreChart hS hM).open_target.mem_nhds
-      (image_mem_cotangentLegendreChart_target hS hM),
-      (cotangentLegendreChart hS hM).continuousOn_symm⟩
-  · exact (contDiffAt_cotangentLegendreProjection hSn).to_localInverse
-      (hasStrictFDerivAt_legendreDerivEquiv hS hM).hasFDerivAt hn
+  have hx : (cotangentLegendreChart hS hM).symm (cotangentLegendreProjection S x₀) = x₀ :=
+    (hasStrictFDerivAt_legendreDerivEquiv hS hM).localInverse_apply_image
+  have hcont : ContDiffAt ℝ n (cotangentLegendreProjection S)
+      ((cotangentLegendreChart hS hM).symm (cotangentLegendreProjection S x₀)) := by
+    rw [hx]
+    exact contDiffAt_cotangentLegendreProjection hSn
+  exact (hasStrictFDerivAt_legendreDerivEquiv hS hM).contDiffAt_toOpenPartialHomeomorph_symm
+    (image_mem_cotangentLegendreChart_target hS hM) hcont
 
 /-- Every local inverse agrees with this inverse branch as a germ. -/
 theorem eventuallyEq_cotangentLegendreChart_symm {g : V × StrongDual ℝ W → V × W}
