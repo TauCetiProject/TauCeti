@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.Decomposition.Lebesgue
+public import Mathlib.Data.EReal.Operations
+public import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 
 /-!
 # The Radon–Nikodym derivative on null sets and at atoms
@@ -40,6 +41,27 @@ theorem ae_rnDeriv_eq_zero_of_measure_eq_zero {s : Set α} (hs : μ s = 0) :
   rw [lintegral_eq_zero_iff (measurable_rnDeriv μ ν)] at h
   exact ((ae_restrict_iff' (measurableSet_toMeasurable μ s)).1 h).mono fun x hx hxs ↦
     hx (subset_toMeasurable μ s hxs)
+
+/-- For `μ ≪ ν` with `μ` σ-finite, a measurable set `Z` and a real `L` which is the extended real
+`c` unless `μ Z = 0`, the term `(ε c)⁺ μ(Z)` is the integral over `Z` of the positive part of
+`ε L dμ/dν`. -/
+theorem toENNReal_mul_measure_eq_setLIntegral_ofReal_mul_rnDeriv [SigmaFinite μ]
+    [μ.HaveLebesgueDecomposition ν] (hμ : μ ≪ ν) {Z : Set α} (hZ : MeasurableSet Z) {c : EReal}
+    {L : ℝ} (hL : c = L ∨ μ Z = 0) (ε : ℝ) :
+    (ε * c).toENNReal * μ Z =
+      ∫⁻ x in Z, ENNReal.ofReal (ε * (L * (μ.rnDeriv ν x).toReal)) ∂ν := by
+  rcases hL with hL | hL
+  · rw [hL, ← EReal.coe_mul, EReal.real_coe_toENNReal, ← setLIntegral_rnDeriv' hμ hZ,
+      ← lintegral_const_mul _ (measurable_rnDeriv _ _)]
+    refine setLIntegral_congr_fun_ae hZ ((rnDeriv_ne_top μ ν).mono fun x hx _ => ?_)
+    rw [← mul_assoc, ENNReal.ofReal_mul' ENNReal.toReal_nonneg, ENNReal.ofReal_toReal hx]
+  · rw [hL, mul_zero]
+    have h0 := setLIntegral_rnDeriv' hμ hZ
+    rw [hL, setLIntegral_eq_zero_iff hZ (measurable_rnDeriv _ _)] at h0
+    symm
+    rw [setLIntegral_eq_zero_iff hZ (by fun_prop)]
+    filter_upwards [h0] with x hx hxZ
+    simp [hx hxZ]
 
 variable [MeasurableSingletonClass α] {x : α}
 

@@ -104,9 +104,9 @@ theorem norm_coeff_subst_coe_le [Finite σ] {a : σ → MvPolynomial τ R}
   rw [← MvPolynomial.coe_finsuppProd_pow, MvPolynomial.coeff_coe]
   by_cases hd : (d.prod fun s n ↦ a s ^ n).coeff e = 0
   · simp [hd, hr]
-  · exact (norm_mul_le _ _).trans <| (mul_le_of_le_one_right (norm_nonneg _)
-      (TauCeti.MvPolynomial.norm_coeff_prod_pow_le_one norm_one.le d
-        (fun s _ ↦ ha₁ s) e)).trans (h d hd)
+  · have hprod : ‖(d.prod fun s n ↦ a s ^ n).coeff e‖ ≤ 1 := by
+      simpa using MvPolynomial.norm_coeff_prod_pow_le (r := 1) norm_one.le d (fun s _ ↦ ha₁ s) e
+    exact (norm_mul_le _ _).trans <| (mul_le_of_le_one_right (norm_nonneg _) hprod).trans (h d hd)
 
 /-- **Isolating one term of a substitution.** Up to the contribution
 `coeff ν f * coeff e (∏ₛ (a s) ^ (ν s))` of a single exponent `ν`, a coefficient of a substitution

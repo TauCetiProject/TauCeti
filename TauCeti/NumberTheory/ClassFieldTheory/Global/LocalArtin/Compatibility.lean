@@ -75,23 +75,19 @@ local notation "E₀" =>
   ((⊥ : FiniteGaloisIntermediateField K (SeparableClosure K)) :
     IntermediateField K (SeparableClosure K))
 
-/-- **The local–global character formula for the global Artin map.** For a finite Galois extension
-`L/K` of number fields, embedded in `Kˢ` by `ι`, every character `χ : Gal(L/K)^ab → ℚ/ℤ` takes on
-the global Artin symbol of the class of an idele `a` the sum of its values on the local Artin
-symbols of the components of `a`, at the finite places and at the infinite places:
-
-```text
-χ (Art [a]) = ∑ᶠ v, χ (Art_v a_v) + ∑_w χ (Art_w a_w).
-```
--/
-theorem apply_globalArtinMap_eq_finsum (ι : L →ₐ[K] SeparableClosure K)
-    (χ : Additive (Abelianization Gal(L/K)) →+ AddCircle (1 : ℚ)) (a : IdeleGroup (𝓞 K) K) :
-    χ (globalArtinMap K L ι (.ofMul (a : IdeleClassGroup (𝓞 K) K))) =
-      ∑ᶠ v, χ (.ofMul (localArtinAt K L v (v.ideleFiniteCoord a))) +
-        ∑ w, χ (.ofMul (infiniteLocalArtinAt K L w (w.ideleInfiniteCoord a))) := by
-  -- The argument adapts the finite-place comparison of Tau Ceti pull request 20832.
-  -- The idele `a`, extended to `Kˢ`, as an element of the ground level of the layer of `L`.
-  let V := fixingOpenNormalSubgroup K L
+omit [IsGalois K L] in
+/-- **The idele `a`, extended to `Kˢ`, as an element of the ground level of the layer of `L`.**
+It reads as the extension of `a` to the fixed field `E₀` on the coefficient side and maps to the
+class of `a` on the ground level of the global formation. -/
+private lemma exists_ideleLevel_ground_eq (a : IdeleGroup (𝓞 K) K) :
+    ∃ a' : (ideleFormation K).level (ofOpenNormal (fixingOpenNormalSubgroup K L)).ground,
+      (ideleCoeffEquivIdeleFormation K).symm (a' : (ideleFormation K).toRep.V) =
+        ideleCoeffOfIntermediateField K E₀ (.ofMul (GlobalNumberFields.ideleExtension K E₀ a)) ∧
+      ((ofOpenNormal (fixingOpenNormalSubgroup K L)).repMapLayerHom
+        (ideleClassHom K)).groundMap a' =
+        groundEquivOfOpenNormal (globalFormation K) (fixingOpenNormalSubgroup K L)
+          (globalGroundEquiv K (.ofMul (a : IdeleClassGroup (𝓞 K) K))) := by
+  set V := fixingOpenNormalSubgroup K L
   let a' : (ideleFormation K).level (ofOpenNormal V).ground :=
     groundEquivOfOpenNormal (ideleFormation K) V
       (ideleLevelEquiv (E := E₀) (fixedField_toSubgroup_top K)
@@ -109,12 +105,32 @@ theorem apply_globalArtinMap_eq_finsum (ι : L →ₐ[K] SeparableClosure K)
       Submodule.coe_inclusion, groundEquivOfOpenNormal_apply_coe, a',
       ideleLevelEquiv_apply_coe, ideleCoeffOfIntermediateField_coe, globalGroundEquiv_mk]
     exact ideleClassHom_hom_apply K _
+  exact ⟨a', ha', hground⟩
+
+/-- **The local–global character formula for the global Artin map.** For a finite Galois extension
+`L/K` of number fields, embedded in `Kˢ` by `ι`, every character `χ : Gal(L/K)^ab → ℚ/ℤ` takes on
+the global Artin symbol of the class of an idele `a` the sum of its values on the local Artin
+symbols of the components of `a`, at the finite places and at the infinite places:
+
+```text
+χ (Art [a]) = ∑ᶠ v, χ (Art_v a_v) + ∑_w χ (Art_w a_w).
+```
+-/
+theorem apply_globalArtinMap_eq_finsum (ι : L →ₐ[K] SeparableClosure K)
+    (χ : Additive (Abelianization Gal(L/K)) →+ AddCircle (1 : ℚ)) (a : IdeleGroup (𝓞 K) K) :
+    χ (globalArtinMap K L ι (.ofMul (a : IdeleClassGroup (𝓞 K) K))) =
+      ∑ᶠ v, χ (.ofMul (localArtinAt K L v (v.ideleFiniteCoord a))) +
+        ∑ w, χ (.ofMul (infiniteLocalArtinAt K L w (w.ideleInfiniteCoord a))) := by
+  -- The argument adapts the finite-place comparison of Tau Ceti pull request 20832.
+  -- The idele `a`, extended to `Kˢ`, as an element of the ground level of the layer of `L`.
+  obtain ⟨a', ha', hground⟩ := exists_ideleLevel_ground_eq K L a
   -- The character `χ`, read on the layer of `L` and on `G_K`.
   let χ' := χ.comp (MulEquiv.toAdditive (layerGalEquiv ι).abelianizationCongr).toAddMonoidHom
   let ψ := (χ.comp Abelianization.of.toAdditive).comp ι.restrictNormalHom.toAdditive
   have hψ (g : AbsoluteGaloisGroup K) : ψ (.ofMul g) =
       χ' (.ofMul (Abelianization.of
-        ((galOfOpenNormalEquiv V).symm (g : AbsoluteGaloisGroup K ⧸ V.toSubgroup)))) := by
+        ((galOfOpenNormalEquiv (fixingOpenNormalSubgroup K L)).symm
+          (g : AbsoluteGaloisGroup K ⧸ (fixingOpenNormalSubgroup K L).toSubgroup)))) := by
     simp only [ψ, χ', AddMonoidHom.comp_apply, MonoidHom.coe_toAdditive,
       Function.comp_apply, toMul_ofMul, AddEquiv.coe_toAddMonoidHom,
       MulEquiv.toAdditive_apply_apply, abelianizationCongr_of]
@@ -128,7 +144,7 @@ theorem apply_globalArtinMap_eq_finsum (ι : L →ₐ[K] SeparableClosure K)
   choose σ' hσ' using fun w : InfinitePlace K ↦
     QuotientGroup.mk_surjective (infiniteArtinAt w (w.ideleInfiniteCoord a))
   have h := (globalClassFormation K).apply_artinMap_eq_finsum_of_inv_eq_ideleSumLocalInv
-    ψ V χ' hψ a'
+    ψ (fixingOpenNormalSubgroup K L) χ' hψ a'
     (fun y ↦ by rw [globalClassFormation_inv, ← ideleToClassH2_apply, globalInv_ideleToClassH2])
     τ (fun v ↦ v.ideleFiniteCoord a) σ τ' (fun w ↦ w.ideleInfiniteCoord a) σ'
     (fun v ↦ ha' ▸ hτ v a) hσ (fun w ↦ ha' ▸ hτ' w a) hσ'

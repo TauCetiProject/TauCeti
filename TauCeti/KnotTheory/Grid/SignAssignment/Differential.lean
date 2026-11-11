@@ -82,22 +82,21 @@ theorem signedUnblockedCoefficient_self (x : GridState n) :
 linear map on `GC⁻` over the polynomial ring. -/
 noncomputable def signedUnblockedDifferential :
     GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n :=
-  Finsupp.linearCombination (MvPolynomial (Fin n) R) fun x =>
-    Finsupp.equivFunOnFinite.symm (G.signedUnblockedCoefficient S R x)
+  GridChain.matrixMap R (G.signedUnblockedCoefficient S R)
 
 /-- The `y`-coefficient of the signed differential of the generator `x` is the signed matrix
 coefficient. -/
 theorem signedUnblockedDifferential_single_apply (x y : GridState n) :
     G.signedUnblockedDifferential S R (Finsupp.single x 1) y =
       G.signedUnblockedCoefficient S R x y := by
-  simp [signedUnblockedDifferential]
+  rw [signedUnblockedDifferential, GridChain.matrixMap_single_apply, one_mul]
 
 /-- The coefficient formula for the signed differential on an arbitrary chain. -/
 @[simp]
 theorem signedUnblockedDifferential_apply_apply (c : GridChainMinus R n) (y : GridState n) :
     G.signedUnblockedDifferential S R c y =
-      c.sum fun x a => a * G.signedUnblockedCoefficient S R x y := by
-  simp [signedUnblockedDifferential, Finsupp.linearCombination_apply, Finsupp.sum_apply]
+      c.sum fun x a => a * G.signedUnblockedCoefficient S R x y :=
+  GridChain.matrixMap_apply_apply R _ c y
 
 /-- The matrix of the square of the signed differential: its `(x, z)` entry is the sum over
 intermediate grid states of the products of the two matrix coefficients. -/

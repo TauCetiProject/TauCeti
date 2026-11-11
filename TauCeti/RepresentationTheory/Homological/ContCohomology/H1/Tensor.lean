@@ -255,10 +255,10 @@ theorem h1TensorInvariantsEquiv_symm_apply
 /-- **Coprime descent followed by the tensor comparison.** -/
 noncomputable def h1CoprimeTensorInvariantsEquiv
     (hN : ∀ (n : N) (a : A), (n : G) • a = a) [Fact p.Prime]
-    [Module.Finite (ZMod p) A] [N.FiniteIndex] (hopen : IsOpen (N : Set G))
-    (hcop : N.index.Coprime p) :
+    [Module.Finite (ZMod p) A] (hopen : IsOpen (N : Set G)) (hcop : N.index.Coprime p) :
     H1 G A ≃ₗ[ZMod p]
       h1TensorConjInvariants (p := p) (G := G) (N := N) (A := A) :=
+  haveI := N.finiteIndex_of_index_coprime (Fact.out : p.Prime).ne_one hcop
   h1CoprimeDescentEquiv hopen hcop ≪≫ₗ (h1TensorInvariantsEquiv hN).symm
 
 /-- The forward map of `h1CoprimeTensorInvariantsEquiv` is restriction to `N` followed by the
@@ -266,10 +266,11 @@ inverse tensor comparison. -/
 @[simp]
 theorem h1CoprimeTensorInvariantsEquiv_apply
     (hN : ∀ (n : N) (a : A), (n : G) • a = a) [Fact p.Prime]
-    [Module.Finite (ZMod p) A] [N.FiniteIndex] (hopen : IsOpen (N : Set G))
-    (hcop : N.index.Coprime p) (x : H1 G A) :
+    [Module.Finite (ZMod p) A] (hopen : IsOpen (N : Set G)) (hcop : N.index.Coprime p)
+    (x : H1 G A) :
     (h1CoprimeTensorInvariantsEquiv hN hopen hcop x : H1 N (ZMod p) ⊗[ZMod p] A) =
       (h1TensorEquiv hN).symm (explicitResConj1 G A N x : H1 N A) := by
+  have := N.finiteIndex_of_index_coprime (Fact.out : p.Prime).ne_one hcop
   rw [h1CoprimeTensorInvariantsEquiv, LinearEquiv.trans_apply,
     h1TensorInvariantsEquiv_symm_apply, h1CoprimeDescentEquiv_apply]
 
@@ -278,8 +279,7 @@ index prime to `p` acting trivially on `A`, the dimension of `H¹(G, A)` is the 
 invariants in `H¹(N, ZMod p) ⊗ A`. -/
 theorem finrank_H1_eq_finrank_tensorInvariants
     (hN : ∀ (n : N) (a : A), (n : G) • a = a) [Fact p.Prime]
-    [Module.Finite (ZMod p) A] [N.FiniteIndex] (hopen : IsOpen (N : Set G))
-    (hcop : N.index.Coprime p) :
+    [Module.Finite (ZMod p) A] (hopen : IsOpen (N : Set G)) (hcop : N.index.Coprime p) :
     Module.finrank (ZMod p) (H1 G A) =
       Module.finrank (ZMod p)
         (h1TensorConjInvariants (p := p) (G := G) (N := N) (A := A)) :=
@@ -371,8 +371,8 @@ consumed by `finrankTensorInvariantsK0`: the right side is the invariant dimensi
 of the quotient representation `H¹(N, ZMod p)` with `A`. -/
 theorem finrank_H1_eq_finrank_representationInvariants
     (hN : ∀ (n : N) (a : A), (n : G) • a = a) [Fact p.Prime]
-    [Module.Finite (ZMod p) A] [N.FiniteIndex] (hopen : IsOpen (N : Set G))
-    (hcop : N.index.Coprime p) (ρ : Representation (ZMod p) (G ⧸ N) A)
+    [Module.Finite (ZMod p) A] (hopen : IsOpen (N : Set G)) (hcop : N.index.Coprime p)
+    (ρ : Representation (ZMod p) (G ⧸ N) A)
     (hρ : ∀ (g : G) (a : A), ρ (g : G ⧸ N) a = g • a) :
     Module.finrank (ZMod p) (H1 G A) =
       Module.finrank (ZMod p) (Representation.invariants

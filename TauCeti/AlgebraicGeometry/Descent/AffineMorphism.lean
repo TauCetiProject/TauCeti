@@ -180,12 +180,6 @@ theorem toBaseChangeDescended_hom_left_fst :
     D.toBaseChangeDescended.hom.left ≫ pullback.fst D.descended.hom p = D.toDescended :=
   pullback.lift_fst _ _ _
 
-/-- The second component of the comparison morphism is the structure morphism `X ⟶ S'`. -/
-@[reassoc (attr := simp)]
-theorem toBaseChangeDescended_hom_left_snd :
-    D.toBaseChangeDescended.hom.left ≫ pullback.snd D.descended.hom p = X.hom :=
-  pullback.lift_snd _ _ _
-
 section Effective
 
 open Opposite
@@ -436,7 +430,7 @@ theorem isPullback_toDescended [Flat p] : IsPullback D.toDescended X.hom D.desce
   have : IsIso D.toBaseChangeDescended.hom.left :=
     (Over.forget S').map_isIso D.toBaseChangeDescended.hom
   exact .of_iso_pullback ⟨D.toDescended_hom⟩ (asIso D.toBaseChangeDescended.hom.left)
-    D.toBaseChangeDescended_hom_left_fst D.toBaseChangeDescended_hom_left_snd
+    D.toBaseChangeDescended_hom_left_fst D.toBaseChangeDescended.hom_left_snd
 
 end Effective
 

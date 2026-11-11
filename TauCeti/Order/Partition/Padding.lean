@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Data.Fintype.Prod
 public import Mathlib.Order.Partition.Equipartition
+public import TauCeti.Data.Nat.RoundUp
+public import TauCeti.Order.Partition.Finpartition
 import Mathlib.Tactic.Linarith
 
 /-!
@@ -79,56 +81,27 @@ theorem IsEquipartition.exists_divisible_padding (hP : P.IsEquipartition) (hs : 
       Fintype.card (P.parts × Fin m) < #s + q * #P.parts := by
   classical
   -- Round the largest cell size up to a multiple of `q`.
-  let M := P.parts.sup card
-  let m := q * ((M + q - 1) / q)
-  have hM : 0 < M := by
+  obtain ⟨m, hqm, hmlo, hmhi⟩ := Nat.exists_dvd_between_of_pos hq (P.parts.sup card)
+  have hM : 0 < P.parts.sup card := by
     obtain ⟨A, hA⟩ := P.parts_nonempty hs.ne_empty
     exact (card_pos.2 (P.nonempty_of_mem_parts hA)).trans_le (le_sup hA)
-  have hmlo : M ≤ m := by
-    have hrem := Nat.mod_lt (M + q - 1) hq
-    have hdiv := Nat.mod_add_div (M + q - 1) q
-    dsimp [m]
-    omega
-  have hmhi : m < M + q := by
-    have := Nat.mul_div_le (M + q - 1) q
-    dsimp [m]
-    omega
   have hmpos := hM.trans_le hmlo
   obtain ⟨e, he⟩ := P.exists_embedding_prod_fin (m := m)
     (fun A hA ↦ (le_sup hA).trans hmlo)
-  -- The padded cells are precisely the fibers of the first coordinate.
-  let cell (A : P.parts) : Finset (P.parts × Fin m) := {A} ×ˢ univ
-  let Q := ofSetoid (Setoid.ker (Prod.fst : P.parts × Fin m → P.parts))
-  have hfilter (x : P.parts × Fin m) :
-      {y ∈ (univ : Finset (P.parts × Fin m)) | x.1 = y.1} = cell x.1 := by
-    ext y
-    simp only [mem_filter, mem_univ, true_and, cell, mem_product, mem_singleton,
-      and_true, eq_comm]
-  have hparts : Q.parts = univ.image cell := by
-    simp only [Q, ofSetoid, ofSetSetoid_parts, Setoid.ker_def, hfilter]
-    ext B
-    simp only [mem_image, mem_univ, true_and]
-    exact ⟨fun ⟨x, hx⟩ ↦ ⟨x.1, hx⟩,
-      fun ⟨A, hA⟩ ↦ ⟨(A, ⟨0, hmpos⟩), hA⟩⟩
-  have hcell (A : P.parts) : #(cell A) = m := by simp [cell]
-  have hinj : Function.Injective cell := by
-    intro A B h
-    have : (A, (⟨0, hmpos⟩ : Fin m)) ∈ cell B := by rw [← h]; simp [cell]
-    simpa only [cell, mem_product, mem_singleton, mem_univ, and_true] using this
-  have hcard (B) (hB : B ∈ Q.parts) : #B = m := by
-    obtain ⟨A, -, rfl⟩ := mem_image.1 (hparts ▸ hB)
-    exact hcell A
-  refine ⟨m, e, Q, hmpos, ⟨_, rfl⟩, ?_, ?_, hparts, hcard, ?_, ?_⟩
+  have : Nonempty (Fin m) := ⟨⟨0, hmpos⟩⟩
+  have hparts := Finpartition.ofSetoid_ker_fst_parts (α := P.parts) (β := Fin m)
+  have hcard : ∀ B ∈ (ofSetoid (Setoid.ker (Prod.fst : P.parts × Fin m → P.parts))).parts,
+      #B = m := fun B hB ↦ by simpa using card_of_mem_ofSetoid_ker_fst_parts hB
+  refine ⟨m, e, _, hmpos, hqm, ?_, ?_, hparts, hcard, ?_, ?_⟩
   · intro A B hA hB
     simp only [hcard A hA, hcard B hB]
     omega
-  · rw [hparts, card_image_of_injective _ hinj, card_univ, Fintype.card_coe]
+  · simp
   · intro A x
     simpa only [mem_product, mem_singleton, mem_univ, and_true] using he A x
   · -- Rounding costs at most `q - 1` per cell; equitability costs strictly less than one.
     have hgap := hP.card_parts_mul_sup_card_lt hs
-    have hround := Nat.mul_le_mul_left #P.parts (by omega : m + 1 ≤ M + q)
-    dsimp [M] at hround
+    have hround := Nat.mul_le_mul_left #P.parts (by omega : m + 1 ≤ P.parts.sup card + q)
     simp only [Fintype.card_prod, Fintype.card_coe, Fintype.card_fin]
     nlinarith
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Reduced
-public import TauCeti.AlgebraicGeometry.EllipticCurve.RealPeriod
+public import TauCeti.AlgebraicGeometry.EllipticCurve.RealPeriod.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.GlobalExistence
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 

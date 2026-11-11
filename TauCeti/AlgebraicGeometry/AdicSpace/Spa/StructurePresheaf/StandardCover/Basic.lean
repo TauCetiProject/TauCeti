@@ -11,9 +11,9 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.IsSheafF
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.LaurentCover.Sheaf
 public import TauCeti.RingTheory.Huber.StronglyNoetherian
 
-import Mathlib.CategoryTheory.Sites.Coverage
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.OpenEmbedding
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.Units
+import TauCeti.CategoryTheory.Sites.IsSheafFor
 
 /-!
 # The sheaf condition for standard rational covers
@@ -118,14 +118,12 @@ theorem isSheafFor_ofArrows_inf_spaBasicOpen_of_isUnit_of_isSheafFor [IsHuberRin
     exact isOpen_univ
   have hWt (t : T) : W ⊓ spaBasicOpen Aplus T t ∈ spaRationalOpens Aplus :=
     inf_mem_spaRationalOpens hW (spaBasicOpen_mem_spaRationalOpens hTopen)
-  refine Presieve.isSheafFor_of_factorsThru _ (S := (laurentSieve Aplus R W).arrows)
-    (fun _ g hg ↦ laurentSieve_mul_inverse_le_ofArrows_inf_spaBasicOpen hT hu W g hg)
-    (hlaurent R hW) fun Y e he ↦ ?_
   -- on each piece of the standard cover, the Laurent sieve restricts to a Laurent sieve
-  obtain ⟨t⟩ := he
-  refine ⟨(laurentSieve Aplus R _).arrows,
-    (hlaurent R (hWt t)).isSeparatedFor,
-    fun Z g hg ↦ ⟨Z, 𝟙 Z, g ≫ homOfLE inf_le_left, ?_, Category.id_comp _⟩⟩
+  refine Presieve.isSheafFor_ofArrows_of_factorsThru _
+    (fun t ↦ (laurentSieve Aplus R (W ⊓ spaBasicOpen Aplus T t)).arrows)
+    (fun t ↦ (hlaurent R (hWt t)).isSeparatedFor) (hlaurent R hW)
+    (fun _ g hg ↦ laurentSieve_mul_inverse_le_ofArrows_inf_spaBasicOpen hT hu W g hg)
+    fun t Z g hg ↦ ⟨Z, 𝟙 Z, _, ?_, Category.id_comp _⟩
   rw [← laurentSieve_pullback R (homOfLE inf_le_left : W ⊓ spaBasicOpen Aplus T t ⟶ W)] at hg
   exact hg
 
@@ -320,30 +318,28 @@ theorem isSheafFor_ofArrows_inf_spaBasicOpen_of_span_eq_top_of_isSheafFor
       (fun J J' ↦ (hSV J (inf_mem_spaRationalOpens (hY J) (hY J')) inf_le_left).isSeparatedFor)
       fun _ _ hg ↦ hg.1
     -- the pieces `Y J` satisfy the sheaf condition, since the Laurent sieve does
-    refine Presieve.isSheafFor_of_factorsThru _ (S := (laurentSieve Aplus R W).arrows)
-      (fun U g hg ↦ ?_) (hlaurent R hW) fun Z e he ↦ ?_
-    · obtain ⟨J, hJ⟩ := hRY g le_rfl hg
-      exact ⟨Y J, homOfLE hJ, homOfLE inf_le_left, Presieve.ofArrows.mk J, rfl⟩
-    · obtain ⟨J⟩ := he
-      refine ⟨(laurentSieve Aplus R _).arrows, (hlaurent R (hY J)).isSeparatedFor,
-        fun U g hg ↦ ⟨U, 𝟙 U, g ≫ homOfLE inf_le_left,
-          (laurentSieve_apply _).mpr ((laurentSieve_apply g).mp hg), Category.id_comp _⟩⟩
+    refine Presieve.isSheafFor_ofArrows_of_factorsThru _
+      (fun J ↦ (laurentSieve Aplus R (Y J)).arrows)
+      (fun J ↦ (hlaurent R (hY J)).isSeparatedFor) (hlaurent R hW) (fun U g hg ↦ ?_)
+      fun J U g hg ↦
+        ⟨U, 𝟙 U, _, (laurentSieve_apply _).mpr ((laurentSieve_apply g).mp hg), Category.id_comp _⟩
+    obtain ⟨J, hJ⟩ := hRY g le_rfl hg
+    exact ⟨Y J, homOfLE hJ, homOfLE inf_le_left, Presieve.ofArrows.mk J, rfl⟩
   -- every member of `S` lies in a piece of the standard cover, and on each piece the Laurent
   -- sieve, which is separated there, refines `S`
   have hTopen : IsOpen (Ideal.span (T : Set A) : Set A) := by
     rw [hspan]
     exact isOpen_univ
-  refine Presieve.isSheafFor_of_factorsThru _ (S := S.arrows) (fun U g hg ↦ ?_) hS
-    fun Z e he ↦ ?_
-  · obtain ⟨-, t, ht, hUt⟩ := hg
-    exact ⟨W ⊓ spaBasicOpen Aplus T t, homOfLE (le_inf g.le hUt), homOfLE inf_le_left,
-      Presieve.ofArrows.mk (⟨t, ht⟩ : T), rfl⟩
-  · obtain ⟨t⟩ := he
-    refine ⟨(laurentSieve Aplus R _).arrows,
-      (hlaurent R
-        (inf_mem_spaRationalOpens hW (spaBasicOpen_mem_spaRationalOpens hTopen))).isSeparatedFor,
-      fun U g hg ↦ ⟨U, 𝟙 U, g ≫ homOfLE inf_le_left,
-        ⟨hRY g inf_le_left hg, t, t.2, g.le.trans inf_le_right⟩, Category.id_comp _⟩⟩
+  refine Presieve.isSheafFor_ofArrows_of_factorsThru _
+    (fun t ↦ (laurentSieve Aplus R (W ⊓ spaBasicOpen Aplus T t)).arrows)
+    (fun _ ↦ (hlaurent R
+      (inf_mem_spaRationalOpens hW (spaBasicOpen_mem_spaRationalOpens hTopen))).isSeparatedFor)
+    hS (fun U g hg ↦ ?_)
+    fun t U g hg ↦ ⟨U, 𝟙 U, _, ⟨hRY g inf_le_left hg, t, t.2, g.le.trans inf_le_right⟩,
+      Category.id_comp _⟩
+  obtain ⟨-, t, ht, hUt⟩ := hg
+  exact ⟨W ⊓ spaBasicOpen Aplus T t, homOfLE (le_inf g.le hUt), homOfLE inf_le_left,
+    Presieve.ofArrows.mk (⟨t, ht⟩ : T), rfl⟩
 
 /-- **Wedhorn's Lemma 8.34 in degree zero for standard covers.** Let `C` be a predicate on Tate
 rings satisfying `LaurentGluing`, and `A` a Tate ring satisfying `C`. Let `P` be a pair of

@@ -150,6 +150,36 @@ private theorem mem_orbit_of_mk_eq_mk {s : Fin n → Bool} {H : Subgroup (Perm (
 
 /-! ### Joining two directed orbits of a circle is not planar -/
 
+/-- Let `σ` be an involution and `τ = σ * crossingRotation`. Take lists `LT`, `Lα`, `Lσ` of
+permutations with products `τ * swap x y`, the edge pairing `α` and `σ`. Then the entries of the
+three lists, together with `swap x y`, generate a subgroup containing the monodromy group of the
+underlying graph. The intended application takes `σ` to be the smoothing turn and the lists to be
+factorizations into transpositions. -/
+private theorem monodromyGroup_toPermutationTriple_le_closure {x y : Fin (4 * n)}
+    {σ τ : Perm (Fin (4 * n))} {LT Lα Lσ : List (Perm (Fin (4 * n)))}
+    (hLTprod : LT.prod = τ * swap x y) (hLαprod : Lα.prod = D.edgePair.val)
+    (hLσprod : Lσ.prod = σ) (hσσ : σ * σ = 1) (hτdef : τ = σ * D.crossingRotation) :
+    D.toPermutationTriple.monodromyGroup ≤
+      Subgroup.closure {g | g ∈ LT ++ swap x y :: (Lα ++ Lσ)} := by
+  have hsub {L : List (Perm (Fin (4 * n)))} (h : L ⊆ LT ++ swap x y :: (Lα ++ Lσ)) :
+      L.prod ∈ Subgroup.closure {g | g ∈ LT ++ swap x y :: (Lα ++ Lσ)} :=
+    Subgroup.list_prod_mem _ fun g hg ↦ Subgroup.subset_closure (h hg)
+  have hLTmem := hLTprod ▸ hsub (List.subset_append_left _ _)
+  have hswap : swap x y ∈ Subgroup.closure {g | g ∈ LT ++ swap x y :: (Lα ++ Lσ)} :=
+    Subgroup.subset_closure (List.mem_append_right _ List.mem_cons_self)
+  have hαmem := hLαprod ▸ hsub fun g hg ↦ List.mem_append_right _
+    (List.mem_cons_of_mem _ (List.mem_append_left _ hg))
+  have hσmem := hLσprod ▸ hsub fun g hg ↦ List.mem_append_right _
+    (List.mem_cons_of_mem _ (List.mem_append_right _ hg))
+  have hρ : D.crossingRotation = σ * ((τ * swap x y) * swap x y) := by
+    rw [mul_assoc τ, swap_mul_self, mul_one, hτdef, ← mul_assoc, hσσ, one_mul]
+  rw [← PermutationTriple.closure_pair_eq_monodromyGroup, Subgroup.closure_le]
+  rintro g (rfl | rfl)
+  · rw [toPermutationTriple_σ0, hρ]
+    exact mul_mem hσmem (mul_mem hLTmem hswap)
+  · rw [toPermutationTriple_σ1]
+    exact hαmem
+
 /-- If the two slots `x` and `y` exchanged at their crossing by turning to the next slot and then
 following the smoothing of `s` lie on one circle of `s`, but on different directed traversal
 orbits, then the code is not planar. -/
@@ -191,27 +221,8 @@ private theorem not_isPlanar_of_not_sameCycle {s : Fin n → Bool} {x y : Fin (4
   have hprod : (LT ++ swap x y :: (Lα ++ Lσ)).prod = τ * (α * σ) := by
     rw [List.prod_append, List.prod_cons, hLTprod, hMprod, mul_assoc, swap_mul_self_mul]
   -- The transpositions generate the monodromy group of the underlying graph.
-  have hmono : D.toPermutationTriple.monodromyGroup ≤
-      Subgroup.closure {g | g ∈ LT ++ swap x y :: (Lα ++ Lσ)} := by
-    rw [← PermutationTriple.closure_pair_eq_monodromyGroup, Subgroup.closure_le]
-    have hLTmem : τ * swap x y ∈ Subgroup.closure {g | g ∈ LT ++ swap x y :: (Lα ++ Lσ)} :=
-      hLTprod ▸ hsub (List.subset_append_left _ _)
-    have hswap : swap x y ∈ Subgroup.closure {g | g ∈ LT ++ swap x y :: (Lα ++ Lσ)} :=
-      Subgroup.subset_closure (List.mem_append_right _ List.mem_cons_self)
-    have hαmem : α ∈ Subgroup.closure {g | g ∈ LT ++ swap x y :: (Lα ++ Lσ)} :=
-      hLαprod ▸ hsub fun g hg ↦ List.mem_append_right _
-        (List.mem_cons_of_mem _ (List.mem_append_left _ hg))
-    have hσmem : σ ∈ Subgroup.closure {g | g ∈ LT ++ swap x y :: (Lα ++ Lσ)} :=
-      hLσprod ▸ hsub fun g hg ↦ List.mem_append_right _
-        (List.mem_cons_of_mem _ (List.mem_append_right _ hg))
-    have hρ : D.crossingRotation = σ * ((τ * swap x y) * swap x y) := by
-      rw [mul_assoc τ, swap_mul_self, mul_one, hτdef, ← mul_assoc, hσσ, one_mul]
-    rintro g (rfl | rfl)
-    · rw [toPermutationTriple_σ0, hρ]
-      exact mul_mem hσmem (mul_mem hLTmem hswap)
-    · rw [toPermutationTriple_σ1]
-      exact hαmem
-  have hcomp := MulAction.card_orbitRelQuotient_anti (X := Fin (4 * n)) hmono
+  have hcomp := MulAction.card_orbitRelQuotient_anti (X := Fin (4 * n))
+    (D.monodromyGroup_toPermutationTriple_le_closure hLTprod hLαprod hLσprod hσσ hτdef)
   -- Count the transpositions.
   have hτ : τ.SameCycle x y := ⟨1, by simpa using hxy⟩
   have horbT := orbitCount_mul_swap_of_sameCycle hne hτ

@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.AlgebraicGeometry.Modules.PseudoCoherent.FinitePresentation
+import TauCeti.AlgebraicGeometry.Modules.PseudoCoherent.Pullback
+import Mathlib.RingTheory.MvPolynomial.Basic
+import Mathlib.Data.ZMod.Basic
 import TauCeti.AlgebraicGeometry.Modules.FinitePresentation
 
 /-!
@@ -16,6 +18,11 @@ noetherian ring `R`, the sheaf on `Spec R` associated with any cyclic module `R 
 pseudo-coherent. Its resolution gives a finite global presentation; local resolutions on an
 arbitrary scheme give finite presentation and quasi-coherence. Conversely, a sheaf associated
 to a module that is not finitely presented cannot be pseudo-coherent.
+
+Flat pullback preserves the full resolutions as well as local pseudo-coherence. In particular,
+cyclic sheaves over Noetherian rings stay pseudo-coherent after flat base change to schemes
+that need not be Noetherian. A polynomial algebra in infinitely many variables over `ℤ/4`
+exercises this without requiring the target ring of the algebra map to be Noetherian.
 -/
 
 open CategoryTheory Limits ZeroObject
@@ -68,5 +75,33 @@ example {R : CommRingCat.{u}} (M : ModuleCat.{u} R)
 /-- Zero sheaves on arbitrary schemes also satisfy the finite-presentation consequence. -/
 example (X : Scheme.{u}) : (0 : X.Modules).IsFinitePresentation :=
   (IsPseudoCoherent.of_isZero (isZero_zero _)).isFinitePresentation
+
+/-- Flat pullback preserves the full finite free resolution of a cyclic sheaf, even if
+its source scheme is not Noetherian. -/
+example (R : CommRingCat.{u}) [IsNoetherianRing R] (I : Ideal R)
+    {X : Scheme.{u}} (f : X ⟶ Spec R) [Flat f] :
+    ((pullback f).obj (tilde (ModuleCat.of R (R ⧸ I)))).HasFiniteFreeResolution :=
+  (hasFiniteFreeResolution_tilde (M := ModuleCat.of R (R ⧸ I))
+    TauCeti.Huber.IsPseudoCoherentOver.of_isNoetherianRing).pullback f
+
+/-- Pullback also preserves local resolutions; it does not require a globally chosen one. -/
+example {X Y Z : Scheme.{u}} {F : Z.Modules} (h : F.IsPseudoCoherent)
+    (f : X ⟶ Y) (g : Y ⟶ Z) [Flat f] [Flat g] :
+    ((pullback (f ≫ g)).obj F).IsPseudoCoherent :=
+  ((h.pullback g).pullback f).of_iso ((pullbackComp f g).app F)
+
+/-- Infinitely many polynomial variables and nilpotents are allowed on the new base. -/
+example :
+    ((pullback (Spec.map (CommRingCat.ofHom
+      (MvPolynomial.C : ZMod 4 →+* MvPolynomial ℕ (ZMod 4))))).obj
+        (tilde (ModuleCat.of (ZMod 4) (ZMod 4 ⧸ Ideal.span {(2 : ZMod 4)})))).IsPseudoCoherent := by
+  have : Flat (Spec.map (CommRingCat.ofHom
+      (MvPolynomial.C : ZMod 4 →+* MvPolynomial ℕ (ZMod 4)))) := by
+    rw [Flat.SpecMap_iff, CommRingCat.hom_ofHom, ← MvPolynomial.algebraMap_eq,
+      RingHom.flat_algebraMap_iff]
+    infer_instance
+  exact (isPseudoCoherent_tilde (R := CommRingCat.of (ZMod 4)) (M := ModuleCat.of (ZMod 4)
+    (ZMod 4 ⧸ Ideal.span {(2 : ZMod 4)}))
+      TauCeti.Huber.IsPseudoCoherentOver.of_isNoetherianRing).pullback _
 
 end AlgebraicGeometry.Scheme.Modules

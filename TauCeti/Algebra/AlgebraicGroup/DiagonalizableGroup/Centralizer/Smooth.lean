@@ -113,6 +113,86 @@ private theorem comp_conjugationCoactAlgHom_eq_iff_commute {B : Type x} [CommRin
   rw [comp_conjugationCoactAlgHom, ← ofConv_toConv (ψ.comp Algebra.TensorProduct.includeLeft),
     ofConv_injective.eq_iff, mul_inv_eq_iff_eq_mul, ofConv_toConv, commute_iff_eq, eq_comm]
 
+/-- Conjugating twice, first by the point `u₁` and then by the point `u₂` of `D(X)`: the
+left-hand side of the action-associativity law, tested against `ψ`. -/
+private theorem comp_assoc_comp_map_conjugationCoactAlgHom_left {B : Type x} [CommRing B]
+    [Algebra R B] (ψ : H ⊗[R] (MonoidAlgebra R X ⊗[R] MonoidAlgebra R X) →ₐ[R] B) :
+    ψ.comp ((Algebra.TensorProduct.assoc R R R H (MonoidAlgebra R X)
+        (MonoidAlgebra R X)).toAlgHom.comp
+          ((Algebra.TensorProduct.map (conjugationCoactAlgHom π)
+            (AlgHom.id R (MonoidAlgebra R X))).comp (conjugationCoactAlgHom π))) =
+      (mapDomain π (toConv ((ψ.comp Algebra.TensorProduct.includeRight).comp
+            Algebra.TensorProduct.includeRight)) *
+          (mapDomain π (toConv ((ψ.comp Algebra.TensorProduct.includeRight).comp
+              Algebra.TensorProduct.includeLeft)) *
+            toConv (ψ.comp Algebra.TensorProduct.includeLeft) *
+            (mapDomain π (toConv ((ψ.comp Algebra.TensorProduct.includeRight).comp
+              Algebra.TensorProduct.includeLeft)))⁻¹) *
+        (mapDomain π (toConv ((ψ.comp Algebra.TensorProduct.includeRight).comp
+          Algebra.TensorProduct.includeRight)))⁻¹).ofConv := by
+  let ψ' := ψ.comp (Algebra.TensorProduct.assoc R R R H (MonoidAlgebra R X)
+    (MonoidAlgebra R X)).toAlgHom
+  have hg : toConv ((ψ'.comp Algebra.TensorProduct.includeLeft).comp
+      Algebra.TensorProduct.includeLeft) = toConv (ψ.comp Algebra.TensorProduct.includeLeft) := by
+    apply congrArg toConv
+    ext h
+    simp [ψ', Algebra.TensorProduct.one_def]
+  have hu₁ : toConv ((ψ'.comp Algebra.TensorProduct.includeLeft).comp
+      Algebra.TensorProduct.includeRight) =
+      toConv ((ψ.comp Algebra.TensorProduct.includeRight).comp
+        Algebra.TensorProduct.includeLeft) := by
+    apply congrArg toConv
+    ext p
+    simp [ψ']
+  have hu₂ : toConv ((ψ'.comp (Algebra.TensorProduct.map (conjugationCoactAlgHom π)
+      (AlgHom.id R (MonoidAlgebra R X)))).comp Algebra.TensorProduct.includeRight) =
+      toConv ((ψ.comp Algebra.TensorProduct.includeRight).comp
+        Algebra.TensorProduct.includeRight) := by
+    apply congrArg toConv
+    ext p
+    simp [ψ', Algebra.TensorProduct.one_def]
+  have e1 : ψ.comp ((Algebra.TensorProduct.assoc R R R H (MonoidAlgebra R X)
+      (MonoidAlgebra R X)).toAlgHom.comp ((Algebra.TensorProduct.map (conjugationCoactAlgHom π)
+        (AlgHom.id R (MonoidAlgebra R X))).comp (conjugationCoactAlgHom π))) =
+      (ψ'.comp (Algebra.TensorProduct.map (conjugationCoactAlgHom π)
+        (AlgHom.id R (MonoidAlgebra R X)))).comp (conjugationCoactAlgHom π) := by
+    simp only [ψ', AlgHom.comp_assoc]
+  have e2 : (ψ'.comp (Algebra.TensorProduct.map (conjugationCoactAlgHom π)
+      (AlgHom.id R (MonoidAlgebra R X)))).comp Algebra.TensorProduct.includeLeft =
+      (ψ'.comp Algebra.TensorProduct.includeLeft).comp (conjugationCoactAlgHom π) := by
+    rw [AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeLeft]
+    simp only [ψ', AlgHom.comp_assoc]
+  rw [e1, comp_conjugationCoactAlgHom, e2, comp_conjugationCoactAlgHom, toConv_ofConv, hg, hu₁,
+    hu₂]
+
+/-- Conjugating once by the product of the points `u₁` and `u₂` of `D(X)`: the right-hand side of
+the action-associativity law, tested against `ψ`. -/
+private theorem comp_map_comulAlgHom_comp_conjugationCoactAlgHom {B : Type x} [CommRing B]
+    [Algebra R B] (ψ : H ⊗[R] (MonoidAlgebra R X ⊗[R] MonoidAlgebra R X) →ₐ[R] B) :
+    ψ.comp ((Algebra.TensorProduct.map (AlgHom.id R H)
+        (Bialgebra.comulAlgHom R (MonoidAlgebra R X))).comp (conjugationCoactAlgHom π)) =
+      (mapDomain π (toConv ((ψ.comp Algebra.TensorProduct.includeRight).comp
+            Algebra.TensorProduct.includeLeft)) *
+          mapDomain π (toConv ((ψ.comp Algebra.TensorProduct.includeRight).comp
+            Algebra.TensorProduct.includeRight)) *
+        toConv (ψ.comp Algebra.TensorProduct.includeLeft) *
+        (mapDomain π (toConv ((ψ.comp Algebra.TensorProduct.includeRight).comp
+              Algebra.TensorProduct.includeLeft)) *
+          mapDomain π (toConv ((ψ.comp Algebra.TensorProduct.includeRight).comp
+            Algebra.TensorProduct.includeRight)))⁻¹).ofConv := by
+  have hcomul : toConv ((ψ.comp (Algebra.TensorProduct.map (AlgHom.id R H)
+      (Bialgebra.comulAlgHom R (MonoidAlgebra R X)))).comp Algebra.TensorProduct.includeRight) =
+      toConv ((ψ.comp Algebra.TensorProduct.includeRight).comp Algebra.TensorProduct.includeLeft) *
+        toConv ((ψ.comp Algebra.TensorProduct.includeRight).comp
+          Algebra.TensorProduct.includeRight) := by
+    rw [AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeRight, ← AlgHom.comp_assoc,
+      Bialgebra.toConv_comp_comulAlgHom]
+  have hleft : (ψ.comp (Algebra.TensorProduct.map (AlgHom.id R H)
+      (Bialgebra.comulAlgHom R (MonoidAlgebra R X)))).comp Algebra.TensorProduct.includeLeft =
+      ψ.comp Algebra.TensorProduct.includeLeft := by
+    rw [AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeLeft, AlgHom.comp_id]
+  rw [← AlgHom.comp_assoc, comp_conjugationCoactAlgHom, hcomul, hleft, map_mul]
+
 /-- The action-associativity law of the conjugation action, tested against an arbitrary algebra
 map `ψ` out of the triple tensor product. Testing against `ψ` keeps every point in a convolution
 group with a commutative value algebra of its own. -/
@@ -124,64 +204,17 @@ private theorem comp_assoc_comp_map_conjugationCoactAlgHom {B : Type x} [CommRin
             (AlgHom.id R (MonoidAlgebra R X))).comp (conjugationCoactAlgHom π))) =
       ψ.comp ((Algebra.TensorProduct.map (AlgHom.id R H)
         (Bialgebra.comulAlgHom R (MonoidAlgebra R X))).comp (conjugationCoactAlgHom π)) := by
-  let ψ' := ψ.comp (Algebra.TensorProduct.assoc R R R H (MonoidAlgebra R X)
-    (MonoidAlgebra R X)).toAlgHom
   -- The universal point `g` of `G` and the two universal points `u₁`, `u₂` of `D(X)`.
   let g : WithConv (H →ₐ[R] B) := toConv (ψ.comp Algebra.TensorProduct.includeLeft)
   let u₁ : WithConv (MonoidAlgebra R X →ₐ[R] B) :=
     toConv ((ψ.comp Algebra.TensorProduct.includeRight).comp Algebra.TensorProduct.includeLeft)
   let u₂ : WithConv (MonoidAlgebra R X →ₐ[R] B) :=
     toConv ((ψ.comp Algebra.TensorProduct.includeRight).comp Algebra.TensorProduct.includeRight)
-  have hg : toConv ((ψ'.comp Algebra.TensorProduct.includeLeft).comp
-      Algebra.TensorProduct.includeLeft) = g := by
-    apply congrArg toConv
-    ext h
-    simp [ψ', Algebra.TensorProduct.one_def]
-  have hu₁ : toConv ((ψ'.comp Algebra.TensorProduct.includeLeft).comp
-      Algebra.TensorProduct.includeRight) = u₁ := by
-    apply congrArg toConv
-    ext p
-    simp [ψ']
-  have hu₂ : toConv ((ψ'.comp (Algebra.TensorProduct.map (conjugationCoactAlgHom π)
-      (AlgHom.id R (MonoidAlgebra R X)))).comp Algebra.TensorProduct.includeRight) = u₂ := by
-    apply congrArg toConv
-    ext p
-    simp [ψ', Algebra.TensorProduct.one_def]
-  have hcomul : toConv ((ψ.comp (Algebra.TensorProduct.map (AlgHom.id R H)
-      (Bialgebra.comulAlgHom R (MonoidAlgebra R X)))).comp Algebra.TensorProduct.includeRight) =
-      u₁ * u₂ := by
-    rw [AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeRight, ← AlgHom.comp_assoc,
-      Bialgebra.toConv_comp_comulAlgHom]
-  have hleft : (ψ.comp (Algebra.TensorProduct.map (AlgHom.id R H)
-      (Bialgebra.comulAlgHom R (MonoidAlgebra R X)))).comp Algebra.TensorProduct.includeLeft =
-      ψ.comp Algebra.TensorProduct.includeLeft := by
-    rw [AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeLeft, AlgHom.comp_id]
   have hcomm : mapDomain π u₂ * mapDomain π u₁ = mapDomain π u₁ * mapDomain π u₂ := by
     rw [← map_mul, ← map_mul, (Commute.all u₂ u₁).eq]
   -- Both sides are conjugation of `g` by the image of `u₁ u₂`.
-  have hL : ψ.comp ((Algebra.TensorProduct.assoc R R R H (MonoidAlgebra R X)
-      (MonoidAlgebra R X)).toAlgHom.comp ((Algebra.TensorProduct.map (conjugationCoactAlgHom π)
-        (AlgHom.id R (MonoidAlgebra R X))).comp (conjugationCoactAlgHom π))) =
-      (mapDomain π u₂ * (mapDomain π u₁ * g * (mapDomain π u₁)⁻¹) *
-        (mapDomain π u₂)⁻¹).ofConv := by
-    have e1 : ψ.comp ((Algebra.TensorProduct.assoc R R R H (MonoidAlgebra R X)
-        (MonoidAlgebra R X)).toAlgHom.comp ((Algebra.TensorProduct.map (conjugationCoactAlgHom π)
-          (AlgHom.id R (MonoidAlgebra R X))).comp (conjugationCoactAlgHom π))) =
-        (ψ'.comp (Algebra.TensorProduct.map (conjugationCoactAlgHom π)
-          (AlgHom.id R (MonoidAlgebra R X)))).comp (conjugationCoactAlgHom π) := by
-      simp only [ψ', AlgHom.comp_assoc]
-    have e2 : (ψ'.comp (Algebra.TensorProduct.map (conjugationCoactAlgHom π)
-        (AlgHom.id R (MonoidAlgebra R X)))).comp Algebra.TensorProduct.includeLeft =
-        (ψ'.comp Algebra.TensorProduct.includeLeft).comp (conjugationCoactAlgHom π) := by
-      rw [AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeLeft]
-      simp only [ψ', AlgHom.comp_assoc]
-    rw [e1, comp_conjugationCoactAlgHom, e2, comp_conjugationCoactAlgHom, toConv_ofConv, hg, hu₁,
-      hu₂]
-  have hR : ψ.comp ((Algebra.TensorProduct.map (AlgHom.id R H)
-      (Bialgebra.comulAlgHom R (MonoidAlgebra R X))).comp (conjugationCoactAlgHom π)) =
-      (mapDomain π u₁ * mapDomain π u₂ * g * (mapDomain π u₁ * mapDomain π u₂)⁻¹).ofConv := by
-    rw [← AlgHom.comp_assoc, comp_conjugationCoactAlgHom, hcomul, hleft, map_mul]
-  rw [hL, hR]
+  rw [comp_assoc_comp_map_conjugationCoactAlgHom_left,
+    comp_map_comulAlgHom_comp_conjugationCoactAlgHom]
   apply congrArg ofConv
   calc mapDomain π u₂ * (mapDomain π u₁ * g * (mapDomain π u₁)⁻¹) * (mapDomain π u₂)⁻¹ =
       (mapDomain π u₂ * mapDomain π u₁) * g * (mapDomain π u₂ * mapDomain π u₁)⁻¹ := by group

@@ -200,20 +200,8 @@ private theorem recutTerminal_rectangle_notMem_columns
       finRotate n a ∉
         (D.recutTerminal hcommon hcol hp hr).rectangle.toGridRectangle.coveredColumns := by
   obtain ⟨_, _, _, _, hl, hright⟩ := D.recutTerminal_geometry hcommon hcol hp hr
-  have ha := Grid.self_mem_cIco_finRotate
-    (D.pentagon.right_eq ▸ Grid.ne_right_of_mem_cIoo hcol)
-  have hd := Grid.disjoint_cIco_cIco_of_mem_cIoo hcol
-  constructor
-  · intro h
-    rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
-      GridRectangleBetween.toGridRectangle_right, hl, hright] at h
-    exact Finset.disjoint_left.mp hd h (D.pentagon.right_eq ▸ ha)
-  · intro h
-    rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
-      GridRectangleBetween.toGridRectangle_right, hl, hright] at h
-    have hh := Finset.mem_union_left (Grid.cIco D.rectangle.left D.pentagon.right) h
-    rw [Grid.cIco_union_cIco_eq_cIco_of_mem_cIoo hcol, D.pentagon.right_eq] at hh
-    exact Grid.right_notMem_cIco _ _ hh
+  rw [GridRectangleBetween.mem_coveredColumns, GridRectangleBetween.mem_coveredColumns, hl, hright]
+  exact Grid.notMem_cIco_of_mem_cIoo_finRotate (D.pentagon.right_eq ▸ hcol)
 
 /-- The terminal self-recut preserves the squares counted with multiplicity. Rectangles of the
 commuted diagram are read in the original diagram by exchanging the two commuted columns.

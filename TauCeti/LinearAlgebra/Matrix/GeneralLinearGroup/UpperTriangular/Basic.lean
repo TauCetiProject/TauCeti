@@ -34,6 +34,9 @@ defined in `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Borel`.
 * `TauCeti.UpperTriangularGroup.exists_det_eq_one_map_inv_mul_mul_map_mem`:
   a triangularizing basis can be rescaled to have determinant one.
 * `TauCeti.UpperTriangularGroup.ker_diag`: identification of the diagonal kernel.
+* `Module.Basis.eq_one_of_toMatrix_mem_upperUnitriangularGroup_of_reindex_toDual`:
+  an automorphism that is upper unitriangular in an ordered basis and upper triangular in the
+  reversed order is the identity.
 
 ## References
 
@@ -229,3 +232,36 @@ theorem mul_inv_diagGL_mem_upperUnitriangularGroup_iff (g : upperTriangularGroup
 end UpperTriangularGroup
 
 end TauCeti
+
+namespace Module.Basis
+
+open TauCeti
+
+variable {m : Type*} [Fintype m] [LinearOrder m] {R : Type*} [CommRing R]
+  {N : Type*} [AddCommGroup N] [Module R N]
+
+/-- A linear automorphism whose matrix is upper unitriangular in an ordered basis and upper
+triangular in the reversed order is the identity. -/
+theorem eq_one_of_toMatrix_mem_upperUnitriangularGroup_of_reindex_toDual
+    (b : Module.Basis m R N) {g : LinearMap.GeneralLinearGroup R N}
+    (hU : Units.map (LinearMap.toMatrixAlgEquiv b).toMulEquiv g ∈ upperUnitriangularGroup m R)
+    (hT : Units.map (LinearMap.toMatrixAlgEquiv (b.reindex OrderDual.toDual)).toMulEquiv g ∈
+      upperTriangularGroup mᵒᵈ R) :
+    g = 1 := by
+  rw [UpperUnitriangularGroup.mem_iff, Matrix.isUpperUnitriangular_def] at hU
+  rw [UpperTriangularGroup.mem_iff] at hT
+  simp only [Units.coe_map, MonoidHom.coe_ofClass, MulEquiv.coe_mk, AlgEquiv.toEquiv_eq_coe,
+    EquivLike.coe_coe] at hU hT
+  have hmat : LinearMap.toMatrixAlgEquiv b (g : LinearMap.GeneralLinearGroup R N) = 1 := by
+    ext r s
+    rcases lt_trichotomy r s with hrs | rfl | hrs
+    · have := @hT (OrderDual.toDual r) (OrderDual.toDual s) (OrderDual.toDual_lt_toDual.2 hrs)
+      rw [LinearMap.toMatrixAlgEquiv_apply, reindex_apply, repr_reindex_apply] at this
+      rw [LinearMap.toMatrixAlgEquiv_apply, Matrix.one_apply_ne hrs.ne]
+      simpa using this
+    · rw [hU.2 r, Matrix.one_apply_eq]
+    · rw [hU.1 hrs, Matrix.one_apply_ne hrs.ne']
+  refine Units.ext ?_
+  rw [Units.val_one, ← (LinearMap.toMatrixAlgEquiv b).injective.eq_iff, hmat, map_one]
+
+end Module.Basis

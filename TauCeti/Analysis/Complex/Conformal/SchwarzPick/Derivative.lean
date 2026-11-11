@@ -43,8 +43,8 @@ defects.
 
 All the target factor needs is that its denominator `1 - conj (f z) * f z` at `f z` — the
 Poincaré defect `1 - ‖f z‖ ^ 2` — does not vanish, which for `‖f z‖ < 1` is
-`one_sub_conj_mul_ne_zero_of_norm_lt_one`; the source factor is differentiated at the origin,
-where its denominator is `1`, so no bound on `z` is required. -/
+`one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one`; the source factor is differentiated at
+the origin, where its denominator is `1`, so no bound on `z` is required. -/
 lemma hasDerivAt_schwarzPickConjugate_zero {f : ℂ → ℂ} {df z : ℂ}
     (hp_outer : (1 : ℂ) - (starRingEnd ℂ) (f z) * f z ≠ 0) (hf : HasDerivAt f df z) :
     HasDerivAt (schwarzPickConjugate f z)
@@ -85,7 +85,7 @@ infinitesimal Schwarz--Pick estimate for `f` at `z`.
 Only the closed-disc bounds `‖z‖ ≤ 1` and `‖f z‖ ≤ 1` are needed to identify the two Moebius
 defects with `1 - ‖z‖ ^ 2` and `1 - ‖f z‖ ^ 2`, on top of the nonvanishing
 `1 - conj (f z) * f z ≠ 0` that `hasDerivAt_schwarzPickConjugate_zero` itself asks for; for a
-disc point that nonvanishing is `one_sub_conj_mul_ne_zero_of_norm_lt_one`. -/
+disc point that nonvanishing is `one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one`. -/
 private lemma norm_deriv_schwarzPickConjugate_zero {f : ℂ → ℂ} {df z : ℂ}
     (hp_outer : (1 : ℂ) - (starRingEnd ℂ) (f z) * f z ≠ 0) (hz : ‖z‖ ≤ 1) (hfz : ‖f z‖ ≤ 1)
     (hf : HasDerivAt f df z) :
@@ -120,8 +120,8 @@ theorem norm_deriv_div_one_sub_norm_sq_le {f : ℂ → ℂ}
     (hf.differentiableAt (isOpen_ball.mem_nhds hz)).hasDerivAt
   have hnorm_dg : ‖deriv (schwarzPickConjugate f z) 0‖
       = ‖deriv f z‖ * (1 - ‖z‖ ^ 2) / (1 - ‖f z‖ ^ 2) :=
-    norm_deriv_schwarzPickConjugate_zero (one_sub_conj_mul_ne_zero_of_norm_lt_one hfz1 hfz1)
-      hz1.le hfz1.le hf_at
+    norm_deriv_schwarzPickConjugate_zero
+      (one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one hfz1.le hfz1) hz1.le hfz1.le hf_at
   have hkey : ‖deriv f z‖ * (1 - ‖z‖ ^ 2) / (1 - ‖f z‖ ^ 2) ≤ 1 := hnorm_dg ▸ hschwarz
   rw [div_le_one hden_fz] at hkey
   rw [div_le_div_iff₀ hden_fz hden_z, one_mul]

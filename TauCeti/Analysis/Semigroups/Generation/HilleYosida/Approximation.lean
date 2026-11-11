@@ -49,6 +49,8 @@ Chapter 1.
 
 public section
 
+open _root_.LinearPMap (yosidaApproximation)
+
 noncomputable section
 
 namespace TauCeti.Semigroups

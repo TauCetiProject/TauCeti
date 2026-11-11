@@ -61,17 +61,18 @@ theorem lintegral_enat_eq_tsum {β : Type*} [MeasurableSpace β] (μ : Measure �
 theorem lintegral_withTop_nat_eq_tsum {β : Type*} [MeasurableSpace β] (μ : Measure β)
     {f : β → WithTop ℕ} (hf : ∀ k : ℕ, MeasurableSet {x | (k : WithTop ℕ) < f x}) :
     ∫⁻ x, (f x).recTopCoe ⊤ Nat.cast ∂μ = ∑' k : ℕ, μ {x | (k : WithTop ℕ) < f x} := by
-  have hcount : ∀ x, (f x).recTopCoe ⊤ Nat.cast =
-      ({k : ℕ | (k : WithTop ℕ) < f x}.encard : ℝ≥0∞) := fun x => by
-    induction f x using WithTop.recTopCoe with
-    | top => simp
-    | coe n =>
-      have hr : {k : ℕ | (k : WithTop ℕ) < WithTop.some n} = ↑(Finset.range n) := by
-        ext k
-        exact WithTop.coe_lt_coe.trans Finset.mem_range.symm
-      rw [WithTop.recTopCoe_coe, hr, Set.encard_coe_eq_coe_finsetCard, Finset.card_range,
-        ENat.toENNReal_coe]
-  simp_rw [hcount]
-  exact lintegral_encard_setOf_eq_tsum μ hf
+  let e : WithTop ℕ → ℕ∞ := fun z => z.recTopCoe ⊤ Nat.cast
+  have hint (z : WithTop ℕ) : z.recTopCoe ⊤ Nat.cast = (e z : ℝ≥0∞) := by
+    induction z using WithTop.recTopCoe with
+    | top => exact ENat.toENNReal_top.symm
+    | coe n => exact (ENat.toENNReal_coe n).symm
+  have hlt (k : ℕ) (z : WithTop ℕ) : (k : WithTop ℕ) < z ↔ (k : ℕ∞) < e z := by
+    induction z using WithTop.recTopCoe with
+    | top => exact iff_of_true (WithTop.coe_lt_top k) (ENat.natCast_lt_top k)
+    | coe n => exact WithTop.coe_lt_coe.trans Nat.cast_lt.symm
+  have hset (k : ℕ) : {x | (k : WithTop ℕ) < f x} = {x | (k : ℕ∞) < e (f x)} :=
+    Set.ext fun x => hlt k (f x)
+  simp_rw [fun x => hint (f x), hset]
+  exact lintegral_enat_eq_tsum μ fun k => hset k ▸ hf k
 
 end MeasureTheory

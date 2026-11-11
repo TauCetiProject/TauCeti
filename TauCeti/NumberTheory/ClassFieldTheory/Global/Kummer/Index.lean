@@ -234,6 +234,46 @@ theorem exists_auxiliaryKummerIdeleClassSubgroup_index_eq_finrank
 
 /-! ### The Kummer case of the second fundamental inequality -/
 
+/-- **The index divides the degree for a field inside the Kummer extension.** If `F` is an
+intermediate field of `SeparableClosure K / K` contained in `K(U_S^{1/p})` where `S` contains the
+places above `p` and generates the ideal class group, then the index of the idele-class norm group
+of `F` divides `[F : K]`. -/
+private theorem index_range_ideleClassNormMap_dvd_finrank_of_le_kummerField [Fact p.Prime]
+    (S : Finset (HeightOneSpectrum (NumberField.RingOfIntegers K)))
+    (hS : Subgroup.closure (HeightOneSpectrum.classGroupMk ''
+      (S : Set (HeightOneSpectrum (NumberField.RingOfIntegers K)))) = ⊤)
+    (hpS : ∀ v : HeightOneSpectrum (NumberField.RingOfIntegers K),
+      (p : NumberField.RingOfIntegers K) ∈ v.asIdeal → v ∈ S)
+    (F : IntermediateField K (SeparableClosure K)) [NumberField F]
+    (hFM : F ≤ kummerField (SeparableClosure K) p
+      ((S : Set (HeightOneSpectrum (NumberField.RingOfIntegers K))).unit K)) :
+    (GlobalNumberFields.ideleClassNormMap K F).range.index ∣ Module.finrank K F := by
+  classical
+  let M := kummerField (SeparableClosure K) p
+    ((S : Set (HeightOneSpectrum (NumberField.RingOfIntegers K))).unit K)
+  let F' : IntermediateField K M := IntermediateField.restrict hFM
+  let eFM : F' ≃ₐ[K] F := (IntermediateField.restrictAlgEquiv hFM).symm
+  have hF'fin : Module.finrank K F' = Module.finrank K F :=
+    LinearEquiv.finrank_eq eFM.toLinearEquiv
+  have : NumberField F' := NumberField.of_module_finite K F'
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K p
+  let _ : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
+  have hroots : ∀ a ∈ (S : Set (HeightOneSpectrum (NumberField.RingOfIntegers K))).unit K,
+      ∃ x : SeparableClosure K, x ^ p = algebraMap K (SeparableClosure K) (a : K) := by
+    intro a _
+    exact IsSepClosed.exists_pow_nat_eq _ p
+  obtain ⟨T, _, hauxIndex, hnorm⟩ :=
+    exists_auxiliaryKummerIdeleClassSubgroup_index_eq_finrank
+      (E := SeparableClosure K) (Fact.out : p.Prime) S hS hpS hζ.toInteger_isPrimitiveRoot
+      hroots F'
+  have hdvd : (GlobalNumberFields.ideleClassNormMap K F').range.index ∣
+      Module.finrank K F' := by
+    rw [← hauxIndex]
+    exact Subgroup.index_dvd_of_le hnorm
+  rw [← hF'fin]
+  exact (dvd_of_eq (congrArg Subgroup.index
+    (GlobalNumberFields.range_ideleClassNormMap_eq_of_algEquiv eFM)).symm).trans hdvd
+
 /-- **The Kummer case of the second fundamental inequality.** Let `L/K` be a Galois extension of
 number fields of prime degree `p`, and suppose that `K` contains the `p`-th roots of unity. Then
 the idele-class norm group has index at most `p`:
@@ -272,40 +312,11 @@ theorem index_range_ideleClassNormMap_le_of_finrank_prime
     have hwv : w.asIdeal.LiesOver v.asIdeal := hw ▸ inferInstance
     refine ⟨w, hwv, TauCeti.NumberField.isUnramifiedAway_ramifiedSupport v ?_ w.asIdeal⟩
     exact fun hvram ↦ hv (hFS hvram)
-  have hFM : F ≤ kummerField (SeparableClosure K) p
-      ((S : Set (HeightOneSpectrum (NumberField.RingOfIntegers K))).unit K) :=
-    TauCeti.NumberField.le_kummerField_sUnits_of_isCyclic hS (hFfin ▸ dvd_rfl) hram
-  let M := kummerField (SeparableClosure K) p
-    ((S : Set (HeightOneSpectrum (NumberField.RingOfIntegers K))).unit K)
-  let F' : IntermediateField K M := F.comap M.val
-  have hFM' : F ≤ M.val.fieldRange := by
-    intro x hx
-    exact ⟨⟨x, hFM hx⟩, rfl⟩
-  have hmap : F'.map M.val = F := IntermediateField.map_comap_eq_self hFM'
-  let eFM : F' ≃ₐ[K] F :=
-    (IntermediateField.equivMap F' M.val).trans (IntermediateField.equivOfEq hmap)
-  have hF'fin : Module.finrank K F' = p := by
-    rw [← hFfin]
-    exact LinearEquiv.finrank_eq eFM.toLinearEquiv
-  have : NumberField F' := NumberField.of_module_finite K F'
-  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K p
-  let _ : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
-  have hroots : ∀ a ∈ (S : Set (HeightOneSpectrum (NumberField.RingOfIntegers K))).unit K,
-      ∃ x : SeparableClosure K, x ^ p = algebraMap K (SeparableClosure K) (a : K) := by
-    intro a _
-    exact IsSepClosed.exists_pow_nat_eq _ p
-  obtain ⟨T, _, hauxIndex, hnorm⟩ :=
-    exists_auxiliaryKummerIdeleClassSubgroup_index_eq_finrank
-      (E := SeparableClosure K) (Fact.out : p.Prime) S hS hpS hζ.toInteger_isPrimitiveRoot
-      hroots F'
-  have hdvd : (GlobalNumberFields.ideleClassNormMap K F').range.index ∣ p := by
-    rw [← hF'fin, ← hauxIndex]
-    exact Subgroup.index_dvd_of_le hnorm
-  have hFle : (GlobalNumberFields.ideleClassNormMap K F).range.index ≤ p :=
-    (congrArg Subgroup.index
-      (GlobalNumberFields.range_ideleClassNormMap_eq_of_algEquiv eFM)).symm.trans_le
-      (Nat.le_of_dvd (Fact.out : p.Prime).pos hdvd)
+  have hdvd := index_range_ideleClassNormMap_dvd_finrank_of_le_kummerField S hS hpS F
+    (TauCeti.NumberField.le_kummerField_sUnits_of_isCyclic hS (hFfin ▸ dvd_rfl) hram)
+  rw [hFfin] at hdvd
   exact (congrArg Subgroup.index
-    (GlobalNumberFields.range_ideleClassNormMap_eq_of_algEquiv ι.equivFieldRange)).trans_le hFle
+    (GlobalNumberFields.range_ideleClassNormMap_eq_of_algEquiv ι.equivFieldRange)).trans_le
+    (Nat.le_of_dvd (Fact.out : p.Prime).pos hdvd)
 
 end TauCeti.ClassFieldTheory

@@ -53,10 +53,10 @@ modular adjoint matrix. -/
 theorem f4ShortRootBaseChangeAdjointMatrixLinearMap_cancel_tmul
     (a : A) (X : f4ModularChevalleyLieAlgebra) :
     f4ShortRootBaseChangeAdjointMatrixLinearMap
-        ((TauCeti.cancelBaseChange ℤ 𝔽₂ A
+        ((TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange ℤ 𝔽₂ A
           f4ChevalleyLieLattice) (a ⊗ₜ[𝔽₂] X)) =
       a • f4ShortRootAdjointMatrixBaseChange (A := A) X := by
-  let e := TauCeti.cancelBaseChange ℤ 𝔽₂ A f4ChevalleyLieLattice
+  let e := TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange ℤ 𝔽₂ A f4ChevalleyLieLattice
   have heval : f4ShortRootBaseChangeAdjointMatrixLinearMap
       (e ((1 : A) ⊗ₜ[𝔽₂] X)) =
       f4ShortRootAdjointMatrixBaseChange (A := A) X :=
@@ -73,7 +73,7 @@ theorem f4ShortRootBaseChangeAdjointMatrix_mem_range
     (x : A ⊗[ℤ] f4ChevalleyLieLattice) :
     f4ShortRootBaseChangeAdjointMatrixLinearMap x ∈
       f4ShortRootRepresentedRangeMatrixBaseChange (A := A) := by
-  let e := TauCeti.cancelBaseChange ℤ 𝔽₂ A f4ChevalleyLieLattice
+  let e := TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange ℤ 𝔽₂ A f4ChevalleyLieLattice
   rw [← e.apply_symm_apply x]
   generalize e.symm x = z
   induction z using TensorProduct.inductionOn with
@@ -148,7 +148,7 @@ theorem f4ShortRootRootConj_mem_representedRange
       (Units.invertible (rootSubgroupPoints k A u : GL (Fin 26) A)))
         (f4ShortRootAdjointMatrixBaseChange (A := A) x) ∈ _
     have heval : f4ShortRootBaseChangeAdjointMatrixLinearMap
-        ((TauCeti.cancelBaseChange ℤ 𝔽₂ A
+        ((TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange ℤ 𝔽₂ A
           f4ChevalleyLieLattice) ((1 : A) ⊗ₜ[𝔽₂] x)) =
         f4ShortRootAdjointMatrixBaseChange (A := A) x :=
       f4ShortRootBaseChangeAdjoint_toMatrix_cancel_tmul x
@@ -198,7 +198,7 @@ theorem f4ShortRootRootConj_mem_representedIdeal
             (y : f4ModularChevalleyLieAlgebra) := by
         calc
           _ = f4ShortRootBaseChangeAdjointMatrixLinearMap
-              ((TauCeti.cancelBaseChange ℤ 𝔽₂ A
+              ((TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange ℤ 𝔽₂ A
                 f4ChevalleyLieLattice)
                 ((1 : A) ⊗ₜ[𝔽₂] (y : f4ModularChevalleyLieAlgebra))) :=
             congrArg _ (f4ShortRootBaseChangeInclusion_tmul (1 : A) y)

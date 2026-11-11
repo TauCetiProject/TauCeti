@@ -12,19 +12,19 @@ public import TauCeti.Geometry.Manifold.LinearSlice
 /-!
 # Trajectory spaces of a Morse–Smale negative-gradient flow are manifolds
 
-Let `E` be a finite-dimensional real inner product space and `f : E → ℝ` a `C²` function with
-globally Lipschitz gradient. If `f` satisfies the Morse–Smale condition `IsMorseSmale f hf`, the
-pointwise results on transverse intersections of unstable and stable sets
+Let `E` be a finite-dimensional real inner product space and `f : E → ℝ` a `C^(n+1)` function
+(`1 ≤ n`) with globally Lipschitz gradient. If `f` satisfies the Morse–Smale condition
+`IsMorseSmale f hf`, the pointwise results on transverse intersections of unstable and stable sets
 (`TauCeti.Analysis.Calculus.Morse.Transversality`, `…TrajectorySpace`) apply at every point, and the
 sets they describe are manifolds.
 
 ## Main declarations
 
 * `TauCeti.IsMorseSmale.exists_isManifold_unstableSet_inter_stableSet`: under the Morse–Smale
-  condition, the set of points on trajectories from `p` to `q` is a `C¹` manifold of dimension
+  condition, the set of points on trajectories from `p` to `q` is a `C^n` manifold of dimension
   `morseIndex f p - morseIndex f q`, embedded in `E`.
 * `TauCeti.IsMorseSmale.exists_isManifold_unstableSet_inter_stableSet_level`: each level slice
-  `W^u(p) ∩ W^s(q) ∩ {f = c}` of it is a `C¹` manifold of dimension
+  `W^u(p) ∩ W^s(q) ∩ {f = c}` of it is a `C^n` manifold of dimension
   `morseIndex f p - morseIndex f q - 1`, embedded in `E`.
 
 ## References
@@ -43,55 +43,56 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   {f : E → ℝ} {K : ℝ≥0} {hf : LipschitzWith K (∇ f)} {p q : E} {c : ℝ}
 
 /-- **The connecting locus is a manifold.** Under the Morse–Smale condition, for nondegenerate
-critical points `p` and `q` of a `C²` function, the set `W^u(p) ∩ W^s(q)` of points on trajectories
-from `p` to `q` is a `C¹` manifold of dimension `morseIndex f p - morseIndex f q`: it is modelled on
-any subspace `L` of that dimension, and its inclusion into `E` is `C¹`. -/
-theorem IsMorseSmale.exists_isManifold_unstableSet_inter_stableSet (h : IsMorseSmale f hf)
-    (hfs : ContDiff ℝ 2 f) (hp : IsNondegenerateCriticalPoint f p)
+critical points `p` and `q` of a `C^(n+1)` function, the set `W^u(p) ∩ W^s(q)` of points on
+trajectories from `p` to `q` is a `C^n` manifold of dimension `morseIndex f p - morseIndex f q`: it
+is modelled on any subspace `L` of that dimension, and its inclusion into `E` is `C^n`. -/
+theorem IsMorseSmale.exists_isManifold_unstableSet_inter_stableSet (h : IsMorseSmale f hf) {n : ℕ}
+    (hn : 1 ≤ n) (hfs : ContDiff ℝ (n + 1) f) (hp : IsNondegenerateCriticalPoint f p)
     (hq : IsNondegenerateCriticalPoint f q) {L : Submodule ℝ E}
     (hL : Module.finrank ℝ L + morseIndex f q = morseIndex f p) :
     ∃ C : ChartedSpace L ↥(Flow.unstableSet (negativeGradientFlow f hf) p ∩
         Flow.stableSet (negativeGradientFlow f hf) q), letI := C
-      IsManifold 𝓘(ℝ, L) 1 ↥(Flow.unstableSet (negativeGradientFlow f hf) p ∩
+      IsManifold 𝓘(ℝ, L) n ↥(Flow.unstableSet (negativeGradientFlow f hf) p ∩
         Flow.stableSet (negativeGradientFlow f hf) q) ∧
-      ContMDiff 𝓘(ℝ, L) 𝓘(ℝ, E) 1 (Subtype.val : ↥(Flow.unstableSet (negativeGradientFlow f hf) p ∩
+      ContMDiff 𝓘(ℝ, L) 𝓘(ℝ, E) n (Subtype.val : ↥(Flow.unstableSet (negativeGradientFlow f hf) p ∩
         Flow.stableSet (negativeGradientFlow f hf) q) → E) := by
   refine exists_isManifold_of_finrankSubspaceCharts fun y ⟨hyu, hys⟩ ↦ ?_
   have htr := h.transverse_at hp hq ⟨hyu, hys⟩
   obtain ⟨e, hye, he, hes, hmem⟩ :=
-    hp.exists_unstableSet_inter_stableSet_chart hq le_rfl (by simpa [one_add_one_eq_two] using hfs)
-      hf hyu hys htr
+    hp.exists_unstableSet_inter_stableSet_chart hq hn hfs hf hyu hys htr
   refine ⟨e, _, hye, fun z hz ↦ (he z hz).contMDiffAt, fun z hz ↦ (hes z hz).contMDiffAt, hmem,
     ?_⟩
-  have hdim := hp.finrank_span_tangentConeAt_unstableSet_inter_stableSet_add_morseIndex hq hfs hf
+  have hfs2 : ContDiff ℝ 2 f := hfs.of_le (by exact_mod_cast (by omega : 2 ≤ n + 1))
+  have hdim := hp.finrank_span_tangentConeAt_unstableSet_inter_stableSet_add_morseIndex hq hfs2 hf
     hyu hys htr
-  rw [hp.span_tangentConeAt_unstableSet_inter_stableSet hq hfs hf hyu hys htr] at hdim
+  rw [hp.span_tangentConeAt_unstableSet_inter_stableSet hq hfs2 hf hyu hys htr] at hdim
   omega
 
 /-- **Level slices of the connecting locus are manifolds.** Under the Morse–Smale condition, for
-nondegenerate critical points `p` and `q` of a `C²` function, each level slice
-`W^u(p) ∩ W^s(q) ∩ {f = c}` is a `C¹` manifold of dimension `morseIndex f p - morseIndex f q - 1`:
-it is modelled on any subspace `L` of that dimension, and its inclusion into `E` is `C¹`. -/
+nondegenerate critical points `p` and `q` of a `C^(n+1)` function, each level slice
+`W^u(p) ∩ W^s(q) ∩ {f = c}` is a `C^n` manifold of dimension `morseIndex f p - morseIndex f q - 1`:
+it is modelled on any subspace `L` of that dimension, and its inclusion into `E` is `C^n`. -/
 theorem IsMorseSmale.exists_isManifold_unstableSet_inter_stableSet_level (h : IsMorseSmale f hf)
-    (hfs : ContDiff ℝ 2 f) (hp : IsNondegenerateCriticalPoint f p)
+    {n : ℕ} (hn : 1 ≤ n) (hfs : ContDiff ℝ (n + 1) f) (hp : IsNondegenerateCriticalPoint f p)
     (hq : IsNondegenerateCriticalPoint f q) {L : Submodule ℝ E}
     (hL : Module.finrank ℝ L + morseIndex f q + 1 = morseIndex f p) :
     ∃ C : ChartedSpace L ↥(Flow.unstableSet (negativeGradientFlow f hf) p ∩
         Flow.stableSet (negativeGradientFlow f hf) q ∩ {x | f x = c}), letI := C
-      IsManifold 𝓘(ℝ, L) 1 ↥(Flow.unstableSet (negativeGradientFlow f hf) p ∩
+      IsManifold 𝓘(ℝ, L) n ↥(Flow.unstableSet (negativeGradientFlow f hf) p ∩
         Flow.stableSet (negativeGradientFlow f hf) q ∩ {x | f x = c}) ∧
-      ContMDiff 𝓘(ℝ, L) 𝓘(ℝ, E) 1 (Subtype.val : ↥(Flow.unstableSet (negativeGradientFlow f hf) p ∩
+      ContMDiff 𝓘(ℝ, L) 𝓘(ℝ, E) n (Subtype.val : ↥(Flow.unstableSet (negativeGradientFlow f hf) p ∩
         Flow.stableSet (negativeGradientFlow f hf) q ∩ {x | f x = c}) → E) := by
   have hpq : p ≠ q := by rintro rfl; omega
   refine exists_isManifold_of_finrankSubspaceCharts fun y ⟨⟨hyu, hys⟩, hyc⟩ ↦ ?_
   have htr := h.transverse_at hp hq ⟨hyu, hys⟩
   obtain ⟨e, hye, he, hes, hmem⟩ :=
-    hp.exists_unstableSet_inter_stableSet_level_chart hq hfs hf hpq hyu hys htr hyc
+    hp.exists_unstableSet_inter_stableSet_level_chart hq hn hfs hf hpq hyu hys htr hyc
   refine ⟨e, _, hye, fun z hz ↦ (he z hz).contMDiffAt, fun z hz ↦ (hes z hz).contMDiffAt, hmem,
     ?_⟩
+  have hfs2 : ContDiff ℝ 2 f := hfs.of_le (by exact_mod_cast (by omega : 2 ≤ n + 1))
   have hdim := hp.finrank_span_tangentConeAt_unstableSet_inter_stableSet_level_add_morseIndex hq
-    hfs hf hpq hyu hys htr hyc
-  rw [hp.span_tangentConeAt_unstableSet_inter_stableSet_level hq hfs hf hpq hyu hys htr hyc]
+    hfs2 hf hpq hyu hys htr hyc
+  rw [hp.span_tangentConeAt_unstableSet_inter_stableSet_level hq hfs2 hf hpq hyu hys htr hyc]
     at hdim
   omega
 

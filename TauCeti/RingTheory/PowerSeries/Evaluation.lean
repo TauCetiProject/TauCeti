@@ -49,12 +49,17 @@ topology; `PowerSeries.continuous_eval₂_of_continuous` specializes the multiva
 * `PowerSeries.continuous_eval₂_of_continuous`: continuity in the admissible evaluation point.
 * `PowerSeries.algHom_coe_eq_aeval`: any algebra map out of `A⟦X⟧`, continuous or not, restricts
   on polynomials to the polynomial evaluation at the image of `X`.
+* `PowerSeries.constantCoeff_polynomial_aeval`: the constant coefficient of a polynomial evaluated
+  at a power series `f` is the polynomial evaluated at the constant coefficient of `f`.
 * `PowerSeries.aeval_X`, `PowerSeries.aeval_C`: the values of evaluation on the generators.
 * `PowerSeries.hasSum_smul_pow_aeval`: the series expansion of the evaluation of a power series
   whose coefficients come from a scalar ring.
 * `PowerSeries.exists_aeval_eq_mul_of_constantCoeff_eq_zero`,
   `PowerSeries.isTopologicallyNilpotent_aeval_of_constantCoeff_eq_zero`: a series without
   constant term evaluates at `a` to a multiple of `a`, hence to a topologically nilpotent element.
+* `PowerSeries.aeval_mem_of_constantCoeff_eq_zero`: a series without constant term evaluates at a
+  point of an ideal to an element of that ideal.
+* `PowerSeries.aeval_rescale`: the rescaled series `f(r X)` evaluates at `a` to `f(r • a)`.
 * `PowerSeries.divXSubC`: the quotient of a power series on division by `X - C c`, with its
   coefficients `PowerSeries.coeff_divXSubC` and their series expansion
   `PowerSeries.hasSum_coeff_divXSubC`.
@@ -95,6 +100,14 @@ theorem algHom_coe_eq_aeval (φ : A⟦X⟧ →ₐ[A] B) (f : Polynomial A) :
     Polynomial.algHom_ext (by simp)
   exact DFunLike.congr_fun this f
 
+/-- Evaluating a polynomial at a power series `f` and taking the constant coefficient is
+evaluating it at the constant coefficient of `f`. -/
+@[simp]
+theorem constantCoeff_polynomial_aeval (f : A⟦X⟧) (p : Polynomial A) :
+    constantCoeff (Polynomial.aeval f p) = p.eval (constantCoeff f) := by
+  rw [Polynomial.aeval_def, Polynomial.hom_eval₂, algebraMap_eq, constantCoeff_comp_C,
+    Polynomial.eval₂_id]
+
 end AlgHom
 
 section Aeval
@@ -129,12 +142,26 @@ theorem exists_aeval_eq_mul_of_constantCoeff_eq_zero (ha : HasEval a) {f : R⟦X
   obtain ⟨g, rfl⟩ := X_dvd_iff.2 hf
   exact ⟨_, by rw [map_mul, aeval_X]⟩
 
+/-- A power series without constant term evaluates at a point `a` of an ideal `I` to an element
+of `I`. -/
+theorem aeval_mem_of_constantCoeff_eq_zero (ha : HasEval a) {f : R⟦X⟧}
+    (hf : constantCoeff f = 0) {I : Ideal S} (haI : a ∈ I) : aeval ha f ∈ I := by
+  obtain ⟨c, hc⟩ := exists_aeval_eq_mul_of_constantCoeff_eq_zero ha hf
+  exact hc ▸ I.mul_mem_right c haI
+
 /-- A power series without constant term evaluates at a topologically nilpotent `a` to a
 topologically nilpotent element. -/
 theorem isTopologicallyNilpotent_aeval_of_constantCoeff_eq_zero (ha : HasEval a) {f : R⟦X⟧}
     (hf : constantCoeff f = 0) : IsTopologicallyNilpotent (aeval ha f) := by
   obtain ⟨c, hc⟩ := exists_aeval_eq_mul_of_constantCoeff_eq_zero ha hf
   exact hc ▸ IsTopologicallyNilpotent.mul_right ha c
+
+/-- Evaluating the rescaled series `f(r X)` at `a` is evaluating `f` at `r • a`. -/
+theorem aeval_rescale (ha : HasEval a) (r : R) (hra : HasEval (r • a)) (f : R⟦X⟧) :
+    aeval ha (rescale r f) = aeval hra f := by
+  refine (hasSum_aeval ha (rescale r f)).unique ?_
+  convert hasSum_aeval hra f using 2 with d
+  rw [coeff_rescale, smul_pow, smul_smul, mul_comm]
 
 end Aeval
 

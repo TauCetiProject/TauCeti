@@ -66,7 +66,7 @@ private theorem parabolicWeylHom_mk (n : T.subgroupN.subgroupOf (T.standardParab
   QuotientGroup.map_mk _ _ _ _ _
 
 private theorem parabolicWeylHom_injective : Function.Injective (T.parabolicWeylHom J) :=
-  TauCeti.QuotientGroup.map_injective_of_eq_comap _ _ (T.parabolicIntersection_eq_comap J)
+  (TauCeti.QuotientGroup.map_injective_iff _ _ _).mpr (T.parabolicIntersection_eq_comap J)
 
 private theorem range_parabolicWeylHom :
     (T.parabolicWeylHom J).range = Subgroup.closure (Subtype.val '' J) := by
@@ -127,7 +127,7 @@ noncomputable def parabolicTitsSystem : TitsSystem (T.standardParabolic J) where
   intersection_normal := inferInstance
   simple := T.parabolicWeylHom J ⁻¹' (Subtype.val '' J)
   closure_simple := T.closure_parabolicSimple J
-  exists_simpleRep_sq_mem s hs := by
+  exists_simpleRep_mul_self_mem s hs := by
     obtain ⟨r, rfl⟩ := QuotientGroup.mk_surjective s
     refine ⟨r, rfl, ?_⟩
     have hs' : T.parabolicWeylHom J (QuotientGroup.mk r) ∈ T.simple := by
@@ -135,7 +135,7 @@ noncomputable def parabolicTitsSystem : TitsSystem (T.standardParabolic J) where
       exact hs ▸ s.property
     apply (QuotientGroup.eq_one_iff (r * r)).mp
     apply T.parabolicWeylHom_injective J
-    simpa only [QuotientGroup.mk_mul, map_mul, map_one] using T.simple_sq_eq_one hs'
+    simpa only [QuotientGroup.mk_mul, map_mul, map_one] using T.simple_mul_simple_self hs'
   mul_doubleCoset_subset s hs := by
     obtain ⟨r, rfl⟩ := QuotientGroup.mk_surjective s
     refine ⟨r, rfl, fun w ↦ ?_⟩

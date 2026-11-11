@@ -117,6 +117,40 @@ theorem rationalTrivializationHom_app_mem_sections
 variable (hX : ∀ y : X, coheight y ≤ 1)
 include hX
 
+omit [SheafOfModules.isInvertible X M] in
+/-- Over a chart `V` of `M` on which the coefficients of `D` are minus the orders of the basis
+section, every section of `𝒪_X(D)` over `W` restricts, over `W ⊓ V`, to the rational function of a
+section of `M`: the quotient by the basis section has no poles, hence is regular by the algebraic
+Hartogs' principle. -/
+private theorem exists_rationalTrivializationHom_app_eq_inf
+    {V : X.Opens} [Nonempty V]
+    (t : SheafOfModules.free (R := X.ringCatSheaf.over V) PUnit ≅ M.over V)
+    (hD : ∀ y : CodimensionOnePoint X, (y : X) ∈ V →
+      WeilDivisor.coeff D y =
+        -X.ord (trivializationGeneratorRationalUnit M e hU t : X.functionField) y)
+    {W : X.Opens} [Nonempty W] [Nonempty (W ⊓ V : X.Opens)] {q : Γ(Scheme.rationalFunctions X, W)}
+    (hq : q ∈ sections D W) :
+    ∃ s : Γ(M, W ⊓ V),
+      Hom.app (rationalTrivializationHom M e hU) (W ⊓ V) s =
+        (Scheme.rationalFunctions X).presheaf.map (homOfLE inf_le_left : W ⊓ V ⟶ W).op q := by
+  set qK := Scheme.rationalFunctionsEquiv W q with hqK
+  have hord : ∀ y : CodimensionOnePoint X, (y : X) ∈ W ⊓ V →
+      0 ≤ X.ord (qK * (trivializationGeneratorRationalUnit M e hU t : X.functionField)⁻¹) y := by
+    intro y hy
+    by_cases hq0 : qK = 0
+    · simp [hq0]
+    · have hb := (mem_sections_iff.mp hq).resolve_left hq0 y hy.1
+      rw [← hqK, hD y hy.2, neg_neg] at hb
+      rw [X.ord_mul hq0 (inv_ne_zero (Units.ne_zero _)), Scheme.ord_inv]
+      omega
+  obtain ⟨r, hr⟩ := Scheme.exists_germToFunctionField_eq_of_ord_nonneg
+    (fun _ _ ↦ inferInstance) (fun y _ ↦ hX y) hord
+  refine ⟨r • M.presheaf.map (homOfLE inf_le_right : W ⊓ V ⟶ V).op
+    (trivializationGenerator M t), (Scheme.rationalFunctionsEquiv (W ⊓ V)).injective ?_⟩
+  rw [rationalFunctionsEquiv_rationalTrivializationHom_app, rationalFunction_smul,
+    rationalFunction_map, ← coe_trivializationGeneratorRationalUnit, hr,
+    Scheme.rationalFunctionsEquiv_map, inv_mul_cancel_right₀ (Units.ne_zero _)]
+
 /-- If the coefficients of `D` are minus the orders of the local basis sections of `M`, then
 every section of `𝒪_X(D)` is the rational function of a section of `M`. Locally the quotient by
 a basis section has no poles, hence is regular by the algebraic Hartogs' principle, and the local
@@ -148,23 +182,7 @@ theorem exists_rationalTrivializationHom_app_eq
     intro x
     have := hW' x
     have := hV' x
-    set c := (trivializationGeneratorRationalUnit M e hU (t x) : X.functionField)
-    set qK := Scheme.rationalFunctionsEquiv W q with hqK
-    have hord : ∀ y : CodimensionOnePoint X, (y : X) ∈ W' x → 0 ≤ X.ord (qK * c⁻¹) y := by
-      intro y hy
-      by_cases hq0 : qK = 0
-      · simp [hq0]
-      · have hb := (mem_sections_iff.mp hq).resolve_left hq0 y hy.1
-        rw [← hqK, hD (V x) (t x) y hy.2, neg_neg] at hb
-        rw [X.ord_mul hq0 (inv_ne_zero (Units.ne_zero _)), Scheme.ord_inv]
-        omega
-    obtain ⟨r, hr⟩ := Scheme.exists_germToFunctionField_eq_of_ord_nonneg
-      (fun _ _ ↦ inferInstance) (fun y _ ↦ hX y) hord
-    refine ⟨r • M.presheaf.map (homOfLE inf_le_right : W' x ⟶ V x).op
-      (trivializationGenerator M (t x)), (Scheme.rationalFunctionsEquiv (W' x)).injective ?_⟩
-    rw [rationalFunctionsEquiv_rationalTrivializationHom_app, rationalFunction_smul,
-      rationalFunction_map, ← coe_trivializationGeneratorRationalUnit, hr,
-      Scheme.rationalFunctionsEquiv_map, inv_mul_cancel_right₀ (Units.ne_zero _)]
+    exact exists_rationalTrivializationHom_app_eq_inf hX (t x) (hD (V x) (t x)) hq
   choose s hs using hloc
   have hinj := rationalTrivializationHom_app_injective M e hU
   have hcompat : TopCat.Presheaf.IsCompatible M.presheaf W' s := by

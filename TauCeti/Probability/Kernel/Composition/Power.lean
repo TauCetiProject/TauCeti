@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex, The Tau Ceti contributors
+Authors: Codex
 -/
 module
 
@@ -14,9 +14,8 @@ public import Mathlib.Probability.Kernel.Invariance
 Iterating an s-finite kernel remains s-finite; iterating a uniformly finite kernel remains
 uniformly finite. The latter permits taking finite transition masses, and thus nonnegative real
 transition matrices, for every iterate.
-Iterating a Markov kernel also preserves the probability normalization of every row, and any
-measure invariant under a kernel remains invariant under all its powers, as well as under scalar
-multiples and binary sums.
+Iterating a Markov kernel also preserves the probability normalization of every row.
+Every power of a kernel preserves each of its invariant measures.
 
 The powers of a deterministic kernel are the deterministic kernels of the iterates. Restricting
 the Chapman–Kolmogorov integral to one intermediate state bounds `(κ ^ (m + n)) x s` below by
@@ -25,8 +24,6 @@ along paths of states.
 -/
 
 public section
-
-open scoped ENNReal
 
 namespace ProbabilityTheory
 
@@ -66,35 +63,15 @@ variable {α : Type*} [MeasurableSpace α]
 /-- The unit of the monoid of kernels `Kernel α α` is the identity kernel. -/
 theorem one_def : (1 : Kernel α α) = Kernel.id := (rfl)
 
-/-- Every measure is invariant under the identity kernel. -/
+/-- Every power of a kernel preserves each of its invariant measures. -/
 @[simp]
-theorem Invariant.id (μ : Measure α) : Kernel.id.Invariant μ :=
-  Measure.id_comp
-
-/-- A measure invariant under `κ` is invariant under every natural power `κ ^ n`. -/
-theorem Invariant.pow {κ : Kernel α α} {μ : Measure α} (h : κ.Invariant μ) (n : ℕ) :
-    (κ ^ n).Invariant μ := by
+theorem Invariant.pow_comp {κ : Kernel α α} {ν : Measure α} (hν : κ.Invariant ν)
+    (n : ℕ) : (κ ^ n : Kernel α α) ∘ₘ ν = ν := by
   induction n with
   | zero => simp [one_def]
   | succ n ih =>
-    rw [pow_add, pow_one]
-    exact ih.comp h
-
-/-- The zero measure is invariant under every kernel. -/
-@[simp]
-theorem Invariant.zero (κ : Kernel α α) : κ.Invariant 0 :=
-  Measure.bind_zero_left κ
-
-/-- Scalar multiples of an invariant measure remain invariant. -/
-theorem Invariant.smul {κ : Kernel α α} {μ : Measure α} (h : κ.Invariant μ) (c : ℝ≥0∞) :
-    κ.Invariant (c • μ) := by
-  rw [Invariant, Measure.comp_smul, h.def]
-
-/-- The sum of two invariant measures is invariant. -/
-theorem Invariant.add {κ : Kernel α α} {μ ν : Measure α}
-    (hμ : κ.Invariant μ) (hν : κ.Invariant ν) :
-    κ.Invariant (μ + ν) := by
-  rw [Invariant, Measure.comp_add, hμ.def, hν.def]
+    simpa only [Nat.add_comm n 1, pow_add, pow_one, ← Measure.comp_assoc, ih]
+      using hν.def
 
 /-- A kernel intertwining two one-step kernels also intertwines all their powers. -/
 theorem comp_pow_eq_pow_comp_of_comp_eq {β : Type*} [MeasurableSpace β]
@@ -106,6 +83,13 @@ theorem comp_pow_eq_pow_comp_of_comp_eq {β : Type*} [MeasurableSpace β]
     -- Use the composition form of powers; the monoid instance does not expose multiplication.
     simp only [Nat.add_comm n 1, pow_add, pow_one]
     rw [← comp_assoc, h, comp_assoc, ih, comp_assoc]
+
+/-- A measure invariant under a kernel is invariant under every natural power of it. -/
+theorem Invariant.pow {κ : Kernel α α} {μ : Measure α} (hκ : κ.Invariant μ) (n : ℕ) :
+    (κ ^ n).Invariant μ := by
+  induction n with
+  | zero => exact Measure.id_comp
+  | succ n ih => exact ih.comp hκ
 
 /-- The `n`-th power of the deterministic kernel of `f` is the deterministic kernel of the
 `n`-th iterate of `f`. -/
@@ -120,23 +104,31 @@ theorem deterministic_pow {f : α → α} (hf : Measurable f) (n : ℕ) :
     rw [pow_add, pow_one, ih, deterministic_comp_deterministic]
     simp_rw [Function.iterate_succ]
 
-/-- **Chapman–Kolmogorov lower bound.** The `m + n`-step mass of a measurable set `s` is at least
-the mass of the paths that sit at the intermediate state `y` at time `m`. -/
+/-- **Chapman–Kolmogorov lower bound.** The `m + n`-step mass of a set `s` is at least the mass of
+the paths that sit at the intermediate state `y` at time `m`. -/
 theorem pow_apply_singleton_mul_le_pow_add_apply (κ : Kernel α α) (m n : ℕ) (x y : α)
-    {s : Set α} (hs : MeasurableSet s) :
+    {s : Set α} :
     (κ ^ m) x {y} * (κ ^ n) y s ≤ (κ ^ (m + n)) x s := by
-  rw [pow_add_apply_eq_lintegral _ _ _ _ hs, mul_comm,
-    ← lintegral_singleton' ((κ ^ n).measurable_coe hs)]
-  exact setLIntegral_le_lintegral _ _
+  have hts : (κ ^ (m + n)) x (toMeasurable ((κ ^ (m + n)) x) s) = (κ ^ (m + n)) x s :=
+    measure_toMeasurable s
+  have ht := measurableSet_toMeasurable ((κ ^ (m + n)) x) s
+  calc (κ ^ m) x {y} * (κ ^ n) y s
+      ≤ (κ ^ m) x {y} * (κ ^ n) y (toMeasurable ((κ ^ (m + n)) x) s) :=
+        mul_le_mul_right (measure_mono (subset_toMeasurable _ s)) _
+    _ ≤ (κ ^ (m + n)) x (toMeasurable ((κ ^ (m + n)) x) s) := by
+        rw [pow_add_apply_eq_lintegral _ _ _ _ ht, mul_comm,
+          ← lintegral_singleton' ((κ ^ n).measurable_coe ht)]
+        exact setLIntegral_le_lintegral _ _
+    _ = (κ ^ (m + n)) x s := hts
 
 /-- Positive multi-step masses compose: if `x` reaches `y` with positive probability in `m` steps
 and `y` reaches `s` with positive probability in `n` steps, then `x` reaches `s` with positive
 probability in `m + n` steps. -/
 theorem pow_add_apply_pos {κ : Kernel α α} {m n : ℕ} {x y : α} {s : Set α}
-    (hs : MeasurableSet s) (hxy : 0 < (κ ^ m) x {y}) (hy : 0 < (κ ^ n) y s) :
+    (hxy : 0 < (κ ^ m) x {y}) (hy : 0 < (κ ^ n) y s) :
     0 < (κ ^ (m + n)) x s :=
   (ENNReal.mul_pos hxy.ne' hy.ne').trans_le
-    (pow_apply_singleton_mul_le_pow_add_apply κ m n x y hs)
+    (pow_apply_singleton_mul_le_pow_add_apply κ m n x y)
 
 end Kernel
 

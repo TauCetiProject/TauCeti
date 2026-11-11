@@ -228,7 +228,7 @@ theorem tendsto_mul_logDeriv_deriv_of_inverted_coordinate_of_side {g : ℂ → �
   obtain ⟨r, hr, hc, hi, hreal, hupper⟩ :=
     exists_ball_side_of_inverted_coordinate hGc hGi hGU (hG0 ▸ hw0) hρ hUw'
   refine tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_neg_inv
-    (f := fun z => q + (g z)⁻¹) (g := fun z => (q + (G z)⁻¹ - p) / n) (q := p) hr hn
+    (f := fun z => q + (g z)⁻¹) (g := fun z => (q + (G z)⁻¹ - p) / n) (q := p) (b := n) hr
     (fun z hz => by simp [hG (hH0 z hz.2)]) ((hc.sub continuousOn_const).div_const n)
     ((((differentiableOn_const q).add (hGd.inv hGne)).mono inter_subset_right).sub_const p
       |>.div_const n)

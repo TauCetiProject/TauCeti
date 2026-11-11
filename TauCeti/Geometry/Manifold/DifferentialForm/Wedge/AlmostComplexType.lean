@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.AlmostComplexType
-public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
+public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.MapCoeff
 public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.AlmostComplexType
 
 /-!
@@ -29,6 +29,8 @@ of the wedges of the type components of the factors whose types add up to `(P,Q)
 * `ContMDiffSection.alternatingDerivation_wedgeWith`: the Leibniz rule for the derivation along a
   smooth endomorphism field.
 * `TauCeti.SmoothForm.IsOfType.wedgeWith`: types add under the wedge of smooth forms.
+* `TauCeti.SmoothAlmostComplexStructure.wedgeWithType`: the complex-bilinear paired wedge
+  on the submodules of type forms, with the total degree regrouped into type degrees.
 * `TauCeti.SmoothAlmostComplexStructure.typeProjection_wedgeWith`: the type components of a
   wedge of smooth forms.
 
@@ -149,6 +151,43 @@ theorem typeProjection_wedgeWith (hμ₁ : ∀ (c : ℂ) a b, μ (c • a) b = c
     simp only [coe_typeProjection, Submodule.coe_sum, Finset.sum_apply, SmoothForm.coe_wedgeWith,
       RoughForm.wedgeWith_apply']
     exact ContinuousLinearMap.typeProjection_pairedWedge (J.apply_apply x) hμ₁ hμ₂ _ _ P Q
+
+/-- The paired wedge on type forms, with total degree regrouped into the sum of types. -/
+def wedgeWithType (μ : F₁ →L[ℂ] F₂ →L[ℂ] F₃) (p q r s : ℕ) :
+    J.typeForms (F := F₁) p q →ₗ[ℂ]
+      J.typeForms (F := F₂) r s →ₗ[ℂ]
+        J.typeForms (F := F₃) (p + r) (q + s) :=
+  LinearMap.mk₂ ℂ (fun φ ψ ↦
+    ⟨LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F₃ n)
+        (by omega : (p + q) + (r + s) = (p + r) + (q + s))
+        (SmoothForm.wedgeWith (μ.bilinearRestrictScalars ℝ) φ.1 ψ.1),
+      (mem_typeForms _ _ _ _).mpr
+        ((((mem_typeForms _ _ _ _).mp φ.2).wedgeWith
+          (fun _ _ _ ↦ by simp) (fun _ _ _ ↦ by simp)
+          ((mem_typeForms _ _ _ _).mp ψ.2)).cast _)⟩)
+    (fun _ _ _ ↦ Subtype.ext <| by simp [map_add])
+    (fun c φ ψ ↦ Subtype.ext <| by
+      simp only [Submodule.coe_smul, SmoothForm.wedgeWith_bilinearRestrictScalars_smul_left]
+      -- Degree transport is independent of the scalar ring used to bundle it.
+      exact (LinearEquiv.cast (R := ℂ) (M := fun n ↦ SmoothForm I M F₃ n)
+        (by omega : (p + q) + (r + s) = (p + r) + (q + s))).map_smul c _)
+    (fun _ _ _ ↦ Subtype.ext <| by simp [map_add])
+    (fun c φ ψ ↦ Subtype.ext <| by
+      simp only [Submodule.coe_smul, SmoothForm.wedgeWith_bilinearRestrictScalars_smul_right]
+      -- Degree transport is independent of the scalar ring used to bundle it.
+      exact (LinearEquiv.cast (R := ℂ) (M := fun n ↦ SmoothForm I M F₃ n)
+        (by omega : (p + q) + (r + s) = (p + r) + (q + s))).map_smul c _)
+
+/-- The type-form product is the usual paired wedge, transported across the total-degree
+regrouping. -/
+@[simp]
+theorem coe_wedgeWithType (μ : F₁ →L[ℂ] F₂ →L[ℂ] F₃) (p q r s : ℕ)
+    (φ : J.typeForms (F := F₁) p q)
+    (ψ : J.typeForms (F := F₂) r s) :
+    (J.wedgeWithType μ p q r s φ ψ).1 =
+      LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F₃ n)
+        (by omega : (p + q) + (r + s) = (p + r) + (q + s))
+        (SmoothForm.wedgeWith (μ.bilinearRestrictScalars ℝ) φ.1 ψ.1) := (rfl)
 
 end SmoothAlmostComplexStructure
 

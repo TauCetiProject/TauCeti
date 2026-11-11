@@ -6,16 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Kernel.Irreducible
+public import TauCeti.Probability.Kernel.Composition.Power
+import Mathlib.Order.Preorder.Finite
+import TauCeti.MeasureTheory.Measure.GiryMonad
 
 /-!
 # Reachability and communication for kernels
 
 For a kernel `κ` on a measurable space, a state `y` is *reachable* from `x` if some power of `κ`
 (including the zeroth) assigns positive mass to `y`, and two states *communicate* if they are
-mutually reachable. Reachability is reflexive; when the singletons are measurable it is
-transitive, communication is an equivalence relation, and Mathlib's `Kernel.IsIrreducible`
-with respect to the counting measure is equivalent to every state reaching every other state,
-equivalently to every pair of states communicating.
+mutually reachable. Reachability is reflexive and transitive; when singletons are measurable,
+communication is an equivalence relation and Mathlib's `Kernel.IsIrreducible` with respect to
+counting measure is equivalent to every state reaching every other state, equivalently to every
+pair of states communicating. Positive singleton mass of an invariant measure propagates along
+reachability, so under counting-measure irreducibility every nonzero invariant measure charges
+every singleton. A state with finitely many reachable states reaches a state from which every
+reachable state can return.
 -/
 
 public section
@@ -59,6 +65,14 @@ target state. -/
 theorem reaches_def (x y : S) :
     κ.Reaches x y ↔ ∃ n : ℕ, 0 < (κ ^ n) x {y} := Iff.rfl
 
+/-- Reachability under a deterministic kernel is membership in the forward orbit. -/
+@[simp]
+theorem reaches_deterministic [MeasurableSingletonClass S] {f : S → S}
+    (hf : Measurable f) (x y : S) :
+    (deterministic f hf).Reaches x y ↔ ∃ n : ℕ, f^[n] x = y := by
+  simp [reaches_def, deterministic_pow, deterministic_apply, pos_iff_ne_zero,
+    Set.indicator_apply_eq_zero]
+
 /-- Every state reaches itself. -/
 @[simp] theorem Reaches.refl (x : S) : κ.Reaches x x := by
   use 0
@@ -74,23 +88,11 @@ theorem reaches_of_pos {x y : S} (h : 0 < κ x {y}) : κ.Reaches x y := by
   simpa [pow_one] using h
 
 /-- Reachability is transitive. -/
-theorem Reaches.trans [MeasurableSingletonClass S] {x y z : S}
+theorem Reaches.trans {x y z : S}
     (hxy : κ.Reaches x y) (hyz : κ.Reaches y z) : κ.Reaches x z := by
   obtain ⟨n, hn⟩ := hxy
   obtain ⟨m, hm⟩ := hyz
-  use n + m
-  -- Chapman-Kolmogorov: (κ ^ (n + m)) x {z} = ∫⁻ b, (κ ^ m) b {z} ∂((κ ^ n) x); bound the
-  -- resulting integral below by its restriction to the single intermediate state y
-  have hyz_y : 0 < (κ ^ m) y {z} * (κ ^ n) x {y} := by
-    rw [ENNReal.mul_pos_iff]
-    exact ⟨hm, hn⟩
-  have hsum : 0 < ∫⁻ b in {y}, (κ ^ m) b {z} ∂((κ ^ n) x) := by
-    rw [lintegral_singleton (f := fun b => (κ ^ m) b {z}) y]
-    exact hyz_y
-  rw [Kernel.pow_add_apply_eq_lintegral _ n m _ (measurableSet_singleton z)]
-  have hsum' : 0 < ∫⁻ b in Set.univ, (κ ^ m) b {z} ∂((κ ^ n) x) :=
-    lt_of_lt_of_le hsum (lintegral_mono_set (Set.subset_univ {y}))
-  exact (Measure.restrict_univ : ((κ ^ n) x).restrict Set.univ = (κ ^ n) x) ▸ hsum'
+  exact ⟨n + m, pow_add_apply_pos hn hm⟩
 
 /-- Every state communicates with itself. -/
 @[simp] theorem Communicates.refl (x : S) : κ.Communicates x x :=
@@ -101,7 +103,7 @@ theorem Communicates.symm {x y : S} (h : κ.Communicates x y) : κ.Communicates 
   ⟨h.2, h.1⟩
 
 /-- Communication is transitive. -/
-theorem Communicates.trans [MeasurableSingletonClass S] {x y z : S}
+theorem Communicates.trans {x y z : S}
     (hxy : κ.Communicates x y) (hyz : κ.Communicates y z) : κ.Communicates x z :=
   ⟨hxy.1.trans hyz.1, hyz.2.trans hxy.2⟩
 
@@ -111,7 +113,7 @@ theorem communicates_comm (x y : S) : κ.Communicates x y ↔ κ.Communicates y 
   ⟨fun h => h.symm, fun h => h.symm⟩
 
 /-- Communication is an equivalence relation on the state space. -/
-theorem communicates_equivalence [MeasurableSingletonClass S] :
+theorem communicates_equivalence :
     Equivalence κ.Communicates := by
   refine ⟨?_, ?_, ?_⟩
   · intro x
@@ -145,5 +147,68 @@ theorem isIrreducible_count_iff_forall_communicates [MeasurableSingletonClass S]
     IsIrreducible Measure.count κ ↔ ∀ x y : S, κ.Communicates x y := by
   rw [isIrreducible_count_iff_forall_reaches]
   exact ⟨fun h x y => ⟨h x y, h y x⟩, fun h x y => (h x y).1⟩
+
+/-- A state with finitely many reachable states reaches a state all of whose reachable states
+can reach it back. -/
+theorem exists_reaches_forall_reaches_reaches_of_finite (κ : Kernel S S) {x : S}
+    (hfinite : {y | κ.Reaches x y}.Finite) :
+    ∃ y, κ.Reaches x y ∧ ∀ z, κ.Reaches y z → κ.Reaches z y := by
+  -- Choose a minimal reachable set using the finite-order minimal-element theorem.
+  obtain ⟨y, hxy, hmin⟩ := hfinite.exists_minimalFor
+    (fun y => {z | κ.Reaches y z}) _ ⟨x, Reaches.refl x⟩
+  exact ⟨y, hxy, fun z hyz => hmin (hxy.trans hyz) (fun w hzw => hyz.trans hzw) (Reaches.refl y)⟩
+
+/-- An irreducible s-finite kernel with respect to the counting measure lives on a countable state
+space with measurable singletons: every state is reached from a fixed state, and each s-finite
+measure `(κ ^ n) x` has only countably many atoms. -/
+theorem countable_of_isIrreducible_count [MeasurableSingletonClass S] [IsSFiniteKernel κ]
+    [IsIrreducible Measure.count κ] : Countable S := by
+  rcases isEmpty_or_nonempty S with hS | ⟨⟨x⟩⟩
+  · infer_instance
+  · have hc : (⋃ n : ℕ, {y | 0 < (κ ^ n) x {y}}).Countable :=
+      Set.countable_iUnion fun n => Measure.countable_meas_pos_of_disjoint_iUnion
+        (fun y => measurableSet_singleton y) fun _ _ h => Set.disjoint_singleton.mpr h
+    exact Set.countable_univ_iff.mp (hc.mono fun y _ =>
+      Set.mem_iUnion.mpr ((reaches_def x y).mp
+        (isIrreducible_count_iff_forall_reaches.mp ‹_› x y)))
+
+/-- Positive singleton mass of an invariant measure propagates along reachable transitions. -/
+theorem Invariant.apply_singleton_pos_of_reaches {μ : Measure S} (hμ : κ.Invariant μ) {x y : S}
+    (hx : 0 < μ {x}) (hxy : κ.Reaches x y) :
+    0 < μ {y} := by
+  obtain ⟨n, hn⟩ := (reaches_def x y).mp hxy
+  have hle := Measure.singleton_mul_apply_le_bind_apply μ (κ ^ n).aemeasurable x (s := {y})
+  rw [(hμ.pow n).def] at hle
+  exact (ENNReal.mul_pos hx.ne' hn.ne').trans_le hle
+
+/-- Under counting-measure irreducibility, every nonzero invariant measure charges every
+singleton. -/
+theorem Invariant.apply_singleton_pos_of_ne_zero [MeasurableSingletonClass S]
+    [IsIrreducible Measure.count κ] {μ : Measure S} (hμ : κ.Invariant μ) (hμ0 : μ ≠ 0) (x : S) :
+    0 < μ {x} := by
+  by_contra hx0
+  have hzero : ∀ n : ℕ, μ {z | (κ ^ n) z {x} ≠ 0} = 0 := fun n => by
+    have hint : ∫⁻ z, (κ ^ n) z {x} ∂μ = 0 := by
+      rw [← Measure.bind_apply (measurableSet_singleton x) (κ ^ n).aemeasurable, (hμ.pow n).def]
+      exact nonpos_iff_eq_zero.mp (not_lt.mp hx0)
+    exact ae_iff.mp (((lintegral_eq_zero_iff
+      ((κ ^ n).measurable_coe (measurableSet_singleton x))).mp hint).mono fun _ hz => hz)
+  have huniv : (⋃ n : ℕ, {z : S | (κ ^ n) z {x} ≠ 0}) = Set.univ := by
+    ext z
+    simp only [Set.mem_iUnion, Set.mem_ofPred_eq, Set.mem_univ, iff_true]
+    obtain ⟨n, hn⟩ := (reaches_def z x).mp (isIrreducible_count_iff_forall_reaches.mp ‹_› z x)
+    exact ⟨n, hn.ne'⟩
+  have hμ_univ : μ Set.univ = 0 := by
+    rw [← huniv]
+    exact measure_iUnion_null hzero
+  exact hμ0 (Measure.measure_univ_eq_zero.mp hμ_univ)
+
+/-- Under counting-measure irreducibility, every invariant probability measure charges every
+singleton. -/
+theorem Invariant.apply_singleton_pos [MeasurableSingletonClass S]
+    [IsIrreducible Measure.count κ] {π : Measure S} [IsProbabilityMeasure π]
+    (hπ : κ.Invariant π) (x : S) :
+    0 < π {x} :=
+  hπ.apply_singleton_pos_of_ne_zero (IsProbabilityMeasure.ne_zero π) x
 
 end ProbabilityTheory.Kernel
