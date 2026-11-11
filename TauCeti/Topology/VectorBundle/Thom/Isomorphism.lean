@@ -196,30 +196,6 @@ theorem thomMapOver_apply (W : Set B) {n p m : ℕ} (h : p + n = m)
         (TopCat.singularCohomologyMap (thomPairOverProj F E W) p a) u :=
   (rfl)
 
-/-! The maps of pairs below are inclusions of subspaces of the total space, whose definitions are
-not exposed; the compatibilities between them are checked pointwise through their evaluation lemmas.
-`erw` is needed because, after `ConcreteCategory.hom_ext`, points are typed in the carrier of the
-`TopCat` object rather than in the subtype the evaluation lemmas are stated for. -/
-
-private theorem fst_thomPairOverMap_comp_thomPairOverProj {W W' : Set B} (hW : W ⊆ W') :
-    TopPair.Hom.fst (thomPairOverMap F E hW) ≫ thomPairOverProj F E W' =
-      thomPairOverProj F E W ≫ TopCat.ofHom (ContinuousMap.inclusion hW) :=
-  ConcreteCategory.hom_ext _ _ fun x ↦ by
-    erw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, thomPairOverMap_fst_apply,
-      thomPairOverProj_apply, thomPairOverProj_apply]
-    rfl
-
-private theorem fst_thomPairOverMap_comp_thomPairProj (W : Set B) :
-    TopPair.Hom.fst (thomPairOverMap F E (Set.subset_univ W) ≫ (thomPairOverUnivIso F E).hom) ≫
-        thomPairProj F E =
-      thomPairOverProj F E W ≫ TopCat.ofHom (ContinuousMap.subtypeVal W) :=
-  ConcreteCategory.hom_ext _ _ fun x ↦ by
-    simp only [TopPair.Hom.fst_comp]
-    erw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
-      thomPairOverMap_fst_apply, thomPairOverUnivIso_hom_fst_apply, thomPairProj_apply,
-      thomPairOverProj_apply]
-    rfl
-
 /-- **Naturality of the Thom map over a subset in restrictions**: for `W ⊆ W'`, restricting
 `Φ_u(a)` from `W'` to `W` gives the Thom map over `W` of the restrictions of `u` and `a`. -/
 theorem singularCohomologyMap_thomPairOverMap_thomMapOver {W W' : Set B} (hW : W ⊆ W')

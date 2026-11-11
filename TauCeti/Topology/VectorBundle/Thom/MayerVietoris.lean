@@ -73,11 +73,6 @@ variable {B : Type w} [TopologicalSpace B] {F : Type*} [TopologicalSpace F]
   [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
   {K : Type w} [CommRing K] {M : ModuleCat.{w} K} {U V : Set B}
 
-variable (F E) in
-/-- The projection of the total space maps the preimage of `W` into `W`. -/
-private theorem mapsTo_thomPairProj (W : Set B) : MapsTo (thomPairProj F E) (π F E ⁻¹' W) W :=
-  fun x hx ↦ (congrArg (· ∈ W) (thomPairProj_apply F E x)).mpr hx
-
 variable (F E U V) in
 /-- The intersection pair of the Mayer–Vietoris sequence of the Thom pairs over `U` and `V`. -/
 private abbrev interPair : TopPair.{w} :=

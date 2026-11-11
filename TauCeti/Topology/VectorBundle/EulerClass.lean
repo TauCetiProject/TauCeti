@@ -215,6 +215,10 @@ def thomPairProj : (thomPair F E).fst ⟶ TopCat.of B :=
 theorem thomPairProj_apply (v : TotalSpace F E) : thomPairProj F E v = v.proj :=
   (rfl)
 
+/-- The projection of the total space maps the vectors over `W` into `W`. -/
+theorem mapsTo_thomPairProj (W : Set B) : MapsTo (thomPairProj F E) (π F E ⁻¹' W) W :=
+  fun _ hx ↦ hx
+
 /-- The projection `E|_W ⟶ W` of the restriction of a fibre bundle to a subset `W` of its base, as a
 morphism of topological spaces out of the ambient space of the Thom pair over `W`. -/
 def thomPairOverProj (W : Set B) : (thomPairOver F E W).fst ⟶ TopCat.of W :=
@@ -225,6 +229,23 @@ def thomPairOverProj (W : Set B) : (thomPairOver F E W).fst ⟶ TopCat.of W :=
 theorem thomPairOverProj_apply (W : Set B) (v : π F E ⁻¹' W) :
     thomPairOverProj F E W v = ⟨v.1.proj, v.2⟩ :=
   (rfl)
+
+/-- For `W ⊆ W'`, the restricted projections commute with the inclusions `E|_W ⟶ E|_{W'}` and
+`W ⟶ W'`. -/
+@[reassoc]
+theorem fst_thomPairOverMap_comp_thomPairOverProj {W W' : Set B} (hW : W ⊆ W') :
+    TopPair.Hom.fst (thomPairOverMap F E hW) ≫ thomPairOverProj F E W' =
+      thomPairOverProj F E W ≫ TopCat.ofHom (ContinuousMap.inclusion hW) :=
+  TopCat.ext fun _ ↦ rfl
+
+/-- The projection `π : E ⟶ B` restricts along the inclusion `(E|_W, E₀|_W) ⟶ (E, E₀)` to the
+projection `E|_W ⟶ W` followed by the inclusion `W ⟶ B`. -/
+@[reassoc]
+theorem fst_thomPairOverMap_comp_thomPairProj (W : Set B) :
+    TopPair.Hom.fst (thomPairOverMap F E (subset_univ W) ≫ (thomPairOverUnivIso F E).hom) ≫
+        thomPairProj F E =
+      thomPairOverProj F E W ≫ TopCat.ofHom (ContinuousMap.subtypeVal W) :=
+  TopCat.ext fun _ ↦ rfl
 
 /-- The fibre inclusion over `b` followed by the projection is constant at `b`. -/
 theorem fiberThomPairMap_fst_comp_thomPairProj (b : B) :
