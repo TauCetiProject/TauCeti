@@ -72,7 +72,7 @@ at any `k` distinct positions. -/
 theorem prod_castLE_dvd_prod_of_injective {M : Type*} [CommMonoid M] {n : ℕ} {d : Fin n → M}
     (hd : ∀ ⦃i j : Fin n⦄, i ≤ j → d i ∣ d j) {k : ℕ} (hk : k ≤ n) {f : Fin k → Fin n}
     (hf : Function.Injective f) :
-    ∏ j : Fin k, d (Fin.castLE hk j) ∣ ∏ j : Fin k, d (f j) := by
+    ∏ j : Fin k, d (castLE hk j) ∣ ∏ j : Fin k, d (f j) := by
   induction k with
   | zero => simp
   | succ k ih =>
@@ -84,11 +84,11 @@ theorem prod_castLE_dvd_prod_of_injective {M : Type*} [CommMonoid M] {n : ℕ} {
       push Not at hlt
       have := Fintype.card_le_of_injective
         (fun j : Fin (k + 1) ↦ (⟨f j, (hmax j (Finset.mem_univ _)).trans_lt hlt⟩ : Fin k))
-        (fun j₁ j₂ heq ↦ hf (Fin.ext (Fin.mk.inj heq)))
+        (fun j₁ j₂ heq ↦ hf (Fin.ext (mk.inj heq)))
       simp at this
-    rw [Fin.prod_univ_castSucc, Fin.prod_univ_succAbove _ j₀, mul_comm (d (f j₀))]
-    exact mul_dvd_mul (ih (by omega) (hf.comp Fin.succAbove_right_injective))
-      (hd (Fin.le_def.mpr hge))
+    rw [prod_univ_castSucc, prod_univ_succAbove _ j₀, mul_comm (d (f j₀))]
+    exact mul_dvd_mul (ih (by omega) (hf.comp succAbove_right_injective))
+      (hd (le_def.mpr hge))
 
 /-- **A tuple is determined by its leading partial sums.** If the sums of the first `k` entries
 of `a` and `b` agree for every `k ≤ n`, then `a = b`: entry `i` is what the sum of the first
@@ -178,7 +178,7 @@ theorem sum_filter_and_snd_eq {α β M : Type*} [Fintype α] [Fintype β] [Decid
     [AddCommMonoid M] (h : α × β → M) (P : α → Prop) [DecidablePred P] (b : β) :
     ∑ x ∈ Finset.univ.filter (fun x : α × β ↦ P x.1 ∧ x.2 = b), h x =
       ∑ a ∈ Finset.univ.filter P, h (a, b) := by
-  rw [Finset.sum_filter, Finset.sum_filter, Fintype.sum_prod_type]
+  rw [Finset.sum_filter, Finset.sum_filter, sum_prod_type]
   refine Finset.sum_congr rfl fun a _ ↦ ?_
   by_cases hP : P a <;> simp [hP]
 
@@ -187,7 +187,7 @@ theorem sum_filter_and_snd_eq {α β M : Type*} [Fintype α] [Fintype β] [Decid
 entries. -/]
 theorem prod_finTwoArrow {α M : Type*} [Fintype α] [CommMonoid M] (f : (Fin 2 → α) → M) :
     ∏ w, f w = ∏ p, ∏ q, f ![p, q] := by
-  rw [← (finTwoArrowEquiv α).symm.prod_comp, Fintype.prod_prod_type]
+  rw [← (finTwoArrowEquiv α).symm.prod_comp, prod_prod_type]
   rfl
 
 end Fintype

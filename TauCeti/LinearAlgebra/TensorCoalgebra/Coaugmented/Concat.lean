@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Coalgebra.Comodule.Cofree
+public import TauCeti.Algebra.Coalgebra.Comodule.Cofree.Basic
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Prepend
 
 /-!
@@ -194,10 +194,13 @@ theorem concatLetter_subword {N : ℕ} (y : Fin N → A) {a l k : ℕ} (h : a + 
 
 /-- Concatenating the block of length `j` at `a`, a letter `e`, and the block of length `k` that
 starts `d` letters after the first block ends replaces those `d` letters by `e`. -/
-theorem concatLetter_eq_splice {N : ℕ} (y : Fin N → A) {a j d k : ℕ} (e : A) (hd : 0 < d)
-    (h : a + j + d + k ≤ N) :
+theorem concatLetter_eq_splice {N : ℕ} (y : Fin N → A) {a j d k : ℕ} (e : A) (hd : 0 < d) :
     concatLetter R A ((subword R y a j ⊗ₜ e) ⊗ₜ subword R y (a + j + d) k) =
       ReducedTensorWords.splice R y a (j + d + k) j d e := by
+  by_cases h : a + j + d + k ≤ N
+  swap
+  · rw [subword_eq_zero_of_lt_add R y (a := a + j + d) (by omega), TensorProduct.tmul_zero,
+      map_zero, ReducedTensorWords.splice_eq_zero_of_length_lt_add R y e (by omega)]
   rw [subword_eq_of_tprod R y (by omega), subword_eq_of_tprod R y h,
     ReducedTensorWords.splice_eq_of_tprod R y e hd (by omega) (by omega)]
   dsimp only

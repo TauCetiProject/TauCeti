@@ -79,7 +79,9 @@ families of operators.
   `(∂_{x_j} a)^(η, ξ) = 2πi ηⱼ â(η, ξ)`
   (`TauCeti.Symbol.HasCompactSpatialSupport.fourier_spatialDeriv_slice`).
 * `TauCeti.Symbol.HasCompactSpatialSupport.fourier_quantizeSchwartzValue`: the Fourier transform
-  of `Op(a) u`.
+  of `Op(a) u`, a case of
+  `TauCeti.Symbol.HasCompactSpatialSupport.fourier_integral_fourierChar_smul_apply` for
+  `x ↦ ∫ exp(2πi ⟪ζ, x⟫) a(x, g ζ) (𝓕 u ζ) dζ` with a general frequency map `g`.
 * `TauCeti.Symbol.HasCompactSpatialSupport.exists_eLpNorm_smul_fourier_quantizeSchwartzValue_le`:
   the Sobolev estimate on Schwartz functions, on the Fourier side.
 * `TauCeti.Symbol.quantizeSobolev`: the bounded operator `H^s → H^{s - m}`, with
@@ -378,54 +380,54 @@ section Quantization
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W] {a : Symbol n V W m}
 
-/-- The integrand of the double integral giving `𝓕 (Op(a) u) ξ` is integrable in the position
-and the frequency: it is dominated by the indicator of the spatial support of `a` times an
-integrable function of the frequency. -/
+/-- The integrand of the double integral giving the Fourier transform of
+`x ↦ ∫ exp(2πi ⟪ζ, x⟫) a(x, g ζ) (𝓕 u ζ) dζ` is integrable in the position and the frequency: it is
+dominated by the indicator of the spatial support of `a` times the integrable function
+`⟨g ζ⟩ ^ m ‖𝓕 u ζ‖` of the frequency. -/
 private theorem HasCompactSpatialSupport.integrable_fourierChar_smul_apply
-    (ha : a.HasCompactSpatialSupport) (u : 𝓢(CoordinateSpace n, V)) (ξ : CoordinateSpace n) :
+    (ha : a.HasCompactSpatialSupport) (u : 𝓢(CoordinateSpace n, V))
+    {g : CoordinateSpace n → CoordinateSpace n} (hg : Continuous g)
+    (hgu : Integrable fun ζ ↦ (1 + ‖g ζ‖ ^ 2) ^ (m / 2) * ‖𝓕 u ζ‖) (ξ : CoordinateSpace n) :
     Integrable (fun p : CoordinateSpace n × CoordinateSpace n ↦
-      𝐞 (-⟪p.1, ξ - p.2⟫) • a.coefficient (p.1, (2 * π) • p.2) (𝓕 u p.2)) (volume.prod volume) := by
+      𝐞 (-⟪p.1, ξ - p.2⟫) • a.coefficient (p.1, g p.2) (𝓕 u p.2)) (volume.prod volume) := by
   obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
   obtain ⟨C, hC0, hC⟩ := a.exists_bound_coefficient K hK
   have hFcont : Continuous fun p : CoordinateSpace n × CoordinateSpace n ↦
-      𝐞 (-⟪p.1, ξ - p.2⟫) • a.coefficient (p.1, (2 * π) • p.2) (𝓕 u p.2) :=
+      𝐞 (-⟪p.1, ξ - p.2⟫) • a.coefficient (p.1, g p.2) (𝓕 u p.2) :=
     (Real.continuous_fourierChar.comp (by fun_prop)).smul
       ((a.contDiff_coefficient.continuous.comp (by fun_prop)).clm_apply
         ((𝓕 u).continuous.comp continuous_snd))
   have hK1 : Integrable (K.indicator fun _ ↦ (1 : ℝ)) :=
     (integrable_indicator_iff hK.measurableSet).2 (integrableOn_const hK.measure_lt_top.ne)
-  have hg : Integrable fun ζ : CoordinateSpace n ↦
-      C * ((2 * π) ^ |m| * ((1 + ‖ζ‖ ^ 2) ^ (m / 2) * ‖𝓕 u ζ‖)) :=
-    (((𝓕 u).integrable_one_add_norm_sq_rpow_mul_norm (m / 2)).const_mul _).const_mul _
-  refine (hK1.mul_prod hg).mono' hFcont.aestronglyMeasurable (.of_forall fun p ↦ ?_)
+  refine (hK1.mul_prod (hgu.const_mul C)).mono' hFcont.aestronglyMeasurable
+    (.of_forall fun p ↦ ?_)
   by_cases hx : p.1 ∈ K
-  · rw [Set.indicator_of_mem hx, one_mul, Circle.norm_smul]
-    refine ((a.coefficient _).le_opNorm _).trans ?_
-    have hscale := one_add_norm_smul_sq_rpow_le (c := 2 * π) (by linarith [Real.two_le_pi]) m p.2
-    calc ‖a.coefficient (p.1, (2 * π) • p.2)‖ * ‖𝓕 u p.2‖
-        ≤ C * (1 + ‖(2 * π) • p.2‖ ^ 2) ^ (m / 2) * ‖𝓕 u p.2‖ := by
-          gcongr
-          exact hC _ hx _
-      _ ≤ C * ((2 * π) ^ |m| * (1 + ‖p.2‖ ^ 2) ^ (m / 2)) * ‖𝓕 u p.2‖ := by gcongr
-      _ = _ := by ring
+  · rw [Set.indicator_of_mem hx, one_mul, Circle.norm_smul, ← mul_assoc]
+    exact ((a.coefficient _).le_opNorm _).trans (by gcongr; exact hC _ hx _)
   · rw [Set.indicator_of_notMem hx, zero_mul]
     simp [hKa p.1 hx]
 
-/-- **The Fourier transform of the quantization.** For a symbol `a` with compact spatial support,
-`𝓕 (Op(a) u) ξ = ∫ â(ξ - ζ, 2πζ) (𝓕 u ζ) dζ`, where `â(η, ξ)` is the Fourier transform of the
-position slice `x ↦ a(x, ξ)` at `η`. -/
-theorem HasCompactSpatialSupport.fourier_quantizeSchwartzValue (ha : a.HasCompactSpatialSupport)
-    (u : 𝓢(CoordinateSpace n, V)) (ξ : CoordinateSpace n) :
-    𝓕 (quantizeSchwartzValue a.coefficient u) ξ =
-      ∫ ζ, 𝓕 (fun x ↦ a.coefficient (x, (2 * π) • ζ)) (ξ - ζ) (𝓕 u ζ) := by
+/-- **The Fourier transform of a quantization integral.** For a symbol `a` with compact spatial
+support and a continuous frequency map `g` such that `⟨g ζ⟩ ^ m ‖𝓕 u ζ‖` is integrable, the Fourier
+transform of `x ↦ ∫ exp(2πi ⟪ζ, x⟫) a(x, g ζ) (𝓕 u ζ) dζ` is `ξ ↦ ∫ â(ξ - ζ, g ζ) (𝓕 u ζ) dζ`,
+where `â(η, ξ)` is the Fourier transform of the position slice `x ↦ a(x, ξ)` at `η`. For
+`g ζ = 2πζ` this is the Fourier transform of the quantization
+(`TauCeti.Symbol.HasCompactSpatialSupport.fourier_quantizeSchwartzValue`). -/
+theorem HasCompactSpatialSupport.fourier_integral_fourierChar_smul_apply
+    (ha : a.HasCompactSpatialSupport) (u : 𝓢(CoordinateSpace n, V))
+    {g : CoordinateSpace n → CoordinateSpace n} (hg : Continuous g)
+    (hgu : Integrable fun ζ ↦ (1 + ‖g ζ‖ ^ 2) ^ (m / 2) * ‖𝓕 u ζ‖) (ξ : CoordinateSpace n) :
+    𝓕 (fun x ↦ ∫ ζ, 𝐞 ⟪ζ, x⟫ • a.coefficient (x, g ζ) (𝓕 u ζ)) ξ =
+      ∫ ζ, 𝓕 (fun x ↦ a.coefficient (x, g ζ)) (ξ - ζ) (𝓕 u ζ) := by
   obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
   set F : CoordinateSpace n × CoordinateSpace n → W := fun p ↦
-    𝐞 (-⟪p.1, ξ - p.2⟫) • a.coefficient (p.1, (2 * π) • p.2) (𝓕 u p.2) with hF
-  have hFint : Integrable F (volume.prod volume) := ha.integrable_fourierChar_smul_apply u ξ
-  calc 𝓕 (quantizeSchwartzValue a.coefficient u) ξ = ∫ x, ∫ ζ, F (x, ζ) := by
+    𝐞 (-⟪p.1, ξ - p.2⟫) • a.coefficient (p.1, g p.2) (𝓕 u p.2) with hF
+  have hFint : Integrable F (volume.prod volume) := ha.integrable_fourierChar_smul_apply u hg hgu ξ
+  calc 𝓕 (fun x ↦ ∫ ζ, 𝐞 ⟪ζ, x⟫ • a.coefficient (x, g ζ) (𝓕 u ζ)) ξ =
+        ∫ x, ∫ ζ, F (x, ζ) := by
         rw [Real.fourier_eq]
         refine integral_congr_ae (.of_forall fun x ↦ ?_)
-        simp only [quantizeSchwartzValue_def, hF]
+        simp only [hF]
         rw [Circle.smul_def, ← integral_smul]
         refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
         simp only [Circle.smul_def, smul_smul, ← Circle.coe_mul, ← AddChar.map_add_eq_mul]
@@ -435,13 +437,36 @@ theorem HasCompactSpatialSupport.fourier_quantizeSchwartzValue (ha : a.HasCompac
     _ = ∫ ζ, ∫ x, F (x, ζ) := integral_integral_swap hFint
     _ = _ := by
         refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
-        have hint : Integrable fun x ↦ 𝐞 (-⟪x, ξ - ζ⟫) • a.coefficient (x, (2 * π) • ζ) :=
+        have hint : Integrable fun x ↦ 𝐞 (-⟪x, ξ - ζ⟫) • a.coefficient (x, g ζ) :=
           ((Real.continuous_fourierChar.comp (by fun_prop)).smul
             (a.contDiff_coefficient_slice _).continuous).integrable_of_hasCompactSupport
               (HasCompactSupport.intro hK fun x hx ↦ by simp [hKa x hx, Circle.smul_def])
         dsimp only
         rw [Real.fourier_eq, ContinuousLinearMap.integral_apply hint]
         simp only [hF, Circle.smul_def, smul_apply]
+
+/-- **The Fourier transform of the quantization.** For a symbol `a` with compact spatial support,
+`𝓕 (Op(a) u) ξ = ∫ â(ξ - ζ, 2πζ) (𝓕 u ζ) dζ`, where `â(η, ξ)` is the Fourier transform of the
+position slice `x ↦ a(x, ξ)` at `η`. -/
+theorem HasCompactSpatialSupport.fourier_quantizeSchwartzValue (ha : a.HasCompactSpatialSupport)
+    (u : 𝓢(CoordinateSpace n, V)) (ξ : CoordinateSpace n) :
+    𝓕 (quantizeSchwartzValue a.coefficient u) ξ =
+      ∫ ζ, 𝓕 (fun x ↦ a.coefficient (x, (2 * π) • ζ)) (ξ - ζ) (𝓕 u ζ) := by
+  have hcont : Continuous fun ζ : CoordinateSpace n ↦
+      (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) * ‖𝓕 u ζ‖ :=
+    ((by fun_prop : Continuous fun ζ : CoordinateSpace n ↦ 1 + ‖(2 * π) • ζ‖ ^ 2).rpow_const
+      fun _ ↦ Or.inl (by positivity)).mul (𝓕 u).continuous.norm
+  have hgu : Integrable fun ζ : CoordinateSpace n ↦ (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) * ‖𝓕 u ζ‖ :=
+    (((𝓕 u).integrable_one_add_norm_sq_rpow_mul_norm (m / 2)).const_mul ((2 * π) ^ |m|)).mono'
+      hcont.aestronglyMeasurable (.of_forall fun ζ ↦ by
+        rw [Real.norm_of_nonneg (by positivity), ← mul_assoc]
+        gcongr
+        exact one_add_norm_smul_sq_rpow_le (c := 2 * π) (by linarith [Real.two_le_pi]) m ζ)
+  have hq : quantizeSchwartzValue a.coefficient u =
+      fun x ↦ ∫ ζ, 𝐞 ⟪ζ, x⟫ • a.coefficient (x, (2 * π) • ζ) (𝓕 u ζ) :=
+    funext (quantizeSchwartzValue_def _ u)
+  rw [hq]
+  exact ha.fourier_integral_fourierChar_smul_apply u (continuous_const_smul _) hgu ξ
 
 /-- The pointwise kernel bound behind the Sobolev estimate: Peetre's inequality and the decay of
 `â` give `⟨ξ⟩ ^ (s - m) ‖â(ξ - ζ, 2πζ) v‖ ≤ B k(ξ - ζ) ⟨ζ⟩ ^ s ‖v‖` with
@@ -892,15 +917,12 @@ theorem toDistr_postcomp_comp_comp_postcomp_toBesselPotentialSpaceCLM_apply
         BesselPotentialSpace.postcomp _ s 2 (e₁ : V →L[ℂ] V'))
         (SchwartzMap.toBesselPotentialSpaceCLM s 2 u)).toDistr φ =
       ∫ x, φ x • quantizeSchwartzValue a.coefficient u x := by
-  have hc : (a.map ((e₁.arrowCongr e₂).toContinuousLinearMap.restrictScalars ℝ)).coefficient =
-      fun p ↦ e₁.arrowCongr e₂ (a.coefficient p) :=
-    funext fun p ↦ by simp
   have hq (x : CoordinateSpace n) :
       quantizeSchwartzValue
           (a.map ((e₁.arrowCongr e₂).toContinuousLinearMap.restrictScalars ℝ)).coefficient
           (u.postcompCLM (e₁ : V →L[ℂ] V')) x =
         e₂ (quantizeSchwartzValue a.coefficient u x) := by
-    rw [hc, quantizeSchwartzValue_arrowCongr]
+    rw [coefficient_map_arrowCongr, quantizeSchwartzValue_arrowCongr]
   rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
     ← SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM,
     BesselPotentialSpace.toDistr_postcomp_apply, hT]
