@@ -198,7 +198,8 @@ automorphism `γ_j` of [IFT], §7.1, with `j ≤ m - 1`. -/
 noncomputable def basicCoeff : MulAut (GX G X) :=
   twist (coeffAtom z c j * coeffAtom z c j')
     (blockExp x y z 0 0 fun k => if k = j ∨ k = j' then (0, 1) else 0)
-    fun k => twistHom_coeffTerm inj c j j' ((Commute.refl _).zpow_left k)
+    (twistHom_coeffTerm inj c j j' (Commute.refl _))
+    (twistHom_coeffTerm inj c j j' (Commute.refl _).inv_left)
 
 @[simp]
 theorem basicCoeff_inl (g : G) : basicCoeff inj c j j' (inl g) = inl g := by
@@ -251,7 +252,8 @@ the first commutator it is the automorphism `γ_m` of [IFT], §7.1. -/
 noncomputable def basicLink : MulAut (GX G X) :=
   twist (coeffAtom z c j * (inr (.of (x i)))⁻¹)
     (blockExp x y z (Pi.single i (-1, 1)) (Pi.single i (-1, 0)) (Pi.single j (0, 1)))
-    fun k => twistHom_linkTerm inj c j i ((Commute.refl _).zpow_left k)
+    (twistHom_linkTerm inj c j i (Commute.refl _))
+    (twistHom_linkTerm inj c j i (Commute.refl _).inv_left)
 
 @[simp]
 theorem basicLink_inl (g : G) : basicLink inj c j i (inl g) = inl g := by
@@ -311,7 +313,7 @@ variable (i : Fin n)
 the automorphisms `γ_{m+4i-3}` and `γ_{m+4i-1}` of [IFT], §7.1. -/
 noncomputable def basicY : MulAut (GX G X) :=
   twist (inr (.of (x i))) (blockExp x y z 0 (Pi.single i (1, 0)) 0)
-    fun k => by simp [blockExp_x inj]
+    (by simp [blockExp_x inj]) (by simp [blockExp_x inj])
 
 @[simp]
 theorem basicY_inl (g : G) : basicY inj i (inl g) = inl g := by
@@ -351,7 +353,7 @@ variable (i : Fin n)
 the automorphism `γ_{m+4i-2}` of [IFT], §7.1. -/
 noncomputable def basicX : MulAut (GX G X) :=
   twist (inr (.of (y i))) (blockExp x y z (Pi.single i (1, 0)) 0 0)
-    fun k => by simp [blockExp_y inj]
+    (by simp [blockExp_y inj]) (by simp [blockExp_y inj])
 
 @[simp]
 theorem basicX_inl (g : G) : basicX inj i (inl g) = inl g := by
@@ -404,7 +406,8 @@ noncomputable def basicComm : MulAut (GX G X) :=
   twist (inr (.of (y i)) * (inr (.of (x i')))⁻¹)
     (blockExp x y z (fun l => if l = i' then (-1, 1) else if l = i then (-1, 0) else 0)
       (fun l => if l = i then (-1, 1) else if l = i' then (-1, 0) else 0) 0)
-    fun k => twistHom_commTerm inj i i' ((Commute.refl _).zpow_left k)
+    (twistHom_commTerm inj i i' (Commute.refl _))
+    (twistHom_commTerm inj i i' (Commute.refl _).inv_left)
 
 @[simp]
 theorem basicComm_inl (g : G) : basicComm inj i i' (inl g) = inl g := by

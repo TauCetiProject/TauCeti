@@ -28,8 +28,8 @@ is `c ^ p * a * c ^ (n - p)` (`List.prod_ofFn_ite`).
 
 A multiplicative self-map fixing every letter of a word, or fixing the product of two adjacent
 letters and every other letter, fixes the product of the word (`List.map_prod_ofFn_of_forall`,
-`List.map_prod_ofFn_of_adjacent`). In a group the inverse of a product is the product of the
-inverses in the reverse order (`List.inv_prod_ofFn`).
+`List.map_prod_ofFn_of_adjacent`). In a division monoid the inverse of a product is the product
+of the inverses in the reverse order (`List.inv_prod_ofFn`).
 -/
 
 public section
@@ -122,9 +122,9 @@ theorem map_prod_ofFn_of_adjacent {F M : Type*} [Monoid M] [FunLike F M M] [Mono
     rw [List.getElem_ofFn]
     exact hfix _ (by simp [Fin.ext_iff]; omega) (by simp [Fin.ext_iff]; omega)
 
-/-- The inverse of a product `f₀ f₁ ⋯ fₙ₋₁` in a group is the product of the inverses in the
-reverse order. -/
-theorem inv_prod_ofFn {M : Type*} [Group M] :
+/-- The inverse of a product `f₀ f₁ ⋯ fₙ₋₁` in a division monoid is the product of the inverses
+in the reverse order. -/
+theorem inv_prod_ofFn {M : Type*} [DivisionMonoid M] :
     ∀ {k : ℕ} (f : Fin k → M), (List.ofFn f).prod⁻¹ = (List.ofFn fun i ↦ (f i.rev)⁻¹).prod
   | 0, _ => by simp
   | k + 1, f => by

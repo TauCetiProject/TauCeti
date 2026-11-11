@@ -31,13 +31,21 @@ group of the quadratic equation.
 
 [IFT], §7.1, writes a standard orientable quadratic equation with the coefficient atoms first,
 `∏ⱼ zⱼ⁻¹ cⱼ zⱼ ∏ᵢ [xᵢ, yᵢ] d⁻¹ = 1`, whereas `TauCeti.GroupAlgGeom.Quadratic.Standard` follows
-[IFT], §2.7, and puts the commutators first, `∏ᵢ [xᵢ, yᵢ] ∏ⱼ zⱼ⁻¹ cⱼ zⱼ d = 1`. The two shapes
-are exchanged by inversion: the inverse of `∏ᵢ [xᵢ, yᵢ] ∏ⱼ zⱼ⁻¹ cⱼ zⱼ` is the word `S₀` for the
-mirrored variables and coefficients `xᵢ' = y_{n+1-i}`, `yᵢ' = x_{n+1-i}`, `zⱼ' = z_{m+1-j}` and
-`cⱼ' = c_{m+1-j}⁻¹` (`basicWord_rev_orientableCoeff`). The basic sequence `basicSeq S` of a
-standard orientable equation `S` is by definition the sequence `basicWordSeq` of these mirrored
-data, so that the formulas of [IFT] apply verbatim to `S₀`; its automorphisms fix the
-coefficients and the left side of `S` (`apply_toWord_of_mem_basicSeq`).
+[IFT], §2.7, and puts the commutators first, `∏ᵢ [xᵢ, yᵢ] ∏ⱼ zⱼ⁻¹ cⱼ zⱼ d = 1`.
+
+When there is no coefficient atom (`m = 0`) the two shapes coincide: the product of the atoms of
+the equation is the word `S₀` of its own variables (`basicWord_orientable`,
+`basicWord_orientableCoeff`), and the basic sequence `basicSeq S` is the sequence `basicWordSeq`
+of [IFT] in these variables, beginning with `y₁ ↦ x₁ y₁`.
+
+When there are coefficient atoms (`m ≠ 0`) the two shapes are exchanged by inversion: the inverse
+of `∏ᵢ [xᵢ, yᵢ] ∏ⱼ zⱼ⁻¹ cⱼ zⱼ` is the word `S₀` for the mirrored variables and coefficients
+`xᵢ' = y_{n+1-i}`, `yᵢ' = x_{n+1-i}`, `zⱼ' = z_{m+1-j}` and `cⱼ' = c_{m+1-j}⁻¹`
+(`basicWord_rev_orientableCoeff`), and `basicSeq S` is by definition the sequence `basicWordSeq`
+of these mirrored data, so that the formulas of [IFT] apply verbatim to `S₀`.
+
+In both cases the automorphisms of `basicSeq S` fix the coefficients and the left side of `S`
+(`apply_toWord_of_mem_basicSeq`).
 
 ## Order of composition
 
@@ -262,31 +270,36 @@ theorem basicWord_rev_orientableCoeff (hnm : 0 < n + m)
   · simp [coeffAtom_def, mul_assoc]
   · simp [commAtom_def, commutatorElement_inv]
 
-/-- The inverse of the product of the atoms of the standard equation `∏ᵢ [xᵢ, yᵢ] = 1` is the
-word `S₀` of the mirrored variables: the indices are reversed and `x` and `y` are exchanged. -/
-theorem basicWord_rev_orientable (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
-    basicWord (y ∘ Fin.rev) (x ∘ Fin.rev) (Fin.elim0 ∘ Fin.rev) (Fin.elim0 : Fin 0 → G) =
-      (orientable n hn x y inj).atoms.prod⁻¹ := by
-  rw [atoms_orientable, List.inv_prod_ofFn, basicWord_def, List.ofFn_zero, List.prod_nil, one_mul]
-  refine congrArg List.prod (congrArg List.ofFn (funext fun i => ?_))
-  simp [commAtom_def, commutatorElement_inv]
+/-- The product of the atoms of the standard equation `∏ᵢ [xᵢ, yᵢ] d = 1` without coefficient
+atoms is the word `S₀` of its variables. -/
+theorem basicWord_orientableCoeff {z : Fin 0 → X} {c : Fin 0 → G} (hn : 0 < n + 0)
+    (inj : (Sum.elim (Sum.elim x y) z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
+    basicWord x y z c = (orientableCoeff n 0 hn x y z inj c hc d hd).atoms.prod := by
+  simp [atoms_orientableCoeff, basicWord_def, funext (commAtom_def x y)]
+
+/-- The product of the atoms of the standard equation `∏ᵢ [xᵢ, yᵢ] = 1` is the word `S₀` of its
+variables. -/
+theorem basicWord_orientable (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
+    basicWord x y Fin.elim0 (Fin.elim0 : Fin 0 → G) = (orientable n hn x y inj).atoms.prod := by
+  simp [atoms_orientable, basicWord_def, funext (commAtom_def x y)]
 
 /-- The basic sequence of automorphisms of `G[X]` of a standard orientable quadratic equation
-`S = 1` ([IFT], §7.1). The equation `∏ᵢ [xᵢ, yᵢ] ∏ⱼ zⱼ⁻¹ cⱼ zⱼ d = 1` is read backwards: the
-inverse of the product of its atoms is `∏ⱼ zⱼ'⁻¹ cⱼ' zⱼ' ∏ᵢ [xᵢ', yᵢ']` for the mirrored
-variables and coefficients `xᵢ' = y_{n+1-i}`, `yᵢ' = x_{n+1-i}`, `zⱼ' = z_{m+1-j}`,
-`cⱼ' = c_{m+1-j}⁻¹`, and the sequence is `basicWordSeq` for these. -/
+`S = 1` ([IFT], §7.1). For an equation `∏ᵢ [xᵢ, yᵢ] = 1` or `∏ᵢ [xᵢ, yᵢ] d = 1` without
+coefficient atoms it is `basicWordSeq` for the variables of the equation. An equation
+`∏ᵢ [xᵢ, yᵢ] ∏ⱼ zⱼ⁻¹ cⱼ zⱼ d = 1` with coefficient atoms is read backwards: the inverse of the
+product of its atoms is `∏ⱼ zⱼ'⁻¹ cⱼ' zⱼ' ∏ᵢ [xᵢ', yᵢ']` for the mirrored variables and
+coefficients `xᵢ' = y_{n+1-i}`, `yᵢ' = x_{n+1-i}`, `zⱼ' = z_{m+1-j}`, `cⱼ' = c_{m+1-j}⁻¹`, and
+the sequence is `basicWordSeq` for these. -/
 noncomputable def basicSeq : (S : Standard G X) → S.IsOrientable → List (MulAut (GX G X))
-  | .orientable _ _ _ _ inj, _ => basicWordSeq (injective_mirror (injective_elim0 inj)) Fin.elim0
-  | .orientableCoeff _ _ _ _ _ _ inj c _ _ _, _ =>
-    basicWordSeq (injective_mirror inj) fun j => (c j.rev)⁻¹
+  | .orientable _ _ _ _ inj, _ => basicWordSeq (injective_elim0 inj) Fin.elim0
+  | .orientableCoeff _ m _ _ _ _ inj c _ _ _, _ =>
+    if m = 0 then basicWordSeq inj c else basicWordSeq (injective_mirror inj) fun j => (c j.rev)⁻¹
   | .nonorientable _ hn _ inj, h => (not_isOrientable_nonorientable hn inj h).elim
   | .nonorientableCoeff _ _ hn _ _ inj _ hc _ hd, h =>
     (not_isOrientable_nonorientableCoeff hn inj hc hd h).elim
 
 theorem basicSeq_orientable (hn : 0 < n) (inj : (Sum.elim x y).Injective)
-    (inj' : (Sum.elim (Sum.elim (y ∘ Fin.rev) (x ∘ Fin.rev))
-      ((Fin.elim0 : Fin 0 → X) ∘ Fin.rev)).Injective) :
+    (inj' : (Sum.elim (Sum.elim x y) (Fin.elim0 : Fin 0 → X)).Injective) :
     basicSeq (G := G) (orientable n hn x y inj) (isOrientable_orientable hn inj) =
       basicWordSeq inj' Fin.elim0 := (rfl)
 
@@ -295,7 +308,25 @@ theorem basicSeq_orientableCoeff (hnm : 0 < n + m) (inj : (Sum.elim (Sum.elim x 
     (inj' : (Sum.elim (Sum.elim (y ∘ Fin.rev) (x ∘ Fin.rev)) (z ∘ Fin.rev)).Injective) :
     basicSeq (orientableCoeff n m hnm x y z inj c hc d hd)
         (isOrientable_orientableCoeff hnm inj hc hd) =
-      basicWordSeq inj' fun j => (c j.rev)⁻¹ := (rfl)
+      if m = 0 then basicWordSeq inj c else basicWordSeq inj' fun j => (c j.rev)⁻¹ := (rfl)
+
+/-- Without coefficient atoms, the basic sequence of `∏ᵢ [xᵢ, yᵢ] d = 1` is the basic sequence of
+the word `S₀` of its variables. -/
+theorem basicSeq_orientableCoeff_of_eq_zero (hnm : 0 < n + m)
+    (inj : (Sum.elim (Sum.elim x y) z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) (hm : m = 0) :
+    basicSeq (orientableCoeff n m hnm x y z inj c hc d hd)
+        (isOrientable_orientableCoeff hnm inj hc hd) = basicWordSeq inj c := by
+  simp only [basicSeq_orientableCoeff hnm inj hc hd (injective_mirror inj), hm, ↓reduceIte]
+
+/-- With coefficient atoms, the basic sequence of `∏ᵢ [xᵢ, yᵢ] ∏ⱼ zⱼ⁻¹ cⱼ zⱼ d = 1` is the basic
+sequence of the word `S₀` of the mirrored variables and coefficients. -/
+theorem basicSeq_orientableCoeff_of_ne_zero (hnm : 0 < n + m)
+    (inj : (Sum.elim (Sum.elim x y) z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) (hm : m ≠ 0)
+    (inj' : (Sum.elim (Sum.elim (y ∘ Fin.rev) (x ∘ Fin.rev)) (z ∘ Fin.rev)).Injective) :
+    basicSeq (orientableCoeff n m hnm x y z inj c hc d hd)
+        (isOrientable_orientableCoeff hnm inj hc hd) =
+      basicWordSeq inj' fun j => (c j.rev)⁻¹ := by
+  simp only [basicSeq_orientableCoeff hnm inj hc hd inj', hm, ↓reduceIte]
 
 variable {S : Standard G X} (hS : S.IsOrientable) {γ : MulAut (GX G X)}
 
@@ -303,7 +334,9 @@ variable {S : Standard G X} (hS : S.IsOrientable) {γ : MulAut (GX G X)}
 theorem apply_inl_of_mem_basicSeq (hγ : γ ∈ basicSeq S hS) (g : G) : γ (inl g) = inl g := by
   cases S with
   | orientable n hn x y inj => exact apply_inl_of_mem_basicWordSeq _ _ hγ g
-  | orientableCoeff n m hnm x y z inj c hc d hd => exact apply_inl_of_mem_basicWordSeq _ _ hγ g
+  | orientableCoeff n m hnm x y z inj c hc d hd =>
+    rw [basicSeq_orientableCoeff hnm inj hc hd (injective_mirror inj)] at hγ
+    split_ifs at hγ <;> exact apply_inl_of_mem_basicWordSeq _ _ hγ g
   | nonorientable n hn x inj => exact (not_isOrientable_nonorientable hn inj hS).elim
   | nonorientableCoeff n m hn x z inj c hc d hd =>
     exact (not_isOrientable_nonorientableCoeff hn inj hc hd hS).elim
@@ -314,11 +347,15 @@ theorem apply_prod_atoms_of_mem_basicSeq (hγ : γ ∈ basicSeq S hS) :
     γ S.atoms.prod = S.atoms.prod := by
   cases S with
   | orientable n hn x y inj =>
-    have h := apply_basicWord_of_mem_basicWordSeq _ _ hγ
-    rwa [basicWord_rev_orientable hn inj, map_inv, inv_inj] at h
+    simpa only [basicWord_orientable hn inj] using apply_basicWord_of_mem_basicWordSeq _ _ hγ
   | orientableCoeff n m hnm x y z inj c hc d hd =>
-    have h := apply_basicWord_of_mem_basicWordSeq _ _ hγ
-    rwa [basicWord_rev_orientableCoeff hnm inj hc hd, map_inv, inv_inj] at h
+    rw [basicSeq_orientableCoeff hnm inj hc hd (injective_mirror inj)] at hγ
+    split_ifs at hγ with hm
+    · subst hm
+      simpa only [basicWord_orientableCoeff hnm inj hc hd] using
+        apply_basicWord_of_mem_basicWordSeq _ _ hγ
+    · have h := apply_basicWord_of_mem_basicWordSeq _ _ hγ
+      rwa [basicWord_rev_orientableCoeff hnm inj hc hd, map_inv, inv_inj] at h
   | nonorientable n hn x inj => exact (not_isOrientable_nonorientable hn inj hS).elim
   | nonorientableCoeff n m hn x z inj c hc d hd =>
     exact (not_isOrientable_nonorientableCoeff hn inj hc hd hS).elim
@@ -343,7 +380,7 @@ theorem phi_basicSeq_inl (p : List ℕ) (g : G) : phi (basicSeq S hS) p (inl g) 
 theorem length_basicSeq_orientable (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
     (basicSeq (G := G) (orientable n hn x y inj) (isOrientable_orientable hn inj)).length =
       4 * n - 1 := by
-  rw [basicSeq_orientable hn inj (injective_mirror (injective_elim0 inj)), length_basicWordSeq]
+  rw [basicSeq_orientable hn inj (injective_elim0 inj), length_basicWordSeq]
   simp
 
 /-- The basic sequence of `∏ᵢ₌₁ⁿ [xᵢ, yᵢ] ∏ⱼ₌₁ᵐ zⱼ⁻¹ cⱼ zⱼ d = 1` has `K(m, n)` terms:
@@ -353,7 +390,8 @@ theorem length_basicSeq_orientableCoeff (hnm : 0 < n + m)
     (basicSeq (orientableCoeff n m hnm x y z inj c hc d hd)
         (isOrientable_orientableCoeff hnm inj hc hd)).length =
       (m - 1) + (if 0 < m ∧ 0 < n then 1 else 0) + (4 * n - 1) := by
-  rw [basicSeq_orientableCoeff hnm inj hc hd (injective_mirror inj), length_basicWordSeq]
+  rw [basicSeq_orientableCoeff hnm inj hc hd (injective_mirror inj), apply_ite List.length,
+    length_basicWordSeq, length_basicWordSeq, ite_self]
 
 end Standard
 
