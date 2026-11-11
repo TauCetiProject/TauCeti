@@ -90,7 +90,7 @@ private theorem IsWarpedProduct.sum_mixed_curvature :
       ((tangentSpaceProdEquiv p).symm (0, (f p.1)⁻¹ • c j)),
       (tangentSpaceProdEquiv p).symm (b k, 0)⟫_ℝ) =
       -(Fintype.card κ : ℝ) * laplaceBeltrami I f p.1 / f p.1 := by
-  simp only [h.inner_curvatureTensor_horizontal_vertical_vertical_horizontal hf p hf₀,
+  simp only [h.inner_curvatureTensor_horizontal_vertical_vertical_horizontal hf p,
     real_inner_smul_left, real_inner_smul_right, c.inner_eq_one, mul_one]
   have hterm (k : ι) :
       -f p.1 * hessian I f p.1 (b k) (b k) * ((f p.1)⁻¹ * (f p.1)⁻¹) =

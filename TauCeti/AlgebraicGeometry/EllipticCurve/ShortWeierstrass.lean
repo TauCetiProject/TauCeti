@@ -73,9 +73,8 @@ with `u = 1`, and this is the canonical representative of the pair.
 The classical discriminant `-16(4A³ + 27B²)` is *not* restated: it is Mathlib's `Δ_of_isShortNF`,
 which the instance below makes applicable and the coefficient lemmas reduce.
 
-This is a prerequisite of the Nagell–Lutz milestone of
-`TauCetiRoadmap/EllipticCurves/README.md`, Layer 6, item "The torsion subgroup and Nagell–Lutz",
-whose classical statement is about this curve and its discriminant.
+This is a prerequisite of the Nagell–Lutz theorem, whose classical statement is about this curve
+and its discriminant.
 
 ## Provenance
 
