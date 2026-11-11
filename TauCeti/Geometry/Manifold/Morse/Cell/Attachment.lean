@@ -57,7 +57,9 @@ attaching region `{f = c - ε}` carried onto `∂D^λ × D^(m-λ)` (`TauCeti.qua
 
 * `TauCeti.exists_sublevel_union_cells_deformation`: for normal-form charts with disjoint sources
   around the critical points of a compact band `f⁻¹[c - ε, c + ε]`, the sublevel `M_{c+ε}`
-  strong deformation retracts onto `M_{c-ε}` with the cells of the charts attached.
+  strong deformation retracts onto its intersection with `M_{c-ε}` with the cells of the charts
+  attached; for `0 ≤ ε` this is `M_{c-ε}` with the cells attached, and for `ε ≤ 0` the retraction
+  is the identity.
 * `TauCeti.IsMorse.exists_sublevel_union_cells_deformation`: **Milnor's cell attachment
   theorem** for a Morse function with a compact band around a critical value, with the charts and
   the width `ε₀` supplied by `TauCeti.IsMorse.exists_admissible_morseCharts`, valid for all
@@ -525,10 +527,12 @@ in its target, in which `f = c - Σ_{j < k i} yⱼ² + Σ_{j ≥ k i} yⱼ²`. S
 chart `ψ i` is the disc `{‖y‖² ≤ ε, yⱼ = 0 for j ≥ k i}` of the first `k i` coordinates, read in
 `M`.
 
-Then the lower sublevel `{f ≤ c - ε}` with these cells attached is a strong deformation retract
-of `{f ≤ c + ε}`: there is a retraction of `{f ≤ c + ε}` onto it, and a homotopy in
-`{f ≤ c + ε}` from this retraction to the identity which fixes it pointwise. The cells lie in
-`{f ≤ c}`, so intersecting with `{f ≤ c + ε}` does not change the retract. -/
+Then the intersection with `{f ≤ c + ε}` of the lower sublevel `{f ≤ c - ε}` with these cells
+attached is a strong deformation retract of `{f ≤ c + ε}`: there is a retraction of
+`{f ≤ c + ε}` onto it, and a homotopy in `{f ≤ c + ε}` from this retraction to the identity which
+fixes it pointwise. For `0 ≤ ε` the cells lie in `{f ≤ c}`, so the intersection does not change
+the retract: it is the lower sublevel with the cells attached. For `ε ≤ 0` the sublevel
+`{f ≤ c + ε}` lies in `{f ≤ c - ε}`, and the retraction is the identity. -/
 theorem exists_sublevel_union_cells_deformation [Finite ι] (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
     (ψ : ι → PartialDiffeomorph I 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) M (EuclideanSpace ℝ (Fin n)) ∞)
     (hψ : Pairwise (Disjoint on fun i ↦ (ψ i).source)) (k : ι → ℕ)
@@ -546,7 +550,9 @@ theorem exists_sublevel_union_cells_deformation [Finite ι] (hfs : ContMDiff I �
   · -- For `ε ≤ 0` the sublevel `{f ≤ c + ε}` lies in `{f ≤ c - ε}`, so the retraction is trivial.
     have hsub : ∀ x : {x | f x ≤ c + ε}, (x : M) ∈ {x | f x ≤ c - ε} ∪
         ⋃ i, (ψ i).source ∩ ψ i ⁻¹' {y | ‖y‖ ^ 2 ≤ ε ∧ ∀ j : Fin n, k i ≤ j.val → y j = 0} :=
-      fun x ↦ Or.inl (le_trans (show f x ≤ c + ε from x.2) (by linarith))
+      -- `x.2 : (x : M) ∈ {x | f x ≤ c + ε}` is the inequality `f x ≤ c + ε` by the definition of
+      -- membership in a set-builder set.
+      fun x ↦ Or.inl (le_trans (b := c + ε) x.2 (by linarith))
     exact ⟨⟨fun x ↦ ⟨x.1, x.2, hsub x⟩, continuous_subtype_val.subtype_mk _⟩, fun x ↦ rfl,
       ⟨ContinuousMap.HomotopyRel.refl _ _⟩⟩
   have := Fintype.ofFinite ι

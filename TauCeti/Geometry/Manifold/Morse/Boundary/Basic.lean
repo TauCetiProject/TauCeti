@@ -111,14 +111,14 @@ theorem neg_morseTrajectorySlice (hf : IsMorse 𝓘(ℝ, E) f) (p q : M) :
 
 /-- **Trajectories read off a decomposition of a stable set.** Suppose that, apart from `q` itself,
 the stable set of a point `q` is covered by the orbits of points `y i`, where `y i` flows
-from a point `a i ≠ q` to `q` and crosses the middle level between `a i` and `q` at time `τ i`.
+from a point `a i` to `q` and crosses the middle level between `a i` and `q` at time `τ i`.
 Then the trajectories from a point `p ≠ q` to `q` are the crossings of the orbits starting at
 `p`. -/
 theorem morseTrajectorySlice_eq_image_of_stableSet_subset
     {ι : Type*} {p q : M} {a y : ι → M} {τ : ι → ℝ}
     (hpq : p ≠ q)
     (hW : hX.flow.stableSet q ⊆ insert q (⋃ i, hX.flow.orbit (y i)))
-    (hy : ∀ i, y i ∈ hX.flow.unstableSet (a i) ∩ hX.flow.stableSet q) (haq : ∀ i, a i ≠ q)
+    (hy : ∀ i, y i ∈ hX.flow.unstableSet (a i) ∩ hX.flow.stableSet q)
     (hτ : ∀ i, f (hX.flow (τ i) (y i)) = (f (a i) + f q) / 2) :
     hX.morseTrajectorySlice p q = (fun i ↦ hX.flow (τ i) (y i)) '' {i | a i = p} := by
   have hf := hX.mdifferentiable
@@ -139,7 +139,7 @@ theorem morseTrajectorySlice_eq_image_of_stableSet_subset
         ((Flow.apply_mem_unstableSet_iff _ _).2 (hy i).1) hwu rfl
     -- The orbit of `y i` crosses the middle level only once.
     obtain ⟨s, -, hs⟩ :=
-      hX.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet hf (haq i) (hy i)
+      hX.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet hf (hai ▸ hpq) (hy i)
     refine ⟨i, hai, ?_⟩
     rw [hs (τ i) (hτ i), hs t (hwc.trans (by rw [hai]))]
   · rintro ⟨i, rfl, rfl⟩

@@ -440,13 +440,19 @@ theorem finiteDimensional_of_isCompact_sublevel [T2Space M] {b : ℝ} (hf : Cont
     (hcompact : IsCompact {x | f x ≤ b}) (hb : IsRegularValue I 𝓘(ℝ) f b)
     [hK : Nonempty {x | f x ≤ b}] : FiniteDimensional ℝ E := by
   obtain ⟨x₀, hx₀, hmin⟩ := hcompact.exists_isMinOn (Set.nonempty_coe_sort.1 hK) hf.continuousOn
-  rcases (show f x₀ ≤ b from hx₀).lt_or_eq with hlt | heq
+  -- Membership in a set-builder set `{x | f x ≤ b}` is by definition the inequality.
+  have hx₀b : f x₀ ≤ b := hx₀
+  rcases hx₀b.lt_or_eq with hlt | heq
   · let U : TopologicalSpace.Opens M := ⟨{x | f x < b}, isOpen_lt hf continuous_const⟩
     have : Nonempty U := ⟨⟨x₀, hlt⟩⟩
     have : CompactSpace {x | f x ≤ b} := isCompact_iff_compactSpace.1 hcompact
     have : LocallyCompactSpace U :=
       (Topology.IsOpenEmbedding.inclusion (s := (U : Set M)) (t := {x | f x ≤ b})
-        (fun x hx ↦ (le_of_lt (show f x < b from hx) : f x ≤ b))
+        -- A point of `U` lies in `{f < b}`: the underlying set of the `Opens` structure `U` is
+        -- `{x | f x < b}`, and membership in it is the strict inequality by definition.
+        (fun x hx ↦ by
+          have hlt : f x < b := hx
+          simpa using hlt.le)
         (U.isOpen.preimage continuous_subtype_val)).locallyCompactSpace
     exact FiniteDimensional.of_locallyCompact_manifold U I
   · -- Otherwise `x₀` is a global minimum of `f` on the level `b`, contradicting regularity.
