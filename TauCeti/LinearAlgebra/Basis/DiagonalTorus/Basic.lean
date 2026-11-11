@@ -12,6 +12,7 @@ public import Mathlib.Algebra.CharZero.Infinite
 -- Characteristic zero for a field that is a `ℚ`-algebra.
 public import Mathlib.Algebra.CharP.Algebra
 public import Mathlib.Algebra.Module.Equiv.Basic
+public import Mathlib.GroupTheory.Divisible
 public import Mathlib.LinearAlgebra.Basis.SMul
 public import Mathlib.LinearAlgebra.Matrix.Basis
 public import TauCeti.Algebra.BigOperators.ZPow
@@ -62,6 +63,8 @@ field distinct weights stay distinct (`TauCeti.weightChar_injective`).
   reflecting coordinate, with value there the root character.
 * `TauCeti.torusCharacter_weylReflectTorusPoint`: evaluation at a reflected point agrees with
   evaluation of the reflected character.
+* `TauCeti.torusCharacter_surjective`: every nonzero character is surjective on points when the
+  coefficient ring has divisible units, even when the character is not primitive.
 * `TauCeti.exists_torusCharacter_eq_of_sum_mul_eq_one`: a weight whose coordinates have a
   `ℤ`-linear combination equal to one takes every unit as a value.
 * `TauCeti.weightChar_injective`: over an infinite field, distinct weights give distinct
@@ -166,6 +169,12 @@ theorem torusCharacter_zsmul (s : κ → Rˣ) (μ : κ → ℤ) (z : ℤ) :
   refine prod_congr rfl fun j _ => ?_
   rw [mul_comm, _root_.zpow_mul]
 
+/-- Evaluating a character on a one-parameter subgroup pairs its exponents with those of the
+subgroup. -/
+theorem torusCharacter_zpow (a : Rˣ) (f μ : κ → ℤ) :
+    torusCharacter (fun j => a ^ f j) μ = a ^ ∑ j, f j * μ j := by
+  simp only [torusCharacter_def, ← _root_.zpow_mul, Finset.prod_zpow_eq_zpow_sum]
+
 /-- Every character takes the value one at the identity point. -/
 @[simp] theorem torusCharacter_one (μ : κ → ℤ) : torusCharacter (1 : κ → Rˣ) μ = 1 := by
   simp [torusCharacter]
@@ -206,6 +215,19 @@ theorem exists_torusCharacter_eq_of_sum_mul_eq_one {μ m : κ → ℤ} (hm : ∑
     _ = u ^ ∑ j, m j * μ j := Finset.prod_zpow_eq_zpow_sum _ u _
     _ = u := by
         rw [Finset.sum_congr rfl fun j _ => mul_comm (m j) (μ j), hm, _root_.zpow_one]
+
+/-- A nonzero character of a split torus is surjective on points when the coefficient ring
+has divisible units. In particular, this applies over an algebraically closed field and
+does not require the character to be primitive. -/
+theorem torusCharacter_surjective [Fintype ι] [RootableBy Rˣ ℕ]
+    {α : ι → ℤ} (hα : α ≠ 0) :
+    Function.Surjective (fun s : ι → Rˣ => torusCharacter s α) := by
+  classical
+  obtain ⟨i, hi⟩ : ∃ i, α i ≠ 0 := Function.ne_iff.mp hα
+  let : RootableBy Rˣ ℤ := Group.rootableByIntOfRootableByNat Rˣ
+  intro u
+  obtain ⟨v, hv⟩ := RootableBy.surjective_pow Rˣ ℤ hi u
+  exact ⟨Pi.mulSingle i v, by simpa using hv⟩
 
 /-! ## Reflections of split-torus points -/
 

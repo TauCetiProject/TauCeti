@@ -231,22 +231,16 @@ private lemma fivePath_fiber_equations
     (T.multiplicity c : ℤ) * T.intersection c d + T.multiplicity e * T.intersection d e =
       2 * T.weight d * T.multiplicity d ∧
     (T.multiplicity d : ℤ) * T.intersection d e = 2 * T.weight e * T.multiplicity e := by
-  have ne_of_nonneg {x y : T.Component}
-      (hxx : T.intersection x x = -(2 * (T.weight x : ℤ)))
-      (hxy : 0 ≤ T.intersection x y) : x ≠ y := by
-    rintro rfl
-    have := (T.weight x).pos
-    omega
-  have hab := ne_of_nonneg haa hab₀.le
-  have hac := ne_of_nonneg haa hac₀.ge
-  have had := ne_of_nonneg haa had₀.ge
-  have hae := ne_of_nonneg haa hae₀.ge
-  have hbc := ne_of_nonneg hbb hbc₀.le
-  have hbd := ne_of_nonneg hbb hbd₀.ge
-  have hbe := ne_of_nonneg hbb hbe₀.ge
-  have hcd := ne_of_nonneg hcc hcd₀.le
-  have hce := ne_of_nonneg hcc hce₀.ge
-  have hde := ne_of_nonneg hdd hde₀.le
+  have hab := T.ne_of_intersection_nonneg haa hab₀.le
+  have hac := T.ne_of_intersection_nonneg haa hac₀.ge
+  have had := T.ne_of_intersection_nonneg haa had₀.ge
+  have hae := T.ne_of_intersection_nonneg haa hae₀.ge
+  have hbc := T.ne_of_intersection_nonneg hbb hbc₀.le
+  have hbd := T.ne_of_intersection_nonneg hbb hbd₀.ge
+  have hbe := T.ne_of_intersection_nonneg hbb hbe₀.ge
+  have hcd := T.ne_of_intersection_nonneg hcc hcd₀.le
+  have hce := T.ne_of_intersection_nonneg hcc hce₀.ge
+  have hde := T.ne_of_intersection_nonneg hdd hde₀.le
   -- The five distinct components exhaust the numerical type.
   have hu : (univ : Finset T.Component) = {a, b, c, d, e} :=
     (eq_univ_of_card _ (by simp [hcard, hab, hac, had, hae, hbc, hbd, hbe, hcd, hce, hde])).symm

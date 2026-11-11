@@ -46,7 +46,7 @@ theorem disjoint_coveredSquares_XSet_rectangle_recutRightEqRightFirst
         hfirst).rectangle.toGridRectangle.coveredSquares
       (G.swapColumns a (finRotate n a)).XSet := by
   let E := D.recutRightEqRightFirst hcommon hone hrectangle hpentagon hfirst
-  obtain ⟨_, _, hbottom, htop, hCols, haNot, ha⟩ :=
+  obtain ⟨_, _, hbottom, htop, hCols, haNot, ha, _⟩ :=
     D.recutRightEqRightFirst_rectangle_geometry hcommon hone hrectangle hpentagon hfirst
   have hbottomE : E.rectangle.bottom = D.rectangle.bottom := by
     simpa only [E] using hbottom

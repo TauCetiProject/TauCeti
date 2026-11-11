@@ -27,9 +27,7 @@ The construction uses `Polynomial.Gal.galActionHom`, its equivariant comparison
 
 public section
 
-namespace TauCeti
-
-open Polynomial
+namespace Polynomial.Gal
 
 universe u v w
 
@@ -38,7 +36,7 @@ variable {F : Type u} [Field F]
 open scoped Classical in
 /-- The full cycle types of the Galois action on the distinct roots of `p`, including one part
 for every fixed root. This is an intrinsic invariant of the polynomial. -/
-noncomputable def _root_.Polynomial.Gal.cycleTypes (p : F[X]) : Set (Multiset ℕ) :=
+noncomputable def cycleTypes (p : F[X]) : Set (Multiset ℕ) :=
   letI : Fact ((p.map (algebraMap F p.SplittingField)).Splits) :=
     ⟨IsSplittingField.splits p.SplittingField p⟩
   Set.range fun g : p.Gal ↦ (Gal.galActionHom p p.SplittingField g).fullCycleType
@@ -49,7 +47,7 @@ variable (p : F[X]) (E : Type v) [Field E] [Algebra F E]
 open scoped Classical in
 /-- The intrinsic set of cycle types is the range of the full cycle type of the root action
 in any splitting extension. -/
-theorem _root_.Polynomial.Gal.cycleTypes_eq :
+theorem cycleTypes_eq :
     Gal.cycleTypes p = Set.range fun g : p.Gal ↦ (Gal.galActionHom p E g).fullCycleType := by
   let : Fact ((p.map (algebraMap F p.SplittingField)).Splits) :=
     ⟨IsSplittingField.splits p.SplittingField p⟩
@@ -63,13 +61,13 @@ theorem _root_.Polynomial.Gal.cycleTypes_eq :
 open scoped Classical in
 /-- A multiset is a Galois cycle type exactly when some Galois automorphism realizes it in
 the chosen splitting extension. -/
-theorem _root_.Polynomial.Gal.mem_cycleTypes_iff {t : Multiset ℕ} :
+theorem mem_cycleTypes_iff {t : Multiset ℕ} :
     t ∈ Gal.cycleTypes p ↔ ∃ g : p.Gal, (Gal.galActionHom p E g).fullCycleType = t := by
   rw [Gal.cycleTypes_eq p E, Set.mem_range]
 
 open scoped Classical in
 /-- The same membership characterization, expressed directly in the permutation image. -/
-theorem _root_.Polynomial.Gal.mem_cycleTypes_iff_exists_mem_range {t : Multiset ℕ} :
+theorem mem_cycleTypes_iff_exists_mem_range {t : Multiset ℕ} :
     t ∈ Gal.cycleTypes p ↔ ∃ σ ∈ (Gal.galActionHom p E).range, σ.fullCycleType = t := by
   rw [Gal.mem_cycleTypes_iff p E]
   exact ⟨fun ⟨g, hg⟩ ↦ ⟨_, ⟨g, rfl⟩, hg⟩,
@@ -77,7 +75,7 @@ theorem _root_.Polynomial.Gal.mem_cycleTypes_iff_exists_mem_range {t : Multiset 
 
 open scoped Classical in
 /-- Numbering the roots by any finite type leaves the set of Galois cycle types unchanged. -/
-theorem _root_.Polynomial.Gal.cycleTypes_eq_range_permCongr {α : Type w} [Fintype α]
+theorem cycleTypes_eq_range_permCongr {α : Type w} [Fintype α]
     (e : p.rootSet E ≃ α) :
     Gal.cycleTypes p = Set.range fun g : p.Gal ↦
       (e.permCongr (Gal.galActionHom p E g)).fullCycleType := by
@@ -86,19 +84,19 @@ theorem _root_.Polynomial.Gal.cycleTypes_eq_range_permCongr {α : Type w} [Finty
 open scoped Classical in
 /-- Every root permutation induced by a Galois automorphism exhibits a Galois cycle type. -/
 @[simp]
-theorem _root_.Polynomial.Gal.fullCycleType_mem_cycleTypes (g : p.Gal) :
+theorem fullCycleType_mem_cycleTypes (g : p.Gal) :
     (Gal.galActionHom p E g).fullCycleType ∈ Gal.cycleTypes p :=
   (Gal.mem_cycleTypes_iff p E).mpr ⟨g, rfl⟩
 
 open scoped Classical in
 /-- The identity exhibits the type consisting of one part for each distinct root. -/
-theorem _root_.Polynomial.Gal.replicate_mem_cycleTypes :
+theorem replicate_mem_cycleTypes :
     Multiset.replicate (Fintype.card (p.rootSet E)) 1 ∈ Gal.cycleTypes p := by
   simpa using Gal.fullCycleType_mem_cycleTypes p E 1
 
 omit E [Field E] [Algebra F E] [Fact ((p.map (algebraMap F E)).Splits)] in
 /-- A polynomial Galois group exhibits only finitely many cycle types. -/
-theorem _root_.Polynomial.Gal.finite_cycleTypes : (Gal.cycleTypes p).Finite := by
+theorem finite_cycleTypes : (Gal.cycleTypes p).Finite := by
   let : Fact ((p.map (algebraMap F p.SplittingField)).Splits) :=
     ⟨IsSplittingField.splits p.SplittingField p⟩
   rw [Gal.cycleTypes_eq p p.SplittingField]
@@ -106,14 +104,14 @@ theorem _root_.Polynomial.Gal.finite_cycleTypes : (Gal.cycleTypes p).Finite := b
 
 open scoped Classical in
 /-- The sum of any Galois cycle type is the number of distinct roots in a splitting extension. -/
-theorem _root_.Polynomial.Gal.sum_eq_card_rootSet_of_mem_cycleTypes {t : Multiset ℕ}
+theorem sum_eq_card_rootSet_of_mem_cycleTypes {t : Multiset ℕ}
     (ht : t ∈ Gal.cycleTypes p) : t.sum = Fintype.card (p.rootSet E) := by
   obtain ⟨g, rfl⟩ := (Gal.mem_cycleTypes_iff p E).mp ht
   exact Equiv.Perm.sum_fullCycleType _
 
 omit E [Field E] [Algebra F E] [Fact ((p.map (algebraMap F E)).Splits)] in
 /-- For a separable polynomial, every Galois cycle type is a partition of its degree. -/
-theorem _root_.Polynomial.Gal.sum_eq_natDegree_of_mem_cycleTypes (hsep : p.Separable)
+theorem sum_eq_natDegree_of_mem_cycleTypes (hsep : p.Separable)
     {t : Multiset ℕ} (ht : t ∈ Gal.cycleTypes p) : t.sum = p.natDegree := by
   let : Fact ((p.map (algebraMap F p.SplittingField)).Splits) :=
     ⟨IsSplittingField.splits p.SplittingField p⟩
@@ -122,7 +120,7 @@ theorem _root_.Polynomial.Gal.sum_eq_natDegree_of_mem_cycleTypes (hsep : p.Separ
 
 open scoped Classical in
 /-- The least common multiple of an exhibited cycle type divides the Galois-group order. -/
-theorem _root_.Polynomial.Gal.lcm_dvd_natCard_of_mem_cycleTypes {t : Multiset ℕ}
+theorem lcm_dvd_natCard_of_mem_cycleTypes {t : Multiset ℕ}
     (ht : t ∈ Gal.cycleTypes p) : t.lcm ∣ Nat.card p.Gal := by
   let : Fact ((p.map (algebraMap F p.SplittingField)).Splits) :=
     ⟨IsSplittingField.splits p.SplittingField p⟩
@@ -131,4 +129,4 @@ theorem _root_.Polynomial.Gal.lcm_dvd_natCard_of_mem_cycleTypes {t : Multiset �
     orderOf_injective _ (Gal.galActionHom_injective p p.SplittingField)]
   exact orderOf_dvd_natCard g
 
-end TauCeti
+end Polynomial.Gal

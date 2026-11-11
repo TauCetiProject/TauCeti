@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Renewal.Exponential
+public import TauCeti.Probability.Renewal.Exponential.Basic
 public import TauCeti.Probability.Renewal.Measure
 public import TauCeti.Probability.PointProcess.OccurrenceTime
 public import Mathlib.MeasureTheory.Measure.GiryMonad

@@ -187,13 +187,15 @@ theorem localPolynomial_eq_of_not_hasGoodReduction (W : WeierstrassCurve K)
       C_0, zero_mul, sub_zero]
 
 omit [Finite (IsLocalRing.ResidueField R)] in
-/-- **The local factor at potentially good bad reduction is trivial**: if an elliptic curve has
-potential good reduction while its minimal equation has bad reduction, then its local polynomial
-(`WeierstrassCurve.localPolynomial`) is `1`, multiplicative reduction never being potentially
-good. Unlike `localPolynomial_eq_of_not_hasGoodReduction`, this needs no finite residue field. -/
-theorem localPolynomial_eq_one_of_hasPotentialGoodReduction_of_not_hasGoodReduction [W.IsElliptic]
+/-- **The local factor at potentially good bad reduction is trivial**: if a curve has potential
+good reduction (so is elliptic) while its minimal equation has bad reduction, then its local
+polynomial (`WeierstrassCurve.localPolynomial`) is `1`, multiplicative reduction never being
+potentially good. Unlike `localPolynomial_eq_of_not_hasGoodReduction`, this needs no finite
+residue field. -/
+theorem localPolynomial_eq_one_of_hasPotentialGoodReduction_of_not_hasGoodReduction
     (h : W.HasPotentialGoodReduction R) (hb : ¬ (W.minimal R).HasGoodReduction R) :
     W.localPolynomial R = 1 := by
+  have := h.isElliptic
   obtain ⟨C, hC⟩ := W.exists_smul_eq_minimal R
   -- multiplicative reduction is never potentially good
   have hm : ¬ (W.minimal R).HasMultiplicativeReduction R := fun hm ↦
