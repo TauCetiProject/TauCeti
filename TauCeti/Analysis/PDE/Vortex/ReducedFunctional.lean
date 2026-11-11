@@ -150,8 +150,9 @@ private theorem le_div_two_add_of_pow_four_le {x D M : ℝ} (hD : 0 ≤ D) (hM :
 where `h = ‖P‖² / (1 + ‖P‖²)` and `g = 2 ‖P'‖² / (1 + ‖P‖²)²`. The first two terms are finite for
 every `u`. The potential is a nonnegative extended integral, so `I(u) = ⊤` exactly when it is not
 integrable (`TauCeti.Vortex.sobolevReducedFunctional_eq_coe`,
-`TauCeti.Vortex.sobolevReducedFunctional_eq_top`). On compactly supported `C¹` functions this is
-`TauCeti.Vortex.reducedFunctional`
+`TauCeti.Vortex.sobolevReducedFunctional_eq_top`,
+`TauCeti.Vortex.sobolevReducedFunctional_ne_top_iff`). On compactly supported `C¹` functions this
+is `TauCeti.Vortex.reducedFunctional`
 (`TauCeti.Vortex.sobolevReducedFunctional_eq_reducedFunctional`). -/
 def sobolevReducedFunctional (P : Polynomial ℂ) (u : W1p (volume : Measure ℂ) ⊤ 2) : EReal :=
   ((‖W1p.gradient u‖ ^ 2 / 2 + ∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
@@ -170,13 +171,6 @@ theorem sobolevReducedFunctional_def (P : Polynomial ℂ) (u : W1p (volume : Mea
 
 variable {P : Polynomial ℂ}
 
-/-- The value of an element of `H¹(ℂ)` is square integrable for Lebesgue measure. -/
-private theorem memLp_value (u : W1p (volume : Measure ℂ) ⊤ 2) :
-    MemLp (W1p.value u : ℂ → ℝ) 2 := by
-  have h := Lp.memLp (W1p.value u)
-  simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] at h
-  exact h
-
 /-- The potential `h (exp (2u) - 1 - 2u)` of an element of `H¹(ℂ)` is measurable. -/
 private theorem aestronglyMeasurable_potential (u : W1p (volume : Measure ℂ) ⊤ 2) :
     AEStronglyMeasurable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
@@ -185,7 +179,7 @@ private theorem aestronglyMeasurable_potential (u : W1p (volume : Measure ℂ) �
     fun_prop (disch := intro z; positivity)
   have hΦ : Continuous fun t : ℝ ↦ Real.exp (2 * t) - 1 - 2 * t := by fun_prop
   exact hh.aestronglyMeasurable.mul (hΦ.comp_aestronglyMeasurable
-    (memLp_value u).aestronglyMeasurable)
+    (W1p.memLp_value u).aestronglyMeasurable)
 
 /-- The potential `h (exp (2w) - 1 - 2w)` is nonnegative. -/
 private theorem potential_nonneg (w : ℂ → ℝ) (z : ℂ) :
@@ -232,6 +226,13 @@ theorem sobolevReducedFunctional_eq_top {u : W1p (volume : Measure ℂ) ⊤ 2}
       (ae_of_all _ (potential_nonneg _))).2 (lt_top_iff_ne_top.2 hne)⟩
   rw [sobolevReducedFunctional_def, hinf, ENNReal.top_div_of_ne_top (by norm_num),
     EReal.coe_ennreal_top, EReal.coe_add_top]
+
+/-- Taubes's functional on `H¹(ℂ)` is finite exactly when its potential is integrable. -/
+theorem sobolevReducedFunctional_ne_top_iff {u : W1p (volume : Measure ℂ) ⊤ 2} :
+    sobolevReducedFunctional P u ≠ ⊤ ↔ Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
+      (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z) :=
+  ⟨fun hu ↦ by_contra fun h ↦ hu (sobolevReducedFunctional_eq_top h),
+    fun hu ↦ by rw [sobolevReducedFunctional_eq_coe hu]; exact EReal.coe_ne_top _⟩
 
 /-- Taubes's functional vanishes at `0`. -/
 @[simp]
@@ -398,7 +399,7 @@ private theorem exists_sq_norm_value_sq_le (hm : 0 < P.natDegree) :
   have hW1 : ‖W1p.value u‖ ^ 2 ≤ 64 * k * M + k ^ 2 * S := by
     have h := hpl u (closedBall (0 : ℂ) R) measurableSet_closedBall measure_closedBall_lt_top.ne
     have h2 := mul_le_mul_of_nonneg_left (setIntegral_compl_closedBall_le hR
-      (memLp_value u).aestronglyMeasurable hpint) (by positivity : 0 ≤ 2 * k)
+      (W1p.memLp_value u).aestronglyMeasurable hpint) (by positivity : 0 ≤ 2 * k)
     have h3 : 2 * k * (2 * E) ≤ 64 * k * M := by
       have : E ≤ 16 * M := by simp only [M]; nlinarith [sq_nonneg G]
       nlinarith
@@ -444,7 +445,7 @@ theorem exists_le_two_mul_sobolevReducedFunctional_add (hm : 0 < P.natDegree) :
   have hx2 : x ^ 2 ≤ K * ‖W1p.value u‖ ^ 2 := by
     rw [sq_abs, ← W1p.integral_value_sq_eq_norm_value_sq]
     simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ]
-    exact sq_integral_mul_le_integral_sq_mul_integral_sq hc (memLp_value u)
+    exact sq_integral_mul_le_integral_sq_mul_integral_sq hc (W1p.memLp_value u)
   have hx4 : x ^ 4 ≤ D * (1 + M) ^ 3 := by
     calc x ^ 4 = (x ^ 2) ^ 2 := by ring
       _ ≤ (K * ‖W1p.value u‖ ^ 2) ^ 2 := pow_le_pow_left₀ (sq_nonneg x) hx2 2

@@ -300,7 +300,7 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_range_eq
   obtain ⟨v, hv, hvA, hv2⟩ := exists_val_mul_one_add_two_pow_eq_neg_one hf hw
   -- `χ₁(x₂)` topologically generates `U^[f]`: its negative has exact level `f`.
   obtain ⟨hnu, hnu'⟩ :=
-    neg_mem_unitsPrincipal_and_notMem_succ_of_mem_topologicalClosure_zpowers_two hf hwf hwf'
+    neg_mem_unitsPrincipal_and_notMem_succ_of_mem_topologicalClosure_zpowers_two hwf hwf'
       (hχ₁A _) hu2
   rw [(topologicalClosure_zpowers_two_eq_iff hf hf hwf hwf' hnu hnu').2 rfl] at hχ₁A hvA
   -- Step 3: the `2`-adic exponents `s_j`, and the basis modification `x_j ↦ x_j x₂^{2 s_j}`.
