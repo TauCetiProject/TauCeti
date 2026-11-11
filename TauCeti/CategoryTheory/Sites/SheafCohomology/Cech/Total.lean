@@ -87,12 +87,25 @@ lemma cechTotalComplexMap_def (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.m
         ComplexShape.embeddingUpNat) (ComplexShape.up ℤ) :=
   (rfl)
 
+/-- On each total summand, refinement is the corresponding component of the extended
+Čech refinement map. -/
+@[reassoc, simp]
+lemma ι_cechTotalComplexMap
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (p q n : ℤ)
+    (hpq : p + q = n) :
+    ιTotal _ (ComplexShape.up ℤ) p q n hpq ≫ (cechTotalComplexMap P φ).f n =
+      ((HomologicalComplex.extendMap (cechComplexMap P φ)
+        ComplexShape.embeddingUpNat).f p).f q ≫
+          ιTotal _ (ComplexShape.up ℤ) p q n hpq := by
+  exact ιTotal_map _ _ _ _ p q n hpq
+
 /-- The identity refinement induces the identity of the total Čech complex. -/
 @[simp]
 lemma cechTotalComplexMap_id :
     cechTotalComplexMap P (𝟙 (FormalCoproduct.mk _ U)) = 𝟙 _ := by
   rw [cechTotalComplexMap_def, cechComplexMap_id, HomologicalComplex.extendMap_id,
     total.map_id]
+  -- The remaining object equation is `cechTotalComplexFunctor_obj`.
   rfl
 
 /-- Refinement of total Čech complexes respects composition contravariantly. -/
@@ -103,6 +116,7 @@ lemma cechTotalComplexMap_comp {ν : Type w} {W : ν → C}
     cechTotalComplexMap P (φ ≫ ψ) = cechTotalComplexMap P ψ ≫ cechTotalComplexMap P φ := by
   simp only [cechTotalComplexMap_def, cechComplexMap_comp,
     HomologicalComplex.extendMap_comp, total.map_comp]
+  -- The remaining object equations are instances of `cechTotalComplexFunctor_obj`.
   rfl
 
 /-- The total refinement map is natural in the presheaf of coefficient complexes. -/

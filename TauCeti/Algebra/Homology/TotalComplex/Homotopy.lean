@@ -105,10 +105,9 @@ private lemma totalHom_vertical_of_rel {p p' : I₁} (hp : c₁.Rel p p')
   rw [L.d₂_eq c p hq n hpq',
     K.d₂_eq c p' hq _ (by rw [← hpq, ComplexShape.next_π₂ c₁ c p' hq]),
     Linear.comp_units_smul, Linear.units_smul_comp, Category.assoc,
-    ι_totalHom h c _ p q' _ n _ (c₁.prev_eq' hp), L.ιTotalOrZero_eq c p q' n hpq',
-    Linear.comp_units_smul, smul_smul, smul_smul, ComplexShape.ε₁_ε₂ c hp hq,
-    neg_mul, Units.neg_smul, neg_inj, smul_left_cancel_iff,
-    HomologicalComplex.Hom.comm_assoc]
+    ι_totalHom h c _ p q' _ n _ (c₁.prev_eq' hp), L.ιTotalOrZero_eq c p q' n hpq']
+  simp [Linear.comp_units_smul, smul_smul,
+    ComplexShape.ε₁_ε₂ c hp hq, HomologicalComplex.Hom.comm_assoc]
 
 private lemma totalHom_vertical (p : I₁) (q : I₂) (n : J)
     (hpq : ComplexShape.π c₁ c₂ c (p, q) = n) :
