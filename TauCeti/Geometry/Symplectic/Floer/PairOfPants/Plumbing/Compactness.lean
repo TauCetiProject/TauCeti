@@ -24,10 +24,9 @@ Gromov–Floer compactness at that end, for a symplectic vector space target `(V
 
 Fix a truncation `S_R` (`TauCeti.ThricePuncturedSphere.truncation`) and let `L ≥ 2R + 2`. On the
 receiving pair of pants, `S_R` lies in `Σ_L` and the plumbed datum there is the datum of `S`
-(`TauCeti.SymplecticForm.plumbedPerturbation_eq_pairOfPantsPerturbation_of_mem_truncation`). On
-the inserted pair of pants, `ψ_L` maps `S_R` into `Σ_L` and pulls the plumbed datum back to the
-datum of `S'`
-(`TauCeti.SymplecticForm.perturbationPullback_plumbedPerturbation_of_mem_truncation`). Since
+(`TauCeti.Floer.plumbedPerturbation_eq_pairOfPantsPerturbation_of_mem_truncation`). On the
+inserted pair of pants, `ψ_L` maps `S_R` into `Σ_L` and pulls the plumbed datum back to the datum
+of `S'` (`TauCeti.Floer.perturbationPullback_plumbedPerturbation_of_mem_truncation`). Since
 `ψ_L` is holomorphic, if `u` solves the Floer equation on `Σ_L` then `u ∘ ψ_L` solves the Floer
 equation of `S'` on `S_R`
 (`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_realChart_plumbingMap`), and its
@@ -41,8 +40,11 @@ applies on both pieces, first to the sequence and then to the resulting subseque
 result of this file gives a threshold `δ > 0`, independent of the neck lengths, and a single
 subsequence along which `uₖ` converges locally uniformly on open `Ω ⊆ S_R` off a finite set `Z`,
 and `uₖ ∘ ψ_{Lₖ}` converges locally uniformly on open `Ω' ⊆ S_R` off a finite set `Z'`, with
-`#Z * δ ≤ E` and `#Z' * δ ≤ E`. When `Lₖ → ∞` every compact subset of either pair of pants lies
-in some `S_R`, so the limits are a pair of maps on the two pieces of the broken domain.
+`#Z * δ ≤ E` and `#Z' * δ ≤ E`. This is convergence on one fixed truncation of each piece.
+When `Lₖ → ∞` every compact subset of either pair of pants lies in some `S_R`, but limits on the
+two whole pieces of the broken domain need more work, not done here: an exhaustion by truncations
+`S_{R_j}` with a diagonal subsequence, hypotheses on structure agreement and on a compact image
+for every `R_j`, and control of the bubbling points as `R_j` grows.
 
 The almost complex structures `Jₖ` on `Σ_{Lₖ}` are only required to agree with fixed structures
 `J` on `Ω` and `J'` on `Ω'`, after the change of coordinates `ψ_{Lₖ}` on the inserted piece. The
@@ -70,127 +72,32 @@ namespace TauCeti.SymplecticForm
 
 open Floer TauCeti.MeasureTheory
 
-section Data
-
-variable {M : Type*} {Ha Hb : Puncture → ℝ → M → ℝ} {q : Puncture} {R L : ℝ}
-
-/-- **The plumbed datum on the receiving truncation.** For neck length `L ≥ R + 2`, the plumbed
-perturbation on the truncation `S_R` of the receiving pair of pants is its pair-of-pants
-perturbation. -/
-theorem plumbedPerturbation_eq_pairOfPantsPerturbation_of_mem_truncation (hq : q ≠ inf)
-    (hab : Hb q = Ha inf) (hRL : R + 2 ≤ L) {w : ℂ} (hw : w ∈ truncation R) (x : M) :
-    plumbedPerturbation Ha Hb q L w x = pairOfPantsPerturbation Hb w x := by
-  have h := (mem_truncation.1 hw).2.2 q
-  rw [endSign_eq_one hq, one_mul] at h
-  exact plumbedPerturbation_of_re_endCoord_le hq hab (by linarith) x
-
-/-- **The plumbed datum on the inserted truncation.** For neck length `L ≥ R + 2`, the pullback of
-the plumbed perturbation along the plumbing map `ψ_L`, at a point of the truncation `S_R` of the
-inserted pair of pants and in the real coordinates, is its pair-of-pants perturbation. -/
-theorem perturbationPullback_plumbedPerturbation_of_mem_truncation (hq : q ≠ inf)
-    (hab : Hb q = Ha inf) (hRL : R + 2 ≤ L) {w : ℝ × ℝ}
-    (hw : Complex.equivRealProdCLM.symm w ∈ truncation R) (v : ℝ × ℝ) (x : M) :
-    perturbationPullback (realChart (q.plumbingMap L))
-        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x I) v w x =
-      pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm w) x
-        (Complex.equivRealProdCLM.symm v) := by
-  have h := (mem_truncation.1 hw).2.2 inf
-  rw [endSign_inf, neg_one_mul] at h
-  rw [perturbationPullback_realChart _ (q.hasDerivAt_plumbingMap L _),
-    plumbedPerturbation_plumbingMap hq hab (mem_truncation.1 hw).1 (by linarith)]
-
-end Data
-
-section Equation
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  {Ha Hb : Puncture → ℝ → V → ℝ} {q : Puncture} {R L : ℝ}
-
-/-- **The inserted pair of pants solves its Floer equation.** Let `u` solve the Floer equation
-`(du - X_K)^{0,1} = 0` of the plumbed perturbation `K` at the image `ψ_L(w)` of a point `w` of the
-truncation `S_R` of the inserted pair of pants, with neck length `L > 4` and `L > R + 2`. Then
-`u ∘ ψ_L` solves the Floer equation of the inserted pair-of-pants perturbation at `w`, for the same
-almost complex structure, because the plumbing map is holomorphic. -/
-theorem isComplexLinearMap_perturbedFDeriv_comp_realChart_plumbingMap (ω : SymplecticForm V)
-    (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
-    (hHas : ∀ r, ContDiff ℝ 1 (uncurry (Ha r))) (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r)))
-    (hab : Hb q = Ha inf) (hL : 4 < L) (hRL : R + 2 < L) {w : ℝ × ℝ}
-    (hw : Complex.equivRealProdCLM.symm w ∈ truncation R) {u : ℝ × ℝ → V}
-    (hu : DifferentiableAt ℝ u (realChart (q.plumbingMap L) w)) {J : AlmostComplexStructure V}
-    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J (ω.perturbedFDeriv
-      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x I)
-      u (realChart (q.plumbingMap L) w) : ℝ × ℝ →ₗ[ℝ] V)) :
-    IsComplexLinearMap (AlmostComplexStructure.product ℝ) J (ω.perturbedFDeriv
-      (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x I)
-      (u ∘ realChart (q.plumbingMap L)) w : ℝ × ℝ →ₗ[ℝ] V) := by
-  have h₂ := (mem_truncation.1 hw).2.2 inf
-  rw [endSign_inf, neg_one_mul] at h₂
-  have hw' : (Complex.equivRealProdCLM.symm w ≠ 0 ∧ Complex.equivRealProdCLM.symm w ≠ 1) ∧
-      2 - L < (inf.endCoord (Complex.equivRealProdCLM.symm w)).re :=
-    ⟨⟨(mem_truncation.1 hw).1, (mem_truncation.1 hw).2.1⟩, by linarith⟩
-  have htgt (v : ℂ) :=
-    (differentiableAt_uncurry_plumbedPerturbation_realChart_plumbingMap hq hHa hHb hHas hHbs hab
-      hL hw' (u (realChart (q.plumbingMap L) w)) v).comp
-      (f := fun y : V ↦ (realChart (q.plumbingMap L) w, y)) _
-      ((differentiableAt_const _).prodMk differentiableAt_id)
-  have h' := ω.isComplexLinearMap_perturbedFDeriv_perturbationPullback
-    ((contDiff_realChart_plumbingMap q L (n := 1)).differentiable one_ne_zero w) hu (htgt 1)
-    (htgt I) (isComplexLinearMap_fderiv_realChart (q.hasDerivAt_plumbingMap L _)) h
-  -- The pulled-back datum is the datum of the inserted pair of pants.
-  have hs : perturbationPullback (realChart (q.plumbingMap L))
-      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x I)
-      stdComplexLineReal w =
-        fun x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm w) x 1 :=
-    funext fun x ↦ by
-      rw [perturbationPullback_plumbedPerturbation_of_mem_truncation hq hab hRL.le hw,
-        equivRealProdCLM_symm_stdComplexLineReal]
-  have ht : perturbationPullback (realChart (q.plumbingMap L))
-      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x I)
-      stdComplexLineImag w =
-        fun x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm w) x I :=
-    funext fun x ↦ by
-      rw [perturbationPullback_plumbedPerturbation_of_mem_truncation hq hab hRL.le hw,
-        equivRealProdCLM_symm_stdComplexLineImag]
-  rwa [ω.perturbedFDeriv_congr (Ks' := fun z x ↦
-      pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x 1)
-    (Kt' := fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x I) _ hs ht]
-    at h'
-
-end Equation
-
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {Ha Hb : Puncture → ℝ → V → ℝ} {q : Puncture}
 
-/-- **Floer solutions on plumbed four-punctured spheres converge on both pieces.** Let `Ha`, `Hb`
-be period-one `C³` Hamiltonians with `Hb q = Ha ∞`, `q ≠ ∞`, and let `J`, `J'` be `C²` families of
-`ω`-tame structures on the receiving and the inserted pair of pants `S`, read in real coordinates.
-Fix a truncation `S_R` and a compact `K ⊆ V`. There is a threshold `δ > 0` with the following
-property. Let `uₖ` be `C³` solutions of the Floer equation `(du - X_K)^{0,1} = 0` of the plumbed
-perturbation `K` on the four-punctured spheres `Σ_{Lₖ}` with neck lengths `Lₖ > 4` and
-`Lₖ ≥ 2R + 2`, for structures `Jₖ(z, u)`, and with Floer energy at most `E`. Let `Ω` and `Ω'` be
-open subsets of `S_R`, on which `Jₖ = J` and `Jₖ ∘ ψ_{Lₖ} = J'` respectively, with
-`uₖ(Ω) ⊆ K` and `uₖ(ψ_{Lₖ}(Ω')) ⊆ K`. Then there are a subsequence `φ`, finite sets `Z ⊆ Ω` and
-`Z' ⊆ Ω'` with `#Z * δ ≤ E` and `#Z' * δ ≤ E`, and continuous maps `v : Ω \ Z → K` and
-`v' : Ω' \ Z' → K` such that along `φ` the maps `uₖ` converge to `v` locally uniformly on `Ω \ Z`,
-and the maps `uₖ ∘ ψ_{Lₖ}` on the inserted pair of pants converge to `v'` locally uniformly on
-`Ω' \ Z'`. -/
+/-- **Floer solutions on plumbed four-punctured spheres converge on both pieces.** Let `Ha`, `Hb` be
+period-one `C³` Hamiltonians with `Hb q = Ha ∞`, `q ≠ ∞`. Fix a truncation `S_R` and a compact
+`K ⊆ V`, and let `J`, `J'` be `C²` families of structures on the receiving and the inserted pair of
+pants `S`, read in real coordinates, which are `ω`-tame on `S_R × K`. There is a threshold `δ > 0`
+with the following property. Let `uₖ` be `C³` solutions of the Floer equation `(du - X_K)^{0,1} = 0`
+of the plumbed perturbation `K` on the four-punctured spheres `Σ_{Lₖ}` with neck lengths `Lₖ > 4`
+and `Lₖ ≥ 2R + 2`, for structures `Jₖ(z, u)`, and with Floer energy at most `E`. Let `Ω` and `Ω'` be
+open subsets of `S_R`, on which `Jₖ = J` and `Jₖ ∘ ψ_{Lₖ} = J'` respectively, with `uₖ(Ω) ⊆ K` and
+`uₖ(ψ_{Lₖ}(Ω')) ⊆ K`. Then there are a subsequence `φ`, finite sets `Z ⊆ Ω` and `Z' ⊆ Ω'` with
+`#Z * δ ≤ E` and `#Z' * δ ≤ E`, and continuous maps `v : Ω \ Z → K` and `v' : Ω' \ Z' → K` such that
+along `φ` the maps `uₖ` converge to `v` locally uniformly on `Ω \ Z`, and the maps `uₖ ∘ ψ_{Lₖ}` on
+the inserted pair of pants converge to `v'` locally uniformly on `Ω' \ Z'`. -/
 theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_plumbedPerturbation
     (ω : SymplecticForm V) (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1)
     (hHb : ∀ r, Periodic (Hb r) 1) (hHas : ∀ r, ContDiff ℝ 3 (uncurry (Ha r)))
     (hHbs : ∀ r, ContDiff ℝ 3 (uncurry (Hb r))) (hab : Hb q = Ha inf)
-    {J J' : ℝ × ℝ → V → AlmostComplexStructure V}
+    (R : ℝ) {K : Set V} (hK : IsCompact K) {J J' : ℝ × ℝ → V → AlmostComplexStructure V}
     (hJ : ContDiffOn ℝ 2 (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
       (thricePuncturedSphereReal ×ˢ univ))
-    (hJt : ∀ z ∈ thricePuncturedSphereReal, ∀ x, ω.Tames (J z x))
+    (hJt : ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation R, ∀ x ∈ K, ω.Tames (J z x))
     (hJ' : ContDiffOn ℝ 2 (fun p : (ℝ × ℝ) × V ↦ (J' p.1 p.2).toLinearMap.toContinuousLinearMap)
       (thricePuncturedSphereReal ×ˢ univ))
-    (hJ't : ∀ z ∈ thricePuncturedSphereReal, ∀ x, ω.Tames (J' z x)) (R : ℝ) {K : Set V}
-    (hK : IsCompact K) :
+    (hJ't : ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation R, ∀ x ∈ K, ω.Tames (J' z x)) :
     ∃ δ > (0 : ℝ), ∀ ⦃Ω Ω' : Set (ℝ × ℝ)⦄ ⦃L : ℕ → ℝ⦄ ⦃u : ℕ → ℝ × ℝ → V⦄
       ⦃Jk : ℕ → ℝ × ℝ → V → AlmostComplexStructure V⦄ ⦃E : ℝ≥0⦄,
       IsOpen Ω → Ω ⊆ Complex.equivRealProdCLM.symm ⁻¹' truncation R →
@@ -236,10 +143,10 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_plumbedPer
   have hTK := prod_mono hTS (subset_univ K)
   obtain ⟨δ, hδ, hconv⟩ := ω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset hS
     (hK' Hb hHb hHbs (by norm_num) 1) (hK' Hb hHb hHbs (by norm_num) I) hJ
-    (isCompact_preimage_truncation R) hK hTK fun z hz x _ ↦ hJt z (hTS hz) x
+    (isCompact_preimage_truncation R) hK hTK hJt
   obtain ⟨δ', hδ', hconv'⟩ := ω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset hS
     (hK' Ha hHa hHas (by norm_num) 1) (hK' Ha hHa hHas (by norm_num) I) hJ'
-    (isCompact_preimage_truncation R) hK hTK fun z hz x _ ↦ hJ't z (hTS hz) x
+    (isCompact_preimage_truncation R) hK hTK hJ't
   refine ⟨min δ δ', lt_min hδ hδ', fun Ω Ω' L u Jk E hΩ hΩT hΩ' hΩ'T hL4 hLR hu hfl hJΩ hJΩ' hE
     huK huK' ↦ ?_⟩
   -- The real-coordinate pair-of-pants data and the plumbed spheres.

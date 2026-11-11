@@ -285,19 +285,6 @@ theorem fderiv_endChart_apply (q : Puncture) (z v : ℝ × ℝ) :
   rw [(hasFDerivAt_endChart q z).fderiv]
   simp [mul_comm]
 
-/-- A map of the plane with a complex derivative is holomorphic in real coordinates: the derivative
-of its real chart is complex linear. -/
-theorem isComplexLinearMap_fderiv_realChart {f : ℂ → ℂ} {f' : ℂ} {z : ℝ × ℝ}
-    (hf : HasDerivAt f f' (Complex.equivRealProdCLM.symm z)) :
-    IsComplexLinearMap (AlmostComplexStructure.product ℝ) (AlmostComplexStructure.product ℝ)
-      (fderiv ℝ (TauCeti.Complex.realChart f) z : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) := by
-  rw [isComplexLinearMap_iff_apply]
-  intro v
-  simp only [ContinuousLinearMap.coe_coe, TauCeti.Complex.fderiv_realChart_apply hf,
-    AlmostComplexStructure.product_apply]
-  apply Prod.ext <;>
-    simp [Complex.equivRealProdCLM_symm_apply, Complex.mul_re, Complex.mul_im] <;> ring
-
 /-- The end charts are holomorphic: their derivatives are complex linear. -/
 theorem isComplexLinearMap_fderiv_endChart (q : Puncture) (z : ℝ × ℝ) :
     IsComplexLinearMap (AlmostComplexStructure.product ℝ) (AlmostComplexStructure.product ℝ)
