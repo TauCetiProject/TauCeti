@@ -49,8 +49,6 @@ namespace Ideal
 
 variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
 
-variable [HasEnoughRootsOfUnity (𝓞 K) 4]
-
 /-- The split and ramified case: if the rational prime `q` is a sum of two squares
 `x² + y² = (x + y i) (x - y i)`, the symbols of `n` at the two conjugate factors cancel. -/
 private theorem powerResidueSymbolIdeal_natCast_four_of_mod_four_ne_three {n : ℤ} {q : ℕ}
@@ -133,7 +131,6 @@ example : powerResidueSymbolIdeal (span {((3 : ℤ) : 𝓞 K)}) 4 (2 : ℤ) = 1 
 example : powerResidueSymbolIdeal (span {((5 : ℤ) : 𝓞 K)}) 4 (3 : ℤ) = 1 :=
   powerResidueSymbolIdeal_intCast_four (by decide)
 
-omit [IsCyclotomicExtension {4} ℚ K] in
 /-- At an element `π` of norm `5`, the symbol of `3` is the fourth root of unity `μ ≡ 3 (mod π)`.
 This computes the symbols at the two conjugate factors of `5` in the examples below. -/
 private theorem powerResidueSymbolIdeal_three_of_absNorm_eq_five {π μ : 𝓞 K}

@@ -21,18 +21,16 @@ available under Apache 2.0, from extended metric spaces to extended pseudometric
 
 public section
 
-open Set
 open scoped ENNReal
 
-namespace TauCeti
+namespace IsPreconnected
 
-/-- The `PseudoEMetricSpace` generalization of Mathlib's `IsPreconnected.edist_ne_top`. -/
-theorem _root_.IsPreconnected.edist_ne_top' {X : Type*} [PseudoEMetricSpace X] {s : Set X}
+/-- In a preconnected subset of an extended pseudometric space, any two points are at finite
+distance. This is Mathlib's `IsPreconnected.edist_ne_top` with `EMetricSpace` weakened to
+`PseudoEMetricSpace`. -/
+theorem edist_ne_top' {X : Type*} [PseudoEMetricSpace X] {s : Set X}
     (hs : IsPreconnected s) {x y : X} (hx : x ∈ s) (hy : y ∈ s) : edist x y ≠ ∞ := by
-  have hsub : s ⊆ Metric.eball x ∞ := hs.subset_isClopen
-    Metric.isClopen_eball_top ⟨x, hx, by simp⟩
-  have hy' := hsub hy
-  rw [Metric.mem_eball] at hy'
-  simpa only [edist_comm] using hy'.ne
+  rw [edist_comm, ← lt_top_iff_ne_top, ← Metric.mem_eball]
+  exact hs.subset_isClopen Metric.isClopen_eball_top ⟨x, hx, by simp⟩ hy
 
-end TauCeti
+end IsPreconnected

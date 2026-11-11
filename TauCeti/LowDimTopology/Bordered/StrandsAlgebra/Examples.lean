@@ -122,7 +122,7 @@ example :
       Finset.disjoint_empty_right _, Finset.disjoint_empty_right _⟩
   refine ⟨?_, ?_⟩
   · rw [horizontalCompletion_mul_horizontalCompletion (hgen 0 1 (by decide)) (hgen 1 2 (by decide))]
-    simp [composable_single_single]
+    simp
   · rw [horizontalCompletion_mul_horizontalCompletion (hgen 1 2 (by decide)) (hgen 0 1 (by decide))]
     refine ite_eq_right_iff.2 fun hc ↦ absurd hc.2.target_eq ?_
     simp

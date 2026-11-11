@@ -6,7 +6,7 @@ The policy is in `[services.fleet]` in `tauceti.toml`:
 | Build class | Preference order |
 | --- | --- |
 | PR | GitHub → fleet → Namespace |
-| Bors staging | fleet → Namespace → GitHub |
+| Bors staging | tauchonki2; otherwise wait for tauchonki2 |
 
 `fleet` is a live pool of eligible runners in the configured GitHub runner group,
 not a list of machines in this repository. Adding or replacing a host requires
@@ -14,24 +14,30 @@ no `tauceti.toml` machine-ID entry. Each host controls its concurrency and resou
 limits; its credential controls which CI classes it may register. Registration,
 resizing and retirement update the capacity seen by subsequent pickers.
 
-The picker requires an idle online runner with the requested class, permanent
-machine identity, and unique guest-instance labels. It targets that exact guest
-in the `TauCetiFleet` group. `FLEET_CI_ENABLED`, `FLEET_READ_TOKEN` and
-`FLEET_RUNNER_GROUP_ID` govern access to that group's inventory. Labels on runners
-outside the approved group grant no eligibility. Hosts with missing or ambiguous
-permanent identities are ineligible, as are offline or busy runners. A PR-only
-host cannot receive staging work. Within the fleet tier, jobs spread across
-eligible registered slots; staging-only slots are preferred for staging.
-Queued jobs already targeting a guest count against observed machine capacity.
-A simultaneous picker can still select the same guest; startup recovery handles
-jobs that fail to acquire it.
+The picker reads idle online runners in the trusted group, requiring the
+requested class and unambiguous host and instance identities. `FLEET_CI_ENABLED`,
+`FLEET_READ_TOKEN` and `FLEET_RUNNER_GROUP_ID` govern that inventory. Labels on
+runners outside the approved group grant no eligibility.
+
+When the PR fleet tier is selected, dispatch uses the `TauCetiFleet` group and
+`self-hosted`, `linux`, `x64`, `tauceti-fleet-pr` labels. GitHub assigns the next
+matching runner. A runner being replaced, or two pickers seeing the same idle
+runner, can cause ordinary pool waiting without pinning a job to a vanished
+instance. Staging-only runners cannot match PR work. No reservation service or
+PR startup cancellation/rerun loop is involved. Named PR machine tiers, if
+configured, retain the permanent host label but omit the disposable instance.
+
+Staging retains exact guest selection, preferring reserved staging runners. This
+project restricts staging to tauchonki2; when selection is unavailable it
+waits for the permanent tauchonki2 staging label. PRs cannot consume those
+staging-only runners.
 
 Namespace has an approximate cap of **20 queued or running build jobs**, shared
 across PR and staging. Picker, recovery, publisher, and finalizer jobs are excluded.
 The variable `NAMESPACE_BUILD_CAP` overrides the default in the configuration.
 Concurrent picker decisions can admit jobs above this snapshot-based cap. When Namespace is
-full, staging falls through to GitHub; if all eligible destinations are full or
-unknown, the build waits for a GitHub-hosted slot. A failed picker uses that same
+full, ordinary PRs fall through to GitHub; if all eligible PR destinations are
+full or unknown, the build waits for a GitHub-hosted slot. A failed picker uses that same
 GitHub fallback. `HOSTED_RUNNER_BUDGET` defaults to 18 running GitHub-hosted jobs,
 including other GitHub-hosted control jobs. All runner pickers run on Namespace
 and do not count toward that budget. Set it below the provider's total job limit
@@ -44,10 +50,9 @@ Capacity scans use the repository workflow token, preserving the reserve set by
 `PICKER_REPOSITORY_API_RESERVE` (default 250 requests). Incomplete scans cannot
 authorize spare cloud capacity. Fleet placement uses complete online/idle runner
 inventory and class labels, retaining any observed queued guest
-reservations even when global queue coverage is incomplete. Concurrent or unseen
-reservations can still collide; the acquisition watcher below recovers those runs.
-Staging tries dedicated machines first. If no machine is eligible,
-staging uses the existing bounded cloud discovery and fallback.
+reservations even when global queue coverage is incomplete. Concurrent PR
+selections wait in the shared pool. Staging tries its dedicated machine
+first and retains the local staging fallback.
 The existing shared state service coalesces cloud and queued-target discovery;
 older snapshots can still answer the first GitHub preference. Every picker runs
 on the existing Namespace 2x4 priority-zero control profile with a run-specific
@@ -58,14 +63,12 @@ During a Namespace outage, set repository variable `PICKER_GITHUB_FALLBACK=true`
 to run fresh picker attempts on GitHub. Clear it to restore Namespace control
 capacity. This switches the picker only; build placement and merge gates still apply.
 
-The existing `fleet-recovery.yml` watcher waits for placement and allows two
-minutes for a dedicated guest to acquire the build. It cancels an unacquired
-attempt, confirms it is terminal, and reruns the **same workflow run ID**. The next
-picker excludes previously failed machine placements. Bors run identity stays
-intact; PR retries additionally require the immutable head in the run title to
-remain current. Manual PR dispatches without an immutable head and native merge
-groups use cloud pools. A failed-jobs-only rerun that reuses old picker outputs
-queues on GitHub instead of targeting a retired guest.
+The existing `fleet-recovery.yml` watcher applies only to Bors staging. It waits
+for placement, allows two minutes for the selected guest to acquire the build,
+and preserves the same workflow run ID through recovery. PR jobs wait normally
+in their selected pool. A rerun that reuses stale picker outputs retains the
+existing GitHub fallback; it cannot target a retired guest from an older attempt.
+Manual PR dispatches and native merge groups use cloud pools.
 
 The initial Namespace limit was chosen from the archived CI database at
 [the TauCetiCI db release](https://github.com/TauCetiProject/TauCetiCI/releases/tag/db),

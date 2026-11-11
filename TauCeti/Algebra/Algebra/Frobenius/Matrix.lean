@@ -23,16 +23,16 @@ symmetric algebra. This is the basic example of the notions defined in
 
 public section
 
-namespace TauCeti
+namespace Matrix
 
 variable {k : Type*} [CommSemiring k]
 
 /-- The trace of square matrices over a commutative semiring is a symmetric Frobenius functional. -/
-theorem _root_.Matrix.isSymmetricFrobeniusFunctional_traceLinearMap (n : Type*) [Fintype n]
+theorem isSymmetricFrobeniusFunctional_traceLinearMap (n : Type*) [Fintype n]
     [DecidableEq n] : (Matrix.traceLinearMap n k k).IsSymmetricFrobeniusFunctional where
   isFrobeniusFunctional := LinearMap.isFrobeniusFunctional_iff.mpr
     ⟨fun a h => Matrix.ext_iff_trace_mul_right.mpr fun x => by simpa using h x,
       fun b h => Matrix.ext_iff_trace_mul_left.mpr fun x => by simpa using h x⟩
   apply_mul_comm a b := by simpa using Matrix.trace_mul_comm a b
 
-end TauCeti
+end Matrix
