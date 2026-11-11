@@ -136,18 +136,6 @@ theorem measurable_weightLaplaceTransform : Measurable weightLaplaceTransform :=
       |>.stronglyMeasurable
   exact hf.integral_prod_right' (ν := volume.restrict (Ioi 0)) |>.measurable
 
-/-- Since the weight is less than `1`, `L(t) ≤ ∫_{y > 0} e^{-|t| y} dy = 1 / |t|`. -/
-theorem weightLaplaceTransform_le_inv_abs {t : ℝ} (ht : t ≠ 0) :
-    weightLaplaceTransform t ≤ |t|⁻¹ := by
-  have ht' : 0 < |t| := abs_pos.mpr ht
-  have hexp := integral_pow_mul_exp_neg_mul_Ioi 0 ht'
-  simp only [pow_zero, one_mul, Nat.factorial_zero, Nat.cast_one, zero_add, pow_one,
-    one_div] at hexp
-  rw [← hexp, weightLaplaceTransform_def]
-  refine setIntegral_mono_on (integrableOn_weight_mul_exp ht)
-    (by simpa using integrableOn_pow_mul_exp_neg_mul_Ioi 0 ht') measurableSet_Ioi fun y _ ↦ ?_
-  exact mul_le_of_le_one_left (Real.exp_pos _).le (weight_lt_one y).le
-
 /-- At `t = 0` the integrand of the Laplace transform of the weight is not integrable on `(0, ∞)`,
 so the Bochner integral is `0`. -/
 @[simp]
@@ -168,6 +156,21 @@ theorem weightLaplaceTransform_zero : weightLaplaceTransform 0 = 0 := by
     have := (integrableOn_const_iff (by finiteness)).mp hc
     simp [hpos.ne', Real.volume_Ioi] at this
   rw [weightLaplaceTransform_def, integral_undef hnint]
+
+/-- Since the weight is less than `1`, `L(t) ≤ ∫_{y > 0} e^{-|t| y} dy = 1 / |t|`. At `t = 0` both
+sides are `0`, the integral diverging. -/
+theorem weightLaplaceTransform_le_inv_abs (t : ℝ) :
+    weightLaplaceTransform t ≤ |t|⁻¹ := by
+  rcases eq_or_ne t 0 with rfl | ht
+  · simp
+  have ht' : 0 < |t| := abs_pos.mpr ht
+  have hexp := integral_pow_mul_exp_neg_mul_Ioi 0 ht'
+  simp only [pow_zero, one_mul, Nat.factorial_zero, Nat.cast_one, zero_add, pow_one,
+    one_div] at hexp
+  rw [← hexp, weightLaplaceTransform_def]
+  refine setIntegral_mono_on (integrableOn_weight_mul_exp ht)
+    (by simpa using integrableOn_pow_mul_exp_neg_mul_Ioi 0 ht') measurableSet_Ioi fun y _ ↦ ?_
+  exact mul_le_of_le_one_left (Real.exp_pos _).le (weight_lt_one y).le
 
 /-- Since the weight lies below `π y / 2`,
 `L(t) ≤ (π / 2) ∫_{y > 0} y e^{-|t| y} dy = π / (2 t²)`. At `t = 0` both sides are `0`, the
@@ -248,7 +251,7 @@ theorem abs_realKernel_le (t : ℝ) : |realKernel t| ≤ π / (2 * (1 + t ^ 2)) 
   · -- Near the origin: `|sin t| * L(t) ≤ |t| * |t|⁻¹ = 1`.
     have hprod : |Real.sin t| * weightLaplaceTransform t ≤ 1 :=
       calc |Real.sin t| * weightLaplaceTransform t ≤ |t| * |t|⁻¹ :=
-            mul_le_mul (Real.abs_sin_le_abs) (weightLaplaceTransform_le_inv_abs ht) hL
+            mul_le_mul (Real.abs_sin_le_abs) (weightLaplaceTransform_le_inv_abs t) hL
               ht'.le
         _ = 1 := mul_inv_cancel₀ ht'.ne'
     have hsq : t ^ 2 ≤ 1 := by
