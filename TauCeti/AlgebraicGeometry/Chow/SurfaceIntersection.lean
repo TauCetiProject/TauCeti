@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Cohomology.EulerCharacteristic
-public import TauCeti.AlgebraicGeometry.LineBundle.Class
+public import TauCeti.AlgebraicGeometry.LineBundle.EulerCharacteristic
 
 /-!
 # The intersection pairing of line bundles on a surface, and numerical equivalence
@@ -32,7 +31,8 @@ with the descended pairing (Fulton, *Intersection Theory*, §19.1).
 * `Chow.classIntersectionNumber k S a b`: the descended pairing on `LineBundleClass S`.
 * `Chow.NumericallyEquivalent k S a b`: `a · c = b · c` for every class `c`, an equivalence
   relation.
-* `Chow.Num k S`: line-bundle classes modulo numerical equivalence, with
+* `Chow.Num k S`: line-bundle classes modulo numerical equivalence, with the descent
+  `Chow.Num.lift` of functions invariant under numerical equivalence and
   `Chow.Num.intersectionNumber`, the descended pairing, which separates points
   (`Chow.Num.ext_intersectionNumber`).
 
@@ -79,14 +79,6 @@ lemma intersectionNumber_def (L M : InvertibleSheaf S) :
         Scheme.Modules.eulerCharBelow k S (L.dual.tensorProduct M.dual).obj 3 :=
   (rfl)
 
-/-- Line bundles with the same class in the Picard group have the same truncated Euler
-characteristic. -/
-private lemma eulerCharBelow_eq_of_mk_eq {L L' : InvertibleSheaf S}
-    (h : LineBundleClass.mk L = LineBundleClass.mk L') (n : ℕ) :
-    Scheme.Modules.eulerCharBelow k S L.obj n = Scheme.Modules.eulerCharBelow k S L'.obj n := by
-  obtain ⟨e⟩ := LineBundleClass.mk_eq_mk_iff.1 h
-  exact Scheme.Modules.eulerCharBelow_congr k e n
-
 /-- The intersection number only depends on the classes of the line bundles in the Picard
 group. -/
 lemma intersectionNumber_congr {L L' M M' : InvertibleSheaf S}
@@ -100,8 +92,10 @@ lemma intersectionNumber_congr {L L' M M' : InvertibleSheaf S}
   have hLM : LineBundleClass.mk (L.dual.tensorProduct M.dual) =
       LineBundleClass.mk (L'.dual.tensorProduct M'.dual) := by
     rw [LineBundleClass.mk_tensorProduct, LineBundleClass.mk_tensorProduct, hL', hM']
-  rw [intersectionNumber_def, intersectionNumber_def, eulerCharBelow_eq_of_mk_eq hL',
-    eulerCharBelow_eq_of_mk_eq hM', eulerCharBelow_eq_of_mk_eq hLM]
+  rw [intersectionNumber_def, intersectionNumber_def,
+    InvertibleSheaf.eulerCharBelow_eq_of_mk_eq k hL',
+    InvertibleSheaf.eulerCharBelow_eq_of_mk_eq k hM',
+    InvertibleSheaf.eulerCharBelow_eq_of_mk_eq k hLM]
 
 /-- The intersection pairing is symmetric. -/
 lemma intersectionNumber_comm (L M : InvertibleSheaf S) :
@@ -109,7 +103,8 @@ lemma intersectionNumber_comm (L M : InvertibleSheaf S) :
   have h : LineBundleClass.mk (L.dual.tensorProduct M.dual) =
       LineBundleClass.mk (M.dual.tensorProduct L.dual) := by
     rw [LineBundleClass.mk_tensorProduct, LineBundleClass.mk_tensorProduct, mul_comm]
-  rw [intersectionNumber_def, intersectionNumber_def, eulerCharBelow_eq_of_mk_eq h]
+  rw [intersectionNumber_def, intersectionNumber_def,
+    InvertibleSheaf.eulerCharBelow_eq_of_mk_eq k h]
   ring
 
 /-- The trivial line bundle has intersection number zero with every line bundle. -/
@@ -122,7 +117,8 @@ lemma intersectionNumber_trivial_left (M : InvertibleSheaf S) :
   have h₂ : LineBundleClass.mk ((InvertibleSheaf.trivial S).dual.tensorProduct M.dual) =
       LineBundleClass.mk M.dual := by
     rw [LineBundleClass.mk_tensorProduct, h₁, LineBundleClass.mk_trivial, one_mul]
-  rw [intersectionNumber_def, eulerCharBelow_eq_of_mk_eq h₁, eulerCharBelow_eq_of_mk_eq h₂]
+  rw [intersectionNumber_def, InvertibleSheaf.eulerCharBelow_eq_of_mk_eq k h₁,
+    InvertibleSheaf.eulerCharBelow_eq_of_mk_eq k h₂]
   ring
 
 /-- The trivial line bundle has intersection number zero with every line bundle. -/
@@ -226,6 +222,26 @@ lemma mk_surjective : Function.Surjective (mk : LineBundleClass S → Num k S) :
 lemma mk_eq_mk_iff {a b : LineBundleClass S} :
     mk (k := k) a = mk b ↔ NumericallyEquivalent k S a b :=
   Quotient.eq (r := numericalSetoid k S)
+
+/-- Descend a function on line-bundle classes that is invariant under numerical equivalence to
+numerical classes. -/
+def lift {α : Sort*} (f : LineBundleClass S → α)
+    (hf : ∀ a b, NumericallyEquivalent k S a b → f a = f b) : Num k S → α :=
+  Quotient.lift (s := numericalSetoid k S) f hf
+
+@[simp]
+lemma lift_mk {α : Sort*} {f : LineBundleClass S → α}
+    {hf : ∀ a b, NumericallyEquivalent k S a b → f a = f b} (a : LineBundleClass S) :
+    lift f hf (mk a) = f a :=
+  (rfl)
+
+/-- A function on numerical classes is determined by its values on representatives. -/
+lemma lift_unique {α : Sort*} {f : LineBundleClass S → α}
+    {hf : ∀ a b, NumericallyEquivalent k S a b → f a = f b} (g : Num k S → α)
+    (hg : ∀ a, g (mk a) = f a) : g = lift f hf := by
+  funext x
+  obtain ⟨a, rfl⟩ := mk_surjective x
+  rw [hg, lift_mk]
 
 variable (k S)
 
