@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.Localization.Finiteness
 public import Mathlib.RingTheory.Localization.NormTrace
-public import Mathlib.RingTheory.Trace.Basic
 public import TauCeti.RingTheory.Localization.FiniteFree
 
 /-!
@@ -48,17 +47,10 @@ theorem trace_eq_zero_iff_of_isLocalization (R S Rₘ Sₘ : Type*) [CommRing R]
     rw [← trace_localization R (Rₘ := Rₘ) (Sₘ := Sₘ) M b]
     simp only [h, LinearMap.zero_apply, map_zero]
   · intro h
-    ext z
-    obtain ⟨⟨b, m⟩, e⟩ := IsLocalization.surj (Algebra.algebraMapSubmonoid S M) z
-    obtain ⟨r, hr, hrm⟩ := m.2
-    simp only at e
-    rw [← hrm] at e
-    have he := congrArg (trace Rₘ Sₘ) e
-    rw [← IsScalarTower.algebraMap_apply R S Sₘ,
-      IsScalarTower.algebraMap_apply R Rₘ Sₘ, mul_comm z, ← Algebra.smul_def,
-      LinearMap.map_smul, trace_localization R (Rₘ := Rₘ) (Sₘ := Sₘ) M b, LinearMap.congr_fun h b,
-      LinearMap.zero_apply, map_zero, smul_eq_mul] at he
-    exact (IsLocalization.map_units Rₘ ⟨r, hr⟩).mul_left_cancel (he.trans (mul_zero _).symm)
+    apply ((Module.Free.chooseBasis R S).localizationLocalization Rₘ M Sₘ).ext
+    intro i
+    simp only [Module.Basis.localizationLocalization_apply, LinearMap.zero_apply,
+      trace_localization R (Rₘ := Rₘ) (Sₘ := Sₘ) M, h, map_zero]
 
 /-- A finite free extension of domains with separable fraction fields has nonzero trace.
 No normality assumption is needed. -/
