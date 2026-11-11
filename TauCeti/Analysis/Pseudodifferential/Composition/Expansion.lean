@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Composition.Basic
+public import TauCeti.Analysis.Pseudodifferential.AsymptoticSum
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.ParametricIntegral
@@ -38,7 +39,8 @@ the position and the frequency.
 ## Main results
 
 * `TauCeti.Symbol.sharpTerm`: the terms of the expansion, with their closed form
-  `TauCeti.Symbol.coefficient_sharpTerm` and the Leibniz rules
+  `TauCeti.Symbol.coefficient_sharpTerm`, the first correction term
+  `TauCeti.Symbol.coefficient_sharpTerm_one` (`-i ∑ⱼ ∂_{ξⱼ} a ∘ ∂_{xⱼ} b`) and the Leibniz rules
   `TauCeti.Symbol.spatialDeriv_sharpTerm` and `TauCeti.Symbol.coefficient_frequencyDeriv_sharpTerm`.
   The coefficients of the terms only depend on the coefficients of the two symbols
   (`TauCeti.Symbol.coefficient_sharpTerm_congr`) and depend linearly on each of them, also for
@@ -55,6 +57,8 @@ the position and the frequency.
   `a # b = ∑_{k < N} sharpTerm a b k + sharpRemainder a b hb N`, for every `N`.
 * `TauCeti.Symbol.sharp_eq_comp_add_sharpRemainder_one`: in particular `a # b` agrees with the
   pointwise composition `a ∘ b` up to a symbol of order `m' + m - 1`.
+* `TauCeti.Symbol.isAsymptoticSum_sharp`: `a # b ∼ ∑ₖ sharpTerm a b k` as an asymptotic sum
+  (`TauCeti.Symbol.IsAsymptoticSum`), so the terms determine `a # b` modulo smoothing symbols.
 * `TauCeti.Symbol.exists_coefficient_eq_sharp_sub_sharp`: if `a` and `b` both have compact
   spatial support and their values commute pointwise, for instance for scalar symbols, the
   commutator symbol `a # b - b # a` has order `m' + m - 1`.
@@ -147,6 +151,13 @@ theorem coefficient_sharpTerm_succ (a : Symbol n W U m') (b : Symbol n V W m) (k
     (a.sharpTerm b (k + 1)).coefficient p = (-Complex.I / (k + 1)) •
       ∑ j, ((frequencyDeriv j a).sharpTerm (spatialDeriv j b) k).coefficient p := by
   simp [sharpTerm_succ]
+
+/-- The first correction term of the composition expansion is `-i ∑ⱼ ∂_{ξⱼ} a ∘ ∂_{xⱼ} b`. -/
+theorem coefficient_sharpTerm_one (a : Symbol n W U m') (b : Symbol n V W m)
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    (a.sharpTerm b 1).coefficient p = (-Complex.I) •
+      ∑ j, ((frequencyDeriv j a).coefficient p).comp ((spatialDeriv j b).coefficient p) := by
+  simp [coefficient_sharpTerm_succ]
 
 /-- **The terms of the composition expansion** are
 `((-i)^k / k!) ∑_{|w| = k} ∂_ξ^w a ∘ ∂_x^w b`, the sum running over the words `w` of coordinate
@@ -686,6 +697,14 @@ theorem sharp_eq_comp_add_sharpRemainder_one (hb : b.HasCompactSpatialSupport) :
   ext1
   funext p
   simp
+
+/-- The composition symbol is an asymptotic sum `a # b ∼ ∑ₖ sharpTerm a b k` of the terms of the
+expansion, of orders `m' + m - k`. In particular it is determined by the terms modulo smoothing
+symbols (`TauCeti.Symbol.IsAsymptoticSum.isAsymptoticSum_iff_isSmoothing_sub`). -/
+theorem isAsymptoticSum_sharp (hb : b.HasCompactSpatialSupport) :
+    IsAsymptoticSum (m := fun k : ℕ ↦ m' + m - k) (inclusion (by simp) (a.sharp b hb))
+      (a.sharpTerm b) :=
+  isAsymptoticSum_iff.2 fun N ↦ ⟨a.sharpRemainder b hb N, by simp⟩
 
 end Symbol
 

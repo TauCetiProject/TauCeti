@@ -5,49 +5,56 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.AsymptoticSum
-public import TauCeti.Analysis.Pseudodifferential.Composition.Expansion
+public import TauCeti.Analysis.Pseudodifferential.Composition.Associativity
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Elliptic
 
 /-!
-# The symbol of a parametrix
+# Parametrix symbols of elliptic symbols
 
-Let `a` be a symbol of order `m` with values in `V →L[ℂ] W`. The composition of quantizations
-has the asymptotic expansion `a # b ∼ ∑ₖ sharpTerm a b k`, the `k`-th term having order
-`m + m_b - k` (`TauCeti.Symbol.sharpTerm`). A symbol `b` of order `-m` is the symbol of a right
-parametrix of `Op(a)` when this formal composition is the identity, that is, when the constant
-symbol `1` is an asymptotic sum `1 ∼ ∑ₖ sharpTerm a b k`: for every `N` the symbol
-`1 - ∑_{k < N} sharpTerm a b k` has order `-N`. Left parametrices are defined in the same way with
-`∑ₖ sharpTerm b a k`.
+Let `a` be a symbol of order `m` with values in `V →L[ℂ] W`. A *left parametrix symbol* of `a` is
+a symbol `b` of order `-m` whose formal composition with `a` is the identity,
 
-This file constructs such symbols from a pointwise inverse `b₀` of `a` modulo smoothing symbols, for
-instance the cut-off inverse `χ(ξ / R) a(x, ξ)⁻¹` of an elliptic symbol. Grouping the terms of the
-formal composition `a # (b₀ + b₁ + b₂ + ⋯)`, with `bⱼ` of order `-m - j`, by their orders gives the
-**inverse-symbol recursion** (Taylor, Lecture I, (4.1)–(4.6))
+`1 ∼ ∑ₖ sharpTerm b a k`,
 
-`b_l = -b₀ ∘ ∑_{j < l} sharpTerm a b_j (l - j)` for `l ≥ 1`,
+and a *right parametrix symbol* is one with `1 ∼ ∑ₖ sharpTerm a b k`, both in the sense of
+asymptotic sums (`TauCeti.Symbol.IsAsymptoticSum`). These are the symbols from which parametrices
+of `Op(a)` are built: the composition expansion
+(`TauCeti.Symbol.sharp_eq_sum_sharpTerm_add_sharpRemainder`) identifies `sharpTerm` with the terms
+of the symbol of a composition of quantizations.
 
-so that the terms of order `-l` of the formal composition cancel modulo smoothing symbols for every
-`l ≥ 1` (`TauCeti.Symbol.rightInverseTerm`). An asymptotic sum `b ∼ ∑ₗ b_l` (Borel summation,
-`TauCeti.Symbol.exists_asymptoticSum`) is then the symbol of a right parametrix. The recursion
-uses only the bilinearity of the terms `sharpTerm` and their compatibility with the inclusions of
-symbol classes, not the associativity of the formal composition. The left recursion
-`b_l = -(∑_{j < l} sharpTerm b_j a (l - j)) ∘ b₀` is the mirror image
-(`TauCeti.Symbol.leftInverseTerm`).
+This file constructs them. If `b₀` is a pointwise left inverse of `a` modulo a smoothing symbol,
+for instance the cut-off inverse `χ(ξ / R) a(x, ξ)⁻¹` of an elliptic symbol
+(`TauCeti.Symbol.cutoffInverse`), then `a` has a left parametrix symbol, and it agrees with `b₀`
+up to a symbol of order `-m - 1` as soon as `b₀` is also a pointwise right inverse. In particular
+every symbol elliptic above some radius has a **two-sided parametrix symbol**, unique modulo
+smoothing symbols. Unlike `TauCeti.ClassicalSymbol.exists_sharpTerms_eq_left`, which solves the
+same equations for the homogeneous terms of a classical symbol, nothing here assumes `a` classical.
 
-## Main declarations
+## Main results
 
-* `TauCeti.Symbol.rightInverseTerm`, `TauCeti.Symbol.leftInverseTerm`: the terms of the right and
-  left inverse-symbol recursions.
-* `TauCeti.Symbol.isAsymptoticSum_sharpTerm_of_isAsymptoticSum_rightInverseTerm`: if `a ∘ b₀ - 1` is
-  smoothing and `b ∼ ∑ₗ rightInverseTerm a b₀ l`, then `1 ∼ ∑ₖ sharpTerm a b k`; and
-  `TauCeti.Symbol.isAsymptoticSum_sharpTerm_of_isAsymptoticSum_leftInverseTerm`, the left version.
-* `TauCeti.Symbol.exists_isAsymptoticSum_sharpTerm_right`,
-  `TauCeti.Symbol.exists_isAsymptoticSum_sharpTerm_left`: a pointwise right (left) inverse modulo
-  smoothing symbols extends to the symbol of a right (left) parametrix with the same leading term.
-* `TauCeti.Symbol.IsEllipticAbove.exists_isAsymptoticSum_sharpTerm_right`,
-  `TauCeti.Symbol.IsEllipticAbove.exists_isAsymptoticSum_sharpTerm_left`: an elliptic symbol of
-  order `m` has the symbols of a right and of a left parametrix, of order `-m`.
+* `TauCeti.Symbol.exists_isAsymptoticSum_sharpTerm_left`,
+  `TauCeti.Symbol.exists_isAsymptoticSum_sharpTerm_right`: a pointwise left (right) inverse modulo
+  smoothing symbols gives a left (right) parametrix symbol.
+* `TauCeti.Symbol.exists_coefficient_sub_eq_of_isAsymptoticSum_sharpTerm_left`,
+  `TauCeti.Symbol.exists_coefficient_sub_eq_of_isAsymptoticSum_sharpTerm_right`: a left (right)
+  parametrix symbol agrees with a pointwise right (left) inverse up to order `-m - 1`.
+* `TauCeti.Symbol.IsEllipticAbove.exists_isAsymptoticSum_sharpTerm`: **an elliptic symbol has a
+  two-sided parametrix symbol**.
+* `TauCeti.Symbol.isAsymptoticSum_sharpTerm_left_iff`,
+  `TauCeti.Symbol.isAsymptoticSum_sharpTerm_right_iff`: the left and the right parametrix symbols
+  are exactly the symbols differing from a two-sided one by a smoothing symbol.
+
+## Proof outline
+
+Suppose `1 - ∑_{k < N} sharpTerm b a k` has order `-N`, which holds for `b = b₀` and `N = 0`. Then
+`R = 1 - ∑_{k ≤ N} sharpTerm b a k` has order `-N` as well, and the correction `d = R b₀` of order
+`-m - N` satisfies `d a = R` modulo smoothing symbols. Since the later terms `sharpTerm d a k`,
+`k ≥ 1`, have order at most `-N - 1`, the symbol `b + d` inverts `a` up to order `-N - 1`. Iterating
+gives corrections `d_N` of orders `-m - N`, and an asymptotic sum `b ∼ b₀ + ∑_N d_N` inverts `a` up
+to every order, because changing `b` by a symbol of order `-m - N` does not affect the first `N`
+terms modulo order `-N`. This is the construction of Taylor, Lecture I, (4.1)–(4.6). A left and a
+right parametrix symbol differ by a smoothing symbol
+(`TauCeti.Symbol.isSmoothing_sub_of_isAsymptoticSum_sharpTerm`), so each of them is two-sided.
 
 ## References
 
@@ -66,321 +73,260 @@ namespace TauCeti
 
 namespace Symbol
 
-variable {n : ℕ} {m : ℝ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
-  [NormedAddCommGroup W] [NormedSpace ℂ W]
+variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
+  [NormedSpace ℂ W] {m : ℝ}
 
-/-! ### Coefficients of a given order -/
-
-variable (n V W) in
-/-- The coefficients of the symbols of order `μ`, as a submodule of all functions. -/
-private def orderSubmodule (μ : ℝ) :
-    Submodule ℂ (CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W) where
-  carrier := {f | ∃ r : Symbol n V W μ, r.coefficient = f}
-  add_mem' := by
-    rintro _ _ ⟨r, rfl⟩ ⟨s, rfl⟩
-    exact ⟨r + s, coefficient_add r s⟩
-  zero_mem' := ⟨0, coefficient_zero⟩
-  smul_mem' := by
-    rintro c _ ⟨r, rfl⟩
-    exact ⟨c • r, coefficient_smul c r⟩
-
-private theorem mem_orderSubmodule {μ : ℝ}
-    {f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} :
-    f ∈ orderSubmodule n V W μ ↔ ∃ r : Symbol n V W μ, f = r.coefficient :=
-  ⟨fun ⟨r, hr⟩ ↦ ⟨r, hr.symm⟩, fun ⟨r, hr⟩ ↦ ⟨r, hr.symm⟩⟩
-
-private theorem coefficient_mem_orderSubmodule {μ μ' : ℝ} (h : μ ≤ μ') (r : Symbol n V W μ) :
-    r.coefficient ∈ orderSubmodule n V W μ' :=
-  ⟨inclusion h r, coefficient_inclusion h r⟩
-
-private theorem IsSmoothing.coefficient_mem_orderSubmodule {s : Symbol n V W m}
-    (hs : s.IsSmoothing) (μ' : ℝ) : s.coefficient ∈ orderSubmodule n V W μ' :=
-  isSmoothing_iff.1 hs μ'
-
-/-- The bookkeeping behind the inverse-symbol recursions. Let `g k` be the terms of a formal
-composition, `f k j` the contribution of order `-(j + k)` to `g k`, and `S N` the coefficients of
-order `-N`. If `g k ≡ ∑_{j < N - k} f k j` modulo `S N`, the part `f 0 0` of order `0` is `1`
-modulo `S N` and the parts `f 0 l + ∑_{j < l} f (l - j) j` of order `-l` vanish modulo `S N` for
-`l ≥ 1`, then `1 ≡ ∑_{k < N} g k` modulo `S N`. -/
-private theorem sub_sum_mem_of_sum_antidiagonal_mem {M : Type*} [AddCommGroup M] [Module ℂ M]
-    (S : ℕ → Submodule ℂ M) (e : M) (g : ℕ → M) (f : ℕ → ℕ → M)
-    (hg : ∀ N k, k < N → g k - ∑ j ∈ range (N - k), f k j ∈ S N)
-    (h₀ : ∀ N, e - f 0 0 ∈ S N)
-    (hf : ∀ l N, f 0 (l + 1) + ∑ j : Fin (l + 1), f (l + 1 - j) j ∈ S N)
-    (he : e ∈ S 0) (N : ℕ) : e - ∑ k ∈ range N, g k ∈ S N := by
-  -- The part of order `-(l + 1)`, as a sum over the antidiagonal `k + j = l + 1`.
-  have hf' : ∀ l N, ∑ k ∈ range (l + 2), f k (l + 1 - k) ∈ S N := fun l N ↦ by
-    convert hf l N using 1
-    rw [sum_range_succ', Fin.sum_univ_eq_sum_range (fun j ↦ f (l + 1 - j) j), ← sum_range_reflect,
-      add_comm]
-    refine congrArg _ (sum_congr rfl fun k hk ↦ ?_)
-    have hk := mem_range.1 hk
-    congr 1 <;> omega
-  cases N with
-  | zero => simpa using he
-  | succ N =>
-    -- Regroup `∑_{k ≤ N} ∑_{j ≤ N - k} f k j` by the total order `l = j + k`.
-    have hsum : e - ∑ k ∈ range (N + 1), g k = (e - f 0 0) -
-        ∑ l ∈ range N, ∑ k ∈ range (l + 2), f k (l + 1 - k) -
-        ∑ k ∈ range (N + 1), (g k - ∑ j ∈ range (N + 1 - k), f k j) := by
-      rw [sum_sub_distrib, ← sum_range_diag_flip,
-        sum_range_succ' (fun l ↦ ∑ k ∈ range (l + 1), f k (l - k))]
-      simp
-      abel
-    rw [hsum]
-    refine sub_mem (sub_mem (h₀ _) (sum_mem fun l _ ↦ hf' l _)) (sum_mem fun k hk ↦ ?_)
-    exact hg _ k (mem_range.1 hk)
-
-/-- The orders in the right recursion: the term of index `l + 1 - j` of the formal composition of
-`a`, of order `m`, with a symbol of order `-m - j` has order `-(l + 1)`. -/
-private theorem order_le (m : ℝ) {l : ℕ} (j : Fin (l + 1)) :
-    m + (-m - (j : ℕ)) - ((l + 1 - j : ℕ) : ℝ) ≤ -((l + 1 : ℕ) : ℝ) := by
-  rw [Nat.cast_sub j.isLt.le]
-  push_cast
-  linarith
-
-/-- The orders in the left recursion, as in `order_le`. -/
-private theorem order_le' (m : ℝ) {l : ℕ} (j : Fin (l + 1)) :
-    (-m - (j : ℕ)) + m - ((l + 1 - j : ℕ) : ℝ) ≤ -((l + 1 : ℕ) : ℝ) := by
-  rw [Nat.cast_sub j.isLt.le]
-  push_cast
-  linarith
-
-/-! ### The right inverse-symbol recursion -/
-
-section Right
-
-/-- The terms of the **right inverse-symbol recursion** of a symbol `a` of order `m`, starting from
-a symbol `b₀` of order `-m`: `b_0 = b₀` and, for `l ≥ 1`,
-
-`b_l = -b₀ ∘ ∑_{j < l} sharpTerm a b_j (l - j)`,
-
-a symbol of order `-m - l`. When `a ∘ b₀ = 1` modulo smoothing symbols, every asymptotic sum
-`b ∼ ∑ₗ b_l` satisfies `1 ∼ ∑ₖ sharpTerm a b k`
-(`isAsymptoticSum_sharpTerm_of_isAsymptoticSum_rightInverseTerm`). -/
-def rightInverseTerm (a : Symbol n V W m) (b₀ : Symbol n W V (-m)) :
-    (l : ℕ) → Symbol n W V (-m - l)
-  | 0 => inclusion (by simp) b₀
-  | l + 1 => -inclusion (by push_cast; linarith) (b₀.comp
-      (∑ j : Fin (l + 1), inclusion (order_le m j)
-        (a.sharpTerm (rightInverseTerm a b₀ j) (l + 1 - j)) : Symbol n W W (-((l + 1 : ℕ) : ℝ))))
-
-variable (a : Symbol n V W m) (b₀ : Symbol n W V (-m))
-
-@[simp]
-theorem coefficient_rightInverseTerm_zero :
-    (a.rightInverseTerm b₀ 0).coefficient = b₀.coefficient := by
-  rw [rightInverseTerm, coefficient_inclusion]
-
-theorem coefficient_rightInverseTerm_succ (l : ℕ) (p : CoordinateSpace n × CoordinateSpace n) :
-    (a.rightInverseTerm b₀ (l + 1)).coefficient p = -(b₀.coefficient p).comp
-      (∑ j : Fin (l + 1), (a.sharpTerm (a.rightInverseTerm b₀ j) (l + 1 - j)).coefficient p) := by
-  rw [rightInverseTerm]
-  simp [coefficient_sum]
-
-variable {a b₀}
-
-/-- **The right inverse-symbol recursion.** If `b₀` is a pointwise right inverse of `a` modulo
-smoothing symbols and `b ∼ ∑ₗ b_l` is an asymptotic sum of the terms of the recursion
-(`TauCeti.Symbol.rightInverseTerm`), then the formal composition `a # b` is the identity: for every
-`N`, the symbol `1 - ∑_{k < N} sharpTerm a b k` has order `-N`. -/
-theorem isAsymptoticSum_sharpTerm_of_isAsymptoticSum_rightInverseTerm
-    (h₀ : (a.comp b₀ - inclusion (add_neg_cancel m).ge (const (.id ℂ W))).IsSmoothing)
-    {b : Symbol n W V (-m)}
-    (hb : IsAsymptoticSum (m := fun l : ℕ ↦ -m - l) (inclusion (by simp) b)
-      (a.rightInverseTerm b₀)) :
-    IsAsymptoticSum (m := fun k : ℕ ↦ m + -m - k) (inclusion (by simp) (const (.id ℂ W)))
-      (a.sharpTerm b) := by
-  set f : ℕ → ℕ → CoordinateSpace n × CoordinateSpace n → W →L[ℂ] W :=
-    fun k j ↦ (a.sharpTerm (a.rightInverseTerm b₀ j) k).coefficient with hf
-  refine isAsymptoticSum_iff.2 fun N ↦ mem_orderSubmodule.1 ?_
-  refine sub_sum_mem_of_sum_antidiagonal_mem (fun N ↦ orderSubmodule n W W (m + -m - N))
-    (inclusion (by simp) (const (.id ℂ W)) : Symbol n W W (m + -m - (0 : ℕ))).coefficient
-    (fun k ↦ (a.sharpTerm b k).coefficient) f (fun N k hk ↦ ?_) (fun N ↦ ?_) (fun l N ↦ ?_)
-    (coefficient_mem_orderSubmodule le_rfl _) N
-  · -- Split `b = ∑_{j < N - k} b_j + r` with `r` of order `-m - (N - k)`.
-    obtain ⟨r, hr⟩ := isAsymptoticSum_iff.1 hb (N - k)
-    have hb' : b = ∑ j ∈ range (N - k), inclusion (by simp) (a.rightInverseTerm b₀ j) +
-        inclusion (by simp) r := by
-      ext1
-      rw [coefficient_add, coefficient_sum, coefficient_inclusion, ← hr]
-      simp [coefficient_inclusion]
-    rw [hb', sharpTerm_add, sharpTerm_sum, coefficient_add, coefficient_sum]
-    simp only [sharpTerm_inclusion, coefficient_inclusion, hf, add_sub_cancel_left]
-    refine coefficient_mem_orderSubmodule ?_ _
-    rw [Nat.cast_sub hk.le]
-    linarith
-  · -- The part of order `0` is `a ∘ b₀`.
-    have h := IsSmoothing.coefficient_mem_orderSubmodule h₀.neg (m + -m - N)
-    convert h using 1
-    funext p
-    simp [hf]
-  · -- The part of order `-(l + 1)` is `-(a ∘ b₀ - 1) ∘ c` for the sum `c` in the recursion.
-    have h := IsSmoothing.coefficient_mem_orderSubmodule
-      ((h₀.comp_right (∑ j : Fin (l + 1), inclusion (order_le m j)
-        (a.sharpTerm (a.rightInverseTerm b₀ j) (l + 1 - j)) :
-          Symbol n W W (-((l + 1 : ℕ) : ℝ)))).neg) (m + -m - N)
-    convert h using 1
-    funext p
-    simp [hf, coefficient_sum, coefficient_rightInverseTerm_succ,
-      ContinuousLinearMap.comp_assoc]
-    abel
-
-/-- **Symbols of right parametrices.** A pointwise right inverse `b₀` of `a` modulo smoothing
-symbols is the leading term of a symbol `b` of order `-m` with `1 ∼ ∑ₖ sharpTerm a b k`: the
-asymptotic sum of the right inverse-symbol recursion. -/
-theorem exists_isAsymptoticSum_sharpTerm_right
-    (h₀ : (a.comp b₀ - inclusion (add_neg_cancel m).ge (const (.id ℂ W))).IsSmoothing) :
-    ∃ b : Symbol n W V (-m),
-      IsAsymptoticSum (m := fun l : ℕ ↦ -m - l) (inclusion (by simp) b)
-        (a.rightInverseTerm b₀) ∧
-      IsAsymptoticSum (m := fun k : ℕ ↦ m + -m - k) (inclusion (by simp) (const (.id ℂ W)))
-        (a.sharpTerm b) := by
-  have hm : Antitone fun l : ℕ ↦ -m - l := fun _ _ h ↦ sub_le_sub_left (Nat.cast_le.2 h) _
-  have hm' : Tendsto (fun l : ℕ ↦ -m - l) atTop atBot :=
-    tendsto_atBot_add_const_left atTop (-m) <|
-      tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop
-  obtain ⟨b, hb⟩ := exists_asymptoticSum hm hm' (a.rightInverseTerm b₀)
-  have hb' : IsAsymptoticSum (m := fun l : ℕ ↦ -m - l)
-      (inclusion (by simp) (inclusion (by simp) b : Symbol n W V (-m))) (a.rightInverseTerm b₀) :=
-    isAsymptoticSum_iff.2 fun N ↦ (isAsymptoticSum_iff.1 hb N).imp fun _ h ↦ by simpa using h
-  exact ⟨_, hb', isAsymptoticSum_sharpTerm_of_isAsymptoticSum_rightInverseTerm h₀ hb'⟩
-
-end Right
-
-/-! ### The left inverse-symbol recursion -/
+/-! ### Left parametrix symbols -/
 
 section Left
 
-/-- The terms of the **left inverse-symbol recursion** of a symbol `a` of order `m`, starting from
-a symbol `b₀` of order `-m`: `b_0 = b₀` and, for `l ≥ 1`,
+/-- Changing the left factor `b` by a symbol of order `-m - N` keeps `1 - ∑_{k < N} sharpTerm b a k`
+of order `-N`. -/
+private theorem exists_sub_sum_sharpTerm_left_congr {a : Symbol n V W m} {N : ℕ}
+    {b b' : Symbol n W V (-m)} (d : Symbol n W V (-m - N))
+    (hb : ∃ r : Symbol n V V (-m + m - N), (const (.id ℂ V) : Symbol n V V 0).coefficient -
+      ∑ k ∈ range N, (b.sharpTerm a k).coefficient = r.coefficient)
+    (h : b'.coefficient = b.coefficient + d.coefficient) :
+    ∃ r : Symbol n V V (-m + m - N), (const (.id ℂ V) : Symbol n V V 0).coefficient -
+      ∑ k ∈ range N, (b'.sharpTerm a k).coefficient = r.coefficient := by
+  obtain ⟨r, hr⟩ := hb
+  refine ⟨r - ∑ k : Fin N, inclusion (by linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ (k : ℕ))])
+    (d.sharpTerm a k), ?_⟩
+  rw [coefficient_sub, coefficient_sum, ← hr]
+  simp only [coefficient_inclusion, coefficient_sharpTerm_eq_add_left h, sum_add_distrib]
+  rw [Fin.sum_univ_eq_sum_range fun k ↦ (d.sharpTerm a k).coefficient]
+  abel
 
-`b_l = -(∑_{j < l} sharpTerm b_j a (l - j)) ∘ b₀`,
-
-a symbol of order `-m - l`. When `b₀ ∘ a = 1` modulo smoothing symbols, every asymptotic sum
-`b ∼ ∑ₗ b_l` satisfies `1 ∼ ∑ₖ sharpTerm b a k`
-(`isAsymptoticSum_sharpTerm_of_isAsymptoticSum_leftInverseTerm`). -/
-def leftInverseTerm (a : Symbol n V W m) (b₀ : Symbol n W V (-m)) :
-    (l : ℕ) → Symbol n W V (-m - l)
-  | 0 => inclusion (by simp) b₀
-  | l + 1 => -inclusion (by push_cast; linarith)
-      ((∑ j : Fin (l + 1), inclusion (order_le' m j)
-        ((leftInverseTerm a b₀ j).sharpTerm a (l + 1 - j)) :
-          Symbol n V V (-((l + 1 : ℕ) : ℝ))).comp b₀)
-
-variable (a : Symbol n V W m) (b₀ : Symbol n W V (-m))
-
-@[simp]
-theorem coefficient_leftInverseTerm_zero :
-    (a.leftInverseTerm b₀ 0).coefficient = b₀.coefficient := by
-  rw [leftInverseTerm, coefficient_inclusion]
-
-theorem coefficient_leftInverseTerm_succ (l : ℕ) (p : CoordinateSpace n × CoordinateSpace n) :
-    (a.leftInverseTerm b₀ (l + 1)).coefficient p =
-      -(∑ j : Fin (l + 1), ((a.leftInverseTerm b₀ j).sharpTerm a (l + 1 - j)).coefficient p).comp
-        (b₀.coefficient p) := by
-  rw [leftInverseTerm]
-  simp [coefficient_sum]
-
-variable {a b₀}
-
-/-- **The left inverse-symbol recursion.** If `b₀` is a pointwise left inverse of `a` modulo
-smoothing symbols and `b ∼ ∑ₗ b_l` is an asymptotic sum of the terms of the recursion
-(`TauCeti.Symbol.leftInverseTerm`), then the formal composition `b # a` is the identity: for every
-`N`, the symbol `1 - ∑_{k < N} sharpTerm b a k` has order `-N`. -/
-theorem isAsymptoticSum_sharpTerm_of_isAsymptoticSum_leftInverseTerm
-    (h₀ : (b₀.comp a - inclusion (neg_add_cancel m).ge (const (.id ℂ V))).IsSmoothing)
+/-- The correction step for left parametrix symbols: if `b₀ a - 1` is smoothing and
+`1 - ∑_{k < N} sharpTerm b a k` has order `-N`, then changing `b` by a symbol of order `-m - N`
+makes the sum over `k ≤ N` have order `-N - 1`. -/
+private theorem exists_sub_sum_sharpTerm_left_succ {a : Symbol n V W m}
+    {b₀ : Symbol n W V (-m)}
+    (hb₀ : (b₀.comp a - inclusion (neg_add_cancel m).ge (const (.id ℂ V))).IsSmoothing) {N : ℕ}
     {b : Symbol n W V (-m)}
-    (hb : IsAsymptoticSum (m := fun l : ℕ ↦ -m - l) (inclusion (by simp) b)
-      (a.leftInverseTerm b₀)) :
-    IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k) (inclusion (by simp) (const (.id ℂ V)))
-      (b.sharpTerm a) := by
-  set f : ℕ → ℕ → CoordinateSpace n × CoordinateSpace n → V →L[ℂ] V :=
-    fun k j ↦ ((a.leftInverseTerm b₀ j).sharpTerm a k).coefficient with hf
-  refine isAsymptoticSum_iff.2 fun N ↦ mem_orderSubmodule.1 ?_
-  refine sub_sum_mem_of_sum_antidiagonal_mem (fun N ↦ orderSubmodule n V V (-m + m - N))
-    (inclusion (by simp) (const (.id ℂ V)) : Symbol n V V (-m + m - (0 : ℕ))).coefficient
-    (fun k ↦ (b.sharpTerm a k).coefficient) f (fun N k hk ↦ ?_) (fun N ↦ ?_) (fun l N ↦ ?_)
-    (coefficient_mem_orderSubmodule le_rfl _) N
-  · -- Split `b = ∑_{j < N - k} b_j + r` with `r` of order `-m - (N - k)`.
-    obtain ⟨r, hr⟩ := isAsymptoticSum_iff.1 hb (N - k)
-    have hb' : b = ∑ j ∈ range (N - k), inclusion (by simp) (a.leftInverseTerm b₀ j) +
-        inclusion (by simp) r := by
-      ext1
-      rw [coefficient_add, coefficient_sum, coefficient_inclusion, ← hr]
-      simp [coefficient_inclusion]
-    rw [hb', add_sharpTerm, sum_sharpTerm, coefficient_add, coefficient_sum]
-    simp only [inclusion_sharpTerm, coefficient_inclusion, hf, add_sub_cancel_left]
-    refine coefficient_mem_orderSubmodule ?_ _
-    rw [Nat.cast_sub hk.le]
-    linarith
-  · -- The part of order `0` is `b₀ ∘ a`.
-    have h := IsSmoothing.coefficient_mem_orderSubmodule h₀.neg (-m + m - N)
-    convert h using 1
-    funext p
-    simp [hf]
-  · -- The part of order `-(l + 1)` is `-c ∘ (b₀ ∘ a - 1)` for the sum `c` in the recursion.
-    have h := IsSmoothing.coefficient_mem_orderSubmodule
-      ((h₀.comp_left (∑ j : Fin (l + 1), inclusion (order_le' m j)
-        ((a.leftInverseTerm b₀ j).sharpTerm a (l + 1 - j)) :
-          Symbol n V V (-((l + 1 : ℕ) : ℝ)))).neg) (-m + m - N)
-    convert h using 1
-    funext p
-    simp [hf, coefficient_sum, coefficient_leftInverseTerm_succ,
-      ContinuousLinearMap.comp_assoc]
+    (hb : ∃ r : Symbol n V V (-m + m - N), (const (.id ℂ V) : Symbol n V V 0).coefficient -
+      ∑ k ∈ range N, (b.sharpTerm a k).coefficient = r.coefficient) :
+    ∃ d : Symbol n W V (-m - N), ∃ r : Symbol n V V (-m + m - (N + 1 : ℕ)),
+      (const (.id ℂ V) : Symbol n V V 0).coefficient -
+        ∑ k ∈ range (N + 1), ((b + inclusion (by simp) d).sharpTerm a k).coefficient =
+          r.coefficient := by
+  obtain ⟨r, hr⟩ := hb
+  -- The remainder `R = 1 - ∑_{k ≤ N} sharpTerm b a k`, of order `-N`, and the correction `R b₀`.
+  set R := r - b.sharpTerm a N with hR
+  have hRc : R.coefficient = (const (.id ℂ V) : Symbol n V V 0).coefficient -
+      ∑ k ∈ range (N + 1), (b.sharpTerm a k).coefficient := by
+    rw [hR, coefficient_sub, ← hr, sum_range_succ]
     abel
+  let d : Symbol n W V (-m - N) := inclusion (by linarith) (R.comp b₀)
+  have hd₀ : (d.sharpTerm a 0).coefficient = R.coefficient +
+      (R.comp (b₀.comp a - inclusion (neg_add_cancel m).ge (const (.id ℂ V)))).coefficient := by
+    funext p
+    simp [d, ContinuousLinearMap.comp_sub, ContinuousLinearMap.comp_assoc]
+  obtain ⟨t, ht⟩ := isSmoothing_iff.1 (hb₀.comp_left R) (-m + m - (N + 1 : ℕ))
+  refine ⟨d, -t - ∑ k : Fin N,
+    inclusion (by push_cast; linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ (k : ℕ))])
+    (d.sharpTerm a (k + 1)), ?_⟩
+  rw [coefficient_sub, coefficient_neg, coefficient_sum, ht]
+  simp only [coefficient_inclusion]
+  simp only [coefficient_sharpTerm_eq_add_left (a₀ := b + inclusion (by simp) d) (a₁ := b)
+    (a₂ := d) (by rw [coefficient_add, coefficient_inclusion]), sum_add_distrib]
+  rw [sum_range_succ' fun k ↦ (d.sharpTerm a k).coefficient, hd₀,
+    Fin.sum_univ_eq_sum_range fun k ↦ (d.sharpTerm a (k + 1)).coefficient]
+  rw [show ∑ k ∈ range (N + 1), (b.sharpTerm a k).coefficient =
+    (const (.id ℂ V) : Symbol n V V 0).coefficient - R.coefficient by rw [hRc]; abel]
+  abel
 
-/-- **Symbols of left parametrices.** A pointwise left inverse `b₀` of `a` modulo smoothing symbols
-is the leading term of a symbol `b` of order `-m` with `1 ∼ ∑ₖ sharpTerm b a k`: the asymptotic
-sum of the left inverse-symbol recursion. -/
-theorem exists_isAsymptoticSum_sharpTerm_left
-    (h₀ : (b₀.comp a - inclusion (neg_add_cancel m).ge (const (.id ℂ V))).IsSmoothing) :
-    ∃ b : Symbol n W V (-m),
-      IsAsymptoticSum (m := fun l : ℕ ↦ -m - l) (inclusion (by simp) b)
-        (a.leftInverseTerm b₀) ∧
-      IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k) (inclusion (by simp) (const (.id ℂ V)))
-        (b.sharpTerm a) := by
-  have hm : Antitone fun l : ℕ ↦ -m - l := fun _ _ h ↦ sub_le_sub_left (Nat.cast_le.2 h) _
-  have hm' : Tendsto (fun l : ℕ ↦ -m - l) atTop atBot :=
-    tendsto_atBot_add_const_left atTop (-m) <|
-      tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop
-  obtain ⟨b, hb⟩ := exists_asymptoticSum hm hm' (a.leftInverseTerm b₀)
-  have hb' : IsAsymptoticSum (m := fun l : ℕ ↦ -m - l)
-      (inclusion (by simp) (inclusion (by simp) b : Symbol n W V (-m))) (a.leftInverseTerm b₀) :=
-    isAsymptoticSum_iff.2 fun N ↦ (isAsymptoticSum_iff.1 hb N).imp fun _ h ↦ by simpa using h
-  exact ⟨_, hb', isAsymptoticSum_sharpTerm_of_isAsymptoticSum_leftInverseTerm h₀ hb'⟩
+/-- **Left parametrix symbols.** If a symbol `b₀` of order `-m` is a pointwise left inverse of the
+symbol `a` of order `m` modulo smoothing symbols, that is `b₀(x, ξ) a(x, ξ) - 1` is smoothing,
+then `a` has a left parametrix symbol: a symbol `b` of order `-m` whose formal composition with `a`
+is the identity, `1 ∼ ∑ₖ sharpTerm b a k`. -/
+theorem exists_isAsymptoticSum_sharpTerm_left {a : Symbol n V W m} {b₀ : Symbol n W V (-m)}
+    (hb₀ : (b₀.comp a - inclusion (neg_add_cancel m).ge (const (.id ℂ V))).IsSmoothing) :
+    ∃ b : Symbol n W V (-m), IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k)
+      (inclusion (by simp) (const (.id ℂ V))) (b.sharpTerm a) := by
+  obtain ⟨b, hb⟩ := exists_forall_of_exists_add
+    (fun N (b : Symbol n W V (-m)) ↦ ∃ r : Symbol n V V (-m + m - N),
+      (const (.id ℂ V) : Symbol n V V 0).coefficient -
+        ∑ k ∈ range N, (b.sharpTerm a k).coefficient = r.coefficient)
+    (b₀ := b₀) ⟨inclusion (by simp) (const (.id ℂ V)), by simp⟩
+    (fun _ _ _ d hb h ↦ exists_sub_sum_sharpTerm_left_congr d hb h)
+    (fun _ _ hb ↦ exists_sub_sum_sharpTerm_left_succ hb₀ hb)
+  exact ⟨b, isAsymptoticSum_iff.2 fun N ↦ by simpa using hb N⟩
+
+/-- **The leading term of a left parametrix symbol.** A left parametrix symbol `b` of `a` agrees
+with every pointwise right inverse `b₀` of `a` modulo smoothing symbols up to a symbol of order
+`-m - 1`. -/
+theorem exists_coefficient_sub_eq_of_isAsymptoticSum_sharpTerm_left {a : Symbol n V W m}
+    {b b₀ : Symbol n W V (-m)}
+    (hb : IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k) (inclusion (by simp) (const (.id ℂ V)))
+      (b.sharpTerm a))
+    (hb₀ : (a.comp b₀ - inclusion (add_neg_cancel m).ge (const (.id ℂ W))).IsSmoothing) :
+    ∃ r : Symbol n W V (-m - 1), b.coefficient - b₀.coefficient = r.coefficient := by
+  -- `b - b₀ = -(1 - b a) b₀ - b (a b₀ - 1)`, where `1 - b a` has order `-1`.
+  obtain ⟨r, hr⟩ := isAsymptoticSum_iff.1 hb 1
+  obtain ⟨t, ht⟩ := isSmoothing_iff.1 (hb₀.comp_left b) (-m - 1)
+  refine ⟨-inclusion (by push_cast; linarith) (r.comp b₀) - t, ?_⟩
+  funext p
+  have hp := congrFun hr p
+  simp only [range_one, sum_singleton, Pi.sub_apply, coefficient_inclusion,
+    coefficient_sharpTerm_zero, coefficient_const] at hp
+  simp only [Pi.sub_apply, coefficient_sub, coefficient_neg, coefficient_inclusion,
+    coefficient_comp, ht, Pi.neg_apply, coefficient_const, ← hp]
+  ext v
+  simp
 
 end Left
 
-/-! ### Elliptic symbols -/
+/-! ### Right parametrix symbols -/
 
-variable [CompleteSpace V] {a : Symbol n V W m} {R : ℝ}
+section Right
 
-/-- **Right parametrix symbols of elliptic symbols.** An elliptic symbol `a` of order `m` has a
-symbol `b` of order `-m` whose formal composition with it is the identity,
-`1 ∼ ∑ₖ sharpTerm a b k`. -/
-theorem IsEllipticAbove.exists_isAsymptoticSum_sharpTerm_right (ha : a.IsEllipticAbove R) :
-    ∃ b : Symbol n W V (-m),
-      IsAsymptoticSum (m := fun k : ℕ ↦ m + -m - k) (inclusion (by simp) (const (.id ℂ W)))
-        (a.sharpTerm b) := by
-  obtain ⟨b₀, R', h⟩ := exists_isEllipticAbove_iff.1 ⟨R, ha⟩
-  have h₀ : (a.comp b₀ - inclusion (add_neg_cancel m).ge (const (.id ℂ W))).IsSmoothing :=
-    isSmoothing_of_coefficient_eq_zero R' fun x ξ hξ ↦ by simp [(h x ξ hξ).2]
-  obtain ⟨b, -, hb⟩ := Symbol.exists_isAsymptoticSum_sharpTerm_right h₀
-  exact ⟨b, hb⟩
+/-- Changing the right factor `b` by a symbol of order `-m - N` keeps
+`1 - ∑_{k < N} sharpTerm a b k` of order `-N`. -/
+private theorem exists_sub_sum_sharpTerm_right_congr {a : Symbol n V W m} {N : ℕ}
+    {b b' : Symbol n W V (-m)} (d : Symbol n W V (-m - N))
+    (hb : ∃ r : Symbol n W W (m + -m - N), (const (.id ℂ W) : Symbol n W W 0).coefficient -
+      ∑ k ∈ range N, (a.sharpTerm b k).coefficient = r.coefficient)
+    (h : b'.coefficient = b.coefficient + d.coefficient) :
+    ∃ r : Symbol n W W (m + -m - N), (const (.id ℂ W) : Symbol n W W 0).coefficient -
+      ∑ k ∈ range N, (a.sharpTerm b' k).coefficient = r.coefficient := by
+  obtain ⟨r, hr⟩ := hb
+  refine ⟨r - ∑ k : Fin N, inclusion (by linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ (k : ℕ))])
+    (a.sharpTerm d k), ?_⟩
+  rw [coefficient_sub, coefficient_sum, ← hr]
+  simp only [coefficient_inclusion, coefficient_sharpTerm_eq_add_right h, sum_add_distrib]
+  rw [Fin.sum_univ_eq_sum_range fun k ↦ (a.sharpTerm d k).coefficient]
+  abel
 
-/-- **Left parametrix symbols of elliptic symbols.** An elliptic symbol `a` of order `m` has a
-symbol `b` of order `-m` such that the formal composition `b # a` is the identity,
-`1 ∼ ∑ₖ sharpTerm b a k`. -/
-theorem IsEllipticAbove.exists_isAsymptoticSum_sharpTerm_left (ha : a.IsEllipticAbove R) :
+/-- The correction step for right parametrix symbols: if `a b₀ - 1` is smoothing and
+`1 - ∑_{k < N} sharpTerm a b k` has order `-N`, then changing `b` by a symbol of order `-m - N`
+makes the sum over `k ≤ N` have order `-N - 1`. -/
+private theorem exists_sub_sum_sharpTerm_right_succ {a : Symbol n V W m}
+    {b₀ : Symbol n W V (-m)}
+    (hb₀ : (a.comp b₀ - inclusion (add_neg_cancel m).ge (const (.id ℂ W))).IsSmoothing) {N : ℕ}
+    {b : Symbol n W V (-m)}
+    (hb : ∃ r : Symbol n W W (m + -m - N), (const (.id ℂ W) : Symbol n W W 0).coefficient -
+      ∑ k ∈ range N, (a.sharpTerm b k).coefficient = r.coefficient) :
+    ∃ d : Symbol n W V (-m - N), ∃ r : Symbol n W W (m + -m - (N + 1 : ℕ)),
+      (const (.id ℂ W) : Symbol n W W 0).coefficient -
+        ∑ k ∈ range (N + 1), (a.sharpTerm (b + inclusion (by simp) d) k).coefficient =
+          r.coefficient := by
+  obtain ⟨r, hr⟩ := hb
+  -- The remainder `R = 1 - ∑_{k ≤ N} sharpTerm a b k`, of order `-N`, and the correction `b₀ R`.
+  set R := r - a.sharpTerm b N with hR
+  have hRc : R.coefficient = (const (.id ℂ W) : Symbol n W W 0).coefficient -
+      ∑ k ∈ range (N + 1), (a.sharpTerm b k).coefficient := by
+    rw [hR, coefficient_sub, ← hr, sum_range_succ]
+    abel
+  let d : Symbol n W V (-m - N) := inclusion (by linarith) (b₀.comp R)
+  have hd₀ : (a.sharpTerm d 0).coefficient = R.coefficient +
+      ((a.comp b₀ - inclusion (add_neg_cancel m).ge (const (.id ℂ W))).comp R).coefficient := by
+    funext p
+    simp [d, ContinuousLinearMap.sub_comp, ContinuousLinearMap.comp_assoc]
+  obtain ⟨t, ht⟩ := isSmoothing_iff.1 (hb₀.comp_right R) (m + -m - (N + 1 : ℕ))
+  refine ⟨d, -t - ∑ k : Fin N,
+    inclusion (by push_cast; linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ (k : ℕ))])
+    (a.sharpTerm d (k + 1)), ?_⟩
+  rw [coefficient_sub, coefficient_neg, coefficient_sum, ht]
+  simp only [coefficient_inclusion]
+  simp only [coefficient_sharpTerm_eq_add_right (b₀ := b + inclusion (by simp) d) (b₁ := b)
+    (b₂ := d) (by rw [coefficient_add, coefficient_inclusion]), sum_add_distrib]
+  rw [sum_range_succ' fun k ↦ (a.sharpTerm d k).coefficient, hd₀,
+    Fin.sum_univ_eq_sum_range fun k ↦ (a.sharpTerm d (k + 1)).coefficient]
+  rw [show ∑ k ∈ range (N + 1), (a.sharpTerm b k).coefficient =
+    (const (.id ℂ W) : Symbol n W W 0).coefficient - R.coefficient by rw [hRc]; abel]
+  abel
+
+/-- **Right parametrix symbols.** If a symbol `b₀` of order `-m` is a pointwise right inverse of
+the symbol `a` of order `m` modulo smoothing symbols, that is `a(x, ξ) b₀(x, ξ) - 1` is smoothing,
+then `a` has a right parametrix symbol: a symbol `b` of order `-m` such that the formal composition
+of `a` with `b` is the identity, `1 ∼ ∑ₖ sharpTerm a b k`. -/
+theorem exists_isAsymptoticSum_sharpTerm_right {a : Symbol n V W m} {b₀ : Symbol n W V (-m)}
+    (hb₀ : (a.comp b₀ - inclusion (add_neg_cancel m).ge (const (.id ℂ W))).IsSmoothing) :
+    ∃ b : Symbol n W V (-m), IsAsymptoticSum (m := fun k : ℕ ↦ m + -m - k)
+      (inclusion (by simp) (const (.id ℂ W))) (a.sharpTerm b) := by
+  obtain ⟨b, hb⟩ := exists_forall_of_exists_add
+    (fun N (b : Symbol n W V (-m)) ↦ ∃ r : Symbol n W W (m + -m - N),
+      (const (.id ℂ W) : Symbol n W W 0).coefficient -
+        ∑ k ∈ range N, (a.sharpTerm b k).coefficient = r.coefficient)
+    (b₀ := b₀) ⟨inclusion (by simp) (const (.id ℂ W)), by simp⟩
+    (fun _ _ _ d hb h ↦ exists_sub_sum_sharpTerm_right_congr d hb h)
+    (fun _ _ hb ↦ exists_sub_sum_sharpTerm_right_succ hb₀ hb)
+  exact ⟨b, isAsymptoticSum_iff.2 fun N ↦ by simpa using hb N⟩
+
+/-- **The leading term of a right parametrix symbol.** A right parametrix symbol `b` of `a` agrees
+with every pointwise left inverse `b₀` of `a` modulo smoothing symbols up to a symbol of order
+`-m - 1`. -/
+theorem exists_coefficient_sub_eq_of_isAsymptoticSum_sharpTerm_right {a : Symbol n V W m}
+    {b b₀ : Symbol n W V (-m)}
+    (hb : IsAsymptoticSum (m := fun k : ℕ ↦ m + -m - k) (inclusion (by simp) (const (.id ℂ W)))
+      (a.sharpTerm b))
+    (hb₀ : (b₀.comp a - inclusion (neg_add_cancel m).ge (const (.id ℂ V))).IsSmoothing) :
+    ∃ r : Symbol n W V (-m - 1), b.coefficient - b₀.coefficient = r.coefficient := by
+  -- `b - b₀ = -b₀ (1 - a b) - (b₀ a - 1) b`, where `1 - a b` has order `-1`.
+  obtain ⟨r, hr⟩ := isAsymptoticSum_iff.1 hb 1
+  obtain ⟨t, ht⟩ := isSmoothing_iff.1 (hb₀.comp_right b) (-m - 1)
+  refine ⟨-inclusion (by push_cast; linarith) (b₀.comp r) - t, ?_⟩
+  funext p
+  have hp := congrFun hr p
+  simp only [range_one, sum_singleton, Pi.sub_apply, coefficient_inclusion,
+    coefficient_sharpTerm_zero, coefficient_const] at hp
+  simp only [Pi.sub_apply, coefficient_sub, coefficient_neg, coefficient_inclusion,
+    coefficient_comp, ht, Pi.neg_apply, coefficient_const, ← hp]
+  ext v
+  simp
+
+end Right
+
+/-! ### Two-sided parametrix symbols -/
+
+/-- **An elliptic symbol has a two-sided parametrix symbol.** A symbol `a` of order `m` that is
+elliptic above some radius has a parametrix symbol `b` of order `-m`: the formal compositions of
+`b` with `a` in both orders are the identity, `1 ∼ ∑ₖ sharpTerm b a k` and
+`1 ∼ ∑ₖ sharpTerm a b k`. It is unique modulo smoothing symbols
+(`TauCeti.Symbol.isAsymptoticSum_sharpTerm_left_iff`), and agrees with the cut-off inverse
+`χ(ξ / t) a(x, ξ)⁻¹` (`TauCeti.Symbol.cutoffInverse`) up to a symbol of order `-m - 1`
+(`TauCeti.Symbol.exists_coefficient_sub_eq_of_isAsymptoticSum_sharpTerm_left`). -/
+theorem IsEllipticAbove.exists_isAsymptoticSum_sharpTerm [CompleteSpace V] {a : Symbol n V W m}
+    {R : ℝ} (ha : a.IsEllipticAbove R) :
     ∃ b : Symbol n W V (-m),
       IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k) (inclusion (by simp) (const (.id ℂ V)))
-        (b.sharpTerm a) := by
-  obtain ⟨b₀, R', h⟩ := exists_isEllipticAbove_iff.1 ⟨R, ha⟩
-  have h₀ : (b₀.comp a - inclusion (neg_add_cancel m).ge (const (.id ℂ V))).IsSmoothing :=
-    isSmoothing_of_coefficient_eq_zero R' fun x ξ hξ ↦ by simp [(h x ξ hξ).1]
-  obtain ⟨b, -, hb⟩ := Symbol.exists_isAsymptoticSum_sharpTerm_left h₀
-  exact ⟨b, hb⟩
+        (b.sharpTerm a) ∧
+      IsAsymptoticSum (m := fun k : ℕ ↦ m + -m - k) (inclusion (by simp) (const (.id ℂ W)))
+        (a.sharpTerm b) := by
+  obtain ⟨b₀, R', hb₀⟩ := exists_isEllipticAbove_iff.1 ⟨R, ha⟩
+  have hL : (b₀.comp a - inclusion (neg_add_cancel m).ge (const (.id ℂ V))).IsSmoothing :=
+    isSmoothing_of_coefficient_eq_zero R' fun x ξ hξ ↦ by simp [(hb₀ x ξ hξ).1]
+  have hR : (a.comp b₀ - inclusion (add_neg_cancel m).ge (const (.id ℂ W))).IsSmoothing :=
+    isSmoothing_of_coefficient_eq_zero R' fun x ξ hξ ↦ by simp [(hb₀ x ξ hξ).2]
+  obtain ⟨bL, hbL⟩ := exists_isAsymptoticSum_sharpTerm_left hL
+  obtain ⟨bR, hbR⟩ := exists_isAsymptoticSum_sharpTerm_right hR
+  exact ⟨bL, hbL, isAsymptoticSum_sharpTerm_of_isSmoothing_sub_right hbR
+    (isSmoothing_sub_of_isAsymptoticSum_sharpTerm hbL hbR)⟩
+
+/-- **Uniqueness of left parametrix symbols.** If `b` is a two-sided parametrix symbol of `a`, then
+the left parametrix symbols of `a` are exactly the symbols `b'` with `b' - b` smoothing. -/
+theorem isAsymptoticSum_sharpTerm_left_iff {a : Symbol n V W m} {b b' : Symbol n W V (-m)}
+    (hL : IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k) (inclusion (by simp) (const (.id ℂ V)))
+      (b.sharpTerm a))
+    (hR : IsAsymptoticSum (m := fun k : ℕ ↦ m + -m - k) (inclusion (by simp) (const (.id ℂ W)))
+      (a.sharpTerm b)) :
+    IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k) (inclusion (by simp) (const (.id ℂ V)))
+      (b'.sharpTerm a) ↔ (b' - b).IsSmoothing :=
+  ⟨fun h ↦ isSmoothing_sub_of_isAsymptoticSum_sharpTerm h hR,
+    isAsymptoticSum_sharpTerm_of_isSmoothing_sub_left hL⟩
+
+/-- **Uniqueness of right parametrix symbols.** If `b` is a two-sided parametrix symbol of `a`,
+then the right parametrix symbols of `a` are exactly the symbols `b'` with `b' - b` smoothing. -/
+theorem isAsymptoticSum_sharpTerm_right_iff {a : Symbol n V W m} {b b' : Symbol n W V (-m)}
+    (hL : IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k) (inclusion (by simp) (const (.id ℂ V)))
+      (b.sharpTerm a))
+    (hR : IsAsymptoticSum (m := fun k : ℕ ↦ m + -m - k) (inclusion (by simp) (const (.id ℂ W)))
+      (a.sharpTerm b)) :
+    IsAsymptoticSum (m := fun k : ℕ ↦ m + -m - k) (inclusion (by simp) (const (.id ℂ W)))
+      (a.sharpTerm b') ↔ (b' - b).IsSmoothing := by
+  refine ⟨fun h ↦ ?_, isAsymptoticSum_sharpTerm_of_isSmoothing_sub_right hR⟩
+  simpa using (isSmoothing_sub_of_isAsymptoticSum_sharpTerm hL h).neg
 
 end Symbol
 
