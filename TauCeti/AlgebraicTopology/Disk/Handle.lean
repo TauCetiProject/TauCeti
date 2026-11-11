@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.Disk
 public import TauCeti.Topology.Category.TopCat.Pushout
 import TauCeti.Analysis.Normed.Module.Normalize
-import TauCeti.Topology.Category.TopCat.Limits.Basic
 
 /-!
 # A handle attachment deformation retracts onto the attachment of its cores
@@ -319,10 +318,11 @@ private lemma exists_handleAttachment_homotopy
     ∃ K : C(I × P, P), (∀ t x, K (t, j x) = j x) ∧
       ∀ t i p, K (t, χ i p) = χ i (handleCoreHomotopy (k i) (l i) (t, p)) := by
   refine ⟨hP.cylinderDesc (j.hom.comp ContinuousMap.snd)
-    (sigmaCylinderDesc fun i ↦ (χ i).hom.comp (handleCoreHomotopy (k i) (l i)).toContinuousMap)
+    (_root_.TopCat.sigmaCylinderDesc fun i ↦
+      (χ i).hom.comp (handleCoreHomotopy (k i) (l i)).toContinuousMap)
     (fun t b ↦ ?_), hP.cylinderDesc_inl _ _ _, fun t i p ↦ ?_⟩
   · -- Both pieces are constant on the attaching regions.
-    obtain ⟨i, ⟨s, y⟩, rfl⟩ := exists_sigma_ι_eq b
+    obtain ⟨i, ⟨s, y⟩, rfl⟩ := _root_.TopCat.exists_sigma_ι_eq _ b
     have h₁ : Sigma.desc α (Sigma.ι (fun i ↦ _root_.TopCat.of
         (TopCat.diskBoundary.{u} (k i) × TopCat.disk.{u} (l i))) i (s, y)) = α i (s, y) := by
       simp
@@ -334,13 +334,13 @@ private lemma exists_handleAttachment_homotopy
           (TopCat.diskBoundaryInclusion _ s, y) := by
       simp [Sigma.ι_map_apply]
     simp only [ContinuousMap.comp_apply, ContinuousMap.snd_apply]
-    rw [h₁, h₂, sigmaCylinderDesc_ι, ContinuousMap.comp_apply,
+    rw [h₁, h₂, _root_.TopCat.sigmaCylinderDesc_ι, ContinuousMap.comp_apply,
       ContinuousMap.HomotopyWith.coe_toContinuousMap, handleCoreHomotopy_diskBoundaryInclusion]
     exact handle_w_apply hP i s y
   · have hp : Sigma.desc χ (Sigma.ι (fun i ↦
         _root_.TopCat.of (TopCat.disk.{u} (k i) × TopCat.disk.{u} (l i))) i p) = χ i p := by
       simp
-    rw [← hp, hP.cylinderDesc_inr, sigmaCylinderDesc_ι]
+    rw [← hp, hP.cylinderDesc_inr, _root_.TopCat.sigmaCylinderDesc_ι]
     rfl
 
 /-- The collapse of a handle attachment `P` onto the attachment `Q` of the cores: `j'` on `X`, and
@@ -444,19 +444,19 @@ theorem exists_coreAttachment_deformation
   · -- `g` inverts `Φ` on the two legs of `Q`.
     have h : g.hom.comp Φ.hom = ContinuousMap.id Q := hQ.continuousMap_ext
       (fun x ↦ by simp [hΦj, hgj]) fun z ↦ by
-        obtain ⟨i, x, rfl⟩ := exists_sigma_ι_eq z
+        obtain ⟨i, x, rfl⟩ := _root_.TopCat.exists_sigma_ι_eq _ z
         simp [hΦχ, hgχ, hcore]
     exact congrArg (fun f : C(Q, Q) ↦ f q) h
   · -- At time `0` the homotopy is the identity.
     have h : (⟨fun p ↦ K (0, p), by fun_prop⟩ : C(P, P)) = ContinuousMap.id P :=
       hP.continuousMap_ext (fun x ↦ hKj 0 x) fun z ↦ by
-        obtain ⟨i, x, rfl⟩ := exists_sigma_ι_eq z
+        obtain ⟨i, x, rfl⟩ := _root_.TopCat.exists_sigma_ι_eq _ z
         simp [hKχ]
     exact congrArg (fun f : C(P, P) ↦ f p) h
   · -- At time `1` it is the core retraction followed by `Φ`.
     have h : (⟨fun p ↦ K (1, p), by fun_prop⟩ : C(P, P)) = Φ.hom.comp g.hom :=
       hP.continuousMap_ext (fun x ↦ by simp [hKj, hgj, hΦj]) fun z ↦ by
-        obtain ⟨i, x, rfl⟩ := exists_sigma_ι_eq z
+        obtain ⟨i, x, rfl⟩ := _root_.TopCat.exists_sigma_ι_eq _ z
         simp [hKχ, hgχ, hΦG i (handleCoreRetraction_mem x)]
     exact congrArg (fun f : C(P, P) ↦ f p) h
   · -- The homotopy fixes the image of `Φ`: the points of `X` and of the cores.
