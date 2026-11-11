@@ -78,16 +78,15 @@ variable {f : ℂ → ℂ} {c ζ : ℂ} {r ρ : ℝ}
 The limit of `f` along the crosscut at `circleMap ζ ρ θ` is also the limit of the angular
 composite `θ ↦ f (circleMap ζ ρ θ)` along `Ioo a b`.
 
-The angle `θ` is unconstrained, not merely one of the two endpoints. The frontier case is all that
-is used. -/
-private theorem exists_tendsto_nhdsWithin_and_tendsto_comp_circleMap
-    (hζ : dist ζ c = r) (hρr : ρ < 2 * r)
+The angle `θ` is unconstrained, not merely one of the two endpoints; only the two endpoints are
+used below. -/
+private theorem exists_tendsto_nhdsWithin_and_tendsto_comp_circleMap (hζ : dist ζ c = r)
     (hf : DifferentiableOn ℂ f (ball c r))
     (hfin : circleImageLength f (ball c r) ζ ρ ≠ ⊤) {a b θ : ℝ}
     (hcrosscut : ball c r ∩ sphere ζ ρ = circleMap ζ ρ '' Ioo a b) :
     ∃ v, Tendsto f (𝓝[ball c r ∩ sphere ζ ρ] (circleMap ζ ρ θ)) (𝓝 v) ∧
       Tendsto (fun θ => f (circleMap ζ ρ θ)) (𝓝[Ioo a b] θ) (𝓝 v) := by
-  obtain ⟨v, hv⟩ := exists_tendsto_nhdsWithin_ball_inter_sphere hζ hρr hf hfin
+  obtain ⟨v, hv⟩ := exists_tendsto_nhdsWithin_ball_inter_sphere hζ hf hfin
   have hcircle : Tendsto (circleMap ζ ρ) (𝓝[Ioo a b] θ)
       (𝓝[circleMap ζ ρ '' Ioo a b] (circleMap ζ ρ θ)) :=
     (continuous_circleMap ζ ρ).continuousAt.continuousWithinAt.tendsto_nhdsWithin_image
@@ -140,9 +139,9 @@ theorem exists_path_range_eq_closure_image_ball_inter_sphere (hζ : dist ζ c = 
   -- The endpoint-limit theorem at the two ends of the arc, read both along the crosscut and along
   -- the angle: the latter is what `TauCeti.Path.ofContinuousOnIoo` consumes.
   obtain ⟨u, hu, huangle⟩ :=
-    exists_tendsto_nhdsWithin_and_tendsto_comp_circleMap (θ := a) hζ hρr hf hfin hcrosscut
+    exists_tendsto_nhdsWithin_and_tendsto_comp_circleMap (θ := a) hζ hf hfin hcrosscut
   obtain ⟨v, hv, hvangle⟩ :=
-    exists_tendsto_nhdsWithin_and_tendsto_comp_circleMap (θ := b) hζ hρr hf hfin hcrosscut
+    exists_tendsto_nhdsWithin_and_tendsto_comp_circleMap (θ := b) hζ hf hfin hcrosscut
   rw [nhdsWithin_Ioo_eq_nhdsGT hab] at huangle
   rw [nhdsWithin_Ioo_eq_nhdsLT hab] at hvangle
   refine ⟨u, v, Path.ofContinuousOnIoo hab hgcont huangle hvangle, ?_, ?_, ?_, ?_⟩

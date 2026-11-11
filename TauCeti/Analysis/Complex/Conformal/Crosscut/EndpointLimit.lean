@@ -218,24 +218,9 @@ theorem isBounded_image_circleMap_image_Ioo_of_lintegral_ne_top (hUo : IsOpen U)
 
 /-! ## The cluster sets of an arc of finite image length -/
 
-/-- **An arc of finite image length has at most one cluster value at each of its points.** For `f`
-holomorphic on an open set containing the open arc `circleMap ζ ρ '' Ioo a b`, of angular width
-below a full turn and of finite image length, and for any angle `θ₀` of the *closed* arc, `f` has at
-most one cluster value along the arc at the point `circleMap ζ ρ θ₀`. For a degenerate arc
-`a = b` the arc is empty, and so is the cluster set.
-
-The two endpoints `θ₀ = a` and `θ₀ = b` are the case with content; at an interior angle the
-statement is continuity. The angular width restriction is what makes closeness in the plane the same
-as closeness in angle, and it is exactly the requirement that the arc not wrap around the circle: by
-the chord formula `TauCeti.dist_circleMap_eq_two_mul_sin_abs` the chord is
-`2 * |ρ| * sin (|θ - θ₀| / 2)`, which over the angular gaps between `m` and the width `b - a` of the
-arc stays at least its value at one of those two ends, so a point of the arc within
-`2 * |ρ| * min (sin (m / 2)) (sin ((b - a) / 2))` of `circleMap ζ ρ θ₀` is within `m` of `θ₀` in
-angle. Feeding that to the modulus `TauCeti.exists_pos_forall_dist_le_of_lintegral_ne_top` gives the
-Cauchy criterion `TauCeti.subsingleton_clusterSetOn_of_forall_exists`. A radius of either sign
-traces the same circle; at `ρ = 0` the arc is the single point `ζ` and the criterion is immediate,
-no angular control being needed. -/
-theorem subsingleton_clusterSetOn_circleMap_image_Ioo (hUo : IsOpen U)
+/-- The case of an angle `θ₀` of the closed arc `Icc a b` of
+`TauCeti.subsingleton_clusterSetOn_circleMap_image_Ioo`. -/
+private theorem subsingleton_clusterSetOn_circleMap_image_Ioo_of_mem_Icc (hUo : IsOpen U)
     (hf : DifferentiableOn ℂ f U) (ζ : ℂ) {ρ : ℝ} {a b θ₀ : ℝ}
     (hab2π : b - a < 2 * π) (hθ₀ : θ₀ ∈ Icc a b)
     (hmemU : ∀ θ ∈ Ioo a b, circleMap ζ ρ θ ∈ U)
@@ -277,6 +262,43 @@ theorem subsingleton_clusterSetOn_circleMap_image_Ioo (hUo : IsOpen U)
   have hmη : m ≤ η / 2 := min_le_left _ _
   linarith
 
+/-- **An arc of finite image length has at most one cluster value at each of its points.** For `f`
+holomorphic on an open set containing the open arc `circleMap ζ ρ '' Ioo a b`, of angular width
+below a full turn and of finite image length, and for any angle `θ₀`, `f` has at most one cluster
+value along the arc at the point `circleMap ζ ρ θ₀`. At a point outside the closure of the arc, and
+for a degenerate arc `a = b`, the cluster set is empty. This is the case of an angle `θ₀` of the
+*closed* arc `Icc a b`, to which the other case reduces.
+
+The two endpoints `θ₀ = a` and `θ₀ = b` are the case with content; at an interior angle the
+statement is continuity. The angular width restriction is what makes closeness in the plane the same
+as closeness in angle, and it is exactly the requirement that the arc not wrap around the circle: by
+the chord formula `TauCeti.dist_circleMap_eq_two_mul_sin_abs` the chord is
+`2 * |ρ| * sin (|θ - θ₀| / 2)`, which over the angular gaps between `m` and the width `b - a` of the
+arc stays at least its value at one of those two ends, so a point of the arc within
+`2 * |ρ| * min (sin (m / 2)) (sin ((b - a) / 2))` of `circleMap ζ ρ θ₀` is within `m` of `θ₀` in
+angle. Feeding that to the modulus `TauCeti.exists_pos_forall_dist_le_of_lintegral_ne_top` gives the
+Cauchy criterion `TauCeti.subsingleton_clusterSetOn_of_forall_exists`. A radius of either sign
+traces the same circle; at `ρ = 0` the arc is the single point `ζ` and the criterion is immediate,
+no angular control being needed. -/
+theorem subsingleton_clusterSetOn_circleMap_image_Ioo (hUo : IsOpen U)
+    (hf : DifferentiableOn ℂ f U) (ζ : ℂ) {ρ : ℝ} {a b θ₀ : ℝ}
+    (hab2π : b - a < 2 * π)
+    (hmemU : ∀ θ ∈ Ioo a b, circleMap ζ ρ θ ∈ U)
+    (hfin : ∫⁻ θ in Ioo a b, ‖deriv f (circleMap ζ ρ θ)‖ₑ ≠ ⊤) :
+    (clusterSetOn f (circleMap ζ ρ '' Ioo a b) (circleMap ζ ρ θ₀)).Subsingleton := by
+  by_cases hx : circleMap ζ ρ θ₀ ∈ closure (circleMap ζ ρ '' Ioo a b)
+  · -- a point of the closure is the image of an angle of the closed arc
+    obtain ⟨θ, hθ, hθx⟩ : circleMap ζ ρ θ₀ ∈ circleMap ζ ρ '' Icc a b :=
+      (isCompact_Icc.image (continuous_circleMap ζ ρ)).isClosed.closure_subset_iff.mpr
+        (image_mono Ioo_subset_Icc_self) hx
+    rw [← hθx]
+    exact subsingleton_clusterSetOn_circleMap_image_Ioo_of_mem_Icc hUo hf ζ hab2π hθ hmemU hfin
+  · -- outside the closure of the arc the filter is trivial, so the cluster set is empty
+    rw [mem_closure_iff_nhdsWithin_neBot, not_neBot] at hx
+    refine Set.subsingleton_empty.anti ?_
+    rw [clusterSetOn_eq_iInter, hx]
+    exact Set.iInter₂_subset_of_subset ∅ Filter.mem_bot (by simp)
+
 /-- Every angle of the *closed* arc names a point of the closure of the open one: the closure of
 `Ioo a b` is `Icc a b`, and `circleMap ζ ρ` is continuous. -/
 private lemma circleMap_mem_closure_image_Ioo (ζ : ℂ) (ρ : ℝ) {a b θ₀ : ℝ} (hab : a < b)
@@ -316,7 +338,7 @@ theorem exists_tendsto_nhdsWithin_circleMap_image_Ioo (hUo : IsOpen U)
             hfin).isCompact_closure
           (fun _ hw => subset_closure (mem_image_of_mem f hw))
           (circleMap_mem_closure_image_Ioo ζ ρ hab hθ)
-          (subsingleton_clusterSetOn_circleMap_image_Ioo hUo hf ζ hab2π hθ hmemU hfin)
+          (subsingleton_clusterSetOn_circleMap_image_Ioo_of_mem_Icc hUo hf ζ hab2π hθ hmemU hfin)
     · -- outside the closure of the arc the filter is trivial
       rw [mem_closure_iff_nhdsWithin_neBot, not_neBot] at hx
       exact ⟨0, hx ▸ tendsto_bot⟩
@@ -387,32 +409,18 @@ private lemma lintegral_enorm_deriv_circleMap_ne_top (hζ : dist ζ c = r) (hρ 
     ((c - ζ).arg - Real.arccos (ρ / (2 * r))), hbig,
     ENNReal.mul_top (ENNReal.ofReal_pos.mpr hρ).ne']
 
-/-- A point of a circular crosscut forces the radius `ρ` to lie strictly between `0` and `2 * r`:
-the sphere `sphere ζ ρ` centred on the boundary circle meets the open disc only in that range. -/
-private lemma pos_and_lt_two_mul_of_mem_ball_inter_sphere (hζ : dist ζ c = r) {z : ℂ}
-    (hz : z ∈ ball c r ∩ sphere ζ ρ) : 0 < ρ ∧ ρ < 2 * r := by
-  have h1 : dist z c < r := mem_ball.mp hz.1
-  have h2 : dist z ζ = ρ := mem_sphere.mp hz.2
-  refine ⟨lt_of_le_of_ne (h2 ▸ dist_nonneg) fun h0 => ?_, ?_⟩
-  · have hzζ : z = ζ := dist_eq_zero.mp (h2.trans h0.symm)
-    rw [hzζ, hζ] at h1
-    exact lt_irrefl _ h1
-  · calc ρ = dist z ζ := h2.symm
-      _ ≤ dist z c + dist c ζ := dist_triangle _ _ _
-      _ < 2 * r := by rw [dist_comm c ζ, hζ]; linarith
-
-/-- **A circular crosscut of finite image length has at most one cluster value at each point of its
-closure.** This is `TauCeti.subsingleton_clusterSetOn_circleMap_image_Ioo` at the arc description of
+/-- **A circular crosscut of finite image length has at most one cluster value at each point.**
+This is `TauCeti.subsingleton_clusterSetOn_circleMap_image_Ioo` at the arc description of
 `Conformal/Crosscut/Endpoints.lean`: a genuine circular crosscut is the open arc of angles within
 `arccos (ρ / (2 * r))` of `arg (c - ζ)`, of angular width below `π`, and its closure adds exactly
-the two angles at the ends.
+the two angles at the ends. At a point outside that closure, and for an empty crosscut, the
+cluster set is empty.
 
 The two endpoints, where `e ∈ sphere c r ∩ sphere ζ ρ`, are the case with content. Neither
 injectivity of `f` nor any hypothesis on its image is used. -/
 theorem subsingleton_clusterSetOn_ball_inter_sphere (hζ : dist ζ c = r)
     (hf : DifferentiableOn ℂ f (ball c r))
-    (hfin : circleImageLength f (ball c r) ζ ρ ≠ ⊤) {e : ℂ}
-    (he : e ∈ closedBall c r ∩ sphere ζ ρ) :
+    (hfin : circleImageLength f (ball c r) ζ ρ ≠ ⊤) {e : ℂ} :
     (clusterSetOn f (ball c r ∩ sphere ζ ρ) e).Subsingleton := by
   -- an empty crosscut has an empty cluster set, otherwise the radius is in the genuine range
   rcases (ball c r ∩ sphere ζ ρ).eq_empty_or_nonempty with h | ⟨z, hz⟩
@@ -424,23 +432,41 @@ theorem subsingleton_clusterSetOn_ball_inter_sphere (hζ : dist ζ c = r)
   have hr : 0 < r := by linarith
   have hφ0 := arccos_div_two_mul_pos hr hρr
   have hφπ2 := arccos_div_two_mul_lt_pi_div_two hρ hr
-  obtain ⟨θ₀, hθ₀, rfl⟩ := (closedBall_inter_sphere_eq_circleMap_image_Icc hζ hρ hρr).le he
   rw [ball_inter_sphere_eq_circleMap_image_Ioo hζ hρ hρr]
-  exact subsingleton_clusterSetOn_circleMap_image_Ioo isOpen_ball hf ζ
-    (by linarith [Real.pi_pos]) hθ₀ (fun _ hθ => circleMap_mem_ball_of_mem_Ioo hζ hρ hρr hθ)
-    (lintegral_enorm_deriv_circleMap_ne_top hζ hρ hρr hfin)
+  by_cases he : e ∈ closedBall c r ∩ sphere ζ ρ
+  · obtain ⟨θ₀, -, rfl⟩ := (closedBall_inter_sphere_eq_circleMap_image_Icc hζ hρ hρr).le he
+    exact subsingleton_clusterSetOn_circleMap_image_Ioo isOpen_ball hf ζ
+      (by linarith [Real.pi_pos]) (fun _ hθ => circleMap_mem_ball_of_mem_Ioo hζ hρ hρr hθ)
+      (lintegral_enorm_deriv_circleMap_ne_top hζ hρ hρr hfin)
+  · -- outside the closed crosscut the filter is trivial, so the cluster set is empty
+    have hcl : e ∉ closure (circleMap ζ ρ '' Ioo
+        ((c - ζ).arg - Real.arccos (ρ / (2 * r))) ((c - ζ).arg + Real.arccos (ρ / (2 * r)))) := by
+      rw [← ball_inter_sphere_eq_circleMap_image_Ioo hζ hρ hρr]
+      exact fun h => he (closure_minimal (inter_subset_inter ball_subset_closedBall subset_rfl)
+        (isClosed_closedBall.inter isClosed_sphere) h)
+    rw [mem_closure_iff_nhdsWithin_neBot, not_neBot] at hcl
+    refine Set.subsingleton_empty.anti ?_
+    rw [clusterSetOn_eq_iInter, hcl]
+    exact Set.iInter₂_subset_of_subset ∅ Filter.mem_bot (by simp)
 
-/-- **A circular crosscut of finite image length has a limit at each point of its closure.** This is
+/-- **A circular crosscut of finite image length has a limit at each point.** This is
 `TauCeti.exists_tendsto_nhdsWithin_circleMap_image_Ioo` at the arc description of
-`Conformal/Crosscut/Endpoints.lean`.
+`Conformal/Crosscut/Endpoints.lean`. For an empty crosscut, or at a point outside the closure of the
+crosscut, the filter `𝓝[ball c r ∩ sphere ζ ρ] e` is `⊥` and the convergence is vacuous: every `v`
+is a limit.
 
-At the two endpoints, where `e ∈ sphere c r ∩ sphere ζ ρ`, this is the statement that the image
-crosscut is a curve with two honest ends. -/
+At the two endpoints of a nonempty crosscut, where `e ∈ sphere c r ∩ sphere ζ ρ` and `0 < ρ`,
+this is the statement that the image crosscut is a curve with two honest ends. -/
 theorem exists_tendsto_nhdsWithin_ball_inter_sphere (hζ : dist ζ c = r)
-    (hρr : ρ < 2 * r) (hf : DifferentiableOn ℂ f (ball c r))
+    (hf : DifferentiableOn ℂ f (ball c r))
     (hfin : circleImageLength f (ball c r) ζ ρ ≠ ⊤) {e : ℂ} :
     ∃ v, Tendsto f (𝓝[ball c r ∩ sphere ζ ρ] e) (𝓝 v) := by
-  -- outside the closed crosscut, and for an empty crosscut, the filter is trivial
+  -- for an empty crosscut the filter is trivial, otherwise the radius is in the genuine range
+  rcases (ball c r ∩ sphere ζ ρ).eq_empty_or_nonempty with h | ⟨z, hz⟩
+  · rw [h, nhdsWithin_empty]
+    exact ⟨0, tendsto_bot⟩
+  obtain ⟨hρ, hρr⟩ := pos_and_lt_two_mul_of_mem_ball_inter_sphere hζ hz
+  -- outside the closed crosscut the filter is trivial
   by_cases he : e ∈ closedBall c r ∩ sphere ζ ρ
   swap
   · have hcl : e ∉ closure (ball c r ∩ sphere ζ ρ) := fun h => he
@@ -448,10 +474,6 @@ theorem exists_tendsto_nhdsWithin_ball_inter_sphere (hζ : dist ζ c = r)
         (isClosed_closedBall.inter isClosed_sphere) h)
     rw [mem_closure_iff_nhdsWithin_neBot, not_neBot] at hcl
     exact ⟨0, hcl ▸ tendsto_bot⟩
-  rcases (ball c r ∩ sphere ζ ρ).eq_empty_or_nonempty with h | ⟨z, hz⟩
-  · rw [h, nhdsWithin_empty]
-    exact ⟨0, tendsto_bot⟩
-  obtain ⟨hρ, -⟩ := pos_and_lt_two_mul_of_mem_ball_inter_sphere hζ hz
   have hr : 0 < r := by linarith
   have hφ0 := arccos_div_two_mul_pos hr hρr
   have hφπ2 := arccos_div_two_mul_lt_pi_div_two hρ hr
