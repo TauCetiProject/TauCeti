@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
 public import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
-import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 
 /-!
 # Smoothing operators with compact spatial support produce smooth functions
@@ -28,8 +27,6 @@ function.
 
 ## Main results
 
-* `TauCeti.Symbol.toDistr_quantizeSobolev_congr`: the Sobolev extension of `Op(a)` depends only on
-  the coefficient of `a`, not on the order it is assigned.
 * `TauCeti.Symbol.IsSmoothing.memSobolev_toDistr_quantizeSobolev`: for a smoothing symbol with
   compact spatial support, `Op(a) u ∈ H^t` for every `u ∈ H^s` and all real `s` and `t`.
 * `TauCeti.Symbol.IsSmoothing.exists_contDiff_quantizeSobolev`: `Op(a) u` is a smooth function.
@@ -53,31 +50,9 @@ namespace TauCeti
 
 namespace Symbol
 
-variable {n : ℕ} {m m' : ℝ}
+variable {n : ℕ} {m : ℝ}
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
   [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
-
-/-- **The Sobolev extension depends only on the coefficient.** If two symbols `a` and `b`, of
-possibly different orders `m` and `m'`, have the same coefficient and compact spatial support,
-then `Op(a) u` and `Op(b) u` are the same tempered distribution for every `u ∈ H^s`, although they
-are constructed as elements of the different spaces `H^{s - m}` and `H^{s - m'}`. -/
-theorem toDistr_quantizeSobolev_congr {a : Symbol n V W m} {b : Symbol n V W m'}
-    (h : a.coefficient = b.coefficient) (ha : a.HasCompactSpatialSupport)
-    (hb : b.HasCompactSpatialSupport) (s : ℝ) (u : H^{s}(CoordinateSpace n, V)) :
-    (a.quantizeSobolev ha s u).toDistr = (b.quantizeSobolev hb s u).toDistr := by
-  -- Both extensions, followed by the inclusion into `H^r` with `r = min (s - m) (s - m')`, agree
-  -- on Schwartz functions, hence everywhere.
-  have key :
-      BesselPotentialSpace.inclusion (min_le_left (s - m) (s - m')) ∘L a.quantizeSobolev ha s =
-        BesselPotentialSpace.inclusion (min_le_right (s - m) (s - m')) ∘L
-          b.quantizeSobolev hb s :=
-    BesselPotentialSpace.continuousLinearMap_ext ENNReal.ofNat_ne_top fun v ↦
-      BesselPotentialSpace.ext <| by
-        ext φ
-        simp only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion,
-          toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, h]
-  simpa only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion] using
-    congrArg (fun T ↦ (T u).toDistr) key
 
 /-- **Smoothing operators gain every order of regularity.** For a smoothing symbol `a` with compact
 spatial support, the quantization `Op(a) u` of any `u ∈ H^s` lies in `H^t` for every real `t`. -/

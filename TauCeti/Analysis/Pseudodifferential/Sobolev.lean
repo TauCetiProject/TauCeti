@@ -12,6 +12,7 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.Continuous
 import TauCeti.Analysis.Fourier.Parametric
+import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.MeasureTheory.Integral.SchurTest
 
@@ -87,6 +88,8 @@ families of operators.
 * `TauCeti.Symbol.quantizeSobolev`: the bounded operator `H^s → H^{s - m}`, with
   `TauCeti.Symbol.toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply` identifying its values
   on Schwartz functions.
+* `TauCeti.Symbol.toDistr_quantizeSobolev_congr`: the Sobolev extension of `Op(a)` depends only on
+  the coefficient of `a`, not on the order it is assigned.
 * `TauCeti.Symbol.toDistr_postcomp_comp_comp_postcomp_toBesselPotentialSpaceCLM_apply`: Sobolev
   extensions of quantizations are compatible with isomorphisms of the fibres.
 * `TauCeti.Symbol.exists_quantizeSobolev`: the mapping property for finite-dimensional normed
@@ -767,6 +770,28 @@ theorem toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply
     Lp.toTemperedDistribution_apply]
   exact integral_congr_ae ((ha.memLp_quantizeSchwartzValue u 2).coeFn_toLp.mono fun x hx ↦ by
     simp only [hx])
+
+/-- **The Sobolev extension depends only on the coefficient.** If two symbols `a` and `b`, of
+possibly different orders `m` and `m'`, have the same coefficient and compact spatial support,
+then `Op(a) u` and `Op(b) u` are the same tempered distribution for every `u ∈ H^s`, although they
+are constructed as elements of the different spaces `H^{s - m}` and `H^{s - m'}`. -/
+theorem toDistr_quantizeSobolev_congr {m' : ℝ} {b : Symbol n V W m'}
+    (h : a.coefficient = b.coefficient) (ha : a.HasCompactSpatialSupport)
+    (hb : b.HasCompactSpatialSupport) (s : ℝ) (u : H^{s}(CoordinateSpace n, V)) :
+    (a.quantizeSobolev ha s u).toDistr = (b.quantizeSobolev hb s u).toDistr := by
+  -- Both extensions, followed by the inclusion into `H^r` with `r = min (s - m) (s - m')`, agree
+  -- on Schwartz functions, hence everywhere.
+  have key :
+      BesselPotentialSpace.inclusion (min_le_left (s - m) (s - m')) ∘L a.quantizeSobolev ha s =
+        BesselPotentialSpace.inclusion (min_le_right (s - m) (s - m')) ∘L
+          b.quantizeSobolev hb s :=
+    BesselPotentialSpace.continuousLinearMap_ext ENNReal.ofNat_ne_top fun v ↦
+      BesselPotentialSpace.ext <| by
+        ext φ
+        simp only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion,
+          toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, h]
+  simpa only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion] using
+    congrArg (fun T ↦ (T u).toDistr) key
 
 /-- The operator norm of `Op(a) : H^s → H^{s - m}` is at most any constant of the Sobolev
 estimate on the Fourier side. -/

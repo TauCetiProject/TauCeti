@@ -14,7 +14,6 @@ import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
-import TauCeti.Analysis.Fourier.Continuous
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Lp
 
@@ -407,14 +406,6 @@ private theorem MemSobolev.norm_iteratedFDeriv_fourierInv_le {s : ℝ} {j : ℕ}
         gcongr
         exact hf.integral_norm_pow_mul_norm_le hs hv
 
-/-- If the Fourier transform of `u ∈ L²` is an `L¹` function `v`, then every continuous
-representative of `u` is the inverse Fourier transform `𝓕⁻ v`. -/
-private theorem eq_fourierInv_of_ae_eq {u : Lp F 2 (volume : Measure E)}
-    {v : Lp F 1 (volume : Measure E)} (hv : 𝓕 (u : 𝓢'(E, F)) = v) {g : E → F}
-    (hg : Continuous g) (hug : u =ᵐ[volume] g) : g = 𝓕⁻ (v : E → F) :=
-  (hg.ae_eq_iff_eq volume (L1.integrable_coeFn v).continuous_fourierInv).1
-    (hug.symm.trans (Lp.ae_eq_fourierInv_of_fourier_eq hv))
-
 /-- **Sobolev embedding into `C^k`.** A continuous representative `g` of an `L²` function in the
 Bessel-potential space `H^s` with `s > k + dim E / 2` is `k` times continuously differentiable.
 Such a representative exists by `MemSobolev.exists_zeroAtInftyContinuousMap_ae_eq`. -/
@@ -422,7 +413,7 @@ theorem MemSobolev.contDiff_of_ae_eq {s : ℝ} {k : ℕ} (hs : finrank ℝ E < 2
     {u : Lp F 2 (volume : Measure E)} (hu : MemSobolev s 2 (u : 𝓢'(E, F))) {g : E → F}
     (hg : Continuous g) (hug : u =ᵐ[volume] g) : ContDiff ℝ k g := by
   obtain ⟨v, hv⟩ := hu.fourier_memL1 (by linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)])
-  rw [eq_fourierInv_of_ae_eq hv hg hug]
+  rw [Lp.eq_fourierInv_of_ae_eq hv hg hug]
   exact hu.contDiff_fourierInv hs hv
 
 /-- **Sobolev embedding into `C^k`.** An `L²` function on `E` lying in the Bessel-potential space
@@ -458,7 +449,7 @@ theorem MemSobolev.tendsto_iteratedFDeriv_cocompact_of_ae_eq {s : ℝ} {j : ℕ}
     (hug : u =ᵐ[volume] g) :
     Tendsto (iteratedFDeriv ℝ j g) (cocompact E) (𝓝 0) := by
   obtain ⟨v, hv⟩ := hu.fourier_memL1 (by linarith [(Nat.cast_nonneg j : (0 : ℝ) ≤ j)])
-  rw [eq_fourierInv_of_ae_eq hv hg hug, hu.iteratedFDeriv_fourierInv hs hv]
+  rw [Lp.eq_fourierInv_of_ae_eq hv hg hug, hu.iteratedFDeriv_fourierInv hs hv]
   exact (tendsto_integral_exp_inner_smul_cocompact _).congr fun w => (Real.fourier_eq _ w).symm
 
 /-- **The quantitative Sobolev embedding `H^s ⊆ C^k`, `s > k + n / 2`.** There is a constant `C`,
@@ -478,7 +469,7 @@ theorem exists_norm_iteratedFDeriv_le_mul_norm_toBesselPotentialSpace {s : ℝ} 
     have hj' : (j : ℝ) ≤ k := by exact_mod_cast hj
     linarith
   obtain ⟨v, hv⟩ := hu.fourier_memL1 (by linarith [(Nat.cast_nonneg j : (0 : ℝ) ≤ j)])
-  rw [eq_fourierInv_of_ae_eq hv hg hug]
+  rw [Lp.eq_fourierInv_of_ae_eq hv hg hug]
   refine (hu.norm_iteratedFDeriv_fourierInv_le hsj hv x).trans ?_
   gcongr
   exact Finset.single_le_sum (fun i _ => hc i) (Finset.mem_range.2 (Nat.lt_succ_of_le hj))
