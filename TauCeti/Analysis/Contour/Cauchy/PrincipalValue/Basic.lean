@@ -704,13 +704,17 @@ theorem HasCauchyPVAt.const_mul_curve {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ �
     filter_upwards with ε
     exact intervalIntegral.integral_congr fun t _ => (truncated_const_mul_curve_eq hc ε t).symm
 
-/-- Existence form of `HasCauchyPVAt.const_mul_curve`: nonzero scaling of the curve and excision
-point preserves existence of a single-point Cauchy principal value. -/
+/-- Existence form of `HasCauchyPVAt.const_mul_curve`: scaling of the curve and excision point by
+any complex number preserves existence of a single-point Cauchy principal value (for `c = 0` the
+rescaled integrand is zero). -/
 theorem CauchyPVExistsAt.const_mul_curve {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ : ℂ}
-    (h : CauchyPVExistsAt γ a b f z₀) {c : ℂ} (hc : c ≠ 0) :
-    CauchyPVExistsAt (fun t => c * γ t) a b (fun z => c⁻¹ * f (c⁻¹ * z)) (c * z₀) :=
-  let ⟨_, hL⟩ := cauchyPVExistsAt_iff.mp h
-  CauchyPVExistsAt.intro (hL.const_mul_curve hc)
+    (h : CauchyPVExistsAt γ a b f z₀) (c : ℂ) :
+    CauchyPVExistsAt (fun t => c * γ t) a b (fun z => c⁻¹ * f (c⁻¹ * z)) (c * z₀) := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · -- for `c = 0` the scaled integrand vanishes identically
+    simpa using (CauchyPVExistsAt.zero (γ := fun _ => 0) (a := a) (b := b) (z₀ := 0))
+  · let ⟨_, hL⟩ := cauchyPVExistsAt_iff.mp h
+    exact CauchyPVExistsAt.intro (hL.const_mul_curve hc)
 
 /-- Value form of `HasCauchyPVAt.const_mul_curve`: simultaneous nonzero scaling of the curve and the
 excision point preserves the raw single-point Cauchy principal *value*, with no existence

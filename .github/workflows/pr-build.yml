@@ -1549,15 +1549,13 @@ jobs:
           fi
           post_status scope "$sc_state" "$sc_desc"
 
-          # The durable intents are retried by retry-ci-status.yml. Optional
-          # scope/bump status delivery must not retain the reserved compiler.
-          status_wait=600
-          if [ "${{ env.IS_BATCH }}" = "true" ]; then status_wait=0; fi
-          CI_STATUS_MAX_WAIT="$status_wait" python3 gate/scripts/ci_status.py resume "$RUNNER_TEMP/tauceti-status-intents" || post_fail=1
+          # These are required queue verdicts. Keep bounded retries for transient
+          # GitHub failures, and leave undelivered intents to the retry workflow.
+          CI_STATUS_MAX_WAIT=600 python3 gate/scripts/ci_status.py resume "$RUNNER_TEMP/tauceti-status-intents" || post_fail=1
 
           # A status we could not post leaves the commit in the wedged state described above, so
           # fail the job loudly. This runs only after all three have been attempted.
-          if [ "$post_fail" = 1 ] && [ "${{ env.IS_BATCH }}" != "true" ]; then
+          if [ "$post_fail" = 1 ]; then
             echo "::error::status publication incomplete; retained intents will retry without rebuilding"
             exit 1
           fi

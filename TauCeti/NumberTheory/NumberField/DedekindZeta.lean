@@ -155,7 +155,7 @@ theorem exists_differentiableOn_eq_dedekindZeta_sub : ∃ G : ℂ → ℂ,
     DifferentiableOn ℂ G {s | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re} ∧
       ∀ s : ℂ, 1 < s.re → G s = dedekindZeta K s - dedekindZeta_residue K / (s - 1) := by
   obtain ⟨G, hG, hGζ⟩ := TauCeti.LSeries.exists_differentiableOn_eq_LSeries_sub_div_of_isBigO _ _
-    (sub_le_self _ (by positivity)) (isBigO_sum_Icc_dedekindZetaCoeff_sub K)
+    (isBigO_sum_Icc_dedekindZetaCoeff_sub K)
     fun s hs ↦ (LSeriesSummable_dedekindZetaCoeff_iff K).mpr hs
   exact ⟨G, hG, fun s hs ↦ by rw [hGζ s hs, dedekindZeta_eq_LSeries_dedekindZetaCoeff]⟩
 

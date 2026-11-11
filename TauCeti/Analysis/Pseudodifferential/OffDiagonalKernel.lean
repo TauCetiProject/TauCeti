@@ -40,12 +40,10 @@ convergent kernel itself.
   `(-1)^N ‖x - y‖^(-2N) K_{Δ_ξ^N a}(x, y)` for every `N` with `m - 2N < -n`.
 * `TauCeti.Symbol.quantizeSchwartzValue_eq_integral_offDiagonalKernel`: **kernel representation**,
   `Op(a) u (x) = ∫ K(x, y) u(y) dy` for compactly supported `u` vanishing near `x`.
-* `TauCeti.Symbol.continuousOn_offDiagonalKernel` and
-  `TauCeti.Symbol.contDiffOn_offDiagonalKernel`: the kernel is continuous, and indeed smooth, off
-  the diagonal, since `K_{Δ_ξ^N a}` is `C^k` once `m - 2N + k < -n`
-  (`TauCeti.Symbol.contDiff_quantizationKernel`). In particular the absolutely convergent kernel of
-  a symbol of order `m < -n` is smooth off the diagonal
-  (`TauCeti.Symbol.contDiffOn_quantizationKernel`).
+* `TauCeti.Symbol.continuousOn_offDiagonalKernel`, `TauCeti.Symbol.contDiffOn_offDiagonalKernel`:
+  the kernel is continuous, and indeed smooth, off the diagonal.
+* `TauCeti.Symbol.contDiffOn_quantizationKernel`: the absolutely convergent kernel of a symbol of
+  order `m < -n` is smooth off the diagonal.
 * `TauCeti.Symbol.eqOn_offDiagonalKernel_of_forall`: **uniqueness**, a kernel continuous away
   from `x` that represents `u ↦ Op(a) u (x)` on compactly supported Schwartz functions vanishing
   near `x` is the off-diagonal kernel there.
@@ -196,21 +194,25 @@ theorem continuousOn_offDiagonalKernel (a : Symbol n V W m) :
       pow_ne_zero _ (norm_ne_zero_iff.2 (sub_ne_zero.2 hp))
   exact hs.smul hK.continuousOn
 
-/-- **Smoothness off the diagonal.** The off-diagonal kernel is smooth on `{(x, y) | x ≠ y}`. -/
+/-- **Smoothness off the diagonal.** The off-diagonal kernel is smooth on `{(x, y) | x ≠ y}`: for
+each `k`, choosing `N` with `m - 2N + k < -n` makes the kernel of `Δ_ξ^N a` of class `C^k`
+(`TauCeti.Symbol.contDiff_quantizationKernel`). -/
 theorem contDiffOn_offDiagonalKernel (a : Symbol n V W m) :
     ContDiffOn ℝ ∞ (Function.uncurry (offDiagonalKernel a)) {p | p.1 ≠ p.2} := by
   refine contDiffOn_infty.2 fun k ↦ ?_
-  obtain ⟨N, hN⟩ := exists_nat_gt ((m + k + n) / 2)
-  have hNk : m - 2 * N + k < -n := by linarith
-  have hN' : m - 2 * N < -n := by linarith [(k.cast_nonneg : (0 : ℝ) ≤ k)]
-  have hw : ContDiffOn ℝ k (fun p : CoordinateSpace n × CoordinateSpace n ↦
-      (-1) ^ N / ‖p.1 - p.2‖ ^ (2 * N)) {p | p.1 ≠ p.2} := by
+  have hN := sub_two_mul_floor_lt (m + k) n
+  set N := ⌊(m + k + n) / 2⌋₊ + 1
+  have hk : (0 : ℝ) ≤ k := Nat.cast_nonneg k
+  have hd : ContDiff ℝ k fun p : CoordinateSpace n × CoordinateSpace n ↦ ‖p.1 - p.2‖ ^ (2 * N) := by
     simp_rw [pow_mul]
-    exact contDiffOn_const.div
-      (((contDiff_norm_sq ℝ).comp (contDiff_fst.sub contDiff_snd)).pow N).contDiffOn
-      fun p hp ↦ pow_ne_zero _ (pow_ne_zero _ (norm_ne_zero_iff.2 (sub_ne_zero.2 hp)))
-  exact (hw.smul ((frequencyLaplacianPow N a).contDiff_quantizationKernel k hNk).contDiffOn).congr
-    fun _ hp ↦ offDiagonalKernel_eq a hN' hp
+    exact ((contDiff_norm_sq ℝ).comp (contDiff_fst.sub contDiff_snd)).pow N
+  have hs : ContDiffOn ℝ k (fun p : CoordinateSpace n × CoordinateSpace n ↦
+      (-1) ^ N / ‖p.1 - p.2‖ ^ (2 * N)) {p | p.1 ≠ p.2} :=
+    contDiffOn_const.div hd.contDiffOn fun p hp ↦
+      pow_ne_zero _ (norm_ne_zero_iff.2 (sub_ne_zero.2 hp))
+  have hK := ((frequencyLaplacianPow N a).contDiff_quantizationKernel k
+    (by linarith)).contDiffOn (s := {p | p.1 ≠ p.2})
+  exact (hs.smul hK).congr fun p hp ↦ offDiagonalKernel_eq a (by linarith) hp
 
 /-- **Smoothness off the diagonal for symbols of order `m < -n`.** The absolutely convergent kernel
 `K_a` is smooth on `{(x, y) | x ≠ y}`. -/

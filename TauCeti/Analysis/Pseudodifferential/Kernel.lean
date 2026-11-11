@@ -7,13 +7,14 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Quantization
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
+import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
+import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
-import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
-import Mathlib.Analysis.Calculus.ParametricIntegral
-import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
+import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 
 /-!
@@ -57,6 +58,11 @@ the diagonal.
   `TauCeti.Symbol.quantizationKernel_frequencyDeriv`: for a symbol `a ∈ S^m_{1,0}` with `m < -n`
   the frequency slices are integrable, the kernel is continuous, and the kernel of `∂_{ξ_j} a` is
   `-i (x - y)_j K_a(x, y)`.
+* `TauCeti.contDiff_quantizationKernel_of_bound` and `TauCeti.Symbol.contDiff_quantizationKernel`:
+  **smoothness**, the kernel of a coefficient of order `m` is `C^k` when `m + k < -n`; each
+  derivative of the integrand in `(x, y)` costs one power of the frequency.
+* `TauCeti.Symbol.IsSmoothing.contDiff_quantizationKernel`: the kernel of a smoothing symbol is
+  smooth.
 * `TauCeti.Symbol.quantizationKernel_frequencyLaplacian` and
   `TauCeti.Symbol.quantizationKernel_frequencyLaplacianPow_add`: for `m < -n` the kernel of the
   frequency Laplacian `Δ_ξ a` is `-‖x - y‖² K_a(x, y)`, and iterating, the kernel of
@@ -67,11 +73,6 @@ the diagonal.
   controlled by the frequency integrals of the derivatives: if `∫ ‖a(x, ξ)‖ dξ ≤ A` and
   `∫ ‖∂_{ξ_j}^N a(x, ξ)‖ dξ ≤ A R^N` for every `j`, then
   `(1 + ‖x - y‖ / R)^N ‖K_a(x, y)‖ ≤ 2^N (1 + √n^N) (2π)⁻ⁿ A`.
-* `TauCeti.Symbol.contDiff_quantizationKernel` and
-  `TauCeti.Symbol.IsSmoothing.contDiff_quantizationKernel`: **regularity of the kernel**. For a
-  symbol of order `m` with `m + k < -n` the kernel is `C^k` in `(x, y)`, since every derivative of
-  `K_a` is the kernel of a symbol of one order higher, a position derivative of `a` or `a` times
-  `i ⟪ξ, ·⟫`. The kernel of a smoothing symbol is therefore smooth.
 
 ## References
 
@@ -200,6 +201,147 @@ theorem continuous_quantizationKernel (ha : Continuous a) {m : ℝ} (hm : m < -f
         exact hC p.1 hp _)
     (hweight.const_mul C)
     (ae_of_all _ fun ζ ↦ (hcont.comp (continuous_id.prodMk continuous_const)).continuousAt)
+
+/-- The phase `(x, y) ↦ 2πi ⟪ζ, x - y⟫` of the kernel integrand at the frequency `ζ`, a real-linear
+map to `ℂ` of norm at most `2 ‖2πζ‖`. -/
+private def kernelPhase (ζ : E) : E × E →L[ℝ] ℂ :=
+  ((2 * π : ℂ) * Complex.I) • (Complex.ofRealCLM ∘L (innerSL ℝ ζ) ∘L
+    (ContinuousLinearMap.fst ℝ E E - ContinuousLinearMap.snd ℝ E E))
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+private theorem kernelPhase_apply (ζ : E) (p : E × E) :
+    kernelPhase ζ p = ((2 * π * ⟪ζ, p.1 - p.2⟫ : ℝ) : ℂ) * Complex.I := by
+  simp [kernelPhase, inner_sub_right]
+  ring
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+private theorem exp_kernelPhase (ζ : E) (p : E × E) :
+    Complex.exp (kernelPhase ζ p) = 𝐞 ⟪ζ, p.1 - p.2⟫ := by
+  rw [kernelPhase_apply, Real.fourierChar_apply]
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+private theorem norm_kernelPhase_le (ζ : E) : ‖kernelPhase ζ‖ ≤ 2 * ‖(2 * π) • ζ‖ := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun p ↦ ?_
+  have hp : ‖p.1 - p.2‖ ≤ 2 * ‖p‖ := (norm_sub_le _ _).trans (by
+    linarith [norm_fst_le p, norm_snd_le p])
+  calc ‖kernelPhase ζ p‖ = 2 * π * |⟪ζ, p.1 - p.2⟫| := by
+        simp [kernelPhase_apply, abs_of_pos pi_pos]
+    _ ≤ 2 * π * (‖ζ‖ * ‖p.1 - p.2‖) := by gcongr; exact abs_real_inner_le_norm _ _
+    _ ≤ 2 * π * (‖ζ‖ * (2 * ‖p‖)) := by gcongr
+    _ = 2 * ‖(2 * π) • ζ‖ * ‖p‖ := by
+        rw [norm_smul, Real.norm_of_nonneg two_pi_pos.le]
+        ring
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- **Leibniz bound on the kernel integrand.** If the position derivatives of order at most `k` of
+`a` satisfy `‖D_x^i a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m` for `x ∈ s`, then the `i`-th derivative in `p = (x, y)`
+of `exp(2πi ⟪ζ, x - y⟫) a(x, 2πζ)` is at most `C (1 + 2 ‖2πζ‖) ^ i ⟨2πζ⟩ ^ m` for `x ∈ s`. -/
+private theorem norm_iteratedFDeriv_kernelIntegrand_le {a : E × E → V →L[ℂ] W} {k : ℕ}
+    {m C : ℝ} (ha : ContDiff ℝ k a) {s : Set E}
+    (hC : ∀ i ≤ k, ∀ x ∈ s, ∀ ξ,
+      ‖iteratedFDeriv ℝ i (fun y ↦ a (y, ξ)) x‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
+    (ζ : E) {p : E × E} (hp : p.1 ∈ s) {i : ℕ} (hi : i ≤ k) :
+    ‖iteratedFDeriv ℝ i (fun p ↦ Complex.exp (kernelPhase ζ p) • a (p.1, (2 * π) • ζ)) p‖ ≤
+      C * (1 + 2 * ‖(2 * π) • ζ‖) ^ i * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) := by
+  set ξ := (2 * π) • ζ
+  have he : ContDiff ℝ i fun p ↦ Complex.exp (kernelPhase ζ p) :=
+    (kernelPhase ζ).contDiff.cexp
+  have hg : ContDiff ℝ i fun y : E ↦ a (y, ξ) :=
+    (ha.of_le (mod_cast hi)).comp (contDiff_id.prodMk contDiff_const)
+  -- The `j`-th derivative of the phase factor is at most `(2 ‖ξ‖) ^ j`.
+  have he_le (j : ℕ) : ‖iteratedFDeriv ℝ j (fun p ↦ Complex.exp (kernelPhase ζ p)) p‖ ≤
+      (2 * ‖ξ‖) ^ j := by
+    refine ((kernelPhase ζ).norm_iteratedFDeriv_cexp_comp_le j p).trans ?_
+    rw [exp_kernelPhase, Circle.norm_coe, one_mul]
+    exact pow_le_pow_left₀ (norm_nonneg _) (norm_kernelPhase_le ζ) j
+  -- The `r`-th derivative of the coefficient factor is at most `C ⟨ξ⟩ ^ m`.
+  have hg_le (r : ℕ) (hr : r ≤ i) : ‖iteratedFDeriv ℝ r (fun p : E × E ↦ a (p.1, ξ)) p‖ ≤
+      C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+    have hcomp := (ContinuousLinearMap.fst ℝ E E).iteratedFDeriv_comp_right hg p
+      (i := r) (mod_cast hr)
+    simp only [Function.comp_def, ContinuousLinearMap.coe_fst'] at hcomp
+    rw [hcomp]
+    refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
+    rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+    refine (mul_le_of_le_one_right (norm_nonneg _) (pow_le_one₀ (norm_nonneg _)
+      (ContinuousLinearMap.norm_fst_le ℝ E E))).trans ?_
+    exact hC r (hr.trans hi) p.1 hp ξ
+  refine (norm_iteratedFDeriv_smul_le he (hg.comp contDiff_fst) p le_rfl).trans ?_
+  calc ∑ j ∈ Finset.range (i + 1), (i.choose j : ℝ) *
+        ‖iteratedFDeriv ℝ j (fun p ↦ Complex.exp (kernelPhase ζ p)) p‖ *
+        ‖iteratedFDeriv ℝ (i - j) (fun p : E × E ↦ a (p.1, ξ)) p‖
+      ≤ ∑ j ∈ Finset.range (i + 1), (i.choose j : ℝ) * (2 * ‖ξ‖) ^ j *
+        (C * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by
+        gcongr with j hj
+        · exact he_le j
+        · exact hg_le (i - j) (Nat.sub_le i j)
+    _ = C * (1 + 2 * ‖ξ‖) ^ i * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+        rw [← Finset.sum_mul, show 1 + 2 * ‖ξ‖ = 2 * ‖ξ‖ + 1 by ring, add_pow]
+        simp only [one_pow, mul_one]
+        rw [Finset.sum_congr rfl fun j _ ↦ mul_comm ((i.choose j : ℝ)) ((2 * ‖ξ‖) ^ j)]
+        ring
+
+/-- **Smoothness of the kernel.** Let `a` be a `C^k` coefficient whose position derivatives of
+order at most `k` satisfy `‖D_x^i a(x, ξ)‖ ≤ C_K ⟨ξ⟩ ^ m`, uniformly for `x` in each compact set
+`K`, with `m + k < -n`. Then the kernel `(x, y) ↦ K_a(x, y)` is `C^k`: each derivative of the
+integrand `exp(2πi ⟪ζ, x - y⟫) a(x, 2πζ)` in `(x, y)` costs at most one power of `⟨2πζ⟩`. -/
+theorem contDiff_quantizationKernel_of_bound {a : E × E → V →L[ℂ] W} {k : ℕ} {m : ℝ}
+    (ha : ContDiff ℝ k a) (hm : m + k < -finrank ℝ E)
+    (hC : ∀ K : Set E, IsCompact K → ∃ C, ∀ i ≤ k, ∀ x ∈ K, ∀ ξ,
+      ‖iteratedFDeriv ℝ i (fun y ↦ a (y, ξ)) x‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) :
+    ContDiff ℝ k (Function.uncurry (quantizationKernel a)) := by
+  -- Near each point `p₀`, Mathlib's `hasFTaylorSeriesUpToOn_integral_of_le_bound` differentiates
+  -- under the integral sign `k` times. Its hypotheses are measurability of the derivatives of the
+  -- integrand in the frequency, the Leibniz bound `C (1 + 2 ‖2πζ‖) ^ i ⟨2πζ⟩ ^ m` on the `i`-th
+  -- derivative for positions near `p₀`, and integrability of these bounds since `m + k < -n`.
+  -- The integrand `F p ζ` as a jointly `C^k` function of the kernel variables `p = (x, y)` and the
+  -- frequency `ζ`.
+  obtain ⟨F, hF⟩ : ∃ F : E × E → E → V →L[ℂ] W,
+      F = fun p ζ ↦ Complex.exp (kernelPhase ζ p) • a (p.1, (2 * π) • ζ) := ⟨_, rfl⟩
+  have hK : Function.uncurry (quantizationKernel a) = fun p ↦ ∫ ζ, F p ζ := by
+    funext p
+    simp only [Function.uncurry_def, quantizationKernel_def, hF, exp_kernelPhase, Circle.smul_def]
+  have hΦ : ContDiff ℝ k fun q : (E × E) × E ↦ F q.1 q.2 := by
+    have hphase : ContDiff ℝ k fun q : (E × E) × E ↦ (2 * π * ⟪q.2, q.1.1 - q.1.2⟫ : ℝ) :=
+      contDiff_const.mul (contDiff_snd.inner ℝ
+        ((contDiff_fst.comp contDiff_fst).sub (contDiff_snd.comp contDiff_fst)))
+    simp only [hF, kernelPhase_apply]
+    exact ((Complex.ofRealCLM.contDiff.comp hphase).mul contDiff_const).cexp.smul
+      (ha.comp ((contDiff_fst.comp contDiff_fst).prodMk (contDiff_snd.const_smul _)))
+  have hslice (ζ : E) : ContDiff ℝ k fun p ↦ F p ζ :=
+    hΦ.comp (contDiff_id.prodMk contDiff_const)
+  rw [hK, contDiff_iff_contDiffAt]
+  intro p₀
+  obtain ⟨C, hC⟩ := hC _ (isCompact_closedBall p₀.1 1)
+  have hs : IsOpen (Prod.fst ⁻¹' Metric.ball p₀.1 1 : Set (E × E)) :=
+    Metric.isOpen_ball.preimage continuous_fst
+  have hT := hasFTaylorSeriesUpToOn_integral_of_le_bound (μ := volume) (F := F)
+    (s := Prod.fst ⁻¹' Metric.ball p₀.1 1) (n := (k : ℕ∞))
+    (p := fun p ζ ↦ ftaylorSeries ℝ (F · ζ) p)
+    (bound := fun i ζ ↦ C * (1 + 2 * ‖(2 * π) • ζ‖) ^ i * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2))
+    hs (fun p _ i hi ↦ ?_) (ae_of_all _ fun ζ p hp i hi ↦ ?_) (fun i hi ↦ ?_)
+    (ae_of_all _ fun ζ ↦ (contDiff_iff_ftaylorSeries.1 (hslice ζ)).hasFTaylorSeriesUpToOn _)
+  · exact hT.contDiffOn.contDiffAt (hs.mem_nhds (Metric.mem_ball_self one_pos))
+  · -- measurability: the derivatives of the slices are continuous in the frequency
+    have hi' : i ≤ k := by exact_mod_cast hi
+    -- Instance synthesis does not find the pseudo-metrizable structure of these multilinear maps
+    -- on the product `E × E`, although their topology is the one of their norm.
+    have : TopologicalSpace.PseudoMetrizableSpace
+        (ContinuousMultilinearMap ℝ (fun _ : Fin i ↦ E × E) (V →L[ℂ] W)) :=
+      @PseudoEMetricSpace.pseudoMetrizableSpace
+        (ContinuousMultilinearMap ℝ (fun _ : Fin i ↦ E × E) (V →L[ℂ] W)) _
+    simp only [ftaylorSeries, _root_.ContDiff.iteratedFDeriv_prod_left hΦ i (mod_cast hi')]
+    exact ((ContinuousMultilinearMap.compContinuousLinearMapL _).continuous.comp
+      ((hΦ.continuous_iteratedFDeriv (mod_cast hi')).comp
+        (continuous_const.prodMk continuous_id))).aestronglyMeasurable
+  · subst hF
+    exact norm_iteratedFDeriv_kernelIntegrand_le ha (fun i hi ↦ hC i hi) ζ
+      (Metric.ball_subset_closedBall hp) (by exact_mod_cast hi)
+  · -- integrability: `(1 + 2 ‖ξ‖) ^ i ⟨ξ⟩ ^ m` is integrable since `m + i < -n`
+    have hi' : (i : ℝ) ≤ k := by exact_mod_cast hi
+    simpa only [neg_neg, mul_assoc] using
+      ((integrable_one_add_mul_norm_pow_mul_rpow_neg_one_add_norm_sq (V := E) volume zero_le_two i
+        (r := -m) (by linarith)).const_mul C).comp_smul two_pi_pos.ne'
 
 /-- **Kernel representation.** If the frequency slice `ξ ↦ a(x, ξ)` is integrable, the
 quantization of a Schwartz function is the integral operator with kernel `K_a`:
@@ -372,6 +514,39 @@ theorem quantizationKernel_frequencyDeriv (a : Symbol n V W m) (hm : m < -n) (j 
   rw [h, smul_smul]
   simp
 
+/-- **Smoothness of the kernel of a symbol.** The kernel of a symbol of order `m` is `C^k` as soon
+as `m + k < -n`. -/
+theorem contDiff_quantizationKernel (b : Symbol n V W m) (k : ℕ) (hk : m + k < -n) :
+    ContDiff ℝ k (Function.uncurry (quantizationKernel b.coefficient)) := by
+  refine contDiff_quantizationKernel_of_bound (b.contDiff_coefficient.of_le (mod_cast le_top))
+    (by simpa using hk) fun K hK ↦ ?_
+  choose C hC0 hC using fun α : List (Fin n) ↦ b.exists_bound K hK α []
+  refine ⟨∑ i ∈ Finset.range (k + 1), ∑ r : Fin i → Fin n, C (List.ofFn r),
+    fun i hi x hx ξ ↦ ?_⟩
+  have hslice : ContDiff ℝ i fun y ↦ b.coefficient (y, ξ) :=
+    (b.contDiff_coefficient_slice ξ).of_le (mod_cast le_top)
+  refine (norm_iteratedFDeriv_le_sum_coordinateDeriv hslice x).trans ?_
+  calc ∑ r : Fin i → Fin n, ‖coordinateDeriv (List.ofFn r) (fun y ↦ b.coefficient (y, ξ)) x‖
+      ≤ ∑ r : Fin i → Fin n, C (List.ofFn r) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) :=
+        Finset.sum_le_sum fun r _ ↦ by simpa [mixedDeriv_def] using hC (List.ofFn r) x hx ξ
+    _ = (∑ r : Fin i → Fin n, C (List.ofFn r)) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+        rw [Finset.sum_mul]
+    _ ≤ (∑ i ∈ Finset.range (k + 1), ∑ r : Fin i → Fin n, C (List.ofFn r)) *
+        (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+        gcongr
+        exact Finset.single_le_sum (f := fun i ↦ ∑ r : Fin i → Fin n, C (List.ofFn r))
+          (fun i _ ↦ Finset.sum_nonneg fun r _ ↦ hC0 _) (Finset.mem_range.2 (Nat.lt_succ_of_le hi))
+
+/-- **Smoothness of smoothing kernels.** The kernel of a smoothing symbol is smooth. -/
+theorem IsSmoothing.contDiff_quantizationKernel {a : Symbol n V W m} (ha : a.IsSmoothing) :
+    ContDiff ℝ ∞ (Function.uncurry (quantizationKernel a.coefficient)) := by
+  refine contDiff_infty.2 fun k ↦ ?_
+  obtain ⟨b, hb⟩ := isSmoothing_iff.1 ha (-n - k - 1)
+  rw [← hb]
+  exact b.contDiff_quantizationKernel k (by linarith)
+
+/-! ### The frequency Laplacian and multiplication by `‖x - y‖²` -/
+
 /-- **Kernel of the frequency Laplacian.** For a symbol of order `m < -n`,
 `K_{Δ_ξ a}(x, y) = -‖x - y‖² K_a(x, y)`. -/
 theorem quantizationKernel_frequencyLaplacian (a : Symbol n V W m) (hm : m < -n)
@@ -490,231 +665,6 @@ theorem one_add_norm_div_pow_mul_norm_quantizationKernel_le (a : Symbol n V W m)
     _ = 2 ^ N * (K + (‖x - y‖ / R) ^ N * K) := by ring
     _ ≤ 2 ^ N * (c * A + √n ^ N * (c * A)) := by gcongr
     _ = 2 ^ N * (1 + √n ^ N) * c * A := by ring
-
-/-! ### Regularity of the kernel -/
-
-/-- The coefficient whose kernel is the derivative of `K_a` in the direction `v = (h, h')`:
-`i ⟪ξ, h - h'⟫ a(x, ξ) + ∂ₓ a(x, ξ) h`, a symbol of order `1 + m`. -/
-private def kernelDeriv (a : Symbol n V W m) (v : CoordinateSpace n × CoordinateSpace n) :
-    Symbol n V W (1 + m) :=
-  Complex.I • (ofInner (v.1 - v.2)).comp a +
-    inclusion (by linarith) (∑ j, (v.1 j : ℂ) • spatialDeriv j a)
-
-private theorem coefficient_kernelDeriv (a : Symbol n V W m)
-    (v : CoordinateSpace n × CoordinateSpace n) (x ξ : CoordinateSpace n) :
-    (kernelDeriv a v).coefficient (x, ξ) =
-      (Complex.I * ⟪ξ, v.1 - v.2⟫) • a.coefficient (x, ξ) +
-        fderiv ℝ (fun y ↦ a.coefficient (y, ξ)) x v.1 := by
-  rw [ContinuousLinearMap.apply_eq_sum_single _ v.1]
-  simp only [kernelDeriv, coefficient_add, coefficient_smul, coefficient_comp,
-    coefficient_ofInner, coefficient_inclusion, coefficient_sum, fderiv_coefficient_single,
-    Pi.add_apply, Pi.smul_apply, Finset.sum_apply, ContinuousLinearMap.smul_comp,
-    ContinuousLinearMap.id_comp]
-  rw [mul_smul]
-  congr 1
-
-/-- The kernel integrand `𝐞 ⟪ζ, x - y⟫ a(x, 2πζ)` as a function of `p = (x, y)`. -/
-private def kernelIntegrand (a : Symbol n V W m) (ζ : CoordinateSpace n)
-    (p : CoordinateSpace n × CoordinateSpace n) : V →L[ℂ] W :=
-  𝐞 ⟪ζ, p.1 - p.2⟫ • a.coefficient (p.1, (2 * π) • ζ)
-
-/-- The derivative in `p = (x, y)` of the kernel integrand. -/
-private def kernelIntegrandFDeriv (a : Symbol n V W m) (ζ : CoordinateSpace n)
-    (p : CoordinateSpace n × CoordinateSpace n) :
-    CoordinateSpace n × CoordinateSpace n →L[ℝ] V →L[ℂ] W :=
-  (𝐞 ⟪ζ, p.1 - p.2⟫ : ℂ) • ((fderiv ℝ (fun y ↦ a.coefficient (y, (2 * π) • ζ)) p.1).comp
-      (ContinuousLinearMap.fst ℝ _ _)) +
-    ((ContinuousLinearMap.toSpanSingleton ℝ (2 * π * Complex.I * 𝐞 ⟪ζ, p.1 - p.2⟫)).comp
-        ((innerSL ℝ ζ).comp
-          (ContinuousLinearMap.fst ℝ _ _ - ContinuousLinearMap.snd ℝ _ _))).smulRight
-      (a.coefficient (p.1, (2 * π) • ζ))
-
-private theorem kernelIntegrandFDeriv_apply (a : Symbol n V W m) (ζ : CoordinateSpace n)
-    (p v : CoordinateSpace n × CoordinateSpace n) :
-    kernelIntegrandFDeriv a ζ p v =
-      𝐞 ⟪ζ, p.1 - p.2⟫ • (kernelDeriv a v).coefficient (p.1, (2 * π) • ζ) := by
-  rw [coefficient_kernelDeriv]
-  simp only [kernelIntegrandFDeriv, add_apply, smul_apply,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.smulRight_apply,
-    ContinuousLinearMap.toSpanSingleton_apply, innerSL_apply_apply, sub_apply,
-    ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd', Circle.smul_def, smul_add,
-    inner_smul_left]
-  rw [add_comm]
-  congr 1
-  simp only [smul_smul]
-  congr 1
-  simp only [Complex.real_smul, conj_trivial]
-  push_cast
-  ring
-
-private theorem hasFDerivAt_kernelIntegrand (a : Symbol n V W m) (ζ : CoordinateSpace n)
-    (p : CoordinateSpace n × CoordinateSpace n) :
-    HasFDerivAt (kernelIntegrand a ζ) (kernelIntegrandFDeriv a ζ p) p := by
-  have hg : HasFDerivAt (fun q : CoordinateSpace n × CoordinateSpace n ↦
-      a.coefficient (q.1, (2 * π) • ζ))
-      ((fderiv ℝ (fun y ↦ a.coefficient (y, (2 * π) • ζ)) p.1).comp
-        (ContinuousLinearMap.fst ℝ _ _)) p :=
-    (((a.contDiff_coefficient_slice _).differentiable (by simp) p.1).hasFDerivAt).comp p
-      (hasFDerivAt_fst)
-  have hL : HasFDerivAt (fun q : CoordinateSpace n × CoordinateSpace n ↦ ⟪ζ, q.1 - q.2⟫)
-      ((innerSL ℝ ζ).comp (ContinuousLinearMap.fst ℝ _ _ - ContinuousLinearMap.snd ℝ _ _)) p :=
-    ((innerSL ℝ ζ).comp (ContinuousLinearMap.fst ℝ _ _ - ContinuousLinearMap.snd ℝ _ _)).hasFDerivAt
-  have hc := (Real.hasDerivAt_fourierChar ⟪ζ, p.1 - p.2⟫).hasFDerivAt.comp p hL
-  convert hc.smul hg using 1
-  · funext q
-    simp [kernelIntegrand, Circle.smul_def]
-  · simp [kernelIntegrandFDeriv]
-
-/-- The constants of bounds `‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m` and `‖∂ₓ a(x, ξ)‖ ≤ C' ⟨ξ⟩ ^ m` on the values
-and position derivatives of a symbol at `x` are nonnegative. -/
-private theorem bound_constants_nonneg (a : Symbol n V W m) {x : CoordinateSpace n} {C C' : ℝ}
-    (hC : ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
-    (hC' : ∀ ξ, ‖fderiv ℝ (fun y ↦ a.coefficient (y, ξ)) x‖ ≤ C' * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) :
-    0 ≤ C ∧ 0 ≤ C' :=
-  ⟨nonneg_of_mul_nonneg_left ((norm_nonneg _).trans (hC 0)) (rpow_weight_pos _ _),
-    nonneg_of_mul_nonneg_left ((norm_nonneg (fderiv ℝ (fun y ↦ a.coefficient (y, 0)) x)).trans
-      (hC' 0)) (rpow_weight_pos _ _)⟩
-
-/-- The coefficient of `kernelDeriv a v` at `x` is bounded by `(C' + 2C) ⟨ξ⟩ ^ (m + 1) ‖v‖` when
-the values and position derivatives of `a` at `x` are bounded by `C ⟨ξ⟩ ^ m` and `C' ⟨ξ⟩ ^ m`. -/
-private theorem norm_coefficient_kernelDeriv_le (a : Symbol n V W m) {x : CoordinateSpace n}
-    {C C' : ℝ} (hC : ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
-    (hC' : ∀ ξ, ‖fderiv ℝ (fun y ↦ a.coefficient (y, ξ)) x‖ ≤ C' * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
-    (v : CoordinateSpace n × CoordinateSpace n) (ξ : CoordinateSpace n) :
-    ‖(kernelDeriv a v).coefficient (x, ξ)‖ ≤
-      (C' + 2 * C) * (1 + ‖ξ‖ ^ 2) ^ ((m + 1) / 2) * ‖v‖ := by
-  obtain ⟨hC0, hC'0⟩ := bound_constants_nonneg a hC hC'
-  set w := 1 + ‖ξ‖ ^ 2
-  have hw : w ^ (m / 2) ≤ w ^ ((m + 1) / 2) :=
-    Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖ξ‖]) (by linarith)
-  have hw' := one_add_norm_sq_rpow_mul_norm_le ξ m
-  have hv : ‖v.1 - v.2‖ ≤ 2 * ‖v‖ := by
-    linarith [norm_sub_le v.1 v.2, norm_fst_le v, norm_snd_le v]
-  rw [coefficient_kernelDeriv]
-  refine (norm_add_le _ _).trans ?_
-  have h₁ : ‖(Complex.I * ⟪ξ, v.1 - v.2⟫) • a.coefficient (x, ξ)‖ ≤
-      2 * C * w ^ ((m + 1) / 2) * ‖v‖ := by
-    rw [norm_smul, norm_mul, Complex.norm_I, one_mul, Complex.norm_real, Real.norm_eq_abs]
-    calc |⟪ξ, v.1 - v.2⟫| * ‖a.coefficient (x, ξ)‖
-        ≤ (‖ξ‖ * (2 * ‖v‖)) * (C * w ^ (m / 2)) := by
-          gcongr
-          · exact (abs_real_inner_le_norm _ _).trans (by gcongr)
-          · exact hC ξ
-      _ = 2 * C * (w ^ (m / 2) * ‖ξ‖) * ‖v‖ := by ring
-      _ ≤ 2 * C * w ^ ((m + 1) / 2) * ‖v‖ := by gcongr
-  have h₂ : ‖fderiv ℝ (fun y ↦ a.coefficient (y, ξ)) x v.1‖ ≤ C' * w ^ ((m + 1) / 2) * ‖v‖ :=
-    calc _ ≤ ‖fderiv ℝ (fun y ↦ a.coefficient (y, ξ)) x‖ * ‖v.1‖ :=
-          ContinuousLinearMap.le_opNorm _ _
-      _ ≤ C' * w ^ (m / 2) * ‖v‖ := by gcongr; exacts [hC' ξ, norm_fst_le v]
-      _ ≤ C' * w ^ ((m + 1) / 2) * ‖v‖ := by gcongr
-  linarith
-
-/-- The kernel of `a` is the parametric integral of the kernel integrand. -/
-private theorem uncurry_quantizationKernel_eq (a : Symbol n V W m) :
-    Function.uncurry (quantizationKernel a.coefficient) = fun p ↦ ∫ ζ, kernelIntegrand a ζ p := by
-  funext p
-  exact quantizationKernel_def _ _ _
-
-/-- The derivative of the kernel integrand is bounded by `(C' + 2C) ⟨2πζ⟩ ^ (m + 1)` when the values
-and position derivatives of `a` at `x` are bounded by `C ⟨ξ⟩ ^ m` and `C' ⟨ξ⟩ ^ m`. -/
-private theorem norm_kernelIntegrandFDeriv_le (a : Symbol n V W m) {x : CoordinateSpace n}
-    {C C' : ℝ} (hC : ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
-    (hC' : ∀ ξ, ‖fderiv ℝ (fun y ↦ a.coefficient (y, ξ)) x‖ ≤ C' * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
-    (y ζ : CoordinateSpace n) :
-    ‖kernelIntegrandFDeriv a ζ (x, y)‖ ≤
-      (C' + 2 * C) * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ ((m + 1) / 2) := by
-  obtain ⟨hC0, hC'0⟩ := bound_constants_nonneg a hC hC'
-  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
-  rw [kernelIntegrandFDeriv_apply, Circle.norm_smul (E := V →L[ℂ] W)]
-  exact norm_coefficient_kernelDeriv_le a hC hC' v _
-
-private theorem continuous_kernelIntegrand (a : Symbol n V W m)
-    (p : CoordinateSpace n × CoordinateSpace n) : Continuous fun ζ ↦ kernelIntegrand a ζ p :=
-  (Real.continuous_fourierChar.comp (continuous_id.inner continuous_const)).smul
-    (a.contDiff_coefficient.continuous.comp (continuous_const.prodMk (continuous_const_smul _)))
-
-private theorem aestronglyMeasurable_kernelIntegrandFDeriv (a : Symbol n V W m)
-    (p : CoordinateSpace n × CoordinateSpace n) :
-    AEStronglyMeasurable fun ζ ↦ kernelIntegrandFDeriv a ζ p := by
-  have hcont : Continuous fun ζ ↦ kernelIntegrandFDeriv a ζ p := by
-    refine continuous_clm_apply.2 fun v ↦ ?_
-    simp only [kernelIntegrandFDeriv_apply]
-    exact (Real.continuous_fourierChar.comp (continuous_id.inner continuous_const)).smul
-      ((kernelDeriv a v).contDiff_coefficient.continuous.comp
-        (continuous_const.prodMk (continuous_const_smul _)))
-  -- Instance search does not find the metrizability of this space of operators unaided.
-  let _ : PseudoMetricSpace (CoordinateSpace n × CoordinateSpace n →L[ℝ] V →L[ℂ] W) :=
-    inferInstance
-  exact hcont.aestronglyMeasurable
-
-/-- **Differentiation of the kernel.** For a symbol of order `m < -n - 1`, the kernel is
-differentiable, and its derivative is the integral of the derivative of the integrand. -/
-private theorem hasFDerivAt_quantizationKernel (a : Symbol n V W m) (hm : m + 1 < -n)
-    (p₀ : CoordinateSpace n × CoordinateSpace n) :
-    HasFDerivAt (Function.uncurry (quantizationKernel a.coefficient))
-      (∫ ζ, kernelIntegrandFDeriv a ζ p₀) p₀ := by
-  obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient _ (isCompact_closedBall p₀.1 1)
-  obtain ⟨C', hC'⟩ := a.exists_bound_fderiv_coefficient _ (isCompact_closedBall p₀.1 1)
-  have hmem : ∀ p ∈ Metric.ball p₀ 1, p.1 ∈ Metric.closedBall p₀.1 1 := fun p hp ↦
-    Metric.mem_closedBall.2
-    (((le_max_left _ _).trans (Prod.dist_eq (x := p) (y := p₀)).ge).trans (Metric.mem_ball.1 hp).le)
-  have hweight :
-      Integrable fun ζ : CoordinateSpace n ↦ (1 + ‖(2 * π) • ζ‖ ^ 2) ^ ((m + 1) / 2) := by
-    simpa only [neg_neg] using (integrable_rpow_neg_one_add_norm_sq (μ := volume) (r := -(m + 1))
-      (by simp only [finrank_euclideanSpace_fin]; linarith)).comp_smul two_pi_pos.ne'
-  rw [uncurry_quantizationKernel_eq]
-  exact hasFDerivAt_integral_of_dominated_of_fderiv_le (Metric.ball_mem_nhds p₀ one_pos)
-    (Filter.Eventually.of_forall fun p ↦ (continuous_kernelIntegrand a p).aestronglyMeasurable)
-    (integrable_quantizationKernel_integrand (a.integrable_coefficient (by linarith) p₀.1) p₀.2)
-    (aestronglyMeasurable_kernelIntegrandFDeriv a p₀)
-    (ae_of_all _ fun ζ p hp ↦ norm_kernelIntegrandFDeriv_le a (hC p.1 (hmem p hp))
-      (hC' p.1 (hmem p hp)) p.2 ζ)
-    (hweight.const_mul (C' + 2 * C))
-    (ae_of_all _ fun ζ p _ ↦ hasFDerivAt_kernelIntegrand a ζ p)
-
-/-- The derivative of the kernel in the direction `v` is the kernel of `kernelDeriv a v`. -/
-private theorem fderiv_quantizationKernel_apply (a : Symbol n V W m) (hm : m + 1 < -n)
-    (p v : CoordinateSpace n × CoordinateSpace n) :
-    fderiv ℝ (Function.uncurry (quantizationKernel a.coefficient)) p v =
-      quantizationKernel (kernelDeriv a v).coefficient p.1 p.2 := by
-  obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient _ (isCompact_singleton (x := p.1))
-  obtain ⟨C', hC'⟩ := a.exists_bound_fderiv_coefficient _ (isCompact_singleton (x := p.1))
-  -- Instance search does not find the norm structure of this space of operators unaided.
-  let _ : NormedAddCommGroup (CoordinateSpace n × CoordinateSpace n →L[ℝ] V →L[ℂ] W) :=
-    inferInstance
-  have hweight :
-      Integrable fun ζ : CoordinateSpace n ↦ (1 + ‖(2 * π) • ζ‖ ^ 2) ^ ((m + 1) / 2) := by
-    simpa only [neg_neg] using (integrable_rpow_neg_one_add_norm_sq (μ := volume) (r := -(m + 1))
-      (by simp only [finrank_euclideanSpace_fin]; linarith)).comp_smul two_pi_pos.ne'
-  have hint : Integrable fun ζ ↦ kernelIntegrandFDeriv a ζ p :=
-    (hweight.const_mul (C' + 2 * C)).mono'
-      (aestronglyMeasurable_kernelIntegrandFDeriv a p)
-      (ae_of_all _ fun ζ ↦ norm_kernelIntegrandFDeriv_le a (hC p.1 rfl) (hC' p.1 rfl) p.2 ζ)
-  rw [(hasFDerivAt_quantizationKernel a hm p).fderiv, ContinuousLinearMap.integral_apply hint,
-    quantizationKernel_def]
-  simp only [kernelIntegrandFDeriv_apply]
-
-/-- **Regularity of the kernel.** The kernel `(x, y) ↦ K_a(x, y)` of a symbol of order `m` with
-`m + k < -n` is `C^k`. -/
-theorem contDiff_quantizationKernel (k : ℕ) (a : Symbol n V W m) (hm : m + k < -n) :
-    ContDiff ℝ k (Function.uncurry (quantizationKernel a.coefficient)) := by
-  induction k generalizing m with
-  | zero => exact contDiff_zero.2 (a.continuous_quantizationKernel (by simpa using hm))
-  | succ k ih =>
-    have hm' : m + 1 < -n := by push_cast at hm; linarith [(k.cast_nonneg : (0 : ℝ) ≤ k)]
-    rw [Nat.cast_succ, contDiff_succ_iff_fderiv]
-    refine ⟨fun p ↦ (hasFDerivAt_quantizationKernel a hm' p).differentiableAt, by simp,
-      contDiff_clm_apply_iff.2 fun v ↦ ?_⟩
-    simp only [fderiv_quantizationKernel_apply a hm']
-    exact ih (kernelDeriv a v) (by push_cast at hm; linarith)
-
-/-- **Smoothness of smoothing kernels.** The kernel of a smoothing symbol is smooth. -/
-theorem IsSmoothing.contDiff_quantizationKernel {a : Symbol n V W m} (ha : a.IsSmoothing) :
-    ContDiff ℝ ∞ (Function.uncurry (quantizationKernel a.coefficient)) := by
-  refine contDiff_infty.2 fun k ↦ ?_
-  obtain ⟨b, hb⟩ := isSmoothing_iff.1 ha (-n - k - 1)
-  rw [← hb]
-  exact b.contDiff_quantizationKernel k (by linarith)
 
 end Symbol
 
