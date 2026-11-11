@@ -22,7 +22,8 @@ required only on an open set containing the point, and the direction `v` is an a
 vector there.
 
 These coefficients are the values of the connection one-forms `IsLocalFrameOn.connectionForm`,
-which are therefore skew-symmetric too (`IsLocalFrameOn.connectionForm_add_connectionForm_swap`).
+which are therefore skew-symmetric too (`IsLocalFrameOn.connectionForm_add_connectionForm_swap`)
+with vanishing diagonal (`IsLocalFrameOn.connectionForm_self_eq_zero`).
 For an orthonormal frame `(e₁, e₂)` of a surface they reduce to a single one-form `ω` with
 `∇e₁ = ω ⊗ e₂` and `∇e₂ = -ω ⊗ e₁`.
 
@@ -33,6 +34,7 @@ For an orthonormal frame `(e₁, e₂)` of a surface they reduce to a single one
 * `IsLocalFrameOn.coeff_covariantDerivative_self_eq_zero`: its diagonal entries vanish.
 * `IsLocalFrameOn.connectionForm_add_connectionForm_swap`: the connection one-forms of such a
   frame are skew-symmetric.
+* `IsLocalFrameOn.connectionForm_self_eq_zero`: the diagonal connection one-forms vanish.
 
 ## References
 
@@ -97,5 +99,14 @@ theorem connectionForm_add_connectionForm_swap [FiniteDimensional ℝ E]
     hs.connectionForm cov j i x + hs.connectionForm cov i j x = 0 := by
   ext v
   simpa using hs.coeff_covariantDerivative_add_eq_zero (by norm_num) hu ho hcov hx i j (v 0)
+
+include hu ho hcov in
+/-- The diagonal connection forms of a metric connection in a `C²` orthonormal local frame
+vanish: `Aⁱᵢ = 0` at every point of the domain. -/
+theorem connectionForm_self_eq_zero [FiniteDimensional ℝ E]
+    (hs : IsLocalFrameOn I F 2 s u) (hx : x ∈ u) (i : ι) :
+    hs.connectionForm cov i i x = 0 := by
+  ext v
+  simpa using hs.coeff_covariantDerivative_self_eq_zero (by norm_num) hu ho hcov hx i (v 0)
 
 end IsLocalFrameOn
