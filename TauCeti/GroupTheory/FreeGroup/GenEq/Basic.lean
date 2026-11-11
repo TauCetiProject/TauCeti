@@ -162,6 +162,15 @@ theorem segment_append {i j k : ℕ} (hij : i ≤ j) (hjk : j ≤ k) (hk : k ≤
   conv_rhs => rw [← List.take_append_drop j M]
   rw [List.drop_append_of_le_length (by simp [M]; omega)]
 
+/-- After substituting words for the items, `h[i, j] ^ ±1` is reduced exactly when `h[i, j]` is,
+since a formal inverse is reduced exactly when the word is. -/
+theorem isReduced_substituteVars_segment_iff (U : Fin Ω.numItems → List (A × Bool)) (i j : ℕ)
+    (s : Bool) : FreeGroup.IsReduced (substituteVars U (Ω.segment i j s)) ↔
+      FreeGroup.IsReduced (substituteVars U (Ω.segment i j true)) := by
+  cases s
+  · rw [segment_false, substituteVars_invRev, FreeGroup.isReduced_invRev]
+  · rfl
+
 /-- The basic equation `h[α(μ), β(μ)] ^ ε(μ) = h[α(Δμ), β(Δμ)] ^ ε(Δμ)` of a variable base. -/
 def basicEquation (μ : Fin Ω.numBases) :
     List ((Fin Ω.numItems ⊕ A) × Bool) × List ((Fin Ω.numItems ⊕ A) × Bool) :=
@@ -331,6 +340,12 @@ def point : Fin Ω.numItems → FreeGroup A :=
 @[simp]
 theorem point_apply (k : Fin Ω.numItems) : U.point k = FreeGroup.mk (U.word k) := (rfl)
 
+/-- A solution is determined by its point, since a reduced word is determined by the element of
+`F(A)` it represents. -/
+theorem point_injective : Function.Injective (point : Ω.Solution → Fin Ω.numItems → FreeGroup A) :=
+  fun U U' h => Solution.ext <| funext fun k =>
+    (U.isReduced_word k).eq_of_mk_eq (U'.isReduced_word k) (congrFun h k)
+
 /-- A solution of a generalised equation is a solution of the system `Ω*` in `F(A)`. -/
 theorem point_mem_V : U.point ∈ V (MonoidHom.id (FreeGroup A)) Ω.toSystem := by
   refine Ω.mem_V_toSystem_iff.2 fun e he => ?_
@@ -404,6 +419,16 @@ theorem isFormallyConsistent_iff : Ω.IsFormallyConsistent ↔
 instance [DecidableEq A] : Decidable Ω.IsFormallyConsistent :=
   decidable_of_iff _ Ω.isFormallyConsistent_iff.symm
 
+variable {Ω} in
+/-- In a formally consistent generalised equation, dual bases starting at the same boundary (a
+matched pair) have the same sign, since they overlap. -/
+theorem IsFormallyConsistent.sign_eq_of_left_eq (hΩ : Ω.IsFormallyConsistent) {μ : Fin Ω.numBases}
+    (hl : Ω.left μ = Ω.left (Ω.dual μ)) : Ω.sign μ = Ω.sign (Ω.dual μ) := by
+  by_contra hs
+  rcases hΩ.disjoint_of_sign_ne μ hs with h | h
+  · exact absurd (h.trans_lt (hl ▸ Ω.left_lt_right μ)) (lt_irrefl _)
+  · exact absurd (h.trans_lt (hl ▸ Ω.left_lt_right (Ω.dual μ))) (lt_irrefl _)
+
 /-! ### Solutions force formal consistency -/
 
 namespace Solution
@@ -426,6 +451,12 @@ theorem length_substituteVars_segment (s : Bool) (i j : ℕ) :
   cases s
   · rw [segment_false, substituteVars_invRev, FreeGroup.invRev_length, h]
   · exact h
+
+/-- The word `U[α(μ), β(μ)]` of a variable base is reduced as written. -/
+theorem isReduced_substituteVars_segment (μ : Fin Ω.numBases) :
+    FreeGroup.IsReduced (substituteVars U.word (Ω.segment (Ω.left μ) (Ω.right μ) true)) :=
+  (Ω.isReduced_substituteVars_segment_iff U.word _ _ (Ω.sign μ)).1
+    (U.isReduced_subst _ (Ω.basicEquation_mem_equations μ)).1
 
 /-- The substituted word `h[i, j] ^ ±1` spans the words of a solution from boundary `i` to
 boundary `j`. -/
