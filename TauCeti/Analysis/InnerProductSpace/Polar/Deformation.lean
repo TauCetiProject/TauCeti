@@ -15,7 +15,10 @@ An invertible operator `T = U P` on a real Hilbert space deforms to its canonica
 isometry by `U P^(1-t)`. If `T` expands every vector, the deformation continues to expand
 vectors and never increases their norms beyond their original images under `T`.
 Consequently negative discs can be deformed to orthogonal discs without leaving a prescribed
-coordinate ball or raising the negative quadratic value above its boundary value.
+coordinate ball or raising the negative quadratic value above its boundary value. The
+deformation is jointly continuous in the operator and the parameter where the modulus is
+strictly positive (`ContinuousLinearMap.continuousOn_polarDeformation`), so it can be performed
+continuously in families of operators.
 
 The construction uses `ContinuousLinearMap.polarFactor` and the positive modulus, together
 with real powers from the continuous functional calculus. It does not require a choice of
@@ -137,5 +140,22 @@ theorem norm_le_norm_polarDeformation_apply_le (T : E →L[ℝ] E)
       simpa only [mul_apply_eq_comp] using congrArg (fun A : E →L[ℝ] E ↦ A x) hop
     rw [hfactor, ← T.norm_modulus_apply x]
     exact T.modulus.norm_rpow_apply_le_of_one_le_of_nonpos hP (neg_nonpos.mpr ht.1) _
+
+/-- The polar deformation is jointly continuous in the operator and the parameter, in operator
+norm, on the operators whose modulus is strictly positive. -/
+theorem continuousOn_polarDeformation :
+    ContinuousOn (fun q : (E →L[ℝ] E) × ℝ ↦ q.1.polarDeformation q.2)
+      ({T | IsStrictlyPositive T.modulus} ×ˢ univ) := by
+  have hm : Continuous fun q : (E →L[ℝ] E) × ℝ ↦ (q.1.modulus, 1 - q.2) :=
+    (continuous_modulus.comp continuous_fst).prodMk (continuous_const.sub continuous_snd)
+  have hp : ContinuousOn (fun q : (E →L[ℝ] E) × ℝ ↦ q.1.modulus ^ (1 - q.2))
+      ({T | IsStrictlyPositive T.modulus} ×ˢ univ) :=
+    ContinuousOn.comp (g := fun p : (E →L[ℝ] E) × ℝ ↦ p.1 ^ p.2)
+      (f := fun q : (E →L[ℝ] E) × ℝ ↦ (q.1.modulus, 1 - q.2))
+      CFC.continuousOn_rpow_prod hm.continuousOn fun q hq ↦ ⟨hq.1, mem_univ _⟩
+  have hU : ContinuousOn (fun q : (E →L[ℝ] E) × ℝ ↦ q.1.polarFactor)
+      ({T | IsStrictlyPositive T.modulus} ×ˢ univ) :=
+    continuousOn_polarFactor.comp continuousOn_fst fun q hq ↦ hq.1.isUnit
+  exact hU.clm_comp hp
 
 end ContinuousLinearMap
