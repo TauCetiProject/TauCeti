@@ -146,7 +146,7 @@ private theorem exists_sum_norm_sq_littlewoodPaleyBlock_le :
     ∃ C : ℝ, ∀ f : Lp F 2 (volume : Measure E), ∃ g : ℕ → Lp F 2 (volume : Measure E),
       (∀ j, littlewoodPaleyBlock F φ j (f : 𝓢'(E, F)) = g j) ∧
         ∀ t : Finset ℕ, ∑ j ∈ t, ‖g j‖ ^ 2 ≤ C * ‖f‖ ^ 2 := by
-  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero
+  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ
   choose m hm hm1 using exists_ae_eq_inhomogeneousLittlewoodPaley_and_norm_le φ
   set T : ℕ → Lp F 2 (volume : Measure E) →L[ℂ] Lp F 2 (volume : Measure E) :=
     fun j ↦ Lp.fourierMultiplierCLM F (m j)
@@ -186,7 +186,7 @@ blocks `Δᵢ v` and `Δₖ v` of a tempered distribution `v` are `L²` function
 private theorem exists_inner_eq_zero_of_littlewoodPaleyBlock_eq :
     ∃ L : ℕ, ∀ (v : 𝓢'(E, F)) (g : ℕ → Lp F 2 (volume : Measure E)),
       (∀ j, littlewoodPaleyBlock F φ j v = g j) → ∀ i k, i + L ≤ k → ⟪g i, g k⟫_ℂ = 0 := by
-  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero
+  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ
   refine ⟨2 * L, fun v g hg ↦ ?_⟩
   have hinj : Function.Injective fun f : Lp F 2 (volume : Measure E) ↦ (f : 𝓢'(E, F)) :=
     LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot

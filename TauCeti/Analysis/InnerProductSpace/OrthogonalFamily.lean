@@ -118,7 +118,7 @@ theorem norm_sum_sq_le_mul_sum_norm_sq_of_inner_eq_zero {v : ℕ → E} {L : ℕ
         simpa using sq_sum_le_card_mul_sum_sq (s := Finset.range L)
           (f := fun r ↦ ‖∑ i ∈ s, w r i‖)
     _ = L * ∑ i ∈ s, ‖v i‖ ^ 2 := by
-        simp_rw [norm_sum_sq_eq_sum_norm_sq_of_pairwise_inner_eq_zero (hw _), hsq,
+        simp_rw [norm_sum_sq_eq_sum_norm_sq_of_pairwise_inner_eq_zero ((hw _).set_pairwise _), hsq,
           Finset.sum_fiberwise_of_maps_to hmaps]
 
 /-- **Normalizing an orthogonal family.** If the vectors `vᵢ` are pairwise orthogonal, then the
