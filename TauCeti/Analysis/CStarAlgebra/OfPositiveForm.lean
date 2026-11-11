@@ -152,9 +152,7 @@ def traceNormedAlgebra :
     letI := τ.traceNormedRing hτ hfaith
     NormedAlgebra 𝕜 A := by
   letI := τ.traceNormedRing hτ hfaith
-  exact ⟨fun r a ↦ by
-    simp only [traceNormedRing_norm, map_smul]
-    exact norm_smul_le r (τ.traceRegularRep hτ hfaith a)⟩
+  exact NormedAlgebra.induced 𝕜 A _ (τ.traceRegularRep hτ hfaith)
 
 /-- The operator norm of left multiplication satisfies the C*-identity. -/
 theorem traceCStarRing :
