@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Basic
-public import Mathlib.Algebra.Homology.Double
 
 /-!
 # Classes of explicit bounded complexes in the bounded homotopy category
@@ -30,8 +29,6 @@ naturally isomorphic to the class of the complex concentrated in degree `n`, and
 
 ## Main results
 
-* `CochainComplex.bounded_single` and `CochainComplex.bounded_double`: complexes concentrated in
-  one degree, or in two adjacent degrees, are bounded.
 * `TauCeti.HomotopyCategory.Bounded.mkMap_id`, `mkMap_comp`, `mkMap_zero`, `mkMap_add`,
   `mkMap_neg` and `ι_map_mkMap`: `mkMap` is a functorial, additive lift of the quotient map.
 -/
@@ -43,23 +40,6 @@ open CategoryTheory CategoryTheory.Limits ZeroObject
 universe v u
 
 variable {C : Type u} [Category.{v} C]
-
-namespace CochainComplex
-
-/-- A complex concentrated in one degree is bounded. -/
-lemma bounded_single [HasZeroMorphisms C] [HasZeroObject C] (n : ℤ) (A : C) :
-    bounded C ((HomologicalComplex.single C (.up ℤ) n).obj A) :=
-  (bounded_iff C _).2 ⟨n, n, inferInstance, inferInstance⟩
-
-/-- A complex concentrated in two adjacent degrees is bounded. -/
-lemma bounded_double [HasZeroMorphisms C] [HasZeroObject C] {X₀ X₁ : C} (f : X₀ ⟶ X₁) {i j : ℤ}
-    (h : (ComplexShape.up ℤ).Rel i j) : bounded C (HomologicalComplex.double f h) := by
-  have h : i + 1 = j := h
-  exact (bounded_iff C _).2 ⟨i, j,
-    (isStrictlyGE_iff _ _).2 fun _ hk ↦ HomologicalComplex.isZero_double_X _ _ _ (by lia) (by lia),
-    (isStrictlyLE_iff _ _).2 fun _ hk ↦ HomologicalComplex.isZero_double_X _ _ _ (by lia) (by lia)⟩
-
-end CochainComplex
 
 namespace TauCeti.HomotopyCategory.Bounded
 
