@@ -12,10 +12,8 @@ public import TauCeti.Combinatorics.Graph.Serre.Tree
 # Serre graphs without edges
 
 The Serre graph `SerreGraph.noEdge V` has the vertices `V` and no darts. Its only paths are the
-empty ones, so every vertex is a connected component by itself: the graph is preconnected exactly
-when `V` has at most one element, it is always acyclic, and it is connected, equivalently a tree,
-exactly when `V` has exactly one element. Its underlying multigraph is `Graph.noEdge Set.univ _`
-and has `Nat.card V` components.
+empty ones, so every vertex is a connected component by itself: its underlying multigraph is
+`Graph.noEdge Set.univ _` and has `Nat.card V` components.
 
 Two boundary cases separate the notions of connectedness. The empty graph `noEdge PEmpty` is
 preconnected, vacuously, but it is neither connected nor a tree and it has no component:
@@ -37,47 +35,7 @@ universe u v
 namespace TauCeti
 namespace SerreGraph
 
-/-- The Serre graph with vertex type `V` and no edges. -/
-@[expose] def noEdge (V : Type u) : SerreGraph.{u, v} where
-  V := V
-  E := PEmpty
-  src := PEmpty.elim
-  rev := PEmpty.elim
-  rev_rev e := e.elim
-  rev_ne e := e.elim
-
 variable {V : Type u}
-
-/-- A graph without edges has no dart. -/
-instance : IsEmpty (noEdge.{u, v} V).E := inferInstanceAs (IsEmpty PEmpty)
-
-/-- In a graph without edges a path joins two vertices exactly when they are equal. -/
-theorem noEdge_nonempty_path_iff {a b : (noEdge.{u, v} V).V} :
-    Nonempty ((noEdge.{u, v} V).Path a b) ↔ a = b :=
-  ⟨fun ⟨p⟩ => (noEdge V).eq_of_path_of_forall_src_eq_tgt (fun e => isEmptyElim e) p,
-    by rintro rfl; exact ⟨.nil⟩⟩
-
-/-- A graph without edges is preconnected exactly when it has at most one vertex. -/
-theorem noEdge_preconnected_iff : (noEdge.{u, v} V).Preconnected ↔ Subsingleton V :=
-  (preconnected_iff _).trans
-    ⟨fun h => ⟨fun a b => noEdge_nonempty_path_iff.mp (h a b)⟩,
-      fun h a b => noEdge_nonempty_path_iff.mpr (h.elim a b)⟩
-
-/-- A graph without edges is connected exactly when it has exactly one vertex. -/
-theorem noEdge_connected_iff :
-    (noEdge.{u, v} V).Connected ↔ Nonempty V ∧ Subsingleton V :=
-  (connected_iff _).trans (and_congr_right fun _ => noEdge_preconnected_iff)
-
-/-- A graph without edges is acyclic. -/
-theorem noEdge_isAcyclic : (noEdge.{u, v} V).IsAcyclic := by
-  refine (isAcyclic_iff _).mpr fun u p _ => ?_
-  cases p with
-  | nil => rfl
-  | cons p e => exact isEmptyElim e.1
-
-/-- A graph without edges is a tree exactly when it has exactly one vertex. -/
-theorem noEdge_isTree_iff : (noEdge.{u, v} V).IsTree ↔ Nonempty V ∧ Subsingleton V := by
-  rw [isTree_iff, noEdge_connected_iff, and_iff_left noEdge_isAcyclic]
 
 /-- The multigraph underlying a Serre graph without edges has all vertices and no edges. -/
 theorem toGraph_noEdge : (noEdge.{u, v} V).toGraph = Graph.noEdge Set.univ _ :=
@@ -85,7 +43,7 @@ theorem toGraph_noEdge : (noEdge.{u, v} V).toGraph = Graph.noEdge Set.univ _ :=
 
 /-- In a graph without edges every vertex is a connected component by itself, so the underlying
 multigraph has as many components as there are vertices. -/
-theorem componentCount_toGraph_noEdge :
+@[simp] theorem componentCount_toGraph_noEdge :
     (noEdge.{u, v} V).toGraph.componentCount = Nat.card V := by
   rw [Graph.componentCount_def]
   refine (Nat.card_congr (Equiv.ofBijective _

@@ -18,8 +18,8 @@ used to build the free basis of the fundamental group of a graph from a spanning
 An acyclic graph has no loop, and a restriction `Γ.restrict S hS` is acyclic exactly when no
 nonempty reduced closed path of `Γ` has all its darts in `S`.
 
-The one-vertex graph without edges and the segment are trees. A rose with a petal is not a tree,
-since its petal is a reduced loop.
+A graph without edges is acyclic, and it is a tree exactly when it has one vertex. The segment is
+a tree. A rose with a petal is not a tree, since its petal is a reduced loop.
 
 ## References
 
@@ -143,21 +143,21 @@ theorem isAcyclic_restrict_empty : (Γ.restrict ∅ fun _ h => h.elim).IsAcyclic
 
 end Restrict
 
+/-- A graph without edges is acyclic. -/
+@[simp] theorem noEdge_isAcyclic {V : Type u} : (noEdge.{u, v} V).IsAcyclic := by
+  refine (isAcyclic_iff _).mpr fun u p _ => ?_
+  cases p with
+  | nil => rfl
+  | cons p e => exact isEmptyElim e.1
+
+/-- A graph without edges is a tree exactly when it has exactly one vertex. -/
+@[simp] theorem noEdge_isTree_iff {V : Type u} :
+    (noEdge.{u, v} V).IsTree ↔ Nonempty V ∧ Subsingleton V := by
+  rw [isTree_iff, noEdge_connected_iff, and_iff_left noEdge_isAcyclic]
+
 /-- The graph with one vertex and no edges is a tree. -/
-theorem single_vertex_isTree : point.{u, v}.IsTree := by
-  rw [isTree_iff]
-  refine ⟨?_, ?_⟩
-  · rw [point.{u, v}.connected_iff]
-    refine ⟨⟨PUnit.unit⟩, ?_⟩
-    rw [point.{u, v}.preconnected_iff]
-    intro u v
-    cases u
-    cases v
-    exact ⟨(@Quiver.Path.nil point.{u, v}.V point.{u, v}.toQuiver PUnit.unit)⟩
-  · intro u p _
-    cases p with
-    | nil => rfl
-    | cons p e => exact e.1.elim
+theorem single_vertex_isTree : (noEdge.{u, v} PUnit).IsTree :=
+  noEdge_isTree_iff.mpr ⟨inferInstance, inferInstance⟩
 
 /-- The segment, two vertices joined by a single pair of darts, is a tree. -/
 theorem segment_isTree : segment.IsTree := by

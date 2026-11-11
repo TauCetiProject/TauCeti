@@ -49,13 +49,14 @@ along the edge `a` from the vertex `b` to the vertex `!b`. -/
 
 variable {α : Type w}
 
-@[simp] theorem parallelGraph_src (e : α × Bool) : (parallelGraph α).src e = e.2 := rfl
+@[simp] theorem parallelGraph_src (e : (parallelGraph α).E) : (parallelGraph α).src e = e.2 :=
+  rfl
 
-@[simp] theorem parallelGraph_rev (e : α × Bool) :
+@[simp] theorem parallelGraph_rev (e : (parallelGraph α).E) :
     (parallelGraph α).rev e = (e.1, !e.2) := rfl
 
 /-- Each dart of a graph of parallel edges ends at the vertex other than its source. -/
-@[simp] theorem parallelGraph_tgt (e : α × Bool) :
+@[simp] theorem parallelGraph_tgt (e : (parallelGraph α).E) :
     (parallelGraph α).tgt e = !e.2 := rfl
 
 /-- The darts of a graph of parallel edges, being pairs of an edge and a direction, have
@@ -64,16 +65,14 @@ instance [DecidableEq α] : DecidableEq (parallelGraph α).E :=
   inferInstanceAs (DecidableEq (α × Bool))
 
 /-- The darts leaving the vertex `true` form an orientation of a graph of parallel edges. -/
-theorem parallelGraph_isOrientation : (parallelGraph α).IsOrientation {e | e.2 = true} := by
-  refine (isOrientation_iff _ _).mpr ?_
-  rintro ⟨a, b⟩
-  -- The carrier `(parallelGraph α).E` reduces definitionally to `α × Bool` here.
-  change b = true ↔ ¬(!b) = true
-  cases b <;> decide
+theorem parallelGraph_isOrientation : (parallelGraph α).IsOrientation {e | e.2 = true} :=
+  -- Membership is unfolded first: once `parallelGraph_rev` turns a dart into a pair `α × Bool`,
+  -- `Set.mem_ofPred_eq` no longer matches a set of darts.
+  (isOrientation_iff _ _).mpr fun e => by simp only [Set.mem_ofPred_eq]; simp
 
 /-- Two darts of a graph of parallel edges lie on the same undirected edge exactly when they
 have the same index: parallel edges remain distinct. -/
-@[simp] theorem parallelGraph_edge_eq_iff (e f : α × Bool) :
+@[simp] theorem parallelGraph_edge_eq_iff (e f : (parallelGraph α).E) :
     (parallelGraph α).edge e = (parallelGraph α).edge f ↔ e.1 = f.1 := by
   have key : ∀ e f : α × Bool, e = f ∨ e = (f.1, !f.2) ↔ e.1 = f.1 := by
     rintro ⟨a, x⟩ ⟨b, y⟩
@@ -85,10 +84,10 @@ have the same index: parallel edges remain distinct. -/
     (parallelGraph α).edgeEnds q = s(false, true) := by
   have key : ∀ x : Bool, s(x, !x) = s(false, true) := by decide
   induction q using Edge.ind with
-  | h e => exact ((parallelGraph α).edgeEnds_edge e).trans (key e.2)
+  | h e => rw [edgeEnds_edge, parallelGraph_src, parallelGraph_tgt]; exact key e.2
 
 /-- A graph of parallel edges is preconnected exactly when it has an edge. -/
-theorem parallelGraph_preconnected_iff : (parallelGraph α).Preconnected ↔ Nonempty α := by
+@[simp] theorem parallelGraph_preconnected_iff : (parallelGraph α).Preconnected ↔ Nonempty α := by
   refine ⟨fun h => ?_, fun ⟨a⟩ => ?_⟩
   · by_contra hα
     rw [not_nonempty_iff] at hα
@@ -101,7 +100,7 @@ theorem parallelGraph_preconnected_iff : (parallelGraph α).Preconnected ↔ Non
     · exact ⟨((parallelGraph α).dart (a, false)).toPath⟩
 
 /-- A graph of parallel edges is connected exactly when it has an edge. -/
-theorem parallelGraph_connected_iff : (parallelGraph α).Connected ↔ Nonempty α := by
+@[simp] theorem parallelGraph_connected_iff : (parallelGraph α).Connected ↔ Nonempty α := by
   rw [connected_iff, parallelGraph_preconnected_iff]
   exact and_iff_right ⟨false⟩
 
@@ -133,7 +132,7 @@ theorem parallelGraph_not_isAcyclic {a b : α} (hab : a ≠ b) : ¬(parallelGrap
     (isAcyclic_iff _).mp h false (parallelLoop a b) (parallelLoop_isReduced_iff.mpr hab)
 
 /-- A graph of parallel edges is acyclic exactly when it has at most one edge. -/
-theorem parallelGraph_isAcyclic_iff : (parallelGraph α).IsAcyclic ↔ Subsingleton α := by
+@[simp] theorem parallelGraph_isAcyclic_iff : (parallelGraph α).IsAcyclic ↔ Subsingleton α := by
   refine ⟨fun h => ⟨fun a b => by_contra fun hab => parallelGraph_not_isAcyclic hab h⟩,
     fun _ => (isAcyclic_iff _).mpr fun u p hp => ?_⟩
   cases p with
@@ -150,7 +149,7 @@ theorem parallelGraph_isAcyclic_iff : (parallelGraph α).IsAcyclic ↔ Subsingle
       exact absurd h ((Path.isReduced_cons_cons _ p e f).mp hp).2
 
 /-- A graph of parallel edges is a tree exactly when it has exactly one edge. -/
-theorem parallelGraph_isTree_iff :
+@[simp] theorem parallelGraph_isTree_iff :
     (parallelGraph α).IsTree ↔ Nonempty α ∧ Subsingleton α := by
   rw [isTree_iff, parallelGraph_connected_iff, parallelGraph_isAcyclic_iff]
 
@@ -160,7 +159,7 @@ theorem double_edge_not_tree : ¬(parallelGraph Bool).IsTree :=
 
 /-- The multigraph underlying a graph of parallel edges with at least one edge has one
 component. -/
-theorem componentCount_toGraph_parallelGraph [Nonempty α] :
+@[simp] theorem componentCount_toGraph_parallelGraph [Nonempty α] :
     (parallelGraph α).toGraph.componentCount = 1 := by
   rw [Graph.componentCount_eq_one_iff, connected_toGraph_iff, parallelGraph_connected_iff]
   infer_instance

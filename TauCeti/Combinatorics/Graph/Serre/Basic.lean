@@ -23,6 +23,9 @@ unoriented edge, such as the edge groups of a graph of groups, is indexed by the
 For a reversal-closed set `S` of darts, the subgraph `Γ.restrict S hS` keeps every vertex of `Γ`
 and the darts in `S`.
 
+The graph `noEdge V` has the vertices `V` and no edges; it is preconnected exactly when `V` has at
+most one element, and connected exactly when `V` has exactly one.
+
 The simple-graph construction takes its edge set from Mathlib's darts. It provides the familiar
 loopless example while retaining the reversal structure used for general graphs.
 
@@ -366,14 +369,35 @@ end Restrict
 @[simp] theorem rose_tgt (α : Type w) (e : α × Bool) :
     (rose α).tgt e = PUnit.unit := rfl
 
-/-- The Serre graph with one vertex and no edges. -/
-abbrev point : SerreGraph.{u, v} where
-  V := PUnit
+/-- The Serre graph with vertex type `V` and no edges. -/
+@[expose] def noEdge (V : Type u) : SerreGraph.{u, v} where
+  V := V
   E := PEmpty
   src := PEmpty.elim
   rev := PEmpty.elim
-  rev_rev := by intro e; exact e.elim
-  rev_ne := by intro e; exact e.elim
+  rev_rev e := e.elim
+  rev_ne e := e.elim
+
+/-- A graph without edges has no dart. -/
+instance (V : Type u) : IsEmpty (noEdge.{u, v} V).E := inferInstanceAs (IsEmpty PEmpty)
+
+/-- In a graph without edges a path joins two vertices exactly when they are equal. -/
+@[simp] theorem noEdge_nonempty_path_iff {V : Type u} {a b : (noEdge.{u, v} V).V} :
+    Nonempty ((noEdge.{u, v} V).Path a b) ↔ a = b :=
+  ⟨fun ⟨p⟩ => (noEdge V).eq_of_path_of_forall_src_eq_tgt (fun e => isEmptyElim e) p,
+    by rintro rfl; exact ⟨.nil⟩⟩
+
+/-- A graph without edges is preconnected exactly when it has at most one vertex. -/
+@[simp] theorem noEdge_preconnected_iff {V : Type u} :
+    (noEdge.{u, v} V).Preconnected ↔ Subsingleton V :=
+  (preconnected_iff _).trans
+    ⟨fun h => ⟨fun a b => noEdge_nonempty_path_iff.mp (h a b)⟩,
+      fun h a b => noEdge_nonempty_path_iff.mpr (h.elim a b)⟩
+
+/-- A graph without edges is connected exactly when it has exactly one vertex. -/
+@[simp] theorem noEdge_connected_iff {V : Type u} :
+    (noEdge.{u, v} V).Connected ↔ Nonempty V ∧ Subsingleton V :=
+  (connected_iff _).trans (and_congr_right fun _ => noEdge_preconnected_iff)
 
 /-- A rose has a single vertex. -/
 instance (α : Type w) : Unique (rose α).V := inferInstanceAs (Unique PUnit)
