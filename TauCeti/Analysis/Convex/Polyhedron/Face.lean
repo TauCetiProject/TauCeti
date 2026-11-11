@@ -197,8 +197,8 @@ variable [IsTopologicalAddGroup V]
 
 /-- Making a finite set of the defining inequalities equalities exposes a subset. When the locus
 where every selected row vanishes is nonempty, the sum of the selected affine functions is
-maximized exactly there; when it is empty, the subset is the empty set, which is exposed by
-convention (by the zero functional). -/
+maximized exactly there; when it is empty, the subset is the empty set, which satisfies
+`IsExposed` vacuously. -/
 theorem TauCeti.isExposed_setOf_active (g : ι → (V →ᴬ[ℝ] ℝ)) (I : Finset ι) :
     IsExposed ℝ {x | ∀ j, g j x ≤ 0}
       {x | (∀ j, g j x ≤ 0) ∧ ∀ j ∈ I, g j x = 0} := by
