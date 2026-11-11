@@ -193,13 +193,13 @@ is zero. -/
 theorem integral_cutoffCurrent_comp_closedBall_eq_zero {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] {α : E → ℂ} {b : E → E [⋀^Fin 1]→L[ℝ] ℝ} {σ : ℂ → E} {z₀ : ℂ} {r : ℝ}
     (hα : ∀ z ∈ Metric.closedBall z₀ r, ContDiffAt ℝ 2 α (σ z))
-    (hb : ∀ z ∈ Metric.closedBall z₀ r, DifferentiableAt ℝ b (σ z)) (hχ₀ : χ =ᶠ[𝓝 0] 0)
+    (hχ₀ : χ =ᶠ[𝓝 0] 0)
     (hvac : ∀ z ∈ Metric.closedBall z₀ r, χ =ᶠ[𝓝 (normSq (α (σ z)))] 1) :
     ∫ z in Metric.closedBall z₀ r,
       (cutoffCurrent χ b α (σ z)).compContinuousLinearMap (fderiv ℝ σ z) ![1, I] = 0 := by
   refine setIntegral_eq_zero_of_forall_eq_zero fun z hz ↦ ?_
   rw [cutoffCurrent_eq_zero (hα z hz)
-    (ne_zero_of_cutoff_eq_one hχ₀ (hvac z hz).eq_of_nhds) (hb z hz) (hvac z hz)]
+    (ne_zero_of_cutoff_eq_one hχ₀ (hvac z hz).eq_of_nhds) (hvac z hz)]
   simp
 
 /-- **A disc on which `α` does not vanish has charge zero.** Let `σ : ℂ → E` be a `C²` disc such
