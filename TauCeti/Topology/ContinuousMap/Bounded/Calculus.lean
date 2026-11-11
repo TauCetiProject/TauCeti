@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Analysis.Asymptotics.Lemmas
 public import Mathlib.Analysis.Normed.Group.Bounded
-public import Mathlib.Topology.ContinuousMap.Bounded.Normed
+public import TauCeti.Topology.ContinuousMap.Bounded.Normed
 
 /-!
 # Differentiating bounded continuous functions in the supremum norm
@@ -54,36 +54,20 @@ theorem hasDerivAt_of_bounded_second_derivative
   simp only [norm_pow, norm_norm]
   apply (BoundedContinuousFunction.norm_le (by positivity)).mpr
   intro x
-  change ‖u s x - u t x - (s - t) • du t x‖ ≤ _
+  simp only [BoundedContinuousFunction.sub_apply, BoundedContinuousFunction.smul_apply]
   -- Mathlib already subtracts the fixed linear part in its mean-value inequality.
   have h := (convex_segment t s).norm_image_sub_le_of_norm_hasFDerivWithin_le'
     (φ := ContinuousLinearMap.toSpanSingleton ℝ (du t x))
     (fun r _ ↦ (hu r x).hasFDerivAt.hasFDerivWithinAt)
     (fun r hr ↦ by
-      change ‖ContinuousLinearMap.toSpanSingletonLIE ℝ F (du r x) -
-        ContinuousLinearMap.toSpanSingletonLIE ℝ F (du t x)‖ ≤ _
+      rw [← ContinuousLinearMap.toSpanSingletonLIE_apply,
+        ← ContinuousLinearMap.toSpanSingletonLIE_apply]
       rw [← (ContinuousLinearMap.toSpanSingletonLIE ℝ F).map_sub,
         (ContinuousLinearMap.toSpanSingletonLIE ℝ F).norm_map]
       exact (hLip r t x).trans (mul_le_mul_of_nonneg_left
         (norm_sub_le_of_mem_segment hr) hK))
     (left_mem_segment ℝ t s) (right_mem_segment ℝ t s)
   simpa only [ContinuousLinearMap.toSpanSingleton_apply, pow_two, mul_assoc] using h
-
-/-- A continuous compactly supported function on space-time, viewed as a curve of bounded
-continuous spatial functions. -/
-@[expose] noncomputable def compactSlice (f : V × ℝ → F) (hf : Continuous f)
-    (hc : HasCompactSupport f) (t : ℝ) : V →ᵇ F :=
-  ofNormedAddCommGroup (fun x ↦ f (x, t))
-    (hf.comp (continuous_id.prodMk continuous_const))
-    (hc.exists_bound_of_continuous hf).choose
-    (fun x ↦ (hc.exists_bound_of_continuous hf).choose_spec (x, t))
-
-omit [NormedSpace ℝ F] in
-/-- Evaluation of a compactly supported time slice. -/
-@[simp]
-theorem compactSlice_apply (f : V × ℝ → F) (hf : Continuous f)
-    (hc : HasCompactSupport f) (t : ℝ) (x : V) :
-    compactSlice f hf hc t x = f (x, t) := rfl
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 

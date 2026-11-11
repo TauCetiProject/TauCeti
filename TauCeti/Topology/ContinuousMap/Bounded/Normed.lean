@@ -1,13 +1,14 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
+public import Mathlib.Analysis.Normed.Group.Bounded
 
 /-!
 # Norm bounds and pointwise operators on bounded continuous functions
@@ -50,6 +51,14 @@ bounded continuous function `f` lies within `‖f‖` of the constant `‖f‖`.
 natural-number division; dilations compose multiplicatively and commute with the pointwise
 operations. They are the operators under which Dixmier's generalized limits are invariant, see
 `TauCeti.Analysis.Normed.Order.GeneralizedLimit`.
+
+`BoundedContinuousFunction.compactSlice` views a compactly supported continuous function
+on space-time as a bounded continuous spatial function at a fixed time.
+
+Formalization references for compact slices:
+https://github.com/frenzymath/lean-eval-submissions and
+https://github.com/frenzymath/PoincareConjecture.
+
 -/
 
 public section
@@ -285,5 +294,26 @@ theorem neg_dilate {β : Type*} [SeminormedAddCommGroup β] (f : ℕ →ᵇ β) 
     (-f).dilate k = -f.dilate k := by
   ext n
   simp
+
+end BoundedContinuousFunction
+
+namespace BoundedContinuousFunction
+
+variable {V F : Type*} [TopologicalSpace V] [NormedAddCommGroup F]
+
+/-- A continuous compactly supported function on space-time, viewed as a curve of bounded
+continuous spatial functions. -/
+noncomputable def compactSlice (f : V × ℝ → F) (hf : Continuous f)
+    (hc : HasCompactSupport f) (t : ℝ) : V →ᵇ F :=
+  ofNormedAddCommGroup (fun x ↦ f (x, t))
+    (hf.comp (continuous_id.prodMk continuous_const))
+    (hc.exists_bound_of_continuous hf).choose
+    (fun x ↦ (hc.exists_bound_of_continuous hf).choose_spec (x, t))
+
+/-- Evaluation of a compactly supported time slice. -/
+@[simp]
+theorem compactSlice_apply (f : V × ℝ → F) (hf : Continuous f)
+    (hc : HasCompactSupport f) (t : ℝ) (x : V) :
+    compactSlice f hf hc t x = f (x, t) := (rfl)
 
 end BoundedContinuousFunction
