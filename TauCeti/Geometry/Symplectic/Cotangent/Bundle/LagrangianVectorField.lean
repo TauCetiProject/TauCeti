@@ -38,7 +38,8 @@ canonical form pairs a tangent vector `ξ` of `T*M` with a vertical covector `β
 
 `ω_L(X_E(v), u^v) = Hess_v(u, dπ X_E(v))`,
 
-while differentiating `E_L` along the fibre gives `dE_L(u^v) = Hess_v(u, v)`. For a regular
+while differentiating `E_L` along the fibre gives `dE_L(u^v) = Hess_v(u, v)`
+(`TauCeti.mvfderiv_lagrangianEnergy_vertical`). For a regular
 Lagrangian the fibre Hessian is a nondegenerate symmetric form
 (`TauCeti.fiberHessian_apply_comm`), so `dπ X_E(v) = v`. Only invertibility of the fibre Hessian
 at `v` itself is used (`TauCeti.mfderiv_proj_eq_snd_of_eval₂_cartanTwoForm`).
@@ -84,53 +85,6 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M] {L : TangentBundle I M → ℝ}
 
-/-- The derivative of the energy along the vertical vector at `v` with fibre direction `u` is
-`Hess_v(u, v)`. The vertical vector is the velocity of the line `r ↦ v + r u` in the fibre, read in
-the preferred chart at `v` (`TauCeti.Manifold.hasMFDerivAt_totalSpaceMk_add_smul`). -/
-private theorem mvfderiv_lagrangianEnergy_vertical (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L)
-    (v : TangentBundle I M) (u : TangentSpace I v.proj) :
-    mvfderiv I.tangent (lagrangianEnergy L) v
-      ((0 : E), (trivializationAt E (TangentSpace I) v.proj).continuousLinearMapAt ℝ v.proj u) =
-      fiberHessian L v u v.2 := by
-  obtain ⟨x, a⟩ := v
-  -- On the fibre over `x`, `E_L(w) = D(w)(w) - f(w)` for `f = L|_{T_x M}` and `D = df`.
-  have hγ := TauCeti.Manifold.hasMFDerivAt_totalSpaceMk_add_smul (F := E)
-    (V := TangentSpace I) (IB := I) x a u
-  let f : E → ℝ := fun w ↦ L (TotalSpace.mk' E x w)
-  have hf : ContDiff ℝ ∞ f :=
-    contMDiff_iff_contDiff.1 (hL.comp (contMDiff_tangentBundle_mk_constBase contMDiff_id x))
-  -- The fibre `TangentSpace I x` is `E` by definition: `b` and `a₀` are `u` and `a` read as
-  -- vectors of `E`, so that `fderiv` on `E` applies to them.
-  let b : E := u
-  let a₀ : E := a
-  let D : E → E →L[ℝ] ℝ := fderiv ℝ f
-  have hHess : fiberHessian L ⟨x, a⟩ = fderiv ℝ D a₀ := fiberHessian_def L _
-  have hD : HasFDerivAt D (fderiv ℝ D a₀) a₀ :=
-    ((hf.fderiv_right (m := 1) (by simp)).differentiable one_ne_zero _).hasFDerivAt
-  have hc : HasDerivAt (fun r : ℝ ↦ a₀ + r • b) b 0 := by
-    simpa using ((hasDerivAt_id (0 : ℝ)).smul_const b).const_add (a₀ : E)
-  have hD' : HasDerivAt (fun r : ℝ ↦ D (a₀ + r • b)) (fderiv ℝ D a₀ b) 0 :=
-    hD.comp_hasDerivAt_of_eq 0 hc (by simp)
-  have hf' : HasDerivAt (fun r : ℝ ↦ f (a₀ + r • b)) (D a₀ b) 0 :=
-    ((hf.differentiable (by simp)) a₀).hasFDerivAt.comp_hasDerivAt_of_eq 0 hc (by simp)
-  have hE : HasDerivAt (fun r : ℝ ↦ lagrangianEnergy L (TotalSpace.mk' E x (a + r • u)))
-      (fderiv ℝ D a₀ b a₀) 0 := by
-    have h := (hD'.clm_apply hc).sub hf'
-    simp only [zero_smul, add_zero, add_sub_cancel_right] at h
-    convert h using 1
-    funext r
-    rw [lagrangianEnergy_apply, legendreMap_snd]
-    simp only [f, D, a₀, b, Pi.sub_apply]
-    -- The two sides differ only in reading the fibre `TangentSpace I x` as `E`.
-    rfl
-  have hEd := Manifold.hasDerivAt_comp_curve (g := lagrangianEnergy L)
-    (((contMDiff_lagrangianEnergy (m := 1) hL (by simp)) _).mdifferentiableAt one_ne_zero) hγ
-  have h := hEd.unique hE
-  have h0 : (TotalSpace.mk' E x (a + (0 : ℝ) • u) : TangentBundle I M) = ⟨x, a⟩ := by simp
-  rw [h0] at h
-  rw [hHess]
-  exact h
-
 /-- **The Lagrangian vector field is second order, pointwise.** At a tangent vector `v` where the
 fibre Hessian of a smooth Lagrangian `L` is invertible, a tangent vector `X` of `TM` at `v` with
 `ω_L(X, ·) = dE_L` satisfies `dπ X = v`: its base component is `v` itself. -/
@@ -162,7 +116,8 @@ theorem mfderiv_proj_eq_snd_of_eval₂_cartanTwoForm (hL : ContMDiff I.tangent �
       (CotangentBundle.eval₂_symplecticForm _ a b).trans
         (strongDualCotangentSymplecticForm_apply a b)
     have h := hX Y
-    rw [mvfderiv_lagrangianEnergy_vertical hL v u, ← mpullback_legendreMap_symplecticForm hL,
+    rw [mvfderiv_lagrangianEnergy_vertical hL (by simp) v u,
+      ← mpullback_legendreMap_symplecticForm hL,
       SmoothForm.eval₂_mpullback (legendreMap L) (contMDiff_legendreMap hL le_rfl), hω, hY,
       CotangentBundle.continuousLinearMapAt_trivializationAt_self, hX1] at h
     simp only [map_zero, sub_zero] at h
