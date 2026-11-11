@@ -23,10 +23,11 @@ of `s` in closed balls around `x` tends to `d` as `r → 0⁺`. The points of de
 
 All three sets depend only on the `μ`-a.e. class of `s`, unlike the topological interior and
 frontier. They are nevertheless comparable to them: for a locally finite measure that charges
-every open set, `interior s ⊆ essentialInterior μ s ⊆ closure s` and
-`essentialBoundary μ s ⊆ frontier s`. For such a measure and a null-measurable set `s`,
-complements exchange the essential interior and exterior, so the essential boundary of `sᶜ` is
-that of `s`. The essential boundary of a union of any two sets lies in the union of their
+every open set, `interior s ⊆ essentialInterior μ s ⊆ closure s`, while
+`essentialBoundary μ s ⊆ frontier s` holds for any measure. For a locally finite measure that
+charges every open set and a null-measurable set `s`, complements exchange the essential interior
+and exterior; for any measure, a null-measurable set and its complement have the same essential
+boundary. The essential boundary of a union of any two sets lies in the union of their
 essential boundaries; the same holds for an intersection of two sets one of which is
 null-measurable, for any measure.
 
@@ -120,6 +121,20 @@ theorem compl (hs : NullMeasurableSet s μ)
   hs.tendsto_measure_compl_inter_div hx h
 
 end HasDensityAt
+
+/-- For a null-measurable set `s`, if closed balls of small positive radius around `x` have
+positive finite measure, then `sᶜ` has density zero at `x` exactly when `s` has density one. -/
+theorem hasDensityAt_compl_zero_iff (hs : NullMeasurableSet s μ)
+    (hx : ∀ᶠ r in 𝓝[>] 0, μ (closedBall x r) ≠ 0 ∧ μ (closedBall x r) ≠ ∞) :
+    HasDensityAt μ sᶜ x 0 ↔ HasDensityAt μ s x 1 :=
+  hs.tendsto_measure_compl_inter_div_iff hx
+
+/-- For a null-measurable set `s`, if closed balls of small positive radius around `x` have
+positive finite measure, then `sᶜ` has density one at `x` exactly when `s` has density zero. -/
+theorem hasDensityAt_compl_one_iff (hs : NullMeasurableSet s μ)
+    (hx : ∀ᶠ r in 𝓝[>] 0, μ (closedBall x r) ≠ 0 ∧ μ (closedBall x r) ≠ ∞) :
+    HasDensityAt μ sᶜ x 1 ↔ HasDensityAt μ s x 0 := by
+  simpa only [compl_compl] using (hasDensityAt_compl_zero_iff hs.compl hx).symm
 
 /-- Densities only depend on the set up to `μ`-null sets. -/
 theorem hasDensityAt_congr_ae (hst : s =ᵐ[μ] t) : HasDensityAt μ s x d ↔ HasDensityAt μ t x d :=
@@ -303,11 +318,7 @@ exterior. -/
 theorem essentialInterior_compl (hs : NullMeasurableSet s μ) :
     essentialInterior μ sᶜ = essentialExterior μ s := by
   ext x
-  refine ⟨fun hx => ?_, fun hx => ?_⟩
-  · simpa using (mem_essentialInterior.1 hx).compl hs.compl
-      (eventually_measure_closedBall_ne_zero_ne_top μ x)
-  · simpa using (mem_essentialExterior.1 hx).compl hs
-      (eventually_measure_closedBall_ne_zero_ne_top μ x)
+  exact hasDensityAt_compl_one_iff hs (eventually_measure_closedBall_ne_zero_ne_top μ x)
 
 /-- The essential exterior of the complement of a null-measurable set is its essential
 interior. -/
@@ -324,11 +335,7 @@ theorem essentialBoundary_compl (hs : NullMeasurableSet s μ) :
   ext x
   simp only [mem_essentialBoundary, mem_essentialInterior, mem_essentialExterior]
   rcases eventually_measure_closedBall_ne_zero_ne_top_or_forall_hasDensityAt_zero μ x with hx | hx
-  · have h1 : HasDensityAt μ sᶜ x 1 ↔ HasDensityAt μ s x 0 :=
-      ⟨fun h => by simpa using h.compl hs.compl hx, fun h => by simpa using h.compl hs hx⟩
-    have h0 : HasDensityAt μ sᶜ x 0 ↔ HasDensityAt μ s x 1 :=
-      ⟨fun h => by simpa using h.compl hs.compl hx, fun h => by simpa using h.compl hs hx⟩
-    rw [h1, h0]
+  · rw [hasDensityAt_compl_one_iff hs hx, hasDensityAt_compl_zero_iff hs hx]
     tauto
   · simp [hx s, hx sᶜ]
 
@@ -351,21 +358,26 @@ theorem essentialInterior_subset_closure : essentialInterior μ s ⊆ closure s 
   not_not.1 fun hcl => disjoint_left.1 disjoint_essentialInterior_essentialExterior hx
     (compl_closure_subset_essentialExterior hcl)
 
+/-- An interior point of `s` is in its essential interior, provided closed balls of small positive
+radius around it have positive finite measure. -/
+theorem mem_essentialInterior_of_mem_interior
+    (hμ : ∀ᶠ r in 𝓝[>] 0, μ (closedBall x r) ≠ 0 ∧ μ (closedBall x r) ≠ ∞)
+    (hx : x ∈ interior s) : x ∈ essentialInterior μ s := by
+  obtain ⟨ε, hε, hεs⟩ := Metric.isOpen_iff.1 isOpen_interior x hx
+  rw [mem_essentialInterior, hasDensityAt_iff]
+  refine tendsto_const_nhds.congr' ?_
+  filter_upwards [Ioo_mem_nhdsGT hε, hμ] with r hr hr'
+  rw [inter_eq_right.2 ((closedBall_subset_ball hr.2).trans (hεs.trans interior_subset)),
+    ENNReal.div_self hr'.1 hr'.2]
+
 section OpenPos
 
 variable [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure]
 
 /-- An interior point of `s` is in its essential interior, for a locally finite measure that
 charges every open set. -/
-theorem interior_subset_essentialInterior : interior s ⊆ essentialInterior μ s := by
-  intro x hx
-  obtain ⟨ε, hε, hεs⟩ := Metric.isOpen_iff.1 isOpen_interior x hx
-  rw [mem_essentialInterior, hasDensityAt_iff]
-  refine tendsto_const_nhds.congr' ?_
-  filter_upwards [Ioo_mem_nhdsGT hε, eventually_measure_closedBall_ne_zero_ne_top μ x]
-    with r hr hμ
-  rw [inter_eq_right.2 ((closedBall_subset_ball hr.2).trans (hεs.trans interior_subset)),
-    ENNReal.div_self hμ.1 hμ.2]
+theorem interior_subset_essentialInterior : interior s ⊆ essentialInterior μ s := fun x hx =>
+  mem_essentialInterior_of_mem_interior (eventually_measure_closedBall_ne_zero_ne_top μ x) hx
 
 /-- The essential exterior of `s` lies in the complement of its interior. -/
 theorem essentialExterior_subset_compl_interior : essentialExterior μ s ⊆ (interior s)ᶜ :=
@@ -381,13 +393,7 @@ theorem essentialBoundary_subset_frontier : essentialBoundary μ s ⊆ frontier 
   refine ⟨not_not.1 fun hcl => hx.2 (compl_closure_subset_essentialExterior hcl),
     fun hint => ?_⟩
   rcases eventually_measure_closedBall_ne_zero_ne_top_or_forall_hasDensityAt_zero μ x with hμ | hμ
-  · obtain ⟨ε, hε, hεs⟩ := Metric.isOpen_iff.1 isOpen_interior x hint
-    refine hx.1 ?_
-    rw [mem_essentialInterior, hasDensityAt_iff]
-    refine tendsto_const_nhds.congr' ?_
-    filter_upwards [Ioo_mem_nhdsGT hε, hμ] with r hr hr'
-    rw [inter_eq_right.2 ((closedBall_subset_ball hr.2).trans (hεs.trans interior_subset)),
-      ENNReal.div_self hr'.1 hr'.2]
+  · exact hx.1 (mem_essentialInterior_of_mem_interior hμ hint)
   · exact hx.2 (hμ s)
 
 end PseudoMetricSpace
