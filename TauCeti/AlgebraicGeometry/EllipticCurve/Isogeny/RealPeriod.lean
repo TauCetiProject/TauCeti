@@ -7,10 +7,9 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InvariantDifferential
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Wronskian
-public import TauCeti.AlgebraicGeometry.EllipticCurve.RealPeriod
--- Proof-only: the quotient rule, and the derivative of a polynomial function.
-import Mathlib.Analysis.Calculus.Deriv.Inv
-import Mathlib.Analysis.Calculus.Deriv.Polynomial
+public import TauCeti.AlgebraicGeometry.EllipticCurve.RealPeriod.Basic
+-- Proof-only: the quotient rule `(N / D)' = W(D, N) / D²`.
+import TauCeti.Analysis.Calculus.Deriv.Polynomial
 -- Proof-only: the real points over an abscissa, and the finite kernel of an isogeny on points.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Real
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Cokernel
@@ -18,6 +17,15 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Cokernel
 -- integrand `1 / √Ψ₂Sq` is measurable.
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.Topology.Algebra.Polynomial
+-- Proof-only: the intermediate value argument for `N / D`, through a local minimum at a pole and
+-- the growth of `N / D` at infinity.
+import Mathlib.Analysis.Calculus.LocalExtr.Basic
+import Mathlib.Analysis.Polynomial.Basic
+import Mathlib.Topology.Order.Compact
+import Mathlib.Topology.Order.IntermediateValue
+-- Proof-only: translation by a point of order two, and `-W_X` there from the roots of `Ψ₂Sq`.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.TwoTorsion
+import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Discriminant
 
 /-!
 # The real period under an isogeny
@@ -44,6 +52,22 @@ share an abscissa, as `-P ≠ P`. So the fibre has `#ker φ(ℝ)` elements when 
 `#ker φ(ℝ)` times the integral of `dx' / √Ψ₂Sq₂(x')` over the abscissas of the image, and
 `|c| Ω(W₁) = #ker φ(ℝ) · Ω(W₂)` when `φ` is onto on real points.
 
+In general `|c| Ω(W₁) · [W₂(ℝ) : φ(W₁(ℝ))] = #ker φ(ℝ) · Ω(W₂)`, and the proof shows that the
+index is `1` or `2`. Let `e` be the largest real root of `Ψ₂Sq₂`. Every `x' ≥ e` is `r(x)` for
+some `x` off the poles with `Ψ₂Sq₁(x) ≥ 0`, by the intermediate value theorem. Beyond the larger
+`p` of the largest root of `Ψ₂Sq₁` and the largest pole, `r` is continuous and tends to `∞`, as
+`deg N > deg D`. Some `x₀ ≥ p` off the poles has `Ψ₂Sq₂(r(x₀)) = 0`, so `r(x₀) ≤ e`. If `p` is
+not a pole, it is a root of `Ψ₂Sq₁`, and `x₀ = p` works. If `p` is a pole, `r` tends to `∞` at
+`p` as well, so it attains a minimum at some `x₀` in `(p, ∞)`, where `r' = 0`; there `w = 0`, so
+again `Ψ₂Sq₂(r(x₀)) = 0`. So the image contains every real point over `[e, ∞)`. If `e` is the
+only real root, there are no other real points. Otherwise `Ψ₂Sq₂ = 4 (x - e₁)(x - e₂)(x - e)`
+with `e₁ < e₂ < e`, and the remaining real points lie over `[e₁, e₂]`. Translation by the point
+`T` of order two over `e₁` carries them over `[e, ∞)`, since
+`(x(P + T) - e₁)(x(P) - e₁) = (e₁ - e₂)(e₁ - e)`. So `φ` is onto if `T` is in the image.
+Otherwise the image has index two and its affine points lie exactly over `[e, ∞)`. Those with
+`Ψ₂Sq₂ > 0` lie over `(e, ∞)`, which carries half of the period
+(`WeierstrassCurve.realPeriodLIntegral_eq_two_mul_setLIntegral_Ioi`).
+
 ## Main results
 
 * `TauCeti.Isogeny.ofReal_abs_mul_realPeriodLIntegral_eq_setLIntegral_encard`: the fibre-counted
@@ -61,6 +85,10 @@ share an abscissa, as `-P ≠ P`. So the fibre has `#ker φ(ℝ)` elements when 
   image.
 * `TauCeti.Isogeny.abs_mul_realPeriod_eq_card_ker_mul_of_surjective`:
   `|c| Ω(W₁) = #ker φ(ℝ) · Ω(W₂)` when `φ` is onto on real points.
+* `TauCeti.Isogeny.mem_range_pointMapHom_of_le_xCoord`: the image of `φ` contains every real point
+  of `W₂` over `[e, ∞)`, for `e` the largest real root of `Ψ₂Sq₂`.
+* `TauCeti.Isogeny.abs_mul_realPeriod_mul_index_eq_card_ker_mul`: **the real period under an
+  isogeny**, `|c| Ω(W₁) · [W₂(ℝ) : φ(W₁(ℝ))] = #ker φ(ℝ) · Ω(W₂)`.
 
 ## References
 
@@ -69,8 +97,8 @@ share an abscissa, as `-P ≠ P`. So the fibre has `#ker φ(ℝ)` elements when 
 
 public section
 
-open MeasureTheory Polynomial Set WeierstrassCurve.Affine
-open scoped ENNReal
+open Filter MeasureTheory Polynomial Set WeierstrassCurve.Affine
+open scoped ENNReal Topology
 
 namespace TauCeti.Isogeny
 
@@ -101,10 +129,8 @@ private theorem substitution_hypotheses (φ : Isogeny W₁ W₂) {c : ℝ}
         oddPart φ c x ^ 2 * W₁.Ψ₂Sq.eval x := by
   have hc0 := ne_zero_of_pullbackDifferential_eq_smul φ hc
   refine ⟨?_, div_ne_zero hw (mul_ne_zero hc0 (pow_ne_zero 2 hD)), ?_⟩
-  · convert HasDerivAt.div (φ.xRatFunc.num.hasDerivAt x) (φ.xRatFunc.denom.hasDerivAt x) hD
-      using 1
-    rw [oddPart, wronskian]
-    simp only [eval_sub, eval_mul]
+  · convert hasDerivAt_eval_div_eval hD using 1
+    rw [oddPart]
     field_simp
   · rw [oddPart, div_pow, div_mul_eq_mul_div,
       eval_wronskian_xRatFunc_sq_mul_eval_Ψ₂Sq hc hD]
@@ -354,5 +380,307 @@ theorem abs_mul_realPeriod_eq_card_ker_mul_of_surjective (φ : Isogeny W₁ W₂
   rwa [Point.xCoord_some] at he
 
 end Fibres
+
+section Image
+
+variable {φ : Isogeny W₁ W₂} {c : ℝ}
+
+/-- Off the poles, `c² D⁴ Ψ₂Sq₂(N / D) = w² Ψ₂Sq₁`, so the sign of `Ψ₂Sq₁` controls that of
+`Ψ₂Sq₂(N / D)`. -/
+private theorem nonneg_eval_Ψ₂Sq_div
+    (hc : φ.pullbackDifferential (invariantDifferential W₂) = c • invariantDifferential W₁)
+    {x : ℝ} (hD : φ.xRatFunc.denom.eval x ≠ 0) (hx : 0 ≤ W₁.Ψ₂Sq.eval x) :
+    0 ≤ W₂.Ψ₂Sq.eval (φ.xRatFunc.num.eval x / φ.xRatFunc.denom.eval x) := by
+  have h := eval_wronskian_xRatFunc_sq_mul_eval_Ψ₂Sq hc hD
+  have hc0 := ne_zero_of_pullbackDifferential_eq_smul φ hc
+  have hpos : 0 < c ^ 2 * φ.xRatFunc.denom.eval x ^ 4 := by positivity
+  exact (mul_nonneg_iff_of_pos_left hpos).mp (h ▸ mul_nonneg (sq_nonneg _) hx)
+
+/-- Off the poles, where `w` or `Ψ₂Sq₁` vanishes, so does `Ψ₂Sq₂(N / D)`. -/
+private theorem eval_Ψ₂Sq_div_eq_zero
+    (hc : φ.pullbackDifferential (invariantDifferential W₂) = c • invariantDifferential W₁)
+    {x : ℝ} (hD : φ.xRatFunc.denom.eval x ≠ 0)
+    (hx : (wronskian φ.xRatFunc.denom φ.xRatFunc.num).eval x * W₁.Ψ₂Sq.eval x = 0) :
+    W₂.Ψ₂Sq.eval (φ.xRatFunc.num.eval x / φ.xRatFunc.denom.eval x) = 0 := by
+  have h := eval_wronskian_xRatFunc_sq_mul_eval_Ψ₂Sq hc hD
+  have hc0 := ne_zero_of_pullbackDifferential_eq_smul φ hc
+  rw [sq, mul_assoc, hx, mul_zero] at h
+  simpa [hc0, hD] using h.symm
+
+/-- Where `|N / D| → ∞` along a filter on which eventually `D ≠ 0` and `Ψ₂Sq₁ ≥ 0`, in fact
+`N / D → ∞`: its values are abscissas of real points of `W₂`, which are bounded below. -/
+private theorem tendsto_eval_div_atTop_of_tendsto_abs
+    (hc : φ.pullbackDifferential (invariantDifferential W₂) = c • invariantDifferential W₁)
+    {l : Filter ℝ}
+    (h : Tendsto (fun x ↦ |φ.xRatFunc.num.eval x / φ.xRatFunc.denom.eval x|) l atTop)
+    (hl : ∀ᶠ x in l, φ.xRatFunc.denom.eval x ≠ 0 ∧ 0 ≤ W₁.Ψ₂Sq.eval x) :
+    Tendsto (fun x ↦ φ.xRatFunc.num.eval x / φ.xRatFunc.denom.eval x) l atTop := by
+  obtain ⟨m, hm⟩ := bddBelow_setOf_nonneg_eval_Ψ₂Sq (W := W₂)
+  refine tendsto_atTop.mpr fun b ↦ ((h.eventually_ge_atTop (|m| + |b| + 1)).and hl).mono ?_
+  rintro x ⟨h₁, hD, hx⟩
+  have h₂ := hm (nonneg_eval_Ψ₂Sq_div hc hD hx)
+  rcases abs_cases (φ.xRatFunc.num.eval x / φ.xRatFunc.denom.eval x) with ⟨h₃, -⟩ | ⟨h₃, -⟩
+  · linarith [le_abs_self b, abs_nonneg m]
+  · linarith [neg_abs_le m, abs_nonneg b]
+
+variable (φ) in
+/-- Beyond some `p`, `D` has no roots and `Ψ₂Sq₁ > 0`; at `p`, `Ψ₂Sq₁ ≥ 0` and `D` or `Ψ₂Sq₁`
+vanishes. So `p` is the larger of the largest root of `Ψ₂Sq₁` and the largest pole of `N / D`. -/
+private theorem exists_forall_lt_eval_denom_ne_zero_and_pos :
+    ∃ p, 0 ≤ W₁.Ψ₂Sq.eval p ∧ (φ.xRatFunc.denom.eval p = 0 ∨ W₁.Ψ₂Sq.eval p = 0) ∧
+      ∀ ⦃x⦄, p < x → φ.xRatFunc.denom.eval x ≠ 0 ∧ 0 < W₁.Ψ₂Sq.eval x := by
+  -- `p` is the largest `x` with `D(x) = 0` or `Ψ₂Sq₁(x) ≤ 0`
+  set Z := {x | φ.xRatFunc.denom.eval x = 0 ∨ W₁.Ψ₂Sq.eval x ≤ 0}
+  obtain ⟨e, he, hpos⟩ := exists_isRoot_Ψ₂Sq_and_forall_lt_pos_eval W₁
+  obtain ⟨M, hM⟩ := eventually_atTop.mp
+    (Polynomial.eventually_atTop_not_isRoot _ φ.xRatFunc.denom_ne_zero)
+  have heZ : e ∈ Z := Or.inr he.eq_zero.le
+  have hZb : BddAbove Z := ⟨max e M, fun x hx ↦ le_of_not_gt fun h ↦ by
+    rcases hx with hx | hx
+    · exact hM x (le_of_max_le_right h.le) hx
+    · exact (hpos (lt_of_le_of_lt (le_max_left e M) h)).not_ge hx⟩
+  have hZc : IsClosed Z := (isClosed_eq φ.xRatFunc.denom.continuous continuous_const).union
+    (isClosed_le W₁.Ψ₂Sq.continuous continuous_const)
+  have hgt : ∀ ⦃x⦄, sSup Z < x → φ.xRatFunc.denom.eval x ≠ 0 ∧ 0 < W₁.Ψ₂Sq.eval x :=
+    fun x hx ↦ by
+      have : x ∉ Z := fun h ↦ (le_csSup hZb h).not_gt hx
+      simp only [Z, mem_ofPred_eq, not_or, not_le] at this
+      exact this
+  have hp0 : 0 ≤ W₁.Ψ₂Sq.eval (sSup Z) := by
+    rcases (le_csSup hZb heZ).eq_or_lt with h | h
+    · exact h ▸ he.eq_zero.ge
+    · exact (hpos h).le
+  refine ⟨sSup Z, hp0, ?_, hgt⟩
+  exact (hZc.csSup_mem ⟨e, heZ⟩ hZb).imp_right hp0.antisymm'
+
+variable (φ) in
+/-- `N / D → ∞` at `∞`: the degree of `N` exceeds that of `D`. -/
+private theorem tendsto_eval_div_atTop
+    (hc : φ.pullbackDifferential (invariantDifferential W₂) = c • invariantDifferential W₁) :
+    Tendsto (fun x ↦ φ.xRatFunc.num.eval x / φ.xRatFunc.denom.eval x) atTop atTop := by
+  obtain ⟨p, -, -, hgt⟩ := exists_forall_lt_eval_denom_ne_zero_and_pos φ
+  refine tendsto_eval_div_atTop_of_tendsto_abs hc
+    (abs_div_tendsto_atTop_atTop_of_degree_gt _ _
+      (degree_lt_degree (natDegree_denom_lt_natDegree_num_xRatFunc φ)) φ.xRatFunc.denom_ne_zero)
+    ((eventually_gt_atTop p).mono fun x hx ↦ ⟨(hgt hx).1, (hgt hx).2.le⟩)
+
+/-- At a pole `p` of `N / D` beyond which `D ≠ 0` and `Ψ₂Sq₁ > 0`, the function `N / D` tends to
+`∞` on both sides of `(p, ∞)`, so it has a minimum there. At the minimum its derivative `w / D²`
+vanishes, so `Ψ₂Sq₂(N / D) = 0` there, and the minimum is at most the largest root `e` of
+`Ψ₂Sq₂`. -/
+private theorem exists_lt_eval_div_le_of_eval_denom_eq_zero
+    (hc : φ.pullbackDifferential (invariantDifferential W₂) = c • invariantDifferential W₁)
+    {e : ℝ} (hpos : ∀ ⦃y⦄, e < y → 0 < W₂.Ψ₂Sq.eval y) {p : ℝ}
+    (hp : φ.xRatFunc.denom.eval p = 0)
+    (hgt : ∀ ⦃x⦄, p < x → φ.xRatFunc.denom.eval x ≠ 0 ∧ 0 < W₁.Ψ₂Sq.eval x) :
+    ∃ x₀, p < x₀ ∧ φ.xRatFunc.num.eval x₀ / φ.xRatFunc.denom.eval x₀ ≤ e := by
+  set r := fun x ↦ φ.xRatFunc.num.eval x / φ.xRatFunc.denom.eval x
+  have hcont : ContinuousOn r (Ioi p) := fun x hx ↦
+    (hasDerivAt_eval_div_eval (hgt hx).1).continuousAt.continuousWithinAt
+  -- `N(p) ≠ 0`, as `N` and `D` are coprime, so `|N / D| → ∞` at `p`
+  have hNp : φ.xRatFunc.num.eval p ≠ 0 := fun hN ↦ by
+    obtain ⟨a, b, hab⟩ := RatFunc.isCoprime_num_denom φ.xRatFunc
+    simpa [hN, hp] using congrArg (eval p) hab
+  have hD : Tendsto (fun x ↦ |φ.xRatFunc.denom.eval x|) (𝓝[>] p) (𝓝[>] 0) :=
+    tendsto_nhdsWithin_iff.mpr ⟨by simpa [hp] using
+      (φ.xRatFunc.denom.continuous.abs.tendsto p).mono_left nhdsWithin_le_nhds,
+      eventually_nhdsWithin_of_forall fun x hx ↦ abs_pos.mpr (hgt hx).1⟩
+  have hpole : Tendsto r (𝓝[>] p) atTop := by
+    refine tendsto_eval_div_atTop_of_tendsto_abs hc ?_
+      (eventually_nhdsWithin_of_forall fun x hx ↦ ⟨(hgt hx).1, (hgt hx).2.le⟩)
+    simpa [abs_div, div_eq_mul_inv] using
+      (((φ.xRatFunc.num.continuous.abs.tendsto p).mono_left nhdsWithin_le_nhds).pos_mul_atTop
+        (abs_pos.mpr hNp) (tendsto_inv_nhdsGT_zero.comp hD))
+  -- a local minimum of `r` on `(a, b)`, where `p < a < p + 1 < b` and `r(a), r(b) > r(p + 1)`
+  obtain ⟨a, ha, hpa⟩ := ((hpole.eventually_gt_atTop (r (p + 1))).and
+    (Ioo_mem_nhdsGT (by linarith : p < p + 1))).exists
+  obtain ⟨b, hb, hpb⟩ := ((tendsto_eval_div_atTop φ hc |>.eventually_gt_atTop (r (p + 1))).and
+    (eventually_gt_atTop (p + 1))).exists
+  obtain ⟨x₀, hx₀, hmin⟩ := isCompact_Icc.exists_isLocalMin_mem_open Ioo_subset_Icc_self
+    (hcont.mono fun x hx ↦ hpa.1.trans_le hx.1) ⟨hpa.2.le, hpb.le⟩
+    (fun z hz ↦ by
+      rcases hz with ⟨⟨h₁, h₂⟩, h₃⟩
+      rcases h₁.eq_or_lt with rfl | h₁
+      · exact ha
+      rcases h₂.eq_or_lt with rfl | h₂
+      · exact hb
+      exact absurd ⟨h₁, h₂⟩ h₃) isOpen_Ioo
+  have hpx₀ : p < x₀ := hpa.1.trans hx₀.1
+  have hw := hmin.hasDerivAt_eq_zero (hasDerivAt_eval_div_eval (hgt hpx₀).1)
+  rw [div_eq_zero_iff, or_iff_left (pow_ne_zero 2 (hgt hpx₀).1)] at hw
+  refine ⟨x₀, hpx₀, le_of_not_gt fun h ↦ (hpos h).ne' ?_⟩
+  exact eval_Ψ₂Sq_div_eq_zero hc (hgt hpx₀).1 (by rw [hw, zero_mul])
+
+/-- **The intermediate value argument.** Every `y` at least the largest root `e` of `Ψ₂Sq₂` is
+`N(x) / D(x)` for some `x` with `D(x) ≠ 0` and `Ψ₂Sq₁(x) ≥ 0`. -/
+private theorem exists_eval_div_eq
+    (hc : φ.pullbackDifferential (invariantDifferential W₂) = c • invariantDifferential W₁)
+    {e : ℝ} (hpos : ∀ ⦃y⦄, e < y → 0 < W₂.Ψ₂Sq.eval y) {y : ℝ} (hy : e ≤ y) :
+    ∃ x, 0 ≤ W₁.Ψ₂Sq.eval x ∧ φ.xRatFunc.denom.eval x ≠ 0 ∧
+      φ.xRatFunc.num.eval x / φ.xRatFunc.denom.eval x = y := by
+  obtain ⟨p, hp0, hpZ, hgt⟩ := exists_forall_lt_eval_denom_ne_zero_and_pos φ
+  -- a point `x₀ ≥ p` off the poles at which `N / D` is at most `e`
+  obtain ⟨x₀, hpx₀, hD₀, hx₀⟩ : ∃ x₀, p ≤ x₀ ∧ φ.xRatFunc.denom.eval x₀ ≠ 0 ∧
+      φ.xRatFunc.num.eval x₀ / φ.xRatFunc.denom.eval x₀ ≤ e := by
+    by_cases hDp : φ.xRatFunc.denom.eval p = 0
+    · obtain ⟨x₀, h₁, h₂⟩ := exists_lt_eval_div_le_of_eval_denom_eq_zero hc hpos hDp hgt
+      exact ⟨x₀, h₁.le, (hgt h₁).1, h₂⟩
+    · refine ⟨p, le_rfl, hDp, le_of_not_gt fun h ↦ (hpos h).ne' ?_⟩
+      exact eval_Ψ₂Sq_div_eq_zero hc hDp (by rw [hpZ.resolve_left hDp, mul_zero])
+  have hD (x : ℝ) (hx : x₀ ≤ x) : φ.xRatFunc.denom.eval x ≠ 0 :=
+    hx.eq_or_lt.elim (· ▸ hD₀) fun h ↦ (hgt (hpx₀.trans_lt h)).1
+  -- the intermediate value theorem on `[x₀, M]`, where `N(M) / D(M) ≥ y`
+  obtain ⟨M, hM, hxM⟩ := ((tendsto_eval_div_atTop φ hc |>.eventually_ge_atTop y).and
+    (eventually_ge_atTop x₀)).exists
+  obtain ⟨x, hx, hrx⟩ := intermediate_value_Icc hxM
+    (fun x hx ↦ (hasDerivAt_eval_div_eval (hD x hx.1)).continuousAt.continuousWithinAt)
+    ⟨hx₀.trans hy, hM⟩
+  refine ⟨x, ?_, hD x hx.1, hrx⟩
+  rcases (hpx₀.trans hx.1).eq_or_lt with h | h
+  · exact h ▸ hp0
+  · exact (hgt h).2.le
+
+variable (φ) in
+/-- **The image of `φ` contains every real point beyond the largest root of `Ψ₂Sq₂`.** If
+`Ψ₂Sq₂ > 0` on `(e, ∞)`, every affine real point `P` of `W₂` with `x(P) ≥ e` is the image under
+`φ` of a real point of `W₁`. -/
+theorem mem_range_pointMapHom_of_le_xCoord {e : ℝ} (hpos : ∀ ⦃y⦄, e < y → 0 < W₂.Ψ₂Sq.eval y)
+    {P : W₂.Point} (hP : P ≠ 0) (he : e ≤ P.xCoord) : P ∈ (Hom.ofIsogeny φ).pointMapHom.range := by
+  obtain ⟨c, hc, -⟩ := φ.existsUnique_pullbackDifferential_invariantDifferential_eq_smul
+  obtain ⟨x, hx, hD, hr⟩ := exists_eval_div_eq hc hpos he
+  obtain ⟨y, h⟩ := exists_nonsingular_of_nonneg_eval_Ψ₂Sq hx
+  have h0 : (Hom.ofIsogeny φ).pointMap (.some x y h) ≠ 0 :=
+    (pointMap_ofIsogeny_some_eq_zero_iff h).not.mpr hD
+  rcases Point.eq_or_eq_neg_of_xCoord_eq h0 hP ((xCoord_pointMap_ofIsogeny_some h hD).trans hr)
+    with he | he
+  · exact ⟨_, (Hom.pointMapHom_apply _ _).trans he⟩
+  · exact ⟨-.some x y h, by rw [map_neg, Hom.pointMapHom_apply, he, neg_neg]⟩
+
+variable (φ) in
+/-- With three real roots `e₁ < e₂ < e` of `Ψ₂Sq₂`, translating by the point `T` of order two over
+`e₁` carries every affine real point `P` with `x(P) < e`, which lies over `[e₁, e₂]`, into the
+image of `φ`: `x(P + T) - e₁ = (e₁ - e₂)(e₁ - e) / (x(P) - e₁) ≥ e - e₁`. -/
+private theorem add_mem_range_pointMapHom_of_xCoord_lt {e₁ e₂ e : ℝ} (h₁₂ : e₁ < e₂)
+    (h₂ : e₂ < e)
+    (hfac : W₂.Ψ₂Sq = C 4 * (X - C e₁) * (X - C e₂) * (X - C e)) {t : ℝ}
+    (hT : W₂.Nonsingular e₁ t) (hψ : W₂.polynomialY.evalEval e₁ t = 0) {P : W₂.Point}
+    (hP : P ≠ 0) (hx : P.xCoord < e) :
+    P + .some e₁ t hT ∈ (Hom.ofIsogeny φ).pointMapHom.range := by
+  have hpos : ∀ ⦃y⦄, e < y → 0 < W₂.Ψ₂Sq.eval y := fun y hy ↦
+    (W₂.pos_eval_Ψ₂Sq_iff_of_eq_prod_three_roots h₁₂ h₂ hfac y).mpr (Or.inr hy)
+  obtain ⟨x, y, h, rfl⟩ := Point.exists_eq_some_of_ne_zero hP
+  rw [Point.xCoord_some] at hx
+  -- `x` lies in `[e₁, e₂]`, as `Ψ₂Sq₂(x) ≥ 0`
+  have hΨ : 0 ≤ 4 * (x - e₁) * (x - e₂) * (x - e) := by
+    simpa [hfac] using exists_equation_iff_nonneg_eval_Ψ₂Sq.mp ⟨y, h.1⟩
+  have h₁ : e₁ ≤ x := le_of_not_gt fun h ↦ by
+    nlinarith [mul_pos (mul_pos (sub_pos.2 h) (by linarith : (0 : ℝ) < e₂ - x)) (sub_pos.2 hx)]
+  have hx₂ : x ≤ e₂ := le_of_not_gt fun h ↦ by
+    nlinarith [mul_pos (mul_pos (by linarith : (0 : ℝ) < x - e₁) (sub_pos.2 h)) (sub_pos.2 hx)]
+  rcases h₁.eq_or_lt with rfl | h₁
+  · -- over `e₁` the point is `T` itself, and `T + T = 0`
+    obtain rfl := Y_eq_of_evalEval_polynomialY_eq_zero hT.1 hψ h.1
+    rw [(Point.some_add_self_eq_zero_iff hT).mpr hψ]
+    exact zero_mem _
+  have hne : x ≠ e₁ := h₁.ne'
+  have hc := W₂.neg_evalEval_polynomialX_eq_of_Ψ₂Sq_eq two_ne_zero hfac
+    (by rwa [WeierstrassCurve.ψ₂])
+  have key := Point.xCoord_add_sub_mul_sub hT hψ h hne
+  rw [hc] at key
+  refine mem_range_pointMapHom_of_le_xCoord φ hpos (fun h0 ↦ hne ?_) ?_
+  · -- `P + T = 0` would make `P = -T = T`
+    rw [add_eq_zero_iff_eq_neg, ← (neg_eq_iff_add_eq_zero.mpr
+      ((Point.some_add_self_eq_zero_iff hT).mpr hψ))] at h0
+    simpa using congrArg Point.xCoord h0
+  · nlinarith [mul_pos (sub_pos.2 h₁) (by linarith : (0 : ℝ) < e - e₁)]
+
+end Image
+
+section Index
+
+/-- When `φ` is onto the real points, the index is one. -/
+private theorem abs_mul_realPeriod_mul_index_eq_of_forall_mem (φ : Isogeny W₁ W₂) {c : ℝ}
+    (hc : φ.pullbackDifferential (invariantDifferential W₂) = c • invariantDifferential W₁)
+    (h : ∀ P, P ∈ (Hom.ofIsogeny φ).pointMapHom.range) :
+    |c| * W₁.realPeriod * (Hom.ofIsogeny φ).pointMapHom.range.index =
+      Nat.card (Hom.ofIsogeny φ).pointMapHom.ker * W₂.realPeriod := by
+  rw [AddSubgroup.index_eq_one.mpr (eq_top_iff.mpr fun P _ ↦ h P), Nat.cast_one, mul_one]
+  exact abs_mul_realPeriod_eq_card_ker_mul_of_surjective φ hc fun P ↦
+    (h P).imp fun Q hQ ↦ (Hom.pointMapHom_apply _ Q).symm.trans hQ
+
+/-- With three real roots `e₁ < e₂ < e` of `Ψ₂Sq₂`, if the point `T` of order two over `e₁` is not
+in the image of `φ`, the abscissas `x'` with `Ψ₂Sq₂(x') > 0` of the affine points of the image are
+exactly `(e, ∞)`: a point of the image over `(e₁, e₂)` would put `T` in the image. -/
+private theorem setOf_xCoord_mem_range_eq_Ioi (φ : Isogeny W₁ W₂) {e₁ e₂ e : ℝ} (h₁₂ : e₁ < e₂)
+    (h₂ : e₂ < e) (hfac : W₂.Ψ₂Sq = C 4 * (X - C e₁) * (X - C e₂) * (X - C e)) {t : ℝ}
+    (hT : W₂.Nonsingular e₁ t) (hψ : W₂.polynomialY.evalEval e₁ t = 0)
+    (hTH : .some e₁ t hT ∉ (Hom.ofIsogeny φ).pointMapHom.range) :
+    {y | 0 < W₂.Ψ₂Sq.eval y ∧
+      ∃ P ∈ (Hom.ofIsogeny φ).pointMapHom.range, P ≠ 0 ∧ P.xCoord = y} = Ioi e := by
+  have hpos : ∀ ⦃y⦄, e < y → 0 < W₂.Ψ₂Sq.eval y := fun y hy ↦
+    (W₂.pos_eval_Ψ₂Sq_iff_of_eq_prod_three_roots h₁₂ h₂ hfac y).mpr (Or.inr hy)
+  ext y
+  refine ⟨fun ⟨hy, P, hPH, hP, hPy⟩ ↦ mem_Ioi.mpr (lt_of_not_ge fun hle ↦ hTH ?_), fun hy ↦ ?_⟩
+  · have hlt : P.xCoord < e := hPy ▸ hle.lt_of_ne fun h ↦ by
+      rw [h] at hy
+      exact (hy.trans_eq (by simp [hfac])).false
+    simpa using sub_mem (add_mem_range_pointMapHom_of_xCoord_lt φ h₁₂ h₂ hfac hT hψ hP hlt) hPH
+  · obtain ⟨y', h⟩ := exists_nonsingular_of_nonneg_eval_Ψ₂Sq (hpos hy).le
+    refine ⟨hpos hy, _, mem_range_pointMapHom_of_le_xCoord φ hpos (Point.some_ne_zero h) ?_,
+      Point.some_ne_zero h, Point.xCoord_some h⟩
+    rw [Point.xCoord_some]
+    exact (mem_Ioi.mp hy).le
+
+/-- **The real period under an isogeny.** Let `φ : W₁ → W₂` be an isogeny over `ℝ` with
+`φ^*ω₂ = c ω₁`. Then `|c| Ω(W₁) · [W₂(ℝ) : φ(W₁(ℝ))] = #ker φ(ℝ) · Ω(W₂)`, the index being that of
+the image of `φ` on real points. -/
+theorem abs_mul_realPeriod_mul_index_eq_card_ker_mul (φ : Isogeny W₁ W₂) {c : ℝ}
+    (hc : φ.pullbackDifferential (invariantDifferential W₂) = c • invariantDifferential W₁) :
+    |c| * W₁.realPeriod * (Hom.ofIsogeny φ).pointMapHom.range.index =
+      Nat.card (Hom.ofIsogeny φ).pointMapHom.ker * W₂.realPeriod := by
+  set H := (Hom.ofIsogeny φ).pointMapHom.range
+  obtain ⟨e, he, hpos⟩ := exists_isRoot_Ψ₂Sq_and_forall_lt_pos_eval W₂
+  have hH (P : W₂.Point) (hP : P ≠ 0) (hle : e ≤ P.xCoord) : P ∈ H :=
+    mem_range_pointMapHom_of_le_xCoord φ hpos hP hle
+  by_cases hx : ∃ x₀ < e, 0 ≤ W₂.Ψ₂Sq.eval x₀
+  swap
+  · -- every real point other than `O` lies over `[e, ∞)`
+    refine abs_mul_realPeriod_mul_index_eq_of_forall_mem φ hc fun P ↦ ?_
+    rcases eq_or_ne P 0 with rfl | hP
+    · exact zero_mem H
+    obtain ⟨x, y, h, rfl⟩ := Point.exists_eq_some_of_ne_zero hP
+    refine hH _ hP (le_of_not_gt fun hlt ↦ hx ⟨x, ?_,
+      exists_equation_iff_nonneg_eval_Ψ₂Sq.mp ⟨y, h.1⟩⟩)
+    rwa [Point.xCoord_some] at hlt
+  obtain ⟨x₀, hx₀, h₀⟩ := hx
+  obtain ⟨e₁, e₂, h₁₂, h₂, hfac⟩ := exists_Ψ₂Sq_eq_prod_three_roots he hpos hx₀ h₀
+  -- the point `T` of order two over `e₁`; a point `P` off the image has `P + T` in it
+  obtain ⟨t, hT⟩ := exists_nonsingular_of_nonneg_eval_Ψ₂Sq (W := W₂) (x := e₁) (by simp [hfac])
+  have hψ : W₂.polynomialY.evalEval e₁ t = 0 := by
+    simpa [hfac, WeierstrassCurve.ψ₂] using W₂.evalEval_ψ₂_sq hT.1
+  have hnot (P : W₂.Point) (hP : P ∉ H) : P + .some e₁ t hT ∈ H := by
+    have hP0 : P ≠ 0 := fun h ↦ hP (h ▸ zero_mem H)
+    exact add_mem_range_pointMapHom_of_xCoord_lt φ h₁₂ h₂ hfac hT hψ hP0
+      (lt_of_not_ge fun hle ↦ hP (hH P hP0 hle))
+  by_cases hTH : .some e₁ t hT ∈ H
+  · refine abs_mul_realPeriod_mul_index_eq_of_forall_mem φ hc fun P ↦ by_contra fun hP ↦ hP ?_
+    simpa only [add_sub_cancel_right] using sub_mem (hnot P hP) hTH
+  -- otherwise the image has index two, and its abscissas `(e, ∞)` carry half of the period
+  have hidx : H.index = 2 := AddSubgroup.index_eq_two_iff.mpr ⟨.some e₁ t hT, fun P ↦ by
+    by_cases hP : P ∈ H
+    · exact Or.inr ⟨hP, fun h ↦ hTH (by simpa using sub_mem h hP)⟩
+    · exact Or.inl ⟨hnot P hP, hP⟩⟩
+  have hI₁ := congrArg ENNReal.toReal
+    (ofReal_abs_mul_realPeriodLIntegral_eq_card_ker_mul_setLIntegral φ hc)
+  have hI₂ := congrArg ENNReal.toReal
+    (W₂.realPeriodLIntegral_eq_two_mul_setLIntegral_Ioi h₁₂ h₂ hfac)
+  rw [setOf_xCoord_mem_range_eq_Ioi φ h₁₂ h₂ hfac hT hψ hTH, ENNReal.toReal_mul,
+    ENNReal.toReal_ofReal (abs_nonneg c), ENNReal.toReal_mul, ENNReal.toReal_natCast] at hI₁
+  rw [ENNReal.toReal_mul, ENNReal.toReal_ofNat] at hI₂
+  rw [hidx, WeierstrassCurve.realPeriod_def, WeierstrassCurve.realPeriod_def, hI₂]
+  push_cast
+  linear_combination 4 * hI₁
+
+end Index
 
 end TauCeti.Isogeny

@@ -41,13 +41,19 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Complete
     {A : Type*} [NormedCommRing A] [NormedAlgebra K A] [IsUltrametricDist A]
     [CompleteSpace A]
 
+/-- Every ideal of an affinoid algebra carrying a complete compatible ultrametric algebra norm
+is closed. -/
+theorem isClosed_ideal (hA : IsAffinoidAlgebra K A) (I : Ideal A) : IsClosed (I : Set A) := by
+  have := hA.isNoetherianRing
+  have := Huber.IsTateRing.of_normedAlgebra K A
+  exact Huber.isClosed_of_isNoetherian I
+
 /-- Every homomorphism from a noetherian ultrametric Banach algebra to a completely normed
 affinoid algebra is continuous. The affinoid presentation is purely algebraic. -/
 theorem continuous_algHom (hA : IsAffinoidAlgebra K A)
     {B : Type*} [NormedCommRing B] [NormedAlgebra K B] [IsUltrametricDist B]
     [CompleteSpace B] [IsNoetherianRing B] (f : B →ₐ[K] A) : Continuous f := by
   have := hA.isNoetherianRing
-  let : Huber.IsTateRing A := Huber.IsTateRing.of_normedAlgebra K A
   apply f.toLinearMap.continuous_of_seq_closed_graph
   intro u x y hu huy
   suffices y - f x ∈ (⊥ : Ideal A) by
@@ -57,7 +63,7 @@ theorem continuous_algHom (hA : IsAffinoidAlgebra K A)
   intro m hm n hn
   let := hm
   let I := m ^ n
-  have : IsClosed (I : Set A) := Huber.isClosed_of_isNoetherian I
+  have : IsClosed (I : Set A) := hA.isClosed_ideal I
   have : Module.Finite K (A ⧸ I) := hA.finite_quotient_pow m n
   let q := Ideal.Quotient.mkₐ K I
   have hq : Continuous q := continuous_quot_mk

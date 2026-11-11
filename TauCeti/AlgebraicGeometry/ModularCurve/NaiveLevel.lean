@@ -13,7 +13,6 @@ import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.MulBy.Finite
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Rigidity
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Torsion.Etale.Locus
-import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.TateNormalForm
 import TauCeti.AlgebraicGeometry.ResidueField
 
 /-!
@@ -346,28 +345,19 @@ fixes `P`, `2P` and `-P`, which are distinct in every fibre. No hypothesis is ma
 bound is sharp: on `Y² + Y = X³` over a field containing a primitive cube root of unity `ζ`, the
 automorphism `(X, Y) ↦ (ζX, Y)` fixes the point `(0, 0)` of order `3`. -/
 theorem isRigid_gammaOneNaive (hN : 4 ≤ N) : (gammaOneNaive B N).IsRigid := by
-  have : NeZero N := ⟨by omega⟩
-  rw [isRigid_iff]
-  intro X σ hσ α hα
-  have hφ := (naiveLevelEquiv X α).2
-  set P := (naiveLevelEquiv X α).1 (.ofAdd 1)
-  -- the multiples `P`, `2P` and `3P` miss the zero section, since `P` has exact order `N ≥ 4`
-  have hk (k : ℤ) (hk : 0 < k) (hk' : k < 4) (s : X.base) :
-      (P.left ≫ (X.curve.mulBy k).left) s ≠ X.curve.zero s := by
-    lift k to ℕ using hk.le
-    rw [← Over.comp_left, EllipticCurveGeom.comp_mulBy, zpow_natCast]
-    exact (EllipticCurveGeom.isFiberwiseInjective_zmod_iff.mp hφ) k (by omega) (by omega) s
-  -- `σ` fixes `P`, because it fixes the naive `[Γ₁(N)]`-structure
-  have hσP : P.left ≫ σ.total = P.left := by
-    have h := congrArg (fun α ↦ (naiveLevelEquiv X α).1 (.ofAdd 1)) hα
-    simp only [naiveLevelEquiv_map, MonoidHom.comp_apply] at h
-    simpa [hσ] using (EllipticCurveGeom.eq_pointsPullback_iff σ.isPullback σ.zero_total).mp h.symm
-  refine EllObj.hom_ext ?_
-  rw [EllObj.id_total]
-  refine EllipticCurveGeom.eq_id_of_isPullback_of_comp_eq (P := P.left) (by simp)
-    (by simpa using hk 1) (hk 2 (by norm_num) (by norm_num))
-    (hk 3 (by norm_num) (by norm_num)) (hσ ▸ σ.isPullback) ?_ hσP
-  simp [hσ]
+  have h (k : ℕ) (h0 : 0 < k) (hk : k < N) : (k : ZMod N) ≠ 0 := by
+    rw [Ne, ZMod.natCast_eq_zero_iff]
+    exact Nat.not_dvd_of_pos_of_lt h0 hk
+  refine isRigid_naiveLevel B (a := .ofAdd 1) (b := .ofAdd 2) ?_ ?_ ?_ ?_
+  · rw [← ofAdd_add, Ne, ofAdd_eq_one, one_add_one_eq_two]
+    exact_mod_cast h 2 (by omega) (by omega)
+  · rw [Ne, ofAdd_eq_one]
+    exact_mod_cast h 2 (by omega) (by omega)
+  · rw [Ne, Multiplicative.ofAdd.injective.eq_iff, ← sub_eq_zero]
+    norm_num
+    exact_mod_cast h 1 (by omega) (by omega)
+  · rw [← ofAdd_neg, Ne, Multiplicative.ofAdd.injective.eq_iff, ← sub_eq_zero, sub_neg_eq_add]
+    exact_mod_cast h 3 (by omega) (by omega)
 
 
 /-- The morphism `[Γ(N)] ⟶ [Γ₁(N)]` of naive moduli problems which keeps the first component `P`

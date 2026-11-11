@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.VectorBundle.Constructions
 public import Mathlib.Topology.VectorBundle.ContinuousAlternatingMap
 public import Mathlib.Topology.VectorBundle.Hom
 
@@ -20,6 +21,11 @@ In degree one, the identification `ContinuousAlternatingMap.ofSubsingleton` of l
 alternating maps of one variable also commutes with passing into coordinates, with no base-set
 hypothesis. This compares regularity of degree-one forms with regularity of sections of the
 bundle of fibrewise linear maps.
+
+When the codomain is a fixed space, a fibre alternating map read in the trivialization at `x₀`
+is precomposed with the inverse, at its base point, of the trivialization of the domain bundle at
+`x₀` (`FiberBundle.trivializationAt_continuousAlternatingMap_apply_snd`). This holds everywhere,
+with no base-set hypothesis.
 
 The coordinate maps are Mathlib's `ContinuousAlternatingMap.inCoordinates` and
 `ContinuousLinearMap.inCoordinates`.
@@ -69,3 +75,23 @@ theorem inCoordinates_ofSubsingleton [Subsingleton ι] (i : ι) {x₀ x : B₁} 
   simp [inCoordinates, ContinuousLinearMap.inCoordinates]
 
 end ContinuousAlternatingMap
+
+namespace FiberBundle
+
+variable {𝕜 ι B F₁ F : Type*} [NontriviallyNormedField 𝕜] [Fintype ι] [TopologicalSpace B]
+  [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {V : B → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
+  [TopologicalSpace (TotalSpace F₁ V)] [FiberBundle F₁ V] [VectorBundle 𝕜 F₁ V]
+
+/-- In the trivialization at `x₀` of the bundle of alternating maps from `V` to a fixed space `F`,
+a fibre map `ω` at `x` is precomposed with the inverse, at `x`, of the trivialization of `V` at
+`x₀`. -/
+@[simp]
+theorem trivializationAt_continuousAlternatingMap_apply_snd (x₀ : B) {x : B}
+    (ω : V x [⋀^ι]→L[𝕜] F) :
+    (trivializationAt (F₁ [⋀^ι]→L[𝕜] F) (fun x ↦ V x [⋀^ι]→L[𝕜] F) x₀ ⟨x, ω⟩).2 =
+      ω.compContinuousLinearMap ((trivializationAt F₁ V x₀).symmL 𝕜 x) := by
+  ext v
+  simp [trivializationAt_continuousAlternatingMap_apply, ContinuousAlternatingMap.inCoordinates]
+
+end FiberBundle

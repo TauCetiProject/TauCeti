@@ -149,5 +149,44 @@ theorem polarizedComplexMeasure_smul_right (P : ProjValMeasure X H) (c : ℂ) (�
     P.polarizedComplexMeasure_apply u v B hB
   simp only [heval, _root_.smul_apply, map_smul, inner_smul_right, smul_eq_mul]
 
+/-- Pointwise Young-type bound on a polarized spectral measure by a weighted sum of the two
+diagonal measures. -/
+theorem norm_polarizedComplexMeasure_apply_le (P : ProjValMeasure X H) {ψ ξ : H}
+    (B : Set X) (hB : MeasurableSet B) :
+    ‖P.polarizedComplexMeasure ψ ξ B‖ ≤
+      (‖ξ‖ / (2 * ‖ψ‖)) * (P.diag ψ).real B + (‖ψ‖ / (2 * ‖ξ‖)) * (P.diag ξ).real B := by
+  by_cases hψz : ψ = 0
+  · subst ψ
+    simp only [P.polarizedComplexMeasure_zero_left, _root_.zero_apply, norm_zero]
+    have := measureReal_nonneg (μ := P.diag ξ) (s := B)
+    have := measureReal_nonneg (μ := P.diag (0 : H)) (s := B)
+    positivity
+  by_cases hξz : ξ = 0
+  · subst ξ
+    simp only [P.polarizedComplexMeasure_zero_right, _root_.zero_apply, norm_zero]
+    have := measureReal_nonneg (μ := P.diag ψ) (s := B)
+    have := measureReal_nonneg (μ := P.diag (0 : H)) (s := B)
+    positivity
+  have hψ : 0 < ‖ψ‖ := norm_pos_iff.mpr hψz
+  have hξ : 0 < ‖ξ‖ := norm_pos_iff.mpr hξz
+  let T := P.proj B hB
+  have hcs : ‖P.polarizedComplexMeasure ψ ξ B‖ ≤ ‖T ψ‖ * ‖T ξ‖ := by
+    rw [P.polarizedComplexMeasure_apply ψ ξ B hB]
+    rw [P.inner_proj_eq_inner_proj_proj B hB ψ ξ]
+    exact norm_inner_le_norm _ _
+  have hy :
+      ‖T ψ‖ * ‖T ξ‖ ≤
+        (‖ξ‖ / (2 * ‖ψ‖)) * ‖T ψ‖ ^ 2 + (‖ψ‖ / (2 * ‖ξ‖)) * ‖T ξ‖ ^ 2 := by
+    have hYoung := two_mul_le_add_mul_sq
+      (a := ‖T ψ‖) (b := ‖T ξ‖)
+      (ε := ‖ξ‖ / ‖ψ‖) (div_pos hξ hψ)
+    have hscale :
+        (‖ξ‖ / ‖ψ‖) * ‖T ψ‖ ^ 2 + (‖ξ‖ / ‖ψ‖)⁻¹ * ‖T ξ‖ ^ 2 =
+          2 * ((‖ξ‖ / (2 * ‖ψ‖)) * ‖T ψ‖ ^ 2 + (‖ψ‖ / (2 * ‖ξ‖)) * ‖T ξ‖ ^ 2) := by
+      field_simp [ne_of_gt hψ, ne_of_gt hξ]
+    nlinarith only [hYoung, hscale]
+  rw [P.norm_sq_proj_apply B hB ψ, P.norm_sq_proj_apply B hB ξ] at hy
+  exact hcs.trans hy
+
 end ProjValMeasure
 end TauCeti

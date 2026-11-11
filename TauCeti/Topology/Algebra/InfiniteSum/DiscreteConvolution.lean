@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Topology.Algebra.InfiniteSum.DiscreteConvolution
 public import Mathlib.Topology.Algebra.Ring.Basic
+public import Mathlib.Analysis.Normed.Ring.Basic
+import Mathlib.Analysis.Normed.Group.InfiniteSum
+import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.Topology.Algebra.InfiniteSum.Ring
 
 /-!
@@ -42,6 +45,9 @@ groupings agree.
 * `DiscreteConvolution.addConvolution_eq_tsum_neg_add` and its ring version
   `DiscreteConvolution.addRingConvolution_eq_tsum_neg_add`: on an additive group,
   `(f ⋆₊[L] g) x = ∑' y, L (f y) (g (-y + x))`.
+* `DiscreteConvolution.hasSum_tsum_mul_sub`: on an additive group, the convolution
+  `x ↦ ∑' y, f y * g (x - y)` of two absolutely summable families in a complete normed ring
+  sums to `(∑ f) (∑ g)`.
 -/
 
 public section
@@ -197,6 +203,24 @@ theorem addRingConvolution_eq_tsum_neg_add [NonUnitalNonAssocSemiring R] [Topolo
     (f g : M → R) (x : M) :
     (f ⋆ᵣ₊ g) x = ∑' y, f y * g (-y + x) :=
   addConvolution_eq_tsum_neg_add _ f g x
+
+/-- On an additive group, the convolution `x ↦ ∑' y, f y * g (x - y)` of two absolutely summable
+families in a complete normed ring sums to `(∑ f) (∑ g)`. -/
+theorem hasSum_tsum_mul_sub [NormedRing R] [CompleteSpace R] {f g : M → R}
+    (hf : Summable fun y ↦ ‖f y‖) (hg : Summable fun z ↦ ‖g z‖) :
+    HasSum (fun x ↦ ∑' y, f y * g (x - y)) ((∑' y, f y) * ∑' z, g z) := by
+  -- reindex the product `∑ (y, z), f y g z` by `(x, y) = (z + y, y)`
+  let e : M × M ≃ M × M :=
+    { toFun p := (p.2 + p.1, p.1)
+      invFun q := (q.2, q.1 - q.2)
+      left_inv p := by simp
+      right_inv q := by simp }
+  have hF : HasSum (fun p : M × M ↦ f p.2 * g (p.1 - p.2)) ((∑' y, f y) * ∑' z, g z) := by
+    rw [← e.hasSum_iff]
+    convert hf.of_norm.hasSum.mul hg.of_norm.hasSum (summable_mul_of_summable_norm hf hg) using 1
+    ext p
+    simp [e]
+  exact hF.prod_fiberwise fun x ↦ (hF.summable.prod_factor x).hasSum
 
 end AddGroup
 

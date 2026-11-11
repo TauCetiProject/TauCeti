@@ -47,7 +47,7 @@ modular forms in `ℤ[c₄, c₆, Δ]` above, this determines the ring of
 integral modular forms of level one: an integral modular form of weight `k` is exactly a weighted
 homogeneous element of weight `k` of `ℤ[c₄, c₆, Δ]` (`WeierstrassCurve.isIntegralModularForm_iff`),
 and this subring is presented by the single relation `c₄³ - c₆² = 1728Δ`
-(`WeierstrassCurve.Universal.adjoinC₄C₆ΔEquiv`).
+(`WeierstrassCurve.adjoinC₄C₆ΔEquiv`).
 
 Deligne's theorem follows from the description after inverting `6`, because `ℤ[c₄, c₆, Δ]` is
 saturated with respect to `6`: every element of it is `α(c₄, Δ) + c₆ β(c₄, Δ)`, and reducing
@@ -59,6 +59,8 @@ and `β`.
 
 * `WeierstrassCurve.IsIntegralModularForm`: the predicate of being an integral modular form of
   weight `k`.
+* `TauCeti.WeierstrassCurve.integralModularFormSubmodule`: the `ℤ`-submodule of integral modular
+  forms of weight `k`, forming a graded monoid across weights.
 
 ## Main results
 
@@ -74,6 +76,8 @@ and `β`.
   integral modular form of weight `k` exactly when it is weighted homogeneous of weight `k`.
 * `WeierstrassCurve.isIntegralModularForm_iff_universal`: the transformation law need only be
   checked for the universal curve and change of variables over `ℤ[u, u⁻¹, r, s, t][a₁, ⋯, a₆]`.
+* `WeierstrassCurve.isIntegralModularForm_iff_forall_isElliptic`: the transformation law need
+  only be checked on elliptic curves, still over every commutative ring.
 * `WeierstrassCurve.isIntegralModularForm_smul_iff`: for a nonzero integer `n`, `n • f` is an
   integral modular form of weight `k` exactly when `f` is.
 * `WeierstrassCurve.IsIntegralModularForm.six_pow_mul_eq_specialize_shortCurve`: an integral
@@ -181,6 +185,42 @@ theorem isIntegralModularForm_iff_universal : IsIntegralModularForm k f ↔
   rw [← hW, ← hC, map_variableChange, specialize_map, specialize_map, RingHom.comp_apply, h,
     map_mul, map_pow]
   simp
+
+open TauCeti.WeierstrassChange.Universal (CoordinateRing) in
+/-- A coefficient polynomial satisfies the modular transformation law on all cubics if and
+only if it satisfies it on elliptic curves over every commutative ring. The reverse direction
+extends across the discriminant in the universal coefficient/change-of-variables domain. -/
+theorem isIntegralModularForm_iff_forall_isElliptic : IsIntegralModularForm k f ↔
+    ∀ (R : Type) [CommRing R] (W : WeierstrassCurve R) [W.IsElliptic]
+      (C : VariableChange R),
+      (C • W).specialize f = ↑C.u⁻¹ ^ k * W.specialize f := by
+  refine ⟨fun hf R _ W _ C ↦ hf.specialize_smul W C, fun h ↦ ?_⟩
+  apply isIntegralModularForm_iff_universal.mpr
+  let W := Universal.curve.map (MvPolynomial.map (Int.castRingHom CoordinateRing))
+  let C := (TauCeti.WeierstrassChange.ChangeRing.universalChange ℤ).map
+    (algebraMap CoordinateRing (MvPolynomial Coeff CoordinateRing))
+  have hℤ : Function.Injective (Int.castRingHom CoordinateRing) := by
+    -- Evaluating a coordinate change at the identity retracts the integer inclusion.
+    apply Function.LeftInverse.injective (g := (1 : VariableChange ℤ).specialize)
+    intro n
+    simp only [Int.coe_castRingHom, map_intCast, Int.cast_id]
+  have hΔ : W.Δ ≠ 0 := by
+    rw [map_Δ]
+    exact (map_ne_zero_iff _ (MvPolynomial.map_injective _ hℤ)).mpr
+      Universal.curve_Δ_ne_zero
+  let S := Localization.Away W.Δ
+  let φ := algebraMap (MvPolynomial Coeff CoordinateRing) S
+  have hφ : Function.Injective φ :=
+    IsLocalization.injective _ (powers_le_nonZeroDivisors_of_noZeroDivisors hΔ)
+  have : (W.map φ).IsElliptic :=
+    ⟨(map_Δ W φ).symm ▸ IsLocalization.Away.algebraMap_isUnit W.Δ⟩
+  -- `W` and `C` name precisely the universal pair in the criterion above.
+  change (C • W).specialize f = ↑C.u⁻¹ ^ k * W.specialize f
+  apply hφ
+  have he := h S (W.map φ) (C.map φ)
+  simpa only [map_variableChange, specialize_map, RingHom.comp_apply,
+    map_mul, map_pow, VariableChange.map_u, Units.coe_map_inv,
+    MonoidHom.coe_ofClass] using he
 
 /-- Multiplying by a nonzero integer neither creates nor destroys integral modular forms. -/
 theorem isIntegralModularForm_smul_iff {n : ℤ} (hn : n ≠ 0) :
@@ -519,3 +559,27 @@ theorem isIntegralModularForm_iff : IsIntegralModularForm k f ↔
     fun h ↦ (isIntegralModularForm_iff_of_mem_adjoin h.1).mpr h.2⟩
 
 end WeierstrassCurve
+
+namespace TauCeti.WeierstrassCurve
+
+open _root_.WeierstrassCurve
+
+/-- The `ℤ`-submodule of `ℤ[a₁, a₂, a₃, a₄, a₆]` consisting of integral modular forms of weight `k`
+for the Weierstrass coordinate-change action. -/
+def integralModularFormSubmodule (k : ℕ) : Submodule ℤ (MvPolynomial Coeff ℤ) where
+  carrier := {f | IsIntegralModularForm k f}
+  add_mem' hf hg := hf.add hg
+  zero_mem' := isIntegralModularForm_zero k
+  smul_mem' n _ hf := hf.smul n
+
+@[simp]
+theorem mem_integralModularFormSubmodule {k : ℕ} {f : MvPolynomial Coeff ℤ} :
+    f ∈ integralModularFormSubmodule k ↔ IsIntegralModularForm k f :=
+  (Iff.rfl)
+
+instance : SetLike.GradedMonoid integralModularFormSubmodule where
+  one_mem := mem_integralModularFormSubmodule.mpr isIntegralModularForm_one
+  mul_mem _ _ _ _ hf hg := mem_integralModularFormSubmodule.mpr
+    ((mem_integralModularFormSubmodule.mp hf).mul (mem_integralModularFormSubmodule.mp hg))
+
+end TauCeti.WeierstrassCurve

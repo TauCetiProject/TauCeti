@@ -398,7 +398,113 @@ and `2` elsewhere. -/
 private def forkTest (c : ℕ → T.Component) (t : ℕ) (branch k : T.Component) : ℤ :=
   if k = c (t - 1) ∨ k = branch then 1 else 2
 
+/-- The fork test vector takes values between `1` and `2`. -/
+private lemma one_le_forkTest_le_two (c : ℕ → T.Component) (t : ℕ) (branch k : T.Component) :
+    1 ≤ forkTest c t branch k ∧ forkTest c t branch k ≤ 2 := by
+  unfold forkTest
+  split_ifs <;> omega
+
 namespace IsSelfIntersectionMinusTwoFork
+
+/-- The row sum `∑ₖ aᵢₖ vₖ` of the fork test vector over a fork splits into the `branch` term and
+a sum along the chain with weight `1` at `c (t - 1)` and `2` elsewhere. -/
+private lemma sum_intersection_mul_forkTest_eq
+    (hf : T.IsSelfIntersectionMinusTwoFork t c branch) (i : T.Component) :
+    ∑ k ∈ insert branch ((range t).image c), T.intersection i k * forkTest c t branch k =
+      T.intersection i branch + ∑ s ∈ range t,
+        T.intersection i (c s) * (if s = t - 1 then 1 else 2) := by
+  have hc := hf.toIsSelfIntersectionMinusTwoChain
+  have ht := hf.two_lt
+  have hbr := hf.branch_notMem_image
+  -- the values of the test vector
+  have hvc : ∀ s < t, forkTest c t branch (c s) = if s = t - 1 then 1 else 2 := by
+    intro s hs
+    have hlast : c s = c (t - 1) ↔ s = t - 1 :=
+      ⟨fun h ↦ hc.injOn s hs (t - 1) (by omega) h, fun h ↦ h ▸ rfl⟩
+    have hb : c s ≠ branch := fun h ↦ hf.branch_ne s hs h.symm
+    simp only [forkTest, hlast, hb, or_false]
+  have hvb : forkTest c t branch branch = 1 := by simp [forkTest]
+  rw [Finset.sum_insert hbr, sum_image_chain hc, hvb, mul_one]
+  congr 1
+  exact Finset.sum_congr rfl fun s hs ↦ by rw [hvc s (Finset.mem_range.mp hs)]
+
+/-- The row of the fork test sum at the extra leaf is nonpositive: it meets the chain only at
+`c (t - 2)`. -/
+private lemma branch_row_forkTest_nonpos (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
+    {W : ℕ+} (hwb : (T.weight branch : ℤ) = W) (hbranch : T.intersection (c (t - 2)) branch = W) :
+    T.intersection branch branch + ∑ s ∈ range t,
+      T.intersection branch (c s) * (if s = t - 1 then 1 else 2) ≤ 0 := by
+  have ht := hf.two_lt
+  have hW : (0 : ℤ) < W := by exact_mod_cast W.pos
+  have hbself : T.intersection branch branch = -(2 * (W : ℤ)) := by
+    rw [hf.branch_intersection_self, hwb]
+  -- the extra leaf meets the chain only at `c (t - 2)`
+  rw [Finset.sum_eq_single (t - 2), hbself, T.intersection_comm, hbranch]
+  · have hpenultimate_ne_last : t - 2 ≠ t - 1 := by omega
+    simp only [hpenultimate_ne_last, ↓reduceIte]
+    linarith
+  · intro s hs hst
+    rw [T.intersection_comm, hf.branch_intersection_eq_zero (Finset.mem_range.mp hs) hst,
+      zero_mul]
+  · intro h
+    exact absurd (Finset.mem_range.mpr (by omega)) h
+
+/-- The row of the fork test sum at a component `c r` of the chain is nonpositive. -/
+private lemma chain_row_forkTest_nonpos
+    (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
+    (hcard : t + 1 < Fintype.card T.Component) {W : ℕ+}
+    (hwc : ∀ i < t, (T.weight (c i) : ℤ) = W)
+    (hedge : ∀ i, i + 1 < t → T.intersection (c i) (c (i + 1)) = W)
+    (hbranch : T.intersection (c (t - 2)) branch = W) {r : ℕ} (hr : r < t) :
+    T.intersection (c r) branch + ∑ s ∈ range t,
+      T.intersection (c r) (c s) * (if s = t - 1 then 1 else 2) ≤ 0 := by
+  have hc := hf.toIsSelfIntersectionMinusTwoChain
+  have ht := hf.two_lt
+  have hW : (0 : ℤ) < W := by exact_mod_cast W.pos
+  have hcardt : t < Fintype.card T.Component := by omega
+  have hself : T.intersection (c r) (c r) = -(2 * (W : ℤ)) := by
+    rw [hc.intersection_self r hr, hwc r hr]
+  have hsucc : ∀ p, p + 1 < t → T.intersection (c (p + 1)) (c p) = W := fun p hp ↦ by
+    rw [T.intersection_comm, hedge p hp]
+  rcases Nat.eq_zero_or_pos r with rfl | hr0
+  · -- the free end of the chain
+    have h01 := hedge 0 (by omega)
+    have hzero_ne_last : (0 : ℕ) ≠ t - 1 := by omega
+    have hone_ne_last : 1 ≠ t - 1 := by omega
+    rw [zero_add] at h01
+    rw [hf.branch_intersection_eq_zero hr (by omega), hc.left_sum_eq hcardt (by omega),
+      hself, h01]
+    simp only [hzero_ne_last, hone_ne_last, ↓reduceIte]
+    linarith
+  rcases lt_or_ge (r + 1) t with hrt | hrt
+  · have hprev := hsucc (r - 1) (by omega)
+    have hprev_succ : r - 1 + 1 = r := by omega
+    have hprev_ne_last : r - 1 ≠ t - 1 := by omega
+    have hr_ne_last : r ≠ t - 1 := by omega
+    rw [hprev_succ] at hprev
+    rw [hc.interior_sum_eq hcardt _ hr0 hrt, hself, hedge r hrt, hprev]
+    simp only [hprev_ne_last, hr_ne_last, ↓reduceIte]
+    by_cases hrb : r = t - 2
+    · -- the forked component meets both leaves
+      subst hrb
+      rw [hbranch]
+      have hpenultimate_succ : t - 2 + 1 = t - 1 := by omega
+      simp only [hpenultimate_succ, ↓reduceIte]
+      linarith
+    · rw [hf.branch_intersection_eq_zero hr hrb]
+      have hnext_ne_last : r + 1 ≠ t - 1 := by omega
+      simp only [hnext_ne_last, ↓reduceIte]
+      linarith
+  · -- the leaf `c (t - 1)`
+    obtain rfl : r = t - 1 := by omega
+    have hprev := hsucc (t - 2) (by omega)
+    have hpenultimate_succ : t - 2 + 1 = t - 1 := by omega
+    have hpenultimate_ne_last : t - 2 ≠ t - 1 := by omega
+    rw [hpenultimate_succ] at hprev
+    rw [hf.branch_intersection_eq_zero hr (by omega), hc.right_sum_eq hcardt (by omega),
+      hself, hprev]
+    simp only [hpenultimate_ne_last, ↓reduceIte]
+    linarith
 
 /-- Along a fork, in a numerical type with more components than the fork, the fork test vector
 satisfies the hypothesis of the weighted maximum principle. -/
@@ -410,89 +516,12 @@ private lemma sum_intersection_mul_forkTest_nonpos
     (hbranch : T.intersection (c (t - 2)) branch = W) {i : T.Component}
     (hi : i ∈ insert branch ((range t).image c)) :
     ∑ k ∈ insert branch ((range t).image c), T.intersection i k * forkTest c t branch k ≤ 0 := by
-  have hc := hf.toIsSelfIntersectionMinusTwoChain
-  have ht := hf.two_lt
-  have hW : (0 : ℤ) < W := by exact_mod_cast W.pos
-  set S := insert branch ((range t).image c) with hS
-  have hmemS : ∀ {k}, k ∈ S ↔ k = branch ∨ ∃ s < t, c s = k := by
-    intro k
-    simp [hS]
-  have hbr : branch ∉ (range t).image c := by
-    simp only [Finset.mem_image, Finset.mem_range, not_exists, not_and]
-    exact fun s hs h ↦ hf.branch_ne s hs h.symm
-  -- the values of the test vector
-  have hvc : ∀ s < t, forkTest c t branch (c s) = if s = t - 1 then 1 else 2 := by
-    intro s hs
-    have hlast : c s = c (t - 1) ↔ s = t - 1 :=
-      ⟨fun h ↦ hc.injOn s hs (t - 1) (by omega) h, fun h ↦ h ▸ rfl⟩
-    have hb : c s ≠ branch := fun h ↦ hf.branch_ne s hs h.symm
-    simp only [forkTest, hlast, hb, or_false]
-  have hvb : forkTest c t branch branch = 1 := by simp [forkTest]
-  have hsum : ∀ i, ∑ k ∈ S, T.intersection i k * forkTest c t branch k =
-      T.intersection i branch + ∑ s ∈ range t,
-        T.intersection i (c s) * (if s = t - 1 then 1 else 2) := by
-    intro i
-    rw [hS, Finset.sum_insert hbr, sum_image_chain hc, hvb, mul_one]
-    congr 1
-    exact Finset.sum_congr rfl fun s hs ↦ by rw [hvc s (Finset.mem_range.mp hs)]
-  have hcardt : t < Fintype.card T.Component := by omega
-  have hbself : T.intersection branch branch = -(2 * (W : ℤ)) := by
-    rw [hf.branch_intersection_self, hwb]
-  rw [hsum]
-  rcases hmemS.mp hi with rfl | ⟨r, hr, rfl⟩
-  · -- the extra leaf meets the chain only at `c (t - 2)`
-    rw [Finset.sum_eq_single (t - 2), hbself, T.intersection_comm, hbranch]
-    · have hpenultimate_ne_last : t - 2 ≠ t - 1 := by omega
-      simp only [hpenultimate_ne_last, ↓reduceIte]
-      linarith
-    · intro s hs hst
-      rw [T.intersection_comm, hf.branch_intersection_eq_zero (Finset.mem_range.mp hs) hst,
-        zero_mul]
-    · intro h
-      exact absurd (Finset.mem_range.mpr (by omega)) h
-  · have hself : T.intersection (c r) (c r) = -(2 * (W : ℤ)) := by
-      rw [hc.intersection_self r hr, hwc r hr]
-    have hsucc : ∀ p, p + 1 < t → T.intersection (c (p + 1)) (c p) = W := fun p hp ↦ by
-      rw [T.intersection_comm, hedge p hp]
-    rcases Nat.eq_zero_or_pos r with rfl | hr0
-    · -- the free end of the chain
-      have h01 := hedge 0 (by omega)
-      have hzero_ne_last : (0 : ℕ) ≠ t - 1 := by omega
-      have hone_ne_last : 1 ≠ t - 1 := by omega
-      rw [zero_add] at h01
-      rw [hf.branch_intersection_eq_zero hr (by omega), hc.left_sum_eq hcardt (by omega),
-        hself, h01]
-      simp only [hzero_ne_last, hone_ne_last, ↓reduceIte]
-      linarith
-    rcases lt_or_ge (r + 1) t with hrt | hrt
-    · have hprev := hsucc (r - 1) (by omega)
-      have hprev_succ : r - 1 + 1 = r := by omega
-      have hprev_ne_last : r - 1 ≠ t - 1 := by omega
-      have hr_ne_last : r ≠ t - 1 := by omega
-      rw [hprev_succ] at hprev
-      rw [hc.interior_sum_eq hcardt _ hr0 hrt, hself, hedge r hrt, hprev]
-      simp only [hprev_ne_last, hr_ne_last, ↓reduceIte]
-      by_cases hrb : r = t - 2
-      · -- the forked component meets both leaves
-        subst hrb
-        rw [hbranch]
-        have hpenultimate_succ : t - 2 + 1 = t - 1 := by omega
-        simp only [hpenultimate_succ, ↓reduceIte]
-        linarith
-      · rw [hf.branch_intersection_eq_zero hr hrb]
-        have hnext_ne_last : r + 1 ≠ t - 1 := by omega
-        simp only [hnext_ne_last, ↓reduceIte]
-        linarith
-    · -- the leaf `c (t - 1)`
-      obtain rfl : r = t - 1 := by omega
-      have hprev := hsucc (t - 2) (by omega)
-      have hpenultimate_succ : t - 2 + 1 = t - 1 := by omega
-      have hpenultimate_ne_last : t - 2 ≠ t - 1 := by omega
-      rw [hpenultimate_succ] at hprev
-      rw [hf.branch_intersection_eq_zero hr (by omega), hc.right_sum_eq hcardt (by omega),
-        hself, hprev]
-      simp only [hpenultimate_ne_last, ↓reduceIte]
-      linarith
+  rw [hf.sum_intersection_mul_forkTest_eq]
+  rcases mem_insert.mp hi with rfl | hi
+  · exact hf.branch_row_forkTest_nonpos hwb hbranch
+  obtain ⟨r, hr, rfl⟩ := mem_image.mp hi
+  rw [mem_range] at hr
+  exact hf.chain_row_forkTest_nonpos hcard hwc hedge hbranch hr
 
 /-- The weighted-maximum-principle bound on a fork, for every component of the fork. -/
 private lemma forall_mem_multiplicity_mul_abs_intersection_self_le (hT : T.IsMinimal)
@@ -513,9 +542,8 @@ private lemma forall_mem_multiplicity_mul_abs_intersection_self_le (hT : T.IsMin
     simp [hS]
   have hbself : T.intersection branch branch = -(2 * (W : ℤ)) := by
     rw [hf.branch_intersection_self, hwb]
-  have hv : ∀ i ∈ S, 0 < forkTest c t branch i := fun i _ ↦ by
-    unfold forkTest
-    split_ifs <;> omega
+  have hv : ∀ i ∈ S, 0 < forkTest c t branch i := fun i _ ↦
+    (one_le_forkTest_le_two c t branch i).1
   have hrow : ∀ i ∈ S, ∑ k ∈ S, T.intersection i k * forkTest c t branch k ≤ 0 :=
     fun i hi ↦ sum_intersection_mul_forkTest_nonpos hf hcard hwc hwb hedge hbranch hi
   have hclosed' : ∀ i ∈ S, ∀ k ∉ S, 0 < T.intersection i k → ¬ T.IsMinusTwoIndex k := by
@@ -526,13 +554,9 @@ private lemma forall_mem_multiplicity_mul_abs_intersection_self_le (hT : T.IsMin
     · exact Or.inl h
     · exact Or.inr ⟨s, hs, h.symm⟩
   have h1 : 1 < Fintype.card T.Component := by omega
-  have hSu : ∃ k, k ∉ S := by
-    refine exists_notMem_of_card_lt ?_
-    calc #S ≤ #((range t).image c) + 1 := Finset.card_insert_le _ _
-      _ ≤ t + 1 := by
-        have := (Finset.card_image_le (s := range t) (f := c)).trans (card_range t).le
-        omega
-      _ < Fintype.card T.Component := hcard
+  have hSu : ∃ k, k ∉ S := exists_notMem_of_card_lt <|
+    (Finset.card_insert_le _ _).trans_lt <| lt_of_le_of_lt
+      (Nat.succ_le_succ (Finset.card_image_le.trans (card_range t).le)) hcard
   obtain ⟨i, hi, hbound⟩ := hT.exists_forall_multiplicity_mul_weight_mul_le
     ⟨branch, hmemS.mpr (Or.inl rfl)⟩ hSu hv hrow hclosed'
   -- every component of the fork has weight `W`
@@ -550,12 +574,8 @@ private lemma forall_mem_multiplicity_mul_abs_intersection_self_le (hT : T.IsMin
   have hbj := hbound j hj
   rw [hweight i hi] at hbj
   rw [hselfS j hj, abs_neg, abs_of_nonneg (by positivity)]
-  have hvi : 1 ≤ forkTest c t branch i := by
-    unfold forkTest
-    split_ifs <;> omega
-  have hvj : forkTest c t branch j ≤ 2 := by
-    unfold forkTest
-    split_ifs <;> omega
+  have hvi := (one_le_forkTest_le_two c t branch i).1
+  have hvj := (one_le_forkTest_le_two c t branch j).2
   -- `mⱼW ≤ mⱼWvᵢ ≤ (6g - 6)vⱼ ≤ 2(6g - 6)`
   have h₁ : (T.multiplicity j : ℤ) * W ≤ (T.multiplicity j : ℤ) * W * forkTest c t branch i :=
     le_mul_of_one_le_right (by positivity) hvi
@@ -691,6 +711,77 @@ private lemma exists_finset_of_isMinusTwoIndex (hg : 2 ≤ T.arithmeticGenus)
   · rintro rfl
     exact hk hx
 
+/-- A bound `m|a| ≤ 2ⁿ(6g - 6)` with `n ≤ 7` implies the bound `m|a| ≤ 768g - 768`. -/
+private lemma le_768_of_le_two_pow_mul (hg : 2 ≤ T.arithmeticGenus) {n : ℕ} {z : T.Component}
+    (hn : n ≤ 7) (hz : (T.multiplicity z : ℤ) * |T.intersection z z| ≤
+      2 ^ n * (6 * T.arithmeticGenus - 6)) :
+    (T.multiplicity z : ℤ) * |T.intersection z z| ≤ 768 * T.arithmeticGenus - 768 := by
+  have hpow : (2 : ℤ) ^ n ≤ 2 ^ 7 := pow_le_pow_right₀ (by norm_num) hn
+  nlinarith
+
+/-- A fork of components of self-intersection `-2w`, with the components outside it meeting it
+only in non-`(-2)`-indices, satisfies the bound `mᵢ|aᵢᵢ| ≤ 768g - 768` at each of its components. -/
+private lemma IsMinimal.multiplicity_mul_abs_intersection_self_le_of_fork (hT : T.IsMinimal)
+    (hg : 2 ≤ T.arithmeticGenus) {t : ℕ} {c : ℕ → T.Component} {b : T.Component}
+    (hf : T.IsSelfIntersectionMinusTwoFork t c b)
+    (hcard : #(insert b ((range t).image c)) < Fintype.card T.Component)
+    (hclosed : ∀ x ∈ insert b ((range t).image c), ∀ k ∉ insert b ((range t).image c),
+      0 < T.intersection x k → ¬ T.IsMinusTwoIndex k)
+    {i : T.Component} (hiS : i ∈ insert b ((range t).image c)) :
+    (T.multiplicity i : ℤ) * |T.intersection i i| ≤ 768 * T.arithmeticGenus - 768 := by
+  have hc := hf.toIsSelfIntersectionMinusTwoChain
+  have hbr := hf.branch_notMem_image
+  have hcard' : t + 1 < Fintype.card T.Component := by
+    rwa [card_insert_of_notMem hbr, hc.card_image_range] at hcard
+  have hfclosed : ∀ z, (z = b ∨ ∃ r < t, z = c r) → ∀ k, k ≠ b → (∀ s < t, k ≠ c s) →
+      0 < T.intersection z k → ¬ T.IsMinusTwoIndex k := by
+    intro z hz k hkb hkc hpos
+    refine hclosed z ?_ k ?_ hpos
+    · rcases hz with rfl | ⟨r, hr, rfl⟩
+      exacts [mem_insert_self _ _, mem_insert_of_mem (mem_image_of_mem c (mem_range.mpr hr))]
+    · rw [mem_insert, mem_image]
+      rintro (rfl | ⟨q, hq, rfl⟩)
+      exacts [hkb rfl, hkc q (mem_range.mp hq) rfl]
+  rcases mem_insert.mp hiS with rfl | hiS
+  · have := hf.multiplicity_mul_abs_intersection_self_le_branch hT hcard' hfclosed
+    linarith
+  · obtain ⟨s, hs, rfl⟩ := mem_image.mp hiS
+    have := hf.multiplicity_mul_abs_intersection_self_le hT hcard' hfclosed (mem_range.mp hs)
+    linarith
+
+/-- An exceptional configuration (a chain of five to seven components with a leaf `b` meeting
+`c (t - 3)`) satisfies the bound `mᵢ|aᵢᵢ| ≤ 768g - 768` at each component, given the doubling bound
+`2 · (6g - 6)` at a component `x` of it. -/
+private lemma multiplicity_mul_abs_intersection_self_le_of_exceptional
+    (hg : 2 ≤ T.arithmeticGenus) {t : ℕ} {c : ℕ → T.Component} {b x : T.Component}
+    (hc : T.IsSelfIntersectionMinusTwoChain t c) (ht5 : 5 ≤ t) (ht7 : t ≤ 7)
+    (hb : T.intersection b b = -(2 * (T.weight b : ℤ))) (hbpos : 0 < T.intersection (c (t - 3)) b)
+    (hxS : x ∈ insert b ((range t).image c))
+    (hx : (T.multiplicity x : ℤ) * |T.intersection x x| ≤
+      2 ^ 1 * (6 * T.arithmeticGenus - 6))
+    {i : T.Component} (hiS : i ∈ insert b ((range t).image c)) :
+    (T.multiplicity i : ℤ) * |T.intersection i i| ≤ 768 * T.arithmeticGenus - 768 := by
+  have hbpos' : 0 < T.intersection b (c (t - 3)) := T.intersection_comm b _ ▸ hbpos
+  rcases mem_insert.mp hxS with rfl | hxS
+  · -- the walk starts at the leaf `x = b`
+    have hx' := le_two_pow_succ_mul (hc.intersection_self (t - 3) (by omega)) hbpos hx
+    rcases mem_insert.mp hiS with rfl | hiS
+    · exact le_768_of_le_two_pow_mul hg (by omega) hx
+    · obtain ⟨s, hs, rfl⟩ := mem_image.mp hiS
+      rw [mem_range] at hs
+      exact le_768_of_le_two_pow_mul hg (by omega) (hc.le_two_pow_add_mul (by omega) hx'
+        (t - 3 - s + (s - (t - 3))) s (by omega) hs)
+  · obtain ⟨r, hr, rfl⟩ := mem_image.mp hxS
+    rw [mem_range] at hr
+    rcases mem_insert.mp hiS with rfl | hiS
+    · have h3 := hc.le_two_pow_add_mul hr hx (r - (t - 3) + (t - 3 - r)) (t - 3) (by omega)
+        (by omega)
+      exact le_768_of_le_two_pow_mul hg (by omega) (le_two_pow_succ_mul hb hbpos' h3)
+    · obtain ⟨s, hs, rfl⟩ := mem_image.mp hiS
+      rw [mem_range] at hs
+      exact le_768_of_le_two_pow_mul hg (by omega)
+        (hc.le_two_pow_add_mul hr hx (r - s + (s - r)) s (by omega) hs)
+
 /-- In a minimal numerical type of genus `g ≥ 2`, every `(-2)`-index `i` satisfies
 `mᵢ|aᵢᵢ| ≤ 768g - 768`. -/
 private lemma IsMinimal.multiplicity_mul_abs_intersection_self_le_of_isMinusTwoIndex
@@ -715,16 +806,10 @@ private lemma IsMinimal.multiplicity_mul_abs_intersection_self_le_of_isMinusTwoI
   have hy := hT.multiplicity_mul_abs_intersection_self_le h
     (hclosed x hxS y hyS (T.adj_iff.mp hxy).2)
   have hx : (T.multiplicity x : ℤ) * |T.intersection x x| ≤
-      2 ^ (0 + 1) * (6 * T.arithmeticGenus - 6) :=
+      2 ^ 1 * (6 * T.arithmeticGenus - 6) :=
     le_two_pow_succ_mul (hself x hxS) (T.adj_iff.mp hxy).2 (by simpa using hy)
-  have hfin : ∀ {n : ℕ} {z : T.Component}, n ≤ 7 →
-      (T.multiplicity z : ℤ) * |T.intersection z z| ≤ 2 ^ n * (6 * T.arithmeticGenus - 6) →
-      (T.multiplicity z : ℤ) * |T.intersection z z| ≤ 768 * T.arithmeticGenus - 768 := by
-    intro n z hn hz
-    have hpow : (2 : ℤ) ^ n ≤ 2 ^ 7 := pow_le_pow_right₀ (by norm_num) hn
-    nlinarith
   rcases exists_chain_or_fork_or_exceptional hself hcard hconn with
-    ⟨t, c, hc, rfl⟩ | ⟨t, c, b, hf, rfl⟩ | ⟨t, c, b, hc, ht5, ht7, hbne, -, hbpos, -, rfl⟩
+    ⟨t, c, hc, rfl⟩ | ⟨t, c, b, hf, rfl⟩ | ⟨t, c, b, hc, ht5, ht7, -, -, hbpos, -, rfl⟩
   · obtain ⟨s, hs, rfl⟩ := mem_image.mp hiS
     rw [mem_range] at hs
     by_cases ht : 4 < t
@@ -737,50 +822,13 @@ private lemma IsMinimal.multiplicity_mul_abs_intersection_self_le_of_isMinusTwoI
       linarith
     · obtain ⟨r, hr, rfl⟩ := mem_image.mp hxS
       rw [mem_range] at hr
-      exact hfin (by omega) (hc.le_two_pow_add_mul hr hx (r - s + (s - r)) s (by omega) hs)
+      exact le_768_of_le_two_pow_mul hg (by omega)
+        (hc.le_two_pow_add_mul hr hx (r - s + (s - r)) s (by omega) hs)
   · -- a fork: the concavity bound
-    have hc := hf.toIsSelfIntersectionMinusTwoChain
-    have hbr : b ∉ (range t).image c := fun hb ↦ by
-      obtain ⟨q, hq, hbq⟩ := mem_image.mp hb
-      exact hf.branch_ne q (mem_range.mp hq) hbq.symm
-    have hcard' : t + 1 < Fintype.card T.Component := by
-      rwa [card_insert_of_notMem hbr, hc.card_image_range] at hcard
-    have hfclosed : ∀ z, (z = b ∨ ∃ r < t, z = c r) → ∀ k, k ≠ b → (∀ s < t, k ≠ c s) →
-        0 < T.intersection z k → ¬ T.IsMinusTwoIndex k := by
-      intro z hz k hkb hkc hpos
-      refine hclosed z ?_ k ?_ hpos
-      · rcases hz with rfl | ⟨r, hr, rfl⟩
-        exacts [mem_insert_self _ _, mem_insert_of_mem (mem_image_of_mem c (mem_range.mpr hr))]
-      · rw [mem_insert, mem_image]
-        rintro (rfl | ⟨q, hq, rfl⟩)
-        exacts [hkb rfl, hkc q (mem_range.mp hq) rfl]
-    rcases mem_insert.mp hiS with rfl | hiS
-    · have := hf.multiplicity_mul_abs_intersection_self_le_branch hT hcard' hfclosed
-      linarith
-    · obtain ⟨s, hs, rfl⟩ := mem_image.mp hiS
-      have := hf.multiplicity_mul_abs_intersection_self_le hT hcard' hfclosed (mem_range.mp hs)
-      linarith
+    exact hT.multiplicity_mul_abs_intersection_self_le_of_fork hg hf hcard hclosed hiS
   · -- an exceptional configuration: walk along the chain, through the leaf `b` if necessary
-    have hb : T.intersection b b = -(2 * (T.weight b : ℤ)) := hself b (mem_insert_self _ _)
-    have hbpos' : 0 < T.intersection b (c (t - 3)) := T.intersection_comm b _ ▸ hbpos
-    rcases mem_insert.mp hxS with rfl | hxS
-    · -- the walk starts at the leaf `x = b`
-      have hx' := le_two_pow_succ_mul (hc.intersection_self (t - 3) (by omega)) hbpos hx
-      rcases mem_insert.mp hiS with rfl | hiS
-      · exact hfin (by omega) hx
-      · obtain ⟨s, hs, rfl⟩ := mem_image.mp hiS
-        rw [mem_range] at hs
-        exact hfin (by omega) (hc.le_two_pow_add_mul (by omega) hx'
-          (t - 3 - s + (s - (t - 3))) s (by omega) hs)
-    · obtain ⟨r, hr, rfl⟩ := mem_image.mp hxS
-      rw [mem_range] at hr
-      rcases mem_insert.mp hiS with rfl | hiS
-      · have h3 := hc.le_two_pow_add_mul hr hx (r - (t - 3) + (t - 3 - r)) (t - 3) (by omega)
-          (by omega)
-        exact hfin (by omega) (le_two_pow_succ_mul hb hbpos' h3)
-      · obtain ⟨s, hs, rfl⟩ := mem_image.mp hiS
-        rw [mem_range] at hs
-        exact hfin (by omega) (hc.le_two_pow_add_mul hr hx (r - s + (s - r)) s (by omega) hs)
+    exact multiplicity_mul_abs_intersection_self_le_of_exceptional hg hc ht5 ht7
+      (hself b (mem_insert_self _ _)) hbpos hxS hx hiS
 
 /-- **The multiplicities of a minimal numerical type are bounded.** In a minimal numerical type of
 genus `g ≥ 2`, every multiplicity-weighted intersection number satisfies

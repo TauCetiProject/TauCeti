@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.HeatKernel.DuhamelPotential.Basic
 public import TauCeti.Analysis.PDE.HeatKernel.CauchyPotential
 import Mathlib.Analysis.Calculus.Deriv.Slope
+import TauCeti.Analysis.PDE.Parabolic.SpaceTime.Holder
 
 /-!
 # The initial time derivative of the Duhamel heat potential
@@ -165,10 +166,7 @@ theorem hasDerivWithinAt_heatDuhamelPotential_zero_of_holderOnWith
     simpa using hs
   have hH : ∀ᵐ s ∂volume.restrict (Ioo 0 T), HolderWith H α (f s) := by
     filter_upwards [ae_restrict_mem measurableSet_Ioo] with s hs
-    intro y z
-    simpa [ParabolicSpaceTime.edist_ofCoords] using
-      hpar (ParabolicSpaceTime.ofCoords y s) (hmem ⟨hs.1.le, hs.2.le⟩ y)
-        (ParabolicSpaceTime.ofCoords z s) (hmem ⟨hs.1.le, hs.2.le⟩ z)
+    exact ParabolicSpaceTime.holderWith_of_holderOnWith_slab hpar ⟨hs.1.le, hs.2.le⟩
   have hL : ∀ᵐ s ∂volume.restrict (Ioo 0 T),
       ∀ y, ‖f s y - f 0 y‖ ≤ H * s ^ ((α : ℝ) / 2) := by
     filter_upwards [ae_restrict_mem measurableSet_Ioo] with s hs y

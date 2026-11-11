@@ -227,11 +227,11 @@ theorem isConj_iff_isRotated_reduceCyclically [DecidableEq α] {x y : FreeGroup 
   exact ((isConj_mk_reduceCyclically x.toWord).symm.trans h).trans
     (isConj_mk_reduceCyclically y.toWord)
 
-/-- For any letters `a` and `b`, the elements `a b` and `a b⁻¹` of a free group are not
+/-- For any letters `a`, `b`, `c` and `d`, the elements `a b` and `c d⁻¹` of a free group are not
 conjugate: the homomorphism to `Multiplicative ℤ` sending every generator to `ofAdd 1` maps them
-to `ofAdd 2` and `ofAdd 0`. -/
-theorem not_isConj_of_mul_of_of_mul_inv_of (a b : α) :
-    ¬IsConj (of a * of b) (of a * (of b)⁻¹) := by
+to `ofAdd 2` and `ofAdd 0`. In particular `a b` and `a b⁻¹` are not conjugate. -/
+theorem not_isConj_of_mul_of_of_mul_inv_of (a b c d : α) :
+    ¬IsConj (of a * of b) (of c * (of d)⁻¹) := by
   intro h
   have := (FreeGroup.lift fun _ => Multiplicative.ofAdd (1 : ℤ)).map_isConj h
   rw [isConj_iff_eq] at this

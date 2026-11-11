@@ -23,8 +23,10 @@ import Mathlib.Topology.Algebra.Group.Basic
 
 This file records generic instances for actions on a topological space that typeclass search
 cannot otherwise reach, and continuity of maps equal to fixed-element scalar actions.
+A trivial action, fixing every point, is jointly continuous for any topologies.
 A continuous monoid action on a Hausdorff space has closed fixed sets, and a group action with
-continuous orbit maps on a `T₁` space has closed point stabilisers.
+continuous orbit maps on a `T₁` space has closed point stabilisers. If every orbit of a group
+action is open, then every orbit is also closed.
 A submonoid, and hence a subgroup, inherits `ContinuousConstSMul` from
 an ambient scalar action; and a properly discontinuous action has `Finite` point stabilisers.
 It also records that a properly discontinuous scalar family on a nonempty σ-compact space is
@@ -37,6 +39,7 @@ open embedding.
 
 ## Main results
 
+* `TauCeti.continuousSMul_of_forall_smul_eq_self`: a trivial action is jointly continuous.
 * `Submonoid.continuousConstSMul` and `TauCeti.Subgroup.continuousConstSMul`: continuity
   in the point is inherited by a submonoid, hence by a subgroup.
 * `Continuous.properlyDiscontinuousSMul`: proper discontinuity pulls back along a continuous
@@ -46,6 +49,8 @@ open embedding.
   properly discontinuous subgroup `H` acts properly discontinuously.
 * `TauCeti.isClosed_stabilizer`: the stabilizer of a point with continuous orbit map in a `T₁`
   space is closed.
+* `TauCeti.isClosed_orbit_of_forall_isOpen_orbit`: if every orbit of a group action is open,
+  then every orbit is closed.
 * `TauCeti.finite_stabilizer_of_properlyDiscontinuousSMul`: a properly discontinuous action has
   finite point stabilisers, as an instance rather than as `Set.Finite` of the carrier.
 * `TauCeti.countable_of_properlyDiscontinuousSMul`: a properly discontinuous scalar family on a
@@ -75,6 +80,12 @@ theorem continuous_of_eq_smul {G M : Type*} [TopologicalSpace M] [SMul G M]
     Continuous f :=
   (continuous_const_smul g).congr fun m => (hf m).symm
 
+/-- A trivial action, with `g • m = m` for all `g` and `m`, is jointly continuous for any
+topologies on the scalars and on the space acted on. -/
+theorem continuousSMul_of_forall_smul_eq_self {G M : Type*} [TopologicalSpace G]
+    [TopologicalSpace M] [SMul G M] (h : ∀ (g : G) (m : M), g • m = m) : ContinuousSMul G M :=
+  ⟨continuous_snd.congr fun p ↦ (h p.1 p.2).symm⟩
+
 /-- The fixed set of an element acting continuously on a Hausdorff space is closed. -/
 theorem isClosed_fixedBy {M X : Type*} [Monoid M] [MulAction M X] [TopologicalSpace X]
     [T2Space X] [ContinuousConstSMul M X] (g : M) : IsClosed (MulAction.fixedBy X g) :=
@@ -86,6 +97,16 @@ theorem isClosed_stabilizer {G X : Type*} [Group G] [MulAction G X] [Topological
     [TopologicalSpace X] [T1Space X] {x : X} (hx : Continuous fun g : G ↦ g • x) :
     IsClosed (MulAction.stabilizer G x : Set G) :=
   isClosed_singleton.preimage hx
+
+/-- If every orbit of a group action is open, then every orbit is also closed: its complement is
+the union of the other orbits. -/
+theorem isClosed_orbit_of_forall_isOpen_orbit {G X : Type*} [Group G] [MulAction G X]
+    [TopologicalSpace X] (h : ∀ x : X, IsOpen (MulAction.orbit G x)) (x : X) :
+    IsClosed (MulAction.orbit G x) := by
+  refine isOpen_compl_iff.1 (isOpen_iff_mem_nhds.2 fun z hz ↦ ?_)
+  refine Filter.mem_of_superset ((h z).mem_nhds (MulAction.mem_orbit_self z)) fun w hw hwx ↦ hz ?_
+  rw [← (MulAction.orbit_eq_iff.2 hw).symm.trans (MulAction.orbit_eq_iff.2 hwx)]
+  exact MulAction.mem_orbit_self z
 
 section DisjointTranslates
 

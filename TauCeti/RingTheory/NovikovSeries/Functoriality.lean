@@ -60,6 +60,13 @@ covering and of its base.
 * `TauCeti.NovikovSeries.map_mem_periodFiltration`: the pushforward sends `U_C` into `U'_(c * C)`.
 * `TauCeti.NovikovSeries.continuous_map` and `TauCeti.NovikovSeries.continuous_mapRingHom`: the
   pushforward is continuous for the period topologies.
+* `TauCeti.NovikovSeries.continuous_mapNonnegSubring` and
+  `TauCeti.NovikovSeries.mapNonnegSubring_injective`: the pushforward on the nonnegative subrings
+  is continuous, and injective along injective coefficient and exponent maps.
+* `TauCeti.NovikovSeries.mapNonnegSubring_algebraMap`,
+  `TauCeti.NovikovSeries.mapNonnegSubring_comp_algebraMap` and
+  `TauCeti.NovikovSeries.mapNonnegSubring_smul`: the pushforward on the nonnegative subrings is
+  compatible with constants and semilinear over the coefficient map.
 * `TauCeti.NovikovSeries.comap_mem_periodFiltration` and `TauCeti.NovikovSeries.continuous_comap`:
   the restriction sends `U'_(c * C)` into `U_C`, and is continuous for the period topologies.
 * `TauCeti.NovikovSeries.mapNonnegSubring_mem_posIdeal`: the pushforward maps the positive ideal
@@ -345,6 +352,17 @@ theorem coe_mapNonnegSubring (a : nonnegSubring R N) :
     (mapNonnegSubring ρ φ hφ a : NovikovSeries S H' N') = map (ρ : R →+ S) φ hφ a :=
   (rfl)
 
+/-- The pushforward on the nonnegative subrings is continuous for the period topologies. -/
+@[fun_prop]
+theorem continuous_mapNonnegSubring : Continuous (mapNonnegSubring ρ φ hφ) :=
+  continuous_induced_rng.2 <| (continuous_mapRingHom ρ φ hφ).comp continuous_subtype_val
+
+/-- The pushforward on the nonnegative subrings along injective coefficient and exponent maps is
+injective. -/
+theorem mapNonnegSubring_injective (hρ : Function.Injective ρ) (hinj : Function.Injective φ) :
+    Function.Injective (mapNonnegSubring ρ φ hφ) := fun _ _ hab =>
+  Subtype.ext <| map_injective (ρ : R →+ S) φ hφ hρ hinj (congrArg Subtype.val hab)
+
 /-- The pushforward maps the ideal of series supported in strictly positive periods into the
 corresponding ideal. -/
 theorem mapNonnegSubring_mem_posIdeal {a : nonnegSubring R N} (ha : a ∈ posIdeal R N) :
@@ -364,6 +382,33 @@ theorem map_unitsOneSubSingle {g : H} (hg : 0 < N g) (hg' : 0 < N' (φ g)) (r : 
   Units.ext <| Subtype.ext <| by simp
 
 end TopologyRing
+
+section AlgebraMap
+
+variable [AddMonoid H] [AddMonoid H'] {N : H →+ ℝ} {N' : H' →+ ℝ} [CommRing R] [CommRing S]
+  (ρ : R →+* S) (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h)
+
+/-- The pushforward on the nonnegative subrings sends the constant `r` to the constant `ρ r`. -/
+@[simp]
+theorem mapNonnegSubring_algebraMap (r : R) :
+    mapNonnegSubring ρ φ hφ (algebraMap R (nonnegSubring R N) r) =
+      algebraMap S (nonnegSubring S N') (ρ r) := by
+  ext : 1
+  simp [algebraMap_apply, map_single]
+
+/-- The pushforward on the nonnegative subrings commutes with the constant embeddings. -/
+theorem mapNonnegSubring_comp_algebraMap :
+    (mapNonnegSubring ρ φ hφ).comp (algebraMap R (nonnegSubring R N)) =
+      (algebraMap S (nonnegSubring S N')).comp ρ :=
+  RingHom.ext <| mapNonnegSubring_algebraMap ρ φ hφ
+
+/-- The pushforward on the nonnegative subrings is semilinear over `ρ`. -/
+@[simp]
+theorem mapNonnegSubring_smul (r : R) (a : nonnegSubring R N) :
+    mapNonnegSubring ρ φ hφ (r • a) = ρ r • mapNonnegSubring ρ φ hφ a := by
+  rw [Algebra.smul_def, Algebra.smul_def, _root_.map_mul, mapNonnegSubring_algebraMap]
+
+end AlgebraMap
 
 section Subgroup
 

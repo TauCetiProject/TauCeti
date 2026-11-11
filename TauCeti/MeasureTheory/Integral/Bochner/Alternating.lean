@@ -26,7 +26,7 @@ open MeasureTheory Set
 
 namespace Module.Basis
 
-variable {E ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E] [Fintype ι] [DecidableEq ι]
 
 /-- Arbitrary basis changes transform the actual top-form coefficient integral by their

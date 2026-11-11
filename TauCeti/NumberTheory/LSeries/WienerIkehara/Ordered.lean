@@ -25,7 +25,7 @@ continuous linear functional (for `ι → ℝ`, the coordinate projections): the
 required to extend continuously to `Re s ≥ 1`. The scalar theorem then gives the asymptotic for
 every `φ i (a n)`, and by linearity for every functional in their span. Monotone continuous
 functionals separate the points of `E` because its positive cone is closed
-(`TauCeti.eq_of_forall_monotone_dual_eq`, a consequence of Farkas' lemma), so evaluation at them is
+(`TauCeti.eq_iff_forall_monotone_dual_eq`, a consequence of Farkas' lemma), so evaluation at them is
 an injective linear map from the finite-dimensional space `E`, hence a closed embedding, and the
 scalar limits assemble to the limit in `E` (`TauCeti.tendsto_iff_forall_monotone_dual`).
 

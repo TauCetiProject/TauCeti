@@ -50,8 +50,8 @@ theorem Place.eq_of_linearlyEquivalent_ofPoint_of_genus_pos (hF : IsFunctionFiel
     (h : (Place.orderSystem hF).LinearlyEquivalent
       (WeilDivisor.ofPoint P) (WeilDivisor.ofPoint Q)) : P = Q := by
   exact WeilDivisor.ofPoint_injective (Divisor.eq_of_linearlyEquivalent_of_dim_eq_one hF
-    (WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_ofPoint P))
-    (WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_ofPoint Q))
+    (WeilDivisor.ofPoint_nonneg P)
+    (WeilDivisor.ofPoint_nonneg Q)
     (Divisor.dim_ofPoint_eq_one_of_genus_pos hF hex hg hP) h)
 
 namespace Place

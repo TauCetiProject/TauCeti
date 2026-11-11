@@ -124,16 +124,9 @@ theorem isFG_coextendScalars [Module.Finite k R]
           (map_smul _ _ _) }
   -- `S` is a direct summand of some `R^n`, so `Hom_R(S, M)` is a quotient of `Hom_R(R^n, M)`,
   -- which is finitely generated over `k` because `M` is.
-  obtain ⟨n, π, hπ⟩ := Module.Finite.exists_fin' R S'
-  obtain ⟨σ, hσ⟩ := Module.projective_lifting_property π LinearMap.id hπ
-  let restrict : ((Fin n → R) →ₗ[R] M) →ₗ[k] (S' →ₗ[R] M) :=
-    { toFun := fun ψ ↦ ψ ∘ₗ σ
-      map_add' := fun _ _ ↦ LinearMap.add_comp _ _ _
-      map_smul' := fun _ _ ↦ LinearMap.smul_comp _ _ _ }
-  have hrestrict : Function.Surjective restrict := fun ψ ↦
-    ⟨ψ ∘ₗ π, by simp only [restrict, LinearMap.coe_mk, AddHom.coe_mk, LinearMap.comp_assoc, hσ,
-      LinearMap.comp_id]⟩
-  have : Module.Finite k (S' →ₗ[R] M) := .of_surjective restrict hrestrict
+  obtain ⟨n, π, σ, hπ, -, hσ⟩ := Module.Finite.exists_comp_eq_id_of_projective R S'
+  have : Module.Finite k (S' →ₗ[R] M) := .of_surjective (LinearMap.lcomp k M σ) fun ψ ↦
+    ⟨ψ ∘ₗ π, by rw [LinearMap.lcomp_apply', LinearMap.comp_assoc, hσ, LinearMap.comp_id]⟩
   have : Module.Finite k X := .equiv e.symm
   exact .of_restrictScalars_finite k S X
 

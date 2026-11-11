@@ -237,22 +237,19 @@ private lemma exists_isFiniteMeasure_comp_mul_eq_integral_add_div_sub
     nlinarith [norm_nonneg z]
   have hdiff : DifferentiableOn ℂ (fun z ↦ F (r * z)) (closedBall 0 1) :=
     hF.comp (by fun_prop) hmaps
-  have hφc : ContinuousOn (fun ζ ↦ (F (r * ζ)).re) (sphere 0 1) :=
-    continuous_re.comp_continuousOn (hdiff.continuousOn.mono sphere_subset_closedBall)
+  have hφi : CircleIntegrable (fun ζ ↦ (F (r * ζ)).re) 0 1 :=
+    (continuous_re.comp_continuousOn (hdiff.continuousOn.mono sphere_subset_closedBall)
+      ).circleIntegrable zero_le_one
   have hφ₀ : ∀ z ∈ sphere (0 : ℂ) 1, 0 ≤ (F (r * z)).re := fun z hz ↦
     hre _ (hmaps (sphere_subset_closedBall hz))
   refine ⟨circleDensityMeasure fun ζ ↦ (F (r * ζ)).re,
-    isFiniteMeasure_circleDensityMeasure hφc, fun w hw ↦ ?_⟩
-  have hK : ContinuousOn (fun ζ : ℂ ↦ (ζ + w) / (ζ - w)) (sphere 0 1) := by
-    have hw' : w ∉ sphere (0 : ℂ) |1| := by
-      rw [abs_one, mem_sphere_zero_iff_norm]
-      exact (mem_ball_zero_iff.1 hw).ne
-    simpa [herglotzRieszKernel_fun_def] using continuousOn_herglotzRieszKernel_sphere hw'
+    isFiniteMeasure_circleDensityMeasure hφi, fun w hw ↦ ?_⟩
   have hcl : DiffContOnCl ℂ (fun z ↦ F (r * z)) (ball 0 1) :=
     DifferentiableOn.diffContOnCl (by rwa [closure_ball 0 one_ne_zero])
   have h := hcl.circleAverage_herglotzRieszKernel_smul_re_add hw
   rw [mul_zero] at h
-  rw [Measure.herglotzTransform_def, ← h, integral_circleDensityMeasure hφc hφ₀ hK]
+  rw [Measure.herglotzTransform_def, ← h,
+    integral_circleDensityMeasure hφi.1.aestronglyMeasurable hφ₀ fun ζ ↦ (ζ + w) / (ζ - w)]
   congr 2
   ext ζ
   simp [herglotzRieszKernel_def, Complex.real_smul, mul_comm]

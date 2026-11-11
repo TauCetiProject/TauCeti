@@ -132,15 +132,14 @@ theorem mem_initialPentagonRectangleInitialSelfPairs_of_right_eq_left
   have hrecut : D.toGridRectangleDecomposition.IsRecut E.toGridRectangleDecomposition := by
     rw [hErect]
     exact D.toGridRectangleDecomposition.isRecut_recut hone hfirst hsecond
-  have hback := hrecut.symm hone hfirst hsecond
+  have hback := hrecut.symm hfirst hsecond
   have hEone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback
-    (D.toGridRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone)
   obtain ⟨hleft, hsecondLeft, -, -⟩ :=
     D.rightLeftSelfRecut_geometry hcommon hone hfirst hsecond hturn
   rw [← hErect] at hleft hsecondLeft
   have hEcommon : E.first.left = E.second.left := hleft.trans hsecondLeft.symm
   have hEcol : E.second.right ∈ Grid.cIoo E.first.left E.first.right := by
-    have hdata := hback.isRecutOfLeftEqLeft hEone hEcommon
+    have hdata := hback.isRecutOfLeftEqLeft hEcommon
     rcases hdata.recut_branch with ⟨-, -, hright, -⟩ | ⟨hcol, -⟩
     · exact (E.first.left_ne_right (hleft.trans hright)).elim
     · exact hcol
@@ -190,9 +189,8 @@ theorem mem_initialPentagonRectangleInitialSelfPairs_iff_sides
     obtain ⟨hright, -, htop, hleft, -⟩ :=
       S.recutInitialSelf_geometry hcommon hcol hfirst hsecond
     rw [hEq] at hright htop hleft
-    have hback := hrecut.symm hone hfirst hsecond
+    have hback := hrecut.symm hfirst hsecond
     have hDone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback
-      (S.toGridRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone)
     right
     refine ⟨hright.trans hleft.symm, hDone, ?_⟩
     have hsecondTop := S.recutInitialSelf_second_top hcommon hcol hfirst hsecond

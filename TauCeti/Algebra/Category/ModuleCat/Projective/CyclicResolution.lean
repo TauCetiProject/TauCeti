@@ -238,41 +238,41 @@ section TruncatedPolynomial
 
 open Polynomial
 
-variable (R : Type u) [CommRing R] {n i : ℕ}
+variable (R : Type u) [CommRing R] (n i : ℕ)
 
 /-- **The periodic free resolution of `M_i` over `R[X]/(X ^ n)`.** With `x` the class of `X`
-and `M_i = A ⧸ (x ^ i)` for `i ≤ n`, the complex
+and `M_i = A ⧸ (x ^ i)`, the complex
 `⋯ ⟶ A --x^(n-i)--> A --x^i--> A --x^(n-i)--> A --x^i--> A ⟶ M_i ⟶ 0` is a projective
 resolution of `M_i`. -/
-def cyclicModuleRootPowProjectiveResolution (hi : i ≤ n) :
+def cyclicModuleRootPowProjectiveResolution :
     ProjectiveResolution (ModuleCat.of (AdjoinRoot (X ^ n : R[X]))ᵐᵒᵖ
       ((AdjoinRoot (X ^ n : R[X]))ᵐᵒᵖ ⧸ Ideal.span {op (AdjoinRoot.root (X ^ n : R[X]) ^ i)})) :=
-  cyclicModuleProjectiveResolution (AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff hi)
-    (AdjoinRoot.root_X_pow_sub_pow_mul_eq_zero_iff hi)
+  cyclicModuleProjectiveResolution AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff
+    AdjoinRoot.root_X_pow_sub_pow_mul_eq_zero_iff
 
 /-- The complex of `TauCeti.cyclicModuleRootPowProjectiveResolution` is the general cyclic-module
 resolution complex specialized to `x ^ i` and `x ^ (n - i)`. -/
 @[simp]
-theorem cyclicModuleRootPowProjectiveResolution_complex (hi : i ≤ n) :
-    (cyclicModuleRootPowProjectiveResolution R hi).complex =
+theorem cyclicModuleRootPowProjectiveResolution_complex :
+    (cyclicModuleRootPowProjectiveResolution R n i).complex =
       (cyclicModuleProjectiveResolution
-        (AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff hi)
-        (AdjoinRoot.root_X_pow_sub_pow_mul_eq_zero_iff hi)).complex :=
+        (AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff (n := n) (i := i))
+        (AdjoinRoot.root_X_pow_sub_pow_mul_eq_zero_iff (n := n) (i := i))).complex :=
   (rfl)
 
 /-- Every term of `TauCeti.cyclicModuleRootPowProjectiveResolution` is the free module
 `A = R[X]/(X ^ n)` of rank one. -/
-def cyclicModuleRootPowProjectiveResolutionXIso (hi : i ≤ n) (j : ℕ) :
-    (cyclicModuleRootPowProjectiveResolution R hi).complex.X j ≅
+def cyclicModuleRootPowProjectiveResolutionXIso (j : ℕ) :
+    (cyclicModuleRootPowProjectiveResolution R n i).complex.X j ≅
       ModuleCat.of (AdjoinRoot (X ^ n : R[X]))ᵐᵒᵖ (AdjoinRoot (X ^ n : R[X]))ᵐᵒᵖ :=
   Iso.refl _
 
 /-- The augmentation of `TauCeti.cyclicModuleRootPowProjectiveResolution` is the quotient map,
 read through `TauCeti.cyclicModuleRootPowProjectiveResolutionXIso`. -/
 @[simp]
-theorem cyclicModuleRootPowProjectiveResolution_π_f_zero (hi : i ≤ n) :
-    (cyclicModuleRootPowProjectiveResolutionXIso R hi 0).inv ≫
-        (cyclicModuleRootPowProjectiveResolution R hi).π.f 0 =
+theorem cyclicModuleRootPowProjectiveResolution_π_f_zero :
+    (cyclicModuleRootPowProjectiveResolutionXIso R n i 0).inv ≫
+        (cyclicModuleRootPowProjectiveResolution R n i).π.f 0 =
       ModuleCat.ofHom
         (Ideal.span {op (AdjoinRoot.root (X ^ n : R[X]) ^ i)}).mkQ :=
   -- the isomorphism is an identity, so this is the augmentation of the general resolution
@@ -282,33 +282,33 @@ theorem cyclicModuleRootPowProjectiveResolution_π_f_zero (hi : i ≤ n) :
 multiplication by `x ^ i` for even `j` and by `x ^ (n - i)` for odd `j`, read through
 `TauCeti.cyclicModuleRootPowProjectiveResolutionXIso`. -/
 @[simp]
-theorem cyclicModuleRootPowProjectiveResolution_complex_d (hi : i ≤ n) (j : ℕ) :
-    (cyclicModuleRootPowProjectiveResolution R hi).complex.d (j + 1) j =
-      (cyclicModuleRootPowProjectiveResolutionXIso R hi (j + 1)).hom ≫
+theorem cyclicModuleRootPowProjectiveResolution_complex_d (j : ℕ) :
+    (cyclicModuleRootPowProjectiveResolution R n i).complex.d (j + 1) j =
+      (cyclicModuleRootPowProjectiveResolutionXIso R n i (j + 1)).hom ≫
         ModuleCat.ofHom (LinearMap.toSpanSingleton _ _
           (op (AdjoinRoot.root (X ^ n : R[X]) ^ if Even j then i else n - i))) ≫
-          (cyclicModuleRootPowProjectiveResolutionXIso R hi j).inv :=
+          (cyclicModuleRootPowProjectiveResolutionXIso R n i j).inv :=
   -- the isomorphisms are identities, so this is the differential of the general resolution
   (cyclicModuleProjectiveResolution_complex_d _ _ j).trans <| by split_ifs <;> rfl
 
 /-- The differential of `TauCeti.cyclicModuleRootPowProjectiveResolution` into degree `j`, read
 through `TauCeti.cyclicModuleRootPowProjectiveResolutionXIso`, sends `c` to `c * op (x ^ i)` for
 even `j` and to `c * op (x ^ (n - i))` for odd `j`. -/
-theorem cyclicModuleRootPowProjectiveResolution_complex_d_apply (hi : i ≤ n) (j : ℕ)
+theorem cyclicModuleRootPowProjectiveResolution_complex_d_apply (j : ℕ)
     (c : (AdjoinRoot (X ^ n : R[X]))ᵐᵒᵖ) :
-    ((cyclicModuleRootPowProjectiveResolutionXIso R hi (j + 1)).inv ≫
-        (cyclicModuleRootPowProjectiveResolution R hi).complex.d (j + 1) j ≫
-          (cyclicModuleRootPowProjectiveResolutionXIso R hi j).hom).hom c =
+    ((cyclicModuleRootPowProjectiveResolutionXIso R n i (j + 1)).inv ≫
+        (cyclicModuleRootPowProjectiveResolution R n i).complex.d (j + 1) j ≫
+          (cyclicModuleRootPowProjectiveResolutionXIso R n i j).hom).hom c =
       c * op (AdjoinRoot.root (X ^ n : R[X]) ^ if Even j then i else n - i) := by
   simp
 
 /-- After identifying right modules with opposites, the specialized resolution differential is
 the multiplication map underlying `TauCeti.MatrixFactorization.powerXPeriodicComplex`. -/
-theorem unop_cyclicModuleRootPowProjectiveResolution_complex_d_op (hi : i ≤ n) (j : ℕ)
+theorem unop_cyclicModuleRootPowProjectiveResolution_complex_d_op (j : ℕ)
     (c : AdjoinRoot (X ^ n : R[X])) :
-    unop (((cyclicModuleRootPowProjectiveResolutionXIso R hi (j + 1)).inv ≫
-        (cyclicModuleRootPowProjectiveResolution R hi).complex.d (j + 1) j ≫
-          (cyclicModuleRootPowProjectiveResolutionXIso R hi j).hom).hom (op c)) =
+    unop (((cyclicModuleRootPowProjectiveResolutionXIso R n i (j + 1)).inv ≫
+        (cyclicModuleRootPowProjectiveResolution R n i).complex.d (j + 1) j ≫
+          (cyclicModuleRootPowProjectiveResolutionXIso R n i j).hom).hom (op c)) =
       MatrixFactorization.rootPowHom R n (if Even j then i else n - i) c := by
   rw [cyclicModuleRootPowProjectiveResolution_complex_d_apply,
     MatrixFactorization.rootPowHom_apply]
@@ -320,14 +320,14 @@ in `xA`. When `R` is a field, `xA` is the maximal ideal of the local ring `A`, a
 condition for a free resolution over `A` to be minimal. -/
 theorem range_cyclicModuleRootPowProjectiveResolution_complex_d_le (hi₀ : 0 < i) (hin : i < n)
     (j : ℕ) :
-    LinearMap.range ((cyclicModuleRootPowProjectiveResolutionXIso R hin.le (j + 1)).inv ≫
-        (cyclicModuleRootPowProjectiveResolution R hin.le).complex.d (j + 1) j ≫
-          (cyclicModuleRootPowProjectiveResolutionXIso R hin.le j).hom).hom ≤
+    LinearMap.range ((cyclicModuleRootPowProjectiveResolutionXIso R n i (j + 1)).inv ≫
+        (cyclicModuleRootPowProjectiveResolution R n i).complex.d (j + 1) j ≫
+          (cyclicModuleRootPowProjectiveResolutionXIso R n i j).hom).hom ≤
       Ideal.span {op (AdjoinRoot.root (X ^ n : R[X]))} := by
   rintro _ ⟨c, rfl⟩
   have hk : 0 < if Even j then i else n - i := by split_ifs <;> omega
   obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_lt hk
-  have hd := cyclicModuleRootPowProjectiveResolution_complex_d_apply R hin.le j c
+  have hd := cyclicModuleRootPowProjectiveResolution_complex_d_apply R n i j c
   rw [hk, zero_add, pow_succ', op_mul] at hd
   rw [hd]
   exact (Ideal.span {op (AdjoinRoot.root (X ^ n : R[X]))}).mul_mem_left c

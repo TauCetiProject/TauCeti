@@ -28,6 +28,7 @@ the Möbius function `μ(0̂, 1̂)` of the lattice of noncrossing partitions.
 
 ## Main results
 
+* `Nat.catalan_le_four_pow` — the exponential bound `Cₙ ≤ 4ⁿ`.
 * `Nat.add_two_mul_catalan_succ` — the first-order recurrence `(n + 2) Cₙ₊₁ = 2 (2n + 1) Cₙ`.
 * `TauCeti.sum_range_neg_one_pow_mul_catalan` — the convolution of the signed Catalan numbers.
 -/
@@ -35,6 +36,14 @@ the Möbius function `μ(0̂, 1̂)` of the lattice of noncrossing partitions.
 public section
 
 namespace Nat
+
+/-- The Catalan numbers have exponential growth bounded by `4 ^ n`. -/
+theorem catalan_le_four_pow (n : ℕ) : catalan n ≤ 4 ^ n := by
+  calc
+    catalan n ≤ n.centralBinom := by
+      rw [catalan_eq_centralBinom_div]
+      exact Nat.div_le_self _ _
+    _ ≤ 4 ^ n := centralBinom_le_four_pow n
 
 /-- The first-order recurrence `(n + 2) Cₙ₊₁ = 2 (2n + 1) Cₙ` of the Catalan numbers. -/
 theorem add_two_mul_catalan_succ (n : ℕ) :

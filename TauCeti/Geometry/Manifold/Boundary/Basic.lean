@@ -39,6 +39,27 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCom
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {k : WithTop ℕ∞}
   {e e' : OpenPartialHomeomorph M H} {x : M}
 
+/-- Every nonzero-regularity change of charts for a model with corners preserves its intrinsic
+interior, in both directions. No boundaryless or finite-dimensional hypothesis is needed. -/
+theorem isInteriorPoint_iff_of_mem_contDiffGroupoid {φ : OpenPartialHomeomorph H H}
+    (hφ : φ ∈ contDiffGroupoid k I) (hk : k ≠ 0) {z : H} (hz : z ∈ φ.source) :
+    I.IsInteriorPoint z ↔ I.IsInteriorPoint (φ z) := by
+  let ψ : PartialDiffeomorph I I H H k :=
+    { toPartialEquiv := φ.toPartialEquiv
+      open_source := φ.open_source
+      open_target := φ.open_target
+      contMDiffOn_toFun := contMDiffOn_of_mem_contDiffGroupoid hφ
+      contMDiffOn_invFun := contMDiffOn_of_mem_contDiffGroupoid ((contDiffGroupoid k I).symm hφ) }
+  exact (ψ.isLocalDiffeomorphAt I I k hz).isInteriorPoint_iff hk
+
+/-- Every nonzero-regularity change of charts for a model with corners preserves its intrinsic
+boundary, in both directions. -/
+theorem isBoundaryPoint_iff_of_mem_contDiffGroupoid {φ : OpenPartialHomeomorph H H}
+    (hφ : φ ∈ contDiffGroupoid k I) (hk : k ≠ 0) {z : H} (hz : z ∈ φ.source) :
+    I.IsBoundaryPoint z ↔ I.IsBoundaryPoint (φ z) := by
+  rw [I.isBoundaryPoint_iff_not_isInteriorPoint, I.isBoundaryPoint_iff_not_isInteriorPoint,
+    isInteriorPoint_iff_of_mem_contDiffGroupoid hφ hk hz]
+
 /-- A preferred chart target is a neighborhood of the coordinates of an intrinsic interior
 point at any nonzero manifold regularity. The model may have boundary or corners. -/
 theorem extChartAt_target_mem_nhds_of_isInteriorPoint [IsManifold I k M] (hk : k ≠ 0)

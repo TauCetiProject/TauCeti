@@ -143,7 +143,7 @@ theorem apply_generator_nonpos_of_mem_dualitySet (S : ContractionSemigroup X)
   -- `x' (S(t) x) ≤ ‖x'‖ ‖S(t) x‖ ≤ ‖x‖ ‖x‖ = x' x`.
   have hSx : ‖S.realOperator t (x : X)‖ ≤ ‖(x : X)‖ :=
     ((S.realOperator t).le_opNorm _).trans
-      (mul_le_of_le_one_left (norm_nonneg _) (S.contracting_real t ht.le))
+      (mul_le_of_le_one_left (norm_nonneg _) (S.contracting_real t))
   have hle : f (S.realOperator t (x : X)) ≤ ‖(x : X)‖ * ‖(x : X)‖ :=
     (le_abs_self _).trans ((f.le_opNorm _).trans (by rw [hnorm]; gcongr))
   simp only [Function.comp_apply, map_smul, map_sub, smul_eq_mul, hfx]

@@ -11,11 +11,14 @@ public import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
 /-!
 # Basic properties of polynomial spectral values and spectral norms
 
-This file collects elementary invariance, scaling, and tower-descent lemmas for `spectralValue` and
-`spectralNorm` that do not depend on separability, trace, or completeness assumptions.
+This file collects elementary vanishing, invariance, scaling, and tower-descent lemmas for
+`spectralValue` and `spectralNorm` that do not depend on separability, trace, or completeness
+assumptions.
 
 ## Main results
 
+* `TauCeti.spectralNorm_eq_zero_of_not_isAlgebraic`: the spectral norm over `K` of an element that
+  is transcendental over `K` is zero.
 * `RingHom.spectralValue_map_of_norm_eq`: mapping a polynomial along a norm-preserving ring
   homomorphism out of a normed ring preserves `spectralValue`.
 * `Polynomial.spectralValue_expand`: expanding a polynomial by a positive factor `q` raises its
@@ -241,5 +244,14 @@ theorem spectralNorm_eq_norm_rpow_of_pow_eq_algebraMap {n : ℕ}
     spectralNorm_pow_eq_norm_of_pow_eq_algebraMap hn h]
 
 end NormedField
+
+/-- The spectral norm of an element that is transcendental over `K` is zero, since its minimal
+polynomial is `0`. -/
+theorem spectralNorm_eq_zero_of_not_isAlgebraic {K L : Type*} [NormedField K] [Field L]
+    [Algebra K L] {y : L} (hy : ¬ IsAlgebraic K y) : spectralNorm K L y = 0 := by
+  have h0 : spectralValueTerms (0 : K[X]) = 0 :=
+    funext fun n ↦ spectralValueTerms_of_natDegree_le _ (by simp)
+  rw [spectralNorm, minpoly.eq_zero fun h ↦ hy h.isAlgebraic, spectralValue, h0]
+  exact ciSup_const
 
 end TauCeti

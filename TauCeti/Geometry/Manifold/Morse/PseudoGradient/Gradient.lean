@@ -91,8 +91,7 @@ theorem IsEuclidean.neg_mgradient_eq_field (hφ : φ.IsEuclidean) {y : M}
       -- on the underlying type `ℝ` of `TangentSpace 𝓘(ℝ) (f y)` and has no Mathlib `simp` lemma.
       rw [mvfderiv, ContinuousLinearMap.comp_apply,
         mfderiv_eq_fderiv_comp_of_eqOn
-          (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) φ.eqOn_quadratic hy
-          (φ.differentiableAt_quadratic _)]
+          (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) φ.eqOn_quadratic hy]
       exact φ.fderiv_quadratic_apply _ _
     have hX : φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (-φ.field y)) =
         fun i ↦ φ.weight i * φ.coord (φ.toChart y) i := by

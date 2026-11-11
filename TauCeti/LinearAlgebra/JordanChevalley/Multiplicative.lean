@@ -89,7 +89,7 @@ theorem IsSemisimple.inv {g : GeneralLinearGroup K V} (hg : IsSemisimple g) :
     IsSemisimple g⁻¹ := by
   rw [isSemisimple_def] at hg ⊢
   exact hg.of_mem_adjoin_singleton
-    (TauCeti.Units.coe_inv_mem_adjoin g (IsIntegral.of_finite K (g : End K V)))
+    (Units.inv_mem_adjoin g (IsIntegral.of_finite K (g : End K V)))
 
 /-- A linear automorphism is semisimple if and only if its inverse is semisimple. -/
 @[simp]

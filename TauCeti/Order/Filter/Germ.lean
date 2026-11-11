@@ -11,6 +11,7 @@ public import Mathlib.Order.Filter.Germ.Basic
 /-!
 # Algebras of germs
 
+Composition along a map tending to a filter is a ring homomorphism on germs.
 Germs of algebra-valued functions inherit the pointwise scalar algebra structure.
 The projection from functions to germs is an algebra homomorphism. This lets subalgebras
 of germs retain the same scalars as their representatives.
@@ -19,6 +20,25 @@ of germs retain the same scalars as their representatives.
 public section
 
 namespace Filter.Germ
+
+/-- Composition of germs along a map tending to the target filter, as a ring homomorphism. -/
+def compTendstoRingHom {α β R : Type*} [Semiring R] {l : Filter α} {l' : Filter β}
+    (f : α → β) (hf : Tendsto f l l') : Germ l' R →+* Germ l R where
+  toFun s := s.compTendsto f hf
+  map_one' := const_compTendsto (1 : R) hf
+  map_mul' s t := by
+    -- On representatives, composition preserves pointwise multiplication by definition.
+    exact inductionOn₂ s t fun _ _ ↦ rfl
+  map_zero' := const_compTendsto (0 : R) hf
+  map_add' s t := by
+    -- On representatives, composition preserves pointwise addition by definition.
+    exact inductionOn₂ s t fun _ _ ↦ rfl
+
+/-- The ring homomorphism on germs acts by composition. -/
+@[simp]
+theorem compTendstoRingHom_apply {α β R : Type*} [Semiring R]
+    {l : Filter α} {l' : Filter β} (f : α → β) (hf : Tendsto f l l') (s : Germ l' R) :
+    compTendstoRingHom (R := R) f hf s = s.compTendsto f hf := (rfl)
 
 variable {α R A : Type*} {l : Filter α}
   [CommSemiring R] [Semiring A] [Algebra R A]

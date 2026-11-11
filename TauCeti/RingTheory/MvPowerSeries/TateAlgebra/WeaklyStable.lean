@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.FractionField
 
 import Mathlib.Algebra.CharP.Reduced
 import Mathlib.Algebra.Polynomial.SpecificDegree
+import Mathlib.Data.Finsupp.Encodable
 import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 import Mathlib.RingTheory.Localization.Integer
 import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
@@ -31,7 +32,7 @@ import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Basic
 # Characteristic-free weak stability of Gauss-normed Tate fraction fields
 
 Let `K` be a complete nontrivially normed ultrametric field of arbitrary characteristic, `σ` a
-finite variable type, and `c : σ → ℝ` a positive polyradius. This file proves that the
+countable variable type, and `c : σ → ℝ` a positive polyradius. This file proves that the
 Gauss-normed fraction field `GaussFractionField σ K c` of the restricted-series algebra
 `K{X / c}` is weakly stable (`TauCeti.MvPowerSeries.isWeaklyStable_gaussFractionField`): on every
 finite extension `L / GaussFractionField σ K c`, every linear functional is bounded by
@@ -73,7 +74,8 @@ Let `p := ringExpChar K` and `q := p ^ e`, where `e` is the exponent of `M / F`.
   `TauCeti.MvPowerSeries.isWeaklyStable_gaussFractionField_iff_of_isEmpty`: zero-variable agreement
   with extensions of `K`.
 * `TauCeti.MvPowerSeries.isWeaklyStable_gaussFractionField`: characteristic-free weak stability of
-  `GaussFractionField σ K c` for `[Finite σ]` over a complete nontrivially normed ultrametric field.
+  `GaussFractionField σ K c` for `[Countable σ]` over a complete nontrivially normed ultrametric
+  field.
 
 ## References
 
@@ -204,8 +206,11 @@ private theorem exists_isometric_ringHom_of_isPurelyInseparable
   let _ : Algebra F F' := (Ψ.gaussFractionFieldMap hΨ_inj).toAlgebra
   have hF_alg : algebraMap F F' = Ψ.gaussFractionFieldMap hΨ_inj := RingHom.algebraMap_toAlgebra _
   -- Step 2: Pick an `F`-basis `b` of `M` with `b j ^ p ^ e ∈ T` and `p ^ e`-th roots in `T'`.
-  obtain ⟨m, b, g, hg⟩ :=
-    IsPurelyInseparable.exists_basis_iterateFrobenius_eq_algebraMap T F M p he
+  let m := Module.finrank F M
+  obtain ⟨w, g, hg⟩ :=
+    IsPurelyInseparable.exists_iterateFrobenius_unitsSMul_eq_algebraMap T F M p he
+      (Module.finBasis F M)
+  let b := (Module.finBasis F M).unitsSMul w
   let rootG (j : Fin m) : T' := tateRoot p e hr_def (g j)
   have hrootG_pow (j : Fin m) : rootG j ^ p ^ e = Ψ (g j) := tateRoot_pow hr_def hr (g j)
   -- Step 3: Embed `M` `F`-linearly into `F'` by sending `b` to the `p ^ e`-th roots `rootG`.
@@ -219,7 +224,7 @@ private theorem exists_isometric_ringHom_of_isPurelyInseparable
     IsPurelyInseparable.nonempty_algHom_of_forall_exists_pow_eq F M p he F' hspan_b <| by
       rintro _ ⟨j, rfl⟩
       exact ⟨algebraMap T' F' (rootG j), by
-        rw [← map_pow, hrootG_pow, ← Ψ.gaussFractionFieldMap_algebraMap hΨ_inj, ← hF_alg, hg]⟩
+        rw [← map_pow, hrootG_pow, ← Ψ.gaussFractionFieldMap_algebraMap hΨ_inj, ← hF_alg, ← hg]⟩
   -- Step 4: Verify scalar compatibility, spectral-norm isometry, and images of the basis `b`.
   refine ⟨Ψ, m, b, rootG, ι₀.toRingHom, fun _ ↦ rfl, hΨ_norm, fun f ↦ ?_, fun y ↦ ?_, fun j ↦ ?_⟩
   · rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, AlgHom.commutes, hF_alg]
@@ -235,7 +240,7 @@ private theorem exists_isometric_ringHom_of_isPurelyInseparable
   · refine iterateFrobenius_inj F' p e ?_
     simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, iterateFrobenius_def]
     rw [← map_pow, ← IsPurelyInseparable.algebraMap_iterateFrobenius F p he (b j),
-      AlgHom.commutes, hF_alg, ← map_pow, hrootG_pow, ← hg]
+      AlgHom.commutes, hF_alg, ← map_pow, hrootG_pow, hg]
     exact Ψ.gaussFractionFieldMap_algebraMap hΨ_inj (g j)
 
 private theorem algebraMap_sum_mul_eq_mul
@@ -360,7 +365,7 @@ private theorem exists_sum_mul_ne_zero_of_sum_ne_zero
   · rw [hπ_sum]
     calc ‖π (∑ j, a j • wE j)‖
         ≤ ‖f_dual‖ * ‖restrictedExpandComponent hq hr ν (∑ j, Ψ (a j) * rootG j)‖ := by
-          refine norm_le_mul_of_norm_coeff_le (norm_nonneg f_dual) fun α ↦ ?_
+          refine norm_le_mul_of_norm_coeff_le fun α ↦ ?_
           rw [hπ_coeff, ← hcoe_sum a α, ← AddSubgroupClass.coe_norm]
           exact f_dual.le_opNorm _
       _ ≤ ‖f_dual‖ * (‖∑ j, Ψ (a j) * rootG j‖ / ν.prod (r · ^ ·)) :=
@@ -376,10 +381,10 @@ private theorem exists_sum_mul_ne_zero_of_sum_ne_zero
 end Helpers
 
 /-- **Characteristic-free weak stability of Gauss-normed Tate fraction fields.**
-For any complete nontrivially normed ultrametric field `K` (of arbitrary characteristic), finite
+For any complete nontrivially normed ultrametric field `K` (of arbitrary characteristic), countable
 variable type `σ`, and positive polyradius `c : σ → ℝ`, the Gauss-normed fraction field
 `GaussFractionField σ K c` is weakly stable ([bosch-guntzer-remmert], §5.3.1, Theorem 1). -/
-theorem isWeaklyStable_gaussFractionField (σ K : Type*) [Finite σ]
+theorem isWeaklyStable_gaussFractionField (σ K : Type*) [Countable σ]
     [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
     (c : σ → ℝ) [∀ i, Fact (0 < c i)] :
     IsWeaklyStable (GaussFractionField σ K c) := by
@@ -408,7 +413,6 @@ theorem isWeaklyStable_gaussFractionField (σ K : Type*) [Finite σ]
   obtain ⟨Ψ, m, b, rootG, ι, hΨ_def, hΨ_norm, hι_alg, hι_norm, hι_b⟩ :=
     exists_isometric_ringHom_of_isPurelyInseparable M p e le_rfl (fun _ ↦ rfl) hr h_iso
   -- Step 3: Span a countable-type `K`-subspace `E ⊆ K'` from all coefficients of `rootG`.
-  have : Countable (σ →₀ ℕ) := DFunLike.coe_injective.countable
   obtain ⟨E, _, hrootG_mem⟩ : ∃ E : Submodule K K', SeparatingDual K E ∧
       ∀ (j : Fin m) (α : σ →₀ ℕ), coeff α (rootG j : _root_.MvPowerSeries σ K') ∈ E :=
     ⟨Submodule.span K (Set.range fun idx : Fin m × (σ →₀ ℕ) ↦
@@ -538,7 +542,7 @@ private theorem not_isRoot_X_sq_add_C_sq_mul_X_add_C {σ K : Type*}
 /-- In any characteristic (including `2`), `Y ^ 2 + Xᵢ ^ 2 * Y + Xᵢ` defines a degree-`2` separable
 extension of `GaussFractionField σ K c` on which `spectralNorm` is equivalent to the power-basis
 coordinate norm. -/
-example (σ : Type u₁) (K : Type u₂) [Finite σ] [Nonempty σ]
+example (σ : Type u₁) (K : Type u₂) [Countable σ] [Nonempty σ]
     [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
     (c : σ → ℝ) [∀ i, Fact (0 < c i)] :
     let F := GaussFractionField σ K c
@@ -586,7 +590,7 @@ example (σ : Type u₁) (K : Type u₂) [Finite σ] [Nonempty σ]
 /-- In prime characteristic `p`, adjoining a `p`-th root of a coordinate variable `Xᵢ` produces a
 nontrivial finite purely inseparable extension of `GaussFractionField σ K c` on which `spectralNorm`
 is equivalent to the power-basis coordinate norm. -/
-example (σ : Type u₁) (K : Type u₂) [Finite σ] [Nonempty σ]
+example (σ : Type u₁) (K : Type u₂) [Countable σ] [Nonempty σ]
     [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
     (p : ℕ) [Fact p.Prime] [CharP K p]
     (c : σ → ℝ) [∀ i, Fact (0 < c i)] :

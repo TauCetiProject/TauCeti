@@ -199,6 +199,14 @@ theorem isUnipotentPoint_conj_iff (g h : WithConv (H →ₐ[k] K)) :
       (LinearMap.GeneralLinearGroup.ofLinearEquiv (Comodule.pointsAction M g))
       (LinearMap.GeneralLinearGroup.ofLinearEquiv (Comodule.pointsAction M h))).mpr (hg M)
 
+/-- A unipotent point acts on every finitely generated comodule through an endomorphism `ρ x`
+with `ρ x - 1` nilpotent. -/
+theorem IsUnipotentPoint.isNilpotent_pointsRepresentation_sub_one {x : WithConv (H →ₐ[k] K)}
+    (hx : IsUnipotentPoint x) (M : FGComoduleCat.{u, v, u} k H) :
+    _root_.IsNilpotent (Comodule.pointsRepresentation (R := k) (H := H) (A := K) M x - 1) := by
+  rw [Comodule.pointsRepresentation_apply]
+  exact (isUnipotentPoint_iff_forall_isNilpotent_endOfPoint_sub_one x).mp hx M
+
 end HopfAlgebra
 
 end TauCeti

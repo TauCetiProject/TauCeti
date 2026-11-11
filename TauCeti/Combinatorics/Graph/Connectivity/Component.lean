@@ -10,6 +10,7 @@ public import Mathlib.Combinatorics.Graph.Simple
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 public import Mathlib.Order.Minimal
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.OfSimpleGraph
+public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Trace
 
 import Mathlib.Basic.Finite.Sum
 import Mathlib.SetTheory.Cardinal.Finite
@@ -36,8 +37,6 @@ elementary order API, follow Peter Nelson and Jun Kwon's Mathlib proposal
   `G.toSimpleGraph`.
 * `Graph.componentCount G` counts the components via `Nat.card`, so it is `0` if there are
   infinitely many; it is exact whenever there are finitely many components.
-* `Graph.toSimpleGraphHomOfLE` is the homomorphism of underlying simple graphs induced by a
-  subgraph inclusion, along which simple components can be mapped.
 * `Graph.ConnectedComponent.mapOfLE` maps native components along a subgraph inclusion.
 
 Component membership is described by the walk-based `Graph.Reachable`, which agrees with
@@ -427,6 +426,14 @@ theorem Connected.reachable (hG : G.Connected) {x y : α} (hx : x ∈ V(G)) (hy 
     G.Reachable x y :=
   (connected_iff_forall_reachable.mp hG).2 hx hy
 
+/-- The graph traced by a walk is connected. -/
+theorem Walk.connected_walkGraph {x y : α} (p : G.Walk x y) : (G.walkGraph p).Connected := by
+  rw [connected_iff_forall_reachable]
+  refine ⟨⟨x, by simp⟩, fun a b ha hb ↦ ?_⟩
+  exact p.reachable_walkGraph_of_mem_support
+    (by simpa only [Walk.vertexSet_walkGraph, Set.mem_ofPred_eq] using ha)
+    (by simpa only [Walk.vertexSet_walkGraph, Set.mem_ofPred_eq] using hb)
+
 /-- Finitely many actual vertices give finitely many connected-component subgraphs. -/
 instance [Finite V(G)] : Finite G.ConnectedComponent :=
   G.connectedComponentEquiv.finite_iff.mpr inferInstance
@@ -474,17 +481,6 @@ theorem componentCount_le_ncard_vertexSet [Finite V(G)] : G.componentCount ≤ V
     fun C ↦ C.ind fun v ↦ ⟨v, rfl⟩
 
 /-! ### Subgraph inclusions -/
-
-/-- A subgraph inclusion `H ≤ G` induces a homomorphism of underlying simple graphs, sending each
-actual vertex of `H` to itself. -/
-def toSimpleGraphHomOfLE (hHG : H ≤ G) : H.toSimpleGraph →g G.toSimpleGraph where
-  toFun z := ⟨z, hHG.vertexSet_mono z.2⟩
-  map_rel' hzw :=
-    ⟨fun h ↦ hzw.1 (Subtype.ext (Subtype.mk.inj h)), hzw.2.mono hHG⟩
-
-@[simp]
-theorem coe_toSimpleGraphHomOfLE_apply (hHG : H ≤ G) (z : V(H)) :
-    (toSimpleGraphHomOfLE hHG z : α) = z := (rfl)
 
 /-- Along a subgraph inclusion `H ≤ G`, the simple component of `z` in `H` maps to the simple
 component of `w` in `G` exactly when `w` is reachable from `z` in `G`. -/
