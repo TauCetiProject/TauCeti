@@ -562,6 +562,8 @@ theorem isLocalDiffeomorphAt_of_writtenInExtChartAt [IsManifold I n M] [IsManifo
       (extChartAt I x x)) :
     IsLocalDiffeomorphAt I J n f x := by
   -- Cancel the inverse chart on the right, then the chart at `f x` on the left.
+  -- By definition, `writtenInExtChartAt I J x f` is
+  -- `(extChartAt J (f x) ∘ f) ∘ (extChartAt I x).symm`.
   have h := hw.of_comp_right (f := extChartAt J (f x) ∘ f) (e := (extChartAt I x).symm)
     (isLocalDiffeomorphAt_extChartAt_symm ((ModelWithCorners.isInteriorPoint_iff (I := I)).mp hIx))
   rw [extChartAt_to_inv] at h
@@ -623,8 +625,9 @@ theorem isLocalDiffeomorphAt_of_mfderiv_eq (hf : ContMDiffOn I J n f s) (hs : Is
     refine ⟨(ModelWithCorners.isInteriorPoint_iff (I := I)).mp hIx, ?_⟩
     rw [mem_preimage, extChartAt_to_inv]
     exact ⟨hx, mem_extChartAt_source (f x)⟩
-  have hgt : ContDiffOn 𝕂 n (writtenInExtChartAt I J x f) t :=
-    ((contMDiffOn_iff.1 hf).2 x (f x)).mono fun _ hy ↦ ⟨interior_subset hy.1, hy.2⟩
+  have hgt : ContDiffOn 𝕂 n (writtenInExtChartAt I J x f) t := by
+    simp only [writtenInExtChartAt]
+    exact ((contMDiffOn_iff.1 hf).2 x (f x)).mono fun _ hy ↦ ⟨interior_subset hy.1, hy.2⟩
   -- Its derivative there is `e`: the tangent spaces are the model spaces, and the model range is a
   -- neighbourhood of the chart image of the interior point `x`.
   have hfd : (e : TangentSpace I x →L[𝕂] TangentSpace J (f x)) =
