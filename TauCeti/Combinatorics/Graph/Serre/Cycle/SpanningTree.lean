@@ -15,8 +15,8 @@ Let `T` be a spanning tree and `O` an orientation of `Γ`. Deleting a dart of `T
 its reverse separates its endpoints, so the simple support of `T` is a tree, and the positive
 darts of `T` form a spanning forest of `O`. Counting gives the edge count of a finite tree: a
 spanning tree of a graph with finitely many vertices has one positive dart fewer than there are
-vertices. Hence a finite connected graph has `#O + 1 - #V` positive darts outside a spanning
-tree.
+vertices. Hence a connected graph with finitely many positive darts, which then has finitely
+many vertices, has `#O + 1 - #V` positive darts outside a spanning tree.
 
 ## Main results
 
@@ -119,10 +119,21 @@ theorem card_inter_add_one [Finite Γ.V] : Nat.card ↥(T.darts ∩ O) + 1 = Nat
   rwa [SimpleGraph.card_connectedComponent_eq_one_iff.mpr
     (hO.connected_supportGraph_iff.mpr ((nonempty_spanningTree_iff Γ).mp ⟨T⟩))] at h
 
-/-- For finitely many vertices and positive darts, the number of positive darts outside a
-spanning tree, plus the number of vertices, is the number of positive darts plus one. -/
-theorem card_diff_add_card [Finite Γ.V] [Finite O] :
+/-- For finitely many positive darts, the number of positive darts outside a spanning tree, plus
+the number of vertices, is the number of positive darts plus one. -/
+theorem card_diff_add_card [Finite O] :
     Nat.card ↥(O \ T.darts) + Nat.card Γ.V = Nat.card O + 1 := by
+  -- Every dart lies in `O` or reverses a dart of `O`, and every vertex other than a base vertex
+  -- `v` is the target of the last dart of the tree path from `v`.
+  have : Finite Γ.E := Set.finite_univ_iff.mp <|
+    ((Set.toFinite O).union ((Set.toFinite O).preimage Γ.rev_injective.injOn)).subset
+      fun e _ => (em (e ∈ O)).imp id (hO.mem_rev_iff Γ e).mpr
+  obtain ⟨v⟩ := (Γ.connected_iff.mp ((nonempty_spanningTree_iff Γ).mp ⟨T⟩)).1
+  have : Finite Γ.V := Set.finite_univ_iff.mp <|
+    ((Set.finite_range Γ.tgt).insert v).subset fun w _ => by
+      cases T.path v w with
+      | nil => exact .inl rfl
+      | cons _ e => exact .inr ⟨e.1, e.2.2⟩
   have h := Set.ncard_inter_add_ncard_sdiff_eq_ncard O T.darts (Set.toFinite O)
   have h' := T.card_inter_add_one hO
   rw [Set.inter_comm] at h'
