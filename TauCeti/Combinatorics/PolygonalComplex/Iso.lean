@@ -311,11 +311,9 @@ private theorem germEquiv_coe {v : C.graph.V} (e : (C.vertexLink v).V) :
 vertex: the link edge of a corner to that of the corresponding corner, with its two directions
 exchanged on a reversed face. -/
 private def linkDartEquiv (v : C.graph.V) :
-    (C.vertexLink v).E ≃ (D.vertexLink (φ.graph.equivV v)).E where
-  toFun d := (φ.cornerAtEquiv v d.1, d.2 ^^ φ.flip d.1.1.1)
-  invFun d := ((φ.cornerAtEquiv v).symm d.1, d.2 ^^ φ.flip ((φ.cornerAtEquiv v).symm d.1).1.1)
-  left_inv d := Prod.ext (by simp) (by simp)
-  right_inv d := Prod.ext (by simp) (by simp)
+    (C.vertexLink v).E ≃ (D.vertexLink (φ.graph.equivV v)).E :=
+  (φ.cornerAtEquiv v).prodShear fun c =>
+    Function.Involutive.toPerm (· ^^ φ.flip c.1.1) fun _ => by simp
 
 private theorem linkDartEquiv_apply {v : C.graph.V} (c : {c : C.Corner // C.cornerVertex c = v})
     (b : Bool) : φ.linkDartEquiv v (c, b) = (φ.cornerAtEquiv v c, b ^^ φ.flip c.1.1) := rfl

@@ -148,20 +148,12 @@ theorem trans_assoc {Λ : SerreGraph.{u', v'}} (φ : Γ.Iso Δ) (ψ : Δ.Iso Θ)
     (φ.trans ψ).trans χ = φ.trans (ψ.trans χ) := (rfl)
 
 /-- The bijection of geometric edges induced by an isomorphism. -/
-def geomEdgeEquiv (φ : Γ.Iso Δ) : Γ.GeomEdge ≃ Δ.GeomEdge where
-  toFun := GeomEdge.lift Γ (fun e => Δ.toGeomEdge (φ.equivE e)) fun e => by simp
-  invFun := GeomEdge.lift Δ (fun e => Γ.toGeomEdge (φ.equivE.symm e)) fun e => by
-    rw [← symm_equivE, map_rev, toGeomEdge_rev]
-  left_inv x := by
-    obtain ⟨e, rfl⟩ := Γ.toGeomEdge_surjective x
-    simp
-  right_inv x := by
-    obtain ⟨e, rfl⟩ := Δ.toGeomEdge_surjective x
-    simp
+def geomEdgeEquiv (φ : Γ.Iso Δ) : Γ.GeomEdge ≃ Δ.GeomEdge :=
+  Quot.congr φ.equivE fun e f => by rw [← φ.map_rev, Equiv.apply_eq_iff_eq]
 
 @[simp] theorem geomEdgeEquiv_toGeomEdge (φ : Γ.Iso Δ) (e : Γ.E) :
     φ.geomEdgeEquiv (Γ.toGeomEdge e) = Δ.toGeomEdge (φ.equivE e) :=
-  GeomEdge.lift_toGeomEdge ..
+  Quot.congr_mk ..
 
 /-- Isomorphic Serre graphs are preconnected together. -/
 theorem preconnected_iff (φ : Γ.Iso Δ) : Δ.Preconnected ↔ Γ.Preconnected :=
