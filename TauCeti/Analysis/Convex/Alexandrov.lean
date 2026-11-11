@@ -614,8 +614,9 @@ theorem _root_.ConvexOn.ae_existsUnique_isPositive_isLittleO {Ω : Set E} {u : E
   classical
   -- Extend `u` by `⊤` off `Ω`. Almost every point of `Ω` is interior, and near an interior point
   -- the real representative of the extension is `u` itself.
-  filter_upwards [TauCeti.ae_existsUnique_isPositive_isLittleO (μ := μ) (convex_epigraph_ite hu)
-    ite_ne_bot, hu.ae_differentiableAt_of_mem, hu.1.ae_mem_interior] with x h₁ h₂ h₃ hx
+  filter_upwards [TauCeti.ae_existsUnique_isPositive_isLittleO (μ := μ)
+    (convexOn_iff_convex_epigraph_ite.1 hu) ite_ne_bot, hu.ae_differentiableAt_of_mem,
+    hu.1.ae_mem_interior] with x h₁ h₂ h₃ hx
   have heq : (fun x' => ((if x' ∈ Ω then (u x' : EReal) else ⊤)).toReal) =ᶠ[𝓝 x] u :=
     eventually_of_mem (isOpen_interior.mem_nhds (h₃ hx)) fun x' hx' => by
       simp [interior_subset hx']

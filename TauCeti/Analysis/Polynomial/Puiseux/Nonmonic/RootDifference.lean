@@ -79,7 +79,7 @@ theorem exists_analyticOnNhd_nonmonic_root_sub_eq_zpow_mul_unit
     rw [hdiscr b hb]
     exact mul_ne_zero (pow_ne_zero _ hb.2.2) (hv0 b ⟨hb.1, hb.2.1⟩)
   obtain ⟨r, g, hra, hg, hr⟩ := exists_analyticOnNhd_nonmonic_powerSubstitution
-    hU hR' hn hR hdvd hF hdeg hdiscr0 hu hu0 hlead
+    hU hn hR hdvd hF hdeg hdiscr0 hu hu0 hlead
   obtain ⟨s, hsa, hscale, hnorm⟩ :=
     exists_analyticOnNhd_integralNormalization_eq_prod_X_sub_C_powerSubstitution
       hn hR hdeg hu (fun b hb ↦ hu0 b ⟨hb.1, hb.2.1⟩) hlead hg
@@ -87,7 +87,7 @@ theorem exists_analyticOnNhd_nonmonic_root_sub_eq_zpow_mul_unit
   refine ⟨r, g, hra, hg, hr, ?_⟩
   intro i j hij
   have hUc : IsConnected U := isConnected_iff_connectedSpace.mpr inferInstance
-  refine TauCeti.exists_analyticOnNhd_eq_zpow_mul hU hUc isOpen_ball (mem_ball_self hR')
+  refine TauCeti.exists_analyticOnNhd_eq_zpow_mul hU hUc isOpen_ball
     ((hra i).sub (hra j)) (fun b hb ↦ sub_ne_zero.mpr ((hr b hb).1.ne hij)) ?_
   intro x hx
   let q : E × ℂ → E × ℂ := fun b ↦ (b.1, b.2 ^ n)
