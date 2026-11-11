@@ -176,16 +176,6 @@ The slice `⟨T, u, t⟩` is approximated by `-T ⌞ dfₘ` for the smooth multi
 `fₘ x = ψ(cₘ (t - u x))`, where `ψ = Real.smoothTransition` and `cₘ = m + 1`. They increase to the
 indicator of `{u < t}`, and `‖dfₘ‖ = cₘ ψ'(cₘ (t - u)) ‖du‖`, whose integral in `t` is `‖du‖`. -/
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The derivative of the multiplier `x ↦ ψ(c (t - u x))` has norm `c ψ'(c (t - u x)) ‖du x‖`. -/
-private theorem enorm_fderiv_smoothTransition_mul_sub (hu : ContDiff ℝ ∞ u) {c : ℝ} (hc : 0 ≤ c)
-    (t : ℝ) (x : E) :
-    ‖fderiv ℝ (fun y => Real.smoothTransition (c * (t - u y))) x‖ₑ =
-      ENNReal.ofReal (c * deriv Real.smoothTransition (c * (t - u x))) * ‖fderiv ℝ u x‖ₑ := by
-  rw [(((hu.differentiable (by simp) x).hasFDerivAt.const_sub t).const_mul c).smoothTransition
-    |>.fderiv, smul_smul, mul_comm, enorm_smul, enorm_neg,
-    Real.enorm_of_nonneg (mul_nonneg hc Real.smoothTransition.monotone.deriv_nonneg)]
-
 /-- **Mass of a slice as a limit.** The slice is the weak limit of `-T ⌞ dfₘ` for
 `fₘ x = ψ((m + 1) (t - u x))`, so its mass is at most the `liminf` of the weighted integrals
 `(k + 1) ∫ (m + 1) ψ'((m + 1) (t - u)) ‖du‖ d‖T‖`. -/
@@ -216,51 +206,21 @@ private theorem mass_slice_le_liminf {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] 
       have hle : ((m : ℝ) + 1) * (t - u x) ≤ 0 :=
         mul_nonpos_of_nonneg_of_nonpos (by positivity) (sub_nonpos.2 (not_lt.1 hxt))
       simp [Real.smoothTransition.zero_of_nonpos hle, hxt]
-  refine mass_le_iff.2 fun φ hφ => ?_
-  have h := ((tendsto_apply_smulLeftCLM_massRestrict hT₁ hA hf hfC hlim (extDerivCLM φ)).sub
-    (tendsto_apply_smulLeftCLM_massRestrict hT₂ hA hf hfC hlim φ)).enorm
-  rw [← slice_apply _ hum] at h
-  rw [← h.liminf_eq]
-  refine liminf_le_liminf (Eventually.of_forall fun m => ?_)
-  -- The Leibniz rule `∂(fT) = f ∂T - T ⌞ df`, evaluated at `φ`.
-  have hL := DFunLike.congr_fun (ContinuousLinearMap.comp_smulLeftCLM_comp_extDerivCLM T (hf m)) φ
-  simp only [ContinuousLinearMap.comp_apply, sub_apply] at hL ⊢
-  rw [hL, sub_sub_cancel_left, enorm_neg]
-  calc _ ≤ mass (T ∘ oneFormWedgeCLM (k := k) (contDiff_infty_iff_fderiv.1 (hf m)).2) :=
-        enorm_le_mass (f := T ∘ oneFormWedgeCLM _) hφ
-    _ ≤ _ := mass_comp_oneFormWedgeCLM_le_lintegral hT₁ _
-    _ = _ := by
-        simp_rw [enorm_fderiv_smoothTransition_mul_sub hu (c := (m : ℝ) + 1) (by positivity)]
-
-/-- The measurable weight `(t, x) ↦ c ψ'(c (t - u x)) ‖du x‖` of the integrals in
-`mass_slice_le_liminf`. -/
-private theorem measurable_weight (hu : ContDiff ℝ ∞ u) (c : ℝ) :
-    Measurable fun p : ℝ × Ω => ENNReal.ofReal (c * deriv Real.smoothTransition
-      (c * (p.1 - u p.2))) * ‖fderiv ℝ u p.2‖ₑ := by
-  have hu' : Continuous fun p : ℝ × Ω => u p.2 :=
-    hu.continuous.comp (continuous_subtype_val.comp continuous_snd)
-  have hdu : Continuous fun p : ℝ × Ω => ‖fderiv ℝ u p.2‖ₑ :=
-    continuous_enorm.comp ((hu.continuous_fderiv (by simp)).comp
-      (continuous_subtype_val.comp continuous_snd))
-  have hψ : Continuous (deriv Real.smoothTransition) :=
-    (Real.smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl
-  exact (ENNReal.continuous_ofReal.comp (continuous_const.mul (hψ.comp
-    (continuous_const.mul (continuous_fst.sub hu'))))).measurable.mul hdu.measurable
-
-/-- Integrating the weighted integrals of `mass_slice_le_liminf` over the level `t` gives
-`∫ ‖du‖ d‖T‖`, because `t ↦ c ψ'(c (t - a))` has total integral one. -/
-private theorem lintegral_lintegral_weight (hu : ContDiff ℝ ∞ u) (μ : Measure Ω) [SFinite μ]
-    {c : ℝ} (hc : 0 < c) :
-    ∫⁻ t, ∫⁻ x, ENNReal.ofReal (c * deriv Real.smoothTransition (c * (t - u x))) *
-      ‖fderiv ℝ u x‖ₑ ∂μ = ∫⁻ x, ‖fderiv ℝ u x‖ₑ ∂μ := by
-  rw [lintegral_lintegral_swap (measurable_weight hu c).aemeasurable]
-  refine lintegral_congr fun x => ?_
-  have hk : ∫⁻ t, ENNReal.ofReal (c * deriv Real.smoothTransition (c * (t - u x))) = 1 := by
-    simp_rw [ENNReal.ofReal_mul hc.le, mul_sub]
-    rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
-      Real.smoothTransition.lintegral_ofReal_deriv_mul_sub _ hc.ne', ← ENNReal.ofReal_mul hc.le,
-      abs_of_pos hc, mul_inv_cancel₀ hc.ne', ENNReal.ofReal_one]
-  rw [lintegral_mul_const' _ _ enorm_ne_top, hk, one_mul]
+  -- By the Leibniz rule `∂(fT) = f ∂T - T ⌞ df`, the slice is the weak limit of `-T ⌞ dfₘ`.
+  refine (mass_le_liminf (fs := fun m =>
+      -(T ∘ oneFormWedgeCLM (k := k) (contDiff_infty_iff_fderiv.1 (hf m)).2)) fun φ => ?_).trans
+    (liminf_le_liminf (.of_forall fun m => ?_))
+  · have h := (tendsto_apply_smulLeftCLM_massRestrict hT₁ hA hf hfC hlim (extDerivCLM φ)).sub
+      (tendsto_apply_smulLeftCLM_massRestrict hT₂ hA hf hfC hlim φ)
+    rw [← slice_apply _ hum] at h
+    refine h.congr fun m => ?_
+    have hL := DFunLike.congr_fun (ContinuousLinearMap.comp_smulLeftCLM_comp_extDerivCLM T (hf m)) φ
+    simp only [ContinuousLinearMap.comp_apply, sub_apply] at hL
+    simp [hL]
+  · rw [mass_neg]
+    refine (mass_comp_oneFormWedgeCLM_le_lintegral hT₁ _).trans_eq ?_
+    simp_rw [(hu.differentiable (by simp) _).enorm_fderiv_smoothTransition_mul_sub
+      (c := (m : ℝ) + 1) (by positivity)]
 
 /-- A measurable majorant of `t ↦ M(⟨T, u, t⟩)` whose integral is at most
 `(k + 1) ∫ ‖du‖ d‖T‖`. -/
@@ -269,14 +229,20 @@ private theorem exists_measurable_mass_slice_le {T : 𝓓(Ω, E [⋀^Fin (k + 1)
     ∃ G : ℝ → ℝ≥0∞, Measurable G ∧ (∀ t, mass (slice T u t) ≤ G t) ∧
       ∫⁻ t, G t ≤ (k + 1) * ∫⁻ x, ‖fderiv ℝ u x‖ₑ ∂massMeasure T := by
   have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
+  have hum : Measurable fun x : Ω => u x := hu.continuous.measurable.comp measurable_subtype_coe
+  have hdu : Measurable fun x : Ω => ‖fderiv ℝ u x‖ₑ := (continuous_enorm.comp
+    ((hu.continuous_fderiv (by simp)).comp continuous_subtype_val)).measurable
+  have hg' (m : ℕ) :=
+    Real.smoothTransition.measurable_ofReal_mul_deriv_mul_sub_mul hum hdu ((m : ℝ) + 1)
   have hg (m : ℕ) : Measurable fun t => (k + 1 : ℝ≥0∞) *
       ∫⁻ x, ENNReal.ofReal (((m : ℝ) + 1) *
         deriv Real.smoothTransition (((m : ℝ) + 1) * (t - u x))) * ‖fderiv ℝ u x‖ₑ
         ∂massMeasure T :=
-    ((measurable_weight hu _).lintegral_prod_right').const_mul _
+    (hg' m).lintegral_prod_right'.const_mul _
   refine ⟨_, .liminf hg, mass_slice_le_liminf hT hu, (lintegral_liminf_le hg).trans_eq ?_⟩
-  simp_rw [lintegral_const_mul _ ((measurable_weight hu _).lintegral_prod_right'),
-    lintegral_lintegral_weight hu _ (Nat.cast_add_one_pos _)]
+  simp_rw [lintegral_const_mul _ (hg' _).lintegral_prod_right',
+    Real.smoothTransition.lintegral_lintegral_ofReal_mul_deriv_mul_sub_mul _ hum hdu
+      (Nat.cast_add_one_pos _)]
   exact liminf_const _
 
 /-- **The slicing inequality.** For a locally normal `(k + 1)`-current `T` and a smooth
@@ -287,15 +253,6 @@ theorem lintegral_mass_slice_le {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) �
   obtain ⟨G, -, hG, hGint⟩ := exists_measurable_mass_slice_le hT hu
   exact (lintegral_mono hG).trans hGint
 
-omit [CompleteSpace F] in
-/-- `∫ ‖du‖ d‖T‖ ≤ L M(T)` when `‖du‖ ≤ L` on `Ω`. -/
-private theorem lintegral_enorm_fderiv_le_mul_mass {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ}
-    (hT : HasLocallyFiniteMass T) {L : ℝ≥0∞} (hdu : ∀ x ∈ Ω, ‖fderiv ℝ u x‖ₑ ≤ L) :
-    ∫⁻ x, ‖fderiv ℝ u x‖ₑ ∂massMeasure T ≤ L * mass T := by
-  calc ∫⁻ x, ‖fderiv ℝ u x‖ₑ ∂massMeasure T ≤ ∫⁻ _, L ∂massMeasure T :=
-        lintegral_mono fun x => hdu x x.2
-    _ = L * mass T := by rw [lintegral_const, massMeasure_univ hT]
-
 /-- **The slicing inequality with a Lipschitz bound.** If `‖du‖ ≤ L` on `Ω`, then
 `∫ M(⟨T, u, t⟩) dt ≤ (k + 1) L M(T)`. -/
 theorem lintegral_mass_slice_le_mul_mass {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ}
@@ -304,7 +261,7 @@ theorem lintegral_mass_slice_le_mul_mass {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[�
     ∫⁻ t, mass (slice T u t) ≤ (k + 1) * L * mass T := by
   rw [mul_assoc]
   exact (lintegral_mass_slice_le hT hu).trans
-    (by gcongr; exact lintegral_enorm_fderiv_le_mul_mass hT.hasLocallyFiniteMass hdu)
+    (by gcongr; exact lintegral_massMeasure_le_mul_mass hT.hasLocallyFiniteMass fun x => hdu x x.2)
 
 /-- If `∫ ‖du‖ d‖T‖` is finite, then almost every slice `⟨T, u, t⟩` has finite mass. -/
 theorem ae_mass_slice_lt_top {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ}
@@ -324,7 +281,7 @@ theorem ae_isNormal_slice {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ
   have hfin {j : ℕ} {S : 𝓓(Ω, E [⋀^Fin (j + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hS : IsNormal S) :
       ∫⁻ x, ‖fderiv ℝ u x‖ₑ ∂massMeasure S ≠ ⊤ :=
     ne_top_of_le_ne_top (ENNReal.mul_ne_top hL hS.mass_ne_top)
-      (lintegral_enorm_fderiv_le_mul_mass hS.isLocallyNormal.hasLocallyFiniteMass hdu)
+      (lintegral_massMeasure_le_mul_mass hS.isLocallyNormal.hasLocallyFiniteMass fun x => hdu x x.2)
   cases k with
   | zero =>
     filter_upwards [ae_mass_slice_lt_top hT.isLocallyNormal hu (hfin hT)] with t ht
