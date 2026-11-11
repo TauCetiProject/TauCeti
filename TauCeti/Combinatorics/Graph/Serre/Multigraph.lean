@@ -222,5 +222,12 @@ theorem toGraph_connectedComponentOf_eq_iff (u v : Γ.V) :
   rw [Graph.connectedComponentOf_eq_connectedComponentOf_iff]
   exact Γ.reachable_toGraph_iff u v
 
+/-- Every connected component of the underlying multigraph is the component of a vertex. -/
+theorem toGraph_connectedComponentOf_surjective :
+    Function.Surjective fun v : Γ.V => Γ.toGraph.connectedComponentOf v (by simp) := by
+  intro C
+  obtain ⟨v, hv⟩ := C.property.nonempty
+  exact ⟨v, (Graph.ConnectedComponent.eq_connectedComponentOf hv).symm⟩
+
 end SerreGraph
 end TauCeti
