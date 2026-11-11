@@ -43,8 +43,8 @@ invariance; vector-valued maps are handled in coordinates (`Module.Basis.memWkpL
 For half-discs the property is checked locally (`TauCeti.memWkpLoc_iff_locally`). Near a point
 whose image lies on the real axis, the higher-order reflection
 `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_ball` extends `u` to a disc centred on
-the axis; the open case applies to the extension, which agrees with `u` on the closed upper
-half-plane, where `Φ` takes its values.
+the axis (`TauCeti.MemWkpLoc.exists_ball_extension`); the open case applies to the extension,
+which agrees with `u` on the closed upper half-plane, where `Φ` takes its values.
 
 ## Main declarations
 
@@ -142,29 +142,6 @@ end Open
 /-! ### Half-discs -/
 
 section HalfPlane
-
-/-- Near a point `w` of the closed upper half-plane in an open set `V`, a member of the half-disc
-class on `V ∩ {0 ≤ im}` agrees on the closed upper half-plane with a member of the class on a
-disc about `w`: the higher-order reflection when `w` is real, and the map itself otherwise. -/
-private theorem MemWkpLoc.exists_ball_extension (hp : 1 ≤ p) {V : Set ℂ} (hV : IsOpen V)
-    {u : ℂ → F} (hu : MemWkpLoc p (V ∩ {z | 0 ≤ z.im}) k u) {w : ℂ} (hw : w ∈ V)
-    (hw0 : 0 ≤ w.im) : ∃ r > 0, ∃ v : ℂ → F, MemWkpLoc p (ball w r) k v ∧
-      ∀ y ∈ ball w r, 0 ≤ y.im → v y = u y := by
-  obtain ⟨r, hr, hrV⟩ := Metric.isOpen_iff.1 hV w hw
-  rcases hw0.lt_or_eq with hw0 | hw0
-  · refine ⟨min r w.im, lt_min hr hw0, u, hu.mono fun y hy => ⟨hrV (ball_subset_ball
-      (min_le_left _ _) hy), ?_⟩, fun _ _ _ => rfl⟩
-    have := (Complex.abs_im_le_norm (y - w)).trans_lt ((mem_ball_iff_norm.1 hy).trans_le
-      (min_le_right _ _))
-    rw [Complex.sub_im, abs_lt] at this
-    rw [mem_ofPred_eq]
-    linarith [this.1]
-  · have hwx : ((w.re : ℝ) : ℂ) = w := Complex.ext (by simp) (by simp [hw0])
-    refine ⟨r, hr, TauCeti.planarReflection (higherReflectionCoeff k) u, ?_, fun y _ hy =>
-      planarReflection_of_nonneg _ u hy⟩
-    rw [← hwx]
-    exact MemWkpLoc.planarReflection_higherReflectionCoeff_ball hp w.re r
-      (hu.mono (inter_subset_inter_left _ (by rw [hwx]; exact hrV)))
 
 variable [FiniteDimensional ℝ F]
 
