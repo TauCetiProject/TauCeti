@@ -22,10 +22,8 @@ for `k = n`: the homotopy groups of `SO(m)` stabilize, `π_k(SO(m))` being indep
 ## Main results
 
 * `TauCeti.isNConnected_fromBlocksOne`: the block embedding `SO(n + 1) → SO(r + n + 1)` is
-  `n`-connected.
-* `TauCeti.bijective_homotopyGroupMap_fromBlocksOne`,
-  `TauCeti.surjective_homotopyGroupMap_fromBlocksOne`: it is bijective on `π_k` for `k < n` and
-  surjective for `k = n`.
+  `n`-connected, so it is bijective on `π_k` for `k < n` and surjective for `k = n`
+  (`ContinuousMap.IsNConnected.map_injective`, `ContinuousMap.IsNConnected.map_surjective`).
 
 ## References
 
@@ -72,24 +70,5 @@ theorem isNConnected_fromBlocksOne :
   ext B : 1
   exact (coe_specialOrthogonalFrameFiberHomeomorph_apply B).symm.trans
     (TopCat.Hom.fiberι_apply p _ (φ B)).symm
-
-/-- The block embedding `SO(n + 1) → SO(r + n + 1)` induces a bijection on the homotopy group
-indexed by a finite type of fewer than `n` cube directions. -/
-theorem bijective_homotopyGroupMap_fromBlocksOne (N : Type*) [Finite N] (hN : Nat.card N < n)
-    (B : specialOrthogonalGroup (Fin (n + 1)) ℝ) :
-    Function.Bijective (HomotopyGroup.map (N := N)
-      ⟨SpecialOrthogonalGroup.fromBlocksOne ℝ r (n + 1), continuous_fromBlocksOne (n + 1)⟩
-      (rfl : SpecialOrthogonalGroup.fromBlocksOne ℝ r (n + 1) B = _)) :=
-  ⟨(isNConnected_fromBlocksOne r n).map_injective N hN B,
-    (isNConnected_fromBlocksOne r n).map_surjective N hN.le B⟩
-
-/-- The block embedding `SO(n + 1) → SO(r + n + 1)` induces a surjection on the homotopy group
-indexed by a finite type of at most `n` cube directions. -/
-theorem surjective_homotopyGroupMap_fromBlocksOne (N : Type*) [Finite N] (hN : Nat.card N ≤ n)
-    (B : specialOrthogonalGroup (Fin (n + 1)) ℝ) :
-    Function.Surjective (HomotopyGroup.map (N := N)
-      ⟨SpecialOrthogonalGroup.fromBlocksOne ℝ r (n + 1), continuous_fromBlocksOne (n + 1)⟩
-      (rfl : SpecialOrthogonalGroup.fromBlocksOne ℝ r (n + 1) B = _)) :=
-  (isNConnected_fromBlocksOne r n).map_surjective N hN B
 
 end TauCeti

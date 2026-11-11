@@ -83,23 +83,11 @@ theorem exists_trivialization_forgetLast (h : r < N) (b : finiteOrthonormalFrame
   obtain ⟨U, s, hU, hb, hs, hsec⟩ := exists_localSection_specialOrthogonalFrameMap (m + 1) b
   let := specialOrthogonalMulAction (r + 1) (r + m + 1)
   let := specialOrthogonalMulAction r (r + m + 1)
-  -- Both actions of `SO(N)` are `unitaryMap` through the inclusion `SO(N) ⊆ O(N)`.
-  have : ContinuousSMul (Matrix.specialOrthogonalGroup (Fin (r + m + 1)) ℝ)
-      (finiteOrthonormalFrame ℝ (r + 1) (r + m + 1)) :=
-    ⟨continuous_unitaryMap.comp
-      (((continuous_subtype_val.subtype_mk _).comp continuous_fst).prodMk continuous_snd)⟩
-  -- The Stiefel fibration sends `A` to `A • e` for the standard frame `e`: the action is
-  -- `unitaryMap` through `SO(N) ⊆ O(N)`, so `A • e` unfolds to the right side of
-  -- `specialOrthogonalFrameMap_mul A 1`, and `forgetLast_unitaryMap` is the equivariance of
-  -- `forgetLast` below.
-  have hact (A : Matrix.specialOrthogonalGroup (Fin (r + m + 1)) ℝ) :
-      specialOrthogonalFrameMap r (m + 1) A = A • standard ℝ h.le := by
-    have := specialOrthogonalFrameMap_mul (r := r) (m := m + 1) A 1
-    rw [mul_one, specialOrthogonalFrameMap_one] at this
-    exact this
+  have := continuousSMul_specialOrthogonalMulAction (r := r + 1) (N := r + m + 1)
   let e := equivariantTrivialization forgetLast continuous_forgetLast
-    (fun A g ↦ forgetLast_unitaryMap _ g) (forgetLast_surjective h (standard ℝ h.le)) U hU s hs
-    fun f hf ↦ (hact (s f)).symm.trans (hsec f hf)
+    (fun A g ↦ by simp only [specialOrthogonal_smul_def, forgetLast_unitaryMap])
+    (forgetLast_surjective h (standard ℝ h.le)) U hU s hs
+    fun f hf ↦ (specialOrthogonalFrameMap_eq_smul_standard (s f)).symm.trans (hsec f hf)
   refine ⟨e.transFiberHomeomorph (forgetLastFiberSphere _), ?_⟩
   simpa only [Bundle.Trivialization.transFiberHomeomorph, e, equivariantTrivialization_baseSet]
     using hb
