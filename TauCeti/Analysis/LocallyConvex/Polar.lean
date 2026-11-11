@@ -12,14 +12,10 @@ public import Mathlib.Analysis.Normed.Module.Dual
 
 The absolute polar for a bilinear pairing is unchanged by taking an absolutely
 convex hull. For the continuous dual pairing, taking the closed absolutely convex
-hull also leaves the polar unchanged. These identities let separation arguments
-pass between a generating set and its closed disked hull.
-
-In both cases the bipolar of the set is absolutely convex by Mathlib's
-`LinearMap.polar_AbsConvex`, and for the continuous dual pairing it is also closed by
-continuity of the functionals. So the bipolar contains the hull, and the tripolar
-identity `LinearMap.tripolar_eq_polar` concludes. The second identity needs no
-topological vector space structure on the space, only a topology.
+hull also leaves the polar unchanged. This second identity holds for any module
+carrying a topology, with no continuity assumed for addition or scalar
+multiplication. These identities let separation arguments pass between a
+generating set and its closed disked hull.
 -/
 
 public section
