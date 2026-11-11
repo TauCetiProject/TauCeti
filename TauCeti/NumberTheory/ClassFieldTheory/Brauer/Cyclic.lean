@@ -63,6 +63,26 @@ variable {K : Type} [Field K] (E : IntermediateField K (SeparableClosure K))
   [FiniteDimensional K E] [IsGalois K E] {g : Gal(E/K)} (hg : ∀ σ, σ ∈ Subgroup.zpowers g)
   {χ : Additive Gal(E/K) →+ AddCircle (1 : ℚ)}
 
+/-- **A group element on which a character takes the value `1 / [E : K]` is a generator.** If
+`χ(g) = 1 / [E : K]` for a character `χ` of `Gal(E/K)`, then `g` generates `Gal(E/K)`, so `E/K` is
+cyclic. -/
+theorem forall_mem_zpowers_of_map_ofMul_eq_one_div_finrank
+    (hχ : χ (.ofMul g) = ((1 / Module.finrank K E : ℚ) : AddCircle (1 : ℚ))) :
+    ∀ σ, σ ∈ Subgroup.zpowers g := by
+  have hdvd : Module.finrank K E ∣ orderOf g := by
+    have hord : addOrderOf ((1 / Module.finrank K E : ℚ) : AddCircle (1 : ℚ)) =
+        Module.finrank K E := by
+      simpa [one_div, Rat.inv_natCast_den_of_pos Module.finrank_pos] using
+        AddCircle.addOrderOf_coe_rat (p := (1 : ℚ)) (q := 1 / Module.finrank K E)
+    have h := addOrderOf_map_dvd χ (.ofMul g)
+    rwa [hχ, hord, addOrderOf_ofMul_eq_orderOf] at h
+  have hcard : Nat.card Gal(E/K) = Module.finrank K E := IsGalois.card_aut_eq_finrank K E
+  have hord : orderOf g = Module.finrank K E :=
+    Nat.dvd_antisymm (hcard ▸ orderOf_dvd_natCard g) hdvd
+  have htop : Subgroup.zpowers g = ⊤ := Subgroup.eq_top_of_card_eq _ (by
+    rw [Nat.card_zpowers, hord, hcard])
+  exact fun σ ↦ htop ▸ Subgroup.mem_top σ
+
 include hg in
 /-- **The inflated cyclic class is a carry class.** Let `E/K` be a cyclic Galois extension inside
 `Kˢ` with generator `g`, and `χ` the character of `Gal(E/K)` with `χ(g) = 1 / [E : K]`. Then for

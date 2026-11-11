@@ -119,10 +119,8 @@ theorem ideleShortExact_proj : (ideleShortExact K).proj = ideleClassMk K :=
 
 variable {K} in
 /-- **Idele classes fixed by a subgroup lift to fixed ideles.** If a subgroup `V` of `G_K` fixes an
-idele class `c`, then `c` is the class of an idele fixed by `V`. The stabilizer of `c` is open, so
-`c` is also fixed by the closure of `V`; the obstruction for this closed subgroup is the connecting
-map `H⁰(V, C_{Kˢ}) → H¹(V, (Kˢ)ˣ)`, whose target vanishes by Hilbert 90. In field notation: the
-idele classes of the fixed field `L` of `V` are `I_L / Lˣ`. -/
+idele class `c`, then `c` is the class of an idele fixed by `V`. In field notation: the idele
+classes of the fixed field `L` of `V` are `I_L / Lˣ`. -/
 theorem exists_ideleClassMk_eq_of_forall_smul_eq (V : Subgroup (AbsoluteGaloisGroup K))
     {c : IdeleClassCoeff K} (hc : ∀ v ∈ V, v • c = c) :
     ∃ x : IdeleCoeff K, (∀ v ∈ V, v • x = x) ∧ ideleClassMk K x = c := by

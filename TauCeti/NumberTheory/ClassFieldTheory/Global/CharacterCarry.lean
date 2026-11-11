@@ -734,26 +734,7 @@ theorem forall_sumLocalInv_brLocalization_relBrInfl_eq_zero_iff
           (absoluteGaloisGroupRestrictEquiv (v.adicCompletion K) (σ a v))))) +
         ∑ w, χ (.ofMul (AlgEquiv.restrictNormalHom E (absoluteGaloisGroupMap (τ' w)
           (absoluteGaloisGroupRestrictEquiv w.Completion (σ' a w))))) = 0 := by
-  -- `g` is a generator: its order is divisible by the order `[E : K]` of `χ(g)`.
-  have hg : ∀ σ, σ ∈ Subgroup.zpowers g := by
-    have hn : Module.finrank K E ≠ 0 := Module.finrank_pos.ne'
-    have hdvd : Module.finrank K E ∣ orderOf g := by
-      have h0 : (orderOf g • χ (.ofMul g) : AddCircle (1 : ℚ)) = 0 := by
-        rw [← map_nsmul, ← ofMul_pow, pow_orderOf_eq_one, ofMul_one, map_zero]
-      rw [hχ, ← AddCircle.coe_nsmul, AddCircle.coe_eq_zero_iff] at h0
-      obtain ⟨k, hk⟩ := h0
-      simp only [zsmul_eq_mul, nsmul_eq_mul, mul_one] at hk
-      have h1 : (k : ℚ) * Module.finrank K E = orderOf g := by
-        field_simp at hk
-        linarith
-      have h2 : (k * Module.finrank K E : ℤ) = orderOf g := by exact_mod_cast h1
-      exact Int.natCast_dvd_natCast.1 ⟨k, by linarith⟩
-    have hcard : Nat.card Gal(E/K) = Module.finrank K E := IsGalois.card_aut_eq_finrank K E
-    have hord : orderOf g = Module.finrank K E :=
-      Nat.dvd_antisymm (hcard ▸ orderOf_dvd_natCard g) hdvd
-    have htop : Subgroup.zpowers g = ⊤ := Subgroup.eq_top_of_card_eq _ (by
-      rw [Nat.card_zpowers, hord, hcard])
-    exact fun σ ↦ htop ▸ Subgroup.mem_top σ
+  have hg := forall_mem_zpowers_of_map_ofMul_eq_one_div_finrank E hχ
   -- The sum of the local invariants of the carry class of `a` is the sum in the statement.
   have hsum (a : Kˣ) := sumLocalInv_brLocalization_characterCarryCocycle_eq_finsum
     (χ.comp (AlgEquiv.restrictNormalHom (K₁ := SeparableClosure K) E).toAdditive)
