@@ -100,24 +100,12 @@ theorem IsGeodesicSegment.restrict_mem_geodesicPaths {γ : ℝ → X} (h : IsGeo
 
 /-- A path whose Lipschitz constant is the distance between its endpoints is a geodesic path. -/
 theorem mem_geodesicPaths_of_lipschitzWith (hγ : LipschitzWith (dist (γ 0) (γ 1)).toNNReal γ) :
-    γ ∈ geodesicPaths X := by
-  have hle (s t : I) : dist (γ s) (γ t) ≤ dist (γ 0) (γ 1) * |(s : ℝ) - t| := by
-    simpa only [Real.coe_toNNReal _ dist_nonneg, Subtype.dist_eq, Real.dist_eq] using
-      hγ.dist_le_mul s t
-  have hord (s t : I) (hst : (s : ℝ) ≤ t) :
-      dist (γ s) (γ t) = |(s : ℝ) - t| * dist (γ 0) (γ 1) := by
-    have h0 := hle 0 s
-    have h1 := hle t 1
-    have hst' := hle s t
-    rw [Icc.coe_zero, zero_sub, abs_neg, abs_of_nonneg s.2.1] at h0
-    rw [Icc.coe_one, abs_sub_comm, abs_of_nonneg (sub_nonneg.2 t.2.2)] at h1
-    rw [abs_sub_comm, abs_of_nonneg (sub_nonneg.2 hst)] at hst' ⊢
-    nlinarith [dist_triangle4 (γ 0) (γ s) (γ t) (γ 1)]
-  intro s t
-  rcases le_total (s : ℝ) t with hst | hts
-  · exact hord s t hst
-  · rw [dist_comm, abs_sub_comm]
-    exact hord t s hts
+    γ ∈ geodesicPaths X :=
+  mem_geodesicPaths_iff_isGeodesicSegment.2 <|
+    isGeodesicSegment_of_dist_le (IccExtend_left ..) (IccExtend_right ..) fun s hs t ht hst ↦ by
+      simpa only [IccExtend_of_mem _ _ hs, IccExtend_of_mem _ _ ht, Real.coe_toNNReal _ dist_nonneg,
+        Subtype.dist_eq, Real.dist_eq, abs_of_nonpos (sub_nonpos.2 hst), neg_sub, mul_comm] using
+        hγ.dist_le_mul ⟨s, hs⟩ ⟨t, ht⟩
 
 /-- Two points are the endpoints of a geodesic path exactly when they are joined by a geodesic
 segment. -/
