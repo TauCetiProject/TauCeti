@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Limits.Types.Filtered
 public import Mathlib.Topology.Category.TopCat.Limits.Basic
+public import Mathlib.Topology.Coherent
 
 /-!
 # Basic facts about colimits in `TopCat`
@@ -16,8 +17,12 @@ As an instance, this makes the separation properties of the empty space, such as
 available for it by instance search. It is the base of every CW complex in Mathlib's categorical
 sense, `TopCat.CWComplex X`, which is a relative CW complex over the map out of `⊥_ TopCat`.
 
-A directed colimit in `TopCat` along injective transition maps has injective colimit maps
-(`TauCeti.TopCat.injective_ι_of_isColimit`), since the forgetful functor to types preserves it.
+A colimit in `TopCat` is the union of the ranges of the maps from the objects of the diagram
+(`TauCeti.TopCat.iUnion_range_ι_of_isColimit`), and its topology is coherent with these ranges
+(`TauCeti.TopCat.isCoherentWith_range_ι_of_isColimit`): a set is closed as soon as its trace on
+each range is closed. A directed colimit in `TopCat` along injective transition maps has injective
+colimit maps (`TauCeti.TopCat.injective_ι_of_isColimit`), since the forgetful functor to types
+preserves it.
 -/
 
 public section
@@ -35,6 +40,29 @@ instance initial_isEmpty : IsEmpty (⊥_ TopCat.{u}) :=
 end TopCat
 
 namespace TauCeti.TopCat
+
+section
+
+variable {J : Type w} [Category J] {F : J ⥤ TopCat.{u}} {c : Cocone F}
+
+/-- A colimit in `TopCat` is the union of the ranges of the maps from the objects of the
+diagram. -/
+theorem iUnion_range_ι_of_isColimit (hc : IsColimit c) :
+    (⋃ j, Set.range fun x : F.obj j ↦ c.ι.app j x : Set c.pt) = Set.univ :=
+  Set.eq_univ_of_forall fun x ↦ by
+    obtain ⟨j, y, rfl⟩ :=
+      Types.jointly_surjective_of_isColimit (isColimitOfPreserves (forget TopCat) hc) x
+    exact Set.mem_iUnion.2 ⟨j, y, rfl⟩
+
+/-- A colimit in `TopCat` carries the topology coherent with the ranges of the maps from the
+objects of the diagram. -/
+theorem isCoherentWith_range_ι_of_isColimit (hc : IsColimit c) :
+    Topology.IsCoherentWith (X := c.pt)
+      (Set.range fun j ↦ Set.range fun x : F.obj j ↦ c.ι.app j x) := by
+  refine .of_isClosed fun t ht ↦ (TopCat.isClosed_iff_of_isColimit c hc t).2 fun j ↦ ?_
+  exact (ht _ ⟨j, rfl⟩).preimage ((c.ι.app j).hom.continuous.subtype_mk Set.mem_range_self)
+
+end
 
 /-- If all transition maps of a directed diagram in `TopCat` are injective, then so are the maps
 from the objects of the diagram to its colimit. -/
