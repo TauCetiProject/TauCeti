@@ -73,6 +73,8 @@ spectrum from that of its orthogonal complement.
   has restricted point spectrum in `Ω`.
 * `Module.End.pointSpectralSubspace_conj`: conjugating by a linear equivalence transports the
   point-spectral subspaces.
+* `Module.End.pointSpectralSubspace_sub_smul_one`: shifting `A` by a real scalar shifts the
+  selected eigenvalues.
 * `Module.End.map_pointSpectralSubspace_le_of_commute`: an endomorphism commuting with `A`
   preserves the point-spectral subspaces of `A`.
 * `LinearMap.IsSymmetric.orthogonal_pointSpectralSubspace`: for symmetric `A` in finite dimension,
@@ -334,6 +336,22 @@ theorem pointSpectralSubspace_neg :
     exact eigenspace_le_pointSpectralSubspace (Set.neg_mem_neg.mpr hμ)
   · simpa only [h, neg_neg] using
       eigenspace_le_pointSpectralSubspace (A := -A) (Set.mem_neg.mp hμ)
+
+/-- Shifting an endomorphism by a real scalar shifts its eigenvalues: the point-spectral subspace
+of `A - ρ • 1` selected by `Ω` is the point-spectral subspace of `A` selected by `Ω + ρ`, the
+preimage of `Ω` under `μ ↦ μ - ρ`. -/
+theorem pointSpectralSubspace_sub_smul_one (ρ : ℝ) :
+    (A - (ρ : 𝕜) • 1).pointSpectralSubspace Ω = A.pointSpectralSubspace ((· - ρ) ⁻¹' Ω) := by
+  have h (μ : ℝ) : (A - (ρ : 𝕜) • 1).eigenspace (μ : 𝕜) = A.eigenspace ((μ + ρ : ℝ) : 𝕜) := by
+    ext x
+    simp only [mem_eigenspace_iff, LinearMap.sub_apply, LinearMap.smul_apply, one_apply_eq_self,
+      RCLike.ofReal_add, add_smul, sub_eq_iff_eq_add]
+  refine le_antisymm (iSup₂_le fun μ hμ ↦ ?_) (iSup₂_le fun μ hμ ↦ ?_)
+  · rw [h]
+    exact eigenspace_le_pointSpectralSubspace (by simpa using hμ)
+  · have hle := eigenspace_le_pointSpectralSubspace (A := A - (ρ : 𝕜) • 1) (μ := μ - ρ) (Ω := Ω)
+      (Set.mem_preimage.1 hμ)
+    rwa [h, sub_add_cancel] at hle
 
 /-- Conjugating an endomorphism by a linear equivalence transports its point-spectral subspaces:
 the point-spectral subspace of `e ∘ A ∘ e⁻¹` selected by `Ω` is the image under `e` of that of
