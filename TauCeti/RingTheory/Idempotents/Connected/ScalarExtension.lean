@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.FiniteType.Tensor.PointSeparation
 public import Mathlib.RingTheory.TensorProduct.Basic
 import Mathlib.RingTheory.TensorProduct.DirectLimitFG
 import Mathlib.RingTheory.Flat.Basic
+import Mathlib.RingTheory.Noetherian.Nilpotent
 import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -33,9 +34,8 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-/-- An idempotent in a family over a reduced finite-type parameter algebra is scalar when the
-other factor has connected spectrum and the ground field is algebraically closed. -/
-theorem exists_eq_tmul_one_of_isIdempotentElem
+/-- The reduced case of `exists_eq_tmul_one_of_isIdempotentElem`: points separate. -/
+private theorem exists_eq_tmul_one_of_isIdempotentElem_of_isReduced
     {k A B : Type*} [Field k] [IsAlgClosed k]
     [CommRing A] [Algebra k A] [ConnectedSpace (PrimeSpectrum A)]
     [CommRing B] [Algebra k B] [Algebra.FiniteType k B] [IsReduced B]
@@ -58,6 +58,43 @@ theorem exists_eq_tmul_one_of_isIdempotentElem
       rw [hcomponent, h, Algebra.TensorProduct.one_def, LinearMap.tensorComponent_tmul, hf,
         one_smul]
     exact h.trans (by simp [hc, Algebra.TensorProduct.one_def])
+
+/-- An idempotent in a family over a finite-type parameter algebra is scalar when the other
+factor has connected spectrum and the ground field is algebraically closed. The nilradical of
+the parameter algebra is nilpotent, so the reduced case lifts. -/
+theorem exists_eq_tmul_one_of_isIdempotentElem
+    {k A B : Type*} [Field k] [IsAlgClosed k]
+    [CommRing A] [Algebra k A] [ConnectedSpace (PrimeSpectrum A)]
+    [CommRing B] [Algebra k B] [Algebra.FiniteType k B]
+    {e : B ⊗[k] A} (he : IsIdempotentElem e) :
+    ∃ c : B, e = c ⊗ₜ[k] (1 : A) := by
+  let : Nontrivial A := PrimeSpectrum.nonempty_iff_nontrivial.mp inferInstance
+  let q : B →ₐ[k] B ⧸ nilradical B := Ideal.Quotient.mkₐ k (nilradical B)
+  have hq : Function.Surjective q := Ideal.Quotient.mk_surjective
+  have : IsReduced (B ⧸ nilradical B) :=
+    (Ideal.isRadical_iff_quotient_reduced _).mp (Ideal.radical_isRadical _)
+  have : Algebra.FiniteType k (B ⧸ nilradical B) := Algebra.FiniteType.of_surjective q hq
+  let G := Algebra.TensorProduct.map q (AlgHom.id k A)
+  have := Algebra.FiniteType.isNoetherianRing k B
+  obtain ⟨n, hn⟩ := IsNoetherianRing.isNilpotent_nilradical B
+  have hker : ∀ x ∈ RingHom.ker G, IsNilpotent x := fun x hx => by
+    rw [Algebra.TensorProduct.rTensor_ker q hq] at hx
+    refine ⟨n, ?_⟩
+    have hmem := Ideal.pow_mem_pow hx n
+    rwa [← Ideal.map_pow, show RingHom.ker q = nilradical B from Ideal.mk_ker, hn,
+      Ideal.zero_eq_bot, Ideal.map_bot, Ideal.mem_bot] at hmem
+  obtain ⟨cb, hcb⟩ := exists_eq_tmul_one_of_isIdempotentElem_of_isReduced (he.map G)
+  have hcbid : IsIdempotentElem cb := by
+    apply Algebra.TensorProduct.includeLeft_injective (S := k) (B := A)
+      (algebraMap k A).injective
+    simpa only [map_mul, Algebra.TensorProduct.includeLeft_apply, ← hcb] using (he.map G).eq
+  obtain ⟨c, hc, hcq⟩ := exists_isIdempotentElem_eq_of_ker_isNilpotent (q : B →+* _)
+    (fun x hx => by simpa [mem_nilradical] using (show x ∈ nilradical B from
+      Ideal.mk_ker (I := nilradical B) ▸ hx)) cb (RingHom.mem_range.mpr (hq cb)) hcbid
+  refine ⟨c, eq_of_isNilpotent_sub_of_isIdempotentElem he ?_ (hker _ ?_)⟩
+  · simpa using hc.map (Algebra.TensorProduct.includeLeft : B →ₐ[k] B ⊗[k] A)
+  · rw [RingHom.mem_ker, map_sub, hcb, sub_eq_zero]
+    simp [G, ← hcq]
 
 /-- A connected algebra over an algebraically closed field remains connected after every field
 extension, without finite-type or reducedness assumptions. -/
