@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.MellinInversion
 public import Mathlib.Analysis.Convolution
+public import TauCeti.Analysis.MellinTransform.Basic
 
 /-!
 # Mellin convolution and the Parseval formula (DLMF 2.5.3–2.5.5)
@@ -16,8 +17,9 @@ both transforms on the right converge absolutely, and then Mellin inversion alon
 `Re z = c` gives the Parseval formula
 `I(x) = (2πi)⁻¹ ∫_{c-i∞}^{c+i∞} x^{-z} 𝓜f(1 - z) 𝓜h(z) dz`.
 
-The proof passes to logarithmic coordinates. The substitution `t = e^{-u}` turns the Mellin
-integrand of `f` into `e^{-su} f(e^{-u})` on the real line, and the multiplicative convolution
+The proof passes to logarithmic coordinates (`TauCeti.mellinConvergent_iff_integrable_exp_smul`
+and `TauCeti.mellin_eq_integral_exp_smul`). The substitution `t = e^{-u}` turns the multiplicative
+convolution
 `∫₀^∞ f(y) g(x/y) dy/y` into an ordinary convolution, so absolute convergence and the product
 formula come from `MeasureTheory.Integrable.integrable_convolution` and
 `MeasureTheory.integral_convolution`. The substitution `t ↦ 1/t` relates
@@ -25,14 +27,19 @@ formula come from `MeasureTheory.Integrable.integrable_convolution` and
 
 ## Main results
 
-* `TauCeti.mellinConvergent_iff_integrable_exp_mul`: absolute Mellin convergence is
-  integrability on the real line in logarithmic coordinates.
-* `TauCeti.mellin_eq_integral_exp_mul`: the Mellin transform in logarithmic coordinates.
 * `TauCeti.hasMellin_integral_mul_div`: the Mellin transform of `∫₀^∞ f(y) g(x/y) dy/y` is
   `𝓜f(s) 𝓜g(s)`, with absolute convergence.
 * `TauCeti.hasMellin_integral_mul_comp_mul`: the Mellin transform of `∫₀^∞ f(t) h(xt) dt` is
   `𝓜f(1 - z) 𝓜h(z)` (DLMF 2.5.3–2.5.4).
 * `TauCeti.integral_mul_comp_mul_eq_mellinInv`: the Parseval formula (DLMF 2.5.5).
+
+## References
+
+* [DLMF] *NIST Digital Library of Mathematical Functions*, §2.5(i), <https://dlmf.nist.gov/2.5.i>.
+
+The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>),
+files `DLMFMathlib/Analysis/MellinConvolution.lean` and
+`DLMF/AsymptoticApproximations/Mellin/Transforms.lean`.
 -/
 
 @[expose] public section
@@ -41,53 +48,6 @@ open MeasureTheory Complex Set Filter
 open scoped Topology
 
 namespace TauCeti
-
-/-- Under the substitution `t = e^{-u}`, absolute Mellin convergence of `f` at `s` is
-integrability of `u ↦ e^{-su} f(e^{-u})` on the real line. -/
-theorem mellinConvergent_iff_integrable_exp_mul (f : ℝ → ℂ) (s : ℂ) :
-    MellinConvergent f s ↔ Integrable (fun u : ℝ => cexp (-s * u) * f (Real.exp (-u))) := by
-  have hd : ∀ x ∈ (univ : Set ℝ),
-      HasDerivWithinAt (Real.exp ∘ Neg.neg) (-Real.exp (-x)) univ x := fun x _ => by
-    simpa only [mul_neg_one] using
-      ((Real.hasDerivAt_exp (-x)).comp x (hasDerivAt_neg x)).hasDerivWithinAt (s := univ)
-  have him : (Real.exp ∘ Neg.neg) '' (univ : Set ℝ) = Ioi 0 := by
-    rw [Set.image_comp, Set.image_univ_of_surjective neg_surjective, Set.image_univ,
-      Real.range_exp]
-  have hinj : (univ : Set ℝ).InjOn (Real.exp ∘ Neg.neg) :=
-    Real.exp_injective.injOn.comp neg_injective.injOn (univ.mapsTo_univ _)
-  rw [MellinConvergent, ← him,
-    integrableOn_image_iff_integrableOn_abs_deriv_smul MeasurableSet.univ hd hinj]
-  simp only [IntegrableOn, Measure.restrict_univ, Function.comp_apply, abs_neg,
-    abs_of_pos (Real.exp_pos _), smul_eq_mul]
-  refine integrable_congr (Eventually.of_forall fun u => ?_)
-  dsimp only
-  rw [Complex.real_smul]
-  simp only [ofReal_exp, ofReal_neg]
-  rw [← mul_assoc]
-  nth_rw 1 [← cpow_one (cexp (-(u : ℂ)))]
-  rw [← cpow_add _ _ (Complex.exp_ne_zero _)]
-  rw [show (1 : ℂ) + (s - 1) = s by ring,
-    cpow_def_of_ne_zero (Complex.exp_ne_zero _), Complex.log_exp]
-  · congr 1; ring_nf
-  · simp [Real.pi_pos]
-  · simp [Real.pi_nonneg]
-
-/-- The Mellin transform in logarithmic coordinates:
-`𝓜f(s) = ∫_ℝ e^{-su} f(e^{-u}) du`. -/
-theorem mellin_eq_integral_exp_mul (f : ℝ → ℂ) (s : ℂ) :
-    mellin f s = ∫ u : ℝ, cexp (-s * u) * f (Real.exp (-u)) := by
-  rw [mellin_eq_fourier, Real.fourier_eq']
-  apply integral_congr_ae (Eventually.of_forall fun u => ?_)
-  simp only [smul_eq_mul, Complex.real_smul]
-  rw [ofReal_exp, ← mul_assoc, ← Complex.exp_add]
-  congr 1
-  congr 1
-  conv_rhs => rw [← re_add_im s]
-  simp only [RCLike.inner_apply]
-  push_cast
-  field_simp
-  simp only [starRingEnd_apply, star_trivial]
-  ring
 
 /-- In logarithmic coordinates the multiplicative convolution becomes an ordinary
 convolution. -/
@@ -104,8 +64,8 @@ private lemma integral_mul_div_eq_convolution (f g : ℝ → ℂ) (s : ℂ) (u :
     intro y hy
     simp only [zero_sub, cpow_neg_one, smul_eq_mul]
     ring
-  rw [← hmel, mellin_eq_integral_exp_mul]
-  simp only [neg_zero, zero_mul, Complex.exp_zero, one_mul]
+  rw [← hmel, mellin_eq_integral_exp_smul]
+  simp only [neg_zero, zero_mul, Complex.exp_zero, one_smul]
   rw [← integral_const_mul, convolution]
   apply integral_congr_ae (Eventually.of_forall fun v => ?_)
   simp only [ContinuousLinearMap.mul_apply']
@@ -130,28 +90,19 @@ theorem hasMellin_integral_mul_div {f g : ℝ → ℂ} {s : ℂ}
     (hf : MellinConvergent f s) (hg : MellinConvergent g s) :
     HasMellin (fun x : ℝ => ∫ y in Ioi 0, f y * g (x / y) / y) s
       (mellin f s * mellin g s) := by
-  have hfi := (mellinConvergent_iff_integrable_exp_mul f s).mp hf
-  have hgi := (mellinConvergent_iff_integrable_exp_mul g s).mp hg
+  have hlog (k : ℝ → ℂ) : mellin k s = ∫ u : ℝ, cexp (-s * u) * k (Real.exp (-u)) := by
+    simpa only [smul_eq_mul] using mellin_eq_integral_exp_smul k s
+  have hfi : Integrable fun u : ℝ => cexp (-s * u) * f (Real.exp (-u)) := by
+    simpa only [smul_eq_mul] using (mellinConvergent_iff_integrable_exp_smul f s).mp hf
+  have hgi : Integrable fun u : ℝ => cexp (-s * u) * g (Real.exp (-u)) := by
+    simpa only [smul_eq_mul] using (mellinConvergent_iff_integrable_exp_smul g s).mp hg
   have hfun := funext (integral_mul_div_eq_convolution f g s)
-  refine ⟨(mellinConvergent_iff_integrable_exp_mul _ _).mpr ?_, ?_⟩
-  · rw [hfun]
+  refine ⟨(mellinConvergent_iff_integrable_exp_smul _ _).mpr ?_, ?_⟩
+  · simp only [smul_eq_mul]
+    rw [hfun]
     exact hfi.integrable_convolution (L := ContinuousLinearMap.mul ℂ ℂ) hgi
-  · rw [mellin_eq_integral_exp_mul, hfun,
-      integral_convolution (ContinuousLinearMap.mul ℂ ℂ) hfi hgi]
-    simp only [ContinuousLinearMap.mul_apply', ← mellin_eq_integral_exp_mul]
-
-/-- The kernel `f(1/y)/y` converges absolutely at `s` when `f` converges at `1 - s`. -/
-private lemma mellinConvergent_inv_div {f : ℝ → ℂ} {s : ℂ}
-    (hf : MellinConvergent f (1 - s)) :
-    MellinConvergent (fun y => f y⁻¹ / y) s := by
-  have hi : MellinConvergent (fun y => f y⁻¹) (s - 1) := by
-    have hs : (s - 1) / ((-1 : ℝ) : ℂ) = 1 - s := by push_cast; ring
-    have h := (MellinConvergent.comp_rpow (f := f) (s := s - 1) (a := -1)
-      (by norm_num)).mpr (by simpa only [hs] using hf)
-    simpa only [Real.rpow_neg_one] using h
-  have h := (MellinConvergent.cpow_smul (f := fun y => f y⁻¹) (s := s) (a := -1)).mpr
-    (by simpa only [sub_eq_add_neg] using hi)
-  simpa only [cpow_neg_one, smul_eq_mul, div_eq_mul_inv, mul_comm] using h
+  · rw [hlog, hfun, integral_convolution (ContinuousLinearMap.mul ℂ ℂ) hfi hgi]
+    simp only [ContinuousLinearMap.mul_apply', ← hlog]
 
 /-- The substitution `y = 1/t` turns `∫₀^∞ f(t) h(xt) dt` into a multiplicative
 convolution. -/
@@ -177,15 +128,12 @@ private lemma integral_inv_div_mul_div (f h : ℝ → ℂ) (x : ℝ) :
 theorem hasMellin_integral_mul_comp_mul {f h : ℝ → ℂ} {z : ℂ} (hf : MellinConvergent f (1 - z))
     (hh : MellinConvergent h z) :
     HasMellin (fun x => ∫ t in Ioi 0, f t * h (x * t)) z (mellin f (1 - z) * mellin h z) := by
-  have he := hasMellin_integral_mul_div (mellinConvergent_inv_div hf) hh
+  have hk : MellinConvergent (fun y : ℝ => f y⁻¹ / y) z := by
+    simpa only [smul_eq_mul, div_eq_inv_mul] using mellinConvergent_inv_smul_comp_inv hf
+  have he := hasMellin_integral_mul_div hk hh
   rw [funext (integral_inv_div_mul_div f h)] at he
-  have hmel : mellin (fun y => f y⁻¹ / y) z = mellin f (1 - z) := by
-    have h := mellin_cpow_smul (fun y => f y⁻¹) z (-1)
-    simp only [cpow_neg_one, smul_eq_mul] at h
-    rw [mellin_comp_inv] at h
-    convert h using 1
-    · congr 1; funext y; ring
-    · congr 1; ring
+  have hmel : mellin (fun y : ℝ => f y⁻¹ / y) z = mellin f (1 - z) := by
+    simpa only [smul_eq_mul, div_eq_inv_mul] using mellin_inv_smul_comp_inv f z
   rwa [hmel] at he
 
 /-- DLMF 2.5.5, the Parseval formula: if `𝓜f(1 - z)` and `𝓜h(z)` converge absolutely on the line
@@ -209,10 +157,10 @@ theorem integral_mul_comp_mul_eq_mellinInv {f h : ℝ → ℂ} {c x : ℝ} (hx :
     unfold VerticalIntegrable at hint ⊢
     simp only [hline]
     exact hint
-  have h1 := mellinInv_mellin_eq c Iv hx hIc hV hcont
-  change Iv x = _
-  rw [← h1]
-  unfold mellinInv
-  simp only [hline]
+  calc (∫ t in Ioi 0, f t * h (x * t)) = Iv x := by rw [hIv]
+    _ = mellinInv c (mellin Iv) x := (mellinInv_mellin_eq c Iv hx hIc hV hcont).symm
+    _ = _ := by
+      unfold mellinInv
+      simp only [hline]
 
 end TauCeti
