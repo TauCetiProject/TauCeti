@@ -26,9 +26,9 @@ where the term for the empty set is zero; for a singleton `J` this says that `g 
 degree zero, as the truncation requires. A monotone map `α : [m] → [n]` acts on such families by
 `(α^* g) J = g (α J)` when `α` is injective on `J`, and `0` otherwise, which is how it acts on
 normalized chains. This gives a simplicial set `K.simplexChainMaps`: the normalized-chain
-description of the simplicial set that the Dold–Kan correspondence attaches to `τ_{≥ 0} K`. The
-right mapping spaces of a differential graded nerve are computed by it
-(`TauCeti.dgNerve.rightMappingSpaceIso`).
+description of the simplicial set that the Dold–Kan correspondence attaches to `τ_{≥ 0} K`
+(`CochainComplex.simplexChainMapsIso`). The right mapping spaces of a differential graded nerve
+are computed by it (`TauCeti.dgNerve.rightMappingSpaceIso`).
 
 We record a family `g` as a function of all finite sets `J` and all degrees `d`, required to
 vanish unless `J` is nonempty and `d + #J = 1`. This avoids degree casts: the value at `J` in the
@@ -86,6 +86,15 @@ theorem val_empty' (g : K.SimplexChainMap n) (d : ℤ) : g.val ∅ d = 0 := by
   · subst hd
     exact g.val_empty
   · exact g.val_eq_zero_of_ne _ _ (by simpa using hd)
+
+/-- The differential of the value on `J`, with its target degree given by an equation: it is the
+alternating sum of the values on the faces of `J`. -/
+theorem d_val_of_eq (g : K.SimplexChainMap n) (J : Finset (Fin (n + 1))) {d d' : ℤ}
+    (h : d + 1 = d') :
+    (K.d d d').hom (g.val J d) =
+      ∑ j ∈ J, (#{s ∈ J | s < j} : ℤ).negOnePow • g.val (J.erase j) d' := by
+  subst h
+  exact g.d_val J d
 
 /-- The value on a single vertex is a cycle. -/
 theorem d_val_singleton (g : K.SimplexChainMap n) (j : Fin (n + 1)) (d : ℤ) :

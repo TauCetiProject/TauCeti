@@ -79,14 +79,9 @@ theorem divergence_eq_sum_christoffelSymbol (α : M) {y : M}
   let b := Module.finBasis ℝ E
   have : IsManifold I (1 + 1) M := by norm_num; infer_instance
   -- Trace `∇X` in the frame, and expand `∇_{eₖ} X` by the frame formula.
-  rw [divergence_def, LinearMap.trace_eq_matrix_trace ℝ (e.basisAt b hy)]
-  simp only [Matrix.trace, Matrix.diag, LinearMap.toMatrix_apply]
+  rw [divergence_def, trace_eq_sum_localFrameCoeff I b hy]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
-  have hcoeff (w : TangentSpace I y) :
-      (e.basisAt b hy).repr w k = e.localFrameCoeff I b k y w :=
-    (e.localFrameCoeff_apply_of_mem_baseSet b hy (fun _ ↦ w) k).symm
-  rw [hcoeff, ← e.localFrame_apply_of_mem_baseSet b hy, ContinuousLinearMap.coe_coe,
-    covariantDerivative_apply_localFrame_eq_sum b
+  rw [ContinuousLinearMap.coe_coe, covariantDerivative_apply_localFrame_eq_sum b
       ((CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOn (s := e.baseSet))
       hy hX k, map_sum]
   simp [localFrameCoeff_localFrame b hy, chartLocalFrame_def, e, b]

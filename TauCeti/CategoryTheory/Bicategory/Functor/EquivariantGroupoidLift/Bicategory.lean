@@ -195,6 +195,14 @@ section API
 
 variable {L L' L'' L''' : EquivariantGroupoidLift Γ actions}
 
+/-- The identity of the lift bicategory is the prescribed identity lift morphism. -/
+lemma id_eq (L : EquivariantGroupoidLift Γ actions) : (𝟙 L : L ⟶ L) = Hom.id L :=
+  rfl
+
+/-- Composition in the lift bicategory is the prescribed composition of lift morphisms. -/
+lemma comp_eq (φ : L ⟶ L') (ψ : L' ⟶ L'') : φ ≫ ψ = Hom.comp φ ψ :=
+  rfl
+
 /-- `2`-morphisms of the bicategory of lifts are determined by their joint modifications. -/
 @[ext]
 lemma hom₂_ext {φ ψ : L ⟶ L'} {Θ Ξ : φ ⟶ ψ} (h : Θ.joint = Ξ.joint) : Θ = Ξ :=

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Perfection
+public import TauCeti.Topology.Algebra.Perfection
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.RingTheory.Huber.Uniform
 import Mathlib.Algebra.CharP.Lemmas
@@ -502,14 +502,11 @@ variable [TopologicalSpace B]
 coordinates are. Since each coordinate determines the earlier ones, this is the topology of
 `lim_{x ↦ x ^ p} B`. -/
 instance instTopologicalSpace : TopologicalSpace (uniformTilt p B) :=
-  .induced (fun x ↦ (x : Perfection B p).1) inferInstance
-
-private theorem isEmbedding_val : IsEmbedding fun x : uniformTilt p B ↦ (x : Perfection B p).1 :=
-  ⟨⟨rfl⟩, Subtype.val_injective⟩
+  inferInstanceAs (TopologicalSpace (Perfection B p))
 
 /-- The tilt of a Hausdorff ring is Hausdorff. -/
 instance instT2Space [T2Space B] : T2Space (uniformTilt p B) :=
-  isEmbedding_val.t2Space
+  Perfection.isEmbedding_val.t2Space
 
 end Topology
 
@@ -832,7 +829,7 @@ section Topology
 /-- The coordinates `x ↦ (x⁽ⁿ⁾)ₙ` embed the tilt, with its inverse-limit topology, into the
 product `ℕ → B`. -/
 theorem isEmbedding_coeff : IsEmbedding fun (x : uniformTilt p B) n ↦ coeff p B n x :=
-  isEmbedding_val
+  Perfection.isEmbedding_val
 
 /-- A sequence converges in the tilt exactly when each of its coordinates converges. -/
 theorem tendsto_nhds_iff {ι : Type*} {l : Filter ι} {f : ι → uniformTilt p B}

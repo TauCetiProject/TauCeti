@@ -159,7 +159,8 @@ private theorem ellipticOrbitMap_apply_inr
     (σ.ellipticOrbitMap hmap hdisj (.inr i)).val =
       Quotient.mk'' (σ.selfPairedSideFixedPoint i) := rfl
 
-private theorem quotientMk_vertex_ne_selfPairedSideFixedPoint
+/-- The fixed point of a self-paired side is not equivalent to a finite vertex. -/
+theorem quotientMk_vertex_ne_selfPairedSideFixedPoint
     (hmap : ∀ i, σ.map i ∈ Γ)
     (hdisj : ∀ γ : Γ, γ ≠ 1 →
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
@@ -181,7 +182,8 @@ private theorem quotientMk_vertex_ne_selfPairedSideFixedPoint
       (P.mem_leftHalfPlane_of_mem_side hi hip hiq hji)
       (P.side_subset_range_sideGeodesic _ hside)
 
-private theorem selfPairedSideOrbit_injective
+/-- The fixed points of distinct self-paired sides are not equivalent. -/
+theorem injective_quotientMk_selfPairedSideFixedPoint
     (hmap : ∀ i, σ.map i ∈ Γ)
     (hdisj : ∀ γ : Γ, γ ≠ 1 →
       Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier)) :
@@ -216,7 +218,7 @@ private theorem ellipticOrbitMap_injective
     exact False.elim ((σ.quotientMk_vertex_ne_selfPairedSideFixedPoint hmap hdisj
       (Sum.inl_getLeft (P.vertex k) k.2.1).symm i)
       (hk.trans (congrArg Subtype.val heq.symm)))
-  · exact congrArg Sum.inr (σ.selfPairedSideOrbit_injective hmap hdisj
+  · exact congrArg Sum.inr (σ.injective_quotientMk_selfPairedSideFixedPoint hmap hdisj
       (congrArg Subtype.val heq))
 
 private theorem ellipticOrbitMap_surjective

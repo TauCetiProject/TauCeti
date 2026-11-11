@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.RamificationInertia.HilbertTheory
 public import TauCeti.NumberTheory.RamificationInertia.SeparableDegree
+import TauCeti.NumberTheory.RamificationInertia.Galois
 
 /-!
 # Hilbert theory over arbitrary residue fields
@@ -50,6 +51,7 @@ variable (A K L : Type*) {B : Type*} [CommRing A] [CommRing B] [Field K] [Field 
 
 variable (D : Type*) [Field D] [Algebra D L] [IsDecompositionField K L P D]
 
+omit [FiniteDimensional K L] in
 include K P in
 /-- The degree above the decomposition field is `e * f`, also for inseparable residue
 extensions. -/
@@ -75,6 +77,7 @@ theorem IsDecompositionField.finrank_eq_ncard_primesOver [IsGalois K L]
 
 variable (E : Type*) [Field E] [Algebra E L] [IsInertiaField K L P E]
 
+omit [FiniteDimensional K L] in
 include K P in
 /-- The degree above the inertia field is the ramification index times the inseparable
 residue degree. -/
@@ -85,6 +88,7 @@ theorem IsInertiaField.finrank_eq_ramificationIdx_mul_finInsepDegree [IsDomain A
   rw [← IsGaloisGroup.card_eq_finrank (inertia Gal(L/K) P) E L]
   exact P.card_inertia_eq_ramificationIdx_mul_finInsepDegree (R := A) (G := Gal(L/K))
 
+omit [FiniteDimensional K L] in
 include K P in
 /-- When the residue extension at `P` is separable, the degree above the inertia field is the
 ramification index. This is Mathlib's `IsInertiaField.rank_left` with separability assumed only at

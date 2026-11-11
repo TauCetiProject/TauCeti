@@ -5,14 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Path
 public import TauCeti.Geometry.Manifold.SmoothSingular.Basic
-public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
-public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.Analysis.Calculus.FDeriv.Affine
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.MeasureTheory.Integral.FullSimplex
+import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 
 /-!
 # Integration of differential forms over smooth singular simplices
@@ -42,14 +43,18 @@ is natural under smooth maps, `∫_{f ∘ σ} ψ = ∫_σ f^*ψ`
 (`TauCeti.SmoothSimplex.integral_smoothSingularSubcomplexMap_app`), transforms under simplicial
 operators by precomposition with `simplexMapAmbient` (`TauCeti.SmoothSimplex.integral_map`,
 `TauCeti.SmoothSimplex.integral_δ`), vanishes on degeneracies (`TauCeti.SmoothSimplex.integral_σ`),
-and over a `0`-simplex evaluates a function at the image point
-(`TauCeti.SmoothSimplex.integral_ofFunction`).
+evaluates a function at the image point over a `0`-simplex
+(`TauCeti.SmoothSimplex.integral_ofFunction`), and agrees with `pathIntegral φ γ 0 1` over the
+smooth `1`-simplex `SmoothSimplex.ofCurve hγ` of a smooth curve `γ : ℝ → M`
+(`TauCeti.SmoothSimplex.integral_ofCurve`).
 
 These integrals, summed over smooth chains, are the pairing between differential forms and smooth
 singular chains that underlies the de Rham homomorphism to singular cohomology.
 
 ## Main definitions and results
 
+* `TauCeti.mpullbackWithin_comp_simplexMapAmbient`: within-set pullback along precomposition by
+  `simplexMapAmbient`.
 * `TauCeti.SmoothSimplex.integral`, `TauCeti.SmoothSimplex.integral_def`: the integral of a
   `p`-form over a smooth `p`-simplex.
 * `TauCeti.SmoothSimplex.integral_eq_setIntegral_mpullbackWithin`: computation from any extension.
@@ -70,6 +75,9 @@ singular chains that underlies the de Rham homomorphism to singular cohomology.
 * `TauCeti.SmoothSimplex.integral_ofContMDiffOn`,
   `TauCeti.SmoothSimplex.integral_ofContMDiff`: integration over a smooth map on a neighbourhood of
   `Δᵖ` or on `ℝᵖ`.
+* `TauCeti.SmoothSimplex.integral_ofCurve`,
+  `TauCeti.SmoothSimplex.integral_ofCurve_id_realLineCoordForm`: compatibility with `pathIntegral`
+  and concrete orientation check on `ℝ`.
 
 ## References
 
@@ -91,6 +99,21 @@ namespace TauCeti
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℕ}
+
+/-- Pulling back within `Δᵐ` along `g` composed with the affine map `simplexMapAmbient f` induced
+by a vertex map `f` is the flat pullback, along `simplexMapAmbient f`, of the pullback along `g`
+within `Δⁿ`. -/
+theorem mpullbackWithin_comp_simplexMapAmbient {m n k : ℕ} (f : Fin (m + 1) → Fin (n + 1))
+    {g : EuclideanSpace ℝ (Fin n) → M} {y : EuclideanSpace ℝ (Fin m)} (hy : y ∈ fullSimplex m)
+    (hg : MDifferentiableWithinAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I g (fullSimplex n)
+      (simplexMapAmbient f y))
+    (φ : RoughForm I M F k) :
+    mpullbackWithin 𝓘(ℝ, EuclideanSpace ℝ (Fin m)) I (g ∘ simplexMapAmbient f) (fullSimplex m)
+        φ y =
+      (mpullbackWithin 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I g (fullSimplex n) φ
+        (simplexMapAmbient f y)).compContinuousLinearMap (simplexMapAmbient f).contLinear :=
+  mpullbackWithin_comp_apply_of_hasFDerivWithinAt (simplexMapAmbient f).hasFDerivWithinAt hg
+    (mapsTo_simplexMapAmbient f) (uniqueDiffOn_fullSimplex m y hy) φ
 
 namespace SmoothSimplex
 
@@ -250,7 +273,7 @@ section Simplicial
 /-- Integrating a `q`-form over the image of a smooth `p`-simplex under a simplicial operator
 `f : ⦋q⦌ ⟶ ⦋p⦌` integrates over `Δ^q` the pullback of `φ` along `σ`, precomposed with the ambient
 affine map `simplexMapAmbient f.toOrderHom`. -/
-theorem integral_map {q : ℕ} (f : ⦋q⦌ ⟶ ⦋p⦌) (σ : SmoothSimplex I M p) (φ : RoughForm I M F q) :
+theorem integral_map {q : ℕ} (σ : SmoothSimplex I M p) (f : ⦋q⦌ ⟶ ⦋p⦌) (φ : RoughForm I M F q) :
     integral ((smoothSingularSubcomplex I M : SSet).map f.op σ) φ =
       ∫ x in fullSimplex q,
         mpullbackWithin 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I σ.extension (fullSimplex p) φ
@@ -258,34 +281,33 @@ theorem integral_map {q : ℕ} (f : ⦋q⦌ ⟶ ⦋p⦌) (σ : SmoothSimplex I M
           fun i ↦ (simplexMapAmbient f.toOrderHom).contLinear (EuclideanSpace.single i 1) := by
   let L := simplexMapAmbient f.toOrderHom
   rw [integral_eq_setIntegral_mpullbackWithin _ φ (g := σ.extension ∘ L) fun x ↦ by
-    rw [Function.comp_apply, toContinuousMap_map_apply,
+    rw [Function.comp_apply, σ.toContinuousMap_map_apply,
       ← σ.extension_coe ⟨L x, mapsTo_simplexMapAmbient _ x.2⟩]]
   refine setIntegral_congr_fun (isClosed_fullSimplex q).measurableSet fun x hx ↦ ?_
-  rw [mpullbackWithin_comp_apply_of_hasFDerivWithinAt L.hasFDerivWithinAt
+  rw [mpullbackWithin_comp_simplexMapAmbient f.toOrderHom hx
     ((σ.contMDiffOn_extension (L x) (mapsTo_simplexMapAmbient _ hx)).mdifferentiableWithinAt
-      (by simp))
-    (mapsTo_simplexMapAmbient _) (uniqueDiffOn_fullSimplex q x hx) φ]
+      (by simp)) φ]
   -- `compContinuousLinearMap` evaluates by precomposing the vector arguments.
   rfl
 
 /-- Integrating a `p`-form over the `i`-th face of a smooth `(p + 1)`-simplex integrates over `Δᵖ`
 the pullback of `φ` along the simplex, restricted along the ambient face map
 `simplexMapAmbient i.succAbove`. -/
-theorem integral_δ (i : Fin (p + 2)) (σ : SmoothSimplex I M (p + 1)) (φ : RoughForm I M F p) :
+theorem integral_δ (σ : SmoothSimplex I M (p + 1)) (i : Fin (p + 2)) (φ : RoughForm I M F p) :
     integral ((smoothSingularSubcomplex I M : SSet).δ i σ) φ =
       ∫ x in fullSimplex p,
         mpullbackWithin 𝓘(ℝ, EuclideanSpace ℝ (Fin (p + 1))) I σ.extension (fullSimplex (p + 1)) φ
           (simplexMapAmbient i.succAbove x)
           fun k ↦ (simplexMapAmbient i.succAbove).contLinear (EuclideanSpace.single k 1) :=
-  integral_map (SimplexCategory.δ i) σ φ
+  σ.integral_map (SimplexCategory.δ i) φ
 
 /-- If `p < q`, the integral of any `q`-form over the image of a smooth `p`-simplex under a
 simplicial operator `f : ⦋q⦌ ⟶ ⦋p⦌` vanishes, since any `q` vectors in `ℝᵖ` are linearly
 dependent. -/
-theorem integral_map_eq_zero_of_lt {q : ℕ} (hpq : p < q) (f : ⦋q⦌ ⟶ ⦋p⦌)
-    (σ : SmoothSimplex I M p) (φ : RoughForm I M F q) :
+theorem integral_map_eq_zero_of_lt {q : ℕ} (σ : SmoothSimplex I M p) (hpq : p < q) (f : ⦋q⦌ ⟶ ⦋p⦌)
+    (φ : RoughForm I M F q) :
     integral ((smoothSingularSubcomplex I M : SSet).map f.op σ) φ = 0 := by
-  rw [integral_map]
+  rw [σ.integral_map]
   refine setIntegral_eq_zero_of_forall_eq_zero fun x _ ↦ ?_
   let η : EuclideanSpace ℝ (Fin p) [⋀^Fin q]→L[ℝ] F :=
     mpullbackWithin 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I σ.extension (fullSimplex p) φ
@@ -303,10 +325,10 @@ theorem integral_map_eq_zero_of_lt {q : ℕ} (hpq : p < q) (f : ⦋q⦌ ⟶ ⦋p
 /-- **Degeneracy vanishing.** The integral of any `(p + 1)`-form over a degenerate smooth
 `(p + 1)`-simplex vanishes. -/
 @[simp]
-theorem integral_σ (i : Fin (p + 1)) (σ : SmoothSimplex I M p) (φ : RoughForm I M F (p + 1)) :
+theorem integral_σ (σ : SmoothSimplex I M p) (i : Fin (p + 1)) (φ : RoughForm I M F (p + 1)) :
     (dsimp% only [Subfunctor.toFunctor_obj]
       (integral ((smoothSingularSubcomplex I M : SSet).σ i σ) φ)) = 0 :=
-  integral_map_eq_zero_of_lt (Nat.lt_succ_self p) (SimplexCategory.σ i) σ φ
+  σ.integral_map_eq_zero_of_lt (Nat.lt_succ_self p) (SimplexCategory.σ i) φ
 
 end Simplicial
 
@@ -375,6 +397,47 @@ theorem integral_ofContMDiff {g : EuclideanSpace ℝ (Fin p) → M}
   (ofContMDiff hg).integral_eq_setIntegral_mpullback φ
     (fun x ↦ (toContinuousMap_ofContMDiff_apply hg x).symm)
     fun x _ ↦ (hg.mdifferentiable (by simp)) x
+
+/-- Integrating a `1`-form over the smooth `1`-simplex `SmoothSimplex.ofCurve hγ` of a smooth curve
+`γ : ℝ → M` agrees with the line integral `pathIntegral φ γ 0 1`. Neither manifold smoothness nor
+completeness of `F` is required. -/
+theorem integral_ofCurve {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ) (φ : RoughForm I M F 1) :
+    (ofCurve hγ).integral φ = pathIntegral φ γ 0 1 := by
+  let P : EuclideanSpace ℝ (Fin 1) →L[ℝ] ℝ := EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0
+  have hγP : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) I ∞ (γ ∘ P) :=
+    hγ.comp P.contDiff.contMDiff
+  rw [(ofCurve hγ).integral_eq_setIntegral_mpullback φ
+    (fun x ↦ (toContinuousMap_ofCurve_apply hγ x).symm)
+    fun x _ ↦ (hγP.mdifferentiable (by simp)) x]
+  have hpull : ∀ x : EuclideanSpace ℝ (Fin 1),
+      mpullback 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) I (γ ∘ P) φ x (fun i ↦ EuclideanSpace.single i 1) =
+        mpullback 𝓘(ℝ, ℝ) I γ φ (P x) (fun _ ↦ 1) := by
+    intro x
+    rw [mpullback_comp_apply_of_hasFDerivAt P.hasFDerivAt ((hγ.mdifferentiable (by simp)) (P x)) φ]
+    -- `compContinuousLinearMap` acts by precomposing the tangent-vector arguments with `P`, and
+    -- `TangentSpace 𝓘(ℝ, ℝ) (P x)` is definitionally `ℝ`.
+    refine congrArg (mpullback 𝓘(ℝ, ℝ) I γ φ (P x)) (funext fun i ↦ ?_)
+    change P (EuclideanSpace.single i 1) = (1 : ℝ)
+    rw [Subsingleton.elim i 0]
+    simp [P]
+  simp_rw [hpull]
+  dsimp only [P]
+  rw [fullSimplex_one_eq_preimage_proj_zero_Icc,
+    (volume_preserving_euclideanSpace_proj (ι := Fin 1) 0).setIntegral_preimage_emb
+      (measurableEmbedding_euclideanSpace_proj (ι := Fin 1) 0)
+      (fun t ↦ mpullback 𝓘(ℝ, ℝ) I γ φ t fun _ ↦ 1) (Icc 0 1),
+    integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le zero_le_one,
+    pathIntegral_eq_integral_mpullback]
+
+/-- Integrating the coordinate `1`-form `dt` of `ℝ` over the identity `1`-simplex yields `+1`,
+pinning the orientation convention of `SmoothSimplex.ofCurve` and `SmoothSimplex.integral`. -/
+@[simp]
+theorem integral_ofCurve_id_realLineCoordForm :
+    (ofCurve (I := 𝓘(ℝ)) (γ := id) contMDiff_id).integral SmoothForm.realLineCoordForm.1 = 1 := by
+  have hd : SmoothForm.realLineCoordForm.1 = mextDeriv (RoughForm.ofFunction 𝓘(ℝ) id) := by
+    simpa only [mpullback_id] using SmoothForm.mpullback_realLineCoordForm (I := 𝓘(ℝ)) id
+  rw [integral_ofCurve, hd, pathIntegral_mextDeriv_ofFunction contMDiff_id contMDiff_id 0 1]
+  norm_num
 
 end SmoothSimplex
 

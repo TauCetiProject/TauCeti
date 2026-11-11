@@ -203,7 +203,7 @@ theorem contMDiffOn_extension (σ : SmoothSimplex I M p) :
 
 /-- A simplicial operator on smooth simplices acts on `Δ^q` by precomposition with the ambient
 affine map `simplexMapAmbient`. -/
-theorem toContinuousMap_map_apply {q p : ℕ} (f : ⦋q⦌ ⟶ ⦋p⦌) (σ : SmoothSimplex I M p)
+theorem toContinuousMap_map_apply {q : ℕ} (σ : SmoothSimplex I M p) (f : ⦋q⦌ ⟶ ⦋p⦌)
     (x : fullSimplex q) :
     toContinuousMap ((smoothSingularSubcomplex I M : SSet).map f.op σ) x =
       σ.toContinuousMap ⟨simplexMapAmbient f.toOrderHom x, mapsTo_simplexMapAmbient _ x.2⟩ := by
@@ -217,24 +217,24 @@ theorem toContinuousMap_map_apply {q p : ℕ} (f : ⦋q⦌ ⟶ ⦋p⦌) (σ : Sm
 -- arguments via `Subfunctor.toFunctor_obj` before looking up a lemma, so `simp` lemmas involving
 -- simplicial operators, `equiv₀`, or `smoothSingularSubcomplexMap` normalize their left-hand sides
 -- with `dsimp% only [Subfunctor.toFunctor_obj]`.
-/-- The `i`-th face of a smooth `(p + 1)`-simplex, read on `Δᵖ`, is its restriction along the
-`i`-th face inclusion `simplexFace p i`. -/
+/-- The `i`-th face of a smooth simplex, read on `Δᵖ`, is the simplex composed with the `i`-th face
+inclusion `Δᵖ → Δᵖ⁺¹`. -/
 @[simp]
-theorem toContinuousMap_δ_apply (i : Fin (p + 2)) (σ : SmoothSimplex I M (p + 1))
+theorem toContinuousMap_δ_apply (σ : SmoothSimplex I M (p + 1)) (i : Fin (p + 2))
     (x : fullSimplex p) :
     (dsimp% only [Subfunctor.toFunctor_obj]
       (toContinuousMap ((smoothSingularSubcomplex I M : SSet).δ i σ) x)) =
       σ.toContinuousMap (simplexFace p i x) := by
-  refine (toContinuousMap_map_apply (SimplexCategory.δ i) σ x).trans ?_
+  refine (σ.toContinuousMap_map_apply (SimplexCategory.δ i) x).trans ?_
   exact congrArg σ.toContinuousMap (Subtype.ext (simplexMapAmbient_succAbove_coe i x))
 
 /-- The `i`-th degeneracy of a smooth `p`-simplex, read on `Δᵖ⁺¹`, precomposes with the ambient
 projection `simplexMapAmbient i.predAbove`. -/
-theorem toContinuousMap_σ_apply (i : Fin (p + 1)) (σ : SmoothSimplex I M p)
+theorem toContinuousMap_σ_apply (σ : SmoothSimplex I M p) (i : Fin (p + 1))
     (x : fullSimplex (p + 1)) :
     toContinuousMap ((smoothSingularSubcomplex I M : SSet).σ i σ) x =
       σ.toContinuousMap ⟨simplexMapAmbient i.predAbove x, mapsTo_simplexMapAmbient _ x.2⟩ :=
-  toContinuousMap_map_apply (SimplexCategory.σ i) σ x
+  σ.toContinuousMap_map_apply (SimplexCategory.σ i) x
 
 variable (I M) in
 /-- Smooth `0`-simplices of `M` correspond bijectively to points of `M`, restricting

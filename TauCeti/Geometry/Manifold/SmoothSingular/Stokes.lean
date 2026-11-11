@@ -5,46 +5,42 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SimplicialSet.Cochains.Basic
-public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Path
+public import TauCeti.Geometry.Manifold.SmoothSingular.Chains
+public import TauCeti.Analysis.Calculus.DifferentialForm.Simplex
 public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
-public import TauCeti.Geometry.Manifold.SmoothSingular.Integral
-import TauCeti.Analysis.Calculus.DifferentialForm.Simplex
 import TauCeti.MeasureTheory.Integral.FullSimplex
-import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 
 /-!
-# Stokes' theorem for smooth singular simplices
+# Stokes' theorem for smooth singular simplices and chains
 
-For a smooth singular `(p + 1)`-simplex `σ` of a `C²` manifold `M` (possibly with boundary or
-corners) and a `C¹` `p`-form `φ` with values in a complete normed space `F`, Stokes' theorem on
-`σ` states that the integral of the exterior derivative `dφ` over `σ` equals the alternating sum of
-the integrals of `φ` over the faces of `σ`:
+Let `σ` be a smooth singular `(p + 1)`-simplex of a `C²` manifold `M` (possibly with boundary or
+corners) and `φ` a `C¹` `p`-form on `M` with values in a complete normed space `F`. Then
 
-`∫_σ dφ = ∑_{i = 0}^{p + 1} (-1)ⁱ ∫_{δᵢ σ} φ`
+`∫_σ dφ = ∑_{i = 0}^{p + 1} (-1)ⁱ ∫_{δᵢ σ} φ`,
 
-(`TauCeti.SmoothSimplex.integral_mextDeriv`). The proof is independent of manifold-level Stokes'
-theorem on oriented manifolds with boundary: `σ.extension` is `C^∞` within the closed simplex
-`Δᵖ⁺¹`, `Δᵖ⁺¹` has unique derivatives (`TauCeti.uniqueDiffOn_fullSimplex`) and is the closure of
-its interior (`TauCeti.closure_interior_fullSimplex`), so within-set pullback commutes with exterior
-differentiation on `Δᵖ⁺¹` (`TauCeti.extDerivWithin_mpullbackWithin`). Applying Euclidean simplex
-Stokes (`ContDiffOn.integral_extDerivWithin_fullSimplex`) to the `C¹` pulled-back form
-(`TauCeti.SmoothSimplex.contDiffOn_mpullbackWithin_of_contMDiffAt`) and identifying the face
-integrals via `TauCeti.SmoothSimplex.integral_δ` yields the formula.
+where `δᵢ σ` is the `i`-th face of `σ` in the simplicial set of smooth singular simplices
+(`TauCeti.SmoothSimplex.integral_mextDeriv`, and
+`TauCeti.SmoothSimplex.integral_mextDeriv_of_contMDiffAt` when `φ` is only `C¹` along the image of
+`σ`). Summing over the simplices of a chain, integration of
+forms turns the boundary of smooth singular chains into the exterior derivative: the integration
+cochain of `φ`, precomposed with the differential of the smooth singular chain complex, is the
+integration cochain of `dφ` (`TauCeti.d_comp_integrationCochain`). Consequently, the integration
+cochain of a closed form is a cocycle (`TauCeti.d_comp_integrationCochain_eq_zero`), and an exact
+form integrates to zero over every smooth singular cycle
+(`TauCeti.integrationCochain_mextDeriv_apply_eq_zero`).
+
+The proof pulls `φ` back to the standard simplex `Δᵖ⁺¹ ⊆ ℝᵖ⁺¹` along `σ.extension`, with
+derivatives taken within `Δᵖ⁺¹`. Since `Δᵖ⁺¹` has unique derivatives
+(`TauCeti.uniqueDiffOn_fullSimplex`) and is the closure of its interior
+(`TauCeti.closure_interior_fullSimplex`), pullback within `Δᵖ⁺¹` commutes with exterior
+differentiation (`TauCeti.extDerivWithin_mpullbackWithin`), reducing the identity to Euclidean
+simplex Stokes (`ContDiffOn.integral_extDerivWithin_fullSimplex`) and the face-pullback formula
+`TauCeti.SmoothSimplex.integral_δ`.
 
 In degree `0`, the fundamental theorem of calculus for smooth `1`-simplices holds on any charted
-space without manifold smoothness hypotheses
-(`TauCeti.SmoothSimplex.integral_mextDeriv_ofFunction`), and for general `C¹` `0`-forms on any `C¹`
-manifold (`TauCeti.SmoothSimplex.integral_mextDeriv_eq_sub`). Integrating a `1`-form over the smooth
-`1`-simplex `SmoothSimplex.ofCurve hγ` of a smooth curve `γ : ℝ → M` agrees with the line integral
-`pathIntegral φ γ 0 1` (`TauCeti.SmoothSimplex.integral_ofCurve`), and integrating the standard
-coordinate `1`-form `dt` on `ℝ` over the identity `1`-simplex yields `+1`
-(`TauCeti.SmoothSimplex.integral_ofCurve_id_realLineCoordForm`).
-
-Through `TauCeti.cochainValuesEquiv`, simplex Stokes expresses the simplicial coboundary of the
-cochain `σ ↦ ∫_σ φ` as the cochain `σ ↦ ∫_σ dφ`
-(`TauCeti.d_comp_cochainValuesEquiv_symm_integral`), so closed forms define cocycles on the
-smooth singular chain complex.
+space without manifold smoothness hypotheses (`TauCeti.SmoothSimplex.integral_mextDeriv_ofFunction`,
+fixing the face sign convention `δ₀ σ` = endpoint, `δ₁ σ` = initial point), and for general `C¹`
+`0`-forms on any `C¹` manifold (`TauCeti.SmoothSimplex.integral_mextDeriv_eq_sub`).
 
 ## Main results
 
@@ -60,13 +56,12 @@ smooth singular chain complex.
   `TauCeti.SmoothSimplex.integral_mextDeriv_eq_sub`,
   `TauCeti.SmoothSimplex.integral_eq_zero_of_mem_exactForms_of_eq`: degree-`0` fundamental theorem
   of calculus on smooth `1`-simplices.
-* `TauCeti.SmoothSimplex.integral_ofCurve`,
-  `TauCeti.SmoothSimplex.integral_ofCurve_id_realLineCoordForm`: compatibility with `pathIntegral`
-  and concrete orientation check.
-* `TauCeti.d_comp_cochainValuesEquiv_symm_integral`,
-  `TauCeti.d_comp_cochainValuesEquiv_symm_integral_eq_zero`,
-  `TauCeti.d_comp_cochainValuesEquiv_symm_integral_eq_zero_of_mem_closedForms`: simplicial
-  coboundary of simplex integration.
+* `TauCeti.d_comp_integrationCochain`: Stokes' theorem for smooth singular chains, as an identity
+  of cochains.
+* `TauCeti.d_comp_integrationCochain_eq_zero`: the integration cochain of a closed form is a
+  cocycle.
+* `TauCeti.integrationCochain_mextDeriv_apply_eq_zero`: an exact form integrates to zero over
+  every smooth singular cycle.
 
 ## References
 
@@ -85,14 +80,15 @@ universe u
 
 namespace TauCeti
 
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℕ}
+
 namespace SmoothSimplex
 
 section Stokes
 
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I 2 M] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-  {p : ℕ}
+variable [IsManifold I 2 M] [CompleteSpace F]
 
 /-- **Stokes' theorem for smooth singular simplices** (pointwise `C¹` hypothesis). For a smooth
 singular `(p + 1)`-simplex `σ` of a `C²` manifold `M` and a `p`-form `φ` with values in a complete
@@ -130,13 +126,13 @@ theorem integral_mextDeriv_of_contMDiffAt (σ : SmoothSimplex I M (p + 1))
   refine (setIntegral_congr_fun (isClosed_fullSimplex (p + 1)).measurableSet
     fun x hx ↦ congrArg (fun η ↦ η fun i ↦ EuclideanSpace.single i 1) (hext x hx)).trans ?_
   refine hpull.integral_extDerivWithin_fullSimplex.trans
-    (Finset.sum_congr rfl fun i _ ↦ congrArg ((-1 : ℝ) ^ (i : ℕ) • ·) (integral_δ i σ φ).symm)
+    (Finset.sum_congr rfl fun i _ ↦ congrArg ((-1 : ℝ) ^ (i : ℕ) • ·) (σ.integral_δ i φ).symm)
 
-/-- **Stokes' theorem for smooth singular simplices.** For a smooth singular `(p + 1)`-simplex `σ`
-of a `C²` manifold `M` and a `C¹` `p`-form `φ` with values in a complete space `F`, the integral of
-`dφ` over `σ` is the alternating sum of the integrals of `φ` over the faces of `σ`. -/
-theorem integral_mextDeriv (σ : SmoothSimplex I M (p + 1)) {φ : RoughForm I M F p}
-    (hφ : IsSmoothForm I 1 φ) :
+/-- **Stokes' theorem for a smooth singular simplex.** The integral of the exterior derivative of
+a `C¹` form over a smooth singular `(p + 1)`-simplex is the alternating sum of the integrals of the
+form over the faces of the simplex. -/
+theorem integral_mextDeriv (σ : SmoothSimplex I M (p + 1))
+    {φ : RoughForm I M F p} (hφ : IsSmoothForm I 1 φ) :
     σ.integral (mextDeriv φ) =
       ∑ i : Fin (p + 2), (-1 : ℝ) ^ (i : ℕ) •
         integral ((smoothSingularSubcomplex I M : SSet).δ i σ) φ :=
@@ -186,27 +182,16 @@ end Stokes
 
 section DegreeZero
 
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- Inserting `t` as the unique coordinate over `Fin 0` gives `single 0 t` in `ℝ¹`. -/
-private theorem toLp_insertNth_zero_fin_one (t : ℝ) (y : Fin 0 → ℝ) :
-    WithLp.toLp 2 ((0 : Fin 1).insertNth t y) = EuclideanSpace.single (0 : Fin 1) t := by
-  ext i
-  fin_cases i
-  simp
-
-/-- At a point of `Δᵖ` where `a : M → F` is differentiable along `σ`, the within-set pullback of
-`da` along `σ.extension` agrees with the Euclidean within-set derivative of `a ∘ σ.extension`. -/
-private theorem mpullbackWithin_mextDeriv_ofFunction_apply {p : ℕ} (σ : SmoothSimplex I M p)
-    {a : M → F} {x : EuclideanSpace ℝ (Fin p)} (hx : x ∈ fullSimplex p)
-    (ha : MDifferentiableAt I 𝓘(ℝ, F) a (σ.toContinuousMap ⟨x, hx⟩))
+/-- At a point of `Δᵖ` where `f : M → F` is differentiable along `σ`, the within-set pullback of
+`df` along `σ.extension` agrees with the Euclidean within-set derivative of `f ∘ σ.extension`. -/
+private theorem mpullbackWithin_mextDeriv_ofFunction_apply (σ : SmoothSimplex I M p)
+    {f : M → F} {x : EuclideanSpace ℝ (Fin p)} (hx : x ∈ fullSimplex p)
+    (hf : MDifferentiableAt I 𝓘(ℝ, F) f (σ.toContinuousMap ⟨x, hx⟩))
     (v : Fin 1 → EuclideanSpace ℝ (Fin p)) :
     mpullbackWithin 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I σ.extension (fullSimplex p)
-      (mextDeriv (RoughForm.ofFunction I a)) x v =
-      fderivWithin ℝ (a ∘ σ.extension) (fullSimplex p) x (v 0) := by
-  have hax : MDifferentiableAt I 𝓘(ℝ, F) a (σ.extension x) := by
+      (mextDeriv (RoughForm.ofFunction I f)) x v =
+      fderivWithin ℝ (f ∘ σ.extension) (fullSimplex p) x (v 0) := by
+  have hfx : MDifferentiableAt I 𝓘(ℝ, F) f (σ.extension x) := by
     rwa [σ.extension_coe ⟨x, hx⟩]
   have hσx : MDifferentiableWithinAt 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I σ.extension
       (fullSimplex p) x :=
@@ -214,55 +199,70 @@ private theorem mpullbackWithin_mextDeriv_ofFunction_apply {p : ℕ} (σ : Smoot
   have hux : UniqueMDiffWithinAt 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) (fullSimplex p) x :=
     uniqueMDiffWithinAt_iff_uniqueDiffWithinAt.2 (uniqueDiffOn_fullSimplex p x hx)
   refine (mpullbackWithin_apply σ.extension (fullSimplex p)
-    (mextDeriv (RoughForm.ofFunction I a)) x v).trans ?_
+    (mextDeriv (RoughForm.ofFunction I f)) x v).trans ?_
   rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
     mvfderiv_apply_eq_mfderiv_apply]
   -- `ContinuousLinearMap.comp_apply` is definitional; `DFunLike.congr_fun` avoids `rw`'s
   -- `implicit`-transparency check on `TangentSpace (𝓡 p) x`.
   exact DFunLike.congr_fun
-    ((mfderiv_comp_mfderivWithin x hax hσx hux).symm.trans mfderivWithin_eq_fderivWithin) (v 0)
+    ((mfderiv_comp_mfderivWithin x hfx hσx hux).symm.trans mfderivWithin_eq_fderivWithin) (v 0)
 
 variable [CompleteSpace F]
 
 /-- **Fundamental theorem of calculus for smooth `1`-simplices** (pointwise `C¹` function). Over a
-smooth `1`-simplex `σ` of any charted space `M`, the integral of `da` for a function `a : M → F`
-that is `C¹` at each point of the image of `σ` equals the difference of the values of `a` at the
+smooth `1`-simplex `σ` of any charted space `M`, the integral of `df` for a function `f : M → F`
+that is `C¹` at each point of the image of `σ` equals the difference of the values of `f` at the
 endpoints `σ(e₀)` and `σ(0)`. -/
-theorem integral_mextDeriv_ofFunction_of_contMDiffAt (σ : SmoothSimplex I M 1) {a : M → F}
-    (ha : ∀ x : fullSimplex 1, ContMDiffAt I 𝓘(ℝ, F) 1 a (σ.toContinuousMap x)) :
-    σ.integral (mextDeriv (RoughForm.ofFunction I a)) =
-      a (σ.toContinuousMap ⟨EuclideanSpace.single 0 1, single_one_mem_fullSimplex 0⟩) -
-        a (σ.toContinuousMap ⟨0, zero_mem_fullSimplex 1⟩) := by
-  -- `g = a ∘ σ.extension` is `C¹` within `Δ¹`, and the pulled-back integrand is its directional
+theorem integral_mextDeriv_ofFunction_of_contMDiffAt (σ : SmoothSimplex I M 1) {f : M → F}
+    (hf : ∀ x : fullSimplex 1, ContMDiffAt I 𝓘(ℝ, F) 1 f (σ.toContinuousMap x)) :
+    σ.integral (mextDeriv (RoughForm.ofFunction I f)) =
+      f (σ.toContinuousMap ⟨EuclideanSpace.single 0 1, single_one_mem_fullSimplex 0⟩) -
+        f (σ.toContinuousMap ⟨0, zero_mem_fullSimplex 1⟩) := by
+  -- `g = f ∘ σ.extension` is `C¹` within `Δ¹`, and the pulled-back integrand is its directional
   -- derivative along `e₀`.
-  let g : EuclideanSpace ℝ (Fin 1) → F := a ∘ σ.extension
+  let g : EuclideanSpace ℝ (Fin 1) → F := f ∘ σ.extension
   have hg : ContDiffOn ℝ 1 g (fullSimplex 1) := fun x hx ↦ by
-    have hax : ContMDiffAt I 𝓘(ℝ, F) 1 a (σ.extension x) := by
-      simpa only [σ.extension_coe ⟨x, hx⟩] using ha ⟨x, hx⟩
+    have hfx : ContMDiffAt I 𝓘(ℝ, F) 1 f (σ.extension x) := by
+      simpa only [σ.extension_coe ⟨x, hx⟩] using hf ⟨x, hx⟩
     exact contMDiffWithinAt_iff_contDiffWithinAt.mp
-      (hax.contMDiffWithinAt.comp x ((σ.contMDiffOn_extension x hx).of_le (by simp))
+      (hfx.contMDiffWithinAt.comp x ((σ.contMDiffOn_extension x hx).of_le (by simp))
         (mapsTo_univ _ _))
-  -- Apply the Euclidean simplex FTC along the unique coordinate of `Δ¹`, then evaluate the two
-  -- resulting constant integrals over the single-point `0`-simplex `Δ⁰`.
+  -- Apply the Euclidean simplex FTC along the unique coordinate of `Δ¹`, then identify the two
+  -- boundary evaluations with `simplexFace 0 0` and `simplexFace 0 1` over the single-point `Δ⁰`.
   rw [integral_def, setIntegral_congr_fun (isClosed_fullSimplex 1).measurableSet
       fun x hx ↦ σ.mpullbackWithin_mextDeriv_ofFunction_apply hx
-        ((ha ⟨x, hx⟩).mdifferentiableAt one_ne_zero) _,
+        ((hf ⟨x, hx⟩).mdifferentiableAt one_ne_zero) _,
     hg.integral_fderivWithin_fullSimplex 0]
-  simp only [toLp_insertNth_zero_fin_one, Finset.univ_eq_empty, Finset.sum_empty, sub_zero,
-    (PiLp.single_eq_zero_iff 2 (0 : Fin 1)).mpr rfl, g, Function.comp_apply,
-    σ.extension_coe ⟨EuclideanSpace.single 0 1, single_one_mem_fullSimplex 0⟩,
-    σ.extension_coe ⟨0, zero_mem_fullSimplex 1⟩, setIntegral_const, volume_real_fullSimplex_zero,
-    one_smul]
+  have hface : ∀ y ∈ fullSimplex 0,
+      g (WithLp.toLp 2 ((0 : Fin 1).insertNth (1 - ∑ k, y k) y.ofLp)) -
+        g (WithLp.toLp 2 ((0 : Fin 1).insertNth 0 y.ofLp)) =
+      f (σ.toContinuousMap ⟨EuclideanSpace.single 0 1, single_one_mem_fullSimplex 0⟩) -
+        f (σ.toContinuousMap ⟨0, zero_mem_fullSimplex 1⟩) := by
+    intro y hy
+    let y₀ : fullSimplex 0 :=
+      ⟨simplexMapAmbient (0 : Fin 1).cycleRange.symm y, mapsTo_simplexMapAmbient _ hy⟩
+    have h0 : WithLp.toLp 2 ((0 : Fin 1).insertNth (1 - ∑ k, y k) y.ofLp) =
+        (simplexFace 0 0 y₀).1 :=
+      (toLp_insertNth_eq_simplexMapAmbient 0 y).trans (simplexMapAmbient_succAbove_coe 0 y₀)
+    have h1 : WithLp.toLp 2 ((0 : Fin 1).insertNth 0 y.ofLp) = (simplexFace 0 1 ⟨y, hy⟩).1 :=
+      (simplexMapAmbient_succAbove_succ 0 y).symm.trans (simplexMapAmbient_succAbove_coe 1 ⟨y, hy⟩)
+    rw [h0, h1]
+    simp only [g, Function.comp_apply, σ.extension_coe]
+    simp
+  rw [setIntegral_congr_fun (isClosed_fullSimplex 0).measurableSet hface,
+    setIntegral_const, volume_real_fullSimplex_zero, one_smul]
 
-/-- **Fundamental theorem of calculus for smooth `1`-simplices.** Over a smooth `1`-simplex `σ` of
-any charted space `M`, the integral of `da` for a `C¹` function `a : M → F` equals the difference
-of the values of `a` at the endpoints `σ(e₀)` and `σ(0)`. -/
-theorem integral_mextDeriv_ofFunction (σ : SmoothSimplex I M 1) {a : M → F}
-    (ha : ContMDiff I 𝓘(ℝ, F) 1 a) :
-    σ.integral (mextDeriv (RoughForm.ofFunction I a)) =
-      a (σ.toContinuousMap ⟨EuclideanSpace.single 0 1, single_one_mem_fullSimplex 0⟩) -
-        a (σ.toContinuousMap ⟨0, zero_mem_fullSimplex 1⟩) :=
-  σ.integral_mextDeriv_ofFunction_of_contMDiffAt fun x ↦ ha (σ.toContinuousMap x)
+/-- **The fundamental theorem of calculus for a smooth `1`-simplex.** Over a smooth `1`-simplex `σ`
+of any charted space `M`, the integral of the differential of a `C¹` function `f : M → F` is the
+difference of its values at the endpoints `σ(e₀)` and `σ(0)`. This fixes the sign convention of
+`TauCeti.SmoothSimplex.integral_mextDeriv`: the face `δ₀ σ` is the endpoint and `δ₁ σ` the initial
+point. -/
+theorem integral_mextDeriv_ofFunction (σ : SmoothSimplex I M 1) {f : M → F}
+    (hf : ContMDiff I 𝓘(ℝ, F) 1 f) :
+    σ.integral (mextDeriv (RoughForm.ofFunction I f)) =
+      f (σ.toContinuousMap ⟨EuclideanSpace.single 0 1, single_one_mem_fullSimplex 0⟩) -
+        f (σ.toContinuousMap ⟨0, zero_mem_fullSimplex 1⟩) :=
+  σ.integral_mextDeriv_ofFunction_of_contMDiffAt fun x ↦ hf (σ.toContinuousMap x)
 
 /-- On a `C¹` manifold, the integral of the exterior derivative of a `C¹` `0`-form `ψ` over a
 smooth `1`-simplex `σ` is the difference of `ψ` evaluated at the endpoints `σ(e₀)` and `σ(0)`. -/
@@ -289,103 +289,46 @@ theorem integral_eq_zero_of_mem_exactForms_of_eq [IsManifold I 2 M] (σ : Smooth
 
 end DegreeZero
 
-section Curve
-
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- Integrating a `1`-form over the smooth `1`-simplex `SmoothSimplex.ofCurve hγ` of a smooth curve
-`γ : ℝ → M` agrees with the line integral `pathIntegral φ γ 0 1`. Neither manifold smoothness nor
-completeness of `F` is required. -/
-theorem integral_ofCurve {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ) (φ : RoughForm I M F 1) :
-    (ofCurve hγ).integral φ = pathIntegral φ γ 0 1 := by
-  let P : EuclideanSpace ℝ (Fin 1) →L[ℝ] ℝ := EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0
-  have hγP : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) I ∞ (γ ∘ P) :=
-    hγ.comp P.contDiff.contMDiff
-  rw [(ofCurve hγ).integral_eq_setIntegral_mpullback φ
-    (fun x ↦ (toContinuousMap_ofCurve_apply hγ x).symm)
-    fun x _ ↦ (hγP.mdifferentiable (by simp)) x]
-  have hpull : ∀ x : EuclideanSpace ℝ (Fin 1),
-      mpullback 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) I (γ ∘ P) φ x (fun i ↦ EuclideanSpace.single i 1) =
-        mpullback 𝓘(ℝ, ℝ) I γ φ (P x) (fun _ ↦ 1) := by
-    intro x
-    rw [mpullback_comp_apply_of_hasFDerivAt P.hasFDerivAt ((hγ.mdifferentiable (by simp)) (P x)) φ]
-    -- `compContinuousLinearMap` acts by precomposing the tangent-vector arguments with `P`, and
-    -- `TangentSpace 𝓘(ℝ, ℝ) (P x)` is definitionally `ℝ`.
-    refine congrArg (mpullback 𝓘(ℝ, ℝ) I γ φ (P x)) (funext fun i ↦ ?_)
-    change P (EuclideanSpace.single i 1) = (1 : ℝ)
-    rw [Subsingleton.elim i 0]
-    simp [P]
-  simp_rw [hpull]
-  dsimp only [P]
-  rw [fullSimplex_one_eq_preimage_proj_zero_Icc,
-    (volume_preserving_euclideanSpace_proj (ι := Fin 1) 0).setIntegral_preimage_emb
-      (measurableEmbedding_euclideanSpace_proj (ι := Fin 1) 0)
-      (fun t ↦ mpullback 𝓘(ℝ, ℝ) I γ φ t fun _ ↦ 1) (Icc 0 1),
-    integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le zero_le_one,
-    pathIntegral_eq_integral_mpullback]
-
-/-- Integrating the coordinate `1`-form `dt` of `ℝ` over the identity `1`-simplex yields `+1`,
-pinning the orientation convention of `SmoothSimplex.ofCurve` and `SmoothSimplex.integral`. -/
-@[simp]
-theorem integral_ofCurve_id_realLineCoordForm :
-    (ofCurve (I := 𝓘(ℝ)) (γ := id) contMDiff_id).integral SmoothForm.realLineCoordForm.1 = 1 := by
-  have hd : SmoothForm.realLineCoordForm.1 = mextDeriv (RoughForm.ofFunction 𝓘(ℝ) id) := by
-    simpa only [mpullback_id] using SmoothForm.mpullback_realLineCoordForm (I := 𝓘(ℝ)) id
-  rw [integral_ofCurve, hd, pathIntegral_mextDeriv_ofFunction contMDiff_id contMDiff_id 0 1]
-  norm_num
-
-end Curve
-
 end SmoothSimplex
 
 section Cochain
 
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} {M : Type} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I 2 M] {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-  {p : ℕ}
+variable {M : Type} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+  {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
 
-/-- **Simplicial coboundary of simplex integration.** Under `TauCeti.cochainValuesEquiv`, the
-simplicial coboundary of the cochain `σ ↦ ∫_σ φ` on the smooth singular chain complex of `M` is
-the cochain `σ ↦ ∫_σ dφ`. -/
-theorem d_comp_cochainValuesEquiv_symm_integral {φ : RoughForm I M F p}
-    (hφ : IsSmoothForm I 1 φ) :
+/-- **Stokes' theorem for smooth singular chains.** Integrating a `C¹` form over the boundary of a
+smooth singular chain is integrating its exterior derivative over the chain: the integration
+cochain of `φ`, precomposed with the differential of the smooth singular chain complex, is the
+integration cochain of `dφ`. -/
+@[reassoc]
+theorem d_comp_integrationCochain {φ : RoughForm I M F p} (hφ : IsSmoothForm I 1 φ) :
     ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℝ ℝ)).d (p + 1) p ≫
-        (cochainValuesEquiv ℝ (ModuleCat.of ℝ F) (smoothSingularSubcomplex I M : SSet) p).symm
-          (fun σ ↦ SmoothSimplex.integral σ φ) =
-      (cochainValuesEquiv ℝ (ModuleCat.of ℝ F) (smoothSingularSubcomplex I M : SSet) (p + 1)).symm
-        (fun σ ↦ SmoothSimplex.integral σ (mextDeriv φ)) := by
-  apply (cochainValuesEquiv ℝ (ModuleCat.of ℝ F)
-    (smoothSingularSubcomplex I M : SSet) (p + 1)).injective
-  funext σ
-  rw [cochainValuesEquiv_d, LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply,
-    SmoothSimplex.integral_mextDeriv σ hφ]
+      integrationCochain φ = integrationCochain (mextDeriv φ) := by
+  refine SSet.chainComplex_hom_ext fun σ ↦ ModuleCat.hom_ext (LinearMap.ext_ring ?_)
+  simp only [SSet.ιChainComplex_d_assoc, Preadditive.sum_comp, ModuleCat.hom_comp,
+    LinearMap.comp_apply, ModuleCat.hom_sum, LinearMap.sum_apply, ModuleCat.hom_smul]
+  rw [integrationCochain_ιChainComplex, one_smul, SmoothSimplex.integral_mextDeriv σ hφ]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [← Int.cast_smul_eq_zsmul ℝ]
-  simp only [Int.cast_pow, Int.cast_neg, Int.cast_one]
+  rw [LinearMap.smul_apply, map_zsmul, integrationCochain_ιChainComplex, one_smul,
+    ← Int.cast_smul_eq_zsmul ℝ]
+  simp
 
-/-- If `φ` is a `C¹` `p`-form with `dφ = 0`, the cochain `σ ↦ ∫_σ φ` is a cocycle on the smooth
-singular chain complex of `M`. -/
-theorem d_comp_cochainValuesEquiv_symm_integral_eq_zero {φ : RoughForm I M F p}
-    (hφ : IsSmoothForm I 1 φ) (hd : mextDeriv φ = 0) :
+/-- The integration cochain of a closed `C¹` form is a cocycle. -/
+theorem d_comp_integrationCochain_eq_zero {φ : RoughForm I M F p} (hφ : IsSmoothForm I 1 φ)
+    (hdφ : mextDeriv φ = 0) :
     ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℝ ℝ)).d (p + 1) p ≫
-        (cochainValuesEquiv ℝ (ModuleCat.of ℝ F) (smoothSingularSubcomplex I M : SSet) p).symm
-          (fun σ ↦ SmoothSimplex.integral σ φ) = 0 := by
-  rw [d_comp_cochainValuesEquiv_symm_integral hφ, hd]
-  simp only [SmoothSimplex.integral_zero]
-  exact map_zero _
+      integrationCochain φ = 0 := by
+  rw [d_comp_integrationCochain hφ, hdφ, integrationCochain_zero]
 
-/-- Every closed smooth real `p`-form defines a cocycle on the smooth singular chain complex of
-`M`. -/
-theorem d_comp_cochainValuesEquiv_symm_integral_eq_zero_of_mem_closedForms
-    {φ : SmoothForm I M ℝ p} (hφ : φ ∈ closedForms I M p) :
-    ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℝ ℝ)).d (p + 1) p ≫
-        (cochainValuesEquiv ℝ (ModuleCat.of ℝ ℝ) (smoothSingularSubcomplex I M : SSet) p).symm
-          (fun σ ↦ SmoothSimplex.integral σ φ.1) = 0 :=
-  d_comp_cochainValuesEquiv_symm_integral_eq_zero
-    (φ.isSmoothForm.of_le (by exact_mod_cast le_top)) ((mem_closedForms I φ).mp hφ)
+/-- An exact form integrates to zero over every smooth singular cycle: if the boundary of the
+smooth singular `(p + 1)`-chain `c` vanishes, then `∫_c dφ = 0` for every `C¹` `p`-form `φ`. -/
+theorem integrationCochain_mextDeriv_apply_eq_zero {φ : RoughForm I M F p}
+    (hφ : IsSmoothForm I 1 φ)
+    {c : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℝ ℝ)).X (p + 1)}
+    (hc : (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of ℝ ℝ)).d
+      (p + 1) p).hom c = 0) :
+    (integrationCochain (mextDeriv φ)).hom c = 0 := by
+  rw [← d_comp_integrationCochain hφ, ModuleCat.hom_comp, LinearMap.comp_apply, hc, map_zero]
 
 end Cochain
 

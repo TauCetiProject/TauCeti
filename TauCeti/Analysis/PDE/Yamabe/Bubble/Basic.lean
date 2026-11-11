@@ -77,7 +77,7 @@ noncomputable section
 namespace TauCeti.Yamabe
 
 open InnerProductSpace Laplacian Module
-open scoped Gradient
+open scoped ENNReal Gradient
 
 /-- The exponent `pₙ = 2 n / (n - 2)`; for `n > 2` it is the critical Sobolev exponent of `H¹` in
 dimension `n`. At `n = 2` it is `0` by the convention for division by zero. -/
@@ -110,6 +110,21 @@ theorem two_div_criticalExponent (n : ℕ) : 2 / criticalExponent n = ((n : ℝ)
   rw [criticalExponent_def]
   field_simp
 
+/-- The critical exponent, viewed in `ℝ≥0∞`, is Sobolev conjugate to `2`. -/
+theorem inv_ofReal_criticalExponent_add_inv_eq_inv {n : ℕ} (hn : 2 < n) :
+    (ENNReal.ofReal (criticalExponent n))⁻¹ + (n : ℝ≥0∞)⁻¹ = (2 : ℝ≥0∞)⁻¹ := by
+  have hn0 : n ≠ 0 := by omega
+  have hp0 : ENNReal.ofReal (criticalExponent n) ≠ 0 :=
+    (ENNReal.ofReal_pos.mpr (criticalExponent_pos hn)).ne'
+  apply (ENNReal.toReal_eq_toReal_iff' (by finiteness) (by finiteness)).mp
+  rw [ENNReal.toReal_add (by finiteness) (by finiteness)]
+  simp only [ENNReal.toReal_inv, ENNReal.toReal_ofReal (criticalExponent_pos hn).le,
+    ENNReal.toReal_natCast, ENNReal.toReal_ofNat]
+  rw [criticalExponent_def]
+  have hnr : (n : ℝ) ≠ 0 := by exact_mod_cast hn0
+  field_simp
+  ring
+
 /-- The coefficient `aₙ = 4 (n - 1) / (n - 2)`; for `n > 2` it is the coefficient of the
 nonnegative Laplacian in the conformal Laplacian `aₙ Δ⁺ + Scal` in dimension `n`. At `n = 2` it is
 `0` by the convention for division by zero. -/
@@ -124,6 +139,13 @@ theorem conformalCoefficient_pos {n : ℕ} (hn : 2 < n) : 0 < conformalCoefficie
   have h : (2 : ℝ) < n := by exact_mod_cast hn
   rw [conformalCoefficient_def]
   exact div_pos (by linarith) (by linarith)
+
+/-- The conformal coefficient is nonnegative in every dimension: positive for `n > 2`, `0` for
+`n = 1` and (by division by zero) `n = 2`, and `2` for `n = 0`. -/
+theorem conformalCoefficient_nonneg (n : ℕ) : 0 ≤ conformalCoefficient n := by
+  rcases lt_or_ge 2 n with hn | hn
+  · exact (conformalCoefficient_pos hn).le
+  · interval_cases n <;> norm_num [conformalCoefficient_def]
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
@@ -166,6 +188,18 @@ theorem bubble_zero_smul {t : ℝ} (ht : 0 < t) (x : E) :
     field_simp
   rw [bubble_apply, bubble_apply, hbase, Real.mul_rpow (inv_nonneg.mpr ht.le) (by positivity),
     Real.inv_rpow ht.le, Real.rpow_neg ht.le]
+
+/-- The square of a bubble under translation and dilation:
+`U_{t,b}(b + t x)² = t ^ (-(n - 2)) U_{1,0}(x)²`. -/
+theorem bubble_sq_add_smul {t : ℝ} (ht : 0 < t) (b x : E) :
+    bubble t b (b + t • x) ^ 2 =
+      t ^ (-((finrank ℝ E : ℝ) - 2)) * bubble 1 0 x ^ 2 := by
+  have hb : bubble t b (b + t • x) =
+      t ^ (-(((finrank ℝ E : ℝ) - 2) / 2)) * bubble 1 0 x := by
+    rw [← bubble_zero_sub, add_sub_cancel_left, bubble_zero_smul ht]
+  have hexp : -(((finrank ℝ E : ℝ) - 2) / 2) * (2 : ℕ) =
+      -((finrank ℝ E : ℝ) - 2) := by push_cast; ring
+  rw [hb, mul_pow, ← Real.rpow_mul_natCast ht.le, hexp]
 
 /-- In dimension `n ≠ 2`, the critical power of a bubble is
 `U_{t,b} ^ pₙ = (2 t / (t² + ‖x - b‖²)) ^ n`. -/
@@ -276,7 +310,6 @@ theorem norm_fderiv_bubble {t : ℝ} (ht : 0 < t) (b x : E) :
 theorem norm_fderiv_bubble_sq {t : ℝ} (ht : 0 < t) (b x : E) :
     ‖fderiv ℝ (bubble t b) x‖ ^ 2 = (((finrank ℝ E : ℝ) - 2) / (2 * t)) ^ 2 * ‖x - b‖ ^ 2 *
       (2 * t / (t ^ 2 + ‖x - b‖ ^ 2)) ^ finrank ℝ E := by
-  have hQ : 0 < t ^ 2 + ‖x - b‖ ^ 2 := by positivity
   have hU2 : bubble t b x ^ 2 =
       (2 * t / (t ^ 2 + ‖x - b‖ ^ 2)) ^ finrank ℝ E / (2 * t / (t ^ 2 + ‖x - b‖ ^ 2)) ^ 2 := by
     have ha : 0 < 2 * t / (t ^ 2 + ‖x - b‖ ^ 2) := by positivity

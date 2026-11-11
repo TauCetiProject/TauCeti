@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.Algebra.Homology.Embedding.Restriction.Shift
-public import TauCeti.KnotTheory.Khovanov.Resolution.Cube
-public import Mathlib.Algebra.Homology.Embedding.CochainComplex
+public import TauCeti.KnotTheory.Khovanov.Resolution.Support
 
 /-!
 # The normalized Khovanov complex
@@ -154,6 +154,15 @@ def khovanovComplexι {i : ℤ}
     (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).cubeComplexι S ≫
       eqToHom (D.khovanovComplex_X hD R j i).symm
 
+/-- The inclusion of a state vertex is its inclusion into the signed cube term of height
+`i + n₋`, which is the normalized term in degree `i`. -/
+theorem khovanovComplexι_def {i : ℤ}
+    (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount}) :
+    D.khovanovComplexι hD R j S =
+      (D.toPDCode.resolutionCube hD R
+        (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).cubeComplexι S ≫
+          eqToHom (D.khovanovComplex_X hD R j i).symm := (rfl)
+
 /-- The projection of a normalized cochain term onto a state vertex. -/
 def khovanovComplexπ {i : ℤ}
     (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount}) :
@@ -163,6 +172,29 @@ def khovanovComplexπ {i : ℤ}
   eqToHom (D.khovanovComplex_X hD R j i) ≫
     (D.toPDCode.resolutionCube hD R
       (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).cubeComplexπ S
+
+/-- The normalized state projection is the cube projection after the index translation. -/
+theorem khovanovComplexπ_def {i : ℤ}
+    (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount}) :
+    D.khovanovComplexπ hD R j S =
+      eqToHom (D.khovanovComplex_X hD R j i) ≫
+        (D.toPDCode.resolutionCube hD R
+          (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).cubeComplexπ S := (rfl)
+
+/-- The state projections followed by their inclusions sum to the identity of a normalized
+cochain term. -/
+@[simp]
+theorem khovanovComplex_total (i : ℤ) :
+    ∑ S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount},
+      D.khovanovComplexπ hD R j S ≫ D.khovanovComplexι hD R j S = 𝟙 _ := by
+  have h := congrArg (fun f ↦ eqToHom (D.khovanovComplex_X hD R j i) ≫ f ≫
+    eqToHom (D.khovanovComplex_X hD R j i).symm)
+    ((D.toPDCode.resolutionCube hD R
+      (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).cubeComplex_total
+        (i + D.negativeCrossingCount))
+  simpa only [khovanovComplexπ_def, khovanovComplexι_def, Preadditive.comp_sum,
+    Preadditive.sum_comp, Category.assoc, Category.id_comp, eqToHom_trans,
+    eqToHom_refl] using h
 
 /-- Inclusion followed by projection is the identity on a state summand. -/
 @[reassoc (attr := simp)]
@@ -256,6 +288,21 @@ theorem khovanovComplexXIso_hom_comp_π {i : ℤ}
   simp only [khovanovComplexπ, Category.assoc, biproduct.mapIso_hom, biproduct.map_π,
     eqToIso.hom, Functor.eqToHom_comp_cubeComplexπ_assoc]
 
+/-- The product coordinates of the term comparison are its normalized state projections. -/
+@[simp]
+theorem khovanovComplexXIso_biproductIsoPi_apply (i : ℤ)
+    (x : (D.khovanovComplex hD R j).X i)
+    (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount}) :
+    ((ModuleCat.biproductIsoPi _).hom ((D.khovanovComplexXIso hD R j i).hom x)) S =
+      (eqToHom (D.resolutionCube_obj_normalized hD R j S.1)).hom
+        ((D.khovanovComplexπ hD R j S).hom x) := by
+  have h := congrArg (fun f ↦ (D.khovanovComplexXIso hD R j i).hom ≫
+    (ModuleCat.biproductIsoPi _).hom ≫ f)
+    (ModuleCat.biproductIsoPi_inv_comp_π _ S)
+  simp only [Iso.hom_inv_id_assoc, khovanovComplexXIso_hom_comp_π] at h
+  simpa only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply,
+    LinearMap.proj_apply] using (congrArg (fun f ↦ f.hom x) h).symm
+
 /-- The inverse term comparison projects a quantum piece onto its state vertex. -/
 @[reassoc (attr := simp)]
 theorem khovanovComplexXIso_inv_comp_π {i : ℤ}
@@ -314,5 +361,44 @@ instance khovanovComplex_isStrictlyLE :
   exact (D.toPDCode.resolutionCube hD R
     (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).isZero_cubeComplex_X_of_card_lt
       (by simp only [Fintype.card_fin]; omega)
+
+/-- The normalized chain groups vanish outside the cochain interval `[-n₋, n₊]`. -/
+theorem isZero_khovanovComplex_X_of_cochain_notMem_Icc {i : ℤ}
+    (hi : i ∉ Set.Icc (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount) (j : ℤ) :
+    IsZero ((D.khovanovComplex hD R j).X i) :=
+  (D.khovanovComplex hD R j).isZero_X_of_notMem_Icc
+    (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount (by simpa using hi)
+
+/-- The normalized chain groups vanish outside the translated extreme-resolution quantum
+interval. Circle counts include all crossing-free components. -/
+theorem isZero_khovanovComplex_X_of_quantum_notMem_Icc {j : ℤ}
+    (hj : j ∉ Set.Icc
+      ((D.positiveCrossingCount : ℤ) - 2 * D.negativeCrossingCount -
+        D.toPDCode.stateLoopCount (PDCode.cubeState ∅))
+      ((D.positiveCrossingCount : ℤ) - 2 * D.negativeCrossingCount + n +
+        D.toPDCode.stateLoopCount (PDCode.cubeState Finset.univ))) (i : ℤ) :
+    IsZero ((D.khovanovComplex hD R j).X i) := by
+  rw [khovanovComplex_X, ← PDCode.khovanovBracket_apply]
+  apply D.toPDCode.isZero_khovanovBracket_X_of_quantum_notMem_Icc hD R
+  intro h
+  rcases h with ⟨hl, hu⟩
+  exact hj ⟨by omega, by omega⟩
+
+/-- The normalized chain groups are supported in a finite rectangle in the two gradings
+jointly. -/
+theorem finite_bigradedSupport_khovanovComplex :
+    {p : ℤ × ℤ | ¬ IsZero ((D.khovanovComplex hD R p.2).X p.1)}.Finite := by
+  refine ((Set.finite_Icc (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount).prod
+    (Set.finite_Icc
+      ((D.positiveCrossingCount : ℤ) - 2 * D.negativeCrossingCount -
+        D.toPDCode.stateLoopCount (PDCode.cubeState ∅))
+      ((D.positiveCrossingCount : ℤ) - 2 * D.negativeCrossingCount + n +
+        D.toPDCode.stateLoopCount (PDCode.cubeState Finset.univ)))).subset ?_
+  rintro ⟨i, j⟩ h
+  constructor
+  · by_contra hi
+    exact h (D.isZero_khovanovComplex_X_of_cochain_notMem_Icc hD R hi j)
+  · by_contra hj
+    exact h (D.isZero_khovanovComplex_X_of_quantum_notMem_Icc hD R hj i)
 
 end TauCeti.OrientedPDCode
