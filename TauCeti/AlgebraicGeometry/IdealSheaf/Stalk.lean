@@ -40,7 +40,7 @@ private theorem map_ideal_germ_eq (I : X.IdealSheafData) (U V : X.affineOpens)
     (I.ideal U).map (X.presheaf.germ U.1 x hxU).hom =
       (I.ideal V).map (X.presheaf.germ V.1 x hxV).hom := by
   obtain ⟨W, hW, hxW, hWU⟩ := Opens.isBasis_iff_nbhd.mp X.isBasis_affineOpens
-    (show x ∈ U.1 ⊓ V.1 from ⟨hxU, hxV⟩)
+    (Opens.mem_inf.mpr ⟨hxU, hxV⟩)
   have h (A : X.affineOpens) (hxA : x ∈ A.1) (hWA : W ≤ A.1) :
       (I.ideal A).map (X.presheaf.germ A.1 x hxA).hom =
         (I.ideal ⟨W, hW⟩).map (X.presheaf.germ W x hxW).hom := by
@@ -171,12 +171,11 @@ theorem stalkOrder_eq_orderAt (I : X.IdealSheafData) (U : X.affineOpens)
 @[simp]
 theorem one_le_stalkOrder_iff (I : X.IdealSheafData) (x : X) :
     1 ≤ I.stalkOrder x ↔ x ∈ I.support := by
-  obtain ⟨U, hU, hxU, _⟩ := exists_isAffineOpen_mem_and_subset (X := X)
-    (show x ∈ (⊤ : X.Opens) from trivial)
+  obtain ⟨U, hU, hxU, _⟩ := exists_isAffineOpen_mem_and_subset (X := X) (Opens.mem_top x)
   rw [I.stalkOrder_eq_orderAt ⟨U, hU⟩ x hxU, Ideal.one_le_orderAt_iff,
     I.mem_support_iff_of_mem (U := ⟨U, hU⟩) hxU, Scheme.mem_zeroLocus_iff]
-  simp only [hU.mem_basicOpen_iff_notMem_primeIdealOf hxU, not_not]
-  rfl
+  simp only [hU.mem_basicOpen_iff_notMem_primeIdealOf hxU, not_not,
+    IsConcreteLE.le_iff, SetLike.mem_coe]
 
 /-- A point lies in the support exactly when its stalk ideal is proper. -/
 theorem mem_support_iff_stalkIdeal_ne_top (I : X.IdealSheafData) (x : X) :
