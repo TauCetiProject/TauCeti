@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
-import TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Braid.Basic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Orthogonal
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
