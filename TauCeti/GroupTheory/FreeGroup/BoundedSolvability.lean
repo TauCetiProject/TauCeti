@@ -6,9 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Computability.RE
-public import Mathlib.Data.Fintype.Prod
-public import TauCeti.Computability.Primrec.List
-public import TauCeti.Data.List.Sections
 public import TauCeti.GroupTheory.FreeGroup.EqIneqSystem
 public import TauCeti.GroupTheory.FreeGroup.Substitution
 
@@ -46,56 +43,6 @@ reduction.
 -/
 
 public section
-
-namespace FreeGroup
-
-variable {A : Type*}
-
-section Words
-
-variable [Fintype A]
-
-variable (A) in
-/-- The words of length at most `N` in the letters of a finite alphabet and their inverses. -/
-noncomputable def wordsOfLengthLE (N : ℕ) : List (List (A × Bool)) :=
-  (List.range (N + 1)).flatMap fun k =>
-    (List.replicate k (Finset.univ : Finset (A × Bool)).toList).sections
-
-/-- A word is listed among the words of length at most `N` exactly when its length is at
-most `N`. -/
-@[simp] theorem mem_wordsOfLengthLE {N : ℕ} {w : List (A × Bool)} :
-    w ∈ wordsOfLengthLE A N ↔ w.length ≤ N := by
-  simp [wordsOfLengthLE, List.mem_sections_replicate, Nat.lt_succ_iff]
-
-/-- The list of words of length at most `N` is primitive recursive in `N`. -/
-theorem primrec_wordsOfLengthLE [Primcodable A] : Primrec (wordsOfLengthLE A) :=
-  Primrec.list_flatMap (Primrec.list_range.comp Primrec.succ)
-    (Primrec.list_sections.comp
-      (Primrec.list_replicate.comp Primrec.snd (Primrec.const _))).to₂
-
-end Words
-
-/-- Substitution of words for the variables of a word, without free reduction, is primitive
-recursive jointly in the word and a finite table of the substituted words; variables beyond the
-table receive the empty word. -/
-theorem primrec₂_substituteVars_getD [Primcodable A] :
-    Primrec₂ fun (u : List (List (A × Bool))) (w : List ((ℕ ⊕ A) × Bool)) =>
-      substituteVars (fun x => u.getD x []) w := by
-  have table : Primrec₂ fun (u : List (List (A × Bool))) (y : ℕ ⊕ A) =>
-      Sum.elim (fun x => u.getD x []) (fun a => [(a, true)]) y :=
-    (Primrec.sumCasesOn Primrec.snd
-      ((Primrec.list_getD []).comp (Primrec.fst.comp Primrec.fst) Primrec.snd).to₂
-      (Primrec.list_cons.comp (Primrec.pair Primrec.snd (Primrec.const true))
-        (Primrec.const [])).to₂).to₂.of_eq fun u y => by cases y <;> rfl
-  have letter : Primrec₂ fun (u : List (List (A × Bool))) (y : (ℕ ⊕ A) × Bool) =>
-      substituteLetter (Sum.elim (fun x => u.getD x []) fun a => [(a, true)]) y :=
-    (Primrec.cond (Primrec.snd.comp Primrec.snd)
-      (table.comp Primrec.fst (Primrec.fst.comp Primrec.snd))
-      (primrec_invRev.comp (table.comp Primrec.fst (Primrec.fst.comp Primrec.snd)))).to₂
-  exact (Primrec.list_flatMap Primrec.snd
-    (letter.comp (Primrec.fst.comp Primrec.fst) Primrec.snd).to₂).to₂
-
-end FreeGroup
 
 namespace TauCeti.EqIneqSystem
 
