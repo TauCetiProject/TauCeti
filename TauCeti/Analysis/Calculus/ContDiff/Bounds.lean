@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
@@ -56,6 +57,10 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   `x ↦ B (f x) (g x)` when the derivatives of `f` and `g` have uniform bounds.
 * `ContDiff.norm_iteratedFDeriv_comp_const_smul_le`: rescaling the variable by `c` with
   `1 ≤ ‖c‖` multiplies uniform derivative bounds of order at most `N` by at most `‖c‖ ^ N`.
+* `ContDiff.exists_norm_iteratedFDeriv_comp_le_mul`: if `g 0 = 0` and the derivatives of order at
+  most `n` of `f` at `x` are bounded by `K w` with `0 ≤ w ≤ 1`, then the `n`-th derivative of
+  `g ∘ f` at `x` is bounded by `K' w`, with `K'` depending only on `g`, `n` and `K`. This transfers
+  a decay rate from `f` to `g ∘ f`.
 -/
 
 public section
@@ -301,3 +306,75 @@ theorem norm_iteratedFDeriv_comp_le_of_contDiffAt {n : ℕ} {f : E → F}
     exact hD j hj₁ hj
 
 end TauCeti
+
+/-- **Small derivatives survive composition with a map fixing `0`.** Let `g` be of class
+`C^(n+1)` on a proper space with `g 0 = 0`. There is a constant `K'`, depending only on `g`, `n`
+and `K`, such that whenever the derivatives of order at most `n` of a map `f` at `x` are all
+bounded by `K w` with `0 ≤ w ≤ 1`, the `n`-th derivative of `g ∘ f` at `x` is bounded by `K' w`.
+For `n = 0` this is the Lipschitz bound of `g` near `0`; for `n ≥ 1` it is the Faà di Bruno bound,
+every term of which contains a derivative of `f` of positive order. -/
+theorem ContDiff.exists_norm_iteratedFDeriv_comp_le_mul {E F G : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] [ProperSpace F]
+    [NormedAddCommGroup G] [NormedSpace ℝ G] {g : F → G} {n : ℕ} (hg : ContDiff ℝ (n + 1) g)
+    (hg₀ : g 0 = 0) (K : ℝ) :
+    ∃ K', ∀ (f : E → F) (x : E) (w : ℝ), ContDiffAt ℝ n f x → 0 ≤ w → w ≤ 1 →
+      (∀ i ≤ n, ‖iteratedFDeriv ℝ i f x‖ ≤ K * w) → ‖iteratedFDeriv ℝ n (g ∘ f) x‖ ≤ K' * w := by
+  obtain ⟨A, hA₀, hA⟩ :=
+    (hg.contDiffOn (s := Set.univ)).exists_nonneg_bound_iteratedFDeriv_of_isOpen isOpen_univ
+      (isCompact_closedBall (0 : F) |K|) (Set.subset_univ _)
+  -- The value `f x` stays in the ball of radius `|K|`, where the derivatives of `g` are bounded.
+  have hball : ∀ (f : E → F) (x : E) (w : ℝ), 0 ≤ w → w ≤ 1 →
+      ‖iteratedFDeriv ℝ 0 f x‖ ≤ K * w → f x ∈ Metric.closedBall (0 : F) |K| := by
+    intro f x w hw₀ hw₁ h
+    rw [norm_iteratedFDeriv_zero] at h
+    rw [mem_closedBall_zero_iff]
+    calc ‖f x‖ ≤ K * w := h
+      _ ≤ |K| * w := mul_le_mul_of_nonneg_right (le_abs_self K) hw₀
+      _ ≤ |K| := mul_le_of_le_one_right (abs_nonneg K) hw₁
+  cases n with
+  | zero =>
+    -- The Lipschitz bound of `g` on the ball, from the mean value inequality.
+    refine ⟨A * |K|, fun f x w _ hw₀ hw₁ hb ↦ ?_⟩
+    have hx := hball f x w hw₀ hw₁ (hb 0 le_rfl)
+    have hfd : ∀ y ∈ Metric.closedBall (0 : F) |K|, ‖fderiv ℝ g y‖ ≤ A := fun y hy ↦ by
+      rw [← norm_iteratedFDeriv_one]
+      exact hA 1 (by norm_num) y hy
+    have hmv := Convex.norm_image_sub_le_of_norm_fderiv_le (𝕜 := ℝ)
+      (fun y _ ↦ (hg.differentiable (by norm_num)).differentiableAt) hfd
+      (convex_closedBall (0 : F) |K|) (Metric.mem_closedBall_self (abs_nonneg K)) hx
+    rw [hg₀, sub_zero, sub_zero] at hmv
+    have hf := hb 0 le_rfl
+    rw [norm_iteratedFDeriv_zero] at hf
+    rw [norm_iteratedFDeriv_zero, Function.comp_apply]
+    calc ‖g (f x)‖ ≤ A * ‖f x‖ := hmv
+      _ ≤ A * (K * w) := mul_le_mul_of_nonneg_left hf hA₀
+      _ ≤ A * (|K| * w) := mul_le_mul_of_nonneg_left
+          (mul_le_mul_of_nonneg_right (le_abs_self K) hw₀) hA₀
+      _ = A * |K| * w := by ring
+  | succ m =>
+    -- Faà di Bruno with `D = B w^(1/(m+1))`, so that `D ^ (m+1) = B ^ (m+1) w` while every
+    -- derivative of `f` of positive order is at most `B w ≤ D ^ j`.
+    set B := max |K| 1 with hB
+    have hB₁ : 1 ≤ B := le_max_right _ _
+    refine ⟨(m + 1).factorial * A * B ^ (m + 1), fun f x w hf hw₀ hw₁ hb ↦ ?_⟩
+    have hx := hball f x w hw₀ hw₁ (hb 0 (Nat.zero_le _))
+    set D := B * w ^ ((m + 1 : ℕ) : ℝ)⁻¹ with hD
+    have hDpow : D ^ (m + 1) = B ^ (m + 1) * w := by
+      rw [hD, mul_pow, Real.rpow_inv_natCast_pow hw₀ (by omega)]
+    have hle := TauCeti.norm_iteratedFDeriv_comp_le_of_contDiffAt (C := A) (D := D)
+      (hg.contDiffAt.of_le (by norm_cast; omega)) hf
+      (fun j hj ↦ hA j (le_trans hj (Nat.le_succ _)) (f x) hx) (fun j hj₁ hj ↦ ?_)
+    · rw [hDpow] at hle
+      calc ‖iteratedFDeriv ℝ (m + 1) (g ∘ f) x‖ ≤ (m + 1).factorial * A * (B ^ (m + 1) * w) := hle
+        _ = (m + 1).factorial * A * B ^ (m + 1) * w := by ring
+    · have hKB : K ≤ B := (le_abs_self K).trans (le_max_left _ _)
+      have hwj : w ≤ (w ^ ((m + 1 : ℕ) : ℝ)⁻¹) ^ j := by
+        rw [← Real.rpow_natCast, ← Real.rpow_mul hw₀]
+        refine Real.self_le_rpow_of_le_one hw₀ hw₁ ?_
+        rw [inv_mul_le_one₀ (by positivity)]
+        exact_mod_cast hj
+      calc ‖iteratedFDeriv ℝ j f x‖ ≤ K * w := hb j hj
+        _ ≤ B * w := mul_le_mul_of_nonneg_right hKB hw₀
+        _ ≤ B ^ j * (w ^ ((m + 1 : ℕ) : ℝ)⁻¹) ^ j :=
+          mul_le_mul (le_self_pow₀ hB₁ (by omega)) hwj hw₀ (by positivity)
+        _ = D ^ j := by rw [hD, mul_pow]

@@ -33,6 +33,7 @@ evaluated on the directions.
   which is `C^m` whenever `m + k ≤ n`.
 * `ContDiffOn.iteratedFDerivAlong`, `TauCeti.iteratedFDerivAlong_add_apply_of_isOpen`: the
   same smoothness, and additivity, for maps which are only `C^n` on an open set.
+* `TauCeti.iteratedFDerivAlong_sum`: additivity over finite sums of `C^n` maps.
 * `TauCeti.iteratedFDerivAlong_comp_of_hasFDerivAt`: the chain rule for an affine change of
   variables.
 * `List.Perm.iteratedFDerivAlong_eq`: over `ℝ` or `ℂ`, reordering the directions does not change
@@ -193,6 +194,23 @@ theorem iteratedFDerivAlong_sub {f g : E → F} (hf : ContDiff 𝕜 n f) (hg : C
       fderiv_sub (hf.differentiable_iteratedFDerivAlong vs hlt x)
         (hg.differentiable_iteratedFDerivAlong vs hlt x)]
     rfl
+
+/-- Iterated directional derivatives commute with finite sums of `C^n` maps. -/
+theorem iteratedFDerivAlong_sum {ι : Type*} (s : Finset ι) {g : ι → E → F}
+    (hg : ∀ i ∈ s, ContDiff 𝕜 n (g i)) (vs : List E) (hvs : vs.length ≤ n) :
+    iteratedFDerivAlong 𝕜 vs (fun y ↦ ∑ i ∈ s, g i y) =
+      fun y ↦ ∑ i ∈ s, iteratedFDerivAlong 𝕜 vs (g i) y := by
+  classical
+  induction s using Finset.induction_on with
+  | empty =>
+    simp only [Finset.sum_empty]
+    exact iteratedFDerivAlong_zero (𝕜 := 𝕜) (F := F) vs
+  | insert a s ha ih =>
+    have hs : ContDiff 𝕜 n fun y ↦ ∑ i ∈ s, g i y :=
+      ContDiff.sum fun i hi ↦ hg i (Finset.mem_insert_of_mem hi)
+    have h := iteratedFDerivAlong_add (hg a (Finset.mem_insert_self a s)) hs vs hvs
+    simp only [Pi.add_def] at h
+    simp only [Finset.sum_insert ha, h, ih fun i hi ↦ hg i (Finset.mem_insert_of_mem hi)]
 
 theorem iteratedFDerivAlong_const_smul {R : Type*} [Semiring R] [Module R F] [SMulCommClass 𝕜 R F]
     [ContinuousConstSMul R F] {f : E → F} (hf : ContDiff 𝕜 n f) (c : R) (vs : List E)

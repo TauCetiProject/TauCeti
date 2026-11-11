@@ -94,6 +94,8 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
 * `ContDiffAt.laplacian_fun_mul`: the Leibniz rule `Δ (f g) = f Δg + 2 ⟪∇f, ∇g⟫ + g Δf`.
 * `ContDiffAt.laplacian_comp`: the chain rule `Δ (F ∘ q) = F''(q) ‖∇q‖² + F'(q) Δq` for a real
   function `F` of a scalar function `q`.
+* `TauCeti.laplacian_inner_sub`, `ContDiff.laplacian_comp_inner_sub`: an affine coordinate
+  `⟪e, x - x₀⟫` is harmonic, and `Δ (g ∘ ⟪e, · - x₀⟫) = ‖e‖² g''(⟪e, · - x₀⟫)`.
 * `ContDiffAt.laplacian_fun_smul`: its vector-valued form
   `Δ (f • g) = f • Δg + 2 Dg(∇f) + Δf • g`.
 * `ContDiffAt.laplacian_norm_sq`: the Laplacian of a squared norm,
@@ -521,6 +523,30 @@ theorem _root_.ContDiffAt.laplacian_comp {F : ℝ → ℝ} {q : E → ℝ} {x : 
   rw [congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis _ b) x,
     congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis q b) x, hgrad]
   simp_rw [hterm, Finset.sum_add_distrib, ← Finset.mul_sum]
+
+/-- The Laplacian of the affine coordinate `y ↦ ⟪e, y - x₀⟫` vanishes. -/
+theorem laplacian_inner_sub (e x₀ x : E) : Δ (fun y ↦ ⟪e, y - x₀⟫_ℝ) x = 0 := by
+  have hfd : fderiv ℝ (fun y ↦ ⟪e, y - x₀⟫_ℝ) = fun _ ↦ innerSL ℝ e := by
+    funext y
+    exact ((innerSL ℝ e).hasFDerivAt.comp y ((hasFDerivAt_id y).sub_const x₀)).fderiv
+  rw [laplacian_eq_traceL, hfd]
+  simp
+
+open Gradient in
+/-- **The Laplacian of a function of one affine coordinate.** For a `C²` function `g : ℝ → ℝ`,
+the Laplacian of `y ↦ g ⟪e, y - x₀⟫` is `‖e‖² g'' (⟪e, x - x₀⟫)`. -/
+theorem _root_.ContDiff.laplacian_comp_inner_sub {g : ℝ → ℝ} (hg : ContDiff ℝ 2 g) (e x₀ x : E) :
+    Δ (fun y ↦ g ⟪e, y - x₀⟫_ℝ) x = ‖e‖ ^ 2 * deriv (deriv g) ⟪e, x - x₀⟫_ℝ := by
+  have ht : ContDiff ℝ 2 fun y : E ↦ ⟪e, y - x₀⟫_ℝ :=
+    (innerSL ℝ e).contDiff.comp (contDiff_id.sub contDiff_const)
+  have hgrad : ∇ (fun y : E ↦ ⟪e, y - x₀⟫_ℝ) x = e := by
+    refine HasGradientAt.gradient (hasGradientAt_iff_hasFDerivAt.2 ?_)
+    refine ((innerSL ℝ e).hasFDerivAt.comp x ((hasFDerivAt_id x).sub_const x₀)).congr_fderiv ?_
+    ext v
+    simp
+  have h := hg.contDiffAt.laplacian_comp ht.contDiffAt (x := x)
+  rw [hgrad, laplacian_inner_sub, mul_zero, add_zero, mul_comm] at h
+  exact h
 
 open Gradient in
 /-- **The Leibniz rule for the Laplacian**, vector-valued form.  For a scalar function `f` and a

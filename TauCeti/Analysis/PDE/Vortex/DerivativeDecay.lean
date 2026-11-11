@@ -44,7 +44,8 @@ covariant derivative is complex linear, `d_a α (v) = v · d_a α (1)`
 
 These are gauge-invariant estimates for classical solutions. The decay of the connection
 coefficients themselves depends on a choice of gauge, such as the winding-`m` end trivialization,
-and is not treated here; neither are higher derivatives.
+and is not treated here. The decay of the derivatives of every order of `log |α|²` and of
+`|α|² - 1` is in `TauCeti.Analysis.PDE.Vortex.HigherDerivativeDecay`.
 
 ## Main results
 
