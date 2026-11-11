@@ -24,7 +24,7 @@ left-coset representatives of `p.range`, which represent its right cosets.
 
 * `TauCeti.MonoidAlgebra.basisCosets`: the coset basis of `R[N]` over `R[M]`.
 * `Subgroup.restrictSubgroup_isScalarTower_finite_projective`: restricting a finitely
-  generated projective `R[G]`-module to the group algebra of a subgroup of a finite group keeps it
+  generated projective `R[G]`-module to the group algebra of a finite-index subgroup keeps it
   finitely generated and projective, with the scalar towers needed for that.
 -/
 
@@ -100,14 +100,14 @@ end TauCeti.MonoidAlgebra
 
 namespace MonoidAlgebra
 
-variable {R : Type*} [CommSemiring R] {G : Type*} [Group G] [Finite G]
+variable {R : Type*} [CommSemiring R] {G : Type*} [Group G]
 
-/-- Restricting a finitely generated projective `R[G]`-module `X` of a finite group `G` to the
-group algebra of a subgroup `C` gives a finitely generated projective `R[C]`-module, on which `R`
-and `R[G]` act compatibly. Here `R[C]` acts on `R[G]` and on `X` through
+/-- Restricting a finitely generated projective `R[G]`-module `X` of a group `G` to the
+group algebra of a finite-index subgroup `C` gives a finitely generated projective `R[C]`-module,
+on which `R` and `R[G]` act compatibly. Here `R[C]` acts on `R[G]` and on `X` through
 `mapDomainRingHom R C.subtype`, as the hypotheses `hA` and `hX` state. -/
 theorem _root_.Subgroup.restrictSubgroup_isScalarTower_finite_projective (C : Subgroup G)
-    [inst : Module R[C] R[G]]
+    [C.FiniteIndex] [inst : Module R[C] R[G]]
     (hA : ∀ (r : R[C]) (s : R[G]), r • s = mapDomainRingHom R C.subtype r * s)
     (X : Type*) [AddCommMonoid X] [Module R X] [Module R[G] X] [IsScalarTower R R[G] X]
     [Module.Finite R[G] X] [Module.Projective R[G] X] [Module R[C] X]
@@ -119,6 +119,9 @@ theorem _root_.Subgroup.restrictSubgroup_isScalarTower_finite_projective (C : Su
   let _ : Module R[C] R[G] := (mapDomainRingHom R C.subtype).toModule
   have hAA : IsScalarTower R[C] R[G] R[G] := ⟨fun r s t ↦ mul_assoc (φ r) s t⟩
   let b := TauCeti.MonoidAlgebra.basisCosets R C.subtype C.subtype_injective
+  have : Finite (G ⧸ C.subtype.range) := by
+    rw [Subgroup.range_subtype]
+    infer_instance
   have : Module.Free R[C] R[G] := .of_basis b
   have : Module.Finite R[C] R[G] := .of_basis b
   have hAX : IsScalarTower R[C] R[G] X := ⟨fun r s x ↦ by
