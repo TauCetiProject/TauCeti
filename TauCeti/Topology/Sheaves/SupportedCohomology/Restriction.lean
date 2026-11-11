@@ -38,61 +38,6 @@ variable {X : TopCat.{u}} {R : Type u} [CommRing R] (S : Closeds X)
 
 noncomputable section
 
-/-- Restriction of supported sections, natural in the coefficient sheaf. -/
-def supportedSubmoduleSectionsRestrict (i : W' ⟶ W) :
-    supportedSubmoduleSectionsFunctor (R := R) S W ⟶
-      supportedSubmoduleSectionsFunctor S W' :=
-  Functor.whiskerLeft (supportedSubmoduleFunctor S)
-    ((sheafSections (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map i.op)
-
-/-- Restriction of supported sections leaves the usual restriction in the ambient sheaf. -/
--- Rewrite before evaluation simplifies the bundled section object.
-@[simp↓]
-lemma coe_supportedSubmoduleSectionsRestrict_app_apply (i : W' ⟶ W)
-    (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R))
-    (s : F.supportedSubmodule S W) :
-    ((supportedSubmoduleSectionsRestrict (R := R) S i).app F s).val = F.obj.map i.op s :=
-  (rfl)
-
-/-- Restriction along an identity open inclusion is the identity transformation. -/
-@[simp]
-lemma supportedSubmoduleSectionsRestrict_id (W : Opens X) :
-    supportedSubmoduleSectionsRestrict (R := R) S (𝟙 W) = 𝟙 _ := by
-  ext F s
-  apply Subtype.ext
-  simp [supportedSubmoduleSectionsRestrict]
-
-/-- Restricting through two open inclusions agrees with restriction along their composite. -/
-@[reassoc (attr := simp)]
-lemma supportedSubmoduleSectionsRestrict_comp {W'' : Opens X}
-    (i : W'' ⟶ W') (j : W' ⟶ W) :
-    supportedSubmoduleSectionsRestrict (R := R) S j ≫
-        supportedSubmoduleSectionsRestrict S i =
-      supportedSubmoduleSectionsRestrict S (i ≫ j) := by
-  ext F s
-  apply Subtype.ext
-  simp [supportedSubmoduleSectionsRestrict, ← Functor.map_comp, ← op_comp]
-
-/-- The representation of supported sections by `Q_S(W)` respects restriction of opens. -/
-@[reassoc]
-lemma supportedSubmoduleSectionsRepresentableIso_hom_restrict (i : W' ⟶ W) :
-    (linearCoyoneda R _).map ((S.supportedFreeModuleSheafFunctor R).map i).op ≫
-        (supportedSubmoduleSectionsRepresentableIso (R := R) S W').hom =
-      (supportedSubmoduleSectionsRepresentableIso (R := R) S W).hom ≫
-        supportedSubmoduleSectionsRestrict S i := by
-  ext F g
-  apply Subtype.ext
-  -- Unbundle composition and the linear coyoneda action before using the opaque
-  -- representing isomorphism's application lemmas.
-  change (((supportedSubmoduleSectionsRepresentableIso (R := R) S W').hom.app F)
-      ((S.supportedFreeModuleSheafFunctor R).map i ≫ g)).val =
-    (((supportedSubmoduleSectionsRestrict (R := R) S i).app F)
-      (((supportedSubmoduleSectionsRepresentableIso (R := R) S W).hom.app F) g)).val
-  erw [supportedSubmoduleSectionsRepresentableIso_hom_app_apply,
-    coe_supportedSubmoduleSectionsRestrict_app_apply,
-    supportedSubmoduleSectionsRepresentableIso_hom_app_apply]
-  exact S.coe_supportedFreeModuleSheafHomEquiv_map_comp R i F g
-
 /-- The derived supported-section-to-Ext comparison commutes with restriction in every
 cohomological degree, naturally in the coefficient sheaf. -/
 @[reassoc]

@@ -80,6 +80,29 @@ lemma supportedSubmoduleSectionsRepresentableIso_inv_app_apply
       (S.supportedFreeModuleSheafHomEquiv R W F).symm s :=
   (rfl)
 
+/-- The representation of supported sections by `Q_S(W)` respects restriction of opens. -/
+@[reassoc]
+lemma supportedSubmoduleSectionsRepresentableIso_hom_restrict {W' : Opens X} (i : W' ⟶ W) :
+    (linearCoyoneda R _).map ((S.supportedFreeModuleSheafFunctor R).map i).op ≫
+        (supportedSubmoduleSectionsRepresentableIso (R := R) S W').hom =
+      (supportedSubmoduleSectionsRepresentableIso (R := R) S W).hom ≫
+        supportedSubmoduleSectionsRestrict S i := by
+  ext F g
+  apply Subtype.ext
+  -- Unbundle composition and the linear coyoneda action before using the opaque
+  -- representing isomorphism's application lemmas.
+  change (((supportedSubmoduleSectionsRepresentableIso (R := R) S W').hom.app F)
+      ((S.supportedFreeModuleSheafFunctor R).map i ≫ g)).val =
+    (((supportedSubmoduleSectionsRestrict (R := R) S i).app F)
+      (((supportedSubmoduleSectionsRepresentableIso (R := R) S W).hom.app F) g)).val
+  -- `erw` identifies the evaluated `linearCoyoneda` module containing `g` with
+  -- the sheaf Hom module, and the evaluated section module with its supported subtype.
+  -- Plain `rw` cannot typecheck `map i ≫ g` across the first of these wrappers.
+  erw [supportedSubmoduleSectionsRepresentableIso_hom_app_apply,
+    coe_supportedSubmoduleSectionsRestrict_app_apply,
+    supportedSubmoduleSectionsRepresentableIso_hom_app_apply]
+  exact S.coe_supportedFreeModuleSheafHomEquiv_map_comp R i F g
+
 /-- Right derived supported sections are the supported Ext groups, naturally in the
 coefficient sheaf. The target evaluates the existing supported cohomology presheaf on `W`. -/
 def rightDerivedSupportedSubmoduleSectionsIso (n : ℕ) :
