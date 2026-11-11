@@ -101,6 +101,7 @@ theorem minorGcd_mul_subspaceHeight_ker_mulVecLin (A : Matrix (Fin p) ι ℤ) :
   rw [← checkedBy_def, checkedBy_eq_euclideanDual_generatedBy, subspaceHeight_euclideanDual,
     generatedBy_eq_span_rows, minorGcd_mul_subspaceHeight_span_range_row]
 
+omit [LinearOrder ι] in
 /-- **The covolume of the lattice of integral solutions of `A y = 0`.** For an integer matrix `A`
 with linearly independent rows, the lattice of integral solutions of `A y = 0` has covolume
 `√det (A Aᵀ)` divided by the greatest common divisor of the maximal minors of `A`. -/
@@ -108,6 +109,8 @@ theorem covolume_intLattice_ker_mulVecLin {A : Matrix (Fin p) ι ℤ}
     (hA : LinearIndependent ℚ (A.map ((↑) : ℤ → ℚ)).row) :
     ZLattice.covolume (LinearMap.ker (A.map ((↑) : ℤ → ℚ)).mulVecLin).intLattice =
       √((A * Aᵀ).det : ℝ) / (A.minorGcd : ℝ) := by
+  -- The height of a subspace of `ℚ^ι` is defined through an ordering of `ι`; any one will do.
+  let : LinearOrder ι := LinearOrder.lift' (Fintype.equivFin ι) (Fintype.equivFin ι).injective
   have hg : A.minorGcd ≠ 0 := minorGcd_ne_zero_iff.2 (linearIndependent_rat_row_iff.1 hA)
   rw [covolume_intLattice, ← minorGcd_mul_subspaceHeight_ker_mulVecLin,
     mul_div_cancel_left₀ _ (Int.cast_ne_zero.mpr hg)]
