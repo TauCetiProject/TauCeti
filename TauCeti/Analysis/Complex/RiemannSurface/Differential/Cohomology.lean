@@ -23,10 +23,11 @@ through which Serre duality `H¹(X, 𝒪_D)^* ≅ H⁰(X, Ω_(-D))` and `h⁰(K)
 differentials and divisor sheaves.
 
 In degree `0` the isomorphism is the map of global sections `η ↦ η / ω`, read through the
-identification of degree `0` Čech cohomology of a sheaf with its global sections
-(`TauCeti.RiemannSurface.cechCohomologyZeroIso_hom_comp_differentialSheafCechCohomologyIso_hom`).
-In particular `H⁰(X, Ω_D)` is finite-dimensional on a compact connected surface, with no nonzero
-meromorphic `1`-form assumed to exist
+identification of degree `0` Čech cohomology of a sheaf with its global sections; this is
+`TauCeti.Topology.cechCohomologyZeroIso_hom_naturality` after rewriting with
+`TauCeti.RiemannSurface.differentialSheafCechCohomologyIso_hom`. In particular `H⁰(X, Ω_D)` is
+finite-dimensional on a compact connected surface, with no nonzero meromorphic `1`-form assumed
+to exist
 (`TauCeti.RiemannSurface.finiteDimensional_cechCohomology_zero_differentialSheaf`). That a
 nonzero meromorphic `1`-form exists is not proved here, so `ω` is a hypothesis throughout.
 
@@ -36,8 +37,6 @@ nonzero meromorphic `1`-form exists is not proved here, so `ω` is a hypothesis 
 
 ## Main results
 
-* `TauCeti.RiemannSurface.cechCohomologyZeroIso_hom_comp_differentialSheafCechCohomologyIso_hom`:
-  in degree `0` the isomorphism is division by `ω` on global sections.
 * `TauCeti.RiemannSurface.finiteDimensional_cechCohomology_zero_differentialSheaf`: `H⁰(X, Ω_D)`
   is finite-dimensional on a compact connected surface.
 
@@ -49,7 +48,7 @@ nonzero meromorphic `1`-form exists is not proved here, so `ω` is a hypothesis 
 
 public noncomputable section
 
-open CategoryTheory Opposite
+open CategoryTheory
 open scoped Manifold
 
 namespace TauCeti.RiemannSurface
@@ -93,17 +92,6 @@ theorem differentialSheafCechCohomologyIso_inv (n : ℕ) :
       (Topology.cechCohomology (TopCat.of X) (ModuleCat.{u} ℂ) n).map
         (differentialSheafIsoDivisorSheafAdd ω hω hω₀ D).inv.hom :=
   (rfl)
-
-/-- **In degree `0` the isomorphism is division by `ω` on global sections.** Identifying the
-degree `0` Čech cohomology of each sheaf with its global sections, the isomorphism
-`H⁰(X, Ω_D) ≅ H⁰(X, 𝒪_(D + div ω))` is the map `η ↦ η / ω` of global sections. -/
-@[reassoc]
-theorem cechCohomologyZeroIso_hom_comp_differentialSheafCechCohomologyIso_hom :
-    (Topology.cechCohomologyZeroIso (differentialSheaf D)).hom ≫
-        (differentialSheafCechCohomologyIso ω hω hω₀ D 0).hom =
-      (differentialSheafIsoDivisorSheafAdd ω hω hω₀ D).hom.hom.app (op ⊤) ≫
-        (Topology.cechCohomologyZeroIso (divisorSheaf (D + ω.divisor))).hom :=
-  (Topology.cechCohomologyZeroIso_hom_naturality _ _).symm
 
 /-- **`H⁰(X, Ω_D)` is finite-dimensional.** On a compact connected Riemann surface the degree `0`
 Čech cohomology of `Ω_D` is finite-dimensional for every divisor `D`, since it is the space of
