@@ -79,8 +79,8 @@ theorem character_indFDRep_eq_zero_of_notMem_of_index_two (hindex : N.index = 2)
 /-- **On an inverted subgroup of index two, the character induced from a linear character `ψ` is
 `ψ + ψ⁻¹`.**  Together with `TauCeti.character_indFDRep_eq_zero_of_notMem_of_index_two`, which
 gives the value `0` off `N` from the same hypothesis `hindex`, this determines the induced
-character on all of `G`.  No invertibility assumption on the order of `N` is needed, since the
-proof uses the division-free two-coset formula. -/
+character on all of `G`.  This holds over any field `k`, with no assumption on the
+order of `N`. -/
 theorem character_indFDRep_ofLinearCharacter_eq_add_inv_of_mem_of_conj_eq_inv
     (hindex : N.index = 2) {s : G} (hs : s ∉ N) (hinv : ∀ x ∈ N, s * x * s⁻¹ = x⁻¹)
     (ψ : N →* kˣ) {g : G} (hg : g ∈ N) :
