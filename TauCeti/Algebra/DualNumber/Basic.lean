@@ -28,17 +28,6 @@ linear maps out of them are determined by their values on `1` and `ε`.
 
 public section
 
-namespace DualNumber
-
-/-- The infinitesimal parameter of dual numbers over a nontrivial semiring is nonzero. -/
-@[simp]
-theorem eps_ne_zero {R : Type*} [Semiring R] [Nontrivial R] : (eps : DualNumber R) ≠ 0 := by
-  intro h
-  have := congrArg TrivSqZeroExt.snd h
-  simp at this
-
-end DualNumber
-
 namespace TauCeti
 
 /-- The unit `1 + inr c` in the dual numbers, with inverse `1 - inr c`. -/
