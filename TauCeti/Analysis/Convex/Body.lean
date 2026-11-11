@@ -6,9 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Body
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 public import Mathlib.Topology.MetricSpace.ProperSpace
+
 import Mathlib.Analysis.Normed.Module.Convex
+import Mathlib.Topology.Algebra.Group.Pointwise
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Constructions on convex bodies
@@ -17,7 +21,9 @@ A continuous linear map `f : V →L[ℝ] W` sends convex, compact, nonempty sets
 nonempty sets, so it pushes a convex body `K` of `V` forward to the convex body `K.map f` of `W`
 with carrier `f '' K`. This is how a convex body is carried along a change of coordinates, for
 instance to transport the successive minima of a lattice with respect to a body along a linear
-equivalence.
+equivalence. A convex body with `0` in its interior is a compact neighbourhood of `0`, so it forces
+the ambient normed space to be finite-dimensional
+(`ConvexBody.finiteDimensional_of_zero_mem_interior`).
 
 In a proper real seminormed space `V`, every closed metric ball `Metric.closedBall x r` of
 nonnegative radius `r` is likewise convex, compact, and nonempty, giving `ConvexBody.closedBall`.
@@ -64,6 +70,14 @@ theorem map_comp (g : W →L[ℝ] X) (f : V →L[ℝ] W) (K : ConvexBody V) :
   ConvexBody.ext (Set.image_comp g f _)
 
 end Map
+
+/-- A convex body with `0` in its interior lives in a finite-dimensional space: it contains a
+compact neighbourhood of `0`, so `E` is locally compact (Riesz's theorem). -/
+theorem finiteDimensional_of_zero_mem_interior {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {K : ConvexBody E} (hK : 0 ∈ interior (K : Set E)) : FiniteDimensional ℝ E :=
+  haveI := K.isCompact.locallyCompactSpace_of_mem_nhds_of_addGroup
+    (mem_interior_iff_mem_nhds.1 hK)
+  .of_locallyCompactSpace ℝ
 
 section ClosedBall
 
