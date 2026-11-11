@@ -109,6 +109,13 @@ theorem forceMatrix_def :
     forceMatrix = !![-1, 0, 1, 0; 0, 0, 0, 0; 1, 0, -1, 0; 0, 0, 0, 0] :=
   (rfl)
 
+/-- The force `H u` in coordinates: only the stretching `x₂ - x₁` of the spring is felt, pulling the
+two particles together along the rest direction. -/
+theorem forceMatrix_mulVec (u : Fin 4 → ℝ) :
+    forceMatrix *ᵥ u = ![u 2 - u 0, 0, u 0 - u 2, 0] := by
+  ext i
+  fin_cases i <;> simp [forceMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_four] <;> ring
+
 /-- The stretching mode `(1, 0, -1, 0)` is an eigenvector of `H` of eigenvalue `-2`. -/
 theorem forceMatrix_mulVec_stretch :
     forceMatrix *ᵥ ![1, 0, -1, 0] = ![-2, 0, 2, 0] := by
