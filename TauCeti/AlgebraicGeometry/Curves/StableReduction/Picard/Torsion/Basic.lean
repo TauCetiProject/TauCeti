@@ -69,11 +69,13 @@ theorem finite_torsion {ℓ : ℕ} (hℓ : ℓ ≠ 0) : Finite (T.torsion ℓ) :
   apply Module.finite_of_fg_torsion
   exact Submodule.torsionBy_isTorsion_nonZeroDivisor (ℓ : ℤ) (by simp [hℓ])
 
-/-- For nonzero `ℓ`, the `ℓ`-torsion subgroup of `Pic(T)` is finitely generated over `ZMod ℓ`. -/
-noncomputable instance torsionModuleFinite (ℓ : ℕ) [NeZero ℓ] :
-    Module.Finite (ZMod ℓ) (T.torsion ℓ) := by
-  let _ : Finite (T.torsion ℓ) := T.finite_torsion (NeZero.ne ℓ)
-  infer_instance
+/-- The `ℓ`-torsion subgroup of `Pic(T)` is finitely generated over `ZMod ℓ`, for every `ℓ`:
+it is a finitely generated abelian group, as a subgroup of the finitely generated group `Pic(T)`.
+-/
+noncomputable instance torsionModuleFinite (ℓ : ℕ) : Module.Finite (ZMod ℓ) (T.torsion ℓ) := by
+  have : Module.Finite ℤ (T.torsion ℓ) :=
+    inferInstanceAs (Module.Finite ℤ (T.torsion ℓ).toIntSubmodule)
+  exact Module.Finite.of_restrictScalars_finite ℤ _ _
 
 /-- The cardinality of prime torsion is the prime raised to its vector-space dimension. -/
 theorem natCard_torsion (ℓ : ℕ) [Fact ℓ.Prime] :

@@ -258,10 +258,6 @@ theorem finrank_torsion_le_contract (ℓ : ℕ) :
   · -- Over the trivial ring `ZMod 1`, every module has `finrank = 1`.
     rw [Module.finrank_subsingleton, Module.finrank_subsingleton]
   have : Nontrivial (ZMod ℓ) := ZMod.nontrivial_iff.mpr hℓ
-  have : Module.Finite ℤ ((T.contract he).torsion ℓ) :=
-    inferInstanceAs (Module.Finite ℤ ((T.contract he).torsion ℓ).toIntSubmodule)
-  have : Module.Finite (ZMod ℓ) ((T.contract he).torsion ℓ) :=
-    Module.Finite.of_restrictScalars_finite ℤ _ _
   refine LinearMap.finrank_le_finrank_of_injective (f := f.toZModLinearMap ℓ) fun x y hxy ↦ ?_
   exact Subtype.ext (T.picContract_injective he (congrArg Subtype.val hxy))
 
