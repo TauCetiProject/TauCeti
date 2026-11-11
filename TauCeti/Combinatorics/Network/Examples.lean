@@ -91,21 +91,6 @@ private theorem lexPair_nonneg_of_nonneg {a b : ℤ} (ha : 0 ≤ a) (hb : 0 ≤ 
   rw [← toLex_zero, lexPair, Prod.Lex.toLex_le_toLex']
   exact ⟨ha, fun _ ↦ hb⟩
 
-/-- `lexPair a b` corresponds to the pair `(a, b)`. -/
-@[simp]
-theorem ofLex_lexPair (a b : ℤ) : ofLex (lexPair a b) = (a, b) := by
-  unfold lexPair; rfl
-
-/-- Pairs are compared lexicographically. -/
-theorem lexPair_le_lexPair_iff {a b c d : ℤ} :
-    lexPair a b ≤ lexPair c d ↔ a < c ∨ a = c ∧ b ≤ d :=
-  Prod.Lex.toLex_le_toLex
-
-/-- Pairs are strictly compared lexicographically. -/
-theorem lexPair_lt_lexPair_iff {a b c d : ℤ} :
-    lexPair a b < lexPair c d ↔ a < c ∨ a = c ∧ b < d :=
-  Prod.Lex.toLex_lt_toLex
-
 /-- Addition of lexicographically ordered pairs is coordinatewise. -/
 @[simp]
 theorem lexPair_add (a b c d : ℤ) :
