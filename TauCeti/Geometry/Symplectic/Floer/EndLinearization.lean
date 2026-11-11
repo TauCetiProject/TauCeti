@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.PeriodicOrbitLimit
 public import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator
+import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator.Estimate
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
@@ -49,6 +50,23 @@ For a solution of the Floer equation `∂s u + J_t(u)(∂t u - X_{H_t}(u)) = 0` 
 `J_t(u) ∂s u`, so it tends to zero uniformly whenever `∂s u` does
 (`TauCeti.SymplecticForm.tendstoUniformlyOn_sliceDefect_of_floerOperator_eq_zero`).
 
+At a nondegenerate orbit `x` with `J_t(x(t))` compatible, the stationary cylinder operator `D_x`
+is bounded below from `W^{1,2}` to `L²` on maps vanishing on two slices
+(`Floer.exists_forall_setIntegral_norm_sq_le_mul_setIntegral_norm_sq_stationaryCylinderOperator`),
+and the bound survives perturbations small relative to `‖∂t ξ‖ + ‖ξ‖`. Combined with the
+convergence above, the linearized operator along a `C¹` map `u` asymptotic to `x` is bounded below
+on maps supported far out on the end: there are `C` and a set `U` of values of `s`, in the
+filter of the end, with
+
+`∫ (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ C ∫ ‖D_u ξ‖²`
+
+over `[a, b] × [0, 1]` for every `ξ` of period one in `t` vanishing on the slices `s = a` and
+`s = b`, whenever `[a, b] ⊆ U`
+(`SymplecticForm.exists_forall_setIntegral_norm_sq_le_mul_setIntegral_norm_sq_floerLinearization`).
+This is the estimate on the ends from which the semi-Fredholm property of `D_u` on the punctured
+domain follows, once it is combined with interior elliptic estimates; neither the Sobolev
+completion nor that combination is treated here.
+
 ## References
 
 * D. Salamon, *Lectures on Floer homology*, in *Symplectic geometry and topology*, IAS/Park City
@@ -61,6 +79,7 @@ For a solution of the Floer equation `∂s u + J_t(u)(∂t u - X_{H_t}(u)) = 0` 
 public section
 
 open Filter Set Topology ContinuousLinearMap
+open scoped Manifold NNReal
 
 namespace TauCeti.SymplecticForm
 
@@ -259,5 +278,65 @@ theorem tendstoUniformlyOn_sliceDefect_of_floerOperator_eq_zero (ω : Symplectic
     _ ≤ (|C| + 1) * ‖fderiv ℝ u (s, t) stdComplexLineReal‖ := by gcongr
     _ < (|C| + 1) * (ε / (|C| + 1)) := by gcongr
     _ = ε := by field_simp
+
+/-- **The `L²` estimate of the linearized Floer operator on a cylindrical end.** Let `x` be a
+nondegenerate one-periodic orbit of a one-periodic, jointly `C²` time-dependent Hamiltonian `H`
+whose suspended vector field is globally Lipschitz, and let `J_t(y)` be a `C¹` family of almost
+complex structures, `ω`-compatible along `x`. Let `u` be a `C¹` map whose loops `u(s, ·)` converge
+uniformly on `[0, 1]` to `x` along a filter `l` of `s`, such as `atTop` for a positive end or
+`atBot` for a negative one, while the slice defect `∂t u - X_{H_t}(u)` converges uniformly to
+zero. Then there are `C ≥ 0` and a set `U ∈ l` of values of `s` such that every `C²` map `ξ` of
+period one in `t` vanishing on the slices `s = a` and `s = b`, for `a ≤ b` with `[a, b] ⊆ U`,
+satisfies
+
+`∫ (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ C ∫ ‖D_u ξ‖²`
+
+over `[a, b] × [0, 1]`, for the linearized Floer operator `D_u` along `u` with the datum
+`K = H_t dt`. Thus `D_u` is bounded below from `W^{1,2}` to `L²` on maps supported far out on the
+end. -/
+theorem exists_forall_setIntegral_norm_sq_le_mul_setIntegral_norm_sq_floerLinearization
+    (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
+    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
+    (hH : ContDiff ℝ 2 (Function.uncurry H)) (hHp : Function.Periodic H 1) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t)
+    (hxp : Function.Periodic x 1)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0))
+    {J : ℝ → V → AlmostComplexStructure V}
+    (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJx : ∀ t, ω.Compatible (J t (x t))) {l : Filter ℝ} {u : ℝ × ℝ → V} (hu₁ : ContDiff ℝ 1 u)
+    (hu : TendstoUniformlyOn (fun s t ↦ u (s, t)) x l (Icc 0 1))
+    (hδ : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 l (Icc 0 1)) :
+    ∃ C, 0 ≤ C ∧ ∃ U ∈ l, ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ →
+      (∀ s t, ξ (s, t + 1) = ξ (s, t)) → ∀ ⦃a b : ℝ⦄, a ≤ b → Icc a b ⊆ U →
+        (∀ t, ξ (a, t) = 0) → (∀ t, ξ (b, t) = 0) →
+        ∫ z in Icc a b ×ˢ Icc 0 1, (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 +
+            ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 + ‖ξ z‖ ^ 2) ≤
+          C * ∫ z in Icc a b ×ˢ Icc 0 1, ‖ω.floerLinearization
+            (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+            (fun w ↦ H w.2) u ξ z‖ ^ 2 := by
+  have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
+  have hSc : Continuous fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) :=
+    ω.continuous_fderiv_hamiltonianVectorField_comp hH hxc
+  have hJxc : Continuous fun p : ℝ × V ↦ J p.1 (x p.1) p.2 := by
+    have h := (hJ.continuous.comp (continuous_fst.prodMk (hxc.comp continuous_fst))).clm_apply
+      continuous_snd
+    simpa using h
+  -- The stationary operator along `x` satisfies the perturbed cylinder estimate, and `D_u` is
+  -- eventually a small perturbation of it.
+  obtain ⟨ε, hε, C, hC, hest⟩ :=
+    Floer.exists_pos_forall_setIntegral_norm_sq_le_mul_setIntegral_norm_sq_of_norm_sub_le
+      (J := fun t ↦ J t (x t)) hJx hJxc
+      (fun t ↦ ω.apply_fderiv_hamiltonianVectorField_add
+        (hH.comp (contDiff_prodMk_right t)).contDiffAt) hSc
+      (det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt ω hX hH hHp hx hxp hnd)
+  refine ⟨C, hC, _, eventually_norm_floerLinearization_sub_stationaryCylinderOperator_le ω hJ hH
+    isCompact_Icc hxc.continuousOn hu hδ hε, fun ξ hξ hper a b hab hU ha hb ↦
+    hest hξ hper hab ha hb (((ω.continuous_floerLinearization
+      (J := fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (Ks := fun _ _ ↦ 0)
+      (Kt := fun w ↦ H w.2) (hJ.comp (contDiff_fst.snd.prodMk contDiff_snd)) contDiff_const
+      (hH.comp (contDiff_fst.snd.prodMk contDiff_snd)) hu₁ (hξ.of_le one_le_two)).norm.pow
+        2).continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc))
+      fun z hz ↦ hU hz.1 z.2 hz.2 ξ⟩
 
 end TauCeti.SymplecticForm

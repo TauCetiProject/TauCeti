@@ -141,6 +141,38 @@ theorem floerLinearization_zero (ω : SymplecticForm V)
     ω.floerLinearization J Ks Kt u 0 z = 0 := by
   simp [floerLinearization_def]
 
+/-- For a `C¹` field `J` and `C²` Hamiltonians `Ks`, `Kt`, jointly in the domain point and the
+target point, the linearization along a `C¹` map `u` sends a `C¹` direction `ξ` to a continuous
+map. -/
+theorem continuous_floerLinearization (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    (hJ : ContDiff ℝ 1 (Function.uncurry J)) (hKs : ContDiff ℝ 2 (Function.uncurry Ks))
+    (hKt : ContDiff ℝ 2 (Function.uncurry Kt)) {u ξ : ℝ × ℝ → V} (hu : ContDiff ℝ 1 u)
+    (hξ : ContDiff ℝ 1 ξ) : Continuous (ω.floerLinearization J Ks Kt u ξ) := by
+  -- The target derivatives of `J` and of both Hamiltonian vector fields are continuous in
+  -- `(z, y)`, and are evaluated at `(z, u z)`.
+  have hu₀ : ContDiff ℝ 0 u := hu.of_le zero_le_one
+  have hdJ : Continuous fun z ↦ fderiv ℝ (J z) (u z) := (hJ.fderiv hu₀ le_rfl).continuous
+  have hdXs : Continuous fun z ↦ fderiv ℝ (ω.hamiltonianVectorField (Ks z)) (u z) :=
+    (ContDiff.fderiv (f := fun z y ↦ ω.hamiltonianVectorField (Ks z) y)
+      (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hKs) hu₀ le_rfl).continuous
+  have hXt := ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hKt
+  have hdXt : Continuous fun z ↦ fderiv ℝ (ω.hamiltonianVectorField (Kt z)) (u z) :=
+    (ContDiff.fderiv (f := fun z y ↦ ω.hamiltonianVectorField (Kt z) y) hXt hu₀
+      le_rfl).continuous
+  have hp : Continuous fun z : ℝ × ℝ ↦ (z, u z) := continuous_id.prodMk hu.continuous
+  have hdu : Continuous (fderiv ℝ u) := hu.continuous_fderiv one_ne_zero
+  have hdξ : Continuous (fderiv ℝ ξ) := hξ.continuous_fderiv one_ne_zero
+  have hδ : Continuous fun z ↦ fderiv ℝ u z stdComplexLineImag -
+      ω.hamiltonianVectorField (Kt z) (u z) :=
+    (hdu.clm_apply continuous_const).sub (hXt.continuous.comp hp)
+  have hw : Continuous fun z ↦ fderiv ℝ ξ z stdComplexLineImag -
+      fderiv ℝ (ω.hamiltonianVectorField (Kt z)) (u z) (ξ z) :=
+    (hdξ.clm_apply continuous_const).sub (hdXt.clm_apply hξ.continuous)
+  exact (((hdξ.clm_apply (continuous_const (y := stdComplexLineReal))).sub
+    (hdXs.clm_apply hξ.continuous)).add ((hdJ.clm_apply hξ.continuous).clm_apply hδ)).add
+    ((hJ.continuous.comp hp).clm_apply hw)
+
 /-- **Conjugating the linearization by an exponential weight.** On maps of the form
 `e^{-δ s} ξ`, the linearized Floer operator acts as `e^{-δ s} (D - δ) ξ`: the weight only
 differentiates in the `s` direction, where the operator has the leading term `∂s`. -/

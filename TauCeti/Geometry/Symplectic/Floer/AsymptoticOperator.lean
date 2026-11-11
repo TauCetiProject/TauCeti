@@ -14,6 +14,7 @@ public import TauCeti.Analysis.Sobolev.Circle.LinearODE
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.PeriodicDeriv
+import TauCeti.Geometry.Symplectic.ExistsCompatible
 import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
@@ -58,7 +59,10 @@ one-periodic Hamiltonian the asymptotic operator has no nonzero one-periodic ker
 exactly when the orbit is nondegenerate, that is, when `x(0)` is a nondegenerate fixed point of
 the time-one map
 (`SymplecticForm.isNondegenerateFixedPt_iff_forall_eq_zero_of_asymptoticOperator_eq_zero`).
-This holds for every family `J_t`, compatible or not. It is the Hamiltonian case of the same
+This holds for every family `J_t`, compatible or not; in terms of the return map, nondegeneracy
+gives `det (1 - Ψ(1)) ≠ 0`
+(`SymplecticForm.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt`). It is the
+Hamiltonian case of the same
 criterion for a one-periodic orbit of any jointly `C¹` one-periodic vector field `v` on a Banach
 space, with `S_t = D(v_t)(x(t))` (`Floer.isNondegenerateFixedPt_timeDependentFlow_iff`).
 
@@ -414,6 +418,15 @@ theorem stationaryCylinderOperator_eq_add_asymptoticOperator (hξ : Differentiab
     rw [stdComplexLineImag_eq]
     exact (hξ.hasFDerivAt.comp_hasDerivAt t (hasDerivAt_prodMk_right s t)).deriv
   rw [stationaryCylinderOperator_def, asymptoticOperator_def, hξt]
+
+/-- For continuously varying `J_t` and `S_t`, the stationary cylinder operator maps `C¹` maps to
+continuous maps. -/
+theorem continuous_stationaryCylinderOperator (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2)
+    (hSc : Continuous S) (hξ : ContDiff ℝ 1 ξ) : Continuous (stationaryCylinderOperator J S ξ) := by
+  have hdξ : Continuous (fderiv ℝ ξ) := hξ.continuous_fderiv one_ne_zero
+  have hw : Continuous fun z : ℝ × ℝ ↦ fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z) :=
+    (hdξ.clm_apply continuous_const).sub ((hSc.comp continuous_snd).clm_apply hξ.continuous)
+  exact (hdξ.clm_apply continuous_const).add (hJc.comp (continuous_snd.prodMk hw))
 
 /-- A map of period one in the second coordinate has a derivative of period one in it. -/
 private theorem fderiv_add_one_snd (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) (s t : ℝ) :
@@ -790,6 +803,34 @@ theorem isNondegenerateFixedPt_iff_forall_eq_zero_of_asymptoticOperator_eq_zero
   exact Floer.isNondegenerateFixedPt_timeDependentFlow_iff _
     (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH)
     (fun t ↦ funext fun y ↦ by simp only [hHp t]) hx hxp J
+
+/-- **The return map at a nondegenerate orbit.** Let `x` be a one-periodic orbit of a
+one-periodic, jointly `C²` time-dependent Hamiltonian `H` whose suspended vector field is globally
+Lipschitz, with `x(0)` a nondegenerate fixed point of the time-one map. Then `1` is not an
+eigenvalue of the return map `Ψ(1) = dysonSeriesLeft S 1` of the linearized equation
+`ζ' = S_t ζ`, `S_t = dX_{H_t}(x(t))`: that is, `det (1 - Ψ(1)) ≠ 0`. -/
+theorem det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt
+    (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
+    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
+    (hH : ContDiff ℝ 2 (uncurry H)) (hHp : Periodic H 1) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxp : Periodic x 1)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
+    LinearMap.det ((1 - dysonSeriesLeft
+      (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) ≠
+      0 := by
+  have hSc : Continuous fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) :=
+    ω.continuous_fderiv_hamiltonianVectorField_comp hH
+      (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt)
+  have hSp : Periodic (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 :=
+    fun t ↦ by simp only [hHp t, hxp t]
+  -- The kernel of the asymptotic operator does not depend on the almost complex structures.
+  obtain ⟨J₀, -⟩ := ω.exists_compatible
+  intro h
+  obtain ⟨ζ, hζ, hζp, hne, hA⟩ :=
+    (Floer.exists_ne_zero_asymptoticOperator_eq_zero_iff_det_eq_zero (J := fun _ ↦ J₀) hSc
+      hSp).2 h
+  exact hne ((isNondegenerateFixedPt_iff_forall_eq_zero_of_asymptoticOperator_eq_zero ω hX hH
+    hHp hx hxp _).1 hnd ζ hζ hζp hA)
 
 /-- **Small weights preserve nondegeneracy.** At a nondegenerate one-periodic orbit `x` of a
 one-periodic, jointly `C²` time-dependent Hamiltonian `H` whose suspended vector field is globally
