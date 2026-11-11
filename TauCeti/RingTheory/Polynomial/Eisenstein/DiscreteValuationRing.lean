@@ -26,8 +26,6 @@ uniformizer. Conversely, `X ^ n` minus a uniformizer is Eisenstein for positive 
   `x ^ deg f = -f(0) g(x)` for a root `x`.
 * `Polynomial.IsEisensteinAt.ne_zero_of_aeval_eq_zero`: such a root is nonzero in an algebra
   with injective structure map.
-* `Polynomial.IsEisensteinAt.exists_monic_aeval_eq_zero`: an Eisenstein polynomial can be scaled by
-  a unit to a monic Eisenstein polynomial of the same degree with the same roots.
 * `TauCeti.isEisensteinAt_X_pow_sub_C_of_irreducible` and
   `TauCeti.isEisensteinAt_X_pow_add_C_mul_X_add_C_of_irreducible` give Eisenstein polynomials
   from uniformizers.
@@ -122,25 +120,6 @@ theorem ne_zero_of_aeval_eq_zero [FaithfulSMul R S] (hf : f.IsEisensteinAt (maxi
   have hirr := hf.irreducible_coeff_zero (hmo.natDegree_pos.mpr (by rintro rfl; simp at hx))
   rw [← coeff_zero_eq_aeval_zero', map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective R S)] at hx
   exact hirr.ne_zero hx
-
-
-/-- Over a discrete valuation ring, an Eisenstein polynomial has a unit leading coefficient, so
-scaling it by the inverse gives a monic Eisenstein polynomial of the same degree with the same
-roots. -/
-theorem exists_monic_aeval_eq_zero (hf : f.IsEisensteinAt (maximalIdeal R)) (hx : aeval x f = 0) :
-    ∃ g : R[X], g.Monic ∧ g.IsEisensteinAt (maximalIdeal R) ∧ aeval x g = 0 ∧
-      g.natDegree = f.natDegree := by
-  obtain ⟨u, hu⟩ := notMem_maximalIdeal.mp hf.leading
-  have hdeg : (C (↑u⁻¹ : R) * f).natDegree = f.natDegree := natDegree_C_mul (u⁻¹).ne_zero
-  have hmo : (C (↑u⁻¹ : R) * f).Monic :=
-    monic_C_mul_of_mul_leadingCoeff_eq_one (by simp [← hu])
-  refine ⟨C (↑u⁻¹ : R) * f, hmo, ⟨?_, fun {n} hn ↦ ?_, fun h ↦ hf.notMem ?_⟩, by simp [hx], hdeg⟩
-  · rw [hmo.leadingCoeff]
-    exact (maximalIdeal.isMaximal R).ne_top ∘ (Ideal.eq_top_iff_one _).mpr
-  · rw [coeff_C_mul]
-    exact Ideal.mul_mem_left _ _ (hf.mem (hdeg ▸ hn))
-  · have := Ideal.mul_mem_left _ (u : R) h
-    rwa [coeff_C_mul, ← mul_assoc, Units.mul_inv, one_mul] at this
 
 end Polynomial.IsEisensteinAt
 
