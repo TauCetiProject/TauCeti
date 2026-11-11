@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.VectorMeasure.BoundedVariation
 public import Mathlib.MeasureTheory.VectorMeasure.Variation.Basic
+public import TauCeti.MeasureTheory.Measure.Stieltjes
 public import TauCeti.Topology.Order.ProjIcc
 public import TauCeti.Topology.EMetricSpace.BoundedVariation
 
@@ -20,6 +21,9 @@ This gives a finite-horizon Stieltjes measure without making assumptions on the 
 interval. The initial time never carries an atom because of the restriction to `(a,b]`, while a
 jump at the terminal time is retained. Right continuity within the horizon yields the usual
 increment formulas. These are the endpoint conventions for pathwise finite-variation integration.
+
+An increasing-part decomposition identifies this signed measure with the difference of the
+parts' restricted Stieltjes measures, even if the parts have infinite mass on the whole line.
 
 The construction uses Mathlib's `BoundedVariationOn.vectorMeasure` and `Set.IccExtend`.
 
@@ -217,5 +221,37 @@ theorem vectorMeasureIcc_congr (hf : BoundedVariationOn f (Icc a b))
     funext fun x ↦ hfg (projIcc a b hab x).property
   simp only [vectorMeasureIcc_def]
   congr 2
+
+/-- A decomposition of the path's increments into two increasing right-continuous parts
+identifies its finite-horizon signed measure with the difference of their Stieltjes measures.
+Neither increasing part needs finite mass outside the horizon. -/
+theorem vectorMeasureIcc_eq_sub_toSignedMeasure
+    {f : α → ℝ} (hf : BoundedVariationOn f (Icc a b)) (hab : a ≤ b)
+    (p q : StieltjesFunction α)
+    (hpq : ∀ x ∈ Icc a b, f x - f a = (p x - p a) - (q x - q a)) :
+    hf.vectorMeasureIcc hab =
+      (p.measure.restrict (Ioc a b)).toSignedMeasure -
+        (q.measure.restrict (Ioc a b)).toSignedMeasure := by
+  have hfr (x : α) (hx : x ∈ Icc a b) : ContinuousWithinAt f (Icc x b) x := by
+    have h := (((p.right_continuous x).sub (q.right_continuous x)).add_const
+      (f a - p a + q a)).mono (Icc_subset_Ici_self : Icc x b ⊆ Ici x)
+    apply h.congr_of_mem ?_ (left_mem_Icc.mpr hx.2)
+    intro y hy
+    have := hpq y ⟨hx.1.trans hy.1, hy.2⟩
+    dsimp only [Pi.sub_apply]
+    linarith
+  apply VectorMeasure.ext_of_restrict_Ioc hab (hf.vectorMeasureIcc_restrict hab)
+  · rw [VectorMeasure.restrict_sub, VectorMeasure.restrict_toSignedMeasure measurableSet_Ioc,
+      VectorMeasure.restrict_toSignedMeasure measurableSet_Ioc]
+    simp [Measure.restrict_restrict, measurableSet_Ioc]
+  · intro x hx
+    simpa only [hf.vectorMeasureIcc_Ioc hab (hfr a (left_mem_Icc.mpr hab)) (hfr x hx)
+      (left_mem_Icc.mpr hab) hx hx.1, _root_.sub_apply,
+      Measure.toSignedMeasure_apply_measurable measurableSet_Ioc,
+      measureReal_restrict_apply measurableSet_Ioc,
+      inter_eq_left.mpr (Ioc_subset_Ioc le_rfl hx.2), measureReal_def,
+      StieltjesFunction.measure_Ioc,
+      ENNReal.toReal_ofReal (sub_nonneg.mpr (p.mono hx.1)),
+      ENNReal.toReal_ofReal (sub_nonneg.mpr (q.mono hx.1))] using hpq x hx
 
 end BoundedVariationOn
