@@ -50,6 +50,7 @@ when `R` contains `ℚ`. It contrasts with the reduced theory of
 
 ## Main definitions
 
+* `TauCeti.mkPiRingCocycle`: the product cochain of `m` in even degree, as a cyclic cocycle.
 * `TauCeti.cyclicCohomology.mkPiRing`: the class in even degree of the product cochain of `m`.
 * `TauCeti.cyclicCohomology.selfEquiv`: `M ≃ HCⁿ(R; M)` for even `n` when `M` has no `2`-torsion.
 * `TauCeti.cyclicCohomology.selfQuotEquiv`: `M ⧸ M[2] ≃ HCⁿ(R; M)` for even `n ≠ 0`.
@@ -175,12 +176,14 @@ theorem cyclicCocycles_self_of_odd (hn : Odd n) : cyclicCocycles R R M n = ⊥ :
 /-! ### Even cocycle representatives -/
 
 /-- The product cochain of `m` in even degree, as a cyclic cocycle. -/
-private def mkPiRingCocycle (hn : Even n) : M →ₗ[R] cyclicCocycles R R M n :=
+def mkPiRingCocycle (hn : Even n) : M →ₗ[R] cyclicCocycles R R M n :=
   ((MultilinearMap.piRingEquiv (R := R) (ι := Fin (n + 1))).toLinearMap.codRestrict
     (cyclicCochains R R M n) fun _ ↦ by simp [cyclicCochains_self_of_even R M hn]).codRestrict
     (cyclicCocycles R R M n) fun _ ↦ by simp [cyclicCocycles_self_of_even R M hn]
 
-private theorem coe_mkPiRingCocycle (hn : Even n) (m : M) :
+/-- The underlying multilinear map of `mkPiRingCocycle R M hn m` is `MultilinearMap.mkPiRing`. -/
+@[simp]
+theorem coe_mkPiRingCocycle (hn : Even n) (m : M) :
     ((mkPiRingCocycle R M hn m : cyclicCochains R R M n) :
       MultilinearMap R (fun _ : Fin (n + 1) ↦ R) M) = MultilinearMap.mkPiRing R (Fin (n + 1)) m :=
   (rfl)
@@ -385,29 +388,19 @@ variable (k : Type*) [CommRing k]
 /-- The **calibrated scalar cyclic `2m`-cocycle** `σₘ` on a commutative ring `k`, defined by
 `σₘ(a₀, …, a₂ₘ) = m! a₀ ⋯ a₂ₘ`. -/
 def scalarCocycle (m : ℕ) : cyclicCocycles k k k (2 * m) :=
-  ⟨⟨MultilinearMap.mkPiRing k (Fin (2 * m + 1)) (m ! : k),
-    by simp [cyclicCochains_self_of_even k k (even_two_mul m)]⟩,
-    by simp [cyclicCocycles_self_of_even k k (even_two_mul m)]⟩
-
-/-- Underlying multilinear map of `scalarCocycle`. -/
-@[simp]
-theorem coe_scalarCocycle (m : ℕ) :
-    ((scalarCocycle k m : cyclicCochains k k k (2 * m)) :
-      MultilinearMap k (fun _ : Fin (2 * m + 1) ↦ k) k) =
-      MultilinearMap.mkPiRing k (Fin (2 * m + 1)) (m ! : k) :=
-  (rfl)
+  mkPiRingCocycle k k (even_two_mul m) (m ! : k)
 
 /-- Pointwise formula `σₘ(a₀, …, a₂ₘ) = m! ∏ᵢ aᵢ`. -/
 theorem scalarCocycle_apply (m : ℕ) (a : Fin (2 * m + 1) → k) :
     ((scalarCocycle k m : cyclicCochains k k k (2 * m)) :
       MultilinearMap k (fun _ : Fin (2 * m + 1) ↦ k) k) a = (m ! : k) * ∏ i, a i := by
-  rw [coe_scalarCocycle, MultilinearMap.mkPiRing_apply, smul_eq_mul, mul_comm]
+  rw [scalarCocycle, coe_mkPiRingCocycle, MultilinearMap.mkPiRing_apply, smul_eq_mul, mul_comm]
 
 /-- In degree zero, `σ₀(a₀) = a₀` is the identity trace on `k`. -/
 theorem scalarCocycle_zero_apply (a : Fin 1 → k) :
     ((scalarCocycle k 0 : cyclicCochains k k k 0) :
       MultilinearMap k (fun _ : Fin 1 ↦ k) k) a = a 0 := by
-  simp
+  rw [scalarCocycle_apply k 0 a, Nat.factorial_zero, Nat.cast_one, one_mul, Fin.prod_univ_one]
 
 /-- In degree two, `σ₁(a₀, a₁, a₂) = a₀ a₁ a₂` is Connes' fundamental `2`-cocycle on `k`. -/
 theorem scalarCocycle_one_apply (a : Fin 3 → k) :
@@ -421,20 +414,20 @@ theorem cyclicCocyclesPeriodicity_scalarCocycle (m : ℕ) :
     cyclicCocyclesPeriodicity k k k (2 * m) (scalarCocycle k m) = scalarCocycle k (m + 1) := by
   apply Subtype.ext
   apply Subtype.ext
-  rw [coe_cyclicCocyclesPeriodicity_apply, coe_scalarCocycle, cochainPeriodicity_mkPiRing]
   have hdiv : 2 * m / 2 + 1 = m + 1 := by omega
   have hfac : ((m + 1 : ℕ) • (m ! : k)) = ((m + 1)! : k) := by
     rw [nsmul_eq_mul, ← Nat.cast_mul, ← Nat.factorial_succ]
-  rw [hdiv, hfac]
-  rfl
+  rw [coe_cyclicCocyclesPeriodicity_apply, scalarCocycle, coe_mkPiRingCocycle,
+    cochainPeriodicity_mkPiRing, hdiv, hfac]
+  -- `2 * m + 2` is definitionally `2 * (m + 1)` (`Nat.mul_succ`), matching `Fin (2 * (m + 1) + 1)`.
+  exact (coe_mkPiRingCocycle k k (even_two_mul (m + 1)) ((m + 1)! : k)).symm
 
 /-- The cyclic cohomology class of `scalarCocycle k m` is `mkPiRing` of `m!`. -/
 @[simp]
 theorem cyclicCohomology.mk_scalarCocycle (m : ℕ) :
     cyclicCohomology.mk k k k (2 * m) (scalarCocycle k m) =
       cyclicCohomology.mkPiRing k k (2 * m) (even_two_mul m) (m ! : k) := by
-  rw [cyclicCohomology.mkPiRing_apply]
-  rfl
+  rw [cyclicCohomology.mkPiRing, LinearMap.comp_apply, scalarCocycle]
 
 end ScalarCocycle
 

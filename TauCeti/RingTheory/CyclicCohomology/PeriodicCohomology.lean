@@ -413,6 +413,26 @@ theorem isUnit_algebraMap_periodicComparisonScalar {R : Type*} [CommRing R] [Alg
     (n k : ℕ) : IsUnit (algebraMap ℚ R (periodicComparisonScalar n k)) :=
   (periodicComparisonScalar_ne_zero n k).isUnit.map (algebraMap ℚ R)
 
+private theorem algebraMap_periodicComparisonScalar_succ_mul_neg {R : Type*} [CommRing R]
+    [Algebra ℚ R] (n k : ℕ) :
+    algebraMap ℚ R (periodicComparisonScalar n (k + 1)) *
+        -((((n + 2 * k : ℕ) : R) + 1) * (((n + 2 * k : ℕ) : R) + 2)) =
+      algebraMap ℚ R (periodicComparisonScalar n k) := by
+  simpa only [map_mul, map_neg, map_add, map_natCast, map_one, map_ofNat, Nat.cast_add,
+    Nat.cast_mul, Nat.cast_ofNat] using
+    congrArg (algebraMap ℚ R) (periodicComparisonScalar_mul_neg n k)
+
+private theorem algebraMap_periodicComparisonScalar_succ_inv {R : Type*} [CommRing R]
+    [Algebra ℚ R] (n k : ℕ) :
+    algebraMap ℚ R (periodicComparisonScalar n (k + 1))⁻¹ =
+      algebraMap ℚ R (periodicComparisonScalar n k)⁻¹ *
+        -((((n + 2 * k : ℕ) : R) + 1) * (((n + 2 * k : ℕ) : R) + 2)) := by
+  have hq : (periodicComparisonScalar n (k + 1))⁻¹ =
+      (periodicComparisonScalar n k)⁻¹ * (-((n + 2 * k + 1 : ℚ) * (n + 2 * k + 2 : ℚ))) := by
+    rw [periodicComparisonScalar_succ, mul_inv, inv_inv]
+  simpa only [map_mul, map_neg, map_add, map_natCast, map_one, map_ofNat, Nat.cast_add,
+    Nat.cast_mul, Nat.cast_ofNat] using congrArg (algebraMap ℚ R) hq
+
 /-- **Even column comparison constant.** For `n = 0` and even degree `2m`, the comparison scalar is
 `(-1)^m / (2m)!`. -/
 theorem periodicComparisonScalar_zero_left (m : ℕ) :
@@ -484,6 +504,16 @@ theorem cyclicCohomology.periodicTransition_comp (n : ℕ) {i j k : ℕ} (hij : 
       cyclicCohomology.periodicTransition R A M n (hij.trans hjk) :=
   (Functor.OfSequence.map_comp _ i j k hij hjk).symm
 
+/-- Restatement of `cyclicCohomology.periodicity_comp_homologyMap_cyclicCochainComplexToTotal` at
+stage `k + 1`, exposing the definitional equality `(n + 2 * k) + 2 = n + 2 * (k + 1)` for `rw`. -/
+private theorem periodicity_comp_homologyMap_cyclicCochainComplexToTotal_add_two_mul (n k : ℕ) :
+    cyclicCohomology.periodicity R A M (n + 2 * k) ≫
+        HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (n + 2 * (k + 1)) =
+      -((((n + 2 * k : ℕ) : R) + 1) * (((n + 2 * k : ℕ) : R) + 2)) •
+        (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (n + 2 * k) ≫
+          cyclicTotalHomologyPeriodicity R A M (n + 2 * k)) :=
+  cyclicCohomology.periodicity_comp_homologyMap_cyclicCochainComplexToTotal R A M (n + 2 * k)
+
 /-- Compatibility between `cyclicCohomology.periodicTransition` and
 `cyclicTotalHomologyPeriodicTransition` after rescaling by `periodicComparisonScalar`. -/
 theorem cyclicCohomology.smul_periodicTransition_comp_homologyMap (n : ℕ) {i j : ℕ} (h : i ≤ j) :
@@ -498,28 +528,12 @@ theorem cyclicCohomology.smul_periodicTransition_comp_homologyMap (n : ℕ) {i j
     rw [cyclicCohomology.periodicTransition_self, cyclicTotalHomologyPeriodicTransition_self,
       Category.id_comp, Category.comp_id]
   | succ j hij ih =>
-    have hscalar :
-        algebraMap ℚ R (periodicComparisonScalar n (j + 1)) *
-            -((((n + 2 * j : ℕ) : R) + 1) * (((n + 2 * j : ℕ) : R) + 2)) =
-          algebraMap ℚ R (periodicComparisonScalar n j) := by
-      have hm := congrArg (algebraMap ℚ R) (periodicComparisonScalar_mul_neg n j)
-      simp only [map_mul, map_add, map_neg, map_one, map_ofNat, map_natCast] at hm
-      rw [← hm]
-      push_cast
-      ring
-    -- Expose the definitional equality `n + 2 * (j + 1) = (n + 2 * j) + 2` for `rw`.
-    have hcomp :
-        cyclicCohomology.periodicity R A M (n + 2 * j) ≫
-            HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (n + 2 * (j + 1)) =
-          -((((n + 2 * j : ℕ) : R) + 1) * (((n + 2 * j : ℕ) : R) + 2)) •
-            (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (n + 2 * j) ≫
-              cyclicTotalHomologyPeriodicity R A M (n + 2 * j)) :=
-      cyclicCohomology.periodicity_comp_homologyMap_cyclicCochainComplexToTotal R A M (n + 2 * j)
     rw [← cyclicCohomology.periodicTransition_comp R A M n hij (Nat.le_add_right j 1),
-      cyclicCohomology.periodicTransition_succ, Category.assoc, hcomp, Linear.comp_smul,
-      smul_smul, hscalar, ← Linear.smul_comp, ← Category.assoc, Linear.smul_comp, ih,
-      Linear.smul_comp, Category.assoc, ← cyclicTotalHomologyPeriodicTransition_succ,
-      cyclicTotalHomologyPeriodicTransition_comp]
+      cyclicCohomology.periodicTransition_succ, Category.assoc,
+      periodicity_comp_homologyMap_cyclicCochainComplexToTotal_add_two_mul, Linear.comp_smul,
+      smul_smul, algebraMap_periodicComparisonScalar_succ_mul_neg, ← Linear.smul_comp,
+      ← Category.assoc, Linear.smul_comp, ih, Linear.smul_comp, Category.assoc,
+      ← cyclicTotalHomologyPeriodicTransition_succ, cyclicTotalHomologyPeriodicTransition_comp]
 
 namespace periodicCyclicCohomology
 
@@ -566,35 +580,31 @@ theorem exists_fromCyclicCohomology_eq {n : ℕ} (x : periodicCyclicCohomology R
     ∃ k y, fromCyclicCohomology R A M n k y = x := by
   obtain ⟨k, z, rfl⟩ := exists_ι_eq x
   obtain ⟨y, rfl⟩ := (bijective_homologyMap_cyclicCochainComplexToTotal R A M (n + 2 * k)).2 z
-  obtain ⟨u, hu⟩ := isUnit_algebraMap_periodicComparisonScalar (R := R) n k
-  refine ⟨k, (↑u⁻¹ : R) • y, ?_⟩
+  have hu := isUnit_algebraMap_periodicComparisonScalar (R := R) n k
+  refine ⟨k, (↑hu.unit⁻¹ : R) • y, ?_⟩
   simp only [fromCyclicCohomology, map_smul, ModuleCat.hom_smul, ModuleCat.hom_comp,
-    LinearMap.smul_apply, LinearMap.comp_apply, ← hu, smul_smul, Units.inv_mul, one_smul]
+    LinearMap.smul_apply, LinearMap.comp_apply, smul_smul, hu.val_inv_mul, one_smul]
 
 /-- A cyclic cohomology class in `HC^(n+2k)(A; M)` has zero image in `HP^n(A; M)` if and only if
 some iterate of Connes' periodicity operator `S` kills it. -/
 theorem fromCyclicCohomology_eq_zero_iff {n k : ℕ} (y : cyclicCohomology R A M (n + 2 * k)) :
     fromCyclicCohomology R A M n k y = 0 ↔
       ∃ (j : ℕ) (h : k ≤ j), cyclicCohomology.periodicTransition R A M n h y = 0 := by
-  obtain ⟨uk, huk⟩ := isUnit_algebraMap_periodicComparisonScalar (R := R) n k
   constructor
   · intro hy
     have hι : ι R A M n k
-        (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (n + 2 * k) y) = 0 := by
-      have h1 := congrArg ((↑uk⁻¹ : R) • ·) hy
-      simpa only [fromCyclicCohomology, ModuleCat.hom_smul, ModuleCat.hom_comp,
-        LinearMap.smul_apply, LinearMap.comp_apply, ← huk, smul_smul, Units.inv_mul, one_smul,
-        smul_zero] using h1
+        (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (n + 2 * k) y) = 0 :=
+      (isUnit_algebraMap_periodicComparisonScalar (R := R) n k).smul_eq_zero.1
+        (by simpa only [fromCyclicCohomology, ModuleCat.hom_smul, ModuleCat.hom_comp,
+          LinearMap.smul_apply, LinearMap.comp_apply] using hy)
     obtain ⟨j, hkj, hj⟩ := (ι_eq_zero_iff _).1 hι
-    obtain ⟨uj, huj⟩ := isUnit_algebraMap_periodicComparisonScalar (R := R) n j
     refine ⟨j, hkj, (bijective_homologyMap_cyclicCochainComplexToTotal R A M (n + 2 * j)).1 ?_⟩
     rw [map_zero]
     have heq := congrArg (fun f : cyclicCohomology R A M (n + 2 * k) ⟶ _ ↦ f y)
       (cyclicCohomology.smul_periodicTransition_comp_homologyMap R A M n hkj)
     simp only [ModuleCat.hom_smul, ModuleCat.hom_comp, LinearMap.smul_apply, LinearMap.comp_apply,
       hj, smul_zero] at heq
-    have h2 := congrArg ((↑uj⁻¹ : R) • ·) heq
-    simpa only [← huj, smul_smul, Units.inv_mul, one_smul, smul_zero] using h2
+    exact (isUnit_algebraMap_periodicComparisonScalar (R := R) n j).smul_eq_zero.1 heq
   · rintro ⟨j, hkj, hj⟩
     rw [← periodicTransition_fromCyclicCohomology_apply hkj, hj, map_zero]
 
@@ -605,11 +615,9 @@ theorem hom_ext_fromCyclicCohomology {n : ℕ} {P : ModuleCat R}
     f = g := by
   refine hom_ext fun k ↦ ?_
   have := quasiIso_cyclicCochainComplexToTotal R A M
-  obtain ⟨u, hu⟩ := isUnit_algebraMap_periodicComparisonScalar (R := R) n k
   rw [← cancel_epi (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (n + 2 * k))]
-  have hk := congrArg ((↑u⁻¹ : R) • ·) (h k)
-  simpa only [fromCyclicCohomology, Linear.smul_comp, Category.assoc, ← hu, smul_smul,
-    Units.inv_mul, one_smul] using hk
+  exact (isUnit_algebraMap_periodicComparisonScalar (R := R) n k).smul_left_cancel.1
+    (by simpa only [fromCyclicCohomology, Linear.smul_comp, Category.assoc] using h k)
 
 /-- **Universal property of `HP^n(A; M)` along Connes' operator `S`:** a family of morphisms out of
 `HC^(n+2k)(A; M)` compatible with `cyclicCohomology.periodicity` factors uniquely through
@@ -623,29 +631,11 @@ def descCyclicCohomology {n : ℕ} {P : ModuleCat R}
     (fun k ↦ algebraMap ℚ R (periodicComparisonScalar n k)⁻¹ •
       (inv (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (n + 2 * k)) ≫ g k))
     fun k ↦ ?_
-  have hc :
-      algebraMap ℚ R (periodicComparisonScalar n (k + 1))⁻¹ =
-        algebraMap ℚ R (periodicComparisonScalar n k)⁻¹ *
-          -((((n + 2 * k : ℕ) : R) + 1) * (((n + 2 * k : ℕ) : R) + 2)) := by
-    have hq : (periodicComparisonScalar n (k + 1))⁻¹ =
-        (periodicComparisonScalar n k)⁻¹ * (-((n + 2 * k + 1 : ℚ) * (n + 2 * k + 2 : ℚ))) := by
-      rw [periodicComparisonScalar_succ, mul_inv, inv_inv]
-    have hm := congrArg (algebraMap ℚ R) hq
-    simp only [map_mul, map_add, map_neg, map_one, map_ofNat, map_natCast] at hm
-    rw [hm]
-    push_cast
-    ring
-  -- Expose the definitional equality `n + 2 * (k + 1) = (n + 2 * k) + 2` for `rw`.
-  have hcomp :
-      cyclicCohomology.periodicity R A M (n + 2 * k) ≫
-          HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (n + 2 * (k + 1)) =
-        -((((n + 2 * k : ℕ) : R) + 1) * (((n + 2 * k : ℕ) : R) + 2)) •
-          (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (n + 2 * k) ≫
-            cyclicTotalHomologyPeriodicity R A M (n + 2 * k)) :=
-    cyclicCohomology.periodicity_comp_homologyMap_cyclicCochainComplexToTotal R A M (n + 2 * k)
   rw [← cancel_epi (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) (n + 2 * k)),
-    Linear.comp_smul, Linear.comp_smul, hc, mul_smul, ← Category.assoc, ← Linear.smul_comp,
-    ← hcomp, Category.assoc, IsIso.hom_inv_id_assoc, hg, Linear.comp_smul, IsIso.hom_inv_id_assoc]
+    Linear.comp_smul, Linear.comp_smul, algebraMap_periodicComparisonScalar_succ_inv, mul_smul,
+    ← Category.assoc, ← Linear.smul_comp,
+    ← periodicity_comp_homologyMap_cyclicCochainComplexToTotal_add_two_mul,
+    Category.assoc, IsIso.hom_inv_id_assoc, hg, Linear.comp_smul, IsIso.hom_inv_id_assoc]
 
 /-- The map out of `HP^n(A; M)` induced by a compatible family restricts to the given family on each
 cyclic cohomology stage. -/
@@ -686,6 +676,7 @@ theorem cyclicCohomology.periodicTransition_zero_mkPiRing (m : ℕ) (x : M) :
     have h0 : Nat.zero_le 0 = le_refl 0 := rfl
     rw [h0, cyclicCohomology.periodicTransition_self, ModuleCat.id_apply, Nat.factorial_zero,
       Nat.cast_one, one_smul]
+    -- `0 + 2 * 0` is definitionally `0` (and the `Even` proofs match by proof irrelevance).
     rfl
   | succ k ih =>
     rw [show Nat.zero_le (k + 1) = (Nat.zero_le k).trans (Nat.le_add_right k 1) from rfl,

@@ -496,21 +496,17 @@ theorem cyclicCohomology.exact_connesB_periodicity (m : ℕ) :
     Function.Exact (hochschildCohomology.connesB R A M m)
       (cyclicCohomology.periodicity R A M m) := by
   have hbij₀ := bijective_homologyMap_cyclicCochainComplexToTotal R A M m
-  obtain ⟨u, hu⟩ := ((isUnit_natCast_add_one (K := R) m).mul
-    (isUnit_natCast_add_of_ne_zero (K := R) m two_ne_zero)).neg
-  rw [Nat.cast_ofNat] at hu
+  have hu : IsUnit ((m + 1 : R) * (m + 2 : R)) :=
+    (isUnit_natCast_add_one (K := R) m).mul
+      (isUnit_natCast_add_of_ne_zero (K := R) m two_ne_zero)
   refine fun c ↦ ⟨fun hc ↦ ?_, ?_⟩
   · have hc' : cyclicTotalHomologyPeriodicity R A M m
         (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) m c) = 0 := by
-      have h0 : -((m + 1 : R) * (m + 2 : R)) •
-          cyclicTotalHomologyPeriodicity R A M m
-            (HomologicalComplex.homologyMap (cyclicCochainComplexToTotal R A M) m c) = 0 := by
-        have heq := congrArg (fun f : cyclicCohomology R A M m ⟶ _ ↦ f c)
-          (cyclicCohomology.periodicity_comp_homologyMap_cyclicCochainComplexToTotal R A M m)
-        simpa only [ModuleCat.comp_apply, ModuleCat.hom_smul, LinearMap.smul_apply, hc,
-          map_zero] using heq.symm
-      have h1 := congrArg ((↑u⁻¹ : R) • ·) h0
-      rwa [← hu, smul_smul, Units.inv_mul, one_smul, smul_zero] at h1
+      refine hu.smul_eq_zero.1 (neg_eq_zero.1 ?_)
+      have heq := cyclicCohomology.periodicity_comp_homologyMap_cyclicCochainComplexToTotal_apply
+        R A M m c
+      rw [hc, map_zero] at heq
+      exact heq.symm
     obtain ⟨b, hb⟩ :=
       (exact_cyclicTotalHomologyConnesB_cyclicTotalHomologyPeriodicity m _).1 hc'
     refine ⟨b, hbij₀.1 ?_⟩
@@ -542,4 +538,3 @@ end Rational
 end Exactness
 
 end TauCeti
-

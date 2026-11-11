@@ -10,7 +10,6 @@ public import TauCeti.RingTheory.CyclicCohomology.RowExactness
 import Mathlib.Algebra.Module.BigOperators
 import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.Algebra.BigOperators.AlternatingSum
-import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
 # Connes' periodicity operator on cyclic cochains and cyclic cohomology
@@ -161,6 +160,118 @@ theorem cochainPeriodicity_mkPiRing {S : Type u} {M : Type*} [CommSemiring S] [A
 
 section Simplicial
 
+/-- Coefficient of `δᵢ` in `cupOneLeft`, extended by zero on the top two indices. -/
+private def cupOneWeight (n : ℕ) (i : Fin (n + 3)) : ℤ :=
+  if (i : ℕ) ≤ n + 1 then (n + 1 : ℤ) - i else 0
+
+section CupOneSum
+
+variable {M : Type*} [AddCommGroup M] {n : ℕ}
+
+/-- Reindexing `{is | ¬ (is.1 : ℕ) ≤ is.2}` onto `{is | (is.1 : ℕ) ≤ is.2}` via
+`(i, s) ↦ (s.succ, i.castLT _)` folds the complementary double-face terms under the simplicial
+identity `F s.succ i = F i.castSucc s`. -/
+private theorem sum_compl_le_smul_eq_sum_le {F : Fin (n + 3) → Fin (n + 2) → M}
+    (hF : ∀ i s : Fin (n + 2), i ≤ s → F s.succ i = F i.castSucc s)
+    (w : Fin (n + 3) → ℤ) :
+    (∑ x ∈ ({is : Fin (n + 3) × Fin (n + 2) | (is.1 : ℕ) ≤ is.2} : Finset _)ᶜ,
+        ((-(x.2 : ℤ) * (-1 : ℤ) ^ ((x.1 : ℕ) + x.2) +
+          w x.1 * (-1 : ℤ) ^ ((x.1 : ℕ) + x.2))) • F x.1 x.2) =
+      ∑ x ∈ ({is : Fin (n + 3) × Fin (n + 2) | (is.1 : ℕ) ≤ is.2} : Finset _),
+        (((x.1 : ℤ) - w x.2.succ) * (-1 : ℤ) ^ ((x.1 : ℕ) + x.2)) • F x.1 x.2 := by
+  let S : Finset (Fin (n + 3) × Fin (n + 2)) := {is | (is.1 : ℕ) ≤ is.2}
+  change (∑ x ∈ Sᶜ, _) = ∑ x ∈ S, _
+  refine (Finset.sum_bij (fun x hx ↦ (x.2.succ, x.1.castLT
+      (lt_of_le_of_lt (Finset.mem_filter.1 hx).2 x.2.2))) ?_ ?_ ?_ ?_).symm
+  · intro x hx
+    simp only [S, Finset.compl_filter, Finset.mem_filter_univ, Fin.val_succ,
+      Fin.val_castLT] at hx ⊢
+    omega
+  · rintro ⟨i, s⟩ _ ⟨i', s'⟩ _ h
+    simp only [Prod.mk.injEq, Fin.succ_inj] at h
+    ext
+    · simpa using congrArg Fin.val h.2
+    · exact congrArg Fin.val h.1
+  · rintro ⟨i', s'⟩ h
+    simp only [S, Finset.compl_filter, Finset.mem_filter_univ, not_le] at h
+    refine ⟨(s'.castSucc, i'.pred fun hi ↦ by simp [hi] at h), ?_, ?_⟩
+    · simp only [S, Finset.mem_filter_univ, Fin.val_castSucc, Fin.val_pred]
+      omega
+    · simp
+  · rintro ⟨i, s⟩ hx
+    have his : (i : ℕ) ≤ s := (Finset.mem_filter.1 hx).2
+    dsimp only
+    have hi' : (i.castLT (lt_of_le_of_lt his s.2)).castSucc = i := by ext; rfl
+    rw [hF _ _ (by simpa [Fin.le_def] using his), hi', Fin.val_succ, Fin.val_castLT]
+    congr 1
+    have hpow : (-1 : ℤ) ^ ((s : ℕ) + 1 + i) = -((-1 : ℤ) ^ ((i : ℕ) + s)) := by
+      rw [show (s : ℕ) + 1 + i = ((i : ℕ) + s) + 1 by omega, pow_succ]
+      ring
+    rw [hpow]
+    ring
+
+/-- Evaluating the combined weight on `{is | (is.1 : ℕ) ≤ is.2}` cancels all coefficients except
+weight `1` for `(s : ℕ) < n + 1` and weight `0` at `s = Fin.last (n + 1)`, matching the double sum
+in `cochainPeriodicity`. -/
+private theorem sum_le_cupOneWeight_smul_eq {F : Fin (n + 3) → Fin (n + 2) → M}
+    (hF : ∀ i s : Fin (n + 2), i ≤ s → F s.succ i = F i.castSucc s) :
+    (∑ x ∈ ({is : Fin (n + 3) × Fin (n + 2) | (is.1 : ℕ) ≤ is.2} : Finset _),
+        (((-(x.2 : ℤ) * (-1 : ℤ) ^ ((x.1 : ℕ) + x.2) +
+            cupOneWeight n x.1 * (-1 : ℤ) ^ ((x.1 : ℕ) + x.2))) • F x.1 x.2 +
+          (((x.1 : ℤ) - cupOneWeight n x.2.succ) * (-1 : ℤ) ^ ((x.1 : ℕ) + x.2)) • F x.1 x.2)) =
+      ∑ j : Fin (n + 1), ∑ r ∈ Finset.Iic j,
+        (-1 : ℤ) ^ ((j : ℕ) - r) • F j.succ.castSucc r.castSucc := by
+  let S : Finset (Fin (n + 3) × Fin (n + 2)) := {is | (is.1 : ℕ) ≤ is.2}
+  change (∑ x ∈ S, _) = _
+  trans ∑ s : Fin (n + 2), ∑ i ∈ Finset.univ.filter (fun i : Fin (n + 3) ↦ (i : ℕ) ≤ s),
+      (((n + 1 : ℤ) - s - cupOneWeight n s.succ) * (-1 : ℤ) ^ ((i : ℕ) + s)) • F i s
+  · rw [show S = (Finset.univ ×ˢ Finset.univ).filter (fun x : Fin (n + 3) × Fin (n + 2) ↦
+      (x.1 : ℕ) ≤ x.2) from rfl, Finset.sum_filter, Finset.sum_product_right]
+    refine Finset.sum_congr rfl fun s _ ↦ ?_
+    rw [Finset.sum_filter]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    split_ifs with his
+    · have hi : (i : ℕ) ≤ n + 1 := le_trans his (Nat.le_of_lt_succ s.2)
+      rw [← add_smul]
+      congr 1
+      simp only [cupOneWeight, hi, ↓reduceIte]
+      ring
+    · rfl
+  · rw [Fin.sum_univ_castSucc]
+    have hlast :
+        (((n + 1 : ℤ) - (Fin.last (n + 1) : ℕ) - cupOneWeight n (Fin.last (n + 1)).succ)) = 0 := by
+      simp [cupOneWeight]
+    simp only [hlast, zero_mul, zero_smul, Finset.sum_const_zero, add_zero]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    have hwj : ((n + 1 : ℤ) - (j.castSucc : ℕ) - cupOneWeight n j.castSucc.succ) = 1 := by
+      have hj : (j : ℕ) + 1 ≤ n + 1 := Nat.succ_le_of_lt j.2
+      simp only [cupOneWeight, Fin.val_succ, Fin.val_castSucc, hj, ↓reduceIte]
+      omega
+    rw [hwj]
+    refine Finset.sum_bij (fun i hi ↦ ⟨i, lt_of_le_of_lt (Finset.mem_filter.1 hi).2 j.2⟩)
+      ?_ ?_ ?_ ?_
+    · intro i hi
+      exact Finset.mem_Iic.2 (Fin.le_def.2 (Finset.mem_filter.1 hi).2)
+    · intro i₁ _ i₂ _ h
+      exact Fin.ext (congrArg (Fin.val (n := n + 1)) h)
+    · intro r hr
+      exact ⟨r.castSucc.castSucc, Finset.mem_filter.2 ⟨Finset.mem_univ _, Fin.le_def.1
+        (Finset.mem_Iic.1 hr)⟩, Fin.ext rfl⟩
+    · intro i hi
+      have hij : (i : ℕ) ≤ j := (Finset.mem_filter.1 hi).2
+      dsimp only
+      have hjs : j.castSucc.succ = j.succ.castSucc := Fin.ext (by simp)
+      have hface := hF ⟨i, lt_of_le_of_lt hij (Nat.lt_succ_of_lt j.2)⟩ j.castSucc hij
+      have hi_eq' : (⟨(i : ℕ), lt_of_le_of_lt hij (Nat.lt_succ_of_lt j.2)⟩ : Fin (n + 2)).castSucc =
+          i := Fin.ext rfl
+      rw [hi_eq'] at hface
+      rw [one_mul, ← hface, hjs]
+      congr 1
+      rw [Fin.val_castSucc, show (i : ℕ) + j = 2 * i + ((j : ℕ) - i) by omega, pow_add, pow_mul,
+        neg_one_sq, one_pow, one_mul]
+
+end CupOneSum
+
 section Semigroup
 
 variable {R : Type*} {A : Type u} {M : Type*} [Semiring R] [NonUnitalSemiring A] [Module R A]
@@ -193,18 +304,20 @@ private theorem hochschildCoboundary_cupOneSelf_add
   set F : Fin (n + 3) → Fin (n + 2) → M := fun i s ↦ φ (hochschildFace s (hochschildFace i a))
   have hF (i s : Fin (n + 2)) (his : i ≤ s) : F s.succ i = F i.castSucc s := by
     simp only [F, hochschildFace_hochschildFace his]
-  set w : Fin (n + 3) → ℤ := fun i ↦ if (i : ℕ) ≤ n + 1 then (n + 1 : ℤ) - i else 0
+  -- Stage 1: expand `cupOneLeft (b φ)` and `b (cupOneSelf φ)` into double sums over `(i, s)`.
   have hleft : cupOneLeft n (hochschildCoboundary R A M n φ) a =
-      ∑ i : Fin (n + 3), ∑ s : Fin (n + 2), (w i * (-1 : ℤ) ^ ((i : ℕ) + s)) • F i s := by
+      ∑ i : Fin (n + 3), ∑ s : Fin (n + 2),
+        (cupOneWeight n i * (-1 : ℤ) ^ ((i : ℕ) + s)) • F i s := by
     rw [Fin.sum_univ_castSucc, Fin.sum_univ_castSucc]
-    have hlast₁ : w (Fin.last (n + 2)) = 0 := by simp [w]
-    have hlast₂ : w (Fin.last (n + 1)).castSucc = 0 := by simp [w]
+    have hlast₁ : cupOneWeight n (Fin.last (n + 2)) = 0 := by simp [cupOneWeight]
+    have hlast₂ : cupOneWeight n (Fin.last (n + 1)).castSucc = 0 := by simp [cupOneWeight]
     simp only [hlast₁, hlast₂, zero_mul, zero_smul, Finset.sum_const_zero, add_zero]
     rw [cupOneLeft, LinearMap.sum_apply, sum_apply]
     refine Finset.sum_congr rfl fun r _ ↦ ?_
     have hr : (r : ℕ) ≤ n + 1 := by omega
     simp only [LinearMap.smul_apply, smul_apply, hochschildCoface_apply,
-      hochschildCoboundary_apply, Finset.smul_sum, w, Fin.val_castSucc, hr, ↓reduceIte, F]
+      hochschildCoboundary_apply, Finset.smul_sum, cupOneWeight, Fin.val_castSucc, hr, ↓reduceIte,
+      F]
     refine Finset.sum_congr rfl fun s _ ↦ ?_
     rw [smul_smul, smul_smul, pow_add]
     congr 1
@@ -220,91 +333,16 @@ private theorem hochschildCoboundary_cupOneSelf_add
     rw [smul_smul, smul_smul, ← neg_smul, pow_add]
     congr 1
     ring
+  -- Stage 2: fold `i > s` onto `i ≤ s` using the simplicial identity `F s.succ i = F i.castSucc s`.
   rw [add_apply, hself, hleft, ← Finset.sum_add_distrib]
   simp_rw [← Finset.sum_add_distrib, ← add_smul]
   simp only [← Finset.sum_product']
-  let S : Finset (Fin (n + 3) × Fin (n + 2)) := {is | (is.1 : ℕ) ≤ is.2}
-  rw [Finset.univ_product_univ, ← Finset.sum_add_sum_compl S]
-  have hcompl :
-      (∑ x ∈ Sᶜ, ((-(x.2 : ℤ) * (-1 : ℤ) ^ ((x.1 : ℕ) + x.2) +
-          w x.1 * (-1 : ℤ) ^ ((x.1 : ℕ) + x.2))) • F x.1 x.2) =
-        ∑ x ∈ S, (((x.1 : ℤ) - w x.2.succ) * (-1 : ℤ) ^ ((x.1 : ℕ) + x.2)) • F x.1 x.2 := by
-    refine (Finset.sum_bij (fun x hx ↦ (x.2.succ, x.1.castLT
-        (lt_of_le_of_lt (Finset.mem_filter.1 hx).2 x.2.2))) ?_ ?_ ?_ ?_).symm
-    · intro x hx
-      simp only [S, Finset.compl_filter, Finset.mem_filter_univ, Fin.val_succ,
-        Fin.val_castLT] at hx ⊢
-      omega
-    · rintro ⟨i, s⟩ _ ⟨i', s'⟩ _ h
-      simp only [Prod.mk.injEq, Fin.succ_inj] at h
-      ext
-      · simpa using congrArg Fin.val h.2
-      · exact congrArg Fin.val h.1
-    · rintro ⟨i', s'⟩ h
-      simp only [S, Finset.compl_filter, Finset.mem_filter_univ, not_le] at h
-      refine ⟨(s'.castSucc, i'.pred fun hi ↦ by simp [hi] at h), ?_, ?_⟩
-      · simp only [S, Finset.mem_filter_univ, Fin.val_castSucc, Fin.val_pred]
-        omega
-      · simp
-    · rintro ⟨i, s⟩ hx
-      have his : (i : ℕ) ≤ s := (Finset.mem_filter.1 hx).2
-      dsimp only
-      have hi' : (i.castLT (lt_of_le_of_lt his s.2)).castSucc = i := by ext; rfl
-      rw [hF _ _ (by simpa [Fin.le_def] using his), hi', Fin.val_succ, Fin.val_castLT]
-      congr 1
-      have hpow : (-1 : ℤ) ^ ((s : ℕ) + 1 + i) = -((-1 : ℤ) ^ ((i : ℕ) + s)) := by
-        rw [show (s : ℕ) + 1 + i = ((i : ℕ) + s) + 1 by omega, pow_succ]
-        ring
-      rw [hpow]
-      ring
-  rw [hcompl, ← Finset.sum_add_distrib]
-  -- Evaluate the combined weight on `S`, splitting off `s = Fin.last (n + 1)` where it vanishes.
+  rw [Finset.univ_product_univ,
+    ← Finset.sum_add_sum_compl ({is : Fin (n + 3) × Fin (n + 2) | (is.1 : ℕ) ≤ is.2} : Finset _),
+    sum_compl_le_smul_eq_sum_le hF (cupOneWeight n), ← Finset.sum_add_distrib]
+  -- Stage 3: collect the combined weights (`1` for `s < n + 1` and `0` at `s = n + 1`).
   rw [cochainPeriodicity_apply]
-  trans ∑ s : Fin (n + 2), ∑ i ∈ Finset.univ.filter (fun i : Fin (n + 3) ↦ (i : ℕ) ≤ s),
-      (((n + 1 : ℤ) - s - w s.succ) * (-1 : ℤ) ^ ((i : ℕ) + s)) • F i s
-  · rw [show S = (Finset.univ ×ˢ Finset.univ).filter (fun x : Fin (n + 3) × Fin (n + 2) ↦
-      (x.1 : ℕ) ≤ x.2) from rfl, Finset.sum_filter, Finset.sum_product_right]
-    refine Finset.sum_congr rfl fun s _ ↦ ?_
-    rw [Finset.sum_filter]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    split_ifs with his
-    · have hi : (i : ℕ) ≤ n + 1 := le_trans his (Nat.le_of_lt_succ s.2)
-      rw [← add_smul]
-      congr 1
-      simp only [w, hi, ↓reduceIte]
-      ring
-    · rfl
-  · rw [Fin.sum_univ_castSucc]
-    have hlast : (((n + 1 : ℤ) - (Fin.last (n + 1) : ℕ) - w (Fin.last (n + 1)).succ)) = 0 := by
-      simp [w]
-    simp only [hlast, zero_mul, zero_smul, Finset.sum_const_zero, add_zero]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    have hwj : ((n + 1 : ℤ) - (j.castSucc : ℕ) - w j.castSucc.succ) = 1 := by
-      have hj : (j : ℕ) + 1 ≤ n + 1 := Nat.succ_le_of_lt j.2
-      simp only [w, Fin.val_succ, Fin.val_castSucc, hj, ↓reduceIte]
-      omega
-    rw [hwj]
-    refine Finset.sum_bij (fun i hi ↦ ⟨i, lt_of_le_of_lt (Finset.mem_filter.1 hi).2 j.2⟩)
-      ?_ ?_ ?_ ?_
-    · intro i hi
-      exact Finset.mem_Iic.2 (Fin.le_def.2 (Finset.mem_filter.1 hi).2)
-    · intro i₁ _ i₂ _ h
-      exact Fin.ext (congrArg (Fin.val (n := n + 1)) h)
-    · intro r hr
-      exact ⟨r.castSucc.castSucc, Finset.mem_filter.2 ⟨Finset.mem_univ _, Fin.le_def.1
-        (Finset.mem_Iic.1 hr)⟩, Fin.ext rfl⟩
-    · intro i hi
-      have hij : (i : ℕ) ≤ j := (Finset.mem_filter.1 hi).2
-      dsimp only
-      have hjs : j.castSucc.succ = j.succ.castSucc := Fin.ext (by simp)
-      have hface := hF ⟨i, lt_of_le_of_lt hij (Nat.lt_succ_of_lt j.2)⟩ j.castSucc hij
-      have hi_eq' : (⟨(i : ℕ), lt_of_le_of_lt hij (Nat.lt_succ_of_lt j.2)⟩ : Fin (n + 2)).castSucc =
-          i := Fin.ext rfl
-      rw [hi_eq'] at hface
-      rw [one_mul, ← hface, hjs]
-      congr 1
-      rw [Fin.val_castSucc, show (i : ℕ) + j = 2 * i + ((j : ℕ) - i) by omega, pow_add, pow_mul,
-        neg_one_sq, one_pow, one_mul]
+  exact sum_le_cupOneWeight_smul_eq hF
 
 end Semigroup
 
@@ -522,8 +560,8 @@ theorem connesS_eq_cyclicCocyclesPeriodicity [Invertible (n + 3 : R)]
   ext1
   rw [coe_connesS_apply, cyclicNorm_apply_of_mem_cyclicCochains
     (cochainPeriodicity_mem_cyclicCochains_of_mem_cyclicCocycles φ.2),
-    show ((n + 2 : ℕ) + 1 : R) = (n + 3 : R) by push_cast; ring, invOf_smul_smul]
-  rfl
+    show ((n + 2 : ℕ) + 1 : R) = (n + 3 : R) by push_cast; ring, invOf_smul_smul,
+    coe_cyclicCocyclesPeriodicity_apply]
 
 /-- **Connes' Proposition 12**: `(n + 3) • b (S ψ) = (n + 1) • S (b ψ)` on cyclic `n`-cochains. -/
 theorem smul_cyclicHochschildCoboundary_connesS [Invertible (n + 3 : R)]
@@ -557,15 +595,15 @@ theorem cyclicCocyclesPeriodicity_mem_cyclicCoboundaries
     exact zero_mem _
   | succ m =>
     obtain ⟨ψ, hψ⟩ := (mem_cyclicCoboundaries_succ_iff R A M).1 hφ
-    obtain ⟨u, hu⟩ := hR.resolve_left m.succ_ne_zero
-    rw [Nat.cast_add, Nat.cast_one] at hu
+    have hm : IsUnit ((m + 1 : R)) := by
+      simpa [Nat.cast_add, Nat.cast_one] using hR.resolve_left m.succ_ne_zero
     rw [mem_cyclicCoboundaries_succ_iff]
-    refine ⟨(↑u⁻¹ : R) • ⟨cyclicNorm R A M (m + 2) (cochainPeriodicity R A M m ψ),
+    refine ⟨(↑hm.unit⁻¹ : R) • ⟨cyclicNorm R A M (m + 2) (cochainPeriodicity R A M m ψ),
       cyclicNorm_mem_cyclicCochains _⟩, ?_⟩
     ext1
     rw [map_smul, Submodule.coe_smul_of_tower, coe_cyclicHochschildCoboundary_apply,
-      Subtype.coe_mk, hochschildCoboundary_cyclicNorm_cochainPeriodicity, ← hu,
-      smul_smul, Units.inv_mul, one_smul, coe_cyclicCocyclesPeriodicity_apply, ← hψ,
+      Subtype.coe_mk, hochschildCoboundary_cyclicNorm_cochainPeriodicity,
+      smul_smul, hm.val_inv_mul, one_smul, coe_cyclicCocyclesPeriodicity_apply, ← hψ,
       coe_cyclicHochschildCoboundary_apply]
 
 end RowHomotopy

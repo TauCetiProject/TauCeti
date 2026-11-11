@@ -508,6 +508,21 @@ private theorem idempotent_dgAlgebra_identities (hd₂ : IsDGAlgebra 𝒜₂ d�
     exact h1.symm
   exact ⟨hEE, hEDE, hEDDE⟩
 
+omit [GradedAlgebra 𝒜₁] [GradedAlgebra 𝒜₂] [SMulCommClass R B B] [IsScalarTower R B B] in
+/-- In degree zero, `cochainPeriodicity` applied to `cycleForm d₁ ρ₁ 0` evaluates to the triple
+product `ρ₁(a₀) ρ₁(a₁) ρ₁(a₂)`. -/
+private theorem cochainPeriodicity_cycleForm_zero (a : Fin 3 → A) :
+    cochainPeriodicity R A Ω₁ 0 (cycleForm d₁ ρ₁ 0) a = ρ₁ (a 0) * ρ₁ (a 1) * ρ₁ (a 2) := by
+  rw [cochainPeriodicity_apply, Fin.sum_univ_one]
+  have hIic0 : Finset.Iic (0 : Fin 1) = {0} := Finset.ext fun r ↦ by simp [Fin.eq_zero r]
+  rw [hIic0, Finset.sum_singleton]
+  simp only [Fin.val_zero, Nat.sub_zero, pow_zero, one_smul, cycleForm_zero_apply]
+  have hc : hochschildFace (0 : Fin 1).castSucc (hochschildFace (0 : Fin 1).succ.castSucc a) 0 =
+      a 0 * (a 1 * a 2) := by
+    rw [hochschildFace_castSucc, hochschildFace_castSucc]
+    rfl
+  rw [hc, map_mul, map_mul, mul_assoc]
+
 /-- Three-term expansion modulo right degree `> 2` of `cycleForm` on `(a₀ ⊗ e, …, aₙ₊₂ ⊗ e)` for
 an idempotent `e : B`. -/
 private theorem cycleForm_gradedTensorHomOfMemZero_two_sub_mem (hd₁ : IsDGAlgebra 𝒜₁ d₁)
@@ -527,6 +542,13 @@ private theorem cycleForm_gradedTensorHomOfMemZero_two_sub_mem (hd₁ : IsDGAlge
   have hD : D ∈ 𝒜₂ 1 := by simpa using hd₂.map_mem hE
   have hED : E * D ∈ 𝒜₂ 1 := by simpa using SetLike.mul_mem_graded hE hD
   have hEDD : E * D * D ∈ 𝒜₂ 2 := by simpa using SetLike.mul_mem_graded hED hD
+  have hmul_E_E (u : Ω₁) (c : A) :
+      ((u ᵍ⊗ₜ[R] E) * (d₁ (ρ₁ c) ᵍ⊗ₜ[R] E) : 𝒜₁ ᵍ⊗[R] 𝒜₂) = (u * d₁ (ρ₁ c)) ᵍ⊗ₜ[R] E := by
+    rw [GradedTensorProduct.tmul_zero_coe_mul_coe_tmul 𝒜₁ 𝒜₂ u ⟨E, hE⟩
+      ⟨d₁ (ρ₁ c), hd₁.map_mem (hρ₁ c)⟩ E, hEE]
+  have hmul_E_D (u : Ω₁) (c : A) :
+      ((u ᵍ⊗ₜ[R] E) * (ρ₁ c ᵍ⊗ₜ[R] D) : 𝒜₁ ᵍ⊗[R] 𝒜₂) = (u * ρ₁ c) ᵍ⊗ₜ[R] (E * D) :=
+    GradedTensorProduct.tmul_zero_coe_mul_coe_tmul 𝒜₁ 𝒜₂ u ⟨E, hE⟩ ⟨ρ₁ c, hρ₁ c⟩ D
   have hmul_ED_E (u : Ω₁) (c : A) :
       ((u ᵍ⊗ₜ[R] (E * D)) * (d₁ (ρ₁ c) ᵍ⊗ₜ[R] E) : 𝒜₁ ᵍ⊗[R] 𝒜₂) = 0 := by
     rw [GradedTensorProduct.tmul_coe_mul_coe_tmul 𝒜₁ 𝒜₂ u ⟨E * D, hED⟩
@@ -538,49 +560,28 @@ private theorem cycleForm_gradedTensorHomOfMemZero_two_sub_mem (hd₁ : IsDGAlge
     simp [mul_assoc]
   induction n with
   | zero =>
+    -- Base case `n = 0`: expand `(ρ(a₀ ⊗ e)) d(ρ(a₁ ⊗ e)) d(ρ(a₂ ⊗ e))` directly; `E * D * E = 0`
+    -- kills the `(E * D) * E` cross-term, leaving an exact three-term identity with zero remainder.
     have h0 : Fin.init (Fin.init fun i ↦ a i ⊗ₜ[R] e) 0 = a 0 ⊗ₜ[R] e := rfl
     have h1 : Fin.init (fun i ↦ a i ⊗ₜ[R] e) (Fin.last (0 + 1)) = a 1 ⊗ₜ[R] e := rfl
     have h2 : a (Fin.last (1 + 1)) = a 2 := rfl
-    have ht01 : ((ρ₁ (a 0) ᵍ⊗ₜ[R] E) * (d₁ (ρ₁ (a 1)) ᵍ⊗ₜ[R] E) : 𝒜₁ ᵍ⊗[R] 𝒜₂) =
-        (ρ₁ (a 0) * d₁ (ρ₁ (a 1))) ᵍ⊗ₜ[R] E := by
-      rw [GradedTensorProduct.tmul_zero_coe_mul_coe_tmul 𝒜₁ 𝒜₂ (ρ₁ (a 0)) ⟨E, hE⟩
-        ⟨d₁ (ρ₁ (a 1)), hd₁.map_mem (hρ₁ (a 1))⟩ E, hEE]
-    have ht01' : ((ρ₁ (a 0) ᵍ⊗ₜ[R] E) * (ρ₁ (a 1) ᵍ⊗ₜ[R] D) : 𝒜₁ ᵍ⊗[R] 𝒜₂) =
-        (ρ₁ (a 0) * ρ₁ (a 1)) ᵍ⊗ₜ[R] (E * D) :=
-      GradedTensorProduct.tmul_zero_coe_mul_coe_tmul 𝒜₁ 𝒜₂ (ρ₁ (a 0)) ⟨E, hE⟩ ⟨ρ₁ (a 1), hρ₁ (a 1)⟩
-        D
-    have ht1 : (((ρ₁ (a 0) * d₁ (ρ₁ (a 1))) ᵍ⊗ₜ[R] E) * (d₁ (ρ₁ (a 2)) ᵍ⊗ₜ[R] E) :
-        𝒜₁ ᵍ⊗[R] 𝒜₂) = (ρ₁ (a 0) * d₁ (ρ₁ (a 1)) * d₁ (ρ₁ (a 2))) ᵍ⊗ₜ[R] E := by
-      rw [GradedTensorProduct.tmul_zero_coe_mul_coe_tmul 𝒜₁ 𝒜₂ _ ⟨E, hE⟩
-        ⟨d₁ (ρ₁ (a 2)), hd₁.map_mem (hρ₁ (a 2))⟩ E, hEE]
-    have ht2 : (((ρ₁ (a 0) * d₁ (ρ₁ (a 1))) ᵍ⊗ₜ[R] E) * (ρ₁ (a 2) ᵍ⊗ₜ[R] D) : 𝒜₁ ᵍ⊗[R] 𝒜₂) =
-        (ρ₁ (a 0) * d₁ (ρ₁ (a 1)) * ρ₁ (a 2)) ᵍ⊗ₜ[R] (E * D) :=
-      GradedTensorProduct.tmul_zero_coe_mul_coe_tmul 𝒜₁ 𝒜₂ _ ⟨E, hE⟩ ⟨ρ₁ (a 2), hρ₁ (a 2)⟩ D
     rw [cycleForm_succ_apply, cycleForm_succ_apply, cycleForm_zero_apply, h0, h1, h2]
     simp only [gradedTensorHomOfMemZero_tmul, dgTensorDifferential_tmul_of_mem (hρ₁ (a 1)),
       dgTensorDifferential_tmul_of_mem (hρ₁ (a 2)), Int.negOnePow_zero, one_smul,
       show ρ₂ e = E from rfl, show d₂ E = D from rfl,
-      mul_add, add_mul, ht01, ht01', ht1, ht2, hmul_ED_E, hmul_ED_D, add_zero, ← add_assoc]
+      mul_add, add_mul, hmul_E_E, hmul_E_D, hmul_ED_E, hmul_ED_D, add_zero, ← add_assoc]
     have hform1 : cycleForm d₁ ρ₁ (0 + 1) (Fin.init a) = ρ₁ (a 0) * d₁ (ρ₁ (a 1)) := by
       rw [cycleForm_succ_apply, cycleForm_zero_apply]
       rfl
     have hform2 : cycleForm d₁ ρ₁ (0 + 2) a = ρ₁ (a 0) * d₁ (ρ₁ (a 1)) * d₁ (ρ₁ (a 2)) := by
       rw [cycleForm_succ_apply, hform1]
       rfl
-    have hS0 : cochainPeriodicity R A Ω₁ 0 (cycleForm d₁ ρ₁ 0) a =
-        ρ₁ (a 0) * ρ₁ (a 1) * ρ₁ (a 2) := by
-      rw [cochainPeriodicity_apply, Fin.sum_univ_one]
-      have hIic0 : Finset.Iic (0 : Fin 1) = {0} := Finset.ext fun r ↦ by simp [Fin.eq_zero r]
-      rw [hIic0, Finset.sum_singleton]
-      simp only [Fin.val_zero, Nat.sub_zero, pow_zero, one_smul, cycleForm_zero_apply]
-      have hc : hochschildFace (0 : Fin 1).castSucc (hochschildFace (0 : Fin 1).succ.castSucc a) 0 =
-          a 0 * (a 1 * a 2) := by
-        rw [hochschildFace_castSucc, hochschildFace_castSucc]
-        rfl
-      rw [hc, map_mul, map_mul, mul_assoc]
-    rw [hform2, hform1, hS0, sub_self]
+    rw [hform2, hform1, cochainPeriodicity_cycleForm_zero, sub_self]
     exact zero_mem _
   | succ n ih =>
+    -- Inductive step: multiply the three-term approximation `Y` of `Fin.init a` by
+    -- `d₁(ρ₁ c) ⊗ E + ρ₁ c ⊗ D`; `E * D * D * E = E * D * D` feeds into
+    -- `cochainPeriodicity_cycleForm_succ`, while `(E * D * D) * D` lands in right degree `3 > 2`.
     set c := a (Fin.last (n + 3))
     set X := cycleForm (dgTensorDifferential 𝒜₁ 𝒜₂ d₁ d₂)
       (gradedTensorHomOfMemZero ρ₁ ρ₂ hρ₁ hρ₂) (n + 2) fun i ↦ Fin.init a i ⊗ₜ[R] e
@@ -592,13 +593,6 @@ private theorem cycleForm_gradedTensorHomOfMemZero_two_sub_mem (hd₁ : IsDGAlge
     have hinit : Fin.init (fun i ↦ a i ⊗ₜ[R] e) = fun i ↦ Fin.init a i ⊗ₜ[R] e := rfl
     rw [cycleForm_succ_apply, hinit, gradedTensorHomOfMemZero_tmul,
       dgTensorDifferential_tmul_of_mem (hρ₁ c), Int.negOnePow_zero, one_smul]
-    have hm1 : ((ω₂ ᵍ⊗ₜ[R] E) * (d₁ (ρ₁ c) ᵍ⊗ₜ[R] E) : 𝒜₁ ᵍ⊗[R] 𝒜₂) =
-        (ω₂ * d₁ (ρ₁ c)) ᵍ⊗ₜ[R] E := by
-      rw [GradedTensorProduct.tmul_zero_coe_mul_coe_tmul 𝒜₁ 𝒜₂ ω₂ ⟨E, hE⟩
-        ⟨d₁ (ρ₁ c), hd₁.map_mem (hρ₁ c)⟩ E, hEE]
-    have hm2 : ((ω₂ ᵍ⊗ₜ[R] E) * (ρ₁ c ᵍ⊗ₜ[R] D) : 𝒜₁ ᵍ⊗[R] 𝒜₂) =
-        (ω₂ * ρ₁ c) ᵍ⊗ₜ[R] (E * D) :=
-      GradedTensorProduct.tmul_zero_coe_mul_coe_tmul 𝒜₁ 𝒜₂ ω₂ ⟨E, hE⟩ ⟨ρ₁ c, hρ₁ c⟩ D
     have hm3 : ((ω₀ ᵍ⊗ₜ[R] (E * D * D)) * (d₁ (ρ₁ c) ᵍ⊗ₜ[R] E) : 𝒜₁ ᵍ⊗[R] 𝒜₂) =
         (ω₀ * d₁ (ρ₁ c)) ᵍ⊗ₜ[R] (E * D * D) := by
       rw [GradedTensorProduct.tmul_coe_mul_coe_tmul 𝒜₁ 𝒜₂ ω₀ ⟨E * D * D, hEDD⟩
@@ -618,7 +612,7 @@ private theorem cycleForm_gradedTensorHomOfMemZero_two_sub_mem (hd₁ : IsDGAlge
       have hω1c : ω₁ * ρ₁ c = cycleForm d₁ ρ₁ (n + 1) (Fin.init (Fin.init a)) *
           ρ₁ (a (Fin.last (n + 2)).castSucc * c) := by
         simp only [ω₁, Fin.init, mul_assoc, map_mul]
-      simp only [Y, add_mul, mul_add, hm1, hm2, hmul_ED_E, hmul_ED_D, hm3, add_zero]
+      simp only [Y, add_mul, mul_add, hmul_E_E, hmul_E_D, hmul_ED_E, hmul_ED_D, hm3, add_zero]
       rw [cycleForm_succ_apply, cochainPeriodicity_cycleForm_succ hd₁ hρ₁, hω1c,
         gradedTensor_add_tmul]
       abel

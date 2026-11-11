@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.CyclicCohomology.Periodicity.Basic
 public import TauCeti.RingTheory.CyclicCohomology.Periodicity.Cochain
 import TauCeti.Algebra.Algebra.NatCast
-import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
 # Comparison of Connes' periodicity operator with the bicomplex shift
@@ -221,9 +220,9 @@ theorem exact_periodicity_toHochschild (m : ℕ) :
     Function.Exact (periodicity R A M m) (toHochschild R A M (m + 2)) := by
   have hbij₀ := bijective_homologyMap_cyclicCochainComplexToTotal R A M m
   have hbij₂ := bijective_homologyMap_cyclicCochainComplexToTotal R A M (m + 2)
-  obtain ⟨u, hu⟩ := ((isUnit_natCast_add_one (K := R) m).mul
-    (isUnit_natCast_add_of_ne_zero (K := R) m two_ne_zero)).neg
-  rw [Nat.cast_ofNat] at hu
+  have hu : IsUnit (-((m + 1 : R) * (m + 2 : R))) := by
+    simpa using ((isUnit_natCast_add_one (K := R) m).mul
+      (isUnit_natCast_add_of_ne_zero (K := R) m two_ne_zero)).neg
   intro x
   refine ⟨fun hx ↦ ?_, ?_⟩
   · have hx' : HomologicalComplex.homologyMap (cyclicTotalComplexToHochschild R A M) (m + 2)
@@ -234,9 +233,9 @@ theorem exact_periodicity_toHochschild (m : ℕ) :
       (exact_cyclicTotalHomologyPeriodicity_homologyMap_cyclicTotalComplexToHochschild R A M m _).1
         hx'
     obtain ⟨y, rfl⟩ := hbij₀.2 c
-    refine ⟨(↑u⁻¹ : R) • y, hbij₂.1 ?_⟩
-    rw [map_smul, map_smul, periodicity_comp_homologyMap_cyclicCochainComplexToTotal_apply,
-      ← neg_smul, ← hu, smul_smul, Units.inv_mul, one_smul, hc]
+    refine ⟨(↑hu.unit⁻¹ : R) • y, hbij₂.1 (hu.smul_left_cancel.1 ?_)⟩
+    rw [map_smul, map_smul, smul_smul, hu.mul_val_inv, one_smul,
+      periodicity_comp_homologyMap_cyclicCochainComplexToTotal_apply, ← neg_smul, hc]
   · rintro ⟨y, rfl⟩
     exact periodicity_comp_toHochschild_apply R A M m y
 
