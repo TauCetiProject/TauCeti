@@ -60,7 +60,7 @@ also cover systems without solutions, whose coordinate group is trivial.
 * `TauCeti.GroupAlgGeom.isIrreducible_V_iff_isGDomain`: over a domain `H`, a nonempty algebraic
   set is irreducible if and only if its coordinate group is a domain over `G`.
 * `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.exists_forall_ge_ker_eq`: increasing kernels of
-  presentations `G[X] →* K k` of groups separated by an equationally Noetherian `H`, with `X`
+  `G`-homomorphisms `G[X] →* K k` into groups separated by an equationally Noetherian `H`, with `X`
   finite, are eventually constant.
 * `TauCeti.GroupAlgGeom.IsEquationallyNoetherian.exists_forall_ge_injective`: in a sequence of
   surjective `G`-homomorphisms of such groups, all but finitely many are injective.
@@ -110,6 +110,19 @@ theorem isSeparatedBy_quotientCoeff_iff (N : Subgroup (GX G X)) [N.Normal] :
 
 end GX
 
+/-- The kernel of a `G`-homomorphism `π : G[X] →* K` into a group separated by `H` is its own
+radical over `H`. -/
+theorem IsSeparatedBy.Rad_ker_eq (h : IsSeparatedBy κ ι) (π : GHom (inl : G →* GX G X) κ) :
+    Rad ι ((π : GX G X →* K).ker : Set (GX G X)) = (π : GX G X →* K).ker := by
+  refine le_antisymm (fun w hw => ?_) (subset_Rad _)
+  -- A separating homomorphism composed with `π` is a solution of `ker π` at which `w` survives.
+  by_contra hwπ
+  obtain ⟨φ, hφ⟩ := (isSeparatedBy_def _ _).1 h (π w) hwπ
+  have he (s : GX G X) : eval ι (fun x => φ (π (inr (FreeGroup.of x)))) s = φ (π s) := by
+    simpa using DFunLike.congr_fun (eval_eq_of_comp_inl (φ.comp π).comp_coeff) s
+  exact hφ ((he w).symm.trans (mem_Rad.1 hw _ (mem_V.2 fun s hs =>
+    (he s).trans (by rw [show π s = 1 from hs, map_one]))))
+
 /-- A group `K` generated over `G` by the images of the variables, through a surjective
 `G`-homomorphism `π : G[X] →* K`, is separated by `H` if and only if the kernel of `π` is its own
 radical over `H`. -/
@@ -122,18 +135,18 @@ theorem isSeparatedBy_iff_Rad_ker_eq (π : GHom (inl : G →* GX G X) κ)
   exact ⟨fun h => h.of_injective ψ hψ.1,
     fun h => h.of_injective (ψ.symmOfBijective hψ) (ψ.symmOfBijective_injective hψ)⟩
 
-/-- Let `π k : G[X] →* K k` be surjective `G`-homomorphisms, in finitely many variables `X`, onto
+/-- Let `π k : G[X] →* K k` be `G`-homomorphisms, in finitely many variables `X`, into
 groups separated by an equationally Noetherian group `H`. If their kernels increase with `k`, then
 they are eventually constant. -/
 theorem IsEquationallyNoetherian.exists_forall_ge_ker_eq [Finite X]
     (hH : IsEquationallyNoetherian ι) {K : ℕ → Type*} [∀ k, Group (K k)] {κ : ∀ k, G →* K k}
-    (π : ∀ k, GHom (inl : G →* GX G X) (κ k)) (hπ : ∀ k, Function.Surjective (π k))
+    (π : ∀ k, GHom (inl : G →* GX G X) (κ k))
     (hker : Monotone fun k => (π k : GX G X →* K k).ker) (hsep : ∀ k, IsSeparatedBy (κ k) ι) :
     ∃ m, ∀ k, m ≤ k → (π k : GX G X →* K k).ker = (π m : GX G X →* K m).ker := by
   -- The radicals of the kernels stabilise, and each kernel is its own radical.
   obtain ⟨m, hm⟩ := hH.exists_forall_ge_Rad_eq
     (S := fun k => ((π k : GX G X →* K k).ker : Set (GX G X))) fun _ _ hij => hker hij
-  have hrad k := (isSeparatedBy_iff_Rad_ker_eq (π k) (hπ k)).1 (hsep k)
+  have hrad k := (hsep k).Rad_ker_eq (π k)
   exact ⟨m, fun k hk => (hrad k).symm.trans ((hm k hk).trans (hrad m))⟩
 
 /-- **Descending chain condition for separated groups.** Let `K 0 ↠ K 1 ↠ ⋯` be a sequence of
@@ -155,7 +168,7 @@ theorem IsEquationallyNoetherian.exists_forall_ge_injective [Finite X]
     | succ k ih => rw [hp, GHom.coe_comp]; exact (hf k).comp ih
   have hker : Monotone fun k => (p k : GX G X →* K k).ker :=
     monotone_nat_of_le_succ fun k w hw => by simp_all [MonoidHom.mem_ker, GHom.coe_comp]
-  obtain ⟨m, hm⟩ := hH.exists_forall_ge_ker_eq p hps hker hsep
+  obtain ⟨m, hm⟩ := hH.exists_forall_ge_ker_eq p hker hsep
   refine ⟨m, fun k hk => (injective_iff_map_eq_one (f k)).2 fun x hx => ?_⟩
   obtain ⟨w, rfl⟩ := hps k x
   have hw : w ∈ (p (k + 1) : GX G X →* K (k + 1)).ker := by
@@ -193,7 +206,7 @@ theorem isSeparatedBy_iff_exists_coordGroup (π : GHom (inl : G →* GX G X) κ)
       (φ.symmOfBijective_injective hφ)⟩
   rw [CoordGroup.coeff_def]
   obtain ⟨ψ, hψ, -⟩ :=
-    GX.exists_bijective_gHom_of_eq_ker π hπ ((isSeparatedBy_iff_Rad_ker_eq π hπ).1 h)
+    GX.exists_bijective_gHom_of_eq_ker π hπ (h.Rad_ker_eq π)
   exact ⟨ψ, hψ⟩
 
 /-- Over an equationally Noetherian group `H`, a group `K` generated over `G` by the images of
@@ -208,7 +221,7 @@ theorem isDiscriminatedBy_iff_exists_coordGroup [Finite X] (hH : IsEquationallyN
     (isIrreducible_V_iff_isDiscriminatedBy.1 hS).of_injective (φ.symmOfBijective hφ)
       (φ.symmOfBijective_injective hφ)⟩
   -- The kernel of `π` is its own radical, which a finite subsystem already defines.
-  have hker := (isSeparatedBy_iff_Rad_ker_eq π hπ).1 h.isSeparatedBy
+  have hker := h.isSeparatedBy.Rad_ker_eq π
   obtain ⟨S, -, hfin, hRad⟩ := hH.exists_finite_Rad_eq ((π : GX G X →* K).ker : Set (GX G X))
   obtain ⟨ψ, hψ, -⟩ := GX.exists_bijective_gHom_of_eq_ker π hπ (hRad.trans hker)
   refine ⟨S, hfin, ?_, ?_⟩
