@@ -282,13 +282,8 @@ private theorem mul_sub_self_mem_map_span_pow (hF' : IsFunctionField k' F')
       (u : F') ∈ Q'.filtration (ramificationIdx F Q' * m)) :
     w * u - u ∈ (Ideal.span {x ^ m}).map
       (algebraMap (P'.restrict k F).integers (integralClosure (P'.restrict k F).integers F')) := by
-  refine mem_map_span_pow_of_mem_filtration k F P' hF' he hx m ?_ fun Q' hQ' h ↦ ?_
-  · push_cast
-    simpa [sub_mul] using P'.mul_mem_filtration hw1
-      (P'.mem_filtration_zero_iff.mpr (algebraMap_mem_integers_of_mem_integralClosure k F P' u))
-  · push_cast
-    refine sub_mem ?_ (hu Q' hQ' h)
-    simpa [mul_comm] using mul_mem_filtration_of_mem_integralClosure hQ' (hu Q' hQ' h) w
+  simpa using mul_sub_mem_map_span_pow k F P' hF' he hx m (b := w) (w := u) (c := 1)
+    (by simpa using hw1) hu
 
 variable [Algebra.IsSeparable F F']
 
