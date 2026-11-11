@@ -34,12 +34,6 @@ open scoped ContDiff Topology
 
 namespace TauCeti
 
-/-- Composition of complex-linear maps, as a real bilinear map. -/
-private abbrev compR (V₁ V₂ V₃ : Type*) [NormedAddCommGroup V₁] [NormedSpace ℂ V₁]
-    [NormedAddCommGroup V₂] [NormedSpace ℂ V₂] [NormedAddCommGroup V₃] [NormedSpace ℂ V₃] :
-    (V₂ →L[ℂ] V₃) →L[ℝ] (V₁ →L[ℂ] V₂) →L[ℝ] (V₁ →L[ℂ] V₃) :=
-  (ContinuousLinearMap.compL ℂ V₁ V₂ V₃).bilinearRestrictScalars ℝ
-
 /-- Bounds on the derivatives of an inverse family at one point, from bounds on the derivatives
 of the family at that point and on its inverse there. The bounds are homogeneous in the scale `s`:
 the derivatives of the family are of size `s` and its inverse of size `1 / s`. -/
@@ -57,8 +51,10 @@ theorem exists_norm_iteratedFDeriv_clm_inverse_le {E V W : Type*} [NormedAddComm
     simpa using hB
   | succ k ih =>
     obtain ⟨c, hc⟩ := ih
-    obtain ⟨C₁, hC₁, h₁⟩ := exists_norm_iteratedFDeriv_bilinear_le E (compR W V W) k
-    obtain ⟨C₂, hC₂, h₂⟩ := exists_norm_iteratedFDeriv_bilinear_le E (compR W W V) k
+    obtain ⟨C₁, hC₁, h₁⟩ := exists_norm_iteratedFDeriv_bilinear_le E
+      ((ContinuousLinearMap.compL ℂ W V W).bilinearRestrictScalars ℝ) k
+    obtain ⟨C₂, hC₂, h₂⟩ := exists_norm_iteratedFDeriv_bilinear_le E
+      ((ContinuousLinearMap.compL ℂ W W V).bilinearRestrictScalars ℝ) k
     refine ⟨max c (C₂ * (c * (C₁ * (A * c)))), ?_⟩
     intro H U x s hs hU hx hH hinv hA hB j hj
     have hc' := hc H U x s hs hU hx hH hinv (fun j hj => hA j (hj.trans k.le_succ)) hB
@@ -81,13 +77,12 @@ theorem exists_norm_iteratedFDeriv_clm_inverse_le {E V W : Type*} [NormedAddComm
       fun i => (hFF'.iteratedFDeriv (𝕜 := ℝ) i).eq_of_nhds
     -- `∂ᵤ(H⁻¹) = -H⁻¹ (∂ᵤ H) H⁻¹` near `x`.
     have heq (u : E) : (fun y => fderiv ℝ F' y u) =ᶠ[𝓝 x]
-        fun y => -compR W W V (F' y) (compR W V W (fderiv ℝ H' y u) (F' y)) := by
+        fun y => -(F' y).comp ((fderiv ℝ H' y u).comp (F' y)) := by
       filter_upwards [hU.mem_nhds hx, hHH'.eventuallyEq_nhds, hFF'.eventuallyEq_nhds]
         with y hy hHy hFy
       have hdiff : DifferentiableAt ℝ H y :=
         (hH.differentiableOn (by simp) y hy).differentiableAt (hU.mem_nhds hy)
       rw [hFy.fderiv_eq, hHy.fderiv_eq, hdiff.fderiv_clm_inverse (hinv y hy), hFy.eq_of_nhds]
-      simp
     -- Bounds on the derivatives of `∂ᵤ(H⁻¹)` at `x`, for every direction `u`.
     have hdir (u : E) : ‖iteratedFDeriv ℝ k (fun y => fderiv ℝ F' y u) x‖ ≤
         C₂ * (c * (C₁ * (A * c))) / s * ‖u‖ := by
@@ -103,13 +98,13 @@ theorem exists_norm_iteratedFDeriv_clm_inverse_le {E V W : Type*} [NormedAddComm
       have hG := h₁ (fun y => fderiv ℝ H' y u) F' univ x isOpen_univ (mem_univ x)
         ((hDH'.clm_apply contDiff_const).of_le hk).contDiffOn (hF'.of_le hk).contDiffOn _ _ hDHu
         hF'k
-      have hG' := h₂ F' (fun y => compR W V W (fderiv ℝ H' y u) (F' y)) univ x isOpen_univ
+      have hG' := h₂ F' (fun y => (fderiv ℝ H' y u).comp (F' y)) univ x isOpen_univ
         (mem_univ x) (hF'.of_le hk).contDiffOn
-        ((((compR W V W).isBoundedBilinearMap.contDiff (n := ∞)).comp
-          ((hDH'.clm_apply contDiff_const).prodMk hF')).of_le hk).contDiffOn _ _ hF'k hG k le_rfl
-      have hneg : iteratedFDeriv ℝ k (fun y => -compR W W V (F' y)
-          (compR W V W (fderiv ℝ H' y u) (F' y))) x = -iteratedFDeriv ℝ k
-            (fun y => compR W W V (F' y) (compR W V W (fderiv ℝ H' y u) (F' y))) x :=
+        (((((ContinuousLinearMap.compL ℂ W V W).bilinearRestrictScalars ℝ).isBoundedBilinearMap
+          |>.contDiff (n := ∞)).comp ((hDH'.clm_apply contDiff_const).prodMk hF')).of_le
+            hk).contDiffOn _ _ hF'k hG k le_rfl
+      have hneg : iteratedFDeriv ℝ k (fun y => -(F' y).comp ((fderiv ℝ H' y u).comp (F' y))) x =
+          -iteratedFDeriv ℝ k (fun y => (F' y).comp ((fderiv ℝ H' y u).comp (F' y))) x :=
         iteratedFDeriv_neg_apply
       rw [((heq u).iteratedFDeriv (𝕜 := ℝ) k).eq_of_nhds, hneg, norm_neg]
       refine hG'.trans (le_of_eq ?_)

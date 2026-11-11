@@ -219,12 +219,6 @@ private theorem contDiffOn_comp_dilation {Λ : Set ℂ} (hΛ : IsOpen Λ)
   exact hf.comp (contDiff_const.add (parameterDilation n t).contDiff).contDiffOn
     (mapsTo_preimage _ _)
 
-/-- Composition of complex-linear maps, as a real bilinear map. -/
-private abbrev compR (V₁ V₂ V₃ : Type*) [NormedAddCommGroup V₁] [NormedSpace ℂ V₁]
-    [NormedAddCommGroup V₂] [NormedSpace ℂ V₂] [NormedAddCommGroup V₃] [NormedSpace ℂ V₃] :
-    (V₂ →L[ℂ] V₃) →L[ℝ] (V₁ →L[ℂ] V₂) →L[ℝ] (V₁ →L[ℂ] V₃) :=
-  (ContinuousLinearMap.compL ℂ V₁ V₂ V₃).bilinearRestrictScalars ℝ
-
 /-- The estimates of order `m` for a function of positions, frequencies and spectral parameters in
 `Λ`: on every compact set of positions, `‖parameterIteratedFDeriv k f ((x, ξ), z)‖` is at most a
 constant times `parameterWeight ξ z ^ m`. -/
@@ -560,13 +554,14 @@ def comp (b : ParameterSymbol n Λ W U m') (a : ParameterSymbol n Λ V W m) :
     ParameterSymbol n Λ V U (m' + m) where
   coefficient p := (b.coefficient p).comp (a.coefficient p)
   contDiffOn_coefficient := by
-    exact ((compR V W U).isBoundedBilinearMap.contDiff (n := ∞)).comp_contDiffOn
+    exact (((ContinuousLinearMap.compL ℂ V W U).bilinearRestrictScalars ℝ).isBoundedBilinearMap
+      |>.contDiff (n := ∞)).comp_contDiffOn
       (b.contDiffOn_coefficient.prodMk a.contDiffOn_coefficient)
   coefficient_of_notMem p hp := by
     rw [b.coefficient_of_notMem p hp, ContinuousLinearMap.zero_comp]
   exists_bound := by
-    exact Bounds.bilinear Λ.isOpen (compR V W U) b.contDiffOn_coefficient
-      a.contDiffOn_coefficient b.exists_bound a.exists_bound
+    exact Bounds.bilinear Λ.isOpen ((ContinuousLinearMap.compL ℂ V W U).bilinearRestrictScalars ℝ)
+      b.contDiffOn_coefficient a.contDiffOn_coefficient b.exists_bound a.exists_bound
 
 @[simp]
 theorem coefficient_comp (b : ParameterSymbol n Λ W U m') (a : ParameterSymbol n Λ V W m)
