@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # The additive Haar measure of the standard basis
@@ -19,6 +20,8 @@ by the inverse absolute determinant.
 ## Main results
 
 * `Module.Basis.addHaar_basisFun` — the additive Haar measure of `Pi.basisFun ℝ ι` is `volume`.
+* `Module.Basis.addHaar_singleton`, `Module.Basis.addHaar_finTwoProd` — the additive Haar measures
+  of the standard bases of `ℝ` and `ℝ × ℝ` are `volume`.
 -/
 
 public section
@@ -32,6 +35,19 @@ measure, because the basis parallelepiped is the unit cube. -/
 theorem addHaar_basisFun (ι : Type*) [Fintype ι] :
     (Pi.basisFun ℝ ι).addHaar = (volume : Measure (ι → ℝ)) := by
   rw [addHaar_def, parallelepiped_basisFun, addHaarMeasure_eq_volume_pi]
+
+/-- The additive Haar measure attached to the standard basis of `ℝ` is Lebesgue measure. -/
+theorem addHaar_singleton : (Basis.singleton (Fin 1) ℝ).addHaar = volume := by
+  rw [← OrthonormalBasis.toBasis_singleton]
+  exact OrthonormalBasis.addHaar_eq_volume _
+
+/-- The additive Haar measure attached to the standard basis `((1, 0), (0, 1))` of `ℝ × ℝ` is
+Lebesgue measure. -/
+theorem addHaar_finTwoProd : (Basis.finTwoProd ℝ).addHaar = volume := by
+  have h : ((Basis.singleton (Fin 1) ℝ).prod (Basis.singleton (Fin 1) ℝ)).reindex
+      finSumFinEquiv = Basis.finTwoProd ℝ :=
+    Basis.eq_of_apply_eq (Fin.forall_fin_two.2 ⟨rfl, rfl⟩)
+  rw [← h, addHaar_reindex, prod_addHaar, addHaar_singleton, Measure.volume_eq_prod]
 
 /-- The normalized Haar measure of a basis indexed by an empty type has total mass one. -/
 @[simp]
@@ -49,12 +65,13 @@ theorem addHaar_univ_of_isEmpty {V ι : Type*} [NormedAddCommGroup V] [NormedSpa
 
 section ChangeBasis
 
-variable {E ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E] [Fintype ι] [DecidableEq ι]
 
 /-- A change of basis rescales its normalized Haar measure by the inverse absolute determinant. -/
 theorem addHaar_eq_smul_of_basis (b b' : Basis ι ℝ E) :
     b'.addHaar = ENNReal.ofReal |(b.det b')⁻¹| • b.addHaar := by
+  have := b.finiteDimensional_of_finite
   let e : E ≃ₗ[ℝ] E := b.equiv b' (Equiv.refl ι)
   have hmap : b.map e = b' := by
     ext i

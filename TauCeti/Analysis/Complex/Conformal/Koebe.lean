@@ -93,7 +93,7 @@ private theorem zero_notMem_image_moebius {U : Set ℂ} {a : ℂ} (ha1 : ‖a‖
     (hUd : U ⊆ ball 0 1) (haU : a ∉ U) : (0 : ℂ) ∉ moebius a '' U := by
   rintro ⟨z, hz, hz0⟩
   have hden : 1 - (starRingEnd ℂ) a * z ≠ 0 :=
-    one_sub_conj_mul_ne_zero_of_norm_lt_one (mem_ball_zero_iff.mp (hUd hz)) ha1
+    one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one (mem_ball_zero_iff.mp (hUd hz)).le ha1
   have hza : z - a = 0 := by
     rw [moebius, div_eq_zero_iff] at hz0
     exact hz0.resolve_right hden

@@ -78,60 +78,16 @@ theorem exists_gaussian_decomposition_of_isUnit_toBlocks₁₁
   set Ainv : Matrix (Fin m) (Fin m) R :=
     ((P⁻¹ : GL (Fin m) R) : Matrix (Fin m) (Fin m) R) with Ainv_def
   have hP : (P : Matrix (Fin m) (Fin m) R) = A := by simp [P]
-  have hleft : Ainv * A = 1 := by
-    rw [← hP, Ainv_def, ← Matrix.GeneralLinearGroup.coe_mul]
-    simp
-  have hright : A * Ainv = 1 := by
-    rw [← hP, Ainv_def, ← Matrix.GeneralLinearGroup.coe_mul]
-    simp
+  have hleft : Ainv * A = 1 := by rw [← hP, Ainv_def]; exact_mod_cast P.inv_mul
+  have hright : A * Ainv = 1 := by rw [← hP, Ainv_def]; exact_mod_cast P.mul_inv
+  obtain ⟨hS, hT, hD⟩ := SymplecticGroup.symm_and_toBlocks₂₂_of_mem_symplecticGroup hM hright
   set S := C * Ainv with S_def
-  -- The two symplectic block equations supply the symmetric lower and upper
-  -- Gaussian parameters `S = C A⁻¹` and `T = A⁻¹ B`.
-  have hS : S.IsSymm := by
-    rw [Matrix.IsSymm, S_def, Matrix.transpose_mul]
-    calc
-      Ainvᵀ * Cᵀ = Ainvᵀ * Cᵀ * (A * Ainv) := by rw [hright, mul_one]
-      _ = Ainvᵀ * (Cᵀ * A) * Ainv := by simp only [mul_assoc]
-      _ = Ainvᵀ * (Aᵀ * C) * Ainv := by rw [hblocks.1]
-      _ = (Ainvᵀ * Aᵀ) * C * Ainv := by simp only [mul_assoc]
-      _ = C * Ainv := by rw [← Matrix.transpose_mul, hright, Matrix.transpose_one, one_mul]
-  have hdual : A * Bᵀ = B * Aᵀ := by
-    have hMt : Matrix.fromBlocks Aᵀ Cᵀ Bᵀ Dᵀ ∈
-        Matrix.symplecticGroup (Fin m) R := by
-      rw [← Matrix.fromBlocks_transpose, hMblocks]
-      exact SymplecticGroup.transpose_mem hM
-    simpa only [Matrix.transpose_transpose] using
-      (SymplecticGroup.fromBlocks_mem_iff.mp hMt).1
   set T := Ainv * B with T_def
-  have hT : T.IsSymm := by
-    rw [Matrix.IsSymm, T_def, Matrix.transpose_mul]
-    calc
-      Bᵀ * Ainvᵀ = (Ainv * A) * Bᵀ * Ainvᵀ := by rw [hleft, one_mul]
-      _ = Ainv * (A * Bᵀ) * Ainvᵀ := by simp only [mul_assoc]
-      _ = Ainv * (B * Aᵀ) * Ainvᵀ := by rw [hdual]
-      _ = Ainv * B * (Aᵀ * Ainvᵀ) := by simp only [mul_assoc]
-      _ = Ainv * B := by rw [← Matrix.transpose_mul, hleft, Matrix.transpose_one, mul_one]
-  have hAD : Aᵀ * D = 1 + Cᵀ * B := sub_eq_iff_eq_add.mp hblocks.2.2
-  have hAinvC : Ainvᵀ * Cᵀ = S := by
-    calc
-      Ainvᵀ * Cᵀ = Sᵀ := by simp only [S_def, Matrix.transpose_mul]
-      _ = S := hS.eq
-  have hD : D = S * A * T + Ainvᵀ := by
-    calc
-      D = (Ainvᵀ * Aᵀ) * D := by rw [← Matrix.transpose_mul, hright,
-        Matrix.transpose_one, one_mul]
-      _ = Ainvᵀ * (Aᵀ * D) := by rw [mul_assoc]
-      _ = Ainvᵀ * (1 + Cᵀ * B) := by rw [hAD]
-      _ = Ainvᵀ + (Ainvᵀ * Cᵀ) * B := by noncomm_ring
-      _ = Ainvᵀ + S * B := by rw [hAinvC]
-      _ = Ainvᵀ + S * A * T := by
-        rw [T_def, ← mul_assoc (S * A) Ainv B, mul_assoc S A Ainv,
-          hright, mul_one]
-      _ = S * A * T + Ainvᵀ := add_comm _ _
-  have hAT : A * T = B := by
-    rw [T_def, ← mul_assoc, hright, one_mul]
-  have hSA : S * A = C := by
-    rw [S_def, mul_assoc, hleft, mul_one]
+  replace hS : S.IsSymm := hS
+  replace hT : T.IsSymm := hT
+  replace hD : D = S * A * T + Ainvᵀ := hD
+  have hAT : A * T = B := by rw [T_def, ← mul_assoc, hright, one_mul]
+  have hSA : S * A = C := by rw [S_def, mul_assoc, hleft, mul_one]
   have hfactor : g = lowerUnipotent S hS * leviHom P * upperUnipotent T hT := by
     apply (mulEquivGLSymplectic m R).injective
     rw [map_mul, map_mul, mulEquivGLSymplectic_leviHom]
@@ -184,34 +140,8 @@ theorem eq_top_of_root_subgroups_of_diagonal
     simpa only [RootSubgroupIndex.hom_difference, differenceShortRootHom_apply,
       toAdd_ofAdd] using
       hroot (.difference i j hij) (Multiplicative.ofAdd c)
-  have hupper : ∀ (B : Matrix (Fin m) (Fin m) K) (hB : B.IsSymm),
-      upperUnipotent B hB ∈ H := by
-    intro B hB
-    exact upperUnipotent_mem_of_root_subgroups H.toSubmonoid
-      (fun i c ↦ by
-        rw [Subgroup.mem_toSubmonoid]
-        simpa only [RootSubgroupIndex.hom_positiveLong,
-          positiveLongRootTransvectionHom_apply, toAdd_ofAdd] using
-            hroot (.positiveLong i) (Multiplicative.ofAdd c))
-      (fun hij c ↦ by
-        rw [Subgroup.mem_toSubmonoid]
-        simpa only [RootSubgroupIndex.hom_positiveSum, positiveSumShortRootHom_apply,
-          toAdd_ofAdd] using
-          hroot (.positiveSum _ _ hij) (Multiplicative.ofAdd c)) B hB
-  have hlower : ∀ (C : Matrix (Fin m) (Fin m) K) (hC : C.IsSymm),
-      lowerUnipotent C hC ∈ H := by
-    intro C hC
-    exact lowerUnipotent_mem_of_root_subgroups H.toSubmonoid
-      (fun i c ↦ by
-        rw [Subgroup.mem_toSubmonoid]
-        simpa only [RootSubgroupIndex.hom_negativeLong,
-          negativeLongRootTransvectionHom_apply, toAdd_ofAdd] using
-            hroot (.negativeLong i) (Multiplicative.ofAdd c))
-      (fun hij c ↦ by
-        rw [Subgroup.mem_toSubmonoid]
-        simpa only [RootSubgroupIndex.hom_negativeSum, negativeSumShortRootHom_apply,
-          toAdd_ofAdd] using
-          hroot (.negativeSum _ _ hij) (Multiplicative.ofAdd c)) C hC
+  have hupper := Submonoid.upperUnipotent_mem_of_root_subgroups_hom H.toSubmonoid hroot
+  have hlower := Submonoid.lowerUnipotent_mem_of_root_subgroups_hom H.toSubmonoid hroot
   have hlevi : ∀ A : GL (Fin m) K, leviHom A ∈ H :=
     leviHom_mem_of_difference_of_diagonal H hdifference hdiagonal
   let M : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) K :=
@@ -239,29 +169,7 @@ theorem eq_top_of_root_subgroups_of_diagonal
   have hu : upperUnipotent X hX ∈ H := hupper X hX
   have hprod : upperUnipotent X hX * g ∈ H := by
     apply mem_of_isUnit_toBlocks₁₁ H hupper hlower hlevi
-    have hcoeProduct :
-        ((((mulEquivGLSymplectic m K) (upperUnipotent X hX * g) :
-          GLSymplectic (Fin m) K) : GL (Fin m ⊕ Fin m) K) :
-            Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) K) =
-          ((((mulEquivGLSymplectic m K) (upperUnipotent X hX) :
-            GLSymplectic (Fin m) K) : GL (Fin m ⊕ Fin m) K) :
-              Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) K) * M := by
-      have h := congrArg
-        (fun q : GLSymplectic (Fin m) K ↦
-          (((q : GL (Fin m ⊕ Fin m) K) : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) K)))
-        ((mulEquivGLSymplectic m K).map_mul (upperUnipotent X hX) g)
-      simpa only [Subgroup.coe_mul, Matrix.GeneralLinearGroup.coe_mul, M] using h
-    have htop :
-        (((mulEquivGLSymplectic m K (upperUnipotent X hX * g) :
-          GLSymplectic (Fin m) K) : GL (Fin m ⊕ Fin m) K) :
-            Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) K).toBlocks₁₁ = A + X * C := by
-      rw [hcoeProduct]
-      simp only [coe_mulEquivGLSymplectic, coe_mulEquivGLSymplectic_upperUnipotent,
-        GLSymplectic.coe_ofSymplecticGroup]
-      rw [← M.fromBlocks_toBlocks, Matrix.fromBlocks_multiply]
-      simp only [Matrix.one_mul, Matrix.zero_mul, zero_add, A, C,
-        Matrix.toBlocks_fromBlocks₁₁]
-    rw [htop]
+    rw [toBlocks₁₁_upperUnipotent_mul]
     exact hunit
   have := H.mul_mem (H.inv_mem hu) hprod
   simpa only [inv_mul_cancel_left] using this

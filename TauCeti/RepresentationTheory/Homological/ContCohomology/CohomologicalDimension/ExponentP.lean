@@ -60,9 +60,9 @@ theorem subsingleton_continuousCohomology_of_forall_finite_nsmul_eq_zero (n : �
       [DistribMulAction G A] [ContinuousSMul G A] [Finite A], (∀ a : A, p • a = 0) →
       Subsingleton (continuousCohomology n (ofDiscreteModule ℤ G A)))
     (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-    [DistribMulAction G M] [ContinuousSMul G M] [Finite M] (hM : IsPPrimaryTorsion p M) :
+    [DistribMulAction G M] [ContinuousSMul G M] [Finite M] (hM : IsAddPGroup p M) :
     Subsingleton (continuousCohomology n (ofDiscreteModule ℤ G M)) := by
-  obtain ⟨k, hk⟩ := hM.exists_pow_smul_eq_zero
+  obtain ⟨k, hk⟩ := isAddPGroup_iff_exists_pow_nsmul_eq_zero.1 hM
   -- Induct on a common exponent, with the coefficient module allowed to vary.
   suffices H : ∀ (k : ℕ) (A : Type u) [AddCommGroup A] [TopologicalSpace A]
       [DiscreteTopology A] [DistribMulAction G A] [ContinuousSMul G A] [Finite A],
@@ -113,7 +113,7 @@ theorem cohomologicalDimensionLE_iff_forall_finite_nsmul_eq_zero (hp : p ≠ 0) 
   rw [cohomologicalDimensionLE_iff_forall_finite_subsingleton_succ hp]
   constructor
   · intro h M _ _ _ _ _ _ hM
-    exact h M (isPPrimaryTorsion_iff.2 fun m ↦ ⟨1, by simpa using hM m⟩)
+    exact h M (fun m ↦ ⟨1, by simpa using hM m⟩)
   · intro h M _ _ _ _ _ _ hM
     exact ContinuousCohomology.subsingleton_continuousCohomology_of_forall_finite_nsmul_eq_zero
       (n + 1) h M hM

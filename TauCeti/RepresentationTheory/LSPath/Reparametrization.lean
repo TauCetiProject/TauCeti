@@ -43,6 +43,8 @@ reparametrization stays rational.
 * `TauCeti.PLPath.evalTimed`: the parametrized path of a timed presentation.
 * `TauCeti.PLPath.timedComp`: a timed presentation of the composite of two parametrized paths.
 * `TauCeti.PLPath.IsReparam`: one timed presentation is a reparametrization of another.
+* `TauCeti.PLPath.reverseTimed`: the reversal of a timed presentation, presenting the reversed
+  path.
 
 ## Main results
 
@@ -107,6 +109,12 @@ theorem duration_cons (x : 𝕜 × V) (p : List (𝕜 × V)) :
 theorem duration_append (p q : List (𝕜 × V)) : duration (p ++ q) = duration p + duration q := by
   rw [duration_def, duration_def, duration_def, List.map_append, List.sum_append]
 
+/-- The total duration is the time coordinate of the sum of the `(duration, segment)` pairs. -/
+theorem duration_eq_fst_sum [AddMonoid V] (p : List (𝕜 × V)) : duration p = p.sum.1 := by
+  induction p with
+  | nil => rfl
+  | cons x p ih => simp [ih]
+
 end Duration
 
 section IsTimed
@@ -140,6 +148,50 @@ theorem IsTimed.nonneg [Zero 𝕜] [Preorder 𝕜] {p : List (𝕜 × V)} (hp : 
 theorem IsTimed.and_nonneg {W : Type*} [Zero 𝕜] [Preorder 𝕜] [Zero W] [LE W]
     {p : List (𝕜 × W)} (hp : IsTimed p) (hp' : ∀ x ∈ p, 0 ≤ x.2) : ∀ x ∈ p, 0 ≤ x.1 ∧ 0 ≤ x.2 :=
   fun x hx ↦ ⟨(hp x hx).le, hp' x hx⟩
+
+section Reverse
+
+/-- The reversal of a list of `(duration, segment)` pairs: the segments are negated and traversed
+in the opposite order, each in its own time. It presents the reversed path
+(`TauCeti.PLPath.ofSegments_map_snd_reverseTimed`). -/
+def reverseTimed [Neg V] (p : List (𝕜 × V)) : List (𝕜 × V) :=
+  (p.map fun z ↦ (z.1, -z.2)).reverse
+
+theorem reverseTimed_def [Neg V] (p : List (𝕜 × V)) :
+    reverseTimed p = (p.map fun z ↦ (z.1, -z.2)).reverse :=
+  (rfl)
+
+@[simp]
+theorem mem_reverseTimed [InvolutiveNeg V] {p : List (𝕜 × V)} {z : 𝕜 × V} :
+    z ∈ reverseTimed p ↔ (z.1, -z.2) ∈ p := by
+  simp only [reverseTimed_def, List.mem_reverse, List.mem_map]
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    simpa using hy
+  · exact fun h ↦ ⟨_, h, by simp⟩
+
+@[simp]
+theorem reverseTimed_reverseTimed [InvolutiveNeg V] (p : List (𝕜 × V)) :
+    reverseTimed (reverseTimed p) = p := by
+  simp [reverseTimed_def, List.map_reverse, Function.comp_def]
+
+@[simp]
+theorem isTimed_reverseTimed [Zero 𝕜] [LT 𝕜] [Neg V] {p : List (𝕜 × V)} :
+    IsTimed (reverseTimed p) ↔ IsTimed p := by
+  simp only [isTimed_iff, reverseTimed_def, List.mem_reverse, List.forall_mem_map]
+
+@[simp]
+theorem duration_reverseTimed [AddCommMonoid 𝕜] [Neg V] (p : List (𝕜 × V)) :
+    duration (reverseTimed p) = duration p := by
+  simp [reverseTimed_def, duration_def, List.map_reverse, Function.comp_def]
+
+@[simp]
+theorem ofSegments_map_snd_reverseTimed [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+    [AddCommGroup V] [Module 𝕜 V] (p : List (𝕜 × V)) :
+    ofSegments 𝕜 ((reverseTimed p).map Prod.snd) = (ofSegments 𝕜 (p.map Prod.snd)).reverse := by
+  simp [reverseTimed_def, List.map_reverse, Function.comp_def]
+
+end Reverse
 
 section Eval
 
@@ -307,9 +359,9 @@ theorem monotone_evalTimed {φ : List (𝕜 × 𝕜)} (hφ : ∀ x ∈ φ, 0 ≤
     · exact hφ.1.1
     · exact ih hφ.2 (by linarith)
 
-/-- A timed presentation `φ` in `𝕜` with nonnegative segments maps `[0, duration φ]` onto
-`[0, s]`, where `s` is the sum of its segments. -/
-theorem exists_evalTimed_eq {φ : List (𝕜 × 𝕜)} (hφ : IsTimed φ) (hφ' : ∀ x ∈ φ, 0 ≤ x.2)
+/-- Every `u ∈ [0, s]`, where `s` is the sum of the segments of a timed presentation `φ` in `𝕜`,
+is a value of `evalTimed φ` on `[0, duration φ]`. -/
+theorem exists_evalTimed_eq {φ : List (𝕜 × 𝕜)} (hφ : IsTimed φ)
     {u : 𝕜} (hu₀ : 0 ≤ u) (hu : u ≤ (φ.map Prod.snd).sum) :
     ∃ t, 0 ≤ t ∧ t ≤ duration φ ∧ evalTimed φ t = u := by
   induction φ generalizing u with
@@ -317,12 +369,12 @@ theorem exists_evalTimed_eq {φ : List (𝕜 × 𝕜)} (hφ : IsTimed φ) (hφ' 
   | cons x φ ih =>
     obtain ⟨d, a⟩ := x
     obtain ⟨hd, hφ⟩ := isTimed_cons.1 hφ
-    obtain ⟨ha, hφ'⟩ := List.forall_mem_cons.1 hφ'
-    dsimp only at hd ha
+    dsimp only at hd
     simp only [List.map_cons, List.sum_cons] at hu
     have hdur := duration_nonneg hφ.nonneg
     rcases le_or_gt u a with hua | hau
-    · rcases ha.lt_or_eq with ha | ha
+    · have ha : 0 ≤ a := hu₀.trans hua
+      rcases ha.lt_or_eq with ha | ha
       · have hle : u * d / a ≤ d := by
           rw [div_le_iff₀ ha]
           nlinarith
@@ -334,7 +386,7 @@ theorem exists_evalTimed_eq {φ : List (𝕜 × 𝕜)} (hφ : IsTimed φ) (hφ' 
       · refine ⟨0, le_rfl, by simp only [duration_cons]; linarith, ?_⟩
         rw [evalTimed_zero (isTimed_cons.2 ⟨(hd : 0 < (d, a).1), hφ⟩).nonneg]
         linarith
-    · obtain ⟨t, ht₀, ht, htu⟩ := ih hφ hφ' (u := u - a) (by linarith) (by linarith)
+    · obtain ⟨t, ht₀, ht, htu⟩ := ih hφ (u := u - a) (by linarith) (by linarith)
       refine ⟨t + d, by linarith, by simp only [duration_cons]; linarith, ?_⟩
       rw [evalTimed_cons_of_le hd (by linarith), add_sub_cancel_right, htu, add_sub_cancel]
 
@@ -558,6 +610,7 @@ theorem isTimed_timedComp {φ : List (𝕜 × 𝕜)} (hq : IsTimed q) (hφ : IsT
     simp only [timedComp.eq_3, hae, hae', ↓reduceIte]
     exact isTimed_cons.2 ⟨hpos, ih hq (isTimed_cons.2 ⟨sub_pos.2 hlt, hφ⟩)⟩
 
+omit [IsStrictOrderedRing 𝕜] in
 @[simp]
 theorem duration_timedComp (q : List (𝕜 × V)) (φ : List (𝕜 × 𝕜)) :
     duration (timedComp q φ) = duration φ := by
@@ -570,9 +623,9 @@ theorem duration_timedComp (q : List (𝕜 × V)) (φ : List (𝕜 × 𝕜)) :
     simp only [timedComp.eq_3, hae, hae', ↓reduceIte, duration_cons, ih]
     ring
 
-/-- Composing a timed presentation in `𝕜` with nonnegative segments with a timing gives
-nonnegative segments again. -/
-theorem timedComp_snd_nonneg {q : List (𝕜 × 𝕜)} {φ : List (𝕜 × 𝕜)} (hq : IsTimed q)
+/-- Composing a presentation in `𝕜` with nonnegative segments with a timing with nonnegative
+segments gives nonnegative segments again. -/
+theorem timedComp_snd_nonneg {q : List (𝕜 × 𝕜)} {φ : List (𝕜 × 𝕜)}
     (hq' : ∀ x ∈ q, 0 ≤ x.2) (hφ' : ∀ x ∈ φ, 0 ≤ x.2) : ∀ x ∈ timedComp q φ, 0 ≤ x.2 := by
   induction q, φ using timedComp.induct with
   | case1 q => simp [timedComp.eq_1]
@@ -580,22 +633,21 @@ theorem timedComp_snd_nonneg {q : List (𝕜 × 𝕜)} {φ : List (𝕜 × 𝕜)
     rw [timedComp.eq_2 _ hφ₀]
     exact List.forall_mem_map.2 fun _ _ ↦ le_rfl
   | case3 e w q d a φ hae ih =>
-    obtain ⟨he, hq⟩ := isTimed_cons.1 hq
     obtain ⟨hw, hq'⟩ := List.forall_mem_cons.1 hq'
     obtain ⟨ha, hφ'⟩ := List.forall_mem_cons.1 hφ'
-    dsimp only at he hw ha
+    dsimp only at hw ha
+    have he : 0 < e := ha.trans_lt hae
     simp only [timedComp.eq_3, hae, ↓reduceIte]
-    refine List.forall_mem_cons.2 ⟨mul_nonneg (div_nonneg ha he.le) hw, ih ?_ ?_ hφ'⟩
-    · exact isTimed_cons.2 ⟨sub_pos.2 hae, hq⟩
+    refine List.forall_mem_cons.2 ⟨mul_nonneg (div_nonneg ha he.le) hw, ih ?_ hφ'⟩
     · exact List.forall_mem_cons.2 ⟨mul_nonneg (div_nonneg (sub_pos.2 hae).le he.le) hw, hq'⟩
   | case4 w q d a φ _ ih =>
     simp only [timedComp.eq_3, lt_self_iff_false, ↓reduceIte]
     exact List.forall_mem_cons.2 ⟨(List.forall_mem_cons.1 hq').1,
-      ih (isTimed_cons.1 hq).2 (List.forall_mem_cons.1 hq').2 (List.forall_mem_cons.1 hφ').2⟩
+      ih (List.forall_mem_cons.1 hq').2 (List.forall_mem_cons.1 hφ').2⟩
   | case5 e w q d a φ hae hae' ih =>
     simp only [timedComp.eq_3, hae, hae', ↓reduceIte]
     exact List.forall_mem_cons.2 ⟨(List.forall_mem_cons.1 hq').1,
-      ih (isTimed_cons.1 hq).2 (List.forall_mem_cons.1 hq').2
+      ih (List.forall_mem_cons.1 hq').2
         (List.forall_mem_cons.2 ⟨sub_nonneg.2 (not_lt.1 hae), (List.forall_mem_cons.1 hφ').2⟩)⟩
 
 /-- When the timing `φ` runs through all of `q`, the composite `TauCeti.PLPath.timedComp q φ`
@@ -707,7 +759,7 @@ theorem ofSegments_map_snd_eq_of_evalTimed_eq (hp : IsTimed p) (hq : IsTimed q)
 theorem IsReparam.trans (hpq : IsReparam p q) (hqr : IsReparam q r) : IsReparam p r := by
   obtain ⟨φ, hφ, hφ', hφp, hφq, hφe⟩ := hpq
   obtain ⟨ψ, hψ, hψ', hψq, hψr, hψe⟩ := hqr
-  refine ⟨timedComp ψ φ, isTimed_timedComp hψ hφ, timedComp_snd_nonneg hψ hψ' hφ',
+  refine ⟨timedComp ψ φ, isTimed_timedComp hψ hφ, timedComp_snd_nonneg hψ' hφ',
     by rw [duration_timedComp, hφp], ?_,
     fun t ↦ by rw [hφe, hψe, evalTimed_timedComp hψ hφ hφ']⟩
   rw [← endpoint_ofSegments (𝕜 := 𝕜), ofSegments_map_snd_timedComp hψ hφ' (by rw [hψq, hφq]),

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Bound
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.SingularReduction
+import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Invariance
 
 /-!
 # Local Tamagawa numbers
@@ -121,15 +122,20 @@ theorem tamagawaNumber_pos [HenselianLocalRing v.valuationSubring]
   rw [tamagawaNumber_def]
   exact AddSubgroup.index_pos
 
-/-- Tate's algorithm on any minimal equation computes the local Tamagawa number. -/
+/-- If Tate's algorithm stops with symbol `s` on an integral equation for `E`, then
+`tateLocalIndex` at `s` is the local Tamagawa number. Minimality need not be assumed, since an
+equation on which the algorithm stops is minimal. -/
 theorem tamagawaNumber_eq_tateLocalIndex [HenselianLocalRing v.valuationSubring]
-    [Finite (IsLocalRing.ResidueField v.valuationSubring)] [IsMinimal v.valuationSubring E]
+    [Finite (IsLocalRing.ResidueField v.valuationSubring)] [IsIntegral v.valuationSubring E]
     {ϖ : v.valuationSubring}
     (hϖ : IsLocalRing.maximalIdeal v.valuationSubring = Ideal.span {ϖ})
     {s : TauCeti.ReductionSymbol}
     (h : (integralModel v.valuationSubring E).IsTateTerminal ϖ s) :
     E.tamagawaNumber v = (integralModel v.valuationSubring E).tateLocalIndex ϖ s := by
   classical
+  have hirr : Irreducible ϖ := (IsDiscreteValuationRing.irreducible_iff_uniformizer ϖ).2 hϖ
+  have : IsMinimal v.valuationSubring E := by
+    simpa only [baseChange_integralModel_eq] using h.isMinimal_baseChange (K := F) hirr
   rw [tamagawaNumber_eq_index]
   exact Affine.index_nonsingularReduction_eq_tateLocalIndex v hϖ h
 

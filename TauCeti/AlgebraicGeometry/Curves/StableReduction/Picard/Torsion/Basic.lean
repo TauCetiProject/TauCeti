@@ -186,8 +186,8 @@ lemma torsionCongr_symm (f : T.Equiv T') (ℓ : ℕ) :
       rw [← f.picCongr_symm]
       exact (f.picCongr.apply_symm_apply x).symm
 
-/-- Prime-torsion dimension is invariant under equivalence of numerical types. -/
-theorem finrank_torsion_eq (f : T.Equiv T') (ℓ : ℕ) [Fact ℓ.Prime] :
+/-- Torsion dimension is invariant under equivalence of numerical types. -/
+theorem finrank_torsion_eq (f : T.Equiv T') (ℓ : ℕ) :
     Module.finrank (ZMod ℓ) (T.torsion ℓ) =
       Module.finrank (ZMod ℓ) (T'.torsion ℓ) :=
   (f.torsionCongr ℓ).finrank_eq

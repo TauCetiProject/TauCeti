@@ -41,7 +41,11 @@ This is the analytic estimate behind the interpolation and extrapolation steps o
 linear forms in `p`-adic logarithms: an auxiliary function with many zeros of high multiplicity at
 the points of a grid is small at every other point of the disc. For distinct points with
 prescribed multiplicities it takes the form
-`‖f(x)‖ ≤ ‖f‖_c * ∏_{b ∈ s} (‖x - b‖ / c) ^ T b`.
+`‖f(x)‖ ≤ ‖f‖_c * ∏_{b ∈ s} (‖x - b‖ / c) ^ T b`. Since `D⁽ᵏ⁾ f` is again restricted at `c`, with
+`‖D⁽ᵏ⁾ f‖_c ≤ c⁻ᵏ ‖f‖_c`, and vanishes at each `b` to order `T b - k`, the same bound with
+exponents `T b - k` and an extra factor `c⁻ᵏ` holds for the Hasse derivatives of `f`. This is the
+form the extrapolation steps use, where vanishing of `f` to high order on a grid controls the
+derivatives of lower order at new points.
 
 ## Main results
 
@@ -51,6 +55,8 @@ prescribed multiplicities it takes the form
   of zeros.
 * `PowerSeries.IsRestricted.norm_evalAt_le_gaussNorm_mul_prod_pow`: the Schwarz lemma for distinct
   zeros with multiplicities.
+* `PowerSeries.IsRestricted.norm_evalAt_hasseDeriv_le_gaussNorm_mul_prod_pow`: the Schwarz lemma
+  for the Hasse derivatives `D⁽ᵏ⁾ f`, whose zeros have multiplicities reduced by `k`.
 
 ## References
 
@@ -201,6 +207,32 @@ theorem IsRestricted.norm_evalAt_le_gaussNorm_mul_prod_pow {L : Type*} [NormedFi
     rw [← Multiset.coe_mapAddMonoidHom, map_sum, Multiset.prod_sum]
     simp
   rwa [hprod] at h
+
+/-- **The Schwarz lemma for Hasse derivatives.** Let `f` be a power series over a complete
+ultrametric normed field `K`, restricted at a radius `c > 0`, and let `s` be a finite set of points
+of the closed disc of radius `c` at each of which the Hasse derivatives `(D⁽ᵗ⁾ f)(b)` vanish for
+`t < T b`. Then for every `k` and every point `x` of the closed disc of radius `c` in a complete
+normed field extension `L` of `K`,
+
+```text
+‖(D⁽ᵏ⁾ f)(x)‖ ≤ c⁻ᵏ * ‖f‖_c * ∏_{b ∈ s} (‖x - b‖ / c) ^ (T b - k).
+```
+
+For `k = 0` this is `PowerSeries.IsRestricted.norm_evalAt_le_gaussNorm_mul_prod_pow`. -/
+theorem IsRestricted.norm_evalAt_hasseDeriv_le_gaussNorm_mul_prod_pow {L : Type*}
+    [NormedField L] [NormedAlgebra K L] [CompleteSpace L] (hf : f.IsRestricted c) (hc : 0 < c)
+    {s : Finset K} {T : K → ℕ} (hs : ∀ b ∈ s, ‖b‖ ≤ c)
+    (hzero : ∀ b ∈ s, ∀ t < T b, (PowerSeries.hasseDeriv t f).evalAt b = 0) (k : ℕ)
+    {x : L} (hx : ‖x‖ ≤ c) :
+    ‖(PowerSeries.hasseDeriv k f).evalAt x‖ ≤
+      c⁻¹ ^ k * f.gaussNorm norm c * ∏ b ∈ s, (‖x - algebraMap K L b‖ / c) ^ (T b - k) := by
+  -- `D⁽ᵏ⁾ f` vanishes to order `T b - k` at each `b ∈ s`
+  have hzero' : ∀ b ∈ s, ∀ t < T b - k,
+      (PowerSeries.hasseDeriv t (PowerSeries.hasseDeriv k f)).evalAt b = 0 := fun b hb t ht ↦ by
+    rw [hf.evalAt_hasseDeriv_hasseDeriv (hs b hb), hzero b hb _ (by omega), smul_zero]
+  have h := (hf.hasseDeriv k).norm_evalAt_le_gaussNorm_mul_prod_pow (L := L) hc hs hzero' hx
+  have hk := gaussNorm_hasseDeriv_le (R := K) hc (hasGaussNorm_of_isRestricted hf) k
+  exact h.trans <| mul_le_mul_of_nonneg_right hk (Finset.prod_nonneg fun _ _ ↦ by positivity)
 
 end Field
 

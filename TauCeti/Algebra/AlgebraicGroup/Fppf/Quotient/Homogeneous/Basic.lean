@@ -164,6 +164,21 @@ theorem homogeneousQuotientPresheafLift_app_mk
       f.app A (ULift.up g) :=
   (rfl)
 
+/-- Restricting a descended map along the coset projection recovers the original map. -/
+@[reassoc (attr := simp)]
+theorem homogeneousQuotientPresheafProjection_comp_lift
+    {F : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ ⥤ Type (u + 1)}
+    (f : HopfAlgebra.pointsPresheaf H ⋙ uliftFunctor.{u + 1, u} ⟶ F)
+    (hf : ∀ (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
+      (g : HopfAlgebra.points (R := R) (H := H) A.unop.unop)
+      (n : quotientPointsSubgroup H I A.unop.unop),
+      f.app A (ULift.up (g * n.val)) = f.app A (ULift.up g)) :
+    homogeneousQuotientPresheafProjection H I ≫
+      homogeneousQuotientPresheafLift H I f hf = f := by
+  ext A g
+  obtain ⟨g⟩ := g
+  rfl
+
 /-- A map from the coset presheaf is determined by its values on group points. -/
 theorem homogeneousQuotientPresheaf_hom_ext
     {F : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ ⥤ Type (u + 1)}
@@ -307,6 +322,17 @@ theorem fppfHomogeneousQuotientHomEquiv_apply
     sheafificationAdjunction_unit_app]
   dsimp only [fppfHomogeneousQuotientProjection, sheafToPresheaf]
   exact (Category.assoc _ _ _).symm
+
+/-- A map out of the fppf homogeneous quotient is determined by its composite with
+the projection from the ambient group. -/
+theorem fppfHomogeneousQuotient_hom_ext
+    {F : Sheaf (CommAlgCat.fppfTopology R) (Type (u + 1))}
+    {f g : fppfHomogeneousQuotient H I ⟶ F}
+    (h : fppfHomogeneousQuotientProjection H I ≫ f.hom =
+      fppfHomogeneousQuotientProjection H I ≫ g.hom) : f = g := by
+  apply (fppfHomogeneousQuotientHomEquiv H I F).injective
+  apply Subtype.ext
+  simpa only [fppfHomogeneousQuotientHomEquiv_apply] using h
 
 /-- Descending a subgroup-invariant natural map and then restricting along the quotient
 projection recovers that map. -/

@@ -97,7 +97,7 @@ theorem decompositionHom_eq_frobeniusAlgEquiv
     TauCeti.residueFieldAutEquiv_apply]
   obtain ⟨x, rfl⟩ := w.residueFieldEquivAdicCompletion (K := L).surjective x
   rw [← residueFieldEquivAdicCompletion_stabilizerHom v w,
-    Ideal.stabilizerHom_eq_frobeniusAlgEquivOfAlgebraic w.asIdeal w.ne_bot hσ,
+    Ideal.stabilizerHom_eq_frobeniusAlgEquivOfAlgebraic w.asIdeal hσ,
     FiniteField.coe_frobeniusAlgEquivOfAlgebraic,
     MulSemiringAction.toAlgAut_apply,
     TauCeti.residueField_toAlgEquiv_frobeniusAlgEquiv,

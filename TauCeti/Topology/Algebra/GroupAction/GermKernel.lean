@@ -119,6 +119,24 @@ theorem card_germKernel_smul [ContinuousConstSMul G X] (h : G) (x : X) :
   rw [germKernel_smul_eq_germKernel_map_conj,
     Subgroup.card_map_of_injective (MulAut.conj h).injective]
 
+/-- The stabilizer of `x` normalizes the germ kernel at `x`. -/
+theorem stabilizer_le_normalizer_germKernel [ContinuousConstSMul G X] (x : X) :
+    stabilizer G x ≤ Subgroup.normalizer (germKernel G x : Set G) := by
+  intro h hh
+  have hconj := germKernel_smul_eq_germKernel_map_conj h x
+  rw [mem_stabilizer_iff.mp hh] at hconj
+  refine Subgroup.mem_normalizer_iff.mpr fun g ↦ ?_
+  conv_rhs => rw [hconj]
+  rw [Subgroup.mem_map_equiv, MulAut.conj_symm_apply]
+  simp [mul_assoc]
+
+/-- The germ kernel at `x` is a normal subgroup of the stabilizer of `x`, so the isotropy at `x`
+has an effective quotient by its ineffective part. -/
+instance normal_germKernel_subgroupOf_stabilizer [ContinuousConstSMul G X] (x : X) :
+    ((germKernel G x).subgroupOf (stabilizer G x)).Normal :=
+  (Subgroup.normal_subgroupOf_iff_le_normalizer (germKernel_le_stabilizer x)).mpr
+    (stabilizer_le_normalizer_germKernel x)
+
 variable (G) in
 /-- The order of the germ kernel as a function on the orbit space: its value at the orbit of `x` is
 the order of the germ kernel at `x`, which does not depend on the representative by

@@ -43,12 +43,12 @@ def primesAwayConductorEquiv :
   toFun p := ⟨p.1.map (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K),
     (isPrime_map_iff_of_coprime_comap (S := O.toRingOfIntegers.toSubring)
       O.conductor_le_toRingOfIntegers p.2.2).mpr p.2.1,
-    map_sup_eq_top_of_coprime_comap (S := O.toRingOfIntegers.toSubring) p.2.2⟩
+    Ideal.map_sup_eq_top_of_coprime_comap p.2.2⟩
   invFun P := ⟨P.1.comap (O.toRingOfIntegers.val : O.toRingOfIntegers →+* 𝓞 K), by
     have := P.2.1
     exact Ideal.comap_isPrime _ _,
-    comap_sup_eq_top_of_le (S := O.toRingOfIntegers.toSubring)
-      O.conductor_le_toRingOfIntegers P.2.2⟩
+    (comap_sup_comap_eq_top_iff (S := O.toRingOfIntegers.toSubring)
+      O.conductor_le_toRingOfIntegers).mpr P.2.2⟩
   left_inv p := Subtype.ext <|
     comap_map_of_coprime_comap (S := O.toRingOfIntegers.toSubring)
       O.conductor_le_toRingOfIntegers p.2.2

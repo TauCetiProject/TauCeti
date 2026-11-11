@@ -194,90 +194,33 @@ theorem card_powerClasses_eq_of_index_unitFiltration_one {n c : ℕ} (hn : n ≠
   let e : Kˣ ≃* Multiplicative ℤ × μ × V :=
     (unitsEquivIntProd K ϖ hϖ).toMulEquiv.trans
       (MulEquiv.prodCongr (.refl _) (unitFiltrationZeroEquivProd K).toMulEquiv)
-  -- Both the index of `(Kˣ)ⁿ` and the number of `n`-th roots of unity transfer along `e`.
-  have hidx : (powMonoidHom n : Kˣ →* Kˣ).range.index =
-      (powMonoidHom n : Multiplicative ℤ × μ × V →* _).range.index := by
-    rw [← e.map_range_powMonoidHom n, Subgroup.index_map_equiv]
-  have hker : Nat.card (rootsOfUnity n K) =
-      Nat.card (powMonoidHom n : Multiplicative ℤ × μ × V →* _).ker := by
-    have hmap : (powMonoidHom n : Kˣ →* Kˣ).ker.map e.toMonoidHom =
-        (powMonoidHom n : Multiplicative ℤ × μ × V →* _).ker := by
-      have hcomm :
-          (powMonoidHom n : Kˣ →* Kˣ).comp e.symm.toMonoidHom =
-            e.symm.toMonoidHom.comp
-              (powMonoidHom n : Multiplicative ℤ × μ × V →* _) := by
-        ext
-        simp
-      calc
-        _ = ((powMonoidHom n : Kˣ →* Kˣ).comp e.symm.toMonoidHom).ker :=
-          (MonoidHom.ker_comp_mulEquiv (powMonoidHom n : Kˣ →* Kˣ) e.symm).symm
-        _ = (e.symm.toMonoidHom.comp
-              (powMonoidHom n : Multiplicative ℤ × μ × V →* _)).ker :=
-          congrArg MonoidHom.ker hcomm
-        _ = _ := MonoidHom.ker_mulEquiv_comp _ e.symm
-    rw [rootsOfUnity_eq_ker, ← hmap]
-    exact Nat.card_congr (Subgroup.equivMapOfInjective _ e.toMonoidHom e.injective).toEquiv
-  -- On the product, the power map is componentwise.
-  have hprod : (powMonoidHom n : Multiplicative ℤ × μ × V →* _) =
-      (powMonoidHom n).prodMap ((powMonoidHom n).prodMap (powMonoidHom n)) := by
-    ext x <;> simp
-  -- The factor `ℤ` contributes index `n`.
+  -- The factor `ℤ` contributes index `n` and no `n`-torsion.
   have hZ : (powMonoidHom n : Multiplicative ℤ →* _).range.index = n := by
-    have : (powMonoidHom n : Multiplicative ℤ →* _) =
-        AddMonoidHom.toMultiplicative (nsmulAddMonoidHom (α := ℤ) n) := by
+    have hker : (powMonoidHom n : Multiplicative ℤ →* _).ker = ⊥ := by
       ext
-      simp
-    rw [this, MonoidHom.coe_toMultiplicative_range, AddSubgroup.index_toSubgroup,
-      AddSubgroup.index_range_nsmul]
+      simp [hn]
+    simpa [hker, (AddEquiv.additiveMultiplicative ℤ).toIntLinearEquiv.finrank_eq] using
+      Subgroup.index_range_powMonoidHom_of_fg (Multiplicative ℤ) n
+  have hZker : Nat.card (powMonoidHom n : Multiplicative ℤ →* _).ker = 1 := by
+    have : (powMonoidHom n : Multiplicative ℤ →* _).ker = ⊥ := by
+      ext
+      simp [hn]
+    rw [this]
     simp
-  have hZker : (powMonoidHom n : Multiplicative ℤ →* _).ker = ⊥ := by
-    ext
-    simp [hn]
-  -- The finite factor `μ_{q-1}(K)` has as many power classes as `n`-torsion elements. The
-  -- hypothesis `hV` records the corresponding index/kernel ratio on the principal units.
-  have hμ : (powMonoidHom n : μ →* μ).range.index =
-      Nat.card (powMonoidHom n : μ →* μ).ker := Subgroup.index_range
-  have hZkerCard : Nat.card (powMonoidHom n : Multiplicative ℤ →* _).ker = 1 := by
-    rw [hZker]
-    simp
-  have hproductIndex :
-      (powMonoidHom n : Multiplicative ℤ × μ × V →* _).range.index =
-        n * (Nat.card (powMonoidHom n : μ →* μ).ker *
-          Nat.card (powMonoidHom n : V →* V).ker) * c := by
-    calc
-      _ = (powMonoidHom n : Multiplicative ℤ →* _).range.index *
-          ((powMonoidHom n : μ →* μ).range.index *
-            (powMonoidHom n : V →* V).range.index) := by
-        rw [hprod, MonoidHom.range_prodMap, MonoidHom.range_prodMap,
-          Subgroup.index_prod, Subgroup.index_prod]
-      _ = n * (Nat.card (powMonoidHom n : μ →* μ).ker *
-          (Nat.card (powMonoidHom n : V →* V).ker * c)) := by
-        rw [hZ, hμ, hV]
-      _ = _ := by ring
-  have hproductKernel :
-      Nat.card (powMonoidHom n : Multiplicative ℤ × μ × V →* _).ker =
-        Nat.card (powMonoidHom n : μ →* μ).ker *
-          Nat.card (powMonoidHom n : V →* V).ker := by
-    calc
-      _ = Nat.card (powMonoidHom n : Multiplicative ℤ →* _).ker *
-          (Nat.card (powMonoidHom n : μ →* μ).ker *
-            Nat.card (powMonoidHom n : V →* V).ker) := by
-        rw [hprod, MonoidHom.ker_prodMap, MonoidHom.ker_prodMap,
-          Nat.card_congr (Subgroup.prodEquiv _ _).toEquiv, Nat.card_prod,
-          Nat.card_congr (Subgroup.prodEquiv _ _).toEquiv, Nat.card_prod]
-      _ = 1 * (Nat.card (powMonoidHom n : μ →* μ).ker *
-          Nat.card (powMonoidHom n : V →* V).ker) := by rw [hZkerCard]
-      _ = _ := by simp
+  -- The finite factor `μ_{q-1}(K)` has as many power classes as `n`-torsion elements.
+  have hμ : (powMonoidHom n : μ →* μ).range.index = Nat.card (powMonoidHom n : μ →* μ).ker :=
+    Subgroup.index_range
   calc
     Nat.card (Kˣ ⧸ (powMonoidHom n : Kˣ →* Kˣ).range) =
         (powMonoidHom n : Kˣ →* Kˣ).range.index := (Subgroup.index_eq_card _).symm
-    _ = (powMonoidHom n : Multiplicative ℤ × μ × V →* _).range.index := hidx
     _ = n * (Nat.card (powMonoidHom n : μ →* μ).ker *
-        Nat.card (powMonoidHom n : V →* V).ker) * c := hproductIndex
-    _ = n * Nat.card (powMonoidHom n : Multiplicative ℤ × μ × V →* _).ker * c :=
-      congrArg (· * c) (congrArg (n * ·) hproductKernel.symm)
-    _ = n * Nat.card (rootsOfUnity n K) * c :=
-      congrArg (· * c) (congrArg (n * ·) hker.symm)
+        Nat.card (powMonoidHom n : V →* V).ker) * c := by
+      rw [e.index_range_powMonoidHom n, Subgroup.index_range_powMonoidHom_prod,
+        Subgroup.index_range_powMonoidHom_prod, hZ, hμ, hV]
+      ring
+    _ = n * Nat.card (rootsOfUnity n K) * c := by
+      rw [rootsOfUnity_eq_ker, e.card_ker_powMonoidHom n, Subgroup.card_ker_powMonoidHom_prod,
+        Subgroup.card_ker_powMonoidHom_prod, hZker, one_mul]
 
 /-- **The number of `n`-th power classes.** For `n` with `(n : K) ≠ 0`, the quotient
 `Kˣ ⧸ (Kˣ)ⁿ` has `n · #μ_n(K) · q ^ v_K(n)` elements, where `μ_n(K)` is the group of `n`-th roots

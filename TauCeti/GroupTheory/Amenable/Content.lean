@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Amenable.Discrete
+public import TauCeti.GroupTheory.Amenable.Finite
 public import TauCeti.Topology.ContinuousMap.Bounded.AddContent
 
 /-!
@@ -23,6 +24,13 @@ commutes with pushforward along arbitrary maps between discrete groups, and a me
 invariant exactly when its probability is. Hence a discrete group is amenable exactly when it
 admits a left-invariant finitely additive probability on all subsets
 (`TauCeti.amenable_iff_exists_invariantContent`).
+
+Point evaluation gives the Dirac probability (`TauCeti.Mean.toContent_eval`). On a finite group
+the uniform mean gives normalized counting, `ν s = |s| / |G|` (`TauCeti.Mean.toContent_uniform`),
+stated with `Nat.card` so that no `Fintype` instance is involved. This is the only left-invariant
+finitely additive probability on all subsets of a finite group
+(`MeasureTheory.addContent_eq_natCard_div_natCard`). On a group with one element the uniform mean
+is point evaluation, and its content is the Dirac probability.
 
 ## References
 
@@ -124,6 +132,18 @@ theorem IsLeftInvariant.toContent_smul {m : Mean G} (hm : m.IsLeftInvariant)
       BoundedContinuousFunction.indicator_apply]
     by_cases hx : x ∈ g • s <;> simp_all [mem_smul_set_iff_inv_smul_mem]
   simp only [toContent_apply, h, hm.apply_leftTranslation]
+
+/-- The content of evaluation at `x` is the Dirac probability at `x`. -/
+@[simp]
+theorem toContent_eval (x : G) (s : Set G) : (eval G x).toContent s = s.indicator 1 x := by
+  by_cases hx : x ∈ s <;> simp [toContent_apply, hx]
+
+/-- On a finite group, the content of the uniform mean is normalized counting,
+`ν s = |s| / |G|`. -/
+@[simp]
+theorem toContent_uniform [Finite G] (s : Set G) :
+    (uniform G).toContent s = Nat.card s / Nat.card G :=
+  addContent_eq_natCard_div_natCard (toContent_univ _) isLeftInvariant_uniform.toContent_smul s
 
 variable (G) in
 /-- Means on a discrete group correspond to finitely additive probabilities on all subsets, by

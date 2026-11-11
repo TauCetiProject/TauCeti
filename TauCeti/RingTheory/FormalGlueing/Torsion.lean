@@ -252,6 +252,25 @@ theorem baseChangeHom_bijective_of_primaryComponent_eq_top_left (hIfg : I.FG) {N
     -- The goal is `h` with the codomain restriction applied to `m` unfolded.
     exact h
 
+/-- Postcomposition with `n ↦ 1 ⊗ n` detects linear maps from an `I`-power torsion module
+when the flat algebra preserves the quotient by `I`. -/
+theorem tensorProduct_mk_comp_injective_of_primaryComponent_eq_top
+    {N : Type*} [AddCommGroup N] [Module R N] (hM : I.primaryComponent M = ⊤) :
+    Injective (fun f : M →ₗ[R] N ↦ (TensorProduct.mk R S N 1).comp f) := by
+  intro f g hfg
+  -- The values of `f` and `g` lie in the `I`-power torsion `P` of `N`, where `n ↦ 1 ⊗ n` is
+  -- injective, and `S` is flat so `S ⊗ P → S ⊗ N` is injective.
+  have hmem (f : M →ₗ[R] N) (m : M) : f m ∈ I.primaryComponent N :=
+    Ideal.primaryComponent_map_mem _ f ⟨m, hM ▸ mem_top⟩
+  have hP := tensorProduct_mk_bijective_of_primaryComponent_eq_top
+    (M := I.primaryComponent N) hI (Ideal.primaryComponent_primaryComponent_eq_top I)
+  refine LinearMap.ext fun m ↦ ?_
+  have h : (1 : S) ⊗ₜ[R] f m = 1 ⊗ₜ[R] g m := LinearMap.congr_fun hfg m
+  have h' : (1 : S) ⊗ₜ[R] (⟨f m, hmem f m⟩ : I.primaryComponent N) = 1 ⊗ₜ ⟨g m, hmem g m⟩ :=
+    Module.Flat.lTensor_preserves_injective_linearMap (I.primaryComponent N).subtype
+      (I.primaryComponent N).injective_subtype (by simpa using h)
+  exact congr(Subtype.val $(hP.1 h'))
+
 /-- An `S`-module that is `IS`-power torsion is the base change of its underlying `R`-module:
 the multiplication map `S ⊗[R] N → N` is bijective. -/
 @[stacks 05EC "(3), essential surjectivity"]

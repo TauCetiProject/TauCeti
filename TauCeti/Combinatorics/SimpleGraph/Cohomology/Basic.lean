@@ -28,6 +28,8 @@ This is the group in which Couture's classification of skew-zigzag algebras take
 * `SimpleGraph.FirstCohomology`: the first cohomology group `H¹(G, A)`.
 * `SimpleGraph.FirstCohomology.mk`: the cohomology class of a `1`-cochain.
 * `SimpleGraph.FirstCohomology.lift`: the universal property of first cohomology.
+* `SimpleGraph.FirstCohomology.congr`: an equivalence of `1`-cochain groups matching coboundaries
+  induces an equivalence of first cohomology groups.
 
 ## Main results
 
@@ -53,12 +55,9 @@ variable {V : Type*} (G : SimpleGraph V) (A : Type*) [CommGroup A]
 are inverted by reversing a dart. -/
 def oneCochains : Subgroup (G.Dart → A) where
   carrier := {σ | ∀ d : G.Dart, σ d.symm = (σ d)⁻¹}
-  mul_mem' {σ τ} (hσ : ∀ d : G.Dart, σ d.symm = (σ d)⁻¹) (hτ : ∀ d : G.Dart, τ d.symm = (τ d)⁻¹)
-      d := by
-    simp only [Pi.mul_apply, hσ d, hτ d, mul_inv]
+  mul_mem' hσ hτ d := by simp only [Pi.mul_apply, hσ d, hτ d, mul_inv]
   one_mem' d := by simp
-  inv_mem' {σ} (hσ : ∀ d : G.Dart, σ d.symm = (σ d)⁻¹) d := by
-    simp only [Pi.inv_apply, hσ d]
+  inv_mem' hσ d := by simp [hσ d]
 
 variable {G A}
 
@@ -77,13 +76,9 @@ variable (G A)
 /-- The **coboundary** of a function `φ` on the vertices of a simple graph: the `1`-cochain whose
 value on a dart is the value of `φ` at its target divided by the value at its source. -/
 def coboundary : (V → A) →* G.oneCochains A where
-  toFun φ := ⟨fun d ↦ φ d.snd / φ d.fst, fun d ↦ by simp [Dart.symm, inv_div]⟩
-  map_one' := by
-    ext d
-    simp
-  map_mul' φ ψ := by
-    ext d
-    simp [mul_div_mul_comm]
+  toFun φ := ⟨fun d ↦ φ d.snd / φ d.fst, fun d ↦ by simp [inv_div]⟩
+  map_one' := by ext; simp
+  map_mul' φ ψ := by ext; simp [mul_div_mul_comm]
 
 variable {G A}
 
@@ -148,9 +143,10 @@ theorem mk_coboundary (φ : V → A) : mk G A (G.coboundary A φ) = 1 :=
 /-- **Two `1`-cochains have the same cohomology class exactly when they differ by a
 coboundary.** -/
 theorem mk_eq_mk_iff {σ τ : G.oneCochains A} :
-    mk G A σ = mk G A τ ↔ ∃ φ : V → A, τ = σ * G.coboundary A φ := by
-  rw [eq_comm, ← div_eq_one, ← map_div, mk_eq_one_iff]
-  exact exists_congr fun φ ↦ by rw [eq_div_iff_mul_eq', eq_comm, mul_comm]
+    mk G A σ = mk G A τ ↔ ∃ φ : V → A, τ = σ * G.coboundary A φ :=
+  (QuotientGroup.mk'_eq_mk' _).trans <| by
+    simp only [MonoidHom.mem_range, exists_exists_eq_and]
+    exact exists_congr fun _ ↦ eq_comm
 
 /-- The kernel of the cohomology class map consists of the coboundaries. -/
 @[simp]
@@ -159,17 +155,18 @@ theorem ker_mk : (mk G A).ker = (G.coboundary A).range :=
 
 /-- An equivalence of one-cochain groups preserving coboundaries induces an equivalence of
 first cohomology groups. -/
-def congr {W : Type*} {H : SimpleGraph W} (e : G.oneCochains A ≃* H.oneCochains A)
-    (he : (G.coboundary A).range.map e = (H.coboundary A).range) :
-    G.FirstCohomology A ≃* H.FirstCohomology A :=
+def congr {W : Type*} {H : SimpleGraph W} {B : Type*} [CommGroup B]
+    (e : G.oneCochains A ≃* H.oneCochains B)
+    (he : (G.coboundary A).range.map e = (H.coboundary B).range) :
+    G.FirstCohomology A ≃* H.FirstCohomology B :=
   QuotientGroup.congr _ _ e he
 
 /-- The induced equivalence sends the class of a cochain to the class of its image. -/
 @[simp]
-theorem congr_mk {W : Type*} {H : SimpleGraph W} (e : G.oneCochains A ≃* H.oneCochains A)
-    (he : (G.coboundary A).range.map e = (H.coboundary A).range)
-    (σ : G.oneCochains A) :
-    congr e he (mk G A σ) = mk H A (e σ) :=
+theorem congr_mk {W : Type*} {H : SimpleGraph W} {B : Type*} [CommGroup B]
+    (e : G.oneCochains A ≃* H.oneCochains B)
+    (he : (G.coboundary A).range.map e = (H.coboundary B).range) (σ : G.oneCochains A) :
+    congr e he (mk G A σ) = mk H B (e σ) :=
   QuotientGroup.congr_mk' _ _ e he σ
 
 end FirstCohomology

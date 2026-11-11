@@ -161,6 +161,15 @@ instance (priority := 100) forget₂Rep {R : Type u} [Ring R] {G : Type v} [Mono
     HasForget₂ (FDRep R G) (Rep R G) where
   forget₂ := (forget₂ (FGModuleCat R) (ModuleCat R)).mapAction G ⋙ Rep.ActionToRep R G
 
+/-- The forward forgetful Hom equivalence preserves evaluations. -/
+@[simp]
+theorem forget₂HomLinearEquiv_apply {R : Type u} [CommRing R] {G : Type v} [Monoid G]
+    (X Y : FDRep R G)
+    (f : (forget₂ (FDRep R G) (Rep R G)).obj X ⟶
+      (forget₂ (FDRep R G) (Rep R G)).obj Y) (x : X) :
+    forget₂HomLinearEquiv X Y f x = f.hom x :=
+  rfl
+
 /-- **The character of the trivial one-dimensional representation is constantly `1`**, that
 dimension being `1`. This is the form in which the trivial character enters a pairing or a
 Frobenius reciprocity computation, both of which are phrased for objects of `FDRep k G`. -/

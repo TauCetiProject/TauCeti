@@ -10,7 +10,7 @@ public import TauCeti.Probability.Quantile
 public import TauCeti.Probability.Distributions.Uniform.Basic
 public import Mathlib.Analysis.SpecialFunctions.Sigmoid
 import TauCeti.Analysis.SpecialFunctions.Sigmoid
-import TauCeti.MeasureTheory.Integral.ExpDecay
+import TauCeti.MeasureTheory.Integral.Exp.Decay
 import TauCeti.Probability.Distributions.Affine
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 

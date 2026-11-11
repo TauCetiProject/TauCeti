@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.FormalGroup.AddInv
 public import TauCeti.RingTheory.FormalGroup.Logarithm.Basic
 -- Proof-only: splitting a power series into its truncation and its tail.
 import Mathlib.RingTheory.PowerSeries.Trunc
+import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
 # Multiplication by `n` on a formal group law
@@ -54,6 +55,9 @@ off the invariant differential.
 ## Main results
 
 * `FormalGroup.nsmulSeries_succ`: `[n + 1]_F(T) = F([n]_F(T), T)`.
+* `FormalGroup.coeff_nsmulSeries_succ_of_eq_addInvX_add_X_pow_mul`: if `[n](T)` agrees
+  with the inverse below degree `k`, adding `T` retains the coefficient of their difference
+  in degree `k`.
 * `FormalGroup.nsmulSeries_add`: `[m + n]_F(T) = F([m]_F(T), [n]_F(T))`.
 * `FormalGroup.nsmulSeries_mul`: `[m n]_F(T) = [m]_F([n]_F(T))`.
 * `FormalGroup.subst_nsmulSeries`: `[n]_F(x) = n • x` for every power-series point `x` of `F`.
@@ -65,6 +69,8 @@ off the invariant differential.
   `P([n]_F(T)) · [n]_F'(T) = n · P(T)`.
 * `FormalGroup.coeff_one_nsmulSeries`: `[n]_F(T) = n T + ⋯`.
 * `FormalGroup.natCast_eq_zero_of_nsmulSeries_eq_zero`: if `[n]_F = 0` then `n = 0` in `R`.
+* `FormalGroup.natCast_eq_zero_of_two_le_order_nsmulSeries`: if `[n]_F` has order at least two
+  then `n = 0` in `R`.
 * `FormalGroup.natCast_dvd_derivative_nsmulSeries`: `n` divides the derivative of `[n]_F`.
 * `FormalGroup.natCast_dvd_coeff_nsmulSeries`: `n` divides the coefficient of `Tᵏ` in `[n]_F`
   for `k` coprime to `n`.
@@ -74,6 +80,9 @@ off the invariant differential.
   in the invariant differential.
 * `TauCeti.FormalGroupHom.subst_nsmulSeries`: a homomorphism `f` from `F` to `G` commutes with
   multiplication by `n`, `f([n]_F(T)) = [n]_G(f(T))`.
+* `TauCeti.FormalGroupHom.coeff_nsmulSeries_mul_coeff_one_pow_of_le_order`: if `f = u T + ⋯` and
+  `[n]_F`, `[n]_G` both have order at least `q`, their coefficients `a`, `b` of `T ^ q` satisfy
+  `b u ^ q = u a`.
 
 ## References
 
@@ -133,6 +142,17 @@ theorem hasSubst_nsmulSeries_X (n : ℕ) : HasSubst ![F.nsmulSeries n, PowerSeri
     fin_cases s
     · exact F.constantCoeff_nsmulSeries n
     · exact PowerSeries.constantCoeff_X
+
+/-- If `[n]_F(T) = i(T) + Tᵏ s(T)` with `k ≠ 0`, then `[n + 1]_F` vanishes below degree
+`k` and has coefficient `s(0)` in degree `k`. No commutativity hypothesis on `F` is needed. -/
+theorem coeff_nsmulSeries_succ_of_eq_addInvX_add_X_pow_mul {n k m : ℕ}
+    {s : PowerSeries R} (h : F.nsmulSeries n = F.addInvX + PowerSeries.X ^ k * s)
+    (hk : k ≠ 0) (hm : m ≤ k) :
+    PowerSeries.coeff m (F.nsmulSeries (n + 1)) =
+      if m = k then PowerSeries.constantCoeff s else 0 := by
+  rw [nsmulSeries_succ, h,
+    F.coeff_subst_add_X_pow_mul_X F.constantCoeff_addInvX s hk hm,
+    F.subst_addInvX_X_eq_zero, map_zero, _root_.zero_add]
 
 /-- `[m n]_F(T) = [m]_F([n]_F(T))`: multiplication by `m n` is the composite of multiplication by
 `m` and by `n`. -/
@@ -298,6 +318,13 @@ theorem coeff_one_nsmulSeries (n : ℕ) :
 theorem natCast_eq_zero_of_nsmulSeries_eq_zero {n : ℕ} (h : F.nsmulSeries n = 0) : (n : R) = 0 := by
   simpa [h] using (F.coeff_one_nsmulSeries n).symm
 
+/-- If `[n]_F` has order at least two then `n = 0` in `R`, as `n` is the linear coefficient of
+`[n]_F`. -/
+theorem natCast_eq_zero_of_two_le_order_nsmulSeries {n : ℕ}
+    (h : 2 ≤ (F.nsmulSeries n).order) : (n : R) = 0 := by
+  rw [← F.coeff_one_nsmulSeries n]
+  exact PowerSeries.coeff_of_lt_order 1 ((Nat.cast_lt.mpr one_lt_two).trans_le h)
+
 /-- **The derivative of `[n]_F` is divisible by `n`**, for a commutative formal group law `F`. -/
 theorem natCast_dvd_derivative_nsmulSeries [F.IsComm] (n : ℕ) :
     (n : PowerSeries R) ∣ PowerSeries.derivative (F.nsmulSeries n) := by
@@ -426,5 +453,18 @@ theorem subst_nsmulSeries (f : FormalGroupHom F G) (n : ℕ) :
     rw [← G.subst_nsmulSeries, applyPoint_val, FormalGroup.val_tautologicalPoint,
       PowerSeries.X_subst]
   rw [← hF, ← hG, ← applyPoint_val, ← toAddMonoidHom_apply, map_nsmul, toAddMonoidHom_apply]
+
+/-- **A homomorphism relates the leading coefficients of multiplication by `n`.** If `f` is a
+homomorphism of formal group laws from `F` to `G` with linear coefficient `u`, and `[n]_F` and
+`[n]_G` both have order at least `q`, then their coefficients `a` and `b` of `T ^ q` satisfy
+`b u ^ q = u a`. -/
+theorem coeff_nsmulSeries_mul_coeff_one_pow_of_le_order (f : FormalGroupHom F G) (n : ℕ) {q : ℕ}
+    (hF : q ≤ (F.nsmulSeries n).order) (hG : q ≤ (G.nsmulSeries n).order) :
+    PowerSeries.coeff q (G.nsmulSeries n) * PowerSeries.coeff 1 f.toPowerSeries ^ q =
+      PowerSeries.coeff 1 f.toPowerSeries * PowerSeries.coeff q (F.nsmulSeries n) := by
+  have h := congrArg (PowerSeries.coeff q) (f.subst_nsmulSeries n)
+  rw [PowerSeries.coeff_subst_eq_mul (F.constantCoeff_nsmulSeries n) f.zero_constantCoeff hF,
+    PowerSeries.coeff_subst_eq_mul_pow f.zero_constantCoeff hG] at h
+  simpa using h.symm
 
 end TauCeti.FormalGroupHom

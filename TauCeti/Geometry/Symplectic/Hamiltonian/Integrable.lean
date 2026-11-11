@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Involutive
 public import TauCeti.Geometry.Symplectic.Lagrangian.SymplecticTangent
 public import TauCeti.Geometry.Symplectic.StandardCompatible
 
+import Mathlib.Analysis.Calculus.FDeriv.Pow
 import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -137,14 +138,14 @@ theorem IsNondegenerate.isFirstIntegral_iff_mvfderiv :
   simp only [isFirstIntegral_iff, hσ.poissonBracket_eq_mvfderiv]
 
 /-- **Conservation of first integrals.** A first integral `g` of `f`, differentiable along an
-integral curve of the Hamiltonian vector field of `f` on an open interval of times (or any open
+integral curve of the Hamiltonian vector field of `f` on an interval of times (or any
 preconnected set of times), is constant along that curve. -/
 theorem IsFirstIntegral.apply_eq_of_isMIntegralCurveOn (hg : σ.IsFirstIntegral f g) {γ : ℝ → M}
-    {s : Set ℝ} (hs : IsOpen s) (hs' : IsPreconnected s)
+    {s : Set ℝ} (hs' : IsPreconnected s)
     (hγ : IsMIntegralCurveOn γ (σ.hamiltonianVectorField f) s)
     (hgγ : ∀ t ∈ s, MDifferentiableAt I 𝓘(ℝ) g (γ t)) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
     g (γ t) = g (γ t₀) :=
-  hγ.apply_eq_of_mvfderiv_apply_eq_zero hs hs' hgγ
+  hγ.apply_eq_of_mvfderiv_apply_eq_zero hs' hgγ
     (fun u _ ↦ hσ.isFirstIntegral_iff_mvfderiv.1 hg (γ u)) ht₀ ht
 
 /-- **Conservation of first integrals** along a global integral curve: a first integral of `f`,
@@ -154,7 +155,7 @@ theorem IsFirstIntegral.apply_eq_of_isMIntegralCurve (hg : σ.IsFirstIntegral f 
     (hγ : IsMIntegralCurve γ (σ.hamiltonianVectorField f))
     (hgγ : ∀ t, MDifferentiableAt I 𝓘(ℝ) g (γ t)) (s t : ℝ) :
     g (γ t) = g (γ s) :=
-  hg.apply_eq_of_isMIntegralCurveOn hσ isOpen_univ isPreconnected_univ (hγ.isMIntegralCurveOn _)
+  hg.apply_eq_of_isMIntegralCurveOn hσ isPreconnected_univ (hγ.isMIntegralCurveOn _)
     (fun t _ ↦ hgγ t) (Set.mem_univ s) (Set.mem_univ t)
 
 end Nondegenerate

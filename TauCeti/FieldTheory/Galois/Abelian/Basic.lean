@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Galois.Abelian
+public import Mathlib.GroupTheory.Abelianization.Defs
+import TauCeti.GroupTheory.Abelianization.Basic
 
 /-!
 # Commutativity of Galois groups
@@ -18,10 +20,14 @@ Mathlib's `IsAbelianGalois.tower_bot`, and `TauCeti.algEquiv_commute_of_isAbelia
 The file also extends Mathlib's `IsAbelianGalois.sup` from two subextensions to an arbitrary
 family: a compositum of abelian Galois subextensions is abelian Galois.
 
+For a subgroup `H` of `Gal(L/K)` whose fixed field is abelian over `K`, the restriction of
+`σ ∈ Gal(L/K)` to that fixed field has trivial image in the abelianization exactly when `σ ∈ H`.
+
 ## Main results
 
 * `TauCeti.commute_of_tower`
 * `TauCeti.algEquiv_commute_of_isAbelianGalois`
+* `TauCeti.abelianization_of_restrictNormalHom_fixedField_eq_one_iff`
 * `IntermediateField.isAbelianGalois_iSup`
 -/
 
@@ -52,6 +58,18 @@ ideal-theoretic Artin map, obtained from an `IsAbelianGalois` instance. -/
 theorem algEquiv_commute_of_isAbelianGalois [IsAbelianGalois K L] :
     ∀ σ τ : L ≃ₐ[K] L, Commute σ τ :=
   Commute.all
+
+omit [IsGalois K L] in
+/-- **Trivial abelianized restriction to a fixed field.** Let `L/K` be finite and `H` a subgroup
+of `Gal(L/K)` whose fixed field is abelian over `K`. The restriction of `σ ∈ Gal(L/K)` to the
+fixed field of `H` has trivial image in the abelianization exactly when `σ ∈ H`. -/
+theorem abelianization_of_restrictNormalHom_fixedField_eq_one_iff [FiniteDimensional K L]
+    (H : Subgroup Gal(L/K)) [IsAbelianGalois K (IntermediateField.fixedField H)]
+    (σ : Gal(L/K)) :
+    Abelianization.of (AlgEquiv.restrictNormalHom (IntermediateField.fixedField H) σ) = 1 ↔
+      σ ∈ H := by
+  rw [← map_one Abelianization.of, Abelianization.of_injective.eq_iff, ← MonoidHom.mem_ker,
+    IntermediateField.restrictNormalHom_ker, IntermediateField.fixingSubgroup_fixedField]
 
 section iSup
 

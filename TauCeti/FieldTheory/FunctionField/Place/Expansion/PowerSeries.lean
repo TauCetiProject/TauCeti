@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Expansion.Basic
 public import Mathlib.RingTheory.PowerSeries.Order
+import TauCeti.Algebra.BigOperators.Finset.Pairs
 
 /-!
 # Power-series expansions at rational places

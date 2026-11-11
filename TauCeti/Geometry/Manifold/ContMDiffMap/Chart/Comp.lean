@@ -141,7 +141,7 @@ private theorem eventually_comp_mem_source_and_iteratedFDerivWithin_mem
       iteratedFDerivWithin 𝕜 m (χ ∘ q.1.1.comp q.1.2 ∘ φ.symm) φ.target q.2 := by
     filter_upwards [hsrc, hcsrc, tendsto_snd.eventually self_mem_nhdsWithin] with q h₁ h₂ h₃
     exact (iteratedFDerivWithin_extChartAt_comp q.1.1 q.1.2 h₃ h₁ h₂ hm).symm
-  have hlim := (Filter.Tendsto.taylorComp hjg hjf).congr' hfdb
+  have hlim := (Filter.Tendsto.taylorComp hjg fun k _ hk ↦ hjf k hk).congr' hfdb
   rw [iteratedFDerivWithin_extChartAt_comp g₀ f₀ hw₀ hf₀ h₀ hm] at hV
   exact hcsrc.and (hlim.eventually_mem hV)
 

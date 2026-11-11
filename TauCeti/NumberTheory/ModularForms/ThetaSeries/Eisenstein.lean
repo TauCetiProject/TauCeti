@@ -81,7 +81,7 @@ theorem thetaForm_eq_of_qExpansion_coeff_zero {k : ℕ} (hL : IsEven L) (hU : Is
   have hθ := hL.qExpansion_thetaSeries_coeff_zero
   simp_all
 
-omit [IsZLattice ℝ L] in
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
 /-- If the theta series of an even lattice is the normalized Eisenstein series of weight `k`, then
 for `m ≥ 1` the lattice has `-(2k / B_k) σ_{k-1}(m)` vectors of squared norm `2m`. -/
 private theorem representationNumber_two_mul_of_thetaSeries_eq_E (hL : IsEven L) {k : ℕ}

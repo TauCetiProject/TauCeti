@@ -54,6 +54,8 @@ local ring of the same dimension is étale
   `AlgebraicGeometry.Scheme.Hom.isClosed_nonEtaleLocus`,
   `AlgebraicGeometry.Scheme.Hom.isClosed_branchLocus` (for `f` universally closed and locally of
   finite type, in particular finite, Stacks 01WM).
+* `AlgebraicGeometry.Scheme.Hom.etale_morphismRestrict_iff`: the restriction of `f` over an open
+  `U` is étale iff `f⁻¹ U` does not meet the non-étale locus.
 * `AlgebraicGeometry.Scheme.Hom.ramificationLocus_subset_nonEtaleLocus`.
 * `AlgebraicGeometry.Scheme.Hom.ramificationLocus_eq_nonEtaleLocus`: for a dominant morphism of
   integral schemes, locally of finite type, onto a locally Noetherian normal (for instance,
@@ -184,6 +186,32 @@ theorem isClosed_ramificationLocus [LocallyOfFiniteType f] : IsClosed f.ramifica
 by Stacks, Definition 29.37.1 (02GI). -/
 theorem isClosed_nonEtaleLocus : IsClosed f.nonEtaleLocus :=
   TopologicalSpace.Opens.isClosed_setOf_not_exists _
+
+/-- The restriction of `f` over an open `U ⊆ Y` is étale iff the non-étale locus of `f` does not
+meet `f⁻¹ U`. -/
+theorem etale_morphismRestrict_iff (U : Y.Opens) :
+    Etale (f ∣_ U) ↔ Disjoint (f ⁻¹ᵁ U : Set X) f.nonEtaleLocus := by
+  refine ⟨fun _ ↦ Set.disjoint_left.mpr fun x hx hne ↦ hne ⟨f ⁻¹ᵁ U, hx, ?_⟩, fun h ↦ ?_⟩
+  · rw [← morphismRestrict_ι]
+    infer_instance
+  -- Instance search does not find `IsZariskiLocalAtSource @Etale` by itself.
+  have := HasRingHomProperty.instIsZariskiLocalAtSource (P := @Etale) (Q := RingHom.Etale)
+  have hx (z : (f ⁻¹ᵁ U).toScheme) : ∃ O : X.Opens, (f ⁻¹ᵁ U).ι z ∈ O ∧ Etale (O.ι ≫ f) :=
+    not_not.mp (Set.disjoint_left.mp h z.2)
+  choose O hzO hO using hx
+  refine IsZariskiLocalAtSource.of_iSup_eq_top (P := @Etale)
+    (fun z ↦ (f ⁻¹ᵁ U).ι ⁻¹ᵁ O z) ?_ fun z ↦ ?_
+  · exact top_le_iff.mp fun z _ ↦ TopologicalSpace.Opens.mem_iSup.mpr ⟨z, hzO z⟩
+  · -- On `(f ⁻¹ᵁ U).ι ⁻¹ᵁ O z` the restriction of `f` factors as the open immersion
+    -- `(f ⁻¹ᵁ U).ι ∣_ O z` into `O z`, followed by `(O z).ι ≫ f`, which is étale.
+    have := hO z
+    have hfac : (((f ⁻¹ᵁ U).ι ⁻¹ᵁ O z).ι ≫ f ∣_ U) ≫ U.ι =
+        (f ⁻¹ᵁ U).ι ∣_ O z ≫ (O z).ι ≫ f := by
+      simp only [Category.assoc, morphismRestrict_ι, morphismRestrict_ι_assoc]
+    have : Etale ((((f ⁻¹ᵁ U).ι ⁻¹ᵁ O z).ι ≫ f ∣_ U) ≫ U.ι) := by
+      rw [hfac]
+      infer_instance
+    exact Etale.of_comp _ U.ι
 
 /-- An étale point is unramified: the ramification locus is contained in the non-étale locus. -/
 theorem ramificationLocus_subset_nonEtaleLocus : f.ramificationLocus ⊆ f.nonEtaleLocus := by

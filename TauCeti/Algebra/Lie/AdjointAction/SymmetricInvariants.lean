@@ -114,7 +114,7 @@ theorem map_apply_of_mem_intLieAlgebra {g : LinearMap.GeneralLinearGroup K L}
   have hG : intLieAlgebra K L ≤
       fixingSubgroup _ (lieInvariants K L L : Set (_root_.SymmetricAlgebra K L)) :=
     intLieAlgebra_le_iff.mpr fun x hx ↦ (mem_fixingSubgroup_iff _).mpr fun p hp ↦ by
-      rw [hsmul, coe_ofLinearEquiv_expAd]
+      rw [hsmul, coe_ofLinearEquiv_expAd x hx]
       exact map_exp_toEnd_apply_of_mem_lieInvariants hx hp
   rw [← hsmul]
   exact (mem_fixingSubgroup_iff _).mp (hG hg) p hp
@@ -142,7 +142,7 @@ theorem map_dualMap_apply_of_mem_intLieAlgebra {g : LinearMap.GeneralLinearGroup
     have hcoad : (ad K L x).dualMap = LieModule.toEnd K L (Dual K L) (-x) := by
       ext φ y
       simp
-    rw [hsmul, coe_ofLinearEquiv_expAd, LinearMap.dualMap_exp hx, hcoad]
+    rw [hsmul, coe_ofLinearEquiv_expAd x hx, LinearMap.dualMap_exp hx, hcoad]
     exact map_exp_toEnd_apply_of_mem_lieInvariants (hcoad ▸ hx.dualMap) hp
   rw [← hsmul]
   exact (mem_fixingSubgroup_iff _).mp (hG (inv_mem hg)) p hp
@@ -163,7 +163,7 @@ theorem lift_eval_smul_of_mem_intLieAlgebra {g : LinearMap.GeneralLinearGroup K 
 
 section Grading
 
-variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+variable {K : Type u} {L : Type v} [Field K] [LieRing L] [LieAlgebra K L]
   [FiniteDimensional K L] {h : L}
   (hh : DirectSum.IsInternal fun j : ℤ ↦ (ad K L h).eigenspace (j : K))
 
@@ -175,6 +175,18 @@ killed by the coadjoint action of `h`, in particular every Lie invariant. -/
 theorem map_dualMap_gradingAut_apply {p : _root_.SymmetricAlgebra K (Dual K L)}
     (hp : lieModuleDerivation K L (Dual K L) h p = 0) (s : Kˣ) :
     map K (gradingAut hh s : L →ₗ[K] L).dualMap p = p := by
+  rcases subsingleton_or_nontrivial L with hL | hL
+  · -- A trivial `L` has trivial dual, so the transpose is the identity.
+    have hid : map K (gradingAut hh s : L →ₗ[K] L).dualMap = AlgHom.id K _ := by
+      refine algHom_ext (LinearMap.ext fun φ ↦ ?_)
+      simp [Subsingleton.elim _ φ]
+    simp [hid]
+  -- A nontrivial `L` forces characteristic zero: in positive characteristic it would be trivial.
+  have : CharZero K := by
+    obtain ⟨q, hq⟩ := CharP.exists K
+    rcases q.eq_zero_or_pos with rfl | hq0
+    · exact (CharP.charP_zero_iff_charZero K).mp hq
+    · exact absurd (subsingleton_of_isInternal_eigenspace_of_charP_pos hh hq0) (not_subsingleton L)
   -- A functional of weight `j` for the coadjoint action of `h` vanishes outside `L(-j)`, so the
   -- transpose of the grading automorphism at `s` scales it by `s⁻¹ ^ j`.
   have hg (j : ℤ) (φ : Dual K L)

@@ -39,7 +39,7 @@ noncomputable section
 namespace TauCeti
 
 open Set Topology
-open scoped Manifold ContDiff
+open scoped _root_.Manifold ContDiff
 
 universe u
 

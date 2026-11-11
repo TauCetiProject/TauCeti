@@ -187,6 +187,27 @@ lemma baseChangeFunctor_map {H L : _root_.CommHopfAlgCat.{v} k} (φ : H ⟶ L) :
     (baseChangeFunctor (K := K)).map φ = baseChangeMap (K := K) φ :=
   (rfl)
 
+/-- If a surjective coordinate map and its composite with a lift commute with base-change
+identifications, then the lift itself commutes with those identifications. -/
+theorem baseChangeMap_lift_comp_iso_hom
+    {H Q L : _root_.CommHopfAlgCat.{v} k}
+    {H' Q' L' : _root_.CommHopfAlgCat.{max w v} K}
+    (f : H ⟶ Q) (hf : Function.Surjective f.hom) (lift : Q ⟶ L)
+    (f' : H' ⟶ Q') (lift' : Q' ⟶ L')
+    (eH : baseChange (K := K) H ≅ H')
+    (eQ : baseChange (K := K) Q ≅ Q')
+    (eL : baseChange (K := K) L ≅ L')
+    (hf' : baseChangeMap f ≫ eQ.hom = eH.hom ≫ f')
+    (hcomp : (eH.inv ≫ baseChangeMap (f ≫ lift)) ≫ eL.hom = f' ≫ lift') :
+    baseChangeMap lift ≫ eL.hom = eQ.hom ≫ lift' := by
+  let F := baseChangeFunctor (k := k) (K := K)
+  have := ConcreteCategory.epi_of_surjective _ (baseChangeMap_surjective (K := K) f hf)
+  rw [← baseChangeFunctor_map] at this ⊢
+  apply (cancel_epi (F.map f)).mp
+  rw [← Category.assoc, ← Functor.map_comp, baseChangeFunctor_map]
+  rw [← Category.assoc, hf', Category.assoc]
+  exact (Iso.inv_comp_eq eH).mp hcomp
+
 section Tower
 
 variable (k K) {E : Type v} [CommRing E] [Algebra k E] [Algebra E K] [IsScalarTower k E K]
@@ -214,6 +235,12 @@ lemma baseChangeTowerIso_hom_apply (H : _root_.CommHopfAlgCat.{v} k) (s : K) (e 
 lemma baseChangeTowerIso_inv_apply (H : _root_.CommHopfAlgCat.{v} k) (s : K) (h : H) :
     (baseChangeTowerIso k K H).inv.hom (s ⊗ₜ[k] h) = s ⊗ₜ[E] (1 ⊗ₜ[k] h) :=
   TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv_symm_tmul k E H K s h
+
+/-- The tower comparison sends `1 ⊗ x` to the base change of `x ∈ E ⊗[k] H` along `E → K`. -/
+lemma baseChangeTowerIso_hom_one_tmul (H : _root_.CommHopfAlgCat.{v} k) (x : E ⊗[k] H) :
+    (baseChangeTowerIso k K H).hom.hom ((1 : K) ⊗ₜ[E] x) =
+      Algebra.TensorProduct.map (IsScalarTower.toAlgHom k E K) (AlgHom.id k H) x :=
+  _root_.TensorProduct.baseChangeTowerBialgEquiv_one_tmul k E H K x
 
 end Tower
 

@@ -24,11 +24,13 @@ the sum over the proper classes of the lattices in the genus
 (`TauCeti.IntegralLattice.genusProperClasses`). Both are sums over finite sets when
 the genus contains finitely many classes, which holds for definite lattices
 (`TauCeti.IntegralLattice.IsPosDef.finite_genusClasses`) and in rank at most one. They are defined
-for every lattice, through `finsum`, and the comparison theorems carry the finiteness of the genus
-as a hypothesis. A class with infinite isometry group contributes `0`, because `Nat.card` of an
-infinite type is `0` and `0⁻¹ = 0`. This happens for every degenerate lattice of rank at least two,
-whose shears along the radical are isometries, and for many indefinite lattices, although some
-indefinite lattices (such as the hyperbolic plane `xy`, with four isometries) have finite isometry
+for every lattice, through `finsum`. Some of the comparison theorems, for example
+`properMass_eq_two_mul_mass` and `sum_inv_natCard_isometry_le_mass`, assume a finite genus,
+while the mass-check criterion `sum_inv_natCard_isometry_eq_mass_iff` does not. A class with
+infinite isometry group contributes `0`, because `Nat.card` of an infinite type is `0` and
+`0⁻¹ = 0`. This happens for every degenerate lattice of rank at least two, whose shears along the
+radical are isometries, and for many indefinite lattices, although some indefinite lattices (such
+as the hyperbolic plane `xy`, with four isometries) have finite isometry
 groups. So the masses have their classical meaning only for definite lattices, where the isometry
 groups are always finite.
 
@@ -55,7 +57,8 @@ the genus of `E₈ ⊕ E₈`.
 * `TauCeti.IntegralLattice.sum_inv_natCard_isometry_le_mass` and
   `TauCeti.IntegralLattice.sum_inv_natCard_isometry_eq_mass_iff`: pairwise non-isometric lattices
   in a genus carry at most its mass, and, when every class has a finite isometry group, they carry
-  all of it exactly when they represent every class.
+  all of it exactly when their number is the class number, that is, in a genus with finitely many
+  classes, exactly when they represent every class.
 * `TauCeti.IntegralLattice.mass_eq_one_of_finrank_eq_zero` and
   `TauCeti.IntegralLattice.properMass_eq_one_of_finrank_eq_zero`: in rank zero, `m = m⁺ = 1`.
 * `TauCeti.IntegralLattice.mass_eq_inv_two_of_finrank_eq_one` and
@@ -214,15 +217,50 @@ theorem sum_inv_natCard_isometry_le_mass (hL : L.genusClasses.Finite)
   exact Finset.sum_le_sum_of_subset_of_nonneg (image_isometryClass_comp_subset hL hgen)
     fun _ _ _ ↦ by positivity
 
-/-- **A mass check certifies a complete set of classes.** Let the genus of `L` contain finitely
-many classes, each with a finite isometry group, as for a definite lattice. Then pairwise
-non-isometric lattices in the genus represent every class exactly when the reciprocal orders of
-their isometry groups sum to the mass: a missing class would contribute a positive term. -/
-theorem sum_inv_natCard_isometry_eq_mass_iff (hL : L.genusClasses.Finite)
+/-- A positive reciprocal isometry group order: the isometry group of a lattice in the genus of
+`L` is finite and nonempty, so its order contributes a positive term. -/
+private theorem inv_natCard_isometry_pos
+    (hO : ∀ M : IntegralLattice V, L.SameGenus M → Finite (Isometry M M))
+    {M : IntegralLattice V} (hM : L.SameGenus M) :
+    0 < ((Nat.card (Isometry M M) : ℚ))⁻¹ :=
+  inv_pos.mpr (Nat.cast_pos.mpr (Nat.card_pos_iff.mpr ⟨⟨Isometry.refl _⟩, hO _ hM⟩))
+
+/-- In a genus with infinitely many classes, each with a finite isometry group, a family of
+lattices in the genus has reciprocal isometry group orders summing to the mass (which is `0` by
+the `finsum` convention) exactly when the family is empty, and the class number is `0`. -/
+private theorem sum_inv_natCard_isometry_eq_mass_iff_of_infinite (hL : ¬ L.genusClasses.Finite)
+    (hO : ∀ M : IntegralLattice V, L.SameGenus M → Finite (Isometry M M))
+    (hgen : ∀ i, L.SameGenus (f i)) :
+    ∑ i, ((Nat.card (Isometry (f i) (f i)) : ℚ))⁻¹ = L.mass ↔ Nat.card ι = L.classNumber := by
+  have hinf : L.genusClasses.Infinite := hL
+  have hclass : L.classNumber = 0 := Nat.eq_zero_of_not_pos (classNumber_pos_iff.not.mpr hL)
+  have hmass : L.mass = 0 := by
+    rw [mass_def]
+    refine finsum_mem_eq_zero_of_infinite <| hinf.mono fun c hc ↦ ⟨hc, ?_⟩
+    have := inv_natCard_isometry_pos hO (M := c.out) (mem_genusClasses_iff.mp hc)
+    exact this.ne'
+  rw [hclass, hmass, Nat.card_eq_zero, Finset.sum_eq_zero_iff_of_nonneg fun _ _ ↦ by positivity]
+  refine ⟨fun h ↦ Or.inl ⟨fun i ↦ ?_⟩, ?_⟩
+  · exact (inv_natCard_isometry_pos hO (hgen i)).ne' (h i (Finset.mem_univ i)) |>.elim
+  · rintro (⟨h⟩ | h) i -
+    · exact h.false i |>.elim
+    · exact (@not_finite ι h _).elim
+
+/-- **A mass check certifies a complete set of classes.** Let each lattice in the genus of `L` have
+a finite isometry group, as for a definite lattice. Then, for pairwise non-isometric lattices in
+the genus, the reciprocal orders of their isometry groups sum to the mass exactly when their
+number is the class number. In a genus with finitely many classes this says that they represent
+every class: a missing class would contribute a positive term. For a genus with infinitely many
+classes the mass and the class number are `0` by convention and both sides say that the family is
+empty. -/
+theorem sum_inv_natCard_isometry_eq_mass_iff
     (hO : ∀ M : IntegralLattice V, L.SameGenus M → Finite (Isometry M M))
     (hgen : ∀ i, L.SameGenus (f i)) (hf : Pairwise fun i j ↦ IsEmpty (Isometry (f i) (f j))) :
     ∑ i, ((Nat.card (Isometry (f i) (f i)) : ℚ))⁻¹ = L.mass ↔ Nat.card ι = L.classNumber := by
   classical
+  by_cases hL : L.genusClasses.Finite
+  swap
+  · exact sum_inv_natCard_isometry_eq_mass_iff_of_infinite hL hO hgen
   rw [card_eq_classNumber_iff_of_pairwise_isEmpty_isometry hL hgen hf,
     sum_inv_natCard_isometry_eq_sum_image hf, mass_def, finsum_mem_eq_finite_toFinset_sum _ hL]
   have hsub := image_isometryClass_comp_subset hL hgen
@@ -233,11 +271,11 @@ theorem sum_inv_natCard_isometry_eq_mass_iff (hL : L.genusClasses.Finite)
       simp only [Finset.mem_image, Finset.mem_univ, true_and, Function.comp_apply,
         isometryClass_eq_isometryClass_iff, not_exists, not_nonempty_iff]
       exact fun i ↦ ⟨fun e ↦ (hne i).false e⟩
-    have := hO _ (mem_genusClasses_iff.mp (isometryClass_mem_genusClasses_iff.mpr hM))
     refine h.not_lt (Finset.sum_lt_sum_of_subset hsub
       (hL.mem_toFinset.mpr (isometryClass_mem_genusClasses_iff.mpr hM)) hM' ?_
       fun _ _ _ ↦ by positivity)
-    exact inv_pos.mpr (Nat.cast_pos.mpr (Nat.card_pos_iff.mpr ⟨⟨Isometry.refl _⟩, this⟩))
+    exact inv_natCard_isometry_pos hO
+      (mem_genusClasses_iff.mp (isometryClass_mem_genusClasses_iff.mpr hM))
   · refine congrArg (Finset.sum · _) (hsub.antisymm fun c hc ↦ ?_)
     obtain ⟨i, ⟨e⟩⟩ := h c.out (mem_genusClasses_iff.mp (hL.mem_toFinset.mp hc))
     exact Finset.mem_image.mpr

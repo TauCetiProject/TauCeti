@@ -64,19 +64,10 @@ private theorem exists_exit_of_pos {f₀ f₁ f₂ : 𝕜 →ᵃ[𝕜] 𝕜} {s�
     have : f₂ s = (s - s₀) * (f₂ 1 - f₂ 0) := by rw [hf₂ s]; linarith [hf₂ s₀]
     rw [this]
     exact ⟨fun h ↦ by nlinarith, fun h ↦ mul_nonneg (by linarith) hκ.le⟩
-  -- A nonnegative coordinate on `[s₀, 1]` has not yet passed its zero.
-  have hle₀ {s} (hs : s ∈ Icc s₀ 1) (h : 0 ≤ f₀ s) : s ≤ z₀ := by
-    rcases h.lt_or_eq with h | h
-    exacts [((hz₀s s hs).1.1 h).le, ((hz₀s s hs).2.1 h.symm).le]
-  have hle₁ {s} (hs : s ∈ Icc s₀ 1) (h : 0 ≤ f₁ s) : s ≤ z₁ := by
-    rcases h.lt_or_eq with h | h
-    exacts [((hz₁s s hs).1.1 h).le, ((hz₁s s hs).2.1 h.symm).le]
-  have hnn₀ {s} (hs : s ∈ Icc s₀ 1) (h : s ≤ z₀) : 0 ≤ f₀ s := by
-    rcases h.lt_or_eq with h | h
-    exacts [((hz₀s s hs).1.2 h).le, ((hz₀s s hs).2.2 h).ge]
-  have hnn₁ {s} (hs : s ∈ Icc s₀ 1) (h : s ≤ z₁) : 0 ≤ f₁ s := by
-    rcases h.lt_or_eq with h | h
-    exacts [((hz₁s s hs).1.2 h).le, ((hz₁s s hs).2.2 h).ge]
+  -- A coordinate is nonnegative on `[s₀, 1]` exactly up to its zero.
+  have hnn {g : 𝕜 →ᵃ[𝕜] 𝕜} {z s : 𝕜} (h : (0 < g s ↔ s < z) ∧ (g s = 0 ↔ s = z)) :
+      0 ≤ g s ↔ s ≤ z := by
+    rw [le_iff_lt_or_eq, le_iff_lt_or_eq, h.1, eq_comm (a := 0), h.2]
   -- The segment leaves at the first zero of `f₀` or `f₁`.
   set s₁ := min z₀ z₁
   have hs₁1 : s₁ < 1 := by
@@ -101,12 +92,96 @@ private theorem exists_exit_of_pos {f₀ f₁ f₂ : 𝕜 →ᵃ[𝕜] 𝕜} {s�
   · have hsI : s ∈ Icc s₀ 1 := ⟨(hf₂nn s).1 h2, hs.2⟩
     rcases h with ⟨h1, h0⟩ | ⟨h0, h1⟩
     · have hsz : s = z₁ := (hz₁s s hsI).2.1 h1
-      exact hsz.trans (min_eq_right (hsz ▸ hle₀ hsI h0)).symm
+      exact hsz.trans (min_eq_right (hsz ▸ (hnn (hz₀s s hsI)).1 h0)).symm
     · have hsz : s = z₀ := (hz₀s s hsI).2.1 h0
-      exact hsz.trans (min_eq_left (hsz ▸ hle₁ hsI h1)).symm
+      exact hsz.trans (min_eq_left (hsz ▸ (hnn (hz₁s s hsI)).1 h1)).symm
   · have hsI : s ∈ Icc s₀ 1 := ⟨hs.1, hs.2.trans hs₁1.le⟩
-    exact ⟨hnn₀ hsI (hs.2.trans (min_le_left _ _)), hnn₁ hsI (hs.2.trans (min_le_right _ _)),
+    exact ⟨(hnn (hz₀s s hsI)).2 (hs.2.trans (min_le_left _ _)),
+      (hnn (hz₁s s hsI)).2 (hs.2.trans (min_le_right _ _)),
       (hf₂nn s).2 hs.1⟩
+
+/-- A segment entering a triangle across one side, along which the barycentric coordinate `f₂`
+opposite that side decreases, leaves it across one of the other two sides: run the segment
+backwards and apply `exists_exit_of_pos`. -/
+private theorem exists_exit_of_neg {f₀ f₁ f₂ : 𝕜 →ᵃ[𝕜] 𝕜} {s₀ : 𝕜} (hs₀ : s₀ ∈ Ioo (0 : 𝕜) 1)
+    (h₂ : f₂ s₀ = 0) (h₀ : 0 < f₀ s₀) (h₁ : 0 < f₁ s₀) (hκ : f₂ 1 - f₂ 0 < 0)
+    (hout₀ : ¬ (0 ≤ f₀ 0 ∧ 0 ≤ f₁ 0 ∧ 0 ≤ f₂ 0))
+    (hC : ∀ s ∈ Icc (0 : 𝕜) 1, ¬ (f₀ s = 0 ∧ f₁ s = 0)) :
+    ∃ s₁ ∈ Ioo (0 : 𝕜) 1, s₁ ≠ s₀ ∧ 0 < f₂ s₁ ∧
+      ((f₁ s₁ = 0 ∧ 0 < f₀ s₁) ∨ (f₀ s₁ = 0 ∧ 0 < f₁ s₁)) ∧
+      (∀ s ∈ Icc (0 : 𝕜) 1, 0 ≤ f₂ s → (f₁ s = 0 ∧ 0 ≤ f₀ s ∨ f₀ s = 0 ∧ 0 ≤ f₁ s) → s = s₁) ∧
+      ∀ s ∈ uIcc s₀ s₁, 0 ≤ f₀ s ∧ 0 ≤ f₁ s ∧ 0 ≤ f₂ s := by
+  have hf₂ := f₂.apply_eq_add_mul_sub
+  set r : 𝕜 →ᵃ[𝕜] 𝕜 := lineMap 1 0
+  have hr (s : 𝕜) : r s = 1 - s := by simp [r, lineMap_apply_ring']; ring
+  have hrI {s : 𝕜} (hs : s ∈ Icc (0 : 𝕜) 1) : r s ∈ Icc (0 : 𝕜) 1 := by
+    rw [hr]; exact ⟨by linarith [hs.2], by linarith [hs.1]⟩
+  have hrr (s : 𝕜) : r (r s) = s := by rw [hr, hr]; ring
+  have hrs₀ : r (r s₀) = s₀ := hrr s₀
+  obtain ⟨s₁, hs₁, hpos, hside, huniq, hin⟩ := exists_exit_of_pos (f₀ := f₀.comp r)
+    (f₁ := f₁.comp r) (f₂ := f₂.comp r) (s₀ := r s₀)
+    (by rw [hr]; exact ⟨by linarith [hs₀.2], by linarith [hs₀.1]⟩)
+    (by rwa [AffineMap.comp_apply, hrs₀])
+    (by rw [AffineMap.comp_apply, hr, sub_self]; nlinarith [hf₂ s₀, hs₀.1])
+    (by rwa [AffineMap.comp_apply, hrs₀]) (by rwa [AffineMap.comp_apply, hrs₀])
+    (by
+      simp only [AffineMap.comp_apply, hr, sub_self]
+      by_contra! h
+      exact hout₀ ⟨h.1, h.2, by nlinarith [hf₂ s₀, hs₀.1]⟩)
+    (fun s hs ↦ hC (r s) (hrI hs))
+  refine ⟨r s₁, ?_, ?_, hpos, hside, fun s hs h2 h ↦ ?_, fun s hs ↦ ?_⟩
+  · rw [hr]; exact ⟨by linarith [hs₁.2], by linarith [hs₀.2, hs₁.1, hr s₀]⟩
+  · rw [hr]; intro h; linarith [hs₁.1, hr s₀]
+  · rw [← huniq (r s) (hrI hs) (by rwa [AffineMap.comp_apply, hrr])
+      (by simpa only [AffineMap.comp_apply, hrr] using h), hrr]
+  · have := hin (r s) (by
+      rw [hr, hr] at *
+      rcases (mem_uIcc.1 hs) with h | h <;> constructor <;> linarith [hs₁.1])
+    simpa only [AffineMap.comp_apply, hrr] using this
+
+/-- The barycentric coordinate `f₂` of a segment crossing the open side `AB` at `s₀` is not
+constant: otherwise the segment runs along the line `AB`, outside the triangle at both ends, and
+so meets a vertex. -/
+private theorem false_of_apply_one_sub_eq_zero {f₀ f₁ f₂ : 𝕜 →ᵃ[𝕜] 𝕜}
+    (hsum : ∀ s, f₀ s + f₁ s + f₂ s = 1) {s₀ : 𝕜} (hs₀ : s₀ ∈ Ioo (0 : 𝕜) 1) (h₂ : f₂ s₀ = 0)
+    (h₀ : 0 < f₀ s₀) (h₁ : 0 < f₁ s₀) (hκ : f₂ 1 - f₂ 0 = 0)
+    (hout₀ : ¬ (0 ≤ f₀ 0 ∧ 0 ≤ f₁ 0 ∧ 0 ≤ f₂ 0))
+    (hout₁ : ¬ (0 ≤ f₀ 1 ∧ 0 ≤ f₁ 1 ∧ 0 ≤ f₂ 1))
+    (hA : ∀ s ∈ Icc (0 : 𝕜) 1, ¬ (f₁ s = 0 ∧ f₂ s = 0))
+    (hB : ∀ s ∈ Icc (0 : 𝕜) 1, ¬ (f₀ s = 0 ∧ f₂ s = 0)) : False := by
+  have hf₀ := f₀.apply_eq_add_mul_sub
+  have hf₂ := f₂.apply_eq_add_mul_sub
+  have hz (s : 𝕜) : f₂ s = 0 := by
+    have h := hf₂ s₀
+    rw [hκ, mul_zero, add_zero] at h
+    rw [hf₂ s, hκ, mul_zero, add_zero, ← h, h₂]
+  have hf₁ (s : 𝕜) : f₁ s = 1 - f₀ s := by linarith [hsum s, hz s]
+  have h01 : f₀ s₀ < 1 := by linarith [hf₁ s₀]
+  simp only [hz, le_refl, and_true, hf₁, sub_nonneg, not_and, not_le] at hout₀ hout₁
+  rcases lt_or_ge (f₀ 0) 0 with h | h
+  · -- `f₀` increases from below `0` to above `1`, so it takes the value `1`.
+    have h1 : 1 < f₀ 1 := by
+      rcases lt_or_ge (f₀ 1) 0 with h' | h'
+      · nlinarith [hf₀ s₀, hs₀.1, hs₀.2]
+      · exact hout₁ h'
+    refine hA ((1 - f₀ 0) / (f₀ 1 - f₀ 0)) ⟨div_nonneg (by linarith) (by linarith),
+      (div_le_one (by linarith)).2 (by linarith)⟩ ⟨?_, hz _⟩
+    have hne : f₀ 1 - f₀ 0 ≠ 0 := (by linarith : (0 : 𝕜) < f₀ 1 - f₀ 0).ne'
+    rw [hf₁, hf₀]
+    field_simp
+    ring
+  · -- `f₀` decreases from above `1` to below `0`, so it vanishes.
+    have h0 : 1 < f₀ 0 := hout₀ h
+    have h1 : f₀ 1 < 0 := by
+      by_contra! h'
+      have := hout₁ h'
+      nlinarith [hf₀ s₀, hs₀.1, hs₀.2]
+    refine hB (f₀ 0 / (f₀ 0 - f₀ 1)) ⟨div_nonneg (by linarith) (by linarith),
+      (div_le_one (by linarith)).2 (by linarith)⟩ ⟨?_, hz _⟩
+    have hne : f₀ 0 - f₀ 1 ≠ 0 := (by linarith : (0 : 𝕜) < f₀ 0 - f₀ 1).ne'
+    rw [hf₀]
+    field_simp
+    ring
 
 /-- **A segment crossing one side of a triangle leaves it across another.** Read a segment
 `s ↦ σ s`, `s ∈ [0, 1]`, in the barycentric coordinates `f₀`, `f₁`, `f₂` of a triangle `ABC`.
@@ -124,76 +199,16 @@ theorem exists_triangle_exit {f₀ f₁ f₂ : 𝕜 →ᵃ[𝕜] 𝕜} (hsum : �
       ((f₁ s₁ = 0 ∧ 0 < f₀ s₁) ∨ (f₀ s₁ = 0 ∧ 0 < f₁ s₁)) ∧
       (∀ s ∈ Icc (0 : 𝕜) 1, 0 ≤ f₂ s → (f₁ s = 0 ∧ 0 ≤ f₀ s ∨ f₀ s = 0 ∧ 0 ≤ f₁ s) → s = s₁) ∧
       ∀ s ∈ uIcc s₀ s₁, 0 ≤ f₀ s ∧ 0 ≤ f₁ s ∧ 0 ≤ f₂ s := by
-  have hf₀ := f₀.apply_eq_add_mul_sub
   have hf₂ := f₂.apply_eq_add_mul_sub
   have hout₀ := hout 0 (by simp)
   have hout₁ := hout 1 (by simp)
   rcases lt_trichotomy (f₂ 1 - f₂ 0) 0 with hκ | hκ | hκ
-  · -- `f₂` decreases: run along the segment backwards.
-    set r : 𝕜 →ᵃ[𝕜] 𝕜 := lineMap 1 0
-    have hr (s : 𝕜) : r s = 1 - s := by simp [r, lineMap_apply_ring']; ring
-    have hrI {s : 𝕜} (hs : s ∈ Icc (0 : 𝕜) 1) : r s ∈ Icc (0 : 𝕜) 1 := by
-      rw [hr]; exact ⟨by linarith [hs.2], by linarith [hs.1]⟩
-    have hrr (s : 𝕜) : r (r s) = s := by rw [hr, hr]; ring
-    have hrs₀ : r (r s₀) = s₀ := hrr s₀
-    obtain ⟨s₁, hs₁, hpos, hside, huniq, hin⟩ := exists_exit_of_pos (f₀ := f₀.comp r)
-      (f₁ := f₁.comp r) (f₂ := f₂.comp r) (s₀ := r s₀)
-      (by rw [hr]; exact ⟨by linarith [hs₀.2], by linarith [hs₀.1]⟩)
-      (by rwa [AffineMap.comp_apply, hrs₀])
-      (by rw [AffineMap.comp_apply, hr, sub_self]; nlinarith [hf₂ s₀, hs₀.1])
-      (by rwa [AffineMap.comp_apply, hrs₀]) (by rwa [AffineMap.comp_apply, hrs₀])
-      (by
-        simp only [AffineMap.comp_apply, hr, sub_self]
-        by_contra! h
-        exact hout₀ ⟨h.1, h.2, by nlinarith [hf₂ s₀, hs₀.1]⟩)
-      (fun s hs ↦ hC (r s) (hrI hs))
-    refine ⟨r s₁, ?_, ?_, hpos, hside, fun s hs h2 h ↦ ?_, fun s hs ↦ ?_⟩
-    · rw [hr]; exact ⟨by linarith [hs₁.2], by linarith [hs₀.2, hs₁.1, hr s₀]⟩
-    · rw [hr]; intro h; linarith [hs₁.1, hr s₀]
-    · rw [← huniq (r s) (hrI hs) (by rwa [AffineMap.comp_apply, hrr])
-        (by simpa only [AffineMap.comp_apply, hrr] using h), hrr]
-    · have := hin (r s) (by
-        rw [hr, hr] at *
-        rcases (mem_uIcc.1 hs) with h | h <;> constructor <;> linarith [hs₁.1])
-      simpa only [AffineMap.comp_apply, hrr] using this
-  · -- `f₂` vanishes identically, so the segment runs along the line `AB` and meets a vertex.
-    exfalso
-    have hz (s : 𝕜) : f₂ s = 0 := by
-      have h := hf₂ s₀
-      rw [hκ, mul_zero, add_zero] at h
-      rw [hf₂ s, hκ, mul_zero, add_zero, ← h, h₂]
-    have hf₁ (s : 𝕜) : f₁ s = 1 - f₀ s := by linarith [hsum s, hz s]
-    have h01 : f₀ s₀ < 1 := by linarith [hf₁ s₀]
-    simp only [hz, le_refl, and_true, hf₁, sub_nonneg, not_and, not_le] at hout₀ hout₁
-    rcases lt_or_ge (f₀ 0) 0 with h | h
-    · -- `f₀` increases from below `0` to above `1`, so it takes the value `1`.
-      have h1 : 1 < f₀ 1 := by
-        rcases lt_or_ge (f₀ 1) 0 with h' | h'
-        · nlinarith [hf₀ s₀, hs₀.1, hs₀.2]
-        · exact hout₁ h'
-      refine hA ((1 - f₀ 0) / (f₀ 1 - f₀ 0)) ⟨div_nonneg (by linarith) (by linarith),
-        (div_le_one (by linarith)).2 (by linarith)⟩ ⟨?_, hz _⟩
-      have hne : f₀ 1 - f₀ 0 ≠ 0 := (by linarith : (0 : 𝕜) < f₀ 1 - f₀ 0).ne'
-      rw [hf₁, hf₀]
-      field_simp
-      ring
-    · -- `f₀` decreases from above `1` to below `0`, so it vanishes.
-      have h0 : 1 < f₀ 0 := hout₀ h
-      have h1 : f₀ 1 < 0 := by
-        by_contra! h'
-        have := hout₁ h'
-        nlinarith [hf₀ s₀, hs₀.1, hs₀.2]
-      refine hB (f₀ 0 / (f₀ 0 - f₀ 1)) ⟨div_nonneg (by linarith) (by linarith),
-        (div_le_one (by linarith)).2 (by linarith)⟩ ⟨?_, hz _⟩
-      have hne : f₀ 0 - f₀ 1 ≠ 0 := (by linarith : (0 : 𝕜) < f₀ 0 - f₀ 1).ne'
-      rw [hf₀]
-      field_simp
-      ring
+  · exact exists_exit_of_neg hs₀ h₂ h₀ h₁ hκ hout₀ hC
+  · exact (false_of_apply_one_sub_eq_zero hsum hs₀ h₂ h₀ h₁ hκ hout₀ hout₁ hA hB).elim
   · obtain ⟨s₁, hs₁, hpos, hside, huniq, hin⟩ := exists_exit_of_pos hs₀ h₂
       (by nlinarith [hf₂ s₀, hs₀.2]) h₀ h₁
       (by by_contra! h; exact hout₁ ⟨h.1, h.2, by nlinarith [hf₂ s₀, hs₀.2]⟩) hC
     exact ⟨s₁, ⟨hs₀.1.trans hs₁.1, hs₁.2⟩, hs₁.1.ne', hpos, hside, huniq,
       by rwa [uIcc_of_le hs₁.1.le]⟩
-
 
 end TauCeti
