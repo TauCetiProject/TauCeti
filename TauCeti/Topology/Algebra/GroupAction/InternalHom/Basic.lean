@@ -137,18 +137,19 @@ the two constructions do agree, transported along `AddMonoidHom.toIntLinearMap`;
 not recorded here, because it would pull `Mathlib.RepresentationTheory.Basic` — and with it the
 tensor, matrix and dual stack — into a file the whole continuous-cohomology development imports.
 
-Mathlib puts no topology on `M →+ N`. Discreteness of the internal hom enters here through the
-discreteness of the ambient function space `M → N`, which is what
-`isOpen_setOfPred_homAction_eq_self` rests on. `InternalHom G M N` carries the discrete topology by
-definition, with no hypothesis on `M` or `N`: that is the intended topology in the discrete setting
-this file is written for, namely finite discrete `M` and discrete `N`, which is also the setting in
-which the action is proved continuous below. Those hypotheses are sufficient for that continuity,
-not necessary — if `G` acts trivially on both `M` and `N` then it acts trivially on `M →+ N`, so
-the action is continuous for an infinite `M` too — and it is sufficiency that is established here.
-(A trivial action on `M` alone does not suffice: the stabilizer of `φ` is then the intersection of
-the stabilizers of the values `φ m`, which for infinitely many `m` need not be open.) For infinite
-`M` the internal hom in the category of discrete `G`-modules is the sub-object of homomorphisms
-with open stabilizer, which is not `InternalHom G M N`; nothing here claims otherwise.
+Mathlib puts no topology on `M →+ N`. `InternalHom G M N` carries the discrete topology by
+definition, with no hypothesis on `M` or `N`; for finite `M` and discrete `N`, the stabilizer of
+each continuous `φ` is then open (`isOpen_setOfPred_homAction_eq_self`), a finite intersection of
+open sets, which gives continuity of the action. The discrete topology is the intended topology in
+the discrete setting this file is written for, namely finite discrete `M` and discrete `N`, which
+is also the setting in which the action is proved continuous below. Those hypotheses are
+sufficient for that continuity, not necessary — if `G` acts trivially on both `M` and `N` then it
+acts trivially on `M →+ N`, so the action is continuous for an infinite `M` too — and it is
+sufficiency that is established here. (A trivial action on `M` alone does not suffice: the
+stabilizer of `φ` is then the intersection of the stabilizers of the values `φ m`, which for
+infinitely many `m` need not be open.) For infinite `M` the internal hom in the category of
+discrete `G`-modules is the sub-object of homomorphisms with open stabilizer, which is not
+`InternalHom G M N`; nothing here claims otherwise.
 -/
 
 public section
@@ -283,14 +284,15 @@ theorem continuous_homAction_coe {φ : M →+ N} (hφ : Continuous φ) :
   continuous_pi fun m => continuous_homAction_apply hφ m
 
 omit [ContinuousInv G] in
-/-- For a finite `M` and a discrete `N` the set of group elements fixing a continuous `φ` is open.
-By `homAction_eq_self_iff` it is the finite intersection of the sets where the continuous maps
-`g ↦ φ (g • m)` and `g ↦ g • φ m` into the discrete `N` agree, so no continuity of inversion is
-needed. As for the two continuity lemmas above, the source only has to be discrete where
-`Continuous φ` is discharged. This is what the `ContinuousSMul G (InternalHom G M N)` instance
-below rests on, through `continuousSMul_iff_stabilizer_isOpen`. -/
+/-- For a finite `M` and a discrete `N` the set of group elements fixing a continuous `φ` is open,
+without any continuity of inversion on `G`. As for the two continuity lemmas above, the source only
+has to be discrete where `Continuous φ` is discharged. This is what the
+`ContinuousSMul G (InternalHom G M N)` instance below rests on, through
+`continuousSMul_iff_stabilizer_isOpen`. -/
 theorem isOpen_setOfPred_homAction_eq_self [Finite M] [DiscreteTopology N] {φ : M →+ N}
     (hφ : Continuous φ) : IsOpen {g : G | homAction g φ = φ} := by
+  -- By `homAction_eq_self_iff` the set is the finite intersection of the sets where the continuous
+  -- maps `g ↦ φ (g • m)` and `g ↦ g • φ m` into the discrete `N` agree.
   have hset : {g : G | homAction g φ = φ} = ⋂ m : M, {g : G | φ (g • m) = g • φ m} := by
     ext g
     simp [homAction_eq_self_iff]
