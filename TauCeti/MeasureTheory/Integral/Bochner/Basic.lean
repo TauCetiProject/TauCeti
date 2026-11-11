@@ -110,6 +110,8 @@ The conversion is `MeasureTheory.ofReal_integral_norm_eq_lintegral_enorm`, whose
   uniformly on the support of the weight.
 * `norm_integral_smul_sub_integral_smul_le` bounds the change of such an integral when the weight
   is perturbed uniformly on a set of finite measure.
+* `enorm_integral_sub_integral_le_lintegral_enorm_sub`: two Bochner integrals differ by at most
+  the integral of the norm of the difference of the integrands, with no integrability assumption.
 
 ## Tail lower bounds
 
@@ -604,6 +606,26 @@ theorem norm_integral_smul_sub_integral_smul_le {X F : Type*} [MeasurableSpace X
   refine norm_setIntegral_le_of_norm_le_const hK fun x hx ↦ ?_
   rw [← sub_smul, norm_smul, Real.norm_eq_abs, abs_sub_comm]
   exact mul_le_mul (hab x) (hB x hx) (norm_nonneg _) ((abs_nonneg _).trans (hab x))
+
+/-- The Bochner integrals of two a.e. strongly measurable functions differ by at most the integral
+of the norm of their difference. No integrability is assumed: if the right-hand side is finite,
+the two functions are either both integrable or both not, and in the second case both integrals
+vanish. -/
+theorem enorm_integral_sub_integral_le_lintegral_enorm_sub {α G : Type*} [MeasurableSpace α]
+    {μ : Measure α} [NormedAddCommGroup G] [NormedSpace ℝ G] {f g : α → G}
+    (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeasurable g μ) :
+    ‖∫ x, f x ∂μ - ∫ x, g x ∂μ‖ₑ ≤ ∫⁻ x, ‖f x - g x‖ₑ ∂μ := by
+  rcases eq_or_ne (∫⁻ x, ‖f x - g x‖ₑ ∂μ) ∞ with h | h
+  · simp [h]
+  have hint : Integrable (fun x => f x - g x) μ :=
+    ⟨hf.sub hg, hasFiniteIntegral_iff_enorm.2 h.lt_top⟩
+  by_cases hgi : Integrable g μ
+  · have hfi : Integrable f μ := (hint.add hgi).congr (.of_forall fun x => by simp)
+    rw [← integral_sub hfi hgi]
+    exact enorm_integral_le_lintegral_enorm _
+  · have hfi : ¬Integrable f μ := fun hfi =>
+      hgi ((hfi.sub hint).congr (.of_forall fun x => by simp))
+    simp [integral_undef hfi, integral_undef hgi]
 
 /-- **Averaging against a kernel supported in `[-ε, 0]` samples only `[t, t + ε]`.** If `ψ` is a
 nonnegative probability density with respect to `μ` vanishing outside `[-ε, 0]`, and `F` is antitone
