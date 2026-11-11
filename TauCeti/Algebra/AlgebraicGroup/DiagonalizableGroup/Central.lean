@@ -200,6 +200,19 @@ theorem mem_weightSpace_weightSubcomodule (x : X) (n : weightSubcomodule V π h�
   | add y z hy hz => simp only [map_add, hy, hz]
   | tmul y c => simp
 
+/-- A weight vector of `V` lying in a subcomodule is a weight vector of that subcomodule. -/
+private theorem mem_weightSpace_of_mem_weightSpace_subcomodule (N : Subcomodule R C V) {x : X}
+    (n : N) (hn : (n : V) ∈ weightSpace V π x) : n ∈ weightSpace N π x := by
+  rw [mem_weightSpace]
+  apply Module.Flat.rTensor_preserves_injective_linearMap (M := MonoidAlgebra R X)
+    (SMulMemClass.subtype N) Subtype.val_injective
+  rw [LinearMap.rTensor_tmul, SMulMemClass.subtype_apply, ← mem_weightSpace.mp hn,
+    ← Subcomodule.subtype_rTensor_coact _ n]
+  generalize Comodule.coact (R := R) (C := C) n = t
+  induction t using TensorProduct.inductionOn with
+  | add y z hy hz => simp only [map_add, hy, hz]
+  | tmul y c => simp
+
 end TauCeti.DiagonalizableGroup
 
 namespace BialgHom
@@ -208,10 +221,9 @@ open TauCeti.DiagonalizableGroup
 
 variable {k H X : Type*} [Field k] [CommRing H] [HopfAlgebra k H] [CommGroup X]
 
-/-- **A weight of a central diagonalizable subgroup has a power extending to a character.** If
-`D(X)` is central in `G` and `x` occurs as a weight of a finite-dimensional representation `V`,
-then some positive power `x ^ n` is the restriction to `D(X)` of a character of `G`. -/
-theorem exists_groupLike_map_eq_single_pow_of_weightSpace_ne_bot
+/-- The finite-dimensional case of
+`exists_groupLike_map_eq_single_pow_of_weightSpace_ne_bot`. -/
+private theorem exists_groupLike_map_eq_single_pow_of_weightSpace_ne_bot_of_finite
     (π : H →ₐc[k] MonoidAlgebra k X) (hπ : centralizerHopfIdeal π = ⊥)
     {V : Type*} [AddCommMonoid V] [Module k V] [Comodule k H V] [Module.Finite k V] {x : X}
     (hx : weightSpace V π.toCoalgHom x ≠ ⊥) :
@@ -230,6 +242,22 @@ theorem exists_groupLike_map_eq_single_pow_of_weightSpace_ne_bot
       Comodule.isGroupLikeElem_det_coefficientMatrix b⟩, ?_⟩
   simpa using map_det_coefficientMatrix_of_forall_mem_weightSpace π
     (mem_weightSpace_weightSubcomodule x) b
+
+/-- **A weight of a central diagonalizable subgroup has a power extending to a character.** If
+`D(X)` is central in `G` and `x` occurs as a weight of a representation `V`, then some positive
+power `x ^ n` is the restriction to `D(X)` of a character of `G`. -/
+theorem exists_groupLike_map_eq_single_pow_of_weightSpace_ne_bot
+    (π : H →ₐc[k] MonoidAlgebra k X) (hπ : centralizerHopfIdeal π = ⊥)
+    {V : Type*} [AddCommMonoid V] [Module k V] [Comodule k H V] {x : X}
+    (hx : weightSpace V π.toCoalgHom x ≠ ⊥) :
+    ∃ n, 0 < n ∧ ∃ g : GroupLike k H, π g = MonoidAlgebra.single (x ^ n) 1 := by
+  let _ : AddCommGroup V := Module.addCommMonoidToAddCommGroup k
+  obtain ⟨v, hv, hv0⟩ := (Submodule.ne_bot_iff _).mp hx
+  obtain ⟨N, hN, hvN⟩ := Subcomodule.exists_finite_subcomodule_mem (R := k) (C := H) v
+  have : Module.Finite k N := hN
+  refine exists_groupLike_map_eq_single_pow_of_weightSpace_ne_bot_of_finite π hπ (V := N) ?_
+  exact (Submodule.ne_bot_iff _).mpr ⟨⟨v, hvN⟩,
+    mem_weightSpace_of_mem_weightSpace_subcomodule N _ hv, fun h ↦ hv0 (congrArg Subtype.val h)⟩
 
 /-- **A central diagonalizable subgroup meets the derived subgroup in a finite subgroup**, given
 a finite-dimensional representation whose matrix coefficients generate the coordinate algebra.
