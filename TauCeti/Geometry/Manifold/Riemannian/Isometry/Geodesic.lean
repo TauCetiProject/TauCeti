@@ -26,6 +26,8 @@ maximal geodesic intervals and intertwines the exponential maps, `Φ ∘ exp_p =
 
 * `IsLocalRiemannianIsometry.isGeodesicCurveOn_comp`: local isometries preserve geodesics.
 * `IsLocalRiemannianIsometry.isGeodesicCurveOn_comp_iff`: reflection for `C²` source curves.
+* `IsLocalRiemannianIsometry.isGeodesicCurveOnFrom_comp`: local isometries carry the initial point
+  and velocity of a geodesic through their differential.
 * `RiemannianIsometry.isGeodesicCurveOn_comp_iff`: an isometry preserves the geodesic equation
   on a parameter set.
 * `RiemannianIsometry.isGeodesicCurve_comp_iff`: the all-time specialization.
@@ -78,6 +80,20 @@ theorem isGeodesicCurveOn_comp_iff {f : M → N} (hf : IsLocalRiemannianIsometry
   refine ⟨fun h ↦ ⟨h.uniqueDiffOn, hγ, fun t ht ↦ ?_⟩, hf.isGeodesicCurveOn_comp⟩
   exact (hf.accelerationWithin_comp_eq_zero_iff h.uniqueDiffOn hγ ht).1
     (h.accelerationWithin_eq_zero t ht)
+
+/-- A local Riemannian isometry carries a geodesic with initial data `(p, v)` to a geodesic with
+initial data `(f p, df_p v)`. -/
+theorem isGeodesicCurveOnFrom_comp {f : M → N} (hf : IsLocalRiemannianIsometry I J f)
+    {γ : ℝ → M} {s : Set ℝ} {p : M} {v : TangentSpace I p}
+    (hγ : IsGeodesicCurveOnFrom I γ s p v) :
+    IsGeodesicCurveOnFrom J (f ∘ γ) s (f p) (mfderiv I J f p v) := by
+  refine ⟨hf.isGeodesicCurveOn_comp hγ.isGeodesicCurveOn, hγ.zero_mem, ?_⟩
+  have hlift := tangentMap_curveVelocityLiftWithin (hf.mdifferentiableAt (γ 0))
+    (hγ.isGeodesicCurveOn.mdifferentiableOn 0 hγ.zero_mem)
+    (hγ.isGeodesicCurveOn.uniqueDiffOn 0 hγ.zero_mem).uniqueMDiffWithinAt
+  rw [curveVelocityLiftWithin_apply, curveVelocityLiftWithin_apply, hγ.initial_eq] at hlift
+  rw [← hlift]
+  rfl
 
 end IsLocalRiemannianIsometry
 

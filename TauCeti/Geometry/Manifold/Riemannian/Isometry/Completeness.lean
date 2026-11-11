@@ -15,6 +15,10 @@ point is a bijection between the tangent spaces. Consequently an isometry preser
 completeness, both at corresponding base points and globally, as well as the property that the
 exponential map has its full tangent space as domain.
 
+A local Riemannian isometry `f` maps maximal geodesic intervals into maximal geodesic intervals,
+and its differential at a point is surjective; hence geodesic completeness at `p` implies geodesic
+completeness at `f p`.
+
 These statements are purely geodesic: unlike the Hopf–Rinow theorem, they need neither a metric on
 the manifolds, nor their Hausdorffness, nor boundarylessness.
 -/
@@ -79,5 +83,31 @@ theorem expDomain_eq_univ_iff (Φ : RiemannianIsometry I J M N) (p : M) :
       (Manifold.expDomain_eq_univ_iff (I := J) (M := N) (p := Φ p)).symm
 
 end TauCeti.RiemannianIsometry
+
+namespace TauCeti.IsLocalRiemannianIsometry
+
+open TauCeti.Manifold
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I ∞ M]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+  [RiemannianBundle (fun y : N ↦ TangentSpace J y)] [IsManifold J ∞ N]
+  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
+
+/-- If every geodesic leaving `p` is defined for all time, then so is every geodesic leaving
+`f p`, for a local Riemannian isometry `f`. -/
+theorem isGeodesicallyCompleteAt {f : M → N} (hf : IsLocalRiemannianIsometry I J f) {p : M}
+    (hp : IsGeodesicallyCompleteAt I M p) : IsGeodesicallyCompleteAt J N (f p) := by
+  refine isGeodesicallyCompleteAt_iff_forall_one_mem_geodesicInterval.2 fun w ↦ ?_
+  obtain ⟨v, rfl⟩ := hf.mfderiv_surjective p w
+  exact hf.geodesicInterval_subset_geodesicInterval_mfderiv p v
+    (hp.geodesicInterval_eq_univ v ▸ Set.mem_univ 1)
+
+end TauCeti.IsLocalRiemannianIsometry
 
 end
