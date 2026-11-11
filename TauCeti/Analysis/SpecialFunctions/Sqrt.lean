@@ -9,6 +9,8 @@ public import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Tactic.FieldSimp
 
+import Mathlib.Analysis.MeanInequalitiesPow
+
 /-!
 # Square-root displacement estimates and limits at zero
 
@@ -68,18 +70,18 @@ namespace Real
 /-- For every real `μ`, the square root is no farther from `1` than `μ` is:
 `|√μ - 1| ≤ |μ - 1|`. -/
 theorem abs_sqrt_sub_one_le_abs_sub_one {μ : ℝ} :
-    |Real.sqrt μ - 1| ≤ |μ - 1| := by
+    |sqrt μ - 1| ≤ |μ - 1| := by
   rcases le_total 0 μ with hμ | hμ
-  · have hs : 0 ≤ Real.sqrt μ := Real.sqrt_nonneg μ
-    have hsq : Real.sqrt μ * Real.sqrt μ = μ := Real.mul_self_sqrt hμ
-    have key : |Real.sqrt μ - 1| * (Real.sqrt μ + 1) = |μ - 1| := by
-      rw [← abs_of_nonneg (by linarith : (0 : ℝ) ≤ Real.sqrt μ + 1), ← abs_mul]
+  · have hs : 0 ≤ sqrt μ := sqrt_nonneg μ
+    have hsq : sqrt μ * sqrt μ = μ := mul_self_sqrt hμ
+    have key : |sqrt μ - 1| * (sqrt μ + 1) = |μ - 1| := by
+      rw [← abs_of_nonneg (by linarith : (0 : ℝ) ≤ sqrt μ + 1), ← abs_mul]
       congr 1
       nlinarith [hsq]
-    nlinarith [key, mul_nonneg (abs_nonneg (Real.sqrt μ - 1)) hs]
-  · have hsqrt : Real.sqrt μ = 0 := Real.sqrt_eq_zero_of_nonpos hμ
+    nlinarith [key, mul_nonneg (abs_nonneg (sqrt μ - 1)) hs]
+  · have hsqrt : sqrt μ = 0 := sqrt_eq_zero_of_nonpos hμ
     calc
-      |Real.sqrt μ - 1| = 1 := by rw [hsqrt]; norm_num
+      |sqrt μ - 1| = 1 := by rw [hsqrt]; norm_num
       _ ≤ |μ - 1| := by
         rw [abs_of_nonpos (by linarith : μ - 1 ≤ 0)]
         linarith
@@ -89,12 +91,12 @@ theorem abs_sqrt_sub_one_le_abs_sub_one {μ : ℝ} :
 The hypotheses force `μ` to be positive and keep the inverse square root
 bounded near `1`. -/
 theorem abs_one_sub_inv_sqrt_le {μ δ : ℝ} (hδ : δ ≤ 1 / 2) (hμ : |μ - 1| ≤ δ) :
-    |1 - (Real.sqrt μ)⁻¹| ≤ δ := by
+    |1 - (sqrt μ)⁻¹| ≤ δ := by
   have hμlb : 1 - δ ≤ μ := by rw [abs_le] at hμ; linarith
   have hμpos : (0 : ℝ) < μ := by linarith
-  set s := Real.sqrt μ
-  have hs0 : 0 < s := Real.sqrt_pos.mpr hμpos
-  have hssq : s ^ 2 = μ := Real.sq_sqrt (le_of_lt hμpos)
+  set s := sqrt μ
+  have hs0 : 0 < s := sqrt_pos.mpr hμpos
+  have hssq : s ^ 2 = μ := sq_sqrt (le_of_lt hμpos)
   -- `s ≥ 1/2` (since `s² = μ ≥ 1/2`)
   have hssqlb : (1 : ℝ) / 2 ≤ s ^ 2 := by rw [hssq]; linarith
   have hsge : (1 : ℝ) / 2 ≤ s := by nlinarith [hs0, hssqlb]
@@ -212,12 +214,12 @@ lemma contDiff_div_sqrt_pow {k : WithTop ℕ∞} {ψ : ℝ → ℝ} (hψ : ContD
   rw [contDiff_iff_contDiffAt]
   intro t
   by_cases ht : √t ∈ tsupport ψ
-  · have ht0 : 0 < t := Real.sqrt_pos.mp (hψs ht)
-    exact ((hψ.contDiffAt.comp t (Real.contDiffAt_sqrt ht0.ne')).div
-      ((Real.contDiffAt_sqrt ht0.ne').pow _) (pow_ne_zero _ (Real.sqrt_pos.mpr ht0).ne'))
+  · have ht0 : 0 < t := sqrt_pos.mp (hψs ht)
+    exact ((hψ.contDiffAt.comp t (contDiffAt_sqrt ht0.ne')).div
+      ((contDiffAt_sqrt ht0.ne').pow _) (pow_ne_zero _ (sqrt_pos.mpr ht0).ne'))
   · have hev : ∀ᶠ s in 𝓝 t, ψ (√s) / (√s) ^ n = 0 := by
       have : ∀ᶠ s in 𝓝 t, √s ∉ tsupport ψ :=
-        Real.continuous_sqrt.continuousAt.preimage_mem_nhds
+        continuous_sqrt.continuousAt.preimage_mem_nhds
           ((isClosed_tsupport ψ).isOpen_compl.mem_nhds ht)
       filter_upwards [this] with s hs
       simp [image_eq_zero_of_notMem_tsupport hs]
@@ -251,10 +253,22 @@ theorem image_add_sqrt_sq_add_eq_Ioi {p : ℝ} (hp : 0 < p) :
     field_simp
     ring
   have hsqrt : √(((x ^ 2 - p) / (2 * x)) ^ 2 + p) = (x ^ 2 + p) / (2 * x) := by
-    rw [hradicand, Real.sqrt_sq (by positivity)]
+    rw [hradicand, sqrt_sq (by positivity)]
   rw [hsqrt]
   field_simp
   ring
+
+/-- Subadditivity of the square root: `√(a + b) ≤ √a + √b`. -/
+theorem sqrt_add_le_add_sqrt (a b : ℝ) : √(a + b) ≤ √a + √b := by
+  rcases le_or_gt 0 a with ha | ha
+  · rcases le_or_gt 0 b with hb | hb
+    · have h := rpow_add_le_add_rpow (p := 1 / 2) (a := a) (b := b) ha hb (by norm_num)
+        (by norm_num)
+      simpa only [← sqrt_eq_rpow] using h
+    · rw [sqrt_eq_zero_of_nonpos hb.le, add_zero]
+      exact sqrt_le_sqrt (by linarith)
+  · rw [sqrt_eq_zero_of_nonpos ha.le, zero_add]
+    exact sqrt_le_sqrt (by linarith)
 
 end Real
 

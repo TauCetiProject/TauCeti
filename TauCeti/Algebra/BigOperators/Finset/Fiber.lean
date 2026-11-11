@@ -31,11 +31,17 @@ for the fibre sums over the range holds for the fibre sum over every value of th
 
 * `TauCeti.prod_eq_prod_image_fiber`, `TauCeti.sum_eq_sum_image_fiber`: `∏ i, F i` is the
   product, over the values `g` takes, of the products of `F` over the fibres of `g`.
+* `Equiv.prod_fiber_eq`, `Equiv.sum_fiber_eq`: taking a product or sum over a fibre of an
+  equivalence selects its unique term.
 * `TauCeti.prod_pow_card_filter_eq_prod_comp`, `TauCeti.sum_card_filter_nsmul_eq_sum_comp`: for
   `g` mapping `s` into `t`, `∏ i ∈ s, f (g i)` is the product over `j ∈ t` of `f j` raised to the
   size of the fibre of `g` over `j`.
 * `TauCeti.sum_sum_eval_mul`: summing `(∑ i, φ i (z i)) * f z` over a finite dependent product
   regroups, coordinate by coordinate, into `∑ i, ∑ a, φ i a * ∑ z with z i = a, f z`.
+* `TauCeti.prod_filter_eq_apply_of_injective`, `TauCeti.sum_filter_eq_apply_of_injective`: along
+  an injective map the fibre product (sum) at the value of `j` is just `F j`.
+* `TauCeti.lt_sum_filter_eq_apply_of_injective`: a strict lower bound for `F` bounds every fibre
+  sum of an injective map.
 * `TauCeti.forall_prod_filter_eq_of_forall_apply`,
   `TauCeti.forall_sum_filter_eq_of_forall_apply`: a property holding at the unit and at fibre
   products over the range holds at every fibre product; for instance a lower bound `c ≤ 0` on
@@ -47,6 +53,17 @@ public section
 namespace TauCeti
 
 open Finset
+
+/-- Taking a product over a fibre of an equivalence selects the unique term in that fibre. -/
+@[to_additive (attr := simp)
+  /-- Taking a sum over a fibre of an equivalence selects the unique term in that fibre. -/]
+theorem _root_.Equiv.prod_fiber_eq {ι κ M : Type*} [Fintype ι] [DecidableEq κ]
+    [CommMonoid M] (e : ι ≃ κ) (b : ι → M) (j : κ) :
+    ∏ i with e i = j, b i = b (e.symm j) := by
+  classical
+  simp only [← e.eq_symm_apply]
+  rw [filter_eq' univ (e.symm j)]
+  simp
 
 /-- **A finite product is the product over the values actually taken of the products over their
 fibres.** Multiplying `F` over all of `ι` is multiplying, over each `k` in the image of `g`, the
@@ -92,6 +109,27 @@ theorem sum_sum_eval_mul {ι : Type*} {X : ι → Type*} {R : Type*} [Fintype ι
   refine sum_congr rfl fun i _ ↦ ?_
   rw [← sum_fiberwise univ (Function.eval i) fun z ↦ φ i (z i) * f z]
   exact sum_congr rfl fun a _ ↦ sum_congr rfl fun z hz ↦ by rw [(mem_filter.1 hz).2]
+
+/-- Along an injective map the fibre above the value at `j` is the singleton `{j}`, so the product
+of `F` over it is `F j`. -/
+@[to_additive (attr := simp) /-- Along an injective map the fibre above the value at `j` is the
+singleton `{j}`, so the sum of `F` over it is `F j`. -/]
+theorem prod_filter_eq_apply_of_injective {ι κ M : Type*} [Fintype ι] [DecidableEq κ]
+    [CommMonoid M] {g : ι → κ} (hg : Function.Injective g) (F : ι → M) (j : ι) :
+    ∏ i with g i = g j, F i = F j := by
+  have hfilter : univ.filter (fun i ↦ g i = g j) = {j} := by
+    ext i
+    simp only [mem_filter, mem_univ, true_and, mem_singleton]
+    exact hg.eq_iff
+  rw [hfilter, prod_singleton]
+
+/-- Along an injective map every fibre sum at a value of `g` is a value of `F`, so a strict lower
+bound for `F` is a strict lower bound for all those fibre sums. -/
+theorem lt_sum_filter_eq_apply_of_injective {ι κ M : Type*} [Fintype ι] [DecidableEq κ]
+    [AddCommMonoid M] [Preorder M] {g : ι → κ} (hg : Function.Injective g) {F : ι → M} {c : M}
+    (h : ∀ j, c < F j) (j : ι) : c < ∑ i with g i = g j, F i := by
+  rw [sum_filter_eq_apply_of_injective hg F j]
+  exact h j
 
 /-- A property holding at one and at every fibre product over the range holds at every fibre
 product, since fibres outside the range are empty. -/
