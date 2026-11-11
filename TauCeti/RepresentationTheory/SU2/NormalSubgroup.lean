@@ -7,12 +7,14 @@ module
 
 public import TauCeti.RepresentationTheory.SU2.Adjoint
 public import TauCeti.RepresentationTheory.SU2.ConjugacyClasses
+import TauCeti.Algebra.Quaternion.ComplexMatrix
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # Normal subgroups of `SU(2)` and the simplicity of `SO(3)`
 
-The center of `SU(2)` is `{1, -1}` (`TauCeti.SU2.mem_center_iff`), and it is the only source of
+The center of `SU(2)` is `{1, -1}` (`TauCeti.SU2.mem_center_iff`, proved alongside the double
+cover), and it is the only source of
 proper normal subgroups: **every normal subgroup of `SU(2)` lies in the center or is the whole
 group** (`TauCeti.SU2.le_center_or_eq_top`). No topology enters the statement; it is a fact about
 the abstract group.
@@ -38,7 +40,6 @@ its trace is `2 - 4 sin² φ sin² θ`. As `φ` varies these traces fill the int
 
 ## Main results
 
-* `TauCeti.SU2.mem_center_iff`: the center of `SU(2)` is `{1, -1}`.
 * `TauCeti.SU2.le_center_or_eq_top`: a normal subgroup of `SU(2)` lies in the center or is
   everything.
 * `TauCeti.SU2.ker_le_center`: a nontrivial homomorphism out of `SU(2)` has kernel in `{1, -1}`.
@@ -57,16 +58,11 @@ public section
 noncomputable section
 
 open Matrix
+open scoped Quaternion
 
 namespace TauCeti
 
 namespace SU2
-
-/-- **The center of `SU(2)` is `{1, -1}`.** -/
-theorem mem_center_iff {g : SU2} :
-    g ∈ Subgroup.center SU2 ↔
-      (g : Matrix (Fin 2) (Fin 2) ℂ) = 1 ∨ (g : Matrix (Fin 2) (Fin 2) ℂ) = -1 := by
-  rw [← ker_toSO3, MonoidHom.mem_ker, toSO3_eq_one_iff]
 
 /-! ### Commutators of torus elements with real rotations -/
 
@@ -74,21 +70,15 @@ theorem mem_center_iff {g : SU2} :
 private def rotationMatrix (φ : ℝ) : Matrix (Fin 2) (Fin 2) ℂ :=
   !![(Real.cos φ : ℂ), Real.sin φ; -Real.sin φ, Real.cos φ]
 
+/-- The real rotation by `φ` is the matrix of the unit quaternion `cos φ + sin φ j`. -/
 private theorem rotationMatrix_mem (φ : ℝ) :
     rotationMatrix φ ∈ specialUnitaryGroup (Fin 2) ℂ := by
-  have h : (Real.cos φ : ℂ) ^ 2 + (Real.sin φ : ℂ) ^ 2 = 1 := by
-    exact_mod_cast Real.cos_sq_add_sin_sq φ
-  refine mem_specialUnitaryGroup_iff.mpr ⟨mem_unitaryGroup_iff.mpr ?_, ?_⟩
-  · ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp only [rotationMatrix, star_eq_conjTranspose, Matrix.mul_apply, of_apply, cons_val',
-        cons_val_fin_one, cons_val_zero, cons_val_one, conjTranspose_apply, RCLike.star_def,
-        Fin.sum_univ_two, Complex.conj_ofReal, map_neg, mul_neg, neg_mul, neg_neg, one_apply_eq,
-        one_apply_ne, ne_eq, zero_ne_one, one_ne_zero, not_false_eq_true, Fin.isValue, Fin.zero_eta,
-        Fin.mk_one] <;>
-      first | linear_combination h | ring
-  · simp only [rotationMatrix, det_fin_two_of]
-    linear_combination h
+  have hq : (⟨Real.cos φ, 0, Real.sin φ, 0⟩ : ℍ[ℝ]) ∈ unitary ℍ[ℝ] := by
+    rw [Quaternion.mem_unitary_iff_normSq_eq_one, Quaternion.normSq_def']
+    linear_combination Real.cos_sq_add_sin_sq φ
+  convert Quaternion.mem_specialUnitaryGroup_toComplexMatrix hq using 1
+  rw [Quaternion.toComplexMatrix_apply, rotationMatrix]
+  simp
 
 /-- The real rotation `!![cos φ, sin φ; -sin φ, cos φ]` as an element of `SU(2)`. -/
 private def rotation (φ : ℝ) : SU2 := ⟨rotationMatrix φ, rotationMatrix_mem φ⟩
@@ -147,9 +137,7 @@ private theorem torusExp_mem_of_abs_le {N : Subgroup SU2} [N.Normal] {θ ψ : �
   have htr : Matrix.trace ((torusExp θ * rotation φ * (torusExp θ)⁻¹ * (rotation φ)⁻¹ : SU2) :
       Matrix (Fin 2) (Fin 2) ℂ) = Matrix.trace ((torusExp ψ : SU2) : Matrix (Fin 2) (Fin 2) ℂ) := by
     have hcos : Real.cos ψ = 1 - 2 * Real.sin (ψ / 2) ^ 2 := by
-      have h := Real.cos_two_mul (ψ / 2)
-      rw [mul_div_cancel₀ ψ two_ne_zero] at h
-      linarith [Real.sin_sq_add_cos_sq (ψ / 2)]
+      rw [← Real.cos_two_mul_eq_one_sub, mul_div_cancel₀ ψ two_ne_zero]
     have key : 2 - 4 * (Real.sin (ψ / 2) / Real.sin θ) ^ 2 * Real.sin θ ^ 2 = 2 * Real.cos ψ := by
       rw [hcos]
       field_simp
@@ -168,11 +156,7 @@ private theorem torusExp_mem_of_sin_ne_zero {N : Subgroup SU2} [N.Normal] {θ : 
   have hpos : 0 < 2 * |Real.sin θ| := by positivity
   obtain ⟨n, hn⟩ := exists_nat_gt (|ψ| / (2 * |Real.sin θ|))
   have hn₀ : (0 : ℝ) < n := (div_nonneg (abs_nonneg ψ) hpos.le).trans_lt hn
-  have hpow (m : ℕ) (x : ℝ) : torusExp (m * x) = torusExp x ^ m := by
-    induction m with
-    | zero => simp
-    | succ m ih => rw [Nat.cast_succ, add_one_mul, torusExp_add, ih, pow_succ]
-  rw [← mul_div_cancel₀ ψ hn₀.ne', hpow]
+  rw [← mul_div_cancel₀ ψ hn₀.ne', torusExp_def, Circle.exp_natCast_mul, map_pow, ← torusExp_def]
   refine N.pow_mem (torusExp_mem_of_abs_le hθ hsin ?_) n
   rw [abs_div, Nat.abs_cast, div_le_iff₀ hn₀]
   rw [div_lt_iff₀ hpos] at hn
