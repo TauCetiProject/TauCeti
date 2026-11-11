@@ -41,6 +41,12 @@ sheaf cohomology by `CategoryTheory.Sheaf.subsingleton_H'_one_of_isZero_cechCoho
   a neighbourhood basis of every point.
 * `TauCeti.exists_finite_cover_subsingleton_H'_one_holomorphicStructureSheafModules`: on a compact
   Riemann surface, every open cover is refined by a finite cover by such opens.
+* `OpenPartialHomeomorph.chartDisc`: the coordinate disc `e.source ∩ e ⁻¹' ball c r` of real radius
+  `r`; by `OpenPartialHomeomorph.closure_chartDisc_subset` its closure is compact and lies in every
+  coordinate disc of larger radius when `closedBall c r ⊆ e.target`.
+* `TauCeti.exists_finite_chartDisc_cover`: a compact Riemann surface is covered by finitely many
+  coordinate discs of radii `r i` with `closedBall (c i) (3 * r i)` in the chart target, giving
+  three nested finite acyclic covers of radii `r i`, `2 * r i` and `3 * r i`.
 
 ## References
 
@@ -53,6 +59,39 @@ public noncomputable section
 
 open CategoryTheory Limits Opposite TopologicalSpace Topology
 open scoped ContDiff Manifold
+
+namespace OpenPartialHomeomorph
+
+variable {X : Type} [TopologicalSpace X] {e : OpenPartialHomeomorph X ℂ}
+
+/-- The coordinate disc `e.source ∩ e ⁻¹' ball c r`. -/
+def chartDisc (e : OpenPartialHomeomorph X ℂ) (c : ℂ) (r : ℝ) : Opens X :=
+  ⟨e.source ∩ e ⁻¹' Metric.ball c r, e.isOpen_inter_preimage Metric.isOpen_ball⟩
+
+@[simp]
+theorem mem_chartDisc {c : ℂ} {r : ℝ} {x : X} :
+    x ∈ e.chartDisc c r ↔ x ∈ e.source ∧ e x ∈ Metric.ball c r := Iff.rfl
+
+theorem chartDisc_subset_source {c : ℂ} {r : ℝ} : (e.chartDisc c r : Set X) ⊆ e.source :=
+  Set.inter_subset_left
+
+/-- If `closedBall c r` lies in the chart target, the coordinate disc of radius `r` has compact
+closure, contained in the coordinate disc of any larger radius. -/
+theorem closure_chartDisc_subset [T2Space X] {c : ℂ} {r s : ℝ}
+    (hr : Metric.closedBall c r ⊆ e.target) (hrs : r < s) :
+    IsCompact (closure (e.chartDisc c r : Set X)) ∧
+      closure (e.chartDisc c r : Set X) ⊆ e.chartDisc c s := by
+  have hK : IsCompact (e.symm '' Metric.closedBall c r) :=
+    (isCompact_closedBall c r).image_of_continuousOn (e.continuousOn_symm.mono hr)
+  have hcl : closure (e.chartDisc c r : Set X) ⊆ e.symm '' Metric.closedBall c r :=
+    closure_minimal (fun x hx ↦ ⟨e x, Metric.ball_subset_closedBall hx.2, e.left_inv hx.1⟩)
+      hK.isClosed
+  refine ⟨hK.of_isClosed_subset isClosed_closure hcl, hcl.trans ?_⟩
+  rintro _ ⟨z, hz, rfl⟩
+  exact mem_chartDisc.2 ⟨e.map_target (hr hz), by
+    rw [e.right_inv (hr hz)]; exact Metric.closedBall_subset_ball hrs hz⟩
+
+end OpenPartialHomeomorph
 
 namespace TauCeti
 
@@ -235,6 +274,29 @@ theorem exists_finite_cover_subsingleton_H'_one_holomorphicStructureSheafModules
   obtain ⟨s, hs⟩ := hWc.exists_finite_of_compactSpace
   exact ⟨s, inferInstance, fun i ↦ W i.1, hs.iSup_eq_top, fun i ↦ ⟨k i.1, hWV i.1⟩,
     fun i ↦ hW i.1⟩
+
+/-- **Finite nested coordinate-disc covers.** A compact Riemann surface is covered by finitely many
+coordinate discs `(e i).chartDisc (c i) (r i)` of holomorphic charts with
+`closedBall (c i) (3 * r i) ⊆ (e i).target`. By `OpenPartialHomeomorph.closure_chartDisc_subset`
+the discs of radii `r i`, `2 * r i` and `3 * r i` are nested, each closure compact in the next, and
+by `subsingleton_H'_one_holomorphicStructureSheafModules_chart_eball` (at radius
+`ENNReal.ofReal`, see `Metric.eball_ofReal`) each of them has `H¹(·, 𝒪) = 0`. -/
+theorem exists_finite_chartDisc_cover [CompactSpace X] :
+    ∃ (ι : Type) (_ : Finite ι) (e : ι → OpenPartialHomeomorph X ℂ) (c : ι → ℂ) (r : ι → ℝ),
+      (∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X) ∧ (∀ i, 0 < r i) ∧
+        (∀ i, Metric.closedBall (c i) (3 * r i) ⊆ (e i).target) ∧
+          ⨆ i, (e i).chartDisc (c i) (r i) = ⊤ := by
+  have hε (x : X) : ∃ ε > 0, Metric.ball (chartAt ℂ x x) ε ⊆ (chartAt ℂ x).target :=
+    Metric.isOpen_iff.1 (chartAt ℂ x).open_target _ (mem_chart_target ℂ x)
+  choose ε hε hεT using hε
+  let D : X → Opens (TopCat.of X) := fun x ↦ (chartAt ℂ x).chartDisc (chartAt ℂ x x) (ε x / 4)
+  have hD : IsOpenCover D := .mk <| eq_top_iff.2 fun x _ ↦
+    Opens.mem_iSup.2 ⟨x, mem_chart_source ℂ x, Metric.mem_ball_self (by linarith [hε x])⟩
+  obtain ⟨s, hs⟩ := hD.exists_finite_of_compactSpace
+  exact ⟨s, inferInstance, fun i ↦ chartAt ℂ i.1, fun i ↦ chartAt ℂ i.1 i.1, fun i ↦ ε i.1 / 4,
+    fun i ↦ IsManifold.chart_mem_maximalAtlas i.1, fun i ↦ by linarith [hε i.1],
+    fun i ↦ (Metric.closedBall_subset_ball (by linarith [hε i.1])).trans (hεT i.1),
+    hs.iSup_eq_top⟩
 
 end Chart
 
