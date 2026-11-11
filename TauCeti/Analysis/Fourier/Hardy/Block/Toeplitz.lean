@@ -331,23 +331,7 @@ theorem exists_blockToeplitz_eq_iff_inner_blockHardyBasis_succ {r : ℕ}
     ext f i : 2
     rw [blockToeplitz_apply_apply, ContinuousLinearMap.apply_eq_sum_piLpEntry]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
-    have hij : blockSymbolEntry r i j
-        (∑ k : Fin r, ∑ l : Fin r, blockSymbolSingle r k l (a k l)) = a i j := by
-      have hmap (f : Fin r → BlockSymbol r) :
-          blockSymbolEntry r i j (∑ x, f x) = ∑ x, blockSymbolEntry r i j (f x) :=
-        map_sum (blockSymbolEntry r i j).toLinearMap.toAddMonoidHom f Finset.univ
-      rw [hmap, Finset.sum_eq_single i
-        (fun k _ hki ↦ by
-          rw [hmap]
-          exact Finset.sum_eq_zero fun l _ ↦ by
-            rw [blockSymbolEntry_blockSymbolSingle, ite_eq_right (fun h ↦ hki h.1.symm)])
-        (fun hi ↦ absurd (Finset.mem_univ _) hi),
-        hmap, Finset.sum_eq_single j
-          (fun l _ hlj ↦ by
-            rw [blockSymbolEntry_blockSymbolSingle, ite_eq_right (fun h ↦ hlj h.2.symm)])
-          (fun hj ↦ absurd (Finset.mem_univ _) hj),
-        blockSymbolEntry_blockSymbolSingle, ite_eq_left ⟨rfl, rfl⟩]
-    rw [hij, ha i j]
+    rw [blockSymbolEntry_sum_blockSymbolSingle, ha i j]
 
 /-- **Block Brown–Halmos theorem.** A bounded operator `T` on `BlockHardySpace r` equals
 `blockToeplitz r A` for a unique symbol `A : BlockSymbol r` if and only if `S_r† T S_r = T`, where

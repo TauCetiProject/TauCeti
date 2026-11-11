@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Operator.Norm
 
 /-!
 # Operator-valued `L∞` multiplication operators on `Lᵖ`
@@ -193,29 +194,6 @@ variable [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [SecondCountableTopology E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-private theorem exists_subset_measure_lt_norm_apply [SigmaFinite μ] (A : Lp (E →L[𝕜] F) ∞ μ)
-    {c : ℝ} (hc_nonneg : 0 ≤ c) (hc_lt : c < ‖A‖) :
-    ∃ (u : E) (t : Set α), MeasurableSet t ∧ (∀ x ∈ t, c * ‖u‖ < ‖A x u‖) ∧
-      0 < μ t ∧ μ t < ∞ := by
-  obtain ⟨D, hD_count, hD_dense⟩ := TopologicalSpace.exists_countable_dense E
-  have hsub : {x | c < ‖A x‖} ⊆ ⋃ u ∈ D, {x | c * ‖u‖ < ‖A x u‖} := fun x hx ↦ by
-    have hnot : ¬ ∀ w : E, ‖A x w‖ ≤ c * ‖w‖ := fun h ↦
-      (not_le_of_gt hx) ((A x).opNorm_le_bound hc_nonneg h)
-    push Not at hnot; obtain ⟨w, hw⟩ := hnot
-    obtain ⟨u, huU, huD⟩ := hD_dense.inter_open_nonempty {u : E | c * ‖u‖ < ‖A x u‖}
-      (isOpen_lt (by fun_prop) (by fun_prop)) ⟨w, hw⟩
-    exact Set.mem_biUnion huD huU
-  have hμ_union : μ (⋃ u ∈ D, {x | c * ‖u‖ < ‖A x u‖}) ≠ 0 :=
-    mt (measure_mono_null hsub) (Lp.measure_lt_norm_ne_zero hc_nonneg hc_lt)
-  obtain ⟨u, _, hμs⟩ : ∃ u ∈ D, μ {x | c * ‖u‖ < ‖A x u‖} ≠ 0 := by
-    by_contra! hzero; exact hμ_union ((measure_biUnion_null_iff hD_count).2 hzero)
-  have hs : MeasurableSet {x | c * ‖u‖ < ‖A x u‖} := measurableSet_lt measurable_const
-    (((ContinuousLinearMap.apply 𝕜 F u).continuous.norm.comp_stronglyMeasurable
-      (Lp.stronglyMeasurable A)).measurable)
-  obtain ⟨t, ht, hts, hμt_pos, hμt_top⟩ :=
-    Measure.exists_subset_measure_lt_top hs (pos_iff_ne_zero.mpr hμs)
-  exact ⟨u, t, ht, hts, hμt_pos, hμt_top⟩
 
 /-- On a σ-finite measure space, when the domain fibre `E` has a second-countable topology, the
 operator norm of `operatorMultiplication p A` on `Lp E p μ` (`1 ≤ p ≤ ∞`) equals the `L∞` operator

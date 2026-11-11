@@ -158,13 +158,9 @@ theorem adjoint_blockHankel {r : ℕ} (A : BlockSymbol r) :
         (blockHardySubmodule r).orthogonalProjectionOnto ∘L
         Lp.operatorMultiplication 2 (star A) ∘L
         (blockHardySubmodule r)ᗮ.subtypeL := by
-  have hadj_equiv :
-      ContinuousLinearMap.adjoint (blockHardyEquiv r).symm.toLinearIsometry.toContinuousLinearMap =
-        (blockHardyEquiv r).toLinearIsometry.toContinuousLinearMap := by
-    refine ((ContinuousLinearMap.eq_adjoint_iff _ _).2 fun x y ↦ ?_).symm
-    simp only [LinearIsometry.coe_toContinuousLinearMap, LinearIsometryEquiv.coe_toLinearIsometry]
-    rw [← (blockHardyEquiv r).symm.inner_map_map, LinearIsometryEquiv.symm_apply_apply]
-  simp only [blockHankel_apply, ContinuousLinearMap.adjoint_comp, hadj_equiv,
+  simp only [blockHankel_apply, ContinuousLinearMap.adjoint_comp,
+    LinearIsometryEquiv.toContinuousLinearMap_toLinearIsometry,
+    LinearIsometryEquiv.adjoint_eq_symm, LinearIsometryEquiv.symm_symm,
     Submodule.adjoint_subtypeL, Submodule.adjoint_orthogonalProjectionOnto,
     Lp.adjoint_operatorMultiplication, ContinuousLinearMap.comp_assoc]
 

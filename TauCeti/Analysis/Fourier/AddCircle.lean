@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.Topology.Algebra.PontryaginDual
+public import TauCeti.MeasureTheory.Function.Lp.PiLp
 
 /-!
 # The continuous characters of the circle are the Fourier monomials
@@ -82,6 +83,9 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   the native `Lᵖ` pullback form `MeasureTheory.Lp.fourierCoeff_compMeasurePreserving_neg`.
 * `ContinuousLinearMap.fourierCoeff_comp`: Fourier coefficients commute with continuous linear
   maps.
+* `TauCeti.fourierCoeff_piLp_apply`: the `i`-th coordinate of the `n`-th Fourier coefficient of a
+  `PiLp`-valued circle `Lᵖ` function (`1 ≤ p ≤ ∞`) is the `n`-th Fourier coefficient of its `i`-th
+  coordinate under `MeasureTheory.Lp.piLpEquiv`.
 
 ## Tags
 
@@ -243,6 +247,17 @@ theorem _root_.ContinuousLinearMap.fourierCoeff_comp {E F : Type*} [NormedAddCom
     (n : ℤ) :
     fourierCoeff (fun x ↦ φ (f x)) n = φ (fourierCoeff f n) := by
   simp only [fourierCoeff, ← φ.integral_comp_comm (hf.fourier_smul (-n)), map_smul]
+
+/-- The `i`-th coordinate of the `n`-th Fourier coefficient of a `PiLp`-valued `Lᵖ` function on
+`AddCircle T` (`1 ≤ p ≤ ∞`) is the `n`-th Fourier coefficient of its `i`-th coordinate under
+`MeasureTheory.Lp.piLpEquiv`. -/
+theorem fourierCoeff_piLp_apply {ι : Type*} [Fintype ι] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace ℂ (E i)]
+    [∀ i, CompleteSpace (E i)] (f : Lp (PiLp p E) p (haarAddCircle (T := T))) (n : ℤ) (i : ι) :
+    fourierCoeff f n i =
+      fourierCoeff (Lp.piLpEquiv p ℂ E (haarAddCircle (T := T)) f i) n := by
+  rw [fourierCoeff_congr_ae (Lp.coeFn_piLpEquiv_apply (𝕜 := ℂ) f i)]
+  exact ((PiLp.proj (𝕜 := ℂ) p E i).fourierCoeff_comp ((Lp.memLp f).integrable Fact.out) n).symm
 
 /-- Pulling back an `Lᵖ` function by circle reflection reverses its Fourier indices. -/
 theorem _root_.MeasureTheory.Lp.fourierCoeff_compMeasurePreserving_neg {p : ℝ≥0∞}

@@ -28,6 +28,8 @@ or fibrewise `L²` spaces.
 ## Main definitions
 
 * `MeasureTheory.Lp.piLpEquiv`: `Lp (PiLp p E) p μ ≃ₗᵢ[𝕜] PiLp p (fun i ↦ Lp (E i) p μ)`.
+* `MeasureTheory.Lp.subspacePiLpEquiv`: `↥M ≃ₗᵢ[𝕜] PiLp p (fun i ↦ ↥(N i))` for a submodule `M`
+  characterized coordinatewise under `piLpEquiv` by submodules `N i`.
 
 ## Main results
 
@@ -39,6 +41,10 @@ or fibrewise `L²` spaces.
   almost everywhere `x ↦ PiLp.single p i (h x)`.
 * `MeasureTheory.Lp.piLpEquiv_lpSMul`: `piLpEquiv` commutes coordinatewise with heterogeneous `Lp`
   scalar multiplication.
+* `MeasureTheory.Lp.coe_subspacePiLpEquiv_apply`,
+  `MeasureTheory.Lp.piLpEquiv_coe_subspacePiLpEquiv_symm`,
+  `MeasureTheory.Lp.coe_subspacePiLpEquiv_symm_single`: coordinatewise evaluation formulas for
+  `subspacePiLpEquiv` and its inverse.
 -/
 
 public section
@@ -156,6 +162,63 @@ theorem piLpEquiv_lpSMul {q : ℝ≥0∞} [HolderTriple q p p] (a : Lp 𝕜 q μ
     Lp.coeFn_lpSMul (r := p) a f, Lp.coeFn_lpSMul (r := p) a (piLpEquiv p 𝕜 E μ f i),
     coeFn_piLpEquiv_apply (𝕜 := 𝕜) f i] with x h₁ h₂ h₃ h₄
   rw [h₁, h₂, h₃, Pi.smul_apply', Pi.smul_apply', PiLp.smul_apply, h₄]
+
+private theorem norm_toLp_subspace_eq (N : ∀ i, Submodule 𝕜 (Lp (E i) p μ))
+    (g : PiLp p (fun i ↦ Lp (E i) p μ)) (hg : ∀ i, g i ∈ N i) :
+    ‖WithLp.toLp p (fun i ↦ (⟨g i, hg i⟩ : ↥(N i)))‖ = ‖g‖ := by
+  rcases p.trichotomy with rfl | rfl | hp
+  · exact absurd (Fact.out : (1 : ℝ≥0∞) ≤ 0) (by norm_num)
+  · simp [PiLp.norm_eq_ciSup]
+  · simp [PiLp.norm_eq_sum hp]
+
+/-- Linear isometric identification of a submodule `M` of `Lp (PiLp p E) p μ` characterized
+coordinatewise under `piLpEquiv` with the `Lᵖ` product of coordinate submodules `N i`. -/
+def subspacePiLpEquiv (M : Submodule 𝕜 (Lp (PiLp p E) p μ))
+    (N : ∀ i, Submodule 𝕜 (Lp (E i) p μ))
+    (hMN : ∀ f, f ∈ M ↔ ∀ i, piLpEquiv p 𝕜 E μ f i ∈ N i) :
+    ↥M ≃ₗᵢ[𝕜] PiLp p (fun i ↦ ↥(N i)) where
+  toFun f := WithLp.toLp p fun i ↦ ⟨piLpEquiv p 𝕜 E μ f.1 i, (hMN f.1).mp f.2 i⟩
+  invFun g :=
+    ⟨(piLpEquiv p 𝕜 E μ).symm (WithLp.toLp p fun i ↦ (g i : Lp (E i) p μ)),
+      (hMN _).mpr fun i ↦ by rw [LinearIsometryEquiv.apply_symm_apply]; exact (g i).2⟩
+  map_add' _ _ := by ext i : 2; simp [map_add]
+  map_smul' _ _ := by ext i : 2; simp [map_smul]
+  left_inv f := Subtype.ext <| (piLpEquiv p 𝕜 E μ).symm_apply_apply f.1
+  right_inv _ := by ext i : 2; simp
+  norm_map' f := (norm_toLp_subspace_eq N (piLpEquiv p 𝕜 E μ f.1) ((hMN f.1).mp f.2)).trans
+    ((LinearIsometryEquiv.norm_map _ f.1).trans (Submodule.norm_coe f))
+
+/-- Coordinatewise evaluation of `subspacePiLpEquiv` in `Lp (E i) p μ`. -/
+@[simp]
+theorem coe_subspacePiLpEquiv_apply (M : Submodule 𝕜 (Lp (PiLp p E) p μ))
+    (N : ∀ i, Submodule 𝕜 (Lp (E i) p μ))
+    (hMN : ∀ f, f ∈ M ↔ ∀ i, piLpEquiv p 𝕜 E μ f i ∈ N i) (f : ↥M) (i : ι) :
+    (subspacePiLpEquiv M N hMN f i : Lp (E i) p μ) = piLpEquiv p 𝕜 E μ f.1 i :=
+  (rfl)
+
+/-- Coordinatewise evaluation of `(subspacePiLpEquiv M N hMN).symm` under `piLpEquiv`. -/
+@[simp]
+theorem piLpEquiv_coe_subspacePiLpEquiv_symm (M : Submodule 𝕜 (Lp (PiLp p E) p μ))
+    (N : ∀ i, Submodule 𝕜 (Lp (E i) p μ))
+    (hMN : ∀ f, f ∈ M ↔ ∀ i, piLpEquiv p 𝕜 E μ f i ∈ N i)
+    (g : PiLp p (fun i ↦ ↥(N i))) (i : ι) :
+    piLpEquiv p 𝕜 E μ ((subspacePiLpEquiv M N hMN).symm g : Lp (PiLp p E) p μ) i =
+      (g i : Lp (E i) p μ) := by
+  rw [← coe_subspacePiLpEquiv_apply M N hMN, LinearIsometryEquiv.apply_symm_apply]
+
+/-- On a single-coordinate vector, `(subspacePiLpEquiv M N hMN).symm` embeds into
+`Lp (PiLp p E) p μ` via `(piLpEquiv p 𝕜 E μ).symm` of `PiLp.single`. -/
+theorem coe_subspacePiLpEquiv_symm_single [DecidableEq ι]
+    (M : Submodule 𝕜 (Lp (PiLp p E) p μ))
+    (N : ∀ i, Submodule 𝕜 (Lp (E i) p μ))
+    (hMN : ∀ f, f ∈ M ↔ ∀ i, piLpEquiv p 𝕜 E μ f i ∈ N i) (j : ι) (h : ↥(N j)) :
+    ((subspacePiLpEquiv M N hMN).symm (PiLp.single p j h) : Lp (PiLp p E) p μ) =
+      (piLpEquiv p 𝕜 E μ).symm (PiLp.single p j (h : Lp (E j) p μ)) := by
+  apply (piLpEquiv p 𝕜 E μ).injective
+  rw [LinearIsometryEquiv.apply_symm_apply]
+  ext k : 1
+  rw [piLpEquiv_coe_subspacePiLpEquiv_symm M N hMN]
+  rcases eq_or_ne k j with rfl | hkj <;> simp [*]
 
 end NormedRing
 

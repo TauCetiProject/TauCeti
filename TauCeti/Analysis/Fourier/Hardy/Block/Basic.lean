@@ -95,20 +95,6 @@ theorem blockFourierMode_mem_blockHardySubmodule (r : ℕ) (n : ℕ) (i : Fin r)
     blockFourierMode r (n : ℤ) i ∈ blockHardySubmodule r :=
   Submodule.le_topologicalClosure _ (Submodule.subset_span ⟨(n, i), rfl⟩)
 
-/-- The `i`-th coordinate of the `n`-th Fourier coefficient of a vector-valued `L²` function on the
-unit circle is the `n`-th Fourier coefficient of its `i`-th coordinate function. -/
-theorem fourierCoeff_euclideanSpace_apply {r : ℕ}
-    (f : Lp (EuclideanSpace ℂ (Fin r)) 2 (AddCircle.haarAddCircle (T := 1))) (n : ℤ) (i : Fin r) :
-    fourierCoeff f n i =
-      fourierCoeff
-        (Lp.piLpEquiv 2 ℂ (fun _ : Fin r ↦ ℂ) (AddCircle.haarAddCircle (T := 1)) f i) n := by
-  have hint : Integrable (fun x : UnitAddCircle ↦ @fourier 1 (-n) x • f x)
-      (AddCircle.haarAddCircle (T := 1)) :=
-    ((Lp.memLp f).integrable one_le_two).fourier_smul (-n)
-  rw [fourierCoeff, eval_integral_piLp (fun j ↦ hint.eval_piLp j) i,
-    fourierCoeff_congr_ae (Lp.coeFn_piLpEquiv_apply (𝕜 := ℂ) f i), fourierCoeff]
-  simp only [PiLp.smul_apply]
-
 private def coordIncl (r : ℕ) (i : Fin r) :
     Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)) →L[ℂ]
       Lp (EuclideanSpace ℂ (Fin r)) 2 (AddCircle.haarAddCircle (T := 1)) :=
@@ -172,7 +158,7 @@ theorem mem_blockHardySubmodule_iff {r : ℕ}
     (f : Lp (EuclideanSpace ℂ (Fin r)) 2 (AddCircle.haarAddCircle (T := 1))) :
     f ∈ blockHardySubmodule r ↔ ∀ n : ℤ, n < 0 → fourierCoeff f n = 0 := by
   rw [mem_blockHardySubmodule_iff_piLpEquiv]
-  simp_rw [mem_hardySubmodule_iff, PiLp.ext_iff, PiLp.zero_apply, fourierCoeff_euclideanSpace_apply]
+  simp_rw [mem_hardySubmodule_iff, PiLp.ext_iff, PiLp.zero_apply, fourierCoeff_piLp_apply]
   exact ⟨fun h n hn i ↦ h i n hn, fun h i n hn ↦ h n hn i⟩
 
 /-- The span of all vector Fourier modes is dense in vector-valued circle `L²`. -/
@@ -214,41 +200,18 @@ theorem eventually_fourierLp_smul_mem_blockHardySubmodule {r : ℕ}
   exact (mem_blockHardySubmodule_iff_piLpEquiv _).mpr fun i ↦ by
     rw [Lp.piLpEquiv_lpSMul]; exact hN i
 
-private def subspacePiLpEquiv {r : ℕ}
-    (M : Submodule ℂ (Lp (EuclideanSpace ℂ (Fin r)) 2 (AddCircle.haarAddCircle (T := 1))))
-    (N : Submodule ℂ (Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))))
-    (hMN : ∀ f, f ∈ M ↔ ∀ i : Fin r,
-      Lp.piLpEquiv 2 ℂ (fun _ : Fin r ↦ ℂ) (AddCircle.haarAddCircle (T := 1)) f i ∈ N) :
-    ↥M ≃ₗᵢ[ℂ] PiLp 2 (fun _ : Fin r ↦ ↥N) where
-  toFun f := WithLp.toLp 2 fun i ↦
-    ⟨Lp.piLpEquiv 2 ℂ (fun _ : Fin r ↦ ℂ) (AddCircle.haarAddCircle (T := 1)) f.1 i,
-      (hMN f.1).mp f.2 i⟩
-  invFun g :=
-    ⟨(Lp.piLpEquiv 2 ℂ (fun _ : Fin r ↦ ℂ) (AddCircle.haarAddCircle (T := 1))).symm
-        (WithLp.toLp 2 fun i ↦ (g i : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))),
-      (hMN _).mpr fun i ↦ by rw [LinearIsometryEquiv.apply_symm_apply]; exact (g i).2⟩
-  map_add' _ _ := by ext i : 2; simp [map_add]
-  map_smul' _ _ := by ext i : 2; simp [map_smul]
-  left_inv f := Subtype.ext <|
-    (Lp.piLpEquiv 2 ℂ (fun _ : Fin r ↦ ℂ) (AddCircle.haarAddCircle (T := 1))).symm_apply_apply f.1
-  right_inv _ := by ext i : 2; simp
-  norm_map' f := by
-    refine (?_ : _ = ‖Lp.piLpEquiv 2 ℂ (fun _ : Fin r ↦ ℂ)
-      (AddCircle.haarAddCircle (T := 1)) f.1‖).trans
-      ((LinearIsometryEquiv.norm_map _ f.1).trans (Submodule.norm_coe f))
-    simp [PiLp.norm_eq_sum (ENNReal.toReal_pos two_ne_zero ENNReal.ofNat_ne_top)]
-
 /-- The canonical unitary equivalence between the closed nonnegative-mode subspace
 `blockHardySubmodule r` of vector-valued circle `L²` and `BlockHardySpace r`. -/
 def blockHardyEquiv (r : ℕ) : ↥(blockHardySubmodule r) ≃ₗᵢ[ℂ] BlockHardySpace r :=
-  subspacePiLpEquiv (blockHardySubmodule r) hardySubmodule fun f ↦
+  Lp.subspacePiLpEquiv (blockHardySubmodule r) (fun _ ↦ hardySubmodule) fun f ↦
     mem_blockHardySubmodule_iff_piLpEquiv f
 
 /-- Coordinatewise evaluation of `blockHardyEquiv r` in circle `L²`. -/
 @[simp]
 theorem coe_blockHardyEquiv_apply {r : ℕ} (f : ↥(blockHardySubmodule r)) (i : Fin r) :
     (blockHardyEquiv r f i : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) =
-      Lp.piLpEquiv 2 ℂ (fun _ : Fin r ↦ ℂ) (AddCircle.haarAddCircle (T := 1)) f.1 i := (rfl)
+      Lp.piLpEquiv 2 ℂ (fun _ : Fin r ↦ ℂ) (AddCircle.haarAddCircle (T := 1)) f.1 i := by
+  rw [blockHardyEquiv]; exact Lp.coe_subspacePiLpEquiv_apply _ _ _ f i
 
 /-- Coordinatewise evaluation of `(blockHardyEquiv r).symm` under `Lp.piLpEquiv`. -/
 @[simp]
@@ -257,7 +220,7 @@ theorem piLpEquiv_coe_blockHardyEquiv_symm {r : ℕ} (g : BlockHardySpace r) (i 
       ((blockHardyEquiv r).symm g :
         Lp (EuclideanSpace ℂ (Fin r)) 2 (AddCircle.haarAddCircle (T := 1))) i =
       (g i : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) := by
-  rw [← coe_blockHardyEquiv_apply, LinearIsometryEquiv.apply_symm_apply]
+  rw [blockHardyEquiv]; exact Lp.piLpEquiv_coe_subspacePiLpEquiv_symm _ _ _ g i
 
 /-- A block Hardy vector concentrated in coordinate `j` embeds into ambient vector `L²` as a single
 coordinate under `Lp.piLpEquiv`. -/
@@ -266,11 +229,8 @@ theorem coe_blockHardyEquiv_symm_single {r : ℕ} (j : Fin r) (h : HardySpace) :
       Lp (EuclideanSpace ℂ (Fin r)) 2 (AddCircle.haarAddCircle (T := 1))) =
       (Lp.piLpEquiv 2 ℂ (fun _ : Fin r ↦ ℂ) (AddCircle.haarAddCircle (T := 1))).symm
         (PiLp.single 2 j (h : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))) := by
-  apply (Lp.piLpEquiv 2 ℂ (fun _ : Fin r ↦ ℂ) (AddCircle.haarAddCircle (T := 1))).injective
-  rw [LinearIsometryEquiv.apply_symm_apply]
-  ext k : 1
-  rw [piLpEquiv_coe_blockHardyEquiv_symm]
-  by_cases hkj : k = j <;> simp [hkj]
+  rw [blockHardyEquiv]
+  exact Lp.coe_subspacePiLpEquiv_symm_single (blockHardySubmodule r) (fun _ ↦ hardySubmodule) _ j h
 
 /-- Orthogonal projection onto `blockHardySubmodule r` acts coordinatewise as scalar Hardy
 projection. -/
@@ -327,21 +287,22 @@ theorem mem_blockHardySubmodule_orthogonal_iff {r : ℕ}
     f ∈ (blockHardySubmodule r)ᗮ ↔ ∀ n : ℕ, fourierCoeff f (n : ℤ) = 0 := by
   rw [mem_blockHardySubmodule_orthogonal_iff_piLpEquiv]
   simp_rw [mem_hardySubmodule_orthogonal_iff, PiLp.ext_iff, PiLp.zero_apply,
-    fourierCoeff_euclideanSpace_apply]
+    fourierCoeff_piLp_apply]
   exact ⟨fun h n i ↦ h i n, fun h i n ↦ h n i⟩
 
 /-- Unitary identification of the actual orthogonal complement `↥(blockHardySubmodule r)ᗮ` with the
 `L²` product of scalar `↥hardySubmoduleᗮ` spaces. -/
 def blockHardyOrthogonalEquiv (r : ℕ) :
     ↥(blockHardySubmodule r)ᗮ ≃ₗᵢ[ℂ] PiLp 2 (fun _ : Fin r ↦ ↥hardySubmoduleᗮ) :=
-  subspacePiLpEquiv (blockHardySubmodule r)ᗮ hardySubmoduleᗮ fun f ↦
+  Lp.subspacePiLpEquiv (blockHardySubmodule r)ᗮ (fun _ ↦ hardySubmoduleᗮ) fun f ↦
     mem_blockHardySubmodule_orthogonal_iff_piLpEquiv f
 
 /-- Coordinatewise evaluation of `blockHardyOrthogonalEquiv r` in circle `L²`. -/
 @[simp]
 theorem coe_blockHardyOrthogonalEquiv_apply {r : ℕ} (f : ↥(blockHardySubmodule r)ᗮ) (i : Fin r) :
     (blockHardyOrthogonalEquiv r f i : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) =
-      Lp.piLpEquiv 2 ℂ (fun _ : Fin r ↦ ℂ) (AddCircle.haarAddCircle (T := 1)) f.1 i := (rfl)
+      Lp.piLpEquiv 2 ℂ (fun _ : Fin r ↦ ℂ) (AddCircle.haarAddCircle (T := 1)) f.1 i := by
+  rw [blockHardyOrthogonalEquiv]; exact Lp.coe_subspacePiLpEquiv_apply _ _ _ f i
 
 /-- Orthogonal projection onto `(blockHardySubmodule r)ᗮ` acts coordinatewise as orthogonal
 projection onto `hardySubmoduleᗮ`. -/
@@ -386,7 +347,7 @@ theorem blockHardyRepr_blockHardyEquiv_eq_fourierCoeff {r : ℕ}
         (n : ℤ) := by
   ext i
   rw [blockHardyRepr_apply, hardyBasis_repr, coe_blockHardyEquiv_apply,
-    fourierCoeff_euclideanSpace_apply]
+    fourierCoeff_piLp_apply]
 
 /-- The `(ℕ × Fin r)`-indexed Fourier Hilbert basis of `BlockHardySpace r`. -/
 def blockHardyBasis (r : ℕ) : HilbertBasis (ℕ × Fin r) ℂ (BlockHardySpace r) :=
@@ -491,6 +452,18 @@ theorem blockSymbolEntry_blockSymbolSingle {r : ℕ} (i j k l : Fin r)
     rw [h₁, h₂, h₀]
     simp [EuclideanSpace.single, hkl]
 
+/-- Extracting the `(i, j)` scalar entry of a matrix of scalar `L∞` symbols assembled via
+`blockSymbolSingle` recovers the `(i, j)` symbol. -/
+theorem blockSymbolEntry_sum_blockSymbolSingle {r : ℕ}
+    (a : Fin r → Fin r → Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) (i j : Fin r) :
+    blockSymbolEntry r i j (∑ k : Fin r, ∑ l : Fin r, blockSymbolSingle r k l (a k l)) =
+      a i j := by
+  have hmap (f : Fin r → BlockSymbol r) :
+      blockSymbolEntry r i j (∑ x, f x) = ∑ x, blockSymbolEntry r i j (f x) :=
+    map_sum (blockSymbolEntry r i j).toLinearMap.toAddMonoidHom f Finset.univ
+  simp_rw [hmap, blockSymbolEntry_blockSymbolSingle, and_comm (a := i = _), ite_and]
+  simp
+
 /-- Every block symbol is the finite sum of its scalar matrix entries along the matrix units. -/
 theorem eq_sum_blockSymbolSingle {r : ℕ} (A : BlockSymbol r) :
     A = ∑ i : Fin r, ∑ j : Fin r, blockSymbolSingle r i j (blockSymbolEntry r i j A) := Lp.ext <| by
@@ -588,12 +561,11 @@ theorem fourierCoeff_blockSymbolEntry {r : ℕ} (A : BlockSymbol r) (i j : Fin r
   let entry : (EuclideanSpace ℂ (Fin r) →L[ℂ] EuclideanSpace ℂ (Fin r)) →L[ℂ] ℂ :=
     EuclideanSpace.proj i ∘L
       ContinuousLinearMap.apply ℂ (EuclideanSpace ℂ (Fin r)) (EuclideanSpace.single j 1)
-  have hint := ((Lp.memLp A).integrable le_top).fourier_smul (-n)
-  have hentry (M : EuclideanSpace ℂ (Fin r) →L[ℂ] EuclideanSpace ℂ (Fin r)) :
-      M (EuclideanSpace.single j 1) i = entry M := by simp [entry]
-  rw [hentry (fourierCoeff A n), fourierCoeff_congr_ae (blockSymbolEntry_ae i j A),
-    fourierCoeff, fourierCoeff, ← entry.integral_comp_comm hint]
-  exact integral_congr_ae <| .of_forall fun x ↦ by simp [entry]
+  have hae : blockSymbolEntry r i j A =ᵐ[AddCircle.haarAddCircle (T := 1)]
+      fun x ↦ entry (A x) :=
+    (blockSymbolEntry_ae i j A).mono fun x hx ↦ by simp [hx, entry]
+  rw [fourierCoeff_congr_ae hae, entry.fourierCoeff_comp ((Lp.memLp A).integrable le_top) n]
+  simp [entry]
 
 /-- Matrix-element form of `fourierCoeff_blockSymbolEntry` in the standard basis of
 `EuclideanSpace ℂ (Fin r)`. -/
