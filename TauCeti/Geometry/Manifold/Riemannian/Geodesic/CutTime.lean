@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Completeness
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Flow.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Flow.Domain
 public import TauCeti.MeasureTheory.MeasurableSpace.RayCutTime
 
 /-!
@@ -24,14 +24,12 @@ The manifold is not assumed to be complete, and `γ` need not be defined up to t
 of `K` makes up for both: a maximal geodesic that is defined and lies in `K` on `[0, τ)` is defined
 at time `τ`, where it is still in `K`. Consequently the cut time is attained. Moreover, for a
 continuous family of initial vectors, the parameters whose geodesic is defined and lies in `K` on
-`[0, t]` form a closed set, and the cut time is an upper semicontinuous, hence measurable, function
-of the parameter.
+`[0, t]` form a closed set
+(`TauCeti.Manifold.isClosed_setOfPred_Icc_subset_geodesicInterval_inter_preimage`), and the cut
+time is an upper semicontinuous, hence measurable, function of the parameter.
 
 ## Main results
 
-* `TauCeti.Manifold.isClosed_setOfPred_Icc_subset_geodesicInterval_inter_preimage`: for a
-  continuous family of initial vectors, the parameters whose maximal geodesic is defined and lies
-  in a compact set on `[0, t]` form a closed set.
 * `TauCeti.Manifold.rayCutTime_maximalGeodesic_mem_rayMinimizingTimes`: the cut time of a geodesic
   in a compact set is attained.
 * `TauCeti.Manifold.upperSemicontinuous_rayCutTime_maximalGeodesic` and
@@ -49,31 +47,6 @@ namespace TauCeti.Manifold
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   {P : Type*} [TopologicalSpace P]
-
-section Prefix
-
-variable {M : Type*} [TopologicalSpace M] [T2Space M] [ChartedSpace H M] [IsManifold I ∞ M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-
-/-- For a continuous family `Z` of initial tangent vectors and a compact set `K`, the parameters
-whose maximal geodesic is defined and lies in `K` on `[0, t]` form a closed set. -/
-theorem isClosed_setOfPred_Icc_subset_geodesicInterval_inter_preimage
-    {Z : P → TangentBundle I M} (hZ : Continuous Z) {K : Set M} (hK : IsCompact K) (t : ℝ) :
-    IsClosed {q | Icc 0 t ⊆ geodesicInterval I M (Z q).proj (Z q).2 ∩
-      maximalGeodesic I M (Z q).proj (Z q).2 ⁻¹' K} := by
-  refine isClosed_of_closure_subset fun q hq ↦ ?_
-  have hmem : MapsTo (maximalGeodesic I M (Z q).proj (Z q).2)
-      (Icc 0 t ∩ geodesicInterval I M (Z q).proj (Z q).2) K := fun u hu ↦
-    hK.isClosed.closure_subset ((continuousAt_maximalGeodesic_comp hZ.continuousAt
-      continuousAt_const hu.2).continuousWithinAt.mem_closure hq fun _ hq' ↦ (hq' hu.1).2)
-  intro s hs
-  have hsJ : s ∈ geodesicInterval I M (Z q).proj (Z q).2 :=
-    mem_geodesicInterval_of_isCompact_of_mapsTo_Ico hK hs.1
-      (hmem.mono_left (inter_subset_inter_left _ fun _ hu ↦ ⟨hu.1, hu.2.le.trans hs.2⟩))
-  exact ⟨hsJ, hmem ⟨hs, hsJ⟩⟩
-
-end Prefix
 
 variable {M : Type*} [EMetricSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
