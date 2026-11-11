@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Vortex.SpectralGap
 public import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Exp
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.MeasureTheory.Integral.MeanInequalities
 
 /-!
 # Weighted energy estimates for the plane-vortex adjoint
@@ -204,40 +205,6 @@ private theorem integral_sq_mul_inner_gaugeFixedOperator_eq_add
   rw [← integral_add (hi hv₁) (hi hv₂)]
   simp_rw [hW, add_mul]
 
-/-- An angle rising from `0` on the disc of radius `R` to `π / 2` outside a larger disc, with
-gradient at most `ε`. Then `cos θ` and `sin θ` form a partition of unity in the sense of
-squares whose gradients are at most `ε`. -/
-private theorem exists_angle_cutoff {R ε : ℝ} (hR : 0 ≤ R) (hε : 0 < ε) :
-    ∃ R₂ > R, ∃ θ : ℂ → ℝ, ContDiff ℝ 2 θ ∧ (∀ z, ‖z‖ ≤ R → θ z = 0) ∧
-      (∀ z, R₂ < ‖z‖ → θ =ᶠ[𝓝 z] fun _ ↦ π / 2) ∧ ∀ z, ‖fderiv ℝ θ z‖ ≤ ε := by
-  obtain ⟨C, hC, hcut⟩ := exists_forall_contDiff_cutoff_closedBall (E := ℂ)
-  set K : ℝ := π * C / (2 * ε) + 1 with hK_def
-  have hK : 0 < K := by positivity
-  obtain ⟨ψ, hψ, -, hψ1, hψt, hψd, -⟩ := hcut 0 hR (lt_add_of_pos_right R hK)
-  refine ⟨R + K, lt_add_of_pos_right R hK, fun z ↦ π / 2 * (1 - ψ z),
-    contDiff_const.mul (contDiff_const.sub (hψ.of_le (by simp))), fun z hz ↦ ?_,
-    fun z hz ↦ ?_, fun z ↦ ?_⟩
-  · have : ψ z = 1 := hψ1 (by simpa using hz)
-    simp [this]
-  · filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds hz] with w hw
-    have : ψ w = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ by
-      have := hψt h
-      simp only [Metric.mem_closedBall, dist_zero_right] at this
-      linarith
-    simp [this]
-  · have hd : HasFDerivAt (fun z ↦ π / 2 * (1 - ψ z)) ((π / 2) • -fderiv ℝ ψ z) z :=
-      (((hψ.differentiable (by simp)) z).hasFDerivAt.const_sub 1).const_mul (π / 2)
-    have hg : ‖fderiv ℝ ψ z‖ ≤ C / K := by
-      have := hψd z
-      rwa [gradient, LinearIsometryEquiv.norm_map, add_sub_cancel_left] at this
-    have hCK : π * C ≤ 2 * ε * K := by
-      have : π * C / (2 * ε) * (2 * ε) = π * C := div_mul_cancel₀ _ (by positivity)
-      nlinarith
-    rw [hd.fderiv, norm_smul, norm_neg, Real.norm_eq_abs, abs_of_pos (by positivity)]
-    calc π / 2 * ‖fderiv ℝ ψ z‖ ≤ π / 2 * (C / K) := by gcongr
-      _ = π * C / (2 * K) := div_mul_div_comm _ _ _ _
-      _ ≤ ε := by rw [div_le_iff₀ (by positivity)]; linarith
-
 /-- The pointwise margin on the disc: if the weight `W` and the angle `t` have small
 gradients `A` and `e`, then the localized weights `W cos t`, `W sin t` with gradients `g₁`, `g₂`
 keep half of the smaller of the two masses. -/
@@ -342,7 +309,7 @@ private theorem exists_flat_weight_mul_integral_le
   obtain ⟨R, hR₀, hR⟩ := exists_exterior_lt_mass hlim ha
   set m : ℝ := min c₀ a with hm_def
   have hm : 0 < m := lt_min hc₀ (lt_of_le_of_lt (sq_nonneg c) hca)
-  obtain ⟨R₂, hR₂, θ, hθ, hθR, hθout, hθd⟩ := exists_angle_cutoff hR₀.le
+  obtain ⟨R₂, hR₂, θ, hθ, hθR, hθout, hθd⟩ := exists_contDiff_angle_cutoff (E := ℂ) hR₀.le
     (by positivity : 0 < √m / 4)
   set b : ℝ := 16 * c ^ 2 * R₂ ^ 2 / m + 1 with hb_def
   have hb : 1 ≤ b := by
@@ -375,8 +342,8 @@ private theorem exists_flat_weight_mul_integral_le
     exact mul_le_mul_of_nonneg_right ((div_le_iff₀ hp).2 hfr) (sq_nonneg _)
   set v₁ : ℂ → ℝ := fun z ↦ W z * Real.cos (θ z) with hv₁_def
   set v₂ : ℂ → ℝ := fun z ↦ W z * Real.sin (θ z) with hv₂_def
-  have hv₁ : ContDiff ℝ 2 v₁ := hW.mul (Real.contDiff_cos.comp hθ)
-  have hv₂ : ContDiff ℝ 2 v₂ := hW.mul (Real.contDiff_sin.comp hθ)
+  have hv₁ : ContDiff ℝ 2 v₁ := hW.mul (Real.contDiff_cos.comp (hθ.of_le (by simp)))
+  have hv₂ : ContDiff ℝ 2 v₂ := hW.mul (Real.contDiff_sin.comp (hθ.of_le (by simp)))
   have hsq (z : ℂ) : W z ^ 2 = v₁ z ^ 2 + v₂ z ^ 2 := by
     simp only [v₁, v₂, mul_pow]
     rw [← mul_add, Real.cos_sq_add_sin_sq, mul_one]
@@ -447,34 +414,6 @@ private theorem exists_flat_weight_mul_integral_le
   have hθz : θ z ≠ 0 := fun h ↦ hz (by simp [v₂, h])
   exact (hR z (lt_of_not_ge fun h ↦ hθz (hθR z h))).le
 
-/-- Absorbing a weighted pairing: `∫ W² ⟪G, η⟫ ≤ (δ / 2) ∫ W² |η|² + (2 δ)⁻¹ ∫ W² |G|²` for
-continuous compactly supported `G` and `η` and every `δ > 0`. -/
-private theorem integral_sq_mul_inner_le {W : ℂ → ℝ} {G : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hW : Continuous W) (hG : Continuous G) (hη : Continuous η) (hGs : HasCompactSupport G)
-    (hηs : HasCompactSupport η) {δ : ℝ} (hδ : 0 < δ) :
-    ∫ z, W z ^ 2 * ⟪G z, η z⟫ ∂μ ≤
-      δ / 2 * (∫ z, W z ^ 2 * ‖η z‖ ^ 2 ∂μ) + 1 / (2 * δ) * ∫ z, W z ^ 2 * ‖G z‖ ^ 2 ∂μ := by
-  have hi {g : ℂ → EuclideanSpace ℝ (Fin 4)} (hg : Continuous g) (hgs : HasCompactSupport g) :
-      Integrable (fun z ↦ W z ^ 2 * ‖g z‖ ^ 2) μ :=
-    ((hW.pow 2).mul (hg.norm.pow 2)).integrable_of_hasCompactSupport
-      (hgs.mono fun z hz hzero ↦ hz (by simp [hzero]))
-  have hηi : Integrable (fun z ↦ W z ^ 2 * ⟪G z, η z⟫) μ :=
-    ((hW.pow 2).mul (hG.inner hη)).integrable_of_hasCompactSupport
-      (hηs.mono fun z hz hzero ↦ hz (by simp [hzero]))
-  have i₁ := (hi hη hηs).const_mul (δ / 2)
-  have i₂ := (hi hG hGs).const_mul (1 / (2 * δ))
-  rw [← integral_const_mul, ← integral_const_mul, ← integral_add i₁ i₂]
-  refine integral_mono hηi (i₁.add i₂) fun z ↦ ?_
-  have h := real_inner_le_norm (G z) (η z)
-  have hq : ‖G z‖ * ‖η z‖ ≤ δ / 2 * ‖η z‖ ^ 2 + 1 / (2 * δ) * ‖G z‖ ^ 2 := by
-    have e : δ / 2 * ‖η z‖ ^ 2 + 1 / (2 * δ) * ‖G z‖ ^ 2 =
-        (δ ^ 2 * ‖η z‖ ^ 2 + ‖G z‖ ^ 2) / (2 * δ) := by
-      field_simp
-    rw [e, le_div_iff₀ (by positivity)]
-    nlinarith [sq_nonneg (δ * ‖η z‖ - ‖G z‖)]
-  have := mul_le_mul_of_nonneg_left (h.trans hq) (sq_nonneg (W z))
-  linarith
-
 /-- **The exponentially weighted estimate for `L_x L_x*` at a plane vortex.** For an actual
 vortex with unit-modulus end and `|c| < 1/2`, there is `K` such that every compactly supported
 `C²` field `η` satisfies
@@ -512,7 +451,8 @@ theorem exists_integral_exp_mul_norm_sq_le_mul_integral_exp_mul_norm_sq_gaugeFix
       Integrable (fun z ↦ f z ^ 2 * ‖g z‖ ^ 2) μ :=
     ((hf.pow 2).mul (hg.norm.pow 2)).integrable_of_hasCompactSupport
       (hgs.mono fun z hz hzero ↦ hz (by simp [hzero]))
-  have hamgm := integral_sq_mul_inner_le (μ := μ) hWc hGc hη.continuous hGs hηc hδ
+  have hamgm := integral_mul_inner_le (ν := μ) (w := fun z ↦ W z ^ 2) (fun z ↦ sq_nonneg _)
+    (hi hWc hη.continuous hηc) (hi hWc hGc hGs) hδ
   have hWη := hW η hη hηc
   have hflat : ∫ z, W z ^ 2 * ‖η z‖ ^ 2 ∂μ ≤ 1 / δ ^ 2 * ∫ z, W z ^ 2 * ‖G z‖ ^ 2 ∂μ := by
     rw [div_mul_eq_mul_div, one_mul, le_div_iff₀ (by positivity)]
@@ -620,8 +560,10 @@ theorem exists_integral_exp_mul_norm_sq_gaugeFixedAdjoint_le_mul_integral_exp_mu
     (c ^ 2)) fun z ↦ by
       simpa only [mul_assoc] using mul_le_mul_of_nonneg_right (hdw z) (sq_nonneg ‖η z‖)
   rw [integral_const_mul] at hD
-  have hP := integral_sq_mul_inner_le (μ := μ) hw.continuous hGc hη.continuous hGs hηc
-    one_pos
+  have hP := integral_mul_inner_le (ν := μ) (w := fun z ↦ w z ^ 2) (fun z ↦ sq_nonneg _)
+    (hi (f := fun z ↦ w z ^ 2) (hw.continuous.pow 2))
+    (((hw.continuous.pow 2).mul (hGc.norm.pow 2)).integrable_of_hasCompactSupport
+      (hGs.mono fun z hz hzero ↦ hz (by simp [hzero]))) one_pos
   have h1 := hK η hη hηc
   have hB : 0 ≤ ∫ z, w z ^ 2 * ‖G z‖ ^ 2 ∂μ := integral_nonneg fun z ↦ by positivity
   have hc2 : 0 ≤ c ^ 2 := sq_nonneg c
