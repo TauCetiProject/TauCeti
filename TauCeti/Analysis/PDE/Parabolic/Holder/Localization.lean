@@ -22,6 +22,10 @@ For `α < 1`, interpolation makes this error at most `η ‖u‖_{2+α,par} + K 
 on their derivative norms. This is the lower-order error estimate used when localizing a
 parabolic Schauder estimate; it does not assert the principal-part estimate itself.
 
+Multiplying by a cutoff `χ` with values in `[0, 1]` does not increase the supremum norm, keeps a
+vanishing trace, and makes the Hessian vanish wherever `χ` vanishes nearby; these are the
+properties of the localizations `χ u` that a localized estimate uses.
+
 The Hessian cross terms are kept separately, so the formula also applies to nonsymmetric
 second-order coefficients. Time derivatives include the one-sided derivatives at both endpoints
 of the closed slab.
@@ -154,6 +158,24 @@ theorem norm_parabolicOperatorL_mul_sub_mul_parabolicOperatorL_le :
     mul_nonneg (by positivity : 0 ≤ ‖A‖ * ‖spatialFDerivHolderL hα χ‖)
       (norm_nonneg (valueHolderL hα u))]
 
+/-- **The operator on a localization.** `P(χu)` is `χ P u` up to the localization commutator:
+`‖P(χu)‖ ≤ 24 ‖χ‖ ‖P u‖ + ‖P(χu) - χ P u‖`. -/
+theorem norm_parabolicOperatorL_mul_le :
+    ‖parabolicOperatorL hα A B C ((ContinuousLinearMap.mul ℝ ℝ).compParabolicC2Holder₂ hα χ u)‖ ≤
+      24 * ‖χ‖ * ‖parabolicOperatorL hα A B C u‖ +
+        ‖parabolicOperatorL hα A B C ((ContinuousLinearMap.mul ℝ ℝ).compParabolicC2Holder₂ hα χ u) -
+          (ContinuousLinearMap.mul ℝ ℝ).compHolder₂ (valueHolderL hα χ)
+            (parabolicOperatorL hα A B C u)‖ := by
+  refine (norm_le_insert' _ ((ContinuousLinearMap.mul ℝ ℝ).compHolder₂ (valueHolderL hα χ)
+    (parabolicOperatorL hα A B C u))).trans (add_le_add_left ?_ _)
+  have hm : ‖ContinuousLinearMap.mul ℝ ℝ‖ ≤ 1 := ContinuousLinearMap.opNorm_mul_le ℝ ℝ
+  have hχ : ‖valueHolderL hα χ‖ ≤ 24 * ‖χ‖ := by
+    linarith [norm_valueHolderL_add_norm_spatialFDerivHolderL_le_mul hα χ,
+      norm_nonneg (spatialFDerivHolderL hα χ)]
+  refine ((ContinuousLinearMap.mul ℝ ℝ).norm_compHolder₂_apply_le _ _).trans ?_
+  calc _ ≤ 1 * (24 * ‖χ‖) * ‖parabolicOperatorL hα A B C u‖ := by gcongr
+    _ = _ := by ring
+
 /-- **Uniform absorption of localization errors.** Given a common bound `M` on the cutoff
 derivative/coefficient expression, the remainder constant depends only on `α`, `M` and `η`.
 It is independent of the slab, the particular cutoff and the zeroth-order coefficient. -/
@@ -183,5 +205,45 @@ theorem exists_norm_parabolicOperatorL_mul_sub_mul_parabolicOperatorL_le
       exact mul_le_mul_of_nonneg_left ((hK u).trans (add_le_add le_rfl
         (mul_le_mul_of_nonneg_right (le_max_left K 0) (norm_nonneg _)))) hMp.le
     _ = _ := by field_simp
+
+
+/-! ### Localizations by cutoffs -/
+
+section Localizations
+
+variable {χ}
+
+/-- Multiplying by a cutoff with values in `[0, 1]` does not increase the supremum norm. -/
+theorem norm_valueL_mul_le (hχ : ∀ p, χ p ∈ Icc 0 1) (u : ParabolicC2HolderSpace α E ℝ ht) :
+    ‖valueL ((ContinuousLinearMap.mul ℝ ℝ).compParabolicC2Holder₂ hα χ u)‖ ≤ ‖valueL u‖ :=
+  (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun p ↦ by
+    rw [valueL_apply, ContinuousLinearMap.compParabolicC2Holder₂_apply,
+      ContinuousLinearMap.mul_apply', norm_mul]
+    refine (mul_le_of_le_one_left (norm_nonneg _) ?_).trans ((valueL u).norm_coe_le_norm p)
+    rw [Real.norm_eq_abs, abs_of_nonneg (hχ p).1]
+    exact (hχ p).2
+
+/-- A localization `χ u` has vanishing trace wherever `u` does. -/
+theorem spatialTrace_mul_eq_zero {u : ParabolicC2HolderSpace α E ℝ ht} {t : Icc t₀ t₁}
+    (hu : u.spatialTrace t = 0) :
+    ((ContinuousLinearMap.mul ℝ ℝ).compParabolicC2Holder₂ hα χ u).spatialTrace t = 0 := by
+  ext x
+  have hx := congrArg (fun g : CkHolderSpace 2 α E ℝ ↦ g x) hu
+  simp only [spatialTrace_apply] at hx
+  simp [spatialTrace_apply, hx]
+
+/-- The Hessian of a localization `χ u` vanishes wherever `χ` vanishes near the point. -/
+theorem spatialSecondFDerivL_mul_eq_zero {p : slab (E := E) t₀ t₁} {r : ℝ}
+    (hχ : ∀ q, r ≤ dist q p → χ q = 0) (u : ParabolicC2HolderSpace α E ℝ ht)
+    {q : slab (E := E) t₀ t₁} (hq : r < dist q p) :
+    spatialSecondFDerivL ((ContinuousLinearMap.mul ℝ ℝ).compParabolicC2Holder₂ hα χ u) q = 0 := by
+  have hU : IsOpen {q' : slab (E := E) t₀ t₁ | r < dist q' p} :=
+    isOpen_lt continuous_const (continuous_id.dist continuous_const)
+  have h : EqOn ((ContinuousLinearMap.mul ℝ ℝ).compParabolicC2Holder₂ hα χ u)
+      (0 : ParabolicC2HolderSpace α E ℝ ht) {q' | r < dist q' p} := fun q' hq' ↦ by
+    simp [hχ q' (le_of_lt hq')]
+  rw [eqOn_spatialSecondFDerivL_of_eqOn hU h hq, map_zero, HolderSpace.zero_apply]
+
+end Localizations
 
 end TauCeti.ParabolicC2HolderSpace

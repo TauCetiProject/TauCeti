@@ -248,6 +248,55 @@ theorem euclideanZerothOrderCoeff_apply
     euclideanZerothOrderCoeff c p y = c p * y := by
   simp [euclideanZerothOrderCoeff]
 
+/-- The second-order coefficient field has norm at most `∑ᵢⱼ ‖aⁱʲ‖`. -/
+theorem norm_euclideanSecondOrderCoeff_le
+    (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    ‖euclideanSecondOrderCoeff a‖ ≤ ∑ i, ∑ j, ‖a i j‖ := by
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦
+    (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_))
+  -- Evaluating a Hessian on two unit vectors has norm at most one.
+  have hL : ‖(ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single j (1 : ℝ))).comp
+      (ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ ι →L[ℝ] ℝ)
+        (EuclideanSpace.single i (1 : ℝ)))‖ ≤ 1 :=
+    ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun H ↦ by
+      simpa using H.le_opNorm₂ (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
+  refine ((ContinuousLinearMap.lsmul ℝ ℝ).norm_compHolder₂_apply_le _ _).trans ?_
+  have := (HolderSpace.norm_const_le (α := α) (X := slab (E := EuclideanSpace ℝ ι) t₀ t₁)
+    _).trans hL
+  calc _ ≤ 1 * ‖a i j‖ * 1 := by
+        gcongr
+        exact ContinuousLinearMap.opNorm_lsmul_le
+    _ = ‖a i j‖ := by ring
+
+/-- The first-order coefficient field has norm at most `∑ᵢ ‖bⁱ‖`. -/
+theorem norm_euclideanFirstOrderCoeff_le
+    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    ‖euclideanFirstOrderCoeff b‖ ≤ ∑ i, ‖b i‖ := by
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
+  have hL : ‖ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single i (1 : ℝ))‖ ≤ 1 :=
+    ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v ↦ by
+      simpa using v.le_opNorm (EuclideanSpace.single i 1)
+  refine ((ContinuousLinearMap.lsmul ℝ ℝ).norm_compHolder₂_apply_le _ _).trans ?_
+  have := (HolderSpace.norm_const_le (α := α) (X := slab (E := EuclideanSpace ℝ ι) t₀ t₁)
+    _).trans hL
+  calc _ ≤ 1 * ‖b i‖ * 1 := by
+        gcongr
+        exact ContinuousLinearMap.opNorm_lsmul_le
+    _ = ‖b i‖ := by ring
+
+omit [DecidableEq ι] in
+/-- The zeroth-order coefficient field has norm at most `‖c‖`. -/
+theorem norm_euclideanZerothOrderCoeff_le
+    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    ‖euclideanZerothOrderCoeff c‖ ≤ ‖c‖ := by
+  refine ((ContinuousLinearMap.lsmul ℝ ℝ).norm_compHolder₂_apply_le _ _).trans ?_
+  have := (HolderSpace.norm_const_le (α := α) (X := slab (E := EuclideanSpace ℝ ι) t₀ t₁)
+    (ContinuousLinearMap.id ℝ ℝ)).trans ContinuousLinearMap.norm_id_le
+  calc _ ≤ 1 * ‖c‖ * 1 := by
+        gcongr
+        exact ContinuousLinearMap.opNorm_lsmul_le
+    _ = ‖c‖ := by ring
+
 /-- The parabolic operator `P u = ∂ₜu - aⁱʲ ∂ᵢ∂ⱼu - bⁱ ∂ᵢu - c u` on `ℝⁿ = EuclideanSpace ℝ ι`
 with scalar coefficients `aⁱʲ`, `bⁱ`, `c` in `C_b^{α,α/2}`, as a continuous linear map from
 `C_b^{2+α,1+α/2}` to `C_b^{α,α/2}`. -/
