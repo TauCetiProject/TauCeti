@@ -91,7 +91,7 @@ private theorem coe_retractionScale (τ : unitInterval) (x : M) :
 private theorem retractionScale_one (x : M) : retractionScale s t ε 1 x = 1 :=
   Subtype.ext (by simp [coe_retractionScale])
 
-/-- Above the level `t = s - ε`, the scaling factor is `1` at all times. -/
+/-- For `0 < t ≤ s - ε`, the scaling factor is `1` at all times. -/
 private theorem retractionScale_eq_one (τ : unitInterval) (ht : 0 < t x)
     (hst : t x ≤ s x - ε) : retractionScale s t ε τ x = 1 := by
   have h1 : 1 ≤ √((s x - ε) / t x) := Real.one_le_sqrt.2 ((one_le_div ht).2 hst)
