@@ -13,7 +13,6 @@ public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.Morse.Hessian
 public import TauCeti.Geometry.Manifold.Morse.Index
 public import TauCeti.Geometry.Manifold.Morse.Lemma
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Morse functions on a product manifold
@@ -25,17 +24,14 @@ is the sum of the two indices. This is the classical construction of the standar
 on a product, for instance on a torus `S¹ × S¹` as the sum of two height functions.
 
 The product chart at `(x, y)` is the product of the preferred charts at `x` and `y`, so all the
-statements reduce to the calculus of separated sums on the model space `E × E'`. The two model
-spaces are assumed boundaryless where the manifold differential `mvfderiv` must be split into its
-two components, since only then is the coordinate expression of a smooth function differentiable
-in the ordinary sense at the chart image of a point. The Morse statements themselves need neither
-boundary nor openness hypotheses, because `IsMorseOn` tests criticality in the preferred charts,
-where a function which is Morse on a set has a differentiable coordinate expression at every point
-of the set.
+statements reduce to the calculus of separated sums on the model space `E × E'`. The Morse
+statements need neither boundary nor openness hypotheses, because `IsMorseOn` tests criticality in
+the preferred charts, where a function which is Morse on a set has a differentiable coordinate
+expression at every point of the set.
 
-Morse charts (`TauCeti.MorseChart`) and the manifold differential `mfderiv` for the model
-`𝓘(ℝ, E × E')` are read in the product charts of `M × N` with values in the normed space `E × E'`
-(`TauCeti.chartedSpaceProd`, a local instance). In these charts, Morse charts for `f` at `x` and
+Morse charts (`TauCeti.MorseChart`) for the model `𝓘(ℝ, E × E')` are read in the product charts
+of `M × N` with values in the normed space `E × E'` (`TauCeti.chartedSpaceProd`, a local
+instance). In these charts, Morse charts for `f` at `x` and
 for `g` at `y` combine to a Morse chart for the separated sum at `(x, y)`.
 
 ## Main declarations
@@ -43,8 +39,6 @@ for `g` at `y` combine to a Morse chart for the separated sum at `(x, y)`.
 * `TauCeti.isManifoldNondegenerateCriticalPoint_comp_fst_add_comp_snd_iff` and
   `TauCeti.IsManifoldNondegenerateCriticalPoint.comp_fst_add_comp_snd`: nondegenerate critical
   points of the separated sum are the pairs of nondegenerate critical points.
-* `TauCeti.mvfderiv_comp_fst_add_comp_snd_eq_zero_iff`: the critical points of the separated sum
-  are the pairs of critical points.
 * `TauCeti.IsMorseOn.comp_fst_add_comp_snd` and `TauCeti.IsMorse.comp_fst_add_comp_snd`: the
   separated sum of two Morse functions is Morse.
 * `TauCeti.criticalHessian_comp_fst_add_comp_snd_apply`: the critical Hessian of the separated
@@ -52,8 +46,6 @@ for `g` at `y` combine to a Morse chart for the separated sum at `(x, y)`.
 * `TauCeti.manifoldMorseIndex_comp_fst_add_comp_snd` and
   `TauCeti.IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_comp_fst_add_comp_snd`: the
   Morse index of the separated sum is the sum of the indices.
-* `TauCeti.mfderiv_comp_fst_add_comp_snd_eq_zero_iff`: the critical points of the separated sum,
-  read in the product charts with values in `E × E'`, are the pairs of critical points.
 * `TauCeti.MorseChart.prod`: the product of Morse charts for `f` at `x` and `g` at `y` is a Morse
   chart for the separated sum at `(x, y)`.
 
@@ -112,22 +104,6 @@ theorem IsManifoldNondegenerateCriticalPoint.comp_fst_add_comp_snd
   (isManifoldNondegenerateCriticalPoint_comp_fst_add_comp_snd_iff
     ((isManifoldNondegenerateCriticalPoint_iff I).1 hf).contDiffAt
     ((isManifoldNondegenerateCriticalPoint_iff I').1 hg).contDiffAt).2 ⟨hf, hg⟩
-
-/-- **The critical points of a separated sum are the pairs of critical points.** On boundaryless
-manifolds, the differential of `f ∘ Prod.fst + g ∘ Prod.snd` vanishes at `(x, y)` exactly when the
-differentials of `f` at `x` and of `g` at `y` both vanish. -/
-@[simp]
-theorem mvfderiv_comp_fst_add_comp_snd_eq_zero_iff [I.Boundaryless] [I'.Boundaryless]
-    (hf : MDifferentiableAt I 𝓘(ℝ) f x) (hg : MDifferentiableAt I' 𝓘(ℝ) g y) :
-    mvfderiv (I.prod I') (f ∘ Prod.fst + g ∘ Prod.snd) (x, y) = 0 ↔
-      mvfderiv I f x = 0 ∧ mvfderiv I' g y = 0 := by
-  have hsum : MDifferentiableAt (I.prod I') 𝓘(ℝ) (f ∘ Prod.fst + g ∘ Prod.snd) (x, y) :=
-    (hf.comp (x, y) mdifferentiableAt_fst).add (hg.comp (x, y) mdifferentiableAt_snd)
-  rw [hsum.mvfderiv_eq_fderiv_comp_extChartAt_symm, hf.mvfderiv_eq_fderiv_comp_extChartAt_symm,
-    hg.mvfderiv_eq_fderiv_comp_extChartAt_symm, comp_fst_add_comp_snd_comp_extChartAt_prod_symm]
-  simp only [extChartAt_prod, PartialEquiv.prod_coe]
-  exact fderiv_comp_fst_add_comp_snd_eq_zero_iff hf.differentiableAt_comp_extChartAt_symm
-    hg.differentiableAt_comp_extChartAt_symm
 
 /-- **The separated sum of two Morse functions is Morse on the product of the sets.** A function
 which is Morse on a set has a differentiable coordinate expression at every point of the set, so a
@@ -210,18 +186,6 @@ variable {E E' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCom
 attribute [local instance low] chartedSpaceProd
 
 attribute [local instance] isManifold_chartedSpaceProd
-
-/-- **The critical points of a separated sum, in the product charts with values in `E × E'`.** When
-`f` is differentiable at `p.1` and `g` at `p.2`, the differential of `f ∘ Prod.fst + g ∘ Prod.snd`
-for the model `𝓘(ℝ, E × E')` vanishes at `p` exactly when the differentials of `f` at `p.1` and of
-`g` at `p.2` both vanish. -/
-theorem mfderiv_comp_fst_add_comp_snd_eq_zero_iff {p : M × N}
-    (hf : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f p.1) (hg : MDifferentiableAt 𝓘(ℝ, E') 𝓘(ℝ) g p.2) :
-    mfderiv 𝓘(ℝ, E × E') 𝓘(ℝ) (f ∘ Prod.fst + g ∘ Prod.snd) p = 0 ↔
-      mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p.1 = 0 ∧ mfderiv 𝓘(ℝ, E') 𝓘(ℝ) g p.2 = 0 := by
-  rw [← mvfderiv_eq_zero_iff, ← mvfderiv_eq_zero_iff, ← mvfderiv_eq_zero_iff,
-    modelWithCornersSelf_prod]
-  exact mvfderiv_comp_fst_add_comp_snd_eq_zero_iff hf hg
 
 variable (E E') in
 /-- The coordinates of `E × E'` in a product of Morse charts (`TauCeti.MorseChart.prod`) are

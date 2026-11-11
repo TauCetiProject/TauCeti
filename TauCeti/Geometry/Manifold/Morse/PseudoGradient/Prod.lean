@@ -102,24 +102,12 @@ theorem coord_mfderiv_prod {X : (z : M) → TangentSpace 𝓘(ℝ, E) z}
       (Manifold.prodVectorField X Y p) =
       ((mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart p.1 (X p.1),
         mfderiv 𝓘(ℝ, E') 𝓘(ℝ, E') ψ.toChart p.2 (Y p.2)) : E × E') := by
-    -- The target `E × E'` carries its own chart, not a product chart, so the derivative of the
-    -- product chart is assembled from those of its two components.
-    have h₁ : HasMFDerivAt 𝓘(ℝ, E × E') 𝓘(ℝ, E) (fun q : M × N ↦ φ.toChart q.1) p
-        ((mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart p.1).comp (ContinuousLinearMap.fst ℝ E E')) := by
-      rw [modelWithCornersSelf_prod]
-      exact (φ.mdifferentiableAt_toChart hp₁).hasMFDerivAt.comp p (hasMFDerivAt_fst p)
-    have h₂ : HasMFDerivAt 𝓘(ℝ, E × E') 𝓘(ℝ, E') (fun q : M × N ↦ ψ.toChart q.2) p
-        ((mfderiv 𝓘(ℝ, E') 𝓘(ℝ, E') ψ.toChart p.2).comp (ContinuousLinearMap.snd ℝ E E')) := by
-      rw [modelWithCornersSelf_prod]
-      exact (ψ.mdifferentiableAt_toChart hp₂).hasMFDerivAt.comp p (hasMFDerivAt_snd p)
-    have h : HasMFDerivAt 𝓘(ℝ, E × E') 𝓘(ℝ, E × E') (φ.toChart.prod ψ.toChart) p
-        ((mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart p.1).prodMap
-          (mfderiv 𝓘(ℝ, E') 𝓘(ℝ, E') ψ.toChart p.2)) :=
-      ⟨h₁.1.prodMk h₂.1, h₁.2.prodMk h₂.2⟩
-    rw [h.mfderiv, ← Manifold.prodVectorField_fst X Y p, ← Manifold.prodVectorField_snd X Y p]
-    -- `prodMap` applies its two maps componentwise. The tangent-space types of its domain keep
-    -- `ContinuousLinearMap.coe_prodMap'` from matching, so this is closed by its definition.
-    rfl
+    -- Mathlib's `mfderiv_prodMap` is stated for the product model and product charts; the
+    -- product model is `𝓘(ℝ, E × E')` and the product charts on `E × E'` are its own chart.
+    have h := mfderiv_prodMap (φ.mdifferentiableAt_toChart hp₁) (ψ.mdifferentiableAt_toChart hp₂)
+    rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod] at h
+    rw [← Manifold.prodVectorField_fst X Y p, ← Manifold.prodVectorField_snd X Y p]
+    exact congr($h (Manifold.prodVectorField X Y p))
   ext i
   rw [hD, prod_coord_apply, prod_weight_apply, prod_coord_apply]
   rcases prodIndexEquiv E E' i with j | j
