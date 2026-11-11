@@ -6,14 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Symmetric
+import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 
 /-!
-# Symmetric operators: negation and limits
+# Symmetric operators: negation, range and limits
 
-Two facts about symmetric operators complementing Mathlib's
+Three facts about symmetric operators complementing Mathlib's
 `Mathlib.Analysis.InnerProductSpace.Symmetric`:
 
 * the negative of a symmetric linear map is symmetric (`LinearMap.IsSymmetric.neg`);
+* an injective symmetric linear map on a Hilbert space has dense range
+  (`LinearMap.IsSymmetric.denseRange_of_injective`), the orthogonal complement of its range being
+  its kernel;
 * the symmetric bounded operators form a closed subset of `E →L[𝕜] E`
   (`ContinuousLinearMap.isClosed_setOf_isSymmetric`), so a limit of symmetric bounded operators
   is symmetric. No completeness of `E` is needed: the condition `⟪T x, y⟫ = ⟪x, T y⟫` is closed
@@ -29,6 +33,14 @@ namespace LinearMap
 /-- The negative of a symmetric linear map is symmetric. -/
 theorem IsSymmetric.neg {T : E →ₗ[𝕜] E} (hT : T.IsSymmetric) : (-T).IsSymmetric := by
   simpa using IsSymmetric.zero.sub hT
+
+/-- An injective symmetric linear map on a Hilbert space has dense range: the orthogonal
+complement of its range is its kernel. -/
+theorem IsSymmetric.denseRange_of_injective [CompleteSpace E] {T : E →ₗ[𝕜] E}
+    (hT : T.IsSymmetric) (hinj : Function.Injective T) : DenseRange T := by
+  rw [DenseRange, ← LinearMap.coe_range, Submodule.dense_iff_topologicalClosure_eq_top,
+    Submodule.topologicalClosure_eq_top_iff, hT.orthogonal_range, LinearMap.ker_eq_bot]
+  exact hinj
 
 end LinearMap
 

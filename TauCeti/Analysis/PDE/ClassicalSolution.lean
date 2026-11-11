@@ -38,6 +38,8 @@ disc, continuous up to the boundary, with infinite Dirichlet energy.
 
 ## Main declarations
 
+* `TauCeti.PDE.energyFormH1_one_zero_zero_ofTestFunctionₗ`: `∫_Ω ∇φ · ∇u = -∫ Δφ u` for
+  `u ∈ H¹(Ω)` and a test function `φ`, the weak gradient of `u` being integrated by parts.
 * `TauCeti.PDE.energyFormH1_one_zero_zero_eq_setIntegral_neg_laplacian_mul`: Green's first
   identity `∫_Ω ∇v · ∇u = -∫_Ω Δw v` for `v ∈ H¹₀(Ω)` and `u ∈ H¹(Ω)` represented by a `C²`
   function `w` with `Δw ∈ L²(Ω)`.
@@ -71,6 +73,26 @@ open scoped Distributions Gradient InnerProductSpace ENNReal Topology
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)} {w : EuclideanSpace ℝ ι → ℝ}
 
+/-- **Integration by parts against a test function.** For `u ∈ H¹(Ω)` and a test function
+`φ ∈ C_c^∞(Ω)`, the Dirichlet energy pairing is `∫_Ω ∇φ · ∇u = -∫ Δφ u`: the weak gradient of
+`u` is moved onto `φ`. -/
+theorem energyFormH1_one_zero_zero_ofTestFunctionₗ [DecidableEq ι] (u : W1p mu Omega 2)
+    (φ : 𝓓(Omega, ℝ)) :
+    energyFormH1 (fun _ => 1) 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
+      -∫ x, Δ (φ : EuclideanSpace ℝ ι → ℝ) x • W1p.value u x ∂mu := by
+  have hgrad : energyFormH1 (fun _ => 1) 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
+      ∫ x, ⟪∇ (φ : EuclideanSpace ℝ ι → ℝ) x, W1p.gradient u x⟫_ℝ ∂mu := by
+    rw [energyFormH1_zero_zero_eq_setIntegral]
+    refine (integral_congr_ae ?_).trans
+      (setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => ?_)
+    · filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 φ] with x hx
+      rw [W1p.gradient_ofTestFunctionₗ, hx, matrixBilinearForm_one_apply]
+      exact ((EuclideanSpace.inner_eq_star_dotProduct _ _).trans (dotProduct_comm _ _)).symm
+    · have hφ : fderiv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x = 0 :=
+        fderiv_of_notMem_tsupport ℝ fun hx' => hx (φ.tsupport_subset hx')
+      simp [gradient, hφ]
+  rw [hgrad, (W1p.hasWeakFDerivOn u).integral_laplacian_smul_eq_neg_integral_inner φ, neg_neg]
+
 /-- **Green's first identity against `H¹₀(Ω)`.** Let `u ∈ H¹(Ω)` agree almost everywhere on `Ω`
 with a function `w` of class `C²` on `Ω` whose Laplacian lies in `L²(Ω)`. Then
 `∫_Ω ∇v · ∇u = -∫_Ω Δw v` for every `v ∈ H¹₀(Ω)`: `u` solves `-Δu = -Δw` weakly. No boundary
@@ -91,17 +113,6 @@ theorem energyFormH1_one_zero_zero_eq_setIntegral_neg_laplacian_mul [DecidableEq
   refine ((forall_energyFormH1_eq_setIntegral_iff_forall_testFunction hcoeff
     (hΔ.neg.toLp _) u).2 (fun φ => ?_) v).trans (integral_congr_ae ?_)
   · -- Against a test function: `∫ ⟪∇φ, ∇u⟫ = -∫ Δφ u = -∫ Δφ w = -∫ φ Δw`.
-    have hgrad : energyFormH1 (fun _ => 1) 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
-        ∫ x, ⟪∇ (φ : EuclideanSpace ℝ ι → ℝ) x, W1p.gradient u x⟫_ℝ ∂mu := by
-      rw [energyFormH1_zero_zero_eq_setIntegral]
-      refine (integral_congr_ae ?_).trans
-        (setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => ?_)
-      · filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 φ] with x hx
-        rw [W1p.gradient_ofTestFunctionₗ, hx, matrixBilinearForm_one_apply]
-        exact ((EuclideanSpace.inner_eq_star_dotProduct _ _).trans (dotProduct_comm _ _)).symm
-      · have hφ : fderiv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x = 0 :=
-          fderiv_of_notMem_tsupport ℝ fun hx' => hx (φ.tsupport_subset hx')
-        simp [gradient, hφ]
     have hval : ∫ x, Δ (φ : EuclideanSpace ℝ ι → ℝ) x • W1p.value u x ∂mu =
         ∫ x, Δ (φ : EuclideanSpace ℝ ι → ℝ) x • w x ∂mu := by
       refine integral_congr_ae ?_
@@ -111,8 +122,7 @@ theorem energyFormH1_one_zero_zero_eq_setIntegral_neg_laplacian_mul [DecidableEq
       · rw [image_eq_zero_of_notMem_tsupport fun h' =>
           hxΩ (φ.tsupport_subset (tsupport_laplacian_subset _ h'))]
         simp
-    rw [hgrad, ← neg_neg (∫ x, ⟪_, _⟫_ℝ ∂mu),
-      ← (W1p.hasWeakFDerivOn u).integral_laplacian_smul_eq_neg_integral_inner φ, hval,
+    rw [energyFormH1_one_zero_zero_ofTestFunctionₗ, hval,
       hw.integral_laplacian_smul_eq_integral_smul_laplacian φ, ← integral_neg,
       ← setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => ?_]
     · refine integral_congr_ae ?_

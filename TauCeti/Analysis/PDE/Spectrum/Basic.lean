@@ -77,7 +77,8 @@ map.
   `TauCeti.PDE.dirichletSolutionOperator_apply` identifying it as the value of the weak
   solution, and `TauCeti.PDE.isCompactOperator_dirichletSolutionOperator`,
   `TauCeti.PDE.isSymmetric_dirichletSolutionOperator` and
-  `TauCeti.PDE.inner_dirichletSolutionOperator_self_nonneg`.
+  `TauCeti.PDE.inner_dirichletSolutionOperator_self_nonneg`, and its injectivity
+  `TauCeti.PDE.injective_dirichletSolutionOperator`.
 * `TauCeti.PDE.IsDirichletEigenvalue`: the Dirichlet eigenvalue problem, with
   `TauCeti.PDE.isDirichletEigenvalue_iff_setIntegral` writing it as an integral identity and
   `TauCeti.PDE.isDirichletEigenvalue_iff_exists_isWeakSolutionDirichlet_sub_const` matching it
@@ -197,6 +198,17 @@ theorem inner_dirichletSolutionOperator_self_nonneg
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) (f : Lp ℝ 2 (mu.restrict Omega)) :
     0 ≤ ⟪f, dirichletSolutionOperator hcoeff hcoercive f⟫_ℝ :=
   hcoercive.inner_formSolutionOperator_self_nonneg W1p0.valueL f
+
+/-- **The solution operator is injective**: a forcing `f` with `S f = 0` is orthogonal to the
+values of `H¹₀(Ω)`, which are dense in `L²(Ω)`. -/
+theorem injective_dirichletSolutionOperator
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) :
+    Function.Injective (dirichletSolutionOperator hcoeff hcoercive) := by
+  unfold dirichletSolutionOperator
+  refine (injective_iff_map_eq_zero _).2 fun f hf ↦ ?_
+  exact W1p0.denseRange_valueL_two.eq_zero_of_inner_left ℝ
+    ((hcoercive.formSolutionOperator_apply_eq_zero_iff _ f).1 hf)
 
 /-! ### Dirichlet eigenvalues -/
 
