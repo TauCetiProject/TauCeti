@@ -15,7 +15,7 @@ import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
-# Interior derivative estimates of every order and Liouville's theorem
+# Interior derivative estimates of every order
 
 Let `E` be a real inner product space of finite dimension `n`, and let `u : E → F` be harmonic on
 the ball `ball x R`, with values in a finite-dimensional real normed space `F`. This file proves
@@ -34,55 +34,38 @@ bounds every partial derivative `∂^α u(x)` with `|α| = k`. The constants dep
 `k`, and the estimates are scale-invariant: they carry the factor `R^{-k}`, respectively
 `r^{-n-k}`.
 
-The file also proves **Liouville's theorem** in every dimension: a bounded harmonic function on
-the whole space `E`, with values in any real normed space, is constant
-(`InnerProductSpace.HarmonicOnNhd.apply_eq_apply_of_bounded`). Mathlib proves the planar case
-`E = ℂ` (`InnerProductSpace.bounded_harmonic_on_complex_plane_is_constant`).
-
 ## The argument
 
 The gradient bound `‖Du(y)‖ ≤ 2ⁿ n M / ρ` for a harmonic function bounded by `M` on `ball y (2ρ)`
-(`InnerProductSpace.HarmonicOnNhd.norm_fderiv_le_of_norm_le`) is iterated, as in Evans. Peel off
-the innermost derivative: `D^(k+1) u(x)(m₀, …, m_k) = D^k (∂_{m_k} u)(x)(m₀, …, m_{k-1})`, the
-directional derivative `∂_v u` is again harmonic (`InnerProductSpace.HarmonicOnNhd.fderiv_apply`),
-and on `ball x (R k / (k + 1))` it is bounded by `2ⁿ⁺¹ n (k + 1) M ‖v‖ / R`, by the gradient bound
-on balls of radius `R / (k + 1)`. Splitting `ball x R` into `k + 1` shells of equal width gives the
-constant `(2ⁿ⁺¹ n (k + 1) / R)^(k+1)`. Vector-valued functions are reduced to scalar ones by
-the continuous linear functionals on `F`; this uses that a harmonic function with values in a
-finite-dimensional space is smooth (`InnerProductSpace.HarmonicAt.analyticAt`). The `L¹` estimate
-follows from the supremum estimate on `ball x (r / 2)` and the mean-value bound
+(`InnerProductSpace.HarmonicOnNhd.norm_fderiv_le_of_norm_le`), in its translated form
+`InnerProductSpace.HarmonicOnNhd.norm_fderiv_le_of_norm_le_of_mem_ball`, is iterated, as in Evans.
+Peel off the innermost derivative: `D^(k+1) u(x)(m₀, …, m_k) = D^k (∂_{m_k} u)(x)(m₀, …, m_{k-1})`,
+the directional derivative `∂_v u` is again harmonic
+(`InnerProductSpace.HarmonicOnNhd.fderiv_apply`), and on `ball x (R k / (k + 1))` it is bounded by
+`2ⁿ⁺¹ n (k + 1) M ‖v‖ / R`, by the gradient bound on balls of radius `R / (k + 1)`. Splitting
+`ball x R` into `k + 1` shells of equal width gives the constant `(2ⁿ⁺¹ n (k + 1) / R)^(k+1)`.
+Vector-valued functions are reduced to scalar ones by the continuous linear functionals on `F`; this
+uses that a harmonic function with values in a finite-dimensional space is smooth
+(`InnerProductSpace.HarmonicAt.analyticAt`). The `L¹` estimate follows from the supremum estimate on
+`ball x (r / 2)` and the mean-value bound
 `InnerProductSpace.HarmonicOnNhd.norm_le_inv_measureReal_mul_integral_norm`.
-
-Liouville's theorem follows from the Lipschitz bound
-`InnerProductSpace.HarmonicOnNhd.norm_sub_le_of_norm_le` on balls of radius `s → ∞`.
 
 ## References
 
 * L. C. Evans, *Partial Differential Equations*, 2nd ed., §2.2.3, Theorem 7 (estimates on
-  derivatives) and Theorem 8 (Liouville's theorem).
-* E. Nelson, *A proof of Liouville's theorem*, Proc. Amer. Math. Soc. 12 (1961), 995.
+  derivatives).
 -/
 
 public section
 
 noncomputable section
 
-open Metric Set Module Filter MeasureTheory Topology
+open Metric Set Module MeasureTheory Topology
 
 namespace InnerProductSpace
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- The gradient bound away from the centre: a harmonic function bounded by `M` on `ball x R` has
-`‖Du(y)‖ ≤ 2ⁿ n M / ρ` at every `y ∈ ball x (R - 2 ρ)`. -/
-private theorem HarmonicOnNhd.norm_fderiv_le_of_norm_le_of_mem_ball [CompleteSpace F]
-    {u : E → F} {x y : E} {R M ρ : ℝ} (hu : HarmonicOnNhd u (ball x R))
-    (hM : ∀ z ∈ ball x R, ‖u z‖ ≤ M) (hρ : 0 < ρ) (hy : y ∈ ball x (R - 2 * ρ)) :
-    ‖fderiv ℝ u y‖ ≤ 2 ^ finrank ℝ E * finrank ℝ E / ρ * M := by
-  have hsub : ball y (2 * ρ) ⊆ ball x R :=
-    ball_subset_ball' (by linarith [mem_ball.mp hy])
-  exact (hu.mono hsub).norm_fderiv_le_of_norm_le (fun z hz ↦ hM z (hsub hz)) hρ
 
 /-- The supremum estimate for real-valued harmonic functions, by induction on the order. -/
 private theorem HarmonicOnNhd.norm_iteratedFDeriv_le_of_norm_le_real (k : ℕ) :
@@ -192,29 +175,5 @@ theorem HarmonicOnNhd.norm_iteratedFDeriv_le_integral_norm [FiniteDimensional �
   rw [hc, μ.addHaar_real_ball_of_pos 0 hr2, div_pow r, div_pow]
   field_simp
   ring
-
-/-- **Liouville's theorem.** A bounded harmonic function on a finite-dimensional real inner
-product space, with values in a real normed space, is constant. -/
-theorem HarmonicOnNhd.apply_eq_apply_of_bounded {u : E → F} (hu : HarmonicOnNhd u univ)
-    (hb : Bornology.IsBounded (range u)) (y z : E) : u y = u z := by
-  -- Pass to the completion of `F`, where the Lipschitz bound is available.
-  set L : F →L[ℝ] UniformSpace.Completion F := UniformSpace.Completion.toComplL
-  have hL (w : F) : ‖L w‖ = ‖w‖ := UniformSpace.Completion.norm_coe w
-  have hLu : HarmonicOnNhd (L ∘ u) univ := hu.comp_CLM L
-  obtain ⟨M, hM⟩ := hb.exists_norm_le
-  set A : ℝ := 2 ^ finrank ℝ E * finrank ℝ E * M * dist y z
-  have hbound : ∀ᶠ s in atTop, ‖u y - u z‖ ≤ A / s := by
-    filter_upwards [eventually_gt_atTop 0] with s hs
-    rw [← hL, map_sub]
-    exact (hLu.mono (subset_univ _)).norm_sub_le_of_norm_le (hLu.mono (subset_univ _))
-      (fun w _ ↦ (hL (u w)).trans_le (hM _ (mem_range_self w))) hs
-  have h0 : ‖u y - u z‖ ≤ 0 := ge_of_tendsto (tendsto_id.const_div_atTop A) hbound
-  exact sub_eq_zero.mp (norm_le_zero_iff.mp h0)
-
-/-- **Liouville's theorem.** A bounded harmonic function on a finite-dimensional real inner
-product space, with values in a real normed space, is equal to a constant. -/
-theorem HarmonicOnNhd.exists_const_forall_eq_of_bounded {u : E → F} (hu : HarmonicOnNhd u univ)
-    (hb : Bornology.IsBounded (range u)) : ∃ c, ∀ x, u x = c :=
-  ⟨u 0, fun x ↦ hu.apply_eq_apply_of_bounded hb x 0⟩
 
 end InnerProductSpace
