@@ -35,7 +35,7 @@ none of the further theory built on it.
   `R[M]` inherits the absence of additive torsion from its coefficients, as `M →₀ R` does in
   Mathlib.
 * The `Finite (MonoidAlgebra R M)` instance: `R[M]` is finite when `R` and `M` are.
-* `TauCeti.MonoidAlgebra.isIntegral_of_isTorsion`: the monoid algebra of a commutative torsion
+* `TauCeti.MonoidAlgebra.isIntegral_of_isMulTorsion`: the monoid algebra of a commutative torsion
   monoid is integral over its coefficient ring.
 * `MonoidAlgebra.singleOneUnit`: in a group algebra, `single g 1` as a unit with inverse
   `single g⁻¹ 1`, and `MonoidAlgebra.coeff_single_mul_mul_single_inv`: conjugating by it
@@ -119,7 +119,7 @@ theorem mapRingHom_eq_zero_iff [Monoid M] {S : Type*} [Semiring S] (f : R →+* 
 
 /-- **The monoid algebra of a commutative torsion monoid is integral over its coefficients.**
 Every basis element `single g 1` with `g ^ n = 1` is a root of the monic polynomial `X ^ n - 1`. -/
-theorem isIntegral_of_isTorsion {R G : Type*} [CommRing R] [CommMonoid G] (hG : IsMulTorsion G) :
+theorem isIntegral_of_isMulTorsion {R G : Type*} [CommRing R] [CommMonoid G] (hG : IsMulTorsion G) :
     Algebra.IsIntegral R (MonoidAlgebra R G) := by
   refine ⟨fun x ↦ ?_⟩
   induction x using MonoidAlgebra.induction_on with

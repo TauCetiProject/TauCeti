@@ -80,7 +80,7 @@ private theorem single_sub_one_mem_of_isMaximal (hp : ¬IsUnit (p : R)) (hQ : Is
     (𝔐 : Ideal (MonoidAlgebra R Q)) [𝔐.IsMaximal] (q : Q) : single q (1 : R) - 1 ∈ 𝔐 := by
   -- `R[Q]` is integral over `R`: each group element has order a power of `p`.
   have : Algebra.IsIntegral R (MonoidAlgebra R Q) :=
-    TauCeti.MonoidAlgebra.isIntegral_of_isTorsion fun m ↦ by
+    TauCeti.MonoidAlgebra.isIntegral_of_isMulTorsion fun m ↦ by
       obtain ⟨k, hk⟩ := hQ m
       exact isOfFinOrder_iff_pow_eq_one.2 ⟨p ^ k, pow_pos (Fact.out : p.Prime).pos k, hk⟩
   -- `𝔐` lies over the maximal ideal of `R`, which contains `p`.
