@@ -421,6 +421,21 @@ theorem energyFormH1_def (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
       ∫ x in Omega, energyIntegrand (a x) (b x) (c x) (jetField u x) (jetField v x) ∂mu :=
   energyFormIntegral_def _ _ _ _ _ _
 
+/-- The energy form on `H¹(Ω)` only sees the coefficients almost everywhere on `Ω`. -/
+theorem energyFormH1_congr_ae {a a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b b' : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c c' : EuclideanSpace ℝ ι → ℝ}
+    (ha : a =ᵐ[mu.restrict Omega] a') (hb : b =ᵐ[mu.restrict Omega] b')
+    (hc : c =ᵐ[mu.restrict Omega] c') (u v : W1p mu Omega 2) :
+    energyFormH1 a b c u v = energyFormH1 a' b' c' u v :=
+  energyFormIntegral_congr_ae _ _ _ _ _ _ ha hb hc .rfl .rfl
+
+/-- The energy form on `H¹(Ω)` is homogeneous in the coefficient triple `(a, b, c)`. -/
+theorem energyFormH1_smul_coefficients (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
+    (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (c : EuclideanSpace ℝ ι → ℝ) (r : ℝ)
+    (u v : W1p mu Omega 2) :
+    energyFormH1 (r • a) (r • b) (r • c) u v = r * energyFormH1 a b c u v :=
+  energyFormIntegral_smul _ _ _ _ _ _ r
+
 /-- **Measurability of the energy form in a parameter.** If the coefficients of a
 divergence-form operator depend on a parameter `t` and are jointly a.e. strongly measurable in
 `(t, x)`, then for fixed `u, v ∈ H¹(Ω)` the energy form `t ↦ a_t(u, v)` is a.e. strongly
