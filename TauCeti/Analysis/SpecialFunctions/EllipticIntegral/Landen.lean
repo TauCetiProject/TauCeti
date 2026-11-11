@@ -60,8 +60,8 @@ theorem legendreEc_two_mul_sqrt_div_one_add {k : ℝ} (hk₀ : 0 ≤ k) (hk₁ :
     simp only [id_eq]
     field_simp
     nlinarith [sq_sqrt hk₀.le]
-  have hleft := (hasDerivAt_legendreK ht.ne' hlt).comp k hd
-  have hright := ((hasDerivAt_id k).const_add 1).mul (hasDerivAt_legendreK hk₀.ne' hk)
+  have hleft := (hasDerivAt_legendreK hlt).comp k hd
+  have hright := ((hasDerivAt_id k).const_add 1).mul (hasDerivAt_legendreK hk)
   have heq : (fun x : ℝ ↦ legendreK (2 * √x / (1 + x))) =ᶠ[𝓝 k]
       (fun x ↦ (1 + x) * legendreK x) := by
     filter_upwards [Ioo_mem_nhds hk₀ hk₁] with x hx
