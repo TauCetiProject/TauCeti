@@ -49,7 +49,7 @@ nonzero coderivations of a diagonalizable coordinate coalgebra.
 Cocommutativity of the source cannot be dropped: on the `2 × 2` matrix coalgebra over `ℤ`, with
 `f` the projection `eᵢⱼ ↦ δᵢⱼ eᵢ`, the map sending `e₁₂` to `e₁ - e₂` and the other basis
 elements to zero is a nonzero coderivation. -/
-theorem eq_zero_of_comul_comp_eq (d f : C →ₗ[R] (κ →₀ R))
+theorem eq_zero_of_finsupp_comul_comp_eq (d f : C →ₗ[R] (κ →₀ R))
     (hf : comul ∘ₗ f = TensorProduct.map f f ∘ₗ comul)
     (hd : comul ∘ₗ d = (TensorProduct.map d f + TensorProduct.map f d) ∘ₗ comul) :
     d = 0 := by
@@ -91,7 +91,7 @@ group-like comultiplication identity is zero. The counit identity is unnecessary
 theorem eq_zero_of_comul_eq_tmul_add_tmul {g x : ι →₀ R}
     (hg : comul (R := R) g = g ⊗ₜ[R] g)
     (hx : comul (R := R) x = x ⊗ₜ[R] g + g ⊗ₜ[R] x) : x = 0 := by
-  simpa using LinearMap.congr_fun (LinearMap.eq_zero_of_comul_comp_eq
+  simpa using LinearMap.congr_fun (LinearMap.eq_zero_of_finsupp_comul_comp_eq
     (LinearMap.toSpanSingleton R _ x) (LinearMap.toSpanSingleton R _ g)
     (LinearMap.ext_ring (by simpa using hg)) (LinearMap.ext_ring (by simpa using hx))) 1
 
