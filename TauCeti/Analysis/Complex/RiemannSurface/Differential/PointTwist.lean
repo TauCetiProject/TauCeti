@@ -264,10 +264,6 @@ private def cechCohomologyIsoOfIso {F G : TopCat.Sheaf (ModuleCat.{0} ℂ) (TopC
       (cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).obj G.obj :=
   (cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) n).mapIso ((sheafToPresheaf _ _).mapIso e)
 
-private theorem finiteDimensional_iff_of_iso {M N : ModuleCat.{0} ℂ} (e : M ≅ N) :
-    FiniteDimensional ℂ M ↔ FiniteDimensional ℂ N :=
-  ⟨fun _ ↦ Module.Finite.equiv e.toLinearEquiv, fun _ ↦ Module.Finite.equiv e.symm.toLinearEquiv⟩
-
 /-- **Finiteness of `H¹(X, Ω_D)` is unchanged by adding a point.** On a compact Hausdorff Riemann
 surface with a canonical divisor, `H¹(X, Ω_(D + x))` is finite-dimensional if and only if
 `H¹(X, Ω_D)` is. Finiteness is not asserted for any divisor. -/
@@ -280,10 +276,12 @@ theorem finiteDimensional_cechCohomology_one_differentialSheaf_add_point_iff
   classical
   obtain ⟨_, hK⟩ := hK
   obtain ⟨ω, hω, hω₀, -⟩ := hK.exists_divisor_eq
-  rw [finiteDimensional_iff_of_iso
-      (cechCohomologyIsoOfIso (differentialSheafIsoDivisorSheafAddOfPoint ω hω hω₀ D x) 1),
-    finiteDimensional_iff_of_iso (differentialSheafCechCohomologyIso ω hω hω₀ D 1)]
-  exact finiteDimensional_divisorCechCohomology_one_add_point_iff (D + ω.divisor) x
+  exact (Module.Finite.equiv_iff
+      (cechCohomologyIsoOfIso (differentialSheafIsoDivisorSheafAddOfPoint ω hω hω₀ D x)
+        1).toLinearEquiv).trans
+    ((finiteDimensional_divisorCechCohomology_one_add_point_iff (D + ω.divisor) x).trans
+      (Module.Finite.equiv_iff
+        (differentialSheafCechCohomologyIso ω hω hω₀ D 1).toLinearEquiv).symm)
 
 /-- **The point-twist step of Riemann–Roch for `Ω_D`.** On a compact connected Hausdorff Riemann
 surface with a canonical divisor, once `H¹(X, Ω_D)` is finite-dimensional, adding a point raises
