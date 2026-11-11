@@ -58,21 +58,6 @@ open CategoryTheory Limits MorphismProperty Topology TauCeti.TopCat
 
 universe w' t u
 
-namespace TauCeti.TopCat
-
-/-- The inclusion `∂𝔻 n ⟶ 𝔻 n` of the boundary sphere of the disk extends disjoint open sets: an
-open subset `U` of the sphere is the trace of the open cone `{x | 1 / 2 < ‖x‖ ∧ x / ‖x‖ ∈ U}`,
-and the cones over disjoint sets are disjoint. This is the attaching region of a handle whose
-second factor is a point (`TauCeti.TopCat.extendsDisjointOpens_diskBoundaryInclusion_prodMap`). -/
-theorem extendsDisjointOpens_diskBoundaryInclusion (n : ℕ) :
-    extendsDisjointOpens (TopCat.diskBoundaryInclusion.{u} n) :=
-  (extendsDisjointOpens.arrow_mk_iso_iff (Arrow.isoMk (TopCat.isoOfHomeo (Homeomorph.prodPUnit _))
-    -- Both composites of the square send `(s, ⋆)` to the boundary point `s` of the disk.
-    (TopCat.isoOfHomeo (Homeomorph.prodPUnit _)) (by ext; rfl))).1
-      (extendsDisjointOpens_diskBoundaryInclusion_prodMap n PUnit)
-
-end TauCeti.TopCat
-
 namespace HomotopicalAlgebra
 
 variable {α : Type t} {A B : α → TopCat.{u}} {g : ∀ a, A a ⟶ B a} {X₁ X₂ : TopCat.{u}}
