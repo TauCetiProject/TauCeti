@@ -66,14 +66,8 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {Ω : Open
 theorem localFourier_lineDerivOp (T : 𝓓'(Ω, ℂ)) (v : E) (φ : 𝓓(Ω, ℂ)) (η : E) :
     (∂_{v} T).localFourier φ η =
       2 * π * I * ⟪v, η⟫ * T.localFourier φ η - T.localFourier (∂_{v} φ) η := by
-  -- `localFourier` is not exposed outside its module, so it is unfolded through `localFourier_eq`.
-  have h (S : 𝓓'(Ω, ℂ)) (ψ : 𝓓(Ω, ℂ)) : S.localFourier ψ η =
-      S.complexPairing (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ)
-        (TauCeti.contDiff_fourierAtom η) ψ) :=
-    localFourier_eq S ψ fun x ↦ by
-      simp [bilinLeftCLM_apply, TauCeti.fourierAtom_eq_fourierChar, -TauCeti.fourierAtom_apply]
-  rw [h, h, h, complexPairing_lineDerivOp, lineDerivOp_bilinLeftCLM_fourierAtom, map_sub,
-    map_smul, smul_eq_mul]
+  rw [localFourier_def, localFourier_def, localFourier_def, complexPairing_lineDerivOp,
+    lineDerivOp_bilinLeftCLM_fourierAtom, map_sub, map_smul, smul_eq_mul]
   ring
 
 section FiniteDimensional
