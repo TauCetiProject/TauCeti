@@ -12,9 +12,9 @@ public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Curvature.Basic
 
 The ratio `curvatureCotangent κ = curvatureCosine κ / curvatureSine κ` of the constant-curvature
 model functions solves the scalar Riccati equation `f' = -f² - κ` on its regular domain. Its
-singular initial asymptotic is `t * curvatureCotangent κ t → 1`. It is positive before the
-spherical half-radius, and at all positive times in nonpositive curvature. These are the
-scalar-model inputs to local Hessian comparison.
+singular initial asymptotic is `t * curvatureCotangent κ t → 1`, so it tends to `+∞` at `0⁺`.
+It is positive before the spherical half-radius, and at all positive times in nonpositive
+curvature. These are the scalar-model inputs to local Hessian and Sturm comparison.
 
 ## References
 
@@ -65,6 +65,15 @@ theorem tendsto_mul_curvatureCotangent_zero (κ : ℝ) :
     rw [curvatureCotangent_def, Pi.div_apply, div_div_eq_mul_div]
     ring
   · norm_num
+
+/-- The model logarithmic derivative tends to `+∞` at its singular origin from the right. -/
+theorem tendsto_curvatureCotangent_nhdsGT_zero (κ : ℝ) :
+    Tendsto (curvatureCotangent κ) (𝓝[>] 0) atTop := by
+  refine (((tendsto_mul_curvatureCotangent_zero κ).mono_left
+    (nhdsWithin_mono 0 fun t ht ↦ ne_of_gt ht)).pos_mul_atTop one_pos
+    tendsto_inv_nhdsGT_zero).congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with t ht
+  field_simp [ne_of_gt ht]
 
 /-- The model logarithmic derivative is positive in the squared-distance convexity range. -/
 theorem curvatureCotangent_pos {κ t : ℝ} (ht : 0 < t)
