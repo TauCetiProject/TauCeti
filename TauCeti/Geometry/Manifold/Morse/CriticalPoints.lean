@@ -85,6 +85,9 @@ polynomial in the Morse inequalities.
 * `TauCeti.exists_mem_Ioc_forall_notMem_criticalPoints` and
   `TauCeti.exists_mem_Ioc_isCompact_forall_mfderiv_ne_zero`: a compact band starting at a regular
   value begins with a compact collar free of critical points.
+* `TauCeti.eventually_mem_criticalPoints_imp_isManifoldNondegenerateCriticalPoint`: near a
+  regular point or a nondegenerate critical point of a `C¹` function, every critical point is
+  nondegenerate.
 * `TauCeti.IsMorse.eventually_eq_of_mem_criticalPoints`: the critical points of a Morse function
   are isolated.
 * `TauCeti.finite_criticalPoints_inter_of_forall_isManifoldNondegenerateCriticalPoint`: a `C¹`
@@ -574,6 +577,23 @@ theorem IsMorse.finite_criticalPoints_inter (hf : IsMorse I f) {K : Set M} (hK :
   finite_criticalPoints_inter_of_forall_isManifoldNondegenerateCriticalPoint
     (hf.contMDiff.of_le (by simp)) hK
     fun _ hx ↦ hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints hx.1
+
+/-- **Nondegeneracy of critical points spreads to a neighbourhood.** If a point `x` is either a
+regular point or a nondegenerate critical point of a `C¹` function `f`, then every critical point
+of `f` near `x` is nondegenerate: a regular point has a neighbourhood free of critical points, and
+a nondegenerate critical point is isolated among the critical points. -/
+theorem eventually_mem_criticalPoints_imp_isManifoldNondegenerateCriticalPoint
+    (hf : ContMDiff I 𝓘(ℝ) 1 f)
+    (hx : x ∈ criticalPoints I f → IsManifoldNondegenerateCriticalPoint I f x) :
+    ∀ᶠ y in 𝓝 x, y ∈ criticalPoints I f → IsManifoldNondegenerateCriticalPoint I f y := by
+  by_cases hxc : x ∈ criticalPoints I f
+  · filter_upwards [eventually_nhdsWithin_iff.1 (hx hxc).eventually_notMem_criticalPoints]
+      with y hy hyc
+    by_cases hyx : y = x
+    · exact hyx ▸ hx hxc
+    · exact absurd hyc (hy hyx)
+  · filter_upwards [(isClosed_criticalPoints hf).isOpen_compl.mem_nhds hxc] with y hy hyc
+    exact absurd hyc hy
 
 /-- **The critical points of a Morse function are isolated.** Near any point `x` there is no
 critical point of a Morse function other than `x` itself. -/

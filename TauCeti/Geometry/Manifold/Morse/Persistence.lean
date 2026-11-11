@@ -322,21 +322,11 @@ theorem eventually_forall_isManifoldNondegenerateCriticalPoint {f : C^n⟮I, M; 
     ∀ᶠ g : C^n⟮I, M; 𝓘(ℝ), ℝ⟯ in 𝓝 f,
       ∀ x ∈ K, x ∈ criticalPoints I g → IsManifoldNondegenerateCriticalPoint I g x := by
   have : IsManifold I 1 M := IsManifold.of_le (one_le_two.trans hn)
-  -- Near each point of `K` all critical points of `f` are nondegenerate: a regular point has a
-  -- neighbourhood free of critical points, and a nondegenerate critical point is isolated.
-  have hloc (x : M) (hx : x ∈ K) :
-      ∀ᶠ y in 𝓝 x, y ∈ criticalPoints I f → IsManifoldNondegenerateCriticalPoint I f y := by
-    by_cases hxc : x ∈ criticalPoints I f
-    · filter_upwards [eventually_nhdsWithin_iff.1
-        (hf x hx hxc).eventually_notMem_criticalPoints] with y hy hyc
-      by_cases hyx : y = x
-      · exact hyx ▸ hf x hx hxc
-      · exact absurd hyc (hy hyx)
-    · filter_upwards [(isClosed_criticalPoints
-        (f.contMDiff.of_le (one_le_two.trans hn))).isOpen_compl.mem_nhds hxc] with y hy hyc
-      exact absurd hyc hy
+  -- Near each point of `K` all critical points of `f` are nondegenerate.
   choose! U hU hUg using fun x hx ↦
-    exists_mem_nhds_eventually_forall_isManifoldNondegenerateCriticalPoint hn (hloc x hx)
+    exists_mem_nhds_eventually_forall_isManifoldNondegenerateCriticalPoint hn
+      (eventually_mem_criticalPoints_imp_isManifoldNondegenerateCriticalPoint
+        (f.contMDiff.of_le (one_le_two.trans hn)) (hf x hx))
   obtain ⟨t, htK, hKt⟩ := hK.elim_nhds_subcover U hU
   filter_upwards [(eventually_all_finset t).2 fun x hx ↦ hUg x (htK x hx)] with g hg y hy hcrit
   obtain ⟨x, hxt, hyx⟩ := mem_iUnion₂.1 (hKt hy)

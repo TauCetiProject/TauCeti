@@ -26,8 +26,8 @@ this phenomenon concretely:
   plurisubharmonic at every point of `ℂ`.
 * At the origin `z = 0`, `fderiv ℝ ψ 0 = 0` and `fderiv ℝ (fderiv ℝ ψ) 0 I = 0`, so `0` is a
   degenerate critical point and `ψ` is **not** a Morse function (`¬ IsMorse 𝓘(ℝ, ℂ) ψ`).
-* On `{0}ᶜ`, `fderiv ℝ ψ z ≠ 0`, so `ψ` is already Morse on the open neighbourhood `{0}ᶜ` of the
-  closed exterior `{z : ℂ | 1 ≤ ‖z‖}`.
+* On `{0}ᶜ`, `fderiv ℝ ψ z ≠ 0`, so `ψ` is already Morse on `{0}ᶜ`, and hence on the closed
+  exterior `{z : ℂ | 1 ≤ ‖z‖}`.
 
 Applying
 `TauCeti.exists_isMorse_isProperMap_bddBelow_isManifoldStrictlyPlurisubharmonicAt_sub_compl`
@@ -202,7 +202,7 @@ theorem exists_isMorse_ne_quarticExhaustion :
       isProperMap_quarticExhaustion
       ⟨0, by rintro _ ⟨z, rfl⟩; unfold quarticExhaustion; positivity⟩
       isManifoldStrictlyPlurisubharmonicAt_quarticExhaustion
-      hC hCV isMorseOn_quarticExhaustion_compl_zero
+      hC (isMorseOn_quarticExhaustion_compl_zero.mono hCV)
   refine ⟨g, fun hge ↦ not_isMorse_quarticExhaustion (hge ▸ hgm), hgm, hgp, hg_bdd, hg_pos,
     fun j hj ↦ criticalCount_eq_zero_of_isManifoldStrictlyPlurisubharmonicAt
       (g.contMDiff.of_le (by simp : (2 : ℕ∞ω) ≤ ∞)) (fun z _ ↦ hg_pos z)
