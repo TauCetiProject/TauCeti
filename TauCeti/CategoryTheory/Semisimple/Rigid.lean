@@ -237,7 +237,7 @@ section Transitive
 
 variable [Simple (𝟙_ C)]
 
-omit [IsAlgClosed k] in
+omit [IsAlgClosed k] [MonoidalLinear k C] in
 /-- **Transitivity** of the fusion rules: for simple classes `S` and `U` there is a simple class
 `T` with `N_{S T}^U > 0`, that is, `U` is a summand of `S ⊗ T`. Any simple summand `T` of the
 nonzero object `Sᘁ ⊗ U` will do. -/
@@ -249,13 +249,14 @@ theorem exists_fusionCoeff_pos_right (S U : SimpleClasses C) : ∃ T, 0 < fusion
     (by simpa [SimpleClasses.classOf_repr] using hT)
   obtain ⟨r, hr⟩ := exists_nonzero_from_simple_iff_exists_nonzero_to_simple.1 ⟨f, hf⟩
   obtain ⟨g, hg⟩ : ∃ g : U.repr ⟶ S.repr ⊗ T.repr, g ≠ 0 :=
-    ⟨tensorLeftHomLinearEquiv k U.repr S.repr S.reprᘁ T.repr r,
-      (LinearEquiv.map_ne_zero_iff _).2 hr⟩
+    ⟨tensorLeftHomEquiv U.repr S.repr S.reprᘁ T.repr r, fun h ↦ hr <| by
+      rw [← (tensorLeftHomEquiv U.repr S.repr S.reprᘁ T.repr).symm_apply_apply r, h]
+      simp [tensorLeftHomEquiv]⟩
   obtain ⟨q, hq⟩ := exists_nonzero_from_simple_iff_exists_nonzero_to_simple.1 ⟨g, hg⟩
   rw [fusionCoeff_def]
   exact Module.finrank_pos_iff.2 ⟨⟨q, 0, hq⟩⟩
 
-omit [IsAlgClosed k] in
+omit [IsAlgClosed k] [MonoidalLinear k C] in
 /-- **Transitivity** of the fusion rules: for simple classes `S` and `U` there is a simple class
 `T` with `N_{T S}^U > 0`, that is, `U` is a summand of `T ⊗ S`. Any simple summand `T` of the
 nonzero object `U ⊗ Sᘁ` will do. -/
@@ -265,21 +266,22 @@ theorem exists_fusionCoeff_pos_left (S U : SimpleClasses C) : ∃ T, 0 < fusionC
   refine ⟨T, ?_⟩
   obtain ⟨f, hf⟩ := (simpleMultiplicities_apply_classOf_ne_zero_iff _ T.repr).1
     (by simpa [SimpleClasses.classOf_repr] using hT)
-  have hg : (tensorRightHomLinearEquiv k T.repr S.repr S.reprᘁ U.repr).symm f ≠ 0 :=
-    (LinearEquiv.map_ne_zero_iff _).2 hf
+  have hg : (tensorRightHomEquiv T.repr S.repr S.reprᘁ U.repr).symm f ≠ 0 := fun h ↦ hf <| by
+    rw [← (tensorRightHomEquiv T.repr S.repr S.reprᘁ U.repr).apply_symm_apply f, h]
+    simp [tensorRightHomEquiv]
   rw [fusionCoeff_def]
   exact Module.finrank_pos_iff.2 ⟨⟨_, 0, hg⟩⟩
 
 variable [Fintype (SimpleClasses C)]
 
-omit [IsAlgClosed k] in
+omit [IsAlgClosed k] [MonoidalLinear k C] in
 /-- The matrix of multiplication on the left by the sum of all simple classes has positive
 entries: `∑ S, N_{S T}^U > 0` for all simple classes `T` and `U`. -/
 theorem sum_fusionCoeff_pos_left (T U : SimpleClasses C) : 0 < ∑ S, fusionCoeff k S T U := by
   obtain ⟨S, hS⟩ := exists_fusionCoeff_pos_left k T U
   exact Finset.sum_pos' (fun _ _ ↦ Nat.zero_le _) ⟨S, Finset.mem_univ S, hS⟩
 
-omit [IsAlgClosed k] in
+omit [IsAlgClosed k] [MonoidalLinear k C] in
 /-- The matrix of multiplication on the right by the sum of all simple classes has positive
 entries: `∑ S, N_{T S}^U > 0` for all simple classes `T` and `U`. -/
 theorem sum_fusionCoeff_pos_right (T U : SimpleClasses C) : 0 < ∑ S, fusionCoeff k T S U := by
