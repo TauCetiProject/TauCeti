@@ -22,8 +22,9 @@ URLs are never fetched; objects come from this repository's canonical pull refs.
 
 ## Source evidence
 
-A sweep caches at most 2,000 open PRs and the 64 most recently updated closed PRs
-from this repository. Closed parents outside that bounded index are outside
+A sweep caches the complete open-PR index and the 64 most recently updated closed
+PRs from this repository. Discovery is bounded by the sweep's API call, byte and
+time budgets, rather than a PR-count ceiling. Closed parents outside that index are outside
 coverage. Closed state, mergedAt and bors title markers do not establish landing.
 Candidates share non-main commits or have a canonical repository parent head
 branch matching the child's current base. An author, label, shared file, import,

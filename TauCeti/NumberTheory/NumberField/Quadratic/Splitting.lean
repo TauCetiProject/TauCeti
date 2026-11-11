@@ -232,7 +232,7 @@ theorem exists_isPrime_and_absNorm_eq_of_legendreSym_eq_one {θ : 𝓞 K} {d : �
   -- `h𝔮` and `hlo` are the prime and lies-over hypotheses of the norm computation; pass them
   -- explicitly rather than installing them as anonymous local instances.
   exact ⟨𝔮, h𝔮, hlo,
-    @Ideal.absNorm_eq_of_ncard_primesOver_eq_finrank K _ _ p _ 𝔮 h𝔮 hlo hsplit⟩
+    @Ideal.absNorm_eq_of_ncard_primesOver_eq_finrank K _ _ p 𝔮 h𝔮 hlo hsplit⟩
 
 /-! ### The prime `2` for `d ≡ 1 (mod 4)` -/
 

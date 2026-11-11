@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Convolution
 public import Mathlib.Analysis.LConvolution
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
-import Mathlib.Analysis.MeanInequalitiesPow
+import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.Convolution.Young
@@ -19,7 +19,11 @@ import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 Write `⟨ξ⟩ = (1 + ‖ξ‖ ^ 2) ^ (1 / 2)`. For `0 ≤ s`, the functions `v ∈ L¹` with
 `⟨ξ⟩ ^ s v ∈ L²` are closed under convolution
-(`TauCeti.memLp_one_add_norm_sq_rpow_mul_convolution`). Peetre's inequality
+(`TauCeti.memLp_one_add_norm_sq_rpow_mul_convolution`), with the bound
+
+`‖⟨·⟩ ^ s (v₁ ⋆ v₂)‖₂ ≤ 2 ^ s (‖v₂‖₁ ‖⟨·⟩ ^ s v₁‖₂ + ‖v₁‖₁ ‖⟨·⟩ ^ s v₂‖₂)`
+
+(`TauCeti.eLpNorm_one_add_norm_sq_rpow_mul_convolution_le`). Peetre's inequality
 `⟨ξ⟩ ^ s ≤ 2 ^ s (⟨η⟩ ^ s + ⟨ξ - η⟩ ^ s)` (`TauCeti.one_add_norm_add_sq_rpow_le`) gives the
 pointwise bound
 
@@ -27,7 +31,7 @@ pointwise bound
 
 (`TauCeti.enorm_one_add_norm_sq_rpow_mul_convolution_le`), and each convolution on the right is
 that of an `L¹` function with an `L²` function, which lies in `L²` by Young's inequality
-(`MeasureTheory.lintegral_lconvolution_sq_le`).
+(`MeasureTheory.eLpNorm_lconvolution_le`).
 
 This is the Fourier-side estimate behind the algebra property of the Sobolev spaces `H^s(ℝⁿ)`,
 `s > n / 2`.
@@ -107,54 +111,63 @@ theorem enorm_one_add_norm_sq_rpow_mul_convolution_le {s : ℝ} (hs : 0 ≤ s)
         hcomm, lconvolution_def]
       simp only [neg_add_eq_sub, c]
 
-/-- **The weighted convolution estimate.** For `0 ≤ s`, if `f` and `g` are integrable and
-`(1 + ‖ξ‖ ^ 2) ^ (s / 2) f` and `(1 + ‖ξ‖ ^ 2) ^ (s / 2) g` are square integrable, then so is
+/-- **The weighted convolution estimate.** For `0 ≤ s`, the weight
+`w(ξ) = (1 + ‖ξ‖ ^ 2) ^ (s / 2)` satisfies
+`‖w (f ⋆ g)‖₂ ≤ 2 ^ s (‖g‖₁ ‖w f‖₂ + ‖f‖₁ ‖w g‖₂)`. -/
+theorem eLpNorm_one_add_norm_sq_rpow_mul_convolution_le {s : ℝ} (hs : 0 ≤ s) {f g : E → ℂ}
+    (hf : AEStronglyMeasurable f) (hg : AEStronglyMeasurable g) :
+    eLpNorm (fun x => (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * (f ⋆[mul ℂ ℂ] g) x) 2 ≤
+      ENNReal.ofReal (2 ^ s) *
+        (eLpNorm g 1 * eLpNorm (fun x => (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * f x) 2 +
+          eLpNorm f 1 * eLpNorm (fun x => (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * g x) 2) := by
+  have hwc : Continuous fun x : E => (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) := by fun_prop
+  have hwf : AEStronglyMeasurable fun x => (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * f x :=
+    hwc.aestronglyMeasurable.mul hf
+  have hwg : AEStronglyMeasurable fun x => (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * g x :=
+    hwc.aestronglyMeasurable.mul hg
+  set X := (fun y => ‖g y‖ₑ) ⋆ₗ fun y => ‖(((1 + ‖y‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * f y‖ₑ
+  set Y := (fun y => ‖f y‖ₑ) ⋆ₗ fun y => ‖(((1 + ‖y‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * g y‖ₑ
+  have hX : AEMeasurable X := aemeasurable_lconvolution hg.enorm hwf.enorm
+  have hY : AEMeasurable Y := aemeasurable_lconvolution hf.enorm hwg.enorm
+  -- Integrate the pointwise bound, then apply Young's inequality to `X` and `Y`.
+  calc eLpNorm (fun x => (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * (f ⋆[mul ℂ ℂ] g) x) 2
+      ≤ eLpNorm (fun x => ENNReal.ofReal (2 ^ s) * (X x + Y x)) 2 :=
+        eLpNorm_mono_enorm
+          (f := fun x => (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * (f ⋆[mul ℂ ℂ] g) x)
+          (g := fun x => ENNReal.ofReal (2 ^ s) * (X x + Y x))
+          (hwc.aestronglyMeasurable.mul (hf.convolution (mul ℂ ℂ) hg)) fun x => by
+            rw [enorm_eq_self]
+            exact enorm_one_add_norm_sq_rpow_mul_convolution_le hs hwf hg x
+    _ = ENNReal.ofReal (2 ^ s) * eLpNorm (X + Y) 2 :=
+        eLpNorm_const_mul_ennreal (hX.add hY).aestronglyMeasurable
+    _ ≤ ENNReal.ofReal (2 ^ s) * (eLpNorm X 2 + eLpNorm Y 2) := by
+        gcongr
+        exact eLpNorm_add_le one_le_two
+    _ ≤ ENNReal.ofReal (2 ^ s) *
+        (eLpNorm g 1 * eLpNorm (fun x => (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * f x) 2 +
+          eLpNorm f 1 * eLpNorm (fun x => (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * g x) 2) := by
+        rw [← eLpNorm_enorm _ hg, ← eLpNorm_enorm _ hf, ← eLpNorm_enorm _ hwf,
+          ← eLpNorm_enorm _ hwg]
+        have h12 : (1 : ℝ≥0∞)⁻¹ + 2⁻¹ = 1 + 2⁻¹ := by rw [inv_one]
+        gcongr
+        · exact eLpNorm_lconvolution_le le_rfl one_le_two h12 hg.enorm hwf.enorm
+        · exact eLpNorm_lconvolution_le le_rfl one_le_two h12 hf.enorm hwg.enorm
+
+/-- For `0 ≤ s`, if `f` and `g` are integrable and `(1 + ‖ξ‖ ^ 2) ^ (s / 2) f` and
+`(1 + ‖ξ‖ ^ 2) ^ (s / 2) g` are square integrable, then so is
 `(1 + ‖ξ‖ ^ 2) ^ (s / 2) (f ⋆ g)`. -/
 theorem memLp_one_add_norm_sq_rpow_mul_convolution {s : ℝ} (hs : 0 ≤ s) {f g : E → ℂ}
     (hf : Integrable f) (hg : Integrable g)
     (hwf : MemLp (fun x => (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * f x) 2)
     (hwg : MemLp (fun x => (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * g x) 2) :
     MemLp (fun x => (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * (f ⋆[mul ℂ ℂ] g) x) 2 := by
-  have hwc : Continuous fun x : E => (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) := by fun_prop
-  have hmeas : AEStronglyMeasurable
-      (fun x => (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * (f ⋆[mul ℂ ℂ] g) x) volume :=
-    hwc.aestronglyMeasurable.mul (hf.integrable_convolution (mul ℂ ℂ) hg).aestronglyMeasurable
-  set X := (fun y => ‖g y‖ₑ) ⋆ₗ fun y => ‖(((1 + ‖y‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * f y‖ₑ
-  set Y := (fun y => ‖f y‖ₑ) ⋆ₗ fun y => ‖(((1 + ‖y‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * g y‖ₑ
-  -- Young's inequality bounds both convolutions in `L²`.
-  have hfin : ∀ {F : E → ℂ}, MemLp F 2 → ∫⁻ x, ‖F x‖ₑ ^ 2 < ∞ := fun hF => by
-    simpa using (eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top (by norm_num) (by norm_num)
-      hF.aestronglyMeasurable).1 hF.eLpNorm_lt_top
-  have hX : ∫⁻ x, X x ^ 2 < ∞ :=
-    (lintegral_lconvolution_sq_le hg.aestronglyMeasurable.enorm
-      hwf.aestronglyMeasurable.enorm).trans_lt <| ENNReal.mul_lt_top
-        (ENNReal.pow_lt_top (hasFiniteIntegral_iff_enorm.1 hg.hasFiniteIntegral)) (hfin hwf)
-  have hY : ∫⁻ x, Y x ^ 2 < ∞ :=
-    (lintegral_lconvolution_sq_le hf.aestronglyMeasurable.enorm
-      hwg.aestronglyMeasurable.enorm).trans_lt <| ENNReal.mul_lt_top
-        (ENNReal.pow_lt_top (hasFiniteIntegral_iff_enorm.1 hf.hasFiniteIntegral)) (hfin hwg)
-  -- Integrate the square of the pointwise bound, using `(X + Y) ^ 2 ≤ 2 (X ^ 2 + Y ^ 2)`.
-  refine (eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top (by norm_num) (by norm_num) hmeas).2 ?_
-  simp only [ENNReal.toReal_ofNat, ENNReal.rpow_two]
-  calc ∫⁻ x, ‖(((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * (f ⋆[mul ℂ ℂ] g) x‖ₑ ^ 2
-      ≤ ∫⁻ x, ENNReal.ofReal (2 ^ s) ^ 2 * (2 * (X x ^ 2 + Y x ^ 2)) := by
-        refine lintegral_mono fun x => ?_
-        have hsq := ENNReal.rpow_add_le_mul_rpow_add_rpow (X x) (Y x) (p := 2) one_le_two
-        norm_num [ENNReal.rpow_two] at hsq
-        calc ‖(((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * (f ⋆[mul ℂ ℂ] g) x‖ₑ ^ 2
-            ≤ (ENNReal.ofReal (2 ^ s) * (X x + Y x)) ^ 2 := by
-              gcongr
-              exact enorm_one_add_norm_sq_rpow_mul_convolution_le hs hwf.aestronglyMeasurable
-                hg.aestronglyMeasurable x
-          _ ≤ ENNReal.ofReal (2 ^ s) ^ 2 * (2 * (X x ^ 2 + Y x ^ 2)) := by
-              rw [mul_pow]
-              gcongr
-    _ < ∞ := by
-      rw [lintegral_const_mul' _ _ (ENNReal.pow_ne_top ENNReal.ofReal_ne_top),
-        lintegral_const_mul' _ _ ENNReal.ofNat_ne_top, lintegral_add_left'
-          ((aemeasurable_lconvolution hg.aestronglyMeasurable.enorm
-            hwf.aestronglyMeasurable.enorm).pow_const 2)]
-      exact ENNReal.mul_lt_top (ENNReal.pow_lt_top ENNReal.ofReal_lt_top)
-        (ENNReal.mul_lt_top ENNReal.ofNat_lt_top (ENNReal.add_lt_top.2 ⟨hX, hY⟩))
+  refine (eLpNorm_one_add_norm_sq_rpow_mul_convolution_le hs hf.aestronglyMeasurable
+    hg.aestronglyMeasurable).trans_lt ?_
+  have h1 := (memLp_one_iff_integrable.2 hf).eLpNorm_lt_top
+  have h2 := (memLp_one_iff_integrable.2 hg).eLpNorm_lt_top
+  have h3 := hwf.eLpNorm_lt_top
+  have h4 := hwg.eLpNorm_lt_top
+  exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top
+    (ENNReal.add_lt_top.2 ⟨ENNReal.mul_lt_top h2 h3, ENNReal.mul_lt_top h1 h4⟩)
 
 end TauCeti

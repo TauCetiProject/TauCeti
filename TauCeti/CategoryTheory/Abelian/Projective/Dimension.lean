@@ -24,6 +24,9 @@ In an abelian category with enough projectives, every object has projective dime
 if and only if every subobject of a projective object is projective. This is the hereditary
 condition, expressed using Mathlib's existing projective-dimension predicate.
 
+A morphism `f` of projective objects shifts dimension by two between its kernel and its cokernel
+(`CategoryTheory.hasProjectiveDimensionLT_cokernel_iff_kernel`).
+
 When every object has projective dimension at most one, the criterion shows that the cycles and
 boundaries of a complex of projective objects are projective. Surjections onto these boundaries
 then split, so the cycles split off the terms.
@@ -65,6 +68,25 @@ theorem projective_of_mono_of_hasProjectiveDimensionLE_one {X Y : C} (f : X ⟶ 
     { exact := ShortComplex.exact_of_g_is_cokernel _ (cokernelIsCokernel f) }
   exact projective_iff_hasProjectiveDimensionLT_one.mpr
     (hS.hasProjectiveDimensionLT_X₁ 1 inferInstance inferInstance)
+
+/-- **Dimension shifting along a morphism of projectives.** For a morphism `f : P ⟶ Q` of
+projective objects, the exact sequence `0 ⟶ ker f ⟶ P ⟶ Q ⟶ coker f ⟶ 0` lowers the projective
+dimension of `coker f` by two: it is less than `n + 3` exactly when that of `ker f` is less than
+`n + 1`. -/
+theorem hasProjectiveDimensionLT_cokernel_iff_kernel {P Q : C} (f : P ⟶ Q) [Projective P]
+    [Projective Q] (n : ℕ) :
+    HasProjectiveDimensionLT (cokernel f) (n + 3) ↔
+      HasProjectiveDimensionLT (kernel f) (n + 1) := by
+  have hz : kernel.ι f ≫ Abelian.factorThruImage f = 0 := by
+    simp [← cancel_mono (Abelian.image.ι f)]
+  have h₁ : (ShortComplex.mk _ _ hz).ShortExact :=
+    { exact := ShortComplex.exact_of_f_is_kernel _
+        (isKernelOfComp (Abelian.image.ι f) f (kernelIsKernel f) hz (by simp)) }
+  have h₂ : (ShortComplex.mk (Abelian.image.ι f) (cokernel.π f)
+      (kernel.condition _)).ShortExact :=
+    { exact := ShortComplex.exact_of_f_is_kernel _ (kernelIsKernel _) }
+  exact (h₂.hasProjectiveDimensionLT_X₃_iff (n + 1) ‹_›).trans
+    (h₁.hasProjectiveDimensionLT_X₃_iff n ‹_›)
 
 variable (C) [EnoughProjectives C]
 

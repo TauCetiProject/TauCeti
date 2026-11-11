@@ -153,6 +153,15 @@ theorem isotypicMultiplicity_eq_zero_of_subsingleton_codomain [Nontrivial R] [Su
     ⟨fun _ _ ↦ LieModuleHom.ext fun _ ↦ Subsingleton.elim _ _⟩
   Module.finrank_zero_of_subsingleton
 
+/-- The multiplicity in a Noetherian module of an irreducible type that is not finitely generated
+is `0`. -/
+theorem isotypicMultiplicity_eq_zero_of_not_finite [IsNoetherian R M] [IsIrreducible R L S]
+    (hS : ¬ Module.Finite R S) : isotypicMultiplicity R L M S = 0 :=
+  have := subsingleton_lieModuleHom_of_not_finite (R := R) (L := L) (M := M) (S := S) hS
+  have := nontrivial_of_isIrreducible R L S
+  have := Module.nontrivial R S
+  (isotypicMultiplicity_def R L M S).trans Module.finrank_zero_of_subsingleton
+
 end Def
 
 /-! ### The multiplicity depends only on the two equivalence classes -/
@@ -170,7 +179,7 @@ variable [AddCommGroup S'] [Module R S'] [LieRingModule L S']
 Postcomposition with an equivalence identifies the two morphism spaces. -/
 theorem isotypicMultiplicity_eq_of_lieModuleEquiv (e : M ≃ₗ⁅R,L⁆ M') :
     isotypicMultiplicity R L M S = isotypicMultiplicity R L M' S :=
-  (TauCeti.LieModuleEquiv.congrRight (M := S) e).finrank_eq
+  (e.congrRight (M := S)).finrank_eq
 
 /-- **The multiplicity only depends on the equivalence class of the module being counted.**
 Precomposition with an equivalence identifies the two morphism spaces. This is what lets the
@@ -178,7 +187,7 @@ multiplicity be read for an irreducible determined only up to equivalence, such 
 highest-weight quotient. -/
 theorem isotypicMultiplicity_eq_of_lieModuleEquiv_type (e : S ≃ₗ⁅R,L⁆ S') :
     isotypicMultiplicity R L M S = isotypicMultiplicity R L M S' :=
-  (TauCeti.LieModuleEquiv.congrLeft (P := M) e).finrank_eq
+  (e.congrLeft (P := M)).finrank_eq
 
 end Invariance
 
