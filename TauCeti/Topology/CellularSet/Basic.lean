@@ -71,6 +71,8 @@ of compact sets with diameters tending to `0`. The collapse is their pointwise l
   identifies `K` homeomorphically with its image.
 * `TauCeti.IsCellularSet.nonempty_homeomorph`: collapsing a cellular set in a compact manifold to a
   point gives a space homeomorphic to the manifold.
+* `TauCeti.IsCellularSet.nonempty_homeomorph_of_isOpenEmbedding`: the same for a compact Hausdorff
+  space and a set which is cellular in a Euclidean chart.
 * `TauCeti.isCellularSet_closedBall`: closed balls are cellular.
 
 ## References
@@ -339,6 +341,70 @@ theorem IsCellularSet.nonempty_homeomorph [ChartedSpace E M] [CompactSpace M] {X
     (subset_univ X) subset_rfl fun x _ y _ ↦ hfX x y
   exact ⟨((Homeomorph.Set.univ M).symm.trans h).trans
     ((Homeomorph.setCongr (image_univ_of_surjective hfs)).trans (Homeomorph.Set.univ Y))⟩
+
+/-- **Collapsing a set which is cellular in a chart.** Let `X` be a compact Hausdorff space, let
+`θ : E → X` be an open embedding of a finite-dimensional real normed space, and let `K` be a subset
+of the range of `θ` whose preimage `θ ⁻¹' K` is cellular in `E`. If a continuous surjection
+`φ : X → Y` onto a Hausdorff space collapses `K` to a point and is injective elsewhere, then `Y` is
+homeomorphic to `X`. Unlike `TauCeti.IsCellularSet.nonempty_homeomorph`, the space `X` need not be
+a metric space or a manifold: only a neighbourhood of `K` is required to be Euclidean. -/
+theorem IsCellularSet.nonempty_homeomorph_of_isOpenEmbedding {X Y : Type*} [TopologicalSpace X]
+    [CompactSpace X] [T2Space X] [TopologicalSpace Y] [T2Space Y] {θ : E → X}
+    (hθ : IsOpenEmbedding θ) {K : Set X} (hK : IsCellularSet E (θ ⁻¹' K)) (hKθ : K ⊆ range θ)
+    {φ : X → Y} (hφ : Continuous φ) (hφs : Surjective φ)
+    (hφK : ∀ x y, φ x = φ y ↔ x = y ∨ x ∈ K ∧ y ∈ K) : Nonempty (X ≃ₜ Y) := by
+  -- A collapse `c` of `θ ⁻¹' K` supported in a ball `B`; read through `θ` and extended by the
+  -- identity it is a map `c'` of `X` with the fibres of `φ`.
+  obtain ⟨R, hR⟩ := hK.isCompact.isBounded.subset_ball 0
+  obtain ⟨c, hcc, hcs, hcf, hcB⟩ := hK.exists_collapse isOpen_ball hR
+  set c' : X → X := extend θ (θ ∘ c) id
+  have hc'θ (v : E) : c' (θ v) = θ (c v) := hθ.injective.extend_apply _ _ v
+  have hc'off {x : X} (hx : x ∉ range θ) : c' x = x := extend_apply' _ _ x hx
+  have hc' : Continuous c' := by
+    refine continuous_iff_continuousAt.2 fun x ↦ ?_
+    by_cases hx : x ∈ range θ
+    · -- On the open range of `θ`, `c'` is `θ ∘ c ∘ θ⁻¹`.
+      refine ((hθ.continuous.comp hcc).continuousAt.comp
+        ((hθ.toOpenPartialHomeomorph θ).continuousAt_symm (by simpa using hx))).congr ?_
+      filter_upwards [hθ.isOpen_range.mem_nhds hx] with z ⟨v, hv⟩
+      subst hv
+      rw [comp_apply, hθ.toOpenPartialHomeomorph_left_inv, comp_apply, hc'θ]
+    · -- Off the compact set `θ '' closedBall 0 R`, `c'` is the identity.
+      have hC : IsClosed (θ '' closedBall 0 R) :=
+        ((isCompact_closedBall 0 R).image hθ.continuous).isClosed
+      refine continuousAt_id.congr ?_
+      filter_upwards [hC.isOpen_compl.mem_nhds fun ⟨v, _, hv⟩ ↦ hx ⟨v, hv⟩] with z hz
+      by_cases hzθ : z ∈ range θ
+      · obtain ⟨v, rfl⟩ := hzθ
+        rw [hc'θ, hcB v fun hv ↦ hz ⟨v, ball_subset_closedBall hv, rfl⟩, id]
+      · exact (hc'off hzθ).symm
+  have hc's : Surjective c' := fun y ↦ by
+    by_cases hy : y ∈ range θ
+    · obtain ⟨w, rfl⟩ := hy
+      obtain ⟨v, rfl⟩ := hcs w
+      exact ⟨θ v, hc'θ v⟩
+    · exact ⟨y, hc'off hy⟩
+  have hc'f (x y : X) : c' x = c' y ↔ φ x = φ y := by
+    rw [hφK]
+    -- A point of the range of `θ` and a point outside it have distinct images, and only the first
+    -- can lie in `K`.
+    have hmix (v : E) {z : X} (hz : z ∉ range θ) :
+        ¬(c' (θ v) = c' z) ∧ ¬(θ v = z ∨ θ v ∈ K ∧ z ∈ K) := by
+      rw [hc'θ, hc'off hz]
+      exact ⟨fun h ↦ hz ⟨_, h⟩, fun h ↦ h.elim (fun h ↦ hz ⟨v, h⟩) fun h ↦ hz (hKθ h.2)⟩
+    rcases em (x ∈ range θ) with ⟨v, rfl⟩ | hx <;> rcases em (y ∈ range θ) with ⟨w, rfl⟩ | hy
+    · rw [hc'θ, hc'θ, hθ.injective.eq_iff, hcf, hθ.injective.eq_iff, mem_preimage, mem_preimage]
+    · exact iff_of_false (hmix v hy).1 (hmix v hy).2
+    · exact iff_of_false (fun h ↦ (hmix w hx).1 h.symm)
+        fun h ↦ (hmix w hx).2 (h.imp Eq.symm And.symm)
+    · rw [hc'off hx, hc'off hy]
+      exact ⟨Or.inl, fun h ↦ h.elim id fun h ↦ (hx (hKθ h.1)).elim⟩
+  -- `φ` and `c'` have the same fibres, so `X ≃ₜ φ '' univ = Y`.
+  obtain ⟨h, -⟩ := exists_homeomorph_image_of_forall_eq_iff hφ.continuousOn isCompact_univ
+    (fun x : (univ : Set X) ↦ c' x) (hc'.comp continuous_subtype_val)
+    (fun y ↦ let ⟨x, hx⟩ := hc's y; ⟨⟨x, mem_univ x⟩, hx⟩) fun x y ↦ hc'f x y
+  exact ⟨(h.symm.trans (Homeomorph.setCongr (image_univ_of_surjective hφs))).trans
+    (Homeomorph.Set.univ Y)⟩
 
 omit [FiniteDimensional ℝ E] in
 /-- A closed ball `closedBall x r` with `r ≥ 0` is cellular in `E`: it is the intersection of the

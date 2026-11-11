@@ -29,6 +29,8 @@ source of homotopies between collapse maps.
 
 * `TauCeti.onePointCollapse e g`: the collapse of `M` onto `OnePoint V` along `e` and `g`.
 * `TauCeti.onePointCollapse_apply`, `TauCeti.onePointCollapse_eq_infty_iff`: its values.
+* `TauCeti.onePointCollapse_eq_onePointCollapse_iff`, `TauCeti.surjective_onePointCollapse`: its
+  fibres and its surjectivity.
 * `TauCeti.preimage_onePointCollapse`: the preimage of a set not containing `∞`.
 * `TauCeti.continuous_onePointCollapse`: continuity for an open embedding `e` into a Hausdorff
   space and a proper map `g`.
@@ -82,6 +84,36 @@ theorem onePointCollapse_eq_coe_iff (he : Injective e) {m : M} {v : V} :
     simp [he, he.eq_iff]
   · rw [onePointCollapse_of_notMem_range hm]
     exact ⟨fun h ↦ (coe_ne_infty v h.symm).elim, fun ⟨x, _, hx⟩ ↦ (hm ⟨x, hx⟩).elim⟩
+
+/-- For injective `e` and `g`, two points have the same image under the collapse exactly when they
+are equal or both lie outside the range of `e`. -/
+theorem onePointCollapse_eq_onePointCollapse_iff (he : Injective e) (hg : Injective g)
+    {m m' : M} :
+    onePointCollapse e g m = onePointCollapse e g m' ↔ m = m' ∨ m ∉ range e ∧ m' ∉ range e := by
+  by_cases hm : m ∈ range e <;> by_cases hm' : m' ∈ range e
+  · obtain ⟨x, rfl⟩ := hm
+    obtain ⟨x', rfl⟩ := hm'
+    simp [he, he.eq_iff, hg.eq_iff]
+  · obtain ⟨x, rfl⟩ := hm
+    rw [onePointCollapse_apply he, onePointCollapse_of_notMem_range hm']
+    exact iff_of_false (coe_ne_infty _) fun h ↦ h.elim (fun h ↦ hm' ⟨x, h⟩) fun h ↦ h.1 ⟨x, rfl⟩
+  · obtain ⟨x', rfl⟩ := hm'
+    rw [onePointCollapse_of_notMem_range hm, onePointCollapse_apply he]
+    exact iff_of_false (infty_ne_coe _) fun h ↦
+      h.elim (fun h ↦ hm ⟨x', h.symm⟩) fun h ↦ h.2 ⟨x', rfl⟩
+  · simp [hm, hm']
+
+/-- The collapse along an injective `e` and a surjective `g` is surjective as soon as `e` is not
+surjective. -/
+theorem surjective_onePointCollapse (he : Injective e) (hg : Surjective g) (hr : range e ≠ univ) :
+    Surjective (onePointCollapse e g) := by
+  obtain ⟨m, hm⟩ := (ne_univ_iff_exists_notMem _).1 hr
+  intro p
+  induction p using OnePoint.rec with
+  | infty => exact ⟨m, onePointCollapse_of_notMem_range hm⟩
+  | coe v =>
+    obtain ⟨x, rfl⟩ := hg v
+    exact ⟨e x, onePointCollapse_apply he g x⟩
 
 /-- The preimage under the collapse of a set `s` not containing `∞` is the image under `e` of the
 preimage of `s` under `g`. -/
