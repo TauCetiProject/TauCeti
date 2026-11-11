@@ -319,7 +319,7 @@ theorem measure_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   apply measure_mono_null hSf
   apply measure_iUnion_null
   intro i
-  apply addHaar_eq_zero_of_dimH_lt_finrank μ
+  apply μ.addHaar_eq_zero_of_dimH_lt_finrank
   calc
     dimH (f i '' Icc (0 : Fin d → ℝ) 1) ≤ dimH (Icc (0 : Fin d → ℝ) 1) :=
       (hf i).dimH_image_le
