@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.WeakOperatorTopology
 public import TauCeti.Analysis.VonNeumannAlgebra.Density
 public import TauCeti.Analysis.LocallyConvex.WeakOperatorTopology
 public import TauCeti.Analysis.InnerProductSpace.WeakOperatorTopology.Compact
+import TauCeti.Topology.Algebra.Star.Module
 
 /-!
 # The bicommutant theorem
@@ -152,11 +153,9 @@ theorem closure_image_toPointwiseConvergenceCLM_inter_selfAdjoint [NormedSpace �
         ((S : Set (H →L[𝕜] H)).centralizer.centralizer ∩ selfAdjoint (H →L[𝕜] H)) := by
   set q := ContinuousLinearMap.toPointwiseConvergenceCLM 𝕜 (RingHom.id 𝕜) H H
   -- The self-adjoint part is convex, so its strong and weak operator closures agree.
-  -- Mathlib records only `StarModule 𝕜` here; real scalars act through `𝕜`, so they commute
-  -- with adjoints and `selfAdjoint.submodule ℝ` is available.
-  have : StarModule ℝ (H →L[𝕜] H) := ⟨fun r a ↦ by
-    simp only [RCLike.real_smul_eq_coe_smul (K := 𝕜), star_smul, RCLike.star_def,
-      RCLike.conj_ofReal, star_trivial]⟩
+  -- Mathlib records only `StarModule 𝕜` here. The adjoint is a continuous additive
+  -- involution, hence real-linear, so `selfAdjoint.submodule ℝ` is available.
+  have : StarModule ℝ (H →L[𝕜] H) := StarModule.real_of_continuousStar (H →L[𝕜] H)
   have hconv : Convex ℝ ((S : Set (H →L[𝕜] H)) ∩ selfAdjoint (H →L[𝕜] H)) :=
     (S.toSubalgebra.toSubmodule.restrictScalars ℝ).convex.inter
       (selfAdjoint.submodule ℝ (H →L[𝕜] H)).convex

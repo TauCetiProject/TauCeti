@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Star
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Algebra.Star.Unitary
 public import TauCeti.Analysis.ODE.Caratheodory
+import TauCeti.Topology.Algebra.Star.Module
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.SpecificLimits.Normed
@@ -299,8 +300,7 @@ variable [StarRing B] [ContinuousStar B]
 theorem dysonSeries_mem_unitary (hp : Continuous p) (hskew : ∀ t, star (p t) = -p t) (t : ℝ) :
     dysonSeries p t ∈ unitary B := by
   -- Continuity of `star` makes it commute with real scalars.
-  have : StarModule ℝ B :=
-    ⟨fun r x => by simpa using map_real_smul (starAddEquiv : B ≃+ B) continuous_star r x⟩
+  have : StarModule ℝ B := StarModule.real_of_continuousStar B
   have hΓ := hasDerivAt_dysonSeries hp
   have hΓstar (t : ℝ) :
       HasDerivAt (fun s => star (dysonSeries p s)) (-(p t * star (dysonSeries p t))) t :=

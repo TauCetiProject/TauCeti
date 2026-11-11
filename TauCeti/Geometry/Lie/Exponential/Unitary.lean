@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import TauCeti.Geometry.Lie.Exponential.OneParameter
+import TauCeti.Topology.Algebra.Star.Module
 
 /-!
 # Unitary exponentials and exponential lines
@@ -73,9 +74,7 @@ elements": the left-hand side is the condition defining the Lie algebra of a sub
 through the exponential, and the right-hand side is `star x = -x`. -/
 theorem forall_exp_smul_mem_unitary_iff_mem_skewAdjoint (x : R) :
     (∀ t : ℝ, exp (t • x) ∈ unitary R) ↔ x ∈ skewAdjoint R := by
-  have hstar (t : ℝ) (y : R) : star (t • y) = t • star y :=
-    map_real_smul (starAddEquiv : R ≃+ R) continuous_star t y
-  have : StarModule ℝ R := ⟨fun t y ↦ by simpa using hstar t y⟩
+  have : StarModule ℝ R := StarModule.real_of_continuousStar R
   refine ⟨fun h => ?_, fun hx t => exp_mem_unitary_of_mem_skewAdjoint (skewAdjoint.smul_mem t hx)⟩
   rw [skewAdjoint.mem_iff]
   refine eq_of_forall_exp_smul_eq fun t => ?_

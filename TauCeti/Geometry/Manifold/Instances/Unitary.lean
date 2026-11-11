@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 public import Mathlib.Topology.Algebra.Star.Unitary
 import TauCeti.Topology.Algebra.Star.Unitary
 public import Mathlib.Geometry.Manifold.Immersion
+public import Mathlib.Geometry.Manifold.SmoothEmbedding
 import TauCeti.Geometry.Manifold.PullbackGroupoid
 import TauCeti.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Geometry.Manifold.Immersion.Differential
@@ -36,6 +37,8 @@ factor of the smooth Cartan decomposition.
 * `Unitary.instChartedSpace`, `Unitary.instIsManifold`, `Unitary.instLieGroup`: the native
   smooth Lie-group structure on unitary elements.
 * `Unitary.contMDiff_toUnits`, `Unitary.isImmersion_toUnits`: the inclusion into the units.
+* `Unitary.isSmoothEmbedding_toUnits`: the inclusion is a smooth embedding.
+* `Unitary.toUnitsSmoothHom`: the inclusion bundled as a smooth group homomorphism.
 * `Unitary.finiteDimensional_model`: the model space is finite-dimensional.
 
 ## References
@@ -155,6 +158,31 @@ theorem contMDiff_toUnits : ContMDiff (model R) 𝓘(ℝ, R) ∞ (toUnits : unit
 theorem isImmersion_toUnits :
     Manifold.IsImmersion (model R) 𝓘(ℝ, R) ∞ (toUnits : unitary R → Rˣ) :=
   (isLieGroupAtlas_instChartedSpace (R := R)).isImmersion_toUnits
+
+/-- The inclusion of the native unitary group into the units is a smooth embedding. -/
+theorem isSmoothEmbedding_toUnits :
+    Manifold.IsSmoothEmbedding (Unitary.model R) 𝓘(ℝ, R) ∞
+      (Unitary.toUnits : unitary R → Rˣ) := by
+  refine ⟨Unitary.isImmersion_toUnits, ?_⟩
+  let h := TauCeti.unitarySubgroupUnitsHomeomorph R
+  have heq : (fun x : 𝕂 ↦ (x : Rˣ)) ∘ h.symm =
+      (Unitary.toUnits : unitary R → Rˣ) := by
+    funext u
+    simp only [Function.comp_apply, h, TauCeti.unitarySubgroupUnitsHomeomorph_symm_apply,
+      TauCeti.coe_unitarySubgroupUnitsEquiv_symm_apply]
+  exact heq ▸ (Topology.IsEmbedding.subtypeVal.comp h.symm.isEmbedding)
+
+/-- The inclusion of the native unitary group into the units, as a smooth homomorphism. -/
+def toUnitsSmoothHom :
+    ContMDiffMonoidMorphism (model R) 𝓘(ℝ, R) ∞ (unitary R) Rˣ where
+  toMonoidHom := toUnits
+  contMDiff_toFun := contMDiff_toUnits
+
+/-- The smooth inclusion sends a unitary element to its corresponding unit. -/
+@[simp]
+theorem toUnitsSmoothHom_apply (u : unitary R) : toUnitsSmoothHom u = toUnits u := by
+  -- Bundling the inclusion leaves its underlying monoid homomorphism unchanged.
+  rfl
 
 /-- The native unitary manifold has smooth multiplication and inversion. -/
 instance instLieGroup : LieGroup (model R) ∞ (unitary R) :=

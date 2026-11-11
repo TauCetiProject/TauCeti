@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Lie.Exponential.Unitary
 public import TauCeti.Geometry.Lie.Subgroup.Embedded
 public import TauCeti.Geometry.Lie.Subgroup.Units
 public import TauCeti.Topology.Algebra.Star.Unitary
+public import TauCeti.Topology.Algebra.Star.Module
 public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.Analysis.RCLike.Basic
@@ -64,8 +65,14 @@ unitary group, and is not treated here.
   the matrix form, with the skew-adjointness spelled out as `Aᴴ = -A`.
 * `TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_so`: over `ℝ` the
   unitary matrix group is the orthogonal group, and its Lie algebra is Mathlib's `so`.
+* `TauCeti.Lie.unitsLieAlgebraLieEquiv_map_lieSubalgebraOfSubgroup_unitarySubgroup`: the canonical
+  algebra-coordinate image is the skew-adjoint Lie subalgebra.
 * `TauCeti.Lie.isEmbeddedLieSubgroup_unitarySubgroup`: the unitary group is an embedded Lie
   subgroup of the units, so a Lie group in its own right.
+## References
+
+* B. C. Hall, *Lie Groups, Lie Algebras, and Representations*, 2nd ed., Springer GTM 222
+  (2015), Proposition 3.24 (the matrix unitary and orthogonal specializations).
 -/
 
 public section
@@ -95,8 +102,7 @@ theorem forall_lieExp_mem_unitarySubgroup_iff_mem_skewAdjoint (x : R) :
     (∀ t : ℝ, lieExp ((unitsLieAlgebraLieEquiv (R := R)).symm (t • x)) ∈
         unitarySubgroup Rˣ) ↔ x ∈ skewAdjoint R := by
   -- A continuous additive involution is real-linear, so `star` is automatically `ℝ`-semilinear.
-  have : StarModule ℝ R :=
-    ⟨fun r x ↦ by simpa using map_real_smul (starAddEquiv (R := R)) continuous_star r x⟩
+  have : StarModule ℝ R := StarModule.real_of_continuousStar R
   rw [forall_lieExp_unitsLieAlgebraLieEquiv_symm_smul_mem_iff,
     ← forall_exp_smul_mem_unitary_iff_mem_skewAdjoint]
   simp only [mem_unitarySubgroup_iff, Units.unitary_eq, Submonoid.mem_comap,
@@ -116,6 +122,35 @@ theorem unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_skewAdj
         (isClosed_unitarySubgroup_units R) x).trans
     ((forall_lieExp_unitsLieAlgebraLieEquiv_symm_smul_mem_iff _ x).symm.trans
       (forall_lieExp_mem_unitarySubgroup_iff_mem_skewAdjoint x))
+
+section
+
+attribute [local instance] StarModule.real_of_continuousStar
+
+/-- In canonical algebra coordinates, the Lie subalgebra of the unitary subgroup is the
+skew-adjoint Lie subalgebra. -/
+@[simp]
+theorem unitsLieAlgebraLieEquiv_map_lieSubalgebraOfSubgroup_unitarySubgroup :
+    (lieSubalgebraOfSubgroup (I := 𝓘(ℝ, R)) (unitarySubgroup Rˣ)).map
+      (unitsLieAlgebraLieEquiv (R := R)).toLieHom = skewAdjoint.lieSubalgebra ℝ R := by
+  let e := unitsLieAlgebraLieEquiv (R := R)
+  have hiff (x : R) :
+      e.symm x ∈ lieSubalgebraOfSubgroup (I := 𝓘(ℝ, R)) (unitarySubgroup Rˣ) ↔
+        x ∈ skewAdjoint.lieSubalgebra ℝ R := by
+    simpa only [← SetLike.mem_coe, skewAdjoint.coe_lieSubalgebra] using
+      (unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_skewAdjoint x)
+  -- Use the Lie-equivalence inverse laws directly to keep the coordinate map opaque.
+  ext x
+  rw [LieSubalgebra.mem_map]
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    exact (hiff (e y)).mp (by
+      simpa only [e.symm_apply_apply, LieSubalgebra.coe_toSubmodule, LieSubalgebra.mem_coe]
+        using hy)
+  · intro hx
+    exact ⟨e.symm x, (hiff x).mpr hx, e.apply_symm_apply x⟩
+
+end
 
 /-- **The unitary group is an embedded Lie subgroup of the units.**  Being a closed subgroup of
 the Lie group `Rˣ`, it is a Lie group for its subspace topology.  Specialized to

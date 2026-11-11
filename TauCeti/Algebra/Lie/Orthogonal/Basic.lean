@@ -6,21 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Classical
+public import TauCeti.Algebra.Lie.SkewAdjoint.Star
 public import Mathlib.Basic.Real.Star
 import Mathlib.Algebra.Group.Pi.Units
 
 /-!
 # Basic facts about the orthogonal Lie algebras
 
-Mathlib carries two unrelated descriptions of the skew-symmetric real matrices: the orthogonal Lie
-algebra `LieAlgebra.Orthogonal.so n ℝ`, cut out by the skew-adjointness condition `Aᵀ = -A` for the
-identity bilinear form, and `skewAdjoint (Matrix n n ℝ)`, the skew-adjoint part of the star ring
-`Matrix n n ℝ`.  This file identifies them: over `ℝ` the star of a matrix is its conjugate
-transpose, which is its transpose.
+Over a commutative ring `R` with trivial star, the matrix involution is transposition. Thus
+Mathlib's orthogonal Lie algebra `LieAlgebra.Orthogonal.so n R`, defined by `Aᵀ = -A`, has
+the same carrier as `skewAdjoint (Matrix n n R)`. This file identifies those carriers and the
+corresponding skew-adjoint Lie subalgebra.
 
-The bridge is purely algebraic, with no exponential or topological content, so it is stated here
-and consumed by the exponential and Lie-subgroup files that compare `so` with star-algebra
-statements about the unitary — that is, orthogonal — group of `Matrix n n ℝ`.
+These identities express skew-adjointness calculations for unitary matrix groups in the
+canonical orthogonal Lie algebra.
 
 The file also records invertibility of the indefinite Gram matrix
 `LieAlgebra.Orthogonal.indefiniteDiagonal p q R`, and symmetry and invertibility of the split
@@ -28,8 +27,10 @@ odd orthogonal Gram matrix `LieAlgebra.Orthogonal.JB ι R`.
 
 ## Main results
 
-* `Matrix.mem_so_iff_mem_skewAdjoint` identifies the real orthogonal Lie algebra with the
-  skew-adjoint matrices.
+* `Matrix.mem_so_iff_mem_skewAdjoint` identifies orthogonal Lie-algebra membership with
+  skew-adjointness over a commutative ring with trivial star.
+* `Matrix.skewAdjoint_lieSubalgebra_eq_so`: the skew-adjoint Lie subalgebra is `so` over
+  any commutative ring with trivial star.
 * `LieAlgebra.Orthogonal.isUnit_indefiniteDiagonal`: the Gram matrix of the indefinite form is
   invertible.
 * `LieAlgebra.Orthogonal.isSymm_JB` and `LieAlgebra.Orthogonal.isUnit_JB`: the split odd
@@ -44,12 +45,22 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-/-- Over `ℝ` the orthogonal Lie algebra is the skew-adjoint part of the matrix algebra: the star
-of a real matrix is its conjugate transpose, which is its transpose. -/
-theorem mem_so_iff_mem_skewAdjoint (A : Matrix n n ℝ) :
-    A ∈ LieAlgebra.Orthogonal.so n ℝ ↔ A ∈ skewAdjoint (Matrix n n ℝ) := by
+/-- Over a commutative ring with trivial star, the orthogonal Lie algebra is the skew-adjoint
+part of the matrix algebra: conjugate transposition is transposition. -/
+theorem mem_so_iff_mem_skewAdjoint {R : Type*} [CommRing R] [StarRing R] [TrivialStar R]
+    (A : Matrix n n R) :
+    A ∈ LieAlgebra.Orthogonal.so n R ↔ A ∈ skewAdjoint (Matrix n n R) := by
   rw [LieAlgebra.Orthogonal.mem_so, skewAdjoint.mem_iff, Matrix.star_eq_conjTranspose,
     Matrix.conjTranspose_eq_transpose_of_trivial]
+
+/-- Over a commutative ring with trivial star, the skew-adjoint matrix Lie subalgebra is `so`. -/
+@[simp]
+theorem skewAdjoint_lieSubalgebra_eq_so {R : Type*} [CommRing R] [StarRing R] [TrivialStar R] :
+    skewAdjoint.lieSubalgebra R (Matrix n n R) = LieAlgebra.Orthogonal.so n R := by
+  apply SetLike.coe_injective
+  rw [skewAdjoint.coe_lieSubalgebra]
+  ext A
+  exact (mem_so_iff_mem_skewAdjoint A).symm
 
 end Matrix
 
