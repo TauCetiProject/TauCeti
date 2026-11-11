@@ -13,7 +13,7 @@ import Mathlib.Topology.Instances.ENNReal.Lemmas
 import Mathlib.Topology.UniformSpace.UniformEmbedding
 
 /-!
-# Hölder functions: a `dist` criterion, extension from a dense set, sums, and the seminorm
+# Hölder functions: a `dist` criterion, extension from a dense set, sums, pairs, and the seminorm
 
 A Hölder bound stated with `dist` is equivalent to `HolderOnWith`, which Mathlib phrases with
 `edist`. A function with bounded oscillation which satisfies a Hölder bound between nearby points
@@ -32,7 +32,8 @@ Hölder inequality passes from `s × s` to its closure because both of its sides
 This is how an almost-everywhere Hölder estimate becomes a Hölder continuous representative: a set
 of full measure for a measure that is positive on open sets is dense.
 
-Sums, differences and finite sums of Hölder functions are Hölder, with the sum of the constants.
+Sums, differences and finite sums of Hölder functions are Hölder, with the sum of the constants,
+and the pairing of two Hölder functions is Hölder for the product metric.
 Postcomposition with an isometry keeps the constant and the exponent. A function bounded by `M` is
 Hölder of exponent zero with constant `2 M`.
 
@@ -68,6 +69,9 @@ By subadditivity of `t ↦ t ^ α`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölde
   preserves Hölder bounds.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
 * `HolderOnWith.add`: sums of Hölder functions on a set.
+* `HolderOnWith.prodMk`: the pairing of two Hölder functions is Hölder for the product metric.
+* `continuousOn_of_locally_holderOnWith`: a function which is Hölder near each point of a set is
+  continuous on it.
 * `holderWith_zero_of_nnnorm_le`: a function bounded by `M` is Hölder of exponent zero with
   constant `2 M`.
 * `IsCompact.exists_holderOnWith_thickening_and_norm_le`: a function which is Hölder on a ball
@@ -264,6 +268,26 @@ theorem HolderOnWith.add {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommG
   HolderOnWith.of_dist_le fun x hx y hy => by
     simp only [Pi.add_apply, NNReal.coe_add]
     linarith [dist_add_add_le (f x) (g x) (f y) (g y), hf.dist_le hx hy, hg.dist_le hx hy]
+
+/-- A function which is Hölder with a positive exponent on a neighbourhood of each point of `s`,
+with constants and neighbourhoods depending on the point, is continuous on `s`. Compare Mathlib's
+`HolderOnWith.continuousOn`. -/
+theorem continuousOn_of_locally_holderOnWith {X Y : Type*} [PseudoEMetricSpace X]
+    [PseudoEMetricSpace Y] {r : ℝ≥0} {f : X → Y} {s : Set X} (hr : 0 < r)
+    (hf : ∀ x ∈ s, ∃ t ∈ 𝓝 x, ∃ C : ℝ≥0, HolderOnWith C r f t) : ContinuousOn f s := fun x hx => by
+  obtain ⟨t, ht, C, hC⟩ := hf x hx
+  exact ((hC.continuousOn hr).continuousAt ht).continuousWithinAt
+
+/-- The pairing of two functions that are Hölder on `s` with a common exponent is Hölder on `s`
+for the product (sup) metric, with the larger of the two constants. Compare Mathlib's
+`LipschitzWith.prodMk`. -/
+theorem HolderOnWith.prodMk {X Y Z : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
+    [PseudoEMetricSpace Z] {C D r : ℝ≥0} {f : X → Y} {g : X → Z} {s : Set X}
+    (hf : HolderOnWith C r f s) (hg : HolderOnWith D r g s) :
+    HolderOnWith (max C D) r (fun x => (f x, g x)) s := fun x hx y hy => by
+  rw [Prod.edist_eq, ENNReal.coe_max]
+  exact max_le ((hf x hx y hy).trans (by gcongr; exact le_max_left _ _))
+    ((hg x hx y hy).trans (by gcongr; exact le_max_right _ _))
 
 /-- A function bounded by `M` has oscillation at most `2 M`, which is its Hölder bound of
 exponent zero. Compare Mathlib's `HolderWith.holderWith_zero_of_bounded`, which bounds the
