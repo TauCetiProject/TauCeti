@@ -231,8 +231,8 @@ theorem localHomologyMap_fundamentalClassOn_comap {j : C(U, M)} (hj : IsOpenEmbe
   have hox : localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) j hjx n (o.comap hj x).val =
       (o (j x)).val := by
     rw [← localOrientationEquiv_comap_apply o hj x, IsOpenEmbedding.coe_localOrientationEquiv,
-      localHomologyIsoOfIsOpenEmbedding_hom]
-    rfl
+      localHomologyIsoOfIsOpenEmbedding_hom,
+      localHomologyMap_congr _ (ContinuousMap.ext fun _ ↦ rfl : ⟨j, hj.continuous⟩ = j)]
   -- Restricting to `j x` after the map induced by `j` is restricting to `x` before it.
   rw [← hox, ← (o.comap hj).localHomologyRestriction_fundamentalClassOn hn hK hx,
     ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,

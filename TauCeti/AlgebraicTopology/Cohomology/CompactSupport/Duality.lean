@@ -129,21 +129,21 @@ lemma singularCohomologyMap_comp_capFundamentalClassOn {K K' : Compacts (TopCat.
   ext α
   have hfst : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map
       (TopPair.Hom.fst (TopPair.ofSubsetMap (𝟙 (TopCat.of M))
-        (TopCat.mapsTo_id_compl_compacts hKK'))) = 𝟙 _ :=
-    (congrArg (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map ·)
-      (TopPair.ofSubsetMap_fst (g := 𝟙 (TopCat.of M)) (TopCat.mapsTo_id_compl_compacts hKK'))).trans
-      (CategoryTheory.Functor.map_id _ _)
-  have := ConcreteCategory.congr_hom (TopPair.singularCap_naturality
-    (TopPair.ofSubsetMap (𝟙 (TopCat.of M)) (TopCat.mapsTo_id_compl_compacts hKK')) ℤ (ρ_ _).inv
-      (ρ_ L).hom p q n h α) (o.fundamentalClassOn hn K'.isCompact)
-  rw [hfst] at this
-  rw [ModuleCat.hom_comp, LinearMap.comp_apply, capFundamentalClassOn_apply,
-    capFundamentalClassOn_apply]
+        (TopCat.mapsTo_id_compl_compacts hKK'))) = 𝟙 _ := by
+    rw [TopPair.ofSubsetMap_fst]
+    exact CategoryTheory.Functor.map_id _ _
   have hμ := o.localHomologyRestriction_fundamentalClassOn_of_subset hn K'.isCompact
     K.isCompact (SetLike.coe_subset_coe.2 hKK')
   rw [localHomologyRestriction_def] at hμ
-  refine (Eq.trans ?_ this).trans ((ConcreteCategory.comp_apply _ _ _).trans (congrArg _ hμ))
-  exact (ConcreteCategory.comp_apply _ _ _).trans (ConcreteCategory.id_apply _)
+  have := ConcreteCategory.congr_hom (TopPair.singularCap_naturality
+    (TopPair.ofSubsetMap (𝟙 (TopCat.of M)) (TopCat.mapsTo_id_compl_compacts hKK')) ℤ (ρ_ _).inv
+      (ρ_ L).hom p q n h α) (o.fundamentalClassOn hn K'.isCompact)
+  rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hfst, hμ] at this
+  rw [ModuleCat.hom_comp, LinearMap.comp_apply, capFundamentalClassOn_apply,
+    capFundamentalClassOn_apply, ← this]
+  -- The source and target of the identity from `hfst` agree only after unfolding
+  -- `TopPair.ofSubset`, so `ConcreteCategory.id_apply` applies by `exact` but not by `rw`.
+  exact (ConcreteCategory.id_apply _).symm
 
 /-- **The duality map** `D_M : Hᵖ_c(M; L) ⟶ H_q(M; L)` of an oriented manifold, `p + q = n`: on a
 class supported in a compact set `K`, the cap product with the fundamental class `μ_K` along `K`.
@@ -210,9 +210,10 @@ lemma dualityMap_compactSupportCohomologyIsoOfCompactSpace_inv [CompactSpace M] 
   have := ConcreteCategory.congr_hom (TopPair.singularCap_singularCohomologyπ
     (TopPair.ofSubset (((⊤ : Compacts (TopCat.of M)) : Set (TopCat.of M))ᶜ)) ℤ (ρ_ _).inv
       (ρ_ L).hom p q n h γ) (o.fundamentalClass hn)
-  refine Eq.trans ?_ this.symm
-  exact (congrArg _ (o.singularHomologyπ_fundamentalClass hn _).symm).trans
-    (ConcreteCategory.comp_apply _ _ _).symm
+  rw [← o.singularHomologyπ_fundamentalClass hn]
+  -- `rw` cannot use `ConcreteCategory.comp_apply` here: the ambient space of the pair
+  -- `(M, M ∖ ⊤)` is `M` only after unfolding `TopPair.ofSubset`.
+  exact (ConcreteCategory.comp_apply _ _ _).symm.trans this.symm
 
 section OpenEmbedding
 
@@ -239,10 +240,12 @@ theorem compactSupportCohomologyExtend_dualityMap {j : C(U, M)} (hj : IsOpenEmbe
   rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, TopPair.ofSubsetMap_fst] at this
   rw [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_comp, LinearMap.comp_apply,
     capFundamentalClassOn_apply, capFundamentalClassOn_apply]
-  refine Eq.trans ?_ this.symm
   have hμ := o.localHomologyMap_fundamentalClassOn_comap hn hj K.isCompact
   rw [localHomologyMap_def] at hμ
-  exact congrArg _ hμ.symm
+  -- `hμ` is stated for the compact set `j '' K` and the goal for `K.map j`, which agree by
+  -- definition (`Compacts.coe_map` is `rfl`). Since the set also occurs in the type of `β`, `rw`
+  -- cannot change one into the other, but `exact` identifies them.
+  exact (congrArg _ hμ.symm).trans this.symm
 
 end OpenEmbedding
 
