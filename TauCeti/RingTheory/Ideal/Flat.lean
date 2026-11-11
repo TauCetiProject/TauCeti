@@ -81,9 +81,8 @@ theorem flat_span_range_of_isSMulRegular {p : ℕ} (r : Perfection R p)
     exact fun i j ↦ ⟨max i j, hdvd (le_max_left i j), hdvd (le_max_right i j)⟩
   · intro n
     rcases Nat.eq_zero_or_pos p with rfl | hp
-    · have h : Perfection.coeffMonoidHom R 0 n r = 1 := by
-        change r.1 n = 1
-        simpa using (r.2 n).symm
+    · have h : Perfection.coeffMonoidHom R 0 n r = 1 :=
+        (Perfection.coeffMonoidHom_pow_p' r n).symm.trans (pow_zero _)
       rw [h]
       exact isRegular_one.left
     · apply (IsSMulRegular.pow_iff (pow_pos hp n)).mp
