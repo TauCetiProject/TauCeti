@@ -38,6 +38,9 @@ added constants lie in the range of `lhomWithConstants`
 `FirstOrder.Language.subset_range_lhomWithConstants_onRelation`), and every `L[[γ]]`-structure is
 the expansion of its `L`-reduct by the interpretations of the added constants
 (`FirstOrder.Language.withConstantsStructure_reduct_eq`).
+
+A function symbol of `L[[γ]]` is a function symbol of `L` or one of the added constants
+(`FirstOrder.Language.sigmaFunctionsWithConstantsEquiv`), and `L[[γ]]` is algebraic when `L` is.
 -/
 
 public section
@@ -178,5 +181,50 @@ theorem withConstantsStructure_reduct_eq (M : Type*) [S : L[[γ]].Structure M] :
   rcases f with f | c
   · rfl
   · cases k with | zero => rw [Unique.eq_default xs]; rfl | succ _ => exact c.elim
+
+section WithConstantsSymbols
+
+variable {L : Language.{u, v}} (A : Type w)
+
+/-- A function symbol of `L[[A]]` is a function symbol of `L` or a constant from `A`. -/
+def sigmaFunctionsWithConstantsEquiv :
+    (Σ n, L[[A]].Functions n) ≃ (Σ n, L.Functions n) ⊕ A where
+  toFun
+    | ⟨n, Sum.inl f⟩ => Sum.inl ⟨n, f⟩
+    | ⟨0, Sum.inr a⟩ => Sum.inr a
+  invFun := Sum.elim (fun f => ⟨f.1, Sum.inl f.2⟩) fun a => ⟨0, Sum.inr a⟩
+  left_inv := by rintro ⟨_ | _, f | f⟩ <;> first | rfl | exact isEmptyElim f
+  right_inv := by rintro (f | a) <;> rfl
+
+@[simp]
+theorem sigmaFunctionsWithConstantsEquiv_inl {n : ℕ} (f : L.Functions n) :
+    sigmaFunctionsWithConstantsEquiv A ⟨n, (Sum.inl f : L[[A]].Functions n)⟩ = Sum.inl ⟨n, f⟩ :=
+  (rfl)
+
+@[simp]
+theorem sigmaFunctionsWithConstantsEquiv_con (a : A) :
+    sigmaFunctionsWithConstantsEquiv A ⟨0, L.con a⟩ = Sum.inr a :=
+  (rfl)
+
+@[simp]
+theorem sigmaFunctionsWithConstantsEquiv_symm_inl (f : Σ n, L.Functions n) :
+    (sigmaFunctionsWithConstantsEquiv A).symm (Sum.inl f) = ⟨f.1, Sum.inl f.2⟩ :=
+  (rfl)
+
+@[simp]
+theorem sigmaFunctionsWithConstantsEquiv_symm_inr (a : A) :
+    (sigmaFunctionsWithConstantsEquiv (L := L) A).symm (Sum.inr a) = ⟨0, L.con a⟩ :=
+  (rfl)
+
+/-- The arity of a function symbol of `L[[A]]`, read off its description as a function symbol
+of `L` or a constant from `A`. -/
+theorem elim_fst_sigmaFunctionsWithConstantsEquiv (s : Σ n, L[[A]].Functions n) :
+    Sum.elim Sigma.fst (fun _ => 0) (sigmaFunctionsWithConstantsEquiv A s) = s.1 := by
+  rcases s with ⟨_ | _, f | f⟩ <;> first | rfl | exact isEmptyElim f
+
+/-- Adding constants to an algebraic language gives an algebraic language. -/
+instance [L.IsAlgebraic] : L[[A]].IsAlgebraic := isAlgebraic_sum
+
+end WithConstantsSymbols
 
 end FirstOrder.Language
