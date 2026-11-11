@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Prod
+public import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 
 /-!
 # The sheaf of holomorphic sections of a holomorphic vector bundle
@@ -185,15 +186,15 @@ theorem contMDiff {U : (Opens (TopCat.of X))ᵒᵖ} (s : (holomorphicSectionShea
   s.2
 
 /-- A section of `V` over `U` whose bundled map is complex analytic, as a section of the sheaf. -/
-def mk {U : Opens X} (s : (x : U) → V x)
+def ofContMDiff {U : Opens X} (s : (x : U) → V x)
     (hs : ContMDiff I (I.prod 𝓘(ℂ, F)) ω (fun x : U ↦ TotalSpace.mk' F (x : X) (s x))) :
     (holomorphicSectionSheaf I F V).obj.obj (op U) :=
   ⟨s, hs⟩
 
 @[simp]
-theorem mk_apply {U : Opens X} (s : (x : U) → V x)
+theorem ofContMDiff_apply {U : Opens X} (s : (x : U) → V x)
     (hs : ContMDiff I (I.prod 𝓘(ℂ, F)) ω (fun x : U ↦ TotalSpace.mk' F (x : X) (s x))) (x : U) :
-    mk s hs x = s x := (rfl)
+    ofContMDiff s hs x = s x := (rfl)
 
 @[simp]
 theorem zero_apply {U : (Opens (TopCat.of X))ᵒᵖ} (x : ↥(unop U)) :
@@ -275,6 +276,29 @@ theorem homOfLinearMap_app_apply (φ : ∀ x, V₁ x →ₗ[ℂ] V₂ x)
     (x : ↥(unop U)) :
     (homOfLinearMap φ hφ).hom.app U s x = φ x (s x) := (rfl)
 
+/-- The fibrewise identity induces the identity of the sheaf of holomorphic sections. -/
+@[simp]
+theorem homOfLinearMap_id
+    (hφ : ContMDiff (I.prod 𝓘(ℂ, F₁)) (I.prod 𝓘(ℂ, F₁)) ω
+      (fun v : TotalSpace F₁ V₁ ↦ TotalSpace.mk' F₁ v.proj (LinearMap.id (R := ℂ) v.2))) :
+    homOfLinearMap (fun _ ↦ LinearMap.id) hφ = 𝟙 (holomorphicSectionSheaf I F₁ V₁) :=
+  hom_ext fun _ _ _ ↦ rfl
+
+/-- Fibrewise composition of linear maps induces composition of sheaf morphisms. -/
+@[reassoc (attr := simp)]
+theorem homOfLinearMap_comp {F₃ : Type*} [NormedAddCommGroup F₃] [NormedSpace ℂ F₃]
+    {V₃ : X → Type} [TopologicalSpace (TotalSpace F₃ V₃)] [∀ x, TopologicalSpace (V₃ x)]
+    [FiberBundle F₃ V₃] [∀ x, AddCommGroup (V₃ x)] [∀ x, Module ℂ (V₃ x)] [VectorBundle ℂ F₃ V₃]
+    (φ : ∀ x, V₁ x →ₗ[ℂ] V₂ x)
+    (hφ : ContMDiff (I.prod 𝓘(ℂ, F₁)) (I.prod 𝓘(ℂ, F₂)) ω
+      (fun v : TotalSpace F₁ V₁ ↦ TotalSpace.mk' F₂ v.proj (φ v.proj v.2)))
+    (ψ : ∀ x, V₂ x →ₗ[ℂ] V₃ x)
+    (hψ : ContMDiff (I.prod 𝓘(ℂ, F₂)) (I.prod 𝓘(ℂ, F₃)) ω
+      (fun v : TotalSpace F₂ V₂ ↦ TotalSpace.mk' F₃ v.proj (ψ v.proj v.2))) :
+    homOfLinearMap φ hφ ≫ homOfLinearMap ψ hψ =
+      homOfLinearMap (fun x ↦ ψ x ∘ₗ φ x) (hψ.comp hφ) :=
+  hom_ext fun _ _ _ ↦ rfl
+
 /-- An isomorphism of holomorphic vector bundles, given as fibrewise linear isomorphisms whose
 total-space maps in both directions are complex analytic, induces an isomorphism of the sheaves
 of holomorphic sections. -/
@@ -313,25 +337,16 @@ theorem isoOfLinearEquiv_inv_app_apply (φ : ∀ x, V₁ x ≃ₗ[ℂ] V₂ x)
 
 section Trivial
 
-/-- A section of the trivial line bundle over an open set is holomorphic exactly when it is a
-complex analytic function. -/
-theorem contMDiff_trivial_mk_iff {U : Opens X} (f : U → ℂ) :
-    ContMDiff I (I.prod 𝓘(ℂ, ℂ)) ω
-        (fun x : U ↦ TotalSpace.mk' ℂ (E := Trivial X ℂ) (x : X) (f x)) ↔
-      ContMDiff I 𝓘(ℂ) ω f := by
-  refine forall_congr' fun x ↦ ?_
-  rw [contMDiffAt_totalSpace]
-  simp [contMDiff_subtype_val.contMDiffAt]
-
 /-- The holomorphic sections of the trivial line bundle over `U` are the holomorphic functions on
 `U`. -/
 private def trivialSectionsEquiv (U : Opens X) :
     (holomorphicSectionSheaf I ℂ (Trivial X ℂ)).obj.obj (op U) ≃ₗ[ℂ]
       (holomorphicStructureSheafModules I X).obj.obj (op U) where
   toFun s := holomorphicStructureSheafModules.ofContMDiff (fun x ↦ s x)
-    ((contMDiff_trivial_mk_iff _).1 (contMDiff s))
-  invFun f := mk (fun x ↦ f x)
-    ((contMDiff_trivial_mk_iff _).2 (holomorphicStructureSheafModules.contMDiff f))
+    (Trivial.contMDiff_mk_iff.1 (contMDiff s)).2
+  invFun f := ofContMDiff (fun x ↦ f x)
+    (Trivial.contMDiff_mk_iff.2
+      ⟨contMDiff_subtype_val, holomorphicStructureSheafModules.contMDiff f⟩)
   map_add' _ _ := holomorphicStructureSheafModules.ext fun _ ↦ by simp
   map_smul' _ _ := holomorphicStructureSheafModules.ext fun _ ↦ by simp
   left_inv _ := ext fun _ ↦ by simp
@@ -445,8 +460,10 @@ theorem prodFst_prodInl_add_prodSnd_prodInr :
 variable (I F₁ V₁ F₂ V₂) in
 /-- The sheaf of holomorphic sections of a direct sum `V₁ ×ᵇ V₂`, with the morphisms induced by
 the fibrewise projections and inclusions, as a bicone over the two sheaves of sections. -/
--- Exposed so that the cone point and legs are visibly the sheaf and morphisms above.
-@[expose] def prodBicone :
+-- Exposed so that the cone point is visibly the sheaf of the direct sum: otherwise the legs
+-- cannot be stated as `prodFst`, `prodSnd`, `prodInl` and `prodInr` in the simp lemmas.
+@[expose, simps]
+def prodBicone :
     BinaryBicone (holomorphicSectionSheaf I F₁ V₁) (holomorphicSectionSheaf I F₂ V₂) where
   pt := holomorphicSectionSheaf I (F₁ × F₂) (V₁ ×ᵇ V₂)
   fst := prodFst I F₁ V₁ F₂ V₂
@@ -477,6 +494,18 @@ def prodIso :
     holomorphicSectionSheaf I (F₁ × F₂) (V₁ ×ᵇ V₂) ≅
       holomorphicSectionSheaf I F₁ V₁ ⊞ holomorphicSectionSheaf I F₂ V₂ :=
   biprod.uniqueUpToIso _ _ (prodBiconeIsBilimit I F₁ V₁ F₂ V₂)
+
+/-- The isomorphism with the biproduct is given by the two projections. -/
+@[simp]
+theorem prodIso_hom :
+    (prodIso I F₁ V₁ F₂ V₂).hom = biprod.lift (prodFst I F₁ V₁ F₂ V₂) (prodSnd I F₁ V₁ F₂ V₂) :=
+  (rfl)
+
+/-- The inverse of the isomorphism with the biproduct is given by the two inclusions. -/
+@[simp]
+theorem prodIso_inv :
+    (prodIso I F₁ V₁ F₂ V₂).inv = biprod.desc (prodInl I F₁ V₁ F₂ V₂) (prodInr I F₁ V₁ F₂ V₂) :=
+  (rfl)
 
 end Prod
 
