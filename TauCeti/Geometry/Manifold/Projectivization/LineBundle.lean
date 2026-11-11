@@ -97,6 +97,7 @@ theorem twistTransition_mk (k : ℤ) (i j : ι) (v : ι → 𝕜) (hv : v ≠ 0)
   rw [mul_div_mul_left _ _ a.ne_zero]
 
 /-- On the chart `i`, the transition from a chart to itself is the identity. -/
+@[simp]
 theorem twistTransition_self (k : ℤ) {i : ι} {x : ℙ 𝕜 (ι → 𝕜)}
     (hx : x ∈ affineOpen i) : twistTransition k i i x = 1 := by
   simp [twistTransition, div_self ((mem_affineOpen_iff i x).1 hx)]
@@ -168,7 +169,7 @@ theorem contMDiffOn_twistTransition (k : ℤ) (i j : Fin (n + 1)) (r : ℕ∞ω)
 vector-bundle core with model fibre `𝕜`. The chart `i` is trivial over the standard affine open
 `U_i`, the coordinate change from the chart `i` to the chart `j` is multiplication by
 `twistTransition k i j`, and the preferred chart at `x` is the one used by `chartAt`. -/
-@[expose] def twistCore (k : ℤ) :
+def twistCore (k : ℤ) :
     VectorBundleCore 𝕜 (ℙ 𝕜 (Fin (n + 1) → 𝕜)) 𝕜 (Fin (n + 1)) where
   baseSet i := affineOpen i
   isOpen_baseSet i := isOpen_affineOpen i
@@ -183,22 +184,29 @@ vector-bundle core with model fibre `𝕜`. The chart `i` is trivial over the st
     simp only [ContinuousLinearMap.lsmul_apply, smul_eq_mul, ← mul_assoc]
     rw [twistTransition_mul_twistTransition k i l hx.1.2]
 
+/-- The chart `i` of `𝒪(k)` is defined over the standard affine open `U_i`. It is not a
+simp lemma, since `VectorBundleCore.baseSet_at` already rewrites its left side into the left side
+of `twistCore_localTriv_baseSet`. -/
+theorem twistCore_baseSet (k : ℤ) (i : Fin (n + 1)) :
+    (twistCore (𝕜 := 𝕜) k).baseSet i = affineOpen i :=
+  (rfl)
+
 /-- The chart `i` of `𝒪(k)` is trivial over the standard affine open `U_i`. -/
 @[simp]
 theorem twistCore_localTriv_baseSet (k : ℤ) (i : Fin (n + 1)) :
     ((twistCore (𝕜 := 𝕜) k).localTriv i).baseSet = affineOpen i :=
-  rfl
+  (rfl)
 
 /-- The preferred chart of `𝒪(k)` at `x` is the chart of the manifold structure at `x`. -/
 theorem chartAt_eq_affineOpenPartialHomeomorph_twistCore_indexAt (k : ℤ)
     (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
     chartAt (Fin n → 𝕜) x = affineOpenPartialHomeomorph ((twistCore k).indexAt x) :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem twistCore_coordChange_apply (k : ℤ) (i j : Fin (n + 1)) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜))
     (v : 𝕜) : (twistCore k).coordChange i j x v = twistTransition k i j x * v :=
-  rfl
+  (rfl)
 
 /-- **`𝒪(k)` is an analytic line bundle.** Its transition functions are analytic, so for
 `𝕜 = ℂ` it is a holomorphic line bundle on `ℂℙⁿ`. -/
@@ -216,7 +224,7 @@ theorem twistCore_localTriv_apply (k : ℤ) (j : Fin (n + 1)) (s : ℙ 𝕜 (Fin
     (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
     ((twistCore k).localTriv j ⟨x, s x⟩).2 =
       twistTransition k ((twistCore k).indexAt x) j x * s x :=
-  rfl
+  (rfl)
 
 /-- **Sections of `𝒪(k)` in the standard charts.** A section `s` of `𝒪(k)` is `C^r` exactly when,
 for every `j`, its coordinate `x ↦ twistTransition k ((twistCore k).indexAt x) j x * s x` in the
@@ -251,6 +259,28 @@ theorem homogeneousSection_def (d : ℕ) (P : MvPolynomial (Fin (n + 1)) 𝕜)
     homogeneousSection d P x =
       eval x.rep P / x.rep ((twistCore (𝕜 := 𝕜) (d : ℤ)).indexAt x) ^ d :=
   (rfl)
+
+/-- The section defined by the zero polynomial is zero. -/
+@[simp]
+theorem homogeneousSection_zero (d : ℕ) :
+    homogeneousSection (𝕜 := 𝕜) (n := n) d 0 = 0 := by
+  funext x
+  simp [homogeneousSection]
+
+/-- The section defined by a sum of polynomials is the sum of their sections. -/
+@[simp]
+theorem homogeneousSection_add (d : ℕ) (P Q : MvPolynomial (Fin (n + 1)) 𝕜) :
+    homogeneousSection d (P + Q) = homogeneousSection d P + homogeneousSection d Q := by
+  funext x
+  simp [homogeneousSection, add_div]
+
+/-- The section defined by a scalar multiple of a polynomial is the scalar multiple of its
+section. -/
+@[simp]
+theorem homogeneousSection_smul (d : ℕ) (c : 𝕜) (P : MvPolynomial (Fin (n + 1)) 𝕜) :
+    homogeneousSection d (c • P) = c • homogeneousSection d P := by
+  funext x
+  simp [homogeneousSection, smul_eq_C_mul, mul_div_assoc]
 
 /-- The coordinate of `homogeneousSection d P` in the frame of the chart `j` is
 `P v / v j ^ d`, computed on the chosen representative `v` of `x`. -/
@@ -292,6 +322,7 @@ theorem contMDiff_homogeneousSection {d : ℕ} {P : MvPolynomial (Fin (n + 1)) �
     (contMDiffOn_affineChart j r)).congr fun x hx ↦ homogeneousSection_coord hP hx
 
 /-- The section `homogeneousSection d P` vanishes at `[v]` exactly when `P` vanishes at `v`. -/
+@[simp]
 theorem homogeneousSection_mk_eq_zero_iff {d : ℕ} {P : MvPolynomial (Fin (n + 1)) 𝕜}
     (hP : P.IsHomogeneous d) (v : Fin (n + 1) → 𝕜) (hv : v ≠ 0) :
     homogeneousSection d P (mk 𝕜 v hv) = 0 ↔ eval v P = 0 := by
@@ -304,6 +335,7 @@ theorem homogeneousSection_mk_eq_zero_iff {d : ℕ} {P : MvPolynomial (Fin (n + 
 
 /-- **Distinct homogeneous polynomials give distinct sections.** A homogeneous polynomial of
 degree `d` whose section of `𝒪(d)` vanishes identically is zero. -/
+@[simp]
 theorem homogeneousSection_eq_zero_iff {d : ℕ} {P : MvPolynomial (Fin (n + 1)) 𝕜}
     (hP : P.IsHomogeneous d) : homogeneousSection d P = 0 ↔ P = 0 := by
   refine ⟨fun h ↦ hP.eq_zero_of_forall_eval_eq_zero fun v ↦ ?_, fun h ↦ ?_⟩
