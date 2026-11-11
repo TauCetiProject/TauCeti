@@ -62,27 +62,9 @@ include hjets
 
 private theorem contDiff_coefficient_integral :
     ContDiff ℝ ∞ (fun p ↦ ∫ y, (a y).coefficient p ∂μ) := by
-  apply contDiff_of_differentiable_iteratedFDeriv
-  intro k _
-  have heq : iteratedFDeriv ℝ k (fun p ↦ ∫ y, (a y).coefficient p ∂μ) =
-      fun p ↦ ∫ y, iteratedFDeriv ℝ k (a y).coefficient p ∂μ :=
-    funext fun p ↦ iteratedFDeriv_integral_of_continuous_jets (μ := μ) isOpen_univ
+  exact contDiffOn_univ.1 <|
+    contDiffOn_integral_of_continuous_jets (μ := μ) isOpen_univ
       (fun y ↦ (a y).contDiff_coefficient.contDiffOn) (fun k ↦ (hjets k).continuousOn)
-      k (mem_univ p)
-  rw [heq]
-  intro p
-  have hnext := (continuousMultilinearCurryLeftEquiv ℝ
-    (fun _ : Fin (k + 1) ↦ CoordinateSpace n × CoordinateSpace n) (V →L[ℂ] W)).continuous.comp
-      ((hjets (k + 1)).comp continuous_swap)
-  change Continuous (fun q : (CoordinateSpace n × CoordinateSpace n) × Y ↦
-    fderiv ℝ (iteratedFDeriv ℝ k (a q.2).coefficient) q.1) at hnext
-  have hD := hasFDerivAt_integral_of_continuousOn_fderiv (𝕜 := ℝ) (μ := μ) (x₀ := p)
-    (F := fun p y ↦ iteratedFDeriv ℝ k (a y).coefficient p)
-    Filter.univ_mem isCompact_univ MeasurableSet.univ (measure_ne_top _ _) Subset.rfl
-    ((hjets k).comp continuous_swap).continuousOn
-    (fun y _ ↦ ((a y).contDiff_coefficient.differentiable_iteratedFDeriv
-      (ENat.natCast_lt_of_coe_top_le_withTop le_rfl k)).differentiableOn) hnext.continuousOn
-  simpa only [setIntegral_univ] using hD.differentiableAt
 
 /-- Mixed coordinate derivatives commute with the coefficient integral of a compact family
 whose spatial jets are jointly continuous. -/
