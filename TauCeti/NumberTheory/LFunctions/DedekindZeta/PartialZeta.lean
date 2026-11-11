@@ -358,11 +358,10 @@ theorem sum_LSeries_rayClassCoeff_classMap {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣
     ∑ c' with classMap h c' = c, LSeries (normCoeff K (rayClassCoeff 𝔫 c')) s =
       LSeries (normCoeff K (rayClassCoeff 𝔪 c)) s := by
   rw [← LSeries_sum fun c' _ ↦ LSeriesSummable_rayClassCoeff 𝔫 c' hs,
-    ← sum_rayClassCoeff_classMap h h' c]
+    ← sum_rayClassCoeff_classMap h h' c, map_sum]
   congr 1
   funext n
-  simp only [Finset.sum_apply, normCoeff_eq_sum_normFiber]
-  exact Finset.sum_comm
+  simp only [Finset.sum_apply, sum_apply]
 
 /-- **The partial sums of the coefficients of a ray class are the ray class ideal counts**: the
 norm coefficients of `rayClassCoeff 𝔪 c` up to `n` add up to the number of ideals of class `c`
