@@ -29,8 +29,6 @@ a segment as their union, which gives (T2).
 
 ## Main results
 
-* `TauCeti.LambdaMetric.IsSegment.union`: two segments with a common endpoint `w`, such that
-  `d u u' = d u w + d w u'` for `u` in the first and `u'` in the second, have a segment as union.
 * `TauCeti.LambdaMetric.even_dist_add_dist_sub_dist_of_forall`: if the Gromov products based at
   one point lie in `Λ`, so do those based at any point.
 * `TauCeti.LambdaMetric.min_dist_add_dist_sub_dist_le_of_forall`: `0`-hyperbolicity with respect
@@ -71,82 +69,9 @@ theorem min_dist_add_dist_sub_dist_le_of_forall {v : X}
   grind [h x y z, h t x y, h y t z, h t z y, h x t y, h x t z, d.symm y t, d.symm x t, d.symm z t,
     d.symm z y]
 
-/-- The map gluing a parametrisation `f` of a segment on `[a, b]` to a parametrisation `g` on
-`[a', b']` of a segment starting where the first one ends, the second translated to start at
-`b`, is isometric when the common endpoint lies between the points of the two segments. -/
-private theorem isometricOn_ite {f g : Λ → X} {a b a' b' : Λ} (hab : a ≤ b) (hab' : a' ≤ b')
-    (hf : d.IsometricOn f (Icc a b)) (hg : d.IsometricOn g (Icc a' b')) (hg0 : g a' = f b)
-    (h : ∀ u ∈ f '' Icc a b, ∀ u' ∈ g '' Icc a' b', d u u' = d u (f b) + d (f b) u') :
-    d.IsometricOn (fun t => if t ≤ b then f t else g (t - b + a')) (Icc a (b + (b' - a'))) := by
-  have hmem {t : Λ} (ht : t ∈ Icc a (b + (b' - a'))) (hbt : b < t) : t - b + a' ∈ Icc a' b' :=
-    ⟨by grind, by grind⟩
-  have hmix {s t : Λ} (hs : s ∈ Icc a (b + (b' - a'))) (ht : t ∈ Icc a (b + (b' - a')))
-      (hsb : s ≤ b) (hbt : b < t) : d (f s) (g (t - b + a')) = |s - t| := by
-    have hs' : s ∈ Icc a b := ⟨hs.1, hsb⟩
-    rw [h _ (mem_image_of_mem f hs') _ (mem_image_of_mem g (hmem ht hbt)),
-      hf.dist_eq hs' ⟨hab, le_rfl⟩, ← hg0, hg.dist_eq ⟨le_rfl, hab'⟩ (hmem ht hbt),
-      abs_of_nonpos (by grind), abs_of_nonpos (by grind), abs_of_nonpos (by grind)]
-    grind
-  refine d.isometricOn_iff.2 fun s hs t ht => ?_
-  rcases le_or_gt s b with hsb | hsb <;> rcases le_or_gt t b with htb | htb
-  · simpa only [hsb, htb, ite_true] using hf.dist_eq ⟨hs.1, hsb⟩ ⟨ht.1, htb⟩
-  · simpa only [hsb, htb.not_ge, ite_true, ite_false] using hmix hs ht hsb htb
-  · simpa only [hsb.not_ge, htb, ite_true, ite_false, d.symm (g _), abs_sub_comm s] using
-      hmix ht hs htb hsb
-  · simpa only [hsb.not_ge, htb.not_ge, ite_false, add_sub_add_right_eq_sub,
-      sub_sub_sub_cancel_right] using hg.dist_eq (hmem hs hsb) (hmem ht htb)
-
-/-- The image of the glued parametrisation is the union of the two segments. -/
-private theorem image_ite {f g : Λ → X} {a b a' b' : Λ} (hab : a ≤ b) (hab' : a' ≤ b')
-    (hg0 : g a' = f b) :
-    (fun t => if t ≤ b then f t else g (t - b + a')) '' Icc a (b + (b' - a')) =
-      f '' Icc a b ∪ g '' Icc a' b' := by
-  ext u
-  constructor
-  · rintro ⟨t, ht, rfl⟩
-    by_cases htb : t ≤ b
-    · exact .inl ⟨t, ⟨ht.1, htb⟩, by simp [htb]⟩
-    · exact .inr ⟨t - b + a', ⟨by grind, by grind⟩, by simp [htb]⟩
-  · rintro (⟨s, hs, rfl⟩ | ⟨s, hs, rfl⟩)
-    · exact ⟨s, ⟨hs.1, by grind⟩, by simp [hs.2]⟩
-    · rcases hs.1.eq_or_lt with rfl | h0
-      · exact ⟨b, ⟨hab, by grind⟩, by simp [hg0]⟩
-      · have : ¬s - a' + b ≤ b := by grind
-        exact ⟨s - a' + b, ⟨by grind, by grind⟩, by simp [this]⟩
-
 namespace IsSegment
 
-variable {σ τ : Set X} {x y z w : X}
-
-/-- Two segments with a common endpoint `w` such that `w` lies between any point of the first
-and any point of the second have a segment as their union. -/
-theorem union (hσ : d.IsSegment σ x w) (hτ : d.IsSegment τ w y)
-    (h : ∀ u ∈ σ, ∀ u' ∈ τ, d u u' = d u w + d w u') : d.IsSegment (σ ∪ τ) x y := by
-  obtain ⟨a, b, f, hab, rfl, rfl, hf, rfl⟩ := isSegment_iff_exists_Icc.1 hσ
-  obtain ⟨a', b', g, hab', hg0, rfl, hg, rfl⟩ := isSegment_iff_exists_Icc.1 hτ
-  refine isSegment_iff_exists_Icc.2 ⟨a, b + (b' - a'),
-    fun t => if t ≤ b then f t else g (t - b + a'), by grind, by simp [hab], ?_,
-    isometricOn_ite hab hab' hf hg hg0 h, image_ite hab hab' hg0⟩
-  rcases hab'.eq_or_lt with rfl | h0
-  · simp [← hg0]
-  · simp [h0]
-
-/-- In a `Λ`-metric space which is `0`-hyperbolic with respect to `w`, two segments from `w`
-whose other endpoints `x` and `y` satisfy `d x y = d x w + d w y`, that is, have Gromov product
-`0` based at `w`, have a segment as their union. -/
-theorem union_of_dist_eq
-    (hw : ∀ x y z, min (d w x + d w y - d x y) (d w y + d w z - d y z) ≤ d w x + d w z - d x z)
-    (hσ : d.IsSegment σ x w) (hτ : d.IsSegment τ w y) (hxy : d x y = d x w + d w y) :
-    d.IsSegment (σ ∪ τ) x y := by
-  refine hσ.union hτ fun u hu u' hu' => ?_
-  rcases eq_or_ne u w with rfl | huw
-  · simp
-  rcases eq_or_ne u' w with rfl | hu'w
-  · simp
-  have h₁ := hσ.dist_add_dist hu
-  have h₂ := hτ.dist_add_dist hu'
-  grind [hw x u y, hw u u' y, d.triangle u w u', d.pos_iff.2 huw, d.pos_iff.2 hu'w, d.symm w x,
-    d.symm w u, d.symm w u', d.symm u x, d.symm u' y, d.symm u' w]
+variable {σ τ : Set X} {x y z : X}
 
 /-- In a `Λ`-metric space which is `0`-hyperbolic with respect to `x`, a point of a segment from
 `x` to `y` whose distance from `x` is at most the Gromov product of `y` and `z` based at `x` lies
@@ -206,7 +131,7 @@ theorem IsGeodesic.isTree (hd : d.IsGeodesic) (v : X)
       rw [← mem_singleton_iff, ← hστ]
       exact ⟨hw, hwτ⟩
     rw [hwy, d.refl] at hwc
-    exact ⟨x, z, hσ.union_of_dist_eq hy hτ (by grind [d.symm x y])⟩
+    exact ⟨x, z, hσ.union hτ (by grind [d.symm x y])⟩
   exists_isSegment_inter {σ τ x y z} hσ hτ :=
     ⟨x, hσ.exists_isSegment_inter (min_dist_add_dist_sub_dist_le_of_forall hhyp x)
       (even_dist_add_dist_sub_dist_of_forall heven x y z) hτ⟩

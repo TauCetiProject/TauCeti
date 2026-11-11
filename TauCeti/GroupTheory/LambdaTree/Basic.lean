@@ -54,6 +54,8 @@ prove that segments in a `Λ`-tree are unique, hence convex, that `Λ` itself, w
   satisfies `d x u + d u y = d x y`.
 * `TauCeti.LambdaMetric.IsSegment.isSegment_sep`: the part of a segment between two of its points
   is a segment.
+* `TauCeti.LambdaMetric.IsSegment.union`: segments from `x` to `w` and from `w` to `y` with
+  `d x y = d x w + d w y` have a segment from `x` to `y` as union.
 * `TauCeti.LambdaMetric.IsTree.isSegment_unique`: in a `Λ`-tree, two points are joined by a
   unique segment.
 * `TauCeti.LambdaMetric.IsTree.segment_eq_sep`: in a `Λ`-tree, the segment between two points of
@@ -272,6 +274,65 @@ theorem dist_add_dist (h : d.IsSegment σ x y) {u : X} (hu : u ∈ σ) : d x u +
     conv_lhs => rw [← hfD]
     rw [hf s hs _ ⟨d.nonneg x y, le_rfl⟩, abs_sub_comm, abs_of_nonneg (sub_nonneg.2 hs.2)]
   rw [dist_apply_of_isometricOn hf0 hf hs, h₂, add_sub_cancel]
+
+/-- If `w` lies between `x` and `y`, it lies between any point of a segment from `x` to `w` and
+any point of a segment from `w` to `y`. -/
+theorem dist_eq_dist_add_dist {w u u' : X} (hσ : d.IsSegment σ x w) (hτ : d.IsSegment τ w y)
+    (hxy : d x y = d x w + d w y) (hu : u ∈ σ) (hu' : u' ∈ τ) : d u u' = d u w + d w u' := by
+  grind [hσ.dist_add_dist hu, hτ.dist_add_dist hu', d.triangle x u y, d.triangle u u' y,
+    d.triangle u w u']
+
+/-- Parametrisations `f` on `[0, D]` and `g` on `[0, D']` of two segments, the second starting at
+the end `f D` of the first, glue to a map isometric on `[0, D + D']` when `f D` lies between the
+points of the two segments. -/
+private theorem isometricOn_ite {f g : Λ → X} {D D' : Λ} (hD : 0 ≤ D) (hD' : 0 ≤ D')
+    (hf : d.IsometricOn f (Icc 0 D)) (hg : d.IsometricOn g (Icc 0 D')) (hg0 : g 0 = f D)
+    (h : ∀ u ∈ f '' Icc 0 D, ∀ u' ∈ g '' Icc 0 D', d u u' = d u (f D) + d (f D) u') :
+    d.IsometricOn (fun t => if t ≤ D then f t else g (t - D)) (Icc 0 (D + D')) := by
+  have hmem {t : Λ} (ht : t ∈ Icc 0 (D + D')) (hDt : D < t) : t - D ∈ Icc 0 D' :=
+    ⟨by grind, by grind⟩
+  have hmix {s t : Λ} (hs : s ∈ Icc 0 D) (ht : t ∈ Icc 0 (D + D')) (hDt : D < t) :
+      d (f s) (g (t - D)) = |s - t| := by
+    rw [h _ (mem_image_of_mem f hs) _ (mem_image_of_mem g (hmem ht hDt)),
+      hf.dist_eq hs ⟨hD, le_rfl⟩, ← hg0, hg.dist_eq ⟨le_rfl, hD'⟩ (hmem ht hDt),
+      abs_of_nonpos (by grind), abs_of_nonpos (by grind), abs_of_nonpos (by grind)]
+    grind
+  intro s hs t ht
+  rcases le_or_gt s D with hs' | hs' <;> rcases le_or_gt t D with ht' | ht'
+  · simpa only [hs', ht', ite_true] using hf.dist_eq ⟨hs.1, hs'⟩ ⟨ht.1, ht'⟩
+  · simpa only [hs', ht'.not_ge, ite_true, ite_false] using hmix ⟨hs.1, hs'⟩ ht ht'
+  · simpa only [hs'.not_ge, ht', ite_true, ite_false, d.symm (g _), abs_sub_comm s] using
+      hmix ⟨ht.1, ht'⟩ hs hs'
+  · simpa only [hs'.not_ge, ht'.not_ge, ite_false, sub_sub_sub_cancel_right] using
+      hg.dist_eq (hmem hs hs') (hmem ht ht')
+
+/-- Two segments with a common endpoint `w`, from `x` to `w` and from `w` to `y`, have a segment
+from `x` to `y` as their union when `w` lies between `x` and `y`. -/
+theorem union {w : X} (hσ : d.IsSegment σ x w) (hτ : d.IsSegment τ w y)
+    (hxy : d x y = d x w + d w y) : d.IsSegment (σ ∪ τ) x y := by
+  have key (u) (hu : u ∈ σ) (u') (hu' : u' ∈ τ) : d u u' = d u w + d w u' :=
+    hσ.dist_eq_dist_add_dist hτ hxy hu hu'
+  obtain ⟨f, hf0, hfD, hf, rfl⟩ := hσ
+  obtain ⟨g, hg0, hgD, hg, rfl⟩ := hτ
+  have hD := d.nonneg x w
+  have hD' := d.nonneg w y
+  rw [IsSegment, hxy]
+  refine ⟨fun t => if t ≤ d x w then f t else g (t - d x w), by simp [hD, hf0], ?_,
+    isometricOn_ite hD hD' hf hg (hg0.trans hfD.symm) (hfD.symm ▸ key), ?_⟩
+  · rcases hD'.eq_or_lt with h | h
+    · obtain rfl := d.eq_zero_iff.1 h.symm
+      simp [hfD]
+    · simp [h, hgD]
+  · have heq : EqOn (fun t => if t ≤ d x w then f t else g (t - d x w))
+        (fun t => g (t - d x w)) (Icc (d x w) (d x w + d w y)) := fun t ht => by
+      rcases ht.1.eq_or_lt with rfl | h
+      · simp [hfD, hg0]
+      · simp [h.not_ge]
+    have heq' : EqOn (fun t => if t ≤ d x w then f t else g (t - d x w)) f (Icc 0 (d x w)) :=
+      fun t ht => by simp [ht.2]
+    rw [← Icc_union_Icc_eq_Icc hD (le_add_of_nonneg_right hD'), image_union,
+      image_congr heq', image_congr heq, ← image_image g (· - d x w),
+      image_sub_const_Icc, sub_self, add_sub_cancel_left]
 
 /-- The part of a segment from `x` between two of its points `a` and `b`, that is, the set of its
 points whose distance from `x` lies between those of `a` and `b`, is a segment from `a` to `b`. -/

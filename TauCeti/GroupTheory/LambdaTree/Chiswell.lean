@@ -199,17 +199,12 @@ def chiswellMetric : LambdaMetric Λ l.ChiswellTree where
   triangle' x y z := Quotient.inductionOn₃ x y z (preDist_triangle l)
   eq_of_eq_zero' {x y} := Quotient.inductionOn₂ x y fun _ _ h => Quotient.sound h
 
-private theorem chiswellMetric_mk_mk_eq_preDist (g f : G) (a : Icc (0 : Λ) (l g))
-    (b : Icc (0 : Λ) (l f)) :
-    l.chiswellMetric (ChiswellTree.mk g a) (ChiswellTree.mk f b) = preDist l ⟨g, a⟩ ⟨f, b⟩ :=
-  rfl
-
 /-- The distance between the classes of `(g, a)` and `(f, b)` in Chiswell's tree is
 `a + b - 2 min (a, b, c(g, f))`; here twice the minimum is written out in `Λ`. -/
 theorem chiswellMetric_mk_mk (g f : G) (a : Icc (0 : Λ) (l g)) (b : Icc (0 : Λ) (l f)) :
     l.chiswellMetric (ChiswellTree.mk g a) (ChiswellTree.mk f b) =
-      a + b - min (2 • (a : Λ)) (min (2 • (b : Λ)) (l g + l f - l (g⁻¹ * f))) :=
-  l.chiswellMetric_mk_mk_eq_preDist g f a b
+      a + b - min (2 • (a : Λ)) (min (2 • (b : Λ)) (l g + l f - l (g⁻¹ * f))) := by
+  rfl
 
 /-- The distance between the classes of `(g, a)` and `(f, b)` in Chiswell's tree is
 `a + b - 2 min (a, b, c)` when the Gromov product `c = c(g, f)` lies in `Λ`. -/
@@ -250,8 +245,8 @@ private theorem min_chiswellMetric_root_le (x y z : l.ChiswellTree) :
   induction x with | mk g a
   induction y with | mk f b
   induction z with | mk h c
-  simp only [chiswellMetric_root_mk, chiswellMetric_mk_mk_eq_preDist]
-  exact min_add_sub_preDist_le l ⟨g, a⟩ ⟨f, b⟩ ⟨h, c⟩
+  simp only [chiswellMetric_root_mk, chiswellMetric_mk_mk]
+  simpa only [preDist] using min_add_sub_preDist_le l ⟨g, a⟩ ⟨f, b⟩ ⟨h, c⟩
 
 /-- The Gromov products of Chiswell's tree based at its root lie in `Λ` when those of the length
 function do. -/
@@ -302,8 +297,7 @@ private theorem isGeodesic_chiswellMetric
   obtain ⟨σ, hσ⟩ := l.exists_isSegment_mk g (s := ⟨m, hm0, hma.trans a.2.2⟩) (t := a) hma
   obtain ⟨τ, hτ⟩ := l.exists_isSegment_mk f (s := ⟨m, hm0, hmb.trans b.2.2⟩) (t := b) hmb
   rw [← hmk] at hτ
-  refine ⟨σ ∪ τ, hσ.symm.union_of_dist_eq
-    (min_dist_add_dist_sub_dist_le_of_forall l.min_chiswellMetric_root_le _) hτ ?_⟩
+  refine ⟨σ ∪ τ, hσ.symm.union hτ ?_⟩
   nth_rw 2 [hmk]
   rw [chiswellMetric_mk_mk, chiswellMetric_mk_mk_self, chiswellMetric_mk_mk_self, two_nsmul,
     two_nsmul, hm, abs_of_nonneg (sub_nonneg.2 hma), abs_of_nonpos (sub_nonpos.2 hmb)]
