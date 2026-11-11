@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Basic
-public import Mathlib.GroupTheory.Perm.Cycle.Concrete
-public import Mathlib.LinearAlgebra.Matrix.Permutation
+public import TauCeti.LinearAlgebra.Matrix.Intertwining
+public import TauCeti.LinearAlgebra.Matrix.Permutation
+public import TauCeti.GroupTheory.Perm.Fin
 public import TauCeti.Data.List.OneDegenerateOrder
 
 /-!
@@ -16,24 +17,17 @@ public import TauCeti.Data.List.OneDegenerateOrder
 In the `ε`-model the simple root `αᵢ` is `εᵢ - εᵢ₊₁ ∈ ℤⁿ⁺¹` (`TauCeti.Coxeter.epsMatrix`), the
 simple reflection `sᵢ` becomes the permutation matrix of the transposition `(i i+1)`
 (`TauCeti.Coxeter.epsMatrix_mul_reflMatrix`), and the Coxeter element becomes the permutation matrix
-of `List.formPerm [0, 1, …, n]`, an `(n+1)`-cycle. The `ε`-embedding is injective, so the order of
-the Coxeter element is `n + 1`.
+of the rotation `finRotate (n + 1)`, an `(n+1)`-cycle. The `ε`-embedding is injective, so the order
+of the Coxeter element is `n + 1`.
 -/
 
 public section
 
-open Matrix
+open Matrix Equiv.Perm
 
 namespace TauCeti.Coxeter
 
 variable {n : ℕ}
-
-/-- Left multiplication by the permutation matrix of `σ` moves row `σ⁻¹ a` to row `a`. -/
-theorem permMatrixHom_mul_apply {m : ℕ} {k : Type*} (σ : Equiv.Perm (Fin m))
-    (M : Matrix (Fin m) k ℤ) (a : Fin m) (j : k) :
-    (permMatrixHom (R := ℤ) σ * M) a j = M (σ.symm a) j := by
-  rw [permMatrixHom_apply, Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul]
-  rfl
 
 /-- The `ε`-coordinates of the simple roots of type `Aₙ`: column `i` is `εᵢ - εᵢ₊₁`. -/
 @[expose] def epsMatrix (n : ℕ) : Matrix (Fin (n + 1)) (Fin n) ℤ :=
@@ -63,27 +57,16 @@ theorem epsMatrix_mul_prod (l : List (Fin n)) :
       Matrix.mul_assoc, ih, ← Matrix.mul_assoc, List.map_cons, List.prod_cons, map_mul]
     rfl
 
-/-- The product of the transpositions `(0 1) (1 2) ⋯ (n-1 n)` is `List.formPerm [0, 1, …, n]`. -/
-theorem prod_adjSwap_eq_formPerm :
-    ((List.finRange n).map adjSwap).prod = (List.finRange (n + 1)).formPerm := by
-  rw [List.formPerm]
+/-- The product of the transpositions `(0 1) (1 2) ⋯ (n-1 n)` is the rotation `finRotate (n + 1)`,
+that is `List.formPerm [0, 1, …, n]`. -/
+theorem prod_adjSwap_eq_finRotate :
+    ((List.finRange n).map adjSwap).prod = finRotate (n + 1) := by
+  rw [← List.formPerm_finRange, List.formPerm]
   congr 1
   refine List.ext_getElem (by simp) fun k h₁ h₂ => ?_
   simp only [List.getElem_map, List.getElem_finRange, List.getElem_zipWith, List.getElem_tail,
     adjSwap]
   congr 1
-
-/-- The `(n+1)`-cycle has order `n + 1`. -/
-theorem orderOf_formPerm_finRange (hn : 1 ≤ n) :
-    orderOf (List.finRange (n + 1)).formPerm = n + 1 := by
-  have hlen : 2 ≤ (List.finRange (n + 1)).length := by simp; omega
-  rw [(List.isCycle_formPerm (List.nodup_finRange _) hlen).orderOf,
-    List.support_formPerm_of_nodup _ (List.nodup_finRange _), List.toFinset_card_of_nodup
-      (List.nodup_finRange _), List.length_finRange]
-  intro x hx
-  have := congrArg List.length hx
-  simp at this
-  omega
 
 /-- Partial sums: a left inverse of `epsMatrix`. -/
 @[expose] def epsLeftInv (n : ℕ) : Matrix (Fin n) (Fin (n + 1)) ℤ :=
@@ -124,25 +107,22 @@ theorem eq_one_of_permMatrixHom_mul_epsMatrix (hn : 1 ≤ n) {τ : Equiv.Perm (F
 /-- **The Coxeter element of type `Aₙ` has order `n + 1`.** -/
 theorem orderOf_coxeterElement_A (hn : 1 ≤ n) :
     orderOf (coxeterElement (CartanMatrix.A n)) = n + 1 := by
-  set σ := (List.finRange (n + 1)).formPerm
   have hc : epsMatrix n * coxeterElement (CartanMatrix.A n) =
-      permMatrixHom (R := ℤ) σ * epsMatrix n := by
-    rw [coxeterElement, epsMatrix_mul_prod, prod_adjSwap_eq_formPerm]
-  have hpow : ∀ k, epsMatrix n * coxeterElement (CartanMatrix.A n) ^ k =
-      permMatrixHom (R := ℤ) (σ ^ k) * epsMatrix n := by
-    intro k
-    induction k with
-    | zero => simp
-    | succ k ih => rw [pow_succ, ← Matrix.mul_assoc, ih, Matrix.mul_assoc, hc,
-        ← Matrix.mul_assoc, ← map_mul (permMatrixHom (R := ℤ)), ← pow_succ]
-  rw [← orderOf_formPerm_finRange hn]
-  refine orderOf_eq_orderOf_iff.2 fun k => ⟨fun h => ?_, fun h => ?_⟩
-  · apply eq_one_of_permMatrixHom_mul_epsMatrix hn
-    rw [← hpow, h, Matrix.mul_one]
-  · have := congrArg (fun M => epsLeftInv n * M) (hpow k)
-    rw [h, map_one, Matrix.one_mul, ← Matrix.mul_assoc, epsLeftInv_mul_epsMatrix,
-      Matrix.one_mul] at this
-    exact this
+      permMatrixHom (R := ℤ) (finRotate (n + 1)) * epsMatrix n := by
+    rw [coxeterElement, epsMatrix_mul_prod, prod_adjSwap_eq_finRotate]
+  have hfix : ∀ k, permMatrixHom (R := ℤ) (finRotate (n + 1)) ^ k * epsMatrix n = epsMatrix n →
+      finRotate (n + 1) ^ k = 1 := fun k h =>
+    eq_one_of_permMatrixHom_mul_epsMatrix hn (by rwa [map_pow])
+  have hrot : orderOf (permMatrixHom (R := ℤ) (finRotate (n + 1))) =
+      orderOf (finRotate (n + 1)) := orderOf_eq_orderOf_iff.2 fun k =>
+    ⟨fun h => hfix k (by rw [h, Matrix.one_mul]), fun h => by rw [← map_pow, h, map_one]⟩
+  have hcox : ∀ k, epsMatrix n * coxeterElement (CartanMatrix.A n) ^ k = epsMatrix n →
+      coxeterElement (CartanMatrix.A n) ^ k = 1 := fun k h => by
+    rw [← Matrix.one_mul (coxeterElement (CartanMatrix.A n) ^ k), ← epsLeftInv_mul_epsMatrix,
+      Matrix.mul_assoc, h]
+  rw [orderOf_eq_orderOf_of_mul_eq_mul hc hcox (fun k h => by rw [← map_pow, hfix k h, map_one]),
+    hrot, (isCycle_finRotate_of_le (by omega)).orderOf, support_finRotate_of_le (by omega),
+    Finset.card_univ, Fintype.card_fin]
 
 /-- The path `0, 1, …, n - 1` is a one-degenerate order of the Dynkin diagram of type `Aₙ`. -/
 theorem isOneDegenerateOrder_A (n : ℕ) :

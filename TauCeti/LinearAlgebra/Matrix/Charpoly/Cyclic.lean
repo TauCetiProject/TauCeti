@@ -13,8 +13,8 @@ public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 
 Two generic tools for computing characteristic polynomials with no determinant in the kernel.
 
-* `Matrix.charpoly_eq_of_cyclic`: if `Mᵏ v` is the `k`-th standard basis vector for `k < n` and a
-  monic `q` of degree `n` kills `v`, then `charpoly M = q`.
+* `Matrix.charpoly_eq_of_cyclic`: if the vectors `v, M v, …, Mⁿ⁻¹ v` are linearly independent and
+  a monic `q` of degree `n` kills `v`, then `charpoly M = q`.
 * `Matrix.det_ne_zero_of_mul_left_cancel`: a left-cancellable matrix over a domain has nonzero
   determinant. Together with Mathlib's `Matrix.charpoly_eq_of_mul_eq_mul`, an intertwiner that can
   be cancelled transfers the characteristic polynomial.
@@ -26,13 +26,14 @@ open Polynomial Matrix
 
 namespace Matrix
 
-/-- **Cyclic-vector criterion.** If `Mᵏ v = eₖ` for `k < n` and a monic polynomial `q` of degree
-`n` satisfies `q(M) v = 0`, then `q` is the characteristic polynomial of `M`. -/
+/-- **Cyclic-vector criterion.** If the vectors `v, M v, …, Mⁿ⁻¹ v` are linearly independent and
+a monic polynomial `q` of degree `n` satisfies `q(M) v = 0`, then `q` is the characteristic
+polynomial of `M`: by Cayley–Hamilton `charpoly M - q` also kills `v`, and it has degree less than
+`n`, so linear independence forces all its coefficients to vanish. -/
 theorem charpoly_eq_of_cyclic {R : Type*} [CommRing R] [Nontrivial R] {n : ℕ}
     (M : Matrix (Fin n) (Fin n) R) {q : R[X]} (hq : q.Monic) (hdeg : q.natDegree = n)
-    (v : Fin n → R) (hv : ∀ k : Fin n, (M ^ (k : ℕ)) *ᵥ v = Pi.single k 1)
+    (v : Fin n → R) (hv : LinearIndependent R fun k : Fin n => (M ^ (k : ℕ)) *ᵥ v)
     (hqv : (aeval M q) *ᵥ v = 0) : M.charpoly = q := by
-  classical
   have hcp : M.charpoly.natDegree = n := by simp
   have hrn : (M.charpoly - q).coeff n = 0 := by
     rw [coeff_sub]
@@ -48,19 +49,13 @@ theorem charpoly_eq_of_cyclic {R : Type*} [CommRing R] [Nontrivial R] {n : ℕ}
     rw [hcp, hdeg, max_self] at this
     omega
   rw [aeval_eq_sum_range' hlt, Finset.sum_range_succ, hrn, zero_smul, add_zero,
-    sum_mulVec] at hzero
+    sum_mulVec, Finset.sum_range] at hzero
+  simp only [smul_mulVec] at hzero
+  have hc := Fintype.linearIndependent_iff.1 hv _ hzero
   refine sub_eq_zero.1 (Polynomial.ext fun k => ?_)
   rw [coeff_zero]
   rcases lt_trichotomy k n with hk | rfl | hk
-  · have := congrFun hzero ⟨k, hk⟩
-    rw [Finset.sum_apply, Pi.zero_apply] at this
-    rw [← this, Finset.sum_eq_single k]
-    · rw [smul_mulVec, hv ⟨k, hk⟩, Pi.smul_apply, Pi.single_eq_same, smul_eq_mul, mul_one]
-    · intro j hj hjk
-      rw [smul_mulVec, hv ⟨j, Finset.mem_range.1 hj⟩, Pi.smul_apply,
-        Pi.single_eq_of_ne (by simpa [Fin.ext_iff] using Ne.symm hjk), smul_zero]
-    · intro hk'
-      exact absurd (Finset.mem_range.2 hk) hk'
+  · exact hc ⟨k, hk⟩
   · exact hrn
   · exact coeff_eq_zero_of_natDegree_lt (by omega)
 

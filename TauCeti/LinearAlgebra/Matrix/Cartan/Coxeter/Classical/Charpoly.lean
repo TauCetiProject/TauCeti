@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.Matrix.Charpoly.Cyclic
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical.A
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical.C
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical.D
+import TauCeti.Algebra.Polynomial.BigOperators
 
 /-!
 # Characteristic polynomials of the classical Coxeter elements
@@ -27,24 +28,31 @@ negacyclic shift (and, for `Dₙ`, a sign on the last coordinate), so
 vector `e₀` (`Matrix.charpoly_eq_of_cyclic`). For `Dₙ` the eigenvalue `-1` is double when `n` is
 even, so there is no cyclic vector; the model is block diagonal instead. For `Aₙ` the Coxeter
 element is the companion matrix of `1 + X + ⋯ + Xⁿ` (`TauCeti.Coxeter.coxeterElement_A_apply`).
+In both cases the powers of the matrix carry the cyclic vector `e₀` to the standard basis.
 -/
 
 public section
 
-open Polynomial Matrix
+open Polynomial Matrix Equiv.Perm
 
 namespace TauCeti.Coxeter
 
 /-- **The negacyclic shift on `ℤⁿ` has characteristic polynomial `Xⁿ + 1`.** -/
 theorem charpoly_negaShift (m : ℕ) : (negaShift (m + 1)).charpoly = X ^ (m + 1) + 1 := by
   classical
-  refine charpoly_eq_of_cyclic _ (monic_X_pow_add_C 1 (by omega))
-    (natDegree_X_pow_add_C) (Pi.single 0 1) (fun k => ?_) ?_
-  · funext a
+  have hv : ∀ k : Fin (m + 1), (negaShift (m + 1) ^ (k : ℕ)) *ᵥ Pi.single 0 1 = Pi.single k 1 := by
+    intro k
+    funext a
     rw [mulVec_single_one, col_apply, negaShift_pow (by omega), Pi.single_apply]
     simp only [Fin.ext_iff, Fin.val_zero, zero_add]
     split_ifs <;> omega
-  · rw [map_add, map_pow, aeval_X, map_one, negaShift_pow_self, neg_add_cancel, zero_mulVec]
+  have hli : LinearIndependent ℤ fun k : Fin (m + 1) =>
+      (negaShift (m + 1) ^ (k : ℕ)) *ᵥ Pi.single 0 1 := by
+    simp_rw [hv]
+    exact Pi.linearIndependent_single_one _ _
+  refine charpoly_eq_of_cyclic _ (monic_X_pow_add_C 1 (by omega))
+    (natDegree_X_pow_add_C) (Pi.single 0 1) hli ?_
+  rw [map_add, map_pow, aeval_X, map_one, negaShift_pow_self, neg_add_cancel, zero_mulVec]
 
 /-- **The Coxeter element of type `Bₙ` has characteristic polynomial `Xⁿ + 1`.** -/
 theorem charpoly_coxeterElement_B (m : ℕ) :
@@ -99,21 +107,6 @@ theorem charpoly_coxeterElement_D (m : ℕ) :
   rw [← charpoly_eq_of_mul_eq_mul (det_ne_zero_of_mul_left_cancel fun X Y h =>
       epsD_mul_left_cancel h) epsD_mul_coxeterElement.symm, charpoly_negaD]
 
-/-- The inverse of the `(n+1)`-cycle `0 → 1 → ⋯ → n → 0`. -/
-theorem formPerm_finRange_symm_val {n : ℕ} (a : Fin (n + 1)) :
-    ((List.finRange (n + 1)).formPerm.symm a).val = if a.val = 0 then n else a.val - 1 := by
-  set b := (List.finRange (n + 1)).formPerm.symm a
-  have hb : a = (List.finRange (n + 1)).formPerm b := by simp [b]
-  rw [formPerm_finRange_apply] at hb
-  have hb' := congrArg Fin.val hb
-  simp only at hb'
-  rcases Nat.lt_or_ge (b.val + 1) (n + 1) with h | h
-  · rw [Nat.mod_eq_of_lt h] at hb'
-    split_ifs <;> omega
-  · rw [show b.val + 1 = n + 1 by omega, Nat.mod_self] at hb'
-    split_ifs
-    omega
-
 /-- Row sums of `epsMatrix`: they telescope. -/
 theorem sum_epsMatrix_row {n : ℕ} (a : Fin (n + 1)) :
     ∑ j : Fin n, epsMatrix n a j = (if a.val = 0 then 1 else 0) - (if a.val = n then 1 else 0) := by
@@ -129,14 +122,18 @@ theorem coxeterElement_A_apply {n : ℕ} (a k : Fin n) :
       if k.val + 1 < n then (if a.val = k.val + 1 then 1 else 0) else -1 := by
   set C : Matrix (Fin n) (Fin n) ℤ := Matrix.of fun a k =>
     if k.val + 1 < n then (if a.val = k.val + 1 then 1 else 0) else -1 with hC
-  set σ := (List.finRange (n + 1)).formPerm
   have hc : epsMatrix n * coxeterElement (CartanMatrix.A n) =
-      permMatrixHom (R := ℤ) σ * epsMatrix n := by
-    rw [coxeterElement, epsMatrix_mul_prod, prod_adjSwap_eq_formPerm]
-  have hCe : epsMatrix n * C = permMatrixHom (R := ℤ) σ * epsMatrix n := by
+      permMatrixHom (R := ℤ) (finRotate (n + 1)) * epsMatrix n := by
+    rw [coxeterElement, epsMatrix_mul_prod, prod_adjSwap_eq_finRotate]
+  have hCe : epsMatrix n * C = permMatrixHom (R := ℤ) (finRotate (n + 1)) * epsMatrix n := by
     ext a k
     rw [permMatrixHom_mul_apply, Matrix.mul_apply]
-    have hs : (σ.symm a).val = if a.val = 0 then n else a.val - 1 := formPerm_finRange_symm_val a
+    have hs : ((finRotate (n + 1)).symm a).val = if a.val = 0 then n else a.val - 1 := by
+      obtain ⟨b, rfl⟩ := (finRotate (n + 1)).surjective a
+      rw [Equiv.symm_apply_apply, coe_finRotate]
+      by_cases h : b = Fin.last n
+      · rw [ite_eq_left h, ite_eq_left rfl, h, Fin.val_last]
+      · rw [ite_eq_right h, ite_eq_right (Nat.succ_ne_zero _), Nat.add_sub_cancel]
     by_cases hk : k.val + 1 < n
     · rw [Finset.sum_eq_single ⟨k.val + 1, hk⟩]
       · simp only [hC, epsMatrix, Matrix.of_apply, hk, ite_true, mul_one]
@@ -167,28 +164,26 @@ theorem charpoly_coxeterElement_A (m : ℕ) :
     funext a
     rw [mulVec_single_one, col_apply]
     exact coxeterElement_A_apply a k
-  have hv : ∀ k : Fin (m + 1), (c ^ (k : ℕ)) *ᵥ Pi.single 0 1 = Pi.single k 1 := by
-    intro ⟨k, hk⟩
+  have hpow : ∀ (k : ℕ) (hk : k < m + 1), (c ^ k) *ᵥ Pi.single 0 1 = Pi.single ⟨k, hk⟩ 1 := by
+    intro k
     induction k with
     | zero =>
-      rw [show ((⟨0, hk⟩ : Fin (m + 1)) : ℕ) = 0 from rfl, pow_zero, Matrix.one_mulVec]
+      intro hk
+      rw [pow_zero, Matrix.one_mulVec]
       congr 1
     | succ k ih =>
-      rw [show ((⟨k + 1, hk⟩ : Fin (m + 1)) : ℕ) = k + 1 from rfl, pow_succ', ← mulVec_mulVec]
-      have ih' := ih (by omega)
-      simp only at ih'
-      rw [ih', hcol]
+      intro hk
+      rw [pow_succ', ← mulVec_mulVec, ih (by omega), hcol]
       funext a
       simp only [Pi.single_apply, Fin.ext_iff]
       split_ifs <;> omega
+  have hv : ∀ k : Fin (m + 1), (c ^ (k : ℕ)) *ᵥ Pi.single 0 1 = Pi.single k 1 :=
+    fun k => hpow k k.isLt
   have hmon : (∑ i ∈ Finset.range (m + 2), (X : ℤ[X]) ^ i).Monic := monic_geom_sum_X (by omega)
-  have hdeg : (∑ i ∈ Finset.range (m + 2), (X : ℤ[X]) ^ i).natDegree = m + 1 := by
-    have h := congrArg natDegree (geom_sum_mul (X : ℤ[X]) (m + 2))
-    rw [show (X : ℤ[X]) - 1 = X - C 1 by simp, show (X : ℤ[X]) ^ (m + 2) - 1 = X ^ (m + 2) - C 1
-      by simp, hmon.natDegree_mul (monic_X_sub_C 1), natDegree_X_sub_C,
-      natDegree_X_pow_sub_C] at h
-    omega
-  refine charpoly_eq_of_cyclic c hmon hdeg (Pi.single 0 1) hv ?_
+  have hli : LinearIndependent ℤ fun k : Fin (m + 1) => (c ^ (k : ℕ)) *ᵥ Pi.single 0 1 := by
+    simp_rw [hv]
+    exact Pi.linearIndependent_single_one _ _
+  refine charpoly_eq_of_cyclic c hmon (natDegree_geom_sum_X (m + 1)) (Pi.single 0 1) hli ?_
   have hlast : (c ^ (m + 1)) *ᵥ Pi.single 0 1 = fun _ => -1 := by
     have h := hv (Fin.last m)
     rw [Fin.val_last] at h

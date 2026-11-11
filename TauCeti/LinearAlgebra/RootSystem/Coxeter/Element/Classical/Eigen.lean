@@ -39,13 +39,64 @@ open Matrix Polynomial RootPairing TauCeti
 namespace TauCeti.Coxeter
 
 /-- The exponents `1, 2, …, n` of `Aₙ`. -/
-@[expose] def aExponents (n : ℕ) : List ℕ := (List.range n).map (· + 1)
+def aExponents (n : ℕ) : List ℕ := (List.range n).map (· + 1)
 
 /-- The exponents `1, 3, …, 2n - 1` of `Bₙ` and `Cₙ`. -/
-@[expose] def bExponents (n : ℕ) : List ℕ := (List.range n).map fun k => 2 * k + 1
+def bExponents (n : ℕ) : List ℕ := (List.range n).map fun k => 2 * k + 1
 
-/-- The exponents `1, 3, …, 2n - 3` and `n - 1` of `Dₙ`. -/
-@[expose] def dExponents (n : ℕ) : List ℕ := bExponents (n - 1) ++ [n - 1]
+/-- The exponents `1, 3, …, 2n - 3` and `n - 1` of `Dₙ`, as a list with multiplicity. -/
+def dExponents (n : ℕ) : List ℕ := bExponents (n - 1) ++ [n - 1]
+
+theorem aExponents_def (n : ℕ) : aExponents n = (List.range n).map (· + 1) := by
+  rw [aExponents]
+
+theorem bExponents_def (n : ℕ) : bExponents n = (List.range n).map fun k => 2 * k + 1 := by
+  rw [bExponents]
+
+theorem dExponents_def (n : ℕ) : dExponents n = bExponents (n - 1) ++ [n - 1] := by
+  rw [dExponents]
+
+/-- The exponents of `D_{n+1}` are those of `B_n` followed by `n`. -/
+theorem dExponents_succ (n : ℕ) : dExponents (n + 1) = bExponents n ++ [n] := by
+  rw [dExponents_def, Nat.add_sub_cancel]
+
+@[simp]
+theorem length_aExponents (n : ℕ) : (aExponents n).length = n := by simp [aExponents]
+
+@[simp]
+theorem length_bExponents (n : ℕ) : (bExponents n).length = n := by simp [bExponents]
+
+@[simp]
+theorem length_dExponents (n : ℕ) : (dExponents (n + 1)).length = n + 1 := by
+  simp [dExponents_succ]
+
+theorem mem_aExponents_iff {n e : ℕ} : e ∈ aExponents n ↔ 1 ≤ e ∧ e ≤ n := by
+  simp only [aExponents, List.mem_map, List.mem_range]
+  constructor
+  · rintro ⟨k, hk, rfl⟩
+    omega
+  · intro h
+    exact ⟨e - 1, by omega, by omega⟩
+
+theorem mem_bExponents_iff {n e : ℕ} : e ∈ bExponents n ↔ Odd e ∧ e < 2 * n := by
+  simp only [bExponents, List.mem_map, List.mem_range]
+  constructor
+  · rintro ⟨k, hk, rfl⟩
+    exact ⟨odd_two_mul_add_one k, by omega⟩
+  · rintro ⟨⟨k, rfl⟩, h⟩
+    exact ⟨k, by omega, rfl⟩
+
+theorem mem_dExponents_iff {n e : ℕ} :
+    e ∈ dExponents n ↔ (Odd e ∧ e < 2 * (n - 1)) ∨ e = n - 1 := by
+  simp [dExponents, mem_bExponents_iff]
+
+/-- The multiplicity of `e` among the exponents of `Dₙ`: `n - 1` occurs once more than among the
+odd numbers below `2n - 2`, so twice when `n` is even. -/
+theorem count_dExponents (n e : ℕ) :
+    (dExponents n).count e = (bExponents (n - 1)).count e + if e = n - 1 then 1 else 0 := by
+  by_cases h : e = n - 1
+  · simp [dExponents_def, h]
+  · simp [dExponents_def, h, Ne.symm h]
 
 /-- **The roots of `(X^{m+2} + 1)(X + 1)`** are `exp (2πi e / 2(m + 2))` over the exponents of
 `D_{m+3}`, with multiplicity. -/
@@ -57,8 +108,8 @@ theorem roots_X_pow_add_one_mul_X_add_one (m : ℕ) :
     simpa using monic_X_pow_add_C (1 : ℂ) (n := m + 2) (by omega)
   have h1 : (X + 1 : ℂ[X]) = X + C 1 := by simp
   rw [roots_mul (mul_ne_zero hmon.ne_zero (h1 ▸ X_add_C_ne_zero 1)),
-    roots_X_pow_add_one (by omega), h1, roots_X_add_C, dExponents,
-    show m + 3 - 1 = m + 2 from rfl, List.map_append, ← Multiset.coe_add]
+    roots_X_pow_add_one (by omega), h1, roots_X_add_C, dExponents_succ, List.map_append,
+    ← Multiset.coe_add]
   congr 1
   · simp only [bExponents, List.map_map, Function.comp_def]
   have : 2 * Real.pi * Complex.I * (((m + 2 : ℕ) : ℂ) / ((2 * (m + 2) : ℕ) : ℂ)) =

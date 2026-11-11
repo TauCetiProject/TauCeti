@@ -20,7 +20,7 @@ coordinate, and the Coxeter element becomes the negacyclic shift `εᵢ ↦ ε�
 
 public section
 
-open Matrix
+open Matrix Equiv.Perm
 
 namespace TauCeti.Coxeter
 
@@ -33,12 +33,7 @@ last column is `ε_{n-1}`. -/
 
 /-- The sign change of the last coordinate. -/
 @[expose] def flipLast (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
-  Matrix.of fun a b => if a = b then (if a.val + 1 = n then -1 else 1) else 0
-
-theorem flipLast_mul_apply {k : Type*} (M : Matrix (Fin n) k ℤ) (a : Fin n) (j : k) :
-    (flipLast n * M) a j = (if a.val + 1 = n then -1 else 1) * M a j := by
-  simp only [flipLast, Matrix.mul_apply, Matrix.of_apply, ite_mul, zero_mul,
-    Finset.sum_ite_eq, Finset.mem_univ, ite_true]
+  diagonal fun a => if a.val + 1 = n then -1 else 1
 
 /-- A long simple reflection of type `Bₙ` is a transposition in the `ε`-model. -/
 theorem epsB_mul_reflMatrix_of_lt (i : Fin n) (hi : i.val + 1 < n) :
@@ -53,20 +48,13 @@ theorem epsB_mul_reflMatrix_of_lt (i : Fin n) (hi : i.val + 1 < n) :
 theorem epsB_mul_reflMatrix_last (i : Fin n) (hi : i.val + 1 = n) :
     epsB n * reflMatrix (CartanMatrix.B n) i = flipLast n * epsB n := by
   ext a j
-  rw [mul_reflMatrix_apply, flipLast_mul_apply]
+  rw [mul_reflMatrix_apply, flipLast, diagonal_mul]
   simp only [epsB, CartanMatrix.B, Matrix.of_apply, Fin.ext_iff]
   split_ifs <;> omega
 
 /-- The negacyclic shift `εᵢ ↦ εᵢ₊₁`, `ε_{n-1} ↦ -ε₀`. -/
 @[expose] def negaShift (n : ℕ) : Matrix (Fin n) (Fin n) ℤ :=
   Matrix.of fun a b => if b.val + 1 = a.val then 1 else if b.val + 1 = n ∧ a.val = 0 then -1 else 0
-
-theorem formPerm_finRange_apply {m : ℕ} (b : Fin (m + 1)) :
-    (List.finRange (m + 1)).formPerm b = ⟨(b.val + 1) % (m + 1), Nat.mod_lt _ (by omega)⟩ := by
-  have := List.formPerm_apply_getElem (List.finRange (m + 1)) (List.nodup_finRange _) b.val
-    (by rw [List.length_finRange]; exact b.2)
-  have hb : b.val ≤ m := Nat.le_of_lt_succ b.2
-  simpa [hb] using this
 
 /-- **The Coxeter element of type `Bₙ` is the negacyclic shift** in the `ε`-model. -/
 theorem epsB_mul_coxeterElement {m : ℕ} :
@@ -85,23 +73,24 @@ theorem epsB_mul_coxeterElement {m : ℕ} :
   rw [coxeterElement, List.finRange_succ_last, List.map_append, List.prod_append, List.map_map,
     ← Matrix.mul_assoc, hlist, List.map_cons, List.map_nil, List.prod_cons, List.prod_nil,
     Matrix.mul_one, Matrix.mul_assoc, epsB_mul_reflMatrix_last _ (by simp), ← Matrix.mul_assoc,
-    prod_adjSwap_eq_formPerm]
+    prod_adjSwap_eq_finRotate]
   congr 1
   ext a b
   rw [permMatrixHom_mul_apply]
-  simp only [flipLast, negaShift, Matrix.of_apply]
-  have hσ : (List.finRange (m + 1)).formPerm.symm a = b ↔ a.val = (b.val + 1) % (m + 1) := by
-    rw [Equiv.symm_apply_eq, formPerm_finRange_apply, Fin.ext_iff]
+  simp only [flipLast, diagonal_apply, negaShift, Matrix.of_apply]
+  have hσ : (finRotate (m + 1)).symm a = b ↔ a.val = if b.val = m then 0 else b.val + 1 := by
+    rw [Equiv.symm_apply_eq, Fin.ext_iff, coe_finRotate]
+    simp only [Fin.ext_iff, Fin.val_last]
   by_cases hb : b.val + 1 < m + 1
-  · rw [Nat.mod_eq_of_lt hb] at hσ
-    by_cases hab : (List.finRange (m + 1)).formPerm.symm a = b
+  · rw [ite_eq_right (by omega)] at hσ
+    by_cases hab : (finRotate (m + 1)).symm a = b
     · have := hσ.1 hab
       rw [ite_eq_left hab, hab, ite_eq_right (by omega), ite_eq_left (by omega)]
     · rw [ite_eq_right hab, ite_eq_right (fun h => hab (hσ.2 (by omega))),
         ite_eq_right (by omega)]
   · have hb' : b.val + 1 = m + 1 := by omega
-    rw [hb', Nat.mod_self] at hσ
-    by_cases hab : (List.finRange (m + 1)).formPerm.symm a = b
+    rw [ite_eq_left (by omega)] at hσ
+    by_cases hab : (finRotate (m + 1)).symm a = b
     · have := hσ.1 hab
       rw [ite_eq_left hab, hab, ite_eq_left hb', ite_eq_right (by omega),
         ite_eq_left ⟨hb', this⟩]
@@ -157,11 +146,10 @@ theorem orderOf_negaShift {m : ℕ} : orderOf (negaShift (m + 1)) = 2 * (m + 1) 
       rw [negaShift_pow hkn] at this
       simp only [Fin.val_zero, Matrix.one_apply, Fin.ext_iff] at this
       split_ifs at this <;> omega
-  · have hsplit : negaShift (m + 1) ^ k = -(negaShift (m + 1) ^ (k - (m + 1))) := by
-      rw [show k = (m + 1) + (k - (m + 1)) by omega, pow_add, negaShift_pow_self,
-        Nat.add_sub_cancel_left, neg_one_mul]
-    have := congrFun (congrFun h ⟨k - (m + 1), by omega⟩) 0
-    rw [hsplit, Matrix.neg_apply, negaShift_pow (by omega)] at this
+  · obtain ⟨j, rfl⟩ : ∃ j, k = (m + 1) + j := ⟨k - (m + 1), by omega⟩
+    have := congrFun (congrFun h ⟨j, by omega⟩) 0
+    rw [pow_add, negaShift_pow_self, neg_one_mul, Matrix.neg_apply, negaShift_pow (by omega)]
+      at this
     simp only [Fin.val_zero, Matrix.one_apply, Fin.ext_iff] at this
     split_ifs at this <;> omega
 
@@ -190,19 +178,11 @@ theorem epsB_mul_epsBInv : epsB n * epsBInv n = 1 :=
 /-- **The Coxeter element of type `Bₙ` has order `2n`.** -/
 theorem orderOf_coxeterElement_B (m : ℕ) :
     orderOf (coxeterElement (CartanMatrix.B (m + 1))) = 2 * (m + 1) := by
-  set c := coxeterElement (CartanMatrix.B (m + 1))
-  have hpow : ∀ k, epsB (m + 1) * c ^ k = negaShift (m + 1) ^ k * epsB (m + 1) := by
-    intro k
-    induction k with
-    | zero => simp
-    | succ k ih => rw [pow_succ, ← Matrix.mul_assoc, ih, Matrix.mul_assoc,
-        epsB_mul_coxeterElement, ← Matrix.mul_assoc, ← pow_succ]
   rw [← orderOf_negaShift]
-  refine orderOf_eq_orderOf_iff.2 fun k => ⟨fun h => ?_, fun h => ?_⟩
-  · rw [← Matrix.mul_one (negaShift (m + 1) ^ k), ← epsB_mul_epsBInv, ← Matrix.mul_assoc, ← hpow,
-      h, Matrix.mul_one, epsB_mul_epsBInv]
-  · rw [← Matrix.one_mul (c ^ k), ← epsBInv_mul_epsB, Matrix.mul_assoc, hpow, h,
-      Matrix.one_mul, epsBInv_mul_epsB]
+  refine orderOf_eq_orderOf_of_mul_eq_mul epsB_mul_coxeterElement (fun k h => ?_) fun k h => ?_
+  · rw [← Matrix.one_mul (coxeterElement (CartanMatrix.B (m + 1)) ^ k), ← epsBInv_mul_epsB,
+      Matrix.mul_assoc, h]
+  · rw [← Matrix.mul_one (negaShift (m + 1) ^ k), ← epsB_mul_epsBInv, ← Matrix.mul_assoc, h]
 
 /-- The path `0, 1, …, n - 1` is a one-degenerate order of the Dynkin diagram of type `Bₙ`. -/
 theorem isOneDegenerateOrder_B (n : ℕ) :
