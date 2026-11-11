@@ -58,6 +58,11 @@ normal closure of `x ^ n` when `n ≠ 1`.
   `TauCeti.GroupAlgGeom.exists_subsingleton_V_eq`: with finitely many points, every system has a
   finite subsystem with the same solutions; with at most one point, for instance with no
   variables, a single equation suffices.
+* `TauCeti.GroupAlgGeom.exists_empty_eq_V_iff`: the empty set is algebraic exactly when some
+  coefficient remains nontrivial in `H`.
+* `TauCeti.GroupAlgGeom.mul_inv_mul_mem_V`, `TauCeti.GroupAlgGeom.not_exists_pair_eq_V`: in a
+  commutative group an algebraic set is closed under `(u, v, w) ↦ u * v⁻¹ * w`, so two tuples with
+  different squares do not form an algebraic set.
 * `TauCeti.GroupAlgGeom.I_singleton_comp`: the ideal of a point with coordinates `ι (g x)` is the
   normal closure of the equations `x (g x)⁻¹`, for injective `ι`.
 * `TauCeti.GroupAlgGeom.GX.quotientHomEquiv`: `G`-homomorphisms from `G[X] ⧸ N` to `H`
@@ -74,7 +79,8 @@ normal closure of `x ^ n` when `n ≠ 1`.
 ## References
 
 * G. Baumslag, A. Myasnikov, V. Remeslennikov, *Algebraic geometry over groups I. Algebraic sets
-  and ideal theory*, J. Algebra 219 (1999), §1 and §§3.1–3.4.
+  and ideal theory*, J. Algebra 219 (1999), §1 and §§3.1–3.4
+  (Example 4 of §3.2 for algebraic sets in abelian groups).
 * O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
   (2005), §2.4.
 -/
@@ -235,6 +241,62 @@ theorem V_singleton_inl_eq_empty {g : G} (hg : ι g ≠ 1) :
     V ι ({inl g} : Set (GX G X)) = ∅ := by
   ext v
   simp [hg]
+
+/-- If no coefficient survives in `H`, the trivial tuple solves every system. -/
+theorem one_mem_V (hι : ∀ g, ι g = 1) (S : Set (GX G X)) : (1 : X → H) ∈ V ι S := by
+  obtain rfl : ι = 1 := MonoidHom.ext hι
+  simp
+
+/-- The empty set is algebraic exactly when some coefficient remains nontrivial in `H`. -/
+theorem exists_empty_eq_V_iff :
+    (∃ S : Set (GX G X), (∅ : Set (X → H)) = V ι S) ↔ ∃ g, ι g ≠ 1 := by
+  refine ⟨?_, fun ⟨g, hg⟩ => ⟨{inl g}, (V_singleton_inl_eq_empty hg).symm⟩⟩
+  rintro ⟨S, hS⟩
+  by_contra! h
+  exact Set.notMem_empty _ (hS ▸ one_mem_V h S)
+
+/-- Over a trivial group every tuple solves every system. -/
+theorem V_eq_univ_of_subsingleton [Subsingleton H] (S : Set (GX G X)) : V ι S = Set.univ :=
+  Set.eq_univ_of_forall fun _ => mem_V.2 fun _ _ => Subsingleton.elim _ _
+
+/-- Over a torsion-free group in which no coefficient survives, a system in one variable with a
+nontrivial solution is solved by every element: each equation is then a power of the variable. -/
+theorem V_eq_univ_of_mem_of_ne_one [IsMulTorsionFree H] [Unique X] (hι : ∀ g, ι g = 1) (hv : v ≠ 1)
+    (hvS : v ∈ V ι S) : V ι S = Set.univ := by
+  obtain rfl : ι = 1 := MonoidHom.ext hι
+  -- Every word evaluates to a fixed power of the value of the variable.
+  have key (u : X → H) : eval (1 : G →* H) u =
+      (zpowersHom H (u default)).comp (eval 1 fun _ => Multiplicative.ofAdd 1) :=
+    hom_ext (MonoidHom.ext fun g => by simp)
+      (FreeGroup.ext_hom _ _ fun x => by simp [Unique.eq_default x])
+  have hv' : v default ≠ 1 := fun h => hv (funext fun x => by rw [Unique.eq_default x, h]; rfl)
+  refine Set.eq_univ_of_forall fun u => mem_V.2 fun s hs => ?_
+  have h := mem_V.1 hvS s hs
+  rw [key, MonoidHom.comp_apply, zpowersHom_apply,
+    IsMulTorsionFree.zpow_eq_one_iff_right hv'] at h
+  rw [key, MonoidHom.comp_apply, zpowersHom_apply, h, zpow_zero]
+
+/-- In a commutative group an algebraic set is closed under `(u, v, w) ↦ u * v⁻¹ * w`, which
+is the sense in which a nonempty algebraic set is a coset of a subgroup of tuples. -/
+theorem mul_inv_mul_mem_V {A : Type*} [CommGroup A] {ι : G →* A} {u v w : X → A} (hu : u ∈ V ι S)
+    (hv : v ∈ V ι S) (hw : w ∈ V ι S) : u * v⁻¹ * w ∈ V ι S :=
+  mem_V.2 fun s hs => by
+    simp [eval_mul_inv_mul, mem_V.1 hu s hs, mem_V.1 hv s hs, mem_V.1 hw s hs]
+
+/-- In a commutative group a set of two tuples with different squares is not algebraic: an
+algebraic set containing `a` and `b` also contains `a * b⁻¹ * a`. -/
+theorem not_exists_pair_eq_V {A : Type*} [CommGroup A] (ι : G →* A) {a b : X → A}
+    (hab : a ^ 2 ≠ b ^ 2) : ¬∃ S : Set (GX G X), ({a, b} : Set (X → A)) = V ι S := by
+  rintro ⟨S, hS⟩
+  have ha : a ∈ V ι S := hS ▸ Set.mem_insert a {b}
+  have hb : b ∈ V ι S := hS ▸ Set.mem_insert_of_mem a rfl
+  have h : a * b⁻¹ * a ∈ ({a, b} : Set (X → A)) := hS ▸ mul_inv_mul_mem_V ha hb ha
+  rcases h with h | h
+  · exact hab (by rw [mul_inv_eq_one.1 (mul_eq_right.1 h)])
+  · have h' : a * a = b * b := by
+      rw [← mul_inv_eq_iff_eq_mul, mul_right_comm]
+      exact h
+    exact hab (by rw [pow_two, pow_two, h'])
 
 @[simp]
 theorem I_union (Y Z : Set (X → H)) : I ι (Y ∪ Z) = I ι Y ⊓ I ι Z :=
