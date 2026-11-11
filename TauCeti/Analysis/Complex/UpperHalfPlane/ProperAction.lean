@@ -25,7 +25,6 @@ action of Mathlib's `UpperHalfPlane.J`, composed with an element of positive det
 
 ## Main declarations
 
-* `TauCeti.UpperHalfPlane.isometry_J_smul`: the action of `UpperHalfPlane.J` is an isometry.
 * `IsIsometricSMul (GL (Fin 2) ℝ) ℍ` and `IsIsometricSMul PGL(2, ℝ) ℍ`: every element of
   `GL(2, ℝ)` and of `PGL(2, ℝ)` acts on `ℍ` by an isometry of the hyperbolic distance.
 
@@ -63,13 +62,6 @@ instance : IsIsometricSMul PSL(2, ℝ) ℍ where
     induction q using QuotientGroup.induction_on with | _ g =>
     simpa only [UpperHalfPlane.pslMk_smul] using isometry_smul ℍ g
 
-/-- The orientation-reversing involution `UpperHalfPlane.J : z ↦ -conj z` acts on `ℍ` by an
-isometry. -/
-theorem isometry_J_smul : Isometry (J • · : ℍ → ℍ) :=
-  Isometry.of_dist_eq fun z w ↦ by
-    rw [UpperHalfPlane.dist_eq, UpperHalfPlane.dist_eq, coe_J_smul, coe_J_smul, dist_neg_neg,
-      Complex.dist_conj_conj, J_smul_im, J_smul_im]
-
 /-- Every element of `GL(2, ℝ)` acts on `ℍ` by a hyperbolic isometry, including the
 orientation-reversing elements of negative determinant, which act through complex
 conjugation. -/
@@ -85,8 +77,13 @@ instance : IsIsometricSMul (GL (Fin 2) ℝ) ℍ where
       have hfun : (g • · : ℍ → ℍ) = (J • ·) ∘ ((J * g) • ·) := by
         funext z
         rw [Function.comp_apply, smul_smul, ← mul_assoc, ← sq, J_sq, one_mul]
+      -- the orientation-reversing involution `J : z ↦ -conj z` is an isometry
+      have hJ : Isometry (J • · : ℍ → ℍ) :=
+        Isometry.of_dist_eq fun z w ↦ by
+          rw [UpperHalfPlane.dist_eq, UpperHalfPlane.dist_eq, coe_J_smul, coe_J_smul,
+            dist_neg_neg, Complex.dist_conj_conj, J_smul_im, J_smul_im]
       rw [hfun]
-      exact isometry_J_smul.comp (pos (J * g) hJg)
+      exact hJ.comp (pos (J * g) hJg)
     · exact pos g hg
 
 /-- Every element of `PGL(2, ℝ)` acts on `ℍ` by a hyperbolic isometry. -/

@@ -96,7 +96,7 @@ def imaginaryAxisReflection : ℍ ≃ᵢ ℍ where
   invFun z := J • z
   left_inv z := by simp only [smul_smul, ← sq, J_sq, one_smul]
   right_inv z := by simp only [smul_smul, ← sq, J_sq, one_smul]
-  isometry_toFun := isometry_J_smul
+  isometry_toFun := isometry_smul ℍ J
 
 /-- Reflection in the imaginary axis is the action of `UpperHalfPlane.J`. -/
 theorem imaginaryAxisReflection_apply (z : ℍ) : imaginaryAxisReflection z = J • z :=
