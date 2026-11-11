@@ -279,7 +279,7 @@ theorem mapDomain_rowLenWeight (h : μ.colLen 0 ≤ N) :
 
 /-- For a shape taller than the alphabet the row-length exponent records only the rows the
 alphabet reaches, so its degree falls short of the number of cells. -/
-private theorem degree_rowLenWeight_lt (h : N < μ.colLen 0) :
+theorem degree_rowLenWeight_lt (h : N < μ.colLen 0) :
     (rowLenWeight N μ).degree < μ.card := by
   rw [Finsupp.degree_eq_sum]
   simp only [rowLenWeight_apply]
