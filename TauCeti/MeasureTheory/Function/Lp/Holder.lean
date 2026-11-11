@@ -78,9 +78,8 @@ theorem isCompactOperator_holderL_comp_of_ae_eq {α 𝕜 X E F G : Type*} [Measu
       B.coeFn_holder (r := q) g (V u), hι u, Lp.simpleFunc.toSimpleFunc_eq_toFun f,
       MemLp.coeFn_toLp (SimpleFunc.memLp_top (Lp.simpleFunc.toSimpleFunc f) μ)]
       with x h₁ h₂ h₃ h₄ h₅
-    rw [hΦ, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.holderL_apply_apply, ContinuousLinearMap.holderL_apply_apply]
-    rw [h₁, h₂, h₃, h₅, h₄]
+    simp only [hΦ, ContinuousLinearMap.comp_apply, ContinuousLinearMap.holderL_apply_apply, h₁, h₂,
+      h₃, g, h₅, h₄]
   rw [hfac]
   exact hV.clm_comp (B.holderL μ ∞ q q g)
 
