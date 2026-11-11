@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Real
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Realization
-public import TauCeti.NumberTheory.QuadraticForm.Global.Invariants
+public import TauCeti.NumberTheory.QuadraticForm.Global.Invariants.Basic
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 import TauCeti.NumberTheory.HilbertSymbol.Archimedean
 

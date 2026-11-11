@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.QuadraticForm.Global.HasseSupport
-public import TauCeti.NumberTheory.QuadraticForm.Global.Invariants
+public import TauCeti.NumberTheory.QuadraticForm.Global.Invariants.Basic
 public import TauCeti.NumberTheory.QuadraticForm.Global.RealHasse
 import Mathlib.Algebra.FiniteSupport.Basic
 import TauCeti.NumberTheory.QuadraticForm.Global.HilbertSymbol
