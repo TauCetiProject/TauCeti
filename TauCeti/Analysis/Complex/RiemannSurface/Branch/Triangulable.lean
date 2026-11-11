@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Branch.EulerCharacteristic
+public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 public import TauCeti.Geometry.Manifold.Triangulation.Puncture
 public import TauCeti.Topology.Triangulable.FiniteCWType
+public import TauCeti.Topology.Triangulable.Sphere
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Geometry.Manifold.Complex.Analytic
 
@@ -20,7 +22,9 @@ triangulable compact Riemann surfaces with connected target, without separate fi
 hypotheses for the surfaces or for the complement of the branch values.
 
 This applies the fibre-counting and covering calculation in `Branch.EulerCharacteristic`;
-it neither constructs surface triangulations nor defines genus.
+it does not define genus. The only surface triangulation used is that of the Riemann sphere
+`OnePoint ℂ` by the boundary of a tetrahedron (`TauCeti.isTriangulable_onePoint`), which gives
+the sphere minus any finite set finite CW type.
 
 ## References
 
@@ -63,3 +67,17 @@ theorem eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree_of_isTriangulab
   exact f.eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree
 
 end TauCeti.RiemannSurface.FiniteHolomorphicMap
+
+namespace TauCeti.RiemannSurface
+
+/-- The Riemann sphere minus finitely many points has finite CW type: the sphere is triangulated
+by the boundary of a tetrahedron, and finite punctures of a compact triangulable surface have
+finite CW type. -/
+instance finiteCWType_compl_onePoint {S : Set (OnePoint ℂ)} [Finite S] : FiniteCWType ↥Sᶜ := by
+  have : IsManifold 𝓘(ℝ, ℂ) 2 (OnePoint ℂ) :=
+    (inferInstance : IsManifold 𝓘(ℂ) 1 (OnePoint ℂ)).restrictScalars_of_ne_zero 2 (by norm_num)
+  exact S.toFinite.finiteCWType_compl_of_isTriangulable (E := ℂ)
+    (by rw [← Module.finrank_eq_rank, Complex.finrank_real_complex]; norm_num)
+    (isTriangulable_onePoint.{0, 0} ℂ)
+
+end TauCeti.RiemannSurface
