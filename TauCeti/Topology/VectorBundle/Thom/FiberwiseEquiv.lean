@@ -21,12 +21,12 @@ On the fibre over `b'` it is the isomorphism of fibre pairs induced by `φ b'`
 `g` to the zero section (`TauCeti.zeroSectionHom_comp_thomPairMapOfFiberwise_fst`).
 
 Hence it pulls Thom classes of `E` back to Thom classes of `E'`
-(`TauCeti.IsThomClass.thomPairMapOfFiberwise`). Over the identity of the base, when the
+(`TauCeti.IsThomClass.thomPairMapOfFiberwise`). Over the identity of the base, a relative class
+of `E` is a Thom class exactly when its pull-back to `E'` is one
+(`TauCeti.isThomClass_singularCohomologyMap_thomPairMapOfFiberwise_iff`), and when the
 total-space map of the fibrewise inverse is continuous as well, the maps of Thom pairs of `φ` and of
-its inverse form an isomorphism of Thom pairs (`TauCeti.thomPairIsoOfFiberwise`), and a relative
-class of `E` is a Thom class exactly when its pull-back to `E'` is one
-(`TauCeti.isThomClass_singularCohomologyMap_thomPairMapOfFiberwise_iff`). The map of Thom pairs
-also intertwines the Euler class maps `Hⁿ(E, E₀) ⟶ Hⁿ(B)` and `Hⁿ(E', E'₀) ⟶ Hⁿ(B')`
+its inverse form an isomorphism of Thom pairs (`TauCeti.thomPairIsoOfFiberwise`). The map of Thom
+pairs also intertwines the Euler class maps `Hⁿ(E, E₀) ⟶ Hⁿ(B)` and `Hⁿ(E', E'₀) ⟶ Hⁿ(B')`
 with pullback along `g` (`TauCeti.eulerClass_thomPairMapOfFiberwise`). Over the identity of the
 base, for an isomorphism of vector bundles over `B`, the Euler class of the pulled-back class is the
 Euler class of the original one (`TauCeti.eulerClass_thomPairMapOfFiberwise_id`).
@@ -182,24 +182,38 @@ theorem IsThomClass.thomPairMapOfFiberwise
     (fiberThomPairMap_comp_thomPairMapOfFiberwise hφ)
 
 /-- **Thom classes are invariant under bundle isomorphisms.** For a fibrewise isomorphism
-`φ b : E'_b ≃ E_b` over the same base whose total-space map has a continuous inverse, a relative
-class of `E` is a Thom class exactly when its pull-back along the map of Thom pairs of `φ` is a
-Thom class of `E'`. -/
+`φ b : E'_b ≃ E_b` over the same base with continuous total-space map, a relative class of `E` is a
+Thom class exactly when its pull-back along the map of Thom pairs of `φ` is a Thom class of `E'`.
+No continuity of the inverse total-space map is needed: on each fibre, `φ b` induces a linear
+isomorphism in cohomology, which reflects generators as well as preserving them. -/
 theorem isThomClass_singularCohomologyMap_thomPairMapOfFiberwise_iff {E' : B → Type w}
     [TopologicalSpace (TotalSpace F E')] [∀ b, AddCommMonoid (E' b)] [∀ b, Module ℝ (E' b)]
     [∀ b, TopologicalSpace (E' b)] [FiberBundle F E'] {φ : ∀ b, E' b ≃L[ℝ] E b}
     (hφ : Continuous fun v : TotalSpace F E' ↦ TotalSpace.mk' F v.proj (φ v.proj v.2))
-    (hφ' : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F v.proj ((φ v.proj).symm v.2))
     {u : (thomPair F E).singularCohomology R k M (finrank ℝ F)} :
     IsThomClass F E'
         (TopPair.singularCohomologyMap (thomPairMapOfFiberwise (g := ContinuousMap.id B) hφ) _ u) ↔
       IsThomClass F E u := by
   refine ⟨fun hu ↦ ?_, fun hu ↦ hu.thomPairMapOfFiberwise hφ⟩
-  -- Pull back along the inverse isomorphism of Thom pairs.
-  have h := hu.thomPairMapOfFiberwise (g := ContinuousMap.id B) (φ := fun b ↦ (φ b).symm) hφ'
-  rwa [← thomPairIsoOfFiberwise_hom hφ hφ', ← thomPairIsoOfFiberwise_inv hφ hφ',
-    ← ConcreteCategory.comp_apply, ← TopPair.singularCohomologyMap_comp, Iso.inv_hom_id,
-    TopPair.singularCohomologyMap_id, ConcreteCategory.id_apply] at h
+  obtain ⟨hF, hu⟩ := isThomClass_iff.1 hu
+  refine isThomClass_iff.2 ⟨hF, fun b ↦ ?_⟩
+  have hψ : fiberThomPairMap F E' b ≫ thomPairMapOfFiberwise (g := ContinuousMap.id B) hφ =
+      (φ b).complZeroPairIso.hom ≫ fiberThomPairMap F E b :=
+    fiberThomPairMap_comp_thomPairMapOfFiberwise hφ b
+  have h := hu b
+  rw [← ConcreteCategory.comp_apply, ← TopPair.singularCohomologyMap_comp, hψ,
+    TopPair.singularCohomologyMap_comp, ConcreteCategory.comp_apply] at h
+  -- The isomorphism of fibre pairs induced by `φ b` gives a linear isomorphism `e` in cohomology,
+  -- which reflects generators; by definition of the cohomology functor, `e` applies
+  -- `TopPair.singularCohomologyMap (φ b).complZeroPairIso.hom`.
+  let e : (TopPair.ofSubset (X := TopCat.of (E b)) ({0}ᶜ : Set (E b))).singularCohomology
+      R k M (finrank ℝ F) ≃ₗ[k]
+      (TopPair.ofSubset (X := TopCat.of (E' b)) ({0}ᶜ : Set (E' b))).singularCohomology
+        R k M (finrank ℝ F) :=
+    ((TopPair.singularCohomologyFunctor R k M (finrank ℝ F)).mapIso
+      (φ b).complZeroPairIso.op).toLinearEquiv
+  rw [← Submodule.map_eq_top_iff (e := e), ← Submodule.span_image_linearEquiv, Set.image_singleton]
+  exact h
 
 end ThomClass
 
