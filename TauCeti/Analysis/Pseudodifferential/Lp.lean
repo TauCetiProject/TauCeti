@@ -179,6 +179,15 @@ theorem coeFn_quantizeLp (u : Lp V p (volume : Measure (CoordinateSpace n))) :
     a.quantizeLp p hm ha u =ᵐ[volume] fun x ↦ ∫ y, quantizationKernel a.coefficient x y (u y) :=
   coeFn_integralOperatorLp u
 
+/-- `TauCeti.Symbol.quantizeLp` is the integral operator with kernel `K_a`, for any bounds on the
+row and column integrals of the kernel. -/
+theorem quantizeLp_eq_integralOperatorLp {A B : ℝ≥0}
+    (hA : ∀ᵐ x ∂volume, ∫⁻ y, ‖quantizationKernel a.coefficient x y‖ₑ ≤ A)
+    (hB : ∀ᵐ y ∂volume, ∫⁻ x, ‖quantizationKernel a.coefficient x y‖ₑ ≤ B) :
+    a.quantizeLp p hm ha = integralOperatorLp (quantizationKernel a.coefficient) p
+      (a.continuous_quantizationKernel hm).aestronglyMeasurable hA hB :=
+  ContinuousLinearMap.ext fun u ↦ (integralOperatorLp_eq_iff.2 (coeFn_quantizeLp u).symm).symm
+
 /-- On Schwartz functions, `TauCeti.Symbol.quantizeLp` is the quantization `Op(a)`. -/
 theorem coeFn_quantizeLp_toLp [CompleteSpace V] [CompleteSpace W]
     (u : 𝓢(CoordinateSpace n, V)) :
@@ -205,12 +214,7 @@ theorem norm_quantizeLp_le {A R : ℝ} (hR : 0 < R) (h₀ : ∀ x, ∫ ξ, ‖a.
   have hcol (y) : ∫⁻ x, ‖quantizationKernel a.coefficient x y‖ₑ ≤ B.toNNReal := by
     rw [ENNReal.ofNNReal_toNNReal]
     exact a.lintegral_enorm_quantizationKernel_left_le hm hR h₀ h₁ y
-  -- `quantizeLp` is the integral operator with these bounds.
-  have h : a.quantizeLp p hm ha = integralOperatorLp (quantizationKernel a.coefficient) p
-      (a.continuous_quantizationKernel hm).aestronglyMeasurable (ae_of_all _ hrow)
-      (ae_of_all _ hcol) :=
-    ContinuousLinearMap.ext fun u ↦ (integralOperatorLp_eq_iff.2 (coeFn_quantizeLp u).symm).symm
-  rw [h]
+  rw [quantizeLp_eq_integralOperatorLp (ae_of_all _ hrow) (ae_of_all _ hcol)]
   refine norm_integralOperatorLp_le_max.trans ?_
   have hA : 0 ≤ A := (integral_nonneg fun _ ↦ norm_nonneg _).trans (h₀ 0)
   rw [max_self, Real.coe_toNNReal _ (by positivity)]

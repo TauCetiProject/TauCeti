@@ -122,6 +122,16 @@ theorem integrable_quantizationKernel_integrand (ha : Integrable (fun ξ ↦ a (
   simpa only [inner_neg_right, neg_neg] using
     (Real.fourierIntegral_convergent_iff (-(x - y))).2 (ha.comp_smul two_pi_pos.ne')
 
+/-- The kernel `y ↦ K_a(x, y)` is the Fourier transform, with respect to the flipped pairing, of
+`ζ ↦ 𝐞 ⟪ζ, x⟫ • a(x, 2πζ)`. -/
+theorem fourierIntegral_flip_eq_quantizationKernel (a : E × E → V →L[ℂ] W) (x y : E) :
+    VectorFourier.fourierIntegral 𝐞 volume (innerₗ E).flip
+      (fun ζ ↦ 𝐞 ⟪ζ, x⟫ • a (x, (2 * π) • ζ)) y = quantizationKernel a x y := by
+  rw [VectorFourier.fourierIntegral, quantizationKernel_def]
+  congr 1 with ζ
+  rw [smul_smul, ← AddChar.map_add_eq_mul, LinearMap.flip_apply, innerₗ_apply_apply,
+    real_inner_comm, inner_sub_right, neg_add_eq_sub]
+
 /-- **Uniform bound.** `‖K_a(x, y)‖ ≤ (2π)⁻ⁿ ∫ ‖a(x, ξ)‖ dξ` for every `y`. -/
 theorem norm_quantizationKernel_le (a : E × E → V →L[ℂ] W) (x y : E) :
     ‖quantizationKernel a x y‖ ≤ ((2 * π) ^ finrank ℝ E)⁻¹ * ∫ ξ, ‖a (x, ξ)‖ := by
@@ -209,13 +219,7 @@ theorem quantizeSchwartzValue_eq_integral_quantizationKernel [CompleteSpace V] [
         (fun ζ ↦ 𝐞 ⟪ζ, x⟫ • a (x, (2 * π) • ζ)) y (u y) :=
     VectorFourier.integral_bilin_fourierIntegral_eq_flip (ContinuousLinearMap.apply ℂ W)
       Real.continuous_fourierChar continuous_inner (u.integrable (μ := volume)) hg
-  have hK (y : E) : VectorFourier.fourierIntegral 𝐞 volume (innerₗ E).flip
-      (fun ζ ↦ 𝐞 ⟪ζ, x⟫ • a (x, (2 * π) • ζ)) y = quantizationKernel a x y := by
-    rw [VectorFourier.fourierIntegral, quantizationKernel_def]
-    congr 1 with ζ
-    rw [smul_smul, ← AddChar.map_add_eq_mul, LinearMap.flip_apply, innerₗ_apply_apply,
-      real_inner_comm, inner_sub_right, neg_add_eq_sub]
-  simp only [hK] at h
+  simp only [fourierIntegral_flip_eq_quantizationKernel] at h
   rw [quantizeSchwartzValue_def, SchwartzMap.fourier_coe, ← h]
   simp only [Circle.smul_def, smul_apply]
 

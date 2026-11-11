@@ -38,6 +38,8 @@ in the position and is not treated here.
 
 ## Main results
 
+* `TauCeti.adjoint_quantizationKernel_eq_fourierInv`: the adjoint `K_b(z, y)†` is an inverse
+  Fourier transform in `y`.
 * `TauCeti.integral_quantizationKernel_comp_adjoint`: the kernel of `Op(a) Op(b)†`.
 * `TauCeti.Symbol.quantizeLp_comp_adjoint_eq_zero`: `Op(a) Op(b)† = 0` on `L²` when
   `a(x, ξ) b(z, ξ)† = 0` for all `x`, `z` and `ξ`.
@@ -45,7 +47,7 @@ in the position and is not treated here.
   uniform symbol, as an operator on `Lᵖ`.
 * `TauCeti.Symbol.IsUniform.exists_norm_quantizeLittlewoodPaleyPiece_le`: the diagonal estimates
   `‖Tⱼ‖ ≤ C (2^j)^m`.
-* `TauCeti.Symbol.quantizeLittlewoodPaleyPiece_comp_adjoint_eq_zero` and
+* `TauCeti.Symbol.quantizeLittlewoodPaleyPiece_comp_adjoint_succ_eq_zero` and
   `TauCeti.Symbol.exists_quantizeLittlewoodPaleyPiece_comp_adjoint_eq_zero`: frequency
   orthogonality of the pieces.
 
@@ -75,7 +77,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 /-- The adjoint of the kernel `K_b(z, y)` is the inverse Fourier transform, evaluated at `y`, of
 `ζ ↦ 𝐞 (-⟪ζ, z⟫) • b(z, 2πζ)†`. -/
-private theorem adjoint_quantizationKernel_eq_fourierInv {b : E × E → V →L[ℂ] W} {z : E}
+theorem adjoint_quantizationKernel_eq_fourierInv {b : E × E → V →L[ℂ] W} {z : E}
     (hb : Integrable (fun ξ ↦ b (z, ξ))) (y : E) :
     adjoint (quantizationKernel b z y) =
       𝓕⁻ (fun ζ ↦ 𝐞 (-⟪ζ, z⟫) • adjoint (b (z, (2 * π) • ζ))) y := by
@@ -123,24 +125,18 @@ theorem integral_quantizationKernel_comp_adjoint {a b : E × E → V →L[ℂ] W
     have := hK'
     rw [hKG] at this
     simpa [fourierInv_eq_fourier_neg] using this.comp_neg
-  have hKa (y : E) : VectorFourier.fourierIntegral 𝐞 volume (innerₗ E).flip g y =
-      quantizationKernel a x y := by
-    rw [VectorFourier.fourierIntegral, quantizationKernel_def]
-    congr 1 with ζ
-    rw [smul_smul, ← AddChar.map_add_eq_mul, LinearMap.flip_apply, innerₗ_apply_apply,
-      real_inner_comm, inner_sub_right, neg_add_eq_sub]
   have hL : Continuous fun p : E × E ↦ (innerₗ E).flip p.1 p.2 :=
     continuous_snd.inner continuous_fst
   have h := VectorFourier.integral_bilin_fourierIntegral_eq_flip (compL ℂ W V W)
     Real.continuous_fourierChar hL hg hK'
-  simp only [hKa, compL_apply, LinearMap.flip_flip] at h
+  simp only [g, fourierIntegral_flip_eq_quantizationKernel, compL_apply, LinearMap.flip_flip] at h
   have hFKG : VectorFourier.fourierIntegral 𝐞 volume (innerₗ E)
       (fun y ↦ adjoint (quantizationKernel b z y)) = G := by
     rw [hKG]
     exact hGc.fourier_fourierInv_eq hG hFG
   rw [h, hFKG, quantizationKernel_def]
   refine congrArg (integral volume) (funext fun ζ ↦ ?_)
-  simp only [g, G, Circle.smul_def, smul_comp, comp_smul, smul_smul, ← Circle.coe_mul,
+  simp only [G, Circle.smul_def, smul_comp, comp_smul, smul_smul, ← Circle.coe_mul,
     ← AddChar.map_add_eq_mul]
   rw [inner_sub_right, neg_add_eq_sub]
 
@@ -173,14 +169,6 @@ theorem quantizeLp_comp_adjoint_eq_zero (a : Symbol n V W m₁) (b : Symbol n V 
       (hb.integrable_quantizationKernel hm₂ z)]
     simp only [h]
     exact quantizationKernel_zero x z
-  have e₁ : a.quantizeLp 2 hm₁ ha = integralOperatorLp (quantizationKernel a.coefficient) 2
-      (a.continuous_quantizationKernel hm₁).aestronglyMeasurable (ae_of_all _ hA₁)
-      (ae_of_all _ hB₁) :=
-    ContinuousLinearMap.ext fun u ↦ (integralOperatorLp_eq_iff.2 (coeFn_quantizeLp u).symm).symm
-  have e₂ : b.quantizeLp 2 hm₂ hb = integralOperatorLp (quantizationKernel b.coefficient) 2
-      (b.continuous_quantizationKernel hm₂).aestronglyMeasurable (ae_of_all _ hA₂)
-      (ae_of_all _ hB₂) :=
-    ContinuousLinearMap.ext fun u ↦ (integralOperatorLp_eq_iff.2 (coeFn_quantizeLp u).symm).symm
   have hA : ∀ᵐ x ∂(volume : Measure (CoordinateSpace n)), ∫⁻ z,
       ‖∫ y, quantizationKernel a.coefficient x y ∘L
         adjoint (quantizationKernel b.coefficient z y)‖ₑ ≤ (0 : ℝ≥0) :=
@@ -189,7 +177,9 @@ theorem quantizeLp_comp_adjoint_eq_zero (a : Symbol n V W m₁) (b : Symbol n V 
       ‖∫ y, quantizationKernel a.coefficient x y ∘L
         adjoint (quantizationKernel b.coefficient z y)‖ₑ ≤ (0 : ℝ≥0) :=
     ae_of_all _ fun z ↦ by simp [hzero]
-  rw [e₁, e₂, integralOperatorLp_comp_adjoint _ _ _ _ _ _ hA hB]
+  rw [quantizeLp_eq_integralOperatorLp (ae_of_all _ hA₁) (ae_of_all _ hB₁),
+    quantizeLp_eq_integralOperatorLp (ae_of_all _ hA₂) (ae_of_all _ hB₂),
+    integralOperatorLp_comp_adjoint _ _ _ _ _ _ hA hB]
   refine ContinuousLinearMap.ext fun u ↦ integralOperatorLp_eq_iff.2 ?_
   filter_upwards [Lp.coeFn_zero W 2 (volume : Measure (CoordinateSpace n))] with x hx
   simp only [hzero, zero_apply, integral_zero, hx, Pi.zero_apply]
@@ -305,7 +295,7 @@ variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V
 /-- **Frequency orthogonality of the Littlewood–Paley pieces.** If `2^j φ.rOut ≤ 2^k φ.rIn`, the
 `j`-th piece of `a` and the `(k + 1)`-st piece of `b` have disjoint frequency supports, so
 `Op(ψⱼ a) Op(ψₖ₊₁ b)† = 0` on `L²`. -/
-theorem quantizeLittlewoodPaleyPiece_comp_adjoint_eq_zero (a : Symbol n V W m)
+theorem quantizeLittlewoodPaleyPiece_comp_adjoint_succ_eq_zero (a : Symbol n V W m)
     (b : Symbol n V W m') (ha : a.IsUniform) (hb : b.IsUniform) {j k : ℕ}
     (hjk : 2 ^ j * φ.rOut ≤ 2 ^ k * φ.rIn) :
     quantizeLittlewoodPaleyPiece 2 φ a ha j ∘L
@@ -337,16 +327,16 @@ theorem quantizeLittlewoodPaleyPiece_succ_comp_adjoint_eq_zero (a : Symbol n V W
 depending only on the bump function `φ`, such that `Op(ψⱼ a) Op(ψₖ b)† = 0` and
 `Op(ψₖ a) Op(ψⱼ b)† = 0` on `L²` whenever `j + N ≤ k`. In the Cotlar–Stein lemma only the
 finitely many terms with `|j - k| < N` remain in the sums of `√‖Tⱼ Tₖ†‖`. -/
-theorem exists_quantizeLittlewoodPaleyPiece_comp_adjoint_eq_zero (a : Symbol n V W m)
-    (b : Symbol n V W m') (ha : a.IsUniform) (hb : b.IsUniform) :
-    ∃ N : ℕ, ∀ j k, j + N ≤ k →
+theorem exists_quantizeLittlewoodPaleyPiece_comp_adjoint_eq_zero :
+    ∃ N : ℕ, ∀ {m m' : ℝ} (a : Symbol n V W m) (b : Symbol n V W m') (ha : a.IsUniform)
+      (hb : b.IsUniform) (j k : ℕ), j + N ≤ k →
       quantizeLittlewoodPaleyPiece 2 φ a ha j ∘L
           adjoint (quantizeLittlewoodPaleyPiece 2 φ b hb k) = 0 ∧
         quantizeLittlewoodPaleyPiece 2 φ a ha k ∘L
           adjoint (quantizeLittlewoodPaleyPiece 2 φ b hb j) = 0 := by
   obtain ⟨N, hN⟩ := pow_unbounded_of_one_lt (φ.rOut / φ.rIn) one_lt_two
   rw [div_lt_iff₀ φ.rIn_pos] at hN
-  refine ⟨N + 1, fun j k hjk ↦ ?_⟩
+  refine ⟨N + 1, fun a b ha hb j k hjk ↦ ?_⟩
   obtain _ | k := k
   · omega
   have h : 2 ^ j * φ.rOut ≤ 2 ^ k * φ.rIn :=
@@ -355,7 +345,7 @@ theorem exists_quantizeLittlewoodPaleyPiece_comp_adjoint_eq_zero (a : Symbol n V
       _ = 2 ^ (j + N) * φ.rIn := by ring
       _ ≤ 2 ^ k * φ.rIn :=
           mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two (by omega)) φ.rIn_pos.le
-  exact ⟨quantizeLittlewoodPaleyPiece_comp_adjoint_eq_zero φ a b ha hb h,
+  exact ⟨quantizeLittlewoodPaleyPiece_comp_adjoint_succ_eq_zero φ a b ha hb h,
     quantizeLittlewoodPaleyPiece_succ_comp_adjoint_eq_zero φ a b ha hb h⟩
 
 end PiecesOrthogonality
