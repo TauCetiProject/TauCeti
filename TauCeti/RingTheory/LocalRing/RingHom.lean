@@ -17,6 +17,10 @@ units. Here unit reflection is Mathlib's `IsLocalHom`; neither ring is required 
 Together with Mathlib's kernel containment for unit-reflecting maps, this allows unit reflection
 to propagate through inverse systems with locally nilpotent transition kernels. Elementwise
 nilpotence suffices, without a uniform exponent.
+
+For a surjection of local rings `A → A'`, the image of the maximal ideal of `A` has radical the
+maximal ideal of `A'` (`TauCeti.IsLocalRing.radical_map_maximalIdeal_of_surjective`): the closed
+point of `Spec A'` is the only point over the closed point of `Spec A`.
 -/
 
 public section
@@ -36,3 +40,18 @@ theorem isLocalHom_of_surjective_of_isNilpotent_ker (f : R →+* S)
   exact isUnit_of_mul_isUnit_left (by simpa using hxy.isUnit_add_one)
 
 end RingHom
+
+namespace TauCeti.IsLocalRing
+
+variable {A A' : Type*} [CommRing A] [IsLocalRing A] [CommRing A'] [IsLocalRing A']
+  [Algebra A A']
+
+/-- For a surjection of local rings `A → A'`, the closed point is the only point of `Spec A'`
+over the closed point of `Spec A`. -/
+theorem radical_map_maximalIdeal_of_surjective (hf : Function.Surjective (algebraMap A A')) :
+    ((IsLocalRing.maximalIdeal A).map (algebraMap A A')).radical =
+      IsLocalRing.maximalIdeal A' := by
+  rw [IsLocalRing.map_maximalIdeal_of_surjective _ hf]
+  exact (IsLocalRing.maximalIdeal.isMaximal _).isPrime.radical
+
+end TauCeti.IsLocalRing

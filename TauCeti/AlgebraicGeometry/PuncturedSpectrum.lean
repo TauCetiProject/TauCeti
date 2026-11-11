@@ -34,8 +34,6 @@ by finitely many basic opens, so that covers can be described and glued chart by
 * `TauCeti.IsLocalRing.preimage_puncturedSpectrum`: for an algebra `A'` over `A` whose closed
   point is the only point over the closed point of `Spec A`, the punctured spectrum of `A'` is the
   preimage of that of `A`.
-* `TauCeti.IsLocalRing.radical_map_maximalIdeal_of_surjective`: the hypothesis of
-  `preimage_puncturedSpectrum` holds for a surjection of local rings.
 
 ## References
 
@@ -159,14 +157,6 @@ theorem preimage_puncturedSpectrum
   ext x
   exact ((mem_puncturedSpectrum_iff A _).trans (key x).not).trans
     (mem_puncturedSpectrum_iff A' x).symm
-
-/-- For a surjection of local rings `A → A'`, the closed point is the only point of `Spec A'`
-over the closed point of `Spec A`. -/
-theorem radical_map_maximalIdeal_of_surjective (hf : Function.Surjective (algebraMap A A')) :
-    ((IsLocalRing.maximalIdeal A).map (algebraMap A A')).radical =
-      IsLocalRing.maximalIdeal A' := by
-  rw [IsLocalRing.map_maximalIdeal_of_surjective _ hf]
-  exact (IsLocalRing.maximalIdeal.isMaximal _).isPrime.radical
 
 end
 
