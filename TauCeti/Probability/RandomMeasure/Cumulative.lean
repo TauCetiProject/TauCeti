@@ -46,8 +46,7 @@ theorem measurable_measure_iff_Iic (hfinite : ∀ ω t, M ω (Iic t) ≠ ∞) :
   refine Measurable.measure_of_isPiSystem_of_iUnion
     (B := fun n ↦ Iic (n : ℝ≥0))
     (BorelSpace.measurable_eq.trans (borel_eq_generateFrom_Iic ℝ≥0)) isPiSystem_Iic
-    (fun n ↦ ⟨n, rfl⟩) (fun i j hij ↦ Iic_subset_Iic.mpr (by exact_mod_cast hij)) ?_
-    (fun ω n ↦ hfinite ω n) ?_
+    (fun n ↦ ⟨n, rfl⟩) ?_ (fun ω n ↦ hfinite ω n) ?_
   · ext t
     simp only [mem_iUnion, mem_Iic, mem_univ, iff_true]
     obtain ⟨n, hn⟩ := exists_nat_gt t

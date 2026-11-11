@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.TangentCone.Real
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Complex.Convex
+import Mathlib.Analysis.Calculus.TangentCone.Pi
 import Mathlib.Analysis.Complex.ReImTopology
 
 /-!
@@ -25,6 +26,7 @@ which lets chart transitions of a manifold with corners compare the corners of t
 * `Submodule.tangentConeAt_eq`: the tangent cone of a closed subspace at one of its points is the
   subspace itself.
 * `TauCeti.uniqueDiffOn_pi_halfSpace`: a coordinate half-space is a set of unique differentiability.
+* `TauCeti.uniqueDiffOn_pi_Ici`: a closed coordinate orthant is a set of unique differentiability.
 * `TauCeti.uniqueDiffOn_setOfPred_le_im`: a closed half-plane `{z : ℂ | a ≤ z.im}` is a set of
   unique differentiability.
 * `IsPreconnected.uniqueDiffOn`: a preconnected set of reals containing two distinct points is a
@@ -91,6 +93,12 @@ theorem TauCeti.uniqueDiffOn_pi_halfSpace {ι : Type*} (i : ι) (a : ℝ) :
   have ha : a < a + 1 := lt_add_one a
   exact mem_of_superset ((isOpen_lt continuous_const (continuous_apply i)).mem_nhds ha)
     fun x hx ↦ hx.le
+
+/-- A closed coordinate orthant `{x | ∀ i, a i ≤ x i}` has unique derivatives, including at its
+corners. -/
+theorem TauCeti.uniqueDiffOn_pi_Ici {ι : Type*} (a : ι → ℝ) : UniqueDiffOn ℝ (Ici a) := by
+  rw [← pi_univ_Ici]
+  exact UniqueDiffOn.univ_pi fun i ↦ uniqueDiffOn_Ici (a i)
 
 /-- A closed half-plane `{z : ℂ | a ≤ z.im}` has unique derivatives, including on its boundary. -/
 theorem TauCeti.uniqueDiffOn_setOfPred_le_im (a : ℝ) : UniqueDiffOn ℝ {z : ℂ | a ≤ z.im} :=

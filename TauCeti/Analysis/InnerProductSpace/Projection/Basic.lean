@@ -24,6 +24,12 @@ same dimension. The orthogonal complement of a nonzero vector has codimension on
 vector followed by a linearly independent family in its orthogonal complement is linearly
 independent.
 
+For a family of subspaces `K x` of a finite-dimensional real inner product space whose orthogonal
+projections are continuous at `x₀`, projecting linearly independent vectors of `K x₀` onto `K x`
+keeps them linearly independent near `x₀`. If moreover a second such family `L x` has
+`dim K x + dim L x = dim E` near `x₀`, the projections of a basis of `K x₀` form a basis of `K x`
+near `x₀`.
+
 For finite-dimensional `U` and `V` with `dim V ≤ dim U`, a lower bound `k ‖u‖² ≤ ‖P_V u‖²` for
 `u ∈ U` transfers to the same lower bound `k ‖v‖² ≤ ‖P_U v‖²` for `v ∈ V`.
 
@@ -62,6 +68,10 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `TauCeti.exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank`: fewer than `dim E` vectors
   have a common nonzero, and hence a common unit, orthogonal vector.
 * `TauCeti.ne_neg_of_inner_eq_zero`: a vector orthogonal to a nonzero vector `b` is not `-b`.
+* `TauCeti.eventually_linearIndependent_starProjection_apply`,
+  `TauCeti.eventually_linearIndependent_and_span_starProjection`: projected bases of a
+  continuously varying family of subspaces stay linearly independent, and stay bases under a
+  complementary dimension count.
 * `LinearIndependent.finCons_orthogonal_span_singleton`: a nonzero vector `p` followed by a
   linearly independent family in `(𝕜 ∙ p)ᗮ` is linearly independent.
 * `LinearIsometry.exists_mem_sphere_inner_eq_zero`: a linear isometry into a space of larger
@@ -80,6 +90,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 * `Submodule.starProjection_sub_starProjection_sq_mul_starProjection`,
   `Submodule.starProjection_mul_starProjection_sub_starProjection_sq`:
   `(P_U - P_V)² P_U = P_U (P_U - P_V)² = P_U - P_U P_V P_U`.
+* `Submodule.span_range_starProjection_orthogonal_basis_succ`: if the zeroth coordinate of `v` in
+  a basis is nonzero, the projections onto `(𝕜 ∙ v)ᗮ` of the other basis vectors span it.
 * `LinearMap.apply_sub_starProjection_ker`,
   `ContinuousLinearMap.comp_starProjection_orthogonal_ker`: maps ignore their kernel component.
 -/
@@ -291,6 +303,37 @@ theorem adjoint_orthogonalProjectionOnto_toLinearMap [FiniteDimensional 𝕜 E] 
     LinearMap.adjoint U.orthogonalProjectionOnto.toLinearMap = U.subtype := by
   rw [← U.adjoint_subtype, LinearMap.adjoint_adjoint]
 
+/-- If the zeroth coordinate of `v` in a basis `b` is nonzero, then the orthogonal projections onto
+`(𝕜 ∙ v)ᗮ` of the remaining basis vectors span `(𝕜 ∙ v)ᗮ`. -/
+theorem span_range_starProjection_orthogonal_basis_succ
+    {k : ℕ} (b : Module.Basis (Fin (k + 1)) 𝕜 E) {v : E} (hv : b.repr v 0 ≠ 0) :
+    span 𝕜 (Set.range fun j : Fin k ↦ (𝕜 ∙ v)ᗮ.starProjection (b j.succ)) = (𝕜 ∙ v)ᗮ := by
+  apply le_antisymm
+  · rw [span_le]
+    rintro _ ⟨j, rfl⟩
+    exact starProjection_apply_mem _ _
+  intro w hw
+  set t := b.repr w 0 / b.repr v 0
+  -- `w - t • v` has zeroth coordinate zero, so it is a combination of the other basis vectors.
+  have h0 : b.repr (w - t • v) 0 = 0 := by
+    simp only [map_sub, map_smul, Finsupp.coe_sub, Finsupp.coe_smul, Pi.sub_apply,
+      Pi.smul_apply, smul_eq_mul, t]
+    field_simp
+    ring
+  have hd : w - t • v = ∑ j : Fin k, b.repr (w - t • v) j.succ • b j.succ := by
+    conv_lhs => rw [← b.sum_repr (w - t • v)]
+    rw [Fin.sum_univ_succ, h0, zero_smul, zero_add]
+  have hw' : w = ∑ j : Fin k, b.repr (w - t • v) j.succ • (𝕜 ∙ v)ᗮ.starProjection (b j.succ) :=
+    calc w = (𝕜 ∙ v)ᗮ.starProjection w := (starProjection_eq_self_iff.mpr hw).symm
+      _ = (𝕜 ∙ v)ᗮ.starProjection (w - t • v) + t • (𝕜 ∙ v)ᗮ.starProjection v := by
+        rw [← map_smul, ← map_add, sub_add_cancel]
+      _ = _ := by
+        rw [starProjection_orthogonalComplement_singleton_eq_zero, smul_zero, add_zero]
+        conv_lhs => rw [hd]
+        simp only [map_sum, map_smul]
+  rw [hw']
+  exact sum_mem fun j _ ↦ smul_mem _ _ (subset_span ⟨j, rfl⟩)
+
 section Real
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
@@ -345,6 +388,62 @@ theorem ne_neg_of_inner_eq_zero {a b : E} (hb : b ≠ 0) (hab : ⟪a, b⟫_𝕜 
   rintro rfl
   rw [inner_neg_left, neg_eq_zero, inner_self_eq_zero] at hab
   exact hb hab
+
+section ProjectedBasis
+
+open Filter Module
+open scoped Topology
+
+variable {X : Type*} [TopologicalSpace X]
+  {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+  {K L : X → Submodule ℝ F} {x₀ : X}
+
+/-- Projecting linearly independent vectors of `K x₀` onto `K x` keeps them linearly independent
+for `x` near `x₀`, when the orthogonal projections onto the subspaces `K x` are continuous at
+`x₀`. -/
+theorem eventually_linearIndependent_starProjection_apply
+    (hK : ContinuousAt (fun x ↦ (K x).starProjection) x₀)
+    {ι : Type*} [Finite ι] {b : ι → F} (hb : LinearIndependent ℝ b) (hbK : ∀ i, b i ∈ K x₀) :
+    ∀ᶠ x in 𝓝 x₀, LinearIndependent ℝ fun i ↦ (K x).starProjection (b i) := by
+  have h₀ : (fun i ↦ (K x₀).starProjection (b i)) = b :=
+    funext fun i ↦ Submodule.starProjection_eq_self_iff.mpr (hbK i)
+  have hb' := hb.eventually
+  rw [← h₀] at hb'
+  exact (continuousAt_pi.2 fun i ↦ hK.clm_apply continuousAt_const).eventually hb'
+
+/-- Let `K x` and `L x` be subspaces whose orthogonal projections are continuous at `x₀` and whose
+dimensions add up to `finrank ℝ F` near `x₀`. Then projecting a basis of `K x₀` onto `K x` gives,
+for every `x` near `x₀`, a basis of `K x`. -/
+theorem eventually_linearIndependent_and_span_starProjection
+    (hK : ContinuousAt (fun x ↦ (K x).starProjection) x₀)
+    (hL : ContinuousAt (fun x ↦ (L x).starProjection) x₀)
+    (hdim : ∀ᶠ x in 𝓝 x₀, finrank ℝ (K x) + finrank ℝ (L x) = finrank ℝ F)
+    {k : ℕ} (b : Basis (Fin k) ℝ (K x₀)) :
+    ∀ᶠ x in 𝓝 x₀, LinearIndependent ℝ (fun i ↦ (K x).starProjection (b i)) ∧
+      Submodule.span ℝ (Set.range fun i ↦ (K x).starProjection (b i)) = K x := by
+  have hk := finrank_eq_card_basis b
+  obtain ⟨bL⟩ : Nonempty (Basis (Fin (finrank ℝ (L x₀))) ℝ (L x₀)) := ⟨finBasis ℝ _⟩
+  have hK' := eventually_linearIndependent_starProjection_apply (b := fun i ↦ (b i : F)) hK
+    (b.linearIndependent.map' (K x₀).subtype (Submodule.ker_subtype _)) fun i ↦ (b i).2
+  have hL' := eventually_linearIndependent_starProjection_apply (b := fun i ↦ (bL i : F)) hL
+    (bL.linearIndependent.map' (L x₀).subtype (Submodule.ker_subtype _)) fun i ↦ (bL i).2
+  have h₀ := hdim.self_of_nhds
+  filter_upwards [hK', hL', hdim] with x hliK hliL hx
+  have hle (M : Submodule ℝ F) {κ : Type} (c : κ → F) :
+      Submodule.span ℝ (Set.range fun i ↦ M.starProjection (c i)) ≤ M :=
+    Submodule.span_le.mpr <| Set.range_subset_iff.mpr fun i ↦ Submodule.starProjection_apply_mem _ _
+  -- Both projected families are linearly independent, so they fill `K x` and `L x`, whose
+  -- dimensions add up to `finrank ℝ F`.
+  have hleK := hle (K x) fun i ↦ (b i : F)
+  have h₁ := (finrank_span_eq_card hliK).symm.trans_le (Submodule.finrank_mono hleK)
+  have h₂ := (finrank_span_eq_card hliL).symm.trans_le
+    (Submodule.finrank_mono (hle (L x) fun i ↦ (bL i : F)))
+  rw [Fintype.card_fin] at h₁ h₂ hk
+  refine ⟨hliK, Submodule.eq_of_le_of_finrank_eq hleK ?_⟩
+  rw [finrank_span_eq_card hliK, Fintype.card_fin]
+  omega
+
+end ProjectedBasis
 
 end TauCeti
 

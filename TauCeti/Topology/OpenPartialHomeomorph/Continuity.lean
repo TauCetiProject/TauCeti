@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Order.Filter.EventuallyConst
 public import Mathlib.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
@@ -15,7 +16,9 @@ neighbourhood of its image, so a point of the source is not isolated as soon as 
 (`OpenPartialHomeomorph.nhdsNE_neBot`). For instance, no point in the source of a chart into a
 nontrivially normed field is isolated. Being injective and continuous on its source, it sends the
 punctured neighbourhoods of a point of its source to those of the image
-(`OpenPartialHomeomorph.tendsto_nhdsNE`).
+(`OpenPartialHomeomorph.tendsto_nhdsNE`). Eventual constancy of a map `f` near `x` is likewise
+detected by its chart representative `e' ∘ f ∘ e.symm` near `e x`
+(`OpenPartialHomeomorph.not_eventuallyConst_comp_symm`).
 
 A continuous function on the target that is constant off a compact subset of the target, read
 through the open partial homeomorphism on its source and extended by that constant, is continuous
@@ -69,5 +72,20 @@ theorem continuous_ite_source_of_eq_off_compact [T2Space X] (e : OpenPartialHome
     · simp only [hws, ↓reduceIte]
       exact (hgK _ fun hK => hw ⟨e w, hK, e.left_inv hws⟩).symm
     · simp [hws]
+
+/-- If `f` is not eventually constant near `x`, then its chart representative `e' ∘ f ∘ e.symm`
+is not eventually constant near `e x`, provided `f ∘ e.symm` maps a neighbourhood of `e x` into
+the source of `e'`. -/
+theorem not_eventuallyConst_comp_symm {Z W : Type*} [TopologicalSpace Z] [TopologicalSpace W]
+    {f : X → Y} {x : X} (e : OpenPartialHomeomorph X Z) {e' : OpenPartialHomeomorph Y W}
+    (hx : x ∈ e.source)
+    (hZ2 : ∀ᶠ z in 𝓝 (e x), f (e.symm z) ∈ e'.source)
+    (hne : ¬ EventuallyConst f (𝓝 x)) :
+    ¬ EventuallyConst (fun z ↦ e' (f (e.symm z))) (𝓝 (e x)) := fun h ↦ by
+  refine hne (((h.comp_tendsto (e.continuousAt hx)).comp e'.symm).congr ?_)
+  filter_upwards [e.open_source.mem_nhds hx,
+    (e.continuousAt hx).tendsto.eventually hZ2] with y hy hy'
+  rw [e.left_inv hy] at hy'
+  simp only [Function.comp_apply, e.left_inv hy, e'.left_inv hy']
 
 end OpenPartialHomeomorph

@@ -59,7 +59,7 @@ public section
 
 namespace TauCeti
 
-open LinearMap (BilinForm)
+open _root_.LinearMap (BilinForm)
 
 variable {n : ℕ}
 

@@ -387,7 +387,7 @@ theorem kostantRootSubgroupToToral_comp_numberedSymmetryIso_pow_hom (m : ℕ) (i
           e h ρ M hM hnil b wt σ θ hθM hθe hσ torusPerm hwt) ^
             m).asIso.hom =
       kostantRootSubgroupToToral e h ρ M hM hnil b wt ((σ^[m]) i) := by
-  exact TauCeti.CategoryTheory.comp_aut_pow_hom_of_comp
+  exact Aut.comp_pow_hom_of_comp
     (kostantToralNumberedSymmetryIso
       e h ρ M hM hnil b wt σ θ hθM hθe hσ torusPerm hwt)
     (kostantRootSubgroupToToral e h ρ M hM hnil b wt) σ
@@ -415,7 +415,7 @@ theorem kostantWeightTorusToToral_comp_numberedSymmetryIso_pow_hom (m : ℕ) :
     dsimp [F, γ]
     rw [Category.assoc, kostantWeightTorusToToral_comp_numberedSymmetryIso_hom,
       ← Category.assoc, SplitTorus.relabel_comp, pow_succ]
-  have hiter := TauCeti.CategoryTheory.comp_aut_pow_hom_of_comp
+  have hiter := Aut.comp_pow_hom_of_comp
     γ F Nat.succ hstep m 0
   rw [Nat.succ_iterate, zero_add] at hiter
   simpa [F, γ] using hiter

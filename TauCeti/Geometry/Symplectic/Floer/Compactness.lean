@@ -250,8 +250,8 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset
     (WithLp.sndL 2 ℝ ℂ V).continuous.comp_continuousOn hwcont, fun z hz ↦ (hwK hz).2, ?_⟩
   · intro C hC hCZ
     obtain ⟨M, hM⟩ := hbd C hC hCZ
-    exact ⟨M, fun n y hy ↦ (norm_fderiv_le_norm_fderiv_toLp_prodMk_right differentiableAt_fun_id
-      (hdiff (φ n) y (hCZ hy).1)).trans (hM n y hy)⟩
+    exact ⟨M, fun n y hy ↦
+      (norm_fderiv_le_norm_fderiv_toLp_prodMk_right differentiableAt_fun_id).trans (hM n y hy)⟩
   · simpa [Function.comp_def, g] using
       (WithLp.sndL 2 ℝ ℂ V).uniformContinuous.comp_tendstoLocallyUniformlyOn hlim
 
@@ -418,7 +418,7 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
   · rwa [hint' _ _ inter_subset_right (measurableSet_ball.inter hΩ.measurableSet)] at hn
   · obtain ⟨M, hM⟩ := hbd C' hC' hC'Z
     exact ⟨M, fun n y hy ↦ (norm_fderiv_le_norm_fderiv_toLp_prodMk_right
-      (differentiableAt_const _) (hdiff _ y (hC'Z hy).1)).trans (hM n y hy)⟩
+      (differentiableAt_const _)).trans (hM n y hy)⟩
   · obtain ⟨⟨a, x⟩, ⟨-, hx⟩, hax⟩ := hwK hz
     simpa [← hax, hι] using hx
   · simpa [Function.comp_def, g] using
@@ -436,7 +436,7 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
 /-- In the complex coordinate `equivRealProdCLM`, the Floer equation `(du - X_K)^{0,1} = 0` at
 `equivRealProdCLM y` is the coordinate equation `∂ₜu' - X(y, u') i = J(y, u')(∂ₛu' - X(y, u') 1)`
 for `u' = u ∘ equivRealProdCLM`, with `X(y, x) = X_K(equivRealProdCLM y, x) ∘ equivRealProdCLM`. -/
-private theorem fderiv_comp_equivRealProdCLM_I_sub (ω : SymplecticForm V) {u : ℝ × ℝ → V}
+theorem fderiv_comp_equivRealProdCLM_I_sub (ω : SymplecticForm V) {u : ℝ × ℝ → V}
     {y : ℂ} (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
       (J (equivRealProdCLM y) (u (equivRealProdCLM y)))
       (ω.perturbedFDeriv Ks Kt u (equivRealProdCLM y) : ℝ × ℝ →ₗ[ℝ] V)) :

@@ -82,22 +82,12 @@ theorem integralTopForm_mpullback_eq_sum_curveIntegral {ι : Type*} [Fintype ι]
       ((hf (R i z)).mdifferentiableAt one_ne_zero)
   have hD : MeasurableSet D := measurableSet_Ioo.preimage
     (EuclideanSpace.proj (𝕜 := ℝ) 0).continuous.measurable
-  have hri (i : ι) : R i '' D = (q i).extend '' Ioo (0 : ℝ) 1 := by
-    ext x
-    constructor
-    · rintro ⟨z, hz, rfl⟩
-      exact ⟨z 0, hz, rfl⟩
-    · rintro ⟨t, ht, rfl⟩
-      exact ⟨(EuclideanSpace.equiv (Fin 1) ℝ).symm (fun _ ↦ t), ht, rfl⟩
+  have hri (i : ι) : R i '' D = (q i).extend '' Ioo (0 : ℝ) 1 :=
+    image_comp_euclideanSpace_proj_preimage _ _ _
   have himage : (⋃ i, R i '' D) = Zᶜ := by simpa only [hri] using hqimage
   have hdisj : Pairwise (fun i j ↦ Disjoint (R i '' D) (R j '' D)) := by
     simpa only [hri] using hqdisj
-  have hinj (i : ι) : InjOn (R i) D := by
-    intro x hx y hy he
-    have hp := hqinj i hx hy he
-    ext j
-    rw [Subsingleton.elim j 0]
-    exact hp
+  have hinj (i : ι) : InjOn (R i) D := injOn_comp_euclideanSpace_proj_preimage (hqinj i) _
   have hr := integralTopForm_eq_oriented_parametrizations l
     (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis φ hi hD hZ himage hdisj hinj e hqd hqo
   rw [OrthonormalBasis.addHaar_eq_volume] at hr
@@ -115,14 +105,9 @@ theorem integralTopForm_mpullback_eq_sum_curveIntegral {ι : Type*} [Fintype ι]
     apply Finset.sum_congr rfl
     intro i _
     rw [curveIntegral_oneForm_eq, setIntegral_congr_fun hD (heval i)]
-    have hp :=
-      (TauCeti.volume_preserving_euclideanSpace_proj (ι := Fin 1) 0).setIntegral_preimage_emb
-      (TauCeti.measurableEmbedding_euclideanSpace_proj (ι := Fin 1) 0)
-      (circulationFun P Q (γ i).extend) (Ioo (0 : ℝ) 1)
-    -- Read the Euclidean parameter integral as pullback along its measure-preserving projection.
-    change (∫ z in (EuclideanSpace.proj 0) ⁻¹' Ioo (0 : ℝ) 1,
-      circulationFun P Q (γ i).extend (EuclideanSpace.proj 0 z)) = _
-    rw [hp, ← integral_Icc_eq_integral_Ioo,
+    -- Read the Euclidean parameter integral as a set integral over `(0, 1)`.
+    rw [setIntegral_comp_euclideanSpace_proj_preimage (circulationFun P Q (γ i).extend)
+      (Ioo (0 : ℝ) 1) 0, ← integral_Icc_eq_integral_Ioo,
       integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le zero_le_one]
 
 section SmoothBoundary
