@@ -341,6 +341,21 @@ section Smooth
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
 
+/-- The point `(w - c) / a` of the plane on which an input end with center `c` and scale `a` is
+modelled, paired with the target point, is `C^n` jointly in the center, the scale, the domain point
+`w` and the target point, at every point with `a ≠ 0`. -/
+theorem contMDiffAt_sub_div_prodMk {n : ℕ∞} {c a : ℂ} (ha : a ≠ 0) (w : ℂ) (x : M) :
+    ContMDiffAt (𝓘(ℝ, ℂ × ℂ).prod (𝓘(ℝ, ℂ).prod I)) (𝓘(ℝ, ℂ).prod I) n
+      (fun p : (ℂ × ℂ) × (ℂ × M) => ((p.2.1 - p.1.1) / p.1.2, p.2.2)) ((c, a), (w, x)) := by
+  have hcoord : ContDiffAt ℝ n (fun q : (ℂ × ℂ) × ℂ => (q.2 - q.1.1) / q.1.2) ((c, a), w) := by
+    have h : ContDiffAt ℂ n (fun q : (ℂ × ℂ) × ℂ => (q.2 - q.1.1) / q.1.2) ((c, a), w) := by
+      refine ContDiffAt.div (x := ((c, a), w)) (f := fun q : (ℂ × ℂ) × ℂ => q.2 - q.1.1)
+        (g := fun q : (ℂ × ℂ) × ℂ => q.1.2) ?_ ?_ ha <;> fun_prop
+    exact h.restrict_scalars ℝ
+  exact (hcoord.contMDiffAt.comp (f := fun p : (ℂ × ℂ) × (ℂ × M) => (p.1, p.2.1))
+    ((c, a), (w, x)) (contMDiffAt_fst.prodMk_space (contMDiffAt_fst.comp _ contMDiffAt_snd))).prodMk
+    (contMDiffAt_snd.comp _ contMDiffAt_snd)
+
 /-- **The input end datum is smooth in its center and scale.** For a period-one Hamiltonian of
 class `C^n` on `ℝ × M`, the input end datum is `C^n` jointly in the center `c`, the scale `a`, the
 domain point `w` and the target point, at every point with `a ≠ 0` and `w ≠ c`. -/
@@ -350,15 +365,6 @@ theorem contMDiffAt_inputEndPerturbation {n : ℕ∞} {H : ℝ → M → ℝ} (h
     ContMDiffAt (𝓘(ℝ, ℂ × ℂ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
       (fun p : (ℂ × ℂ) × (ℂ × M) => inputEndPerturbation p.1.1 p.1.2 H p.2.1 p.2.2)
       ((c, a), (w, x)) := by
-  have hcoord : ContDiffAt ℝ n (fun q : (ℂ × ℂ) × ℂ => (q.2 - q.1.1) / q.1.2) ((c, a), w) := by
-    have h : ContDiffAt ℂ n (fun q : (ℂ × ℂ) × ℂ => (q.2 - q.1.1) / q.1.2) ((c, a), w) := by
-      refine ContDiffAt.div (x := ((c, a), w)) (f := fun q : (ℂ × ℂ) × ℂ => q.2 - q.1.1)
-        (g := fun q : (ℂ × ℂ) × ℂ => q.1.2) ?_ ?_ ha <;> fun_prop
-    exact h.restrict_scalars ℝ
-  have hcoordM : ContMDiffAt (𝓘(ℝ, ℂ × ℂ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ) n
-      (fun p : (ℂ × ℂ) × (ℂ × M) => (p.2.1 - p.1.1) / p.1.2) ((c, a), (w, x)) :=
-    hcoord.contMDiffAt.comp (f := fun p : (ℂ × ℂ) × (ℂ × M) => (p.1, p.2.1)) ((c, a), (w, x))
-      (contMDiffAt_fst.prodMk_space (contMDiffAt_fst.comp _ contMDiffAt_snd))
   have hinv : ContDiffAt ℝ n (fun q : ℂ × ℂ => ContinuousLinearMap.mul ℝ ℂ q.2⁻¹) (c, a) :=
     (ContinuousLinearMap.mul ℝ ℂ).contDiff.contDiffAt.comp (c, a)
       ((contDiffAt_inv ℝ ha).comp (c, a) contDiffAt_snd)
@@ -368,9 +374,17 @@ theorem contMDiffAt_inputEndPerturbation {n : ℕ∞} {H : ℝ → M → ℝ} (h
       ((c, a), (w, x)) hinv.contMDiffAt contMDiffAt_fst
   exact ((contMDiffAt_positivePlanePerturbation hH hHs
     (div_ne_zero (sub_ne_zero.2 hw) ha) x).comp ((c, a), (w, x))
-    (hcoordM.prodMk (contMDiffAt_snd.comp _ contMDiffAt_snd))).clm_comp hmul
+    (contMDiffAt_sub_div_prodMk ha w x)).clm_comp hmul
 
 variable {ι : Type*} [Fintype ι] {H : ι → ℝ → M → ℝ} {Hout : ℝ → M → ℝ}
+
+/-- Evaluating the centers and the scales of a configuration at the input `i` is smooth. -/
+theorem contMDiff_prodMap_apply {n : ℕ∞} (i : ι) :
+    ContMDiff (𝓘(ℝ, (ι → ℂ) × (ι → ℂ)).prod (𝓘(ℝ, ℂ).prod I))
+      (𝓘(ℝ, ℂ × ℂ).prod (𝓘(ℝ, ℂ).prod I)) n
+      (fun p : ((ι → ℂ) × (ι → ℂ)) × (ℂ × M) => ((p.1.1 i, p.1.2 i), p.2)) :=
+  have hL : ContDiff ℝ n (fun q : (ι → ℂ) × (ι → ℂ) => (q.1 i, q.2 i)) := by fun_prop
+  (hL.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd
 
 /-- **The datum is smooth in the configuration.** For period-one Hamiltonians of class `C^n` on
 `ℝ × M`, the perturbation datum is `C^n` jointly in the centers, the scales, the domain point and
@@ -386,14 +400,8 @@ theorem contMDiffAt_puncturedSpherePerturbation {n : ℕ∞} (hH : ∀ i, Period
   simp only [puncturedSpherePerturbation_def]
   refine (contMDiffAt_finsetSum fun i _ => ?_).add
     ((contMDiff_negativePlanePerturbation hHout hHouts).contMDiffAt.comp _ contMDiffAt_snd)
-  -- Evaluating the configuration at `i` is a continuous linear map.
-  have hev : ContMDiffAt (𝓘(ℝ, (ι → ℂ) × (ι → ℂ)).prod (𝓘(ℝ, ℂ).prod I))
-      (𝓘(ℝ, ℂ × ℂ).prod (𝓘(ℝ, ℂ).prod I)) n
-      (fun p : ((ι → ℂ) × (ι → ℂ)) × (ℂ × M) => ((p.1.1 i, p.1.2 i), p.2)) ((c, a), (w, x)) :=
-    have hL : ContDiff ℝ n (fun q : (ι → ℂ) × (ι → ℂ) => (q.1 i, q.2 i)) := by fun_prop
-    (hL.contMDiff.contMDiffAt.comp _ contMDiffAt_fst).prodMk contMDiffAt_snd
   exact (contMDiffAt_inputEndPerturbation (hH i) (hHs i) (ha i) (hw i) x).comp ((c, a), (w, x))
-    hev
+    (contMDiff_prodMap_apply i).contMDiffAt
 
 end Smooth
 

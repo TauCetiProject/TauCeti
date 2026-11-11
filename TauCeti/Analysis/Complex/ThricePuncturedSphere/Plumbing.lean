@@ -161,6 +161,13 @@ theorem norm_plumbingFactor_of_ne_inf {q : Puncture} (hq : q ≠ inf) (L : ℝ) 
   rw [norm_plumbingFactor, norm_endScale hq]
   ring
 
+/-- At a finite puncture the plumbing factor has norm `u² / 4`, where `u / 2 = e^{-2π(L/2)} / 2`
+is the radius of the circle `Re z = L/2` in the end. -/
+theorem norm_plumbingFactor_of_ne_inf_eq_sq {q : Puncture} (hq : q ≠ inf) (L : ℝ) :
+    ‖q.plumbingFactor L‖ = Real.exp (-(2 * π * (L / 2))) ^ 2 / 4 := by
+  rw [norm_plumbingFactor_of_ne_inf hq, ← Real.exp_nat_mul]
+  ring_nf
+
 /-- The first input of the inserted sphere sits at the center of the end it is plumbed into. -/
 @[simp]
 theorem plumbingMap_zero (q : Puncture) (L : ℝ) : q.plumbingMap L 0 = q.endCenter := by
@@ -338,16 +345,12 @@ theorem exp_neg_two_pi_div_two_le_norm_sub_endCenter_and_norm_le {q r : Puncture
 theorem norm_plumbingFactor_mul_exp_div_two_le_norm_sub_endCenter {q : Puncture} (hq : q ≠ inf)
     {L : ℝ} (hL : 0 ≤ L) {w : ℂ} (hc : w ≠ q.endCenter) (h : (q.endCoord w).re ≤ L / 2) :
     ‖q.plumbingFactor L‖ * Real.exp (-(2 * π)) / 2 ≤ ‖w - q.endCenter‖ := by
-  set u := Real.exp (-(2 * π * (L / 2)))
-  have hu₀ : 0 < u := Real.exp_pos _
-  have hu₁ : u ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [pi_pos])
-  have hf : ‖q.plumbingFactor L‖ = u ^ 2 / 4 := by
-    rw [norm_plumbingFactor_of_ne_inf hq, ← Real.exp_nat_mul]
-    ring_nf
+  have hu₀ : 0 < Real.exp (-(2 * π * (L / 2))) := Real.exp_pos _
+  have hu₁ : Real.exp (-(2 * π * (L / 2))) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [pi_pos])
   have he₀ : 0 < Real.exp (-(2 * π)) := Real.exp_pos _
   have he₁ : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [pi_pos])
-  have hge : u / 2 ≤ ‖w - q.endCenter‖ := (re_endCoord_le_iff hq hc).1 h
-  rw [hf]
+  have hge := (re_endCoord_le_iff hq hc).1 h
+  rw [norm_plumbingFactor_of_ne_inf_eq_sq hq]
   nlinarith
 
 /-- **The receiving part is far from the second inserted input.** For `L ≥ 0`, a point with
@@ -357,22 +360,20 @@ plumbing factor. -/
 theorem norm_plumbingFactor_mul_exp_div_two_le_norm_sub_plumbingMap_one {q : Puncture}
     (hq : q ≠ inf) {L : ℝ} (hL : 0 ≤ L) {w : ℂ} (h : (q.endCoord w).re ≤ L / 2) :
     ‖q.plumbingFactor L‖ * Real.exp (-(2 * π)) / 2 ≤ ‖w - q.plumbingMap L 1‖ := by
-  set u := Real.exp (-(2 * π * (L / 2)))
-  have hu₀ : 0 < u := Real.exp_pos _
-  have hu₁ : u ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [pi_pos])
-  have hf : ‖q.plumbingFactor L‖ = u ^ 2 / 4 := by
-    rw [norm_plumbingFactor_of_ne_inf hq, ← Real.exp_nat_mul]
-    ring_nf
   have he₀ : 0 < Real.exp (-(2 * π)) := Real.exp_pos _
   have he₁ : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [pi_pos])
   have hψ := q.plumbingMap_one_sub_endCenter L
   rcases eq_or_ne w q.endCenter with rfl | hc
-  · rw [norm_sub_rev, hψ, hf]
-    nlinarith
-  · have hge : u / 2 ≤ ‖w - q.endCenter‖ := (re_endCoord_le_iff hq hc).1 h
+  · -- At the center the distance to `ψ(1)` is the plumbing factor itself.
+    rw [norm_sub_rev, hψ]
+    nlinarith [norm_nonneg (q.plumbingFactor L)]
+  · -- Elsewhere `‖w - c_q‖ ≥ u / 2`, which exceeds `‖f‖ = u² / 4` by at least `u² / 4`.
+    have hu₀ : 0 < Real.exp (-(2 * π * (L / 2))) := Real.exp_pos _
+    have hu₁ : Real.exp (-(2 * π * (L / 2))) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [pi_pos])
+    have hge := (re_endCoord_le_iff hq hc).1 h
     have h₁ := norm_sub_norm_le (w - q.endCenter) (q.plumbingMap L 1 - q.endCenter)
-    rw [sub_sub_sub_cancel_right, hψ, hf] at h₁
-    rw [hf]
+    rw [sub_sub_sub_cancel_right, hψ, norm_plumbingFactor_of_ne_inf_eq_sq hq] at h₁
+    rw [norm_plumbingFactor_of_ne_inf_eq_sq hq]
     nlinarith
 
 /-- **The plumbing map preserves the angular forms.** It pulls the angular form `dt` of the end

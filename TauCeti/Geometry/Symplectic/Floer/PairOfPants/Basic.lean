@@ -294,6 +294,37 @@ theorem eventuallyEq_pairOfPantsEndComponent (hH : Function.Periodic (H q) 1) {z
   refine ⟨?_, ?_⟩ <;> filter_upwards [h] with w hw <;> funext x
   exacts [pairOfPantsEndComponent_one_of_pos hw x, pairOfPantsEndComponent_I_of_pos hH hw x]
 
+/-! ### The supports of the end weights -/
+
+/-- The weight `β(s₀(w) - 1)` of the end at `0` vanishes off the disc `‖w‖ < exp (-2π) / 2`. -/
+theorem smoothTransition_eq_zero_of_le_norm {w : ℂ} (hw : Real.exp (-(2 * π)) / 2 ≤ ‖w‖) :
+    smoothTransition ((zero.endCoord w).re - 1) = 0 :=
+  smoothTransition.zero_of_nonpos (by linarith [re_endCoord_zero_le_one hw])
+
+/-- At the center `c` of an input end, where the end coordinate takes the junk longitudinal value
+`0` (from `Complex.log 0 = 0`), the weight `β(s₀((w - c) / a) - 1)` of the end vanishes. -/
+theorem smoothTransition_eq_zero_of_sub_div_eq_zero {c a w : ℂ} (h : (w - c) / a = 0) :
+    smoothTransition ((zero.endCoord ((w - c) / a)).re - 1) = 0 := by
+  have h0 : (zero.endCoord 0).re = 0 := by simpa using re_endCoord_endCenter zero
+  rw [h, h0, zero_sub, smoothTransition.zero_of_nonpos (by norm_num)]
+
+/-- The weight `β(s₀((w - c) / a) - 1)` of the input end with center `c` and scale `a` vanishes off
+the disc `‖w - c‖ < ‖a‖ exp (-2π) / 2`. -/
+theorem smoothTransition_eq_zero_of_le_norm_sub {c a w : ℂ}
+    (h : ‖a‖ * Real.exp (-(2 * π)) / 2 ≤ ‖w - c‖) :
+    smoothTransition ((zero.endCoord ((w - c) / a)).re - 1) = 0 := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · exact smoothTransition_eq_zero_of_sub_div_eq_zero (div_zero _)
+  · refine smoothTransition_eq_zero_of_le_norm ?_
+    rw [norm_div, le_div_iff₀ (norm_pos_iff.2 ha)]
+    linarith
+
+/-- The weight `β(-s_∞(w) - 1)` of the end at `∞` vanishes on the disc `‖w‖ ≤ 2 exp (2π)`. -/
+theorem smoothTransition_eq_zero_of_norm_le {w : ℂ} (h : ‖w‖ ≤ 2 * Real.exp (2 * π)) :
+    smoothTransition (-(inf.endCoord w).re - 1) = 0 :=
+  smoothTransition.zero_of_nonpos
+    (by linarith [neg_re_endCoord_inf_le zero_le_one (w := w) (by rwa [mul_one])])
+
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
 
