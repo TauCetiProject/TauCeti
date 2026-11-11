@@ -12,6 +12,10 @@ public import Mathlib.MeasureTheory.Function.UnifTight
 
 * `MeasureTheory.UnifTight.ae_mono`: uniform tightness passes to families which are dominated
   almost everywhere in norm by a uniformly tight family.
+* `MeasureTheory.tendsto_eLpNorm_comp_sub_comp_of_tendsto`: for a finite exponent, composing
+  with a continuous map `P` satisfying `‖P x‖ ≤ ‖x‖` preserves `Lᵖ` convergence. The map need not
+  be uniformly continuous or Lipschitz; by Vitali's convergence theorem, continuity together with
+  the norm bound suffices.
 -/
 
 public section
@@ -34,5 +38,38 @@ protected theorem UnifTight.ae_mono {α β ι : Type*} {m : MeasurableSpace α}
   by_cases hxs : x ∈ sᶜ
   · simpa only [Set.indicator_of_mem hxs] using hx
   · simp only [Set.indicator_of_notMem hxs, enorm_zero, le_refl]
+
+open Filter Topology in
+/-- **Continuous maps of norm at most the identity preserve `Lᵖ` convergence.** Let
+`1 ≤ p < ∞` and let `P` be continuous with `‖P x‖ ≤ ‖x‖`. If `f n → g` in `Lᵖ`, then
+`P ∘ f n → P ∘ g` in `Lᵖ`.
+
+Every subsequence of `f` has a further subsequence converging almost everywhere, along which
+`P ∘ f` converges almost everywhere by continuity, while the norm bound transfers uniform
+integrability and uniform tightness from `f` to `P ∘ f`; Vitali's convergence theorem then gives
+convergence along that subsequence. -/
+theorem tendsto_eLpNorm_comp_sub_comp_of_tendsto {α β : Type*} {m : MeasurableSpace α}
+    [NormedAddCommGroup β] {μ : Measure α} {p : ℝ≥0∞} (hp : 1 ≤ p) (hp' : p ≠ ∞) {P : β → β}
+    (hP : Continuous P) (hPb : ∀ x, ‖P x‖ ≤ ‖x‖) {f : ℕ → α → β} {g : α → β}
+    (hf : ∀ n, MemLp (f n) p μ) (hg : MemLp g p μ)
+    (hfg : Tendsto (fun n ↦ eLpNorm (f n - g) p μ) atTop (𝓝 0)) :
+    Tendsto (fun n ↦ eLpNorm (P ∘ f n - P ∘ g) p μ) atTop (𝓝 0) := by
+  have hmeas (n : ℕ) : AEStronglyMeasurable (P ∘ f n) μ :=
+    hP.comp_aestronglyMeasurable (hf n).aestronglyMeasurable
+  have hPg : MemLp (P ∘ g) p μ :=
+    hg.mono (hP.comp_aestronglyMeasurable hg.aestronglyMeasurable)
+      (Eventually.of_forall fun x ↦ hPb (g x))
+  have hbound (n : ℕ) : ∀ᵐ x ∂μ, ‖(P ∘ f n) x‖ₑ ≤ ‖f n x‖ₑ :=
+    Eventually.of_forall fun x ↦ enorm_le_iff_norm_le.2 (hPb (f n x))
+  refine tendsto_of_subseq_tendsto fun ns hns ↦ ?_
+  obtain ⟨hmeasure, hui, hut⟩ :=
+    (tendstoInMeasure_iff_tendsto_Lp hp hp' (fun n ↦ hf (ns n)) hg).2 (hfg.comp hns)
+  obtain ⟨ms, -, hae⟩ := hmeasure.exists_seq_tendsto_ae
+  have hlim : ∀ᵐ x ∂μ, Tendsto (fun n ↦ (P ∘ f (ns (ms n))) x) atTop (𝓝 ((P ∘ g) x)) := by
+    filter_upwards [hae] with x hx
+    exact (hP.tendsto (g x)).comp hx
+  exact ⟨ms, tendsto_Lp_of_tendsto_ae hp hp' (fun n ↦ hmeas (ns (ms n))) hPg
+    ((hui.comp ms).ae_mono (fun n ↦ hmeas (ns (ms n))) fun n ↦ hbound (ns (ms n)))
+    ((hut.comp ms).ae_mono (fun n ↦ hmeas (ns (ms n))) fun n ↦ hbound (ns (ms n))) hlim⟩
 
 end MeasureTheory
