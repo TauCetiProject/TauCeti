@@ -175,6 +175,109 @@ theorem isMaximal_span_natCast_omega_sub (hr : (p : ℤ) ∣ r ^ 2 - b * r - a) 
   rw [← ker_evalRoot hr]
   exact RingHom.ker_isMaximal_of_surjective _ (evalRoot_surjective hr)
 
+omit [Fact p.Prime] in
+/-- The product of the two ideals `(p, ω - r)` and `(p, ω - (b - r))` is contained in `(p)`: the
+only product of generators not visibly a multiple of `p` is `(ω - r)(ω - (b - r)) = -p m`. -/
+private theorem span_mul_span_le_span_natCast {m : ℤ} (hm : r ^ 2 - b * r - a = p * m) :
+    Ideal.span {(p : QuadraticAlgebra ℤ a b), ω - (r : QuadraticAlgebra ℤ a b)} *
+        Ideal.span {(p : QuadraticAlgebra ℤ a b), ω - ((b - r : ℤ) : QuadraticAlgebra ℤ a b)} ≤
+      Ideal.span {(p : QuadraticAlgebra ℤ a b)} := by
+  have hP := Ideal.mem_span_singleton_self (p : QuadraticAlgebra ℤ a b)
+  refine (Ideal.span_pair_mul_span_pair _ _ _ _).le.trans ?_
+  simp only [Ideal.span_le, Set.insert_subset_iff, Set.singleton_subset_iff, SetLike.mem_coe]
+  refine ⟨Ideal.mul_mem_right _ _ hP, Ideal.mul_mem_right _ _ hP, Ideal.mul_mem_left _ _ hP, ?_⟩
+  rw [omega_sub_mul_omega_sub hm]
+  exact neg_mem (Ideal.mul_mem_right _ _ hP)
+
+/-- If `p ∣ 2r - b` and `p ∣ m`, then `(p, ω - r) = (p, ω - (b - r))` and
+`(p, ω - r)² ≤ p (p, ω - r)`, which cannot contain `p`; so the product of the two primes is not
+`(p)`. -/
+private theorem span_mul_span_ne_span_natCast {m t : ℤ}
+    (hm : r ^ 2 - b * r - a = p * m) (ht : 2 * r - b = p * t) (hmp : (p : ℤ) ∣ m) :
+    Ideal.span {(p : QuadraticAlgebra ℤ a b), ω - (r : QuadraticAlgebra ℤ a b)} *
+        Ideal.span {(p : QuadraticAlgebra ℤ a b), ω - ((b - r : ℤ) : QuadraticAlgebra ℤ a b)} ≠
+      Ideal.span {(p : QuadraticAlgebra ℤ a b)} := by
+  intro h
+  have hkey := omega_sub_mul_omega_sub (a := a) (b := b) hm
+  set P : QuadraticAlgebra ℤ a b := (p : QuadraticAlgebra ℤ a b)
+  set R : QuadraticAlgebra ℤ a b := (r : QuadraticAlgebra ℤ a b)
+  set R' : QuadraticAlgebra ℤ a b := ((b - r : ℤ) : QuadraticAlgebra ℤ a b) with hR'
+  set M : QuadraticAlgebra ℤ a b := (m : QuadraticAlgebra ℤ a b)
+  set 𝔭 := Ideal.span {P, ω - R}
+  set 𝔮 := Ideal.span {P, ω - R'}
+  have hP𝔭 : P ∈ 𝔭 := Ideal.subset_span (by simp)
+  have hω𝔭 : ω - R ∈ 𝔭 := Ideal.subset_span (by simp)
+  have h𝔮 : 𝔮 = 𝔭 :=
+    (span_natCast_omega_sub_eq_iff ⟨m, hm⟩).mpr ⟨t, by linear_combination ht⟩
+  have hM𝔭 : M ∈ 𝔭 := (mem_span_natCast_omega_sub_iff ⟨m, hm⟩).mpr (by simpa [M] using hmp)
+  have hR'eq : R' = R - P * (t : QuadraticAlgebra ℤ a b) := by
+    have h' : ((2 * r - b : ℤ) : QuadraticAlgebra ℤ a b) = ((p * t : ℤ) : _) := by rw [ht]
+    simp only [hR', P, R]
+    push_cast at h' ⊢
+    linear_combination -h'
+  have hsq' : (ω - R) * (ω - R) = P * (-(t : QuadraticAlgebra ℤ a b) * (ω - R) - M) := by
+    rw [hR'eq] at hkey
+    linear_combination hkey
+  have hle' : 𝔭 * 𝔭 ≤ Ideal.span {P} * 𝔭 := by
+    have hP : ∀ x ∈ 𝔭, P * x ∈ Ideal.span {P} * 𝔭 :=
+      fun x hx => Ideal.mul_mem_mul (Ideal.mem_span_singleton_self P) hx
+    refine (Ideal.span_pair_mul_span_pair P (ω - R) P (ω - R)).le.trans ?_
+    simp only [Ideal.span_le, Set.insert_subset_iff, Set.singleton_subset_iff, SetLike.mem_coe]
+    refine ⟨hP _ hP𝔭, hP _ hω𝔭, mul_comm P (ω - R) ▸ hP _ hω𝔭, ?_⟩
+    rw [hsq']
+    exact hP _ (sub_mem (Ideal.mul_mem_left _ _ hω𝔭) hM𝔭)
+  rw [h𝔮] at h
+  obtain ⟨z, hz, hPz⟩ :=
+    Ideal.mem_span_singleton_mul.mp (hle' (h ▸ Ideal.mem_span_singleton_self P))
+  exact (isMaximal_span_natCast_omega_sub ⟨m, hm⟩).ne_top
+    ((Ideal.eq_top_iff_one _).mpr
+      (eq_one_of_natCast_mul_eq (Fact.out : p.Prime).ne_zero hPz ▸ hz))
+
+/-- If `2r - b` or `m` is coprime to `p`, a Bézout relation writes `p` as a combination of
+products of the generators of `(p, ω - r)` and `(p, ω - (b - r))`, so `p` lies in their
+product. -/
+private theorem natCast_mem_span_mul_span {m : ℤ}
+    (hm : r ^ 2 - b * r - a = p * m) (h : ¬ ((p : ℤ) ∣ 2 * r - b ∧ (p : ℤ) ∣ m)) :
+    (p : QuadraticAlgebra ℤ a b) ∈
+      Ideal.span {(p : QuadraticAlgebra ℤ a b), ω - (r : QuadraticAlgebra ℤ a b)} *
+        Ideal.span {(p : QuadraticAlgebra ℤ a b),
+          ω - ((b - r : ℤ) : QuadraticAlgebra ℤ a b)} := by
+  have hkey := omega_sub_mul_omega_sub (a := a) (b := b) hm
+  set P : QuadraticAlgebra ℤ a b := (p : QuadraticAlgebra ℤ a b)
+  set R : QuadraticAlgebra ℤ a b := (r : QuadraticAlgebra ℤ a b)
+  set R' : QuadraticAlgebra ℤ a b := ((b - r : ℤ) : QuadraticAlgebra ℤ a b) with hR'
+  set 𝔭 := Ideal.span {P, ω - R}
+  set 𝔮 := Ideal.span {P, ω - R'}
+  have hP𝔭 : P ∈ 𝔭 := Ideal.subset_span (by simp)
+  have hP𝔮 : P ∈ 𝔮 := Ideal.subset_span (by simp)
+  have hω𝔭 : ω - R ∈ 𝔭 := Ideal.subset_span (by simp)
+  have hω𝔮 : ω - R' ∈ 𝔮 := Ideal.subset_span (by simp)
+  have hpr : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp Fact.out
+  rcases not_and_or.mp h with hs | hmp
+  · obtain ⟨u, v, huv⟩ := (hpr.coprime_iff_not_dvd).mpr hs
+    have huv' : ((u * p + v * (2 * r - b) : ℤ) : QuadraticAlgebra ℤ a b) = 1 := by
+      rw [huv, Int.cast_one]
+    push_cast at huv'
+    have hP : P = (u : QuadraticAlgebra ℤ a b) * (P * P) + (v : QuadraticAlgebra ℤ a b) *
+        (P * (ω - R')) - (v : QuadraticAlgebra ℤ a b) * ((ω - R) * P) := by
+      rw [hR']
+      push_cast
+      linear_combination (-P) * huv'
+    rw [hP]
+    exact sub_mem (add_mem (Ideal.mul_mem_left _ _ (Ideal.mul_mem_mul hP𝔭 hP𝔮))
+      (Ideal.mul_mem_left _ _ (Ideal.mul_mem_mul hP𝔭 hω𝔮)))
+      (Ideal.mul_mem_left _ _ (Ideal.mul_mem_mul hω𝔭 hP𝔮))
+  · obtain ⟨u, v, huv⟩ := (hpr.coprime_iff_not_dvd).mpr hmp
+    have huv' : ((u * p + v * m : ℤ) : QuadraticAlgebra ℤ a b) = 1 := by
+      rw [huv, Int.cast_one]
+    push_cast at huv'
+    have hP : P = (u : QuadraticAlgebra ℤ a b) * (P * P) -
+        (v : QuadraticAlgebra ℤ a b) * ((ω - R) * (ω - R')) := by
+      linear_combination (-P) * huv' + v * hkey
+    rw [hP]
+    exact sub_mem (Ideal.mul_mem_left _ _ (Ideal.mul_mem_mul hP𝔭 hP𝔮))
+      (Ideal.mul_mem_left _ _ (Ideal.mul_mem_mul hω𝔭 hω𝔮))
+
 /-- **Dedekind's criterion for a quadratic order.** Let `r` be a root of `X² - b X - a` modulo
 `p`, so that `b - r` is the second root. Then `p` factors as `(p) = (p, ω - r) (p, ω - (b - r))`
 in `ℤ[ω]` if and only if `p` does not divide both the derivative `2r - b` and the quotient
@@ -187,87 +290,14 @@ theorem span_natCast_omega_sub_mul_span_natCast_omega_sub_eq_iff
       ¬ ((p : ℤ) ∣ 2 * r - b ∧ (p : ℤ) ^ 2 ∣ r ^ 2 - b * r - a) := by
   have hp0 : (p : ℤ) ≠ 0 := by exact_mod_cast (Fact.out : p.Prime).ne_zero
   obtain ⟨m, hm⟩ := hr
-  have hkey := omega_sub_mul_omega_sub (a := a) (b := b) hm
   have hsq : (p : ℤ) ^ 2 ∣ r ^ 2 - b * r - a ↔ (p : ℤ) ∣ m := by
     rw [hm, sq, mul_dvd_mul_iff_left hp0]
   rw [hsq]
-  set P : QuadraticAlgebra ℤ a b := (p : QuadraticAlgebra ℤ a b)
-  set R : QuadraticAlgebra ℤ a b := (r : QuadraticAlgebra ℤ a b)
-  set R' : QuadraticAlgebra ℤ a b := ((b - r : ℤ) : QuadraticAlgebra ℤ a b) with hR'
-  set M : QuadraticAlgebra ℤ a b := (m : QuadraticAlgebra ℤ a b)
-  set 𝔭 := Ideal.span {P, ω - R}
-  set 𝔮 := Ideal.span {P, ω - R'}
-  have hP𝔭 : P ∈ 𝔭 := Ideal.subset_span (by simp)
-  have hP𝔮 : P ∈ 𝔮 := Ideal.subset_span (by simp)
-  have hω𝔭 : ω - R ∈ 𝔭 := Ideal.subset_span (by simp)
-  have hω𝔮 : ω - R' ∈ 𝔮 := Ideal.subset_span (by simp)
-  -- The product is always contained in `(p)`: the only product of generators not visibly a
-  -- multiple of `p` is `(ω - r)(ω - (b - r)) = -p m`.
-  have hle : 𝔭 * 𝔮 ≤ Ideal.span {P} := by
-    have hP := Ideal.mem_span_singleton_self P
-    refine (Ideal.span_pair_mul_span_pair P (ω - R) P (ω - R')).le.trans ?_
-    simp only [Ideal.span_le, Set.insert_subset_iff, Set.singleton_subset_iff, SetLike.mem_coe]
-    refine ⟨Ideal.mul_mem_right _ _ hP, Ideal.mul_mem_right _ _ hP, Ideal.mul_mem_left _ _ hP, ?_⟩
-    rw [hkey]
-    exact neg_mem (Ideal.mul_mem_right _ _ hP)
   constructor
-  · -- If `p ∣ 2r - b` and `p ∣ m`, then `𝔭 = 𝔮` and `𝔭² ≤ p 𝔭`, which cannot contain `p`.
-    rintro h ⟨⟨t, ht⟩, hmp⟩
-    have h𝔮 : 𝔮 = 𝔭 :=
-      (span_natCast_omega_sub_eq_iff ⟨m, hm⟩).mpr ⟨t, by linear_combination ht⟩
-    have hM𝔭 : M ∈ 𝔭 := (mem_span_natCast_omega_sub_iff ⟨m, hm⟩).mpr (by simpa [M] using hmp)
-    have hR'eq : R' = R - P * (t : QuadraticAlgebra ℤ a b) := by
-      have h' : ((2 * r - b : ℤ) : QuadraticAlgebra ℤ a b) = ((p * t : ℤ) : _) := by rw [ht]
-      simp only [hR', P, R]
-      push_cast at h' ⊢
-      linear_combination -h'
-    have hsq' : (ω - R) * (ω - R) =
-        P * (-(t : QuadraticAlgebra ℤ a b) * (ω - R) - M) := by
-      rw [hR'eq] at hkey
-      linear_combination hkey
-    have hle' : 𝔭 * 𝔭 ≤ Ideal.span {P} * 𝔭 := by
-      have hP : ∀ x ∈ 𝔭, P * x ∈ Ideal.span {P} * 𝔭 :=
-        fun x hx => Ideal.mul_mem_mul (Ideal.mem_span_singleton_self P) hx
-      refine (Ideal.span_pair_mul_span_pair P (ω - R) P (ω - R)).le.trans ?_
-      simp only [Ideal.span_le, Set.insert_subset_iff, Set.singleton_subset_iff, SetLike.mem_coe]
-      refine ⟨hP _ hP𝔭, hP _ hω𝔭, mul_comm P (ω - R) ▸ hP _ hω𝔭, ?_⟩
-      rw [hsq']
-      exact hP _ (sub_mem (Ideal.mul_mem_left _ _ hω𝔭) hM𝔭)
-    rw [h𝔮] at h
-    obtain ⟨z, hz, hPz⟩ :=
-      Ideal.mem_span_singleton_mul.mp (hle' (h ▸ Ideal.mem_span_singleton_self P))
-    exact (isMaximal_span_natCast_omega_sub ⟨m, hm⟩).ne_top
-      ((Ideal.eq_top_iff_one _).mpr
-        (eq_one_of_natCast_mul_eq (Fact.out : p.Prime).ne_zero hPz ▸ hz))
-  · -- Otherwise `2r - b` or `m` is coprime to `p`, and a Bézout relation writes `p` as a
-    -- combination of products of generators.
-    intro h
-    refine le_antisymm hle ((Ideal.span_singleton_le_iff_mem _).mpr ?_)
-    have hpr : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp Fact.out
-    rcases not_and_or.mp h with hs | hmp
-    · obtain ⟨u, v, huv⟩ := (hpr.coprime_iff_not_dvd).mpr hs
-      have huv' : ((u * p + v * (2 * r - b) : ℤ) : QuadraticAlgebra ℤ a b) = 1 := by
-        rw [huv, Int.cast_one]
-      push_cast at huv'
-      have hP : P = (u : QuadraticAlgebra ℤ a b) * (P * P) + (v : QuadraticAlgebra ℤ a b) *
-          (P * (ω - R')) - (v : QuadraticAlgebra ℤ a b) * ((ω - R) * P) := by
-        rw [hR']
-        push_cast
-        linear_combination (-P) * huv'
-      rw [hP]
-      exact sub_mem (add_mem (Ideal.mul_mem_left _ _ (Ideal.mul_mem_mul hP𝔭 hP𝔮))
-        (Ideal.mul_mem_left _ _ (Ideal.mul_mem_mul hP𝔭 hω𝔮)))
-        (Ideal.mul_mem_left _ _ (Ideal.mul_mem_mul hω𝔭 hP𝔮))
-    · obtain ⟨u, v, huv⟩ := (hpr.coprime_iff_not_dvd).mpr hmp
-      have huv' : ((u * p + v * m : ℤ) : QuadraticAlgebra ℤ a b) = 1 := by
-        rw [huv, Int.cast_one]
-      push_cast at huv'
-      have hP : P = (u : QuadraticAlgebra ℤ a b) * (P * P) -
-          (v : QuadraticAlgebra ℤ a b) * ((ω - R) * (ω - R')) := by
-        linear_combination (-P) * huv' + v * hkey
-      rw [hP]
-      exact sub_mem (Ideal.mul_mem_left _ _ (Ideal.mul_mem_mul hP𝔭 hP𝔮))
-        (Ideal.mul_mem_left _ _ (Ideal.mul_mem_mul hω𝔭 hω𝔮))
+  · rintro h ⟨⟨t, ht⟩, hmp⟩
+    exact span_mul_span_ne_span_natCast hm ht hmp h
+  · exact fun h => le_antisymm (span_mul_span_le_span_natCast hm)
+      ((Ideal.span_singleton_le_iff_mem _).mpr (natCast_mem_span_mul_span hm h))
 
 /-- **The ramified case of Dedekind's criterion.** If `r` is a double root of `X² - b X - a`
 modulo `p` (that is, `p ∣ 2r - b`), then `(p) = (p, ω - r)²` exactly when

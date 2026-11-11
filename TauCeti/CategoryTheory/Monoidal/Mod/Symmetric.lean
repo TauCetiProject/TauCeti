@@ -56,7 +56,7 @@ namespace Mod
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [SymmetricCategory C]
   [HasCoequalizers C]
   [∀ X : C, PreservesColimitsOfSize.{0, 0} (tensorLeft X)]
-  [∀ X : C, PreservesColimitsOfSize.{0, 0} (tensorRight X)]
+  [∀ X : C, PreservesColimitsOfSize.{0, 0} (MonoidalCategory.tensorRight X)]
   {A : C} [MonObj A] [IsCommMonObj A]
 
 /-- The braiding of the underlying objects, followed by the quotient map onto `N ⊗_A M`, identifies

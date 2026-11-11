@@ -85,7 +85,7 @@ theorem exists_candidateGenusFieldProdRoot_eq_mul_baseRoot {d : ℤ} (hd : Squar
       candidateGenusFieldProdRoot hd =
         algebraMap ℚ (candidateGenusField hd) a * candidateGenusFieldBaseRoot hd := by
   obtain ⟨a, ha, hrad⟩ := exists_prod_radicand_eq_sq_mul_of_prod_primeDiscriminant_eq
-    (genusPrimeDiscriminants_spec hd).1 (genusPrimeDiscriminants_spec hd).2.2
+    (genusPrimeDiscriminants_spec hd).2.2
   rw [← Finset.univ_eq_attach] at hrad
   have hsq : candidateGenusFieldProdRoot hd ^ 2 =
       (algebraMap ℚ (candidateGenusField hd) a * candidateGenusFieldBaseRoot hd) ^ 2 := by

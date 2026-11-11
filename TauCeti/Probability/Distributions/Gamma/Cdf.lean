@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma
+public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Basic
 public import TauCeti.Probability.Distributions.Gamma.Basic
 import TauCeti.Probability.Distributions.Gamma.PDF
 import TauCeti.Probability.Cdf
@@ -118,7 +118,7 @@ theorem cdf_gammaMeasure_eq (ha : 0 < a) (hr : 0 < r) (x : ℝ) :
   rw [hsplit, setIntegral_congr_fun measurableSet_Ioc
       (fun t ht => gammaPDFReal_eq_comp_mul hr ht.1),
     ← intervalIntegral.integral_of_le hx.le, intervalIntegral.integral_const_mul, hsubst,
-    ← lowerIncompleteGamma_eq_integral ha (by positivity), regularizedGamma_eq_div]
+    ← lowerIncompleteGamma_eq_integral (by positivity), regularizedGamma_eq_div]
   field_simp
 
 /-- A Gamma law of positive shape and rate has positive survival at every finite point. -/
@@ -151,8 +151,7 @@ theorem measureReal_Ioc_gammaMeasure (ha : 0 < a) (hr : 0 < r) {y : ℝ} (hyx : 
 theorem measureReal_Ioi_gammaMeasure (ha : 0 < a) (hr : 0 < r) (x : ℝ) :
     (gammaMeasure a r).real (Ioi x) = 1 - regularizedGamma a (r * x) := by
   have hp : IsProbabilityMeasure (gammaMeasure a r) := isProbabilityMeasure_gammaMeasure ha hr
-  rw [← compl_Iic, measureReal_compl measurableSet_Iic, measureReal_Iic_gammaMeasure ha hr]
-  simp
+  rw [Measure.measureReal_Ioi_eq_one_sub_cdf, cdf_gammaMeasure_eq ha hr]
 
 /-- The cumulative distribution function of a gamma law is continuous: `P(a, ·)` is continuous even
 at the origin, where for `a < 1` Euler's integrand blows up. -/

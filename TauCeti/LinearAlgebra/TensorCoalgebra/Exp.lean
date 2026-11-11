@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.TensorCoalgebra.CoalgHom
 public import TauCeti.LinearAlgebra.TensorCoalgebra.GradedCoderivation
 import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Data.Nat.Choose.Cast
+import TauCeti.LinearAlgebra.BilinearMap.Sum
 import TauCeti.LinearAlgebra.End.TensorProduct
 
 /-!
@@ -205,27 +206,17 @@ theorem commute_expCoderiv (hφ : φ ∘ₗ ofLetter R M = 0)
     expCoderiv_apply_eq_sum_of_pow_apply_eq_zero hφ hTz, map_sum]
   simp only [map_smul, hTr]
 
-/-- **The exponential of a coderivation is a coalgebra morphism**, when the coderivation has no
-unary Taylor component.  This is the binomial theorem for the commuting endomorphisms `D ⊗ 1` and
-`1 ⊗ D` of `Tᶜ(M) ⊗ Tᶜ(M)`, divided by factorials. -/
-theorem isCoalgHom_expCoderiv (hφ : φ ∘ₗ ofLetter R M = 0) :
-    IsCoalgHom R (expCoderiv R φ) := by
-  rw [isCoalgHom_iff]
-  refine LinearMap.ext fun z ↦ ?_
-  obtain ⟨N, hN⟩ := exists_mem_filtration R M z
-  -- The truncation `S` of the exponential at `N`, and the summands `T` of its tensor square.
+/-- On the cuts of an element of filtration level `N`, the tensor square of the exponential of a
+coderivation is the double sum, over `a, b < N`, of the tensor products of its Taylor terms
+`Dᵃ ⊗ Dᵇ`, each divided by `a! b!`. -/
+theorem map_expCoderiv_deconcatenation_eq_sum (hφ : φ ∘ₗ ofLetter R M = 0)
+    {z : ReducedTensorWords R M} {N : ℕ} (hN : z ∈ filtration R M N) :
+    TensorProduct.map (expCoderiv R φ) (expCoderiv R φ) (deconcatenation R M z) =
+      ∑ a ∈ Finset.range N, ∑ b ∈ Finset.range N,
+        (algebraMap ℚ R (a.factorial : ℚ)⁻¹ * algebraMap ℚ R (b.factorial : ℚ)⁻¹) •
+          TensorProduct.map (coderiv R φ ^ a) (coderiv R φ ^ b) (deconcatenation R M z) := by
   let c : ℕ → R := fun r ↦ algebraMap ℚ R (r.factorial : ℚ)⁻¹
   let S : Module.End R (ReducedTensorWords R M) := ∑ r ∈ Finset.range N, c r • coderiv R φ ^ r
-  let T : ℕ × ℕ → ReducedTensorWords R M ⊗[R] ReducedTensorWords R M := fun ij ↦
-    (c ij.1 * c ij.2) •
-      TensorProduct.map (coderiv R φ ^ ij.1) (coderiv R φ ^ ij.2) (deconcatenation R M z)
-  have hkill : ∀ a, ∀ w ∈ filtration R M a, (coderiv R φ ^ a) w = 0 := fun _ _ hw ↦
-    pow_coderiv_apply_eq_zero_of_mem_filtration R hφ hw
-  -- The summands `T (a, b)` with `a ≥ N` or `b ≥ N` vanish.
-  have hvan : ∀ a b, N ≤ a ∨ N ≤ b → T (a, b) = 0 := fun a b hab ↦ by
-    simp only [T]
-    rw [map_deconcatenation_eq_zero_of_mem_filtration R M (hkill a) (hkill b)
-      (filtration_monotone R M (by omega) hN), smul_zero]
   -- On the cuts of `z`, which have length at most `N`, the exponential agrees with `S`.
   have hS : TensorProduct.map (expCoderiv R φ) (expCoderiv R φ) (deconcatenation R M z) =
       TensorProduct.map S S (deconcatenation R M z) := by
@@ -239,17 +230,34 @@ theorem isCoalgHom_expCoderiv (hφ : φ ∘ₗ ofLetter R M = 0) :
         rw [expCoderiv_apply_eq_sum hφ u.2, expCoderiv_apply_eq_sum hφ v.2]
         simp only [S, c, LinearMap.sum_apply, LinearMap.smul_apply]
     | add u v hu hv => simp only [map_add, hu, hv]
-  -- The tensor square of `S` expands into the summands `T`.
-  have hSS : TensorProduct.map S S (deconcatenation R M z) =
-      ∑ a ∈ Finset.range N, ∑ b ∈ Finset.range N, T (a, b) := by
+  -- The tensor square of `S` expands into the summands.
+  rw [hS]
+  rw [← TensorProduct.mapBilinear_apply]
+  simp only [S]
+  rw [LinearMap.apply_sum_smul_sum_smul]
+  simp only [LinearMap.sum_apply, LinearMap.smul_apply, TensorProduct.mapBilinear_apply,
+    smul_smul, c]
+
+/-- **The exponential of a coderivation is a coalgebra morphism**, when the coderivation has no
+unary Taylor component.  This is the binomial theorem for the commuting endomorphisms `D ⊗ 1` and
+`1 ⊗ D` of `Tᶜ(M) ⊗ Tᶜ(M)`, divided by factorials. -/
+theorem isCoalgHom_expCoderiv (hφ : φ ∘ₗ ofLetter R M = 0) :
+    IsCoalgHom R (expCoderiv R φ) := by
+  rw [isCoalgHom_iff]
+  refine LinearMap.ext fun z ↦ ?_
+  obtain ⟨N, hN⟩ := exists_mem_filtration R M z
+  -- The summands `T` of the tensor square of the exponential.
+  let c : ℕ → R := fun r ↦ algebraMap ℚ R (r.factorial : ℚ)⁻¹
+  let T : ℕ × ℕ → ReducedTensorWords R M ⊗[R] ReducedTensorWords R M := fun ij ↦
+    (c ij.1 * c ij.2) •
+      TensorProduct.map (coderiv R φ ^ ij.1) (coderiv R φ ^ ij.2) (deconcatenation R M z)
+  have hkill : ∀ a, ∀ w ∈ filtration R M a, (coderiv R φ ^ a) w = 0 := fun _ _ hw ↦
+    pow_coderiv_apply_eq_zero_of_mem_filtration R hφ hw
+  -- The summands `T (a, b)` with `a ≥ N` or `b ≥ N` vanish.
+  have hvan : ∀ a b, N ≤ a ∨ N ≤ b → T (a, b) = 0 := fun a b hab ↦ by
     simp only [T]
-    generalize deconcatenation R M z = w
-    induction w using TensorProduct.inductionOn with
-    | tmul u v =>
-        simp only [S, TensorProduct.map_tmul, LinearMap.sum_apply, LinearMap.smul_apply,
-          TensorProduct.sum_tmul, TensorProduct.tmul_sum, TensorProduct.smul_tmul_smul]
-        exact Finset.sum_comm
-    | add u v hu hv => simp only [map_add, hu, hv, smul_add, Finset.sum_add_distrib]
+    rw [map_deconcatenation_eq_zero_of_mem_filtration R M (hkill a) (hkill b)
+      (filtration_monotone R M (by omega) hN), smul_zero]
   -- The binomial expansion of `Δ ∘ Dʳ`, divided by `r!`, gives the summands `T`.
   have hΔ : ∀ r, deconcatenation R M ((coderiv R φ ^ r) z) =
       ∑ ij ∈ Finset.antidiagonal r, r.choose ij.1 •
@@ -258,7 +266,7 @@ theorem isCoalgHom_expCoderiv (hφ : φ ∘ₗ ofLetter R M = 0) :
       rw [← LinearMap.comp_apply (deconcatenation R M), deconcatenation_comp_pow_coderiv,
         LinearMap.comp_apply, LinearMap.sum_apply]
       simp only [LinearMap.smul_apply]
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, hS, hSS,
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, map_expCoderiv_deconcatenation_eq_sum hφ hN,
     expCoderiv_apply_eq_sum hφ (filtration_monotone R M (by omega : N ≤ N + N) hN), map_sum,
     ← sum_range_add_antidiagonal_of_support N N T hvan]
   refine Finset.sum_congr rfl fun r _ ↦ ?_

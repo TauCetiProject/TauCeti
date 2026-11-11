@@ -197,7 +197,7 @@ itself, whose norm to itself is the identity. This pins the direction of the loc
 correspondence. -/
 @[simp]
 theorem localNormSubgroup_top :
-    localNormSubgroup K (openNormalSubgroupTop (AbsoluteGaloisGroup K)) = ⊤ := by
+    localNormSubgroup K ⊤ = ⊤ := by
   apply (localGroundOrderIso K).injective
   rw [localGroundOrderIso_localNormSubgroup, Formation.normSubgroup_top, map_top]
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Curvature
+public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Curvature.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.ConstantCurvature
 import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Tangential
 

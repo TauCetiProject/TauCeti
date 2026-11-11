@@ -216,11 +216,11 @@ theorem riemannRochSpace_ne_bot_iff (hF : IsFunctionField k F) {D : Divisor k F}
 theorem mem_riemannRochSpace_poles (hF : IsFunctionField k F) (z : Fˣ) :
     (z : F) ∈ riemannRochSpace (Divisor.poles hF z) := by
   rw [mem_riemannRochSpace_units_iff hF, ← Divisor.zeros_sub_poles, sub_add_cancel]
-  exact (Divisor.isEffective_zeros hF z).zero_le
+  exact Divisor.zeros_nonneg hF z
 
 /-- **The poles of `z` are bounded by an effective divisor `D` exactly when `z ∈ L(D)`**. -/
 theorem poles_le_iff_mem_riemannRochSpace (hF : IsFunctionField k F) {D : Divisor k F}
-    (hD : WeilDivisor.IsEffective D) (z : Fˣ) :
+    (hD : 0 ≤ D) (z : Fˣ) :
     Divisor.poles hF z ≤ D ↔ (z : F) ∈ riemannRochSpace D := by
   refine ⟨fun h ↦ riemannRochSpace_mono h (mem_riemannRochSpace_poles hF z), fun h ↦ ?_⟩
   rw [mem_riemannRochSpace_units_iff hF, WeilDivisor.le_iff] at h
@@ -228,7 +228,7 @@ theorem poles_le_iff_mem_riemannRochSpace (hF : IsFunctionField k F) {D : Diviso
   have hP := h P
   rw [WeilDivisor.coeff_zero, WeilDivisor.coeff_add, Divisor.coeff_principal] at hP
   rw [Divisor.coeff_poles]
-  have := (WeilDivisor.isEffective_iff D).mp hD P
+  have := WeilDivisor.coeff_nonneg hD P
   omega
 
 /-- **The poles of a linear combination `x - c y` with `y ∈ L((x - c y)_∞)`**: if `u = x - c y`
@@ -239,16 +239,16 @@ theorem poles_eq_sup_poles_of_mem_riemannRochSpace (hF : IsFunctionField k F) {x
     Divisor.poles hF u = Divisor.poles hF x ⊔ Divisor.poles hF y := by
   have hux : (x : F) = u + c • (y : F) := by
     rw [hu, sub_add_cancel]
-  have hsup : WeilDivisor.IsEffective (Divisor.poles hF x ⊔ Divisor.poles hF y) :=
-    (Divisor.isEffective_poles hF x).sup
+  have hsup : 0 ≤ Divisor.poles hF x ⊔ Divisor.poles hF y :=
+    le_sup_of_le_left (Divisor.poles_nonneg hF x)
   refine le_antisymm ((poles_le_iff_mem_riemannRochSpace hF hsup u).mpr ?_) (sup_le ?_ ?_)
   · rw [hu]
     exact sub_mem (riemannRochSpace_mono le_sup_left (mem_riemannRochSpace_poles hF x))
       (Submodule.smul_mem _ c
         (riemannRochSpace_mono le_sup_right (mem_riemannRochSpace_poles hF y)))
-  · rw [poles_le_iff_mem_riemannRochSpace hF (Divisor.isEffective_poles hF u), hux]
+  · rw [poles_le_iff_mem_riemannRochSpace hF (Divisor.poles_nonneg hF u), hux]
     exact add_mem (mem_riemannRochSpace_poles hF u) (Submodule.smul_mem _ c hy)
-  · exact (poles_le_iff_mem_riemannRochSpace hF (Divisor.isEffective_poles hF u) y).mpr hy
+  · exact (poles_le_iff_mem_riemannRochSpace hF (Divisor.poles_nonneg hF u) y).mpr hy
 
 /-- The `n`-th power of a nonzero function has poles bounded by `n` times its pole divisor. -/
 theorem pow_mem_riemannRochSpace_zsmul_poles (hF : IsFunctionField k F) (z : Fˣ) (n : ℕ) :
@@ -259,7 +259,7 @@ theorem pow_mem_riemannRochSpace_zsmul_poles (hF : IsFunctionField k F) (z : Fˣ
 nonzero function lie in `L((n - 1) · (z)_∞)`. -/
 theorem pow_mem_riemannRochSpace_zsmul_poles_of_le (hF : IsFunctionField k F) (z : Fˣ) {i : ℕ}
     {m : ℤ} (h : (i : ℤ) ≤ m) : (z : F) ^ i ∈ riemannRochSpace (m • Divisor.poles hF z) :=
-  riemannRochSpace_mono ((Divisor.isEffective_poles hF z).zsmul_le_zsmul h)
+  riemannRochSpace_mono (zsmul_le_zsmul_left (Divisor.poles_nonneg hF z) h)
     (pow_mem_riemannRochSpace_zsmul_poles hF z i)
 
 /-- The first `n` powers of a nonzero function span a subspace of `L(m · (z)_∞)` whenever
@@ -292,14 +292,14 @@ theorem span_pow_mul_pow_le_riemannRochSpace_zsmul_sup_poles (hF : IsFunctionFie
       riemannRochSpace (n • (Divisor.poles hF x ⊔ Divisor.poles hF y)) := by
   rw [Submodule.span_le]
   rintro _ ⟨p, hp, rfl⟩
-  have hH := (Divisor.isEffective_poles hF x).sup (E := Divisor.poles hF y)
+  have hH := le_sup_of_le_left (b := Divisor.poles hF y) (Divisor.poles_nonneg hF x)
   have hmem := mul_mem_riemannRochSpace_add
     (pow_mem_riemannRochSpace_zsmul (riemannRochSpace_mono (le_sup_left (b := Divisor.poles hF y))
       (mem_riemannRochSpace_poles hF x)) p.1)
     (pow_mem_riemannRochSpace_zsmul (riemannRochSpace_mono (le_sup_right (a := Divisor.poles hF x))
       (mem_riemannRochSpace_poles hF y)) p.2)
   rw [← add_zsmul] at hmem
-  exact riemannRochSpace_mono (hH.zsmul_le_zsmul (by simp only [Set.mem_ofPred_eq] at hp; omega))
-    hmem
+  exact riemannRochSpace_mono
+    (zsmul_le_zsmul_left hH (by simp only [Set.mem_ofPred_eq] at hp; omega)) hmem
 
 end TauCeti

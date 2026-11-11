@@ -29,8 +29,13 @@ noncommutative algebras.
   norm form.
 * `TauCeti.Algebra.norm_sum_X_tmul_tensorProductBasis`: the generic norm form of `T ⊗[K] B` over
   `T` is the image of that of `B` over `K`.
+* `Module.Basis.norm_sum_tmul_eq_aeval`: the norm of `∑ j, xⱼ ⊗ bⱼ` over `T` is the generic norm
+  form of `B` evaluated at `x`.
 * `TauCeti.Algebra.charpoly_lmul_eq_norm`: the characteristic polynomial of multiplication by
   `x ∈ T ⊗[K] B` over `T` is the norm of `X - x` over `T[X]`.
+* `TauCeti.Algebra.trace_baseChange_tmul_of_isScalarTower`: for a tower `R → S → T` and an
+  `R`-algebra `C` with `S ⊗[R] C` finite free over `S`, the trace of `1 ⊗ c` in `T ⊗[R] C` is the
+  image of its trace in `S ⊗[R] C`.
 -/
 
 public section
@@ -141,6 +146,17 @@ theorem Algebra.norm_sum_X_tmul_tensorProductBasis {ι : Type*} [Fintype ι]
   rw [← Algebra.norm_eq_of_algEquiv e]
   simp [e]
 
+/-- The norm of `∑ j, xⱼ ⊗ bⱼ` in `T ⊗[K] B` over `T` is the generic norm form of `B` in the basis
+`b`, evaluated at `x`. -/
+theorem _root_.Module.Basis.norm_sum_tmul_eq_aeval {ι : Type*} [Fintype ι] (b : Module.Basis ι K B)
+    (x : ι → T) :
+    Algebra.norm T (∑ j, x j ⊗ₜ[K] b j) = MvPolynomial.aeval x
+      (Algebra.norm (MvPolynomial ι K) (∑ j, (MvPolynomial.X j : MvPolynomial ι K) ⊗ₜ[K] b j)) := by
+  let := Module.Free.of_basis b
+  let := Module.Finite.of_basis b
+  rw [← Algebra.norm_rTensor]
+  simp
+
 end GenericNorm
 
 section Trace
@@ -156,5 +172,23 @@ theorem Algebra.trace_baseChange_tmul (x : B) :
   simp only [Algebra.trace_apply, ← Algebra.baseChange_lmul, LinearMap.trace_baseChange]
 
 end Trace
+
+section TraceTower
+
+variable {R S T C : Type*} [CommRing R] [CommRing S] [CommRing T] [CommRing C] [Algebra R S]
+  [Algebra S T] [Algebra R T] [IsScalarTower R S T] [Algebra R C]
+  [Module.Free S (S ⊗[R] C)] [Module.Finite S (S ⊗[R] C)]
+
+/-- Let `R → S → T` be a tower of rings and `C` an `R`-algebra with `S ⊗[R] C` finite free over
+`S`. The trace of `1 ⊗ c` in `T ⊗[R] C` over `T` is the image of the trace of `1 ⊗ c` in
+`S ⊗[R] C` over `S`. -/
+theorem Algebra.trace_baseChange_tmul_of_isScalarTower (c : C) :
+    Algebra.trace T (T ⊗[R] C) (1 ⊗ₜ c) =
+      algebraMap S T (Algebra.trace S (S ⊗[R] C) (1 ⊗ₜ c)) := by
+  rw [← Algebra.trace_baseChange_tmul (A := T),
+    ← Algebra.trace_eq_of_algEquiv (Algebra.TensorProduct.cancelBaseChange R S T T C)]
+  simp
+
+end TraceTower
 
 end TauCeti

@@ -37,6 +37,8 @@ subcomplexes.
 * `Topology.RelCWComplex.Subcomplex.le_iff_I_subset`: one subcomplex lies in another exactly when
   its cells do.
 * `Topology.RelCWComplex.Subcomplex.ofLE`: a subcomplex `F ≤ E`, as a subcomplex of `E`.
+* `Topology.RelCWComplex.coe_skeletonLT_skeletonLT`: the skeleta of a skeleton of `C` are skeleta
+  of `C`.
 
 ## References
 
@@ -137,9 +139,8 @@ lemma cellFrontier_relCWComplex (E : Subcomplex C) (n : ℕ)
 lemma finiteDimensional_relCWComplex [FiniteDimensional C] (E : Subcomplex C) :
     @FiniteDimensional X _ C E E.relCWComplex :=
   @FiniteDimensional.mk X _ C E E.relCWComplex <| by
-    filter_upwards [FiniteDimensional.eventually_isEmpty_cell (C := C) (D := D)] with n hn
-    rw [(E.relCWComplexCellEquiv n).isEmpty_congr]
-    simp [isEmpty_subtype]
+    filter_upwards [FiniteDimensional.eventually_isEmpty_cell (C := C) (D := D)] with n _
+    exact (E.relCWComplexCellEquiv n).isEmpty_congr.2 inferInstance
 
 /-- The CW structure on `C` relative to a subcomplex is of finite type when `C` is. -/
 lemma finiteType_relCWComplex [FiniteType C] (E : Subcomplex C) :
@@ -192,3 +193,23 @@ lemma ofLE_I {F E : Subcomplex C} (h : F ≤ E) (n : ℕ) :
   (rfl)
 
 end Topology.RelCWComplex.Subcomplex
+
+namespace Topology.RelCWComplex
+
+variable {X : Type*} [TopologicalSpace X] [T2Space X] {C D : Set X} [RelCWComplex C D]
+
+/-- The subcomplex `skeletonLT C m`, viewed as a relative CW complex in its own right, has
+`skeletonLT C (min n m)` as its `skeletonLT _ n`: both are the union of the base `D` with the cells
+of dimension strictly less than both `n` and `m`. In particular, for `n ≤ m` it has the same
+`skeletonLT _ n` as `C`. -/
+@[simp]
+lemma coe_skeletonLT_skeletonLT (n m : ℕ∞) :
+    (skeletonLT (skeletonLT C m : Set X) n : Set X) = skeletonLT C (min n m) := by
+  ext x
+  simp only [SetLike.mem_coe, mem_skeletonLT_iff, lt_min_iff]
+  refine or_congr_right ⟨fun ⟨k, hk, j, hj⟩ ↦ ⟨k, ⟨hk, ?_⟩, j.1, by simpa using hj⟩,
+    fun ⟨k, hk, j, hj⟩ ↦ ⟨k, hk.1, ⟨j, ?_⟩, by simpa using hj⟩⟩
+  · simpa only [skeletonLT_I, mem_ofPred_eq] using j.2
+  · simpa only [skeletonLT_I, mem_ofPred_eq] using hk.2
+
+end Topology.RelCWComplex

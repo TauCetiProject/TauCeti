@@ -50,6 +50,8 @@ everything: this is the moving lemma, `idealClass_surjective`.
 * `TauCeti.GlobalNumberFields.idealClass_eq_one_iff_exists_generator`: the generator form of
   `idealClass_eq_one_iff`, with the generator kept inside `𝓞 K` and its two defining conditions
   spelled out.
+* `TauCeti.GlobalNumberFields.idealClass_one_eq_one_iff_isPrincipal`: at the trivial modulus, the
+  ray class of an integral ideal is trivial exactly when the ideal is principal.
 * `TauCeti.GlobalNumberFields.idealClass_eq_one_iff_exists_integral`: the denominator-cleared form
   of `idealClass_eq_one_iff`, an equation `I · (b) = (a)` between integral ideals whose generators
   are congruent to one modulo `𝔪`.
@@ -301,6 +303,13 @@ theorem idealClass_eq_one_iff_exists_generator {𝔪 : Modulus K} (J : integralI
     have hαne : algebraMap (𝓞 K) K α ≠ 0 := by
       simpa [hJ] using (NumberFieldArithmetic.mem_integralIdealsAway_iff.mp J.prop).1
     exact ⟨Units.mk0 _ hαne, isCongrOne_of_sub_one_mem rfl hα1 hαpos, by simp [hJ]⟩
+
+/-- **Trivial class at the trivial modulus.**  For the trivial modulus, whose ray class group is
+the class group, an integral ideal has trivial ray class exactly when it is principal. -/
+theorem idealClass_one_eq_one_iff_isPrincipal (J : integralIdealsPrimeTo (Modulus.one K)) :
+    idealClass (Modulus.one K) J = 1 ↔ (J : Ideal (𝓞 K)).IsPrincipal := by
+  rw [idealClass_eq_one_iff_exists_generator]
+  simp [Submodule.isPrincipal_iff]
 
 /-- **The integral form of the triviality criterion.**  An integral ideal prime to `𝔪` has trivial
 ray class exactly when there are `x y : Kˣ` congruent to one modulo `𝔪` whose underlying values

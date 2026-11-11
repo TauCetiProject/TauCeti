@@ -58,6 +58,8 @@ corresponding identity between kernels (`NovikovModule.kernelMap_kernelMap`).
   product is determined by its values on tensor products of point masses.
 * `TauCeti.NovikovModule.kernelMap_kernelTensor_tensor`: kernel maps act factorwise on tensor
   products.
+* `TauCeti.NovikovModule.kernelComp_tensorDifferential`: composing the tensor differential with a
+  kernel out of the tensor product gives the Koszul sum of the two composites.
 * `TauCeti.NovikovModule.tensor_mem_gradeBy`,
   `TauCeti.NovikovModule.degree_eq_of_tensorDifferential_ne_zero`: the tensor product adds degrees,
   and the tensor differential raises the total degree by one.
@@ -306,6 +308,49 @@ theorem degree_eq_of_tensorDifferential_ne_zero {d₂ : S₂ → ℤ}
       simp [hpq] at h₁
     rw [← h₂, hd₁ _ _ (left_ne_zero_of_mul h₁)]
     ring
+
+/-- **Composing with the tensor differential.** If only finitely many intermediate generators
+contribute to each sum on the right, then the composite of the tensor differential with a kernel
+`m` out of `S₁ × S₂` is the Koszul sum
+`∑ δ₁(p₁, q₁) m((q₁, p₂), p₀) + (-1)^(d₁ p₁) ∑ δ₂(p₂, q₂) m((p₁, q₂), p₀)`. -/
+theorem kernelComp_tensorDifferential (m : S₁ × S₂ → S₀ → R) (p₁ : S₁) (p₂ : S₂) (p₀ : S₀)
+    (h₁ : (support fun q₁ => δ₁ p₁ q₁ * m (q₁, p₂) p₀).Finite)
+    (h₂ : (support fun q₂ => δ₂ p₂ q₂ * m (p₁, q₂) p₀).Finite) :
+    kernelComp (tensorDifferential d₁ δ₁ δ₂) m (p₁, p₂) p₀ =
+      kernelComp δ₁ (fun q₁ => m (q₁, p₂)) p₁ p₀ +
+        ((d₁ p₁).negOnePow : R) * kernelComp δ₂ (fun q₂ => m (p₁, q₂)) p₂ p₀ := by
+  -- Each Koszul summand is supported on a slice through `(p₁, p₂)`.
+  set f₁ : S₁ × S₂ → R := fun q => δ₁ p₁ q.1 * (if p₂ = q.2 then 1 else 0) * m q p₀
+  set f₂ : S₁ × S₂ → R := fun q =>
+    (if p₁ = q.1 then ((d₁ p₁).negOnePow : R) else 0) * δ₂ p₂ q.2 * m q p₀
+  have hf₁ : (support f₁).Finite := (h₁.image fun q₁ => (q₁, p₂)).subset fun q hq => by
+    obtain ⟨q₁, q₂⟩ := q
+    by_cases e : p₂ = q₂
+    · subst e
+      exact ⟨q₁, by simpa [f₁] using hq, rfl⟩
+    · simp [f₁, e] at hq
+  have hf₂ : (support f₂).Finite := (h₂.image fun q₂ => (p₁, q₂)).subset fun q hq => by
+    obtain ⟨q₁, q₂⟩ := q
+    by_cases e : p₁ = q₁
+    · subst e
+      refine ⟨q₂, ?_, rfl⟩
+      simpa [f₂, mul_assoc] using hq
+    · simp [f₂, e] at hq
+  have e₁ : ∑ᶠ q, f₁ q = kernelComp δ₁ (fun q₁ => m (q₁, p₂)) p₁ p₀ := by
+    rw [finsum_curry f₁ hf₁, kernelComp_apply]
+    refine finsum_congr fun q₁ => ?_
+    rw [finsum_eq_single _ p₂ fun q₂ hq₂ => by simp [f₁, Ne.symm hq₂]]
+    simp [f₁]
+  have e₂ : ∑ᶠ q, f₂ q =
+      ((d₁ p₁).negOnePow : R) * kernelComp δ₂ (fun q₂ => m (p₁, q₂)) p₂ p₀ := by
+    rw [finsum_curry f₂ hf₂, finsum_eq_single _ p₁ fun q₁ hq₁ => by simp [f₂, Ne.symm hq₁],
+      kernelComp_apply, mul_finsum' _ _ h₂]
+    refine finsum_congr fun q₂ => ?_
+    simp [f₂, mul_assoc]
+  rw [kernelComp_apply, ← e₁, ← e₂, ← finsum_add_distrib hf₁ hf₂]
+  refine finsum_congr fun q => ?_
+  simp only [tensorDifferential_apply, f₁, f₂]
+  ring
 
 omit [DecidableEq S₁] in
 /-- The potential bound of the identity kernel on the second factor. -/

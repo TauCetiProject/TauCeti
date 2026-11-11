@@ -6,14 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fourier.Hardy.Compact
+public import TauCeti.Analysis.Fourier.Hardy.Index
 public import TauCeti.Analysis.Fourier.Winding
 public import TauCeti.Analysis.Fredholm.CompactPerturbation
 
 import Mathlib.Topology.CompactOpen
 import Mathlib.Topology.ContinuousMap.Units
-import TauCeti.Analysis.Fredholm.Adjoint
-import TauCeti.Analysis.Fredholm.Criteria
-import TauCeti.Analysis.Fredholm.Pow
 
 /-!
 # The Gohberg–Krein Fredholm index theorem for continuous Toeplitz operators
@@ -23,12 +21,9 @@ This file develops the Fredholm theory of Toeplitz operators `T_a` with continuo
 
 ## Mathematical overview
 
-1. **Laurent monomial models.** Using the shift surjectivity and kernel formulas from
-   `TauCeti/Analysis/Fourier/Hardy/Toeplitz.lean` (`toeplitz_fourierLp_neg_one_surjective` and
-   `ker_toeplitz_fourierLp_neg_one`), the backward shift `S† = toeplitz (fourierLp ∞ (-1))` is
-   Fredholm of index `1`, its adjoint `S = toeplitz (fourierLp ∞ 1)` is Fredholm of index `-1`, and
-   for every `k : ℤ` the monomial Toeplitz operator `toeplitz (fourierLp ∞ k)` is Fredholm of index
-   `-k`.
+1. **Laurent monomial models (`TauCeti/Analysis/Fourier/Hardy/Index.lean`).** For every `k : ℤ`,
+   the monomial Toeplitz operator `toeplitz (fourierLp ∞ k)` is Fredholm of index `-k`
+   (`TauCeti.isFredholm_toeplitz_fourierLp`, `TauCeti.index_toeplitz_fourierLp`).
 
 2. **Sufficiency and homotopy invariance.** When `a : C(UnitAddCircle, ℂ)` is nowhere zero, `a⁻¹`
    is also continuous, and the semicommutators `T_(a⁻¹) T_a - I` and `T_a T_(a⁻¹) - I` are compact
@@ -54,8 +49,6 @@ This file develops the Fredholm theory of Toeplitz operators `T_a` with continuo
 
 ## Main results
 
-* `TauCeti.isFredholm_toeplitz_fourierLp`, `TauCeti.index_toeplitz_fourierLp`: for every `k : ℤ`,
-  `toeplitz (fourierLp ∞ k)` is Fredholm of index `-k`.
 * `TauCeti.isFredholm_toeplitz_toLp_iff`: **Gohberg–Krein Fredholm criterion** — for continuous
   `a`, `T_a` is Fredholm if and only if `∀ x, a x ≠ 0`.
 * `TauCeti.index_toeplitz_toLp`: **Gohberg–Krein index theorem** —
@@ -84,70 +77,6 @@ open scoped ENNReal InnerProductSpace unitInterval
 
 namespace TauCeti
 
-section MonomialModels
-
-/-- The backward shift `T_(e_{-1})` is a Fredholm operator on `HardySpace`. -/
-theorem isFredholm_toeplitz_fourierLp_neg_one :
-    ContinuousLinearMap.IsFredholm (toeplitz (fourierLp (T := 1) ∞ (-1))) := by
-  have : FiniteDimensional ℂ
-      (LinearMap.ker (toeplitz (fourierLp (T := 1) ∞ (-1)) : HardySpace →ₗ[ℂ] HardySpace)) := by
-    rw [ker_toeplitz_fourierLp_neg_one]
-    infer_instance
-  exact .of_surjective toeplitz_fourierLp_neg_one_surjective
-
-/-- The backward shift `T_(e_{-1})` has Fredholm index `1`. -/
-theorem index_toeplitz_fourierLp_neg_one :
-    ContinuousLinearMap.index (toeplitz (fourierLp (T := 1) ∞ (-1))) = 1 := by
-  rw [ContinuousLinearMap.index_of_surjective _ toeplitz_fourierLp_neg_one_surjective,
-    ker_toeplitz_fourierLp_neg_one, finrank_span_singleton (hardyBasis_ne_zero 0), Nat.cast_one]
-
-/-- The forward shift `T_(e_1)` is a Fredholm operator on `HardySpace`. -/
-theorem isFredholm_toeplitz_fourierLp_one :
-    ContinuousLinearMap.IsFredholm (toeplitz (fourierLp (T := 1) ∞ 1)) := by
-  have h := isFredholm_toeplitz_fourierLp_neg_one.adjoint
-  rwa [adjoint_toeplitz_fourierLp, neg_neg] at h
-
-/-- The forward shift `T_(e_1)` has Fredholm index `-1`. -/
-theorem index_toeplitz_fourierLp_one :
-    ContinuousLinearMap.index (toeplitz (fourierLp (T := 1) ∞ 1)) = -1 := by
-  have h := ContinuousLinearMap.index_adjoint (toeplitz (fourierLp (T := 1) ∞ (-1)))
-    isFredholm_toeplitz_fourierLp_neg_one
-  rw [adjoint_toeplitz_fourierLp, neg_neg, index_toeplitz_fourierLp_neg_one] at h
-  exact h
-
-/-- Every Fourier monomial `e_k` (`k : ℤ`) defines a Fredholm Toeplitz operator on `HardySpace`. -/
-theorem isFredholm_toeplitz_fourierLp (k : ℤ) :
-    ContinuousLinearMap.IsFredholm (toeplitz (fourierLp (T := 1) ∞ k)) := by
-  cases k with
-  | ofNat m =>
-    rw [Int.ofNat_eq_natCast, toeplitz_fourierLp_natCast_eq_pow]
-    exact isFredholm_toeplitz_fourierLp_one.pow m
-  | negSucc m =>
-    rw [Int.negSucc_eq, ← Int.natCast_add_one, ← adjoint_toeplitz_fourierLp,
-      toeplitz_fourierLp_natCast_eq_pow]
-    exact (isFredholm_toeplitz_fourierLp_one.pow (m + 1)).adjoint
-
-/-- **Index of Laurent monomial Toeplitz operators.** For every `k : ℤ`, `T_(e_k)` has Fredholm
-index `-k`. -/
-@[simp]
-theorem index_toeplitz_fourierLp (k : ℤ) :
-    ContinuousLinearMap.index (toeplitz (fourierLp (T := 1) ∞ k)) = -k := by
-  cases k with
-  | ofNat m =>
-    rw [Int.ofNat_eq_natCast, toeplitz_fourierLp_natCast_eq_pow,
-      ContinuousLinearMap.index_pow _ isFredholm_toeplitz_fourierLp_one,
-      index_toeplitz_fourierLp_one]
-    ring
-  | negSucc m =>
-    have hpow := isFredholm_toeplitz_fourierLp_one.pow (m + 1)
-    rw [Int.negSucc_eq, ← Int.natCast_add_one, ← adjoint_toeplitz_fourierLp,
-      toeplitz_fourierLp_natCast_eq_pow, ContinuousLinearMap.index_adjoint _ hpow,
-      ContinuousLinearMap.index_pow _ isFredholm_toeplitz_fourierLp_one,
-      index_toeplitz_fourierLp_one]
-    ring
-
-end MonomialModels
-
 section GohbergKrein
 
 /-- A nowhere-zero continuous symbol `a : C(UnitAddCircle, ℂ)` induces a Fredholm Toeplitz
@@ -167,7 +96,7 @@ theorem isFredholm_toeplitz_toLp_of_forall_ne_zero {a : C(UnitAddCircle, ℂ)}
           HardySpace →L[ℂ] HardySpace)) := by
     have h := isCompactOperator_toeplitz_comp_sub_toeplitz_toLp
       (ContinuousMap.toLp ∞ (AddCircle.haarAddCircle (T := 1)) ℂ b₀) a₀
-    rwa [ContinuousMap.toLp_smul_toLp, smul_eq_mul, hba, toeplitz_toLp_one,
+    rwa [← Lp.smul_eq_mul, ContinuousMap.toLp_smul_toLp, smul_eq_mul, hba, toeplitz_toLp_one,
       ← ContinuousLinearMap.one_def] at h
   have hK₂ : IsCompactOperator
       (((toeplitz (ContinuousMap.toLp ∞ (AddCircle.haarAddCircle (T := 1)) ℂ a₀)).comp
@@ -175,7 +104,7 @@ theorem isFredholm_toeplitz_toLp_of_forall_ne_zero {a : C(UnitAddCircle, ℂ)}
           HardySpace →L[ℂ] HardySpace)) := by
     have h := isCompactOperator_toeplitz_comp_sub_toeplitz_toLp
       (ContinuousMap.toLp ∞ (AddCircle.haarAddCircle (T := 1)) ℂ a₀) b₀
-    rwa [ContinuousMap.toLp_smul_toLp, smul_eq_mul, hab, toeplitz_toLp_one,
+    rwa [← Lp.smul_eq_mul, ContinuousMap.toLp_smul_toLp, smul_eq_mul, hab, toeplitz_toLp_one,
       ← ContinuousLinearMap.one_def] at h
   exact .of_isCompactOperator_comp_sub_one hK₁ hK₂
 

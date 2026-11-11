@@ -167,7 +167,8 @@ theorem injHomDensity_le_one : injHomDensity F G ≤ 1 := by
 a homomorphism, and the power `|V(G)| ^ |V(F)|` counts them. -/
 @[simp]
 theorem homDensityFin_bot_left [Nonempty W] : homDensityFin (⊥ : SimpleGraph V) G = 1 := by
-  rw [homDensityFin_def, G.card_bot_hom, Nat.cast_pow]
+  rw [homDensityFin_def, G.card_bot_hom, Nat.card_eq_fintype_card, Nat.card_eq_fintype_card,
+    Nat.cast_pow]
   exact div_self (pow_ne_zero _ (Nat.cast_ne_zero.2 Fintype.card_ne_zero))
 
 /-- The injective homomorphism density in a complete host with at least `|V(F)|` vertices is `1`:
@@ -176,7 +177,8 @@ them. -/
 @[simp]
 theorem injHomDensity_top_right (h : Fintype.card V ≤ Fintype.card W) :
     injHomDensity F (⊤ : SimpleGraph W) = 1 := by
-  rw [injHomDensity_def, F.card_injective_hom_top]
+  rw [injHomDensity_def, F.card_injective_hom_top, Nat.card_eq_fintype_card,
+    Nat.card_eq_fintype_card]
   exact div_self (Nat.cast_ne_zero.2 (Nat.descFactorial_eq_zero_iff_lt.not.2 h.not_gt))
 
 /-! ### Complete patterns: cliques, edges and triangles -/

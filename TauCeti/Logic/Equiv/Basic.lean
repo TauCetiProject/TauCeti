@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Logic.Equiv.Basic
+public import Mathlib.Order.Defs.LinearOrder
 
 /-!
 # Commuting two subtype restrictions
@@ -15,6 +16,9 @@ leaves the same elements as restricting in the opposite order. When the second p
 order is stated on the subtype, rather than on `E`, this is the equivalence
 `Equiv.subtypeSubtypeComm`; it identifies, for instance, the edges left after deleting two vertices
 of a graph one after the other, in either order.
+
+The file also records that the transposition of two points of a linear order is the transposition
+of their minimum and maximum (`Equiv.swap_min_max`).
 -/
 
 public section
@@ -47,5 +51,12 @@ theorem coe_coe_subtypeSubtypeComm_symm_apply {E : Type*} {p q : E → Prop}
     (hq : ∀ e he, q' ⟨e, he⟩ ↔ q e) (e : {e : Subtype q // p' e}) :
     (((subtypeSubtypeComm hp hq).symm e : Subtype p) : E) = e.1.1 :=
   (rfl)
+
+/-- The transposition of two points of a linear order, written with the smaller point first. -/
+theorem swap_min_max {α : Type*} [LinearOrder α] (a b : α) :
+    swap (min a b) (max a b) = swap a b := by
+  rcases le_total a b with h | h
+  · rw [min_eq_left h, max_eq_right h]
+  · rw [min_eq_right h, max_eq_left h, swap_comm]
 
 end Equiv

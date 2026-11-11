@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.MvPolynomial.Equiv
 public import Mathlib.RingTheory.LocalRing.ResidueField.Fiber
 public import TauCeti.RingTheory.CohenMacaulay.Basic
+public import TauCeti.RingTheory.CohenMacaulay.Ring
 import Mathlib.RingTheory.Flat.Localization
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import Mathlib.RingTheory.Ideal.Quotient.Noetherian
@@ -15,6 +16,7 @@ import Mathlib.RingTheory.PolynomialAlgebra
 import Mathlib.RingTheory.RegularLocalRing.Polynomial
 import Mathlib.RingTheory.TensorProduct.MvPolynomial
 import TauCeti.RingTheory.Depth.Flat
+import TauCeti.RingTheory.Flat.Noetherian
 import TauCeti.RingTheory.KrullDimension.Module
 import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 
@@ -42,6 +44,8 @@ over themselves (Stacks, Definition 10.103.12 (0AAH)).
 * `Module.isCohenMacaulay_localization_atPrime_of_flat`: for a flat Noetherian `R`-algebra `S` and
   a prime `q` of `S` over `p`, the local ring `S_q` is Cohen–Macaulay when `R_p` is and the local
   ring of the fibre `κ(p) ⊗[R] S` at the point corresponding to `q` is.
+* `TauCeti.Ring.IsCohenMacaulay.of_flat`: a flat Noetherian algebra over a Cohen–Macaulay ring
+  whose fibres `κ(p) ⊗[R] S` are Cohen–Macaulay rings is a Cohen–Macaulay ring.
 * `Polynomial.isCohenMacaulay_localization_atPrime` and
   `MvPolynomial.isCohenMacaulay_localization_atPrime`: polynomial rings in finitely many variables
   over a Noetherian Cohen–Macaulay ring are Cohen–Macaulay (Stacks, Lemma 10.103.13 (0AAI)).
@@ -68,7 +72,7 @@ variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S] [IsLocalRing R] 
 /-- **Cohen–Macaulay rings along a flat local homomorphism.** For a flat local homomorphism
 `R → S` of Noetherian local rings, `S` is Cohen–Macaulay if and only if `R` and the closed fibre
 `S ⧸ 𝔪_R S` are. The closed fibre is taken as an `S`-module; by
-`Module.isCohenMacaulay_iff_isCohenMacaulay_self_of_surjective` this is the same as asking the
+`Module.isCohenMacaulay_iff_isCohenMacaulay_of_surjective` this is the same as asking the
 local ring `S ⧸ 𝔪_R S` to be Cohen–Macaulay over itself. H. Matsumura, *Commutative Ring Theory*,
 Corollary of Theorem 23.3. -/
 theorem isCohenMacaulay_self_iff_of_flat :
@@ -105,11 +109,11 @@ end Local
 
 section Global
 
-variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S] [IsNoetherianRing R]
-  [IsNoetherianRing S] [Module.Flat R S]
+variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S] [IsNoetherianRing S]
+  [Module.Flat R S]
 
 /-- **Cohen–Macaulay local rings of a flat algebra.** Let `S` be a flat Noetherian algebra over a
-Noetherian ring `R`, and `q` a prime of `S` lying over `p`. If `R_p` is Cohen–Macaulay, and so is
+ring `R`, and `q` a prime of `S` lying over `p`. If `R_p` is Cohen–Macaulay, and so is
 the local ring of the fibre `κ(p) ⊗[R] S` at the prime corresponding to `q`, then `S_q` is
 Cohen–Macaulay. H. Matsumura, *Commutative Ring Theory*, Corollary of Theorem 23.3. -/
 theorem isCohenMacaulay_localization_atPrime_of_flat (p : Ideal R) [p.IsPrime] (q : Ideal S)
@@ -126,6 +130,11 @@ theorem isCohenMacaulay_localization_atPrime_of_flat (p : Ideal R) [p.IsPrime] (
   let := Localization.AtPrime.algebraOfLiesOver p r
   have : IsLocalHom (algebraMap (Localization.AtPrime p) (Localization.AtPrime r)) :=
     Localization.isLocalHom_localRingHom _ _ _ _
+  -- `R_p` is Noetherian, being the base of the faithfully flat local map `R_p → S_r`.
+  have : Module.FaithfullyFlat (Localization.AtPrime p) (Localization.AtPrime r) :=
+    .of_flat_of_isLocalHom
+  have : IsNoetherianRing (Localization.AtPrime p) :=
+    IsNoetherianRing.of_faithfullyFlat (Localization.AtPrime r)
   refine (isCohenMacaulay_self_iff_of_flat (R := Localization.AtPrime p)).2 ⟨hp, ?_⟩
   -- The closed fibre of `R_p → S_r` is the local ring of `κ(p) ⊗[R] S` at `Q`.
   have hI : p.map (algebraMap R (Localization.AtPrime r)) =
@@ -140,12 +149,28 @@ theorem isCohenMacaulay_localization_atPrime_of_flat (p : Ideal R) [p.IsPrime] (
   let e : Localization.AtPrime r ⧸ I ≃+* Localization.AtPrime Q :=
     (Ideal.quotEquivOfEq hI.symm).trans
       (Ideal.Fiber.localizationAlgEquivQuotient p Q).toRingEquiv.symm
-  exact (isCohenMacaulay_iff_isCohenMacaulay_self_of_surjective Ideal.Quotient.mk_surjective).2
+  exact (isCohenMacaulay_iff_isCohenMacaulay_of_surjective Ideal.Quotient.mk_surjective).2
     (e.isCohenMacaulay_self_iff.2 (hq Q rfl))
 
 end Global
 
 end Module
+
+namespace TauCeti.Ring
+
+variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
+
+/-- **Cohen–Macaulay rings along flat homomorphisms.** A flat Noetherian algebra `S` over a
+Cohen–Macaulay ring `R` is Cohen–Macaulay when each fibre `κ(p) ⊗[R] S` is a Cohen–Macaulay
+ring. H. Matsumura, *Commutative Ring Theory*, Corollary of Theorem 23.3. -/
+theorem IsCohenMacaulay.of_flat [IsCohenMacaulay R] [IsNoetherianRing S] [Module.Flat R S]
+    (h : ∀ (p : Ideal R) [p.IsPrime], IsCohenMacaulay (p.Fiber S)) : IsCohenMacaulay S :=
+  isCohenMacaulay_iff_forall_localization.mpr fun q _ ↦
+    Module.isCohenMacaulay_localization_atPrime_of_flat (q.under R) q
+      (IsCohenMacaulay.isCohenMacaulay_localization _) fun Q _ _ ↦
+        (h (q.under R)).isCohenMacaulay_localization Q
+
+end TauCeti.Ring
 
 open Module
 

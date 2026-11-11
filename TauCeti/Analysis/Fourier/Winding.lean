@@ -12,11 +12,10 @@ public import TauCeti.Topology.Circle.Normalize
 public import TauCeti.Topology.Homotopy.AddCircle
 
 import Mathlib.Analysis.Complex.Polynomial.Basic
--- Supplies `ContractibleSpace ℝ` (hence `SimplyConnectedSpace ℝ`) for lifting along `Circle.exp`.
-import Mathlib.Analysis.Convex.Contractible
-import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.Topology.CompactOpen
+import TauCeti.Analysis.Complex.ContinuousLog.AddCircle
 import TauCeti.Analysis.Contour.Winding.Number.Circle
+import TauCeti.Analysis.Fourier.Monomial
 
 /-!
 # Winding number, continuous logarithms, and homotopy of nowhere-zero circle functions
@@ -28,14 +27,14 @@ a continuous map `f.normalizeToCircle hf : C(AddCircle T, Circle)` sending `x` t
 `f.normalizedLoop hf` in `Circle`. Its topological degree (`Circle.degree`) is the **winding
 number** `f.windingNumber hf : ℤ` of `f` about the origin.
 
-Lifting `f.normalizeToCircle hf` along the universal covering `Circle.exp : ℝ → Circle` yields a
-continuous real angle function whose increment over each period `T` is `k * (2π)`, where
-`k = f.windingNumber hf`. Subtracting the linear drift `k * (2π / T) * x` produces a continuous
-`T`-periodic phase `ψ`, giving the canonical factorization
-`f x = fourier k x * Complex.exp (g x)` with `g x = Real.log ‖f x‖ + ψ x * I` continuous on
-`AddCircle T`. Setting `k = 0` characterizes nowhere-zero circle functions admitting a continuous
-logarithm; damping `g` linearly to `0` deforms `f` through nowhere-zero functions to the pure
-Fourier mode `fourier k`, classifying homotopy classes in `C(AddCircle T, ℂ \ {0})` by their
+By `TauCeti.exists_hasContinuousLogOn_div_fourier`
+(`TauCeti/Analysis/Complex/ContinuousLog/AddCircle.lean`), every nowhere-zero continuous `f`
+factors as `f x = fourier d x * Complex.exp (g x)` for some `d : ℤ` and `g : C(AddCircle T, ℂ)`.
+Because `Complex.exp (g x)` has continuous angle lift `t ↦ (g (t * T)).im` with equal endpoints and
+therefore winding number `0`, additivity of `windingNumber` and `windingNumber_fourier` identify `d`
+with `f.windingNumber hf`. Setting `k = 0` characterizes nowhere-zero circle functions admitting a
+continuous logarithm; damping `g` linearly to `0` deforms `f` through nowhere-zero functions to the
+pure Fourier mode `fourier k`, classifying homotopy classes in `C(AddCircle T, ℂ \ {0})` by their
 winding number.
 
 This representation also bridges the topological winding number with the contour winding integral
@@ -225,7 +224,7 @@ theorem windingNumber_eq_of_norm_sub_lt {f g : C(AddCircle T, ℂ)}
 /-- The `k`-th Fourier monomial `x ↦ exp(2πikx / T)` has winding number `k`. -/
 @[simp]
 theorem windingNumber_fourier [hT : Fact (0 < T)] (k : ℤ)
-    (hf : ∀ x : AddCircle T, fourier k x ≠ 0 := fourier_ne_zero k) :
+    (hf : ∀ x : AddCircle T, fourier k x ≠ 0 := fourier_apply_ne_zero k) :
     (fourier (T := T) k).windingNumber hf = k := by
   have hTne : (T : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hT.out.ne'
   refine Circle.degree_eq_of_sub_eq _ (θ := fun t : I => k * (2 * Real.pi) * (t : ℝ))
@@ -248,7 +247,7 @@ theorem windingNumber_fourier_sub_const_of_norm_lt_one [Fact (0 < T)] (k : ℤ) 
       ‖(fourier (T := T) k - ContinuousMap.const (AddCircle T) w) x - fourier k x‖ <
         ‖fourier (T := T) k x‖ := by
     simpa using hw
-  rw [windingNumber_eq_of_norm_sub_lt (fourier_ne_zero k) hlt, windingNumber_fourier]
+  rw [windingNumber_eq_of_norm_sub_lt (fourier_apply_ne_zero k) hlt, windingNumber_fourier]
 
 /-- Subtracting a constant `w` with `1 < ‖w‖` from `fourier k` produces winding number `0`. -/
 theorem windingNumber_fourier_sub_const_of_one_lt_norm (k : ℤ) {w : ℂ} (hw : 1 < ‖w‖)
@@ -263,79 +262,45 @@ theorem windingNumber_fourier_sub_const_of_one_lt_norm (k : ℤ) {w : ℂ} (hw :
     simpa [sub_neg_eq_add, add_sub_cancel_right] using hw
   rw [windingNumber_eq_of_norm_sub_lt (fun _ => hw0) hlt, windingNumber_const hw0]
 
+private theorem windingNumber_eq_zero_of_forall_eq_exp {f g : C(AddCircle T, ℂ)}
+    (hf : ∀ x, f x ≠ 0) (hg : ∀ x, f x = Complex.exp (g x)) :
+    f.windingNumber hf = 0 := by
+  refine Circle.degree_eq_of_sub_eq _
+    (θ := fun t : I => (g (((t : ℝ) * T : ℝ) : AddCircle T)).im) (by fun_prop)
+    (fun t => ?_) (by simp [AddCircle.coe_period])
+  apply Circle.ext
+  have hx := hg (((t : ℝ) * T : ℝ) : AddCircle T)
+  have hre_im : Complex.exp (g (((t : ℝ) * T : ℝ) : AddCircle T)) =
+      (Real.exp (g (((t : ℝ) * T : ℝ) : AddCircle T)).re : ℂ) *
+        Complex.exp (((g (((t : ℝ) * T : ℝ) : AddCircle T)).im : ℂ) * Complex.I) := by
+    conv_lhs => rw [← Complex.re_add_im (g (((t : ℝ) * T : ℝ) : AddCircle T))]
+    rw [Complex.exp_add, Complex.ofReal_exp]
+  rw [Circle.coe_exp, normalizedLoop_apply, coe_normalizeToCircle_apply, hx, Complex.norm_exp,
+    hre_im, mul_div_cancel_left₀ _ (Complex.ofReal_ne_zero.mpr (Real.exp_ne_zero _))]
+
 /-- **Canonical exponential factorization of a nowhere-zero circle function.** Every nowhere-zero
 continuous `f : C(AddCircle T, ℂ)` factors as `f x = fourier (f.windingNumber hf) x * exp(g x)`
 for some continuous `g : C(AddCircle T, ℂ)`. -/
-theorem exists_eq_fourier_mul_exp [hT : Fact (0 < T)] (f : C(AddCircle T, ℂ))
+theorem exists_eq_fourier_mul_exp [Fact (0 < T)] (f : C(AddCircle T, ℂ))
     (hf : ∀ x, f x ≠ 0) :
     ∃ g : C(AddCircle T, ℂ), ∀ x, f x = fourier (f.windingNumber hf) x * Complex.exp (g x) := by
-  have hTne : T ≠ 0 := hT.out.ne'
-  set k : ℤ := f.windingNumber hf
-  -- Lift the normalized map along `Circle.exp : ℝ → Circle` over the universal cover `ℝ`.
-  let u : C(ℝ, Circle) :=
-    (f.normalizeToCircle hf).comp ⟨((↑) : ℝ → AddCircle T), continuous_quotient_mk'⟩
-  obtain ⟨Θ, ⟨-, hΘ_lift⟩, -⟩ :=
-    Circle.isCoveringMap_exp.existsUnique_continuousMap_lifts u 0 (Complex.arg (u 0))
-      (Circle.exp_arg (u 0))
-  have hΘ (r : ℝ) : Circle.exp (Θ r) = f.normalizeToCircle hf (r : AddCircle T) :=
-    congr_fun hΘ_lift r
-  -- Read the degree off the restriction of `Θ` to `[0, T]`.
-  have hsubT : Θ T - Θ 0 = k * (2 * Real.pi) := by
-    have hloop := Circle.sub_eq_degree_mul (f.normalizedLoop hf)
-      (θ := fun t : I => Θ ((t : ℝ) * T)) (by fun_prop) (fun t => by
-        simpa only [normalizedLoop_apply] using hΘ ((t : ℝ) * T))
-    simpa [k, windingNumber_def] using hloop
-  -- `Θ (r + T) - Θ r` is constant on `ℝ`, hence equal to `k * (2π)`.
-  obtain ⟨c, hc⟩ := Circle.exists_forall_eq_add_of_exp_eq (G := fun r => Θ (r + T)) (G' := Θ)
-    (by fun_prop) Θ.continuous fun r => by rw [hΘ, hΘ, AddCircle.coe_add_period]
-  have hc_eq : c = k * (2 * Real.pi) := by
-    have hc0 := hc 0
-    rw [zero_add] at hc0
-    linarith [hc0, hsubT]
-  -- Subtracting the linear drift makes the angle lift `T`-periodic.
-  let Ψ : ℝ → ℝ := fun r => Θ r - k * (2 * Real.pi / T) * r
-  have hΨ_per : Function.Periodic Ψ T := fun r => by
-    simp only [Ψ, hc r, hc_eq]
-    field_simp
-    ring
-  have hΨ_cont : Continuous Ψ := by fun_prop
-  let ψ : C(AddCircle T, ℝ) :=
-    ⟨hΨ_per.lift, (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.mpr <| by
-      have hcomp : hΨ_per.lift ∘ ((↑) : ℝ → AddCircle T) = Ψ := funext hΨ_per.lift_coe
-      rwa [hcomp]⟩
-  let g : C(AddCircle T, ℂ) :=
-    ⟨fun x => (Real.log ‖f x‖ : ℂ) + (ψ x : ℂ) * Complex.I,
-      Continuous.add
-        (Complex.continuous_ofReal.comp
-          (f.continuous.norm.log fun x => norm_ne_zero_iff.mpr (hf x)))
-        ((Complex.continuous_ofReal.comp ψ.continuous).mul continuous_const)⟩
-  refine ⟨g, fun x => ?_⟩
-  obtain ⟨r, rfl⟩ := QuotientAddGroup.mk_surjective x
-  have hψr : ψ (r : AddCircle T) = Ψ r := hΨ_per.lift_coe r
-  have hexp_log : Complex.exp (Real.log ‖f (r : AddCircle T)‖) = ‖f (r : AddCircle T)‖ := by
-    rw [← Complex.ofReal_exp, Real.exp_log (norm_pos_iff.mpr (hf _))]
-  have hexp_phase :
-      fourier k (r : AddCircle T) * Complex.exp ((Ψ r : ℂ) * Complex.I) =
-        (f.normalizeToCircle hf (r : AddCircle T) : ℂ) := by
-    have harg :
-        2 * (Real.pi : ℂ) * Complex.I * k * r / T + (Ψ r : ℂ) * Complex.I =
-          (Θ r : ℂ) * Complex.I := by
-      have hTℂ : (T : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hTne
-      simp only [Ψ, Complex.ofReal_sub, Complex.ofReal_mul, Complex.ofReal_div,
-        Complex.ofReal_intCast, Complex.ofReal_ofNat]
-      field_simp
-      ring
-    rw [fourier_coe_apply, ← Complex.exp_add, harg, ← Circle.coe_exp, hΘ]
-  calc
-    f (r : AddCircle T)
-      = (‖f (r : AddCircle T)‖ : ℂ) * (f.normalizeToCircle hf (r : AddCircle T) : ℂ) :=
-        (f.norm_mul_normalizeToCircle_apply hf _).symm
-    _ = Complex.exp (Real.log ‖f (r : AddCircle T)‖) *
-          (fourier k (r : AddCircle T) * Complex.exp ((Ψ r : ℂ) * Complex.I)) := by
-        rw [hexp_log, hexp_phase]
-    _ = fourier k (r : AddCircle T) * Complex.exp (g (r : AddCircle T)) := by
-        simp only [g, ContinuousMap.coe_mk, hψr, Complex.exp_add]
-        ring
+  obtain ⟨d, hd⟩ := exists_hasContinuousLogOn_div_fourier f.continuous hf
+  obtain ⟨L, hL_cont, hL_exp⟩ := hasContinuousLogOn_iff.mp hd
+  let g : C(AddCircle T, ℂ) := ⟨L, continuousOn_univ.mp hL_cont⟩
+  have hfg (x : AddCircle T) : f x = fourier d x * Complex.exp (g x) := by
+    change f x = fourier d x * Complex.exp (L x)
+    rw [hL_exp x (mem_univ x), mul_div_cancel₀ _ (fourier_apply_ne_zero d x)]
+  let eg : C(AddCircle T, ℂ) := ⟨fun x => Complex.exp (g x), by fun_prop⟩
+  have heg : ∀ x, eg x ≠ 0 := fun _ => Complex.exp_ne_zero _
+  have hfeq (x : AddCircle T) : f x = (fourier (T := T) d * eg) x := by
+    rw [ContinuousMap.mul_apply]
+    exact hfg x
+  have hd_eq : f.windingNumber hf = d := by
+    rw [windingNumber_congr (g := fourier (T := T) d * eg) hf
+        (fun x => mul_ne_zero (fourier_apply_ne_zero d x) (heg x)) hfeq,
+      windingNumber_mul _ _ (fourier_apply_ne_zero d) heg, windingNumber_fourier,
+      windingNumber_eq_zero_of_forall_eq_exp heg (fun _ => rfl), add_zero]
+  exact ⟨g, fun x => hd_eq ▸ hfg x⟩
 
 /-- **Continuous logarithm criterion.** A nowhere-zero continuous circle function has winding
 number `0` if and only if it is the exponential of a continuous complex function on the circle. -/
@@ -347,18 +312,7 @@ theorem windingNumber_eq_zero_iff_exists_exp [Fact (0 < T)] (f : C(AddCircle T, 
     obtain ⟨g, hg⟩ := f.exists_eq_fourier_mul_exp hf
     exact ⟨g, fun x => by simpa [h0] using hg x⟩
   · rintro ⟨g, hg⟩
-    refine Circle.degree_eq_of_sub_eq _
-      (θ := fun t : I => (g (((t : ℝ) * T : ℝ) : AddCircle T)).im) (by fun_prop)
-      (fun t => ?_) (by simp [AddCircle.coe_period])
-    apply Circle.ext
-    have hx := hg (((t : ℝ) * T : ℝ) : AddCircle T)
-    have hre_im : Complex.exp (g (((t : ℝ) * T : ℝ) : AddCircle T)) =
-        (Real.exp (g (((t : ℝ) * T : ℝ) : AddCircle T)).re : ℂ) *
-          Complex.exp (((g (((t : ℝ) * T : ℝ) : AddCircle T)).im : ℂ) * Complex.I) := by
-      conv_lhs => rw [← Complex.re_add_im (g (((t : ℝ) * T : ℝ) : AddCircle T))]
-      rw [Complex.exp_add, Complex.ofReal_exp]
-    rw [Circle.coe_exp, normalizedLoop_apply, coe_normalizeToCircle_apply, hx, Complex.norm_exp,
-      hre_im, mul_div_cancel_left₀ _ (Complex.ofReal_ne_zero.mpr (Real.exp_ne_zero _))]
+    exact windingNumber_eq_zero_of_forall_eq_exp hf hg
 
 /-- Every nowhere-zero continuous circle function `f` is continuously homotopic through
 nowhere-zero functions to the Fourier monomial `fourier (f.windingNumber hf)`. -/
@@ -369,7 +323,7 @@ theorem exists_homotopy_fourier [Fact (0 < T)] (f : C(AddCircle T, ℂ)) (hf : �
   obtain ⟨g, hg⟩ := f.exists_eq_fourier_mul_exp hf
   refine ⟨⟨fun p => fourier (f.windingNumber hf) p.2 *
       Complex.exp (((1 - (p.1 : ℝ)) : ℂ) * g p.2), by fun_prop⟩,
-    fun p => mul_ne_zero (fourier_ne_zero _ _) (Complex.exp_ne_zero _),
+    fun p => mul_ne_zero (fourier_apply_ne_zero _ _) (Complex.exp_ne_zero _),
     fun x => ?_, fun x => ?_⟩
   · simpa using (hg x).symm
   · simp
@@ -386,7 +340,7 @@ theorem windingNumber_eq_iff_exists_homotopy_fourier [Fact (0 < T)] (f : C(AddCi
   · rintro rfl
     exact f.exists_homotopy_fourier hf
   · rintro ⟨H, hH, h0, h1⟩
-    rw [windingNumber_eq_of_homotopy hf (fourier_ne_zero k) H hH h0 h1, windingNumber_fourier]
+    rw [windingNumber_eq_of_homotopy hf (fourier_apply_ne_zero k) H hH h0 h1, windingNumber_fourier]
 
 end Winding
 
@@ -446,7 +400,7 @@ theorem coe_windingNumber_eq_contour_windingNumber {T : ℝ} [hT : Fact (0 < T)]
   have hqC1 : TauCeti.IsPiecewiseC1On q.extend 0 1 :=
     (TauCeti.IsPiecewiseC1On.of_contDiffOn hδ_contDiff.contDiffOn).congr hq_eq.symm
   have havoid (st : I × I) : φ st ≠ 0 :=
-    mul_ne_zero (mul_ne_zero (hf 0) (fourier_ne_zero _ _)) (Complex.exp_ne_zero _)
+    mul_ne_zero (mul_ne_zero (hf 0) (fourier_apply_ne_zero _ _)) (Complex.exp_ne_zero _)
   have hhom := TauCeti.Contour.windingNumber_eq_of_pathHomotopy φ hpC1 hqC1 havoid
   have hp_wind : TauCeti.Contour.windingNumber γ 0 1 0 =
       TauCeti.Contour.windingNumber p.extend 0 1 0 :=
@@ -495,8 +449,8 @@ private theorem exists_norm_sub_lt_windingNumber_ne_of_norm_lt [Fact (0 < T)]
       ‖(c • fourier (T := T) k) - f‖ ≤ ‖c • fourier (T := T) k‖ + ‖f‖ := norm_sub_le _ _
       _ < (ε - η) / 2 + η := add_lt_add_of_le_of_lt hck hf
       _ < ε := by linarith
-  refine ⟨c • fourier 1, c • fourier 0, fun x => mul_ne_zero hc (fourier_ne_zero 1 x),
-    fun x => mul_ne_zero hc (fourier_ne_zero 0 x), hbound 1, hbound 0, ?_⟩
+  refine ⟨c • fourier 1, c • fourier 0, fun x => mul_ne_zero hc (fourier_apply_ne_zero 1 x),
+    fun x => mul_ne_zero hc (fourier_apply_ne_zero 0 x), hbound 1, hbound 0, ?_⟩
   simp [windingNumber_smul hc]
 
 /-- Scales unit-circle roots radially by `1 - δ` while leaving off-circle roots fixed. -/
@@ -555,7 +509,7 @@ private theorem rootPushFamily_apply_ne_zero {c z₀ : ℂ} (hc : c ≠ 0) (hz�
     (hpos : 0 ≤ 1 + s * δ) (x : AddCircle T) :
     rootPushFamily (T := T) c z₀ N M s δ x ≠ 0 := by
   refine mul_ne_zero (fun hx => ?_)
-    (mul_ne_zero (mul_ne_zero hc (fourier_ne_zero (-N) x))
+    (mul_ne_zero (mul_ne_zero hc (fourier_apply_ne_zero (-N) x))
       (pushedRootsProd_apply_ne_zero M hδ0 hδ1 x))
   have h1 : 1 = 1 + s * δ := by
     have h := congrArg norm (sub_eq_zero.mp hx)
@@ -577,7 +531,7 @@ private theorem exists_norm_sub_lt_windingNumber_ne_of_eq_fourier_mul_eval [Fact
   set z₀ : ℂ := fourier 1 x₀
   have hz₀_norm : ‖z₀‖ = 1 := norm_fourier_apply 1 x₀
   have hz₀_mem : z₀ ∈ P.roots := (Polynomial.mem_roots hP0).mpr <|
-    (mul_eq_zero.mp ((hP x₀).symm.trans hqx₀)).resolve_left (fourier_ne_zero (-N) x₀)
+    (mul_eq_zero.mp ((hP x₀).symm.trans hqx₀)).resolve_left (fourier_apply_ne_zero (-N) x₀)
   set M : Multiset ℂ := P.roots.erase z₀
   have hG0 (s : ℝ) : rootPushFamily (T := T) P.leadingCoeff z₀ N M s 0 = q := by
     ext x

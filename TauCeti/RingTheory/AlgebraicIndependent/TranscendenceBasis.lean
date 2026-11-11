@@ -18,9 +18,10 @@ tower inequality `lift_trdeg_add_le` for towers of commutative rings.
 
 * `TauCeti.trdeg_eq_of_isAlgebraic_base`: an injective algebraic extension of the base ring
   preserves transcendence degree in any commutative algebra over the larger base.
-* `TauCeti.isAlgebraic_of_trdeg_eq`: if the top ring has the same finite transcendence degree
-  over the bottom and middle rings, then the middle ring is algebraic over the bottom ring;
-  `TauCeti.isAlgebraic_of_trdeg_eq_one` is the case of transcendence degree one.
+* `TauCeti.isAlgebraic_of_trdeg_le`: if the top ring has finite transcendence degree over the
+  middle ring, at least its transcendence degree over the bottom ring, then the middle ring is
+  algebraic over the bottom ring; `TauCeti.isAlgebraic_of_trdeg_eq_one` is the case of
+  transcendence degree one.
 -/
 
 public section
@@ -40,31 +41,35 @@ theorem trdeg_eq_of_isAlgebraic_base
     [NoZeroDivisors S] [FaithfulSMul R S] [Algebra.IsAlgebraic R S] :
     Algebra.trdeg S A = Algebra.trdeg R A := by
   -- Mathlib's algebraic-independence transfer identifies the sets in the defining supremum.
-  have h : AlgebraicIndepOn S (id : A → A) = AlgebraicIndepOn R id := by
-    funext s
-    exact propext (Algebra.IsAlgebraic.algebraicIndependent_iff R S (A := A)).symm
-  unfold Algebra.trdeg
-  rw [h]
+  rw [Algebra.trdeg, Algebra.trdeg,
+    funext fun _ ↦ propext (Algebra.IsAlgebraic.algebraicIndependent_iff R S (A := A)).symm]
 
 variable [Nontrivial R] [FaithfulSMul R S] [FaithfulSMul S A]
 
-/-- In an injective tower `R → S → A`, if `A` has the same finite transcendence degree over
-`R` and `S`, then `S` is algebraic over `R`. Finiteness allows cancellation in the
-transcendence-degree tower inequality. -/
-theorem isAlgebraic_of_trdeg_eq (h : Algebra.trdeg S A = Algebra.trdeg R A)
-    (hfin : Algebra.trdeg R A < Cardinal.aleph0) : Algebra.IsAlgebraic R S := by
-  rw [← trdeg_eq_zero_iff]
-  have hz : Cardinal.lift.{w} (Algebra.trdeg R S) ≤ 0 :=
-    (Cardinal.add_le_add_iff_of_lt_aleph0
-      (γ := Cardinal.lift.{v} (Algebra.trdeg R A))
-      (Cardinal.lift_lt_aleph0.mpr hfin)).mp
-      (by simpa only [h, zero_add] using (lift_trdeg_add_le (R := R) (S := S) (A := A)))
-  simpa using hz
+/-- In an injective tower `R → S → A`, if `A` has finite transcendence degree over `S` that is
+at least its transcendence degree over `R`, then `S` is algebraic over `R`. Finiteness allows
+cancellation in the transcendence-degree tower inequality `lift_trdeg_add_le`. -/
+theorem isAlgebraic_of_trdeg_le (h : Algebra.trdeg R A ≤ Algebra.trdeg S A)
+    (hfin : Algebra.trdeg S A < Cardinal.aleph0) : Algebra.IsAlgebraic R S := by
+  rw [← trdeg_eq_zero_iff, ← Cardinal.lift_eq_zero.{w}, ← nonpos_iff_eq_zero,
+    ← Cardinal.add_le_add_iff_of_lt_aleph0 (Cardinal.lift_lt_aleph0.mpr hfin), zero_add]
+  exact lift_trdeg_add_le.trans (Cardinal.lift_le.mpr h)
 
-/-- In an injective tower `R → S → A`, if `A` has transcendence degree one over both
-`R` and `S`, then `S` is algebraic over `R`. -/
+omit [FaithfulSMul R S] [FaithfulSMul S A] in
+/-- In a tower `R → S → A`, if `A` has transcendence degree one over both `R` and `S`, then `S` is
+algebraic over `R`. The structure maps are injective because the transcendence degrees are
+nonzero. -/
 theorem isAlgebraic_of_trdeg_eq_one (h : Algebra.trdeg R A = 1) (h' : Algebra.trdeg S A = 1) :
-    Algebra.IsAlgebraic R S :=
-  isAlgebraic_of_trdeg_eq (h'.trans h.symm) (by rw [h]; exact Cardinal.one_lt_aleph0)
+    Algebra.IsAlgebraic R S := by
+  have hSA : Function.Injective (algebraMap S A) := by
+    by_contra hn
+    exact one_ne_zero (h'.symm.trans (trdeg_eq_zero_of_not_injective hn))
+  have hRA : Function.Injective (algebraMap R A) := by
+    by_contra hn
+    exact one_ne_zero (h.symm.trans (trdeg_eq_zero_of_not_injective hn))
+  rw [IsScalarTower.algebraMap_eq R S A, RingHom.coe_comp] at hRA
+  have : FaithfulSMul S A := (faithfulSMul_iff_algebraMap_injective S A).2 hSA
+  have : FaithfulSMul R S := (faithfulSMul_iff_algebraMap_injective R S).2 hRA.of_comp
+  exact isAlgebraic_of_trdeg_le (h.trans h'.symm).le (h' ▸ Cardinal.one_lt_aleph0)
 
 end TauCeti

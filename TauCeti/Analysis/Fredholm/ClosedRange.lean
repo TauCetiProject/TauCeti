@@ -39,8 +39,6 @@ check.
 * `TauCeti.isFredholm_iff_finite_ker_coker`: over Banach spaces over an
   `IsRCLikeNormedField`, the Fredholm predicate is equivalent to finite dimensionality of the
   kernel and cokernel.
-* `ContinuousLinearMap.IsFredholm.of_comp_left_right`: over Banach spaces over an
-  `IsRCLikeNormedField`, if `S₁.comp T` and `T.comp S₂` are Fredholm then `T` is Fredholm.
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*, Appendix
 A.1, where a Fredholm operator has finite-dimensional kernel and cokernel; the closed-range
@@ -53,7 +51,7 @@ namespace TauCeti
 
 open Module
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜] [CompleteSpace 𝕜]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
 variable {E F : Type*}
 variable [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
 variable [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
@@ -67,8 +65,8 @@ Closedness of the range is therefore not an independent hypothesis in the Banach
 forced by finite dimensionality of the cokernel. The proof runs the Banach open mapping theorem on
 the surjection `Φ(x, n) = T x + n` from `E × N`, where `N` is a finite-dimensional algebraic
 complement of `range T`. -/
-theorem _root_.ContinuousLinearMap.isClosed_range_of_finite_coker (T : E →L[𝕜] F)
-    [FiniteDimensional 𝕜 (F ⧸ LinearMap.range (T : E →ₗ[𝕜] F))] :
+theorem _root_.ContinuousLinearMap.isClosed_range_of_finite_coker [CompleteSpace 𝕜]
+    (T : E →L[𝕜] F) [FiniteDimensional 𝕜 (F ⧸ LinearMap.range (T : E →ₗ[𝕜] F))] :
     IsClosed (LinearMap.range (T : E →ₗ[𝕜] F) : Set F) := by
   set R := LinearMap.range (T : E →ₗ[𝕜] F) with hR
   -- A finite-dimensional algebraic complement `N` of `range T`.
@@ -112,6 +110,7 @@ theorem _root_.ContinuousLinearMap.IsFredholm.of_finite_ker_coker (T : E →L[�
     (hcoker : FiniteDimensional 𝕜 (F ⧸ LinearMap.range (T : E →ₗ[𝕜] F))) :
     ContinuousLinearMap.IsFredholm T where
   isStrictMap := by
+    have : CompleteSpace 𝕜 := by let := IsRCLikeNormedField.rclike 𝕜; infer_instance
     have hclosed := by
       have := hcoker
       exact ContinuousLinearMap.isClosed_range_of_finite_coker T
@@ -119,6 +118,7 @@ theorem _root_.ContinuousLinearMap.IsFredholm.of_finite_ker_coker (T : E →L[�
     rw [Topology.isStrictMap_iff_isQuotientMap_rangeFactorization]
     exact T.rangeRestrict.isQuotientMap Set.rangeFactorization_surjective
   isClosed_range := by
+    have : CompleteSpace 𝕜 := by let := IsRCLikeNormedField.rclike 𝕜; infer_instance
     have := hcoker
     exact ContinuousLinearMap.isClosed_range_of_finite_coker T
   finite_ker := hker
@@ -136,27 +136,5 @@ theorem isFredholm_iff_finite_ker_coker (T : E →L[𝕜] F) :
         FiniteDimensional 𝕜 (F ⧸ LinearMap.range (T : E →ₗ[𝕜] F)) :=
   ⟨fun h => ⟨h.finite_ker, h.finite_coker⟩,
     fun h => .of_finite_ker_coker T h.1 h.2⟩
-
-/-- Over Banach spaces over an `IsRCLikeNormedField`, a continuous linear map `T : E →L[𝕜] F` is
-Fredholm whenever it admits a left composite `S₁.comp T` and a right composite `T.comp S₂` that are
-both Fredholm: `ker T ≤ ker (S₁.comp T)` bounds the kernel and `range (T.comp S₂) ≤ range T` bounds
-the cokernel, with closed range automatic. -/
-theorem _root_.ContinuousLinearMap.IsFredholm.of_comp_left_right
-    {G H : Type*} [AddCommGroup G] [Module 𝕜 G] [TopologicalSpace G]
-    [AddCommGroup H] [Module 𝕜 H] [TopologicalSpace H]
-    {T : E →L[𝕜] F} {S₁ : F →L[𝕜] G} {S₂ : H →L[𝕜] E}
-    (h₁ : ContinuousLinearMap.IsFredholm (S₁.comp T))
-    (h₂ : ContinuousLinearMap.IsFredholm (T.comp S₂)) :
-    ContinuousLinearMap.IsFredholm T := by
-  refine .of_finite_ker_coker T ?_ ?_
-  · have hker : LinearMap.ker (T : E →ₗ[𝕜] F) ≤ LinearMap.ker (S₁.comp T : E →ₗ[𝕜] G) :=
-      LinearMap.ker_le_ker_comp T.toLinearMap S₁.toLinearMap
-    have := h₁.finite_ker
-    exact Submodule.finiteDimensional_of_le hker
-  · have hrange : LinearMap.range (T.comp S₂ : H →ₗ[𝕜] F) ≤ LinearMap.range (T : E →ₗ[𝕜] F) :=
-      LinearMap.range_comp_le_range S₂.toLinearMap T.toLinearMap
-    have := h₂.finite_coker
-    exact FiniteDimensional.of_surjective (Submodule.factor hrange)
-      (Submodule.factor_surjective hrange)
 
 end TauCeti

@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Semigroups.Resolvent.Identity
 public import Mathlib.Analysis.Normed.Lp.lpHolder
 import TauCeti.Analysis.Normed.Operator.Dense
-import TauCeti.MeasureTheory.Integral.ExpDecay
+import TauCeti.MeasureTheory.Integral.Exp.Decay
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 
 /-!

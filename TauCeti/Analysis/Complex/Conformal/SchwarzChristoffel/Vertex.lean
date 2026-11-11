@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
 public import TauCeti.Analysis.Complex.SegmentDistIntegral
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
+import TauCeti.Topology.ClusterSet
 
 /-!
 # The vertices of the Schwarz--Christoffel map
@@ -180,7 +181,6 @@ private theorem exists_tendsto_schwarzChristoffelPrimitive (a e : ι → ℝ)
     rw [mem_singleton_iff] at hcon
     rw [hcon] at hy
     exact absurd hy (not_lt.mpr hpim)
-  have hnb : (𝓝[upperHalfPlaneSet] p).NeBot := Real.nhdsWithin_upperHalfPlaneSet_neBot (a j)
   obtain ⟨C, hC, hev⟩ := exists_norm_schwarzChristoffelIntegrand_le a e (a j)
   set T : ℝ := ∑ i with a i = a j, e i
   set u : ℝ := min T 0 with hudef
@@ -194,62 +194,32 @@ private theorem exists_tendsto_schwarzChristoffelPrimitive (a e : ι → ℝ)
       ‖schwarzChristoffelIntegrand a e y‖ ≤ C * dist y p ^ u := by
     intro y hy
     have hyne : y ≠ p := hsub hy.2
-    have hd : 0 < dist y p := dist_pos.mpr hyne
-    have hd1 : dist y p ≤ 1 := by
-      have := Metric.mem_ball.mp hy.1
-      have h2 : ρ₀ ≤ 1 := min_le_right _ _
-      linarith
-    have h1 : ‖schwarzChristoffelIntegrand a e y‖ ≤ C * dist y p ^ T := by
-      refine hr₁sub ⟨?_, hyne⟩
-      exact Metric.mem_ball.mp hy.1 |>.trans_le (min_le_left _ _) |> Metric.mem_ball.mpr
-    have hdecomp : T = (T - u) + u := by ring
-    have h2 : dist y p ^ T ≤ dist y p ^ u := by
-      rw [hdecomp, Real.rpow_add hd]
-      have hle1 : dist y p ^ (T - u) ≤ 1 :=
-        Real.rpow_le_one dist_nonneg hd1 (by simp [hudef])
-      nlinarith [Real.rpow_nonneg (dist_nonneg (x := y) (y := p)) u]
-    exact h1.trans (mul_le_mul_of_nonneg_left h2 hC.le)
-  refine CompleteSpace.complete (f := map (schwarzChristoffelPrimitive a e z₀)
-    (𝓝[upperHalfPlaneSet] p)) ?_
-  rw [Metric.cauchy_iff]
-  refine ⟨map_neBot, ?_⟩
-  intro ε hε
-  set K : ℝ := C * (2 / (u + 1))
-  have hK : 0 < K := by positivity
-  obtain ⟨ρ, hρpos, hρle, hρε⟩ : ∃ ρ, 0 < ρ ∧ ρ ≤ ρ₀ ∧ K * (2 * ρ) ^ (u + 1) < ε := by
-    set τ : ℝ := (ε / (2 * K)) ^ (u + 1)⁻¹ with hτdef
-    refine ⟨min ρ₀ (τ / 2), lt_min hρ₀ (by positivity), min_le_left _ _, ?_⟩
-    have h2ρ : 2 * min ρ₀ (τ / 2) ≤ τ := by
-      have := min_le_right ρ₀ (τ / 2)
-      linarith
-    have hstep : K * (2 * min ρ₀ (τ / 2)) ^ (u + 1) ≤ K * τ ^ (u + 1) :=
-      mul_le_mul_of_nonneg_left
-        (Real.rpow_le_rpow (by positivity) h2ρ hu1.le) hK.le
-    have hval : τ ^ (u + 1) = ε / (2 * K) := by
-      rw [hτdef, Real.rpow_inv_rpow (by positivity) hu1.ne']
-    rw [hval] at hstep
-    have : K * (ε / (2 * K)) = ε / 2 := by field_simp
-    rw [this] at hstep
-    exact hstep.trans_lt (half_lt_self hε)
-  refine ⟨schwarzChristoffelPrimitive a e z₀ '' (Metric.ball p ρ ∩ upperHalfPlaneSet), ?_, ?_⟩
-  · refine mem_map.mpr (mem_of_superset ?_ (subset_preimage_image _ _))
-    exact inter_mem (nhdsWithin_le_nhds (Metric.ball_mem_nhds p hρpos)) self_mem_nhdsWithin
-  rintro x ⟨z, hz, rfl⟩ y ⟨w, hw, rfl⟩
+    have hyr := Metric.mem_ball.mp hy.1
+    exact (hr₁sub ⟨Metric.mem_ball.mpr (hyr.trans_le (min_le_left _ _)), hyne⟩).trans
+      (mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_ge (dist_pos.mpr hyne)
+        (hyr.le.trans (min_le_right _ _)) (min_le_left T 0)) hC.le)
+  refine exists_tendsto_of_forall_exists fun ε hε => ?_
+  -- `C * (2 / (u + 1)) * (2 * ρ) ^ (u + 1) → 0` as `ρ → 0⁺`, so some radius `ρ ≤ ρ₀` makes it
+  -- less than `ε`.
+  have hK : 0 < C * (2 / (u + 1)) := by positivity
+  have hlim : Tendsto (fun ρ : ℝ => C * (2 / (u + 1)) * (2 * ρ) ^ (u + 1)) (𝓝[>] 0) (𝓝 0) := by
+    have hc : Continuous fun ρ : ℝ => C * (2 / (u + 1)) * (2 * ρ) ^ (u + 1) :=
+      continuous_const.mul ((continuous_const.mul continuous_id).rpow_const fun _ => .inr hu1.le)
+    simpa [Real.zero_rpow hu1.ne'] using (hc.tendsto 0).mono_left nhdsWithin_le_nhds
+  obtain ⟨ρ, hρε, hρpos, hρle⟩ :=
+    ((hlim.eventually (gt_mem_nhds hε)).and (Ioc_mem_nhdsGT hρ₀)).exists
+  refine ⟨ρ, hρpos, fun z hz w hw => ?_⟩
   have hzw : ‖z - w‖ ≤ 2 * ρ := by
-    have h1 := Metric.mem_ball.mp hz.1
-    have h2 := Metric.mem_ball.mp hw.1
-    have := dist_triangle z p w
-    rw [dist_comm p w] at this
     rw [← dist_eq_norm]
-    linarith
-  have hzsub : Metric.ball p ρ ∩ upperHalfPlaneSet ⊆ Metric.ball p ρ₀ ∩ upperHalfPlaneSet :=
-    inter_subset_inter_left _ (Metric.ball_subset_ball hρle)
+    linarith [dist_triangle_right z w p, Metric.mem_ball.mp hz.2, Metric.mem_ball.mp hw.2]
+  have hρball : Metric.ball p ρ ⊆ Metric.ball p ρ₀ := Metric.ball_subset_ball hρle
   calc dist (schwarzChristoffelPrimitive a e z₀ z) (schwarzChristoffelPrimitive a e z₀ w)
-      ≤ K * ‖z - w‖ ^ (u + 1) :=
-        dist_schwarzChristoffelPrimitive_le a e z₀ hu hu0 hC.le hpim hbd (hzsub hz) (hzsub hw)
-    _ ≤ K * (2 * ρ) ^ (u + 1) :=
+      ≤ C * (2 / (u + 1)) * ‖z - w‖ ^ (u + 1) :=
+        dist_schwarzChristoffelPrimitive_le a e z₀ hu hu0 hC.le hpim hbd
+          ⟨hρball hz.2, hz.1⟩ ⟨hρball hw.2, hw.1⟩
+    _ ≤ C * (2 / (u + 1)) * (2 * ρ) ^ (u + 1) :=
         mul_le_mul_of_nonneg_left (Real.rpow_le_rpow (norm_nonneg _) hzw hu1.le) hK.le
-    _ < ε := hρε
+    _ ≤ ε := hρε.le
 
 /-- The **Schwarz--Christoffel vertex** attached to the prevertex `a j`: the boundary value at
 `a j` of the primitive normalized at `z₀`.  It is a genuine limit when the total turning exponent

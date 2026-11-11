@@ -36,13 +36,10 @@ variable {K L : HomologicalComplex C c} (φ : K ⟶ L) (e : c.Embedding c')
 /-- The identification of the opcycles of an extended complex is natural. -/
 @[reassoc (attr := simp)]
 lemma extendOpcyclesIso_hom_naturality {j : ι} {j' : ι'} (hj' : e.f j = j')
-    [K.HasHomology j] [L.HasHomology j] :
-    letI := extend.hasHomology K e hj'
-    letI := extend.hasHomology L e hj'
+    [K.HasHomology j] [L.HasHomology j] [(K.extend e).HasHomology j']
+    [(L.extend e).HasHomology j'] :
     opcyclesMap (extendMap φ e) j' ≫ (L.extendOpcyclesIso e hj').hom =
       (K.extendOpcyclesIso e hj').hom ≫ opcyclesMap φ j := by
-  let := extend.hasHomology K e hj'
-  let := extend.hasHomology L e hj'
   simp [← cancel_epi ((K.extend e).pOpcycles j'), extendMap_f φ e hj']
 
 variable (K) in
@@ -50,14 +47,11 @@ variable (K) in
 maps `opcyclesToCycles`. -/
 -- The left-hand side does not determine the source index `i` for the simplifier.
 @[reassoc]
-lemma extend_opcyclesToCycles_comp_extendCyclesIso_hom {i j : ι} {i' j' : ι'} (hi' : e.f i = i')
-    (hj' : e.f j = j') [K.HasHomology i] [K.HasHomology j] :
-    letI := extend.hasHomology K e hi'
-    letI := extend.hasHomology K e hj'
+lemma opcyclesToCycles_extendCyclesIso_hom {i j : ι} {i' j' : ι'} (hi' : e.f i = i')
+    (hj' : e.f j = j') [K.HasHomology i] [K.HasHomology j] [(K.extend e).HasHomology i']
+    [(K.extend e).HasHomology j'] :
     (K.extend e).opcyclesToCycles i' j' ≫ (K.extendCyclesIso e hj').hom =
       (K.extendOpcyclesIso e hi').hom ≫ K.opcyclesToCycles i j := by
-  let := extend.hasHomology K e hi'
-  let := extend.hasHomology K e hj'
   simp [← cancel_epi ((K.extend e).pOpcycles i'), ← cancel_mono (K.iCycles j),
     K.extend_d_eq e hi' hj']
 
@@ -69,7 +63,7 @@ lemma epi_homologyMap_extendMap_iff {j : ι} {j' : ι'} (hj' : e.f j = j')
     [(L.extend e).HasHomology j'] :
     Epi (homologyMap (extendMap φ e) j') ↔ Epi (homologyMap φ j) :=
   (MorphismProperty.epimorphisms C).arrow_mk_iso_iff
-    (Arrow.isoMk (K.extendHomologyIso e hj') (L.extendHomologyIso e hj') (by simp))
+    (Arrow.isoMk (K.extendHomologyIso e hj') (L.extendHomologyIso e hj'))
 
 variable {e} in
 /-- In a degree `j'` outside the image of `e`, the map induced in homology by the extension of `φ`

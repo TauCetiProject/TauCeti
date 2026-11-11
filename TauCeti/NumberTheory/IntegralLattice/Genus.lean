@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.IntegralLattice.Localization.Operations
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Unimodular
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
+public import TauCeti.LinearAlgebra.IntegralLattice.Ideals
 public import Mathlib.Data.Nat.PrimeFin
 import Mathlib.Data.Int.Associated
 import TauCeti.NumberTheory.IntegralLattice.Localization.Ideals
@@ -31,6 +32,10 @@ since the signed determinant is `(-1) ^ n₋` times the absolute determinant. Fo
 lattices the absolute determinant is the order of the discriminant group `Lᵛ / L`, so the genus
 also determines that order.
 
+The scale and norm ideals are genus invariants in the same way: their extensions to `ℤ_p` are
+the scale and norm ideals of the localization, and an ideal of `ℤ` is determined by its extensions
+to all `ℤ_p`.
+
 For lattices with equal nonzero signed determinants, the local tests reduce to the finite set
 of prime factors of twice the absolute determinant. Outside that set, the local determinants
 are units at an odd prime, so the rank and determinant classification gives an isometry. The
@@ -50,6 +55,13 @@ localizations alone.
 * `TauCeti.IntegralLattice.SameGenus.natCard_discriminantGroup_eq`: lattices in one genus have
   discriminant groups of the same order.
 * `TauCeti.IntegralLattice.SameGenus.isEven_iff`: lattices in one genus are even together.
+* `TauCeti.IntegralLattice.SameGenus.scaleIdeal_eq` and
+  `TauCeti.IntegralLattice.SameGenus.normIdeal_eq`: lattices in one genus have the same scale and
+  norm ideals.
+* `TauCeti.IntegralLattice.sameGenus_smul_iff` and
+  `TauCeti.IntegralLattice.SameGenus.exists_eq_smul`: scaling the forms by a nonzero integer `n`
+  preserves and reflects the genus, and every lattice in the genus of `n • L` is the scaling by
+  `n` of a lattice in the genus of `L`.
 * `TauCeti.IntegralLattice.SameGenus.completedRationalForm_equivalent`: lattices in one genus have
   isometric completed rational spaces at every prime.
 * `TauCeti.IntegralLattice.sameGenus_iff_localIntegralForm_equivalent_primeFactors`: for equal
@@ -143,6 +155,21 @@ theorem isEven_iff (h : L.SameGenus M) : L.IsEven ↔ M.IsEven := by
     isEven_iff_forall_two_dvd_localIntegralForm_apply_self]
   exact (h.localIntegralForm_equivalent 2).forall_two_dvd_apply_self_iff
 
+/-- **The scale ideal is a genus invariant.** -/
+theorem scaleIdeal_eq (h : L.SameGenus M) : L.scaleIdeal = M.scaleIdeal :=
+  -- Localization at `p` extends the scale ideal to `ℤ_[p]`, isometric localizations have equal
+  -- scale ideals, and an ideal of `ℤ` is determined by its extensions to all `ℤ_[p]`.
+  Int.ideal_eq_iff_forall_map_padicInt_eq.mpr fun p _ ↦ by
+    rw [← localScaleIdeal_eq_map, ← localScaleIdeal_eq_map]
+    exact (h.localIntegralForm_equivalent p).scaleIdeal_eq
+
+/-- **The norm ideal is a genus invariant.** -/
+theorem normIdeal_eq (h : L.SameGenus M) : L.normIdeal = M.normIdeal :=
+  -- The same localization argument as for `scaleIdeal_eq`.
+  Int.ideal_eq_iff_forall_map_padicInt_eq.mpr fun p _ ↦ by
+    rw [← localNormIdeal_eq_map, ← localNormIdeal_eq_map]
+    exact (h.localIntegralForm_equivalent p).normIdeal_eq
+
 /-- Every integral lattice belongs to its own genus. -/
 @[refl, simp]
 theorem refl (L : IntegralLattice V) : L.SameGenus L :=
@@ -176,8 +203,10 @@ theorem determinant_eq (h : L.SameGenus M) : L.determinant = M.determinant := by
     discriminant_def, habs]
 
 /-- Lattices in one genus have discriminant groups of the same order. -/
-theorem natCard_discriminantGroup_eq [L.IsNondegenerate] [M.IsNondegenerate]
-    (h : L.SameGenus M) : Nat.card L.DiscriminantGroup = Nat.card M.DiscriminantGroup := by
+theorem natCard_discriminantGroup_eq [L.IsNondegenerate] (h : L.SameGenus M) :
+    Nat.card L.DiscriminantGroup = Nat.card M.DiscriminantGroup := by
+  have : M.IsNondegenerate := ⟨M.determinant_ne_zero_iff.mp
+    (h.determinant_eq ▸ L.determinant_ne_zero_iff.mpr L.form_nondegenerate)⟩
   rw [natCard_discriminantGroup, natCard_discriminantGroup, discriminant_def, discriminant_def,
     h.determinant_eq]
 
@@ -203,6 +232,34 @@ theorem completedRationalForm_equivalent (h : L.SameGenus M) (p : ℕ) [Fact p.P
     (h.localIntegralForm_equivalent p)
 
 end SameGenus
+
+/-- Scaling by a common nonzero integer preserves and reflects the genus relation. -/
+theorem sameGenus_smul_iff {L : IntegralLattice V} {M : IntegralLattice W} {n : ℤ} (hn : n ≠ 0) :
+    (n • L).SameGenus (n • M) ↔ L.SameGenus M := by
+  refine ⟨fun h ↦ (sameGenus_iff _ _).mpr ⟨?_, fun p _ ↦ ?_⟩, SameGenus.smul hn⟩
+  · have hsig := h.signature_eq
+    rcases hn.lt_or_gt with hneg | hpos
+    · rw [signature_smul_of_neg hneg, signature_smul_of_neg hneg, Prod.mk.injEq,
+        Prod.mk.injEq] at hsig
+      exact Prod.ext hsig.2.2 (Prod.ext hsig.2.1 hsig.1)
+    · rwa [signature_smul_of_pos hpos, signature_smul_of_pos hpos] at hsig
+  · have hloc := h.localIntegralForm_equivalent p
+    rw [localIntegralForm_smul, localIntegralForm_smul] at hloc
+    exact (LinearMap.BilinForm.equivalent_smul_iff
+      (mem_nonZeroDivisors_of_ne_zero (by exact_mod_cast hn))).mp hloc
+
+/-- A lattice in the genus of the scaling `n • L` by a nonzero integer is the scaling by `n` of a
+lattice in the genus of `L`. The genus fixes the scale ideal, so `n` divides every value of the
+integral form of such a lattice. -/
+theorem SameGenus.exists_eq_smul {L : IntegralLattice V} {M : IntegralLattice W} {n : ℤ}
+    (hn : n ≠ 0) (h : (n • L).SameGenus M) :
+    ∃ M' : IntegralLattice W, M = n • M' ∧ L.SameGenus M' := by
+  have hle : M.scaleIdeal ≤ Ideal.span {n} := by
+    rw [← h.scaleIdeal_eq, LinearMap.BilinForm.scaleIdeal_le_iff]
+    exact fun x y ↦ Ideal.mem_span_singleton.mpr ⟨_, integralForm_smul_apply n L x y⟩
+  obtain ⟨M', rfl⟩ := (exists_eq_smul_iff_forall_dvd hn).mpr fun x y ↦
+    Ideal.mem_span_singleton.mp (hle (M.integralForm.apply_mem_scaleIdeal x y))
+  exact ⟨M', rfl, (sameGenus_smul_iff hn).mp h⟩
 
 /-- An integral-lattice isometry preserves the genus. -/
 theorem Isometry.sameGenus {L : IntegralLattice V} {M : IntegralLattice W}

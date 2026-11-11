@@ -21,7 +21,7 @@ if `f` is `C^n` on `ball x R`, then `y ↦ f (y + a)` is `C^n` on `ball (x - a) 
 
 public section
 
-namespace TauCeti
+namespace ContDiffOn
 
 open Metric
 
@@ -30,9 +30,8 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E
 
 /-- If `f` is `C^n` on the ball `ball x R`, then its translate `y ↦ f (y + a)` is `C^n` on the
 translated ball `ball (x - a) R`. -/
-theorem _root_.ContDiffOn.comp_add_right_ball (hf : ContDiffOn 𝕜 n f (ball x R)) (a : E) :
+theorem comp_add_right_ball (hf : ContDiffOn 𝕜 n f (ball x R)) (a : E) :
     ContDiffOn 𝕜 n (fun y ↦ f (y + a)) (ball (x - a) R) :=
-  hf.comp (contDiffOn_id.add contDiffOn_const) fun y hy ↦ by
-    simpa [mem_ball, dist_eq_norm, sub_sub_eq_add_sub] using hy
+  hf.comp (contDiffOn_id.add contDiffOn_const) (preimage_add_right_ball a x R).superset
 
-end TauCeti
+end ContDiffOn

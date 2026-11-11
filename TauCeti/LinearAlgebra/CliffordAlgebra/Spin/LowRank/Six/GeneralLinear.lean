@@ -332,7 +332,7 @@ four. -/
 theorem finrank_spinPlus_eq_four_of_finrank_eq_six (hV : finrank K V = 6) :
     finrank K (spinPlus Q P) = 4 := by
   have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
-  rw [finrank_spinPlus P (P.W_ne_bot_of_finrank_eq_six hV),
+  rw [finrank_spinPlus P,
     P.finrank_W_eq_three_of_finrank_eq_six hV]
   norm_num
 
@@ -393,6 +393,7 @@ noncomputable def hyperbolicSixEvenEquivMatrixProd :
     (splitEvenPolarization_W_ne_bot K (by norm_num))
       ((finrank_splitEvenSpace K 3).trans (by norm_num : (2 : ℕ) * 3 = 6))
 
+omit [NeZero (2 : K)] in
 /-- The hyperbolic matrix-product model is the model of the canonical split polarization. -/
 theorem hyperbolicSixEvenEquivMatrixProd_apply (x : even (splitEvenForm K 3)) :
     hyperbolicSixEvenEquivMatrixProd K x =

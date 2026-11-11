@@ -66,11 +66,11 @@ variable [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- Pairing a field of continuous linear functionals `G` with a test vector field on `Ω` of norm
 at most one gives at most `∫_Ω ‖G‖`. -/
-theorem enorm_integral_apply_le_setLIntegral_enorm [OpensMeasurableSpace E] (φ : 𝓓(Ω, F))
+theorem enorm_integral_apply_le_setLIntegral_enorm (φ : 𝓓(Ω, F))
     (hφ : ∀ x, ‖φ x‖ ≤ 1) (G : E → F →L[ℝ] ℝ) :
     ‖∫ x, G x (φ x) ∂μ‖ₑ ≤ ∫⁻ x in Ω, ‖G x‖ₑ ∂μ := by
-  rw [← lintegral_indicator Ω.isOpen.measurableSet]
-  refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono fun x => ?_)
+  refine (enorm_integral_le_lintegral_enorm _).trans
+    ((lintegral_mono fun x => ?_).trans (lintegral_indicator_le _ _))
   by_cases hx : x ∈ (Ω : Set E)
   · rw [Set.indicator_of_mem hx, enorm_le_iff_norm_le]
     exact ((G x).le_opNorm (φ x)).trans (mul_le_of_le_one_right (norm_nonneg _) (hφ x))
@@ -145,7 +145,7 @@ private theorem ofReal_setIntegral_norm_le_iSup (hG : LocallyIntegrableOn G Ω �
   have hΦψ (n : ℕ) : (Φ n : E → F) = ψ n := TestFunction.coe_mk
   have hΦ (n : ℕ) (x : E) : ‖Φ n x‖ ≤ 1 := by
     simpa [hΦψ] using norm_convolution_lsmul_le_of_forall_norm_le (φ n).support_normed_eq.subset
-      (φ n).nonneg_normed (φ n).integral_normed hσi.aestronglyMeasurable fun y _ => hσ y
+      (φ n).nonneg_normed (φ n).integral_normed fun y _ => hσ y
   -- By the Lebesgue differentiation theorem, they converge to `σ` almost everywhere.
   have hlim : ∀ᵐ x ∂μ, Tendsto (fun n => ψ n x) atTop (𝓝 (σ x)) := by
     refine ContDiffBump.ae_convolution_tendsto_right_of_locallyIntegrable (K := 2) ?_
