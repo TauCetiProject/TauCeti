@@ -49,10 +49,10 @@ theorem re_eq_zero_of_eulerCorrection_eq_zero (χ : RayClassCharacter 𝔪)
   have hz : 1 - χ.toMultiplicativeIdealWeight P.asIdeal *
       ((Ideal.absNorm P.asIdeal : ℝ) : ℂ) ^ (-s) = 0 := by simpa using hP
   exact re_eq_zero_of_one_sub_mul_ofReal_cpow_neg_eq_zero
-    (by exact_mod_cast NumberField.HeightOneSpectrum.one_lt_absNorm P) hnorm hz
+    (one_lt_two.trans_le (TauCeti.two_le_absNorm_asIdeal_real P)) hnorm hz
 
 /-- The finite Euler correction is nonzero off the imaginary axis. -/
-theorem eulerCorrection_ne_zero_of_re_ne_zero (χ : RayClassCharacter 𝔪)
+theorem eulerCorrection_ne_zero (χ : RayClassCharacter 𝔪)
     (𝔫 : Modulus K) {s : ℂ} (hs : s.re ≠ 0) : χ.eulerCorrection 𝔫 s ≠ 0 :=
   fun hz ↦ hs (re_eq_zero_of_eulerCorrection_eq_zero χ 𝔫 hz)
 
@@ -84,7 +84,7 @@ theorem norm_logDeriv_eulerCorrection_le (χ : RayClassCharacter 𝔪) (𝔫 : M
     ‖logDeriv (χ.eulerCorrection 𝔫) s‖ ≤ Real.log (Ideal.absNorm 𝔫.finitePart) := by
   classical
   rw [logDeriv_eulerCorrection χ 𝔫
-    (eulerCorrection_ne_zero_of_re_ne_zero χ 𝔫 (zero_lt_one.trans_le hs).ne')]
+    (eulerCorrection_ne_zero χ 𝔫 (zero_lt_one.trans_le hs).ne')]
   calc
     _ ≤ ∑ P ∈ 𝔫.support,
         ‖χ.toMultiplicativeIdealWeight P.asIdeal * (Ideal.absNorm P.asIdeal : ℂ) ^ (-s) *
@@ -96,8 +96,7 @@ theorem norm_logDeriv_eulerCorrection_le (χ : RayClassCharacter 𝔪) (𝔫 : M
       intro P _
       rw [← logDeriv_one_sub_mul_cpow_neg P.natCast_absNorm_ne_zero]
       have h := norm_logDeriv_one_sub_mul_ofReal_cpow_neg_le
-        (q := (Ideal.absNorm P.asIdeal : ℝ))
-        (by exact_mod_cast NumberField.HeightOneSpectrum.one_lt_absNorm P)
+        (TauCeti.two_le_absNorm_asIdeal_real P)
         (by simpa using χ.toUnitaryIdealWeight.norm_le_one P.asIdeal) hs
       simpa using h
     _ ≤ _ := sum_log_absNorm_le_log_absNorm 𝔫.finitePart_ne_bot 𝔫.support

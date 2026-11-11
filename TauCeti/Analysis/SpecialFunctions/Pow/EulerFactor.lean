@@ -8,12 +8,12 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.Calculus.LogDeriv
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Zeros and logarithmic derivatives of weighted Euler factors
 
-For a positive base `q > 1` and `‖a‖ ≤ 1`, the factor `1 - a q^(-s)` is nonzero
-on `Re s > 0`. When `‖a‖ = 1`, all its zeros have real part zero.
+For a base `q > 1` and `‖a‖ = 1`, every zero of the factor `1 - a q^(-s)` has real part zero.
 For `q ≥ 2` and `Re s ≥ 1` its logarithmic derivative has norm at most `log q`.
 These estimates control finite Euler corrections uniformly in the character.
 -/
@@ -41,19 +41,6 @@ theorem re_eq_zero_of_one_sub_mul_ofReal_cpow_neg_eq_zero {q : ℝ} (hq : 1 < q)
   have h := (Real.rpow_right_inj (by linarith : 0 < q) (ne_of_gt hq)).mp hp
   linarith
 
-/-- An Euler factor with coefficient of norm at most one is nonzero in the open right half-plane. -/
-theorem one_sub_mul_ofReal_cpow_neg_ne_zero {q : ℝ} (hq : 1 < q)
-    {a s : ℂ} (ha : ‖a‖ ≤ 1) (hs : 0 < s.re) : 1 - a * (q : ℂ) ^ (-s) ≠ 0 := by
-  have hq0 : 0 < q := by linarith
-  have hpow : ‖(q : ℂ) ^ (-s)‖ < 1 := by
-    rw [norm_cpow_eq_rpow_re_of_pos hq0, neg_re]
-    exact Real.rpow_lt_one_of_one_lt_of_neg hq (by linarith)
-  intro hz
-  have he := congrArg norm (sub_eq_zero.mp hz)
-  rw [norm_one, norm_mul] at he
-  have hle := mul_le_mul_of_nonneg_right ha (norm_nonneg ((q : ℂ) ^ (-s)))
-  nlinarith
-
 /-- For base at least two and real part at least one, the factor logarithmic derivative has norm
 at most the logarithm of its base. -/
 theorem norm_logDeriv_one_sub_mul_ofReal_cpow_neg_le {q : ℝ} (hq : 2 ≤ q)
@@ -65,11 +52,7 @@ theorem norm_logDeriv_one_sub_mul_ofReal_cpow_neg_le {q : ℝ} (hq : 2 ≤ q)
       abs_of_nonneg (Real.log_nonneg (by linarith))]
   have hpow : ‖(q : ℂ) ^ (-s)‖ ≤ 1 / 2 := by
     rw [norm_cpow_eq_rpow_re_of_pos hq0, neg_re]
-    calc
-      q ^ (-s.re) ≤ q ^ (-1 : ℝ) :=
-        Real.rpow_le_rpow_of_exponent_le (by linarith) (by linarith)
-      _ = q⁻¹ := Real.rpow_neg_one q
-      _ ≤ 1 / 2 := by simpa using inv_anti₀ (by norm_num : (0 : ℝ) < 2) hq
+    exact Real.rpow_neg_le_half hq hs
   have hterm : ‖a * (q : ℂ) ^ (-s)‖ ≤ 1 / 2 := by
     rw [norm_mul]
     exact (mul_le_mul_of_nonneg_right ha (norm_nonneg _)).trans (by simpa using hpow)
