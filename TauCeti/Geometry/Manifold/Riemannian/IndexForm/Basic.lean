@@ -9,9 +9,8 @@ public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Metric
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import Mathlib.Analysis.Calculus.ContDiff.Deriv
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Bianchi
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Smoothness
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.AlongCurve
 
 /-!
 # The index form and integration by parts
@@ -219,68 +218,6 @@ theorem indexFormWithin_const_smul_right (c : ℝ) :
 
 /-! ### Integrability -/
 
-omit [T2Space M] in
-/-- The covariant derivative of a `C¹` field along a curve has a continuous lift. -/
-private theorem contMDiffOn_zero_alongCurveWithin (hs : UniqueDiffOn ℝ s)
-    (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s) :
-    ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 0
-      (fun r ↦ TotalSpace.mk' E (γ r)
-        (alongCurveWithin (leviCivitaConnection I M) γ V s r)) s := by
-  let : IsManifold I (0 + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  let : IsManifold I (0 + 1 + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  let : ContMDiffVectorBundle (0 + 1) E (TangentSpace I : M → Type _) I :=
-    TangentBundle.contMDiffVectorBundle
-  exact CovariantDerivative.contMDiffOn_alongCurveWithin (n := 0)
-    (leviCivitaConnection I M) γ V
-    (fun x ↦ contMDiffCovariantDerivativeOn_leviCivitaConnection
-      (m := ∞) (k := ∞) (trivializationAt E (TangentSpace I) x).open_baseSet
-      (by simp) (by simp)) hs (by simpa using hV)
-
-/-- The curvature term `R(V, γ') γ'` of a continuous field along a `C¹` curve has a continuous
-lift. -/
-private theorem contMDiffOn_zero_curvatureTensor (hs : UniqueDiffOn ℝ s)
-    (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ s)
-    (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 0 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s) :
-    ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 0 (fun r ↦ TotalSpace.mk' E (γ r)
-      ((leviCivitaConnection I M).curvatureTensor (γ r) (V r)
-        (curveVelocityWithin I γ s r) (curveVelocityWithin I γ s r))) s := by
-  let cov := leviCivitaConnection I M
-  -- Cache the iterated hom-fibre instances to keep typeclass search within its budget.
-  let _ : NormedAddCommGroup (E →L[ℝ] E) := inferInstance
-  let _ : NormedSpace ℝ (E →L[ℝ] E) := inferInstance
-  let _ : ∀ x : M, NormedAddCommGroup (TangentSpace I x →L[ℝ] TangentSpace I x) :=
-    fun x ↦ inferInstance
-  let _ : ∀ x : M, NormedSpace ℝ (TangentSpace I x →L[ℝ] TangentSpace I x) :=
-    fun x ↦ inferInstance
-  let _ : ∀ x : M, NormedAddCommGroup
-      (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x) :=
-    fun x ↦ inferInstance
-  let _ : ∀ x : M, NormedSpace ℝ
-      (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x) :=
-    fun x ↦ inferInstance
-  let _ : ∀ x : M, AddCommMonoid
-      (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x) :=
-    fun x ↦ (inferInstance : NormedAddCommGroup
-      (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x)).toAddCommMonoid
-  have hR : ContMDiffOn 𝓘(ℝ, ℝ) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] E →L[ℝ] E))
-      0 (fun r ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] E →L[ℝ] E)
-        (E := fun x ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ]
-          TangentSpace I x →L[ℝ] TangentSpace I x) (γ r)
-        (cov.curvatureTensorCLM (V := fun x : M ↦ TangentSpace I x)
-          (fiberNorm := fun x ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I x)))
-          (γ r))) s :=
-    ((contMDiff_curvatureTensorCLM (F := E)
-      (V := fun x : M ↦ TangentSpace I x)
-      (fiberNorm := fun x ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I x)))
-      cov).of_le (by simp)).comp_contMDiffOn (hγ.of_le zero_le_one)
-  have hvel : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 0
-      (fun r ↦ TotalSpace.mk' E (γ r) (curveVelocityWithin I γ s r)) s := by
-    simpa only [funext (curveVelocityLiftWithin_apply (I := I) γ s)] using
-      hγ.contMDiffOn_curveVelocityLiftWithin (m := 0) (by simp) hs.uniqueMDiffOn
-  refine (((hR.clm_bundle_apply hV).clm_bundle_apply hvel).clm_bundle_apply hvel).congr
-    fun r _ ↦ ?_
-  simp only [curvatureTensorCLM_apply, cov]
-
 /-- The integrand of the index form of `C¹` fields is continuous on a parameter set with unique
 derivatives. -/
 theorem continuousOn_indexFormIntegrandWithin (hs : UniqueDiffOn ℝ s)
@@ -289,15 +226,21 @@ theorem continuousOn_indexFormIntegrandWithin (hs : UniqueDiffOn ℝ s)
     ContinuousOn (indexFormIntegrandWithin I γ V W s) s := by
   have hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ s :=
     (Bundle.contMDiff_proj (fun x : M ↦ TangentSpace I x) (IB := I) (n := 1)).comp_contMDiffOn hV
+  have hvel : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 0
+      (fun r ↦ TotalSpace.mk' E (γ r) (curveVelocityWithin I γ s r)) s := by
+    simpa only [funext (curveVelocityLiftWithin_apply (I := I) γ s)] using
+      hγ.contMDiffOn_curveVelocityLiftWithin (m := 0) (by simp) hs.uniqueMDiffOn
   have hD :=
     (ContMDiffOn.inner_bundle (IB := I) (F := E) (E := fun x : M ↦ TangentSpace I x) (b := γ)
       (h := IsContMDiffRiemannianBundle.of_le (n := ∞) zero_le)
-      (contMDiffOn_zero_alongCurveWithin hs hV)
-      (contMDiffOn_zero_alongCurveWithin hs hW)).continuousOn
+      (contMDiffOn_alongCurveWithin_leviCivitaConnection (n := 0) hs (by simpa using hV))
+      (contMDiffOn_alongCurveWithin_leviCivitaConnection (n := 0) hs
+        (by simpa using hW))).continuousOn
   have hR :=
     (ContMDiffOn.inner_bundle (IB := I) (F := E) (E := fun x : M ↦ TangentSpace I x) (b := γ)
       (h := IsContMDiffRiemannianBundle.of_le (n := ∞) zero_le)
-      (contMDiffOn_zero_curvatureTensor hs hγ (hV.of_le zero_le_one))
+      ((leviCivitaConnection I M).contMDiffOn_curvatureTensor (by simp)
+        (hV.of_le zero_le_one) hvel hvel)
       (hW.of_le zero_le_one)).continuousOn
   exact (hD.sub hR).congr fun t _ ↦ indexFormIntegrandWithin_def t
 
@@ -309,15 +252,6 @@ theorem intervalIntegrable_indexFormIntegrandWithin (hs : UniqueDiffOn ℝ s)
     (hsub : uIcc a b ⊆ s) :
     IntervalIntegrable (indexFormIntegrandWithin I γ V W s) MeasureTheory.volume a b :=
   ((continuousOn_indexFormIntegrandWithin hs hV hW).mono hsub).intervalIntegrable
-
-omit [FiniteDimensional ℝ E] [T2Space M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- The coordinate reading of a `C¹` field is differentiable within the parameter set. -/
-private theorem differentiableWithinAt_sectionCoord_of_contMDiffOn {t : ℝ}
-    (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s)
-    (ht : t ∈ s) : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t :=
-  differentiableWithinAt_sectionCoord γ V ((hV t ht).mdifferentiableWithinAt one_ne_zero)
-    (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
 
 /-- The index form is additive in the first field on `C¹` fields. -/
 theorem indexFormWithin_add_left (hs : UniqueDiffOn ℝ s)
@@ -331,8 +265,10 @@ theorem indexFormWithin_add_left (hs : UniqueDiffOn ℝ s)
     (intervalIntegrable_indexFormIntegrandWithin hs hV hW hsub)
     (intervalIntegrable_indexFormIntegrandWithin hs hV' hW hsub)]
   exact intervalIntegral.integral_congr fun t ht ↦ indexFormIntegrandWithin_add_left
-    (differentiableWithinAt_sectionCoord_of_contMDiffOn hV (hsub ht))
-    (differentiableWithinAt_sectionCoord_of_contMDiffOn hV' (hsub ht))
+    (differentiableWithinAt_sectionCoord γ V ((hV t (hsub ht)).mdifferentiableWithinAt
+      one_ne_zero) (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)))
+    (differentiableWithinAt_sectionCoord γ V' ((hV' t (hsub ht)).mdifferentiableWithinAt
+      one_ne_zero) (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)))
 
 /-- The index form is additive in the second field on `C¹` fields. -/
 theorem indexFormWithin_add_right (hs : UniqueDiffOn ℝ s)
@@ -407,7 +343,7 @@ theorem indexFormWithin_eq_boundary_sub_integral (hs : UniqueDiffOn ℝ s)
     apply contMDiffOn_iff_contDiffOn.mp
     exact ContMDiffOn.inner_bundle (IB := I) (F := E)
       (E := fun x : M ↦ TangentSpace I x) (b := γ)
-      (contMDiffOn_alongCurveWithin_leviCivitaConnection hs hV) hW
+      (contMDiffOn_alongCurveWithin_leviCivitaConnection (n := 1) hs hV) hW
   have hd (t : ℝ) (ht : t ∈ s) :
       derivWithin A s t = indexFormIntegrandWithin I γ V W s t + J t :=
     (hasDerivWithinAt_inner_alongCurveWithin hs hV ht

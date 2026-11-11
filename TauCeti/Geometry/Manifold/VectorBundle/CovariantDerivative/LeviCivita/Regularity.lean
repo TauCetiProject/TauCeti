@@ -69,8 +69,9 @@ merely to be written down, are carried for the same reason.
   its model-space Christoffel map are `C^n` on a trivialization base set.
 * `TauCeti.Manifold.contMDiffOn_alongCurveWithin_leviCivitaConnection` and
   `TauCeti.Manifold.differentiableWithinAt_sectionCoord_alongCurveWithin_leviCivitaConnection`:
-  along a curve, the Levi-Civita derivative of a section with a `C²` tangent-bundle lift has a
-  `C¹` lift and differentiable coordinate readings.
+  along a curve, the Levi-Civita derivative of a section with a `C^(n + 1)` tangent-bundle lift
+  has a `C^n` lift, and that of a section with a `C²` lift has differentiable coordinate
+  readings.
 
 ## References
 
@@ -381,18 +382,19 @@ variable
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   {γ : ℝ → M} {V : ∀ t, TangentSpace I (γ t)} {s : Set ℝ} {t : ℝ}
 
-/-- The Levi-Civita covariant derivative of a section with a `C²` tangent-bundle lift, within a
-parameter set with unique derivatives, has a `C¹` tangent-bundle lift. -/
-theorem contMDiffOn_alongCurveWithin_leviCivitaConnection (hs : UniqueDiffOn ℝ s)
-    (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 2 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s) :
-    ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
+/-- The Levi-Civita covariant derivative of a section with a `C^(n + 1)` tangent-bundle lift,
+within a parameter set with unique derivatives, has a `C^n` tangent-bundle lift. -/
+theorem contMDiffOn_alongCurveWithin_leviCivitaConnection {n : ℕ}
+    (hs : UniqueDiffOn ℝ s)
+    (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent (n + 1) (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s) :
+    ContMDiffOn 𝓘(ℝ, ℝ) I.tangent n
       (fun r ↦ TotalSpace.mk' E (γ r)
         (alongCurveWithin (leviCivitaConnection I M) γ V s r)) s := by
-  let : IsManifold I (1 + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  let : IsManifold I (1 + 1 + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  let : ContMDiffVectorBundle (1 + 1) E (TangentSpace I : M → Type _) I :=
+  let : IsManifold I ((n : ℕ∞ω) + 1) M := IsManifold.of_le (n := ∞) (by simp)
+  let : IsManifold I ((n : ℕ∞ω) + 1 + 1) M := IsManifold.of_le (n := ∞) (by simp)
+  let : ContMDiffVectorBundle ((n : ℕ∞ω) + 1) E (TangentSpace I : M → Type _) I :=
     TangentBundle.contMDiffVectorBundle
-  exact CovariantDerivative.contMDiffOn_alongCurveWithin (n := 1)
+  exact CovariantDerivative.contMDiffOn_alongCurveWithin (n := n)
     (leviCivitaConnection I M) γ V
     (fun x ↦ contMDiffCovariantDerivativeOn_leviCivitaConnection
       (m := ∞) (k := ∞) (trivializationAt E (TangentSpace I) x).open_baseSet
@@ -407,8 +409,8 @@ theorem differentiableWithinAt_sectionCoord_alongCurveWithin_leviCivitaConnectio
     DifferentiableWithinAt ℝ
       (sectionCoord (F := E) γ (alongCurveWithin (leviCivitaConnection I M) γ V s) (γ t)) s t :=
   TauCeti.Manifold.differentiableWithinAt_sectionCoord γ _
-    ((contMDiffOn_alongCurveWithin_leviCivitaConnection hs hV t ht).mdifferentiableWithinAt
-      one_ne_zero)
+    ((contMDiffOn_alongCurveWithin_leviCivitaConnection (n := 1) hs hV t
+      ht).mdifferentiableWithinAt one_ne_zero)
     (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
 
 end TauCeti.Manifold

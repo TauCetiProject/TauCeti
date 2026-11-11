@@ -13,7 +13,8 @@ import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 /-!
 # Differentiating curvature along a curve
 
-The covariant product rule for curvature applies to arbitrary differentiable tangent fields
+Curvature applied to three sections along a curve with `C^n` tangent-bundle lifts has a `C^n`
+lift. The covariant product rule for curvature applies to arbitrary differentiable tangent fields
 along a differentiable curve, including within parameter sets with unique derivatives.
 In particular, when the curvature is parallel, applying curvature to three parallel fields
 again gives a parallel field. For a metric connection its pairing with a fourth parallel
@@ -185,6 +186,48 @@ theorem differentiableWithinAt_sectionCoord_curvatureTensor
       ((trivializationAt E (TangentSpace I) (γ t)).open_baseSet.mem_nhds he)] with r hr
     simpa only [sectionCoord_apply] using hread (γ r) hr (U r) (V r) (W r)
   · simpa only [sectionCoord_apply] using hread (γ t) he (U t) (V t) (W t)
+
+/-- Curvature applied to three sections along a curve with `C^n` tangent-bundle lifts has a `C^n`
+tangent-bundle lift, for `n ≤ ∞`. -/
+theorem contMDiffOn_curvatureTensor {n : ℕ∞ω} (hn : n ≤ ∞)
+    (hU : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent n (fun r ↦ TotalSpace.mk' E (γ r) (U r)) s)
+    (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent n (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s)
+    (hW : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent n (fun r ↦ TotalSpace.mk' E (γ r) (W r)) s) :
+    ContMDiffOn 𝓘(ℝ, ℝ) I.tangent n (fun r ↦ TotalSpace.mk' E (γ r)
+      (cov.curvatureTensor (γ r) (U r) (V r) (W r))) s := by
+  -- Cache the iterated hom-fibre instances to keep typeclass search within its budget.
+  let _ : NormedAddCommGroup (E →L[ℝ] E) := inferInstance
+  let _ : NormedSpace ℝ (E →L[ℝ] E) := inferInstance
+  let _ : ∀ x : M, NormedAddCommGroup (TangentSpace I x →L[ℝ] TangentSpace I x) :=
+    fun x ↦ inferInstance
+  let _ : ∀ x : M, NormedSpace ℝ (TangentSpace I x →L[ℝ] TangentSpace I x) :=
+    fun x ↦ inferInstance
+  let _ : ∀ x : M, NormedAddCommGroup
+      (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x) :=
+    fun x ↦ inferInstance
+  let _ : ∀ x : M, NormedSpace ℝ
+      (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x) :=
+    fun x ↦ inferInstance
+  let _ : ∀ x : M, AddCommMonoid
+      (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x) :=
+    fun x ↦ (inferInstance : NormedAddCommGroup
+      (TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x)).toAddCommMonoid
+  have hγ : ContMDiffOn 𝓘(ℝ, ℝ) I n γ s :=
+    (Bundle.contMDiff_proj (fun x : M ↦ TangentSpace I x) (IB := I) (n := n)).comp_contMDiffOn hU
+  have hR : ContMDiffOn 𝓘(ℝ, ℝ) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] E →L[ℝ] E))
+      n (fun r ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] E →L[ℝ] E)
+        (E := fun x ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ]
+          TangentSpace I x →L[ℝ] TangentSpace I x) (γ r)
+        (cov.curvatureTensorCLM (V := fun x : M ↦ TangentSpace I x)
+          (fiberNorm := fun x ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I x)))
+          (γ r))) s :=
+    ((contMDiff_curvatureTensorCLM (F := E)
+      (V := fun x : M ↦ TangentSpace I x)
+      (fiberNorm := fun x ↦ inferInstanceAs (NormedAddCommGroup (TangentSpace I x)))
+      cov).of_le hn).comp_contMDiffOn hγ
+  refine (((hR.clm_bundle_apply hU).clm_bundle_apply hV).clm_bundle_apply hW).congr
+    fun r _ ↦ ?_
+  simp only [curvatureTensorCLM_apply]
 
 
 
