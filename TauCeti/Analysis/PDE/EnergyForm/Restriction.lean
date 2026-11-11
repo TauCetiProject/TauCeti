@@ -53,7 +53,10 @@ integrability hypotheses on `Ω`.
   essentially bounded and `f` is square integrable it satisfies `a(u, v) = ∫_B f v` for every
   `v ∈ H¹₀(B)`, with no integrability of `f` on all of `Ω`.
 * `TauCeti.PDE.inner_toLp_gradient_ofTestFunctionₗ`: the test-function case,
-  `⟪G - c, ∇φ⟫_{L²(B)} = ∫_B ⟨G, ∇φ⟩`.
+  `⟪G - c, ∇φ⟫_{L²(B)} = ∫_B ⟨G, ∇φ⟩`, in any finite-dimensional real inner product space.
+* `TauCeti.PDE.inner_gradient_restrictL_eq_inner_toLp`: the same restriction statement for the
+  Laplacian, `⟪∇(u|_B), ∇v⟫_{L²(B)} = ⟪G - c, ∇v⟫_{L²(B)}` for `v ∈ H¹₀(B)`, in any
+  finite-dimensional real inner product space.
 * `TauCeti.PDE.forall_energyFormH1_restrictL_top_eq_setIntegral`: if `v ∈ H¹(ℝⁿ)` solves `Δv = G`
   weakly, tested against compactly supported smooth functions, and `G = -F` on an open `Ω` with
   `F ∈ L²(Ω)`, then `v|_Ω` solves `-Δv = F` weakly on `Ω`, tested against `H¹₀(Ω)`.
@@ -288,23 +291,24 @@ open scoped ContDiff Distributions Gradient InnerProductSpace
 
 /-- Subtracting a constant `c` from a square-integrable field `G` on `B` does not change its
 pairing with gradients of test functions on `B`. -/
-theorem inner_toLp_gradient_ofTestFunctionₗ {B : Opens (EuclideanSpace ℝ ι)}
-    {G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι}
+theorem inner_toLp_gradient_ofTestFunctionₗ {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
+    {mu : Measure F} [mu.IsAddHaarMeasure] {B : Opens F} {G : F → F} {c : F}
     (hGc : MemLp (fun x => G x - c) 2 (mu.restrict B)) (φ : 𝓓(B, ℝ)) :
     ⟪hGc.toLp, W1p.gradient (W1p.ofTestFunctionₗ mu B 2 φ)⟫_ℝ =
-      ∫ x in B, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu := by
+      ∫ x in B, ⟪G x, ∇ (φ : F → ℝ) x⟫_ℝ ∂mu := by
   -- The constant `c` integrates to zero against `∇φ`.
-  have hpt : ∀ x, ⟪c, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ = lineDeriv ℝ (φ : _ → ℝ) x c :=
+  have hpt : ∀ x, ⟪c, ∇ (φ : F → ℝ) x⟫_ℝ = lineDeriv ℝ (φ : _ → ℝ) x c :=
     fun x => by
       rw [real_inner_comm, gradient, InnerProductSpace.toDual_symm_apply,
         (φ.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv]
-  have hcint : IntegrableOn (fun x => ⟪c, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ) B mu := by
+  have hcint : IntegrableOn (fun x => ⟪c, ∇ (φ : F → ℝ) x⟫_ℝ) B mu := by
     simpa [hpt] using (integrable_lineDeriv_smul_of_locallyIntegrableOn
       (locallyIntegrableOn_const (1 : ℝ) (μ := mu) (s := B)) φ c).integrableOn
-  have hc : ∫ x in B, ⟪c, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu = 0 := by
+  have hc : ∫ x in B, ⟪c, ∇ (φ : F → ℝ) x⟫_ℝ ∂mu = 0 := by
     rw [φ.setIntegral_inner_gradient_eq_integral_inner_gradient _ φ.tsupport_subset]
     simpa only [hpt] using TestFunction.integral_lineDeriv_eq_zero (μ := mu) φ c
-  have hGint : IntegrableOn (fun x => ⟪G x - c, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ) B mu := by
+  have hGint : IntegrableOn (fun x => ⟪G x - c, ∇ (φ : F → ℝ) x⟫_ℝ) B mu := by
     refine (L2.integrable_inner hGc.toLp
       (gradientTestFunctionLp (mu := mu) (Omega := B) 2 φ)).congr ?_
     filter_upwards [hGc.coeFn_toLp,
@@ -312,15 +316,58 @@ theorem inner_toLp_gradient_ofTestFunctionₗ {B : Opens (EuclideanSpace ℝ ι)
     rw [hx, hφx]
   rw [L2.inner_def]
   calc ∫ x in B, ⟪MemLp.toLp _ hGc x, W1p.gradient (W1p.ofTestFunctionₗ mu B 2 φ) x⟫_ℝ ∂mu
-      = ∫ x in B, (⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ -
-          ⟪c, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ) ∂mu := by
+      = ∫ x in B, (⟪G x, ∇ (φ : F → ℝ) x⟫_ℝ -
+          ⟪c, ∇ (φ : F → ℝ) x⟫_ℝ) ∂mu := by
         refine integral_congr_ae ?_
         filter_upwards [hGc.coeFn_toLp,
           gradientTestFunctionLp_apply_ae (mu := mu) (Omega := B) 2 φ] with x hx hφx
         rw [W1p.gradient_ofTestFunctionₗ, hx, hφx, inner_sub_left]
-    _ = ∫ x in B, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu := by
+    _ = ∫ x in B, ⟪G x, ∇ (φ : F → ℝ) x⟫_ℝ ∂mu := by
         rw [integral_sub ((hGint.add hcint).congr (ae_of_all _ fun x => by simp)) hcint, hc,
           sub_zero]
+
+/-- **Weak solutions of `-Δu = -div G` restrict to smaller domains.** Let `B ⊆ Ω` be open sets
+of a finite-dimensional real inner product space, and let `u ∈ H¹(Ω)` solve `-Δu = -div G`
+weakly on `Ω`, tested against test functions: `∫_Ω ⟪∇u, ∇φ⟫ = ∫_Ω ⟪G, ∇φ⟫`. If `G - c` is
+square integrable on `B` for a constant `c`, then
+`⟪∇(u|_B), ∇v⟫_{L²(B)} = ⟪G - c, ∇v⟫_{L²(B)}` for every `v ∈ H¹₀(B)`: constants have zero
+divergence. This is the Laplacian case of `forall_energyFormH1_restrictL_eq_inner`, without
+coordinates. -/
+theorem inner_gradient_restrictL_eq_inner_toLp {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
+    {mu : Measure F} [mu.IsAddHaarMeasure] {Omega B : Opens F} (hB : B ≤ Omega)
+    {u : W1p mu Omega 2} {G : F → F}
+    (hu : ∀ φ : 𝓓(Omega, ℝ), ∫ x in Omega, ⟪W1p.gradient u x, ∇ (φ : F → ℝ) x⟫_ℝ ∂mu =
+      ∫ x in Omega, ⟪G x, ∇ (φ : F → ℝ) x⟫_ℝ ∂mu)
+    {c : F} (hGc : MemLp (fun x => G x - c) 2 (mu.restrict B)) {v : W1p mu B 2}
+    (hv : v ∈ w1p0Submodule mu B 2) :
+    ⟪W1p.gradient (W1p.restrictL hB u), W1p.gradient v⟫_ℝ = ⟪hGc.toLp, W1p.gradient v⟫_ℝ := by
+  set L : W1p mu B 2 →L[ℝ] ℝ :=
+    (innerSL ℝ (W1p.gradient (W1p.restrictL hB u)) - innerSL ℝ hGc.toLp).comp W1p.gradientL
+  have hL : ∀ w, L w = ⟪W1p.gradient (W1p.restrictL hB u), W1p.gradient w⟫_ℝ -
+      ⟪hGc.toLp, W1p.gradient w⟫_ℝ := fun w => by
+    simp [L, W1p.gradientL_apply]
+  -- The functional `L` is continuous, so it suffices that it vanishes on test functions.
+  suffices hzero : (w1p0Submodule mu B 2 : Set (W1p mu B 2)) ⊆ {w | L w = 0} by
+    have := hzero hv
+    simp only [mem_ofPred_eq, hL, sub_eq_zero] at this
+    exact this
+  refine w1p0Submodule_subset_of_isClosed (isClosed_eq L.continuous continuous_const) fun φ => ?_
+  simp only [mem_ofPred_eq, hL, sub_eq_zero]
+  rw [inner_toLp_gradient_ofTestFunctionₗ hGc φ, L2.inner_def]
+  -- `⟪∇(u|_B), ∇φ⟫_{L²(B)} = ∫_Ω ⟪∇u, ∇φ⟫ = ∫_Ω ⟪G, ∇φ⟫ = ∫_B ⟪G, ∇φ⟫`.
+  have hψ : ((TestFunction.monoCLM ℝ φ : 𝓓(Omega, ℝ)) : F → ℝ) = φ := by
+    rw [TestFunction.monoCLM_apply]
+    simp [hB]
+  have h := hu (TestFunction.monoCLM ℝ φ)
+  rw [hψ, φ.setIntegral_inner_gradient_eq_integral_inner_gradient _ (φ.tsupport_subset.trans hB),
+    φ.setIntegral_inner_gradient_eq_integral_inner_gradient _ (φ.tsupport_subset.trans hB)] at h
+  rw [φ.setIntegral_inner_gradient_eq_integral_inner_gradient G φ.tsupport_subset, ← h,
+    ← φ.setIntegral_inner_gradient_eq_integral_inner_gradient _ φ.tsupport_subset]
+  refine integral_congr_ae ?_
+  filter_upwards [W1p.gradient_restrictL_ae hB u,
+    gradientTestFunctionLp_apply_ae (mu := mu) (Omega := B) 2 φ] with x hx hφx
+  rw [W1p.gradient_ofTestFunctionₗ, hx, hφx]
 
 /-- **Weak equations restrict to smaller domains.** Let `B ⊆ Ω` be open, let the coefficients
 be essentially bounded on `B`, and let `ℓ` be a continuous linear functional on `H¹(B)`. If
