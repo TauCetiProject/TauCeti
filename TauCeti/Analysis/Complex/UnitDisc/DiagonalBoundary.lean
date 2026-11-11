@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.DiffContOnCl
 public import TauCeti.Analysis.Complex.UnitDisc.AdjointBoundary
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Index
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Prod
@@ -35,7 +36,7 @@ for `n` the cardinality of `ι`
 (`TauCeti.finrank_unitDiscCauchyRiemannKernelPi_sub_finrank_unitDiscAdjointKernelPi`), the
 Riemann–Roch index formula on the disc once the adjoint kernel is identified with the cokernel.
 
-Two checks of the roadmap are instances. For `k = 0`, the disc with boundary condition `(ℂⁿ, ℝⁿ)`,
+Two examples illustrate these formulas. For `k = 0`, the disc with boundary condition `(ℂⁿ, ℝⁿ)`,
 the kernel is the real constants `ℝⁿ` (`TauCeti.mem_unitDiscCauchyRiemannKernelPi_zero_iff`), of
 real dimension `n` (`TauCeti.finrank_unitDiscCauchyRiemannKernelPi_zero`), and the adjoint kernel
 vanishes. In rank two, the dimension identity is matched with the Maslov index of the direct sum
@@ -88,27 +89,6 @@ open scoped ComplexConjugate
 
 variable {ι : Type*}
 
-/-- Coordinatewise solutions on the closed disc assemble into one map to `ι → ℂ`: a map `g` has
-each coordinate the restriction of a function holomorphic on the open disc, continuous on its
-closure and satisfying the boundary condition `P i w` at the points of the unit circle, exactly
-when `g` itself is the restriction of such a map `ℂ → ι → ℂ`. -/
-private theorem forall_exists_diffContOnCl_iff [Fintype ι] (P : ι → ℂ → ℂ → Prop)
-    (g : closedBall (0 : ℂ) 1 → ι → ℂ) :
-    (∀ i, ∃ u : ℂ → ℂ, DiffContOnCl ℂ u (ball 0 1) ∧ (∀ w ∈ sphere (0 : ℂ) 1, P i w (u w)) ∧
-        (closedBall 0 1).domRestrict u = fun z => g z i) ↔
-      ∃ u : ℂ → ι → ℂ, DiffContOnCl ℂ u (ball 0 1) ∧
-        (∀ w ∈ sphere (0 : ℂ) 1, ∀ i, P i w (u w i)) ∧ (closedBall 0 1).domRestrict u = g := by
-  constructor
-  · intro h
-    choose u hu hb hg using h
-    refine ⟨fun z i => u i z, ⟨differentiableOn_pi.mpr fun i => (hu i).differentiableOn,
-      continuousOn_pi.mpr fun i => (hu i).continuousOn⟩, fun w hw i => hb i w hw, ?_⟩
-    funext z i
-    exact congrFun (hg i) z
-  · rintro ⟨u, hu, hb, rfl⟩ i
-    exact ⟨fun z => u z i, ⟨differentiableOn_pi.mp hu.differentiableOn i,
-      continuousOn_pi.mp hu.continuousOn i⟩, fun w hw => hb w hw i, rfl⟩
-
 /-! ### The kernel -/
 
 /-- The kernel of the Cauchy–Riemann operator `∂/∂(conj z)` on the closed unit disc for maps to
@@ -144,7 +124,7 @@ theorem mem_unitDiscCauchyRiemannKernelPi_iff_exists [Fintype ι] :
 
 /-- **The diagonal kernel splits.** The real-linear isomorphism from the diagonal kernel to the
 product of the rank one kernels, taking a map to its coordinates. -/
-@[expose] def unitDiscCauchyRiemannKernelPiEquiv (k : ι → ℤ) :
+def unitDiscCauchyRiemannKernelPiEquiv (k : ι → ℤ) :
     unitDiscCauchyRiemannKernelPi k ≃ₗ[ℝ] Π i, unitDiscCauchyRiemannKernel (k i) where
   toFun g i := ⟨fun z => (g : closedBall (0 : ℂ) 1 → ι → ℂ) z i,
     mem_unitDiscCauchyRiemannKernelPi_iff.mp g.2 i⟩
@@ -159,14 +139,14 @@ product of the rank one kernels, taking a map to its coordinates. -/
 theorem unitDiscCauchyRiemannKernelPiEquiv_apply (g : unitDiscCauchyRiemannKernelPi k) (i : ι)
     (z : closedBall (0 : ℂ) 1) :
     (unitDiscCauchyRiemannKernelPiEquiv k g i : closedBall (0 : ℂ) 1 → ℂ) z =
-      (g : closedBall (0 : ℂ) 1 → ι → ℂ) z i :=
+      (g : closedBall (0 : ℂ) 1 → ι → ℂ) z i := by
   rfl
 
 @[simp]
 theorem unitDiscCauchyRiemannKernelPiEquiv_symm_apply
     (f : Π i, unitDiscCauchyRiemannKernel (k i)) (z : closedBall (0 : ℂ) 1) (i : ι) :
     ((unitDiscCauchyRiemannKernelPiEquiv k).symm f : closedBall (0 : ℂ) 1 → ι → ℂ) z i =
-      (f i : closedBall (0 : ℂ) 1 → ℂ) z :=
+      (f i : closedBall (0 : ℂ) 1 → ℂ) z := by
   rfl
 
 /-- The diagonal kernel is a finite-dimensional real vector space. -/
@@ -228,7 +208,7 @@ theorem mem_unitDiscAdjointKernelPi_iff_exists [Fintype ι] :
 
 /-- **The diagonal adjoint kernel splits.** The real-linear isomorphism from the diagonal adjoint
 kernel to the product of the rank one adjoint kernels, taking a map to its coordinates. -/
-@[expose] def unitDiscAdjointKernelPiEquiv (k : ι → ℤ) :
+def unitDiscAdjointKernelPiEquiv (k : ι → ℤ) :
     unitDiscAdjointKernelPi k ≃ₗ[ℝ] Π i, unitDiscAdjointKernel (k i) where
   toFun g i := ⟨fun z => (g : closedBall (0 : ℂ) 1 → ι → ℂ) z i,
     mem_unitDiscAdjointKernelPi_iff.mp g.2 i⟩
@@ -243,14 +223,14 @@ kernel to the product of the rank one adjoint kernels, taking a map to its coord
 theorem unitDiscAdjointKernelPiEquiv_apply (g : unitDiscAdjointKernelPi k) (i : ι)
     (z : closedBall (0 : ℂ) 1) :
     (unitDiscAdjointKernelPiEquiv k g i : closedBall (0 : ℂ) 1 → ℂ) z =
-      (g : closedBall (0 : ℂ) 1 → ι → ℂ) z i :=
+      (g : closedBall (0 : ℂ) 1 → ι → ℂ) z i := by
   rfl
 
 @[simp]
 theorem unitDiscAdjointKernelPiEquiv_symm_apply (f : Π i, unitDiscAdjointKernel (k i))
     (z : closedBall (0 : ℂ) 1) (i : ι) :
     ((unitDiscAdjointKernelPiEquiv k).symm f : closedBall (0 : ℂ) 1 → ι → ℂ) z i =
-      (f i : closedBall (0 : ℂ) 1 → ℂ) z :=
+      (f i : closedBall (0 : ℂ) 1 → ℂ) z := by
   rfl
 
 /-- The diagonal adjoint kernel is a finite-dimensional real vector space. -/
