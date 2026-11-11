@@ -66,7 +66,7 @@ section Homothety
 
 variable {EY : Type*} [NormedAddCommGroup EY] [NormedSpace ℂ EY] {H : Type*} [TopologicalSpace H]
   {I : ModelWithCorners ℂ EY H} {Y : Type*} [TopologicalSpace Y] [ChartedSpace H Y] [T2Space Y]
-  [LocallyCompactSpace Y] {Λ : Type*} [AddCommGroup Λ] [Module.Free ℤ Λ] [Module.Finite ℤ Λ]
+  [LocallyCompactSpace Y] {Λ : Type*} [AddCommGroup Λ]
   (P : Y → Λ →ₗ[ℤ] ℂ) [∀ y, DiscreteTopology (LinearMap.range (P y))]
   [∀ y, IsZLattice ℝ (LinearMap.range (P y))] (hinj : ∀ y, Function.Injective (P y))
   {n : WithTop ℕ∞} [IsManifold I n Y] (hP : ∀ l, ContMDiff I 𝓘(ℂ) n fun y ↦ P y l)
