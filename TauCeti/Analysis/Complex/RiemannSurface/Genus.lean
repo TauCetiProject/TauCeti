@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Surface
 public import TauCeti.AlgebraicTopology.Singular.SurfaceGenus
 public import TauCeti.Analysis.Complex.RiemannSurface.Branch.EulerCharacteristic
-public import TauCeti.Topology.CWComplex.Classical.RealProjective
+public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.RealProjective
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Sphere
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Torus
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -48,7 +48,7 @@ Given `χ = 2 - 2 · genus` on both sides, the branched-cover formula
 * `TauCeti.RiemannSurface.eulerChar_eq_two_sub_two_mul_genus_iff`: `χ = 2 - 2 · genus` holds if
   and only if `χ ≤ 2` and `χ` is even.
 * `TauCeti.RiemannSurface.genus_eq_of_eulerChar_eq`: a space with `χ = 2 - 2g` has genus `g`.
-* `TauCeti.RiemannSurface.genus_eq_of_homotopyEquiv`: the genus is a homotopy invariant.
+* `ContinuousMap.HomotopyEquiv.genus_eq`: the genus is a homotopy invariant.
 * `TauCeti.HomologicalOrientation.genus_eq_surfaceGenus`: on a closed connected homologically
   oriented surface, `genus` agrees with `TauCeti.surfaceGenus`, half the first Betti number.
 * `TauCeti.HomologicalOrientation.eulerChar_eq_two_sub_two_mul_genus_iff_even_finrank`: on such a
@@ -59,7 +59,7 @@ Given `χ = 2 - 2 · genus` on both sides, the branched-cover formula
 ## Checks
 
 * `TauCeti.RiemannSurface.genus_onePoint_complex`: the Riemann sphere has genus `0`.
-* `TauCeti.RiemannSurface.genus_torus`: the torus `AddCircle p₀ × AddCircle p₁` has `χ = 0` and
+* `TauCeti.RiemannSurface.genus_torus`: the torus `∀ i : Fin 2, AddCircle (p i)` has `χ = 0` and
   genus `1`; the unhalved `2 - χ` would give `2`.
 * `TauCeti.RiemannSurface.genus_eq_two_of_eulerChar_eq_neg_two`: `χ = -2` gives genus `2`, while
   `(-χ / 2).toNat` would give `1`.
@@ -128,8 +128,8 @@ theorem genus_eq_of_eulerChar_eq {g : ℕ} (h : eulerChar X = 2 - 2 * g) : genus
 
 /-- **Homotopy invariance of the genus.** Homotopy equivalent spaces of finite CW type have the
 same genus. -/
-theorem genus_eq_of_homotopyEquiv {Y : Type u} [TopologicalSpace Y] [FiniteCWType Y]
-    (e : ContinuousMap.HomotopyEquiv X Y) : genus X = genus Y := by
+theorem _root_.ContinuousMap.HomotopyEquiv.genus_eq {Y : Type u} [TopologicalSpace Y]
+    [FiniteCWType Y] (e : ContinuousMap.HomotopyEquiv X Y) : genus X = genus Y := by
   rw [genus_def, genus_def, e.eulerChar_eq]
 
 end Genus
@@ -164,9 +164,9 @@ section Checks
 theorem genus_onePoint_complex : genus (OnePoint ℂ) = 0 :=
   genus_eq_of_eulerChar_eq (by rw [eulerChar_onePoint, Complex.finrank_real_complex]; norm_num)
 
-/-- **The torus has genus `1`.** The torus `AddCircle p₀ × AddCircle p₁`, the underlying surface
-of a complex torus `ℂ/Λ`, has Euler characteristic `0`, so its genus is `1`; without the halving,
-`2 - χ` would give `2`. -/
+/-- **The torus has genus `1`.** The torus `∀ i : Fin 2, AddCircle (p i)`, a product of two circles
+and the underlying surface of a complex torus `ℂ/Λ`, has Euler characteristic `0`, so its genus
+is `1`; without the halving, `2 - χ` would give `2`. -/
 theorem genus_torus (p : Fin 2 → ℝ) [∀ i, NeZero (p i)] :
     genus (∀ i, AddCircle (p i)) = 1 :=
   genus_eq_of_eulerChar_eq (by rw [eulerChar_torus]; norm_num)
@@ -179,29 +179,18 @@ theorem genus_eq_two_of_eulerChar_eq_neg_two {X : Type u} [TopologicalSpace X] [
   rw [h]
   rfl
 
-/-- The real projective plane has Euler characteristic `1`: its CW structure has one cell in each
-of the dimensions `0`, `1` and `2`. -/
-private theorem eulerChar_realProjectiveSpace_two : eulerChar (RealProjectiveSpace 2) = 1 := by
-  let _ : Topology.CWComplex (Set.univ : Set (RealProjectiveSpace 2)) :=
-    RealProjectiveSpace.cwComplex 2
-  have := RealProjectiveSpace.finite_cwComplex (n := 2)
-  rw [eulerChar_eq_cwEulerChar (Homeomorph.Set.univ (RealProjectiveSpace 2)).symm.toHomotopyEquiv,
-    cwEulerChar_eq_sum_range _ (N := 3) fun m hm ↦
-      ⟨fun c ↦ by have := RealProjectiveSpace.le_of_cell_cwComplex c; omega⟩]
-  simp [Finset.sum_range_succ, RealProjectiveSpace.nat_card_cell_cwComplex]
-
 /-- **The real projective plane has genus `0`**: `χ(RP²) = 1`, and `(2 - 1) / 2` rounds down to
 `0`. -/
 theorem genus_realProjectiveSpace_two : genus (RealProjectiveSpace 2) = 0 := by
-  rw [genus_def, eulerChar_realProjectiveSpace_two]
-  rfl
+  rw [genus_def, eulerChar_realProjectiveSpace]
+  decide
 
 /-- **`χ = 2 - 2 · genus` fails on the real projective plane**: `χ(RP²) = 1` while `genus RP² = 0`.
 The identity needs the oriented surface underlying a complex structure, which `RP²` does not
 carry. -/
 theorem eulerChar_realProjectiveSpace_two_ne_two_sub_two_mul_genus :
     eulerChar (RealProjectiveSpace 2) ≠ 2 - 2 * genus (RealProjectiveSpace 2) := by
-  rw [eulerChar_realProjectiveSpace_two, genus_realProjectiveSpace_two]
+  rw [eulerChar_realProjectiveSpace, genus_realProjectiveSpace_two]
   decide
 
 end Checks
