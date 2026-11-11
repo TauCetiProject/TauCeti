@@ -80,11 +80,14 @@ theorem cochainShiftLinearEquiv_v (K L : CochainComplex V ℤ) (r s n : ℤ)
 
 /-- The normalized identification intertwines the differential `δ` of cochains between the
 shifted complexes with `(-1)^(s - r) δ` on cochains between the unshifted ones. -/
-theorem δ_cochainShiftLinearEquiv (K L : CochainComplex V ℤ) (r s n m : ℤ) (hnm : n + 1 = m)
+theorem δ_cochainShiftLinearEquiv (K L : CochainComplex V ℤ) (r s n m : ℤ)
     (z : Cochain K L (n + (s - r))) :
     δ n m (cochainShiftLinearEquiv R K L r s n z) =
       cochainShiftLinearEquiv R K L r s m
         ((s - r).negOnePow • δ (n + (s - r)) (m + (s - r)) z) := by
+  by_cases hnm : n + 1 = m
+  swap
+  · rw [δ_shape _ _ hnm, δ_shape _ _ (by omega), smul_zero, map_zero]
   subst hnm
   simp only [cochainShiftLinearEquiv, LinearEquiv.trans_apply,
     DistribMulAction.toLinearEquiv_apply, Cochain.rightShiftLinearEquiv_apply,
