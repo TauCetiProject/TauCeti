@@ -42,34 +42,6 @@ section Ring
 variable {R : Type u} [CommRing R] (n : ℕ)
 variable {A : Type v} [CommRing A] [Algebra R A] (h2 : IsRegular (2 : A))
 
-/-- In dimension at most two, the special orthogonal group of a commutative ring is commutative. -/
-private theorem specialOrthogonalGroup_mul_comm_of_le_two {B : Type*} [CommRing B] {m : ℕ}
-    (hm : m ≤ 2) (x y : Matrix.specialOrthogonalGroup (Fin m) B) : x * y = y * x := by
-  interval_cases m
-  · exact Subtype.ext (Matrix.ext fun i ↦ i.elim0)
-  · refine Subtype.ext (Matrix.ext fun i j ↦ ?_)
-    simp [Matrix.mul_apply, Fin.eq_zero i, Fin.eq_zero j, mul_comm]
-  · have key (z : Matrix.specialOrthogonalGroup (Fin 2) B) :
-        (z : Matrix (Fin 2) (Fin 2) B) = !![(z : Matrix (Fin 2) (Fin 2) B) 0 0,
-          (z : Matrix (Fin 2) (Fin 2) B) 0 1; -(z : Matrix (Fin 2) (Fin 2) B) 0 1,
-          (z : Matrix (Fin 2) (Fin 2) B) 0 0] := by
-      obtain ⟨hz, hdet⟩ := Matrix.mem_specialOrthogonalGroup_iff.mp z.2
-      have hz' : (z : Matrix (Fin 2) (Fin 2) B) *
-          Matrix.transpose (z : Matrix (Fin 2) (Fin 2) B) = 1 :=
-        (Matrix.mem_orthogonalGroup_iff _ _).mp hz
-      have h := congrArg (fun N ↦ N * Matrix.transpose (z : Matrix (Fin 2) (Fin 2) B))
-        (Matrix.adjugate_mul (z : Matrix (Fin 2) (Fin 2) B))
-      simp only [hdet, one_smul, Matrix.mul_assoc, hz',
-        Matrix.mul_one, Matrix.one_mul] at h
-      rw [Matrix.adjugate_fin_two] at h
-      ext i j
-      have := congrFun (congrFun h j) i
-      fin_cases i <;> fin_cases j <;> simp_all
-    refine Subtype.ext ?_
-    rw [Submonoid.coe_mul, Submonoid.coe_mul, key x, key y]
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two] <;> ring
-
 include h2 in
 /-- A special orthogonal point over a ring where two is a non-zero-divisor is universally central
 exactly when its matrix is central. -/
@@ -88,7 +60,7 @@ theorem isCentralPoint_iff_mem_center_pointsMulEquiv
     rw [map_mul, map_mul]
     by_cases hn : 3 ≤ n
     swap
-    · exact specialOrthogonalGroup_mul_comm_of_le_two (by omega) _ _
+    · exact Matrix.SpecialOrthogonalGroup.mul_comm_of_le_two (by omega) _ _
     obtain ⟨c, hc, _, _⟩ :=
       (Matrix.SpecialOrthogonalGroup.mem_center_iff h2 (pointsMulEquiv R n (A := A) g)
         (by simpa using hn)).mp hg
