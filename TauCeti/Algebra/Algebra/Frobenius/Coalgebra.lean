@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 public import Mathlib.RingTheory.Coalgebra.IsFrobenius
+public import TauCeti.Algebra.Coalgebra.Basic
 import TauCeti.Algebra.HopfAlgebra.FiniteDual.Basic
 
 /-!
@@ -55,8 +56,9 @@ def frobeniusCoalgebra : Coalgebra R A := by
         ext φ
         -- Expose the local coalgebra data and the convolution type synonym.
         change ε ((e).symm φ.ofConv) = φ.ofConv 1
-        simpa only [toPerfPair_apply, compr₂_apply, mul_apply_apply, mul_one] using
-          congrArg (fun f : Module.Dual R A => f 1) ((e).apply_symm_apply φ.ofConv)
+        simpa only [compr₂_apply, mul_apply_apply, mul_one] using
+          congrArg (fun f : Module.Dual R A => f 1)
+            (((mul R A).compr₂ ε).apply_symm_toPerfPair_self φ.ofConv)
       map_comp_comul := by
         ext φ
         -- The target's coproduct is defined by transport along the inverse.
@@ -182,13 +184,7 @@ theorem frobeniusCoalgebra_eq (c : Coalgebra R A) (hc : c.counit = ε)
     rw [traceTensorEquiv_frobeniusCoalgebra_comul,
       traceTensorEquiv_comul_of_isFrobenius ε c hc hf]
   have hcounit : (frobeniusCoalgebra ε).counit = c.counit := by simp [hc]
-  cases c with
-  | @mk cs _ _ _ =>
-    cases cs with
-    | mk δ η =>
-      cases hcomul
-      cases hcounit
-      rfl
+  exact Coalgebra.ext hcomul hcounit
 
 omit [Module.Finite R A] [Module.Projective R A] in
 /-- The basis dual to `b` for the trace pairing, with the same indexing type. -/
@@ -202,9 +198,10 @@ omit [Module.Finite R A] [Module.Projective R A] in
     (b : Module.Basis ι R A) (i : ι) (a : A) :
     ε (traceDualBasis ε b i * a) = b.repr a i := by
   classical
-  simpa only [traceDualBasis, Module.Basis.map_apply, toPerfPair_apply, compr₂_apply,
-    mul_apply_apply, Module.Basis.dualBasis_apply] using
-    congrArg (fun f : Module.Dual R A => f a) ((e).apply_symm_apply (b.dualBasis i))
+  simpa only [traceDualBasis, Module.Basis.map_apply, Module.Basis.dualBasis_apply,
+    compr₂_apply, mul_apply_apply] using
+    congrArg (fun f : Module.Dual R A => f a)
+      (((mul R A).compr₂ ε).apply_symm_toPerfPair_self (b.dualBasis i))
 
 omit [Module.Finite R A] [Module.Projective R A] in
 /-- Coordinates in the trace-dual basis are pairings with the original basis. -/
