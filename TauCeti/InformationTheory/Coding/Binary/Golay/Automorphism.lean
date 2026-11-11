@@ -167,9 +167,12 @@ theorem injOn_base_Iio_seven : Set.InjOn base (Set.Iio 7) := by
 /-- At each of the seven base levels, the basic orbit avoids all previously fixed base points. -/
 theorem orbit_stabilizerChain_subset_compl_of_lt_seven {i : ℕ} (hi : i < 7) :
     orbit ((AdditiveCode.permutationAut code.toAddSubgroup).stabilizerChain base i) (base i) ⊆
-      (base '' Set.Iio i)ᶜ :=
-  Subgroup.orbit_stabilizerChain_subset_compl fun ⟨_, hj, hji⟩ ↦
-    (Set.mem_Iio.mp hj).ne (injOn_base_Iio_seven ((Set.mem_Iio.mp hj).trans hi) hi hji)
+      (base '' Set.Iio i)ᶜ := by
+  rintro _ ⟨⟨g, hg⟩, rfl⟩
+  rw [Subgroup.stabilizerChain_def] at hg
+  exact (SubMulAction.ofFixingSubgroup (Equiv.Perm (Fin 24)) (base '' Set.Iio i)).smul_mem
+    ⟨g, hg.2⟩ fun ⟨_, hj, hji⟩ ↦
+      (Set.mem_Iio.mp hj).ne (injOn_base_Iio_seven ((Set.mem_Iio.mp hj).trans hi) hi hji)
 
 /-- For `i < 7`, the complement of the first `i` base points has cardinality `24 - i`. -/
 theorem ncard_compl_image_base_Iio {i : ℕ} (hi : i < 7) :

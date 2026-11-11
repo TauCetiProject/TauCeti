@@ -45,9 +45,8 @@ membership in it to computations of orbits of explicit permutations.
 * `Subgroup.mem_iff_inv_mul_mem_stabilizerChain`: any sift decides membership.
 * `Subgroup.mem_iff_exists_inv_mul_mem_stabilizerChain`: the membership criterion.
 * `Subgroup.mem_iff_exists_prod_eq`: the membership criterion along a base.
-* `Subgroup.orbit_stabilizerChain_subset_compl`, `Subgroup.orbit_stabilizerChain_eq_compl`,
-  `Subgroup.ncard_orbit_stabilizerChain`: upper bounds on basic orbits and their exact values under
-  a multiply transitive subgroup.
+* `Subgroup.orbit_stabilizerChain_eq_compl`, `Subgroup.ncard_orbit_stabilizerChain`: the basic
+  orbits of distinct points under a multiply transitive subgroup.
 
 ## References
 
@@ -219,16 +218,6 @@ theorem mem_iff_exists_prod_eq {k : ℕ} (hk : H.stabilizerChain b k = ⊥) {R :
 
 /-! ### Basic orbits of a multiply transitive subgroup -/
 
-/-- Whenever `b i` is distinct from the earlier points `b 0, …, b (i - 1)`, the `i`-th basic orbit
-lies in the complement of `{b 0, …, b (i - 1)}`. -/
-theorem orbit_stabilizerChain_subset_compl {i : ℕ} (hbi : b i ∉ b '' Set.Iio i) :
-    orbit (H.stabilizerChain b i) (b i) ⊆ (b '' Set.Iio i)ᶜ := by
-  intro y hy ⟨j, hj, hjy⟩
-  obtain ⟨g, rfl⟩ := mem_orbit_iff.mp hy
-  have hgj : (g : G) • b j = b j := ((mem_stabilizerChain_iff H b).mp g.2).2 j hj
-  rw [Subgroup.smul_def] at hjy
-  exact hbi ⟨j, hj, smul_left_cancel _ (hgj.trans hjy)⟩
-
 /-- For a `k`-transitive subgroup `H` and points `b 0, …, b (k - 1)` that are distinct, the
 `i`-th basic orbit, for `i < k`, is the complement of the set of earlier points. -/
 theorem orbit_stabilizerChain_eq_compl {k : ℕ} [IsMultiplyPretransitive H α k]
@@ -237,28 +226,35 @@ theorem orbit_stabilizerChain_eq_compl {k : ℕ} [IsMultiplyPretransitive H α k
   set s := b '' Set.Iio i with hs
   have hbi : b i ∉ s := fun ⟨j, hj, hji⟩ ↦
     (Set.mem_Iio.mp hj).ne (hb ((Set.mem_Iio.mp hj).trans hi) hi hji)
-  refine Set.Subset.antisymm (orbit_stabilizerChain_subset_compl hbi) fun y hy ↦ ?_
-  have hsk : s.ncard + 1 ≤ k := by
-    rw [hs, (hb.mono (Set.Iio_subset_Iio hi.le)).ncard_image,
-      Set.ncard_eq_toFinset_card', Set.toFinset_Iio, Nat.card_Iio]
-    exact hi
-  have hkα : (k : ℕ∞) ≤ ENat.card α := by
-    simpa using ENat.card_le_card_of_injective (f := fun j : Fin k ↦ b j)
-      fun j j' h ↦ Fin.ext (hb j.2 j'.2 h)
-  have : IsPretransitive (fixingSubgroup H s) (SubMulAction.ofFixingSubgroup H s) :=
-    is_one_pretransitive_iff.mp
-      (SubMulAction.ofFixingSubgroup.isMultiplyPretransitive' s hsk hkα)
-  obtain ⟨g, hg⟩ := exists_smul_eq (fixingSubgroup H s)
-    (⟨b i, hbi⟩ : SubMulAction.ofFixingSubgroup H s) ⟨y, hy⟩
-  have hgi : ((g : H) : G) ∈ H.stabilizerChain b i :=
-    (mem_stabilizerChain_iff H b).mpr ⟨(g : H).2, fun j hj ↦
-      (mem_fixingSubgroup_iff H).mp g.2 (b j) ⟨j, hj, rfl⟩⟩
-  -- unfold the actions of `fixingSubgroup H s` on `SubMulAction.ofFixingSubgroup H s` and of
-  -- `H` on `α` to see that `g` sends `b i` to `y` in `α`
-  have hgy : ((g : H) : G) • b i = y := by
-    have h := congrArg Subtype.val hg
-    rwa [SubMulAction.val_smul_of_tower, Subgroup.smul_def, Subgroup.smul_def] at h
-  exact mem_orbit_iff.mpr ⟨⟨_, hgi⟩, by rw [Subgroup.smul_def]; exact hgy⟩
+  ext y
+  constructor
+  · intro hy ⟨j, hj, hjy⟩
+    obtain ⟨g, rfl⟩ := mem_orbit_iff.mp hy
+    have hgj : (g : G) • b j = b j := ((mem_stabilizerChain_iff H b).mp g.2).2 j hj
+    rw [Subgroup.smul_def] at hjy
+    exact hbi ⟨j, hj, smul_left_cancel _ (hgj.trans hjy)⟩
+  · intro hy
+    have hsk : s.ncard + 1 ≤ k := by
+      rw [hs, (hb.mono (Set.Iio_subset_Iio hi.le)).ncard_image,
+        Set.ncard_eq_toFinset_card', Set.toFinset_Iio, Nat.card_Iio]
+      exact hi
+    have hkα : (k : ℕ∞) ≤ ENat.card α := by
+      simpa using ENat.card_le_card_of_injective (f := fun j : Fin k ↦ b j)
+        fun j j' h ↦ Fin.ext (hb j.2 j'.2 h)
+    have : IsPretransitive (fixingSubgroup H s) (SubMulAction.ofFixingSubgroup H s) :=
+      is_one_pretransitive_iff.mp
+        (SubMulAction.ofFixingSubgroup.isMultiplyPretransitive' s hsk hkα)
+    obtain ⟨g, hg⟩ := exists_smul_eq (fixingSubgroup H s)
+      (⟨b i, hbi⟩ : SubMulAction.ofFixingSubgroup H s) ⟨y, hy⟩
+    have hgi : ((g : H) : G) ∈ H.stabilizerChain b i :=
+      (mem_stabilizerChain_iff H b).mpr ⟨(g : H).2, fun j hj ↦
+        (mem_fixingSubgroup_iff H).mp g.2 (b j) ⟨j, hj, rfl⟩⟩
+    -- unfold the actions of `fixingSubgroup H s` on `SubMulAction.ofFixingSubgroup H s` and of
+    -- `H` on `α` to see that `g` sends `b i` to `y` in `α`
+    have hgy : ((g : H) : G) • b i = y := by
+      have h := congrArg Subtype.val hg
+      rwa [SubMulAction.val_smul_of_tower, Subgroup.smul_def, Subgroup.smul_def] at h
+    exact mem_orbit_iff.mpr ⟨⟨_, hgi⟩, by rw [Subgroup.smul_def]; exact hgy⟩
 
 /-- For a `k`-transitive subgroup `H` and points `b 0, …, b (k - 1)` that are distinct, the
 `i`-th basic orbit, for `i < k`, has `Nat.card α - i` points, so the first `k` basic orbits have
