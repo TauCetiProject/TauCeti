@@ -172,17 +172,8 @@ theorem tsupport_chartTestSection (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, 
     (e.chartTestSection c hc hce φ).1.tsupport = c.symm '' tsupport φ := by
   apply le_antisymm
   · exact tsupport_testSection_subset e c hc hce φ
-  · rw [ContMDiffSection.tsupport_def]
-    rintro _ ⟨y, hy, rfl⟩
-    have hcont : ContinuousWithinAt c.symm (Function.support φ) y :=
-      (c.continuousOn_symm y (φ.tsupport_subset hy)).mono
-        ((subset_tsupport φ).trans φ.tsupport_subset)
-    refine hcont.mem_closure hy fun z hz ↦ ?_
-    have ht := φ.tsupport_subset (subset_tsupport φ hz)
-    intro hzero
-    have hcoeff := e.continuousLinearMapAt_chartTestSection c hc hce φ (c.map_target ht)
-    rw [hzero, map_zero, c.right_inv ht] at hcoeff
-    exact hz hcoeff.symm
+  · rw [ContMDiffSection.tsupport_def, support_chartTestSection]
+    exact (c.continuousOn_symm.mono φ.tsupport_subset).image_closure
 
 /-- The closed support of an extended test lies entirely in the chart source. -/
 theorem tsupport_chartTestSection_subset_source (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) :
