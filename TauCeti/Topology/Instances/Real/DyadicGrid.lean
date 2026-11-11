@@ -69,9 +69,12 @@ theorem exists_dyadicPoint_eq_of_le {a b : ℝ} (hab : a ≤ b) {m n : ℕ}
   simpa only [coe_dyadicPoint, Fin.val_mk] using heq
 
 /-- The points of the dyadic grids of `[a, b]`, of all levels, are dense in `[a, b]`. -/
-theorem dense_setOfPred_eq_add_mul_div_two_pow {a b : ℝ} (hab : a < b) :
+theorem dense_setOfPred_eq_add_mul_div_two_pow {a b : ℝ} :
     Dense {t : Icc a b | ∃ n k : ℕ, k ≤ 2 ^ n ∧ (t : ℝ) = a + k * ((b - a) / 2 ^ n)} := by
   refine Metric.dense_iff.2 fun t r hr ↦ ?_
+  rcases le_or_gt b a with hba | hab
+  · exact ⟨t, Metric.mem_ball_self hr,
+      0, 0, by simp, by simpa using (t.2.2.trans hba).antisymm t.2.1⟩
   have hba : 0 < b - a := sub_pos.2 hab
   obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one (div_pos hr hba) (one_half_lt_one (α := ℝ))
   set h := (b - a) / 2 ^ n with h_def
@@ -96,16 +99,9 @@ theorem dense_setOfPred_eq_add_mul_div_two_pow {a b : ℝ} (hab : a < b) :
 /-- The union of the finite-indexed dyadic grids is dense, including for a singleton interval. -/
 theorem dense_iUnion_range_dyadicPoint {a b : ℝ} (hab : a ≤ b) :
     Dense (⋃ n, range (dyadicPoint hab n)) := by
-  rcases hab.eq_or_lt with rfl | hlt
-  · have heq : (⋃ n, range (dyadicPoint (le_refl a) n)) = univ := by
-      ext t
-      simp only [mem_iUnion, mem_range, mem_univ, iff_true]
-      exact ⟨0, 0, Subtype.ext (by simpa using t.property.1.antisymm t.property.2)⟩
-    rw [heq]
-    exact dense_univ
-  · apply (dense_setOfPred_eq_add_mul_div_two_pow hlt).mono
-    rintro t ⟨n, k, hk, ht⟩
-    refine mem_iUnion.2 ⟨n, ⟨⟨k, Nat.lt_succ_of_le hk⟩, Subtype.ext ?_⟩⟩
-    simpa only [coe_dyadicPoint, Fin.val_mk] using ht.symm
+  apply dense_setOfPred_eq_add_mul_div_two_pow.mono
+  rintro t ⟨n, k, hk, ht⟩
+  refine mem_iUnion.2 ⟨n, ⟨⟨k, Nat.lt_succ_of_le hk⟩, Subtype.ext ?_⟩⟩
+  simpa only [coe_dyadicPoint, Fin.val_mk] using ht.symm
 
 end TauCeti
