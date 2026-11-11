@@ -72,8 +72,9 @@ theorem Connected.fg_pathGroup (h : Γ.Connected) [Finite Γ.GeomEdge] (v : Γ.V
   have : Finite O := Finite.of_injective _ hO.bijective_toGeomEdge.1
   exact (T.fg_pathGroup_iff v hO).mpr (Finite.Set.subset O Set.sdiff_subset)
 
-/-- For a connected graph with finitely many vertices, the rank of the reduced closed-path
-group plus the number of vertices is the number of positive darts plus one. -/
+/-- For a connected graph with finitely many vertices whose reduced closed-path group is
+finitely generated, the rank of that group plus the number of vertices is the number of
+positive darts plus one. -/
 theorem IsOrientation.rank_pathGroup_add_card {O : Set Γ.E} (hO : Γ.IsOrientation O)
     (h : Γ.Connected) (v : Γ.V) [Finite Γ.V] [Group.FG (PathGroup Γ v)] :
     Group.rank (PathGroup Γ v) + Nat.card Γ.V = Nat.card O + 1 := by
@@ -84,15 +85,17 @@ theorem IsOrientation.rank_pathGroup_add_card {O : Set Γ.E} (hO : Γ.IsOrientat
   rw [T.rank_pathGroup v hO, T.card_diff_add_card hO]
 
 /-- The Euler form of the rank of the reduced closed-path group of a connected graph with
-finitely many vertices: the rank plus the number of vertices is the number of geometric edges
-plus one. -/
+finitely many vertices, when that group is finitely generated (for instance when there are
+finitely many geometric edges, see `Connected.fg_pathGroup`): the rank plus the number of
+vertices is the number of geometric edges plus one. -/
 theorem Connected.rank_pathGroup_add_card (h : Γ.Connected) (v : Γ.V) [Finite Γ.V]
     [Group.FG (PathGroup Γ v)] :
     Group.rank (PathGroup Γ v) + Nat.card Γ.V = Nat.card Γ.GeomEdge + 1 := by
   obtain ⟨O, hO⟩ := Γ.exists_isOrientation
   rw [hO.rank_pathGroup_add_card h v, Nat.card_eq_of_bijective _ hO.bijective_toGeomEdge]
 
-/-- The reduced closed-path group of a rose has rank its number of petals. -/
+/-- When the reduced closed-path group of a rose is finitely generated, its rank is the number
+of petals. -/
 theorem rank_pathGroup_rose (α : Type*) (v : (rose α).V) [Group.FG (PathGroup (rose α) v)] :
     Group.rank (PathGroup (rose α) v) = Nat.card α := by
   have h := (rose_connected α).rank_pathGroup_add_card v
