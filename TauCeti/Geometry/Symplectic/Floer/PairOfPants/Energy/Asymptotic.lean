@@ -181,7 +181,9 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation
       (integrableOn_hamiltonianCurvature_pairOfPantsPerturbation ω hH hHs hu.continuousOn))
   refine tendsto_nhds_unique (tendsto_setIntegral_truncation hE) (hrhs.congr' ?_)
   filter_upwards [eventually_ge_atTop 1] with R hR
-  exact (hω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation hH hHs hu hR).symm
+  exact (hω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation hH hHs
+    isOpen_thricePuncturedSphereReal hu hR
+    (preimage_truncation_subset_thricePuncturedSphereReal R)).symm
 
 /-- **The energy bound on the pair of pants, for a manifold target.** Under the hypotheses of
 `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation`, the Floer

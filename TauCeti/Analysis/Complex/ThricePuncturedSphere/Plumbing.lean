@@ -458,6 +458,16 @@ theorem plumbingMap_mem_plumbedSphere_of_mem_truncation (hq : q ≠ inf) (hL : 4
   rw [endSign_eq_one hq, one_mul]
   linarith [le_re_endCoord_plumbingMap (q := q) hw]
 
+/-- In real coordinates, the plumbing chart carries the inserted truncation `S_{L/2}` into the
+plumbed four-punctured sphere. -/
+theorem realChart_plumbingMap_mem_plumbedSphere (hq : q ≠ inf) (hL : 4 < L) {w : ℝ × ℝ}
+    (hw : w ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)) :
+    realChart (q.plumbingMap L) w ∈ {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1) ∧
+      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} := by
+  rw [mem_ofPred_eq, equivRealProdCLM_symm_realChart]
+  exact plumbingMap_mem_plumbedSphere_of_mem_truncation hq hL hw
+
 /-- The receiving and inserted truncations meet only on the circle `s_q = L/2`, a null set. -/
 theorem aedisjoint_truncation_image (hq : q ≠ inf) :
     AEDisjoint volume (Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2))
