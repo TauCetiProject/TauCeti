@@ -34,8 +34,10 @@ diffeomorphism `e` onto an open subset of a real normed space identifies `D` wit
 under translation by a convex cone, for instance a translated convex cone or a half-space near a
 corner or a smooth boundary point of `D`, the endpoint variations of
 `TauCeti.exists_contDiffAt_endpointVariation_of_add_mem` read through `e` give variations of a
-curve `γ` in `D ∩ e.source` with prescribed moving left endpoint, fixed right endpoint, and all
-curves in `D`. These are the competitors of a curve constrained to `D`.
+curve `γ` in `D ∩ e.source` with prescribed moving left endpoint `σ` and fixed right endpoint.
+Given a filter `l ≤ 𝓝 0`, such as `𝓝[≥] 0`, along which the displacement `e (σ s) - e (σ 0)` of
+the endpoint lies in the cone, the curves of the variation lie in `D` for all `s` eventually
+along `l`. These are the competitors of a curve constrained to `D`.
 
 ## Main definitions and results
 
