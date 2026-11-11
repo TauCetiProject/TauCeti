@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
-import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
+import TauCeti.Analysis.SpecialFunctions.Complex.Exp.Series
+import TauCeti.Analysis.SpecialFunctions.Complex.LogBounds
 
 /-!
 # Power series of `H^s` functions, `s > n / 2`
@@ -49,8 +50,6 @@ what the charts of a gauge group modelled on `H^s` require.
 
 ## Main declarations
 
-* `Complex.hasSum_exp_sub_one`, `Complex.hasSum_taylorSeries_log'`: the series
-  `exp z - 1 = ∑ₙ z ^ (n + 1) / (n + 1)!` and `log (1 + z) = ∑ₙ (-1) ^ n z ^ (n + 1) / (n + 1)`.
 * `TemperedDistribution.exists_toBesselPotentialSpace_eq_tsum_and_ae_tendsto`: a series of `L²`
   functions in `H^s` converging in `H^s` converges almost everywhere to an `L²` function whose
   `H^s` element is its sum.
@@ -86,30 +85,6 @@ open scoped Nat SchwartzMap ENNReal Topology BesselPotentialSpace
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E]
-
-namespace Complex
-
-/-- The exponential series without its constant term: `exp z - 1 = ∑ₙ z ^ (n + 1) / (n + 1)!`. -/
-theorem hasSum_exp_sub_one (z : ℂ) :
-    HasSum (fun n : ℕ ↦ (((n + 1)! : ℂ))⁻¹ * z ^ (n + 1)) (exp z - 1) := by
-  have h := (hasSum_nat_add_iff' 1).2 (NormedSpace.expSeries_div_hasSum_exp z)
-  simp only [Finset.range_one, Finset.sum_singleton, pow_zero, Nat.factorial_zero, Nat.cast_one,
-    div_one, ← exp_eq_exp_ℂ] at h
-  simpa only [div_eq_inv_mul] using h
-
-/-- The Taylor series of `log (1 + z)` without its vanishing constant term:
-`log (1 + z) = ∑ₙ (-1) ^ n z ^ (n + 1) / (n + 1)` for `‖z‖ < 1`. -/
-theorem hasSum_taylorSeries_log' {z : ℂ} (hz : ‖z‖ < 1) :
-    HasSum (fun n : ℕ ↦ (-1) ^ n / (n + 1) * z ^ (n + 1)) (log (1 + z)) := by
-  have h := (hasSum_nat_add_iff' 1).2 (hasSum_taylorSeries_log hz)
-  simp only [Finset.range_one, Finset.sum_singleton, pow_zero, CharP.cast_eq_zero, div_zero,
-    sub_zero] at h
-  convert h using 1
-  ext n
-  push_cast
-  ring
-
-end Complex
 
 namespace TemperedDistribution
 

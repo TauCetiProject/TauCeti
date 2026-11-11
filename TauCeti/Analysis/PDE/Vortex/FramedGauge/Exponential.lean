@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Sobolev
-import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Analysis.Sobolev.BesselPotential.PowerSeries
+import TauCeti.Analysis.SpecialFunctions.Complex.LogBounds
 import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
@@ -39,8 +39,9 @@ ingredients of a chart of `G_s` at the identity modelled on `H^s(ℂ; ℝ)`.
   (`TauCeti.Vortex.exists_norm_toBesselPotentialSpace_sub_le_of_ae_eq_exp`), by the Lipschitz
   estimate for the exponential series on `H^s`
   (`TemperedDistribution.exists_norm_toBesselPotentialSpace_sub_le_of_ae_eq_exp_sub_one`).
-* **Its inverse is Lipschitz near the identity.** If `‖u - 1‖_{H^s}, ‖u' - 1‖_{H^s} ≤ R` with
-  `C R < 1`, then `‖arg u - arg u'‖_{H^s} ≤ (1 - C R)⁻¹ ‖u - u'‖_{H^s}`
+* **Its inverse is Lipschitz near the identity.** If the phases `arg u, arg u'` lie in `H^s` and
+  `‖u - 1‖_{H^s}, ‖u' - 1‖_{H^s} ≤ R` with `C R < 1`, then
+  `‖arg u - arg u'‖_{H^s} ≤ (1 - C R)⁻¹ ‖u - u'‖_{H^s}`
   (`TauCeti.Vortex.exists_norm_toBesselPotentialSpace_sub_le_of_ae_eq_arg`), since
   `i arg u = log (1 + (u - 1))` and the logarithm series is Lipschitz on `H^s`
   (`TemperedDistribution.exists_norm_toBesselPotentialSpace_sub_le_of_ae_eq_log_one_add`).
@@ -63,7 +64,8 @@ shown here that `arg u ∈ H^s` for every `u` near `1`, and no topology or manif
 * `TauCeti.Vortex.exists_norm_toBesselPotentialSpace_sub_le_of_ae_eq_exp`: the exponential is
   locally Lipschitz from `H^s` phases to `H^s` coordinates of gauges.
 * `TauCeti.Vortex.exists_norm_toBesselPotentialSpace_sub_le_of_ae_eq_arg`: the phase `arg u` is
-  Lipschitz in the coordinate `u - 1` near the identity.
+  Lipschitz in the coordinate `u - 1` near the identity, among the `u` whose phase `arg u` lies in
+  `H^s`.
 
 ## References
 
