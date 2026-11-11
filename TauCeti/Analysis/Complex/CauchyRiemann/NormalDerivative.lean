@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
 public import TauCeti.Analysis.Sobolev.Local.SmoothCoefficients
 import TauCeti.Analysis.Complex.OperatorNorm
+import TauCeti.Analysis.Sobolev.Local.Coordinates
 
 /-!
 # Recovering the normal derivative from the Cauchy–Riemann equation
@@ -34,8 +35,6 @@ formulation is expected to produce.
 * `TauCeti.ae_cauchyRiemann_iff_ae_apply_I_eq`: the almost-everywhere form of the equation is
   equivalent to the almost-everywhere normal derivative formula `D z I = J z (D z 1 + S z (ξ z) -
   η z)`.
-* `TauCeti.memWkpLoc_succ_iff_apply_one_apply_I`: a map lies in `W^{k+1,q}_loc` exactly when it is
-  locally `L^q` and has a weak derivative whose two partial derivatives lie in `W^{k,q}_loc`.
 * `TauCeti.memWkpLoc_succ_of_ae_cauchyRiemann`: the induction step of boundary regularity for
   coefficients `J`, `S` of class `C^k` near `U`. If `ξ` and `η` lie in `W^{k,q}_loc(U)` and so does
   the tangential derivative `∂ₛξ`, then `ξ` lies in `W^{k+1,q}_loc(U)`.
@@ -70,7 +69,8 @@ theorem add_apply_add_eq_iff_eq_apply_add_sub {A : V →L[ℝ] V}
     simpa using congrArg (fun T : V →L[ℝ] V => T v) hA
   constructor
   · rintro rfl
-    rw [show a + c - (a + A b + c) = -A b by abel, map_neg, hA', neg_neg]
+    have hsub : a + c - (a + A b + c) = -A b := by abel
+    rw [hsub, map_neg, hA', neg_neg]
   · rintro rfl
     rw [hA']
     abel
@@ -88,36 +88,7 @@ theorem ae_cauchyRiemann_iff_ae_apply_I_eq {μ : Measure ℂ} {J S : ℂ → V �
   · exact (add_apply_add_eq_iff_eq_apply_add_sub hJz).1 hz
   · exact (add_apply_add_eq_iff_eq_apply_add_sub hJz).2 hz
 
-/-! ### Local Sobolev classes through the two partial derivatives -/
-
 variable {q : ENNReal} {U : Set ℂ} {k : ℕ}
-
-/-- **Assembling a weak derivative from its partial derivatives.** A locally `L^q` map with a
-weak derivative `D` on the interior of `U` whose partial derivatives `z ↦ D z 1` and `z ↦ D z I`
-lie in `W^{k,q}_loc(U)` lies in `W^{k+1,q}_loc(U)`. The derivative `D` is rebuilt from its two
-partial derivatives with `ContinuousLinearMap.smulRightL`. -/
-theorem MemLpLoc.memWkpLoc_succ_of_hasWeakFDerivOn {ξ : ℂ → V} {D : ℂ → ℂ →L[ℝ] V}
-    (hξ : MemLpLoc q U ξ) (hD : HasWeakFDerivOn volume (Opens.interior U) ξ D)
-    (h1 : MemWkpLoc q U k fun z => D z 1) (hI : MemWkpLoc q U k fun z => D z I) :
-    MemWkpLoc q U (k + 1) ξ := by
-  have := hD.completeSpace
-  refine memWkpLoc_succ_iff.2 ⟨hξ, D, hD, ?_⟩
-  rw [ContinuousLinearMap.fun_eq_smulRightL_reCLM_add_smulRightL_imCLM D]
-  exact (h1.clm_comp _).add (hI.clm_comp _)
-
-/-- **Local Sobolev classes through partial derivatives.** A map lies in `W^{k+1,q}_loc(U)`
-exactly when it is locally `L^q` on `U` and has a weak derivative on the interior of `U` whose
-partial derivatives `z ↦ D z 1` and `z ↦ D z I` lie in `W^{k,q}_loc(U)`. -/
-theorem memWkpLoc_succ_iff_apply_one_apply_I {ξ : ℂ → V} :
-    MemWkpLoc q U (k + 1) ξ ↔ MemLpLoc q U ξ ∧ ∃ D : ℂ → ℂ →L[ℝ] V,
-      HasWeakFDerivOn volume (Opens.interior U) ξ D ∧
-        (MemWkpLoc q U k fun z => D z 1) ∧ MemWkpLoc q U k fun z => D z I := by
-  refine ⟨fun h => ?_, fun ⟨hξ, D, hD, h1, hI⟩ =>
-    hξ.memWkpLoc_succ_of_hasWeakFDerivOn hD h1 hI⟩
-  obtain ⟨hξ, D, hD, hDk⟩ := memWkpLoc_succ_iff.1 h
-  have := hD.completeSpace
-  exact ⟨hξ, D, hD, hDk.clm_comp (ContinuousLinearMap.apply ℝ V 1),
-    hDk.clm_comp (ContinuousLinearMap.apply ℝ V I)⟩
 
 /-! ### The induction step for smooth coefficients -/
 
@@ -126,8 +97,10 @@ endomorphisms of a finite-dimensional space `V`, of class `C^n` on an open neigh
 `U`, with `k ≤ n` and `J z ∘ J z = -1` on the interior of `U`. Let `ξ` have a weak derivative `D`
 on the interior of `U` satisfying `∂ₛξ + J ∂ₜξ + S ξ = η` there almost everywhere. If `ξ`, `η`
 and the tangential derivative `∂ₛξ = D · 1` lie in `W^{k,q}_loc(U)`, then `ξ` lies in
-`W^{k+1,q}_loc(U)`: the normal derivative `∂ₜξ = J (∂ₛξ + S ξ - η)` lies in `W^{k,q}_loc(U)` as
-well. On a half-disc this is the induction step of boundary regularity. -/
+`W^{k+1,q}_loc(U)`: the map `J (∂ₛξ + S ξ - η)` lies in `W^{k,q}_loc(U)` and agrees with the
+normal derivative `∂ₜξ = D · I` almost everywhere on the interior of `U`, so it serves as the
+normal partial derivative of a weak derivative of `ξ`. On a half-disc this is the induction step of
+boundary regularity. -/
 theorem memWkpLoc_succ_of_ae_cauchyRiemann [FiniteDimensional ℝ V] {Ω : Opens ℂ}
     {n : WithTop ℕ∞} {J S : ℂ → V →L[ℝ] V} {ξ η : ℂ → V} {D : ℂ → ℂ →L[ℝ] V}
     (hJ : ContDiffOn ℝ n J Ω) (hS : ContDiffOn ℝ n S Ω) (hk : (k : WithTop ℕ∞) ≤ n)
@@ -147,7 +120,6 @@ theorem memWkpLoc_succ_of_ae_cauchyRiemann [FiniteDimensional ℝ V] {Ω : Opens
       ContinuousLinearMap.smulRightL ℝ ℂ V imCLM (N z)
   have hD' : HasWeakFDerivOn volume (Opens.interior U) ξ D' := by
     refine hD.congr_ae_deriv ?_
-    change D =ᵐ[volume.restrict (interior U)] D'
     filter_upwards [hae] with z hz
     conv_lhs => rw [(D z).eq_reCLM_smulRight_add_imCLM_smulRight, hz]
     ext w
