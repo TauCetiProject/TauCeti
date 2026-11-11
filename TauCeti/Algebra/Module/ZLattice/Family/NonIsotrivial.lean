@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Module.ZLattice.Family.Manifold
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
-public import TauCeti.Analysis.SpecialFunctions.Elliptic.PeriodMap
 
 import Mathlib.Topology.Separation.CompletelyRegular
 import TauCeti.Analysis.Complex.RiemannSurface.ComplexTorus
@@ -144,19 +143,6 @@ section PeriodPair
 variable {EY : Type*} [NormedAddCommGroup EY] [NormedSpace ℂ EY] {H : Type*} [TopologicalSpace H]
   {I : ModelWithCorners ℂ EY H} {Y : Type*} [TopologicalSpace Y] [ChartedSpace H Y]
   {n : WithTop ℕ∞}
-
-/-- The periods of a period pair varying `C^n` with a parameter are `C^n`. -/
-theorem contMDiff_periodMap_apply {ω : Y → PeriodPair} (hω₁ : ContMDiff I 𝓘(ℂ) n fun y ↦ (ω y).ω₁)
-    (hω₂ : ContMDiff I 𝓘(ℂ) n fun y ↦ (ω y).ω₂) (l : ℤ × ℤ) :
-    ContMDiff I 𝓘(ℂ) n fun y ↦ (ω y).periodMap l := by
-  simp only [PeriodPair.periodMap_apply]
-  exact (contMDiff_const.mul hω₁).add (contMDiff_const.mul hω₂)
-
-/-- The periods `m τ(y) + k` of the lattices `ℤ τ(y) + ℤ` of a `C^n` map `τ : Y → ℍ` are `C^n`. -/
-theorem contMDiff_periodPair_periodMap_apply {τ : Y → ℍ}
-    (hτ : ContMDiff I 𝓘(ℂ) n fun y ↦ (τ y : ℂ)) (l : ℤ × ℤ) :
-    ContMDiff I 𝓘(ℂ) n fun y ↦ (τ y).periodPair.periodMap l :=
-  contMDiff_periodMap_apply (by simpa using hτ) (by simpa using contMDiff_const) l
 
 variable [T2Space Y] [LocallyCompactSpace Y] [PreconnectedSpace Y] [IsManifold I n Y]
   {L : Submodule ℤ ℂ} [DiscreteTopology L]

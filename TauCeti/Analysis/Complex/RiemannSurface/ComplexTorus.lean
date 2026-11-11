@@ -153,8 +153,9 @@ theorem exists_apply_mk_eq_mul_add [IsZLattice ℝ L]
     (φ : AddAction.orbitRel.Quotient L ℂ ≃ₘ^n⟮𝓘(ℂ), 𝓘(ℂ)⟯ AddAction.orbitRel.Quotient L ℂ)
     (hn : n ≠ 0) :
     ∃ u ∈ MulAction.stabilizer ℂˣ L, ∃ b : ℂ,
-      ∀ z, φ (Quotient.mk _ z) = Quotient.mk (AddAction.orbitRel L ℂ) (u * z + b) :=
-  φ.contMDiff.exists_units_smul_eq_of_injective hn φ.injective
+      ∀ z, φ (Quotient.mk _ z) = Quotient.mk (AddAction.orbitRel L ℂ) (u * z + b) := by
+  simpa only [MulAction.mem_stabilizer_iff] using
+    φ.contMDiff.exists_units_smul_eq_of_injective hn φ.injective
 
 /-- The biholomorphisms of a complex torus fixing a point are finite in number: such a map is
 `[z] ↦ [u * (z - p) + p]`, determined by its linear part `u` in the finite lattice stabilizer. -/

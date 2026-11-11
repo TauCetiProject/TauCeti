@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Elliptic.Weierstrass
+public import Mathlib.Geometry.Manifold.Algebra.Structures
 
 /-!
 # The period map of a period pair
@@ -15,10 +16,14 @@ A period pair `L = (ω₁, ω₂)` determines the `ℤ`-linear map `ℤ × ℤ �
 `L.lattice`, so the range is a discrete subgroup of full rank. Unlike `L.lattice` itself, the
 domain `ℤ × ℤ` does not depend on `L`: a period pair `ω y` varying with a parameter `y` gives a
 family of period maps `y ↦ (ω y).periodMap` with one fixed lattice of marks, which is the input of
-the family of one-dimensional complex tori `ℂ / (ℤ ω₁(y) + ℤ ω₂(y))`.
+the family of one-dimensional complex tori `ℂ / (ℤ ω₁(y) + ℤ ω₂(y))`. If the periods `ω₁(y)` and
+`ω₂(y)` are `C^n` in `y`, then so is every period `(ω y).periodMap l`
+(`TauCeti.contMDiff_periodMap_apply`).
 -/
 
 public section
+
+open scoped Manifold
 
 namespace PeriodPair
 
@@ -58,3 +63,18 @@ instance : IsZLattice ℝ (LinearMap.range L.periodMap) where
     exact IsZLattice.span_top
 
 end PeriodPair
+
+namespace TauCeti
+
+variable {EY : Type*} [NormedAddCommGroup EY] [NormedSpace ℂ EY] {H : Type*} [TopologicalSpace H]
+  {I : ModelWithCorners ℂ EY H} {Y : Type*} [TopologicalSpace Y] [ChartedSpace H Y]
+  {n : WithTop ℕ∞}
+
+/-- The periods of a period pair varying `C^n` with a parameter are `C^n`. -/
+theorem contMDiff_periodMap_apply {ω : Y → PeriodPair} (hω₁ : ContMDiff I 𝓘(ℂ) n fun y ↦ (ω y).ω₁)
+    (hω₂ : ContMDiff I 𝓘(ℂ) n fun y ↦ (ω y).ω₂) (l : ℤ × ℤ) :
+    ContMDiff I 𝓘(ℂ) n fun y ↦ (ω y).periodMap l := by
+  simp only [PeriodPair.periodMap_apply]
+  exact (contMDiff_const.mul hω₁).add (contMDiff_const.mul hω₂)
+
+end TauCeti
