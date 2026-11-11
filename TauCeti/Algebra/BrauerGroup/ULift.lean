@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.BrauerGroup.BaseChange
 public import Mathlib.Algebra.Field.ULift
+import TauCeti.Algebra.Subalgebra.Center
 import TauCeti.Algebra.BrauerGroup.Splitting
 import Mathlib.Algebra.Algebra.Shrink
 import Mathlib.RingTheory.Finiteness.Small
@@ -95,12 +96,9 @@ private theorem ulift_surjective : Function.Surjective (ulift.{u, w} K) := by
     obtain ⟨c, rfl⟩ := (Algebra.IsCentral.mem_center_iff (ULift.{w} K)).1 hz
     exact ⟨c.down, rfl⟩⟩
   have : Small.{u} B := Module.Finite.small K B
-  -- `Algebra.IsCentral.of_algEquiv` needs both algebras in one universe, and `Shrink.{u} B` is
-  -- in a smaller universe than `B`, so centrality is transported by hand.
-  have : Algebra.IsCentral K (Shrink.{u} B) := ⟨fun z hz ↦ by
-    obtain ⟨c, hc⟩ := (Algebra.IsCentral.mem_center_iff K).1
-      ((MulEquivClass.apply_mem_center_iff (Shrink.algEquiv K B)).2 hz)
-    exact ⟨c, (Shrink.algEquiv K B).injective (by simpa using hc.symm)⟩⟩
+  -- `Shrink.{u} B` is in a smaller universe than `B`.
+  have : Algebra.IsCentral K (Shrink.{u} B) :=
+    Algebra.IsCentral.of_algEquiv' K (Shrink.algEquiv K B).symm
   have : IsSimpleRing (Shrink.{u} B) :=
     IsSimpleRing.of_ringEquiv (Shrink.algEquiv K B).symm.toRingEquiv inferInstance
   refine ⟨mk (CSA.of K (Shrink.{u} B)), ?_⟩

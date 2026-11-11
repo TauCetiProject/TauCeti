@@ -146,7 +146,7 @@ theorem _root_.AnalyticOnNhd.zeroCount_le_finsum_divisor {K : Set 𝕜}
     (zeroCount f U S : ℤ) ≤ ∑ᶠ z, MeromorphicOn.divisor f K z := by
   have hfin : (K ∩ Function.support (fun z ↦ (MeromorphicOn.divisor f K z).toNat)).Finite :=
     zeroCount_support_finite <|
-      hf.meromorphicOn.divisor_finite_inter_support_of_isCompact hK subset_rfl subset_rfl
+      MeromorphicOn.divisor_finite_inter_support_of_isCompact hK subset_rfl subset_rfl
   rw [← divisorCount_self, divisorCount_eq_zeroCount fun z _ ↦
     MeromorphicOn.AnalyticOnNhd.divisor_nonneg hf z]
   exact_mod_cast zeroCount_le_zeroCount_of_subset hf.meromorphicOn hS subset_rfl hfin

@@ -301,7 +301,7 @@ theorem height_lt_height_highestRoot {j : ι} (hj : j ≠ b.highestRoot) :
 
 /-- **An automorphism permuting the simple roots fixes the highest root**: it preserves heights,
 and `θ` is the only root of maximal height. -/
-theorem indexEquiv_highestRoot [P.IsRootSystem] (u : P.Aut)
+theorem indexEquiv_highestRoot (u : P.Aut)
     (hu : ∀ j ∈ b.support, u.indexEquiv j ∈ b.support) :
     u.indexEquiv b.highestRoot = b.highestRoot := by
   by_contra h

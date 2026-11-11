@@ -370,7 +370,7 @@ theorem IsEven.conductor_kroneckerChar_signedDiscr_sqrt_smul (R : Type*) [CommRi
 /-- In even ambient dimension, scaling an even full lattice `L` by `√m` (`m ≠ 0`) preserves the
 primitive character values of `(D_L / ·)` at every integer `a`. -/
 theorem IsEven.primitiveCharacter_kroneckerChar_signedDiscr_sqrt_smul_apply
-    (R : Type*) [CommRing R] [Nontrivial R] (hL : IsEven L) (hE : Even (finrank ℝ E))
+    (R : Type*) [CommRing R] (hL : IsEven L) (hE : Even (finrank ℝ E))
     {m : ℕ} (hm : m ≠ 0) (a : ℤ) :
     (TauCeti.kroneckerChar R (signedDiscr (√(m : ℝ) • L))
       (hL.signedDiscr_sqrt_smul_modEq_zero_or_one hE hm)
@@ -417,7 +417,7 @@ theorem IsEven.conductor_kroneckerChar_signedDiscr_sqrt_level_smul_dual (R : Typ
 rank and level `N`, the primitive Kronecker characters of `L` and of its Fricke partner `√N • L^∨`
 agree at every integer `a`. -/
 theorem IsEven.primitiveCharacter_kroneckerChar_signedDiscr_sqrt_level_smul_dual_apply
-    (R : Type*) [CommRing R] [Nontrivial R] (hL : IsEven L) (hE : Even (finrank ℝ E)) (a : ℤ) :
+    (R : Type*) [CommRing R] (hL : IsEven L) (hE : Even (finrank ℝ E)) (a : ℤ) :
     (TauCeti.kroneckerChar R (signedDiscr (√(level L : ℝ) • dual L))
       (hL.isIntegral.signedDiscr_sqrt_level_smul_dual_modEq_zero_or_one hE)
       hL.isIntegral.signedDiscr_sqrt_level_smul_dual_ne_zero).primitiveCharacter a =
