@@ -49,8 +49,8 @@ private theorem ker_actionUnits : (actionUnits G A).ker = (MulAction.toPermHom G
     exact Multiplicative.toAdd.injective (AddEquiv.ext h)
 
 /-- **The kernel of an action on a cyclic group has index dividing `φ (Nat.card A)`**: the action
-factors through the automorphism group of `A`, which has `φ (Nat.card A)` elements. For an
-infinite cyclic `A` the statement is trivial, `φ 0 = 0`. -/
+factors through the automorphism group of `A`, which has `φ (Nat.card A)` elements when `A` is
+finite. For an infinite cyclic `A` the divisibility is trivial: `Nat.card A = 0` and `φ 0 = 0`. -/
 theorem index_ker_toPermHom_dvd_totient :
     (MulAction.toPermHom G A).ker.index ∣ (Nat.card A).totient := by
   rcases finite_or_infinite A with hA | hA
