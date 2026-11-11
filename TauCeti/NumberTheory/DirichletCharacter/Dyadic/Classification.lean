@@ -76,14 +76,6 @@ section Classification
 
 variable {R : Type*} [CommRing R]
 
-/-- The value of the lift of `χ₄` to level eight at a unit, read off from the value of `χ₄` at
-its reduction modulo four. -/
-private theorem changeLevel_χ₄_ringHomComp_eight_apply {a : ZMod 8} (ha : IsUnit a) {b : ℤ}
-    (h : χ₄ a.cast = b) :
-    changeLevel (by norm_num : 4 ∣ 8) (χ₄.ringHomComp (Int.castRingHom R)) a = b := by
-  rw [← ha.unit_spec, changeLevel_eq_cast_of_dvd, ha.unit_spec,
-    MulChar.ringHomComp_intCast_apply_of_apply_eq _ h]
-
 /-- The quadratic characters of level four: the principal character and `χ₄`. -/
 theorem eq_one_or_eq_χ₄_of_isQuadratic {χ : DirichletCharacter R 4} (hχ : χ.IsQuadratic) :
     χ = 1 ∨ χ = χ₄.ringHomComp (Int.castRingHom R) := by
@@ -111,10 +103,12 @@ theorem eq_one_or_eq_χ₄_or_eq_χ₈_or_eq_χ₈'_of_isQuadratic {χ : Dirichl
     · rw [h5, MulChar.ringHomComp_intCast_apply_of_apply_eq χ₈' (a := 5) (b := -1) (by decide),
         Int.cast_neg, Int.cast_one]
   · refine Or.inr (Or.inl (ext_of_level_eight ?_ ?_))
-    · rw [h3, changeLevel_χ₄_ringHomComp_eight_apply (a := 3) (by decide) (b := -1) (by decide),
-        Int.cast_neg, Int.cast_one]
-    · rw [h5, changeLevel_χ₄_ringHomComp_eight_apply (a := 5) (by decide) (b := 1) (by decide),
-        Int.cast_one]
+    · rw [h3, show (3 : ZMod 8) = ((3 : ℤ) : ZMod 8) by decide,
+        changeLevel_ringHomComp_intCast_apply _ _ (Int.isCoprime_iff_gcd_eq_one.mpr rfl),
+        show χ₄ ((3 : ℤ) : ZMod 4) = -1 by decide, Int.cast_neg, Int.cast_one]
+    · rw [h5, show (5 : ZMod 8) = ((5 : ℤ) : ZMod 8) by decide,
+        changeLevel_ringHomComp_intCast_apply _ _ (Int.isCoprime_iff_gcd_eq_one.mpr rfl),
+        show χ₄ ((5 : ℤ) : ZMod 4) = 1 by decide, Int.cast_one]
   · refine Or.inr (Or.inr (Or.inl (ext_of_level_eight ?_ ?_)))
     · rw [h3, MulChar.ringHomComp_intCast_apply_of_apply_eq χ₈ (a := 3) (b := -1) (by decide),
         Int.cast_neg, Int.cast_one]
