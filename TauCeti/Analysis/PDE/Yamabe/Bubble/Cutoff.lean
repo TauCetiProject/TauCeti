@@ -273,7 +273,7 @@ theorem tendsto_cutoff_bubble_sobolev_quotient (hn : 2 < finrank ℝ E)
   have henergy := tendsto_conformalCoefficient_mul_integral_norm_fderiv_cutoff_bubble_sq
     hn hχ hχc hχle b hχone
   have hlim := henergy.div hden (Real.rpow_pos_of_pos (roundSphereVolume_pos _) _).ne'
-  simpa only [Pi.div_def, ← sphereYamabeConstant_eq_div (show finrank ℝ E ≠ 0 by omega)]
+  simpa only [Pi.div_def, ← sphereYamabeConstant_eq_div]
     using hlim
 
 /-- Two-sided bounds for the power `2 / pₙ` of the critical mass of a cutoff bubble:
@@ -288,7 +288,6 @@ private lemma cutoff_bubble_critical_norm_bounds (hn : 2 < finrank ℝ E) {χ : 
     (∫ x, |χ x * bubble t b x| ^ criticalExponent (finrank ℝ E)) ^
         (2 / criticalExponent (finrank ℝ E)) ≤
       roundSphereVolume (finrank ℝ E) ^ (2 / criticalExponent (finrank ℝ E)) := by
-  have hn' : (2 : ℝ) < finrank ℝ E := by exact_mod_cast hn
   have hV := roundSphereVolume_pos (finrank ℝ E)
   have hq0 : 0 ≤ 2 / criticalExponent (finrank ℝ E) :=
     div_nonneg zero_le_two (criticalExponent_pos hn).le
@@ -357,7 +356,7 @@ theorem isBigO_cutoff_bubble_sobolev_quotient_sub_sphereYamabeConstant (hn : 2 <
   -- The mass error enters through the denominator.
   obtain ⟨hlow, hup⟩ := cutoff_bubble_critical_norm_bounds hn hχ.continuous.measurable hχle hr
     hball ht (by linarith)
-  rw [sphereYamabeConstant_eq_div (by omega), Real.norm_eq_abs,
+  rw [sphereYamabeConstant_eq_div, Real.norm_eq_abs,
     Real.norm_of_nonneg (by positivity)]
   refine (abs_div_sub_div_le hD hN hsn' hlow hup hE).trans ?_
   have hst : s ^ (n - 2) = (2 / r) ^ (n - 2) * t ^ (n - 2) := by
@@ -383,12 +382,11 @@ theorem exists_contDiff_hasCompactSupport_sobolev_quotient_lt (hn : 2 < finrank 
           (2 / criticalExponent (finrank ℝ E)) < sphereYamabeConstant (finrank ℝ E) + ε := by
   obtain ⟨b, hb⟩ := hΩne
   obtain ⟨χ, hχ, hχrange, hχone, hχc, hχΩ⟩ :=
-    (isCompact_singleton (x := b)).exists_contDiff_cutoff hΩ (singleton_subset_iff.mpr hb)
+    (isCompact_singleton (x := b)).exists_contDiff_cutoff_eventuallyEq_one hΩ
+      (singleton_subset_iff.mpr hb)
   have hχrange' (x : E) : χ x ∈ Icc (0 : ℝ) 1 := hχrange (mem_range_self x)
   have hχle (x : E) : |χ x| ≤ 1 := abs_le.mpr ⟨by linarith [(hχrange' x).1], (hχrange' x).2⟩
-  have hχone' : χ =ᶠ[𝓝 b] fun _ ↦ 1 := by
-    filter_upwards [mem_interior_iff_mem_nhds.mp (hχone (mem_singleton b))] with x hx
-    exact hx
+  have hχone' : χ =ᶠ[𝓝 b] fun _ ↦ 1 := hχone b (mem_singleton b)
   have hm := tendsto_integral_cutoff_bubble_rpow_criticalExponent hn hχ.continuous.measurable hχle
     b hχone'
   have hq := tendsto_cutoff_bubble_sobolev_quotient hn (hχ.of_le (by simp)) hχc hχle b hχone'

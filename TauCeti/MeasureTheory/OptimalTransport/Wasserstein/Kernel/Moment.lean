@@ -11,7 +11,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Kernel.Basic
 # Finite moments of Markov-kernel mixtures
 
 A mixture has finite `p`-moment exactly when its kernel's radial `Lᵖ` seminorms belong to
-`Lᵖ` on the source, for a finite nonzero exponent. Consequently a Wasserstein-Lipschitz
+`Lᵖ` on the source, for every exponent. Consequently a Wasserstein-Lipschitz
 Markov kernel preserves finite moments as soon as one of its laws has finite moment.
 The anchor law is necessary: a constant kernel with an infinite-moment law is
 Wasserstein-Lipschitz with constant zero.
@@ -39,15 +39,14 @@ variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
   {p : ℝ≥0∞} {μ : Measure X} {κ : Kernel X Y}
 
 /-- A finite-kernel mixture has finite moment exactly when its radial seminorm profile
-belongs to `Lᵖ` on the source. The source measure is finite and the exponent finite nonzero;
+belongs to `Lᵖ` on the source. The source measure is finite and the exponent `p` is arbitrary;
 neither a topology on the source nor a standard-Borel hypothesis is needed. -/
-theorem hasFiniteMoment_comp_iff_memLp (hp0 : p ≠ 0) (hp : p ≠ ∞)
-    [IsFiniteMeasure μ] [IsFiniteKernel κ] (y : Y) :
+theorem hasFiniteMoment_comp_iff_memLp [IsFiniteMeasure μ] [IsFiniteKernel κ] (y : Y) :
     HasFiniteMoment p (κ ∘ₘ μ) ↔
       MemLp (fun x ↦ eLpNorm (fun z ↦ edist y z) p (κ x)) p μ := by
   rw [hasFiniteMoment_iff_memLp_edist (x := y)
     measurable_edist_right.aestronglyMeasurable]
-  simp only [MemLp, eLpNorm_eLpNorm_kernel hp0 hp κ μ measurable_edist_right]
+  simp only [MemLp, eLpNorm_eLpNorm_kernel κ μ measurable_edist_right.aestronglyMeasurable]
 
 variable [PseudoMetricSpace X] [OpensMeasurableSpace X] [StandardBorelSpace Y]
   [TopologicalSpace.SeparableSpace Y] [IsMarkovKernel κ]
@@ -56,20 +55,19 @@ variable [PseudoMetricSpace X] [OpensMeasurableSpace X] [StandardBorelSpace Y]
 sends finite-moment finite measures to finite-moment measures, provided the anchor law has
 finite moment. -/
 theorem HasFiniteMoment.comp_kernel [IsFiniteMeasure μ] (hμ : HasFiniteMoment p μ)
-    (hp1 : 1 ≤ p) (hp : p ≠ ∞) {L : ℝ≥0} {x₀ : X}
+    (hp1 : 1 ≤ p) {L : ℝ≥0} {x₀ : X}
     (hκ : ∀ᵐ x ∂μ, wassersteinEDist p (κ x₀) (κ x) ≤ L * edist x₀ x)
     (hκ₀ : HasFiniteMoment p (κ x₀)) : HasFiniteMoment p (κ ∘ₘ μ) := by
   obtain ⟨y, hy⟩ := hasFiniteMoment_def.mp hκ₀
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp1).ne'
   have hrad : Measurable (fun x ↦ eLpNorm (fun z ↦ edist y z) p (κ x)) :=
-    measurable_eLpNorm_kernel hp0 hp κ measurable_edist_right
+    measurable_eLpNorm_kernel κ measurable_edist_right.stronglyMeasurable
   have hdist : MemLp (fun x ↦ (L : ℝ≥0∞) * edist x₀ x) p μ :=
     (hμ.memLp (x := x₀) measurable_edist_right.aestronglyMeasurable).of_enorm_le_mul (c := L)
       (measurable_edist_right.const_mul _).aestronglyMeasurable
       (.of_forall fun _ ↦ by simp)
   have hconst : MemLp (fun _ : X ↦ eLpNorm (fun z ↦ edist y z) p (κ x₀)) p μ :=
     memLp_const_enorm (by simpa only [enorm_eq_self] using hy.eLpNorm_ne_top)
-  refine (hasFiniteMoment_comp_iff_memLp hp0 hp y).2
+  refine (hasFiniteMoment_comp_iff_memLp y).2
     ((hconst.add hdist).of_le_enorm hrad.aestronglyMeasurable (hκ.mono fun x hx ↦ ?_))
   simp only [enorm_eq_self, Pi.add_apply]
   rw [← wassersteinEDist_dirac_left measurable_edist,

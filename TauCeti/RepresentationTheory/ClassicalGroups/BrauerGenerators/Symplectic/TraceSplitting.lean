@@ -272,7 +272,7 @@ theorem isCompl_symplecticHarmonicTensors_iSup_range_symplecticCupCapAt :
   have h := LinearMap.isCompl_iInf_ker_iSup_range_of_isHermitian_toMatrix
     (Basis.piTensorProduct fun _ : Fin d => Pi.basisFun k (Fin n ⊕ Fin n))
     (fun p : {p : Fin d × Fin d // p.1 ≠ p.2} => symplecticCupCapAt k n d p.1.1 p.1.2)
-    fun p => isHermitian_toMatrix_symplecticCupCapAt p.2
+    fun _ => isHermitian_toMatrix_symplecticCupCapAt
   simpa only [iInf_subtype, iSup_subtype, iInf_prod, iSup_prod,
     ← symplecticHarmonicTensors_eq_iInf_ker_symplecticCupCapAt] using h
 

@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.FormalGroup.Basic
-public import TauCeti.RingTheory.FormalGroup.Hom
+public import TauCeti.RingTheory.FormalGroup.Hom.Basic
 public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
 public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
 import TauCeti.Algebra.Ring.GeomSum
+import TauCeti.RingTheory.FormalGroup.BaseChange
 import TauCeti.RingTheory.FormalGroup.AddInv
 import TauCeti.RingTheory.FormalGroup.ZSMul
 import TauCeti.RingTheory.MvPowerSeries.Substitution
@@ -51,11 +52,15 @@ representable by a polynomial ring over the Lazard ring.
 * `TauCeti.FormalGroupHom.smul_eq`: if `φ` is a homomorphism from `F` to `G`, then `φ • F = G`.
 * `FormalGroup.instIsCommSMul`: changing coordinates preserves commutativity.
 * `FormalGroup.map_smul`: changing coordinates commutes with base change.
+* `FormalGroup.map_ofStrictCoeffs_smul_𝔾ₐ`: the base change of the additive law transported along
+  `X + ∑ bᵢ X^(i + 1)` is transported along `X + ∑ f(bᵢ) X^(i + 1)`.
 * `FormalGroup.nsmulSeries_smul_eq_zero_iff`: changing coordinates preserves `[n](X) = 0`.
 * `FormalGroup.nsmulSeries_smul_𝔾ₐ_eq_zero`: if `n = 0` in `R`, then `[n](X) = 0` for every
   transport `φ • 𝔾ₐ` of the additive formal group law.
 * `FormalGroup.ofStrictCoeffs_single_smul_𝔾ₐ_toPowerSeries`: if `e² = 0`, transporting the
   additive law along `X + e X^(n + 1)` gives `X + Y + e ((X + Y)^(n + 1) - X^(n + 1) - Y^(n + 1))`.
+* `FormalGroup.nsmulSeries_ofStrictCoeffs_single_smul_𝔾ₐ`: if `e² = 0`, multiplication by `k` on
+  that law is `k X + e (k^(n + 1) - k) X^(n + 1)`.
 
 ## References
 
@@ -237,6 +242,14 @@ theorem map_smul (f : R →+* S) (φ : FormalCoordinate R) (F : FormalGroup R) :
   funext s
   fin_cases s <;> simp [PowerSeries.map_subst (hX _)]
 
+/-- The base change along `f : R →+* S` of the additive formal group law transported along the
+strict coordinate `X + ∑ bᵢ X^(i + 1)` is the additive law transported along
+`X + ∑ f(bᵢ) X^(i + 1)`. -/
+theorem map_ofStrictCoeffs_smul_𝔾ₐ (f : R →+* S) (b : ℕ+ → R) :
+    (FormalCoordinate.ofStrictCoeffs b • 𝔾ₐ).map f =
+      FormalCoordinate.ofStrictCoeffs (f ∘ b) • 𝔾ₐ := by
+  rw [map_smul, map_𝔾ₐ, FormalCoordinate.map_ofStrictCoeffs]
+
 /-- **Changing coordinates gives an isomorphic formal group law**: the formal coordinate `φ` is
 an isomorphism of formal group laws from `F` to `φ • F`, with inverse `φ⁻¹`. -/
 noncomputable def smulIso (φ : FormalCoordinate R) (F : FormalGroup R) :
@@ -331,6 +344,40 @@ theorem ofStrictCoeffs_single_smul_𝔾ₐ_toPowerSeries (n : ℕ+) {e : R} (he 
       X 0 + X 1 + C (-e) * (X 0 ^ ((n : ℕ) + 1) + X 1 ^ ((n : ℕ) + 1)) := by
     ring
   rw [hsum, mul_add_mul_pow_of_mul_eq_zero hC, map_neg]
+  ring
+
+/-- If `e² = 0`, multiplication by `k` on the additive formal group law transported along
+`X + e X^(n + 1)` is `[k](X) = k X + e (k^(n + 1) - k) X^(n + 1)`. -/
+theorem nsmulSeries_ofStrictCoeffs_single_smul_𝔾ₐ (n : ℕ+) {e : R} (he : e * e = 0) (k : ℕ) :
+    (FormalCoordinate.ofStrictCoeffs (Pi.single n e) • 𝔾ₐ).nsmulSeries k =
+      PowerSeries.C (k : R) * PowerSeries.X +
+        PowerSeries.C (e * ((k : R) ^ ((n : ℕ) + 1) - k)) * PowerSeries.X ^ ((n : ℕ) + 1) := by
+  have hC : PowerSeries.C e * PowerSeries.C (-e) = 0 := by
+    rw [← map_mul, mul_neg, he, neg_zero, map_zero]
+  have hk : PowerSeries.HasSubst (PowerSeries.C (k : R) * PowerSeries.X) :=
+    .of_constantCoeff_zero' (by simp)
+  set ψ : PowerSeries R := PowerSeries.X + PowerSeries.C (-e) * PowerSeries.X ^ ((n : ℕ) + 1)
+  have hψ : PowerSeries.HasSubst ψ := .of_constantCoeff_zero' (by simp [ψ])
+  -- `[k]` is conjugated by the isomorphism `φ = X + e X^(n + 1)` from `[k](X) = k X` on `X + Y`,
+  -- and `φ⁻¹ = X - e X^(n + 1)`.
+  have hconj : (FormalCoordinate.ofStrictCoeffs (Pi.single n e) • 𝔾ₐ).nsmulSeries k =
+      (PowerSeries.C (k : R) * PowerSeries.X +
+        PowerSeries.C e * (PowerSeries.C (k : R) * PowerSeries.X) ^ ((n : ℕ) + 1)).subst ψ := by
+    rw [← zsmulSeries_natCast, (smulIso _ 𝔾ₐ).zsmulSeries_eq_subst, zsmulSeries_natCast]
+    simp only [smulIso_toHom_toPowerSeries, smulIso_invHom_toPowerSeries,
+      FormalCoordinate.inv_ofStrictCoeffs_single_of_mul_self_eq_zero n he,
+      FormalCoordinate.toPowerSeries_ofStrictCoeffs_single, nsmulSeries_𝔾ₐ]
+    rw [← map_natCast PowerSeries.C, PowerSeries.subst_X_add_C_mul_X_pow hk, ← PowerSeries.C_apply]
+  rw [hconj]
+  simp only [PowerSeries.subst_add hψ, PowerSeries.subst_mul hψ, PowerSeries.subst_pow hψ,
+    PowerSeries.subst_X hψ, PowerSeries.subst_C, ← PowerSeries.C_apply]
+  -- `e (k ψ)^(n + 1) = e (k X)^(n + 1)`, since `e · e = 0`.
+  have hkψ : PowerSeries.C (k : R) * ψ = PowerSeries.C (k : R) * PowerSeries.X +
+      PowerSeries.C (-e) * (PowerSeries.C (k : R) * PowerSeries.X ^ ((n : ℕ) + 1)) := by
+    simp only [ψ]
+    ring
+  rw [hkψ, mul_add_mul_pow_of_mul_eq_zero hC]
+  simp only [map_neg, map_mul, map_sub, map_pow]
   ring
 
 end FormalGroup

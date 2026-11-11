@@ -35,7 +35,8 @@ height estimates such as Roth's lemma.
 * `Rat.den_le_mulHeight₁`, `Rat.log_den_le_logHeight₁`: the denominator of a rational number is
   at most its height.
 * `Rat.mulHeight₁_le_max_one_abs_mul_den`: conversely, `H(q) ≤ max(1, |q|) den(q)`.
-* `Rat.mulHeight₁_intCast_div_le`: `H(x / y) ≤ max(|x|, |y|)` for integers `x` and `y ≠ 0`.
+* `Rat.mulHeight₁_intCast_div_le`: `H(x / y) ≤ max(|x|, |y|)` for integers `x` and `y ≠ 0`, with
+  equality for coprime `x` and `y` (`Rat.mulHeight₁_intCast_div_of_isCoprime`).
 * `MvPolynomial.IsHomogeneous.max_abs_le_abs_eval_rpow_mul_mulHeight₁`: conversely, if `F` is an
   integer binary form of degree `n ≠ 0` with `F(x, y) ≠ 0`, then
   `max(|x|, |y|) ≤ |F(x, y)| ^ (1 / n) H(x / y)`.
@@ -129,6 +130,26 @@ theorem mulHeight₁_intCast_div_le (x : ℤ) {y : ℤ} (hy : y ≠ 0) :
   refine (mulHeight_le_max_abs (by simp [hy])).trans ?_
   rw [← Int.cast_abs, ← Int.cast_abs, ← Int.cast_max, Int.cast_le]
   exact ciSup_le fun i ↦ by fin_cases i <;> simp
+
+/-- The multiplicative height of a quotient `x / y` of coprime integers is `max(|x|, |y|)`. This
+includes `y = 0`, where `x = ±1` and `x / y = 0` has height `1`. -/
+theorem mulHeight₁_intCast_div_of_isCoprime {x y : ℤ} (h : IsCoprime x y) :
+    mulHeight₁ ((x : ℚ) / y) = max |(x : ℝ)| |(y : ℝ)| := by
+  have hv : ![(x : ℚ), y] = ((↑) : ℤ → ℚ) ∘ ![x, y] := by
+    ext i
+    fin_cases i <;> simp
+  -- `Finset.gcd` normalizes its entries, and `normalize y` is a unit multiple of `y`.
+  have hg : Finset.univ.gcd ![x, y] = 1 := by
+    have h' : IsCoprime x (_root_.normalize y) := by
+      rw [normalize_apply]
+      exact (isCoprime_mul_unit_right_right (Units.isUnit _) x y).mpr h
+    simp only [Fin.univ_succ, Finset.univ_unique]
+    simp [← Int.coe_gcd, Int.isCoprime_iff_gcd_eq_one.mp h']
+  rw [mulHeight₁_div_eq_mulHeight, hv, mulHeight_eq_max_abs_of_gcd_eq_one hg, ← Int.cast_abs,
+    ← Int.cast_abs, ← Int.cast_max, Int.cast_inj]
+  exact le_antisymm (ciSup_le fun i ↦ by fin_cases i <;> simp)
+    (max_le (le_ciSup (f := fun i ↦ |![x, y] i|) (Finite.bddAbove_range _) 0)
+      (le_ciSup (f := fun i ↦ |![x, y] i|) (Finite.bddAbove_range _) 1))
 
 /-- The logarithm of the denominator of a rational number is at most its logarithmic height. -/
 theorem log_den_le_logHeight₁ (q : ℚ) : Real.log q.den ≤ logHeight₁ q := by

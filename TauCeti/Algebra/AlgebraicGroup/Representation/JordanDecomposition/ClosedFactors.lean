@@ -65,16 +65,16 @@ noncomputable abbrev unipotentFactor : _root_.CommHopfAlgCat.{u} k :=
 /-- The closed semisimple factor is commutative. -/
 noncomputable instance instIsCocommSemisimpleFactor :
     Coalgebra.IsCocomm k (semisimpleFactor k H) :=
-  (CommHopfAlgCat.mkImage (_root_.CommHopfAlgCat.ofHom
-    (semisimplePartBialgHom k H))).hom.toCoalgHom.isCocomm_of_surjective
-      (CommHopfAlgCat.mkImage_surjective _)
+  Coalgebra.IsCocomm.of_surjective
+    (CommHopfAlgCat.mkImage (_root_.CommHopfAlgCat.ofHom (semisimplePartBialgHom k H))).hom
+    (CommHopfAlgCat.mkImage_surjective _)
 
 /-- The closed unipotent factor is commutative. -/
 noncomputable instance instIsCocommUnipotentFactor :
     Coalgebra.IsCocomm k (unipotentFactor k H) :=
-  (CommHopfAlgCat.mkImage (_root_.CommHopfAlgCat.ofHom
-    (unipotentPartBialgHom k H))).hom.toCoalgHom.isCocomm_of_surjective
-      (CommHopfAlgCat.mkImage_surjective _)
+  Coalgebra.IsCocomm.of_surjective
+    (CommHopfAlgCat.mkImage (_root_.CommHopfAlgCat.ofHom (unipotentPartBialgHom k H))).hom
+    (CommHopfAlgCat.mkImage_surjective _)
 
 /-- The closed semisimple factor is smooth. -/
 noncomputable instance instSmoothSemisimpleFactor : Algebra.Smooth k (semisimpleFactor k H) :=
@@ -186,8 +186,9 @@ theorem torusCommHopfAlgProperty_semisimpleFactor
   let _ : IsReduced (semisimpleFactor k H) := isReduced_of_smooth k _
   let _ : ConnectedSpace (PrimeSpectrum (semisimpleFactor k H)) :=
     (hH.image (_root_.CommHopfAlgCat.ofHom (semisimplePartBialgHom k H))).connectedSpace k _
-  exact torusCommHopfAlgProperty.of_groupLikeSetSpan_eq_top _
-    (groupLikeSetSpan_semisimpleFactor_eq_top k H)
+  exact splitTorusCommHopfAlgProperty.torus k _
+    (splitTorusCommHopfAlgProperty.of_groupLikeSetSpan_eq_top _
+      (groupLikeSetSpan_semisimpleFactor_eq_top k H))
 
 private theorem mapDomain_semisimplePart_mapDomain_unipotentPart
     (g : WithConv (H →ₐ[k] A)) :

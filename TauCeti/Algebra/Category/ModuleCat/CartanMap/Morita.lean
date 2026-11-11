@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Morita.Basic
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Equivalence
-public import TauCeti.CategoryTheory.Preadditive.Equivalence
+public import TauCeti.CategoryTheory.Adjunction.Additive
 
 /-!
 # Morita invariance of `K₀(proj A)`, `G₀(mod A)` and the Cartan map
@@ -113,6 +113,13 @@ instance : e.finiteModulesEquivalence.functor.Additive := by
 instance : e.finiteProjectiveModulesEquivalence.functor.Additive := by
   unfold finiteProjectiveModulesEquivalence
   infer_instance
+
+open scoped ModuleCat.Algebra in
+/-- The restriction to finitely generated modules of an `R`-linear equivalence is `R`-linear. -/
+instance {R : Type*} [CommSemiring R] [Algebra R A] [Algebra R B] [e.functor.Linear R] :
+    e.finiteModulesEquivalence.functor.Linear R where
+  -- `congrFullSubcategory` acts on underlying morphisms as `e.functor`, by definition.
+  map_smul f r := ObjectProperty.hom_ext _ (e.functor.map_smul r f.hom)
 
 @[simp]
 theorem finiteModulesEquivalence_functor_obj_obj (M : FGModuleCat.{u} A) :

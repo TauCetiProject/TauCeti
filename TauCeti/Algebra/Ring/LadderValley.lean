@@ -150,11 +150,7 @@ theorem ladderValley_zero_mul_ladderValley (m s r : ℕ) :
 theorem ladderValley_climb_mul (m s r t : ℕ) :
     ladderValley u d (m + r) 0 t * ladderValley u d m s r =
       ladderValley u d m s (r + t) := by
-  induction t with
-  | zero => simp
-  | succ t ih =>
-    rw [← u_mul_ladderValley, mul_assoc, ih]
-    simpa only [Nat.add_assoc] using u_mul_ladderValley u d m s (r + t)
+  simp [ladderValley, List.range_add, Function.comp_def, mul_assoc, add_assoc]
 
 end Monoid
 
@@ -173,7 +169,7 @@ theorem d_mul_ladderValley (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0) 
   | succ r ih =>
     rw [← u_mul_ladderValley, ← u_mul_ladderValley, ← mul_assoc, add_right_comm, ← add_assoc,
       eq_neg_of_add_eq_zero_left (hud (m + r)), neg_mul, mul_assoc, ih]
-    rcases neg_one_pow_eq_or A r with h | h <;> simp [h, pow_succ]
+    simp [pow_succ, ((Commute.neg_one_right (u (m + r))).pow_right r).left_comm]
 
 /-- **A valley at the bottom rung cannot be followed by a descent.** If the turns at every rung
 cancel, then descending after a valley word which reaches rung `0` and climbs back up vanishes. -/
@@ -189,7 +185,6 @@ theorem d_mul_ladderValley_zero_eq_zero (hud₀ : d 0 * u 0 = 0)
 
 /-- Commuting a descent of `s` steps past a climb of `r` steps costs the sign `(-1)^(s*r)`.
 The bottom of the resulting valley is `m`. No bottom-rung relation is needed. -/
-@[simp]
 private theorem ladderValley_descent_mul (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0)
     (m s t r : ℕ) :
     ladderValley u d (m + r) s 0 * ladderValley u d (m + s) t r =
@@ -199,9 +194,9 @@ private theorem ladderValley_descent_mul (hud : ∀ w, d (w + 1) * u (w + 1) + u
   | succ s ih =>
     have hleft : m + r + 1 = (m + 1) + r := by omega
     have hright : m + (s + 1) = (m + 1) + s := by omega
-    rw [← d_mul_ladderValley_succ_zero, hleft, hright, mul_assoc, ih]
-    rw [← mul_assoc, ((Commute.neg_one_right _).pow_right (s * r)).eq, mul_assoc,
-      d_mul_ladderValley hud, ← mul_assoc, ← pow_add]
+    rw [← d_mul_ladderValley_succ_zero, hleft, hright, mul_assoc, ih,
+      ((Commute.neg_one_right _).pow_right (s * r)).left_comm, d_mul_ladderValley hud,
+      ← mul_assoc, ← pow_add]
     congr 2
     simp [Nat.add_mul]
 
@@ -217,8 +212,7 @@ theorem ladderValley_mul_ladderValley (hud : ∀ w, d (w + 1) * u (w + 1) + u w 
   have hm : m = b + q := by omega
   rw [hl, Nat.add_sub_cancel, hm, ← ladderValley_zero_mul_ladderValley u d (b + q) s r,
     mul_assoc, ladderValley_descent_mul hud]
-  rw [← mul_assoc, ((Commute.neg_one_right _).pow_right (s * q)).eq, mul_assoc,
-    ladderValley_climb_mul]
+  rw [((Commute.neg_one_right _).pow_right (s * q)).left_comm, ladderValley_climb_mul]
 
 /-- A composable descent which pushes a valley below rung zero vanishes. -/
 private theorem ladderValley_descent_mul_eq_zero (hud₀ : d 0 * u 0 = 0)
@@ -235,7 +229,7 @@ private theorem ladderValley_descent_mul_eq_zero (hud₀ : d 0 * u 0 = 0)
       have hr : r = m + 1 := by omega
       have hcomp' : m + 1 + s = s + r := by omega
       rw [hl', ladderValley_mul_ladderValley hud hcomp' le_rfl, Nat.sub_self, hr,
-        ← mul_assoc, ((Commute.neg_one_right _).pow_right (s * (m + 1))).eq, mul_assoc,
+        ((Commute.neg_one_right _).pow_right (s * (m + 1))).left_comm,
         d_mul_ladderValley_zero_eq_zero hud₀ hud, mul_zero]
 
 /-- Two composable valley words multiply to zero if their formal bottom is negative. -/
@@ -265,15 +259,13 @@ theorem ladderValley_mul_ladderValley_zero_eq_pow
   induction j with
   | zero => simp
   | succ j ih =>
-    have hc : (j + 1).choose 2 = j + j.choose 2 :=
-      (Nat.choose_succ_succ' j 1).trans (by rw [Nat.choose_one_right])
     -- The last descent leaves the turn at rung `0` after the shorter climb and descent.
     have hstep : ladderValley u d 0 (j + 1) 0 * ladderValley u d 0 0 (j + 1) =
         (-1) ^ j * (ladderValley u d 0 j 0 * ladderValley u d 0 0 j) * (d 0 * u 0) := by
       rw [← ladderValley_mul_d, zero_add, mul_assoc, d_mul_ladderValley_zero_zero hud,
-        ← mul_assoc, ((Commute.neg_one_right _).pow_right j).eq]
+        ((Commute.neg_one_right _).pow_right j).left_comm]
       simp only [mul_assoc]
-    rw [hstep, ih, hc, pow_add, pow_succ]
+    rw [hstep, ih, Nat.choose_succ_succ', Nat.choose_one_right, pow_add, pow_succ]
     simp only [mul_assoc]
 
 /-- **The turn at the bottom of a finite ladder is nilpotent.** If the turns at every positive
@@ -284,8 +276,7 @@ theorem pow_d_mul_u_eq_zero (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0)
     (hN : u N = 0) : (d 0 * u 0) ^ (N + 1) = 0 := by
   have h := ladderValley_mul_ladderValley_zero_eq_pow hud (N + 1)
   rw [← u_mul_ladderValley, zero_add, hN, zero_mul, mul_zero, eq_comm] at h
-  rcases neg_one_pow_eq_or A ((N + 1).choose 2) with hs | hs <;>
-    simpa [hs] using h
+  simpa using h
 
 section Commutator
 
@@ -299,7 +290,7 @@ moves the power one rung up, and at rung `N` it vanishes. -/
 theorem pow_d_mul_u_mem_commutatorSubmodule (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0)
     {N : ℕ} (hN : u N = 0) {j : ℕ} (hj : 0 < j) :
     (d 0 * u 0) ^ j ∈ commutatorSubmodule k A := by
-  obtain ⟨j, rfl⟩ : ∃ j', j = j' + 1 := ⟨j - 1, by omega⟩
+  obtain ⟨j, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hj.ne'
   -- Climbing from rung `N - i` to rung `N`, by induction on `i`.
   suffices h : ∀ i ≤ N, (d (N - i) * u (N - i)) ^ (j + 1) ∈ commutatorSubmodule k A by
     simpa using h N le_rfl

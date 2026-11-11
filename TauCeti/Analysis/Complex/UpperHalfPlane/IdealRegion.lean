@@ -28,7 +28,8 @@ angle `0`; in particular the ideal triangle with vertices `-1`, `1` and `∞` ha
 
 `idealRegionAbove c r a b` is the same region for the semicircle of centre `c` and radius
 `r > 0`, obtained from `idealRegion` by the affine map `z ↦ r z + c` (`idealRegionAbove_eq_smul`);
-its area is the same formula in the rescaled endpoints when `c - r ≤ a ≤ b ≤ c + r`
+its area is the nonnegative part (`ENNReal.ofReal`) of the same arccos difference in the rescaled
+endpoints when `c - r ≤ a` and `b ≤ c + r`, so it is `0` when `b < a` and the region is empty
 (`volume_idealRegionAbove`). The two one-variable integrals of the computation are
 `TauCeti.lintegral_Ioi_inv_sq` and `TauCeti.integral_one_div_sqrt_one_sub_sq`.
 
@@ -75,6 +76,28 @@ theorem volume_setOf_re_eq (x : ℝ) : volume {z : ℍ | z.re = x} = 0 := by
   rw [h]
   exact volume_preimage_coe_null (Complex.volume_setOf_re_eq x)
 
+/-- The image of `idealRegion a b` in `ℂ` is the preimage, under the real-coordinates equivalence,
+of the set of points with `a ≤ x ≤ b` and `√(1 - x²) ≤ y`. -/
+private theorem image_idealRegion_eq_preimage {a b : ℝ}
+    (hsqrt : ∀ x ∈ Icc a b, 0 < Real.sqrt (1 - x ^ 2)) :
+    (↑) '' idealRegion a b = Complex.measurableEquivRealProd ⁻¹'
+      {p : ℝ × ℝ | p.1 ∈ Icc a b ∧ Real.sqrt (1 - p.1 ^ 2) ≤ p.2} := by
+  ext w
+  simp only [Set.mem_image, Set.mem_preimage, Complex.measurableEquivRealProd_apply,
+    Set.mem_ofPred_eq, idealRegion]
+  constructor
+  · rintro ⟨z, ⟨hza, hzb, hz1⟩, rfl⟩
+    refine ⟨⟨hza, hzb⟩, ?_⟩
+    rw [UpperHalfPlane.coe_re, UpperHalfPlane.coe_im, Real.sqrt_le_left z.im_pos.le]
+    rw [Complex.normSq_apply, UpperHalfPlane.coe_re, UpperHalfPlane.coe_im] at hz1
+    nlinarith [hz1]
+  · rintro ⟨⟨hwa, hwb⟩, hw⟩
+    have him : 0 < w.im := (hsqrt _ ⟨hwa, hwb⟩).trans_le hw
+    refine ⟨⟨w, him⟩, ⟨hwa, hwb, ?_⟩, rfl⟩
+    rw [Real.sqrt_le_left him.le] at hw
+    rw [Complex.normSq_apply]
+    nlinarith [hw]
+
 /-- `volume_idealRegion` for `-1 < a` and `b < 1`, where the integrand `1 / √(1 - x²)` is
 continuous on `[a, b]`; for `b < a` both sides vanish. -/
 private theorem volume_idealRegion_of_lt {a b : ℝ} (ha : -1 < a) (hb : b < 1) :
@@ -91,22 +114,8 @@ private theorem volume_idealRegion_of_lt {a b : ℝ} (ha : -1 < a) (hb : b < 1) 
   have hRm : MeasurableSet R :=
     (measurableSet_Icc.preimage measurable_fst).inter
       (measurableSet_le (by fun_prop) measurable_snd)
-  have himage : (↑) '' idealRegion a b = Complex.measurableEquivRealProd ⁻¹' R := by
-    ext w
-    simp only [Set.mem_image, Set.mem_preimage, Complex.measurableEquivRealProd_apply, hR,
-      Set.mem_ofPred_eq, idealRegion]
-    constructor
-    · rintro ⟨z, ⟨hza, hzb, hz1⟩, rfl⟩
-      refine ⟨⟨hza, hzb⟩, ?_⟩
-      rw [UpperHalfPlane.coe_re, UpperHalfPlane.coe_im, Real.sqrt_le_left z.im_pos.le]
-      rw [Complex.normSq_apply, UpperHalfPlane.coe_re, UpperHalfPlane.coe_im] at hz1
-      nlinarith [hz1]
-    · rintro ⟨⟨hwa, hwb⟩, hw⟩
-      have him : 0 < w.im := (hsqrt _ ⟨hwa, hwb⟩).trans_le hw
-      refine ⟨⟨w, him⟩, ⟨hwa, hwb, ?_⟩, rfl⟩
-      rw [Real.sqrt_le_left him.le] at hw
-      rw [Complex.normSq_apply]
-      nlinarith [hw]
+  have himage : (↑) '' idealRegion a b = Complex.measurableEquivRealProd ⁻¹' R :=
+    image_idealRegion_eq_preimage hsqrt
   -- the integrand and its integral in `y` over `[√(1 - x²), ∞)`
   set F : ℝ × ℝ → ℝ≥0∞ := fun p ↦ (((1 / ‖p.2‖₊) ^ 2 : ℝ≥0) : ℝ≥0∞) with hF
   have hFm : Measurable F := by fun_prop
@@ -137,7 +146,7 @@ private theorem volume_idealRegion_of_lt {a b : ℝ} (ha : -1 < a) (hb : b < 1) 
     hcont.integrableOn_Icc
     (ae_restrict_of_forall_mem measurableSet_Icc fun x _ ↦ by positivity),
     integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le hab,
-    integral_one_div_sqrt_one_sub_sq ⟨ha, hab.trans_lt hb⟩ ⟨ha.trans_le hab, hb⟩,
+    integral_one_div_sqrt_one_sub_sq,
     Real.arccos_eq_pi_div_two_sub_arcsin,
     Real.arccos_eq_pi_div_two_sub_arcsin]
   ring_nf
@@ -250,11 +259,18 @@ theorem idealRegionAbove_eq_smul {c r : ℝ} (hr : 0 < r) (a b : ℝ) :
     sub_le_sub_iff_right, le_div_iff₀ (by positivity), one_mul]
 
 /-- The area of a hyperbolic triangle with a vertex at infinity, for a general semicircle, for
-`c - r ≤ a ≤ b ≤ c + r`. -/
-theorem volume_idealRegionAbove {c r a b : ℝ} (hr : 0 < r) (ha : c - r ≤ a) (hab : a ≤ b)
-    (hb : b ≤ c + r) :
+`c - r ≤ a` and `b ≤ c + r`; for `b < a` the region is empty and both sides are `0`. -/
+theorem volume_idealRegionAbove {c r a b : ℝ} (hr : 0 < r) (ha : c - r ≤ a) (hb : b ≤ c + r) :
     volume (idealRegionAbove c r a b) =
       ENNReal.ofReal (Real.arccos ((a - c) / r) - Real.arccos ((b - c) / r)) := by
+  rcases le_or_gt a b with hab | hab
+  swap
+  · have hempty : idealRegionAbove c r a b = ∅ :=
+      Set.eq_empty_of_forall_notMem fun z hz ↦ by
+        have := (mem_idealRegionAbove_iff c r a b z).1 hz
+        linarith [this.1, this.2.1]
+    rw [hempty, measure_empty, eq_comm, ENNReal.ofReal_eq_zero, sub_nonpos]
+    exact Real.arccos_le_arccos ((div_le_div_iff_of_pos_right hr).2 (by linarith))
   rw [idealRegionAbove_eq_smul hr, MeasureTheory.measure_smul, volume_idealRegion]
   · rw [le_div_iff₀ hr]
     linarith

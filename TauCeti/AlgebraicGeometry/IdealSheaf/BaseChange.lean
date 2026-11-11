@@ -24,7 +24,17 @@ affine opens `W ⊆ S` and `U ⊆ f⁻¹ W`, the quotient `Γ(X, U) ⧸ I(U)` is
 the restricted subscheme morphism (`TauCeti.flat_resLE_subschemeι_iff`).
 
 The ideal sheaf of a closed immersion pulled back along any pullback square is the inverse image
-of its ideal sheaf (`AlgebraicGeometry.Scheme.IdealSheafData.ker_eq_comap_of_isPullback`). In
+of its ideal sheaf (`AlgebraicGeometry.Scheme.IdealSheafData.ker_eq_comap_of_isPullback`). Along a
+closed immersion `j`, pulling back is therefore a left inverse to pushing forward
+(`AlgebraicGeometry.Scheme.IdealSheafData.comap_map_of_isClosedImmersion`,
+`AlgebraicGeometry.Scheme.Hom.comap_ker_comp_of_isClosedImmersion`), while pushing forward an
+inverse image recovers the supremum with `j.ker`
+(`AlgebraicGeometry.Scheme.IdealSheafData.map_comap_of_isClosedImmersion`). In
+
+of its ideal sheaf (`AlgebraicGeometry.Scheme.IdealSheafData.ker_eq_comap_of_isPullback`), and
+the same holds for the ideal sheaf of any quasi-compact morphism pulled back along an open
+immersion
+(`AlgebraicGeometry.Scheme.IdealSheafData.ker_eq_comap_of_isPullback_of_isOpenImmersion`). In
 particular, for a section `s` of `f : X ⟶ S` which is a closed immersion, the ideal sheaf of its
 base change `T ⟶ X ×_S T` along `g : T ⟶ S` is the inverse image of the ideal sheaf of `s`
 (`CategoryTheory.SplitEpi.ker_pullback_section`), and the same holds for the product of the
@@ -102,6 +112,69 @@ the inverse image of the ideal sheaf of `i`. -/
 theorem ker_eq_comap_of_isPullback {P Y Z : Scheme.{u}} {i' : P ⟶ X} {g : P ⟶ Z} {f : X ⟶ Y}
     (i : Z ⟶ Y) [IsClosedImmersion i] (h : IsPullback i' g f i) : i'.ker = i.ker.comap f := by
   rw [← h.isoPullback_hom_fst, Scheme.Hom.ker_comp_of_isIso, ker_fst_of_isClosedImmersion]
+
+/-- Pulling the kernel ideal sheaf of any morphism `f` back along `f` itself gives `⊥`. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Hom.comap_ker_self {Y : Scheme.{u}} (f : X ⟶ Y) :
+    f.ker.comap f = ⊥ :=
+  le_bot_iff.mp (le_map_iff_comap_le.mp (map_bot f).symm.le)
+
+/-- Pushing an ideal sheaf forward along a closed immersion `j` and pulling back along `j` recovers
+the original ideal sheaf, since `j` is a monomorphism so the closed subscheme of `I` is the base
+change along `j` of its image in the target. -/
+@[simp]
+theorem comap_map_of_isClosedImmersion {Y : Scheme.{u}} (I : X.IdealSheafData) (j : X ⟶ Y)
+    [IsClosedImmersion j] : (I.map j).comap j = I := by
+  have hsq : IsPullback I.subschemeι (𝟙 _) j (I.subschemeι ≫ j) :=
+    (IsPullback.of_horiz_isIso_mono (fst := 𝟙 _) (snd := I.subschemeι)
+      (f := I.subschemeι ≫ j) (g := j) ⟨by simp⟩).flip
+  simpa [IdealSheafData.map] using (ker_eq_comap_of_isPullback (I.subschemeι ≫ j) hsq).symm
+
+/-- Pulling the kernel ideal sheaf of `i ≫ j` back along a closed immersion `j` recovers `i.ker`. -/
+@[simp]
+theorem _root_.AlgebraicGeometry.Scheme.Hom.comap_ker_comp_of_isClosedImmersion {Y Z : Scheme.{u}}
+    (i : Z ⟶ X) (j : X ⟶ Y) [IsClosedImmersion j] : (i ≫ j).ker.comap j = i.ker := by
+  rw [Scheme.Hom.ker_comp, comap_map_of_isClosedImmersion]
+
+/-- For ideal sheaves `I ≤ J`, the ideal sheaf of the inclusion `V(J) ⟶ V(I)` is the inverse image
+of `J` along `V(I) ⟶ X`. -/
+@[simp]
+theorem ker_inclusion {I J : X.IdealSheafData} (h : I ≤ J) :
+    (inclusion h).ker = J.comap I.subschemeι := by
+  rw [← Scheme.Hom.comap_ker_comp_of_isClosedImmersion (inclusion h) I.subschemeι,
+    inclusion_subschemeι, ker_subschemeι]
+
+/-- Pushing the inverse image of `J` along a closed immersion `j` back forward along `j` recovers
+`J ⊔ j.ker`. -/
+@[simp]
+theorem map_comap_of_isClosedImmersion {Y : Scheme.{u}} (J : Y.IdealSheafData) (j : X ⟶ Y)
+    [IsClosedImmersion j] : (J.comap j).map j = J ⊔ j.ker := by
+  let J' : Y.IdealSheafData := J ⊔ j.ker
+  have hJ' : J'.comap j = J.comap j := by simp [J']
+  let u : J'.subscheme ⟶ X :=
+    IsClosedImmersion.lift j J'.subschemeι (le_sup_right.trans_eq J'.ker_subschemeι.symm)
+  have hu : u ≫ j = J'.subschemeι :=
+    IsClosedImmersion.lift_fac j J'.subschemeι (le_sup_right.trans_eq J'.ker_subschemeι.symm)
+  have : IsClosedImmersion (u ≫ j) := hu.symm ▸ inferInstance
+  have : IsClosedImmersion u := .of_comp_isClosedImmersion u j
+  have huker : u.ker = (J.comap j).subschemeι.ker := by
+    rw [← Scheme.Hom.comap_ker_comp_of_isClosedImmersion u j, hu, J'.ker_subschemeι, hJ',
+      ker_subschemeι]
+  let e : (J.comap j).subscheme ⟶ J'.subscheme :=
+    IsClosedImmersion.lift u (J.comap j).subschemeι huker.le
+  have : IsIso e := IsClosedImmersion.isIso_lift u (J.comap j).subschemeι huker
+  have he : e ≫ J'.subschemeι = (J.comap j).subschemeι ≫ j := by
+    rw [← hu, ← Category.assoc, IsClosedImmersion.lift_fac]
+  rw [IdealSheafData.map, ← he, Scheme.Hom.ker_comp_of_isIso, J'.ker_subschemeι]
+
+/-- **Ideal sheaves of quasi-compact morphisms restrict to opens.** If `f' : U ⟶ V` is the base
+change of a quasi-compact morphism `f : X ⟶ Y` along an open immersion `iV : V ⟶ Y`, then the
+ideal sheaf of `f'` is the inverse image of the ideal sheaf of `f`. -/
+theorem ker_eq_comap_of_isPullback_of_isOpenImmersion {U V Y : Scheme.{u}} {f : X ⟶ Y}
+    {f' : U ⟶ V} {iU : U ⟶ X} (iV : V ⟶ Y) [IsOpenImmersion iV] [QuasiCompact f]
+    (H : IsPullback f' iU iV f) : f'.ker = f.ker.comap iV := by
+  ext W : 2
+  rw [ideal_comap_of_isOpenImmersion, ker_ideal_of_isPullback_of_isOpenImmersion f f' iU iV H]
 
 /-- **Closed subschemes are stable under base change.** If `X' ⟶ X` is the base change of
 `X ⟶ S` along `S' ⟶ S`, then the closed subscheme of the inverse image `I.comap g`, as a scheme

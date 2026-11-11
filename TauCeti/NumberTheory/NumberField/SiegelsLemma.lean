@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.House
+import TauCeti.Algebra.Order.BigOperators.Sum.UnitWeights
+import TauCeti.Algebra.Order.Floor.Ring
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
@@ -176,16 +178,13 @@ theorem exists_ne_zero_int_vec_abs_le_of_house_le (a : Matrix α β (𝓞 K)) {A
     rw [mem_Icc] at hx
     exact ⟨hx.1 j, hx.2 j⟩
   have hL {x : β → ℤ} (hx : x ∈ T) (p : α × index K) : |L x p| ≤ n * A * B := by
-    calc |L x p| ≤ ∑ j, |(x j : ℝ) * c p j| := abs_sum_le_sum_abs _ _
-      _ ≤ ∑ _j : β, A * B := by
-        gcongr with j
-        have := hT hx j
-        rw [abs_mul, mul_comm A]
-        gcongr
-        · rw [abs_of_nonneg (by exact_mod_cast this.1)]
-          exact_mod_cast this.2
-        · exact hc p j
-      _ = n * A * B := by simp [n, mul_assoc]
+    refine (Finset.abs_sum_le_card_nsmul (s := Finset.univ) (B := (B : ℝ) * A)
+      fun j _ ↦ ?_).trans_eq (by simp [n]; ring)
+    obtain ⟨h₀, h₁⟩ := hT hx j
+    rw [abs_mul]
+    refine mul_le_mul ?_ (hc p j) (abs_nonneg _) (by positivity)
+    rw [abs_of_nonneg (by exact_mod_cast h₀)]
+    exact_mod_cast h₁
   have hmaps (x : β → ℤ) (hx : x ∈ T) : f x ∈ S := by
     simp only [S, Fintype.mem_piFinset, mem_range, Nat.lt_succ_iff]
     intro p
@@ -194,34 +193,29 @@ theorem exists_ne_zero_int_vec_abs_le_of_house_le (a : Matrix α β (𝓞 K)) {A
   have hlt : #S < #T := by
     have : Fintype.card (index K) = finrank ℚ K := by
       rw [← mixedEmbedding.finrank K, finrank_eq_card_basis (stdBasis K)]
-    have hS : #S = (⌊3 * n * A * B⌋₊ + 1) ^ D := by
-      simp [S, Fintype.card_piFinset, Fintype.card_prod, this, hD_def, mul_comm]
-    have hT : #T = (B + 1) ^ n := by simp [T, Pi.card_Icc, n]
-    rw [hS, hT]
-    exact Real.floor_mul_add_one_pow_lt hnA hcard (Nat.lt_floor_add_one _)
+    have hγ : Fintype.card (α × index K) = D := by
+      simp [Fintype.card_prod, this, hD_def, mul_comm]
+    simpa [S, T, Fintype.card_piFinset, Pi.card_Icc, hγ] using
+      Real.floor_mul_add_one_pow_lt hnA hcard (Nat.lt_floor_add_one _)
   obtain ⟨x, hx, y, hy, hne, hxy⟩ := exists_ne_map_eq_of_card_lt_of_maps_to hlt hmaps
   refine ⟨x - y, sub_ne_zero.mpr hne, ?_, fun j ↦ ?_⟩
   · -- Two points in the same cell differ by an integer vector on which every form is `< 2 / 3`.
     funext i
     refine RingOfIntegers.eq_zero_of_abs_stdBasis_repr_le fun r ↦ ?_
-    have hfloor := congr_arg (fun k : ℕ ↦ (k : ℤ)) (congr_fun hxy (i, r))
-    simp only [f] at hfloor
-    rw [Int.natCast_floor_eq_floor (by linarith [(abs_le.mp (hL hx (i, r))).1]),
-      Int.natCast_floor_eq_floor (by linarith [(abs_le.mp (hL hy (i, r))).1])] at hfloor
-    have hcell := Int.abs_sub_lt_one_of_floor_eq_floor hfloor
+    have hcell := TauCeti.abs_sub_lt_one_div_of_natFloor_mul_eq (t := 3 / 2) (by norm_num)
+      (by linarith [(abs_le.mp (hL hx (i, r))).1]) (by linarith [(abs_le.mp (hL hy (i, r))).1])
+      (congr_fun hxy (i, r))
+    rw [add_sub_add_right_eq_sub] at hcell
     have hsub : ∑ j, ((x - y) j : ℝ) * (stdBasis K).repr (mixedEmbedding K (a i j : K)) r =
         L x (i, r) - L y (i, r) := by
       simp [L, c, sub_mul, sum_sub_distrib]
     rw [stdBasis_repr_mulVec_intCast, hsub]
-    rw [← sub_mul, add_sub_add_right_eq_sub, abs_mul, abs_of_pos (by norm_num : (0 : ℝ) < 3 / 2)]
-      at hcell
     linarith
   · obtain ⟨hx₁, hx₂⟩ := hT hx j
     obtain ⟨hy₁, hy₂⟩ := hT hy j
     calc |((x - y) j : ℝ)| ≤ B := by
-          have : |x j - y j| ≤ (B : ℤ) := abs_le.mpr ⟨by linarith, by linarith⟩
           rw [Pi.sub_apply]
-          exact_mod_cast this
+          exact_mod_cast (abs_le.mpr ⟨by linarith, by linarith⟩ : |x j - y j| ≤ (B : ℤ))
       _ ≤ _ := Nat.floor_le (by positivity)
 
 omit [NumberField K] [Fintype α] in

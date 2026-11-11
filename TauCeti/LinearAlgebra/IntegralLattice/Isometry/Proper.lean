@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Class
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Group
+public import TauCeti.LinearAlgebra.IntegralLattice.Scaling
 import TauCeti.Algebra.Module.Lattice
 import TauCeti.LinearAlgebra.Reflection
 
@@ -41,6 +42,8 @@ In rank zero every isometry is proper, and the class of `L` is a single proper c
   proper class.
 * `TauCeti.IntegralLattice.properIsometryQuotientEquiv`: transport of proper classes along an
   ambient linear equivalence.
+* `TauCeti.IntegralLattice.instMulActionIntProperIsometryQuotient`: scaling the forms by an
+  integer acts on proper classes.
 
 ## Main results
 
@@ -48,6 +51,9 @@ In rank zero every isometry is proper, and the class of `L` is a single proper c
   when it lies in `SO(L)`.
 * `TauCeti.IntegralLattice.Isometry.isProper_trans_iff`: a composite of isometries is proper
   exactly when both factors are proper or both are improper.
+* `TauCeti.IntegralLattice.Isometry.isProper_smul_iff` and
+  `TauCeti.IntegralLattice.natCard_specialOrthogonalGroup_smul`: scaling the forms by an integer
+  preserves properness, and by a nonzero integer it keeps the order of `SO(L)`.
 * `TauCeti.IntegralLattice.properIsometryClass_eq_properIsometryClass_iff_of_index_eq_two`: when
   `L` has an improper self-isometry, the proper class of `L` is its class.
 * `TauCeti.IntegralLattice.preimage_toIsometryQuotient_eq_pair` and
@@ -458,5 +464,72 @@ theorem ProperIsometryQuotient.exists_isProper_transport_out (d : ProperIsometry
     ← properIsometryQuotientEquiv_properIsometryClass, properIsometryClass_out]
 
 end ProperIsometryQuotient
+
+section Scaling
+
+/-! ### Scaling the forms
+
+Scaling the forms by an integer keeps every ambient equivalence, so it preserves properness and
+descends to proper classes. -/
+
+/-- An isometry and its scaling by an integer have the same ambient equivalence, so one is proper
+exactly when the other is. -/
+@[simp]
+theorem Isometry.isProper_smul_iff {L M : IntegralLattice V} (n : ℤ) (e : Isometry L M) :
+    (e.smul n).IsProper ↔ e.IsProper := by
+  have h : ((e.smul n : Isometry (n • L) (n • M)) : V ≃ₗ[ℚ] V) = e :=
+    LinearEquiv.ext fun x ↦ by simp
+  rw [Isometry.isProper_iff, Isometry.isProper_iff, h]
+
+/-- Scaling by a nonzero integer does not change the order of the special isometry group. -/
+theorem natCard_specialOrthogonalGroup_smul {n : ℤ} (hn : n ≠ 0) (L : IntegralLattice V) :
+    Nat.card (specialOrthogonalGroup (n • L)) = Nat.card (specialOrthogonalGroup L) :=
+  Nat.card_congr <| ((Isometry.smulEquiv hn).subtypeEquiv fun e ↦ by
+    rw [← Isometry.isProper_iff_mem_specialOrthogonalGroup,
+      ← Isometry.isProper_iff_mem_specialOrthogonalGroup, Isometry.smulEquiv_apply,
+      Isometry.isProper_smul_iff]).symm
+
+/-- Integer scaling of forms descends to proper classes, since the scaling of a proper isometry
+is proper. -/
+noncomputable instance instSMulIntProperIsometryQuotient : SMul ℤ (ProperIsometryQuotient V) :=
+  ⟨fun n d ↦ (n • d.out).properIsometryClass⟩
+
+/-- The scaling of the proper class of a lattice is the proper class of its scaling. -/
+@[simp]
+theorem smul_properIsometryClass (n : ℤ) (L : IntegralLattice V) :
+    n • L.properIsometryClass = (n • L).properIsometryClass := by
+  obtain ⟨e, he⟩ := properIsometryClass_eq_properIsometryClass_iff.mp
+    (properIsometryClass_out L.properIsometryClass)
+  exact ((Isometry.isProper_smul_iff n e).mpr he).properIsometryClass_eq
+
+/-- Integer scaling of forms is an action of the multiplicative monoid `ℤ` on proper classes. -/
+noncomputable instance instMulActionIntProperIsometryQuotient :
+    MulAction ℤ (ProperIsometryQuotient V) where
+  one_smul d := by
+    obtain ⟨L, rfl⟩ := properIsometryClass_surjective d
+    rw [smul_properIsometryClass, one_smul]
+  mul_smul m n d := by
+    obtain ⟨L, rfl⟩ := properIsometryClass_surjective d
+    rw [smul_properIsometryClass, smul_properIsometryClass, smul_properIsometryClass, mul_smul]
+
+/-- The class containing the scaling of a proper class is the scaling of its class. -/
+@[simp]
+theorem ProperIsometryQuotient.toIsometryQuotient_smul (n : ℤ) (d : ProperIsometryQuotient V) :
+    (n • d).toIsometryQuotient = n • d.toIsometryQuotient := by
+  obtain ⟨L, rfl⟩ := properIsometryClass_surjective d
+  simp
+
+/-- Scaling by a nonzero integer is injective on proper classes. -/
+theorem smul_properIsometryQuotient_injective {n : ℤ} (hn : n ≠ 0) :
+    Function.Injective (n • · : ProperIsometryQuotient V → ProperIsometryQuotient V) := by
+  intro c d hcd
+  obtain ⟨L, rfl⟩ := properIsometryClass_surjective c
+  obtain ⟨M, rfl⟩ := properIsometryClass_surjective d
+  simp only [smul_properIsometryClass, properIsometryClass_eq_properIsometryClass_iff] at hcd ⊢
+  obtain ⟨e, he⟩ := hcd
+  refine ⟨e.ofSmul hn, (Isometry.isProper_smul_iff n _).mp ?_⟩
+  rwa [Isometry.smul_ofSmul]
+
+end Scaling
 
 end TauCeti.IntegralLattice

@@ -71,7 +71,6 @@ theorem tendsto_integral_inner_polarDensity_of_tendsto_integral
   have hfK : tsupport f ⊆ K := self_subset_cthickening _
   obtain ⟨C, hC⟩ := hbound K hK hδΩ
   let M := max C 0 + (variationMeasure μ Ω u).real (((↑) : Ω → E) ⁻¹' K) + 1
-  have hM : 0 < M := by positivity
   refine Metric.tendsto_nhds.2 fun ε hε => ?_
   let η := ε / (M + 1)
   have hη : 0 < η := div_pos hε (by positivity)
@@ -85,9 +84,9 @@ theorem tendsto_integral_inner_polarDensity_of_tendsto_integral
       neg_neg] at h
     exact h
   filter_upwards [hC, (Metric.tendsto_nhds.1 hψconv) η hη] with i hi hdist
-  have hleft := dist_integral_inner_polarDensity_le (hv i) (hvfin i) hf ψ.continuous
+  have hleft := dist_integral_inner_polarDensity_le (μ := μ) (u := v i) hf ψ.continuous
     hK hδΩ hfK hψK (fun x => (dist_comm _ _).trans_le (hψ x))
-  have hright := dist_integral_inner_polarDensity_le hu hufin ψ.continuous hf
+  have hright := dist_integral_inner_polarDensity_le (μ := μ) (u := u) ψ.continuous hf
     hK hδΩ hψK hfK hψ
   refine (dist_triangle4 _
     (∫ x : Ω, ⟪ψ x, polarDensity μ Ω (v i) x⟫ ∂variationMeasure μ Ω (v i))
@@ -135,8 +134,8 @@ theorem tendsto_integral_inner_polarDensity_of_tendsto_lintegral_enorm_sub
   exact MeasureTheory.tendsto_integral_smul_of_tendsto_lintegral_enorm_sub
     (.of_forall fun x => (ψ : E →ᵇ ℝ).norm_coe_le_norm x)
     (.of_forall fun x hx => image_eq_zero_of_notMem_tsupport hx)
-    (.of_forall fun i => integrable_smul_of_locallyIntegrableOn (hv i) ψ)
-    (integrable_smul_of_locallyIntegrableOn hu ψ).aestronglyMeasurable
+    (.of_forall fun i => ψ.integrable_smul (hv i))
+    (ψ.integrable_smul hu).aestronglyMeasurable
     (hconv _ ψ.hasCompactSupport ψ.tsupport_subset)
 
 end TauCeti

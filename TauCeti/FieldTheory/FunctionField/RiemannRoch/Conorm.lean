@@ -7,7 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Divisor.Conorm
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Basic
-import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.FieldTheory.RatFunc.Transcendental
 import TauCeti.RingTheory.Algebraic.LinearIndependent
 
@@ -84,19 +84,22 @@ theorem mem_riemannRochSpace_algebraMap_iff_of_coeff_eq [Algebra.IsIntegral F F'
     nlinarith
   · intro h P'
     rw [hD, Place.ord_algebraMap_restrict k F P']
-    have he : (0 : ℤ) < Place.ramificationIdx F P' := by
-      exact_mod_cast Place.ramificationIdx_pos F P'
     nlinarith [h (P'.restrict k F)]
 
+omit [Algebra.IsIntegral k k'] in
 /-- **Pole bounds descend along integral extensions**: a function `f` of `F` lies in
 `L(n (z)_∞)` precisely when its image in `F'` lies in the Riemann–Roch space of `n` times the pole
-divisor of the image of `z`. The extensions `F' / F` and `k' / k` need only be integral, not
-finite. -/
+divisor of the image of `z`. The extension `F' / F` need only be integral, not finite; the
+algebraicity of `k' / k` is then automatic. -/
 theorem mem_riemannRochSpace_nsmul_poles_map_iff [Algebra.IsIntegral F F']
     (hF : IsFunctionField k F) (hF' : IsFunctionField k' F') (n : ℕ) (z : Fˣ) (f : F) :
     algebraMap F F' f ∈
         riemannRochSpace (n • Divisor.poles hF' (Units.map (algebraMap F F' : F →* F') z)) ↔
       f ∈ riemannRochSpace (n • Divisor.poles hF z) := by
+  -- the base extension is algebraic, hence integral, because both fields have transcendence
+  -- degree one
+  have : Algebra.IsAlgebraic k k' := hF.isAlgebraic_baseExtension hF'
+  have : Algebra.IsIntegral k k' := Algebra.IsAlgebraic.isIntegral
   -- at a place `P'` over `P` the pole order of `z` scales by `e(P' ∣ P) ≥ 0`
   refine mem_riemannRochSpace_algebraMap_iff_of_coeff_eq hF' (fun P' ↦ ?_) f
   simp only [WeilDivisor.coeff_nsmul, Divisor.coeff_poles, Units.coe_map,
@@ -107,6 +110,7 @@ theorem mem_riemannRochSpace_nsmul_poles_map_iff [Algebra.IsIntegral F F']
   rw [← hmax]
   ring
 
+omit [Algebra.IsIntegral k k'] in
 /-- **Enlarging the constants does not change `L(n (z)_∞)`**: for an algebraic extension `k'` of
 `k` inside `F`, for instance the full constant field `algebraicClosure k F`, the Riemann–Roch space
 of `n` times the pole divisor of `z`, computed over `k'`, is the one computed over `k`. -/
@@ -138,7 +142,7 @@ theorem mem_span_pair_of_mem_adjoin (hF : IsFunctionField k F) {x : F}
       Nat.cast_one]
   have hdim : Divisor.dim (Divisor.poles hK₀ u) ≤ 2 := by
     have := Divisor.dim_le_degree_posPart_add_one hK₀ hex₀ (Divisor.poles hK₀ u)
-    rw [posPart_eq_self.mpr (Divisor.isEffective_poles hK₀ u).zero_le, hdeg] at this
+    rw [posPart_eq_self.mpr (Divisor.poles_nonneg hK₀ u), hdeg] at this
     omega
   -- So `L((x)_∞) = k + k x` inside `k(x)`.
   have hspan : Submodule.span k {(1 : k⟮x⟯), x₀} = riemannRochSpace (Divisor.poles hK₀ u) := by
@@ -149,7 +153,7 @@ theorem mem_span_pair_of_mem_adjoin (hF : IsFunctionField k F) {x : F}
     have := finiteDimensional_riemannRochSpace hK₀ (Divisor.poles hK₀ u)
     refine Submodule.eq_of_le_of_finrank_le ?_ (by rw [hcard, ← Divisor.dim_def]; exact hdim)
     rw [Submodule.span_le, Set.insert_subset_iff, Set.singleton_subset_iff]
-    exact ⟨one_mem_riemannRochSpace_iff.mpr (Divisor.isEffective_poles hK₀ u).zero_le,
+    exact ⟨one_mem_riemannRochSpace_iff.mpr (Divisor.poles_nonneg hK₀ u),
       mem_riemannRochSpace_poles hK₀ u⟩
   -- The function `z` descends to `L((x)_∞)` computed in `k(x)`.
   have hw : (⟨z, hzx⟩ : k⟮x⟯) ∈ riemannRochSpace (Divisor.poles hK₀ u) := by
@@ -195,6 +199,7 @@ end FiniteFibres
 
 variable [FiniteDimensional F F']
 
+omit [Algebra.IsIntegral k k'] in
 /-- An `F`-linearly independent family of `r` functions in `L(C)` multiplies the dimension of
 the Riemann–Roch space of any divisor `A` of `F`: `r ℓ(A) ≤ [k' : k] ℓ(Con A + C)`, where `ℓ(A)`
 is a dimension over `k` and `ℓ(Con A + C)` one over `k'`.  The products of a `k`-basis of `L(A)`
@@ -207,6 +212,7 @@ theorem Divisor.card_mul_dim_le_finrank_mul_dim_conorm_add [FiniteDimensional k 
     (A : Divisor k F) :
     Fintype.card ι * Divisor.dim A ≤
       Module.finrank k k' * Divisor.dim (Divisor.conorm k' F' A + C) := by
+  have : Algebra.IsIntegral k k' := Algebra.IsIntegral.of_finite k k'
   have : Algebra.IsAlgebraic F F' := Algebra.IsAlgebraic.of_finite F F'
   have hF : IsFunctionField k F := (hF'.of_finiteDimensional (k := k)).of_isAlgebraic_top
   set V := riemannRochSpace (Divisor.conorm k' F' A + C)

@@ -71,15 +71,12 @@ theorem fieldUnitSignature_ker :
     fieldUnitSignature u = 1 ↔ IsTotallyPositive (u : K) := by
   rw [← MonoidHom.mem_ker, fieldUnitSignature_ker, mem_totallyPositiveUnits]
 
-variable [NumberField K]
-
 /-- The **signature homomorphism** on the integer units `(𝓞 K)ˣ`, the restriction of
 `fieldUnitSignature` along the inclusion `(𝓞 K)ˣ → Kˣ`. -/
 noncomputable def unitSignature :
     (𝓞 K)ˣ →* ({w : InfinitePlace K // w.IsReal} → ℝˣ ⧸ Units.posSubgroup ℝ) :=
   fieldUnitSignature.comp (Units.map (algebraMap (𝓞 K) K).toMonoidHom)
 
-omit [NumberField K] in
 /-- Componentwise evaluation of the integer-unit signature: the class, in the sign group, of the
 image of `u` under the real embedding `w` composed with `(𝓞 K) → K`. -/
 @[simp] theorem unitSignature_apply (u : (𝓞 K)ˣ) (w : {w : InfinitePlace K // w.IsReal}) :
@@ -87,7 +84,6 @@ image of `u` under the real embedding `w` composed with `(𝓞 K) → K`. -/
       (Units.map (algebraMap (𝓞 K) K).toMonoidHom u) : ℝˣ ⧸ Units.posSubgroup ℝ) := by
   simp only [unitSignature, MonoidHom.comp_apply, fieldUnitSignature_apply]
 
-omit [NumberField K] in
 /-- The signature of an integer unit is the field-unit signature of its image in `Kˣ`. -/
 theorem unitSignature_eq_fieldUnitSignature (u : (RingOfIntegers K)ˣ) :
     unitSignature u =
@@ -95,14 +91,12 @@ theorem unitSignature_eq_fieldUnitSignature (u : (RingOfIntegers K)ˣ) :
   funext w
   rw [unitSignature_apply, fieldUnitSignature_apply]
 
-omit [NumberField K] in
 /-- An integer unit has trivial signature exactly when its image in `K` is totally positive. -/
 @[simp] theorem unitSignature_eq_one_iff {u : (𝓞 K)ˣ} :
     unitSignature u = 1 ↔ IsTotallyPositive (algebraMap (𝓞 K) K (u : 𝓞 K)) := by
   simp only [unitSignature, MonoidHom.comp_apply, fieldUnitSignature_eq_one_iff, Units.coe_map,
     RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
 
-omit [NumberField K] in
 /-- The kernel of the integer-unit signature is exactly the totally positive integer units. -/
 theorem unitSignature_ker :
     MonoidHom.ker (unitSignature (K := K)) = totallyPositiveIntegerUnits := by

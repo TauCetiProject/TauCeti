@@ -58,7 +58,8 @@ The dot-action versions follow by applying these to the `ρ`-shift `x = λ + ρ`
   `TauCeti.weylGroup_smul_eq_self_of_dominantIntegral`: **the Weyl orbit of a dominant integral
   weight lies below it in the positive root cone**, so a dominant integral weight is the unique
   dominant integral weight in its Weyl orbit;
-  `TauCeti.sub_dotAction_mem_posRootCone_of_dominantIntegral` is the dot-action form.
+  `TauCeti.sub_dotAction_mem_posRootCone_of_dominantIntegral` and
+  `TauCeti.dotAction_eq_self_of_dominantIntegral` are the dot-action forms.
 * `TauCeti.coeff_weylNumerator_self_of_dominantIntegral`: **`N(λ)` has coefficient `1` at `λ`**,
   and `TauCeti.coeff_weylNumerator_eq_zero_of_dominantIntegral_of_ne`: **coefficient `0` at every
   other dominant integral weight**, with
@@ -222,10 +223,11 @@ Even a weak dominance condition on the image `w • x` suffices: `x` itself is d
 dominant integral weights (`TauCeti.eq_one_of_smul_eq_self_of_forall_coroot'_eq_natCast_add_one`)
 then forces `w = 1`. -/
 theorem eq_one_of_forall_coroot'_smul_eq_natCast_of_forall_coroot'_eq_natCast_add_one
-    [P.flip.IsReduced] {w : P.weylGroup}
+    {w : P.weylGroup}
     (hx : ∀ i ∈ b.support, ∃ n : ℕ, P.coroot' i x = (n : R) + 1)
     (hwx : ∀ i ∈ b.support, ∃ n : ℕ, P.coroot' i (w • x) = (n : R)) :
     w = 1 := by
+  have := P.flip_isReduced
   have hx' : ∀ i ∈ b.support, ∃ n : ℕ, P.coroot' i x = (n : R) := fun i hi ↦ by
     obtain ⟨n, hn⟩ := hx i hi
     exact ⟨n + 1, by rw [hn]; push_cast; ring⟩
@@ -257,6 +259,19 @@ theorem sub_dotAction_mem_posRootCone_of_dominantIntegral
     exact ⟨n + 1, by rw [hn]; push_cast; ring⟩
   have h := sub_weylGroup_smul_mem_posRootCone_of_dominantIntegral hshift w
   rwa [← dotAction_add_weylVector P b w lam, add_sub_add_right_eq_sub] at h
+
+/-- **A dominant integral weight is the only dominant integral weight in its dot orbit**: if both
+`λ` and `w ⬝ λ` take natural values on every simple coroot, then `w ⬝ λ = λ`, because each lies
+below the other in the pointed positive root cone. -/
+theorem dotAction_eq_self_of_dominantIntegral {w : P.weylGroup}
+    (hlam : ∀ i ∈ b.support, ∃ n : ℕ, P.coroot' i lam = (n : R))
+    (hwlam : ∀ i ∈ b.support, ∃ n : ℕ, P.coroot' i (dotAction P b w lam) = (n : R)) :
+    dotAction P b w lam = lam := by
+  have hdown := sub_dotAction_mem_posRootCone_of_dominantIntegral hlam w
+  have hup : dotAction P b w lam - lam ∈ posRootCone P b := by
+    simpa only [dotAction_inv_dotAction] using
+      sub_dotAction_mem_posRootCone_of_dominantIntegral hwlam w⁻¹
+  exact sub_eq_zero.mp (eq_zero_of_add_eq_zero_of_mem_posRootCone P b hup hdown (by abel))
 
 variable [P.flip.IsReduced]
 
@@ -304,15 +319,8 @@ theorem coeff_weylNumerator_eq_zero_of_dominantIntegral_of_ne
     (hx : ∀ i ∈ b.support, ∃ n : ℕ, P.coroot' i x = (n : R)) (hne : x ≠ lam) :
     (weylNumerator P b lam).coeff x = 0 := by
   refine coeff_weylNumerator_eq_zero P b fun w h ↦ hne ?_
-  have hdown : lam - x ∈ posRootCone P b := by
-    rw [← h]
-    exact sub_dotAction_mem_posRootCone_of_dominantIntegral hlam w
-  have hup : x - lam ∈ posRootCone P b := by
-    have hxl : dotAction P b w⁻¹ x = lam := by rw [← h, dotAction_inv_dotAction]
-    have hinv := sub_dotAction_mem_posRootCone_of_dominantIntegral (lam := x) hx w⁻¹
-    rwa [hxl] at hinv
-  have := eq_zero_of_add_eq_zero_of_mem_posRootCone P b hup hdown (by abel)
-  rwa [sub_eq_zero] at this
+  subst h
+  exact dotAction_eq_self_of_dominantIntegral hlam hx
 
 variable [P.flip.IsReduced]
 

@@ -35,11 +35,9 @@ on a diagram and with the Burau representation of a braid word. What is fixed he
 normalisation those routes must match, pinned by the trefoil and figure-eight computations at the
 end of the file.
 
-Everything is stated over an arbitrary commutative ring and an arbitrary index type; the
-knot-theoretic case is `R = ℤ` and `ι = Fin (2 * g)`.
-
-This is the Seifert-matrix route to the Alexander polynomial called for by Layer 4 (knot theory)
-of the GeometricTopology roadmap.
+Everything is stated over an arbitrary commutative ring (the enlargements over any type with
+`0` and `1`) and an arbitrary index type; the knot-theoretic case is `R = ℤ` and
+`ι = Fin (2 * g)`.
 
 ## Main definitions
 
@@ -84,7 +82,11 @@ open Matrix LaurentPolynomial
 
 namespace TauCeti.KnotTheory
 
-variable {R : Type*} [CommRing R] {ι : Type*}
+variable {R : Type*} {ι : Type*}
+
+section CommRing
+
+variable [CommRing R]
 
 /-- The Alexander matrix `T • V - Vᵀ` of a square matrix `V` over `R`, with entries in the ring
 `R[T;T⁻¹]` of Laurent polynomials.
@@ -144,6 +146,12 @@ theorem alexanderMatrix_fromBlocks_zero {κ : Type*} (V : Matrix ι ι R) (W : M
       fromBlocks (alexanderMatrix V) 0 0 (alexanderMatrix W) := by
   ext (i | i) (j | j) <;> simp
 
+end CommRing
+
+section Enlargement
+
+variable [Zero R]
+
 /-- The two extra columns of an enlargement: a chosen vector `ξ` in the first, zero in the
 second. -/
 def enlargeBlock (ξ : ι → R) : Matrix ι (Fin 2) R :=
@@ -158,6 +166,8 @@ theorem enlargeBlock_apply_zero (ξ : ι → R) (i : ι) : enlargeBlock ξ i 0 =
 @[simp]
 theorem enlargeBlock_apply_one (ξ : ι → R) (i : ι) : enlargeBlock ξ i 1 = 0 := by
   simp [enlargeBlock]
+
+variable [One R]
 
 /-- The column enlargement of a Seifert matrix by a vector `ξ`, the block matrix
 
@@ -220,17 +230,6 @@ theorem enlargeColumn_apply_inr_one_inr_zero (V : Matrix ι ι R) (ξ : ι → R
 theorem enlargeColumn_apply_inr_one_inr_one (V : Matrix ι ι R) (ξ : ι → R) :
     enlargeColumn V ξ (Sum.inr 1) (Sum.inr 1) = 0 := by
   simp [enlargeColumn]
-
-/-- Ring homomorphisms commute with column enlargement. -/
-@[simp]
-theorem map_enlargeColumn {S : Type*} [CommRing S] (f : R →+* S) (V : Matrix ι ι R)
-    (xi : ι → R) :
-    (enlargeColumn V xi).map f = enlargeColumn (V.map f) (f ∘ xi) := by
-  ext (i | i) (j | j)
-  · simp
-  · fin_cases j <;> simp [Function.comp_apply]
-  · fin_cases i <;> simp
-  · fin_cases i <;> fin_cases j <;> simp
 
 /-- The row enlargement of a Seifert matrix by a vector `η`, the transpose of the column
 enlargement, that is the block matrix
@@ -301,13 +300,6 @@ theorem enlargeRow_apply_inr_one_inr_one (V : Matrix ι ι R) (η : ι → R) :
     enlargeRow V η (Sum.inr 1) (Sum.inr 1) = 0 := by
   simp [enlargeRow]
 
-/-- Ring homomorphisms commute with row enlargement. -/
-@[simp]
-theorem map_enlargeRow {S : Type*} [CommRing S] (f : R →+* S) (V : Matrix ι ι R)
-    (eta : ι → R) :
-    (enlargeRow V eta).map f = enlargeRow (V.map f) (f ∘ eta) := by
-  rw [enlargeRow_def, enlargeRow_def, transpose_map, map_enlargeColumn, transpose_map]
-
 /-- A column enlargement, reindexed onto the canonical finite type of the enlarged size. -/
 def enlargeColumnFin {n : ℕ} (V : Matrix (Fin n) (Fin n) R) (xi : Fin n → R) :
     Matrix (Fin (n + 2)) (Fin (n + 2)) R :=
@@ -328,19 +320,45 @@ theorem enlargeRowFin_def {n : ℕ} (V : Matrix (Fin n) (Fin n) R) (eta : Fin n 
     enlargeRowFin V eta =
       (enlargeRow V eta).submatrix finSumFinEquiv.symm finSumFinEquiv.symm := (rfl)
 
+end Enlargement
+
+section NonAssocSemiring
+
+variable [NonAssocSemiring R] {S : Type*} [NonAssocSemiring S]
+
+/-- Ring homomorphisms commute with column enlargement. -/
+@[simp]
+theorem map_enlargeColumn (f : R →+* S) (V : Matrix ι ι R) (xi : ι → R) :
+    (enlargeColumn V xi).map f = enlargeColumn (V.map f) (f ∘ xi) := by
+  ext (i | i) (j | j)
+  · simp
+  · fin_cases j <;> simp [Function.comp_apply]
+  · fin_cases i <;> simp
+  · fin_cases i <;> fin_cases j <;> simp
+
+/-- Ring homomorphisms commute with row enlargement. -/
+@[simp]
+theorem map_enlargeRow (f : R →+* S) (V : Matrix ι ι R) (eta : ι → R) :
+    (enlargeRow V eta).map f = enlargeRow (V.map f) (f ∘ eta) := by
+  rw [enlargeRow_def, enlargeRow_def, transpose_map, map_enlargeColumn, transpose_map]
+
 /-- Ring homomorphisms commute with canonically reindexed column enlargement. -/
 @[simp]
-theorem map_enlargeColumnFin {S : Type*} [CommRing S] {n : ℕ} (f : R →+* S)
+theorem map_enlargeColumnFin {n : ℕ} (f : R →+* S)
     (V : Matrix (Fin n) (Fin n) R) (xi : Fin n → R) :
     (enlargeColumnFin V xi).map f = enlargeColumnFin (V.map f) (f ∘ xi) := by
   rw [enlargeColumnFin_def, enlargeColumnFin_def, ← submatrix_map, map_enlargeColumn]
 
 /-- Ring homomorphisms commute with canonically reindexed row enlargement. -/
 @[simp]
-theorem map_enlargeRowFin {S : Type*} [CommRing S] {n : ℕ} (f : R →+* S)
+theorem map_enlargeRowFin {n : ℕ} (f : R →+* S)
     (V : Matrix (Fin n) (Fin n) R) (eta : Fin n → R) :
     (enlargeRowFin V eta).map f = enlargeRowFin (V.map f) (f ∘ eta) := by
   rw [enlargeRowFin_def, enlargeRowFin_def, ← submatrix_map, map_enlargeRow]
+
+end NonAssocSemiring
+
+variable [CommRing R]
 
 /-- The Alexander matrix of a column enlargement, in blocks. The bottom-right block is the only
 new content: it is invertible with determinant `T`, which is where the extra factor of `T` in
@@ -357,10 +375,11 @@ theorem alexanderMatrix_enlargeColumn (V : Matrix ι ι R) (ξ : ι → R) :
   · fin_cases i <;> fin_cases j <;> simp [enlargeColumn, alexanderMatrix_apply]
 
 /-- Congruence of matrices is congruence of Alexander matrices. -/
-theorem alexanderMatrix_congruence [Fintype ι] (P V : Matrix ι ι R) :
+theorem alexanderMatrix_congruence {κ : Type*} [Fintype ι] (P : Matrix κ ι R)
+    (V : Matrix ι ι R) :
     alexanderMatrix (P * V * Pᵀ) = P.map C * alexanderMatrix V * (P.map C)ᵀ := by
-  simp [alexanderMatrix, Matrix.map_mul, Matrix.transpose_mul, mul_sub, sub_mul,
-    Matrix.transpose_map, mul_assoc]
+  simp [alexanderMatrix, Matrix.map_mul, Matrix.transpose_mul, Matrix.mul_sub, Matrix.sub_mul,
+    Matrix.transpose_map, Matrix.mul_assoc, Matrix.mul_smul, Matrix.smul_mul]
 
 variable [Fintype ι] [DecidableEq ι]
 
@@ -397,8 +416,7 @@ noncomputable def alexander (V : Matrix ι ι R) : R[T;T⁻¹] :=
 
 /-- The defining formula for the Alexander polynomial of an arbitrary finite matrix. -/
 theorem alexander_def (V : Matrix ι ι R) :
-    alexander V = T (-((Fintype.card ι / 2 : ℕ) : ℤ)) * (alexanderMatrix V).det := by
-  rw [alexander]
+    alexander V = T (-((Fintype.card ι / 2 : ℕ) : ℤ)) * (alexanderMatrix V).det := (rfl)
 
 /-- The normalized Alexander polynomial is unchanged by a simultaneous bijective reindexing
 of its rows and columns, including between different finite index types. -/
@@ -441,16 +459,7 @@ composing the coefficient homomorphisms. -/
 theorem eval₂_alexander_map {S A : Type*} [CommRing S] [CommRing A]
     (f : S →+* A) (g : R →+* S) (x : Aˣ) (V : Matrix ι ι R) :
     eval₂ f x (alexander (V.map g)) = eval₂ (f.comp g) x (alexander V) := by
-  have hcomp : (eval₂ f x).comp (AddMonoidAlgebra.mapRingHom ℤ g) =
-      eval₂ (f.comp g) x := by
-    apply AddMonoidAlgebra.ringHom_ext
-    · intro r
-      rw [RingHom.comp_apply, AddMonoidAlgebra.mapRingHom_single]
-      simp only [single_eq_C, eval₂_C, RingHom.comp_apply]
-    · intro n
-      simp only [RingHom.comp_apply, AddMonoidAlgebra.mapRingHom_single, map_one]
-      simpa only [T] using (eval₂_T f x n).trans (eval₂_T (f.comp g) x n).symm
-  rw [← map_alexander, ← RingHom.comp_apply, hcomp]
+  rw [← map_alexander, eval₂_mapRingHom]
 
 /-- The Alexander polynomial of a matrix of size `2 * g`, with the genus `g` named. -/
 theorem alexander_eq_of_card {g : ℕ} (V : Matrix ι ι R) (h : Fintype.card ι = 2 * g) :
@@ -519,7 +528,7 @@ theorem alexander_neg {g : ℕ} (V : Matrix ι ι R) (h : Fintype.card ι = 2 * 
   simp [det_neg, h, pow_mul]
 
 /-- `Δ(1)` is the determinant of the intersection form `V - Vᵀ` of the Seifert surface. For a
-knot that form is unimodular, so `Δ(1) = ±1`. -/
+knot that form is unimodular and skew-symmetric, so `Δ(1) = 1`. -/
 theorem eval₂_one_alexander (V : Matrix ι ι R) :
     eval₂ (RingHom.id R) 1 (alexander V) = (V - Vᵀ).det := by
   rw [alexander, map_mul, eval₂_T, RingHom.map_det, RingHom.mapMatrix_apply,
@@ -536,39 +545,24 @@ theorem alexander_of_isEmpty [IsEmpty ι] (V : Matrix ι ι R) : alexander V = 1
 enlargement.** -/
 theorem det_alexanderMatrix_enlargeColumn (V : Matrix ι ι R) (ξ : ι → R) :
     (alexanderMatrix (enlargeColumn V ξ)).det = T 1 * (alexanderMatrix V).det := by
-  set E : Matrix ι (Fin 2) R[T;T⁻¹] := (enlargeBlock ξ).map C with hE
-  set D : Matrix (Fin 2) (Fin 2) R[T;T⁻¹] := !![0, T 1; -1, 0] with hD
-  set X : Matrix ι (Fin 2) R[T;T⁻¹] := Matrix.of fun i => ![0, T 1 * C (ξ i)] with hX
-  have hXE : X * (-Eᵀ) = 0 := by
-    refine Matrix.ext fun i j => ?_
-    simp only [hX, hE, Matrix.mul_apply, Fin.sum_univ_two, Matrix.neg_apply,
-      Matrix.transpose_apply, Matrix.map_apply, Matrix.of_apply, Matrix.cons_val_zero,
-      Matrix.cons_val_one, enlargeBlock_apply_one, map_zero, Matrix.zero_apply,
-      neg_zero, mul_zero, zero_mul, add_zero]
-  have hXD : (T 1 : R[T;T⁻¹]) • E + X * D = 0 := by
-    refine Matrix.ext fun i j => ?_
-    fin_cases j <;>
-      simp only [hX, hE, hD, Matrix.add_apply, Matrix.smul_apply, smul_eq_mul, Matrix.mul_apply,
-        Fin.sum_univ_two, Matrix.map_apply, Matrix.of_apply, Matrix.cons_val_zero,
-        Matrix.cons_val_one, Matrix.cons_val',
-        Matrix.empty_val', Matrix.cons_val_fin_one, Fin.zero_eta, Fin.mk_one,
-        enlargeBlock_apply_zero, enlargeBlock_apply_one, map_zero, Matrix.zero_apply, mul_zero,
-        zero_mul, add_zero, zero_add, mul_neg]
-    ring
-  have hone : (fromBlocks (1 : Matrix ι ι R[T;T⁻¹]) X 0 1).det = 1 := by
-    rw [Matrix.det_fromBlocks_zero₂₁, Matrix.det_one, Matrix.det_one, one_mul]
-  have key : fromBlocks (1 : Matrix ι ι R[T;T⁻¹]) X 0 1 * alexanderMatrix (enlargeColumn V ξ)
-      = fromBlocks (alexanderMatrix V) 0 (-Eᵀ) D := by
-    rw [alexanderMatrix_enlargeColumn, fromBlocks_multiply, ← hE, ← hD]
-    simp only [Matrix.one_mul, Matrix.zero_mul, zero_add, hXE, add_zero, hXD]
-  calc (alexanderMatrix (enlargeColumn V ξ)).det
-      = (fromBlocks (1 : Matrix ι ι R[T;T⁻¹]) X 0 1).det
-        * (alexanderMatrix (enlargeColumn V ξ)).det := by rw [hone, one_mul]
-    _ = (fromBlocks (1 : Matrix ι ι R[T;T⁻¹]) X 0 1
-        * alexanderMatrix (enlargeColumn V ξ)).det := (Matrix.det_mul _ _).symm
-    _ = (fromBlocks (alexanderMatrix V) 0 (-Eᵀ) D).det := by rw [key]
-    _ = (alexanderMatrix V).det * D.det := Matrix.det_fromBlocks_zero₁₂ _ _ _
-    _ = T 1 * (alexanderMatrix V).det := by rw [hD, Matrix.det_fin_two_of]; ring
+  -- A unimodular row operation clears the top-right block, leaving a block lower-triangular
+  -- matrix whose new diagonal block has determinant `T`.
+  let X : Matrix ι (Fin 2) R[T;T⁻¹] := Matrix.of fun i => ![0, T 1 * C (ξ i)]
+  have key : fromBlocks 1 X 0 1 * alexanderMatrix (enlargeColumn V ξ) =
+      fromBlocks (alexanderMatrix V) 0 (-((enlargeBlock ξ).map C)ᵀ) !![0, T 1; -1, 0] := by
+    rw [alexanderMatrix_enlargeColumn, fromBlocks_multiply]
+    congr 1
+    · refine Matrix.ext fun i j => ?_
+      simp [X, Matrix.mul_apply]
+    · refine Matrix.ext fun i j => ?_
+      fin_cases j <;> simp [X, Matrix.mul_apply, Fin.sum_univ_two]
+    · simp
+    · simp
+  have hdet := congrArg det key
+  rw [det_mul, det_fromBlocks_zero₂₁, det_one, det_one, one_mul, one_mul,
+    det_fromBlocks_zero₁₂, det_fin_two_of] at hdet
+  rw [hdet]
+  ring
 
 /-- The unnormalised Alexander determinant picks up exactly one factor of `T` under a row
 enlargement. -/
