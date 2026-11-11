@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace
 public import TauCeti.Analysis.PDE.HeatKernel.TemperedDistribution
-import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 import TauCeti.Analysis.PDE.HeatKernel.FrequencyLocalized
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 
 /-!
 # The heat semigroup on Besov spaces
@@ -44,12 +44,14 @@ vanishing near the origin. The kernel of that multiplier has `L¹` norm `O(exp(-
 `‖Δⱼ e^{tΔ} u‖_p ≤ C exp(-c 4^j t) ‖Δⱼ u‖_p`
 (`TauCeti.exists_heatSemigroup_littlewoodPaleyBlock_succ_eq_and_norm_le`). Finally
 `2^{2σj} exp(-c 4^j t) = t^{-σ} x^σ exp(-c x)` with `x = 4^j t`, and `x^σ exp(-c x)` is bounded on
-`x ≥ 0`.
+`x ≥ 0` (`TauCeti.exists_rpow_mul_exp_neg_mul_le`).
 
 ## Main declarations
 
 * `TemperedDistribution.littlewoodPaleyBlock_heatSemigroup_comm`: `Δⱼ e^{tΔ} = e^{tΔ} Δⱼ`.
-* `TauCeti.BesovSpace.heatSemigroup`: `e^{tΔ}` as a contraction of `B^s_{p,q}`.
+* `TauCeti.BesovSpace.heatSemigroup`: `e^{tΔ}` as a contraction of `B^s_{p,q}`, with
+  `TauCeti.BesovSpace.heatSemigroup_zero` and the semigroup law
+  `TauCeti.BesovSpace.heatSemigroup_heatSemigroup_apply`.
 * `TauCeti.BesovSpace.exists_toDistr_eq_heatSemigroup_and_norm_le_rpow_neg`: the smoothing
   estimate `B^s_{p,q} → B^{s + 2σ}_{p,q}` with norm `O(t^{-σ})` for `0 < t ≤ 1`.
 
@@ -130,16 +132,7 @@ open TemperedDistribution
 private theorem exists_rpow_mul_exp_le {σ c : ℝ} (hσ : 0 ≤ σ) (hc : 0 < c) :
     ∃ A, 0 ≤ A ∧ ∀ (j : ℕ) {t : ℝ}, 0 < t →
       ((4 : ℝ) ^ j) ^ σ * rexp (-(c * ((4 ^ j - 1) * t))) ≤ A * max 1 (t ^ (-σ)) := by
-  -- `x ↦ x^σ exp(-c x)` tends to `0` at infinity, so it is bounded on `x ≥ 0` by some `M`.
-  obtain ⟨X, hX⟩ := eventually_atTop.1 ((tendsto_rpow_mul_exp_neg_mul_atTop_nhds_zero σ c
-    hc).eventually (ge_mem_nhds zero_lt_one))
-  set M := max 1 (max X 0 ^ σ)
-  have hM0 : 0 ≤ M := zero_le_one.trans (le_max_left _ _)
-  have hM (x : ℝ) (hx : 0 ≤ x) : x ^ σ * rexp (-(c * x)) ≤ M := by
-    rcases le_total X x with h | h
-    · exact (neg_mul c x ▸ hX x h).trans (le_max_left _ _)
-    · exact (mul_le_of_le_one_right (by positivity) (exp_le_one_iff.2 (by nlinarith))).trans
-        ((rpow_le_rpow hx (h.trans (le_max_left _ _)) hσ).trans (le_max_right _ _))
+  obtain ⟨M, hM0, hM⟩ := exists_rpow_mul_exp_neg_mul_le hσ hc
   refine ⟨rexp c * M, by positivity, fun j t ht ↦ ?_⟩
   have h4 : (1 : ℝ) ≤ 4 ^ j := one_le_pow₀ (by norm_num)
   rcases le_total t 1 with h1 | h1
@@ -147,9 +140,10 @@ private theorem exists_rpow_mul_exp_le {σ c : ℝ} (hσ : 0 ≤ σ) (hc : 0 < c
     have hx : ((4 : ℝ) ^ j) ^ σ = (4 ^ j * t) ^ σ * t ^ (-σ) := by
       rw [mul_rpow (by positivity) ht.le, mul_assoc, ← rpow_add ht, add_neg_cancel, rpow_zero,
         mul_one]
+    have he : -(c * ((4 ^ j - 1) * t)) = c * t + -(c * (4 ^ j * t)) := by ring
     calc ((4 : ℝ) ^ j) ^ σ * rexp (-(c * ((4 ^ j - 1) * t)))
         = rexp (c * t) * ((4 ^ j * t) ^ σ * rexp (-(c * (4 ^ j * t)))) * t ^ (-σ) := by
-          rw [hx, show -(c * ((4 ^ j - 1) * t)) = c * t + -(c * (4 ^ j * t)) by ring, exp_add]
+          rw [hx, he, exp_add]
           ring
       _ ≤ rexp c * M * t ^ (-σ) := by
           have hct : rexp (c * t) ≤ rexp c := exp_le_exp.2 (by nlinarith)
@@ -157,23 +151,16 @@ private theorem exists_rpow_mul_exp_le {σ c : ℝ} (hσ : 0 ≤ σ) (hc : 0 < c
           gcongr
       _ ≤ rexp c * M * max 1 (t ^ (-σ)) := by gcongr; exact le_max_right _ _
   · -- For `t ≥ 1` the exponential only decreases in `t`, so use the bound at `x = 4^j`.
+    have he : -(c * ((4 ^ j - 1) * 1)) = c + -(c * 4 ^ j) := by ring
     calc ((4 : ℝ) ^ j) ^ σ * rexp (-(c * ((4 ^ j - 1) * t)))
         ≤ ((4 : ℝ) ^ j) ^ σ * rexp (-(c * ((4 ^ j - 1) * 1))) := by
           gcongr
       _ = rexp c * (((4 : ℝ) ^ j) ^ σ * rexp (-(c * 4 ^ j))) := by
-          rw [show -(c * ((4 ^ j - 1) * 1)) = c + -(c * 4 ^ j) by ring, exp_add]
+          rw [he, exp_add]
           ring
       _ ≤ rexp c * M := by gcongr; exact hM _ (by positivity)
       _ ≤ rexp c * M * max 1 (t ^ (-σ)) := le_mul_of_one_le_right (by positivity)
           (le_max_left _ _)
-
-/-- Raising the order from `s` to `s + 2σ` multiplies the `j`-th weight `2^{js}` by `(4^j)^σ`. -/
-private theorem two_rpow_add_two_mul_mul_natCast (s σ : ℝ) (j : ℕ) :
-    (2 : ℝ) ^ ((s + 2 * σ) * j) = ((4 : ℝ) ^ j) ^ σ * 2 ^ (s * j) := by
-  rw [show (4 : ℝ) ^ j = (2 ^ (2 * j : ℝ)) by
-      rw [rpow_mul zero_le_two, rpow_natCast, show (2 : ℝ) ^ (2 : ℝ) = 4 by norm_num],
-    ← rpow_mul zero_le_two, ← rpow_add two_pos]
-  ring_nf
 
 namespace BesovSpace
 
@@ -248,7 +235,14 @@ theorem exists_toDistr_eq_heatSemigroup_and_norm_le {σ : ℝ} (hσ : 0 ≤ σ) 
   have ht' : (0 : ℝ) < t := by positivity
   have hwB (j : ℕ) : 2 ^ ((s + 2 * σ) * j) * (C * rexp (-(c * ((4 ^ j - 1) * t)))) ≤
       C * A * max 1 ((t : ℝ) ^ (-σ)) * 2 ^ (s * j) := by
-    rw [two_rpow_add_two_mul_mul_natCast]
+    -- Raising the order from `s` to `s + 2σ` multiplies the weight `2^{js}` by `(4^j)^σ`.
+    have h4 : (4 : ℝ) ^ j = 2 ^ (2 * j : ℝ) := by
+      rw [rpow_mul zero_le_two, rpow_natCast, rpow_two]
+      norm_num
+    have hw : (2 : ℝ) ^ ((s + 2 * σ) * j) = ((4 : ℝ) ^ j) ^ σ * 2 ^ (s * j) := by
+      rw [h4, ← rpow_mul zero_le_two, ← rpow_add two_pos]
+      ring_nf
+    rw [hw]
     calc ((4 : ℝ) ^ j) ^ σ * 2 ^ (s * j) * (C * rexp (-(c * ((4 ^ j - 1) * t))))
         = C * (((4 : ℝ) ^ j) ^ σ * rexp (-(c * ((4 ^ j - 1) * t)))) * 2 ^ (s * j) := by ring
       _ ≤ C * (A * max 1 ((t : ℝ) ^ (-σ))) * 2 ^ (s * j) := by
@@ -325,6 +319,29 @@ theorem coe_block_heatSemigroup (t : ℝ≥0) (u : BesovSpace F φ s p q) (j : �
 theorem norm_heatSemigroup_le (t : ℝ≥0) (u : BesovSpace F φ s p q) :
     ‖heatSemigroup F φ s p q t u‖ ≤ ‖u‖ :=
   (exists_toDistr_eq_heatSemigroup_and_norm_le_self t u).choose_spec.2
+
+variable (F φ s p q) in
+/-- At time `0` the heat semigroup on `B^s_{p,q}` is the identity. -/
+@[simp]
+theorem heatSemigroup_zero :
+    heatSemigroup F φ s p q 0 = ContinuousLinearMap.id ℂ _ := by
+  ext1 u
+  exact ext (by simp)
+
+/-- **The semigroup law** `e^{tΔ} e^{sΔ} = e^{(s+t)Δ}` on `B^s_{p,q}`. -/
+@[simp]
+theorem heatSemigroup_heatSemigroup_apply (t₁ t₂ : ℝ≥0) (u : BesovSpace F φ s p q) :
+    heatSemigroup F φ s p q t₂ (heatSemigroup F φ s p q t₁ u) =
+      heatSemigroup F φ s p q (t₁ + t₂) u :=
+  ext (by simp)
+
+/-- The semigroup law `e^{tΔ} ∘ e^{sΔ} = e^{(s+t)Δ}` on `B^s_{p,q}` as an identity of
+operators. -/
+theorem heatSemigroup_compL_heatSemigroup (t₁ t₂ : ℝ≥0) :
+    heatSemigroup F φ s p q t₂ ∘L heatSemigroup F φ s p q t₁ =
+      heatSemigroup F φ s p q (t₁ + t₂) := by
+  ext1 u
+  exact heatSemigroup_heatSemigroup_apply t₁ t₂ u
 
 end BesovSpace
 

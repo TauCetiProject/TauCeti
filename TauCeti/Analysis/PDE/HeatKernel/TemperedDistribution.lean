@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import TauCeti.Analysis.PDE.HeatKernel.Semigroup
-import Mathlib.Analysis.Fourier.Inversion
 import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
@@ -42,8 +41,6 @@ Working on `𝓢'` lets the heat semigroup act on spaces of distributions, such 
 * `TemperedDistribution.heatSemigroup_zero`,
   `TemperedDistribution.heatSemigroup_heatSemigroup_apply`:
   `e^{0Δ} = 1` and `e^{tΔ} e^{sΔ} = e^{(s+t)Δ}`.
-* `TauCeti.fourierInv_exp_neg_mul_norm_sq`: the inverse Fourier transform of `exp(-4π² t ‖ξ‖²)` is
-  the heat kernel `K_t`.
 * `TemperedDistribution.heatSemigroup_toTemperedDistribution`: agreement with the heat semigroup on
   `Lᵖ`, `p < ∞`.
 * `TemperedDistribution.exists_heatSemigroup_eq_and_norm_le`: `e^{tΔ}` is a contraction on every
@@ -66,31 +63,6 @@ open scoped Convolution ENNReal NNReal SchwartzMap
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
-
-namespace TauCeti
-
-/-- **The heat kernel is the inverse Fourier transform of the heat symbol.** For `t > 0`,
-`𝓕⁻ (ξ ↦ exp(-4π² t ‖ξ‖²)) = K_t`. This is Fourier inversion applied to
-`TauCeti.fourier_heatKernel`. -/
-theorem fourierInv_exp_neg_mul_norm_sq {t : ℝ} (ht : 0 < t) :
-    𝓕⁻ (fun ξ : E ↦ ((rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ)) =
-      fun x ↦ (heatKernel t x : ℂ) := by
-  have hb : 0 < ((4 * π ^ 2 * t : ℝ) : ℂ).re := by
-    rw [Complex.ofReal_re]
-    positivity
-  have hF : 𝓕 (fun x : E ↦ (heatKernel t x : ℂ)) =
-      ⇑(SchwartzMap.gaussian (V := E) hb) := by
-    funext ξ
-    rw [fourier_heatKernel ht, SchwartzMap.gaussian_apply, Complex.ofReal_exp]
-    push_cast
-    ring_nf
-  rw [show (fun ξ : E ↦ ((rexp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ)) =
-      𝓕 (fun x : E ↦ (heatKernel t x : ℂ)) from funext fun ξ ↦ (fourier_heatKernel ht ξ).symm]
-  exact (Complex.continuous_ofReal.comp
-    (contDiff_heatKernel (k := 0) t).continuous).fourierInv_fourier_eq
-      (integrable_heatKernel ht).ofReal (hF ▸ (SchwartzMap.gaussian hb).integrable)
-
-end TauCeti
 
 namespace TemperedDistribution
 

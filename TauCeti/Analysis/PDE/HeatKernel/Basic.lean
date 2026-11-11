@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Convolution
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 public import TauCeti.Analysis.InnerProductSpace.CompleteSquare
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import Mathlib.Analysis.Fourier.Inversion
+import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
@@ -49,6 +51,8 @@ a heat kernel assumes `0 < t`.
 * `TauCeti.hasDerivAt_heatKernel`: the heat equation `∂ₜ K_t(x) = Δ K_t(x)` for `t > 0`.
 * `TauCeti.heatKernel_convolution_heatKernel`: the semigroup identity `K_t ⋆ K_s = K_{t+s}`.
 * `TauCeti.fourier_heatKernel`: `𝓕 K_t(ξ) = exp(-4π² t ‖ξ‖²)`.
+* `TauCeti.fourierInv_exp_neg_mul_norm_sq`: the inverse Fourier transform of `exp(-4π² t ‖ξ‖²)`
+  is `K_t`.
 * `TauCeti.heatKernel_convolution_eq_intervalIntegral`: on `ℝ`, the heat kernel smoothing of a
   function supported in `[a, b]` is an integral over `[a, b]` against a Gaussian.
 
@@ -319,6 +323,30 @@ theorem fourier_heatKernel {t : ℝ} (ht : 0 < t) (ξ : E) :
     simp only [c, neg_div]
     rw [rpow_neg (by positivity), inv_mul_cancel₀ (by positivity)]
   rw [hpow, hexp, ← mul_assoc, ← Complex.ofReal_mul, hc, Complex.ofReal_one, one_mul]
+
+/-- **The heat kernel is the inverse Fourier transform of the heat symbol.** For `t > 0`,
+`𝓕⁻ (ξ ↦ exp(-4π² t ‖ξ‖²)) = K_t`. This is Fourier inversion applied to
+`TauCeti.fourier_heatKernel`. -/
+theorem fourierInv_exp_neg_mul_norm_sq {t : ℝ} (ht : 0 < t) :
+    𝓕⁻ (fun ξ : E ↦ ((exp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ)) =
+      fun x ↦ (heatKernel t x : ℂ) := by
+  have hb : 0 < ((4 * π ^ 2 * t : ℝ) : ℂ).re := by
+    rw [Complex.ofReal_re]
+    positivity
+  -- The symbol is the Fourier transform of `K_t`, and also the Schwartz Gaussian at `4π² t`.
+  have hsym : (fun ξ : E ↦ ((exp (-(4 * π ^ 2 * t * ‖ξ‖ ^ 2)) : ℝ) : ℂ)) =
+      𝓕 (fun x : E ↦ (heatKernel t x : ℂ)) :=
+    funext fun ξ ↦ (fourier_heatKernel ht ξ).symm
+  have hF : 𝓕 (fun x : E ↦ (heatKernel t x : ℂ)) =
+      ⇑(SchwartzMap.gaussian (V := E) hb) := by
+    funext ξ
+    rw [fourier_heatKernel ht, SchwartzMap.gaussian_apply, Complex.ofReal_exp]
+    push_cast
+    ring_nf
+  rw [hsym]
+  exact (Complex.continuous_ofReal.comp
+    (contDiff_heatKernel (k := 0) t).continuous).fourierInv_fourier_eq
+      (integrable_heatKernel ht).ofReal (hF ▸ (SchwartzMap.gaussian hb).integrable)
 
 /-- On `ℝ`, the heat kernel smoothing of a function supported in `[a, b]` is the Gaussian
 transform `x ↦ ∫ y in a..b, (4πt)^(-1/2) g y exp (-(x - y)² / (4t))`. -/

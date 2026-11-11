@@ -480,8 +480,9 @@ theorem exists_heatSemigroup_littlewoodPaleyBlock_succ_eq_and_norm_le
   have h4 : ((2 : ℝ) ^ j) ^ 2 = 4 ^ j := by
     rw [← pow_mul, mul_comm, pow_mul]
     norm_num
+  have h22 : (2 : ℝ) ^ 2 = 4 := by norm_num
   refine (hσ ▸ hC _ hν t t.2).trans_eq ?_
-  rw [h4, div_pow, show (2 : ℝ) ^ 2 = 4 by norm_num]
+  rw [h4, div_pow, h22]
   ring_nf
 
 end HeatFlow
