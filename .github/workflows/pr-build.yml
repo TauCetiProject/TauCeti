@@ -800,9 +800,23 @@ jobs:
           # is load-bearing, and scripts/test_bwrap_pin.py checks it is still present and still
           # runs before anything that touches a candidate `.lake`.
           deb="bubblewrap_${BWRAP_VER}_amd64.deb"
-          if ! curl -sSL --fail "https://archive.ubuntu.com/ubuntu/pool/main/b/bubblewrap/${deb}" -o bwrap.deb \
-             && ! curl -sSL --fail "https://security.ubuntu.com/ubuntu/pool/main/b/bubblewrap/${deb}" -o bwrap.deb; then
-            echo "::error::bubblewrap ${BWRAP_VER} is gone from the Ubuntu pool. The sandbox cannot be installed, so no PR can build until the pin is moved."
+          # CI runners intermittently fail to reach archive.ubuntu.com while the package is still
+          # published, so try several mirrors with retries. Any mirror is safe: the download is
+          # checked against BWRAP_DEB_SHA256 below before it is installed.
+          fetch_bwrap() {
+            local base
+            for base in https://archive.ubuntu.com/ubuntu http://azure.archive.ubuntu.com/ubuntu \
+                        https://security.ubuntu.com/ubuntu; do
+              if curl -sSL --fail --retry 4 --retry-delay 5 --retry-all-errors \
+                   "${base}/pool/main/b/bubblewrap/${deb}" -o bwrap.deb; then
+                return 0
+              fi
+              echo "::warning::could not download ${deb} from ${base}; trying the next mirror"
+            done
+            return 1
+          }
+          if ! fetch_bwrap; then
+            echo "::error::bubblewrap ${BWRAP_VER} could not be downloaded from any Ubuntu mirror. If the package is gone from the Ubuntu pool, no PR can build until the pin is moved."
             printf '%s\n' \
               '' \
               "WHAT HAPPENED: BWRAP_VER is pinned to ${BWRAP_VER} from noble's release pocket," \

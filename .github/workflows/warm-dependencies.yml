@@ -179,7 +179,23 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          curl -sSL --fail "https://archive.ubuntu.com/ubuntu/pool/main/b/bubblewrap/bubblewrap_${BWRAP_VER}_amd64.deb" -o bwrap.deb
+          deb="bubblewrap_${BWRAP_VER}_amd64.deb"
+          # CI runners intermittently fail to reach archive.ubuntu.com while the package is still
+          # published, so try several mirrors with retries. Any mirror is safe: the download is
+          # checked against BWRAP_DEB_SHA256 below before it is installed.
+          fetch_bwrap() {
+            local base
+            for base in https://archive.ubuntu.com/ubuntu http://azure.archive.ubuntu.com/ubuntu \
+                        https://security.ubuntu.com/ubuntu; do
+              if curl -sSL --fail --retry 4 --retry-delay 5 --retry-all-errors \
+                   "${base}/pool/main/b/bubblewrap/${deb}" -o bwrap.deb; then
+                return 0
+              fi
+              echo "::warning::could not download ${deb} from ${base}; trying the next mirror"
+            done
+            return 1
+          }
+          fetch_bwrap
           echo "${BWRAP_DEB_SHA256}  bwrap.deb" | sha256sum -c -
           sudo dpkg -i bwrap.deb >/dev/null
           echo "${BWRAP_SHA256}  /usr/bin/bwrap" | sha256sum -c -
