@@ -182,7 +182,7 @@ private theorem snd_eq_zero_of_mfderiv_milnorFunction_eq_zero (hμ : ContDiff �
   set b := ‖(e (ψ i x)).2‖ ^ 2
   -- The curve `γ` scales the positive coordinates of `x` by `t`.
   set L : ℝ → EuclideanSpace ℝ (Fin n) := fun t ↦ e.symm ((e (ψ i x)).1, t • (e (ψ i x)).2)
-  set γ : ℝ → M := fun t ↦ φ.symm (L t)
+  set γ : ℝ → M := fun t ↦ (ψ i).symm (L t)
   have hL1 : L 1 = ψ i x := by simp [L]
   have hLt : L 1 ∈ (ψ i).target := hL1 ▸ φ.map_source hx
   -- `F ∘ γ` has derivative `0` at `1`, since `x = γ 1` is a critical point of `F`.
@@ -200,7 +200,7 @@ private theorem snd_eq_zero_of_mfderiv_milnorFunction_eq_zero (hμ : ContDiff �
       fun t ↦ c + (-a + t ^ 2 * b) - μ (a + 2 * (t ^ 2 * b)) := by
     filter_upwards [(e.symm.continuous.comp (continuous_const.prodMk (continuous_id.smul
       continuous_const))).continuousAt.preimage_mem_nhds ((ψ i).open_target.mem_nhds hLt)] with t ht
-    simpa [L, e, norm_smul, mul_pow] using (milnorFunction_symm_apply k hψ (hf i) (μ := μ) ht).2
+    simpa [L, e, γ, norm_smul, mul_pow] using (milnorFunction_symm_apply k hψ (hf i) (μ := μ) ht).2
   have hq := (hasDerivAt_pow 2 (1 : ℝ)).mul_const b
   have hg := ((hq.const_add (-a)).const_add c).sub
     (((hμ.differentiable (by simp)) _).hasDerivAt.comp 1 ((hq.const_mul 2).const_add a))
@@ -577,10 +577,11 @@ theorem exists_sublevel_union_cells_deformation [Finite ι] (hfs : ContMDiff I �
 `√(2ε)` about `0` in its target, in which `f = c - Σ_{j < k i} yⱼ² + Σ_{j ≥ k i} yⱼ²`. Suppose the
 band `f⁻¹[c - ε, c + ε]` is compact and its critical points lie in the chart sources.
 
-Then there are handles `H i` in the chart sources and a diffeomorphism `Φ` of `M` carrying
-the upper sublevel `{f ≤ c + ε}` onto the lower sublevel `{f ≤ c - ε}` with the handles attached.
-Each handle is homeomorphic to the product `D^{k i} × D^{n - k i}` of closed unit balls in the
-first `k i` and in the remaining coordinates, by a homeomorphism `e i` carrying:
+Then there are handles `H i` in the chart sources, on or above the level `f⁻¹(c - ε)`, and a
+diffeomorphism `Φ` of `M` carrying the upper sublevel `{f ≤ c + ε}` onto the lower sublevel
+`{f ≤ c - ε}` with the handles attached. Each handle is homeomorphic to the product
+`D^{k i} × D^{n - k i}` of closed unit balls in the first `k i` and in the remaining coordinates, by
+a homeomorphism `e i` carrying:
 * its intersection with `{f ≤ c - ε}` onto `∂D^{k i} × D^{n - k i}`;
 * its core, the points whose coordinates beyond the first `k i` vanish, onto `D^{k i} × 0`.
 
@@ -597,7 +598,7 @@ theorem exists_diffeomorph_sublevel_eq_union_handles [Finite ι] (hfs : ContMDif
     ∃ (H : ι → Set M)
       (e : ∀ i, H i ≃ₜ closedBall (0 : EuclideanSpace ℝ {j : Fin n // j.val < k i}) 1 ×
         closedBall (0 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k i}) 1) (Φ : M ≃ₘ⟮I, I⟯ M),
-      (∀ i, H i ⊆ (ψ i).source) ∧
+      (∀ i, H i ⊆ (ψ i).source) ∧ (∀ i (x : H i), c - ε ≤ f x) ∧
       (∀ i (x : H i),
         f x ≤ c - ε ↔ ‖((e i x).1 : EuclideanSpace ℝ {j : Fin n // j.val < k i})‖ = 1) ∧
       (∀ i (x : H i), ((e i x).2 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k i}) = 0 ↔
@@ -625,7 +626,10 @@ theorem exists_diffeomorph_sublevel_eq_union_handles [Finite ι] (hfs : ContMDif
   choose e he using fun i ↦ exists_milnorHandle_homeomorph (k := k) hε hμ.continuous hμa hμε hμ₀
     (hμ_pos (by positivity)) hball i
   refine ⟨milnorHandle ψ k ε μ, e, Φ, fun i ↦ inter_subset_left, fun i x ↦ ?_, fun i x ↦ ?_,
-    fun x ↦ ?_, fun x ↦ ?_⟩
+    fun i x ↦ ?_, fun x ↦ ?_, fun x ↦ ?_⟩
+  · -- The handle lies on or above the level `c - ε` of `f`.
+    rw [(milnorFunction_of_mem_source hψ hf (μ := μ) x.2.1).1]
+    linarith [(mem_quadraticHandle.1 x.2.2).1]
   · -- The handle meets the lower sublevel in its attaching region.
     have hfx := (milnorFunction_of_mem_source hψ hf (μ := μ) x.2.1).1
     rw [(he i x).1, norm_fst_quadraticHandleMap_eq_one_iff hε, hfx]
@@ -715,7 +719,7 @@ theorem IsMorse.exists_diffeomorph_sublevel_eq_union_handles (hf : IsMorse I f) 
             closedBall (0 : EuclideanSpace ℝ
               {i : Fin (Module.finrank ℝ E) // ¬i.val < manifoldMorseIndex I f p}) 1)
           (Φ : M ≃ₘ⟮I, I⟯ M),
-          (∀ p, H p ⊆ (ψ p).source) ∧
+          (∀ p, H p ⊆ (ψ p).source) ∧ (∀ p (x : H p), c - ε ≤ f x) ∧
           (∀ p (x : H p), f x ≤ c - ε ↔ ‖((e p x).1 : EuclideanSpace ℝ
             {i : Fin (Module.finrank ℝ E) // i.val < manifoldMorseIndex I f p})‖ = 1) ∧
           (∀ p (x : H p), ((e p x).2 : EuclideanSpace ℝ

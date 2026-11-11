@@ -5,31 +5,33 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Distribution.Restrict
+public import TauCeti.Analysis.Distribution.ComplexPairing
 public import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Analysis.Distribution.Support
 
 /-!
 # Multiplication of distributions by smooth functions
 
-A `C^n` real function `g` multiplies test functions on `Ω` (`TestFunction.smulLeftCLM`).
-Transposing, it multiplies a distribution `T` of order `n` by the rule `(g T) φ = T (g φ)`
-(Hörmander I, §2.1). Multiplying by smooth cutoffs is how distributions are localized, for
-instance in the definition of the wave front set.
+For a `C^n` function `g : E → ℝ` and a distribution `T` of order at most `n` on an open set `Ω`,
+the product `g T` is the distribution `φ ↦ T (g φ)`. It is the transpose of multiplication of test
+functions by `g` (`TestFunction.smulLeftCLM`), and on a locally integrable function `f` it is the
+pointwise product `g f`. This file packages it as a continuous linear map
+`Distribution.smulLeftCLM` on `𝓓'^{n}(Ω, F)`, in the way Mathlib's `Distribution.lineDerivCLM`
+transposes differentiation of test functions.
+
+A complex multiplier `g + i h` acts on a complex distribution as `g T + i (h T)`; on complex test
+functions the product pairs as `(g T) ψ = T (g ψ)` (`Distribution.complexPairing_smulLeftCLM`).
 
 ## Main declarations
 
-* `Distribution.smulLeftCLM hg`: the multiplication `T ↦ g T`, as a continuous linear map
-  `𝓓'^{n}(Ω, F) →L[ℝ] 𝓓'^{n}(Ω, F)`.
-* `Distribution.smulLeftCLM_apply`: `(g T) φ = T (g φ)`.
-* `Distribution.smulLeftCLM_const`, `Distribution.smulLeftCLM_smulLeftCLM`: a constant `c`
-  acts as the scalar `c`, and multiplying by `f` and then by `g` is multiplying by `g f`.
-* `Distribution.restrictCLM_smulLeftCLM`: multiplication commutes with restriction to an open
-  subset.
-* `Distribution.dsupport_smulLeftCLM_subset_inter`: the support of `g T` lies in the supports of `g`
-  and of `T`.
-* `Distribution.complexPairing_smulLeftCLM`: the complex-linear extension of `g T` to complex
-  test functions is that of `T`, on test functions multiplied by `g`.
+* `Distribution.smulLeftCLM`: the product `g T`, with `Distribution.smulLeftCLM_apply` and
+  `Distribution.coe_smulLeftCLM`.
+* `Distribution.smulLeftCLM_const`: multiplying by the constant function `c` is the scalar `c`.
+* `Distribution.smulLeftCLM_smulLeftCLM`: multiplying by `h` and then by `g` is multiplying by
+  `g h`.
+* `Distribution.dsupport_smulLeftCLM_subset_inter`: the support of `g T` lies in the supports of
+  `g` and of `T`.
+* `Distribution.complexPairing_smulLeftCLM`: the pairing of `g T` with a complex test function.
 
 ## References
 
@@ -45,18 +47,23 @@ open scoped Distributions
 
 namespace Distribution
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {Ω Ω' : Opens E}
-  {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] [IsTopologicalAddGroup F]
-  [ContinuousSMul ℝ F] {n : ℕ∞} {f g : E → ℝ}
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {Ω : Opens E} {n : ℕ∞}
+  [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+  [ContinuousSMul ℝ F] {g h : E → ℝ}
 
-/-- **Multiplication of a distribution by a `C^n` real function** `g`, as a continuous linear map
-`T ↦ g T` on distributions of order `n`, where `(g T) φ = T (g φ)`. -/
+/-- The product `g T` of a distribution `T` with a `C^n` function `g`, defined by
+`(g T) φ = T (g φ)`, as a continuous linear map on distributions of order at most `n`. -/
 def smulLeftCLM (hg : ContDiff ℝ n g) : 𝓓'^{n}(Ω, F) →L[ℝ] 𝓓'^{n}(Ω, F) :=
-  (TestFunction.smulLeftCLM hg : 𝓓^{n}(Ω, ℝ) →L[ℝ] 𝓓^{n}(Ω, ℝ)).precompCompactConvergenceCLM F
+  (TestFunction.smulLeftCLM hg).precompCompactConvergenceCLM F
 
 @[simp]
 theorem smulLeftCLM_apply (hg : ContDiff ℝ n g) (T : 𝓓'^{n}(Ω, F)) (φ : 𝓓^{n}(Ω, ℝ)) :
     smulLeftCLM hg T φ = T (TestFunction.smulLeftCLM hg φ) :=
+  (rfl)
+
+/-- As a function on test functions, `g T` is `T` composed with multiplication by `g`. -/
+theorem coe_smulLeftCLM (hg : ContDiff ℝ n g) (T : 𝓓'^{n}(Ω, F)) :
+    ⇑(smulLeftCLM hg T) = ⇑T ∘ ⇑(TestFunction.smulLeftCLM hg) :=
   (rfl)
 
 /-- Multiplying a distribution by the constant function `c` is scalar multiplication by `c`. -/
@@ -69,42 +76,34 @@ theorem smulLeftCLM_const (c : ℝ) (T : 𝓓'^{n}(Ω, F)) :
     simp
   simp [h]
 
-/-- Multiplying a distribution by `f` and then by `g` is multiplying it by `g f`. -/
+/-- Multiplying a distribution by `h` and then by `g` is multiplying it by `g h`. -/
 @[simp]
-theorem smulLeftCLM_smulLeftCLM (hf : ContDiff ℝ n f) (hg : ContDiff ℝ n g)
+theorem smulLeftCLM_smulLeftCLM (hg : ContDiff ℝ n g) (hh : ContDiff ℝ n h)
     (T : 𝓓'^{n}(Ω, F)) :
-    smulLeftCLM hg (smulLeftCLM hf T) = smulLeftCLM (hg.mul hf) T := by
+    smulLeftCLM hg (smulLeftCLM hh T) = smulLeftCLM (hg.mul hh) T := by
   ext φ
-  simp only [smulLeftCLM_apply, TestFunction.smulLeftCLM_smulLeftCLM]
+  simp only [smulLeftCLM_apply]
   congr 1
   ext x
   simp [mul_comm]
 
-/-- Multiplication by a smooth function commutes with restriction to an open subset. -/
-theorem restrictCLM_smulLeftCLM (hg : ContDiff ℝ n g) (T : 𝓓'^{n}(Ω, F)) :
-    restrictCLM Ω' (smulLeftCLM hg T) = smulLeftCLM hg (restrictCLM Ω' T) := by
-  ext φ
-  simp
-
 /-- The support of `g T` lies both in the support of `g` and in the support of `T`. -/
 theorem dsupport_smulLeftCLM_subset_inter (hg : ContDiff ℝ n g) (T : 𝓓'^{n}(Ω, F)) :
     dsupport (smulLeftCLM hg T) ⊆ tsupport g ∩ dsupport T := by
-  have h : ⇑(smulLeftCLM hg T) = T ∘ TestFunction.smulLeftCLM hg :=
-    funext (smulLeftCLM_apply hg T)
-  rw [h]
+  rw [coe_smulLeftCLM]
   exact dsupport_comp_smulLeftCLM_subset T hg
 
-/-- The complex-linear extension of `g T` pairs with a complex test function `φ` as the extension
-of `T` pairs with `g φ`. -/
+/-- The complex-linear extension of `g T` to complex test functions pairs `g T` with `ψ` as `T`
+with `g ψ`. -/
+@[simp]
 theorem complexPairing_smulLeftCLM (hg : ContDiff ℝ n g) (T : 𝓓'^{n}(Ω, ℂ))
-    (φ : 𝓓^{n}(Ω, ℂ)) :
-    (smulLeftCLM hg T).complexPairing φ = T.complexPairing (TestFunction.smulLeftCLM hg φ) := by
-  have hsmul (L : ℂ →L[ℝ] ℝ) :
-      TestFunction.smulLeftCLM hg (TestFunction.postcompCLM (𝕜 := ℝ) L φ) =
-        TestFunction.postcompCLM (𝕜 := ℝ) L (TestFunction.smulLeftCLM hg φ) := by
+    (ψ : 𝓓^{n}(Ω, ℂ)) :
+    (smulLeftCLM hg T).complexPairing ψ = T.complexPairing (TestFunction.smulLeftCLM hg ψ) := by
+  have hpart (L : ℂ →L[ℝ] ℝ) :
+      TestFunction.postcompCLM (𝕜 := ℝ) L (TestFunction.smulLeftCLM hg ψ) =
+        TestFunction.smulLeftCLM hg (TestFunction.postcompCLM (𝕜 := ℝ) L ψ) := by
     ext x
-    simp only [TestFunction.smulLeftCLM_apply, TestFunction.postcompCLM_apply,
-      Function.comp_apply, map_smul]
-  simp only [complexPairing_apply, smulLeftCLM_apply, hsmul]
+    simp [-real_smul]
+  simp [complexPairing_apply, hpart]
 
 end Distribution

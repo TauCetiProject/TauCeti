@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.NovikovSeries.Multiplication
 public import Mathlib.Algebra.Torsor.Basic
+public import Mathlib.Basic.Finite.Sigma
 public import Mathlib.LinearAlgebra.StdBasis
 public import Mathlib.Algebra.Module.TransferInstance
 public import Mathlib.Tactic.Linarith
@@ -28,6 +29,9 @@ the monomial of the old lift minus the new lift. In particular the completion re
 lifted generators, while the coordinate description depends on the chosen lifts. The transported
 Novikov scalar action is independent of those lifts. Its module laws and basis use Mathlib's
 `AddEquiv.module` and `Pi.basisFun`.
+
+If `H` is trivial, each torsor is a single generator and no completion is needed
+(`NovikovModule.eq_top_of_subsingleton`).
 
 The cutoff formulas include the potential of each chosen lift; they do not require an
 injective or discrete period map. These are the coefficient coordinates used for completed
@@ -73,6 +77,11 @@ theorem mem_iff {a : S → R} : a ∈ NovikovModule R F ↔
 theorem mem_of_finite_support {a : S → R} (ha : (Function.support a).Finite) :
     a ∈ NovikovModule R F :=
   fun _ => ha.subset fun _ hs => hs.1
+
+/-- With finitely many generators no completion is needed: every coefficient function is a
+completed combination. -/
+theorem eq_top_of_finite [Finite S] : NovikovModule R F = ⊤ :=
+  eq_top_iff.2 fun _ _ => mem_of_finite_support (Set.toFinite _)
 
 /-- A point mass at a generator is a completed combination. -/
 theorem pi_single_mem [DecidableEq S] (s : S) (r : R) : Pi.single s r ∈ NovikovModule R F :=
@@ -199,6 +208,16 @@ section Coordinates
 variable {H ι : Type*} [AddGroup H] [Finite ι] {P : ι → Type*}
     [∀ i, AddTorsor H (P i)] {N : H →+ ℝ} {F : (Σ i, P i) → ℝ}
     (hF : ∀ i h (p : P i), F ⟨i, h +ᵥ p⟩ = F ⟨i, p⟩ - N h)
+
+variable (H) in
+/-- **No completion is needed over a trivial group.** With finitely many orbits, each a torsor
+under a trivial group and so a single generator, every coefficient function is a completed
+combination, whatever the potential `F`. -/
+theorem eq_top_of_subsingleton [Subsingleton H] : NovikovModule R F = ⊤ :=
+  have (i : ι) : Finite (P i) :=
+    have := (AddTorsor.subsingleton_iff H (P i)).1 inferInstance
+    Finite.of_subsingleton
+  eq_top_of_finite
 
 include hF
 

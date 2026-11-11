@@ -69,7 +69,7 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory Set TopologicalSpace
+open _root_.MeasureTheory Set TopologicalSpace
 open scoped ContDiff Distributions ENNReal Gradient InnerProductSpace
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]

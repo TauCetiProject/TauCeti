@@ -15,7 +15,8 @@ public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 For a split short complex `X₁ ⟶ X₂ ⟶ X₃` with retraction `r` and section `s`, a morphism out of
 `X₂` which vanishes on `X₁` factors through the projection `g` via the section `s`, and dually a
 morphism into `X₂` which vanishes after `g` factors through the inclusion `f` via the retraction
-`r`. Both are immediate from the identity `r ≫ f + g ≫ s = 𝟙`.
+`r`. Both are immediate from the identity `r ≫ f + g ≫ s = 𝟙`, as is the fact that a natural
+number `e` with `e • 𝟙 = 0` on both outer terms also kills the middle term.
 The canonical biproduct comparison sends the inclusion `f` to `biprod.inl`, and its
 composition with `biprod.snd` recovers the projection `g`.
 For a split short complex of homological complexes, the homology of the outer terms is a retract
@@ -36,6 +37,8 @@ of that of the middle term, so the outer terms are exact wherever the middle ter
   `S.g ≫ s.s ≫ k = k`.
 * `CategoryTheory.ShortComplex.Splitting.comp_r_f_eq_of_comp_g_eq_zero`: if `k ≫ S.g = 0`, then
   `k ≫ s.r ≫ S.f = k`.
+* `CategoryTheory.ShortComplex.Splitting.nsmul_id_X₂_eq_zero`: a natural number killing both
+  outer terms kills the middle term.
 * `CategoryTheory.ShortComplex.Splitting.comp_s_hom_comp_g_hom_of_comp_f_hom_eq_zero`: the first
   statement for linear maps out of a split short complex of modules into an arbitrary module.
 * `CategoryTheory.ShortComplex.Splitting.acyclic_X₁` and
@@ -72,6 +75,13 @@ theorem comp_r_f_eq_of_comp_g_eq_zero (s : S.Splitting) {Y : C} (k : Y ⟶ S.X�
     (hk : k ≫ S.g = 0) : k ≫ s.r ≫ S.f = k := by
   rw [s.r_f, Preadditive.comp_sub, Category.comp_id, ← Category.assoc, hk, zero_comp, sub_zero]
 
+/-- A natural number killing both outer terms of a split short complex kills the middle term. -/
+theorem nsmul_id_X₂_eq_zero (s : S.Splitting) {e : ℕ} (h₁ : e • 𝟙 S.X₁ = 0)
+    (h₃ : e • 𝟙 S.X₃ = 0) : e • 𝟙 S.X₂ = 0 :=
+  calc e • 𝟙 S.X₂ = s.r ≫ (e • 𝟙 S.X₁) ≫ S.f + S.g ≫ (e • 𝟙 S.X₃) ≫ s.s := by
+        rw [← s.id, smul_add, Preadditive.nsmul_comp, Preadditive.nsmul_comp,
+          Preadditive.comp_nsmul, Preadditive.comp_nsmul, Category.id_comp, Category.id_comp]
+    _ = 0 := by rw [h₁, h₃, zero_comp, zero_comp, comp_zero, comp_zero, add_zero]
 
 /-- The binary bicone of a split short complex: `S.X₂` with the inclusions `S.f`, `s.s` and the
 projections `s.r`, `S.g`. It is exposed so that its `simps` lemmas are definitional. -/

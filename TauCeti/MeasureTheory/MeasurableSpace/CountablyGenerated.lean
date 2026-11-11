@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.FactorsThrough
 public import Mathlib.MeasureTheory.MeasurableSpace.CountablyGenerated
 public import Mathlib.MeasureTheory.MeasurableSpace.Prod
+public import Mathlib.MeasureTheory.PiSystem
 
 /-!
 # Boolean coordinates for a measurable function on a product
@@ -32,7 +33,9 @@ the Cantor space makes all the countably many sides measurable in the pulled-bac
 Doob--Dynkin (`Measurable.exists_eq_measurable_comp`) then produces `g`.
 
 This file also records that a countable separating family pulls back along a measurable
-injection (`MeasurableSpace.CountablySeparated.of_injective`).
+injection (`MeasurableSpace.CountablySeparated.of_injective`), and that a countably generated
+space has a countable generating π-system containing the whole space
+(`MeasurableSpace.exists_countable_isPiSystem_generateFrom`).
 
 ## Main results
 
@@ -71,6 +74,26 @@ theorem MeasurableSpace.CountablySeparated.of_injective {α β : Type*} [Measura
     exact hinj <| hS _ (mem_univ _) _ (mem_univ _) fun s hs => hxy _ ⟨s, hs, rfl⟩
 
 variable {α β γ : Type*}
+
+/-- A countably generated measurable space has a countable generating π-system containing
+the whole space. -/
+theorem MeasurableSpace.exists_countable_isPiSystem_generateFrom [MeasurableSpace α]
+    [CountablyGenerated α] :
+    ∃ C : Set (Set α), C.Countable ∧ IsPiSystem C ∧ univ ∈ C ∧
+      ‹MeasurableSpace α› = generateFrom C := by
+  classical
+  let G := natGeneratingSequence α
+  let C := piiUnionInter (fun i => ({G i} : Set (Set α))) univ
+  have hC : C = range (fun s : Finset ℕ => ⋂ i ∈ s, G i) := by
+    ext A
+    simp [C, piiUnionInter_singleton_left, eq_comm]
+  refine ⟨C, ?_, isPiSystem_piiUnionInter _ (fun _ => IsPiSystem.singleton _) _, ?_, ?_⟩
+  · rw [hC]
+    exact countable_range _
+  · rw [hC]
+    exact ⟨∅, by simp⟩
+  · simp only [C, generateFrom_piiUnionInter_singleton_left, mem_univ, true_and]
+    exact (generateFrom_natGeneratingSequence α).symm
 
 /-- **A generated σ-algebra is exhausted by its countable subfamilies.** A set measurable for
 `generateFrom C` is measurable for `generateFrom D` for some countable `D ⊆ C`. -/

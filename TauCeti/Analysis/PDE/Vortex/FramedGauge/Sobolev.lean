@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.Sobolev
+public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
+import TauCeti.Analysis.PDE.Vortex.Multiplier
 import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
+import TauCeti.Analysis.Sobolev.Wkp.ContDiffRepresentative
 
 /-!
 # The Sobolev framed gauge group of plane vortices
@@ -27,16 +30,21 @@ the end condition `u → 1` at infinity, so the smooth elements of `G_s` are smo
 (`TauCeti.Vortex.framedGaugeGroup`); they form the subgroup `G_s ⊓ framedGaugeGroup`. Conversely,
 smooth gauges with `u - 1` compactly supported, such as `exp (i f)` for a smooth compactly
 supported phase `f`, lie in every `G_s`. A smooth framed gauge need not lie in `G_s`: a phase
-with a `1 / |z|` tail is not square integrable on the plane.
+with a `1 / |z|` tail is not square integrable on the plane. By the Sobolev embedding, an element
+of `G_s` is `Cʲ` whenever `j + 2 ≤ s`.
 
 For a `C¹` gauge `u ∈ G_(s+1)`, the real one-form `Im (u⁻¹ du)` (`TauCeti.Vortex.gaugeForm`)
 has coefficients in `H^s`. Its product with `i` is the connection increment `u⁻¹ du` of the
 action `(a, α) ↦ (a - u⁻¹ du, u α)`, so the `C¹` elements of `G_(s+1)` preserve the connection
 part of `A_m^s`.
 
-No topology or Banach Lie group charts on `G_s` are constructed here, and the action on the
-section part of `A_m^s`, which needs multiplication of `H^s` by the bounded reference section,
-is not treated.
+For an integer `k ≥ 2`, the section part is preserved as well: `H^k` is an algebra, and it is
+stable under multiplication by the reference section, whose derivatives are bounded. Hence the
+charge-one action of `G_(k+1)` maps `A_m^k` into itself, giving an action of `G_(k+1)` on
+`A_m^k`.
+
+No topology or Banach Lie group charts on `G_s` are constructed here, and neither the slice
+theorem nor the quotient is treated.
 
 ## Main definitions
 
@@ -48,12 +56,17 @@ is not treated.
   function `u - 1` lies in `H^s(ℂ; ℂ)`.
 * `TauCeti.Vortex.tendsto_cocompact_of_mem_sobolevGaugeGroup`: elements of `G_s` tend to one at
   infinity.
+* `TauCeti.Vortex.contDiff_of_mem_sobolevGaugeGroup`: elements of `G_s` are `Cʲ` for
+  `j + 2 ≤ s`.
 * `TauCeti.Vortex.mem_sobolevGaugeGroup_inf_framedGaugeGroup`: the smooth subgroup of `G_s` is
   `G_s ⊓ framedGaugeGroup`.
 * `TauCeti.Vortex.mem_sobolevGaugeGroup_of_hasCompactSupport`,
   `TauCeti.Vortex.exp_mem_sobolevGaugeGroup`: compactly supported smooth gauges lie in `G_s`.
 * `TauCeti.Vortex.gaugeForm_apply_mem_realSobolevFunctions`: for a `C¹` gauge in `G_(s+1)`,
   `Im (u⁻¹ du)` has coefficients in `H^s`.
+* `TauCeti.Vortex.gaugeTransform_mem_framedFieldSpace`: for `k ≥ 2`, the charge-one action of
+  `G_(k+1)` preserves `A_m^k`; this gives a `MulAction` of `G_(k+1)` on `A_m^k`, which is
+  free (an `IsCancelSMul` instance).
 
 ## References
 
@@ -160,6 +173,30 @@ theorem tendsto_cocompact_of_mem_sobolevGaugeGroup {s : ℝ} {hs : 1 < s} {u : �
     simpa using h
   exact tendsto_subtype_rng.2 (by simpa using hc)
 
+/-- **Regularity of Sobolev gauges.** By the Sobolev embedding, an element of `G_s` is `Cʲ`
+whenever `j + 2 ≤ s`. -/
+theorem contDiff_of_mem_sobolevGaugeGroup {s : ℝ} {hs : 1 < s} {u : ℂ → Circle}
+    (hu : u ∈ sobolevGaugeGroup hs) {j : ℕ} (hj : (j : ℝ) + 2 ≤ s) :
+    ContDiff ℝ j (fun z ↦ (u z : ℂ)) := by
+  obtain ⟨hu, hu₁, hu₂⟩ := (mem_sobolevGaugeGroup hs u).1 hu
+  have hc : Continuous (fun z ↦ (u z : ℂ)) := continuous_subtype_val.comp hu
+  have hk : finrank ℝ ℂ < 2 * 2 := by
+    exact_mod_cast finrank_real_complex_lt_two_mul (by norm_num : (1 : ℝ) < 2)
+  have hj' : ((2 : ℕ) + j : ℝ) ≤ s := by push_cast; linarith
+  have hre := (contDiff_of_mem_realSobolevFunctions hk hu₁
+    ((continuous_re.comp hc).sub continuous_const) hj').add (contDiff_const (c := (1 : ℝ)))
+  have him := contDiff_of_mem_realSobolevFunctions hk hu₂ (continuous_im.comp hc) hj'
+  convert (ofRealCLM.contDiff.comp hre).add ((ofRealCLM.contDiff.comp him).mul
+    (contDiff_const (c := I))) using 1
+  ext1 z
+  simp [re_add_im]
+
+/-- An element of `G_s`, `s ≥ 3`, is differentiable. -/
+theorem differentiable_of_mem_sobolevGaugeGroup {s : ℝ} {hs : 1 < s} {u : ℂ → Circle}
+    (hu : u ∈ sobolevGaugeGroup hs) (h : 3 ≤ s) : Differentiable ℝ (fun z ↦ (u z : ℂ)) :=
+  (contDiff_of_mem_sobolevGaugeGroup hu (j := 1) (by norm_num; linarith)).differentiable
+    one_ne_zero
+
 /-- **Smooth elements of `G_s` are smooth framed gauges.** -/
 theorem mem_framedGaugeGroup_of_mem_sobolevGaugeGroup {s : ℝ} {hs : 1 < s} {u : ℂ → Circle}
     (hu : u ∈ sobolevGaugeGroup hs) (hsmooth : ContDiff ℝ ∞ (fun z ↦ (u z : ℂ))) :
@@ -245,5 +282,81 @@ theorem gaugeForm_apply_mem_realSobolevFunctions {s : ℝ} (hs : 1 < s) {u : ℂ
   simp only [gaugeForm_apply, mul_im, conj_re, conj_im, Pi.add_apply, Pi.neg_apply,
     Pi.mul_apply]
   ring
+
+/-! ### The action on the affine field space -/
+
+/-- **The Sobolev gauge action preserves the affine field space.** For `k ≥ 2`, the charge-one
+action `(a, α) ↦ (a - u⁻¹ du, u α)` of `u ∈ G_(k+1)` maps `A_m^k` into itself. -/
+theorem gaugeTransform_mem_framedFieldSpace {k : ℕ} (hk : 1 < k) {hs : 1 < (k : ℝ) + 1}
+    {u : ℂ → Circle} (hu : u ∈ sobolevGaugeGroup hs) {f : ContDiffBump (0 : ℝ)} {m : ℕ}
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : x ∈ framedFieldSpace f m k) :
+    gaugeTransform u x ∈ framedFieldSpace f m k := by
+  have hk' : (2 : ℝ) ≤ k := by exact_mod_cast hk
+  have hs' : (1 : ℝ) < k := by linarith
+  have hC : ContDiff ℝ 1 (fun z ↦ (u z : ℂ)) :=
+    contDiff_of_mem_sobolevGaugeGroup hu (j := 1) (by push_cast; linarith)
+  have hω (v : ℂ) := gaugeForm_apply_mem_realSobolevFunctions hs' hu hC v
+  -- Products of section coordinates of `x` with `H^k` functions stay in `H^k`.
+  have hmul (i : Fin 4) {g : ℂ → ℝ} (hg : g ∈ realSobolevFunctions ℂ k 2) :
+      (fun z ↦ x z i * g z) ∈ realSobolevFunctions ℂ k 2 :=
+    mul_mem_realSobolevFunctions_of_mem_framedFieldSpace hk hx i hg
+  rw [mem_framedFieldSpace, mem_sobolevFields] at hx ⊢
+  obtain ⟨-, hA, hB⟩ := (mem_sobolevGaugeGroup _ u).1 hu
+  have hmono := realSobolevFunctions_mono (E := ℂ) (p := 2) (by norm_num) (by norm_num)
+    (lt_add_one (k : ℝ)).le
+  replace hA := hmono hA
+  replace hB := hmono hB
+  intro i
+  fin_cases i
+  · convert sub_mem (hx 0) (hω 1) using 1
+    ext z
+    simp [gaugeTransform_apply]
+    ring
+  · convert sub_mem (hx 1) (hω I) using 1
+    ext z
+    simp [gaugeTransform_apply]
+    ring
+  · convert sub_mem (add_mem (hx 2) (hmul 2 hA)) (hmul 3 hB) using 1
+    ext z
+    simp [gaugeTransform_apply]
+    ring
+  · convert add_mem (add_mem (hx 3) (hmul 3 hA)) (hmul 2 hB) using 1
+    ext z
+    simp [gaugeTransform_apply]
+    ring
+
+/-- For `k ≥ 2`, the Sobolev gauge group `G_(k+1)` acts on the affine field space `A_m^k` by the
+charge-one gauge action `(a, α) ↦ (a - u⁻¹ du, u α)`. -/
+instance {k : ℕ} [Fact (1 < k)] {hs : 1 < (k : ℝ) + 1} {f : ContDiffBump (0 : ℝ)} {m : ℕ} :
+    MulAction (sobolevGaugeGroup hs) (framedFieldSpace f m k) where
+  smul u x := ⟨gaugeTransform u x, gaugeTransform_mem_framedFieldSpace Fact.out u.2 x.2⟩
+  one_smul x := Subtype.ext (gaugeTransform_one x)
+  mul_smul u v x := by
+    have h : (3 : ℝ) ≤ k + 1 := by
+      have : (2 : ℝ) ≤ k := by exact_mod_cast (Fact.out : 1 < k)
+      linarith
+    exact Subtype.ext (gaugeTransform_mul (differentiable_of_mem_sobolevGaugeGroup u.2 h)
+      (differentiable_of_mem_sobolevGaugeGroup v.2 h) x)
+
+/-- The action of `G_(k+1)` on `A_m^k` is the charge-one gauge transformation. -/
+@[simp]
+theorem coe_sobolevGaugeGroup_smul {k : ℕ} [Fact (1 < k)] {hs : 1 < (k : ℝ) + 1}
+    {f : ContDiffBump (0 : ℝ)} {m : ℕ} (u : sobolevGaugeGroup hs)
+    (x : framedFieldSpace f m k) :
+    ((u • x : framedFieldSpace f m k) : ℂ → EuclideanSpace ℝ (Fin 4)) = gaugeTransform u x :=
+  (rfl)
+
+/-- **The action of `G_(k+1)` on `A_m^k` is free**: an element of `G_(k+1)` fixing one field is the
+identity. -/
+instance {k : ℕ} [Fact (1 < k)] {hs : 1 < (k : ℝ) + 1} {f : ContDiffBump (0 : ℝ)} {m : ℕ} :
+    IsCancelSMul (sobolevGaugeGroup hs) (framedFieldSpace f m k) := by
+  have h : (3 : ℝ) ≤ k + 1 := by
+    have : (2 : ℝ) ≤ k := by exact_mod_cast (Fact.out : 1 < k)
+    linarith
+  refine isCancelSMul_iff_eq_one_of_smul_eq.mpr fun u x hux ↦ Subtype.ext ?_
+  exact eq_one_of_gaugeTransform_eq_self (x := x.1)
+    (differentiable_of_mem_sobolevGaugeGroup u.2 h)
+    (tendsto_cocompact_of_mem_sobolevGaugeGroup u.2)
+    (by simpa only [coe_sobolevGaugeGroup_smul] using congrArg Subtype.val hux)
 
 end TauCeti.Vortex
