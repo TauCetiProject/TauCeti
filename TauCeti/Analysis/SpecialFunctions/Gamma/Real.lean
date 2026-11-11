@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.Digamma
 public import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
 public import Mathlib.Analysis.Convex.Deriv
 public import Mathlib.Analysis.Complex.RealDeriv
+public import Mathlib.Analysis.Complex.ExponentialBounds
 
 /-!
 # Real digamma and its bounds on the positive real axis
@@ -26,6 +27,11 @@ derivative of real Gamma, and relates it to Mathlib's `Complex.digamma`.
 * `Real.digamma_one`, `Real.digamma_apply_add_one`, `Real.digamma_apply_add_nat`: the value
   `ψ(1) = -γ` and the recurrence `ψ(x + 1) = ψ(x) + 1 / x` with its iterates.
 * `Real.digamma_le_log_le`: for `x > 0`, `ψ(x) ≤ log x ≤ ψ(x + 1)`.
+* `Real.monotoneOn_digamma`, `Complex.monotoneOn_re_digamma_ofReal`: digamma is monotone on the
+  positive real axis, being the derivative of the convex function `log ∘ Gamma`.
+* `Real.digamma_one_half`, `Real.digamma_three_halves`, `Real.digamma_one_half_neg`,
+  `Real.digamma_three_halves_pos`: the values `ψ(1/2) = -γ - 2 log 2 < 0` and
+  `ψ(3/2) = 2 - γ - 2 log 2 > 0`.
 * `Real.abs_digamma_sub_log_le`, `Complex.norm_digamma_ofReal_sub_log_le`,
   `Complex.isBigO_digamma_ofReal_sub_log`: for `x > 0`, `|ψ(x) - log x| ≤ 1 / x`, so complex
   digamma differs from the logarithm by `O(1 / x)` on the positive real axis.
@@ -158,9 +164,74 @@ theorem abs_digamma_sub_log_le {x : ℝ} (hx : 0 < x) : |digamma x - log x| ≤ 
   rw [abs_le]
   constructor <;> linarith
 
+/-- Real digamma is monotone on the positive real axis. It is the derivative of `log ∘ Gamma`,
+which is convex there by the Bohr–Mollerup theorem. -/
+theorem monotoneOn_digamma : MonotoneOn digamma (Ioi 0) := by
+  have hd : EqOn digamma (deriv (log ∘ Gamma)) (Ioi 0) := fun x hx ↦
+    digamma_eq_deriv_log_Gamma (Complex.real_ne_neg_nat_of_pos hx)
+  exact (convexOn_log_Gamma.monotoneOn_deriv fun x hx ↦
+    differentiableAt_log_Gamma (Complex.real_ne_neg_nat_of_pos hx)).congr hd.symm
+
+/-- The value `ψ(1/2) = -γ - 2 log 2`. -/
+theorem digamma_one_half : digamma (1 / 2) = -eulerMascheroniConstant - 2 * log 2 := by
+  have h := Complex.digamma_one_half
+  rw [show (1 / 2 : ℂ) = ((1 / 2 : ℝ) : ℂ) by push_cast; rfl, Complex.digamma_ofReal,
+    show Complex.log 2 = ((log 2 : ℝ) : ℂ) by rw [Complex.ofReal_log zero_le_two]; rfl] at h
+  apply Complex.ofReal_injective
+  rw [h]
+  push_cast
+  ring
+
+/-- `ψ(1/2) = -γ - 2 log 2` is negative. -/
+theorem digamma_one_half_neg : digamma (1 / 2) < 0 := by
+  rw [digamma_one_half]
+  linarith [one_half_lt_eulerMascheroniConstant, log_pos one_lt_two]
+
+/-- The value `ψ(3/2) = 2 - γ - 2 log 2`, from `ψ(1/2)` and the recurrence. -/
+theorem digamma_three_halves : digamma (3 / 2) = 2 - eulerMascheroniConstant - 2 * log 2 := by
+  rw [show (3 / 2 : ℝ) = 1 / 2 + 1 by norm_num,
+    digamma_apply_add_one (Complex.real_ne_neg_nat_of_pos one_half_pos), digamma_one_half]
+  ring
+
+/-- Euler's constant satisfies `γ + 2 log 2 < 2`. With `γ ≈ 0.57722` the gap is about
+`0.03649`; it follows from `γ < H₁₆ - log 16` and `log 2 > 0.6931471803`. -/
+theorem eulerMascheroniConstant_add_two_mul_log_two_lt_two :
+    eulerMascheroniConstant + 2 * log 2 < 2 := by
+  have h := eulerMascheroniConstant_lt_eulerMascheroniSeq' 16
+  have h16 : eulerMascheroniSeq' 16 = (harmonic 16 : ℝ) - 4 * log 2 := by
+    rw [eulerMascheroniSeq', show ((16 : ℕ) : ℝ) = 2 ^ 4 by norm_num, log_pow]
+    norm_num
+  have hH : (harmonic 16 : ℝ) = 2436559 / 720720 := by
+    rw [harmonic]
+    norm_num [Finset.sum_range_succ]
+  have hlog := log_two_gt_d9
+  rw [h16, hH] at h
+  norm_num at h hlog
+  linarith
+
+/-- `ψ(3/2) = 2 - γ - 2 log 2` is positive. -/
+theorem digamma_three_halves_pos : 0 < digamma (3 / 2) := by
+  rw [digamma_three_halves]
+  linarith [eulerMascheroniConstant_add_two_mul_log_two_lt_two]
+
 end Real
 
 namespace Complex
+
+/-- Complex digamma is real on the real axis. -/
+theorem im_digamma_ofReal (x : ℝ) : (digamma (x : ℂ)).im = 0 := by
+  rw [digamma_ofReal, ofReal_im]
+
+/-- On the positive real axis, the real part of complex digamma is the derivative of
+`log ∘ Real.Gamma`. -/
+theorem re_digamma_ofReal_eq_deriv {x : ℝ} (hx : 0 < x) :
+    (digamma (x : ℂ)).re = deriv (Real.log ∘ Real.Gamma) x := by
+  rw [digamma_ofReal, ofReal_re, Real.digamma_eq_deriv_log_Gamma (real_ne_neg_nat_of_pos hx)]
+
+/-- The real part of complex digamma is monotone on the positive real axis. -/
+theorem monotoneOn_re_digamma_ofReal :
+    MonotoneOn (fun x : ℝ ↦ (digamma (x : ℂ)).re) (Ioi 0) := by
+  simpa only [digamma_ofReal, ofReal_re] using Real.monotoneOn_digamma
 
 /-- An explicit error bound for complex digamma on the positive real axis. -/
 theorem norm_digamma_ofReal_sub_log_le {x : ℝ} (hx : 0 < x) :
