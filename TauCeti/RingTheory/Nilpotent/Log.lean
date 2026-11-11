@@ -84,8 +84,6 @@ theorem map_log {B F : Type*} [Ring B] [Module ℚ B]
   have hn' : (f a - 1) ^ n = 0 := by simpa using congrArg f hn
   simp [log_eq_sum hn, log_eq_sum hn', map_rat_smul]
 
-variable [IsScalarTower ℚ A A] [SMulCommClass ℚ A A]
-
 /-- The finite logarithm of a unipotent element is nilpotent. -/
 theorem isNilpotent_log {a : A} (ha : IsNilpotent (a - 1)) : IsNilpotent (log a) := by
   rw [log_def]
