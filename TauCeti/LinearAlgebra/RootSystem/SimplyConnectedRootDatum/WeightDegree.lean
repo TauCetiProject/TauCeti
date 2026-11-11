@@ -82,6 +82,13 @@ theorem weightDegree_root_pos {γ : Fin t.numRoots}
   exact_mod_cast lt_of_lt_of_le Int.zero_lt_one
     (one_le_height_of_mem_posRoots (t.rationalRootSystem ht) (t.rationalBase ht) hγ)
 
+/-- Every negative root has strictly negative weight degree. -/
+theorem weightDegree_root_neg {γ : Fin t.numRoots}
+    (hγ : γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht)) :
+    t.weightDegree ht ((t.simplyConnectedRootDatum ht).root γ) < 0 := by
+  rw [weightDegree_root]
+  exact_mod_cast height_neg_of_mem_negRoots (t.rationalRootSystem ht) (t.rationalBase ht) hγ
+
 /-- The integral weight of a root coordinate in Geck's representation, cast to `ℚ`, is the
 corresponding root of the pinned rational root system. -/
 theorem intCast_geckWeight_inr (k : Fin t.numRoots) :

@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Orientation.Sphere
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.Analysis.InnerProductSpace.Euclidean.CrossProduct
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Parametrization
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 import TauCeti.Geometry.Manifold.Instances.OnePoint.FubiniStudy
@@ -19,12 +20,12 @@ import TauCeti.Geometry.Manifold.Riemannian.Sphere.Stereographic
 # The area of the unit two-sphere
 
 For an orientation `o` of `ℝ³ = EuclideanSpace ℝ (Fin 3)`, the outward-normal top form
-`o.sphereTopForm` of the unit sphere `S²` sends two tangent vectors `a, b` at `u` to
+`o.sphereVolumeForm` of the unit sphere `S²` sends two tangent vectors `a, b` at `u` to
 `vol(u, a, b)`. For the standard orientation this is the triple product
-`u ⬝ᵥ (a ⨯₃ b)` (`EuclideanSpace.volumeForm_eq_dotProduct_cross`), the area form of the round
-sphere. This file proves that its integral over `S²` with the outward-normal orientation is the
-area `4π` of the unit sphere (`Orientation.integralTopForm_sphereOrientation_sphereTopForm`), for
-either orientation of `ℝ³`.
+`u ⬝ᵥ (a ⨯₃ b)` (`EuclideanSpace.volumeForm_basisFun_orientation_three`), the area form of the
+round sphere. This file proves that its integral over `S²` with the outward-normal orientation is
+the area `4π` of the unit sphere (`Orientation.integralTopForm_sphereOrientation_sphereVolumeForm`),
+for either orientation of `ℝ³`.
 
 The integral is computed through inverse stereographic projection from the south pole,
 
@@ -40,8 +41,8 @@ whose total integral is one (`OnePoint.integral_fubiniStudyDensity`).
 
 ## Main results
 
-* `Orientation.integralTopForm_sphereOrientation_sphereTopForm`: the outward-normal area form of
-  the unit sphere of `ℝ³` integrates to `4π`.
+* `Orientation.integralTopForm_sphereOrientation_sphereVolumeForm`: the outward-normal area form
+  of the unit sphere of `ℝ³` integrates to `4π`.
 
 ## References
 
@@ -167,13 +168,13 @@ private theorem mvfderiv_coe_mfderiv_stereoSphere (z : ℝ²) (v : TangentSpace 
 
 /-- On the derivatives of the parametrization, the area form is the density
 `4 / (1 + x² + y²)²`. -/
-private theorem sphereTopForm_mfderiv_stereoSphere (z : ℝ²) :
-    (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereTopForm (stereoSphere z)
+private theorem sphereVolumeForm_mfderiv_stereoSphere (z : ℝ²) :
+    (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.1 (stereoSphere z)
       (fun i ↦ mfderiv 𝓘(ℝ, ℝ²) (𝓡 2) stereoSphere z
         ((EuclideanSpace.basisFun (Fin 2) ℝ).toBasis i)) =
         4 / (1 + z 0 ^ 2 + z 1 ^ 2) ^ 2 := by
-  rw [Orientation.sphereTopForm_apply, ← dotProduct_cross_fderiv_stereoParam,
-    ← EuclideanSpace.volumeForm_eq_dotProduct_cross]
+  rw [Orientation.sphereVolumeForm_apply, ← dotProduct_cross_fderiv_stereoParam,
+    ← EuclideanSpace.volumeForm_basisFun_orientation_three]
   refine congrArg _ (funext fun i ↦ ?_)
   fin_cases i
   · rfl
@@ -188,9 +189,10 @@ private theorem injective_mfderiv_stereoSphere (z : ℝ²) :
   -- The area form does not vanish on the images of the basis vectors, so they are independent.
   have hli : LinearIndependent ℝ fun i ↦ L ((EuclideanSpace.basisFun (Fin 2) ℝ).toBasis i) := by
     by_contra h
-    have h0 := ((EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereTopForm
+    have h0 := ((EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.1
       (stereoSphere z)).toAlternatingMap.map_linearDependent _ h
-    rw [ContinuousAlternatingMap.coe_toAlternatingMap, sphereTopForm_mfderiv_stereoSphere] at h0
+    rw [ContinuousAlternatingMap.coe_toAlternatingMap, sphereVolumeForm_mfderiv_stereoSphere]
+      at h0
     have : (0 : ℝ) < 4 / (1 + z 0 ^ 2 + z 1 ^ 2) ^ 2 := by positivity
     exact this.ne' h0
   exact LinearMap.injective_of_linearIndependent (f := L.toLinearMap)
@@ -226,13 +228,13 @@ private theorem map_stereoDerivEquiv_orientation (z : ℝ²) :
         (stereoSphere z) := by
   rw [← Module.Basis.orientation_map,
     Orientation.orientation_eq_orientationAt_sphereOrientation_iff,
-    ← Orientation.sphereTopForm_apply]
+    ← Orientation.sphereVolumeForm_apply]
   have hmap : ⇑((EuclideanSpace.basisFun (Fin 2) ℝ).toBasis.map
       (stereoDerivEquiv z).toLinearEquiv) = fun i ↦ mfderiv 𝓘(ℝ, ℝ²) (𝓡 2) stereoSphere z
         ((EuclideanSpace.basisFun (Fin 2) ℝ).toBasis i) := by
     funext i
     rw [Module.Basis.map_apply, ContinuousLinearEquiv.coe_toLinearEquiv, stereoDerivEquiv_apply]
-  rw [hmap, sphereTopForm_mfderiv_stereoSphere]
+  rw [hmap, sphereVolumeForm_mfderiv_stereoSphere]
   positivity
 
 /-! ### The image of the parametrization -/
@@ -297,19 +299,20 @@ private theorem integral_stereoDensity :
   rw [integral_const_mul, OnePoint.integral_fubiniStudyDensity, mul_one]
 
 /-- The outward-normal area form of the standard orientation integrates to `4π`. -/
-private theorem integralTopForm_sphereTopForm_basisFun :
+private theorem integralTopForm_sphereVolumeForm_basisFun :
     integralTopForm (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereOrientation
-      (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereTopForm = 4 * Real.pi := by
+      (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.1 =
+        4 * Real.pi := by
   obtain ⟨l, hl⟩ :=
     (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereOrientation.exists_lift
   have hc : IsCompact (_root_.tsupport (α := ℝ² [⋀^Fin 2]→L[ℝ] ℝ)
-      (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereTopForm) :=
+      (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.1) :=
     isCompact_univ.of_isClosed_subset (isClosed_tsupport _) (Set.subset_univ _)
   have h := integralTopForm_eq_oriented_parametrization l
     (EuclideanSpace.basisFun (Fin 2) ℝ).toBasis
-    (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereTopForm
+    (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.1
     (IsSmoothForm.integrableTopForm
-      (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.isSmoothForm_sphereTopForm hc
+      (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm.isSmoothForm hc
       (EuclideanSpace.basisFun (Fin 2) ℝ).toBasis)
     MeasurableSet.univ (Set.finite_singleton southPole)
     (by rw [Set.image_univ, range_stereoSphere]) injective_stereoSphere.injOn stereoDerivEquiv
@@ -318,7 +321,7 @@ private theorem integralTopForm_sphereTopForm_basisFun :
       rw [← Manifold.Orientation.orientationAt_mk, hl, map_stereoDerivEquiv_orientation])
   rw [OrthonormalBasis.addHaar_eq_volume] at h
   rw [← hl, h.2, Measure.restrict_univ]
-  simp_rw [stereoDerivEquiv_apply, sphereTopForm_mfderiv_stereoSphere]
+  simp_rw [stereoDerivEquiv_apply, sphereVolumeForm_mfderiv_stereoSphere]
   exact integral_stereoDensity
 
 end TauCeti
@@ -326,14 +329,14 @@ end TauCeti
 /-- **The area of the unit sphere is `4π`.** For either orientation `o` of `ℝ³`, the
 outward-normal area form `(a, b) ↦ vol(u, a, b)` of the unit sphere integrates to `4π` over the
 sphere with its outward-normal orientation. -/
-theorem Orientation.integralTopForm_sphereOrientation_sphereTopForm
+theorem Orientation.integralTopForm_sphereOrientation_sphereVolumeForm
     (o : Orientation ℝ ℝ³ (Fin 3)) :
-    TauCeti.integralTopForm o.sphereOrientation o.sphereTopForm = 4 * Real.pi := by
+    TauCeti.integralTopForm o.sphereOrientation o.sphereVolumeForm.1 = 4 * Real.pi := by
   rcases o.eq_or_eq_neg (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation (by simp)
     with rfl | rfl
-  · exact TauCeti.integralTopForm_sphereTopForm_basisFun
+  · exact TauCeti.integralTopForm_sphereVolumeForm_basisFun
   · -- Reversing `o` reverses both the orientation of the sphere and the sign of the form.
-    rw [Orientation.sphereOrientation_neg, Orientation.sphereTopForm_neg, ← neg_one_smul ℝ,
-      TauCeti.integralTopForm_neg, TauCeti.integralTopForm_smul,
-      TauCeti.integralTopForm_sphereTopForm_basisFun]
+    rw [Orientation.sphereOrientation_neg, Orientation.sphereVolumeForm_neg, Submodule.coe_neg,
+      ← neg_one_smul ℝ, TauCeti.integralTopForm_neg, TauCeti.integralTopForm_smul,
+      TauCeti.integralTopForm_sphereVolumeForm_basisFun]
     ring
