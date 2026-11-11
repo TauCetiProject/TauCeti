@@ -41,6 +41,13 @@ def IsLocallyProConstructible (s : Set X) : Prop :=
   ∀ U : Set X, IsOpen U → SpectralSpace U →
     IsProConstructible ((Subtype.val : U → X) ⁻¹' s)
 
+/-- Pro-constructible traces on every spectral open imply local pro-constructibility. -/
+theorem IsLocallyProConstructible.of_forall
+    (hs : ∀ U : Set X, IsOpen U → SpectralSpace U →
+      IsProConstructible ((Subtype.val : U → X) ⁻¹' s)) :
+    IsLocallyProConstructible s :=
+  hs
+
 /-- The trace of a locally pro-constructible subset on a spectral open is pro-constructible. -/
 theorem IsLocallyProConstructible.isProConstructible_preimage
     (hs : IsLocallyProConstructible s) {U : Set X} (hU : IsOpen U) [SpectralSpace U] :
