@@ -58,6 +58,9 @@ abbrev addEdge : SerreGraph.{u, v} where
 
 variable {Γ x y}
 
+/- The three `src` equations are not simp lemmas: `addEdge` is reducible, so `simp` already
+evaluates `src` on the darts `Sum.inl e`, `Sum.inr true` and `Sum.inr false`. -/
+
 theorem addEdge_src_inl (e : Γ.E) : (Γ.addEdge x y).src (.inl e) = Γ.src e := (rfl)
 
 theorem addEdge_src_inr_true : (Γ.addEdge x y).src (.inr true) = x := (rfl)

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.AddEdge
-public import TauCeti.Combinatorics.PolygonalComplex.SurfaceModel
+public import TauCeti.Combinatorics.PolygonalComplex.Basic
 public import Mathlib.Basic.Finite.Sum
 import Mathlib.Logic.Equiv.Option
 import Mathlib.SetTheory.Cardinal.NatCard
@@ -321,22 +321,26 @@ theorem splitFaceCornerOrigin_injective : Function.Injective (C.splitFaceCornerO
 
 /-! ### Side counts and link degrees -/
 
+/-- The side occurrences of `C.splitFace f p` attached along an old dart `e` are those of `C`
+attached along `e`. -/
+private noncomputable def outgoingFiberSplitFaceEquiv (e : C.graph.E) :
+    {c : C.Corner // C.outgoing c = e} ≃
+      {c : (C.splitFace f p).Corner // (C.splitFace f p).outgoing c = .inl e} := by
+  classical
+  refine Equiv.ofBijective (fun c => ⟨C.splitFaceCornerOfOrigin f p (.inl c.1),
+    outgoing_splitFace_eq_inl_iff.2 ⟨c.1, splitFaceCornerOrigin_splitFaceCornerOfOrigin _, c.2⟩⟩)
+    ⟨fun c c' h => ?_, fun ⟨c, hc⟩ => ?_⟩
+  · exact Subtype.ext (Sum.inl_injective
+      ((C.splitFaceCornerEquiv f p).symm.injective (congrArg Subtype.val h)))
+  · obtain ⟨c₀, h₀, he⟩ := outgoing_splitFace_eq_inl_iff.1 hc
+    exact ⟨⟨c₀, he⟩, Subtype.ext ((congrArg (C.splitFaceCornerOfOrigin f p) h₀.symm).trans
+      (splitFaceCornerOfOrigin_splitFaceCornerOrigin c))⟩
+
 /-- Splitting a face does not change the number of face sides attached along an old dart. -/
 @[simp] theorem sideCount_splitFace_inl (e : C.graph.E) :
     (C.splitFace f p).sideCount (.inl e) = C.sideCount e := by
-  classical
   rw [sideCount_def, sideCount_def]
-  refine (Nat.card_congr (Equiv.ofBijective (fun c : {c : C.Corner // C.outgoing c = e} =>
-    (⟨C.splitFaceCornerOfOrigin f p (.inl c.1), outgoing_splitFace_eq_inl_iff.2
-      ⟨c.1, splitFaceCornerOrigin_splitFaceCornerOfOrigin _, c.2⟩⟩ :
-      {c : (C.splitFace f p).Corner // (C.splitFace f p).outgoing c = .inl e})) ⟨?_, ?_⟩)).symm
-  · intro c c' h
-    exact Subtype.ext (Sum.inl_injective
-      ((C.splitFaceCornerEquiv f p).symm.injective (congrArg Subtype.val h)))
-  · rintro ⟨c, hc⟩
-    obtain ⟨c₀, h₀, he⟩ := outgoing_splitFace_eq_inl_iff.1 hc
-    exact ⟨⟨c₀, he⟩, Subtype.ext ((congrArg (C.splitFaceCornerOfOrigin f p) h₀.symm).trans
-      (splitFaceCornerOfOrigin_splitFaceCornerOrigin c))⟩
+  exact (Nat.card_congr (C.outgoingFiberSplitFaceEquiv f p e)).symm
 
 /-- Each of the two new darts lies on exactly one face side: the new side occurs once on each of
 the two new faces. -/
@@ -350,16 +354,20 @@ the two new faces. -/
       (splitFaceCornerOrigin_splitFaceCornerOfOrigin _)⟩⟩⟩
 
 /-- Splitting a face does not change the link degree of an old germ. -/
-@[simp] theorem linkDegree_splitFace_inl [Finite C.Face] (e : C.graph.E) :
+@[simp] theorem linkDegree_splitFace_inl (e : C.graph.E) :
     (C.splitFace f p).linkDegree (.inl e) = C.linkDegree e := by
-  rw [linkDegree_eq_sideCount_rev_add_sideCount, linkDegree_eq_sideCount_rev_add_sideCount,
-    SerreGraph.addEdge_rev_inl, sideCount_splitFace_inl, sideCount_splitFace_inl]
+  rw [linkDegree_eq_natCard_sum, linkDegree_eq_natCard_sum]
+  exact (Nat.card_congr ((C.outgoingFiberSplitFaceEquiv f p _).sumCongr
+    (C.outgoingFiberSplitFaceEquiv f p e))).symm
 
 /-- Each of the two new germs has degree two in its link: the new edge is interior. -/
-@[simp] theorem linkDegree_splitFace_inr [Finite C.Face] (b : Bool) :
+@[simp] theorem linkDegree_splitFace_inr (b : Bool) :
     (C.splitFace f p).linkDegree (.inr b) = 2 := by
-  rw [linkDegree_eq_sideCount_rev_add_sideCount, SerreGraph.addEdge_rev_inr,
-    sideCount_splitFace_inr, sideCount_splitFace_inr]
+  have (b' : Bool) :
+      Finite {c : (C.splitFace f p).Corner // (C.splitFace f p).outgoing c = .inr b'} :=
+    Nat.finite_of_card_ne_zero (by rw [← sideCount_def, sideCount_splitFace_inr]; simp)
+  rw [linkDegree_eq_natCard_sum, SerreGraph.addEdge_rev_inr, Nat.card_sum, ← sideCount_def,
+    ← sideCount_def, sideCount_splitFace_inr, sideCount_splitFace_inr]
 
 /-! ### Euler characteristic -/
 

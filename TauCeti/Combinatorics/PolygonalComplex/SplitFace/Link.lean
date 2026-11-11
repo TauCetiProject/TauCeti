@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.PolygonalComplex.Examples
-public import TauCeti.Combinatorics.PolygonalComplex.SplitFace
+public import TauCeti.Combinatorics.PolygonalComplex.SplitFace.Basic
+import Mathlib.Data.Set.Finite.Range
 
 /-!
 # Splitting a face of a polygonal surface model
@@ -59,14 +60,12 @@ private theorem incoming_splitFace_false_zero :
     (C.splitFace f p).incoming ⟨.inr false, ⟨0, Nat.succ_pos _⟩⟩ =
       .inl (C.incoming ⟨f, ⟨0, C.sides_pos f⟩⟩) := by
   have hp := p.2
-  rw [(C.splitFace f p).incoming_mk_eq_outgoing_mk
-      (f := .inr false) (i := (⟨C.sides f - p, Nat.lt_succ_self _⟩ : Fin (C.sides f - p + 1)))
-      (show (0 : ℕ) = if C.sides f - p + 1 = C.sides f - p + 1 then 0 else C.sides f - p + 1 by
-        simp),
+  rw [(C.splitFace f p).incoming_mk_of_eq_zero (f := .inr false)
+      (i := (⟨C.sides f - p, Nat.lt_succ_self _⟩ : Fin (C.sides f - p + 1))) rfl
+      (Nat.add_sub_cancel _ _).symm,
     outgoing_splitFace, splitFaceCornerOrigin_inr_false_of_ne_zero (by dsimp only; omega),
-    Sum.map_inl, C.incoming_mk_eq_outgoing_mk (i := ⟨p + (C.sides f - p) - 1, by omega⟩)
-      (show (0 : ℕ) = if p + (C.sides f - p) - 1 + 1 = C.sides f then 0
-        else p + (C.sides f - p) - 1 + 1 by split_ifs <;> omega)]
+    Sum.map_inl, C.incoming_mk_of_eq_zero (i := ⟨p + (C.sides f - p) - 1, by omega⟩) rfl
+      (by dsimp only; omega)]
 
 private theorem outgoing_splitFace_false_one :
     (C.splitFace f p).outgoing ⟨.inr false, ⟨1, Nat.succ_lt_succ (Nat.sub_pos_of_lt p.2)⟩⟩ =
@@ -77,30 +76,17 @@ private theorem outgoing_splitFace_false_one :
 private theorem incoming_splitFace_false_one :
     (C.splitFace f p).incoming ⟨.inr false, ⟨1, Nat.succ_lt_succ (Nat.sub_pos_of_lt p.2)⟩⟩ =
       .inr false := by
-  have hp := p.2
-  rw [(C.splitFace f p).incoming_mk_eq_outgoing_mk
-      (f := .inr false) (i := (⟨0, Nat.succ_pos _⟩ : Fin (C.sides f - p + 1)))
-      (show (1 : ℕ) = if 0 + 1 = C.sides f - p + 1 then 0 else 0 + 1 by split_ifs <;> omega)]
+  rw [(C.splitFace f p).incoming_mk_of_ne_zero (f := .inr false)
+    (i := (⟨0, Nat.succ_pos _⟩ : Fin (C.sides f - p + 1))) one_ne_zero rfl]
   exact outgoing_splitFace_inr_false_zero C f p
-
-private theorem incoming_splitFace_true_last_of_eq_zero (hp : (p : ℕ) = 0) :
-    (C.splitFace f p).incoming ⟨.inr true, ⟨p, Nat.lt_succ_self _⟩⟩ = .inr true := by
-  rw [(C.splitFace f p).incoming_mk_eq_outgoing_mk
-      (f := .inr true) (i := (⟨p, Nat.lt_succ_self _⟩ : Fin (p + 1)))
-      (show (p : ℕ) = if (p : ℕ) + 1 = p + 1 then 0 else (p : ℕ) + 1 by simp [hp])]
-  exact outgoing_splitFace_inr_true_last C f p
 
 private theorem incoming_splitFace_true_last_of_ne_zero (hp : (p : ℕ) ≠ 0) :
     (C.splitFace f p).incoming ⟨.inr true, ⟨p, Nat.lt_succ_self _⟩⟩ = .inl (C.incoming ⟨f, p⟩) := by
   have hp' := p.2
-  rw [(C.splitFace f p).incoming_mk_eq_outgoing_mk
-      (f := .inr true) (i := (⟨p - 1, by omega⟩ : Fin (p + 1)))
-      (show (p : ℕ) = if (p : ℕ) - 1 + 1 = p + 1 then 0 else (p : ℕ) - 1 + 1 by
-        split_ifs <;> omega),
+  rw [(C.splitFace f p).incoming_mk_of_ne_zero (f := .inr true)
+      (i := (⟨p - 1, by omega⟩ : Fin (p + 1))) hp rfl,
     outgoing_splitFace, splitFaceCornerOrigin_inr_true_of_lt (by dsimp only; omega),
-    Sum.map_inl, C.incoming_mk_eq_outgoing_mk (i := ⟨p - 1, by omega⟩)
-      (show (p : ℕ) = if (p : ℕ) - 1 + 1 = C.sides f then 0 else (p : ℕ) - 1 + 1 by
-        split_ifs <;> omega)]
+    Sum.map_inl, C.incoming_mk_of_ne_zero (i := ⟨p - 1, by omega⟩) hp rfl]
 
 private theorem outgoing_splitFace_true_zero (hp : (p : ℕ) ≠ 0) :
     (C.splitFace f p).outgoing ⟨.inr true, ⟨0, Nat.succ_pos _⟩⟩ =
@@ -110,9 +96,8 @@ private theorem outgoing_splitFace_true_zero (hp : (p : ℕ) ≠ 0) :
 
 private theorem incoming_splitFace_true_zero :
     (C.splitFace f p).incoming ⟨.inr true, ⟨0, Nat.succ_pos _⟩⟩ = .inr true := by
-  rw [(C.splitFace f p).incoming_mk_eq_outgoing_mk
-      (f := .inr true) (i := (⟨p, Nat.lt_succ_self _⟩ : Fin (p + 1)))
-      (show (0 : ℕ) = if (p : ℕ) + 1 = p + 1 then 0 else (p : ℕ) + 1 by simp)]
+  rw [(C.splitFace f p).incoming_mk_of_eq_zero (f := .inr true)
+    (i := (⟨p, Nat.lt_succ_self _⟩ : Fin (p + 1))) rfl (Nat.add_sub_cancel _ _).symm]
   exact outgoing_splitFace_inr_true_last C f p
 
 /-- A corner of the split face other than the two corners cut by the new edge is a corner of one
@@ -122,29 +107,23 @@ private theorem exists_corner_splitFace_self (k : Fin (C.sides f)) (hk0 : (k : �
     ∃ c : (C.splitFace f p).Corner, (C.splitFace f p).outgoing c = .inl (C.outgoing ⟨f, k⟩) ∧
       (C.splitFace f p).incoming c = .inl (C.incoming ⟨f, k⟩) := by
   have hk := k.2
-  have hC : C.incoming ⟨f, k⟩ = C.outgoing ⟨f, ⟨k - 1, by omega⟩⟩ :=
-    C.incoming_mk_eq_outgoing_mk (show (k : ℕ) = if (k : ℕ) - 1 + 1 = C.sides f then 0
-      else (k : ℕ) - 1 + 1 by split_ifs <;> omega)
+  rw [C.incoming_mk_of_ne_zero (i := ⟨k - 1, by omega⟩) hk0 rfl]
   by_cases hlt : (k : ℕ) < p
   · refine ⟨⟨.inr true, ⟨k, Nat.lt_succ_of_lt hlt⟩⟩, ?_, ?_⟩
     · rw [outgoing_splitFace, splitFaceCornerOrigin_inr_true_of_lt hlt, Sum.map_inl]
-    · rw [(C.splitFace f p).incoming_mk_eq_outgoing_mk
-          (f := .inr true) (i := (⟨k - 1, by omega⟩ : Fin (p + 1)))
-          (show (k : ℕ) = if (k : ℕ) - 1 + 1 = p + 1 then 0 else (k : ℕ) - 1 + 1 by
-            split_ifs <;> omega),
+    · rw [(C.splitFace f p).incoming_mk_of_ne_zero (f := .inr true)
+          (i := (⟨k - 1, by omega⟩ : Fin (p + 1))) hk0 rfl,
         outgoing_splitFace, splitFaceCornerOrigin_inr_true_of_lt (by dsimp only; omega),
-        Sum.map_inl, hC]
+        Sum.map_inl]
   · refine ⟨⟨.inr false, (⟨k - p + 1, by omega⟩ : Fin (C.sides f - p + 1))⟩, ?_, ?_⟩
     · rw [outgoing_splitFace, splitFaceCornerOrigin_inr_false_of_ne_zero (Nat.succ_ne_zero _),
         Sum.map_inl]
       exact congrArg (fun j => (Sum.inl (C.outgoing ⟨f, j⟩) : C.graph.E ⊕ Bool))
         (Fin.ext (by dsimp only; omega))
-    · rw [(C.splitFace f p).incoming_mk_eq_outgoing_mk
-          (f := .inr false) (i := (⟨k - p, by omega⟩ : Fin (C.sides f - p + 1)))
-          (show (k : ℕ) - p + 1 = if (k : ℕ) - p + 1 = C.sides f - p + 1 then 0
-            else (k : ℕ) - p + 1 by split_ifs <;> omega),
-        outgoing_splitFace, splitFaceCornerOrigin_inr_false_of_ne_zero (by dsimp only; omega),
-        Sum.map_inl, hC]
+    · rw [(C.splitFace f p).incoming_mk_of_ne_zero (f := .inr false)
+          (i := (⟨k - p, by omega⟩ : Fin (C.sides f - p + 1))) (Nat.succ_ne_zero _) rfl,
+        outgoing_splitFace,
+        splitFaceCornerOrigin_inr_false_of_ne_zero (by dsimp only; omega), Sum.map_inl]
       exact congrArg (fun j => (Sum.inl (C.outgoing ⟨f, j⟩) : C.graph.E ⊕ Bool))
         (Fin.ext (by dsimp only; omega))
 
@@ -195,7 +174,7 @@ private theorem nonempty_vertexLink_path_splitFace_zero {v : C.graph.V}
       ⟨.inr true, ⟨0, Nat.succ_pos _⟩⟩ (a := m') (b := m)
       (outgoing_splitFace_inr_true_last C f _).symm
       (congrArg (C.splitFace f ⟨0, C.sides_pos f⟩).graph.rev
-        (incoming_splitFace_true_last_of_eq_zero C f _ rfl).symm)
+        (incoming_splitFace_true_zero C f _).symm)
     exact ⟨(P.comp R).comp Q⟩
   · obtain ⟨P⟩ := (C.splitFace f p).nonempty_vertexLink_path_of_corner
       ⟨.inr true, ⟨0, Nat.succ_pos _⟩⟩ (a := a) (b := m)
@@ -297,12 +276,31 @@ private theorem nonempty_vertexLink_path_splitFace_of_preconnected {v : C.graph.
     exact ⟨Q.comp R⟩
 
 variable (f p) in
+/-- A vertex with finitely many corners in `C` has finitely many corners in `C.splitFace f p`:
+they come from its corners in `C` and the two occurrences of the new edge. -/
+instance {v : C.graph.V} [Finite (C.vertexLink v).E] :
+    Finite ((C.splitFace f p).vertexLink v).E := by
+  have : Finite {c : C.Corner // C.cornerVertex c = v} :=
+    .of_injective (β := (C.vertexLink v).E) (fun c => (c, true)) fun _ _ h => congrArg Prod.fst h
+  have hs : (C.splitFaceCornerOrigin f p '' {c | (C.splitFace f p).cornerVertex c = v}).Finite := by
+    refine (((Set.toFinite {c : C.Corner | C.cornerVertex c = v}).image Sum.inl).union
+      (Set.finite_range Sum.inr)).subset ?_
+    rintro _ ⟨c, rfl, rfl⟩
+    rcases hc : C.splitFaceCornerOrigin f p c with c₀ | b
+    · refine .inl ⟨c₀, ?_, rfl⟩
+      rw [Set.mem_ofPred_eq, ← src_outgoing, ← src_outgoing, outgoing_splitFace, hc, Sum.map_inl]
+      rfl
+    · exact .inr ⟨b, rfl⟩
+  have := (hs.of_finite_image (C.splitFaceCornerOrigin_injective f p).injOn).to_subtype
+  exact inferInstanceAs (Finite ({c : (C.splitFace f p).Corner // _} × Bool))
+
+variable (f p) in
 /-- Splitting a face keeps the surface links: the link of a vertex in `C.splitFace f p` is its
 link in `C` with the edges of the cut corners subdivided at the new germs, which have degree
 two. -/
-theorem HasSurfaceLink.splitFace [Finite C.Face] {v : C.graph.V} (h : C.HasSurfaceLink v) :
+theorem HasSurfaceLink.splitFace {v : C.graph.V} (h : C.HasSurfaceLink v) :
     (C.splitFace f p).HasSurfaceLink v := by
-  obtain ⟨-, hconn, hdeg⟩ := (C.hasSurfaceLink_iff v).1 h
+  obtain ⟨hfin, hconn, hdeg⟩ := (C.hasSurfaceLink_iff v).1 h
   obtain ⟨⟨a⟩, hpre⟩ := (C.vertexLink v).connected_iff.1 hconn
   refine ((C.splitFace f p).hasSurfaceLink_iff v).2 ⟨inferInstance,
     ((C.splitFace f p).vertexLink v).connected_iff.2 ⟨⟨⟨.inl a.1, a.2⟩⟩,
@@ -336,7 +334,7 @@ abbrev splitFace : SurfaceModel.{u, v, w} where
   hasSurfaceLink v := (S.hasSurfaceLink v).splitFace f p
 
 /-- Splitting a face of a surface model does not change its Euler characteristic. -/
-theorem eulerChar_splitFace : (S.splitFace f p).eulerChar = S.eulerChar :=
+@[simp] theorem eulerChar_splitFace : (S.splitFace f p).eulerChar = S.eulerChar :=
   haveI : Finite S.graph.GeomEdge := Finite.of_surjective _ S.graph.toGeomEdge_surjective
   S.toPolygonalComplex.eulerChar_splitFace f p
 
@@ -345,7 +343,7 @@ theorem isOrientable_splitFace_iff : (S.splitFace f p).IsOrientable ↔ S.IsOrie
   S.toPolygonalComplex.isOrientable_splitFace_iff f p
 
 /-- The new edge of a split face is interior: its two darts are not boundary darts. -/
-theorem inr_notMem_boundaryDarts_splitFace (b : Bool) :
+@[simp] theorem inr_notMem_boundaryDarts_splitFace (b : Bool) :
     .inr b ∉ (S.splitFace f p).boundaryDarts := by
   rw [notMem_boundaryDarts_iff]
   exact congrArg₂ (· + ·) (S.sideCount_splitFace_inr f p !b) (S.sideCount_splitFace_inr f p b)
