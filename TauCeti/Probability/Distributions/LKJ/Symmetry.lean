@@ -140,15 +140,6 @@ private theorem hasLaw_symmetricCongruenceLinearMap_diagonal_lkjMeasure {s : Fin
   ⟨(LinearMap.continuous_of_finiteDimensional _).measurable.aemeasurable,
     map_symmetricCongruenceLinearMap_diagonal_lkjMeasure p η hs⟩
 
-/-- Diagonal congruence multiplies an entry by its two diagonal factors. -/
-private theorem coe_symmetricCongruenceLinearMap_diagonal_apply (s : Fin p → ℝ)
-    (R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (i j : Fin p) :
-    (Matrix.symmetricCongruenceLinearMap (Matrix.diagonal s) R :
-        Matrix (Fin p) (Fin p) ℝ) i j =
-      s i * (R : Matrix (Fin p) (Fin p) ℝ) i j * s j := by
-  simp only [Matrix.coe_symmetricCongruenceLinearMap_apply, Matrix.diagonal_transpose,
-    Matrix.mul_diagonal, Matrix.diagonal_mul]
-
 /-! ### The mean -/
 
 /-- Every entry of an LKJ matrix is integrable: it lies in `[-1, 1]` almost surely. -/
@@ -175,7 +166,7 @@ private theorem integral_coe_apply_lkjMeasure_of_ne {i j : Fin p} (hij : i ≠ j
   have h := (hasLaw_symmetricCongruenceLinearMap_diagonal_lkjMeasure
     (p := p) (η := η) hs).integral_comp
       (selfAdjoint.measurable_coe_apply i j).aestronglyMeasurable
-  simp only [Function.comp_apply, coe_symmetricCongruenceLinearMap_diagonal_apply,
+  simp only [Function.comp_apply, Matrix.coe_symmetricCongruenceLinearMap_diagonal_apply,
     s, hij.symm, ↓reduceIte, neg_one_mul, mul_one, integral_neg] at h
   linarith
 
@@ -265,20 +256,6 @@ theorem integral_apply_map_partialCorrelationGram_pi_of_ne
   simp only [s, ite_true, ite_eq_right (Ne.symm hij), neg_one_mul, mul_one, integral_neg] at h
   linarith
 
-/-- Distinct strictly lower positions `ij ≠ kl` have an index of `ij` that is not an index of
-`kl`. Flipping the sign of that axis negates entry `ij` and fixes entry `kl`. -/
-private theorem exists_index_ne_ne_of_ne {ij kl : strictLowerTriangle p} (hne : ij ≠ kl) :
-    ∃ v : Fin p, (v = ij.1.1 ∨ v = ij.1.2) ∧ v ≠ kl.1.1 ∧ v ≠ kl.1.2 := by
-  have hp : ij.1 ≠ kl.1 := Subtype.coe_injective.ne hne
-  have hij := ij.2
-  have hkl := kl.2
-  by_cases h : ij.1.1 = kl.1.1 ∨ ij.1.1 = kl.1.2
-  · refine ⟨ij.1.2, Or.inr rfl, ?_, ?_⟩
-    all_goals rcases h with h | h
-    all_goals intro h'
-    all_goals first | exact hp (Prod.ext h h') | omega
-  · exact ⟨ij.1.1, Or.inl rfl, fun h' ↦ h (Or.inl h'), fun h' ↦ h (Or.inr h')⟩
-
 /-- Distinct strictly lower entries of a Gram law with independent negation-invariant
 marginals have zero covariance. The marginals need only be sigma-finite; the integrals in
 covariance are totalized, so this does not assert integrability or independence. -/
@@ -292,7 +269,7 @@ theorem covariance_apply_map_partialCorrelationGram_pi
       (Measure.pi μ).map partialCorrelationGram] = 0 := by
   have hij := ij.2
   have hkl := kl.2
-  obtain ⟨v, hv, hvk, hvl⟩ := exists_index_ne_ne_of_ne hne
+  obtain ⟨v, hv, hvk, hvl⟩ := strictLowerTriangle.exists_index_ne_ne_of_ne hne
   let s : Fin p → ℝ := fun k ↦ if k = v then -1 else 1
   have hs : ∀ k, |s k| = 1 := by intro k; simp [s]; split_ifs <;> norm_num
   have hsign : s ij.1.1 * s ij.1.2 = -1 := by
