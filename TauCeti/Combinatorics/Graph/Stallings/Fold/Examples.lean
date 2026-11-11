@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Stallings.Fold.Termination
+public import TauCeti.Combinatorics.Graph.Stallings.Fold.Cardinality
 public import TauCeti.Combinatorics.Graph.Stallings.Flower
 
 /-!
