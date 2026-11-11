@@ -6,11 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Contractible
+public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Topology.Category.TopCat.Monoidal
+public import Mathlib.Topology.Category.TopCat.Sphere
 public import TauCeti.Analysis.Convex.Star
 public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.SubspaceCompl
 public import TauCeti.Topology.Homotopy.HomotopyEquiv
+
+import TauCeti.Topology.Homotopy.PuncturedStarConvex
 
 /-!
 # Relative homology of the Thom pair of a product bundle
@@ -49,6 +54,9 @@ The isomorphism is built from a choice of such a step for each proper subspace o
 * `TauCeti.prodThomPairFiberMap`: the inclusion of the fibre pair `(F, F ∖ {0})` over a point.
 * `TauCeti.prodThomPairSnd`: the projection onto the fibre pair, a retraction of each fibre
   inclusion (`TauCeti.prodThomPairFiberMap_comp_prodThomPairSnd`).
+* `TauCeti.prodThomPairPuncturedHomotopyEquiv`: for `e : F ≃L[ℝ] ℝᵈ⁺²`, the punctured product
+  `B × (F ∖ {0})` is homotopy equivalent to `Sᵈ⁺¹ × B` by `(b, x) ↦ (e x / ‖e x‖, b)`.
+* `TauCeti.prodThomPairPuncturedProj`: the projection `B × (F ∖ {0}) → B`.
 * `TauCeti.isZero_singularHomology_prodThomPair`: `Hₙ(B × F, B × (F ∖ {0})) = 0` for
   `n < dim F`.
 * `TauCeti.prodThomPairSingularHomologyIso`: `Hₙ₊ᵣ(B × F, B × (F ∖ {0})) ≅ Hₙ(B)`, `r = dim F`.
@@ -152,6 +160,77 @@ theorem prodThomPairSnd_comp_prodThomPairFiberMap :
       (congrArg (Prod.mk PUnit.unit) (prodThomPairSnd_fst_apply F p)))
 
 end Defs
+
+section Punctured
+
+variable {B : Type w} [TopologicalSpace B]
+  {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F] {d : ℕ}
+
+open MonoidalCategory CartesianMonoidalCategory
+
+/-- In the coordinates `e`, the punctured product `B × (F ∖ {0})` is `B × (ℝᵈ⁺² ∖ {0})`. -/
+private def prodThomPairPuncturedHomeomorph (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 2))) :
+    (prodThomPair B F).snd ≃ₜ B × ({0}ᶜ : Set (EuclideanSpace ℝ (Fin (d + 2)))) where
+  toFun p := (p.1.1, ⟨e p.1.2, by simpa using p.2⟩)
+  invFun q := ⟨(q.1, e.symm q.2), fun h ↦ q.2.2 (by simpa using congrArg e h)⟩
+  left_inv p := Subtype.ext (by simp)
+  right_inv q := Prod.ext rfl (Subtype.ext (by simp))
+  continuous_toFun := by fun_prop
+  continuous_invFun := by fun_prop
+
+/-- **The punctured product bundle is homotopy equivalent to a product with a sphere.** For a
+continuous linear equivalence `e : F ≃L[ℝ] ℝᵈ⁺²`, the complement `B × (F ∖ {0})` of the zero
+section of the product bundle `B × F → B` is homotopy equivalent to `Sᵈ⁺¹ × B`, by
+`(b, x) ↦ (e x / ‖e x‖, b)`. -/
+def prodThomPairPuncturedHomotopyEquiv (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 2))) :
+    ContinuousMap.HomotopyEquiv (prodThomPair B F).snd
+      ↑(TopCat.sphere.{w} (d + 1) ⊗ TopCat.of B : TopCat.{w}) :=
+  ((prodThomPairPuncturedHomeomorph e).toHomotopyEquiv.trans
+    ((ContinuousMap.HomotopyEquiv.refl B).prodCongr (complSingletonHomotopyEquivSphere 0))).trans
+    ((Homeomorph.prodComm _ _).trans
+      ((Homeomorph.ulift.{w}).symm.prodCongr (Homeomorph.refl B))).toHomotopyEquiv
+
+/-- The second component of `TauCeti.prodThomPairPuncturedHomotopyEquiv` is the base point. -/
+@[simp]
+theorem prodThomPairPuncturedHomotopyEquiv_apply_snd (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 2)))
+    (p : (prodThomPair B F).snd) :
+    (prodThomPairPuncturedHomotopyEquiv e p).2 = p.1.1 :=
+  (rfl)
+
+/-- The first component of `TauCeti.prodThomPairPuncturedHomotopyEquiv` is the radial projection
+`(b, x) ↦ e x / ‖e x‖` onto the unit sphere of `ℝᵈ⁺²`. -/
+@[simp]
+theorem coe_prodThomPairPuncturedHomotopyEquiv_apply_fst
+    (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 2))) (p : (prodThomPair B F).snd) :
+    ((prodThomPairPuncturedHomotopyEquiv e p).1.down : EuclideanSpace ℝ (Fin (d + 2))) =
+      ‖e p.1.2‖⁻¹ • e p.1.2 :=
+  (coe_complSingletonHomotopyEquivSphere_apply _ ⟨e p.1.2, _⟩).trans (by simp)
+
+/-- The homotopy inverse of `TauCeti.prodThomPairPuncturedHomotopyEquiv` is
+`(s, b) ↦ (b, e⁻¹ s)`. -/
+@[simp]
+theorem coe_prodThomPairPuncturedHomotopyEquiv_symm_apply
+    (e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (d + 2)))
+    (q : ↑(TopCat.sphere.{w} (d + 1) ⊗ TopCat.of B : TopCat.{w})) :
+    ((prodThomPairPuncturedHomotopyEquiv e).symm q).1 = (q.2, e.symm q.1.down) :=
+  Prod.ext rfl (congrArg e.symm
+    ((coe_complSingletonHomotopyEquivSphere_symm_apply _ q.1.down).trans (add_zero _)))
+
+variable (B F) in
+/-- The projection `B × (F ∖ {0}) → B` of the punctured product bundle onto its base. -/
+abbrev prodThomPairPuncturedProj : (prodThomPair B F).snd ⟶ TopCat.of B :=
+  (prodThomPair B F).map ≫ TopCat.ofHom ContinuousMap.fst
+
+variable {B' : Type w} [TopologicalSpace B'] (g : C(B, B'))
+
+omit [NormedSpace ℝ F] in
+/-- The projections of the punctured product bundles commute with the map of the bases. -/
+theorem snd_prodThomPairMap_comp_prodThomPairPuncturedProj :
+    TopPair.Hom.snd (prodThomPairMap F g) ≫ prodThomPairPuncturedProj B' F =
+      prodThomPairPuncturedProj B F ≫ TopCat.ofHom g :=
+  TopCat.ext fun p ↦ congrArg Prod.fst (prodThomPairMap_snd_apply F g p)
+
+end Punctured
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
   {B : Type w} [TopologicalSpace B] {B' : Type w} [TopologicalSpace B']
