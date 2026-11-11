@@ -103,9 +103,11 @@ variable {K : Type*} [Field K] [NumberField K]
 /-- The absolute values of the complex conjugates of `x ∈ K` have product `|N(x)|`. -/
 theorem prod_norm_embedding_eq_abs_norm (x : K) :
     ∏ σ : K →+* ℂ, ‖σ x‖ = |(Algebra.norm ℚ x : ℝ)| := by
-  rw [Fintype.prod_equiv (RingHom.equivRatAlgHom K ℂ) (fun σ => ‖σ x‖) (fun τ => ‖τ x‖)
-    fun _ => rfl, ← norm_prod, ← Algebra.norm_eq_prod_embeddings, eq_ratCast,
-    Complex.norm_ratCast]
+  -- Reindex the product by `ℚ`-algebra embeddings, which act on `x` as the ring embeddings do.
+  rw [Fintype.prod_equiv (RingHom.equivRatAlgHom K ℂ) _ (fun τ => ‖τ x‖)
+    fun σ => by simp [RingHom.equivRatAlgHom_apply]]
+  -- The conjugates `τ x` multiply to the field norm, and the complex norm is multiplicative.
+  simp [← norm_prod, ← Algebra.norm_eq_prod_embeddings]
 
 /-- If every complex embedding `σ : K →+* ℂ` satisfies `‖σ x‖ ≤ C σ`, then the field norm of `x` has
 absolute value at most `∏ σ, C σ`. -/
