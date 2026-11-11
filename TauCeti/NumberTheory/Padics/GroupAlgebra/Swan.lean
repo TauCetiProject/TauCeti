@@ -102,10 +102,10 @@ private theorem exists_linearEquiv_commute_reduction_of_not_dvd (p : ℕ) [Fact 
   let _ : Module (MonoidAlgebra ℤ_[p] C) N :=
     .compHom N (MonoidAlgebra.mapDomainRingHom ℤ_[p] C.subtype)
   obtain ⟨_, _, _, _, _⟩ :=
-    MonoidAlgebra.restrictSubgroup_isScalarTower_finite_projective (R := ℤ_[p]) C
+    Subgroup.restrictSubgroup_isScalarTower_finite_projective (R := ℤ_[p]) C
       (fun _ _ ↦ rfl) M fun _ _ ↦ rfl
   obtain ⟨_, _, _, _, _⟩ :=
-    MonoidAlgebra.restrictSubgroup_isScalarTower_finite_projective (R := ℤ_[p]) C
+    Subgroup.restrictSubgroup_isScalarTower_finite_projective (R := ℤ_[p]) C
       (fun _ _ ↦ rfl) N fun _ _ ↦ rfl
   -- Swan's theorem for `C` identifies `M` and `N` over `ℤ_p[C]`, hence their reductions.
   obtain ⟨eMN⟩ := nonempty_linearEquiv_of_projective_of_tensorRat_of_not_dvd p hC M N

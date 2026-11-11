@@ -85,10 +85,10 @@ theorem trace_ofModule'_eq_of_equiv_comp (C : Subgroup G) {g : G} (hg : g ∈ C)
   let _ : Module AC X₁ := .compHom X₁ (MonoidAlgebra.mapDomainRingHom ℤ_[p] C.subtype)
   let _ : Module AC X₂ := .compHom X₂ (MonoidAlgebra.mapDomainRingHom ℤ_[p] C.subtype)
   obtain ⟨_, _, _, _, _⟩ :=
-    MonoidAlgebra.restrictSubgroup_isScalarTower_finite_projective (R := ℤ_[p]) C
+    Subgroup.restrictSubgroup_isScalarTower_finite_projective (R := ℤ_[p]) C
       (fun _ _ ↦ rfl) X₁ fun _ _ ↦ rfl
   obtain ⟨_, _, _, _, _⟩ :=
-    MonoidAlgebra.restrictSubgroup_isScalarTower_finite_projective (R := ℤ_[p]) C
+    Subgroup.restrictSubgroup_isScalarTower_finite_projective (R := ℤ_[p]) C
       (fun _ _ ↦ rfl) X₂ fun _ _ ↦ rfl
   -- Transport `e` through the lifts to an isomorphism of the reductions over `C`.
   let Q₁ := X₁ ⧸ Ideal.span {(p : A)} • (⊤ : Submodule A X₁)

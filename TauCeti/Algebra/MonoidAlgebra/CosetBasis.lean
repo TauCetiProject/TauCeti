@@ -23,7 +23,7 @@ left-coset representatives of `p.range`, which represent its right cosets.
 ## Main definitions
 
 * `TauCeti.MonoidAlgebra.basisCosets`: the coset basis of `R[N]` over `R[M]`.
-* `MonoidAlgebra.restrictSubgroup_isScalarTower_finite_projective`: restricting a finitely
+* `Subgroup.restrictSubgroup_isScalarTower_finite_projective`: restricting a finitely
   generated projective `R[G]`-module to the group algebra of a subgroup of a finite group keeps it
   finitely generated and projective, with the scalar towers needed for that.
 -/
@@ -106,7 +106,7 @@ variable {R : Type*} [CommSemiring R] {G : Type*} [Group G] [Finite G]
 group algebra of a subgroup `C` gives a finitely generated projective `R[C]`-module, on which `R`
 and `R[G]` act compatibly. Here `R[C]` acts on `R[G]` and on `X` through
 `mapDomainRingHom R C.subtype`, as the hypotheses `hA` and `hX` state. -/
-theorem restrictSubgroup_isScalarTower_finite_projective (C : Subgroup G)
+theorem _root_.Subgroup.restrictSubgroup_isScalarTower_finite_projective (C : Subgroup G)
     [inst : Module R[C] R[G]]
     (hA : ∀ (r : R[C]) (s : R[G]), r • s = mapDomainRingHom R C.subtype r * s)
     (X : Type*) [AddCommMonoid X] [Module R X] [Module R[G] X] [IsScalarTower R R[G] X]
