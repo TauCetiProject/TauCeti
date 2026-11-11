@@ -153,6 +153,26 @@ theorem integrableOn_latticeTheta_surfaceScale {D : Set (realSpace K)} (hDm : Me
   exact mul_le_mul_of_nonneg_right (hC x hx x.2 w).1 (Real.rpow_pos_of_pos ht _).le
 
 open scoped Classical in
+/-- Subtracting the constant term of the kernel subtracts `1` from the theta series before
+averaging. The constant is the surface mass times `2^r₂ / w`. -/
+theorem mellinKernel_sub_eq_integral_sub_one {D : Set (realSpace K)}
+    (hDm : MeasurableSet D) (hD : Bornology.IsBounded D)
+    (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L] [IsZLattice ℝ L]
+    {u : ℝ} (hu : 0 < u) :
+    mellinKernel D L u - (2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ) *
+        (surfaceHaar K).real (Subtype.val ⁻¹' D) =
+      (2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ) *
+        ∫ x in Subtype.val ⁻¹' D,
+          (latticeTheta L (surfaceScale (x : realSpace K)
+            (u / ZLattice.covolume L ^ 2)) - 1) ∂surfaceHaar K := by
+  have hV : 0 < ZLattice.covolume L := ZLattice.covolume_pos L
+  have := isFiniteMeasure_restrict.mpr (surfaceHaar_preimage_lt_top hD).ne
+  rw [integral_sub (integrableOn_latticeTheta_surfaceScale hDm hD L (by positivity))
+    (integrable_const _), integral_const, measureReal_restrict_apply_univ, ← Complex.coe_smul,
+    smul_eq_mul, mul_one, mellinKernel_def]
+  ring
+
+open scoped Classical in
 /-- **The Mellin kernel is continuous on `(0, ∞)`** for a bounded measurable set `D` of
 parameters, such as a unit fundamental domain. -/
 theorem continuousOn_mellinKernel {D : Set (realSpace K)} (hDm : MeasurableSet D)

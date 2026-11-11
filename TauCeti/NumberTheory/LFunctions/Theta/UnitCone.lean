@@ -32,26 +32,6 @@ namespace TauCeti.LFunctions
 variable {K : Type*} [Field K] [NumberField K]
 
 open scoped Classical in
-/-- Subtracting the constant term of the kernel subtracts `1` from the theta series before
-averaging. The constant is the surface mass times `2^r₂ / w`. -/
-theorem mellinKernel_sub_eq_integral_sub_one {D : Set (realSpace K)}
-    (hDm : MeasurableSet D) (hD : Bornology.IsBounded D)
-    (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L] [IsZLattice ℝ L]
-    {u : ℝ} (hu : 0 < u) :
-    mellinKernel D L u - (2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ) *
-        (surfaceHaar K).real (Subtype.val ⁻¹' D) =
-      (2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ) *
-        ∫ x in Subtype.val ⁻¹' D,
-          (latticeTheta L (surfaceScale (x : realSpace K)
-            (u / ZLattice.covolume L ^ 2)) - 1) ∂surfaceHaar K := by
-  have hV : 0 < ZLattice.covolume L := ZLattice.covolume_pos L
-  have := isFiniteMeasure_restrict.mpr (surfaceHaar_preimage_lt_top hD).ne
-  rw [integral_sub (integrableOn_latticeTheta_surfaceScale hDm hD L (by positivity))
-    (integrable_const _), integral_const, measureReal_restrict_apply_univ, ← Complex.coe_smul,
-    smul_eq_mul, mul_one, mellinKernel_def]
-  ring
-
-open scoped Classical in
 /-- **The radial Mellin substitution in Hecke's integral.** If the norm-weighted theta series
 minus its constant term is absolutely integrable over the cone, then the Mellin transform of
 its kernel is that cone integral times `(2^r₂ / w) V_L^s`. The power of the covolume comes from
