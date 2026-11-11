@@ -26,8 +26,9 @@ distance from the base point: `dist p (exp_p v) ≤ ‖v‖`.
 * `TauCeti.Manifold.lipschitzOnWith_maximalGeodesic`: consequently it is `‖v‖`-Lipschitz there.
 * `TauCeti.Manifold.edist_riemannianExp_le` and `TauCeti.Manifold.dist_riemannianExp_le`: the
   distance from `p` to `exp_p v` is at most `‖v‖`.
-* `TauCeti.Manifold.ball_subset_expDomain_of_isCompact_closedBall`: if the closed ball of radius
-  `R` about `p` is compact, the exponential map at `p` is defined on the tangent ball of radius `R`.
+* `TauCeti.Manifold.closedBall_subset_expDomain_of_isCompact_closedBall`: if the closed ball of
+  radius `R` about `p` is compact, the exponential map at `p` is defined on the closed tangent ball
+  of radius `R`.
 * `TauCeti.Manifold.isGeodesicallyCompleteAt_of_completeSpace`: a complete Riemannian manifold is
   geodesically complete at every point, with
   `TauCeti.Manifold.isGeodesicCurveOnFrom_maximalGeodesic_univ` the resulting all-time geodesic
@@ -117,14 +118,14 @@ theorem dist_riemannianExp_le (p : M) (v : TangentSpace I p) :
   rwa [← ofReal_norm, edist_le_ofReal (norm_nonneg v)] at h
 
 /-- **Compact continuation of radial geodesics.** If the closed ball of radius `R` about `p` is
-compact, the exponential map at `p` is defined on the open tangent ball of radius `R`. A maximal
-geodesic of speed `‖v‖ < R` stays in that closed ball up to time `1`, so by the escape lemma it
+compact, the exponential map at `p` is defined on the closed tangent ball of radius `R`. A maximal
+geodesic of speed `‖v‖ ≤ R` stays in that closed ball up to time `1`, so by the escape lemma it
 cannot stop before. No completeness of `M` is assumed. -/
-theorem ball_subset_expDomain_of_isCompact_closedBall {p : M} {R : ℝ}
+theorem closedBall_subset_expDomain_of_isCompact_closedBall {p : M} {R : ℝ}
     (hR : IsCompact (Metric.closedBall p R)) :
-    Metric.ball (0 : TangentSpace I p) R ⊆ expDomain I M p := by
+    Metric.closedBall (0 : TangentSpace I p) R ⊆ expDomain I M p := by
   intro v hv
-  rw [Metric.mem_ball, dist_zero_right] at hv
+  rw [Metric.mem_closedBall, dist_zero_right] at hv
   by_contra hvdom
   have h0 : (0 : ℝ) ∈ geodesicInterval I M p v := zero_mem_geodesicInterval
   have hupper : ∀ t ∈ geodesicInterval I M p v, t ≤ 1 := fun t ht ↦ by
@@ -142,7 +143,7 @@ theorem ball_subset_expDomain_of_isCompact_closedBall {p : M} {R : ℝ}
   simp only [coe_nnnorm, Real.dist_eq, zero_sub, abs_neg, abs_of_nonneg ht.1.le] at hd
   refine hnot (Metric.mem_closedBall'.mpr (hd.trans ?_))
   calc ‖v‖ * t ≤ ‖v‖ * 1 := mul_le_mul_of_nonneg_left (ht.2.le.trans hb1) (norm_nonneg _)
-    _ ≤ R := by rw [mul_one]; exact hv.le
+    _ ≤ R := by rwa [mul_one]
 
 end Metric
 
