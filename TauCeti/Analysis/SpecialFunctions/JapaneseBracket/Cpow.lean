@@ -9,9 +9,7 @@ public import Mathlib.Analysis.Distribution.TemperateGrowth
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
-import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Distribution.TemperateGrowth
 
 /-!
@@ -27,9 +25,10 @@ complex number `z` its complex power is Mathlib's complex power of the positive 
 For real `z = s` this is the real power `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the symbol of the Bessel
 potential of order `s`. In general its modulus is the real power of order `re z`, so an
 imaginary power `⟨x⟩ ^ (i y)` has modulus one. The powers are multiplicative in the exponent, and
-`z ↦ ⟨x⟩ ^ z` is entire with derivative `⟨x⟩ ^ z log ⟨x⟩`. For each `z` the function
-`x ↦ ⟨x⟩ ^ z` has temperate growth, so it is a Fourier multiplier on Schwartz functions: these are
-the Bessel potentials of complex order, which depend holomorphically on the order and are used to
+`z ↦ ⟨x⟩ ^ z` is entire with derivative `⟨x⟩ ^ z log ⟨x⟩`. When the domain is a real inner product
+space, the function `x ↦ ⟨x⟩ ^ z` has temperate growth for each `z`. On a finite-dimensional real
+inner product space it is therefore a Fourier multiplier on Schwartz functions: these are the
+Bessel potentials of complex order, which depend holomorphically on the order and are used to
 interpolate operators between Bessel-potential spaces.
 
 ## Main declarations
@@ -41,8 +40,8 @@ interpolate operators between Bessel-potential spaces.
 * `TauCeti.japaneseBracketCpow_add`: `⟨x⟩ ^ (z + w) = ⟨x⟩ ^ z ⟨x⟩ ^ w`.
 * `TauCeti.hasDerivAt_japaneseBracketCpow`: the derivative in the exponent, and the uniform
   second-order remainder bound `TauCeti.norm_japaneseBracketCpow_add_sub_sub_le`.
-* `TauCeti.hasTemperateGrowth_log_one_add_norm_sq`: `x ↦ log (1 + ‖x‖ ^ 2)` has temperate growth.
-* `TauCeti.hasTemperateGrowth_japaneseBracketCpow`: `x ↦ ⟨x⟩ ^ z` has temperate growth.
+* `TauCeti.hasTemperateGrowth_japaneseBracketCpow`: on a real inner product space,
+  `x ↦ ⟨x⟩ ^ z` has temperate growth.
 -/
 
 public section
@@ -155,36 +154,13 @@ theorem norm_japaneseBracketCpow_add_sub_sub_le (z : ℂ) {h : ℂ} (hh : ‖h�
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H]
 
-/-- The logarithm `x ↦ log (1 + ‖x‖ ^ 2)` of the squared Japanese bracket has temperate growth:
-it grows like `‖x‖ ^ 2`, and its derivative `(1 + ‖x‖ ^ 2)⁻¹ D‖x‖ ^ 2` has temperate growth. -/
-@[fun_prop]
-theorem hasTemperateGrowth_log_one_add_norm_sq :
-    (fun x : H ↦ Real.log (1 + ‖x‖ ^ 2)).HasTemperateGrowth := by
-  have hderiv (x : H) : HasFDerivAt (fun x : H ↦ Real.log (1 + ‖x‖ ^ 2))
-      ((1 + ‖x‖ ^ 2) ^ (-1 : ℝ) • fderiv ℝ (fun x : H ↦ ‖x‖ ^ 2) x) x := by
-    have h := (((contDiff_norm_sq ℝ (E := H) (n := 1)).differentiable one_ne_zero).differentiableAt
-      (x := x)).hasFDerivAt.const_add 1
-    rw [Real.rpow_neg_one]
-    exact h.log (ne_of_gt (by positivity))
-  have hfd : fderiv ℝ (fun x : H ↦ Real.log (1 + ‖x‖ ^ 2)) =
-      (fun x : H ↦ (1 + ‖x‖ ^ 2) ^ (-1 : ℝ)) • fderiv ℝ (fun x : H ↦ ‖x‖ ^ 2) :=
-    funext fun x ↦ (hderiv x).fderiv
-  refine Function.HasTemperateGrowth.of_fderiv (k := 2) (C := 1) ?_
-    (fun x ↦ (hderiv x).differentiableAt) fun x ↦ ?_
-  · rw [hfd]
-    exact (Function.hasTemperateGrowth_one_add_norm_sq_rpow H (-1)).smul
-      (Function.hasTemperateGrowth_norm_sq H).fderiv
-  · have hle : 1 ≤ 1 + ‖x‖ ^ 2 := by nlinarith [sq_nonneg ‖x‖]
-    rw [Real.norm_of_nonneg (Real.log_nonneg hle), one_mul]
-    have := Real.log_le_sub_one_of_pos (by linarith : (0 : ℝ) < 1 + ‖x‖ ^ 2)
-    nlinarith [norm_nonneg x]
-
-/-- The complex power `x ↦ ⟨x⟩ ^ z` of the Japanese bracket has temperate growth. It is the
-product of the real power `(1 + ‖x‖ ^ 2) ^ (re z / 2)` and the unimodular factor
-`exp (i im z log (1 + ‖x‖ ^ 2) / 2)`. -/
+/-- On a real inner product space `H`, the complex power `x ↦ ⟨x⟩ ^ z` of the Japanese bracket
+has temperate growth. -/
 @[fun_prop]
 theorem hasTemperateGrowth_japaneseBracketCpow (z : ℂ) :
     (japaneseBracketCpow z : H → ℂ).HasTemperateGrowth := by
+  -- Factor `⟨x⟩ ^ z` into the real power `(1 + ‖x‖ ^ 2) ^ (re z / 2)` and the unimodular factor
+  -- `exp (i im z log (1 + ‖x‖ ^ 2) / 2)`.
   have h : (japaneseBracketCpow z : H → ℂ) =
       (fun x : H ↦ (((1 + ‖x‖ ^ 2) ^ (z.re / 2) : ℝ) : ℂ)) *
         ((fun t : ℝ ↦ exp (t * I)) ∘ fun x : H ↦ z.im / 2 * Real.log (1 + ‖x‖ ^ 2)) := by

@@ -11,6 +11,7 @@ import Mathlib.Analysis.Normed.Operator.Extend
 import TauCeti.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Sobolev.BesselPotential.Duality
 import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Interpolation of operators on the Hilbert scale of Bessel-potential spaces
@@ -155,11 +156,6 @@ private theorem bddAbove_norm_integral_inner_besselPotentialCLM {T : 𝓢(E, V) 
   · exact BesselPotentialSpace.norm_inclusion_apply_le _ _
   · exact BesselPotentialSpace.norm_inclusion_apply_le _ _
 
-private theorem mul_rpow_mul_mul_rpow (θ : ℝ) {a b c : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hc : 0 ≤ c) :
-    (c * a) ^ (1 - θ) * (c * b) ^ θ = c * (a ^ (1 - θ) * b ^ θ) := by
-  rw [Real.mul_rpow hc ha, Real.mul_rpow hc hb, mul_mul_mul_comm,
-    ← Real.rpow_add' hc (by norm_num : 1 - θ + θ ≠ 0), sub_add_cancel, Real.rpow_one]
-
 /-- **Interpolation on the Hilbert scale of Bessel-potential spaces.** Let `T` be a linear map of
 Schwartz spaces with `‖T u‖_{H^{t₀}} ≤ M₀ ‖u‖_{H^{s₀}}` and `‖T u‖_{H^{t₁}} ≤ M₁ ‖u‖_{H^{s₁}}`.
 Then for `0 ≤ θ ≤ 1`,
@@ -198,10 +194,8 @@ theorem norm_toBesselPotentialSpaceCLM_le_rpow_mul_rpow_mul_norm {T : 𝓢(E, V)
     ring
   set N := ‖toBesselPotentialSpaceCLM tθ 2 (T u)‖ with hN
   have hGθ : G θ = ((N ^ 2 : ℝ) : ℂ) := by
-    simp only [hG]
-    rw [hcθ, hdθ, besselPotentialCLM_zero, besselPotentialCLM_zero,
-      ContinuousLinearMap.id_apply, ContinuousLinearMap.id_apply,
-      ← inner_toLp_toBesselPotentialSpaceCLM_neg tθ, hvL, inner_self_eq_norm_sq_to_K,
+    simp only [hG, hcθ, hdθ, besselPotentialCLM_zero, ContinuousLinearMap.id_apply]
+    rw [← inner_toLp_toBesselPotentialSpaceCLM_neg tθ, hvL, inner_self_eq_norm_sq_to_K,
       BesselPotentialSpace.norm_toLp_eq, hN]
     norm_cast
   have hvN : ‖toBesselPotentialSpaceCLM (-tθ) 2 v‖ = N := by
@@ -229,15 +223,18 @@ theorem norm_toBesselPotentialSpaceCLM_le_rpow_mul_rpow_mul_norm {T : 𝓢(E, V)
     (by simpa [verticalClosedStrip] using hθ)
     (differentiable_integral_inner_besselPotentialCLM h₀ u v _ _ _ _).diffContOnCl
     (bddAbove_norm_integral_inner_besselPotentialCLM hM₀ h₀ u v _ _ _ _) ha hb
-  rw [hGθ, Complex.ofReal_re, Complex.norm_real, Real.norm_of_nonneg (by positivity),
-    mul_rpow_mul_mul_rpow θ (mul_nonneg hM₀ hX0) (mul_nonneg hM₁ hX0) (norm_nonneg _),
-    mul_comm M₀ X, mul_comm M₁ X, mul_rpow_mul_mul_rpow θ hM₀ hM₁ hX0, pow_two] at h3
+  -- The common factors `N` and `X` come out of the geometric mean of the boundary bounds.
+  have hmean : (N * (M₀ * X)) ^ (1 - θ) * (N * (M₁ * X)) ^ θ =
+      N * (M₀ ^ (1 - θ) * M₁ ^ θ * X) := by
+    rw [Real.mul_rpow_one_sub_mul_mul_rpow (norm_nonneg _), mul_comm M₀, mul_comm M₁,
+      Real.mul_rpow_one_sub_mul_mul_rpow hX0, mul_comm X]
+  simp only [hGθ, Complex.ofReal_re, Complex.norm_real, hmean, sq, Real.norm_eq_abs,
+    abs_mul_self] at h3
   -- Divide by `N`.
   rcases (norm_nonneg _ : 0 ≤ N).eq_or_lt with hN0 | hN0
   · rw [show N = 0 from hN0.symm]
     exact mul_nonneg (mul_nonneg (Real.rpow_nonneg hM₀ _) (Real.rpow_nonneg hM₁ _)) hX0
-  · rw [mul_comm _ X]
-    exact le_of_mul_le_mul_left h3 hN0
+  · exact le_of_mul_le_mul_left h3 hN0
 
 /-- **Interpolated operators on the Hilbert scale.** Under the hypotheses of
 `SchwartzMap.norm_toBesselPotentialSpaceCLM_le_rpow_mul_rpow_mul_norm`, the linear map `T` of

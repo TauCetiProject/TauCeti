@@ -300,12 +300,14 @@ theorem inner_toLp_toBesselPotentialSpaceCLM_neg (r : ℝ) (a b : 𝓢(E, F)) :
     ← integral_inner_fourier_fourier a b]
   congr 1
   funext ξ
-  have h1 : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
-  rw [fourierMultiplierCLM_apply, fourierMultiplierCLM_apply, fourier_fourierInv_eq,
-    fourier_fourierInv_eq, smulLeftCLM_apply_apply (by fun_prop),
-    smulLeftCLM_apply_apply (by fun_prop), inner_smul_left, inner_smul_right, ← mul_assoc,
-    Complex.conj_ofReal, ← Complex.ofReal_mul, ← Real.rpow_add h1, neg_div, neg_add_cancel,
-    Real.rpow_zero, Complex.ofReal_one, one_mul]
+  -- The weights `⟨ξ⟩ ^ (-r)` and `⟨ξ⟩ ^ r` multiply to `1`.
+  have hw : (1 + ‖ξ‖ ^ 2) ^ (-r / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) = 1 := by
+    rw [← Real.rpow_add (by positivity)]
+    simp [neg_div]
+  simp only [fourierMultiplierCLM_apply, fourier_fourierInv_eq]
+  rw [smulLeftCLM_apply_apply (by fun_prop), smulLeftCLM_apply_apply (by fun_prop)]
+  rw [inner_smul_left, inner_smul_right, ← mul_assoc]
+  simp [← Complex.ofReal_mul, hw]
 
 /-- **Duality of `H^{-r}` and `H^r` under the `L²` pairing**:
 `|∫ ⟪a, b⟫| ≤ ‖a‖_{H^{-r}} ‖b‖_{H^r}` for Schwartz functions `a` and `b`. -/

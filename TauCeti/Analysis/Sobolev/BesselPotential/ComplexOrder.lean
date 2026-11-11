@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 public import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Cpow
 import Mathlib.Tactic.Module
+import TauCeti.Analysis.Distribution.TemperateGrowth
 
 /-!
 # Bessel potentials of complex order on Schwartz space
@@ -128,9 +129,9 @@ theorem norm_toBesselPotentialSpaceCLM_besselPotentialCLM (r : ℝ) (z : ℂ) (u
   refine eLpNorm_congr_norm_ae (memLp_one_add_norm_sq_rpow_smul_fourier _ _ 2).aestronglyMeasurable
     (memLp_one_add_norm_sq_rpow_smul_fourier _ _ 2).aestronglyMeasurable (.of_forall fun ξ ↦ ?_)
   have h1 : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
-  rw [fourier_besselPotentialCLM_apply, norm_smul, norm_smul, norm_smul, Complex.norm_real,
-    Complex.norm_real, Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity),
-    TauCeti.norm_japaneseBracketCpow, ← mul_assoc, ← Real.rpow_add h1]
+  simp only [fourier_besselPotentialCLM_apply, norm_smul, Complex.norm_real, Real.norm_eq_abs,
+    abs_of_pos (Real.rpow_pos_of_pos h1 _), TauCeti.norm_japaneseBracketCpow]
+  rw [← mul_assoc, ← Real.rpow_add h1]
   ring_nf
 
 /-- **The Bessel potentials depend holomorphically on the order.** For a Schwartz function `u`
@@ -174,8 +175,8 @@ theorem hasDerivAt_toBesselPotentialSpaceCLM_besselPotentialCLM (r : ℝ) (u : �
     refine eLpNorm_le_mul_eLpNorm_of_ae_le_mul
       (memLp_one_add_norm_sq_rpow_smul_fourier r w 2).aestronglyMeasurable (.of_forall fun ξ ↦ ?_) 2
     have h1 : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
-    rw [hrem, norm_smul, norm_smul, norm_smul, Complex.norm_real, Complex.norm_real,
-      Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity)]
+    simp only [hrem, norm_smul, Complex.norm_real, Real.norm_eq_abs,
+      abs_of_pos (Real.rpow_pos_of_pos h1 _)]
     have hr := TauCeti.norm_japaneseBracketCpow_add_sub_sub_le z hh ξ
     calc (1 + ‖ξ‖ ^ 2) ^ (r / 2) * (‖TauCeti.japaneseBracketCpow (z + h) ξ -
           TauCeti.japaneseBracketCpow z ξ - h * (TauCeti.japaneseBracketCpow z ξ * ℓ ξ)‖ *
