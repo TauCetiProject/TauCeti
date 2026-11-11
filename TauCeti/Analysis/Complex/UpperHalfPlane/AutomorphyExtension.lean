@@ -83,6 +83,7 @@ def automorphyExtension (τ : ℍ) : ℂ :=
 variable {Γ' U k f}
 
 /-- Off the saturation `Γ' • U` the extension vanishes. -/
+@[simp]
 theorem automorphyExtension_of_notMem {τ : ℍ} (hτ : τ ∉ (Γ' : Set SL(2, ℝ)) • U) :
     automorphyExtension Γ' U k f τ = 0 := by
   rw [automorphyExtension, dite_eq_right (fun h ↦ absurd h
@@ -113,6 +114,7 @@ theorem automorphyExtension_eq {g : SL(2, ℝ)} (hg : g ∈ Γ') {τ : ℍ} (hτ
       (g₀ • τ))
 
 /-- **On `U` the extension is the given function.** -/
+@[simp]
 theorem automorphyExtension_of_mem {τ : ℍ} (hτ : τ ∈ U) :
     automorphyExtension Γ' U k f τ = f τ := by
   rw [automorphyExtension_eq hf Γ'.one_mem (by rwa [one_smul]), one_smul, map_one, denom_one,
