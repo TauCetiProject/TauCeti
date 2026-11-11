@@ -64,6 +64,12 @@ rotation of the end at `∞` under `σ`. The main results are:
   along any map, where `|H_q| ≤ B_q`; the bound does not depend on `c`. The symplectic vector
   space case (`TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le`)
   is the case of the constant form `TauCeti.SymplecticForm.constSmooth`.
+* `TauCeti.Floer.exchangePerturbation_update_zero_eq_zero` and
+  `TauCeti.SymplecticForm.hamiltonianCurvature_exchangePerturbation_update_zero_eq_zero`: with the
+  input Hamiltonian `H_0` replaced by `0`, every member with `0 ≤ c ≤ 1` vanishes near `0`, and for
+  a symplectic vector space target its curvature vanishes on `S` outside the truncation
+  `TauCeti.ThricePuncturedSphere.exchangeTruncation c R` with `R ≥ 2`. This is the form used to
+  cap the input at `0` in `TauCeti.Geometry.Symplectic.Floer.PairOfPants.LeftCapping`.
 
 The input part is supported in two small discs about `0` and `1`, and the translated plane datum
 vanishes on the disc of radius `2 exp (2π)` about `c`, so for `0 ≤ c ≤ 1` the two parts have
@@ -263,6 +269,25 @@ theorem exchangePerturbation_eq_zero {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 
     pairOfPantsPerturbation_update_inf_eq_zero_of_le_norm_sub hc₀ hc₁ (by linarith),
     negativePlanePerturbation_eq_zero_of_norm_le
       (hw₂.trans (by linarith [Real.add_one_le_exp (2 * π), Real.two_le_pi])), add_zero]
+
+/-- Within distance `1/2` of `0`, the input-exchange datum of the Hamiltonians with `H_0` replaced
+by `0` vanishes, for `0 ≤ c ≤ 1`. -/
+theorem exchangePerturbation_update_zero_eq_zero {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {w : ℂ}
+    (hw : ‖w‖ ≤ 1 / 2) (x : M) : exchangePerturbation (update H zero 0) c w x = 0 := by
+  have hw₁ : 1 / 2 ≤ ‖w - 1‖ := by
+    have h := norm_sub_norm_le (1 : ℂ) w
+    rw [norm_one, norm_sub_rev] at h
+    linarith
+  have hre : (one.endCoord w).re ≤ 0 :=
+    re_endCoord_nonpos_of_le_norm_sub_endCenter (by decide) (by rwa [endCenter_one])
+  have hcut : smoothTransition ((one.endCoord w).re - 1) = 0 :=
+    smoothTransition.zero_of_nonpos (by linarith)
+  have hwc : ‖w - c‖ ≤ 2 * Real.exp (2 * π) := by
+    have h := norm_sub_le w (c : ℂ)
+    rw [Complex.norm_real, Real.norm_of_nonneg hc₀] at h
+    nlinarith [Real.one_le_exp (by positivity : (0 : ℝ) ≤ 2 * π)]
+  rw [exchangePerturbation_def, negativePlanePerturbation_eq_zero_of_norm_le hwc, add_zero]
+  simp [pairOfPantsPerturbation_def, Puncture.sum_univ, hcut]
 
 /-- **The family near the output is a translate.** For `0 ≤ c ≤ 1`, off the disc `|w| < 3/2`,
 the member `c` of the family at `w + c` is the pair-of-pants datum at `w`: only the translated
@@ -587,5 +612,103 @@ theorem lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le (ω : Sympl
         z (u z)‖ₑ ≤ ∑ q, ENNReal.ofReal (B q) := by
   simpa using ω.constSmooth.lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le hH
     (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) hB hc₀ hc₁ u
+
+/-- The curvature of the input-exchange datum of the Hamiltonians with `H_0` replaced by `0`
+vanishes on `S = ℂ ∖ {0, 1}` outside the truncation with recentred output end, for `R ≥ 2`: near
+`0` the datum vanishes, and on the other two ends it is cylindrical. -/
+theorem hamiltonianCurvature_exchangePerturbation_update_zero_eq_zero
+    (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
+    {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {R : ℝ} (hR : 2 ≤ R) {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1)
+    (hzT : Complex.equivRealProdCLM.symm z ∉ exchangeTruncation c R) (x : V) :
+    ω.hamiltonianCurvature
+      (fun z x ↦ exchangePerturbation (update H zero 0) c (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦
+        exchangePerturbation (update H zero 0) c (Complex.equivRealProdCLM.symm z) x Complex.I)
+      z x = 0 := by
+  set e := Complex.equivRealProdCLM
+  have hρ : Real.exp (-(2 * π * R)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
+  have h₁ : 1 ≤ Real.exp (2 * π * R) := Real.one_le_exp (by nlinarith [Real.pi_pos])
+  -- Points near `z` satisfy any strict inequality on a distance that `z` satisfies.
+  have hnear {a : ℂ} {r : ℝ} (h : ‖e.symm z - a‖ < r) : ∀ᶠ y in 𝓝 z, ‖e.symm y - a‖ < r :=
+    ((continuous_norm.comp (e.symm.continuous.sub continuous_const)).continuousAt.eventually
+      (gt_mem_nhds h))
+  have hfar {a : ℂ} {r : ℝ} (h : r < ‖e.symm z - a‖) : ∀ᶠ y in 𝓝 z, r < ‖e.symm y - a‖ :=
+    ((continuous_norm.comp (e.symm.continuous.sub continuous_const)).continuousAt.eventually
+      (lt_mem_nhds h))
+  simp only [mem_exchangeTruncation, not_and_or, not_le] at hzT
+  rcases hzT with h₀ | h₁' | hc
+  -- Near `0` the datum vanishes.
+  · have hev := hnear (a := 0) (r := 1 / 2) (by rw [sub_zero]; linarith)
+    refine ω.hamiltonianCurvature_eq_zero_of_eventuallyEq_zero ?_ ?_ x <;>
+      exact hev.mono fun y hy ↦ funext fun x ↦ by
+        rw [sub_zero] at hy
+        simp [exchangePerturbation_update_zero_eq_zero hc₀ hc₁ hy.le x]
+  -- Near `1` the output datum vanishes, and the input part is cylindrical on the end at `1`.
+  · have hev := hnear (a := 1) (r := 1 / 2) (by linarith)
+    have hK (v : ℂ) : (fun y x ↦ exchangePerturbation (update H zero 0) c (e.symm y) x v) =ᶠ[𝓝 z]
+        fun y x ↦ pairOfPantsPerturbation (update (update H zero 0) inf 0) (e.symm y) x v :=
+      hev.mono fun y hy ↦ funext fun x ↦ by
+        have hyc : ‖e.symm y - c‖ ≤ 2 * Real.exp (2 * π) := by
+          have h := norm_add_le (e.symm y - 1) (1 - (c : ℂ))
+          have hc : ‖(1 : ℂ) - c‖ ≤ 1 := by
+            rw [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real,
+              Real.norm_of_nonneg (by linarith)]
+            linarith
+          rw [sub_add_sub_cancel] at h
+          nlinarith [Real.one_le_exp (by positivity : (0 : ℝ) ≤ 2 * π)]
+        beta_reduce
+        rw [exchangePerturbation_def, negativePlanePerturbation_eq_zero_of_norm_le hyc, add_zero]
+    have hre : R < (one.endCoord (e.symm z)).re := by
+      rw [← not_le, re_endCoord_le_iff (by decide) (by rw [endCenter_one]; exact hz.2),
+        endCenter_one, not_le]
+      exact h₁'
+    rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (hK 1) (hK Complex.I)]
+    have hH' : ∀ q, Periodic (update H zero 0 q) 1 :=
+      (forall_update_iff H fun _ f => Periodic f 1).2 ⟨fun _ => rfl, fun q _ => hH q⟩
+    have hHs' : ∀ q, ContDiff ℝ 1 (uncurry (update H zero 0 q)) :=
+      (forall_update_iff H fun _ f => ContDiff ℝ 1 (uncurry f)).2
+        ⟨contDiff_const, fun q _ => hHs q⟩
+    exact ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt
+      (forall_update_inf (P := fun f ↦ Periodic f 1) (fun _ ↦ rfl) hH')
+      (forall_update_inf (P := fun f ↦ ContDiff ℝ 1 (uncurry f)) contDiff_const hHs')
+      hz (q := one) (by rw [endSign_one, one_mul]; linarith) x
+  -- Far from `c` the input part vanishes, and the output datum is cylindrical on its end.
+  · have hev := hfar (a := c) (r := 3 / 2) (by linarith)
+    set z' : ℝ × ℝ := z + -(c, 0)
+    have he (y : ℝ × ℝ) : e.symm (y + -(c, 0)) = e.symm y - c := by
+      apply Complex.ext <;> simp [e, sub_eq_add_neg]
+    have hinf : inf ≠ zero := by decide
+    have hK (v : ℂ) : (fun y x ↦ exchangePerturbation (update H zero 0) c (e.symm y) x v) =ᶠ[𝓝 z]
+        fun y x ↦ pairOfPantsPerturbation (Pi.single inf (H inf)) (e.symm (y + -(c, 0))) x v :=
+      hev.mono fun y hy ↦ funext fun x ↦ by
+        beta_reduce
+        rw [exchangePerturbation_def,
+          pairOfPantsPerturbation_update_inf_eq_zero_of_le_norm_sub hc₀ hc₁ hy.le, zero_add,
+          update_of_ne hinf, pairOfPantsPerturbation_single_inf, he]
+    have hz' : e.symm z' ≠ 0 ∧ e.symm z' ≠ 1 := by
+      rw [he]
+      constructor <;> intro h <;> rw [h] at hc <;> simp at hc <;> linarith
+    have hre : 2 < inf.endSign * (inf.endCoord (e.symm z')).re := by
+      have hpos : 0 < ‖e.symm z - c‖ / 2 := by linarith
+      have hlog : 2 * π * R < Real.log (‖e.symm z - c‖ / 2) := by
+        rw [Real.lt_log_iff_exp_lt hpos]
+        linarith
+      rw [he, re_endCoord, endCenter_inf, endScale_inf, sub_zero, norm_div, Complex.norm_ofNat]
+      simp only [endSign_inf]
+      rw [neg_one_mul, neg_div, neg_neg, lt_div_iff₀ (by positivity)]
+      nlinarith [Real.pi_pos]
+    have hzz' : z = z' + (c, 0) := (neg_add_cancel_right z (c, 0)).symm
+    rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (hK 1) (hK Complex.I), hzz',
+      ← ω.hamiltonianCurvature_comp_add_right]
+    simp only [add_neg_cancel_right]
+    have hsingle {P : (ℝ → V → ℝ) → Prop} (h₀ : P 0) (h : P (H inf)) (q : Puncture) :
+        P ((Pi.single inf (H inf) : Puncture → ℝ → V → ℝ) q) := by
+      rcases eq_or_ne q inf with rfl | hq
+      · rwa [Pi.single_eq_same]
+      · rwa [Pi.single_eq_of_ne hq]
+    exact ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt
+      (hsingle (P := fun f => Periodic f 1) (fun _ => rfl) (hH inf))
+      (hsingle (P := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const (hHs inf)) hz' hre x
 
 end TauCeti.SymplecticForm
