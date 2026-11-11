@@ -418,6 +418,20 @@ theorem cubicalChainModuleLinearMap_smul (f : C(Y, Y'))
 
 end LeftMap
 
+section Self
+
+variable {G : Type*} [Monoid G] [TopologicalSpace G] [ContinuousMul G] {R : Type*} [CommRing R]
+
+/-- For a monoid acting on itself by left multiplication, the left action of chains is the
+Pontryagin product. -/
+theorem NormalizedCubicalChain.leftAct_eq_mul {p q : ℕ} (a : NormalizedCubicalChain G R p)
+    (b : NormalizedCubicalChain G R q) : leftAct G G R p q a b = mul G R p q a b := by
+  have h : leftActMap G G = mulMap G :=
+    ContinuousMap.ext fun x ↦ by rw [leftActMap_apply, mulMap_apply, smul_eq_mul]
+  rw [leftAct_def, mul_def, h]
+
+end Self
+
 section Bimodule
 
 variable (G Y H : Type*) [Monoid G] [TopologicalSpace G] [ContinuousMul G] [TopologicalSpace Y]
