@@ -140,7 +140,7 @@ theorem conditionallyIID_of_contractable [StandardBorelSpace α] {μ : Measure �
     (hX_meas : ∀ n, AEMeasurable (X n) μ) :
     ConditionallyIID μ X := by
   rcases isEmpty_or_nonempty Ω with hΩ | ⟨⟨ω⟩⟩
-  · exact .of_isEmpty hX_meas
+  · exact .of_isEmpty
   · have : Nonempty α := ⟨X 0 ω⟩
     exact (conditionallyIID_of_contractable_measurable (hX.congr fun n => (hX_meas n).ae_eq_mk)
       fun n => (hX_meas n).measurable_mk).congr_process fun n => ((hX_meas n).ae_eq_mk).symm

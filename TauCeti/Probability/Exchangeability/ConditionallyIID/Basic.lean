@@ -115,11 +115,12 @@ theorem ConditionallyIID.of_directing {μ : Measure Ω} {X : ι → Ω → α}
   ⟨ν, h⟩
 
 /-- On an empty sample space the measure is zero and every identity is between zero measures, so
-every family of a.e. measurable coordinates is conditionally i.i.d. -/
-theorem ConditionallyIID.of_isEmpty [IsEmpty Ω] {μ : Measure Ω} {X : ι → Ω → α}
-    (hX : ∀ i, AEMeasurable (X i) μ) : ConditionallyIID μ X := by
+every family of coordinates is conditionally i.i.d. -/
+theorem ConditionallyIID.of_isEmpty [IsEmpty Ω] {μ : Measure Ω} {X : ι → Ω → α} :
+    ConditionallyIID μ X := by
   refine ConditionallyIID.of_directing (ν := fun ω => isEmptyElim ω)
-    (.intro hX Subsingleton.measurable fun m k _ => ?_)
+    (.intro (fun _ => Subsingleton.measurable.aemeasurable) Subsingleton.measurable
+      fun m k _ => ?_)
   simp [Measure.eq_zero_of_isEmpty μ]
 
 /-- Simp normal form for the existential wrapper `ConditionallyIID`. -/

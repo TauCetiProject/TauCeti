@@ -87,7 +87,7 @@ theorem conditionallyIID_of_contractable_viaKoopman [StandardBorelSpace α]
     ConditionallyIID μ X := by
   have hXae : ∀ i, AEMeasurable (X i) μ := fun i => (hX_meas i).aemeasurable
   rcases isEmpty_or_nonempty Ω with hΩ | ⟨⟨ω⟩⟩
-  · exact .of_isEmpty hXae
+  · exact .of_isEmpty
   have : Nonempty α := ⟨X 0 ω⟩
   -- Supplied for instance resolution below, not referenced by name.
   have : IsFiniteMeasure (pathLaw μ X) := by
