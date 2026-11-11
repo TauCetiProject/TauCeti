@@ -147,8 +147,8 @@ theorem HasWeakConjWirtingerDerivOn.memWkpLoc_one (hp : 1 < p) (hp_top : p ≠ �
     obtain ⟨V, hKV, -, hVW, C, hC⟩ :=
       exists_hasWeakFDerivOn_eLpNorm_le_of_hasWeakConjWirtingerDerivOn_of_le (F := F)
         (U := ⟨W, hW⟩) hp hp_top le_rfl hK hKW
-    have hu' := hu.memLp_of_closure_subset hWc hWΩ
-    have hf' := hf.memLp_of_closure_subset hWc hWΩ
+    have hu' := hu.memLp_restrict_of_isCompact_closure hWc hWΩ
+    have hf' := hf.memLp_restrict_of_isCompact_closure hWc hWΩ
     have hWΩ' : (⟨W, hW⟩ : Opens ℂ) ≤ Ω := subset_closure.trans hWΩ
     obtain ⟨D, hD, hDn⟩ := hC u f hu' hf' (h.mono hWΩ')
     have hDp : MemLp D p (volume.restrict V) := hDn.trans_lt (ENNReal.mul_lt_top
@@ -202,8 +202,8 @@ theorem exists_eLpNorm_le_of_hasWeakConjWirtingerDerivOn_of_le (hp : 1 < p) (hp_
       (U := ⟨W, hW⟩) hp hp_top hpr hK hKW
   have hWΩ' : (⟨W, hW⟩ : Opens ℂ) ≤ Ω := subset_closure.trans hWΩ
   refine ⟨⟨W, hW⟩, hKW, hWc, hWΩ, C, fun u f D hu hf h hD => ?_⟩
-  obtain ⟨D', hD', hD'n⟩ := hC u f (hu.memLp_of_closure_subset hWc hWΩ)
-    (hf.memLp_of_closure_subset hWc hWΩ) (h.mono hWΩ')
+  obtain ⟨D', hD', hD'n⟩ := hC u f (hu.memLp_restrict_of_isCompact_closure hWc hWΩ)
+    (hf.memLp_restrict_of_isCompact_closure hWc hWΩ) (h.mono hWΩ')
   have hVΩ : V ≤ Ω := (subset_closure.trans hVW).trans hWΩ'
   calc eLpNorm D p (volume.restrict K) ≤ eLpNorm D p (volume.restrict V) :=
         eLpNorm_mono_measure _ (Measure.restrict_mono hKV le_rfl)
