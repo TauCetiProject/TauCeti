@@ -66,11 +66,11 @@ variable [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- Pairing a field of continuous linear functionals `G` with a test vector field on `Ω` of norm
 at most one gives at most `∫_Ω ‖G‖`. -/
-theorem enorm_integral_apply_le_setLIntegral_enorm [OpensMeasurableSpace E] (φ : 𝓓(Ω, F))
+theorem enorm_integral_apply_le_setLIntegral_enorm (φ : 𝓓(Ω, F))
     (hφ : ∀ x, ‖φ x‖ ≤ 1) (G : E → F →L[ℝ] ℝ) :
     ‖∫ x, G x (φ x) ∂μ‖ₑ ≤ ∫⁻ x in Ω, ‖G x‖ₑ ∂μ := by
-  rw [← lintegral_indicator Ω.isOpen.measurableSet]
-  refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono fun x => ?_)
+  refine (enorm_integral_le_lintegral_enorm _).trans
+    ((lintegral_mono fun x => ?_).trans (lintegral_indicator_le _ _))
   by_cases hx : x ∈ (Ω : Set E)
   · rw [Set.indicator_of_mem hx, enorm_le_iff_norm_le]
     exact ((G x).le_opNorm (φ x)).trans (mul_le_of_le_one_right (norm_nonneg _) (hφ x))

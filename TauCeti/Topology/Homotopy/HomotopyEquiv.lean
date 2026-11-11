@@ -45,6 +45,8 @@ homotopy equivalence is automatically a right homotopy inverse.
   `X ≃ₕ X × [a, b]`, with homotopy inverse the projection.
 * `ContinuousMap.Homotopic.homotopic_of_comp_homotopic_id`: a left and a right homotopy inverse
   of the same map are homotopic.
+* `ContinuousMap.Homotopic.comp_homotopic_id_of_comp_homotopic_id`: a left homotopy inverse that
+  has a left homotopy inverse itself is a right homotopy inverse.
 * `ContinuousMap.HomotopyEquiv.toFun_comp_homotopic_id_of_comp_toFun_homotopic_id`: a left
   homotopy inverse of a homotopy equivalence is a right homotopy inverse.
 -/
@@ -150,6 +152,15 @@ theorem Homotopic.homotopic_of_comp_homotopic_id {f : C(X, Y)}
   have h₂ := hl.comp (ContinuousMap.Homotopic.refl r)
   simp only [ContinuousMap.comp_id, ContinuousMap.id_comp, ContinuousMap.comp_assoc] at h₁ h₂
   exact h₁.trans h₂
+
+/-- **A left homotopy inverse with its own left homotopy inverse is a right homotopy inverse.** If
+`l ∘ f ≃ id` and `k ∘ l ≃ id`, then `k ≃ f` as left and right homotopy inverses of `l`, so
+`f ∘ l ≃ k ∘ l ≃ id`. -/
+theorem _root_.ContinuousMap.Homotopic.comp_homotopic_id_of_comp_homotopic_id {f : C(X, Y)}
+    {l : C(Y, X)} {k : C(X, Y)} (hl : (l.comp f).Homotopic (ContinuousMap.id X))
+    (hk : (k.comp l).Homotopic (ContinuousMap.id Y)) :
+    (f.comp l).Homotopic (ContinuousMap.id Y) :=
+  ((hk.homotopic_of_comp_homotopic_id hl).symm.comp (.refl l)).trans hk
 
 /-- **A left homotopy inverse of a homotopy equivalence is a right homotopy inverse.** If
 `e : X ≃ₕ Y` and `g : Y → X` satisfy `g ∘ e ≃ id`, then also `e ∘ g ≃ id`, since `g` is
