@@ -98,7 +98,7 @@ private theorem exists_disc_factorization {U : Set ℂ} (hUb : IsBounded U)
   obtain ⟨G, hGc, hGF⟩ :=
     exists_continuousOn_closedBall_eqOn_of_locallyConnectedSpace_frontier one_pos hF'd hF'i
       (by rwa [hF'im])
-  have hGi : InjOn G (closedBall 0 1) := injOn_closedBall_of_isJordanCurve_frontier one_pos hF'd
+  have hGi : InjOn G (closedBall 0 1) := injOn_closedBall_of_isJordanCurve_frontier hF'd
     hF'i (by rwa [hF'im]) (by rwa [hF'im]) hGc hGF
   -- the inverses of `f ∘ K` and `g ∘ K` differ by a disc automorphism
   have hinv {F : ℂ → ℂ} (hd : DifferentiableOn ℂ F (ball 0 1)) (hi : InjOn F (ball 0 1))
