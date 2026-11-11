@@ -18,8 +18,8 @@ adapted to `f` satisfying the Morse–Smale condition, and `p`, `r` critical poi
 `ind p = ind r + 2`. This file embeds the one-dimensional space of trajectories from `p` to `r`
 in the compact space `M × M` and studies its closure there. It shows that the closure adds only
 trajectories broken once, at a critical point `q` of intermediate index, that it adds finitely many
-points, and that it is one-dimensional at the unbroken trajectories. It does not show that every
-broken trajectory is a limit of unbroken ones.
+points, and that it is one-dimensional at the unbroken trajectories. That every broken trajectory
+is a limit of unbroken ones is proved in `TauCeti.Geometry.Manifold.Morse.Boundary.Gluing`.
 
 A trajectory is recorded by its points on two levels `c₁` and `c₂` with
 `f r < c₂ < c₁ < f p`, chosen so that every critical value strictly between `f r` and `f p` lies
@@ -42,11 +42,13 @@ pairs in `M × M`; it is compact as a closed subset of the compact space `M × M
   `W^u(p) ∩ W^s(r) ∩ {f = c₁}`, so each of them has a neighbourhood homeomorphic to an open
   subset of `ℝ`.
 
-The converse inclusion, that every broken trajectory is a limit of unbroken ones and has a
-neighbourhood homeomorphic to a half-open interval, is the gluing theorem and is not proved here.
-Together with `TauCeti.even_ncard_of_forall_exists_homeomorph_Ico` it would show that the broken
-trajectories are even in number, which is `∂ ∘ ∂ = 0` by
-`IsMorseSmale.morseBoundary_comp_morseBoundary_eq_zero_iff`.
+The converse inclusion, that every broken trajectory is a limit of unbroken ones, is
+`IsMorseSmale.morseBrokenTrajectoryPairs_subset_closure`. Each broken trajectory moreover has a
+neighbourhood homeomorphic to a half-open interval, by
+`IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet`. Together with
+`TauCeti.even_ncard_of_forall_exists_homeomorph_Ico` this would show that the broken trajectory
+pairs are even in number, which is `∂ ∘ ∂ = 0` by
+`IsMorseSmale.morseBoundary_comp_morseBoundary_eq_zero_iff_even_ncard_morseBrokenTrajectoryPairs`.
 
 ## Main declarations
 
@@ -63,6 +65,9 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   compactified space.
 * `IsMorseSmale.exists_nhds_homeomorph_of_mem_morseTrajectoryPairs`: the compactified space is
   locally homeomorphic to open subsets of `ℝ` at unbroken pairs.
+* `IsMorseSmale.morseBoundary_comp_morseBoundary_eq_zero_iff_even_ncard_morseBrokenTrajectoryPairs`:
+  `∂ ∘ ∂ = 0` exactly when there is an even number of broken pairs on every pair of separating
+  levels.
 
 ## References
 
@@ -404,6 +409,35 @@ theorem exists_nhds_homeomorph_of_mem_morseTrajectoryPairs {p r : M}
     ⟨G.toHomeomorphSourceTarget.symm⟩⟩
   have hιw : ι ⟨w, hwP⟩ = ⟨w, hw⟩ := rfl
   simp [G, ← hιw, hι.toOpenPartialHomeomorph_left_inv]
+
+include h hf in
+/-- **`∂² = 0` reduces to the parity of broken trajectory pairs.** The mod-two Morse boundary
+squares to zero exactly when, for any two critical points `p` and `r` and any levels
+`f r < c₂ < c₁ < f p` separating every critical value strictly between `f r` and `f p` from `f r`
+and `f p`, there is an even number of broken trajectory pairs from `p` to `r` on those levels. -/
+theorem morseBoundary_comp_morseBoundary_eq_zero_iff_even_ncard_morseBrokenTrajectoryPairs :
+    h.morseBoundary hf ∘ₗ h.morseBoundary hf = 0 ↔
+      ∀ (p r : criticalPoints 𝓘(ℝ, E) f) (c₁ c₂ : ℝ), f r < c₂ → c₂ < c₁ → c₁ < f p →
+        (∀ x ∈ criticalPoints 𝓘(ℝ, E) f, f x ∈ Ioo (f r) (f p) → f x ∈ Ioo c₂ c₁) →
+        Even (hX.morseBrokenTrajectoryPairs p r c₁ c₂).ncard := by
+  have hdf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
+  rw [h.morseBoundary_comp_morseBoundary_eq_zero_iff hf]
+  refine ⟨fun h0 p r c₁ c₂ hr₂ _ h₁p hgap ↦
+    hX.ncard_morseBrokenTrajectoryPairs hdf p r hr₂ h₁p hgap ▸ h0 p r, fun h0 p r ↦ ?_⟩
+  by_cases hrp : f r < f p
+  · obtain ⟨c₁, c₂, hr₂, h₂₁, h₁p, hgap⟩ := hf.exists_lt_lt_forall_mem_Ioo hrp
+    exact hX.ncard_morseBrokenTrajectoryPairs hdf p r hr₂ h₁p hgap ▸
+      h0 p r c₁ c₂ hr₂ h₂₁ h₁p hgap
+  -- Without a drop in value there are no broken trajectories.
+  have hne {a b : M} (h : manifoldMorseIndex 𝓘(ℝ, E) f a = manifoldMorseIndex 𝓘(ℝ, E) f b + 1) :
+      a ≠ b := by
+    rintro rfl; omega
+  have hempty : hX.morseBrokenTrajectorySet p r = ∅ := eq_empty_of_forall_notMem fun x hx ↦ by
+    obtain ⟨hpq, hqr, hy, hz⟩ := (hX.mem_morseBrokenTrajectorySet).1 hx
+    exact hrp ((hX.value_lt_of_mem_morseTrajectorySlice hdf (hne hqr) hz).trans
+      (hX.value_lt_of_mem_morseTrajectorySlice hdf (hne hpq) hy))
+  rw [hempty, ncard_empty]
+  exact Even.zero
 
 end IsMorseSmale
 

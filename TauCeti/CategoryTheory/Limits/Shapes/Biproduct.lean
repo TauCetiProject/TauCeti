@@ -41,7 +41,9 @@ kills one summand of a binary biproduct inverts the projection onto the other
 (`CategoryTheory.Functor.isIso_map_biprod_fst_of_isZero`). The biproduct comparison
 `F.obj (X ⊞ Y) ⟶ F.obj X ⊞ F.obj Y` is natural (`CategoryTheory.Functor.biprodComparison_natural`)
 and compatible with lifts. Unlike the `Functor.mapBiprod` lemmas, these statements need no
-preservation hypothesis.
+preservation hypothesis. Commutative squares into the images under a functor combine into
+squares through lifts into and descents out of binary biproducts
+(`CategoryTheory.Functor.comp_map_biprod_lift` and `CategoryTheory.Functor.biprod_desc_comp_map`).
 For a functor out of `Cᵒᵖ`, the comparison `F.obj (op (X ⊞ Y)) ≅ F.obj (op X) ⊞ F.obj (op Y)`
 through `biprod.opIso` has inverse given by the images of the projections
 (`CategoryTheory.Functor.mapIso_biprod_opIso_trans_mapBiprod_inv`).
@@ -534,6 +536,20 @@ theorem isIso_map_biprod_fst_of_isZero (X Y : C) [HasBinaryBiproduct X Y]
     simp [hY.eq_zero_of_tgt (F.map biprod.snd)]
   · rw [← F.map_comp, biprod.inl_fst, F.map_id]
 
+/-- Commutative squares `a₁ ≫ F.map x = y ≫ a₂` and `a₁ ≫ F.map x' = y' ≫ a₃` combine into a
+commutative square through the maps `biprod.lift x x'` and `biprod.lift y y'` into binary
+biproducts, where `A₂ ⊞ A₃ ⟶ F.obj (B₂ ⊞ B₃)` is assembled from `a₂`, `a₃` and the images of the
+inclusions. -/
+theorem comp_map_biprod_lift {A₁ A₂ A₃ : D} {B₁ B₂ B₃ : C} [HasBinaryBiproduct A₂ A₃]
+    [HasBinaryBiproduct B₂ B₃] {a₁ : A₁ ⟶ F.obj B₁} {a₂ : A₂ ⟶ F.obj B₂} {a₃ : A₃ ⟶ F.obj B₃}
+    {x : B₁ ⟶ B₂} {x' : B₁ ⟶ B₃} {y : A₁ ⟶ A₂} {y' : A₁ ⟶ A₃}
+    (h : a₁ ≫ F.map x = y ≫ a₂) (h' : a₁ ≫ F.map x' = y' ≫ a₃) :
+    a₁ ≫ F.map (biprod.lift x x') =
+      biprod.lift y y' ≫ biprod.desc (a₂ ≫ F.map biprod.inl) (a₃ ≫ F.map biprod.inr) := by
+  rw [biprod.lift_desc, biprod.lift_eq]
+  simp only [Functor.map_add, Functor.map_comp, Preadditive.comp_add, reassoc_of% h,
+    reassoc_of% h']
+
 section Comparison
 
 variable {C : Type u} {D : Type v} [Category.{w} C] [Category.{w'} D] [HasZeroMorphisms C]
@@ -556,6 +572,22 @@ theorem biprodComparison_natural {X Y X' Y' : C} [HasBinaryBiproduct X Y]
       biprodComparison F X Y ≫ biprod.map (F.map f) (F.map g) := by
   ext <;> simp only [Category.assoc, biprodComparison_fst, biprodComparison_snd, biprod.map_fst,
     biprod.map_snd, biprodComparison_fst_assoc, biprodComparison_snd_assoc, ← F.map_comp]
+
+/-- Commutative squares `a₂ ≫ F.map z = w ≫ a₄` and `a₃ ≫ F.map z' = w' ≫ a₄` combine into a
+commutative square through the maps `biprod.desc z z'` and `biprod.desc w w'` out of binary
+biproducts, where `A₂ ⊞ A₃ ⟶ F.obj (B₂ ⊞ B₃)` is assembled from `a₂`, `a₃` and the images of the
+inclusions. -/
+theorem biprod_desc_comp_map {A₂ A₃ A₄ : D} {B₂ B₃ B₄ : C} [HasBinaryBiproduct A₂ A₃]
+    [HasBinaryBiproduct B₂ B₃] {a₂ : A₂ ⟶ F.obj B₂} {a₃ : A₃ ⟶ F.obj B₃} {a₄ : A₄ ⟶ F.obj B₄}
+    {z : B₂ ⟶ B₄} {z' : B₃ ⟶ B₄} {w : A₂ ⟶ A₄} {w' : A₃ ⟶ A₄}
+    (h : a₂ ≫ F.map z = w ≫ a₄) (h' : a₃ ≫ F.map z' = w' ≫ a₄) :
+    biprod.desc (a₂ ≫ F.map biprod.inl) (a₃ ≫ F.map biprod.inr) ≫ F.map (biprod.desc z z') =
+      biprod.desc w w' ≫ a₄ := by
+  apply biprod.hom_ext'
+  · rw [biprod.inl_desc_assoc, biprod.inl_desc_assoc, Category.assoc, ← F.map_comp,
+      biprod.inl_desc, h]
+  · rw [biprod.inr_desc_assoc, biprod.inr_desc_assoc, Category.assoc, ← F.map_comp,
+      biprod.inr_desc, h']
 
 end Comparison
 

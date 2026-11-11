@@ -63,6 +63,8 @@ over `Set.Iic x` is then the limit of those interval integrals, using
   standard Gaussian cdf.
 * `TauCeti.Probability.mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal` — a lower bound
   for the upper tail to the right of the mean, by the density at a later point.
+* `TauCeti.Probability.gaussianPDFReal_add_one_le_measureReal_map_abs_Ioi` — the corresponding
+  lower bound for the upper tail of the absolute value of a standard Gaussian.
 * `TauCeti.Probability.measureReal_le_of_hasLaw_gaussianReal` — the random-variable corollary.
 -/
 
@@ -338,6 +340,15 @@ theorem mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal {m s t : ℝ} (v
         rw [measureReal_def, gaussianReal_apply_eq_integral m hv, ENNReal.toReal_ofReal
           (setIntegral_nonneg measurableSet_Ioc fun x _ => gaussianPDFReal_nonneg m v x)]
     _ ≤ (gaussianReal m v).real (Ioi s) := measureReal_mono Ioc_subset_Ioi_self
+
+/-- The absolute value of a standard Gaussian exceeds `s ≥ 0` with probability at least the
+standard Gaussian density at `s + 1`. -/
+theorem gaussianPDFReal_add_one_le_measureReal_map_abs_Ioi {s : ℝ} (hs : 0 ≤ s) :
+    gaussianPDFReal 0 1 (s + 1) ≤ ((gaussianReal 0 1).map fun x => |x|).real (Ioi s) := by
+  have h := mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal (m := 0) 1 hs (t := 1)
+  rw [one_mul] at h
+  rw [map_measureReal_apply continuous_abs.measurable measurableSet_Ioi]
+  exact h.trans (measureReal_mono fun x (hx : s < x) => hx.trans_le (le_abs_self x))
 
 /-- A random variable with a Gaussian law of nonzero variance has the error-function cumulative
 distribution function. -/

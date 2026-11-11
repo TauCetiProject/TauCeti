@@ -19,11 +19,11 @@ or manifold structure assumed.
 
 The fibres and the kernel setoid describe parameter redundancy. Their quotient is equivalent
 to the realized-function type, and maps constant on fibres factor uniquely through the
-parametrization. Reparametrization, restriction of parameters, and composition on inputs or
-outputs interact with these constructions through the ordinary set-image APIs.
-Use `realizedFunctions_def` with Mathlib's `Set.range_comp_subset_range`,
-`Function.Surjective.range_comp`, `Set.range_domRestrict`, `Set.range_eq_empty`,
-`Set.range_unique`, and `Set.range_comp` for these range computations.
+parametrization. For reparametrization and restriction of parameters, see
+`TauCeti.Geometry.Neuromanifold.Reparametrization`. Composition on inputs or outputs
+interacts with these constructions through the ordinary set-image APIs.
+Use `realizedFunctions_def` with Mathlib's `Set.range_comp` for these image computations,
+and with `Set.range_eq_empty` or `Set.range_unique` for empty or singleton parameter types.
 Likewise, `fiber_def` exposes the singleton preimage for `Set.preimage_singleton_nonempty`
 and `Set.preimage_comp`.
 For cancellation of output or input composition, first rewrite parameter equivalence with
