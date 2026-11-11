@@ -40,6 +40,9 @@ continues to hold when the input family loses rank.
 
 * `Module.Basis.repr_gramSchmidt_self_eq_one` — the Gram-Schmidt process leaves the coefficient of a
   basis vector along itself equal to `1`.
+* `InnerProductSpace.gramSchmidt_eq_self_of_inner_eq_zero`,
+  `InnerProductSpace.gramSchmidtNormed_eq_self_of_inner_eq_zero` — the process fixes an input
+  (unit) vector orthogonal to all earlier inputs, so it fixes an orthonormal initial segment.
 * `ContinuousWithinAt.gramSchmidt`, `ContinuousWithinAt.gramSchmidtNormed` — Gram-Schmidt applied to
   a family of vectors depending continuously on a parameter is continuous at every parameter where
   the family is linearly independent, with `ContinuousAt`, `ContinuousOn` and `Continuous`
@@ -100,6 +103,29 @@ theorem inner_gramSchmidtNormed_eq_norm (f : ι → E) (j : ι) :
   by_cases h : gramSchmidt 𝕜 f j = 0
   · simp [gramSchmidtNormed, h]
   · simp [gramSchmidtNormed, inner_smul_left, h, sq]
+
+/-- The Gram–Schmidt process fixes an input vector orthogonal to all earlier inputs. This is the
+pointwise form of Mathlib's `InnerProductSpace.gramSchmidt_of_orthogonal`: every earlier
+Gram–Schmidt vector lies in the span of earlier inputs, so its projection of `f i` vanishes. -/
+theorem gramSchmidt_eq_self_of_inner_eq_zero {f : ι → E} {i : ι}
+    (hf : ∀ j < i, inner 𝕜 (f j) (f i) = 0) : gramSchmidt 𝕜 f i = f i := by
+  rw [gramSchmidt_def, sub_eq_self]
+  refine Finset.sum_eq_zero fun j hj ↦ ?_
+  rw [Submodule.starProjection_apply, Submodule.coe_eq_zero]
+  suffices Submodule.span 𝕜 (f '' Set.Iic j) ⟂ Submodule.span 𝕜 {f i} by
+    apply Submodule.orthogonalProjectionOnto_eq_zero_iff.2
+    rw [Submodule.mem_orthogonal_singleton_iff_inner_left,
+      ← Submodule.mem_orthogonal_singleton_iff_inner_right]
+    exact this (gramSchmidt_mem_span 𝕜 f (le_refl j))
+  rw [Submodule.isOrtho_span]
+  rintro u ⟨k, hk, rfl⟩ v (rfl : v = f i)
+  exact hf k (lt_of_le_of_lt hk (Finset.mem_Iio.mp hj))
+
+/-- The normalized Gram–Schmidt process fixes an input unit vector orthogonal to all earlier
+inputs. -/
+theorem gramSchmidtNormed_eq_self_of_inner_eq_zero {f : ι → E} {i : ι}
+    (hf : ∀ j < i, inner 𝕜 (f j) (f i) = 0) (hi : ‖f i‖ = 1) : gramSchmidtNormed 𝕜 f i = f i := by
+  simp [gramSchmidtNormed, gramSchmidt_eq_self_of_inner_eq_zero hf, hi]
 
 end InnerProductSpace
 
