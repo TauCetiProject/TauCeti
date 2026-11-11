@@ -177,6 +177,7 @@ theorem tetrahedronVibrationSeed_def (i : Fin 4) :
   (rfl)
 
 /-- The breathing mode has squared norm `∑ⱼ qⱼ ⬝ qⱼ = 3`. -/
+@[simp]
 theorem dotProduct_tetrahedronBreathingMode_self :
     tetrahedronBreathingMode ⬝ᵥ tetrahedronBreathingMode = 3 := by
   rw [tetrahedronBreathingMode_def]

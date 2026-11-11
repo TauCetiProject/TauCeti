@@ -48,9 +48,14 @@ the seeds form a symmetric spanning set of `E`, not a basis.
   `TauCeti.mem_span_range_tetrahedronMatchingSeedMatrix_iff`: the three seed matrices satisfy only
   the relation `A₀ + A₁ + A₂ = 0`, and span the trace-zero diagonal matrices.
 * `TauCeti.tetrahedronDisplacementRep_matchingSeed`: `σ` sends the seed of `m` to that of `q σ m`.
+* `TauCeti.range_tetrahedronSymmetryMatrix_mul_matchingSeedMatrix_mul`: the conjugation orbit of a
+  seed matrix is the set of the three seed matrices.
 * `TauCeti.ncard_range_tetrahedronDisplacementRep_matchingSeed`: the `S₄`-orbit of a matching seed
   has three elements, and `TauCeti.stabilizer_tetrahedronMatchingSeed`: its stabilizer is the
-  stabilizer of the matching.
+  stabilizer of the matching, so
+  `TauCeti.range_tetrahedronDisplacementRep_centralizer_matchingSeed`: its `D₄`-orbit is a
+  singleton.
+* `TauCeti.dotProduct_tetrahedronMatchingSeed`: the Gram matrix of the matching seeds.
 * `TauCeti.span_range_tetrahedronMatchingSeed`: the matching seeds span the eigenspace of `H` for
   `-2`.
 * `TauCeti.invariants_tetrahedronDisplacementRep_comp_centralizer` and
@@ -147,6 +152,7 @@ theorem tetrahedronMatchingSeedMatrix_eq :
     simp [tetrahedronMatchingSeedMatrix_def, tetrahedronMatchingAxis_eq] <;> norm_num
 
 /-- The seed matrices are diagonal. -/
+@[simp]
 theorem isDiag_tetrahedronMatchingSeedMatrix (m : Fin 3) :
     (tetrahedronMatchingSeedMatrix m).IsDiag := by
   rw [tetrahedronMatchingSeedMatrix_eq]
@@ -173,6 +179,17 @@ theorem tetrahedronSymmetryMatrix_mul_matchingSeedMatrix_mul (σ : Equiv.Perm (F
     Matrix.sub_mul, Matrix.mul_smul, Matrix.smul_mul, mul_vecMulVec, vecMulVec_mul, h,
     tetrahedronSymmetryMatrix_mulVec_matchingAxis, vecMulVec_tetrahedronCenteredVertex_add_matching,
     Matrix.mul_one, ← map_mul, mul_inv_cancel, map_one]
+
+/-- The orbit of a seed matrix under conjugation by the symmetries is the set of the three seed
+matrices. -/
+theorem range_tetrahedronSymmetryMatrix_mul_matchingSeedMatrix_mul (m : Fin 3) :
+    Set.range (fun σ ↦ tetrahedronSymmetryMatrix σ * tetrahedronMatchingSeedMatrix m *
+        tetrahedronSymmetryMatrix σ⁻¹) = Set.range tetrahedronMatchingSeedMatrix := by
+  ext A
+  simp only [Set.mem_range, tetrahedronSymmetryMatrix_mul_matchingSeedMatrix_mul]
+  refine ⟨fun ⟨σ, h⟩ ↦ ⟨_, h⟩, fun ⟨n, h⟩ ↦ ?_⟩
+  obtain ⟨σ, hσ⟩ := symmetricGroupFourMatchingHom_surjective (Equiv.swap m n)
+  exact ⟨σ, by rwa [hσ, Equiv.swap_apply_left]⟩
 
 /-- The three seed matrices sum to zero. -/
 theorem sum_tetrahedronMatchingSeedMatrix : ∑ m, tetrahedronMatchingSeedMatrix m = 0 := by
@@ -290,6 +307,15 @@ theorem ncard_range_tetrahedronDisplacementRep_matchingSeed (m : Fin 3) :
     Set.ncard_range_of_injective tetrahedronMatchingSeed_injective, Nat.card_eq_fintype_card,
     Fintype.card_fin]
 
+/-- The orbit of the seed of `m` under the stabilizer `D₄` of `m` is a singleton. -/
+theorem range_tetrahedronDisplacementRep_centralizer_matchingSeed (m : Fin 3) :
+    Set.range (fun σ : Subgroup.centralizer {symmetricGroupFourMatching m} ↦
+      tetrahedronDisplacementRep σ (tetrahedronMatchingSeed m)) = {tetrahedronMatchingSeed m} := by
+  refine Set.eq_singleton_iff_unique_mem.mpr ⟨⟨1, by simp⟩, ?_⟩
+  rintro _ ⟨⟨σ, hσ⟩, rfl⟩
+  rw [mem_centralizer_symmetricGroupFourMatching_iff] at hσ
+  simp [hσ]
+
 /-! ### The matching seeds in the eigenspace for `-2` -/
 
 /-- The matching seeds lie in the eigenspace of the force matrix for `-2`. -/
@@ -315,12 +341,34 @@ theorem span_range_tetrahedronMatchingSeed :
   rw [← prod_mk_sum, Finset.sum_const_zero]
 
 /-- The matching seeds are orthogonal to the breathing mode. -/
+@[simp]
 theorem dotProduct_tetrahedronMatchingSeed_breathingMode (m : Fin 3) :
     tetrahedronMatchingSeed m ⬝ᵥ tetrahedronBreathingMode = 0 := by
   rw [tetrahedronMatchingSeed_def, tetrahedronBreathingMode_def, tetrahedronMatchingSeedMatrix_eq]
   fin_cases m <;>
     simp [dotProduct, Fintype.sum_prod_type, Fin.sum_univ_four, Fin.sum_univ_three, mulVec,
       tetrahedronCenteredVertex_eq] <;> norm_num
+
+/-- The breathing mode is orthogonal to the matching seeds. -/
+@[simp]
+theorem dotProduct_tetrahedronBreathingMode_matchingSeed (m : Fin 3) :
+    tetrahedronBreathingMode ⬝ᵥ tetrahedronMatchingSeed m = 0 := by
+  rw [dotProduct_comm, dotProduct_tetrahedronMatchingSeed_breathingMode]
+
+/-- The Gram matrix of the matching seeds: each has squared norm `6`, and two distinct seeds have
+inner product `-3`. -/
+theorem dotProduct_tetrahedronMatchingSeed (m n : Fin 3) :
+    tetrahedronMatchingSeed m ⬝ᵥ tetrahedronMatchingSeed n = if m = n then 6 else -3 := by
+  rw [tetrahedronMatchingSeed_def, tetrahedronMatchingSeed_def, tetrahedronMatchingSeedMatrix_eq]
+  fin_cases m <;> fin_cases n <;>
+    simp [dotProduct, Fintype.sum_prod_type, Fin.sum_univ_four, Fin.sum_univ_three, mulVec,
+      tetrahedronCenteredVertex_eq] <;> norm_num
+
+/-- Each matching seed has squared norm `6`. -/
+@[simp]
+theorem dotProduct_tetrahedronMatchingSeed_self (m : Fin 3) :
+    tetrahedronMatchingSeed m ⬝ᵥ tetrahedronMatchingSeed m = 6 := by
+  simp [dotProduct_tetrahedronMatchingSeed]
 
 /-! ### The stabilizer of a matching -/
 
