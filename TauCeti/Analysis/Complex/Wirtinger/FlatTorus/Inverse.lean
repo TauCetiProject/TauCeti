@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Wirtinger.FlatTorus.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Analysis.Fourier.Torus.Decay
 import TauCeti.Analysis.Fourier.Torus.Smooth
 import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
@@ -23,7 +24,8 @@ the flat line over `ℂ / (ℤ ω₁ + ℤ ω₂)` with holonomy `exp (2πiθ₁
 
 (`TauCeti.flatLineSections`). The Cauchy–Riemann operator
 `∂bar u = TauCeti.conjWirtingerDeriv u · 1` maps these sections to themselves
-(`TauCeti.flatLineConjWirtingerDerivₗ`). This file proves that
+(`TauCeti.flatLineConjWirtingerDerivₗ`); both are defined in
+`TauCeti.Analysis.Complex.Wirtinger.FlatTorus.Basic`. This file proves that
 when the holonomy is nontrivial, that is when `θ₁` or `θ₂` is not an integer, `∂bar` is a linear
 bijection of the smooth sections (`TauCeti.bijective_flatLineConjWirtingerDerivₗ`). Its inverse
 `(TauCeti.flatLineConjWirtingerDerivEquiv hω hθ).symm` is the leading complex inverse in Taubes's
@@ -52,6 +54,11 @@ nontrivial holonomy it is therefore bounded away from zero, so dividing the rapi
 Fourier coefficients of a smooth function by `m(n)` gives the rapidly decreasing coefficients of
 a smooth preimage, and a function killed by the operator has vanishing Fourier coefficients.
 
+The argument adapts the Fourier proof for the square torus `ℂ / (ℤ + ℤ i)` with trivial twist
+in `TauCeti.Analysis.Fourier.Torus.ConjWirtinger`, specifically
+`UnitAddTorus.exists_conjWirtingerDeriv_eq_iff`, to an arbitrary lattice and a nontrivial
+twist.
+
 ## References
 
 * C. H. Taubes, *Gr ⇒ SW: from pseudo-holomorphic curves to Seiberg–Witten solutions*,
@@ -70,58 +77,6 @@ open scoped Real ContDiff
 namespace TauCeti
 
 variable {u : ℂ → ℂ} {ω₁ ω₂ : ℂ} {θ₁ θ₂ : ℝ}
-
-/-! ### Smooth sections of a flat line and the Cauchy–Riemann operator -/
-
-/-- The smooth sections of the flat line over `ℂ / (ℤ ω₁ + ℤ ω₂)` with holonomy `exp (2πiθ₁)`,
-`exp (2πiθ₂)` along `ω₁`, `ω₂`: the smooth functions `u : ℂ → ℂ` with
-`u (z + ω₁) = exp (2πiθ₁) u z` and `u (z + ω₂) = exp (2πiθ₂) u z`. -/
-def flatLineSections (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) : Submodule ℂ (ℂ → ℂ) where
-  carrier := {u | ContDiff ℝ ∞ u ∧ (∀ z, u (z + ω₁) = exp (2 * π * θ₁ * I) * u z) ∧
-    ∀ z, u (z + ω₂) = exp (2 * π * θ₂ * I) * u z}
-  add_mem' {u v} hu hv :=
-    ⟨hu.1.add hv.1, fun z ↦ by simp [hu.2.1, hv.2.1, mul_add],
-      fun z ↦ by simp [hu.2.2, hv.2.2, mul_add]⟩
-  zero_mem' := ⟨contDiff_const, fun z ↦ by simp, fun z ↦ by simp⟩
-  smul_mem' c u hu :=
-    ⟨hu.1.const_smul c, fun z ↦ by simp [hu.2.1, mul_left_comm],
-      fun z ↦ by simp [hu.2.2, mul_left_comm]⟩
-
-theorem mem_flatLineSections :
-    u ∈ flatLineSections ω₁ ω₂ θ₁ θ₂ ↔ ContDiff ℝ ∞ u ∧
-      (∀ z, u (z + ω₁) = exp (2 * π * θ₁ * I) * u z) ∧
-      ∀ z, u (z + ω₂) = exp (2 * π * θ₂ * I) * u z :=
-  Iff.rfl
-
-/-- Translating by a period of a twisted function multiplies `∂bar` by the twist. -/
-private theorem conjWirtingerDeriv_add_apply_one {ω₀ c : ℂ} (h : ∀ z, u (z + ω₀) = c * u z)
-    (z : ℂ) : conjWirtingerDeriv u (z + ω₀) 1 = c * conjWirtingerDeriv u z 1 := by
-  have hfun : (fun x ↦ u (x + ω₀)) = c • u := funext fun x ↦ by simp [h]
-  rw [conjWirtingerDeriv_eq_complexAntilinearPart, ← fderiv_comp_add_right, hfun,
-    ← conjWirtingerDeriv_eq_complexAntilinearPart, conjWirtingerDeriv_const_smul]
-  rfl
-
-/-- `∂bar` maps smooth sections of a flat line to smooth sections of the same line. -/
-theorem conjWirtingerDeriv_mem_flatLineSections (hu : u ∈ flatLineSections ω₁ ω₂ θ₁ θ₂) :
-    (fun z ↦ conjWirtingerDeriv u z 1) ∈ flatLineSections ω₁ ω₂ θ₁ θ₂ :=
-  ⟨contDiff_iff_contDiffAt.2 fun z ↦ hu.1.contDiffAt.conjWirtingerDeriv_apply (by simp) 1,
-    conjWirtingerDeriv_add_apply_one hu.2.1, conjWirtingerDeriv_add_apply_one hu.2.2⟩
-
-/-- The Cauchy–Riemann operator `∂bar` as a complex-linear map on the smooth sections of the flat
-line over `ℂ / (ℤ ω₁ + ℤ ω₂)` with holonomy `exp (2πiθ₁)`, `exp (2πiθ₂)`. -/
-def flatLineConjWirtingerDerivₗ (ω₁ ω₂ : ℂ) (θ₁ θ₂ : ℝ) :
-    flatLineSections ω₁ ω₂ θ₁ θ₂ →ₗ[ℂ] flatLineSections ω₁ ω₂ θ₁ θ₂ where
-  toFun u := ⟨fun z ↦ conjWirtingerDeriv u z 1, conjWirtingerDeriv_mem_flatLineSections u.2⟩
-  map_add' u v := Subtype.ext <| funext fun z ↦ by
-    have hd (w : flatLineSections ω₁ ω₂ θ₁ θ₂) : DifferentiableAt ℝ (w : ℂ → ℂ) z :=
-      (w.2.1.differentiable (by simp)) z
-    simp [conjWirtingerDeriv_add (hd u) (hd v)]
-  map_smul' c u := Subtype.ext <| funext fun z ↦ by simp [conjWirtingerDeriv_const_smul]
-
-@[simp]
-theorem coe_flatLineConjWirtingerDerivₗ_apply (u : flatLineSections ω₁ ω₂ θ₁ θ₂) :
-    (flatLineConjWirtingerDerivₗ ω₁ ω₂ θ₁ θ₂ u : ℂ → ℂ) = fun z ↦ conjWirtingerDeriv u z 1 :=
-  (rfl)
 
 /-! ### The operator on the torus -/
 
@@ -277,11 +232,6 @@ section Correspondence
 
 open _root_.UnitAddTorus TauCeti.UnitAddTorus
 
-/-- `Im (conj ω₁ ω₂)` in real coordinates. -/
-private theorem im_conj_mul_eq : (conj ω₁ * ω₂).im = ω₁.re * ω₂.im - ω₁.im * ω₂.re := by
-  simp only [mul_im, conj_re, conj_im]
-  ring
-
 /-- The lattice coordinates `p ↦ p₀ ω₁ + p₁ ω₂`, a real-linear equivalence when `ω₁` and `ω₂` are
 linearly independent. -/
 private def latticeEquiv (hω : (conj ω₁ * ω₂).im ≠ 0) : (Fin 2 → ℝ) ≃L[ℝ] ℂ :=
@@ -297,7 +247,9 @@ private def latticeEquiv (hω : (conj ω₁ * ω₂).im ≠ 0) : (Fin 2 → ℝ)
       have hi := congrArg im hp
       simp only [add_re, mul_re, ofReal_re, ofReal_im, zero_mul, sub_zero, zero_re, add_im,
         mul_im, zero_im] at hre hi
-      rw [im_conj_mul_eq] at hω
+      replace hω : ω₁.re * ω₂.im - ω₁.im * ω₂.re ≠ 0 := fun h ↦ hω <| by
+        simp only [mul_im, conj_re, conj_im]
+        linarith
       have h0 : p 0 * (ω₁.re * ω₂.im - ω₁.im * ω₂.re) = 0 := by
         linear_combination ω₂.im * hre - ω₂.re * hi
       have h1 : p 1 * (ω₁.re * ω₂.im - ω₁.im * ω₂.re) = 0 := by
@@ -338,13 +290,6 @@ private theorem exp_phaseCLM_add_single (p : Fin 2 → ℝ) :
   constructor <;> rw [map_add, Complex.exp_add, mul_comm] <;> congr 2 <;>
     simp [phaseCLM_apply] <;> ring
 
-/-- Translating by an integer vector does not move a point of the torus. -/
-private theorem coe_add_single (p : Fin 2 → ℝ) (i : Fin 2) :
-    (fun j ↦ ((p + (Pi.single i 1 : Fin 2 → ℝ)) j : UnitAddCircle)) =
-      fun j ↦ (p j : UnitAddCircle) :=
-  (TauCeti.UnitAddTorus.coe_eq_coe_iff.2 ⟨Pi.single i 1, funext fun j ↦ by
-    by_cases h : j = i <;> simp [Pi.single_apply, h]⟩).symm
-
 /-- The section of the flat line corresponding to a function on the torus: in lattice coordinates
 `p`, it is `exp (2πi (θ₁ p₀ + θ₂ p₁)) g p`. -/
 private def ofTorus (hω : (conj ω₁ * ω₂).im ≠ 0) (θ₁ θ₂ : ℝ) (g : UnitAddTorus (Fin 2) → ℂ) :
@@ -378,22 +323,6 @@ private theorem ofTorus_mem (hω : (conj ω₁ * ω₂).im ≠ 0) {g : UnitAddTo
       coe_add_single]
     ring
 
-/-- `∂bar` in terms of the derivatives along `ω₁` and `ω₂`: `2 i D ∂bar u = ω₂ A - ω₁ B`. -/
-private theorem conjWirtingerDeriv_apply_one_eq (hω : (conj ω₁ * ω₂).im ≠ 0) (u : ℂ → ℂ)
-    (z : ℂ) : conjWirtingerDeriv u z 1 = (2 * I * (conj ω₁ * ω₂).im : ℂ)⁻¹ *
-      (ω₂ * fderiv ℝ u z ω₁ - ω₁ * fderiv ℝ u z ω₂) := by
-  have h2 : (2 * I * (conj ω₁ * ω₂).im : ℂ) = ω₂ * conj ω₁ - ω₁ * conj ω₂ := by
-    have h := sub_conj (conj ω₁ * ω₂)
-    simp only [map_mul, conj_conj, ofReal_mul, ofReal_ofNat] at h
-    linear_combination -h
-  have hne : (2 * I * (conj ω₁ * ω₂).im : ℂ) ≠ 0 := by
-    have : ((conj ω₁ * ω₂).im : ℂ) ≠ 0 := mod_cast hω
-    exact mul_ne_zero (mul_ne_zero two_ne_zero I_ne_zero) this
-  rw [eq_inv_mul_iff_mul_eq₀ hne, fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv,
-    fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv, h2]
-  simp only [smul_eq_mul]
-  ring
-
 /-- `∂bar` of the section corresponding to a smooth function on the torus corresponds to the torus
 operator applied to that function. -/
 private theorem conjWirtingerDeriv_ofTorus (hω : (conj ω₁ * ω₂).im ≠ 0)
@@ -416,35 +345,12 @@ private theorem conjWirtingerDeriv_ofTorus (hω : (conj ω₁ * ω₂).im ≠ 0)
   have hline (i : Fin 2) : fderiv ℝ G p (Pi.single i 1) =
       lineDeriv g (Pi.single i 1) fun j ↦ (p j : UnitAddCircle) :=
     (lineDeriv_coe p _ ((hG.differentiable (by simp)) p)).symm
-  rw [conjWirtingerDeriv_apply_one_eq hω, hD, hD, latticeEquiv_symm_apply_fst,
+  rw [conjWirtingerDeriv_apply_one_eq_inv_smul_sub hω, hD, hD, latticeEquiv_symm_apply_fst,
     latticeEquiv_symm_apply_snd, hline, hline, ofTorus_latticeEquiv]
   simp only [torusOp, Pi.smul_apply, Pi.add_apply, smul_eq_mul, G, phaseCLM_apply]
   simp only [Pi.single_apply, Fin.isValue, ↓reduceIte, one_ne_zero, zero_ne_one, ofReal_one,
     ofReal_zero, mul_one, mul_zero, add_zero, zero_add]
   ring
-
-/-- Iterating a twist `u (z + ω) = c u z` over the integer multiples of `ω`. -/
-private theorem apply_add_intCast_mul {ω₀ c : ℂ} (hc : c ≠ 0) (h : ∀ z, u (z + ω₀) = c * u z)
-    (k : ℤ) (z : ℂ) : u (z + k * ω₀) = c ^ k * u z := by
-  induction k using Int.induction_on with
-  | zero => simp
-  | succ k ih =>
-    have hz : z + ((k + 1 : ℤ) : ℂ) * ω₀ = z + ((k : ℤ) : ℂ) * ω₀ + ω₀ := by
-      push_cast
-      ring
-    rw [hz, h, ih, zpow_add_one₀ hc]
-    ring
-  | pred k ih =>
-    have h' := h (z + ((-k - 1 : ℤ) : ℂ) * ω₀)
-    have hz : z + ((-k - 1 : ℤ) : ℂ) * ω₀ + ω₀ = z + ((-k : ℤ) : ℂ) * ω₀ := by
-      push_cast
-      ring
-    rw [hz, ih] at h'
-    calc u (z + ((-k - 1 : ℤ) : ℂ) * ω₀) = c⁻¹ * (c * u (z + ((-k - 1 : ℤ) : ℂ) * ω₀)) := by
-          rw [inv_mul_cancel_left₀ hc]
-      _ = c ^ (-k - 1 : ℤ) * u z := by
-          rw [← h', zpow_sub_one₀ hc]
-          ring
 
 /-- Every smooth section of the flat line comes from a smooth function on the torus. -/
 private theorem exists_ofTorus_eq (hω : (conj ω₁ * ω₂).im ≠ 0)
@@ -466,9 +372,9 @@ private theorem exists_ofTorus_eq (hω : (conj ω₁ * ω₂).im ≠ 0)
       push_cast
       ring
     simp only [G]
-    rw [hL, apply_add_intCast_mul (exp_ne_zero _) hu.2.2,
-      apply_add_intCast_mul (exp_ne_zero _) hu.2.1, map_add, neg_add, Complex.exp_add,
-      Complex.exp_neg (phaseCLM θ₁ θ₂ fun i ↦ (m i : ℝ)), hexp]
+    rw [hL, Function.apply_add_int_mul_eq_zpow_mul (exp_ne_zero _) hu.2.2,
+      Function.apply_add_int_mul_eq_zpow_mul (exp_ne_zero _) hu.2.1, map_add, neg_add,
+      Complex.exp_add, Complex.exp_neg (phaseCLM θ₁ θ₂ fun i ↦ (m i : ℝ)), hexp]
     have h₁ : exp (2 * π * θ₁ * I) ^ m 0 ≠ 0 := zpow_ne_zero _ (exp_ne_zero _)
     have h₂ : exp (2 * π * θ₂ * I) ^ m 1 ≠ 0 := zpow_ne_zero _ (exp_ne_zero _)
     field_simp

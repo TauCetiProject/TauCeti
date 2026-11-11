@@ -58,11 +58,15 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
 * `DifferentiableAt.conjWirtingerDeriv_eq_zero`, `DifferentiableAt.wirtingerDeriv_eq_fderiv`:
   for complex differentiable `g`, `\bar∂g = 0` and `∂g` is the complex derivative.
 * `TauCeti.conjWirtingerDeriv_const_smul`: `\bar∂` commutes with complex scalar multiplication.
+* `TauCeti.conjWirtingerDeriv_add_eq_smul`: if `g (x + v) = c • g x`, then
+  `\bar∂g(x + v) = c • \bar∂g(x)`.
 * `TauCeti.conjWirtingerDeriv_eq_sum_smul`: `\bar∂` depends complex-linearly on the real
   derivative.
 * `TauCeti.conjWirtingerDeriv_fun_sum`: `\bar∂` of a finite sum of real-differentiable functions.
 * `TauCeti.conjWirtingerDeriv_fun_mul`, `TauCeti.conjWirtingerDeriv_fun_pow`: the Leibniz and
   power rules for complex-valued functions.
+* `TauCeti.conjWirtingerDeriv_apply_one_eq_inv_smul_sub`: in one variable,
+  `2 i Im (conj ω₁ ω₂) \bar∂f = ω₂ Df ω₁ - ω₁ Df ω₂` for `ℝ`-linearly independent `ω₁`, `ω₂`.
 * `TauCeti.conjWirtingerDeriv_apply_eq_conjWirtingerDeriv_line`: `\bar∂g(x) v` is the
   one-variable conjugate Wirtinger derivative of the restriction of `g` to the complex line
   `t ↦ x + t • v`.
@@ -230,6 +234,15 @@ theorem conjWirtingerDeriv_const_smul {g : V → W} {x : V} (c : ℂ) :
   simp only [conjWirtingerDeriv_apply, fderiv_const_smul_field c, Pi.smul_apply, smul_apply]
   module
 
+/-- If translating by `v` multiplies `g` by `c`, it multiplies the conjugate Wirtinger derivative
+by `c`. -/
+theorem conjWirtingerDeriv_add_eq_smul {g : V → W} {v : V} {c : ℂ}
+    (h : ∀ x, g (x + v) = c • g x) (x : V) :
+    conjWirtingerDeriv g (x + v) = c • conjWirtingerDeriv g x := by
+  have hfun : (fun y ↦ g (y + v)) = c • g := funext fun y ↦ by simp [h]
+  rw [conjWirtingerDeriv_eq_complexAntilinearPart, ← fderiv_comp_add_right, hfun,
+    ← conjWirtingerDeriv_eq_complexAntilinearPart, conjWirtingerDeriv_const_smul]
+
 /-- The conjugate Wirtinger derivative in the direction `v` is the one-variable conjugate
 Wirtinger derivative `∂/∂(conj t)` of the restriction `t ↦ g (x + t • v)` to the complex line
 through `x` in the direction `v`. -/
@@ -393,6 +406,22 @@ theorem fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv {f : ℂ
       v • wirtingerDeriv f x 1 + conj v • conjWirtingerDeriv f x 1 := by
   rw [← wirtingerDeriv_add_conjWirtingerDeriv f x v,
     wirtingerDeriv_apply_eq_smul_apply_one, conjWirtingerDeriv_apply_eq_conj_smul_apply_one]
+
+/-- In one variable, `\bar∂f` is determined by the real derivatives along two `ℝ`-linearly
+independent directions `ω₁`, `ω₂`: `2 i Im (conj ω₁ ω₂) \bar∂f(x) = ω₂ Df(x) ω₁ - ω₁ Df(x) ω₂`. -/
+theorem conjWirtingerDeriv_apply_one_eq_inv_smul_sub {f : ℂ → W} {ω₁ ω₂ : ℂ}
+    (hω : (conj ω₁ * ω₂).im ≠ 0) (x : ℂ) :
+    conjWirtingerDeriv f x 1 = (2 * I * (conj ω₁ * ω₂).im : ℂ)⁻¹ •
+      (ω₂ • fderiv ℝ f x ω₁ - ω₁ • fderiv ℝ f x ω₂) := by
+  have h2 : (2 * I * (conj ω₁ * ω₂).im : ℂ) = ω₂ * conj ω₁ - ω₁ * conj ω₂ := by
+    have h := sub_conj (conj ω₁ * ω₂)
+    simp only [map_mul, conj_conj, ofReal_mul, ofReal_ofNat] at h
+    linear_combination -h
+  have hne : (2 * I * (conj ω₁ * ω₂).im : ℂ) ≠ 0 :=
+    mul_ne_zero (mul_ne_zero two_ne_zero I_ne_zero) (mod_cast hω)
+  rw [eq_inv_smul_iff₀ hne, fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv,
+    fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv, h2]
+  module
 
 /-- In one variable the real derivative is controlled by its two Wirtinger parts:
 `‖Df(x)‖ ≤ ‖∂f(x)‖ + ‖bar∂f(x)‖`. -/
