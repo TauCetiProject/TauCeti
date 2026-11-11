@@ -15,8 +15,8 @@ public import Mathlib.RingTheory.PowerSeries.Ideal
 For a module `M` over `O⟦X⟧`, its delta submodule is the increasing union of the kernels of
 `ωₙ = (1 + X) ^ (p ^ n) - 1`. Linear maps preserve this submodule, and injective maps reflect it.
 
-On a noetherian module the union stabilizes at a single kernel. If `O` is a complete noetherian
-local ring and `p` is prime and belongs to its maximal ideal, this makes the delta submodule of
+On a noetherian module the union stabilizes at a single kernel. If `O` is noetherian and
+`I`-adically complete for an ideal `I` containing the prime `p`, this makes the delta submodule of
 a finite `O⟦X⟧`-module finite over `O`: it is a finite module over the quotient by a distinguished
 polynomial `ωₙ`. This is the finiteness input for separating cyclotomic factors in growth formulas.
 No torsion, characteristic-zero, discrete-valuation or finite-residue-field hypothesis is needed
