@@ -92,14 +92,15 @@ variable {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D]
 
 /-- **The unit condition follows from the tensor condition.** A natural transformation `τ` from a
 lax monoidal functor to a monoidal functor that is an isomorphism at the tensor unit and
-compatible with the tensorators is monoidal. Left unitality of both functors at `𝟙_ C` turns the
-tensor condition into `(ε F ≫ τ.app (𝟙_ C)) ▷ G.obj (𝟙_ C) = ε G ▷ G.obj (𝟙_ C)`, and whiskering by
-`G.obj (𝟙_ C) ≅ 𝟙_ D` is faithful. -/
+compatible with the tensorators is monoidal. -/
 theorem of_tensor {F G : C ⥤ D} [F.LaxMonoidal] [G.Monoidal] (τ : F ⟶ G)
     [IsIso (τ.app (𝟙_ C))]
     (h : ∀ X Y, μ F X Y ≫ τ.app (X ⊗ Y) = (τ.app X ⊗ₘ τ.app Y) ≫ μ G X Y) :
     τ.IsMonoidal where
   unit := by
+    -- Left unitality of both functors at `𝟙_ C` turns the tensor condition into
+    -- `(ε F ≫ τ.app (𝟙_ C)) ▷ G.obj (𝟙_ C) = ε G ▷ G.obj (𝟙_ C)`, and whiskering by
+    -- `G.obj (𝟙_ C) ≅ 𝟙_ D` is faithful.
     have h₁ : (ε F ≫ τ.app (𝟙_ C)) ▷ G.obj (𝟙_ C) = ε G ▷ G.obj (𝟙_ C) := by
       have key : 𝟙_ D ◁ τ.app (𝟙_ C) ≫ (ε F ≫ τ.app (𝟙_ C)) ▷ G.obj (𝟙_ C) ≫
           μ G (𝟙_ C) (𝟙_ C) ≫ G.map (λ_ (𝟙_ C)).hom =
