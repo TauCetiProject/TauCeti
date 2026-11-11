@@ -211,7 +211,8 @@ theorem aeval_unique (f : LaurentRing R K →ₐ[R] A) (x : K → Aˣ) (h : ∀ 
 
 /-- Evaluating at the variables themselves is the identity. -/
 @[simp]
-theorem aeval_unitX : aeval (unitX : K → (LaurentRing R K)ˣ) = AlgHom.id R (LaurentRing R K) :=
+theorem aeval_unitX_left :
+    aeval (unitX : K → (LaurentRing R K)ˣ) = AlgHom.id R (LaurentRing R K) :=
   (aeval_unique _ _ fun i ↦ by simp).symm
 
 /-- Evaluation is natural in the target algebra. -/
