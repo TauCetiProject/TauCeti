@@ -20,7 +20,8 @@ coordinates `z = s + i t` of the input `i`, given by the end lift `z ↦ c i + a
 end lift `φ_∞(z) = 2 exp (-2πz)` of the output it is `β(-s - 1) Hout(t) dt`. Here `β` is the
 cutoff `smoothTransition`.
 
-The *truncation* `TauCeti.Floer.puncturedSphereTruncation c a R` is the closed disc
+The *truncation* `TauCeti.Floer.puncturedSphereTruncation c a R`, defined in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.MovingEnds`, is the closed disc
 `‖w‖ ≤ 2 exp (2πR)` with the open discs `‖w - c i‖ < ‖a i‖ exp (-2πR) / 2` removed: the part of
 the sphere where `s ≤ R` on every input end and `-s ≤ R` on the output end. This file proves the
 energy identity over it, for a map `u` into a symplectic vector space which is `C¹` off the input
@@ -51,10 +52,6 @@ energy identity is
 `g(s) G(t) dt` in the end coordinates. The side `s = 1` of an input annulus and the side `s = -1`
 of the output annulus carry the factor `β(0) = 0`, and the remaining side carries `β(R - 1)`.
 
-## Main definitions
-
-* `TauCeti.Floer.puncturedSphereTruncation`: the truncation of the sphere with moving input ends.
-
 ## Main results
 
 * `SymplecticForm.integrableOn_puncturedSphereTruncation_puncturedSpherePerturbation`: the energy,
@@ -80,47 +77,6 @@ open scoped Topology
 
 namespace TauCeti
 
-namespace Floer
-
-variable {ι : Type*} {c a : ι → ℂ} {R : ℝ}
-
-/-- The **truncation of a sphere with moving input ends** at height `R`: the closed disc
-`‖w‖ ≤ 2 exp (2πR)` with the open discs `‖w - c i‖ < ‖a i‖ exp (-2πR) / 2` about the input
-punctures removed. In the end coordinates of the input `i` it is bounded by the circle `s = R`, and
-in those of the output by the circle `s = -R`. -/
-def puncturedSphereTruncation (c a : ι → ℂ) (R : ℝ) : Set ℂ :=
-  {w | ‖w‖ ≤ 2 * Real.exp (2 * π * R) ∧ ∀ i, ‖a i‖ * Real.exp (-(2 * π * R)) / 2 ≤ ‖w - c i‖}
-
-@[simp]
-theorem mem_puncturedSphereTruncation {w : ℂ} :
-    w ∈ puncturedSphereTruncation c a R ↔
-      ‖w‖ ≤ 2 * Real.exp (2 * π * R) ∧ ∀ i, ‖a i‖ * Real.exp (-(2 * π * R)) / 2 ≤ ‖w - c i‖ :=
-  Iff.rfl
-
-/-- The truncation is compact. -/
-theorem isCompact_puncturedSphereTruncation (c a : ι → ℂ) (R : ℝ) :
-    IsCompact (puncturedSphereTruncation c a R) := by
-  have hclosed : IsClosed (puncturedSphereTruncation c a R) := by
-    simp only [puncturedSphereTruncation, ofPred_and, ofPred_forall]
-    exact (isClosed_le continuous_norm continuous_const).inter
-      (isClosed_iInter fun i ↦
-        isClosed_le continuous_const (continuous_id.sub continuous_const).norm)
-  exact (isCompact_closedBall (0 : ℂ) (2 * Real.exp (2 * π * R))).of_isClosed_subset hclosed
-    fun w hw ↦ by simpa using hw.1
-
-/-- The truncation avoids the input punctures. -/
-theorem ne_of_mem_puncturedSphereTruncation (ha : ∀ i, a i ≠ 0) {w : ℂ}
-    (hw : w ∈ puncturedSphereTruncation c a R) (i : ι) : w ≠ c i := by
-  rintro rfl
-  have h := hw.2 i
-  rw [sub_self, norm_zero] at h
-  have : 0 < ‖a i‖ * Real.exp (-(2 * π * R)) / 2 := by
-    have := norm_pos_iff.2 (ha i)
-    positivity
-  linarith
-
-end Floer
-
 namespace SymplecticForm
 
 open Floer
@@ -130,111 +86,6 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 /-! ### The pieces of the truncation -/
 
 variable {ι : Type*} {c a : ι → ℂ} {R : ℝ}
-
-/-- The input end lift `z ↦ c + a φ₀(z)` sends `z` to a point at distance
-`‖a‖ exp (-2π Re z) / 2` from its center `c`. -/
-private theorem norm_inputEndLift_sub (c a z : ℂ) :
-    ‖c + a * zero.cylindricalEndLift z - c‖ = ‖a‖ * Real.exp (-(2 * π * z.re)) / 2 := by
-  have h := norm_cylindricalEndLift_sub_endCenter zero z
-  rw [endCenter_zero, sub_zero, endScale_zero] at h
-  rw [add_sub_cancel_left, norm_mul, h]
-  norm_num
-  ring
-
-/-- The image of the band `1 ≤ s ≤ R` of an input end lies in the truncation. -/
-private theorem inputEndLift_mem_puncturedSphereTruncation
-    (hsep : Pairwise fun i j => ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖)
-    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {i : ι} {z : ℂ} (h₁ : 1 ≤ z.re)
-    (hR : z.re ≤ R) : c i + a i * zero.cylindricalEndLift z ∈ puncturedSphereTruncation c a R := by
-  set w := c i + a i * zero.cylindricalEndLift z
-  have hπ := Real.pi_pos
-  have hn := norm_inputEndLift_sub (c i) (a i) z
-  have he₁ : Real.exp (-(2 * π * z.re)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith)
-  have heR : Real.exp (-(2 * π * R)) ≤ Real.exp (-(2 * π * z.re)) :=
-    Real.exp_le_exp.2 (by nlinarith)
-  have heR₁ : Real.exp (-(2 * π * R)) ≤ 1 := heR.trans he₁
-  have hwi : ‖w - c i‖ ≤ ‖a i‖ / 2 := by
-    rw [hn]
-    nlinarith [norm_nonneg (a i)]
-  refine ⟨?_, fun j => ?_⟩
-  · have h₂ : Real.exp (2 * π) ≤ Real.exp (2 * π * R) := Real.exp_le_exp.2 (by nlinarith)
-    have h₃ : ‖w‖ ≤ ‖c i‖ + ‖w - c i‖ := by simpa using norm_add_le (c i) (w - c i)
-    linarith [hout i]
-  · rcases eq_or_ne j i with rfl | hji
-    · rw [hn]
-      nlinarith [norm_nonneg (a j)]
-    · have h₁ := hsep hji.symm
-      have h₂ : ‖c i - c j‖ ≤ ‖w - c i‖ + ‖w - c j‖ := by
-        simpa [norm_sub_rev] using norm_sub_le (c i - w) (c j - w)
-      nlinarith [norm_nonneg (a j)]
-
-/-- The image of the band `-R ≤ s ≤ -1` of the output end lies in the truncation. -/
-private theorem cylindricalEndLift_inf_mem_puncturedSphereTruncation
-    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {z : ℂ} (hR : -R ≤ z.re)
-    (h₁ : z.re ≤ -1) : inf.cylindricalEndLift z ∈ puncturedSphereTruncation c a R := by
-  have hπ := Real.pi_pos
-  have hn := norm_cylindricalEndLift_sub_endCenter inf z
-  rw [endCenter_inf, sub_zero, endScale_inf, Complex.norm_ofNat] at hn
-  have h₂ : Real.exp (2 * π) ≤ Real.exp (-(2 * π * z.re)) := Real.exp_le_exp.2 (by nlinarith)
-  refine ⟨?_, fun i => ?_⟩
-  · rw [hn]
-    have : Real.exp (-(2 * π * z.re)) ≤ Real.exp (2 * π * R) := Real.exp_le_exp.2 (by nlinarith)
-    linarith
-  · have heR : Real.exp (-(2 * π * R)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith)
-    have h₃ := norm_sub_norm_le (inf.cylindricalEndLift z) (c i)
-    nlinarith [hout i, norm_nonneg (a i)]
-
-/-- A point of the truncation in the disc `‖w - c‖ ≤ ‖a‖ exp (-2π) / 2` of the input end with
-center `c` and scale `a` is the image of a point of the rectangle `[1, R] × [-1/2, 1/2)`. -/
-private theorem exists_inputEndLift_eq {c a w : ℂ} (ha : a ≠ 0) {R : ℝ}
-    (hw₀ : ‖a‖ * Real.exp (-(2 * π * R)) / 2 ≤ ‖w - c‖)
-    (hw₁ : ‖w - c‖ ≤ ‖a‖ * Real.exp (-(2 * π)) / 2) :
-    ∃ z : ℂ, (z.re ∈ Icc 1 R ∧ z.im ∈ Ico (-1 / 2 : ℝ) (1 / 2)) ∧
-      c + a * zero.cylindricalEndLift z = w := by
-  have hπ := Real.pi_pos
-  have hna := norm_pos_iff.2 ha
-  set w' := (w - c) / a
-  have hw' : ‖w'‖ = ‖w - c‖ / ‖a‖ := norm_div _ _
-  have hw'₀ : 0 < ‖w'‖ := by
-    rw [hw']
-    have : 0 < ‖a‖ * Real.exp (-(2 * π * R)) / 2 := by positivity
-    exact div_pos (by linarith) hna
-  have hw'0 : w' ≠ zero.endCenter := by
-    rw [endCenter_zero]
-    exact norm_pos_iff.1 hw'₀
-  refine ⟨zero.endCoord w', ⟨⟨?_, ?_⟩, zero.im_endCoord_mem_Ico w'⟩, ?_⟩
-  · refine le_re_endCoord_of_norm_sub_endCenter_le (by decide) hw'0 ?_
-    rw [endCenter_zero, sub_zero, hw', div_le_iff₀ hna, mul_one]
-    linarith
-  · have hlog : -(2 * π * R) ≤ Real.log (‖w'‖ / (1 / 2)) := by
-      rw [Real.le_log_iff_exp_le (by positivity), le_div_iff₀ (by norm_num), hw',
-        le_div_iff₀ hna]
-      linarith
-    rw [re_endCoord, endCenter_zero, endScale_zero, sub_zero, norm_div, div_le_iff₀ (by positivity)]
-    norm_num at hlog ⊢
-    linarith
-  · rw [zero.cylindricalEndLift_endCoord hw'0, mul_div_cancel₀ _ ha, add_sub_cancel]
-
-/-- A point of the truncation off the disc `‖w‖ < 2 exp (2π)` is the image under the output end
-lift of a point of the rectangle `[-R, -1] × [-1/2, 1/2)`. -/
-private theorem exists_cylindricalEndLift_inf_eq {w : ℂ} {R : ℝ} (hR : 0 ≤ R)
-    (hw₀ : 2 * Real.exp (2 * π) ≤ ‖w‖) (hw₁ : ‖w‖ ≤ 2 * Real.exp (2 * π * R)) :
-    ∃ z : ℂ, (z.re ∈ Icc (-R) (-1) ∧ z.im ∈ Ico (-1 / 2 : ℝ) (1 / 2)) ∧
-      inf.cylindricalEndLift z = w := by
-  have hπ := Real.pi_pos
-  have hw0 : 0 < ‖w‖ := lt_of_lt_of_le (by positivity) hw₀
-  have hw : w ≠ inf.endCenter := by
-    rw [endCenter_inf]
-    exact norm_pos_iff.1 hw0
-  refine ⟨inf.endCoord w, ⟨⟨?_, ?_⟩, inf.im_endCoord_mem_Ico w⟩,
-    inf.cylindricalEndLift_endCoord hw⟩
-  · linarith [neg_re_endCoord_inf_le hR hw₁]
-  · have hlog : 2 * π ≤ Real.log (‖w‖ / 2) := by
-      rw [Real.le_log_iff_exp_le (div_pos hw0 two_pos), le_div_iff₀ (by norm_num)]
-      linarith
-    rw [re_endCoord, endCenter_inf, endScale_inf, sub_zero, norm_div, Complex.norm_ofNat,
-      div_le_iff₀ (by positivity)]
-    linarith
 
 /-- A point of a rectangle `[α, β] × [-1/2, 1/2)` is a complex number whose imaginary part lies in
 the period `[-1/2, 1/2)`, on which the end lifts are injective. -/
@@ -368,6 +219,7 @@ private theorem forall_lt_norm_sub_and_norm_lt_of_mem_sdiff (ha : ∀ i, a i ≠
     (∀ i, ‖a i‖ * Real.exp (-(2 * π)) / 2 < ‖Complex.equivRealProdCLM.symm z - c i‖) ∧
       ‖Complex.equivRealProdCLM.symm z‖ < 2 * Real.exp (2 * π) := by
   obtain ⟨hzT, hzA⟩ := hz
+  replace hzT := mem_puncturedSphereTruncation.1 hzT
   have hz' (g : ℂ → ℂ) (ζ : ℂ) (h : g ζ = Complex.equivRealProdCLM.symm z) :
       realChart g (Complex.equivRealProdCLM ζ) = z := by
     rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply, h,
