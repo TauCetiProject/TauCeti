@@ -24,28 +24,40 @@ CW homotopy models and whole-space CW structures:
 * When `(C, D)` has **no `(d + 1)`-cells** (`[IsEmpty (cell C (d + 1))]`), with no finiteness
   assumption on cell counts and no assumption above degree `d + 1`, both terms of the universal
   coefficient sequence
-  `0 ⟶ Ext¹_k(H_d, M) ⟶ H^{d+1}(-; R, M) ⟶ Hom_k(H_{d+1}, M) ⟶ 0` vanish over a hereditary
-  commutative ring `k` (in any universe, including `ℤ`) when `R` is projective: `H_d` is projective
-  so `Ext¹_k(H_d, M) = 0`, and `H_{d+1} = 0` so `Hom_k(H_{d+1}, M) = 0`. Thus
-  `H^{d+1}(C, D; R, M)`, `H^{d+1}(C; R, M)` and `H^{d+1}(Y; R, M)` (for any space `Y` homotopy
-  equivalent to `C`) vanish
-  (`TauCeti.isZero_singularCohomology_complexBasePair_succ_of_isEmpty_cell`,
-  `TauCeti.isZero_singularCohomology_succ_of_isEmpty_cell`,
-  `ContinuousMap.HomotopyEquiv.isZero_singularCohomology_succ_of_isEmpty_cell`).
-* Note that degree-`d` integral cohomology `H^d(C; ℤ)` need **not** be torsion-free: the universal
-  coefficient sequence in degree `d` contains `Ext¹_ℤ(H_{d-1}(C; ℤ), ℤ)`, which carries the torsion
-  of `H_{d-1}` (for instance `H^2(ℝP²; ℤ) ≅ ℤ/2ℤ`).
-* For a **CW homotopy model** `e : ContinuousMap.HomotopyEquiv Y C`, projectivity and freeness of
-  `H_d(Y; -)` when `C` has no `(d + 1)`-cells, as well as vanishing of homology and cohomology above
-  `d`, transfer directly across `e`
-  (`ContinuousMap.HomotopyEquiv.free_singularHomology_of_isEmpty_cell_succ`,
+  `0 ⟶ Ext¹_k(H_d(C, D; R), M) ⟶ H^{d+1}(C, D; R, M) ⟶ Hom_k(H_{d+1}(C, D; R), M) ⟶ 0` vanish
+  over a hereditary commutative ring `k` (in any universe, including `ℤ`) when `R` is projective:
+  `H_d(C, D; R)` is projective so `Ext¹_k(H_d(C, D; R), M) = 0`, and `H_{d+1}(C, D; R) = 0` so
+  `Hom_k(H_{d+1}(C, D; R), M) = 0`. Thus `H^{d+1}(C, D; R, M)` vanishes
+  (`TauCeti.isZero_singularCohomology_complexBasePair_succ_of_isEmpty_cell`). When `C` carries an
+  absolute CW structure (`[CWComplex C]`, i.e. `D = ∅`) with no `(d + 1)`-cells, the same gives
+  vanishing of `H^{d+1}(C; R, M)` (`TauCeti.isZero_singularCohomology_succ_of_isEmpty_cell`) and
+  of `H^{d+1}(Y; R, M)` for any space `Y` homotopy equivalent to `C`
+  (`ContinuousMap.HomotopyEquiv.isZero_singularCohomology_succ_of_isEmpty_cell`).
+* Note that even for an absolute `d`-dimensional CW complex `C`, degree-`d` integral cohomology
+  `H^d(C; ℤ)` need **not** be torsion-free: the universal coefficient sequence in degree `d`
+  contains `Ext¹_ℤ(H_{d-1}(C; ℤ), ℤ)`, which carries the torsion of `H_{d-1}` (for instance
+  `H^2(ℝP²; ℤ) ≅ ℤ/2ℤ`).
+* For a **CW homotopy model** `e : ContinuousMap.HomotopyEquiv Y C` with an absolute CW structure on
+  `C` (`[CWComplex C]`, `D = ∅`), projectivity and freeness of `H_d(Y; -)` when that CW structure
+  on `C` has no `(d + 1)`-cells, as well as vanishing of homology and cohomology above `d` when it
+  has no cells in dimensions strictly above `d`, transfer directly across `e`
+  (`ContinuousMap.HomotopyEquiv.projective_singularHomology_of_isEmpty_cell_succ`,
+  `ContinuousMap.HomotopyEquiv.free_singularHomology_of_isEmpty_cell_succ`,
   `ContinuousMap.HomotopyEquiv.isZero_singularHomology_of_isEmpty_cell_gt`,
   `ContinuousMap.HomotopyEquiv.isZero_singularCohomology_of_isEmpty_cell_gt`).
 * When `(C, D)` has **no cells in dimensions strictly above `d`**
   (`∀ m, d < m → IsEmpty (cell C m)`), it is finite-dimensional
-  (`Topology.RelCWComplex.finiteDimensional_of_isEmpty_cell_gt`), and both singular homology and
-  singular cohomology vanish in every degree `n > d` — for `(C, D)`, for `C`, for a space with a CW
-  structure on `Set.univ`, and for any space homotopy equivalent to `C`.
+  (`Topology.RelCWComplex.finiteDimensional_of_isEmpty_cell_gt`), and both relative singular
+  homology `Hₙ(C, D; R)` and relative singular cohomology `Hⁿ(C, D; R, M)` vanish in every degree
+  `n > d` (`TauCeti.isZero_singularHomology_complexBasePair_of_isEmpty_cell_gt`,
+  `TauCeti.isZero_singularCohomology_complexBasePair_of_isEmpty_cell_gt`). When `C` carries an
+  absolute CW structure (`[CWComplex C]`, i.e. `D = ∅`) with no cells in dimensions strictly above
+  `d`, ordinary singular homology and cohomology vanish in every degree `n > d` — for `C`
+  (`TauCeti.isZero_singularHomology_of_isEmpty_cell_gt`,
+  `TauCeti.isZero_singularCohomology_of_isEmpty_cell_gt`), for any space homotopy equivalent to `C`,
+  and for a space `X` carrying such an absolute CW structure on `Set.univ`
+  (`TauCeti.isZero_singularHomology_univ_of_isEmpty_cell_gt`,
+  `TauCeti.isZero_singularCohomology_univ_of_isEmpty_cell_gt`).
 
 ## References
 
