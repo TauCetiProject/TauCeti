@@ -408,10 +408,8 @@ theorem mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smu
       Real.exp (∫ u in s..t, g (u, timeDependentFlowOf X s u x)) •
         mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α x := by
   have hX₁ := hX.of_le (m := 1) one_le_two
-  -- The times up to which the flow from `(s, x)` is defined form an open interval `J`.
+  -- The times up to which the flow from `(s, x)` is defined form an interval `J`.
   set J : Set ℝ := {u | ((s, u), x) ∈ timeDependentFlowDomain X}
-  have hJo : IsOpen J :=
-    (isOpen_timeDependentFlowDomain hX₁).preimage (by fun_prop : Continuous fun u : ℝ ↦ ((s, u), x))
   -- The pullbacks at `x`, as alternating maps on the model space.
   set P : ℝ → E [⋀^Fin k]→L[ℝ] F := fun u ↦
     mpullback I I (timeDependentFlowOf X s u) (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk u) α) x
@@ -427,9 +425,9 @@ theorem mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smu
     exact (congrArg (fun f ↦ mpullback I I f (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α) x)
       h).trans (congrFun (mpullback_id _) x)
   rw [← hP0]
-  exact eq_exp_integral_smul_of_hasDerivAt_smul (V := E [⋀^Fin k]→L[ℝ] F) hJo
-    (ordConnected_setOf_mem_timeDependentFlowDomain s x) hcont hP
-    (mem_timeDependentFlowDomain_self hX₁ s x) h
+  exact eq_exp_integral_smul_of_hasDerivWithinAt_smul (V := E [⋀^Fin k]→L[ℝ] F)
+    (ordConnected_setOf_mem_timeDependentFlowDomain s x) hcont
+    (fun u hu ↦ (hP u hu).hasDerivWithinAt) (mem_timeDependentFlowDomain_self hX₁ s x) h
 
 variable (hc : IsCompleteVectorField (timeDependentSuspensionField X))
 include hc
