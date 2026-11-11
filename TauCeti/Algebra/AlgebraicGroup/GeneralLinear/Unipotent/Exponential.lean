@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Unipotent.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.OneParameter
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Antipode
 import TauCeti.Algebra.AlgebraicGroup.Tangent.GroupLike
+import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.RingTheory.Derivation.LocallyNilpotent
 
 /-!
@@ -92,11 +93,28 @@ theorem exists_iterate_leftInvariantDerivation_eq_zero (hX : IsNilpotent (tangen
     simpa only [trace_tangentMatrix, Bialgebra.CounitAlgebra.algEquivSelf_apply] using
       Matrix.isNilpotent_trace_of_isNilpotent hX
 
-variable [Algebra ℚ R] [Algebra ℚ (coordinateHopfAlgebra R n)]
+variable [Algebra ℚ (coordinateHopfAlgebra R n)]
+
+/-- The base ring of a `ℚ`-algebra Hopf algebra is a `ℚ`-algebra: it is a retract of it through
+the counit, so every nonzero natural number is invertible. -/
+private theorem nonempty_algebra_rat_of_coordinateHopfAlgebra (n : ℕ)
+    [Algebra ℚ (coordinateHopfAlgebra R n)] :
+    Nonempty (Algebra ℚ R) := by
+  have hu : ∀ y : nonZeroDivisors ℤ, IsUnit (algebraMap ℤ R y) := by
+    intro y
+    obtain ⟨m, hm⟩ := Int.eq_nat_or_neg y.1
+    have hm0 : m ≠ 0 := by
+      rintro rfl
+      exact nonZeroDivisors.coe_ne_zero y (by simp at hm)
+    have h : IsUnit (m : R) := by
+      simpa using (TauCeti.isUnit_natCast_of_ne_zero
+        (K := coordinateHopfAlgebra R n) hm0).map (Bialgebra.counitAlgHom R _)
+    rcases hm with hm | hm <;> rw [eq_intCast, hm] <;> simpa using h
+  exact ⟨(IsLocalization.lift (M := nonZeroDivisors ℤ) (S := ℚ) hu).toAlgebra⟩
 
 /-- **The exponential curve of a nilpotent tangent vector to `GLₙ` is the matrix curve
 `t ↦ exp(tX)`.** The coefficients of the abstract curve are `ε(Dᵐ x) / m! = Xᵐ / m!`. -/
-theorem expPointPolynomial_eq_nilpotentOneParameterCoordinateMap
+theorem expPointPolynomial_eq_nilpotentOneParameterCoordinateMap [Algebra ℚ R]
     (hd : ∀ h, ∃ m, (Bialgebra.leftInvariantDerivation d)^[m] h = 0)
     (hX : IsNilpotent (tangentMatrix n d)) :
     Bialgebra.expPointPolynomial d hd = nilpotentOneParameterCoordinateMap n hX := by
@@ -115,6 +133,7 @@ theorem pointsMulEquiv_expPointAt
     {A : Type v} [CommRing A] [Algebra R A] [Algebra ℚ A] (t : A) :
     pointsMulEquiv n (Bialgebra.expPointAt d hd t) =
       expSMulHom A (hX.map (algebraMap R A).mapMatrix) (Multiplicative.ofAdd t) := by
+  obtain ⟨_⟩ := nonempty_algebra_rat_of_coordinateHopfAlgebra (R := R) n
   rw [← Matrix.GeneralLinearGroup.map_aeval_expSMulHom hX t]
   ext i j
   rw [pointsMulEquiv_apply, pointToGeneralLinear_apply, Bialgebra.expPointAt_apply,
@@ -124,7 +143,7 @@ theorem pointsMulEquiv_expPointAt
 
 /-- The exponential of a nilpotent tangent vector to `GLₙ` is the matrix exponential of its
 tangent matrix. -/
-theorem pointsMulEquiv_expPoint
+theorem pointsMulEquiv_expPoint [Algebra ℚ R]
     (hd : ∀ h, ∃ m, (Bialgebra.leftInvariantDerivation d)^[m] h = 0)
     (hX : IsNilpotent (tangentMatrix n d)) :
     pointsMulEquiv n (toConv (Bialgebra.expPoint d hd)) = nilpotentExpUnit hX := by
