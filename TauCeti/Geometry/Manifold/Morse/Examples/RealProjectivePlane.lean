@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Homology
 public import TauCeti.Geometry.Manifold.Morse.Cell.Band
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
 public import TauCeti.Geometry.Manifold.Morse.SpectralSequence
-import TauCeti.AlgebraicTopology.Singular.Sublevel
 
 /-!
 # The critical-band spectral sequence of `ℝP²`
