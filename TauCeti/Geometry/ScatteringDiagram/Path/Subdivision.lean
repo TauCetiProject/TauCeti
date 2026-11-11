@@ -255,8 +255,9 @@ inductive IsSubdivision : {x y : WallComplement W} →
   | trans {x y} {p q r : AdmissiblePLPath x y}
       (hpq : IsSubdivision p q) (hqr : IsSubdivision q r) : IsSubdivision p r
 
-/-- Subdivision retains exactly the wall indices encountered by a path. It changes edge
-indices and rescales crossing times, while retaining simultaneous crossings. -/
+/-- Subdivision retains exactly the wall indices encountered by a path.
+See `TauCeti.WallComplement.crossings_subdivide` for the crossing-parameter formulas
+for a single split. -/
 theorem IsSubdivision.image_crossingEvents {x y : WallComplement W}
     {p q : AdmissiblePLPath x y} (h : IsSubdivision p q) :
     (fun c : ℕ × (ι × ℝ) => c.2.1) '' p.crossingEvents =

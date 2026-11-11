@@ -313,6 +313,16 @@ theorem toContinuousPath_nil :
 theorem toContinuousPath_cons (p : AdmissiblePLPath x y) (e : y ⟶ z) :
     toContinuousPath (p.cons e) = (toContinuousPath p).trans (Path.segment y.val z.val) := (rfl)
 
+/-- Forgetting walls preserves the continuous realization of a path. -/
+@[simp]
+theorem toContinuousPath_restrictPrefunctor {κ : Type*} (f : κ → ι)
+    (p : AdmissiblePLPath x y) :
+    toContinuousPath ((WallComplement.restrictPrefunctor W f).mapPath p) =
+      toContinuousPath p := by
+  induction p with
+  | nil => rfl
+  | cons p e ih => simp only [Prefunctor.mapPath_cons, toContinuousPath_cons, ih]
+
 /-- Realizing concatenation agrees with continuous path concatenation up to
 the usual homotopies of reparametrization. -/
 theorem toContinuousPath_comp_homotopic (p : AdmissiblePLPath x y) (q : AdmissiblePLPath y z) :
@@ -387,6 +397,19 @@ theorem mem_crossingEvents_cons (p : AdmissiblePLPath x y) (e : y ⟶ z)
     (j, i, t) ∈ crossingEvents (p.cons e) ↔
       (j, i, t) ∈ crossingEvents p ∨ j = p.length ∧ (i, t) ∈ WallComplement.crossings y z := by
   simp [crossingEvents, eq_comm, and_assoc, and_left_comm, and_comm]
+
+/-- Restricting the wall family retains exactly the crossings of the selected walls,
+with the same edge indices and affine parameters. -/
+@[simp]
+theorem mem_crossingEvents_restrictPrefunctor {κ : Type*} (f : κ → ι)
+    (p : AdmissiblePLPath x y) (j : ℕ) (k : κ) (t : ℝ) :
+    (j, k, t) ∈ crossingEvents ((WallComplement.restrictPrefunctor W f).mapPath p) ↔
+      (j, f k, t) ∈ crossingEvents p := by
+  induction p with
+  | nil => simp
+  | cons p e ih =>
+    simp only [Prefunctor.mapPath_cons, mem_crossingEvents_cons, ih,
+      Prefunctor.length_mapPath, WallComplement.mem_crossings, Function.comp_apply]
 
 /-- A single edge records exactly its segment crossings, all at edge index zero. -/
 @[simp]
