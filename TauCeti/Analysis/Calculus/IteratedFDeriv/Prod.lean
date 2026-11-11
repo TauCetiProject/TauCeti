@@ -155,9 +155,9 @@ theorem norm_iteratedFDeriv_snd_mul_comp_fst_le {g : E → A} {k : ℕ} (hg : Co
       ‖z.2‖ * ‖iteratedFDeriv 𝕜 k g z.1‖ + k * ‖iteratedFDeriv 𝕜 (k - 1) g z.1‖ := by
   have hsnd : ContDiff 𝕜 k (Prod.snd : E × A → A) := contDiff_snd
   have hgf : ContDiff 𝕜 k (g ∘ Prod.fst : E × A → A) := hg.comp contDiff_fst
-  have hle (i : ℕ) (hi : i ≤ k) :
+  have hle (i : ℕ) :
       ‖iteratedFDeriv 𝕜 i (g ∘ Prod.fst : E × A → A) z‖ ≤ ‖iteratedFDeriv 𝕜 i g z.1‖ :=
-    norm_iteratedFDeriv_comp_fst_le hg z (by exact_mod_cast hi)
+    norm_iteratedFDeriv_comp_fst_le z
   refine (norm_iteratedFDeriv_mul_le hsnd hgf z le_rfl).trans ?_
   rcases k with _ | m
   · simp
@@ -178,12 +178,12 @@ theorem norm_iteratedFDeriv_snd_mul_comp_fst_le {g : E → A} {k : ℕ} (hg : Co
           ‖iteratedFDeriv 𝕜 m (g ∘ Prod.fst : E × A → A) z‖
         ≤ ((m + 1 : ℕ) : ℝ) * 1 * ‖iteratedFDeriv 𝕜 m g z.1‖ := by
           gcongr
-          exact hle m (Nat.le_succ m)
+          exact hle m
       _ = ((m + 1 : ℕ) : ℝ) * ‖iteratedFDeriv 𝕜 m g z.1‖ := by ring
   · simp only [Nat.choose_zero_right, Nat.cast_one, one_mul, Nat.sub_zero,
       norm_iteratedFDeriv_zero]
     gcongr
-    exact hle _ le_rfl
+    exact hle _
 
 /-- **Derivative bound for a fibrewise multiplication.** For `g : E → A` of class `C^k` with
 `1 ≤ k`, the `k`-th iterated derivative of `z ↦ (z.1, z.2 * g z.1)` on `E × A` has norm at most
