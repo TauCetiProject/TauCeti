@@ -130,11 +130,22 @@ private theorem norm_chord_le (s t : I) : ‖chord s t‖ ≤ 1 := by
       ≤ ‖((1 - (s : ℝ) : ℝ) : ℂ)‖ + ‖((s : ℝ) : ℂ) * (Circle.exp (2 * π * t) : ℂ)‖ :=
         norm_add_le _ _
     _ = (1 - s) + s := by
-        rw [norm_mul, Circle.norm_coe, mul_one, Complex.norm_real, Complex.norm_real,
-          Real.norm_of_nonneg h₁, Real.norm_of_nonneg s.2.1]
+        simp [-Complex.ofReal_sub, -Circle.coe_exp, abs_of_nonneg h₁, abs_of_nonneg s.2.1]
     _ = 1 := by ring
 
 /-! ### The Hopf lift of the projective line -/
+
+/-- Two orthogonal unit vectors exist only in `ℂⁿ⁺¹` with `n ≥ 1`: in `ℂ¹` the inner product
+`⟪v, w⟫ = conj (v 0) * w 0` of two unit vectors has norm `1`. -/
+private theorem pos_of_inner_eq_zero (hvw : ⟪(v : EuclideanSpace ℂ (Fin (n + 1))), w⟫ = 0) :
+    0 < n := by
+  obtain _ | n := n
+  · have hv := norm_eq_of_mem_sphere v
+    have hw := norm_eq_of_mem_sphere w
+    rw [EuclideanSpace.norm_eq] at hv hw
+    have := congrArg norm hvw
+    simp_all [PiLp.inner_apply]
+  · exact n.succ_pos
 
 /-- The vector `κ v + √(1 - |κ|²) w` of the Hopf lift, for the chord point `κ = κ(s, t)`. -/
 private def liftVector (v w : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) (s t : I) :
@@ -152,9 +163,8 @@ private theorem liftVector_mem_sphere (hvw : ⟪(v : EuclideanSpace ℂ (Fin (n 
       (chord s t • (v : EuclideanSpace ℂ (Fin (n + 1))))
       (((√(1 - ‖chord s t‖ ^ 2) : ℝ) : ℂ) • (w : EuclideanSpace ℂ (Fin (n + 1))))
       (by rw [inner_smul_left, inner_smul_right, hvw, mul_zero, mul_zero])
-    rw [liftVector, sq, h₂, norm_smul, norm_smul, norm_eq_of_mem_sphere v, norm_eq_of_mem_sphere w,
-      Complex.norm_real, Real.norm_of_nonneg (Real.sqrt_nonneg _), mul_one, mul_one,
-      Real.mul_self_sqrt h₁]
+    rw [liftVector, sq, h₂]
+    simp [norm_smul, Real.mul_self_sqrt h₁]
     ring
   rw [mem_sphere_zero_iff_norm]
   nlinarith [norm_nonneg (liftVector v w s t)]
@@ -316,15 +326,9 @@ theorem bijective_mapOfEq_projectiveLineLoopMap :
   -- Two orthogonal unit vectors exist only in `ℂⁿ⁺¹` with `n ≥ 1`, where the Hopf boundary
   -- `π₂(CPⁿ) → π₁(S¹)` is an isomorphism.
   have hN : Nat.card (Fin 1) < 2 * n := by
-    rcases Nat.eq_zero_or_pos n with rfl | hn
-    · have hv := norm_eq_of_mem_sphere v
-      have hw := norm_eq_of_mem_sphere w
-      rw [EuclideanSpace.norm_eq, Fin.sum_univ_one, Real.sqrt_sq (norm_nonneg _)] at hv hw
-      rw [PiLp.inner_apply, Fin.sum_univ_one, RCLike.inner_apply, mul_eq_zero,
-        map_eq_zero] at hvw
-      rcases hvw with h | h <;> simp [h] at hv hw
-    · simp only [Nat.card_eq_fintype_card, Fintype.card_fin]
-      omega
+    have := pos_of_inner_eq_zero hvw
+    simp only [Nat.card_eq_fintype_card, Fintype.card_fin]
+    omega
   -- The loop-space shift followed by the Hopf boundary, `π₁(Ω CPⁿ) ≃* π₁(S¹)`.
   let Φ := HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv.trans
     ((HomotopyGroup.congrMulEquiv (finSuccEquiv 1)).trans (hopfBoundaryMulEquiv v hN))
