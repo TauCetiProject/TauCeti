@@ -6,13 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.AuslanderReiten.Functor
-public import TauCeti.Algebra.Category.ModuleCat.MatlisDual
-public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Opposite
-public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Functor
-public import TauCeti.CategoryTheory.Exact.Stable.Injective
-import TauCeti.CategoryTheory.Exact.Injective
-import TauCeti.CategoryTheory.Exact.Projective
-import Mathlib.Algebra.Category.ModuleCat.Injective
+public import TauCeti.Algebra.Category.ModuleCat.MatlisDual.Stable
 import Mathlib.Algebra.Category.ModuleCat.Projective
 
 /-!
@@ -27,7 +21,8 @@ Let `A` be an algebra over a commutative ring `R` and `E` an injective `R`-modul
   (`TauCeti.stableTranspose`);
 * `D` sends projective right modules to injective left modules, so it carries maps through
   projectives to maps through injectives, and descends to a functor from right modules modulo
-  projectives to the opposite of left modules modulo injectives (`TauCeti.stableMatlisDualOp`).
+  projectives to the opposite of left modules modulo injectives (`TauCeti.stableMatlisDualOp`, in
+  `TauCeti.Algebra.Category.ModuleCat.MatlisDual.Stable`).
 
 Defining `τ` as the composite of these functors makes it a functor without choices beyond the
 presentations defining `Tr`; changing them gives an isomorphic functor. Over a field, with
@@ -35,16 +30,16 @@ presentations defining `Tr`; changing them gives an isomorphic functor. Over a f
 
 ## Main definitions
 
-* `TauCeti.stableMatlisDualOp`: the Matlis dual on stable categories.
 * `TauCeti.stableTranslateOf` and `TauCeti.stableTranslate`: the translate `τ = D Tr`, from
   chosen presentations, and from the presentations of `TauCeti.stableTranspose`.
 
 ## Main results
 
-* `TauCeti.projectiveStableIdeal_op_le_comap_matlisDualOp`: the Matlis dual of a map through a
-  projective right module factors through an injective left module.
 * `TauCeti.stableTranslateOfIso`: the translate does not depend on the presentations.
-* `TauCeti.stableTranslateOfObjIso`: on objects, the translate is the class of `D Tr M`.
+* `TauCeti.stableTranslateOfObjIso` and `TauCeti.stableTranslateOf_map`: on objects and maps, the
+  translate is the class of `D Tr`.
+* `TauCeti.stableTranslate_def`: the translate is `stableTranslateOf` for the presentations of
+  `TauCeti.stableTranspose`.
 * `TauCeti.isZero_stableTranslateOf_obj`: the translate of a projective module vanishes.
 * `TauCeti.AuslanderReitenTranslate.linearEquivMatlisDual`: the translate of a presentation over a
   base `k` is the case `E = k`.
@@ -83,58 +78,6 @@ def AuslanderReitenTranslate.linearEquivMatlisDual {k : Type*} [CommRing k] [Alg
     map_smul' := fun a φ ↦ MatlisDual.ext fun x ↦ by
       simp [MatlisDual.smul_apply, AuslanderReitenTranslate.smul_apply] }
 
-/-- **The Matlis dual of a map through a projective factors through an injective.** The dual
-`D = Hom_R(-, E)` of a projective right `A`-module is an injective left `A`-module, so `D` carries
-the ideal of maps through projective right modules into the ideal of maps through injective left
-modules. -/
-theorem projectiveStableIdeal_op_le_comap_matlisDualOp :
-    (ExactStructure.abelian (ModuleCat.{max u v} Aᵐᵒᵖ)).projectiveStableIdeal.op ≤
-      (ExactStructure.abelian (ModuleCat.{max u v} A)).injectiveStableIdeal.comap
-        (ModuleCat.matlisDualOp R E (A := A)) := by
-  intro X Y f hf
-  rw [MorphismIdeal.mem_op_hom, ExactStructure.mem_projectiveStableIdeal_iff,
-    ObjectProperty.factorsThrough_iff] at hf
-  obtain ⟨P, hP, i, p, h⟩ := hf
-  rw [MorphismIdeal.mem_comap_hom, ExactStructure.mem_injectiveStableIdeal_iff,
-    ObjectProperty.factorsThrough_iff]
-  have : Projective P := (ExactStructure.abelian_isProjective_iff P).1 hP
-  have : Module.Projective Aᵐᵒᵖ P := P.projective_of_module_projective
-  refine ⟨(ModuleCat.matlisDualOp R E).obj (op P), ?_, (ModuleCat.matlisDualOp R E).map p.op,
-    (ModuleCat.matlisDualOp R E).map i.op, ?_⟩
-  · rw [ExactStructure.abelian_isInjective_iff]
-    have := Module.injective_object_of_injective_module A (MatlisDual R E P)
-    exact Injective.of_iso (ModuleCat.matlisDualOpObjEquiv R E P).toModuleIso.symm this
-  · rw [← Functor.map_comp, ← op_comp, ← h]
-    rfl
-
-/-- **The Matlis dual on stable categories**: `D = Hom_R(-, E)` as a functor from right
-`A`-modules modulo projectives, contravariantly, to left `A`-modules modulo injectives. -/
-def stableMatlisDualOp :
-    ((ExactStructure.abelian (ModuleCat.{max u v} Aᵐᵒᵖ)).ProjectiveStableCategory)ᵒᵖ ⥤
-      (ExactStructure.abelian (ModuleCat.{max u v} A)).InjectiveStableCategory :=
-  (MorphismIdeal.opQuotientEquivalence _).inverse ⋙
-    MorphismIdeal.map _ _ (ModuleCat.matlisDualOp R E)
-      (projectiveStableIdeal_op_le_comap_matlisDualOp R E)
-
-/-- On the class of a right module `N`, the stable Matlis dual is the class of `D N`. -/
-def stableMatlisDualOpObjIso (N : ModuleCat.{max u v} Aᵐᵒᵖ) :
-    (stableMatlisDualOp R E).obj
-        (op ((ExactStructure.abelian (ModuleCat.{max u v} Aᵐᵒᵖ)).projectiveStableFunctor.obj N)) ≅
-      (ExactStructure.abelian (ModuleCat.{max u v} A)).injectiveStableFunctor.obj
-        ((ModuleCat.matlisDualOp R E).obj (op N)) := by
-  let I := (ExactStructure.abelian (ModuleCat.{max u v} Aᵐᵒᵖ)).projectiveStableIdeal
-  have h : op (I.quotientFunctor.obj N) =
-      I.opQuotientEquivalence.functor.obj (I.op.quotientFunctor.obj (op N)) := by
-    rw [MorphismIdeal.opQuotientEquivalence_functor, MorphismIdeal.opQuotientFunctor_obj]
-  exact (MorphismIdeal.map _ _ _ (projectiveStableIdeal_op_le_comap_matlisDualOp R E)).mapIso
-    ((I.opQuotientEquivalence.inverse.mapIso (eqToIso h)) ≪≫
-        (I.opQuotientEquivalence.unitIso.app _).symm) ≪≫
-    eqToIso (MorphismIdeal.map_obj_quotientFunctor_obj _ _ _ _ _)
-
-instance : (stableMatlisDualOp R E (A := A)).Additive := by
-  unfold stableMatlisDualOp
-  infer_instance
-
 variable {R E}
 
 variable (R E) in
@@ -170,6 +113,25 @@ def stableTranslateOfObjIso (P : ∀ M : FinitelyPresentedStableModule.{u, max u
     rw [stableTranslateOf, Functor.comp_obj, Functor.comp_obj, stableTransposeFunctor_obj]
     rfl) ≪≫ stableMatlisDualOpObjIso R E _
 
+/-- **The translate of a map is the Matlis dual of its transpose**, through
+`stableTranslateOfObjIso`: if a map `t` of right modules represents the stable transpose of `g`
+(`AuslanderReitenTranspose.stableMap`), then the translate of `g` is the class of `D t`. -/
+theorem stableTranslateOf_map (P : ∀ M : FinitelyPresentedStableModule.{u, max u v} A,
+    FiniteProjectivePresentation M.obj.as) {M N : FinitelyPresentedStableModule.{u, max u v} A}
+    (g : M ⟶ N) (t : ModuleCat.of Aᵐᵒᵖ (AuslanderReitenTranspose (P N).p) ⟶
+      ModuleCat.of Aᵐᵒᵖ (AuslanderReitenTranspose (P M).p))
+    (ht : (ExactStructure.abelian (ModuleCat.{max u v} Aᵐᵒᵖ)).projectiveStableFunctor.map t =
+      AuslanderReitenTranspose.stableMap (P M).exact.linearMap_comp_eq_zero (P N).exact
+        (P N).surjective g.hom) :
+    (stableTranslateOf R E P).map g =
+      (stableTranslateOfObjIso P M).hom ≫
+        (ExactStructure.abelian (ModuleCat.{max u v} A)).injectiveStableFunctor.map
+          ((ModuleCat.matlisDualOp R E).map t.op) ≫
+        (stableTranslateOfObjIso P N).inv := by
+  simp [stableTranslateOf, stableTranslateOfObjIso, ← ht,
+    stableMatlisDualOp_map_projectiveStableFunctor_map, eqToHom_map]
+  rfl
+
 /-- **The translate of a projective module vanishes.** -/
 theorem isZero_stableTranslateOf_obj (P : ∀ M : FinitelyPresentedStableModule.{u, max u v} A,
     FiniteProjectivePresentation M.obj.as) {M : FinitelyPresentedStableModule.{u, max u v} A}
@@ -189,6 +151,15 @@ def stableTranslate :
     FinitelyPresentedStableModule.{u, max u v} A ⥤
       (ExactStructure.abelian (ModuleCat.{max u v} A)).InjectiveStableCategory :=
   stableTranspose.{u, v} A ⋙ (ObjectProperty.ι _).op ⋙ stableMatlisDualOp R E
+
+/-- The translate is `stableTranslateOf` for the presentations of `TauCeti.stableTranspose`, so
+`stableTranslateOfObjIso`, `stableTranslateOf_map`, `stableTranslateOfIso` and
+`isZero_stableTranslateOf_obj` apply to it. -/
+theorem stableTranslate_def :
+    stableTranslate R A E = stableTranslateOf R E (fun M ↦
+      letI := M.property
+      FiniteProjectivePresentation.ofFinitePresentation (M := M.obj.as)) := by
+  rw [stableTranslate, stableTranspose_def, stableTranslateOf]
 
 instance : (stableTranslate R A E).Additive := by
   unfold stableTranslate
