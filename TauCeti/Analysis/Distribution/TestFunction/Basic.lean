@@ -8,7 +8,12 @@ module
 public import Mathlib.Analysis.Distribution.TestFunction
 
 /-!
-# Components of vector-valued test functions in a basis
+# Basic constructions on test functions
+
+A test function on an open set `Ω` contained in a compact set `K` is a smooth function supported
+in `K`; `TestFunction.toSupportedInCLM` records this as a continuous linear map from the test
+functions on `Ω` to `𝓓^{n}_{K}(E, F)`, the space on which estimates by finitely many `C^k`
+seminorms are stated.
 
 Let `F` be a finite-dimensional real normed space with a basis `(bᵢ)`. An `F`-valued test
 function `φ` has the real-valued components `bᵢ* ∘ φ`, obtained by postcomposition with the
@@ -26,6 +31,8 @@ of `ψ • v` are the multiples `b.repr v i • ψ`. These identities reduce sta
   of its components in a basis, times the basis vectors.
 * `TestFunction.postcompCLM_postcompCLM_toSpanSingleton`: a continuous linear functional applied
   to `ψ • v`.
+* `TestFunction.toSupportedInCLM`: a test function on an open set contained in a compact set `K`,
+  as a function supported in `K`.
 -/
 
 public section
@@ -75,5 +82,31 @@ theorem postcompCLM_postcompCLM_toSpanSingleton (f : F →L[ℝ] ℝ) (ψ : 𝓓
   ext x
   rw [postcompCLM_postcompCLM, postcompCLM_apply]
   simp [mul_comm]
+
+/-- A test function on an open set `Ω` contained in a compact set `K` is a function supported in
+`K`. This forgetful map `𝓓^{n}(Ω, F) →L[ℝ] 𝓓^{n}_{K}(E, F)` is continuous for the LF topology. -/
+noncomputable def toSupportedInCLM {K : Compacts E} (hΩK : (Ω : Set E) ⊆ K) :
+    𝓓^{n}(Ω, F) →L[ℝ] 𝓓^{n}_{K}(E, F) :=
+  TestFunction.mkCLM ℝ (fun φ ↦ .of_support_subset φ.contDiff
+      ((subset_tsupport _).trans (φ.tsupport_subset.trans hΩK)))
+    (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+    (fun K' hK' ↦ (ContDiffMapSupportedIn.monoCLM ℝ (K₁ := K') (K₂ := K) (n₁ := n)
+      (n₂ := n)).continuous.congr fun φ ↦ by
+        ext x
+        simp [show K' ≤ K from hK'.trans hΩK])
+
+@[simp]
+theorem toSupportedInCLM_apply {K : Compacts E} (hΩK : (Ω : Set E) ⊆ K) (φ : 𝓓^{n}(Ω, F)) :
+    ⇑(toSupportedInCLM hΩK φ) = φ :=
+  (rfl)
+
+/-- A test function on `Ω'`, read as a function supported in a compact set `K ⊆ Ω` and then as a
+test function on `Ω`, is its extension by zero `monoCLM`. -/
+@[simp]
+theorem ofSupportedIn_toSupportedInCLM {Ω' : Opens E} {K : Compacts E}
+    (hΩ'K : (Ω' : Set E) ⊆ K) (hKΩ : (K : Set E) ⊆ Ω) (φ : 𝓓^{n}(Ω', F)) :
+    ofSupportedIn hKΩ (toSupportedInCLM hΩ'K φ) = monoCLM ℝ φ := by
+  ext x
+  simp [show Ω' ≤ Ω from hΩ'K.trans hKΩ]
 
 end TestFunction
