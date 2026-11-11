@@ -174,10 +174,11 @@ theorem biLinHom_apply_one_mk (h : H) (T : V →L[𝕜] W) :
 
 variable [TopologicalSpace G] [IsTopologicalGroup G] [TopologicalSpace H] [IsTopologicalGroup H]
 
-omit [IsTopologicalGroup G] in
+omit [IsTopologicalGroup G] [IsTopologicalGroup H] in
 /-- **The two-sided Hom representation of two representations with continuous operator-valued
-action has one.** Only inversion on `H` is used, so `G` needs no topological group structure. -/
-theorem continuous_biLinHom (hπ : Continuous π) (hρ : Continuous ρ) :
+action has one.** Only continuity of inversion on `H` is used, so `G` needs no topological group
+structure and `H` needs no continuous multiplication. -/
+theorem continuous_biLinHom [ContinuousInv H] (hπ : Continuous π) (hρ : Continuous ρ) :
     Continuous (biLinHom π ρ) := by
   have h : (biLinHom π ρ : G × H → _) = fun p =>
       (ContinuousLinearMap.compL 𝕜 V W W (ρ p.1)).comp
