@@ -92,7 +92,7 @@ private theorem edge_false_mul_of_true (c : C) :
 
 /-- In `π₁(segment, T)` with `T` nonempty, both darts are trivial: one of them lies in `T`, and
 the other is its inverse. -/
-private theorem edge_segment_eq_one (hT : T.Nonempty) (e : SerreGraph.segment.E) :
+theorem edge_segment_eq_one (hT : T.Nonempty) (e : SerreGraph.segment.E) :
     (edge T e : π₁Tree (segment f g hf hg) T) = 1 := by
   obtain ⟨e', he'⟩ := hT
   obtain rfl | rfl : e = e' ∨ e = SerreGraph.segment.rev e' := by
@@ -102,7 +102,7 @@ private theorem edge_segment_eq_one (hT : T.Nonempty) (e : SerreGraph.segment.E)
 
 /-- In `π₁(segment, T)` with `T` nonempty, the two images of the edge group agree: the dart
 `false` is trivial, so its relation `e g(c) e⁻¹ = f(c)` becomes `g(c) = f(c)`. -/
-private theorem of_true_eq_of_false (hT : T.Nonempty) (c : C) :
+theorem of_true_eq_of_false (hT : T.Nonempty) (c : C) :
     of (𝔸 := segment f g hf hg) T true (g c) = of (𝔸 := segment f g hf hg) T false (f c) := by
   have h := edge_false_mul_of_true (f := f) (hf := hf) (hg := hg) (T := T) c
   rwa [edge_segment_eq_one hT false, one_mul, mul_one] at h
