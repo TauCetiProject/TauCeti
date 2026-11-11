@@ -11,7 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import Mathlib.MeasureTheory.Group.Measure
 import Mathlib.Topology.Metrizable.Urysohn
-import TauCeti.MeasureTheory.Group.Measure
+import TauCeti.MeasureTheory.Group.Arithmetic
 
 /-!
 # Almost everywhere strong measurability
@@ -201,7 +201,7 @@ theorem AEStronglyMeasurable.comp_prod_sub
     {ν : Measure G} [ν.IsAddRightInvariant] {k : G → F} {c : α → G}
     (hk : AEStronglyMeasurable k ν) (hc : AEMeasurable c μ) :
     AEStronglyMeasurable (fun p : α × G ↦ k (p.2 - c p.1)) (μ.prod ν) := by
-  have : MeasurableAdd G := MeasurableSub₂.measurableAdd
+  have : MeasurableAdd G := TauCeti.measurableAdd_of_measurableSub
   have hm : Measurable (fun p : α × G ↦ p.2 - hc.mk c p.1) :=
     measurable_snd.sub (hc.measurable_mk.comp measurable_fst)
   have hq : QuasiMeasurePreserving (fun p : α × G ↦ p.2 - hc.mk c p.1) (μ.prod ν) ν := by
