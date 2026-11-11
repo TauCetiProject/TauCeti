@@ -42,6 +42,9 @@ the same theorem.
 * `CovariantDerivative.IsMetricCompatible.hasDerivAt_inner_alongCurve`: the unrestricted form,
   with `CovariantDerivative.IsMetricCompatible.differentiableAt_inner` and
   `CovariantDerivative.IsMetricCompatible.deriv_inner_alongCurve` as consequences.
+* `CovariantDerivative.IsMetricCompatible.inner_alongCurveWithin_self_eq_zero_of_eventually_norm_eq`
+  and `CovariantDerivative.IsMetricCompatible.inner_alongCurve_self_eq_zero_of_eventually_norm_eq`:
+  a field of locally constant length is orthogonal to its covariant derivative.
 * `CovariantDerivative.IsMetricCompatible.inner_eq_of_alongCurveWithin_eq_zero`: parallel fields
   along a curve have constant inner product.
 * `CovariantDerivative.IsMetricCompatible.eq_of_alongCurveWithin_eq_zero` and
@@ -434,6 +437,40 @@ theorem IsMetricCompatible.deriv_inner_alongCurve
       inner ℝ (alongCurve cov γ V t) (W t) +
         inner ℝ (V t) (alongCurve cov γ W t) :=
   (hcov.hasDerivAt_inner_alongCurve hγ hV hW).deriv
+
+/-- **A field of locally constant length is orthogonal to its covariant derivative.** If a
+differentiable tangent field `V` along a differentiable real curve has constant metric length on
+the parameter set `s` near `t`, then `D V / dt` is orthogonal to `V` at `t`, for a
+metric-compatible covariant derivative. -/
+theorem IsMetricCompatible.inner_alongCurveWithin_self_eq_zero_of_eventually_norm_eq
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun x : M ↦ TangentSpace I x) cov)
+    (hu : UniqueDiffWithinAt ℝ s t)
+    (hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t)
+    {V : ∀ r, TangentSpace I (γ r)}
+    (hV : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
+    (hnorm : ∀ᶠ r in 𝓝[s] t, ‖V r‖ = ‖V t‖) :
+    inner ℝ (alongCurveWithin cov γ V s t) (V t) = 0 := by
+  have hconst : HasDerivWithinAt (fun r ↦ inner ℝ (V r) (V r)) 0 s t :=
+    (hasDerivWithinAt_const t s (‖V t‖ ^ 2)).congr_of_eventuallyEq
+      (hnorm.mono fun r hr ↦ by simp only [real_inner_self_eq_norm_sq, hr])
+      (real_inner_self_eq_norm_sq _)
+  have h := hu.eq_deriv _ (hcov.hasDerivWithinAt_inner_alongCurveWithin hγ hV hV) hconst
+  linarith [real_inner_comm (alongCurveWithin cov γ V s t) (V t)]
+
+/-- **A field of locally constant length is orthogonal to its covariant derivative**, for the
+unrestricted covariant derivative along a differentiable real curve. -/
+theorem IsMetricCompatible.inner_alongCurve_self_eq_zero_of_eventually_norm_eq
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun x : M ↦ TangentSpace I x) cov)
+    (hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ t)
+    {V : ∀ r, TangentSpace I (γ r)}
+    (hV : DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t)
+    (hnorm : ∀ᶠ r in 𝓝 t, ‖V r‖ = ‖V t‖) :
+    inner ℝ (alongCurve cov γ V t) (V t) = 0 := by
+  simpa only [alongCurveWithin_univ] using
+    hcov.inner_alongCurveWithin_self_eq_zero_of_eventually_norm_eq uniqueDiffWithinAt_univ
+      hγ.mdifferentiableWithinAt hV.differentiableWithinAt (by rwa [nhdsWithin_univ])
 
 /-- **Parallel transport preserves the inner product.** On a preconnected parameter set, two
 tangent fields along a differentiable curve that have differentiable coordinate readings and are

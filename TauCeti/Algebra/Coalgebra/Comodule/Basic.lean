@@ -101,16 +101,6 @@ theorem lTensor_counit_coact (m : M) :
     Coalgebra.counit.lTensor M (coact (R := R) (C := C) (M := M) m) = m ⊗ₜ[R] 1 :=
   LinearMap.congr_fun (Comodule.lTensor_counit_comp_coact (R := R) (C := C) (M := M)) m
 
-/-- Coassociativity of the coaction with the inverse associator, as an equality of linear
-maps. -/
-@[simp]
-theorem coact_coassoc_symm :
-    (TensorProduct.assoc R M C C).symm ∘ₗ Coalgebra.comul.lTensor M ∘ₗ
-        coact (R := R) (C := C) (M := M) =
-      (coact (R := R) (C := C) (M := M)).rTensor C ∘ₗ coact (R := R) (C := C) (M := M) := by
-  rw [← coact_coassoc, ← LinearMap.comp_assoc, ← LinearEquiv.coe_trans,
-    LinearEquiv.self_trans_symm, LinearEquiv.refl_toLinearMap, LinearMap.id_comp]
-
 /-- Coassociativity of the coaction with the inverse associator, evaluated at a vector. -/
 @[simp]
 theorem coassoc_symm_apply (m : M) :
@@ -118,6 +108,15 @@ theorem coassoc_symm_apply (m : M) :
         (Coalgebra.comul.lTensor M (coact (R := R) (C := C) (M := M) m)) =
       (coact (R := R) (C := C) (M := M)).rTensor C (coact m) := by
   rw [(TensorProduct.assoc R M C C).symm_apply_eq, coassoc_apply]
+
+/-- Coassociativity of the coaction with the inverse associator, as an equality of linear
+maps. -/
+@[simp]
+theorem coact_coassoc_symm :
+    (TensorProduct.assoc R M C C).symm ∘ₗ Coalgebra.comul.lTensor M ∘ₗ
+        coact (R := R) (C := C) (M := M) =
+      (coact (R := R) (C := C) (M := M)).rTensor C ∘ₗ coact (R := R) (C := C) (M := M) :=
+  LinearMap.ext coassoc_symm_apply
 
 /-- Contracting the coaction against the counit recovers the vector. -/
 theorem rid_lTensor_counit_coact (m : M) :
@@ -157,15 +156,6 @@ theorem coact_comp_tensorComponent (phi : C →ₗ[R] R) :
   refine TensorProduct.ext' fun m c => ?_
   simp
 
-/-- Taking a tensor component after coacting on the first factor is the coaction
-of that component. -/
-@[simp]
-theorem tensorComponent_rTensor_coact (phi : C →ₗ[R] R) (b : M ⊗[R] C) :
-    _root_.LinearMap.tensorComponent phi
-        ((coact (R := R) (C := C) (M := M)).rTensor C b) =
-      coact (_root_.LinearMap.tensorComponent phi b) :=
-  (LinearMap.congr_fun (coact_comp_tensorComponent phi) b).symm
-
 /-- The component of a coaction selected by a linear functional on the coalgebra. -/
 noncomputable def coactComponent (phi : C →ₗ[R] R) : M →ₗ[R] M :=
   _root_.LinearMap.tensorComponent (R := R) (M := M) phi ∘ₗ
@@ -181,7 +171,7 @@ followed by the right contraction of the comultiplication with `φ`. -/
 theorem coact_coactComponent (phi : C →ₗ[R] R) (m : M) :
     coact (coactComponent (R := R) (C := C) (M := M) phi m) =
       (_root_.LinearMap.tensorComponent phi ∘ₗ Coalgebra.comul).lTensor M (coact m) := by
-  rw [coactComponent_apply, ← tensorComponent_rTensor_coact,
+  rw [coactComponent_apply, ← _root_.LinearMap.tensorComponent_rTensor,
     ← coassoc_symm_apply, _root_.LinearMap.tensorComponent_assoc_symm,
     LinearMap.lTensor_comp_apply]
 
