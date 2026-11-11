@@ -98,13 +98,6 @@ theorem isComplexLinearMap_fderiv_realChart_cylindricalEndLift (p : PSSPlane) (z
   apply Prod.ext <;>
     simp [Complex.equivRealProdCLM_symm_apply, Complex.mul_re, Complex.mul_im] <;> ring
 
-/-- The end lift in real coordinates preserves orientation strictly. -/
-theorem det_fderiv_realChart_cylindricalEndLift_pos (p : PSSPlane) (z : ℝ × ℝ) :
-    0 < (fderiv ℝ (realChart p.cylindricalEndLift) z).det := by
-  rw [TauCeti.Complex.det_fderiv_realChart (p.hasDerivAt_cylindricalEndLift _)]
-  exact Complex.normSq_pos.2 (mul_ne_zero (by simp [Real.pi_ne_zero, p.endSign_ne_zero])
-    (p.cylindricalEndLift_ne_zero _))
-
 /-- The end lift in real coordinates is injective on every band `ℝ × [t₀, t₀ + 1)` of angular
 width one: two points with the same image differ by an integer multiple of `i`. -/
 theorem injOn_realChart_cylindricalEndLift (p : PSSPlane) (t₀ : ℝ) :
