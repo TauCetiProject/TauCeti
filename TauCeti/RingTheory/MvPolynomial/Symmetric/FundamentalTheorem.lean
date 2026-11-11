@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.AlgebraicIndependent.Defs
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Homogeneous
@@ -19,17 +20,21 @@ Mathlib's fundamental theorem of symmetric polynomials (`MvPolynomial.esymmAlgHo
 `n ≤ card σ`, and an algebra isomorphism onto `MvPolynomial.symmetricSubalgebra σ R` when
 `card σ = n`.
 
-This file records three basic properties of this elementary-symmetric coordinate correspondence:
+This file records four basic properties of this elementary-symmetric coordinate correspondence:
 
 1. Writing the elementary symmetric polynomials as `Multiset.esymm` of the multiset of variables
    gives `MvPolynomial.aeval_multiset_esymm_X_injective`, so an identity between polynomials in
    `e₁, …, eₙ` follows from the corresponding identity evaluated at the elementary symmetric
    functions of a multiset of roots specialized to the variables.
-2. Because `MvPolynomial.map f` sends each elementary symmetric polynomial over `R` to the
+2. Restating `MvPolynomial.esymmAlgHom_injective` via `algebraicIndependent_iff_injective_aeval`
+   shows that `e₁, …, eₙ` are algebraically independent when `n ≤ card σ`
+   (`MvPolynomial.algebraicIndependent_esymm`), the form in which it combines with other
+   algebraically independent families.
+3. Because `MvPolynomial.map f` sends each elementary symmetric polynomial over `R` to the
    corresponding elementary symmetric polynomial over `S`, the inverse equivalence
    `(esymmAlgEquiv σ R hn).symm` commutes with changing coefficients along any ring homomorphism
    `f : R →+* S` (`MvPolynomial.map_esymmAlgEquiv_symm`).
-3. A symmetric polynomial homogeneous of degree `m` corresponds under `(esymmAlgEquiv σ R hn).symm`
+4. A symmetric polynomial homogeneous of degree `m` corresponds under `(esymmAlgEquiv σ R hn).symm`
    to a polynomial in `e₁, …, eₙ` that is weighted homogeneous of weight `m` for the weights
    `i ↦ i + 1` (`MvPolynomial.isWeightedHomogeneous_esymmAlgEquiv_symm`).
 
@@ -37,6 +42,8 @@ This file records three basic properties of this elementary-symmetric coordinate
 
 * `MvPolynomial.aeval_multiset_esymm_X_injective`: substituting the elementary symmetric
   functions of the multiset of variables is injective.
+* `MvPolynomial.algebraicIndependent_esymm`: the elementary symmetric polynomials `e₁, …, eₙ` are
+  algebraically independent when `n ≤ card σ`.
 * `MvPolynomial.map_esymmAlgEquiv_symm`: `(esymmAlgEquiv σ R hn).symm` commutes with
   `MvPolynomial.map`.
 * `MvPolynomial.isWeightedHomogeneous_esymmAlgEquiv_symm`: the expression of a degree-`m`
@@ -60,6 +67,19 @@ theorem aeval_multiset_esymm_X_injective (R : Type*) [CommRing R] {σ : Type*} [
   intro p q h
   refine esymmAlgHom_injective R hn (Subtype.ext ?_)
   simpa [esymmAlgHom_apply, esymm_eq_multiset_esymm] using h
+
+/-- **The elementary symmetric polynomials are algebraically independent**: if `n ≤ card σ`, the
+elementary symmetric polynomials `e₁, …, eₙ` of the variables of `σ` are algebraically independent
+over the coefficient ring. -/
+theorem algebraicIndependent_esymm (R : Type*) [CommRing R] {σ : Type*} [Fintype σ] {n : ℕ}
+    (hn : n ≤ Fintype.card σ) :
+    AlgebraicIndependent R fun i : Fin n => esymm σ R ((i : ℕ) + 1) := by
+  rw [algebraicIndependent_iff_injective_aeval]
+  have h : (aeval fun i : Fin n => esymm σ R ((i : ℕ) + 1) :
+      MvPolynomial (Fin n) R → MvPolynomial σ R) = Subtype.val ∘ esymmAlgHom σ R n :=
+    funext fun p => (esymmAlgHom_apply p).symm
+  rw [h]
+  exact Subtype.val_injective.comp (esymmAlgHom_injective R hn)
 
 /-- Expressing a symmetric polynomial in the elementary symmetric polynomials commutes with
 changing coefficients along a ring homomorphism `f : R →+* S`. -/
@@ -91,12 +111,9 @@ theorem isWeightedHomogeneous_esymmAlgEquiv_symm {σ R : Type*} [Fintype σ] [Co
     (hn : Fintype.card σ = n) {p : symmetricSubalgebra σ R} {m : ℕ}
     (hp : (p : MvPolynomial σ R).IsHomogeneous m) :
     ((esymmAlgEquiv σ R hn).symm p).IsWeightedHomogeneous (fun i : Fin n ↦ (i : ℕ) + 1) m := by
-  have hinj : Function.Injective
-      (aeval (R := R) fun i : Fin n ↦ esymm σ R ((i : ℕ) + 1)) := by
-    intro q₁ q₂ hq
-    exact esymmAlgHom_injective R hn.ge (Subtype.ext (by simpa [esymmAlgHom_apply] using hq))
   refine isWeightedHomogeneous_of_isHomogeneous_aeval
-    (fun i : Fin n ↦ isHomogeneous_esymm (σ := σ) (R := R) ((i : ℕ) + 1)) hinj ?_
+    (fun i : Fin n ↦ isHomogeneous_esymm (σ := σ) (R := R) ((i : ℕ) + 1))
+    (algebraicIndependent_iff_injective_aeval.mp (algebraicIndependent_esymm R hn.ge)) ?_
   have happly : aeval (fun i : Fin n ↦ esymm σ R ((i : ℕ) + 1))
       ((esymmAlgEquiv σ R hn).symm p) = (p : MvPolynomial σ R) := by
     rw [← esymmAlgHom_apply, ← esymmAlgEquiv_apply σ R hn, AlgEquiv.apply_symm_apply]
