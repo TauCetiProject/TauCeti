@@ -210,6 +210,12 @@ variable (T) in
   ⟨Classical.arbitrary T.V, bot_le⟩
 
 variable (T) in
+/-- Every subgroup is elliptic in a `G`-tree with a single vertex. -/
+theorem isEllipticSubgroup_of_subsingleton [Subsingleton T.V] (H : Subgroup G) :
+    T.IsEllipticSubgroup H :=
+  ⟨Classical.arbitrary T.V, fun _ _ => Subsingleton.elim _ _⟩
+
+variable (T) in
 /-- Vertex stabilizers are elliptic. -/
 theorem isEllipticSubgroup_stabilizer (v : T.V) : T.IsEllipticSubgroup (stabilizer G v) :=
   ⟨v, le_rfl⟩
@@ -379,6 +385,11 @@ theorem dominates_iff : T.Dominates T' ↔ ∀ v : T.V, T'.IsEllipticSubgroup (s
   MulAction.nonempty_mulActionHom_iff
 
 variable (T T') in
+/-- Every `G`-tree dominates a `G`-tree with a single vertex. -/
+theorem dominates_of_subsingleton [Subsingleton T'.V] : T.Dominates T' :=
+  dominates_iff.mpr fun _ => isEllipticSubgroup_of_subsingleton T' _
+
+variable (T T') in
 /-- Two `G`-trees lie in the same deformation space when each dominates the other. -/
 def SameDeformationSpace : Prop :=
   T.Dominates T' ∧ T'.Dominates T
@@ -418,7 +429,7 @@ instance : Subsingleton (point.{u, v} G).V :=
 /-- Every subgroup is elliptic in the one-vertex tree. -/
 @[simp] theorem point_isEllipticSubgroup (H : Subgroup G) :
     (point.{u, v} G).IsEllipticSubgroup H :=
-  ⟨Classical.arbitrary _, fun _ _ => Subsingleton.elim _ _⟩
+  isEllipticSubgroup_of_subsingleton _ H
 
 /-- Every element is elliptic in the one-vertex tree. -/
 @[simp] theorem point_isElliptic (g : G) : (point.{u, v} G).IsElliptic g :=
@@ -436,7 +447,7 @@ theorem point_isRelative (𝒜 ℋ : Set (Subgroup G)) : (point.{u, v} G).IsRela
 variable (T) in
 /-- Every `G`-tree dominates the one-vertex tree. -/
 theorem dominates_point : T.Dominates (point.{u', v'} G) :=
-  dominates_iff.mpr fun _ => point_isEllipticSubgroup _
+  dominates_of_subsingleton T _
 
 /-- The one-vertex tree dominates exactly the `G`-trees in which `G` is elliptic. -/
 theorem point_dominates_iff : (point.{u', v'} G).Dominates T ↔ T.IsEllipticSubgroup ⊤ := by

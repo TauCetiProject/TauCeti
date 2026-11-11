@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.PUnit
+public import Mathlib.Algebra.Pointwise.Stabilizer
 public import Mathlib.GroupTheory.GroupAction.Basic
 public import Mathlib.GroupTheory.GroupAction.FixedPoints
 public import Mathlib.GroupTheory.GroupAction.Hom
@@ -17,6 +18,9 @@ Two elementary equivariant maps which `Mathlib/GroupTheory/GroupAction/Hom.lean`
 unrecorded: the unique equivariant map to the one-point space `PUnit`, and the constant equivariant
 map whose value is a fixed point.
 
+For a group action, the stabilizer of the image of a point under an equivariant map is the
+stabilizer of the fibre through that point.
+
 An equivariant map `X →[G] Y` sends each point to a point whose stabilizer contains the
 stabilizer of the first. Conversely, if every point of `X` has such a point in `Y`, an equivariant
 map exists: choose a representative of each orbit of `X`, send it to a point of `Y` fixed by its
@@ -26,6 +30,8 @@ stabilizer, and extend along the orbit.
 
 * `MulActionHom.toPUnit`: the equivariant map from any space to the point.
 * `MulActionHom.constOfMemFixedPoints`: the constant equivariant map at a fixed point.
+* `MulActionHom.stabilizer_apply_eq_stabilizer_preimage`: the stabilizer of an image point is the
+  stabilizer of its fibre.
 * `TauCeti.MulAction.nonempty_mulActionHom_iff`: an equivariant map exists exactly when every
   stabilizer of `X` is contained in a stabilizer of `Y`.
 -/
@@ -63,6 +69,19 @@ theorem constOfMemFixedPoints_apply {y : Y} (hy : y ∈ fixedPoints N Y) (x : X)
 theorem coe_constOfMemFixedPoints {y : Y} (hy : y ∈ fixedPoints N Y) :
     ⇑(constOfMemFixedPoints (X := X) (φ := φ) hy) = Function.const X y :=
   (rfl)
+
+open scoped Pointwise in
+/-- The stabilizer of the image of a point under an equivariant map is the stabilizer of the
+fibre through that point. -/
+theorem stabilizer_apply_eq_stabilizer_preimage {G X Y : Type*} [Group G] [MulAction G X]
+    [MulAction G Y] (f : X →[G] Y) (x : X) :
+    stabilizer G (f x) = stabilizer G (f ⁻¹' {f x}) := by
+  ext g
+  rw [mem_stabilizer_iff, mem_stabilizer_set]
+  refine ⟨fun h b => ?_, fun h => ?_⟩
+  · simp only [Set.mem_preimage, Set.mem_singleton_iff, map_smul]
+    exact ⟨fun hb => smul_left_cancel g (hb.trans h.symm), fun hb => by rw [hb, h]⟩
+  · simpa using (h x).mpr rfl
 
 end MulActionHom
 
