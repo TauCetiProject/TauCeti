@@ -32,7 +32,7 @@ multiples of `n` in `i + j + k`. -/
 theorem carry_add_carry {n i j k : ℕ} (hi : i < n) (hj : j < n) (hk : k < n) :
     (if n ≤ (i + j) % n + k then 1 else 0) + (if n ≤ i + j then 1 else 0) =
       (if n ≤ j + k then 1 else 0) + (if n ≤ i + (j + k) % n then 1 else 0) := by
-  simp only [Nat.add_mod_eq_ite, Nat.mod_eq_of_lt hi, Nat.mod_eq_of_lt hj, Nat.mod_eq_of_lt hk]
+  simp only [add_mod_eq_ite, mod_eq_of_lt hi, mod_eq_of_lt hj, mod_eq_of_lt hk]
   split_ifs <;> omega
 
 /-- For `i, j < N` and `d N = m n`, the carry after scaling by `d` modulo `n`, together with
@@ -45,8 +45,8 @@ theorem mul_div_add_mul_div_add_carry {n N d m i j : ℕ} (hn : 0 < n) (hd : d *
   rw [← Nat.add_div hn, ← Nat.mul_add]
   split_ifs with h
   · obtain ⟨r, hr⟩ := Nat.exists_eq_add_of_le h
-    rw [hr, Nat.add_mod_left, Nat.mod_eq_of_lt (by omega), Nat.mul_one, Nat.mul_add, hd,
-      Nat.add_comm (m * n), Nat.add_mul_div_right _ _ hn]
-  · rw [Nat.mod_eq_of_lt (by omega), Nat.mul_zero, Nat.add_zero]
+    rw [hr, add_mod_left, mod_eq_of_lt (by omega), Nat.mul_one, Nat.mul_add, hd,
+      Nat.add_comm (m * n), add_mul_div_right _ _ hn]
+  · rw [mod_eq_of_lt (by omega), Nat.mul_zero, Nat.add_zero]
 
 end Nat
