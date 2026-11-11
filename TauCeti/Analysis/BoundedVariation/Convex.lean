@@ -20,8 +20,9 @@ import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 /-!
 # Cutting by half-spaces and the perimeter of convex sets
 
-Let `μ` be a measure on a finite-dimensional real inner product space `E`, finite on compact sets
-(an additive Haar measure for the results on convex sets). This file proves that cutting a set of
+Let `μ` be a measure on a finite-dimensional real inner product space `E` (an additive Haar measure
+for the results on convex sets). The half-space and truncation results only need `μ s < ∞` for the
+set `s` being cut, not local finiteness of `μ`. This file proves that cutting a set of
 finite measure by a closed half-space does not increase its perimeter, and deduces that
 intersecting such a set with a convex set does not increase its perimeter either. In particular
 the perimeter is monotone under inclusion of convex sets: a convex set has perimeter at most that
@@ -240,8 +241,7 @@ theorem perimeter_inter_halfSpace_le [OpensMeasurableSpace E]
     (f : StrongDual ℝ E) (c : ℝ) (hs : NullMeasurableSet s μ) (hμs : μ s ≠ ∞) :
     perimeter μ ⊤ (s ∩ {x | f x ≤ c}) ≤ perimeter μ ⊤ s := by
   -- Pass to the finite measure `μ.restrict s`, which sees the same perimeters of subsets of `s`.
-  have : IsFiniteMeasure (μ.restrict s) :=
-    ⟨by rw [Measure.restrict_apply_univ]; exact hμs.lt_top⟩
+  have := isFiniteMeasure_restrict.2 hμs
   have hsν : NullMeasurableSet s (μ.restrict s) :=
     hs.mono_ac Measure.restrict_le_self.absolutelyContinuous
   rw [← perimeter_restrict_of_subset (inter_subset_left (t := {x | f x ≤ c})),
@@ -324,8 +324,7 @@ theorem _root_.MeasureTheory.NullMeasurableSet.exists_isBounded_perimeter_approx
     fun n => ⟨inter_subset_left, ht n, htb n, htP n⟩, hlim, ?_⟩
   refine tendsto_of_le_liminf_of_limsup_le ?_ (limsup_le_of_le (h := .of_forall htP))
   -- Lower semicontinuity for the finite measure `μ.restrict s`.
-  have : IsFiniteMeasure (μ.restrict s) :=
-    ⟨by rw [Measure.restrict_apply_univ]; exact hμs.lt_top⟩
+  have := isFiniteMeasure_restrict.2 hμs
   have hac : μ.restrict s ≪ μ := Measure.restrict_le_self.absolutelyContinuous
   have hts (n : ℕ) : t n ⊆ s := inter_subset_left
   rw [show (fun n => perimeter μ ⊤ (t n)) = fun n => perimeter (μ.restrict s) ⊤ (t n) from
@@ -334,7 +333,7 @@ theorem _root_.MeasureTheory.NullMeasurableSet.exists_isBounded_perimeter_approx
   refine perimeter_le_liminf (.of_forall fun n => (ht n).mono_ac hac) (hs.mono_ac hac)
     fun K _ _ => ?_
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ => zero_le)
-    fun n => (Measure.le_iff'.1 Measure.restrict_le_self _).trans (measure_mono ?_)
+    fun n => (Measure.restrict_apply_le _ _).trans (measure_mono ?_)
   rw [symmDiff_of_le (hts n)]
   exact inter_subset_left
 
