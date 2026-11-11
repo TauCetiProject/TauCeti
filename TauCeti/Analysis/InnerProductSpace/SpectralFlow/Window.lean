@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Basic
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Projection
 import Mathlib.FieldTheory.Minpoly.Field
 import Mathlib.Topology.Order.DenselyOrdered
 import TauCeti.Analysis.Normed.Operator.IdempotentRange
 import TauCeti.LinearAlgebra.Projection.Add
-import TauCeti.Topology.Frontier
+import TauCeti.Topology.Algebra.Indicator
 
 /-!
 # Spectral windows of self-adjoint operators
@@ -113,7 +114,7 @@ variable {T : E →L[ℂ] E} {r : ℝ}
 /-- The indicator of a spectral window is continuous on the spectrum. -/
 private theorem continuousOn_indicator_Ioo (hT : IsSpectralWindow T r) :
     ContinuousOn ((Ioo (-r) r).indicator (1 : ℝ → ℝ)) (spectrum ℝ T) :=
-  TauCeti.continuousOn_indicator_of_disjoint_frontier continuousOn_const
+  continuousOn_const.continuousOn_indicator_of_disjoint_frontier
     (frontier_Ioo_disjoint_spectrum hT.pos hT.notMem_spectrum hT.neg_notMem_spectrum)
 
 /-- The spectrum meets a spectral window in finitely many points. -/
@@ -230,7 +231,8 @@ private theorem eventually_nonempty_continuousLinearEquiv_range_cfc_indicator {s
     ∀ᶠ i in l, Nonempty ((cfc (s.indicator (1 : ℝ → ℝ)) T).range ≃L[ℂ]
       (cfc (s.indicator (1 : ℝ → ℝ)) (A i)).range) :=
   TauCeti.eventually_nonempty_continuousLinearEquiv_range
-    (hA.cfc_indicator hsa hT hs)
+    ((hT.continuousWithinAt_cfc_indicator hs).tendsto.comp
+      (tendsto_nhdsWithin_iff.2 ⟨hA, hsa⟩))
     (TauCeti.isStarProjection_cfc_indicator T s).isIdempotentElem
     (.of_forall fun i ↦ (TauCeti.isStarProjection_cfc_indicator (A i) s).isIdempotentElem)
 
@@ -250,7 +252,8 @@ theorem IsSpectralWindow.eventually {r : ℝ} (hT : IsSpectralWindow T r)
     ∀ᶠ i in l, IsSpectralWindow (A i) r := by
   have hd := frontier_Ioo_disjoint_spectrum hT.pos hT.notMem_spectrum hT.neg_notMem_spectrum
   have := hT.finiteDimensional_range_Ioo
-  filter_upwards [hsa, hA.eventually_disjoint_spectrum isClosed_frontier hd,
+  filter_upwards [hsa,
+    hA.eventually (spectrum.eventually_disjoint_of_isClosed isClosed_frontier hd),
     eventually_nonempty_continuousLinearEquiv_range_cfc_indicator hA hsa hT.isSelfAdjoint hd]
     with i hi hdi ⟨e⟩
   rw [frontier_Ioo (by linarith [hT.pos])] at hdi

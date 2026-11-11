@@ -82,13 +82,6 @@ continuity puts a whole neighbourhood of `x` in `D`, so `x` is interior to `D`; 
 puts a whole neighbourhood of `x` outside `D`, so `x` is not adherent to `D`. Neither `D` nor `f`
 needs any further hypothesis: `D` need not be closed, and `f` need only be continuous at `x`.
 
-## Indicators are continuous away from the frontier
-
-The indicator `s.indicator f` of a set `s` agrees near each point outside `frontier s` with `f` or
-with `0`, so it is continuous on any set disjoint from `frontier s` on which `f` is continuous
-(`TauCeti.continuousOn_indicator_of_disjoint_frontier`). This is how spectral projectors
-`cfc (s.indicator 1) a` are evaluated: the indicator only has to be continuous on the spectrum.
-
 ## Consumers
 
 The straddling, splitting and clinging lemmas serve Carathéodory's boundary correspondence for
@@ -117,8 +110,6 @@ let alone a holomorphic map.
 * `TauCeti.eq_of_mem_frontier_of_mem_iff_le` — a function whose superlevel set `{a ≤ f}` agrees
   with a set on an open set takes the value `a` at the frontier points of the set in that open
   set where it is continuous.
-* `TauCeti.continuousOn_indicator_of_disjoint_frontier` — an indicator is continuous on any set
-  missing the frontier of the indicated set, on which the function is continuous.
 -/
 
 public section
@@ -327,19 +318,5 @@ theorem eq_of_mem_frontier_of_mem_iff_le (hU : IsOpen U) (hD : ∀ y ∈ U, y �
     exact hyD hy
 
 end DefiningFunction
-
-section Indicator
-
-/-- The indicator of `s` is continuous on any set `S` disjoint from `frontier s` on which the
-function is continuous. -/
-theorem continuousOn_indicator_of_disjoint_frontier {X M : Type*} [TopologicalSpace X] [Zero M]
-    [TopologicalSpace M] {f : X → M} {s S : Set X} (hf : ContinuousOn f S)
-    (h : Disjoint (frontier s) S) : ContinuousOn (s.indicator f) S := by
-  classical
-  rw [← piecewise_eq_indicator]
-  exact ContinuousOn.piecewise (fun x hx ↦ (h.notMem_of_mem_left hx.2 hx.1).elim)
-    (hf.mono inter_subset_left) continuousOn_const
-
-end Indicator
 
 end TauCeti
