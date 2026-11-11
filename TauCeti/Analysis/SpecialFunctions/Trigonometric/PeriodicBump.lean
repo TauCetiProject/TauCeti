@@ -54,6 +54,7 @@ theorem contDiff_periodicBump {n : ℕ∞} (t₀ c : ℝ) : ContDiff ℝ n (peri
       (contDiff_id.sub contDiff_const)))).sub contDiff_const))).div_const _)
 
 /-- The periodic bump is `1`-periodic. -/
+@[simp]
 theorem periodicBump_add_one (t₀ c t : ℝ) :
     periodicBump t₀ c (t + 1) = periodicBump t₀ c t := by
   rw [periodicBump, periodicBump, show 2 * π * (t + 1 - t₀) = 2 * π * (t - t₀) + 2 * π by ring,
@@ -68,12 +69,14 @@ theorem periodicBump_le_one (t₀ c t : ℝ) : periodicBump t₀ c t ≤ 1 :=
   smoothTransition.le_one _
 
 /-- The periodic bump vanishes where `cos (2π(t - t₀)) ≤ c`. -/
+@[simp]
 theorem periodicBump_eq_zero {t₀ c t : ℝ} (hc : c < 1) (h : cos (2 * π * (t - t₀)) ≤ c) :
     periodicBump t₀ c t = 0 :=
   smoothTransition.zero_of_nonpos
     (div_nonpos_of_nonpos_of_nonneg (by linarith) (by linarith))
 
 /-- The periodic bump is `1` where `cos (2π(t - t₀)) ≥ (1 + c)/2`. -/
+@[simp]
 theorem periodicBump_eq_one {t₀ c t : ℝ} (hc : c < 1)
     (h : (1 + c) / 2 ≤ cos (2 * π * (t - t₀))) : periodicBump t₀ c t = 1 := by
   refine smoothTransition.one_of_one_le ?_
