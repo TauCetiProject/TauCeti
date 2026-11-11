@@ -353,7 +353,7 @@ theorem isFrechetBarycenter_two_iff_exists_isMinOn_lintegral_map_eq (hw : ∑ i,
   refine ⟨fun h ↦ ?_, fun ⟨γ, hγ, hmin, hγν⟩ ↦ ?_⟩
   · have hfin := WassersteinSpace.sum_mul_wassersteinEDist_rpow_ne_top (w := w) μ ν
     have hmin := WassersteinSpace.isMinOn_sum_mul_wassersteinEDist_rpow_of_isFrechetBarycenter
-      ENNReal.ofNat_ne_top hw h
+      ENNReal.ofNat_ne_top h
     simp only [ENNReal.toReal_ofNat, ENNReal.rpow_ofNat] at hfin hmin
     exact exists_isMinOn_lintegral_map_eq hw hmin hfin
   · rw [WassersteinSpace.isFrechetBarycenter_sum_smul_dirac_iff_isMinOn ENNReal.ofNat_ne_top μ ν,
@@ -540,7 +540,7 @@ theorem WassersteinSpace.exists_ae_isFrechetBarycenter_sum_smul_dirac [Fact (1 �
   -- That cost is at most the least multi-marginal cost, attained here by the law of `q.2`.
   have hle : ∫⁻ q, f q ∂Γ ≤ ∫⁻ q, c q.2 ∂Γ := by
     have hmin := WassersteinSpace.isMinOn_sum_mul_wassersteinEDist_rpow_of_isFrechetBarycenter
-      hp_top hw hν
+      hp_top hν
     rw [hΓf, ← lintegral_map hc.measurable measurable_snd]
     refine le_trans ?_ (iInf₂_le (f := fun (γ : Measure (J → X))
       (_ : Measure.IsMultiCoupling γ μ') ↦ ∫⁻ x, c x ∂γ) Γ.snd hΓ)

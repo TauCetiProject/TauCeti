@@ -79,4 +79,33 @@ theorem tendsto_dirac_of_integral_dist_sq_tendsto_zero {E ι : Type*}
   · simp [integral_dirac' _ _ hK.continuous.stronglyMeasurable]
   · simpa [Real.dist_eq] using hK.dist_le_mul y x
 
+/-- Mean squared distance from a point tending to zero along a filter implies weak convergence to
+its Dirac mass, if only the eventual terms have square-integrable distance. -/
+theorem tendsto_dirac_of_eventually_integral_dist_sq_tendsto_zero {E ι : Type*}
+    [PseudoMetricSpace E] [MeasurableSpace E] [OpensMeasurableSpace E]
+    {L : Filter ι} [L.IsCountablyGenerated] {μ : ι → ProbabilityMeasure E} {x : E}
+    (hmem : ∀ᶠ i in L, MemLp (fun y ↦ dist y x) 2 (μ i : Measure E))
+    (hlim : Tendsto (fun i ↦ ∫ y, dist y x ^ 2 ∂(μ i : Measure E)) L (𝓝 0)) :
+    Tendsto μ L (𝓝 (⟨Measure.dirac x, inferInstance⟩ : ProbabilityMeasure E)) := by
+  classical
+  -- Replace the finitely many bad terms by the Dirac mass itself.
+  let μ' (i : ι) : ProbabilityMeasure E :=
+    if MemLp (fun y ↦ dist y x) 2 (μ i : Measure E) then μ i else ⟨Measure.dirac x, inferInstance⟩
+  refine Tendsto.congr' (f₁ := μ') (hmem.mono fun i hi ↦ by simp [μ', hi]) ?_
+  apply tendsto_dirac_of_integral_dist_sq_tendsto_zero
+  · intro i
+    by_cases hi : MemLp (fun y ↦ dist y x) 2 (μ i : Measure E)
+    · have e : μ' i = μ i := by simp [μ', hi]
+      rw [e]
+      exact hi
+    · have e : μ' i = ⟨Measure.dirac x, inferInstance⟩ :=
+        ite_eq_right_iff.2 fun h ↦ (hi h).elim
+      rw [e, coe_mk]
+      have hc : MeasurableSet {y : E | ‖dist y x‖ ≤ 0} :=
+        (isClosed_le (by fun_prop) continuous_const).measurableSet
+      exact MemLp.of_bound (by fun_prop) 0 ((ae_dirac_iff hc).2 (by simp))
+  · refine hlim.congr' ?_
+    filter_upwards [hmem] with i hi
+    simp [μ', hi]
+
 end MeasureTheory.ProbabilityMeasure

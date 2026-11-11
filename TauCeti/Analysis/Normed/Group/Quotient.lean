@@ -16,7 +16,8 @@ over `s' ∈ S` if and only if `‖m / s‖` attains the quotient seminorm `‖(
 (`QuotientGroup.norm_div_eq_norm_mk_iff`), so every coset has a least-norm element precisely when
 every class in `M ⧸ S` has a representative of the same norm
 (`QuotientGroup.exists_mk_eq_and_norm_eq_iff`). The additive, submodule and ideal counterparts
-give the corresponding characterisations of strict closedness for submodules and ideals.
+give the corresponding characterisations of strict closedness for submodules and for two-sided
+ideals of possibly noncommutative seminormed rings.
 
 If every nontrivial element of `S` has seminorm at least twice that of `m`, then `m` attains the
 quotient seminorm of its class (`QuotientGroup.norm_mk_eq_norm`). So the projection `M → M ⧸ S`
@@ -163,17 +164,17 @@ end Submodule
 
 section Ideal
 
-variable {R : Type*} [SeminormedCommRing R]
+variable {R : Type*} [SeminormedRing R] {I : Ideal R} [I.IsTwoSided]
 
-/-- For `s ∈ I`, the element `r - s` attains the quotient seminorm of `r` modulo the ideal `I`
-if and only if `s` minimises `‖r - s'‖` over `I`. -/
-theorem Ideal.Quotient.norm_sub_eq_norm_mk_iff {I : Ideal R} {r s : R} (hs : s ∈ I) :
+/-- For `s ∈ I`, the element `r - s` attains the quotient seminorm of `r` modulo the two-sided
+ideal `I` if and only if `s` minimises `‖r - s'‖` over `I`. -/
+theorem Ideal.Quotient.norm_sub_eq_norm_mk_iff {r s : R} (hs : s ∈ I) :
     ‖r - s‖ = ‖Ideal.Quotient.mk I r‖ ↔ ∀ s' ∈ I, ‖r - s‖ ≤ ‖r - s'‖ :=
   Submodule.Quotient.norm_sub_eq_norm_mk_iff (S := I) hs
 
 /-- Every residue class in `R ⧸ I` has a representative attaining its quotient seminorm if and only
-if every coset of `I` has an element of least seminorm. -/
-theorem Ideal.Quotient.exists_mk_eq_and_norm_eq_iff {I : Ideal R} :
+if every coset of the two-sided ideal `I` has an element of least seminorm. -/
+theorem Ideal.Quotient.exists_mk_eq_and_norm_eq_iff :
     (∀ x : R ⧸ I, ∃ r : R, Ideal.Quotient.mk I r = x ∧ ‖r‖ = ‖x‖) ↔
       ∀ r : R, ∃ s ∈ I, ∀ s' ∈ I, ‖r - s‖ ≤ ‖r - s'‖ :=
   Submodule.Quotient.exists_mk_eq_and_norm_eq_iff (S := I)
