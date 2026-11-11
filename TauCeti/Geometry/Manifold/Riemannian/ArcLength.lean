@@ -177,7 +177,7 @@ theorem pathELength_le_ofReal_sqrt_energy_of_intervalIntegrable {γ : ℝ → M}
   refine ENNReal.ofReal_le_ofReal ?_
   calc ∫ t in a..b, v t
       ≤ √(b - a) * √(∫ t in a..b, v t ^ 2) :=
-        TauCeti.integral_le_sqrt_mul_sqrt_integral_sq hab (fun _ _ ↦ norm_nonneg _) hγ
+        TauCeti.integral_le_sqrt_mul_sqrt_integral_sq hab hγ
     _ = √(2 * (b - a) * energy I γ a b) := by
         rw [← Real.sqrt_mul (sub_nonneg.2 hab), energy_def]
         congr 1

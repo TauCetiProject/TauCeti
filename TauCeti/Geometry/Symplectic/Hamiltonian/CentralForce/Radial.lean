@@ -245,12 +245,18 @@ theorem centralForceHamiltonian_eq_radialMomentum_sq_div_add_effectivePotential 
     centralForceHamiltonian_effectivePotential_apply (norm_nonneg _), effectivePotential_apply,
     add_assoc]
 
-/-- **The effective potential bounds the energy.** For a nonnegative mass, away from the collision
-set, `U_ℓ(‖q‖) ≤ H(q, p)` for the squared angular momentum `ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²`. So a motion
-of energy `E` and angular momentum `ℓ` stays in the region `U_ℓ(r) ≤ E`. -/
+/-- **The effective potential bounds the energy.** For a nonnegative mass,
+`U_ℓ(‖q‖) ≤ H(q, p)` for the squared angular momentum `ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²`. So a motion
+of energy `E` and angular momentum `ℓ` stays in the region `U_ℓ(r) ≤ E`. At the collision
+`q = 0` the squared angular momentum vanishes and the bound reads `U 0 ≤ ‖p‖² / (2m) + U 0`. -/
 theorem effectivePotential_le_centralForceHamiltonian {m ℓ : ℝ} (hm : 0 ≤ m) {U : ℝ → ℝ}
-    {x : V × V} (hq : x.1 ≠ 0) (hℓ : ℓ ^ 2 = ‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2) :
+    {x : V × V} (hℓ : ℓ ^ 2 = ‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2) :
     effectivePotential m ℓ U ‖x.1‖ ≤ centralForceHamiltonian m U x := by
+  rcases eq_or_ne x.1 0 with hq | hq
+  · have h0 : ℓ ^ 2 = 0 := by simpa [hq] using hℓ
+    rw [effectivePotential_apply, centralForceHamiltonian_apply, hq, h0]
+    have hk : 0 ≤ ‖x.2‖ ^ 2 / (2 * m) := by positivity
+    simpa using hk
   rw [centralForceHamiltonian_eq_radialMomentum_sq_div_add_effectivePotential hq hℓ]
   exact le_add_of_nonneg_left (div_nonneg (sq_nonneg _) (by linarith))
 

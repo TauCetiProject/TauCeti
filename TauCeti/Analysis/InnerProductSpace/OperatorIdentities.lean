@@ -19,6 +19,12 @@ This module collects operator identities independent of projection-valued measur
   their diagonal inner products.
 * `ContinuousLinearMap.norm_sub_sq_of_selfAdjoint_idempotent_absorption` computes the squared
   distance between `S x` and `T x` when `S` is a self-adjoint idempotent absorbed by `T`.
+* `ContinuousLinearMap.adjoint_ofReal_smul`: the adjoint commutes with real scalars.
+* `ContinuousLinearMap.norm_apply_sq_of_adjoint_comp_eq_smul`: if `T† T = c` for a real scalar
+  `c`, then `‖T x‖² = c ‖x‖²`.
+* `ContinuousLinearMap.adjoint_ofReal_smul_comp_ofReal_smul` and
+  `ContinuousLinearMap.ofReal_smul_comp_adjoint_ofReal_smul`: if `T† T` (respectively `T T†`)
+  is a real scalar `s`, then the same product for `c T` is `c² s`.
 
 Use `eq_of_diagonal` to identify bounded complex-linear operators when
 their diagonal inner products agree on every vector. Use
@@ -79,6 +85,38 @@ theorem norm_sub_sq_of_selfAdjoint_idempotent_absorption
       _ = ⟪x, S (S x)⟫_𝕜 := by rw [← mul_apply_eq_comp, hSS]
       _ = ⟪S x, S x⟫_𝕜 := (hS.isSymmetric x (S x)).symm
   rw [norm_sub_sq (𝕜 := 𝕜), hcross, ← norm_sq_eq_re_inner (𝕜 := 𝕜)]
+  ring
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+
+/-- The adjoint commutes with multiplication by a real scalar. -/
+theorem adjoint_ofReal_smul (r : ℝ) (T : E →L[𝕜] F) :
+    ((r : 𝕜) • T).adjoint = (r : 𝕜) • T.adjoint := by
+  rw [map_smulₛₗ, RCLike.conj_ofReal]
+
+/-- An operator `T` with `T† T = c` for a real scalar `c` multiplies norms squared by `c`. -/
+theorem norm_apply_sq_of_adjoint_comp_eq_smul {T : E →L[𝕜] F} {c : ℝ}
+    (hT : T.adjoint ∘L T = (c : 𝕜) • 1) (x : E) : ‖T x‖ ^ 2 = c * ‖x‖ ^ 2 := by
+  rw [apply_norm_sq_eq_inner_adjoint_left, hT, smul_apply, one_apply_eq_self, inner_smul_left,
+    RCLike.conj_ofReal, inner_self_eq_norm_sq_to_K, ← RCLike.ofReal_pow, ← RCLike.ofReal_mul,
+    RCLike.ofReal_re]
+
+/-- If `T† T = s` for a real scalar `s`, then `(c T)† (c T) = c² s` for real `c`. -/
+theorem adjoint_ofReal_smul_comp_ofReal_smul {T : E →L[𝕜] F} {s : ℝ}
+    (hT : T.adjoint ∘L T = (s : 𝕜) • 1) (c : ℝ) :
+    ((c : 𝕜) • T).adjoint ∘L ((c : 𝕜) • T) = ((c ^ 2 * s : ℝ) : 𝕜) • 1 := by
+  rw [adjoint_ofReal_smul, comp_smul, smul_comp, hT, smul_smul, smul_smul]
+  congr 1
+  push_cast
+  ring
+
+/-- If `T T† = s` for a real scalar `s`, then `(c T) (c T)† = c² s` for real `c`. -/
+theorem ofReal_smul_comp_adjoint_ofReal_smul {T : E →L[𝕜] F} {s : ℝ}
+    (hT : T ∘L T.adjoint = (s : 𝕜) • 1) (c : ℝ) :
+    ((c : 𝕜) • T) ∘L ((c : 𝕜) • T).adjoint = ((c ^ 2 * s : ℝ) : 𝕜) • 1 := by
+  rw [adjoint_ofReal_smul, comp_smul, smul_comp, hT, smul_smul, smul_smul]
+  congr 1
+  push_cast
   ring
 
 end RCLike
