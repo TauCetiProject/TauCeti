@@ -41,7 +41,7 @@ The proof assembles the steps of the auxiliary polynomial method. Suppose that i
   (`TauCeti.exists_roth_auxiliary_polynomial`).
 * By Roth's lemma (`TauCeti.weightedIndex_le_of_logHeight_le`), the index of `P` at
   `β = (β₀, …, β_{n-1})` is at most `5 n ε / 2`; the parameters are chosen as in
-  `TauCeti.inv_mul_add_le_floor_div_mul`.
+  `TauCeti.inv_mul_add_lt_floor_div_mul`.
 * The key inequality (`TauCeti.roth_key_inequality`) then gives
   `κ (1 - ε) (1 / 2 - 3 ε) ≤ 1 + C₂ / (n L)`, which fails for small `ε` and large `L` because
   `κ > 2`.
@@ -140,11 +140,11 @@ private theorem roth_inequality {α : ℝ} {b : ℕ} (hb : 0 < b)
   have hindβ := weightedIndex_le_of_logHeight_le (K := ℚ) hP'0 hr hP'deg hσ₀
     (by linarith) (fun i j hij ↦ by
       simp only [hr_def, hij]
-      exact floor_div_le_mul_floor_div hσ₀ hM (hpos i) (hh i) (by linarith [h5D i, hpos i]))
+      exact (floor_div_lt_mul_floor_div hσ₀ hM (hpos i) (hh i) (by linarith [h5D i, hpos i])).le)
     (fun i ↦ β i) (fun i ↦ by
       rw [Module.finrank_self, Nat.cast_one, mul_one]
-      exact inv_mul_add_le_floor_div_mul hσ₀ hL₀ hM₂ h₀ (fun j _ ↦ hh j) hC₁₀ hL (hpos i)
-        (h5D i) hP'height)
+      exact (inv_mul_add_lt_floor_div_mul hσ₀ hL₀ hM₂ h₀ (fun j _ ↦ hh j) hC₁₀ hL (hpos i)
+        (h5D i) hP'height).le)
   have hθ := two_mul_mul_rpow_inv_two_pow hε₀.le n
   rw [← hσ_def] at hθ
   rw [hθ] at hindβ
