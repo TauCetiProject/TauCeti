@@ -53,6 +53,8 @@ approximation of `X` is homotopy equivalent to this one compatibly with the maps
 * `TauCeti.sigmaCWApproximation X`: the CW approximation of `X`, one summand for each path
   component.
 * `TauCeti.sigmaCWApproximationMap X`: its map to `X`.
+* `TauCeti.instCWComplexUnivSigmaCWApproximation`: its CW structure, the disjoint union of those of
+  the summands.
 * `TauCeti.sigmaCWApproximationLift φ`: the map of CW approximations induced by `φ : X → Y`.
 
 ## Main results
@@ -134,15 +136,21 @@ instance instT2SpaceSigmaCWApproximation : T2Space (sigmaCWApproximation X) :=
   have (c : ZerothHomotopy X) : T2Space (cwApproximation X (Quotient.out c)) := inferInstance
   inferInstanceAs (T2Space (Σ c : ZerothHomotopy X, cwApproximation X (Quotient.out c)))
 
-/-- **The CW approximation of an arbitrary space has CW type**: a disjoint union of CW complexes is
-a CW complex. -/
-instance cwType_sigmaCWApproximation : CWType (sigmaCWApproximation X) :=
+/-- The CW structure of `TauCeti.sigmaCWApproximation X`: the disjoint union of the CW structures
+`TauCeti.cwApproximationCWComplex X x_c` of the summands, whose `n`-cells are the pairs of a path
+component `c` and an `n`-cell of the summand of `c` (`Topology.CWComplex.sigmaUnivCellEquiv`). -/
+instance instCWComplexUnivSigmaCWApproximation :
+    Topology.CWComplex (Set.univ : Set (sigmaCWApproximation X)) :=
   letI (c : ZerothHomotopy X) :
       Topology.CWComplex (Set.univ : Set (cwApproximation X (Quotient.out c))) :=
     (cwApproximationCWComplex X (Quotient.out c)).toCWComplex
-  haveI : T2Space (Σ c : ZerothHomotopy X, cwApproximation X (Quotient.out c)) :=
-    instT2SpaceSigmaCWApproximation X
-  CWType.of_cwComplex_univ (Σ c : ZerothHomotopy X, cwApproximation X (Quotient.out c))
+  inferInstanceAs (Topology.CWComplex
+    (Set.univ : Set (Σ c : ZerothHomotopy X, cwApproximation X (Quotient.out c))))
+
+/-- **The CW approximation of an arbitrary space has CW type**: a disjoint union of CW complexes is
+a CW complex. -/
+instance cwType_sigmaCWApproximation : CWType (sigmaCWApproximation X) :=
+  CWType.of_cwComplex_univ (sigmaCWApproximation X)
 
 /-- **CW approximation** (Hatcher, Proposition 4.13). For every space `X`, the map
 `TauCeti.sigmaCWApproximationMap X` from the CW complex `TauCeti.sigmaCWApproximation X` to `X` is a

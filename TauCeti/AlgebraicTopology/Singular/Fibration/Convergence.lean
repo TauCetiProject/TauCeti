@@ -34,8 +34,8 @@ fibration, read in the indexing of `TauCeti.preimageSkeleton`: a Serre fibration
   everything from `b = n` on
   (`TauCeti.TopCat.isIso_serreSpectralObject_abutmentFiltrationι`, which holds over relative CW
   complexes as well). For an absolute CW complex it vanishes below `0` because `E_{-1}`
-  is empty (`CochainComplex.isZero_filtrationAbutmentFiltration`), so in each degree it is finite,
-  exhaustive and separated.
+  is empty (`TauCeti.TopCat.isZero_serreSpectralObject_abutmentFiltration`), so in each degree it
+  is finite, exhaustive and separated.
 * **Strong convergence.** On every late enough page the object at `(a, b)` is the graded piece
   `F_{b+1} H / F_b H` of the filtration of `H_{-(a+b)}(E; R)`
   (`TauCeti.TopCat.serreSpectralSequencePageXIsoGraded`).
@@ -146,6 +146,15 @@ end Relative
 section Absolute
 
 variable {K : Set B} [CWComplex K]
+
+variable (p K) in
+/-- **The filtration of the abutment of the Serre spectral sequence over a CW complex vanishes in
+negative degrees**: for `b < 0` the preimage of the `b`-skeleton is empty, so the piece
+`F_b Hₙ(E; R)` is zero. -/
+theorem isZero_serreSpectralObject_abutmentFiltration {b : ℤ} (hb : b < 0) (n : ℤ) :
+    IsZero ((serreSpectralObject K p R).abutmentFiltration b n) :=
+  CochainComplex.isZero_filtrationAbutmentFiltration _ _
+    (singularChainFiltration_eq_bot (ModuleCat.of R R) (preimageSkeleton_eq_empty p hb)) n
 
 /-- **Strong convergence of the Serre spectral sequence over a CW complex.** Let `p : E ⟶ B` be a
 Serre fibration with values in a CW complex `K ⊆ B`, with no finiteness or dimension bound on `K`.
