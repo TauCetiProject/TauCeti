@@ -12,13 +12,14 @@ import TauCeti.Analysis.BoundedVariation.TotalVariation
 import TauCeti.Analysis.Sobolev.Embedding
 import TauCeti.Analysis.Sobolev.W1p.ChainRule
 import TauCeti.Analysis.Sobolev.W1p.Restriction
+import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Function.LpSeminorm.PosPart
 import TauCeti.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Integral.LayerCake
 import TauCeti.MeasureTheory.Integral.MeanInequalities
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.Median
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-!
 # The Sobolev–Poincaré inequality at the critical exponent
@@ -91,85 +92,6 @@ open scoped ENNReal NNReal Topology
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p pstar : ℝ≥0∞} [Fact (1 ≤ p)] {S : Set E}
-
-/-! ### Dyadic decompositions -/
-
-/-- Two dyadic strips `{m + 2^j < y ≤ m + 2^(j+1)}` and `{m + 2^k < y ≤ m + 2^(k+1)}` meet only
-when `j = k`. -/
-private theorem eq_of_mem_dyadic_strip {y m : ℝ} {j k : ℤ}
-    (hj : m + (2 : ℝ) ^ j < y ∧ y ≤ m + 2 * (2 : ℝ) ^ j)
-    (hk : m + (2 : ℝ) ^ k < y ∧ y ≤ m + 2 * (2 : ℝ) ^ k) : j = k := by
-  have h₁ : (2 : ℝ) ^ j < 2 ^ (k + 1) := by
-    rw [zpow_add_one₀ two_ne_zero]
-    linarith
-  have h₂ : (2 : ℝ) ^ k < 2 ^ (j + 1) := by
-    rw [zpow_add_one₀ two_ne_zero]
-    linarith
-  rw [zpow_lt_zpow_iff_right₀ one_lt_two] at h₁ h₂
-  omega
-
-/-- The integrals of `g` over the disjoint dyadic strips `{m + 2^k < f ≤ m + 2^{k+1}}`, `k ∈ ℤ`,
-add up to at most its integral over `Ω`. -/
-private theorem tsum_setLIntegral_indicator_dyadic_strip_le {α : Type*} [MeasurableSpace α]
-    {ν : Measure α} {Ω : Set α} {f : α → ℝ} {g : α → ℝ≥0∞} (hf : Measurable f)
-    (hg : Measurable g) (m : ℝ) :
-    ∑' k : ℤ, ∫⁻ x in Ω, {x | m + (2 : ℝ) ^ k < f x ∧ f x ≤ m + 2 * (2 : ℝ) ^ k}.indicator g x ∂ν ≤
-      ∫⁻ x in Ω, g x ∂ν := by
-  have hstrip : ∀ k : ℤ, MeasurableSet {x | m + (2 : ℝ) ^ k < f x ∧ f x ≤ m + 2 * (2 : ℝ) ^ k} :=
-    fun k => (measurableSet_lt measurable_const hf).inter (measurableSet_le hf measurable_const)
-  rw [← lintegral_tsum fun k => (hg.indicator (hstrip k)).aemeasurable]
-  refine lintegral_mono fun x => ?_
-  by_cases hx : ∃ k : ℤ, m + (2 : ℝ) ^ k < f x ∧ f x ≤ m + 2 * (2 : ℝ) ^ k
-  · obtain ⟨k, hk⟩ := hx
-    rw [tsum_eq_single k fun j hj =>
-      indicator_of_notMem (fun hj' => hj (eq_of_mem_dyadic_strip hj' hk)) _]
-    exact indicator_le_self _ _ x
-  · rw [tsum_congr fun k => indicator_of_notMem (fun hk => hx ⟨k, hk⟩) _, tsum_zero]
-    exact bot_le
-
-/-- **Dyadic domination of a positive part.** For `s > 0`, the integral of `((f - m)⁺)^s` over `Ω`
-is at most `∑_{k ∈ ℤ} 4^s 2^{ks} ν(Ω ∩ {f ≥ m + 2^{k+1}})`: a point with `f > m` lies in the
-superlevel set of height `2^{k+1}` for which `f - m ≤ 4 · 2^k`. -/
-private theorem setLIntegral_ofReal_max_sub_rpow_le_tsum {α : Type*} [MeasurableSpace α]
-    {ν : Measure α} {Ω : Set α} {f : α → ℝ} (hΩ : MeasurableSet Ω) (hf : Measurable f) (m : ℝ)
-    {s : ℝ} (hs0 : 0 < s) :
-    ∫⁻ x in Ω, ENNReal.ofReal (max (f x - m) 0) ^ s ∂ν ≤
-      ∑' k : ℤ, 4 ^ s * (ENNReal.ofReal ((2 : ℝ) ^ k) ^ s *
-        ν (Ω ∩ {x | m + 2 * (2 : ℝ) ^ k ≤ f x})) := by
-  set A : ℤ → Set α := fun k => Ω ∩ {x | m + 2 * (2 : ℝ) ^ k ≤ f x}
-  have hAm : ∀ k, MeasurableSet (A k) := fun k => hΩ.inter (measurableSet_le measurable_const hf)
-  have hpt : ∀ x ∈ Ω, ENNReal.ofReal (max (f x - m) 0) ^ s ≤
-      ∑' k : ℤ, 4 ^ s * (ENNReal.ofReal ((2 : ℝ) ^ k) ^ s * (A k).indicator 1 x) := by
-    intro x hx
-    rcases le_or_gt (f x - m) 0 with h | h
-    · rw [max_eq_right h, ENNReal.ofReal_zero, ENNReal.zero_rpow_of_pos hs0]
-      exact bot_le
-    obtain ⟨k, hk1, hk2⟩ := exists_mem_Ioc_zpow h one_lt_two
-    refine le_trans ?_ (le_tsum _ (k - 1))
-    have h2k : 2 * (2 : ℝ) ^ (k - 1) = 2 ^ k := by
-      rw [zpow_sub_one₀ two_ne_zero]
-      ring
-    have hxA : x ∈ A (k - 1) := ⟨hx, by simp only [mem_ofPred_eq]; linarith⟩
-    rw [indicator_of_mem hxA, Pi.one_apply, mul_one, ← ENNReal.mul_rpow_of_nonneg _ _ hs0.le]
-    gcongr
-    rw [← ENNReal.ofReal_ofNat 4, ← ENNReal.ofReal_mul (by norm_num), max_eq_left h.le]
-    refine ENNReal.ofReal_le_ofReal (hk2.trans_eq ?_)
-    rw [zpow_add_one₀ two_ne_zero, ← h2k]
-    ring
-  calc _ ≤ ∫⁻ x in Ω, ∑' k : ℤ,
-        4 ^ s * (ENNReal.ofReal ((2 : ℝ) ^ k) ^ s * (A k).indicator 1 x) ∂ν :=
-        setLIntegral_mono' hΩ hpt
-    _ = ∑' k : ℤ, ∫⁻ x in Ω,
-        4 ^ s * (ENNReal.ofReal ((2 : ℝ) ^ k) ^ s * (A k).indicator 1 x) ∂ν :=
-        lintegral_tsum fun k =>
-          ((measurable_const.indicator (hAm k)).const_mul _ |>.const_mul _).aemeasurable
-    _ = _ := by
-        congr 1
-        funext k
-        rw [lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_nonneg hs0.le (by simp)),
-          lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_nonneg hs0.le ENNReal.ofReal_ne_top),
-          lintegral_indicator_one (hAm k), Measure.restrict_apply (hAm k),
-          inter_eq_left.2 inter_subset_left]
 
 /-! ### The case `p = 1`: Maz'ya's truncation -/
 
@@ -259,6 +181,31 @@ private theorem lintegral_ofReal_max_sub_rpow_le_of_convex (hp : p ≠ ∞) (hn 
   have hs1 : 1 ≤ s := one_le_inv₀ (sub_pos.2 hninv1) |>.2 (sub_le_self _ hninv0)
   have hmeas : Measurable (W1p.value u : E → ℝ) := (Lp.stronglyMeasurable _).measurable
   have hDT : ∀ k, D k ≤ T := fun k => lintegral_mono fun x => indicator_le_self _ _ x
+  -- The strips `{m + 2^k < u ≤ m + 2^{k+1}}` are pairwise disjoint, so the integrals `D k` of
+  -- `|∇u|` over them, the measures of the strips for the density `|∇u|` on `Ω`, add up to `≤ T`.
+  have hDsum : ∑' k, D k ≤ T := by
+    set strip : ℤ → Set E := fun k =>
+      {x | m + (2 : ℝ) ^ k < W1p.value u x ∧ W1p.value u x ≤ m + 2 * (2 : ℝ) ^ k}
+    have hstrip : ∀ k, MeasurableSet (strip k) := fun k =>
+      (measurableSet_lt measurable_const hmeas).inter (measurableSet_le hmeas measurable_const)
+    have hdisj : Pairwise (Function.onFun Disjoint strip) := by
+      intro j k hjk
+      refine disjoint_left.2 fun x (hj : x ∈ strip j) (hk : x ∈ strip k) => hjk ?_
+      have h₁ : (2 : ℝ) ^ j < 2 ^ (k + 1) := by
+        rw [zpow_add_one₀ two_ne_zero]
+        linarith [hj.1, hk.2]
+      have h₂ : (2 : ℝ) ^ k < 2 ^ (j + 1) := by
+        rw [zpow_add_one₀ two_ne_zero]
+        linarith [hk.1, hj.2]
+      rw [zpow_lt_zpow_iff_right₀ one_lt_two] at h₁ h₂
+      omega
+    set ν := (mu.restrict Omega).withDensity fun x => ‖W1p.gradient u x‖ₑ
+    calc ∑' k, D k = ∑' k, ν (strip k) := tsum_congr fun k => by
+          rw [withDensity_apply _ (hstrip k)]
+          exact lintegral_indicator (hstrip k) _
+      _ ≤ ν (⋃ k, strip k) := tsum_meas_le_meas_iUnion_of_disjoint ν hstrip hdisj
+      _ ≤ ν univ := measure_mono (subset_univ _)
+      _ = T := by rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
   -- The weak inequality at the height `2^k`, raised to the power `s`.
   have hlevel : ∀ k : ℤ, ENNReal.ofReal ((2 : ℝ) ^ k) ^ s *
       mu ((Omega : Set E) ∩ {x | m + 2 * (2 : ℝ) ^ k ≤ W1p.value u x}) ≤ (C * D k) ^ s :=
@@ -284,8 +231,6 @@ private theorem lintegral_ofReal_max_sub_rpow_le_of_convex (hp : p ≠ ∞) (hn 
         ring
     _ ≤ 4 ^ s * (C * T) ^ (s - 1) * C * T := by
         gcongr
-        exact tsum_setLIntegral_indicator_dyadic_strip_le hmeas
-          (Lp.stronglyMeasurable _).measurable.enorm m
     _ = 4 ^ s * (C * T) ^ ((s - 1) + 1) := by
         rw [ENNReal.rpow_add_of_nonneg _ _ (sub_nonneg.2 hs1) zero_le_one, ENNReal.rpow_one]
         ring
@@ -293,43 +238,6 @@ private theorem lintegral_ofReal_max_sub_rpow_le_of_convex (hp : p ≠ ∞) (hn 
         rw [sub_add_cancel, mul_assoc, ENNReal.mul_rpow_of_nonneg 4 (C * T) hs0.le]
 
 /-! ### The case `1 < p`: powers of the positive part -/
-
-/-- For `γ > 1` and `K > 0`, the primitive `F` of `γ (min (t⁺, K))^{γ - 1}` vanishing at `0` is a
-`C¹` function with bounded derivative, vanishes on `(-∞, 0]` and dominates `(min (t⁺, K))^γ`. It
-agrees with `t^γ` on `[0, K]` and continues linearly beyond `K`. -/
-private theorem exists_contDiff_deriv_eq_rpow (γ : ℝ) (hγ : 1 < γ) {K : ℝ} (hK : 0 < K) :
-    ∃ F : ℝ → ℝ, ContDiff ℝ 1 F ∧ (∀ t, HasDerivAt F (γ * min (max t 0) K ^ (γ - 1)) t) ∧
-      (∀ t ≤ 0, F t = 0) ∧ ∀ t, min (max t 0) K ^ γ ≤ F t := by
-  set φ : ℝ → ℝ := fun t => γ * min (max t 0) K ^ (γ - 1)
-  have hφc : Continuous φ := continuous_const.mul
-    (((continuous_id.max continuous_const).min continuous_const).rpow_const fun _ =>
-      Or.inr (by linarith))
-  have hφ0 : ∀ t, 0 ≤ φ t := fun t =>
-    mul_nonneg (by linarith) (Real.rpow_nonneg (le_min (le_max_right _ _) hK.le) _)
-  set F : ℝ → ℝ := fun t => ∫ τ in (0 : ℝ)..t, φ τ
-  have hFd : ∀ t, HasDerivAt F (φ t) t := fun t => (hφc.integral_hasStrictDerivAt 0 t).hasDerivAt
-  have hFderiv : deriv F = φ := funext fun t => (hFd t).deriv
-  have hFdiff : Differentiable ℝ F := fun t => (hFd t).differentiableAt
-  have hF0 : ∀ t ≤ 0, F t = 0 := fun t ht => by
-    -- `φ` vanishes on `[t, 0]`, hence so does its integral from `0` to `t`.
-    have hφt : EqOn φ (fun _ => 0) (uIcc 0 t) := fun τ hτ => by
-      rw [uIcc_of_ge ht] at hτ
-      simp only [φ, max_eq_right hτ.2, min_eq_left hK.le, Real.zero_rpow (by linarith : γ - 1 ≠ 0),
-        mul_zero]
-    exact (intervalIntegral.integral_congr hφt).trans intervalIntegral.integral_zero
-  have hFpow : ∀ t, 0 ≤ t → t ≤ K → F t = t ^ γ := fun t ht0 htK => by
-    have hd : ∀ τ ∈ uIcc 0 t, HasDerivAt (fun τ => τ ^ γ) (φ τ) τ := fun τ hτ => by
-      rw [uIcc_of_le ht0] at hτ
-      convert Real.hasDerivAt_rpow_const (x := τ) (Or.inr hγ.le) using 1
-      simp only [φ, max_eq_left hτ.1, min_eq_left (hτ.2.trans htK)]
-    have hFt : F t = t ^ γ - 0 ^ γ :=
-      intervalIntegral.integral_eq_sub_of_hasDerivAt hd (hφc.intervalIntegrable _ _)
-    rw [hFt, Real.zero_rpow (by linarith), sub_zero]
-  refine ⟨F, contDiff_one_iff_deriv.2 ⟨hFdiff, hFderiv ▸ hφc⟩, hFd, hF0, fun t => ?_⟩
-  rcases le_total t 0 with ht | ht
-  · rw [max_eq_right ht, min_eq_left hK.le, Real.zero_rpow (by linarith), hF0 t ht]
-  · rw [max_eq_left ht, ← hFpow _ (le_min ht hK.le) (min_le_right _ _)]
-    exact monotone_of_deriv_nonneg hFdiff (fun t => hFderiv ▸ hφ0 t) (min_le_left _ _)
 
 /-- **The `p = 1` estimate for a power of the truncated positive part.** Let `γ > 1` and `K > 0`,
 let `u ≤ m` almost everywhere on `S ⊆ Ω` of positive measure, and let `W = min ((u - m)⁺, K)`.
@@ -395,24 +303,6 @@ private theorem lintegral_ofReal_min_rpow_le_of_convex (hp : p ≠ ∞) (hn : 2 
       ENNReal.ofReal_rpow_of_nonneg (hW0 _) (by linarith)]
   rw [← hgradv]
   exact hX.trans (lintegral_ofReal_max_sub_rpow_le_of_convex hp hn hconv hb hS hS0 v hvS)
-
-/-- The exponents of the power trick. If `1/q + 1/N = 1/P` with `P > 1` and `q > 0`, then
-`γ = q (1 - 1/N)` and the conjugate exponent `P'` of `P` satisfy `(γ - 1) P' = q` and
-`1 - 1/N = 1/q + 1/P'`. -/
-private theorem exists_holderConjugate_sub_one_mul_eq {P q N : ℝ} (hP1 : 1 < P) (hq0 : 0 < q)
-    (h : q⁻¹ + N⁻¹ = P⁻¹) :
-    ∃ P' : ℝ, P'.HolderConjugate P ∧ (q * (1 - N⁻¹) - 1) * P' = q ∧ 1 - N⁻¹ = q⁻¹ + P'⁻¹ := by
-  have hPinv : P⁻¹ < 1 := inv_lt_one_of_one_lt₀ hP1
-  refine ⟨(1 - P⁻¹)⁻¹, by simpa using
-    Real.HolderConjugate.one_sub_inv_inv (inv_pos.2 (by linarith)) hPinv, ?_, ?_⟩
-  · have hγ : q * (1 - N⁻¹) - 1 = q * (1 - P⁻¹) := by
-      have hN : N⁻¹ = P⁻¹ - q⁻¹ := by linarith
-      rw [hN, mul_sub, mul_sub, mul_sub, mul_one,
-        mul_inv_cancel₀ hq0.ne']
-      ring
-    rw [hγ, mul_assoc, mul_inv_cancel₀ (sub_pos.2 hPinv).ne', mul_one]
-  · rw [inv_inv]
-    linarith
 
 /-- **The Sobolev–Poincaré inequality for `1 < p < n`, above a level, for a truncation.** Let
 `u ≤ m` almost everywhere on `S ⊆ Ω` of positive measure. For every height `K > 0`, the function
@@ -558,22 +448,6 @@ private theorem eLpNorm_max_const_sub_le_of_convex (hpstar : pstar ≠ ∞)
   filter_upwards [W1p.value_neg_ae u] with x hx
   rw [hx, Pi.neg_apply, sub_neg_eq_add, neg_add_eq_sub]
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] [mu.IsAddHaarMeasure]
-  [Fact (1 ≤ p)] in
-/-- On a subset `S' ⊆ Ω` carrying at least half the measure of `Ω`, the weak-type Poincaré
-constant `K₀ / μ(S')` is at most `2 K₀ / μ(Ω)`. -/
-private theorem ofReal_div_measureReal_le_of_le_two_mul {K₀ : ℝ} (hK₀ : 0 ≤ K₀) {S' : Set E}
-    (hS' : S' ⊆ Omega) (hfin : mu Omega ≠ ∞) (h0 : mu Omega ≠ 0) (h2 : mu Omega ≤ 2 * mu S') :
-    ENNReal.ofReal (K₀ / mu.real S') ≤ ENNReal.ofReal (2 * K₀ / mu.real Omega) := by
-  have hS'fin : mu S' ≠ ∞ := ne_top_of_le_ne_top hfin (measure_mono hS')
-  have hΩpos : 0 < mu.real Omega := ENNReal.toReal_pos h0 hfin
-  have h2' : mu.real Omega ≤ 2 * mu.real S' := by
-    have := ENNReal.toReal_mono (ENNReal.mul_ne_top (by simp) hS'fin) h2
-    rwa [ENNReal.toReal_mul, ENNReal.toReal_ofNat] at this
-  refine ENNReal.ofReal_le_ofReal ?_
-  rw [div_le_div_iff₀ (by linarith) hΩpos]
-  nlinarith
-
 /-- **The Sobolev–Poincaré inequality about a median.** If `m` is a median of `u` on `Ω`, so that
 `{u ≤ m}` and `{u ≥ m}` each carry at least half the measure of `Ω`, then
 `‖u - m‖_{L^{p⋆}(Ω)} ≤ 16 p⋆ μ(B(0, 1)) ^ (1 - 1/n) (diam Ω) ^ n / μ(Ω) · ‖∇u‖_{Lᵖ(Ω)}`. -/
@@ -600,11 +474,19 @@ private theorem eLpNorm_value_sub_le_of_median_of_convex (hpstar : pstar ≠ ∞
   have hbound : ∀ S' ⊆ (Omega : Set E), mu Omega ≤ 2 * mu S' →
       ENNReal.ofReal γ * (4 * ENNReal.ofReal (K₀ / mu.real S')) * G ≤
         ENNReal.ofReal (8 * γ * K₀ / mu.real Omega) * G := fun S' hS' h2 => by
+    -- Since `S'` carries at least half the measure of `Ω`, `K₀ / μ(S') ≤ 2 K₀ / μ(Ω)`.
+    have hS'fin : mu S' ≠ ∞ := ne_top_of_le_ne_top hfin (measure_mono hS')
+    have hΩpos : 0 < mu.real Omega := ENNReal.toReal_pos h0 hfin
+    have h2' : mu.real Omega ≤ 2 * mu.real S' := by
+      have := ENNReal.toReal_mono (ENNReal.mul_ne_top (by simp) hS'fin) h2
+      rwa [ENNReal.toReal_mul, ENNReal.toReal_ofNat] at this
+    have hK₀ : 0 ≤ K₀ := by positivity
     gcongr ?_ * G
     calc ENNReal.ofReal γ * (4 * ENNReal.ofReal (K₀ / mu.real S'))
         ≤ ENNReal.ofReal γ * (4 * ENNReal.ofReal (2 * K₀ / mu.real Omega)) := by
-          gcongr ENNReal.ofReal γ * (4 * ?_)
-          exact ofReal_div_measureReal_le_of_le_two_mul (by positivity) hS' hfin h0 h2
+          gcongr ENNReal.ofReal γ * (4 * ENNReal.ofReal ?_)
+          rw [div_le_div_iff₀ (by linarith) hΩpos]
+          nlinarith
       _ = ENNReal.ofReal (8 * γ * K₀ / mu.real Omega) := by
           rw [← ENNReal.ofReal_ofNat 4, ← ENNReal.ofReal_mul (by norm_num),
             ← ENNReal.ofReal_mul hγ]
