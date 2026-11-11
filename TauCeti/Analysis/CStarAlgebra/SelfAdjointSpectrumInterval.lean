@@ -11,10 +11,14 @@ public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometr
 # Spectral intervals of a self-adjoint element
 
 Let `a` be a self-adjoint element of a real normed star algebra with an isometric continuous
-functional calculus for self-adjoint elements, for instance a C⋆-algebra. The norm of `a` is the
-largest absolute value of a point of its real spectrum. Hence, for `0 ≤ r`, `‖a‖ ≤ r` exactly
-when the real spectrum of `a` lies in the interval `[-r, r]`; this turns spectral localisation
-into norm bounds and back.
+functional calculus for self-adjoint elements, for instance a C⋆-algebra. Every point of the real
+spectrum of `a` has absolute value at most `‖a‖`
+(`IsometricContinuousFunctionalCalculus.norm_spectrum_le`). When the algebra is nontrivial, `‖a‖`
+is attained as the largest such absolute value
+(`IsometricContinuousFunctionalCalculus.isGreatest_norm_spectrum`); in a trivial algebra the
+spectrum is empty and `‖a‖ = 0`. In either case, for `0 ≤ r`, `‖a‖ ≤ r` exactly when the real
+spectrum of `a` lies in the interval `[-r, r]`; this turns spectral localisation into norm bounds
+and back.
 
 If instead the spectrum has a gap around zero of radius `r > 0`, then `a` is invertible and its
 canonical ring inverse has norm at most `r⁻¹`; this is
