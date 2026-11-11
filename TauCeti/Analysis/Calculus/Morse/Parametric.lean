@@ -38,7 +38,9 @@ isomorphisms `T b` depending continuously on `b`, then
 (`TauCeti.eventually_parametricMorseCoord_transition`). Read in two trivializations of a vector
 bundle, the canonical coordinates of a function therefore agree near the zero section. This is the
 compatibility with bundle transitions needed to patch the local normal forms of a Morse–Bott
-function along its critical submanifold; the patching itself is not done here.
+function along its critical submanifold. Far from the zero section the trivializations need not be
+close, and the patching on a vector bundle, `TauCeti.exists_bundle_morse_normal_form`, compares the
+coordinates along fibre segments instead.
 
 ## Main declarations
 

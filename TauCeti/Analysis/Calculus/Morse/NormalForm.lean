@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Calculus.Morse.Basic
 public import TauCeti.Analysis.Normed.Algebra.SquareRoot
 import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
+import TauCeti.Topology.SeparatedMap
 
 /-!
 # The Morse lemma
@@ -68,7 +69,10 @@ forms near a pair `(B₀, B₀)` with `B₀` invertible (`TauCeti.eventually_mor
 and it depends smoothly on both forms, so the reference form may vary too. Being canonical, it
 is compatible with linear changes of coordinates
 (`TauCeti.eventually_morseCongruence_bilinearComp`), which is what the parametric Morse lemma on
-a vector bundle needs to glue local normal forms.
+a vector bundle needs to glue local normal forms. The compatibility also holds along a path of
+forms starting at the reference form, for an arbitrary linear change of coordinates, as long as
+the congruences along the path are continuous square roots and one of the two paths stays where
+`TauCeti.sqrtNearOne` inverts squaring (`TauCeti.eqOn_morseCongruence_bilinearComp`).
 
 The varying-reference variant `TauCeti.exists_parametric_congruence_of_symmetric_family`
 compares a jointly smooth family `B (b, v)` to `B (b, 0)` by jointly smooth invertible
@@ -393,6 +397,64 @@ theorem eventually_morseCongruence_bilinearComp {E' : Type*} [NormedAddCommGroup
   rw [ContinuousLinearMap.inverse_bilinearComp_comp_bilinearComp hinv, ← hsq]
   ext x
   simp [mul_apply_eq_comp]
+
+/-- **The canonical congruence is natural along a path.** Let `B t`, for `t` in a preconnected
+set `S`, be forms equal to an invertible form `B₀` at some `a ∈ S`, and let `e : E' ≃L[ℝ] E`.
+Suppose that along `S` the canonical congruences of `(B₀, B t)` and of the pulled-back pair
+`(B₀ ∘ e, B t ∘ e)` depend continuously on `t` and square to their comparison operators, and that
+the first stays in the interior of the set on which `TauCeti.sqrtNearOne` inverts squaring. Then
+pulling back along `e` conjugates the canonical congruence by `e` all along `S`.
+
+Unlike `TauCeti.eventually_morseCongruence_bilinearComp`, this asks for no control of `e`: the
+pulled-back congruences need not lie near the identity. This is what makes the canonical
+coordinates of a function read in two arbitrary trivializations of a vector bundle agree. -/
+theorem eqOn_morseCongruence_bilinearComp {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [CompleteSpace E'] {α : Type*} [TopologicalSpace α] {S : Set α}
+    (hS : IsPreconnected S) {a : α} (ha : a ∈ S) {B : α → E →L[ℝ] E →L[ℝ] ℝ}
+    (hB₀ : B₀.IsInvertible) (hBa : B a = B₀) (e : E' ≃L[ℝ] E)
+    (hR : ContinuousOn (fun t ↦ morseCongruence B₀ (B t)) S)
+    (hR' : ContinuousOn (fun t ↦ morseCongruence (B₀.bilinearComp (e : E' →L[ℝ] E) (e : E' →L[ℝ] E))
+      ((B t).bilinearComp (e : E' →L[ℝ] E) (e : E' →L[ℝ] E))) S)
+    (hsq : ∀ t ∈ S, morseCongruence B₀ (B t) * morseCongruence B₀ (B t) = B₀.inverse ∘L B t)
+    (hsq' : ∀ t ∈ S, morseCongruence (B₀.bilinearComp (e : E' →L[ℝ] E) (e : E' →L[ℝ] E))
+        ((B t).bilinearComp (e : E' →L[ℝ] E) (e : E' →L[ℝ] E)) *
+      morseCongruence (B₀.bilinearComp (e : E' →L[ℝ] E) (e : E' →L[ℝ] E))
+        ((B t).bilinearComp (e : E' →L[ℝ] E) (e : E' →L[ℝ] E)) =
+      (B₀.bilinearComp (e : E' →L[ℝ] E) (e : E' →L[ℝ] E)).inverse ∘L
+        (B t).bilinearComp (e : E' →L[ℝ] E) (e : E' →L[ℝ] E))
+    (hW : ∀ t ∈ S, morseCongruence B₀ (B t) ∈
+      interior {r : E →L[ℝ] E | sqrtNearOne (E →L[ℝ] E) (r * r) = r}) :
+    EqOn (fun t ↦ morseCongruence (B₀.bilinearComp (e : E' →L[ℝ] E) (e : E' →L[ℝ] E))
+        ((B t).bilinearComp (e : E' →L[ℝ] E) (e : E' →L[ℝ] E)))
+      (fun t ↦ (e.symm : E →L[ℝ] E') ∘L morseCongruence B₀ (B t) ∘L (e : E' →L[ℝ] E)) S := by
+  set R' := fun t ↦ morseCongruence (B₀.bilinearComp (e : E' →L[ℝ] E) (e : E' →L[ℝ] E))
+    ((B t).bilinearComp (e : E' →L[ℝ] E) (e : E' →L[ℝ] E)) with hR'def
+  -- Squaring is injective on the interior of the set where `sqrtNearOne` inverts it.
+  have hinj : InjOn (fun r : E →L[ℝ] E ↦ r * r)
+      (interior {r : E →L[ℝ] E | sqrtNearOne (E →L[ℝ] E) (r * r) = r}) := fun r hr s hs hrs ↦ by
+    rw [← interior_subset hr, ← interior_subset hs]
+    exact congrArg (sqrtNearOne (E →L[ℝ] E)) hrs
+  -- The congruence of `(B₀, B t)` and the conjugate of the pulled-back congruence are continuous
+  -- square roots of the same operators, equal to the identity at `a`.
+  have hEq : EqOn (fun t ↦ morseCongruence B₀ (B t))
+      (fun t ↦ (e : E' →L[ℝ] E) ∘L R' t ∘L (e.symm : E →L[ℝ] E')) S := by
+    refine hinj.eqOn_of_comp_eqOn isOpen_interior hS hR
+      (continuousOn_const.clm_comp (hR'.clm_comp continuousOn_const)) hW
+      (fun t ht ↦ ?_) ha ?_
+    · have h := hsq' t ht
+      rw [ContinuousLinearMap.inverse_bilinearComp_comp_bilinearComp hB₀] at h
+      simp only [Function.comp_apply, hsq t ht]
+      ext x
+      simpa [mul_apply_eq_comp] using
+        (congrArg (fun r : E' →L[ℝ] E' ↦ e (r (e.symm x))) h).symm
+    · simp only [hR'def, hBa, morseCongruence_self hB₀,
+        morseCongruence_self (hB₀.bilinearComp e e)]
+      ext x
+      simp
+  intro t ht
+  simp only [hEq ht]
+  ext x
+  simp [hR'def]
 
 /-- A `C^n` family `B` of symmetric continuous bilinear forms on a Banach space whose value at
 `a` is invertible is, near `a`, the congruence of that value by a `C^n` family of continuous
