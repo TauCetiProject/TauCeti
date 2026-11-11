@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Normed.Operator.Compact.FredholmAlternative
 public import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 public import TauCeti.Analysis.Fredholm.SelfAdjoint.SpectralGap
 public import TauCeti.Analysis.Normed.Operator.Compact.Finite.Rank
+public import TauCeti.LinearAlgebra.Projection.IsIdempotentElem
 public import TauCeti.Analysis.Normed.Operator.SpectralProjection
 
 /-!
@@ -298,10 +299,16 @@ theorem spectralCount_eq_add (h₁ : IsFiniteSpectralCutoff T c₁) (h₂ : IsFi
     have := h₁.finiteDimensional_range_cfc_indicator_Ico
     exact Submodule.finiteDimensional_of_le <| range_cfc_indicator_le_of_subset
       (Ico_subset_Ico_left h₂.pos.le) h₁.continuousOn_indicator_Ico hQc
+  have hPQ' : P.toLinearMap * Q.toLinearMap = 0 := by
+    rw [← ContinuousLinearMap.toLinearMap_mul, hPQ, ContinuousLinearMap.toLinearMap_zero]
+  have hQP' : Q.toLinearMap * P.toLinearMap = 0 := by
+    rw [← ContinuousLinearMap.toLinearMap_mul, hQP, ContinuousLinearMap.toLinearMap_zero]
+  have hPi' : IsIdempotentElem P.toLinearMap := hPi.map ContinuousLinearMap.toLinearMapRingHom
+  have hQi' : IsIdempotentElem Q.toLinearMap := hQi.map ContinuousLinearMap.toLinearMapRingHom
   rw [ContinuousLinearMap.spectralCount_def, ContinuousLinearMap.spectralCount_def, hsum,
-    ContinuousLinearMap.IsIdempotentElem.range_add hPi hQi hPQ hQP,
+    ContinuousLinearMap.toLinearMap_add, LinearMap.IsIdempotentElem.range_add hPi' hQi' hPQ' hQP',
     ← Submodule.finrank_sup_add_finrank_inf_eq,
-    (ContinuousLinearMap.IsIdempotentElem.disjoint_range hPi hPQ).eq_bot, finrank_bot, add_zero]
+    (LinearMap.IsIdempotentElem.disjoint_range hPi' hPQ').eq_bot, finrank_bot, add_zero]
 
 private theorem eventually_spectralCount_sub_eq_of_le (h₁ : IsFiniteSpectralCutoff T c₁)
     (h₂ : IsFiniteSpectralCutoff T c₂) (h : c₂ ≤ c₁) :
