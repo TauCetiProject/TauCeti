@@ -28,6 +28,10 @@ of the first coordinate commutes with taking the first marginal (`fst_withDensit
 Projecting a measurable restriction of a product weights the first factor by the masses of
 its vertical sections (`map_fst_restrict_prod_eq_withDensity`).
 
+If the pushforward of a product `(μ.map Z).prod ρ` along `(z, t) ↦ (z, f z t)` is the joint law of
+`(Z, X)` for a nonzero finite `μ`, then `ρ` is a probability measure
+(`MeasureTheory.Measure.isProbabilityMeasure_of_map_prod_eq`).
+
 It also records that almost every section of an almost-everywhere measurable function on a
 product `μ.prod ν` is almost-everywhere measurable (`AEMeasurable.prodMk_left`), the counterpart of
 Mathlib's `MeasureTheory.AEStronglyMeasurable.prodMk_left`.
@@ -229,6 +233,28 @@ theorem measure_symmDiff_preimage_swap_of_preimage_swap_eq {X : Type*} [Measurab
     _ = (μ.prod μ) (u ∆ s) :=
       (measurePreserving_swap (μ := μ) (ν := μ)).measure_preimage_emb
         MeasurableEquiv.prodComm.measurableEmbedding _
+
+/-- If a randomization `f` realizes a nonzero finite law, its noise is a probability measure. -/
+theorem isProbabilityMeasure_of_map_prod_eq {Ω β δ ξ : Type*} [MeasurableSpace Ω]
+    [MeasurableSpace β] [MeasurableSpace δ] [MeasurableSpace ξ] {μ : Measure Ω} [IsFiniteMeasure μ]
+    (hμ : μ ≠ 0) {X : Ω → β} {Z : Ω → δ} (hZ : Measurable Z) (hX : Measurable X)
+    {ρ : Measure ξ} {f : δ → ξ → β} (hf : Measurable (Function.uncurry f))
+    (hfX : ((μ.map Z).prod ρ).map (fun p => (p.1, f p.1 p.2)) = μ.map fun ω => (Z ω, X ω)) :
+    IsProbabilityMeasure ρ := by
+  have h := congrArg (fun m => m Set.univ) hfX
+  have hF : Measurable (fun p : δ × ξ => (p.1, f p.1 p.2)) := measurable_fst.prodMk hf
+  simp only [Measure.map_apply hF MeasurableSet.univ, Set.preimage_univ,
+    Measure.map_apply (hZ.prodMk hX) MeasurableSet.univ] at h
+  have hμu : μ Set.univ ≠ 0 := by simpa using hμ
+  by_cases hs : SFinite ρ
+  · have hprod := Measure.prod_prod (μ := μ.map Z) (ν := ρ) Set.univ Set.univ
+    rw [Set.univ_prod_univ, Measure.map_apply hZ MeasurableSet.univ, Set.preimage_univ] at hprod
+    rw [hprod] at h
+    refine ⟨(ENNReal.mul_right_inj hμu (measure_ne_top _ _)).1 ?_⟩
+    rw [mul_one]
+    exact h
+  · rw [Measure.prod_eq_zero_of_not_sfinite hs, FunLike.coe_zero, Pi.zero_apply] at h
+    exact absurd h.symm hμu
 
 end MeasureTheory.Measure
 

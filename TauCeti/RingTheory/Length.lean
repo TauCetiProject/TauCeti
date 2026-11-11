@@ -67,6 +67,9 @@ applies to the quotients appearing here without any further appeal to defeq.
   contains a non-zero-divisor.
 * `TauCeti.isFiniteLength_of_nonZeroDivisor_mem_annihilator`: over a noetherian ring of dimension
   at most one, a finitely generated module killed by a non-zero-divisor has finite length.
+* `LinearMap.ker_mkQ_comp_codRestrict` and `LinearMap.length_quotient_sup_comap_ker`: for a
+  linear map `e`, the kernel of the induced map `M → eM ⧸ a·eM`, and the length of the quotient
+  of `M` by it.
 * `TauCeti.length_quotient_maximalIdeal_eq_one`: `length (A ⧸ 𝔪) = 1` for a local ring `A`.
 * `TauCeti.length_residueField_eq_one`: the residue field of a local ring `A` has length one
   over `A`.
@@ -456,6 +459,50 @@ theorem length_eq_of_bijective (f : M →ₛₗ[σ] N) (hf : Function.Bijective 
     Module.length R M = Module.length S N := by
   rw [Module.length, Module.length, WithBot.unbot_inj,
     Order.krullDim_eq_of_orderIso (Submodule.orderIsoMapComapOfBijective f hf)]
+
+end LinearMap
+
+namespace LinearMap
+
+section CommRing
+
+open scoped Pointwise
+
+variable {A V W : Type*} [CommRing A] [AddCommGroup V] [Module A V] [AddCommGroup W] [Module A W]
+
+/-- The kernel of the map `M → eM ⧸ a·eM` induced by a linear map `e` is
+`aM ⊔ (M ⊓ ker e)`. -/
+theorem ker_mkQ_comp_codRestrict (e : V →ₗ[A] W) (M : Submodule A V) (a : A) :
+    LinearMap.ker ((LinearMap.range (LinearMap.lsmul A ↥(M.map e) a)).mkQ ∘ₗ
+        LinearMap.codRestrict (M.map e) (e ∘ₗ M.subtype) (fun y => Submodule.mem_map_of_mem y.2))
+      = LinearMap.range (LinearMap.lsmul A ↥M a) ⊔ Submodule.comap M.subtype (LinearMap.ker e) := by
+  set g : ↥M →ₗ[A] ↥(M.map e) :=
+    LinearMap.codRestrict (M.map e) (e ∘ₗ M.subtype) (fun y => Submodule.mem_map_of_mem y.2)
+  have hg : Function.Surjective g := LinearMap.submoduleMap_surjective e M
+  have hmap : LinearMap.range (LinearMap.lsmul A ↥(M.map e) a) =
+      (LinearMap.range (LinearMap.lsmul A ↥M a)).map g := by
+    rw [TauCeti.range_lsmul_eq_smul_top, TauCeti.range_lsmul_eq_smul_top,
+      Submodule.map_pointwise_smul, Submodule.map_top, LinearMap.range_eq_top.mpr hg]
+  rw [LinearMap.ker_comp, Submodule.ker_mkQ, hmap, Submodule.comap_map_eq,
+    LinearMap.ker_codRestrict, LinearMap.ker_comp]
+
+/-- **The length of the quotient by the kernel of the projected map.** For `e : V → W`, the
+quotient of `M` by `aM ⊔ (M ⊓ ker e)` has the length of `e M ⧸ a·e M`. -/
+theorem length_quotient_sup_comap_ker (e : V →ₗ[A] W) (M : Submodule A V) (a : A) :
+    Module.length A (↥M ⧸ (LinearMap.range (LinearMap.lsmul A ↥M a) ⊔
+        Submodule.comap M.subtype (LinearMap.ker e))) =
+      Module.length A (↥(M.map e) ⧸ LinearMap.range (LinearMap.lsmul A ↥(M.map e) a)) := by
+  set g : ↥M →ₗ[A] ↥(M.map e) :=
+    LinearMap.codRestrict (M.map e) (e ∘ₗ M.subtype) (fun y => Submodule.mem_map_of_mem y.2)
+  set Q : Submodule A ↥(M.map e) := LinearMap.range (LinearMap.lsmul A ↥(M.map e) a)
+  have hgsurj : Function.Surjective g := LinearMap.submoduleMap_surjective e M
+  have hker : LinearMap.ker (Q.mkQ ∘ₗ g) = LinearMap.range (LinearMap.lsmul A ↥M a) ⊔
+      Submodule.comap M.subtype (LinearMap.ker e) := e.ker_mkQ_comp_codRestrict M a
+  rw [← hker]
+  exact (LinearMap.quotKerEquivOfSurjective (Q.mkQ ∘ₗ g)
+    ((Submodule.mkQ_surjective Q).comp hgsurj)).length_eq
+
+end CommRing
 
 end LinearMap
 
