@@ -32,8 +32,9 @@ object of the higher (cubic, quartic and Eisenstein) reciprocity laws.
 * `Ideal.powerResidueSymbol P n`: the `n`-th power residue symbol at `P`.
 * `Ideal.mk_powerResidueSymbol`: `(x / P)_n ≡ x ^ ((N P - 1) / n) (mod P)`.
 * `Ideal.powerResidueSymbol_pow_eq_one`: `(x / P)_n` is an `n`-th root of unity for `x ≠ 0`.
-* `Ideal.powerResidueSymbol_eq_iff`: `(x / P)_n` is the only `n`-th root of unity of `𝓞 K`
-  congruent to `x ^ ((N P - 1) / n)`.
+* `Ideal.powerResidueSymbol_eq_iff`: for `x ≠ 0`, `(x / P)_n` is the only `n`-th root of unity of
+  `𝓞 K` congruent to `x ^ ((N P - 1) / n)`; the equivalence also holds at `x = 0`, where both
+  sides are false.
 * `Ideal.powerResidueSymbol_mk_of_pow_eq_one`: `(ζ / P)_n = ζ ^ ((N P - 1) / n)` for an `n`-th
   root of unity `ζ` of `𝓞 K`.
 * `Ideal.powerResidueSymbol_pow_div`: `((x / P)_n) ^ (n / d) = (x / P)_d` for `d ∣ n`.
@@ -125,8 +126,11 @@ theorem powerResidueSymbol_pow_eq_one {x : 𝓞 K ⧸ P} (hx : x ≠ 0) :
       (mem_rootsOfUnity _ _).mp (SetLike.coe_mem _), Units.val_one]
   · rw [powerResidueSymbol_of_not_coprime hP, MulChar.one_apply hx.isUnit, one_pow]
 
-/-- **Characterisation of the power residue symbol.** If `N P` is prime to `n`, then `(x / P)_n`
-is the unique `n`-th root of unity of `𝓞 K` congruent to `x ^ ((N P - 1) / n)` modulo `P`. -/
+/-- **Characterisation of the power residue symbol.** If `N P` is prime to `n` and `x ≠ 0`, then
+`(x / P)_n` is the unique `n`-th root of unity of `𝓞 K` congruent to `x ^ ((N P - 1) / n)` modulo
+`P`. The equivalence is stated for every `x`: at `x = 0` the symbol is `0` and `x ^ ((N P - 1) / n)`
+is `0` modulo `P`, while a root of unity is a unit, so it is neither `0` nor in `P`, and both sides
+are false. -/
 theorem powerResidueSymbol_eq_iff (hP : (absNorm P).Coprime n) {x : 𝓞 K ⧸ P}
     {μ : 𝓞 K} (hμ : μ ^ n = 1) :
     powerResidueSymbol P n x = μ ↔ Ideal.Quotient.mk P μ = x ^ ((absNorm P - 1) / n) := by
