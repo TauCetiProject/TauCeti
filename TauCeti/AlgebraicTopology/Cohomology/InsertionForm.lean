@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cohomology.CupPairing
+public import TauCeti.AlgebraicTopology.Cohomology.Cup.Pairing
 public import Mathlib.LinearAlgebra.Alternating.Basic
 
 /-!
@@ -164,6 +164,7 @@ theorem halfCupInsertionForm_apply (f : C(N, X)) (h : 2 + 2 = n)
   (rfl)
 
 /-- Twice the half insertion form is the insertion form `(a, b) ↦ ⟨l ⌣ (a ⌣ b), f_*[N]⟩`. -/
+@[simp]
 theorem two_mul_halfCupInsertionForm_apply (f : C(N, X)) (h : 2 + 2 = n)
     {l : (TopCat.of X).integralCohomology 2} (hl : (o.cupPairing hn f 2 h).IsCharacteristic l)
     (v : Fin 2 → (TopCat.of X).integralCohomology 1) :
