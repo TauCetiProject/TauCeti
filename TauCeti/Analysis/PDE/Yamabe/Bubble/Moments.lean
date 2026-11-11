@@ -360,7 +360,7 @@ theorem setIntegral_ball_norm_sub_rpow_mul_bubble_rpow_criticalExponent
         (log (1 + (R / t) ^ 2) - ∑ k ∈ Finset.range (finrank ℝ E - 1),
           (R ^ 2 / (t ^ 2 + R ^ 2)) ^ (k + 1) / (k + 1))) := by
   simp_rw [bubble_rpow_criticalExponent hn ht b]
-  exact setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow μ hn₀.ne' (by ring) ht.ne' hR b
+  exact setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow μ hn₀.ne' (by ring) hR b
 
 /-- The truncated moment of order `n` of the critical bubble density, in dimension `n ≠ 2`,
 differs from `n |B(0, 1)| 2 ^ (n - 1) t ^ n log (1 + (R / t)²)` by at most
@@ -454,7 +454,7 @@ theorem setIntegral_ball_norm_sub_rpow_mul_bubble_sq
             (R ^ 2 / (t ^ 2 + R ^ 2)) ^ (k + 1) / (k + 1))) := by
   simp_rw [bubble_sq hn.le ht.le b]
   rw [setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow μ (by omega)
-    (by push_cast [Nat.cast_sub hn.le]; ring) ht.ne' hR b, Nat.sub_sub]
+    (by push_cast [Nat.cast_sub hn.le]; ring) hR b, Nat.sub_sub]
 
 /-- The truncated moment of order `n - 4` of the square of a bubble, in dimension `n > 2`,
 differs from `n |B(0, 1)| 2 ^ (n - 3) t ^ (n - 2) log (1 + (R / t)²)` by at most

@@ -39,6 +39,8 @@ unital only up to reparametrization, so the homotopies here are reparametrizatio
   `Path.Homotopic.Quotient.cast_map_trans_refl_prod`: concatenating every loop of a loop of loops
   with the constant loop does not change its class.
 * `Path.prependHomotopyEquiv α z`: `Path y z ≃ₕ Path x z`, with inverse prepending `α.symm`.
+* `Path.joined_prependHomotopyEquiv_refl`: prepending `α` to the constant path lands in the path
+  component of `α`.
 
 ## References
 
@@ -218,5 +220,13 @@ theorem prependHomotopyEquiv_apply (α : Path x y) (γ : Path y z) :
 @[simp]
 theorem prependHomotopyEquiv_symm_apply (α : Path x y) (γ : Path x z) :
     (prependHomotopyEquiv α z).symm γ = α.symm.trans γ := (rfl)
+
+/-- Prepending `α` to the constant path gives a path joined to `α` in the path space, through
+the reparametrization of `α.trans (refl y)` back to `α`. -/
+theorem joined_prependHomotopyEquiv_refl (α : Path x y) :
+    Joined (prependHomotopyEquiv α y (refl y)) α := by
+  rw [prependHomotopyEquiv_apply, Homotopy.trans_refl_reparam]
+  exact ⟨((reparamHomotopy _ (by fun_prop) (Subtype.ext Homotopy.transReflReparamAux_zero)
+    (Subtype.ext Homotopy.transReflReparamAux_one)).evalAt α).symm⟩
 
 end Path

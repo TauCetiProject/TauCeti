@@ -292,7 +292,7 @@ theorem isVertexStrong_iff_exists_paths [Finite V] :
         Pairwise fun i j ↦ (P i).InternallyDisjoint (P j) := by
   refine ⟨fun h ↦ ⟨h.lt_card, fun s t hst ↦ ?_⟩, fun ⟨hk, h⟩ ↦ ⟨hk, fun X hX s hs t ht ↦ ?_⟩⟩
   · rcases isEmpty_or_nonempty (Q s t) with hadj | hne
-    · obtain ⟨P, hP, hdisj⟩ := (forall_reachableAvoiding_iff_exists_paths hst hadj k).1
+    · obtain ⟨P, hP, hdisj⟩ := (forall_reachableAvoiding_iff_exists_paths k).1
         fun X hs ht hX ↦ h.reachableAvoiding hX hs ht
       exact ⟨P, injective_of_pairwise_internallyDisjoint hdisj
         fun i ↦ (P i).exists_mem_vertices_ne_ne hst hadj, hP, hdisj⟩
@@ -301,8 +301,7 @@ theorem isVertexStrong_iff_exists_paths [Finite V] :
     · exact ⟨Fin.elim0, fun i ↦ i.elim0, fun i ↦ i.elim0, fun i ↦ i.elim0⟩
     -- Delete the arrows from `s` to `t`, find `m` paths, and add the arrow `e`.
     set F : Set (Σ x y, Q x y) := {a | a.1 = s ∧ a.2.1 = t}
-    have hadj : IsEmpty (WithoutHom F s t) := ⟨fun e' ↦ e'.2 ⟨rfl, rfl⟩⟩
-    obtain ⟨P, hP, hdisj⟩ := (forall_reachableAvoiding_iff_exists_paths hst hadj m).1
+    obtain ⟨P, hP, hdisj⟩ := (forall_reachableAvoiding_iff_exists_paths m).1
       fun X hs ht hX ↦ h.reachableAvoiding_withoutHom hst hs ht hX
     obtain ⟨R, hinj, hR, hdisjR, -⟩ :=
       exists_paths_of_withoutHom (F := F) (fun _ ↦ ⟨rfl, rfl⟩) hst P hP hdisj
