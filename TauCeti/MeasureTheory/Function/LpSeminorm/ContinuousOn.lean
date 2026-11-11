@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
 import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
+import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Integral.IntegrableOn
 
 /-!
@@ -21,6 +22,11 @@ continuous counterpart of Mathlib's `MonotoneOn.memLp_top`, and the restricted-m
 of `Continuous.memLp_top_of_hasCompactSupport`. A continuous function on `ℝ` with limits at `-∞`
 and `+∞` is bounded, so it lies in `L^∞(μ)` for every measure (`Continuous.memLp_top_of_tendsto`).
 
+The same bound controls a pointwise composition `x ↦ A x ∘L B x` of operator families with `A`
+continuous on `K`: `A ∘L B` lies in `Lᵖ(s)` whenever `B` does
+(`MeasureTheory.MemLp.clm_comp_of_continuousOn`, Hölder's inequality
+`ContinuousLinearMap.memLp_of_bilin` for `ContinuousLinearMap.compL` with exponents `(∞, p, p)`).
+
 On a compact space with a measure that is finite on compact sets, every continuous function lies in
 every `Lᵖ`, so for a finite exponent `p ≠ 0` its `Lᵖ` seminorm is the integral
 `(∫ ‖f‖ ^ p dμ) ^ (1 / p)` (`Continuous.eLpNorm_eq_integral_rpow_norm`).
@@ -29,7 +35,7 @@ every `Lᵖ`, so for a finite exponent `p ≠ 0` its `Lᵖ` seminorm is the inte
 public section
 
 open MeasureTheory Set
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 variable {X E : Type*} [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
   [SeminormedAddGroup E]
@@ -43,6 +49,22 @@ theorem ContinuousOn.memLp_top_restrict_of_subset_isCompact {f : X → E} {K s :
   obtain ⟨C, hC⟩ := (hK.image_of_continuousOn (continuous_nnnorm.comp_continuousOn hf)).bddAbove
   refine memLp_top_of_bound_enorm (hf.aestronglyMeasurable_of_subset_isCompact hK hs hsK) C ?_
   filter_upwards [ae_restrict_mem hs] with x hx using enorm_le_coe.2 <| hC ⟨x, hsK hx, rfl⟩
+
+section CLMComp
+
+variable {𝕜 F G H : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G] [NormedAddCommGroup H] [NormedSpace 𝕜 H]
+  {A : X → G →L[𝕜] H} {B : X → F →L[𝕜] G} {K s : Set X} {μ : Measure X}
+
+/-- **Composing an `Lᵖ` operator family with a continuous one.** If `A` is continuous on a compact
+set `K` and `B` is in `Lᵖ` on a measurable `s ⊆ K`, then so is `A ∘L B`. -/
+theorem MeasureTheory.MemLp.clm_comp_of_continuousOn {p : ℝ≥0∞} (hB : MemLp B p (μ.restrict s))
+    (hA : ContinuousOn A K) (hK : IsCompact K) (hs : MeasurableSet s) (hsK : s ⊆ K) :
+    MemLp (fun x => (A x).comp (B x)) p (μ.restrict s) :=
+  (ContinuousLinearMap.compL 𝕜 F G H).memLp_of_bilin p
+    (hA.memLp_top_restrict_of_subset_isCompact hK hs hsK) hB
+
+end CLMComp
 
 /-- The `Lᵖ` seminorm of a continuous function on a compact space, for a finite exponent `p ≠ 0`
 and a measure finite on compact sets, as an integral: `‖f‖_{Lᵖ} = (∫ ‖f‖ ^ p dμ) ^ (1 / p)`. -/
