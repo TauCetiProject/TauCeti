@@ -8,8 +8,6 @@ module
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Projective
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
-import Mathlib.Algebra.Field.ZMod
-import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 import TauCeti.GroupTheory.QuotientGroup.Index
 
 /-!
@@ -102,17 +100,12 @@ theorem two_mul_index_map_Gamma {N : ℕ} (hN : 3 ≤ N) :
   rw [CongruenceSubgroup.neg_one_mem_Gamma_iff]
   exact fun h ↦ by have := Nat.le_of_dvd two_pos h; omega
 
-/-- `Γ(3)` has index `24 = |SL₂(𝔽₃)|` in `SL₂(ℤ)`. -/
-theorem index_Gamma_three : (CongruenceSubgroup.Gamma 3).index = 24 := by
-  rw [CongruenceSubgroup.index_Gamma, Matrix.card_SL_field]
-  simp [Fin.prod_univ_two, ZMod.card]
-
 /-- The image of `Γ(3)` in `PSL₂(ℤ)` has index `12`, half the index of `Γ(3)`, since `-I ∉ Γ(3)`. -/
 theorem index_map_Gamma_three :
     ((CongruenceSubgroup.Gamma 3).map
         (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))).index = 12 := by
   have h := two_mul_index_map_Gamma le_rfl
-  rw [← CongruenceSubgroup.index_Gamma, index_Gamma_three] at h
+  rw [← CongruenceSubgroup.index_Gamma, CongruenceSubgroup.index_Gamma_three] at h
   omega
 
 end TauCeti.CongruenceSubgroup

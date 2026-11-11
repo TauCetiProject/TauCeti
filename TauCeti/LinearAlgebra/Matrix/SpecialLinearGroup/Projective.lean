@@ -122,8 +122,9 @@ section Lift
 
 variable {n : Type*} [Fintype n] [DecidableEq n] {R : Type*} [CommRing R]
 
-/-- The full preimage `±Γ` in `SL(n, R)` of a subgroup `Γ` of the projective special linear group
-`PSL(n, R) = SL(n, R) ⧸ Z(SL(n, R))`: the matrices whose class modulo the centre lies in `Γ`. -/
+/-- The full preimage in `SL(n, R)` of a subgroup `Γ` of the projective special linear group
+`PSL(n, R) = SL(n, R) ⧸ Z(SL(n, R))` under the quotient map by the centre: the matrices whose
+class modulo the centre lies in `Γ`. -/
 def liftSL (Γ : Subgroup (ProjectiveSpecialLinearGroup n R)) :
     Subgroup (SpecialLinearGroup n R) :=
   Γ.comap (QuotientGroup.mk' (center (SpecialLinearGroup n R)))
@@ -188,7 +189,7 @@ theorem range_liftSL :
 theorem liftSL_top : (⊤ : Subgroup (ProjectiveSpecialLinearGroup n R)).liftSL = ⊤ :=
   comap_top _
 
-/-- The lift of the trivial subgroup is the centre of `SL(n, R)`, not the trivial subgroup. -/
+/-- The lift of the trivial subgroup is the centre of `SL(n, R)`, which need not be trivial. -/
 @[simp]
 theorem liftSL_bot :
     (⊥ : Subgroup (ProjectiveSpecialLinearGroup n R)).liftSL = center (SpecialLinearGroup n R) :=
@@ -218,12 +219,14 @@ end Lift
 
 section FinTwo
 
-variable {R : Type*} [CommRing R] [NoZeroDivisors R]
+variable {R : Type*} [CommRing R]
 
-/-- The lift of a subgroup of `PSL(2, R)` contains `-I`. -/
+/-- The lift of a subgroup of `PSL(2, R)` contains `-I`, which is central. -/
 theorem neg_one_mem_liftSL (Γ : Subgroup (ProjectiveSpecialLinearGroup (Fin 2) R)) :
     (-1 : SpecialLinearGroup (Fin 2) R) ∈ Γ.liftSL :=
-  SpecialLinearGroup.center_le_iff_neg_one_mem.mp (center_le_liftSL Γ)
+  center_le_liftSL Γ <| mem_center_iff.mpr fun g ↦ by rw [mul_neg_one, neg_one_mul]
+
+variable [NoZeroDivisors R]
 
 variable {Γ : Subgroup (SpecialLinearGroup (Fin 2) R)}
 
