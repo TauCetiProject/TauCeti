@@ -457,23 +457,13 @@ private theorem assoc_spinHalf_leftInclusion_vec_zero [Fact (q ≠ 0)]
     add_comm]
   rfl
 
-private theorem clebschGordanInclusion_one_vec_zero [Fact (q ≠ 0)]
-    (hq : IsGenericQuantumParameter q) {m n : ℕ} (ε δ : ℤˣ) (h : 1 < min m n + 1) :
-    clebschGordanInclusion (ε := ε) (δ := δ) hq (⟨1, h⟩ : Fin (min m n + 1)) (vec q _ _ 0) =
-      tmul ℂ (UqSl2 q) (vec q m ε 0) (vec q n δ 1) +
-        (-(δ : ℂ) * q ^ (m : ℤ) * quantumInteger q n / quantumInteger q m) •
-          tmul ℂ (UqSl2 q) (vec q m ε 1) (vec q n δ 0) := by
-  rw [clebschGordanInclusion_vec_zero, clebschGordanVector_def]
-  simp [Finset.sum_range_succ, clebschGordanCoeff_succ]
-
-private theorem spinHalfAlt_vec_zero [Fact (q ≠ 0)]
+private theorem spinHalf_clebschGordanVector_one [Fact (q ≠ 0)]
     (hq : IsGenericQuantumParameter q) (ε₁ ε₂ : ℤˣ) :
-    clebschGordanInclusion (ε := ε₁) (δ := ε₂) hq (⟨1, by decide⟩ : Fin (min 1 1 + 1))
-        (vec q _ _ 0) =
+    clebschGordanVector q 1 ε₁ 1 ε₂ 1 =
       tmul ℂ (UqSl2 q) (vec q 1 ε₁ 0) (vec q 1 ε₂ 1) +
         (-(ε₂ : ℂ) * q) • tmul ℂ (UqSl2 q) (vec q 1 ε₁ 1) (vec q 1 ε₂ 0) := by
   simpa [quantumInteger_one hq.sub_inv_ne_zero] using
-    clebschGordanInclusion_one_vec_zero hq ε₁ ε₂ (m := 1) (n := 1) (by decide)
+    clebschGordanVector_one (q := q) 1 ε₁ 1 ε₂
 
 private theorem spinHalfSym_vec_one [Fact (q ≠ 0)]
     (hq : IsGenericQuantumParameter q) (ε₁ ε₂ : ℤˣ) :
@@ -488,9 +478,8 @@ private theorem rightVecZero_coords [Fact (q ≠ 0)]
     (hq : IsGenericQuantumParameter q) (ε δ ζ : ℤˣ) :
     tripleRightCoord ε δ ζ 0 0 1 (rightVecZero hq ε δ ζ) = 1 ∧
       tripleRightCoord ε δ ζ 1 0 0 (rightVecZero hq ε δ ζ) = 0 := by
-  have h10 := spinHalfAlt_vec_zero hq δ ζ
-  rw [clebschGordanInclusion_vec_zero] at h10
-  rw [rightVecZero, clebschGordanRightInclusion_zero_vec_zero, h10]
+  rw [rightVecZero, clebschGordanRightInclusion_zero_vec_zero, Fin.val_mk,
+    spinHalf_clebschGordanVector_one hq δ ζ]
   simp only [tmul_add, tmul_smul, map_add, map_smul, tripleRightCoord_tmul, smul_eq_mul]
   norm_num
 
@@ -503,9 +492,8 @@ private theorem rightVecTwo_coords [Fact (q ≠ 0)]
       tmul ℂ (UqSl2 q) (vec q 1 ε 0) (vec q 2 (δ * ζ) 1) +
         (-(δ : ℂ) * (ζ : ℂ) * q * quantumInteger q 2) •
           tmul ℂ (UqSl2 q) (vec q 1 ε 1) (vec q 2 (δ * ζ) 0) := by
-    have h1 := clebschGordanInclusion_one_vec_zero hq ε (δ * ζ) (m := 1) (n := 2) (by decide)
-    rw [clebschGordanInclusion_vec_zero] at h1
-    simpa [quantumInteger_one hq.sub_inv_ne_zero, mul_assoc] using h1
+    simpa [quantumInteger_one hq.sub_inv_ne_zero, mul_assoc] using
+      clebschGordanVector_one (q := q) 1 ε 2 (δ * ζ)
   have h00 : clebschGordanInclusion (m := 1) (n := 1) (ε := δ) (δ := ζ) hq 0 (vec q 2 (δ * ζ) 0) =
       tmul ℂ (UqSl2 q) (vec q 1 δ 0) (vec q 1 ζ 0) := by
     simpa using clebschGordanInclusion_vec_zero (m := 1) (n := 1) (ε := δ) (δ := ζ) hq 0
@@ -525,10 +513,9 @@ private theorem spinHalf_zero_eq [Fact (q ≠ 0)]
         sixJ hq ε δ ζ 1 1 1 1 0 2 • rightVecTwo hq ε δ ζ := by
   have hexp :=
     assoc_spinHalf_leftInclusion_vec_zero hq ε δ ζ ⟨1, by decide⟩ 0 (by simp)
-  have h10 := spinHalfAlt_vec_zero hq ε δ
-  rw [clebschGordanInclusion_vec_zero] at h10
-  rw [clebschGordanLeftInclusion_zero_vec_zero, h10] at hexp
-  simpa only [Fin.val_mk, mul_one, tsub_self, add_tmul, ← smul_tmul', map_add,
+  rw [clebschGordanLeftInclusion_zero_vec_zero, Fin.val_mk,
+    spinHalf_clebschGordanVector_one hq ε δ] at hexp
+  simpa only [mul_one, tsub_self, add_tmul, ← smul_tmul', map_add,
     LinearMapClass.map_smul_of_tower (S := UqSl2 q), assoc_tmul] using hexp
 
 private theorem spinHalf_two_eq [Fact (q ≠ 0)]
@@ -546,9 +533,8 @@ private theorem spinHalf_two_eq [Fact (q ≠ 0)]
       tmul ℂ (UqSl2 q) (vec q 2 (ε * δ) 0) (vec q 1 ζ 1) +
         (-(ζ : ℂ) * q ^ 2 / quantumInteger q 2) •
           tmul ℂ (UqSl2 q) (vec q 2 (ε * δ) 1) (vec q 1 ζ 0) := by
-    have h1 := clebschGordanInclusion_one_vec_zero hq (ε * δ) ζ (m := 2) (n := 1) (by decide)
-    rw [clebschGordanInclusion_vec_zero] at h1
-    simpa [quantumInteger_one hq.sub_inv_ne_zero] using h1
+    simpa [quantumInteger_one hq.sub_inv_ne_zero] using
+      clebschGordanVector_one (q := q) 2 (ε * δ) 1 ζ
   have h00 : clebschGordanInclusion (m := 1) (n := 1) (ε := ε) (δ := δ) hq 0 (vec q 2 (ε * δ) 0) =
       tmul ℂ (UqSl2 q) (vec q 1 ε 0) (vec q 1 δ 0) := by
     simpa using clebschGordanInclusion_vec_zero (m := 1) (n := 1) (ε := ε) (δ := δ) hq 0
