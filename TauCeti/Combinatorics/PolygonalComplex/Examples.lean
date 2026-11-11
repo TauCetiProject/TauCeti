@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.PolygonalComplex.SingleFace
-public import TauCeti.Combinatorics.PolygonalComplex.SurfaceModel
+public import TauCeti.Combinatorics.PolygonalComplex.Subdivide
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Ring
 
@@ -18,7 +18,9 @@ This file builds the standard surface models from the single-face complexes of
 projective plane `a a`, each a one-vertex polygon `PolygonalComplex.polygon w`. The sphere is the
 digon `a a⁻¹` on the segment, with two vertices. For each model the file checks the surface links
 and the Euler characteristic. It also separates the disc from the closed models by their boundary
-darts, and the torus from the projective plane by orientability.
+darts, and the torus from the projective plane by orientability. Subdividing an edge of the torus
+keeps it a closed orientable model with Euler characteristic `0`, with a circle link at the new
+vertex.
 
 It also records how the surface-link condition fails at a pinched vertex. On the one-petal rose,
 any family of faces `a a⁻¹` (`PolygonalComplex.digons`) has a disconnected vertex link: every
@@ -43,6 +45,10 @@ For infinitely many faces the link is moreover infinite, and every germ then has
 * `TauCeti.SurfaceModel.boundaryDarts_disc`, `TauCeti.SurfaceModel.boundaryDarts_torus`,
   `TauCeti.SurfaceModel.boundaryDarts_projectivePlane`, `TauCeti.SurfaceModel.boundaryDarts_sphere`:
   both darts of the disc are boundary darts, while the closed models have no boundary.
+* `TauCeti.SurfaceModel.eulerChar_torus_subdivide`,
+  `TauCeti.SurfaceModel.linkDegree_torus_subdivide_inr`,
+  `TauCeti.SurfaceModel.isOrientable_torus_subdivide`: a subdivided torus has Euler characteristic
+  `0`, a circle link at its new vertex, and is orientable.
 * `TauCeti.PolygonalComplex.not_hasSurfaceLink_digons`: the vertex of any family of faces `a a⁻¹` on
   the one-petal rose has no surface link (for example, the sphere with two points identified).
 
@@ -195,6 +201,36 @@ theorem boundaryDarts_torus : torus.boundaryDarts = ∅ :=
 it in opposite directions. -/
 theorem isOrientable_torus : torus.IsOrientable :=
   isOrientable_polygon (hw := List.cons_ne_nil _ _) (by decide)
+
+section subdivide
+
+variable [DecidableEq torus.graph.E] (a : torus.graph.E)
+
+/-- Subdividing an edge of the torus keeps the Euler characteristic `0`. -/
+theorem eulerChar_torus_subdivide : (torus.subdivide a).eulerChar = 0 :=
+  (torus.eulerChar_subdivide a).trans eulerChar_torus
+
+/-- Subdividing an edge of the torus creates no boundary. -/
+theorem boundaryDarts_torus_subdivide : (torus.subdivide a).boundaryDarts = ∅ := by
+  ext (e | b)
+  · rw [inl_mem_boundaryDarts_subdivide_iff, boundaryDarts_torus]
+    rfl
+  · rw [inr_mem_boundaryDarts_subdivide_iff, boundaryDarts_torus]
+    rfl
+
+/-- The link of the new vertex of a subdivided torus is a circle: both of its germs have degree
+two. -/
+theorem linkDegree_torus_subdivide_inr (b : Bool) :
+    (torus.subdivide a).linkDegree (.inr b) = 2 :=
+  linkDegree_eq_two_iff_notMem_boundaryDarts.2 (by
+    rw [boundaryDarts_torus_subdivide]
+    exact Set.notMem_empty _)
+
+/-- Subdividing an edge of the torus keeps it orientable. -/
+theorem isOrientable_torus_subdivide : (torus.subdivide a).IsOrientable :=
+  (isOrientable_subdivide_iff _ a).2 isOrientable_torus
+
+end subdivide
 
 /-! ### The projective plane -/
 
