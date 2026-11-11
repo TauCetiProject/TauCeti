@@ -25,13 +25,9 @@ namespace ENNReal
 exactly when `m < ε * n` in `ℝ`. -/
 theorem natCast_div_natCast_lt_ofReal_iff {m n : ℕ} (hn : 0 < n) {ε : ℝ} :
     (m : ℝ≥0∞) / n < ENNReal.ofReal ε ↔ (m : ℝ) < ε * n := by
-  rcases le_or_gt ε 0 with hε | hε
-  · rw [ENNReal.ofReal_of_nonpos hε]
-    exact iff_of_false (by simp) (not_lt.2 ((mul_nonpos_of_nonpos_of_nonneg hε
-      (Nat.cast_nonneg _)).trans (Nat.cast_nonneg _)))
   -- Clear the denominator in `ℝ≥0∞`, then compare a natural number with a real.
   rw [ENNReal.div_lt_iff (by simp [hn.ne']) (by simp), ← ENNReal.ofReal_natCast n,
-    ← ENNReal.ofReal_mul hε.le]
+    ← ENNReal.ofReal_mul' (Nat.cast_nonneg n)]
   exact ENNReal.natCast_lt_ofReal
 
 end ENNReal
