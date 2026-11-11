@@ -209,8 +209,8 @@ noncomputable abbrev directSum :
       rw [DirectSum.lmap_apply]
       simpa using (r i).isHomogeneous_π.map_mem (hx i)
   surjective_π := (DirectSum.lmap_surjective _).2 fun i ↦ (r i).surjective_π
-  exact_d_π := Function.Exact.directSum fun i ↦ (r i).exact_d_π
-  exact_d_d n := Function.Exact.directSum fun i ↦ (r i).exact_d_d n
+  exact_d_π := DirectSum.exact_lmap_iff.mpr fun i ↦ (r i).exact_d_π
+  exact_d_d n := DirectSum.exact_lmap_iff.mpr fun i ↦ (r i).exact_d_d n
 
 omit [GradedAlgebra 𝒜] [∀ i, IsScalarTower k A (N i)]
   [∀ i, SetLike.GradedSMul 𝒜 (G i).piece] in
