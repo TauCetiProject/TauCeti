@@ -279,9 +279,7 @@ theorem disjoint_range {F : M →L[R] M} {b : R} {k : ℕ}
   rw [hE.range_eq_ker, hF.range_eq_ker]
   have hpq := (Polynomial.isCoprime_one_sub_C_mul_X_of_isUnit_sub hab).pow (m := h) (n := k)
   have hd := Polynomial.disjoint_ker_aeval_of_isCoprime u.toLinearMap hpq
-  simpa only [map_pow, map_sub, map_one, map_mul, Polynomial.aeval_C,
-    Polynomial.aeval_X, Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul,
-    toLinearMap_pow, toLinearMap_sub, toLinearMap_smul, toLinearMap_one] using hd
+  simpa [← toLinearMap_aeval, Algebra.algebraMap_eq_smul_one] using hd
 
 /-- Riesz projectors at parameters separated by a unit annihilate each other. -/
 theorem mul_eq_zero {F : M →L[R] M} {b : R} {k : ℕ}
@@ -338,7 +336,10 @@ theorem orthogonalIdempotents_of_isRieszProjection
     (ha : Pairwise fun i j ↦ IsUnit (a i - a j)) : OrthogonalIdempotents E :=
   ⟨fun i ↦ (hE i).isIdempotentElem, fun i j hij ↦ (hE i).mul_eq_zero (hE j) (ha hij)⟩
 
-private theorem orthogonalIdempotents_subtype_of_isRieszProjection (s : Finset ι)
+/-- Riesz projectors indexed by a finite set of pairwise unit-separated parameters form
+orthogonal idempotents on that set. This gives access to the `OrthogonalIdempotents` API
+without requiring projection or separation hypotheses outside the finite set. -/
+theorem orthogonalIdempotents_subtype_of_isRieszProjection (s : Finset ι)
     (hE : ∀ i ∈ s, IsRieszProjection u (a i) (h i) (E i))
     (ha : (s : Set ι).Pairwise fun i j ↦ IsUnit (a i - a j)) :
     OrthogonalIdempotents (fun i : s ↦ E i) :=

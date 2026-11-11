@@ -42,10 +42,9 @@ variable {I R : Type*} [TopologicalSpace I]
 
 section Complete
 
-variable [DiscreteTopology I] [DecidableEq I] [NormOneClass R]
+variable [DiscreteTopology I] [DecidableEq I]
   [IsUltrametricDist R] [CompleteSpace R]
 
-omit [NormOneClass R] in
 /-- The spectral block cut out by finitely many separated Riesz projectors is finitely
 generated. No Noetherian hypothesis is required. -/
 theorem IsRowCompact.finite_range_sum_of_isRieszProjection (hu : u.IsRowCompact)
@@ -55,7 +54,6 @@ theorem IsRowCompact.finite_range_sum_of_isRieszProjection (hu : u.IsRowCompact)
   (IsRowCompact.sum fun i hi ↦ (hE i hi).isRowCompact hu).finite_range_of_isIdempotentElem
     (isIdempotentElem_sum_of_isRieszProjection s hE ha)
 
-omit [NormOneClass R] in
 /-- The spectral block cut out by finitely many separated Riesz projectors is projective;
 it need not be free over a coefficient ring. -/
 theorem IsRowCompact.projective_range_sum_of_isRieszProjection (hu : u.IsRowCompact)
@@ -65,7 +63,6 @@ theorem IsRowCompact.projective_range_sum_of_isRieszProjection (hu : u.IsRowComp
   (IsRowCompact.sum fun i hi ↦ (hE i hi).isRowCompact hu).projective_range_of_isIdempotentElem
     (isIdempotentElem_sum_of_isRieszProjection s hE ha)
 
-omit [NormOneClass R] in
 /-- The common complementary Fredholm factor is a unit at every selected parameter.
 Thus removing several spectral summands does not leave any of their zeros behind. -/
 theorem IsRowCompact.isUnit_evalAt_charPowerSeries_complement_sum_of_isRieszProjection
@@ -101,7 +98,6 @@ theorem IsRowCompact.isUnit_evalAt_charPowerSeries_complement_sum_of_isRieszProj
     comp_apply, map_sub]
   module
 
-omit [NormOneClass R] in
 /-- The Fredholm factor on a finite union of separated good-zero summands is the product
 of the corresponding normalised linear factors, with their good-zero orders. -/
 theorem IsRowCompact.charPowerSeries_matrixCoeff_mul_sum_eq_prod_of_isRieszProjection
@@ -122,7 +118,6 @@ theorem IsRowCompact.charPowerSeries_matrixCoeff_mul_sum_eq_prod_of_isRieszProje
         (hE i hi).commute.symm.mul_mul_mul_comm u (E j)
       _ = 0 := by simp only [(hE i hi).mul_eq_zero (hE j hj) (ha hi hj hij), mul_zero]
 
-omit [NormOneClass R] in
 /-- Simultaneously split off finitely many separated Fredholm zeros. The remaining factor
 is the determinant of the operator on the common complementary summand. -/
 theorem IsRowCompact.charPowerSeries_matrixCoeff_eq_prod_mul_of_isRieszProjection
