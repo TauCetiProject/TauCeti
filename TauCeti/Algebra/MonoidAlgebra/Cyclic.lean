@@ -203,14 +203,14 @@ theorem aeval_of_sub_one_surjective (hσ : ∀ x, x ∈ Subgroup.zpowers σ) :
   rintro _ ⟨i, rfl⟩
   exact ⟨X ^ (i : ℕ), by simp⟩
 
-omit [Finite C] in
-/-- Evaluation at an element `σ` of infinite order is injective on `R[X]`: the powers of `σ` are
-linearly independent in the group algebra `R[C]`. -/
-theorem injective_aeval_of_not_isOfFinOrder (hσ : ¬ IsOfFinOrder σ) :
-    Function.Injective (aeval (MonoidAlgebra.of R C σ) : R[X] →ₐ[R] MonoidAlgebra R C) := by
-  have hinj : Function.Injective fun n : ℕ ↦ σ ^ n := injective_pow_iff_not_isOfFinOrder.2 hσ
-  have hli : LinearIndependent R fun n : ℕ ↦ MonoidAlgebra.of R C σ ^ n := by
-    convert (MonoidAlgebra.basis C R).linearIndependent.comp _ hinj using 1
+/-- Evaluation at an element `τ` of infinite order is injective on `R[X]`: the powers of `τ` are
+linearly independent in the monoid algebra `R[M]` of a left-cancellative monoid. -/
+theorem injective_aeval_of_not_isOfFinOrder {M : Type*} [LeftCancelMonoid M] {τ : M}
+    (hτ : ¬ IsOfFinOrder τ) :
+    Function.Injective (aeval (MonoidAlgebra.of R M τ) : R[X] →ₐ[R] MonoidAlgebra R M) := by
+  have hinj : Function.Injective fun n : ℕ ↦ τ ^ n := injective_pow_iff_not_isOfFinOrder.2 hτ
+  have hli : LinearIndependent R fun n : ℕ ↦ MonoidAlgebra.of R M τ ^ n := by
+    convert (MonoidAlgebra.basis M R).linearIndependent.comp _ hinj using 1
     funext n
     rw [Function.comp_apply, MonoidAlgebra.basis_apply, ← map_pow, MonoidAlgebra.of_apply]
   refine (injective_iff_map_eq_zero _).2 fun q hq ↦ ?_
