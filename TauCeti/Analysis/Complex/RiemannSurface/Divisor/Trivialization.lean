@@ -274,6 +274,89 @@ theorem divisorSheafMulIso_inv_app {D E : WeilDivisor X} (U : Opens X) (h : X �
   funext y
   simp [multiplySection, toDivisorSection_apply]
 
+/-- Multiplication by a function meromorphic at every point, whose order at each point is the
+difference of the coefficients of two divisors, identifies their sheaves on the whole surface.
+Sections are normalized after multiplication. Unlike `divisorSheafMulIso`, no open subset or
+pullback is involved, so the isomorphism can be pushed through any functor of sheaves on `X`. -/
+def divisorSheafGlobalMulIso (D E : WeilDivisor X) (h : X → ℂ) (hh : ∀ x, MeromorphicAt h x)
+    (ho : ∀ x, meromorphicOrderAt h x = ((D x - E x : ℤ) : WithTop ℤ)) :
+    divisorSheaf D ≅ divisorSheaf E := by
+  apply (fullyFaithfulSheafToPresheaf _ _).preimageIso
+  refine NatIso.ofComponents (fun V ↦ multiplyComponent (U := V.unop) h
+    (fun x _ ↦ hh x) (fun x _ ↦ ho x)) ?_
+  intro V W i
+  apply ModuleCat.hom_ext
+  apply LinearMap.ext
+  intro f
+  apply (divisorSheafSectionsEquiv E W.unop).injective
+  -- Name the component isomorphisms on their native section carriers before rewriting.
+  change divisorSheafSectionsEquiv E W.unop ((multiplyComponent h (fun x _ ↦ hh x)
+      (fun x _ ↦ ho x)).hom ((divisorSheaf D).obj.map i.unop.op f)) =
+    divisorSheafSectionsEquiv E W.unop ((divisorSheaf E).obj.map i.unop.op
+      ((multiplyComponent h (fun x _ ↦ hh x) (fun x _ ↦ ho x)).hom f))
+  rw [multiplyComponent_hom_apply]
+  apply section_ext_nhdsNE
+  intro x
+  -- Both sides are sections over the smaller open whose punctured germs are multiplication
+  -- by `h`; normalization determines the remaining values.
+  have ht : Tendsto (Opens.inclusion i.unop.le)
+      (𝓝[≠] x) (𝓝[≠] (Opens.inclusion i.unop.le x)) :=
+    (continuous_inclusion _).continuousAt.continuousWithinAt.tendsto_nhdsWithin
+      (fun _ hy hxy ↦ hy (Set.inclusion_injective _ hxy))
+  filter_upwards [multiplySection_eventuallyEq h _ _ _ x,
+    (multiplySection_eventuallyEq h _ _ (divisorSheafSectionsEquiv D V.unop f)
+      (Opens.inclusion i.unop.le x)).comp_tendsto ht] with y hy hy'
+  have hres := congrFun (divisorSheafSectionsEquiv_map D i.unop f) y
+  rw [divisorSheafSectionsEquiv_map, multiplyComponent_hom_apply]
+  exact hy.trans ((congrArg (h (y : X) * ·) hres).trans hy'.symm)
+
+/-- The forward section map of `divisorSheafGlobalMulIso` multiplies meromorphic
+representatives, fills removable singularities and sets the values at the target's allowed
+poles to zero. -/
+theorem divisorSheafGlobalMulIso_hom_app {D E : WeilDivisor X} (h : X → ℂ)
+    (hh : ∀ x, MeromorphicAt h x)
+    (ho : ∀ x, meromorphicOrderAt h x = ((D x - E x : ℤ) : WithTop ℤ)) (U : Opens X)
+    (f : (divisorSheaf D).obj.obj (op U)) :
+    (divisorSheafSectionsEquiv E U
+      ((divisorSheafGlobalMulIso D E h hh ho).hom.hom.app (op U) f)).1 =
+      fun y : U ↦ if E y ≤ 0 then affineChart (sphereMap
+        (h * Subtype.val.extend (divisorSheafSectionsEquiv D U f).1 0) y) else 0 := by
+  -- The sheaf component is the multiplication component on the same open.
+  change (divisorSheafSectionsEquiv E U ((multiplyComponent h _ _).hom f)).1 = _
+  rw [multiplyComponent_hom_apply]
+  funext y
+  simp [multiplySection, toDivisorSection_apply]
+
+/-- The inverse section map of `divisorSheafGlobalMulIso` multiplies by the reciprocal of the
+generator, with the same normalization. -/
+theorem divisorSheafGlobalMulIso_inv_app {D E : WeilDivisor X} (h : X → ℂ)
+    (hh : ∀ x, MeromorphicAt h x)
+    (ho : ∀ x, meromorphicOrderAt h x = ((D x - E x : ℤ) : WithTop ℤ)) (U : Opens X)
+    (f : (divisorSheaf E).obj.obj (op U)) :
+    (divisorSheafSectionsEquiv D U
+      ((divisorSheafGlobalMulIso D E h hh ho).inv.hom.app (op U) f)).1 =
+      fun y : U ↦ if D y ≤ 0 then affineChart (sphereMap
+        (h⁻¹ * Subtype.val.extend (divisorSheafSectionsEquiv E U f).1 0) y) else 0 := by
+  -- The inverse sheaf component is the inverse multiplication component on the same open.
+  change (divisorSheafSectionsEquiv D U ((multiplyComponent h _ _).inv f)).1 = _
+  rw [multiplyComponent_inv_apply]
+  funext y
+  simp [multiplySection, toDivisorSection_apply]
+
+/-- On a punctured neighbourhood of each point, the forward section map of
+`divisorSheafGlobalMulIso` is pointwise multiplication by the generator. -/
+theorem divisorSheafGlobalMulIso_hom_app_eventuallyEq {D E : WeilDivisor X} (h : X → ℂ)
+    (hh : ∀ x, MeromorphicAt h x)
+    (ho : ∀ x, meromorphicOrderAt h x = ((D x - E x : ℤ) : WithTop ℤ)) (U : Opens X)
+    (f : (divisorSheaf D).obj.obj (op U)) (x : U) :
+    (divisorSheafSectionsEquiv E U
+        ((divisorSheafGlobalMulIso D E h hh ho).hom.hom.app (op U) f)).1 =ᶠ[𝓝[≠] x]
+      fun y ↦ h y * (divisorSheafSectionsEquiv D U f).1 y := by
+  -- The sheaf component is the multiplication component on the same open.
+  change (divisorSheafSectionsEquiv E U ((multiplyComponent h _ _).hom f)).1 =ᶠ[𝓝[≠] x] _
+  rw [multiplyComponent_hom_apply]
+  exact multiplySection_eventuallyEq h _ _ _ x
+
 section Coordinate
 
 variable {Y : Type} [TopologicalSpace Y] [ChartedSpace ℂ Y] [IsManifold 𝓘(ℂ) 1 Y]
