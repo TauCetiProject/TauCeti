@@ -42,9 +42,7 @@ theorem toMatrixAlgEquiv_expAd {ι : Type*} [Fintype ι] [DecidableEq ι]
   have : HasUniqueDiv L := .of_module_rat L
   rcases subsingleton_or_nontrivial L with _ | _
   · -- `L` is trivial, so `ι` is empty
-    have : IsEmpty ι := ⟨fun i ↦ one_ne_zero (α := K) (by
-      simpa using congrArg (fun x ↦ b.repr x i)
-        (Subsingleton.elim (b.repr.symm (Finsupp.single i 1)) 0))⟩
+    have : IsEmpty ι := (linearIndependent_subsingleton_iff b).mp b.linearIndependent
     exact Subsingleton.elim _ _
   have := CharZero.of_hasUniqueDiv K L
   have hlin : (expAd (t • e) ht.exists_pow_apply_eq_zero).toLinearEquiv.toLinearMap =
