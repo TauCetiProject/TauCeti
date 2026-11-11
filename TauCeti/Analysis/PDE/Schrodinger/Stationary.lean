@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.TestFunction
 public import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.Distribution.TestFunction.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.LaplacianResolvent
 import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
@@ -44,7 +45,9 @@ on the whole space, for every `g ∈ L²(E)`, with a solution `h` in the Sobolev
   boundedness of `P` is used here.
 
 Together, every `g ∈ L²(E)` has a weak solution `h ∈ H²(E)`
-(`TauCeti.exists_mem_realSobolevFunctions_two_integral_mul_neg_laplacian_add_mul_eq`).
+(`TauCeti.exists_mem_realSobolevFunctions_two_integral_mul_neg_laplacian_add_mul_eq`). Solving
+for the real and imaginary parts of a complex right-hand side separately gives a complex weak
+solution (`TauCeti.integrable_and_integral_mul_neg_laplacian_add_mul_eq_of_re_im`).
 
 The potential may vanish on a large set inside the ball, so `-Δ + P` need not be bounded below
 by a positive constant pointwise. A potential of this kind is `P = |α|² / 4` for the section `α`
@@ -59,6 +62,10 @@ equation `Δη = P η` for `η = δα / α` describes the infinitesimal deformat
   solutions lie in `H²(E)`.
 * `TauCeti.exists_mem_realSobolevFunctions_two_integral_mul_neg_laplacian_add_mul_eq`: existence of
   an `H²` weak solution for every `L²` right-hand side.
+* `TauCeti.integrable_and_integral_mul_neg_laplacian_add_mul_eq_of_re_im`: real weak solutions
+  for the real and imaginary parts combine into a complex weak solution.
+* `TauCeti.memLp_neg_laplacian_add_mul`: the Schrödinger operator with a bounded potential maps
+  compactly supported `C²` functions into `L²`.
 
 ## References
 
@@ -86,27 +93,15 @@ section Weak
 private abbrev TestFn (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℝ E] :=
   TestFunction (⊤ : TopologicalSpace.Opens E) ℝ 2
 
-/-- The image `-Δφ + P φ` of a test function under the Schrödinger operator is square
-integrable. -/
-private theorem memLp_neg_laplacian_add_mul {P : E → ℝ} (hP : MemLp P ⊤ volume) {φ : E → ℝ}
-    (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ) :
-    MemLp (fun z ↦ -Δ φ z + P z * φ z) 2 volume := by
-  have hφ2 : MemLp φ 2 volume := hφ.continuous.memLp_of_hasCompactSupport hφc
+/-- The image `-Δφ + P φ` of a compactly supported `C²` function under the Schrödinger operator
+with a bounded potential `P` is square integrable. -/
+theorem memLp_neg_laplacian_add_mul {μ : Measure E} [IsFiniteMeasureOnCompacts μ] {P : E → ℝ}
+    (hP : MemLp P ⊤ μ) {φ : E → ℝ} (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ) :
+    MemLp (fun z ↦ -Δ φ z + P z * φ z) 2 μ := by
+  have hφ2 : MemLp φ 2 μ := hφ.continuous.memLp_of_hasCompactSupport hφc
   refine MemLp.add ?_ ?_
   · exact (hφ.continuous_laplacian.memLp_of_hasCompactSupport hφc.laplacian).neg
   · exact hP.mul hφ2
-
-/-- The inclusion of the test functions into `L²`. -/
-private noncomputable def testFnToLp (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-    [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] :
-    TestFn E →ₗ[ℝ] Lp ℝ 2 (volume : Measure E) where
-  toFun φ := (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport).toLp φ
-  map_add' φ ψ := by
-    rw [← MemLp.toLp_add]
-    exact MemLp.toLp_congr _ _ (.of_eq (FunLike.coe_add φ ψ))
-  map_smul' t φ := by
-    rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
-    exact MemLp.toLp_congr _ _ (.of_eq (FunLike.coe_smul t φ))
 
 /-- The Schrödinger operator `-Δ + P` on test functions, with values in `L²`. -/
 private noncomputable def schrodingerToLp {P : E → ℝ} (hP : MemLp P ⊤ volume) :
@@ -151,11 +146,12 @@ theorem exists_continuousLinearMap_integral_mul_neg_laplacian_add_mul_eq [Nontri
     filter_upwards [hf.coeFn_toLp] with z hz
     rw [hz, sq]
   set S := schrodingerToLp hP
-  set ι := testFnToLp E
+  set ι : TestFn E →ₗ[ℝ] Lp ℝ 2 (volume : Measure E) := TestFunction.ambientToLp 2 volume
   have hSφ (φ : TestFn E) : S φ =
       (memLp_neg_laplacian_add_mul hP φ.contDiff φ.hasCompactSupport).toLp _ := rfl
   have hιφ (φ : TestFn E) : ι φ =
-      (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport).toLp φ := rfl
+      (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport).toLp φ :=
+    TestFunction.ambientToLp_apply φ
   -- The quadratic form of `-Δ + P` is bounded below:
   -- `c ‖φ‖₂² ≤ ⟪(-Δ + P) φ, φ⟫ ≤ ‖(-Δ + P) φ‖₂ ‖φ‖₂`.
   have hbound (φ : TestFn E) : c * ‖ι φ‖ ≤ ‖S φ‖ := by
@@ -308,5 +304,55 @@ theorem exists_mem_realSobolevFunctions_two_integral_mul_neg_laplacian_add_mul_e
   refine ⟨Q (hg.toLp g), ?_, hweak⟩
   exact mem_realSobolevFunctions_two_of_integral_mul_neg_laplacian_add_mul_eq hP
     (Lp.memLp _) hg fun φ hφ hφc ↦ hweak φ (hφ.of_le (by simp)) hφc
+
+
+/-! ### Complex-valued weak solutions -/
+
+/-- **Complex weak solutions from real ones.** Let `P` be a bounded potential and `g ∈ L²(E; ℂ)`.
+If `h₁`, `h₂ ∈ L²(E)` are weak solutions of `-Δh + P h = Re g` and `-Δh + P h = Im g`, then
+`h = h₁ + i h₂` is a weak solution of `-Δh + P h = g`: for every compactly supported `C²` real
+function `φ`, the integrand `h (-Δφ + P φ)` is integrable and `∫ h (-Δφ + P φ) = ∫ g φ`. -/
+theorem integrable_and_integral_mul_neg_laplacian_add_mul_eq_of_re_im {P : E → ℝ}
+    (hP : MemLp P ⊤ volume) {g : E → ℂ} (hg : MemLp g 2 volume) {h₁ h₂ : E → ℝ}
+    (hh₁ : MemLp h₁ 2 volume) (hh₂ : MemLp h₂ 2 volume)
+    (hw₁ : ∀ φ : E → ℝ, ContDiff ℝ 2 φ → HasCompactSupport φ →
+      ∫ z, h₁ z * (-Δ φ z + P z * φ z) = ∫ z, (g z).re * φ z)
+    (hw₂ : ∀ φ : E → ℝ, ContDiff ℝ 2 φ → HasCompactSupport φ →
+      ∫ z, h₂ z * (-Δ φ z + P z * φ z) = ∫ z, (g z).im * φ z)
+    {φ : E → ℝ} (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ) :
+    Integrable (fun z ↦ (h₁ z + h₂ z * Complex.I) * ((-Δ φ z + P z * φ z : ℝ) : ℂ)) volume ∧
+      ∫ z, (h₁ z + h₂ z * Complex.I) * ((-Δ φ z + P z * φ z : ℝ) : ℂ) =
+        ∫ z, g z * (φ z : ℂ) := by
+  set L : E → ℝ := fun z ↦ -Δ φ z + P z * φ z with hLdef
+  have hL2 : MemLp L 2 volume := memLp_neg_laplacian_add_mul hP hφ hφc
+  have hφ2 : MemLp φ 2 volume := hφ.continuous.memLp_of_hasCompactSupport hφc
+  have j₁ : Integrable (fun z ↦ h₁ z * L z) volume := hh₁.integrable_mul hL2
+  have j₂ : Integrable (fun z ↦ h₂ z * L z) volume := hh₂.integrable_mul hL2
+  have j₃ : Integrable (fun z ↦ (g z).re * φ z) volume := hg.re.integrable_mul hφ2
+  have j₄ : Integrable (fun z ↦ (g z).im * φ z) volume := hg.im.integrable_mul hφ2
+  -- Integrals of `u + i v` for real integrable `u`, `v`.
+  have hsplit (u v : E → ℝ) (hu : Integrable u volume) (hv : Integrable v volume) :
+      ∫ z, ((u z : ℂ) + Complex.I * (v z : ℂ)) =
+        (∫ z, u z : ℝ) + Complex.I * (∫ z, v z : ℝ) := by
+    rw [integral_add (f := fun z ↦ (u z : ℂ)) (g := fun z ↦ Complex.I * (v z : ℂ)) hu.ofReal
+      (hv.ofReal.const_mul Complex.I), integral_const_mul,
+      integral_complex_ofReal, integral_complex_ofReal]
+  refine ⟨(Integrable.add (f := fun z ↦ ((h₁ z * L z : ℝ) : ℂ))
+      (g := fun z ↦ Complex.I * ((h₂ z * L z : ℝ) : ℂ)) j₁.ofReal
+        (j₂.ofReal.const_mul Complex.I)).congr (ae_of_all _ fun z ↦ ?_), ?_⟩
+  · simp only [Pi.add_apply, hLdef]
+    push_cast
+    ring
+  have hl : ∫ z, (h₁ z + h₂ z * Complex.I) * (L z : ℂ) =
+      ∫ z, (((h₁ z * L z : ℝ) : ℂ) + Complex.I * ((h₂ z * L z : ℝ) : ℂ)) :=
+    integral_congr_ae (ae_of_all _ fun z ↦ by simp only [hLdef]; push_cast; ring)
+  have hr : ∫ z, g z * (φ z : ℂ) =
+      ∫ z, ((((g z).re * φ z : ℝ) : ℂ) + Complex.I * (((g z).im * φ z : ℝ) : ℂ)) := by
+    refine integral_congr_ae (ae_of_all _ fun z ↦ ?_)
+    dsimp only
+    conv_lhs => rw [← Complex.re_add_im (g z)]
+    push_cast
+    ring
+  rw [hl, hr, hsplit _ _ j₁ j₂, hsplit _ _ j₃ j₄, hw₁ φ hφ hφc, hw₂ φ hφ hφc]
 
 end TauCeti

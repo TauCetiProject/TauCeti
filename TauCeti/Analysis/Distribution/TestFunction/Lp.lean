@@ -29,6 +29,8 @@ evaluation on integrable forms (`Distribution.extendL1`).
 ## Main declarations
 
 * `TestFunction.toLp`: the class in `Lᵖ(μ)` of the restriction of a test function to `Ω`.
+* `TestFunction.ambientToLp`: the class in `Lᵖ(ν)` of a test function, for a measure `ν` on the
+  ambient space `E`.
 * `TestFunction.indicatorToLp`: the class in `Lᵖ(μ)` of `1_A φ`, for a measurable set `A ⊆ Ω`.
   It is zero for `A = ∅`, is `toLp` for `A = Ω` and is additive on disjoint sets
   (`TestFunction.indicatorToLp_empty`, `_univ`, `_union`).
@@ -138,6 +140,35 @@ theorem indicatorToLp_union [IsFiniteMeasureOnCompacts μ] {B : Set Ω} (hA : Me
     rw [LinearMap.add_apply, indicatorToLp_apply, indicatorToLp_apply, indicatorToLp_apply,
       ← MemLp.toLp_add]
     exact MemLp.toLp_congr _ _ (.of_eq (indicator_union_of_disjoint hAB _))
+
+section Ambient
+
+variable {ν : Measure E} [IsFiniteMeasureOnCompacts ν]
+
+variable (p ν) in
+/-- The class in `Lᵖ(ν)` of a test function on `Ω`, as a function on all of `E`, for a measure `ν`
+on `E` that is finite on compact sets, as a linear map. Unlike `toLp`, the measure lives on the
+ambient space `E` rather than on `Ω`. -/
+def ambientToLp : 𝓓^{n}(Ω, F) →ₗ[ℝ] Lp F p ν where
+  toFun φ := (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport).toLp φ
+  map_add' φ ψ := by
+    rw [← MemLp.toLp_add]
+    exact MemLp.toLp_congr _ _ (.of_eq (FunLike.coe_add φ ψ))
+  map_smul' c φ := by
+    rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
+    exact MemLp.toLp_congr _ _ (.of_eq (FunLike.coe_smul c φ))
+
+/-- `ambientToLp p ν φ` is the `Lᵖ(ν)` class of `φ`. -/
+theorem ambientToLp_apply (φ : 𝓓^{n}(Ω, F)) :
+    ambientToLp p ν φ = (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport).toLp φ :=
+  (rfl)
+
+/-- A representative of `ambientToLp p ν φ` agrees almost everywhere with `φ`. -/
+theorem coeFn_ambientToLp (φ : 𝓓^{n}(Ω, F)) : ambientToLp p ν φ =ᵐ[ν] φ := by
+  rw [ambientToLp_apply]
+  exact MemLp.coeFn_toLp _
+
+end Ambient
 
 variable [Fact (1 ≤ p)]
 

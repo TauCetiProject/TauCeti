@@ -44,11 +44,13 @@ linearized vortex operator with the tangent space of `Sym^m ℂ`.
 The construction is the following. The function `η₀ = ρ c / (z - a)^k` is holomorphic near `a`
 off `a` itself, hence harmonic there, so `g = Δη₀ - P η₀` equals `-P η₀` near `a`. Since `α`
 vanishes to order `k` at `a`, `P ≤ C |z - a|^(2k)` near `a`, so `g` is bounded there; away from
-`a` it is smooth with compact support. Hence `g ∈ L²`. The potential `P` is nonnegative, bounded,
-and at least `1 / 8` outside a disc when `|α| → 1` at infinity, so the stationary Schrödinger
-equation `-Δh + P h = g` has a solution `h ∈ H²`
-(`TauCeti.exists_mem_realSobolevFunctions_two_integral_mul_neg_laplacian_add_mul_eq`), and
-`η = η₀ + h` solves `Δη = P η` off `a`.
+`a` it is continuous with compact support. Hence `g ∈ L²`. The potential `P` is nonnegative,
+bounded, and at least `1 / 8` outside a disc when `|α| → 1` at infinity, so the stationary
+Schrödinger equation `-Δh + P h = g` has a solution `h ∈ H²`
+(`TauCeti.exists_mem_realSobolevFunctions_two_integral_mul_neg_laplacian_add_mul_eq`, applied to
+the real and imaginary parts of `g` and combined by
+`TauCeti.integrable_and_integral_mul_neg_laplacian_add_mul_eq_of_re_im`), and `η = η₀ + h` solves
+`Δη = P η` off `a`.
 
 Only the vanishing order of `α` at `a` and the limit `|α| → 1` at infinity enter; neither the
 vortex equations nor the smoothness of the field are used beyond continuity. The equation is
@@ -117,7 +119,7 @@ private theorem contDiffAt_principalPart {ρ : ℂ → ℝ} (hρ : ContDiff ℝ 
 
 /-- The defect `g = Δη₀ - P η₀` of the principal part `η₀ = ρ c / (z - a)^k` is square
 integrable: it is bounded near `a`, where `η₀` is harmonic and `P` vanishes to order `2k`, and
-smooth with compact support away from `a`. -/
+continuous with compact support away from `a`. -/
 private theorem memLp_laplacian_sub_mul_principalPart (hx : Continuous x) {a : ℂ} {k : ℕ}
     (hα : ∃ C, ∀ᶠ z in 𝓝 a, ‖sectionValue x z‖ ≤ C * ‖z - a‖ ^ k)
     {ρ : ℂ → ℝ} (hρ : ContDiff ℝ ∞ ρ) (hρc : HasCompactSupport ρ) (hρa : ρ =ᶠ[𝓝 a] 1) (c : ℂ) :
@@ -327,61 +329,6 @@ private theorem integrable_and_integral_principalPart_mul_laplacian_sub_mul (hx 
         simp only [e₂, e₃, hgdef]
         ring
 
-/-- **The weak equation for the `H²` part.** If `h₁` and `h₂` are weak `L²` solutions of
-`-Δh + P h = Re g` and `-Δh + P h = Im g`, then `h = h₁ + i h₂` satisfies
-`∫ h (Δφ - P φ) = -∫ g φ` for every compactly supported `C²` real function `φ`, and the integrand
-is integrable. -/
-private theorem integral_mul_laplacian_sub_mul_eq_neg {P : ℂ → ℝ} (hPc : Continuous P)
-    {g : ℂ → ℂ} (hg2 : MemLp g 2 volume) {h₁ h₂ : ℂ → ℝ} (hh₁2 : MemLp h₁ 2 volume)
-    (hh₂2 : MemLp h₂ 2 volume)
-    (hw₁ : ∀ φ : ℂ → ℝ, ContDiff ℝ 2 φ → HasCompactSupport φ →
-      ∫ z, h₁ z * (-Δ φ z + P z * φ z) = ∫ z, (g z).re * φ z)
-    (hw₂ : ∀ φ : ℂ → ℝ, ContDiff ℝ 2 φ → HasCompactSupport φ →
-      ∫ z, h₂ z * (-Δ φ z + P z * φ z) = ∫ z, (g z).im * φ z)
-    {φ : ℂ → ℝ} (hφ2 : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ) :
-    Integrable (fun z ↦ (h₁ z + h₂ z * I) * ((Δ φ z - P z * φ z : ℝ) : ℂ)) volume ∧
-      ∫ z, (h₁ z + h₂ z * I) * ((Δ φ z - P z * φ z : ℝ) : ℂ) = -∫ z, g z * (φ z : ℂ) := by
-  set L : ℂ → ℝ := fun z ↦ Δ φ z - P z * φ z with hLdef
-  have hLc : Continuous L := hφ2.continuous_laplacian.sub (hPc.mul hφ2.continuous)
-  have hL2 : MemLp L 2 volume := hLc.memLp_of_hasCompactSupport
-    (hφc.laplacian.sub (hφc.mul_left (f := P)))
-  have hφL2 : MemLp φ 2 volume := hφ2.continuous.memLp_of_hasCompactSupport hφc
-  have hweak₁ : ∫ z, h₁ z * L z = -∫ z, (g z).re * φ z := by
-    rw [← hw₁ φ hφ2 hφc, ← integral_neg]
-    exact integral_congr_ae (ae_of_all _ fun z ↦ by simp only [hLdef]; ring)
-  have hweak₂ : ∫ z, h₂ z * L z = -∫ z, (g z).im * φ z := by
-    rw [← hw₂ φ hφ2 hφc, ← integral_neg]
-    exact integral_congr_ae (ae_of_all _ fun z ↦ by simp only [hLdef]; ring)
-  have j₁ : Integrable (fun z ↦ h₁ z * L z) volume := hh₁2.integrable_mul hL2
-  have j₂ : Integrable (fun z ↦ h₂ z * L z) volume := hh₂2.integrable_mul hL2
-  have j₃ : Integrable (fun z ↦ (g z).re * φ z) volume := hg2.re.integrable_mul hφL2
-  have j₄ : Integrable (fun z ↦ (g z).im * φ z) volume := hg2.im.integrable_mul hφL2
-  -- Integrals of `u + i v` for real integrable `u`, `v`.
-  have hsplit (u v : ℂ → ℝ) (hu : Integrable u volume) (hv : Integrable v volume) :
-      ∫ z, ((u z : ℂ) + I * (v z : ℂ)) = (∫ z, u z : ℝ) + I * (∫ z, v z : ℝ) := by
-    rw [integral_add (f := fun z ↦ (u z : ℂ)) (g := fun z ↦ I * (v z : ℂ)) hu.ofReal
-      (hv.ofReal.const_mul I), integral_const_mul,
-      integral_complex_ofReal, integral_complex_ofReal]
-  refine ⟨(Integrable.add (f := fun z ↦ ((h₁ z * L z : ℝ) : ℂ))
-      (g := fun z ↦ I * ((h₂ z * L z : ℝ) : ℂ)) j₁.ofReal (j₂.ofReal.const_mul I)).congr
-      (ae_of_all _ fun z ↦ ?_), ?_⟩
-  · simp only [Pi.add_apply, hLdef]
-    push_cast
-    ring
-  have hl : ∫ z, (h₁ z + h₂ z * I) * (L z : ℂ) =
-      ∫ z, (((h₁ z * L z : ℝ) : ℂ) + I * ((h₂ z * L z : ℝ) : ℂ)) :=
-    integral_congr_ae (ae_of_all _ fun z ↦ by simp only [hLdef]; push_cast; ring)
-  have hr : ∫ z, g z * (φ z : ℂ) =
-      ∫ z, ((((g z).re * φ z : ℝ) : ℂ) + I * (((g z).im * φ z : ℝ) : ℂ)) := by
-    refine integral_congr_ae (ae_of_all _ fun z ↦ ?_)
-    dsimp only
-    conv_lhs => rw [← re_add_im (g z)]
-    push_cast
-    ring
-  rw [hl, hr, hsplit _ _ j₁ j₂, hsplit _ _ j₃ j₄, hweak₁, hweak₂]
-  push_cast
-  ring
-
 /-- **Zero modes of a plane vortex with a prescribed principal part.** Let `x` be a continuous
 field whose section `α` has unit modulus at infinity, and write `P = |α|² / 4 = x₂² + x₃²`.
 Suppose that `α` vanishes to order `k` at `a`: `‖α z‖ ≤ C ‖z - a‖ ^ k` near `a`. Let `c ∈ ℂ` and
@@ -416,21 +363,18 @@ theorem exists_integral_mul_laplacian_sub_mul_eq_zero (hx : Continuous x)
   refine ⟨fun z ↦ h₁ z + h₂ z * I, by simpa using hh₁, by simpa using hh₂,
     fun φ hφ hφc haφ ↦ ?_⟩
   have hφ2 : ContDiff ℝ 2 φ := hφ.of_le (by simp)
-  have hxi (i : Fin 4) : Continuous fun z ↦ x z i := by fun_prop
-  have hPc : Continuous P := by
-    have := hxi 2; have := hxi 3; fun_prop
   -- The principal part contributes `∫ g φ`, and the `H²` part `-∫ g φ`.
   obtain ⟨k₁, hA⟩ :=
     integrable_and_integral_principalPart_mul_laplacian_sub_mul hx hρ hρc c hφ hφc haφ
-  obtain ⟨k₂, hB⟩ := integral_mul_laplacian_sub_mul_eq_neg hPc hg2
+  obtain ⟨k₂, hB⟩ := integrable_and_integral_mul_neg_laplacian_add_mul_eq_of_re_im hP hg2
     (memLp_of_mem_realSobolevFunctions hh₁) (memLp_of_mem_realSobolevFunctions hh₂)
     (by simpa only [RCLike.re_to_complex] using hw₁)
     (by simpa only [RCLike.im_to_complex] using hw₂) hφ2 hφc
   calc ∫ z, ((ρ z : ℂ) * (c / (z - a) ^ k) + (h₁ z + h₂ z * I)) *
         ((Δ φ z - P z * φ z : ℝ) : ℂ)
-      = ∫ z, ((ρ z : ℂ) * (c / (z - a) ^ k) * ((Δ φ z - P z * φ z : ℝ) : ℂ) +
-          (h₁ z + h₂ z * I) * ((Δ φ z - P z * φ z : ℝ) : ℂ)) :=
-        integral_congr_ae (ae_of_all _ fun z ↦ by ring)
-    _ = 0 := by rw [integral_add k₁ k₂, hA, hB, add_neg_cancel]
+      = ∫ z, ((ρ z : ℂ) * (c / (z - a) ^ k) * ((Δ φ z - P z * φ z : ℝ) : ℂ) -
+          (h₁ z + h₂ z * I) * ((-Δ φ z + P z * φ z : ℝ) : ℂ)) :=
+        integral_congr_ae (ae_of_all _ fun z ↦ by push_cast; ring)
+    _ = 0 := by rw [integral_sub k₁ k₂, hA, hB, sub_self]
 
 end TauCeti.Vortex
