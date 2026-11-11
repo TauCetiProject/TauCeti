@@ -408,13 +408,7 @@ theorem harmonicOnNhd_newtonianKernel_sub (n : ℕ)
 theorem newtonianKernel_one (x : EuclideanSpace ℝ (Fin 1)) :
     newtonianKernel 1 x = -‖x‖ / 2 := by
   have hvol : volume.real (ball (0 : EuclideanSpace ℝ (Fin 1)) 1) = 2 := by
-    have hpi : √Real.pi ≠ 0 := (Real.sqrt_pos.2 Real.pi_pos).ne'
-    have hΓ : Real.Gamma (1 / 2 + 1) = √Real.pi / 2 := by
-      rw [Real.Gamma_add_one (by norm_num), Real.Gamma_one_half_eq]
-      ring
-    rw [Measure.real_def, EuclideanSpace.volume_ball]
-    simp only [Fintype.card_fin, Nat.cast_one, ENNReal.ofReal_one, pow_one, one_mul, hΓ,
-      div_div_eq_mul_div, mul_div_cancel_left₀ _ hpi]
+    rw [Measure.real_def, InnerProductSpace.volume_ball_of_dim_odd (k := 0) (by simp)]
     norm_num
   rw [newtonianKernel_def, hvol]
   norm_num

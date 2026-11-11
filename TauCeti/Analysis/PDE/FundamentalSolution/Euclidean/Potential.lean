@@ -29,8 +29,9 @@ For `f : ℝⁿ → F` with compact support, the **Newtonian potential** of `f` 
 `Gₙ = TauCeti.newtonianKernel n`. For `f` of class `C²` with compact support:
 
 * `u` is as smooth as `f` (no restriction on `n` is needed here);
-* for `n = 1` and `n ≥ 3`, `u` solves **Poisson's equation** `-Δu = f` on all of `ℝⁿ`, and is
-  harmonic off the support of `f` (in dimension one `G₁(x) = -|x| / 2`, so `u'' = -f`);
+* for `n = 1` and `n ≥ 3`, `u` solves **Poisson's equation** `-Δu = f` on all of `ℝⁿ` (in
+  dimension one `G₁(x) = -|x| / 2`, so `u'' = -f`);
+* `u` is harmonic off the support of `f` (in every dimension; for `n = 0, 2` the kernel is zero);
 * off the support of `f`, the second derivatives of `u` are obtained by integrating `f` against
   the Hessian of `Gₙ` (for this, too, any `n`);
 * `u` decays like `‖x‖ ^ (2 - n)` (this does need `n ≥ 3`, but already holds for integrable `f`
@@ -92,11 +93,19 @@ theorem laplacian_newtonianKernel_convolution [CompleteSpace F] (hn : n ≠ 2) (
       simp_rw [newtonianKernel_sub_comm n x]
       exact integral_laplacian_mul_newtonianKernel_sub hn hn0 hφ hφc x) hf hc
 
-/-- For `n = 1` or `n ≥ 3`, the Newtonian potential of a `C²` function `f` with compact support is
-harmonic off the support of `f`. -/
-theorem harmonicOnNhd_newtonianKernel_convolution [CompleteSpace F] (hn : n ≠ 2) (hn0 : n ≠ 0)
+/-- The Newtonian potential of a `C²` function `f` with compact support is harmonic off the
+support of `f`. In dimensions zero and two the kernel vanishes identically, so the potential is
+zero there. -/
+theorem harmonicOnNhd_newtonianKernel_convolution [CompleteSpace F]
     (hf : ContDiff ℝ 2 f) (hc : HasCompactSupport f) :
     HarmonicOnNhd (newtonianKernel n ⋆ f) (tsupport f)ᶜ := fun x hx => by
+  by_cases h : n = 0 ∨ n = 2
+  · have hzero : newtonianKernel n = 0 := by
+      funext y
+      rcases h with rfl | rfl <;> simp [newtonianKernel_def]
+    rw [hzero, zero_convolution]
+    exact harmonicAt_const 0
+  obtain ⟨hn0, hn⟩ := not_or.mp h
   refine ⟨(contDiff_newtonianKernel_convolution hf hc).contDiffAt, ?_⟩
   filter_upwards [(isClosed_tsupport f).isOpen_compl.mem_nhds hx] with y hy
   rw [laplacian_newtonianKernel_convolution hn hn0 hf hc, Pi.neg_apply,
