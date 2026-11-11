@@ -69,6 +69,47 @@ theorem IsFredholm.coprod_of_finiteDimensional {T : E →L[𝕜] F} (hT : IsFred
     LinearMap.HasFiniteRange.of_finite_dom.comp_right _
   simpa only [comp_fst_add_comp_snd] using (hT.comp hf).add_hasFiniteRange hB
 
+omit [CompleteSpace 𝕜] in
+/-- **Kernel charts of a sum of stabilizers.** A kernel coordinate `q` of the stabilization of
+`T` by `D₂` gives the kernel coordinate `(x, (l, l₃)) ↦ (q (x, l), l₃)` of its stabilization by
+`D₂.coprod D₃`, for any further directions `D₃`. -/
+theorem IsInvertible.prod_coprod_coprod {Λ Λ₃ G : Type*} [NormedAddCommGroup Λ] [NormedSpace 𝕜 Λ]
+    [NormedAddCommGroup Λ₃] [NormedSpace 𝕜 Λ₃] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {T : E →L[𝕜] F} {D₂ : Λ →L[𝕜] F} {q : E × Λ →L[𝕜] G}
+    (h : ((T.coprod D₂).prod q).IsInvertible) (D₃ : Λ₃ →L[𝕜] F) :
+    ((T.coprod (D₂.coprod D₃)).prod ((q.prodMap (ContinuousLinearMap.id 𝕜 Λ₃)) ∘L
+      (ContinuousLinearEquiv.prodAssoc 𝕜 E Λ Λ₃).symm.toContinuousLinearMap)).IsInvertible := by
+  obtain ⟨e, he⟩ := h
+  have hA (w : F × G) : (T.coprod D₂) (e.symm w) = w.1 := by
+    simpa using congrArg Prod.fst (congrArg (· (e.symm w)) he.symm)
+  have hq (w : F × G) : q (e.symm w) = w.2 := by
+    simpa using congrArg Prod.snd (congrArg (· (e.symm w)) he.symm)
+  have he' (z : E × Λ) : e.symm ((T.coprod D₂) z, q z) = z := by
+    rw [ContinuousLinearEquiv.symm_apply_eq]
+    exact (congrArg (· z) he).symm
+  -- The inverse solves `T x + D₂ l = y - D₃ l₃` and `q (x, l) = g` for `(x, l)`.
+  let S : F × G × Λ₃ →L[𝕜] (F × G) × Λ₃ :=
+    ((ContinuousLinearMap.fst 𝕜 F (G × Λ₃) - D₃ ∘L ContinuousLinearMap.snd 𝕜 G Λ₃ ∘L
+        ContinuousLinearMap.snd 𝕜 F (G × Λ₃)).prod
+      (ContinuousLinearMap.fst 𝕜 G Λ₃ ∘L ContinuousLinearMap.snd 𝕜 F (G × Λ₃))).prod
+      (ContinuousLinearMap.snd 𝕜 G Λ₃ ∘L ContinuousLinearMap.snd 𝕜 F (G × Λ₃))
+  let inv : F × G × Λ₃ →L[𝕜] E × Λ × Λ₃ :=
+    (ContinuousLinearEquiv.prodAssoc 𝕜 E Λ Λ₃).toContinuousLinearMap ∘L
+      ((e.symm : F × G →L[𝕜] E × Λ).prodMap (ContinuousLinearMap.id 𝕜 Λ₃)) ∘L S
+  refine ⟨ContinuousLinearEquiv.equivOfInverse ((T.coprod (D₂.coprod D₃)).prod
+    ((q.prodMap (ContinuousLinearMap.id 𝕜 Λ₃)) ∘L
+      (ContinuousLinearEquiv.prodAssoc 𝕜 E Λ Λ₃).symm.toContinuousLinearMap)) inv
+    (fun z ↦ ?_) (fun w ↦ ?_), rfl⟩
+  · obtain ⟨x, l, l₃⟩ := z
+    have := he' (x, l)
+    simp only [coprod_apply] at this
+    simp [inv, S, ← add_assoc, this]
+  · obtain ⟨y, g, m⟩ := w
+    have h1 := hA (y - D₃ m, g)
+    have h2 := hq (y - D₃ m, g)
+    simp only [coprod_apply] at h1
+    simp [inv, S, ← add_assoc, h1, h2]
+
 variable [CompleteSpace E] [CompleteSpace F]
   {X : Type*} [TopologicalSpace X] {T : X → E →L[𝕜] F} {x₀ : X}
 

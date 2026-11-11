@@ -48,9 +48,9 @@ theorem permTensorAction_swap_mul_orthogonalCupCapAt_mul_orthogonalCupCapAt
   classical
   apply (tensorPowerBasis k n d).ext
   intro f
-  simp only [mul_apply_eq_comp, orthogonalCupCapAt_tensorPowerBasis hij]
+  simp only [mul_apply_eq_comp, orthogonalCupCapAt_tensorPowerBasis]
   by_cases hf : f i = f j
-  · simp only [hf, ite_true, map_sum, orthogonalCupCapAt_tensorPowerBasis hjl]
+  · simp only [hf, ite_true, map_sum, orthogonalCupCapAt_tensorPowerBasis]
     simp only [Function.update_self, Function.update_of_ne hil.symm,
       Function.update_of_ne hjl.symm]
     simp only [apply_ite, map_sum, map_zero, permTensorAction_tensorPowerBasis]
