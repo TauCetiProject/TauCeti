@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Hive.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.DominantWeight
+import TauCeti.Algebra.BigOperators.Fin
 import Mathlib.Order.Fin.Basic
 
 /-!
@@ -14,8 +15,8 @@ import Mathlib.Order.Fin.Basic
 
 Boundary differences are read clockwise along `A → B → C → A`. On each side of a
 hive they are antitone, so an integer hive determines three native dominant weights.
-The sum of the three boundary weights is zero. Before imposing hive inequalities,
-the boundary restriction is a linear map on the entire space of labellings.
+The sum of all entries of the three boundary weights is zero. Before imposing hive
+inequalities, the boundary restriction is a linear map on the entire space of labellings.
 
 The boundary dominance proof adds the two unit rhombi sharing the inward triangle
 at an edge point. The conventions follow Knutson–Tao, *The honeycomb model of
@@ -29,32 +30,6 @@ namespace TauCeti.Hive
 open Finset
 
 variable {n : ℕ} {R : Type*}
-
-namespace Vertex
-
-/-- The `i`th lattice vertex on `A → B`, including both endpoints. -/
-def edgeAB (n : ℕ) (i : Fin (n + 1)) : Vertex n :=
-  ⟨n - i, i, 0, by omega⟩
-
-@[simp] theorem edgeAB_x (i : Fin (n + 1)) : (edgeAB n i).x = n - i := (rfl)
-@[simp] theorem edgeAB_y (i : Fin (n + 1)) : (edgeAB n i).y = i := (rfl)
-@[simp] theorem edgeAB_z (i : Fin (n + 1)) : (edgeAB n i).z = 0 := (rfl)
-
-/-- The `i`th vertex on side `s`, where sides `0,1,2` are `AB,BC,CA`, respectively. -/
-def edge (n : ℕ) (s : Fin 3) (i : Fin (n + 1)) : Vertex n :=
-  ![edgeAB n i, (edgeAB n i).rotate, (edgeAB n i).rotate.rotate] s
-
-@[simp] theorem edge_zero (i : Fin (n + 1)) : edge n 0 i = edgeAB n i := (rfl)
-@[simp] theorem edge_one (i : Fin (n + 1)) : edge n 1 i = (edgeAB n i).rotate := (rfl)
-@[simp] theorem edge_two (i : Fin (n + 1)) :
-    edge n 2 i = (edgeAB n i).rotate.rotate := (rfl)
-
-@[simp] theorem edgeAB_zero : edgeAB n 0 = cornerA n := by ext <;> simp [edgeAB]
-
-@[simp] theorem edgeAB_last : edgeAB n (Fin.last n) = (cornerA n).rotate := by
-  ext <;> simp [edgeAB]
-
-end Vertex
 
 section Group
 
@@ -86,11 +61,8 @@ def boundary (h : Vertex n → R) (s : Fin 3) (i : Fin n) : R :=
 /-- The sum along one side is the difference of its endpoint values. -/
 theorem sum_boundary (h : Vertex n → R) (s : Fin 3) :
     ∑ i, boundary h s i = h (Vertex.edge n s (Fin.last n)) - h (Vertex.edge n s 0) := by
-  simp only [boundary, sum_sub_distrib]
-  have hs := Fin.sum_univ_succ (fun i => h (Vertex.edge n s i))
-  have hc := Fin.sum_univ_castSucc (fun i => h (Vertex.edge n s i))
-  rw [hs] at hc
-  exact sub_eq_sub_iff_add_eq_add.mpr (by simpa [add_comm] using hc)
+  simpa only [boundary] using
+    Fin.sum_univ_succ_sub_castSucc (fun i => h (Vertex.edge n s i))
 
 /-- The cyclic trace of a boundary is zero, without a normalization assumption. -/
 theorem sum_boundary_eq_zero (h : Vertex n → R) : ∑ s, ∑ i, boundary h s i = 0 := by
@@ -114,7 +86,7 @@ end Group
 
 section OrderedGroup
 
-variable [AddCommGroup R] [PartialOrder R] [IsOrderedAddMonoid R]
+variable [AddCommGroup R] [Preorder R] [IsOrderedAddMonoid R]
 
 private theorem edgeAB_midpoint_inequality {k : ℕ} {h : Vertex (k + 2) → R}
     (hh : IsHive h) (i : Fin (k + 1)) :
@@ -129,12 +101,12 @@ private theorem edgeAB_midpoint_inequality {k : ℕ} {h : Vertex (k + 2) → R}
   have h1 := ((isHive_iff h).mp hh) (isRhombus_at_cornerA.add p)
   have h2 := ((isHive_iff h).mp hh) (isRhombus_at_cornerA.rotate.add p)
   have he : p.add e = Vertex.edgeAB (k + 2) ⟨i + 1, by omega⟩ := by
-    ext <;> simp [p, e, Vertex.edgeAB]; omega
+    ext <;> simp [p, e]; omega
   have hA : p.add (Vertex.cornerA 2) = Vertex.edgeAB (k + 2) ⟨i, by omega⟩ := by
-    ext <;> simp [p, Vertex.edgeAB]; omega
+    ext <;> simp [p]; omega
   have hB : p.add (Vertex.cornerA 2).rotate =
       Vertex.edgeAB (k + 2) ⟨i + 2, by omega⟩ := by
-    ext <;> simp [p, Vertex.edgeAB]
+    ext <;> simp [p]
   have hr1 : (⟨1, 1, 0, rfl⟩ : Vertex 2).rotate = v := by ext <;> simp [v]
   have hr2 : (⟨1, 0, 1, rfl⟩ : Vertex 2).rotate = e := by ext <;> simp [e]
   have hr3 : (⟨0, 1, 1, rfl⟩ : Vertex 2).rotate = u := by ext <;> simp [u]
@@ -163,10 +135,15 @@ theorem IsHive.boundary_antitone {h : Vertex n → R} (hh : IsHive h) (s : Fin 3
         simp only [boundary, Vertex.edge_zero, sub_le_sub_iff]
         rw [add_comm]
         convert hi using 1 <;> congr 3
+  -- Normalize the nonzero Fin literals from fin_cases so the edge evaluation lemmas match.
   fin_cases s
   · exact base hh
-  · exact base hh.rotate
-  · exact base hh.rotate.rotate
+  · change Antitone (boundary h 1)
+    intro i j hij
+    simpa only [boundary, Vertex.edge_one, Vertex.edge_zero] using base hh.rotate hij
+  · change Antitone (boundary h 2)
+    intro i j hij
+    simpa only [boundary, Vertex.edge_two, Vertex.edge_zero] using base hh.rotate.rotate hij
 
 /-- Each side of a normalized hive has antitone boundary differences. -/
 theorem boundary_antitone (h : Hive n R) (s : Fin 3) :

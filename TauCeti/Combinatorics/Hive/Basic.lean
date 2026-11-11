@@ -57,7 +57,7 @@ end Symmetry
 
 section AddMonoid
 
-variable [AddCommMonoid R] [PartialOrder R]
+variable [AddCommMonoid R] [Preorder R]
 
 /-- The zero labelling satisfies every rhombus inequality. -/
 @[simp] theorem isHive_zero : IsHive (0 : Vertex n → R) := by
@@ -71,7 +71,7 @@ theorem IsHive.add [IsOrderedAddMonoid R] {h k : Vertex n → R} (hh : IsHive h)
   simpa only [Pi.add_apply, add_add_add_comm] using add_le_add (hh hr) (hk hr)
 
 /-- The additive submonoid of normalized hive labellings. -/
-def hiveSubmonoid (n : ℕ) (R : Type*) [AddCommMonoid R] [PartialOrder R]
+def hiveSubmonoid (n : ℕ) (R : Type*) [AddCommMonoid R] [Preorder R]
     [IsOrderedAddMonoid R] : AddSubmonoid (Vertex n → R) where
   carrier := {h | IsHive h ∧ h (Vertex.cornerA n) = 0}
   zero_mem' := ⟨isHive_zero, rfl⟩
@@ -80,20 +80,21 @@ def hiveSubmonoid (n : ℕ) (R : Type*) [AddCommMonoid R] [PartialOrder R]
 @[simp] theorem mem_hiveSubmonoid [IsOrderedAddMonoid R] (h : Vertex n → R) :
     h ∈ hiveSubmonoid n R ↔ IsHive h ∧ h (Vertex.cornerA n) = 0 := Iff.rfl
 
-end AddMonoid
-
-section Group
-
-variable [AddCommGroup R] [PartialOrder R] [IsOrderedAddMonoid R]
-
 /-- Adding a constant does not affect whether a labelling is a hive. -/
-@[simp] theorem isHive_add_const_iff (h : Vertex n → R) (c : R) :
+@[simp] theorem isHive_add_const_iff [IsOrderedCancelAddMonoid R]
+    (h : Vertex n → R) (c : R) :
     IsHive (fun p => h p + c) ↔ IsHive h := by
   constructor <;> intro hh a b c' d hr
   · have hi : (h b + h d) + (c + c) ≤ (h a + h c') + (c + c) := by
       convert hh hr using 1 <;> dsimp only <;> abel
     exact (add_le_add_iff_right _).mp hi
   · convert add_le_add_right (hh hr) (c + c) using 1 <;> dsimp only <;> abel
+
+end AddMonoid
+
+section Group
+
+variable [AddCommGroup R] [Preorder R] [IsOrderedAddMonoid R]
 
 /-- Subtracting a constant does not affect whether a labelling is a hive. -/
 @[simp] theorem isHive_sub_const_iff (h : Vertex n → R) (c : R) :
@@ -108,7 +109,7 @@ namespace TauCeti
 
 /-- A normalized hive: a rhombus-concave labelling with value zero at `A`.
 Its additive monoid structure is pointwise. -/
-abbrev Hive (n : ℕ) (R : Type*) [AddCommMonoid R] [PartialOrder R]
+abbrev Hive (n : ℕ) (R : Type*) [AddCommMonoid R] [Preorder R]
     [IsOrderedAddMonoid R] := ↥(Hive.hiveSubmonoid n R)
 
 /-- Integer-valued normalized hives. -/
@@ -123,7 +124,7 @@ variable {n : ℕ} {R : Type*}
 
 section AddMonoid
 
-variable [AddCommMonoid R] [PartialOrder R] [IsOrderedAddMonoid R]
+variable [AddCommMonoid R] [Preorder R] [IsOrderedAddMonoid R]
 
 instance : CoeFun (Hive n R) (fun _ => Vertex n → R) := ⟨fun h => h.val⟩
 
@@ -168,7 +169,7 @@ end AddMonoid
 
 section Group
 
-variable [AddCommGroup R] [PartialOrder R] [IsOrderedAddMonoid R]
+variable [AddCommGroup R] [Preorder R] [IsOrderedAddMonoid R]
 
 /-- Normalize a hive labelling by subtracting its value at `A`. -/
 def normalize (h : Vertex n → R) (hh : IsHive h) : Hive n R :=

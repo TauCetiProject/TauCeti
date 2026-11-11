@@ -122,6 +122,28 @@ theorem reflect_injective : Function.Injective (reflect (n := n)) :=
     p.rotate.reflect = p.reflect.rotate.rotate := by
   ext <;> rfl
 
+/-- The `i`th lattice vertex on `A → B`, including both endpoints. -/
+def edgeAB (n : ℕ) (i : Fin (n + 1)) : Vertex n :=
+  ⟨n - i, i, 0, by omega⟩
+
+@[simp] theorem edgeAB_x (i : Fin (n + 1)) : (edgeAB n i).x = n - i := (rfl)
+@[simp] theorem edgeAB_y (i : Fin (n + 1)) : (edgeAB n i).y = i := (rfl)
+@[simp] theorem edgeAB_z (i : Fin (n + 1)) : (edgeAB n i).z = 0 := (rfl)
+
+/-- The `i`th vertex on side `s`, where sides `0,1,2` are `AB,BC,CA`, respectively. -/
+def edge (n : ℕ) (s : Fin 3) (i : Fin (n + 1)) : Vertex n :=
+  ![edgeAB n i, (edgeAB n i).rotate, (edgeAB n i).rotate.rotate] s
+
+@[simp] theorem edge_zero (i : Fin (n + 1)) : edge n 0 i = edgeAB n i := (rfl)
+@[simp] theorem edge_one (i : Fin (n + 1)) : edge n 1 i = (edgeAB n i).rotate := (rfl)
+@[simp] theorem edge_two (i : Fin (n + 1)) :
+    edge n 2 i = (edgeAB n i).rotate.rotate := (rfl)
+
+@[simp] theorem edgeAB_zero : edgeAB n 0 = cornerA n := by ext <;> simp [edgeAB]
+
+@[simp] theorem edgeAB_last : edgeAB n (Fin.last n) = (cornerA n).rotate := by
+  ext <;> simp [edgeAB]
+
 /-- Add barycentric coordinates, embedding translated lattice triangles. -/
 def add {m : ℕ} (p : Vertex n) (q : Vertex m) : Vertex (n + m) :=
   ⟨p.x + q.x, p.y + q.y, p.z + q.z, by have := p.sum_eq; have := q.sum_eq; omega⟩
