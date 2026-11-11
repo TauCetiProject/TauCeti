@@ -931,15 +931,20 @@ section Commutators
 
 variable {n : ℕ} {x y : Fin n → X}
 
-/-- The trivial point is a solution of `∏ᵢ₌₁ⁿ [xᵢ, yᵢ] = 1`. -/
-theorem one_mem_V_orientable (ι : G →* H) (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
-    1 ∈ V ι {(orientable n hn x y inj).toWord} := by
+/-- A point at which the two variables of each commutator take commuting values is a solution of
+`∏ᵢ₌₁ⁿ [xᵢ, yᵢ] = 1`. -/
+theorem mem_V_orientable_of_commute (ι : G →* H) (hn : 0 < n) (inj : (Sum.elim x y).Injective)
+    {v : X → H} (hv : ∀ i, Commute (v (x i)) (v (y i))) :
+    v ∈ V ι {(orientable n hn x y inj).toWord} := by
   simp only [mem_V, Set.mem_singleton_iff, forall_eq, toWord_def, constant_orientable, map_one,
     mul_one, map_list_prod, atoms_orientable]
-  exact List.prod_eq_one fun a ha => by
-    obtain ⟨r, hr, rfl⟩ := List.mem_map.1 ha
-    obtain ⟨i, rfl⟩ := List.mem_ofFn.1 hr
-    simp [map_commutatorElement]
+  exact List.prod_eq_one <| by
+    simp [map_commutatorElement, commutatorElement_eq_one_iff_commute, hv]
+
+/-- The trivial point is a solution of `∏ᵢ₌₁ⁿ [xᵢ, yᵢ] = 1`. -/
+theorem one_mem_V_orientable (ι : G →* H) (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
+    1 ∈ V ι {(orientable n hn x y inj).toWord} :=
+  mem_V_orientable_of_commute ι hn inj fun _ => .one_left 1
 
 /-- The trivial solution of `∏ᵢ₌₁ⁿ [xᵢ, yᵢ] = 1` is degenerate. -/
 theorem isDegenerate_one_orientable (ι : G →* H) (hn : 0 < n) (inj : (Sum.elim x y).Injective) :
