@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
+import TauCeti.Geometry.Manifold.MFDeriv.Translation
 
 /-!
 # The Floer energy identity for manifold targets
@@ -113,8 +114,9 @@ form they recover the vector-space definitions.
   symplectic area, the integrated curvature and the curvature allowance under changes of domain
   coordinates.
 * `SmoothTwoForm.hamiltonianCurvature_comp_add_right`,
-  `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_comp_add_right`: translations of the domain
-  translate the curvature and preserve the curvature allowance along a map.
+  `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_comp_add_right`,
+  `SmoothTwoForm.floerEnergyDensity_comp_add_right`: translations of the domain translate the
+  curvature and the energy density, and preserve the curvature allowance along a map.
 
 ## References
 
@@ -240,6 +242,17 @@ theorem floerEnergyDensity_zero (ω : SmoothTwoForm I M) (u : ℝ × ℝ → M) 
       SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) := by
   simp [floerEnergyDensity_def]
+
+/-- Translating a map and its perturbation data by `v` translates the Floer energy density by `v`,
+at points where the map is differentiable. -/
+theorem floerEnergyDensity_comp_add_right (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
+    {u : ℝ × ℝ → M} {v z : ℝ × ℝ} (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (z + v)) :
+    ω.floerEnergyDensity (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) (fun w ↦ u (w + v)) z =
+      ω.floerEnergyDensity Ks Kt u (z + v) := by
+  simp only [floerEnergyDensity_def, perturbedMFDeriv_apply, hu.mfderiv_comp_add_right]
+  -- The two sides differ only in the base point `(fun w ↦ u (w + v)) z` of the tangent space,
+  -- which beta-reduces to `u (z + v)`.
+  rfl
 
 variable {ω : SmoothTwoForm I M} {Ks Kt : ℝ × ℝ → M → ℝ}
   {u : ℝ × ℝ → M} {z : ℝ × ℝ}
