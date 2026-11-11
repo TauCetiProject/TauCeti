@@ -144,10 +144,12 @@ theorem isUnit_leadingCoeff_ringChoose_X (n : ℕ) :
     (algebraMap ℚ K)
 
 /-- The binomial polynomials are linearly independent over `K`. -/
-theorem linearIndependent_ringChoose_X [Nontrivial K] :
-    LinearIndependent K (fun n : ℕ => Ring.choose (X : K[X]) n) :=
-  (binomialPolynomialSequence K).linearIndependent_of_isRightRegular_leadingCoeff fun n =>
-    (isUnit_leadingCoeff_ringChoose_X K n).isRegular.right
+theorem linearIndependent_ringChoose_X :
+    LinearIndependent K (fun n : ℕ => Ring.choose (X : K[X]) n) := by
+  rcases subsingleton_or_nontrivial K with _ | _
+  · exact linearIndependent_of_subsingleton
+  · exact (binomialPolynomialSequence K).linearIndependent_of_isRightRegular_leadingCoeff fun n =>
+      (isUnit_leadingCoeff_ringChoose_X K n).isRegular.right
 
 /-- The binomial polynomials form a basis of `K[X]`. -/
 noncomputable def binomialPolynomialBasis [Nontrivial K] : Module.Basis ℕ K K[X] :=
