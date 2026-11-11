@@ -5,7 +5,6 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.CategoryTheory.Grothendieck.Basic
 public import TauCeti.CategoryTheory.Limits.Reindex
 public import TauCeti.CategoryTheory.Grothendieck.Section
 
@@ -25,8 +24,9 @@ and `Section.pullback_comp` give its laws under changes of base.
 For a represented coefficient diagram, `Section.coefficientRestriction` maps the
 old section limit to the new one. Its projection formula and label-equivariance
 law characterize restriction of matching families. It is invertible for an
-initial base functor. This uses Mei's `NatTrans.reindexLimitMap`, without requiring
-limits along sections other than those being compared.
+initial base functor. This uses `NatTrans.reindexLimitMap` from
+`TauCeti.CategoryTheory.Limits.Reindex`, without requiring limits along sections
+other than those being compared.
 
 ## Attribution
 
@@ -123,6 +123,7 @@ theorem liftHom_comp {B : Type*} [Category* B] (H : B ⥤ E)
   subst d'
   simp only [liftHom, Functor.comp_obj, Functor.comp_map, cast_eq]
   congr 1
+  -- Nested lifts compose equality transports in the same reindexed fiber category.
   erw [eqToHom_trans_assoc]
 
 /-- Reindexing commutes with a natural transformation of the fibers on objects. -/
@@ -161,15 +162,20 @@ theorem liftHom_map {C' : D ⥤ Cat.{w, z}} (h : C ⟶ C') {X Y : Grothendieck C
   erw [eqToHom_refl, Category.id_comp]
   erw [Category.id_comp, Category.id_comp]
 
+/-- The object of a functor over `G` lies over the corresponding object of `G`. -/
+theorem base_eq_of_comp_forget {S : E ⥤ Grothendieck C}
+    (hS : S ⋙ forget C = G) (e : E) : (S.obj e).base = G.obj e :=
+  Functor.congr_obj hS e
+
 /-- Lift a functor over `G` to the reindexed Grothendieck construction. -/
--- Expose the object formula so that the new base computes in dependent morphism types.
+-- The object formula must compute to type liftFunctor_map and vertical base identities.
 @[expose]
 def liftFunctor (S : E ⥤ Grothendieck C) (hS : S ⋙ forget C = G) :
     E ⥤ Grothendieck (G ⋙ C) where
-  obj e := liftObj G (S.obj e) e (by convert Functor.congr_obj hS e using 1; rfl)
+  obj e := liftObj G (S.obj e) e (base_eq_of_comp_forget G hS e)
   map f := liftHom G (S.map f) f
-    (by convert Functor.congr_obj hS _ using 1; rfl)
-    (by convert Functor.congr_obj hS _ using 1; rfl)
+    (base_eq_of_comp_forget G hS _)
+    (base_eq_of_comp_forget G hS _)
     (by convert Functor.congr_hom hS f using 1 <;> rfl)
   map_id e := by
     apply hom_ext_of_pre G
@@ -180,14 +186,28 @@ def liftFunctor (S : E ⥤ Grothendieck C) (hS : S ⋙ forget C = G) :
     · simp
     · simp [Category.assoc]
 
+/-- The lifted object is the original object with its base reindexed. -/
+@[simp]
+theorem liftFunctor_obj (S : E ⥤ Grothendieck C) (hS : S ⋙ forget C = G) (e : E) :
+    (liftFunctor G S hS).obj e =
+      liftObj G (S.obj e) e (base_eq_of_comp_forget G hS e) := (rfl)
+
+/-- The lifted arrow retains its prescribed arrow in the new base. -/
+@[simp]
+theorem liftFunctor_map (S : E ⥤ Grothendieck C) (hS : S ⋙ forget C = G)
+    {e e' : E} (f : e ⟶ e') :
+    (liftFunctor G S hS).map f = liftHom G (S.map f) f
+      (base_eq_of_comp_forget G hS e) (base_eq_of_comp_forget G hS e')
+      (by convert Functor.congr_hom hS f using 1 <;> rfl) := (rfl)
+
 /-- The lifted functor lies over the identity of its new base. -/
 @[simp]
 theorem liftFunctor_comp_forget (S : E ⥤ Grothendieck C) (hS : S ⋙ forget C = G) :
     liftFunctor G S hS ⋙ forget (G ⋙ C) = 𝟭 E := by
-  refine Functor.hext (fun e => by simp [liftFunctor]) ?_
+  refine Functor.hext (fun e => by simp) ?_
   intro e e' f
   -- The projection has the same objects as the identity after unfolding the lift.
-  dsimp [liftFunctor]
+  dsimp
   exact heq_of_eq (liftHom_base G _ _ _ _ _)
 
 /-- Composing a lift with `pre` gives the original functor. -/
@@ -195,7 +215,7 @@ theorem liftFunctor_comp_forget (S : E ⥤ Grothendieck C) (hS : S ⋙ forget C 
 theorem liftFunctor_comp_pre (S : E ⥤ Grothendieck C) (hS : S ⋙ forget C = G) :
     liftFunctor G S hS ⋙ pre C G = S := by
   refine Functor.ext (fun e => pre_obj_liftObj G (S.obj e) e
-    (by convert Functor.congr_obj hS e using 1; rfl)) ?_
+    (base_eq_of_comp_forget G hS e)) ?_
   intro e e' f
   exact pre_map_liftHom G (S.map f) f _ _ _
 
@@ -205,10 +225,10 @@ theorem liftFunctor_comp_map {C' : D ⥤ Cat.{w, z}} (h : C ⟶ C') (S : E ⥤ G
     liftFunctor G (S ⋙ Grothendieck.map h) (by rw [Functor.assoc, functor_comp_forget]; exact hs) =
       liftFunctor G S hs ⋙ Grothendieck.map (whiskerLeft G h) := by
   refine Functor.hext (fun e => ?_) (fun e e' f => ?_)
-  · exact liftObj_map G h (S.obj e) e (by convert Functor.congr_obj hs e using 1; rfl)
+  · exact liftObj_map G h (S.obj e) e (base_eq_of_comp_forget G hs e)
   · exact liftHom_map G h (S.map f) f
-      (by convert Functor.congr_obj hs e using 1; rfl)
-      (by convert Functor.congr_obj hs e' using 1; rfl)
+      (base_eq_of_comp_forget G hs e)
+      (base_eq_of_comp_forget G hs e')
       (by convert Functor.congr_hom hs f using 1 <;> rfl)
 
 variable {S T : E ⥤ Grothendieck C} (hS : S ⋙ forget C = G) (hT : T ⋙ forget C = G)
@@ -218,10 +238,12 @@ def liftNatTrans (α : S ⟶ T)
     (hα : whiskerRight α (forget C) = eqToHom hS ≫ eqToHom hT.symm) :
     liftFunctor G S hS ⟶ liftFunctor G T hT where
   app e := liftHom G (α.app e) (𝟙 e)
-    (by convert Functor.congr_obj hS e using 1; rfl)
-    (by convert Functor.congr_obj hT e using 1; rfl) (by
+    (base_eq_of_comp_forget G hS e)
+    (base_eq_of_comp_forget G hT e) (by
+      -- Whiskering presents the same base arrows through the forgetful functor.
       convert NatTrans.congr_app hα e using 1 <;> simp <;> rfl)
   naturality e e' f := by
+    -- Compute the lifted endpoints before simplifying compositions in their common fiber.
     apply hom_ext_of_pre G
     · simp [liftFunctor]
     · simp [liftFunctor, Category.assoc]
@@ -243,9 +265,10 @@ theorem liftNatTrans_over :
       eqToHom (liftFunctor_comp_forget G S hS) ≫
         eqToHom (liftFunctor_comp_forget G T hT).symm := by
   ext e
+  -- Whiskering and liftHom use definitionally equal presentations of the endpoints.
   convert liftHom_base G (α.app e) (𝟙 e)
-    (by convert Functor.congr_obj hS e using 1; rfl)
-    (by convert Functor.congr_obj hT e using 1; rfl)
+    (base_eq_of_comp_forget G hS e)
+    (base_eq_of_comp_forget G hT e)
     (by convert NatTrans.congr_app hα e using 1 <;> simp <;> rfl) using 1
   · rfl
   · rfl
@@ -265,22 +288,27 @@ open _root_.CategoryTheory _root_.CategoryTheory.Functor _root_.CategoryTheory.G
 variable {D : Type u} [Category.{v} D] {E : Type u'} [Category.{v'} E]
   {C : D ⥤ Cat.{w, z}} (G : E ⥤ D)
 
+/-- Reindexing the underlying functor of a section gives a functor over the new base map. -/
+theorem comp_toFunctor_comp_forget (s : Section C) :
+    (G ⋙ s.toFunctor) ⋙ forget C = G := by
+  rw [Functor.assoc, s.toFunctor_comp_forget, Functor.comp_id]
+
 /-- Restriction of a section to a new base category. -/
 @[expose]
 def pullback (s : Section C) : Section (G ⋙ C) :=
   Functor.Fiber.mk (liftFunctor_comp_forget G (G ⋙ s.toFunctor)
-    (by rw [Functor.assoc, s.toFunctor_comp_forget]; rfl))
+    (comp_toFunctor_comp_forget G s))
 
 /-- The underlying functor of a restricted section is the lift of the reindexed functor. -/
 theorem pullback_toFunctor (s : Section C) :
     (pullback G s).toFunctor = liftFunctor G (G ⋙ s.toFunctor)
-      (by rw [Functor.assoc, s.toFunctor_comp_forget]; rfl) := (rfl)
+      (comp_toFunctor_comp_forget G s) := (rfl)
 
 /-- A restricted section recovers the original one after applying the base functor. -/
 @[simp]
 theorem pullback_comp_pre (s : Section C) :
     (pullback G s).toFunctor ⋙ pre C G = G ⋙ s.toFunctor :=
-  liftFunctor_comp_pre G _ (by rw [Functor.assoc, s.toFunctor_comp_forget]; rfl)
+  liftFunctor_comp_pre G _ (comp_toFunctor_comp_forget G s)
 
 /-- Restriction along the identity leaves a section unchanged. -/
 @[simp]
@@ -298,21 +326,24 @@ theorem pullback_comp {B : Type*} [Category* B] (H : B ⥤ E) (s : Section C) :
   rw [pullback_toFunctor (H ⋙ G) s, pullback_toFunctor H (pullback G s)]
   simp_rw [pullback_toFunctor G s]
   refine Functor.hext (fun b => ?_) (fun b b' f => ?_)
-  · simp [liftFunctor, liftObj]
-  · dsimp [liftFunctor]
+  · -- Compute the nested casts of fiber objects after identifying both base maps.
+    simp [liftFunctor, liftObj]
+  · simp only [Functor.comp_map, liftFunctor_map]
     exact heq_of_eq (liftHom_comp G H _ f _ _ _)
 
 /-- Restriction of a vertical label to the new base. -/
 def pullbackHom {s t : Section C} (α : s ⟶ t) : pullback G s ⟶ pullback G t :=
   homMk (liftNatTrans G
-    (by rw [Functor.assoc, s.toFunctor_comp_forget]; rfl)
-    (by rw [Functor.assoc, t.toFunctor_comp_forget]; rfl)
+    (comp_toFunctor_comp_forget G s)
+    (comp_toFunctor_comp_forget G t)
     (whiskerLeft G (hom α)) (by
       ext e
+      -- Evaluate the whiskered section identities at G.obj e in the same base category.
       convert NatTrans.congr_app (whiskerRight_hom_forget α) (G.obj e) using 1
       · rfl
       · rfl
-      · erw [NatTrans.comp_app, NatTrans.comp_app, eqToHom_app, eqToHom_app,
+      · -- Reduce the Fiber.mk endpoints to compare the two equality components.
+        erw [NatTrans.comp_app, NatTrans.comp_app, eqToHom_app, eqToHom_app,
           eqToHom_app, eqToHom_app]))
     (liftNatTrans_over G _ _ _ _)
 
@@ -323,6 +354,7 @@ theorem pre_map_hom_pullbackHom {s t : Section C} (α : s ⟶ t) (e : E) :
       eqToHom (Functor.congr_obj (pullback_comp_pre G s) e) ≫ (hom α).app (G.obj e) ≫
         eqToHom (Functor.congr_obj (pullback_comp_pre G t) e).symm := by
   dsimp only [pullbackHom]
+  -- Reduce Fiber.mk so hom_homMk sees the endpoints of the lifted transformation.
   erw [hom_homMk]
   exact pre_map_liftNatTrans_app G _ _ _ _ e
 
@@ -331,6 +363,7 @@ theorem pre_map_hom_pullbackHom {s t : Section C} (α : s ⟶ t) (e : E) :
 theorem hom_pullbackHom_app_base {s t : Section C} (α : s ⟶ t) (e : E) :
     ((hom (pullbackHom G α)).app e).base = 𝟙 e := by
   dsimp only [pullbackHom]
+  -- Reduce Fiber.mk so hom_homMk sees the endpoints of the lifted transformation.
   erw [hom_homMk]
   dsimp only [liftNatTrans]
   exact liftHom_base G _ _ _ _ _
@@ -344,14 +377,15 @@ def pullbackFunctor : Section C ⥤ Section (G ⋙ C) where
     apply hom_ext
     intro e
     apply hom_ext_of_pre G
-    · simp only [hom_pullbackHom_app_base, hom]
+    · simp only [hom_pullbackHom_app_base, hom_id, NatTrans.id_app, id_base]
+      -- The lifted section object has new base e by its defining liftObj.
       rfl
     · simp
   map_comp α β := by
     apply hom_ext
     intro e
     apply hom_ext_of_pre G
-    · simp only [hom, Functor.map_comp, NatTrans.comp_app, comp_base,
+    · simp only [hom_comp, NatTrans.comp_app, comp_base,
         hom_pullbackHom_app_base]
       exact (Category.id_comp (𝟙 e)).symm
     · simp [Category.assoc]

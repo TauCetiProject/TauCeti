@@ -14,8 +14,6 @@ public import Mathlib.CategoryTheory.SingleObj
 A diagram of groups gives a diagram of one-object groupoids. Its distinguished
 section uses identity transport. Automorphisms of this section are exactly
 compatible group elements, with their multiplication and their components.
-The specialization to completed groups of towers is in
-`Mei.GroupTheory.CompletedGroup.Section`.
 
 The construction uses Mathlib's `MonCat.toCat`, `Units.toAut` and `toUnits`,
 and `TransportSection.autEquivSections` for compatible automorphisms.
@@ -36,15 +34,6 @@ public section
 open CategoryTheory CategoryTheory.Limits TauCeti Opposite
 
 universe u v w u₂ v₂
-
-namespace Units
-
-/-- The automorphism of the unique object given by a group element has that element as arrow. -/
-theorem toAut_toUnits_asIso_hom {G : Type*} [Group G] (x : G) :
-    (Units.toAut G (toUnits x)).asIso.hom = x := by
-  simp [SingleObj.toEnd_def]
-
-end Units
 
 namespace CategoryTheory.Functor
 
@@ -98,7 +87,8 @@ noncomputable def singleObjSectionAutEquiv :
       -- Expose the forgotten group homomorphism so the transport formula can rewrite it.
       change ((F.singleObjSection.automorphismDiagram.map f)
         (Units.toAut (F.obj d) (toUnits (g.val d)))).asIso.hom = _
-      rw [singleObjSection_automorphismDiagram_map_toAut, Units.toAut_toUnits_asIso_hom]
+      rw [singleObjSection_automorphismDiagram_map_toAut]
+      rw [Units.toAut_apply_asIso_hom]
       exact g.property f⟩
   invFun a := ⟨fun d => a.asIso.hom.app d, by
     intro d e f
@@ -112,7 +102,7 @@ noncomputable def singleObjSectionAutEquiv :
     funext d
     dsimp only
     rw [TransportSection.autEquivSections_symm_apply_hom]
-    exact Units.toAut_toUnits_asIso_hom (g.val d)
+    simp [SingleObj.toEnd_def]
   right_inv a := by
     apply Aut.ext
     apply Iso.ext
@@ -120,7 +110,8 @@ noncomputable def singleObjSectionAutEquiv :
     funext d
     dsimp only
     rw [TransportSection.autEquivSections_symm_apply_hom]
-    exact Units.toAut_toUnits_asIso_hom (G := F.obj d) _
+    rw [Units.toAut_apply_asIso_hom]
+    rfl
   map_mul' g h := by
     apply F.singleObjSection.autEquivSections.injective
     simp only [map_mul, MulEquiv.apply_symm_apply]
@@ -136,7 +127,8 @@ theorem singleObjSectionAutEquiv_hom_app (g : GrpCat.sectionsSubgroup F) (d : D)
     (F.singleObjSectionAutEquiv g).asIso.hom.app d = g.val d := by
   rw [singleObjSectionAutEquiv, MulEquiv.coe_mk, Equiv.coe_fn_mk,
     TransportSection.autEquivSections_symm_apply_hom]
-  exact Units.toAut_toUnits_asIso_hom (g.val d)
+  rw [Units.toAut_apply_asIso_hom]
+  rfl
 
 /-- The inverse identification reads off the fiber arrows. -/
 @[simp]
@@ -178,14 +170,6 @@ theorem singleObjFiber_id
   simp [singleObjFiber, Grothendieck.id_fiber, MonCat.toCat,
     SingleObj.id_as_one (F.obj a.base)]
 
-/-- Fiber inclusion retains its group element. -/
-@[simp]
-theorem singleObjFiber_ι_map (d : D) (g : F.obj d) :
-    F.singleObjFiber ((Grothendieck.ι (F ⋙ forget₂ GrpCat MonCat ⋙ MonCat.toCat) d).map
-      (X := SingleObj.star (F.obj d)) (Y := SingleObj.star (F.obj d)) g) = g := by
-  simp [singleObjFiber, Grothendieck.ι, SingleObj.comp_as_mul (F.obj d),
-    SingleObj.id_as_one (F.obj d)]
-
 /-- Composition transports the first group element and then multiplies on the left. -/
 @[simp]
 theorem singleObjFiber_comp
@@ -214,6 +198,7 @@ theorem singleObjFiber_map_whiskerRight
   simp only [singleObjFiber_def, Grothendieck.map_map,
     whiskerRight_app, comp_map, MonCat.toCat, toCatHom_toFunctor,
     Cat.eqToHom_app, SingleObj.mapHom]
+  -- The Cat morphism wrappers must reduce to the target SingleObj composition.
   erw [SingleObj.comp_as_mul]
   exact mul_one _
 
@@ -225,14 +210,16 @@ theorem singleObjFiber_pre
     F.singleObjFiber ((Grothendieck.pre
       (F ⋙ forget₂ GrpCat MonCat ⋙ MonCat.toCat) G).map f) =
       (G ⋙ F).singleObjFiber f := by
-  rw [singleObjFiber_def, singleObjFiber_def]
-  rfl
+  -- `pre` retains exactly the fiber arrow, viewed in the same one-object category.
+  exact Grothendieck.pre_map_fiber _ G f
 
 end LabelTransport
 
 /-- Compatible actions on a coefficient diagram give a representation of the total
 one-object label system. A total arrow first restricts coefficients, then acts.
 The abbreviation retains the coefficient objects in dependent morphism types. -/
+-- At these pins functorFrom's coherence types contain unexported private proofs;
+-- its hom_id and hom_comp cannot be simplified through the public module interface.
 abbrev singleObjRepresentation :
     Grothendieck (F ⋙ forget₂ GrpCat MonCat ⋙ MonCat.toCat) ⥤ V where
   obj a := X.obj a.base
@@ -263,9 +250,11 @@ theorem singleObjRepresentation_map_ι (d : D) (g : F.obj d) :
       ((Grothendieck.ι (F ⋙ forget₂ GrpCat MonCat ⋙ MonCat.toCat) d).map
         (X := SingleObj.star (F.obj d)) (Y := SingleObj.star (F.obj d)) g) =
       (ρ d g).asIso.hom := by
-  rw [singleObjRepresentation_map, singleObjFiber_ι_map]
-  -- The fiber inclusion has the identity of `d` as base arrow.
-  exact (congrArg (· ≫ (ρ d g).asIso.hom) (X.map_id d)).trans (Category.id_comp _)
+  rw [singleObjRepresentation_map]
+  simp [singleObjFiber, Grothendieck.ι, SingleObj.comp_as_mul (F.obj d),
+    SingleObj.id_as_one (F.obj d)]
+  -- The fiber-inclusion object has the same base d, so its action has these endpoints.
+  rfl
 
 /-- Restriction of the representation to identity transport recovers the coefficient diagram. -/
 def singleObjRepresentationIso :

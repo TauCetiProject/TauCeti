@@ -44,8 +44,9 @@ variable {D : Type u₁} [Category.{v₁} D] {E : Type u₂} [Category.{v₂} E]
   {A'' : Grothendieck C'' ⥤ V} {G : E ⥤ D} {H : B ⥤ E}
 
 /-- The identity comparison of a represented action. -/
--- The label map must compute in the dependent type of the coefficient transformation.
-abbrev id (A : Grothendieck C ⥤ V) : ActionIntertwiner (𝟭 D) A A where
+-- The label map must compute in dependent coefficient-component types.
+@[expose]
+def id (A : Grothendieck C ⥤ V) : ActionIntertwiner (𝟭 D) A A where
   labelMap := 𝟙 C
   coefficient := eqToHom (by rw [pre_id, Grothendieck.map_id_eq (F := C)]; rfl)
 
@@ -53,8 +54,9 @@ abbrev id (A : Grothendieck C ⥤ V) : ActionIntertwiner (𝟭 D) A A where
 theorem id_labelMap : (id A).labelMap = 𝟙 C := (rfl)
 
 /-- Compose comparisons, applying `f` before `g`. The base functor is `H ⋙ G`. -/
--- The composite label map must compute in the dependent coefficient and section types.
-abbrev comp (g : ActionIntertwiner H A' A'') (f : ActionIntertwiner G A A') :
+-- Expose the label map for dependent types; coefficient simplification uses the app lemma.
+@[expose]
+def comp (g : ActionIntertwiner H A' A'') (f : ActionIntertwiner G A A') :
     ActionIntertwiner (H ⋙ G) A A'' where
   labelMap := whiskerLeft H f.labelMap ≫ g.labelMap
   coefficient :=
@@ -71,6 +73,7 @@ theorem comp_labelMap (g : ActionIntertwiner H A' A'')
 
 /-- Composition evaluates the first comparison after forgetting the new base,
 then the second comparison after applying the first fiber functor. -/
+@[simp]
 theorem comp_coefficient_app (g : ActionIntertwiner H A' A'')
     (f : ActionIntertwiner G A A') (X : Grothendieck ((H ⋙ G) ⋙ C)) :
     (g.comp f).coefficient.app X =
@@ -83,9 +86,11 @@ theorem comp_coefficient_app (g : ActionIntertwiner H A' A'')
   rfl
 
 /-- The identity comparison has identity coefficient components. -/
+@[simp]
 theorem id_coefficient_app (X : Grothendieck C) :
     (id A).coefficient.app X = 𝟙 (A.obj X) := by
   simp only [id, eqToHom_app]
+  -- The total-category functors agree on objects; evaluate their equality component.
   erw [eqToHom_refl]
   rfl
 
@@ -132,6 +137,7 @@ theorem comp_assoc {B' : Type*} [Category* B'] {C''' : B' ⥤ Cat.{w, z}}
     ext X
     have hl := comp_coefficient_app (h.comp g) f X
     have hr := comp_coefficient_app h (g.comp f) X
+    -- Nested base changes give the same objects through differently associated functors.
     erw [comp_coefficient_app h g] at hl
     erw [comp_coefficient_app g f] at hr
     exact hl.trans ((Category.assoc _ _ _).symm.trans hr.symm)
@@ -142,7 +148,7 @@ theorem mapSection_comp (g : ActionIntertwiner H A' A'')
     (f : ActionIntertwiner G A A') (s : Section C) :
     (g.comp f).mapSection s = g.mapSection (f.mapSection s) := by
   dsimp only [mapSection]
-  rw [Section.pushforward_comp, Section.pullback_comp,
+  rw [comp_labelMap, Section.pushforward_comp, Section.pullback_comp,
     ← Section.pullback_pushforward]
 
 /-- Identity comparisons induce the identity transformation after identifying
@@ -155,7 +161,8 @@ theorem sectionComparison_id (s : Section C) :
   ext d
   simp only [NatTrans.comp_app, sectionComparison_app,
     eqToHom_app, Functor.leftUnitor_hom_app]
-  simp only [eqToHom_map, eqToHom_trans]
+  simp only [id, eqToHom_app, eqToHom_map, eqToHom_trans]
+  -- Both transports now identify the same section object through its Fiber.mk wrapper.
   erw [eqToHom_trans, eqToHom_refl]
   rfl
 
@@ -168,14 +175,13 @@ theorem sectionComparison_comp (g : ActionIntertwiner H A' A'')
       eqToHom (congrArg (fun t : Section C'' => t.toFunctor ⋙ A'') (mapSection_comp g f s)) =
         whiskerLeft H (f.sectionComparison s) ≫ g.sectionComparison (f.mapSection s) := by
   ext b
-  simp only [NatTrans.comp_app, sectionComparison_app,
+  simp only [NatTrans.comp_app, sectionComparison_app, comp_coefficient_app,
     whiskerLeft_app, eqToHom_app]
   have hf : (pre (G ⋙ C) H).obj ((Section.pullback (H ⋙ G) s).toFunctor.obj b) =
       (Section.pullback G s).toFunctor.obj (H.obj b) := by
     rw [Section.pullback_comp]
-    exact pre_obj_liftObj H _ _ (by
-      convert Functor.congr_obj (Section.pullback G s).toFunctor_comp_forget (H.obj b)
-        using 1 <;> rfl)
+    exact pre_obj_liftObj H _ _
+      (base_eq_of_comp_forget (𝟭 E) (Section.pullback G s).toFunctor_comp_forget (H.obj b))
   have hg : (Grothendieck.map (whiskerLeft H f.labelMap)).obj
       ((Section.pullback (H ⋙ G) s).toFunctor.obj b) =
         (Section.pullback H (f.mapSection s)).toFunctor.obj b := by
@@ -183,13 +189,18 @@ theorem sectionComparison_comp (g : ActionIntertwiner H A' A'')
     rfl
   rw [f.coefficient.congr hf, g.coefficient.congr hg]
   simp only [Functor.comp_map, eqToHom_map]
-  -- Reassociate through the section wrappers, then combine the equality transports.
-  repeat' first
-    | erw [Category.assoc]
-    | erw [eqToHom_trans_assoc]
-    | erw [eqToHom_trans]
-  erw [eqToHom_refl, Category.comp_id]
-  rfl
+  -- State the transport identity with explicit endpoints: the section wrappers above
+  -- hide these endpoints from simp's restricted definitional-equality matching.
+  have normalize {W X X' Y Y' Z Z' T : V}
+      (p : W = X) (q : X = X') (r : Y = Y') (t : Y' = Z) (u : Z' = T)
+      (a : X' ⟶ Y) (b : Z ⟶ Z') :
+      (eqToHom p ≫ (eqToHom q ≫ a ≫ eqToHom r) ≫ eqToHom t ≫ b ≫ eqToHom u) ≫
+          eqToHom u.symm = (eqToHom (p.trans q) ≫ a) ≫ eqToHom (r.trans t) ≫ b := by
+    simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_trans, eqToHom_refl,
+      Category.comp_id]
+  exact normalize _ _ _ _ _
+    (f.coefficient.app ((Section.pullback G s).toFunctor.obj (H.obj b)))
+    (g.coefficient.app ((Section.pullback H (f.mapSection s)).toFunctor.obj b))
 
 /-- Identity intertwiners act identically on coefficient limits, after the
 canonical identification of the transported coefficient diagram. -/

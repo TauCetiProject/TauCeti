@@ -81,12 +81,14 @@ def pushforwardFunctor (h : C ⟶ C') : Section C ⥤ Section C' where
     intro d
     simp only [hom_pushforwardHom, hom, _root_.CategoryTheory.Functor.map_id,
       whiskerRight_app, NatTrans.id_app]
+    -- Fiber.mk retains the postcomposed functor and its object endpoints.
     rfl
   map_comp α β := by
     apply hom_ext
     intro d
     simp only [hom_pushforwardHom, hom, Functor.map_comp, whiskerRight_app,
       NatTrans.comp_app]
+    -- Fiber.mk retains the postcomposed functor and its object endpoints.
     rfl
 
 @[simp]
@@ -136,11 +138,9 @@ theorem coefficientPushforward_naturality (h : C ⟶ C')
       coefficientPushforward h η s ≫
         whiskerRight (hom (pushforwardHom h α)) A' := by
   ext d
-  -- The section wrapper presents the same objects with different dependent types.
-  convert η.naturality ((hom α).app d) using 1 <;>
-    try simp only [NatTrans.comp_app, coefficientPushforward_app, whiskerRight_app,
-      hom_pushforwardHom, Functor.comp_map]
-  all_goals rfl
+  simp only [NatTrans.comp_app, coefficientPushforward_app, whiskerRight_app,
+    hom_pushforwardHom]
+  exact η.naturality ((hom α).app d)
 
 /-- Invertible coefficient transformations remain invertible along sections. -/
 instance isIso_coefficientPushforward (h : C ⟶ C')
@@ -200,6 +200,6 @@ theorem pullback_pushforward {E : Type*} [Category* E] (H : E ⥤ D) (h : C ⟶ 
       (pushforward (whiskerLeft H h) (pullback H s)).toFunctor by
     exact h
   exact liftFunctor_comp_map H h (H ⋙ s.toFunctor)
-    (by rw [Functor.assoc, s.toFunctor_comp_forget]; rfl)
+    (comp_toFunctor_comp_forget H s)
 
 end TauCeti.CategoryTheory.Grothendieck.Section
