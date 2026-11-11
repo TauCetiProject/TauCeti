@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
@@ -21,6 +22,10 @@ derivative of a norm-composition forces the one-dimensional profile derivative t
 The squared norm of the derivative of a map from `ℂ` to a Euclidean space is at most twice the
 sum of the squared partial derivatives of its components along `1` and `I`
 (`TauCeti.norm_fderiv_sq_le_two_mul_sum_sq`).
+
+The function `y ↦ √(a - ‖y‖²)`, whose graph over the ball of radius `√a` is a hemisphere, has
+derivative `-(√(a - ‖x‖²))⁻¹ ⟪x, ·⟫` wherever `a - ‖x‖² ≠ 0`; in particular it is flat at the
+origin.
 -/
 
 public section
@@ -86,6 +91,16 @@ theorem norm_fderiv_sq_le_two_mul_sum_sq {ι : Type*} [Fintype ι] (u : ℂ → 
     rw [h.fderiv]
     rfl
   rwa [hcomp, hcomp, ← Finset.sum_add_distrib] at hD
+
+/-- The hemisphere function `y ↦ √(a - ‖y‖²)` has derivative `-(√(a - ‖x‖²))⁻¹ ⟪x, ·⟫` at every
+point `x` with `a - ‖x‖² ≠ 0`. -/
+theorem hasFDerivAt_sqrt_sub_norm_sq {a : ℝ} {x : F} (hx : a - ‖x‖ ^ 2 ≠ 0) :
+    HasFDerivAt (fun y : F ↦ √(a - ‖y‖ ^ 2)) (-(√(a - ‖x‖ ^ 2))⁻¹ • innerSL ℝ x) x := by
+  refine ((((hasFDerivAt_id x).norm_sq).const_sub a).sqrt hx).congr_fderiv ?_
+  ext y
+  simp only [id_eq, one_div, mul_inv_rev, ContinuousLinearMap.comp_id, smul_neg, neg_apply,
+    smul_apply, coe_innerSL_apply, nsmul_eq_mul, Nat.cast_ofNat, smul_eq_mul, neg_smul, neg_inj]
+  ring
 
 /-- The Fréchet derivative of `y ↦ ‖y - x₀‖ ^ 2` at `x` is `2 • innerSL ℝ (x - x₀)`. -/
 theorem hasFDerivAt_norm_sq_sub {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G]

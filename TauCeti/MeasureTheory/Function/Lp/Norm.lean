@@ -53,6 +53,7 @@ bounds.
   exceeded on a set of nonzero measure.
 * `MeasureTheory.Lp.integral_norm_le_mul_norm`: on a finite measure space, the `L¹` norm of an
   `Lᵖ` function, `1 ≤ p`, is at most `μ(univ)^{1 - 1/p}` times its `Lᵖ` norm.
+* `MeasureTheory.MemLp.integral_norm_le_mul_eLpNorm`: the same bound for a function in `Lᵖ`.
 * `MeasureTheory.Lp.norm_integral_le_of_ae_norm_le_mul`: the resulting bound on the integral of a
   function dominated pointwise by a multiple of the norm of an `Lᵖ` function.
 * `MeasureTheory.Lp.setIntegral_norm_sq_le_norm_sq`: so its integral over a subset of the set it
@@ -269,6 +270,17 @@ theorem Lp.integral_norm_le_mul_norm {alpha F : Type*} [MeasurableSpace alpha]
     ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono (ENNReal.mul_ne_top (Lp.eLpNorm_ne_top f)
     (ENNReal.rpow_ne_top_of_nonneg hexp (measure_ne_top m _))) h
+
+/-- On a finite measure space, the `L¹` norm of a function in `Lᵖ`, `1 ≤ p`, is at most
+`μ(univ)^{1 - 1/p}` times its `Lᵖ` norm. This is `MeasureTheory.Lp.integral_norm_le_mul_norm`
+for a representative. -/
+theorem MemLp.integral_norm_le_mul_eLpNorm {alpha F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [IsFiniteMeasure m] [NormedAddCommGroup F] {p : ℝ≥0∞} (hp : 1 ≤ p)
+    {f : alpha → F} (hf : MemLp f p m) :
+    ∫ x, ‖f x‖ ∂m ≤ (m Set.univ ^ (1 - 1 / p.toReal)).toReal * (eLpNorm f p m).toReal := by
+  have : Fact (1 ≤ p) := ⟨hp⟩
+  have h := Lp.integral_norm_le_mul_norm (hf.toLp f)
+  rwa [integral_congr_ae (hf.coeFn_toLp.mono fun x hx => by rw [hx]), Lp.norm_toLp] at h
 
 /-- On a finite measure space, a function dominated pointwise by `K ‖f‖` for an `Lᵖ` function
 `f`, `1 ≤ p`, has norm of its integral at most `K μ(univ)^{1 - 1/p} ‖f‖`. -/
