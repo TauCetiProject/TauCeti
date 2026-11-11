@@ -8,7 +8,6 @@ module
 public import Mathlib.Data.ZMod.Basic
 public import TauCeti.GroupTheory.CSA
 public import TauCeti.GroupTheory.GroupAlgGeom.Basic
-import Mathlib.GroupTheory.OrderOfElement
 
 /-!
 # Separation and discrimination of groups with coefficients
