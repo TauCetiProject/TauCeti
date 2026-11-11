@@ -55,19 +55,14 @@ theorem hasDerivAt_of_bounded_second_derivative
   apply (BoundedContinuousFunction.norm_le (by positivity)).mpr
   intro x
   simp only [sub_apply, smul_apply]
-  -- Mathlib already subtracts the fixed linear part in its mean-value inequality.
-  have h := (convex_segment t s).norm_image_sub_le_of_norm_hasFDerivWithin_le'
-    (φ := ContinuousLinearMap.toSpanSingleton ℝ (du t x))
-    (fun r _ ↦ (hu r x).hasFDerivAt.hasFDerivWithinAt)
+  -- Subtract the fixed linear part before applying the one-variable mean-value bound.
+  have h := (convex_segment t s).norm_image_sub_le_of_norm_hasDerivWithin_le
+    (fun r _ ↦ ((hu r x).sub ((hasDerivAt_id r).smul_const (du t x))).hasDerivWithinAt)
     (fun r hr ↦ by
-      rw [← ContinuousLinearMap.toSpanSingletonLIE_apply,
-        ← ContinuousLinearMap.toSpanSingletonLIE_apply]
-      rw [← (ContinuousLinearMap.toSpanSingletonLIE ℝ F).map_sub,
-        (ContinuousLinearMap.toSpanSingletonLIE ℝ F).norm_map]
-      exact (hLip r t x).trans (mul_le_mul_of_nonneg_left
+      simpa only [one_smul] using (hLip r t x).trans (mul_le_mul_of_nonneg_left
         (norm_sub_le_of_mem_segment hr) hK))
     (left_mem_segment ℝ t s) (right_mem_segment ℝ t s)
-  simpa only [ContinuousLinearMap.toSpanSingleton_apply, pow_two, mul_assoc] using h
+  simpa only [Pi.sub_apply, id_eq, sub_smul, sub_sub_sub_comm, pow_two, mul_assoc] using h
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
@@ -77,13 +72,15 @@ theorem hasDerivAt_compactSlice {f : E × ℝ → F} (hf : ContDiff ℝ 2 f)
     (hc : HasCompactSupport f) (t : ℝ) :
     HasDerivAt (compactSlice f hf.continuous hc)
       (compactSlice (fun p ↦ fderiv ℝ f p (0, 1))
-        ((hf.fderiv_right (m := 1) (by norm_num)).clm_apply contDiff_const).continuous
+        ((hf.contDiff_fderiv_apply (m := 1) (by norm_num)).comp
+          (contDiff_id.prodMk contDiff_const)).continuous
         (hc.fderiv_apply ℝ (0, 1)) t) t := by
   let dt := fun p ↦ fderiv ℝ f p (0, 1)
   have hdt : ContDiff ℝ 1 dt :=
-    (hf.fderiv_right (by norm_num)).clm_apply contDiff_const
+    (hf.contDiff_fderiv_apply (by norm_num)).comp (contDiff_id.prodMk contDiff_const)
   have hdtt : Continuous (fun p ↦ fderiv ℝ dt p (0, 1)) :=
-    ((hdt.fderiv_right (m := 0) (by norm_num)).clm_apply contDiff_const).continuous
+    hdt.continuous_fderiv_apply (by norm_num) |>.comp
+      (continuous_id.prodMk continuous_const)
   have hct : HasCompactSupport dt := hc.fderiv_apply ℝ (0, 1)
   obtain ⟨K, hK⟩ := (hct.fderiv_apply ℝ (0, 1)).exists_bound_of_continuous hdtt
   apply hasDerivAt_of_bounded_second_derivative
