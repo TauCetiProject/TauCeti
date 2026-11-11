@@ -7,6 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 public import Mathlib.Analysis.Normed.Operator.Extend
+import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
+import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 
 /-!
@@ -18,6 +20,15 @@ both spaces. A uniform estimate therefore gives a unique bounded operator on all
 This is the final density step in the Calderón–Zygmund strong-type theorem.
 
 The construction uses Mathlib's `Lp.simpleFunc.dense` and `LinearMap.extendOfNorm`.
+
+## Bounds from simple functions
+
+An `Lᵖ → L^q` bound for a bounded operator `T : Lʳ → Lˢ`, `r < ∞`, `1 ≤ p < ∞`, needs only to be
+checked on simple functions in `Lʳ`: it then holds for every `f ∈ Lʳ ∩ Lᵖ`
+(`ContinuousLinearMap.eLpNorm_apply_le_of_forall_simpleFunc`). The simple approximants of `f`
+converge to `f` in `Lʳ` and `Lᵖ` at once, and Fatou's lemma bounds `‖T f‖_q`. The operator norm
+bound itself reads `‖T f‖_s ≤ M ‖f‖_r` in `eLpNorm` form
+(`ContinuousLinearMap.eLpNorm_apply_le_of_norm_le`).
 -/
 
 public section
@@ -306,5 +317,73 @@ theorem strongTypeExtension_unique_of_ae (T : Lp E 2 μ →L[ℝ] Lp F 2 μ) (C 
   have hEg := strongTypeExtension_apply_of_memLp T C hT hp (lpTwoSubmodule.toL2 g) hp'
   rw [heq, strongTypeExtension_apply T C hT hp g] at hEg
   exact Lp.ext (hSg.trans hEg.symm)
+
+end ContinuousLinearMap
+
+/-! ### Bounds from simple functions -/
+
+namespace ContinuousLinearMap
+
+open MeasureTheory Filter
+open scoped ENNReal NNReal Topology
+
+variable {α β 𝕜 E F : Type*} {mα : MeasurableSpace α} {mβ : MeasurableSpace β} {μ : Measure α}
+  {ν : Measure β} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {p q r s : ℝ≥0∞} [Fact (1 ≤ r)] [Fact (1 ≤ s)]
+
+/-- An operator norm bound `‖T‖ ≤ M` for `T : Lʳ → Lˢ` is the bound `‖T f‖_s ≤ M ‖f‖_r` in
+`eLpNorm` form. -/
+theorem eLpNorm_apply_le_of_norm_le (T : Lp E r μ →L[𝕜] Lp F s ν) {M : ℝ≥0} (hT : ‖T‖ ≤ M)
+    (f : Lp E r μ) : eLpNorm (T f) s ν ≤ M * eLpNorm f r μ := by
+  rw [← Lp.enorm_def, ← Lp.enorm_def]
+  refine T.le_of_opENorm_le ?_ f
+  rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal]
+  exact ENNReal.ofReal_le_ofReal hT
+
+/-- A bound for `T : Lʳ → Lˢ`, `r < ∞`, from `Lᵖ` to `L^q`, `1 ≤ p < ∞`, on simple functions in
+`Lʳ` passes to every `f ∈ Lʳ ∩ Lᵖ`, for any finite constant `C`. -/
+theorem eLpNorm_apply_le_of_forall_simpleFunc [MeasurableSpace E] [BorelSpace E] (hr : r ≠ ∞)
+    (T : Lp E r μ →L[𝕜] Lp F s ν) (hp1 : 1 ≤ p) (hp : p ≠ ∞) {C : ℝ≥0∞} (hC : C ≠ ∞)
+    (h : ∀ (g : SimpleFunc α E) (hg : MemLp g r μ), eLpNorm (T (hg.toLp g)) q ν ≤
+      C * eLpNorm g p μ)
+    (f : Lp E r μ) (hf : MemLp f p μ) : eLpNorm (T f) q ν ≤ C * eLpNorm f p μ := by
+  have hfm := Lp.aestronglyMeasurable f
+  set φ := hfm.mk f
+  have hφ : Measurable φ := hfm.stronglyMeasurable_mk.measurable
+  have := hfm.stronglyMeasurable_mk.separableSpace_range_union_singleton (b := 0)
+  have hfφ : (f : α → E) =ᵐ[μ] φ := hfm.ae_eq_mk
+  have hφr : MemLp φ r μ := (Lp.memLp f).ae_eq hfφ
+  have hφp : MemLp φ p μ := hf.ae_eq hfφ
+  set g : ℕ → SimpleFunc α E := fun n ↦ SimpleFunc.approxOn φ hφ (Set.range φ ∪ {0}) 0
+    (by simp) n
+  have hgr : ∀ n, MemLp (g n) r μ := SimpleFunc.memLp_approxOn_range hφ hφr
+  -- The approximants converge to `f` in `Lʳ`, so their images converge to `T f` in `Lˢ`.
+  have hφf : hφr.toLp φ = f := by
+    rw [← Lp.toLp_coeFn f (Lp.memLp f), MemLp.toLp_eq_toLp_iff]
+    exact hfφ.symm
+  have hT : Tendsto (fun n ↦ T ((hgr n).toLp (g n))) atTop (𝓝 (T f)) := by
+    have := SimpleFunc.tendsto_approxOn_range_Lp hr hφ hφr
+    rw [hφf] at this
+    exact (T.continuous.tendsto f).comp this
+  obtain ⟨ns, hns, hae⟩ := (tendstoInMeasure_of_tendsto_Lp hT).exists_seq_tendsto_ae
+  -- The approximants also converge to `f` in `Lᵖ`.
+  have hgp : Tendsto (fun k ↦ C * (eLpNorm f p μ + eLpNorm (⇑(g (ns k)) - φ) p μ)) atTop
+      (𝓝 (C * (eLpNorm f p μ + 0))) :=
+    ENNReal.Tendsto.const_mul (tendsto_const_nhds.add
+      ((SimpleFunc.tendsto_approxOn_range_Lp_eLpNorm hp hφ hφp.eLpNorm_lt_top).comp
+        hns.tendsto_atTop)) (Or.inr hC)
+  calc eLpNorm (T f) q ν
+      ≤ atTop.liminf fun k ↦ eLpNorm (T ((hgr (ns k)).toLp (g (ns k)))) q ν :=
+        Lp.eLpNorm_lim_le_liminf_eLpNorm (fun _ ↦ Lp.aestronglyMeasurable _) _
+          (Lp.aestronglyMeasurable _) hae
+    _ ≤ atTop.liminf fun k ↦ C * (eLpNorm f p μ + eLpNorm (⇑(g (ns k)) - φ) p μ) := by
+        refine liminf_le_liminf (Eventually.of_forall fun k ↦ (h _ _).trans ?_)
+        gcongr
+        calc eLpNorm (g (ns k)) p μ = eLpNorm (φ + (⇑(g (ns k)) - φ)) p μ := by
+              rw [add_sub_cancel]
+          _ ≤ eLpNorm φ p μ + eLpNorm (⇑(g (ns k)) - φ) p μ :=
+              eLpNorm_add_le hp1
+          _ = eLpNorm f p μ + eLpNorm (⇑(g (ns k)) - φ) p μ := by rw [eLpNorm_congr_ae hfφ]
+    _ = C * eLpNorm f p μ := by rw [hgp.liminf_eq, add_zero]
 
 end ContinuousLinearMap

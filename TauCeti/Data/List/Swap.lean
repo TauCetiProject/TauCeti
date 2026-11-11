@@ -45,10 +45,9 @@ def swapIndexEquiv (u v : List α) (a b : α) :
 
 /-- The swap of indices exchanges the positions `u.length` and `u.length + 1` and fixes every
 other position. -/
+@[simp]
 theorem val_swapIndexEquiv (u v : List α) (a b : α) (j : Fin (u ++ b :: a :: v).length) :
-    (swapIndexEquiv u v a b j : ℕ) =
-      if (j : ℕ) = u.length then u.length + 1
-      else if (j : ℕ) = u.length + 1 then u.length else j := by
+    (swapIndexEquiv u v a b j : ℕ) = Equiv.swap u.length (u.length + 1) (j : ℕ) := by
   simp only [swapIndexEquiv, Equiv.trans_apply, Equiv.swap_apply_def, Fin.ext_iff,
     finCongr_apply, Fin.val_cast]
   split_ifs <;> simp_all
@@ -57,35 +56,20 @@ theorem val_swapIndexEquiv (u v : List α) (a b : α) (j : Fin (u ++ b :: a :: v
 `u ++ a :: b :: v`. -/
 theorem getElem_swapIndexEquiv (u v : List α) (a b : α) (j : Fin (u ++ b :: a :: v).length) :
     (u ++ b :: a :: v)[j.1] = (u ++ a :: b :: v)[(swapIndexEquiv u v a b j).1] := by
-  have hj := j.isLt
-  simp only [length_append, length_cons] at hj
-  simp only [val_swapIndexEquiv, getElem_append, getElem_cons]
-  split_ifs <;> first | rfl | omega
+  grind [val_swapIndexEquiv]
 
 /-- The swap of indices of `u ++ b :: a :: v` is inverse to the swap of indices of
 `u ++ a :: b :: v`. -/
 @[simp]
 theorem swapIndexEquiv_symm (u v : List α) (a b : α) :
     (swapIndexEquiv u v a b).symm = swapIndexEquiv u v b a := by
-  refine Equiv.ext fun j ↦ (swapIndexEquiv u v a b).injective ?_
-  rw [Equiv.apply_symm_apply]
-  ext
-  simp only [val_swapIndexEquiv]
-  split_ifs <;> omega
+  refine Equiv.ext fun j ↦ (swapIndexEquiv u v a b).injective (Fin.ext ?_)
+  simp
 
 /-- Looking up position `k` of `u ++ a :: b :: v` gives the same result as looking up the swapped
 position of `u ++ b :: a :: v`, where the swap exchanges `u.length` and `u.length + 1`. -/
 theorem getElem?_swap_append_cons_cons (u v : List α) (a b : α) (k : ℕ) :
     (u ++ b :: a :: v)[Equiv.swap u.length (u.length + 1) k]? = (u ++ a :: b :: v)[k]? := by
-  rcases lt_trichotomy k u.length with hk | rfl | hk
-  · rw [Equiv.swap_apply_of_ne_of_ne (by omega) (by omega), getElem?_append_left hk,
-      getElem?_append_left hk]
-  · simp
-  · obtain ⟨j, rfl⟩ : ∃ j, k = u.length + 1 + j := ⟨k - u.length - 1, by omega⟩
-    rcases j with _ | j
-    · simp
-    · rw [Equiv.swap_apply_of_ne_of_ne (by omega) (by omega)]
-      rw [getElem?_append_right (by omega), getElem?_append_right (by omega)]
-      simp [Nat.add_assoc, Nat.add_comm 1]
+  grind
 
 end List

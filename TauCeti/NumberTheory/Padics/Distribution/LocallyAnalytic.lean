@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Colimit.Module
-public import TauCeti.NumberTheory.Padics.Distribution.AnalyticStage
+public import TauCeti.NumberTheory.Padics.Distribution.Polynomial
 
 /-!
 # The algebraic direct limit of analytic stages
@@ -15,7 +15,8 @@ public import TauCeti.NumberTheory.Padics.Distribution.AnalyticStage
 coefficient stages along `AnalyticStage.transitionLE S`. Its canonical maps `ofStage S h`
 identify a vector with each of its re-expansions. Mathlib's `Module.DirectLimit.exists_of`
 gives a stage representative for every element. Compatible linear maps extend uniquely
-by `Module.DirectLimit.lift` and `Module.DirectLimit.hom_ext`.
+by `Module.DirectLimit.lift` and `Module.DirectLimit.hom_ext`; `lift_ofStage` reads the
+extension on the named stage maps.
 The equation `ofStage_def` connects the named stage maps with this native API without
 unfolding their bodies.
 
@@ -29,6 +30,12 @@ a linear identification with that union. The equivalence is the native
 `LinearEquiv.ofInjective (eval S) (eval_injective S hpE)`, whose target is the range submodule
 described by `range_eval_eq_iSup`. Its stage formulas are `ofInjective_eval_ofStage` and
 `ofInjective_eval_symm_apply`. No topology is put on the algebraic direct limit here.
+
+The evaluated functions are dense in `C(ℤ_p, E)` (`denseRange_eval`): by uniform continuity, a
+continuous function is uniformly close to the function equal to its value at `a` on each disc
+`a + pʰℤ_p` of a small enough radius, and that step function is the evaluation of a coefficient
+vector of degree zero at level `h`. Hence a continuous linear functional on `C(ℤ_p, E)` is
+determined by its values on locally analytic functions.
 -/
 
 public section
@@ -61,6 +68,18 @@ theorem ofStage_def (h : ℕ) :
     ofStage (p := p) (E := E) S h =
       Module.DirectLimit.of S ℕ (fun k ↦ AnalyticStage p k E)
         (fun _ _ hhk ↦ (AnalyticStage.transitionLE S hhk).toLinearMap) h := (rfl)
+
+/-- Mathlib's universal property of the direct limit, read on the named stage maps: the linear
+map induced by a compatible family restricts to each member of the family. -/
+@[simp]
+theorem lift_ofStage {P : Type*} [AddCommMonoid P] [Module S P]
+    (g : ∀ h, AnalyticStage p h E →ₗ[S] P)
+    (hg : ∀ h k (hhk : h ≤ k) c, g k (AnalyticStage.transitionLE S hhk c) = g h c) (h : ℕ)
+    (c : AnalyticStage p h E) :
+    Module.DirectLimit.lift S ℕ (fun k ↦ AnalyticStage p k E)
+      (fun _ _ hhk ↦ (AnalyticStage.transitionLE S hhk).toLinearMap) g hg (ofStage S h c) =
+      g h c :=
+  Module.DirectLimit.lift_of g hg c
 
 /-- A stage vector and its re-expansion define the same direct-limit element. -/
 @[simp]
@@ -147,6 +166,29 @@ theorem range_eval_eq_iSup :
   rw [Submodule.coe_iSup_of_directed _ hmono.directed_le]
   simpa only [LinearMap.coe_range, ContinuousLinearMap.coe_coe] using
     range_eval (p := p) (E := E) S
+
+/-- Locally analytic functions are dense in the continuous functions. A continuous function is
+uniformly approximated by the function equal to its value at `a.val` on each disc `a + pʰℤ_p`,
+which is the evaluation of a coefficient vector of degree zero at level `h`. -/
+theorem denseRange_eval : DenseRange (eval (p := p) (E := E) S) := by
+  refine Metric.denseRange_iff.mpr fun f ε hε ↦ ?_
+  obtain ⟨δ, hδ, hf⟩ := f.uniform_continuity ε hε
+  obtain ⟨h, hh⟩ := exists_pow_lt_of_lt_one hδ (PadicInt.norm_p_lt_one (p := p))
+  let c := (AnalyticStage.polynomialEquiv (p := p) (h := h) (E := E) S 0).symm
+    fun i ↦ f (i.1.val : ℤ_[p])
+  refine ⟨ofStage S h c.val, ?_⟩
+  rw [eval_ofStage, ContinuousMap.dist_lt_iff hε]
+  intro x
+  have hx := PadicInt.natCast_val_toZModPow_add_mul_snd_discHomeomorph_symm h x
+  set a := PadicInt.toZModPow h x
+  set w := ((PadicInt.discHomeomorph p h).symm x).2
+  have heval : AnalyticStage.eval S c.val x = f (a.val : ℤ_[p]) := by
+    rw [← hx, AnalyticStage.eval_polynomial_natCast_val_add_mul]
+    simp [c]
+  rw [heval]
+  apply hf
+  rw [dist_eq_norm, ← hx, add_sub_cancel_left, norm_mul, norm_pow]
+  exact (mul_le_of_le_one_right (by positivity) (PadicInt.norm_le_one w)).trans_lt hh
 
 end LocallyAnalytic
 

@@ -159,10 +159,11 @@ theorem exists_forall_mul_mem_of_hasBasis
 
 /-- If the left ideals `J i` form a basis of neighborhoods of `0` and right multiplications are
 continuous, a vector lies in the smooth part exactly when it is killed by some `J i`. -/
-theorem mem_smoothPart_iff_of_hasBasis [Nonempty ι]
+theorem mem_smoothPart_iff_of_hasBasis
     (hJ : (𝓝 (0 : A)).HasBasis (fun _ => True) fun i => (J i : Set A)) {M : Type*}
     [AddCommGroup M] [Module A M] {m : M} :
     m ∈ smoothPart J M ↔ ∃ i, ∀ a ∈ J i, a • m = 0 := by
+  have : Nonempty ι := hJ.nonempty
   refine mem_smoothPart_iff_of_mul_mem (fun i j => ?_) (exists_forall_mul_mem_of_hasBasis hJ)
   obtain ⟨k, -, hk⟩ := hJ.mem_iff.1 (inter_mem (hJ.mem_of_mem (i := i) trivial)
     (hJ.mem_of_mem (i := j) trivial))

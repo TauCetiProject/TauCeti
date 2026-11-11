@@ -39,7 +39,7 @@ example :
     Network.Subnetwork.ext (Set.ext fun x ↦ by simp)
       (Set.ext fun a ↦ ⟨fun h ↦ by simp at h, fun _ ↦ a.2.2.elim⟩)
   let D : N.EarDecomposition ⊤ := (Network.EarDecomposition.singleton (N := N) ()).copy htop
-  exact ⟨D, by simp [D], D.isStronglyConnected_network⟩
+  exact ⟨D, by simp [D], D.isStronglyConnected_full⟩
 
 -- 2. A single vertex with two parallel loops decomposes into two closed ears of length one.
 example :
@@ -70,7 +70,7 @@ example :
     · cases b <;>
         simp [e₁, c₀, Network.Ear.adjoin_def, ArrowWalk.arrows_cons, ArrowWalk.arrows_nil]
   let D₂ : N.EarDecomposition ⊤ := (D₁.snoc (.closed e₁)).copy htop
-  refine ⟨D₂, ?_, ?_, D₂.isStronglyConnected_network⟩
+  refine ⟨D₂, ?_, ?_, D₂.isStronglyConnected_full⟩
   · simp [D₂, D₁]
   · intro ⟨i, hi⟩
     have hlen : D₂.length = 2 := by simp [D₂, D₁]
@@ -80,8 +80,8 @@ example :
         apply Fin.ext
         simp [D₁]
       rw [h1]
-      exact ((D₁.snoc (.closed e₁)).kindAt_copy htop (Fin.last D₁.length)).trans
-        ((D₁.kindAt_snoc_last (.closed e₁)).trans (Network.Ear.kind_closed e₁))
+      exact ((D₁.snoc (.closed e₁)).copy_kindAt htop (Fin.last D₁.length)).trans
+        ((D₁.snoc_kindAt_last (.closed e₁)).trans (Network.Ear.kind_closed e₁))
     · omega
 
 -- 3. Two vertices `Bool` with two parallel forward arrows `false → true` and one return arrow

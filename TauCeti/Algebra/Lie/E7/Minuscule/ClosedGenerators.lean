@@ -59,13 +59,13 @@ private theorem rootSubgroupIntegralCoordinateMap_surjective (k : Fin 7 ⊕ Fin 
     Function.Surjective (rootSubgroupIntegralCoordinateMap k).hom := by
   have hrepresented : Function.Surjective
       (TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap
-        (TauCeti.serreRootGenerator (CartanMatrix.E 7))
-        (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep lattice.toAddSubgroup
+        (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+        (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
         rep_kostantForm_mem_lattice k (isNilpotent_rep_serreRootGenerator k)
         latticeBasis).hom := by
     rw [← TauCeti.UniversalEnvelopingAlgebra.mkQuotient_comp_kostantRootSubgroupToralCoordinateMap
-      (TauCeti.serreRootGenerator (CartanMatrix.E 7))
-      (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep lattice.toAddSubgroup
+      (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+      (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
       rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
       e7MinusculeWeight k]
     exact (rootSubgroupCoordinateMap_surjective k).comp
@@ -120,7 +120,7 @@ theorem weightTorusToBaseChangeCoordinateMap_surjective :
         (DiagonalizableGroup.coordinateRing A
           (SplitTorus.characterGroup (Fin 7))).obj :=
     _root_.CommHopfAlgCat.isoMk
-      (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ A
+      (MonoidAlgebra.scalarTensorBialgEquiv ℤ A
         (G := SplitTorus.characterGroup (Fin 7)))
   exact _root_.CommHopfAlgCat.baseChangeMap_surjective_of_iso (K := A)
     (H := CommHopfAlgCat.quotient

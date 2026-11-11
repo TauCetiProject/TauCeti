@@ -76,8 +76,8 @@ theorem riemannRochSpace_add_poles_eq_sup (hF : IsFunctionField k F)
     (hA : 2 * (genus k F : ℤ) - 1 ≤ Divisor.degree (A - Divisor.zeros hF z)) :
     riemannRochSpace (A + Divisor.poles hF z) =
       riemannRochSpace A ⊔ riemannRochSpace (A - Divisor.principal hF z) := by
-  have hZ : 0 ≤ Divisor.zeros hF z := (Divisor.isEffective_zeros hF z).zero_le
-  have hD : 0 ≤ Divisor.poles hF z := (Divisor.isEffective_poles hF z).zero_le
+  have hZ : 0 ≤ Divisor.zeros hF z := Divisor.zeros_nonneg hF z
+  have hD : 0 ≤ Divisor.poles hF z := Divisor.poles_nonneg hF z
   have hinf : A ⊓ (A - Divisor.principal hF z) = A - Divisor.zeros hF z := by
     ext P
     simp only [WeilDivisor.coeff_inf, WeilDivisor.coeff_sub,
@@ -161,7 +161,7 @@ theorem riemannRochSpace_succ_nsmul_poles_le_mul (hF : IsFunctionField k F)
   obtain ⟨a, ha, b, hb, rfl⟩ := (mem_riemannRochSpace_succ_nsmul_poles_iff hF hex z n hn f).mp hf
   refine add_mem ?_ (Submodule.mul_mem_mul (mem_riemannRochSpace_poles hF z) hb)
   simpa only [one_mul] using Submodule.mul_mem_mul
-    (one_mem_riemannRochSpace_iff.mpr (Divisor.isEffective_poles hF z).zero_le) ha
+    (one_mem_riemannRochSpace_iff.mpr (Divisor.poles_nonneg hF z)) ha
 
 /-- Iterating the pencil: once the bound holds at `N`, every section of `(N + j) D`, for
 `D = (z)∞`, is a sum of products of `j` sections of `D` with a section of `N D`. -/
@@ -171,7 +171,7 @@ theorem riemannRochSpace_add_nsmul_poles_le_pow_mul (hF : IsFunctionField k F)
     (j : ℕ) :
     riemannRochSpace ((N + j) • Divisor.poles hF z) ≤
       riemannRochSpace (Divisor.poles hF z) ^ j * riemannRochSpace (N • Divisor.poles hF z) := by
-  have hdeg := Divisor.degree_nonneg (Divisor.isEffective_poles hF z).zero_le
+  have hdeg := Divisor.degree_nonneg (Divisor.poles_nonneg hF z)
   induction j with
   | zero => simp
   | succ j ih =>
@@ -191,7 +191,7 @@ theorem riemannRochSpace_nsmul_nsmul_poles_le_pow (hF : IsFunctionField k F)
     (n : ℕ) :
     riemannRochSpace (n • e • Divisor.poles hF z) ≤
       riemannRochSpace (e • Divisor.poles hF z) ^ n := by
-  have hdeg := Divisor.degree_nonneg (Divisor.isEffective_poles hF z).zero_le
+  have hdeg := Divisor.degree_nonneg (Divisor.poles_nonneg hF z)
   refine Divisor.adjoin_sectionRingGrade_one_eq_top_iff.mp
     (Divisor.adjoin_sectionRingGrade_one_eq_top hF hex fun m hm ↦ ?_) n
   have hm : (1 : ℤ) ≤ m := by exact_mod_cast Nat.one_le_iff_ne_zero.mpr hm
@@ -260,7 +260,7 @@ theorem riemannRochSpace_add_nsmul_poles_eq_span (hF : IsFunctionField k F)
     riemannRochSpace ((N + m) • Divisor.poles hF z) =
       Submodule.span k {f : F | ∃ i ≤ m, ∃ a ∈ riemannRochSpace (N • Divisor.poles hF z),
         f = (z : F) ^ i * a} := by
-  have hD : 0 ≤ Divisor.poles hF z := (Divisor.isEffective_poles hF z).zero_le
+  have hD : 0 ≤ Divisor.poles hF z := Divisor.poles_nonneg hF z
   have hdegD : 0 ≤ Divisor.degree (Divisor.poles hF z) := Divisor.degree_nonneg hD
   induction m with
   | zero =>

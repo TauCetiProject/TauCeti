@@ -39,7 +39,9 @@ near `1` in a bare Banach algebra, with smooth dependence on the element.
   value really is a square root.
 * `TauCeti.eventually_sqrtNearOne_mul_self`: near `1` it is a left inverse of squaring, which is
   the uniqueness statement: an element close to `1` is recovered from its square.
-* `TauCeti.eventually_sqrtNearOne_fixed`: a continuous map fixing `1` and reversing products
+* `TauCeti.eventually_sqrtNearOne_eq_of_tendsto`: the same uniqueness along an arbitrary filter,
+  for a family of square roots tending to `1`.
+* `TauCeti.eventually_sqrtNearOne_fixed`: a map continuous at `1` and reversing products
   fixes the square root of every fixed element sufficiently close to `1`.
 
 ## References
@@ -127,6 +129,14 @@ theorem eventually_sqrtNearOne_mul_self :
     (f' := (ContinuousLinearEquiv.smulLeft (Units.mk0 (2 : ℝ) two_ne_zero) : A ≃L[ℝ] A))
       (a := 1)
 
+/-- **Uniqueness of the square root near the identity, along a filter.** If `r` tends to `1` and
+eventually squares to `x`, then `TauCeti.sqrtNearOne` eventually recovers `r` from `x`. -/
+theorem eventually_sqrtNearOne_eq_of_tendsto {α : Type*} {l : Filter α} {r x : α → A}
+    (hr : Tendsto r l (𝓝 1)) (hx : ∀ᶠ t in l, r t * r t = x t) :
+    ∀ᶠ t in l, sqrtNearOne A (x t) = r t := by
+  filter_upwards [hr.eventually eventually_sqrtNearOne_mul_self, hx] with t ht hxt
+  rwa [← hxt]
+
 /-- The square root near the identity is smooth at the identity. -/
 theorem contDiffAt_sqrtNearOne : ContDiffAt ℝ ∞ (sqrtNearOne A) 1 :=
   analyticAt_sqrtNearOne.contDiffAt
@@ -135,11 +145,16 @@ theorem contDiffAt_sqrtNearOne : ContDiffAt ℝ ∞ (sqrtNearOne A) 1 :=
 theorem continuousAt_sqrtNearOne : ContinuousAt (sqrtNearOne A) 1 :=
   contDiffAt_sqrtNearOne.continuousAt
 
-/-- A map continuous at `1`, fixing `1`, and reversing products fixes the square root near
-the identity of every fixed element sufficiently close to `1`. -/
+/-- A map continuous at `1` and reversing products fixes the square root near the identity of
+every fixed element sufficiently close to `1`. If the map does not fix `1`, it has no fixed
+points near `1`, so the statement is vacuous. -/
 theorem eventually_sqrtNearOne_fixed {adj : A → A} (hc : ContinuousAt adj 1)
-    (h1 : adj 1 = 1) (hmul : ∀ x y, adj (x * y) = adj y * adj x) :
+    (hmul : ∀ x y, adj (x * y) = adj y * adj x) :
     ∀ᶠ a in 𝓝 (1 : A), adj a = a → adj (sqrtNearOne A a) = sqrtNearOne A a := by
+  by_cases h1 : adj 1 = 1
+  swap
+  · filter_upwards [(hc.sub continuousAt_id).eventually_ne (sub_ne_zero.2 h1)] with a ha hfix
+    exact (ha (sub_eq_zero.2 hfix)).elim
   have hroot : Tendsto (sqrtNearOne A) (𝓝 1) (𝓝 1) := by
     simpa only [sqrtNearOne_one] using (continuousAt_sqrtNearOne (A := A)).tendsto
   have hadj : Tendsto (fun a ↦ adj (sqrtNearOne A a)) (𝓝 1) (𝓝 1) := by

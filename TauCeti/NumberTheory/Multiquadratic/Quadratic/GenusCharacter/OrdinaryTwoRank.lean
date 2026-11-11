@@ -262,7 +262,7 @@ theorem twoRank_eq_one_of_minpoly_eq_X_sq_sub_thirty_four
       fundamentalDiscriminant_of_mod_four_ne_one (by decide : (34 : ℤ) % 4 ≠ 1)]
     norm_num
   have hncard : (ramifiedPrimes K).ncard = 2 := by
-    rw [ncard_ramifiedPrimes_eq_card hmin hgen hsf hs heven hprod,
+    rw [ncard_ramifiedPrimes_eq_card hmin hgen hsf hs hprod,
       Finset.card_pair (by decide : (8 : ℤ) ≠ 17)]
   have hrank := (twoRank_eq_ncard_ramifiedPrimes_sub_one_iff hs heven hprod hmin hgen hsf
     (by norm_num)).mpr (by simp)

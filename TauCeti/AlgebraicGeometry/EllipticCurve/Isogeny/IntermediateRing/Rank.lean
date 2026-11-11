@@ -158,8 +158,7 @@ instance isFractionRing_intermediateRing (φ : Isogeny W₁ W₂) :
   have h : ∀ x, algebraMap W₂.CoordinateRing W₁.FunctionField x = φ.pullback x :=
     φ.pullback.algebraMap_toAlgebra_apply
   have : IsScalarTower W₂.CoordinateRing W₂.FunctionField W₁.FunctionField :=
-    IsScalarTower.of_algebraMap_eq fun x ↦ by
-      rw [h, φ.fieldPullback.algebraMap_toAlgebra_apply, fieldPullback_algebraMap]
+    φ.isScalarTower_coordinateRing_of_algebraMap_eq_pullback h
   have : IsScalarTower W₂.CoordinateRing φ.intermediateRing W₁.FunctionField :=
     φ.isScalarTower_intermediateRing rfl h
   have := φ.isIntegralClosure_intermediateRing h
@@ -179,19 +178,20 @@ a structure globally would be a diamond, since different isogenies induce differ
 Nothing here is spent on separability or on the coordinate rings being Dedekind. -/
 theorem finrank_intermediateRing_eq_degree (φ : Isogeny W₁ W₂)
     [Algebra W₂.CoordinateRing W₁.FunctionField]
-    [Algebra W₂.FunctionField W₁.FunctionField]
-    [IsScalarTower W₂.CoordinateRing W₂.FunctionField W₁.FunctionField]
     [Algebra W₂.CoordinateRing φ.intermediateRing]
     [IsScalarTower W₂.CoordinateRing φ.intermediateRing W₁.FunctionField]
     (h : ∀ x, algebraMap W₂.CoordinateRing W₁.FunctionField x = φ.pullback x) :
     Module.finrank W₂.CoordinateRing φ.intermediateRing = φ.degree := by
-  rw [φ.degree_eq_finrank (φ.algebraMap_functionField_eq_fieldPullback h)]
+  -- the function-field algebra structure is local, as `IntermediateRing/Basic.lean` prescribes
+  let _ := φ.fieldPullback.toRingHom.toAlgebra
+  have : IsScalarTower W₂.CoordinateRing W₂.FunctionField W₁.FunctionField :=
+    φ.isScalarTower_coordinateRing_of_algebraMap_eq_pullback h
+  rw [φ.degree_eq_finrank φ.fieldPullback.algebraMap_toAlgebra_apply]
   exact (IsFractionRing.finrank_eq W₂.CoordinateRing W₂.FunctionField φ.intermediateRing
     W₁.FunctionField).symm
 
 /-- **The intermediate ring is projective, hence locally free, over the Dedekind target coordinate
-ring.** Once the function-field algebra structures and scalar towers required by
-`finrank_intermediateRing_eq_degree` are also present, its rank is `φ.degree`. This is the form in
+ring.** By `finrank_intermediateRing_eq_degree` its rank is `φ.degree`. This is the form in
 which the roadmap's place-free fibre count is stated.
 
 The structure map is injective, because it factors the pullback of the isogeny and that is
@@ -236,8 +236,6 @@ Mathlib's `Ideal.sum_ramification_inertia_eq_finrank` takes the binder the same 
 same `Module.Finite`. -/
 theorem sum_ramificationIdx_mul_inertiaDeg_eq_degree (φ : Isogeny W₁ W₂)
     [Algebra W₂.CoordinateRing W₁.FunctionField]
-    [Algebra W₂.FunctionField W₁.FunctionField]
-    [IsScalarTower W₂.CoordinateRing W₂.FunctionField W₁.FunctionField]
     [Algebra W₂.CoordinateRing φ.intermediateRing]
     [IsScalarTower W₂.CoordinateRing φ.intermediateRing W₁.FunctionField]
     [Module.Finite W₂.CoordinateRing φ.intermediateRing]
@@ -256,21 +254,21 @@ API for this set uses (`Ideal.ncard_primesOver_lt_of_not_le`). What is counted a
 intermediate ring; reading them as the fibre over the affine place that `p` names needs `p` maximal
 and `W₁` nonsingular, neither of which is assumed.
 
-Equality holds exactly when every ramification index and every inertia degree over `p` is one.
+For prime `p`, equality holds exactly when every ramification index and every inertia degree over
+`p` is one; a nonprime `p` has no primes over it, so the condition is vacuous there while the count
+is `0`.
 Turning the weighted identity above into an honest count of geometric points is therefore Layer 1's
 separable-⟹-unramified milestone (`e_q = 1`) together with a separably closed base (`f_q = 1`) and
 a nonsingular `W₁`, which makes the primes counted here points of `W₁`; none of the three is
 assumed. -/
 theorem ncard_primesOver_le_degree (φ : Isogeny W₁ W₂)
     [Algebra W₂.CoordinateRing W₁.FunctionField]
-    [Algebra W₂.FunctionField W₁.FunctionField]
-    [IsScalarTower W₂.CoordinateRing W₂.FunctionField W₁.FunctionField]
     [Algebra W₂.CoordinateRing φ.intermediateRing]
     [IsScalarTower W₂.CoordinateRing φ.intermediateRing W₁.FunctionField]
     [Module.Finite W₂.CoordinateRing φ.intermediateRing]
     [Module.Flat W₂.CoordinateRing φ.intermediateRing]
     (h : ∀ x, algebraMap W₂.CoordinateRing W₁.FunctionField x = φ.pullback x)
-    (p : Ideal W₂.CoordinateRing) [p.IsPrime] :
+    (p : Ideal W₂.CoordinateRing) :
     (p.primesOver φ.intermediateRing).ncard ≤ φ.degree := by
   exact (RamificationInertia.ncard_primesOver_le_finrank p).trans_eq
     (φ.finrank_intermediateRing_eq_degree h)

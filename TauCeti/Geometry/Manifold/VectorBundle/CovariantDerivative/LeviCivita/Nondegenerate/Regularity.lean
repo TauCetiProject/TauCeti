@@ -85,6 +85,39 @@ variable {EP : Type*} [NormedAddCommGroup EP] [NormedSpace ℝ EP]
   {cov : P → CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
 
 /-- Levi-Civita connections of a family of nondegenerate metrics, jointly `C^(n+1)` in the
+parameter and the point, have jointly `C^n` pairings `g_p(∇ᵖ_X Y, Z)` with a `C^(n+1)` vector field
+`Z`, on `P × s` for an open set `s` on which `X`, `Y` and `Z` are `C^(n+1)`. This is the Koszul
+formula, half of which is the pairing. -/
+private theorem contMDiffOn_metric_covariantDerivative_apply_of_isLeviCivitaConnection
+    {s : Set M} {Z : Π x : M, TangentSpace I x}
+    (hcov : ∀ p, (g p).IsLeviCivitaConnection (cov p)) (hn : n ≤ ∞) (hs : IsOpen s)
+    (hg : ContMDiffOn (IP.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) (n + 1)
+      (fun q : P × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+        (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) q.2 (g q.1 q.2))
+      (univ ×ˢ s))
+    (hX : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (X y)) s)
+    (hY : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (Y y)) s)
+    (hZ : ContMDiffOn I (I.prod 𝓘(ℝ, E)) (n + 1) (fun y ↦ TotalSpace.mk' E y (Z y)) s) :
+    ContMDiffOn (IP.prod I) 𝓘(ℝ) n
+      (fun q : P × M ↦ g q.1 q.2 (cov q.1 Y q.2 (X q.2)) (Z q.2)) (univ ×ˢ s) := by
+  have hn₂ : n + 2 ≤ ∞ := by simpa using hn
+  have : IsManifold I (n + 1 + 1) M :=
+    IsManifold.of_le (n := ∞) (by simpa only [add_assoc, one_add_one_eq_two] using hn₂)
+  have : IsManifold I (n + 1) M := IsManifold.of_le (n := ∞) (by simpa using hn)
+  have : ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
+  have hK := (contMDiffOn_const (c := (2 : ℝ)⁻¹)).mul
+    (contMDiffOn_koszulBilinear_family (b := fun p ↦ g p) hs hn₂ hg hX hY hZ)
+  refine hK.congr fun q hq ↦ ?_
+  have hXd := (hX.mdifferentiableOn (by simp)).mdifferentiableAt (hs.mem_nhds hq.2)
+  have hYd := (hY.mdifferentiableOn (by simp)).mdifferentiableAt (hs.mem_nhds hq.2)
+  have hZd := (hZ.mdifferentiableOn (by simp)).mdifferentiableAt (hs.mem_nhds hq.2)
+  have hkos := (hcov q.1).two_apply_eq_koszul hXd hYd hZd
+  rw [ContMDiffNondegenerateMetric.koszul_apply, ← koszulBilinear_apply] at hkos
+  simp only [Pi.mul_apply]
+  linarith
+
+/-- Levi-Civita connections of a family of nondegenerate metrics, jointly `C^(n+1)` in the
 parameter and the point, differentiate vector fields jointly in the parameter and the point with
 one derivative lost: `(p, x) ↦ ∇ᵖ_X Y(x)` is `C^n` on `P × u` when `X` and `Y` are `C^(n+1)` on
 the open set `u`. -/
@@ -123,20 +156,9 @@ private theorem contMDiffOn_covariantDerivative_apply_of_isLeviCivitaConnection
   -- half the Koszul expressions.
   have heval (j : Fin (finrank ℝ E)) : ContMDiffOn (IP.prod I) 𝓘(ℝ) n
       (fun q : P × M ↦ g q.1 q.2 (cov q.1 Y q.2 (X q.2)) (chartLocalFrame (I := I) x j q.2))
-      (univ ×ˢ s) := by
-    have hK := (contMDiffOn_const (c := (2 : ℝ)⁻¹)).mul
-      (contMDiffOn_koszulBilinear_family (b := fun p ↦ g p) hs hn₂ (hg.mono hsW)
-        (hX.mono inter_subset_left) (hY.mono inter_subset_left) (hframe j))
-    refine hK.congr fun q hq ↦ ?_
-    have hXd := ((hX.mono inter_subset_left).mdifferentiableOn (by simp)).mdifferentiableAt
-      (hs.mem_nhds hq.2)
-    have hYd := ((hY.mono inter_subset_left).mdifferentiableOn (by simp)).mdifferentiableAt
-      (hs.mem_nhds hq.2)
-    have hZd := ((hframe j).mdifferentiableOn (by simp)).mdifferentiableAt (hs.mem_nhds hq.2)
-    have hkos := (hcov q.1).two_apply_eq_koszul hXd hYd hZd
-    rw [ContMDiffNondegenerateMetric.koszul_apply, ← koszulBilinear_apply] at hkos
-    simp only [Pi.mul_apply]
-    linarith
+      (univ ×ˢ s) :=
+    contMDiffOn_metric_covariantDerivative_apply_of_isLeviCivitaConnection hcov hn hs
+      (hg.mono hsW) (hX.mono inter_subset_left) (hY.mono inter_subset_left) (hframe j)
   have hflat : ContMDiffOn (IP.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) n
       (fun q : P × M ↦ TotalSpace.mk' (E →L[ℝ] ℝ)
         (E := fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) q.2 (g q.1 q.2 (cov q.1 Y q.2 (X q.2))))

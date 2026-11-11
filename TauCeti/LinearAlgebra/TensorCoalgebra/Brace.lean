@@ -270,8 +270,7 @@ theorem gradedCoderiv_sum_antidiagonal_brace {φ : ℕ → ReducedTensorWords R 
       ∑ x ∈ Finset.antidiagonal k, gradedCoderiv G (φ x.1) q ∘ₗ gradedCoderiv G (φ x.2) q := by
   set D := fun i ↦ gradedCoderiv G (φ i) q with hD
   have hle {x : ℕ × ℕ} (hx : x ∈ Finset.antidiagonal k) : x.1 ≤ k ∧ x.2 ≤ k := by
-    rw [Finset.mem_antidiagonal] at hx
-    omega
+    grind [Finset.mem_antidiagonal]
   -- The terms for `(i, j)` and `(j, i)` add up to a graded commutator of odd coderivations.
   have hpair {x : ℕ × ℕ} (hx : x ∈ Finset.antidiagonal k) :
       D x.1 ∘ₗ D x.2 + D x.2 ∘ₗ D x.1 ∈ gradedCoderivations G (q + q) := by
@@ -295,13 +294,8 @@ theorem gradedCoderiv_sum_antidiagonal_brace {φ : ℕ → ReducedTensorWords R 
     have hswap : ∑ x ∈ Finset.antidiagonal k, (if x.1 < x.2 then D x.2 ∘ₗ D x.1 else 0) =
         ∑ x ∈ Finset.antidiagonal k, (if x.2 < x.1 then D x.1 ∘ₗ D x.2 else 0) :=
       Finset.Nat.sum_antidiagonal_swap (f := fun x ↦ if x.2 < x.1 then D x.1 ∘ₗ D x.2 else 0)
-    have hadd : ∑ x ∈ Finset.antidiagonal k,
-          (if x.1 < x.2 then D x.1 ∘ₗ D x.2 + D x.2 ∘ₗ D x.1 else 0) =
-        ∑ x ∈ Finset.antidiagonal k, (if x.1 < x.2 then D x.1 ∘ₗ D x.2 else 0) +
-          ∑ x ∈ Finset.antidiagonal k, (if x.1 < x.2 then D x.2 ∘ₗ D x.1 else 0) := by
-      rw [← Finset.sum_add_distrib]
-      exact Finset.sum_congr rfl fun x _ ↦ by split_ifs <;> simp
-    rw [hadd, hswap, ← Finset.sum_add_distrib, ← Finset.sum_add_distrib]
+    rw [Finset.sum_congr rfl fun x _ ↦ ite_add_zero, Finset.sum_add_distrib, hswap,
+      ← Finset.sum_add_distrib, ← Finset.sum_add_distrib]
     refine Finset.sum_congr rfl fun x _ ↦ ?_
     rcases lt_trichotomy x.1 x.2 with h | h | h
     · simp [h, h.ne, h.not_gt]
@@ -313,9 +307,7 @@ theorem gradedCoderiv_sum_antidiagonal_brace {φ : ℕ → ReducedTensorWords R 
     · split_ifs
       exacts [hpair hx, zero_mem _]
     · split_ifs with h
-      · rw [← h]
-        exact hdiag x.1 (hle hx).1
-      · exact zero_mem _
+      exacts [h ▸ hdiag x.1 (hle hx).1, zero_mem _]
   refine IsGradedCoderivation.eq_of_letter_comp_eq (isGradedCoderivation_gradedCoderiv G _ _)
     ((mem_gradedCoderivations G).1 hmem) ?_
   have hsum := map_sum (LinearMap.llcomp R _ _ _ (letter R M)) (fun x ↦ D x.1 ∘ₗ D x.2)

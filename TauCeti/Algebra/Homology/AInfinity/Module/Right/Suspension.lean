@@ -297,15 +297,9 @@ theorem apply_algebra_splice_of_mem
   have hsplice : ReducedTensorWords.splice R (fun i : Fin (p + s + t) ↦ a i) 0
       (p + s + t) p s (c • v) = ReducedTensorWords.of R A ⟨p + 1 + t, by omega⟩
         (PiTensorProduct.tprod R
-          fun i : Fin (p + 1 + t) ↦ replaceBlock a p s (c • v) i) := by
-    rw [ReducedTensorWords.splice_eq_of_tprod R _ _ hs (by omega) (by omega)]
-    apply ReducedTensorWords.of_tprod_congr R A (by omega) (by omega)
-    intro i
-    simp only [Fin.val_cast, Nat.zero_add]
-    split_ifs with hip hi
-    · exact (replaceBlock_of_lt a p s _ hip).symm
-    · rw [hi, replaceBlock_self]
-    · exact (replaceBlock_of_gt a p s _ (by omega)).symm
+          fun i : Fin (p + 1 + t) ↦ replaceBlock a p s (c • v) i) :=
+    (ReducedTensorWords.splice_eq_of_tprod_replaceBlock R a hs (by omega) (c • v)).trans
+      (ReducedTensorWords.of_tprod_congr R A (by omega) (by omega) fun i ↦ by simp)
   have hcv : c • v ∈ AA.grading.piece (AInfinity.blockDeg d p s) :=
     Submodule.smul_mem _ _ (AInfinity.evalNat_mem_blockDeg AA.grading.piece (AA.m s)
       (AA.m_degree s hs) p fun j hj ↦ ha _ (by omega))

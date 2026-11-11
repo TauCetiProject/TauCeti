@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Digraph.ArrowWalk
-public import TauCeti.Combinatorics.Network.Ear.StronglyConnected
+public import TauCeti.Combinatorics.Network.Ear.StrongConnectivity
 
 /-!
 # Directed ear decompositions of digraphs
@@ -52,23 +52,20 @@ variable {V : Type u} {D : Digraph V}
 
 /-- In a strongly connected digraph (without finiteness assumptions), every nonempty proper
 subnetwork of `D.toNetwork` admits an open or closed directed ear. -/
-theorem nonempty_ear {S : D.toNetwork.Subnetwork} (hD : ∀ v w, ReflTransGen D.Adj v w)
+theorem nonempty_ear_of_ne_top {S : D.toNetwork.Subnetwork} (hD : ∀ v w, ReflTransGen D.Adj v w)
     (hS_ne : S.vertexSet.Nonempty) (hS_top : S ≠ ⊤) : Nonempty (D.toNetwork.Ear S) :=
-  D.toNetwork.nonempty_ear (D.isStronglyConnected_iff.2 hD) hS_ne hS_top
+  Network.Ear.nonempty_of_ne_top (D.isStronglyConnected_iff.2 hD) hS_ne hS_top
 
 /-- In a finite strongly connected digraph, every partial ear decomposition extends to a full ear
-decomposition of `⊤` preserving its initial vertex, prefix stages, ear kinds, and ear
-subnetworks. -/
-theorem exists_earDecomposition_top_of_earDecomposition [Finite V]
+decomposition of `⊤` preserving its initial vertex, prefix stages, and displayed ears. -/
+theorem exists_earDecomposition_top_extend [Finite V]
     (hD : ∀ v w, ReflTransGen D.Adj v w) {S : D.toNetwork.Subnetwork}
     (E : D.toNetwork.EarDecomposition S) :
     ∃ (E' : D.toNetwork.EarDecomposition ⊤) (h : E.length ≤ E'.length),
       E'.initialVertex = E.initialVertex ∧
       (∀ j : Fin (E.length + 1), E'.stage (Fin.castLE (Nat.succ_le_succ h) j) = E.stage j) ∧
-      (∀ i : Fin E.length, E'.kindAt (Fin.castLE h i) = E.kindAt i) ∧
-      (∀ i : Fin E.length,
-        (E'.ear (Fin.castLE h i)).toSubnetwork = (E.ear i).toSubnetwork) :=
-  D.toNetwork.exists_earDecomposition_top_of_earDecomposition (D.isStronglyConnected_iff.2 hD) E
+      ∀ i : Fin E.length, HEq (E'.ear (Fin.castLE h i)) (E.ear i) :=
+  Network.EarDecomposition.exists_earDecomposition_top_extend (D.isStronglyConnected_iff.2 hD) E
 
 /-- A finite digraph is strongly connected if and only if `D.toNetwork` admits a directed ear
 decomposition of `⊤` starting at a prescribed vertex `v₀`. -/
@@ -104,12 +101,12 @@ theorem earDecomposition_length_eq_zero_iff (E : D.toNetwork.EarDecomposition �
   · subst hbot
     exact hadj
 
-/-- In a finite strongly connected digraph, every directed cycle along `D.AdjHom` appears as
-`stage 1` of a directed ear decomposition of `⊤`. -/
+/-- In a finite strongly connected digraph, every directed cycle along `D.AdjHom` appears as the
+initial closed ear and `stage 1` of a directed ear decomposition of `⊤`. -/
 theorem exists_earDecomposition_of_isCycle [Finite V] (hD : ∀ v w, ReflTransGen D.Adj v w)
     {v₀ : V} {c : ArrowWalk D.AdjHom v₀ v₀} (hc : c.IsCycle) :
     ∃ (E : D.toNetwork.EarDecomposition ⊤) (h : 0 < E.length),
-      E.initialVertex = v₀ ∧ E.kindAt ⟨0, h⟩ = .closed ∧
+      E.initialVertex = v₀ ∧ E.kindAt ⟨0, h⟩ = .closed ∧ E.walkAt ⟨0, h⟩ = ⟨v₀, v₀, c⟩ ∧
         E.stage ⟨1, Nat.succ_lt_succ h⟩ = c.toSubnetwork :=
   D.toNetwork.exists_earDecomposition_of_isCycle (D.isStronglyConnected_iff.2 hD) hc
 

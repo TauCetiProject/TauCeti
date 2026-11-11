@@ -22,8 +22,8 @@ public section
 
 namespace TauCeti
 
-open Function Set Manifold
-open scoped Manifold ContDiff
+open Function Set _root_.Manifold
+open scoped _root_.Manifold ContDiff
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 

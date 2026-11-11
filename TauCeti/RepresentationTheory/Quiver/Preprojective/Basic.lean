@@ -712,10 +712,85 @@ theorem preprojectiveMk_preprojectiveRelator :
 
 variable {Q}
 
+/-- An element of the preprojective algebra that is killed on the right by every vertex idempotent
+vanishes, since the vertex idempotents sum to `1`. -/
+theorem eq_zero_of_forall_mul_preprojectiveMk_vertexIdempotent_eq_zero
+    {y : preprojectiveAlgebra k Q}
+    (h : ∀ u : Symmetrify Q, y * preprojectiveMk k Q (vertexIdempotent k u) = 0) : y = 0 := by
+  rw [← mul_one y, ← map_one (preprojectiveMk k Q), one_def, map_sum, Finset.mul_sum]
+  exact Finset.sum_eq_zero fun u _ => h u
+
+/-- A nonzero element of the preprojective algebra does not vanish on the right at some vertex
+idempotent. -/
+theorem exists_mul_preprojectiveMk_vertexIdempotent_ne_zero {y : preprojectiveAlgebra k Q}
+    (hy : y ≠ 0) : ∃ u : Symmetrify Q, y * preprojectiveMk k Q (vertexIdempotent k u) ≠ 0 := by
+  by_contra! h
+  exact hy (eq_zero_of_forall_mul_preprojectiveMk_vertexIdempotent_eq_zero k h)
+
 @[simp]
 theorem preprojectiveMk_localPreprojectiveRelator (v : Q) :
     preprojectiveMk k Q (localPreprojectiveRelator k v) = 0 :=
   (preprojectiveMk_eq_zero_iff k Q).2 (localPreprojectiveRelator_mem_preprojectiveIdeal k v)
+
+section LeftIdeal
+
+local notation "Π" => preprojectiveAlgebra k Q
+local notation "π" => preprojectiveMk k Q
+
+/-- A left ideal containing the classes of all arrows leaving `v` contains the class of every path
+of positive length leaving `v`. -/
+theorem preprojective_ofPath_mem_of_forall_ofArrow_mem {v : Q} (S : Submodule Π Π)
+    (harr : ∀ (w : Symmetrify Q) (c : Symmetrify.of.obj v ⟶ w), π (ofArrow c) ∈ S)
+    {w : Symmetrify Q} (p : Path (Symmetrify.of.obj v) w) (hp : 0 < p.length) :
+    π (ofPath ⟨_, _, p⟩) ∈ S := by
+  induction p with
+  | nil => exact absurd hp (lt_irrefl 0)
+  | cons p' c ih =>
+    rcases Nat.eq_zero_or_pos p'.length with h0 | hpos
+    · obtain rfl := Path.eq_of_length_zero p' h0
+      obtain rfl := Path.eq_nil_of_length_zero p' h0
+      rw [← Path.comp_toPath_eq_cons, Path.nil_comp, ← ofArrow_eq_ofPath]
+      exact harr _ c
+    · rw [← ofArrow_mul_ofPath, map_mul]
+      exact S.smul_mem _ (ih hpos)
+
+/-- A left ideal containing the classes of all arrows leaving `v` contains, for every `a`, the
+difference of `a e_v` and a scalar multiple of `e_v`. -/
+theorem exists_sub_smul_vertexIdempotent_mem_of_forall_ofArrow_mem {v : Q}
+    (S : Submodule Π Π)
+    (harr : ∀ (w : Symmetrify Q) (c : Symmetrify.of.obj v ⟶ w), π (ofArrow c) ∈ S) (a : Π) :
+    ∃ t : k, a * π (doubledVertexIdempotent k v) - t • π (doubledVertexIdempotent k v) ∈ S := by
+  obtain ⟨f, rfl⟩ := preprojectiveMk_surjective k Q a
+  induction f using PathAlgebra.induction_linear with
+  | zero => exact ⟨0, by simp only [map_zero, zero_mul, zero_smul, sub_zero, S.zero_mem]⟩
+  | add f f' hf hf' =>
+    obtain ⟨t, ht⟩ := hf
+    obtain ⟨t', ht'⟩ := hf'
+    refine ⟨t + t', ?_⟩
+    convert S.add_mem ht ht' using 1
+    rw [map_add, add_mul, add_smul]
+    abel
+  | single x c =>
+    obtain ⟨u, w, p⟩ := x
+    rw [single_eq_smul_ofPath, map_smul, smul_mul_assoc, ← map_mul,
+      doubledVertexIdempotent_def]
+    by_cases hu : u = Symmetrify.of.obj v
+    · subst u
+      rw [ofPath_mul_vertexIdempotent]
+      rcases Nat.eq_zero_or_pos p.length with h0 | hpos
+      · obtain rfl := Path.eq_of_length_zero p h0
+        obtain rfl := Path.eq_nil_of_length_zero p h0
+        exact ⟨c, by rw [← vertexIdempotent_eq_ofPath, sub_self]; exact S.zero_mem⟩
+      · exact ⟨0, by
+          rw [zero_smul, sub_zero]
+          exact S.smul_of_tower_mem c
+            (preprojective_ofPath_mem_of_forall_ofArrow_mem k S harr p hpos)⟩
+    · refine ⟨0, ?_⟩
+      rw [ofPath_mul_vertexIdempotent_of_ne _ (Ne.symm hu), map_zero, smul_zero, zero_smul,
+        sub_zero]
+      exact S.zero_mem
+
+end LeftIdeal
 
 /-- **The defining relation of the preprojective algebra**, read at a vertex `v` of `Q`: the head
 backtracks of the arrows into `v` sum to the tail backtracks of the arrows out of `v`. -/

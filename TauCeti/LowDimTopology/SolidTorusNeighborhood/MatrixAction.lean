@@ -9,8 +9,6 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Coprime
 public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Basic
 public import TauCeti.Topology.Circle.MatrixAction
 
-import Mathlib.Tactic.LinearCombination
-
 /-!
 # Torus maps fixing the meridian extend over the solid torus
 
@@ -42,68 +40,20 @@ namespace TauCeti
 
 namespace SolidTorus
 
-/-- The identity of `ℂ` for `ε = 1` and complex conjugation for `ε = -1`; on the unit circle it
-is `a ↦ a ^ ε` (`discSign_coe`). -/
-private def discSign (ε : ℤˣ) : ℂ ≃ₗᵢ[ℝ] ℂ :=
-  if ε = 1 then LinearIsometryEquiv.refl ℝ ℂ else Complex.conjLIE
-
-private theorem discSign_discSign (ε : ℤˣ) (z : ℂ) : discSign ε (discSign ε z) = z := by
-  unfold discSign
-  split_ifs <;> simp
-
-private theorem discSign_coe (ε : ℤˣ) (a : Circle) :
-    discSign ε a = ((a ^ (ε : ℤ) : Circle) : ℂ) := by
-  rcases Int.units_eq_one_or ε with rfl | rfl
-  · simp [discSign]
-  · rw [discSign, ite_eq_right (by decide), Complex.conjLIE_apply, Units.val_neg, Units.val_one,
-      zpow_neg_one, Circle.coe_inv_eq_conj]
-
-private theorem norm_discSign_mul (ε : ℤˣ) (z : ℂ) (c : Circle) : ‖discSign ε z * c‖ = ‖z‖ := by
-  rw [norm_mul, LinearIsometryEquiv.norm_map, Circle.norm_coe, mul_one]
-
 /-- The homeomorphism `(z, b) ↦ (σ z * b ^ k, b ^ δ)` of the solid torus, with `σ` the identity
 for `ε = 1` and complex conjugation for `ε = -1`. -/
-private def extension (ε δ : ℤˣ) (k : ℤ) : SolidTorus ≃ₜ SolidTorus where
-  toFun p := (⟨discSign ε p.1 * (p.2 ^ k : Circle), by
-    rw [mem_closedBall_zero_iff, norm_discSign_mul]; exact mem_closedBall_zero_iff.mp p.1.2⟩,
-    p.2 ^ (δ : ℤ))
-  invFun p := (⟨discSign ε (p.1 * (p.2 ^ (-((δ : ℤ) * k)) : Circle)), by
-    rw [mem_closedBall_zero_iff, LinearIsometryEquiv.norm_map, norm_mul, Circle.norm_coe,
-      mul_one]; exact mem_closedBall_zero_iff.mp p.1.2⟩,
-    p.2 ^ (δ : ℤ))
-  left_inv p := by
-    have hδ := Int.units_coe_mul_self δ
-    have h_exp : k + (δ : ℤ) * -((δ : ℤ) * k) = 0 := by
-      linear_combination (-k) * hδ
-    have hk : p.2 ^ k * (p.2 ^ (δ : ℤ)) ^ (-((δ : ℤ) * k)) = 1 := by
-      rw [← zpow_mul, ← zpow_add, h_exp, zpow_zero]
-    refine Prod.ext (Subtype.ext ?_) ?_
-    · dsimp only
-      rw [mul_assoc, ← Circle.coe_mul, hk, Circle.coe_one, mul_one, discSign_discSign]
-    · dsimp only
-      rw [← zpow_mul, hδ, zpow_one]
-  right_inv p := by
-    have hδ := Int.units_coe_mul_self δ
-    refine Prod.ext (Subtype.ext ?_) ?_
-    · dsimp only
-      rw [discSign_discSign, mul_assoc, ← Circle.coe_mul, ← zpow_mul, ← zpow_add, neg_add_cancel,
-        zpow_zero, Circle.coe_one, mul_one]
-    · dsimp only
-      rw [← zpow_mul, hδ, zpow_one]
-  continuous_toFun := by
-    have hc : Continuous ((↑) : Circle → ℂ) := continuous_subtype_val
-    refine Continuous.prodMk (Continuous.subtype_mk ?_ _) (by fun_prop)
-    exact ((discSign ε).continuous.comp (by fun_prop)).mul (hc.comp (by fun_prop))
-  continuous_invFun := by
-    have hc : Continuous ((↑) : Circle → ℂ) := continuous_subtype_val
-    refine Continuous.prodMk (Continuous.subtype_mk ?_ _) (by fun_prop)
-    exact (discSign ε).continuous.comp ((continuous_subtype_val.comp continuous_fst).mul
-      (hc.comp (by fun_prop)))
+private def extension (ε δ : ℤˣ) (k : ℤ) : SolidTorus ≃ₜ SolidTorus :=
+  (if ε = 1 then Homeomorph.refl _ else conjDisc).trans
+    ((twist k).trans (Homeomorph.prodCongr (Homeomorph.refl _)
+      (if δ = 1 then Homeomorph.refl _ else Homeomorph.inv Circle)))
 
 private theorem extension_boundaryInclusion (ε δ : ℤˣ) (k : ℤ) (q : Circle × Circle) :
     extension ε δ k (boundaryInclusion q) =
-      boundaryInclusion (q.1 ^ (ε : ℤ) * q.2 ^ k, q.2 ^ (δ : ℤ)) :=
-  Prod.ext (Subtype.ext (by simp [extension, discSign_coe])) (by simp [extension])
+      boundaryInclusion (q.1 ^ (ε : ℤ) * q.2 ^ k, q.2 ^ (δ : ℤ)) := by
+  rcases Int.units_eq_one_or ε with rfl | rfl <;>
+    rcases Int.units_eq_one_or δ with rfl | rfl <;>
+    refine Prod.ext (Subtype.ext ?_) ?_ <;>
+    simp [extension, ← Circle.coe_inv_eq_conj]
 
 /-- **Torus maps fixing the meridian extend over the solid torus.** If an invertible integral
 matrix `A` has `A₁₀ = 0`, so that it fixes the meridian class `(1, 0)` up to sign, the induced

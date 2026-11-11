@@ -48,7 +48,7 @@ theorem IsPiecewiseC1On.exists_lipschitzOnWith (hγ : IsPiecewiseC1On γ a b) :
       dist (γ x) (γ y) ≤ K * (y - x) := by
     refine Icc_induction_of_disjoint_Ioo (p := p)
       (Q := fun c d => dist (γ c) (γ d) ≤ K * (d - c)) (fun c d hcd hsub hdisj => ?_)
-      (fun c m d _ _ h₁ h₂ => ?_) hxy hsub
+      (fun c m d _ _ _ h₁ h₂ => ?_) hxy hsub
     · rcases hcd.eq_or_lt with rfl | hcd
       · simp
       have hlip : LipschitzOnWith K γ (Ioo c d) :=

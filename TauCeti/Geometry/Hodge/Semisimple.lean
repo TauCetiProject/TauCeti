@@ -21,7 +21,7 @@ substructures of a polarizable pure Hodge structure is complemented. Over a fini
 rational space that lattice is also modular and satisfies the descending chain condition, and the
 two properties together give the classical decomposition: a polarizable pure Hodge structure is
 the direct sum of finitely many **simple** rational Hodge substructures — the atoms of the lattice
-— pairwise independent and spanning.
+— independent and spanning.
 
 The complement itself is the orthogonal complement
 `TauCeti.Hodge.RationalHodgeSubstructure.orthogonal` for a polarizing form; the decomposition is
@@ -83,8 +83,8 @@ theorem complementedLattice_of_isPolarizable (h : IsPolarizable hℂ hs) :
   complementedLattice P
 
 /-- **Every rational Hodge substructure of a polarized pure Hodge structure is a finite direct sum
-of simple substructures**: it is the supremum of a finite family of atoms of the lattice of
-rational Hodge substructures, pairwise independent. -/
+of simple substructures**: it is the supremum of a finite independent family of atoms of the
+lattice of rational Hodge substructures. -/
 theorem exists_finset_isAtom_sup_eq (P : Polarization hℂ hs) (W : RationalHodgeSubstructure hℚ hs) :
     ∃ s : Finset (RationalHodgeSubstructure hℚ hs),
       (∀ U ∈ s, IsAtom U) ∧ s.SupIndep id ∧ s.sup id = W :=

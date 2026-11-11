@@ -34,7 +34,9 @@ endomorphism algebra is `k(t)`.
 * `CategoryTheory.End.of_id`, `CategoryTheory.End.of_comp`, … of
   `TauCeti.CategoryTheory.Linear.Endomorphism` are `simp` lemmas pushing `End.of` inside
   expressions built from morphisms `f : X ⟶ X`, after which `map_mul`, `map_add`, … let `simp`
-  compute scalars of composites, sums and multiples.
+  compute scalars of composites, sums and multiples;
+* `TauCeti.homPairing`: the composition pairing `(S ⟶ X) × (X ⟶ S) → k` of a simple object `S`,
+  with `f ≫ g = homPairing k S X f g • 𝟙 S` by `TauCeti.homPairing_smul_id`.
 
 ## References
 
@@ -69,6 +71,8 @@ noncomputable def endAlgEquivOfSimple (X : C) [Simple X] [FiniteDimensional k (X
     rw [show ⇑(Algebra.ofId k (End X)) = algebraMap k (End X) from funext (Algebra.ofId_apply _)]
     exact bijective_algebraMap_end_of_simple k X).symm
 
+section Scalar
+
 variable {k}
 variable {X : C} [Simple X] [FiniteDimensional k (X ⟶ X)]
 
@@ -87,5 +91,41 @@ theorem endAlgEquivOfSimple_smul_id (f : End X) : endAlgEquivOfSimple k X f • 
 theorem endAlgEquivOfSimple_apply_eq_iff (f : End X) (c : k) :
     endAlgEquivOfSimple k X f = c ↔ f.asHom = c • 𝟙 X := by
   rw [← AlgEquiv.eq_symm_apply, End.ext_iff, endAlgEquivOfSimple_symm_apply, End.algebraMap_asHom]
+
+end Scalar
+
+section Pairing
+
+/-- The composition pairing between morphisms out of and into a simple object `S`: the scalar
+`homPairing k S X f g` is the one with `f ≫ g = homPairing k S X f g • 𝟙 S`, which exists by
+Schur's lemma. -/
+noncomputable def homPairing (S X : C) [Simple S] [FiniteDimensional k (S ⟶ S)] :
+    (S ⟶ X) →ₗ[k] (X ⟶ S) →ₗ[k] k :=
+  LinearMap.mk₂ k (fun f g ↦ endAlgEquivOfSimple k S (End.of (f ≫ g)))
+    (fun f f' g ↦ by simp) (fun c f g ↦ by simp) (fun f g g' ↦ by simp) (fun c f g ↦ by simp)
+
+variable {k} {S X : C} [Simple S] [FiniteDimensional k (S ⟶ S)]
+
+/-- The composition pairing is the scalar of the composite given by Schur's lemma. -/
+theorem homPairing_apply (f : S ⟶ X) (g : X ⟶ S) :
+    homPairing k S X f g = endAlgEquivOfSimple k S (End.of (f ≫ g)) := (rfl)
+
+/-- The composite of a morphism out of a simple object with a morphism back is the scalar given
+by the composition pairing. -/
+@[simp]
+theorem homPairing_smul_id (f : S ⟶ X) (g : X ⟶ S) : homPairing k S X f g • 𝟙 S = f ≫ g :=
+  endAlgEquivOfSimple_smul_id (End.of (f ≫ g))
+
+/-- The composition pairing takes the value `c` exactly when the composite is `c • 𝟙 S`. -/
+theorem homPairing_eq_iff (f : S ⟶ X) (g : X ⟶ S) (c : k) :
+    homPairing k S X f g = c ↔ f ≫ g = c • 𝟙 S :=
+  endAlgEquivOfSimple_apply_eq_iff (End.of (f ≫ g)) c
+
+/-- A morphism between the two objects can be moved across the composition pairing. -/
+theorem homPairing_comp (f : S ⟶ X) {Y : C} (h : X ⟶ Y) (g : Y ⟶ S) :
+    homPairing k S Y (f ≫ h) g = homPairing k S X f (h ≫ g) := by
+  rw [homPairing_apply, homPairing_apply, Category.assoc]
+
+end Pairing
 
 end TauCeti

@@ -96,8 +96,8 @@ theorem iInter_generatingTuples_nonempty [CompactSpace G] [SeparatelyContinuousM
     (⋂ U : {U : OpenNormalSubgroup G // N ≤ U.toSubgroup}, generatingTuples ι U.1).Nonempty := by
   -- The admissible `U` are directed downwards, and `generatingTuples` is monotone in `U`.
   have : Nonempty {U : OpenNormalSubgroup G // N ≤ U.toSubgroup} :=
-    ⟨⟨openNormalSubgroupTop G,
-      (le_top (a := N)).trans_eq (openNormalSubgroupTop_toSubgroup G).symm⟩⟩
+    ⟨⟨⊤,
+      (le_top (a := N)).trans_eq OpenNormalSubgroup.toSubgroup_top.symm⟩⟩
   exact IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed _
     (fun U V ↦ ⟨⟨U.1 ⊓ V.1, le_inf U.2 V.2⟩, generatingTuples_mono ι inf_le_left,
       generatingTuples_mono ι inf_le_right⟩)

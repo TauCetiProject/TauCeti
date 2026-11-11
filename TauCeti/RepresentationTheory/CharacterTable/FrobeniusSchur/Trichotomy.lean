@@ -402,7 +402,7 @@ algebraically closed field of characteristic zero takes only the values `1`, `0`
 theorem frobeniusSchurIndicator_eq_one_or_eq_zero_or_eq_neg_one :
     frobeniusSchurIndicator ρ = 1 ∨ frobeniusSchurIndicator ρ = 0 ∨
       frobeniusSchurIndicator ρ = -1 := by
-  rcases exists_isSymm_or_exists_isAlt_or_invariantForms_eq_bot ρ (by norm_num) with
+  rcases exists_isSymm_or_exists_isAlt_or_invariantForms_eq_bot ρ with
     ⟨_, hB, hB0, hsymm⟩ | ⟨_, hB, hB0, halt⟩ | hbot
   · exact Or.inl (frobeniusSchurIndicator_eq_one_of_isSymm ρ hB hB0 hsymm)
   · exact Or.inr (Or.inr (frobeniusSchurIndicator_eq_neg_one_of_isAlt ρ hB hB0 halt))
@@ -416,7 +416,7 @@ theorem frobeniusSchurIndicator_eq_one_iff :
       ∃ B : BilinForm k V, IsInvariantForm ρ B ∧ B.IsSymm ∧ B.Nondegenerate := by
   refine ⟨fun h => ?_, fun ⟨_, hB, hsymm, hnd⟩ =>
     frobeniusSchurIndicator_eq_one_of_isSymm ρ hB (hB.nondegenerate_iff_ne_zero.mp hnd) hsymm⟩
-  rcases exists_isSymm_or_exists_isAlt_or_invariantForms_eq_bot ρ (by norm_num) with
+  rcases exists_isSymm_or_exists_isAlt_or_invariantForms_eq_bot ρ with
     ⟨C, hC, hC0, hsymm⟩ | ⟨_, hB, hB0, halt⟩ | hbot
   · exact ⟨C, hC, hsymm, hC.nondegenerate hC0⟩
   · rw [frobeniusSchurIndicator_eq_neg_one_of_isAlt ρ hB hB0 halt] at h
@@ -432,7 +432,7 @@ theorem frobeniusSchurIndicator_eq_neg_one_iff :
       ∃ B : BilinForm k V, IsInvariantForm ρ B ∧ B.IsAlt ∧ B.Nondegenerate := by
   refine ⟨fun h => ?_, fun ⟨_, hB, halt, hnd⟩ =>
     frobeniusSchurIndicator_eq_neg_one_of_isAlt ρ hB (hB.nondegenerate_iff_ne_zero.mp hnd) halt⟩
-  rcases exists_isSymm_or_exists_isAlt_or_invariantForms_eq_bot ρ (by norm_num) with
+  rcases exists_isSymm_or_exists_isAlt_or_invariantForms_eq_bot ρ with
     ⟨_, hB, hB0, hsymm⟩ | ⟨C, hC, hC0, halt⟩ | hbot
   · rw [frobeniusSchurIndicator_eq_one_of_isSymm ρ hB hB0 hsymm] at h
     exact absurd h (by norm_num)
@@ -445,7 +445,7 @@ carries no nonzero invariant bilinear form at all. -/
 theorem frobeniusSchurIndicator_eq_zero_iff :
     frobeniusSchurIndicator ρ = 0 ↔ invariantForms ρ = ⊥ := by
   refine ⟨fun h => ?_, frobeniusSchurIndicator_eq_zero_of_invariantForms_eq_bot ρ⟩
-  rcases exists_isSymm_or_exists_isAlt_or_invariantForms_eq_bot ρ (by norm_num) with
+  rcases exists_isSymm_or_exists_isAlt_or_invariantForms_eq_bot ρ with
     ⟨_, hB, hB0, hsymm⟩ | ⟨_, hB, hB0, halt⟩ | hbot
   · rw [frobeniusSchurIndicator_eq_one_of_isSymm ρ hB hB0 hsymm] at h
     exact absurd h one_ne_zero

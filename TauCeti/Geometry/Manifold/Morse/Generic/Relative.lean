@@ -28,10 +28,10 @@ neighbourhood of the protected set, preserving nondegeneracy on the remaining co
 
 public section
 
-open Filter Set
+open Filter Set TauCeti
 open scoped Manifold Topology ContDiff TauCeti.ManifoldWeakWhitney
 
-namespace TauCeti
+namespace ContMDiffMap
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
@@ -43,7 +43,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 perturbations which are Morse on `K` and whose difference from `f` has compact support disjoint
 from `C`. Consequently the perturbed function agrees with `f` on a neighbourhood of all of `C`,
 not only on `C` itself. Neither `C` nor `V` is required to be compact. -/
-theorem _root_.ContMDiffMap.exists_isMorseOn_hasCompactSupport_sub_compl
+theorem exists_isMorseOn_hasCompactSupport_sub_compl
     (f : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯) {K C V : Set M} (hK : IsCompact K) (hC : IsClosed C)
     (hV : IsOpen V) (hKCV : K ∩ C ⊆ V) (hfV : IsMorseOn I f V)
     {𝒰 : Set C^∞⟮I, M; 𝓘(ℝ), ℝ⟯} (h𝒰 : 𝒰 ∈ 𝓝 f) :
@@ -65,4 +65,4 @@ theorem _root_.ContMDiffMap.exists_isMorseOn_hasCompactSupport_sub_compl
   · exact Or.inl ⟨hx, subset_closure hxO⟩
   · exact Or.inr ⟨hx, hxO⟩
 
-end TauCeti
+end ContMDiffMap

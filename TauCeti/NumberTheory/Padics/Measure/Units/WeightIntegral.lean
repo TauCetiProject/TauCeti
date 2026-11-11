@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Normed.Ring.CompactMonoid
 public import TauCeti.NumberTheory.Padics.Basic
 public import TauCeti.NumberTheory.Padics.Measure.ExtendCoefficients.Algebra
 public import TauCeti.NumberTheory.Padics.Measure.Units.Moments
-public import TauCeti.NumberTheory.Padics.WeightSpace
+public import TauCeti.NumberTheory.Padics.WeightSpace.Basic
 import Mathlib.NumberTheory.Padics.Complex
 
 /-!

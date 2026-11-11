@@ -7,6 +7,9 @@ module
 
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Algebra.MonoidAlgebra.Basis
+public import TauCeti.RingTheory.Trace.Regular
+
+import TauCeti.LinearAlgebra.Trace.Basic
 
 /-!
 # The trace of multiplication by an element of a finite monoid algebra
@@ -36,6 +39,10 @@ a field `k`, if `y * y = κ • y`, this trace is `κ` times the character of th
 * `MonoidAlgebra.trace_mulRight`: the trace of right multiplication by `x` on `k[G]` is
   `|G| * x_1`.
 * `MonoidAlgebra.trace_mulLeft`: the same for left multiplication.
+* `MonoidAlgebra.regularTraceForm_apply`: the regular trace form of `k[G]` is
+  `(x, y) ↦ |G| * (x * y)_1`.
+* `MonoidAlgebra.nondegenerate_regularTraceForm`: for a finite group whose order is nonzero in `k`,
+  the regular trace form of `k[G]` is nondegenerate.
 * `MonoidAlgebra.trace_mulLeft_single_mul_mulRight`: the trace of `x ↦ g * x * y` on a
   finite group algebra is `∑ σ, y_{σ⁻¹ g⁻¹ σ}`.
 -/
@@ -57,14 +64,29 @@ theorem trace_leftMulMatrix {k G : Type*} [CommSemiring k] [Monoid G]
     simpa using x.coeff_mul_single_eq_coeff_mul (m₁ := g) (r := 1) 1 (by simp)
   simp [Matrix.trace, Matrix.diag, Algebra.leftMulMatrix_eq_repr_mul, hdiag, Finset.card_univ]
 
-/-- **The trace of right multiplication on a finite monoid algebra.** Multiplication on the right
-by `x` has trace `|G| * x_1`. -/
+/-- **The trace on an infinite monoid algebra vanishes.** If `k` is nontrivial and `G` is
+infinite, the basis of monoid elements is infinite, so `k[G]` is not a finite `k`-module and
+`LinearMap.trace` is the zero map by convention. If `k` is trivial, every linear map on `k[G]` is
+zero, so the trace vanishes trivially. -/
+@[simp]
+theorem trace_eq_zero_of_infinite {k G : Type*} [CommSemiring k] [Infinite G] :
+    LinearMap.trace k (MonoidAlgebra k G) = 0 := by
+  rcases subsingleton_or_nontrivial k with hk | hk
+  · exact Subsingleton.elim _ _
+  exact TauCeti.LinearMap.trace_eq_zero_of_not_finite
+    (Module.not_finite_of_infinite_basis (MonoidAlgebra.basis G k))
+
+/-- **The trace of right multiplication on a monoid algebra.** Multiplication on the right
+by `x` has trace `|G| * x_1`, where `|G|` is `Nat.card G`, so both sides vanish for infinite `G`. -/
 @[simp]
 theorem trace_mulRight {k G : Type*} [CommSemiring k] [Monoid G]
-    [IsLeftCancelMul G] [Finite G] (x : MonoidAlgebra k G) :
+    [IsLeftCancelMul G] (x : MonoidAlgebra k G) :
     LinearMap.trace k (MonoidAlgebra k G) (LinearMap.mulRight k x) =
       (Nat.card G : k) * x.coeff 1 := by
   classical
+  rcases finite_or_infinite G with hG | hG
+  swap
+  · simp
   have : Fintype G := Fintype.ofFinite G
   have hdiag : ∀ g : G, (MonoidAlgebra.single g (1 : k) * x).coeff g = x.coeff 1 := fun g => by
     simpa using x.coeff_single_mul_eq_mul_coeff (m₁ := g) (r := 1) 1 (by simp)
@@ -74,17 +96,42 @@ theorem trace_mulRight {k G : Type*} [CommSemiring k] [Monoid G]
     Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
   rw [Nat.card_eq_fintype_card]
 
-/-- **The trace of left multiplication on a finite monoid algebra.** Multiplication on the left by
+/-- **The trace of left multiplication on a monoid algebra.** Multiplication on the left by
 `x` has trace `|G| * x_1`, the same as multiplication on the right. -/
 @[simp]
 theorem trace_mulLeft {k G : Type*} [CommSemiring k] [Monoid G]
-    [IsRightCancelMul G] [Finite G] (x : MonoidAlgebra k G) :
+    [IsRightCancelMul G] (x : MonoidAlgebra k G) :
     LinearMap.trace k (MonoidAlgebra k G) (LinearMap.mulLeft k x) =
       (Nat.card G : k) * x.coeff 1 := by
   classical
+  rcases finite_or_infinite G with hG | hG
+  swap
+  · simp
   have : Fintype G := Fintype.ofFinite G
   rw [LinearMap.trace_eq_matrix_trace k (MonoidAlgebra.basis G k), Algebra.toMatrix_lmul_eq,
     trace_leftMulMatrix, Nat.card_eq_fintype_card]
+
+/-- The regular trace form of a monoid algebra is `(x, y) ↦ |G| * (x * y)_1`. -/
+theorem regularTraceForm_apply {k G : Type*} [CommRing k] [Monoid G] [IsRightCancelMul G]
+    (x y : MonoidAlgebra k G) :
+    Algebra.regularTraceForm k (MonoidAlgebra k G) x y = (Nat.card G : k) * (x * y).coeff 1 := by
+  rw [Algebra.regularTraceForm_apply, ← trace_mulLeft]
+  exact congrArg _ (LinearMap.ext fun z => by simp [mul_assoc])
+
+/-- **The regular trace form of a group algebra is nondegenerate when `|G| ≠ 0`.** For a group `G`
+whose order is nonzero in the ring `k` without zero divisors (so `G` is finite), the regular trace
+form `(x, y) ↦ |G| * (x * y)_1` of `k[G]` is nondegenerate. -/
+theorem nondegenerate_regularTraceForm {k G : Type*} [CommRing k] [NoZeroDivisors k] [Group G]
+    [NeZero (Nat.card G : k)] :
+    (Algebra.regularTraceForm k (MonoidAlgebra k G)).Nondegenerate := by
+  have : Finite G := Nat.finite_of_card_ne_zero fun h ↦ NeZero.ne (Nat.card G : k) (by simp [h])
+  refine ⟨fun x hx => ?_, fun y hy => ?_⟩ <;> ext g
+  · have := hx (single g⁻¹ 1)
+    rw [regularTraceForm_apply] at this
+    simpa [NeZero.ne] using this
+  · have := hy (single g⁻¹ 1)
+    rw [regularTraceForm_apply] at this
+    simpa [NeZero.ne] using this
 
 end MonoidAlgebra
 

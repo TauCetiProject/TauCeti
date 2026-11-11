@@ -22,7 +22,8 @@ become exact statements in the limit: `E_∞(A)` is a normal subgroup of `GL_∞
 commutator subgroup of `GL_∞(A)`. Hence algebraic `K₁(A) = GL_∞(A) / E_∞(A)` is an abelian group,
 the abelianization of `GL_∞(A)`. Homomorphisms on invertible matrices which are compatible with
 stabilization and take values in an abelian group, such as Connes' odd pairing with cyclic
-cohomology, factor through it.
+cohomology, factor through it. A ring homomorphism, applied to the entries of invertible matrices,
+induces a homomorphism of algebraic `K₁`, functorially.
 
 ## Main definitions
 
@@ -39,6 +40,7 @@ cohomology, factor through it.
 * `TauCeti.AlgebraicK1.lift`: the universal property of `K₁(A)`, for families of homomorphisms
   to a commutative group compatible with stabilization.
 * `TauCeti.AlgebraicK1.quotientElementarySubgroupEquiv`: `GL_∞(A) / E_∞(A) ≃* K₁(A)`.
+* `TauCeti.AlgebraicK1.map`: the homomorphism `K₁(A) →* K₁(B)` induced by a ring homomorphism.
 
 ## Main results
 
@@ -50,6 +52,8 @@ cohomology, factor through it.
   commutator subgroup of `GL_∞(A)`.
 * `TauCeti.AlgebraicK1.mk_eq_one_iff`: an invertible matrix has trivial class in `K₁(A)` exactly
   when some stabilization of it is elementary.
+* `TauCeti.AlgebraicK1.map_id`, `TauCeti.AlgebraicK1.map_comp`, `TauCeti.AlgebraicK1.map_map`:
+  functoriality of algebraic `K₁`.
 
 ## References
 
@@ -389,5 +393,59 @@ theorem lift_mk {G : Type*} [CommGroup G] (f : ∀ n, GL (Fin n) A →* G)
   (Abelianization.lift_apply_of _ _).trans (StableGeneralLinearGroup.lift_of f hf n u)
 
 end AlgebraicK1
+
+/-! ## Functoriality -/
+
+section Map
+
+variable {B C : Type*} [Ring B] [Ring C]
+
+/-- Stabilization commutes with applying a ring homomorphism to the entries of an invertible
+matrix. -/
+theorem stabilizeGL_map {m n : ℕ} (h : m ≤ n) (f : A →+* B) (u : GL (Fin m) A) :
+    stabilizeGL B h (Units.map (f.mapMatrix (m := Fin m)).toMonoidHom u) =
+      Units.map (f.mapMatrix (m := Fin n)).toMonoidHom (stabilizeGL A h u) := by
+  ext i j
+  simp [coe_stabilizeGL_apply, apply_dite f, apply_ite f, Matrix.one_apply]
+
+namespace AlgebraicK1
+
+/-- The homomorphism of algebraic `K₁` induced by a ring homomorphism `f : A →+* B`, applying `f`
+to the entries of invertible matrices. -/
+def map (f : A →+* B) : AlgebraicK1 A →* AlgebraicK1 B :=
+  lift (fun n ↦ (mk B n).comp (Units.map (f.mapMatrix (m := Fin n)).toMonoidHom))
+    fun m n h u ↦ by simp only [MonoidHom.comp_apply, ← stabilizeGL_map, mk_stabilizeGL]
+
+/-- The induced homomorphism of algebraic `K₁` sends the class of an invertible matrix to the
+class of the matrix obtained by applying the ring homomorphism to its entries. -/
+@[simp]
+theorem map_mk (f : A →+* B) (n : ℕ) (u : GL (Fin n) A) :
+    map f (mk A n u) = mk B n (Units.map (f.mapMatrix (m := Fin n)).toMonoidHom u) :=
+  lift_mk ..
+
+/-- The identity ring homomorphism induces the identity of algebraic `K₁`. -/
+@[simp]
+theorem map_id : AlgebraicK1.map (RingHom.id A) = MonoidHom.id (AlgebraicK1 A) := by
+  refine hom_ext fun n ↦ MonoidHom.ext fun u ↦ ?_
+  simp
+
+/-- Algebraic `K₁` is functorial. -/
+theorem map_comp (f : A →+* B) (g : B →+* C) :
+    AlgebraicK1.map (g.comp f) = (AlgebraicK1.map g).comp (AlgebraicK1.map f) := by
+  refine hom_ext fun n ↦ MonoidHom.ext fun u ↦ ?_
+  simp only [MonoidHom.comp_apply, map_mk]
+  refine congrArg _ (Units.ext ?_)
+  simp [Matrix.map_map]
+
+/-- Applying the homomorphisms of algebraic `K₁` induced by `f` and then `g` is applying the one
+induced by `g.comp f`. -/
+@[simp]
+theorem map_map (f : A →+* B) (g : B →+* C) (x : AlgebraicK1 A) :
+    AlgebraicK1.map g (AlgebraicK1.map f x) = AlgebraicK1.map (g.comp f) x := by
+  rw [map_comp, MonoidHom.comp_apply]
+
+end AlgebraicK1
+
+end Map
 
 end TauCeti

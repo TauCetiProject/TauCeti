@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import TauCeti.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.ExpLog.Basic
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 public import TauCeti.Analysis.SpecialFunctions.Exponential
@@ -165,14 +165,12 @@ theorem contDiffOn_log (hda : ∀ a : A, IsSelfAdjoint a → IsUnit (TauCeti.exp
   have h := contDiffWithinAt_log_exp (n := n) (IsSelfAdjoint.log (a := b)) (hda _ .log)
   rwa [exp_log b hb] at h
 
-variable [SMulCommClass 𝕂 ℝ A]
-
 /-- If the derivative of the exponential is invertible at every self-adjoint element, then every
 real power `a ↦ a ^ s` is `C^n` on the strictly positive elements. -/
 theorem contDiffOn_rpow (hda : ∀ a : A, IsSelfAdjoint a → IsUnit (TauCeti.expFDeriv 𝕂 a))
     (s : ℝ) {n : ℕ∞ω} : ContDiffOn 𝕂 n (fun a : A ↦ a ^ s) {b : A | IsStrictlyPositive b} := by
   have hexp : ContDiff 𝕂 n (exp : A → A) :=
-    contDiff_iff_contDiffAt.2 fun x ↦ ((exp_analytic (𝕂 := 𝕂) x).contDiffAt).of_le le_top
+    NormedSpace.contDiff_exp 𝕂
   exact (hexp.comp_contDiffOn ((contDiffOn_log hda).const_smul s)).congr fun b hb ↦
     rpow_eq_exp_smul_log b s hb
 

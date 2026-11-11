@@ -118,7 +118,7 @@ theorem tendsto_dMinus_spot_atTop (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 < τ) :
     Tendsto (fun x => dMinus x r σ K τ) atTop atTop := by
   have h : Tendsto (fun x => log (x / K)) atTop atTop :=
     tendsto_log_atTop.comp (tendsto_id.atTop_div_const hK)
-  simp_rw [dMinus_eq _ r σ K hτ.le]
+  simp_rw [dMinus_eq _ r σ K τ]
   exact (h.atTop_add tendsto_const_nhds).atTop_div_const (mul_pos hσ (sqrt_pos.2 hτ))
 
 /-- **Put far field.** As the spot tends to `∞`, the put price tends to `0`. -/

@@ -21,7 +21,8 @@ affine opens is flat, a nonzerodivisor on an affine open `U` therefore remains a
 every open subset of `U` (`IsAffineOpen.isSMulRegular_map`). Likewise, the pullback of a
 nonzerodivisor along a flat morphism to an affine scheme is a nonzerodivisor on every affine open
 of the source (`Scheme.Hom.isSMulRegular_map_appTop`); a nonzerodivisor of a ring `R` is one on
-`Spec R` by `Scheme.isSMulRegular_ΓSpecIso_inv`.
+`Spec R` by `Scheme.isSMulRegular_ΓSpecIso_inv`. Consequently the global sections of a scheme
+flat over `Spec R` form a torsion-free `R`-module (`Scheme.Hom.isTorsionFree_appTop`).
 -/
 
 public section
@@ -94,5 +95,18 @@ theorem _root_.AlgebraicGeometry.Scheme.isSMulRegular_ΓSpecIso_inv {R : Type u}
     {π : R} (hπ : IsSMulRegular R π) :
     IsSMulRegular Γ(Spec (.of R), ⊤) ((Scheme.ΓSpecIso (.of R)).inv π) :=
   (TauCeti.isSMulRegular_map_iff (Scheme.ΓSpecIso (.of R)).symm.commRingCatIsoToRingEquiv π).mpr hπ
+
+/-- Along a flat morphism `f : X ⟶ Spec R`, the global sections of `X` form a torsion-free
+`R`-module, for the algebra structure induced by `f`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.isTorsionFree_appTop {R : Type u} [CommRing R]
+    (f : X ⟶ Spec (.of R)) [Flat f] :
+    letI := ((Scheme.ΓSpecIso (.of R)).inv ≫ f.appTop).hom.toAlgebra
+    Module.IsTorsionFree R Γ(X, ⊤) := by
+  let := ((Scheme.ΓSpecIso (.of R)).inv ≫ f.appTop).hom.toAlgebra
+  refine ⟨fun r hr c₁ c₂ hc ↦ ?_⟩
+  -- The image of `r` is a nonzerodivisor on every affine open of `X`, hence on `X` itself.
+  refine Scheme.isSMulRegular_map_of_forall_affineOpens le_rfl
+    (fun W _ ↦ f.isSMulRegular_map_appTop (Scheme.isSMulRegular_ΓSpecIso_inv hr.1) W) ?_
+  simpa [Algebra.smul_def, RingHom.algebraMap_toAlgebra] using hc
 
 end TauCeti

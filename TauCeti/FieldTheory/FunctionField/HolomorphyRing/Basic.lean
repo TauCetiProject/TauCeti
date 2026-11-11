@@ -402,16 +402,12 @@ private theorem exists_mem_ideal_forall_ord_le (hS : S.Finite) {I : Ideal ↥(ho
   have hz₀F : (z₀ : F) ≠ 0 := fun h ↦ hz₀ (Subtype.ext h)
   -- at each place of `S`, a function of `I` of least order there
   have key : ∀ P : Place k F, ∃ z : ↥(holomorphyRing S), z ∈ I ∧ (z : F) ≠ 0 ∧
-      (P ∈ S → ∀ w ∈ I, (w : F) ≠ 0 → P.ord (z : F) ≤ P.ord (w : F)) := by
-    intro P
-    by_cases hP : P ∈ S
-    · obtain ⟨z, hzI, hz, hzmin⟩ := exists_mem_ideal_ord_le hP hI
-      exact ⟨z, hzI, hz, fun _ ↦ hzmin⟩
-    · exact ⟨z₀, hz₀I, hz₀F, fun h ↦ absurd h hP⟩
+      (P ∈ S → ∀ w ∈ I, (w : F) ≠ 0 → P.ord (z : F) ≤ P.ord (w : F)) := fun P ↦
+    if hP : P ∈ S then (exists_mem_ideal_ord_le hP hI).imp fun _ h ↦ ⟨h.1, h.2.1, fun _ ↦ h.2.2⟩
+    else ⟨z₀, hz₀I, hz₀F, fun h ↦ absurd h hP⟩
   choose z hzI hz hzmin using key
   rcases hS.toFinset.eq_empty_or_nonempty with hempty | ⟨Q₀, hQ₀⟩
-  · exact ⟨z₀, hz₀I, hz₀F, fun P hP ↦
-      absurd (hS.mem_toFinset.mpr hP) (by simp [hempty])⟩
+  · exact ⟨z₀, hz₀I, hz₀F, fun P hP ↦ by simp [Set.Finite.toFinset_eq_empty.mp hempty] at hP⟩
   -- a damping factor: a unit at one place of `S`, a zero at each of the others
   have hdamp : ∀ P : Place k F, ∃ u : F, u ≠ 0 ∧ P.ord u = 0 ∧
       ∀ Q ∈ hS.toFinset, Q ≠ P → Q.ord u = 1 := by
@@ -425,8 +421,7 @@ private theorem exists_mem_ideal_forall_ord_le (hS : S.Finite) {I : Ideal ↥(ho
     mem_holomorphyRing_iff_forall_ord_nonneg.mpr fun Q hQ ↦ by
       rcases eq_or_ne Q P with rfl | hQP
       · exact (huP Q).ge
-      · rw [huQ P Q (hS.mem_toFinset.mpr hQ) hQP]
-        norm_num
+      · simp [huQ P Q (hS.mem_toFinset.mpr hQ) hQP]
   have hf0 : ∀ P : Place k F, u P * (z P : F) ≠ 0 := fun P ↦ mul_ne_zero (hu0 P) (hz P)
   -- away from `Q`, every summand is damped below the one indexed by `Q`
   have hlt : ∀ Q ∈ hS.toFinset, ∀ P ∈ hS.toFinset, P ≠ Q →
@@ -443,8 +438,7 @@ private theorem exists_mem_ideal_forall_ord_le (hS : S.Finite) {I : Ideal ↥(ho
       Q.ord_mul (hu0 Q) (hz Q), huP Q, zero_add]
   have hsum : ((∑ P ∈ hS.toFinset, (⟨u P, huS P⟩ * z P : ↥(holomorphyRing S)) : _) : F) =
       ∑ P ∈ hS.toFinset, u P * (z P : F) := by
-    rw [AddSubmonoidClass.coe_finsetSum]
-    exact Finset.sum_congr rfl fun P _ ↦ Subalgebra.coe_mul _ _ _
+    simp
   refine ⟨∑ P ∈ hS.toFinset, ⟨u P, huS P⟩ * z P, Ideal.sum_mem _ fun P _ ↦
     Ideal.mul_mem_left _ _ (hzI P), ?_, ?_⟩
   · rw [hsum]

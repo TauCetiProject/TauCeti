@@ -103,14 +103,6 @@ theorem eq_and_eq_of_add_eq_of_add_eq_of_norm_le {A₄ A₆ s x y X Y : K} (hA�
 
 variable [CompleteSpace K]
 
-/-- The Tate equation `y² + xy = x³ + a₄(q) x + a₆(q)` in the coordinates of `tateCurveAt`. -/
-private theorem tate_equation {q : Kˣ} {hq : ‖(q : K)‖ < 1} {x y : K}
-    (h : (tateCurveAt q hq).toAffine.Equation x y) :
-    y ^ 2 + x * y = x ^ 3 + tateCurveA₄ (q : K) hq * x + tateCurveA₆ (q : K) hq := by
-  rw [equation_iff] at h
-  simp only [tateCurveAt_a₁, tateCurveAt_a₂, tateCurveAt_a₃, tateCurveAt_a₄, tateCurveAt_a₆] at h
-  linear_combination h
-
 /-- **A point reducing to the node is not too close to it.** If `(x, y)` solves the Tate equation,
 `‖y‖ ≤ ‖x + y‖` and `‖x + y‖ < 1`, then `‖q‖ ≤ ‖x + y‖²`. The equation reads
 `y (x + y) = x³ + a₄ x + a₆`, and `‖a₆‖ = ‖q‖`. -/
@@ -122,7 +114,7 @@ private theorem norm_le_norm_add_sq_of_equation (q : Kˣ) (hq : ‖(q : K)‖ < 
   have hx : ‖x‖ ≤ ‖x + y‖ :=
     IsUltrametricDist.norm_le_of_norm_sub_le le_rfl (by rwa [sub_add_cancel_left, norm_neg])
   have hA₆ : tateCurveA₆ (q : K) hq = y * (x + y) - x ^ 3 - tateCurveA₄ (q : K) hq * x := by
-    linear_combination -tate_equation h
+    linear_combination -(tateCurveAt_equation_iff q hq).mp h
   have hss : ‖x + y‖ ^ 3 ≤ ‖x + y‖ ^ 2 := pow_le_pow_of_le_one (norm_nonneg _) hs.le (by norm_num)
   refine (norm_tateCurveA₆ (q : K) hq).not_lt ?_
   rw [hA₆]
@@ -300,38 +292,28 @@ private theorem exists_tateUniformizationX_add_tateUniformizationY_eq (q : Kˣ)
     (hq : ‖(q : K)‖ < 1) {s : K} (hqs : ‖(q : K)‖ ≤ ‖s‖ ^ 2) (hs : ‖s‖ < 1) :
     ∃ u : Kˣ, ‖(u : K)‖ = ‖s‖ ∧ tateUniformizationX q u + tateUniformizationY q u = s := by
   have hs0 : 0 < ‖s‖ := norm_pos_iff.mpr fun h ↦ by simp [h, q.ne_zero] at hqs
-  have hss : ‖s‖ ^ 2 < ‖s‖ := by
-    rw [sq]
-    exact mul_lt_of_lt_one_left hs0 hs
+  have hss : ‖s‖ ^ 2 < ‖s‖ := pow_lt_self_of_lt_one₀ hs0 hs one_lt_two
   set S : Set K := {u | ‖u‖ = ‖s‖}
   have : CompleteSpace S := (isClosed_eq continuous_norm continuous_const).completeSpace_coe
   have : Nonempty S := ⟨⟨s, rfl⟩⟩
   have hne (v : S) : (v : K) ≠ 0 := norm_ne_zero_iff.mp (by rw [v.2]; exact hs0.ne')
   let U : S → Kˣ := fun v ↦ Units.mk0 v (hne v)
   have hUv (v : S) : ((U v : Kˣ) : K) = v := Units.val_mk0 _
-  have hU (v : S) : ‖((U v : Kˣ) : K)‖ = ‖s‖ := v.2
+  have hU (v : S) : ‖((U v : Kˣ) : K)‖ = ‖s‖ := by rw [hUv]; exact v.2
   have hU₁ (v : S) : ‖1 - ((U v : Kˣ) : K)‖ = 1 :=
     norm_one_sub_of_norm_lt_one ((hU v).trans_lt hs)
   have hqU (v : S) : ‖(q : K)‖ ≤ ‖((U v : Kˣ) : K)‖ ^ 2 := by rw [hU v]; exact hqs
   have hErr (v : S) : ‖tateNodeErr q (U v)‖ ≤ ‖s‖ ^ 2 :=
     (norm_tateNodeErr_le q (U v) hq (hqU v) ((hU v).trans_lt hs)).trans hqs
-  have hball {a b : K} (ha : ‖a‖ ≤ 1) (hb : ‖b‖ ≤ 1) : ‖a ^ 2 + a * b + b ^ 2‖ ≤ 1 := by
-    have h₁ : a ∈ Subring.unitClosedBall K := Subring.mem_unitClosedBall.mpr ha
-    have h₂ : b ∈ Subring.unitClosedBall K := Subring.mem_unitClosedBall.mpr hb
-    refine Subring.mem_unitClosedBall.mp ?_
-    apply_rules [add_mem, mul_mem, pow_mem]
   -- the step moves every point of the circle to within `‖s‖²` of `s`, so it preserves the circle
   have hstep (v : S) : ‖tateNodeStep q (U v) s - s‖ ≤ ‖s‖ ^ 2 := by
-    set a := ((U v : Kˣ) : K)
-    have e : tateNodeStep q (U v) s - s =
-        -a * ((1 - a) ^ 2 + (1 - a) * 1 + 1 ^ 2) * s - (1 - a) ^ 3 * tateNodeErr q (U v) := by
-      rw [tateNodeStep]
-      ring
-    rw [e]
+    have h := norm_pow_sub_one_le_norm_sub_one (hU₁ v).le 3
+    rw [sub_sub_cancel_left, norm_neg, hU v] at h
+    have hrw (c E : K) : c * (s - E) - s = (c - 1) * s - c * E := by ring
+    rw [tateNodeStep, hrw]
     refine (IsUltrametricDist.norm_sub_le_max _ _).trans (max_le ?_ ?_)
-    · rw [norm_mul, norm_mul, norm_neg, hU v]
-      exact (mul_le_mul_of_nonneg_right (mul_le_of_le_one_right (norm_nonneg _)
-        (hball (hU₁ v).le norm_one.le)) (norm_nonneg _)).trans_eq (sq _).symm
+    · rw [norm_mul, sq]
+      exact mul_le_mul_of_nonneg_right h (norm_nonneg _)
     · rw [norm_mul, norm_pow, hU₁ v, one_pow, one_mul]
       exact hErr v
   have hmem (v : S) : tateNodeStep q (U v) s ∈ S :=
@@ -340,20 +322,18 @@ private theorem exists_tateUniformizationX_add_tateUniformizationY_eq (q : Kˣ)
   -- the step is Lipschitz with constant `‖s‖`
   have hlip (v w : S) : ‖tateNodeStep q (U v) s - tateNodeStep q (U w) s‖ ≤
       ‖s‖ * ‖((U v : Kˣ) : K) - (U w : Kˣ)‖ := by
-    set a := ((U v : Kˣ) : K)
-    set b := ((U w : Kˣ) : K)
-    have e : tateNodeStep q (U v) s - tateNodeStep q (U w) s =
-        (b - a) * ((1 - a) ^ 2 + (1 - a) * (1 - b) + (1 - b) ^ 2) * (s - tateNodeErr q (U v)) +
-          (1 - b) ^ 3 * (tateNodeErr q (U w) - tateNodeErr q (U v)) := by
-      rw [tateNodeStep, tateNodeStep]
-      ring
-    rw [e]
+    have h := norm_prod_sub_prod_le (s := .univ) (f := fun _ : Fin 3 ↦ 1 - ((U v : Kˣ) : K))
+      (g := fun _ ↦ 1 - ((U w : Kˣ) : K)) zero_le_one (norm_nonneg _) (fun _ _ ↦ (hU₁ v).le)
+      (fun _ _ ↦ (hU₁ w).le) fun _ _ ↦ by rw [sub_sub_sub_cancel_left, norm_sub_rev]
+    simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin, one_pow, mul_one] at h
+    have hrw (c d E F : K) :
+        c * (s - E) - d * (s - F) = (c - d) * (s - E) + d * (F - E) := by ring
+    rw [tateNodeStep, tateNodeStep, hrw]
     refine (IsUltrametricDist.norm_add_le_max _ _).trans (max_le ?_ ?_)
-    · have hsE : ‖s - tateNodeErr q (U v)‖ ≤ ‖s‖ :=
-        (IsUltrametricDist.norm_sub_le_max _ _).trans (max_le le_rfl ((hErr v).trans hss.le))
-      rw [norm_mul, norm_mul, norm_sub_rev b, mul_comm ‖s‖]
-      exact mul_le_mul (mul_le_of_le_one_right (norm_nonneg _) (hball (hU₁ v).le (hU₁ w).le))
-        hsE (norm_nonneg _) (norm_nonneg _)
+    · rw [norm_mul, mul_comm ‖s‖]
+      exact mul_le_mul (h.trans_eq (norm_sub_rev _ _))
+        ((IsUltrametricDist.norm_sub_le_max _ _).trans (max_le le_rfl ((hErr v).trans hss.le)))
+        (norm_nonneg _) (norm_nonneg _)
     · rw [norm_mul, norm_pow, hU₁ w, one_pow, one_mul, norm_sub_rev, ← hU v]
       exact norm_tateNodeErr_sub_le q (U v) (U w) hq (hqU v) ((hU v).trans_lt hs)
         ((hU w).trans (hU v).symm)
@@ -362,11 +342,9 @@ private theorem exists_tateUniformizationX_add_tateUniformizationY_eq (q : Kˣ)
       LipschitzWith.of_dist_le_mul fun v w ↦ ?_⟩
     rw [Subtype.dist_eq, Subtype.dist_eq, dist_eq_norm, dist_eq_norm, coe_nnnorm, ← hUv v, ← hUv w]
     exact hlip v w
-  set v := ContractingWith.fixedPoint _ hF
-  have hv : tateNodeStep q (U v) s = (U v : Kˣ) :=
-    (congrArg Subtype.val (ContractingWith.fixedPoint_isFixedPt hF)).trans (hUv v).symm
-  exact ⟨U v, hU v, tateUniformizationX_add_tateUniformizationY_of_tateNodeStep_eq q (U v)
-    (norm_ne_zero_iff.mp (by rw [hU₁ v]; exact one_ne_zero)) hv⟩
+  exact ⟨U _, hU _, tateUniformizationX_add_tateUniformizationY_of_tateNodeStep_eq q (U _)
+    (norm_ne_zero_iff.mp (by rw [hU₁]; exact one_ne_zero))
+    ((congrArg Subtype.val (ContractingWith.fixedPoint_isFixedPt hF)).trans (hUv _).symm)⟩
 
 /-! ### Surjectivity onto the node stratum -/
 
@@ -390,7 +368,8 @@ private theorem exists_tateUniformizationX_eq_and_tateUniformizationY_eq_of_norm
     hu ▸ (norm_tateUniformizationX_le_max q u hqu hu1).trans
       (max_le le_rfl (div_le_of_le_mul₀ (norm_nonneg _) (norm_nonneg _) (by rwa [← sq, hu])))
   obtain ⟨hXe, hYe⟩ := eq_and_eq_of_add_eq_of_add_eq_of_norm_le
-    ((norm_tateCurveA₄_le (q : K) hq).trans_lt hqs') hs hx hX (tate_equation h) (tate_equation
+    ((norm_tateCurveA₄_le (q : K) hq).trans_lt hqs') hs hx hX ((tateCurveAt_equation_iff q hq).mp h)
+    ((tateCurveAt_equation_iff q hq).mp
       (equation_tateUniformizationX_tateUniformizationY_of_notMem_zpowers q u hq
         (notMem_zpowers_of_norm_lt_of_norm_lt_one hqu hu1))) rfl hXY
   exact ⟨u, hqu, hu1, hXe, hYe⟩

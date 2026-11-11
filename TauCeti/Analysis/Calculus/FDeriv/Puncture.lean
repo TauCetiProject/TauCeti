@@ -23,7 +23,7 @@ the extension replaces it with the limiting value `q` using `Function.update`.
 
 These are the metric and one-dimensional calculus ingredients of continuous removal of
 singularities. They do not assert differentiability of the extension. The central inputs are
-`TauCeti.exists_tendsto_nhdsGT_of_integrableOn_deriv`,
+`TauCeti.exists_tendsto_nhdsGT_of_hasDerivAt_of_integrableOn_Ioo`,
 `TauCeti.tendsto_nhdsNE_of_tendsto_radial_of_tendsto_diam_image_sphere`, and
 `TauCeti.tendsto_diam_image_sphere_nhdsGT_zero_of_tendsto`.
 
@@ -54,7 +54,8 @@ theorem exists_continuousOn_update_of_integrableOn_radial_deriv [ProperSpace E]
     (hd : Tendsto (fun t ↦ diam (u '' sphere a t)) (𝓝[>] 0) (𝓝 0)) :
     ∃ q, Tendsto u (𝓝[≠] a) (𝓝 q) ∧
       ContinuousOn (Function.update u a q) (ball a R) := by
-  obtain ⟨q, hq⟩ := exists_tendsto_nhdsGT_of_integrableOn_deriv hR hr hint
+  obtain ⟨q, hq⟩ := exists_tendsto_nhdsGT_of_hasDerivAt_of_integrableOn_Ioo hR
+    (fun t ht ↦ (hr.differentiableAt (isOpen_Ioo.mem_nhds ht)).hasDerivAt) hint
   have hb : ∀ᶠ t in 𝓝[>] (0 : ℝ), IsBounded (u '' sphere a t) := by
     filter_upwards [Ioo_mem_nhdsGT hR] with t ht
     have hsub : sphere a t ⊆ ball a R \ {a} := by

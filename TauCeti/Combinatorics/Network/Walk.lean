@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.Quiver.ConnectedComponent
 public import Mathlib.Combinatorics.Quiver.Path.Vertices
+public import Mathlib.Combinatorics.Quiver.Path.Decomposition
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.Order.WellFounded
 public import Mathlib.Data.List.Chain
@@ -70,8 +70,9 @@ capacity; for residual capacities these are augmenting walks.
   of `B` contains a path from a vertex of `A` to a vertex of `B` with no other vertex in `A` or
   `B`, traversing only arrows of the walk.
 * `TauCeti.ArrowWalk.exists_isCycle_arrows_subset`: every closed walk of positive length contains
-  a cycle; `TauCeti.ArrowWalk.exists_isCycle_two_le_length` gives a cycle of length at least `2` in
-  any strongly connected arrow family on at least two vertices.
+  a cycle.
+* `TauCeti.ArrowWalk.exists_eq_comp_cons_comp_of_mem_arrows`: a walk that traverses a specified
+  arrow splits at that arrow.
 * `TauCeti.ArrowWalk.le_bottleneck_iff` and `TauCeti.ArrowWalk.exists_mem_bottleneck_eq`: the
   bottleneck is the minimum of the capacities along the walk.
 * `TauCeti.positiveReachable_iff_exists_isPath` and `TauCeti.positiveReachable_iff_reflTransGen`:
@@ -157,25 +158,26 @@ theorem vertices_mapPath_of_obj_eq_id {R : V → V → Type*} (φ : @Prefunctor 
     ArrowWalk.vertices (Q := R) (@Prefunctor.mapPath V ⟨Q⟩ V ⟨R⟩ φ s t p) = p.vertices := by
   rw [vertices, @Prefunctor.vertices_mapPath V V ⟨Q⟩ ⟨R⟩ φ s t p, hφ, List.map_id]
 
+/-- The vertices of `p.comp p'` are those of `p` without its last vertex, followed by those of
+`p'`. This is not a simp lemma, since simp already rewrites its left-hand side by
+`Quiver.Path.vertices_comp`. -/
+theorem vertices_comp {s t x : V} (p : ArrowWalk Q s t) (p' : ArrowWalk Q t x) :
+    (p.comp p').vertices = p.vertices.dropLast ++ p'.vertices :=
+  @Quiver.Path.vertices_comp V ⟨Q⟩ _ _ _ p p'
+
+/-- The vertices of the walk that traverses `e` from `x` and then follows `p` are `x` followed by
+the vertices of `p`. -/
+theorem vertices_nil_cons_comp {x y t : V} (e : Q x y) (p : ArrowWalk Q y t) :
+    (((nil x).cons e).comp p).vertices = x :: p.vertices := by
+  rw [vertices_comp, vertices_cons, vertices_nil, List.concat_eq_append, List.dropLast_concat,
+    List.singleton_append]
+
 @[simp]
 theorem arrows_comp {s t x : V} (p : ArrowWalk Q s t) (p' : ArrowWalk Q t x) :
     (p.comp p').arrows = p.arrows ++ p'.arrows := by
   induction p' with
   | nil => simp [comp]
   | cons p' e ih => simp [comp, ← List.append_assoc, ← ih]
-
-/-- Prepending a single arrow to a walk prepends that arrow to its arrow list. This is not a simp
-lemma, since `simp` already simplifies the left-hand side via `arrows_comp`, `arrows_cons`, and
-`arrows_nil`. -/
-theorem arrows_cons_nil_comp {u y w : V} (e : Q u y) (r : ArrowWalk Q y w) :
-    (((nil u).cons e).comp r).arrows = ⟨u, y, e⟩ :: r.arrows := by
-  simp
-
-/-- Prepending a single arrow to a walk prepends its source vertex to the vertex list. This is not
-a simp lemma, since `simp` already simplifies the left-hand side via `Quiver.Path.vertices_comp`. -/
-theorem vertices_cons_nil_comp {u y w : V} (e : Q u y) (r : ArrowWalk Q y w) :
-    (((nil u).cons e).comp r).vertices = u :: r.vertices := by
-  simp
 
 @[simp]
 theorem length_arrows {s t : V} (p : ArrowWalk Q s t) : p.arrows.length = p.length := by
@@ -310,11 +312,25 @@ theorem IsCycle.nodup_arrows {s : V} {c : ArrowWalk Q s s} (hc : c.IsCycle) : c.
 theorem IsCycle.arrows_ne_nil {s : V} {c : ArrowWalk Q s s} (hc : c.IsCycle) : c.arrows ≠ [] :=
   fun h ↦ hc.1.ne' (arrows_eq_nil_iff.1 h)
 
+/-- Closing a directed path by an arrow from its target to its source produces a directed cycle. -/
+theorem IsPath.isCycle_cons {s t : V} {p : ArrowWalk Q s t} (hp : p.IsPath) (e : Q t s) :
+    (p.cons e).IsCycle := by
+  have hne : p.vertices ≠ [] := @Quiver.Path.vertices_ne_nil V ⟨Q⟩ _ _ p
+  have hhead : p.vertices = s :: p.vertices.tail := by
+    conv_lhs => rw [← List.cons_head_tail hne]
+    rw [@Quiver.Path.vertices_head_eq V ⟨Q⟩ _ _ p hne]
+  rw [isPath_def, hhead, List.nodup_cons] at hp
+  rw [isCycle_def]
+  refine ⟨by simp, ?_⟩
+  rw [vertices_cons, List.concat_eq_append, List.tail_append_of_ne_nil hne]
+  -- The head and final copy of `s` are the permitted repeated cycle endpoint.
+  exact hp.2.append (List.nodup_singleton s) (List.disjoint_singleton.2 hp.1)
+
 /-- An initial segment of a path is a path. -/
 theorem IsPath.of_comp_left {s t x : V} {p : ArrowWalk Q s t} {p' : ArrowWalk Q t x}
     (hp : (p.comp p').IsPath) : p.IsPath := by
   have hcomp : (p.comp p').vertices = p.vertices.dropLast ++ p'.vertices :=
-    @Quiver.Path.vertices_comp V ⟨Q⟩ _ _ _ p p'
+    vertices_comp p p'
   have hend : p.vertices.dropLast ++ [t] = p.vertices :=
     @Quiver.Path.dropLast_append_end_eq V ⟨Q⟩ _ _ p
   rw [isPath_def, hcomp] at hp
@@ -326,7 +342,7 @@ theorem IsPath.of_comp_left {s t x : V} {p : ArrowWalk Q s t} {p' : ArrowWalk Q 
 theorem IsPath.of_comp_right {s t x : V} {p : ArrowWalk Q s t} {p' : ArrowWalk Q t x}
     (hp : (p.comp p').IsPath) : p'.IsPath := by
   have hcomp : (p.comp p').vertices = p.vertices.dropLast ++ p'.vertices :=
-    @Quiver.Path.vertices_comp V ⟨Q⟩ _ _ _ p p'
+    vertices_comp p p'
   rw [isPath_def, hcomp] at hp
   exact hp.of_append_right
 
@@ -342,19 +358,21 @@ theorem IsPath.target_notMem_vertices_of_cons {s t x : V} {p : ArrowWalk Q s t} 
   rw [isPath_def, vertices_cons, List.concat_eq_append, List.nodup_append] at hp
   exact fun hx ↦ hp.2.2 x hx x (List.mem_singleton_self x) rfl
 
-/-- The source of any arrow traversed by a path is distinct from the path's target. -/
+/-- The source of an arrow traversed by a path is not the path's target. -/
 theorem IsPath.source_ne_target_of_mem_arrows {s t x y : V} {p : ArrowWalk Q s t}
     (hp : p.IsPath) {e : Q x y} (he : ⟨x, y, e⟩ ∈ p.arrows) : x ≠ t := by
   cases p with
   | nil => simp at he
-  | @cons z _ p₀ e₀ =>
-    rw [arrows_cons, List.mem_append, List.mem_singleton] at he
+  | @cons z _ p e' =>
+    -- The path recursor exposes the final arrow through its local quiver instance.
+    change Q z t at e'
+    intro hxt
+    apply hp.target_notMem_vertices_of_cons
+    rw [ArrowWalk.arrows_cons, List.mem_append, List.mem_singleton] at he
     rcases he with he | he
-    · exact fun h ↦ hp.target_notMem_vertices_of_cons
-        (h ▸ source_mem_vertices_of_mem_arrows (Q := Q) p₀ he)
-    · obtain rfl : x = z := (Sigma.mk.inj_iff.1 he).1
-      exact fun h ↦ hp.target_notMem_vertices_of_cons
-        (h ▸ @Quiver.Path.end_mem_vertices V ⟨Q⟩ _ _ p₀)
+    · exact hxt ▸ source_mem_vertices_of_mem_arrows (Q := Q) p he
+    · obtain ⟨rfl, -⟩ := Sigma.mk.inj_iff.1 he
+      exact hxt ▸ @Quiver.Path.end_mem_vertices V ⟨Q⟩ _ _ p
 
 /-- A path from `s` to `t` that traverses an arrow `e` from `s` to `t` consists of `e` alone. -/
 theorem IsPath.eq_cons_of_mem_arrows {s t : V} {p : ArrowWalk Q s t} (hp : p.IsPath) {e : Q s t}
@@ -376,6 +394,45 @@ theorem IsPath.eq_cons_of_mem_arrows {s t : V} {p : ArrowWalk Q s t} (hp : p.IsP
       | cons q' e'' =>
         exact absurd (@Quiver.Path.start_mem_vertices V ⟨Q⟩ _ _ q')
           hp.of_cons.target_notMem_vertices_of_cons
+
+/-- A walk from a vertex in `C` to a vertex outside `C` traverses an arrow leaving `C`. -/
+theorem exists_mem_arrows_source_mem_target_notMem {C : Set V} {s t : V}
+    (p : ArrowWalk Q s t) (hs : s ∈ C) (ht : t ∉ C) :
+    ∃ x y, ∃ e : Q x y, ⟨x, y, e⟩ ∈ p.arrows ∧ x ∈ C ∧ y ∉ C := by
+  obtain ⟨x, hx, y, hy, e, p₁, p₂, rfl⟩ :=
+    @Quiver.Path.exists_mem_notMem_hom_path_path_of_notMem_mem V ⟨Q⟩ s t p C hs ht
+  exact ⟨x, y, e, by simp [arrows_comp, Quiver.Hom.toPath], hx, hy⟩
+
+/-- A walk that traverses a specified arrow splits into the part before that arrow, the arrow
+itself, and the part after it. -/
+theorem exists_eq_comp_cons_comp_of_mem_arrows {s t x y : V} {p : ArrowWalk Q s t}
+    {e : Q x y} (he : ⟨x, y, e⟩ ∈ p.arrows) :
+    ∃ (p₁ : ArrowWalk Q s x) (p₂ : ArrowWalk Q y t),
+      p = p₁.comp (((nil x).cons e).comp p₂) := by
+  induction p with
+  | nil => simp at he
+  | @cons z w p a ih =>
+    -- The path recursor exposes the current arrow through its local quiver instance.
+    change Q z w at a
+    rw [arrows_cons, List.mem_append, List.mem_singleton] at he
+    rcases he with he | he
+    · obtain ⟨p₁, p₂, rfl⟩ := ih he
+      exact ⟨p₁, p₂.cons a, by simp only [Quiver.Path.comp_cons]⟩
+    · obtain ⟨rfl, he⟩ := Sigma.mk.inj_iff.1 he
+      obtain ⟨rfl, he⟩ := Sigma.mk.inj_iff.1 (eq_of_heq he)
+      obtain rfl := eq_of_heq he
+      exact ⟨p, nil y, rfl⟩
+
+/-- No arrow traversed by a path leaves its last vertex. -/
+theorem IsPath.fst_ne_of_mem_arrows {s t : V} {p : ArrowWalk Q s t} (hp : p.IsPath)
+    {a : Σ x y, Q x y} (ha : a ∈ p.arrows) : a.1 ≠ t := by
+  obtain ⟨x, y, e⟩ := a
+  obtain ⟨p₁, p₂, rfl⟩ := exists_eq_comp_cons_comp_of_mem_arrows ha
+  rintro rfl
+  -- The final segment would be a path starting and ending at `x`, visiting it twice.
+  have h := hp.of_comp_right
+  rw [isPath_def, vertices_nil_cons_comp] at h
+  exact (List.nodup_cons.1 h).1 (@Quiver.Path.end_mem_vertices V ⟨Q⟩ _ _ p₂)
 
 /-- **Path extraction.** Every walk contains a path with the same endpoints that traverses only
 arrows of the walk. -/
@@ -440,7 +497,7 @@ private theorem IsPath.exists_isPath_interior_notMem {A B : Set V} :
     rw [← hn]
     exact (@Quiver.Path.length_comp V ⟨Q⟩ _ _ p₁ _ p₂).symm
   have hcomp : (p₁.comp p₂).vertices = p₁.vertices.dropLast ++ p₂.vertices :=
-    @Quiver.Path.vertices_comp V ⟨Q⟩ _ _ _ p₁ p₂
+    vertices_comp p₁ p₂
   by_cases hvA : v ∈ A
   · have h₁ : p₁.length ≠ 0 := fun h ↦ hvs (@Quiver.Path.eq_of_length_zero V ⟨Q⟩ _ _ p₁ h).symm
     obtain ⟨a, ha, b, hb, q, hq, hsub, hasub, hint⟩ :=
@@ -479,20 +536,6 @@ theorem exists_isPath_interior_notMem {A B : Set V} {s t : V} (p : ArrowWalk Q s
   exact ⟨a, ha, b, hb, q, hq, List.Subset.trans hqsub (vertices_subset_of_arrows_subset hsub),
     List.Subset.trans hqasub hsub, hint⟩
 
-/-- Following a path from `s` to `t` by a return arrow from `t` to `s` forms a cycle. -/
-theorem IsPath.isCycle_cons {s t : V} {p : ArrowWalk Q s t} (hp : p.IsPath) (e : Q t s) :
-    (p.cons e).IsCycle := by
-  refine ⟨by simp, ?_⟩
-  have hv : (p.cons e).vertices = p.vertices.concat s :=
-    @Quiver.Path.vertices_cons V ⟨Q⟩ _ _ _ p e
-  have hne : p.vertices ≠ [] := @Quiver.Path.vertices_ne_nil V ⟨Q⟩ _ _ p
-  have hh : p.vertices.head hne = s := @Quiver.Path.vertices_head_eq V ⟨Q⟩ _ _ p hne
-  have hhead : p.vertices = s :: p.vertices.tail := by
-    conv_lhs => rw [← List.cons_head_tail hne, hh]
-  rw [isPath_def, hhead, List.nodup_cons] at hp
-  rw [hv, List.concat_eq_append, List.tail_append_of_ne_nil hne]
-  exact hp.2.append (List.nodup_singleton s) (List.disjoint_singleton.2 hp.1)
-
 /-- **Cycle extraction.** Every closed walk of positive length contains a cycle at the same vertex
 that traverses only arrows of the walk. -/
 theorem exists_isCycle_arrows_subset {s : V} (c : ArrowWalk Q s s) (hc : 0 < c.length) :
@@ -505,26 +548,6 @@ theorem exists_isCycle_arrows_subset {s : V} (c : ArrowWalk Q s s) (hc : 0 < c.l
     rw [arrows_cons, arrows_cons]
     exact List.append_subset.2
       ⟨List.subset_append_of_subset_left _ hsub, List.subset_append_right _ _⟩
-
-/-- Every strongly connected arrow family on at least two vertices contains a directed cycle of
-length at least `2`. -/
-theorem exists_isCycle_two_le_length [Nontrivial V] (hQ : @Quiver.IsStronglyConnected V ⟨Q⟩) :
-    ∃ (v : V) (c : ArrowWalk Q v v), c.IsCycle ∧ 2 ≤ c.length := by
-  obtain ⟨u, v, huv⟩ := exists_pair_ne V
-  obtain ⟨q₁⟩ := (@Quiver.isStronglyConnected_iff V ⟨Q⟩).1 hQ u v
-  obtain ⟨p₁, hp₁, _⟩ := exists_isPath_arrows_subset (Q := Q) q₁
-  cases p₁ with
-  | nil => exact (huv rfl).elim
-  | @cons x _ p₀ e =>
-    have hxv : x ≠ v := fun h ↦
-      hp₁.target_notMem_vertices_of_cons (h ▸ @Quiver.Path.end_mem_vertices V ⟨Q⟩ _ _ p₀)
-    obtain ⟨q₂⟩ := (@Quiver.isStronglyConnected_iff V ⟨Q⟩).1 hQ v x
-    obtain ⟨r, hr, _⟩ := exists_isPath_arrows_subset (Q := Q) q₂
-    have hr_pos : 0 < r.length := by
-      cases r with
-      | nil => exact (hxv.symm rfl).elim
-      | cons _ _ => simp
-    exact ⟨v, r.cons e, hr.isCycle_cons e, Nat.succ_le_succ hr_pos⟩
 
 /-! ### Bottlenecks -/
 
@@ -933,7 +956,7 @@ theorem ReachableAvoiding.trans (h : ReachableAvoiding Q X s t) (h' : ReachableA
   obtain ⟨p, hp⟩ := h
   obtain ⟨p', hp'⟩ := h'
   refine ⟨p.comp p', fun v hv ↦ ?_⟩
-  rw [ArrowWalk.vertices, @Quiver.Path.vertices_comp V ⟨Q⟩, List.mem_append] at hv
+  rw [ArrowWalk.vertices_comp, List.mem_append] at hv
   exact hv.elim (fun hv ↦ hp v (List.mem_of_mem_dropLast hv)) (hp' v)
 
 /-- A reachable vertex stays reachable along a further arrow to a vertex outside `X`. -/
