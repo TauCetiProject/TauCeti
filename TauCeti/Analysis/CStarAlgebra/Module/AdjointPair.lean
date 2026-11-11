@@ -79,7 +79,8 @@ theorem symm_cstarModule
       (innerₛₗ (A := A) (E := F)).flip T S) :
     IsAdjointPair (innerₛₗ (A := A) (E := F)).flip
       (innerₛₗ (A := A) (E := E)).flip S T :=
-  fun y x => (h.inner_eq_cstarModule x y).symm
+  isAdjointPair_inner_iff.mpr fun y x => by
+    simpa only [star_inner] using congrArg star (h.inner_eq_cstarModule x y).symm
 
 /-- The first member of a C⋆-module adjoint pair is uniquely determined by the second. -/
 theorem unique_left_cstarModule
@@ -184,17 +185,17 @@ theorem continuous_cstarModule
   h.toLinearMapCStarModule.continuous_of_isClosed_graph h.isClosed_graph_cstarModule
 
 /-- Bundle the bounded complex-linear map forced by the adjoint identity on complete modules. -/
-def toContinuousLinearMapCStarModule
+noncomputable def toContinuousLinearMapCStarModule
     (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
-      (innerₛₗ (A := A) (E := F)).flip T S) : E →L[ℂ] F where
-  toLinearMap := h.toLinearMapCStarModule
-  cont := h.continuous_cstarModule
+      (innerₛₗ (A := A) (E := F)).flip T S) : E →L[ℂ] F :=
+  ContinuousLinearMap.ofIsClosedGraph h.isClosed_graph_cstarModule
 
 @[simp]
 theorem toContinuousLinearMapCStarModule_apply
     (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T S) (x : E) :
-    h.toContinuousLinearMapCStarModule x = T x := (rfl)
+    h.toContinuousLinearMapCStarModule x = T x :=
+  congrFun (ContinuousLinearMap.coeFn_ofIsClosedGraph h.isClosed_graph_cstarModule) x
 
 /-- Both functions in an adjoint pair on complete C⋆-modules are bounded complex-linear
 maps commuting with the coefficient action. In particular this applies to nonunital right
