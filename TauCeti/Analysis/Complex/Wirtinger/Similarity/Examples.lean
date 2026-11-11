@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Wirtinger.Similarity.Basic
+public import TauCeti.Analysis.Complex.Wirtinger.Similarity.Transported
 public import TauCeti.Analysis.Sobolev.Local.Basic
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Analysis.Analytic.Order
 import TauCeti.MeasureTheory.Integral.NormRpow
-import Mathlib.Analysis.InnerProductSpace.Calculus
+import TauCeti.Analysis.Analytic.Order
+import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.Calculus.FDeriv.OfReal
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
@@ -33,12 +35,10 @@ reads `2 bar∂ξ + C ξ = 0`.
   and the chosen extension is `C 0 = 0`. This coefficient has size `2 ‖z‖⁻³` and is not locally
   `Lᵖ` near `0` for any `p ≥ 1`. So unique continuation fails without a coefficient in
   `L^p_loc`.
-* `J` need not be constant. For a differentiable family `Φ` of real-linear automorphisms of a
-  complex normed space, `J = Φ i Φ⁻¹` is a complex structure with `J Φ = Φ i`, and with
-  `C = -(∂_s Φ + J ∂_t Φ) Φ⁻¹` every `ξ = Φ σ` with `σ` holomorphic solves the equation.
-  For families `C¹` on an open set with continuous inverse there, `C` is continuous on that set,
-  hence locally `Lᵖ`. The opposite normalization is excluded: if `J' Φ = -Φ i` at `z₀`, then
-  `ξ w = Φ w ((w - z₀) v)`, `v ≠ 0`, fails `∂_s ξ + J' ∂_t ξ + C' ξ = 0` at `z₀` for every `C'`.
+* `J` need not be constant. For a family `Φ` of real-linear automorphisms, every `Φ σ` with `σ`
+  holomorphic solves the equation for `J = Φ i Φ⁻¹` and `C = -(∂_s Φ + J ∂_t Φ) Φ⁻¹`. This
+  construction lives in `TauCeti.Analysis.Complex.Wirtinger.Similarity.Transported`, which this
+  file imports.
 * Orders of zeros. `z²` has an isolated zero of order `2` at `0`, and by
   `TauCeti.eq_of_eventually_mul_eq_sub_pow_mul` the exponent of every local factorization
   `e^{-conj z} z² = zᵐ v`, with `v` continuous and nonzero at `0`, is `2`.
@@ -55,9 +55,6 @@ reads `2 bar∂ξ + C ξ = 0`.
 * `TauCeti.two_mul_conjWirtingerDeriv_expNegInvNormSq_add_eq_zero_iff`: the coefficient is forced
   away from the origin.
 * `TauCeti.not_memLpLoc_expNegInvNormSqCoeff`: it is locally `Lᵖ` near `0` for no `p ≥ 1`.
-* `TauCeti.fderiv_apply_add_transportedComplexStructure_add_eq_zero`: `Φ σ` solves the equation
-  for `J = Φ i Φ⁻¹`.
-* `TauCeti.fderiv_apply_smul_add_ne_zero`: the normalization `J' Φ = -Φ i` fails.
 * `TauCeti.eq_two_of_eventually_cexp_neg_conj_mul_sq_eq`: `e^{-conj z} z²` has a zero of order
   `2`.
 
@@ -215,15 +212,8 @@ theorem expNegInvNormSq_isLittleO_pow (n : ℕ) :
 /-- `bar∂ exp (-1 / ‖z‖²) = z / ‖z‖⁴ · exp (-1 / ‖z‖²)`, both sides vanishing at `0`. -/
 theorem conjWirtingerDeriv_expNegInvNormSq (z : ℂ) :
     conjWirtingerDeriv expNegInvNormSq z 1 = z / (‖z‖ : ℂ) ^ 4 * expNegInvNormSq z := by
-  -- The real derivative of `z ↦ exp (-1 / ‖z‖²)`, as a real function, including at `0`.
-  have hD : HasFDerivAt (fun w : ℂ ↦ expNegInvGlue (‖w‖ ^ 2))
-      ((((‖z‖ ^ 2)⁻¹ ^ 2 * expNegInvGlue (‖z‖ ^ 2)) • (2 • innerSL ℝ z))) z := by
-    have h := expNegInvGlue.hasDerivAt_polynomial_eval_inv_mul 1 (‖z‖ ^ 2)
-    simp only [Polynomial.eval_one, one_mul, Polynomial.derivative_one, sub_zero, mul_one,
-      Polynomial.eval_pow, Polynomial.eval_X] at h
-    exact h.comp_hasFDerivAt z (hasStrictFDerivAt_norm_sq z).hasFDerivAt
   rw [conjWirtingerDeriv_apply, funext expNegInvNormSq_def]
-  simp only [fderiv_ofReal_comp_apply, hD.fderiv,
+  simp only [fderiv_ofReal_comp_apply, (expNegInvGlue.hasFDerivAt_norm_sq z).fderiv,
     smul_apply, innerSL_apply_apply, Complex.inner, smul_eq_mul, mul_one]
   simp only [one_mul, conj_re, mul_re, I_re, I_im, conj_im, zero_mul, one_mul, neg_neg,
     zero_sub, nsmul_eq_mul]
@@ -292,108 +282,5 @@ theorem not_memLpLoc_expNegInvNormSqCoeff {p : ENNReal} (hp : 1 ≤ p) {U : Set 
   have := (integrableOn_norm_rpow_ball_iff (mu := volume) hr).mp h2
   rw [Complex.finrank_real_complex] at this
   norm_num at this
-
-/-! ### A non-constant structure `J = Φ i Φ⁻¹` -/
-
-section Transported
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
-
-/-- The complex structure `J = Φ i Φ⁻¹` transported from multiplication by `i` along
-real-linear automorphisms `Φ z`. -/
-def transportedComplexStructure (Φ : ℂ → V ≃L[ℝ] V) (z : ℂ) : V →L[ℝ] V :=
-  (Φ z).conjContinuousAlgEquiv (I • ContinuousLinearMap.id ℝ V)
-
-/-- The coefficient `C = -(∂_s Φ + J ∂_t Φ) Φ⁻¹` that absorbs the derivative of `Φ`. -/
-def transportedCoeff (Φ : ℂ → V ≃L[ℝ] V) (z : ℂ) : V →L[ℝ] V :=
-  -((fderiv ℝ (fun w ↦ (Φ w : V →L[ℝ] V)) z 1 +
-      transportedComplexStructure Φ z ∘L fderiv ℝ (fun w ↦ (Φ w : V →L[ℝ] V)) z I) ∘L
-    ((Φ z).symm : V →L[ℝ] V))
-
-variable {Φ : ℂ → V ≃L[ℝ] V}
-
-/-- `J v = Φ (i Φ⁻¹ v)`. -/
-theorem transportedComplexStructure_apply (z : ℂ) (v : V) :
-    transportedComplexStructure Φ z v = Φ z (I • (Φ z).symm v) := (rfl)
-
-/-- `C v = -(∂_s Φ (Φ⁻¹ v) + J ∂_t Φ (Φ⁻¹ v))`. -/
-theorem transportedCoeff_apply (z : ℂ) (v : V) :
-    transportedCoeff Φ z v = -(fderiv ℝ (fun w ↦ (Φ w : V →L[ℝ] V)) z 1 ((Φ z).symm v) +
-      transportedComplexStructure Φ z (fderiv ℝ (fun w ↦ (Φ w : V →L[ℝ] V)) z I ((Φ z).symm v))) :=
-  (rfl)
-
-/-- `J Φ = Φ i`. -/
-@[simp]
-theorem transportedComplexStructure_apply_apply (z : ℂ) (v : V) :
-    transportedComplexStructure Φ z (Φ z v) = Φ z (I • v) := by
-  rw [transportedComplexStructure_apply, ContinuousLinearEquiv.symm_apply_apply]
-
-/-- `J² = -1`. -/
-theorem transportedComplexStructure_comp_self (z : ℂ) :
-    transportedComplexStructure Φ z ∘L transportedComplexStructure Φ z =
-      -ContinuousLinearMap.id ℝ V := by
-  rw [transportedComplexStructure, ← ContinuousLinearMap.mul_def, ← map_mul,
-    ContinuousLinearMap.mul_def]
-  ext v
-  simp [smul_smul]
-
-/-- For `J = Φ i Φ⁻¹` and `C = -(∂_s Φ + J ∂_t Φ) Φ⁻¹`, every `ξ = Φ σ` with `σ` holomorphic
-solves `∂_s ξ + J ∂_t ξ + C ξ = 0`. -/
-theorem fderiv_apply_add_transportedComplexStructure_add_eq_zero {σ : ℂ → V} {z : ℂ}
-    (hΦ : DifferentiableAt ℝ (fun w ↦ (Φ w : V →L[ℝ] V)) z) (hσ : DifferentiableAt ℂ σ z) :
-    fderiv ℝ (fun w ↦ Φ w (σ w)) z 1 +
-        transportedComplexStructure Φ z (fderiv ℝ (fun w ↦ Φ w (σ w)) z I) +
-      transportedCoeff Φ z (Φ z (σ z)) = 0 := by
-  have hD := hΦ.hasFDerivAt.clm_apply (hσ.restrictScalars ℝ).hasFDerivAt
-  simp only [ContinuousLinearEquiv.coe_coe] at hD
-  rw [hD.fderiv]
-  have hI : fderiv ℝ σ z I = I • fderiv ℝ σ z 1 := by
-    rw [hσ.fderiv_restrictScalars ℝ, ContinuousLinearMap.coe_restrictScalars', ← map_smul,
-      smul_eq_mul, mul_one]
-  simp only [add_apply, comp_apply, ContinuousLinearEquiv.coe_coe, flip_apply, hI,
-    transportedComplexStructure_apply, map_add, ContinuousLinearEquiv.symm_apply_apply,
-    smul_smul, I_mul_I, neg_smul, one_smul, map_neg, transportedCoeff_apply, neg_add_rev]
-  abel
-
-/-- The normalization `Φ⁻¹ J' Φ = -i` is wrong: if `J' Φ = -Φ i` at `z₀` and `v ≠ 0`, then
-`ξ w = Φ w ((w - z₀) v)` fails `∂_s ξ + J' ∂_t ξ + C' ξ = 0` at its zero `z₀`, whatever `C'`. -/
-theorem fderiv_apply_smul_add_ne_zero {z₀ : ℂ}
-    (hΦ : DifferentiableAt ℝ (fun w ↦ (Φ w : V →L[ℝ] V)) z₀) {J' C' : V →L[ℝ] V}
-    (hJ' : ∀ v, J' (Φ z₀ v) = -Φ z₀ (I • v)) {v : V} (hv : v ≠ 0) :
-    fderiv ℝ (fun w ↦ Φ w ((w - z₀) • v)) z₀ 1 +
-        J' (fderiv ℝ (fun w ↦ Φ w ((w - z₀) • v)) z₀ I) +
-      C' (Φ z₀ ((z₀ - z₀) • v)) ≠ 0 := by
-  have hσ : HasFDerivAt (fun w : ℂ ↦ (w - z₀) • v) ((ContinuousLinearMap.id ℝ ℂ).smulRight v) z₀ :=
-    ((hasFDerivAt_id z₀).sub_const z₀).smul_const v
-  have hD := hΦ.hasFDerivAt.clm_apply hσ
-  simp only [ContinuousLinearEquiv.coe_coe] at hD
-  rw [hD.fderiv]
-  simp only [sub_self, zero_smul, map_zero, add_zero, comp_apply, smulRight_apply, id_apply,
-    one_smul, ContinuousLinearEquiv.coe_coe, hJ', smul_smul, I_mul_I, neg_smul, map_neg, neg_neg,
-    ne_eq]
-  rw [← two_smul ℝ]
-  exact smul_ne_zero two_ne_zero ((Φ z₀).map_ne_zero_iff.mpr hv)
-
-/-- For a family `C¹` on an open set `U` with inverse continuous on `U`, the coefficient `C` is
-continuous on `U`. -/
-theorem continuousOn_transportedCoeff {U : Set ℂ} (hU : IsOpen U)
-    (hΦ : ContDiffOn ℝ 1 (fun w ↦ (Φ w : V →L[ℝ] V)) U)
-    (hΨ : ContinuousOn (fun w ↦ ((Φ w).symm : V →L[ℝ] V)) U) :
-    ContinuousOn (transportedCoeff Φ) U := by
-  have hD := hΦ.continuousOn_fderiv_of_isOpen hU le_rfl
-  have hJ : ContinuousOn (transportedComplexStructure Φ) U :=
-    hΦ.continuousOn.clm_comp (continuousOn_const.clm_comp hΨ)
-  exact ((hD.clm_apply continuousOn_const).add
-    (hJ.clm_comp (hD.clm_apply continuousOn_const))).clm_comp hΨ |>.neg
-
-/-- For a family `C¹` on an open set `U` with inverse continuous on `U`, the coefficient `C` is
-locally `Lᵖ` on `U`. -/
-theorem memLpLoc_transportedCoeff {U : Set ℂ} (hU : IsOpen U)
-    (hΦ : ContDiffOn ℝ 1 (fun w ↦ (Φ w : V →L[ℝ] V)) U)
-    (hΨ : ContinuousOn (fun w ↦ ((Φ w).symm : V →L[ℝ] V)) U) (p : ENNReal) :
-    MemLpLoc p U (transportedCoeff Φ) :=
-  (continuousOn_transportedCoeff hU hΦ hΨ).memLpLoc
-
-end Transported
 
 end TauCeti

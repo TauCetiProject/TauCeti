@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Complex.Wirtinger.Potential
 public import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 public import Mathlib.Analysis.Analytic.IsolatedZeros
-public import Mathlib.Analysis.Analytic.Order
 import TauCeti.Analysis.Complex.ContinuousLog.ArgumentPrinciple
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
@@ -22,8 +21,8 @@ nowhere-zero `Cᵏ` integrating factor depending on the point. On a preconnected
 a nonzero solution has isolated zeros and factors near each point as a nonnegative
 integral power of the complex coordinate times a factor `Cᵏ` at the point and nonzero
 there. The exponent of such a factorization is unique, already among factors that are only
-continuous at the point, and multiplying an analytic function by a factor continuous and nonzero
-at the point does not change it. For a solution on the plane that is nonzero outside a compact
+continuous at the point (`TauCeti.eq_of_eventually_sub_pow_mul_eq` in
+`TauCeti.Analysis.Analytic.Order`). For a solution on the plane that is nonzero outside a compact
 set, the zero set is finite, by the general finiteness criterion for local power factorizations
 `TauCeti.finite_setOfPred_eq_zero_of_eventually_eq_pow_mul`. No curvature equation or
 analyticity of the coefficient is needed.
@@ -155,51 +154,5 @@ theorem finite_setOfPred_eq_zero_of_conjWirtingerDeriv_apply_one_eq_mul {a f : �
         isPreconnected_univ ha.contDiffOn hf.differentiableOn (fun w _ ↦ heq w) hne (mem_univ z))
   exact finite_setOfPred_eq_zero_of_eventually_eq_pow_mul
     (fun z ↦ ⟨v z, (hvc z).continuousAt, hv0 z, hvf z⟩) htail
-
-/-- The exponent of a local factorization `(w - z) ^ m * v w`, with `v` continuous and nonzero at
-`z`, is unique. -/
-theorem eq_of_eventually_sub_pow_mul_eq {z : ℂ} {m n : ℕ} {u v : ℂ → ℂ}
-    (hu : ContinuousAt u z) (hu₀ : u z ≠ 0) (hv : ContinuousAt v z) (hv₀ : v z ≠ 0)
-    (h : ∀ᶠ w in 𝓝 z, (w - z) ^ m * u w = (w - z) ^ n * v w) : m = n := by
-  wlog hmn : m < n generalizing m n u v
-  · rcases (not_lt.mp hmn).eq_or_lt with h' | h'
-    · exact h'.symm
-    · exact (this hv hv₀ hu hu₀ (h.mono fun w hw ↦ hw.symm) h').symm
-  exfalso
-  -- Off `z`, cancelling `(w - z) ^ m` gives `u w = (w - z) ^ (n - m) * v w`, which tends to `0`.
-  have hlim : Tendsto (fun w ↦ (w - z) ^ (n - m) * v w) (𝓝[≠] z) (𝓝 (u z)) := by
-    refine (hu.tendsto.mono_left nhdsWithin_le_nhds).congr' ?_
-    filter_upwards [nhdsWithin_le_nhds h, self_mem_nhdsWithin] with w hw hwz
-    apply mul_left_cancel₀ (pow_ne_zero m (sub_ne_zero.mpr hwz))
-    rw [hw, ← mul_assoc, ← pow_add, Nat.add_sub_cancel' hmn.le]
-  have h0 : Tendsto (fun w ↦ (w - z) ^ (n - m) * v w) (𝓝[≠] z) (𝓝 0) := by
-    have hc : ContinuousAt (fun w ↦ (w - z) ^ (n - m) * v w) z :=
-      ((continuousAt_id.sub continuousAt_const).pow _).mul hv
-    simpa [zero_pow (Nat.sub_ne_zero_of_lt hmn)] using hc.tendsto.mono_left nhdsWithin_le_nhds
-  exact hu₀ (tendsto_nhds_unique hlim h0)
-
-/-- If `Φ` is continuous and nonzero at `z` and `σ` is analytic with a zero of order `n` at `z`,
-then `Φ σ` factors near `z` as `(w - z) ^ n` times a function continuous and nonzero at `z`. -/
-theorem exists_eventually_mul_eq_sub_pow_mul {Φ σ : ℂ → ℂ} {z : ℂ} {n : ℕ}
-    (hΦ : ContinuousAt Φ z) (hΦ₀ : Φ z ≠ 0) (hσ : AnalyticAt ℂ σ z)
-    (hn : analyticOrderAt σ z = n) :
-    ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧ ∀ᶠ w in 𝓝 z, Φ w * σ w = (w - z) ^ n * v w := by
-  obtain ⟨g, hg, hg₀, hgσ⟩ := hσ.analyticOrderAt_eq_natCast.mp hn
-  refine ⟨fun w ↦ Φ w * g w, hΦ.mul hg.continuousAt, mul_ne_zero hΦ₀ hg₀, ?_⟩
-  filter_upwards [hgσ] with w hw
-  rw [hw, smul_eq_mul]
-  ring
-
-/-- The zero orders of `Φ σ` are those of `σ`: for `Φ` continuous and nonzero at `z` and `σ`
-analytic with a zero of order `n` at `z`, every local factorization `Φ σ = (w - z) ^ m v`, with `v`
-continuous and nonzero at `z`, has `m = n`. -/
-theorem eq_of_eventually_mul_eq_sub_pow_mul {Φ σ v : ℂ → ℂ} {z : ℂ} {m n : ℕ}
-    (hΦ : ContinuousAt Φ z) (hΦ₀ : Φ z ≠ 0) (hσ : AnalyticAt ℂ σ z)
-    (hn : analyticOrderAt σ z = n) (hv : ContinuousAt v z) (hv₀ : v z ≠ 0)
-    (h : ∀ᶠ w in 𝓝 z, Φ w * σ w = (w - z) ^ m * v w) : m = n := by
-  obtain ⟨u, hu, hu₀, hσu⟩ := exists_eventually_mul_eq_sub_pow_mul hΦ hΦ₀ hσ hn
-  exact eq_of_eventually_sub_pow_mul_eq hv hv₀ hu hu₀ <| by
-    filter_upwards [h, hσu] with w hw hw'
-    rw [← hw, hw']
 
 end TauCeti
