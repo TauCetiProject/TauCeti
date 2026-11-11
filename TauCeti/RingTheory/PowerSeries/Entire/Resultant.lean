@@ -110,11 +110,11 @@ theorem entireResultant_zero_right (hP : P.Monic) : entireResultant P 0 = 0 ^ P.
 
 end TopologicalRing
 
-section Normed
+section TopologicalRingT2
 
-variable {R : Type*} [NormedCommRing R] [CompleteSpace R] {P : R[X]} {F : R⟦X⟧}
+variable {R : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] [T2Space R]
+  {P : R[X]}
 
-omit [CompleteSpace R] in
 /-- **Agreement with the polynomial resultant.** For monic `P` and a polynomial `g`, the entire
 resultant is the resultant of `P` and `g`, read at any degree bound `n` for `g`. -/
 theorem entireResultant_coe (hP : P.Monic) (g : R[X]) {n : ℕ} (hn : g.natDegree ≤ n) :
@@ -122,18 +122,22 @@ theorem entireResultant_coe (hP : P.Monic) (g : R[X]) {n : ℕ} (hn : g.natDegre
   rw [entireResultant_def, PowerSeries.modByMonic_coe g hP, AdjoinRoot.mk_modByMonic,
     AdjoinRoot.norm_mk_eq_resultant_of_natDegree_le hP hn]
 
-omit [CompleteSpace R] in
 /-- The resultant of a monic `P` with `1` is `1`: multiplication by `1` has determinant `1`. -/
 @[simp]
 theorem entireResultant_one_right (hP : P.Monic) : entireResultant P 1 = 1 := by
   rw [entireResultant_def, ← Polynomial.coe_one, PowerSeries.modByMonic_coe _ hP,
     AdjoinRoot.mk_modByMonic, map_one, map_one]
 
-omit [CompleteSpace R] in
 /-- The resultant of a monic `P` with itself is `0 ^ deg P`: it vanishes unless `P = 1`. -/
 @[simp]
 theorem entireResultant_self (hP : P.Monic) : entireResultant P P = 0 ^ P.natDegree := by
   rw [entireResultant_coe hP P le_rfl, resultant_self]
+
+end TopologicalRingT2
+
+section Normed
+
+variable {R : Type*} [NormedCommRing R] [CompleteSpace R] {P : R[X]} {F : R⟦X⟧}
 
 /-- **The entire resultant at a split polynomial.** If `P = ∏ i, (X - aᵢ)`, then `Res(P, F)` is the
 product `∏ i, F(aᵢ)` of the values of the entire series `F` at the roots of `P`. The roots may
