@@ -15,6 +15,9 @@ exponents to give an integrable scalar function. This supplies the integrability
 split integrals in weak integration-by-parts formulas. The result specializes Mathlib's
 bilinear Hölder estimate `ContinuousLinearMap.memLp_of_bilin` to the dual pairing.
 
+More generally, an essentially bounded field of continuous bilinear maps applied to an `Lᵖ`
+function and an `Lᵠ` function is integrable (`MeasureTheory.MemLp.integrable_bilinear_apply`).
+
 The Hölder pairing `ContinuousLinearMap.lpPairing` of the multiplication of a normed algebra is
 the integral of the product (`ContinuousLinearMap.lpPairing_mul_eq_integral`).
 -/
@@ -25,9 +28,13 @@ open scoped ENNReal
 
 namespace MeasureTheory.MemLp
 
-variable {α 𝕜 V : Type*} [MeasurableSpace α] [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup V] [NormedSpace 𝕜 V] {μ : Measure α} {p q : ℝ≥0∞}
-  [p.HolderConjugate q] {f : α → StrongDual 𝕜 V} {g : α → V}
+variable {α 𝕜 : Type*} [MeasurableSpace α] [NontriviallyNormedField 𝕜] {μ : Measure α}
+  {p q : ℝ≥0∞} [p.HolderConjugate q]
+
+section DualPairing
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V] {f : α → StrongDual 𝕜 V}
+  {g : α → V}
 
 /-- Evaluating a dual-valued `L^p` function on an `L^q` function is integrable when the
 exponents are Hölder conjugate. -/
@@ -35,6 +42,29 @@ theorem integrable_apply (hf : MemLp f p μ) (hg : MemLp g q μ) :
     Integrable (fun x ↦ f x (g x)) μ :=
   memLp_one_iff_integrable.1
     ((ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 V)).memLp_of_bilin 1 hf hg)
+
+end DualPairing
+
+section Bilinear
+
+variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F]
+  [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G] {B : α → E →L[𝕜] F →L[𝕜] G}
+  {f : α → E} {g : α → F}
+
+/-- Applying an essentially bounded field of continuous bilinear maps to an `L^p` function and
+an `L^q` function gives an integrable function when the exponents are Hölder conjugate. -/
+theorem integrable_bilinear_apply (hB : MemLp B ⊤ μ) (hf : MemLp f p μ) (hg : MemLp g q μ) :
+    Integrable (fun x ↦ B x (f x) (g x)) μ := by
+  -- The Hölder exponents are pinned explicitly, and the application goes through `exact`:
+  -- elaborating it against the expected type in term mode unfolds `MemLp` and loops.
+  have hBf : MemLp (fun x ↦ B x (f x)) p μ := by
+    exact (ContinuousLinearMap.id 𝕜 (E →L[𝕜] F →L[𝕜] G)).memLp_of_bilin (𝕜 := 𝕜)
+      (p := ⊤) (q := p) (f := B) (g := f) p hB hf
+  exact memLp_one_iff_integrable.mp
+    ((ContinuousLinearMap.id 𝕜 (F →L[𝕜] G)).memLp_of_bilin
+      (p := p) (q := q) (f := fun x ↦ B x (f x)) (g := g) 1 hBf hg)
+
+end Bilinear
 
 end MeasureTheory.MemLp
 
