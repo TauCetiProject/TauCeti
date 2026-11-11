@@ -266,8 +266,13 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {B : Type*} [TopologicalS
 
 /-- In a bundle with model fibre `𝕜`, the ratio `w / v` of two vectors of a fibre, read in a
 trivialization `e`. Over `e.baseSet` it is the scalar `c` with `w = c • v`, for `v ≠ 0`. -/
-@[expose] def coordRatio (v w : L x) : 𝕜 :=
+def coordRatio (v w : L x) : 𝕜 :=
   e.continuousLinearMapAt 𝕜 x w / e.continuousLinearMapAt 𝕜 x v
+
+/-- The defining equation of `Bundle.Trivialization.coordRatio`. -/
+theorem coordRatio_def (v w : L x) :
+    e.coordRatio v w = e.continuousLinearMapAt 𝕜 x w / e.continuousLinearMapAt 𝕜 x v :=
+  (rfl)
 
 /-- Over the base set of a trivialization of a bundle with model fibre `𝕜`, every vector `w` is
 the multiple of a nonzero vector `v` by their ratio read in the trivialization. -/
@@ -278,7 +283,7 @@ theorem eq_coordRatio_smul (hx : x ∈ e.baseSet) {v : L x} (hv : v ≠ 0) (w : 
       e.symmL_continuousLinearMapAt (R := 𝕜) hx b]
   have hv' : e.continuousLinearMapAt 𝕜 x v ≠ 0 := fun h ↦ hv (hinj (h.trans (map_zero _).symm))
   apply hinj
-  rw [map_smul, coordRatio, smul_eq_mul, div_mul_cancel₀ _ hv']
+  rw [map_smul, coordRatio_def, smul_eq_mul, div_mul_cancel₀ _ hv']
 
 /-- Over the base set of a trivialization of a bundle with model fibre `𝕜`, the ratio of
 `w = c • v` to a nonzero vector `v`, read in the trivialization, is `c`. -/
@@ -286,7 +291,7 @@ theorem coordRatio_eq_of_eq_smul (hx : x ∈ e.baseSet) {v : L x} (hv : v ≠ 0)
     (hw : w = c • v) : e.coordRatio v w = c := by
   have hv' : e.continuousLinearMapAt 𝕜 x v ≠ 0 := fun h ↦
     hv (by rw [← e.symmL_continuousLinearMapAt (R := 𝕜) hx v, h, map_zero])
-  rw [coordRatio, hw, map_smul, smul_eq_mul, mul_div_assoc, div_self hv', mul_one]
+  rw [coordRatio_def, hw, map_smul, smul_eq_mul, mul_div_assoc, div_self hv', mul_one]
 
 end LineBundle
 

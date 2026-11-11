@@ -204,7 +204,7 @@ theorem exists_mdifferentiableOn_eq_smul {σ τ : Π x : M, V x} {U : Set M}
   have hloc : h =ᶠ[𝓝 x₀] fun x ↦ (e₀ ⟨x, τ x⟩).2 / (e₀ ⟨x, σ x⟩).2 := by
     filter_upwards [hU.mem_nhds hx₀, e₀.open_baseSet.mem_nhds hx₀e] with x hx hxe
     rw [← e₀.continuousLinearMapAt_apply_of_mem (R := ℂ) hxe,
-      ← e₀.continuousLinearMapAt_apply_of_mem (R := ℂ) hxe]
+      ← e₀.continuousLinearMapAt_apply_of_mem (R := ℂ) hxe, ← e₀.coordRatio_def]
     exact (e₀.coordRatio_eq_of_eq_smul hxe (hσ.ne_zero x hx) (hτh x hx)).symm
   have hnum := (mdifferentiableAt_section 𝓘(ℝ, E) τ).1 (hτ x₀ hx₀)
   have hden := (mdifferentiableAt_section 𝓘(ℝ, E) σ).1 (hσ.mdifferentiableAt hU hx₀)
