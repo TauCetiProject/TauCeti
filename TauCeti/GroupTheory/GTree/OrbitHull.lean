@@ -278,7 +278,7 @@ theorem exists_finite_orbitHull_eq_smul (hH : H.FG) : ∃ K : Set T.V, K.Finite 
     x ∈ K ∧ T.orbitHull H x = (H : Set G) • K ∧
       T.inducedDarts (T.orbitHull H x) = (H : Set G) • T.inducedDarts K := by
   obtain ⟨S, rfl, hS⟩ := (Subgroup.fg_iff H).mp hH
-  exact ⟨_, T.isTree.finite_convexHull ((hS.image _).insert x), isConvex_convexHull _,
+  exact ⟨_, T.isTree.isAcyclic.finite_convexHull ((hS.image _).insert x), isConvex_convexHull _,
     subset_convexHull _ (Set.mem_insert x _), orbitHull_closure T x S,
     inducedDarts_orbitHull_closure T x S⟩
 

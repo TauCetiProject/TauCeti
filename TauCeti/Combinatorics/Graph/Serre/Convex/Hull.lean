@@ -12,24 +12,30 @@ public import Mathlib.Data.Set.Finite.List
 /-!
 # Convex hulls of sets of vertices
 
-The convex hull of a set of vertices of a Serre graph is the smallest convex set containing it.
-In a tree, where the nonempty convex sets are the vertex sets of the subtrees, it is the subtree
-spanned by the set. The hull `Γ.convexHull {a, b}` of two vertices of a tree is the geodesic
-segment `[a, b]`: the set of vertices of the reduced path from `a` to `b`.
+The convex hull of a set of vertices of a Serre graph is the smallest convex set containing it;
+each of its vertices is joined to the set by a path. In a tree, where the nonempty convex sets are
+the vertex sets of the subtrees, it is the subtree spanned by the set. The hull
+`Γ.convexHull {a, b}` of two vertices of an acyclic graph joined by a path is the geodesic
+segment `[a, b]`: the set of vertices of the reduced path from `a` to `b`. In an acyclic graph the
+hull of a set is the union of the hulls of its pairs of vertices, so the hull of a finite set is
+finite.
 
 Hulls in a tree are computed from segments through a base vertex: the hull of `{x} ∪ S` is the
 union of `{x}` and the segments `[x, s]` for `s ∈ S`, because subtrees through a common vertex
-glue to a subtree. In particular `[a, c] ⊆ [a, b] ∪ [b, c]`, and the hull of a finite set is
-finite. Automorphisms commute with convex hulls.
+glue to a subtree. In particular `[a, c] ⊆ [a, b] ∪ [b, c]`. Automorphisms commute with convex
+hulls.
 
 ## Main declarations
 
 * `TauCeti.SerreGraph.convexHull`: the convex hull of a set of vertices.
-* `TauCeti.SerreGraph.IsTree.convexHull_pair`: in a tree, the hull of two vertices is the set of
-  vertices of the reduced path joining them.
+* `TauCeti.SerreGraph.IsAcyclic.convexHull_pair`: in an acyclic graph, the hull of two vertices is
+  the set of vertices of a reduced path joining them.
+* `TauCeti.SerreGraph.IsAcyclic.convexHull_eq_biUnion_convexHull_pair`: in an acyclic graph, the
+  hull of a set is the union of the hulls of its pairs of vertices.
+* `TauCeti.SerreGraph.IsAcyclic.finite_convexHull`: in an acyclic graph, the hull of a finite set
+  is finite.
 * `TauCeti.SerreGraph.IsTree.convexHull_insert`: in a tree, the hull of `{x} ∪ S` is the union of
   `{x}` and the segments from `x` to the vertices of `S`.
-* `TauCeti.SerreGraph.IsTree.finite_convexHull`: in a tree, the hull of a finite set is finite.
 * `TauCeti.SerreGraph.Aut.convexHull_smul_set`: automorphisms commute with convex hulls.
 
 ## References
@@ -98,6 +104,80 @@ theorem convexHull_mono {S T : Set Γ.V} (h : S ⊆ T) : Γ.convexHull S ⊆ Γ.
 @[simp] theorem right_mem_convexHull_pair (a b : Γ.V) : b ∈ Γ.convexHull {a, b} :=
   subset_convexHull _ (Set.mem_insert_of_mem a rfl)
 
+/-- Every vertex of the convex hull of a set is joined to the set by a path. -/
+theorem exists_path_of_mem_convexHull {v : Γ.V} (hv : v ∈ Γ.convexHull S) :
+    ∃ s ∈ S, Nonempty (Γ.Path s v) := by
+  -- The vertices joined to `S` by a path form a convex set.
+  refine (?_ : Γ.IsConvex {v | ∃ s ∈ S, Nonempty (Γ.Path s v)}).convexHull_subset
+    (fun s hs => ⟨s, hs, ⟨.nil⟩⟩) hv
+  refine isConvex_iff.mpr ?_
+  rintro a ⟨s, hs, ⟨q⟩⟩ b - p - e he
+  obtain ⟨p₁, -, -⟩ := Path.exists_eq_cons_comp_of_mem_darts Γ p he
+  exact ⟨s, hs, ⟨q.comp p₁⟩⟩
+
+/-! ### Convex hulls in an acyclic graph -/
+
+/-- In an acyclic graph, the convex hull of two vertices is the set of vertices of a reduced path
+joining them. -/
+theorem IsAcyclic.convexHull_pair (h : Γ.IsAcyclic) {a b : Γ.V} {p : Γ.Path a b}
+    (hp : Path.IsReduced Γ p) : Γ.convexHull {a, b} = {v | v ∈ p.vertices} := by
+  refine ((h.isConvex_setOf_mem_vertices p).convexHull_subset
+    (Set.pair_subset p.start_mem_vertices p.end_mem_vertices)).antisymm fun v hv => ?_
+  rcases Path.eq_or_exists_tgt_eq_of_mem_vertices Γ p hv with rfl | ⟨e, he, rfl⟩
+  · exact left_mem_convexHull_pair v b
+  · exact (isConvex_convexHull _).tgt_mem (left_mem_convexHull_pair a b)
+      (right_mem_convexHull_pair a b) hp he
+
+/-- In an acyclic graph, the convex hull of two vertices is finite. -/
+theorem IsAcyclic.finite_convexHull_pair (h : Γ.IsAcyclic) (a b : Γ.V) :
+    (Γ.convexHull {a, b}).Finite := by
+  rcases isEmpty_or_nonempty (Γ.Path a b) with hab | ⟨⟨p⟩⟩
+  · -- Two vertices that are not joined by a path form a convex set.
+    rw [(h.isConvex_of_pairwise (Set.pairwise_pair.mpr fun _ =>
+      ⟨hab, ⟨fun p => hab.elim p.reverse⟩⟩)).convexHull_eq]
+    exact Set.toFinite _
+  · rw [h.convexHull_pair (Path.isReduced_reduce Γ p)]
+    exact (Path.reduce Γ p).vertices.finite_toSet
+
+/-- In an acyclic graph, the convex hull of a set is the union of the convex hulls of the pairs of
+its vertices. -/
+theorem IsAcyclic.convexHull_eq_biUnion_convexHull_pair (h : Γ.IsAcyclic) (S : Set Γ.V) :
+    Γ.convexHull S = ⋃ a ∈ S, ⋃ b ∈ S, Γ.convexHull {a, b} := by
+  -- Every vertex of the union lies in the hull of a pair `{a, b}` and is joined to `a` by a path.
+  have reach : ∀ u ∈ ⋃ a ∈ S, ⋃ b ∈ S, Γ.convexHull {a, b},
+      ∃ a ∈ S, ∃ b ∈ S, u ∈ Γ.convexHull {a, b} ∧ Nonempty (Γ.Path a u) := by
+    simp only [Set.mem_iUnion]
+    rintro u ⟨a, ha, b, hb, hu⟩
+    obtain ⟨s, rfl | rfl, hs⟩ := exists_path_of_mem_convexHull hu
+    · exact ⟨s, ha, b, hb, hu, hs⟩
+    · exact ⟨s, hb, a, ha, Set.pair_comm a s ▸ hu, hs⟩
+  refine ((?_ : Γ.IsConvex _).convexHull_subset fun a ha => Set.mem_biUnion ha
+    (Set.mem_biUnion ha (left_mem_convexHull_pair a a))).antisymm
+    (Set.iUnion₂_subset fun a ha => Set.iUnion₂_subset fun b hb =>
+      convexHull_mono (Set.pair_subset ha hb))
+  refine isConvex_iff.mpr fun u hu v hv r hr e he => ?_
+  obtain ⟨a, ha, b, hb, hu, ⟨qa⟩⟩ := reach u hu
+  obtain ⟨c, hc, d, hd, hv, ⟨qc⟩⟩ := reach v hv
+  -- The reduced path `r` only crosses darts of the reduced paths from `u` to `a`, from `a` to
+  -- `c` and from `c` to `v`, which lie in the hulls of `{a, b}`, `{a, c}` and `{c, d}`.
+  have he' := (h.darts_sublist hr ((Path.reduce Γ qa.reverse).comp
+    ((Path.reduce Γ (qa.comp (r.comp qc.reverse))).comp (Path.reduce Γ qc)))).subset he
+  simp only [Path.darts_comp, List.mem_append] at he'
+  rcases he' with he' | he' | he'
+  · exact Set.mem_biUnion ha (Set.mem_biUnion hb (isConvex_iff.mp (isConvex_convexHull _) u hu a
+      (left_mem_convexHull_pair a b) _ (Path.isReduced_reduce Γ _) e he'))
+  · exact Set.mem_biUnion ha (Set.mem_biUnion hc (isConvex_iff.mp (isConvex_convexHull _) a
+      (left_mem_convexHull_pair a c) c (right_mem_convexHull_pair a c) _
+      (Path.isReduced_reduce Γ _) e he'))
+  · exact Set.mem_biUnion hc (Set.mem_biUnion hd (isConvex_iff.mp (isConvex_convexHull _) c
+      (left_mem_convexHull_pair c d) v hv _ (Path.isReduced_reduce Γ _) e he'))
+
+/-- In an acyclic graph, the convex hull of a finite set of vertices is finite. -/
+theorem IsAcyclic.finite_convexHull (h : Γ.IsAcyclic) (hS : S.Finite) :
+    (Γ.convexHull S).Finite := by
+  rw [h.convexHull_eq_biUnion_convexHull_pair]
+  exact hS.biUnion fun a _ => hS.biUnion fun b _ => h.finite_convexHull_pair a b
+
 /-! ### Convex hulls in a tree -/
 
 /-- In a tree, the convex hull of `{x} ∪ S` is the union of `{x}` and the segments from `x` to the
@@ -130,27 +210,6 @@ theorem IsTree.convexHull_pair_subset_union (h : Γ.IsTree) (a b c : Γ.V) :
     ⟨b, right_mem_convexHull_pair a b, left_mem_convexHull_pair b c⟩).convexHull_subset
       (Set.pair_subset (Or.inl (left_mem_convexHull_pair a b))
         (Or.inr (right_mem_convexHull_pair b c)))
-
-/-- In a tree, the convex hull of two vertices is the set of vertices of the reduced path joining
-them. -/
-theorem IsTree.convexHull_pair (h : Γ.IsTree) {a b : Γ.V} {p : Γ.Path a b}
-    (hp : Path.IsReduced Γ p) : Γ.convexHull {a, b} = {v | v ∈ p.vertices} := by
-  refine ((h.isConvex_setOf_mem_vertices p).convexHull_subset
-    (Set.pair_subset p.start_mem_vertices p.end_mem_vertices)).antisymm fun v hv => ?_
-  rcases Path.eq_or_exists_tgt_eq_of_mem_vertices Γ p hv with rfl | ⟨e, he, rfl⟩
-  · exact left_mem_convexHull_pair v b
-  · exact (isConvex_convexHull _).tgt_mem (left_mem_convexHull_pair a b)
-      (right_mem_convexHull_pair a b) hp he
-
-/-- In a tree, the convex hull of a finite set of vertices is finite. -/
-theorem IsTree.finite_convexHull (h : Γ.IsTree) (hS : S.Finite) : (Γ.convexHull S).Finite := by
-  rcases S.eq_empty_or_nonempty with rfl | ⟨x, hx⟩
-  · simp
-  rw [← Set.insert_eq_of_mem hx, h.convexHull_insert]
-  refine (hS.biUnion fun s _ => ?_).insert x
-  obtain ⟨p, hp, -⟩ := h.existsUnique_isReduced x s
-  rw [h.convexHull_pair hp]
-  exact p.vertices.finite_toSet
 
 /-! ### Automorphisms -/
 

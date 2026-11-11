@@ -14,13 +14,13 @@ public import Mathlib.Data.Set.Finite.Basic
 A set of vertices of a Serre graph is convex when it contains every vertex crossed by a reduced
 path between two of its vertices. In a tree, the nonempty convex sets are the vertex sets of the
 subtrees, since reduced paths are the geodesics. Convex sets are closed under arbitrary
-intersections, and in an acyclic graph every singleton and the pair of endpoints of every dart is
-convex.
+intersections. In an acyclic graph, the following sets are convex: a set of vertices in which no
+two distinct vertices are joined by a path (for instance a singleton), the pair of endpoints of a
+dart, and the set of vertices of a path.
 
 In a tree, a union of convex sets with a common vertex is convex, and a dart between two convex
 sets with a common vertex has both endpoints in one of them: subtrees through a common vertex
-glue to a subtree, without creating new edges. In particular the vertices of a path in a tree form
-a convex set. Here the edges of the subgraph on a set of vertices
+glue to a subtree, without creating new edges. Here the edges of the subgraph on a set of vertices
 are its induced darts, `SerreGraph.inducedDarts`; a finite set of vertices of an acyclic graph
 induces finitely many of them.
 
@@ -88,11 +88,19 @@ theorem IsConvex.inter {S T : Set Γ.V} (hS : Γ.IsConvex S) (hT : Γ.IsConvex T
     Γ.IsConvex (S ∩ T) := fun a ha b hb p hp e he =>
   ⟨hS a ha.1 b hb.1 p hp e he, hT a ha.2 b hb.2 p hp e he⟩
 
+/-- In an acyclic graph, a set of vertices in which no two distinct vertices are joined by a path
+is convex. -/
+theorem IsAcyclic.isConvex_of_pairwise (h : Γ.IsAcyclic) {S : Set Γ.V}
+    (hS : S.Pairwise fun a b => IsEmpty (Γ.Path a b)) : Γ.IsConvex S := by
+  intro a ha b hb p hp e he
+  obtain rfl | hab := eq_or_ne a b
+  · rw [(isAcyclic_iff Γ).mp h a p hp, Path.darts_nil] at he
+    exact absurd he List.not_mem_nil
+  · exact (hS ha hb hab).elim p
+
 /-- In an acyclic graph every singleton is convex. -/
-theorem IsAcyclic.isConvex_singleton (h : Γ.IsAcyclic) (v : Γ.V) : Γ.IsConvex {v} := by
-  rintro a rfl b rfl p hp e he
-  rw [(isAcyclic_iff Γ).mp h b p hp, Path.darts_nil] at he
-  exact absurd he List.not_mem_nil
+theorem IsAcyclic.isConvex_singleton (h : Γ.IsAcyclic) (v : Γ.V) : Γ.IsConvex {v} :=
+  h.isConvex_of_pairwise (Set.pairwise_singleton v _)
 
 /-- In an acyclic graph, the two endpoints of a dart form a convex set. -/
 theorem IsAcyclic.isConvex_pair_src_tgt (h : Γ.IsAcyclic) (e : Γ.E) :
@@ -108,6 +116,21 @@ theorem IsAcyclic.isConvex_pair_src_tgt (h : Γ.IsAcyclic) (e : Γ.E) :
     exact hf ▸ Set.mem_insert_of_mem _ (Γ.src_rev e)
   · rw [(isAcyclic_iff Γ).mp h _ p hp, Path.darts_nil] at hf
     exact absurd hf List.not_mem_nil
+
+/-- In an acyclic graph, the vertices of a path form a convex set. -/
+theorem IsAcyclic.isConvex_setOf_mem_vertices (h : Γ.IsAcyclic) {a b : Γ.V} (p : Γ.Path a b) :
+    Γ.IsConvex {v | v ∈ p.vertices} := by
+  intro u hu v hv r hr e he
+  obtain ⟨p₁, p₂, hp⟩ := p.exists_eq_comp_of_mem_vertices hu
+  obtain ⟨q₁, q₂, hq⟩ := p.exists_eq_comp_of_mem_vertices hv
+  -- The reduced path `r` only crosses darts of the path from `u` back to `a` and on to `v`.
+  have he' := (h.darts_sublist hr (p₁.reverse.comp q₁)).subset he
+  simp only [Path.darts_comp, Path.darts_reverse, List.mem_append, List.mem_map,
+    List.mem_reverse] at he'
+  rcases he' with ⟨f, hf, rfl⟩ | he'
+  · rw [src_rev, Set.mem_ofPred_eq]
+    exact Path.tgt_mem_vertices_of_mem_darts Γ p (by simp [hp, hf])
+  · exact Path.src_mem_vertices_of_mem_darts Γ p (by simp [hq, he'])
 
 /-! ### Unions of convex sets in a tree -/
 
@@ -153,23 +176,6 @@ theorem IsTree.tgt_mem_or_src_mem (h : Γ.IsTree) {A B : Set Γ.V} (hA : Γ.IsCo
     (by rw [Path.darts_toPath, dart_val]; exact List.mem_singleton_self e)
   rw [Path.darts_comp, List.mem_append] at he
   exact he.imp (hA.tgt_mem hs hcA hq) (hB c hcB _ ht r hr e)
-
-/-- In a tree, the vertices of a path form a convex set. -/
-theorem IsTree.isConvex_setOf_mem_vertices (h : Γ.IsTree) {a b : Γ.V} (p : Γ.Path a b) :
-    Γ.IsConvex {v | v ∈ p.vertices} := by
-  induction p with
-  | nil => simpa using h.isAcyclic.isConvex_singleton a
-  | @cons b c p e ih =>
-    -- The vertices of `p.cons e` are those of `p` together with the endpoints of `e`.
-    have hU : {v | v ∈ (p.cons e).vertices} = {v | v ∈ p.vertices} ∪ {Γ.src e.1, Γ.tgt e.1} := by
-      ext v
-      simp only [Set.mem_ofPred_eq, Quiver.Path.mem_vertices_cons, Set.mem_union,
-        Set.mem_insert_iff, Set.mem_singleton_iff, e.2.1, e.2.2]
-      exact ⟨fun hv => hv.imp_right Or.inr, fun hv => hv.elim Or.inl fun hv =>
-        hv.elim (fun hv => Or.inl (hv ▸ p.end_mem_vertices)) Or.inr⟩
-    rw [hU]
-    exact h.isConvex_union ih (h.isAcyclic.isConvex_pair_src_tgt e.1)
-      ⟨b, p.end_mem_vertices, Or.inl e.2.1.symm⟩
 
 /-! ### The darts induced by a set of vertices -/
 
