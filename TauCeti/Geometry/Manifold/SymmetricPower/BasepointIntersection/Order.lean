@@ -208,8 +208,9 @@ theorem basepointIntersectionOrder_eq_analyticOrderAt {s : Sym α n} (hf : Conti
 continuous at `w` and its coordinates in the chosen chart `C` at a tuple `s` are analytic at `w`,
 with `f w` in the source of `C`, then for any affine equation `ℓ = b` of the basepoint
 divisor in `C`, the intersection order of `f` with the divisor at `w` is the order of vanishing of
-`t ↦ ℓ (C (f t)) - b` at `w`. (Such an equation is automatically nonzero, as the divisor is a
-proper hyperplane in the chart.) -/
+`t ↦ ℓ (C (f t)) - b` at `w`. (When `f w` lies on the divisor, `ℓ` is automatically nonzero, as the
+divisor is then a proper hyperplane in the chart; a chart disjoint from the divisor is also
+allowed, for instance with `ℓ = 0` and `b = 1`, and both orders are then `0`.) -/
 theorem basepointIntersectionOrder_eq_analyticOrderAt_sub {s : Sym α n} (hf : ContinuousAt f w)
     (hs : f w ∈ (symChartAt (K := ℂ) s).source)
     (ha : AnalyticAt ℂ (fun t => symChartAt (K := ℂ) s (f t)) w)
