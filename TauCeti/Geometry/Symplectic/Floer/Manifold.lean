@@ -109,7 +109,8 @@ form they recover the vector-space definitions.
   `SmoothTwoForm.eval₂_mfderiv_comp_stdComplexLine`,
   `SmoothTwoForm.hamiltonianCurvature_perturbationPullback`: naturality of the perturbed
   derivative, and the energy density, the area density and the curvature as two-forms on the
-  domain.
+  domain. Consequently holomorphic changes of coordinates preserve the Floer equation
+  (`SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_perturbationPullback`).
 * `SmoothTwoForm.integral_floerEnergyDensity_image`,
   `SmoothTwoForm.integral_eval₂_mfderiv_stdComplexLine_image`,
   `SmoothTwoForm.integral_hamiltonianCurvature_image`,
@@ -570,6 +571,24 @@ theorem perturbedMFDeriv_perturbationPullback (ω : SmoothTwoForm I M)
     Prod.fst_add, Prod.snd_add, Prod.smul_fst, Prod.smul_snd, smul_eq_mul, add_smul, smul_add,
     mul_smul]
   abel
+
+/-- **Holomorphic changes of coordinates preserve the Floer equation.** If `dφ` is complex linear
+at `w` and `u` solves `(du - X_K)^{0,1} = 0` at `φ w` for an almost complex structure `J` on
+`T_(u (φ w)) M`, then `u ∘ φ` solves the Floer equation for the pulled-back datum `φ^*K` at `w`. -/
+theorem isComplexLinearMap_perturbedMFDeriv_perturbationPullback (ω : SmoothTwoForm I M)
+    {J : AlmostComplexStructure (TangentSpace I (u (φ w)))} (hφ : DifferentiableAt ℝ φ w)
+    (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (φ w))
+    (hKs : MDifferentiableAt I 𝓘(ℝ) (Ks (φ w)) (u (φ w)))
+    (hKt : MDifferentiableAt I 𝓘(ℝ) (Kt (φ w)) (u (φ w)))
+    (hφJ : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (AlmostComplexStructure.product ℝ) (fderiv ℝ φ w : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ))
+    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+      (ω.perturbedMFDeriv Ks Kt u (φ w)).toLinearMap) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+      (ω.perturbedMFDeriv (perturbationPullback φ Ks Kt stdComplexLineReal)
+        (perturbationPullback φ Ks Kt stdComplexLineImag) (u ∘ φ) w).toLinearMap := by
+  rw [ω.perturbedMFDeriv_perturbationPullback hφ hu hKs hKt, ContinuousLinearMap.toLinearMap_comp]
+  exact h.comp hφJ
 
 /-- **The energy density is a two-form.** The Floer energy density of `u ∘ φ` for the
 pulled-back datum `φ^*K` is the Jacobian determinant of `φ` times the energy density of `u` for
