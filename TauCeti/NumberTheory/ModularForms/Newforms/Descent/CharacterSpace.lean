@@ -26,8 +26,7 @@ one prime at a time in Miyake's proofs of Lemmas 4.6.7 and 4.6.8.
   peeling a divisor off a form supported on its multiples.
 * `TauCeti.exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_dvd`: a form of level `M`
   supported on the multiples of any `q` is `V_q` of a form of the same level and nebentypus, on
-  coefficients; at `q = 0` the support condition kills every coefficient of `F`, so the statement is
-  trivial.
+  coefficients.
 
 ## Provenance
 
