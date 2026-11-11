@@ -131,7 +131,7 @@ theorem laplacian_comp_eq_of_mvfderiv_comp_eq_neg
         (fderiv ℝ (extChartAt I (u z) ∘ u) w 1) := by
     filter_upwards [hCR, hsrc, ContMDiffAt.eventually_mdifferentiableAt hu two_ne_zero]
       with w hw hws hwd
-    exact (J w).fderiv_extChartAt_comp_apply_eq_inChart (u z) hwd hws hw
+    exact (J w).fderiv_extChartAt_comp_apply_eq_inChart (u z) hwd.continuousAt hws hw
   have hρJc : ∀ᶠ w in 𝓝 z,
       (fderiv ℝ (ρ ∘ (extChartAt I (u z)).symm) ((extChartAt I (u z) ∘ u) w)).comp
         ((J w).inChart (u z) ((extChartAt I (u z) ∘ u) w)) =
