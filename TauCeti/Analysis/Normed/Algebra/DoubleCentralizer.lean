@@ -425,26 +425,19 @@ theorem exists_clm_tendsto_fst {E : Type*} [NormedAddCommGroup E] [NormedSpace �
       ∀ x, Tendsto (fun e => L (m.fst e) x) l (𝓝 (T x)) := by
   have := TauCeti.faithfulSMul_mulOpposite_of_tendsto_mul_right hl
   have happ (a : A) (x : E) :
-      Tendsto (fun e => L (m.fst e) (L a x)) l (𝓝 (L (m.fst a) x)) := by
-    refine (((hL_cont x).comp m.fst.continuous).tendsto a |>.comp (hl a)).congr fun e => ?_
-    dsimp only [Function.comp_apply]
-    rw [fst_mul, hL_mul, mul_apply_eq_comp]
-  have hC0 : 0 ≤ C := let ⟨e, he⟩ := hC.exists; (norm_nonneg e).trans he
-  have hbound : ∀ᶠ e in l, ‖L (m.fst e)‖ ≤ max K 0 * ‖m‖ * C :=
-    hC.mono fun e he =>
-      calc ‖L (m.fst e)‖ ≤ K * ‖m.fst e‖ := hL_norm _
-        _ ≤ max K 0 * ‖m.fst e‖ :=
-            mul_le_mul_of_nonneg_right (le_max_left K 0) (norm_nonneg _)
-        _ ≤ max K 0 * (‖m.fst‖ * ‖e‖) := by gcongr; exact m.fst.le_opNorm e
-        _ ≤ max K 0 * (‖m‖ * C) := by gcongr; exact norm_fst_le m
-        _ = max K 0 * ‖m‖ * C := (mul_assoc _ _ _).symm
+      Tendsto (fun e => L (m.fst e) (L a x)) l (𝓝 (L (m.fst a) x)) :=
+    (((hL_cont x).comp m.fst.continuous).tendsto a |>.comp (hl a)).congr fun e => by
+      simp [Function.comp_apply, fst_mul, hL_mul, mul_apply_eq_comp]
+  have hbound : ∀ᶠ e in l, ‖L (m.fst e)‖ ≤ max K 0 * (‖m‖ * C) :=
+    hC.mono fun e he => (hL_norm _).trans <| (mul_le_mul_of_nonneg_right (le_max_left K 0)
+      (norm_nonneg _)).trans <| mul_le_mul_of_nonneg_left
+        ((m.fst.le_opNorm e).trans (mul_le_mul (norm_fst_le m) he (norm_nonneg e) (norm_nonneg m)))
+        (le_max_right K 0)
   obtain ⟨T, hT⟩ := ContinuousLinearMap.exists_tendsto_apply_of_dense_span hL_dense hbound
-    fun _ hx => by
-      obtain ⟨a, x, rfl⟩ := Set.mem_iUnion.1 hx
-      exact ⟨L (m.fst a) x, happ a x⟩
-  refine ⟨T, fun a => ContinuousLinearMap.ext fun x => ?_, hT⟩
-  rw [mul_apply_eq_comp]
-  exact tendsto_nhds_unique (hT (L a x)) (happ a x)
+    fun _ hx => let ⟨a, x, hax⟩ := Set.mem_iUnion.1 hx
+      hax ▸ ⟨L (m.fst a) x, happ a x⟩
+  exact ⟨T, fun a => ContinuousLinearMap.ext fun x =>
+    tendsto_nhds_unique (hT (L a x)) (happ a x), hT⟩
 
 end Norm
 

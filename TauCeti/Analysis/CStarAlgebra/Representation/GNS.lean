@@ -45,25 +45,20 @@ variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing
 
 /-- The GNS representation acts on classes `f.toGNS b` by left multiplication. -/
 theorem gnsNonUnitalStarAlgHom_toGNS (a b : A) :
-    f.gnsNonUnitalStarAlgHom a (f.toGNS b) = f.toGNS (a * b) := by
-  simp
+    f.gnsNonUnitalStarAlgHom a (f.toGNS b) = f.toGNS (a * b) := by simp
 
 /-- The norm of `f.toGNS b` in the GNS Hilbert space is `√‖f (star b * b)‖`. -/
-theorem norm_toGNS (b : A) : ‖f.toGNS b‖ = √‖f (star b * b)‖ := by
-  simp [preGNS_norm_def']
+theorem norm_toGNS (b : A) : ‖f.toGNS b‖ = √‖f (star b * b)‖ := by simp [preGNS_norm_def']
 
 /-- The GNS representation of any positive linear functional on a C⋆-algebra is nondegenerate. -/
 theorem isNondegenerate_gnsNonUnitalStarAlgHom : f.gnsNonUnitalStarAlgHom.IsNondegenerate := by
   rw [NonUnitalStarAlgHom.isNondegenerate_iff_dense]
   have hl := CStarAlgebra.increasingApproximateUnit A
   have := hl.neBot
-  set S := (Submodule.span ℂ (⋃ a, Set.range (f.gnsNonUnitalStarAlgHom a)) : Set f.GNS)
-  have hrange : Set.range f.toGNS ⊆ closure S := by
-    rintro _ ⟨b, rfl⟩
-    refine mem_closure_of_tendsto ((f.toGNS.continuous.tendsto b).comp (hl.tendsto_mul_right b)) ?_
-    exact .of_forall fun e => Submodule.subset_span <|
-      Set.mem_iUnion.2 ⟨e, f.toGNS b, by simp⟩
-  exact dense_closure.1 (f.denseRange_toGNS.mono hrange)
+  refine dense_closure.1 (f.denseRange_toGNS.mono ?_)
+  rintro _ ⟨b, rfl⟩
+  exact mem_closure_of_tendsto ((f.toGNS.continuous.tendsto b).comp (hl.tendsto_mul_right b)) <|
+    .of_forall fun e => Submodule.subset_span <| Set.mem_iUnion.2 ⟨e, f.toGNS b, by simp⟩
 
 /-- The multiplier extension of the GNS representation sends `f.toGNS b` to `f.toGNS (m.fst b)`. -/
 theorem multiplierExtension_gnsNonUnitalStarAlgHom_toGNS (m : 𝓜(ℂ, A)) (b : A) :
@@ -71,14 +66,11 @@ theorem multiplierExtension_gnsNonUnitalStarAlgHom_toGNS (m : 𝓜(ℂ, A)) (b :
       (f.toGNS b) = f.toGNS (m.fst b) := by
   have hl := CStarAlgebra.increasingApproximateUnit A
   have := hl.neBot
-  have h1 := f.gnsNonUnitalStarAlgHom.tendsto_multiplierExtension_apply
-    f.isNondegenerate_gnsNonUnitalStarAlgHom hl m (f.toGNS b)
-  have h2 : Tendsto (fun e => f.gnsNonUnitalStarAlgHom (m.fst e) (f.toGNS b))
-      (CStarAlgebra.approximateUnit A) (𝓝 (f.toGNS (m.fst b))) := by
-    have hcont : Continuous fun x : A => f.toGNS (m.fst x) := by fun_prop
-    refine ((hcont.tendsto b).comp (hl.tendsto_mul_right b)).congr fun e => ?_
-    simp [DoubleCentralizer.fst_mul]
-  exact tendsto_nhds_unique h1 h2
+  have hcont : Continuous fun x : A => f.toGNS (m.fst x) := by fun_prop
+  exact tendsto_nhds_unique (f.gnsNonUnitalStarAlgHom.tendsto_multiplierExtension_apply
+    f.isNondegenerate_gnsNonUnitalStarAlgHom hl m (f.toGNS b))
+    (((hcont.tendsto b).comp (hl.tendsto_mul_right b)).congr fun e => by
+      simp [DoubleCentralizer.fst_mul])
 
 @[simp]
 theorem multiplierExtension_gnsNonUnitalStarAlgHom_apply_coe (m : 𝓜(ℂ, A)) (b : A) :
@@ -101,39 +93,26 @@ theorem norm_le_iff_forall_isNondegenerate {a : A} {c : ℝ} (hc : 0 ≤ c) :
     ‖a‖ ≤ c ↔ ∀ (H : Type w) [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
       (ρ : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)), ρ.IsNondegenerate → ‖ρ a‖ ≤ c := by
   refine ⟨fun h H _ _ _ ρ _ => (NonUnitalStarAlgHom.norm_apply_le ρ a).trans h, fun h => ?_⟩
-  by_cases ha0 : a = 0
-  · simp [ha0, hc]
+  rcases eq_or_ne a 0 with rfl | ha0
+  · simp [hc]
   have : Nontrivial A := ⟨a, 0, ha0⟩
   let := _root_.CStarAlgebra.spectralOrder A
   have := _root_.CStarAlgebra.spectralOrderedRing A
-  let x : A := a * star a
-  have hx_def : a * star a = x := rfl
-  have hx_nonneg : 0 ≤ x := by simp [x]
-  have hx_norm : ‖x‖ = ‖a‖ ^ 2 := by simp [x, CStarRing.norm_self_mul_star, sq]
-  have ha_pos : 0 < ‖a‖ := norm_pos_iff.2 ha0
-  obtain ⟨ω, -, hωx1, hωx2⟩ :=
-    exists_positiveContinuousLinearMap_apply_mul_self_eq_norm_sq hx_nonneg
+  have hx_nonneg : 0 ≤ a * star a := by simp
+  have hx_norm : ‖a * star a‖ = ‖a‖ ^ 2 := by rw [CStarRing.norm_self_mul_star, sq]
+  obtain ⟨ω, -, hω1, hω2⟩ := exists_positiveContinuousLinearMap_apply_mul_self_eq_norm_sq hx_nonneg
   let f : A →ₚ[ℂ] ℂ := ω
-  have hfx1 : f x = ‖x‖ := by simpa [f] using hωx1
-  have hfx2 : f (x * x) = (‖x‖ : ℂ) ^ 2 := by simpa [f] using hωx2
   have hζ : ‖f.toGNS (star a)‖ = ‖a‖ := by
-    rw [f.norm_toGNS, star_star, hx_def, hfx1, hx_norm,
+    rw [f.norm_toGNS, star_star, show f (a * star a) = ω (a * star a) from rfl, hω1, hx_norm,
       Complex.norm_of_nonneg (sq_nonneg ‖a‖), Real.sqrt_sq (norm_nonneg a)]
-  have hρζ : ‖f.gnsNonUnitalStarAlgHom a (f.toGNS (star a))‖ = ‖a‖ ^ 2 := by
-    rw [f.gnsNonUnitalStarAlgHom_toGNS, hx_def, f.norm_toGNS,
-      hx_nonneg.isSelfAdjoint.star_eq, hfx2, hx_norm, norm_pow,
-      Complex.norm_of_nonneg (sq_nonneg ‖a‖), Real.sqrt_sq (sq_nonneg ‖a‖)]
-  have hbound : ‖f.gnsNonUnitalStarAlgHom a (f.toGNS (star a))‖ ≤ c * ‖a‖ :=
-    calc ‖f.gnsNonUnitalStarAlgHom a (f.toGNS (star a))‖
-        ≤ ‖f.gnsNonUnitalStarAlgHom a‖ * ‖f.toGNS (star a)‖ :=
-          (f.gnsNonUnitalStarAlgHom a).le_opNorm _
-      _ ≤ c * ‖a‖ := by
-          rw [hζ]
-          exact mul_le_mul_of_nonneg_right
-            (h f.GNS f.gnsNonUnitalStarAlgHom f.isNondegenerate_gnsNonUnitalStarAlgHom)
-            (norm_nonneg a)
-  rw [hρζ, sq] at hbound
-  exact le_of_mul_le_mul_right hbound ha_pos
+  have hρζ : ‖f.gnsNonUnitalStarAlgHom a (f.toGNS (star a))‖ = ‖a‖ * ‖a‖ := by
+    rw [f.gnsNonUnitalStarAlgHom_toGNS, f.norm_toGNS, hx_nonneg.isSelfAdjoint.star_eq,
+      show f (a * star a * (a * star a)) = ω (a * star a * (a * star a)) from rfl, hω2, hx_norm,
+      norm_pow, Complex.norm_of_nonneg (sq_nonneg ‖a‖), Real.sqrt_sq (sq_nonneg ‖a‖), sq]
+  refine le_of_mul_le_mul_right ?_ (norm_pos_iff.2 ha0)
+  rw [← hρζ, ← hζ]
+  exact ((f.gnsNonUnitalStarAlgHom a).le_opNorm _).trans <| mul_le_mul_of_nonneg_right
+    (h f.GNS f.gnsNonUnitalStarAlgHom f.isNondegenerate_gnsNonUnitalStarAlgHom) (norm_nonneg _)
 
 end TauCeti.CStarAlgebra
 

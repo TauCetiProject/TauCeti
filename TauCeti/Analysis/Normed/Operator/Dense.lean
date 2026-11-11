@@ -117,11 +117,9 @@ theorem isClosed_setOf_summable_apply [CompleteSpace Y] {ι : Type*} {T : ι →
 dense subset is continuous at every vector. -/
 theorem continuous_apply_of_dense {Z : Type*} [TopologicalSpace Z] {D : Set X}
     (hD : Dense D) {f : Z → X →SL[σ₁₂] Y} {C : ℝ} (hbound : ∀ z, ‖f z‖ ≤ C)
-    (hcont : ∀ x ∈ D, Continuous fun z => f z x) (x : X) :
-    Continuous fun z => f z x :=
+    (hcont : ∀ x ∈ D, Continuous fun z => f z x) (x : X) : Continuous fun z => f z x :=
   continuous_iff_continuousAt.2 fun _ =>
-    tendsto_apply_of_dense hD (.of_forall hbound)
-      (fun y hy => (hcont y hy).continuousAt) x
+    tendsto_apply_of_dense hD (.of_forall hbound) (fun y hy => (hcont y hy).continuousAt) x
 
 /-- A uniformly bounded family of continuous semilinear maps that is continuous at every vector of a
 set with dense `𝕜`-span is continuous at every vector. -/
@@ -132,9 +130,9 @@ theorem continuous_apply_of_dense_span {Z : Type*} [TopologicalSpace Z] {D : Set
   refine continuous_apply_of_dense hD hbound (fun y hy => ?_) x
   induction hy using Submodule.span_induction with
   | mem y hy => exact hcont y hy
-  | zero => simp only [map_zero]; exact continuous_const
-  | add u v _ _ hu hv => simp only [map_add]; exact hu.add hv
-  | smul c u _ hu => simp only [map_smulₛₗ]; exact hu.const_smul (σ₁₂ c)
+  | zero => exact continuous_const.congr fun _ => (map_zero _).symm
+  | add _ _ _ _ hu hv => exact (hu.add hv).congr fun _ => (map_add _ _ _).symm
+  | smul c _ _ hu => exact (hu.const_smul (σ₁₂ c)).congr fun _ => (map_smulₛₗ _ _ _).symm
 
 /-- An eventually uniformly bounded family of continuous semilinear maps into a complete normed
 space that converges pointwise on a dense subset converges pointwise everywhere to a continuous
@@ -144,25 +142,20 @@ theorem exists_tendsto_apply_of_dense {Y' : Type*} [NormedAddCommGroup Y'] [Norm
     {f : ι → X →SL[σ₁₂] Y'} {C : ℝ} (hbound : ∀ᶠ i in l, ‖f i‖ ≤ C)
     (htendsto : ∀ x ∈ D, ∃ y, Tendsto (fun i => f i x) l (𝓝 y)) :
     ∃ g : X →SL[σ₁₂] Y', ∀ x, Tendsto (fun i => f i x) l (𝓝 (g x)) := by
-  have hcauchy (x : X) : Cauchy (map (fun i => f i x) l) := by
-    refine cauchy_map_iff.2 ⟨‹_›, fun u hu => ?_⟩
-    have hunif := uniformCauchySeqOn_apply_of_dense hD
+  have hcauchy (x : X) : Cauchy (map (fun i => f i x) l) :=
+    cauchy_map_iff.2 ⟨‹_›, fun u hu => (uniformCauchySeqOn_apply_of_dense hD
       (f := fun i (_ : Unit) => f i) (s := Set.univ) (hbound.mono fun _ hi _ _ => hi)
-      (fun y hy v hv => by
-        obtain ⟨w, hw⟩ := htendsto y hy
-        exact Filter.Eventually.mono ((cauchy_map_iff.1 hw.cauchy_map).2 hv)
-          fun _ hm _ _ => hm) x u hu
-    exact hunif.mono fun _ hm => hm () trivial
+      (fun y hy _ hv => let ⟨_, hw⟩ := htendsto y hy
+        Filter.Eventually.mono ((cauchy_map_iff.1 hw.cauchy_map).2 hv) fun _ hm _ _ => hm)
+      x u hu).mono fun _ hm => hm () trivial⟩
   let g : X → Y' := fun x => limUnder l fun i => f i x
   have hg (x : X) : Tendsto (fun i => f i x) l (𝓝 (g x)) :=
     tendsto_nhds_limUnder (cauchy_map_iff_exists_tendsto.1 (hcauchy x))
   have hmem : g ∈ closure (((↑) : (X →SL[σ₁₂] Y') → X → Y') '' Metric.closedBall 0 C) :=
     mem_closure_of_tendsto (tendsto_pi_nhds.2 hg) <| hbound.mono fun i hi =>
       ⟨f i, mem_closedBall_zero_iff.2 hi, rfl⟩
-  let T := ofMemClosureImageCoeBounded g
-    (Metric.isBounded_closedBall (x := (0 : X →SL[σ₁₂] Y')) (r := C)) hmem
-  have hT : ⇑T = g := ofMemClosureImageCoeBounded_apply _ _ _
-  exact ⟨T, fun x => hT ▸ hg x⟩
+  exact ⟨ofMemClosureImageCoeBounded g Metric.isBounded_closedBall hmem,
+    fun x => by simpa [ofMemClosureImageCoeBounded_apply] using hg x⟩
 
 /-- An eventually uniformly bounded family of continuous semilinear maps into a complete normed
 space that converges pointwise on a set with dense `𝕜`-span converges pointwise everywhere to a
@@ -177,13 +170,12 @@ theorem exists_tendsto_apply_of_dense_span {Y' : Type*} [NormedAddCommGroup Y']
   induction hy using Submodule.span_induction with
   | mem y hy => exact htendsto y hy
   | zero => exact ⟨0, by simp⟩
-  | add u v _ _ hu hv =>
-    obtain ⟨u', hu'⟩ := hu
-    obtain ⟨v', hv'⟩ := hv
-    exact ⟨u' + v', by simp only [map_add]; exact hu'.add hv'⟩
-  | smul c u _ hu =>
-    obtain ⟨u', hu'⟩ := hu
-    exact ⟨σ₁₂ c • u', by simp only [map_smulₛₗ]; exact hu'.const_smul (σ₁₂ c)⟩
+  | add _ _ _ _ hu hv =>
+    rcases hu, hv with ⟨⟨u', hu'⟩, ⟨v', hv'⟩⟩
+    exact ⟨u' + v', (hu'.add hv').congr fun _ => (map_add _ _ _).symm⟩
+  | smul c _ _ hu =>
+    rcases hu with ⟨u', hu'⟩
+    exact ⟨σ₁₂ c • u', (hu'.const_smul (σ₁₂ c)).congr fun _ => (map_smulₛₗ _ _ _).symm⟩
 
 omit [RingHomIsometric σ₁₂] in
 /-- Restricting a point-continuous family of continuous semilinear maps `L : α → X →SL[σ₁₂] Y` to a

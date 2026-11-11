@@ -163,8 +163,7 @@ private theorem eq_extensionMultiplier (hφ : φ.IsMultiplierNondegenerate) {m :
 
 private theorem mul_extensionMultiplier (hφ : φ.IsMultiplierNondegenerate) (m : 𝓜(ℂ, A)) (a : A) :
     φ a * extensionMultiplier hφ m = φ (m.snd a) :=
-  hφ.ext fun c => by
-    rw [mul_assoc, extensionMultiplier_mul, ← map_mul, ← map_mul, m.central]
+  hφ.ext fun _ => by rw [mul_assoc, extensionMultiplier_mul, ← map_mul, ← map_mul, m.central]
 
 /-- The unital extension of a nondegenerate ⋆-homomorphism `φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)` to multiplier
 algebras: the unique multiplier `φ' m` satisfying `φ' m * φ a = φ (m.fst a)` for every `a : A`. -/
@@ -172,14 +171,11 @@ def extendToMultiplier (hφ : φ.IsMultiplierNondegenerate) : 𝓜(ℂ, A) →�
   toFun := extensionMultiplier hφ
   map_one' := (eq_extensionMultiplier hφ fun a => by simp).symm
   map_mul' m n := (eq_extensionMultiplier hφ fun a => by
-    rw [mul_assoc, extensionMultiplier_mul, extensionMultiplier_mul]
-    simp).symm
+    simp [mul_assoc, extensionMultiplier_mul]).symm
   map_zero' := (eq_extensionMultiplier hφ fun a => by simp).symm
   map_add' m n := (eq_extensionMultiplier hφ fun a => by
-    rw [add_mul, extensionMultiplier_mul, extensionMultiplier_mul]
-    simp).symm
-  commutes' r := (eq_extensionMultiplier hφ fun a => by
-    simp [Algebra.algebraMap_eq_smul_one]).symm
+    simp [add_mul, extensionMultiplier_mul]).symm
+  commutes' r := (eq_extensionMultiplier hφ fun a => by simp [Algebra.algebraMap_eq_smul_one]).symm
   map_star' m := (eq_extensionMultiplier hφ fun a => by
     rw [DoubleCentralizer.star_fst, map_star, ← mul_extensionMultiplier hφ, star_mul,
       ← map_star, star_star]).symm
@@ -232,10 +228,9 @@ theorem eq_extendToMultiplier_of_apply_coe {F : Type*} [FunLike F 𝓜(ℂ, A) �
 @[simp]
 theorem extendToMultiplier_coeHom :
     (DoubleCentralizer.coeHom (𝕜 := ℂ) : A →⋆ₙₐ[ℂ] 𝓜(ℂ, A)).extendToMultiplier
-      isMultiplierNondegenerate_coeHom = StarAlgHom.id ℂ 𝓜(ℂ, A) := by
-  ext m : 1
-  exact congrFun (eq_extendToMultiplier_of_apply_coe isMultiplierNondegenerate_coeHom
-    (StarAlgHom.id ℂ 𝓜(ℂ, A)) fun _ => rfl).symm m
+      isMultiplierNondegenerate_coeHom = StarAlgHom.id ℂ 𝓜(ℂ, A) :=
+  StarAlgHom.ext <| congrFun (eq_extendToMultiplier_of_apply_coe isMultiplierNondegenerate_coeHom
+    (StarAlgHom.id ℂ 𝓜(ℂ, A)) fun _ => rfl).symm
 
 /-- Along an increasing approximate unit `e`, `(φ (m.fst e)).fst b` converges in norm to
 `(φ.extendToMultiplier hφ m).fst b`. -/
@@ -243,10 +238,8 @@ theorem tendsto_extendToMultiplier_fst [PartialOrder A] {l : Filter A}
     (hl : l.IsIncreasingApproximateUnit) (m : 𝓜(ℂ, A)) (b : B) :
     Tendsto (fun e => (φ (m.fst e)).fst b) l (𝓝 ((φ.extendToMultiplier hφ m).fst b)) := by
   obtain ⟨T, hT, hlim⟩ := exists_tendsto_fst hφ hl m
-  have hTeq : T = (φ.extendToMultiplier hφ m).fst :=
-    hφ.clm_ext fun a => (hT a).trans
-      (congrArg (fun x : 𝓜(ℂ, B) => x.fst) (extendToMultiplier_mul_eq_fst hφ m a)).symm
-  exact hTeq ▸ hlim b
+  exact (hφ.clm_ext fun a => (hT a).trans
+    (congrArg (fun x : 𝓜(ℂ, B) => x.fst) (extendToMultiplier_mul_eq_fst hφ m a)).symm) ▸ hlim b
 
 /-- Norm-bounded left-strictly continuous families in `𝓜(ℂ, A)` map to left-strictly continuous
 families in `𝓜(ℂ, B)` under `extendToMultiplier`. -/
@@ -256,8 +249,8 @@ theorem continuous_extendToMultiplier_fst_apply {X : Type*} [TopologicalSpace X]
     Continuous fun x => (φ.extendToMultiplier hφ (u x)).fst b := by
   refine ContinuousLinearMap.continuous_apply_of_dense_span (C := K)
     (f := fun x => (φ.extendToMultiplier hφ (u x)).fst) hφ (fun x => ?_) (fun _ hz => ?_) b
-  · rw [DoubleCentralizer.norm_fst]
-    exact (norm_apply_le (φ.extendToMultiplier hφ).toNonUnitalStarAlgHom _).trans (hK x)
+  · exact (DoubleCentralizer.norm_fst _).trans_le <|
+      (norm_apply_le (φ.extendToMultiplier hφ).toNonUnitalStarAlgHom _).trans (hK x)
   · obtain ⟨a, y, rfl⟩ := Set.mem_iUnion.1 hz
     simp only [extendToMultiplier_fst_apply]
     fun_prop
@@ -274,32 +267,40 @@ theorem isMultiplierNondegenerate_iff_tendsto_fst [PartialOrder A] {l : Filter A
 
 section Composition
 
+private theorem dense_span_of_apply_eq {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℂ E]
+    (hφ : φ.IsMultiplierNondegenerate) {L : B → E →L[ℂ] E} {L' : A → E →L[ℂ] E}
+    (hL_add : ∀ y z, L (y + z) = L y + L z) (hL_smul : ∀ (c : ℂ) y, L (c • y) = c • L y)
+    (hL_cont : ∀ ξ, Continuous fun b => L b ξ)
+    (hL_dense : Dense (Submodule.span ℂ (⋃ b, Set.range (L b)) : Set E))
+    (hcomp : ∀ a d ξ, L' a (L d ξ) = L ((φ a).fst d) ξ) :
+    Dense (Submodule.span ℂ (⋃ a, Set.range (L' a)) : Set E) := by
+  rw [Submodule.dense_iff_topologicalClosure_eq_top] at hL_dense ⊢
+  set S := Submodule.span ℂ (⋃ a, Set.range (L' a))
+  rw [eq_top_iff, ← hL_dense]
+  refine Submodule.topologicalClosure_minimal _ (Submodule.span_le.2 ?_)
+    S.isClosed_topologicalClosure
+  rintro _ ⟨_, ⟨b, rfl⟩, ξ, rfl⟩
+  let f : B →ₗ[ℂ] E :=
+    { toFun y := L y ξ, map_add' y z := by simp [hL_add], map_smul' c y := by simp [hL_smul] }
+  have hf : Continuous f := by
+    simp only [f, LinearMap.coe_mk, AddHom.coe_mk]
+    exact hL_cont ξ
+  refine (S.isClosed_topologicalClosure.preimage hf).closure_subset_iff.2
+    (Submodule.span_le (p := S.topologicalClosure.comap f).2 ?_) (hφ b)
+  rintro _ ⟨_, ⟨a, rfl⟩, d, rfl⟩
+  exact Submodule.le_topologicalClosure S <| Submodule.subset_span <|
+    Set.mem_iUnion.2 ⟨a, L d ξ, by simp [f, hcomp]⟩
+
 /-- Composing a nondegenerate multiplier homomorphism `φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)` with the extension
 of a nondegenerate multiplier homomorphism `ψ : B →⋆ₙₐ[ℂ] 𝓜(ℂ, C)` produces a nondegenerate
 multiplier homomorphism. -/
 theorem IsMultiplierNondegenerate.extendToMultiplier_comp
     {ψ : B →⋆ₙₐ[ℂ] 𝓜(ℂ, C)} (hψ : ψ.IsMultiplierNondegenerate)
     (hφ : φ.IsMultiplierNondegenerate) :
-    ((ψ.extendToMultiplier hψ).toNonUnitalStarAlgHom.comp φ).IsMultiplierNondegenerate := by
-  rw [isMultiplierNondegenerate_iff_dense, Submodule.dense_iff_topologicalClosure_eq_top]
-  set S := Submodule.span ℂ
-    (⋃ a, Set.range (((ψ.extendToMultiplier hψ).toNonUnitalStarAlgHom.comp φ) a).fst)
-  have hmem (b : B) (c : C) : (ψ b).fst c ∈ S.topologicalClosure := by
-    let f : B →ₗ[ℂ] C :=
-      { toFun y := (ψ y).fst c, map_add' _ _ := by simp, map_smul' _ _ := by simp }
-    have hf : Continuous f := by
-      simp only [f, LinearMap.coe_mk, AddHom.coe_mk]
-      fun_prop
-    refine (S.isClosed_topologicalClosure.preimage hf).closure_subset_iff.2
-      (Submodule.span_le (p := S.topologicalClosure.comap f).2 ?_) (hφ b)
-    rintro _ ⟨_, ⟨a, rfl⟩, d, rfl⟩
-    exact Submodule.le_topologicalClosure S <| Submodule.subset_span <|
-      Set.mem_iUnion.2 ⟨a, (ψ d).fst c, by simp [f]⟩
-  rw [eq_top_iff, ← Submodule.dense_iff_topologicalClosure_eq_top.1 hψ]
-  refine Submodule.topologicalClosure_minimal _ (Submodule.span_le.2 ?_)
-    S.isClosed_topologicalClosure
-  rintro _ ⟨_, ⟨b, rfl⟩, c, rfl⟩
-  exact hmem b c
+    ((ψ.extendToMultiplier hψ).toNonUnitalStarAlgHom.comp φ).IsMultiplierNondegenerate :=
+  dense_span_of_apply_eq hφ (L := fun b => (ψ b).fst)
+    (L' := fun a => (((ψ.extendToMultiplier hψ).toNonUnitalStarAlgHom.comp φ) a).fst)
+    (fun _ _ => by simp) (fun _ _ => by simp) (fun _ => by fun_prop) hψ fun _ _ _ => by simp
 
 /-- The multiplier extension of `(ψ.extendToMultiplier hψ) ∘ φ` is the composite of the two
 multiplier extensions. -/
@@ -308,10 +309,9 @@ theorem extendToMultiplier_comp {ψ : B →⋆ₙₐ[ℂ] 𝓜(ℂ, C)} (hψ : �
     (hφ : φ.IsMultiplierNondegenerate) :
     ((ψ.extendToMultiplier hψ).toNonUnitalStarAlgHom.comp φ).extendToMultiplier
       (hψ.extendToMultiplier_comp hφ) =
-        (ψ.extendToMultiplier hψ).comp (φ.extendToMultiplier hφ) := by
-  ext m : 1
-  exact congrFun (eq_extendToMultiplier_of_apply_coe (hψ.extendToMultiplier_comp hφ)
-    ((ψ.extendToMultiplier hψ).comp (φ.extendToMultiplier hφ)) fun a => by simp).symm m
+        (ψ.extendToMultiplier hψ).comp (φ.extendToMultiplier hφ) :=
+  StarAlgHom.ext <| congrFun (eq_extendToMultiplier_of_apply_coe (hψ.extendToMultiplier_comp hφ)
+    ((ψ.extendToMultiplier hψ).comp (φ.extendToMultiplier hφ)) fun a => by simp).symm
 
 /-- Composing a nondegenerate multiplier homomorphism `φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)` with the extension
 of a nondegenerate Hilbert-space representation `π : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)` produces a
@@ -319,27 +319,11 @@ nondegenerate Hilbert-space representation of `A`. -/
 theorem IsNondegenerate.multiplierExtension_comp {H : Type*} [NormedAddCommGroup H]
     [InnerProductSpace ℂ H] [CompleteSpace H] {π : B →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
     (hπ : π.IsNondegenerate) (hφ : φ.IsMultiplierNondegenerate) :
-    ((π.multiplierExtension hπ).toNonUnitalStarAlgHom.comp φ).IsNondegenerate := by
-  rw [isNondegenerate_iff_dense, Submodule.dense_iff_topologicalClosure_eq_top]
-  set S := Submodule.span ℂ
-    (⋃ a, Set.range (((π.multiplierExtension hπ).toNonUnitalStarAlgHom.comp φ) a))
-  have hmem (b : B) (ξ : H) : π b ξ ∈ S.topologicalClosure := by
-    let f : B →ₗ[ℂ] H :=
-      { toFun y := π y ξ, map_add' _ _ := by simp, map_smul' _ _ := by simp }
-    have hf : Continuous f := by
-      simp only [f, LinearMap.coe_mk, AddHom.coe_mk]
-      fun_prop
-    refine (S.isClosed_topologicalClosure.preimage hf).closure_subset_iff.2
-      (Submodule.span_le (p := S.topologicalClosure.comap f).2 ?_) (hφ b)
-    rintro _ ⟨_, ⟨a, rfl⟩, d, rfl⟩
-    exact Submodule.le_topologicalClosure S <| Submodule.subset_span <|
-      Set.mem_iUnion.2 ⟨a, π d ξ, by simp [f]⟩
-  rw [eq_top_iff, ← Submodule.dense_iff_topologicalClosure_eq_top.1
-    (isNondegenerate_iff_dense.1 hπ)]
-  refine Submodule.topologicalClosure_minimal _ (Submodule.span_le.2 ?_)
-    S.isClosed_topologicalClosure
-  rintro _ ⟨_, ⟨b, rfl⟩, ξ, rfl⟩
-  exact hmem b ξ
+    ((π.multiplierExtension hπ).toNonUnitalStarAlgHom.comp φ).IsNondegenerate :=
+  isNondegenerate_iff_dense.2 <| dense_span_of_apply_eq hφ (L := ⇑π)
+    (L' := ⇑((π.multiplierExtension hπ).toNonUnitalStarAlgHom.comp φ))
+    (map_add π) (map_smul π) (fun _ => by fun_prop) (isNondegenerate_iff_dense.1 hπ)
+    fun _ _ _ => by simp
 
 /-- The Hilbert-space multiplier extension of `(π.multiplierExtension hπ) ∘ φ` factors through
 `φ.extendToMultiplier hφ`. -/
@@ -349,10 +333,9 @@ theorem multiplierExtension_comp_extendToMultiplier {H : Type*} [NormedAddCommGr
     (hπ : π.IsNondegenerate) (hφ : φ.IsMultiplierNondegenerate) :
     ((π.multiplierExtension hπ).toNonUnitalStarAlgHom.comp φ).multiplierExtension
       (hπ.multiplierExtension_comp hφ) =
-        (π.multiplierExtension hπ).comp (φ.extendToMultiplier hφ) := by
-  ext m : 1
-  exact congrFun (eq_multiplierExtension_of_apply_coe (hπ.multiplierExtension_comp hφ)
-    ((π.multiplierExtension hπ).comp (φ.extendToMultiplier hφ)) fun a => by simp).symm m
+        (π.multiplierExtension hπ).comp (φ.extendToMultiplier hφ) :=
+  StarAlgHom.ext <| congrFun (eq_multiplierExtension_of_apply_coe (hπ.multiplierExtension_comp hφ)
+    ((π.multiplierExtension hπ).comp (φ.extendToMultiplier hφ)) fun a => by simp).symm
 
 end Composition
 

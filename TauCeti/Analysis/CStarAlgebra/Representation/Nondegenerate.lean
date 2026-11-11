@@ -128,15 +128,10 @@ operator `π' m` with `π' m * π a = π (m * a)` for every `a`. -/
 def multiplierExtension (hπ : π.IsNondegenerate) : 𝓜(ℂ, A) →⋆ₐ[ℂ] (H →L[ℂ] H) where
   toFun := extensionOp hπ
   map_one' := (eq_extensionOp hπ fun a => by simp).symm
-  map_mul' m n := (eq_extensionOp hπ fun a => by
-    rw [mul_assoc, extensionOp_mul, extensionOp_mul]
-    simp).symm
+  map_mul' m n := (eq_extensionOp hπ fun a => by simp [mul_assoc, extensionOp_mul]).symm
   map_zero' := (eq_extensionOp hπ fun a => by simp).symm
-  map_add' m n := (eq_extensionOp hπ fun a => by
-    rw [add_mul, extensionOp_mul, extensionOp_mul]
-    simp).symm
-  commutes' r := (eq_extensionOp hπ fun a => by
-    simp [Algebra.algebraMap_eq_smul_one]).symm
+  map_add' m n := (eq_extensionOp hπ fun a => by simp [add_mul, extensionOp_mul]).symm
+  commutes' r := (eq_extensionOp hπ fun a => by simp [Algebra.algebraMap_eq_smul_one]).symm
   map_star' m := (eq_extensionOp hπ fun a => by
     rw [DoubleCentralizer.star_fst, map_star, ← mul_extensionOp hπ, star_mul, ← map_star,
       star_star]).symm

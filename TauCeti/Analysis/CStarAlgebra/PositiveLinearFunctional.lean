@@ -140,27 +140,21 @@ theorem exists_positiveContinuousLinearMap_apply_pow_eq_norm_pow {a : M} (ha : 0
     rw [StarSubalgebra.spectrum_eq]
     exact spectrum.algebraMap_mem ℂ (_root_.CStarAlgebra.norm_mem_spectrum_of_nonneg a ha)
   obtain ⟨χ, hχa⟩ := WeakDual.CharacterSpace.mem_spectrum_iff_exists.1 hz
-  set φS : StrongDual ℂ S.toSubmodule := (WeakDual.CharacterSpace.toAlgHom χ).toContinuousLinearMap
-  have hφS_norm : ‖φS‖ = 1 := AlgHom.toContinuousLinearMap_norm _
-  obtain ⟨g, hg_ext, hg_norm⟩ := exists_extension_norm_eq S.toSubmodule φS
-  rw [hφS_norm] at hg_norm
-  have hg_one : g 1 = 1 :=
-    (hg_ext ⟨1, S.one_mem⟩).trans (map_one χ)
-  have hg_mono : Monotone g :=
-    ContinuousLinearMap.monotone_iff_opNorm_eq_map_one.2 (by simp [hg_norm, hg_one])
-  refine ⟨{ __ := g, monotone' := hg_mono }, hg_one, hg_norm, fun n => ?_⟩
-  have han : a ^ n ∈ S := S.pow_mem haS n
-  have hsub : (⟨a ^ n, han⟩ : S) = (⟨a, haS⟩ : S) ^ n := rfl
-  calc g (a ^ n) = φS ⟨a ^ n, han⟩ := hg_ext ⟨a ^ n, han⟩
-    _ = χ ((⟨a, haS⟩ : S) ^ n) := by rw [← hsub]; rfl
-    _ = (‖a‖ : ℂ) ^ n := by rw [map_pow, hχa]
+  obtain ⟨g, hg_ext, hg_norm⟩ := exists_extension_norm_eq S.toSubmodule
+    ((WeakDual.CharacterSpace.toAlgHom χ).toContinuousLinearMap : StrongDual ℂ S.toSubmodule)
+  replace hg_norm : ‖g‖ = 1 := hg_norm.trans (AlgHom.toContinuousLinearMap_norm _)
+  have hg_one : g 1 = 1 := (hg_ext ⟨1, S.one_mem⟩).trans (map_one χ)
+  refine ⟨{ __ := g
+            monotone' := ContinuousLinearMap.monotone_iff_opNorm_eq_map_one.2
+              (by simp [hg_norm, hg_one]) }, hg_one, hg_norm, fun n => ?_⟩
+  exact (hg_ext ⟨a ^ n, S.pow_mem haS n⟩).trans ((map_pow χ (⟨a, haS⟩ : S) n).trans (by rw [hχa]))
 
 /-- On a nontrivial unital C⋆-algebra, every nonnegative element `a` admits a state `ω` with
 `ω a = ‖a‖`. -/
 theorem exists_positiveContinuousLinearMap_apply_eq_norm {a : M} (ha : 0 ≤ a) :
-    ∃ ω : M →P[ℂ] ℂ, ω 1 = 1 ∧ ‖(ω : M →L[ℂ] ℂ)‖ = 1 ∧ ω a = ‖a‖ := by
-  obtain ⟨ω, h1, hn, hp⟩ := exists_positiveContinuousLinearMap_apply_pow_eq_norm_pow ha
-  exact ⟨ω, h1, hn, by simpa using hp 1⟩
+    ∃ ω : M →P[ℂ] ℂ, ω 1 = 1 ∧ ‖(ω : M →L[ℂ] ℂ)‖ = 1 ∧ ω a = ‖a‖ :=
+  let ⟨ω, h1, hn, hp⟩ := exists_positiveContinuousLinearMap_apply_pow_eq_norm_pow ha
+  ⟨ω, h1, hn, by simpa using hp 1⟩
 
 end Unital
 
@@ -173,29 +167,19 @@ private theorem exists_positiveContinuousLinearMap_of_ne_zero
   let := _root_.CStarAlgebra.spectralOrder 𝓜(ℂ, A)
   have := _root_.CStarAlgebra.spectralOrderedRing 𝓜(ℂ, A)
   have hx_pos : 0 < ‖x‖ := norm_pos_iff.2 hx0
-  have : Nontrivial 𝓜(ℂ, A) := by
-    refine ⟨(x : 𝓜(ℂ, A)), 0, fun h0 => hx_pos.ne' ?_⟩
-    rw [← DoubleCentralizer.norm_coe (𝕜 := ℂ), h0, norm_zero]
+  have : Nontrivial 𝓜(ℂ, A) := ⟨(x : 𝓜(ℂ, A)), 0, fun h0 => hx_pos.ne' <| by
+    rw [← DoubleCentralizer.norm_coe (𝕜 := ℂ), h0, norm_zero]⟩
   have hxM : 0 ≤ (x : 𝓜(ℂ, A)) := by
-    rw [← DoubleCentralizer.coeHom_apply (𝕜 := ℂ)]
-    exact map_nonneg (DoubleCentralizer.coeHom (𝕜 := ℂ) : A →⋆ₙₐ[ℂ] 𝓜(ℂ, A)) hx
+    simpa using map_nonneg (DoubleCentralizer.coeHom (𝕜 := ℂ) : A →⋆ₙₐ[ℂ] 𝓜(ℂ, A)) hx
   obtain ⟨ω₀, -, hω₀_norm, hω₀⟩ := exists_positiveContinuousLinearMap_apply_pow_eq_norm_pow hxM
-  let ι : A →P[ℂ] 𝓜(ℂ, A) := .ofClass (DoubleCentralizer.coeHom (𝕜 := ℂ) : A →⋆ₙₐ[ℂ] 𝓜(ℂ, A))
-  let ω : A →P[ℂ] ℂ := ω₀.comp ι
-  have hω_apply (b : A) : ω b = ω₀ (b : 𝓜(ℂ, A)) := by
-    simp [ω, ι]
-  have h1 : ω x = ‖x‖ := by
-    simpa [hω_apply, DoubleCentralizer.norm_coe] using hω₀ 1
+  let ω : A →P[ℂ] ℂ :=
+    ω₀.comp (.ofClass (DoubleCentralizer.coeHom (𝕜 := ℂ) : A →⋆ₙₐ[ℂ] 𝓜(ℂ, A)))
+  have h1 : ω x = ‖x‖ := by simpa [ω, DoubleCentralizer.norm_coe] using hω₀ 1
   have h2 : ω (x * x) = (‖x‖ : ℂ) ^ 2 := by
-    have h := hω₀ 2
-    rw [sq, ← DoubleCentralizer.coe_mul, DoubleCentralizer.norm_coe, ← hω_apply] at h
-    exact h
-  refine ⟨ω, le_antisymm ?_ ?_, h1, h2⟩
-  · refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun b => ?_
-    rw [PositiveContinuousLinearMap.coe_toContinuousLinearMap, hω_apply,
-      ← PositiveContinuousLinearMap.coe_toContinuousLinearMap, one_mul]
-    exact ((ω₀ : 𝓜(ℂ, A) →L[ℂ] ℂ).le_opNorm (b : 𝓜(ℂ, A))).trans <| by
-      rw [hω₀_norm, one_mul, DoubleCentralizer.norm_coe]
+    simpa [ω, sq, ← DoubleCentralizer.coe_mul, DoubleCentralizer.norm_coe] using hω₀ 2
+  refine ⟨ω, le_antisymm (ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun b => ?_) ?_, h1, h2⟩
+  · simpa [ω, hω₀_norm, DoubleCentralizer.norm_coe] using
+      (ω₀ : 𝓜(ℂ, A) →L[ℂ] ℂ).le_opNorm (b : 𝓜(ℂ, A))
   · have hle := (ω : A →L[ℂ] ℂ).le_opNorm x
     rw [PositiveContinuousLinearMap.coe_toContinuousLinearMap, h1, Complex.norm_real,
       Real.norm_of_nonneg (norm_nonneg x)] at hle
