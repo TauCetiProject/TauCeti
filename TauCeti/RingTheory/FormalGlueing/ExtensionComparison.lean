@@ -68,7 +68,7 @@ theorem mapExt_one_bijective_of_quotient (f : R →+* S) (hf : f.Flat)
     ext m
     exact ModuleCat.extendRestrictScalarsAdj_unit_app_apply (algebraMap R S) N m
   rw [hunit]
-  -- Linear postcomposition has the same underlying map as ordinary Ext postcomposition.
+  simp only [TauCeti.coe_postcompOfLinear] at hcoeff
   exact hcoeff
 
 /-- **Descent of degree-one extension classes with ideal-power torsion source.** For a flat

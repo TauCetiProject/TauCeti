@@ -57,12 +57,11 @@ coefficients in any object on which the unit is an isomorphism. The source objec
 unrestricted. -/
 theorem mapExt_bijective_of_isIso_unit_app (adj : F ⊣ G) (X Y : C) (n : ℕ)
     [IsIso (adj.unit.app Y)] : Function.Bijective (F.mapExtAddHom.{w, w'} X Y n) := by
-  let e : Ext.{w} X Y n ≃+ Ext.{w'} (F.obj X) (F.obj Y) n :=
-    (TauCeti.extAddEquivOfIso (Iso.refl X) (asIso (adj.unit.app Y)) n).trans
-      adj.extEquiv.symm
-  have he (α : Ext.{w} X Y n) : e α = α.mapExactFunctor F := by
-    simp [e, Adjunction.extEquiv_symm_apply, Ext.mapExactFunctor_comp,
-      Ext.mapExactFunctor_mk₀]
-  exact (funext he).subst (motive := Function.Bijective) e.bijective
+  apply (adj.mapExt_bijective_iff_postcomp_unit_app X Y n).mpr
+  let e := TauCeti.extAddEquivOfIso (Iso.refl X) (asIso (adj.unit.app Y)) n
+  have he : ⇑e = ⇑((Ext.mk₀ (adj.unit.app Y)).postcomp X (add_zero n)) := by
+    funext α
+    simp [e]
+  exact he ▸ e.bijective
 
 end CategoryTheory.Adjunction
