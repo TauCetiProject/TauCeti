@@ -5,38 +5,36 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
 public import Mathlib.NumberTheory.NumberField.Norm
-public import Mathlib.RingTheory.Coprime.Lemmas
+public import TauCeti.Analysis.SpecialFunctions.Log.ProdPowDvd
+public import TauCeti.RingTheory.Norm.Divisibility
 
 /-!
-# Integral norms: scalar divisibility, embedding bounds and prime-sum lower bounds
+# Integral norms: scalar divisibility, embedding bounds and prime-sum upper bounds
 
-This file collects the comparisons that turn a nonzero algebraic integer, divisible by a rational
-scalar power and with bounded conjugates, into a lower bound for a sum of prime logarithms.
+This file collects the comparisons that turn a nonzero algebraic integer with bounded conjugates,
+whose integral norm is divisible by prime powers, into an upper bound for a sum of prime
+logarithms; equivalently, the prime powers give a lower bound for the logarithm of the norm.
 
-For a free algebra `S` of rank `n` over `R`, divisibility of `a` by `algebraMap R S r ^ e` gives
-`r ^ (n * e) ∣ Algebra.norm R a`. For a number field `K`, the integral norm of `a ∈ 𝓞 K` is the
-product of the complex conjugates of `a`, so bounds `‖σ a‖ ≤ C σ` give `|norm a| ≤ ∏ σ, C σ`. On
-the other side, finitely many prime powers `p ^ e p` dividing a nonzero integer `z` give
-`∑ p ∈ P, e p * log p ≤ log |z|`.
+For a number field `K`, divisibility of `a ∈ 𝓞 K` by `(m : 𝓞 K) ^ e` gives
+`m ^ (finrank ℚ K * e) ∣ Algebra.norm ℤ a`, the number-field case of
+`Algebra.pow_finrank_mul_dvd_norm_of_algebraMap_pow_dvd`. The integral norm of `a` is the product
+of the complex conjugates of `a`, so bounds `‖σ a‖ ≤ C σ` give `|norm a| ≤ ∏ σ, C σ`. On the other
+side, finitely many prime powers `p ^ e p` dividing the nonzero integer `norm a` give
+`∑ p ∈ P, e p * log p ≤ log |norm a|` (`Int.sum_mul_log_le_log_abs`).
 
 Nonvanishing of the integral norm of a nonzero `a ∈ 𝓞 K` is Mathlib's `Algebra.norm_ne_zero_iff`,
 and the field norm as a product over embeddings is Mathlib's `Algebra.norm_eq_prod_embeddings`.
 
 ## Main results
 
-* `Algebra.pow_finrank_mul_dvd_norm_of_algebraMap_pow_dvd`: `r ^ (finrank R S * e) ∣ norm R a`
-  whenever `algebraMap R S r ^ e ∣ a`.
 * `NumberField.RingOfIntegers.pow_finrank_mul_dvd_norm`: `m ^ (finrank ℚ K * e) ∣ norm ℤ a`
   whenever `(m : 𝓞 K) ^ e ∣ a`.
 * `NumberField.RingOfIntegers.intCast_norm_eq_prod_embeddings`: the integral norm as the product
   of the complex conjugates.
 * `NumberField.RingOfIntegers.abs_norm_le_prod`, `NumberField.RingOfIntegers.abs_norm_le_pow`:
   bounds on the integral norm from bounds on the conjugates.
-* `Finset.prod_primes_pow_dvd`: prime powers dividing `z` combine to their product.
-* `Int.sum_mul_log_le_log_abs`: `∑ p ∈ P, e p * log p ≤ log |z|` when `∏ p ∈ P, p ^ e p ∣ z ≠ 0`.
 * `NumberField.RingOfIntegers.sum_mul_log_le_finrank_mul_log`: for nonzero `δ ∈ 𝓞 K` with
   conjugates bounded by `C` and `∏ p ∈ P, p ^ e p ∣ norm δ`, `∑ p ∈ P, e p * log p ≤ n * log C`.
 
@@ -49,25 +47,6 @@ and the field norm as a product over embeddings is Mathlib's `Algebra.norm_eq_pr
 public section
 
 open Module
-
-namespace Algebra
-
-variable {R S : Type*} [CommRing R] [Ring S] [Algebra R S] [Free R S]
-
-/-- If `algebraMap R S r` divides `a` in a free `R`-algebra `S`, then `r ^ finrank R S` divides the
-norm of `a`. -/
-theorem pow_finrank_dvd_norm_of_algebraMap_dvd {r : R} {a : S} (h : algebraMap R S r ∣ a) :
-    r ^ finrank R S ∣ norm R a := by
-  simpa using map_dvd (norm R) h
-
-/-- If `algebraMap R S r ^ e` divides `a` in a free `R`-algebra `S`, then `r ^ (finrank R S * e)`
-divides the norm of `a`. -/
-theorem pow_finrank_mul_dvd_norm_of_algebraMap_pow_dvd {r : R} {e : ℕ} {a : S}
-    (h : algebraMap R S r ^ e ∣ a) : r ^ (finrank R S * e) ∣ norm R a := by
-  rw [mul_comm, pow_mul]
-  exact pow_finrank_dvd_norm_of_algebraMap_dvd (by simpa using h)
-
-end Algebra
 
 namespace NumberField
 
@@ -122,28 +101,6 @@ theorem abs_norm_le_pow (a : 𝓞 K) {C : ℝ} (hC : ∀ σ : K →+* ℂ, ‖σ
 end RingOfIntegers
 
 end NumberField
-
-/-- If `(p : R) ^ e p` divides `z` for each prime `p` in a finite set `P`, then so does the product
-`∏ p ∈ P, (p : R) ^ e p`: distinct primes give pairwise coprime prime powers. -/
-theorem Finset.prod_primes_pow_dvd {R : Type*} [CommRing R] {P : Finset ℕ}
-    (hP : ∀ p ∈ P, p.Prime) (e : ℕ → ℕ) {z : R} (h : ∀ p ∈ P, (p : R) ^ e p ∣ z) :
-    ∏ p ∈ P, (p : R) ^ e p ∣ z :=
-  Finset.prod_dvd_of_coprime (fun p hp q hq hpq =>
-    (((Nat.coprime_primes (hP p hp) (hP q hq)).2 hpq).cast).pow) h
-
-/-- If `∏ p ∈ P, p ^ e p` divides a nonzero integer `z`, then `∑ p ∈ P, e p * log p ≤ log |z|`. -/
-theorem Int.sum_mul_log_le_log_abs {P : Finset ℕ} (e : ℕ → ℕ) {z : ℤ} (hz : z ≠ 0)
-    (h : ∏ p ∈ P, (p : ℤ) ^ e p ∣ z) :
-    ∑ p ∈ P, (e p : ℝ) * Real.log p ≤ Real.log |(z : ℝ)| := by
-  have hd : ∏ p ∈ P, (p : ℤ) ^ e p ≠ 0 := ne_zero_of_dvd_ne_zero hz h
-  have hle : ∏ p ∈ P, (p : ℝ) ^ e p ≤ |(z : ℝ)| := by
-    exact_mod_cast Int.le_of_dvd (abs_pos.2 hz) ((dvd_abs _ _).2 h)
-  have hpos : 0 < ∏ p ∈ P, (p : ℝ) ^ e p :=
-    (Finset.prod_nonneg fun _ _ => by positivity).lt_of_ne' (by exact_mod_cast hd)
-  calc ∑ p ∈ P, (e p : ℝ) * Real.log p = Real.log (∏ p ∈ P, (p : ℝ) ^ e p) := by
-        rw [Real.log_prod fun p hp => (Finset.prod_ne_zero_iff.1 hpos.ne' p hp)]
-        simp [Real.log_pow]
-    _ ≤ Real.log |(z : ℝ)| := Real.log_le_log hpos hle
 
 namespace NumberField.RingOfIntegers
 
