@@ -10,6 +10,9 @@ public import TauCeti.Analysis.Analytic.Composition
 public import TauCeti.Analysis.Analytic.Constructions
 public import TauCeti.Analysis.Quaternion.Kernel
 import Mathlib.Analysis.Analytic.CPolynomialDef
+import TauCeti.Analysis.Real.Sqrt
+import TauCeti.Topology.ContinuousMap.Algebra
+import TauCeti.Topology.ContinuousMap.Compact
 
 /-!
 # Power-series expansion and real analyticity of Cauchy–Fueter potentials
@@ -47,70 +50,7 @@ open scoped ENNReal NNReal RealInnerProductSpace Ring
 
 namespace TauCeti
 
-/-! ### Perturbation identity and pointwise series of the Cauchy–Fueter kernel -/
-
-/-- Factoring out `‖q - q₀‖²` from the squared distance to a displaced pole `q₀ + h`. -/
-theorem norm_sub_add_sq_eq {q q₀ : ℍ} (hq : q ≠ q₀) (h : ℍ) :
-    ‖q - (q₀ + h)‖ ^ 2 =
-      ‖q - q₀‖ ^ 2 * (1 - (2 * ⟪q - q₀, h⟫ - ‖h‖ ^ 2) / ‖q - q₀‖ ^ 2) := by
-  have hw : ‖q - q₀‖ ^ 2 ≠ 0 := pow_ne_zero 2 (norm_ne_zero_iff.2 (sub_ne_zero.2 hq))
-  rw [sub_add_eq_sub_sub, norm_sub_sq_real, mul_sub, mul_one, mul_div_cancel₀ _ hw]
-  ring
-
-/-- Exact algebraic factorization of `cauchyFueterKernel q (q₀ + h)` around `q₀` for `q ≠ q₀`.
-This holds for every `h : ℍ`, including the displaced pole `h = q - q₀` where both sides vanish. -/
-theorem cauchyFueterKernel_add_eq {q q₀ : ℍ} (hq : q ≠ q₀) (h : ℍ) :
-    cauchyFueterKernel q (q₀ + h) =
-      ((1 - (2 * ⟪q - q₀, h⟫ - ‖h‖ ^ 2) / ‖q - q₀‖ ^ 2) ^ 2)⁻¹ •
-        ((‖q - q₀‖ ^ 4)⁻¹ • (star (q - q₀) - star h)) := by
-  have hsq := norm_sub_add_sq_eq hq h
-  have h4 : ‖q - (q₀ + h)‖ ^ 4 =
-      (1 - (2 * ⟪q - q₀, h⟫ - ‖h‖ ^ 2) / ‖q - q₀‖ ^ 2) ^ 2 * ‖q - q₀‖ ^ 4 := by
-    calc ‖q - (q₀ + h)‖ ^ 4
-      _ = (‖q - (q₀ + h)‖ ^ 2) ^ 2 := by ring
-      _ = (‖q - q₀‖ ^ 2 * (1 - (2 * ⟪q - q₀, h⟫ - ‖h‖ ^ 2) / ‖q - q₀‖ ^ 2)) ^ 2 := by rw [hsq]
-      _ = (1 - (2 * ⟪q - q₀, h⟫ - ‖h‖ ^ 2) / ‖q - q₀‖ ^ 2) ^ 2 * ‖q - q₀‖ ^ 4 := by ring
-  rw [cauchyFueterKernel_eq, h4, mul_inv, sub_add_eq_sub_sub, star_sub, smul_smul]
-
-/-- `√2 - 1` is strictly positive. -/
-theorem sqrt_two_sub_one_pos : 0 < Real.sqrt 2 - 1 := by
-  rw [sub_pos, Real.lt_sqrt zero_le_one]
-  norm_num
-
-/-- `√2 - 1` is strictly less than `1`. -/
-theorem sqrt_two_sub_one_lt_one : Real.sqrt 2 - 1 < 1 := by
-  have h : Real.sqrt 2 < 2 := by
-    rw [Real.sqrt_lt' zero_lt_two]
-    norm_num
-  linarith
-
-/-- Whenever `0 ≤ t < √2 - 1`, the quadratic majorant `2 t + t²` is strictly less than `1`. -/
-theorem two_mul_add_sq_lt_one {t : ℝ} (ht₀ : 0 ≤ t) (ht : t < Real.sqrt 2 - 1) :
-    2 * t + t ^ 2 < 1 := by
-  have hlt : t + 1 < Real.sqrt 2 := by linarith
-  have hsq : (t + 1) ^ 2 < Real.sqrt 2 ^ 2 :=
-    pow_lt_pow_left₀ hlt (by positivity) two_ne_zero
-  rw [Real.sq_sqrt zero_le_two] at hsq
-  linarith
-
-/-- Uniform Cauchy–Schwarz bound on the dimensionless perturbation `(2 ⟪w, h⟫ - ‖h‖²) / ‖w‖²`
-when `‖w‖ ≥ δ > 0`. -/
-theorem abs_two_mul_inner_sub_norm_sq_div_le {w h : ℍ} {δ : ℝ} (hδ : 0 < δ) (hw : δ ≤ ‖w‖) :
-    |(2 * ⟪w, h⟫ - ‖h‖ ^ 2) / ‖w‖ ^ 2| ≤ 2 * (‖h‖ / δ) + (‖h‖ / δ) ^ 2 := by
-  have hw₀ : 0 < ‖w‖ := hδ.trans_le hw
-  have hdiv : ‖h‖ / ‖w‖ ≤ ‖h‖ / δ := div_le_div_of_nonneg_left (norm_nonneg h) hδ hw
-  calc |(2 * ⟪w, h⟫ - ‖h‖ ^ 2) / ‖w‖ ^ 2|
-    _ = |2 * ⟪w, h⟫ - ‖h‖ ^ 2| / ‖w‖ ^ 2 := by
-        rw [abs_div, abs_of_pos (pow_pos hw₀ 2)]
-    _ ≤ (2 * (‖w‖ * ‖h‖) + ‖h‖ ^ 2) / ‖w‖ ^ 2 := by
-        gcongr
-        refine (abs_sub _ _).trans (add_le_add ?_ (le_of_eq (abs_of_nonneg (sq_nonneg ‖h‖))))
-        rw [abs_mul, abs_of_pos zero_lt_two]
-        gcongr
-        exact abs_real_inner_le_norm w h
-    _ = 2 * (‖h‖ / ‖w‖) + (‖h‖ / ‖w‖) ^ 2 := by
-        field_simp
-    _ ≤ 2 * (‖h‖ / δ) + (‖h‖ / δ) ^ 2 := by gcongr
+/-! ### Pointwise power series of the Cauchy–Fueter kernel -/
 
 /-- Pointwise expansion of `cauchyFueterKernel q (q₀ + h)` via `(1 - u)⁻² = ∑ₙ (n + 1) uⁿ`
 on the ball `‖h‖ < (√2 - 1) ‖q - q₀‖`. -/
@@ -125,7 +65,7 @@ theorem hasSum_cauchyFueterKernel_add {q q₀ h : ℍ} (hq : q ≠ q₀)
   have hu : ‖u‖ < 1 := by
     rw [Real.norm_eq_abs]
     exact (abs_two_mul_inner_sub_norm_sq_div_le hw le_rfl).trans_lt
-      (two_mul_add_sq_lt_one (by positivity) ((div_lt_iff₀ hw).2 hh))
+      (Real.two_mul_add_sq_lt_one (by positivity) ((div_lt_iff₀ hw).2 hh))
   have hgeom : HasSum (fun n : ℕ ↦ ((n + 1 : ℝ) * u ^ n)) (((1 - u) ^ 2)⁻¹) := by
     convert hasSum_choose_mul_geometric_of_norm_lt_one' 1 hu using 1
     · ext n
@@ -347,7 +287,7 @@ private theorem tsum_kernelPerturbSeries_lt_one (φ : C(K, ℍ)) {q₀ : ℍ} (h
     ((∑' k : ℕ, ‖kernelPerturbSeries φ hφ (k + 1)‖₊ * r' ^ (k + 1) : ℝ≥0) : ℝ≥0∞) < 1 := by
   have hr'_real : (r' : ℝ) < (Real.sqrt 2 - 1) * δ := by
     rw [← ENNReal.ofReal_coe_nnreal] at hr'
-    exact (ENNReal.ofReal_lt_ofReal_iff (mul_pos sqrt_two_sub_one_pos hδ₀)).1 hr'
+    exact (ENNReal.ofReal_lt_ofReal_iff (mul_pos (sub_pos.2 Real.one_lt_sqrt_two) hδ₀)).1 hr'
   rw [ENNReal.coe_lt_one_iff, ← NNReal.coe_lt_coe, NNReal.coe_one]
   have htsum : (∑' k : ℕ, ‖kernelPerturbSeries φ hφ (k + 1)‖₊ * r' ^ (k + 1)) =
       ‖kernelPerturbSeries φ hφ 1‖₊ * r' + ‖kernelPerturbSeries φ hφ 2‖₊ * r' ^ 2 := by
@@ -367,7 +307,7 @@ private theorem tsum_kernelPerturbSeries_lt_one (φ : C(K, ℍ)) {q₀ : ℍ} (h
   calc ‖kernelPerturbSeries φ hφ 1‖ * (r' : ℝ) + ‖kernelPerturbSeries φ hφ 2‖ * (r' : ℝ) ^ 2
     _ ≤ (2 / δ) * (r' : ℝ) + (1 / δ ^ 2) * (r' : ℝ) ^ 2 := by gcongr
     _ = 2 * ((r' : ℝ) / δ) + ((r' : ℝ) / δ) ^ 2 := by field_simp
-    _ < 1 := two_mul_add_sq_lt_one (by positivity) ((div_lt_iff₀ hδ₀).2 hr'_real)
+    _ < 1 := Real.two_mul_add_sq_lt_one (by positivity) ((div_lt_iff₀ hδ₀).2 hr'_real)
 
 /-- Scalar series in `C(K, ℝ)` for `h ↦ (1 - kernelPerturbMap φ hφ h)⁻¹ʳ ^ 2`. -/
 private noncomputable def kernelScalarFactorSeries (φ : C(K, ℍ)) {q₀ : ℍ} (hφ : ∀ z, φ z ≠ q₀) :
@@ -385,7 +325,7 @@ private theorem hasFPowerSeriesOnBall_kernelScalarFactor (φ : C(K, ℍ)) {q₀ 
     rw [kernelPerturbMap_zero]
     exact hasFPowerSeriesOnBall_inverse_one_sub_pow ℝ C(K, ℝ) 1
   have hr_pos : 0 < ENNReal.ofReal ((Real.sqrt 2 - 1) * δ) :=
-    ENNReal.ofReal_pos.2 (mul_pos sqrt_two_sub_one_pos hδ₀)
+    ENNReal.ofReal_pos.2 (mul_pos (sub_pos.2 Real.one_lt_sqrt_two) hδ₀)
   exact hg.comp (hasFiniteFPowerSeriesOnBall_kernelPerturbMap φ hφ).toHasFPowerSeriesOnBall
     hr_pos le_top fun _ hr' ↦ tsum_kernelPerturbSeries_lt_one φ hφ hδ₀ hδ hr'
 
@@ -450,14 +390,6 @@ noncomputable def cauchyFueterKernelSeries (φ : C(K, ℍ)) {q₀ : ℍ} (hφ : 
     ((kernelDispNumerCLM φ hφ).compFormalMultilinearSeries
       (kernelScalarFactorSeries φ hφ)).unshift 0
 
-private theorem inverse_one_sub_sq_apply {a : C(K, ℝ)} (ha : ‖a‖ < 1) (z : K) :
-    ((1 - a)⁻¹ʳ ^ 2) z = ((1 - a z) ^ 2)⁻¹ := by
-  have hmul : (1 - a) * (1 - a)⁻¹ʳ = 1 :=
-    Ring.mul_inverse_cancel _ (isUnit_one_sub_of_norm_lt_one ha)
-  have hz : (1 - a z) * ((1 - a)⁻¹ʳ z) = 1 := by
-    simpa using congrArg (fun f : C(K, ℝ) ↦ f z) hmul
-  rw [ContinuousMap.pow_apply, eq_inv_of_mul_eq_one_right hz, inv_pow]
-
 /-- Quantitative uniform power-series expansion of `cauchyFueterKernel` along a compact boundary
 map `φ : C(K, ℍ)`: if `‖φ z - q₀‖ ≥ δ > 0` for all `z : K`, then `cauchyFueterKernelSeries φ hφ`
 represents `q ↦ ContinuousMap.mkD (fun z ↦ cauchyFueterKernel (φ z) q) 0` on the entire open ball
@@ -476,25 +408,27 @@ theorem hasFPowerSeriesOnBall_cauchyFueterKernel_mkD (φ : C(K, ℍ)) {q₀ : �
   set h : ℍ := q - q₀
   have hh_lt : ‖h‖ < (Real.sqrt 2 - 1) * δ := by
     rw [Metric.mem_eball, edist_dist, dist_eq_norm,
-      ENNReal.ofReal_lt_ofReal_iff (mul_pos sqrt_two_sub_one_pos hδ₀)] at hq
+      ENNReal.ofReal_lt_ofReal_iff (mul_pos (sub_pos.2 Real.one_lt_sqrt_two) hδ₀)] at hq
     exact hq
   have hu_norm : ‖kernelPerturbMap φ hφ h‖ < 1 := by
     refine (ContinuousMap.norm_lt_iff _ zero_lt_one).2 fun z ↦ ?_
     rw [kernelPerturbMap_apply, Real.norm_eq_abs]
     exact (abs_two_mul_inner_sub_norm_sq_div_le hδ₀ (hδ z)).trans_lt
-      (two_mul_add_sq_lt_one (by positivity) ((div_lt_iff₀ hδ₀).2 hh_lt))
-  set Fq : C(K, ℍ) :=
-    ((kernelZeroNumerCLM φ hφ ∘ fun x ↦ (1 - kernelPerturbMap φ hφ x)⁻¹ʳ ^ 2) +
-      fun y ↦ 0 + (kernelDispNumerCLM φ hφ ∘ fun x ↦ (1 - kernelPerturbMap φ hφ x)⁻¹ʳ ^ 2)
-        y (y - 0)) h
+      (Real.two_mul_add_sq_lt_one (by positivity) ((div_lt_iff₀ hδ₀).2 hh_lt))
+  have hu : IsUnit (1 - kernelPerturbMap φ hφ h) := isUnit_one_sub_of_norm_lt_one hu_norm
+  let S : C(K, ℝ) := (1 - kernelPerturbMap φ hφ h)⁻¹ʳ ^ 2
+  let Fq : C(K, ℍ) := kernelZeroNumerCLM φ hφ S + kernelDispNumerCLM φ hφ S h
   have hFq_eq : (fun z ↦ cauchyFueterKernel (φ z) q) = ⇑Fq := by
     funext z
     have hq_eq : q = q₀ + h := (add_sub_cancel q₀ q).symm
+    have hS_z : S z = ((1 - kernelPerturbMap φ hφ h z) ^ 2)⁻¹ := by
+      rw [ContinuousMap.pow_apply, ContinuousMap.ringInverse_apply hu,
+        ContinuousMap.sub_apply, ContinuousMap.one_apply, Ring.inverse_eq_inv, inv_pow]
     rw [hq_eq, cauchyFueterKernel_add_eq (hφ z) h]
-    simp only [Fq, Pi.add_apply, Function.comp_apply, zero_add, sub_zero,
-      ContinuousMap.add_apply, kernelZeroNumerCLM_apply, kernelDispNumerCLM_apply,
-      inverse_one_sub_sq_apply hu_norm z, kernelPerturbMap_apply, smul_smul, smul_sub]
+    simp only [Fq, ContinuousMap.add_apply, kernelZeroNumerCLM_apply, kernelDispNumerCLM_apply,
+      hS_z, kernelPerturbMap_apply, smul_smul, smul_sub]
     abel
+  simp only [Pi.add_apply, Function.comp_apply, zero_add, sub_zero]
   rw [hFq_eq]
   exact (ContinuousMap.mkD_of_continuous Fq.continuous).symm
 
@@ -508,9 +442,9 @@ private theorem continuous_cauchyFueterKernel_of_mem_eball (φ : C(K, ℍ)) {q�
   have hlt : ‖q - q₀‖ < δ := by
     have h1 : ‖q - q₀‖ < (Real.sqrt 2 - 1) * δ := by
       rw [Metric.mem_eball, edist_dist, dist_eq_norm,
-        ENNReal.ofReal_lt_ofReal_iff (mul_pos sqrt_two_sub_one_pos hδ₀)] at hq
+        ENNReal.ofReal_lt_ofReal_iff (mul_pos (sub_pos.2 Real.one_lt_sqrt_two) hδ₀)] at hq
       exact hq
-    nlinarith [sqrt_two_sub_one_lt_one]
+    nlinarith [Real.sqrt_two_lt_three_halves]
   have hne : ∀ z, φ z ≠ q := by
     intro z heq
     have hle := hδ z
@@ -523,19 +457,11 @@ private theorem continuous_cauchyFueterKernel_of_mem_eball (φ : C(K, ℍ)) {q�
     (φ.continuous.prodMk continuous_const) fun z ↦ hne z
   exact analyticOnNhd_cauchyFueterKernel_uncurry.continuousOn
 
-private theorem exists_pos_le_norm_sub_of_notMem_range {φ : C(K, ℍ)} {q₀ : ℍ}
-    (hq₀ : q₀ ∉ range φ) : ∃ δ > 0, ∀ z, δ ≤ ‖φ z - q₀‖ := by
-  rcases isEmpty_or_nonempty K with hK | hK
-  · exact ⟨1, zero_lt_one, isEmptyElim⟩
-  · obtain ⟨z₀, -, hz₀⟩ := isCompact_univ.exists_isMinOn univ_nonempty
-      ((φ.continuous.sub continuous_const).norm.continuousOn)
-    refine ⟨‖φ z₀ - q₀‖, norm_pos_iff.2 (sub_ne_zero.2 fun h ↦ hq₀ ⟨z₀, h⟩), fun z ↦ hz₀ trivial⟩
-
 /-- Uniform `C(K, ℍ)` analyticity of `q ↦ cauchyFueterKernel (φ ·) q` at every point
 `q₀ ∉ range φ`. -/
 theorem analyticAt_cauchyFueterKernel_mkD (φ : C(K, ℍ)) {q₀ : ℍ} (hq₀ : q₀ ∉ range φ) :
     AnalyticAt ℝ (fun q ↦ ContinuousMap.mkD (fun z ↦ cauchyFueterKernel (φ z) q) 0) q₀ := by
-  obtain ⟨δ, hδ₀, hδ⟩ := exists_pos_le_norm_sub_of_notMem_range hq₀
+  obtain ⟨δ, hδ₀, hδ⟩ := φ.exists_pos_le_norm_sub_of_notMem_range hq₀
   exact (hasFPowerSeriesOnBall_cauchyFueterKernel_mkD φ (fun z hz ↦ hq₀ ⟨z, hz⟩)
     hδ₀ hδ).analyticAt
 
@@ -580,7 +506,7 @@ theorem hasFPowerSeriesOnBall_integral_mul_cauchyFueterKernel
 theorem analyticAt_integral_cauchyFueterKernel_mul
     (φ : C(K, ℍ)) {q₀ : ℍ} (hq₀ : q₀ ∉ range φ) {g : K → ℍ} (hg : Integrable g μ) :
     AnalyticAt ℝ (fun q ↦ ∫ z, cauchyFueterKernel (φ z) q * g z ∂μ) q₀ := by
-  obtain ⟨δ, hδ₀, hδ⟩ := exists_pos_le_norm_sub_of_notMem_range hq₀
+  obtain ⟨δ, hδ₀, hδ⟩ := φ.exists_pos_le_norm_sub_of_notMem_range hq₀
   exact (hasFPowerSeriesOnBall_integral_cauchyFueterKernel_mul φ
     (fun z hz ↦ hq₀ ⟨z, hz⟩) hδ₀ hδ hg).analyticAt
 
@@ -588,7 +514,7 @@ theorem analyticAt_integral_cauchyFueterKernel_mul
 theorem analyticAt_integral_mul_cauchyFueterKernel
     (φ : C(K, ℍ)) {q₀ : ℍ} (hq₀ : q₀ ∉ range φ) {g : K → ℍ} (hg : Integrable g μ) :
     AnalyticAt ℝ (fun q ↦ ∫ z, g z * cauchyFueterKernel (φ z) q ∂μ) q₀ := by
-  obtain ⟨δ, hδ₀, hδ⟩ := exists_pos_le_norm_sub_of_notMem_range hq₀
+  obtain ⟨δ, hδ₀, hδ⟩ := φ.exists_pos_le_norm_sub_of_notMem_range hq₀
   exact (hasFPowerSeriesOnBall_integral_mul_cauchyFueterKernel φ
     (fun z hz ↦ hq₀ ⟨z, hz⟩) hδ₀ hδ hg).analyticAt
 
@@ -640,7 +566,7 @@ theorem hasFPowerSeriesOnBall_sum_integral_cauchyFueterKernel_mul
           (cauchyFueterKernelSeries (φ i.1) (hφ i.1 i.2)))
       q₀ (ENNReal.ofReal ((Real.sqrt 2 - 1) * δ)) :=
   (I.attach.hasFPowerSeriesOnBall_fun_sum
-    (ENNReal.ofReal_pos.2 (mul_pos sqrt_two_sub_one_pos hδ₀))
+    (ENNReal.ofReal_pos.2 (mul_pos (sub_pos.2 Real.one_lt_sqrt_two) hδ₀))
     fun i _ ↦ hasFPowerSeriesOnBall_integral_cauchyFueterKernel_mul
       (φ i.1) (hφ i.1 i.2) hδ₀ (hδ i.1 i.2) (hg i.1 i.2)).congr fun q _ ↦
     I.sum_attach fun i ↦ ∫ z, cauchyFueterKernel (φ i z) q * g i z ∂μ i
@@ -659,7 +585,7 @@ theorem hasFPowerSeriesOnBall_sum_integral_mul_cauchyFueterKernel
           (cauchyFueterKernelSeries (φ i.1) (hφ i.1 i.2)))
       q₀ (ENNReal.ofReal ((Real.sqrt 2 - 1) * δ)) :=
   (I.attach.hasFPowerSeriesOnBall_fun_sum
-    (ENNReal.ofReal_pos.2 (mul_pos sqrt_two_sub_one_pos hδ₀))
+    (ENNReal.ofReal_pos.2 (mul_pos (sub_pos.2 Real.one_lt_sqrt_two) hδ₀))
     fun i _ ↦ hasFPowerSeriesOnBall_integral_mul_cauchyFueterKernel
       (φ i.1) (hφ i.1 i.2) hδ₀ (hδ i.1 i.2) (hg i.1 i.2)).congr fun q _ ↦
     I.sum_attach fun i ↦ ∫ z, g i z * cauchyFueterKernel (φ i z) q ∂μ i

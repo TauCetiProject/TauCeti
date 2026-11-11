@@ -153,28 +153,4 @@ theorem HasFPowerSeriesOnBall.integral_mul_of_integrable_left
         hg).compFormalMultilinearSeries p) a r :=
   hf.integral_bilin (ContinuousLinearMap.mul 𝕜 A).flip hg
 
-/-- Right-weighted Bochner integration in a normed `𝕜`-algebra preserves `AnalyticAt`. -/
-theorem AnalyticAt.integral_mul_of_integrable_right
-    {f : W → C(X, A)} {a : W} (hf : AnalyticAt 𝕜 f a) {g : X → A} (hg : Integrable g μ) :
-    AnalyticAt 𝕜 (fun w ↦ ∫ x, f w x * g x ∂μ) a :=
-  hf.integral_bilin (ContinuousLinearMap.mul 𝕜 A) hg
-
-/-- Left-weighted Bochner integration in a normed `𝕜`-algebra preserves `AnalyticAt`. -/
-theorem AnalyticAt.integral_mul_of_integrable_left
-    {f : W → C(X, A)} {a : W} (hf : AnalyticAt 𝕜 f a) {g : X → A} (hg : Integrable g μ) :
-    AnalyticAt 𝕜 (fun w ↦ ∫ x, g x * f w x ∂μ) a :=
-  hf.integral_bilin (ContinuousLinearMap.mul 𝕜 A).flip hg
-
-/-- Right-weighted Bochner integration in a normed `𝕜`-algebra preserves `AnalyticOnNhd`. -/
-theorem AnalyticOnNhd.integral_mul_of_integrable_right
-    {f : W → C(X, A)} {s : Set W} (hf : AnalyticOnNhd 𝕜 f s) {g : X → A} (hg : Integrable g μ) :
-    AnalyticOnNhd 𝕜 (fun w ↦ ∫ x, f w x * g x ∂μ) s :=
-  hf.integral_bilin (ContinuousLinearMap.mul 𝕜 A) hg
-
-/-- Left-weighted Bochner integration in a normed `𝕜`-algebra preserves `AnalyticOnNhd`. -/
-theorem AnalyticOnNhd.integral_mul_of_integrable_left
-    {f : W → C(X, A)} {s : Set W} (hf : AnalyticOnNhd 𝕜 f s) {g : X → A} (hg : Integrable g μ) :
-    AnalyticOnNhd 𝕜 (fun w ↦ ∫ x, g x * f w x ∂μ) s :=
-  hf.integral_bilin (ContinuousLinearMap.mul 𝕜 A).flip hg
-
 end Algebra

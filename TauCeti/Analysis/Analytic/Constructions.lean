@@ -141,11 +141,4 @@ theorem hasFPowerSeriesOnBall_inverse_one_sub_pow (𝕜 A : Type*) [Nontrivially
     ext n
     rw [FormalMultilinearSeries.ofScalars_apply_eq, Nat.cast_smul_eq_nsmul, nsmul_eq_mul]
 
-/-- In a normed `𝕜`-algebra `A` with summable geometric series, `x ↦ (1 - x)⁻¹ʳ ^ (k + 1)` is
-analytic at `0`. -/
-theorem analyticAt_inverse_one_sub_pow (𝕜 A : Type*) [NontriviallyNormedField 𝕜]
-    [NormedRing A] [NormedAlgebra 𝕜 A] [HasSummableGeomSeries A] (k : ℕ) :
-    AnalyticAt 𝕜 (fun x : A ↦ (1 - x)⁻¹ʳ ^ (k + 1)) 0 :=
-  (hasFPowerSeriesOnBall_inverse_one_sub_pow 𝕜 A k).analyticAt
-
 end TauCeti

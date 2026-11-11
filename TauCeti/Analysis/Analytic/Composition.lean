@@ -17,11 +17,15 @@ radius, losing a universal factor from counting compositions of `n`.
 
 By majorizing the sum over compositions directly through `compChangeOfVariables_sum`, no
 combinatoric loss occurs: whenever `r` lies below the inner radius and the positive-degree majorant
-`∑' k, ‖p (k + 1)‖₊ * r ^ (k + 1)` lies strictly below the outer radius `rg`, the composed series
-`q.comp p` has radius at least `r` and represents `g ∘ f` on the entire ball of radius `r`. For
-instance, composing `(1 - u)⁻²` on the unit ball with a quadratic perturbation `L₁ h + L₂ (h, h)`
-bounded by `2 ‖h‖ / δ + (‖h‖ / δ)²` preserves the exact ball `‖h‖ < (√2 - 1) δ` on which
-`2 (r / δ) + (r / δ)² < 1`.
+`∑' k, ‖p (k + 1)‖₊ * r ^ (k + 1)` lies strictly below the outer radius `rg`, the tail majorant
+bounds `HasFPowerSeriesWithinOnBall.nnnorm_sub_le_tsum` and
+`HasFPowerSeriesWithinOnBall.mem_eball_of_tsum_lt` place `f (x + y)` inside the outer convergence
+ball, and adapting the partial-sum convergence argument of `HasFPowerSeriesWithinAt.comp` with
+`FormalMultilinearSeries.comp_summable_nnreal_of_tsum_lt` in place of `comp_summable_nnreal` shows
+that `q.comp p` has radius at least `r` and represents `g ∘ f` on the entire ball of radius `r`.
+For instance, composing `(1 - u)⁻²` on the unit ball with a quadratic perturbation
+`L₁ h + L₂ (h, h)` bounded by `2 ‖h‖ / δ + (‖h‖ / δ)²` preserves the exact ball
+`‖h‖ < (√2 - 1) δ` on which `2 (r / δ) + (r / δ)² < 1`.
 -/
 
 public section
@@ -99,27 +103,57 @@ end FormalMultilinearSeries
 
 open FormalMultilinearSeries
 
-private theorem HasFPowerSeriesWithinOnBall.mem_eball_of_tsum_lt
+/-- Positive-degree majorant bound for a formal multilinear series within `s`: if `f` has power
+series `p` within `s` on `eball x rf` and `∑' k, ‖p (k + 1)‖₊ * ‖y‖₊ ^ (k + 1)` is summable, then
+`‖f (x + y) - f x‖₊ ≤ ∑' k, ‖p (k + 1)‖₊ * ‖y‖₊ ^ (k + 1)`. -/
+theorem HasFPowerSeriesWithinOnBall.nnnorm_sub_le_tsum
+    {f : E → F} {p : FormalMultilinearSeries 𝕜 E F} {s : Set E} {x y : E} {rf : ℝ≥0∞}
+    (hf : HasFPowerSeriesWithinOnBall f p s x rf)
+    (h'y : x + y ∈ insert x s) (hy : y ∈ Metric.eball 0 rf)
+    (hp : Summable fun k : ℕ ↦ ‖p (k + 1)‖₊ * ‖y‖₊ ^ (k + 1)) :
+    ‖f (x + y) - f x‖₊ ≤ ∑' k : ℕ, ‖p (k + 1)‖₊ * ‖y‖₊ ^ (k + 1) := by
+  have htail : HasSum (fun k : ℕ ↦ p (k + 1) fun _ ↦ y) (f (x + y) - f x) := by
+    have h1 := (hasSum_nat_add_iff' 1).2 (hf.hasSum h'y hy)
+    simpa [Finset.sum_range_one, hf.coeff_zero fun _ ↦ y] using h1
+  exact NNReal.coe_le_coe.1 <|
+    htail.norm_le_of_bounded (NNReal.hasSum_coe.mpr hp.hasSum) fun k ↦ by
+      simpa [Finset.prod_const, Finset.card_fin] using (p (k + 1)).le_opNorm fun _ ↦ y
+
+/-- Positive-degree majorant bound for a formal multilinear series on a ball: if `f` has power
+series `p` on `eball x rf` and `∑' k, ‖p (k + 1)‖₊ * ‖y‖₊ ^ (k + 1)` is summable, then
+`‖f (x + y) - f x‖₊ ≤ ∑' k, ‖p (k + 1)‖₊ * ‖y‖₊ ^ (k + 1)`. -/
+theorem HasFPowerSeriesOnBall.nnnorm_sub_le_tsum
+    {f : E → F} {p : FormalMultilinearSeries 𝕜 E F} {x y : E} {rf : ℝ≥0∞}
+    (hf : HasFPowerSeriesOnBall f p x rf) (hy : y ∈ Metric.eball 0 rf)
+    (hp : Summable fun k : ℕ ↦ ‖p (k + 1)‖₊ * ‖y‖₊ ^ (k + 1)) :
+    ‖f (x + y) - f x‖₊ ≤ ∑' k : ℕ, ‖p (k + 1)‖₊ * ‖y‖₊ ^ (k + 1) := by
+  rw [← hasFPowerSeriesWithinOnBall_univ] at hf
+  exact hf.nnnorm_sub_le_tsum (Set.mem_insert_of_mem _ (Set.mem_univ _)) hy hp
+
+/-- If `f` has power series `p` within `s` on `eball x rf` and the positive-degree majorant
+`∑' k, ‖p (k + 1)‖₊ * ‖y‖₊ ^ (k + 1)` is summable and strictly smaller than `rg`, then `f (x + y)`
+lies in `eball (f x) rg`. -/
+theorem HasFPowerSeriesWithinOnBall.mem_eball_of_tsum_lt
     {f : E → F} {p : FormalMultilinearSeries 𝕜 E F} {s : Set E} {x y : E} {rf rg : ℝ≥0∞}
     (hf : HasFPowerSeriesWithinOnBall f p s x rf)
     (h'y : x + y ∈ insert x s) (hy : y ∈ Metric.eball 0 rf)
     (hp : Summable fun k : ℕ ↦ ‖p (k + 1)‖₊ * ‖y‖₊ ^ (k + 1))
     (hbound : ((∑' k : ℕ, ‖p (k + 1)‖₊ * ‖y‖₊ ^ (k + 1) : ℝ≥0) : ℝ≥0∞) < rg) :
     f (x + y) ∈ Metric.eball (f x) rg := by
-  have htail : HasSum (fun k : ℕ ↦ p (k + 1) fun _ ↦ y) (f (x + y) - f x) := by
-    have h1 := (hasSum_nat_add_iff' 1).2 (hf.hasSum h'y hy)
-    simpa [Finset.sum_range_one, hf.coeff_zero fun _ ↦ y] using h1
-  have hnorm : ‖f (x + y) - f x‖₊ ≤ ∑' k : ℕ, ‖p (k + 1)‖₊ * ‖y‖₊ ^ (k + 1) := by
-    refine le_of_tendsto' (continuous_nnnorm.tendsto _ |>.comp htail.tendsto_sum_nat) fun N ↦ ?_
-    calc ‖∑ k ∈ Finset.range N, p (k + 1) fun _ ↦ y‖₊
-      _ ≤ ∑ k ∈ Finset.range N, ‖p (k + 1) fun _ ↦ y‖₊ := nnnorm_sum_le _ _
-      _ ≤ ∑ k ∈ Finset.range N, ‖p (k + 1)‖₊ * ‖y‖₊ ^ (k + 1) := by
-          refine Finset.sum_le_sum fun k _ ↦ ?_
-          simpa [Finset.prod_const, Finset.card_fin] using (p (k + 1)).le_opNNNorm fun _ ↦ y
-      _ ≤ ∑' k : ℕ, ‖p (k + 1)‖₊ * ‖y‖₊ ^ (k + 1) :=
-          hp.sum_le_tsum (Finset.range N) fun _ _ ↦ zero_le
   rw [Metric.mem_eball, edist_eq_enorm_sub, enorm_eq_nnnorm]
-  exact (ENNReal.coe_le_coe.2 hnorm).trans_lt hbound
+  exact (ENNReal.coe_le_coe.2 (hf.nnnorm_sub_le_tsum h'y hy hp)).trans_lt hbound
+
+/-- If `f` has power series `p` on `eball x rf` and the positive-degree majorant
+`∑' k, ‖p (k + 1)‖₊ * ‖y‖₊ ^ (k + 1)` is summable and strictly smaller than `rg`, then `f (x + y)`
+lies in `eball (f x) rg`. -/
+theorem HasFPowerSeriesOnBall.mem_eball_of_tsum_lt
+    {f : E → F} {p : FormalMultilinearSeries 𝕜 E F} {x y : E} {rf rg : ℝ≥0∞}
+    (hf : HasFPowerSeriesOnBall f p x rf) (hy : y ∈ Metric.eball 0 rf)
+    (hp : Summable fun k : ℕ ↦ ‖p (k + 1)‖₊ * ‖y‖₊ ^ (k + 1))
+    (hbound : ((∑' k : ℕ, ‖p (k + 1)‖₊ * ‖y‖₊ ^ (k + 1) : ℝ≥0) : ℝ≥0∞) < rg) :
+    f (x + y) ∈ Metric.eball (f x) rg := by
+  rw [← hasFPowerSeriesWithinOnBall_univ] at hf
+  exact hf.mem_eball_of_tsum_lt (Set.mem_insert_of_mem _ (Set.mem_univ _)) hy hp hbound
 
 /-- Quantitative ball version of `HasFPowerSeriesWithinAt.comp`: if `g` has power series `q`
 within `t` on a ball of radius `rg` around `f x`, `f` has power series `p` within `s` on a ball of
