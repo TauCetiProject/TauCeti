@@ -141,6 +141,17 @@ theorem segment_true (i j : ℕ) : Ω.segment i j true =
 theorem segment_false (i j : ℕ) : Ω.segment i j false = FreeGroup.invRev (Ω.segment i j true) := by
   simp [segment]
 
+/-- A homomorphism out of the free group on the items and constants evaluates `h[i, j] ^ ±1` as
+its value on `h[i, j]`, or the inverse of that value. -/
+theorem lift_mk_segment {H : Type*} [Group H] (f : Fin Ω.numItems ⊕ A → H) (i j : ℕ) (s : Bool) :
+    FreeGroup.lift f (FreeGroup.mk (Ω.segment i j s)) =
+      cond s (FreeGroup.lift f (FreeGroup.mk (Ω.segment i j true)))
+        (FreeGroup.lift f (FreeGroup.mk (Ω.segment i j true)))⁻¹ := by
+  cases s
+  · rw [segment_false, ← FreeGroup.inv_mk, map_inv]
+    rfl
+  · rfl
+
 /-- The word `h[i, j] ^ ±1` has one letter for each item between the boundaries `i` and `j`. -/
 @[simp]
 theorem length_segment (i j : ℕ) (s : Bool) :

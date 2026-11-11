@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FreeGroup.GenEq.Basic
+import TauCeti.GroupTheory.FreeGroup.Basic
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Data.Fintype.Sigma
 import Mathlib.Algebra.BigOperators.Fin
@@ -356,22 +357,6 @@ section Soundness
 
 variable {X Z A H : Type*} [Group H]
 
-private theorem lift_mk_singleton {α : Type*} (f : α → H) (y : α × Bool) :
-    FreeGroup.lift f (FreeGroup.mk [y]) = cond y.2 (f y.1) (f y.1)⁻¹ := by
-  simp [FreeGroup.lift_mk]
-
-private theorem cond_cond_inv (s : Bool) (g : H) : cond s (cond s g g⁻¹) (cond s g g⁻¹)⁻¹ = g := by
-  cases s <;> simp
-
-private theorem lift_mk_segment (Ω : GenEq A) (f : Fin Ω.numItems ⊕ A → H) (i j : ℕ) (s : Bool) :
-    FreeGroup.lift f (FreeGroup.mk (Ω.segment i j s)) =
-      cond s (FreeGroup.lift f (FreeGroup.mk (Ω.segment i j true)))
-        (FreeGroup.lift f (FreeGroup.mk (Ω.segment i j true)))⁻¹ := by
-  cases s
-  · rw [segment_false, ← FreeGroup.inv_mk, map_inv]
-    rfl
-  · rfl
-
 variable {E : List (((X ⊕ A) × Bool) × List ((Z ⊕ A) × Bool))} {ι : FreeGroup A →* H}
   {v : Fin (ofEntries E).numItems → H}
 
@@ -385,7 +370,7 @@ private theorem exists_lift_mk_itemLetter (hv : v ∈ V ι (ofEntries E).toSyste
   have hv' := (mem_V_toSystem_iff _).1 hv
   refine ⟨fun z => if h : ∃ c, (itemLetter E c).1 = Sum.inl z then
     cond (itemLetter E h.choose).2 (v h.choose) (v h.choose)⁻¹ else 1, fun c => ?_⟩
-  rw [lift_mk_singleton]
+  rw [FreeGroup.lift_mk_singleton]
   obtain ⟨⟨y, s⟩, hy⟩ : ∃ y, itemLetter E c = y := ⟨_, rfl⟩
   rw [hy]
   rcases y with z | a
@@ -397,10 +382,10 @@ private theorem exists_lift_mk_itemLetter (hv : v ∈ V ι (ofEntries E).toSyste
       by_cases hc : h.choose = c
       · rw [hc, hy]
       · have := hv' _ (mem_equations_ofEntries_of_itemLetter E hc hs₀ hy)
-        simpa [lift_mk_singleton, hs₀] using this
-    simp only [Sum.elim_inl, dite_eq_left h, hval, cond_cond_inv]
+        simpa [FreeGroup.lift_mk_singleton, hs₀] using this
+    simp only [Sum.elim_inl, dite_eq_left h, hval, Bool.cond_cond_inv]
   · have := hv' _ ((ofEntries E).coeffEquation_mem_equations ((mem_constBases_ofEntries E).2 hy))
-    simp only [coeffEquation_fst, coeffEquation_snd, lift_mk_singleton, Sum.elim_inl,
+    simp only [coeffEquation_fst, coeffEquation_snd, FreeGroup.lift_mk_singleton, Sum.elim_inl,
       Sum.elim_inr, Function.comp_apply, Bool.cond_true] at this
     simp [this]
 
@@ -444,7 +429,7 @@ private theorem lift_mk_entry
   obtain ⟨k, hk, rfl⟩ := List.getElem_of_mem hmem
   have hseg := lift_mk_segment_true hζ (entryStart E k) (entryStart E (k + 1))
   rw [drop_take_entryStart E hk] at hseg
-  rw [lift_mk_singleton]
+  rw [FreeGroup.lift_mk_singleton]
   obtain ⟨⟨y, s⟩, hy⟩ : ∃ y, E[k].1 = y := ⟨_, rfl⟩
   rw [hy]
   rcases y with x | a
@@ -460,7 +445,7 @@ private theorem lift_mk_entry
     · rw [lift_mk_segment_eq hv (k' := ⟨k, hk⟩) (by rw [hk₀]; rfl) hsame (mt hiff.1 hnil) hnil,
         lift_mk_segment]
       simp only [Fin.getElem_fin]
-      rw [hseg, hy, cond_cond_inv]
+      rw [hseg, hy, Bool.cond_cond_inv]
   · rw [hc _ (List.getElem_mem _) a (by rw [hy]), hy]
     simp
 
@@ -662,11 +647,6 @@ section LetterWords
 
 variable {X Z A : Type*}
 
-private theorem isReduced_substituteVars_cond (w : Z → List (A × Bool)) (s : Bool)
-    (V : List ((Z ⊕ A) × Bool)) (h : FreeGroup.IsReduced (substituteVars w V)) :
-    FreeGroup.IsReduced (substituteVars w (cond s V (FreeGroup.invRev V))) := by
-  cases s <;> simp [FreeGroup.substituteVars_invRev, FreeGroup.isReduced_invRev, h]
-
 variable (E : List (((X ⊕ A) × Bool) × List ((Z ⊕ A) × Bool))) (w : Z → List (A × Bool))
 
 /-- The word of an item of `ofEntries E` when each letter `z` of `Z` is given the word `w z`: an
@@ -726,8 +706,8 @@ def Solution.ofLetterWords
   isReduced_subst := (forall_mem_equations_ofEntries E).2
     ⟨fun p hp => by
       rw [substituteVars_itemWord_entry E w p.1.isLt, substituteVars_itemWord_entry E w p.2.isLt]
-      exact ⟨isReduced_substituteVars_cond w _ _ (hred p hp),
-        isReduced_substituteVars_cond w _ _ (hred _ hp.swap)⟩,
+      exact ⟨FreeGroup.isReduced_substituteVars_cond w _ _ (hred p hp),
+        FreeGroup.isReduced_substituteVars_cond w _ _ (hred _ hp.swap)⟩,
     fun c c' _ z s s' hc hc' => by
       rw [substituteVars_itemWord_singleton E w hc, substituteVars_itemWord_singleton E w hc']
       exact ⟨hw c z s hc, hw c z s hc⟩,
