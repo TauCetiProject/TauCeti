@@ -42,6 +42,9 @@ bounds: the function `e^{−y²} g(y) − ∫_y^∞ e^{−t²} dt` is monotone a
 compares `erf` with `c y e^{(1 − k) y²}`, `k = 4/π`, using convexity of `exp`.
 
 DLMF 7.8.7, the bounds for Dawson's integral, is not in this file.
+
+The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
+`DLMF/ErrorFunctions/BoundsAsymptotics/ContinuedFractions.lean`.
 -/
 
 @[expose] public section
