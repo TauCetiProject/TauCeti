@@ -49,7 +49,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
   [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace ℝ (V x)]
   [FiberBundle F V] [VectorBundle ℝ F V]
-  {n : ℕ∞ω} [IsContMDiffRiemannianBundle I n F V]
+  {n : ℕ∞ω} [hmetric : IsContMDiffRiemannianBundle I n F V]
   {ι : Type*} [LinearOrder ι] [LocallyFiniteOrderBot ι]
   {v : ι → Π x : M, V x} {x : M}
 

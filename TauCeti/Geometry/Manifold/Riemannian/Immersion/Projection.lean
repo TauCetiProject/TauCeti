@@ -86,19 +86,15 @@ theorem ContMDiffAt.starProjection_range_mfderiv_apply
         (LinearMap.ker_eq_bot.mpr hinj)
   let g (i : Fin (Module.finrank ℝ E)) (y : M) :=
     InnerProductSpace.gramSchmidt ℝ (fun i ↦ v i y) i
-  -- Fix the metric fibre instances explicitly: TangentSpace is reducible to the model,
-  -- but its metric norm need not be the model norm.
-  have hgs := @ContMDiffAt.gramSchmidt_bundle F _ _ G _ J N _ _ F _ _ (TangentSpace J) _
-    (fun y ↦ inferInstance : ∀ y : N, NormedAddCommGroup (TangentSpace J y))
-    (fun y ↦ inferInstance : ∀ y : N, InnerProductSpace ℝ (TangentSpace J y))
+  -- Pin the metric structure through its regularity witness: TangentSpace is reducible
+  -- to the model, but its metric norm need not be the model norm.
+  have hmetric : IsContMDiffRiemannianBundle J n F (fun y : N ↦ TangentSpace J y) :=
+    inferInstance
   have hg (i) : ContMDiffAt I (J.prod 𝓘(ℝ, F)) n
       (fun y ↦ TotalSpace.mk' F (f y) (g i y)) x :=
-    hgs (IP := I) (b := f) (v := v) (x := x) hv hli i
-  have hinner := @ContMDiffAt.inner_bundle F _ _ G _ J n N _ _ F _ _ (TangentSpace J) _
-    (fun y ↦ inferInstance : ∀ y : N, NormedAddCommGroup (TangentSpace J y))
-    (fun y ↦ inferInstance : ∀ y : N, InnerProductSpace ℝ (TangentSpace J y))
-  have hc (i) := (hinner (v := g i) (w := W) (hg i) hW).div₀
-    (hinner (v := g i) (w := g i) (hg i) (hg i))
+    ContMDiffAt.gramSchmidt_bundle (hmetric := hmetric) (b := f) (v := v) hv hli i
+  have hc (i) := ((hg i).inner_bundle (h := hmetric) hW).div₀
+    ((hg i).inner_bundle (h := hmetric) (hg i))
     (inner_self_ne_zero.mpr (InnerProductSpace.gramSchmidt_ne_zero i hli))
   have hs := ContMDiffAt.sum_sectionAlong Finset.univ _ (hf.of_le le_self_add)
     (fun i _ ↦ (hc i).smul_totalSpace (hg i))
