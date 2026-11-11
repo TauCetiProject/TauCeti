@@ -10,7 +10,6 @@ public import TauCeti.MeasureTheory.Measure.NNReal
 
 import TauCeti.Probability.Distributions.Poisson.SmallRate
 import Mathlib.Order.Interval.Set.Union
-import Mathlib.MeasureTheory.Function.Floor
 
 /-!
 # Simplicity of homogeneous temporal Poisson random measures
