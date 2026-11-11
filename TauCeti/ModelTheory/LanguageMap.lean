@@ -40,7 +40,7 @@ the expansion of its `L`-reduct by the interpretations of the added constants
 (`FirstOrder.Language.withConstantsStructure_reduct_eq`).
 
 A function symbol of `L[[γ]]` is a function symbol of `L` or one of the added constants
-(`FirstOrder.Language.sigmaFunctionsWithConstantsEquiv`), and `L[[γ]]` is algebraic when `L` is.
+(`FirstOrder.Language.sigmaFunctionsWithConstantsEquiv`).
 -/
 
 public section
@@ -221,9 +221,6 @@ of `L` or a constant from `A`. -/
 theorem elim_fst_sigmaFunctionsWithConstantsEquiv (s : Σ n, L[[A]].Functions n) :
     Sum.elim Sigma.fst (fun _ => 0) (sigmaFunctionsWithConstantsEquiv A s) = s.1 := by
   rcases s with ⟨_ | _, f | f⟩ <;> first | rfl | exact isEmptyElim f
-
-/-- Adding constants to an algebraic language gives an algebraic language. -/
-instance [L.IsAlgebraic] : L[[A]].IsAlgebraic := isAlgebraic_sum
 
 end WithConstantsSymbols
 

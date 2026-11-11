@@ -56,9 +56,6 @@ namespace FirstOrder
   Functions := TauCeti.groupFunc
   Relations := fun _ => Empty
 
-/-- The language of groups has no relation symbols. -/
-instance : Language.group.IsAlgebraic := fun _ => inferInstanceAs (IsEmpty Empty)
-
 end FirstOrder
 
 namespace TauCeti
