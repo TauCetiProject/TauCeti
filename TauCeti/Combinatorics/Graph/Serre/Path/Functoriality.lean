@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Graph.Serre.Core
 public import TauCeti.Combinatorics.Graph.Serre.Path.SpanningTree
 public import TauCeti.Combinatorics.Quiver.Prefunctor
 public import Mathlib.Algebra.Group.End
@@ -18,8 +19,8 @@ backtrack-homotopic paths to backtrack-homotopic paths. It therefore induces a h
 `PathGroup.map f` of reduced path groups, functorially in `f`. A morphism injective on darts
 sends reduced paths to reduced paths, so the induced homomorphism is injective; in particular the
 reduced path group of a subgraph embeds in that of the ambient graph, with image the reduced
-loops all of whose darts lie in the subgraph. Every reduced loop lies in a spanning subgraph with
-finitely many darts (all vertices of the ambient graph are retained).
+loops all of whose darts lie in the subgraph. Every reduced loop at `v` comes from the based core
+at `v`, and lies in a finite connected based subgraph.
 
 A path `p` from `v` to `w` gives the change of base vertex `PathGroup.mulEquivOfPath p`,
 `g ↦ p⁻¹ g p`, which is natural in the graph.
@@ -42,6 +43,8 @@ tree. Changing the base vertex along a tree path sends tree loops to tree loops.
   injective homomorphism.
 * `TauCeti.SerreGraph.PathGroup.mem_range_map_restrictInclusion_iff`: the image of the reduced
   path group of a subgraph.
+* `TauCeti.SerreGraph.PathGroup.exists_finite_connected_mem_range_map`: every reduced loop lies in
+  a finite connected based subgraph.
 * `TauCeti.SerreGraph.PathGroup.map_mulEquivOfPath`: induced homomorphisms commute with the
   change of base vertex.
 * `TauCeti.SerreGraph.SpanningTree.map_loop`: induced homomorphisms send tree loops to tree
@@ -51,8 +54,8 @@ tree. Changing the base vertex along a tree path sends tree loops to tree loops.
 
 * A. Hatcher, *Algebraic Topology*, §1.1 (induced homomorphisms; change of basepoint,
   Proposition 1.5) and §1.A, Proposition 1A.2.
-* I. Kapovich, A. Myasnikov, *Stallings foldings and subgroups of free groups*, §4, Lemma 4.1,
-  and §6, Lemma 6.1.
+* I. Kapovich, A. Myasnikov, *Stallings foldings and subgroups of free groups*, §3,
+  Definition 3.5 and Lemma 3.7 (core graphs), §4, Lemma 4.1, and §6, Lemma 6.1.
 * J.-P. Serre, *Trees*, Chapter I, §§2.3–3.1.
 -/
 
@@ -199,18 +202,41 @@ theorem mem_range_map_restrictInclusion_iff (g : PathGroup Γ w) :
 
 end Restrict
 
-/-- Every reduced loop lies in a spanning subgraph with finitely many darts: the subgraph
-retains all vertices of the ambient graph, so only its set of darts is finite. -/
-theorem exists_finite_mem_range_map_restrictInclusion {v : Γ.V} (g : PathGroup Γ v) :
-    ∃ (S : Set Γ.E) (hS : ∀ e ∈ S, Γ.rev e ∈ S), S.Finite ∧
-      g ∈ (map (Γ.restrictInclusion S hS) (Γ.restrictInclusion_mapV S hS v)).range := by
-  let D : Set Γ.E := {e | e ∈ Path.darts Γ g.toPath}
-  refine ⟨D ∪ Γ.rev '' D, ?_, ?_, ?_⟩
-  · rintro e (he | ⟨d, hd, rfl⟩)
+/-- Every reduced loop at the base vertex comes from a reduced loop of the based core. -/
+theorem mem_range_map_coreInclusion {v : Γ.V} (g : PathGroup Γ v) :
+    g ∈ (map (Γ.coreInclusion v)
+      ((Γ.coreInclusion_mapV v (Γ.coreBase v)).trans (Γ.coreBase_val v))).range := by
+  obtain ⟨q, hq⟩ := Γ.exists_core_loop v g.toPath g.isReduced
+  have h := (Γ.coreInclusion_mapV v (Γ.coreBase v)).trans (Γ.coreBase_val v)
+  have hv := ((Γ.coreInclusion v).toPrefunctor_obj (Γ.coreBase v)).trans h
+  have hc := (Quiver.Path.cast_eq_iff_heq hv hv _ _).mpr (heq_of_eq hq)
+  exact ⟨ofPath q, (map_ofPath _ h q).trans ((congrArg ofPath hc).trans (ofPath_toPath g))⟩
+
+/-- Every reduced loop lies in a finite connected based subgraph: there are a finite connected
+Serre graph `Δ`, a morphism `f` from `Δ` to `Γ` injective on vertices and on darts, and a vertex
+of `Δ` over the base vertex, such that the loop is in the image of the induced homomorphism. -/
+theorem exists_finite_connected_mem_range_map {v : Γ.V} (g : PathGroup Γ v) :
+    ∃ (Δ : SerreGraph.{u, w}) (f : Δ.Hom Γ) (v' : Δ.V) (h : f.mapV v' = v),
+      Finite Δ.V ∧ Finite Δ.E ∧ Δ.Connected ∧ Function.Injective f.mapV ∧
+        Function.Injective f.mapE ∧ g ∈ (map f h).range := by
+  -- The based core of the subgraph spanned by the darts of the loop and their reverses.
+  let D : Set Γ.E := {e | e ∈ Path.darts Γ g.toPath} ∪ Γ.rev '' {e | e ∈ Path.darts Γ g.toPath}
+  have hD : ∀ e ∈ D, Γ.rev e ∈ D := by
+    rintro e (he | ⟨d, hd, rfl⟩)
     · exact Or.inr ⟨e, he, rfl⟩
     · exact Or.inl (by rwa [Γ.rev_rev])
-  · exact (List.finite_toSet _).union ((List.finite_toSet _).image _)
-  · exact (mem_range_map_restrictInclusion_iff _ _ _ g).mpr fun e he => Or.inl he
+  have : Finite (Γ.restrict D hD).E :=
+    ((List.finite_toSet _).union ((List.finite_toSet _).image _)).to_subtype
+  obtain ⟨g', hg'⟩ := (mem_range_map_restrictInclusion_iff D hD
+    (Γ.restrictInclusion_mapV D hD v) g).mpr fun e he => Or.inl he
+  obtain ⟨g'', hg''⟩ := mem_range_map_coreInclusion g'
+  refine ⟨_, (Γ.restrictInclusion D hD).comp ((Γ.restrict D hD).coreInclusion v), _, by simp,
+    inferInstance, inferInstance, ((Γ.restrict D hD).core_isCore v).connected, ?_, ?_, g'',
+    (map_map _ _ _ _ g'').symm.trans ((congrArg _ hg'').trans hg')⟩
+  · rw [Hom.comp_mapV]
+    exact Function.injective_id.comp Subtype.val_injective
+  · rw [Hom.comp_mapE]
+    exact Subtype.val_injective.comp Subtype.val_injective
 
 /-! ### Change of base vertex -/
 
