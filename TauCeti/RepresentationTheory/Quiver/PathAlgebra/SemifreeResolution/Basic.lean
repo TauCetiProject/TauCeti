@@ -104,7 +104,7 @@ namespace PathAlgebra
 
 universe u v w
 
-variable {k : Type w} [CommRing k] {Q : Type u} [Quiver.{v} Q] [Finite Q]
+variable {k : Type w} [CommRing k] {Q : Type u} [Quiver.{v} Q]
 
 /-- The path algebra, in this file. -/
 local notation "𝒜" => pathAlgebra k Q
@@ -114,6 +114,10 @@ local notation "𝒜ᵉ" => pathAlgebra k Q ⊗[k] (pathAlgebra k Q)ᵐᵒᵖ
 
 /-- The vertex idempotent `eᵥ`, in this file. -/
 local notation "ε" => vertexIdempotent k
+
+section Main
+
+variable [Finite Q]
 
 variable (wt : ∀ {a b : Q}, (a ⟶ b) → ℤ) (d : pathAlgebra k Q →ₗ[k] pathAlgebra k Q)
 
@@ -227,7 +231,7 @@ end Arrow
 
 /-! ### The differential of the middle term and the chain maps -/
 
-section Vertex
+section VertexDifferential
 
 variable [Fintype Q]
 
@@ -243,7 +247,23 @@ noncomputable def vertexTensorBimoduleDifferential :
   map_add' u u' := by ext; simp [add_mul]
   map_smul' c u := by ext; simp [smul_mul_assoc]
 
-variable {wt d}
+end VertexDifferential
+
+end Main
+
+section Vertex
+
+variable [Fintype Q] {wt : ∀ {a b : Q}, (a ⟶ b) → ℤ} {d : pathAlgebra k Q →ₗ[k] pathAlgebra k Q}
+
+/-- The grading sign `x ↦ (-1) ^ |x| x` of the grading by `wt`, in this file. -/
+local notation "σ" =>
+  InternalGrading.koszulTwist (InternalGrading.ofDecomposition (gradeBy k wt)) 1
+
+/-- A linear endomorphism of the path algebra, transported to the opposite algebra, in this
+file. -/
+local notation "op[" f "]" =>
+  LinearMap.comp (LinearEquiv.toLinearMap (opLinearEquiv k))
+    (LinearMap.comp f (LinearEquiv.toLinearMap (LinearEquiv.symm (opLinearEquiv k))))
 
 /-- The differential of `kQ ⊗_{kQ₀} kQ` is the enveloping differential in degree zero, cut down by
 the idempotent `∑ᵥ eᵥ ⊗ eᵥ`. -/
@@ -364,9 +384,9 @@ end Vertex
 
 section Square
 
-variable [DecidableEq Q] [∀ i j : Q, DecidableEq (i ⟶ j)]
+variable [Finite Q] {wt : ∀ {a b : Q}, (a ⟶ b) → ℤ} {d : pathAlgebra k Q →ₗ[k] pathAlgebra k Q}
 
-variable {wt d}
+variable [DecidableEq Q] [∀ i j : Q, DecidableEq (i ⟶ j)]
 
 /-- **The twisted differential squares to zero.** -/
 @[simp]
