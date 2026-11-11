@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.Algebra.Field.Basic
+import Mathlib.RingTheory.SimpleRing.Field
 import Mathlib.Tactic.Abel
 
 /-!
@@ -18,7 +20,9 @@ division ring, a nonzero `a` is separated from its inverse unless it is a square
 `x`, `u` of `-1` in a division ring are conjugate by the unit `1 - u * x` unless `u = -x`, that is
 unless `u * x = 1` (`TauCeti.exists_unit_conj_of_mul_ne_one`). The rational functions
 `x / (1 - x)²`, `x² / (1 - x)³` and `x / (1 - x)³` of the Tate coordinates satisfy the linear
-relation `TauCeti.div_one_sub_sq_add_sq_div_one_sub_cube`.
+relation `TauCeti.div_one_sub_sq_add_sq_div_one_sub_cube`. A square root in a field extension of a
+non-square of the base field does not lie in the base field
+(`TauCeti.notMem_range_algebraMap_of_sq_eq_of_not_isSquare`).
 -/
 
 public section
@@ -41,6 +45,8 @@ theorem exists_unit_conj_of_mul_ne_one {D : Type*} [DivisionRing D] {x u : D} (h
   refine ⟨Units.mk0 _ (sub_ne_zero.2 (Ne.symm h)), (Units.eq_mul_inv_iff_mul_eq _).2 ?_⟩
   rw [Units.val_mk0, sub_mul, mul_sub, mul_assoc, hx, ← mul_assoc, hu]
   simp [add_comm]
+
+section RationalIdentities
 
 variable {K : Type*} [DivisionRing K]
 
@@ -79,6 +85,17 @@ theorem inv_sq_div_one_sub_inv_cube_eq_neg_sub (x : K) :
     (x⁻¹) ^ 2 / (1 - x⁻¹) ^ 3 = -(x ^ 2 / (1 - x) ^ 3) - x / (1 - x) ^ 2 := by
   rw [inv_sq_div_one_sub_inv_cube, neg_div, ← div_one_sub_sq_add_sq_div_one_sub_cube]
   abel
+
+end RationalIdentities
+
+/-- A square root in an extension field of an element that is not a square in `K` does not lie
+in `K`. -/
+theorem notMem_range_algebraMap_of_sq_eq_of_not_isSquare {K L : Type*} [Field K] [Field L]
+    [Algebra K L] {u : K} (hsq : ¬IsSquare u) {x : L} (hx2 : x ^ 2 = algebraMap K L u) :
+    x ∉ Set.range (algebraMap K L) := by
+  rintro ⟨y, rfl⟩
+  rw [← map_pow, (algebraMap K L).injective.eq_iff] at hx2
+  exact hsq ⟨y, by simpa only [sq] using hx2.symm⟩
 
 end TauCeti
 

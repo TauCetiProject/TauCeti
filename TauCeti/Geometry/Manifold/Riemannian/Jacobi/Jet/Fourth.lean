@@ -188,7 +188,7 @@ theorem IsJacobiFieldOn.alongCurveWithin_four_of_eq_zero
     (hJ.differentiableWithinAt_sectionCoord_alongCurveWithin ha) hT hT
   have hDU : alongCurveWithin cov γ U s a =
       cov.derivCurvatureTensor cov (γ a) (T a) (D a) (T a) (T a) := by
-    rw [alongCurveWithin_clm_apply_of_eq_zero cov γ J B (hJ.uniqueDiffOn a ha) hB
+    rw [alongCurveWithin_clm_apply_of_eq_zero cov γ J B hB
       ((hJ.contMDiffOn a ha).mdifferentiableWithinAt (by norm_num)) hzero]
     simp only [B, ContinuousLinearMap.flip_apply, derivCurvatureTensorCLM_apply, D]
   have hDT : alongCurveWithin cov γ T s a = 0 :=

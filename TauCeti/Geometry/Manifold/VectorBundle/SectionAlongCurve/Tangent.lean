@@ -49,9 +49,13 @@ variable
   {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
 variable (γ : 𝕜 → M) (V : Π t, TangentSpace I (γ t))
+
+section CoordChange
+
+variable [IsManifold I 1 M]
 
 /-- The coordinate readings of a tangent field along a curve in the trivializations at two points
 whose base sets contain `γ r` differ by the tangent coordinate change between them. -/
@@ -77,6 +81,8 @@ theorem sectionCoord_eventuallyEq_coordChange {x y : M} {s : Set 𝕜} {r : 𝕜
     hγ.preimage_mem_nhdsWithin
       ((trivializationAt E (TangentSpace I) y).open_baseSet.mem_nhds hy)] with q hqx hqy
   exact sectionCoord_coordChange γ V hqx hqy
+
+end CoordChange
 
 section CoordChangeDeriv
 
