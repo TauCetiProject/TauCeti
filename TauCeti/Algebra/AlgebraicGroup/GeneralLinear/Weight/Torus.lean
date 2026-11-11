@@ -520,13 +520,13 @@ theorem weightTorusBaseChangeCoordinateMap_baseChange
     (coordinateHopfAlgebraBaseChangeIso.{max u v, w} A B N).inv ≫
         CommHopfAlgCat.baseChangeMap (weightTorusBaseChangeCoordinateMap.{u, v} R A wt) ≫
         (_root_.CommHopfAlgCat.isoMk
-          (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv A B
+          (MonoidAlgebra.scalarTensorBialgEquiv A B
             (G := SplitTorus.characterGroup κ))).hom =
       weightTorusBaseChangeCoordinateMap.{u, max v w} R B wt := by
   rw [weightTorusBaseChangeCoordinateMap_def, weightTorusBaseChangeCoordinateMap_def]
   exact coordinateHopfAlgebraBaseChangeIso_inv_comp_baseChangeMap_tower R A B N _ _ _ _
-    fun _ ↦
-      TauCeti.MonoidAlgebra.scalarTensorBialgEquiv_one_tmul_scalarTensorBialgEquiv_one_tmul A B
+    fun y ↦
+      MonoidAlgebra.scalarTensorBialgEquiv_tmul_scalarTensorBialgEquiv_one_tmul A B 1 y
 
 end BaseChange
 

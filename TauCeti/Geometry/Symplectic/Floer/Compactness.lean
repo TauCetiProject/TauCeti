@@ -436,7 +436,7 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
 /-- In the complex coordinate `equivRealProdCLM`, the Floer equation `(du - X_K)^{0,1} = 0` at
 `equivRealProdCLM y` is the coordinate equation `∂ₜu' - X(y, u') i = J(y, u')(∂ₛu' - X(y, u') 1)`
 for `u' = u ∘ equivRealProdCLM`, with `X(y, x) = X_K(equivRealProdCLM y, x) ∘ equivRealProdCLM`. -/
-private theorem fderiv_comp_equivRealProdCLM_I_sub (ω : SymplecticForm V) {u : ℝ × ℝ → V}
+theorem fderiv_comp_equivRealProdCLM_I_sub (ω : SymplecticForm V) {u : ℝ × ℝ → V}
     {y : ℂ} (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
       (J (equivRealProdCLM y) (u (equivRealProdCLM y)))
       (ω.perturbedFDeriv Ks Kt u (equivRealProdCLM y) : ℝ × ℝ →ₗ[ℝ] V)) :
