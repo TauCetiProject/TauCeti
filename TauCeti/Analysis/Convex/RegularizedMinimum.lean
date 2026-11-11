@@ -40,10 +40,11 @@ noncomputable def regularizedAbs (δ : ℝ) (hδ : 0 < δ) : ℝ → ℝ :=
   (absoluteValueBump δ hδ).normed volume ⋆[lsmul ℝ ℝ, volume] (fun t : ℝ ↦ |t|)
 
 /-- The regularized absolute value is the average of translated absolute values. -/
-theorem regularizedAbs_eq_integral (δ : ℝ) (hδ : 0 < δ) (x : ℝ) :
-    regularizedAbs δ hδ x = ∫ t : ℝ,
+theorem regularizedAbs_eq_integral (δ : ℝ) (hδ : 0 < δ) :
+    regularizedAbs δ hδ = fun x ↦ ∫ t : ℝ,
       (⟨δ / 2, δ, half_pos hδ, half_lt_self hδ⟩ : ContDiffBump (0 : ℝ)).normed volume t *
         |x - t| := by
+  funext x
   simp only [regularizedAbs, absoluteValueBump, convolution_def, lsmul_apply, smul_eq_mul]
 
 /-- Normalized bump convolution makes the regularized absolute value smooth. -/
@@ -85,6 +86,7 @@ theorem regularizedAbs_eq_abs (δ : ℝ) (hδ : 0 < δ) {x : ℝ}
           simpa only [Metric.mem_ball, Real.dist_eq, sub_zero, φ, absoluteValueBump] using hmem
         rw [abs_of_nonneg (by linarith [le_abs_self t])]
         ring
+    dsimp only [φ, absoluteValueBump] at heq
     rw [heq, integral_sub (φ.integrable_normed.mul_const _) (φ.integrable_normed_mul_id),
       integral_mul_const, φ.integral_normed, ContDiffBump.integral_normed_mul_id, one_mul, sub_zero]
   rcases le_total 0 x with hx0 | hx0
@@ -107,6 +109,7 @@ theorem abs_le_regularizedAbs (δ : ℝ) (hδ : 0 < δ) (x : ℝ) :
     _ = regularizedAbs δ hδ x := by
       simp only [abs_mul, abs_of_nonneg (φ.nonneg_normed _)]
       rw [regularizedAbs_eq_integral]
+      rfl
 
 /-- The value error of regularized absolute value is at most the smoothing radius. -/
 theorem regularizedAbs_le_abs_add (δ : ℝ) (hδ : 0 < δ) (x : ℝ) :
@@ -117,8 +120,9 @@ theorem regularizedAbs_le_abs_add (δ : ℝ) (hδ : 0 < δ) (x : ℝ) :
         simpa only [NNReal.coe_one, one_mul, absoluteValueBump] using (Metric.mem_ball.mp hy).le))
   have hnorm : (Norm.norm : ℝ → ℝ) = abs := funext Real.norm_eq_abs
   rw [hnorm] at h
-  fold regularizedAbs at h
-  rw [Real.dist_eq] at h
+  have hd : dist (regularizedAbs δ hδ x) |x| ≤ δ := by
+    simpa only [regularizedAbs] using h
+  rw [Real.dist_eq] at hd
   linarith [le_abs_self (regularizedAbs δ hδ x - |x|)]
 
 /-- Nonnegative convolution preserves convexity of absolute value. -/
@@ -211,7 +215,8 @@ theorem hasDerivAt_regularizedMin_right (δ : ℝ) (hδ : 0 < δ) (x y : ℝ) :
     HasDerivAt (regularizedMin δ hδ x)
       ((1 + deriv (regularizedAbs δ hδ) (x - y)) / 2) y := by
   have ha := ((contDiff_regularizedAbs δ hδ).differentiable (by simp) (x - y)).hasDerivAt
-  simpa +instances only [regularizedMin, Function.comp_def, Pi.sub_apply, id_eq,
+  unfold regularizedMin
+  simpa +instances only [Function.comp_def, Pi.sub_apply, id_eq,
     mul_neg, mul_one, sub_neg_eq_add] using
     (((hasDerivAt_id y).const_add x).sub
       (ha.comp y ((hasDerivAt_id y).const_sub x))).div_const 2
