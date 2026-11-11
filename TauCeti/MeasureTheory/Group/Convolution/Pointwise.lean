@@ -47,8 +47,8 @@ From this joint measurability we deduce:
 ## Main results
 
 * `MeasureTheory.AEStronglyMeasurable.comp_inv_mul_prod` /
-  `MeasureTheory.AEStronglyMeasurable.comp_mul_prod`: joint `(μ.prod μ)`-strong measurability of
-  `(x, y) ↦ f (y⁻¹ * x)` and `(x, y) ↦ f (x * y)`.
+  `MeasureTheory.AEStronglyMeasurable.comp_mul_prod`: joint `(μ.prod μ)`-almost-everywhere strong
+  measurability of `(x, y) ↦ f (y⁻¹ * x)` and `(x, y) ↦ f (x * y)`.
 * `AEMeasurable.lintegral_lintegral_mul_comp_inv_mul`:
   `∫⁻ x, ∫⁻ y, h y * f (y⁻¹ * x) ∂μ ∂μ = (∫⁻ y, h y ∂μ) * ∫⁻ x, f x ∂μ`.
 * `MeasureTheory.Integrable.smul_comp_inv_mul_prod_restrict`: local product integrability of
@@ -101,8 +101,8 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] [SigmaCompactSpace G] [MeasurableSpace G] [BorelSpace G]
   {μ : Measure G} [μ.IsMulLeftInvariant] [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop]
 
-/-- Shared quotient-factorization argument for joint `(μ.prod μ)`-strong measurability of
-`(p₁, p₂) ↦ f (φ p₁ * p₂)` along any continuous map `φ : G → G`. -/
+/-- Shared quotient-factorization argument for joint `(μ.prod μ)`-almost-everywhere strong
+measurability of `(p₁, p₂) ↦ f (φ p₁ * p₂)` along any continuous map `φ : G → G`. -/
 private theorem aestronglyMeasurable_comp_mul_prod {β : Type*} [TopologicalSpace β]
     [MetrizableSpace β] {φ : G → G} (hφ : Continuous φ) {f : G → β}
     (hf : AEStronglyMeasurable f μ) :
@@ -152,8 +152,8 @@ theorem AEStronglyMeasurable.comp_mul_prod {β : Type*} [TopologicalSpace β]
     AEStronglyMeasurable (fun p : G × G ↦ f (p.1 * p.2)) (μ.prod μ) :=
   aestronglyMeasurable_comp_mul_prod continuous_id hf
 
-/-- Joint `(μ.prod μ)`-strong measurability of the scalar-multiplied convolution integrand
-`(x, y) ↦ h y • f (y⁻¹ * x)` on a σ-compact locally compact group. -/
+/-- Joint `(μ.prod μ)`-almost-everywhere strong measurability of the scalar-multiplied convolution
+integrand `(x, y) ↦ h y • f (y⁻¹ * x)` on a σ-compact locally compact group. -/
 theorem AEStronglyMeasurable.smul_comp_inv_mul_prod {𝕜 β : Type*} [TopologicalSpace 𝕜]
     [TopologicalSpace β] [MetrizableSpace β] [SMul 𝕜 β] [ContinuousSMul 𝕜 β]
     {h : G → 𝕜} {f : G → β} (hh : AEStronglyMeasurable h μ) (hf : AEStronglyMeasurable f μ) :
@@ -289,17 +289,9 @@ theorem Integrable.smul_comp_inv_mul_prod_restrict {p : ℝ≥0∞} [Fact (1 ≤
 compact group, `y ↦ h y • f (y⁻¹ * x)` is `μ`-integrable for `μ`-almost every `x`. -/
 theorem MemLp.ae_integrable_smul_comp_inv_mul {p : ℝ≥0∞} [Fact (1 ≤ p)] {h : G → 𝕜} {f : G → E}
     (hf : MemLp f p μ) (hh : Integrable h μ) :
-    ∀ᵐ x ∂μ, Integrable (fun y ↦ h y • f (y⁻¹ * x)) μ := by
-  have hpiece (n : ℕ) :
-      ∀ᵐ x ∂μ, x ∈ spanningSets μ n → Integrable (fun y ↦ h y • f (y⁻¹ * x)) μ := by
-    rw [← ae_restrict_iff' (measurableSet_spanningSets μ n)]
-    exact (hh.smul_comp_inv_mul_prod_restrict hf (measure_spanningSets_lt_top μ n)).prod_right_ae
-  filter_upwards [ae_all_iff.mpr hpiece] with x hx
-  have hmem : x ∈ ⋃ n, spanningSets μ n := by
-    rw [iUnion_spanningSets]
-    exact mem_univ x
-  obtain ⟨n, hn⟩ := mem_iUnion.mp hmem
-  exact hx n hn
+    ∀ᵐ x ∂μ, Integrable (fun y ↦ h y • f (y⁻¹ * x)) μ :=
+  ae_of_forall_measure_lt_top_ae_restrict _ fun _ _ hμs ↦
+    (hh.smul_comp_inv_mul_prod_restrict hf hμs).prod_right_ae
 
 /-- Global product integrability on `G × G` of the convolution integrand
 `(x, y) ↦ h y • f (y⁻¹ * x)` for `h ∈ L¹(G, μ; 𝕜)` and `f ∈ L¹(G, μ; E)` on a σ-compact locally

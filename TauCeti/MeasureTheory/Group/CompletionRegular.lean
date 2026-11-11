@@ -136,6 +136,68 @@ private theorem exists_stronglyMeasurable_of_quotient_fibers {Q G β : Type*}
     simpa [hs'_good hx] using hconv x hx
   exact tendsto_nhds_unique (htend (π x)) hc
 
+/-- Extend a family of sets indexed by `↥s.range` to all of `β` by `∅` outside `s.range`. -/
+private noncomputable def extendSimpleRange {Q G β : Type*} [MeasurableSpace G] (s : SimpleFunc G β)
+    (A : ↥s.range → Set Q) (b : β) : Set Q :=
+  open Classical in if hb : b ∈ s.range then A ⟨b, hb⟩ else ∅
+
+private theorem measurableSet_extendSimpleRange {Q G β : Type*} [mQ : MeasurableSpace Q]
+    [MeasurableSpace G] (s : SimpleFunc G β) {A : ↥s.range → Set Q}
+    (hA : ∀ b, MeasurableSet (A b)) (b : β) :
+    MeasurableSet (extendSimpleRange s A b) := by
+  classical
+  dsimp only [extendSimpleRange]
+  split_ifs with hb
+  · exact hA ⟨b, hb⟩
+  · exact .empty
+
+/-- Outside the quotient sandwich error sets `B b \ A b`, the lifted simple function built from `A`
+agrees with `s` along `π`. -/
+private theorem liftSimpleList_apply_eq {Q G β : Type*} [mQ : MeasurableSpace Q]
+    [MeasurableSpace G] (π : G → Q) (s : SimpleFunc G β) (b₀ : β) {A B : ↥s.range → Set Q}
+    (hA : ∀ b, MeasurableSet (A b)) (hpreA : ∀ b, π ⁻¹' A b ⊆ s ⁻¹' {b.1})
+    (hpreB : ∀ b, s ⁻¹' {b.1} ⊆ π ⁻¹' B b) {x : G} (hx : ∀ b : ↥s.range, π x ∉ B b \ A b) :
+    liftSimpleList (extendSimpleRange s A) (measurableSet_extendSimpleRange s hA) b₀
+      s.range.toList (π x) = s x := by
+  have hmem : s x ∈ s.range := s.mem_range_self x
+  refine liftSimpleList_apply_of_unique _ b₀ (Finset.mem_toList.mpr hmem) ?_ ?_
+  · classical
+    simp only [extendSimpleRange, hmem, dite_true]
+    exact not_not.mp fun hxA ↦ hx ⟨s x, hmem⟩ ⟨hpreB ⟨s x, hmem⟩ rfl, hxA⟩
+  · intro b hb hπb
+    have hb_mem : b ∈ s.range := Finset.mem_toList.mp hb
+    classical
+    simp only [extendSimpleRange, hb_mem, dite_true] at hπb
+    exact (mem_singleton_iff.mp (hpreA ⟨b, hb_mem⟩ hπb)).symm
+
+/-- Assemble the quotient Borel null set `Z'` collecting the upper sandwich of a null set `N₀` and
+the sandwich remainders `B' (Sum.inr i) \ A' (Sum.inr i)` of a countable family of fibers. -/
+private theorem exists_quotient_null_error_set {Q G ι : Type*} [mQ : MeasurableSpace Q]
+    [MeasurableSpace G] [Countable ι] {μ : Measure G} (π : G → Q) {N₀ : Set G}
+    (hN₀ : μ N₀ = 0) {A' B' : Unit ⊕ ι → Set Q} (hA' : ∀ i, MeasurableSet (A' i))
+    (hB' : ∀ i, MeasurableSet (B' i)) (hpreA₀ : π ⁻¹' A' (Sum.inl ()) ⊆ N₀)
+    (hpreB₀ : N₀ ⊆ π ⁻¹' B' (Sum.inl ())) (hnull : ∀ i, μ (π ⁻¹' (B' i \ A' i)) = 0) :
+    ∃ Z' : Set Q, MeasurableSet Z' ∧ μ (π ⁻¹' Z') = 0 ∧ N₀ ⊆ π ⁻¹' Z' ∧
+      ∀ i, B' (Sum.inr i) \ A' (Sum.inr i) ⊆ Z' := by
+  let Z' : Set Q := B' (Sum.inl ()) ∪ ⋃ i : ι, B' (Sum.inr i) \ A' (Sum.inr i)
+  have hZ'_meas : MeasurableSet Z' :=
+    (hB' (Sum.inl ())).union <|
+      MeasurableSet.iUnion fun i ↦ (hB' (Sum.inr i)).diff (hA' (Sum.inr i))
+  have hB₀_null : μ (π ⁻¹' B' (Sum.inl ())) = 0 := by
+    have hA₀ : μ (π ⁻¹' A' (Sum.inl ())) = 0 := measure_mono_null hpreA₀ hN₀
+    have hsub : π ⁻¹' B' (Sum.inl ()) ⊆
+        π ⁻¹' A' (Sum.inl ()) ∪ π ⁻¹' (B' (Sum.inl ()) \ A' (Sum.inl ())) := fun x hx ↦
+      em (x ∈ π ⁻¹' A' (Sum.inl ())) |>.imp id fun hxA ↦ ⟨hx, hxA⟩
+    exact measure_mono_null hsub (measure_union_null hA₀ (hnull (Sum.inl ())))
+  have hZ'_null : μ (π ⁻¹' Z') = 0 := by
+    rw [preimage_union]
+    refine measure_union_null hB₀_null ?_
+    rw [preimage_iUnion]
+    exact measure_iUnion_null fun i ↦ hnull (Sum.inr i)
+  exact ⟨Z', hZ'_meas, hZ'_null, hpreB₀.trans (preimage_mono subset_union_left),
+    fun i ↦ (subset_iUnion (fun j ↦ B' (Sum.inr j) \ A' (Sum.inr j)) i).trans
+      subset_union_right⟩
+
 end BorelHelpers
 
 section Helpers
@@ -185,20 +247,9 @@ private theorem measure_preimage_image_diff_eq_zero {K : Subgroup G} [K.Normal]
       exact mem_iUnion₂.mpr ⟨k, hkt, hxk, hCS hxC⟩
     exact measure_mono_null hsub
       ((measure_biUnion_null_iff ht_fin.countable).mpr fun k hkt ↦ htrans (htK hkt))
-  -- Exhaust `S` by finite-measure pieces via `spanningSets μ` and apply inner regularity.
-  have hspan : (QuotientGroup.mk : G → G ⧸ K) ⁻¹' ((QuotientGroup.mk : G → G ⧸ K) '' U \ A') =
-      ⋃ n, S ∩ spanningSets μ n := by
-    rw [← inter_iUnion, iUnion_spanningSets, inter_univ]
-  rw [hspan]
-  refine measure_iUnion_null fun n ↦ ?_
-  have hmeas_n : MeasurableSet (S ∩ spanningSets μ n) :=
-    hS_meas.inter (measurableSet_spanningSets μ n)
-  have hfin_n : μ (S ∩ spanningSets μ n) ≠ ∞ :=
-    ((measure_mono inter_subset_right).trans_lt (measure_spanningSets_lt_top μ n)).ne
-  rw [hmeas_n.measure_eq_iSup_isCompact_of_ne_top hfin_n]
+  rw [hS_meas.measure_eq_iSup_isCompact]
   simp only [ENNReal.iSup_eq_zero]
-  intro C hCSn hC
-  exact hcomp hC (hCSn.trans inter_subset_left)
+  exact fun C hCS hC ↦ hcomp hC hCS
 
 /-- Internal predicate: a set `E ⊆ G` is sandwiched between pullbacks of Borel sets on a metrizable
 second-countable quotient `G ⧸ K` by a closed compact normal subgroup `K`. -/
@@ -524,7 +575,6 @@ theorem AEStronglyMeasurable.exists_compact_normal_subgroup_quotient_eq_off_null
         μ ((QuotientGroup.mk : G → G ⧸ K) ⁻¹' Z') = 0 ∧
         ∀ x, x ∉ (QuotientGroup.mk : G → G ⧸ K) ⁻¹' Z' →
           f x = g (QuotientGroup.mk x) := by
-  classical
   let f₀ : G → β := hf.mk f
   have hf₀ : StronglyMeasurable f₀ := hf.stronglyMeasurable_mk
   let s : ℕ → SimpleFunc G β := hf₀.approx
@@ -542,58 +592,23 @@ theorem AEStronglyMeasurable.exists_compact_normal_subgroup_quotient_eq_off_null
   obtain ⟨K, hK_norm, hK_cp, hK_cl, hK_met, hK_sc, A', B', hA', hB', _, hpreA', hpreB',
     hnull⟩ := TauCeti.exists_compact_normal_subgroup_forall_quotient_borel_sandwich hfam
   let π : G → G ⧸ K := QuotientGroup.mk
-  -- Assemble the Borel null set `Z'` in `G ⧸ K` collecting the error of `N₀` and all fibers.
-  let Z' : Set (G ⧸ K) :=
-    B' (Sum.inl ()) ∪ ⋃ (n : ℕ) (b : ↥(s n).range), (B' (Sum.inr ⟨n, b⟩) \ A' (Sum.inr ⟨n, b⟩))
-  have hZ'_meas : MeasurableSet[borel (G ⧸ K)] Z' :=
-    (hB' (Sum.inl ())).union <|
-      MeasurableSet.iUnion fun n ↦ MeasurableSet.iUnion fun b ↦
-        (hB' (Sum.inr ⟨n, b⟩)).diff (hA' (Sum.inr ⟨n, b⟩))
-  have hB₀_null : μ (π ⁻¹' B' (Sum.inl ())) = 0 := by
-    have hA₀ : μ (π ⁻¹' A' (Sum.inl ())) = 0 := measure_mono_null (hpreA' (Sum.inl ())) hN₀_null
-    have hsub : π ⁻¹' B' (Sum.inl ()) ⊆
-        π ⁻¹' A' (Sum.inl ()) ∪ π ⁻¹' (B' (Sum.inl ()) \ A' (Sum.inl ())) := by
-      intro x hx
-      by_cases hxA : x ∈ π ⁻¹' A' (Sum.inl ())
-      · exact Or.inl hxA
-      · exact Or.inr ⟨hx, hxA⟩
-    exact measure_mono_null hsub (measure_union_null hA₀ (hnull (Sum.inl ())))
-  have hZ'_null : μ (π ⁻¹' Z') = 0 := by
-    rw [preimage_union]
-    refine measure_union_null hB₀_null ?_
-    simp_rw [preimage_iUnion]
-    exact measure_iUnion_null fun n ↦ measure_iUnion_null fun b ↦ hnull (Sum.inr ⟨n, b⟩)
-  -- Lift the approximating simple functions to `(G ⧸ K, borel (G ⧸ K))`.
-  let Aq : ℕ → β → Set (G ⧸ K) := fun n b ↦
-    if hb : b ∈ (s n).range then A' (Sum.inr ⟨n, ⟨b, hb⟩⟩) else ∅
-  have hAq (n : ℕ) (b : β) : MeasurableSet[borel (G ⧸ K)] (Aq n b) := by
-    dsimp only [Aq]
-    split_ifs with hb
-    · exact hA' (Sum.inr ⟨n, ⟨b, hb⟩⟩)
-    · exact @MeasurableSet.empty _ (borel (G ⧸ K))
+  obtain ⟨Z', hZ'_meas, hZ'_null, hN₀_sub, hdiff_sub⟩ :=
+    TauCeti.exists_quotient_null_error_set (mQ := borel (G ⧸ K)) π hN₀_null hA' hB'
+      (hpreA' (Sum.inl ())) (hpreB' (Sum.inl ())) hnull
   obtain ⟨g, hg_meas, hg_eq⟩ := TauCeti.exists_stronglyMeasurable_of_quotient_fibers
     (mQ := borel (G ⧸ K)) π QuotientGroup.mk_surjective (f 1)
-    (fun n ↦ (s n).range.toList) Aq hAq Z' hZ'_meas f₀ fun x hxZ' ↦ by
-      have hval (n : ℕ) :
-          TauCeti.liftSimpleList (mQ := borel (G ⧸ K)) (Aq n) (hAq n) (f 1)
-            (s n).range.toList (π x) = s n x := by
-        have hmem : s n x ∈ (s n).range := (s n).mem_range_self x
-        refine TauCeti.liftSimpleList_apply_of_unique (mQ := borel (G ⧸ K)) (hAq n)
-          (f 1) (Finset.mem_toList.mpr hmem) ?_ ?_
-        · simp only [Aq, hmem, dite_true]
-          have hxB : π x ∈ B' (Sum.inr ⟨n, ⟨s n x, hmem⟩⟩) :=
-            hpreB' (Sum.inr ⟨n, ⟨s n x, hmem⟩⟩) rfl
-          by_contra hxA
-          exact hxZ' (Or.inr (mem_iUnion₂.mpr ⟨n, ⟨s n x, hmem⟩, hxB, hxA⟩))
-        · intro b hb hπb
-          have hb_mem : b ∈ (s n).range := Finset.mem_toList.mp hb
-          simp only [Aq, hb_mem, dite_true] at hπb
-          exact (mem_singleton_iff.mp (hpreA' (Sum.inr ⟨n, ⟨b, hb_mem⟩⟩) hπb)).symm
+    (fun n ↦ (s n).range.toList)
+    (fun n ↦ TauCeti.extendSimpleRange (s n) (fun b ↦ A' (Sum.inr ⟨n, b⟩)))
+    (fun n ↦ TauCeti.measurableSet_extendSimpleRange (mQ := borel (G ⧸ K)) (s n)
+      (fun b ↦ hA' (Sum.inr ⟨n, b⟩)))
+    Z' hZ'_meas f₀ fun x hxZ' ↦ by
+      have hval (n : ℕ) := TauCeti.liftSimpleList_apply_eq (mQ := borel (G ⧸ K)) π (s n) (f 1)
+        (fun b ↦ hA' (Sum.inr ⟨n, b⟩)) (fun b ↦ hpreA' (Sum.inr ⟨n, b⟩))
+        (fun b ↦ hpreB' (Sum.inr ⟨n, b⟩)) fun b hb ↦ hxZ' (hdiff_sub ⟨n, b⟩ hb)
       simpa [hval] using hf₀.tendsto_approx x
   refine ⟨K, hK_norm, hK_cp, hK_cl, hK_met, hK_sc, g, Z', hg_meas, hZ'_meas, hZ'_null,
     fun x hxZ' ↦ ?_⟩
-  have hxN₀ : x ∉ N₀ := fun hxN ↦ hxZ' (Or.inl (hpreB' (Sum.inl ()) hxN))
-  have hfx : f x = f₀ x := not_not.mp hxN₀
+  have hfx : f x = f₀ x := not_not.mp fun hxN ↦ hxZ' (hN₀_sub hxN)
   rw [hfx, hg_eq x hxZ']
 
 /-- Every `μ`-a.e. strongly measurable function from a σ-compact locally compact group `G` into a

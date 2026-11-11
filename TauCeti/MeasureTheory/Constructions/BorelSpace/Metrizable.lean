@@ -8,16 +8,16 @@ module
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
 public import Mathlib.Topology.ContinuousMap.Basic
 public import Mathlib.Topology.Metrizable.Basic
-import Mathlib.Topology.MetricSpace.HausdorffDistance
-import Mathlib.Topology.Metrizable.Uniformity
+import Mathlib.Topology.GDelta.MetrizableSpace
+import Mathlib.Topology.Separation.PerfectlyNormal
 
 /-!
 # Generation of the Borel σ-algebra on pseudometrizable spaces by continuous real functions
 
-On a pseudometrizable space `X`, every nonempty closed set `F` is the zero set of the continuous
-distance function `x ↦ Metric.infDist x F`. Consequently, the Borel σ-algebra `borel X` coincides
-with the Baire σ-algebra `⨆ f : C(X, ℝ), MeasurableSpace.comap f inferInstance`, the coarsest
-σ-algebra making all continuous real-valued functions measurable.
+On a pseudometrizable space `X`, every closed set is the zero set of a continuous real-valued
+function (`PerfectlyNormalSpace`). Consequently, the Borel σ-algebra `borel X` coincides with the
+Baire σ-algebra `⨆ f : C(X, ℝ), MeasurableSpace.comap f inferInstance`, the coarsest σ-algebra
+making all continuous real-valued functions measurable.
 
 Pulling back along any continuous map `q : X → Y` from an arbitrary topological space `X` into a
 pseudometrizable space `Y` therefore maps every Borel set of `Y` into the Baire σ-algebra of `X`.
@@ -49,17 +49,11 @@ theorem borel_eq_iSup_comap_continuousMap (X : Type*) [TopologicalSpace X]
   refine le_antisymm ?_ (iSup_le fun f ↦ ?_)
   · rw [borel_eq_generateFrom_isClosed]
     refine MeasurableSpace.generateFrom_le fun F hF ↦ ?_
-    rcases F.eq_empty_or_nonempty with rfl | hne
-    · exact @MeasurableSet.empty X (⨆ f : C(X, ℝ), MeasurableSpace.comap f inferInstance)
-    · -- A nonempty closed set in a pseudometric space is the zero locus of `infDist · F`.
-      let _ : PseudoMetricSpace X := pseudoMetrizableSpacePseudoMetric X
-      let f : C(X, ℝ) := ⟨fun x ↦ Metric.infDist x F, Metric.continuous_infDist_pt F⟩
-      have hFeq : F = f ⁻¹' {0} := by
-        ext x
-        simpa [f] using hF.mem_iff_infDist_zero hne
-      rw [hFeq]
-      exact le_iSup (fun g : C(X, ℝ) ↦ MeasurableSpace.comap g inferInstance) f _
-        ⟨{0}, measurableSet_singleton 0, rfl⟩
+    obtain ⟨f, hFeq, -⟩ :=
+      perfectlyNormalSpace_iff_forall_isClosed_preimage_zero.mp inferInstance F hF
+    rw [hFeq]
+    exact le_iSup (fun g : C(X, ℝ) ↦ MeasurableSpace.comap g inferInstance) f _
+      ⟨{0}, measurableSet_singleton 0, rfl⟩
   · let _ : MeasurableSpace X := borel X
     have : BorelSpace X := ⟨rfl⟩
     exact f.continuous.measurable.comap_le

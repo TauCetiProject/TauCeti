@@ -59,6 +59,38 @@ open scoped Pointwise Topology Uniformity
 
 namespace TauCeti
 
+/-- For an antitone sequence `V : ℕ → Set G` of closed neighbourhoods of `1` with `V 0` compact
+whose intersection is a normal subgroup `K`, the images of `interior (V n)` form a countable basis
+of `𝓝 (1 : G ⧸ K)`. -/
+@[to_additive]
+private theorem isCountablyGenerated_nhds_one_quotient_of_iInter {G : Type*} [Group G]
+    [TopologicalSpace G] [IsTopologicalGroup G] {V : ℕ → Set G} (hV_nhds : ∀ n, V n ∈ 𝓝 (1 : G))
+    (hV_cl : ∀ n, IsClosed (V n)) (hV₀_cp : IsCompact (V 0)) (hV_anti : Antitone V)
+    (K : Subgroup G) [K.Normal] (hK : (K : Set G) = ⋂ n, V n) :
+    (𝓝 (1 : G ⧸ K)).IsCountablyGenerated := by
+  let π : G → G ⧸ K := QuotientGroup.mk
+  have hbasis : (𝓝 (1 : G ⧸ K)).HasBasis (fun _ : ℕ ↦ True) (fun n ↦ π '' interior (V n)) := by
+    refine ⟨fun O ↦ ⟨fun hO ↦ ?_, fun ⟨n, _, hn⟩ ↦ ?_⟩⟩
+    · have hO' : IsOpen (π ⁻¹' interior O) :=
+        isOpen_interior.preimage QuotientGroup.continuous_mk
+      have hdisj : Disjoint (V 0 ∩ (π ⁻¹' interior O)ᶜ) (⋂ n, V n) := by
+        refine disjoint_left.mpr fun x ⟨_, hxO⟩ hxK ↦ hxO ?_
+        have hπx : π x = 1 := (QuotientGroup.eq_one_iff x).mpr (SetLike.mem_coe.mp (hK ▸ hxK))
+        simpa [π, hπx] using mem_interior_iff_mem_nhds.mpr hO
+      obtain ⟨n, hn⟩ := (hV₀_cp.inter_right hO'.isClosed_compl).elim_directed_family_closed
+        V hV_cl hdisj hV_anti.directed_ge
+      refine ⟨n, trivial, ?_⟩
+      rintro _ ⟨x, hx, rfl⟩
+      have hxV : x ∈ V n := interior_subset hx
+      have hxO : x ∈ π ⁻¹' interior O := by
+        by_contra hxno
+        exact hn.le_bot ⟨⟨hV_anti (Nat.zero_le n) hxV, hxno⟩, hxV⟩
+      exact interior_subset hxO
+    · refine mem_of_superset ?_ hn
+      exact (QuotientGroup.isOpenMap_coe (N := K) _ isOpen_interior).mem_nhds
+        ⟨(1 : G), mem_interior_iff_mem_nhds.mpr (hV_nhds n), rfl⟩
+  exact hbasis.isCountablyGenerated
+
 section KakutaniKodaira
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
@@ -131,32 +163,10 @@ private theorem exists_compact_normal_subgroup_nat (U : ℕ → Set G) (hU : ∀
   have hK_cl : IsClosed (K : Set G) := isClosed_iInter hV_cl
   have hK_cp : IsCompact (K : Set G) :=
     hV₀_cp.of_isClosed_subset hK_cl (hV_zero ▸ iInter_subset (fun n ↦ (V n).1) 0)
-  -- The images of `interior (V n)` form a countable basis of `𝓝 (1 : G ⧸ K)`.
-  have hK_cg : (𝓝 (1 : G ⧸ K)).IsCountablyGenerated := by
-    let π : G → G ⧸ K := QuotientGroup.mk
-    have hbasis : (𝓝 (1 : G ⧸ K)).HasBasis (fun _ : ℕ ↦ True)
-        (fun n ↦ π '' interior (V n).1) := by
-      refine ⟨fun O ↦ ⟨fun hO ↦ ?_, fun ⟨n, _, hn⟩ ↦ ?_⟩⟩
-      · have hO' : IsOpen (π ⁻¹' interior O) :=
-          isOpen_interior.preimage QuotientGroup.continuous_mk
-        have hdisj : Disjoint (V₀ ∩ (π ⁻¹' interior O)ᶜ) (⋂ n, (V n).1) := by
-          refine disjoint_left.mpr fun x ⟨_, hxO⟩ hxK ↦ hxO ?_
-          have hπx : π x = 1 := (QuotientGroup.eq_one_iff x).mpr hxK
-          simpa [π, hπx] using mem_interior_iff_mem_nhds.mpr hO
-        obtain ⟨n, hn⟩ := (hV₀_cp.inter_right hO'.isClosed_compl).elim_directed_family_closed
-          (fun n ↦ (V n).1) hV_cl hdisj hV_anti.directed_ge
-        refine ⟨n, trivial, ?_⟩
-        rintro _ ⟨x, hx, rfl⟩
-        have hxV : x ∈ (V n).1 := interior_subset hx
-        have hxO : x ∈ π ⁻¹' interior O := by
-          by_contra hxno
-          exact hn.le_bot ⟨⟨hV_zero ▸ hV_anti (Nat.zero_le n) hxV, hxno⟩, hxV⟩
-        exact interior_subset hxO
-      · refine mem_of_superset ?_ hn
-        exact (QuotientGroup.isOpenMap_coe (N := K) _ isOpen_interior).mem_nhds
-          ⟨(1 : G), mem_interior_iff_mem_nhds.mpr (V n).2, rfl⟩
-    exact hbasis.isCountablyGenerated
-  exact ⟨K, hK_norm, hK_cp, hK_cl, iInter_mono hV_sub, hK_cg⟩
+  have : K.Normal := hK_norm
+  exact ⟨K, hK_norm, hK_cp, hK_cl, iInter_mono hV_sub,
+    isCountablyGenerated_nhds_one_quotient_of_iInter (fun n ↦ (V n).2) hV_cl
+      (hV_zero.symm ▸ hV₀_cp) hV_anti K rfl⟩
 
 /-- **The Kakutani–Kodaira theorem.** In a σ-compact weakly locally compact topological group `G`,
 for any countable family `U` of neighbourhoods of `1`, there exists a closed compact normal
