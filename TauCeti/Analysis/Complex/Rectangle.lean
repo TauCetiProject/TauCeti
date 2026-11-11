@@ -21,6 +21,8 @@ rectangles.
   vertical segments as `×ℂ` products.
 * `Complex.frontier_rectangle`, `Complex.interior_rectangle`: the frontier of a rectangle is the
   union of its four edges, and its interior is the open rectangle.
+* `Complex.mem_rectangle_iff`: membership in a rectangle given by its lower left and upper right
+  corners.
 * `Complex.mem_Ioo_reProdIm_of_mem_rectangle`: a point of the rectangle off its frontier lies in
   the open rectangle.
 * `Complex.isClosed_rectangle`, `Complex.isCompact_rectangle`, `Complex.convex_rectangle`.
@@ -82,6 +84,12 @@ theorem frontier_rectangle (z w : ℂ) :
 theorem interior_rectangle (hre : z.re ≤ w.re) (him : z.im ≤ w.im) :
     interior (Rectangle z w) = Ioo z.re w.re ×ℂ Ioo z.im w.im := by
   rw [Rectangle, interior_reProdIm, uIcc_of_le hre, uIcc_of_le him, interior_Icc, interior_Icc]
+
+/-- When `z` is the lower left corner, membership in the rectangle with opposite corners `z` and
+`w` is a pair of bounds on the real and imaginary parts. -/
+theorem mem_rectangle_iff (hre : z.re ≤ w.re) (him : z.im ≤ w.im) {s : ℂ} :
+    s ∈ Rectangle z w ↔ (z.re ≤ s.re ∧ s.re ≤ w.re) ∧ (z.im ≤ s.im ∧ s.im ≤ w.im) := by
+  rw [Rectangle, mem_reProdIm, uIcc_of_le hre, uIcc_of_le him, mem_Icc, mem_Icc]
 
 /-- A point of the closed rectangle that is not on its frontier lies in the open rectangle. -/
 theorem mem_Ioo_reProdIm_of_mem_rectangle (hre : z.re ≤ w.re) (him : z.im ≤ w.im)

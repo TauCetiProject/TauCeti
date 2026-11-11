@@ -83,10 +83,6 @@ private theorem meromorphicOrderAt_f {s : ℂ} (ha : s ≠ zeroAbove) (hb : s �
   · rfl
   simp [f, sub_eq_zero, ha, hb]
 
-private theorem mem_rectangle_iff {s z w : ℂ} (hre : z.re ≤ w.re) (him : z.im ≤ w.im) :
-    s ∈ Rectangle z w ↔ (z.re ≤ s.re ∧ s.re ≤ w.re) ∧ (z.im ≤ s.im ∧ s.im ≤ w.im) := by
-  rw [Rectangle, mem_reProdIm, uIcc_of_le hre, uIcc_of_le him, mem_Icc, mem_Icc]
-
 /-- A function with no zero on the frontier of a rectangle has order `0` there; a zero of `f`
 avoids the frontier when it lies in the open rectangle or outside the closed one. -/
 private theorem frontier_order {z w : ℂ} (hre : z.re < w.re) (him : z.im < w.im)

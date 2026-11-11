@@ -158,13 +158,15 @@ theorem sum_zeroCount_le {Rs : List (Set 𝕜)} (hdisj : Rs.Pairwise Disjoint)
     · exact subset_sdiff.2 ⟨hsub T (List.mem_cons_of_mem _ hT), (hdisj.1 T hT).symm⟩
     · exact hS.subset fun z hz ↦ ⟨hz.1.1, hz.2⟩
 
-/-- If the divisor vanishes on the frontier of a closed region, then the region and its interior
-have the same zero count. -/
-theorem zeroCount_interior (hR : IsClosed R)
-    (hfin : (R ∩ Function.support (fun z ↦ (MeromorphicOn.divisor f U z).toNat)).Finite)
-    (hfr : ∀ z ∈ frontier R, MeromorphicOn.divisor f U z = 0) :
+/-- If the divisor vanishes on the frontier of a region, then the region and its interior have
+the same zero count. -/
+theorem zeroCount_interior (hfr : ∀ z ∈ frontier R, MeromorphicOn.divisor f U z = 0) :
     zeroCount f U (interior R) = zeroCount f U R := by
-  refine (zeroCount_eq_iff_of_subset interior_subset hfin).2 fun z hz ↦ ?_
-  rw [hfr z (hR.frontier_eq ▸ hz), Int.toNat_zero]
+  have hsupp : interior R ∩ Function.support (fun z ↦ (MeromorphicOn.divisor f U z).toNat) =
+      R ∩ Function.support (fun z ↦ (MeromorphicOn.divisor f U z).toNat) := by
+    refine subset_antisymm (inter_subset_inter_left _ interior_subset) ?_
+    refine fun z ⟨hz, hz₀⟩ ↦ ⟨by_contra fun hint ↦ hz₀ ?_, hz₀⟩
+    simp [hfr z ⟨subset_closure hz, hint⟩]
+  rw [zeroCount_def, zeroCount_def, ← finsum_mem_inter_support, hsupp, finsum_mem_inter_support]
 
 end TauCeti

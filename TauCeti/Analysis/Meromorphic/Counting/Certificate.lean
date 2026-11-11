@@ -86,7 +86,7 @@ private theorem finite_support {S : Set ℂ} (hS : S ⊆ Rectangle z w) :
 private theorem zeroCount_interior_of_mem {B : ℂ × ℂ} (hB : B ∈ Bs) :
     zeroCount f U (interior (Rectangle B.1 B.2)) = zeroCount f U (Rectangle B.1 B.2) := by
   have hBR := h.subset_rectangle B hB
-  refine zeroCount_interior (isClosed_rectangle _ _) (h.finite_support hBR) fun s hs ↦ ?_
+  refine zeroCount_interior fun s hs ↦ ?_
   have hsB : s ∈ Rectangle B.1 B.2 := (isClosed_rectangle _ _).frontier_subset hs
   rw [h.meromorphicOn.divisor_apply (h.rectangle_subset (hBR hsB)),
     h.meromorphicOrderAt_frontier_of_mem B hB s hs, WithTop.untop₀_zero]
