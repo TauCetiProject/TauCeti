@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Endomorphism
+public import Mathlib.CategoryTheory.Monoidal.CoherenceLemmas
 public import Mathlib.CategoryTheory.Monoidal.NaturalTransformation
 
 /-!
@@ -24,9 +25,9 @@ functor of a monoidal category, often written `Aut_⊗(𝟭_C)`, is commutative,
 centre `CategoryTheory.CatCenter C` of all natural endomorphisms of `𝟭 C`. It is the group
 acting on the pivotal structures of a rigid monoidal category.
 
-A natural transformation from a lax monoidal functor to a monoidal functor that is an isomorphism
-at the tensor unit and compatible with the tensorators is already monoidal: compatibility with
-the unit comparisons follows (`CategoryTheory.NatTrans.IsMonoidal.of_tensor`).
+A natural transformation between lax monoidal functors that is an isomorphism at the tensor unit
+and compatible with the tensorators is already monoidal: compatibility with the unit comparisons
+follows (`CategoryTheory.NatTrans.IsMonoidal.of_tensor`).
 -/
 
 public section
@@ -90,41 +91,44 @@ open MonoidalCategory Functor.LaxMonoidal
 variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C]
 variable {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D]
 
-/-- **The unit condition follows from the tensor condition.** A natural transformation `τ` from a
-lax monoidal functor to a monoidal functor that is an isomorphism at the tensor unit and
-compatible with the tensorators is monoidal. -/
-theorem of_tensor {F G : C ⥤ D} [F.LaxMonoidal] [G.Monoidal] (τ : F ⟶ G)
+/-- **The unit condition follows from the tensor condition.** A natural transformation `τ` between
+lax monoidal functors that is an isomorphism at the tensor unit and compatible with the
+tensorators is monoidal. -/
+theorem of_tensor {F G : C ⥤ D} [F.LaxMonoidal] [G.LaxMonoidal] (τ : F ⟶ G)
     [IsIso (τ.app (𝟙_ C))]
     (h : ∀ X Y, μ F X Y ≫ τ.app (X ⊗ Y) = (τ.app X ⊗ₘ τ.app Y) ≫ μ G X Y) :
     τ.IsMonoidal where
   unit := by
-    -- Left unitality of both functors at `𝟙_ C` turns the tensor condition into
-    -- `(ε F ≫ τ.app (𝟙_ C)) ▷ G.obj (𝟙_ C) = ε G ▷ G.obj (𝟙_ C)`, and whiskering by
-    -- `G.obj (𝟙_ C) ≅ 𝟙_ D` is faithful.
-    have h₁ : (ε F ≫ τ.app (𝟙_ C)) ▷ G.obj (𝟙_ C) = ε G ▷ G.obj (𝟙_ C) := by
-      have key : 𝟙_ D ◁ τ.app (𝟙_ C) ≫ (ε F ≫ τ.app (𝟙_ C)) ▷ G.obj (𝟙_ C) ≫
-          μ G (𝟙_ C) (𝟙_ C) ≫ G.map (λ_ (𝟙_ C)).hom =
-          𝟙_ D ◁ τ.app (𝟙_ C) ≫ ε G ▷ G.obj (𝟙_ C) ≫ μ G (𝟙_ C) (𝟙_ C) ≫
-            G.map (λ_ (𝟙_ C)).hom := by
-        have e : 𝟙_ D ◁ τ.app (𝟙_ C) ≫ (ε F ≫ τ.app (𝟙_ C)) ▷ G.obj (𝟙_ C) =
-            ε F ▷ F.obj (𝟙_ C) ≫ (τ.app (𝟙_ C) ⊗ₘ τ.app (𝟙_ C)) := by
-          rw [comp_whiskerRight, ← Category.assoc, whisker_exchange, Category.assoc,
-            ← tensorHom_def']
-        calc 𝟙_ D ◁ τ.app (𝟙_ C) ≫ (ε F ≫ τ.app (𝟙_ C)) ▷ G.obj (𝟙_ C) ≫
-              μ G (𝟙_ C) (𝟙_ C) ≫ G.map (λ_ (𝟙_ C)).hom
-            = ε F ▷ F.obj (𝟙_ C) ≫ (τ.app (𝟙_ C) ⊗ₘ τ.app (𝟙_ C)) ≫ μ G (𝟙_ C) (𝟙_ C) ≫
-                G.map (λ_ (𝟙_ C)).hom := by rw [← Category.assoc, e, Category.assoc]
-          _ = ε F ▷ F.obj (𝟙_ C) ≫ μ F (𝟙_ C) (𝟙_ C) ≫ F.map (λ_ (𝟙_ C)).hom ≫
-                τ.app (𝟙_ C) := by
-              rw [← reassoc_of% h, τ.naturality]
-          _ = (λ_ (F.obj (𝟙_ C))).hom ≫ τ.app (𝟙_ C) := by rw [← left_unitality_assoc]
-          _ = 𝟙_ D ◁ τ.app (𝟙_ C) ≫ (λ_ (G.obj (𝟙_ C))).hom := by rw [leftUnitor_naturality]
-          _ = 𝟙_ D ◁ τ.app (𝟙_ C) ≫ ε G ▷ G.obj (𝟙_ C) ≫ μ G (𝟙_ C) (𝟙_ C) ≫
-                G.map (λ_ (𝟙_ C)).hom := by rw [left_unitality]
-      simpa only [cancel_epi, cancel_mono] using key
-    have h₂ : (ε F ≫ τ.app (𝟙_ C)) ▷ 𝟙_ D = ε G ▷ 𝟙_ D := by
-      rw [← cancel_mono (G.obj (𝟙_ C) ◁ ε G), ← whisker_exchange, h₁, whisker_exchange]
-    simpa only [whiskerRight_id, cancel_epi, cancel_mono] using h₂
+    -- `G.obj (𝟙_ C)` is a monoid in `D` with multiplication
+    -- `μ G (𝟙_ C) (𝟙_ C) ≫ G.map (λ_ (𝟙_ C)).hom` and unit `ε G`. Transporting the left
+    -- unitality of `F` along the isomorphism `τ.app (𝟙_ C)` makes `ε F ≫ τ.app (𝟙_ C)` a left
+    -- unit for this multiplication (`hl`), while `ε G` is a right unit (`hr`) because the two
+    -- unitors of `𝟙_ C` agree; a left unit and a right unit of a multiplication are equal.
+    have hl : (ε F ≫ τ.app (𝟙_ C)) ▷ G.obj (𝟙_ C) ≫ μ G (𝟙_ C) (𝟙_ C) ≫
+        G.map (λ_ (𝟙_ C)).hom = (λ_ (G.obj (𝟙_ C))).hom := by
+      rw [← cancel_epi (𝟙_ D ◁ τ.app (𝟙_ C))]
+      have e : 𝟙_ D ◁ τ.app (𝟙_ C) ≫ (ε F ≫ τ.app (𝟙_ C)) ▷ G.obj (𝟙_ C) =
+          ε F ▷ F.obj (𝟙_ C) ≫ (τ.app (𝟙_ C) ⊗ₘ τ.app (𝟙_ C)) := by
+        rw [comp_whiskerRight, ← Category.assoc, whisker_exchange, Category.assoc,
+          ← tensorHom_def']
+      calc 𝟙_ D ◁ τ.app (𝟙_ C) ≫ (ε F ≫ τ.app (𝟙_ C)) ▷ G.obj (𝟙_ C) ≫
+            μ G (𝟙_ C) (𝟙_ C) ≫ G.map (λ_ (𝟙_ C)).hom
+          = ε F ▷ F.obj (𝟙_ C) ≫ (τ.app (𝟙_ C) ⊗ₘ τ.app (𝟙_ C)) ≫ μ G (𝟙_ C) (𝟙_ C) ≫
+              G.map (λ_ (𝟙_ C)).hom := by rw [← Category.assoc, e, Category.assoc]
+        _ = ε F ▷ F.obj (𝟙_ C) ≫ μ F (𝟙_ C) (𝟙_ C) ≫ F.map (λ_ (𝟙_ C)).hom ≫
+              τ.app (𝟙_ C) := by
+            rw [← reassoc_of% h, τ.naturality]
+        _ = (λ_ (F.obj (𝟙_ C))).hom ≫ τ.app (𝟙_ C) := by rw [← left_unitality_assoc]
+        _ = 𝟙_ D ◁ τ.app (𝟙_ C) ≫ (λ_ (G.obj (𝟙_ C))).hom := by rw [leftUnitor_naturality]
+    have hr : G.obj (𝟙_ C) ◁ ε G ≫ μ G (𝟙_ C) (𝟙_ C) ≫ G.map (λ_ (𝟙_ C)).hom =
+        (ρ_ (G.obj (𝟙_ C))).hom := by
+      rw [unitors_equal, right_unitality]
+    calc ε F ≫ τ.app (𝟙_ C)
+        = (λ_ (𝟙_ D)).inv ≫ (ε F ≫ τ.app (𝟙_ C)) ▷ 𝟙_ D ≫ (ρ_ (G.obj (𝟙_ C))).hom := by
+          rw [rightUnitor_naturality, unitors_inv_equal, Iso.inv_hom_id_assoc]
+      _ = (λ_ (𝟙_ D)).inv ≫ 𝟙_ D ◁ ε G ≫ (λ_ (G.obj (𝟙_ C))).hom := by
+          rw [← hr, ← whisker_exchange_assoc, hl]
+      _ = ε G := by rw [leftUnitor_naturality, Iso.inv_hom_id_assoc]
   tensor := h
 
 end CategoryTheory.NatTrans.IsMonoidal
