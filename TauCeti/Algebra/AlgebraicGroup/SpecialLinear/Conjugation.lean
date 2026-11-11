@@ -15,10 +15,9 @@ Construct the coordinate morphism of `SLₙ → PGLₙ` by restricting the gener
 conjugation morphism. In coordinates, it sends the generic matrix of `PGLₙ ⊆ GL_{n²}` to
 the conjugation matrix of the generic matrix of `SLₙ` and its inverse. Over every commutative
 value algebra it sends a determinant-one matrix to its inner automorphism of the matrix
-algebra. Over a field, for positive `n`, its
-scheme-theoretic kernel is the represented centre of `SLₙ`, hence `μₙ`. This identifies
-the whole kernel scheme, including its infinitesimal structure when the characteristic
-divides `n`.
+algebra. Over a field, its scheme-theoretic kernel is the represented centre of `SLₙ`, which
+for positive `n` is `μₙ`. This identifies the whole kernel scheme, including its infinitesimal
+structure when the characteristic divides `n`.
 
 The morphism is surjective on algebraically closed field-valued points. That it is a central
 isogeny over a field is proved in `TauCeti.Algebra.AlgebraicGroup.SpecialLinear.CentralIsogeny`.
@@ -111,7 +110,7 @@ theorem mem_quotientPointsSubgroup_kernelHopfIdeal_conjugationMap_iff
 
 /-- Over a field, the kernel of `SLₙ → PGLₙ` is the represented centre of `SLₙ`.
 The equality is of defining Hopf ideals, so also detects nonreduced central subgroup schemes. -/
-theorem kernelHopfIdeal_conjugationMap {k : Type u} [Field k] (hn : 0 < n) :
+theorem kernelHopfIdeal_conjugationMap {k : Type u} [Field k] :
     CommHopfAlgCat.kernelHopfIdeal (conjugationMap n k) =
       CommHopfAlgCat.centerDefiningIdeal (coordinateHopfAlgebra k n) := by
   -- Follow the universal-point kernel argument for `ProjectiveGeneralLinear.conjugationMap`.
@@ -122,7 +121,7 @@ theorem kernelHopfIdeal_conjugationMap {k : Type u} [Field k] (hn : 0 < n) :
         g ∈ CommHopfAlgCat.centerPointsSubgroup _ A := by
     intro A g
     rw [mem_quotientPointsSubgroup_kernelHopfIdeal_conjugationMap_iff,
-      ← map_centerPointsSubgroup_pointsMulEquiv_eq_center n hn A]
+      ← map_centerPointsSubgroup_pointsMulEquiv_eq_center n A]
     exact ⟨fun ⟨g', hg', h⟩ => (pointsMulEquiv (R := k) n).injective h ▸ hg',
       fun hg => Subgroup.mem_map_of_mem _ hg⟩
   apply le_antisymm
