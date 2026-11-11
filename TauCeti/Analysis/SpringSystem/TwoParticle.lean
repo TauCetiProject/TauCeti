@@ -689,12 +689,6 @@ theorem isotypicProjector_mul_self (χ : Multiplicative (ZMod 2) × Multiplicati
     isotypicProjector χ * isotypicProjector χ = isotypicProjector χ :=
   (isIdempotentElem_charIdempotent χ.toHomUnits).map symmetryRep.asAlgebraHom
 
-/-- The isotypic projectors are idempotent elements of `Module.End ℝ (Fin 4 → ℝ)`. -/
-theorem isIdempotentElem_isotypicProjector
-    (χ : Multiplicative (ZMod 2) × Multiplicative (ZMod 2) →* ℝ) :
-    IsIdempotentElem (isotypicProjector χ) :=
-  isotypicProjector_mul_self χ
-
 /-- **The isotypic projectors of distinct characters annihilate each other.** -/
 @[simp]
 theorem isotypicProjector_mul_isotypicProjector_of_ne
