@@ -144,6 +144,7 @@ theorem closure_simpleRootPair_le_normalizer_posRoots_diff_singleton (hs : t.IsS
     rw [← map_range_chevalleyRootSubgroup_conj_kostantWeylGL ρ M hM hnil i
       (t.simpleIndex ht i) A]
     rintro g ⟨x, hx', rfl⟩
+    simp only [MonoidHom.coe_ofClass, MulAut.conj_apply]
     exact N.mul_mem (N.mul_mem hn (hx hx')) (N.inv_mem hn)
   exact (Subgroup.closure_le _).mpr (Set.union_subset hx hy)
 
