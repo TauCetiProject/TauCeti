@@ -12,7 +12,7 @@ public import TauCeti.Analysis.Calculus.InverseFunctionTheorem.Family
 # Families of adapted charts
 
 Let `γ : V → W` parametrize a totally real submanifold for a structure `J₀`, as in
-`TauCeti.exists_adaptedChart`, and let `J i → J₀` be structures converging in `C^ℓ` near the
+`TauCeti.exists_adaptedChart`, and let `J i → J₀` be structures converging in `C^ℓ` along the
 submanifold, with `1 ≤ ℓ`. The adapted normal extensions `Φ i = adaptedNormalExtension γ (J i)`
 then converge to `Φ₀ = adaptedNormalExtension γ J₀` in `C^ℓ`
 (`TauCeti.tendstoContDiffAt_adaptedNormalExtension`). By the inverse function theorem for
@@ -112,7 +112,7 @@ theorem tendstoContDiffAt_adaptedNormalExtension (hU : IsOpen U) (hΩ : IsOpen �
 
 /-- **Adapted charts converging in `C^ℓ`.** Let `γ` be `C^(ℓ+1)` on an open `U`, with `1 ≤ ℓ`,
 mapping `U` into an open `Ω`, and let `J₀` and eventually all `J i` be `C^ℓ` on `Ω` with
-`J i → J₀` in `C^ℓ` at every point of `Ω`. If at `x₀ ∈ U` the tangent map `Dγ x₀` is injective
+`J i → J₀` in `C^ℓ` at every point of `γ (U)`. If at `x₀ ∈ U` the tangent map `Dγ x₀` is injective
 with image maximal totally real for `J₀ (γ x₀)`, and `J₀ (γ x₀)² = -1`, then the adapted
 extensions of `J₀` and, eventually along `l`, of all `J i` restrict to partial homeomorphisms
 with a common source containing `(x₀, 0)` inside `U × V`, whose inverses are `C^ℓ` on their
@@ -122,7 +122,7 @@ theorem exists_adaptedChart_family [CompleteSpace V] [CompleteSpace W] (hU : IsO
     (hΩ : IsOpen Ω) {x₀ : V} (hx₀ : x₀ ∈ U) (hℓ : 1 ≤ ℓ) (hγ : ContDiffOn 𝕜 (ℓ + 1) γ U)
     (hγΩ : MapsTo γ U Ω)
     (hJ : ∀ᶠ i in l, ContDiffOn 𝕜 ℓ (J i) Ω) (hJ₀ : ContDiffOn 𝕜 ℓ J₀ Ω)
-    (hconv : ∀ z ∈ Ω, TendstoContDiffAt 𝕜 ℓ J J₀ l z)
+    (hconv : ∀ x ∈ U, TendstoContDiffAt 𝕜 ℓ J J₀ l (γ x))
     (hsq : ∀ v, J₀ (γ x₀) (J₀ (γ x₀) v) = -v) (hinj : Function.Injective (fderiv 𝕜 γ x₀))
     (htr : IsMaximalTotallyReal (J₀ (γ x₀)).toLinearMap (fderiv 𝕜 γ x₀).range) :
     ∃ (e₀ : OpenPartialHomeomorph (V × V) W) (e : ι → OpenPartialHomeomorph (V × V) W)
@@ -143,7 +143,7 @@ theorem exists_adaptedChart_family [CompleteSpace V] [CompleteSpace W] (hU : IsO
       (by filter_upwards [hJ] with i hi using contDiffOn_adaptedNormalExtension hU hγ hi hγΩ)
       (contDiffOn_adaptedNormalExtension hU hγ hJ₀ hγΩ)
       (fun p hp ↦ tendstoContDiffAt_adaptedNormalExtension hU hΩ hγ hγΩ hJ hJ₀ hp.1
-        (hconv _ (hγΩ hp.1)))
+        (hconv _ hp.1))
       hinv
   rw [adaptedNormalExtension_zero] at hx₀T
   refine ⟨e₀, e, T ∩ Ω, hT.inter hΩ, ⟨hx₀T, hγΩ hx₀⟩, inter_subset_right, he₀, hx₀s, hs,
