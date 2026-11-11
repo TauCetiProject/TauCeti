@@ -76,10 +76,14 @@ theorem isInvertible_prod_comm : (A.prod q).IsInvertible ↔ (q.prod A).IsInvert
     ext <;> simp
   rw [this, isInvertible_equiv_comp]
 
+/-- The first component of an invertible pair is surjective. -/
+theorem surjective_of_isInvertible_prod (h : (A.prod q).IsInvertible) : Function.Surjective A :=
+  fun y ↦ (h.surjective (y, 0)).imp fun _ hx ↦ congrArg Prod.fst hx
+
 /-- The section of `q` with values in the kernel of `A`: it sends `v : G` to the unique `x : M`
 with `A x = 0` and `q x = v`.
 
-This is meaningful when the pair `A.prod q` is invertible, which every lemma below assumes;
+This is meaningful when the pair `A.prod q` is invertible, which most lemmas below assume;
 outside that case Mathlib's `ContinuousLinearMap.inverse` returns `0` and so does this map. -/
 noncomputable def kerSection (A : M →L[R] F) (q : M →L[R] G) : G →L[R] M :=
   (A.prod q).inverse ∘L .inr R F G
@@ -97,14 +101,17 @@ theorem prod_apply_kerSection (h : (A.prod q).IsInvertible) (v : G) :
   obtain ⟨e, he⟩ := h
   simp [kerSection, ← he]
 
-/-- The section takes values in the kernel of `A`. -/
+/-- The section takes values in the kernel of `A`. Outside the invertible case the section is
+`0`. -/
 @[simp]
-theorem apply_kerSection (h : (A.prod q).IsInvertible) (v : G) : A (A.kerSection q v) = 0 :=
-  congrArg Prod.fst (prod_apply_kerSection h v)
+theorem apply_kerSection (v : G) : A (A.kerSection q v) = 0 := by
+  by_cases h : (A.prod q).IsInvertible
+  · exact congrArg Prod.fst (prod_apply_kerSection h v)
+  · simp [kerSection, inverse_of_not_isInvertible h]
 
 /-- The `Submodule.mem` form of `ContinuousLinearMap.apply_kerSection`. -/
-theorem kerSection_mem_ker (h : (A.prod q).IsInvertible) (v : G) : A.kerSection q v ∈ A.ker :=
-  apply_kerSection h v
+theorem kerSection_mem_ker (v : G) : A.kerSection q v ∈ A.ker :=
+  apply_kerSection v
 
 /-- The section is a right inverse of `q`. -/
 @[simp]
@@ -143,14 +150,14 @@ theorem kerSection_injective (h : (A.prod q).IsInvertible) :
 theorem range_kerSection (h : (A.prod q).IsInvertible) : (A.kerSection q).range = A.ker := by
   refine le_antisymm ?_ fun x hx ↦ ⟨q x, kerSection_apply_of_mem_ker h hx⟩
   rintro _ ⟨v, rfl⟩
-  exact kerSection_mem_ker h v
+  exact kerSection_mem_ker v
 
 /-- **An invertible pair identifies the kernel of its first component with the codomain of its
 second.** The isomorphism is the restriction of `q`; its inverse is
 `ContinuousLinearMap.kerSection`. -/
 noncomputable def kerEquivOfProd (A : M →L[R] F) (q : M →L[R] G)
     (h : (A.prod q).IsInvertible) : G ≃L[R] ↥A.ker :=
-  ContinuousLinearEquiv.equivOfInverse ((A.kerSection q).codRestrict A.ker (kerSection_mem_ker h))
+  ContinuousLinearEquiv.equivOfInverse ((A.kerSection q).codRestrict A.ker kerSection_mem_ker)
     (q ∘L A.ker.subtypeL) (apply_kerSection_right h) fun x ↦
       Subtype.ext (kerSection_apply_of_mem_ker h x.2)
 
@@ -165,6 +172,12 @@ theorem coe_kerEquivOfProd_apply (h : (A.prod q).IsInvertible) (v : G) :
 theorem kerEquivOfProd_symm_apply (h : (A.prod q).IsInvertible) (x : ↥A.ker) :
     (kerEquivOfProd A q h).symm x = q x :=
   (rfl)
+
+/-- The kernel of the first component of an invertible pair is a finite module whenever the
+codomain of the second component is. -/
+theorem finite_ker_of_isInvertible_prod [Module.Finite R G] (h : (A.prod q).IsInvertible) :
+    Module.Finite R A.ker :=
+  Module.Finite.equiv (kerEquivOfProd A q h).toLinearEquiv
 
 section Projections
 

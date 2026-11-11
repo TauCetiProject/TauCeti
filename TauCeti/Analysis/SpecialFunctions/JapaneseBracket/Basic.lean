@@ -49,6 +49,8 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
   Japanese bracket, `⟨x⟩ ^ m ‖x‖ ≤ ⟨x⟩ ^ (m + 1)`.
 * `TauCeti.integrable_rpow_neg_sq_add_norm_sq`: the rescaled bracket
   `x ↦ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2)`, `c ≠ 0`, is integrable for every additive Haar measure.
+* `TauCeti.integrable_one_add_norm_sq_rpow_neg_succ_div_two`: on `ℝⁿ` the weight
+  `x ↦ (1 + ‖x‖ ^ 2) ^ (-(n + 1) / 2)` is integrable.
 * `TauCeti.integrable_norm_rpow_mul_rpow_neg_one_add_norm_sq`,
   `TauCeti.integral_norm_rpow_mul_rpow_neg_one_add_norm_sq`: integrability and value of the
   radial moments of the Japanese bracket, for every additive Haar measure.
@@ -120,6 +122,13 @@ theorem integrable_norm_rpow_mul_rpow_neg_one_add_norm_sq (μ : Measure V) [μ.I
     ‖x‖ ^ p * (1 + ‖x‖ ^ 2) ^ (-r / 2)
         ≤ (1 + ‖x‖ ^ 2) ^ (p / 2) * (1 + ‖x‖ ^ 2) ^ (-r / 2) := by gcongr
     _ = (1 + ‖x‖ ^ 2) ^ (-(r - p) / 2) := by rw [← Real.rpow_add hA, hexp]
+
+/-- On `ℝⁿ` the Japanese bracket weight `⟨x⟩ ^ (-(n + 1))` is integrable for every additive Haar
+measure, its decay exponent exceeding the dimension by one. -/
+theorem integrable_one_add_norm_sq_rpow_neg_succ_div_two {n : ℕ}
+    {μ : Measure (EuclideanSpace ℝ (Fin n))} [μ.IsAddHaarMeasure] :
+    Integrable (fun x : EuclideanSpace ℝ (Fin n) ↦ (1 + ‖x‖ ^ 2) ^ (-((n : ℝ) + 1) / 2)) μ :=
+  integrable_rpow_neg_one_add_norm_sq (by rw [finrank_euclideanSpace_fin]; linarith)
 
 end Integrability
 

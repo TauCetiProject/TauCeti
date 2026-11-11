@@ -94,10 +94,9 @@ namespace ContinuousLinearMap
 
 section Ring
 
-variable {R : Type w} [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R] [CompleteSpace R]
+variable {R : Type w} [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
   [TauCeti.NormedRing.IsTate R] (v : AddValuation R (WithTop ℝ))
 
-omit [NormOneClass R] in
 /-- Scaling a row-compact endomorphism by a scalar `a` of finite valuation shifts every slope of
 its Fredholm polygon by `v a`, preserving multiplicities. -/
 theorem IsPrCompact.newtonSlopeMultiplicity_charPowerSeries_smul {M : Type u}
@@ -107,7 +106,6 @@ theorem IsPrCompact.newtonSlopeMultiplicity_charPowerSeries_smul {M : Type u}
       u.charPowerSeries.newtonSlopeMultiplicity v σ := by
   rw [hu.charPowerSeries_smul a, PowerSeries.newtonSlopeMultiplicity_rescale _ ha]
 
-omit [NormOneClass R] in
 /-- On a finitely generated module with property (Pr), the multiplicity of a slope in the
 Fredholm polygon is its multiplicity in the finite slope multiset of the finite projective
 determinant `det (1 - X u)`. -/
