@@ -46,9 +46,9 @@ The converse inclusion, that every broken trajectory is a limit of unbroken ones
 `IsMorseSmale.morseBrokenTrajectoryPairs_subset_closure`. Each broken trajectory moreover has a
 neighbourhood homeomorphic to a half-open interval, by
 `IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet`. Together with
-`TauCeti.even_ncard_of_forall_exists_homeomorph_Ico` this would show that the broken trajectories
-are even in number, which is `∂ ∘ ∂ = 0` by
-`IsMorseSmale.morseBoundary_comp_morseBoundary_eq_zero_iff`.
+`TauCeti.even_ncard_of_forall_exists_homeomorph_Ico` this would show that the broken trajectory
+pairs are even in number, which is `∂ ∘ ∂ = 0` by
+`IsMorseSmale.morseBoundary_comp_morseBoundary_eq_zero_iff_even_ncard_morseBrokenTrajectoryPairs`.
 
 ## Main declarations
 
@@ -65,6 +65,9 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   compactified space.
 * `IsMorseSmale.exists_nhds_homeomorph_of_mem_morseTrajectoryPairs`: the compactified space is
   locally homeomorphic to open subsets of `ℝ` at unbroken pairs.
+* `IsMorseSmale.morseBoundary_comp_morseBoundary_eq_zero_iff_even_ncard_morseBrokenTrajectoryPairs`:
+  `∂ ∘ ∂ = 0` exactly when there is an even number of broken pairs on every pair of separating
+  levels.
 
 ## References
 
@@ -268,20 +271,17 @@ variable {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 
 include h hf in
 /-- **Finitely many broken trajectories.** Under the Morse–Smale condition, the pairs of points of
 broken index-two trajectories on two levels form a finite set. -/
-theorem finite_morseBrokenTrajectoryPairs {p r : M} (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0)
-    (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0) (c₁ c₂ : ℝ) :
+theorem finite_morseBrokenTrajectoryPairs {p r : M} (c₁ c₂ : ℝ) :
     (hX.morseBrokenTrajectoryPairs p r c₁ c₂).Finite := by
-  have hcrit {q : M} : q ∈ criticalPoints 𝓘(ℝ, E) f ↔ mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0 :=
-    mem_criticalPoints_iff_mfderiv_eq_zero
   -- Sort the broken trajectories by their intermediate critical point `q`.
   refine ((hf.finite_criticalPoints.inter_of_left {q |
       manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1 ∧
         manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1}).biUnion
     fun q hq ↦
-      (h.finite_unstableSet_inter_stableSet_inter_level hf hp (hcrit.1 hq.1) hq.2.1 c₁).prod
-        (h.finite_unstableSet_inter_stableSet_inter_level hf (hcrit.1 hq.1) hr hq.2.2 c₂)).subset ?_
+      (h.finite_unstableSet_inter_stableSet_inter_level hf hq.2.1 c₁).prod
+        (h.finite_unstableSet_inter_stableSet_inter_level hf hq.2.2 c₂)).subset ?_
   rintro w ⟨q, hq, hpq, hqr, hy, hyc, hz, hzc⟩
-  exact mem_biUnion ⟨hcrit.2 hq, hpq, hqr⟩ ⟨⟨hy, hyc⟩, hz, hzc⟩
+  exact mem_biUnion ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 hq, hpq, hqr⟩ ⟨⟨hy, hyc⟩, hz, hzc⟩
 
 include h hf in
 /-- **The limits of trajectories are trajectories or broken trajectories.** Let `p` and `r` be
@@ -290,8 +290,7 @@ critical value strictly between `f r` and `f p` from `f r` and `f p`. Then every
 points of trajectories from `p` to `r` on the levels `c₁` and `c₂` is the pair of points of a
 trajectory from `p` to `r`, or of a trajectory broken once at a critical point of intermediate
 index. -/
-theorem closure_morseTrajectoryPairs_subset {p r : M} (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0)
-    (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0)
+theorem closure_morseTrajectoryPairs_subset {p r : M}
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f r + 2) {c₁ c₂ : ℝ}
     (hr₂ : f r < c₂) (h₂₁ : c₂ < c₁) (h₁p : c₁ < f p)
     (hgap : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f, f x ∈ Ioo (f r) (f p) → f x ∈ Ioo c₂ c₁) :
@@ -309,7 +308,7 @@ theorem closure_morseTrajectoryPairs_subset {p r : M} (hp : mfderiv 𝓘(ℝ, E)
     have := hgap y (mem_criticalPoints_iff_mfderiv_eq_zero.2 hy0) (hy ▸ ⟨hr₂.trans h₂₁, h₁p⟩)
     exact (hy ▸ this).2.false
   obtain ⟨n, y, hn, hyc, hyv, hcases⟩ :=
-    h.exists_subseq_unbroken_or_broken_of_manifoldMorseIndex_eq_add_two hf hp hr hind hreg
+    h.exists_subseq_unbroken_or_broken_of_manifoldMorseIndex_eq_add_two hf hind hreg
       (fun k ↦ (v k).1) fun k ↦ ⟨hvpr k, hv₁ k⟩
   obtain rfl : y = w.1 := tendsto_nhds_unique hyv (hv₁w.comp hn.tendsto_atTop)
   rcases hcases with hy | ⟨q, z, t, hq, hpq, hqr, hz, hcases⟩
@@ -343,19 +342,17 @@ theorem closure_morseTrajectoryPairs_subset {p r : M} (hp : mfderiv 𝓘(ℝ, E)
 
 include h hf in
 /-- Only finitely many points of the compactified space are not unbroken trajectories. -/
-theorem finite_closure_diff_morseTrajectoryPairs {p r : M} (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0)
-    (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0)
+theorem finite_closure_diff_morseTrajectoryPairs {p r : M}
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f r + 2) {c₁ c₂ : ℝ}
     (hr₂ : f r < c₂) (h₂₁ : c₂ < c₁) (h₁p : c₁ < f p)
     (hgap : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f, f x ∈ Ioo (f r) (f p) → f x ∈ Ioo c₂ c₁) :
     (closure (hX.morseTrajectoryPairs p r c₁ c₂) \ hX.morseTrajectoryPairs p r c₁ c₂).Finite :=
-  (h.finite_morseBrokenTrajectoryPairs hf hp hr c₁ c₂).subset fun _ hw ↦
-    (h.closure_morseTrajectoryPairs_subset hf hp hr hind hr₂ h₂₁ h₁p hgap hw.1).resolve_left hw.2
+  (h.finite_morseBrokenTrajectoryPairs hf c₁ c₂).subset fun _ hw ↦
+    (h.closure_morseTrajectoryPairs_subset hf hind hr₂ h₂₁ h₁p hgap hw.1).resolve_left hw.2
 
 include h hf in
 /-- **The unbroken trajectories are open in the compactified space.** -/
 theorem isOpen_preimage_val_morseTrajectoryPairs {p r : M}
-    (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0) (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0)
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f r + 2) {c₁ c₂ : ℝ}
     (hr₂ : f r < c₂) (h₂₁ : c₂ < c₁) (h₁p : c₁ < f p)
     (hgap : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f, f x ∈ Ioo (f r) (f p) → f x ∈ Ioo c₂ c₁) :
@@ -364,7 +361,7 @@ theorem isOpen_preimage_val_morseTrajectoryPairs {p r : M}
   -- Its complement is the preimage of a finite, hence closed, set.
   have hc : IsClosed ((↑) ⁻¹' (closure (hX.morseTrajectoryPairs p r c₁ c₂) \
       hX.morseTrajectoryPairs p r c₁ c₂) : Set (closure (hX.morseTrajectoryPairs p r c₁ c₂))) :=
-    (h.finite_closure_diff_morseTrajectoryPairs hf hp hr hind hr₂ h₂₁ h₁p
+    (h.finite_closure_diff_morseTrajectoryPairs hf hind hr₂ h₂₁ h₁p
       hgap).isClosed.preimage continuous_subtype_val
   convert hc.isOpen_compl using 1
   ext x
@@ -374,7 +371,6 @@ include h hf in
 /-- **The compactified space is one-dimensional at unbroken trajectories.** Every unbroken
 trajectory has a neighbourhood in the compactified space homeomorphic to an open subset of `ℝ`. -/
 theorem exists_nhds_homeomorph_of_mem_morseTrajectoryPairs {p r : M}
-    (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0) (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0)
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f r + 2) {c₁ c₂ : ℝ}
     (hr₂ : f r < c₂) (h₂₁ : c₂ < c₁) (h₁p : c₁ < f p)
     (hgap : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f, f x ∈ Ioo (f r) (f p) → f x ∈ Ioo c₂ c₁)
@@ -386,7 +382,7 @@ theorem exists_nhds_homeomorph_of_mem_morseTrajectoryPairs {p r : M}
   obtain ⟨Φ, hΦ⟩ := hX.exists_homeomorph_morseTrajectoryPairs
     (hf.contMDiff.mdifferentiable (by simp)) hpr hr₂ (h₂₁.trans h₁p)
   -- The level slice is a manifold modelled on a line `L`.
-  obtain ⟨L, hL, C, -, -⟩ := h.exists_unstableSet_inter_stableSet_level_isManifold hf hp hr hpr
+  obtain ⟨L, hL, C, -, -⟩ := h.exists_unstableSet_inter_stableSet_level_isManifold hf hpr
     ⟨w.1, hwP.1, hwP.2.1⟩
   let _ := C
   have hL1 : Module.finrank ℝ L = Module.finrank ℝ ℝ := by rw [Module.finrank_self]; omega
@@ -395,7 +391,7 @@ theorem exists_nhds_homeomorph_of_mem_morseTrajectoryPairs {p r : M}
     fun x ↦ ⟨x.1, subset_closure x.2⟩
   have hι : IsOpenEmbedding ι := by
     refine ⟨(IsEmbedding.of_comp_iff IsEmbedding.subtypeVal).1 IsEmbedding.subtypeVal, ?_⟩
-    convert h.isOpen_preimage_val_morseTrajectoryPairs hf hp hr hind hr₂ h₂₁ h₁p hgap
+    convert h.isOpen_preimage_val_morseTrajectoryPairs hf hind hr₂ h₂₁ h₁p hgap
     ext x
     exact ⟨by rintro ⟨y, rfl⟩; exact y.2, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
   have : Nonempty (hX.morseTrajectoryPairs p r c₁ c₂) := ⟨⟨w, hwP⟩⟩
@@ -406,6 +402,35 @@ theorem exists_nhds_homeomorph_of_mem_morseTrajectoryPairs {p r : M}
     ⟨G.toHomeomorphSourceTarget.symm⟩⟩
   have hιw : ι ⟨w, hwP⟩ = ⟨w, hw⟩ := rfl
   simp [G, ← hιw, hι.toOpenPartialHomeomorph_left_inv]
+
+include h hf in
+/-- **`∂² = 0` reduces to the parity of broken trajectory pairs.** The mod-two Morse boundary
+squares to zero exactly when, for any two critical points `p` and `r` and any levels
+`f r < c₂ < c₁ < f p` separating every critical value strictly between `f r` and `f p` from `f r`
+and `f p`, there is an even number of broken trajectory pairs from `p` to `r` on those levels. -/
+theorem morseBoundary_comp_morseBoundary_eq_zero_iff_even_ncard_morseBrokenTrajectoryPairs :
+    h.morseBoundary hf ∘ₗ h.morseBoundary hf = 0 ↔
+      ∀ (p r : criticalPoints 𝓘(ℝ, E) f) (c₁ c₂ : ℝ), f r < c₂ → c₂ < c₁ → c₁ < f p →
+        (∀ x ∈ criticalPoints 𝓘(ℝ, E) f, f x ∈ Ioo (f r) (f p) → f x ∈ Ioo c₂ c₁) →
+        Even (hX.morseBrokenTrajectoryPairs p r c₁ c₂).ncard := by
+  have hdf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
+  rw [h.morseBoundary_comp_morseBoundary_eq_zero_iff hf]
+  refine ⟨fun h0 p r c₁ c₂ hr₂ _ h₁p hgap ↦
+    hX.ncard_morseBrokenTrajectoryPairs hdf p r hr₂ h₁p hgap ▸ h0 p r, fun h0 p r ↦ ?_⟩
+  by_cases hrp : f r < f p
+  · obtain ⟨c₁, c₂, hr₂, h₂₁, h₁p, hgap⟩ := hf.exists_lt_lt_forall_mem_Ioo hrp
+    exact hX.ncard_morseBrokenTrajectoryPairs hdf p r hr₂ h₁p hgap ▸
+      h0 p r c₁ c₂ hr₂ h₂₁ h₁p hgap
+  -- Without a drop in value there are no broken trajectories.
+  have hne {a b : M} (h : manifoldMorseIndex 𝓘(ℝ, E) f a = manifoldMorseIndex 𝓘(ℝ, E) f b + 1) :
+      a ≠ b := by
+    rintro rfl; omega
+  have hempty : hX.morseBrokenTrajectorySet p r = ∅ := eq_empty_of_forall_notMem fun x hx ↦ by
+    obtain ⟨hpq, hqr, hy, hz⟩ := (hX.mem_morseBrokenTrajectorySet).1 hx
+    exact hrp ((hX.value_lt_of_mem_morseTrajectorySlice hdf (hne hqr) hz).trans
+      (hX.value_lt_of_mem_morseTrajectorySlice hdf (hne hpq) hy))
+  rw [hempty, ncard_empty]
+  exact Even.zero
 
 end IsMorseSmale
 

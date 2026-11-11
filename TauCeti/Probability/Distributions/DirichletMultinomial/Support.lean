@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: The Tau Ceti contributors
 -/
 module
 
@@ -11,24 +11,12 @@ public import TauCeti.MeasureTheory.Measure.Support
 /-!
 # Topological support of Dirichlet-multinomial laws
 
-For positive concentration parameters, every count vector with the prescribed total has
-positive Dirichlet-multinomial mass. Thus the native support is the full count antidiagonal,
-independently of the concentration values. Invalid concentration parameters give the zero
-measure and hence empty support.
-
-The count antidiagonal is finite. Consequently, applying arbitrary labels into a T₁ Borel
-space transports the support exactly, even when several count vectors have the same label.
-In particular, the Euclidean count law is supported on the cast integer vectors, rather than
-on their convex hull.
-
-## Main results
-
-* `TauCeti.Probability.support_dirichletMultinomialMeasure`: exact native support, including
-  invalid concentration parameters.
-* `TauCeti.Probability.support_map_dirichletMultinomialMeasure`: exact support after applying
-  arbitrary labels.
-* `TauCeti.Probability.support_map_multinomialToEuclidean_dirichletMultinomialMeasure`: exact
-  support of the Euclidean count law.
+Positive concentrations give positive mass to every count vector with the prescribed total.
+Consequently the native topological support is the finite count antidiagonal, and the support
+of arbitrary labels is its image, even when labels are not injective. The Euclidean membership
+criterion below describes the cast image intrinsically: each coordinate is a natural number and
+the coordinate sum is the trial count. These statements include zero trials and a single category;
+invalid concentrations give empty support.
 
 ## References
 
@@ -41,14 +29,13 @@ public section
 noncomputable section
 
 open MeasureTheory Set
-open scoped Topology
 
 namespace TauCeti.Probability
 
 variable {ι : Type*} [Fintype ι] [Nonempty ι]
 
-/-- With positive concentrations, the support is the count antidiagonal of total `n`.
-If any concentration is nonpositive, the measure and its support are both zero. -/
+/-- The native topological support is exactly the count antidiagonal for positive
+concentrations, and is empty for invalid concentrations. -/
 @[simp]
 theorem support_dirichletMultinomialMeasure (n : ℕ) (a : ι → ℝ) :
     (dirichletMultinomialMeasure n a).support =
@@ -57,9 +44,8 @@ theorem support_dirichletMultinomialMeasure (n : ℕ) (a : ι → ℝ) :
   by_cases ha : ∀ i, 0 < a i
   · rw [ite_eq_left ha, Measure.support_eq_setOf_singleton_ne_zero]
     ext k
-    simp only [mem_ofPred_eq, dirichletMultinomialMeasure_singleton_ne_zero_iff ha]
-  · rw [ite_eq_right ha, dirichletMultinomialMeasure_eq_zero_of_invalid ha]
-    exact Measure.support_zero
+    exact dirichletMultinomialMeasure_singleton_ne_zero_iff ha n k
+  · simp [ha]
 
 /-- Arbitrary labels of a Dirichlet-multinomial count vector have support equal to the labels
 of the count antidiagonal for valid concentrations, and empty support otherwise. Labels need
@@ -79,12 +65,44 @@ theorem support_map_dirichletMultinomialMeasure {E : Type*} [TopologicalSpace E]
   · rw [ite_eq_left ha, ite_eq_left ha, (hfinite.image f).isClosed.closure_eq]
   · rw [ite_eq_right ha, ite_eq_right ha, image_empty, closure_empty]
 
-/-- The Euclidean Dirichlet-multinomial law is supported exactly on the cast count vectors
-whose coordinates total `n`. -/
+/-- For positive concentrations, the Euclidean topological support is the finite image of all
+natural count vectors with the prescribed total. No additional limit points occur.
+For invalid concentrations, the support is empty. -/
+@[simp]
 theorem support_map_multinomialToEuclidean_dirichletMultinomialMeasure
     (n : ℕ) (a : ι → ℝ) :
     ((dirichletMultinomialMeasure n a).map multinomialToEuclidean).support =
-      if ∀ i, 0 < a i then multinomialToEuclidean '' {k | ∑ i, k i = n} else ∅ :=
+      if ∀ i, 0 < a i then
+        multinomialToEuclidean '' {k : ι → ℕ | ∑ i, k i = n} else ∅ :=
   support_map_dirichletMultinomialMeasure n a multinomialToEuclidean
+
+/-- A Euclidean vector belongs to the support precisely when the concentrations are positive,
+its coordinates are natural numbers, and their sum is the trial count. -/
+theorem mem_support_map_multinomialToEuclidean_dirichletMultinomialMeasure_iff
+    (n : ℕ) (a : ι → ℝ) (x : EuclideanSpace ℝ ι) :
+    x ∈ ((dirichletMultinomialMeasure n a).map multinomialToEuclidean).support ↔
+      (∀ i, 0 < a i) ∧ (∀ i, ∃ k : ℕ, x i = k) ∧ ∑ i, x i = n := by
+  classical
+  rw [support_map_multinomialToEuclidean_dirichletMultinomialMeasure]
+  by_cases ha : ∀ i, 0 < a i
+  · rw [ite_eq_left ha]
+    simp only [mem_image, mem_ofPred_eq]
+    constructor
+    · rintro ⟨k, hk, rfl⟩
+      refine ⟨ha, ?_, ?_⟩
+      · intro i
+        exact ⟨k i, multinomialToEuclidean_apply k i⟩
+      · simpa only [multinomialToEuclidean_apply, ← Nat.cast_sum] using
+          congrArg (Nat.cast : ℕ → ℝ) hk
+    · rintro ⟨_, hx, hsum⟩
+      choose k hk using hx
+      have hxk : multinomialToEuclidean k = x := by
+        ext i
+        exact (multinomialToEuclidean_apply k i).trans (hk i).symm
+      refine ⟨k, ?_, hxk⟩
+      have hcast : ((∑ i, k i : ℕ) : ℝ) = n := by
+        simpa only [Nat.cast_sum, ← hk] using hsum
+      exact_mod_cast hcast
+  · simp [ha]
 
 end TauCeti.Probability

@@ -110,8 +110,9 @@ theorem fredholmDet_indicatorCLM_comp (S : Finset I) (u : C₀(I, R) →L[R] C�
 
 end Defs
 
-variable [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R] [CompleteSpace R]
+variable [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
 
+variable [NormOneClass R] in
 /-- **The Fredholm series at a scalar.** For row-compact `u` and any `a : R`, the value
 `H_u(a)` of the Fredholm series of `u` is the Fredholm determinant of `a • u`. -/
 theorem IsRowCompact.fredholmDet_smul {u : C₀(I, R) →L[R] C₀(I, R)} (hu : u.IsRowCompact)
@@ -149,7 +150,7 @@ theorem tendsto_fredholmDet_of_tendsto {α : Type*} {l : Filter α}
   exact PowerSeries.norm_evalAt_le_gaussNorm
     (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted ((hent.sub hent₀).isRestricted 1)) (by simp)
 
-omit [NormOneClass R] [CompleteSpace R] in
+omit [CompleteSpace R] in
 /-- The entries of `u + v - u x` in row `i` are bounded by
 `max (max (rᵢ(u)) (rᵢ(v))) (rᵢ(u) ‖v‖)` whenever the entries of `x` are bounded by `‖v‖`. -/
 private theorem norm_matrixCoeff_add_sub_mul_le (u v x : C₀(I, R) →L[R] C₀(I, R))
@@ -167,7 +168,7 @@ private theorem norm_matrixCoeff_add_sub_mul_le (u v x : C₀(I, R) →L[R] C₀
   exact (norm_mul_le _ _).trans (mul_le_mul (u.norm_matrixCoeff_le_rowNorm i k) (hx k j)
     (norm_nonneg _) (u.rowNorm_nonneg i))
 
-omit [DecidableEq I] [NormOneClass R] [CompleteSpace R] [TauCeti.NormedRing.IsTate R] in
+omit [DecidableEq I] [CompleteSpace R] [TauCeti.NormedRing.IsTate R] in
 /-- The output truncation of `u + v - u v` built from the truncations `u_S = π_S ∘ u` and
 `v_S = π_S ∘ v` is `π_S ∘ (u + v - u v_S)`. -/
 private theorem indicatorCLM_comp_add_sub_mul (S : Set I) (u v : C₀(I, R) →L[R] C₀(I, R)) :
@@ -176,7 +177,7 @@ private theorem indicatorCLM_comp_add_sub_mul (S : Set I) (u v : C₀(I, R) →L
       (indicatorCLM R S).comp (u + v - u * (indicatorCLM R S).comp v) := by
   simp [mul_def, comp_add, comp_sub, comp_assoc]
 
-omit [NormOneClass R] [CompleteSpace R] [TauCeti.NormedRing.IsTate R] in
+omit [CompleteSpace R] [TauCeti.NormedRing.IsTate R] in
 /-- **Multiplicativity for output truncations.** For a finite set `S`, the identity
 `det (1 - (u_S + v_S - u_S v_S)) = det (1 - u_S) det (1 - v_S)` for `u_S = π_S ∘ u` and
 `v_S = π_S ∘ v` is the finite identity `det ((1 - A) (1 - B)) = det (1 - A) det (1 - B)` for the

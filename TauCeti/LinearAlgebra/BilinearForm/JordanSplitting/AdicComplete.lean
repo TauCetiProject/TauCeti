@@ -194,7 +194,7 @@ private theorem IsJordanSplitting.exists_dual [Module.Free R M] [Module.Finite R
   have hmod : ∀ k ≤ m, (D.restrict (N (m - k))).IsModular (π ^ k) := fun k hk ↦ by
     -- The constituent of index `k ≤ m` is `N (m - k)`, with the form `π ^ k • (U (m - k))⁻¹`.
     rw [hres]
-    refine (d (m - k)).isModular_of_isUnit_det (pow_mem hπ k) (fun a a' ↦ ?_)
+    refine (d (m - k)).isModular_of_isUnit_det (fun a a' ↦ ?_)
       (Matrix.isUnit_nonsing_inv_det _ (hUdet (m - k)))
     rw [hEapp, Nat.sub_sub_self hk]
   refine ⟨D, hDs hEs, isJordanSplitting_reverse h.isInternal htop horth hmod, horth,

@@ -90,7 +90,7 @@ def order (x : X) : AddValuation (MeromorphicFunction X) (WithTop ℤ) :=
       classical exact (meromorphicOrderAt_const (1 : ℂ) x).trans (ite_eq_right one_ne_zero))
     (fun f g ↦ by
       rw [meromorphicOrderAt_congr (finitePart_add_eventuallyEq f g x)]
-      exact meromorphicOrderAt_add (f.meromorphicAt_finitePart x) (g.meromorphicAt_finitePart x))
+      exact meromorphicOrderAt_add (g.meromorphicAt_finitePart x))
     (fun f g ↦ by
       rw [meromorphicOrderAt_congr (finitePart_mul_eventuallyEq f g x)]
       exact meromorphicOrderAt_mul (f.meromorphicAt_finitePart x) (g.meromorphicAt_finitePart x))

@@ -15,7 +15,8 @@ public import TauCeti.AlgebraicGeometry.VectorBundle.Rank
 A finite locally free sheaf has a locally constant rank, which need not be constant on a
 disconnected scheme. This file packages the sheaves whose rank is constantly `r` as the full
 subcategory `FiniteLocallyFreeSheaf.FixedRank X r`. The package is stable under arbitrary
-pullback, and the free sheaf on a universe lift of `Fin r` gives its standard object.
+pullback and tensor products, and the free sheaf on a universe lift of `Fin r` gives its standard
+object.
 
 In rank one, fixed-rank finite locally free sheaves are exactly invertible sheaves. The
 equivalence `InvertibleSheaf.fixedRankOneEquiv` is the identity on underlying sheaves and
@@ -30,6 +31,8 @@ morphisms; it only changes which equivalent rank-one condition is bundled with t
 * `FiniteLocallyFreeSheaf.FixedRank.twist`: the twist `E ⊗ L` of a fixed-rank sheaf by an
   invertible sheaf, with its isomorphisms `FixedRank.twistCongr`, `FixedRank.twistTrivialIso` and
   `FixedRank.twistTensorProductIso`;
+* `FiniteLocallyFreeSheaf.FixedRank.tensor`: the tensor product of fixed-rank sheaves of ranks `r`
+  and `s`, of rank `r * s`;
 * `InvertibleSheaf.fixedRankOneEquiv`: the equivalence between invertible sheaves and finite
   locally free sheaves of fixed rank one.
 -/
@@ -282,6 +285,18 @@ theorem twistTensorProductIso_inv_hom_hom (E : FixedRank X r) (L M : InvertibleS
           (α_ E.obj.obj L.obj M.obj).inv) ≫
         eqToHom (by simp only [twist_obj_obj]) :=
   ((Category.id_comp _).trans (congrArg _ (Category.comp_id _))).symm
+
+/-- The tensor product `E ⊗ F` of finite locally free sheaves of constant ranks `r` and `s`, of
+constant rank `r * s`. -/
+def tensor {s : ℕ} (E : FixedRank X r) (F : FixedRank X s) : FixedRank X (r * s) :=
+  ⟨E.obj ⊗ F.obj, fun x ↦ by rw [rank_tensor_apply, rank_apply, rank_apply]⟩
+
+/-- The underlying sheaf of the tensor product `E ⊗ F` is the tensor product of the underlying
+sheaves. -/
+@[simp]
+theorem tensor_obj_obj {s : ℕ} (E : FixedRank X r) (F : FixedRank X s) :
+    (E.tensor F).obj.obj = E.obj.obj ⊗ F.obj.obj :=
+  (rfl)
 
 end FixedRank
 

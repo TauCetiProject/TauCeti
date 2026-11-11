@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.CharP.Algebra
 public import Mathlib.Algebra.CharP.Frobenius
+public import Mathlib.Algebra.CharP.Subring
 public import Mathlib.Algebra.Field.Subfield.Basic
 public import Mathlib.Algebra.Ring.Subring.Basic
 public import Mathlib.Dynamics.PeriodicPts.Defs
@@ -25,8 +25,7 @@ elements sitting inside `A`, which is why the construction is the ring-theoretic
 points of the `q`-power Frobenius are the `𝔽_q`-points"; at `n = 0` it is instead the whole of `A`,
 since `q = 1`. Nothing about finiteness or about the field of `q` elements is proved here: the
 subring statements below are about an arbitrary commutative ring of exponential characteristic `p`
-and the subfield ones about an arbitrary field of exponential characteristic `p`, and Mathlib's
-`iterateFrobenius` supplies every proof.
+and the subfield ones about an arbitrary field of exponential characteristic `p`.
 
 ## Main definitions
 
@@ -45,8 +44,9 @@ and the subfield ones about an arbitrary field of exponential characteristic `p`
   `𝔽_{p ^ m} ⊆ 𝔽_{p ^ k}` in the motivating case.
 * `TauCeti.frobeniusFixedSubring_inf` and `TauCeti.frobeniusFixedSubfield_inf`: the intersection
   of the fixed structures at exponents `m` and `n` is the one at `m.gcd n`.
-* `TauCeti.map_le_frobeniusFixedSubring`: a ring homomorphism carries fixed elements to fixed
-  elements.
+* `TauCeti.map_mem_frobeniusFixedSubring` and `TauCeti.map_le_frobeniusFixedSubring`: a monoid
+  homomorphism carries fixed elements to fixed elements, and a ring homomorphism maps the fixed
+  subring into the fixed subring.
 
 ## References
 
@@ -72,13 +72,6 @@ exponential characteristic `p`, and for `p = 1` — that is, in characteristic z
 the whole of `A` is fixed. -/
 def frobeniusFixedSubring : Subring A :=
   (iterateFrobenius A p n).eqLocus (RingHom.id A)
-
-/-- The Frobenius-fixed subring is again of exponential characteristic `p`, so it is itself a
-legitimate value algebra for the Frobenius: `iterateFrobenius` and everything built on it apply to
-it. Mathlib has this for a `Subfield` (`Subfield.expChar`) but not for a `Subring`. -/
-instance : ExpChar (frobeniusFixedSubring A p n) p :=
-  (frobeniusFixedSubring A p n).subtype.expChar
-    (frobeniusFixedSubring A p n).subtype_injective p
 
 variable {A p n}
 
@@ -125,30 +118,26 @@ theorem frobeniusFixedSubring_inf (m n : ℕ) :
   refine le_antisymm ?_ (le_inf (frobeniusFixedSubring_le_of_dvd (Nat.gcd_dvd_left m n))
     (frobeniusFixedSubring_le_of_dvd (Nat.gcd_dvd_right m n)))
   rintro a ⟨hm, hn⟩
-  have hm' : Function.IsPeriodicPt (frobenius A p) m a := by
-    simpa only [Function.IsPeriodicPt, Function.IsFixedPt, iterate_frobenius] using
-      (mem_frobeniusFixedSubring.mp hm)
-  have hn' : Function.IsPeriodicPt (frobenius A p) n a := by
-    simpa only [Function.IsPeriodicPt, Function.IsFixedPt, iterate_frobenius] using
-      (mem_frobeniusFixedSubring.mp hn)
-  apply mem_frobeniusFixedSubring.mpr
-  simpa only [Function.IsPeriodicPt, Function.IsFixedPt, iterate_frobenius] using hm'.gcd hn'
+  -- membership at exponent `k` is `a` being a period-`k` point of the `p`-power Frobenius
+  have key (k : ℕ) :
+      a ∈ frobeniusFixedSubring A p k ↔ Function.IsPeriodicPt (frobenius A p) k a := by
+    rw [mem_frobeniusFixedSubring, Function.IsPeriodicPt, Function.IsFixedPt, iterate_frobenius]
+  exact (key _).mpr (((key m).mp hm).gcd ((key n).mp hn))
 
 variable {B : Type*} [CommRing B] [ExpChar B p]
 
-/-- A ring homomorphism commutes with the Frobenius, so it carries elements fixed by the
+/-- A monoid homomorphism commutes with powers, so it carries elements fixed by the
 `p ^ n`-power Frobenius to elements fixed by it. -/
+theorem map_mem_frobeniusFixedSubring {F : Type*} [FunLike F A B] [MonoidHomClass F A B] (φ : F)
+    {a : A} (ha : a ∈ frobeniusFixedSubring A p n) : φ a ∈ frobeniusFixedSubring B p n := by
+  rw [mem_frobeniusFixedSubring, ← map_pow, mem_frobeniusFixedSubring.mp ha]
+
+/-- A ring homomorphism maps the subring fixed by the `p ^ n`-power Frobenius into the
+corresponding fixed subring: the subring form of `map_mem_frobeniusFixedSubring`. -/
 theorem map_le_frobeniusFixedSubring (φ : A →+* B) :
     (frobeniusFixedSubring A p n).map φ ≤ frobeniusFixedSubring B p n := by
   rintro _ ⟨a, ha, rfl⟩
-  refine RingHom.mem_eqLocus.mpr ?_
-  rw [← φ.map_iterateFrobenius p a n, RingHom.mem_eqLocus.mp ha]
-  rfl
-
-/-- The pointwise form of `map_le_frobeniusFixedSubring`. -/
-theorem map_mem_frobeniusFixedSubring (φ : A →+* B) {a : A}
-    (ha : a ∈ frobeniusFixedSubring A p n) : φ a ∈ frobeniusFixedSubring B p n :=
-  map_le_frobeniusFixedSubring φ ⟨a, ha, rfl⟩
+  exact map_mem_frobeniusFixedSubring φ ha
 
 end Ring
 
@@ -193,9 +182,9 @@ variable {K p n}
 `𝔽_{p ^ m} ⊆ 𝔽_{p ^ k}` of subfields of an algebraic closure. -/
 theorem frobeniusFixedSubfield_le_of_dvd {m k : ℕ} (h : m ∣ k) :
     frobeniusFixedSubfield K p m ≤ frobeniusFixedSubfield K p k := by
-  rw [← SetLike.coe_subset_coe, ← Subfield.coe_toSubring, ← Subfield.coe_toSubring,
-    toSubring_frobeniusFixedSubfield, toSubring_frobeniusFixedSubfield, SetLike.coe_subset_coe]
-  exact frobeniusFixedSubring_le_of_dvd h
+  intro a ha
+  rw [← Subfield.mem_toSubring, toSubring_frobeniusFixedSubfield] at ha ⊢
+  exact frobeniusFixedSubring_le_of_dvd h ha
 
 /-- The intersection of two Frobenius-fixed subfields is the fixed subfield at the gcd of their
 exponents. -/
