@@ -98,6 +98,18 @@ theorem existsUnique_conv_stableCompensatedPoissonMeasure_eq
   apply mul_right_cancel₀ (hlarge t)
   rw [← charFun_conv, ← charFun_conv, hσ, hconv]
 
+/-- A probability measure can be convolved with the compensated compound-Poisson law to give a
+stable law only for admissible skewness, since the stable measure is zero otherwise. -/
+theorem abs_le_one_of_conv_stableCompensatedPoissonMeasure_eq {μ : ProbabilityMeasure ℝ}
+    (hμ : (μ : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r = stableMeasure α β 1 0) :
+    |β| ≤ 1 := by
+  by_contra hβ
+  have := isProbabilityMeasure_stableCompensatedPoissonMeasure α β r
+  have h : IsProbabilityMeasure ((μ : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r) :=
+    inferInstance
+  rw [hμ, stableMeasure_of_invalid (Or.inr (Or.inr (not_le.1 hβ)))] at h
+  simpa using h.measure_univ
+
 /-- The small-jump factor has the compensated Lévy exponent restricted to jumps of size at
 most the cutoff. The statement applies to any probability law satisfying the decomposition,
 without choosing a particular representative of the unique factor. -/

@@ -261,7 +261,7 @@ theorem tendsto_variance_stableSmallJumpRemainderMeasure_zero {α β : ℝ}
     (hε : ∀ᶠ r in 𝓝[>] (0 : ℝ), 0 < ε r ∧ ε r ≤ r) :
     Tendsto (fun r ↦ Var[id; stableSmallJumpRemainderMeasure α β (ε r) r])
       (𝓝[>] (0 : ℝ)) (𝓝 0) := by
-  have houter := (tendsto_integral_sq_stableLevyMeasure_ball_zero hα hβ).mono_left
+  have houter := (tendsto_integral_sq_stableLevyMeasure_ball_zero (α := α) (β := β)).mono_left
     (nhdsWithin_mono 0 Ioi_subset_Ici_self)
   apply squeeze_zero' (Eventually.of_forall fun r ↦ variance_nonneg id
     (stableSmallJumpRemainderMeasure α β (ε r) r))
@@ -277,7 +277,7 @@ theorem tendsto_integral_id_stableSmallJumpRemainderMeasure_zero {α β : ℝ}
     Tendsto (fun r ↦ ∫ x, x ∂stableSmallJumpRemainderMeasure α β (ε r) r)
       (𝓝[>] (0 : ℝ)) (𝓝 0) := by
   rw [tendsto_zero_iff_norm_tendsto_zero]
-  have houter := (tendsto_integral_sq_stableLevyMeasure_ball_zero hα hβ).mono_left
+  have houter := (tendsto_integral_sq_stableLevyMeasure_ball_zero (α := α) (β := β)).mono_left
     (nhdsWithin_mono 0 Ioi_subset_Ici_self)
   have hr : Tendsto (fun r : ℝ ↦ r / 6) (𝓝[>] (0 : ℝ)) (𝓝 0) := by
     have hle : 𝓝[>] (0 : ℝ) ≤ 𝓝 0 := inf_le_left
