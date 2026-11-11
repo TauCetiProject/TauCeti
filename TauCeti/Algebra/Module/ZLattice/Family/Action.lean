@@ -63,6 +63,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {EY : Type*} [NormedAddCo
   (hinj : ∀ y, Function.Injective (P y)) {n : ℕ∞ω} [IsManifold I n Y]
   (hP : ∀ l, ContMDiff I 𝓘(𝕜, E) n fun y ↦ P y l)
 
+omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- Fibrewise translation is jointly `C^n` for the quotient manifold structure of a `C^n`
 family of full lattices. For holomorphic periods over `ℂ`, it is jointly holomorphic. -/
 theorem contMDiffVAdd_torusFamilyTranslationAddAction :
@@ -88,6 +89,7 @@ variable {Γ : Type*} [Monoid Γ] [MulAction Γ Y] (R : Γ → Y → E →+ E)
   (b : Γ → Y → letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E))
   (hb : ∀ (g : Γ) (y : Y), torusFamilyProjection P (b g y) = g • y)
 
+omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- The affine map of `g` is `C^n` if its linear-part evaluation and its torus-valued translation
 section are `C^n`. No global vector-space lift of the section is needed. -/
 theorem contMDiff_torusFamilyAffineMap {g : Γ}
@@ -114,6 +116,7 @@ variable (hone : ∀ (y : Y) (v : E), R 1 y v = v)
   (hbone : ∀ y : Y, b 1 y = Quotient.mk _ (y, 0))
   (hbmul : ∀ (g h : Γ) (y : Y), b (g * h) y = torusFamilyAffineMap R P ρ hequiv b hb g (b h y))
 
+omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- A `C^n` affine cocycle acts by `C^n` maps on the torus family. For a group, this class
 also supplies `C^n` inverses through `Diffeomorph.constSmul`; over `ℂ` with holomorphic data,
 these are biholomorphisms. Neither a free base action nor global vector lifts are required. -/
