@@ -15,7 +15,8 @@ Let `Z` be standard Gaussian. The covariance of `(Z, tZ)` varies continuously wi
 joint Gaussian laws converge weakly as `t` tends to zero. The pseudoinverse conditional kernel
 has different behaviour: conditioning the first coordinate on the second at zero gives the point
 mass at zero for `t ≠ 0`, but at `t = 0` the observation is constant and the kernel returns the
-unconditional standard Gaussian law.
+unconditional standard Gaussian law. The observed covariance `[t²]` drops rank at zero, while the
+joint covariance retains rank one for every `t`.
 
 This is the basic rank-change example showing why regular conditional distributions need not
 depend continuously on a covariance parameter, even when the corresponding joint laws do.
@@ -47,32 +48,52 @@ def gaussianRankChangeCovariance (t : ℝ) : Matrix (Unit ⊕ Unit) (Unit ⊕ Un
   let v : Unit ⊕ Unit → ℝ := Sum.elim (fun _ ↦ 1) (fun _ ↦ t)
   Matrix.vecMulVec v v
 
+/-- The first-coordinate variance in `gaussianRankChangeCovariance` is one. -/
+@[simp]
+theorem gaussianRankChangeCovariance_inl_inl (t : ℝ) (i j : Unit) :
+    gaussianRankChangeCovariance t (Sum.inl i) (Sum.inl j) = 1 := by
+  simp [gaussianRankChangeCovariance, Matrix.vecMulVec_apply]
+
+/-- The covariance from the first coordinate to the observed coordinate is `t`. -/
+@[simp]
+theorem gaussianRankChangeCovariance_inl_inr (t : ℝ) (i j : Unit) :
+    gaussianRankChangeCovariance t (Sum.inl i) (Sum.inr j) = t := by
+  simp [gaussianRankChangeCovariance, Matrix.vecMulVec_apply]
+
+/-- The covariance from the observed coordinate to the first coordinate is `t`. -/
+@[simp]
+theorem gaussianRankChangeCovariance_inr_inl (t : ℝ) (i j : Unit) :
+    gaussianRankChangeCovariance t (Sum.inr i) (Sum.inl j) = t := by
+  simp [gaussianRankChangeCovariance, Matrix.vecMulVec_apply]
+
+/-- The observed-coordinate variance in `gaussianRankChangeCovariance` is `t²`. -/
+@[simp]
+theorem gaussianRankChangeCovariance_inr_inr (t : ℝ) (i j : Unit) :
+    gaussianRankChangeCovariance t (Sum.inr i) (Sum.inr j) = t ^ 2 := by
+  simp [gaussianRankChangeCovariance, Matrix.vecMulVec_apply, pow_two]
+
 /-- The covariance matrix of `(Z, tZ)` is positive semidefinite for every real `t`. -/
 theorem gaussianRankChangeCovariance_posSemidef (t : ℝ) :
     (gaussianRankChangeCovariance t).PosSemidef := by
   simpa [gaussianRankChangeCovariance] using Matrix.posSemidef_vecMulVec_self_star
     (Sum.elim (fun _ : Unit ↦ (1 : ℝ)) fun _ : Unit ↦ t)
 
-/-- The joint Gaussian laws of `(Z, tZ)` vary weakly continuously with `t`, including at the
-rank drop `t = 0`. -/
+/-- The joint Gaussian laws of `(Z, tZ)` vary weakly continuously with `t`, including when the
+observed covariance drops rank at `t = 0`. -/
 theorem continuous_multivariateGaussian_rankChange :
     Continuous (fun t : ℝ ↦
       (multivariateGaussian (0 : EuclideanSpace ℝ (Unit ⊕ Unit))
         (gaussianRankChangeCovariance t)).toProbabilityMeasure) := by
   apply Continuous.multivariateGaussian continuous_const
-  · unfold gaussianRankChangeCovariance
-    apply continuous_pi
-    intro i
-    apply continuous_pi
-    intro j
-    rcases i with i | i <;> rcases j with j | j
-    · simpa [Matrix.vecMulVec_apply] using (continuous_const : Continuous fun _ : ℝ ↦ (1 : ℝ))
-    · simpa only [Matrix.vecMulVec_apply, Sum.elim_inl, Sum.elim_inr, one_mul] using
-        (continuous_id' : Continuous fun t : ℝ ↦ t)
-    · simpa only [Matrix.vecMulVec_apply, Sum.elim_inl, Sum.elim_inr, mul_one] using
-        (continuous_id' : Continuous fun t : ℝ ↦ t)
-    · change Continuous fun t : ℝ ↦ t * t
-      fun_prop
+  · let v : ℝ → Unit ⊕ Unit → ℝ := fun t ↦ Sum.elim (fun _ ↦ 1) (fun _ ↦ t)
+    have hv : Continuous v := by
+      apply continuous_pi
+      intro i
+      rcases i with i | i
+      · exact continuous_const
+      · exact continuous_id'
+    change Continuous fun t : ℝ ↦ Matrix.vecMulVec (v t) (v t)
+    exact hv.matrix_vecMulVec hv
   · exact gaussianRankChangeCovariance_posSemidef
 
 /-- At a nonzero rank parameter, observing `tZ = 0` determines `Z = 0`, so the displayed
@@ -90,12 +111,11 @@ theorem gaussianCondKernel_rankChange_zero_of_ne {t : ℝ} (ht : t ≠ 0) :
     rw [div_pow, sq_abs, div_self (pow_ne_zero 2 ht)]
     simp only [PUnit.default_eq_unit, sub_self, mul_zero, Real.toNNReal_zero,
       gaussianReal_zero_var, Measure.map_dirac]
-    rw [show EuclideanSpace.single default 0 = (0 : EuclideanSpace ℝ Unit) by
-      ext
-      simp]
-  · simp [gaussianRankChangeCovariance, Matrix.vecMulVec_apply]
-  · simp [gaussianRankChangeCovariance, Matrix.vecMulVec_apply, pow_two]
-  · simp [gaussianRankChangeCovariance, Matrix.vecMulVec_apply, Real.sqrt_sq_eq_abs]
+    -- Congruence reduces the bundled Euclidean-space zero to its pointwise values.
+    congr 1
+  · simp
+  · simp [pow_two]
+  · simp [Real.sqrt_sq_eq_abs]
 
 /-- At the rank parameter `t = 0`, the observed coordinate is constant, so the displayed
 conditional kernel returns the unconditional standard Gaussian first marginal. -/
@@ -105,14 +125,14 @@ theorem gaussianCondKernel_rankChange_zero :
       multivariateGaussian (0 : EuclideanSpace ℝ Unit) 1 := by
   have hzero : (gaussianRankChangeCovariance 0).submatrix Sum.inr Sum.inr = 0 := by
     ext
-    simp [gaussianRankChangeCovariance, Matrix.vecMulVec_apply]
+    simp
   rw [EuclideanSpace.gaussianCondKernel_of_submatrix_eq_zero _ hzero]
   congr 1
   ext
-  simp [gaussianRankChangeCovariance, Matrix.vecMulVec_apply]
+  simp
 
 /-- Although the joint laws vary weakly continuously, the displayed conditional laws at
-observation zero are not weakly continuous at the rank drop. -/
+observation zero are not weakly continuous when the observed covariance drops rank. -/
 theorem not_continuousAt_gaussianCondKernel_rankChange_zero :
     ¬ContinuousAt (fun t : ℝ ↦
       ((0 : EuclideanSpace ℝ (Unit ⊕ Unit)).gaussianCondKernel
