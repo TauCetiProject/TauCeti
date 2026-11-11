@@ -313,12 +313,8 @@ theorem norm_integral_apply_apply_le {V G : Type*} [NormedAddCommGroup V]
   have hbound : IntervalIntegrable
       (fun x => ‖B‖ * ((c⁻¹ * ‖f x - m‖ ^ 2 + c * ‖f' x‖ ^ 2) / 2)) volume a b :=
     (((hdev.const_mul c⁻¹).add (hsq.const_mul c)).div_const 2).const_mul ‖B‖
-  have hint : IntervalIntegrable (fun x => B (f x - m) (f' x)) volume a b :=
-    hbound.mono_fun' (B.aestronglyMeasurable_comp₂
-      (((hfc.sub continuousOn_const).mono uIoc_subset_uIcc).aestronglyMeasurable
-        measurableSet_uIoc) hf'ii.def'.aestronglyMeasurable) (Filter.Eventually.of_forall hpt)
   have hrewrite := B.intervalIntegral_apply_apply_eq_sub_const hfc
-    (fun x hx => hf x (Ioo_subset_Icc_self hx)) hfab hf'ii m hint
+    (fun x hx => hf x (Ioo_subset_Icc_self hx)) hfab hf'ii m
   rw [hrewrite]
   refine (norm_integral_le_of_norm_le hab.le (Filter.Eventually.of_forall fun x _ => hpt x)
     hbound).trans ?_
