@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Stabilizer
 public import TauCeti.Algebra.Lie.Coadjoint
-public import TauCeti.Algebra.Lie.Heisenberg
+public import TauCeti.Algebra.Lie.Heisenberg.Basic
 public import TauCeti.GroupTheory.SpecificGroups.Heisenberg
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
