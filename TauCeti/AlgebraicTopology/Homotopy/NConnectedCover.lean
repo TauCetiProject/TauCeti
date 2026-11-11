@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.HomotopyEquiv
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.LoopSpace
 public import TauCeti.AlgebraicTopology.Homotopy.KillHomotopyGroups
-public import TauCeti.Topology.Homotopy.MappingPath.LiftingFunction
 public import TauCeti.Topology.Homotopy.MappingPath.PathFibration
 public import TauCeti.Topology.Homotopy.SerreFibration.Connected
 
