@@ -28,6 +28,12 @@ return map of its orbit. The return map of the perturbed map `φ ∘ ψ` is then
 (`HasFDerivAt.iterate_comp_of_eventuallyEq_id`). This is how a perturbation supported in a small
 neighbourhood of one point of a periodic orbit, for instance a Hamiltonian twist, changes the
 linearized return map of that orbit.
+
+A perturbation which is the identity near every point of an orbit, `p` included, changes neither
+the iterate near `p` nor its derivative
+(`Function.iterate_comp_eventuallyEq_of_forall_eventuallyEq_id`,
+`HasFDerivAt.iterate_comp_of_forall_eventuallyEq_id`): a periodic orbit avoiding the support of
+the perturbation keeps its period and its linearized return map.
 -/
 
 public section
@@ -69,6 +75,19 @@ theorem iterate_comp_eventuallyEq_of_eventuallyEq_id (hk : 0 < k) (hψp : ψ p =
     simp only [comp_apply] at hx hx' ⊢
     rw [hx, hx']
 
+/-- **Iterates of a map perturbed away from an orbit.** If `ψ` is the identity near every orbit
+point `φ^[j] p`, `j < k`, and `φ` is continuous at these points, then near `p` the `k`-th iterate
+of `φ ∘ ψ` is the `k`-th iterate of `φ`. -/
+theorem iterate_comp_eventuallyEq_of_forall_eventuallyEq_id
+    (hφ : ∀ j < k, ContinuousAt φ (φ^[j] p)) (hid : ∀ j < k, ψ =ᶠ[𝓝 (φ^[j] p)] id) :
+    (φ ∘ ψ)^[k] =ᶠ[𝓝 p] φ^[k] := by
+  rcases Nat.eq_zero_or_pos k with rfl | hk
+  · rfl
+  have hp : ψ =ᶠ[𝓝 p] id := hid 0 hk
+  filter_upwards [iterate_comp_eventuallyEq_of_eventuallyEq_id hk hp.eq_of_nhds
+    (continuousAt_id.congr hp.symm) hφ fun j _ hj ↦ hid j hj, hp] with x hx hx'
+  rw [hx, comp_apply, hx', id]
+
 end Function
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -85,3 +104,11 @@ theorem HasFDerivAt.iterate_comp_of_eventuallyEq_id (hA : HasFDerivAt φ^[k] A p
   rw [← hψp] at hA
   exact (hA.comp p hB).congr_of_eventuallyEq
     (Function.iterate_comp_eventuallyEq_of_eventuallyEq_id hk hψp hB.continuousAt hφ hid)
+
+/-- **The linearized return map survives a perturbation away from the orbit.** If `ψ` is the
+identity near every orbit point `φ^[j] p`, `j < k`, the derivative at `p` of the `k`-th iterate of
+`φ ∘ ψ` is that of `φ^[k]`. -/
+theorem HasFDerivAt.iterate_comp_of_forall_eventuallyEq_id (hA : HasFDerivAt φ^[k] A p)
+    (hφ : ∀ j < k, ContinuousAt φ (φ^[j] p)) (hid : ∀ j < k, ψ =ᶠ[𝓝 (φ^[j] p)] id) :
+    HasFDerivAt (φ ∘ ψ)^[k] A p :=
+  hA.congr_of_eventuallyEq (Function.iterate_comp_eventuallyEq_of_forall_eventuallyEq_id hφ hid)
