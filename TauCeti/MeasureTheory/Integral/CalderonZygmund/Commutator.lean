@@ -5,76 +5,71 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.LpSpace.Basic
-public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
-public import TauCeti.MeasureTheory.Integral.UncenteredMaximalFunction
+public import TauCeti.MeasureTheory.Integral.JohnNirenberg.HigherOscillation
+public import TauCeti.MeasureTheory.Integral.MaximalFunction
+public import TauCeti.MeasureTheory.Integral.SharpMaximalFunction
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
-import TauCeti.MeasureTheory.Integral.CalderonZygmund.BoundedMeanOscillation
-import TauCeti.MeasureTheory.Integral.JohnNirenberg
+import TauCeti.MeasureTheory.Integral.DistRpow
 
 /-!
-# The sharp maximal function of a commutator with a BMO function
+# The sharp maximal function of a commutator with a function of bounded mean oscillation
 
-Let `T` be a singular integral operator on `ℝⁿ = ι → ℝ`, `n ≥ 1`: a bounded linear operator on `L²`
-given off the support of its argument by a kernel `K` that satisfies the standard smoothness
-estimate in its first variable,
+Let `T` be a singular integral operator on `ℝⁿ = ι → ℝ`, `n ≥ 1`, and let `b` have bounded mean
+oscillation. The **commutator** of `T` with multiplication by `b` is
 
-`‖K x y - K x' y‖ ≤ A dist x x' ^ δ dist y x' ^ (-(n + δ))` whenever `dist y x' > 2 dist x x'`,
+`[b, T] f = b T f - T (b f)`.
 
-and bounded in the `Lᵘ` norm for some `1 ≤ u < ∞`. For a function `b` of bounded mean oscillation
-the **commutator** `[b, T] f = b T f - T (b f)` is in general not a singular integral of the same
-kind, but its oscillation is controlled pointwise: for every `t > u`,
+Coifman, Rochberg and Weiss proved that `[b, T]` is bounded on `Lᵖ` for `1 < p < ∞`, with norm
+`O(‖b‖_{BMO})`. This is the perturbative engine of the `W^{1,p}` and `W^{2,p}` theories of elliptic
+equations whose coefficients have vanishing mean oscillation: freezing a coefficient `a` at a
+point leaves an error that is a commutator `[a, T]` of a Calderón–Zygmund operator with `a`.
 
-`([b, T] f)^#(x) ≤ C ‖b‖_{BMO} (M(‖T f‖^t)(x)^{1/t} + M(‖f‖^t)(x)^{1/t})`,
+This file proves the pointwise estimate on which Janson's proof of that theorem rests: for
+`1 < q < ∞`,
 
-where `^#` is the sharp maximal function (`TauCeti.sharpMaximalFunction`), `M` is the uncentred
-maximal function (`TauCeti.uncenteredMaximalFunction`), and `C` depends only on `n`, `u`, `t`, `δ`,
-`A` and the `Lᵘ` bound of `T` (`TauCeti.exists_sharpMaximalFunction_smul_sub_le`). This is the
-estimate of Janson and Strömberg behind the Coifman–Rochberg–Weiss theorem
-`‖[b, T] f‖_p ≲ ‖b‖_{BMO} ‖f‖_p`. That `Lᵖ` bound, for `p > t`, still needs more than this file:
-a Fefferman–Stein inequality applicable to the commutator (the existing
-`TauCeti.eLpNorm_le_eLpNorm_sharpMaximalFunction` assumes integrability, which these hypotheses do
-not supply), the boundedness of the maximal function on `L^{p/t}`, and the `Lᵖ` boundedness of
-`T` to control the `M(‖T f‖^t)` term.
+`([b, T] f)^# x ≤ C ‖b‖_{BMO} ((M(‖T f‖^q) x)^{1/q} + (M(‖f‖^q) x)^{1/q})`
 
-## The argument
+at every point `x` (`TauCeti.exists_sharpMaximalFunction_smul_sub_le_of_norm_sub_le_mul_rpow`),
+where `^#` is the sharp maximal function and `M` the centred Hardy–Littlewood maximal function.
+The operator `T` is bounded on `L²`, given away from the support of its argument by a kernel `K`
+with the standard smoothness estimate in its first variable, and bounded in some `Lˢ` norm with
+`1 ≤ s < q`. Calderón–Zygmund operators satisfy the `Lˢ` bound for every `1 < s < q`; the case
+`s = 1` requires an additional strong `L¹` bound. Balls are taken in the sup distance, so that they
+are cubes.
 
-Fix a ball `B = B(c, r)` containing `x` and put `m = b_{2B}`, the average of `b` over `2B`.
-Splitting `(b - m) f = φ₁ + φ₂` with `φ₁ = 1_{2B} (b - m) f`, one has
+## The proof
 
-`[b, T] f = (b - m) T f - T φ₁ - T φ₂`,
+Fix a ball `B = B(c, r)` containing `x`, let `2B = B(c, 2 r)` and `a = b_{2B}`. Split
+`(b - a) f = h₁ + h₂` with `h₁` supported on `2B` and `h₂` vanishing there. Then
 
-and each term is compared with a constant on `B`:
+`[b, T] f = (b - a) T f - T h₁ - T h₂`,
 
-* `(b - m) T f`: by Hölder's inequality with the exponents `t` and `t' = t / (t - 1)`, its average
-  over `B` is at most `(⨍_B |b - m|^{t'})^{1/t'} M(‖T f‖^t)(x)^{1/t}`, and the John–Nirenberg
-  moment bound (`TauCeti.setLAverage_enorm_sub_setAverage_rpow_le`) controls the first factor by
-  `‖b‖_{BMO}`.
-* `T φ₁`: the `Lᵘ` bound of `T` and Hölder's inequality on `2B` with the exponents `t / u` and its
-  conjugate bound the average of `‖T φ₁‖` over `B` by `‖b‖_{BMO} M(‖f‖^t)(x)^{1/t}`.
-* `T φ₂`: since `φ₂` vanishes on `2B`, on `B` the operator is given by the kernel, and the
-  smoothness estimate bounds `T φ₂ - ∫ K c z (φ₂ z) dz` by
-  `A r^δ ∫_{(2B)ᶜ} dist(z, c)^(-(n+δ)) |b z - m| ‖f z‖ dz`. On the dyadic annulus at distance
-  `2^(k+1) r` this is `4ⁿ 2^(-(k+1)δ)` times an average over `2^(k+1) · 2B`, which Hölder's
-  inequality bounds by `(C + (k + 1) 2ⁿ) ‖b‖_{BMO} M(‖f‖^t)(x)^{1/t}`: the averages of `b` over
-  consecutive concentric balls differ by at most `2ⁿ ‖b‖_{BMO}`
-  (`TauCeti.enorm_setAverage_ball_two_pow_mul_sub_le`). The series in `k` converges.
+and the three terms are compared with the constant `-∫ K c z (h₂ z) dz` on `B`.
 
-Finally, the mean oscillation of a function about its own average is at most twice its mean
-oscillation about any constant (`TauCeti.setLAverage_enorm_sub_setAverage_le`).
+* `(b - a) T f`: by Hölder's inequality, `⨍_B |b - a| ‖T f‖` is at most the `L^{q'}` mean
+  oscillation of `b`, which the John–Nirenberg inequality bounds by `‖b‖_{BMO}`
+  (`TauCeti.setLAverage_enorm_sub_setAverage_rpow_le_of_bmoSeminorm_le`), times the `L^q` average of
+  `T f`, which the maximal function bounds.
+* `T h₁`: by Hölder's inequality and the `Lˢ` bound,
+  `⨍_B ‖T h₁‖ ≤ A |B|^{-1/s} ‖(b - a) f‖_{Lˢ(2B)}`, and the same Hölder and John–Nirenberg
+  argument bounds the right-hand side.
+* `T h₂`: for almost every `y ∈ B`, `‖T h₂ y - ∫ K c z (h₂ z) dz‖` is at most
+  `∫ ‖K y z - K c z‖ ‖h₂ z‖ dz`.
+  On the dyadic annulus `2^(k+1) r ≤ dist z c < 2^(k+2) r` the kernel difference is
+  `O(2^(-kδ) / |2^(k+2) B|)`, while `|b_{2^(k+2) B} - b_{2B}| ≤ (k + 3) 2ⁿ ‖b‖_{BMO}`. The sum over
+  `k` converges.
 
-The kernel representation is assumed in the form used by the `L^∞ → BMO` bound
-(`ContinuousLinearMap.setLAverage_enorm_sub_setAverage_le_of_hormander`). For `u = 2` the `Lᵘ`
-bound holds with the operator norm of `T`; for `1 < u < 2` it follows, under Hörmander's
-condition, from the Calderón–Zygmund theorem (`ContinuousLinearMap.eLpNorm_le_of_hormander`),
-which lets `t` be taken arbitrarily close to `1`. The function `b` enters only through
-`‖b‖_{BMO}`; the commutator is formed on `L²`, so `b f` is assumed to lie in `L²`.
+Integrating this estimate, with the `Lᵖ` bounds for the maximal function for `q < p`, leads to the
+Coifman–Rochberg–Weiss theorem. The Fefferman–Stein inequality available here
+(`TauCeti.eLpNorm_le_eLpNorm_sharpMaximalFunction`) assumes that its argument is integrable, which
+is not known a priori for `[b, T] f`; completing the argument requires a suitable a priori version
+of that inequality together with an approximation or truncation argument.
 
 ## Main declarations
 
-* `TauCeti.exists_sharpMaximalFunction_smul_sub_le`: the pointwise sharp maximal function estimate
-  for the commutator `[b, T] f = b T f - T (b f)`.
+* `TauCeti.exists_sharpMaximalFunction_smul_sub_le_of_norm_sub_le_mul_rpow`: the sharp maximal
+  function estimate for `[b, T] f`.
 
 ## References
 
@@ -82,507 +77,472 @@ which lets `t` be taken arbitrarily close to `1`. The function `b` enters only t
   variables*, Ann. of Math. **103** (1976), 611–635.
 * S. Janson, *Mean oscillation and commutators of singular integral operators*, Ark. Mat. **16**
   (1978), 263–270.
-* J.-O. Strömberg, *Bounded mean oscillation with Orlicz norms and duality of Hardy spaces*,
-  Indiana Univ. Math. J. **28** (1979), 511–544.
-* L. Grafakos, *Modern Fourier Analysis*, 3rd ed., Section 3.5.
+* L. Grafakos, *Modern Fourier Analysis*, Section 3.5.
 -/
 
 public section
 
-namespace TauCeti
-
-open _root_.MeasureTheory Metric Set
+open Filter MeasureTheory Metric Set
 open scoped ENNReal NNReal
 
-variable {ι : Type*} [Fintype ι] {b : (ι → ℝ) → ℝ}
+namespace TauCeti
 
-/-- The arithmetic of the `k`-th dyadic annulus: `r^δ (2^(k+1) r)^(-(n+δ))` times the volume
-`(2 · 2^(k+2) r)ⁿ` of the enclosing ball is `4ⁿ 2^(-(k+1)δ)`. -/
-private theorem rpow_mul_rpow_neg_mul_pow_eq (n : ℕ) {r δ : ℝ} (hr : 0 < r) (k : ℕ) :
-    r ^ δ * (2 ^ (k + 1) * r) ^ (-(n + δ)) * (2 * (2 ^ (k + 1) * (2 * r))) ^ n =
-      4 ^ n * 2 ^ (-((k + 1) * δ)) := by
-  have h2 : (0 : ℝ) < 2 ^ (k + 1) := by positivity
-  rw [Real.rpow_neg (by positivity), Real.rpow_add (by positivity), Real.rpow_natCast,
-    Real.mul_rpow h2.le hr.le]
-  have : (2 : ℝ) ^ (-((k + 1) * δ)) = (((2 : ℝ) ^ (k + 1)) ^ δ)⁻¹ := by
-    rw [Real.rpow_neg zero_le_two, Real.rpow_mul zero_le_two, ← Real.rpow_natCast]
-    push_cast
-    rfl
-  rw [this]
-  have hrδ : 0 < r ^ δ := Real.rpow_pos_of_pos hr δ
-  have h2δ : 0 < ((2 : ℝ) ^ (k + 1)) ^ δ := Real.rpow_pos_of_pos h2 δ
+variable {ι : Type*} [Fintype ι] [Nonempty ι] {E G : Type*} [NormedAddCommGroup E]
+  [NormedSpace ℝ E] [NormedAddCommGroup G]
+
+/-- The arithmetic of the dyadic annuli: `C r^δ (2^(k+1) r)^(-(n+δ)) (2 · 2^(k+2) r)ⁿ = C 4ⁿ
+(2^(-δ))^(k+1)`. -/
+private theorem mul_rpow_mul_rpow_neg_mul_pow_eq (C : ℝ) (n k : ℕ) {r δ : ℝ} (hr : 0 < r) :
+    C * r ^ δ * (2 ^ (k + 1) * r) ^ (-(n + δ)) * (2 * (2 ^ (k + 2) * r)) ^ n =
+      C * 4 ^ n * (2 ^ (-δ)) ^ (k + 1) := by
+  set u : ℝ := 2 ^ (k + 1) * r
+  have hu : 0 < u := by positivity
+  have h4 : 2 * (2 ^ (k + 2) * r) = 4 * u := by simp only [u]; ring
+  have hru : r = u * (2 ^ (k + 1))⁻¹ := by simp only [u]; field_simp
+  rw [h4, mul_pow, Real.rpow_neg hu.le, Real.rpow_add hu, hru,
+    Real.mul_rpow hu.le (by positivity), Real.inv_rpow (by positivity), ← Real.rpow_natCast u n,
+    ← Real.rpow_natCast (2 : ℝ) (k + 1), ← Real.rpow_mul zero_le_two, Real.rpow_neg zero_le_two,
+    ← Real.rpow_natCast (2 ^ δ)⁻¹ (k + 1), Real.inv_rpow (by positivity),
+    ← Real.rpow_mul zero_le_two,
+    mul_comm δ]
   field_simp
-  simp only [mul_pow]
-  norm_num
 
-variable {E : Type*} [NormedAddCommGroup E]
+/-- **The local part.** Let `T` be bounded in the `Lˢ` norm with constant `A`, and let `h ∈ L²` be
+`(b - b_{2B}) f` on the ball `2B = B(c, 2 r)` and zero off it. Then for `x ∈ B = B(c, r)` and
+`s < q`,
 
-/-- **The far part.** Off `ball c (2r)`, the weight `r^δ dist(z, c)^(-(n+δ))` integrated against
-`‖b - b_{2B}‖ ‖f‖` is at most a convergent series times `‖b‖_{BMO} M(‖f‖^t)(x)^{1/t}`. The proof
-splits the complement into dyadic annuli, applies Hölder's inequality on each enclosing ball, and
-sums the telescoped averages of `b`. -/
-private theorem setLIntegral_compl_ball_le [Nonempty ι] (hb : LocallyIntegrable b volume)
-    {t t' : ℝ} (htt : t'.HolderConjugate t) {f : (ι → ℝ) → E} (hf : AEStronglyMeasurable f volume)
-    (c : ι → ℝ) {r : ℝ} (hr : 0 < r) {δ : ℝ} (hδ : 0 ≤ δ) {x : ι → ℝ} (hx : x ∈ ball c r) :
-    ∫⁻ z in (ball c (2 * r))ᶜ, ENNReal.ofReal (r ^ δ * dist z c ^ (-(Fintype.card ι + δ))) *
-        (‖b z - ⨍ y in ball c (2 * r), b y‖ₑ * ‖f z‖ₑ) ≤
-      (∑' k : ℕ, ENNReal.ofReal (4 ^ Fintype.card ι * 2 ^ (-((k + 1) * δ))) *
-        (ENNReal.ofReal ((1 + 7 * (⌈t'⌉₊).factorial) *
-          (2 ^ (Fintype.card ι + 1) / Real.log (3 / 2)) ^ t') ^ t'⁻¹ +
-          (k + 1) * 2 ^ Fintype.card ι)) * bmoSeminorm b volume *
-        uncenteredMaximalFunction volume (fun z => ‖f z‖ₑ ^ t) x ^ t⁻¹ := by
+`∫_B ‖T h‖ ≤ A C 2^{n/q} 2^{n/s} ‖b‖_{BMO} |B| (M(‖f‖^q) x)^{1/q}`,
+
+by Hölder's inequality on `B`, the `Lˢ` bound, and the John–Nirenberg estimate on `2B`. -/
+private theorem setLIntegral_enorm_apply_le_of_eLpNorm_le {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 volume)
+    {s q : ℝ} (hs : 1 ≤ s) (hsq : s < q) {A : ℝ≥0}
+    (hT : ∀ h : Lp E 2 (volume : Measure (ι → ℝ)),
+      eLpNorm (T h) (ENNReal.ofReal s) volume ≤ A * eLpNorm h (ENNReal.ofReal s) volume)
+    {b : (ι → ℝ) → ℝ} (hb : LocallyIntegrable b volume) {M : ℝ≥0}
+    (hM : bmoSeminorm b volume ≤ M) {f : (ι → ℝ) → E} (hf : AEStronglyMeasurable f volume)
+    {h : Lp E 2 (volume : Measure (ι → ℝ))} {c x : ι → ℝ} {r : ℝ} (hx : x ∈ ball c r)
+    (hh : h =ᵐ[volume] (ball c (2 * r)).indicator
+      (fun y => (b y - ⨍ z in ball c (2 * r), b z) • f y)) :
+    ∫⁻ y in ball c r, ‖T h y‖ₑ ≤
+      A * bmoHolderConst (Fintype.card ι) s q * (2 ^ Fintype.card ι : ℝ≥0∞) ^ q⁻¹ *
+        (2 ^ Fintype.card ι : ℝ≥0∞) ^ s⁻¹ * M * volume (ball c r) *
+          maximalFunction volume (fun y => ‖f y‖ₑ ^ q) x ^ q⁻¹ := by
   set n := Fintype.card ι
-  set m := ⨍ y in ball c (2 * r), b y
-  set W : (ι → ℝ) → ℝ≥0∞ := fun z => ‖b z - m‖ₑ * ‖f z‖ₑ
-  set S : ℕ → Set (ι → ℝ) := fun k => ball c (2 ^ (k + 1) * (2 * r))
-  set C' := ENNReal.ofReal ((1 + 7 * (⌈t'⌉₊).factorial) *
-    (2 ^ (n + 1) / Real.log (3 / 2)) ^ t') ^ t'⁻¹
-  set β := bmoSeminorm b volume
-  set M := uncenteredMaximalFunction volume (fun z => ‖f z‖ₑ ^ t) x ^ t⁻¹
-  have hW : AEMeasurable W volume :=
-    (hb.aestronglyMeasurable.sub aestronglyMeasurable_const).enorm.mul hf.enorm
-  -- Each point off `ball c (2r)` lies in one dyadic annulus.
-  have hpt : ∀ z ∈ (ball c (2 * r))ᶜ,
-      ENNReal.ofReal (r ^ δ * dist z c ^ (-(n + δ))) * W z ≤
-        ∑' k : ℕ, ENNReal.ofReal (r ^ δ * (2 ^ (k + 1) * r) ^ (-(n + δ))) *
-          (S k).indicator W z := by
-    intro z hz
-    rw [mem_compl_iff, mem_ball, not_lt] at hz
-    obtain ⟨k, hk1, hk2⟩ := exists_nat_pow_near (x := dist z c / (2 * r))
-      ((one_le_div (by positivity)).2 hz) one_lt_two
-    rw [le_div_iff₀ (by positivity), show (2 : ℝ) ^ k * (2 * r) = 2 ^ (k + 1) * r by ring] at hk1
-    rw [div_lt_iff₀ (by positivity)] at hk2
-    refine le_trans ?_ (le_tsum _ k)
-    rw [indicator_of_mem (mem_ball.2 hk2)]
-    exact mul_le_mul_left (ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_left
-      (Real.rpow_le_rpow_of_nonpos (by positivity) hk1 (neg_nonpos.2 (by positivity)))
-      (Real.rpow_nonneg hr.le _))) _
-  -- On each annulus, Hölder's inequality and the telescoping of averages bound the integral.
-  have hk : ∀ k : ℕ, ENNReal.ofReal (r ^ δ * (2 ^ (k + 1) * r) ^ (-(n + δ))) *
-      ∫⁻ z in S k, W z ≤ ENNReal.ofReal (4 ^ n * 2 ^ (-((k + 1) * δ))) *
-        (C' + (k + 1) * 2 ^ n) * β * M := by
-    intro k
-    have hρ : 0 < 2 ^ (k + 1) * (2 * r) := by positivity
-    have hxS : x ∈ S k := ball_subset_ball (by
-      have : (1 : ℝ) ≤ 2 ^ (k + 1) := one_le_pow₀ one_le_two
-      nlinarith) hx
-    have hMS : (⨍⁻ z in S k, ‖f z‖ₑ ^ t) ^ t⁻¹ ≤ M := by
-      refine ENNReal.rpow_le_rpow ?_ (inv_nonneg.2 htt.symm.nonneg)
-      simpa only [enorm_eq_self] using
-        setLAverage_le_uncenteredMaximalFunction volume (fun z => ‖f z‖ₑ ^ t) hxS
-    have hhol := (setLAverage_enorm_sub_mul_le hb htt hf.enorm c hρ m).trans
-      (mul_le_mul' le_rfl hMS)
-    have htel := enorm_setAverage_ball_two_pow_mul_sub_le hb.aestronglyMeasurable c
-      (show 0 < 2 * r by positivity) (k + 1)
-    rw [Module.finrank_fintype_fun_eq_card] at htel
-    rw [← measure_mul_setLAverage _ measure_ball_lt_top.ne, Real.volume_pi_ball c hρ, ← mul_assoc,
-      ← ENNReal.ofReal_mul (by positivity), rpow_mul_rpow_neg_mul_pow_eq n hr k, mul_assoc,
-      mul_assoc]
-    gcongr
-    calc ⨍⁻ z in S k, W z ≤ (C' * β + ‖(⨍ y in S k, b y) - m‖ₑ) * M := hhol
-      _ ≤ (C' * β + (k + 1) * 2 ^ n * β) * M := by
-          gcongr
-          exact htel.trans_eq (by push_cast; ring)
-      _ = (C' + (k + 1) * 2 ^ n) * (β * M) := by ring
-  calc ∫⁻ z in (ball c (2 * r))ᶜ, ENNReal.ofReal (r ^ δ * dist z c ^ (-(n + δ))) * W z
-      ≤ ∫⁻ z in (ball c (2 * r))ᶜ, ∑' k : ℕ,
-          ENNReal.ofReal (r ^ δ * (2 ^ (k + 1) * r) ^ (-(n + δ))) * (S k).indicator W z :=
-        setLIntegral_mono' measurableSet_ball.compl hpt
-    _ ≤ ∫⁻ z, ∑' k : ℕ,
-          ENNReal.ofReal (r ^ δ * (2 ^ (k + 1) * r) ^ (-(n + δ))) * (S k).indicator W z :=
-        setLIntegral_le_lintegral _ _
-    _ = ∑' k : ℕ, ENNReal.ofReal (r ^ δ * (2 ^ (k + 1) * r) ^ (-(n + δ))) *
-          ∫⁻ z in S k, W z := by
-        rw [lintegral_tsum fun k => (hW.indicator measurableSet_ball).const_mul _]
-        congr 1 with k
-        rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, lintegral_indicator measurableSet_ball]
-    _ ≤ ∑' k : ℕ, ENNReal.ofReal (4 ^ n * 2 ^ (-((k + 1) * δ))) * (C' + (k + 1) * 2 ^ n) * β * M :=
-        tsum_le_tsum hk
-    _ = _ := by rw [ENNReal.tsum_mul_right, ENNReal.tsum_mul_right]
-
-variable [NormedSpace ℝ E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- **The kernel step.** If `φ ∈ L²` vanishes on `ball c (2r)`, then on `ball c r` the function
-`T φ` stays within `A ∫_{(2B)ᶜ} r^δ dist(z, c)^(-(n+δ)) ‖φ z‖ dz` of the kernel integral at the
-centre, by the smoothness of the kernel in its first variable. -/
-private theorem ae_enorm_apply_sub_integral_le
-    (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 (volume : Measure (ι → ℝ)))
-    {K : (ι → ℝ) → (ι → ℝ) → E →L[ℝ] F} (hKm : ∀ x, AEStronglyMeasurable (K x) volume)
-    {A : ℝ≥0} {δ : ℝ} (hδ : 0 ≤ δ)
-    (hK : ∀ x x' y, 2 * dist x x' < dist y x' →
-      ‖K x y - K x' y‖ ≤ A * (dist x x' ^ δ * dist y x' ^ (-(Fintype.card ι + δ))))
-    (hrep : ∀ (φ : Lp E 2 (volume : Measure (ι → ℝ))) (y : ι → ℝ) (ρ : ℝ),
-      (∀ᵐ z, z ∈ ball y ρ → φ z = 0) → ∀ᵐ x, x ∈ ball y ρ → T φ x = ∫ z, K x z (φ z))
-    (φ : Lp E 2 (volume : Measure (ι → ℝ))) (c : ι → ℝ) {r : ℝ} (hr : 0 < r)
-    (hφ : ∀ᵐ z, z ∈ ball c (2 * r) → φ z = 0) :
-    ∀ᵐ y, y ∈ ball c r → ‖T φ y - ∫ z, K c z (φ z)‖ₑ ≤
-      A * ∫⁻ z in (ball c (2 * r))ᶜ,
-        ENNReal.ofReal (r ^ δ * dist z c ^ (-(Fintype.card ι + δ))) * ‖φ z‖ₑ := by
-  filter_upwards [hrep φ c (2 * r) hφ] with y hy hyB
-  rw [hy (ball_subset_ball (by linarith) hyB)]
-  have hmeas (x : ι → ℝ) : AEStronglyMeasurable (fun z => K x z (φ z)) volume := by
-    simpa using (ContinuousLinearMap.apply ℝ F).aestronglyMeasurable_comp₂
-      (Lp.aestronglyMeasurable φ) (hKm x)
-  refine (MeasureTheory.enorm_integral_sub_integral_le_lintegral_enorm_sub (hmeas y)
-    (hmeas c)).trans ?_
-  rw [← lintegral_const_mul' _ _ ENNReal.coe_ne_top, ← lintegral_indicator measurableSet_ball.compl]
-  refine lintegral_mono_ae ?_
-  filter_upwards [hφ] with z hz
-  by_cases hzB : z ∈ ball c (2 * r)
-  · simp [hz hzB]
-  rw [indicator_of_mem (mem_compl hzB)]
-  have hyc : dist y c < r := mem_ball.1 hyB
-  have hd : 2 * dist y c < dist z c := by
-    rw [mem_ball, not_lt] at hzB
-    linarith
-  have hKyz : ‖K y z - K c z‖ₑ ≤
-      A * ENNReal.ofReal (r ^ δ * dist z c ^ (-(Fintype.card ι + δ))) := by
-    rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul A.coe_nonneg]
-    refine ENNReal.ofReal_le_ofReal ((hK y c z hd).trans ?_)
-    gcongr
-  calc ‖K y z (φ z) - K c z (φ z)‖ₑ = ‖(K y z - K c z) (φ z)‖ₑ := by
-        rw [sub_apply]
-    _ ≤ ‖K y z - K c z‖ₑ * ‖φ z‖ₑ := ContinuousLinearMap.le_opENorm _ _
-    _ ≤ _ := by rw [← mul_assoc]; gcongr
-
-/-- **The local part.** If `‖φ‖ ≤ 1_{2B} ‖b - b_{2B}‖ ‖f‖`, then the average of `‖T φ‖` over `B` is
-controlled through the `Lᵘ` bound of `T` and Hölder's inequality on `2B` with the exponents
-`t / u` and its conjugate. -/
-private theorem setLAverage_enorm_apply_le [Nonempty ι]
-    (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 (volume : Measure (ι → ℝ)))
-    {u t : ℝ} (hu : 1 ≤ u) (hut : u < t) {N : ℝ≥0}
-    (hTu : ∀ φ : Lp E 2 (volume : Measure (ι → ℝ)),
-      eLpNorm (T φ) (ENNReal.ofReal u) volume ≤ N * eLpNorm φ (ENNReal.ofReal u) volume)
-    (hb : LocallyIntegrable b volume) {f : (ι → ℝ) → E} (hf : AEStronglyMeasurable f volume)
-    (φ : Lp E 2 (volume : Measure (ι → ℝ))) (c : ι → ℝ) {r : ℝ} (hr : 0 < r)
-    (hφ : ∀ᵐ z, ‖φ z‖ₑ ≤ (ball c (2 * r)).indicator
-      (fun z => ‖b z - ⨍ y in ball c (2 * r), b y‖ₑ * ‖f z‖ₑ) z)
-    {x : ι → ℝ} (hx : x ∈ ball c r) :
-    ⨍⁻ y in ball c r, ‖T φ y‖ₑ ≤
-      (2 ^ Fintype.card ι : ℝ≥0∞) ^ u⁻¹ * N *
-        (ENNReal.ofReal ((1 + 7 * (⌈u * (t / u).conjExponent⌉₊).factorial) *
-          (2 ^ (Fintype.card ι + 1) / Real.log (3 / 2)) ^ (u * (t / u).conjExponent)) ^
-            (u * (t / u).conjExponent)⁻¹ * bmoSeminorm b volume) *
-        uncenteredMaximalFunction volume (fun z => ‖f z‖ₑ ^ t) x ^ t⁻¹ := by
-  set n := Fintype.card ι
-  have hu0 : 0 < u := one_pos.trans_le hu
-  set v := t / u
-  have hv : 1 < v := (one_lt_div hu0).2 hut
-  set v' := v.conjExponent
-  have hvv : v'.HolderConjugate v := (Real.HolderConjugate.conjExponent hv).symm
-  set w := u * v'
-  have hw : 1 ≤ w := one_le_mul_of_one_le_of_one_le hu hvv.lt.le
   set B := ball c r
-  set B2 := ball c (2 * r)
-  set m := ⨍ y in B2, b y
-  set J := ENNReal.ofReal ((1 + 7 * (⌈w⌉₊).factorial) *
-    (2 ^ (n + 1) / Real.log (3 / 2)) ^ w) ^ w⁻¹ * bmoSeminorm b volume
-  set Mf := uncenteredMaximalFunction volume (fun z => ‖f z‖ₑ ^ t) x
+  set B₁ := ball c (2 * r)
+  set a := ⨍ z in B₁, b z
+  set Mf := maximalFunction volume (fun y => ‖f y‖ₑ ^ q) x
+  have hr : 0 < r := pos_of_mem_ball hx
+  have hs0 : 0 < s := one_pos.trans_le hs
+  have hsR : (ENNReal.ofReal s).toReal = s := ENNReal.toReal_ofReal hs0.le
   have hB0 : volume B ≠ 0 := (measure_ball_pos volume c hr).ne'
-  have hBtop : volume B ≠ ⊤ := measure_ball_lt_top.ne
-  have hB2 : volume B2 = 2 ^ n * volume B := by
-    rw [Measure.addHaar_ball_mul_of_pos volume c two_pos, ← Measure.addHaar_ball_center volume c r,
-      Module.finrank_fintype_fun_eq_card, ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat]
-  -- The `Lᵘ` norm of `φ` is controlled by Hölder's inequality on `B2`.
-  have hφu : ∫⁻ z, ‖φ z‖ₑ ^ u ≤ volume B2 * (J ^ u * (Mf ^ t⁻¹) ^ u) := by
-    have hbm : AEMeasurable (fun z => ‖b z - m‖ₑ ^ u) (volume.restrict B2) :=
-      (hb.aestronglyMeasurable.sub aestronglyMeasurable_const).enorm.restrict.pow_const _
-    have hfm : AEMeasurable (fun z => ‖f z‖ₑ ^ u) (volume.restrict B2) :=
-      hf.enorm.restrict.pow_const _
-    have hhol := ENNReal.lintegral_mul_le_Lp_mul_Lq
-      ((volume.restrict B2 univ)⁻¹ • volume.restrict B2) hvv (hbm.smul_measure _)
-      (hfm.smul_measure _)
-    simp only [Pi.mul_apply, ← laverage_eq', ← ENNReal.rpow_mul] at hhol
-    have hw' : u * v' = w := rfl
-    have huv : u * v = t := mul_div_cancel₀ t hu0.ne'
-    rw [hw', huv] at hhol
-    have h1 : (⨍⁻ z in B2, ‖b z - m‖ₑ ^ w) ^ (1 / v') ≤ J ^ u := by
-      have hJ := rpow_setLAverage_enorm_sub_rpow_le hb hw c (show 0 < 2 * r by positivity) m
-      rw [sub_self, enorm_zero, add_zero] at hJ
-      calc (⨍⁻ z in B2, ‖b z - m‖ₑ ^ w) ^ (1 / v') = ((⨍⁻ z in B2, ‖b z - m‖ₑ ^ w) ^ w⁻¹) ^ u := by
-            rw [← ENNReal.rpow_mul]
-            congr 1
-            simp only [w]
-            field_simp
-        _ ≤ J ^ u := by gcongr
-    have h2 : (⨍⁻ z in B2, ‖f z‖ₑ ^ t) ^ (1 / v) ≤ (Mf ^ t⁻¹) ^ u := by
-      have hM : ⨍⁻ z in B2, ‖f z‖ₑ ^ t ≤ Mf := by
-        simpa only [enorm_eq_self] using setLAverage_le_uncenteredMaximalFunction volume
-          (fun z => ‖f z‖ₑ ^ t) (ball_subset_ball (by linarith) hx)
-      calc (⨍⁻ z in B2, ‖f z‖ₑ ^ t) ^ (1 / v) = ((⨍⁻ z in B2, ‖f z‖ₑ ^ t) ^ t⁻¹) ^ u := by
-            rw [← ENNReal.rpow_mul]
-            congr 1
-            simp only [v]
-            field_simp
-        _ ≤ (Mf ^ t⁻¹) ^ u := by
-            gcongr
-            exact inv_nonneg.2 (hu0.trans hut).le
-    calc ∫⁻ z, ‖φ z‖ₑ ^ u ≤ ∫⁻ z, B2.indicator (fun z => ‖b z - m‖ₑ ^ u * ‖f z‖ₑ ^ u) z := by
-          refine lintegral_mono_ae ?_
-          filter_upwards [hφ] with z hz
-          refine (ENNReal.rpow_le_rpow hz hu0.le).trans_eq ?_
-          by_cases hzB : z ∈ B2
-          · simp [indicator_of_mem hzB, ENNReal.mul_rpow_of_nonneg _ _ hu0.le]
-          · simp [indicator_of_notMem hzB, ENNReal.zero_rpow_of_pos hu0]
-      _ = volume B2 * ⨍⁻ z in B2, ‖b z - m‖ₑ ^ u * ‖f z‖ₑ ^ u := by
-          rw [lintegral_indicator measurableSet_ball, measure_mul_setLAverage _
-            measure_ball_lt_top.ne]
-      _ ≤ volume B2 * (J ^ u * (Mf ^ t⁻¹) ^ u) := by
+  have hBtop : volume B ≠ ∞ := measure_ball_lt_top.ne
+  have hxB₁ : x ∈ B₁ := ball_subset_ball (by linarith) hx
+  have hφ : AEStronglyMeasurable (fun y => (b y - a) • f y) (volume.restrict B₁) :=
+    ((hb.aestronglyMeasurable.sub aestronglyMeasurable_const).smul hf).restrict
+  -- The `Lˢ` norm of `h` is that of `(b - a) f` on `B₁`, bounded by the John–Nirenberg estimate.
+  have hint := setLIntegral_enorm_sub_mul_enorm_rpow_le hb hM hf hs hsq hxB₁ (a := a)
+    (κ := 0) (by simp [a, B₁])
+  have hh_norm : eLpNorm h (ENNReal.ofReal s) volume ≤
+      bmoHolderConst n s q * M * (2 ^ n : ℝ≥0∞) ^ q⁻¹ * volume B₁ ^ s⁻¹ * Mf ^ q⁻¹ := by
+    rw [eLpNorm_congr_ae hh,
+      eLpNorm_indicator_eq_eLpNorm_restrict measurableSet_ball.nullMeasurableSet,
+      eLpNorm_eq_lintegral_rpow_enorm_toReal (by positivity) ENNReal.ofReal_ne_top hφ, hsR]
+    simp_rw [enorm_smul]
+    calc (∫⁻ y in B₁, (‖b y - a‖ₑ * ‖f y‖ₑ) ^ s) ^ (1 / s)
+        ≤ (((bmoHolderConst n s q + 0) * M) ^ s * (2 ^ n : ℝ≥0∞) ^ (s / q) * volume B₁ *
+            Mf ^ (s / q)) ^ (1 / s) := by
           gcongr
-          exact hhol.trans (mul_le_mul' h1 h2)
-  have hTφu : ∫⁻ y in B, ‖T φ y‖ₑ ^ u ≤ N ^ u * (volume B2 * (J ^ u * (Mf ^ t⁻¹) ^ u)) := by
-    have hu' : ENNReal.ofReal u ≠ 0 := (ENNReal.ofReal_pos.2 hu0).ne'
-    calc ∫⁻ y in B, ‖T φ y‖ₑ ^ u ≤ ∫⁻ y, ‖T φ y‖ₑ ^ u := setLIntegral_le_lintegral _ _
-      _ = eLpNorm (T φ) (ENNReal.ofReal u) volume ^ u := by
-          rw [eLpNorm_eq_eLpNorm' hu' ENNReal.ofReal_ne_top (Lp.aestronglyMeasurable _),
-            ENNReal.toReal_ofReal hu0.le, lintegral_rpow_enorm_eq_rpow_eLpNorm' hu0]
-      _ ≤ (N * eLpNorm φ (ENNReal.ofReal u) volume) ^ u := by gcongr; exact hTu φ
-      _ = N ^ u * ∫⁻ z, ‖φ z‖ₑ ^ u := by
-          rw [ENNReal.mul_rpow_of_nonneg _ _ hu0.le,
-            eLpNorm_eq_eLpNorm' hu' ENNReal.ofReal_ne_top (Lp.aestronglyMeasurable _),
-            ENNReal.toReal_ofReal hu0.le, lintegral_rpow_enorm_eq_rpow_eLpNorm' hu0]
-      _ ≤ _ := by gcongr
-  have hX : ⨍⁻ y in B, ‖T φ y‖ₑ ^ u ≤
-      ((2 ^ n : ℝ≥0∞) ^ u⁻¹ * N * J * Mf ^ t⁻¹) ^ u := by
-    rw [setLAverage_eq, ENNReal.div_le_iff hB0 hBtop]
-    refine hTφu.trans_eq ?_
-    have key : ((2 ^ n : ℝ≥0∞) ^ u⁻¹ * N * J * Mf ^ t⁻¹) ^ u =
-        2 ^ n * N ^ u * (J ^ u * (Mf ^ t⁻¹) ^ u) := by
-      rw [ENNReal.mul_rpow_of_nonneg ((2 ^ n : ℝ≥0∞) ^ u⁻¹ * N * J) (Mf ^ t⁻¹) hu0.le,
-        ENNReal.mul_rpow_of_nonneg ((2 ^ n : ℝ≥0∞) ^ u⁻¹ * N) J hu0.le,
-        ENNReal.mul_rpow_of_nonneg ((2 ^ n : ℝ≥0∞) ^ u⁻¹) (N : ℝ≥0∞) hu0.le,
-        ENNReal.rpow_inv_rpow hu0.ne']
-      ring
-    rw [hB2, key]
-    ring
-  calc ⨍⁻ y in B, ‖T φ y‖ₑ ≤ (⨍⁻ y in B, ‖T φ y‖ₑ ^ u) ^ u⁻¹ := by
-        rw [ENNReal.le_rpow_inv_iff hu0]
-        exact rpow_laverage_le_laverage_rpow (Lp.aestronglyMeasurable (T φ)).enorm.restrict hu
-    _ ≤ (((2 ^ n : ℝ≥0∞) ^ u⁻¹ * N * J * Mf ^ t⁻¹) ^ u) ^ u⁻¹ := by gcongr
-    _ = _ := ENNReal.rpow_rpow_inv hu0.ne' _
+      _ = bmoHolderConst n s q * M * (2 ^ n : ℝ≥0∞) ^ q⁻¹ * volume B₁ ^ s⁻¹ * Mf ^ q⁻¹ := by
+          have hsq' : s / q * (1 / s) = q⁻¹ := by field_simp
+          rw [add_zero, ENNReal.mul_rpow_of_nonneg _ _ (by positivity),
+            ENNReal.mul_rpow_of_nonneg _ _ (by positivity),
+            ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ← ENNReal.rpow_mul, ← ENNReal.rpow_mul,
+            ← ENNReal.rpow_mul, mul_one_div_cancel hs0.ne', ENNReal.rpow_one, hsq', one_div]
+  -- Hölder's inequality on `B` and the `Lˢ` bound for `T`.
+  have hloc : ∫⁻ y in B, ‖T h y‖ₑ ≤
+      A * eLpNorm h (ENNReal.ofReal s) volume * volume B ^ (1 - s⁻¹) := by
+    calc ∫⁻ y in B, ‖T h y‖ₑ = eLpNorm (T h) 1 (volume.restrict B) :=
+          (eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable _).restrict).symm
+      _ ≤ eLpNorm (T h) (ENNReal.ofReal s) (volume.restrict B) *
+            (volume.restrict B) univ ^ (1 / (1 : ℝ≥0∞).toReal - 1 / (ENNReal.ofReal s).toReal) :=
+          eLpNorm_le_eLpNorm_mul_rpow_measure_univ (by simpa using hs)
+            (Lp.aestronglyMeasurable _).restrict
+      _ ≤ eLpNorm (T h) (ENNReal.ofReal s) volume * volume B ^ (1 - s⁻¹) := by
+          rw [Measure.restrict_apply_univ, hsR, ENNReal.toReal_one, div_one, one_div]
+          exact mul_le_mul_left (eLpNorm_restrict_le _ _ _ _) _
+      _ ≤ A * eLpNorm h (ENNReal.ofReal s) volume * volume B ^ (1 - s⁻¹) := by gcongr; exact hT h
+  have hB₁ : volume B₁ = 2 ^ n * volume B := by
+    simp only [B₁, B]
+    rw [volume.addHaar_ball_mul_of_pos c two_pos, volume.addHaar_ball_center c,
+      ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat, Module.finrank_fintype_fun_eq_card]
+  calc ∫⁻ y in B, ‖T h y‖ₑ
+      ≤ A * (bmoHolderConst n s q * M * (2 ^ n : ℝ≥0∞) ^ q⁻¹ * volume B₁ ^ s⁻¹ * Mf ^ q⁻¹) *
+          volume B ^ (1 - s⁻¹) := hloc.trans (by gcongr)
+    _ = A * bmoHolderConst n s q * (2 ^ n : ℝ≥0∞) ^ q⁻¹ * (2 ^ n : ℝ≥0∞) ^ s⁻¹ * M *
+          (volume B ^ s⁻¹ * volume B ^ (1 - s⁻¹)) * Mf ^ q⁻¹ := by
+        rw [hB₁, ENNReal.mul_rpow_of_nonneg _ _ (by positivity)]
+        ring
+    _ = A * bmoHolderConst n s q * (2 ^ n : ℝ≥0∞) ^ q⁻¹ * (2 ^ n : ℝ≥0∞) ^ s⁻¹ * M * volume B *
+          Mf ^ q⁻¹ := by
+        rw [← ENNReal.rpow_add _ _ hB0 hBtop, add_sub_cancel, ENNReal.rpow_one]
 
-/-- The series `∑ₖ 4ⁿ 2^(-(k+1)δ) (a + (k+1) 2ⁿ)` of the far part converges for `δ > 0`. -/
-private theorem tsum_ofReal_mul_add_ne_top (n : ℕ) {δ : ℝ} (hδ : 0 < δ) {a : ℝ≥0∞} (ha : a ≠ ⊤) :
-    ∑' k : ℕ, ENNReal.ofReal (4 ^ n * 2 ^ (-((k + 1) * δ))) * (a + (k + 1) * 2 ^ n) ≠ ⊤ := by
+/-- The constant of the far part, `TauCeti.lintegral_enorm_sub_apply_le`: a sum over the dyadic
+annuli `2^(k+1) r ≤ dist z c < 2^(k+2) r`, convergent since `2^(-δ) < 1`. -/
+private noncomputable def farConst (n : ℕ) (q : ℝ) (C₀ : ℝ≥0) (δ : ℝ) : ℝ≥0∞ :=
+  (∑' k : ℕ, ENNReal.ofReal (C₀ * 4 ^ n * (2 ^ (-δ)) ^ (k + 1)) *
+    (bmoHolderConst n 1 q + ((k + 2 : ℕ) + 1) * 2 ^ n)) * (2 ^ n : ℝ≥0∞) ^ q⁻¹
+
+private theorem farConst_ne_top (n : ℕ) {q : ℝ} (hq : 1 < q) (C₀ : ℝ≥0) {δ : ℝ} (hδ : 0 < δ) :
+    farConst n q C₀ δ ≠ ∞ := by
+  set D := (bmoHolderConst n 1 q).toReal
+  have hD : bmoHolderConst n 1 q = ENNReal.ofReal D :=
+    (ENNReal.ofReal_toReal (bmoHolderConst_ne_top n one_pos hq)).symm
   set ρ : ℝ := 2 ^ (-δ)
   have hρ0 : 0 ≤ ρ := by positivity
   have hρ1 : ρ < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (neg_neg_of_pos hδ)
-  have hpow (k : ℕ) : (2 : ℝ) ^ (-((k + 1) * δ)) = ρ * ρ ^ k := by
-    rw [← pow_succ', ← Real.rpow_mul_natCast zero_le_two]
+  set u : ℕ → ℝ := fun k => C₀ * 4 ^ n * ρ ^ (k + 1) * (D + ((k + 2 : ℕ) + 1) * 2 ^ n)
+  have hu0 : ∀ k, 0 ≤ u k := fun k => by positivity
+  have hu : Summable u := by
+    have h1 : Summable fun k : ℕ => ρ ^ k := summable_geometric_of_lt_one hρ0 hρ1
+    have h2 : Summable fun k : ℕ => (k : ℝ) ^ 1 * ρ ^ k :=
+      summable_pow_mul_geometric_of_norm_lt_one 1 (by rwa [Real.norm_of_nonneg hρ0])
+    refine ((h1.mul_left (C₀ * 4 ^ n * ρ * (D + 3 * 2 ^ n))).add
+      (h2.mul_left (C₀ * 4 ^ n * ρ * 2 ^ n))).congr fun k => ?_
+    simp only [u]
     push_cast
-    ring_nf
-  set g : ℕ → ℝ := fun k => 4 ^ n * (ρ * ρ ^ k) * (a.toReal + (k + 1) * 2 ^ n)
-  have hg0 (k : ℕ) : 0 ≤ g k := by positivity
-  have hg : Summable g := by
-    have h1 := (summable_geometric_of_lt_one hρ0 hρ1).mul_left (4 ^ n * ρ * (a.toReal + 2 ^ n))
-    have h2 := (summable_pow_mul_geometric_of_norm_lt_one 1
-      (by rwa [Real.norm_of_nonneg hρ0])).mul_left (4 ^ n * ρ * 2 ^ n)
-    refine (h1.add h2).congr fun k => ?_
-    simp only [g, pow_one]
     ring
-  have hterm (k : ℕ) : ENNReal.ofReal (4 ^ n * 2 ^ (-((k + 1) * δ))) * (a + (k + 1) * 2 ^ n) =
-      ENNReal.ofReal (g k) := by
-    simp only [g]
-    rw [hpow, ENNReal.ofReal_mul (show 0 ≤ 4 ^ n * (ρ * ρ ^ k) by positivity)]
-    congr 1
-    rw [ENNReal.ofReal_add ENNReal.toReal_nonneg (by positivity), ENNReal.ofReal_toReal ha,
-      ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_add (by positivity) zero_le_one,
-      ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_natCast, ENNReal.ofReal_one,
-      ENNReal.ofReal_ofNat]
-  simp_rw [hterm]
-  rw [← ENNReal.ofReal_tsum_of_nonneg hg0 hg]
-  exact ENNReal.ofReal_ne_top
+  have hsum : ∑' k : ℕ, ENNReal.ofReal (C₀ * 4 ^ n * ρ ^ (k + 1)) *
+      (bmoHolderConst n 1 q + ((k + 2 : ℕ) + 1) * 2 ^ n) = ENNReal.ofReal (∑' k, u k) := by
+    rw [ENNReal.ofReal_tsum_of_nonneg hu0 hu]
+    refine tsum_congr fun k => ?_
+    simp only [u]
+    rw [hD, ENNReal.ofReal_mul (p := (C₀ : ℝ) * 4 ^ n * ρ ^ (k + 1)) (by positivity),
+      ENNReal.ofReal_add (by positivity) (by positivity),
+      ENNReal.ofReal_mul (p := ((k + 2 : ℕ) : ℝ) + 1) (by positivity),
+      ENNReal.ofReal_add (by positivity) zero_le_one, ENNReal.ofReal_natCast, ENNReal.ofReal_one,
+      ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat]
+  rw [farConst, hsum]
+  exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top
+    (ENNReal.rpow_ne_top_of_nonneg (by positivity) (by simp))
 
-/-- **Splitting the commutator.** For a measurable set `S` and a constant `m`, write
-`(b - m) f = φ₁ + φ₂` with `φ₁` supported on `S` and `φ₂` vanishing on `S`. Then
-`b T f - T (b f) = (b - m) T f - T φ₁ - T φ₂` almost everywhere. -/
-private theorem exists_smul_sub_eq_sub_sub_sub
-    (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 (volume : Measure (ι → ℝ)))
-    {f g : Lp E 2 (volume : Measure (ι → ℝ))}
-    (hg : (g : (ι → ℝ) → E) =ᵐ[volume] fun z => b z • f z) {S : Set (ι → ℝ)}
-    (hS : MeasurableSet S) (m : ℝ) :
-    ∃ φ₁ φ₂ : Lp E 2 (volume : Measure (ι → ℝ)),
-      (∀ᵐ z, ‖φ₁ z‖ₑ ≤ S.indicator (fun z => ‖b z - m‖ₑ * ‖f z‖ₑ) z) ∧
-      (∀ᵐ z, z ∈ S → φ₂ z = 0) ∧ (∀ᵐ z, ‖φ₂ z‖ₑ ≤ ‖b z - m‖ₑ * ‖f z‖ₑ) ∧
-      ∀ᵐ z, b z • T f z - T g z = (b z - m) • T f z - T φ₁ z - T φ₂ z := by
-  set h : Lp E 2 (volume : Measure (ι → ℝ)) := g - m • f
-  obtain ⟨φ₂, hφ₂⟩ : ∃ φ₂ : Lp E 2 (volume : Measure (ι → ℝ)), φ₂ =ᵐ[volume] Sᶜ.indicator h :=
-    ⟨_, ((Lp.memLp h).indicator hS.compl.nullMeasurableSet).coeFn_toLp⟩
-  have hh : ∀ᵐ z ∂volume, h z = (b z - m) • f z := by
-    filter_upwards [Lp.coeFn_sub g (m • f), Lp.coeFn_smul m f, hg] with z h1 h2 h3
-    rw [h1, Pi.sub_apply, h2, Pi.smul_apply, h3, sub_smul]
-  refine ⟨h - φ₂, φ₂, ?_, ?_, ?_, ?_⟩
-  · filter_upwards [Lp.coeFn_sub h φ₂, hφ₂, hh] with z h1 h2 h3
-    rw [h1, Pi.sub_apply, h2]
-    by_cases hz : z ∈ S
-    · rw [indicator_of_notMem (notMem_compl_iff.2 hz), indicator_of_mem hz, sub_zero, h3,
-        enorm_smul]
-    · rw [indicator_of_mem (mem_compl hz), indicator_of_notMem hz, sub_self, enorm_zero]
-  · filter_upwards [hφ₂] with z hz hzS
-    rw [hz, indicator_of_notMem (notMem_compl_iff.2 hzS)]
-  · filter_upwards [hφ₂, hh] with z h1 h2
-    rw [h1]
-    refine (enorm_indicator_le_enorm_self _ _).trans_eq ?_
-    rw [h2, enorm_smul]
-  · -- `g = (h - φ₂) + φ₂ + m f`, and `T` is linear.
-    have hTg : T g = T (h - φ₂) + T φ₂ + m • T f := by
-      rw [← map_add, sub_add_cancel, ← map_smul, ← map_add, sub_add_cancel]
-    have e1 := Lp.coeFn_add (T (h - φ₂) + T φ₂) (m • T f)
-    rw [← hTg] at e1
-    filter_upwards [e1, Lp.coeFn_add (T (h - φ₂)) (T φ₂), Lp.coeFn_smul m (T f)] with z e1 e2 e3
-    rw [e1, Pi.add_apply, e2, e3, Pi.add_apply, Pi.smul_apply, sub_smul]
-    abel
+/-- **The far part.** Let `K` satisfy the standard smoothness estimate in its first variable, and
+let `h` be `(b - b_{2B}) f` off the ball `2B = B(c, 2 r)` and zero on it. For `x, y ∈ B(c, r)`,
 
-variable [CompleteSpace F]
+`∫ ‖(K y z - K c z) (h z)‖ dz ≤ C ‖b‖_{BMO} (M(‖f‖^q) x)^{1/q}`.
 
-/-- **The sharp maximal function of a commutator with a BMO function.** Let `n ≥ 1`, `1 ≤ u < t`
-and `δ > 0`. There is a constant `C`, depending only on `n`, `u`, `t`, `δ`, `A` and `N`, with the
-following property. Let `T` be a bounded linear operator on `L²(ℝⁿ)`, `ℝⁿ = ι → ℝ` with the sup
-norm, such that
-
-* `T φ x = ∫ K x z (φ z) dz` for almost every `x` in any ball on which `φ` vanishes;
-* the kernel satisfies the standard smoothness estimate in its first variable,
-  `‖K x y - K x' y‖ ≤ A dist x x' ^ δ dist y x' ^ (-(n + δ))` whenever `dist y x' > 2 dist x x'`;
-* `‖T φ‖_u ≤ N ‖φ‖_u` for every `φ ∈ L²` (for `u = 2` this holds with `N = ‖T‖`).
-
-Let `b` be real and locally integrable, and let `f, g ∈ L²` with `g = b f`, so that
-`[b, T] f = b T f - T g` is the commutator of `T` with multiplication by `b`. Then at every point
-`x`, with `M` the uncentred maximal function,
-
-`([b, T] f)^#(x) ≤ C ‖b‖_{BMO} (M(‖T f‖^t)(x)^{1/t} + M(‖f‖^t)(x)^{1/t})`.
-
-The inequality is in `ℝ≥0∞`; it is informative when `‖b‖_{BMO} < ∞`. -/
-theorem exists_sharpMaximalFunction_smul_sub_le [Nonempty ι] {u t δ : ℝ} (hu : 1 ≤ u) (hut : u < t)
-    (hδ : 0 < δ) (A N : ℝ≥0) :
-    ∃ C : ℝ≥0, ∀ (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 (volume : Measure (ι → ℝ)))
-      {K : (ι → ℝ) → (ι → ℝ) → E →L[ℝ] F},
-      (∀ x, AEStronglyMeasurable (K x) volume) →
-      (∀ x x' y, 2 * dist x x' < dist y x' →
-        ‖K x y - K x' y‖ ≤ A * (dist x x' ^ δ * dist y x' ^ (-(Fintype.card ι + δ)))) →
-      (∀ (φ : Lp E 2 (volume : Measure (ι → ℝ))) (y : ι → ℝ) (ρ : ℝ),
-        (∀ᵐ z, z ∈ ball y ρ → φ z = 0) → ∀ᵐ x, x ∈ ball y ρ → T φ x = ∫ z, K x z (φ z)) →
-      (∀ φ : Lp E 2 (volume : Measure (ι → ℝ)),
-        eLpNorm (T φ) (ENNReal.ofReal u) volume ≤ N * eLpNorm φ (ENNReal.ofReal u) volume) →
-      ∀ {b : (ι → ℝ) → ℝ}, LocallyIntegrable b volume →
-      ∀ f g : Lp E 2 (volume : Measure (ι → ℝ)), (g : (ι → ℝ) → E) =ᵐ[volume] (fun z => b z • f z) →
-      ∀ x, sharpMaximalFunction volume (fun z => b z • T f z - T g z) x ≤
-        C * bmoSeminorm b volume *
-          (uncenteredMaximalFunction volume (fun z => ‖T f z‖ₑ ^ t) x ^ t⁻¹ +
-            uncenteredMaximalFunction volume (fun z => ‖f z‖ₑ ^ t) x ^ t⁻¹) := by
+Off `2B`, the kernel difference is at most `C₀ r^δ dist z c^(-(n+δ))`. On the annulus
+`2^(k+1) r ≤ dist z c < 2^(k+2) r` this is `C₀ 4ⁿ 2^(-(k+1)δ) / |B(c, 2^(k+2) r)|`, while the
+average of `|b - b_{2B}| ‖f‖` over `B(c, 2^(k+2) r)` grows only linearly in `k`. -/
+private theorem lintegral_enorm_sub_apply_le {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {K : (ι → ℝ) → (ι → ℝ) → E →L[ℝ] F} {C₀ : ℝ≥0} {δ : ℝ} (hδ : 0 < δ)
+    (hK : ∀ x x' y, 2 * dist x x' < dist y x' →
+      ‖K x y - K x' y‖ ≤ C₀ * (dist x x' ^ δ * dist y x' ^ (-(Fintype.card ι + δ))))
+    {b : (ι → ℝ) → ℝ} (hb : LocallyIntegrable b volume) {M : ℝ≥0}
+    (hM : bmoSeminorm b volume ≤ M) {q : ℝ} (hq : 1 < q) {f : (ι → ℝ) → E}
+    (hf : AEStronglyMeasurable f volume) {c x y : ι → ℝ} {r : ℝ} (hx : x ∈ ball c r)
+    (hy : y ∈ ball c r) {h : (ι → ℝ) → E}
+    (hh : h =ᵐ[volume] (ball c (2 * r))ᶜ.indicator
+      (fun z => (b z - ⨍ w in ball c (2 * r), b w) • f z)) :
+    ∫⁻ z, ‖(K y z - K c z) (h z)‖ₑ ≤
+      farConst (Fintype.card ι) q C₀ δ * M *
+        maximalFunction volume (fun y => ‖f y‖ₑ ^ q) x ^ q⁻¹ := by
   set n := Fintype.card ι
-  have hu0 : 0 < u := one_pos.trans_le hu
-  have ht : 1 < t := hu.trans_lt hut
-  set t' := t.conjExponent
-  have htt : t'.HolderConjugate t := (Real.HolderConjugate.conjExponent ht).symm
-  set w := u * (t / u).conjExponent
-  have hw0 : 0 < w :=
-    mul_pos hu0 (Real.HolderConjugate.conjExponent ((one_lt_div hu0).2 hut)).symm.pos
-  set C' := ENNReal.ofReal ((1 + 7 * (⌈t'⌉₊).factorial) *
-    (2 ^ (n + 1) / Real.log (3 / 2)) ^ t') ^ t'⁻¹
-  have hC' : C' ≠ ⊤ := ENNReal.rpow_ne_top_of_nonneg (inv_nonneg.2 htt.nonneg) ENNReal.ofReal_ne_top
-  set C₁ : ℝ≥0∞ := C' + 2 ^ n
-  set C₂ : ℝ≥0∞ := (2 ^ n : ℝ≥0∞) ^ u⁻¹ * N * ENNReal.ofReal ((1 + 7 * (⌈w⌉₊).factorial) *
-    (2 ^ (n + 1) / Real.log (3 / 2)) ^ w) ^ w⁻¹
-  set C₃ : ℝ≥0∞ := A * ∑' k : ℕ, ENNReal.ofReal (4 ^ n * 2 ^ (-((k + 1) * δ))) *
-    (C' + (k + 1) * 2 ^ n)
-  have hC₁ : C₁ ≠ ⊤ := ENNReal.add_ne_top.2 ⟨hC', by simp⟩
-  have hC₂ : C₂ ≠ ⊤ := by
-    refine ENNReal.mul_ne_top (ENNReal.mul_ne_top ?_ ENNReal.coe_ne_top) ?_
-    · exact ENNReal.rpow_ne_top_of_nonneg (inv_nonneg.2 hu0.le) (by simp)
-    · exact ENNReal.rpow_ne_top_of_nonneg (inv_nonneg.2 hw0.le) ENNReal.ofReal_ne_top
-  have hC₃ : C₃ ≠ ⊤ := ENNReal.mul_ne_top ENNReal.coe_ne_top (tsum_ofReal_mul_add_ne_top n hδ hC')
-  refine ⟨(2 * (C₁ + C₂ + C₃)).toNNReal, fun T K hKm hK hrep hTu b hb f g hg x => ?_⟩
-  rw [ENNReal.coe_toNNReal (ENNReal.mul_ne_top (by simp)
-    (ENNReal.add_ne_top.2 ⟨ENNReal.add_ne_top.2 ⟨hC₁, hC₂⟩, hC₃⟩))]
-  set β := bmoSeminorm b volume
-  set M₁ := uncenteredMaximalFunction volume (fun z => ‖T f z‖ₑ ^ t) x ^ t⁻¹
-  set M₂ := uncenteredMaximalFunction volume (fun z => ‖f z‖ₑ ^ t) x ^ t⁻¹
-  set G : (ι → ℝ) → F := fun z => b z • T f z - T g z
-  refine sharpMaximalFunction_le fun c r hx => ?_
+  set a := ⨍ w in ball c (2 * r), b w
+  set g : (ι → ℝ) → ℝ≥0∞ := fun z => ‖b z - a‖ₑ * ‖f z‖ₑ
+  set Mf := maximalFunction volume (fun y => ‖f y‖ₑ ^ q) x
+  set c' : ℕ → ℝ := fun k => C₀ * r ^ δ * (2 ^ (k + 1) * r) ^ (-(n + δ))
   have hr : 0 < r := pos_of_mem_ball hx
+  have hgm : AEMeasurable g volume :=
+    (hb.aestronglyMeasurable.sub aestronglyMeasurable_const).enorm.mul hf.enorm
+  -- Pointwise domination by a sum over the dyadic annuli.
+  have hpt : ∀ᵐ z, ‖(K y z - K c z) (h z)‖ₑ ≤
+      ∑' k : ℕ, ENNReal.ofReal (c' k) * (ball c (2 ^ (k + 2) * r)).indicator g z := by
+    filter_upwards [hh] with z hz
+    rw [hz]
+    by_cases hzB : z ∈ ball c (2 * r)
+    · simp [hzB]
+    have hd : 2 * r ≤ dist z c := not_lt.1 hzB
+    have hyc : dist y c < r := hy
+    rw [indicator_of_mem (mem_compl hzB)]
+    calc ‖(K y z - K c z) ((b z - a) • f z)‖ₑ
+        ≤ ‖K y z - K c z‖ₑ * g z := by
+          simpa only [g, enorm_smul] using
+            ContinuousLinearMap.le_opENorm (K y z - K c z) ((b z - a) • f z)
+      _ ≤ ENNReal.ofReal (C₀ * r ^ δ) * ENNReal.ofReal (dist z c ^ (-(n + δ))) * g z := by
+          gcongr
+          rw [← ofReal_norm, ← ENNReal.ofReal_mul (by positivity)]
+          refine ENNReal.ofReal_le_ofReal ((hK y c z (by linarith)).trans ?_)
+          rw [← mul_assoc]
+          gcongr
+      _ ≤ ENNReal.ofReal (C₀ * r ^ δ) * (∑' k : ℕ, (ball c (2 ^ (k + 2) * r)).indicator
+            (fun _ => ENNReal.ofReal ((2 ^ (k + 1) * r) ^ (-(n + δ)))) z) * g z := by
+          gcongr
+          exact ofReal_dist_rpow_neg_le_tsum hr (by positivity) hd
+      _ = ∑' k : ℕ, ENNReal.ofReal (c' k) * (ball c (2 ^ (k + 2) * r)).indicator g z := by
+          rw [← ENNReal.tsum_mul_left, ← ENNReal.tsum_mul_right]
+          refine tsum_congr fun k => ?_
+          by_cases hzk : z ∈ ball c (2 ^ (k + 2) * r)
+          · simp only [indicator_of_mem hzk, c']
+            rw [ENNReal.ofReal_mul (p := (C₀ : ℝ) * r ^ δ) (by positivity)]
+          · simp [indicator_of_notMem hzk]
+  -- Each annulus contributes `C₀ 4ⁿ 2^(-(k+1)δ)` times the bound on `2^(k+2) B`.
+  have hk : ∀ k : ℕ, ENNReal.ofReal (c' k) * ∫⁻ z in ball c (2 ^ (k + 2) * r), g z ≤
+      ENNReal.ofReal (C₀ * 4 ^ n * (2 ^ (-δ)) ^ (k + 1)) *
+        (bmoHolderConst n 1 q + ((k + 2 : ℕ) + 1) * 2 ^ n) * (2 ^ n : ℝ≥0∞) ^ q⁻¹ *
+          (M * Mf ^ q⁻¹) := by
+    intro k
+    have hxk : x ∈ ball c (2 ^ (k + 2) * r) :=
+      ball_subset_ball (le_mul_of_one_le_left hr.le (one_le_pow₀ one_le_two)) hx
+    have hak : ‖(⨍ y in ball c (2 ^ (k + 2) * r), b y) - a‖ₑ ≤
+        ((k + 2 : ℕ) + 1) * 2 ^ n * M := by
+      refine (enorm_setAverage_ball_sub_setAverage_ball_le hb.aestronglyMeasurable c hr
+        (k + 2)).trans ?_
+      rw [Module.finrank_fintype_fun_eq_card]
+      gcongr
+    calc ENNReal.ofReal (c' k) * ∫⁻ z in ball c (2 ^ (k + 2) * r), g z
+        ≤ ENNReal.ofReal (c' k) * ((bmoHolderConst n 1 q + ((k + 2 : ℕ) + 1) * 2 ^ n) * M *
+            (2 ^ n : ℝ≥0∞) ^ q⁻¹ * volume (ball c (2 ^ (k + 2) * r)) * Mf ^ q⁻¹) := by
+          gcongr
+          exact setLIntegral_enorm_sub_mul_enorm_le hb hM hf hq hxk hak
+      _ = ENNReal.ofReal (c' k * (2 * (2 ^ (k + 2) * r)) ^ n) *
+            (bmoHolderConst n 1 q + ((k + 2 : ℕ) + 1) * 2 ^ n) * (2 ^ n : ℝ≥0∞) ^ q⁻¹ *
+              (M * Mf ^ q⁻¹) := by
+          rw [Real.volume_pi_ball c (by positivity), ENNReal.ofReal_mul (p := c' k) (by positivity)]
+          ring
+      _ = _ := by
+          simp only [c']
+          rw [mul_rpow_mul_rpow_neg_mul_pow_eq _ _ _ hr]
+  calc ∫⁻ z, ‖(K y z - K c z) (h z)‖ₑ
+      ≤ ∫⁻ z, ∑' k : ℕ, ENNReal.ofReal (c' k) * (ball c (2 ^ (k + 2) * r)).indicator g z :=
+        lintegral_mono_ae hpt
+    _ = ∑' k : ℕ, ENNReal.ofReal (c' k) * ∫⁻ z in ball c (2 ^ (k + 2) * r), g z := by
+        rw [lintegral_tsum fun k => (hgm.indicator measurableSet_ball).const_mul _]
+        refine tsum_congr fun k => ?_
+        rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, lintegral_indicator measurableSet_ball]
+    _ ≤ ∑' k : ℕ, ENNReal.ofReal (C₀ * 4 ^ n * (2 ^ (-δ)) ^ (k + 1)) *
+          (bmoHolderConst n 1 q + ((k + 2 : ℕ) + 1) * 2 ^ n) * (2 ^ n : ℝ≥0∞) ^ q⁻¹ *
+            (M * Mf ^ q⁻¹) :=
+        tsum_le_tsum hk
+    _ = farConst n q C₀ δ * M * Mf ^ q⁻¹ := by
+        rw [ENNReal.tsum_mul_right, ENNReal.tsum_mul_right, farConst]
+        ring
+
+/-- The constant of the commutator estimate, the sum of the constants of its three parts. -/
+private noncomputable def commutatorConst (n : ℕ) (s q : ℝ) (A C₀ : ℝ≥0) (δ : ℝ) : ℝ≥0∞ :=
+  (bmoHolderConst n 1 q + 2 ^ n) * (2 ^ n : ℝ≥0∞) ^ q⁻¹ +
+    A * bmoHolderConst n s q * (2 ^ n : ℝ≥0∞) ^ q⁻¹ * (2 ^ n : ℝ≥0∞) ^ s⁻¹ + farConst n q C₀ δ
+
+private theorem commutatorConst_ne_top (n : ℕ) {s q : ℝ} (hs : 1 ≤ s) (hsq : s < q)
+    (A C₀ : ℝ≥0) {δ : ℝ} (hδ : 0 < δ) : commutatorConst n s q A C₀ δ ≠ ∞ := by
+  have hq : 1 < q := hs.trans_lt hsq
+  have h2 : ∀ e : ℝ, 0 ≤ e → (2 ^ n : ℝ≥0∞) ^ e ≠ ∞ := fun e he =>
+    ENNReal.rpow_ne_top_of_nonneg he (by simp)
+  have hq0 : 0 ≤ q⁻¹ := by positivity
+  have hs0 : 0 ≤ s⁻¹ := by positivity
+  unfold commutatorConst
+  refine ENNReal.add_ne_top.2 ⟨ENNReal.add_ne_top.2 ⟨ENNReal.mul_ne_top
+    (ENNReal.add_ne_top.2 ⟨bmoHolderConst_ne_top n one_pos hq, by simp⟩) (h2 _ hq0), ?_⟩,
+    farConst_ne_top n hq C₀ hδ⟩
+  exact ENNReal.mul_ne_top (ENNReal.mul_ne_top (ENNReal.mul_ne_top ENNReal.coe_ne_top
+    (bmoHolderConst_ne_top n (one_pos.trans_le hs) hsq)) (h2 _ hq0)) (h2 _ hs0)
+
+/-- **The commutator estimate on one ball**, with an explicit constant. -/
+private theorem setLAverage_enorm_smul_sub_sub_setAverage_le {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [CompleteSpace F]
+    (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 volume)
+    {K : (ι → ℝ) → (ι → ℝ) → E →L[ℝ] F} (hKm : ∀ x, AEStronglyMeasurable (K x) volume)
+    {C₀ : ℝ≥0} {δ : ℝ} (hδ : 0 < δ)
+    (hK : ∀ x x' y, 2 * dist x x' < dist y x' →
+      ‖K x y - K x' y‖ ≤ C₀ * (dist x x' ^ δ * dist y x' ^ (-(Fintype.card ι + δ))))
+    (hrep : ∀ (h : Lp E 2 (volume : Measure (ι → ℝ))) (y : ι → ℝ) (ρ : ℝ),
+      (∀ᵐ z, z ∈ ball y ρ → h z = 0) → ∀ᵐ x, x ∈ ball y ρ → T h x = ∫ z, K x z (h z))
+    {s q : ℝ} (hs : 1 ≤ s) (hsq : s < q) {A : ℝ≥0}
+    (hT : ∀ h : Lp E 2 (volume : Measure (ι → ℝ)),
+      eLpNorm (T h) (ENNReal.ofReal s) volume ≤ A * eLpNorm h (ENNReal.ofReal s) volume)
+    {b : (ι → ℝ) → ℝ} (hb : LocallyIntegrable b volume) {M : ℝ≥0}
+    (hM : bmoSeminorm b volume ≤ M) (f g : Lp E 2 (volume : Measure (ι → ℝ)))
+    (hg : g =ᵐ[volume] fun y => b y • f y) {c x : ι → ℝ} {r : ℝ} (hx : x ∈ ball c r) :
+    ⨍⁻ y in ball c r, ‖(b y • T f y - T g y) - ⨍ z in ball c r, (b z • T f z - T g z)‖ₑ ≤
+      2 * commutatorConst (Fintype.card ι) s q A C₀ δ * M *
+        (maximalFunction volume (fun y => ‖T f y‖ₑ ^ q) x ^ q⁻¹ +
+          maximalFunction volume (fun y => ‖f y‖ₑ ^ q) x ^ q⁻¹) := by
+  set n := Fintype.card ι
   set B := ball c r
-  set B2 := ball c (2 * r)
-  set m := ⨍ y in B2, b y
+  set B₁ := ball c (2 * r)
+  set a := ⨍ z in B₁, b z
+  set X := maximalFunction volume (fun y => ‖T f y‖ₑ ^ q) x
+  set Y := maximalFunction volume (fun y => ‖f y‖ₑ ^ q) x
+  set Φ : (ι → ℝ) → F := fun y => b y • T f y - T g y
+  have hq : 1 < q := hs.trans_lt hsq
+  have hr : 0 < r := pos_of_mem_ball hx
   have hB0 : volume B ≠ 0 := (measure_ball_pos volume c hr).ne'
-  have hBtop : volume B ≠ ⊤ := measure_ball_lt_top.ne
-  -- Split `(b - m) f` into its parts near `B` and far from it.
-  obtain ⟨h₁, h₂, hh₁le, hh₂van, hh₂le, hGdecomp⟩ :=
-    exists_smul_sub_eq_sub_sub_sub T hg (measurableSet_ball : MeasurableSet B2) m
-  set a : F := -∫ z, K c z (h₂ z)
-  -- The far part is nearly constant on `B`.
-  have hfar : A * ∫⁻ z in B2ᶜ,
-      ENNReal.ofReal (r ^ δ * dist z c ^ (-(n + δ))) * ‖h₂ z‖ₑ ≤ C₃ * β * M₂ := by
-    calc A * ∫⁻ z in B2ᶜ, ENNReal.ofReal (r ^ δ * dist z c ^ (-(n + δ))) * ‖h₂ z‖ₑ
-        ≤ A * ∫⁻ z in B2ᶜ, ENNReal.ofReal (r ^ δ * dist z c ^ (-(n + δ))) *
-            (‖b z - m‖ₑ * ‖f z‖ₑ) := by
-          refine mul_le_mul' le_rfl (lintegral_mono_ae ?_)
-          filter_upwards [ae_restrict_of_ae hh₂le] with z hz
+  have hBtop : volume B ≠ ∞ := measure_ball_lt_top.ne
+  -- Split `g - a f = (b - a) f` into its parts `h₁` on `B₁` and `h₂` off `B₁`.
+  set φ : Lp E 2 (volume : Measure (ι → ℝ)) := g - a • f
+  have hφ : ⇑φ =ᵐ[volume] fun y => (b y - a) • f y := by
+    filter_upwards [Lp.coeFn_sub g (a • f), Lp.coeFn_smul a f, hg] with y h1 h2 h3
+    rw [h1, Pi.sub_apply, h2, Pi.smul_apply, h3, sub_smul]
+  set h₁ : Lp E 2 (volume : Measure (ι → ℝ)) :=
+    ((Lp.memLp φ).indicator measurableSet_ball.nullMeasurableSet (s := B₁)).toLp _
+  set h₂ := φ - h₁
+  have hh₁ : ⇑h₁ =ᵐ[volume] B₁.indicator fun y => (b y - a) • f y := by
+    filter_upwards [MemLp.coeFn_toLp ((Lp.memLp φ).indicator
+      measurableSet_ball.nullMeasurableSet (s := B₁)), hφ] with y h1 h2
+    rw [h1]
+    by_cases hy : y ∈ B₁ <;> simp [hy, h2]
+  have hh₂ : ⇑h₂ =ᵐ[volume] B₁ᶜ.indicator fun y => (b y - a) • f y := by
+    filter_upwards [Lp.coeFn_sub φ h₁, hh₁, hφ] with y h1 h2 h3
+    rw [h1, Pi.sub_apply, h2, h3]
+    by_cases hy : y ∈ B₁ <;> simp [hy]
+  -- `T g = T h₁ + T h₂ + a T f`.
+  have hTg : ∀ᵐ y, T g y = T h₁ y + T h₂ y + a • T f y := by
+    have hgφ : g = h₁ + h₂ + a • f := by
+      simp only [h₂, φ, add_sub_cancel, sub_add_cancel]
+    filter_upwards [Lp.coeFn_add (T h₁ + T h₂) (a • T f), Lp.coeFn_add (T h₁) (T h₂),
+      Lp.coeFn_smul a (T f)] with y h1 h2 h3
+    rw [hgφ, map_add, map_add, map_smul, h1, Pi.add_apply, h2, Pi.add_apply, h3, Pi.smul_apply]
+  -- Off `B₁` the operator is given by the kernel.
+  have hrep₂ : ∀ᵐ y, y ∈ B₁ → T h₂ y = ∫ z, K y z (h₂ z) := hrep h₂ c (2 * r) (by
+    filter_upwards [hh₂] with z hz hzB
+    rw [hz, indicator_of_notMem (notMem_compl_iff.2 hzB)])
+  set A₀ : F := ∫ z, K c z (h₂ z)
+  -- The pointwise bound on `B`.
+  have hpt : ∀ᵐ y ∂volume.restrict B, ‖Φ y - (-A₀)‖ₑ ≤
+      ‖b y - a‖ₑ * ‖T f y‖ₑ + ‖T h₁ y‖ₑ + farConst n q C₀ δ * M * Y ^ q⁻¹ := by
+    rw [ae_restrict_iff' measurableSet_ball]
+    filter_upwards [hTg, hrep₂] with y h1 h2 hyB
+    have hfar : ‖T h₂ y - A₀‖ₑ ≤ farConst n q C₀ δ * M * Y ^ q⁻¹ := by
+      rw [h2 (ball_subset_ball (by linarith) hyB)]
+      refine (MeasureTheory.enorm_integral_sub_integral_le_lintegral_enorm_sub
+        ((ContinuousLinearMap.apply ℝ F).aestronglyMeasurable_comp₂ (Lp.aestronglyMeasurable h₂)
+          (hKm y))
+        ((ContinuousLinearMap.apply ℝ F).aestronglyMeasurable_comp₂ (Lp.aestronglyMeasurable h₂)
+          (hKm c))).trans ?_
+      simpa only [ContinuousLinearMap.apply_apply, sub_apply] using
+        lintegral_enorm_sub_apply_le hδ hK hb hM hq (Lp.aestronglyMeasurable f) hx hyB hh₂
+    have heq : Φ y - (-A₀) = (b y - a) • T f y - T h₁ y - (T h₂ y - A₀) := by
+      simp only [Φ, h1, sub_smul]
+      abel
+    rw [heq]
+    calc ‖(b y - a) • T f y - T h₁ y - (T h₂ y - A₀)‖ₑ
+        ≤ ‖(b y - a) • T f y - T h₁ y‖ₑ + ‖T h₂ y - A₀‖ₑ := enorm_sub_le
+      _ ≤ ‖(b y - a) • T f y‖ₑ + ‖T h₁ y‖ₑ + ‖T h₂ y - A₀‖ₑ := by gcongr; exact enorm_sub_le
+      _ ≤ _ := by rw [enorm_smul]; gcongr
+  -- The three parts.
+  have hI : ∫⁻ y in B, ‖b y - a‖ₑ * ‖T f y‖ₑ ≤
+      (bmoHolderConst n 1 q + 2 ^ n) * M * (2 ^ n : ℝ≥0∞) ^ q⁻¹ * volume B * X ^ q⁻¹ := by
+    refine setLIntegral_enorm_sub_mul_enorm_le hb hM (Lp.aestronglyMeasurable _) hq hx ?_
+    have h0 := enorm_setAverage_ball_sub_setAverage_ball_le hb.aestronglyMeasurable c hr 0
+    simp only [pow_zero, one_mul, Nat.cast_zero, zero_add,
+      Module.finrank_fintype_fun_eq_card] at h0
+    exact h0.trans (by gcongr)
+  have hII := setLIntegral_enorm_apply_le_of_eLpNorm_le T hs hsq hT hb hM
+    (Lp.aestronglyMeasurable f) hx hh₁
+  have hbm : AEMeasurable (fun y => ‖b y - a‖ₑ * ‖T f y‖ₑ) (volume.restrict B) :=
+    ((hb.aestronglyMeasurable.sub aestronglyMeasurable_const).enorm.mul
+      (Lp.aestronglyMeasurable _).enorm).restrict
+  have hosc : ⨍⁻ y in B, ‖Φ y - (-A₀)‖ₑ ≤
+      commutatorConst n s q A C₀ δ * M * (X ^ q⁻¹ + Y ^ q⁻¹) := by
+    rw [setLAverage_eq, ENNReal.div_le_iff hB0 hBtop]
+    calc ∫⁻ y in B, ‖Φ y - (-A₀)‖ₑ
+        ≤ ∫⁻ y in B, (‖b y - a‖ₑ * ‖T f y‖ₑ + ‖T h₁ y‖ₑ + farConst n q C₀ δ * M * Y ^ q⁻¹) :=
+          lintegral_mono_ae hpt
+      _ = (∫⁻ y in B, ‖b y - a‖ₑ * ‖T f y‖ₑ) + (∫⁻ y in B, ‖T h₁ y‖ₑ) +
+            farConst n q C₀ δ * M * Y ^ q⁻¹ * volume B := by
+          rw [lintegral_add_left' (f := fun y => ‖b y - a‖ₑ * ‖T f y‖ₑ + ‖T h₁ y‖ₑ)
+            (hbm.add (Lp.aestronglyMeasurable _).enorm.restrict), lintegral_add_left' hbm,
+            setLIntegral_const]
+      _ ≤ (bmoHolderConst n 1 q + 2 ^ n) * M * (2 ^ n : ℝ≥0∞) ^ q⁻¹ * volume B * X ^ q⁻¹ +
+            A * bmoHolderConst n s q * (2 ^ n : ℝ≥0∞) ^ q⁻¹ * (2 ^ n : ℝ≥0∞) ^ s⁻¹ * M * volume B *
+              Y ^ q⁻¹ + farConst n q C₀ δ * M * Y ^ q⁻¹ * volume B := by
           gcongr
-      _ ≤ A * ((∑' k : ℕ, ENNReal.ofReal (4 ^ n * 2 ^ (-((k + 1) * δ))) *
-            (C' + (k + 1) * 2 ^ n)) * β * M₂) := by
-          gcongr
-          exact setLIntegral_compl_ball_le hb htt (Lp.aestronglyMeasurable f) c hr hδ.le hx
-      _ = C₃ * β * M₂ := by simp only [C₃]; ring
-  have hpt : ∀ᵐ y ∂volume.restrict B, ‖G y - a‖ₑ ≤
-      ‖b y - m‖ₑ * ‖T f y‖ₑ + ‖T h₁ y‖ₑ + C₃ * β * M₂ := by
-    filter_upwards [ae_restrict_of_ae hGdecomp, (ae_restrict_iff' measurableSet_ball).2
-      (ae_enorm_apply_sub_integral_le T hKm hδ.le hK hrep h₂ c hr hh₂van)] with y hy hfy
-    simp only [G]
-    rw [hy]
-    calc ‖(b y - m) • T f y - T h₁ y - T h₂ y - a‖ₑ
-        = ‖(b y - m) • T f y - T h₁ y - (T h₂ y - ∫ z, K c z (h₂ z))‖ₑ := by
-          simp only [a]; congr 1; abel
-      _ ≤ ‖(b y - m) • T f y‖ₑ + ‖T h₁ y‖ₑ + ‖T h₂ y - ∫ z, K c z (h₂ z)‖ₑ :=
-          enorm_sub_le.trans (by gcongr; exact enorm_sub_le)
-      _ ≤ _ := by
-          rw [enorm_smul]
-          gcongr
-          exact hfy.trans hfar
-  -- The three terms.
-  have hI : ⨍⁻ y in B, ‖b y - m‖ₑ * ‖T f y‖ₑ ≤ C₁ * β * M₁ := by
-    refine (setLAverage_enorm_sub_mul_le hb htt (Lp.aestronglyMeasurable (T f)).enorm c hr
-      m).trans ?_
-    calc (C' * β + ‖(⨍ y in B, b y) - m‖ₑ) * (⨍⁻ y in B, ‖T f y‖ₑ ^ t) ^ t⁻¹
-        ≤ (C' * β + 2 ^ n * β) * M₁ := by
-          gcongr
-          · simpa only [Module.finrank_fintype_fun_eq_card] using
-              enorm_setAverage_ball_sub_setAverage_ball_two_mul_le hb.aestronglyMeasurable c hr
-          · refine ENNReal.rpow_le_rpow ?_ (inv_nonneg.2 htt.symm.nonneg)
-            simpa only [enorm_eq_self] using
-              setLAverage_le_uncenteredMaximalFunction volume (fun z => ‖T f z‖ₑ ^ t) hx
-      _ = C₁ * β * M₁ := by simp only [C₁]; ring
-  have hII : ⨍⁻ y in B, ‖T h₁ y‖ₑ ≤ C₂ * β * M₂ :=
-    (setLAverage_enorm_apply_le T hu hut hTu hb (Lp.aestronglyMeasurable f) h₁ c hr hh₁le
-      hx).trans_eq (by simp only [C₂]; ring)
-  have hmain : ⨍⁻ y in B, ‖G y - a‖ₑ ≤ (C₁ + C₂ + C₃) * β * (M₁ + M₂) := by
-    calc ⨍⁻ y in B, ‖G y - a‖ₑ
-        ≤ ⨍⁻ y in B, (‖b y - m‖ₑ * ‖T f y‖ₑ + ‖T h₁ y‖ₑ + C₃ * β * M₂) :=
-          laverage_mono_ae hpt
-      _ = (⨍⁻ y in B, ‖b y - m‖ₑ * ‖T f y‖ₑ) + (⨍⁻ y in B, ‖T h₁ y‖ₑ) + C₃ * β * M₂ := by
-          have hF : AEMeasurable (fun y => ‖b y - m‖ₑ * ‖T f y‖ₑ) (volume.restrict B) :=
-            ((hb.aestronglyMeasurable.sub aestronglyMeasurable_const).enorm.mul
-              (Lp.aestronglyMeasurable (T f)).enorm).restrict
-          rw [setLAverage_eq, lintegral_add_right _ measurable_const, lintegral_add_left' hF,
-            setLIntegral_const, ENNReal.add_div, ENNReal.add_div,
-            ENNReal.mul_div_cancel_right hB0 hBtop, ← setLAverage_eq, ← setLAverage_eq]
-      _ ≤ C₁ * β * M₁ + C₂ * β * M₂ + C₃ * β * M₂ := by gcongr
-      _ ≤ (C₁ + C₂ + C₃) * β * (M₁ + M₂) := by
-          have h1 : M₁ ≤ M₁ + M₂ := le_self_add
-          have h2 : M₂ ≤ M₁ + M₂ := le_add_self
-          calc C₁ * β * M₁ + C₂ * β * M₂ + C₃ * β * M₂
-              ≤ C₁ * β * (M₁ + M₂) + C₂ * β * (M₁ + M₂) + C₃ * β * (M₁ + M₂) := by gcongr
+      _ ≤ commutatorConst n s q A C₀ δ * M * (X ^ q⁻¹ + Y ^ q⁻¹) * volume B := by
+          unfold commutatorConst
+          have h1 : (bmoHolderConst n 1 q + 2 ^ n) * (2 ^ n : ℝ≥0∞) ^ q⁻¹ * X ^ q⁻¹ ≤
+              (bmoHolderConst n 1 q + 2 ^ n) * (2 ^ n : ℝ≥0∞) ^ q⁻¹ * (X ^ q⁻¹ + Y ^ q⁻¹) := by
+            gcongr; exact le_self_add
+          have h2 : (A * bmoHolderConst n s q * (2 ^ n : ℝ≥0∞) ^ q⁻¹ * (2 ^ n : ℝ≥0∞) ^ s⁻¹ +
+              farConst n q C₀ δ) * Y ^ q⁻¹ ≤ (A * bmoHolderConst n s q * (2 ^ n : ℝ≥0∞) ^ q⁻¹ *
+                (2 ^ n : ℝ≥0∞) ^ s⁻¹ + farConst n q C₀ δ) * (X ^ q⁻¹ + Y ^ q⁻¹) := by
+            gcongr; exact le_add_self
+          calc _ = ((bmoHolderConst n 1 q + 2 ^ n) * (2 ^ n : ℝ≥0∞) ^ q⁻¹ * X ^ q⁻¹ +
+                (A * bmoHolderConst n s q * (2 ^ n : ℝ≥0∞) ^ q⁻¹ * (2 ^ n : ℝ≥0∞) ^ s⁻¹ +
+                  farConst n q C₀ δ) * Y ^ q⁻¹) * M * volume B := by ring
+            _ ≤ ((bmoHolderConst n 1 q + 2 ^ n) * (2 ^ n : ℝ≥0∞) ^ q⁻¹ * (X ^ q⁻¹ + Y ^ q⁻¹) +
+                (A * bmoHolderConst n s q * (2 ^ n : ℝ≥0∞) ^ q⁻¹ * (2 ^ n : ℝ≥0∞) ^ s⁻¹ +
+                  farConst n q C₀ δ) * (X ^ q⁻¹ + Y ^ q⁻¹)) * M * volume B := by gcongr
             _ = _ := by ring
-  have hGm : AEStronglyMeasurable G (volume.restrict B) :=
-    ((hb.aestronglyMeasurable.smul (Lp.aestronglyMeasurable (T f))).sub
-      (Lp.aestronglyMeasurable (T g))).restrict
-  by_cases hGi : IntegrableOn G B
-  · calc ⨍⁻ y in B, ‖G y - ⨍ z in B, G z‖ₑ ≤ 2 * ⨍⁻ y in B, ‖G y - a‖ₑ :=
-          setLAverage_enorm_sub_setAverage_le hGi a
-      _ ≤ 2 * ((C₁ + C₂ + C₃) * β * (M₁ + M₂)) := by gcongr
-      _ = _ := by ring
-  · rw [setLAverage_enorm_sub_const_eq_top hGm hBtop hGi a, top_le_iff] at hmain
-    rw [mul_assoc 2, mul_assoc 2, hmain,
-      ENNReal.mul_top two_ne_zero]
+  -- Comparing with the constant `-A₀` bounds the mean oscillation.
+  set R := commutatorConst n s q A C₀ δ * M * (X ^ q⁻¹ + Y ^ q⁻¹)
+  suffices h : ⨍⁻ y in B, ‖Φ y - ⨍ z in B, Φ z‖ₑ ≤ 2 * R by
+    refine h.trans_eq ?_
+    simp only [R]
+    ring
+  rcases eq_or_ne R ∞ with hR | hR
+  · rw [hR, ENNReal.mul_top two_ne_zero]
     exact le_top
+  have hint : IntegrableOn Φ B := by
+    have hfin : ∫⁻ y in B, ‖Φ y - (-A₀)‖ₑ < ∞ := by
+      rw [← measure_mul_setLAverage _ hBtop]
+      exact ENNReal.mul_lt_top hBtop.lt_top (hosc.trans_lt hR.lt_top)
+    have hΦm : AEStronglyMeasurable Φ (volume.restrict B) :=
+      ((hb.aestronglyMeasurable.smul (Lp.aestronglyMeasurable _)).sub
+        (Lp.aestronglyMeasurable _)).restrict
+    have : IntegrableOn (fun y => Φ y - (-A₀)) B := ⟨hΦm.sub aestronglyMeasurable_const, hfin⟩
+    refine (this.add (integrableOn_const hBtop : IntegrableOn (fun _ => -A₀) B)).congr_fun
+      (fun y _ => ?_) measurableSet_ball
+    simp
+  calc ⨍⁻ y in B, ‖Φ y - ⨍ z in B, Φ z‖ₑ ≤ 2 * ⨍⁻ y in B, ‖Φ y - (-A₀)‖ₑ :=
+        setLAverage_enorm_sub_setAverage_le hint _
+    _ ≤ 2 * R := by gcongr
+
+/-- **The sharp maximal function of a commutator with a BMO function.** Let `1 ≤ s < q`, `δ > 0`,
+and let `A`, `C₀` be constants. There is a constant `C`, depending only on these and the
+dimension `n ≥ 1`, with the following property on `ℝⁿ = ι → ℝ` with the sup distance.
+
+Let `T` be a bounded linear operator on `L²` such that `T h x = ∫ K x z (h z) dz` for almost every
+`x` in any ball on which `h` vanishes, where the kernel satisfies the standard smoothness estimate
+in its first variable,
+
+`‖K x y - K x' y‖ ≤ C₀ dist x x' ^ δ dist y x' ^ (-(n + δ))` whenever `dist y x' > 2 dist x x'`,
+
+and such that `‖T h‖_s ≤ A ‖h‖_s` for `h ∈ L²`. Let `b` be locally integrable with
+`‖b‖_{BMO} ≤ M`, and let `f, g ∈ L²` with `g = b f`. Then the commutator
+`[b, T] f = b T f - T (b f)` satisfies, at every point `x`,
+
+`([b, T] f)^# x ≤ C M ((M(‖T f‖^q) x)^{1/q} + (M(‖f‖^q) x)^{1/q})`,
+
+where `^#` is the sharp maximal function and `M` the centred Hardy–Littlewood maximal function.
+
+Calderón–Zygmund operators with a standard kernel satisfy the hypotheses for `1 < s < q`, with the
+`Lˢ` bound supplied by the Calderón–Zygmund theorem; the case `s = 1` requires an additional strong
+`L¹` bound. Combined with an a priori form of the Fefferman–Stein inequality, an approximation
+argument and the `Lᵖ` bounds for the maximal function, this is the route to the
+Coifman–Rochberg–Weiss theorem that `[b, T]` is bounded on `Lᵖ`, `1 < p < ∞`, with norm
+`O(‖b‖_{BMO})`. -/
+theorem exists_sharpMaximalFunction_smul_sub_le_of_norm_sub_le_mul_rpow {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {s q : ℝ} (hs : 1 ≤ s)
+    (hsq : s < q) (A C₀ : ℝ≥0) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ C : ℝ≥0, ∀ (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 volume)
+      {K : (ι → ℝ) → (ι → ℝ) → E →L[ℝ] F}, (∀ x, AEStronglyMeasurable (K x) volume) →
+      (∀ x x' y, 2 * dist x x' < dist y x' →
+        ‖K x y - K x' y‖ ≤ C₀ * (dist x x' ^ δ * dist y x' ^ (-(Fintype.card ι + δ)))) →
+      (∀ (h : Lp E 2 (volume : Measure (ι → ℝ))) (y : ι → ℝ) (ρ : ℝ),
+        (∀ᵐ z, z ∈ ball y ρ → h z = 0) → ∀ᵐ x, x ∈ ball y ρ → T h x = ∫ z, K x z (h z)) →
+      (∀ h : Lp E 2 (volume : Measure (ι → ℝ)),
+        eLpNorm (T h) (ENNReal.ofReal s) volume ≤ A * eLpNorm h (ENNReal.ofReal s) volume) →
+      ∀ {b : (ι → ℝ) → ℝ} {M : ℝ≥0}, LocallyIntegrable b volume → bmoSeminorm b volume ≤ M →
+      ∀ (f g : Lp E 2 (volume : Measure (ι → ℝ))), g =ᵐ[volume] (fun y => b y • f y) →
+      ∀ x, sharpMaximalFunction volume (fun y => b y • T f y - T g y) x ≤
+        C * M * (maximalFunction volume (fun y => ‖T f y‖ₑ ^ q) x ^ q⁻¹ +
+          maximalFunction volume (fun y => ‖f y‖ₑ ^ q) x ^ q⁻¹) := by
+  have hC := ENNReal.mul_ne_top (by simp : (2 : ℝ≥0∞) ≠ ∞)
+    (commutatorConst_ne_top (Fintype.card ι) hs hsq A C₀ hδ)
+  refine ⟨(2 * commutatorConst (Fintype.card ι) s q A C₀ δ).toNNReal,
+    fun T K hKm hK hrep hT b M hb hM f g hg x => sharpMaximalFunction_le fun c r hx => ?_⟩
+  rw [ENNReal.coe_toNNReal hC]
+  exact setLAverage_enorm_smul_sub_sub_setAverage_le T hKm hδ hK hrep hs hsq hT hb hM f g hg hx
 
 end TauCeti

@@ -279,7 +279,7 @@ theorem realLayerInv_apply (w : InfinitePlace K) (hw : w.IsReal)
     simp
   · subst L
     rw [realLayerInv_realLayer, AddMonoidHom.comp_apply,
-      infiniteInvMap_apply_of_isReal w hw]
+      infiniteInvMap_apply_eq_ite w]
     rw [_root_.map_eq_zero_iff _ (brInfl_injective (realOpenNormalSubgroup w hw))]
 
 /-- Real-place invariants are unchanged by conjugating a finite normal layer. -/

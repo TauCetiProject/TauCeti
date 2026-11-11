@@ -168,7 +168,7 @@ theorem f4_chainBotCoeff_eq_zero_of_add_of_length_eq (α β γ : Fin 48)
   f4SimplyConnectedRootDatum.chainBotCoeff_eq_zero_of_add_of_length_eq f4Length
     f4Length_mul_pairing_comm α β γ (f4Length_pos α)
     (fun δ _ => by rcases f4Length_eq_one_or_eq_two δ with hδ | hδ <;> omega)
-    (f4Length_pos β) hβγ h
+    hβγ h
 
 /-- The sum of two long roots, when it is a root, is long. -/
 theorem f4Length_eq_two_of_root_eq_add_of_long_long (α β γ : Fin 48)

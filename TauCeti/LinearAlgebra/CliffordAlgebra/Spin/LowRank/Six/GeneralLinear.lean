@@ -332,7 +332,7 @@ four. -/
 theorem finrank_spinPlus_eq_four_of_finrank_eq_six (hV : finrank K V = 6) :
     finrank K (spinPlus Q P) = 4 := by
   have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
-  rw [finrank_spinPlus P (P.W_ne_bot_of_finrank_eq_six hV),
+  rw [finrank_spinPlus P,
     P.finrank_W_eq_three_of_finrank_eq_six hV]
   norm_num
 

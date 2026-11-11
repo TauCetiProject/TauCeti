@@ -34,6 +34,8 @@ up a small amount of its value is bounded by that same tangent line.
 * `Real.mul_sq_log_sub_log_le_sub_mul_log_sub_log`: for `m ≤ p, q` with `0 < p, q`,
   `m * (log p - log q) ^ 2 ≤ (p - q) * (log p - log q)`, the strong monotonicity of the
   exponential on `[log m, ∞)`.
+* `Real.le_sub_div_log_sub_log`: for `m ≤ a, b` with `0 < a, b` and `log a ≠ log b`,
+  `m ≤ (a - b) / (log a - log b)`, the difference quotient form of the preceding estimate.
 
 The first estimate is the tangent line at `a`, whose slope `log a + 1` is the derivative
 `Real.deriv_mul_log` of the function. It is stated for `u = 0` as well, where the convention
@@ -155,6 +157,20 @@ theorem mul_sq_log_sub_log_le_sub_mul_log_sub_log {p q m : ℝ} (hp : 0 < p) (hq
         mul_le_mul_of_nonneg_right hmq (sq_nonneg _)
     _ = (q * (Real.log p - Real.log q)) * (Real.log p - Real.log q) := by ring
     _ ≤ (p - q) * (Real.log p - Real.log q) := mul_le_mul_of_nonneg_right hlog hgap
+
+/-- The difference quotient of `exp` between `log b` and `log a` is at least `m` when `m ≤ a, b`:
+for `log a ≠ log b`, `m ≤ (a - b) / (log a - log b)`. -/
+theorem le_sub_div_log_sub_log {a b m : ℝ} (ha : 0 < a) (hb : 0 < b)
+    (hma : m ≤ a) (hmb : m ≤ b) (h₀ : Real.log a - Real.log b ≠ 0) :
+    m ≤ (a - b) / (Real.log a - Real.log b) := by
+  have hmono := Real.mul_sq_log_sub_log_le_sub_mul_log_sub_log ha hb hma hmb
+  have hD2 : 0 < (Real.log a - Real.log b) ^ 2 :=
+    lt_of_le_of_ne (sq_nonneg _) (pow_ne_zero 2 h₀).symm
+  have hquot : (a - b) / (Real.log a - Real.log b) =
+      (a - b) * (Real.log a - Real.log b) / (Real.log a - Real.log b) ^ 2 := by
+    field_simp
+  rw [hquot, le_div_iff₀ hD2]
+  exact hmono
 
 end Real
 

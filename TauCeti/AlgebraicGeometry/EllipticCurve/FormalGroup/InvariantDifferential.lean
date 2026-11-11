@@ -399,20 +399,20 @@ private theorem pderiv_mul_subst_formalInvariantDifferentialDenom_universal :
   have hFc := constantCoeff_subst_pair_formalAdd Universal.curve hc₀ hc₁
   have hF0 := subst_pair_formalAdd_ne_zero Universal.curve hχ hc₀ hc₁ hχ₀ hχ₁
   -- the three points with parameters `X 0`, `X 1` and `F(X 0, X 1)`, and their sum relation
-  obtain ⟨hP, hPx, hPy⟩ := coords_thetaPoint hΔ hc₀ h₀
-  obtain ⟨hQ, hQx, hQy⟩ := coords_thetaPoint hΔ hc₁ h₁
-  obtain ⟨hS, hSx, hSy⟩ := coords_thetaPoint hΔ hFc hF0
+  obtain ⟨-, hPx, hPy⟩ := coords_thetaPoint hΔ hc₀ h₀
+  obtain ⟨-, hQx, hQy⟩ := coords_thetaPoint hΔ hc₁ h₁
+  obtain ⟨-, hSx, hSy⟩ := coords_thetaPoint hΔ hFc hF0
   have e := thetaPoint_add_of_subst_separates Universal.curve (KK := UnivField) hΔ hχ hc₀ hc₁
     h₀ h₁ hχ₀ hχ₁ hFc hF0
-  generalize Universal.curve.thetaPoint hΔ hc₀ h₀ = P at hP hPx hPy e
-  generalize Universal.curve.thetaPoint hΔ hc₁ h₁ = Q at hQ hQx hQy e
-  generalize Universal.curve.thetaPoint hΔ hFc hF0 = S at hS hSx hSy e
+  generalize Universal.curve.thetaPoint hΔ hc₀ h₀ = P at hPx hPy e
+  generalize Universal.curve.thetaPoint hΔ hc₁ h₁ = Q at hQx hQy e
+  generalize Universal.curve.thetaPoint hΔ hFc hF0 = S at hSx hSy e
   -- move them to `Universal.curve⁄UnivField`, the curve the derivation lemmas are stated on
   revert P Q S
   rw [fracCurve_eq_baseChange]
-  intro P hP hPx hPy Q hQ hQx hQy S hS hSx hSy e
+  intro P hPx hPy Q hQx hQy S hSx hSy e
   -- additivity of `dx / (2y + a₁x + a₃)` along `P + Q = S`
-  have key := Affine.Point.inv_smul_derivation_xCoord_add D hP hQ (e ▸ hS)
+  have key := Affine.Point.inv_smul_derivation_xCoord_add D
     (fun _ ↦ hPx ▸ hPy ▸ evalEval_polynomialY_div_ne_zero hc₀ h₀)
     (fun _ ↦ hQx ▸ hQy ▸ evalEval_polynomialY_div_ne_zero hc₁ h₁)
     (e ▸ hSx ▸ hSy ▸ evalEval_polynomialY_div_ne_zero hFc hF0)

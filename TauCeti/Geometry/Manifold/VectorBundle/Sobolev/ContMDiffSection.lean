@@ -100,12 +100,9 @@ private theorem value_toSobolevData_ae (s : Cₛ^k⟮𝓘(ℝ, E); F, V⟯) (i :
   (exists_value_ae_eq_coord A μ p k s i j).choose_spec
 
 private theorem chartValueL_toSobolevData_ae (s : Cₛ^k⟮𝓘(ℝ, E); F, V⟯) (i : Fin A.n) :
-    A.chartValueL μ p k i (toSobolevData A μ p k s) =ᵐ[μ.restrict (A.image i)] A.coord i s := by
-  filter_upwards [A.chartValueL_apply_ae μ p k i (toSobolevData A μ p k s),
-    ae_all_iff.2 (value_toSobolevData_ae A μ p k s i)] with y hy hj
-  rw [hy]
-  simp_rw [hj, Basis.coord_apply]
-  exact (finBasis ℝ F).sum_repr _
+    A.chartValueL μ p k i (toSobolevData A μ p k s) =ᵐ[μ.restrict (A.image i)] A.coord i s :=
+  chartValueL_ae_eq_coord_of_value_ae_eq fun j ↦ by
+    simpa only [Basis.coord_apply] using value_toSobolevData_ae A μ p k s i j
 
 /-- **`Cᵏ` sections are Sobolev sections.** The linear map sending a `Cᵏ` section `s` of `V` to the
 element of `W^{k,p}(V)` whose components in chart `i` are the components of `A.coord i s` in the

@@ -8,8 +8,8 @@ module
 public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.Decomposition
 public import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
+import Mathlib.Probability.Moments.IntegrableExpMul
 import TauCeti.Analysis.Normed.Module.Ball
-import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # The John–Nirenberg inequality
@@ -55,6 +55,13 @@ comparable measures. For real `f` it gives Moser's crossover estimate
 `(∫_{B'} exp (σ f)) (∫_{B'} exp (-σ f)) ≤ C |B'|²`
 (`TauCeti.exists_setLIntegral_exp_mul_mul_setLIntegral_exp_neg_mul_ball_le`).
 
+Exponential integrability controls every power: for each `0 < p` there is `C`, depending only on
+`n` and `p`, with `⨍_B ‖f - f_B‖ ^ p ≤ C ‖f‖_{BMO} ^ p` on every ball `B`
+(`TauCeti.exists_setLAverage_enorm_sub_setAverage_rpow_le_mul_bmoSeminorm_rpow`). This `Lᵖ` form of
+the John–Nirenberg inequality is how a function of bounded mean oscillation enters Hölder's
+inequality, as in the commutator estimates for singular integrals; in particular such a function
+lies in `Lᵖ` of every ball for every finite `p` (`TauCeti.MemBMO.memLp_restrict_ball`).
+
 The proof iterates the Calderón–Zygmund decomposition. At height `2M`, the Calderón–Zygmund
 cubes of `‖f - f_{Q₀}‖` restricted to `Q₀` lie inside `Q₀`, cover at most half of it, and carry
 averages within `2ⁿ⁺¹ M` of `f_{Q₀}`, while `‖f - f_{Q₀}‖ ≤ 2M` almost everywhere off them. Each
@@ -73,24 +80,23 @@ averages under positive finite scaling.
 * `TauCeti.measure_lt_norm_sub_setAverage_closedBall_le`,
   `TauCeti.setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le`: the same two statements on an
   arbitrary cube `closedBall c r`.
-* `TauCeti.setLAverage_enorm_sub_setAverage_rpow_le`: every moment `⨍_B ‖f - f_B‖^q` of a
-  function of bounded mean oscillation is at most `C(n, q) ‖f‖_{BMO}^q`, on every open sup-norm
-  ball.
-* `TauCeti.rpow_setLAverage_enorm_sub_rpow_le`, `TauCeti.setLAverage_enorm_sub_mul_le`: the
-  `Lᵠ` distance of a function of bounded mean oscillation from a constant on a sup-norm ball, and
-  Hölder's inequality against it.
 * `TauCeti.exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le`: exponential integrability
   on Euclidean balls.
 * `TauCeti.exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_bmoSeminorm_le`: the same
   on every ball for a locally integrable function with bounded BMO seminorm.
 * `TauCeti.exists_setLIntegral_exp_mul_mul_setLIntegral_exp_neg_mul_ball_le`: Moser's crossover
   estimate for real functions of bounded mean oscillation on Euclidean balls.
+* `TauCeti.exists_setLAverage_enorm_sub_setAverage_rpow_le_mul_bmoSeminorm_rpow`: the `Lᵖ` form
+  of the John–Nirenberg inequality, `⨍_B ‖f - f_B‖ ^ p ≤ C ‖f‖_{BMO} ^ p`.
+* `TauCeti.MemBMO.memLp_restrict_ball`: functions of bounded mean oscillation are locally in
+  every `Lᵖ`, `p < ∞`.
 
 ## References
 
 * F. John and L. Nirenberg, *On functions of bounded mean oscillation*, Comm. Pure Appl. Math.
   **14** (1961), 415–426.
-* L. Grafakos, *Modern Fourier Analysis*, Theorem 3.1.6.
+* L. Grafakos, *Modern Fourier Analysis*, Theorem 3.1.6 and the corollary following it (the `Lᵖ`
+  form).
 * E. Stein, *Harmonic Analysis*, Chapter IV, §1.3.
 * J. Moser, *On Harnack's theorem for elliptic differential equations*, Comm. Pure Appl. Math.
   **14** (1961), 577–591.
@@ -737,218 +743,6 @@ theorem setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le [CompleteSpace E]
 
 end ClosedBall
 
-section Moments
-
-/-! ### Moments of functions of bounded mean oscillation
-
-Exponential integrability bounds every moment: on each open ball `B` of `ι → ℝ` with the sup
-norm, `⨍_B ‖f - f_B‖^q ≤ C(n, q) ‖f‖_{BMO}^q` for every `q > 0`. The closed ball of the same
-radius differs from `B` by a null set, so the cube estimate applies, and `x^q ≤ 1 + ⌈q⌉! eˣ`
-turns the exponential bound into a bound on the `q`-th moment. -/
-
-open Metric
-
-/-- **Moments of functions of bounded mean oscillation.** Let `f` be locally integrable on
-`ℝⁿ = ι → ℝ`, `n ≥ 1`, for an additive Haar measure `μ`. For every `q > 0` and every open ball `B`
-of the sup norm,
-
-`⨍_B ‖f - f_B‖^q ≤ (1 + 7 ⌈q⌉!) (2ⁿ⁺¹ / log (3 / 2))^q ‖f‖_{BMO}^q`.
-
-The inequality is in `ℝ≥0∞`, so it is informative only when `‖f‖_{BMO} < ∞`. -/
-theorem setLAverage_enorm_sub_setAverage_rpow_le [Nonempty ι] [CompleteSpace E]
-    {μ : Measure (ι → ℝ)} [μ.IsAddHaarMeasure] (hf : LocallyIntegrable f μ) {q : ℝ} (hq : 0 < q)
-    (c : ι → ℝ) (r : ℝ) :
-    ⨍⁻ x in ball c r, ‖f x - ⨍ y in ball c r, f y ∂μ‖ₑ ^ q ∂μ ≤
-      ENNReal.ofReal ((1 + 7 * (⌈q⌉₊).factorial) *
-        (2 ^ (Fintype.card ι + 1) / Real.log (3 / 2)) ^ q) * bmoSeminorm f μ ^ q := by
-  set n := Fintype.card ι
-  set C : ℝ := (1 + 7 * (⌈q⌉₊).factorial) * (2 ^ (n + 1) / Real.log (3 / 2)) ^ q
-  have hlog : 0 < Real.log (3 / 2) := Real.log_pos (by norm_num)
-  have hC : 0 < C := by positivity
-  rcases le_or_gt r 0 with hr | hr
-  · simp [ball_eq_empty.2 hr]
-  set B := ball c r
-  have hB0 : μ B ≠ 0 := (measure_ball_pos μ c hr).ne'
-  have hBtop : μ B ≠ ⊤ := measure_ball_lt_top.ne
-  set β := bmoSeminorm f μ
-  rcases eq_or_ne β ⊤ with hβ | hβ
-  · rw [hβ, ENNReal.top_rpow_of_pos hq, ENNReal.mul_top (ENNReal.ofReal_pos.2 hC).ne']
-    exact le_top
-  rcases eq_or_ne β 0 with hβ0 | hβ0
-  · -- Zero mean oscillation forces `f` to agree with its average on the ball.
-    have hosc : ⨍⁻ x in B, ‖f x - ⨍ y in B, f y ∂μ‖ₑ ∂μ = 0 :=
-      le_antisymm ((setLAverage_enorm_sub_setAverage_le_bmoSeminorm f μ c r).trans hβ0.le)
-        zero_le
-    have hae := ae_restrict_eq_setAverage_of_setLAverage_enorm_sub_setAverage_eq_zero
-      hf.aestronglyMeasurable.restrict hBtop hosc
-    have : ⨍⁻ x in B, ‖f x - ⨍ y in B, f y ∂μ‖ₑ ^ q ∂μ = 0 := by
-      rw [setLAverage_eq, ENNReal.div_eq_zero_iff]
-      left
-      refine (lintegral_congr_ae ?_).trans lintegral_zero
-      filter_upwards [hae] with x hx
-      simp [hx, ENNReal.zero_rpow_of_pos hq]
-    rw [this]
-    exact zero_le
-  set M : ℝ≥0 := β.toNNReal
-  have hM : (M : ℝ≥0∞) = β := ENNReal.coe_toNNReal hβ
-  have hM0 : (0 : ℝ) < M := by
-    rw [NNReal.coe_pos, pos_iff_ne_zero]
-    intro h
-    exact hβ0 (by rw [← hM, h, ENNReal.coe_zero])
-  -- The mean oscillation on every closed ball is at most `M`.
-  have hMcl : ∀ y ρ, closedBall y ρ ⊆ closedBall c r →
-      ⨍⁻ x in closedBall y ρ, ‖f x - ⨍ z in closedBall y ρ, f z ∂μ‖ₑ ∂μ ≤ M := by
-    intro y ρ _
-    rcases le_or_gt ρ 0 with hρ | hρ
-    · have h0 : μ (closedBall y ρ) = 0 := measure_mono_null (closedBall_subset_closedBall hρ)
-        (by rw [closedBall_zero]; exact measure_singleton y)
-      simp [Measure.restrict_eq_zero.2 h0]
-    rw [Measure.restrict_congr_set (μ.addHaar_closedBall_ae_eq_ball y ρ), hM]
-    exact setLAverage_enorm_sub_setAverage_le_bmoSeminorm f μ y ρ
-  -- Exponential integrability at the rate `σ = log (3 / 2) / (2ⁿ⁺¹ M)`.
-  set σ : ℝ := Real.log (3 / 2) / (2 ^ (n + 1) * M)
-  have hσ : 0 < σ := by positivity
-  have hσM : Real.exp (σ * (2 ^ (n + 1) * M)) = 3 / 2 := by
-    rw [div_mul_cancel₀ _ (by positivity), Real.exp_log (by norm_num)]
-  have hJN := setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le
-    (hf.integrableOn_isCompact (isCompact_closedBall c r)) hMcl (σ := σ)
-    (by rw [hσM]; norm_num)
-  rw [hσM, Measure.restrict_congr_set (μ.addHaar_closedBall_ae_eq_ball c r),
-    measure_congr (μ.addHaar_closedBall_ae_eq_ball c r)] at hJN
-  norm_num at hJN
-  set k := (⌈q⌉₊).factorial
-  set v := fun x => ‖f x - ⨍ y in B, f y ∂μ‖
-  -- Pointwise, `v ^ q ≤ σ ^ (-q) (1 + k exp (σ v))`, since `x ^ q ≤ 1 + ⌈q⌉! eˣ` for `x ≥ 0`.
-  have hpt : ∀ x, ‖f x - ⨍ y in B, f y ∂μ‖ₑ ^ q ≤
-      ENNReal.ofReal (σ ^ (-q)) * (1 + (k : ℝ≥0∞) * ENNReal.ofReal (Real.exp (σ * v x))) := by
-    intro x
-    have hv : 0 ≤ v x := norm_nonneg _
-    have hxq : (σ * v x) ^ q ≤ 1 + k * Real.exp (σ * v x) := by
-      rcases le_total (σ * v x) 1 with h | h
-      · have h1 : (σ * v x) ^ q ≤ 1 := Real.rpow_le_one (by positivity) h hq.le
-        have : 0 ≤ (k : ℝ) * Real.exp (σ * v x) := by positivity
-        linarith
-      · have h1 : (σ * v x) ^ q ≤ (σ * v x) ^ (⌈q⌉₊ : ℝ) :=
-          Real.rpow_le_rpow_of_exponent_le h (Nat.le_ceil q)
-        have h2 : (σ * v x) ^ ⌈q⌉₊ ≤ k * Real.exp (σ * v x) := by
-          have := Real.pow_div_factorial_le_exp _ (by positivity : 0 ≤ σ * v x) ⌈q⌉₊
-          rw [div_le_iff₀ (by positivity)] at this
-          exact this.trans_eq (mul_comm _ _)
-        rw [Real.rpow_natCast] at h1
-        linarith
-    have key : v x ^ q ≤ σ ^ (-q) * (1 + k * Real.exp (σ * v x)) := by
-      rw [Real.mul_rpow hσ.le hv] at hxq
-      have h2 : σ ^ (-q) * σ ^ q = 1 := by
-        rw [← Real.rpow_add hσ, neg_add_cancel, Real.rpow_zero]
-      calc v x ^ q = σ ^ (-q) * (σ ^ q * v x ^ q) := by rw [← mul_assoc, h2, one_mul]
-        _ ≤ _ := by gcongr
-    rw [← ofReal_norm, ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hq.le]
-    refine (ENNReal.ofReal_le_ofReal key).trans_eq ?_
-    rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_add zero_le_one (by positivity),
-      ENNReal.ofReal_one, ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_natCast]
-  have hint : ∫⁻ x in B, ‖f x - ⨍ y in B, f y ∂μ‖ₑ ^ q ∂μ ≤
-      ENNReal.ofReal (σ ^ (-q) * (1 + 7 * k)) * μ B := by
-    calc ∫⁻ x in B, ‖f x - ⨍ y in B, f y ∂μ‖ₑ ^ q ∂μ
-        ≤ ∫⁻ x in B, ENNReal.ofReal (σ ^ (-q)) *
-            (1 + (k : ℝ≥0∞) * ENNReal.ofReal (Real.exp (σ * v x))) ∂μ := lintegral_mono hpt
-      _ = ENNReal.ofReal (σ ^ (-q)) * (μ B + k * ∫⁻ x in B,
-            ENNReal.ofReal (Real.exp (σ * v x)) ∂μ) := by
-        rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, lintegral_add_left measurable_const,
-          setLIntegral_one, lintegral_const_mul' _ _ (ENNReal.natCast_ne_top k)]
-      _ ≤ ENNReal.ofReal (σ ^ (-q)) * (μ B + k * (7 * μ B)) := by gcongr
-      _ = _ := by
-        rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_add zero_le_one (by positivity),
-          ENNReal.ofReal_one, ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_natCast]
-        norm_num
-        ring
-  have hσq : σ ^ (-q) = (2 ^ (n + 1) / Real.log (3 / 2)) ^ q * (M : ℝ) ^ q := by
-    rw [Real.rpow_neg hσ.le, ← Real.inv_rpow hσ.le, ← Real.mul_rpow (by positivity) hM0.le]
-    congr 1
-    simp only [σ]
-    field_simp
-  rw [setLAverage_eq, ENNReal.div_le_iff hB0 hBtop, ← hM, ← ENNReal.ofReal_coe_nnreal,
-    ENNReal.ofReal_rpow_of_nonneg hM0.le hq.le, ← ENNReal.ofReal_mul hC.le]
-  refine hint.trans_eq ?_
-  congr 2
-  rw [hσq]
-  simp only [C, k]
-  ring
-
-/-- **The `Lᵠ` distance from a constant.** Let `f` be locally integrable on `ℝⁿ = ι → ℝ`, `n ≥ 1`,
-for an additive Haar measure `μ`. For every `q ≥ 1`, every open ball `B` of the sup norm and every
-constant `a`,
-
-`(⨍_B ‖f - a‖^q)^{1/q} ≤ C(n, q)^{1/q} ‖f‖_{BMO} + ‖f_B - a‖`,
-
-with `C(n, q) = (1 + 7 ⌈q⌉!) (2ⁿ⁺¹ / log (3 / 2))^q` the constant of
-`TauCeti.setLAverage_enorm_sub_setAverage_rpow_le`. This is Minkowski's inequality for the
-normalized restriction of `μ` to `B`. -/
-theorem rpow_setLAverage_enorm_sub_rpow_le [Nonempty ι] [CompleteSpace E] {μ : Measure (ι → ℝ)}
-    [μ.IsAddHaarMeasure] (hf : LocallyIntegrable f μ) {q : ℝ} (hq : 1 ≤ q) (c : ι → ℝ) {r : ℝ}
-    (hr : 0 < r) (a : E) :
-    (⨍⁻ x in ball c r, ‖f x - a‖ₑ ^ q ∂μ) ^ q⁻¹ ≤
-      ENNReal.ofReal ((1 + 7 * (⌈q⌉₊).factorial) *
-        (2 ^ (Fintype.card ι + 1) / Real.log (3 / 2)) ^ q) ^ q⁻¹ * bmoSeminorm f μ +
-        ‖(⨍ y in ball c r, f y ∂μ) - a‖ₑ := by
-  have hq0 : 0 < q := one_pos.trans_le hq
-  set B := ball c r
-  set m := ⨍ y in B, f y ∂μ
-  have hB0 : μ B ≠ 0 := (measure_ball_pos μ c hr).ne'
-  have hBtop : μ B ≠ ⊤ := measure_ball_lt_top.ne
-  set ν : Measure (ι → ℝ) := (μ.restrict B univ)⁻¹ • μ.restrict B
-  have hmeas : AEMeasurable (fun x => ‖f x - m‖ₑ) ν :=
-    (hf.aestronglyMeasurable.sub aestronglyMeasurable_const).enorm.restrict.smul_measure _
-  -- Minkowski's inequality for the probability measure `ν`, the normalized restriction to `B`.
-  have hmink := ENNReal.lintegral_Lp_add_le (μ := ν) hmeas (aemeasurable_const (b := ‖m - a‖ₑ)) hq
-  have hconst : (∫⁻ _, ‖m - a‖ₑ ^ q ∂ν) ^ (1 / q) = ‖m - a‖ₑ := by
-    have : ∫⁻ _, ‖m - a‖ₑ ^ q ∂ν = ‖m - a‖ₑ ^ q := by
-      rw [lintegral_const, _root_.smul_apply, smul_eq_mul, Measure.restrict_apply_univ,
-        ENNReal.inv_mul_cancel hB0 hBtop, mul_one]
-    rw [this, ← ENNReal.rpow_mul, mul_one_div_cancel hq0.ne', ENNReal.rpow_one]
-  have hJN := setLAverage_enorm_sub_setAverage_rpow_le hf hq0 c r
-  rw [one_div] at hmink hconst
-  calc (⨍⁻ x in B, ‖f x - a‖ₑ ^ q ∂μ) ^ q⁻¹
-      ≤ (∫⁻ x, (fun x => ‖f x - m‖ₑ + ‖m - a‖ₑ) x ^ q ∂ν) ^ q⁻¹ := by
-        rw [laverage_eq']
-        gcongr with x
-        calc ‖f x - a‖ₑ = ‖(f x - m) + (m - a)‖ₑ := by rw [sub_add_sub_cancel]
-          _ ≤ _ := enorm_add_le _ _
-    _ ≤ _ := hmink
-    _ ≤ _ := by
-        rw [hconst]
-        gcongr
-        rw [← laverage_eq']
-        calc (⨍⁻ x in B, ‖f x - m‖ₑ ^ q ∂μ) ^ q⁻¹ ≤ (_ * bmoSeminorm f μ ^ q) ^ q⁻¹ := by
-              gcongr
-          _ = _ := by
-              rw [ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hq0.le), ← ENNReal.rpow_mul,
-                mul_inv_cancel₀ hq0.ne', ENNReal.rpow_one]
-
-/-- **Hölder's inequality against a function of bounded mean oscillation.** Let `f` be locally
-integrable on `ℝⁿ = ι → ℝ`, `n ≥ 1`, for an additive Haar measure `μ`, and let `t'` and `t` be
-conjugate exponents. For every open ball `B` of the sup norm, every constant `a` and every
-`φ ≥ 0`,
-
-`⨍_B ‖f - a‖ φ ≤ (C(n, t')^{1/t'} ‖f‖_{BMO} + ‖f_B - a‖) (⨍_B φ^t)^{1/t}`,
-
-with `C(n, t')` the constant of `TauCeti.setLAverage_enorm_sub_setAverage_rpow_le`. -/
-theorem setLAverage_enorm_sub_mul_le [Nonempty ι] [CompleteSpace E] {μ : Measure (ι → ℝ)}
-    [μ.IsAddHaarMeasure] (hf : LocallyIntegrable f μ) {t t' : ℝ} (htt : t'.HolderConjugate t)
-    {φ : (ι → ℝ) → ℝ≥0∞} (hφ : AEMeasurable φ μ) (c : ι → ℝ) {r : ℝ} (hr : 0 < r) (a : E) :
-    ⨍⁻ x in ball c r, ‖f x - a‖ₑ * φ x ∂μ ≤
-      (ENNReal.ofReal ((1 + 7 * (⌈t'⌉₊).factorial) *
-        (2 ^ (Fintype.card ι + 1) / Real.log (3 / 2)) ^ t') ^ t'⁻¹ * bmoSeminorm f μ +
-        ‖(⨍ y in ball c r, f y ∂μ) - a‖ₑ) * (⨍⁻ x in ball c r, φ x ^ t ∂μ) ^ t⁻¹ := by
-  have hhol := ENNReal.lintegral_mul_le_Lp_mul_Lq
-    ((μ.restrict (ball c r) univ)⁻¹ • μ.restrict (ball c r)) htt
-    (f := fun x => ‖f x - a‖ₑ)
-    ((hf.aestronglyMeasurable.sub aestronglyMeasurable_const).enorm.restrict.smul_measure _)
-    (hφ.restrict.smul_measure _)
-  simp only [one_div, Pi.mul_apply, ← laverage_eq'] at hhol
-  exact hhol.trans (mul_le_mul_left (rpow_setLAverage_enorm_sub_rpow_le hf htt.lt.le c hr a) _)
-
-end Moments
-
 section EuclideanBall
 
 /-! ### Euclidean balls
@@ -1291,12 +1085,12 @@ theorem exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le :
   exact hfinal.trans_eq hCK.symm
 
 /-- **The John–Nirenberg inequality for functions of bounded mean oscillation.** There are
-constants `A > 0` and `C`, depending only on the dimension `n ≥ 1`, such that the following holds
+constants `A > 0` and `C`, depending only on the dimension `n`, such that the following holds
 for every additive Haar measure `μ` on `ℝⁿ = EuclideanSpace ℝ ι`. If `f : ℝⁿ → E` is locally
 integrable with `‖f‖_{BMO} ≤ M` and `σ M ≤ A`, then on every ball `B`,
 
 `∫_B exp (σ ‖f - f_B‖) ≤ C |B|`. -/
-theorem exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_bmoSeminorm_le [Nonempty ι] :
+theorem exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_bmoSeminorm_le :
     ∃ A : ℝ, 0 < A ∧ ∃ C : ℝ≥0, ∀ {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
       [CompleteSpace E] {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure]
       {f : EuclideanSpace ℝ ι → E} {M : ℝ≥0} {σ : ℝ},
@@ -1304,6 +1098,17 @@ theorem exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_bmoSeminorm_l
       ∀ (x₀ : EuclideanSpace ℝ ι) (r : ℝ),
         ∫⁻ x in ball x₀ r, ENNReal.ofReal (Real.exp (σ * ‖f x - ⨍ y in ball x₀ r, f y ∂μ‖)) ∂μ ≤
           C * μ (ball x₀ r) := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · -- `ℝⁿ` is a point, so the oscillation vanishes and `C = 1` works.
+    refine ⟨1, one_pos, 1, fun {E} _ _ _ μ _ f M σ hf hM hσ x₀ r => ?_⟩
+    have hsub : Subsingleton (EuclideanSpace ℝ ι) := inferInstance
+    by_cases h0 : μ (ball x₀ r) = 0
+    · simp [Measure.restrict_eq_zero.2 h0]
+    by_cases htop : μ (ball x₀ r) = ∞
+    · simp [htop]
+    have hfc : f = fun _ ↦ f x₀ := funext fun y ↦ congrArg f (Subsingleton.elim _ _)
+    rw [hfc, setAverage_const h0 htop]
+    simp
   obtain ⟨A, hA, C, h⟩ := exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le (ι := ι)
   refine ⟨A, hA, C, fun {E} _ _ _ μ _ f M σ hf hM hσ x₀ r => ?_⟩
   have hn : 0 < 2 * √(Fintype.card ι : ℝ) := by
@@ -1370,6 +1175,131 @@ theorem exists_setLIntegral_exp_mul_mul_setLIntegral_exp_neg_mul_ball_le :
     _ ≤ (C * μ B) ^ 2 := by gcongr
     _ = ((C ^ 2 : ℝ≥0) : ℝ≥0∞) * μ B ^ 2 := by
         rw [ENNReal.coe_pow, mul_pow]
+
+/-! ### The `Lᵖ` form
+
+Since `t ^ p ≤ (p / σ) ^ p exp (σ t)` for `t ≥ 0` and `σ > 0`, exponential integrability of
+`σ ‖f - f_B‖` at the rate `σ = A / ‖f‖_{BMO}` controls every power `‖f - f_B‖ ^ p`, with a
+constant of order `‖f‖_{BMO} ^ p`. -/
+
+section Lp
+
+open Filter Topology
+
+/-- The `Lᵖ` form of the John–Nirenberg inequality for a fixed positive bound `M` on the BMO
+seminorm. -/
+private theorem exists_setLAverage_enorm_sub_setAverage_rpow_le_of_bmoSeminorm_le
+    {p : ℝ} (hp : 0 < p) :
+    ∃ C : ℝ≥0, 0 < C ∧ ∀ {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+      {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure] {f : EuclideanSpace ℝ ι → E}
+      {M : ℝ≥0}, LocallyIntegrable f μ → 0 < M → bmoSeminorm f μ ≤ M →
+      ∀ (x₀ : EuclideanSpace ℝ ι) (r : ℝ),
+        ⨍⁻ x in ball x₀ r, ‖f x - ⨍ y in ball x₀ r, f y ∂μ‖ₑ ^ p ∂μ ≤ C * (M : ℝ≥0∞) ^ p := by
+  obtain ⟨A, hA, C₀, hJN⟩ :=
+    exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_bmoSeminorm_le (ι := ι)
+  set K : ℝ := (p / A) ^ p
+  -- `C₀ + 1` rather than `C₀` keeps the constant positive.
+  refine ⟨K.toNNReal * (C₀ + 1), mul_pos (Real.toNNReal_pos.2 (by positivity))
+    (add_pos_of_nonneg_of_pos zero_le one_pos), fun {E} _ _ _ μ _ f M hf hM0 hfM x₀ r => ?_⟩
+  set B := ball x₀ r
+  set c := ⨍ y in B, f y ∂μ
+  -- John–Nirenberg at the rate `σ = A / M`.
+  set σ := A / M
+  have hσ : 0 < σ := div_pos hA (NNReal.coe_pos.2 hM0)
+  have hint :
+      ∫⁻ x in B, ENNReal.ofReal (Real.exp (σ * ‖f x - c‖)) ∂μ ≤ (C₀ + 1 : ℝ≥0) * μ B :=
+    (hJN hf hfM (div_mul_cancel₀ A (NNReal.coe_ne_zero.2 hM0.ne')).le x₀ r).trans
+      (by gcongr; exact_mod_cast le_self_add)
+  -- Pointwise, `‖v‖ ^ p ≤ (p / σ) ^ p exp (σ ‖v‖) = K M ^ p exp (σ ‖v‖)`.
+  have hpt (x : EuclideanSpace ℝ ι) : ‖f x - c‖ₑ ^ p ≤
+      ENNReal.ofReal (K * (M : ℝ) ^ p) * ENNReal.ofReal (Real.exp (σ * ‖f x - c‖)) := by
+    rw [← ofReal_norm, ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hp.le,
+      ← ENNReal.ofReal_mul (by positivity)]
+    refine ENNReal.ofReal_le_ofReal ?_
+    have h := ProbabilityTheory.rpow_abs_le_mul_exp_abs ‖f x - c‖ hp.le hσ.ne'
+    rw [abs_norm, abs_of_pos hσ] at h
+    have hpσ : p / σ = p / A * M := by
+      simp only [σ]
+      field_simp [hA.ne', NNReal.coe_ne_zero.2 hM0.ne']
+    rwa [hpσ, Real.mul_rpow (by positivity) M.coe_nonneg] at h
+  rw [setLAverage_eq]
+  refine ENNReal.div_le_of_le_mul ?_
+  calc ∫⁻ x in B, ‖f x - c‖ₑ ^ p ∂μ
+      ≤ ∫⁻ x in B, ENNReal.ofReal (K * (M : ℝ) ^ p) *
+          ENNReal.ofReal (Real.exp (σ * ‖f x - c‖)) ∂μ := lintegral_mono hpt
+    _ ≤ ENNReal.ofReal (K * (M : ℝ) ^ p) * ((C₀ + 1 : ℝ≥0) * μ B) := by
+        rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+        gcongr
+    _ = (K.toNNReal * (C₀ + 1) : ℝ≥0) * (M : ℝ≥0∞) ^ p * μ B := by
+        rw [ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_rpow_of_nonneg M.coe_nonneg hp.le,
+          ENNReal.ofReal_coe_nnreal, ENNReal.coe_mul, ENNReal.ofNNReal_toNNReal]
+        ring
+
+/-- **The John–Nirenberg inequality in `Lᵖ` form.** For every exponent `0 < p` there is a
+constant `C`, depending only on the dimension `n ≥ 1` and on `p`, such that the following holds
+for every additive Haar measure `μ` on `ℝⁿ = EuclideanSpace ℝ ι`. If `f : ℝⁿ → E` is locally
+integrable, then on every ball `B`
+
+`⨍_B ‖f - f_B‖ ^ p ≤ C ‖f‖_{BMO} ^ p`. -/
+theorem exists_setLAverage_enorm_sub_setAverage_rpow_le_mul_bmoSeminorm_rpow {p : ℝ}
+    (hp : 0 < p) :
+    ∃ C : ℝ≥0, ∀ {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+      {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure] {f : EuclideanSpace ℝ ι → E},
+      LocallyIntegrable f μ → ∀ (x₀ : EuclideanSpace ℝ ι) (r : ℝ),
+        ⨍⁻ x in ball x₀ r, ‖f x - ⨍ y in ball x₀ r, f y ∂μ‖ₑ ^ p ∂μ ≤
+          C * bmoSeminorm f μ ^ p := by
+  obtain ⟨C, hC0, hC⟩ := exists_setLAverage_enorm_sub_setAverage_rpow_le_of_bmoSeminorm_le
+    (ι := ι) hp
+  refine ⟨C, fun {E} _ _ _ μ _ f hf x₀ r => ?_⟩
+  rcases eq_or_ne (bmoSeminorm f μ) ∞ with htop | htop
+  · rw [htop, ENNReal.top_rpow_of_pos hp, ENNReal.mul_top (ENNReal.coe_ne_zero.2 hC0.ne')]
+    exact le_top
+  -- For finite `‖f‖_{BMO} = m`, apply the bound with `M = m + ε` and let `ε → 0`.
+  set m := (bmoSeminorm f μ).toNNReal
+  have hm : bmoSeminorm f μ = m := (ENNReal.coe_toNNReal htop).symm
+  have hlim : Tendsto (fun ε : ℝ≥0 => (C : ℝ≥0∞) * ((m + ε : ℝ≥0) : ℝ≥0∞) ^ p) (𝓝[>] 0)
+      (𝓝 (C * (m : ℝ≥0∞) ^ p)) := by
+    have hc : Continuous fun ε : ℝ≥0 => ((m + ε : ℝ≥0) : ℝ≥0∞) ^ p :=
+      ENNReal.continuous_rpow_const.comp
+        (ENNReal.continuous_coe.comp (continuous_const.add continuous_id))
+    have h := hc.tendsto 0
+    rw [add_zero] at h
+    exact (ENNReal.Tendsto.const_mul h (Or.inr ENNReal.coe_ne_top)).mono_left nhdsWithin_le_nhds
+  rw [hm]
+  refine ge_of_tendsto hlim (eventually_nhdsWithin_of_forall fun ε hε => hC hf
+    (add_pos_of_nonneg_of_pos zero_le hε) ?_ x₀ r)
+  rw [hm]
+  exact_mod_cast le_self_add
+
+/-- **Functions of bounded mean oscillation are locally in every `Lᵖ`, `p < ∞`.** On
+`ℝⁿ = EuclideanSpace ℝ ι`, `n ≥ 1`, with an additive Haar measure, a function of bounded mean
+oscillation lies in `Lᵖ` of every ball for every finite exponent `p`. -/
+theorem MemBMO.memLp_restrict_ball [CompleteSpace E]
+    {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure] {f : EuclideanSpace ℝ ι → E}
+    (hf : MemBMO f μ) {p : ℝ≥0∞} (hp : p ≠ ∞) (x₀ : EuclideanSpace ℝ ι) (r : ℝ) :
+    MemLp f p (μ.restrict (ball x₀ r)) := by
+  have hfm : AEStronglyMeasurable f (μ.restrict (ball x₀ r)) :=
+    hf.locallyIntegrable.aestronglyMeasurable.restrict
+  rcases eq_or_ne p 0 with rfl | hp0
+  · exact memLp_zero_iff_aestronglyMeasurable.2 hfm
+  have hB : μ (ball x₀ r) ≠ ∞ := measure_ball_lt_top.ne
+  have : IsFiniteMeasure (μ.restrict (ball x₀ r)) := isFiniteMeasure_restrict.2 hB
+  set c := ⨍ y in ball x₀ r, f y ∂μ
+  -- `f - c` lies in `Lᵖ(B)` by the `Lᵖ` form of the John–Nirenberg inequality.
+  have hsub : MemLp (fun x => f x - c) p (μ.restrict (ball x₀ r)) := by
+    refine (eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top hp0 hp
+      (hfm.sub aestronglyMeasurable_const)).2 ?_
+    obtain ⟨C, hC⟩ := exists_setLAverage_enorm_sub_setAverage_rpow_le_mul_bmoSeminorm_rpow
+      (ι := ι) (ENNReal.toReal_pos hp0 hp)
+    rw [← measure_mul_setLAverage _ hB]
+    exact ENNReal.mul_lt_top hB.lt_top ((hC hf.locallyIntegrable x₀ r).trans_lt
+      (ENNReal.mul_lt_top ENNReal.coe_lt_top
+        (ENNReal.rpow_lt_top_of_nonneg ENNReal.toReal_nonneg hf.bmoSeminorm_ne_top)))
+  convert hsub.add (memLp_const c) using 1
+  ext x
+  simp
+
+end Lp
 
 end EuclideanBall
 

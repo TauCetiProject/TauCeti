@@ -8,20 +8,24 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 
 /-!
-# Vanishing derivative of a function constant on two rays
+# Vanishing derivatives of locally constant functions
 
 A function from `ℝ` to a normed space that is constant on `(-∞, a]` and on `[b, ∞)` has vanishing
-(total) derivative at every point outside `(a, b)`, with no regularity assumption.
+(total) derivative at every point outside `(a, b)`, with no regularity assumption. Similarly, a
+function on `X × 𝕜` that is independent of the last coordinate near a point has zero derivative in
+that coordinate there.
 
 ## Main results
 
 * `TauCeti.deriv_eq_zero_of_not_mem_Ioo`: a function `ℝ → E` constant on `(-∞, a]` and on `[b, ∞)`
   has zero derivative outside `(a, b)`.
+* `TauCeti.deriv_prodMk_eq_zero_of_eventually_eq`: a function on `X × 𝕜` locally independent of
+  the last coordinate has zero derivative in that coordinate.
 -/
 
 public section
 
-open Set
+open Filter Set Topology
 
 namespace TauCeti
 
@@ -42,5 +46,14 @@ theorem deriv_eq_zero_of_not_mem_Ioo {μ : ℝ → E} {a b : ℝ} {c : E}
   · have hr' : b ≤ r := not_lt.1 h
     exact ((hasDerivWithinAt_const r (Ici b) c).congr (fun x hx ↦ hhigh x hx)
       (hhigh r hr')).deriv_eq_zero (uniqueDiffOn_Ici b r hr')
+
+/-- A function on `X × 𝕜` independent of the last coordinate near `(x, t₀)` has zero derivative
+in that coordinate at `(x, t₀)`. -/
+theorem deriv_prodMk_eq_zero_of_eventually_eq {𝕜 F X : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace X] {f : X × 𝕜 → F} {x : X}
+    {t₀ : 𝕜} (hf : ∀ᶠ z in 𝓝 (x, t₀), f z = f (z.1, t₀)) : deriv (fun s ↦ f (x, s)) t₀ = 0 := by
+  have h : (fun s ↦ f (x, s)) =ᶠ[𝓝 t₀] fun _ ↦ f (x, t₀) :=
+    ((continuous_const.prodMk continuous_id).tendsto t₀).eventually hf
+  rw [h.deriv_eq, deriv_const]
 
 end TauCeti

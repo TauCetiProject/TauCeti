@@ -97,9 +97,6 @@ private theorem exists_differentiableOn_eq_schwarzChristoffelPrimitive_sub_comp_
   set q : ℂ → ℂ := fun w => ∏ i, (1 - -(a i : ℂ) * w) ^ (e i : ℂ)
   have hq : AnalyticAt ℂ q 0 := analyticAt_prod_one_sub_mul_cpow _ _
   have hq0 : q 0 = 1 := by simp [q]
-  have hq' : HasDerivAt q M 0 := by
-    simpa [q, M, Finset.sum_neg_distrib] using
-      hasDerivAt_prod_one_sub_mul_cpow (fun i => -(a i : ℂ)) (fun i => (e i : ℂ))
   obtain ⟨r, hr, hqr⟩ := Metric.eventually_nhds_iff.mp
     (hq.eventually_analyticAt.mono fun _ h => h.differentiableAt)
   have hball : ball (0 : ℂ) r ∈ 𝓝 0 := ball_mem_nhds 0 hr
@@ -119,7 +116,7 @@ private theorem exists_differentiableOn_eq_schwarzChristoffelPrimitive_sub_comp_
   -- The third divided difference at `w ≠ 0` has the closed form `(q w - 1 - M w - C w²) / w³`.
   have hD₃w (w : ℂ) (hw : w ≠ 0) : dslope (dslope (dslope q 0) 0) 0 w =
       (q w - 1 - M * w - C * w ^ 2) / w ^ 3 := by
-    simpa only [hq0] using dslope_dslope_dslope_zero_apply hq'
+    simpa only [hq0] using dslope_dslope_dslope_zero_apply (q := q) (M := M)
       (hlim.congr fun w => by rw [hq0]; ring) hw
   -- Match the remainder of the primitive with a primitive of `-dslope³ q` on the half-disc.
   have hint (w : ℂ) (hw : w ∈ upperHalfPlaneSet) :

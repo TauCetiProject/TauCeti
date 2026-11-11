@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Trigonometric
 public import Mathlib.Analysis.SpecialFunctions.Artanh
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Series
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Data.Nat.Factorial.Basic
 
 /-!
@@ -41,6 +42,8 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
   `1 ± tanh x = exp (± x) / cosh x`, so `Real.tanh` approaches `∓1` at the rate `2 * exp (± 2 x)`.
 * `Real.tendsto_cosh_atTop` and `Real.tendsto_cosh_atBot` — `Real.cosh` tends to infinity at both
   ends of the line.
+* `Real.hasDerivAt_log_cosh` and `Real.abs_sub_log_two_le_log_cosh` — `log (cosh x)` has
+  derivative `tanh x` and is at least `|x| - log 2`, so it is a smooth version of `|x|`.
 * `Real.tendsto_cosh_sub_div_cosh_add_atTop` — `cosh (x - a) / cosh (x + a) → exp (-(2 * a))` as
   `x → ∞`.
 * `Complex.cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two` —
@@ -299,6 +302,21 @@ theorem tendsto_cosh_atTop : Filter.Tendsto Real.cosh Filter.atTop Filter.atTop 
 /-- The hyperbolic cosine tends to infinity at `-∞`, since it is even. -/
 theorem tendsto_cosh_atBot : Filter.Tendsto Real.cosh Filter.atBot Filter.atTop := by
   simpa [Function.comp_def] using Real.tendsto_cosh_atTop.comp Filter.tendsto_neg_atBot_atTop
+
+/-- The derivative of `log (cosh x)` is `tanh x`. -/
+theorem _root_.Real.hasDerivAt_log_cosh (x : ℝ) :
+    HasDerivAt (fun x ↦ Real.log (Real.cosh x)) (Real.tanh x) x := by
+  convert (Real.hasDerivAt_cosh x).log (Real.cosh_pos x).ne' using 1
+  rw [Real.tanh_eq_sinh_div_cosh]
+
+/-- `log (cosh x)` is at least `|x| - log 2`, because `cosh x ≥ exp |x| / 2`. -/
+theorem _root_.Real.abs_sub_log_two_le_log_cosh (x : ℝ) :
+    |x| - Real.log 2 ≤ Real.log (Real.cosh x) := by
+  have hcosh : Real.exp |x| / 2 ≤ Real.cosh x := by
+    rw [Real.cosh_eq]
+    linarith [Real.exp_abs_le x]
+  have := Real.log_le_log (by positivity) hcosh
+  rwa [Real.log_div (Real.exp_pos _).ne' two_ne_zero, Real.log_exp] at this
 
 /-- The ratio `cosh (x - a) / cosh (x + a)` tends to `exp (-(2 * a))` as `x → ∞`. -/
 theorem tendsto_cosh_sub_div_cosh_add_atTop (a : ℝ) :
