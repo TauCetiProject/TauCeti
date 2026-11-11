@@ -296,8 +296,6 @@ continuous. -/
 theorem continuous_covariantDerivative {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ 1 x)
     (v : ℂ) : Continuous fun z ↦ covariantDerivative x z v := by
   have hxi (i : Fin 4) : ContDiff ℝ 1 fun w ↦ x w i := (contDiff_piLp 2).1 hx i
-  have hdx (i : Fin 4) : Continuous fun z ↦ fderiv ℝ (fun w ↦ x w i) z v :=
-    ((hxi i).continuous_fderiv one_ne_zero).clm_apply continuous_const
   have := hx.continuous
   simp only [covariantDerivative_apply, sectionValue_apply,
     fderiv_sectionValue_apply ((hxi 2).differentiable one_ne_zero _)
