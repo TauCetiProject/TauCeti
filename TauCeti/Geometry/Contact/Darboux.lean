@@ -153,7 +153,7 @@ has, on an open time neighbourhood `T` of `[0, 1]` and an open neighbourhood `U`
 `C^r` field `Yₜ` and a continuous factor `σₜ` with `αₜ(Yₜ) = 0` and
 `ι_{Yₜ} dαₜ = -(α₁ - α₀) - σₜ αₜ`. The field vanishes wherever `α₀` and `α₁` agree. -/
 private theorem exists_contDiffOn_contactMoserField
-    {α₀ α₁ : V → V [⋀^Fin 1]→L[ℝ] ℝ} {W : Set V} {x₀ : V} {r : ℕ∞} (_ : 1 ≤ r)
+    {α₀ α₁ : V → V [⋀^Fin 1]→L[ℝ] ℝ} {W : Set V} {x₀ : V} {r : ℕ∞}
     (hW : IsOpen W) (hx₀ : x₀ ∈ W) (hα₀ : ContDiffOn ℝ (r + 1) α₀ W)
     (hα₁ : ContDiffOn ℝ (r + 1) α₁ W) (heq : α₁ x₀ = α₀ x₀)
     (hdeq : extDeriv α₁ x₀ = extDeriv α₀ x₀) (hc : IsContactFormAt (I := 𝓘(ℝ, V)) α₁ x₀) :
@@ -250,7 +250,7 @@ theorem exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul_of_
       ∀ᶠ x in 𝓝 x₀, 0 < g x ∧
         (α₁ (ψ x)).compContinuousLinearMap (fderiv ℝ ψ x) = g x • α₀ x := by
   obtain ⟨T, U, σ, Y, hT, hU, hTI, hxU, hUW, hY, hσ, hker, hYd, hY₀⟩ :=
-    exists_contDiffOn_contactMoserField hr hW hx₀ hα₀ hα₁ heq hdeq hc
+    exists_contDiffOn_contactMoserField hW hx₀ hα₀ hα₁ heq hdeq hc
   have hr0 : (r : WithTop ℕ∞) ≠ 0 :=
     (lt_of_lt_of_le zero_lt_one (by exact_mod_cast hr : (1 : WithTop ℕ∞) ≤ r)).ne'
   have hdiff {α : V → V [⋀^Fin 1]→L[ℝ] ℝ} (hα : ContDiffOn ℝ (r + 1) α W) (y : V) (hy : y ∈ U) :
