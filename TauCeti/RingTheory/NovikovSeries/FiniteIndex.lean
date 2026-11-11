@@ -44,8 +44,9 @@ basis is the restriction of `a` to `K`, so the trace of `a` is `[H : K]` times t
   the basis vectors and the coefficients of the coordinates.
 * `TauCeti.NovikovSeries.finite_support_iff_forall_finite_support_cosetBasis_repr`: a series has
   finite support exactly when its coordinates do.
-* `TauCeti.NovikovSeries.finrank_eq_index`: over a nontrivial commutative ring, the rank of
-  `Nov(R, H, N)` over `Nov(R, K, N|K)` is the index `[H : K]`.
+* `TauCeti.NovikovSeries.finrank_eq_index`: over a nontrivial commutative ring, the natural-valued
+  `Module.finrank` of `Nov(R, H, N)` over `Nov(R, K, N|K)` is the index `[H : K]` (both are `0` for
+  infinite index, by the convention for `Module.finrank` of an infinite-dimensional module).
 * `TauCeti.NovikovSeries.trace_eq_index_smul_comap`: the trace of `a` is `[H : K]` times the
   restriction of `a` to `K`.
 
@@ -202,8 +203,10 @@ section Ring
 
 variable [CommRing R]
 
-/-- Over a nontrivial commutative ring, the rank of the Novikov series on `H` over those on a
-subgroup `K` is the index of `K`; for infinite index both are `0`. -/
+/-- Over a nontrivial commutative ring, the natural-valued `Module.finrank` of the Novikov series
+on `H` over those on a subgroup `K` is the index of `K`. For infinite index both are `0`: the
+cosets give an infinite linearly independent family, so the module is not finite-dimensional, and
+`Module.finrank` is `0` by convention. -/
 theorem finrank_eq_index [Nontrivial R] :
     Module.finrank (NovikovSeries R K (N.comp K.subtype)) (NovikovSeries R H N) = K.index := by
   by_cases hK : K.index = 0
@@ -227,9 +230,7 @@ theorem finrank_eq_index [Nontrivial R] :
       have h := congrArg (fun a : NovikovSeries R H N => a.coeff (Quotient.out q + k)) ht
       simp only [coeff_sum, coeff_zero, hc] at h
       simpa [hq] using h
-    rw [Module.finrank, Cardinal.toNat_apply_of_aleph0_le
-      (Cardinal.aleph0_le_lift.1 ((Cardinal.aleph0_le_lift.2 (Cardinal.aleph0_le_mk _)).trans
-        hli.cardinal_lift_le_rank))]
+    exact hli.finrank_eq_zero_of_infinite
   · have : K.FiniteIndex := ⟨hK⟩
     rw [Module.finrank_eq_nat_card_basis (cosetBasis K Quotient.out QuotientAddGroup.out_eq'),
       AddSubgroup.index_eq_card]

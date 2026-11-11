@@ -180,7 +180,8 @@ theorem orbitZeta_sub_one_mem_periodFiltration {c : ℝ} (hc₀ : 0 < c) (hc : �
   have hLpos := orbitLog_mem_posIdeal (K := K) hc₀ hc ε
   have h := (isTopologicallyNilpotent_of_mem_posIdeal' hLpos).exp_sub_one_mem
     (I := periodIdeal K N c) (mem_periodIdeal.2 (orbitLog_mem_periodFiltration hc₀.le hc ε))
-  rw [orbitZeta_def, ← coe_exp_nonnegSubring ⟨orbitLog K N γ ε, _⟩]
+  rw [orbitZeta_def, ← coe_exp_nonnegSubring ⟨orbitLog K N γ ε,
+    orbitLog_mem_nonnegSubring (fun i => hc₀.le.trans (hc i)) ε⟩]
   simpa using h
 
 /-- Positive periods give a positive lower bound for the support of the orbit logarithm, with no
@@ -304,6 +305,54 @@ private theorem nsmul_single_algebraMap (n : ℕ) (h : H) (q : ℚ) :
       single h (algebraMap ℚ K (n * q)) := by
   rw [smul_single, nsmul_eq_mul, ← map_natCast (algebraMap ℚ K) n, ← _root_.map_mul]
 
+omit [Algebra ℚ K] in
+/-- A monomial lies in a period neighbourhood of `0` exactly when its coefficient vanishes or its
+exponent has weight at least the cutoff. -/
+private theorem single_mem_periodFiltration_iff (C : ℝ) (g : H) (r : K) :
+    (single g r : NovikovSeries K H N) ∈ periodFiltration K N C ↔ r = 0 ∨ C ≤ N g := by
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · by_contra hcon
+    rw [not_or, not_le] at hcon
+    exact hcon.1 (by simpa using mem_periodFiltration.1 h g hcon.2)
+  · rcases h with rfl | h
+    · simp
+    · exact antitone_periodFiltration h (single_mem_periodFiltration _ _)
+
+/-- A nonzero natural multiple of a monomial with rational coefficient lies in a period
+neighbourhood of `0` exactly when the monomial does. -/
+private theorem single_algebraMap_mul_mem_periodFiltration_iff (C : ℝ) (g : H) (q : ℚ) {n : ℕ}
+    (hn : n ≠ 0) :
+    (single g (algebraMap ℚ K (n * q)) : NovikovSeries K H N) ∈ periodFiltration K N C ↔
+      (single g (algebraMap ℚ K q) : NovikovSeries K H N) ∈ periodFiltration K N C := by
+  rw [single_mem_periodFiltration_iff, single_mem_periodFiltration_iff]
+  refine or_congr_left ⟨fun h0 => ?_, fun h0 => ?_⟩
+  · -- `q = n⁻¹ * (n * q)`, since `n` is invertible in `ℚ`
+    have hq : q = (n : ℚ)⁻¹ * (n * q) := (inv_mul_cancel_left₀ (by exact_mod_cast hn) q).symm
+    rw [hq, _root_.map_mul, h0, mul_zero]
+  · rw [_root_.map_mul, h0, mul_zero]
+
+/-- Listing each monomial `c p.1` times does not change which of the terms escape a period
+neighbourhood of `0` (up to finiteness): the repeated family has finitely many bad terms exactly
+when the family scaled by `c` does, since each fibre over `p` is finite. -/
+private theorem finite_notMem_periodFiltration_sigma_iff (c : ι → ℕ) (C : ℝ) (g : ι × ℕ → H)
+    (q : ι × ℕ → ℚ) :
+    {x : (p : ι × ℕ) × Fin (c p.1) | (single (g x.1) (algebraMap ℚ K (q x.1)) :
+      NovikovSeries K H N) ∉ periodFiltration K N C}.Finite ↔
+    {p : ι × ℕ | (single (g p) (algebraMap ℚ K ((c p.1 : ℕ) * q p)) :
+      NovikovSeries K H N) ∉ periodFiltration K N C}.Finite := by
+  have hB (p : ι × ℕ) : (single (g p) (algebraMap ℚ K ((c p.1 : ℕ) * q p)) :
+      NovikovSeries K H N) ∉ periodFiltration K N C ↔
+      c p.1 ≠ 0 ∧ (single (g p) (algebraMap ℚ K (q p)) :
+        NovikovSeries K H N) ∉ periodFiltration K N C := by
+    by_cases h0 : c p.1 = 0
+    · simp [h0]
+    · rw [not_congr (single_algebraMap_mul_mem_periodFiltration_iff C _ _ h0), and_iff_right h0]
+  refine ⟨fun hA => (hA.image Sigma.fst).subset fun p hp => ?_, fun hB' => ?_⟩
+  · obtain ⟨hc, hT⟩ := (hB p).1 hp
+    exact ⟨⟨p, ⟨0, Nat.pos_of_ne_zero hc⟩⟩, hT, rfl⟩
+  · refine (hB'.biUnion fun p _ => Set.finite_range (Sigma.mk p)).subset fun x hx => ?_
+    exact Set.mem_biUnion ((hB x.1).2 ⟨(Fin.pos x.2).ne', hx⟩) ⟨x.2, rfl⟩
+
 /-- Listing an orbit `c i` times does not change whether the terms of the orbit logarithm are
 summable: the terms of the repeated family are those of the original one, and a nonzero natural
 multiple of a monomial with rational coefficient lies in a period neighbourhood of `0` exactly
@@ -314,23 +363,6 @@ private theorem summable_repeated_iff (ε : ι → ℕ → ℤ) (c : ι → ℕ)
     Summable fun p : ι × ℕ => (single ((p.2 + 1) • γ p.1)
       (algebraMap ℚ K (((c p.1 * ε p.1 (p.2 + 1) : ℤ) : ℚ) / (p.2 + 1 : ℕ))) :
         NovikovSeries K H N) := by
-  have key (C : ℝ) (g : H) (r : K) :
-      (single g r : NovikovSeries K H N) ∈ periodFiltration K N C ↔ r = 0 ∨ C ≤ N g := by
-    refine ⟨fun h => ?_, fun h => ?_⟩
-    · by_contra hcon
-      rw [not_or, not_le] at hcon
-      exact hcon.1 (by simpa using mem_periodFiltration.1 h g hcon.2)
-    · rcases h with rfl | h
-      · simp
-      · exact antitone_periodFiltration h (single_mem_periodFiltration _ _)
-  have hmem (C : ℝ) (g : H) (q : ℚ) {n : ℕ} (hn : n ≠ 0) :
-      (single g (algebraMap ℚ K (n * q)) : NovikovSeries K H N) ∈ periodFiltration K N C ↔
-        (single g (algebraMap ℚ K q) : NovikovSeries K H N) ∈ periodFiltration K N C := by
-    rw [key, key]
-    refine or_congr_left ⟨fun h0 => ?_, fun h0 => ?_⟩
-    · rw [show q = (n : ℚ)⁻¹ * (n * q) by rw [inv_mul_cancel_left₀ (by exact_mod_cast hn)],
-        _root_.map_mul, h0, mul_zero]
-    · rw [_root_.map_mul, h0, mul_zero]
   have hq (p : ι × ℕ) : (((c p.1 * ε p.1 (p.2 + 1) : ℤ) : ℚ) / (p.2 + 1 : ℕ)) =
       (c p.1 : ℕ) * ((ε p.1 (p.2 + 1) : ℚ) / (p.2 + 1 : ℕ)) := by
     push_cast
@@ -341,24 +373,8 @@ private theorem summable_repeated_iff (ε : ι → ℕ → ℤ) (c : ι → ℕ)
     hasBasis_nhds_zero.tendsto_right_iff, hasBasis_nhds_zero.tendsto_right_iff]
   refine forall₂_congr fun C _ => ?_
   simp only [eventually_cofinite, SetLike.mem_coe]
-  have gen (g : ι × ℕ → H) (q : ι × ℕ → ℚ) :
-      {x : (p : ι × ℕ) × Fin (c p.1) | (single (g x.1) (algebraMap ℚ K (q x.1)) :
-        NovikovSeries K H N) ∉ periodFiltration K N C}.Finite ↔
-      {p : ι × ℕ | (single (g p) (algebraMap ℚ K ((c p.1 : ℕ) * q p)) :
-        NovikovSeries K H N) ∉ periodFiltration K N C}.Finite := by
-    have hB (p : ι × ℕ) : (single (g p) (algebraMap ℚ K ((c p.1 : ℕ) * q p)) :
-        NovikovSeries K H N) ∉ periodFiltration K N C ↔
-        c p.1 ≠ 0 ∧ (single (g p) (algebraMap ℚ K (q p)) :
-          NovikovSeries K H N) ∉ periodFiltration K N C := by
-      by_cases h0 : c p.1 = 0
-      · simp [h0]
-      · rw [not_congr (hmem C _ _ h0), and_iff_right h0]
-    refine ⟨fun hA => (hA.image Sigma.fst).subset fun p hp => ?_, fun hB' => ?_⟩
-    · obtain ⟨hc, hT⟩ := (hB p).1 hp
-      exact ⟨⟨p, ⟨0, Nat.pos_of_ne_zero hc⟩⟩, hT, rfl⟩
-    · refine (hB'.biUnion fun p _ => Set.finite_range (Sigma.mk p)).subset fun x hx => ?_
-      exact Set.mem_biUnion ((hB x.1).2 ⟨(Fin.pos x.2).ne', hx⟩) ⟨x.2, rfl⟩
-  exact gen (fun p => (p.2 + 1) • γ p.1) fun p => (ε p.1 (p.2 + 1) : ℚ) / (p.2 + 1 : ℕ)
+  exact finite_notMem_periodFiltration_sigma_iff (K := K) (N := N) c C (fun p => (p.2 + 1) • γ p.1)
+    fun p => (ε p.1 (p.2 + 1) : ℚ) / (p.2 + 1 : ℕ)
 
 /-- **Repeated orbits.** The orbit logarithm of the family in which the `i`-th orbit is listed
 `c i` times is the orbit logarithm of the original family with the signs of the `i`-th orbit

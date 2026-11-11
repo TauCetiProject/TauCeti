@@ -86,6 +86,7 @@ theorem coe_expMulEquiv_symm_apply (u : (posIdeal K N).principalUnitGroup) :
 
 /-- The exponential of a series of the nonnegative subring is the same whether it is computed in
 the nonnegative subring or in the Novikov ring. -/
+@[simp]
 theorem coe_exp_nonnegSubring (a : nonnegSubring K N) :
     ((NormedSpace.exp a : nonnegSubring K N) : NovikovSeries K H N) =
       NormedSpace.exp (a : NovikovSeries K H N) := by
