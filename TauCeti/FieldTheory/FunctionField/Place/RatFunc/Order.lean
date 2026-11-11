@@ -19,9 +19,9 @@ rational function field.
 
 ## Main results
 
-* `TauCeti.Place.ord_adicOfIrreducible_algebraMap`: the order of a nonzero polynomial at `P_q`
+* `TauCeti.Place.ord_adicOfIrreducible_algebraMap`: the order of a polynomial at `P_q`
   is its multiplicity of `q`.
-* `TauCeti.Place.ord_adicOfIrreducible`: the order of a nonzero rational function at `P_q` is the
+* `TauCeti.Place.ord_adicOfIrreducible`: the order of a rational function at `P_q` is the
   difference of the multiplicities in its numerator and denominator.
 * `TauCeti.Place.ord_adicOfIrreducible_pos_iff`,
   `TauCeti.Place.ord_adicOfIrreducible_neg_iff` and
@@ -66,11 +66,11 @@ namespace TauCeti.Place
 
 variable {k : Type*} [Field k]
 
-/-- The order at the finite place associated to `q` of a nonzero polynomial `r` is the
+/-- The order at the finite place associated to `q` of a polynomial `r` is the
 multiplicity of `q` in `r`. -/
-theorem ord_adicOfIrreducible_algebraMap {q r : k[X]} (hq : Irreducible q) (hr : r ≠ 0) :
+theorem ord_adicOfIrreducible_algebraMap {q r : k[X]} (hq : Irreducible q) :
     (adicOfIrreducible hq).ord (algebraMap k[X] (RatFunc k) r) = multiplicity q r := by
-  rw [adicOfIrreducible_def, ord_ofPrime_algebraMap _ _ _ hr,
+  rw [adicOfIrreducible_def, ord_ofPrime_algebraMap _ _ _,
     HeightOneSpectrum.ofIrreducible_asIdeal]
   exact_mod_cast multiplicity_eq_of_emultiplicity_eq Ideal.emultiplicity_span_eq_emultiplicity
 
@@ -81,7 +81,7 @@ theorem ord_adicOfIrreducible_algebraMap_irreducible {q p : k[X]} (hq : Irreduci
     (hp : Irreducible p) :
     (adicOfIrreducible hq).ord (algebraMap k[X] (RatFunc k) p) =
       if Associated q p then 1 else 0 := by
-  rw [ord_adicOfIrreducible_algebraMap hq hp.ne_zero]
+  rw [ord_adicOfIrreducible_algebraMap hq]
   split_ifs with h
   · rw [← multiplicity_eq_of_associated_left h,
       multiplicity_self (.of_not_isUnit hp.not_isUnit hp.ne_zero)]
@@ -95,7 +95,7 @@ and order zero at every other finite place. -/
 theorem ord_adicOfIrreducible_algebraMap_of_squarefree {q r : k[X]} (hq : Irreducible q)
     (hr : Squarefree r) :
     (adicOfIrreducible hq).ord (algebraMap k[X] (RatFunc k) r) = if q ∣ r then 1 else 0 := by
-  rw [ord_adicOfIrreducible_algebraMap hq hr.ne_zero]
+  rw [ord_adicOfIrreducible_algebraMap hq]
   have hfin : FiniteMultiplicity q r := .of_not_isUnit hq.not_isUnit hr.ne_zero
   split_ifs with hdvd
   · -- `q ∣ r` but `q ^ 2 ∤ r`, so the multiplicity is exactly one
@@ -255,11 +255,13 @@ theorem exists_gcd_ord_algebraMap_mul_X_zpow_mul_X_sub_one_zpow_eq_one {n : ℕ}
       rwa [ord_adicOfIrreducible_X_sub_one_algebraMap_mul_X_zpow_mul_X_sub_one_zpow hc]⟩
   · exact ⟨_, by rwa [ord_infty_algebraMap_mul_X_zpow_mul_X_sub_one_zpow hc, Int.gcd_neg]⟩
 
-/-- The order of a nonzero rational function at the finite place associated to `q` is the
+/-- The order of a rational function at the finite place associated to `q` is the
 multiplicity of `q` in its numerator minus its multiplicity in its denominator. -/
-theorem ord_adicOfIrreducible {q : k[X]} (hq : Irreducible q) {f : RatFunc k} (hf : f ≠ 0) :
+theorem ord_adicOfIrreducible {q : k[X]} (hq : Irreducible q) {f : RatFunc k} :
     (adicOfIrreducible hq).ord f =
       (multiplicity q f.num : ℤ) - multiplicity q f.denom := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
   calc
     (adicOfIrreducible hq).ord f =
         (adicOfIrreducible hq).ord
@@ -270,8 +272,7 @@ theorem ord_adicOfIrreducible {q : k[X]} (hq : Irreducible q) {f : RatFunc k} (h
       (adicOfIrreducible hq).ord_div (RatFunc.algebraMap_ne_zero (RatFunc.num_ne_zero hf))
         (RatFunc.algebraMap_ne_zero f.denom_ne_zero)
     _ = (multiplicity q f.num : ℤ) - multiplicity q f.denom := by
-      rw [ord_adicOfIrreducible_algebraMap hq (RatFunc.num_ne_zero hf),
-        ord_adicOfIrreducible_algebraMap hq (RatFunc.denom_ne_zero f)]
+      rw [ord_adicOfIrreducible_algebraMap hq, ord_adicOfIrreducible_algebraMap hq]
 
 private theorem not_dvd_right_of_dvd_left {q a b : k[X]} (hq : Irreducible q)
     (hab : IsCoprime a b) (ha : q ∣ a) : ¬q ∣ b := by
@@ -284,7 +285,7 @@ numerator. -/
 theorem ord_adicOfIrreducible_pos_iff {q : k[X]} (hq : Irreducible q) {f : RatFunc k}
     (hf : f ≠ 0) :
     0 < (adicOfIrreducible hq).ord f ↔ q ∣ f.num := by
-  rw [ord_adicOfIrreducible hq hf]
+  rw [ord_adicOfIrreducible hq]
   have hfin : FiniteMultiplicity q f.num :=
     .of_not_isUnit hq.not_isUnit (RatFunc.num_ne_zero hf)
   constructor
@@ -306,7 +307,7 @@ theorem ord_adicOfIrreducible_neg_iff {q : k[X]} (hq : Irreducible q) {f : RatFu
   rcases eq_or_ne f 0 with rfl | hf
   · simp only [ord_zero, lt_self_iff_false, RatFunc.denom_zero, false_iff]
     exact hq.not_dvd_one
-  · rw [ord_adicOfIrreducible hq hf]
+  · rw [ord_adicOfIrreducible hq]
     have hfin : FiniteMultiplicity q f.denom :=
       .of_not_isUnit hq.not_isUnit (RatFunc.denom_ne_zero f)
     constructor

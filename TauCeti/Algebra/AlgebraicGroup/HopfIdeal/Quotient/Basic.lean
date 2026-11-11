@@ -56,6 +56,9 @@ The same quotient of a finite-type commutative Hopf algebra is again an object o
   Hopf ideal `J/I` is the surjective kernel of the induced quotient map.
 * `CommHopfAlgCat.ker_quotientMapOfLe`: over a field, the Hopf ideal `J/I` is the
   kernel of the induced quotient map.
+* `CommHopfAlgCat.Hom.quotientIsoQuotientQuotient`,
+  `CommHopfAlgCat.Hom.mkQuotient_comp_quotientIsoQuotientQuotient_hom`: the third isomorphism
+  theorem `H ⧸ J ≅ (H ⧸ I) ⧸ (J / I)` for `I ≤ J`, compatible with the quotient morphisms.
 * `CommHopfAlgCat.quotientBotIso`: quotienting by the zero Hopf ideal does not
   change a commutative Hopf algebra.
 * `CommHopfAlgCat.Hom.quotientIsoOfSurjective`: a surjective ambient morphism identifies
@@ -92,68 +95,70 @@ public section
 
 open _root_.CommHopfAlgCat _root_.CommHopfAlgCat.Hom
 
-namespace TauCeti
+open TauCeti TauCeti.CommHopfAlgCat
 
 universe u v
 
-namespace CommHopfAlgCat
+section CommHopfAlgebras
 
 open CategoryTheory
 
 variable {R : Type u} [CommRing R]
 
+namespace CommHopfAlgCat
+
 /-- The quotient of a commutative Hopf algebra by a Hopf ideal, as a bundled commutative
 Hopf algebra. -/
-noncomputable abbrev _root_.CommHopfAlgCat.quotient
+noncomputable abbrev quotient
     (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) :
     _root_.CommHopfAlgCat.{v} R :=
   _root_.CommHopfAlgCat.of R (H ⧸ I.toIdeal)
 
 /-- The quotient morphism `H ⟶ H ⧸ I` in `CommHopfAlgCat`. -/
-noncomputable abbrev _root_.CommHopfAlgCat.mkQuotient
+noncomputable abbrev mkQuotient
     (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) :
     H ⟶ quotient H I :=
   _root_.CommHopfAlgCat.ofHom (Bialgebra.Quotient.mkBialgHom I.toIdeal)
 
 /-- The quotient morphism has the expected underlying bialgebra morphism. -/
-lemma _root_.CommHopfAlgCat.hom_mkQuotient (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) :
+lemma hom_mkQuotient (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) :
     (mkQuotient H I).hom = Bialgebra.Quotient.mkBialgHom I.toIdeal :=
   _root_.CommHopfAlgCat.hom_ofHom _
 
 /-- The quotient morphism sends an element to its quotient class. -/
-lemma _root_.CommHopfAlgCat.mkQuotient_apply
+lemma mkQuotient_apply
     (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) (h : H) :
     (mkQuotient H I).hom h = Ideal.Quotient.mkₐ R I.toIdeal h := by
   rw [hom_mkQuotient, Bialgebra.Quotient.mkBialgHom_apply, Ideal.Quotient.mkₐ_eq_mk]
 
 /-- The linear map underlying the quotient morphism is the ideal quotient map. -/
-lemma _root_.CommHopfAlgCat.mkQuotient_toLinearMap
+lemma mkQuotient_toLinearMap
     (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) :
     (mkQuotient H I).hom.toLinearMap = (Ideal.Quotient.mkₐ R I.toIdeal).toLinearMap := by
   ext h
   exact mkQuotient_apply H I h
 
 /-- The kernel of the quotient morphism is the Hopf ideal being quotiented by. -/
-lemma _root_.CommHopfAlgCat.mkQuotient_ker (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) :
+lemma mkQuotient_ker (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) :
     RingHom.ker (mkQuotient H I).hom.toAlgHom.toRingHom = I.toIdeal := by
   rw [hom_mkQuotient]
   exact Ideal.Quotient.mkₐ_ker (R₁ := R) I.toIdeal
 
 /-- An element maps to zero in the quotient exactly when it belongs to the Hopf ideal. -/
-lemma _root_.CommHopfAlgCat.mkQuotient_eq_zero_iff
+lemma mkQuotient_eq_zero_iff
     (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) (h : H) :
     (mkQuotient H I).hom h = 0 ↔ h ∈ I := by
   rw [mkQuotient_apply]
   exact Ideal.Quotient.eq_zero_iff_mem.trans HopfIdeal.mem_toIdeal
 
 /-- The quotient morphism is surjective. -/
-lemma _root_.CommHopfAlgCat.mkQuotient_surjective
+lemma mkQuotient_surjective
     (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) :
     Function.Surjective ⇑(mkQuotient H I).hom :=
   Ideal.Quotient.mkₐ_surjective R I.toIdeal
 
 /-- A Hopf-algebra quotient morphism is an epimorphism. -/
-instance _root_.CommHopfAlgCat.mkQuotient_epi
+instance mkQuotient_epi
     {H : _root_.CommHopfAlgCat.{v} R} {I : HopfIdeal R H} :
     Epi (mkQuotient H I) :=
   ConcreteCategory.epi_of_surjective _ (mkQuotient_surjective H I)
@@ -161,12 +166,16 @@ instance _root_.CommHopfAlgCat.mkQuotient_epi
 /-- Morphisms out of a Hopf-algebra quotient are determined by their composites with the
 quotient morphism. -/
 @[ext]
-theorem _root_.CommHopfAlgCat.mkQuotient_hom_ext {H X : _root_.CommHopfAlgCat.{v} R}
+theorem mkQuotient_hom_ext {H X : _root_.CommHopfAlgCat.{v} R}
     {I : HopfIdeal R H} {f g : quotient H I ⟶ X}
     (h : mkQuotient H I ≫ f = mkQuotient H I ≫ g) : f = g :=
   (cancel_epi (mkQuotient H I)).mp h
 
+end CommHopfAlgCat
+
 variable {H K : _root_.CommHopfAlgCat.{v} R}
+
+namespace TauCeti.CommHopfAlgCat
 
 /-- A morphism of commutative Hopf algebras out of `H` which kills a Hopf ideal factors
 through the quotient object. -/
@@ -187,14 +196,22 @@ lemma liftQuotient_mk (I : HopfIdeal R H) (f : H ⟶ K)
       f.hom h :=
   Bialgebra.Quotient.liftBialgHom_mk I.toIdeal f.hom hf h
 
+end TauCeti.CommHopfAlgCat
+
+namespace CommHopfAlgCat
+
 /-- The quotient lift composed with the quotient morphism is the original morphism. -/
 @[simp]
-lemma _root_.CommHopfAlgCat.mkQuotient_comp_liftQuotient (I : HopfIdeal R H) (f : H ⟶ K)
+lemma mkQuotient_comp_liftQuotient (I : HopfIdeal R H) (f : H ⟶ K)
     (hf : I.toIdeal ≤ RingHom.ker f.hom.toAlgHom.toRingHom) :
     mkQuotient H I ≫ liftQuotient I f hf = f := by
   apply _root_.CommHopfAlgCat.hom_ext
   simpa only [_root_.CommHopfAlgCat.hom_comp, hom_mkQuotient, hom_liftQuotient] using
     Bialgebra.Quotient.liftBialgHom_comp_mkBialgHom I.toIdeal f.hom hf
+
+end CommHopfAlgCat
+
+namespace TauCeti.CommHopfAlgCat
 
 /-- A morphism out of the quotient object is determined by its precomposition with the
 quotient morphism. -/
@@ -213,17 +230,21 @@ theorem liftQuotient_surjective_of_surjective (I : HopfIdeal R H) (f : H ⟶ K)
   obtain ⟨x, rfl⟩ := hsurj y
   exact ⟨Ideal.Quotient.mkₐ R I.toIdeal x, liftQuotient_mk I f hf x⟩
 
+end TauCeti.CommHopfAlgCat
+
+namespace CommHopfAlgCat
+
 /-- Transporting the quotient object along an equality of Hopf ideals transports its quotient
 morphism. This is the identity that lets an automorphism preserving a Hopf ideal be compared with
 the isomorphism it induces on the quotient. -/
-theorem _root_.CommHopfAlgCat.mkQuotient_comp_eqToHom {I J : HopfIdeal R H} (hIJ : I = J) :
+theorem mkQuotient_comp_eqToHom {I J : HopfIdeal R H} (hIJ : I = J) :
     mkQuotient H J ≫ eqToHom (congrArg (quotient H) hIJ.symm) = mkQuotient H I := by
   subst J
   rfl
 
 /-- If restriction after a surjective morphism is a quotient map, an ideal killed by
 restriction pulls back into that quotient's defining ideal. -/
-theorem _root_.CommHopfAlgCat.Hom.comapOfSurjective_le_of_comp_eq_mkQuotient
+theorem Hom.comapOfSurjective_le_of_comp_eq_mkQuotient
     (f : H ⟶ K) (hf : Function.Surjective f.hom) (D : HopfIdeal R H)
     (r : K ⟶ quotient H D) (hr : f ≫ r = mkQuotient H D)
     (I : HopfIdeal R K) (hI : I.toIdeal ≤ RingHom.ker r.hom.toAlgHom.toRingHom) :
@@ -237,7 +258,7 @@ theorem _root_.CommHopfAlgCat.Hom.comapOfSurjective_le_of_comp_eq_mkQuotient
 
 /-- A surjective morphism of commutative Hopf algebras identifies the quotient by the
 inverse-image Hopf ideal with the corresponding quotient of the target. -/
-noncomputable def _root_.CommHopfAlgCat.Hom.quotientIsoOfSurjective
+noncomputable def Hom.quotientIsoOfSurjective
     (f : H ⟶ K) (hf : Function.Surjective f.hom)
     (I : HopfIdeal R K) : quotient H (I.comapOfSurjective f.hom hf) ≅ quotient K I :=
   eqToIso (congrArg (quotient H) (HopfIdeal.comapOfSurjective_eq_kerOfSurjective I f.hom hf)) ≪≫
@@ -248,7 +269,7 @@ noncomputable def _root_.CommHopfAlgCat.Hom.quotientIsoOfSurjective
 /-- The forward quotient isomorphism induced by a surjective morphism commutes with the
 quotient morphisms. -/
 @[simp]
-lemma _root_.CommHopfAlgCat.Hom.mkQuotient_comp_quotientIsoOfSurjective_hom (f : H ⟶ K)
+lemma Hom.mkQuotient_comp_quotientIsoOfSurjective_hom (f : H ⟶ K)
     (hf : Function.Surjective f.hom) (I : HopfIdeal R K) :
     mkQuotient H (I.comapOfSurjective f.hom hf) ≫ (quotientIsoOfSurjective f hf I).hom =
       f ≫ mkQuotient K I := by
@@ -262,7 +283,7 @@ lemma _root_.CommHopfAlgCat.Hom.mkQuotient_comp_quotientIsoOfSurjective_hom (f :
 /-- The forward quotient isomorphism induced by a surjective morphism evaluates on quotient
 classes by applying the morphism before taking the target quotient. -/
 @[simp↓]
-lemma _root_.CommHopfAlgCat.Hom.quotientIsoOfSurjective_hom_mk
+lemma Hom.quotientIsoOfSurjective_hom_mk
     (f : H ⟶ K) (hf : Function.Surjective f.hom)
     (I : HopfIdeal R K) (x : H) :
     (quotientIsoOfSurjective f hf I).hom.hom
@@ -272,7 +293,7 @@ lemma _root_.CommHopfAlgCat.Hom.quotientIsoOfSurjective_hom_mk
 
 /-- The underlying bialgebra map of the forward quotient isomorphism induced by a surjective
 morphism commutes with the quotient maps. -/
-lemma _root_.CommHopfAlgCat.Hom.hom_quotientIsoOfSurjective_hom_comp_mkBialgHom (f : H ⟶ K)
+lemma Hom.hom_quotientIsoOfSurjective_hom_comp_mkBialgHom (f : H ⟶ K)
     (hf : Function.Surjective f.hom) (I : HopfIdeal R K) :
     (quotientIsoOfSurjective f hf I).hom.hom.comp
         (Bialgebra.Quotient.mkBialgHom (R := R) (I.comapOfSurjective f.hom hf).toIdeal) =
@@ -282,12 +303,16 @@ lemma _root_.CommHopfAlgCat.Hom.hom_quotientIsoOfSurjective_hom_comp_mkBialgHom 
 
 /-- The quotient by the inverse image of a Hopf ideal along a surjective morphism is reduced
 exactly when the target quotient is. -/
-theorem _root_.CommHopfAlgCat.Hom.isReduced_quotient_comapOfSurjective_iff (f : H ⟶ K)
+theorem Hom.isReduced_quotient_comapOfSurjective_iff (f : H ⟶ K)
     (hf : Function.Surjective f.hom) (I : HopfIdeal R K) :
     IsReduced (H ⧸ (I.comapOfSurjective f.hom hf).toIdeal) ↔ IsReduced (K ⧸ I.toIdeal) := by
   let e := _root_.CommHopfAlgCat.ofIso (quotientIsoOfSurjective f hf I)
   exact ⟨fun _ ↦ isReduced_of_injective e.symm.toAlgEquiv.toRingHom e.symm.injective,
     fun _ ↦ isReduced_of_injective e.toAlgEquiv.toRingHom e.injective⟩
+
+end CommHopfAlgCat
+
+namespace TauCeti.CommHopfAlgCat
 
 /-- An isomorphism of commutative Hopf algebras induces an isomorphism from the quotient by
 the inverse-image Hopf ideal to the corresponding quotient of the target. -/
@@ -315,14 +340,18 @@ lemma mkQuotient_comp_quotientIsoOfIso_inv (e : H ≅ K) (I : HopfIdeal R K) :
   simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id,
     mkQuotient_comp_quotientIsoOfIso_hom, Iso.inv_hom_id_assoc]
 
-end CommHopfAlgCat
+end TauCeti.CommHopfAlgCat
 
-namespace HopfIdeal
+end CommHopfAlgebras
+
+section HopfIdeals
 
 open CategoryTheory
 
 variable {R : Type u} [CommRing R]
 variable {H : _root_.CommHopfAlgCat.{v} R}
+
+namespace TauCeti.HopfIdeal
 
 /-- A Hopf ideal is invariant under an ambient automorphism if both the automorphism and its
 inverse pull it into itself. -/
@@ -339,14 +368,18 @@ theorem comapOfSurjective_eq_of_hom_le_of_inv_le (e : H ≅ H) (I : HopfIdeal R 
   rw [_root_.CommHopfAlgCat.comp_apply] at hcancel
   simpa only [_root_.CommHopfAlgCat.id_apply] using hcancel.symm ▸ hx
 
-end HopfIdeal
+end TauCeti.HopfIdeal
 
-namespace CommHopfAlgCat
+end HopfIdeals
+
+section CommHopfAlgebras
 
 open CategoryTheory
 
 variable {R : Type u} [CommRing R]
 variable {H K : _root_.CommHopfAlgCat.{v} R}
+
+namespace TauCeti.CommHopfAlgCat
 
 /-- An isomorphism `e : H ≅ K` that pulls the Hopf ideal `I` of `K` back to the Hopf ideal `J`
 of `H` induces an isomorphism of the quotients. For `K = H` and `J = I` this is the automorphism
@@ -401,9 +434,13 @@ lemma quotientIsoOfIso_inv_mk (e : H ≅ K) (I : HopfIdeal R K) (y : K) :
     mkQuotient_apply, mkQuotient_apply] at h
   simpa only [Ideal.Quotient.mkₐ_eq_mk] using h
 
+end TauCeti.CommHopfAlgCat
+
+namespace CommHopfAlgCat
+
 /-- Quotienting a commutative Hopf algebra by the zero Hopf ideal gives an isomorphic object
 of `CommHopfAlgCat`. -/
-noncomputable def _root_.CommHopfAlgCat.quotientBotIso (H : _root_.CommHopfAlgCat.{v} R) :
+noncomputable def quotientBotIso (H : _root_.CommHopfAlgCat.{v} R) :
     quotient H (⊥ : HopfIdeal R H) ≅ H where
   hom := liftQuotient (⊥ : HopfIdeal R H) (𝟙 H) bot_le
   inv := mkQuotient H (⊥ : HopfIdeal R H)
@@ -416,20 +453,20 @@ noncomputable def _root_.CommHopfAlgCat.quotientBotIso (H : _root_.CommHopfAlgCa
 
 /-- The forward map of the quotient-by-zero isomorphism is the lift of the identity. -/
 @[simp]
-lemma _root_.CommHopfAlgCat.quotientBotIso_hom (H : _root_.CommHopfAlgCat.{v} R) :
+lemma quotientBotIso_hom (H : _root_.CommHopfAlgCat.{v} R) :
     (quotientBotIso H).hom =
       liftQuotient (⊥ : HopfIdeal R H) (𝟙 H) bot_le := by
   rw [quotientBotIso]
 
 /-- The inverse map of the quotient-by-zero isomorphism is the quotient morphism. -/
 @[simp]
-lemma _root_.CommHopfAlgCat.quotientBotIso_inv (H : _root_.CommHopfAlgCat.{v} R) :
+lemma quotientBotIso_inv (H : _root_.CommHopfAlgCat.{v} R) :
     (quotientBotIso H).inv = mkQuotient H (⊥ : HopfIdeal R H) := by
   rw [quotientBotIso]
 
 /-- A surjective morphism of commutative Hopf algebras identifies the quotient by its Hopf-ideal
 kernel with its target. -/
-noncomputable def _root_.CommHopfAlgCat.Hom.quotientKerOfSurjectiveIso
+noncomputable def Hom.quotientKerOfSurjectiveIso
     (f : H ⟶ K) (hf : Function.Surjective f.hom) :
     quotient H (HopfIdeal.kerOfSurjective f.hom hf) ≅ K :=
   _root_.CommHopfAlgCat.isoMk (HopfIdeal.kerLiftBialgEquiv f.hom hf)
@@ -437,7 +474,7 @@ noncomputable def _root_.CommHopfAlgCat.Hom.quotientKerOfSurjectiveIso
 /-- The kernel quotient isomorphism identifies the quotient morphism with the original
 surjective morphism. -/
 @[reassoc (attr := simp)]
-lemma _root_.CommHopfAlgCat.Hom.mkQuotient_comp_quotientKerOfSurjectiveIso_hom (f : H ⟶ K)
+lemma Hom.mkQuotient_comp_quotientKerOfSurjectiveIso_hom (f : H ⟶ K)
     (hf : Function.Surjective f.hom) :
     mkQuotient H (HopfIdeal.kerOfSurjective f.hom hf) ≫ (quotientKerOfSurjectiveIso f hf).hom =
       f := by
@@ -447,7 +484,7 @@ lemma _root_.CommHopfAlgCat.Hom.mkQuotient_comp_quotientKerOfSurjectiveIso_hom (
 /-- The inverse of the kernel quotient isomorphism identifies the original surjective morphism
 with the quotient morphism. -/
 @[reassoc (attr := simp)]
-lemma _root_.CommHopfAlgCat.Hom.comp_quotientKerOfSurjectiveIso_inv
+lemma Hom.comp_quotientKerOfSurjectiveIso_inv
     (f : H ⟶ K) (hf : Function.Surjective f.hom) :
     f ≫ (quotientKerOfSurjectiveIso f hf).inv =
       mkQuotient H (HopfIdeal.kerOfSurjective f.hom hf) :=
@@ -455,7 +492,7 @@ lemma _root_.CommHopfAlgCat.Hom.comp_quotientKerOfSurjectiveIso_inv
 
 /-- A surjective morphism of commutative Hopf algebras identifies the quotient by any Hopf ideal
 equal to its Hopf-ideal kernel with its target. -/
-noncomputable def _root_.CommHopfAlgCat.Hom.quotientIsoOfKerOfSurjectiveEq
+noncomputable def Hom.quotientIsoOfKerOfSurjectiveEq
     (f : H ⟶ K) (hf : Function.Surjective f.hom)
     {I : HopfIdeal R H} (hI : HopfIdeal.kerOfSurjective f.hom hf = I) : quotient H I ≅ K :=
   eqToIso (congrArg (quotient H) hI.symm) ≪≫ quotientKerOfSurjectiveIso f hf
@@ -463,7 +500,7 @@ noncomputable def _root_.CommHopfAlgCat.Hom.quotientIsoOfKerOfSurjectiveEq
 /-- The identification of a quotient by the kernel of a surjective morphism with its target
 identifies the quotient morphism with the original surjective morphism. -/
 @[reassoc (attr := simp)]
-lemma _root_.CommHopfAlgCat.Hom.mkQuotient_comp_quotientIsoOfKerOfSurjectiveEq_hom (f : H ⟶ K)
+lemma Hom.mkQuotient_comp_quotientIsoOfKerOfSurjectiveEq_hom (f : H ⟶ K)
     (hf : Function.Surjective f.hom) {I : HopfIdeal R H}
     (hI : HopfIdeal.kerOfSurjective f.hom hf = I) :
     mkQuotient H I ≫ (quotientIsoOfKerOfSurjectiveEq f hf hI).hom = f := by
@@ -474,21 +511,21 @@ lemma _root_.CommHopfAlgCat.Hom.mkQuotient_comp_quotientIsoOfKerOfSurjectiveEq_h
 /-- The inverse identification of a quotient by the kernel of a surjective morphism with its
 target identifies the original surjective morphism with the quotient morphism. -/
 @[reassoc (attr := simp)]
-lemma _root_.CommHopfAlgCat.Hom.comp_quotientIsoOfKerOfSurjectiveEq_inv (f : H ⟶ K)
+lemma Hom.comp_quotientIsoOfKerOfSurjectiveEq_inv (f : H ⟶ K)
     (hf : Function.Surjective f.hom) {I : HopfIdeal R H}
     (hI : HopfIdeal.kerOfSurjective f.hom hf = I) :
     f ≫ (quotientIsoOfKerOfSurjectiveEq f hf hI).inv = mkQuotient H I :=
   (Iso.comp_inv_eq _).mpr (mkQuotient_comp_quotientIsoOfKerOfSurjectiveEq_hom f hf hI).symm
 
 /-- If `I ≤ J`, then the quotient map by `J` kills every element of `I`. -/
-lemma _root_.CommHopfAlgCat.toIdeal_le_ker_mkQuotient_of_le
+lemma toIdeal_le_ker_mkQuotient_of_le
     (H : _root_.CommHopfAlgCat.{v} R) {I J : HopfIdeal R H} (hIJ : I ≤ J) :
     I.toIdeal ≤ RingHom.ker (mkQuotient H J).hom.toAlgHom.toRingHom := by
   rw [mkQuotient_ker]
   exact HopfIdeal.toIdeal_le_toIdeal.mpr hIJ
 
 /-- A morphism out of `H` that factors through the quotient by `I` kills `I`. -/
-lemma _root_.CommHopfAlgCat.toIdeal_le_ker_of_mkQuotient_comp
+lemma toIdeal_le_ker_of_mkQuotient_comp
     {I : HopfIdeal R H} {g : quotient H I ⟶ K}
     {f : H ⟶ K} (hg : mkQuotient H I ≫ g = f) :
     I.toIdeal ≤ RingHom.ker f.hom.toAlgHom.toRingHom := by
@@ -501,13 +538,13 @@ ideals.
 
 It is the unique morphism out of `H ⧸ I` whose composite with `H ⟶ H ⧸ I` is the quotient
 map `H ⟶ H ⧸ J`. -/
-noncomputable abbrev _root_.CommHopfAlgCat.quotientMapOfLe (H : _root_.CommHopfAlgCat.{v} R)
+noncomputable abbrev quotientMapOfLe (H : _root_.CommHopfAlgCat.{v} R)
     {I J : HopfIdeal R H} (hIJ : I ≤ J) : quotient H I ⟶ quotient H J :=
   liftQuotient I (mkQuotient H J) (toIdeal_le_ker_mkQuotient_of_le H hIJ)
 
 /-- The quotient-to-quotient morphism sends the class of `h` modulo `I` to its class
 modulo `J`. -/
-lemma _root_.CommHopfAlgCat.quotientMapOfLe_mk
+lemma quotientMapOfLe_mk
     (H : _root_.CommHopfAlgCat.{v} R) {I J : HopfIdeal R H}
     (hIJ : I ≤ J) (h : H) :
     (quotientMapOfLe H hIJ).hom (Ideal.Quotient.mkₐ R I.toIdeal h) =
@@ -516,7 +553,7 @@ lemma _root_.CommHopfAlgCat.quotientMapOfLe_mk
 
 /-- A quotient-to-quotient coordinate morphism induced by an inclusion of Hopf ideals is
 surjective. -/
-theorem _root_.CommHopfAlgCat.quotientMapOfLe_surjective (H : _root_.CommHopfAlgCat.{v} R)
+theorem quotientMapOfLe_surjective (H : _root_.CommHopfAlgCat.{v} R)
     {I J : HopfIdeal R H} (hIJ : I ≤ J) :
     Function.Surjective (quotientMapOfLe H hIJ).hom :=
   liftQuotient_surjective_of_surjective I (mkQuotient H J)
@@ -525,7 +562,7 @@ theorem _root_.CommHopfAlgCat.quotientMapOfLe_surjective (H : _root_.CommHopfAlg
 /-- The surjective kernel Hopf ideal of the induced map `H ⧸ I ⟶ H ⧸ J` is the image
 of `J` in `H ⧸ I`. -/
 @[simp]
-theorem _root_.CommHopfAlgCat.kerOfSurjective_quotientMapOfLe (H : _root_.CommHopfAlgCat.{v} R)
+theorem kerOfSurjective_quotientMapOfLe (H : _root_.CommHopfAlgCat.{v} R)
     {I J : HopfIdeal R H} (hIJ : I ≤ J) :
     HopfIdeal.kerOfSurjective
         (Bialgebra.Quotient.liftBialgHom I.toIdeal
@@ -545,7 +582,7 @@ theorem _root_.CommHopfAlgCat.kerOfSurjective_quotientMapOfLe (H : _root_.CommHo
 /-- Over a field, the kernel Hopf ideal of the induced map `H ⧸ I ⟶ H ⧸ J` is the
 image of `J` in `H ⧸ I`. -/
 @[simp]
-theorem _root_.CommHopfAlgCat.ker_quotientMapOfLe {k : Type u} [Field k]
+theorem ker_quotientMapOfLe {k : Type u} [Field k]
     (H : _root_.CommHopfAlgCat.{v} k) {I J : HopfIdeal k H} (hIJ : I ≤ J) :
     HopfIdeal.ker
         (Bialgebra.Quotient.liftBialgHom I.toIdeal
@@ -559,16 +596,40 @@ theorem _root_.CommHopfAlgCat.ker_quotientMapOfLe {k : Type u} [Field k]
 /-- Composing the quotient map `H ⟶ H ⧸ I` with the quotient-to-quotient morphism for
 `I ≤ J` gives the quotient map `H ⟶ H ⧸ J`. -/
 @[reassoc]
-lemma _root_.CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe (H : _root_.CommHopfAlgCat.{v} R)
+lemma mkQuotient_comp_quotientMapOfLe (H : _root_.CommHopfAlgCat.{v} R)
     {I J : HopfIdeal R H} (hIJ : I ≤ J) :
     mkQuotient H I ≫ quotientMapOfLe H hIJ = mkQuotient H J :=
   mkQuotient_comp_liftQuotient I (mkQuotient H J)
     (toIdeal_le_ker_mkQuotient_of_le H hIJ)
 
+/-- **Third isomorphism theorem.** For Hopf ideals `I ≤ J` of `H`, the quotient of `H` by `J` is
+the quotient of `H ⧸ I` by the image of `J`: it is the inverse of the identification of that
+quotient with `H ⧸ J` along `quotientMapOfLe`. The quotient morphism `q : H ⟶ H ⧸ I` is taken
+together with `hq : q = mkQuotient H I`, so that this applies verbatim to a coordinate map that
+is only propositionally the quotient morphism. -/
+noncomputable def _root_.CommHopfAlgCat.Hom.quotientIsoQuotientQuotient
+    {I J : HopfIdeal R H} (q : H ⟶ quotient H I)
+    (hq : q = mkQuotient H I) (hIJ : I ≤ J) :
+    quotient H J ≅ quotient (quotient H I) (J.map q.hom) :=
+  (quotientIsoOfKerOfSurjectiveEq (quotientMapOfLe H hIJ) (quotientMapOfLe_surjective H hIJ)
+    (by rw [hq, hom_mkQuotient]; exact kerOfSurjective_quotientMapOfLe H hIJ)).symm
+
+/-- The third isomorphism `H ⧸ J ≅ (H ⧸ I) ⧸ (J / I)` commutes with the quotient morphisms
+from `H`. -/
+@[reassoc (attr := simp)]
+lemma _root_.CommHopfAlgCat.Hom.mkQuotient_comp_quotientIsoQuotientQuotient_hom
+    {I J : HopfIdeal R H} (q : H ⟶ quotient H I)
+    (hq : q = mkQuotient H I) (hIJ : I ≤ J) :
+    mkQuotient H J ≫ (q.quotientIsoQuotientQuotient hq hIJ).hom =
+      q ≫ mkQuotient (quotient H I) (J.map q.hom) := by
+  subst hq
+  rw [← mkQuotient_comp_quotientMapOfLe H hIJ, Category.assoc, quotientIsoQuotientQuotient,
+    Iso.symm_hom, comp_quotientIsoOfKerOfSurjectiveEq_inv]
+
 /-- **A lift through the larger of two Hopf ideals is recognized by its precomposition with the
 quotient morphism.** Composing `H ⧸ I ⟶ H ⧸ J` with the lift of `f : H ⟶ K` through `H ⧸ J` gives
 the unique morphism `g : H ⧸ I ⟶ K` with `mkQuotient H I ≫ g = f`. -/
-lemma _root_.CommHopfAlgCat.quotientMapOfLe_comp_liftQuotient_eq (H : _root_.CommHopfAlgCat.{v} R)
+lemma quotientMapOfLe_comp_liftQuotient_eq (H : _root_.CommHopfAlgCat.{v} R)
     {K : _root_.CommHopfAlgCat.{v} R} {I J : HopfIdeal R H} (hIJ : I ≤ J) (f : H ⟶ K)
     (hf : J.toIdeal ≤ RingHom.ker f.hom.toAlgHom.toRingHom) (g : quotient H I ⟶ K)
     (hg : mkQuotient H I ≫ g = f) :
@@ -578,7 +639,7 @@ lemma _root_.CommHopfAlgCat.quotientMapOfLe_comp_liftQuotient_eq (H : _root_.Com
 
 /-- The quotient-to-quotient morphism for `I ≤ I` is the identity morphism. -/
 @[simp]
-lemma _root_.CommHopfAlgCat.quotientMapOfLe_refl
+lemma quotientMapOfLe_refl
     (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) :
     quotientMapOfLe H (le_refl I) = 𝟙 (quotient H I) := by
   apply mkQuotient_hom_ext
@@ -586,7 +647,7 @@ lemma _root_.CommHopfAlgCat.quotientMapOfLe_refl
 
 /-- Quotient-to-quotient morphisms compose along inclusions of Hopf ideals. -/
 @[simp]
-lemma _root_.CommHopfAlgCat.quotientMapOfLe_comp (H : _root_.CommHopfAlgCat.{v} R)
+lemma quotientMapOfLe_comp (H : _root_.CommHopfAlgCat.{v} R)
     {I J K : HopfIdeal R H} (hIJ : I ≤ J) (hJK : J ≤ K) :
     quotientMapOfLe H hIJ ≫ quotientMapOfLe H hJK =
       quotientMapOfLe H (hIJ.trans hJK) := by
@@ -596,7 +657,7 @@ lemma _root_.CommHopfAlgCat.quotientMapOfLe_comp (H : _root_.CommHopfAlgCat.{v} 
 
 /-- The quotient-to-quotient morphism induced by an inclusion `I ≤ J` of Hopf ideals is
 injective exactly when `I = J`. -/
-theorem _root_.CommHopfAlgCat.quotientMapOfLe_injective_iff (H : _root_.CommHopfAlgCat.{v} R)
+theorem quotientMapOfLe_injective_iff (H : _root_.CommHopfAlgCat.{v} R)
     {I J : HopfIdeal R H} (hIJ : I ≤ J) :
     Function.Injective (quotientMapOfLe H hIJ).hom ↔ I = J := by
   constructor
@@ -612,11 +673,15 @@ theorem _root_.CommHopfAlgCat.quotientMapOfLe_injective_iff (H : _root_.CommHopf
 
 end CommHopfAlgCat
 
-namespace FiniteTypeCommHopfAlgCat
+end CommHopfAlgebras
+
+section FiniteTypeCommHopfAlgebras
 
 open CategoryTheory
 
 variable {R : Type u} [CommRing R]
+
+namespace TauCeti.FiniteTypeCommHopfAlgCat
 
 /-- The quotient of a finite-type commutative Hopf algebra by a Hopf ideal, as a bundled
 finite-type commutative Hopf algebra. -/
@@ -831,6 +896,6 @@ lemma quotientMapOfLe_comp (H : FiniteTypeCommHopfAlgCat.{u, v} R)
     (_root_.CommHopfAlgCat.{v} R)).map_injective
   exact CommHopfAlgCat.quotientMapOfLe_comp H.obj hIJ hJK
 
-end FiniteTypeCommHopfAlgCat
+end TauCeti.FiniteTypeCommHopfAlgCat
 
-end TauCeti
+end FiniteTypeCommHopfAlgebras
