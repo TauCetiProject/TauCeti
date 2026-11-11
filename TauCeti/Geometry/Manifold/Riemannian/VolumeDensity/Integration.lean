@@ -12,8 +12,9 @@ public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 # Signed change of variables for native Riemannian volume
 
 The exact native pushforward measure identity for a partial diffeomorphism gives change of
-variables for every signed integrable real weight. The coordinate integral uses the actual
-Gram Jacobian and the Haar measure associated to the same coordinate basis.
+variables for every signed a.e.-strongly measurable real weight; no integrability hypothesis
+is needed. The coordinate integral uses the actual Gram Jacobian and the Haar measure
+associated to the same coordinate basis.
 
 ## References
 
@@ -35,12 +36,12 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [MeasurableSpace F] [BorelSpace F]
   {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-/-- Signed integrable weights on the actual target of a partial diffeomorphism satisfy the
-native Riemannian change-of-variables formula. -/
+/-- Signed a.e.-strongly measurable weights on the actual target of a partial diffeomorphism
+satisfy the native Riemannian change-of-variables formula; no integrability is assumed. -/
 theorem setIntegral_riemannianVolume_eq
     (Φ : PartialDiffeomorph 𝓘(ℝ, F) I F M 1) (b : Module.Basis ι ℝ F)
     (hdim : Module.finrank ℝ F = Module.finrank ℝ E)
-    {f : M → ℝ} (hf : IntegrableOn f Φ.target (riemannianVolume I M)) :
+    {f : M → ℝ} (hf : AEStronglyMeasurable f ((riemannianVolume I M).restrict Φ.target)) :
     ∫ y in Φ.target, f y ∂riemannianVolume I M =
       ∫ x in Φ.source, riemannianJacobian (I := I) b Φ x * f (Φ x) ∂b.addHaar := by
   let μ := b.addHaar.restrict Φ.source
@@ -54,21 +55,18 @@ theorem setIntegral_riemannianVolume_eq
       (withDensity_absolutelyContinuous _ _)
   have hfm : AEStronglyMeasurable f (Measure.map Φ (μ.withDensity ρ)) := by
     rw [Φ.map_withDensity_riemannianJacobian b hdim]
-    exact hf.aestronglyMeasurable
+    exact hf
   rw [← Φ.map_withDensity_riemannianJacobian b hdim, integral_map hΦ hfm,
     integral_withDensity_eq_integral_toReal_smul₀ hρ
       (Filter.Eventually.of_forall fun _ => ENNReal.ofReal_lt_top)]
-  have hJ (x : F) : 0 ≤ riemannianJacobian (I := I) b Φ x := by
-    rw [riemannianJacobian_eq_sqrt_det_gram]
-    exact Real.sqrt_nonneg _
-  simp only [ρ, μ, ENNReal.toReal_ofReal (hJ _), smul_eq_mul]
+  simp only [ρ, μ, ENNReal.toReal_ofReal (riemannianJacobian_nonneg b Φ _), smul_eq_mul]
 /-- Signed native volume integration over the actual image of an injective local
 parametrization, with its actual open domain and genuine Gram Jacobian. -/
 theorem _root_.IsLocalDiffeomorphOn.setIntegral_riemannianVolume_image
     {g : F → M} {U : Set F} (hg : IsLocalDiffeomorphOn 𝓘(ℝ, F) I 1 g U)
     (hU : IsOpen U) (hinj : Set.InjOn g U) (b : Module.Basis ι ℝ F)
     (hdim : Module.finrank ℝ F = Module.finrank ℝ E)
-    {f : M → ℝ} (hf : IntegrableOn f (g '' U) (riemannianVolume I M)) :
+    {f : M → ℝ} (hf : AEStronglyMeasurable f ((riemannianVolume I M).restrict (g '' U))) :
     ∫ y in g '' U, f y ∂riemannianVolume I M =
       ∫ x in U, riemannianJacobian (I := I) b g x * f (g x) ∂b.addHaar := by
   let Φ := hg.partialDiffeomorphOfInjOn hU hinj

@@ -35,7 +35,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {ι : Type*} [Fintype ι] [DecidableEq ι]
 /-- An actual injective parametrization differentiable on a measurable carrier pushes
 its native Gram-Jacobian-weighted measure exactly to the native Riemannian image volume. -/
-theorem map_withDensity_riemannianJacobian_of_injOn
+theorem _root_.Module.Basis.map_withDensity_riemannianJacobian_of_injOn
     (b : Module.Basis ι ℝ F) (hdim : Module.finrank ℝ F = Module.finrank ℝ E)
     {f : F → M} {s : Set F} (hs : MeasurableSet s) (hinj : InjOn f s)
     (hf : ∀ x ∈ s, MDifferentiableAt 𝓘(ℝ, F) I f x) :
@@ -82,7 +82,7 @@ theorem map_withDensity_riemannianJacobian_of_injOn
   exact hcov.symm
 /-- Riemannian integration over an actual injective image of a measurable carrier is
 Gram-Jacobian-weighted coordinate integration for every nonnegative measurable weight. -/
-theorem setLIntegral_riemannianVolume_image_of_injOn
+theorem _root_.Module.Basis.setLIntegral_riemannianVolume_image_of_injOn
     (b : Module.Basis ι ℝ F) (hdim : Module.finrank ℝ F = Module.finrank ℝ E)
     {f : F → M} {s U : Set F} (hs : MeasurableSet s) (hU : IsOpen U) (hsub : s ⊆ U)
     (hf : ContMDiffOn 𝓘(ℝ, F) I 1 f U) (hinj : InjOn f s)
@@ -98,7 +98,7 @@ theorem setLIntegral_riemannianVolume_image_of_injOn
     ((hf.continuousOn.mono hsub).aemeasurable hs).mono_ac (withDensity_absolutelyContinuous _ _)
   have hdiff (x : F) (hx : x ∈ s) : MDifferentiableAt 𝓘(ℝ, F) I f x :=
     (hf.contMDiffAt (hU.mem_nhds (hsub hx))).mdifferentiableAt one_ne_zero
-  rw [← map_withDensity_riemannianJacobian_of_injOn b hdim hs hinj hdiff,
+  rw [← b.map_withDensity_riemannianJacobian_of_injOn hdim hs hinj hdiff,
     lintegral_map' hφ.aemeasurable hF]
   simpa only [Function.comp_apply, Pi.mul_apply] using
     lintegral_withDensity_eq_lintegral_mul₀' hρ (hφ.comp_aemeasurable hF)
