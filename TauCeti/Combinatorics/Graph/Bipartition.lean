@@ -232,6 +232,12 @@ noncomputable def outgoingEquiv {L : Finset V(G)} (x : V(G)) (hx : x ∈ L) :
     apply Subtype.ext
     rfl⟩
 
+@[simp]
+theorem outgoingEquiv_apply {L : Finset V(G)} (x : V(G)) (hx : x ∈ L)
+    (e : Σ y, G.BipartiteHom L x y) :
+    outgoingEquiv x hx e = ⟨e.2.edge, e.2.isLink.inc_left⟩ :=
+  (rfl)
+
 /-- The arrows entering a vertex on the right side of a bipartition are in bijection with the
 actual edges incident with that vertex. -/
 noncomputable def incomingEquiv {L R : Finset V(G)} (hLR : G.IsBipartition L R)
@@ -250,6 +256,12 @@ noncomputable def incomingEquiv {L R : Finset V(G)} (hLR : G.IsBipartition L R)
       hLR.mem_left_of_isLink e.2.isLink_other hx⟩⟩, ?_⟩
     apply Subtype.ext
     rfl⟩
+
+@[simp]
+theorem incomingEquiv_apply {L R : Finset V(G)} (hLR : G.IsBipartition L R)
+    (x : V(G)) (hx : x ∈ R) (e : Σ y, G.BipartiteHom L y x) :
+    incomingEquiv hLR x hx e = ⟨e.2.edge, e.2.isLink.inc_right⟩ :=
+  (rfl)
 
 /-- In a bipartite graph, directing an edge from the left side to the right side gives a
 bijection from all bipartite arrows to the actual edges. -/

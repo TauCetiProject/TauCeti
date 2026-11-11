@@ -479,6 +479,21 @@ noncomputable def IsBipartition.matchingFlowEquiv [Fintype V(G)] [DecidableEq V(
   left_inv x := Subtype.ext (x.2.flowMatching_toBipartiteFlow hLR)
   right_inv f := hLR.toBipartiteFlow_flowMatching f
 
+@[simp]
+theorem IsBipartition.matchingFlowEquiv_apply [Fintype V(G)] [DecidableEq V(G)]
+    [Fintype E(G)] (hLR : G.IsBipartition L R) (b : V(G) → ℕ)
+    (x : {x : E(G) → ℕ // G.IsCapacitatedMatching b x}) :
+    hLR.matchingFlowEquiv b x = x.2.toBipartiteFlow hLR :=
+  (rfl)
+
+@[simp]
+theorem IsBipartition.matchingFlowEquiv_symm_apply [Fintype V(G)] [DecidableEq V(G)]
+    [Fintype E(G)] (hLR : G.IsBipartition L R) (b : V(G) → ℕ)
+    (f : Flow (bipartiteCapacity L R b) (inr false) (inr true)) :
+    (hLR.matchingFlowEquiv b).symm f =
+      ⟨hLR.flowMatching f, hLR.isCapacitatedMatching_flowMatching f⟩ :=
+  (rfl)
+
 /-- The source side associated to a vertex set `C`: it contains the fresh source, the vertices of
 `L` outside `C`, and the vertices of `R` inside `C`. -/
 noncomputable def bipartiteCoverSourceSide
