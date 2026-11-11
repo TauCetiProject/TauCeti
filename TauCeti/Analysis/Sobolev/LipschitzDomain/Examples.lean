@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Lp.ProdLp
+public import TauCeti.Analysis.Normed.Lp.ProdLp.Rotation
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
 public import Mathlib.Analysis.Real.Sqrt
 
@@ -12,21 +14,23 @@ public import Mathlib.Analysis.Real.Sqrt
 # Planar examples and non-examples of Lipschitz domains
 
 The open unit square `(0, 1)²` is a Lipschitz domain with constant `1`. Along the open edges a
-translated and rotated chart has the flat graph `0`; at a corner the rotation by `π / 4` turns
-the quarter-plane into the region above `γ s = |s|`, which is `1`-Lipschitz.
+translated and rotated chart `TauCeti.prodL2RotationChart` has the flat graph `0`; at a corner
+the rotation by `π / 4` turns the quarter-plane into the region above `γ s = |s|`, which is
+`1`-Lipschitz.
 
 Two standard planar sets fail the predicate. In a chart centred at a frontier point the domain
 contains a whole cone above the centre and misses a whole cone below it, because the graph is
-Lipschitz and passes through the centre. The slit disc `B(0, 1) ∖ [0, 1) × {0}` misses no open
-set near a slit point, so no chart is centred there. The cusp `{(s, t) | √|s| < t}` contains no
-cone at the origin, so no chart, with any Lipschitz constant, is centred there.
+Lipschitz and passes through the centre (`Set.IsLipschitzChart.symm_mem_of_mul_norm_lt_fst` and
+`Set.IsLipschitzChart.symm_notMem_of_fst_lt_neg_mul_norm`). The slit disc
+`B(0, 1) ∖ [0, 1) × {0}` misses no open set near a slit point, so no chart is centred there. The
+cusp `{(s, t) | √|s| < t}` contains no cone at the origin, so no chart, with any Lipschitz
+constant, is centred there.
 
 ## Main declarations
 
-* `Set.IsLipschitzChart.symm_mem_of_mul_norm_lt_fst`,
-  `Set.IsLipschitzChart.symm_notMem_of_fst_lt_neg_mul_norm`: a chart whose graph passes through
-  the centre contains the upward cone and misses the downward cone of its cylinder.
-* `TauCeti.prodL2Rotation`: the rotation `(s, t) ↦ (α s + β t, α t - β s)` of the Euclidean plane.
+* `TauCeti.openUnitSquare`, `TauCeti.slitUnitDisc`, `TauCeti.sqrtAbsCusp`: the three planar sets,
+  with membership lemmas `TauCeti.mem_openUnitSquare`, `TauCeti.mem_slitUnitDisc` and
+  `TauCeti.mem_sqrtAbsCusp`.
 * `TauCeti.isLipschitzChartWith_openUnitSquare_zero`: the corner chart of the square at the
   origin, with graph `|s|` after the rotation by `π / 4`.
 * `TauCeti.isLipschitzDomainWith_openUnitSquare`: the open unit square is a Lipschitz domain
@@ -49,110 +53,19 @@ noncomputable section
 open Metric Set Topology
 open scoped NNReal
 
-namespace Set.IsLipschitzChart
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {Ω : Set F} {e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {γ : E → ℝ} {K : ℝ≥0} {h r : ℝ}
-
-/-- The graph of a Lipschitz chart centred at a frontier point passes through the origin. -/
-theorem apply_zero_of_mem_frontier (hc : IsLipschitzChart Ω e γ K h r) {x : F}
-    (hx : x ∈ frontier Ω) (hex : e x = 0) : γ 0 = 0 := by
-  have := hc.fst_apply_eq_of_mem_frontier hx
-    (hex ▸ TauCeti.zero_mem_normalCylinder hc.height_pos hc.radius_pos)
-  simpa [hex] using this.symm
-
-/-- **Upward cone.** If the graph of a Lipschitz chart passes through the origin, every point of
-the cylinder above the cone `K * ‖y‖ < t` corresponds to a point of `Ω`. -/
-theorem symm_mem_of_mul_norm_lt_fst (hc : IsLipschitzChart Ω e γ K h r) (hγ : γ 0 = 0)
-    {z : WithLp 2 (ℝ × E)} (hz : z ∈ TauCeti.normalCylinder h r) (hlt : K * ‖z.snd‖ < z.fst) :
-    e.symm z ∈ Ω := by
-  rw [hc.mem_iff (by simpa using hz), AffineIsometryEquiv.apply_symm_apply]
-  have := hc.lipschitzWith.dist_le_mul z.snd 0
-  rw [hγ, Real.dist_eq, sub_zero, dist_zero_right] at this
-  linarith [le_abs_self (γ z.snd)]
-
-/-- **Downward cone.** If the graph of a Lipschitz chart passes through the origin, no point of
-the cylinder below the cone `t < -(K * ‖y‖)` corresponds to a point of `Ω`. -/
-theorem symm_notMem_of_fst_lt_neg_mul_norm (hc : IsLipschitzChart Ω e γ K h r) (hγ : γ 0 = 0)
-    {z : WithLp 2 (ℝ × E)} (hz : z ∈ TauCeti.normalCylinder h r)
-    (hlt : z.fst < -(K * ‖z.snd‖)) : e.symm z ∉ Ω := by
-  rw [hc.mem_iff (by simpa using hz), AffineIsometryEquiv.apply_symm_apply, not_lt]
-  have := hc.lipschitzWith.dist_le_mul z.snd 0
-  rw [hγ, Real.dist_eq, sub_zero, dist_zero_right] at this
-  linarith [neg_abs_le (γ z.snd)]
-
-end Set.IsLipschitzChart
-
 namespace TauCeti
-
-/-! ### Rotations of the Euclidean plane -/
-
-/-- Two points of the Euclidean plane with the same coordinates are equal. -/
-private theorem prodL2_ext {x y : WithLp 2 (ℝ × ℝ)} (h1 : x.fst = y.fst) (h2 : x.snd = y.snd) :
-    x = y :=
-  (WithLp.ext_iff 2).2 (Prod.ext h1 h2)
-
-/-- The rotation `(s, t) ↦ (α s + β t, α t - β s)` of the Euclidean plane `WithLp 2 (ℝ × ℝ)`,
-for `α ^ 2 + β ^ 2 = 1`. -/
-def prodL2Rotation (α β : ℝ) (hαβ : α ^ 2 + β ^ 2 = 1) :
-    WithLp 2 (ℝ × ℝ) ≃ₗᵢ[ℝ] WithLp 2 (ℝ × ℝ) where
-  toFun x := WithLp.toLp 2 (α * x.fst + β * x.snd, α * x.snd - β * x.fst)
-  invFun z := WithLp.toLp 2 (α * z.fst - β * z.snd, β * z.fst + α * z.snd)
-  map_add' x y := by apply prodL2_ext <;> simp <;> ring
-  map_smul' c x := by apply prodL2_ext <;> simp <;> ring
-  left_inv x := by
-    apply prodL2_ext
-    · simp only [WithLp.toLp_fst, WithLp.toLp_snd]
-      linear_combination x.fst * hαβ
-    · simp only [WithLp.toLp_fst, WithLp.toLp_snd]
-      linear_combination x.snd * hαβ
-  right_inv z := by
-    apply prodL2_ext
-    · simp only [WithLp.toLp_fst, WithLp.toLp_snd]
-      linear_combination z.fst * hαβ
-    · simp only [WithLp.toLp_fst, WithLp.toLp_snd]
-      linear_combination z.snd * hαβ
-  norm_map' x := by
-    rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), WithLp.prod_norm_sq_eq_of_L2,
-      WithLp.prod_norm_sq_eq_of_L2]
-    simp only [LinearEquiv.coe_mk, LinearMap.coe_mk, AddHom.coe_mk, WithLp.toLp_fst,
-      WithLp.toLp_snd, Real.norm_eq_abs, sq_abs]
-    linear_combination (x.fst ^ 2 + x.snd ^ 2) * hαβ
-
-/-- The rigid coordinates `x ↦ R (x - c)` of the plane, centred at `c`, for the rotation
-`R = prodL2Rotation α β hαβ`. -/
-def prodL2RotationChart (c : WithLp 2 (ℝ × ℝ)) (α β : ℝ) (hαβ : α ^ 2 + β ^ 2 = 1) :
-    WithLp 2 (ℝ × ℝ) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × ℝ) :=
-  (AffineIsometryEquiv.vaddConst ℝ c).symm.trans (prodL2Rotation α β hαβ).toAffineIsometryEquiv
-
-/-- The rotation chart sends its centre to the origin. -/
-@[simp]
-theorem prodL2RotationChart_apply_self (c : WithLp 2 (ℝ × ℝ)) (α β : ℝ)
-    (hαβ : α ^ 2 + β ^ 2 = 1) : prodL2RotationChart c α β hαβ c = 0 := by
-  simp [prodL2RotationChart]
-
-/-- The first coordinate of the inverse of a rotation chart. -/
-@[simp]
-theorem prodL2RotationChart_symm_fst (c : WithLp 2 (ℝ × ℝ)) (α β : ℝ)
-    (hαβ : α ^ 2 + β ^ 2 = 1) (z : WithLp 2 (ℝ × ℝ)) :
-    ((prodL2RotationChart c α β hαβ).symm z).fst = c.fst + (α * z.fst - β * z.snd) := by
-  simp [prodL2RotationChart, prodL2Rotation, add_comm]
-  rfl
-
-/-- The second coordinate of the inverse of a rotation chart. -/
-@[simp]
-theorem prodL2RotationChart_symm_snd (c : WithLp 2 (ℝ × ℝ)) (α β : ℝ)
-    (hαβ : α ^ 2 + β ^ 2 = 1) (z : WithLp 2 (ℝ × ℝ)) :
-    ((prodL2RotationChart c α β hαβ).symm z).snd = c.snd + (β * z.fst + α * z.snd) := by
-  simp [prodL2RotationChart, prodL2Rotation, add_comm]
-  rfl
 
 /-! ### The open unit square -/
 
 /-- The open unit square `(0, 1)²` in the Euclidean plane. -/
 def openUnitSquare : Set (WithLp 2 (ℝ × ℝ)) :=
   {x | x.fst ∈ Ioo 0 1 ∧ x.snd ∈ Ioo 0 1}
+
+/-- Membership in the open unit square. -/
+@[simp]
+theorem mem_openUnitSquare {x : WithLp 2 (ℝ × ℝ)} :
+    x ∈ openUnitSquare ↔ x.fst ∈ Ioo 0 1 ∧ x.snd ∈ Ioo 0 1 :=
+  Iff.rfl
 
 /-- The open unit square is open. -/
 theorem isOpen_openUnitSquare : IsOpen openUnitSquare :=
@@ -180,24 +93,16 @@ theorem isLipschitzChartWith_openUnitSquare_of (c : WithLp 2 (ℝ × ℝ)) {α �
     openUnitSquare.IsLipschitzChartWith 1 (prodL2RotationChart c α β hαβ) φ a b := by
   refine (Set.isLipschitzChartWith_iff ..).2 ⟨ha, hb, hφ0, hφ, fun z hz => ?_⟩
   rw [mem_normalCylinder, Real.norm_eq_abs] at hz
-  simpa [openUnitSquare] using hmem z.fst z.snd (abs_lt.2 ⟨hz.1, hz.2.1⟩) hz.2.2
-
-/-- `(√2)⁻¹` lies in `(1 / 2, 1)`. -/
-private theorem inv_sqrt_two_mem : ((√2)⁻¹ : ℝ) ∈ Ioo (1 / 2) 1 := by
-  have h1 : (1 : ℝ) < √2 := by
-    rw [show (1 : ℝ) = √1 by simp]; exact Real.sqrt_lt_sqrt (by norm_num) (by norm_num)
-  have h2 : √2 < (2 : ℝ) := by
-    rw [show (2 : ℝ) = √4 by rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]]
-    exact Real.sqrt_lt_sqrt (by norm_num) (by norm_num)
-  refine ⟨?_, inv_lt_one_of_one_lt₀ h1⟩
-  rw [one_div]
-  exact inv_strictAnti₀ (by linarith) h2
+  simpa using hmem z.fst z.snd (abs_lt.2 ⟨hz.1, hz.2.1⟩) hz.2.2
 
 /-- The arithmetic of a corner chart: with `k = (√2)⁻¹`, the rotated quarter-plane
 `k (u - v) > 0, k (u + v) > 0` near the origin is the region `|v| < u`. -/
 private theorem corner_iff {u v : ℝ} (hu : |u| < 1 / 2) (hv : |v| < 1 / 2) :
     ((√2)⁻¹ * (u - v) ∈ Ioo (0 : ℝ) 1 ∧ (√2)⁻¹ * (u + v) ∈ Ioo (0 : ℝ) 1) ↔ |v| < u := by
-  obtain ⟨hk1, hk2⟩ := inv_sqrt_two_mem
+  have hk1 : 1 / 2 < (√2)⁻¹ := by
+    rw [one_div]
+    exact inv_strictAnti₀ (by positivity) ((Real.sqrt_lt' two_pos).2 (by norm_num))
+  have hk2 : (√2)⁻¹ < 1 := inv_lt_one_of_one_lt₀ Real.one_lt_sqrt_two
   set k : ℝ := (√2)⁻¹
   rw [abs_lt] at hu hv ⊢
   have hk : 0 < k := by linarith
@@ -231,7 +136,6 @@ theorem isLipschitzDomainWith_openUnitSquare :
   refine (Set.isLipschitzDomainWith_iff ..).2 ⟨isOpen_openUnitSquare, fun x hx => ?_⟩
   obtain ⟨⟨⟨hs0, hs1⟩, ht0, ht1⟩, hxΩ⟩ := mem_Icc_of_mem_frontier_openUnitSquare hx
   have hlip0 : LipschitzWith 1 (fun _ : ℝ => (0 : ℝ)) := (LipschitzWith.const 0).weaken zero_le_one
-  obtain ⟨hk1, hk2⟩ := inv_sqrt_two_mem
   have hk0 := inv_sqrt_two_sq_add_inv_sqrt_two_sq
   have hk : (-(√2)⁻¹ : ℝ) ^ 2 + ((√2)⁻¹ : ℝ) ^ 2 = 1 := by rw [neg_sq]; exact hk0
   have hk' : ((√2)⁻¹ : ℝ) ^ 2 + (-(√2)⁻¹ : ℝ) ^ 2 = 1 := by rw [neg_sq]; exact hk0
@@ -307,11 +211,11 @@ theorem isLipschitzDomainWith_openUnitSquare :
 def slitUnitDisc : Set (WithLp 2 (ℝ × ℝ)) :=
   ball 0 1 \ {x | x.fst ∈ Ico 0 1 ∧ x.snd = 0}
 
-/-- A point of the horizontal axis has norm the absolute value of its first coordinate. -/
-private theorem norm_eq_abs_fst_of_snd_eq_zero {p : WithLp 2 (ℝ × ℝ)} (hp : p.snd = 0) :
-    ‖p‖ = |p.fst| := by
-  rw [WithLp.prod_norm_eq_of_L2, hp]
-  simp [Real.sqrt_sq_eq_abs]
+/-- Membership in the slit disc: a point of the open unit disc off the slit `[0, 1) × {0}`. -/
+@[simp]
+theorem mem_slitUnitDisc {x : WithLp 2 (ℝ × ℝ)} :
+    x ∈ slitUnitDisc ↔ ‖x‖ < 1 ∧ (x.fst ∈ Ico 0 1 → x.snd ≠ 0) := by
+  simp [slitUnitDisc]
 
 /-- Every slit point lies on the frontier of the slit disc. -/
 theorem mem_frontier_slitUnitDisc {p : WithLp 2 (ℝ × ℝ)} (hp : p.fst ∈ Ico 0 1)
@@ -327,7 +231,8 @@ theorem mem_frontier_slitUnitDisc {p : WithLp 2 (ℝ × ℝ)} (hp : p.fst ∈ Ic
   refine ⟨p + WithLp.toLp 2 (0, t), ⟨?_, ?_⟩, ?_⟩
   · rw [mem_ball_zero_iff]
     calc ‖p + WithLp.toLp 2 ((0 : ℝ), t)‖ ≤ ‖p‖ + ‖WithLp.toLp 2 ((0 : ℝ), t)‖ := norm_add_le _ _
-      _ = p.fst + t := by rw [norm_eq_abs_fst_of_snd_eq_zero hp', hnt, abs_of_nonneg hp.1]
+      _ = p.fst + t := by
+        rw [WithLp.prod_norm_eq_norm_fst_of_snd_eq_zero hp', hnt, Real.norm_of_nonneg hp.1]
       _ < 1 := by linarith [hp.2]
   · rintro ⟨-, h⟩
     simp only [WithLp.add_snd, hp', WithLp.toLp_snd, zero_add] at h
@@ -370,7 +275,7 @@ theorem not_exists_isLipschitzChart_slitUnitDisc {p : WithLp 2 (ℝ × ℝ)} (hp
     · simp only [z₁, WithLp.toLp_fst, WithLp.toLp_snd, norm_zero, mul_zero, neg_zero]
       linarith
   have hd : dist (e w₂) z₁ = η := by
-    rw [show z₁ = e w₁ by simp [w₁], e.dist_map, dist_comm, dist_self_add_right, hnη]
+    rw [← e.apply_symm_apply z₁, e.dist_map, dist_comm, dist_self_add_right, hnη]
   have h1 := WithLp.dist_fst_le (e w₂) z₁
   have h2 := WithLp.dist_snd_le (e w₂) z₁
   rw [hd, Real.dist_eq] at h1 h2
@@ -389,7 +294,8 @@ theorem not_exists_isLipschitzChart_slitUnitDisc {p : WithLp 2 (ℝ × ℝ)} (hp
   have hdp : dist w₁ p = ε := by
     rw [← e.dist_map, AffineIsometryEquiv.apply_symm_apply, hep, dist_zero_right]
     simp [z₁, abs_of_pos hε]
-  have hnp : ‖p‖ = p.fst := by rw [norm_eq_abs_fst_of_snd_eq_zero hp', abs_of_nonneg hp.1]
+  have hnp : ‖p‖ = p.fst := by
+    rw [WithLp.prod_norm_eq_norm_fst_of_snd_eq_zero hp', Real.norm_of_nonneg hp.1]
   have hb₁ : ‖w₁‖ ≤ p.fst + ε := by
     rw [← dist_zero_right, ← hnp, ← dist_zero_right p, ← hdp, add_comm]
     exact dist_triangle _ _ _
@@ -429,16 +335,20 @@ theorem not_isLipschitzDomainWith_slitUnitDisc (L : ℝ≥0) :
 def sqrtAbsCusp : Set (WithLp 2 (ℝ × ℝ)) :=
   {x | √|x.fst| < x.snd}
 
+/-- Membership in the cusp. -/
+@[simp]
+theorem mem_sqrtAbsCusp {x : WithLp 2 (ℝ × ℝ)} : x ∈ sqrtAbsCusp ↔ √|x.fst| < x.snd :=
+  Iff.rfl
+
 /-- The vertex of the cusp lies on its frontier. -/
 theorem zero_mem_frontier_sqrtAbsCusp : (0 : WithLp 2 (ℝ × ℝ)) ∈ frontier sqrtAbsCusp := by
   refine ⟨Metric.mem_closure_iff.2 fun ε hε => ⟨WithLp.toLp 2 (0, ε / 2), ?_, ?_⟩,
     fun hint => ?_⟩
-  · change √|(0 : ℝ)| < ε / 2
-    simpa using half_pos hε
+  · simpa using half_pos hε
   · rw [dist_zero_left, WithLp.norm_toLp_snd, Real.norm_of_nonneg (by linarith)]
     linarith
   · have := interior_subset hint
-    simp [sqrtAbsCusp] at this
+    simp at this
 
 /-- **The cusp is not Lipschitz at its vertex.** No Lipschitz chart, with any constant `K` and
 any cylinder, is centred at the origin: such a chart would put a cone of positive aperture,
@@ -476,7 +386,7 @@ theorem not_exists_isLipschitzChart_sqrtAbsCusp :
       linarith
   set q := p + WithLp.toLp 2 (σ, 0)
   have hd : dist (e q) z₀ = δ := by
-    rw [show z₀ = e p by simp [p], e.dist_map, dist_comm, dist_self_add_right,
+    rw [← e.apply_symm_apply z₀, e.dist_map, dist_comm, dist_self_add_right,
       WithLp.norm_toLp_fst, Real.norm_eq_abs, hσ]
   have h1 := WithLp.dist_fst_le (e q) z₀
   have h2 := WithLp.dist_snd_le (e q) z₀
