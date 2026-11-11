@@ -49,7 +49,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
-  [FiniteDimensional ℝ F] [J.Boundaryless] [T2Space N]
+  [FiniteDimensional ℝ F] [J.Boundaryless]
   [RiemannianBundle (fun y : N => TangentSpace J y)] [IsManifold J ∞ N]
   [IsContMDiffRiemannianBundle J ∞ F (fun y : N => TangentSpace J y)]
 
@@ -57,6 +57,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 theorem eventuallyEq_of_mfderiv_eq (Φ Ψ : RiemannianIsometry I J M N) {p : M}
     (hp : Φ p = Ψ p) (hd : mfderiv I J Φ p = mfderiv I J Ψ p) :
     (Φ : M → N) =ᶠ[𝓝 p] Ψ := by
+  have : T2Space N := Φ.toDiffeomorph.toHomeomorph.symm.isEmbedding.t2Space
   obtain ⟨r, -, hr⟩ := exists_isNormalDomain_ball (I := I) (M := M) p
   filter_upwards [hr.image_mem_nhds] with q hq
   obtain ⟨v, -, rfl⟩ := hq
@@ -68,6 +69,7 @@ theorem eqOn_connectedComponent_of_mfderiv_eq (Φ Ψ : RiemannianIsometry I J M 
     {p : M} (hp : Φ p = Ψ p) (hd : mfderiv I J Φ p = mfderiv I J Ψ p) :
     EqOn Φ Ψ (connectedComponent p) := by
   classical
+  have : T2Space N := Φ.toDiffeomorph.toHomeomorph.symm.isEmbedding.t2Space
   let S : Set M := {x | ∀ v : TangentSpace I x,
     tangentMap I J Φ ⟨x, v⟩ = tangentMap I J Ψ ⟨x, v⟩}
   have hdata : ∀ x ∈ S, Φ x = Ψ x ∧ mfderiv I J Φ x = mfderiv I J Ψ x := by

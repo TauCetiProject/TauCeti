@@ -97,7 +97,7 @@ private theorem homDefect_sub_smul_X_pow {n : ℕ} (hn₀ : n ≠ 0) {g : PowerS
   have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
   have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
   have he₀ : PowerSeries.constantCoeff e = 0 := by simp [e, hn₀]
-  have hQe := F.homDefect_𝔾ₐ he₀
+  have hQe := F.homDefect_𝔾ₐ (f := e)
   have hen : (n : ℕ∞) ≤ e.order :=
     PowerSeries.nat_le_order _ _ fun i hi ↦ by simp [e, PowerSeries.coeff_X_pow, hi.ne]
   have hsub (i : Fin 2) : constantCoeff (PowerSeries.subst (X i : MvPowerSeries (Fin 2) R) g) = 0 :=
@@ -117,11 +117,11 @@ private theorem homDefect_sub_smul_X_pow {n : ℕ} (hn₀ : n ≠ 0) {g : PowerS
     (by rw [order_neg]; exact hsube _ (constantCoeff_X 1))
   rw [← sub_eq_add_neg] at h₀ h₁
   -- the remaining change is the additivity defect of `e` along `F`
-  have hQ := F.le_order_homDefect_𝔾ₐ he₀ hen
+  have hQ := F.le_order_homDefect_𝔾ₐ hen
   have heq : homDefect F G (g - e) = homDefect F G g - F.homDefect 𝔾ₐ e -
       (G.toPowerSeries.subst ![g₀ - e₀, g₁ - e₁] - G.toPowerSeries.subst ![g₀, g₁ - e₁] - -e₀) -
       (G.toPowerSeries.subst ![g₀, g₁ - e₁] - G.toPowerSeries.subst ![g₀, g₁] - -e₁) := by
-    rw [hQe, homDefect_eq F G (by rw [map_sub, hg, he₀, sub_zero]), homDefect_eq F G hg,
+    rw [hQe, homDefect_eq_sub_subst_pair F G (g - e), homDefect_eq_sub_subst_pair F G g,
       PowerSeries.subst_sub hF, PowerSeries.subst_sub (hX 0), PowerSeries.subst_sub (hX 1)]
     ring
   have hlt (f : MvPowerSeries (Fin 2) R) (hf : ((n + 1 : ℕ) : ℕ∞) ≤ f.order) :
@@ -197,7 +197,7 @@ theorem succ_le_order_homDefect_of_coeff_nsmulSeries_eq {p : ℕ} (hp : p.Prime)
   have hG' := congrArg (MvPowerSeries.coeff (Finsupp.single () (p ^ k)))
     (PowerSeries.homogeneousComponent_subst_left_eq_C_mul_X_pow hG hg hg₁)
   have hF' := congrArg (MvPowerSeries.coeff (Finsupp.single () (p ^ k)))
-    (PowerSeries.homogeneousComponent_subst_right_eq_C_mul_X_pow hn₀ hF hg hg₁)
+    (PowerSeries.homogeneousComponent_subst_right_eq_C_mul_X_pow hn₀ hF hg₁)
   simp only [coeff_homogeneousComponent, Finsupp.degree_single, ↓reduceIte, coeff_C_mul,
     coeff_X_pow, mul_one, Algebra.algebraMap_self, RingHom.id_apply] at hG' hF'
   rw [← PowerSeries.coeff_def Finsupp.single_eq_same] at hG' hF'

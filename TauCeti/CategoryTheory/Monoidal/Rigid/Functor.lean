@@ -52,6 +52,12 @@ back to the image of that of `Y` (`CategoryTheory.Functor.isIso_map_dualTensorIh
 restriction of sheaves of modules to the members of a cover, this is how the dual-tensor
 comparison, and hence dualizability, is checked locally.
 
+A strong monoidal functor `F` *sends a self-duality* `ExactPairing g g` to a self-duality
+`ExactPairing V V` along an isomorphism `e : F.obj g ≅ V` when the coevaluation and evaluation of
+`V` are the images of those of `g`, transported along `e` and the comparisons of `F`
+(`TauCeti.SendsSelfDuality`). This is the condition in universal properties of monoidal
+categories presented by self-dual generators.
+
 The dual transfers are the forward counterparts of Mathlib's
 `CategoryTheory.hasLeftDualOfEquivalence` and `CategoryTheory.hasRightDualOfEquivalence` in
 `Mathlib.CategoryTheory.Monoidal.Rigid.OfEquivalence`, which pull duals back along a monoidal
@@ -86,7 +92,9 @@ equivalence.
   a strong monoidal functor is invertible at an object with a left dual;
 * `CategoryTheory.Functor.map_dualTensorIhom_app_comp_ihomComparison` and
   `CategoryTheory.Functor.isIso_map_dualTensorIhom_app`: the dual-tensor comparison under a
-  strong monoidal functor.
+  strong monoidal functor;
+* `TauCeti.SendsSelfDuality`: a strong monoidal functor sends one self-duality to another
+  along an isomorphism.
 -/
 
 public section
@@ -321,6 +329,27 @@ theorem isIso_map_dualTensorIhom_app (Y Z : C) [Closed Y] [Closed (F.obj Y)]
   exact IsIso.of_isIso_comp_right _ ((F.ihomComparison Y).app Z)
 
 end CategoryTheory.Functor
+
+/-! ### Sending a self-duality along an isomorphism -/
+
+namespace TauCeti
+
+universe v₁ v₂ u₁ u₂
+
+variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C]
+  {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D]
+
+/-- A strong monoidal functor `F : D ⥤ C` *sends the self-duality of `g` to the self-duality of
+`V` along `e : F.obj g ≅ V`* when the coevaluation and the evaluation of `V` are the images under
+`F` of those of `g`, composed with the unit and tensor comparisons of `F` and with `e`. -/
+structure SendsSelfDuality {g : D} [ExactPairing g g] (F : D ⥤ C) [F.Monoidal] (V : C)
+    [ExactPairing V V] (e : F.obj g ≅ V) : Prop where
+  /-- The coevaluation of `g` is sent to the coevaluation of `V`. -/
+  coevaluation : ε F ≫ F.map (η_ g g) = η_ V V ≫ (e.inv ⊗ₘ e.inv) ≫ μ F g g
+  /-- The evaluation of `g` is sent to the evaluation of `V`. -/
+  evaluation : (e.inv ⊗ₘ e.inv) ≫ μ F g g ≫ F.map (ε_ g g) ≫ η F = ε_ V V
+
+end TauCeti
 
 /-! ### Naturality of the dual comparison in the functor -/
 

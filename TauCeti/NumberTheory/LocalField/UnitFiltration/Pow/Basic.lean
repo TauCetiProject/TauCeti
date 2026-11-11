@@ -341,13 +341,17 @@ theorem disjoint_rootsOfUnity_unitFiltration {n : ℕ} (hn : (n : K) ≠ 0) {i :
 
 /-- **Powers shift deep steps exactly.** For `(n : K) ≠ 0`, a depth `i` with
 `v_K(p) < (p - 1) * i` for every prime `p ∣ n`, and `x ∈ U(K,i)`, the power `x ^ n` lies in
-`U(K, j + v_K(n))` exactly when `x` lies in `U(K,j)`, for every `j ≥ i`. Thus the `n`-th power
+`U(K, j + v_K(n))` exactly when `x` lies in `U(K,j)`, for every `j`. Thus the `n`-th power
 map moves the exact depth of every `x ∈ U(K,i)` by `v_K(n)`. -/
 theorem pow_mem_unitFiltration_add_natCastValuation_iff {n : ℕ} (hn : (n : K) ≠ 0) {i j : ℕ}
     (hi : ∀ p : ℕ, p.Prime → ∀ hpK : (p : K) ≠ 0, p ∣ n →
       natCastValuation K p hpK < (p - 1) * i)
-    (hij : i ≤ j) {x : Kˣ} (hx : x ∈ unitFiltration K i) :
+    {x : Kˣ} (hx : x ∈ unitFiltration K i) :
     x ^ n ∈ unitFiltration K (j + natCastValuation K n hn) ↔ x ∈ unitFiltration K j := by
+  rcases le_total j i with hji | hij
+  · -- Both sides hold: `x ∈ U(K,i) ≤ U(K,j)` and `x ^ n ∈ U(K, i + v_K(n)) ≤ U(K, j + v_K(n))`.
+    exact ⟨fun _ ↦ unitFiltration_antitone hji hx, fun _ ↦ unitFiltration_antitone
+      (Nat.add_le_add_right hji _) ((map_powMonoidHom_unitFiltration hn hi).le ⟨x, hx, rfl⟩)⟩
   have hj : ∀ p : ℕ, p.Prime → ∀ hpK : (p : K) ≠ 0, p ∣ n →
       natCastValuation K p hpK < (p - 1) * j :=
     fun p hp hpK hpn ↦ (hi p hp hpK hpn).trans_le (Nat.mul_le_mul_left _ hij)
@@ -404,6 +408,6 @@ theorem pow_mem_unitFiltration_succ_iff_of_isUnit {n : ℕ} (hn : IsUnit (n : �
   have hv := natCastValuation_eq_zero_of_isUnit K hnK hn
   simpa [hv] using pow_mem_unitFiltration_add_natCastValuation_iff hnK (j := i + 1)
     (fun p hp hpK hpn ↦ natCastValuation_lt_sub_one_mul_of_lt_of_dvd hnK (hv ▸ Nat.one_pos) hp
-      hpK hpn) (Nat.le_add_left 1 i) hx
+      hpK hpn) hx
 
 end TauCeti
