@@ -31,6 +31,8 @@ theorem tensor_eq_of_forall_map_algHom_eq
     (h : ∀ p : B →ₐ[k] K,
       TensorProduct.map p.toLinearMap LinearMap.id x =
         TensorProduct.map p.toLinearMap LinearMap.id y) : x = y := by
+  -- Over a field, `M` is a vector space; this group structure lets `Module.Free.of_divisionRing`
+  -- supply `Module.Projective k M`, used by `tensor_eq_zero_of_forall_rTensor_eq_zero`.
   let : AddCommGroup M := Module.addCommMonoidToAddCommGroup k
   apply sub_eq_zero.mp
   apply tensor_eq_zero_of_forall_rTensor_eq_zero
