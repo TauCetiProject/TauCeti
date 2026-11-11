@@ -441,17 +441,9 @@ theorem eq_or_eq_neg [PreconnectedSpace B] (hι : Fintype.card ι = finrank ℝ 
   have hfib (b : B) : o b = o' b ∨ o b = -o' b := by
     have hb := FiberBundle.mem_baseSet_trivializationAt' (F := F) (E := E) b
     have hinj := ((trivializationAt F E b).mapOrientation ι hb).injective
-    have hF : ∀ x₁ x₂ : Orientation ℝ F ι, x₁ = x₂ ∨ x₁ = -x₂ := by
-      rcases isEmpty_or_nonempty ι with _ | _
-      · intro x₁ x₂
-        rcases Orientation.eq_or_eq_neg_of_isEmpty x₁ with rfl | rfl <;>
-          rcases Orientation.eq_or_eq_neg_of_isEmpty x₂ with rfl | rfl <;>
-          first | exact .inl rfl | exact .inr rfl |
-            exact .inr (neg_neg (positiveOrientation : Orientation ℝ F ι)).symm
-      · have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (hι ▸ Fintype.card_pos)
-        exact fun x₁ x₂ ↦ Orientation.eq_or_eq_neg x₁ x₂ hι
-    rcases hF (((trivializationAt F E b).mapOrientation ι hb) (o b))
-      (((trivializationAt F E b).mapOrientation ι hb) (o' b)) with h | h
+    rcases Orientation.eq_or_eq_neg_of_card_eq_finrank
+        (((trivializationAt F E b).mapOrientation ι hb) (o b))
+        (((trivializationAt F E b).mapOrientation ι hb) (o' b)) hι with h | h
     · exact .inl (hinj h)
     · exact .inr (hinj (by rwa [Trivialization.mapOrientation_neg]))
   have hcompl : {b | o b = o' b}ᶜ = {b | o b = (-o') b} := by
