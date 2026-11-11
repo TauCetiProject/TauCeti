@@ -13,7 +13,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 # Stokes' theorem for smooth singular chains
 
 Let `σ` be a smooth singular `(p + 1)`-simplex of a manifold `M` and `φ` a `C¹` `p`-form on `M`
-with values in a complete space. Then
+with values in a real normed space. Then
 
 `∫_σ dφ = ∑ᵢ (-1)ⁱ ∫_{∂ᵢσ} φ`,
 
@@ -96,7 +96,7 @@ variable [IsManifold I 2 M]
 /-- **Stokes' theorem for a smooth singular simplex.** The integral of the exterior derivative of
 a `C¹` form over a smooth singular `(p + 1)`-simplex is the alternating sum of the integrals of the
 form over the faces of the simplex. -/
-theorem integral_mextDeriv [CompleteSpace F] (σ : SmoothSimplex I M (p + 1))
+theorem integral_mextDeriv (σ : SmoothSimplex I M (p + 1))
     {φ : RoughForm I M F p} (hφ : IsSmoothForm I 1 φ) :
     σ.integral (mextDeriv φ) = ∑ i : Fin (p + 2),
       (-1 : ℝ) ^ (i : ℕ) • integral ((smoothSingularSubcomplex I M : SSet).δ i σ) φ := by
@@ -154,7 +154,7 @@ end SmoothSimplex
 section Cochain
 
 variable {M : Type} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
-  {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+  {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- **Stokes' theorem for smooth singular chains.** Integrating a `C¹` form over the boundary of a
 smooth singular chain is integrating its exterior derivative over the chain: the integration
