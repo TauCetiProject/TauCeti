@@ -15,7 +15,7 @@ import TauCeti.LinearAlgebra.Dual.FiniteProjective
 A finitely generated module over a left Artinian ring has finite length, which is one implication of
 Mathlib's `IsArtinianRing.tfae`. The ring need not be commutative. The same holds over the base of
 any finite extension, in particular for a finitely generated module over an Artin algebra. Over an
-Artin algebra this applies to the dual `Hom_A(P, A)` of a finitely generated projective module.
+Artin algebra this applies to the dual `Hom_A(P, A)` of a finitely generated module.
 -/
 
 public section
@@ -37,11 +37,18 @@ theorem isFiniteLength_of_finite_trans (R : Type u) [Ring R] [IsArtinianRing R] 
   have : Module.Finite R M := Module.Finite.trans B M
   isFiniteLength_of_finite R M
 
-/-- Over an Artin `R`-algebra `A`, the dual `Hom_A(P, A)` of a finitely generated projective
-`A`-module has finite length over `R`. -/
+/-- Over an Artin `R`-algebra `A`, the dual `Hom_A(P, A)` of a finitely generated `A`-module has
+finite length over `R`. -/
 theorem isFiniteLength_dual (R : Type u) [CommRing R] [IsArtinianRing R] (A : Type v) [Ring A]
     [Algebra R A] [Module.Finite R A] (P : Type w) [AddCommGroup P] [Module A P]
-    [Module.Finite A P] [Module.Projective A P] : IsFiniteLength R (Module.Dual A P) :=
-  isFiniteLength_of_finite_trans R Aᵐᵒᵖ _
+    [Module.Finite A P] : IsFiniteLength R (Module.Dual A P) := by
+  -- Precomposing with a surjection `Aⁿ → P` embeds `Hom_A(P, A)` into `Hom_A(Aⁿ, A)`.
+  obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' A P
+  have : IsNoetherian R (Module.Dual A (Fin n → A)) :=
+    (isFiniteLength_iff_isNoetherian_isArtinian.mp
+      (isFiniteLength_of_finite_trans R Aᵐᵒᵖ (Module.Dual A (Fin n → A)))).1
+  have : IsNoetherian R (Module.Dual A P) :=
+    isNoetherian_of_injective (f.lcomp R A) fun _ _ h ↦ (LinearMap.cancel_right hf).mp h
+  exact isFiniteLength_of_finite R _
 
 end TauCeti

@@ -68,10 +68,10 @@ variable {R : Type u} [CommRing R] [IsArtinianRing R] {E : Type v} [AddCommGroup
   [Module.Finite R A]
 
 /-- **The Nakayama functor is fully faithful on finitely generated projective modules.** For
-finitely generated projective `P` and `Q`, sending `g : P → Q` to the map
+finitely generated `P` and finitely generated projective `Q`, sending `g : P → Q` to the map
 `ν g : D_R (Hom_A(P, A)) → D_R (Hom_A(Q, A))` is a bijection. -/
 theorem IsInjectiveEnvelope.bijective_mapOp_lcomp (hf : IsInjectiveEnvelope f)
-    (P : Type w) [AddCommGroup P] [Module A P] [Module.Finite A P] [Module.Projective A P]
+    (P : Type w) [AddCommGroup P] [Module A P] [Module.Finite A P]
     (Q : Type w') [AddCommGroup Q] [Module A Q] [Module.Finite A Q] [Module.Projective A Q] :
     Function.Bijective fun g : P →ₗ[A] Q => mapOp (R := R) (E := E) (g.lcomp Aᵐᵒᵖ A) :=
   (hf.bijective_mapOp (isFiniteLength_dual R A Q) (isFiniteLength_dual R A P)).comp
