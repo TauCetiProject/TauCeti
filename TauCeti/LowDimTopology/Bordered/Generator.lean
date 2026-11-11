@@ -339,27 +339,28 @@ theorem glue_beta_gluePoint (x₁ : H₁.Generator) (x₂ : H₂.Generator) (j :
   obtain ⟨j, rfl⟩ := finSumFinEquiv.surjective j
   cases j <;> simp
 
-/-- The points of a pair of generators lie on distinct `α`-curves of the glued diagram exhausting
-all of them exactly when the occupancies of the two generators are complementary. -/
-theorem bijective_glue_alpha_comp_gluePoint_iff [Fintype Arc] [DecidableEq Arc]
-    (x₁ : H₁.Generator) (x₂ : H₂.Generator) :
-    Function.Bijective ((glue H₁ H₂ e).alpha ∘ gluePoint x₁ x₂) ↔
-      H₁.occupied x₁ = (H₂.occupied x₂)ᶜ := by
-  have hcomp : (glue H₁ H₂ e).alpha ∘ gluePoint x₁ x₂ =
+/-- The `α`-curves of the points of a pair of generators, read through the two diagrams. -/
+private theorem glue_alpha_comp_gluePoint (x₁ : H₁.Generator) (x₂ : H₂.Generator) :
+    (glue H₁ H₂ e).alpha ∘ gluePoint x₁ x₂ =
       e ∘ Sum.elim (glueCurveLeft ∘ H₁.alpha ∘ x₁.point) (glueCurveRight ∘ H₂.alpha ∘ x₂.point) ∘
         finSumFinEquiv.symm := by
-    ext j
-    obtain ⟨j, rfl⟩ := finSumFinEquiv.surjective j
-    cases j <;> simp
-  -- Injectivity amounts to disjoint occupancies, since the `α`-circles of the two diagrams stay
-  -- apart; surjectivity amounts to every arc being occupied by one of the two generators.
-  rw [hcomp, e.comp_bijective, Equiv.bijective_comp, eq_compl_iff_isCompl, isCompl_iff,
-    disjoint_left, codisjoint_iff, top_eq_univ, eq_univ_iff_forall, Function.Bijective,
-    Sum.elim_injective]
-  refine and_congr ⟨fun h a ha₁ ha₂ ↦ ?_, fun h ↦ ⟨?_, ?_, ?_⟩⟩ ⟨fun h a ↦ ?_, fun h ↦ ?_⟩
-  · obtain ⟨i, hi⟩ := mem_occupied.1 ha₁
+  ext j
+  obtain ⟨j, rfl⟩ := finSumFinEquiv.surjective j
+  cases j <;> simp
+
+/-- The points of a pair of generators lie on distinct `α`-curves of the glued diagram exactly
+when the occupancies of the two generators are disjoint: the `α`-circles of the two diagrams stay
+apart, and an arc of the glued diagram meets both points only if both generators occupy it. -/
+theorem injective_glue_alpha_comp_gluePoint_iff (x₁ : H₁.Generator) (x₂ : H₂.Generator) :
+    Function.Injective ((glue H₁ H₂ e).alpha ∘ gluePoint x₁ x₂) ↔
+      Disjoint (H₁.occupied x₁) (H₂.occupied x₂) := by
+  rw [glue_alpha_comp_gluePoint, e.comp_injective, Equiv.injective_comp, Sum.elim_injective,
+    disjoint_left]
+  refine ⟨?_, fun h ↦ ⟨?_, ?_, ?_⟩⟩
+  · rintro ⟨-, -, h⟩ a ha₁ ha₂
+    obtain ⟨i, hi⟩ := mem_occupied.1 ha₁
     obtain ⟨j, hj⟩ := mem_occupied.1 ha₂
-    exact h.2.2 i j (by simp [hi, hj])
+    exact h i j (by simp [hi, hj])
   · exact glueCurveLeft_injective.comp x₁.injective_alpha_comp_point
   · exact glueCurveRight_injective.comp x₂.injective_alpha_comp_point
   · intro i j hij
@@ -369,6 +370,16 @@ theorem bijective_glue_alpha_comp_gluePoint_iff [Fintype Arc] [DecidableEq Arc]
         glueCurveRight_inl, glueCurveRight_inr, reduceCtorEq, Sum.inr.injEq, Sum.inl.injEq] at hij
     subst hij
     exact h (mem_occupied.2 ⟨i, hi⟩) (mem_occupied.2 ⟨j, hj⟩)
+
+/-- The points of a pair of generators meet every `α`-curve of the glued diagram exactly when
+every arc is occupied by one of the two generators: each generator already meets every `α`-circle
+of its own diagram. -/
+theorem surjective_glue_alpha_comp_gluePoint_iff [Fintype Arc] [DecidableEq Arc]
+    (x₁ : H₁.Generator) (x₂ : H₂.Generator) :
+    Function.Surjective ((glue H₁ H₂ e).alpha ∘ gluePoint x₁ x₂) ↔
+      H₁.occupied x₁ ∪ H₂.occupied x₂ = univ := by
+  rw [glue_alpha_comp_gluePoint, e.comp_surjective, Equiv.surjective_comp, eq_univ_iff_forall]
+  refine ⟨fun h a ↦ ?_, fun h ↦ ?_⟩
   · obtain ⟨j, hj⟩ := h (.inr a)
     rcases j with j | j
     · rcases hi : H₁.alpha (x₁.point j) with b | c
@@ -389,6 +400,15 @@ theorem bijective_glue_alpha_comp_gluePoint_iff [Fintype Arc] [DecidableEq Arc]
         exact ⟨.inl j, by simp [hj]⟩
       · obtain ⟨j, hj⟩ := mem_occupied.1 ha
         exact ⟨.inr j, by simp [hj]⟩
+
+/-- The points of a pair of generators lie on distinct `α`-curves of the glued diagram exhausting
+all of them exactly when the occupancies of the two generators are complementary. -/
+theorem bijective_glue_alpha_comp_gluePoint_iff [Fintype Arc] [DecidableEq Arc]
+    (x₁ : H₁.Generator) (x₂ : H₂.Generator) :
+    Function.Bijective ((glue H₁ H₂ e).alpha ∘ gluePoint x₁ x₂) ↔
+      H₁.occupied x₁ = (H₂.occupied x₂)ᶜ := by
+  simp [Function.Bijective, injective_glue_alpha_comp_gluePoint_iff,
+    surjective_glue_alpha_comp_gluePoint_iff, eq_compl_iff_isCompl, isCompl_iff, codisjoint_iff]
 
 /-! ### The generators of the glued diagram -/
 
@@ -558,6 +578,24 @@ noncomputable def glueGeneratorEquivTypeAIdem (R : Type*) [CommSemiring R] [Nont
       {x : H₁.Generator × H₂.Generator // H₁.typeAIdem R M x.1 * H₂.typeDIdem R M x.2 ≠ 0} :=
   (glueGeneratorEquiv e).trans
     (Equiv.subtypeEquivRight fun _ ↦ (typeAIdem_mul_typeDIdem_ne_zero_iff H₁ R M H₂ hM _ _).symm)
+
+@[simp]
+theorem coe_glueGeneratorEquivTypeAIdem (R : Type*) [CommSemiring R] [Nontrivial R]
+    {α : Type*} [LinearOrder α] [Fintype α] {M : α → Arc} (hM : Function.Surjective M)
+    (x : (glue H₁ H₂ e).Generator) :
+    (glueGeneratorEquivTypeAIdem e R hM x : H₁.Generator × H₂.Generator) =
+      (glueLeft e x, glueRight e x) :=
+  (rfl)
+
+/-- The points of the generator of the glued diagram given by a pair of generators `x₁`, `x₂`
+with `I_A(x₁) I_D(x₂) ≠ 0`. -/
+@[simp]
+theorem betaPoint_glueGeneratorEquivTypeAIdem_symm (R : Type*) [CommSemiring R] [Nontrivial R]
+    {α : Type*} [LinearOrder α] [Fintype α] {M : α → Arc} (hM : Function.Surjective M)
+    (x : {x : H₁.Generator × H₂.Generator // H₁.typeAIdem R M x.1 * H₂.typeDIdem R M x.2 ≠ 0}) :
+    (glue H₁ H₂ e).betaPoint ((glueGeneratorEquivTypeAIdem e R hM).symm x) =
+      gluePoint x.1.1 x.1.2 :=
+  (glue H₁ H₂ e).betaPoint_generatorOfBetaPoint _ _ _
 
 end Glue
 
