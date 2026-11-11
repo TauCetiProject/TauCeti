@@ -321,7 +321,6 @@ private theorem valuation_eq_and_le_of_nonsingular {a₆ A B ν x₁ x₂ x₃ :
   -- every quadratic monomial in `x₁`, `u₁`, `w₁` with coefficient of valuation `≤ σ²` is at most
   -- `σ² κ²`, which is smaller than `σ³ κ`
   have hσ2 : σ ≤ σ ^ 2 := le_self_pow₀ hσ1 two_ne_zero
-  have hσ23 : σ ^ 2 ≤ σ ^ 3 := pow_le_pow_right₀ hσ1 (by norm_num)
   have hκκ : σ ^ 2 * (κ * κ) < σ ^ 3 * κ :=
     calc σ ^ 2 * (κ * κ) < σ ^ 2 * (σ * κ) :=
           mul_lt_mul_of_pos_left (mul_lt_mul_of_pos_right (hu₁.trans_le hσ1) hκ0.pos)

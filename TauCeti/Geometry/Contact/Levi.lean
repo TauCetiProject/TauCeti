@@ -306,6 +306,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpa
   {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 2 N]
   {D : Π x : M, Submodule ℝ (TangentSpace I x)} {f : N → M} {n : ℕ∞ω} {k : ℕ}
 
+omit [FiniteDimensional ℝ E] in
 /-- **The Levi form vanishes on horizontal tangent images.** Let `D` be a `C^n` hyperplane field,
 with `1 ≤ n`, and let `f` be horizontal for `D` and of class `C²` at `y`. Then the Levi form
 `L_D (u, v) = -[U, V] mod D` vanishes on any two vectors of the tangent image `df_y(T_y N)`. -/
