@@ -65,9 +65,11 @@ theorem unitDiscCutoff_rIn : unitDiscCutoff.rIn = 1 := (rfl)
 @[simp]
 theorem unitDiscCutoff_rOut : unitDiscCutoff.rOut = 2 := (rfl)
 
+@[simp]
 theorem unitDiscCutoff_of_norm_le_one {z : ℂ} (hz : ‖z‖ ≤ 1) : unitDiscCutoff z = 1 :=
   unitDiscCutoff.one_of_mem_closedBall (by simpa using hz)
 
+@[simp]
 theorem unitDiscCutoff_of_two_le_norm {z : ℂ} (hz : 2 ≤ ‖z‖) : unitDiscCutoff z = 0 :=
   unitDiscCutoff.zero_of_le_dist (by simpa using hz)
 
@@ -81,11 +83,13 @@ theorem contDiff_cutoffField : ContDiff ℝ ∞ cutoffField := by
   have hχ : ContDiff ℝ ∞ (unitDiscCutoff : ℂ → ℝ) := unitDiscCutoff.contDiff
   exact (hχ.smul contDiff_const).add ((contDiff_const.sub hχ).smul contDiff_const)
 
+@[simp]
 theorem cutoffField_of_norm_le_one {z : ℂ} (hz : ‖z‖ ≤ 1) :
     cutoffField z = Complex.I • ContinuousLinearMap.id ℝ ℂ := by
   ext v
   simp [cutoffField, unitDiscCutoff_of_norm_le_one hz]
 
+@[simp]
 theorem cutoffField_of_two_le_norm {z : ℂ} (hz : 2 ≤ ‖z‖) :
     cutoffField z = ContinuousLinearMap.id ℝ ℂ := by
   ext v
