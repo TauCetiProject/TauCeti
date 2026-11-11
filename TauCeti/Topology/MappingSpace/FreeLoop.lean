@@ -180,7 +180,8 @@ private theorem factorsThrough_unitToCircle_iff (g : C(I, Q)) :
 /-- **Circle maps are closed unit-interval paths.** Precomposition with `unitToCircle` is a
 homeomorphism `C(Circle, Q) ≃ₜ ClosedUnitPath Q`. -/
 def circleMapHomeomorphClosedUnitPath : C(Circle, Q) ≃ₜ ClosedUnitPath Q :=
-  (ContinuousMap.homeomorphFactorsThrough unitToCircle unitToCircle_surjective).trans
+  (ContinuousMap.homeomorphFactorsThrough unitToCircle unitToCircle.continuous.isProperMap
+      unitToCircle_surjective).trans
     { toFun g := ⟨g.1, (factorsThrough_unitToCircle_iff g.1).1 g.2⟩
       invFun p := ⟨p.1, (factorsThrough_unitToCircle_iff p.1).2 p.2⟩
       left_inv _ := rfl
@@ -192,7 +193,8 @@ def circleMapHomeomorphClosedUnitPath : C(Circle, Q) ≃ₜ ClosedUnitPath Q :=
 theorem coe_circleMapHomeomorphClosedUnitPath (γ : C(Circle, Q)) :
     (circleMapHomeomorphClosedUnitPath γ : C(I, Q)) = γ.comp unitToCircle := by
   rw [circleMapHomeomorphClosedUnitPath, Homeomorph.trans_apply]
-  exact ContinuousMap.homeomorphFactorsThrough_apply unitToCircle unitToCircle_surjective γ
+  exact ContinuousMap.homeomorphFactorsThrough_apply unitToCircle
+    unitToCircle.continuous.isProperMap unitToCircle_surjective γ
 
 theorem circleMapHomeomorphClosedUnitPath_apply (γ : C(Circle, Q)) (t : I) :
     (circleMapHomeomorphClosedUnitPath γ).1 t = γ (unitToCircle t) := by
