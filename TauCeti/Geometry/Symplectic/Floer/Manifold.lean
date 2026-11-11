@@ -95,7 +95,7 @@ form they recover the vector-space definitions.
   set is `∫ u^* ω - ∫ R_K(u)`, with no boundary term; the vector-space case is
   `SymplecticForm.setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero`.
 * `SmoothTwoForm.IsNondegenerate.integrableOn_floerEnergyDensity`: over a compact set where `u`
-  and `K` are `C¹` nearby, the energy density is integrable as soon as the curvature is.
+  and `K` are `C¹`, the energy density is integrable whenever the curvature is.
 * `SmoothTwoForm.integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero`: where the
   perturbation data vanish the energy is the area, so energy minus area plus integrated curvature
   does not change when a region is shrunk to the part where the data live.
@@ -105,12 +105,16 @@ form they recover the vector-space definitions.
   `SymplecticForm.setIntegral_floerEnergyDensity_add_hamiltonianCurvature_eq_of_eqOn`.
 * `SmoothTwoForm.perturbedMFDeriv_perturbationPullback`,
   `SmoothTwoForm.floerEnergyDensity_perturbationPullback`,
+  `SmoothTwoForm.eval₂_mfderiv_comp_stdComplexLine`,
   `SmoothTwoForm.hamiltonianCurvature_perturbationPullback`: naturality of the perturbed
-  derivative, and the energy density and curvature as two-forms on the domain.
+  derivative, and the energy density, the area density and the curvature as two-forms on the
+  domain.
 * `SmoothTwoForm.integral_floerEnergyDensity_image`,
+  `SmoothTwoForm.integral_eval₂_mfderiv_stdComplexLine_image`,
   `SmoothTwoForm.integral_hamiltonianCurvature_image`,
   `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_image`: invariance of the energy, the
-  integrated curvature and the curvature allowance under changes of domain coordinates.
+  symplectic area, the integrated curvature and the curvature allowance under changes of domain
+  coordinates.
 * `SmoothTwoForm.hamiltonianCurvature_comp_add_right`,
   `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_comp_add_right`: translations of the domain
   translate the curvature and preserve the curvature allowance along a map.
@@ -514,6 +518,20 @@ theorem floerEnergyDensity_perturbationPullback (ω : SmoothTwoForm I M)
   simp only [ContinuousLinearMap.comp_apply, hP, stdComplexLineReal_eq, stdComplexLineImag_eq]
   exact ω.eval₂_smul_add_smul_det _ (fderiv ℝ φ w : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) _ _
 
+/-- **The area density is a two-form.** The symplectic area density `ω(∂_s (u ∘ φ), ∂_t (u ∘ φ))`
+at `w` is the Jacobian determinant of `φ` times the area density `ω(∂_s u, ∂_t u)` at `φ w`. -/
+theorem eval₂_mfderiv_comp_stdComplexLine (ω : SmoothTwoForm I M)
+    (hφ : DifferentiableAt ℝ φ w) (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (φ w)) :
+    SmoothBundleForm.eval₂ ω ((u ∘ φ) w) (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ φ) w stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ φ) w stdComplexLineImag) =
+      (fderiv ℝ φ w).det * SmoothBundleForm.eval₂ ω (u (φ w))
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u (φ w) stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u (φ w) stdComplexLineImag) := by
+  -- The area density is the energy density of the zero perturbation.
+  simpa only [perturbationPullback_zero, floerEnergyDensity_zero] using
+    ω.floerEnergyDensity_perturbationPullback (Ks := fun _ _ ↦ 0) (Kt := fun _ _ ↦ 0) hφ hu
+      mdifferentiableAt_const mdifferentiableAt_const
+
 /-- **The curvature is a two-form.** For a `C²` change of coordinates `φ`, the curvature of the
 pulled-back datum `φ^*K` is the Jacobian determinant of `φ` times the curvature of `K` at `φ w`. -/
 theorem hamiltonianCurvature_perturbationPullback (ω : SmoothTwoForm I M)
@@ -557,6 +575,24 @@ theorem integral_floerEnergyDensity_image (ω : SmoothTwoForm I M) (hs : Measura
   integral_image_eq_integral_of_eq_abs_det_smul hs hinj hφ fun w hw ↦ by
     rw [abs_of_nonneg (hdet w hw), smul_eq_mul,
       ω.floerEnergyDensity_perturbationPullback (hφ w hw) (hu w hw) (hKs w hw) (hKt w hw)]
+
+/-- **Invariance of the symplectic area under changes of coordinates.** For a change of
+coordinates `φ` that is injective and orientation preserving on a measurable set `s`, the
+symplectic area `∫ ω(∂_s u, ∂_t u)` of `u` over `φ '' s` is the symplectic area of `u ∘ φ`
+over `s`. -/
+theorem integral_eval₂_mfderiv_stdComplexLine_image (ω : SmoothTwoForm I M)
+    (hs : MeasurableSet s) (hinj : InjOn φ s) (hφ : ∀ w ∈ s, DifferentiableAt ℝ φ w)
+    (hdet : ∀ w ∈ s, 0 ≤ (fderiv ℝ φ w).det)
+    (hu : ∀ w ∈ s, MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (φ w)) :
+    ∫ z in φ '' s, SmoothBundleForm.eval₂ ω (u z)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) =
+      ∫ w in s, SmoothBundleForm.eval₂ ω ((u ∘ φ) w)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ φ) w stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ φ) w stdComplexLineImag) :=
+  integral_image_eq_integral_of_eq_abs_det_smul hs hinj hφ fun w hw ↦ by
+    rw [abs_of_nonneg (hdet w hw), smul_eq_mul,
+      ω.eval₂_mfderiv_comp_stdComplexLine (hφ w hw) (hu w hw)]
 
 /-- **Invariance of the integrated curvature under changes of coordinates.** For a `C²` change of
 coordinates `φ` that is injective and orientation preserving on a measurable set `s`, the integral
@@ -830,6 +866,52 @@ theorem IsNondegenerate.setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero
   rw [setIntegral_congr_fun hD fun z _ ↦ hpt z, integral_sub hsum hR,
     integral_add harea hdi.integrableOn, hdD, add_zero]
 
+/-- **The area density is integrable over compact sets.** If `u` is `C¹` on an open set `U`, then
+over a compact set `C ⊆ U` the two-form evaluated on the derivatives of `u` along two fixed
+vectors, `z ↦ ω_{u(z)}(du_z a, du_z b)`, is integrable. -/
+theorem integrableOn_eval₂_mfderiv (ω : SmoothTwoForm I M) {U C : Set (ℝ × ℝ)} (hU : IsOpen U)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U) (hC : IsCompact C) (hCU : C ⊆ U) (a b : ℝ × ℝ) :
+    IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z a)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z b) : ℝ)) C := by
+  have h := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv hU hu a b
+  simp only [← SmoothBundleForm.eval₂_apply] at h
+  exact (h.mono hCU).integrableOn_compact hC
+
+/-- **Integrability of the energy density, for a manifold target.** Let `u` and the perturbation
+datum `K = K_s ds + K_t dt` be `C¹` over an open set `U` of the domain, for a nondegenerate
+two-form on a finite-dimensional manifold, and let `T ⊆ U` be compact. If the curvature `R_K(u)` is
+integrable over `T`, so is the Floer energy density: by the pointwise energy identity it differs
+from `R_K(u)` by the symplectic area density and the exterior derivative `d(K(u))`, both continuous
+on `U`. -/
+theorem IsNondegenerate.integrableOn_floerEnergyDensity [FiniteDimensional ℝ E]
+    (hω : ω.IsNondegenerate) {U T : Set (ℝ × ℝ)} (hU : IsOpen U)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U)
+    (hKs : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Ks) (U ×ˢ univ))
+    (hKt : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Kt) (U ×ˢ univ))
+    (hT : IsCompact T) (hTU : T ⊆ U)
+    (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z)) T) :
+    IntegrableOn (ω.floerEnergyDensity Ks Kt u) T := by
+  have hmem : MapsTo (fun w ↦ (w, u w)) U (U ×ˢ univ) := fun _ hz ↦ ⟨hz, mem_univ _⟩
+  have harea := ω.integrableOn_eval₂_mfderiv hU hu hT hTU stdComplexLineReal stdComplexLineImag
+  -- Each pulled-back component `K(u)` is `C¹` on `U`, so its derivative is continuous on `U`.
+  have hd {K : ℝ × ℝ → M → ℝ}
+      (hK : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry K) (U ×ˢ univ)) (e : ℝ × ℝ) :
+      IntegrableOn (fun z ↦ fderiv ℝ (fun w ↦ K w (u w)) z e) T := by
+    have hKu : ContDiffOn ℝ 1 (fun w ↦ K w (u w)) U :=
+      contMDiffOn_iff_contDiffOn.mp (hK.comp (contMDiffOn_id.prodMk hu) hmem)
+    exact (((hKu.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const).mono
+      hTU).integrableOn_compact hT
+  refine ((harea.add ((hd hKt stdComplexLineReal).sub (hd hKs stdComplexLineImag))).sub
+    hR).congr_fun (fun z hz ↦ ?_) hT.isClosed.measurableSet
+  have hzU := hTU hz
+  have hmd {K : ℝ × ℝ → M → ℝ}
+      (hK : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry K) (U ×ˢ univ)) :
+      MDifferentiableAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) (uncurry K) (z, u z) :=
+    (hK.contMDiffAt ((hU.prod isOpen_univ).mem_nhds (hmem hzU))).mdifferentiableAt one_ne_zero
+  rw [hω.floerEnergyDensity_eq ((hu.contMDiffAt (hU.mem_nhds hzU)).mdifferentiableAt
+    one_ne_zero) (hmd hKs) (hmd hKt)]
+  rfl
+
 /-- **Changing the perturbation inside a compact region, for a manifold target.** Let `u` and two
 perturbation data `K = K_s ds + K_t dt` and `K' = K'_s ds + K'_t dt` be `C¹` over an open set `U`
 of the domain, for a nondegenerate two-form on a finite-dimensional manifold, and let `D ⊆ U` be
@@ -932,50 +1014,6 @@ theorem IsNondegenerate.setIntegral_floerEnergyDensity_add_hamiltonianCurvature_
   rw [← integral_add hE hR, ← integral_add hE' hR', setIntegral_congr_fun hD.measurableSet hpt,
     integral_add (f := fun z ↦ ω.floerEnergyDensity Ks' Kt' u z +
       ω.hamiltonianCurvature Ks' Kt' z (u z)) (hE'.add hR') hdi.integrableOn, hdD, add_zero]
-
-/-- **The area density is integrable over compact sets.** If `u` is `C¹` on an open set `U`, then
-over a compact set `C ⊆ U` the two-form evaluated on the derivatives of `u` along two fixed
-vectors, `z ↦ ω_{u(z)}(du_z a, du_z b)`, is integrable. -/
-theorem integrableOn_eval₂_mfderiv (ω : SmoothTwoForm I M) {U C : Set (ℝ × ℝ)} (hU : IsOpen U)
-    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U) (hC : IsCompact C) (hCU : C ⊆ U) (a b : ℝ × ℝ) :
-    IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z a)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z b) : ℝ)) C := by
-  have h := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv hU hu a b
-  simp only [← SmoothBundleForm.eval₂_apply] at h
-  exact (h.mono hCU).integrableOn_compact hC
-
-/-- **The energy density is integrable over compact sets, for a manifold target.** Let `u` and the
-perturbation data `K = K_s ds + K_t dt` be `C¹` over an open set `U`, for a nondegenerate two-form
-on a finite-dimensional manifold. Over a compact set `C ⊆ U` over which the curvature `R_K(u)` is
-integrable, the energy density is integrable: by the pointwise energy identity it differs from the
-symplectic area density and the exterior derivative `d(K(u))`, which are continuous on `U`, by the
-curvature. -/
-theorem IsNondegenerate.integrableOn_floerEnergyDensity [FiniteDimensional ℝ E]
-    (hω : ω.IsNondegenerate) {U C : Set (ℝ × ℝ)} (hU : IsOpen U)
-    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U)
-    (hKs : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Ks) (U ×ˢ univ))
-    (hKt : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Kt) (U ×ˢ univ))
-    (hC : IsCompact C) (hCU : C ⊆ U)
-    (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z)) C) :
-    IntegrableOn (ω.floerEnergyDensity Ks Kt u) C := by
-  have hmem : MapsTo (fun w ↦ (w, u w)) U (U ×ˢ (univ : Set M)) := fun _ hz ↦ ⟨hz, mem_univ _⟩
-  have harea := ω.integrableOn_eval₂_mfderiv hU hu hC hCU stdComplexLineReal stdComplexLineImag
-  -- Each pulled-back component `K(u)` is `C¹` on `U`, so its derivative is continuous on `U`.
-  have hd {K : ℝ × ℝ → M → ℝ}
-      (hK : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry K) (U ×ˢ univ)) (e : ℝ × ℝ) :
-      IntegrableOn (fun z ↦ fderiv ℝ (fun w ↦ K w (u w)) z e) C := by
-    have hK' : ContDiffOn ℝ 1 (fun w ↦ K w (u w)) U :=
-      contMDiffOn_iff_contDiffOn.mp (hK.comp (contMDiffOn_id.prodMk hu) hmem)
-    exact (((hK'.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const).mono
-      hCU).integrableOn_compact hC
-  refine ((harea.add ((hd hKt stdComplexLineReal).sub (hd hKs stdComplexLineImag))).sub
-    hR).congr_fun (fun z hz ↦ ?_) hC.isClosed.measurableSet
-  have hzU := hCU hz
-  have hzU' : (z, u z) ∈ U ×ˢ (univ : Set M) := hmem hzU
-  rw [hω.floerEnergyDensity_eq ((hu.contMDiffAt (hU.mem_nhds hzU)).mdifferentiableAt one_ne_zero)
-    ((hKs.contMDiffAt ((hU.prod isOpen_univ).mem_nhds hzU')).mdifferentiableAt one_ne_zero)
-    ((hKt.contMDiffAt ((hU.prod isOpen_univ).mem_nhds hzU')).mdifferentiableAt one_ne_zero)]
-  rfl
 
 /-- **Shrinking to where the datum lives, for a manifold target.** Let `T ⊆ D` with `D`
 measurable, and let `K_s` and `K_t` vanish near every point of `D \ T`. If the energy density, the
