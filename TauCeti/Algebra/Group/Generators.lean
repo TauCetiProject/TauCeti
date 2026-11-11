@@ -9,16 +9,21 @@ public import TauCeti.Algebra.Module.SpanRank
 public import Mathlib.LinearAlgebra.Pi
 import Mathlib.Data.Nat.ChineseRemainder
 import Mathlib.GroupTheory.OrderOfElement
+import TauCeti.Data.Nat.Card
 
 /-!
 # Generators of products of groups of coprime orders
 
-For finite abelian groups of pairwise coprime orders, coordinatewise generating families
-of a common length generate their product. Chinese remainder coefficients recover each
-single-coordinate generator from the corresponding tuple. Consequently, the least number
-of generators of the product is the maximum of the least numbers for its factors.
+For abelian groups of pairwise coprime orders (`Nat.card`, which is `0` for an infinite group),
+coordinatewise generating families of a common length generate their product. Chinese remainder
+coefficients recover each single-coordinate generator from the corresponding tuple. Consequently,
+the least number of generators of the product is the maximum of the least numbers for its factors.
+If one factor is infinite, coprimality forces all the others to be trivial, and the statements
+reduce to that factor.
 
-The generator number is Mathlib's `Submodule.spanFinrank` over `ℤ`.
+The generator number is Mathlib's `Submodule.spanFinrank` over `ℤ`, the least number of generators
+of a finitely generated group. By Mathlib's convention it is `0` for a group that is not finitely
+generated, so for such factors the generator-number statement holds by that convention only.
 -/
 
 public section
@@ -27,19 +32,6 @@ namespace TauCeti.AddCommGroup
 
 variable {ι : Type*} [Fintype ι] (M : ι → Type*)
   [∀ i, AddCommGroup (M i)]
-
-omit [Fintype ι] [∀ i, AddCommGroup (M i)] in
-/-- If the orders of the groups `M i` are pairwise coprime and `M i₀` is infinite (so its `Nat.card`
-is `0`), then every other `M j` has order one. -/
-private theorem subsingleton_of_not_finite_of_coprime_card
-    (hcop : Pairwise fun i j ↦ (Nat.card (M i)).Coprime (Nat.card (M j)))
-    {i₀ : ι} (hi₀ : ¬ Finite (M i₀)) {j : ι} (hj : j ≠ i₀) : Subsingleton (M j) := by
-  have h0 : Nat.card (M i₀) = 0 := by
-    have := not_finite_iff_infinite.mp hi₀
-    exact Nat.card_eq_zero_of_infinite
-  have h : (Nat.card (M i₀)).Coprime (Nat.card (M j)) := hcop hj.symm
-  rw [h0, Nat.coprime_zero_left] at h
-  exact (Nat.card_eq_one_iff_unique.mp h).1
 
 omit [Fintype ι] in
 /-- In a product of abelian groups of pairwise coprime orders, tuples formed from
@@ -56,8 +48,9 @@ theorem span_range_pi_eq_top_of_coprime_card [Finite ι]
     by_cases hfin : ∀ j, Finite (M j)
     swap
     · obtain ⟨i₀, hi₀⟩ := not_forall.mp hfin
+      have := not_finite_iff_infinite.mp hi₀
       have hsub : ∀ j, j ≠ i₀ → Subsingleton (M j) := fun j hj ↦
-      subsingleton_of_not_finite_of_coprime_card M hcop hi₀ hj
+        Nat.subsingleton_of_coprime_card_of_infinite (hcop hj.symm)
       by_cases hi : i = i₀
       · subst hi
         have he : (fun j ↦ v j k) = Pi.single i (v i k) := by
@@ -104,8 +97,10 @@ theorem span_range_pi_eq_top_of_coprime_card [Finite ι]
   exact S.sum_mem (fun i _ ↦ hall i (x i))
 
 /-- For abelian groups of pairwise coprime orders, the least number of generators
-of their product is the maximum of the least numbers for the factors. The empty product
-has generator number zero. -/
+of their product is the maximum of the least numbers for the factors, over the finite index type
+`ι`. The empty product has generator number zero. Here `spanFinrank` is Mathlib's: it is the least
+number of generators for a finitely generated group and `0` otherwise (for instance for an infinite
+factor that is not finitely generated, which forces all other factors to be trivial). -/
 theorem spanFinrank_pi_eq_sup_of_coprime_card
     (hcop : Pairwise fun i j ↦ (Nat.card (M i)).Coprime (Nat.card (M j))) :
     (⊤ : Submodule ℤ (∀ i, M i)).spanFinrank =
@@ -114,8 +109,9 @@ theorem spanFinrank_pi_eq_sup_of_coprime_card
   by_cases hfin : ∀ i, Finite (M i)
   swap
   · obtain ⟨i₀, hi₀⟩ := not_forall.mp hfin
+    have := not_finite_iff_infinite.mp hi₀
     have hsub : ∀ j, j ≠ i₀ → Subsingleton (M j) := fun j hj ↦
-      subsingleton_of_not_finite_of_coprime_card M hcop hi₀ hj
+      Nat.subsingleton_of_coprime_card_of_infinite (hcop hj.symm)
     have hrange : (⊤ : Submodule ℤ (M i₀)).map (LinearMap.single ℤ M i₀) = ⊤ := by
       rw [Submodule.map_top, LinearMap.range_eq_top]
       intro x
