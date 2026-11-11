@@ -146,7 +146,7 @@ theorem exists_criticalPoint_perturbation [CompleteSpace E]
   have hεr : 2 * C * n ≤ r := by
     have : n ≤ r / (2 * C) := hgx.trans (min_le_right _ _)
     rwa [le_div_iff₀ (by positivity), mul_comm] at this
-  obtain ⟨y, hyε, hy0, huniq⟩ := happrox.exists_eq_zero_of_two_mul_norm_le hC hLsymm hκC hεr
+  obtain ⟨y, hyε, hy0, huniq⟩ := happrox.exists_eq_zero_of_two_mul_norm_le hLsymm hκC hεr
   have hsub : closedBall x (2 * C * n) ⊆ closedBall x r := closedBall_subset_closedBall hεr
   have hKC : 2 * C ≤ K := by
     have : 0 ≤ 8 * (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) * C ^ 2 := by positivity
