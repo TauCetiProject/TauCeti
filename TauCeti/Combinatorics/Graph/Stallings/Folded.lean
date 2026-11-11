@@ -14,7 +14,8 @@ public import Mathlib.GroupTheory.FreeGroup.Reduce
 
 A labelled graph is folded when the label and initial vertex determine a dart. This makes
 the word and endpoints determine a path and ensures that a reduced path has a freely reduced
-label. These are the local facts behind the Stallings subgroup criterion.
+label. Conversely, in any labelled graph a path with a freely reduced label is reduced.
+These are the local facts behind the Stallings subgroup criterion.
 
 ## References
 
@@ -58,6 +59,23 @@ theorem IsFolded.labels_not_inverse (hS : S.IsFolded) {e f : S.graph.E}
   have hfr : f = S.graph.rev e := hS f (S.graph.rev e)
     (hsrc.trans (S.graph.src_rev e).symm) (by simpa only [S.label_rev] using h)
   exact hne hfr
+
+/-- A path whose label word is freely reduced is a reduced path, in any labelled graph:
+a dart followed by its reverse reads a letter followed by its inverse. -/
+theorem isReduced_of_isReduced_word {a b : S.graph.V} (p : S.graph.Path a b)
+    (hp : FreeGroup.IsReduced (S.word p)) : SerreGraph.Path.IsReduced S.graph p := by
+  induction p with
+  | nil => exact SerreGraph.Path.isReduced_nil S.graph a
+  | cons p e ih =>
+    cases p with
+    | nil => exact SerreGraph.Path.isReduced_toPath S.graph e
+    | cons p f =>
+      simp only [word_cons, List.append_assoc, List.singleton_append,
+        FreeGroup.IsReduced, List.isChain_append_cons_cons, List.isChain_singleton,
+        and_true] at hp
+      refine (SerreGraph.Path.isReduced_cons_cons S.graph p f e).mpr ⟨ih ?_, fun he => ?_⟩
+      · simpa only [word_cons, FreeGroup.IsReduced] using hp.1
+      · simpa [he, S.label_rev] using hp.2
 
 /-- A reduced path in a folded graph reads a freely reduced word. -/
 theorem IsFolded.isReduced_word (hS : S.IsFolded) {a b : S.graph.V}

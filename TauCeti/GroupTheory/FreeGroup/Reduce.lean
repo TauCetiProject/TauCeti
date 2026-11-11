@@ -14,7 +14,8 @@ import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 
 Elementary facts about reduced words complementing `Mathlib.GroupTheory.FreeGroup.Reduce`:
 the formal inverse of a one-letter word, uniqueness of reduced representatives, reducedness of
-formal inverses, and reducedness of words `w u w⁻¹` in which no letter cancels at either join.
+formal inverses, powers of a letter, and reducedness of words `w u w⁻¹` in which no letter
+cancels at either join.
 
 The last section controls cancellation under left multiplication: if the reduced word of `g` does
 not begin with the formal inverse of `x₂`, then the reduced word of `(x₁ ++ x₂) * g` still begins
@@ -36,6 +37,16 @@ variable {α : Type*}
 /-- The inverse of a one-letter word is the inverse letter. -/
 theorem inv_mk_singleton (w : α × Bool) : (mk [w])⁻¹ = mk [(w.1, !w.2)] := by
   simp [inv_mk, invRev]
+
+/-- The word consisting of `n` copies of a letter represents the `n`-th power of that letter. -/
+theorem mk_replicate (n : ℕ) (y : α × Bool) : mk (List.replicate n y) = mk [y] ^ n := by
+  induction n with
+  | zero => simp [one_eq_mk]
+  | succ n ih => rw [List.replicate_succ, pow_succ', ← ih, mul_mk, List.singleton_append]
+
+/-- A word made of copies of a single letter is reduced. -/
+theorem isReduced_replicate (n : ℕ) (y : α × Bool) : IsReduced (List.replicate n y) :=
+  List.isChain_replicate_of_rel n fun _ => rfl
 
 /-- Reduced words representing the same element of a free group are equal. -/
 theorem IsReduced.eq_of_mk_eq {u v : List (α × Bool)} (hu : IsReduced u) (hv : IsReduced v)
