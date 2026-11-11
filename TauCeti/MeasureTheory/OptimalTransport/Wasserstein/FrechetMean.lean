@@ -72,19 +72,21 @@ theorem WassersteinSpace.isFrechetBarycenter_sum_smul_dirac_iff_isMinOn [Fact (1
 
 /-- **A barycenter in `P_p(X)` minimizes over all probability laws.** On a Polish metric space and
 for `1 ≤ p < ∞`, a `p`-Fréchet barycenter `ν` in `P_p(X)` of the finitely supported law
-`∑ j, w j • δ_{μ j}`, with weights summing to `1`, minimizes the weighted `p`-Wasserstein cost
+`∑ j, w j • δ_{μ j}` minimizes the weighted `p`-Wasserstein cost
 `ν' ↦ ∑ j, w j * W_p(ν', μ j) ^ p` over all probability laws `ν'` on `X`, not only over `P_p(X)`.
 -/
 theorem WassersteinSpace.isMinOn_sum_mul_wassersteinEDist_rpow_of_isFrechetBarycenter
-    [Fact (1 ≤ p)] (hp_top : p ≠ ∞) (hw : ∑ j, w j = 1) {μ : J → WassersteinSpace p X}
+    [Fact (1 ≤ p)] (hp_top : p ≠ ∞) {μ : J → WassersteinSpace p X}
     {ν : WassersteinSpace p X} (hν : IsFrechetBarycenter p (∑ j, w j • Measure.dirac (μ j)) ν) :
     IsMinOn (fun ν' ↦ ∑ j, (w j : ℝ≥0∞) *
         wassersteinEDist p ν' ((μ j : ProbabilityMeasure X) : Measure X) ^ p.toReal)
       {ν' | IsProbabilityMeasure ν'} ((ν : ProbabilityMeasure X) : Measure X) := by
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
   have hmin := (WassersteinSpace.isFrechetBarycenter_sum_smul_dirac_iff_isMinOn hp_top μ ν).1 hν
-  obtain ⟨j₀, -, hj₀⟩ := Finset.exists_ne_zero_of_sum_ne_zero (hw.trans_ne one_ne_zero)
   refine isMinOn_iff.2 fun ν' (hν' : IsProbabilityMeasure ν') ↦ ?_
+  by_cases hall : ∀ j, w j = 0
+  · simp [hall]
+  obtain ⟨j₀, hj₀⟩ := not_forall.1 hall
   by_cases htop : ∑ j, (w j : ℝ≥0∞) *
       wassersteinEDist p ν' ((μ j : ProbabilityMeasure X) : Measure X) ^ p.toReal = ∞
   · exact htop ▸ le_top
