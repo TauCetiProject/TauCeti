@@ -131,6 +131,8 @@ lemma homSnd_comp_outerMap (φ : T ⟶ T') :
     homSnd φ ≫ T'.outerMap = T.outerMap ≫ homFst φ :=
   (φ.hom.naturality _).symm
 
+/-- Two morphisms of triples are equal as soon as their maps on the ambient spaces agree: the
+maps on the two smaller spaces are determined by injectivity of the inclusions. -/
 @[ext]
 lemma hom_ext {φ ψ : T ⟶ T'} (h₂ : homFst φ = homFst ψ) : φ = ψ := by
   have : Mono T'.outerMap := (TopCat.mono_iff_injective _).2 T'.isEmbedding_outerMap.injective
