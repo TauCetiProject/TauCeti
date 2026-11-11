@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import TauCeti.Geometry.Manifold.Complex.Orientation
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
 
 /-!
 # Tangent coordinate changes of the Riemann sphere
@@ -23,11 +24,15 @@ For the complex tangent bundle, it also reads tangent vectors in the preferred t
 at a finite point in the affine chart and at `∞` in the inverted chart a tangent vector reads as
 itself, while a tangent vector `v` at a nonzero finite point `z` reads in the trivialization at `∞`
 as `-z⁻² v` (`OnePoint.trivializationAt_infty_apply_coe`).
+
+The inclusion `ℂ → OnePoint ℂ` of the affine chart is real-analytic for the underlying real
+structure (`OnePoint.contMDiff_coe_real`), and its derivative, read in the affine chart, is the
+identity (`OnePoint.mfderiv_coe_real`).
 -/
 
 public section
 
-open scoped Manifold TauCeti.ComplexManifold
+open scoped ContDiff Manifold TauCeti.ComplexManifold
 
 noncomputable section
 
@@ -69,5 +74,19 @@ theorem trivializationAt_infty_apply_coe {z : ℂ} (hz : z ≠ 0) (v : ℂ) :
   have h : (invChart : OpenPartialHomeomorph (OnePoint ℂ) ℂ) ∘ affineChart.symm = fun w ↦ w⁻¹ :=
     funext fun _ ↦ by simp
   simp [TangentBundle.trivializationAt_apply, h, (hasDerivAt_inv hz).hasFDerivAt.fderiv, mul_comm]
+
+/-- The inclusion `ℂ → OnePoint ℂ` is real-analytic for the underlying real structure of the
+Riemann sphere. -/
+theorem contMDiff_coe_real : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ω ((↑) : ℂ → OnePoint ℂ) := by
+  simpa using (contMDiff_coe (𝕜 := ℂ)).restrictScalars ℝ
+
+/-- The derivative of the inclusion `ℂ → OnePoint ℂ` of the affine chart is the identity, the
+tangent space at a finite point being identified with `ℂ` through the affine chart. -/
+theorem mfderiv_coe_real (z : ℂ) :
+    mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ((↑) : ℂ → OnePoint ℂ) z = ContinuousLinearMap.id ℝ ℂ := by
+  rw [((contMDiff_coe_real z).mdifferentiableAt (by simp)).mfderiv]
+  simp [writtenInExtChartAt, chartAt_coe, Function.comp_def, mfld_simps]
+  -- The casts `tangentSpaceCastModel` between the tangent spaces and `ℂ` are identities.
+  rfl
 
 end OnePoint

@@ -226,10 +226,6 @@ private theorem toSphere_symm_eq_invChart_symm {p : sphere (0 : E) 1} (hp : p �
 
 /-! ### Smoothness -/
 
-/-- The inclusion `ℂ → OnePoint ℂ` is smooth for the underlying real structure. -/
-private theorem contMDiff_coe_real : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ω ((↑) : ℂ → OnePoint ℂ) := by
-  simpa using (contMDiff_coe (𝕜 := ℂ)).restrictScalars ℝ
-
 /-- The inverse of the inverted chart is smooth for the underlying real structure. -/
 private theorem contMDiff_invChart_symm_real :
     ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ω (invChart.symm : ℂ → OnePoint ℂ) := by
