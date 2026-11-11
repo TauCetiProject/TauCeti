@@ -41,18 +41,16 @@ the Huber development that consumes it.
   admits lifts with control on the `I`-adic filtration.
 * `Submodule.map_subtype_smul_top_inf_comap`: transport of the filtration induced by
   `J • ⊤` from a submodule `N₀` to the ambient module, where it becomes `J • N₀ ⊓ L`.
-* `Ideal.exists_pow_add_smul_inf_eq_pow_smul`: for `N₀` finitely generated, one shift
-  `k` gives `I ^ (n + k) • N₀ ⊓ L = I ^ n • (I ^ k • N₀ ⊓ L)` for all `n`; this is the form used
-  to compare natural topologies of finite modules over Huber rings.
+* `Ideal.exists_pow_add_smul_inf_eq_pow_smul`: for `N₀` finitely generated and a submodule `L`,
+  one shift `k` gives `I ^ (n + k) • N₀ ⊓ L = I ^ n • (I ^ k • N₀ ⊓ L)` for all `n`; this is the
+  form used to compare natural topologies of finite modules over Huber rings.
 
 ## Provenance
 
 Adapted from AINTLIB's `ArtinRees.controlled_lift`, branch `dev/adic-spaces`, commit `37bbdaeb`,
 Apache-2.0, Chris Birkbeck, `projects/AdicSpaces/Adic spaces/ArtinReesConvergence.lean`, whose
-reference is given there as Wedhorn Lemma 8.31. Note that the TauCeti roadmap assigns that
-number to a different statement — `A⟨X⟩` faithfully flat over `A`, in
-`AdicSpaces/README.md` — so the citation below is the source's own attribution, not a
-roadmap node. Two generalisations:
+reference is given there as Wedhorn Lemma 8.31; the citation below is that source's own
+attribution. Two generalisations:
 
 * the source fixes the ambient module to `Fin l → R` and the source of the surjection to
   `Fin k → R`, presenting the map as `∑ j, c j • s j` for a chosen spanning family; here the
@@ -104,27 +102,31 @@ theorem exists_controlled_lift [IsNoetherianRing R] [Module.Finite R M] (I : Ide
 
 end TauCeti.ArtinRees
 
-variable {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M] [Module R M]
-
 namespace Submodule
+
+variable {R : Type*} [Semiring R] {M : Type*} [AddCommMonoid M] [Module R M]
 
 /-- Pushing the filtration that `J • ⊤` induces on `L ∩ N₀`, viewed inside `N₀`, forward along
 the inclusion `N₀ → M` gives `J • N₀ ⊓ L`. -/
 @[simp]
 theorem map_subtype_smul_top_inf_comap (N₀ : Submodule R M) (J : Ideal R) (L : Submodule R M) :
     (J • ⊤ ⊓ L.comap N₀.subtype).map N₀.subtype = J • N₀ ⊓ L := by
-  rw [Submodule.map_inf _ N₀.injective_subtype, Submodule.map_smul'', Submodule.map_top,
-    Submodule.range_subtype, Submodule.map_comap_subtype, ← inf_assoc,
-    inf_eq_left.mpr Submodule.smul_le_right]
+  -- the injective inclusion commutes with `⊓`, and carries `L.comap N₀.subtype` to `N₀ ⊓ L`
+  rw [Submodule.map_inf _ N₀.injective_subtype, Submodule.map_comap_subtype, ← inf_assoc]
+  -- `map_smul''` carries `J • ⊤` to `J • N₀`, which lies in `N₀`
+  simp [Submodule.smul_le_right]
 
 end Submodule
+
+variable {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M] [Module R M]
 
 namespace Ideal
 
 /-- **Artin–Rees for a finitely generated submodule.** If `N₀` is a finitely generated submodule
-over a noetherian ring, there is a shift `k` such that `I ^ (n + k) • N₀ ⊓ L` equals
-`I ^ n • (I ^ k • N₀ ⊓ L)` for every submodule `L` and every `n`. The ambient module need not be
-finite: only `N₀` is, so Mathlib's `Ideal.exists_pow_inf_eq_pow_smul` is applied inside `N₀`.
+over a noetherian ring and `L` is any submodule, there is a shift `k`, depending on `I`, `N₀`
+and `L`, such that `I ^ (n + k) • N₀ ⊓ L` equals `I ^ n • (I ^ k • N₀ ⊓ L)` for every `n`.
+The ambient module need not be finite: only `N₀` is, so Mathlib's
+`Ideal.exists_pow_inf_eq_pow_smul` is applied inside `N₀`.
 In particular `I ^ (n + k) • N₀ ⊓ L ≤ I ^ n • L`; when `L ≤ N₀`, this shows that the
 filtration `N₀` induces on `L` is cofinal in the `I`-adic filtration of `L`. -/
 theorem exists_pow_add_smul_inf_eq_pow_smul [IsNoetherianRing R] (I : Ideal R)
