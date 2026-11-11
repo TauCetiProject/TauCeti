@@ -62,6 +62,8 @@ across the whole disc, so its circle integral vanishes.
   `TauCeti.Contour.integral_circleMap_index_lower_arc` — about a point inside the circle, the index
   integrals over `[0, π]` and `[π, 2π]` add up to `2πi`, and the one over the lower semicircle,
   about a point above the centre's horizontal line, is `log (c + R - s) - log (c - R - s)`.
+* `TauCeti.Contour.integral_circleMap_index_add_two_pi` — about a point inside the circle, the
+  index integral over any interval `[α, α + 2π]` is `2πi`.
 
 ## Provenance
 
@@ -317,6 +319,19 @@ theorem integral_circleMap_index_arcs_eq {s : ℂ} (hs : dist s c < R) :
     (hintC.mono_set hsubC₂)]
   have h := circleIntegral.integral_sub_inv_of_mem_ball (c := c) (w := s) (R := R) hsball
   simpa [circleIntegral, smul_eq_mul, mul_comm] using h
+
+/-- **Any full turn carries the full index integral.** About a point `s` strictly inside the circle
+of radius `R` centred at `c`, the index integral of the circle parametrisation over any interval
+`[α, α + 2π]` is `2πi`. -/
+theorem integral_circleMap_index_add_two_pi {s : ℂ} (hs : dist s c < R) (α : ℝ) :
+    ∫ θ in α..α + 2 * Real.pi, (circleMap c R θ - s)⁻¹ * deriv (circleMap c R) θ =
+      2 * (Real.pi : ℂ) * Complex.I := by
+  have hper : Function.Periodic (fun θ => (circleMap c R θ - s)⁻¹ * deriv (circleMap c R) θ)
+      (2 * Real.pi) := fun θ => by
+    simp only [deriv_circleMap, periodic_circleMap c R θ, periodic_circleMap 0 R θ]
+  rw [hper.intervalIntegral_add_eq α 0, zero_add,
+    ← circleIntegral.integral_sub_inv_of_mem_ball (Metric.mem_ball.mpr hs), circleIntegral]
+  simp only [smul_eq_mul, mul_comm]
 
 /-- The index integral over the lower semicircle about a point strictly above the centre's
 horizontal line is `log (c + R - s) - log (c - R - s)`. -/

@@ -11,6 +11,7 @@ public import TauCeti.Topology.JordanCurve.Basic
 import Mathlib.MeasureTheory.Integral.CircleIntegral
 import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 import TauCeti.Analysis.Complex.PlaneSeparation.Inside
+import TauCeti.Analysis.Contour.Winding.Number.Circle
 import TauCeti.Topology.JordanCurve.Interval
 
 /-!
@@ -64,9 +65,11 @@ def arcLoop (c : ℝ → ℂ) (b : ℝ) (z₀ : ℂ) (r α β : ℝ) (s : ℝ) :
 variable {c : ℝ → ℂ} {a b : ℝ} {z₀ : ℂ} {r α β : ℝ}
 
 /-- Up to the parameter `b`, the loop is the arc `c`. -/
+@[simp]
 theorem arcLoop_of_le {s : ℝ} (hs : s ≤ b) : arcLoop c b z₀ r α β s = c s := ite_eq_left hs
 
 /-- After the parameter `b`, the loop is the affinely reparametrized circle. -/
+@[simp]
 theorem arcLoop_of_lt {s : ℝ} (hs : b < s) :
     arcLoop c b z₀ r α β s = circleMap z₀ r (α + (s - b) * (β - α)) := ite_eq_right hs.not_ge
 
@@ -97,48 +100,42 @@ theorem isPiecewiseC1On_arcLoop (hc : IsPiecewiseC1On c a b) (hab : a ≤ b)
     IsPiecewiseC1On.of_contDiffOn ((contDiff_circleMap z₀ r).comp (by fun_prop)).contDiffOn
   exact hc.if_le harc hab (by linarith) (by simpa using hb)
 
+/-- From the parameter `b` on, the loop is the affinely reparametrized circle, provided the arc `c`
+ends at the point of angle `α`. -/
+theorem eqOn_arcLoop_Ici (hb : c b = circleMap z₀ r α) :
+    EqOn (arcLoop c b z₀ r α β) (fun s => circleMap z₀ r (α + (s - b) * (β - α))) (Ici b) := by
+  intro s hs
+  rcases (mem_Ici.mp hs).eq_or_lt with rfl | hsb
+  · simp [hb]
+  · exact arcLoop_of_lt hsb
+
+/-- Closing a continuous arc by a circle arc gives a continuous loop. -/
+theorem continuousOn_arcLoop (hc : ContinuousOn c (Icc a b)) (hab : a ≤ b)
+    (hb : c b = circleMap z₀ r α) : ContinuousOn (arcLoop c b z₀ r α β) (Icc a (b + 1)) := by
+  rw [← Icc_union_Icc_eq_Icc hab (le_add_of_nonneg_right zero_le_one)]
+  refine ContinuousOn.union_of_isClosed (hc.congr fun s hs => arcLoop_of_le hs.2) ?_
+    isClosed_Icc isClosed_Icc
+  exact ((continuous_circleMap z₀ r).comp (by fun_prop)).continuousOn.congr
+    ((eqOn_arcLoop_Ici hb).mono Icc_subset_Ici_self)
+
 /-- The trace of the loop is the trace of the arc together with the circle arc. -/
 theorem image_arcLoop (hab : a ≤ b) (hb : c b = circleMap z₀ r α) :
     arcLoop c b z₀ r α β '' uIcc a (b + 1) = c '' Icc a b ∪ circleMap z₀ r '' uIcc α β := by
-  rw [uIcc_of_le (by linarith)]
-  apply Subset.antisymm
-  · rintro _ ⟨s, hs, rfl⟩
-    rcases le_or_gt s b with hsb | hsb
-    · exact Or.inl ⟨s, ⟨hs.1, hsb⟩, (arcLoop_of_le hsb).symm⟩
-    · refine Or.inr ⟨α + (s - b) * (β - α), ?_, (arcLoop_of_lt hsb).symm⟩
-      have h0 : 0 ≤ s - b := by linarith
-      have h1 : s - b ≤ 1 := by linarith [hs.2]
-      rcases le_total α β with h | h
-      · rw [uIcc_of_le h]
-        constructor <;> nlinarith
-      · rw [uIcc_of_ge h]
-        constructor <;> nlinarith
-  · rintro _ (⟨s, hs, rfl⟩ | ⟨θ, hθ, rfl⟩)
-    · exact ⟨s, ⟨hs.1, hs.2.trans (by linarith)⟩, arcLoop_of_le hs.2⟩
-    · rcases eq_or_ne α β with rfl | hαβ
-      · rw [uIcc_self] at hθ
-        rw [hθ, ← hb]
-        exact ⟨b, ⟨hab, by linarith⟩, arcLoop_of_le le_rfl⟩
-      rcases eq_or_ne θ α with rfl | hθα
-      · rw [← hb]
-        exact ⟨b, ⟨hab, by linarith⟩, arcLoop_of_le le_rfl⟩
-      have hd : β - α ≠ 0 := sub_ne_zero.mpr hαβ.symm
-      set s := b + (θ - α) / (β - α)
-      have hq : 0 < (θ - α) / (β - α) ∧ (θ - α) / (β - α) ≤ 1 := by
-        rcases lt_or_gt_of_ne hαβ with h | h
-        · rw [uIcc_of_le h.le] at hθ
-          have hθ' : α < θ := lt_of_le_of_ne hθ.1 hθα.symm
-          exact ⟨div_pos (by linarith) (by linarith),
-            (div_le_one (by linarith)).mpr (by linarith [hθ.2])⟩
-        · rw [uIcc_of_ge h.le] at hθ
-          have hθ' : θ < α := lt_of_le_of_ne hθ.2 hθα
-          exact ⟨div_pos_of_neg_of_neg (by linarith) (by linarith),
-            (div_le_one_of_neg (by linarith)).mpr (by linarith [hθ.1])⟩
-      refine ⟨s, ⟨by linarith [hq.1], by linarith [hq.2]⟩, ?_⟩
-      rw [arcLoop_of_lt (by linarith [hq.1])]
-      congr 1
-      simp only [s, add_sub_cancel_left, div_mul_cancel₀ _ hd]
-      ring
+  have hb1 : b ≤ b + 1 := le_add_of_nonneg_right zero_le_one
+  let f : ℝ →ᵃ[ℝ] ℝ := (AffineMap.lineMap α β).comp ((AffineMap.id ℝ ℝ) - AffineMap.const ℝ ℝ b)
+  have hf : ∀ s, f s = α + (s - b) * (β - α) := fun s => by
+    simp only [f, AffineMap.coe_comp, Function.comp_apply, AffineMap.coe_sub, AffineMap.coe_id,
+      AffineMap.coe_const, Pi.sub_apply, id_eq, Function.const_apply, AffineMap.lineMap_apply_ring']
+    ring
+  have hcircle : (fun s => circleMap z₀ r (α + (s - b) * (β - α))) = circleMap z₀ r ∘ f := by
+    ext s
+    simp [hf]
+  rw [uIcc_of_le (hab.trans hb1), ← Icc_union_Icc_eq_Icc hab hb1, image_union,
+    image_congr fun s (hs : s ∈ Icc a b) => arcLoop_of_le hs.2,
+    image_congr fun s (hs : s ∈ Icc b (b + 1)) => eqOn_arcLoop_Ici hb (Icc_subset_Ici_self hs),
+    hcircle, image_comp,
+    ← uIcc_of_le hb1, AffineMap.image_uIcc, hf, hf]
+  simp
 
 /-- A point of the open disk off the arc `c` is off the trace of the loop. -/
 theorem notMem_image_arcLoop (hab : a ≤ b) (hb : c b = circleMap z₀ r α) {z : ℂ}
@@ -175,10 +172,6 @@ theorem filledHull_image_arcLoop_subset_closedBall (hab : a ≤ b)
     (closedConvexHull_min (image_arcLoop_subset_closedBall hab hin hr ha hb)
       (convex_closedBall z₀ r) isClosed_closedBall)
 
-private theorem circleMap_ne_circleMap {x y : ℝ} (hr : r ≠ 0) (hxy : x ≠ y)
-    (hd : |x - y| < 2 * π) : circleMap z₀ r x ≠ circleMap z₀ r y :=
-  fun h => hxy (eq_of_circleMap_eq hr hd h)
-
 /-- The loop is injective on `[a, b + 1)`: the arc meets the circle only at its endpoints, and the
 circle arc is shorter than the full circle. -/
 theorem injOn_arcLoop (hinj : InjOn c (Icc a b)) (hin : ∀ s ∈ Ioo a b, c s ∈ ball z₀ r)
@@ -190,23 +183,20 @@ theorem injOn_arcLoop (hinj : InjOn c (Icc a b)) (hin : ∀ s ∈ Ioo a b, c s �
     push Not at hne
     exact h (hin s ⟨lt_of_le_of_ne hs.1 hne.1.symm, lt_of_le_of_ne hs.2 hne.2⟩)
   have hθα : ∀ s, b < s → s < b + 1 →
-      circleMap z₀ r (α + (s - b) * (β - α)) ≠ circleMap z₀ r α := fun s h1 h2 => by
-    apply circleMap_ne_circleMap hr.ne'
-    · have : (s - b) * (β - α) ≠ 0 := mul_ne_zero (by linarith) (sub_ne_zero.mpr hαβ.symm)
-      intro h
-      exact this (by linarith)
-    · rw [add_sub_cancel_left, abs_mul, abs_of_pos (by linarith : 0 < s - b)]
+      circleMap z₀ r (α + (s - b) * (β - α)) ≠ circleMap z₀ r α := fun s h1 h2 h => by
+    have hd : |α + (s - b) * (β - α) - α| < 2 * π := by
+      rw [add_sub_cancel_left, abs_mul, abs_of_pos (by linarith : 0 < s - b)]
       nlinarith [abs_nonneg (β - α)]
+    have : (s - b) * (β - α) ≠ 0 := mul_ne_zero (by linarith) (sub_ne_zero.mpr hαβ.symm)
+    exact this (by linarith [eq_of_circleMap_eq hr.ne' hd h])
   have hθβ : ∀ s, b < s → s < b + 1 →
-      circleMap z₀ r (α + (s - b) * (β - α)) ≠ circleMap z₀ r β := fun s h1 h2 => by
-    apply circleMap_ne_circleMap hr.ne'
-    · have : (b + 1 - s) * (β - α) ≠ 0 :=
-        mul_ne_zero (by linarith) (sub_ne_zero.mpr hαβ.symm)
-      intro h
-      exact this (by linarith)
-    · rw [show α + (s - b) * (β - α) - β = -((b + 1 - s) * (β - α)) by ring, abs_neg, abs_mul,
-        abs_of_pos (by linarith : 0 < b + 1 - s)]
+      circleMap z₀ r (α + (s - b) * (β - α)) ≠ circleMap z₀ r β := fun s h1 h2 h => by
+    have hsub : α + (s - b) * (β - α) - β = -((b + 1 - s) * (β - α)) := by ring
+    have hd : |α + (s - b) * (β - α) - β| < 2 * π := by
+      rw [hsub, abs_neg, abs_mul, abs_of_pos (by linarith : 0 < b + 1 - s)]
       nlinarith [abs_nonneg (β - α)]
+    have : (b + 1 - s) * (β - α) ≠ 0 := mul_ne_zero (by linarith) (sub_ne_zero.mpr hαβ.symm)
+    exact this (by linarith [eq_of_circleMap_eq hr.ne' hd h])
   have hcross : ∀ s ∈ Ico a (b + 1), ∀ s' ∈ Ico a (b + 1), s ≤ b → b < s' →
       arcLoop c b z₀ r α β s ≠ arcLoop c b z₀ r α β s' := fun s hs s' hs' hsb hs'b h => by
     rw [arcLoop_of_le hsb, arcLoop_of_lt hs'b] at h
@@ -220,9 +210,9 @@ theorem injOn_arcLoop (hinj : InjOn c (Icc a b)) (hin : ∀ s ∈ Ioo a b, c s �
   · exact absurd h (hcross s hs s' hs' hsb hs'b)
   · exact absurd h.symm (hcross s' hs' s hs hs'b hsb)
   · rw [arcLoop_of_lt hsb, arcLoop_of_lt hs'b] at h
+    have hsub : α + (s - b) * (β - α) - (α + (s' - b) * (β - α)) = (s - s') * (β - α) := by ring
     have h' := eq_of_circleMap_eq hr.ne' (by
-      rw [show α + (s - b) * (β - α) - (α + (s' - b) * (β - α)) = (s - s') * (β - α) by ring,
-        abs_mul]
+      rw [hsub, abs_mul]
       have : |s - s'| < 1 := abs_sub_lt_iff.mpr ⟨by linarith [hs.2], by linarith [hs'.2]⟩
       nlinarith [abs_nonneg (s - s'), abs_nonneg (β - α)]) h
     have : (s - s') * (β - α) = 0 := by linarith
@@ -233,15 +223,13 @@ theorem injOn_arcLoop (hinj : InjOn c (Icc a b)) (hin : ∀ s ∈ Ioo a b, c s �
 /-- If the interior of the injective arc `c` lies in the open disk, its endpoints lie on the
 circle, and the closing circle arc is nontrivial and shorter than the full circle, then the trace
 of the loop is a Jordan curve. -/
-theorem isJordanCurve_image_arcLoop (hab : a < b) (hc : IsPiecewiseC1On c a b)
+theorem isJordanCurve_image_arcLoop (hab : a < b) (hc : ContinuousOn c (Icc a b))
     (hinj : InjOn c (Icc a b)) (hin : ∀ s ∈ Ioo a b, c s ∈ ball z₀ r) (hr : 0 < r)
     (ha : c a = circleMap z₀ r β) (hb : c b = circleMap z₀ r α) (hαβ : α ≠ β)
     (hβα : |β - α| < 2 * π) :
     IsJordanCurve (arcLoop c b z₀ r α β '' uIcc a (b + 1)) := by
   rw [uIcc_of_le (by linarith)]
-  exact isJordanCurve_image_Icc (by linarith)
-    (by simpa [uIcc_of_le (by linarith : a ≤ b + 1)] using
-      (isPiecewiseC1On_arcLoop (β := β) hc hab.le hb).continuousOn)
+  exact isJordanCurve_image_Icc (by linarith) (continuousOn_arcLoop hc hab.le hb)
     (arcLoop_eq_arcLoop_add_one hab.le ha) (injOn_arcLoop hinj hin hr ha hb hαβ hβα)
 
 private theorem integral_arcLoop_arc {z : ℂ} :
@@ -270,18 +258,6 @@ private theorem integral_arcLoop_arc {z : ℂ} :
   have h2 : (β - α) * (b + 1) + (α - b * (β - α)) = β := by ring
   rw [h1, h2, Complex.real_smul, ← mul_assoc, Complex.ofReal_inv,
     mul_inv_cancel₀ (Complex.ofReal_ne_zero.mpr (sub_ne_zero.mpr hd)), one_mul]
-
-private theorem integral_circle_sub_two_pi {z : ℂ} (hz : z ∈ ball z₀ r) :
-    ∫ θ in β - 2 * π..β, (circleMap z₀ r θ - z)⁻¹ * (circleMap 0 r θ * I) = 2 * π * I := by
-  have hper : Function.Periodic (fun θ => (circleMap z₀ r θ - z)⁻¹ * (circleMap 0 r θ * I))
-      (2 * π) := fun θ => by
-    simp only [periodic_circleMap z₀ r θ, periodic_circleMap 0 r θ]
-  have h := hper.intervalIntegral_add_eq (β - 2 * π) 0
-  rw [sub_add_cancel, zero_add] at h
-  rw [h, ← circleIntegral.integral_sub_inv_of_mem_ball hz, circleIntegral]
-  refine intervalIntegral.integral_congr fun θ _ => ?_
-  simp only [deriv_circleMap, smul_eq_mul]
-  ring
 
 /-- The winding numbers of the loops closed by the circle arcs from `α` to `β` and from `α` to
 `β - 2π` differ by one at every point of the open disk off the arc `c`. -/
@@ -323,7 +299,9 @@ theorem windingNumber_arcLoop_eq_add_one (hab : a ≤ b) (hc : IsPiecewiseC1On c
   have hsplit := intervalIntegral.integral_add_adjacent_intervals
     (hg.intervalIntegrable (μ := volume) α (β - 2 * π))
     (hg.intervalIntegrable (μ := volume) (β - 2 * π) β)
-  rw [integral_circle_sub_two_pi hz] at hsplit
+  have hturn := integral_circleMap_index_add_two_pi (mem_ball.mp hz) (β - 2 * π)
+  simp only [sub_add_cancel, deriv_circleMap] at hturn
+  rw [hturn] at hsplit
   rw [key β, key (β - 2 * π), hfirst, ← hsplit]
   have hpi : (2 * (π : ℂ) * I) ≠ 0 := by simp [Real.pi_ne_zero, I_ne_zero]
   field_simp
@@ -359,7 +337,7 @@ private theorem jordanSign_arcLoop_eq_one_or_neg_one (hab : a < b)
     |>.jordanSign_eq_one_or_neg_one (by linarith) (arcLoop_eq_arcLoop_add_one hab.le ha)
       (injOn_arcLoop hinj hin hr ha hb hαδ hδα)
 
-private theorem exists_mem_ball_arcLoop (hab : a < b) (hc : IsPiecewiseC1On c a b)
+private theorem exists_mem_ball_arcLoop (hab : a < b) (hc : ContinuousOn c (Icc a b))
     (hinj : InjOn c (Icc a b)) (hin : ∀ s ∈ Ioo a b, c s ∈ ball z₀ r) (hr : 0 < r)
     (ha : c a = circleMap z₀ r δ) (hb : c b = circleMap z₀ r α) (hαδ : α ≠ δ)
     (hδα : |δ - α| < 2 * π) :
@@ -411,8 +389,9 @@ private theorem jordanSign_arcLoop_and_mem_filledHull_iff (hab : a < b)
     have h := hdiff hz hzc
     rw [hw1 hz hzc, hw2 hz hzc] at h
     split_ifs at h ⊢ <;> exact_mod_cast h
-  obtain ⟨z₁, hz₁, hz₁c, hz₁H⟩ := exists_mem_ball_arcLoop hab hc hinj hin hr ha hb h1 h1'
-  obtain ⟨z₂, hz₂, hz₂c, hz₂H⟩ := exists_mem_ball_arcLoop hab hc hinj hin hr ha' hb h2 h2'
+  have hc' : ContinuousOn c (Icc a b) := uIcc_of_le hab.le ▸ hc.continuousOn
+  obtain ⟨z₁, hz₁, hz₁c, hz₁H⟩ := exists_mem_ball_arcLoop hab hc' hinj hin hr ha hb h1 h1'
+  obtain ⟨z₂, hz₂, hz₂c, hz₂H⟩ := exists_mem_ball_arcLoop hab hc' hinj hin hr ha' hb h2 h2'
   have k1 := key z₁ hz₁ hz₁c
   have k2 := key z₂ hz₂ hz₂c
   simp only [hz₁H, ↓reduceIte] at k1
