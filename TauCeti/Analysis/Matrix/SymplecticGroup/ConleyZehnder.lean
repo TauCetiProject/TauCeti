@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Basic
 public import TauCeti.LinearAlgebra.Matrix.OfReal
 public import TauCeti.LinearAlgebra.Matrix.Realify
 public import TauCeti.LinearAlgebra.TotallyReal.Lagrangian
+import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
 
 /-!
 # The Conley–Zehnder index of a path of symplectic matrices
@@ -437,30 +438,21 @@ theorem graphMaslovIndex_eq_sum_of_realify_diagonal {A B : GLSymplectic n ℝ} (
   set φ : n ⊕ n → I → ℝ := Sum.elim (fun j t ↦ θ j t / 2) (fun j t ↦ θ j t / 2)
   have hφ (k : n ⊕ n) : Continuous (φ k) := by
     rcases k with j | j <;> exact (hθ j).div_const 2
-  have hUmem (t : I) : (diagonal fun k ↦ Complex.exp (φ k t * Complex.I)) ∈
-      unitaryGroup (n ⊕ n) ℂ := by
-    rw [mem_unitaryGroup_iff', star_eq_conjTranspose, diagonal_conjTranspose,
-      diagonal_mul_diagonal]
-    simp only [Pi.star_apply, hunit, diagonal_one]
-  let U : I → unitaryGroup (n ⊕ n) ℂ := fun t ↦ ⟨_, hUmem t⟩
-  have hU : Continuous U := by
-    refine continuous_induced_rng.2 (continuous_pi fun k ↦ continuous_pi fun l ↦ ?_)
-    simp only [Function.comp_def, U, diagonal_apply]
-    split_ifs
-    · fun_prop
-    · exact continuous_const
+  let U : I → unitaryGroup (n ⊕ n) ℂ := fun t ↦ unitaryTorusHom (n ⊕ n) fun k ↦ Circle.exp (φ k t)
+  have hU : Continuous U :=
+    continuous_unitaryTorusHom.comp (continuous_pi fun k ↦ Circle.exp.continuous.comp (hφ k))
   let δ : Path (U 0) (U 1) := ⟨⟨U, hU⟩, rfl, rfl⟩
   have hsame : maslovIndex (γ.map continuous_graphFrame) = maslovIndex δ := by
     refine maslovIndex_eq_of_souriau_eq _ _ fun t ↦ Subtype.ext ?_
     rw [Path.map_coe, Function.comp_apply, hW t,
-      coe_souriau_of_coe_eq_diagonal (U := δ t) (rfl)]
+      coe_souriau_of_coe_eq_diagonal (U := δ t) (coe_unitaryTorusHom _)]
     congr 1
     funext k
     rcases k with j | j <;>
-    · simp only [φ, Sum.elim_inl, Sum.elim_inr, ← Complex.exp_nat_mul]
+    · simp only [φ, Sum.elim_inl, Sum.elim_inr, Circle.coe_exp, ← Complex.exp_nat_mul]
       push_cast
       ring_nf
-  rw [graphMaslovIndex, hsame, maslovIndex_eq_sum_of_diagonal δ hφ fun _ ↦ rfl,
+  rw [graphMaslovIndex, hsame, maslovIndex_eq_sum_of_diagonal δ hφ fun _ ↦ coe_unitaryTorusHom _,
     Fintype.sum_sum_type, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   simp only [φ, Sum.elim_inl, Sum.elim_inr, div_div, mul_comm (2 : ℝ) Real.pi]
