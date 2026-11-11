@@ -209,21 +209,7 @@ abelian; when `W` is abelian it is the compositum of the maximal abelian sublaye
 `W`, so `V` need not be abelian. -/
 theorem normSubgroup_inf_of_isAbelian (hW : W.IsAbelianClassFieldLayer) :
     F.normSubgroup (V ⊓ W) = F.normSubgroup V ⊓ F.normSubgroup W := by
-  have hmax : (V ⊓ W).maximalAbelianLayer = V.maximalAbelianLayer ⊓ W := by
-    apply OpenNormalSubgroup.toSubgroup_injective
-    simp only [OpenNormalSubgroup.toSubgroup_maximalAbelianLayer, OpenNormalSubgroup.toSubgroup_inf]
-    -- the modular law, for the normal subgroup `closure [G, G]`, which lies in `W`
-    have hC : (commutator G).topologicalClosure ≤ W.toSubgroup := fun x hx ↦
-      OpenNormalSubgroup.maximalAbelianLayer_le le_rfl hW
-        (OpenNormalSubgroup.mem_maximalAbelianLayer.2 (Subgroup.mem_sup_right hx))
-    refine le_antisymm (sup_le (le_inf (inf_le_left.trans le_sup_left) inf_le_right)
-      (le_inf le_sup_right hC)) fun x ⟨hx, hxW⟩ ↦ ?_
-    obtain ⟨v, hv, c, hc, rfl⟩ := Subgroup.mem_sup_of_normal_right.1 hx
-    have hvW : v ∈ W.toSubgroup := by
-      have := Subgroup.mul_mem W.toSubgroup (show v * c ∈ W.toSubgroup from hxW)
-        (Subgroup.inv_mem W.toSubgroup (hC hc))
-      rwa [mul_inv_cancel_right] at this
-    exact Subgroup.mul_mem_sup ⟨hv, hvW⟩ hc
+  have hmax := OpenNormalSubgroup.maximalAbelianLayer_inf_of_isAbelianClassFieldLayer (V := V) hW
   rw [← cf.normSubgroup_maximalAbelianLayer (V ⊓ W), hmax,
     cf.normSubgroup_inf_of_isAbelian_of_isAbelian V.isAbelianClassFieldLayer_maximalAbelianLayer hW,
     cf.normSubgroup_maximalAbelianLayer]
