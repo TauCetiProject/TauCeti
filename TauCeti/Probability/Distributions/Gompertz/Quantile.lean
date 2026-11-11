@@ -80,7 +80,7 @@ theorem tendsto_quantile_gompertzMeasure_nhdsGT_zero (hη : 0 < η) (hb : 0 < b)
   have hc : ContinuousAt (fun e : ℝ => log (1 + e / η) / b) 0 := by
     fun_prop (disch := first | exact hb.ne' | exact hη.ne' | norm_num)
   have hlim := hc.tendsto.comp
-    (EReal.tendsto_coe.1 (tendsto_quantile_expMeasure_nhdsGT_zero one_pos))
+    (EReal.tendsto_coe.1 (tendsto_quantile_expMeasure_nhdsGT_zero (r := 1)))
   simp only [zero_div, add_zero, log_one] at hlim
   apply hlim.congr'
   filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
