@@ -9,7 +9,6 @@ public import TauCeti.Analysis.PDE.Vortex.Divisor
 public import TauCeti.Analysis.PDE.Vortex.EndFraming
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.Complex.CauchyIntegral
-import TauCeti.Algebra.Polynomial.BigOperators
 
 /-!
 # Every framed plane vortex is a reconstructed amplitude field
@@ -105,9 +104,12 @@ theorem exists_framedGaugeGroup_smul_amplitudeField_eq {x : ℂ → EuclideanSpa
       (∀ z, Δ u z = (Real.exp (2 * u z) * ‖(D.map fun a ↦ z - a).prod‖ ^ 2 - 1) / 8) ∧
       Tendsto (fun z ↦ u z + m * Real.log ‖z‖) (cocompact ℂ) (𝓝 0) ∧
       ∃ g : framedGaugeGroup, g • amplitudeField u (fun w ↦ (D.map fun a ↦ w - a).prod) = x := by
-  obtain ⟨P, hPm, hPdeg, hPf⟩ := exists_monic_natDegree_eq_eval_eq_prod_sub D
   set f : ℂ → ℂ := fun w ↦ (D.map fun a ↦ w - a).prod
-  rw [hD.card_eq_of_tendsto_mul_inv_pow hframe] at hPdeg
+  set P : ℂ[X] := (D.map fun a ↦ X - C a).prod
+  have hPf : P.eval = f := funext fun w ↦ by simp [P, f, eval_multiset_prod, Multiset.map_map]
+  have hPm : P.Monic := monic_multisetProd_X_sub_C D
+  have hPdeg : P.natDegree = m :=
+    (natDegree_multiset_prod_X_sub_C_eq_card D).trans (hD.card_eq_of_tendsto_mul_inv_pow hframe)
   have hfd : Differentiable ℂ f := hPf ▸ P.differentiable
   have hfs : ContDiff ℝ ∞ f := (hfd.contDiff (n := ∞)).restrict_scalars ℝ
   have hxi (i : Fin 4) : ContDiff ℝ ∞ fun w ↦ x w i := (contDiff_piLp 2).1 hx i
@@ -188,13 +190,17 @@ theorem exists_equation_eq_zero_iff_exists_laplacian_eq (D : Multiset ℂ) :
   refine ⟨fun ⟨x, hx, hsol, hframe, hD⟩ ↦ ?_, fun ⟨u, hu, hΔ, hbc⟩ ↦ ?_⟩
   · obtain ⟨u, hu, hΔ, hbc, -⟩ := exists_framedGaugeGroup_smul_amplitudeField_eq hx hsol hframe hD
     exact ⟨u, hu, hΔ, hbc⟩
-  · obtain ⟨P, hPm, hPdeg, hPf⟩ := exists_monic_natDegree_eq_eval_eq_prod_sub D
+  · set P : ℂ[X] := (D.map fun a ↦ X - C a).prod
+    have hPf : P.eval = fun w ↦ (D.map fun a ↦ w - a).prod :=
+      funext fun w ↦ by simp [P, eval_multiset_prod, Multiset.map_map]
+    have hPdeg : P.natDegree = Multiset.card D := natDegree_multiset_prod_X_sub_C_eq_card D
     have hfd : Differentiable ℂ fun w ↦ (D.map fun a ↦ w - a).prod := hPf ▸ P.differentiable
     refine ⟨amplitudeField u fun w ↦ (D.map fun a ↦ w - a).prod,
       contDiff_amplitudeField hu ((hfd.contDiff (n := ∞)).restrict_scalars ℝ),
       fun z ↦ (equation_amplitudeField_eq_zero_iff ((hu.contDiffAt).of_le (by simp)) (hfd z)).2
         (hΔ z), ?_, isZeroMultiplicity_sectionValue_amplitudeField_prod_sub hu.continuous D⟩
-    have := (tendsto_sectionValue_amplitudeField_mul_inv_phase_iff_log hPm u).2 (by rwa [hPdeg])
+    have := (tendsto_sectionValue_amplitudeField_mul_inv_phase_iff_log
+      (monic_multisetProd_X_sub_C D) u).2 (by rwa [hPdeg])
     rwa [hPf, hPdeg] at this
 
 end TauCeti.Vortex
