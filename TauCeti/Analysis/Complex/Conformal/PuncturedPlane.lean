@@ -153,40 +153,6 @@ theorem exists_isPuncturedEmbedding_iff [Finite ι] :
   · have hc : c' = fun i => a * c i + b := funext hab
     exact ⟨_, hc ▸ isPuncturedEmbedding_mul_add ha b c⟩
 
-/-- Three distinct points of `ℂ` are carried to three distinct points by an affine map exactly
-when the cross ratios `(c 1 - c 0) / (c 2 - c 0)` of the two triples, read as the cross ratios
-`OnePoint.crossRatio (c 0) (c 2) ∞ (c 1)` of the Riemann sphere, agree. -/
-theorem exists_eq_mul_add_iff_crossRatio_eq {c c' : Fin 3 → ℂ} (hc : Injective c)
-    (hc' : Injective c') :
-    (∃ a b : ℂ, a ≠ 0 ∧ ∀ i, c' i = a * c i + b) ↔
-      OnePoint.crossRatio (c' 0 : OnePoint ℂ) (c' 2) ∞ (c' 1) =
-        OnePoint.crossRatio (c 0 : OnePoint ℂ) (c 2) ∞ (c 1) := by
-  have h02 : c 0 ≠ c 2 := hc.ne (by decide)
-  have h02' : c' 0 ≠ c' 2 := hc'.ne (by decide)
-  rw [OnePoint.crossRatio_coe_coe_infty_coe h02', OnePoint.crossRatio_coe_coe_infty_coe h02,
-    OnePoint.coe_eq_coe]
-  have h20 : c 2 - c 0 ≠ 0 := sub_ne_zero.2 h02.symm
-  have h20' : c' 2 - c' 0 ≠ 0 := sub_ne_zero.2 h02'.symm
-  constructor
-  · rintro ⟨a, b, ha, hab⟩
-    have hsub (i j : Fin 3) : c' i - c' j = a * (c i - c j) := by
-      rw [hab i, hab j]
-      ring
-    rw [hsub, hsub, mul_div_mul_left _ _ ha]
-  · intro h
-    -- The affine map is determined by the images of `c 0` and `c 2`; the cross ratio then
-    -- places `c' 1` correctly.
-    rw [div_eq_div_iff h20' h20] at h
-    refine ⟨(c' 2 - c' 0) / (c 2 - c 0), c' 0 - (c' 2 - c' 0) / (c 2 - c 0) * c 0,
-      div_ne_zero h20' h20, fun i => ?_⟩
-    field_simp
-    fin_cases i
-    · simp
-    · simp only [Fin.mk_one]
-      linear_combination h
-    · simp only [Fin.reduceFinMk]
-      ring
-
 /-- **Spheres with three labelled input punctures.** For three distinct finite punctures `c` and
 three distinct finite punctures `c'`, the output puncture being `∞` in both, a label-preserving
 punctured embedding exists exactly when the cross ratios `OnePoint.crossRatio (c 0) (c 2) ∞ (c 1)`
@@ -196,6 +162,6 @@ theorem exists_isPuncturedEmbedding_iff_crossRatio_eq {c c' : Fin 3 → ℂ} (hc
     (∃ f, IsPuncturedEmbedding c c' f) ↔
       OnePoint.crossRatio (c' 0 : OnePoint ℂ) (c' 2) ∞ (c' 1) =
         OnePoint.crossRatio (c 0 : OnePoint ℂ) (c 2) ∞ (c 1) :=
-  exists_isPuncturedEmbedding_iff.trans (exists_eq_mul_add_iff_crossRatio_eq hc hc')
+  exists_isPuncturedEmbedding_iff.trans (OnePoint.exists_eq_mul_add_iff_crossRatio_eq hc hc')
 
 end TauCeti

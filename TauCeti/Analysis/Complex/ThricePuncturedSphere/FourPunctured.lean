@@ -181,6 +181,6 @@ theorem tendsto_crossRatio_one_plumbingMap_atTop :
   refine ((OnePoint.continuous_coe.tendsto 1).comp
     ((Complex.continuous_ofReal.tendsto' 1 1 Complex.ofReal_one).comp hinv)).congr' ?_
   filter_upwards [eventually_ge_atTop 0] with L hL
-  simp [crossRatio_one_plumbingMap hL]
+  exact (crossRatio_one_plumbingMap hL).symm
 
 end TauCeti.ThricePuncturedSphere
