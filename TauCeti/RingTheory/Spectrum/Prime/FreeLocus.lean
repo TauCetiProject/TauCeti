@@ -325,10 +325,10 @@ end PrimeSpectrum
 
 namespace Ideal
 
-/-- A finitely presented flat module over a ring with connected spectrum vanishes if its fibre at
-one prime ideal vanishes, since its rank is locally constant. -/
+/-- A finitely presented flat module over a ring with preconnected spectrum vanishes if its fibre
+at one prime ideal vanishes, since its rank is locally constant. -/
 theorem subsingleton_of_subsingleton_fiber {R M : Type*} [CommRing R]
-    [ConnectedSpace (PrimeSpectrum R)] [AddCommGroup M] [Module R M]
+    [PreconnectedSpace (PrimeSpectrum R)] [AddCommGroup M] [Module R M]
     [Module.FinitePresentation R M] [Module.Flat R M] (p : Ideal R) [p.IsPrime]
     (h : Subsingleton (p.Fiber M)) : Subsingleton M := by
   have hrank_identity : Module.rankAtStalk (R := R) M

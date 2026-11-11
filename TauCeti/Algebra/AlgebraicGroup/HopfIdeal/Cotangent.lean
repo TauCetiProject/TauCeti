@@ -181,6 +181,9 @@ theorem quotientCotangentMap_surjective (I : HopfIdeal k H) :
   exact Ideal.mapCotangent_surjective_of_comap_eq
     (Ideal.Quotient.mkₐ_surjective H I.toIdeal)
     (by
+      -- The `show` restates `BialgHom.comap_augmentationIdeal` for the quotient map with
+      -- `algebraMap` as the ring map, which is definitionally the underlying ring map of
+      -- `mkBialgHom`; the rewrite below needs this syntactic `algebraMap` form to match the goal.
       rw [show (Bialgebra.AugmentationIdeal k (H ⧸ I.toIdeal)).comap
           (algebraMap H (H ⧸ I.toIdeal)) = Bialgebra.AugmentationIdeal k H from
         BialgHom.comap_augmentationIdeal (Bialgebra.Quotient.mkBialgHom (R := k) I.toIdeal),
@@ -195,6 +198,9 @@ theorem ker_quotientCotangentMap (I : HopfIdeal k H) :
   rw [Ideal.mapCotangent_ker_of_surjective
     (Ideal.Quotient.mkₐ_surjective H I.toIdeal)
     (by
+      -- The `show` restates `BialgHom.comap_augmentationIdeal` for the quotient map with
+      -- `algebraMap` as the ring map, which is definitionally the underlying ring map of
+      -- `mkBialgHom`; the rewrite below needs this syntactic `algebraMap` form to match the goal.
       rw [show (Bialgebra.AugmentationIdeal k (H ⧸ I.toIdeal)).comap
           (algebraMap H (H ⧸ I.toIdeal)) = Bialgebra.AugmentationIdeal k H from
         BialgHom.comap_augmentationIdeal (Bialgebra.Quotient.mkBialgHom (R := k) I.toIdeal),
