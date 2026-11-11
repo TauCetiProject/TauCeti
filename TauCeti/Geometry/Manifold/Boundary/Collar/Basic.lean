@@ -94,6 +94,14 @@ theorem collarAmbientEquiv_apply_succ (n : ℕ) (x : EuclideanSpace ℝ (Fin n))
     collarAmbientEquiv n (x, t) i.succ = x i := by
   simp [collarAmbientEquiv]
 
+/-- The ambient collar equivalence is the boundary-normal equivalence applied to the boundary
+coordinates and the single coordinate of the normal vector. -/
+theorem collarAmbientEquiv_apply (n : ℕ) (x : EuclideanSpace ℝ (Fin n))
+    (t : EuclideanSpace ℝ (Fin 1)) :
+    collarAmbientEquiv n (x, t) = euclideanHalfSpaceBoundaryNormalEquiv n (x, t 0) := by
+  ext i
+  induction i using Fin.cases <;> simp
+
 /-- At normal coordinate zero, the ambient collar equivalence is the boundary parametrization. -/
 theorem collarAmbientEquiv_apply_zero_eq_boundaryParam (n : ℕ)
     (x : EuclideanSpace ℝ (Fin n)) :
