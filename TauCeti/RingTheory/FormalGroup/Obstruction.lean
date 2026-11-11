@@ -8,13 +8,14 @@ module
 public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
 public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Basic
 -- Proof-only: the order filtration on points, substitution into points, the symmetric 2-cocycle
--- lemma, lowest-degree parts of substitutions, two-variable substitution identities, and the
--- permutations of `Fin 2`.
+-- lemma, lowest-degree parts of substitutions, two-variable substitution identities, symmetric
+-- power series, and the permutations of `Fin 2`.
 import TauCeti.Data.Fin.Basic
 import TauCeti.RingTheory.FormalGroup.Point.Order
 import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Classification
 import TauCeti.RingTheory.FormalGroup.TopNilpotentPoint.Basic
 import TauCeti.RingTheory.MvPowerSeries.Order
+import TauCeti.RingTheory.MvPowerSeries.Symmetric
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 /-!
@@ -131,14 +132,14 @@ theorem exists_homogeneousComponent_eq_smul_lazardCocycle (F : FormalGroup R) {n
     ∃ c : R, homogeneousComponent n Φ = ↑(c • TauCeti.lazardCocycle n R) := by
   obtain ⟨c, hc⟩ := TauCeti.exists_eq_smul_lazardCocycle hn
     (isHomogeneous_homogeneousComponentPolynomial _ _)
-    (isSymmetric_homogeneousComponentPolynomial fun e ↦ by
+    (MvPowerSeries.IsSymmetric.homogeneousComponentPolynomial (f := Φ) (isSymmetric_iff.2 fun e ↦ by
       rcases Equiv.Perm.eq_one_or_swap_fin_two e with rfl | rfl
       · simp
       · have hswap : (X ∘ ⇑(Equiv.swap (0 : Fin 2) 1) : Fin 2 → MvPowerSeries (Fin 2) R) =
             ![X 1, X 0] := by
           funext i
           fin_cases i <;> simp
-        rw [rename_eq_subst, hswap, hsymm])
+        rw [rename_eq_subst, hswap, hsymm]) n)
     (isAddCocycle₂_homogeneousComponentPolynomial F hΦ hcocycle)
   exact ⟨c, by rw [← coe_homogeneousComponentPolynomial]; exact congrArg _ hc⟩
 
