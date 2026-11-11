@@ -14,7 +14,7 @@ import TauCeti.MeasureTheory.Integral.FullSimplex
 # Stokes' theorem for smooth singular simplices and chains
 
 Let `σ` be a smooth singular `(p + 1)`-simplex of a `C²` manifold `M` (possibly with boundary or
-corners) and `φ` a `C¹` `p`-form on `M` with values in a complete normed space `F`. Then
+corners) and `φ` a `C¹` `p`-form on `M` with values in a real normed space `F`. Then
 
 `∫_σ dφ = ∑_{i = 0}^{p + 1} (-1)ⁱ ∫_{δᵢ σ} φ`,
 
@@ -37,10 +37,11 @@ differentiation (`TauCeti.extDerivWithin_mpullbackWithin`), reducing the identit
 simplex Stokes (`ContDiffOn.integral_extDerivWithin_fullSimplex`) and the face-pullback formula
 `TauCeti.SmoothSimplex.integral_δ`.
 
-In degree `0`, the fundamental theorem of calculus for smooth `1`-simplices holds on any charted
-space without manifold smoothness hypotheses (`TauCeti.SmoothSimplex.integral_mextDeriv_ofFunction`,
-fixing the face sign convention `δ₀ σ` = endpoint, `δ₁ σ` = initial point), and for general `C¹`
-`0`-forms on any `C¹` manifold (`TauCeti.SmoothSimplex.integral_mextDeriv_eq_sub`).
+In degree `0`, for a complete space `F`, the fundamental theorem of calculus for smooth
+`1`-simplices holds on any charted space without manifold smoothness hypotheses
+(`TauCeti.SmoothSimplex.integral_mextDeriv_ofFunction`, fixing the face sign convention
+`δ₀ σ` = endpoint, `δ₁ σ` = initial point), and for general `C¹` `0`-forms on any `C¹` manifold
+(`TauCeti.SmoothSimplex.integral_mextDeriv_eq_sub`).
 
 ## Main results
 
@@ -88,12 +89,12 @@ namespace SmoothSimplex
 
 section Stokes
 
-variable [IsManifold I 2 M] [CompleteSpace F]
+variable [IsManifold I 2 M]
 
 /-- **Stokes' theorem for smooth singular simplices** (pointwise `C¹` hypothesis). For a smooth
-singular `(p + 1)`-simplex `σ` of a `C²` manifold `M` and a `p`-form `φ` with values in a complete
-space `F` that is `C¹` at each point of the image of `σ`, the integral of `dφ` over `σ` is the
-alternating sum of the integrals of `φ` over the faces of `σ`. -/
+singular `(p + 1)`-simplex `σ` of a `C²` manifold `M` and a `p`-form `φ` with values in a real
+normed space `F` that is `C¹` at each point of the image of `σ`, the integral of `dφ` over `σ` is
+the alternating sum of the integrals of `φ` over the faces of `σ`. -/
 theorem integral_mextDeriv_of_contMDiffAt (σ : SmoothSimplex I M (p + 1))
     {φ : RoughForm I M F p}
     (hφ : ∀ x : fullSimplex (p + 1), ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin p]→L[ℝ] F)) 1
@@ -294,7 +295,7 @@ end SmoothSimplex
 section Cochain
 
 variable {M : Type} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
-  {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+  {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- **Stokes' theorem for smooth singular chains.** Integrating a `C¹` form over the boundary of a
 smooth singular chain is integrating its exterior derivative over the chain: the integration
