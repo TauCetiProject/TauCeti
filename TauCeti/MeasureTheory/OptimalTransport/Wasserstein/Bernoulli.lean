@@ -24,13 +24,13 @@ namespace TauCeti
 
 /-- A Bernoulli law has finite moments at every exponent, including infinity. -/
 theorem hasFiniteMoment_bernoulliMeasure {X : Type*} [PseudoMetricSpace X]
-    [MeasurableSpace X] [OpensMeasurableSpace X] [MeasurableSingletonClass X]
+    [MeasurableSpace X] [OpensMeasurableSpace X]
     (p : ℝ≥0∞) (x y : X) (t : unitInterval) :
     HasFiniteMoment p (bernoulliMeasure x y t) := by
-  classical
-  apply hasFiniteMoment_of_ae_mem_finset (s := {x, y}) x
-  apply mem_ae_iff.mpr
-  simp [bernoulliMeasure_def]
+  rw [bernoulliMeasure]
+  exact HasFiniteMoment.add_measure (ν := _ • Measure.dirac y)
+    ((hasFiniteMoment_dirac p x).smul_measure ENNReal.coe_ne_top)
+    ((hasFiniteMoment_dirac p y).smul_measure ENNReal.coe_ne_top)
 
 /-- Changing the parameter of a Bernoulli law moves only the difference in mass between
 its two atoms, giving this `W₁` bound. -/

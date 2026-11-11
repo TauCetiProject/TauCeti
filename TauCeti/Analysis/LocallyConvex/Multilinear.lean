@@ -131,4 +131,46 @@ theorem exists_multilinearMap_seminorm_bound
     Finset.prod_nonneg (fun i _ => div_nonneg (norm_nonneg c) (hε i).le)⟩, ?_⟩
   exact multilinearMap_seminorm_le_of_box (fun i => (s i).sup (p i)) q f hε hbox hc
 
+/-- A continuous bilinear map on spaces with defining seminorm families is bounded, for each
+continuous target seminorm, by a constant times a finite supremum of source seminorms in each
+variable. This is the two-variable case of `exists_multilinearMap_seminorm_bound`, for variables
+in two different spaces. -/
+theorem exists_bilinearMap_seminorm_bound {E₁ E₂ σ₁ σ₂ : Type*} [AddCommGroup E₁] [Module 𝕜 E₁]
+    [AddCommGroup E₂] [Module 𝕜 E₂] (p₁ : SeminormFamily 𝕜 E₁ σ₁) (p₂ : SeminormFamily 𝕜 E₂ σ₂)
+    [TopologicalSpace E₁] [TopologicalSpace E₂] (hp₁ : WithSeminorms p₁) (hp₂ : WithSeminorms p₂)
+    [TopologicalSpace F] (q : Seminorm 𝕜 F) (hq : Continuous q) (B : E₁ →ₗ[𝕜] E₂ →ₗ[𝕜] F)
+    (hB : Continuous fun x : E₁ × E₂ ↦ B x.1 x.2) :
+    ∃ (s₁ : Finset σ₁) (s₂ : Finset σ₂) (C : NNReal),
+      ∀ x y, q (B x y) ≤ C * s₁.sup p₁ x * s₂.sup p₂ y := by
+  have hball : {x : E₁ × E₂ | q (B x.1 x.2) < 1} ∈ nhds ((0 : E₁), (0 : E₂)) :=
+    (hq.comp hB).continuousAt.preimage_mem_nhds (Iio_mem_nhds (by simp))
+  rw [nhds_prod_eq] at hball
+  obtain ⟨U₁, hU₁, U₂, hU₂, hU⟩ := Filter.mem_prod_iff.mp hball
+  obtain ⟨s₁, ε₁, hε₁, hs₁⟩ := (hp₁.mem_nhds_iff 0 U₁).mp hU₁
+  obtain ⟨s₂, ε₂, hε₂, hs₂⟩ := (hp₂.mem_nhds_iff 0 U₂).mp hU₂
+  obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜
+  -- `B` as a multilinear map of two variables in `E₁ × E₂`, through the two projections.
+  let f : MultilinearMap 𝕜 (fun _ : Fin 2 ↦ E₁ × E₂) F :=
+    { toFun v := B (v 0).1 (v 1).2
+      map_update_add' v i x y := by
+        fin_cases i <;> simp
+      map_update_smul' v i a x := by
+        fin_cases i <;> simp }
+  let p : Fin 2 → Seminorm 𝕜 (E₁ × E₂) :=
+    ![(s₁.sup p₁).comp (LinearMap.fst 𝕜 E₁ E₂), (s₂.sup p₂).comp (LinearMap.snd 𝕜 E₁ E₂)]
+  let ε : Fin 2 → ℝ := ![ε₁, ε₂]
+  have hε (i : Fin 2) : 0 < ε i := by
+    fin_cases i
+    exacts [hε₁, hε₂]
+  have hbox (v : Fin 2 → E₁ × E₂) (hv : ∀ i, p i (v i) < ε i) : q (f v) ≤ 1 :=
+    (hU (a := ((v 0).1, (v 1).2))
+      ⟨hs₁ (by simpa [p, ε] using hv 0), hs₂ (by simpa [p, ε] using hv 1)⟩).le
+  refine ⟨s₁, s₂, ⟨∏ i, ‖c‖ / ε i, Finset.prod_nonneg fun i _ ↦ (div_pos
+    (zero_lt_one.trans hc) (hε i)).le⟩, fun x y ↦ ?_⟩
+  calc q (B x y) = q (f ![(x, 0), (0, y)]) := by simp [f]
+    _ ≤ (∏ i, ‖c‖ / ε i) * ∏ i, p i (![(x, 0), (0, y)] i) :=
+      multilinearMap_seminorm_le_of_box p q f hε hbox hc _
+    _ = (∏ i, ‖c‖ / ε i) * (s₁.sup p₁ x * s₂.sup p₂ y) := by simp [p, Fin.prod_univ_two]
+    _ = _ := (mul_assoc _ _ _).symm
+
 end TauCeti
