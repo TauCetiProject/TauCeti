@@ -274,19 +274,23 @@ theorem formalInterceptEval_eq_inr {t₁ t₂ : O} (h₁ : PowerSeries.HasEval t
     Sum.elim_inr, PowerSeries.eval₂_id_toMvPowerSeries (hasEval_pair h₁ h₂),
     MvPowerSeries.eval₂_X] using h
 
+omit [IsTopologicalRing O] [IsLinearTopology O O] in
 /-- The slope of the chord at parameters of `I ^ k` again lies in `I ^ k`: the slope series has
 vanishing constant coefficient. -/
 theorem formalSlopeEval_mem {I : Ideal O} (hI : IsAdic I) {k : ℕ} {t₁ t₂ : O}
     (hk₁ : t₁ ∈ I ^ k) (hk₂ : t₂ ∈ I ^ k) : W.formalSlopeEval t₁ t₂ ∈ I ^ k := by
+  have : IsTopologicalRing O := hI ▸ I.nonarchimedean.toIsTopologicalRing
   rcases eq_or_ne k 0 with rfl | hk
   · simp
   · exact MvPowerSeries.eval₂_mem_pow (φ := RingHom.id O) continuous_ringHomId
       (hasEval_pair (hasEval_of_mem_pow hI hk hk₁) (hasEval_of_mem_pow hI hk hk₂)) hI
       (pair_mem hk₁ hk₂) W.formalSlope (by simp)
 
+omit [IsTopologicalRing O] [IsLinearTopology O O] in
 /-- The third point's parameter at parameters of `I ^ k` again lies in `I ^ k`. -/
 theorem formalThirdRootEval_mem {I : Ideal O} (hI : IsAdic I) {k : ℕ} {t₁ t₂ : O}
     (hk₁ : t₁ ∈ I ^ k) (hk₂ : t₂ ∈ I ^ k) : W.formalThirdRootEval t₁ t₂ ∈ I ^ k := by
+  have : IsTopologicalRing O := hI ▸ I.nonarchimedean.toIsTopologicalRing
   rcases eq_or_ne k 0 with rfl | hk
   · simp
   · exact MvPowerSeries.eval₂_mem_pow (φ := RingHom.id O) continuous_ringHomId

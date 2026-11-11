@@ -387,12 +387,13 @@ theorem isIrreducible_quotient_maximalSubmodule_of_isHighestWeightVector_of_lieS
 
 variable {Q : Type x} [AddCommGroup Q] [Module K Q] [LieRingModule L Q]
 
-/-- The kernel of every surjection from a highest weight module to a nontrivial irreducible module
-is its maximal submodule. -/
+/-- The kernel of every surjection from a highest weight module to an irreducible module is its
+maximal submodule. -/
 theorem ker_eq_maximalSubmodule_of_surjective_of_isIrreducible
     (hv : IsHighestWeightVector b lam v) (hgen : LieSubmodule.lieSpan K L {v} = ⊤)
-    (f : M →ₗ⁅K,L⁆ Q) (hf : Function.Surjective f) [Nontrivial Q]
+    (f : M →ₗ⁅K,L⁆ Q) (hf : Function.Surjective f)
     [LieModule.IsIrreducible K L Q] : f.ker = maximalSubmodule H M lam := by
+  have := LieModule.nontrivial_of_isIrreducible K L Q
   have hker_ne : f.ker ≠ ⊤ := by
     intro hker
     obtain ⟨q, hq⟩ := exists_ne (0 : Q)
@@ -420,10 +421,10 @@ theorem ker_eq_maximalSubmodule_of_surjective_of_isIrreducible
       _ = ⊤ := by rw [← LieSubmodule.toSubmodule_map, hmap]; simp
 
 /-- The canonical irreducible quotient of a highest weight module is equivalent to every
-nontrivial irreducible quotient. -/
+irreducible quotient. -/
 noncomputable def quotientMaximalSubmoduleEquivOfSurjectiveOfIsIrreducible
     (hv : IsHighestWeightVector b lam v) (hgen : LieSubmodule.lieSpan K L {v} = ⊤)
-    (f : M →ₗ⁅K,L⁆ Q) (hf : Function.Surjective f) [Nontrivial Q]
+    (f : M →ₗ⁅K,L⁆ Q) (hf : Function.Surjective f)
     [LieModule.IsIrreducible K L Q] : (M ⧸ maximalSubmodule H M lam) ≃ₗ⁅K,L⁆ Q := by
   have hker : (maximalSubmodule H M lam : Submodule K M) =
       LinearMap.ker (f : M →ₗ[K] Q) := by
@@ -449,7 +450,7 @@ noncomputable def quotientMaximalSubmoduleEquivOfSurjectiveOfIsIrreducible
 @[simp]
 theorem quotientMaximalSubmoduleEquivOfSurjectiveOfIsIrreducible_apply_mk
     (hv : IsHighestWeightVector b lam v) (hgen : LieSubmodule.lieSpan K L {v} = ⊤)
-    (f : M →ₗ⁅K,L⁆ Q) (hf : Function.Surjective f) [Nontrivial Q]
+    (f : M →ₗ⁅K,L⁆ Q) (hf : Function.Surjective f)
     [LieModule.IsIrreducible K L Q] (m : M) :
     quotientMaximalSubmoduleEquivOfSurjectiveOfIsIrreducible hv hgen f hf
         (LieSubmodule.Quotient.mk (N := maximalSubmodule H M lam) m) = f m := by

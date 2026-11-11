@@ -72,7 +72,7 @@ theorem kostantRootSubgroupMatrix_eq_transvection {A : Type*} [CommRing A]
         (rep_kostantForm_mem_lattice r) k
         (isNilpotent_rep_rootGenerator r k) (latticeBasis r) (rootSource r k)
         (rootTarget r k) (rootTarget_ne_rootSource r k)
-        (nilpotencyClass_rep_rootGenerator r k) (rep_rootGenerator_latticeBasis_apply r k) q
+        (rep_rootGenerator_latticeBasis_apply r k) q
 
 /-- A numbered root subgroup point is the elementary transvection from the root source to the root
 target. -/

@@ -360,7 +360,7 @@ the multiples of the residue cocycle of the Killing form.** Here `L` is a finite
 algebra over an algebraically closed field of characteristic zero whose adjoint module is
 irreducible and whose Killing form is nondegenerate, for instance a simple Lie algebra. -/
 theorem exists_eq_smul_twoCocycleOfBilinear_killingForm_iff {K L : Type*} [Field K]
-    [IsAlgClosed K] [CharZero K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
+    [IsAlgClosed K] [CharZero K] [LieRing L] [LieAlgebra K L]
     [_root_.LieModule.IsIrreducible K L L] [IsKilling K L]
     (c : twoCocycle K (loopAlgebra K ℤ L) (TrivialLieModule K (loopAlgebra K ℤ L) K)) :
     (∃ t : K, c = t • twoCocycleOfBilinear K ℤ L (killingForm K L)

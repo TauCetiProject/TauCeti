@@ -137,11 +137,13 @@ theorem barDifferential_sq_iff_stasheff (𝒜 : AInfinityAlgebra R A) :
     𝒜.taylor_isSuspension.comp_self_eq_zero_iff_forall_stasheffSum_eq_zero 𝒜.m_degree
 
 /-- The unsuspended operations of an `A∞` algebra satisfy every Stasheff identity on homogeneous
-inputs. -/
-theorem stasheff (𝒜 : AInfinityAlgebra R A) (n : ℕ) (hn : 0 < n)
+inputs. In arity `0` the Stasheff sum is empty. -/
+theorem stasheff (𝒜 : AInfinityAlgebra R A) (n : ℕ)
     (d : ℕ → ℤ) (x : ℕ → A) (hx : ∀ i < n, x i ∈ 𝒜.grading.piece (d i)) :
-    AInfinity.stasheffSum 𝒜.m d x n = 0 :=
-  𝒜.barDifferential_sq_iff_stasheff.mp 𝒜.barDifferential_sq n hn d x hx
+    AInfinity.stasheffSum 𝒜.m d x n = 0 := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · exact AInfinity.stasheffSum_zero (m := 𝒜.m) (d := d) (x := x)
+  · exact 𝒜.barDifferential_sq_iff_stasheff.mp 𝒜.barDifferential_sq n hn d x hx
 
 /-- Construct an `A∞` algebra from homogeneous operations satisfying the unsuspended Stasheff
 identities and a Taylor map realizing their suspension. -/
@@ -250,7 +252,7 @@ theorem stasheff_arity_one (𝒜 : AInfinityAlgebra R A) (x : A) : 𝒜.m 1 ![�
   have hE : E = 0 := by
     apply 𝒜.grading.linearMap_ext
     intro p y hy
-    have h := 𝒜.stasheff 1 (by omega) (fun _ ↦ p) (fun _ ↦ y) (fun _ _ ↦ hy)
+    have h := 𝒜.stasheff 1 (fun _ ↦ p) (fun _ ↦ y) (fun _ _ ↦ hy)
     simpa [E, AInfinity.stasheffSum_one] using h
   rw [hE, LinearMap.zero_apply]
 
@@ -279,7 +281,7 @@ theorem stasheff_arity_two (𝒜 : AInfinityAlgebra R A) (x y : A) (p : ℤ)
       · simpa [a, d] using hx
       · simpa [a, d] using hz
     have h := (AInfinity.stasheffSum_two_eq_zero_iff 𝒜.m d a).mp
-      (𝒜.stasheff 2 (by omega) d a ha)
+      (𝒜.stasheff 2 d a ha)
     simpa [L, Q, a, d] using h
   exact LinearMap.congr_fun hLQ y
 
@@ -313,7 +315,7 @@ theorem stasheff_arity_three (𝒜 : AInfinityAlgebra R A) (a b c : A) (p q : �
       · simpa [x, d] using ha
       · simpa [x, d] using hb
       · simpa [x, d] using hz
-    have h := 𝒜.stasheff 3 (by omega) d x hx
+    have h := 𝒜.stasheff 3 d x hx
     rw [AInfinity.stasheffSum_three] at h
     simpa [E, x, d] using h
   rw [hE, LinearMap.zero_apply]
@@ -359,7 +361,7 @@ theorem stasheff_arity_four (𝒜 : AInfinityAlgebra R A) (a b c d : A) (p q r :
       · simpa [x, e] using hb
       · simpa [x, e] using hc
       · simpa [x, e] using hz
-    have h := 𝒜.stasheff 4 (by omega) e x hx
+    have h := 𝒜.stasheff 4 e x hx
     rw [AInfinity.stasheffSum_four] at h
     simpa [E, x, e] using h
   rw [hE, LinearMap.zero_apply]

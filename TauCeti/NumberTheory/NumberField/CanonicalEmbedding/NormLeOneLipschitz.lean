@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.NormLeOne
 public import TauCeti.NumberTheory.NumberField.Units.Dirichlet
 public import TauCeti.Topology.Frontier
-public import TauCeti.Topology.MetricSpace.LipschitzParametrizable
+public import TauCeti.Topology.MetricSpace.Lipschitz.Parametrizable
 
 /-!
 # A Lipschitz parametrization of the frontier of the norm-≤-one region
@@ -134,7 +134,7 @@ theorem frontier_image_paramSet_subset :
       expMapBasis '' frontier (paramSet K) ∪ {0} :=
   TauCeti.frontier_image_subset_of_closure_subset
     (fun _ hs ↦ expMapBasis.isOpen_image_of_subset_source hs (by simp [expMapBasis_source]))
-    (injective_expMapBasis K) (closure_image_paramSet_subset K)
+    (closure_image_paramSet_subset K)
 
 variable {K}
 

@@ -81,7 +81,7 @@ private theorem cyclotomicSymbol_norm_approx (p : ℕ) [Fact p.Prime] (m : ℕ) 
   have hρ1 : (m : ℝ)⁻¹ ≤ 1 := inv_le_one_of_one_le₀ (by exact_mod_cast NeZero.one_le)
   refine ⟨?_, ?_, ?_⟩
   · apply cyclotomicSymbol_eq_of_norm_sub_lt
-    have hP := norm_algebraNorm_sub_algebraNorm_lt p K M hKM hMK Y (y : M) y.ne_zero hρ1 hYy hYp
+    have hP := norm_algebraNorm_sub_algebraNorm_lt p K M hKM hMK Y (y : M) hρ1 hYy hYp
     simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, haU, eq_ratCast]
     exact hP.trans_le (mul_le_mul_of_nonneg_right (Padic.inv_natCast_le_norm_natCast m)
       (norm_nonneg _))

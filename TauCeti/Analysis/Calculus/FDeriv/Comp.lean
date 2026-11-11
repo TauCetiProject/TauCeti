@@ -11,6 +11,8 @@ public import Mathlib.Analysis.Calculus.FDeriv.Congr
 public import Mathlib.Analysis.Calculus.FDeriv.Equiv
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
+import Mathlib.Tactic.Abel
+
 /-!
 # Derivatives under composition and changes of coordinates
 
@@ -58,13 +60,13 @@ theorem _root_.HasFDerivAt.injective_of_eventuallyEq_id {f : E → F} {g : F →
   exact Function.LeftInverse.injective fun a => by
     simpa using congrArg (fun L : E →L[𝕜] E => L a) hcomp
 
-/-- **Criticality does not depend on the coordinates.** If `f` is differentiable at `φ b`, `φ` is
-differentiable at `b`, and the differential of `φ` at `b` is invertible, then `b` is a critical
+/-- **Criticality does not depend on the coordinates.** If `f` is differentiable at `φ b` and
+the differential of `φ` at `b` is invertible, then `b` is a critical
 point of `f ∘ φ` exactly when `φ b` is a critical point of `f`. -/
 theorem fderiv_comp_eq_zero_iff_of_isInvertible {f : E → G} {φ : F → E} {b : F}
-    (hf : DifferentiableAt 𝕜 f (φ b)) (hφ : DifferentiableAt 𝕜 φ b)
-    (hinv : (fderiv 𝕜 φ b).IsInvertible) :
+    (hf : DifferentiableAt 𝕜 f (φ b)) (hinv : (fderiv 𝕜 φ b).IsInvertible) :
     fderiv 𝕜 (f ∘ φ) b = 0 ↔ fderiv 𝕜 f (φ b) = 0 := by
+  have hφ := differentiableAt_of_isInvertible_fderiv hinv
   obtain ⟨e, he⟩ := hinv
   -- The differential of `f ∘ φ` at `b` is that of `f` at `φ b` precomposed with the equivalence
   -- `e`, so one vanishes exactly when the other does.
@@ -88,3 +90,53 @@ theorem fderiv_comp_add_smul (f : E → F) (c : E) (a : 𝕜) (w : E) :
   rw [_root_.fderiv_comp_smul (f := fun y ↦ f (c + y)), fderiv_comp_add_left]
 
 end TauCeti
+
+namespace ContinuousLinearMap
+
+open Function
+open scoped Topology
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {G₁ G₂ : Type*} [NormedAddCommGroup G₁] [NormedSpace 𝕜 G₁]
+  [NormedAddCommGroup G₂] [NormedSpace 𝕜 G₂]
+
+/-- A critical point of a map yields a critical point of its slice along a level set of a
+functional `φ`. Precisely, let `(φ, ρ)` be jointly injective on `F`, let `γ` parametrize a family of
+points along which `φ ∘ f` is locally constant, and let `φ ∘ Df` be nonzero at `γ z`. If
+`ρ ∘ f ∘ γ` has surjective derivative at `z`, then `Df` is surjective at `γ z`; equivalently, if
+`γ z` is critical for `f`, then `z` is critical for the slice `ρ ∘ f ∘ γ`. -/
+theorem surjective_fderiv_of_surjective_fderiv_comp {f : E → F} {γ : G₁ → E} {z : G₁} {c : 𝕜}
+    (φ : F →L[𝕜] 𝕜) (ρ : F →L[𝕜] G₂) (hφρ : Injective fun w ↦ (φ w, ρ w))
+    (hγ : DifferentiableAt 𝕜 γ z) (hf : DifferentiableAt 𝕜 f (γ z))
+    (hconst : (fun w ↦ φ (f (γ w))) =ᶠ[𝓝 z] fun _ ↦ c)
+    (hne : ∃ v, φ (fderiv 𝕜 f (γ z) v) ≠ 0)
+    (hs : Surjective (fderiv 𝕜 (fun w ↦ ρ (f (γ w))) z)) : Surjective (fderiv 𝕜 f (γ z)) := by
+  set T : G₁ →L[𝕜] E := fderiv 𝕜 γ z
+  set A : E →L[𝕜] F := fderiv 𝕜 f (γ z)
+  have hT : HasFDerivAt γ T z := hγ.hasFDerivAt
+  have hA : HasFDerivAt f A (γ z) := hf.hasFDerivAt
+  have hGd : HasFDerivAt (fun w ↦ ρ (f (γ w))) (ρ.comp (A.comp T)) z :=
+    ρ.hasFDerivAt.comp z (hA.comp z hT)
+  have hzero : ∀ w : G₁, φ (A (T w)) = 0 := by
+    have hd : HasFDerivAt (fun w ↦ φ (f (γ w))) (φ.comp (A.comp T)) z :=
+      φ.hasFDerivAt.comp z (hA.comp z hT)
+    have hzero' : φ.comp (A.comp T) = 0 :=
+      (hd.congr_of_eventuallyEq hconst.symm).unique (hasFDerivAt_const c z)
+    intro w
+    simpa using congrArg (fun B : G₁ →L[𝕜] 𝕜 ↦ B w) hzero'
+  have hker : ∀ y, φ y = 0 → ∃ u, A u = y := by
+    intro y hy
+    obtain ⟨w, hw⟩ := hs (ρ y)
+    rw [hGd.fderiv] at hw
+    refine ⟨T w, hφρ ?_⟩
+    exact Prod.ext (by simp only [hzero w, hy]) hw
+  obtain ⟨v, hv⟩ := hne
+  intro w
+  obtain ⟨u, hu⟩ := hker (w - (φ w / φ (A v)) • A v) (by simp [div_mul_cancel₀ _ hv])
+  refine ⟨u + (φ w / φ (A v)) • v, ?_⟩
+  rw [map_add, map_smul, hu]
+  abel
+
+end ContinuousLinearMap

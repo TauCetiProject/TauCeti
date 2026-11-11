@@ -42,6 +42,8 @@ self-adjoint for the Hermitian form making the basis orthonormal.
   multiplication by the matrix.
 * `Matrix.rank_eq_card_iff_mulVec_injective` characterizes full column rank by injectivity of
   matrix-vector multiplication.
+* `Matrix.finite_of_mulVec_surjective`: a matrix whose `mulVec` is surjective has finitely many
+  rows.
 * `Matrix.rank_left_factor_eq` and `Matrix.range_left_factor_eq`: an exact-rank
   factorization gives a full-column-rank left factor with the same column range.
 * `Matrix.rank_mul_eq_right_of_rank_eq_card`: left multiplication by a full-column-rank matrix
@@ -195,6 +197,18 @@ theorem rank_eq_card_iff_mulVec_injective (B : Matrix m n R) :
 
 end FullColumnRank
 
+section FiniteRows
+
+/-- If `A.mulVec` is surjective, then `A` has finitely many rows: a finite-dimensional space
+cannot surject onto the infinite-dimensional space `m → K`. -/
+theorem finite_of_mulVec_surjective {K : Type*} [Field K] {m n : Type*} [Fintype n]
+    (A : Matrix m n K) (h : Function.Surjective A.mulVec) : Finite m := by
+  have : Module.Finite K (m → K) := Module.Finite.of_surjective (mulVecLin A) h
+  classical
+  exact (Pi.linearIndependent_single_one m K).finite
+
+end FiniteRows
+
 section ExactRankFactorization
 
 variable {R m n : Type*} [CommSemiring R] [StrongRankCondition R] [Fintype n]
@@ -299,6 +313,78 @@ theorem rank_add_le (A B : Matrix m n K) : (A + B).rank ≤ A.rank + B.rank := b
     (Submodule.finrank_add_le_finrank_add_finrank (LinearMap.range A.mulVecLin)
       (LinearMap.range B.mulVecLin))
   exact LinearMap.range_add_le A.mulVecLin B.mulVecLin
+
+/-- Over a field, if `P + e + Q = 1` then the ranks of `P`, `e` and `Q` add up to at least the
+size of the matrices. -/
+lemma card_le_rank_add_rank_add_rank [Fintype m] [DecidableEq m] (P e Q : Matrix m m K)
+    (h : P + e + Q = 1) : Fintype.card m ≤ P.rank + e.rank + Q.rank := by
+  rw [← Matrix.rank_one (R := K) (n := m), ← h]
+  exact (rank_add_le _ _).trans (Nat.add_le_add_right (rank_add_le _ _) _)
+
+/-- Over a field, let `e` be an idempotent and `A₁`, `A₂` matrices with `e A₁ = 0`, `A₂ e = 0` and
+`A₂ A₁ = 0`. Then the ranks of `e`, `A₁` and `A₂` add up to at most the size of `e`: the images of
+`e` and `A₁` are independent and both lie in the kernel of `A₂`. -/
+lemma rank_add_rank_add_rank_le [Fintype m] {a c : Type*} [Fintype a] (e : Matrix m m K)
+    (A₁ : Matrix m a K) (A₂ : Matrix c m K) (he : e * e = e) (h₁ : e * A₁ = 0) (h₂ : A₂ * e = 0)
+    (h₃ : A₂ * A₁ = 0) : e.rank + A₁.rank + A₂.rank ≤ Fintype.card m := by
+  classical
+  have hdisj : LinearMap.range e.mulVecLin ⊓ LinearMap.range A₁.mulVecLin = ⊥ := by
+    refine eq_bot_iff.2 fun x ⟨⟨y, hy⟩, ⟨z, hz⟩⟩ ↦ ?_
+    simp only [Matrix.mulVecLin_apply] at hy hz
+    have h1 : e *ᵥ x = x := by rw [← hy, Matrix.mulVec_mulVec, he]
+    have h2 : e *ᵥ x = 0 := by rw [← hz, Matrix.mulVec_mulVec, h₁, Matrix.zero_mulVec]
+    exact (Submodule.mem_bot K).2 (h1.symm.trans h2)
+  have hle : LinearMap.range e.mulVecLin ⊔ LinearMap.range A₁.mulVecLin ≤
+      LinearMap.ker A₂.mulVecLin := by
+    refine sup_le ?_ ?_ <;> rintro _ ⟨y, rfl⟩ <;>
+      simp [LinearMap.mem_ker, Matrix.mulVec_mulVec, h₂, h₃]
+  have hsum := Submodule.finrank_sup_add_finrank_inf_eq (LinearMap.range e.mulVecLin)
+    (LinearMap.range A₁.mulVecLin)
+  rw [hdisj, finrank_bot, add_zero] at hsum
+  have hker := LinearMap.finrank_range_add_finrank_ker A₂.mulVecLin
+  rw [Module.finrank_fintype_fun_eq_card] at hker
+  have := Submodule.finrank_mono hle
+  simp only [Matrix.rank]
+  omega
+
+/-- A decomposition of the identity into a homology projector and two null-homotopy terms
+computes the sum of the three ranks. -/
+lemma rank_add_rank_add_rank_eq_card [Fintype m] [DecidableEq m]
+    {a c : Type*} [Fintype a] [Fintype c] (e : Matrix m m K)
+    (A₁ : Matrix m a K) (A₂ : Matrix c m K) (σ : Matrix a m K) (τ : Matrix m c K)
+    (he : e * e = e) (h₁ : e * A₁ = 0) (h₂ : A₂ * e = 0) (h₃ : A₂ * A₁ = 0)
+    (h : e + A₁ * σ + τ * A₂ = 1) : e.rank + A₁.rank + A₂.rank = Fintype.card m := by
+  have hle := rank_add_rank_add_rank_le e A₁ A₂ he h₁ h₂ h₃
+  have hge := card_le_rank_add_rank_add_rank _ _ _ h
+  have hσ := rank_mul_le_left A₁ σ
+  have hτ := rank_mul_le_right τ A₂
+  omega
+
+section Field
+
+variable {K : Type*} [Field K] {ι₀ ι₁ ι₂ : Type*} [Fintype ι₀] [Fintype ι₁] [Fintype ι₂]
+
+/-- **Ranks in a split complex over a field.** Let `B * A = 0` over a field, and suppose that the
+middle term `K^{ι₁}` is split by matrices `I`, `P` with `P I = 1`, `B I = 0`, `P A = 0` and
+`I P + A σ + τ B = 1`. Then `rank A + rank B + |k| = |ι₁|`: the cohomology has dimension `|k|`. -/
+theorem rank_add_rank_add_card_eq {k : Type*} [Fintype k] [DecidableEq k] [DecidableEq ι₁]
+    (A : Matrix ι₁ ι₀ K) (B : Matrix ι₂ ι₁ K) (I : Matrix ι₁ k K) (P : Matrix k ι₁ K)
+    (σ : Matrix ι₀ ι₁ K) (τ : Matrix ι₁ ι₂ K) (hBA : B * A = 0) (hPI : P * I = 1)
+    (hBI : B * I = 0) (hPA : P * A = 0) (h : I * P + A * σ + τ * B = 1) :
+    A.rank + B.rank + Fintype.card k = Fintype.card ι₁ := by
+  have hk : (I * P).rank = Fintype.card k := by
+    refine le_antisymm ((rank_mul_le_right _ _).trans (rank_le_card_height P)) ?_
+    calc Fintype.card k = (1 : Matrix k k K).rank := (rank_one).symm
+      _ = (P * (I * P) * I).rank := by
+        rw [← Matrix.mul_assoc, hPI, Matrix.one_mul, hPI]
+      _ ≤ (I * P).rank := (rank_mul_le_left _ _).trans (rank_mul_le_right _ _)
+  have hrank := rank_add_rank_add_rank_eq_card (I * P) A B σ τ
+    (by rw [Matrix.mul_assoc, ← Matrix.mul_assoc P, hPI, Matrix.one_mul])
+    (by rw [Matrix.mul_assoc, hPA, Matrix.mul_zero])
+    (by rw [← Matrix.mul_assoc, hBI, Matrix.zero_mul]) hBA h
+  omega
+
+end Field
 
 /-- The column space of a matrix over a field `K` has `|K| ^ rank` elements. Over an infinite
 field both sides are `0` unless the rank is `0`. -/
