@@ -902,9 +902,7 @@ theorem isStronglyConnected_full_iff :
     @Quiver.IsStronglyConnected ↥N.fullSubnetwork.vertexSet ⟨N.fullSubnetwork.Hom⟩ ↔
       @Quiver.IsStronglyConnected V ⟨N.Hom⟩ := by
   rw [isStronglyConnected_iff, @Quiver.isStronglyConnected_iff V ⟨N.Hom⟩]
-  change (∀ x ∈ (⊤ : N.Subnetwork).vertexSet, ∀ y ∈ (⊤ : N.Subnetwork).vertexSet,
-      (⊤ : N.Subnetwork).Reachable x y) ↔ _
-  simp
+  simp [reachable_def]
 
 /-- Adjoining any directed walk whose endpoints already belong to a strongly connected subnetwork
 preserves strong connectivity. -/
