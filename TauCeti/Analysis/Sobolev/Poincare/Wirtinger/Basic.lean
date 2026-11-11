@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Poincare.Potential
-import Mathlib.Analysis.Convex.Measure
+import TauCeti.Analysis.Convex.Measure
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Integral.Average
@@ -78,13 +78,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
   {μ : Measure E} [μ.IsAddHaarMeasure] {u : E → F} {Ω S : Set E}
 
-/-- A subset of a convex set `Ω` differs from its intersection with `interior Ω` by a null set,
-since the frontier of `Ω` is null. -/
-private lemma inter_interior_ae_eq_of_convex (hΩc : Convex ℝ Ω) (hS : S ⊆ Ω) :
-    S ∩ interior Ω =ᵐ[μ] S := by
-  simpa [inter_eq_left.2 hS] using ae_eq_set_inter (Filter.EventuallyEq.rfl : S =ᵐ[μ] S)
-    (interior_ae_eq_of_null_frontier (hΩc.addHaar_frontier μ))
-
 /-- **The Poincaré–Wirtinger inequality on a convex domain**, in `∫⁻` form. If `u` is `C¹` on a
 bounded convex set `Ω` and `S ⊆ Ω` has positive measure, then for `1 ≤ p` the `p`-th power
 of the deviation of `u` from its mean over `S` has integral over `Ω` at most `C ^ p` times the
@@ -98,7 +91,7 @@ theorem lintegral_enorm_sub_setAverage_rpow_le_of_convex (hΩc : Convex ℝ Ω)
         ∫⁻ y in Ω, ‖fderiv ℝ u y‖ₑ ^ p ∂μ := by
   wlog hΩ : IsOpen Ω generalizing Ω S
   · -- Pass to `interior Ω`, which is a.e. equal to `Ω` and has no larger diameter.
-    have hSae := inter_interior_ae_eq_of_convex (μ := μ) hΩc hS
+    have hSae := hΩc.inter_interior_ae_eq (μ := μ) hS
     have h := this (S := S ∩ interior Ω) hΩc.interior (hb.subset interior_subset)
       (hu.mono interior_subset) inter_subset_right (by rwa [measure_congr hSae]) isOpen_interior
     rw [Measure.restrict_congr_set (interior_ae_eq_of_null_frontier (hΩc.addHaar_frontier μ)),
@@ -178,8 +171,8 @@ theorem setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_of_convex
         μ.real S) * μ A ^ (finrank ℝ E : ℝ)⁻¹ * ∫⁻ y in Ω, ‖fderiv ℝ u y‖ₑ ∂μ := by
   wlog hΩ : IsOpen Ω generalizing Ω S A
   · -- Pass to `interior Ω`, which is a.e. equal to `Ω` and has no larger diameter.
-    have hSae := inter_interior_ae_eq_of_convex (μ := μ) hΩc hS
-    have hAae := inter_interior_ae_eq_of_convex (μ := μ) hΩc hA
+    have hSae := hΩc.inter_interior_ae_eq (μ := μ) hS
+    have hAae := hΩc.inter_interior_ae_eq (μ := μ) hA
     have h := this (S := S ∩ interior Ω) (A := A ∩ interior Ω) hΩc.interior
       (hb.subset interior_subset) (hu.mono interior_subset) inter_subset_right
       (by rwa [measure_congr hSae]) inter_subset_right isOpen_interior
