@@ -5,10 +5,10 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.Algebra.Order.Field.Basic
 public import Mathlib.Algebra.Order.Field.Pi
 public import Mathlib.Basic.Finite.Sum
 public import Mathlib.Data.Finset.Max
+public import TauCeti.Algebra.Order.Field.Basic
 import Mathlib.Tactic.Linarith
 
 /-!
@@ -68,17 +68,6 @@ private theorem exists_lower_bound {K ι : Type*} [Field K] [LinearOrder K]
     · obtain ⟨i, hi, rfl⟩ := Finset.mem_image.mp hz
       exact hneg i (Finset.mem_filter.mp hi).2
 
-private theorem mul_le_of_bounds {K ι : Type*} [Field K] [LinearOrder K]
-    [IsStrictOrderedRing K] {a b : ι → K} {t : K}
-    (hz : ∀ i, a i = 0 → 0 ≤ b i)
-    (hlow : ∀ i, a i < 0 → b i / a i ≤ t)
-    (hupp : ∀ i, 0 < a i → t ≤ b i / a i) : ∀ i, a i * t ≤ b i := by
-  intro i
-  rcases lt_trichotomy (a i) 0 with hi | hi | hi
-  · exact (div_le_iff_of_neg' hi).mp (hlow i hi)
-  · simpa only [hi, zero_mul] using hz i hi
-  · exact (le_div_iff₀' hi).mp (hupp i hi)
-
 /-- Eliminate one nonnegative variable from finitely many scalar inequalities.
 The right side uses only multiplication, addition, and order, so rational input
 coefficients lead to rational compatibility inequalities. -/
@@ -97,7 +86,8 @@ theorem exists_nonneg_mul_le_iff {K ι : Type*} [Field K] [LinearOrder K]
   · rintro ⟨hzero, hpair⟩
     obtain ⟨L, hL, hlow, hupp, _⟩ :=
       exists_lower_bound (fun i hi => hzero i hi.le) hpair
-    exact ⟨L, hL, mul_le_of_bounds (fun i hi => hzero i hi.ge) hlow hupp⟩
+    exact ⟨L, hL, fun i => mul_le_iff_bounds.mpr
+      ⟨fun hi => hzero i hi.ge, hlow i, hupp i⟩⟩
 
 /-- Eliminate a variable in a strict bounded interval from finitely many weak
 linear inequalities. The pair conditions remain weak: a singleton feasible set
@@ -126,7 +116,7 @@ theorem exists_pos_lt_mul_le_iff {K ι : Type*} [Field K] [LinearOrder K]
       (div_lt_iff_of_neg hi).mpr (by simpa only [mul_comm] using hn i hi))
     have feasible (t : K) (hlt : L ≤ t)
         (htu : ∀ i, 0 < a i → t ≤ b i / a i) : ∀ i, a i * t ≤ b i :=
-      mul_le_of_bounds hz (fun i hi => (hlow i hi).trans hlt) htu
+      fun i => mul_le_iff_bounds.mpr ⟨hz i, fun hi => (hlow i hi).trans hlt, htu i⟩
     -- A positive largest lower bound is a witness, even if it equals an upper
     -- bound. When it is zero, choose a common positive gap below all upper bounds.
     rcases hL.eq_or_lt with hLzero | hLpos
