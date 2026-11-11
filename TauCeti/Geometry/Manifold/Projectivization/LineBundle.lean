@@ -10,7 +10,8 @@ public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.Geometry.Manifold.Instances.Projectivization
 public import TauCeti.RingTheory.MvPolynomial.Dehomogenization
 
-import TauCeti.Algebra.Field.Fin.Tuple
+import Mathlib.Analysis.Analytic.Polynomial
+import TauCeti.Analysis.Calculus.ContDiffZPow
 import TauCeti.RingTheory.MvPolynomial.Homogeneous
 
 /-!
@@ -70,51 +71,58 @@ open scoped Manifold ContDiff LinearAlgebra.Projectivization
 
 namespace Projectivization
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ}
-
 /-! ### Transition functions -/
+
+section Transition
+
+variable {𝕜 ι : Type*} [Field 𝕜]
 
 /-- The transition function of `𝒪(k)` from the chart `i` to the chart `j` of projective space:
 `[v] ↦ (v i / v j) ^ k`, computed on the chosen representative
 (`Projectivization.twistTransition_mk` for arbitrary homogeneous coordinates). -/
-@[expose] def twistTransition (k : ℤ) (i j : Fin (n + 1)) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) : 𝕜 :=
+def twistTransition (k : ℤ) (i j : ι) (x : ℙ 𝕜 (ι → 𝕜)) : 𝕜 :=
   (x.rep i / x.rep j) ^ k
+
+/-- The transition function of `𝒪(k)` on the chosen representative. -/
+theorem twistTransition_def (k : ℤ) (i j : ι) (x : ℙ 𝕜 (ι → 𝕜)) :
+    twistTransition k i j x = (x.rep i / x.rep j) ^ k :=
+  (rfl)
 
 /-- The transition function of `𝒪(k)` in arbitrary homogeneous coordinates. -/
 @[simp]
-theorem twistTransition_mk (k : ℤ) (i j : Fin (n + 1)) (v : Fin (n + 1) → 𝕜) (hv : v ≠ 0) :
+theorem twistTransition_mk (k : ℤ) (i j : ι) (v : ι → 𝕜) (hv : v ≠ 0) :
     twistTransition k i j (mk 𝕜 v hv) = (v i / v j) ^ k := by
   obtain ⟨a, ha⟩ := exists_smul_eq_mk_rep 𝕜 v hv
   simp only [twistTransition, ← ha, Pi.smul_apply, Units.smul_def, smul_eq_mul]
   rw [mul_div_mul_left _ _ a.ne_zero]
 
 /-- On the chart `i`, the transition from a chart to itself is the identity. -/
-theorem twistTransition_self (k : ℤ) {i : Fin (n + 1)} {x : ℙ 𝕜 (Fin (n + 1) → 𝕜)}
+theorem twistTransition_self (k : ℤ) {i : ι} {x : ℙ 𝕜 (ι → 𝕜)}
     (hx : x ∈ affineOpen i) : twistTransition k i i x = 1 := by
   simp [twistTransition, div_self ((mem_affineOpen_iff i x).1 hx)]
 
 /-- `𝒪(0)` has trivial transition functions. -/
 @[simp]
-theorem twistTransition_zero (i j : Fin (n + 1)) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
+theorem twistTransition_zero (i j : ι) (x : ℙ 𝕜 (ι → 𝕜)) :
     twistTransition 0 i j x = 1 := by
   simp [twistTransition]
 
 /-- The transition of `𝒪(-k)` is the inverse of the transition of `𝒪(k)`. -/
-theorem twistTransition_neg (k : ℤ) (i j : Fin (n + 1)) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
+theorem twistTransition_neg (k : ℤ) (i j : ι) (x : ℙ 𝕜 (ι → 𝕜)) :
     twistTransition (-k) i j x = (twistTransition k i j x)⁻¹ := by
   simp [twistTransition, zpow_neg]
 
 /-- The transition of `𝒪(k + l)` is the product of the transitions of `𝒪(k)` and `𝒪(l)` on the
 overlap of the two charts. -/
-theorem twistTransition_add (k l : ℤ) {i j : Fin (n + 1)} {x : ℙ 𝕜 (Fin (n + 1) → 𝕜)}
+theorem twistTransition_add (k l : ℤ) {i j : ι} {x : ℙ 𝕜 (ι → 𝕜)}
     (hi : x ∈ affineOpen i) (hj : x ∈ affineOpen j) :
     twistTransition (k + l) i j x = twistTransition k i j x * twistTransition l i j x :=
   zpow_add₀ (div_ne_zero ((mem_affineOpen_iff i x).1 hi) ((mem_affineOpen_iff j x).1 hj)) k l
 
 /-- The transition functions of `𝒪(k)` satisfy the cocycle identity wherever the middle chart is
 defined. -/
-theorem twistTransition_mul_twistTransition (k : ℤ) (i : Fin (n + 1)) {j : Fin (n + 1)}
-    (l : Fin (n + 1)) {x : ℙ 𝕜 (Fin (n + 1) → 𝕜)} (hj : x ∈ affineOpen j) :
+theorem twistTransition_mul_twistTransition (k : ℤ) (i : ι) {j : ι}
+    (l : ι) {x : ℙ 𝕜 (ι → 𝕜)} (hj : x ∈ affineOpen j) :
     twistTransition k j l x * twistTransition k i j x = twistTransition k i l x := by
   have hj' := (mem_affineOpen_iff j x).1 hj
   simp only [twistTransition]
@@ -123,32 +131,17 @@ theorem twistTransition_mul_twistTransition (k : ℤ) (i : Fin (n + 1)) {j : Fin
 /-- **`𝒪(-1)` is the tautological line bundle.** A vector `w` of the line `x` has coordinate
 `w i` in the frame of the chart `i`, and these coordinates transform by the transition functions
 of `𝒪(-1)`. -/
-theorem twistTransition_neg_one_mul {i : Fin (n + 1)} (j : Fin (n + 1))
-    {x : ℙ 𝕜 (Fin (n + 1) → 𝕜)} (hi : x ∈ affineOpen i) {w : Fin (n + 1) → 𝕜}
+theorem twistTransition_neg_one_mul {i : ι} (j : ι)
+    {x : ℙ 𝕜 (ι → 𝕜)} (hi : x ∈ affineOpen i) {w : ι → 𝕜}
     (hw : w ∈ x.submodule) : twistTransition (-1) i j x * w i = w j := by
   obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 (by simpa [submodule_eq] using hw)
   have hi' := (mem_affineOpen_iff i x).1 hi
   simp only [twistTransition, zpow_neg, zpow_one, inv_div, Pi.smul_apply, smul_eq_mul]
   field_simp
 
-/-- On the chart `j`, the ratio `x.rep i / x.rep j` is the `i`-th homogeneous coordinate of
-`[1 : z]` in the coordinate positions of the chart `j`, for `z` the affine coordinates of `x`. -/
-theorem rep_div_rep_eq_insertNth_affineChart (i : Fin (n + 1)) {j : Fin (n + 1)}
-    {x : ℙ 𝕜 (Fin (n + 1) → 𝕜)} (hj : x ∈ affineOpen j) :
-    x.rep i / x.rep j = Fin.insertNth (α := fun _ ↦ 𝕜) j 1 (affineChart j x) i := by
-  have hx : x = mk 𝕜 x.rep x.rep_ne_zero := (mk_rep x).symm
-  conv_rhs => rw [hx, affineChart_mk,
-    Fin.insertNth_one_div_eq_inv_smul j _ ((mem_affineOpen_iff j x).1 hj)]
-  simp [div_eq_inv_mul]
+end Transition
 
-/-- An integer power is `C^r` away from `0`, for every `r`. -/
-private theorem contDiffAt_zpow_of_ne_zero {r : ℕ∞ω} (k : ℤ) {u : 𝕜} (hu : u ≠ 0) :
-    ContDiffAt 𝕜 r (fun u : 𝕜 ↦ u ^ k) u := by
-  cases k with
-  | ofNat m => simpa using (contDiff_id.pow m).contDiffAt
-  | negSucc m =>
-    simp only [zpow_negSucc]
-    exact (contDiffAt_inv 𝕜 (pow_ne_zero (m + 1) hu)).comp u (contDiff_id.pow (m + 1)).contDiffAt
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ}
 
 /-- The transition functions of `𝒪(k)` are `C^r`, for every `r` including the analytic order
 `ω`, on the overlaps of the standard charts. -/
@@ -166,7 +159,7 @@ theorem contMDiffOn_twistTransition (k : ℤ) (i j : Fin (n + 1)) (r : ℕ∞ω)
   have h0 : x.rep i / x.rep j ≠ 0 :=
     div_ne_zero ((mem_affineOpen_iff i x).1 hi) ((mem_affineOpen_iff j x).1 hj)
   have hpow : ContMDiffAt 𝓘(𝕜) 𝓘(𝕜) r (fun u : 𝕜 ↦ u ^ k) (x.rep i / x.rep j) :=
-    (contDiffAt_zpow_of_ne_zero k h0).contMDiffAt
+    (contDiffAt_id.zpow (Or.inl h0)).contMDiffAt
   exact hpow.comp_contMDiffWithinAt x ((hratio x hj).mono inter_subset_right)
 
 /-! ### The line bundle -/
@@ -247,9 +240,17 @@ theorem contMDiff_section_twistCore_iff (k : ℤ) {r : ℕ∞ω} (s : ℙ 𝕜 (
 
 /-- The section of `𝒪(d)` defined by a polynomial `P`, homogeneous of degree `d`: its coordinate in
 the frame of the chart `i` at `[v]` is `P v / v i ^ d`. -/
-@[expose] def homogeneousSection (d : ℕ) (P : MvPolynomial (Fin (n + 1)) 𝕜)
+def homogeneousSection (d : ℕ) (P : MvPolynomial (Fin (n + 1)) 𝕜)
     (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) : 𝕜 :=
   eval x.rep P / x.rep ((twistCore (𝕜 := 𝕜) (d : ℤ)).indexAt x) ^ d
+
+/-- The section `homogeneousSection d P` on the chosen representative, in the frame of the
+preferred chart. -/
+theorem homogeneousSection_def (d : ℕ) (P : MvPolynomial (Fin (n + 1)) 𝕜)
+    (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
+    homogeneousSection d P x =
+      eval x.rep P / x.rep ((twistCore (𝕜 := 𝕜) (d : ℤ)).indexAt x) ^ d :=
+  (rfl)
 
 /-- The coordinate of `homogeneousSection d P` in the frame of the chart `j` is
 `P v / v j ^ d`, computed on the chosen representative `v` of `x`. -/
@@ -276,14 +277,6 @@ theorem homogeneousSection_coord {d : ℕ} {P : MvPolynomial (Fin (n + 1)) 𝕜}
   rw [TauCeti.eval_dehomogenize_div j hP _ ((mem_affineOpen_iff j x).1 hj), inv_pow,
     div_eq_inv_mul]
 
-/-- Evaluation of a multivariate polynomial is `C^r` for every `r`. -/
-private theorem contDiff_eval_mvPolynomial {σ : Type*} [Fintype σ] (r : ℕ∞ω)
-    (p : MvPolynomial σ 𝕜) : ContDiff 𝕜 r fun z : σ → 𝕜 ↦ eval z p := by
-  induction p using MvPolynomial.induction_on with
-  | C a => simpa using contDiff_const
-  | add p q hp hq => simpa using hp.add hq
-  | mul_X p i hp => simpa using hp.mul (contDiff_apply 𝕜 (fun _ ↦ 𝕜) i)
-
 /-- **Homogeneous polynomials are global sections.** For `P` homogeneous of degree `d`, the
 section `homogeneousSection d P` of `𝒪(d)` is `C^r` for every `r`, including the analytic order
 `ω`; for `𝕜 = ℂ` it is a global holomorphic section. -/
@@ -294,7 +287,8 @@ theorem contMDiff_homogeneousSection {d : ℕ} {P : MvPolynomial (Fin (n + 1)) �
         (homogeneousSection (𝕜 := 𝕜) d P x)) := by
   rw [contMDiff_section_twistCore_iff]
   intro j
-  exact ((contDiff_eval_mvPolynomial r _).contMDiff.comp_contMDiffOn
+  exact ((AnalyticOnNhd.eval_continuousLinearMap (ContinuousLinearMap.id 𝕜 (Fin n → 𝕜))
+    (TauCeti.dehomogenize j P)).contDiff.contMDiff.comp_contMDiffOn
     (contMDiffOn_affineChart j r)).congr fun x hx ↦ homogeneousSection_coord hP hx
 
 /-- The section `homogeneousSection d P` vanishes at `[v]` exactly when `P` vanishes at `v`. -/
@@ -304,8 +298,9 @@ theorem homogeneousSection_mk_eq_zero_iff {d : ℕ} {P : MvPolynomial (Fin (n + 
   obtain ⟨a, ha⟩ := exists_smul_eq_mk_rep 𝕜 v hv
   have hi := (mem_affineOpen_iff _ _).1
     ((twistCore (𝕜 := 𝕜) (n := n) (d : ℤ)).mem_baseSet_at (mk 𝕜 v hv))
-  rw [homogeneousSection, div_eq_zero_iff, or_iff_left (pow_ne_zero _ hi), ← ha, Units.smul_def,
-    hP.eval_smul, smul_eq_mul, mul_eq_zero, or_iff_right (pow_ne_zero _ a.ne_zero)]
+  have hrep : eval (mk 𝕜 v hv).rep P = (a : 𝕜) ^ d * eval v P := by
+    rw [← ha, Units.smul_def, hP.eval_smul, smul_eq_mul]
+  simp [homogeneousSection, hrep, hi]
 
 /-- **Distinct homogeneous polynomials give distinct sections.** A homogeneous polynomial of
 degree `d` whose section of `𝒪(d)` vanishes identically is zero. -/
