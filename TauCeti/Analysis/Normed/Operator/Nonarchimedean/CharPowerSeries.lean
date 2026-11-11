@@ -17,7 +17,9 @@ norm-convergent sequence of row-compact operators. This continuity permits finit
 identities to pass to limits of row-compact operators. The finite identities apply to output
 truncations `π_S ∘ u` to a finite set `S` of coordinates, whose determinant is the polynomial
 determinant of the finite block of `u` on `S`
-(`ContinuousLinearMap.charPowerSeries_matrixCoeff_indicatorCLM_comp`).
+(`ContinuousLinearMap.charPowerSeries_matrixCoeff_indicatorCLM_comp`). For a polynomial `B` with
+`B(0) = 0`, the determinant of `B(π_S ∘ u)` is likewise the polynomial `det (1 - X B(A))`
+(`ContinuousLinearMap.charPowerSeries_matrixCoeff_aeval_indicatorCLM_comp`).
 
 The determinant is `u.matrixCoeff.charPowerSeries`.
 Scalars may be complete ultrametric norm-one Tate rings, not just fields.
@@ -52,6 +54,28 @@ theorem charPowerSeries_matrixCoeff_indicatorCLM_comp (S : Finset I)
     simp [Set.indicator_apply]
   rw [hmatrix, TauCeti.charPowerSeries_outputTruncation]
 
+open Polynomial in
+/-- **Spectral mapping for an output truncation.** If `B(0) = 0`, the Fredholm determinant of
+`B(π_S ∘ u)` is the polynomial `det (1 - T B(A))` for the block `A` of `u` on `S`, since the rows
+of `B(π_S ∘ u)` outside `S` vanish. -/
+theorem charPowerSeries_matrixCoeff_aeval_indicatorCLM_comp (S : Finset I)
+    (u : C₀(I, R) →L[R] C₀(I, R)) {B : R[X]} (hB0 : B.coeff 0 = 0) :
+    (aeval ((indicatorCLM R (S : Set I)).comp u) B).matrixCoeff.charPowerSeries =
+      ((aeval (u.matrixCoeff.submatrix (Subtype.val : S → I) (Subtype.val : S → I)) B).charpolyRev :
+        PowerSeries R) := by
+  set w := (indicatorCLM R (S : Set I)).comp u
+  obtain ⟨B', rfl⟩ := X_dvd_iff.2 hB0
+  -- `B(w) = π_S ∘ (u ∘ B'(w))` is an output truncation
+  have hw : aeval w (X * B') = (indicatorCLM R (S : Set I)).comp (u.comp (aeval w B')) := by
+    rw [map_mul, aeval_X, mul_def, comp_assoc]
+  have hblock :
+      (u.comp (aeval w B')).matrixCoeff.submatrix (Subtype.val : S → I) (Subtype.val : S → I) =
+      (aeval w (X * B')).matrixCoeff.submatrix (Subtype.val : S → I) (Subtype.val : S → I) := by
+    ext i i'
+    simp [hw]
+  rw [← submatrix_matrixCoeff_aeval_indicatorCLM_comp, ← hblock, hw,
+    charPowerSeries_matrixCoeff_indicatorCLM_comp]
+
 end ContinuousLinearMap
 
 namespace TauCeti
@@ -67,7 +91,7 @@ variable {I R : Type*} [TopologicalSpace I] [DiscreteTopology I] [DecidableEq I]
 are bounded by a common null row majorant `r`, then their Fredholm series converge in Gauss norm
 at every positive radius. -/
 theorem tendsto_gaussNorm_charPowerSeries_sub_charPowerSeries_of_tendsto_ringOpNorm_of_le
-    [CompleteSpace R] [NormOneClass R] {α : Type*} {l : Filter α}
+    [CompleteSpace R] {α : Type*} {l : Filter α}
     {w : α → C₀(I, R) →L[R] C₀(I, R)} {w₀ : C₀(I, R) →L[R] C₀(I, R)} {r : I → ℝ}
     (hr : Tendsto r cofinite (𝓝 0)) (hw : ∀ a i j, ‖(w a).matrixCoeff i j‖ ≤ r i)
     (hw₀ : ∀ i j, ‖w₀.matrixCoeff i j‖ ≤ r i) (h : Tendsto (fun a ↦ ‖w a - w₀‖) l (𝓝 0))
@@ -81,7 +105,7 @@ theorem tendsto_gaussNorm_charPowerSeries_sub_charPowerSeries_of_tendsto_ringOpN
 Gauss norm at every positive radius. Unlike coefficientwise convergence of arbitrary entire
 series, operator-norm convergence supplies uniform control of the determinant tails. -/
 theorem tendsto_gaussNorm_charPowerSeries_sub_charPowerSeries_of_tendsto_ringOpNorm
-    [CompleteSpace R] [NormOneClass R] (h : Tendsto (fun n ↦ ‖u - v n‖) atTop (𝓝 0))
+    [CompleteSpace R] (h : Tendsto (fun n ↦ ‖u - v n‖) atTop (𝓝 0))
     (hv : ∀ n, (v n).IsRowCompact) {ρ : ℝ} (hρ : 0 < ρ) :
     Tendsto (fun n ↦ ((v n).matrixCoeff.charPowerSeries -
       u.matrixCoeff.charPowerSeries).gaussNorm norm ρ) atTop (𝓝 0) := by

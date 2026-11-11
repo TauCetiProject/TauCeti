@@ -212,13 +212,42 @@ theorem peterssonInnerCosets_trace_left {𝒢 : Subgroup (GL (Fin 2) ℝ)} {Γ �
 
 /-! ### The adjoint of a double coset operator -/
 
+/-- If `-I` lies in `Γ` and `Γ'`, it lies in `Γ ∩ (a Γ' a⁻¹)` (pulled back to `SL(2, ℤ)`): `-I` is
+central, hence fixed by conjugation. -/
+private lemma neg_one_mem_inf_comap_conjAct {Γ Γ' : Subgroup SL(2, ℤ)} (a : GL (Fin 2) ℝ)
+    (h : (-1 : SL(2, ℤ)) ∈ Γ) (h' : (-1 : SL(2, ℤ)) ∈ Γ') :
+    (-1 : SL(2, ℤ)) ∈ Γ ⊓ (ConjAct.toConjAct a • Γ'.map (mapGL ℝ)).comap (mapGL ℝ) := by
+  have hc : (-1 : GL (Fin 2) ℝ) ∈ Subgroup.center (GL (Fin 2) ℝ) :=
+    Subgroup.mem_center_iff.mpr fun g ↦ by rw [mul_neg_one, neg_one_mul]
+  refine Subgroup.mem_inf.mpr ⟨h, ?_⟩
+  rw [Subgroup.mem_comap, mapGL_neg_one]
+  exact Subgroup.mem_conjAct_smul_of_mem_center hc _ ⟨-1, h', mapGL_neg_one⟩
+
+/-- `α` conjugates the intermediate level `Γ₁ ∩ α Γ₂ α⁻¹` onto `α⁻¹ Γ₁ α ∩ Γ₂`, because
+`α⁻¹ (α^ι)⁻¹` is a scalar. -/
+private lemma conjAct_smul_map_inf_comap_eq {Γ₁ Γ₂ : Subgroup SL(2, ℤ)} (α : GL (Fin 2) ℝ) :
+    ConjAct.toConjAct α⁻¹ •
+        (Γ₁ ⊓ (ConjAct.toConjAct α.adjugate⁻¹ • Γ₂.map (mapGL ℝ)).comap (mapGL ℝ)).map
+          (mapGL ℝ) =
+      (Γ₂ ⊓ (ConjAct.toConjAct α⁻¹ • Γ₁.map (mapGL ℝ)).comap (mapGL ℝ)).map (mapGL ℝ) := by
+  have hmul : α⁻¹ * α.adjugate⁻¹ =
+      Matrix.GeneralLinearGroup.scalar (Fin 2) (Matrix.GeneralLinearGroup.det α)⁻¹ := by
+    rw [Matrix.GeneralLinearGroup.adjugate_eq_scalar_mul_inv, mul_inv_rev, inv_inv,
+      inv_mul_cancel_left, map_inv]
+  have hc : Matrix.GeneralLinearGroup.scalar (Fin 2) (Matrix.GeneralLinearGroup.det α)⁻¹ ∈
+      Subgroup.center (GL (Fin 2) ℝ) :=
+    Matrix.GeneralLinearGroup.mem_center_iff_val_mem_range_scalar.mpr ⟨_, rfl⟩
+  rw [Subgroup.map_inf_comap, Subgroup.map_inf_comap, Subgroup.smul_inf, ← mul_smul, ← map_mul,
+    hmul, Subgroup.conjAct_pointwise_smul_eq_self (Subgroup.center_le_normalizer _ hc),
+    inf_comm (Γ₂.map (mapGL ℝ)), inf_comm]
+
 /-- **The Petersson adjoint of a double coset operator.** Let `Γ₁`, `Γ₂` be of finite index in
 `SL₂(ℤ)`, with `-I ∈ Γ₁ ↔ -I ∈ Γ₂`, and let `α ∈ GL₂(ℝ)` have positive determinant, with
 `α⁻¹ Γ₁ α ∩ Γ₂` of finite index in `Γ₂` and `α Γ₂ α⁻¹ ∩ Γ₁` of finite index in `Γ₁`. The operator
 `f ↦ tr (f ∣[k] α)` from `S_k(Γ₁)` to `S_k(Γ₂)` — Mathlib's `CuspForm.trace` of the translate
 `CuspForm.translate f α`, which is the double coset operator `f[Γ₁ α Γ₂]_k` — has Petersson
 adjoint `g ↦ tr (g ∣[k] α^ι)`, the double coset operator of the main involution
-`α^ι = TauCeti.adjugateGL α`:
+`α^ι = α.adjugate` (`Matrix.GeneralLinearGroup.adjugate`):
 
 ```text
 ⟪f[Γ₁ α Γ₂]_k, g⟫_Γ₂ = ⟪f, g[Γ₂ α^ι Γ₁]_k⟫_Γ₁.
@@ -237,15 +266,15 @@ rational conjugates; that is not proved here. -/
 theorem peterssonInnerCosets_trace_translate {Γ₁ Γ₂ : Subgroup SL(2, ℤ)} [Γ₁.FiniteIndex]
     [Γ₂.FiniteIndex] {α : GL (Fin 2) ℝ} (hα : 0 < (α : Matrix (Fin 2) (Fin 2) ℝ).det)
     [(ConjAct.toConjAct α⁻¹ • Γ₁.map (mapGL ℝ)).IsFiniteRelIndex (Γ₂.map (mapGL ℝ))]
-    [(ConjAct.toConjAct (TauCeti.adjugateGL α)⁻¹ • Γ₂.map (mapGL ℝ)).IsFiniteRelIndex
+    [(ConjAct.toConjAct α.adjugate⁻¹ • Γ₂.map (mapGL ℝ)).IsFiniteRelIndex
       (Γ₁.map (mapGL ℝ))]
     (hneg : (-1 : SL(2, ℤ)) ∈ Γ₁ ↔ (-1 : SL(2, ℤ)) ∈ Γ₂)
     (f : CuspForm (Γ₁.map (mapGL ℝ)) k) (g : CuspForm (Γ₂.map (mapGL ℝ)) k) :
     peterssonInnerCosets (CuspForm.trace (Γ₂.map (mapGL ℝ)) (CuspForm.translate f α)) g =
       peterssonInnerCosets f
-        (CuspForm.trace (Γ₁.map (mapGL ℝ)) (CuspForm.translate g (TauCeti.adjugateGL α))) := by
+        (CuspForm.trace (Γ₁.map (mapGL ℝ)) (CuspForm.translate g α.adjugate)) := by
   set 𝒢₁ := ConjAct.toConjAct α⁻¹ • Γ₁.map (mapGL ℝ)
-  set 𝒢₂ := ConjAct.toConjAct (TauCeti.adjugateGL α)⁻¹ • Γ₂.map (mapGL ℝ)
+  set 𝒢₂ := ConjAct.toConjAct α.adjugate⁻¹ • Γ₂.map (mapGL ℝ)
   -- the two intermediate levels `α⁻¹ Γ₁ α ∩ Γ₂` and `Γ₁ ∩ α Γ₂ α⁻¹`, inside `SL(2, ℤ)`
   have h₃ : (Γ₂ ⊓ 𝒢₁.comap (mapGL ℝ)).map (mapGL ℝ) = 𝒢₁ ⊓ Γ₂.map (mapGL ℝ) := by
     rw [Subgroup.map_inf_comap, inf_comm]
@@ -253,42 +282,23 @@ theorem peterssonInnerCosets_trace_translate {Γ₁ Γ₂ : Subgroup SL(2, ℤ)}
     rw [Subgroup.map_inf_comap, inf_comm]
   have := Subgroup.finiteIndex_inf_comap Γ₂ 𝒢₁ (mapGL ℝ)
   have := Subgroup.finiteIndex_inf_comap Γ₁ 𝒢₂ (mapGL ℝ)
-  have hc₁ : (-1 : GL (Fin 2) ℝ) ∈ Subgroup.center (GL (Fin 2) ℝ) :=
-    Subgroup.mem_center_iff.mpr fun g ↦ by rw [mul_neg_one, neg_one_mul]
-  have hneg₁ : (-1 : SL(2, ℤ)) ∈ Γ₂ → (-1 : SL(2, ℤ)) ∈ Γ₂ ⊓ 𝒢₁.comap (mapGL ℝ) := by
-    intro h
-    have h1 : (-1 : GL (Fin 2) ℝ) ∈ Γ₁.map (mapGL ℝ) := ⟨-1, hneg.mpr h, mapGL_neg_one⟩
-    refine Subgroup.mem_inf.mpr ⟨h, ?_⟩
-    rw [Subgroup.mem_comap, mapGL_neg_one]
-    exact Subgroup.mem_conjAct_smul_of_mem_center hc₁ _ h1
-  have hneg₂ : (-1 : SL(2, ℤ)) ∈ Γ₁ → (-1 : SL(2, ℤ)) ∈ Γ₁ ⊓ 𝒢₂.comap (mapGL ℝ) := by
-    intro h
-    have h2 : (-1 : GL (Fin 2) ℝ) ∈ Γ₂.map (mapGL ℝ) := ⟨-1, hneg.mp h, mapGL_neg_one⟩
-    refine Subgroup.mem_inf.mpr ⟨h, ?_⟩
-    rw [Subgroup.mem_comap, mapGL_neg_one]
-    exact Subgroup.mem_conjAct_smul_of_mem_center hc₁ _ h2
+  have hneg₁ : (-1 : SL(2, ℤ)) ∈ Γ₂ → (-1 : SL(2, ℤ)) ∈ Γ₂ ⊓ 𝒢₁.comap (mapGL ℝ) := fun h ↦
+    neg_one_mem_inf_comap_conjAct _ h (hneg.mpr h)
+  have hneg₂ : (-1 : SL(2, ℤ)) ∈ Γ₁ → (-1 : SL(2, ℤ)) ∈ Γ₁ ⊓ 𝒢₂.comap (mapGL ℝ) := fun h ↦
+    neg_one_mem_inf_comap_conjAct _ h (hneg.mp h)
   -- `α` conjugates `α⁻¹ Γ₁ α ∩ Γ₂` onto `Γ₁ ∩ α Γ₂ α⁻¹`, because `α⁻¹ (α^ι)⁻¹` is a scalar
   have hconj : ConjAct.toConjAct α⁻¹ • (Γ₁ ⊓ 𝒢₂.comap (mapGL ℝ)).map (mapGL ℝ) =
-      (Γ₂ ⊓ 𝒢₁.comap (mapGL ℝ)).map (mapGL ℝ) := by
-    have hmul : α⁻¹ * (TauCeti.adjugateGL α)⁻¹ =
-        Matrix.GeneralLinearGroup.scalar (Fin 2) (Matrix.GeneralLinearGroup.det α)⁻¹ := by
-      rw [Matrix.GeneralLinearGroup.adjugateGL_eq_scalar_mul_inv, mul_inv_rev, inv_inv,
-        inv_mul_cancel_left, map_inv]
-    have hc : Matrix.GeneralLinearGroup.scalar (Fin 2) (Matrix.GeneralLinearGroup.det α)⁻¹ ∈
-        Subgroup.center (GL (Fin 2) ℝ) :=
-      Matrix.GeneralLinearGroup.mem_center_iff_val_mem_range_scalar.mpr ⟨_, rfl⟩
-    rw [h₃, h₃', Subgroup.smul_inf, ← mul_smul, ← map_mul, hmul,
-      Subgroup.conjAct_pointwise_smul_eq_self (Subgroup.center_le_normalizer _ hc), inf_comm]
-  have hscal : TauCeti.adjugateGL α * α =
+      (Γ₂ ⊓ 𝒢₁.comap (mapGL ℝ)).map (mapGL ℝ) := conjAct_smul_map_inf_comap_eq α
+  have hscal : α.adjugate * α =
       Matrix.GeneralLinearGroup.scalar (Fin 2) (Matrix.GeneralLinearGroup.det α) := by
-    rw [Matrix.GeneralLinearGroup.adjugateGL_eq_scalar_mul_inv, inv_mul_cancel_right]
+    rw [Matrix.GeneralLinearGroup.adjugate_eq_scalar_mul_inv, inv_mul_cancel_right]
   -- the conjugation step, with the scalar `(det α) ^ (k - 2)` from `α^ι α = (det α) · 1`
   set d : ℂ := ((α : Matrix (Fin 2) (Fin 2) ℝ).det : ℂ) ^ (k - 2)
   have hd : d ≠ 0 := zpow_ne_zero _ (Complex.ofReal_ne_zero.mpr hα.ne')
   have hC := TauCeti.CuspForm.peterssonInnerCosets_slash_of_inv_conjAct_eq hα hconj
     (f := CuspForm.restrict (h₃'.trans_le inf_le_right) f)
     (g := CuspForm.restrict (h₃'.trans_le inf_le_left)
-      (CuspForm.translate g (TauCeti.adjugateGL α)))
+      (CuspForm.translate g α.adjugate))
     (F := CuspForm.restrict (h₃.trans_le inf_le_left) (CuspForm.translate f α))
     (G := d • CuspForm.restrict (h₃.trans_le inf_le_right) g)
     (by rw [CuspForm.coe_restrict, CuspForm.coe_translate, CuspForm.coe_restrict])

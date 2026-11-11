@@ -102,7 +102,7 @@ private theorem hasDerivAt_exp_neg_smul_realOperator
   have horbit : HasDerivAt (fun s : ℝ => S.realOperator s (x : X))
       (S.realOperator t (S.generator
         ⟨x, by rw [S.generator_domain]; exact x.property⟩)) t := by
-    rw [← S.realOperator_generator_map ht.le x]
+    rw [← S.realOperator_generator_map x]
     exact (S.realOperator_hasDerivWithinAt_Ici x ht.le).hasDerivAt (Ici_mem_nhds ht)
   refine (hexp.smul horbit).congr_deriv ?_
   module

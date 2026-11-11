@@ -33,6 +33,8 @@ below are `Mathlib/AlgebraicTopology/SingularHomology/HomotopyInvariance.lean`
   cohomology.
 * `TopCat.isIso_singularCohomologyMap` and `TopPair.isIso_singularCohomologyMap`: a map with a
   homotopy inverse induces an isomorphism on singular cohomology.
+* `ContinuousMap.HomotopyEquiv.isIso_singularCohomologyMap`: the same for a bundled homotopy
+  equivalence of spaces.
 
 ## References
 
@@ -96,6 +98,20 @@ lemma isIso_singularCohomologyMap (f : X ⟶ Y) (f' : Y ⟶ X) (H : Homotopy (f 
       singularCohomologyMap_id]
 
 end TopCat
+
+namespace ContinuousMap.HomotopyEquiv
+
+variable {X Y : Type w} [TopologicalSpace X] [TopologicalSpace Y]
+  (e : ContinuousMap.HomotopyEquiv X Y)
+  {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C]
+
+/-- A homotopy equivalence induces isomorphisms on singular cohomology in every degree. -/
+lemma isIso_singularCohomologyMap (R : C) (k : Type*) [Ring k] [Linear k C] (M : C) (n : ℕ) :
+    IsIso (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) (TopCat.ofHom e.toFun) n) :=
+  TopCat.isIso_singularCohomologyMap _ (TopCat.ofHom e.invFun) e.left_inv.some e.right_inv.some
+    R k M n
+
+end ContinuousMap.HomotopyEquiv
 
 namespace TopPair.Homotopy
 

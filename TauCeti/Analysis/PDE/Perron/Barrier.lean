@@ -36,6 +36,7 @@ condition at each boundary point.
 ## Main declarations
 
 * `TauCeti.IsBarrier`: a barrier at a point relative to `Ω`.
+* `TauCeti.IsBarrier.mono`: a barrier relative to `Ω` is a barrier relative to every subset.
 * `TauCeti.tendsto_perronSolution_of_isBarrier`: at a point with a barrier where the boundary
   data is continuous, the Perron solution tends to the boundary value.
 * `TauCeti.perronSolution_eq_of_isBarrier`: there the Perron solution equals the boundary value.
@@ -79,6 +80,11 @@ structure IsBarrier (Ω : Set E) (ξ : E) (w : E → ℝ) : Prop where
   apply_self : w ξ = 0
   /-- A barrier is positive on `closure Ω` away from its point. -/
   pos : ∀ x ∈ closure Ω, x ≠ ξ → 0 < w x
+
+/-- A barrier relative to `Ω` is a barrier relative to every subset of `Ω`. -/
+theorem IsBarrier.mono {Ω' : Set E} (hw : IsBarrier Ω ξ w) (h : Ω' ⊆ Ω) : IsBarrier Ω' ξ w :=
+  ⟨hw.subharmonicOn_neg.mono h, hw.continuousOn.mono (closure_mono h), hw.apply_self,
+    fun x hx ↦ hw.pos x (closure_mono h hx)⟩
 
 /-- The function `c + k w`, for `k ≥ 0` and a barrier `w`, is superharmonic on the open set
 `Ω`. -/

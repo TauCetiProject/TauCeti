@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.Sobolev.GraphStep.Basic
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The bounded first-order trajectory operator
@@ -19,7 +21,15 @@ both the value and its weak derivative. No new Sobolev carrier is introduced.
 `1 + ‖A‖`, and changing the coefficient changes the operator by at most the `L∞` distance
 between coefficients. Solving `D_A u = f` is equivalent to the weak ordinary differential
 equation `u' = f - A u`. For differentiable representatives with locally integrable derivative,
-the operator agrees almost everywhere with the classical expression `u' + A u`.
+the operator agrees almost everywhere with the classical expression `u' + A u`. In particular,
+for a path in `W^{1,2}(ℝ, F)` with a `C¹` representative `φ`, the squared norms of the path, of
+its weak derivative and of its image under `D_A` are `∫ ‖φ‖²`, `∫ ‖φ'‖²` and `∫ ‖φ' + A φ‖²`
+(`TauCeti.WeakDerivStep.norm_prev_sq_eq_integral`,
+`TauCeti.WeakDerivStep.norm_weakFDeriv_sq_eq_integral` and
+`TauCeti.WeakDerivStep.norm_trajectoryOperator_sq_eq_integral`).
+
+On the line, for a path with a `C¹` representative `φ`, the squared norm of `D_A u` is the
+integral of `‖φ' + A φ‖²` (`TauCeti.WeakDerivStep.norm_trajectoryOperator_sq_eq_integral`).
 
 These statements supply the bounded realization to which coercive estimates and compact-error
 criteria can be applied. They do not assert Fredholmness, asymptotic invertibility, or density
@@ -127,6 +137,32 @@ theorem norm_trajectoryOperator_le (A : Lp (F →L[ℝ] F) ∞ (mu.restrict Omeg
       ‖(ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holder p A (prev base u)‖ := norm_add_le _ _
     _ ≤ ‖u‖ + ‖A‖ * ‖u‖ := add_le_add hd hA
     _ = (1 + ‖A‖) * ‖u‖ := by ring
+
+/-- The weak derivative of a path is controlled by its image under the trajectory operator and
+its `Lᵖ` norm: `‖u'‖ ≤ ‖u' + A u‖ + ‖A‖ ‖u‖`. -/
+theorem norm_weakFDeriv_le_norm_trajectoryOperator_add (A : Lp (F →L[ℝ] F) ∞ (mu.restrict Omega))
+    (u : WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)))) :
+    ‖weakFDeriv (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u‖ ≤
+      ‖trajectoryOperator A u‖ +
+        ‖A‖ * ‖prev (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u‖ := by
+  let base := ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))
+  let w := weakFDeriv base u
+  -- On `ℝ →L[ℝ] F`, evaluation at `1` is an isometry, so it preserves the `Lᵖ` norm.
+  have hw : ‖w‖ = ‖(ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLp w‖ := by
+    rw [Lp.norm_def, Lp.norm_def]
+    congr 1
+    refine (eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _) ?_).symm
+    filter_upwards [(ContinuousLinearMap.apply ℝ F (1 : ℝ)).coeFn_compLp w] with s hs
+    rw [hs, ContinuousLinearMap.apply_apply]
+    exact (ContinuousLinearMap.toSpanSingletonLIE ℝ F).symm.norm_map (w s)
+  have hA : ‖(ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holder p A (prev base u)‖ ≤
+      ‖A‖ * ‖prev base u‖ :=
+    (ContinuousLinearMap.norm_holder_apply_apply_le _ _ _).trans
+      (by gcongr; exact mul_le_of_le_one_left (norm_nonneg _) ContinuousLinearMap.norm_id_le)
+  have hT := trajectoryOperator_apply A u
+  rw [hw, show (ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLp w = trajectoryOperator A u -
+    (ContinuousLinearMap.id ℝ (F →L[ℝ] F)).holder p A (prev base u) from eq_sub_of_add_eq hT.symm]
+  exact (norm_sub_le _ _).trans (by gcongr)
 
 /-- Subtracting two trajectory operators cancels the derivative part and leaves multiplication
 by the difference of their coefficients. -/
@@ -251,5 +287,31 @@ theorem trajectoryOperator_apply_ae_eq_deriv_add
   filter_upwards [trajectoryOperator_apply_ae A u, hweak.ae_eq_fderiv hdv hvd, hv]
     with s hs hd hs'
   rw [hs, hd, hs', fderiv_apply_one_eq_deriv]
+
+/-! ### Norms of a path with a `C¹` representative -/
+
+section Smooth
+
+variable {u : WeakDerivStep volume ⊤ 2
+  (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))} {φ : ℝ → F}
+  {A : ℝ → F →L[ℝ] F}
+
+/-- On a path with a `C¹` representative `φ`, the squared norm of `D_A` is
+`∫ ‖φ' + A φ‖²`. -/
+theorem norm_trajectoryOperator_sq_eq_integral (hφ : ContDiff ℝ 1 φ)
+    (hu : ⇑(prev _ u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] φ)
+    (AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
+    ‖trajectoryOperator AL u‖ ^ 2 = ∫ s, ‖deriv φ s + A s (φ s)‖ ^ 2 := by
+  have hTu := trajectoryOperator_apply_ae_eq_deriv_add AL u hu
+    ((hφ.continuous_fderiv one_ne_zero).locallyIntegrable.locallyIntegrableOn _)
+    fun s _ ↦ hφ.differentiable one_ne_zero s
+  rw [← Lp.integral_norm_sq_eq_norm_sq,
+    integral_congr_ae (g := fun s ↦ ‖deriv φ s + A s (φ s)‖ ^ 2) (by
+      filter_upwards [hTu, hAL] with s hs hAs
+      rw [hs, hAs])]
+  simp
+
+end Smooth
 
 end TauCeti.WeakDerivStep

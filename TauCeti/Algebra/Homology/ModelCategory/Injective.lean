@@ -36,10 +36,11 @@ recognized and used once a model structure or a factorization is available.
 
 ## Implementation notes
 
-The lifting `CochainComplex.hasLiftingProperty_of_quasiIso` corrects degreewise liftings by a
-coboundary, using Joël Riou's obstruction cocycle `CochainComplex.Lifting.cocycle₁` and
-`CochainComplex.Lifting.hasLift`; it is the unbounded form of the lifting lemma for the model
-structure on bounded below complexes in `Mathlib.Algebra.Homology.ModelCategory.Injective`.
+The lifting criterion `CochainComplex.hasLiftingProperty_of_forall_eq_δ` corrects degreewise
+liftings by a coboundary, using Joël Riou's obstruction cocycle `CochainComplex.Lifting.cocycle₁`
+and `CochainComplex.Lifting.hasLift`. Applied to a K-injective kernel, it gives
+`CochainComplex.hasLiftingProperty_of_quasiIso`, the unbounded form of the lifting lemma for the
+model structure on bounded below complexes in `Mathlib.Algebra.Homology.ModelCategory.Injective`.
 Conversely, the terms are tested against the acyclic complexes `M --𝟙--> M` in two consecutive
 degrees, which corepresent evaluation in a degree, and K-injectivity is tested against the
 inclusion of an acyclic complex into the mapping cone of its identity.
@@ -57,11 +58,13 @@ open CategoryTheory Limits ZeroObject MorphismProperty HomComplex Abelian
 
 variable {C : Type*} [Category* C] [Abelian C]
 
-/-- A morphism of cochain complexes which is degreewise an epimorphism with an injective kernel,
-and whose kernel is K-injective, has the right lifting property with respect to every
-monomorphism which is a quasi-isomorphism. -/
-theorem hasLiftingProperty_of_quasiIso {A B X Y : CochainComplex C ℤ} (i : A ⟶ B) (p : X ⟶ Y)
-    [Mono i] [QuasiIso i] (hp : degreewiseEpiWithInjectiveKernel p) [(kernel p).IsKInjective] :
+/-- Let `i` be a monomorphism of cochain complexes and `p` a morphism which is degreewise an
+epimorphism with an injective kernel, with kernel `K`. If every `1`-cocycle from the cokernel of `i`
+to `K` is a coboundary, then `p` has the right lifting property with respect to `i`. -/
+theorem hasLiftingProperty_of_forall_eq_δ {A B X Y K : CochainComplex C ℤ} (i : A ⟶ B)
+    (p : X ⟶ Y) [Mono i] (hp : degreewiseEpiWithInjectiveKernel p) {ι : K ⟶ X} {hι : ι ≫ p = 0}
+    (hK : IsLimit (KernelFork.ofι ι hι))
+    (h : ∀ z : Cocycle (cokernel i) K 1, ∃ α : Cochain (cokernel i) K 0, δ 0 1 α = z.1) :
     HasLiftingProperty i p where
   sq_hasLift {t b} sq := by
     have sq' (n : ℤ) : CommSq (t.f n) (i.f n) (p.f n) (b.f n) :=
@@ -70,14 +73,20 @@ theorem hasLiftingProperty_of_quasiIso {A B X Y : CochainComplex C ℤ} (i : A �
       have := (hp n).hasLiftingProperty (i.f n)
       infer_instance
     -- the obstruction to correcting the degreewise liftings into a chain map
-    let β : Cocycle (cokernel i) (kernel p) 1 :=
-      Lifting.cocycle₁ sq (fun n ↦ { l := (sq' n).lift })
-        (cokernelIsCokernel i) (kernelIsKernel p) (hπ := by simp) (hι := by simp)
-    have hS : (ShortComplex.mk _ _ (cokernel.condition i)).ShortExact :=
-      { exact := ShortComplex.exact_cokernel i }
-    obtain ⟨α, hα⟩ :=
-      IsKInjective.eq_δ_of_cocycle β (hS.acyclic_X₃ (by dsimp; infer_instance)) 0 (by simp)
-    exact Lifting.hasLift sq _ (cokernelIsCokernel _) (kernelIsKernel _) α hα
+    obtain ⟨α, hα⟩ := h (Lifting.cocycle₁ sq (fun n ↦ { l := (sq' n).lift })
+      (cokernelIsCokernel i) hK (hπ := cokernel.condition i))
+    exact Lifting.hasLift sq _ (cokernelIsCokernel _) hK α hα
+
+/-- A morphism of cochain complexes which is degreewise an epimorphism with an injective kernel,
+and whose kernel is K-injective, has the right lifting property with respect to every
+monomorphism which is a quasi-isomorphism. -/
+theorem hasLiftingProperty_of_quasiIso {A B X Y : CochainComplex C ℤ} (i : A ⟶ B) (p : X ⟶ Y)
+    [Mono i] [QuasiIso i] (hp : degreewiseEpiWithInjectiveKernel p) [(kernel p).IsKInjective] :
+    HasLiftingProperty i p := by
+  have hS : (ShortComplex.mk _ _ (cokernel.condition i)).ShortExact :=
+    { exact := ShortComplex.exact_cokernel i }
+  exact hasLiftingProperty_of_forall_eq_δ i p hp (hι := kernel.condition p) (kernelIsKernel p)
+    fun z ↦ IsKInjective.eq_δ_of_cocycle z (hS.acyclic_X₃ (by dsimp; infer_instance)) 0 (by simp)
 
 /-- If a morphism of cochain complexes has the right lifting property with respect to every
 monomorphism which is a quasi-isomorphism, then in each degree it has the right lifting property

@@ -46,7 +46,7 @@ theorem span_weightSublattice_fundamentalLattice_eq_genWeightSpace (i : Fin t.ra
   (t.lieBasis ht).span_weightSublattice_eq_genWeightSpace (t.fundamentalLattice ht i)
     (fun u hu x hx => t.representation_mem_fundamentalLattice ht
       (by rwa [t.kostantForm_def ht]) hx)
-    (fun _ hx => t.mem_iSup_jointWeightSpace_of_mem_fundamentalLattice ht hx) χ μ hχ
+    (fun _ _ => by rw [t.iSup_jointWeightSpace_eq_top ht i]; trivial) χ μ hχ
 
 /-- An integral weight occurs in the fundamental lattice if and only if the corresponding
 rational weight occurs in `L(ϖᵢ)`. -/
@@ -60,7 +60,7 @@ theorem weightSublattice_fundamentalLattice_ne_bot_iff (i : Fin t.rank)
   (t.lieBasis ht).weightSublattice_ne_bot_iff (t.fundamentalLattice ht i)
     (fun u hu x hx => t.representation_mem_fundamentalLattice ht
       (by rwa [t.kostantForm_def ht]) hx)
-    (fun _ hx => t.mem_iSup_jointWeightSpace_of_mem_fundamentalLattice ht hx) χ μ hχ
+    (fun _ _ => by rw [t.iSup_jointWeightSpace_eq_top ht i]; trivial) χ μ hχ
 
 /-- Every rational weight of a fundamental module has integral fundamental-weight coordinates
 and occurs in the corresponding weight slice of the fundamental lattice. -/

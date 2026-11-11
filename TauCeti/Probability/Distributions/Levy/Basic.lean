@@ -116,12 +116,17 @@ def levyPDF (m c x : ℝ) : ℝ≥0∞ :=
 theorem levyPDF_eq_ofReal (m c x : ℝ) :
     levyPDF m c x = ENNReal.ofReal (levyPDFReal m c x) := (rfl)
 
-/-- The real Lévy density has its usual formula above the location at positive scale. -/
+/-- The real Lévy density has its usual formula above the location, at every scale: for a
+nonpositive scale both sides vanish. -/
 @[simp]
-theorem levyPDFReal_of_lt (hc : 0 < c) (hx : m < x) :
+theorem levyPDFReal_of_lt (hx : m < x) :
     levyPDFReal m c x =
       √(c / (2 * π)) * (x - m) ^ (-(3 / 2 : ℝ)) * exp (-c / (2 * (x - m))) := by
-  simp [levyPDFReal, hc, hx]
+  rcases lt_or_ge 0 c with hc | hc
+  · simp [levyPDFReal, hc, hx]
+  · have hsqrt : √(c / (2 * π)) = 0 :=
+      Real.sqrt_eq_zero'.mpr (div_nonpos_of_nonpos_of_nonneg hc (by positivity))
+    simp [levyPDFReal, not_lt.mpr hc, hsqrt]
 
 /-- The Lévy density vanishes at and below the location. -/
 @[simp]
@@ -140,7 +145,7 @@ theorem levyPDFReal_eq_inverseGammaPDFReal (m c x : ℝ) :
   by_cases hc : 0 < c
   · rcases le_or_gt x m with hx | hx
     · rw [levyPDFReal_of_le hx, inverseGammaPDFReal_of_nonpos (sub_nonpos.mpr hx)]
-    · rw [levyPDFReal_of_lt hc hx,
+    · rw [levyPDFReal_of_lt hx,
         inverseGammaPDFReal_of_pos one_half_pos (half_pos hc) (sub_pos.mpr hx),
         Real.Gamma_one_half_eq, ← Real.sqrt_eq_rpow, ← Real.sqrt_div' _ pi_pos.le,
         div_div]
@@ -160,12 +165,13 @@ theorem levyPDFReal_nonneg (m c x : ℝ) : 0 ≤ levyPDFReal m c x := by
 theorem toReal_levyPDF (m c x : ℝ) : (levyPDF m c x).toReal = levyPDFReal m c x := by
   rw [levyPDF_eq_ofReal, ENNReal.toReal_ofReal (levyPDFReal_nonneg m c x)]
 
-/-- The Lévy density has its usual formula above the location at positive scale. -/
+/-- The Lévy density has its usual formula above the location, at every scale: for a nonpositive
+scale both sides vanish. -/
 @[simp]
-theorem levyPDF_of_lt (hc : 0 < c) (hx : m < x) :
+theorem levyPDF_of_lt (hx : m < x) :
     levyPDF m c x =
       ENNReal.ofReal (√(c / (2 * π)) * (x - m) ^ (-(3 / 2 : ℝ)) * exp (-c / (2 * (x - m)))) := by
-  rw [levyPDF_eq_ofReal, levyPDFReal_of_lt hc hx]
+  rw [levyPDF_eq_ofReal, levyPDFReal_of_lt hx]
 
 /-- The `ℝ≥0∞`-valued Lévy density vanishes at and below the location. -/
 @[simp]

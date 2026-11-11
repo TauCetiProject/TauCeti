@@ -426,6 +426,31 @@ private theorem exists_tateUniformizationX_ne (q : Kˣ) (hq : ‖(q : K)‖ < 1)
     norm_tateUniformizationX_add q v hq hv₁ hv₂, hnu, hnv, inv_inj, ← pow_mul] at h'
   exact (pow_lt_pow_right_of_lt_one₀ hq₀ hq (by norm_num : 1 * 2 < 2 * 2)).ne h'.symm
 
+/-- The coefficient vectors of `θ²` and of `θ² (X + 2 s₁)` are linearly independent: a
+proportionality would make `X + 2 s₁` constant, which `TauCeti.exists_tateUniformizationX_ne`
+rules out. -/
+private theorem linearIndependent_tateThetaProductCoeff_tateXCoeff (q : Kˣ)
+    (hq : ‖(q : K)‖ < 1) :
+    LinearIndependent K ![(⟨_, tateThetaProductCoeff_mem q 1⟩ : tateThetaCoefficients q 1 2),
+      ⟨_, tateXCoeff_mem q hq⟩] := by
+  obtain ⟨u₀, v₀, hu₀, hv₀, hne⟩ := exists_tateUniformizationX_ne q hq
+  refine (LinearIndependent.pair_iff' fun h ↦ ?_).mpr fun c hc ↦ hne ?_
+  · have h' := hasSum_tateThetaProductCoeff_one q u₀ hq
+    have hzero : tateThetaProductCoeff q 1 = 0 :=
+      (Submodule.mk_eq_zero _ (tateThetaProductCoeff_mem q 1)).mp h
+    simp only [hzero, Pi.zero_apply, zero_mul] at h'
+    exact tateTheta_ne_zero q hq hu₀
+      (pow_eq_zero_iff two_ne_zero |>.mp (hasSum_zero.unique h').symm)
+  have hcoef (n : ℤ) : tateXCoeff q n = c * tateThetaProductCoeff q 1 n :=
+    (congrFun (congrArg Subtype.val hc) n).symm
+  have hconst {u : Kˣ} (hu : u ∉ Subgroup.zpowers q) :
+      tateUniformizationX q u + 2 * divisorSumAt 1 (q : K) = c := by
+    have h₁ := hasSum_tateXCoeff q hq hu
+    simp only [hcoef, mul_assoc] at h₁
+    have h₂ := h₁.unique ((hasSum_tateThetaProductCoeff_one q u hq).mul_left c)
+    exact mul_left_cancel₀ (pow_ne_zero 2 (tateTheta_ne_zero q hq hu)) (by linear_combination h₂)
+  linear_combination hconst hu₀ - hconst hv₀
+
 /-- **The theta-function form of the first Tate coordinate.** For `a ∉ q^ℤ` there is a
 nonzero constant `α` with `θ(a u) θ(a⁻¹ u) = α θ(u)² (X(u) - X(a))` for every `u ∉ q^ℤ`. -/
 theorem exists_tateTheta_mul_tateTheta_eq (q : Kˣ) (hq : ‖(q : K)‖ < 1) {a : Kˣ}
@@ -433,31 +458,13 @@ theorem exists_tateTheta_mul_tateTheta_eq (q : Kˣ) (hq : ‖(q : K)‖ < 1) {a 
     ∃ α : K, α ≠ 0 ∧ ∀ u : Kˣ, u ∉ Subgroup.zpowers q →
       tateTheta q (a * u) * tateTheta q (a⁻¹ * u) =
         α * tateTheta q u ^ 2 * (tateUniformizationX q u - tateUniformizationX q a) := by
-  have hθ {v : Kˣ} (hv : v ∉ Subgroup.zpowers q) : tateTheta q v ≠ 0 :=
-    fun h ↦ hv ((tateTheta_eq_zero_iff q v hq).mp h)
-  obtain ⟨u₀, v₀, hu₀, hv₀, hne⟩ := exists_tateUniformizationX_ne q hq
   let T : tateThetaCoefficients q 1 2 := ⟨_, tateThetaProductCoeff_mem q 1⟩
   let A : tateThetaCoefficients q 1 2 := ⟨_, tateXCoeff_mem q hq⟩
   let P : tateThetaCoefficients q 1 2 := ⟨_, tateThetaProductCoeff_mem q a⟩
   -- `θ²` and `θ² (X + 2 s₁)` span the two-dimensional coefficient space.
-  have hT : T ≠ 0 := by
-    intro h
-    have h' := hasSum_tateThetaProductCoeff_one q u₀ hq
-    simp only [show tateThetaProductCoeff q 1 = 0 from congrArg Subtype.val h, Pi.zero_apply,
-      zero_mul] at h'
-    exact hθ hu₀ (pow_eq_zero_iff two_ne_zero |>.mp (hasSum_zero.unique h').symm)
-  have hind : LinearIndependent K ![T, A] := by
-    refine (LinearIndependent.pair_iff' hT).mpr fun c hc ↦ hne ?_
-    have hcoef (n : ℤ) : tateXCoeff q n = c * tateThetaProductCoeff q 1 n :=
-      (congrFun (congrArg Subtype.val hc) n).symm
-    have hconst {u : Kˣ} (hu : u ∉ Subgroup.zpowers q) :
-        tateUniformizationX q u + 2 * divisorSumAt 1 (q : K) = c := by
-      have h₁ := hasSum_tateXCoeff q hq hu
-      simp only [hcoef, mul_assoc] at h₁
-      have h₂ := h₁.unique ((hasSum_tateThetaProductCoeff_one q u hq).mul_left c)
-      exact mul_left_cancel₀ (pow_ne_zero 2 (hθ hu)) (by linear_combination h₂)
-    linear_combination hconst hu₀ - hconst hv₀
-  have hspan := hind.span_eq_top_of_card_eq_finrank (by simp)
+  have hspan :=
+    (linearIndependent_tateThetaProductCoeff_tateXCoeff q hq).span_eq_top_of_card_eq_finrank
+      (by simp)
   obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun K).mp (hspan ▸ Submodule.mem_top :
     P ∈ Submodule.span K (Set.range ![T, A]))
   simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one] at hc
@@ -475,7 +482,7 @@ theorem exists_tateTheta_mul_tateTheta_eq (q : Kˣ) (hq : ‖(q : K)‖ < 1) {a 
   have hc₀ : c 0 = -(c 1 * (tateUniformizationX q a + 2 * divisorSumAt 1 (q : K))) := by
     have h := hid ha
     rw [inv_mul_cancel, tateTheta_one, mul_zero] at h
-    have h' := mul_left_cancel₀ (pow_ne_zero 2 (hθ ha)) (a := tateTheta q a ^ 2)
+    have h' := mul_left_cancel₀ (pow_ne_zero 2 (tateTheta_ne_zero q hq ha)) (a := tateTheta q a ^ 2)
       (b := c 0 + c 1 * (tateUniformizationX q a + 2 * divisorSumAt 1 (q : K))) (c := 0)
       (by linear_combination -h)
     linear_combination h'
@@ -485,10 +492,10 @@ theorem exists_tateTheta_mul_tateTheta_eq (q : Kˣ) (hq : ‖(q : K)‖ < 1) {a 
     have h := hasSum_tateThetaProductCoeff q a 1 hq
     simp only [hcoef, hc₀, h₁, zero_mul, add_zero, mul_one, tateTheta_inv] at h
     rcases mul_eq_zero.mp (hasSum_zero.unique h).symm with h' | h'
-    · exact hθ ha h'
+    · exact tateTheta_ne_zero q hq ha h'
     rcases mul_eq_zero.mp h' with h' | h'
     · exact inv_ne_zero a.ne_zero (neg_eq_zero.mp h')
-    · exact hθ ha h'
+    · exact tateTheta_ne_zero q hq ha h'
   · rw [hid hu, hc₀]
     ring
 
@@ -499,7 +506,7 @@ theorem tateUniformizationX_eq_tateUniformizationX_iff (q : Kˣ) (hq : ‖(q : K
     tateUniformizationX q u = tateUniformizationX q a ↔
       a * u ∈ Subgroup.zpowers q ∨ a⁻¹ * u ∈ Subgroup.zpowers q := by
   obtain ⟨α, hα, h⟩ := exists_tateTheta_mul_tateTheta_eq q hq ha
-  have hθ : tateTheta q u ≠ 0 := fun h ↦ hu ((tateTheta_eq_zero_iff q u hq).mp h)
+  have hθ := tateTheta_ne_zero q hq hu
   rw [← tateTheta_eq_zero_iff q _ hq, ← tateTheta_eq_zero_iff q _ hq, ← mul_eq_zero, h u hu]
   simp [hα, hθ, sub_eq_zero]
 

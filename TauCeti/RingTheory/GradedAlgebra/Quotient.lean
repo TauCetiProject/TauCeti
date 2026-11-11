@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Dimension.Finrank
+public import Mathlib.RingTheory.Finiteness.Basic
 public import Mathlib.Algebra.GradedMonoid
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 
@@ -28,6 +30,9 @@ The quotient-piece construction follows Antoine Chambert-Loir's
 
 * `TauCeti.GradedAlgebra.quotientPiece_mul_quotientPiece_le`: multiplication respects the family.
 * `TauCeti.GradedAlgebra.quotientPiece_eq_span_image`: taking quotient pieces commutes with spans.
+* `TauCeti.GradedAlgebra.quotientPiece_le_iff_of_eq_span`: a piece lies in a submodule of the
+  quotient exactly when the classes of a spanning set of the original piece do.
+* `TauCeti.GradedAlgebra.quotientPiece_eq_bot_iff`: a piece vanishes exactly when it lies in `I`.
 * `TauCeti.GradedAlgebra.iSup_quotientPiece_eq_top`: a spanning family spans the quotient.
 -/
 
@@ -47,6 +52,26 @@ noncomputable def quotientPiece (i : ι) : Submodule R (A ⧸ I) :=
 theorem quotientPiece_def (i : ι) :
     quotientPiece 𝒜 I i = (𝒜 i).map (Ideal.Quotient.mkₐ R I).toLinearMap := (rfl)
 
+/-- A quotient piece remains finite whenever the corresponding original piece is finite. -/
+instance finite_quotientPiece (𝒜 : ι → Submodule R A) (I : Ideal A) [I.IsTwoSided] (n : ι)
+    [Module.Finite R (𝒜 n)] : Module.Finite R (quotientPiece 𝒜 I n) := by
+  rw [quotientPiece_def]
+  infer_instance
+
+/-- Quotienting by the zero ideal preserves the dimension of each piece. -/
+@[simp]
+theorem finrank_quotientPiece_bot (𝒜 : ι → Submodule R A) (n : ι) :
+    Module.finrank R (quotientPiece 𝒜 ⊥ n) = Module.finrank R (𝒜 n) := by
+  have hmap : (quotientPiece 𝒜 ⊥ n).map (AlgEquiv.quotientBot R A).toLinearMap = 𝒜 n := by
+    simp only [quotientPiece_def, ← Submodule.map_comp]
+    have hc : (AlgEquiv.quotientBot R A).toLinearMap.comp
+        (Ideal.Quotient.mkₐ R ⊥).toLinearMap = LinearMap.id := by
+      ext x
+      exact RingEquiv.quotientBot_mk x
+    rw [hc, Submodule.map_id]
+  exact ((AlgEquiv.quotientBot R A).toLinearEquiv.finrank_map_eq _).symm.trans
+    (congrArg (fun p : Submodule R A ↦ Module.finrank R p) hmap)
+
 /-- Membership in the descended piece is being the class of an element of the original piece. -/
 @[simp]
 theorem mem_quotientPiece_iff {i : ι} {x : A ⧸ I} :
@@ -58,6 +83,17 @@ theorem mk_mem_quotientPiece {i : ι} {y : A} (hy : y ∈ 𝒜 i) :
     Ideal.Quotient.mk I y ∈ quotientPiece 𝒜 I i :=
   Submodule.mem_map.2 ⟨y, hy, rfl⟩
 
+/-- Compatible linear maps on an algebra and its quotient preserve the quotient pieces
+whenever the original map preserves the original pieces. The family need not be a grading. -/
+theorem apply_mem_quotientPiece (T : A →ₗ[R] A) (Q : (A ⧸ I) →ₗ[R] (A ⧸ I))
+    (hT : ∀ i x, x ∈ 𝒜 i → T x ∈ 𝒜 i)
+    (hQ : ∀ x, Q (Ideal.Quotient.mk I x) = Ideal.Quotient.mk I (T x))
+    (i : ι) (x : A ⧸ I) (hx : x ∈ quotientPiece 𝒜 I i) :
+    Q x ∈ quotientPiece 𝒜 I i := by
+  obtain ⟨y, hy, rfl⟩ := (mem_quotientPiece_iff 𝒜 I).mp hx
+  rw [hQ]
+  exact mk_mem_quotientPiece 𝒜 I (hT i y hy)
+
 /-- The descended piece is the span of the images of any spanning family of the
 original piece: descending commutes with spanning. -/
 theorem quotientPiece_eq_span_image {i : ι} {s : Set A} (hs : 𝒜 i = Submodule.span R s) :
@@ -65,24 +101,16 @@ theorem quotientPiece_eq_span_image {i : ι} {s : Set A} (hs : 𝒜 i = Submodul
   rw [quotientPiece_def, hs, Submodule.map_span]
   simp only [AlgHom.coe_toLinearMap, Ideal.Quotient.mkₐ_eq_mk]
 
-/-- A member of a descended piece lies in the span of `t` if the images of a spanning family of
-the original piece lie in that span. -/
-theorem mem_span_of_mem_quotientPiece {i : ι} {s : Set A} (hs : 𝒜 i = Submodule.span R s)
-    {t : Set (A ⧸ I)}
-    (hmem : ∀ z ∈ s, Ideal.Quotient.mk I z ∈ Submodule.span R t)
-    {w : A ⧸ I} (hw : w ∈ quotientPiece 𝒜 I i) :
-    w ∈ Submodule.span R t := by
-  have heq := quotientPiece_eq_span_image 𝒜 I (i := i) hs
-  rw [heq] at hw
-  refine (Submodule.span_le.2 ?_) hw
-  rintro u ⟨z, hz, rfl⟩
-  exact hmem z hz
+/-- If `s` spans `𝒜 i`, the descended piece lies in a submodule `N` of the quotient exactly when
+the classes of the elements of `s` lie in `N`. -/
+theorem quotientPiece_le_iff_of_eq_span {i : ι} {s : Set A} (hs : 𝒜 i = Submodule.span R s)
+    {N : Submodule R (A ⧸ I)} :
+    quotientPiece 𝒜 I i ≤ N ↔ ∀ z ∈ s, Ideal.Quotient.mk I z ∈ N := by
+  simp [quotientPiece_eq_span_image 𝒜 I hs, Submodule.span_le, Set.subset_def]
 
-/-- A piece contained in `I` vanishes in the quotient. -/
-theorem quotientPiece_eq_bot_of_le {i : ι} (hle : ∀ y ∈ 𝒜 i, y ∈ I) : quotientPiece 𝒜 I i = ⊥ := by
-  refine eq_bot_iff.2 fun x hx => ?_
-  obtain ⟨y, hy, rfl⟩ := Submodule.mem_map.1 hx
-  exact Ideal.Quotient.eq_zero_iff_mem.2 (hle y hy)
+/-- A piece vanishes in the quotient exactly when it is contained in `I`. -/
+theorem quotientPiece_eq_bot_iff {i : ι} : quotientPiece 𝒜 I i = ⊥ ↔ ∀ y ∈ 𝒜 i, y ∈ I := by
+  simp [← le_bot_iff, quotientPiece_def, IsConcreteLE.le_iff, Ideal.Quotient.eq_zero_iff_mem]
 
 /-- Multiplication adds degrees, as an inclusion of products of pieces. -/
 theorem quotientPiece_mul_quotientPiece_le [Add ι] [SetLike.GradedMul 𝒜] (m n : ι) :
@@ -112,5 +140,23 @@ theorem iSup_quotientPiece_eq_top (h𝒜 : ⨆ i, 𝒜 i = ⊤) : ⨆ i, quotien
   rw [← Submodule.map_iSup, h𝒜, Submodule.map_top, LinearMap.range_eq_top]
   exact Ideal.Quotient.mkₐ_surjective R I
 
+end TauCeti.GradedAlgebra
+
+namespace TauCeti.GradedAlgebra
+
+variable {ι k A : Type*} [CommSemiring k] [CommRing A] [Algebra k A]
+
+/-- The third isomorphism theorem identifies successive quotient pieces with the piece
+in the quotient by the sum of the two ideals. No homogeneity is needed. -/
+theorem map_quotientPiece_quotientPiece (𝒜 : ι → Submodule k A) (I J : Ideal A) (n : ι) :
+    (quotientPiece (quotientPiece 𝒜 I) (J.map (Ideal.Quotient.mkₐ k I)) n).map
+        (DoubleQuot.quotQuotEquivQuotSupₐ k I J).toLinearMap =
+      quotientPiece 𝒜 (I ⊔ J) n := by
+  simp only [quotientPiece_def, ← Submodule.map_comp]
+  apply congrArg (fun f : A →ₗ[k] A ⧸ (I ⊔ J) ↦ (𝒜 n).map f)
+  ext x
+  simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply,
+    DoubleQuot.coe_quotQuotEquivQuotSupₐ]
+  exact DoubleQuot.quotQuotEquivQuotSup_quotQuotMk I J x
 
 end TauCeti.GradedAlgebra

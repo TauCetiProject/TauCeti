@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Orientation.OrientedAtlas
 public import TauCeti.Geometry.Manifold.Orientation.Basic
 import Mathlib.Geometry.Manifold.MFDeriv.Tangent
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Topology.VectorBundle.Orientation.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
@@ -176,6 +176,26 @@ theorem IsOrientedAtlas.orientationAt_orientation {A : Set (OpenPartialHomeomorp
   have hrefl : L.toLinearEquiv = LinearEquiv.refl ℝ E := LinearEquiv.ext hLv
   rw [hrefl] at hmap
   exact (Equiv.ext_iff.mp (Orientation.map_refl (R := ℝ) (M := E) ι) _).symm.trans hmap
+
+/-- Reversing the chosen model orientation reverses the manifold orientation determined by an
+oriented atlas. -/
+@[simp]
+theorem IsOrientedAtlas.orientation_neg {A : Set (OpenPartialHomeomorph M H)}
+    (hA : IsOrientedAtlas I n A) (model : Orientation ℝ E ι)
+    (hι : Fintype.card ι = Module.finrank ℝ E) :
+    hA.orientation (-model) hι = -hA.orientation model hι := by
+  ext x
+  obtain ⟨e, he, hx⟩ := hA.exists_mem_source x
+  obtain ⟨L, hL, hmap⟩ := hA.orientation_spec model hι he hx
+  obtain ⟨L', hL', hmap'⟩ := hA.orientation_spec (-model) hι he hx
+  have hLL' : L' = L := ContinuousLinearEquiv.coe_injective (hL'.trans hL.symm)
+  rw [hLL'] at hmap'
+  have h : Orientation.map ι L.toLinearEquiv
+      ((hA.orientation (-model) hι).orientationAt x) =
+      Orientation.map ι L.toLinearEquiv (-(hA.orientation model hι).orientationAt x) := by
+    rw [hmap', Orientation.map_neg, hmap]
+  exact ((Orientation.map ι L.toLinearEquiv).injective h).trans
+    (Manifold.Orientation.orientationAt_neg _ _).symm
 
 /-- An oriented atlas gives orientability, including at boundary and corner points. -/
 theorem IsOrientedAtlas.orientable {n : ℕ∞ω} [NeZero n]

@@ -6,20 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Pointwise
-public import Mathlib.RingTheory.LocalRing.RingHom.Basic
+public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 
 /-!
 # The maximal-ideal filtration is invariant under ring automorphisms
 
-A group acting on a local ring by ring automorphisms acts by surjective local homomorphisms, so it
-fixes the maximal ideal and every one of its powers. This file records that invariance, both as an
-equality of ideals for the pointwise action and in the membership form its consumers use.
+A group acting on a local (commutative) semiring by ring automorphisms sends the maximal ideal to a
+maximal ideal, hence fixes it and every one of its powers. This file records that invariance, both
+as an equality of ideals for the pointwise action and in membership form.
 
 ## Main results
 
 * `TauCeti.IsLocalRing.smul_maximalIdeal`: the pointwise action fixes `𝔪`.
 * `TauCeti.IsLocalRing.smul_maximalIdeal_pow`: the pointwise action fixes `𝔪 ^ n`.
-* `TauCeti.IsLocalRing.smul_mem_maximalIdeal_pow`: the membership form of the same statement.
+* `TauCeti.IsLocalRing.smul_mem_maximalIdeal_pow_iff`: the membership form of the same
+  statement.
 -/
 
 public section
@@ -30,25 +31,24 @@ open scoped Pointwise
 
 namespace TauCeti.IsLocalRing
 
-variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
+variable {G : Type*} [Group G] {S : Type*} [CommSemiring S] [IsLocalRing S]
+  [MulSemiringAction G S]
 
 /-- A group acting by ring automorphisms on a local ring fixes its maximal ideal. -/
 @[simp] theorem smul_maximalIdeal (σ : G) : σ • maximalIdeal S = maximalIdeal S := by
-  have hsurj : Function.Surjective (MulSemiringAction.toRingHom G S σ) :=
-    fun y ↦ ⟨σ⁻¹ • y, smul_inv_smul σ y⟩
-  rw [Ideal.pointwise_smul_def, IsLocalRing.map_maximalIdeal_of_surjective _ hsurj]
+  rw [Ideal.pointwise_smul_eq_comap]
+  exact eq_maximalIdeal inferInstance
 
-/-- A group acting by ring automorphisms on a local ring fixes every power of the maximal ideal:
-each automorphism is a surjective ring homomorphism, hence maps `𝔪` onto `𝔪`. -/
-theorem smul_maximalIdeal_pow (σ : G) (n : ℕ) :
-    σ • (maximalIdeal S ^ n) = maximalIdeal S ^ n := by
-  rw [smul_pow', smul_maximalIdeal]
-
-/-- A group acting by ring automorphisms on a local ring preserves the powers of the maximal
+/-- A group acting by ring automorphisms on a local ring fixes every power of the maximal
 ideal. -/
-theorem smul_mem_maximalIdeal_pow (σ : G) {n : ℕ} {x : S} (hx : x ∈ maximalIdeal S ^ n) :
-    σ • x ∈ maximalIdeal S ^ n := by
-  rw [← smul_maximalIdeal_pow σ n]
-  exact Ideal.smul_mem_pointwise_smul σ x _ hx
+@[simp] theorem smul_maximalIdeal_pow (σ : G) (n : ℕ) :
+    σ • (maximalIdeal S ^ n) = maximalIdeal S ^ n := by
+  rw [Ideal.pointwise_smul_def, Ideal.map_pow, ← Ideal.pointwise_smul_def, smul_maximalIdeal]
+
+/-- An automorphism from a group acting on a local ring moves an element into a power of the
+maximal ideal if and only if the element already lies in it. -/
+@[simp] theorem smul_mem_maximalIdeal_pow_iff (σ : G) {n : ℕ} {x : S} :
+    σ • x ∈ maximalIdeal S ^ n ↔ x ∈ maximalIdeal S ^ n := by
+  rw [← Ideal.mem_inv_pointwise_smul_iff, smul_maximalIdeal_pow]
 
 end TauCeti.IsLocalRing

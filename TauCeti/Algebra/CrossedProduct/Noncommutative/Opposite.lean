@@ -43,11 +43,7 @@ The index monoid is unchanged. -/
 def opInv (c : CrossedSystem k D G) : CrossedSystem k Dᵐᵒᵖ G where
   action g := (c.action g).op
   factor g h := Units.opEquiv.symm (MulOpposite.op (c.factor g h)⁻¹)
-  action_one := by
-    ext d
-    simp [AlgEquiv.op_apply_apply]
   factor_one_left g := by simp
-  factor_one_right g := by simp
   action_mul g h d := by
     apply MulOpposite.unop_injective
     simp only [AlgEquiv.op_apply_apply, Units.coe_opEquiv_symm, unop_op, unop_mul]

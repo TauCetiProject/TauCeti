@@ -217,8 +217,14 @@ theorem indicator_Ioi_inverseGammaPDF (a r : ℝ) :
 /-- The inverse-gamma density is the Gamma density at the inverse point multiplied by the
 absolute Jacobian `x⁻²`. -/
 theorem inverseGammaPDFReal_eq_inv_sq_mul_gammaPDFReal
-    (ha : 0 < a) (hr : 0 < r) (hx : 0 < x) :
+    (ha : 0 < a) (hr : 0 < r) :
     inverseGammaPDFReal a r x = (x ^ 2)⁻¹ * gammaPDFReal a r x⁻¹ := by
+  rcases le_or_gt x 0 with hx | hx
+  · rw [inverseGammaPDFReal_of_nonpos hx, gammaPDFReal]
+    rcases hx.eq_or_lt with rfl | hneg
+    · simp
+    · rw [ite_eq_right (not_le.mpr (inv_lt_zero.mpr hneg))]
+      simp
   rw [inverseGammaPDFReal_of_pos ha hr hx, gammaPDFReal,
     ite_eq_left (inv_nonneg.mpr hx.le)]
   have hpow : x⁻¹ ^ (a - 1) = x ^ (1 - a) := by
@@ -246,7 +252,7 @@ private lemma ofReal_abs_inv_deriv_mul_inverseGammaPDF
         ENNReal.ofReal_mul (inv_nonneg.mpr (sq_nonneg x))]
     _ = ENNReal.ofReal
         ((x ^ 2)⁻¹ * (((x⁻¹) ^ 2)⁻¹ * gammaPDFReal a r x)) := by
-      rw [inverseGammaPDFReal_eq_inv_sq_mul_gammaPDFReal ha hr (inv_pos.mpr hx), inv_inv]
+      rw [inverseGammaPDFReal_eq_inv_sq_mul_gammaPDFReal ha hr, inv_inv]
     _ = ENNReal.ofReal (gammaPDFReal a r x) := by
       simp only [inv_pow, inv_inv, ← mul_assoc,
         inv_mul_cancel₀ (pow_ne_zero 2 hx.ne'), one_mul]
@@ -266,7 +272,7 @@ theorem inverseGammaMeasure_eq_withDensity (a r : ℝ) :
       exact (ofReal_abs_inv_deriv_mul_inverseGammaPDF ha hr hy).symm
     rw [inverseGammaMeasure_of_pos ha hr, gammaMeasure_eq_withDensity_restrict_Ioi,
       withDensity_congr_ae hweight,
-      MeasureTheory.map_withDensity_abs_deriv_mul measurableSet_Ioi measurable_inv
+      MeasureTheory.map_withDensity_abs_deriv_mul measurableSet_Ioi
         (fun y hy ↦ (hasDerivAt_inv (ne_of_gt hy)).hasDerivWithinAt) inv_injective.injOn,
       himage, ← withDensity_indicator measurableSet_Ioi, indicator_Ioi_inverseGammaPDF]
   · rw [inverseGammaMeasure_of_not_pos h]
@@ -285,7 +291,7 @@ theorem inverseGammaMeasure_map_const_mul {b : ℝ} (hb : 0 < b) (a r : ℝ) :
     rw [inverseGammaMeasure_of_pos h.1 h.2, inverseGammaMeasure_of_pos h.1 (mul_pos hb h.2),
       Measure.map_map (measurable_const_mul b) measurable_inv, Function.comp_def, hinv,
       ← Measure.map_map measurable_inv (measurable_const_mul _),
-      gammaMeasure_map_const_mul h.1 h.2 (inv_pos.mpr hb), div_inv_eq_mul, mul_comm]
+      gammaMeasure_map_const_mul (inv_pos.mpr hb), div_inv_eq_mul, mul_comm]
   · have h' : ¬ (0 < a ∧ 0 < b * r) := fun h' ↦ h ⟨h'.1, pos_of_mul_pos_right h'.2 hb.le⟩
     rw [inverseGammaMeasure_of_not_pos h, inverseGammaMeasure_of_not_pos h', Measure.map_zero]
 

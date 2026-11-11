@@ -52,6 +52,34 @@ namespace TauCeti.GradedAlgebra
 
 variable {k A : Type*} [CommRing A]
 
+section Exact
+
+variable [CommSemiring k] [Algebra k A] (𝒜 : ℕ → Submodule k A) [GradedAlgebra 𝒜]
+  {f : A} {d : ℕ}
+
+/-- The degree-`d + n` quotient map has kernel the multiples of `f` from degree `n`,
+when `f` is homogeneous and regular. -/
+theorem exact_mulLeft_submoduleMap_span_singleton (hf : f ∈ 𝒜 d)
+    (hreg : IsLeftRegular f) (n : ℕ) :
+    Function.Exact
+      (((LinearMap.mulLeft k f).domRestrict (𝒜 n)).codRestrict (𝒜 (d + n))
+        (fun x ↦ SetLike.mul_mem_graded hf x.2))
+      ((Ideal.Quotient.mkₐ k (Ideal.span {f})).toLinearMap.submoduleMap (𝒜 (d + n))) := by
+  intro x
+  constructor
+  · intro hx
+    have hxI : (x : A) ∈ Ideal.span {f} :=
+      Ideal.Quotient.eq_zero_iff_mem.1 (congrArg Subtype.val hx)
+    obtain ⟨a, ha⟩ := Ideal.mem_span_singleton.1 hxI
+    have ha𝒜 : a ∈ 𝒜 n :=
+      mem_of_mul_mem_add_of_isLeftRegular 𝒜 hf hreg (ha ▸ x.2)
+    exact ⟨⟨a, ha𝒜⟩, Subtype.ext ha.symm⟩
+  · rintro ⟨a, rfl⟩
+    apply Subtype.ext
+    exact Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.mem_span_singleton.2 ⟨a, rfl⟩)
+
+end Exact
+
 section Field
 
 variable [Field k] [Algebra k A] (𝒜 : ℕ → Submodule k A) [GradedAlgebra 𝒜]
@@ -73,19 +101,7 @@ theorem finrank_quotientPiece_span_singleton_add (hf : f ∈ 𝒜 d)
   have hμ : Function.Injective μ := fun x y h ↦
     Subtype.ext (hreg (congrArg Subtype.val h))
   have hq : Function.Surjective q := LinearMap.submoduleMap_surjective _ _
-  have hex : Function.Exact μ q := by
-    intro x
-    constructor
-    · intro hx
-      have hxI : (x : A) ∈ Ideal.span {f} :=
-        Ideal.Quotient.eq_zero_iff_mem.1 (congrArg Subtype.val hx)
-      obtain ⟨a, ha⟩ := Ideal.mem_span_singleton.1 hxI
-      have ha𝒜 : a ∈ 𝒜 n :=
-        mem_of_mul_mem_add_of_isLeftRegular 𝒜 hf hreg (ha ▸ x.2)
-      exact ⟨⟨a, ha𝒜⟩, Subtype.ext ha.symm⟩
-    · rintro ⟨a, rfl⟩
-      apply Subtype.ext
-      exact Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.mem_span_singleton.2 ⟨a, rfl⟩)
+  have hex : Function.Exact μ q := exact_mulLeft_submoduleMap_span_singleton 𝒜 hf hreg n
   simpa only [add_comm] using (hex.finrank_eq_add hμ hq).symm
 
 end Field
@@ -95,26 +111,31 @@ section CommSemiring
 variable [CommSemiring k] [Algebra k A] (𝒜 : ℕ → Submodule k A) [GradedAlgebra 𝒜]
   {f : A} {d : ℕ}
 
+/-- The quotient map is an isomorphism on pieces below the degree of a homogeneous
+relation. Regularity of the relation is not required. -/
+theorem bijective_submoduleMap_span_singleton_of_lt (hf : f ∈ 𝒜 d) {n : ℕ} (hn : n < d) :
+    Function.Bijective
+      ((Ideal.Quotient.mkₐ k (Ideal.span {f})).toLinearMap.submoduleMap (𝒜 n)) := by
+  refine ⟨?_, LinearMap.submoduleMap_surjective _ _⟩
+  intro x y hxy
+  have hxyI : (x : A) - y ∈ Ideal.span {f} :=
+    Ideal.Quotient.eq.1 (congrArg Subtype.val hxy)
+  obtain ⟨a, ha⟩ := Ideal.mem_span_singleton.1 hxyI
+  apply Subtype.ext
+  apply sub_eq_zero.1
+  have hproj := DirectSum.coe_decompose_mul_of_left_mem_of_not_le 𝒜 (b := a) hf
+    (Nat.not_le_of_lt hn)
+  rw [← GradedAlgebra.proj_apply, ← ha, map_sub] at hproj
+  simpa only [GradedAlgebra.proj_apply, DirectSum.decompose_of_mem_same 𝒜 x.2,
+    DirectSum.decompose_of_mem_same 𝒜 y.2] using hproj
+
 /-- Quotienting by a homogeneous element of degree `d` does not change the dimension
 of any graded piece of degree less than `d`. Regularity is not needed here. -/
 theorem finrank_quotientPiece_span_singleton_of_lt (hf : f ∈ 𝒜 d) {n : ℕ} (hn : n < d) :
     Module.finrank k (quotientPiece 𝒜 (Ideal.span {f}) n) = Module.finrank k (𝒜 n) := by
   rw [quotientPiece_def]
-  let q := (Ideal.Quotient.mkₐ k (Ideal.span {f})).toLinearMap.submoduleMap (𝒜 n)
-  have hq : Function.Bijective q := by
-    refine ⟨?_, LinearMap.submoduleMap_surjective _ _⟩
-    intro x y hxy
-    have hxyI : (x : A) - y ∈ Ideal.span {f} :=
-      Ideal.Quotient.eq.1 (congrArg Subtype.val hxy)
-    obtain ⟨a, ha⟩ := Ideal.mem_span_singleton.1 hxyI
-    apply Subtype.ext
-    apply sub_eq_zero.1
-    have hproj := DirectSum.coe_decompose_mul_of_left_mem_of_not_le 𝒜 (b := a) hf
-      (Nat.not_le_of_lt hn)
-    rw [← GradedAlgebra.proj_apply, ← ha, map_sub] at hproj
-    simpa only [GradedAlgebra.proj_apply, DirectSum.decompose_of_mem_same 𝒜 x.2,
-      DirectSum.decompose_of_mem_same 𝒜 y.2] using hproj
-  exact (LinearEquiv.ofBijective q hq).finrank_eq.symm
+  exact (LinearEquiv.ofBijective _
+    (bijective_submoduleMap_span_singleton_of_lt 𝒜 hf hn)).finrank_eq.symm
 
 end CommSemiring
 

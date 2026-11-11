@@ -15,7 +15,7 @@ The classical adjoint theory of the Hecke operators is written with the **main i
 `α^ι = (det α) · α⁻¹` rather than with `α⁻¹`, because `α ↦ α^ι` preserves the integral matrices
 and so acts on the Hecke cosets, which `α ↦ α⁻¹` does not. This file records what the weight-`k`
 slash does to it. On `GL(2, R)` the main involution is `Matrix.adjugate`, so
-`TauCeti.adjugateGL` is the map in question:
+`Matrix.GeneralLinearGroup.adjugate` is the map in question:
 
 ```text
 f ∣[k] α^ι = (det α) ^ (k - 2) • (f ∣[k] α⁻¹).
@@ -28,19 +28,19 @@ applies on the negative-determinant branch fixes it.
 
 ## Main results
 
-* `ModularForm.slash_adjugateGL`: the slash by the main involution, in terms of the slash by
+* `ModularForm.slash_adjugate`: the slash by the main involution, in terms of the slash by
   the inverse.
 
 The factorization `α^ι = (det α · I) * α⁻¹` it uses is
-`Matrix.GeneralLinearGroup.adjugateGL_eq_scalar_mul_inv`, in `Adjugate.lean` beside
-`adjugateGL`.
+`Matrix.GeneralLinearGroup.adjugate_eq_scalar_mul_inv`, in `Adjugate.lean` beside
+`Matrix.GeneralLinearGroup.adjugate`.
 -/
 
 public section
 
 namespace ModularForm
 
-open UpperHalfPlane Matrix TauCeti
+open UpperHalfPlane Matrix
 
 /-- **The slash by the main involution.** `f ∣[k] α^ι = (det α) ^ (k - 2) • (f ∣[k] α⁻¹)`: the
 involution and the inverse differ by the scalar `det α`, which slashes by `slash_scalar`.
@@ -53,10 +53,10 @@ Adapted from AINTLIB (github.com/CBirkbeck/AINTLIB @ `6d87d596a537`, Apache-2.0)
 `projects/LeanModularForms/LeanModularForms/HeckeRIngs/GL2/AdjointTheory.lean`, whose
 `peterssonAdj` (:322) is this involution. -/
 @[simp]
-theorem slash_adjugateGL (k : ℤ) (g : GL (Fin 2) ℝ) (f : ℍ → ℂ) :
-    f ∣[k] adjugateGL g =
+theorem slash_adjugate (k : ℤ) (g : GL (Fin 2) ℝ) (f : ℍ → ℂ) :
+    f ∣[k] g.adjugate =
       (((g : Matrix (Fin 2) (Fin 2) ℝ).det : ℝ) : ℂ) ^ (k - 2) • (f ∣[k] g⁻¹) := by
-  rw [Matrix.GeneralLinearGroup.adjugateGL_eq_scalar_mul_inv, SlashAction.slash_mul,
+  rw [Matrix.GeneralLinearGroup.adjugate_eq_scalar_mul_inv, SlashAction.slash_mul,
     slash_scalar,
     Matrix.GeneralLinearGroup.val_det_apply, ← Complex.ofReal_zpow, smul_slash, σ_ofReal,
     Complex.ofReal_zpow]

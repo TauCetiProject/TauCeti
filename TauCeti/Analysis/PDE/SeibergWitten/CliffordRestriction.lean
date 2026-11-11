@@ -8,8 +8,10 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Trace.Free
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Action
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Chirality
--- Private: the trace of a restriction is used only inside a proof.
+-- Private: the trace of a restriction and the orthogonality criterion for `Q` are used only
+-- inside proofs.
 import Mathlib.LinearAlgebra.PID
+import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 
 /-!
 # The Clifford map from self-dual two-forms to trace-free endomorphisms of `W⁺`
@@ -58,6 +60,8 @@ operator norm of `C` is `‖C(iα)‖ = √2 ‖α‖` on self-dual forms.
   trace free.
 * `TauCeti.SeibergWitten.cliffordRestriction_eq_zero_of_hodgeStar_eq_neg`: anti-self-dual forms
   act by zero on `W⁺`.
+* `TauCeti.SeibergWitten.coe_cliffordRestriction_ιMulti_apply_of_inner_eq_zero`:
+  `C(i (a ∧ b)) = i c(a) c(b)` on `W⁺` for orthogonal `a` and `b`.
 * `TauCeti.SeibergWitten.cliffordRestriction_mul_add_swap`: the Clifford relation of `C`.
 * `TauCeti.SeibergWitten.trace_cliffordRestriction_mul`:
   `tr (C(iα) C(iβ)) = (⟪α, β⟫ + ⟪⋆α, β⟫) dim W⁺`, and
@@ -158,6 +162,15 @@ end SelfAdjoint
 section Form
 
 include hQ
+
+/-- On the wedge of two orthogonal vectors the Clifford map is a product of Clifford
+multiplications: `C(i (a ∧ b)) ψ = i c(a) c(b) ψ` when `⟪a, b⟫ = 0`. -/
+theorem coe_cliffordRestriction_ιMulti_apply_of_inner_eq_zero {a b : V} (h : ⟪a, b⟫ = 0)
+    (ψ : positiveHalfSpinors o ρ) :
+    (cliffordRestriction o ρ (exteriorPower.ιMulti ℝ 2 ![a, b]) ψ : W) =
+      Complex.I • ρ (ι Q a * ι Q b) ψ := by
+  rw [coe_cliffordRestriction_apply, bivectorExterior_apply_ιMulti,
+    bivector_eq_ι_mul_ι_of_isOrtho Q ((QuadraticMap.isOrtho_iff_inner_eq_zero hQ).2 h)]
 
 /-- **The Clifford relation of `C`**: `C(iα) C(iβ) + C(iβ) C(iα) = 2 (⟪α, β⟫ + ⟪⋆α, β⟫)`. -/
 theorem cliffordRestriction_mul_add_swap (hkl : 2 + 2 = finrank ℝ V) (x y : ⋀[ℝ]^2 V) :

@@ -23,6 +23,12 @@ Mathlib records the lower bound `1 + x + x ^ 2 / 2 ≤ exp x` for `0 ≤ x`
 The second bound is the exponential estimate behind Bernstein's inequality: applied to `t X` for a
 centred random variable `X ≤ b` it bounds the moment-generating function by the second moment.
 
+In the other direction, the lower bound gives
+`Real.neg_mul_abs_sub_sq_div_le_mul_add_mul_exp_div`: for `V > 0`,
+`-S |t| - S ^ 2 / V ≤ t S + V exp (2 t) / 2`. This controls the part of a Liouville-type energy
+`∫ (K u + e^(2u) / 2) dV` carried by the mean `t` of `u`, with `S = ∫ K dV` and `V` the volume
+(`TauCeti.Manifold.exists_le_liouvilleEnergy_add`).
+
 ## References
 
 * S. Boucheron, G. Lugosi and P. Massart, *Concentration Inequalities: A Nonasymptotic Theory of
@@ -84,5 +90,22 @@ theorem exp_le_one_add_add_sq_div_of_le {x c : ℝ} (hxc : x ≤ c) (hc0 : 0 ≤
     · nlinarith
     · linarith
   · exact exp_le_one_add_add_sq_div_of_nonneg_of_le hx hxc hc3
+
+/-- Real numbers `S`, `t` and `V > 0` satisfy `t S + V exp (2 t) / 2 ≥ -S |t| - S ^ 2 / V`. For
+`t ≥ 0` this follows from `exp (2 t) ≥ 1 + 2 t + 2 t ^ 2` and `(V t + S) ^ 2 ≥ 0`. -/
+theorem neg_mul_abs_sub_sq_div_le_mul_add_mul_exp_div {S V t : ℝ} (hV : 0 < V) :
+    -S * |t| - S ^ 2 / V ≤ t * S + V * exp (2 * t) / 2 := by
+  have hq : 0 ≤ S ^ 2 / V := by positivity
+  have hVq : V * (S ^ 2 / V) = S ^ 2 := mul_div_cancel₀ _ hV.ne'
+  rcases le_total t 0 with ht | ht
+  · rw [abs_of_nonpos ht]
+    nlinarith [exp_pos (2 * t)]
+  · rw [abs_of_nonneg ht]
+    have hexp := quadratic_le_exp_of_nonneg (by positivity : 0 ≤ 2 * t)
+    -- `V t² + 2 t S + S² / V = (V t + S)² / V ≥ 0`.
+    have hsq : 0 ≤ V * (V * t ^ 2 + 2 * t * S + S ^ 2 / V) := by
+      nlinarith [sq_nonneg (V * t + S)]
+    have := (mul_nonneg_iff_of_pos_left hV).1 hsq
+    nlinarith [mul_le_mul_of_nonneg_left hexp hV.le]
 
 end Real

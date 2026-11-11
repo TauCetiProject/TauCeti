@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.NonsingularReduction
+-- Proof-only: the coefficients of the addition polynomial, and the line through two points.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.AddPolynomial
 -- Proof-only: the points with singular reduction when the reduction is singular at the origin.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.SingularReduction
 -- Proof-only: the equation in split branch coordinates.
@@ -434,21 +436,11 @@ private theorem exists_line (h₁ : W.a₁ = -(α + β)) (h₂ : W.a₂ = -(α *
       x₁ + x₂ + W.addX x₁ x₂ (W.slope x₁ x₂ y₁ y₂) = A * B ∧
       x₁ * x₂ + x₁ * W.addX x₁ x₂ (W.slope x₁ x₂ y₁ y₂) +
         x₂ * W.addX x₁ x₂ (W.slope x₁ x₂ y₁ y₂) = -(A + B) * ν := by
-  set ℓ := W.slope x₁ x₂ y₁ y₂ with hℓ
+  set ℓ := W.slope x₁ x₂ y₁ y₂
   -- the line passes through the second point
-  have hy₂ : y₂ = ℓ * x₂ + (y₁ - ℓ * x₁) := by
-    by_cases hx : x₁ = x₂
-    · rw [← Y_eq_of_Y_ne hP hQ hx fun h ↦ hxy ⟨hx, h⟩, hx]
-      ring
-    · rw [hℓ, slope_of_X_ne hx]
-      field_simp [sub_ne_zero.2 hx]
-      ring
+  have hy₂ : y₂ = ℓ * x₂ + (y₁ - ℓ * x₁) := Y_eq_slope_mul_add hP hQ hxy
   -- the coefficient of `X` in `W(X, ℓ (X - x₁) + y₁) = -(X - x₁) (X - x₂) (X - x₃)`
-  have hc : 2 * x₁ * ℓ ^ 2 + (W.a₁ * x₁ - 2 * y₁ - W.a₃) * ℓ + (-W.a₁ * y₁ + W.a₄) =
-      x₁ * x₂ + x₁ * W.addX x₁ x₂ ℓ + x₂ * W.addX x₁ x₂ ℓ := by
-    have key := W.addPolynomial_slope hP hQ hxy
-    rw [addPolynomial_eq, Cubic.prod_X_sub_C_eq, neg_inj] at key
-    exact congrArg Cubic.c ((Cubic.toPoly_injective _ _).1 key)
+  have hc := (coeffs_of_addPolynomial_eq (W.addPolynomial_slope hP hQ hxy)).2.1
   refine ⟨ℓ - α, ℓ - β, y₁ - ℓ * x₁, by ring, by ring, by ring, by rw [hy₂]; ring,
     by rw [hy₂]; ring, ?_, ?_, ?_, ?_⟩
   · simp only [addY, negY, negAddY, h₁, h₃]; ring

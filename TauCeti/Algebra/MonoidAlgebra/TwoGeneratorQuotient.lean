@@ -135,6 +135,34 @@ namespace TauCeti.MonoidAlgebra
 
 open _root_.MonoidAlgebra
 
+/-- The ideal `(1 - a, 1 - b)` of `ℤ₂[G]` is two-sided, since its generators are central. -/
+private theorem isTwoSided_span_one_sub_natCast {G : Type*} [Monoid G] (a b : ℕ) :
+    (Ideal.span {single (1 : G) (1 : ℤ_[2]) - a,
+      single (1 : G) (1 : ℤ_[2]) - b}).IsTwoSided := by
+  apply Ideal.isTwoSided_span_of_subset_center
+  rw [Set.insert_subset_iff, Set.singleton_subset_iff]
+  constructor <;> rw [Semigroup.mem_center_iff]
+  · intro y
+    rw [natCast_def, sub_mul, mul_sub, single_one_comm, single_one_comm]
+  · intro y
+    rw [natCast_def, sub_mul, mul_sub, single_one_comm, single_one_comm]
+
+/-- If `a, b` are odd, reduction modulo two kills the ideal `(1 - a, 1 - b)` of `ℤ₂[G]`. -/
+private theorem span_one_sub_natCast_le_ker {G : Type*} [Monoid G] {a b : ℕ}
+    (ha : Odd a) (hb : Odd b) :
+    Ideal.span {single (1 : G) (1 : ℤ_[2]) - a, single (1 : G) (1 : ℤ_[2]) - b} ≤
+      RingHom.ker (_root_.MonoidAlgebra.mapRingHom G (PadicInt.toZMod (p := 2))) := by
+  have ha2 : (a : ZMod 2) = 1 := ZMod.natCast_eq_one_iff_odd.mpr ha
+  have hb2 : (b : ZMod 2) = 1 := ZMod.natCast_eq_one_iff_odd.mpr hb
+  rw [Ideal.span_le, Set.insert_subset_iff, Set.singleton_subset_iff]
+  constructor
+  · apply RingHom.mem_ker.mpr
+    simp only [map_sub, _root_.MonoidAlgebra.mapRingHom_single, map_one, natCast_def, ha2,
+      map_natCast, sub_self]
+  · apply RingHom.mem_ker.mpr
+    simp only [map_sub, _root_.MonoidAlgebra.mapRingHom_single, map_one, natCast_def, hb2,
+      map_natCast, sub_self]
+
 /-- If `G` is finite and nontrivial and `a, b` are odd, then the quotient of `ℤ₂[G]` by
 `(1 - a, 1 - b)` cannot have order two. Indeed, reduction modulo two makes both relations
 vanish, so the quotient surjects onto `𝔽₂[G]`, which has at least four elements. -/
@@ -147,28 +175,8 @@ theorem natCard_quotient_span_one_sub_natCast_ne_two {G : Type*} [Monoid G] [Fin
     {single (1 : G) (1 : ℤ_[2]) - a, single (1 : G) (1 : ℤ_[2]) - b}
   let f : MonoidAlgebra ℤ_[2] G →+* MonoidAlgebra (ZMod 2) G :=
     _root_.MonoidAlgebra.mapRingHom G PadicInt.toZMod
-  have ha2 : (a : ZMod 2) = 1 := ZMod.natCast_eq_one_iff_odd.mpr ha
-  have hb2 : (b : ZMod 2) = 1 := ZMod.natCast_eq_one_iff_odd.mpr hb
-  have hJ : J ≤ RingHom.ker f := by
-    dsimp only [J]
-    rw [Ideal.span_le, Set.insert_subset_iff, Set.singleton_subset_iff]
-    constructor
-    · apply RingHom.mem_ker.mpr
-      simp only [f, map_sub, _root_.MonoidAlgebra.mapRingHom_single, map_one, natCast_def, ha2,
-        map_natCast, sub_self]
-    · apply RingHom.mem_ker.mpr
-      simp only [f, map_sub, _root_.MonoidAlgebra.mapRingHom_single, map_one, natCast_def, hb2,
-        map_natCast, sub_self]
-  have hJtwo : J.IsTwoSided := by
-    dsimp only [J]
-    apply Ideal.isTwoSided_span_of_subset_center
-    rw [Set.insert_subset_iff, Set.singleton_subset_iff]
-    constructor <;> rw [Semigroup.mem_center_iff]
-    · intro y
-      rw [natCast_def, sub_mul, mul_sub, single_one_comm, single_one_comm]
-    · intro y
-      rw [natCast_def, sub_mul, mul_sub, single_one_comm, single_one_comm]
-  let _ : J.IsTwoSided := hJtwo
+  have hJ : J ≤ RingHom.ker f := span_one_sub_natCast_le_ker ha hb
+  let _ : J.IsTwoSided := isTwoSided_span_one_sub_natCast a b
   let φ : (MonoidAlgebra ℤ_[2] G ⧸ J) →+* MonoidAlgebra (ZMod 2) G :=
     Ideal.Quotient.lift J f fun x hx ↦ RingHom.mem_ker.mp (hJ hx)
   have hf : Function.Surjective f :=

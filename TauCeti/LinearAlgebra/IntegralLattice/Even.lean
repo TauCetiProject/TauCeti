@@ -147,7 +147,7 @@ theorem isEven_ofGramMatrix_iff {ι : Type*} [Fintype ι] (b : Basis ι ℚ V)
 /-- An equivalence preserving self-pairings identifies lattice evenness with even self-pairings
 in an arbitrary integral module. -/
 theorem isEven_iff_of_integralForm_equiv (L : IntegralLattice V) {M : Type*}
-    [AddCommGroup M] [Module ℤ M] (B : LinearMap.BilinForm ℤ M) (e : M ≃ₗ[ℤ] L)
+    [AddCommGroup M] (B : LinearMap.BilinForm ℤ M) (e : M ≃ₗ[ℤ] L)
     (hB : ∀ x, L.integralForm (e x) (e x) = B x x) :
     L.IsEven ↔ ∀ x, Even (B x x) := by
   rw [IsEven, e.surjective.forall]

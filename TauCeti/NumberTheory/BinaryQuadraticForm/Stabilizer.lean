@@ -31,8 +31,11 @@ conversely an automorph of `f` commutes with `M`, because `Q_M` and the trace de
 primitivity of `f` makes its coordinates against `M` integral.
 
 The same argument works with coefficients in any commutative ring `R` in which `2` is not a zero
-divisor, such as `ℤ_p`, `ℚ_p`, `ℝ` or `ℚ`. Reading `f` over `R`, its automorphs in `SL(2, R)` are
-the norm-one elements of `R ⊗ 𝒪_D`, in the integral model
+divisor, such as `ℤ_p`, `ℚ_p`, `ℝ` or `ℚ`, for every form whose coefficients `a`, `b`, `c`
+generate the unit ideal of `R`. This holds for every primitive form, over a field of
+characteristic zero for every nonzero form (such as the non-primitive `2 x² + 2 y²` over `ℚ`), and
+over `ℤ_p` for every form whose content is prime to `p`; over `ℤ` it is primitivity. Reading `f`
+over `R`, its automorphs in `SL(2, R)` are the norm-one elements of `R ⊗ 𝒪_D`, in the integral model
 `R[ω]/(ω² - D ω + (D² - D)/4)` of `𝒪_D` with coefficients in `R`. This is the group of `R`-points of
 the norm-one group scheme of `𝒪_D`. This group scheme is a torus over `R` only when `D` is
 invertible in `R`: for `f = x²`, of discriminant `0`, it is `μ₂ × 𝔾ₐ` over `ℚ`. The identification
@@ -41,15 +44,15 @@ coordinates of norm-one elements. The hypothesis on `2` cannot be dropped: over 
 swap is an automorph of `x y` of determinant one, but `x y` corresponds to the order `𝔽₂ × 𝔽₂`,
 whose only norm-one element is `1`.
 
-The isomorphism holds for every primitive form, including those of square or zero discriminant.
+The isomorphism holds for all such forms, including those of square or zero discriminant.
 The discriminant is a parameter `D` with a proof of `f.discrim = D`, so that the target needs no
 transport along an equality of discriminants.
 
 ## Main results
 
-* `TauCeti.BinaryQuadraticForm.stabilizerEquivUnitary`: for primitive `f` of discriminant `D` and
-  `R` without `2`-torsion, the automorphs of `f` over `R` are the norm-one elements of the order
-  of discriminant `D` with coefficients in `R`.
+* `TauCeti.BinaryQuadraticForm.stabilizerEquivUnitary`: for `f` of discriminant `D` whose
+  coefficients generate the unit ideal of `R`, and `R` without `2`-torsion, the automorphs of `f`
+  over `R` are the norm-one elements of the order of discriminant `D` with coefficients in `R`.
 * `TauCeti.BinaryQuadraticForm.coe_stabilizerEquivUnitary_symm_apply`: the automorph attached to a
   norm-one element `x + y ω`.
 * `TauCeti.BinaryQuadraticForm.map_stabilizerEquivUnitary_symm_apply`: naturality in the
@@ -202,16 +205,17 @@ private theorem coe_unitaryToStabilizer (hfD : f.discrim = D)
     ((unitaryToStabilizer f hfD z : SL(2, R)) : Matrix (Fin 2) (Fin 2) R) =
       regularRep R f hfD z := (rfl)
 
-/-- For primitive `f`, distinct elements of the order act differently on `R²`: the off-diagonal
-entries and the difference of the diagonal entries of the action of `z` are `z.im` times the
-coefficients `a`, `-c` and `b` of `f`, which generate the unit ideal. -/
-private theorem regularRep_injective (hfD : f.discrim = D) (hf : f.IsPrimitive) :
+/-- When the coefficients of `f` generate the unit ideal of `R`, distinct elements of the order
+act differently on `R²`: the off-diagonal entries and the difference of the diagonal entries of
+the action of `z` are `z.im` times the coefficients `a`, `-c` and `b` of `f`. -/
+private theorem regularRep_injective (hfD : f.discrim = D)
+    (hf : Ideal.span {(f.a : R), (f.b : R), (f.c : R)} = ⊤) :
     Function.Injective (regularRep R f hfD) := by
   intro z w h
-  obtain ⟨u, v, t, huvt⟩ := hf.exists_linearCombination_eq_one
+  obtain ⟨u, v, t, h1⟩ := Submodule.mem_span_triple.mp ((Ideal.eq_top_iff_one _).mp hf)
+  simp only [smul_eq_mul] at h1
   have he := two_mul_ediv_two_of_discrim_eq (discrim_eq_sq_sub_four_mul f hfD)
   have he' := congrArg (Int.cast : ℤ → R) he
-  have h1 := congrArg (Int.cast : ℤ → R) huvt
   rw [regularRep_eq, regularRep_eq] at h
   have h₀₀ := congrFun₂ h 0 0
   have h₀₁ := congrFun₂ h 0 1
@@ -219,8 +223,8 @@ private theorem regularRep_injective (hfD : f.discrim = D) (hf : f.IsPrimitive) 
   have h₁₁ := congrFun₂ h 1 1
   simp only [of_apply, cons_val', cons_val_zero, cons_val_one, empty_val', cons_val_fin_one]
     at h₀₀ h₀₁ h₁₀ h₁₁
-  push_cast at h1 h₀₀ h₀₁ h₁₀ h₁₁ he'
-  -- `a`, `b` and `c` times `z.im - w.im` vanish, so primitivity forces `z.im = w.im`
+  push_cast at h₀₀ h₀₁ h₁₀ h₁₁ he'
+  -- `a`, `b` and `c` times `z.im - w.im` vanish, and `a`, `b`, `c` generate the unit ideal
   have him : z.im = w.im := by
     linear_combination -(z.im - w.im) * h1 + u * h₁₀ - t * h₀₁ + v * (h₁₁ - h₀₀) +
       v * (z.im - w.im) * he'
@@ -229,10 +233,12 @@ private theorem regularRep_injective (hfD : f.discrim = D) (hf : f.IsPrimitive) 
   · exact him
 
 /-- When `2` is not a zero divisor, an automorph of `f = Q_M` commutes with the generator matrix
-`M`, since `Q_M` and the trace determine `M`. Its coordinates against `M` lie in `R` by
-primitivity of `f`, so it is the image of a norm-one element of the order. -/
-private theorem unitaryToStabilizer_surjective (hfD : f.discrim = D) (hf : f.IsPrimitive)
-    (h2 : IsLeftRegular (2 : R)) : Function.Surjective (unitaryToStabilizer (R := R) f hfD) := by
+`M`, since `Q_M` and the trace determine `M`. Its coordinates against `M` lie in `R` because the
+coefficients of `f` generate the unit ideal, so it is the image of a norm-one element of the
+order. -/
+private theorem unitaryToStabilizer_surjective (hfD : f.discrim = D)
+    (hf : Ideal.span {(f.a : R), (f.b : R), (f.c : R)} = ⊤) (h2 : IsLeftRegular (2 : R)) :
+    Function.Surjective (unitaryToStabilizer (R := R) f hfD) := by
   rintro ⟨γ, hγ⟩
   rw [mem_stabilizer_iff] at hγ
   have hconj : (γ : Matrix (Fin 2) (Fin 2) R) * castGeneratorMatrix R f hfD *
@@ -262,10 +268,10 @@ private theorem unitaryToStabilizer_surjective (hfD : f.discrim = D) (hf : f.IsP
   have hT₁ : (f.a : R) * q + f.c * r = 0 := by linear_combination h₀₀
   have hT₂ : (f.b : R) * q + f.c * (s - p) = 0 := by linear_combination h₀₁ + q * he'
   have hT₃ : (f.b : R) * r - f.a * (s - p) = 0 := by linear_combination -h₁₀ + r * he'
-  -- Primitivity turns proportionality to `(c, a, b)` into a multiple with coefficient in `R`.
-  obtain ⟨u, v, w, huvw⟩ := hf.exists_linearCombination_eq_one
-  have h1 := congrArg (Int.cast : ℤ → R) huvw
-  push_cast at h1
+  -- A Bézout relation for `a`, `b` and `c` in `R` turns proportionality to `(c, a, b)` into a
+  -- multiple with coefficient in `R`.
+  obtain ⟨u, v, w, h1⟩ := Submodule.mem_span_triple.mp ((Ideal.eq_top_iff_one _).mp hf)
+  simp only [smul_eq_mul] at h1
   set n := (u : R) * r + v * (s - p) - w * q
   have hr : r = f.a * n := by linear_combination v * hT₃ + w * hT₁ - r * h1
   have hq : q = -f.c * n := by linear_combination u * hT₁ + v * hT₂ - q * h1
@@ -284,10 +290,10 @@ private theorem unitaryToStabilizer_surjective (hfD : f.discrim = D) (hf : f.IsP
   ext : 2
   rw [coe_unitaryToStabilizer, hz]
 
-/-- For primitive `f`, the norm-one elements of the order with coefficients in `R` are the
-automorphs of `f` over `R`. -/
-private noncomputable def unitaryEquivStabilizer (hfD : f.discrim = D) (hf : f.IsPrimitive)
-    (h2 : IsLeftRegular (2 : R)) :
+/-- When the coefficients of `f` generate the unit ideal of `R`, the norm-one elements of the
+order with coefficients in `R` are the automorphs of `f` over `R`. -/
+private noncomputable def unitaryEquivStabilizer (hfD : f.discrim = D)
+    (hf : Ideal.span {(f.a : R), (f.b : R), (f.c : R)} = ⊤) (h2 : IsLeftRegular (2 : R)) :
     unitary (QuadraticAlgebra R (((D - D ^ 2) / 4 : ℤ) : R) D) ≃*
       stabilizer SL(2, R) (f.map (Int.castRingHom R)) :=
   MulEquiv.ofBijective (unitaryToStabilizer f hfD)
@@ -297,8 +303,9 @@ private noncomputable def unitaryEquivStabilizer (hfD : f.discrim = D) (hf : f.I
           ((γ : SL(2, R)) : Matrix (Fin 2) (Fin 2) R)) h,
       unitaryToStabilizer_surjective f hfD hf h2⟩
 
-private theorem unitaryEquivStabilizer_apply (hfD : f.discrim = D) (hf : f.IsPrimitive)
-    (h2 : IsLeftRegular (2 : R)) (z : unitary (QuadraticAlgebra R (((D - D ^ 2) / 4 : ℤ) : R) D)) :
+private theorem unitaryEquivStabilizer_apply (hfD : f.discrim = D)
+    (hf : Ideal.span {(f.a : R), (f.b : R), (f.c : R)} = ⊤) (h2 : IsLeftRegular (2 : R))
+    (z : unitary (QuadraticAlgebra R (((D - D ^ 2) / 4 : ℤ) : R) D)) :
     unitaryEquivStabilizer f hfD hf h2 z = unitaryToStabilizer f hfD z :=
   MulEquiv.ofBijective_apply _ _ _
 
@@ -306,22 +313,25 @@ private theorem unitaryEquivStabilizer_apply (hfD : f.discrim = D) (hf : f.IsPri
 
 variable {f}
 
-/-- **Automorphs are norm-one elements of the order.** Let `f` be a primitive integral binary
-quadratic form of discriminant `D`, and let `R` be a commutative ring in which `2` is not a zero
-divisor. The proper automorphs of `f` with coefficients in `R` form a group isomorphic to the
-norm-one elements of `R[ω]/(ω² - D ω + (D² - D)/4)`, the quadratic order `ℤ[(D + √D)/2]` of
-discriminant `D` with coefficients in `R`. The inverse is described by
-`coe_stabilizerEquivUnitary_symm_apply`. -/
-noncomputable def stabilizerEquivUnitary (hf : f.IsPrimitive) (hfD : f.discrim = D)
-    (h2 : IsLeftRegular (2 : R)) :
+/-- **Automorphs are norm-one elements of the order.** Let `f` be an integral binary quadratic
+form of discriminant `D`, and let `R` be a commutative ring in which `2` is not a zero divisor and
+the coefficients `a`, `b`, `c` of `f` generate the unit ideal, for instance any `R` when `f` is
+primitive (`IsPrimitive.span_intCast_eq_top`). The proper automorphs of `f` with coefficients in
+`R` form a group isomorphic to the norm-one elements of `R[ω]/(ω² - D ω + (D² - D)/4)`, the
+quadratic order `ℤ[(D + √D)/2]` of discriminant `D` with coefficients in `R`. The inverse is
+described by `coe_stabilizerEquivUnitary_symm_apply`. -/
+noncomputable def stabilizerEquivUnitary (hf : Ideal.span {(f.a : R), (f.b : R), (f.c : R)} = ⊤)
+    (hfD : f.discrim = D) (h2 : IsLeftRegular (2 : R)) :
     stabilizer SL(2, R) (f.map (Int.castRingHom R)) ≃*
       unitary (QuadraticAlgebra R (((D - D ^ 2) / 4 : ℤ) : R) D) :=
   (unitaryEquivStabilizer f hfD hf h2).symm
 
 /-- The automorph attached to the norm-one element `x + y ω`, where `ω` is the image of
 `(D + √D)/2`, is `!![x + y (D - b)/2, -c y; a y, x + y (D + b)/2]`. -/
-theorem coe_stabilizerEquivUnitary_symm_apply (hf : f.IsPrimitive) (hfD : f.discrim = D)
-    (h2 : IsLeftRegular (2 : R)) (z : unitary (QuadraticAlgebra R (((D - D ^ 2) / 4 : ℤ) : R) D)) :
+theorem coe_stabilizerEquivUnitary_symm_apply
+    (hf : Ideal.span {(f.a : R), (f.b : R), (f.c : R)} = ⊤) (hfD : f.discrim = D)
+    (h2 : IsLeftRegular (2 : R))
+    (z : unitary (QuadraticAlgebra R (((D - D ^ 2) / 4 : ℤ) : R) D)) :
     (((stabilizerEquivUnitary hf hfD h2).symm z : SL(2, R)) : Matrix (Fin 2) (Fin 2) R) =
       let x := (z : QuadraticAlgebra R (((D - D ^ 2) / 4 : ℤ) : R) D).re
       let y := (z : QuadraticAlgebra R (((D - D ^ 2) / 4 : ℤ) : R) D).im
@@ -336,15 +346,18 @@ theorem coe_stabilizerEquivUnitary_symm_apply (hf : f.IsPrimitive) (hfD : f.disc
 attached to a norm-one element `z` over `R` entrywise to the automorph attached to the norm-one
 element over `S` whose coordinates are the images of those of `z`. -/
 theorem map_stabilizerEquivUnitary_symm_apply {S : Type*} [CommRing S] (φ : R →+* S)
-    (hf : f.IsPrimitive) (hfD : f.discrim = D) (hR : IsLeftRegular (2 : R))
-    (hS : IsLeftRegular (2 : S)) (z : unitary (QuadraticAlgebra R (((D - D ^ 2) / 4 : ℤ) : R) D))
+    (hf : Ideal.span {(f.a : R), (f.b : R), (f.c : R)} = ⊤) (hfD : f.discrim = D)
+    (hR : IsLeftRegular (2 : R)) (hS : IsLeftRegular (2 : S))
+    (z : unitary (QuadraticAlgebra R (((D - D ^ 2) / 4 : ℤ) : R) D))
     (w : unitary (QuadraticAlgebra S (((D - D ^ 2) / 4 : ℤ) : S) D))
     (hre : (w : QuadraticAlgebra S (((D - D ^ 2) / 4 : ℤ) : S) D).re =
       φ (z : QuadraticAlgebra R (((D - D ^ 2) / 4 : ℤ) : R) D).re)
     (him : (w : QuadraticAlgebra S (((D - D ^ 2) / 4 : ℤ) : S) D).im =
       φ (z : QuadraticAlgebra R (((D - D ^ 2) / 4 : ℤ) : R) D).im) :
     SpecialLinearGroup.map φ ((stabilizerEquivUnitary hf hfD hR).symm z : SL(2, R)) =
-      ((stabilizerEquivUnitary hf hfD hS).symm w : SL(2, S)) := by
+      ((stabilizerEquivUnitary (by
+          simpa [Ideal.map_span, Ideal.map_top, Set.image_insert_eq] using
+            congrArg (Ideal.map φ) hf) hfD hS).symm w : SL(2, S)) := by
   ext i j
   rw [SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply,
     coe_stabilizerEquivUnitary_symm_apply, coe_stabilizerEquivUnitary_symm_apply]
@@ -363,8 +376,9 @@ noncomputable def stabilizerEquivNormOneUnits (hf : f.IsPrimitive) (hfD : f.disc
   -- `Int.cast : ℤ → ℤ` is the identity by definition (`Int.cast_id` is `rfl`), so the
   -- parameters of the integral model read over `ℤ` are those of `normOneUnitsEquivUnitary`.
   (MulEquiv.subgroupCongr (by rw [Int.castRingHom_int, map_id])).trans <|
-    (stabilizerEquivUnitary hf hfD (IsRegular.of_ne_zero two_ne_zero).left).trans
-      (QuadraticOrder.normOneUnitsEquivUnitary D _).symm
+    (stabilizerEquivUnitary hf.span_intCast_eq_top hfD
+      (IsRegular.of_ne_zero two_ne_zero).left).trans
+        (QuadraticOrder.normOneUnitsEquivUnitary D _).symm
 
 /-- The automorph attached to the norm-one unit `x + y√D` of the order is
 `!![x - b y, -2 c y; 2 a y, x + b y]`, read over `ℚ`. -/
@@ -383,8 +397,8 @@ theorem map_stabilizerEquivNormOneUnits_symm_apply (hf : f.IsPrimitive) (hfD : f
     rw [← QuadraticOrder.coe_equivToSubalgebra_apply,
       QuadraticOrder.coe_normOneUnitsEquivUnitary_apply, AlgEquiv.apply_symm_apply]
   have hsymm : ((stabilizerEquivNormOneUnits hf hfD).symm u : SL(2, ℤ)) =
-      ((stabilizerEquivUnitary hf hfD (IsRegular.of_ne_zero two_ne_zero).left).symm z :
-        SL(2, ℤ)) := by
+      ((stabilizerEquivUnitary hf.span_intCast_eq_top hfD
+        (IsRegular.of_ne_zero two_ne_zero).left).symm z : SL(2, ℤ)) := by
     rw [stabilizerEquivNormOneUnits, MulEquiv.symm_trans_apply, MulEquiv.symm_trans_apply,
       MulEquiv.symm_symm, MulEquiv.subgroupCongr_symm_apply]
   have heZ := two_mul_ediv_two_of_discrim_eq (discrim_eq_sq_sub_four_mul f hfD)

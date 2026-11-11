@@ -1,7 +1,8 @@
 name: Update Dependencies
 
 # Pick a recent fully cached master commit, then keep it fixed while workers repair
-# TauCeti. downstream-reports remains external reporting, never a target selector.
+# TauCeti. Once that target is two days old, retarget the bump from its repaired head.
+# downstream-reports remains external reporting, never a target selector.
 on:
   schedule:
     - cron: "23 * * * *"
@@ -35,10 +36,10 @@ jobs:
           ref: main
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@92ecd7a3e35a45e2dd7dff5183ba159e95376f46
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@658d1a42cd5917ae3604c27bb7ab194e7529d6b3
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 92ecd7a3e35a45e2dd7dff5183ba159e95376f46
+          tools-ref: 658d1a42cd5917ae3604c27bb7ab194e7529d6b3
           project-directory: .
       - name: Recover maintenance PRs abandoned without a build status
         env:
@@ -58,18 +59,21 @@ jobs:
           ref: main
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@92ecd7a3e35a45e2dd7dff5183ba159e95376f46
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@658d1a42cd5917ae3604c27bb7ab194e7529d6b3
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 92ecd7a3e35a45e2dd7dff5183ba159e95376f46
+          tools-ref: 658d1a42cd5917ae3604c27bb7ab194e7529d6b3
           project-directory: .
       - name: Install checksum-verified elan
         env:
           ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
           ELAN_VER: v4.2.3
         run: |
-          curl -sSL -H "Accept: application/octet-stream" \
-            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz" -o elan.tar.gz
+          if ! curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz?download=1" -o elan.tar.gz; then
+            curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+              "https://api.github.com/repos/leanprover/elan/releases/assets/441516216" -o elan.tar.gz
+          fi
           echo "${ELAN_SHA256}  elan.tar.gz" | sha256sum -c -
           tar -xzf elan.tar.gz elan-init
           ./elan-init -y --default-toolchain none
@@ -102,10 +106,10 @@ jobs:
           ref: main
           fetch-depth: 0
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@92ecd7a3e35a45e2dd7dff5183ba159e95376f46
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@658d1a42cd5917ae3604c27bb7ab194e7529d6b3
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 92ecd7a3e35a45e2dd7dff5183ba159e95376f46
+          tools-ref: 658d1a42cd5917ae3604c27bb7ab194e7529d6b3
           project-directory: .
       - name: Publish the fixed-target bump
         env:
