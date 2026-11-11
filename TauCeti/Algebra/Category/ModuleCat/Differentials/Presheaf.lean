@@ -29,7 +29,7 @@ public section
 
 open CategoryTheory
 
-namespace TauCeti
+namespace PresheafOfModulesOfCommRing.Derivation
 
 universe v u v₁ v₂ u₁ u₂
 
@@ -40,14 +40,14 @@ variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
 /-- Postcomposing a derivation with a composite of morphisms of presheaves of modules is
 postcomposing with each in turn. -/
 @[simp]
-lemma _root_.PresheafOfModulesOfCommRing.Derivation.postcomp_comp (d : M.Derivation φ)
+lemma postcomp_comp (d : M.Derivation φ)
     (f : M ⟶ N) (g : N ⟶ P) :
     d.postcomp (f ≫ g) = (d.postcomp f).postcomp g :=
   (rfl)
 
 /-- The universal property of a universal derivation `d : M.Derivation φ`: morphisms `M ⟶ N` of
 presheaves of modules correspond to derivations into `N`, by postcomposition with `d`. -/
-noncomputable def _root_.PresheafOfModulesOfCommRing.Derivation.Universal.homEquiv
+noncomputable def Universal.homEquiv
     {d : M.Derivation φ} (hd : d.Universal) (N : PresheafOfModulesOfCommRing.{v} R) :
     (M ⟶ N) ≃ N.Derivation φ where
   toFun f := d.postcomp f
@@ -57,16 +57,16 @@ noncomputable def _root_.PresheafOfModulesOfCommRing.Derivation.Universal.homEqu
 
 /-- The bijection of a universal derivation `d` sends a morphism `f` to `d.postcomp f`. -/
 @[simp]
-lemma _root_.PresheafOfModulesOfCommRing.Derivation.Universal.homEquiv_apply
+lemma Universal.homEquiv_apply
     {d : M.Derivation φ} (hd : d.Universal) (f : M ⟶ N) :
     hd.homEquiv N f = d.postcomp f :=
   (rfl)
 
 /-- The inverse bijection of a universal derivation is its descent map. -/
 @[simp]
-lemma _root_.PresheafOfModulesOfCommRing.Derivation.Universal.homEquiv_symm_apply
+lemma Universal.homEquiv_symm_apply
     {d : M.Derivation φ} (hd : d.Universal) (d' : N.Derivation φ) :
     (hd.homEquiv N).symm d' = hd.desc d' :=
   (rfl)
 
-end TauCeti
+end PresheafOfModulesOfCommRing.Derivation

@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
+public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.Topology.Sets.Opens
 import Mathlib.Analysis.Complex.ReImTopology
@@ -37,6 +38,8 @@ On a relatively open subset `Ω ∩ {0 ≤ im}` of the closed upper half-plane t
 extension across the real axis is in `TauCeti.Analysis.Sobolev.Local.Reflection`. On open
 domains, local `L¹` membership is identified with local integrability, supplying the native
 weak-derivative hypotheses.
+There, with `1 ≤ p`, a locally `Lᵖ` function agrees almost everywhere with its precise
+representative, and every weak derivative of a member of `MemWkpLoc p Ω 1` is locally `Lᵖ`.
 In positive order, completeness is inherited from the native weak-derivative predicate; the
 definitions admit every real normed codomain without an additional typeclass assumption.
 The continuous-linear composition result requires a complete target, as does the native
@@ -69,6 +72,12 @@ theorem memLpLoc_iff : MemLpLoc p U f ↔
 /-- Local integrability restricts to any smaller set. -/
 theorem MemLpLoc.mono_set (hf : MemLpLoc p U f) (hVU : V ⊆ U) : MemLpLoc p V f :=
   fun K hK hc => hf K (hK.trans hVU) hc
+
+/-- Local `Lᵖ` membership on `U` gives `Lᵖ` membership on every set whose closure is compact and
+contained in `U`. -/
+theorem MemLpLoc.memLp_of_closure_subset (hf : MemLpLoc p U f) (hV : IsCompact (closure V))
+    (hVU : closure V ⊆ U) : MemLp f p (volume.restrict V) :=
+  (hf _ hVU hV).mono_measure (Measure.restrict_mono subset_closure le_rfl)
 
 /-- Almost-everywhere equality on `U` preserves local `Lᵖ` membership. -/
 theorem MemLpLoc.congr_ae (hf : MemLpLoc p U f)
@@ -172,6 +181,14 @@ theorem MemLpLoc.clm_prod {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   funext z
   ext v <;> simp
 
+open TauCeti.MeasureTheory in
+/-- A locally `Lᵖ` function on an open set `Ω`, with `1 ≤ p`, agrees almost everywhere on `Ω` with
+its precise representative. -/
+theorem MemLpLoc.ae_eq_preciseRepresentative [CompleteSpace F] {Ω : Opens ℂ} (hp : 1 ≤ p)
+    (hu : MemLpLoc p Ω f) : f =ᵐ[volume.restrict Ω] preciseRepresentative volume f :=
+  ae_eq_restrict_preciseRepresentative Ω.isOpen
+    (hu.locallyIntegrableOn hp Ω.isOpen.isLocallyClosed)
+
 /-- A continuous linear change of codomain preserves and reflects local `Lᵖ` membership. -/
 @[simp]
 theorem _root_.ContinuousLinearEquiv.comp_memLpLoc_iff (e : F ≃L[ℝ] G) :
@@ -265,6 +282,13 @@ theorem MemWkpLoc.exists_weakFDeriv (hf : MemWkpLoc p U (k + 1) f) :
 theorem MemWkpLoc.exists_weakFDeriv_of_isOpen (hf : MemWkpLoc p Ω (k + 1) f) :
     ∃ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume Ω f D ∧ MemWkpLoc p Ω k D :=
   (memWkpLoc_succ_iff_of_isOpen.mp hf).2
+
+/-- Every weak derivative of a member of `MemWkpLoc p Ω 1` is locally `Lᵖ` on `Ω`, not only the
+one supplied by the definition: weak derivatives are unique almost everywhere. -/
+theorem MemWkpLoc.memLpLoc_of_hasWeakFDerivOn (hf : MemWkpLoc p Ω 1 f)
+    {D : ℂ → ℂ →L[ℝ] F} (hD : HasWeakFDerivOn volume Ω f D) : MemLpLoc p Ω D := by
+  obtain ⟨D', hD', hD'p⟩ := hf.exists_weakFDeriv_of_isOpen
+  exact (memWkpLoc_zero_iff.1 hD'p).congr_ae (hD'.ae_eq hD)
 
 /-- Positive-order membership retains the completeness required by weak derivatives. -/
 theorem MemWkpLoc.completeSpace (hf : MemWkpLoc p U (k + 1) f) : CompleteSpace F := by
