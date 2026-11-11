@@ -33,6 +33,8 @@ so `commutatorElement_chevalleyRootSubgroup_of_add_eq_of_add_eq` applies. The no
 exclusions are proved in `TauCeti.LinearAlgebra.RootSystem.DoubleChain`, using the
 Cartan-integer bound outside `G₂` from
 `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Rational`.
+Alternatively, the root-string conditions `chainBotCoeff α β = 0` and
+`chainTopCoeff α β = 2` supply the same non-root hypotheses, without excluding `G₂`.
 
 ## References
 
@@ -90,6 +92,41 @@ private theorem doublyLaced_iterated_bracket {α β γ δ : Fin t.numRoots}
   rw [lie_chevalleySystem_eq_structureConstant_zsmul hγ, lie_zsmul,
     lie_chevalleySystem_eq_structureConstant_zsmul hδ, smul_smul,
     Int.mul_ediv_cancel' (two_dvd_structureConstant_mul_structureConstant hγ)]
+
+private theorem doublyLaced_nonroots_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two
+    {α β γ δ : Fin t.numRoots}
+    (hγ : (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
+    (hδ : (t.simplyConnectedRootDatum ht).root δ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ)
+    (hbot : (t.simplyConnectedRootDatum ht).chainBotCoeff α β = 0)
+    (htop : (t.simplyConnectedRootDatum ht).chainTopCoeff α β = 2) :
+    (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root δ ∉
+        Set.range (t.simplyConnectedRootDatum ht).root ∧
+      (t.simplyConnectedRootDatum ht).root β + (t.simplyConnectedRootDatum ht).root γ ∉
+        Set.range (t.simplyConnectedRootDatum ht).root := by
+  let P := t.simplyConnectedRootDatum ht
+  let : P.IsReduced := t.isReduced_simplyConnectedRootDatum ht
+  have hli := P.linearIndependent_of_add_mem_range_root' ⟨γ, hγ⟩
+  have hrev := P.chainTopCoeff_eq_one_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two
+    hbot htop
+  have hthree : P.root β + 3 • P.root α ∉ Set.range P.root := by
+    rw [P.root_add_nsmul_mem_range_iff_le_chainTopCoeff hli, htop]
+    omega
+  have htwo : P.root α + 2 • P.root β ∉ Set.range P.root := by
+    rw [P.root_add_nsmul_mem_range_iff_le_chainTopCoeff
+      (LinearIndependent.pair_symm_iff.mp hli), hrev]
+    omega
+  have had : P.root α + P.root δ = P.root β + 3 • P.root α := by
+    rw [hδ, hγ]
+    module
+  have hbg : P.root β + P.root γ = P.root α + 2 • P.root β := by
+    rw [hγ]
+    module
+  -- Use the local datum abbreviation so the two explicit root-sum identities can rewrite the goal.
+  change P.root α + P.root δ ∉ Set.range P.root ∧
+    P.root β + P.root γ ∉ Set.range P.root
+  exact ⟨by simpa only [had] using hthree, by simpa only [hbg] using htwo⟩
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ (t.lieAlgebra ht) →ₐ[ℚ] Module.End ℚ V)
@@ -193,6 +230,53 @@ theorem commutatorElement_chevalleyRootSubgroup_of_add_eq_of_add_eq
         (Multiplicative.ofAdd u))
       ((@AdditiveGroup.gaPointsMulEquiv ℤ _ A _ (Ring.toIntAlgebra A)).symm
         (Multiplicative.ofAdd v))
+
+/-- Reorder two root-subgroup elements along a double string. The `α`-string through `β`
+starts at `β` and has top coefficient two. The correction coefficients are computed in `ℤ`. -/
+theorem chevalleyRootSubgroup_mul_of_doubleString
+    {α β γ δ : Fin t.numRoots}
+    (hγ : (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
+    (hδ : (t.simplyConnectedRootDatum ht).root δ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ)
+    (hbot : (t.simplyConnectedRootDatum ht).chainBotCoeff α β = 0)
+    (htop : (t.simplyConnectedRootDatum ht).chainTopCoeff α β = 2)
+    (A : CommAlgCat ℤ) (u v : A) :
+    chevalleyRootSubgroup ρ M hM hnil α A (.ofAdd u) *
+        chevalleyRootSubgroup ρ M hM hnil β A (.ofAdd v) =
+      chevalleyRootSubgroup ρ M hM hnil β A (.ofAdd v) *
+        chevalleyRootSubgroup ρ M hM hnil γ A
+          (.ofAdd ((t.structureConstant ht α β : A) * (u * v))) *
+        chevalleyRootSubgroup ρ M hM hnil δ A
+          (.ofAdd (((t.structureConstant ht α β * t.structureConstant ht α γ / 2 : ℤ) : A) *
+            (u ^ 2 * v))) *
+        chevalleyRootSubgroup ρ M hM hnil α A (.ofAdd u) := by
+  obtain ⟨had, hbg⟩ :=
+    doublyLaced_nonroots_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two hγ hδ hbot htop
+  exact chevalleyRootSubgroup_mul_of_add_eq_of_add_eq ρ M hM hnil hγ hδ had hbg A u v
+
+/-- The Chevalley element-commutator formula when the `α`-string through `β` starts at `β`
+and has top coefficient two. No restriction on the characteristic of the value ring is needed. -/
+theorem commutatorElement_chevalleyRootSubgroup_of_doubleString
+    {α β γ δ : Fin t.numRoots}
+    (hγ : (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
+    (hδ : (t.simplyConnectedRootDatum ht).root δ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ)
+    (hbot : (t.simplyConnectedRootDatum ht).chainBotCoeff α β = 0)
+    (htop : (t.simplyConnectedRootDatum ht).chainTopCoeff α β = 2)
+    (A : CommAlgCat ℤ) (u v : A) :
+    ⁅chevalleyRootSubgroup ρ M hM hnil α A (.ofAdd u),
+        chevalleyRootSubgroup ρ M hM hnil β A (.ofAdd v)⁆ =
+      chevalleyRootSubgroup ρ M hM hnil γ A
+        (.ofAdd ((t.structureConstant ht α β : A) * (u * v))) *
+      chevalleyRootSubgroup ρ M hM hnil δ A
+        (.ofAdd (((t.structureConstant ht α β * t.structureConstant ht α γ / 2 : ℤ) : A) *
+          (u ^ 2 * v))) := by
+  obtain ⟨had, hbg⟩ :=
+    doublyLaced_nonroots_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two hγ hδ hbot htop
+  exact commutatorElement_chevalleyRootSubgroup_of_add_eq_of_add_eq
+    ρ M hM hnil hγ hδ had hbg A u v
 
 /-- Outside `G₂`, the double chain itself supplies the non-root hypotheses of the
 root-subgroup reordering formula. -/
