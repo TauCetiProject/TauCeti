@@ -179,7 +179,8 @@ The definition itself assumes nothing; the properties that make it a surgery eac
 If `γ` is continuous (indeed piecewise `C¹`) on `[a, b]`, the window is nondegenerate, `l < u`, and
 the two endpoint conditions `γ l = circleMap s r θ` and `γ u = circleMap s r θ'` hold, then the
 replacement glues continuously and the result is again piecewise `C¹`
-(`IsPiecewiseC1On.exciseCrossing`). If moreover `γ a = γ b` it is again closed
+(`IsPiecewiseC1On.exciseCrossing`). If moreover `γ a = γ b` and the window lies strictly inside
+the parameter interval, `a < l` and `u < b`, it is again closed
 (`exciseCrossing_closed`). And if the signed radial scale is nonzero, `r ≠ 0`, and `γ` meets `s`
 only inside the open window, then the excised curve misses `s` altogether
 (`exciseCrossing_ne_center`). -/
