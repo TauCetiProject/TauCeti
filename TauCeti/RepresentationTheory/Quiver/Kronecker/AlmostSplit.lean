@@ -249,9 +249,8 @@ theorem indecProjRep_map_arrowPath_injective (a : A) :
   have hz' : z = kroneckerProjSrcEquiv k A z • indecProjRepBasis k src src Quiver.Path.nil :=
     (kroneckerProjSrcEquiv k A).injective (by simp)
   have h := hz
-  rw [hz', map_smul, show ((indecProjRep k (Quiver.Kronecker A) src).map (arrowPath a)).hom
-    (indecProjRepBasis k src src Quiver.Path.nil) = indecProjRepBasis k src tgt (arrowPath a) from
-    by simp [indecProjRep_map_basis], smul_eq_zero] at h
+  rw [hz', map_smul] at h
+  simp only [indecProjRep_map_basis, Quiver.Path.nil_comp, smul_eq_zero] at h
   rcases h with h | h
   · rw [hz', h, zero_smul]
   · exact absurd h (Module.Basis.ne_zero _ _)
