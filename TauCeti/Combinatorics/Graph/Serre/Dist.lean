@@ -18,10 +18,12 @@ and `0` when there is no such path, following Mathlib's `SimpleGraph.dist`. Betw
 vertices it vanishes exactly on the diagonal, is symmetric, and satisfies the triangle
 inequality. Graph morphisms do not increase it.
 
-In an acyclic graph the unique reduced path between two vertices realizes their distance, since
-free reduction never lengthens a path. In a preconnected graph, a pair of vertices at minimal
-distance between two nonempty sets of vertices is joined by a reduced path meeting the first set
-only at its start and the second only at its end.
+A path no longer than the distance between its endpoints is reduced. In an acyclic graph the
+unique reduced path between two vertices realizes their distance, since free reduction never
+lengthens a path. In a preconnected graph, a pair of vertices at minimal distance between two
+nonempty sets of vertices is joined by a reduced path meeting the first set only at its start and
+the second only at its end; in an acyclic graph, the reduced path from a vertex to a nearest
+vertex of a set meets the set only at its end.
 
 ## References
 
@@ -87,6 +89,37 @@ theorem dist_triangle {a b c : Γ.V} (hab : Nonempty (Γ.Path a b))
 theorem dist_src_tgt_le_one (e : Γ.E) : Γ.dist (Γ.src e) (Γ.tgt e) ≤ 1 :=
   dist_le_length (Γ.dart e).toPath
 
+/-- Vertices at distance one are the endpoints of a dart. -/
+theorem exists_src_eq_and_tgt_eq_of_dist_eq_one {a b : Γ.V} (h : Γ.dist a b = 1) :
+    ∃ e : Γ.E, Γ.src e = a ∧ Γ.tgt e = b := by
+  have hab : Nonempty (Γ.Path a b) := by
+    by_contra hne
+    rw [dist_of_isEmpty (not_nonempty_iff.mp hne)] at h
+    exact absurd h (by decide)
+  obtain ⟨p, hp⟩ := exists_length_eq_dist hab
+  obtain ⟨c, e, q, hq, rfl⟩ := p.eq_toPath_comp_of_length_eq_succ (hp.trans h)
+  obtain rfl := q.eq_of_length_zero hq
+  exact ⟨e.1, e.2.1, e.2.2⟩
+
+/-- Joined vertices are joined by a sequence of vertices, each at distance at most one from the
+next, that reaches the second vertex after as many steps as their distance. -/
+theorem exists_forall_dist_succ_le_one {a b : Γ.V} (h : Nonempty (Γ.Path a b)) :
+    ∃ u : ℕ → Γ.V, u 0 = a ∧ u (Γ.dist a b) = b ∧ ∀ i, Γ.dist (u i) (u (i + 1)) ≤ 1 := by
+  have key : ∀ {b : Γ.V} (p : Γ.Path a b), ∃ u : ℕ → Γ.V, u 0 = a ∧ u p.length = b ∧
+      ∀ i, Γ.dist (u i) (u (i + 1)) ≤ 1 := by
+    intro b p
+    induction p with
+    | nil => exact ⟨fun _ => a, rfl, rfl, fun _ => by simp⟩
+    | @cons b c p e ih =>
+      obtain ⟨u, hu₀, hu, hstep⟩ := ih
+      refine ⟨fun i => if i ≤ p.length then u i else c, by simp [hu₀], by simp, fun i => ?_⟩
+      rcases Nat.lt_trichotomy i p.length with hi | rfl | hi
+      · simpa [hi.le, Nat.succ_le_of_lt hi] using hstep i
+      · simpa [hu] using dist_le_length e.toPath
+      · simp [Nat.not_le.mpr hi, Nat.not_le.mpr (Nat.lt_succ_of_lt hi)]
+  obtain ⟨p, hp⟩ := exists_length_eq_dist h
+  exact hp ▸ key p
+
 /-- A graph morphism does not increase the distance between joined vertices. -/
 theorem Hom.dist_le {Δ : SerreGraph} (f : Γ.Hom Δ) {a b : Γ.V} (h : Nonempty (Γ.Path a b)) :
     Δ.dist (f.mapV a) (f.mapV b) ≤ Γ.dist a b := by
@@ -94,6 +127,40 @@ theorem Hom.dist_le {Δ : SerreGraph} (f : Γ.Hom Δ) {a b : Γ.V} (h : Nonempty
   calc Δ.dist (f.mapV a) (f.mapV b) ≤ (f.toPrefunctor.mapPath p).length :=
         dist_le_length (f.toPrefunctor.mapPath p)
     _ = Γ.dist a b := by rw [Prefunctor.length_mapPath, hp]
+
+/-- The vertices after the first dart and before the last dart of a path with at least two darts
+are joined by the path with these two darts removed. -/
+theorem Path.dist_tgt_src_add_two_le {a b : Γ.V} (p : Γ.Path a b) {e f : Γ.E}
+    (hf : f ∈ (Path.darts Γ p).head?) (he : e ∈ (Path.darts Γ p).getLast?)
+    (h : 2 ≤ p.length) : Γ.dist (Γ.tgt f) (Γ.src e) + 2 ≤ p.length := by
+  obtain ⟨c, f', q, hq, rfl⟩ := p.eq_toPath_comp_of_length_eq_succ (n := p.length - 1) (by omega)
+  cases q with
+  | nil => simp [Quiver.Path.length_toPath] at h
+  | cons q e' =>
+    simp only [Quiver.Path.comp_cons, Path.darts_cons, Path.darts_comp, Path.darts_toPath,
+      List.cons_append, List.nil_append, List.head?_cons, Option.mem_def,
+      Option.some.injEq] at hf
+    rw [Quiver.Path.comp_cons, Path.darts_cons, List.getLast?_concat, Option.mem_def,
+      Option.some.injEq] at he
+    subst hf he
+    have := dist_le_length q
+    rw [f'.2.2, e'.2.1, Quiver.Path.length_comp, Quiver.Path.length_toPath,
+      Quiver.Path.length_cons]
+    omega
+
+/-! ### Shortest paths are reduced -/
+
+/-- A path no longer than the distance between its endpoints is reduced. -/
+theorem Path.isReduced_of_length_le_dist {a b : Γ.V} {p : Γ.Path a b}
+    (hp : p.length ≤ Γ.dist a b) : Path.IsReduced Γ p := by
+  have hlen : (Path.darts Γ (Path.reduce Γ p)).length = (Path.darts Γ p).length := by
+    have := dist_le_length (Path.reduce Γ p)
+    have := Path.length_reduce_le Γ p
+    rw [Path.length_darts, Path.length_darts]
+    omega
+  have hdarts := (Path.darts_reduce_sublist Γ p).eq_of_length hlen
+  rw [Path.isReduced_iff_isChain, ← hdarts, ← Path.isReduced_iff_isChain]
+  exact Path.isReduced_reduce Γ p
 
 /-! ### Distances in acyclic graphs -/
 
@@ -135,6 +202,23 @@ theorem Preconnected.exists_isReduced_path (h : Γ.Preconnected) {A B : Set Γ.V
     omega
   · have := (hmin a ha _ hB').trans (dist_le_length q)
     omega
+
+/-- Every vertex has a nearest vertex in a nonempty set of vertices. -/
+theorem exists_forall_dist_le {C : Set Γ.V} (hC : C.Nonempty) (v : Γ.V) :
+    ∃ a ∈ C, ∀ b ∈ C, Γ.dist v a ≤ Γ.dist v b := by
+  obtain ⟨a, ha, hmin⟩ := exists_minimalFor_of_wellFoundedLT (· ∈ C) (Γ.dist v) hC
+  exact ⟨a, ha, fun b hb => (le_total _ _).elim id (hmin hb)⟩
+
+/-- In an acyclic graph, the reduced path from a vertex to a nearest vertex of a set of vertices
+meets the set only at its end. -/
+theorem IsAcyclic.src_notMem_of_forall_dist_le (h : Γ.IsAcyclic) {C : Set Γ.V} {v a : Γ.V}
+    (hmin : ∀ b ∈ C, Γ.dist v a ≤ Γ.dist v b) {q : Γ.Path v a} (hq : Path.IsReduced Γ q)
+    {e : Γ.E} (he : e ∈ Path.darts Γ q) : Γ.src e ∉ C := by
+  intro hC
+  obtain ⟨q₁, r, rfl⟩ := Path.exists_eq_cons_comp_of_mem_darts Γ q he
+  have h₁ := (hmin _ hC).trans (dist_le_length q₁)
+  rw [h.dist_eq_length hq, Quiver.Path.length_comp, Quiver.Path.length_cons] at h₁
+  omega
 
 end SerreGraph
 end TauCeti

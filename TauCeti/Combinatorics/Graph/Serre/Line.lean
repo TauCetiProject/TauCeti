@@ -18,8 +18,9 @@ The line is the Serre graph with the integers as vertices and one geometric edge
 one, and it is a tree: a reduced path never turns back, so it moves monotonically and cannot
 close up.
 
-The coordinate `SerreGraph.lineVertexEquiv` identifies the vertices with the integers, and the
-integers act on the line by translation, `SerreGraph.lineShift`, with `k • n = k + n`.
+The coordinate `SerreGraph.lineVertexEquiv` identifies the vertices with the integers, the
+distance between two vertices is the absolute value of the difference of their coordinates, and
+the integers act on the line by translation, `SerreGraph.lineShift`, with `k • n = k + n`.
 
 ## References
 
@@ -184,6 +185,20 @@ def lineShift : Multiplicative ℤ →* line.Aut where
 /-- Translation moves a dart without changing its orientation. -/
 @[simp] theorem lineShift_smul_dart (k : Multiplicative ℤ) (e : line.E) :
     lineShift k • e = Prod.mk (k.toAdd + Prod.fst e) (Prod.snd e) := (rfl)
+
+/-- The distance between two vertices of the line is the absolute value of the difference of
+their coordinates. -/
+theorem line_dist_eq_natAbs (a b : line.V) :
+    line.dist a b = (lineVertexEquiv a - lineVertexEquiv b).natAbs := by
+  obtain ⟨p, hp, -⟩ := line_isTree.existsUnique_isReduced a b
+  rw [line_isAcyclic.dist_eq_length hp]
+  cases hd : Path.darts line p with
+  | nil =>
+    obtain rfl := Path.eq_of_darts_eq_nil line p hd
+    rw [← Path.length_darts, hd, sub_self, Int.natAbs_zero, List.length_nil]
+  | cons x l =>
+    have h := lineVertexEquiv_eq_add_of_isReduced p hp x (hd ▸ List.mem_cons_self)
+    cases hx : Prod.snd x <;> simp only [hx, Bool.false_eq_true, ite_true, ite_false] at h <;> omega
 
 end SerreGraph
 end TauCeti

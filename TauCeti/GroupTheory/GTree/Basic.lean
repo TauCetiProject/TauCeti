@@ -36,7 +36,8 @@ such actions.
 
 The one-vertex `G`-tree is minimal, every subgroup is elliptic in it, and it is dominated by
 every `G`-tree. The line, a `G`-tree for the infinite cyclic group, is in
-`TauCeti.GroupTheory.GTree.Line`. The automorphism of the segment exchanging its
+`TauCeti.GroupTheory.GTree.Line`, and the axis of a hyperbolic element is in
+`TauCeti.GroupTheory.GTree.Axis`. The automorphism of the segment exchanging its
 vertices inverts its edge (`TauCeti.SerreGraph.segmentSwap_smul`); more generally, no element of
 a `G`-tree exchanges the endpoints of a dart.
 
@@ -109,6 +110,31 @@ theorem smul_ne_rev (g : G) (e : T.E) : g • e ≠ T.rev e :=
 /-- Any two vertices of a `G`-tree are joined by a path. -/
 theorem nonempty_path (a b : T.V) : Nonempty (T.Path a b) :=
   T.isTree.nonempty_path a b
+
+/-- The translate of a path by an element of the group: it traverses the translates of the
+darts of the path, and it is reduced exactly when the path is. -/
+theorem exists_path_darts_eq_map_smul (g : G) {a b : T.V} (p : T.Path a b) :
+    ∃ q : T.Path (g • a) (g • b),
+      Path.darts T.toSerreGraph q = (Path.darts T.toSerreGraph p).map (g • ·) ∧
+        (Path.IsReduced T.toSerreGraph q ↔ Path.IsReduced T.toSerreGraph p) := by
+  refine ⟨((T.action g).toHom.toPrefunctor.mapPath p).cast
+    (by rw [Hom.toPrefunctor_obj, Aut.toHom_mapV, ← smul_vertex_def])
+    (by rw [Hom.toPrefunctor_obj, Aut.toHom_mapV, ← smul_vertex_def]), ?_, ?_⟩
+  · rw [Path.darts_cast, Hom.darts_mapPath]
+    exact List.map_congr_left fun e _ => Aut.toHom_mapE _ e
+  · rw [Path.isReduced_cast]
+    exact Hom.isReduced_mapPath_iff _ _ (T.action g).toHom_mapE_injective p
+
+/-- The `n`-th power of an element moves a vertex by at most `n` times as much as the element. -/
+theorem dist_pow_smul_le (g : G) (v : T.V) (n : ℕ) :
+    T.dist v (g ^ n • v) ≤ n * T.dist v (g • v) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have h := dist_triangle (T.nonempty_path v (g ^ n • v)) (T.nonempty_path _ (g ^ (n + 1) • v))
+    rw [pow_succ, mul_smul, dist_smul] at h
+    rw [pow_succ, mul_smul, Nat.succ_mul]
+    exact h.trans (Nat.add_le_add_right ih _)
 
 instance : Nonempty T.V := ((connected_iff _).mp (IsTree.connected _ T.isTree)).1
 
