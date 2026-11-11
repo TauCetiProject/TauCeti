@@ -144,10 +144,22 @@ variable {R H ι₁ : Type*} [Ring R] [AddGroup H] [Finite ι₁] {N : H →+ �
   {P₁ : ι₁ → Type*} [∀ i, AddTorsor H (P₁ i)] {F₁ : (Σ i, P₁ i) → ℝ}
   (hF₁ : ∀ i h (p : P₁ i), F₁ ⟨i, h +ᵥ p⟩ = F₁ ⟨i, p⟩ - N h) (r₁ : ∀ i, P₁ i)
 
+/-- If degrees change by even amounts within each orbit, then the reference generator of each
+orbit in which a combination of degree `e` has a nonzero coordinate has the parity of `e`: that
+orbit has generators of degree `e`, which all have the parity of its reference generator. -/
+theorem even_sub_of_coordinates_ne_zero {d : (Σ i, P₁ i) → ℤ}
+    (hd : ∀ i (h : H) (p : P₁ i), Even (d ⟨i, h +ᵥ p⟩ - d ⟨i, p⟩)) {e : ℤ} {a : NovikovModule R F₁}
+    (ha : a ∈ gradeBy R F₁ d e) {i : ι₁} (hi : coordinates hF₁ r₁ a i ≠ 0) :
+    Even (d ⟨i, r₁ i⟩ - e) := by
+  obtain ⟨h, hh⟩ : ∃ h, (coordinates hF₁ r₁ a i).coeff h ≠ 0 := by
+    by_contra! hc
+    exact hi (NovikovSeries.ext hc)
+  rw [coordinates_coeff] at hh
+  rw [← mem_gradeBy_iff.1 ha _ hh, ← neg_sub]
+  exact (hd i h (r₁ i)).neg
+
 /-- If degrees change by even amounts within each orbit, then on the coordinates of a combination
-of degree `e` the sign of the degree of a reference generator is the sign `(-1)^e`: the
-coordinate in an orbit vanishes unless the orbit has generators of degree `e`, which all have the
-parity of its reference generator. -/
+of degree `e` the sign of the degree of a reference generator is the sign `(-1)^e`. -/
 theorem negOnePowCast_smul_coordinates_of_mem_gradeBy {d : (Σ i, P₁ i) → ℤ}
     (hd : ∀ i (h : H) (p : P₁ i), Even (d ⟨i, h +ᵥ p⟩ - d ⟨i, p⟩)) {e : ℤ} {a : NovikovModule R F₁}
     (ha : a ∈ gradeBy R F₁ d e) (i : ι₁) :
@@ -155,13 +167,8 @@ theorem negOnePowCast_smul_coordinates_of_mem_gradeBy {d : (Σ i, P₁ i) → �
       negOnePowCast R e • coordinates hF₁ r₁ a i := by
   by_cases h₀ : coordinates hF₁ r₁ a i = 0
   · rw [h₀, smul_zero, smul_zero]
-  obtain ⟨h, hh⟩ : ∃ h, (coordinates hF₁ r₁ a i).coeff h ≠ 0 := by
-    by_contra! hc
-    exact h₀ (NovikovSeries.ext hc)
-  rw [coordinates_coeff] at hh
-  have hde := mem_gradeBy_iff.1 ha _ hh
-  rw [← hde, ← sub_add_cancel (d ⟨i, h +ᵥ r₁ i⟩) (d ⟨i, r₁ i⟩), negOnePowCast_add,
-    negOnePowCast_even (hd i h (r₁ i)), one_mul]
+  rw [← sub_add_cancel (d ⟨i, r₁ i⟩) e, negOnePowCast_add,
+    negOnePowCast_even (even_sub_of_coordinates_ne_zero hF₁ r₁ hd ha h₀), one_mul]
 
 end Sign
 

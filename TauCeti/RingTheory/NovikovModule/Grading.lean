@@ -24,7 +24,9 @@ the kernel at generators of degree `k`. The coordinate matrix of a product kerne
 corresponding reference-degree shifts. These results apply to the supported kernel constructions
 `TauCeti.NovikovModule.kernelMap` and `TauCeti.NovikovModule.kernelProduct`; they do not require
 discrete or injective periods. A diagonal kernel whose coefficient depends only on the degree
-acts on each homogeneous piece as a scalar.
+acts on each homogeneous piece as a scalar. On finite unions of torsors, the product of a matrix
+of Novikov series (`TauCeti.NovikovModule.novikovProductOfMatrix`) with homogeneous entries has the
+corresponding degree shift.
 
 The coordinate construction follows `TauCeti.NovikovModule.coordinates`, and the coefficient
 pieces are `TauCeti.NovikovSeries.gradeBy`.
@@ -276,5 +278,44 @@ theorem kernelMatrix_mem_gradeBy {ε : D}
   exact eq_sub_iff_add_eq.mpr hm
 
 end Matrix
+
+section ProductOfMatrix
+
+variable [CommSemiring R] {H ι₁ ι₂ ι₀ : Type*} [AddCommGroup H] {N : H →+ ℝ}
+  {P₁ : ι₁ → Type*} {P₂ : ι₂ → Type*} {P₀ : ι₀ → Type*}
+  [∀ i, AddTorsor H (P₁ i)] [∀ j, AddTorsor H (P₂ j)] [∀ k, AddTorsor H (P₀ k)]
+  {F₁ : (Σ i, P₁ i) → ℝ} {F₂ : (Σ j, P₂ j) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
+  (hF₁ : ∀ i h (p : P₁ i), F₁ ⟨i, h +ᵥ p⟩ = F₁ ⟨i, p⟩ - N h)
+  (hF₂ : ∀ j h (p : P₂ j), F₂ ⟨j, h +ᵥ p⟩ = F₂ ⟨j, p⟩ - N h)
+  (hF₀ : ∀ k h (p : P₀ k), F₀ ⟨k, h +ᵥ p⟩ = F₀ ⟨k, p⟩ - N h)
+  (r₁ : ∀ i, P₁ i) (r₂ : ∀ j, P₂ j) (r₀ : ∀ k, P₀ k) [Finite ι₁] [Finite ι₂] [Finite ι₀]
+  (M : ι₁ → ι₂ → ι₀ → NovikovSeries R H N)
+
+/-- **Degree of the product of a matrix.** Let the generators be graded by functions `dₗ` that
+change by `δ h` under the translation by `h`. If every entry `Mᵢⱼₖ` is homogeneous of the degree
+`d₁ (r₁ i) + d₂ (r₂ j) + ε - d₀ (r₀ k)`, then the product shifts degrees by `ε`: it sends
+combinations of degrees `e₁` and `e₂` to a combination of degree `e₁ + e₂ + ε`. -/
+theorem novikovProductOfMatrix_mem_gradeBy [AddCommGroup D] (δ : H →+ D)
+    {d₁ : (Σ i, P₁ i) → D} {d₂ : (Σ j, P₂ j) → D} {d₀ : (Σ k, P₀ k) → D}
+    (hd₁ : ∀ i h (p : P₁ i), d₁ ⟨i, h +ᵥ p⟩ = δ h + d₁ ⟨i, p⟩)
+    (hd₂ : ∀ j h (p : P₂ j), d₂ ⟨j, h +ᵥ p⟩ = δ h + d₂ ⟨j, p⟩)
+    (hd₀ : ∀ k h (p : P₀ k), d₀ ⟨k, h +ᵥ p⟩ = δ h + d₀ ⟨k, p⟩) {ε : D}
+    (hM : ∀ i j k, M i j k ∈ NovikovSeries.gradeBy R N δ
+      (d₁ ⟨i, r₁ i⟩ + d₂ ⟨j, r₂ j⟩ + ε - d₀ ⟨k, r₀ k⟩))
+    {e₁ e₂ : D} {a : NovikovModule R F₁} (ha : a ∈ gradeBy R F₁ d₁ e₁)
+    {b : NovikovModule R F₂} (hb : b ∈ gradeBy R F₂ d₂ e₂) :
+    novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ M a b ∈ gradeBy R F₀ d₀ (e₁ + e₂ + ε) := by
+  have := Fintype.ofFinite ι₁
+  have := Fintype.ofFinite ι₂
+  rw [mem_gradeBy_iff_coordinates hF₁ δ hd₁ r₁] at ha
+  rw [mem_gradeBy_iff_coordinates hF₂ δ hd₂ r₂] at hb
+  rw [mem_gradeBy_iff_coordinates hF₀ δ hd₀ r₀]
+  intro k
+  rw [coordinates_novikovProductOfMatrix]
+  refine Submodule.sum_mem _ fun i _ => Submodule.sum_mem _ fun j _ => ?_
+  convert SetLike.mul_mem_graded (SetLike.mul_mem_graded (ha i) (hb j)) (hM i j k) using 2
+  abel
+
+end ProductOfMatrix
 
 end TauCeti.NovikovModule

@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.NovikovModule.Tensor
+public import TauCeti.RingTheory.NovikovModule.Leibniz
 public import TauCeti.Algebra.Homology.SquareZero.Graded
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Graded commutativity homotopies of supported kernel products
@@ -50,6 +52,21 @@ products satisfy the Leibniz rule, the products they induce on degree-wise cohom
 kernel identity and the potential bounds of the kernels remain hypotheses here: they are the
 geometric input from the compactified moduli spaces.
 
+On finite unions of torsors with invariant kernels, products are given by matrices of Novikov
+series relative to reference generators (`NovikovModule.novikovProductOfMatrix`), and so is the
+homotopy, which is a product with the same inputs as `⋆`. For the matrices `Q` of `⋆` and `Q'` of
+`⋆'`, a matrix `K` of the homotopy, and matrices `D₁`, `D₂`, `D₀` of maps on the two inputs and the
+output, the kernel identity becomes the identity
+
+`Qᵢⱼₗ - (-1)^(d₁ (r₁ i) d₂ (r₂ j)) Q'ⱼᵢₗ =
+  ∑ₘ Kᵢⱼₘ D₀ₘₗ + ∑ₘ D₁ᵢₘ Kₘⱼₗ + (-1)^(d₁ (r₁ i)) ∑ₘ D₂ⱼₘ Kᵢₘₗ`
+
+between finite sums of Novikov series. It implies the homotopy
+`a ⋆ b - (-1)^(i j) b ⋆' a = D₀ K(a, b) + K(D₁ a, b) + (-1)^i K(a, D₂ b)` for `a` of degree `i`
+and `b` of degree `j` (`NovikovModule.novikovProductOfMatrix_sub_negOnePowCast_smul_eq_add`),
+provided degrees change by even amounts within each orbit, so that the signs only depend on the
+orbits. This is the form in which counts indexed by classes of a period group enter.
+
 ## Main results
 
 * `NovikovModule.kernelMap_tensor_eq_negOnePow_smul_kernelProduct`: the exchanged product as a
@@ -64,6 +81,8 @@ geometric input from the compactified moduli spaces.
   coboundary, in the degree of the output.
 * `NovikovModule.cohomologyProduct_kernelProduct_eq_negOnePowCast_smul_cohomologyProduct`: the
   induced products on cohomology are graded commutative.
+* `NovikovModule.novikovProductOfMatrix_sub_negOnePowCast_smul_eq_add`: the graded commutativity
+  homotopy for products of matrices, from the commutativity identity between matrices.
 
 ## References
 
@@ -270,6 +289,110 @@ theorem cohomologyProduct_kernelProduct_eq_negOnePowCast_smul_cohomologyProduct
     hδ₀ hδ₀fin hδ₁ hδ₁fin hδ₂ hδ₂fin hkd hcomm ha hb
 
 end Cohomology
+
+end NovikovModule
+
+namespace NovikovModule
+
+section CommutativityOfMatrix
+
+variable {R H ι₁ ι₂ ι₀ : Type*} [CommRing R] [AddCommGroup H] {N : H →+ ℝ}
+  {P₁ : ι₁ → Type*} {P₂ : ι₂ → Type*} {P₀ : ι₀ → Type*}
+  [∀ i, AddTorsor H (P₁ i)] [∀ j, AddTorsor H (P₂ j)] [∀ l, AddTorsor H (P₀ l)]
+  {F₁ : (Σ i, P₁ i) → ℝ} {F₂ : (Σ j, P₂ j) → ℝ} {F₀ : (Σ l, P₀ l) → ℝ}
+  (hF₁ : ∀ i h (p : P₁ i), F₁ ⟨i, h +ᵥ p⟩ = F₁ ⟨i, p⟩ - N h)
+  (hF₂ : ∀ j h (p : P₂ j), F₂ ⟨j, h +ᵥ p⟩ = F₂ ⟨j, p⟩ - N h)
+  (hF₀ : ∀ l h (p : P₀ l), F₀ ⟨l, h +ᵥ p⟩ = F₀ ⟨l, p⟩ - N h)
+  (r₁ : ∀ i, P₁ i) (r₂ : ∀ j, P₂ j) (r₀ : ∀ l, P₀ l)
+  [Fintype ι₁] [Fintype ι₂] [Fintype ι₀]
+
+/-- **The graded commutativity homotopy for matrices of Novikov series.** Let `Q` be the matrix of
+a product `a ⋆ b` and `Q'` that of a product `b ⋆' a` with the inputs exchanged, let `D₁`, `D₂`,
+`D₀` be the matrices of maps on the two inputs and the output, and let `K` be the matrix of a
+product with the same inputs as `⋆`, all relative to reference generators. Grade the inputs by
+`d₁` and `d₂`, with even changes of degree within each orbit. If the matrices obey the
+commutativity identity
+
+`Qᵢⱼₗ - (-1)^(d₁ (r₁ i) d₂ (r₂ j)) Q'ⱼᵢₗ =
+  ∑ₘ Kᵢⱼₘ D₀ₘₗ + ∑ₘ D₁ᵢₘ Kₘⱼₗ + (-1)^(d₁ (r₁ i)) ∑ₘ D₂ⱼₘ Kᵢₘₗ`,
+
+which in Floer theory is the count of the ends of one-dimensional moduli spaces of the family of
+pairs of pants exchanging the two inputs, between reference generators, class by class, then for
+a completed combination `a` of degree `e₁` and a completed combination `b` of degree `e₂`, the
+product of `K` is a homotopy between the two products:
+`a ⋆ b - (-1)^(e₁ e₂) b ⋆' a = D₀ K(a, b) + K(D₁ a, b) + (-1)^e₁ K(a, D₂ b)`. -/
+theorem novikovProductOfMatrix_sub_negOnePowCast_smul_eq_add
+    (Q : ι₁ → ι₂ → ι₀ → NovikovSeries R H N) (Q' : ι₂ → ι₁ → ι₀ → NovikovSeries R H N)
+    (K : ι₁ → ι₂ → ι₀ → NovikovSeries R H N)
+    (D₁ : Matrix ι₁ ι₁ (NovikovSeries R H N)) (D₂ : Matrix ι₂ ι₂ (NovikovSeries R H N))
+    (D₀ : Matrix ι₀ ι₀ (NovikovSeries R H N))
+    {d₁ : (Σ i, P₁ i) → ℤ} {d₂ : (Σ j, P₂ j) → ℤ}
+    (hd₁ : ∀ i (h : H) (p : P₁ i), Even (d₁ ⟨i, h +ᵥ p⟩ - d₁ ⟨i, p⟩))
+    (hd₂ : ∀ j (h : H) (p : P₂ j), Even (d₂ ⟨j, h +ᵥ p⟩ - d₂ ⟨j, p⟩))
+    (hC : ∀ i j l, Q i j l - negOnePowCast R (d₁ ⟨i, r₁ i⟩ * d₂ ⟨j, r₂ j⟩) • Q' j i l =
+      ∑ m, K i j m * D₀ m l + ∑ m, D₁ i m * K m j l +
+        negOnePowCast R (d₁ ⟨i, r₁ i⟩) • ∑ m, D₂ j m * K i m l)
+    {e₁ e₂ : ℤ} {a : NovikovModule R F₁} (ha : a ∈ gradeBy R F₁ d₁ e₁)
+    {b : NovikovModule R F₂} (hb : b ∈ gradeBy R F₂ d₂ e₂) :
+    novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ Q a b -
+        negOnePowCast R (e₁ * e₂) • novikovProductOfMatrix hF₂ hF₁ hF₀ r₂ r₁ r₀ Q' b a =
+      novikovMapOfMatrix hF₀ hF₀ r₀ r₀ D₀ (novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ K a b) +
+        novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ K (novikovMapOfMatrix hF₁ hF₁ r₁ r₁ D₁ a) b +
+        negOnePowCast R e₁ • novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ K a
+          (novikovMapOfMatrix hF₂ hF₂ r₂ r₂ D₂ b) := by
+  refine (coordinates hF₀ r₀).injective (funext fun l => ?_)
+  simp only [map_add, map_sub, map_smul, Pi.add_apply, Pi.sub_apply, Pi.smul_apply,
+    coordinates_novikovMapOfMatrix, coordinates_novikovProductOfMatrix]
+  set x := coordinates hF₁ r₁ a
+  set y := coordinates hF₂ r₂ b
+  -- Each of the five sums is regrouped as `∑ᵢ ∑ⱼ xᵢ yⱼ c(i, j)`, with `c(i, j)` one of the
+  -- five terms of the commutativity identity, by expanding the products and interchanging the
+  -- sums.
+  have h₁ : ∑ j, ∑ i, y j * x i * Q' j i l = ∑ i, ∑ j, x i * y j * Q' j i l := by
+    rw [Finset.sum_comm]
+    ac_rfl
+  have h₂ : ∑ m, (∑ i, ∑ j, x i * y j * K i j m) * D₀ m l =
+      ∑ i, ∑ j, x i * y j * ∑ m, K i j m * D₀ m l := by
+    simp only [Finset.sum_mul, Finset.mul_sum]
+    simp_rw [Finset.sum_comm (s := (Finset.univ : Finset ι₀))]
+    ac_rfl
+  have h₃ : ∑ m, ∑ j, (∑ i, x i * D₁ i m) * y j * K m j l =
+      ∑ i, ∑ j, x i * y j * ∑ m, D₁ i m * K m j l := by
+    simp only [Finset.sum_mul, Finset.mul_sum]
+    simp_rw [Finset.sum_comm (s := (Finset.univ : Finset ι₂))]
+    rw [Finset.sum_comm]
+    ac_rfl
+  have h₄ : ∑ i, ∑ m, (x i * ∑ j, y j * D₂ j m) * K i m l =
+      ∑ i, ∑ j, x i * y j * ∑ m, D₂ j m * K i m l := by
+    simp only [Finset.sum_mul, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [Finset.sum_comm]
+    ac_rfl
+  rw [h₁, h₂, h₃, h₄]
+  simp only [Finset.smul_sum, ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+  -- Termwise, this is the commutativity identity, with the signs of the orbits of `i` and `j`
+  -- replaced by the signs of the degrees of `a` and `b`, on the nonzero coordinates.
+  by_cases hx : x i = 0
+  · simp [hx]
+  by_cases hy : y j = 0
+  · simp [hy]
+  have p₁ := even_sub_of_coordinates_ne_zero hF₁ r₁ hd₁ ha hx
+  have p₂ := even_sub_of_coordinates_ne_zero hF₂ r₂ hd₂ hb hy
+  have s₁ : negOnePowCast R (d₁ ⟨i, r₁ i⟩) = negOnePowCast R e₁ := by
+    rw [negOnePowCast_eq_intCast, negOnePowCast_eq_intCast, (Int.negOnePow_eq_iff _ _).2 p₁]
+  have s₂ : negOnePowCast R (d₁ ⟨i, r₁ i⟩ * d₂ ⟨j, r₂ j⟩) = negOnePowCast R (e₁ * e₂) := by
+    have he : Even (d₁ ⟨i, r₁ i⟩ * d₂ ⟨j, r₂ j⟩ - e₁ * e₂) := by
+      rw [show d₁ ⟨i, r₁ i⟩ * d₂ ⟨j, r₂ j⟩ - e₁ * e₂ =
+        (d₁ ⟨i, r₁ i⟩ - e₁) * d₂ ⟨j, r₂ j⟩ + e₁ * (d₂ ⟨j, r₂ j⟩ - e₂) by ring]
+      exact (p₁.mul_right _).add (p₂.mul_left _)
+    rw [negOnePowCast_eq_intCast, negOnePowCast_eq_intCast, (Int.negOnePow_eq_iff _ _).2 he]
+  have h := hC i j l
+  rw [← s₂, ← s₁]
+  simp only [← negOnePow_smul_eq_negOnePowCast_smul, Units.smul_def, zsmul_eq_mul] at h ⊢
+  linear_combination (x i * y j) * h
+
+end CommutativityOfMatrix
 
 end NovikovModule
 
