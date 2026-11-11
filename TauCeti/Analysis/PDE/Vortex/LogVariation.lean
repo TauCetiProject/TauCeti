@@ -27,6 +27,8 @@ equation `Δη = P η`.
 
 * `logVariation_add`, `logVariation_smul`, `logVariation_sub`: the logarithmic variation is
   real-linear in differentiable `η` (pointwise: `logVariation_add_apply`).
+* `logVariation_congr_nhds`, `contDiff_logVariation`: it is local in `η`, and `Cⁿ` along a `Cⁿ`
+  field when `η` is `Cⁿ⁺¹`.
 * `gaugeFixedOperator_logVariation`: at every field, writing `E = ∂bar_a α` for the complex
   holomorphicity defect (the rows `1` and `2` of `equation x`),
   `L_x (logVariation x η) = (Im (P η - Δη), Re (P η - Δη), Re (η E), Im (η E))`.
@@ -56,8 +58,8 @@ with `|α|² → 1` at infinity) it suffices that `y ∈ L²`, which gives `η �
 of `δα / α` at the zeros of `α`. This is the vanishing step behind the injectivity half of the
 identification of the kernel of `L_x` with the tangent space of the divisor space `Sym^m ℂ`
 through the principal parts of `δα / α`. The principal-part map itself, which needs the local
-structure of `δα / α` at a zero of `α`, and the construction of a kernel element with prescribed
-principal parts are not treated here.
+structure of `δα / α` at a zero of `α`, is not treated here; kernel elements with prescribed
+principal parts are constructed in `TauCeti.Analysis.PDE.Vortex.KernelExistence`.
 
 ## References
 
@@ -384,6 +386,47 @@ theorem logVariation_sub (x : ℂ → EuclideanSpace ℝ (Fin 4)) {η ζ : ℂ �
   have hneg : -ζ = (-1 : ℝ) • ζ := by simp
   rw [sub_eq_add_neg, sub_eq_add_neg, hneg, logVariation_add x hη (hζ.const_smul _),
     logVariation_smul, neg_one_smul]
+
+/-- The logarithmic variation at a point depends only on the germ of `η` there. -/
+theorem logVariation_congr_nhds (x : ℂ → EuclideanSpace ℝ (Fin 4)) {η ζ : ℂ → ℂ} {z : ℂ}
+    (h : η =ᶠ[𝓝 z] ζ) : logVariation x η z = logVariation x ζ z := by
+  have hre : (fun w ↦ (η w).re) =ᶠ[𝓝 z] fun w ↦ (ζ w).re := h.mono fun w hw ↦ by simp only [hw]
+  have him : (fun w ↦ (η w).im) =ᶠ[𝓝 z] fun w ↦ (ζ w).im := h.mono fun w hw ↦ by simp only [hw]
+  refine apply_eq_of_sectionValue_eq ?_ ?_ ?_
+  · simp only [logVariation_apply_zero, hre.fderiv_eq, him.fderiv_eq]
+  · simp only [logVariation_apply_one, hre.fderiv_eq, him.fderiv_eq]
+  · rw [sectionValue_logVariation, sectionValue_logVariation, h.eq_of_nhds]
+
+/-- The logarithmic variation of a `Cⁿ⁺¹` function along a `Cⁿ` field is `Cⁿ`, at a point. -/
+theorem contDiffAt_logVariation {x : ℂ → EuclideanSpace ℝ (Fin 4)} {η : ℂ → ℂ} {z : ℂ}
+    {n : WithTop ℕ∞} (hx : ContDiffAt ℝ n x z) (hη : ContDiffAt ℝ (n + 1) η z) :
+    ContDiffAt ℝ n (logVariation x η) z := by
+  have hu : ContDiffAt ℝ (n + 1) (fun w ↦ (η w).re) z := reCLM.contDiff.contDiffAt.comp z hη
+  have hv : ContDiffAt ℝ (n + 1) (fun w ↦ (η w).im) z := imCLM.contDiff.contDiffAt.comp z hη
+  have hdu (a : ℂ) : ContDiffAt ℝ n (fun w ↦ fderiv ℝ (fun w ↦ (η w).re) w a) z :=
+    (hu.fderiv_right le_rfl).clm_apply contDiffAt_const
+  have hdv (a : ℂ) : ContDiffAt ℝ n (fun w ↦ fderiv ℝ (fun w ↦ (η w).im) w a) z :=
+    (hv.fderiv_right le_rfl).clm_apply contDiffAt_const
+  have hxi (i : Fin 4) : ContDiffAt ℝ n (fun w ↦ x w i) z := contDiffAt_euclidean.1 hx i
+  have hu' := hu.of_le le_self_add
+  have hv' := hv.of_le le_self_add
+  have h₀ : ContDiffAt ℝ n (fun w ↦ logVariation x η w 0) z := by
+    simpa only [logVariation_apply_zero] using (hdv 1).neg.sub (hdu I)
+  have h₁ : ContDiffAt ℝ n (fun w ↦ logVariation x η w 1) z := by
+    simpa only [logVariation_apply_one] using (hdu 1).sub (hdv I)
+  have h₂ : ContDiffAt ℝ n (fun w ↦ logVariation x η w 2) z := by
+    simpa only [logVariation_apply_two] using ((hxi 2).mul hu').sub ((hxi 3).mul hv')
+  have h₃ : ContDiffAt ℝ n (fun w ↦ logVariation x η w 3) z := by
+    simpa only [logVariation_apply_three] using ((hxi 2).mul hv').add ((hxi 3).mul hu')
+  refine contDiffAt_euclidean.2 fun i ↦ ?_
+  fin_cases i
+  exacts [h₀, h₁, h₂, h₃]
+
+/-- The logarithmic variation of a `Cⁿ⁺¹` function along a `Cⁿ` field is `Cⁿ`. -/
+theorem contDiff_logVariation {x : ℂ → EuclideanSpace ℝ (Fin 4)} {η : ℂ → ℂ}
+    {n : WithTop ℕ∞} (hx : ContDiff ℝ n x) (hη : ContDiff ℝ (n + 1) η) :
+    ContDiff ℝ n (logVariation x η) :=
+  contDiff_iff_contDiffAt.2 fun _ ↦ contDiffAt_logVariation hx.contDiffAt hη.contDiffAt
 
 /-- **A kernel element with regular `δα / α` vanishes.** Let `x` be a differentiable field whose
 holomorphicity rows vanish everywhere and whose zeros have dense complement, and let `y` be a
