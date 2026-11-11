@@ -56,8 +56,7 @@ theorem integral_norm_fderiv_one_sq_annulus_le {u : ℂ → V} {J : V → V →L
       ((∫ θ in -π..π, ‖deriv (fun θ ↦ u (circleMap z₀ b θ)) θ‖ ^ 2) +
         ∫ θ in -π..π, ‖deriv (fun θ ↦ u (circleMap z₀ a θ)) θ‖ ^ 2) / (2 * c) := by
   let A := {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}
-  have hcompact : IsCompact A := by
-    simpa only [dist_eq_norm] using Metric.isCompact_annulus z₀ a b
+  have hcompact : IsCompact A := isCompact_setOf_le_norm_sub_le z₀ a b
   have hDu : ContinuousOn (fderiv ℝ u) A := fun z hz ↦
     ((hu z hz).continuousAt_fderiv (by norm_num)).continuousWithinAt
   have hE : IntegrableOn (fun z ↦ c * ‖fderiv ℝ u z 1‖ ^ 2) A :=

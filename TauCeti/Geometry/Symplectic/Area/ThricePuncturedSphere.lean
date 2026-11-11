@@ -139,11 +139,6 @@ private theorem le_norm_sub_one_of_mem_sdiff_ball {S : Set ℂ} {z : ℂ}
 private theorem ae_notMem_sphere : ∀ᵐ z ∂(volume : Measure ℂ), z ∉ sphere (1 : ℂ) (3 / 4) :=
   measure_eq_zero_iff_ae_notMem.1 (Measure.addHaar_sphere (μ := volume) (1 : ℂ) (3 / 4))
 
-/-- A closed annulus about `c` in `ℂ`, written with the norm. -/
-private theorem isCompact_normAnnulus (c : ℂ) (a b : ℝ) :
-    IsCompact {z : ℂ | a ≤ ‖z - c‖ ∧ ‖z - c‖ ≤ b} := by
-  simpa only [dist_eq_norm] using Metric.isCompact_annulus c a b
-
 /-- The area density of a map which is `C²` on the annulus `r ≤ ‖z‖ ≤ ρ` outside the ball of radius
 `3/4` about `1` is integrable there. -/
 private theorem integrableOn_sdiff_ball (ω : SymplecticForm V) {u : ℂ → V} {r ρ : ℝ}
@@ -151,7 +146,7 @@ private theorem integrableOn_sdiff_ball (ω : SymplecticForm V) {u : ℂ → V} 
     IntegrableOn (fun z ↦ ω (fderiv ℝ u z 1) (fderiv ℝ u z I))
       ({z : ℂ | r ≤ ‖z - 0‖ ∧ ‖z - 0‖ ≤ ρ} \ ball 1 (3 / 4)) :=
   integrableOn_fderiv_apply_of_contDiffAt ω
-    ((isCompact_normAnnulus 0 r ρ).diff isOpen_ball)
+    ((isCompact_setOf_le_norm_sub_le 0 r ρ).diff isOpen_ball)
     fun z hz ↦ (hu z hz).of_le (by norm_num)
 
 omit [FiniteDimensional ℝ V] in
@@ -193,7 +188,7 @@ private theorem integral_cutoff_sdiff (ω : SymplecticForm V) {u uc : ℂ → V}
     ω.circleArea u 0 ρ - ω.circleArea u 0 r := by
   set A₀ : Set ℂ := {z : ℂ | r ≤ ‖z - 0‖ ∧ ‖z - 0‖ ≤ ρ}
   have hA : IsCompact (A₀ \ ball 1 (3 / 4)) :=
-    (isCompact_normAnnulus 0 r ρ).diff isOpen_ball
+    (isCompact_setOf_le_norm_sub_le 0 r ρ).diff isOpen_ball
   have hballA₀ : ball (1 : ℂ) (3 / 4) ⊆ A₀ := fun z hz ↦ by
     rw [mem_ball, dist_eq_norm] at hz
     have h₁ : ‖z‖ - 1 ≤ ‖z - 1‖ := by simpa using norm_sub_norm_le z (1 : ℂ)
@@ -280,8 +275,8 @@ private theorem integral_truncation_eq (ω : SymplecticForm V) {u : ℂ → V} {
   set A : Set ℂ := {z : ℂ | r ≤ ‖z - 0‖ ∧ ‖z - 0‖ ≤ ρ} \ ball 1 (3 / 4)
   set B : Set ℂ := {z : ℂ | r ≤ ‖z - 1‖ ∧ ‖z - 1‖ ≤ 3 / 4}
   have hA : IsCompact A :=
-    (isCompact_normAnnulus 0 r ρ).diff isOpen_ball
-  have hB : IsCompact B := isCompact_normAnnulus 1 r (3 / 4)
+    (isCompact_setOf_le_norm_sub_le 0 r ρ).diff isOpen_ball
+  have hB : IsCompact B := isCompact_setOf_le_norm_sub_le 1 r (3 / 4)
   rw [truncation_eq_union hr_def hρ_def (by linarith) (by linarith),
     setIntegral_union (Set.disjoint_left.2 fun z (hzA : z ∈ A)
       (hzB : z ∈ B ∩ ball (1 : ℂ) (3 / 4)) ↦ hzA.2 hzB.2)

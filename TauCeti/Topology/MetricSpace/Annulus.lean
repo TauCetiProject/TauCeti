@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Group.Basic
 public import Mathlib.Topology.MetricSpace.ProperSpace
 
 /-!
 # Closed annuli in proper metric spaces
 
 The closed annulus `{z | a ≤ dist z c ∧ dist z c ≤ b}` about `c` is compact in a proper space
-(`Metric.isCompact_annulus`).
+(`Metric.isCompact_annulus`), and likewise when it is written with the norm.
 -/
 
 public section
@@ -29,3 +30,8 @@ theorem isCompact_annulus {E : Type*} [PseudoMetricSpace E] [ProperSpace E] (c :
     fun _ hz ↦ hz.2
 
 end Metric
+
+/-- A closed annulus written with the norm is compact in a proper seminormed group. -/
+theorem isCompact_setOf_le_norm_sub_le {E : Type*} [SeminormedAddCommGroup E] [ProperSpace E]
+    (c : E) (a b : ℝ) : IsCompact {z : E | a ≤ ‖z - c‖ ∧ ‖z - c‖ ≤ b} := by
+  simpa only [dist_eq_norm] using Metric.isCompact_annulus c a b
