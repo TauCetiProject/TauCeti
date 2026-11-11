@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GraphOfGroups.Presentation
-public import Mathlib.Combinatorics.Quiver.Path.Weight
+public import TauCeti.Combinatorics.Graph.Serre.Path.Group
+public import TauCeti.Combinatorics.Quiver.PathWeight
+public import TauCeti.Combinatorics.Quiver.Symmetric
 
 /-!
 # Paths in a graph of groups and the fundamental group at a vertex
@@ -35,6 +37,10 @@ reading the letters of a path as elements of `π₁(𝔸, T)` gives a homomorphi
 `π₁(𝔸, a) →* π₁(𝔸, T)` for every set `T` of darts. Over a graph without edges `π₁(𝔸, a)` is the
 vertex group `A_a`.
 
+An edge path of `Γ` is an `𝔸`-path with no vertex group letters, and backtrack homotopic edge
+paths are homotopic `𝔸`-paths. Hence reading reduced closed edge paths as `𝔸`-paths is a
+homomorphism from the reduced path group of `Γ` at `a` to `π₁(𝔸, a)`.
+
 ## Main definitions
 
 * `TauCeti.GraphOfGroups.Letter`: the letters of `𝔸`-paths.
@@ -43,6 +49,9 @@ vertex group `A_a`.
 * `TauCeti.GraphOfGroups.π₁`: the fundamental group `π₁(𝔸, a)` of closed `𝔸`-paths.
 * `TauCeti.GraphOfGroups.π₁.vertexHom`: the homomorphism `A_b →* π₁(𝔸, a)`, `g ↦ p g p⁻¹`.
 * `TauCeti.GraphOfGroups.π₁.toπ₁Tree`: the homomorphism `π₁(𝔸, a) →* π₁(𝔸, T)`.
+* `TauCeti.GraphOfGroups.dartPrefunctor`: edge paths of `Γ` as `𝔸`-paths.
+* `TauCeti.GraphOfGroups.π₁.ofPathGroup`: the homomorphism from the reduced path group of `Γ`
+  at `a` to `π₁(𝔸, a)`.
 
 ## Main results
 
@@ -126,6 +135,14 @@ def ofVertex {a : Γ.V} (g : 𝔸.vertexGroup a) : 𝔸.Path ⟨a⟩ ⟨a⟩ :=
 /-- The `𝔸`-path of length one given by a dart. -/
 def ofDart {a b : Γ.V} (e : a ⟶ b) : 𝔸.Path ⟨a⟩ ⟨b⟩ :=
   Quiver.Hom.toPath (Letter.dart e)
+
+theorem ofVertex_def {a : Γ.V} (g : 𝔸.vertexGroup a) :
+    ofVertex g = Quiver.Hom.toPath (Letter.vertex g) :=
+  (rfl)
+
+theorem ofDart_def {a b : Γ.V} (e : a ⟶ b) :
+    ofDart (𝔸 := 𝔸) e = Quiver.Hom.toPath (Letter.dart e) :=
+  (rfl)
 
 @[simp] theorem comp_ofVertex {x : 𝔸.LetterVertex} {a : Γ.V} (p : 𝔸.Path x ⟨a⟩)
     (g : 𝔸.vertexGroup a) : p.comp (ofVertex g) = p.cons (Letter.vertex g) :=
@@ -469,6 +486,80 @@ noncomputable def vertexEquivOfIsEmpty (a : Γ.V) : 𝔸.vertexGroup a ≃* π�
   (rfl)
 
 end isEmpty
+
+end π₁
+
+/-! ### Edge paths of the underlying graph -/
+
+variable (𝔸) in
+/-- The darts of `Γ` as letters of `𝔸`-paths. Its `mapPath` reads an edge path of `Γ` as the
+`𝔸`-path with the same darts and no vertex group letters. It is reducible so that the image
+of a path from `a` to `b` is an `𝔸`-path from `a` to `b` without a cast. -/
+abbrev dartPrefunctor : Γ.V ⥤q 𝔸.LetterVertex where
+  obj a := ⟨a⟩
+  map e := Letter.dart e
+
+@[simp] theorem dartPrefunctor_map {a b : Γ.V} (e : a ⟶ b) :
+    (dartPrefunctor 𝔸).map e = Letter.dart e :=
+  (rfl)
+
+instance : (dartPrefunctor 𝔸).MapReverse :=
+  ⟨fun _ => rfl⟩
+
+variable (𝔸) in
+/-- Backtrack homotopic edge paths of `Γ` are homotopic as `𝔸`-paths: deleting a dart followed by
+its reverse is one of the elementary moves. -/
+theorem _root_.TauCeti.SerreGraph.Path.Homotopic.mapPath_dartPrefunctor {a b : Γ.V}
+    {p q : Γ.Path a b} (h : SerreGraph.Path.Homotopic Γ p q) :
+    GraphOfGroups.Path.Homotopic ((dartPrefunctor 𝔸).mapPath p)
+      ((dartPrefunctor 𝔸).mapPath q) := by
+  induction h with
+  | refl => exact .refl _
+  | symm _ ih => exact ih.symm
+  | trans _ _ ih₁ ih₂ => exact ih₁.trans ih₂
+  | cons _ e ih => exact ih.cons _
+  | backtrack p e => exact .dart_reverse _ e
+
+/-- An edge path of `Γ`, read as an `𝔸`-path, has image in `π₁(𝔸, T)` the product of its dart
+generators. -/
+@[simp] theorem Path.toπ₁Tree_mapPath_dartPrefunctor (T : Set Γ.E) {a b : Γ.V} (p : Γ.Path a b) :
+    Path.toπ₁Tree T ((dartPrefunctor 𝔸).mapPath p) =
+      p.weight fun {a b : Γ.V} (e : a ⟶ b) => π₁Tree.edge T e.1 := by
+  simp [Path.toπ₁Tree]
+
+namespace π₁
+
+/-- Reducing an edge path does not change the class of the `𝔸`-path it defines. -/
+private theorem mk_mapPath_reduce {a : Γ.V} (p : Γ.Path a a) :
+    mk ((dartPrefunctor 𝔸).mapPath (SerreGraph.Path.reduce Γ p)) =
+      mk ((dartPrefunctor 𝔸).mapPath p) :=
+  mk_eq_mk_iff.2 ((SerreGraph.Path.homotopic_reduce Γ p).symm.mapPath_dartPrefunctor 𝔸)
+
+variable (𝔸) in
+/-- Reading reduced closed edge paths of `Γ` at `a` as `𝔸`-paths: the homomorphism from the
+reduced path group of the underlying graph to `π₁(𝔸, a)`. -/
+def ofPathGroup (a : Γ.V) : SerreGraph.PathGroup Γ a →* π₁ 𝔸 a where
+  toFun g := mk ((dartPrefunctor 𝔸).mapPath g.toPath)
+  map_one' := by simp
+  map_mul' g h := by
+    rw [SerreGraph.PathGroup.toPath_mul, mk_mapPath_reduce, Prefunctor.mapPath_comp, mk_comp]
+
+theorem ofPathGroup_apply {a : Γ.V} (g : SerreGraph.PathGroup Γ a) :
+    ofPathGroup 𝔸 a g = mk ((dartPrefunctor 𝔸).mapPath g.toPath) :=
+  (rfl)
+
+/-- A closed edge path, read as an `𝔸`-path, need not be reduced first. -/
+@[simp] theorem ofPathGroup_ofPath {a : Γ.V} (p : Γ.Path a a) :
+    ofPathGroup 𝔸 a (SerreGraph.PathGroup.ofPath p) = mk ((dartPrefunctor 𝔸).mapPath p) := by
+  rw [ofPathGroup_apply, SerreGraph.PathGroup.toPath_ofPath, mk_mapPath_reduce]
+
+/-- A reduced closed edge path, read as an `𝔸`-path, has image in `π₁(𝔸, T)` the product of its
+dart generators. -/
+@[simp] theorem toπ₁Tree_ofPathGroup (T : Set Γ.E) {a : Γ.V} (g : SerreGraph.PathGroup Γ a) :
+    toπ₁Tree 𝔸 a T (ofPathGroup 𝔸 a g) =
+      SerreGraph.PathGroup.lift (π₁Tree.edge T) π₁Tree.edge_rev g := by
+  induction g using SerreGraph.PathGroup.induction_on with
+  | h p => simp
 
 end π₁
 
