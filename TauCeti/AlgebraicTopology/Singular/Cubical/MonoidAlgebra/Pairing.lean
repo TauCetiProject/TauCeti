@@ -46,6 +46,12 @@ operations of the chain systems of trajectory spaces in Morse theory.
 * `TauCeti.cubicalChainPairing_op_smul_left`: the pairing of a balanced map is balanced.
 * `TauCeti.cubicalChainPairing_smul_left`, `TauCeti.cubicalChainPairing_op_smul_right`: the
   pairing of an equivariant map is equivariant.
+* `TauCeti.cubicalChainModuleLinearMap_cubicalChainPairing`,
+  `TauCeti.cubicalChainPairing_cubicalChainModuleLinearMap`: naturality of the pairing for
+  push-forwards of chains.
+* `TauCeti.cubicalChainPairing_lof_point`: pairing with a point is a push-forward.
+* `TauCeti.smul_eq_cubicalChainPairing`, `TauCeti.op_smul_eq_cubicalChainPairing`: the actions of
+  the chains of a monoid are the pairings of the actions on the space.
 * `TauCeti.cubicalChainTensorHom_tmul`: the induced morphism is the pairing on pure tensors.
 * `TauCeti.cubicalChainDifferential_cubicalChainSumPairing`,
   `TauCeti.cubicalChainSumPairing_assoc`, `TauCeti.cubicalChainSumPairing_mulMap`: the Leibniz
@@ -325,6 +331,100 @@ theorem cubicalChainPairing_op_smul_right [Monoid K] [TopologicalSpace K] [Conti
         simp [Homeomorph.prodAssoc, Equiv.prodAssoc, hf]
 
 end Equivariance
+
+section Naturality
+
+universe u
+
+variable {X X' Y Y' Z Z' : Type u} [TopologicalSpace X] [TopologicalSpace X']
+  [TopologicalSpace Y] [TopologicalSpace Y'] [TopologicalSpace Z] [TopologicalSpace Z']
+  {H K R : Type*} [CommRing R]
+
+/-- **Push-forward of a pairing**: pushing the pairing induced by `f` forward along `g` is the
+pairing induced by `g ∘ f`. -/
+@[simp]
+theorem cubicalChainModuleLinearMap_cubicalChainPairing (f : C(X × Y, Z)) (g : C(Z, Z'))
+    (m : cubicalChainModule X H R) (n : cubicalChainModule Y K R) :
+    cubicalChainModuleLinearMap R g (cubicalChainPairing H K R f m n) =
+      cubicalChainPairing H K R (g.comp f) m n := by
+  induction m using cubicalChainModule.induction_on with
+  | add m m' hm hm' => simp only [map_add, LinearMap.add_apply, hm, hm']
+  | lof p c =>
+    induction n using cubicalChainModule.induction_on with
+    | add n n' hn hn' => simp only [map_add, hn, hn']
+    | lof q c' =>
+      rw [cubicalChainPairing_lof_lof, cubicalChainPairing_lof_lof,
+        cubicalChainModuleLinearMap_lof, NormalizedCubicalChain.map_comp, LinearMap.comp_apply]
+
+/-- **Pairing of push-forwards**: pairing the push-forwards along `h` and `k` by `f` is the
+pairing induced by `f ∘ (h × k)`. -/
+@[simp]
+theorem cubicalChainPairing_cubicalChainModuleLinearMap (f : C(X × Y, Z)) (h : C(X', X))
+    (k : C(Y', Y)) (m : cubicalChainModule X' H R) (n : cubicalChainModule Y' K R) :
+    cubicalChainPairing H K R f (cubicalChainModuleLinearMap R h m)
+        (cubicalChainModuleLinearMap R k n) =
+      cubicalChainPairing H K R (f.comp (h.prodMap k)) m n := by
+  induction m using cubicalChainModule.induction_on with
+  | add m m' hm hm' => simp only [map_add, LinearMap.add_apply, hm, hm']
+  | lof p c =>
+    induction n using cubicalChainModule.induction_on with
+    | add n n' hn hn' => simp only [map_add, hn, hn']
+    | lof q c' =>
+      rw [cubicalChainModuleLinearMap_lof, cubicalChainModuleLinearMap_lof,
+        cubicalChainPairing_lof_lof, cubicalChainPairing_lof_lof, ← map_crossProduct,
+        NormalizedCubicalChain.map_comp, LinearMap.comp_apply]
+
+/-- **Pairing with a point**: pairing with the `0`-cube at `x` is the push-forward along
+`y ↦ f (x, y)`. -/
+@[simp]
+theorem cubicalChainPairing_lof_point (f : C(X × Y, Z)) (x : X) (n : cubicalChainModule Y K R) :
+    cubicalChainPairing H K R f (cubicalChainModuleLof X H R 0 (ofCube X R (SingularCube.point x)))
+        n =
+      cubicalChainModuleLinearMap R
+        (f.comp (ContinuousMap.prodMk (ContinuousMap.const Y x) (ContinuousMap.id Y))) n := by
+  induction n using cubicalChainModule.induction_on with
+  | add n n' hn hn' => simp only [map_add, hn, hn']
+  | lof q c' =>
+    rw [cubicalChainPairing_lof_lof, ← cubicalChainModuleLof_cast (Nat.zero_add q), ← map_cast,
+      crossProduct_point_left, cubicalChainModuleLinearMap_lof, NormalizedCubicalChain.map_comp,
+      LinearMap.comp_apply]
+
+end Naturality
+
+section Actions
+
+variable {G Y : Type*} [Monoid G] [TopologicalSpace G] [ContinuousMul G] [TopologicalSpace Y]
+  {H K : Type*} {R : Type*} [CommRing R]
+
+/-- **The left action is a pairing**: a chain of `G` acts on the left by the pairing induced by
+the action `G × Y → Y`. -/
+theorem smul_eq_cubicalChainPairing [MulAction G Y] [ContinuousSMul G Y]
+    (a : cubicalChainModule G H R) (n : cubicalChainModule Y K R) :
+    cubicalChainModuleEquiv G H R a • n = cubicalChainPairing H K R (leftActMap G Y) a n := by
+  induction a using cubicalChainModule.induction_on with
+  | add a a' ha ha' => simp only [map_add, add_smul, LinearMap.add_apply, ha, ha']
+  | lof p c =>
+    induction n using cubicalChainModule.induction_on with
+    | add n n' hn hn' => simp only [smul_add, map_add, hn, hn']
+    | lof q c' =>
+      rw [cubicalChainModuleEquiv_lof, lof_smul_cubicalChainModuleLof,
+        cubicalChainPairing_lof_lof, leftAct_def]
+
+/-- **The right action is a pairing**: a chain of `G` acts on the right by the pairing induced by
+the action `Y × G → Y`. -/
+theorem op_smul_eq_cubicalChainPairing [MulAction Gᵐᵒᵖ Y] [ContinuousSMul Gᵐᵒᵖ Y]
+    (a : cubicalChainModule G G R) (m : cubicalChainModule Y G R) :
+    op (cubicalChainModuleEquiv G G R a) • m = cubicalChainPairing G G R (actMap Y G) m a := by
+  induction a using cubicalChainModule.induction_on with
+  | add a a' ha ha' => simp only [map_add, MulOpposite.op_add, add_smul, ha, ha']
+  | lof q c' =>
+    induction m using cubicalChainModule.induction_on with
+    | add m m' hm hm' => simp only [smul_add, map_add, LinearMap.add_apply, hm, hm']
+    | lof p c =>
+      rw [cubicalChainModuleEquiv_lof, op_lof_smul_cubicalChainModuleLof,
+        cubicalChainPairing_lof_lof, act_def]
+
+end Actions
 
 section TensorHom
 
