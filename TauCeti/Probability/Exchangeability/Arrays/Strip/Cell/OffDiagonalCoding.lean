@@ -504,6 +504,7 @@ private theorem map_prod_orientedPairCoding_eq
   by_cases hq : offDiagonalPairSquareContextOfStripsAndDiagonal e i j q.1 ∈ O <;>
     simp [hq, offDiagonalPairSquareContextOfStripsAndDiagonal_swap e i j]
 
+omit [Nonempty α] in
 /-- A coding function that codes each visible off-diagonal pair correctly generates every finite
 family of such pairs: if feeding the pair's own square context and a uniform variable to `g`
 reproduces the joint law of the crossing strips, the diagonal and that pair, then feeding each

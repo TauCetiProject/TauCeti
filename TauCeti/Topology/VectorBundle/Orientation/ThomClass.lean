@@ -83,6 +83,10 @@ stated in degree `finrank ℝ F`, so `isThomClass_thomClass` transports it along
   Thom class restricts on each fibre to the generator selected by the fibre orientation, read in
   any linear trivialization.
 * `TauCeti.VectorBundleOrientation.eq_thomClass_iff`: this property characterizes it.
+* `TauCeti.VectorBundleOrientation.singularCohomologyMap_thomPairOver_thomClass`: over a set on
+  which a linear trivialization reads the orientation as a single orientation `ω` of the model
+  fibre, the Thom class restricts to the pull-back of the generator selected by `ω` along the
+  projection to the fibre.
 * `TauCeti.VectorBundleOrientation.thomClass_neg`: reversing the orientation negates it.
 * `TauCeti.VectorBundleOrientation.singularCohomologyMap_pullbackThomPairMap_thomClass`: it is
   natural under pullback of bundles.
@@ -488,6 +492,33 @@ theorem eq_thomClass_iff
       (y := v)) u _ fun b ↦ ?_⟩
   have hb := FiberBundle.mem_baseSet_trivializationAt' (F := F) (E := E) b
   rw [h _ b hb, o.singularCohomologyMap_fiberThomPairMap_thomClass hF _ hb]
+
+/-- **The Thom class over an oriented trivializing set.** Over a set `W` inside the base set of a
+linear trivialization `e` that reads the orientation of every fibre over `W` as the same
+orientation `ω` of `F`, the Thom class restricts to the pull-back of the generator of
+`Hⁿ⁺¹(F, F ∖ {0}; ℤ)` selected by `ω` along the projection `E|_W ≅ W × F → F`. -/
+theorem singularCohomologyMap_thomPairOver_thomClass (e : Trivialization F (π F E))
+    [e.IsLinear ℝ] {W : Set B} (hW : W ⊆ e.baseSet) {ω : Orientation ℝ F (Fin (n + 1))}
+    (ho : ∀ b (hb : b ∈ W), e.mapOrientation (Fin (n + 1)) (hW hb) (o b) = ω) :
+    TopPair.singularCohomologyMap
+        (thomPairOverMap F E (subset_univ W) ≫ (thomPairOverUnivIso F E).hom) (n + 1)
+        (o.thomClass hF) =
+      TopPair.singularCohomologyMap ((e.thomPairOverIso ℝ hW).hom ≫ prodThomPairSnd W F) (n + 1)
+        (ω.localCohomologyClass hF) := by
+  have := FiniteDimensional.of_finrank_eq_succ hF
+  refine (hF ▸ fun u v ↦ e.singularCohomology_thomPairOver_ext hW
+    (R' := ModuleCat.of ℤ (ULift.{w} ℤ)) (K := ℤ) (M' := ModuleCat.of ℤ (ULift.{w} ℤ)) (u := u)
+    (v := v)) _ _ fun b hb ↦ ?_
+  -- Structural step: on the left the fibre over `b` includes into the Thom pair of `E`, and on
+  -- the right it is carried by `e` at `b` onto `(F, F ∖ {0})`.
+  simp only [← TopPair.singularCohomologyMap_comp_apply,
+    fiberThomPairOverMap_comp_thomPairOverMap_assoc,
+    fiberThomPairOverMap_comp_thomPairOverUnivIso_hom,
+    e.fiberThomPairOverMap_comp_thomPairOverIso_hom_assoc ℝ hW hb,
+    prodThomPairFiberMap_comp_prodThomPairSnd, Category.comp_id]
+  -- Mathematical step: the Thom class restricts on that fibre to the generator selected by the
+  -- fibre orientation, which `e` reads as `ω`.
+  rw [o.singularCohomologyMap_fiberThomPairMap_thomClass hF e (hW hb), ho b hb]
 
 /-- Reversing the orientation negates the Thom class. -/
 @[simp]

@@ -83,7 +83,7 @@ back to `-R * I`) equals `2πi (G 0 - ∫ t in 0..T, f t)` plus the left semicir
 `G_T k_T` (counterclockwise from `R * I` to `-R * I`). All integrals include the velocity of
 their parametrization. -/
 theorem integral_right_semicircle_add_integral_newmanDetour_mul_kernel {U : Set ℂ}
-    (hf : IntervalIntegrable f volume 0 T) (hR : 0 < R) (hδ : 0 < δ) (hU : IsOpen U)
+    (hR : 0 < R) (hδ : 0 < δ) (hU : IsOpen U)
     (hconv : Convex ℝ U) (hG : DifferentiableOn ℂ G U)
     (hcirc : ∀ θ ∈ Icc (-π / 2) (π / 2), circleMap 0 R θ ∈ U)
     (hdet : ∀ s ∈ Icc (-1 : ℝ) 1, newmanDetour R δ s ∈ U) :
@@ -100,7 +100,7 @@ theorem integral_right_semicircle_add_integral_newmanDetour_mul_kernel {U : Set 
             cexp (T * circleMap 0 R θ) * (1 + circleMap 0 R θ ^ 2 / (R : ℂ) ^ 2) /
               circleMap 0 R θ) := by
   have hGT : Differentiable ℂ fun z : ℂ ↦ ∫ t in (0 : ℝ)..T, f t * cexp (-z * t) :=
-    differentiable_intervalIntegral_mul_cexp_neg_mul hf
+    differentiable_intervalIntegral_mul_cexp_neg_mul
   -- Cauchy's formula for `(G - G_T) k_T` on the right semicircle closed by the detour.
   have hC := integral_right_semicircle_add_integral_newmanDetour
     (g := fun z ↦ (G z - ∫ t in (0 : ℝ)..T, f t * cexp (-z * t)) * cexp (T * z) *
@@ -139,13 +139,8 @@ private theorem norm_sub_intervalIntegral_le_add_norm_integral_newmanDetour {U :
     ‖G 0 - ∫ t in (0 : ℝ)..T, f t‖ ≤ 2 * M / R + ‖(∫ s in (-1 : ℝ)..1,
       deriv (newmanDetour R δ) s * (G (newmanDetour R δ s) * cexp (T * newmanDetour R δ s) *
         (1 + newmanDetour R δ s ^ 2 / (R : ℂ) ^ 2) / newmanDetour R δ s)) / (2 * π * I)‖ := by
-  have hfT : IntervalIntegrable f volume 0 T :=
-    (intervalIntegrable_iff_integrableOn_Ioc_of_le hT).mpr <|
-      IntegrableOn.of_bound measure_Ioc_lt_top
-        (hf.mono_set (Ioc_subset_Ioi_self.trans Ioi_subset_Ici_self)) M
-        (ae_restrict_of_forall_mem measurableSet_Ioc fun t ht ↦ hbound t (le_of_lt ht.1))
-  have hid := integral_right_semicircle_add_integral_newmanDetour_mul_kernel hfT hR hδ hU hconv
-    hG hcirc hdet
+  have hid := integral_right_semicircle_add_integral_newmanDetour_mul_kernel (f := f) (T := T)
+    hR hδ hU hconv hG hcirc hdet
   have h2πI : (2 * π * I : ℂ) ≠ 0 := by simp [Real.pi_ne_zero]
   have hR' := norm_integral_right_semicircle_mul_kernel_le hf hbound hLaplace hR hT
   have hL' := norm_integral_left_semicircle_mul_kernel_le (f := f) (fun t ht ↦ hbound t ht.1) hR hT
@@ -215,7 +210,7 @@ theorem newmanLaplace_tendsto_integral_of_analyticAt
     (hLaplace : ∀ z : ℂ, 0 < z.re → G z = ∫ t in Ici (0 : ℝ), f t * cexp (-z * t)) :
     Tendsto (fun T : ℝ ↦ ∫ t in (0 : ℝ)..T, f t) atTop (𝓝 (G 0)) := by
   obtain ⟨Ω, hΩ, hcover, hGΩ⟩ := (TauCeti.exists_isOpen_differentiableOn_iff_analyticAt
-    ((differentiableOn_integral_mul_cexp_neg_mul hf hbound).congr hLaplace)).mpr hG
+    ((differentiableOn_integral_mul_cexp_neg_mul hbound).congr hLaplace)).mpr hG
   exact newmanLaplace_tendsto_integral hf hbound hΩ hcover hGΩ hLaplace
 
 end TauCeti.LSeries
