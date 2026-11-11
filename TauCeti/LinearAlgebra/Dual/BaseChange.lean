@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dual.BaseChange
 import Mathlib.LinearAlgebra.Contraction
+import TauCeti.LinearAlgebra.TensorProduct.Basis
 
 /-!
 # Evaluation after scalar extension
@@ -145,24 +146,22 @@ theorem baseChange_coord {ι : Type*} (b : Module.Basis ι R M) (i : ι) (z : A 
           simp [Module.Basis.coord_apply, Algebra.smul_def, mul_comm]
 
 /-- If `M` is projective, the base changes of its `R`-linear functionals jointly separate vectors
-in `A ⊗[R] M`. -/
+in `A ⊗[R] M`.
+
+Since contracting against `φ` is the base change of `φ`, this is the case of
+`TensorProduct.tensor_eq_of_forall_tensorComponent_eq` with left factor `A`. -/
 theorem eq_of_baseChange_eq [Module.Projective R M] {x y : A ⊗[R] M}
     (h : ∀ φ : Module.Dual R M,
       Module.Dual.baseChange A φ x = Module.Dual.baseChange A φ y) : x = y := by
-  -- Embed `M` as a direct summand of a free module `F` and separate in `A ⊗[R] F`.
-  obtain ⟨F, _, _, _, i, s, hsi⟩ := Module.Projective.iff_split.mp ‹Module.Projective R M›
-  have hinj : Function.Injective (i.baseChange A) :=
-    Function.LeftInverse.injective (g := s.baseChange A) fun t ↦ by
-      rw [← LinearMap.comp_apply, ← LinearMap.baseChange_comp, hsi, LinearMap.baseChange_id,
-        LinearMap.id_apply]
-  have hnat (φ : Module.Dual R F) (t : A ⊗[R] M) :
-      Module.Dual.baseChange A φ (i.baseChange A t) = Module.Dual.baseChange A (φ ∘ₗ i) t := by
-    rw [← baseChangeEvaluation_one_tmul, Module.Dual.baseChangeEvaluation_one_tmul_baseChange,
-      baseChangeEvaluation_one_tmul]
-  let b := Module.Free.chooseBasis R F
-  refine hinj (((TensorProduct.isBaseChange R F A).basis b).ext_elem fun j ↦ ?_)
-  rw [baseChange_coord, baseChange_coord, hnat, hnat]
-  exact h (b.coord j ∘ₗ i)
+  -- Contracting against `φ` is the base change of `φ`, viewed as an `R`-linear map.
+  have hcomponent (φ : Module.Dual R M) :
+      LinearMap.tensorComponent (M := A) φ = (Module.Dual.baseChange A φ).restrictScalars R :=
+    TensorProduct.ext' fun a m ↦ by
+      rw [LinearMap.tensorComponent_tmul, LinearMap.restrictScalars_apply,
+        Module.Dual.baseChange_apply_tmul]
+  refine TensorProduct.tensor_eq_of_forall_tensorComponent_eq fun φ ↦ ?_
+  rw [hcomponent, LinearMap.restrictScalars_apply, LinearMap.restrictScalars_apply]
+  exact h φ
 
 end TauCeti.Module.Dual
 
