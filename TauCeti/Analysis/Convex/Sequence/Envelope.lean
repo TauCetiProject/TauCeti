@@ -105,9 +105,17 @@ theorem sup {g h : ℕ → WithTop ℝ} (hg : IsConvexSeq g) (hh : IsConvexSeq h
     IsConvexSeq (g ⊔ h) :=
   of_isLUB (by simp [hg, hh]) isLUB_pair
 
-/-- The pointwise supremum of a nonempty family of convex height sequences is convex. -/
-theorem iSup {ι : Sort*} [Nonempty ι] {g : ι → ℕ → WithTop ℝ}
+/-- The pointwise supremum of a family of convex height sequences is convex. For the empty family
+the supremum is the junk value `sSup ∅ = 0` of `WithTop ℝ`, the constant sequence `0`. -/
+theorem iSup {ι : Sort*} {g : ι → ℕ → WithTop ℝ}
     (hg : ∀ i, IsConvexSeq (g i)) : IsConvexSeq fun n => ⨆ i, g i n := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · have h0 : (fun n => ⨆ i, g i n) = fun n : ℕ => (((0 : ℝ) + 0 * n : ℝ) : WithTop ℝ) := by
+      ext n
+      rw [iSup_of_empty', WithTop.sSup_eq (by simp) (by simp)]
+      simp
+    rw [h0]
+    exact isConvexSeq_affine 0 0
   refine of_isLUB (Set.forall_mem_range.mpr hg) (isLUB_pi.mpr fun n => ?_)
   rw [← Set.range_comp]
   exact WithTop.isLUB_sSup' (Set.range_nonempty _)
@@ -176,6 +184,12 @@ theorem isLUB_lowerConvexEnvelope (ha : IsAdmissible a) (n : ℕ) :
 theorem lowerConvexEnvelope_of_not_isAdmissible (ha : ¬IsAdmissible a) :
     lowerConvexEnvelope a = ⊤ := by
   rw [lowerConvexEnvelope, ite_eq_right ha]
+
+/-- A finite height of the total envelope excludes its inadmissible fallback. -/
+theorem isAdmissible_of_lowerConvexEnvelope_ne_top {n : ℕ}
+    (hn : lowerConvexEnvelope a n ≠ ⊤) : IsAdmissible a := by
+  by_contra ha
+  exact hn (congrFun (lowerConvexEnvelope_of_not_isAdmissible ha) n)
 
 /-- An admissible sequence has `lowerConvexEnvelope a` as its lower convex envelope. -/
 theorem isLowerConvexEnvelope_lowerConvexEnvelope (ha : IsAdmissible a) :

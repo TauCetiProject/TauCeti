@@ -10,6 +10,9 @@ public import Mathlib.Algebra.Group.Subgroup.Pointwise
 public import Mathlib.GroupTheory.Coset.Card
 public import Mathlib.GroupTheory.DoubleCoset
 public import Mathlib.GroupTheory.Index
+public import TauCeti.Algebra.Group.Subgroup.Pointwise
+public import TauCeti.GroupTheory.DoubleCoset.Orbits
+public import TauCeti.GroupTheory.QuotientGroup.Basic
 
 /-!
 # Finiteness of the double-coset quotient
@@ -21,28 +24,30 @@ Consequently `H \ G / K` is finite as soon as `K` has finite index, with no fini
 on `G` itself.
 
 This is the instance that lets a sum be taken over `H \ G / K`; the Mackey decomposition
-(`TauCeti.RepresentationTheory.Induction.Mackey.Basic`) is its first consumer, where the index of
-the subgroup being induced from is the only finiteness available.
+(`TauCeti.RepresentationTheory.Induction.Mackey.Basic`) uses it, where the index of the subgroup
+being induced from is the only finiteness available.
 
 The double cosets partition `G`, so for finite `G` their sizes add up to the order of `G`
-(`Subgroup.sum_card_quotToDoubleCoset`).
-
-A sum over `H \ G / K` of values at chosen representatives often comes with a proof that it does
-not depend on the choice; `TauCeti.eq_of_sum_doubleCoset_rep_eq` extracts from this that each
-value depends only on its double coset.
+(`Subgroup.sum_card_quotToDoubleCoset`). The size of a single double coset `KsH` is given by the
+classical formula `|KsH| · |K ⊓ sHs⁻¹| = |K| · |H|`
+(`TauCeti.card_doubleCoset_mul_card_inf_conj_smul`), which holds without finiteness hypotheses
+for `Nat.card`.
 
 ## Main statements
 
 * `TauCeti.finite_doubleCosetQuotient`: `H \ G / K` is finite when `K` has finite index in `G`.
+* `TauCeti.card_doubleCoset_mul_card_inf_conj_smul`: the double-coset size formula
+  `|KsH| · |K ⊓ sHs⁻¹| = |K| · |H|`.
+* `TauCeti.card_doubleCoset_eq_card_mul_relIndex`: the same formula as an index,
+  `|KsH| = |K| · [sHs⁻¹ : K ⊓ sHs⁻¹]`.
 * `Subgroup.sum_card_quotToDoubleCoset`: the sizes of the double cosets add up to `|G|`.
 * `Subgroup.sum_card_quotToDoubleCoset_div_card_eq_index`: the numbers `|HgK| / |H|` add up
   to the index of `H`.
-* `TauCeti.eq_of_sum_doubleCoset_rep_eq`: a value whose sum over double-coset representatives is
-  independent of the representatives is itself constant on double cosets.
 -/
 
 public section
 
+open MulAction
 open scoped Pointwise
 
 namespace TauCeti
@@ -52,11 +57,9 @@ variable {G : Type*} [Group G]
 /-- Replacing an element by the chosen representative of its left `K`-coset does not change its
 double coset. -/
 theorem doubleCosetMk_out_mk (H K : Subgroup G) (g : G) :
-    DoubleCoset.mk H K (Quotient.out (QuotientGroup.mk g : G ⧸ K)) = DoubleCoset.mk H K g := by
-  have hmem : (Quotient.out (QuotientGroup.mk g : G ⧸ K))⁻¹ * g ∈ K :=
-    QuotientGroup.eq.mp (QuotientGroup.out_eq' (QuotientGroup.mk g))
-  rw [DoubleCoset.eq]
-  exact ⟨1, H.one_mem, _, hmem, by simp⟩
+    DoubleCoset.mk H K (QuotientGroup.mk g : G ⧸ K).out = DoubleCoset.mk H K g := by
+  obtain ⟨k, hk⟩ := QuotientGroup.mk_out_eq_mul K g
+  rw [hk, DoubleCoset.mk_mul_mem]
 
 /-- **The double cosets `H \ G / K` are finite when `K` has finite index**: they are the image of
 the finite set `G ⧸ K` under `gK ↦ HgK`. -/
@@ -65,33 +68,71 @@ instance finite_doubleCosetQuotient (H K : Subgroup G) [K.FiniteIndex] :
   Finite.of_surjective (fun t : G ⧸ K => DoubleCoset.mk H K t.out) fun d =>
     ⟨QuotientGroup.mk d.out, (doubleCosetMk_out_mk H K d.out).trans (DoubleCoset.out_eq' d)⟩
 
-/-- **A value at a double-coset representative is determined by its double coset if the sum is**:
-if the sum over `H \ G / K` of the values of `T` at representatives does not depend on the
-choice of representatives, then `T s = T s'` whenever `s` and `s'` lie in the same double coset.
-Comparing the canonical choice `Quotient.out` with the ones that replace the representative of a
-single double coset by `s`, resp. `s'`, leaves only the terms at `s` and `s'`. -/
-theorem eq_of_sum_doubleCoset_rep_eq {A : Type*} [AddCancelCommMonoid A] (H K : Subgroup G)
-    [Fintype (DoubleCoset.Quotient (H : Set G) (K : Set G))] (T : G → A)
-    (hT : ∀ r : DoubleCoset.Quotient (H : Set G) (K : Set G) → G,
-      (∀ D, DoubleCoset.mk H K (r D) = D) →
-        ∑ D, T (r D) = ∑ D : DoubleCoset.Quotient (H : Set G) (K : Set G), T D.out)
-    {s s' : G} (h : DoubleCoset.mk H K s = DoubleCoset.mk H K s') : T s = T s' := by
-  classical
-  have key (t : G) (ht : DoubleCoset.mk H K t = DoubleCoset.mk H K s) :
-      T t + ∑ D ∈ {DoubleCoset.mk H K s}ᶜ, T (Quotient.out D) =
-        ∑ D : DoubleCoset.Quotient (H : Set G) (K : Set G), T D.out := by
-    have hr (D : DoubleCoset.Quotient (H : Set G) (K : Set G)) :
-        DoubleCoset.mk H K (Function.update
-          (fun D' : DoubleCoset.Quotient (H : Set G) (K : Set G) => D'.out)
-          (DoubleCoset.mk H K s) t D) = D := by
-      rcases eq_or_ne D (DoubleCoset.mk H K s) with rfl | hD
-      · rw [Function.update_self, ht]
-      · rw [Function.update_of_ne hD]
-        exact DoubleCoset.out_eq' D
-    rw [← hT _ hr, Fintype.sum_eq_add_sum_compl (DoubleCoset.mk H K s), Function.update_self]
-    refine congrArg (T t + ·) (Finset.sum_congr rfl fun D hD => ?_)
-    rw [Function.update_of_ne fun hD' => Finset.mem_compl.mp hD (Finset.mem_singleton.mpr hD')]
-  exact add_right_cancel ((key s rfl).trans (key s' h.symm).symm)
+/-- **The double-coset size formula**: `|KsH| · |K ⊓ sHs⁻¹| = |K| · |H|`.
+
+With `Nat.card`'s convention that an infinite type has cardinality `0`, this holds without any
+finiteness hypothesis. -/
+theorem card_doubleCoset_mul_card_inf_conj_smul (s : G) (H K : Subgroup G) :
+    Nat.card (DoubleCoset.doubleCoset s (K : Set G) (H : Set G)) *
+        Nat.card (K ⊓ MulAut.conj s • H : Subgroup G) = Nat.card K * Nat.card H := by
+  -- The double coset is `(Ks)H`, so `Subgroup.card_mul_eq_card_subgroup_mul_card_quotient` counts
+  -- it as `|H|` times the size of the image of `Ks` in `G ⧸ H`, and that image is the orbit.
+  have himg : (QuotientGroup.mk : G → G ⧸ H) '' ((K : Set G) * {s}) = orbit K ((s : G ⧸ H)) :=
+    QuotientGroup.mk_surjective.preimage_injective <| by
+      rw [QuotientGroup.preimage_image_mk_eq_mul, preimage_orbit_eq_doubleCoset,
+        DoubleCoset.doubleCoset]
+  have hdc : Nat.card (DoubleCoset.doubleCoset s (K : Set G) (H : Set G))
+      = Nat.card H * Nat.card (orbit K ((s : G ⧸ H))) := by
+    rw [DoubleCoset.doubleCoset, Subgroup.card_mul_eq_card_subgroup_mul_card_quotient, himg]
+  have hK : Nat.card (K ⊓ MulAut.conj s • H : Subgroup G) *
+      (K ⊓ MulAut.conj s • H : Subgroup G).relIndex K = Nat.card K := by
+    rw [Subgroup.relIndex,
+      ← Nat.card_congr (Subgroup.subgroupOfEquivOfLe
+        (inf_le_left : K ⊓ MulAut.conj s • H ≤ K)).toEquiv]
+    exact Subgroup.card_mul_index _
+  rw [hdc, Subgroup.card_orbit_quotientGroup_mk_eq_relIndex_inf, mul_assoc,
+    mul_comm ((K ⊓ MulAut.conj s • H : Subgroup G).relIndex K), hK, mul_comm]
+
+/-- **The double-coset size formula, as an index**: `|KsH| = |K| · [sHs⁻¹ : K ⊓ sHs⁻¹]`.
+
+With `Nat.card`'s convention that an infinite type has cardinality `0` and the relative index
+being `0` when it is infinite, this holds without any finiteness hypothesis: if `H` is infinite,
+both sides are `0`. -/
+theorem card_doubleCoset_eq_card_mul_relIndex (s : G) (H K : Subgroup G) :
+    Nat.card (DoubleCoset.doubleCoset s (K : Set G) (H : Set G)) =
+      Nat.card K * K.relIndex (MulAut.conj s • H) := by
+  by_cases hH : Finite H
+  · -- `[sHs⁻¹ : K ⊓ sHs⁻¹] · |K ⊓ sHs⁻¹| = |sHs⁻¹| = |H|`.
+    have hrel : K.relIndex (MulAut.conj s • H) * Nat.card (K ⊓ MulAut.conj s • H : Subgroup G) =
+        Nat.card H := by
+      rw [Subgroup.relIndex_mul_card]
+      exact card_conj_smul_eq s H
+    have hpos : 0 < Nat.card (K ⊓ MulAut.conj s • H : Subgroup G) :=
+      Nat.pos_of_ne_zero fun h => Nat.card_pos.ne' (by rw [← hrel, h, mul_zero])
+    refine Nat.eq_of_mul_eq_mul_right hpos ?_
+    rw [card_doubleCoset_mul_card_inf_conj_smul, mul_assoc, hrel]
+  · -- `H` is infinite: the double coset contains a translate of `H`, so both sides vanish.
+    have hHinf : Infinite H := not_finite_iff_infinite.1 hH
+    have hdc : Nat.card (DoubleCoset.doubleCoset s (K : Set G) (H : Set G)) = 0 := by
+      have : Infinite (DoubleCoset.doubleCoset s (K : Set G) (H : Set G)) :=
+        Infinite.of_injective
+          (fun h : H => (⟨s * h, DoubleCoset.mem_doubleCoset.2 ⟨1, K.one_mem, h, h.2, by simp⟩⟩ :
+            DoubleCoset.doubleCoset s (K : Set G) (H : Set G)))
+          fun a b hab => Subtype.ext (mul_left_cancel (congrArg Subtype.val hab))
+      exact Nat.card_eq_zero_of_infinite
+    rw [hdc]
+    by_cases hK : Finite K
+    · -- `K ⊓ sHs⁻¹` is finite and nonempty while `|sHs⁻¹| = |H| = 0`, so the index is `0`.
+      have hrel := Subgroup.relIndex_mul_card K (MulAut.conj s • H)
+      have hconj : Nat.card (MulAut.conj s • H : Subgroup G) = 0 :=
+        (card_conj_smul_eq s H).trans Nat.card_eq_zero_of_infinite
+      have hfin : Finite (K ⊓ MulAut.conj s • H : Subgroup G) :=
+        Finite.of_injective (Subgroup.inclusion (inf_le_left : K ⊓ MulAut.conj s • H ≤ K))
+          (Subgroup.inclusion_injective _)
+      rw [hconj] at hrel
+      rw [(mul_eq_zero.1 hrel).resolve_right Nat.card_pos.ne', mul_zero]
+    · have : Infinite K := not_finite_iff_infinite.1 hK
+      rw [Nat.card_eq_zero_of_infinite (α := K), zero_mul]
 
 end TauCeti
 

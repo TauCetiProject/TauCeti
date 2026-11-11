@@ -82,7 +82,7 @@ theorem _root_.LieIdeal.exists_cofinite_refinement_stableDerivations (N : LieIde
       have hBa : IsNilpotent (Ideal.Quotient.mk B a) := by
         simpa only [Ideal.Quotient.factorₐ_apply_mk]
           using ha.map (Ideal.Quotient.factorₐ R hIB)
-      exact B.isNilpotent_quotient_pow_of_isNilpotent_quotient hBa n
+      exact (B.isNilpotent_quotient_pow_iff n).mpr (Or.inr hBa)
 
 end TauCeti
 

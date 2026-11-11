@@ -136,7 +136,7 @@ private noncomputable def carryCocycle (a : H0 G M) : Z2 G M :=
   ⟨fun p ↦ if orderOf g ≤ cyclicLog g hg p.1 + cyclicLog g hg p.2 then a.1 else 0,
     mem_Z2_iff.mpr ⟨continuous_of_discreteTopology, by
       intro x y z
-      have hcarry := TauCeti.Nat.carry_add_carry (cyclicLog_lt g hg x) (cyclicLog_lt g hg y)
+      have hcarry := Nat.carry_add_carry (cyclicLog_lt g hg x) (cyclicLog_lt g hg y)
         (cyclicLog_lt g hg z)
       have hfix : x • (a : M) = a := (FixedPoints.mem_addSubgroup G M a).mp a.property x
       simp only [cyclicLog_mul]

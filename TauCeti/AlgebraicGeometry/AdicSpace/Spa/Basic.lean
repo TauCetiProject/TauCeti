@@ -49,6 +49,8 @@ it; the subspace form here needs no such comparison.)
   module boundary, so these two are the exported interface.
 * `TauCeti.ValuationSpectrum.valuation_le_one_of_mem_spa` : a point of `Spa (A, A⁺)` has
   valuation at most `1` on `A⁺`.
+* `TauCeti.ValuationSpectrum.valuation_units_eq_one_of_mem_spa` : a point of `Spa (A, A⁺)` has
+  valuation `1` on every unit `u` with `u, u⁻¹ ∈ A⁺`.
 * `TauCeti.ValuationSpectrum.spa_antitone` : the spectrum shrinks as the plus ring grows. Its
   inclusion into `Cont A` is `spa_def ▸ Set.inter_subset_left`.
 * `TauCeti.ValuationSpectrum.spa_integralClosure` : replacing the plus ring by its integral
@@ -64,6 +66,8 @@ it; the subspace form here needs no such comparison.)
   ring `A⁺` (the `1 ∈ closure {0} → Spa(A, A⁺) = ∅` half of Wedhorn Proposition 7.49(1)).
 * `TauCeti.ValuationSpectrum.trivialSection_mem_spa_iff` : the trivial valuation of a prime is a
   point of the adic spectrum exactly when the prime is open, for any plus ring.
+* `TauCeti.ValuationSpectrum.isOpen_setOf_notMem_supp` : the points of `Spa (A, A⁺)` off the
+  support of an element form an open subset.
 * `TauCeti.ValuationSpectrum.eq_top_of_spa_eq_empty` : an empty adic spectrum forces every open
   ideal to be the unit ideal.
 The converse and the full separated-quotient criterion of Wedhorn Proposition 7.49(1) require
@@ -125,6 +129,14 @@ theorem valuation_le_one_of_mem_spa {Aplus : Subring A} {v : Spv A} (hv : v ∈ 
     (ha : a ∈ Aplus) : v.valuation a ≤ 1 := by
   rw [← map_one v.valuation, valuation_le_iff]
   exact ((mem_spa_iff Aplus v).mp hv).2 a ha
+
+/-- At a point of `Spa (A, A⁺)`, a unit `u` of `A` with `u, u⁻¹ ∈ A⁺` has valuation `1`. -/
+theorem valuation_units_eq_one_of_mem_spa {Aplus : Subring A} {v : Spv A} (hv : v ∈ spa Aplus)
+    (u : Aˣ) (hu : (u : A) ∈ Aplus) (hu' : ((u⁻¹ : Aˣ) : A) ∈ Aplus) :
+    v.valuation (u : A) = 1 :=
+  Valuation.Integers.one_of_isUnit' (O := Aplus) (x := ⟨u, hu⟩)
+    ⟨⟨⟨u, hu⟩, ⟨_, hu'⟩, by ext; simp, by ext; simp⟩, rfl⟩
+    fun x ↦ valuation_le_one_of_mem_spa hv x.2
 
 /-- Enlarging the plus ring shrinks the adic spectrum. -/
 theorem spa_antitone : Antitone (spa (A := A)) := fun _ _ hle ↦ by
@@ -198,6 +210,17 @@ theorem trivialSection_mem_spa_iff (Aplus : Subring A) (p : PrimeSpectrum A) :
     fun hp ↦ ⟨(isContinuous_trivialSection_iff p).mpr hp, fun a _ ↦ ?_⟩⟩
   exact (trivialSection_vle_iff p a 1).mpr
     (Or.inr ((Ideal.ne_top_iff_one _).mp p.isPrime.ne_top))
+
+/-- **Points off the support of an element.** The points of `Spa (A, A⁺)` at which `f` does not
+vanish, that is `f ∉ supp v`, form an open subset. -/
+theorem isOpen_setOf_notMem_supp {A : Type*} [CommRing A] [TopologicalSpace A]
+    (Aplus : Subring A) (f : A) :
+    IsOpen {v : spa Aplus | f ∉ supp v.1} := by
+  have : {v : spa Aplus | f ∉ supp v.1} = Subtype.val ⁻¹' basicOpen f f := by
+    ext v
+    simp [ValuativeRel.vle_refl]
+  rw [this]
+  exact (isOpen_basicOpen f f).preimage continuous_subtype_val
 
 section SeparatelyContinuousAdd
 

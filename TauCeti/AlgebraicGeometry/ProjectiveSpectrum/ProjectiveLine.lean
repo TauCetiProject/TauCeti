@@ -510,11 +510,13 @@ theorem basicOpen_coord_sup_eq_top :
   have hp : p ∈ (⊤ : (projectiveLine R).Opens) := trivial
   rwa [← iSup_basicOpen_coord_eq_top R, TopologicalSpace.Opens.mem_iSup, Fin.exists_fin_two] at hp
 
-/-- The overlap `D₊(X₀) ⊓ D₊(X₁)` of the standard charts lies in `D₊((X₀X₁)ᵏ)` for `k > 0`. -/
-theorem inf_le_basicOpen_coord_mul_coord_pow {k : ℕ} (hk : 0 < k) :
+/-- The overlap `D₊(X₀) ⊓ D₊(X₁)` of the standard charts lies in `D₊((X₀X₁)ᵏ)`. -/
+theorem inf_le_basicOpen_coord_mul_coord_pow {k : ℕ} :
     Proj.basicOpen 𝒜 (coord R 0) ⊓ Proj.basicOpen 𝒜 (coord R 1) ≤
       Proj.basicOpen 𝒜 ((coord R 0 * coord R 1) ^ k) := by
-  rw [Proj.basicOpen_pow _ _ _ hk, Proj.basicOpen_mul]
+  rcases k.eq_zero_or_pos with rfl | hk
+  · simp
+  · rw [Proj.basicOpen_pow _ _ _ hk, Proj.basicOpen_mul]
 
 /-- The two polynomial chart ranges cover the projective line. -/
 theorem range_polynomialChartι_union_range_polynomialChartι :
@@ -609,14 +611,8 @@ theorem isAffineOpen_basicOpen_coord (i : Fin 2) :
 
 /-- **The projective line over a domain is integral**: `R[X₀, X₁]` is a domain with a nonzero form
 of positive degree. -/
-instance isIntegral [IsDomain R] : IsIntegral (projectiveLine R) := by
-  refine Proj.isIntegral_of_isDomain 𝒜 fun h ↦ ?_
-  have : coord R 0 ∈ HomogeneousIdeal.irrelevant 𝒜 := by
-    rw [HomogeneousIdeal.mem_irrelevant_iff, GradedRing.proj_apply,
-      DirectSum.decompose_of_mem_ne 𝒜 (coord_mem R 0) one_ne_zero]
-  rw [h, ← HomogeneousIdeal.mem_iff, HomogeneousIdeal.toIdeal_bot, Ideal.mem_bot] at this
-  simpa [coord] using
-    congrFun (SymmetricAlgebra.ι_injective R (Fin 2 → R) (this.trans (map_zero _).symm)) 0
+instance isIntegral [IsDomain R] : IsIntegral (projectiveLine R) :=
+  SymmetricAlgebra.instIsIntegralProj R (Fin 2 → R)
 
 /-- **The local rings of the projective line over a regular ring are regular**: each is a local
 ring of a chart `Spec R[X]`, and `R[X]` is a regular ring. -/

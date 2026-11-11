@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Basic.Sign.Defs
+public import Mathlib.MeasureTheory.Measure.NullMeasurable
 public import Mathlib.MeasureTheory.SetAlgebra
 
 /-!
@@ -22,6 +23,8 @@ on the signs of finitely many functions of the class.
   algebra of sets form an algebra of sets.
 * `MeasureTheory.isSetAlgebra_measurableSet`, `MeasureTheory.isSetRing_measurableSet`: the
   measurable sets form an algebra, hence a ring, of sets.
+* `MeasureTheory.isSetRing_nullMeasurableSet`: the null-measurable sets of a measure form a ring
+  of sets.
 -/
 
 public section
@@ -84,5 +87,21 @@ theorem isSetAlgebra_measurableSet : IsSetAlgebra {s : Set α | MeasurableSet s}
 /-- The measurable sets form a ring of sets. -/
 theorem isSetRing_measurableSet : IsSetRing {s : Set α | MeasurableSet s} :=
   isSetAlgebra_measurableSet.isSetRing
+
+/-- The null-measurable sets of a measure form a ring of sets. -/
+theorem isSetRing_nullMeasurableSet {μ : Measure α} :
+    IsSetRing {s : Set α | NullMeasurableSet s μ} where
+  empty_mem := nullMeasurableSet_empty
+  union_mem _ _ hs ht := NullMeasurableSet.union hs ht
+  sdiff_mem _ _ hs ht := NullMeasurableSet.diff hs ht
+
+/-- A finite union of sets from a family containing `∅` lies in the family `supClosure C` of
+finite unions of its members. -/
+theorem sUnion_finset_mem_supClosure {β : Type*} {C : Set (Set β)} (hC : ∅ ∈ C)
+    {I : Finset (Set β)} (hI : ∀ r ∈ I, r ∈ C) : ⋃₀ (I : Set (Set β)) ∈ supClosure C := by
+  rw [← Finset.sup_id_set_eq_sUnion]
+  rcases I.eq_empty_or_nonempty with rfl | hne
+  · simpa using subset_supClosure hC
+  · exact supClosed_supClosure.finsetSup_mem hne fun r hr => subset_supClosure (hI r hr)
 
 end MeasureTheory

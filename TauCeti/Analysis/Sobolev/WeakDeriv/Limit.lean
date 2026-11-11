@@ -78,8 +78,8 @@ theorem hasWeakLineDerivOn_of_tendsto_lintegral_enorm_sub [OpensMeasurableSpace 
       (ae_of_all _ fun x hx =>
         image_eq_zero_of_notMem_tsupport fun hm => hx (φ.tsupport_subset hm))
       (Eventually.of_forall fun i =>
-        integrable_smul_of_locallyIntegrableOn (h i).locallyIntegrableOn_deriv φ)
-      (integrable_smul_of_locallyIntegrableOn hw' φ).aestronglyMeasurable hu'
+        φ.integrable_smul (h i).locallyIntegrableOn_deriv)
+      (φ.integrable_smul hw').aestronglyMeasurable hu'
   refine tendsto_nhds_unique ?_ h2.neg
   simpa only [(h _).integral_lineDeriv_smul_eq_neg_integral_smul φ] using h1
 

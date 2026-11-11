@@ -361,17 +361,46 @@ theorem intersection_det_triple_neg (hcard : 3 < Fintype.card T.Component)
 
 /-! ### Four components -/
 
-/-- A sum over the components of a function vanishing outside four distinct components. -/
-private lemma sum_eq_of_support_four {i j k l : T.Component} (hij : i ≠ j) (hik : i ≠ k)
-    (hil : i ≠ l) (hjk : j ≠ k) (hjl : j ≠ l) (hkl : k ≠ l)
-    (y : T.Component → ℤ) (hy : ∀ m, m ≠ i → m ≠ j → m ≠ k → m ≠ l → y m = 0) :
-    ∑ m, y m = y i + y j + y k + y l := by
-  have hsub : ∑ m ∈ ({i, j, k, l} : Finset T.Component), y m = ∑ m, y m := by
-    refine sum_subset (subset_univ _) fun m _ hm ↦ ?_
+/-- The intersection form evaluated at a vector supported on four distinct components. -/
+private lemma dotProduct_intersection_mulVec_of_support_four {i j k l : T.Component}
+    (hij : i ≠ j) (hik : i ≠ k) (hil : i ≠ l) (hjk : j ≠ k) (hjl : j ≠ l) (hkl : k ≠ l)
+    (x : T.Component → ℤ) (hx : ∀ m, m ≠ i → m ≠ j → m ≠ k → m ≠ l → x m = 0) :
+    x ⬝ᵥ T.intersection *ᵥ x =
+      T.intersection i i * x i ^ 2 + T.intersection j j * x j ^ 2 +
+        T.intersection k k * x k ^ 2 + T.intersection l l * x l ^ 2 +
+        2 * T.intersection i j * x i * x j + 2 * T.intersection i k * x i * x k +
+        2 * T.intersection i l * x i * x l + 2 * T.intersection j k * x j * x k +
+        2 * T.intersection j l * x j * x l + 2 * T.intersection k l * x k * x l := by
+  rw [T.dotProduct_intersection_mulVec_of_support_subset (s := {i, j, k, l}) fun m hm ↦ by
     simp only [mem_insert, mem_singleton, not_or] at hm
-    exact hy m hm.1 hm.2.1 hm.2.2.1 hm.2.2.2
-  rw [← hsub, sum_insert (by simp [hij, hik, hil]), sum_insert (by simp [hjk, hjl]),
-    sum_insert (by simp [hkl]), sum_singleton]
+    exact hx m hm.1 hm.2.1 hm.2.2.1 hm.2.2.2]
+  simp only [sum_insert (by simp [hij, hik, hil] : i ∉ ({j, k, l} : Finset T.Component)),
+    sum_insert (by simp [hjk, hjl] : j ∉ ({k, l} : Finset T.Component)), sum_pair hkl,
+    T.intersection_comm j i, T.intersection_comm k i, T.intersection_comm l i,
+    T.intersection_comm k j, T.intersection_comm l j, T.intersection_comm l k]
+  ring
+
+/-- For the ten entries `aa, …, cd` on and above the diagonal of a symmetric `4 × 4` integer
+matrix, some integer vector has last entry equal to the leading `3 × 3` minor, and the quadratic
+form of the matrix at it equals that entry times the `4 × 4` determinant, written out below. The
+last column of the adjugate is such a vector. -/
+private lemma exists_adjugate_column_four (aa bb cc dd ab ac ad bc bd cd : ℤ) :
+    ∃ xi xj xk xl : ℤ, xl = aa * bb * cc - aa * bc ^ 2 - bb * ac ^ 2 - cc * ab ^ 2 +
+        2 * ab * ac * bc ∧
+      aa * xi ^ 2 + bb * xj ^ 2 + cc * xk ^ 2 + dd * xl ^ 2 + 2 * ab * xi * xj +
+        2 * ac * xi * xk + 2 * ad * xi * xl + 2 * bc * xj * xk + 2 * bd * xj * xl +
+        2 * cd * xk * xl =
+      xl * (aa * bb * cc * dd - aa * bb * cd ^ 2 - aa * cc * bd ^ 2 - aa * dd * bc ^ 2 +
+        2 * aa * bc * bd * cd - bb * cc * ad ^ 2 - bb * dd * ac ^ 2 + 2 * bb * ac * ad * cd -
+        cc * dd * ab ^ 2 + 2 * cc * ab * ad * bd + 2 * dd * ab * ac * bc + ab ^ 2 * cd ^ 2 -
+        2 * ab * ac * bd * cd - 2 * ab * ad * bc * cd + ac ^ 2 * bd ^ 2 - 2 * ac * ad * bc * bd +
+        ad ^ 2 * bc ^ 2) := by
+  refine ⟨-bb * cc * ad + bb * ac * cd + cc * ab * bd - ab * bc * cd - ac * bc * bd +
+      ad * bc ^ 2,
+    -aa * cc * bd + aa * bc * cd + cc * ab * ad - ab * ac * cd + ac ^ 2 * bd -
+      ac * ad * bc,
+    -aa * bb * cd + aa * bc * bd + bb * ac * ad + ab ^ 2 * cd - ab * ac * bd - ab * ad * bc,
+    aa * bb * cc - aa * bc ^ 2 - bb * ac ^ 2 - cc * ab ^ 2 + 2 * ab * ac * bc, rfl, ?_⟩
   ring
 
 /-- In a numerical type with more than four components, the principal `4 × 4` submatrix of the
@@ -416,125 +445,24 @@ theorem intersection_det_four_pos (hcard : 4 < Fintype.card T.Component)
     omega
   simp only [mem_erase, mem_univ, and_true] at hm
   obtain ⟨hml, hmk, hmj, hmi⟩ := hm
+  obtain ⟨xi, xj, xk, xl, hxl', hform⟩ := exists_adjugate_column_four
+    (T.intersection i i) (T.intersection j j) (T.intersection k k) (T.intersection l l)
+    (T.intersection i j) (T.intersection i k) (T.intersection i l) (T.intersection j k)
+    (T.intersection j l) (T.intersection k l)
+  rw [← hxl'] at hxl
   let x : T.Component → ℤ := fun n ↦
-    if n = i then
-      -T.intersection j j * T.intersection k k * T.intersection i l +
-        T.intersection j j * T.intersection i k * T.intersection k l +
-        T.intersection k k * T.intersection i j * T.intersection j l -
-        T.intersection i j * T.intersection j k * T.intersection k l -
-        T.intersection i k * T.intersection j k * T.intersection j l +
-        T.intersection i l * T.intersection j k ^ 2
-    else if n = j then
-      -T.intersection i i * T.intersection k k * T.intersection j l +
-        T.intersection i i * T.intersection j k * T.intersection k l +
-        T.intersection k k * T.intersection i j * T.intersection i l -
-        T.intersection i j * T.intersection i k * T.intersection k l +
-        T.intersection i k ^ 2 * T.intersection j l -
-        T.intersection i k * T.intersection i l * T.intersection j k
-    else if n = k then
-      -T.intersection i i * T.intersection j j * T.intersection k l +
-        T.intersection i i * T.intersection j k * T.intersection j l +
-        T.intersection j j * T.intersection i k * T.intersection i l +
-        T.intersection i j ^ 2 * T.intersection k l -
-        T.intersection i j * T.intersection i k * T.intersection j l -
-        T.intersection i j * T.intersection i l * T.intersection j k
-    else if n = l then
-      T.intersection i i * T.intersection j j * T.intersection k k -
-        T.intersection i i * T.intersection j k ^ 2 -
-        T.intersection j j * T.intersection i k ^ 2 -
-        T.intersection k k * T.intersection i j ^ 2 +
-        2 * T.intersection i j * T.intersection i k * T.intersection j k
-    else 0
-  have hxi : x i =
-      -T.intersection j j * T.intersection k k * T.intersection i l +
-        T.intersection j j * T.intersection i k * T.intersection k l +
-        T.intersection k k * T.intersection i j * T.intersection j l -
-        T.intersection i j * T.intersection j k * T.intersection k l -
-        T.intersection i k * T.intersection j k * T.intersection j l +
-        T.intersection i l * T.intersection j k ^ 2 := by simp [x]
-  have hxj : x j =
-      -T.intersection i i * T.intersection k k * T.intersection j l +
-        T.intersection i i * T.intersection j k * T.intersection k l +
-        T.intersection k k * T.intersection i j * T.intersection i l -
-        T.intersection i j * T.intersection i k * T.intersection k l +
-        T.intersection i k ^ 2 * T.intersection j l -
-        T.intersection i k * T.intersection i l * T.intersection j k := by
-    simp [x, hij.symm]
-  have hxk : x k =
-      -T.intersection i i * T.intersection j j * T.intersection k l +
-        T.intersection i i * T.intersection j k * T.intersection j l +
-        T.intersection j j * T.intersection i k * T.intersection i l +
-        T.intersection i j ^ 2 * T.intersection k l -
-        T.intersection i j * T.intersection i k * T.intersection j l -
-        T.intersection i j * T.intersection i l * T.intersection j k := by
-    simp [x, hik.symm, hjk.symm]
-  have hxl' : x l =
-      T.intersection i i * T.intersection j j * T.intersection k k -
-        T.intersection i i * T.intersection j k ^ 2 -
-        T.intersection j j * T.intersection i k ^ 2 -
-        T.intersection k k * T.intersection i j ^ 2 +
-        2 * T.intersection i j * T.intersection i k * T.intersection j k := by
-    simp [x, hil.symm, hjl.symm, hkl.symm]
-  let d :=
-    T.intersection i i * T.intersection j j * T.intersection k k * T.intersection l l -
-          T.intersection i i * T.intersection j j * T.intersection k l ^ 2 -
-        T.intersection i i * T.intersection k k * T.intersection j l ^ 2 -
-      T.intersection i i * T.intersection l l * T.intersection j k ^ 2 +
-        2 * T.intersection i i * T.intersection j k * T.intersection j l *
-          T.intersection k l -
-      T.intersection j j * T.intersection k k * T.intersection i l ^ 2 -
-        T.intersection j j * T.intersection l l * T.intersection i k ^ 2 +
-      2 * T.intersection j j * T.intersection i k * T.intersection i l *
-        T.intersection k l -
-      T.intersection k k * T.intersection l l * T.intersection i j ^ 2 +
-        2 * T.intersection k k * T.intersection i j * T.intersection i l *
-          T.intersection j l +
-      2 * T.intersection l l * T.intersection i j * T.intersection i k *
-        T.intersection j k +
-      T.intersection i j ^ 2 * T.intersection k l ^ 2 -
-        2 * T.intersection i j * T.intersection i k * T.intersection j l *
-          T.intersection k l -
-      2 * T.intersection i j * T.intersection i l * T.intersection j k *
-        T.intersection k l +
-      T.intersection i k ^ 2 * T.intersection j l ^ 2 -
-        2 * T.intersection i k * T.intersection i l * T.intersection j k *
-          T.intersection j l +
-      T.intersection i l ^ 2 * T.intersection j k ^ 2
-  have hsupp (n : T.Component) (hni : n ≠ i) (hnj : n ≠ j) (hnk : n ≠ k) (hnl : n ≠ l) :
-      x n = 0 := by simp [x, hni, hnj, hnk, hnl]
-  have hrow_i : (T.intersection *ᵥ x) i = 0 := by
-    rw [mulVec, dotProduct, T.sum_eq_of_support_four hij hik hil hjk hjl hkl _
-      (fun n hni hnj hnk hnl ↦ by rw [hsupp n hni hnj hnk hnl, mul_zero]),
-      hxi, hxj, hxk, hxl']
-    ring
-  have hrow_j : (T.intersection *ᵥ x) j = 0 := by
-    rw [mulVec, dotProduct, T.sum_eq_of_support_four hij hik hil hjk hjl hkl _
-      (fun n hni hnj hnk hnl ↦ by rw [hsupp n hni hnj hnk hnl, mul_zero]),
-      hxi, hxj, hxk, hxl', T.intersection_comm j i]
-    ring
-  have hrow_k : (T.intersection *ᵥ x) k = 0 := by
-    rw [mulVec, dotProduct, T.sum_eq_of_support_four hij hik hil hjk hjl hkl _
-      (fun n hni hnj hnk hnl ↦ by rw [hsupp n hni hnj hnk hnl, mul_zero]),
-      hxi, hxj, hxk, hxl', T.intersection_comm k i, T.intersection_comm k j]
-    ring
-  have hrow_l : (T.intersection *ᵥ x) l = d := by
-    rw [mulVec, dotProduct, T.sum_eq_of_support_four hij hik hil hjk hjl hkl _
-      (fun n hni hnj hnk hnl ↦ by rw [hsupp n hni hnj hnk hnl, mul_zero]),
-      hxi, hxj, hxk, hxl', T.intersection_comm l i, T.intersection_comm l j,
-      T.intersection_comm l k]
-    simp only [d]
-    ring
-  have hform : x ⬝ᵥ T.intersection *ᵥ x = x l * d := by
-    rw [dotProduct, T.sum_eq_of_support_four hij hik hil hjk hjl hkl _
-      (fun n hni hnj hnk hnl ↦ by rw [hsupp n hni hnj hnk hnl, zero_mul]),
-      hrow_i, hrow_j, hrow_k, hrow_l]
-    ring
+    if n = i then xi else if n = j then xj else if n = k then xk else if n = l then xl else 0
+  have hxi : x i = xi := by simp [x]
+  have hxj : x j = xj := by simp [x, hij.symm]
+  have hxk : x k = xk := by simp [x, hik.symm, hjk.symm]
+  have hxl'' : x l = xl := by simp [x, hil.symm, hjl.symm, hkl.symm]
   have hneg := T.dotProduct_intersection_mulVec_neg (x := x)
-    (fun hx ↦ hxl.ne (hxl'.symm.trans (congrFun hx l))) (i := m)
-    (by simp [x, hmi, hmj, hmk, hml])
-  rw [hform] at hneg
-  have hd : 0 < d := by nlinarith
-  simpa only [d] using hd
+    (fun hx ↦ hxl.ne (hxl''.symm.trans (congrFun hx l)))
+    (i := m) (by simp [x, hmi, hmj, hmk, hml])
+  rw [T.dotProduct_intersection_mulVec_of_support_four hij hik hil hjk hjl hkl x
+    (fun n hni hnj hnk hnl ↦ by simp [x, hni, hnj, hnk, hnl])] at hneg
+  rw [hxi, hxj, hxk, hxl'', hform] at hneg
+  exact pos_of_mul_neg_right hneg hxl.le
 
 /-! ### Five components -/
 

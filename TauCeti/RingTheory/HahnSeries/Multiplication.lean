@@ -51,6 +51,11 @@ inversely.
 
 `HahnSeries.coeff_mul_add_of_forall_le` computes the coefficient of a product at the sum of lower
 bounds for the supports of the factors: it is the product of the coefficients at those bounds.
+The sum of the lower bounds bounds the support of the product
+(`HahnSeries.add_le_of_mem_support_mul`), and for powers `HahnSeries.nsmul_le_of_mem_support_pow`
+and `HahnSeries.coeff_pow_nsmul_of_forall_le` give the corresponding bound and coefficient.
+`HahnSeries.zero_le_orderTop_single` and `HahnSeries.zero_le_orderTop_one` record that monomials
+of nonnegative exponent, and in particular the constant `1`, have nonnegative order.
 -/
 
 public section
@@ -165,6 +170,20 @@ end HahnModule
 
 namespace HahnSeries
 
+section OrderTop
+
+variable {Γ R : Type*} [Zero Γ] [PartialOrder Γ] [Zero R]
+
+/-- A monomial of nonnegative exponent has nonnegative order. -/
+theorem zero_le_orderTop_single {a : Γ} (ha : 0 ≤ a) (r : R) : 0 ≤ (single a r).orderTop :=
+  (WithTop.coe_le_coe.2 ha).trans orderTop_single_le
+
+/-- The constant `1` has nonnegative order. -/
+theorem zero_le_orderTop_one [One R] : 0 ≤ (1 : HahnSeries Γ R).orderTop :=
+  zero_le_orderTop_single le_rfl 1
+
+end OrderTop
+
 variable {Γ R : Type*} [AddCommMonoid Γ] [PartialOrder Γ] [IsOrderedCancelAddMonoid Γ]
 
 /-- If `x` is supported at exponents at least `a` and `y` at exponents at least `b`, then the
@@ -183,5 +202,36 @@ theorem coeff_mul_add_of_forall_le [NonUnitalNonAssocSemiring R] {x y : HahnSeri
   · by_contra h
     exact hab (Finset.mem_antidiagonal.mpr
       ⟨left_ne_zero_of_mul h, right_ne_zero_of_mul h, rfl⟩)
+
+/-- If `x` is supported at exponents at least `a` and `y` at exponents at least `b`, then `x * y`
+is supported at exponents at least `a + b`. -/
+theorem add_le_of_mem_support_mul [NonUnitalNonAssocSemiring R] {x y : HahnSeries Γ R} {a b : Γ}
+    (hx : ∀ i ∈ x.support, a ≤ i) (hy : ∀ j ∈ y.support, b ≤ j) :
+    ∀ k ∈ (x * y).support, a + b ≤ k := fun _ hk => by
+  obtain ⟨i, hi, j, hj, rfl⟩ := Set.mem_add.mp (support_mul_subset hk)
+  exact add_le_add (hx i hi) (hy j hj)
+
+/-- If `x` is supported at exponents at least `a`, then `x ^ n` is supported at exponents at
+least `n • a`. -/
+theorem nsmul_le_of_mem_support_pow [Semiring R] {x : HahnSeries Γ R} {a : Γ}
+    (hx : ∀ i ∈ x.support, a ≤ i) (n : ℕ) : ∀ i ∈ (x ^ n).support, n • a ≤ i := by
+  induction n with
+  | zero =>
+    intro i hi
+    rw [pow_zero, ← single_zero_one] at hi
+    rw [zero_nsmul, Set.mem_singleton_iff.mp (support_single_subset hi)]
+  | succ n ih =>
+    rw [pow_succ, succ_nsmul]
+    exact add_le_of_mem_support_mul ih hx
+
+/-- If `x` is supported at exponents at least `a`, then the coefficient of `x ^ n` at `n • a` is
+the `n`-th power of the coefficient of `x` at `a`. -/
+theorem coeff_pow_nsmul_of_forall_le [Semiring R] {x : HahnSeries Γ R} {a : Γ}
+    (hx : ∀ i ∈ x.support, a ≤ i) (n : ℕ) : (x ^ n).coeff (n • a) = x.coeff a ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [pow_succ, succ_nsmul, coeff_mul_add_of_forall_le (nsmul_le_of_mem_support_pow hx n) hx,
+      ih, pow_succ]
 
 end HahnSeries

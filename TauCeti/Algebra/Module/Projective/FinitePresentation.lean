@@ -57,19 +57,14 @@ namespace FiniteProjectivePresentation
 
 attribute [instance] finite₀ finite₁ projective₀ projective₁
 
-/-- Every finitely presented module has a finite projective presentation.
+/-- A chosen finite projective presentation of a finitely presented module.
 The ring need only be small in the universe of the module. -/
 noncomputable def ofFinitePresentation {M : ModuleCat.{v} A}
     [Module.FinitePresentation A M] [Small.{v} A] : FiniteProjectivePresentation M := by
-  classical
   apply Classical.choice
   obtain ⟨n, m, f, g, hf, hg⟩ := Module.FinitePresentation.exists_fin' A M
   let e₀ := Shrink.linearEquiv A (Fin n → A)
   let e₁ := Shrink.linearEquiv A (Fin m → A)
-  have : Module.Free A (Shrink.{v} (Fin n → A)) := .of_equiv e₀.symm
-  have : Module.Free A (Shrink.{v} (Fin m → A)) := .of_equiv e₁.symm
-  have : Module.Finite A (Shrink.{v} (Fin n → A)) := .equiv e₀.symm
-  have : Module.Finite A (Shrink.{v} (Fin m → A)) := .equiv e₁.symm
   refine ⟨⟨ModuleCat.of A (Shrink.{v} (Fin n → A)),
     ModuleCat.of A (Shrink.{v} (Fin m → A)),
     e₀.symm.toLinearMap ∘ₗ g ∘ₗ e₁.toLinearMap, f ∘ₗ e₀.toLinearMap, ?_,

@@ -12,31 +12,22 @@ public import Mathlib.Analysis.Complex.Convex
 /-!
 # Identity theorem on a right half-plane
 
-Holomorphic functions on `Re s > a` that agree on a smaller right half-plane `Re s > b`,
-where `a < b`, agree throughout `Re s > a`.
+Functions holomorphic on the right half-plane `Re s > a` that agree on some right half-plane
+`Re s > b` agree throughout `Re s > a`. The codomain is any complete complex normed space.
 -/
 
 public section
 
-namespace TauCeti
+open Set
 
-open Filter Topology
-
-/-- Two functions holomorphic on `Re s > a` that agree on `Re s > b`, for `a < b`,
-agree throughout `Re s > a`. -/
-theorem eq_of_differentiableOn_of_eq_on_halfPlane {f g : ℂ → ℂ} {a b : ℝ} (hab : a < b)
-    (hf : DifferentiableOn ℂ f {s | a < s.re})
-    (hg : DifferentiableOn ℂ g {s | a < s.re})
-    (hfg : ∀ s : ℂ, b < s.re → f s = g s) {s : ℂ}
-    (hs : a < s.re) : f s = g s := by
-  have hUopen : IsOpen {s : ℂ | a < s.re} :=
-    isOpen_lt continuous_const Complex.continuous_re
-  refine (hf.analyticOnNhd hUopen).eqOn_of_preconnected_of_eventuallyEq (hg.analyticOnNhd hUopen)
-    (convex_halfSpace_re_gt a).isPreconnected (z₀ := ((b + 1 : ℝ) : ℂ)) ?_ ?_ hs
-  · simp only [Set.mem_ofPred_eq, Complex.ofReal_re]
-    linarith
-  · have hb : b < ((b + 1 : ℝ) : ℂ).re := by simp
-    filter_upwards [(isOpen_lt continuous_const Complex.continuous_re).mem_nhds hb] with z hz
-    exact hfg z hz
-
-end TauCeti
+/-- **Identity theorem on a right half-plane.** Two functions holomorphic on `Re s > a` that
+agree on some right half-plane `Re s > b` agree throughout `Re s > a`. -/
+theorem DifferentiableOn.eqOn_of_eqOn_re_gt {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] [CompleteSpace E] {f g : ℂ → E} {a b : ℝ}
+    (hf : DifferentiableOn ℂ f {s | a < s.re}) (hg : DifferentiableOn ℂ g {s | a < s.re})
+    (hfg : EqOn f g {s | b < s.re}) : EqOn f g {s | a < s.re} := by
+  have hopen (c : ℝ) : IsOpen {s : ℂ | c < s.re} := isOpen_lt continuous_const Complex.continuous_re
+  refine (hf.analyticOnNhd (hopen a)).eqOn_of_preconnected_of_eventuallyEq
+    (hg.analyticOnNhd (hopen a)) (convex_halfSpace_re_gt a).isPreconnected
+    (z₀ := ((max a b + 1 : ℝ) : ℂ)) ?_ (hfg.eventuallyEq_of_mem ((hopen b).mem_nhds ?_)) <;>
+    simp <;> grind

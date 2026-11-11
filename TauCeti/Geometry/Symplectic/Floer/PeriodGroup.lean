@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Basic
+public import Mathlib.Algebra.Ring.NegOnePow
 public import TauCeti.GroupTheory.SpecificGroups.Cyclic.Int
 
 /-!
@@ -42,7 +43,9 @@ This file develops `Γ` for an arbitrary additive group `S` with two such homomo
 
 ## Main results
 
-* `PeriodGroup.ext_iff`: a class in `Γ` is determined by its area and first Chern number.
+* `PeriodGroup.ext_iff`: a class in `Γ` is determined by its area and first Chern number;
+  equivalently the kernels of area and Chern number are disjoint
+  (`PeriodGroup.disjoint_ker_area_ker_chern`).
 * `PeriodGroup.subsingleton_iff`: `Γ` is trivial exactly when area and Chern number vanish on
   `S`, as for symplectically aspherical manifolds.
 * `PeriodGroup.chern_injective_iff`, `PeriodGroup.area_injective_iff`: the Chern number (resp.
@@ -53,6 +56,8 @@ This file develops `Γ` for an arbitrary additive group `S` with two such homomo
   number (spherical monotonicity), then the Chern number embeds `Γ` into `ℤ`, so `Γ` is cyclic.
 * `PeriodGroup.area_injective_of_chern_eq_zero`: if the Chern number vanishes, then the area
   embeds `Γ` into `ℝ`.
+* `PeriodGroup.negOnePow_eq_negOnePow_of_quotientMk_eq`: degrees are even, so the residue of an
+  integer modulo the degrees of `Γ` determines its parity.
 * `PeriodGroup.map_injective`: induced maps of period groups are injective, and they are
   bijective when the map of class groups is surjective. They are functorial (`PeriodGroup.map_id`,
   `PeriodGroup.map_comp`).
@@ -108,6 +113,16 @@ theorem degree_apply (γ : PeriodGroup ω c) : degree ω c γ = 2 * chern ω c �
 /-- Degrees in the period group are even. -/
 theorem even_degree (γ : PeriodGroup ω c) : Even (degree ω c γ) :=
   ⟨chern ω c γ, by rw [degree_apply, two_mul]⟩
+
+variable {ω c} in
+/-- Two integers with the same residue modulo the degrees of the period group have the same
+parity, since all these degrees are even. Hence the sign `(-1)^k` is a function of the residue
+of `k`. -/
+theorem negOnePow_eq_negOnePow_of_quotientMk_eq {k l : ℤ}
+    (h : (k : ℤ ⧸ (degree ω c).range) = l) : k.negOnePow = l.negOnePow := by
+  obtain ⟨γ, hγ⟩ := AddMonoidHom.mem_range.1 (QuotientAddGroup.eq.1 h)
+  rw [Int.negOnePow_eq_iff, ← even_neg, neg_sub, sub_eq_neg_add, ← hγ]
+  exact even_degree ω c γ
 
 /-- The joint period map sends the class of `s` to its area and first Chern number. -/
 theorem periods_mk (s : S) : periods ω c (s : PeriodGroup ω c) = (ω s, c s) := by
@@ -223,6 +238,21 @@ theorem degree_injective_iff :
   refine ⟨fun h γ γ' hγ => h ?_, fun h γ γ' hγ => h ?_⟩
   · rw [degree_apply, degree_apply, hγ]
   · simpa using hγ
+
+variable (ω c) in
+/-- A class has degree zero exactly when its first Chern number vanishes. -/
+@[simp]
+theorem ker_degree : (degree ω c).ker = (chern ω c).ker := by
+  ext γ
+  simp [AddMonoidHom.mem_ker]
+
+variable (ω c) in
+/-- Area and first Chern number are jointly injective on the period group: the only class with
+vanishing area and vanishing first Chern number is zero. -/
+theorem disjoint_ker_area_ker_chern : Disjoint (area ω c).ker (chern ω c).ker :=
+  disjoint_iff_inf_le.2 fun γ hγ => AddSubgroup.mem_bot.2 <|
+    ext (by rw [AddMonoidHom.mem_ker.1 hγ.1, map_zero])
+      (by rw [AddMonoidHom.mem_ker.1 hγ.2, map_zero])
 
 /-- If every spherical class with vanishing first Chern number has vanishing area, the period
 group is cyclic. -/

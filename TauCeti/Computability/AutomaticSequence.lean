@@ -10,7 +10,7 @@ public import Mathlib.Data.Fintype.Defs
 public import TauCeti.Computability.DFAO
 import Mathlib.Data.Fintype.Prod
 import Mathlib.Data.ZMod.Basic
-import TauCeti.Data.Nat.Periodic
+import TauCeti.Data.Nat.Periodic.Basic
 
 /-!
 # Automatic sequences
@@ -34,7 +34,7 @@ definition is made for every `k ≠ 0`. For `k = 1`, `Nat.digits 1 n` is the una
 
 * `TauCeti.IsAutomatic k a`: the sequence `a` is `k`-automatic.
 * `TauCeti.DFAO.isAutomatic`: a finite automaton computes a `k`-automatic sequence.
-* `TauCeti.IsAutomatic.map`, `TauCeti.IsAutomatic.prod`: closure under changing the values and
+* `TauCeti.IsAutomatic.map`, `TauCeti.IsAutomatic.prodMk`: closure under changing the values and
   under pairing.
 * `TauCeti.IsAutomatic.finite_range`: an automatic sequence takes finitely many values.
 * `TauCeti.isAutomatic_const`: constant sequences are automatic.
@@ -92,7 +92,7 @@ theorem IsAutomatic.map (ha : IsAutomatic k a) (f : Δ → Δ') : IsAutomatic k 
   simpa [hM] using (M.mapOutput f).isAutomatic
 
 /-- The pairing of two `k`-automatic sequences is `k`-automatic. -/
-theorem IsAutomatic.prod {b : ℕ → Δ'} (ha : IsAutomatic k a) (hb : IsAutomatic k b) :
+theorem IsAutomatic.prodMk {b : ℕ → Δ'} (ha : IsAutomatic k a) (hb : IsAutomatic k b) :
     IsAutomatic k fun n ↦ (a n, b n) := by
   obtain ⟨σ, _, M, hM⟩ := ha
   obtain ⟨τ, _, N, hN⟩ := hb

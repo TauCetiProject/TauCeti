@@ -33,10 +33,10 @@ continuous cohomology of `G` with coefficients in any profinite pro-`p` abelian 
 profinite extension of `G` by `M`, and the class of a split extension is zero. The extension
 dictionary reads its abelian kernel multiplicatively, so the vanishing is first stated for a
 `CommGroup` `M`; an `AddCommGroup` `M` is `Additive (Multiplicative M)`, and
-`TauCeti.IsProjective.subsingleton_H2_of_isPPrimaryTorsion` restates the vanishing for it.
+`TauCeti.IsProjective.subsingleton_H2_of_isAddPGroup` restates the vanishing for it.
 Transported through the degree-two comparison with Mathlib's `continuousCohomology`, the
 statement takes its canonical form for a finite discrete `p`-primary `G`-module
-(`TauCeti.IsProjective.subsingleton_continuousCohomology_two_of_isPPrimaryTorsion`), which is the
+(`TauCeti.IsProjective.subsingleton_continuousCohomology_two_of_isAddPGroup`), which is the
 input to `cd_p G ≤ 1` in
 `TauCeti.Topology.Algebra.Group.Profinite.EmbeddingProblem.CohomologicalDimension`. The vanishing
 of `H²` of a free pro-`p` group in `TauCeti.Topology.Algebra.Group.Profinite.Free.Cohomology` is
@@ -52,9 +52,9 @@ the instance of these statements at `freeProP p X`.
   abelian `p`-kernel.
 * `TauCeti.IsProjective.subsingleton_H2`: **`H²(G, M) = 0`** for `G` projective pro-`p` and `M` a
   profinite pro-`p` abelian `G`-module.
-* `TauCeti.IsProjective.subsingleton_H2_of_isPPrimaryTorsion`: the same for a profinite
+* `TauCeti.IsProjective.subsingleton_H2_of_isAddPGroup`: the same for a profinite
   `p`-primary torsion abelian `G`-module written additively.
-* `TauCeti.IsProjective.subsingleton_continuousCohomology_two_of_isPPrimaryTorsion`: the same in
+* `TauCeti.IsProjective.subsingleton_continuousCohomology_two_of_isAddPGroup`: the same in
   Mathlib's continuous cohomology, for a finite discrete `p`-primary `G`-module.
 
 ## References
@@ -196,12 +196,12 @@ variable {M : Type v} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGro
 /-- **`H²` of a projective pro-`p` group vanishes, additive form.** For `G` projective pro-`p` and
 `M` a profinite `p`-primary torsion abelian group, written additively, with a continuous action of
 `G`, the explicit second continuous cohomology group `H²(G, M)` is zero. -/
-theorem subsingleton_H2_of_isPPrimaryTorsion (hproj : IsProjective.{u, max u v, u} p G)
-    (hG : IsProP p G) (hM : IsPPrimaryTorsion p M) : Subsingleton (H2 G M) :=
+theorem subsingleton_H2_of_isAddPGroup (hproj : IsProjective.{u, max u v, u} p G)
+    (hG : IsProP p G) (hM : IsAddPGroup p M) : Subsingleton (H2 G M) :=
   -- `Additive (Multiplicative M)` is `M` with the same instances, so the multiplicative statement
-  -- applies as it stands; `isPPrimaryTorsion_additive_iff` reads the hypothesis the same way.
+  -- applies as it stands.
   hproj.subsingleton_H2 hG (M := Multiplicative M)
-    (IsPGroup.isProP ((isPPrimaryTorsion_additive_iff (M := Multiplicative M)).1 hM))
+    (IsPGroup.isProP (hM : IsPGroup p (Multiplicative M)))
 
 end Additive
 
@@ -209,12 +209,12 @@ end Additive
 cohomology: for `G` projective pro-`p` and `M` a finite discrete `p`-primary torsion abelian group
 with a continuous action of `G`, the canonical `continuousCohomology 2` of the topological
 representation attached to `M` is zero. -/
-theorem subsingleton_continuousCohomology_two_of_isPPrimaryTorsion
+theorem subsingleton_continuousCohomology_two_of_isAddPGroup
     (hproj : IsProjective.{u, u, u} p G) (hG : IsProP p G) (M : Type u) [AddCommGroup M]
     [TopologicalSpace M] [DiscreteTopology M] [Finite M] [DistribMulAction G M]
-    [ContinuousSMul G M] (hM : IsPPrimaryTorsion p M) :
+    [ContinuousSMul G M] (hM : IsAddPGroup p M) :
     Subsingleton (continuousCohomology 2 (ofDiscreteModule ℤ G M)) :=
-  haveI := hproj.subsingleton_H2_of_isPPrimaryTorsion hG hM
+  haveI := hproj.subsingleton_H2_of_isAddPGroup hG hM
   (explicitH2AddEquivContinuousCohomology G M).toEquiv.symm.subsingleton
 
 end IsProjective

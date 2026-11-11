@@ -15,7 +15,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.LeftRegular
 # Cartan weights of the adjoint Clifford lift
 
 Let `L` be a finite-dimensional Lie algebra with nondegenerate Killing form and let `H` be a
-Cartan subalgebra. The coordinate formula for the adjoint Clifford lift can be decomposed into
+split Cartan subalgebra. The coordinate formula for the adjoint Clifford lift can be decomposed into
 opposite root-space projections:
 
 ```text
@@ -61,13 +61,13 @@ namespace CliffordAlgebra
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-variable {K : Type u} [Field K] [CharZero K] [IsAlgClosed K]
+variable {K : Type u} [Field K] [CharZero K]
   {L : Type v} [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
   [Invertible (2 : K)] [LieAlgebra.IsKilling K L]
   (H : LieSubalgebra K L) [H.IsCartanSubalgebra]
   [LieModule.IsTriangularizable K H L]
 
-omit [CharZero K] [IsAlgClosed K] in
+omit [CharZero K] in
 /-- The adjoint Clifford lift, decomposed using the `χ` and `-χ` projections of a basis and its
 Killing-dual basis. The coefficient is the quadratic normalization of the Killing form. -/
 theorem adjointCliffordHom_eq_sum_weight
@@ -105,7 +105,7 @@ theorem adjointCliffordHom_cartan_eq_sum_weight
   simp only [bivector_def, map_smul, smul_mul_assoc, mul_smul_comm]
   module
 
-omit [CharZero K] [IsAlgClosed K] in
+omit [CharZero K] in
 private theorem projectedBivectorSum_neg
     {iota : Type w} [Fintype iota] [DecidableEq iota]
     (b : Module.Basis iota K L) (chi : Weight K H L) :
@@ -120,9 +120,11 @@ private theorem projectedBivectorSum_neg
     (bivectorBilinear (TauCeti.LieAlgebra.killingQuadraticForm K L)).comp
       (TauCeti.genWeightSpaceProjection K H L (-chi)) |>.compl₂
         (TauCeti.genWeightSpaceProjection K H L chi)
-  have hb := TauCeti.sum_apply_killingDualBasis_eq f b (TauCeti.killingDualBasis b)
+  have hb := f.sum_apply_dualBasis_eq (LieAlgebra.IsKilling.killingForm_nondegenerate K L) b
+    (TauCeti.killingDualBasis b)
   simp only [f, LinearMap.compl₂_apply, LinearMap.comp_apply,
-    TauCeti.killingDualBasis_killingDualBasis] at hb
+    LinearMap.BilinForm.dualBasis_dualBasis _
+      (LinearMap.BilinForm.isSymm_iff.mpr (LieModule.traceForm_isSymm K L L))] at hb
   have hb' : (∑ i, bivector (TauCeti.LieAlgebra.killingQuadraticForm K L)
         (TauCeti.genWeightSpaceProjection K H L (-chi) (b i))
         (TauCeti.genWeightSpaceProjection K H L chi (TauCeti.killingDualBasis b i))) =
@@ -159,56 +161,10 @@ theorem adjointCliffordHom_cartan_eq_sum_posRoots
       (TauCeti.genWeightSpaceProjection K H L (-chi) (TauCeti.killingDualBasis b i))
   have hcneg (chi : Weight K H L) : c (-chi) = -c chi := by
     simpa only [c, neg_neg] using projectedBivectorSum_neg H b chi
-  have hregroup :
-      (4 : K)⁻¹ • ∑ chi : Weight K H L, chi h • c chi =
-        (2 : K)⁻¹ • ∑ a ∈
-          TauCeti.posRootsFinset (LieAlgebra.IsKilling.rootSystem H) base,
-          ((a : Weight K H L) h • c (a : Weight K H L)) := by
-    rw [← Finset.sum_sdiff (Finset.subset_univ H.root)]
-    have hzero : ∑ chi ∈ Finset.univ \ H.root, chi h • c chi = 0 := by
-      refine Finset.sum_eq_zero fun chi hchi ↦ ?_
-      have hz : chi.IsZero := not_not.mp (by simpa [LieSubalgebra.root] using
-        (Finset.mem_sdiff.mp hchi).2)
-      rw [hz.eq]
-      simp
-    rw [hzero, zero_add, ← Finset.sum_coe_sort H.root,
-      TauCeti.sum_root_eq_sum_posRootsFinset (H := H) base]
-    have hpair : ∀ a : H.root,
-        ((a : Weight K H L) h • c a + ((-a : H.root) : Weight K H L) h •
-          c ((-a : H.root) : Weight K H L)) =
-          (2 : K) • ((a : Weight K H L) h • c a) := by
-      intro a
-      -- `val_neg_root` is the named interface exposing the definitional compatibility between
-      -- root-subtype negation and weight negation; evaluation compatibility follows from it.
-      have hneg_coe : ((-a : H.root) : Weight K H L) = -(a : Weight K H L) :=
-        LieAlgebra.IsKilling.val_neg_root
-      have hneg_apply : ((-a : H.root) : Weight K H L) h = -((a : Weight K H L) h) := by
-        exact congrArg (fun chi : Weight K H L ↦ chi h) hneg_coe
-      rw [hneg_apply, hneg_coe, hcneg]
-      simp only [smul_neg]
-      module
-    have hsum :
-        ∑ a ∈ TauCeti.posRootsFinset (LieAlgebra.IsKilling.rootSystem H) base,
-            ((a : Weight K H L) h • c (a : Weight K H L) +
-              ((-a : H.root) : Weight K H L) h •
-                c ((-a : H.root) : Weight K H L)) =
-          (2 : K) • ∑ a ∈ TauCeti.posRootsFinset (LieAlgebra.IsKilling.rootSystem H) base,
-            ((a : Weight K H L) h • c (a : Weight K H L)) := by
-      rw [Finset.sum_congr rfl fun a _ ↦ hpair a, ← Finset.smul_sum]
-    calc
-      _ = (4 : K)⁻¹ • ((2 : K) •
-          ∑ a ∈ TauCeti.posRootsFinset (LieAlgebra.IsKilling.rootSystem H) base,
-            ((a : Weight K H L) h • c (a : Weight K H L))) :=
-        congrArg ((4 : K)⁻¹ • ·) hsum
-      _ = _ := by
-        rw [smul_smul]
-        congr 1
-        norm_num
   rw [adjointCliffordHom_cartan_eq_sum_weight H b h]
-  simpa only [c] using hregroup
+  simpa only [c] using TauCeti.inv_four_smul_sum_weight_eq_inv_two_smul_sum_posRoots base c hcneg h
 
 open scoped CliffordAlgebra in
-omit [LieModule.IsTriangularizable K H L] in
 /-- If `y` is a root vector of weight `χ` and `c` is a simultaneous eigenvector of weight `μ`,
 then `ι(y) * c` is a simultaneous eigenvector of weight `χ + μ` for Kostant's left-regular
 action. -/
@@ -226,7 +182,6 @@ theorem kostant_lie_ι_mul_of_mem_rootSpace
   module
 
 open scoped CliffordAlgebra in
-omit [LieModule.IsTriangularizable K H L] in
 /-- Left multiplication by the Clifford generator of a root vector raises a generalized weight
 by that root for Kostant's left-regular action. -/
 theorem mem_genWeightSpace_ι_mul_of_mem_rootSpace

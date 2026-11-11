@@ -10,10 +10,12 @@ import TauCeti.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 import TauCeti.Analysis.PDE.HeatKernel.Derivatives
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.PowerBounds
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
-# The Duhamel heat potential, its spatial derivatives and the Hölder estimate of its Hessian
+# The Duhamel heat potential, its spatial derivatives and the Hölder estimates of its Hessian
 
 For a forcing term `f : ℝ → E → F` on a finite-dimensional real inner product space `E`, the
 *Duhamel potential* (or volume potential) is
@@ -23,8 +25,8 @@ For a forcing term `f : ℝ → E → F` on a finite-dimensional real inner prod
 where `K_τ` is the heat kernel. By Duhamel's principle it is the candidate solution of the
 inhomogeneous heat equation `∂ₜw = Δw + f` with zero initial datum, complementing the heat
 convolution `K_t ⋆ g` of an initial datum `g`. This file proves the spatial regularity of each
-time slice `w(t, ·)`, `t > 0`, with bounds whose constants depend only on the dimension (and on
-`α` below):
+time slice `w(t, ·)`, `t > 0`, and the temporal regularity of its Hessian, with bounds whose
+constants depend only on the dimension (and on `α` below):
 
 * if `‖f‖ ≤ M` almost everywhere, then `‖w(t, x)‖ ≤ M t`;
 * if `f` is moreover jointly measurable, `w(t, ·)` is `C¹`, its derivative is computed under the
@@ -32,7 +34,9 @@ time slice `w(t, ·)`, `t > 0`, with bounds whose constants depend only on the d
 * if moreover `f(s, ·)` is `α`-Hölder with constant `H` for almost every `0 < s < t`, and
   `α > 0`, then `w(t, ·)` is `C²`, its second derivative is computed under the time integral, and
   `‖D² w(t, x)‖ ≤ C H t^(α / 2)`;
-* if moreover `α < 1`, then `D² w(t, ·)` is `α`-Hölder with constant `C H`, independently of `t`.
+* if moreover `α < 1`, then `D² w(t, ·)` is `α`-Hölder with constant `C H`, independently of `t`;
+* if instead `α < 2`, then at each point `x` the Hessian `t ↦ D² w(t, ·)(x)` is `α/2`-Hölder in
+  time on `[0, T]` with constant `C H`, independently of `T`.
 
 The time integrand is singular at `s = t`. For the first derivative, the bound
 `‖D(K_τ ⋆ g)‖ ≤ ‖DK_τ‖_{L¹} M = O(M τ^(-1/2))` is integrable in `τ`. For the second derivative,
@@ -52,10 +56,21 @@ theorem and the bound `‖D³(K_τ ⋆ g)‖ = O(H τ^((α - 3)/2))`, obtained b
 give a contribution `O(H δ ∫_{δ²}^∞ τ^((α - 3)/2) dτ) = O(H δ^α)`, which requires `α < 1`. This is
 the spatial half of the order-two parabolic Hölder estimate of the Duhamel potential.
 
+The temporal half compares `D² w` at times `t' < t`, with `h = t - t'`. If `t' ≤ h`, both
+Hessians are `O(H h^(α/2))` by the bound above. Otherwise the times `s > t' - h` contribute
+`O(H h^(α/2))` by the same bound, while for `s < t' - h` the slices at elapsed times `t' - s` and
+`t - s` differ by `O(H h (t' - s)^((α - 4)/2))`
+(`TauCeti.norm_iteratedFDeriv_heatKernel_convolution_sub_le_of_holderWith`, one time derivative of
+the kernel at the cost of a factor `(t' - s)⁻¹`), which integrates to `O(H h^(α/2))` when
+`α < 2`. For `0 < α < 1`, the two halves together give the parabolic `α`-Hölder estimate of
+`D² w`.
+
 ## Main declarations
 
 * `TauCeti.heatDuhamelPotential`: the Duhamel potential `∫₀ᵗ (K_{t-s} ⋆ f(s, ·))(x) ds`.
 * `TauCeti.norm_heatDuhamelPotential_le`: the bound `‖w(t, x)‖ ≤ M t`.
+* `TauCeti.exists_stronglyMeasurable_eq_iteratedFDeriv_heatKernel_convolution`: the derivatives
+  `D^m (K_τ ⋆ f(s, ·))(x)` agree with a jointly measurable function of `(s, τ)`.
 * `TauCeti.intervalIntegrable_heatKernel_convolution`,
   `TauCeti.intervalIntegrable_iteratedFDeriv_heatKernel_convolution`,
   `TauCeti.intervalIntegrable_iteratedFDeriv_heatKernel_convolution_of_holderWith`: the time
@@ -71,6 +86,8 @@ the spatial half of the order-two parabolic Hölder estimate of the Duhamel pote
   `‖D² w(t, x)‖ ≤ C H t^(α / 2)`.
 * `TauCeti.exists_holderWith_iteratedFDeriv_two_heatDuhamelPotential`: for `0 < α < 1`,
   `D² w(t, ·)` is `α`-Hölder with constant `C H`.
+* `TauCeti.exists_holderOnWith_iteratedFDeriv_two_heatDuhamelPotential`: for `0 < α < 2`,
+  `t ↦ D² w(t, ·)(x)` is `α/2`-Hölder on `[0, T]` with constant `C H`.
 
 ## References
 
@@ -108,16 +125,42 @@ theorem heatDuhamelPotential_def (f : ℝ → E → F) (t : ℝ) (x : E) :
     heatDuhamelPotential f t x = ∫ s in 0..t, (heatKernel (t - s) ⋆ f s) x :=
   (rfl)
 
+/-- The Duhamel heat potential commutes with scalar multiplication, at every time. -/
+theorem heatDuhamelPotential_smul (c : ℝ) (f : ℝ → E → F) (t : ℝ) (x : E) :
+    heatDuhamelPotential (c • f) t x = c • heatDuhamelPotential f t x := by
+  simp only [heatDuhamelPotential_def, Pi.smul_apply, convolution_smul]
+  exact intervalIntegral.integral_smul c _
+
 /-- The Duhamel heat potential vanishes at time zero. -/
 @[simp]
 theorem heatDuhamelPotential_zero (f : ℝ → E → F) : heatDuhamelPotential f 0 = 0 := by
   funext x
   simp [heatDuhamelPotential_def]
 
+/-- Constant forcing produces linear growth in time. -/
+@[simp]
+theorem heatDuhamelPotential_const [CompleteSpace F] (c : F) {t : ℝ} (ht : 0 ≤ t) (x : E) :
+    heatDuhamelPotential (fun _ _ => c) t x = t • c := by
+  rw [heatDuhamelPotential_def]
+  calc (∫ s in 0..t, (heatKernel (t - s) ⋆ fun _ : E => c) x) = ∫ _ in 0..t, c := by
+        apply intervalIntegral.integral_congr_ae_restrict
+        rw [uIoc_of_le ht, ← restrict_Ioo_eq_restrict_Ioc]
+        filter_upwards [ae_restrict_mem measurableSet_Ioo] with s hs
+        rw [convolution_def]
+        simp only [ContinuousLinearMap.lsmul_apply]
+        rw [integral_smul_const, integral_heatKernel (sub_pos.2 hs.2), one_smul]
+    _ = t • c := by simp
+
 /-- The Duhamel potential at time `t` as a function of space. -/
 private theorem heatDuhamelPotential_eq_fun (f : ℝ → E → F) (t : ℝ) :
     heatDuhamelPotential f t = fun x => ∫ s in 0..t, (heatKernel (t - s) ⋆ f s) x :=
   funext (heatDuhamelPotential_def f t)
+
+/-- Without completeness of `F`, the Duhamel heat potential vanishes. -/
+theorem heatDuhamelPotential_eq_zero_of_not_completeSpace (hF : ¬ CompleteSpace F)
+    (f : ℝ → E → F) (t : ℝ) : heatDuhamelPotential f t = 0 := by
+  funext x
+  simp [heatDuhamelPotential_def, convolution_eq_zero_of_not_completeSpace hF]
 
 omit [NormedSpace ℝ F] in
 /-- Almost every time `s` in `Ι 0 t` lies in the open interval, where `t - s > 0`, and has an
@@ -143,37 +186,48 @@ theorem norm_heatDuhamelPotential_le (ht : 0 ≤ t)
   filter_upwards [hae] with s hs hsI
   exact norm_heatKernel_convolution_le (sub_pos.2 (hs hsI).1.2) (hs hsI).2 x
 
+/-- **Joint measurability of the derivatives of heat convolutions.** For jointly measurable `f`,
+some jointly strongly measurable function of `(s, τ)` equals `D^m (K_τ ⋆ f(s, ·))(x)` whenever
+`τ > 0` and `f(s, ·)` is essentially bounded. Writing `D^m K_τ` through the parabolic scaling of
+`K_1` makes the convolution integrand jointly measurable in `(s, τ, z)`. -/
+theorem exists_stronglyMeasurable_eq_iteratedFDeriv_heatKernel_convolution
+    (hf : StronglyMeasurable (Function.uncurry f)) (m : ℕ) (x : E) :
+    ∃ Φ : ℝ × ℝ → ContinuousMultilinearMap ℝ (fun _ : Fin m => E) F, StronglyMeasurable Φ ∧
+      ∀ s τ (B : ℝ), 0 < τ → (∀ᵐ y, ‖f s y‖ ≤ B) →
+        Φ (s, τ) = iteratedFDeriv ℝ m (heatKernel τ ⋆ f s) x := by
+  set Ψ : (ℝ × ℝ) × E → ContinuousMultilinearMap ℝ (fun _ : Fin m => E) F := fun p =>
+    (p.1.2 ^ (-(finrank ℝ E + m : ℝ) / 2) •
+      iteratedFDeriv ℝ m (heatKernel 1 : E → ℝ) (p.1.2 ^ (-1 / 2 : ℝ) • p.2)).smulRight
+        (f p.1.1 (x - p.2))
+  have hΨ : StronglyMeasurable Ψ := by
+    have h₁ : Measurable fun p : (ℝ × ℝ) × E => p.1.2 ^ (-(finrank ℝ E + m : ℝ) / 2) := by
+      fun_prop
+    have h₂ : Measurable fun p : (ℝ × ℝ) × E => p.1.2 ^ (-1 / 2 : ℝ) • p.2 := by fun_prop
+    have h₃ : StronglyMeasurable fun p : (ℝ × ℝ) × E => f p.1.1 (x - p.2) :=
+      hf.comp_measurable (g := fun p : (ℝ × ℝ) × E => (p.1.1, x - p.2)) (by fun_prop)
+    exact (ContinuousMultilinearMap.smulRightL ℝ (fun _ : Fin m => E) F).continuous₂
+      |>.comp_stronglyMeasurable ((h₁.stronglyMeasurable.smul
+        (((contDiff_heatKernel 1).continuous_iteratedFDeriv le_top).comp_stronglyMeasurable
+          h₂.stronglyMeasurable)).prodMk h₃)
+  refine ⟨fun q => ∫ z, Ψ (q, z), hΨ.integral_prod_right', fun s τ B hτ hB => ?_⟩
+  rw [iteratedFDeriv_heatKernel_convolution (g := f s) hτ
+    (hf.comp_measurable measurable_prodMk_left).aestronglyMeasurable hB m x]
+  refine integral_congr_ae (ae_of_all _ fun z => ?_)
+  simp only [Ψ, iteratedFDeriv_heatKernel_eq_rpow_smul hτ]
+
 /-- For jointly measurable essentially bounded `f`, the spatial derivatives
-`D^m (K_{t-s} ⋆ f(s, ·))(x)` are measurable in `s`. Writing `D^m K_{t-s}` through the parabolic
-scaling of `K_1` makes the integrand jointly measurable in `(s, z)`. -/
+`D^m (K_{t-s} ⋆ f(s, ·))(x)` are measurable in `s`. -/
 private theorem aestronglyMeasurable_iteratedFDeriv_heatKernel_convolution
     (hf : StronglyMeasurable (Function.uncurry f))
     (hfM : ∀ᵐ s ∂volume.restrict (Ioo 0 t), ∀ᵐ y, ‖f s y‖ ≤ M)
     (ht : 0 < t) (m : ℕ) (x : E) :
     AEStronglyMeasurable (fun s => iteratedFDeriv ℝ m (heatKernel (t - s) ⋆ f s) x)
       (volume.restrict (Ι 0 t)) := by
-  set Φ : ℝ × E → ContinuousMultilinearMap ℝ (fun _ : Fin m => E) F := fun p =>
-    ((t - p.1) ^ (-(finrank ℝ E + m : ℝ) / 2) •
-      iteratedFDeriv ℝ m (heatKernel 1 : E → ℝ) ((t - p.1) ^ (-1 / 2 : ℝ) • p.2)).smulRight
-        (f p.1 (x - p.2))
-  have hΦ : StronglyMeasurable Φ := by
-    have h₁ : Measurable fun p : ℝ × E => (t - p.1) ^ (-(finrank ℝ E + m : ℝ) / 2) := by
-      fun_prop
-    have h₂ : Measurable fun p : ℝ × E => (t - p.1) ^ (-1 / 2 : ℝ) • p.2 := by fun_prop
-    have h₃ : StronglyMeasurable fun p : ℝ × E => f p.1 (x - p.2) :=
-      hf.comp_measurable (g := fun p : ℝ × E => (p.1, x - p.2)) (by fun_prop)
-    exact (ContinuousMultilinearMap.smulRightL ℝ (fun _ : Fin m => E) F).continuous₂
-      |>.comp_stronglyMeasurable ((h₁.stronglyMeasurable.smul
-        (((contDiff_heatKernel 1).continuous_iteratedFDeriv le_top).comp_stronglyMeasurable
-          h₂.stronglyMeasurable)).prodMk h₃)
-  refine (hΦ.integral_prod_right' (ν := volume)).aestronglyMeasurable.congr ?_
+  obtain ⟨Φ, hΦ, hΦeq⟩ := exists_stronglyMeasurable_eq_iteratedFDeriv_heatKernel_convolution hf m x
+  refine (hΦ.comp_measurable (by fun_prop : Measurable fun s : ℝ => (s, t - s))
+    ).aestronglyMeasurable.congr ?_
   filter_upwards [ae_mem_Ioo_and_ae_norm_le ht.le hfM] with s hs
-  have hts : 0 < t - s := sub_pos.2 hs.1.2
-  have hfs : AEStronglyMeasurable (f s) volume :=
-    (hf.comp_measurable measurable_prodMk_left).aestronglyMeasurable
-  rw [iteratedFDeriv_heatKernel_convolution hts hfs hs.2 m x]
-  refine integral_congr_ae (ae_of_all _ fun z => ?_)
-  simp only [Φ, iteratedFDeriv_heatKernel_eq_rpow_smul hts]
+  exact hΦeq s (t - s) M (sub_pos.2 hs.1.2) hs.2
 
 /-- The time slices `K_{t-s} ⋆ f(s, ·)` are smooth for almost every `s ∈ Ι 0 t`. -/
 private theorem ae_contDiff_heatKernel_convolution (hf : StronglyMeasurable (Function.uncurry f))
@@ -238,6 +292,31 @@ theorem intervalIntegrable_heatKernel_convolution (hf : StronglyMeasurable (Func
   · filter_upwards [ae_mem_Ioo_and_ae_norm_le ht.le hfM] with s hs
     exact norm_heatKernel_convolution_le (sub_pos.2 hs.1.2) hs.2 x
 
+/-- The Duhamel heat potential is additive for jointly measurable, essentially bounded
+forcing on the integration interval. No spatial continuity is required. -/
+theorem heatDuhamelPotential_add {g : ℝ → E → F} {N : ℝ}
+    (hf : StronglyMeasurable (Function.uncurry f))
+    (hfM : ∀ᵐ s ∂volume.restrict (Ioo 0 t), ∀ᵐ y, ‖f s y‖ ≤ M)
+    (hg : StronglyMeasurable (Function.uncurry g))
+    (hgN : ∀ᵐ s ∂volume.restrict (Ioo 0 t), ∀ᵐ y, ‖g s y‖ ≤ N)
+    (ht : 0 ≤ t) (x : E) :
+    heatDuhamelPotential (f + g) t x =
+      heatDuhamelPotential f t x + heatDuhamelPotential g t x := by
+  rcases ht.eq_or_lt with rfl | ht
+  · simp
+  rw [heatDuhamelPotential_def, heatDuhamelPotential_def, heatDuhamelPotential_def,
+    ← intervalIntegral.integral_add (intervalIntegrable_heatKernel_convolution hf hfM ht x)
+      (intervalIntegrable_heatKernel_convolution hg hgN ht x)]
+  apply intervalIntegral.integral_congr_ae_restrict
+  filter_upwards [ae_mem_Ioo_and_ae_norm_le ht.le hfM,
+    ae_mem_Ioo_and_ae_norm_le ht.le hgN] with s hs hs'
+  exact (convolutionExists_of_integrable_of_ae_norm_le _
+    (integrable_heatKernel (sub_pos.2 hs.1.2))
+    (hf.comp_measurable measurable_prodMk_left).aestronglyMeasurable hs.2 x).distrib_add
+      (convolutionExists_of_integrable_of_ae_norm_le _
+        (integrable_heatKernel (sub_pos.2 hs'.1.2))
+        (hg.comp_measurable measurable_prodMk_left).aestronglyMeasurable hs'.2 x)
+
 /-- For `f` jointly measurable and essentially bounded on `(0, t) × E`, the time integrands
 `s ↦ D^k (K_{t-s} ⋆ f(s, ·))(x)` of the spatial derivatives of order at most one of the Duhamel
 potential are interval integrable on `[0, t]`. -/
@@ -300,6 +379,7 @@ private theorem exists_bounds_two (hf : StronglyMeasurable (Function.uncurry f))
   · simpa using hC₁ hf hfM ht
   · simpa using hC₂ hf hfM hH ht
 
+omit [CompleteSpace F] in
 /-- If `f` is jointly measurable and essentially bounded on `(0, t) × E`, and `f(s, ·)` is
 `α`-Hölder for almost every `0 < s < t`, with `α > 0`, then the time integrands
 `s ↦ D^k (K_{t-s} ⋆ f(s, ·))(x)` of the spatial derivatives of order at most two of the Duhamel
@@ -310,6 +390,9 @@ theorem intervalIntegrable_iteratedFDeriv_heatKernel_convolution_of_holderWith
     {H α : ℝ≥0} (hH : ∀ᵐ s ∂volume.restrict (Ioo 0 t), HolderWith H α (f s)) (hα : 0 < α)
     (ht : 0 < t) {k : ℕ} (hk : k ≤ 2) (x : E) :
     IntervalIntegrable (fun s => iteratedFDeriv ℝ k (heatKernel (t - s) ⋆ f s) x) volume 0 t := by
+  by_cases hF : CompleteSpace F
+  swap
+  · simp [convolution_eq_zero_of_not_completeSpace hF]
   obtain ⟨bound, hb, hub⟩ := exists_bounds_two hf hfM hH hα ht
   exact (hb k hk).mono_fun'
     (aestronglyMeasurable_iteratedFDeriv_heatKernel_convolution hf hfM ht k x)
@@ -327,16 +410,22 @@ theorem iteratedFDeriv_heatDuhamelPotential (hf : StronglyMeasurable (Function.u
   exact iteratedFDeriv_intervalIntegral (ae_contDiff_heatKernel_convolution hf hfM ht 1)
     (fun k _ => aestronglyMeasurable_iteratedFDeriv_heatKernel_convolution hf hfM ht k) hb hub hk
 
+omit [CompleteSpace F] in
 /-- For `f` jointly measurable and essentially bounded on `(0, t) × E`, the Duhamel potential
 `w(t, ·)` is `C¹`. -/
 theorem contDiff_heatDuhamelPotential (hf : StronglyMeasurable (Function.uncurry f))
     (hfM : ∀ᵐ s ∂volume.restrict (Ioo 0 t), ∀ᵐ y, ‖f s y‖ ≤ M) (ht : 0 < t) :
     ContDiff ℝ 1 (heatDuhamelPotential f t) := by
+  by_cases hF : CompleteSpace F
+  swap
+  · rw [heatDuhamelPotential_eq_zero_of_not_completeSpace hF]
+    exact contDiff_const
   obtain ⟨bound, hb, hub⟩ := exists_bounds_one hf hfM ht
   rw [heatDuhamelPotential_eq_fun]
   exact contDiff_intervalIntegral (ae_contDiff_heatKernel_convolution hf hfM ht 1)
     (fun k _ => aestronglyMeasurable_iteratedFDeriv_heatKernel_convolution hf hfM ht k) hb hub
 
+omit [CompleteSpace F] in
 /-- **The second derivative of the Duhamel potential.** If `f` is jointly measurable and
 essentially bounded on `(0, t) × E`, and `f(s, ·)` is `α`-Hölder with constant `H` for almost
 every `0 < s < t`, with `α > 0`, then the derivatives of `w(t, ·)` of order at most two are
@@ -348,11 +437,17 @@ theorem iteratedFDeriv_heatDuhamelPotential_of_holderWith
     (ht : 0 < t) {k : ℕ} (hk : k ≤ 2) :
     iteratedFDeriv ℝ k (heatDuhamelPotential f t) =
       fun x => ∫ s in 0..t, iteratedFDeriv ℝ k (heatKernel (t - s) ⋆ f s) x := by
+  by_cases hF : CompleteSpace F
+  swap
+  · rw [heatDuhamelPotential_eq_zero_of_not_completeSpace hF]
+    funext x
+    simp [convolution_eq_zero_of_not_completeSpace hF]
   obtain ⟨bound, hb, hub⟩ := exists_bounds_two hf hfM hH hα ht
   rw [heatDuhamelPotential_eq_fun]
   exact iteratedFDeriv_intervalIntegral (ae_contDiff_heatKernel_convolution hf hfM ht 2)
     (fun k _ => aestronglyMeasurable_iteratedFDeriv_heatKernel_convolution hf hfM ht k) hb hub hk
 
+omit [CompleteSpace F] in
 /-- If `f` is jointly measurable and essentially bounded on `(0, t) × E`, and `f(s, ·)` is
 `α`-Hölder for almost every `0 < s < t`, with `α > 0`, then the Duhamel potential `w(t, ·)` is
 `C²`. -/
@@ -362,6 +457,10 @@ theorem contDiff_heatDuhamelPotential_of_holderWith
     {H α : ℝ≥0} (hH : ∀ᵐ s ∂volume.restrict (Ioo 0 t), HolderWith H α (f s)) (hα : 0 < α)
     (ht : 0 < t) :
     ContDiff ℝ 2 (heatDuhamelPotential f t) := by
+  by_cases hF : CompleteSpace F
+  swap
+  · rw [heatDuhamelPotential_eq_zero_of_not_completeSpace hF]
+    exact contDiff_const
   obtain ⟨bound, hb, hub⟩ := exists_bounds_two hf hfM hH hα ht
   rw [heatDuhamelPotential_eq_fun]
   exact contDiff_intervalIntegral (ae_contDiff_heatKernel_convolution hf hfM ht 2)
@@ -377,14 +476,43 @@ theorem exists_norm_fderiv_heatDuhamelPotential_le :
   obtain ⟨C, hC⟩ := exists_ae_norm_iteratedFDeriv_heatKernel_convolution_le_one (E := E) (F := F)
   refine ⟨2 * C, fun {f M t} hf hfM ht x => ?_⟩
   have hae := hC hf hfM ht
-  rw [uIoc_of_le ht.le, ae_restrict_iff' measurableSet_Ioc] at hae
+  rw [uIoc_of_le ht.le] at hae
   rw [← norm_iteratedFDeriv_one, iteratedFDeriv_heatDuhamelPotential hf hfM ht le_rfl]
-  refine (intervalIntegral.norm_integral_le_of_norm_le ht.le (hae.mono fun s hs hsI => hs hsI x)
-    ((intervalIntegrable_sub_rpow (by norm_num) 0 t).const_mul (C * M))).trans_eq ?_
-  rw [intervalIntegral.integral_const_mul, integral_sub_rpow (by norm_num), sqrt_eq_rpow]
+  refine (TauCeti.intervalIntegral.norm_integral_le_of_norm_le_mul_sub_rpow_left (K := C * M)
+    (by norm_num) ht.le (hae.mono fun s hs => hs x)).trans_eq ?_
+  rw [sqrt_eq_rpow]
   norm_num
   ring
 
+/-- Near the singular endpoint, the time integral over `[a, t]` of the Hessians of the slices is
+`O(H (t - a)^(α/2))`. -/
+private theorem exists_norm_integral_iteratedFDeriv_two_heatKernel_convolution_le {α : ℝ≥0}
+    (hα : 0 < α) :
+    ∃ C ≥ 0, ∀ {f : ℝ → E → F} {M t : ℝ} {H : ℝ≥0}, StronglyMeasurable (Function.uncurry f) →
+      (∀ᵐ s ∂volume.restrict (Ioo 0 t), ∀ᵐ y, ‖f s y‖ ≤ M) →
+      (∀ᵐ s ∂volume.restrict (Ioo 0 t), HolderWith H α (f s)) → ∀ a, 0 ≤ a → a ≤ t → ∀ x,
+        ‖∫ s in a..t, iteratedFDeriv ℝ 2 (heatKernel (t - s) ⋆ f s) x‖ ≤
+          C * H * (t - a) ^ ((α : ℝ) / 2) := by
+  obtain ⟨C, hC₀, hC⟩ :=
+    exists_ae_norm_iteratedFDeriv_heatKernel_convolution_le (E := E) (F := F) (α := α)
+      two_ne_zero
+  simp only [Nat.cast_ofNat] at hC
+  have hα' : (0 : ℝ) < α := hα
+  refine ⟨2 / α * C, by positivity, fun {f M t H} hf hfM hH a ha hat x => ?_⟩
+  rcases hat.eq_or_lt with rfl | hat
+  · rw [intervalIntegral.integral_same, norm_zero]
+    positivity
+  have ht : 0 < t := ha.trans_lt hat
+  have hae := hC hf hfM hH ht
+  rw [uIoc_of_le ht.le] at hae
+  refine (TauCeti.intervalIntegral.norm_integral_le_of_norm_le_mul_sub_rpow_left (K := C * H)
+    (by linarith) hat.le (ae_restrict_of_ae_restrict_of_subset (Ioc_subset_Ioc ha le_rfl)
+      (hae.mono fun s hs => hs x))).trans_eq ?_
+  have h : ((α : ℝ) - 2) / 2 + 1 = α / 2 := by ring
+  rw [h]
+  field_simp
+
+omit [CompleteSpace F] in
 /-- **The Hessian bound for the Duhamel potential.** For `α > 0` there is a constant `C`,
 depending only on `α` and the dimension, such that `‖D² w(t, x)‖ ≤ C H t^(α / 2)` whenever `f` is
 jointly measurable and essentially bounded on `(0, t) × E` and `f(s, ·)` is `α`-Hölder with
@@ -394,21 +522,15 @@ theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_le {α : ℝ≥0} (h
       (∀ᵐ s ∂volume.restrict (Ioo 0 t), ∀ᵐ y, ‖f s y‖ ≤ M) →
       (∀ᵐ s ∂volume.restrict (Ioo 0 t), HolderWith H α (f s)) → 0 < t →
       ∀ x, ‖iteratedFDeriv ℝ 2 (heatDuhamelPotential f t) x‖ ≤ C * H * t ^ ((α : ℝ) / 2) := by
+  by_cases hF : CompleteSpace F
+  swap
+  · refine ⟨0, fun {f M t H} _ _ _ _ x => ?_⟩
+    simp [heatDuhamelPotential_eq_zero_of_not_completeSpace hF]
   obtain ⟨C, -, hC⟩ :=
-    exists_ae_norm_iteratedFDeriv_heatKernel_convolution_le (E := E) (F := F) (α := α)
-      two_ne_zero
-  simp only [Nat.cast_ofNat] at hC
-  have hα' : (0 : ℝ) < α := hα
-  refine ⟨2 / α * C, fun {f M t H} hf hfM hH ht x => ?_⟩
-  have hae := hC hf hfM hH ht
-  rw [uIoc_of_le ht.le, ae_restrict_iff' measurableSet_Ioc] at hae
+    exists_norm_integral_iteratedFDeriv_two_heatKernel_convolution_le (E := E) (F := F) hα
+  refine ⟨C, fun {f M t H} hf hfM hH ht x => ?_⟩
   rw [iteratedFDeriv_heatDuhamelPotential_of_holderWith hf hfM hH hα ht le_rfl]
-  refine (intervalIntegral.norm_integral_le_of_norm_le ht.le (hae.mono fun s hs hsI => hs hsI x)
-    ((intervalIntegrable_sub_rpow (by linarith) 0 t).const_mul (C * H))).trans_eq ?_
-  rw [intervalIntegral.integral_const_mul, integral_sub_rpow (by linarith), sub_zero]
-  have h : ((α : ℝ) - 2) / 2 + 1 = α / 2 := by ring
-  rw [h]
-  field_simp
+  simpa using hC hf hfM hH 0 le_rfl ht.le x
 
 /-! ### The Hölder estimate of the Hessian -/
 
@@ -436,6 +558,7 @@ private theorem exists_ae_norm_iteratedFDeriv_two_heatKernel_convolution_sub_le 
   rw [Nat.cast_ofNat] at this
   rwa [norm_fderiv_iteratedFDeriv]
 
+omit [CompleteSpace F] in
 /-- **The Hölder estimate for the Hessian of the Duhamel potential.** For `0 < α < 1` there is a
 constant `C`, depending only on `α` and the dimension, such that the Hessian `D² w(t, ·)` is
 `α`-Hölder with constant `C H` whenever `f` is jointly measurable and essentially bounded on
@@ -447,6 +570,10 @@ theorem exists_holderWith_iteratedFDeriv_two_heatDuhamelPotential {α : ℝ≥0}
       (∀ᵐ s ∂volume.restrict (Ioo 0 t), ∀ᵐ y, ‖f s y‖ ≤ M) →
       (∀ᵐ s ∂volume.restrict (Ioo 0 t), HolderWith H α (f s)) → 0 < t →
       HolderWith (C * H) α (iteratedFDeriv ℝ 2 (heatDuhamelPotential f t)) := by
+  by_cases hF : CompleteSpace F
+  swap
+  · refine ⟨0, fun {f M t H} _ _ _ _ => ?_⟩
+    simp [heatDuhamelPotential_eq_zero_of_not_completeSpace hF]
   obtain ⟨C₂, hC₂₀, hC₂⟩ :=
     exists_ae_norm_iteratedFDeriv_heatKernel_convolution_le (E := E) (F := F) (α := α)
       two_ne_zero
@@ -472,14 +599,147 @@ theorem exists_holderWith_iteratedFDeriv_two_heatDuhamelPotential {α : ℝ≥0}
   rw [dist_eq_norm, iteratedFDeriv_heatDuhamelPotential_of_holderWith hf hfM hH hα₀ ht le_rfl,
     ← intervalIntegral.integral_sub (hint x) (hint y), dist_eq_norm]
   refine (norm_integral_le_of_ae_norm_le_rpow (A := 2 * C₂ * H) (B := C₃ * H) hα₀' hα₁' ht
-    (norm_pos_iff.2 (sub_ne_zero.2 hxy)) (by positivity) (by positivity) ((hint x).sub (hint y))
-    ?_ ?_).trans_eq ?_
+    (norm_pos_iff.2 (sub_ne_zero.2 hxy)) ?_ ?_).trans_eq ?_
   · filter_upwards [hae₂] with s hs hsI
     refine (norm_sub_le _ _).trans ?_
     linarith [hs hsI x, hs hsI y]
   · filter_upwards [hae₃] with s hs hsI using hs hsI x y
   · rw [NNReal.coe_mul, Real.coe_toNNReal _ (by positivity)]
     ring
+
+/-! ### The temporal Hölder estimate of the Hessian -/
+
+/-- Away from the diagonal, the Hessians of the slices at the times `t' < t` differ by
+`O(H (t - t') (t' - s)^((α - 4)/2))`, at almost every `0 < s ≤ t' - (t - t')`. -/
+private theorem exists_ae_norm_iteratedFDeriv_two_heatKernel_convolution_sub_time_le {α : ℝ≥0} :
+    ∃ C ≥ 0, ∀ {f : ℝ → E → F} {M t t' : ℝ} {H : ℝ≥0},
+      StronglyMeasurable (Function.uncurry f) →
+      (∀ᵐ s ∂volume.restrict (Ioo 0 t), ∀ᵐ y, ‖f s y‖ ≤ M) →
+      (∀ᵐ s ∂volume.restrict (Ioo 0 t), HolderWith H α (f s)) → t' < t →
+      ∀ᵐ s, s ∈ Ioc 0 (t' - (t - t')) → ∀ x,
+        ‖iteratedFDeriv ℝ 2 (heatKernel (t - s) ⋆ f s) x -
+            iteratedFDeriv ℝ 2 (heatKernel (t' - s) ⋆ f s) x‖ ≤
+          C * H * (t - t') * (t' - s) ^ (((α : ℝ) - 4) / 2) := by
+  obtain ⟨K, hK₀, hK⟩ :=
+    exists_integral_norm_iteratedFDeriv_heatKernel_sub_mul_rpow_le (E := E) 2 α.coe_nonneg
+  refine ⟨K, hK₀.le, fun {f M t t' H} hf hfM hH htt' => ?_⟩
+  have hae : ∀ᵐ s ∂volume.restrict (Ioo 0 t), (∀ᵐ y, ‖f s y‖ ≤ M) ∧ HolderWith H α (f s) := by
+    filter_upwards [hfM, hH] with s hsM hsH using ⟨hsM, hsH⟩
+  rw [ae_restrict_iff' measurableSet_Ioo] at hae
+  filter_upwards [hae] with s hs hsI x
+  obtain ⟨hsM, hsH⟩ := hs ⟨hsI.1, by linarith [hsI.2]⟩
+  have ha : 0 < t' - s := by linarith [hsI.2]
+  refine (norm_iteratedFDeriv_heatKernel_convolution_sub_le_of_holderWith ha (by linarith)
+    (hf.comp_measurable measurable_prodMk_left).aestronglyMeasurable hsM hsH two_ne_zero
+    x).trans ?_
+  have := mul_le_mul_of_nonneg_left
+    (hK (t' - s) (t - s) ha (by linarith) (by linarith [hsI.2])) H.coe_nonneg
+  have hexp : ((α : ℝ) - (2 : ℕ) - 2) / 2 = ((α : ℝ) - 4) / 2 := by
+    push_cast
+    ring
+  rw [hexp, show t - s - (t' - s) = t - t' by ring] at this
+  linarith
+
+/-- The temporal increment of the Hessian of the Duhamel potential between times `t' ≤ t` is
+`O(H (t - t')^(α/2))`, for `0 < α < 2`. -/
+private theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_sub_le {α : ℝ≥0}
+    (hα₀ : 0 < α) (hα₂ : α < 2) :
+    ∃ C ≥ 0, ∀ {f : ℝ → E → F} {M t t' : ℝ} {H : ℝ≥0},
+      StronglyMeasurable (Function.uncurry f) →
+      (∀ᵐ s ∂volume.restrict (Ioo 0 t), ∀ᵐ y, ‖f s y‖ ≤ M) →
+      (∀ᵐ s ∂volume.restrict (Ioo 0 t), HolderWith H α (f s)) → 0 ≤ t' → t' ≤ t → ∀ x,
+        ‖iteratedFDeriv ℝ 2 (heatDuhamelPotential f t) x -
+            iteratedFDeriv ℝ 2 (heatDuhamelPotential f t') x‖ ≤
+          C * H * (t - t') ^ ((α : ℝ) / 2) := by
+  obtain ⟨C₁, hC₁₀, hC₁⟩ :=
+    exists_norm_integral_iteratedFDeriv_two_heatKernel_convolution_le (E := E) (F := F) hα₀
+  obtain ⟨K, hK₀, hK⟩ :=
+    exists_ae_norm_iteratedFDeriv_two_heatKernel_convolution_sub_time_le (E := E) (F := F) (α := α)
+  have hα₂' : (α : ℝ) < 2 := hα₂
+  have h2α : (0 : ℝ) < 2 - α := sub_pos.2 hα₂'
+  refine ⟨3 * C₁ + 2 / (2 - α) * K, by positivity,
+    fun {f M t t' H} hf hfM hH ht' htt' x => ?_⟩
+  rcases htt'.eq_or_lt with rfl | htt'
+  · rw [sub_self, norm_zero]; positivity
+  have ht : 0 < t := ht'.trans_lt htt'
+  set h := t - t' with hh_def
+  have hh : 0 < h := sub_pos.2 htt'
+  set Φ : ℝ → ℝ → ContinuousMultilinearMap ℝ (fun _ : Fin 2 => E) F :=
+    fun τ s => iteratedFDeriv ℝ 2 (heatKernel (τ - s) ⋆ f s) x with hΦ_def
+  have hfM' {τ : ℝ} (hτ : τ ≤ t) : ∀ᵐ s ∂volume.restrict (Ioo 0 τ), ∀ᵐ y, ‖f s y‖ ≤ M :=
+    ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo_right hτ) hfM
+  have hH' {τ : ℝ} (hτ : τ ≤ t) : ∀ᵐ s ∂volume.restrict (Ioo 0 τ), HolderWith H α (f s) :=
+    ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo_right hτ) hH
+  -- At every time `τ ∈ [0, t]` the Hessian is the time integral of the Hessians of the slices.
+  have hrep {τ : ℝ} (hτ : 0 ≤ τ) (hτt : τ ≤ t) :
+      iteratedFDeriv ℝ 2 (heatDuhamelPotential f τ) x = ∫ s in 0..τ, Φ τ s := by
+    rcases hτ.eq_or_lt with rfl | hτ
+    · simp [iteratedFDeriv_zero]
+    exact congrFun (iteratedFDeriv_heatDuhamelPotential_of_holderWith hf (hfM' hτt) (hH' hτt)
+      hα₀ hτ le_rfl) x
+  have hnear {τ a : ℝ} (ha : 0 ≤ a) (haτ : a ≤ τ) (hτt : τ ≤ t) :
+      ‖∫ s in a..τ, Φ τ s‖ ≤ C₁ * H * (τ - a) ^ ((α : ℝ) / 2) :=
+    hC₁ hf (hfM' hτt) (hH' hτt) a ha haτ x
+  rw [hrep (ht'.trans htt'.le) le_rfl, hrep ht' htt'.le]
+  rcases le_or_gt t' h with hsmall | hbig
+  · -- For `t' ≤ h` both Hessians are already of size `O(H h^(α/2))`.
+    have hb := norm_sub_le_three_mul_rpow_of_le_sub (x := ∫ s in 0..t, Φ t s)
+      (y := ∫ s in 0..t', Φ t' s) (c := C₁ * H) (β := (α : ℝ) / 2)
+      (mul_nonneg hC₁₀ H.coe_nonneg) (by positivity) (by linarith) ht' hsmall
+      (by simpa using hnear le_rfl ht.le le_rfl) (by simpa using hnear le_rfl ht' htt'.le)
+    have : 0 ≤ 2 / (2 - α) * K * H * h ^ ((α : ℝ) / 2) := by positivity
+    linarith
+  -- Otherwise split both integrals at `s₀ = 2 t' - t = t' - h`.
+  have hs₀ : 0 ≤ 2 * t' - t := by linarith
+  have hint {τ : ℝ} (hτ : 0 < τ) (hτt : τ ≤ t) : IntervalIntegrable (Φ τ) volume 0 τ :=
+    intervalIntegrable_iteratedFDeriv_heatKernel_convolution_of_holderWith hf (hfM' hτt)
+      (hH' hτt) hα₀ hτ le_rfl x
+  -- Away from the diagonal, the time Lipschitz bound integrates to `O(H h^(α/2))`.
+  have hfar : ‖∫ s in 0..2 * t' - t, (Φ t s - Φ t' s)‖ ≤
+      2 / (2 - α) * K * H * h ^ ((α : ℝ) / 2) := by
+    simpa only [mul_assoc, ← hh_def, show 2 * t' - t = t' - h by rw [hh_def]; ring] using
+      norm_integral_le_of_ae_norm_le_mul_sub_rpow (A := K * H)
+        (by positivity) hh hbig hα₂' (hK hf hfM hH htt' |>.mono fun s hs hsI => hs hsI x)
+  have hb := norm_intervalIntegral_sub_le_of_sub_le (c := C₁ * H) (β := (α : ℝ) / 2)
+    (mul_nonneg hC₁₀ H.coe_nonneg) (by positivity) (by linarith) hs₀ htt'.le (hint ht le_rfl)
+    (hint (by linarith) htt'.le) hfar
+    (by simpa only [show t - (2 * t' - t) = 2 * (t - t') by ring] using
+      hnear hs₀ (by linarith) le_rfl)
+    (by simpa only [show t' - (2 * t' - t) = t - t' by ring] using
+      hnear hs₀ (by linarith) htt'.le)
+  linarith
+
+/-- **The temporal Hölder estimate for the Hessian of the Duhamel potential.** For `0 < α < 2`
+there is a constant `C`, depending only on `α` and the dimension, such that at every point `x`
+the Hessian `t ↦ D² w(t, ·)(x)` is `α/2`-Hölder in time on `[0, T]` with constant `C H`, whenever
+`f` is jointly measurable and essentially bounded on `(0, T) × E` and `f(s, ·)` is `α`-Hölder
+with constant `H` for almost every `0 < s < T`. Neither the bound on `f` nor the horizon `T`
+enters the estimate. Together with
+`TauCeti.exists_holderWith_iteratedFDeriv_two_heatDuhamelPotential` this is the parabolic
+`α`-Hölder estimate of `D² w` on the slab `E × [0, T]`, for `0 < α < 1`. -/
+theorem exists_holderOnWith_iteratedFDeriv_two_heatDuhamelPotential {α : ℝ≥0} (hα₀ : 0 < α)
+    (hα₂ : α < 2) :
+    ∃ C : ℝ≥0, ∀ {f : ℝ → E → F} {M T : ℝ} {H : ℝ≥0}, StronglyMeasurable (Function.uncurry f) →
+      (∀ᵐ s ∂volume.restrict (Ioo 0 T), ∀ᵐ y, ‖f s y‖ ≤ M) →
+      (∀ᵐ s ∂volume.restrict (Ioo 0 T), HolderWith H α (f s)) → ∀ x,
+        HolderOnWith (C * H) (α / 2)
+          (fun t => iteratedFDeriv ℝ 2 (heatDuhamelPotential f t) x) (Icc 0 T) := by
+  obtain ⟨C, hC₀, hC⟩ :=
+    exists_norm_iteratedFDeriv_two_heatDuhamelPotential_sub_le (E := E) (F := F) hα₀ hα₂
+  refine ⟨C.toNNReal, fun {f M T H} hf hfM hH x => ?_⟩
+  have hsub {t t' : ℝ} (ht' : 0 ≤ t') (htt' : t' ≤ t) (htT : t ≤ T) :
+      ‖iteratedFDeriv ℝ 2 (heatDuhamelPotential f t) x -
+          iteratedFDeriv ℝ 2 (heatDuhamelPotential f t') x‖ ≤
+        C * H * dist t t' ^ ((α / 2 : ℝ≥0) : ℝ) := by
+    rw [Real.dist_eq, abs_of_nonneg (sub_nonneg.2 htt'), NNReal.coe_div, NNReal.coe_ofNat]
+    exact hC hf (ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo_right htT) hfM)
+      (ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo_right htT) hH) ht' htt' x
+  refine HolderOnWith.of_dist_le fun t ht t' ht' => ?_
+  rw [dist_eq_norm, NNReal.coe_mul, Real.coe_toNNReal _ hC₀]
+  rcases le_total t' t with htt' | htt'
+  · exact hsub ht'.1 htt' ht.2
+  · rw [norm_sub_rev, dist_comm]
+    exact hsub ht.1 htt' ht'.2
 
 end Duhamel
 

@@ -9,17 +9,25 @@ public import Mathlib.Algebra.Star.UnitaryStarAlgAut
 public import Mathlib.Analysis.CStarAlgebra.Multiplier
 public import Mathlib.Analysis.Calculus.Deriv.Mul
 public import Mathlib.Analysis.Calculus.Deriv.Star
+public import TauCeti.Algebra.Star.Basic
 public import TauCeti.Analysis.CStarAlgebra.Hom
+public import TauCeti.Analysis.Normed.Algebra.DoubleCentralizer
 
 /-!
 # Functoriality of multiplier algebras of C⋆-algebras
 
-Mathlib's multiplier algebra `𝓜(𝕜, A)` consists of double centralizers `(L, R)`. This file
-proves that, when `A` has a proper involution (for example, when it is a C⋆-ring), the left and
-right centralizers are module maps for right and left multiplication respectively, so that the
-products of a multiplier with an element of `A` are again elements of `A`, and the canonical
-map `A → 𝓜(𝕜, A)` is injective. For regular normed algebras (`RegularNormedAlgebra`), including
-real and complex C⋆-algebras, this map is isometric.
+Mathlib's multiplier algebra `𝓜(𝕜, A)` consists of double centralizers `(L, R)`. The basic
+API for algebras with zero left and right annihilators (the module laws `DoubleCentralizer.fst_mul`
+and `DoubleCentralizer.snd_mul`, injectivity of `A → 𝓜(𝕜, A)`, and `DoubleCentralizer.ext_fst`)
+is in `TauCeti.Analysis.Normed.Algebra.DoubleCentralizer`. It applies to every C⋆-ring, since a
+proper involution makes both annihilators zero (`TauCeti.faithfulSMul_mulOpposite_of_isProperStar`
+and `TauCeti.faithfulSMul_of_isProperStar`). For regular normed algebras
+(`RegularNormedAlgebra`), including real and complex C⋆-algebras, the canonical map is isometric.
+
+A bounded operator `L` with an adjoint `L'` for the pairing `(x, y) ↦ star x * y` is the left
+centralizer of the multiplier `DoubleCentralizer.ofAdjoint L L'`, whose right centralizer is
+`star ∘ L' ∘ star`. This is how multipliers are built from left actions on a dense subalgebra,
+such as the canonical multipliers of a crossed product.
 
 A star-algebra equivalence `e : A ≃⋆ₐ[ℂ] B` of complex C⋆-algebras extends to a star-algebra
 equivalence `DoubleCentralizer.congr e : 𝓜(ℂ, A) ≃⋆ₐ[ℂ] 𝓜(ℂ, B)`, sending `(L, R)` to
@@ -53,104 +61,39 @@ open scoped MultiplierAlgebra
 
 namespace DoubleCentralizer
 
-section NontriviallyNormed
+section Adjoint
 
-variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
-  [SMulCommClass 𝕜 A A] [IsScalarTower 𝕜 A A]
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [StarRing 𝕜] [NonUnitalNormedRing A]
+  [StarRing A] [NormedStarGroup A] [NormedSpace 𝕜 A] [SMulCommClass 𝕜 A A]
+  [IsScalarTower 𝕜 A A] [StarModule 𝕜 A]
 
-/-- Two multipliers are equal if their left and right centralizers agree pointwise. -/
-theorem ext_fst_snd {m n : 𝓜(𝕜, A)} (h₁ : ∀ a, m.fst a = n.fst a)
-    (h₂ : ∀ a, m.snd a = n.snd a) : m = n :=
-  DoubleCentralizer.ext _ _ _ _ <|
-    Prod.ext (ContinuousLinearMap.ext h₁) (ContinuousLinearMap.ext h₂)
+/-- A bounded operator `L` on `A` with an adjoint `L'` for the pairing `(x, y) ↦ star x * y`,
+that is `star (L' x) * y = star x * L y`, is the left centralizer of the multiplier
+`(L, star ∘ L' ∘ star)`. -/
+def ofAdjoint (L L' : A →L[𝕜] A) (h : ∀ x y, star (L' x) * y = star x * L y) : 𝓜(𝕜, A) where
+  fst := L
+  snd := (((starₗᵢ 𝕜 : A ≃ₗᵢ⋆[𝕜] A) : A →L⋆[𝕜] A).comp L').comp
+    ((starₗᵢ 𝕜 : A ≃ₗᵢ⋆[𝕜] A) : A →L⋆[𝕜] A)
+  central x y := by simpa using h (star x) y
 
-/-- The inclusion of `A` into its multiplier algebra sends `0` to `0`. -/
-@[simp, norm_cast]
-theorem coe_zero : ((0 : A) : 𝓜(𝕜, A)) = 0 :=
-  ext_fst_snd (fun _ => by simp) (fun _ => by simp)
+variable {L L' : A →L[𝕜] A} {h : ∀ x y, star (L' x) * y = star x * L y}
 
-/-- The inclusion of `A` into its multiplier algebra commutes with addition. -/
-@[simp, norm_cast]
-theorem coe_add (a b : A) : ((a + b : A) : 𝓜(𝕜, A)) = (a : 𝓜(𝕜, A)) + b :=
-  ext_fst_snd (fun _ => by simp) (fun _ => by simp)
-
-/-- The inclusion of `A` into its multiplier algebra commutes with multiplication. -/
-@[simp, norm_cast]
-theorem coe_mul (a b : A) : ((a * b : A) : 𝓜(𝕜, A)) = (a : 𝓜(𝕜, A)) * b :=
-  ext_fst_snd (fun _ => by simp [mul_assoc]) (fun _ => by simp [mul_assoc])
-
-/-- The inclusion of `A` into its multiplier algebra commutes with negation. -/
-@[simp, norm_cast]
-theorem coe_neg (a : A) : ((-a : A) : 𝓜(𝕜, A)) = -(a : 𝓜(𝕜, A)) :=
-  ext_fst_snd (fun _ => by simp) (fun _ => by simp)
-
-/-- The inclusion of `A` into its multiplier algebra commutes with subtraction. -/
-@[simp, norm_cast]
-theorem coe_sub (a b : A) : ((a - b : A) : 𝓜(𝕜, A)) = (a : 𝓜(𝕜, A)) - b :=
-  ext_fst_snd (fun _ => by simp) (fun _ => by simp)
-
-/-- The inclusion of `A` into its multiplier algebra commutes with scalar multiplication. -/
-@[simp, norm_cast]
-theorem coe_smul (c : 𝕜) (a : A) : ((c • a : A) : 𝓜(𝕜, A)) = c • (a : 𝓜(𝕜, A)) :=
-  ext_fst_snd (fun _ => by simp) (fun _ => by simp)
-
-/-- The inclusion of `A` into its multiplier algebra commutes with the star operation. -/
-@[simp, norm_cast]
-theorem coe_star [StarRing 𝕜] [StarRing A] [StarModule 𝕜 A] [NormedStarGroup A] (a : A) :
-    ((star a : A) : 𝓜(𝕜, A)) = star (a : 𝓜(𝕜, A)) :=
-  map_star (coeHom (𝕜 := 𝕜)) a
-
-end NontriviallyNormed
-
-section ProperStar
-
-variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
-  [SMulCommClass 𝕜 A A] [IsScalarTower 𝕜 A A] [Star A] [IsProperStar A]
-
-/-- The left centralizer of a multiplier commutes with right multiplication. -/
-theorem fst_mul (m : 𝓜(𝕜, A)) (a b : A) : m.fst (a * b) = m.fst a * b := by
-  have h : ∀ y : A, y * (m.fst (a * b) - m.fst a * b) = 0 := fun y => by
-    simp [mul_sub, ← m.central, ← mul_assoc]
-  exact sub_eq_zero.mp (star_mul_self_eq_zero.mp (h _))
-
-/-- A multiplier times an element of `A` is the element obtained from the left centralizer. -/
 @[simp]
-theorem mul_coe_eq_coe_fst (m : 𝓜(𝕜, A)) (a : A) : m * (a : 𝓜(𝕜, A)) = (m.fst a : 𝓜(𝕜, A)) :=
-  ext_fst_snd (fun _ => by simp [fst_mul]) (fun _ => by simp [m.central])
+theorem ofAdjoint_fst : (ofAdjoint L L' h).fst = L :=
+  (rfl)
 
-/-- The canonical map of `A` into its multiplier algebra is injective. -/
-theorem coe_injective : Function.Injective (DoubleCentralizer.coe 𝕜 : A → 𝓜(𝕜, A)) := by
-  intro a b h
-  have h' : star (a - b) * (a - b) = 0 := by
-    rw [mul_sub, sub_eq_zero]
-    simpa using congrArg (fun m : 𝓜(𝕜, A) => m.snd (star (a - b))) h
-  exact sub_eq_zero.mp (star_mul_self_eq_zero.mp h')
-
-@[simp, norm_cast]
-theorem coe_inj {a b : A} : (a : 𝓜(𝕜, A)) = b ↔ a = b :=
-  coe_injective.eq_iff
-
-end ProperStar
-
-section InvolutiveStar
-
-variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
-  [SMulCommClass 𝕜 A A] [IsScalarTower 𝕜 A A] [InvolutiveStar A] [IsProperStar A]
-
-/-- The right centralizer of a multiplier commutes with left multiplication. -/
-theorem snd_mul (m : 𝓜(𝕜, A)) (a b : A) : m.snd (a * b) = a * m.snd b := by
-  have h : ∀ y : A, (m.snd (a * b) - a * m.snd b) * y = 0 := fun y => by
-    simp [sub_mul, mul_assoc, m.central]
-  have hs : star (m.snd (a * b) - a * m.snd b) = 0 :=
-    star_mul_self_eq_zero.mp (by simpa only [star_star] using h (star _))
-  exact sub_eq_zero.mp (star_mul_self_eq_zero.mp (by rw [hs, zero_mul]))
-
-/-- An element of `A` times a multiplier is the element obtained from the right centralizer. -/
 @[simp]
-theorem coe_mul_eq_coe_snd (a : A) (m : 𝓜(𝕜, A)) : (a : 𝓜(𝕜, A)) * m = (m.snd a : 𝓜(𝕜, A)) :=
-  ext_fst_snd (fun _ => by simp [m.central]) (fun _ => by simp [snd_mul])
+theorem ofAdjoint_snd_apply (x : A) : (ofAdjoint L L' h).snd x = star (L' (star x)) :=
+  (rfl)
 
-end InvolutiveStar
+/-- The adjoint of the multiplier with left centralizer `L` has left centralizer `L'`. -/
+@[simp]
+theorem star_ofAdjoint :
+    star (ofAdjoint L L' h) =
+      ofAdjoint L' L fun x y => by simpa using congr(star $(h y x)).symm :=
+  ext_fst_snd (fun _ => by simp) (fun _ => by simp)
+
+end Adjoint
 
 section RegularNormedAlgebra
 

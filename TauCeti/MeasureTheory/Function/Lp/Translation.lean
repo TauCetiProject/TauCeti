@@ -42,6 +42,8 @@ for a `C¹` function, and needs no integrability of the function itself.
 * `MeasureTheory.Measure.translateLp_zero`, `MeasureTheory.Measure.translateLp_symm`,
   `MeasureTheory.Measure.translateLp_add`: translation is an action of the additive group.
 * `MeasureTheory.Measure.continuous_translateLp`: strong continuity of `translateLp` for `p < ∞`.
+* `MeasureTheory.Measure.tendsto_translateLp_of_tendsto`: translates of convergent `Lᵖ` classes
+  by vanishing translations converge to the same limit.
 * `MeasureTheory.Measure.enorm_translateLp_sub`: identifies the norm of an `Lᵖ` translation
   increment with its pointwise `eLpNorm`.
 * `MeasureTheory.MemLp.comp_add_right_restrict_of_mapsTo`: translation preserves `Lᵖ` on a smaller
@@ -163,6 +165,24 @@ theorem continuous_translateLp [TopologicalSpace E] [ContinuousAdd E] [BorelSpac
     Continuous fun h : E ↦ translateLp mu p h f := by
   simpa only [translateLp, Lp.compMeasurePreservingₗᵢEquiv_apply] using
     Lp.continuous_compMeasurePreserving_add_right hp f
+
+/-- Translations by vectors tending to zero of `Lᵖ` classes converging to `g` converge to `g`,
+when `p < ∞`. -/
+theorem tendsto_translateLp_of_tendsto [TopologicalSpace E] [ContinuousAdd E] [BorelSpace E]
+    [R1Space E] [mu.InnerRegularCompactLTTop] [IsLocallyFiniteMeasure mu] (hp : p ≠ ∞)
+    {I : Type*} {l : Filter I} {h : I → E} (hh : Filter.Tendsto h l (nhds 0))
+    {A : I → Lp F p mu} {g : Lp F p mu} (hA : Filter.Tendsto A l (nhds g)) :
+    Filter.Tendsto (fun i ↦ translateLp mu p (h i) (A i)) l (nhds g) := by
+  let T : E → C(E, E) := fun h ↦ ⟨(· + h), by fun_prop⟩
+  have hT : Continuous T := ContinuousMap.continuous_of_continuous_uncurry T <| by
+    dsimp only [T, Function.uncurry_apply_pair, ContinuousMap.coe_mk]
+    fun_prop
+  have key : Filter.Tendsto (fun i ↦ translateLp mu p (h i) (A i)) l
+      (nhds (translateLp mu p 0 g)) := by
+    simp only [translateLp, Lp.compMeasurePreservingₗᵢEquiv_apply]
+    exact hA.compMeasurePreservingLp ((hT.tendsto 0).comp hh)
+      (fun i ↦ measurePreserving_add_right mu (h i)) (measurePreserving_add_right mu 0) hp
+  rwa [translateLp_zero] at key
 
 /-- The `Lᵖ` extended norm of a translation increment is its pointwise `eLpNorm`. -/
 theorem enorm_translateLp_sub (h : E) (f : Lp F p mu) :
@@ -286,24 +306,18 @@ theorem ContDiff.enorm_sub_rpow_le_lintegral_fderiv_apply (hu : ContDiff ℝ 1 u
     {r : ℝ} (hr : 1 ≤ r) (x h : E) :
     ‖u (x + h) - u x‖ₑ ^ r ≤ ∫⁻ t in Icc (0 : ℝ) 1, ‖fderiv ℝ u (x + t • h) h‖ₑ ^ r := by
   have hr0 : (0 : ℝ) < r := one_pos.trans_le hr
-  have hmeas : AEMeasurable (fun t : ℝ => ‖fderiv ℝ u (x + t • h) h‖ₑ)
-      (volume.restrict (Icc (0 : ℝ) 1)) :=
-    (((hu.continuous_fderiv one_ne_zero).comp
-      (by fun_prop : Continuous fun t : ℝ => x + t • h)).clm_apply
-      continuous_const).enorm.aemeasurable
   have huniv : (volume.restrict (Icc (0 : ℝ) 1)) univ = 1 := by
     rw [Measure.restrict_apply_univ, Real.volume_Icc]
     simp
   have hsegment := TauCeti.enorm_sub_le_lintegral_enorm_fderiv_apply x h
     (fun t _ => (hu.differentiable one_ne_zero) (x + t • h))
-    (((hu.continuous_fderiv one_ne_zero).comp_continuousOn (by fun_prop)).clm_apply
-      continuousOn_const)
   -- Jensen's inequality costs no measure factor because `Icc 0 1` has volume one.
   calc ‖u (x + h) - u x‖ₑ ^ r
       ≤ (∫⁻ t in Icc (0 : ℝ) 1, ‖fderiv ℝ u (x + t • h) h‖ₑ) ^ r :=
         ENNReal.rpow_le_rpow hsegment hr0.le
     _ ≤ ∫⁻ t in Icc (0 : ℝ) 1, ‖fderiv ℝ u (x + t • h) h‖ₑ ^ r := by
-        simpa [huniv] using TauCeti.rpow_lintegral_le_measure_univ_rpow_mul hmeas hr
+        simpa [huniv] using TauCeti.rpow_lintegral_le_measure_univ_rpow_mul
+          (μ := volume.restrict (Icc (0 : ℝ) 1)) (u := fun t : ℝ => ‖fderiv ℝ u (x + t • h) h‖ₑ) hr
 
 end Calculus
 

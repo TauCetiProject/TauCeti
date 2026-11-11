@@ -59,8 +59,7 @@ coordinate functions `x` and `y` are written `AdjoinRoot.of W.polynomial X` and
 theorem basisMonomials_apply (i : ℕ) (j : Fin 2) :
     CoordinateRing.basisMonomials W (i, j) =
       AdjoinRoot.of W.polynomial X ^ i * AdjoinRoot.root W.polynomial ^ (j : ℕ) := by
-  simp only [CoordinateRing.basisMonomials, Module.Basis.smulTower_apply, coe_basisMonomials,
-    ← X_pow_eq_monomial, basis_apply, AdjoinRoot.powerBasis'_gen, smul, map_pow, AdjoinRoot.mk_C]
+  simp [CoordinateRing.basisMonomials, basis_apply, smul, monomial_one_right_eq_X_pow]
 
 end WeierstrassCurve.Affine.CoordinateRing
 

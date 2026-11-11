@@ -176,7 +176,7 @@ theorem normalBundleHomeomorphTube_zeroSection (f : M → V) {ε : ℝ} (hε : 0
 embedded submanifold of a Euclidean space has an open tubular embedding of its entire normal
 bundle inside any given open neighbourhood of its image. The embedding fixes the core. -/
 theorem exists_isOpenEmbedding_normalBundle_subset [FiniteDimensional ℝ V]
-    [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I 2 M] [CompactSpace M]
+    [I.Boundaryless] [IsManifold I 2 M] [CompactSpace M]
     {f : M → V} (hf : ContMDiff I 𝓘(ℝ, V) 2 f)
     (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x)) (hinj : Injective f)
     {O : Set V} (hO : IsOpen O) (hfO : range f ⊆ O) :
@@ -214,7 +214,7 @@ theorem exists_isOpenEmbedding_normalBundle_subset [FiniteDimensional ℝ V]
 /-- The whole-bundle tubular embedding inside a prescribed open neighbourhood, packaged in the
 `IsTubularNeighborhood` interface with domain the entire normal bundle. -/
 theorem exists_isTubularNeighborhood_wholeNormalBundle_subset [FiniteDimensional ℝ V]
-    [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I 2 M] [CompactSpace M]
+    [I.Boundaryless] [IsManifold I 2 M] [CompactSpace M]
     {f : M → V} (hf : ContMDiff I 𝓘(ℝ, V) 2 f)
     (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x)) (hinj : Injective f)
     {O : Set V} (hO : IsOpen O) (hfO : range f ⊆ O) :

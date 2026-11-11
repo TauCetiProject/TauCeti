@@ -104,6 +104,11 @@ theorem constantCoeff_charPowerSeries (u : M →L[R] M) :
   rw [charPowerSeries]
   split_ifs <;> simp
 
+/-- Over a nontrivial ring the Fredholm series is nonzero, since its constant coefficient is
+`1`. -/
+theorem charPowerSeries_ne_zero [Nontrivial R] (u : M →L[R] M) : u.charPowerSeries ≠ 0 :=
+  fun h ↦ (one_ne_zero : (1 : R) ≠ 0) (by simpa [h] using u.constantCoeff_charPowerSeries)
+
 /-- The Fredholm series of the zero endomorphism is `1`. -/
 @[simp]
 theorem charPowerSeries_zero : (0 : M →L[R] M).charPowerSeries = 1 := by
@@ -169,6 +174,7 @@ theorem IsPrCompact.isEntire_charPowerSeries {u : M →L[R] M} (hu : u.IsPrCompa
   rw [hu.charPowerSeries_eq hM]
   exact (hu.isRowCompact_comp iM rM).isEntire_charPowerSeries
 
+omit [NormOneClass R] in
 /-- **Cyclicity of Fredholm series on (Pr) modules.** If `u : M →L[R] N` is row compact and
 `v : N →L[R] M` is any continuous linear map, the endomorphisms `u ∘ v` of `N` and `v ∘ u` of `M`
 have the same Fredholm series: `det (1 - T (u ∘ v)) = det (1 - T (v ∘ u))`. -/
@@ -187,6 +193,7 @@ theorem IsPrCompact.charPowerSeries_comp_comm {u : M →L[R] N} (hu : u.IsPrComp
     ext fun x ↦ by simp [hN']
   rw [h₁, h₂, h.charPowerSeries_matrixCoeff_comp_comm]
 
+omit [NormOneClass R] in
 /-- **Invariance under conjugation.** The Fredholm series of a row-compact endomorphism `u` of a
 module with property (Pr) is unchanged by conjugation `e ∘ u ∘ e⁻¹` by a continuous linear
 equivalence `e`, which need not be an isometry. -/
@@ -213,7 +220,7 @@ end RowCompact
 
 section Finite
 
-variable {R : Type w} [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R] [CompleteSpace R]
+variable {R : Type w} [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
   [TauCeti.NormedRing.IsTate R] {M : Type u} [NormedAddCommGroup M] [Module R M]
   [IsBoundedSMul R M]
 

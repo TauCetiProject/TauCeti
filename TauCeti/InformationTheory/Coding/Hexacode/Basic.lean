@@ -65,12 +65,12 @@ theorem code_def (ω : F) : code ω = (generatorMatrix ω).generatedBy := (rfl)
 
 /-- A chosen root of `X² + X + 1` in the hexacode alphabet `GaloisField 2 2`. -/
 noncomputable def omega : GaloisField 2 2 := by
-  exact Classical.choose (exists_sq_add_self_add_one_eq_zero_of_card_eq_four
+  exact Classical.choose (exists_sq_add_self_add_one_eq_zero_of_natCard_eq_four
     (GaloisField.card 2 2 (by decide)))
 
 /-- The chosen hexacode alphabet root satisfies its defining equation. -/
 theorem omega_sq_add_omega_add_one : omega ^ 2 + omega + 1 = 0 := by
-  exact Classical.choose_spec (exists_sq_add_self_add_one_eq_zero_of_card_eq_four
+  exact Classical.choose_spec (exists_sq_add_self_add_one_eq_zero_of_natCard_eq_four
     (GaloisField.card 2 2 (by decide)))
 
 /-- The hexacode over `GaloisField 2 2`, with the fixed root `omega`. -/
@@ -172,18 +172,20 @@ theorem generatorMatrix_mul_map_frobenius_transpose_eq_zero :
   fin_cases i <;> fin_cases j <;>
     simp [generatorMatrix_def, Matrix.mul_apply, Fin.sum_univ_succ, frobenius_def] <;> grind
 
+omit [CharP F 2] in
 /-- The Euclidean Gram matrix is nonzero: the hexacode is not self-orthogonal for the
 ordinary dot product, unlike the Hermitian form. -/
 theorem generatorMatrix_mul_transpose_ne_zero :
     generatorMatrix ω * (generatorMatrix ω)ᵀ ≠ 0 := by
-  have _ : (2 : F) = 0 := CharTwo.two_eq_zero
-  have h01 : (generatorMatrix ω * (generatorMatrix ω)ᵀ) 0 1 = ω ^ 2 := by
+  have h00 : (generatorMatrix ω * (generatorMatrix ω)ᵀ) 0 0 = 2 + 2 * ω ^ 2 := by
     simp [generatorMatrix_def, Matrix.mul_apply, Fin.sum_univ_succ]
-    grind
+    ring
+  have h01 : (generatorMatrix ω * (generatorMatrix ω)ᵀ) 0 1 = 2 * ω + ω ^ 2 := by
+    simp [generatorMatrix_def, Matrix.mul_apply, Fin.sum_univ_succ]
+    ring
   intro h
-  rw [h, Matrix.zero_apply] at h01
-  have hω0 : ω = 0 := (pow_eq_zero_iff (by decide)).mp h01.symm
-  simp [hω0] at hω
+  rw [h, Matrix.zero_apply] at h00 h01
+  exact one_ne_zero (by linear_combination -h00 + (ω - 1) * hω + ω * h01)
 
 /-- The Frobenius-conjugate generator checks precisely the hexacode. -/
 theorem checkedBy_map_frobenius_generatorMatrix :

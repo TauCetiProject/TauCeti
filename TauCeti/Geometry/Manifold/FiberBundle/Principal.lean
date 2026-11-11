@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
+public import Mathlib.Geometry.Manifold.Algebra.SMul
+public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import TauCeti.Geometry.Manifold.FiberBundle.Basic
-public import TauCeti.Topology.FiberBundle.Principal
+public import TauCeti.Topology.FiberBundle.Principal.Basic
 
 /-!
 # Smooth principal bundles
@@ -27,29 +29,54 @@ For the charts through the fibre, the right action and the division map are smoo
 is `C^n` when multiplication of `G` is (`ContMDiff.totalSpaceMk_smul`), and the division map
 `TauCeti.PrincipalBundle.division G p q`, the unique `g` with `p • g = q`, is `C^n` on pairs of
 points over a common base point when `G` is a `C^n` Lie group (`ContMDiff.division`). As for
-continuity in `TauCeti.Topology.FiberBundle.Principal`, both are stated for families of points
+continuity in `TauCeti.Topology.FiberBundle.Principal.Basic`, both are stated for families of points
 `⟨f x, p x⟩` of the total space over a varying base point `f x`, so that no cast between fibres is
-needed; none of them uses smoothness of the coordinate changes. Consequently the equivariant
+needed; none of them uses smoothness of the coordinate changes. Directly on
+`ManifoldTotalSpace G P`, the fibrewise right action `(x, g) ↦ op g • x` is jointly `C^n`
+(`TauCeti.PrincipalBundle.contMDiff_op_smul`), providing a
+`ContMDiffConstSMul (IB.prod IG) n Gᵐᵒᵖ (ManifoldTotalSpace G P)` instance
+(`TauCeti.PrincipalBundle.instContMDiffConstSMul`) and `C^n` orbit maps `g ↦ op g • x`
+(`TauCeti.PrincipalBundle.contMDiff_orbit`). Consequently the equivariant
 trivialization `TauCeti.PrincipalBundle.trivializationOfSection` determined by a `C^n` local
 section is `C^n` with `C^n` inverse (`TauCeti.PrincipalBundle.contMDiffOn_trivializationOfSection`
 and `TauCeti.PrincipalBundle.contMDiffOn_trivializationOfSection_symm`).
+
+The vertical tangent space at a point `p` of the total space, the kernel of the derivative of the
+projection, is the image of the derivative at the identity of the orbit map `g ↦ p • g`
+(`TauCeti.PrincipalBundle.ker_mfderiv_proj_eq_range_mfderiv_totalSpaceMk_smul_one`), and this
+derivative is injective (`TauCeti.PrincipalBundle.mfderiv_totalSpaceMk_smul_injective`). So the
+vertical tangent vectors at `p` correspond bijectively to the tangent vectors of `G` at the
+identity, and the vertical tangent space has the same `Module.finrank` as the model space of `G`,
+which is its dimension when that model space is finite-dimensional
+(`TauCeti.PrincipalBundle.finrank_ker_mfderiv_proj`). These statements need `C^n` multiplication on
+`G` and a `C^n` fibre bundle for some `n ≠ 0`.
 
 ## Main results
 
 * `TauCeti.PrincipalBundle.contMDiffFiberBundle_iff`: a principal bundle is a `C^n` fibre bundle
   if and only if its transition functions `b ↦ e.coordChange e' b 1` are `C^n`.
-* `ContMDiff.totalSpaceMk_smul`: the right action of a principal bundle is `C^n`.
+* `ContMDiff.totalSpaceMk_smul`, `TauCeti.PrincipalBundle.contMDiff_op_smul`,
+  `TauCeti.PrincipalBundle.instContMDiffConstSMul`: joint and pointwise `C^n` smoothness of the
+  right action of a principal bundle.
 * `ContMDiff.division`: the division map of a principal bundle is `C^n`.
 * `TauCeti.PrincipalBundle.contMDiffOn_trivializationOfSection` and
   `TauCeti.PrincipalBundle.contMDiffOn_trivializationOfSection_symm`: a `C^n` local section
   determines a `C^n` equivariant trivialization with `C^n` inverse.
+* `TauCeti.PrincipalBundle.ker_mfderiv_proj_eq_range_mfderiv_totalSpaceMk_smul`: the kernel of the
+  derivative of the projection at `p • g₀` is the image of the derivative at `g₀` of the orbit map
+  of `p`.
+* `TauCeti.PrincipalBundle.mfderiv_totalSpaceMk_smul_injective`: the orbit maps have injective
+  derivative.
+* `TauCeti.PrincipalBundle.finrank_ker_mfderiv_proj`: the vertical tangent space has the same
+  `Module.finrank` as the model space of `G`.
 
 ## References
 
 * I. Kolář, P. W. Michor, J. Slovák, *Natural Operations in Differential Geometry*, Springer, 1993,
   §10.1–§10.3 (principal fibre bundles, their transition functions and the division map).
 * S. Kobayashi, K. Nomizu, *Foundations of Differential Geometry I*, Interscience, 1963,
-  Chapter I, §5.
+  Chapter I, §5, and Chapter II, §1 (the vertical subspace is the image of the Lie algebra under
+  the derivative of the orbit map).
 -/
 
 public section
@@ -138,6 +165,52 @@ theorem ContMDiff.totalSpaceMk_smul [ContMDiffMul IG n G]
     ContMDiff IM (IB.prod IG) n fun x ↦ ManifoldTotalSpace.homeomorph G P ⟨f x, op (g x) • p x⟩ :=
   fun x ↦ (hp x).totalSpaceMk_smul (hg x)
 
+namespace TauCeti.PrincipalBundle
+
+section SmoothAction
+
+variable [ContMDiffMul IG n G]
+
+/-- **The right action on the charted total space of a principal bundle is jointly `C^n` whenever
+group multiplication is `C^n`.** -/
+theorem contMDiff_op_smul :
+    ContMDiff ((IB.prod IG).prod IG) (IB.prod IG) n
+      (fun p : ManifoldTotalSpace G P × G ↦ op p.2 • p.1) := by
+  have hp : ContMDiff ((IB.prod IG).prod IG) (IB.prod IG) n
+      (fun p : ManifoldTotalSpace G P × G ↦
+        ManifoldTotalSpace.homeomorph G P
+          ⟨((ManifoldTotalSpace.homeomorph G P).symm p.1).proj,
+            ((ManifoldTotalSpace.homeomorph G P).symm p.1).2⟩) :=
+    contMDiff_fst.congr fun p ↦ by simp only [TotalSpace.eta, Homeomorph.apply_symm_apply]
+  exact (hp.totalSpaceMk_smul contMDiff_snd).congr fun ⟨x, g⟩ ↦ by
+    obtain ⟨z, rfl⟩ := (ManifoldTotalSpace.homeomorph G P).surjective x
+    rw [ManifoldTotalSpace.smul_homeomorph, Homeomorph.symm_apply_apply]
+
+/-- Each element of `Gᵐᵒᵖ` acts on `ManifoldTotalSpace G P` by a `C^n` map (`ContMDiffConstSMul`),
+so right translation by any `g : G` is `C^n` (packaged as a diffeomorphism by
+`Diffeomorph.constSmul` in `TauCeti.Geometry.Manifold.Algebra.SMul`). -/
+instance instContMDiffConstSMul :
+    ContMDiffConstSMul (IB.prod IG) n Gᵐᵒᵖ (ManifoldTotalSpace G P) where
+  contMDiff_const_smul γ := by
+    have h := (contMDiff_op_smul (n := n) (G := G) (P := P) (IB := IB) (IG := IG)).comp
+      (contMDiff_id.prodMk (contMDiff_const (c := unop γ)))
+    exact h.congr fun x ↦ by simp
+
+/-- Every right orbit map `g ↦ op g • x` on `ManifoldTotalSpace G P` is `C^n`. -/
+theorem contMDiff_orbit (x : ManifoldTotalSpace G P) :
+    ContMDiff IG (IB.prod IG) n (fun g : G ↦ op g • x) :=
+  contMDiff_op_smul.comp (contMDiff_const.prodMk contMDiff_id)
+
+/-- When `n ≠ 0`, every right orbit map `g ↦ op g • x` on `ManifoldTotalSpace G P` is differentiable
+at every `g : G`. -/
+theorem mdifferentiableAt_orbit (hn : n ≠ 0) (x : ManifoldTotalSpace G P) (g : G) :
+    MDifferentiableAt IG (IB.prod IG) (fun h : G ↦ op h • x) g :=
+  ((contMDiff_orbit (n := n) x) g).mdifferentiableAt hn
+
+end SmoothAction
+
+end TauCeti.PrincipalBundle
+
 /-- **The division map of a principal bundle is `C^n`**, for the charts through the fibre: for two
 `C^n` families of points `⟨f x, p x⟩` and `⟨f x, q x⟩` of the total space over a common base
 point, the family `division G (p x) (q x)` of elements of the Lie group `G` is `C^n`. -/
@@ -219,5 +292,179 @@ theorem contMDiffOn_trivializationOfSection_symm [ContMDiffMul IG n G]
   simp only [trivializationOfSection_symm_apply]
   exact ContMDiffOn.totalSpaceMk_smul (f := Prod.fst) (p := fun y ↦ σ y.1)
     (hσ'.comp contMDiffOn_fst fun _ hy ↦ hy.1) contMDiffOn_snd
+
+end TauCeti.PrincipalBundle
+
+/-! ### The vertical tangent space -/
+
+namespace TauCeti.PrincipalBundle
+
+variable [ContMDiffFiberBundle n G P IB IG] [ContMDiffMul IG n G] {b : B}
+
+omit [Group G] [ContMDiffMul IG n G] [(b : B) → MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P] in
+/-- The tangent-level computation behind `mfderiv_smul_aux`, for abstract maps. Let `O : G → T`
+have the left inverse `ψ`, let `O ∘ ψ = F ∘ (b, s)` and `F ∘ (proj, s) = id` near `x₀ = O g₀`, and
+let `proj ∘ O` be constant. Then the derivative of `ψ` at `x₀` is a left inverse of the derivative
+of `O` at `g₀`, and a right inverse on the kernel of the derivative of `proj` at `x₀`. -/
+private theorem mfderiv_vertical_aux {proj : ManifoldTotalSpace G P → B}
+    {s ψ : ManifoldTotalSpace G P → G} {F : B × G → ManifoldTotalSpace G P}
+    {O : G → ManifoldTotalSpace G P} {x₀ : ManifoldTotalSpace G P} {g₀ : G}
+    (hprojO : proj ∘ O = fun _ ↦ b) (hψO' : ∀ g, ψ (O g) = g)
+    (hOψ : O ∘ ψ = F ∘ fun x ↦ (b, s x))
+    (hFid : F ∘ (fun x ↦ (proj x, s x)) =ᶠ[𝓝 x₀] id) (hxO : O g₀ = x₀)
+    (hproj : MDifferentiableAt (IB.prod IG) IB proj x₀)
+    (hsD : MDifferentiableAt (IB.prod IG) IG s x₀) (hψ : MDifferentiableAt (IB.prod IG) IG ψ x₀)
+    (hO : MDifferentiableAt IG (IB.prod IG) O g₀)
+    (hF : MDifferentiableAt (IB.prod IG) (IB.prod IG) F (b, s x₀)) :
+    (∀ ξ, mfderiv (IB.prod IG) IB proj x₀ (mfderiv IG (IB.prod IG) O g₀ ξ) = 0) ∧
+    ∃ L : TangentSpace (IB.prod IG) x₀ →L[𝕜] TangentSpace IG g₀,
+      (∀ ξ, L (mfderiv IG (IB.prod IG) O g₀ ξ) = ξ) ∧
+      ∀ w, mfderiv (IB.prod IG) IB proj x₀ w = 0 → mfderiv IG (IB.prod IG) O g₀ (L w) = w := by
+  refine ⟨fun ξ ↦ ?_, mfderiv (IB.prod IG) IG ψ x₀, fun ξ ↦ ?_, fun w hw ↦ ?_⟩
+  · have := mfderiv_comp_apply_of_eq g₀ hproj hO hxO ξ
+    rw [hprojO, mfderiv_const] at this
+    exact this.symm
+  · have := mfderiv_comp_apply_of_eq g₀ hψ hO hxO ξ
+    rw [show ψ ∘ O = id from funext hψO', mfderiv_id] at this
+    exact this.symm
+  · -- Differentiate `O ∘ ψ = F ∘ (b, s)` and `F ∘ (π, s) = id` at `x₀`.
+    have hproj₀ : proj x₀ = b := hxO ▸ congrFun hprojO g₀
+    have h₁ := mfderiv_comp_apply_of_eq x₀ hO hψ (hxO ▸ hψO' g₀) w
+    rw [hOψ, mfderiv_comp_apply_of_eq (f := fun x ↦ (b, s x)) x₀ hF
+      (mdifferentiableAt_const.prodMk hsD) rfl, mfderiv_prodMk mdifferentiableAt_const hsD,
+      mfderiv_const] at h₁
+    have h₂ := mfderiv_comp_apply_of_eq (f := fun x ↦ (proj x, s x)) x₀ hF
+      (hproj.prodMk hsD) (by rw [hproj₀]) w
+    rw [hFid.mfderiv_eq, mfderiv_id, ContinuousLinearMap.comp_id, mfderiv_prodMk hproj hsD] at h₂
+    -- `tangentSpaceCast` identifies the tangent spaces at the equal points `x₀` and
+    -- `F (proj x₀, s x₀)`, and is the identity on vectors.
+    change w = _ at h₂
+    -- The two expressions differ only in the base component, which vanishes for vertical `w`.
+    have h₃ : (ContinuousLinearMap.prod 0 (mfderiv (IB.prod IG) IG s x₀)) w =
+        ((mfderiv (IB.prod IG) IB proj x₀).prod (mfderiv (IB.prod IG) IG s x₀)) w :=
+      Prod.ext hw.symm rfl
+    exact h₁.symm.trans
+      ((congrArg (mfderiv (IB.prod IG) (IB.prod IG) F (b, s x₀)) h₃).trans h₂.symm)
+
+/-- Tangent-level properties of the orbit map `g ↦ p • g` through a point `p` of the fibre over
+`b`, at `g₀`. Its derivative is killed by the derivative of the projection, and it has a
+continuous linear left inverse that is also a right inverse on the kernel of the derivative of the
+projection at `p • g₀`. -/
+private theorem mfderiv_smul_aux (hn : n ≠ 0) (p : P b) (g₀ : G) :
+    (∀ ξ, mfderiv (IB.prod IG) IB
+        (fun x : ManifoldTotalSpace G P ↦ ((ManifoldTotalSpace.homeomorph G P).symm x).proj)
+        (ManifoldTotalSpace.homeomorph G P ⟨b, op g₀ • p⟩)
+        (mfderiv IG (IB.prod IG)
+          (fun g : G ↦ ManifoldTotalSpace.homeomorph G P ⟨b, op g • p⟩) g₀ ξ) = 0) ∧
+    ∃ L : TangentSpace (IB.prod IG) (ManifoldTotalSpace.homeomorph G P ⟨b, op g₀ • p⟩) →L[𝕜]
+        TangentSpace IG g₀,
+      (∀ ξ, L (mfderiv IG (IB.prod IG)
+        (fun g : G ↦ ManifoldTotalSpace.homeomorph G P ⟨b, op g • p⟩) g₀ ξ) = ξ) ∧
+      ∀ w, mfderiv (IB.prod IG) IB
+          (fun x : ManifoldTotalSpace G P ↦ ((ManifoldTotalSpace.homeomorph G P).symm x).proj)
+          (ManifoldTotalSpace.homeomorph G P ⟨b, op g₀ • p⟩) w = 0 →
+        mfderiv IG (IB.prod IG)
+          (fun g : G ↦ ManifoldTotalSpace.homeomorph G P ⟨b, op g • p⟩) g₀ (L w) = w := by
+  -- Read everything through the trivialization `e` at `b`. With `h = (e p).2`, the map
+  -- `ψ x = h⁻¹ * (e x).2` inverts the orbit map `O`, and `O ∘ ψ` is `x ↦ e⁻¹ (b, (e x).2)`, which
+  -- differs from `x = e⁻¹ (π x, (e x).2)` only in the base coordinate. The derivative of `ψ` is
+  -- the required left inverse.
+  let Φ := ManifoldTotalSpace.homeomorph G P
+  let e := trivializationAt G P b
+  have hb : b ∈ e.baseSet := mem_baseSet_trivializationAt G P b
+  let x₀ := Φ ⟨b, op g₀ • p⟩
+  let O : G → ManifoldTotalSpace G P := fun g ↦ Φ ⟨b, op g • p⟩
+  let proj : ManifoldTotalSpace G P → B := fun x ↦ (Φ.symm x).proj
+  let s : ManifoldTotalSpace G P → G := fun x ↦ (e (Φ.symm x)).2
+  let F : B × G → ManifoldTotalSpace G P := fun y ↦ Φ (e.toOpenPartialHomeomorph.symm y)
+  let ψ : ManifoldTotalSpace G P → G := fun x ↦ (e ⟨b, p⟩).2⁻¹ * s x
+  -- The identities relating the orbit map, the projection, the trivialization and `ψ`.
+  have hprojO : proj ∘ O = fun _ ↦ b := funext fun g ↦ by
+    simp only [Function.comp_apply, proj, O, Φ, Homeomorph.symm_apply_apply]
+  have hFO (g : G) : F (b, (e ⟨b, p⟩).2 * g) = O g := by
+    simp only [F, O, ← e.apply_smul hb p g,
+      e.symm_apply_apply (x := ⟨b, op g • p⟩) (e.mem_source.2 hb)]
+  have hψO' (g : G) : ψ (O g) = g := by
+    simp only [ψ, s, O, Φ, Homeomorph.symm_apply_apply, e.snd_apply_smul hb p g,
+      inv_mul_cancel_left]
+  have hOψ : O ∘ ψ = F ∘ fun x ↦ (b, s x) := funext fun x ↦ by
+    rw [Function.comp_apply, Function.comp_apply, ← hFO, mul_inv_cancel_left]
+  have hFid : F ∘ (fun x ↦ (proj x, s x)) =ᶠ[𝓝 x₀] id := by
+    have hx₀ : x₀ ∈ Φ.symm ⁻¹' e.source := by
+      simpa only [mem_preimage, x₀, Φ, Homeomorph.symm_apply_apply] using e.mem_source.2 hb
+    filter_upwards [(e.open_source.preimage Φ.symm.continuous).mem_nhds hx₀] with x hx
+    simp only [Function.comp_apply, F, proj, s, id, e.symm_apply_mk_proj hx,
+      Homeomorph.apply_symm_apply]
+  -- The differentiability of the maps involved.
+  have hproj : MDifferentiableAt (IB.prod IG) IB proj x₀ :=
+    (ManifoldTotalSpace.contMDiff_proj n G P IB IG x₀).mdifferentiableAt hn
+  have hsC : ContMDiffAt (IB.prod IG) IG n s x₀ := by
+    have := ManifoldTotalSpace.contMDiffAt_trivializationAt_snd n IB IG x₀
+    simpa only [x₀, Φ, Homeomorph.symm_apply_apply] using this
+  have hsD : MDifferentiableAt (IB.prod IG) IG s x₀ := hsC.mdifferentiableAt hn
+  have hψ : MDifferentiableAt (IB.prod IG) IG ψ x₀ :=
+    (contMDiffAt_const.mul hsC).mdifferentiableAt hn
+  have hO : MDifferentiableAt IG (IB.prod IG) O g₀ :=
+    (ContMDiff.totalSpaceMk_smul (f := fun _ : G ↦ b) (p := fun _ ↦ p) contMDiff_const
+      contMDiff_id g₀).mdifferentiableAt hn
+  have hF : MDifferentiableAt (IB.prod IG) (IB.prod IG) F (b, s x₀) :=
+    (((ManifoldTotalSpace.contMDiffOn_trivialization_symm e).contMDiffAt
+      (e.open_target.mem_nhds (e.mem_target.2 hb))).mdifferentiableAt hn)
+  exact mfderiv_vertical_aux hprojO hψO' hOψ hFid rfl hproj hsD hψ hO hF
+
+variable (IB IG) in
+/-- **The orbit maps of a principal bundle have injective derivative.** For a point `p` of the
+fibre over `b`, the derivative at every `g₀` of the orbit map `g ↦ p • g` is injective. -/
+theorem mfderiv_totalSpaceMk_smul_injective (hn : n ≠ 0) (p : P b) (g₀ : G) :
+    Function.Injective (mfderiv IG (IB.prod IG)
+      (fun g : G ↦ ManifoldTotalSpace.homeomorph G P ⟨b, op g • p⟩) g₀) := by
+  obtain ⟨-, L, hL, -⟩ := mfderiv_smul_aux (IB := IB) (IG := IG) hn p g₀
+  exact Function.LeftInverse.injective hL
+
+variable (IB IG) in
+/-- **The vertical tangent space of a principal bundle.** At the point `p • g₀` of the fibre over
+`b`, the kernel of the derivative of the projection is the image of the derivative at `g₀` of the
+orbit map `g ↦ p • g`. For `g₀ = 1` this describes the vertical vectors at `p` as the
+derivatives at the identity of `g ↦ p • g`
+(`TauCeti.PrincipalBundle.ker_mfderiv_proj_eq_range_mfderiv_totalSpaceMk_smul_one`). -/
+theorem ker_mfderiv_proj_eq_range_mfderiv_totalSpaceMk_smul (hn : n ≠ 0) (p : P b) (g₀ : G) :
+    (mfderiv (IB.prod IG) IB
+      (fun x : ManifoldTotalSpace G P ↦ ((ManifoldTotalSpace.homeomorph G P).symm x).proj)
+      (ManifoldTotalSpace.homeomorph G P ⟨b, op g₀ • p⟩)).ker =
+    (mfderiv IG (IB.prod IG)
+      (fun g : G ↦ ManifoldTotalSpace.homeomorph G P ⟨b, op g • p⟩) g₀).range := by
+  obtain ⟨h, L, -, hL⟩ := mfderiv_smul_aux (IB := IB) (IG := IG) hn p g₀
+  refine le_antisymm (fun w hw ↦ ⟨L w, hL w hw⟩) ?_
+  rintro _ ⟨ξ, rfl⟩
+  exact h ξ
+
+variable (G IB IG) in
+/-- **The vertical tangent space of a principal bundle at a point.** At a point `p` of the fibre
+over `b`, the kernel of the derivative of the projection is the image of the derivative at the
+identity of the orbit map `g ↦ p • g`. -/
+theorem ker_mfderiv_proj_eq_range_mfderiv_totalSpaceMk_smul_one (hn : n ≠ 0) (p : P b) :
+    (mfderiv (IB.prod IG) IB
+      (fun x : ManifoldTotalSpace G P ↦ ((ManifoldTotalSpace.homeomorph G P).symm x).proj)
+      (ManifoldTotalSpace.homeomorph G P ⟨b, p⟩)).ker =
+    (mfderiv IG (IB.prod IG)
+      (fun g : G ↦ ManifoldTotalSpace.homeomorph G P ⟨b, op g • p⟩) 1).range := by
+  have := ker_mfderiv_proj_eq_range_mfderiv_totalSpaceMk_smul IB IG hn p (1 : G)
+  rwa [op_one, one_smul] at this
+
+variable (IB IG) in
+/-- **The vertical tangent space has the dimension of the structure group.** At every point of the
+total space, the kernel of the derivative of the projection has the same `Module.finrank` as the
+model space `EG` of `G`. When `EG` is finite-dimensional this is the dimension of `G`; otherwise
+both sides are `0`. -/
+theorem finrank_ker_mfderiv_proj (hn : n ≠ 0) (x : ManifoldTotalSpace G P) :
+    Module.finrank 𝕜 (mfderiv (IB.prod IG) IB
+      (fun x : ManifoldTotalSpace G P ↦ ((ManifoldTotalSpace.homeomorph G P).symm x).proj) x).ker =
+      Module.finrank 𝕜 EG := by
+  obtain ⟨⟨b, p⟩, rfl⟩ := (ManifoldTotalSpace.homeomorph G P).surjective x
+  rw [ker_mfderiv_proj_eq_range_mfderiv_totalSpaceMk_smul_one G IB IG hn p]
+  -- Elaborated before unifying with the goal, whose tangent-space instances are indexed by the
+  -- equal point `p` rather than `p • 1`.
+  exact (LinearMap.finrank_range_of_inj (R := 𝕜)
+    (mfderiv_totalSpaceMk_smul_injective IB IG hn p (1 : G)) :)
 
 end TauCeti.PrincipalBundle
