@@ -377,20 +377,6 @@ lemma moduleCatKerHomologyClass_eq_moduleCatHomologyClass :
       K.moduleCatHomologyClass hm (Submodule.subtype _) (fun z ↦ z.2) :=
   (rfl)
 
-variable {K} in
-/-- A chain map sends the homology class of an element in the kernel of the outgoing
-differential to the class of its image. -/
-lemma homologyMap_moduleCatKerHomologyClass {L : HomologicalComplex (ModuleCat R) c}
-    (φ : K ⟶ L) (z : LinearMap.ker (K.d n m).hom) :
-    homologyMap φ n (K.moduleCatKerHomologyClass hm z) =
-      L.moduleCatKerHomologyClass hm
-        ⟨φ.f n z.1, φ.d_apply_eq_zero_of_d_apply_eq_zero n m z.1 z.2⟩ := by
-  let g := ((φ.f n).hom.comp (LinearMap.ker (K.d n m).hom).subtype).codRestrict
-    (LinearMap.ker (L.d n m).hom)
-    fun z ↦ φ.d_apply_eq_zero_of_d_apply_eq_zero n m z.1 z.2
-  exact homologyMap_moduleCatHomologyClass hm (Submodule.subtype _) (fun z ↦ z.2)
-    φ (Submodule.subtype _) (fun z ↦ z.2) g (fun _ ↦ rfl) z
-
 /-- The homology class of the kernel element given by a cycle `y` is the class of `y`. -/
 @[simp]
 lemma moduleCatKerHomologyClass_moduleCatCyclesToKer (y : K.cycles n) :
