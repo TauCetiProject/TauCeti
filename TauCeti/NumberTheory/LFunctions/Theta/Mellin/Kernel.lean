@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Pow.Real
+public import TauCeti.NumberTheory.LFunctions.Theta.Decay
 public import TauCeti.NumberTheory.LFunctions.Theta.Inversion
 public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Invariance
 
@@ -31,7 +32,10 @@ and `1/w` accounts for the roots of unity, which act trivially on the parameters
 * `continuousOn_mellinKernel`: for a bounded measurable `D` the kernel is continuous on `(0, ∞)`.
   A bounded subset of `S` lies in a box `[C⁻¹, C]` of the open orthant, so near a positive `u` the
   theta series is dominated by a constant, which is integrable because `D` has finite `d*x`-mass.
-
+* `exists_norm_mellinKernel_sub_le`: for a bounded measurable `D` the kernel tends to
+  `(2^r₂ / w) vol(D)` with error `O(exp(-c u^(1/n)))`, uniformly from the decay of the theta
+  series on bounded subsets of `S`, the second half of Neukirch (5.8);
+  `isBigO_mellinKernel_sub_rpow` is the resulting decay faster than every power.
 * `mellinKernel_mixedDual_idealLattice`: for the lattice `σ(I)` of a fractional ideal, the dual
   side is again the kernel of an ideal lattice, that of the trace dual `J = I^∨`, over the
   translate of `D` by the point `traceShift K` of `S`. The Euclidean dual of `σ(I)` is
@@ -40,8 +44,8 @@ and `1/w` accounts for the roots of unity, which act trivially on the parameters
   and the radial part `16 ^ r₂` of that multiplication is absorbed by the covolumes
   `V_J = 4^(-r₂) V_I⁻¹` (`covolume_idealLattice_dual`).
 
-The first two are the transformation law and the local integrability that Mathlib's Mellin
-principle `WeakFEPair` asks of a pair of kernels.
+The transformation law, the local integrability and the decay at `∞` are what Mathlib's
+Mellin principle `WeakFEPair` asks of a pair of kernels.
 
 ## References
 
@@ -171,6 +175,88 @@ theorem continuousOn_mellinKernel {D : Set (realSpace K)} (hDm : MeasurableSet D
     exact ContinuousAt.comp (g := latticeTheta L) (continuousAt_latticeTheta L
       (surfaceScale_pos (mem_normOneSurface.mp x.property).1 (by positivity))) hu.continuousAt
   exact continuousAt_const.mul (continuousAt_of_dominated hmeas hbound hint hcont)
+
+/-! ### The kernel at `∞` -/
+
+section
+
+open Filter Set
+
+/-- At a positive norm `t`, the theta series of a discrete lattice is continuous along the
+norm-one surface. -/
+theorem continuous_latticeTheta_surfaceScale (L : Submodule ℤ (mixedSpace K))
+    [DiscreteTopology L] {t : ℝ} (ht : 0 < t) :
+    Continuous fun x : normOneSurface K ↦ latticeTheta L (surfaceScale (x : realSpace K) t) :=
+  continuous_iff_continuousAt.mpr fun x ↦ ContinuousAt.comp (g := latticeTheta L)
+    (continuousAt_latticeTheta L (surfaceScale_pos (mem_normOneSurface.mp x.property).1 ht))
+    (continuous_surfaceScale.comp (continuous_subtype_val.prodMk continuous_const)).continuousAt
+
+open scoped Classical in
+/-- **The Mellin kernel at `∞`**: over a bounded measurable set `D` of parameters the kernel of a
+full lattice tends to `(2^r₂ / w) vol(D)`, `vol = surfaceHaar K`, with an error
+`O(exp(-c u^(1/n)))`, `n = [K : ℚ]`. -/
+theorem exists_norm_mellinKernel_sub_le {D : Set (realSpace K)} (hDm : MeasurableSet D)
+    (hD : Bornology.IsBounded D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
+    [IsZLattice ℝ L] :
+    ∃ c > 0, ∃ C ≥ 0, ∀ᶠ u : ℝ in atTop,
+      ‖mellinKernel D L u - (2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ) *
+          ((surfaceHaar K).real (Subtype.val ⁻¹' D) : ℂ)‖ ≤
+        C * Real.exp (-c * u ^ (Module.finrank ℚ K : ℝ)⁻¹) := by
+  set V := ZLattice.covolume L
+  have hV : 0 < V := ZLattice.covolume_pos L
+  set n : ℝ := (Module.finrank ℚ K : ℝ)⁻¹
+  set A : ℂ := (2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ)
+  set S : Set (normOneSurface K) := Subtype.val ⁻¹' D
+  have hS : MeasurableSet S := measurable_subtype_coe hDm
+  have hfin : surfaceHaar K S < ⊤ := surfaceHaar_preimage_lt_top hD
+  have : IsFiniteMeasure ((surfaceHaar K).restrict S) := isFiniteMeasure_restrict.mpr hfin.ne
+  -- the decay of the theta series on the bounded subset `D ∩ S` of the norm-one surface
+  obtain ⟨c, hc, C, hC, h⟩ := exists_norm_latticeTheta_surfaceScale_sub_one_le L
+    (hD.subset inter_subset_left) inter_subset_right
+  refine ⟨c / (V ^ 2) ^ n, by positivity, ‖A‖ * (C * (surfaceHaar K).real S), by positivity, ?_⟩
+  have hu : Tendsto (fun u : ℝ ↦ u / V ^ 2) atTop atTop :=
+    tendsto_id.atTop_div_const (by positivity)
+  filter_upwards [hu.eventually h, eventually_gt_atTop 0] with u hu hu0
+  set e := Real.exp (-c * (u / V ^ 2) ^ n)
+  set θ : normOneSurface K → ℂ := fun x ↦ latticeTheta L (surfaceScale (x : realSpace K)
+    (u / V ^ 2))
+  have hθ (x : normOneSurface K) (hx : x ∈ S) : ‖θ x - 1‖ ≤ C * e := hu x ⟨hx, x.property⟩
+  have hint : IntegrableOn θ S (surfaceHaar K) := by
+    refine Integrable.mono' (integrable_const (1 + C * e))
+      (continuous_latticeTheta_surfaceScale L (by positivity)).aestronglyMeasurable ?_
+    filter_upwards [ae_restrict_mem hS] with x hx
+    calc ‖θ x‖ ≤ ‖(1 : ℂ)‖ + ‖θ x - 1‖ := norm_le_norm_add_norm_sub' _ _
+      _ ≤ 1 + C * e := by rw [norm_one]; linarith [hθ x hx]
+  have hsub : mellinKernel D L u - A * ((surfaceHaar K).real S : ℂ) =
+      A * ∫ x in S, (θ x - 1) ∂surfaceHaar K := by
+    rw [mellinKernel_def, integral_sub hint (integrableOn_const hfin.ne), setIntegral_const,
+      Complex.real_smul, mul_one, mul_sub]
+  have he : e = Real.exp (-(c / (V ^ 2) ^ n) * u ^ n) := by
+    simp only [e]
+    rw [Real.div_rpow hu0.le (sq_nonneg V)]
+    ring_nf
+  rw [hsub, norm_mul, ← he]
+  calc ‖A‖ * ‖∫ x in S, (θ x - 1) ∂surfaceHaar K‖
+      ≤ ‖A‖ * (C * e * (surfaceHaar K).real S) :=
+        mul_le_mul_of_nonneg_left (norm_setIntegral_le_of_norm_le_const hfin hθ) (norm_nonneg _)
+    _ = ‖A‖ * (C * (surfaceHaar K).real S) * e := by ring
+
+open scoped Classical in
+/-- Over a bounded measurable set `D` of parameters the kernel of a full lattice minus
+`(2^r₂ / w) vol(D)` decays faster than every power, as the Mellin principle requires. -/
+theorem isBigO_mellinKernel_sub_rpow {D : Set (realSpace K)} (hDm : MeasurableSet D)
+    (hD : Bornology.IsBounded D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
+    [IsZLattice ℝ L] (r : ℝ) :
+    (fun u ↦ mellinKernel D L u - (2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ) *
+        ((surfaceHaar K).real (Subtype.val ⁻¹' D) : ℂ)) =O[atTop] (· ^ r) := by
+  obtain ⟨c, hc, C, -, h⟩ := exists_norm_mellinKernel_sub_le hDm hD L
+  refine isBigO_rpow_of_isBigO_exp_neg hc
+    (inv_pos.mpr (Nat.cast_pos.mpr (Module.finrank_pos (R := ℚ) (M := K))))
+    (Asymptotics.IsBigO.of_bound C ?_) r
+  filter_upwards [h] with u hu
+  rwa [Real.norm_of_nonneg (Real.exp_pos _).le]
+
+end
 
 /-! ### The dual of an ideal lattice -/
 
