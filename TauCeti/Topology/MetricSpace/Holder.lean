@@ -32,7 +32,8 @@ Hölder inequality passes from `s × s` to its closure because both of its sides
 This is how an almost-everywhere Hölder estimate becomes a Hölder continuous representative: a set
 of full measure for a measure that is positive on open sets is dense.
 
-Sums, differences and finite sums of Hölder functions are Hölder, with the sum of the constants.
+Sums, differences and finite sums of Hölder functions are Hölder, with the sum of the constants,
+and a pointwise limit of Hölder functions with a common constant is Hölder with that constant.
 Postcomposition with an isometry keeps the constant and the exponent. A function bounded by `M` is
 Hölder of exponent zero with constant `2 M`.
 
@@ -68,6 +69,8 @@ By subadditivity of `t ↦ t ^ α`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölde
   preserves Hölder bounds.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
 * `HolderOnWith.add`: sums of Hölder functions on a set.
+* `HolderWith.of_tendsto`: a pointwise limit of Hölder functions with a common constant is Hölder
+  with that constant.
 * `holderWith_zero_of_nnnorm_le`: a function bounded by `M` is Hölder of exponent zero with
   constant `2 M`.
 * `IsCompact.exists_holderOnWith_thickening_and_norm_le`: a function which is Hölder on a ball
@@ -264,6 +267,14 @@ theorem HolderOnWith.add {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommG
   HolderOnWith.of_dist_le fun x hx y hy => by
     simp only [Pi.add_apply, NNReal.coe_add]
     linarith [dist_add_add_le (f x) (g x) (f y) (g y), hf.dist_le hx hy, hg.dist_le hx hy]
+
+/-- A pointwise limit of maps that are `r`-Hölder with a common constant `C` is `r`-Hölder with
+constant `C`. -/
+theorem HolderWith.of_tendsto {ι X Y : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
+    {l : Filter ι} [l.NeBot] {C r : ℝ≥0} {u : ι → X → Y} {v : X → Y}
+    (hu : ∀ x, Tendsto (fun n ↦ u n x) l (𝓝 (v x))) (hC : ∀ᶠ n in l, HolderWith C r (u n)) :
+    HolderWith C r v := fun x y ↦
+  le_of_tendsto ((hu x).edist (hu y)) (hC.mono fun _ hn ↦ hn x y)
 
 /-- A function bounded by `M` has oscillation at most `2 M`, which is its Hölder bound of
 exponent zero. Compare Mathlib's `HolderWith.holderWith_zero_of_bounded`, which bounds the

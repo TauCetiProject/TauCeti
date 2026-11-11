@@ -155,6 +155,33 @@ theorem chartIteratedFDerivLinearMap_apply (x : M) (m : ℕ) (hm : m ≤ n)
       (chartIteratedFDerivLinearMap x m hm) f = chartIteratedFDeriv f x m hm :=
   (rfl)
 
+/-- Coordinate differentiation commutes with addition of vector-valued maps. -/
+@[simp]
+theorem chartIteratedFDeriv_add
+    (f g : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (x : M) (m : ℕ) (hm : m ≤ n) :
+    chartIteratedFDeriv (f + g) x m hm =
+      chartIteratedFDeriv f x m hm + chartIteratedFDeriv g x m hm := by
+  exact (chartIteratedFDerivLinearMap_apply x m hm (f + g)).symm.trans
+    ((map_add (chartIteratedFDerivLinearMap (F := F) x m hm) f g).trans
+      (congrArg₂ (· + ·) (chartIteratedFDerivLinearMap_apply x m hm f)
+        (chartIteratedFDerivLinearMap_apply x m hm g)))
+
+/-- Coordinate differentiation commutes with scalar multiplication of vector-valued maps. -/
+@[simp]
+theorem chartIteratedFDeriv_smul
+    (c : 𝕜) (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (x : M) (m : ℕ) (hm : m ≤ n) :
+    chartIteratedFDeriv (c • f) x m hm = c • chartIteratedFDeriv f x m hm := by
+  exact (chartIteratedFDerivLinearMap_apply x m hm (c • f)).symm.trans
+    ((map_smul (chartIteratedFDerivLinearMap (F := F) x m hm) c f).trans
+      (congrArg (c • ·) (chartIteratedFDerivLinearMap_apply x m hm f)))
+
+/-- The coordinate derivatives of the zero map vanish. -/
+@[simp]
+theorem chartIteratedFDeriv_zero (x : M) (m : ℕ) (hm : m ≤ n) :
+    chartIteratedFDeriv (0 : C^n⟮I, M; 𝓘(𝕜, F), F⟯) x m hm = 0 := by
+  exact (chartIteratedFDerivLinearMap_apply x m hm 0).symm.trans
+    (map_zero (chartIteratedFDerivLinearMap (F := F) x m hm))
+
 /-- Coordinate differentiation commutes with subtraction of vector-valued maps. -/
 @[simp]
 theorem chartIteratedFDeriv_sub
