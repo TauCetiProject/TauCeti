@@ -14,13 +14,14 @@ import Mathlib.LinearAlgebra.PiTensorProduct.Finsupp
 /-!
 # Algebra equivalences for indexed tensor products
 
-The linear equivalences for reindexing, removing an empty index set, and splitting off one
-factor preserve the algebra structures on indexed tensor products. Their algebra versions
-allow algebraic properties stable under binary tensor products to be proved by induction on a
-finite index type.
+The linear equivalences for reindexing, applying equivalences factorwise, removing an empty
+index set, and splitting off one factor preserve the algebra structures on indexed tensor
+products. Their algebra versions allow algebraic properties stable under binary tensor products
+to be proved by induction on a finite index type.
 
-These constructions upgrade Mathlib's `PiTensorProduct.reindex` and
-`PiTensorProduct.isEmptyEquiv`, and `PiTensorProduct.optionEquiv`. Reindexing along permutations
+These constructions upgrade Mathlib's `PiTensorProduct.reindex`, `PiTensorProduct.congr`,
+`PiTensorProduct.isEmptyEquiv` and `PiTensorProduct.optionEquiv`; the algebra version of
+`PiTensorProduct.congr` is `PiTensorProduct.congrAlgEquiv`. Reindexing along permutations
 gives the action of `Equiv.Perm ι` on a tensor power by algebra automorphisms
 (`PiTensorProduct.permAlgEquiv`).
 
@@ -79,6 +80,61 @@ theorem reindexAlgEquiv_singleAlgHom {ι κ : Type*} [DecidableEq ι] [Decidable
   rw [Equiv.symm_symm] at this
   exact congrArg (tprod R) this
 
+/-- An indexed tensor product of algebra equivalences, as an algebra equivalence. It is
+`PiTensorProduct.congr` on the underlying linear equivalences. -/
+noncomputable def congrAlgEquiv {ι : Type*} {A B : ι → Type*} [∀ i, Semiring (A i)]
+    [∀ i, Algebra R (A i)] [∀ i, Semiring (B i)] [∀ i, Algebra R (B i)]
+    (e : ∀ i, A i ≃ₐ[R] B i) : (⨂[R] i, A i) ≃ₐ[R] ⨂[R] i, B i :=
+  AlgEquiv.ofLinearEquiv (congr fun i ↦ (e i).toLinearEquiv)
+    (by simp [one_def, congr_tprod, Pi.one_def]) <|
+    LinearMap.map_mul_iff _ |>.mpr <| by
+      ext a b
+      simp [tprod_mul_tprod, congr_tprod, Pi.mul_def]
+
+/-- The underlying linear equivalence of `PiTensorProduct.congrAlgEquiv` is
+`PiTensorProduct.congr`. -/
+@[simp]
+theorem congrAlgEquiv_toLinearEquiv {ι : Type*} {A B : ι → Type*} [∀ i, Semiring (A i)]
+    [∀ i, Algebra R (A i)] [∀ i, Semiring (B i)] [∀ i, Algebra R (B i)]
+    (e : ∀ i, A i ≃ₐ[R] B i) :
+    (congrAlgEquiv e).toLinearEquiv = congr fun i ↦ (e i).toLinearEquiv := (rfl)
+
+/-- `PiTensorProduct.congrAlgEquiv e` applies `e i` to the entry in slot `i` of a pure tensor. -/
+@[simp]
+theorem congrAlgEquiv_tprod {ι : Type*} {A B : ι → Type*} [∀ i, Semiring (A i)]
+    [∀ i, Algebra R (A i)] [∀ i, Semiring (B i)] [∀ i, Algebra R (B i)]
+    (e : ∀ i, A i ≃ₐ[R] B i) (a : ∀ i, A i) :
+    congrAlgEquiv e (tprod R a) = tprod R fun i ↦ e i (a i) :=
+  congr_tprod _ a
+
+/-- The inverse of `PiTensorProduct.congrAlgEquiv e` applies the inverses of the `e i`. -/
+@[simp]
+theorem congrAlgEquiv_symm {ι : Type*} {A B : ι → Type*} [∀ i, Semiring (A i)]
+    [∀ i, Algebra R (A i)] [∀ i, Semiring (B i)] [∀ i, Algebra R (B i)]
+    (e : ∀ i, A i ≃ₐ[R] B i) :
+    (congrAlgEquiv e).symm = congrAlgEquiv fun i ↦ (e i).symm :=
+  AlgEquiv.ext fun x ↦ by
+    rw [AlgEquiv.symm_apply_eq]
+    induction x using PiTensorProduct.induction_on with
+    | smul_tprod r x => simp
+    | add x y hx hy => rw [map_add, map_add, ← hx, ← hy]
+
+/-- `PiTensorProduct.congrAlgEquiv e` sends the factor inclusion at `i` to the factor inclusion at
+`i` composed with `e i`. It is a pre-simp lemma since `singleAlgHom_apply` would otherwise rewrite
+the factor inclusion first. -/
+@[simp↓]
+theorem congrAlgEquiv_singleAlgHom {ι : Type*} [DecidableEq ι] {A B : ι → Type*}
+    [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)] [∀ i, Semiring (B i)] [∀ i, Algebra R (B i)]
+    (e : ∀ i, A i ≃ₐ[R] B i) (i : ι) (a : A i) :
+    congrAlgEquiv e (singleAlgHom i a) = singleAlgHom i (e i a) := by
+  rw [singleAlgHom_apply, singleAlgHom_apply, congrAlgEquiv_tprod]
+  congr 1
+  ext j
+  by_cases h : j = i
+  · subst h
+    simp
+  · simp [MonoidHom.mulSingle_apply, Pi.mulSingle_eq_of_ne h]
+
 section Perm
 
 variable {ι : Type*} (A : Type*) [Semiring A] [Algebra R A]
@@ -116,6 +172,15 @@ theorem permAlgEquiv_tprod (σ : Equiv.Perm ι) (x : ι → A) :
 theorem permAlgEquiv_singleAlgHom [DecidableEq ι] (σ : Equiv.Perm ι) (i : ι) (a : A) :
     permAlgEquiv (R := R) A σ (singleAlgHom i a) = singleAlgHom (σ i) a :=
   reindexAlgEquiv_singleAlgHom σ i a
+
+/-- Applying the same algebra equivalence in every slot commutes with permuting the slots. -/
+theorem congrAlgEquiv_permAlgEquiv {B : Type*} [Semiring B] [Algebra R B] (e : A ≃ₐ[R] B)
+    (σ : Equiv.Perm ι) (x : ⨂[R] _ : ι, A) :
+    congrAlgEquiv (fun _ ↦ e) (permAlgEquiv A σ x) =
+      permAlgEquiv B σ (congrAlgEquiv (fun _ ↦ e) x) := by
+  induction x using PiTensorProduct.induction_on with
+  | smul_tprod r x => simp [Function.comp_def]
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 end Perm
 

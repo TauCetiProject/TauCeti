@@ -28,7 +28,11 @@ The complementary idempotent, Mathlib's `Algebra.FormallyUnramified.elem`, is ch
 the two properties defining it: it annihilates every `1 ⊗ s - s ⊗ 1` and multiplies to `1`
 (`TauCeti.Algebra.FormallyUnramified.eq_elem`). This makes it computable in examples, and shows
 that it is invariant under the swap of the two tensor factors. For the split algebra `κ → R` it is
-`∑ₖ eₖ ⊗ eₖ`, the indicator of the diagonal of `κ × κ`.
+`∑ₖ eₖ ⊗ eₖ`, the indicator of the diagonal of `κ × κ`. It is also transported by algebra
+isomorphisms (`TauCeti.Algebra.FormallyUnramified.map_elem`) and commutes with base change: the
+diagonal idempotent of `T ⊗[R] S` over `T` is the image of that of `S` over `R`
+(`TauCeti.Algebra.FormallyUnramified.productMap_elem_baseChange`), as the diagonal of `Spec S`
+pulls back to the diagonal of its base change.
 
 For an unramified quotient `S = W ⧸ I` over `R`, Mathlib's diagonal element of `S ⊗[R] S` lifts to
 some `t ∈ S ⊗[R] W` which annihilates the difference of the two images `1 ⊗ w` and `(w mod I) ⊗ 1`
@@ -166,6 +170,85 @@ theorem elem_pi (R κ : Type*) [CommRing R] [Fintype κ] [DecidableEq κ] :
     rw [sub_mul, Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul,
       one_mul, hs, TensorProduct.tmul_smul, ← TensorProduct.smul_tmul', sub_self]
   · simp [← Pi.single_mul, Finset.univ_sum_single, Pi.one_def]
+
+/-- The diagonal idempotent is transported by algebra isomorphisms: an isomorphism
+`e : S ≃ₐ[R] S'` sends the diagonal idempotent of `S ⊗[R] S` to that of `S' ⊗[R] S'`. -/
+@[simp]
+theorem map_elem {R S S' : Type*} [CommRing R] [CommRing S] [Algebra R S]
+    [Algebra.EssFiniteType R S] [Algebra.FormallyUnramified R S] [CommRing S'] [Algebra R S']
+    [Algebra.EssFiniteType R S'] [Algebra.FormallyUnramified R S'] (e : S ≃ₐ[R] S') :
+    Algebra.TensorProduct.map e.toAlgHom e.toAlgHom (Algebra.FormallyUnramified.elem R S) =
+      Algebra.FormallyUnramified.elem R S' := by
+  refine eq_elem (fun s' ↦ ?_) ?_
+  · obtain ⟨s, rfl⟩ := e.surjective s'
+    simpa using congrArg (Algebra.TensorProduct.map e.toAlgHom e.toAlgHom)
+      (Algebra.FormallyUnramified.one_tmul_sub_tmul_one_mul_elem (R := R) s)
+  · have hcomm : (Algebra.TensorProduct.lmul' R).comp
+        (Algebra.TensorProduct.map e.toAlgHom e.toAlgHom) =
+        e.toAlgHom.comp (Algebra.TensorProduct.lmul' R) :=
+      Algebra.TensorProduct.ext' fun a b ↦ by simp
+    rw [← AlgHom.comp_apply, hcomm, AlgHom.comp_apply, Algebra.FormallyUnramified.lmul_elem,
+      map_one]
+
+section BaseChange
+
+variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S] [Algebra.EssFiniteType R S]
+  [Algebra.FormallyUnramified R S] (T : Type*) [CommRing T] [Algebra R T]
+
+/-- The diagonal idempotent of `T ⊗[R] S` over `T` is the image of that of `S` over `R` under
+`a ⊗ b ↦ (1 ⊗ a) ⊗ (1 ⊗ b)`. -/
+private theorem productMap_includeLeft_includeRight_elem :
+    Algebra.TensorProduct.productMap
+        (((Algebra.TensorProduct.includeLeft (R := T) (S := T) (A := T ⊗[R] S)
+          (B := T ⊗[R] S)).restrictScalars R).comp Algebra.TensorProduct.includeRight)
+        (((Algebra.TensorProduct.includeRight (R := T) (A := T ⊗[R] S)
+          (B := T ⊗[R] S)).restrictScalars R).comp Algebra.TensorProduct.includeRight)
+        (Algebra.FormallyUnramified.elem R S) =
+      Algebra.FormallyUnramified.elem T (T ⊗[R] S) := by
+  set ψ := Algebra.TensorProduct.productMap
+    (((Algebra.TensorProduct.includeLeft (R := T) (S := T) (A := T ⊗[R] S)
+      (B := T ⊗[R] S)).restrictScalars R).comp Algebra.TensorProduct.includeRight)
+    (((Algebra.TensorProduct.includeRight (R := T) (A := T ⊗[R] S)
+      (B := T ⊗[R] S)).restrictScalars R).comp Algebra.TensorProduct.includeRight)
+  refine eq_elem (fun u ↦ ?_) ?_
+  · -- The differences `1 ⊗ u - u ⊗ 1` are `T`-linear combinations of the images of the
+    -- differences `1 ⊗ s - s ⊗ 1`, which the diagonal idempotent of `S` annihilates.
+    induction u using TensorProduct.inductionOn with
+    | add u v hu hv =>
+      rw [TensorProduct.tmul_add, TensorProduct.add_tmul, add_sub_add_comm, add_mul, hu, hv,
+        add_zero]
+    | tmul t s =>
+      have h := congrArg ψ (Algebra.FormallyUnramified.one_tmul_sub_tmul_one_mul_elem (R := R) s)
+      rw [map_mul, map_sub, map_zero] at h
+      have hts : t ⊗ₜ[R] s = t • ((1 : T) ⊗ₜ[R] s) := by
+        rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+      rw [hts, TensorProduct.tmul_smul, ← TensorProduct.smul_tmul', ← smul_sub, smul_mul_assoc]
+      convert congrArg (t • ·) h using 2
+      · simp [ψ, Algebra.TensorProduct.one_def]
+      · simp
+  · have hcomm : ((Algebra.TensorProduct.lmul' T).restrictScalars R).comp ψ =
+        Algebra.TensorProduct.includeRight.comp (Algebra.TensorProduct.lmul' R) :=
+      Algebra.TensorProduct.ext' fun a b ↦ by simp [ψ]
+    simpa only [AlgHom.comp_apply, AlgHom.restrictScalars_apply,
+      Algebra.FormallyUnramified.lmul_elem, map_one] using
+      DFunLike.congr_fun hcomm (Algebra.FormallyUnramified.elem R S)
+
+/-- The diagonal idempotent commutes with base change: for `T`-algebra maps `f, g` out of
+`T ⊗[R] S`, the image of the diagonal idempotent of `T ⊗[R] S` over `T` under `f ⊗ g` is the
+image of the diagonal idempotent of `S` over `R` under the restrictions of `f` and `g` to `S`. -/
+theorem productMap_elem_baseChange {C : Type*} [CommRing C] [Algebra T C] [Algebra R C]
+    [IsScalarTower R T C] (f g : T ⊗[R] S →ₐ[T] C) :
+    Algebra.TensorProduct.productMap f g (Algebra.FormallyUnramified.elem T (T ⊗[R] S)) =
+      Algebra.TensorProduct.productMap
+        ((f.restrictScalars R).comp Algebra.TensorProduct.includeRight)
+        ((g.restrictScalars R).comp Algebra.TensorProduct.includeRight)
+        (Algebra.FormallyUnramified.elem R S) := by
+  rw [← productMap_includeLeft_includeRight_elem, ← AlgHom.restrictScalars_apply R,
+    ← AlgHom.comp_apply]
+  congr 1
+  exact Algebra.TensorProduct.ext' fun a b ↦ by simp
+
+end BaseChange
 
 /-- For a quotient `S = W ⧸ I` unramified over `A`, some `t ∈ S ⊗[A] W` maps to `1` on the
 diagonal and such that, for every `w ∈ W`, the product of `t` with the difference
