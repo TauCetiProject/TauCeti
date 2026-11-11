@@ -23,8 +23,6 @@ ring structure when `A` is a nonunital ring. The corner inherits the compatible 
 and module structure of `A`. Over a commutative semiring `R`, this makes it an `R`-algebra,
 with `algebraMap R eAe r = r • e`. When `A` is unital, this is the structure under which `eAe`
 can be compared with `A` as `R`-algebras, for instance through Mathlib's `MoritaEquivalence`.
-With these structures, Mathlib's decomposition of a semiring along a complete family of orthogonal
-central idempotents is a decomposition of `R`-algebras.
 
 ## Main definitions
 
@@ -43,8 +41,6 @@ central idempotents is a decomposition of `R`-algebras.
   product of the corners of its components.
 * `IsIdempotentElem.isNoetherian_corner`: the corner of a Noetherian algebra is Noetherian, so the
   corner of a finite-dimensional algebra is finite-dimensional.
-* `CompleteOrthogonalIdempotents.algEquivOfIsMulCentral`: a complete family of orthogonal central
-  idempotents decomposes an `R`-algebra into the product of its corners.
 
 ## Main results
 
@@ -57,8 +53,6 @@ central idempotents is a decomposition of `R`-algebras.
   `e (x₁ e) ⋯ (xₙ e)` in `A`.
 * `Pi.isIdempotentElem_iff`: an element of a product is idempotent exactly when each component
   is.
-* `CompleteOrthogonalIdempotents.isMulCentral_of_mul_mul_eq_zero`: the members of a complete family
-  of orthogonal idempotents are central when `e i * x * e j` vanishes for `i ≠ j`.
 
 ## References
 
@@ -430,61 +424,3 @@ instance isNoetherian_corner [IsNoetherian R A] : IsNoetherian R he.Corner :=
   isNoetherian_of_linearEquiv (he.cornerLinearEquivCornerSubmodule (R := R)).symm
 
 end IsIdempotentElem
-
-/-! ### Decompositions along complete families of central idempotents -/
-
-namespace CompleteOrthogonalIdempotents
-
-variable {ι : Type*} [Fintype ι] {A : Type u} [Semiring A] {e : ι → A}
-  (he : CompleteOrthogonalIdempotents e)
-
-include he in
-/-- The members of a complete family of orthogonal idempotents are central when every
-`e i * x * e j` with `i ≠ j` vanishes. -/
-theorem isMulCentral_of_mul_mul_eq_zero (h : ∀ i j, i ≠ j → ∀ x, e i * x * e j = 0) (i : ι) :
-    IsMulCentral (e i) := by
-  refine Set.mem_center_iff.1 (Semigroup.mem_center_iff.2 fun x ↦ ?_)
-  -- Both products equal `e i * x * e i`, by inserting `1 = ∑ j, e j` on the other side.
-  have h₁ : x * e i = e i * x * e i := by
-    conv_lhs => rw [← one_mul x, ← he.complete, Finset.sum_mul, Finset.sum_mul]
-    exact Finset.sum_eq_single i (fun j _ hj ↦ h j i hj x) (by simp)
-  have h₂ : e i * x = e i * x * e i := by
-    conv_lhs => rw [← mul_one (_ * x), ← he.complete, Finset.mul_sum]
-    exact Finset.sum_eq_single i (fun j _ hj ↦ h i j hj.symm x) (by simp)
-  rw [h₁, h₂, mul_assoc, (he.idem i).eq]
-
-/-- The component of `x` in the corner of `e i` under Mathlib's
-`CompleteOrthogonalIdempotents.ringEquivOfIsMulCentral` is `e i * x * e i`. -/
-@[simp]
-theorem val_ringEquivOfIsMulCentral_apply (hc : ∀ i, IsMulCentral (e i)) (x : A) (i : ι) :
-    (he.ringEquivOfIsMulCentral hc x i).1 = e i * x * e i :=
-  (rfl)
-
-variable {R : Type v} [CommSemiring R] [Algebra R A]
-
-variable (R) in
-/-- **A complete family of orthogonal central idempotents decomposes an `R`-algebra** into the
-product of its corners, as `R`-algebras. This is Mathlib's
-`CompleteOrthogonalIdempotents.ringEquivOfIsMulCentral` with the `R`-algebra structure of the
-corners, `IsIdempotentElem.Corner.instAlgebra`. -/
-def algEquivOfIsMulCentral (hc : ∀ i, IsMulCentral (e i)) : A ≃ₐ[R] Π i, (he.idem i).Corner :=
-  AlgEquiv.ofRingEquiv (f := he.ringEquivOfIsMulCentral hc) fun r ↦ funext fun i ↦
-    Subtype.ext <| by
-      rw [val_ringEquivOfIsMulCentral_apply, Pi.algebraMap_apply,
-        IsIdempotentElem.Corner.val_algebraMap, Algebra.algebraMap_eq_smul_one, mul_smul_comm,
-        smul_mul_assoc, mul_one, (he.idem i).eq]
-
-/-- The component of `x` in the corner of `e i` is `e i * x * e i`. -/
-@[simp]
-theorem val_algEquivOfIsMulCentral_apply (hc : ∀ i, IsMulCentral (e i)) (x : A) (i : ι) :
-    (he.algEquivOfIsMulCentral R hc x i).1 = e i * x * e i :=
-  (rfl)
-
-/-- An element is the sum of its components in the corners. -/
-@[simp]
-theorem algEquivOfIsMulCentral_symm_apply (hc : ∀ i, IsMulCentral (e i))
-    (y : Π i, (he.idem i).Corner) :
-    (he.algEquivOfIsMulCentral R hc).symm y = ∑ i, (y i).1 :=
-  (rfl)
-
-end CompleteOrthogonalIdempotents

@@ -100,9 +100,6 @@ spanning the matched subalgebra are generators.
   `TauCeti.StrandsAlgebra.matchedIdem_mul_matchedIdem`: the `I(s)` are orthogonal idempotents of the
   matched subalgebra.
 * `TauCeti.StrandsAlgebra.differential_matchedIdem`: the `I(s)` are cycles.
-* `TauCeti.StrandsAlgebra.differential_matchedIdem_mul`,
-  `TauCeti.StrandsAlgebra.differential_mul_matchedIdem`: the differential commutes with
-  multiplication by the `I(s)`.
 * `TauCeti.StrandsAlgebra.horizontalCompletion_mul_horizontalCompletion`: the product of two
   generators.
 * `TauCeti.StrandsAlgebra.matchedOne_mul`, `TauCeti.StrandsAlgebra.mul_matchedOne`: `∑ₛ I(s)` is
@@ -275,13 +272,9 @@ def matchedSubalgebra (M : α → β) : NonUnitalSubalgebra R (StrandsAlgebra R 
     refine ⟨fun χ hχ ↦ ?_, fun χ a b hab ↦ ?_⟩
     · -- A diagram in a product starts where a diagram of `x` starts and ends where one of `y`
       -- ends.
-      rw [repr_mul_apply] at hχ
-      obtain ⟨φ, -, hφ⟩ := exists_ne_zero_of_sum_ne_zero hχ
-      obtain ⟨ψ, -, hψ⟩ := exists_ne_zero_of_sum_ne_zero hφ
-      rw [ne_eq, ite_eq_right_iff, not_imp] at hψ
-      obtain ⟨⟨hc, rfl⟩, hψ⟩ := hψ
+      obtain ⟨φ, ψ, hc, rfl, hφ, hψ⟩ := exists_of_repr_mul_ne_zero hχ
       rw [source_trans_of_target_eq hc.target_eq, target_trans_of_target_eq hc.target_eq]
-      exact ⟨(hx.1 φ (left_ne_zero_of_mul hψ)).1, (hy.1 ψ (right_ne_zero_of_mul hψ)).2⟩
+      exact ⟨(hx.1 φ hφ).1, (hy.1 ψ hψ).2⟩
     -- Reduce to a diagram `χ` with a horizontal strand at `a` that can move to `b`.
     wlog hχ : χ.CanMoveHorizontal a b generalizing a b
     · by_cases hχ' : χ.CanMoveHorizontal b a
@@ -449,54 +442,6 @@ theorem matchedIdem_mul_matchedIdem (M : α → β) (s t : Finset β) :
 theorem isIdempotentElem_matchedIdem (M : α → β) (s : Finset β) :
     IsIdempotentElem (matchedIdem R M s) := by
   simp [IsIdempotentElem, matchedIdem_mul_matchedIdem]
-
-/-- Multiplying a basis element `φ` on the left by `I(s)` keeps it exactly when `M` maps the
-source of `φ` bijectively onto `s`. -/
-theorem matchedIdem_mul_of (M : α → β) (s : Finset β) (φ : StrandDiagram α) :
-    matchedIdem R M s * of φ = if φ.source.image M = s ∧ #φ.source = #s then of φ else 0 := by
-  simp [matchedIdem_def, sum_mul, idem_mul_of]
-
-/-- Multiplying a basis element `φ` on the right by `I(t)` keeps it exactly when `M` maps the
-target of `φ` bijectively onto `t`. -/
-theorem of_mul_matchedIdem (M : α → β) (φ : StrandDiagram α) (t : Finset β) :
-    of φ * matchedIdem R M t = if φ.target.image M = t ∧ #φ.target = #t then of φ else 0 := by
-  simp [matchedIdem_def, mul_sum, of_mul_idem]
-
-/-- `I(s) x I(t)` vanishes when `s` and `t` have different sizes: the diagrams of the strands
-algebra have as many starting points as end points. -/
-theorem matchedIdem_mul_mul_matchedIdem_eq_zero_of_card_ne (M : α → β) {s t : Finset β}
-    (h : #s ≠ #t) (x : StrandsAlgebra R α) : matchedIdem R M s * x * matchedIdem R M t = 0 := by
-  induction x using induction_on with
-  | zero => simp
-  | add x y hx hy => simp [mul_add, add_mul, hx, hy]
-  | smul_of r φ =>
-    rw [mul_smul_comm, smul_mul_assoc, matchedIdem_mul_of]
-    split_ifs with hs
-    · rw [of_mul_matchedIdem,
-        ite_eq_right fun ht ↦ h (by rw [← hs.2, ← ht.2, card_target]), smul_zero]
-    · simp
-
-/-- The differential commutes with left multiplication by `I(s)`: resolving a crossing does not
-move the starting points. -/
-theorem differential_matchedIdem_mul (M : α → β) (s : Finset β) (x : StrandsAlgebra R α) :
-    differential R α (matchedIdem R M s * x) = matchedIdem R M s * differential R α x := by
-  induction x using induction_on with
-  | zero => simp
-  | add x y hx hy => simp [mul_add, hx, hy]
-  | smul_of r φ =>
-    by_cases h : φ.source.image M = s ∧ #φ.source = #s <;>
-      simp [matchedIdem_mul_of, differential_of, mul_sum, source_resolve, h]
-
-/-- The differential commutes with right multiplication by `I(t)`: resolving a crossing does not
-move the end points. -/
-theorem differential_mul_matchedIdem (M : α → β) (x : StrandsAlgebra R α) (t : Finset β) :
-    differential R α (x * matchedIdem R M t) = differential R α x * matchedIdem R M t := by
-  induction x using induction_on with
-  | zero => simp
-  | add x y hx hy => simp [add_mul, hx, hy]
-  | smul_of r φ =>
-    by_cases h : φ.target.image M = t ∧ #φ.target = #t <;>
-      simp [of_mul_matchedIdem, differential_of, sum_mul, target_resolve, h]
 
 end Idempotents
 
@@ -1058,13 +1003,6 @@ theorem mul_matchedOne {x : StrandsAlgebra R α} (hx : x ∈ matchedAlgebra R M)
   | add x y _ _ hx hy => rw [add_mul, hx, hy]
   | smul r x _ hx => rw [smul_mul_assoc, hx]
 
-/-- With finitely many pairs, `∑ₛ I(s)` is the sum of `I(s)` over all sets `s` of pairs: `I(s)`
-vanishes unless `s` consists of values of `M`. -/
-theorem matchedOne_eq_sum [Fintype β] : matchedOne R M = ∑ s, matchedIdem R M s := by
-  refine sum_subset (subset_univ _) fun s _ hs ↦ ?_
-  rw [matchedIdem_eq_horizontalCompletion,
-    horizontalCompletion_eq_zero_of_not_subset _ (mt mem_powerset.2 hs)]
-
 end Unit
 
 /-! ### The algebra of a matching is the matched subalgebra -/
@@ -1401,19 +1339,12 @@ variable [DecidableEq β] in
 theorem matchedDifferential_one : matchedDifferential R M 1 = 0 :=
   Subtype.ext (by simp)
 
-/-- **The Leibniz rule** for the differential of the matched subalgebra, over a ring of
-characteristic two. -/
-theorem matchedDifferential_mul [CharP R 2] (x y : matchedSubalgebra R M) :
-    matchedDifferential R M (x * y) =
-      matchedDifferential R M x * y + x * matchedDifferential R M y :=
-  Subtype.ext (by simp [differential_mul])
-
 /-- Over a ring of characteristic two, such as `𝔽₂`, the matched subalgebra with the restricted
 differential is an ungraded differential algebra. -/
 theorem isUngradedDGAlgebra_matchedDifferential [DecidableEq β] {R : Type*} [CommRing R]
     [CharP R 2] :
     IsUngradedDGAlgebra (matchedDifferential R M) where
-  map_mul := matchedDifferential_mul
+  map_mul a b := Subtype.ext (by simp [differential_mul])
   map_map a := Subtype.ext (by simp [differential_differential])
 
 end Differential
