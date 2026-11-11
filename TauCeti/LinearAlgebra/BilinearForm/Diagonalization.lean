@@ -164,8 +164,8 @@ theorem iIsOrtho.equivalent_weightedSumSquares
           rw [map_smul, LinearMap.smul_apply, hb.apply_basis_left, smul_eq_mul]
   simp only [QuadraticMap.weightedSumSquares_apply, BilinMap.toQuadraticMap_apply, hx]
   exact Finset.sum_congr rfl fun i _ ↦ by
-    change B (b i) (b i) • (b.repr x i * b.repr x i) = _
-    rw [smul_eq_mul]
+    simp only [LinearMap.toFun_eq_coe, LinearEquiv.coe_coe, Module.Basis.equivFun_apply,
+      smul_eq_mul]
     ring
 
 open LinearMap (BilinForm)
