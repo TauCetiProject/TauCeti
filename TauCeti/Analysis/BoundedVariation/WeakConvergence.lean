@@ -85,9 +85,9 @@ theorem tendsto_integral_inner_polarDensity_of_tendsto_integral
       neg_neg] at h
     exact h
   filter_upwards [hC, (Metric.tendsto_nhds.1 hψconv) η hη] with i hi hdist
-  have hleft := dist_integral_inner_polarDensity_le (hv i) (hvfin i) hf ψ.continuous
+  have hleft := dist_integral_inner_polarDensity_le (μ := μ) (u := v i) hf ψ.continuous
     hK hδΩ hfK hψK (fun x => (dist_comm _ _).trans_le (hψ x))
-  have hright := dist_integral_inner_polarDensity_le hu hufin ψ.continuous hf
+  have hright := dist_integral_inner_polarDensity_le (μ := μ) (u := u) ψ.continuous hf
     hK hδΩ hψK hfK hψ
   refine (dist_triangle4 _
     (∫ x : Ω, ⟪ψ x, polarDensity μ Ω (v i) x⟫ ∂variationMeasure μ Ω (v i))

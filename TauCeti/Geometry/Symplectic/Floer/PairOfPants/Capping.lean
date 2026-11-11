@@ -175,15 +175,8 @@ theorem negativePlanePerturbation_neg (hH : Periodic H 1) (w : ℂ) (x : M) :
   · -- At the pole both sides vanish.
     have h : (inf.endCoord 0).re = 0 := by simpa using re_endCoord_endCenter inf
     simp [negativePlanePerturbation_def, h, smoothTransition.zero_of_nonpos]
-  · obtain ⟨k, hk⟩ := exists_endCoord_inf_neg hw
-    have hcast : (1 / 2 + k : ℂ) = ((1 / 2 + k : ℝ) : ℂ) := by push_cast; ring
-    have him : (inf.endCoord (-w)).im + 1 / 2 = (inf.endCoord w).im + (k + 1) := by
-      rw [hk, Complex.add_im, Complex.mul_I_im, hcast, Complex.ofReal_re]
-      ring
-    have hp : H ((inf.endCoord w).im + (k + 1)) = H (inf.endCoord w).im := by
-      simpa using hH.int_mul (k + 1) (inf.endCoord w).im
-    simp only [negativePlanePerturbation_def, re_endCoord_inf_neg, endAngularForm_inf_neg, him, hp,
-      smul_neg]
+  · simp only [negativePlanePerturbation_def, re_endCoord_inf_neg, endAngularForm_inf_neg,
+      apply_im_endCoord_inf_neg_add_half hH hw, smul_neg]
 
 /-- Families indexed by the ends that are `H` at the end `p` and zero at the other two ends
 inherit any property shared by `H` and `0`. -/
@@ -218,16 +211,26 @@ private theorem eventually_negativePlanePerturbation_eq_zero {w : ℂ}
   filter_upwards [continuous_norm.continuousAt.eventually (gt_mem_nhds hw)] with w' hw'
   exact funext (negativePlanePerturbation_eq_zero_of_norm_le hw'.le)
 
-/-- **The perturbation on the end.** On the half-plane `Re z < 0`, the pullback of the negative
-plane perturbation along the end lift `φ` is the continuation datum `β(-s - 1) H(t) dt`: it sends
-a tangent vector `v` of the cylinder to `Im v · β(-Re z - 1) H(Im z)`. -/
-theorem negativePlanePerturbation_cylindricalEndLift_of_neg (hH : Periodic H 1) {z : ℂ}
-    (hz : z.re < 0) (x : M) (v : ℂ) :
+/-- **The perturbation on the end.** The pullback of the negative plane perturbation along the end
+lift `φ` is the continuation datum `β(-s - 1) H(t) dt`: it sends a tangent vector `v` of the
+cylinder to `Im v · β(-Re z - 1) H(Im z)`. On the half-plane `Re z ≥ 0` both sides vanish. -/
+theorem negativePlanePerturbation_cylindricalEndLift_apply (hH : Periodic H 1) (z : ℂ) (x : M)
+    (v : ℂ) :
     negativePlanePerturbation H (inf.cylindricalEndLift z) x (deriv inf.cylindricalEndLift z * v) =
       v.im * (smoothTransition (-z.re - 1) * H z.im x) := by
-  have h := pairOfPantsPerturbation_cylindricalEndLift_of_pos (H := Pi.single inf H) (q := inf)
-    (by simpa using hH) (z := z) (by simpa using hz) x v
-  simpa [pairOfPantsPerturbation_single_inf] using h
+  rcases lt_or_ge z.re 0 with hz | hz
+  · have h := pairOfPantsPerturbation_cylindricalEndLift_of_pos (H := Pi.single inf H) (q := inf)
+      (by simpa using hH) (z := z) (by simpa using hz) x v
+    simpa [pairOfPantsPerturbation_single_inf] using h
+  · -- The end lift lands in the pole disc, where the perturbation vanishes.
+    have hw : ‖inf.cylindricalEndLift z‖ ≤ 2 * Real.exp (2 * π) := by
+      have h := norm_cylindricalEndLift_sub_endCenter inf z
+      rw [endCenter_inf, sub_zero, endScale_inf, Complex.norm_ofNat] at h
+      rw [h]
+      gcongr
+      nlinarith [Real.pi_pos]
+    rw [negativePlanePerturbation_eq_zero_of_norm_le hw, smoothTransition.zero_of_nonpos
+      (by linarith), zero_mul, mul_zero, zero_apply]
 
 /-- **The perturbation is `H(t) dt` far out on the end.** On the half-plane `Re z ≤ -2`, the
 pullback of the negative plane perturbation along the end lift sends a tangent vector `v` of the
@@ -236,7 +239,7 @@ theorem negativePlanePerturbation_cylindricalEndLift (hH : Periodic H 1) {z : �
     (hz : z.re ≤ -2) (x : M) (v : ℂ) :
     negativePlanePerturbation H (inf.cylindricalEndLift z) x (deriv inf.cylindricalEndLift z * v) =
       v.im * H z.im x := by
-  rw [negativePlanePerturbation_cylindricalEndLift_of_neg hH (by linarith),
+  rw [negativePlanePerturbation_cylindricalEndLift_apply hH,
     smoothTransition.one_of_one_le (by linarith), one_mul]
 
 /-! ### The positive plane -/
@@ -294,18 +297,29 @@ private theorem eventually_positivePlanePerturbation_eq_zero_one :
     ∀ᶠ w in 𝓝 (1 : ℂ), positivePlanePerturbation H w = fun _ ↦ 0 :=
   eventually_positivePlanePerturbation_eq_zero (by simpa using exp_neg_two_mul_pi_div_two_lt_one)
 
-/-- **The perturbation on the end.** On the half-plane `Re z > 0`, the pullback of the positive
-plane perturbation along the end lift `φ` of the end at `0` is the continuation datum
-`β(s - 1) H(t) dt`: it sends a tangent vector `v` of the cylinder to
-`Im v · β(Re z - 1) H(Im z)`. -/
-theorem positivePlanePerturbation_cylindricalEndLift_of_pos (hH : Periodic H 1) {z : ℂ}
-    (hz : 0 < z.re) (x : M) (v : ℂ) :
+/-- **The perturbation on the end.** The pullback of the positive plane perturbation along the end
+lift `φ` of the end at `0` is the continuation datum `β(s - 1) H(t) dt`: it sends a tangent vector
+`v` of the cylinder to `Im v · β(Re z - 1) H(Im z)`. On the half-plane `Re z ≤ 0` both sides
+vanish. -/
+theorem positivePlanePerturbation_cylindricalEndLift_apply (hH : Periodic H 1) (z : ℂ) (x : M)
+    (v : ℂ) :
     positivePlanePerturbation H (zero.cylindricalEndLift z) x
         (deriv zero.cylindricalEndLift z * v) =
       v.im * (smoothTransition (z.re - 1) * H z.im x) := by
-  have h := pairOfPantsPerturbation_cylindricalEndLift_of_pos (H := Pi.single zero H) (q := zero)
-    (by simpa using hH) (z := z) (by simpa using hz) x v
-  simpa [pairOfPantsPerturbation_single_zero] using h
+  rcases lt_or_ge 0 z.re with hz | hz
+  · have h := pairOfPantsPerturbation_cylindricalEndLift_of_pos (H := Pi.single zero H) (q := zero)
+      (by simpa using hH) (z := z) (by simpa using hz) x v
+    simpa [pairOfPantsPerturbation_single_zero] using h
+  · -- The end lift lies off the disc of radius `exp (-2π) / 2`, where the perturbation vanishes.
+    have hw : Real.exp (-(2 * π)) / 2 ≤ ‖zero.cylindricalEndLift z‖ := by
+      have h := norm_cylindricalEndLift_sub_endCenter zero z
+      rw [endCenter_zero, sub_zero, endScale_zero, norm_div, norm_one, Complex.norm_ofNat] at h
+      have h' : -(2 * π) ≤ -(2 * π * z.re) := by nlinarith [Real.pi_pos]
+      have := Real.exp_le_exp.2 h'
+      rw [h]
+      linarith
+    rw [positivePlanePerturbation_eq_zero_of_le_norm hw, smoothTransition.zero_of_nonpos
+      (by linarith), zero_mul, mul_zero, zero_apply]
 
 /-- **The perturbation is `H(t) dt` far out on the end.** On the half-plane `Re z ≥ 2`, the
 pullback of the positive plane perturbation along the end lift of the end at `0` sends a tangent
@@ -315,7 +329,7 @@ theorem positivePlanePerturbation_cylindricalEndLift (hH : Periodic H 1) {z : �
     positivePlanePerturbation H (zero.cylindricalEndLift z) x
         (deriv zero.cylindricalEndLift z * v) =
       v.im * H z.im x := by
-  rw [positivePlanePerturbation_cylindricalEndLift_of_pos hH (by linarith),
+  rw [positivePlanePerturbation_cylindricalEndLift_apply hH,
     smoothTransition.one_of_one_le (by linarith), one_mul]
 
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
@@ -870,8 +884,7 @@ theorem integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdiff_b
   set T := Complex.equivRealProdCLM.symm ⁻¹' truncation R
   have hDc : IsCompact D := Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
     ((isCompact_closedBall _ _).diff Metric.isOpen_ball)
-  have hTc : IsCompact T :=
-    Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation R)
+  have hTc : IsCompact T := isCompact_preimage_truncation R
   -- Both the annulus and the truncation avoid the puncture `0`.
   have hDP : D ∪ T ⊆ P := by
     rintro z (hz | hz) h₀

@@ -37,6 +37,8 @@ for the Chinese Remainder decomposition of `K[X] ⧸ (f)` into the fields `K[X] 
 ## Main results
 
 * `Polynomial.Factors.finite`: a nonzero polynomial has finitely many factors.
+* `Polynomial.Factors.infinite_zero`, `Polynomial.Factors.finite_iff`: the zero polynomial has
+  infinitely many factors (an instance), so finiteness characterizes nonzero polynomials.
 * `Polynomial.Factors.normalizedFactors_eq_map_univ_val`: for a nonzero squarefree polynomial,
   its normalized factors are precisely the distinct monic irreducible factors.
 * `Polynomial.Factors.subsingleton_iff_exists_associated_pow`: a polynomial has at most one factor
@@ -102,13 +104,40 @@ lemma finite (hf : f ≠ 0) : Finite f.Factors := by
 /-- For a nonzero squarefree polynomial, its normalized factors list its distinct monic
 irreducible factors exactly once. -/
 lemma normalizedFactors_eq_map_univ_val [Fintype f.Factors] [DecidableEq K]
-    (hf : f ≠ 0) (hsq : Squarefree f) :
+    (hsq : Squarefree f) :
     normalizedFactors f = Finset.univ.val.map (Subtype.val : f.Factors → K[X]) := by
+  have hf := hsq.ne_zero
   refine (Multiset.Nodup.ext
     ((UniqueFactorizationMonoid.squarefree_iff_nodup_normalizedFactors hf).1 hsq)
     (Finset.univ.nodup.map Subtype.val_injective)).2 fun p => ?_
   rw [Polynomial.mem_normalizedFactors_iff hf, Multiset.mem_map]
   exact ⟨fun hp => ⟨⟨p, hp⟩, Finset.mem_univ _, rfl⟩, fun ⟨q, _, hq⟩ => hq ▸ q.2⟩
+
+/-- The zero polynomial has infinitely many distinct monic irreducible factors, since every monic
+irreducible polynomial divides it. -/
+instance infinite_zero : Infinite (0 : K[X]).Factors := by
+  classical
+  refine Infinite.of_not_fintype fun hfin : Fintype (0 : K[X]).Factors ↦ ?_
+  -- Euclid's argument: `X` times the product of the factors, plus one, has a new factor.
+  set S : Finset K[X] := (Finset.univ : Finset (0 : K[X]).Factors).image Subtype.val
+  have hSm : ∀ q ∈ S, q.Monic := fun q hq ↦ by
+    obtain ⟨q, -, rfl⟩ := Finset.mem_image.mp hq
+    exact Factors.monic q
+  have hPdeg : 0 < (X * ∏ q ∈ S, q).natDegree := by
+    rw [monic_X.natDegree_mul (monic_prod_of_monic _ _ hSm), natDegree_X]
+    omega
+  have hN := not_isUnit_of_natDegree_pos (X * ∏ q ∈ S, q + 1)
+    (by rwa [natDegree_add_eq_left_of_natDegree_lt (by simpa using hPdeg)])
+  obtain ⟨q, hqm, hqirr, hqdvd⟩ := exists_monic_irreducible_factor _ hN
+  have hqS : q ∈ S := Finset.mem_image.mpr ⟨⟨q, hqirr, hqm, dvd_zero q⟩, Finset.mem_univ _, rfl⟩
+  have h1 : q ∣ X * ∏ q ∈ S, q := dvd_mul_of_dvd_right (Finset.dvd_prod_of_mem _ hqS) X
+  exact hqirr.not_isUnit (isUnit_of_dvd_one ((dvd_add_right h1).mp hqdvd))
+
+/-- A polynomial has finitely many distinct monic irreducible factors exactly when it is nonzero. -/
+lemma finite_iff : Finite f.Factors ↔ f ≠ 0 :=
+  ⟨fun h hf ↦ by
+    subst hf
+    exact _root_.not_finite (Factors (0 : K[X])), finite⟩
 
 lemma nonempty (hu : ¬ IsUnit f) : Nonempty f.Factors :=
   let ⟨p, hmonic, hirr, hdvd⟩ := f.exists_monic_irreducible_factor hu
@@ -196,11 +225,11 @@ lemma isCoprime_span {p q : f.Factors} (hne : p ≠ q) :
 
 /-- A nonzero squarefree polynomial is associated to the product of its distinct monic
 irreducible factors. -/
-lemma associated_prod [Fintype f.Factors] (hf : f ≠ 0) (hsq : Squarefree f) :
+lemma associated_prod [Fintype f.Factors] (hsq : Squarefree f) :
     Associated (∏ p : f.Factors, (p : K[X])) f := by
   classical
-  rw [Finset.prod_eq_multiset_prod, ← normalizedFactors_eq_map_univ_val hf hsq]
-  exact prod_normalizedFactors hf
+  rw [Finset.prod_eq_multiset_prod, ← normalizedFactors_eq_map_univ_val hsq]
+  exact prod_normalizedFactors hsq.ne_zero
 
 /-- The degrees of the distinct monic irreducible factors of `f ≠ 0` sum to at most the
 degree of `f`. -/
@@ -213,11 +242,12 @@ lemma sum_natDegree_le [Fintype f.Factors] (hf : f ≠ 0) :
 /-- For `f` nonzero and squarefree, the ideal `(f)` is the intersection of the ideals `(p)` over
 the monic irreducible factors `p` of `f`. This is the input for the Chinese Remainder
 decomposition of `K[X] ⧸ (f)`. -/
-lemma span_eq_iInf_span (hf : f ≠ 0) (hsq : Squarefree f) :
+lemma span_eq_iInf_span (hsq : Squarefree f) :
     Ideal.span {f} = ⨅ p : f.Factors, Ideal.span {(p : K[X])} := by
+  have hf := hsq.ne_zero
   have : Fintype f.Factors := @Fintype.ofFinite _ (finite hf)
   rw [Ideal.iInf_span_singleton fun _ _ hpq ↦ isCoprime hpq]
-  exact (Ideal.span_singleton_eq_span_singleton.mpr (associated_prod hf hsq)).symm
+  exact (Ideal.span_singleton_eq_span_singleton.mpr (associated_prod hsq)).symm
 
 /-- A prime factor of the image of `f` under a ring homomorphism to a commutative semiring
 divides the image of one of the monic irreducible factors of `f`.
@@ -277,13 +307,14 @@ lemma map_natDegree_normalizedFactors_eq_singleton_iff {g : K[X]} :
 /-- For a nonzero squarefree polynomial over a field, the number of linear factors among its
 normalized irreducible factors is the number of its distinct roots. Over a finite field this
 bounds the number of linear factors by the number of elements of the field. -/
-lemma count_one_map_natDegree_normalizedFactors {g : K[X]} (hg : g ≠ 0) (hsq : Squarefree g) :
+lemma count_one_map_natDegree_normalizedFactors {g : K[X]} (hsq : Squarefree g) :
     ((normalizedFactors g).map natDegree).count 1 = g.roots.toFinset.card := by
+  have hg := hsq.ne_zero
   have := Factors.finite hg
   let _ : Fintype g.Factors := Fintype.ofFinite _
   -- Squarefreeness lists the normalized factors as the distinct factors `g.Factors`; the linear
   -- ones correspond to the roots through `Factors.linearEquivRoots`.
-  rw [Multiset.count_map, Factors.normalizedFactors_eq_map_univ_val hg hsq, Multiset.filter_map,
+  rw [Multiset.count_map, Factors.normalizedFactors_eq_map_univ_val hsq, Multiset.filter_map,
     Multiset.card_map, ← Finset.filter_val, Finset.card_val]
   simp only [Function.comp_apply, eq_comm (a := 1)]
   rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card,

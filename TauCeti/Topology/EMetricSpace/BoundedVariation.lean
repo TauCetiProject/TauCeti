@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Group.Uniform
 public import Mathlib.Topology.EMetricSpace.BoundedVariation
 public import Mathlib.Order.Interval.Set.ProjIcc
 public import Mathlib.Topology.CompactOpen
+public import Mathlib.Topology.UnitInterval
 
 /-!
 # Limits of total variation bounds
@@ -33,6 +34,9 @@ allowing measurable path-space applications.
   the values of a function does not change its variation.
 * `BoundedVariationOn.IccExtend`: constant extension from a closed interval preserves bounded
   variation.
+* `TauCeti.eVariationOn_id_unitInterval` and `LipschitzWith.eVariationOn_unitInterval_le`: the
+  identity of the unit interval has total variation `1`, so a `C`-Lipschitz map on the unit
+  interval has total variation at most `C`.
 -/
 
 public section
@@ -78,7 +82,29 @@ theorem eVariationOn_le_liminf_of_eventually_le {ι : Type*} {l : Filter ι} {s 
   filter_upwards [eVariationOn.lowerSemicontinuous_aux hf hv, hu] with i hi hui
   exact hi.trans_le hui
 
+open scoped unitInterval
+
+/-- The inclusion of the unit interval into `ℝ` has total variation `1`. This is the simp-normal
+form of `TauCeti.eVariationOn_id_unitInterval`. -/
+@[simp]
+theorem eVariationOn_subtypeVal_unitInterval : eVariationOn (Subtype.val : I → ℝ) univ = 1 := by
+  rw [← Function.id_comp Subtype.val,
+    eVariationOn.comp_eq_of_monotoneOn id Subtype.val (fun _ _ _ _ h ↦ h), image_univ,
+    Subtype.range_coe_subtype, ofPred_mem_eq, unitInterval, eVariationOn_id_Icc, sub_zero,
+    ENNReal.ofReal_one]
+
+/-- The identity of the unit interval has total variation `1`. -/
+theorem eVariationOn_id_unitInterval : eVariationOn (id : I → I) univ = 1 := by
+  rw [eVariationOn_subtypeVal_comp, Function.comp_id, eVariationOn_subtypeVal_unitInterval]
+
 end TauCeti
+
+open scoped NNReal unitInterval in
+/-- A `C`-Lipschitz map on the unit interval has total variation at most `C`. -/
+theorem LipschitzWith.eVariationOn_unitInterval_le {X : Type*} [PseudoEMetricSpace X]
+    {f : I → X} {C : ℝ≥0} (hf : LipschitzWith C f) : eVariationOn f univ ≤ C := by
+  simpa only [Function.comp_id, TauCeti.eVariationOn_id_unitInterval, mul_one] using
+    hf.lipschitzOnWith.comp_eVariationOn_le (mapsTo_id univ)
 
 namespace eVariationOn
 
