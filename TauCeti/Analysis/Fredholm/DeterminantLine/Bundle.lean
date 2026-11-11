@@ -126,6 +126,17 @@ def chartCoord (D₂ : Λ →L[𝕜] F) (q : E × Λ →L[𝕜] G)
       TauCeti.finrank_detLine, finrank_self])
 
 omit [CompleteSpace 𝕜] [CompleteSpace E] in
+/-- A chart coordinate is the kernel chart `ContinuousLinearMap.detLineChartEquiv`, followed by an
+identification of the fixed line `det G ⊗ (det Λ)^*` with `𝕜` that does not depend on `T`. -/
+theorem chartCoord_def (D₂ : Λ →L[𝕜] F) (q : E × Λ →L[𝕜] G)
+    (h : ((T.1.coprod D₂).prod q).IsInvertible) :
+    chartCoord D₂ q h = linearEquiv T ≪≫ₗ detLineChartEquiv T.1 D₂ q h ≪≫ₗ
+      LinearEquiv.ofFinrankEq _ _ (by
+        rw [finrank_tensorProduct, Subspace.dual_finrank_eq, TauCeti.finrank_detLine,
+          TauCeti.finrank_detLine, finrank_self]) :=
+  (rfl)
+
+omit [CompleteSpace 𝕜] [CompleteSpace E] in
 /-- A chart coordinate is a homeomorphism onto `𝕜`. -/
 theorem isInducing_chartCoord (D₂ : Λ →L[𝕜] F) (q : E × Λ →L[𝕜] G)
     (h : ((T.1.coprod D₂).prod q).IsInvertible) : IsInducing (chartCoord D₂ q h) :=
