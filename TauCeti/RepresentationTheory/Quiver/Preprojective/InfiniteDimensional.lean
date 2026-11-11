@@ -290,10 +290,8 @@ theorem AffineDynkinType.not_module_finite_preprojectiveAlgebra {t : AffineDynki
 /-- **The signless preprojective algebra of an affine simply-laced diagram is
 infinite-dimensional**, for every valid graphical affine diagram and over every field. -/
 theorem AffineDynkinType.not_module_finite_signlessPreprojectiveAlgebra {t : AffineDynkinType}
-    [hN : ∀ i, Fintype (t.graph.neighborSet i)] (ht : t.Valid) (hg : t.IsGraphical) :
+    (ht : t.Valid) (hg : t.IsGraphical) :
     ¬ Module.Finite k (signlessPreprojectiveAlgebra k (DoubledQuiver t.graph)) := by
-  have hN_eq : hN = fun i ↦ Subtype.fintype (· ∈ t.graph.neighborSet i) := Subsingleton.elim _ _
-  cases hN_eq
   exact not_module_finite_signlessPreprojectiveAlgebra_doubledQuiver_of_two_mul_le_sum k
     (δ := t.marks) (fun i => (AffineDynkinType.marks_pos i).le)
     (fun h => (AffineDynkinType.marks_pos (0 : Fin t.nodes)).ne' (congrFun h 0))
@@ -326,11 +324,8 @@ infinite-dimensional.** If the generalized Cartan matrix `2I - A` of a finite si
 not positive definite over `ℝ`, then the signless preprojective algebra of its doubled quiver is not
 a finite-dimensional `k`-vector space. -/
 theorem not_module_finite_signlessPreprojectiveAlgebra_of_not_posDef [DecidableEq V]
-    [DecidableRel G.Adj] [hN : ∀ i, Fintype (G.neighborSet i)]
-    (h : ¬ (G.graphCartanMatrix ℝ).PosDef) :
+    [DecidableRel G.Adj] (h : ¬ (G.graphCartanMatrix ℝ).PosDef) :
     ¬ Module.Finite k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
-  have hN_eq : hN = fun i ↦ Subtype.fintype (· ∈ G.neighborSet i) := Subsingleton.elim _ _
-  cases hN_eq
   obtain ⟨δ, hδ0, hδ, hδle⟩ := SimpleGraph.exists_nonneg_two_mul_le_sum_of_not_posDef h
   exact not_module_finite_signlessPreprojectiveAlgebra_doubledQuiver_of_two_mul_le_sum k hδ0 hδ hδle
 
@@ -354,10 +349,12 @@ If a connected finite simple graph `G` is not isomorphic to the diagram of any v
 then the signless preprojective algebra of its doubled quiver is not a finite-dimensional `k`-vector
 space. -/
 theorem not_module_finite_signlessPreprojectiveAlgebra_of_not_exists_dynkinType_iso
-    [∀ i, Fintype (G.neighborSet i)] (hG : G.Connected)
+    [hN : ∀ i, Fintype (G.neighborSet i)] (hG : G.Connected)
     (hD : ¬ ∃ t : DynkinType, t.Valid ∧ Nonempty (G ≃g diagramGraph t.cartanMatrix)) :
     ¬ Module.Finite k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
   classical
+  have hN_eq : hN = fun i ↦ Subtype.fintype (· ∈ G.neighborSet i) := Subsingleton.elim _ _
+  cases hN_eq
   refine not_module_finite_signlessPreprojectiveAlgebra_of_not_posDef k fun h ↦ hD ?_
   obtain ⟨t, ht, -, hφ⟩ := SimpleGraph.exists_dynkinType_iso_of_isFiniteType_graphCartanMatrix hG
     (SimpleGraph.isFiniteType_graphCartanMatrix_of_posDef h)
