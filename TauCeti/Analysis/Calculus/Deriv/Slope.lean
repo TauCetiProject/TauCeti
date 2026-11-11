@@ -35,6 +35,8 @@ that they do not separate linearly: their distance is `o(s - t)` at parameter `s
 
 A negative right derivative at `x` forces nearby values to the right to lie strictly below `f x`.
 
+A function vanishing at `0` with right derivative `a` there satisfies `f(t) / t → a` as `t → 0⁺`.
+
 ## Main results
 
 * `HasDerivAtFilter.tendsto_slope`: slopes converge to the derivative away from the base point.
@@ -45,6 +47,8 @@ A negative right derivative at `x` forces nearby values to the right to lie stri
 * `HasDerivWithinAt.nonpos_of_mul_le_norm_sub`: two curves with the same right derivative at a
   common point do not separate linearly.
 * `HasDerivWithinAt.eventually_lt_of_neg`: `f t < f x` eventually for `t` to the right of `x`.
+* `HasDerivWithinAt.tendsto_div_self_nhdsGT_zero`: `f(t) / t → a` at `0⁺` when `f 0 = 0` and
+  `a` is the right derivative at `0`.
 -/
 
 public section
@@ -112,6 +116,14 @@ theorem HasDerivWithinAt.nonpos_of_mul_le_norm_sub {E : Type*} [NormedAddCommGro
   filter_upwards [hle, self_mem_nhdsWithin] with s hs (hst : t < s)
   simpa [slope_def_module, h0, norm_smul, abs_of_pos (sub_pos.2 hst),
     le_inv_mul_iff₀ (sub_pos.2 hst)] using hs
+
+/-- A function vanishing at `0` with right derivative `a` there has `f(t) / t → a` as `t → 0⁺`. -/
+theorem HasDerivWithinAt.tendsto_div_self_nhdsGT_zero {f : ℝ → ℝ} {a : ℝ}
+    (hfa : HasDerivWithinAt f a (Ici 0) 0) (hf0 : f 0 = 0) :
+    Tendsto (fun t ↦ f t / t) (𝓝[>] 0) (𝓝 a) := by
+  refine ((hasDerivWithinAt_iff_tendsto_slope' (lt_irrefl (0 : ℝ))).1
+    (hasDerivWithinAt_Ioi_iff_Ici.2 hfa)).congr fun t ↦ ?_
+  rw [slope_def_field, hf0, sub_zero, sub_zero]
 
 /-- A negative right derivative at `x` forces `f t < f x` for all `t > x` sufficiently close
 to `x`. -/

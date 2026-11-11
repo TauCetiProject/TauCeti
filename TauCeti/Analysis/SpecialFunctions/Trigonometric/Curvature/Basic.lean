@@ -221,12 +221,20 @@ private theorem curvatureSine_div_sq_mul_and_curvatureCosine_div_sq_mul_of_pos {
     curvatureSine (κ / c ^ 2) (c * t) = c * curvatureSine κ t ∧
       curvatureCosine (κ / c ^ 2) (c * t) = curvatureCosine κ t := by
   have hc2 : 0 < c ^ 2 := by positivity
-  have h₁ : √(κ / c ^ 2) = √κ / c := by rw [sqrt_div' κ hc2.le, sqrt_sq hc.le]
-  have h₂ : √(-(κ / c ^ 2)) = √(-κ) / c := by rw [← neg_div, sqrt_div' _ hc2.le, sqrt_sq hc.le]
   have h₃ (x : ℝ) : x / c * (c * t) = x * t := by field_simp
-  simp only [curvatureSine, curvatureCosine, div_pos_iff_of_pos_right hc2, div_eq_zero_iff,
-    hc2.ne', or_false, h₁, h₂, h₃]
-  split_ifs <;> simp only [and_true] <;> field_simp
+  rcases lt_trichotomy 0 κ with hκ | rfl | hκ
+  · have hs := (sqrt_pos.2 hκ).ne'
+    have h₁ : √(κ / c ^ 2) = √κ / c := by rw [sqrt_div' κ hc2.le, sqrt_sq hc.le]
+    rw [curvatureSine_of_pos (div_pos hκ hc2), curvatureCosine_of_pos (div_pos hκ hc2),
+      curvatureSine_of_pos hκ, curvatureCosine_of_pos hκ, h₁, h₃]
+    exact ⟨by field_simp, rfl⟩
+  · simp
+  · have hs := (sqrt_pos.2 (neg_pos.2 hκ)).ne'
+    have h₂ : √(-(κ / c ^ 2)) = √(-κ) / c := by rw [← neg_div, sqrt_div' _ hc2.le, sqrt_sq hc.le]
+    rw [curvatureSine_of_neg (div_neg_of_neg_of_pos hκ hc2),
+      curvatureCosine_of_neg (div_neg_of_neg_of_pos hκ hc2), curvatureSine_of_neg hκ,
+      curvatureCosine_of_neg hκ, h₂, h₃]
+    exact ⟨by field_simp, rfl⟩
 
 /-- **Scaling law** of the model sine: `s_(κ/c²)(c t) = c s_κ(t)`. At `c = 0` both sides
 vanish. -/
