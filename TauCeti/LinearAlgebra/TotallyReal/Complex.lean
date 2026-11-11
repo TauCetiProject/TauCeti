@@ -26,6 +26,8 @@ that subspace is exactly the fixed locus of a unique conjugate-linear involution
 
 ## Main declarations
 
+* `TauCeti.mem_span_range_basisFun_iff`: the real span of the standard basis of `ι → ℂ` is `ℝ^ι`,
+  the vectors with real entries.
 * `TauCeti.IsTotallyReal.linearIndependent_complex`: real-linearly independent vectors of a
   totally real subspace are complex-linearly independent.
 * `TauCeti.IsMaximalTotallyReal.complexBasis`: a real basis of a maximal totally real subspace,
@@ -75,6 +77,19 @@ theorem isTotallyReal_range_pi_smulRight {v : ι → ℂ} :
   · have h' : (σ i : ℂ) * Complex.I = τ i := mul_right_cancel₀ hi (by rw [← h]; ring)
     have hτ : τ i = 0 := by simpa using (congrArg Complex.re h').symm
     simp [hτ]
+
+/-- The real span of the standard basis of `ι → ℂ` is `ℝ^ι`, the vectors with real entries. -/
+theorem mem_span_range_basisFun_iff [Finite ι] (w : ι → ℂ) :
+    w ∈ Submodule.span ℝ (Set.range (Pi.basisFun ℂ ι)) ↔ ∀ i, (w i).im = 0 := by
+  classical
+  let := Fintype.ofFinite ι
+  rw [Submodule.mem_span_range_iff_exists_fun]
+  constructor
+  · rintro ⟨c, rfl⟩ i
+    simp [Finset.sum_apply, Pi.basisFun_apply, Pi.single_apply]
+  · intro hw
+    refine ⟨fun i ↦ (w i).re, funext fun j ↦ ?_⟩
+    simp [Finset.sum_apply, Pi.basisFun_apply, Pi.single_apply, Complex.ext_iff, hw j]
 
 variable {E : Type*} [AddCommGroup E] [Module ℝ E] [Module ℂ E] [IsScalarTower ℝ ℂ E]
   {L : Submodule ℝ E}

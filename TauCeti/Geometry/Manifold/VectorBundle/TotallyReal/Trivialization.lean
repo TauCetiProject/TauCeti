@@ -10,6 +10,8 @@ public import Mathlib.RingTheory.AlgebraTower
 public import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
 public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
+import TauCeti.Geometry.Manifold.VectorBundle.Scalar
+import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # Standard trivializations of totally real subbundles
@@ -118,24 +120,6 @@ local instance : VectorBundle ℝ F V := VectorBundle.restrictScalars ℝ ℂ F 
 
 namespace TauCeti
 
-omit [∀ x, Module ℝ (V x)] [∀ x, IsScalarTower ℝ ℂ (V x)] in
-/-- A constant complex multiple of a `C^n` section of a real-smooth complex vector bundle is
-`C^n`: read in a trivialization of the atlas, it is the image of the section under a fixed
-real-linear operator of the model fibre. -/
-private theorem contMDiffOn_complex_smul (c : ℂ) {σ : Π x, V x} (hσ : CMDiff[U] n (T% σ)) :
-    CMDiff[U] n (T% (fun x ↦ c • σ x)) := by
-  intro x₀ hx₀
-  have h := hσ x₀ hx₀
-  rw [Bundle.contMDiffWithinAt_section] at h ⊢
-  set e := trivializationAt F V x₀
-  let A : F →L[ℝ] F := (c • ContinuousLinearMap.id ℂ F).restrictScalars ℝ
-  have hx₀e : x₀ ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x₀
-  have heq (x : B) (hx : x ∈ e.baseSet) : (e ⟨x, c • σ x⟩).2 = A (e ⟨x, σ x⟩).2 := by
-    simpa [A] using (e.linear ℂ hx).map_smul c (σ x)
-  refine (((A.contMDiff) _).comp_contMDiffWithinAt x₀ h).congr_of_eventuallyEq ?_ (heq x₀ hx₀e)
-  filter_upwards [nhdsWithin_le_nhds (e.open_baseSet.mem_nhds hx₀e)] with x hx
-  exact heq x hx
-
 namespace IsSubbundleFrameOn
 
 /-- **The doubled frame of a totally real frame.** On a set `U` where the fibres of `L` are
@@ -151,7 +135,7 @@ theorem isLocalFrameOn_complexDoubledFrame (hX : IsSubbundleFrameOn F L σ U)
     ext p
     simp [complexDoubledFrame, Basis.smulTower_apply]
   exact ⟨fun hx ↦ hb hx ▸ Basis.linearIndependent _, fun hx ↦ hb hx ▸ (Basis.span_eq _).ge,
-    fun p ↦ contMDiffOn_complex_smul _ (hσ p.2)⟩
+    fun p ↦ contMDiffOn_const.smul_totalSpace (hσ p.2)⟩
 
 end IsSubbundleFrameOn
 
@@ -201,13 +185,8 @@ instance isLinear_complex_trivialization_complexDoubledFrame :
           rw [smul_smul, Complex.I_mul_I, neg_one_smul]
         have hm := hlin.map_neg (σ i x)
         simp [toBasisAt_coe, f, JV, JF, e, hneg, hm, h0, h1, smul_smul]
-    refine ⟨hlin.map_add, fun c v ↦ ?_⟩
-    have hIv : f (Complex.I • v) = Complex.I • f v := LinearMap.congr_fun hJ v
-    change f (c • v) = c • f v
-    have hV (r : ℝ) (w : V x) : (r : ℂ) • w = r • w := algebraMap_smul ℂ r w
-    have hF (r : ℝ) (w : F) : (r : ℂ) • w = r • w := algebraMap_smul ℂ r w
-    rw [← Complex.re_add_im c, add_smul, add_smul, mul_smul, mul_smul, hV, hV, hF, hF, map_add,
-      map_smul, map_smul, hIv]
+    have h := (f.complexOfMapISmul (LinearMap.congr_fun hJ)).isLinear
+    rwa [LinearMap.coe_complexOfMapISmul f (LinearMap.congr_fun hJ)] at h
 
 include hs in
 /-- **A doubled totally real frame straightens `L`.** If `σ` spans `L x` over `ℝ` at a point
@@ -226,25 +205,12 @@ theorem mem_iff_trivialization_complexDoubledFrame_mem_span {x : B} (hx : x ∈ 
     ext i
     simp [f, e, Trivialization.linearEquivAt_apply,
       hs.trivialization_complexDoubledFrame_apply_zero hU b hx i]
-  change v ∈ L x ↔ f v ∈ _
-  rw [← hmap, Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply]
+  rw [← e.linearEquivAt_apply (R := ℝ) x hxe v, ← hmap,
+    Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply]
 
 end IsLocalFrameOn
 
 namespace TauCeti
-
-/-- The real span of the standard basis of `ι → ℂ` is `ℝ^ι`, the vectors with real entries. -/
-private theorem mem_span_range_basisFun_iff [Finite ι] (w : ι → ℂ) :
-    w ∈ Submodule.span ℝ (range (Pi.basisFun ℂ ι)) ↔ ∀ i, (w i).im = 0 := by
-  classical
-  let := Fintype.ofFinite ι
-  rw [Submodule.mem_span_range_iff_exists_fun]
-  constructor
-  · rintro ⟨c, rfl⟩ i
-    simp [Finset.sum_apply, Pi.basisFun_apply, Pi.single_apply]
-  · intro hw
-    refine ⟨fun i ↦ (w i).re, funext fun j ↦ ?_⟩
-    simp [Finset.sum_apply, Pi.basisFun_apply, Pi.single_apply, Complex.ext_iff, hw j]
 
 namespace HasLocalContMDiffSubbundleFrames
 
@@ -285,7 +251,7 @@ subbundle `L` with `C^n` local frames are maximal totally real, a complex-linear
 the maximal atlas identifies `(V, L)` with `(U × ℂ^ι, U × ℝ^ι)`: a vector lies in `L` exactly when
 its coordinates are real. -/
 theorem exists_trivialization_totallyReal_pi [Fintype ι] [TopologicalSpace (TotalSpace (ι → ℂ) V)]
-    [FiberBundle (ι → ℂ) V] [VectorBundle ℂ (ι → ℂ) V] [VectorBundle ℝ (ι → ℂ) V]
+    [FiberBundle (ι → ℂ) V] [VectorBundle ℂ (ι → ℂ) V]
     [ContMDiffVectorBundle n (ι → ℂ) V IB]
     (hLs : HasLocalContMDiffSubbundleFrames IB n (ι → ℂ) ι L) {s : Set B} (hs : IsOpen s)
     (hL : ∀ x ∈ s,
