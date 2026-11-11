@@ -210,6 +210,17 @@ theorem isOrtho_realCliffordForm_single {p q : ℕ} {i j : Fin (p + q)} (hij : i
       simp [hki]
     · simp [hki, hkj]
 
+/-- The polar form of the signature form against a coordinate vector:
+`polar Q x (a eᵢ) = 2 wᵢ a xᵢ`, where `wᵢ` is the signature weight of the coordinate. -/
+theorem polar_realCliffordForm_single (p q : ℕ) (x : Fin (p + q) → ℝ) (i : Fin (p + q))
+    (a : ℝ) :
+    QuadraticMap.polar (realCliffordForm p q) x (Pi.single i a) =
+      2 * realCliffordWeight p q i * a * x i := by
+  simp only [QuadraticMap.polar, realCliffordForm_apply, Pi.add_apply, ← Finset.sum_sub_distrib]
+  rw [Finset.sum_eq_single i (fun j _ hj => by simp [hj]) (by simp)]
+  simp
+  ring
+
 /-- The coordinate basis is orthogonal for the polar form of the signature form. -/
 theorem isOrthoᵢ_associated_realCliffordForm (p q : ℕ) :
     (QuadraticMap.associated (realCliffordForm p q)).IsOrthoᵢ (Pi.basisFun ℝ (Fin (p + q))) :=

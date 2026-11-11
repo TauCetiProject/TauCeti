@@ -23,7 +23,7 @@ the ambient space, and membership in the pull-back `ZLattice.comap` of a lattice
 the image. The pull-back `L ∩ V` of a discrete subgroup to a subspace `V` is again discrete, and
 so is the pull-back of a discrete subgroup or of a full lattice along a linear isometry
 equivalence; precomposing a linear map with a linear equivalence likewise preserves discreteness
-and fullness of its range.
+and fullness of its range. A discrete subgroup containing a full lattice is a full lattice.
 
 ## Main results
 
@@ -50,6 +50,7 @@ and fullness of its range.
   space over a normed field forces the space to be finite-dimensional.
 * `ZLattice.discreteTopology_of_norm_sq_mem_int_mul`: a lattice whose squared norms are all
   multiples of a positive constant `c` by integers is discrete.
+* `IsZLattice.of_le`: a discrete subgroup containing a full lattice is a full lattice.
 * `TauCeti.discreteTopology_span_one`: the integer span of `1` in `ℝ` is discrete.
 -/
 
@@ -232,6 +233,12 @@ theorem discreteTopology_of_norm_sq_mem_int_mul {E : Type*} [NormedAddCommGroup 
     exact_mod_cast (Int.cast_pos.1 hmpos : 0 < m)
   have h1 : c ≤ ‖(y : E)‖ ^ 2 := by nlinarith
   exact (Real.sqrt_le_iff.2 ⟨hy0.le, h1⟩).trans_eq (Submodule.norm_coe y).symm
+
+/-- A discrete subgroup containing a full lattice is a full lattice. -/
+theorem _root_.IsZLattice.of_le {K : Type*} [NormedField K] {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace K E] {L₁ L₂ : Submodule ℤ E} [DiscreteTopology L₁] [IsZLattice K L₁]
+    [DiscreteTopology L₂] (h : L₁ ≤ L₂) : IsZLattice K L₂ :=
+  ⟨eq_top_iff.2 (IsZLattice.span_top (K := K) (L := L₁) ▸ Submodule.span_mono h)⟩
 
 variable (K : Type*) [NormedField K] [LinearOrder K] [IsStrictOrderedRing K] [HasSolidNorm K]
   [FloorRing K] {E : Type u} [NormedAddCommGroup E] [NormedSpace K E] [FiniteDimensional K E]
