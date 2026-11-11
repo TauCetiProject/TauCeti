@@ -166,18 +166,15 @@ theorem scChevalleyDatum_coordinateRoot (γ : Fin t.numRoots) :
   simpa [Pi.single_apply] using h
 
 /-- **Every root subgroup of the full-weight datum is injective**, over every commutative ring,
-including nonreduced rings and rings of small characteristic. At a positive simple root the
-fundamental summand of that node detects the parameter, and every other root subgroup is a
-signed Weyl conjugate of one of these. -/
+including nonreduced rings and rings of small characteristic. -/
 theorem scChevalleyDatum_rootSubgroupPoints_injective (γ : Fin t.numRoots) (A : Type v)
     [CommRing A] :
     Function.Injective ((t.scChevalleyDatum ht).rootSubgroupPoints γ A) := by
-  refine (t.scChevalleyDatum ht).rootSubgroupPoints_injective_of_simple A (fun i u v huv => ?_) γ
-  have hmatrix := congrArg Subtype.val huv
-  rw [ChevalleyDatum.coe_rootSubgroupPoints, ChevalleyDatum.coe_rootSubgroupPoints,
-    chevalleyRootSubgroup_simpleIndex] at hmatrix
+  -- At a positive simple root the fundamental summand of that node detects the parameter.
+  refine (t.scChevalleyDatum ht).rootSubgroupPoints_injective_of_simple A (fun i => ?_) γ
+  refine ((t.scChevalleyDatum ht).rootSubgroupPoints_injective_iff _ A).2 ?_
+  rw [chevalleyRootSubgroup_simpleIndex]
   exact t.kostantRootSubgroupParam_scLattice_injective ht A (.inl i)
-    (Units.map_injective (MulEquiv.injective _) hmatrix)
 
 /-! ## The simply connected Chevalley group scheme -/
 

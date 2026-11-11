@@ -57,6 +57,8 @@ Following Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemma 19, write
 * `TauCeti.DynkinType.ChevalleyDatum.map_rootSubgroupPoints`: naturality in the ring of points.
 * `TauCeti.DynkinType.ChevalleyDatum.weylElement_conj_rootSubgroupPoints`: the signed conjugation
   identity `nᵢ x_γ(u) nᵢ⁻¹ = x_{sᵢ γ}(ε u)`.
+* `TauCeti.DynkinType.ChevalleyDatum.rootSubgroupPoints_injective_iff`: a root subgroup is
+  injective exactly when the underlying divided-power exponential is.
 * `TauCeti.DynkinType.ChevalleyDatum.rootSubgroupPoints_injective_of_simple`: if the positive
   simple root subgroups are injective, so is every root subgroup.
 * `TauCeti.DynkinType.ChevalleyDatum.rootSubgroupPoints_mem_closure`: every root subgroup lies
@@ -239,8 +241,8 @@ theorem weylElement_conj_rootSubgroupPoints (i : Fin t.rank) (γ : Fin t.numRoot
     (CommAlgCat.of ℤ A) u)
 
 /-- A root subgroup of the datum is injective exactly when the underlying divided-power
-exponential on the base-changed lattice is: writing in the weight basis loses nothing. -/
-private theorem rootSubgroupPoints_injective_iff (γ : Fin t.numRoots) (A : Type v) [CommRing A] :
+exponential on the base-changed lattice is. -/
+theorem rootSubgroupPoints_injective_iff (γ : Fin t.numRoots) (A : Type v) [CommRing A] :
     Function.Injective (D.rootSubgroupPoints γ A) ↔
       Function.Injective (chevalleyRootSubgroup D.representation D.lattice
         D.representation_mem_lattice D.isNilpotent_representation_rootGenerator γ
@@ -253,12 +255,13 @@ private theorem rootSubgroupPoints_injective_iff (γ : Fin t.numRoots) (A : Type
     rw [coe_rootSubgroupPoints, coe_rootSubgroupPoints] at hmatrix
     exact h (Units.map_injective (MulEquiv.injective _) hmatrix)
 
-/-- **Injectivity of the root subgroups transfers from the simple roots to every root.** Every
-root subgroup is conjugate to a positive simple-root subgroup by a word in the simple Weyl
-elements, with a sign in its parameter, so no generation theorem for the points is needed. -/
+/-- **Injectivity of the root subgroups transfers from the simple roots to every root.** If the
+positive simple root subgroups are injective over `A`, so is every root subgroup. -/
 theorem rootSubgroupPoints_injective_of_simple (A : Type v) [CommRing A]
     (hinj : ∀ i : Fin t.rank, Function.Injective (D.rootSubgroupPoints (t.simpleIndex ht i) A))
     (γ : Fin t.numRoots) : Function.Injective (D.rootSubgroupPoints γ A) :=
+  -- Every root subgroup is conjugate to a positive simple-root subgroup by a word in the simple
+  -- Weyl elements, with a sign in its parameter, so no generation theorem is needed.
   (D.rootSubgroupPoints_injective_iff γ A).2 <|
     chevalleyRootSubgroup_injective_of_simple D.representation D.lattice
       D.representation_mem_lattice D.isNilpotent_representation_rootGenerator (CommAlgCat.of ℤ A)
