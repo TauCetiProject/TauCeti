@@ -61,7 +61,6 @@ theorem map_conj_eq_conj_smul (s : G) (H : Subgroup G) :
   (rfl)
 
 /-- Conjugation preserves the number of elements of a subgroup. -/
-@[simp]
 theorem card_conj_smul_eq (s : G) (H : Subgroup G) :
     Nat.card (MulAut.conj s • H : Subgroup G) = Nat.card H :=
   Nat.card_congr (Subgroup.equivSMul (MulAut.conj s) H).toEquiv.symm
