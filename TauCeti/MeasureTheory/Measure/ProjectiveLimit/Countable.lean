@@ -20,6 +20,9 @@ enumerated and reduced to the sequence theorem.
 * `TauCeti.Measure.exists_isProjectiveLimit_of_countable` realizes every projective family of
   probability laws on finite subsets of a countable family of standard Borel spaces.
 
+* `Function.Embedding.exists_measurePreserving_finset_map_of_countable` realizes the restriction
+  of a projective family to any countable embedded coordinate type.
+
 The proof transports finite-dimensional laws along measurable equivalences of dependent products.
 -/
 
@@ -37,49 +40,47 @@ universe u v
 
 variable {ι : Type u} {κ : Type v} {X : ι → Type*} [∀ i, MeasurableSpace (X i)]
 
-/-- Reindex a finite dependent product along an equivalence of its coordinate types. -/
-private def finitePiCongrLeft (e : κ ≃ ι) (J : Finset κ) :
-    (∀ j : J, X (e j)) ≃ᵐ (∀ i : J.map e.toEmbedding, X i) :=
-  MeasurableEquiv.piCongrLeft (fun i : J.map e.toEmbedding ↦ X i)
-    (J.equivMap e.toEmbedding)
+/-- Reindex a finite dependent product along an embedding of coordinate labels. -/
+private def finitePiCongrLeft (e : κ ↪ ι) (J : Finset κ) :
+    (∀ j : J, X (e j)) ≃ᵐ (∀ i : J.map e, X i) :=
+  MeasurableEquiv.piCongrLeft (fun i : J.map e ↦ X i) (J.equivMap e)
 
-private theorem finitePiCongrLeft_apply (e : κ ≃ ι) (J : Finset κ)
+private theorem finitePiCongrLeft_apply (e : κ ↪ ι) (J : Finset κ)
     (x : ∀ j : J, X (e j)) (j : J) :
-    finitePiCongrLeft e J x (J.equivMap e.toEmbedding j) = x j := by
+    finitePiCongrLeft e J x (J.equivMap e j) = x j := by
   exact MeasurableEquiv.piCongrLeft_apply_apply
-    (β := fun i : J.map e.toEmbedding ↦ X i) (J.equivMap e.toEmbedding) x j
+    (β := fun i : J.map e ↦ X i) (J.equivMap e) x j
 
-private theorem finitePiCongrLeft_symm_apply (e : κ ≃ ι) (J : Finset κ)
-    (x : ∀ i : J.map e.toEmbedding, X i) (j : J) :
-    (finitePiCongrLeft e J).symm x j = x (J.equivMap e.toEmbedding j) := by
-  exact Equiv.piCongrLeft_symm_apply
-    (fun i : J.map e.toEmbedding ↦ X i) (J.equivMap e.toEmbedding) x j
+private theorem finitePiCongrLeft_symm_apply (e : κ ↪ ι) (J : Finset κ)
+    (x : ∀ i : J.map e, X i) (j : J) :
+    (finitePiCongrLeft e J).symm x j = x (J.equivMap e j) := by
+  exact Equiv.piCongrLeft_symm_apply (fun i : J.map e ↦ X i) (J.equivMap e) x j
 
-/-- Reindex the finite-dimensional laws of a projective family along an equivalence. -/
-private def reindexProjectiveFamily (e : κ ≃ ι)
+/-- Reindex the finite-dimensional laws of a projective family along an embedding. -/
+private def reindexProjectiveFamily (e : κ ↪ ι)
     (P : ∀ I : Finset ι, Measure (∀ i : I, X i)) (J : Finset κ) :
     Measure (∀ j : J, X (e j)) :=
-  (P (J.map e.toEmbedding)).map (finitePiCongrLeft e J).symm
+  (P (J.map e)).map (finitePiCongrLeft e J).symm
 
-private instance reindexProjectiveFamily.instIsProbabilityMeasure (e : κ ≃ ι)
+private instance reindexProjectiveFamily.instIsProbabilityMeasure (e : κ ↪ ι)
     (P : ∀ I : Finset ι, Measure (∀ i : I, X i)) [∀ I, IsProbabilityMeasure (P I)]
     (J : Finset κ) : IsProbabilityMeasure (reindexProjectiveFamily e P J) := by
   rw [reindexProjectiveFamily]
   infer_instance
 
-private theorem isProjectiveMeasureFamily_reindex (e : κ ≃ ι)
+private theorem isProjectiveMeasureFamily_reindex (e : κ ↪ ι)
     (P : ∀ I : Finset ι, Measure (∀ i : I, X i)) (hP : IsProjectiveMeasureFamily P) :
     IsProjectiveMeasureFamily (α := fun j ↦ X (e j)) (reindexProjectiveFamily e P) := by
   intro I J hJI
-  have hmapJI : J.map e.toEmbedding ⊆ I.map e.toEmbedding :=
+  have hmapJI : J.map e ⊆ I.map e :=
     Finset.map_subset_map.mpr hJI
   rw [reindexProjectiveFamily, reindexProjectiveFamily,
-    hP (I.map e.toEmbedding) (J.map e.toEmbedding) hmapJI]
+    hP (I.map e) (J.map e) hmapJI]
   rw [MeasureTheory.Measure.map_map (finitePiCongrLeft e J).symm.measurable
       (Finset.measurable_restrict₂ hmapJI)]
   have hfun :
       ((finitePiCongrLeft e J).symm ∘ Finset.restrict₂ hmapJI :
-        (∀ i : I.map e.toEmbedding, X i) → (∀ j : J, X (e j))) =
+        (∀ i : I.map e, X i) → (∀ j : J, X (e j))) =
       Finset.restrict₂ (π := fun i ↦ X (e i)) hJI ∘
         (finitePiCongrLeft e I).symm := by
     funext x j
@@ -122,9 +123,9 @@ private theorem exists_isProjectiveLimit_of_countable_infinite [Countable ι] [I
     (hP : IsProjectiveMeasureFamily P) :
     ∃ μ : Measure (∀ i, X i), IsProbabilityMeasure μ ∧ IsProjectiveLimit μ P := by
   let e : ℕ ≃ ι := Classical.choice (inferInstance : Nonempty (ℕ ≃ ι))
-  let Q : ∀ J : Finset ℕ, Measure (∀ j : J, X (e j)) := reindexProjectiveFamily e P
+  let Q : ∀ J : Finset ℕ, Measure (∀ j : J, X (e j)) := reindexProjectiveFamily e.toEmbedding P
   have hQ : IsProjectiveMeasureFamily (α := fun j ↦ X (e j)) Q :=
-    isProjectiveMeasureFamily_reindex e P hP
+    isProjectiveMeasureFamily_reindex e.toEmbedding P hP
   let _ : ∀ n, StandardBorelSpace (X (e (n + 1))) := fun _ ↦ inferInstance
   obtain ⟨ν, hνprob, hν⟩ :=
     exists_isProjectiveLimit_nat (X := fun n ↦ X (e n)) Q hQ
@@ -135,7 +136,7 @@ private theorem exists_isProjectiveLimit_of_countable_infinite [Countable ι] [I
   have hmap : J.map e.toEmbedding = I := by
     simp [J, Finset.map_map]
   have hcomm : (J.map e.toEmbedding).restrict ∘ E =
-      finitePiCongrLeft e J ∘ J.restrict := by
+      finitePiCongrLeft e.toEmbedding J ∘ J.restrict := by
     funext x i
     let j : J := (J.equivMap e.toEmbedding).symm i
     rw [Function.comp_apply, Function.comp_apply,
@@ -147,11 +148,11 @@ private theorem exists_isProjectiveLimit_of_countable_infinite [Countable ι] [I
       P (J.map e.toEmbedding) := by
     rw [MeasureTheory.Measure.map_map (Finset.measurable_restrict (J.map e.toEmbedding))
       E.measurable, hcomm,
-      ← MeasureTheory.Measure.map_map (finitePiCongrLeft e J).measurable
+      ← MeasureTheory.Measure.map_map (finitePiCongrLeft e.toEmbedding J).measurable
         (Finset.measurable_restrict J), hν J]
     simpa only [Q, reindexProjectiveFamily] using
       MeasurableEquiv.map_map_symm (ν := P (J.map e.toEmbedding))
-        (finitePiCongrLeft e J)
+        (finitePiCongrLeft e.toEmbedding J)
   exact hmap ▸ hlimit
 
 /-- **Kolmogorov extension on an arbitrary countable index type.** Every projective family of
@@ -174,3 +175,37 @@ theorem exists_isProjectiveLimit_of_countable [Countable ι]
 end Measure
 
 end TauCeti
+
+namespace Function.Embedding
+
+open TauCeti.Measure
+
+variable {ι κ : Type*}
+
+/-- Realize the restriction of a projective family to a countable embedded coordinate type.
+The finite-dimensional laws are stated on the original coordinate labels, without a second
+public family of relabeled measures. -/
+theorem exists_measurePreserving_finset_map_of_countable {E : Type*}
+    [MeasurableSpace E] [StandardBorelSpace E] [Countable κ] (e : κ ↪ ι)
+    (P : (I : Finset ι) → Measure (I → E)) [∀ I, IsProbabilityMeasure (P I)]
+    (hP : IsProjectiveMeasureFamily (α := fun _ ↦ E) P) :
+    ∃ μ : Measure (κ → E), IsProbabilityMeasure μ ∧ ∀ J : Finset κ,
+      MeasurePreserving (fun x (i : J.map e) ↦ x ((J.equivMap e).symm i)) μ
+        (P (J.map e)) := by
+  let Q := reindexProjectiveFamily (X := fun _ ↦ E) e P
+  have : ∀ J, IsProbabilityMeasure (Q J) := fun J ↦
+    reindexProjectiveFamily.instIsProbabilityMeasure (X := fun _ ↦ E) e P J
+  obtain ⟨μ, hμprob, hμ⟩ := exists_isProjectiveLimit_of_countable (X := fun _ ↦ E) Q
+    (isProjectiveMeasureFamily_reindex (X := fun _ ↦ E) e P hP)
+  refine ⟨μ, hμprob, fun J ↦ ⟨by fun_prop, ?_⟩⟩
+  have hcomm : (fun (x : κ → E) (i : J.map e) ↦ x ((J.equivMap e).symm i)) =
+      finitePiCongrLeft (X := fun _ ↦ E) e J ∘ J.restrict := by
+    funext x i
+    rw [← (J.equivMap e).apply_symm_apply i, Function.comp_apply,
+      finitePiCongrLeft_apply]
+    simp only [Equiv.symm_apply_apply, Finset.restrict_def]
+  rw [hcomm, ← MeasureTheory.Measure.map_map (finitePiCongrLeft e J).measurable
+    (Finset.measurable_restrict J), hμ J]
+  exact (finitePiCongrLeft e J).map_map_symm
+
+end Function.Embedding
