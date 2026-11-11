@@ -278,9 +278,8 @@ theorem isIso_singularHomologyMap_diskBoundaryPairToComplDiskCenter (k : ℕ) :
       (TopCat.coe_diskBoundaryInclusion_apply_down n s).symm
   have hsnd (m : ℕ) : IsIso (SSet.homologyMap
       (TopCat.toSSet.map (TopPair.Hom.snd (diskBoundaryPairToComplDiskCenter.{w} n))) R m) := by
-    have := (e.singularHomologyIso R m).isIso_hom
-    rw [ContinuousMap.HomotopyEquiv.singularHomologyIso_hom, he] at this
-    exact this
+    rw [← he]
+    exact e.isIso_homologyMap R m
   exact TopPair.isIso_singularHomologyMap_of_isIso R _ k (hfst k) (hsnd k) (fun m _ ↦ hfst m)
     fun m _ ↦ hsnd m
 

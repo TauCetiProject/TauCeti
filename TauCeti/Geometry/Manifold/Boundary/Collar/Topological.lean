@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Brown
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Local
+public import TauCeti.Topology.Instances.Real.IcoScale
 
 /-!
 # The topological collar of the boundary of a manifold
@@ -14,7 +15,8 @@ public import TauCeti.Geometry.Manifold.Boundary.Collar.Local
 Let `M` be a `C^k` manifold with boundary modelled on the half-space `𝓡∂ (n + 1)`, with `k ≠ 0`.
 Every boundary point has a product collar chart
 (`TauCeti.exists_isProductCollarChart_of_mem_boundary`), whose source is homeomorphic to its part
-of the boundary times a half-open interval (`TauCeti.IsProductCollarChart.homeomorphProd`).
+of the boundary times a half-open interval
+(`TauCeti.IsProductCollarChart.homeomorphProdOpens`).
 Rescaling the interval to `[0, 1)` makes this a collar of the boundary points of the source, in
 the sense of `TauCeti.IsCollar`, whose points of positive depth are interior points of `M`
 (`TauCeti.IsProductCollarChart.exists_isCollar`). So the inclusion of the boundary `∂M → M` is
@@ -57,30 +59,21 @@ open scoped Manifold
 
 namespace TauCeti
 
-/-- The scaling `t ↦ ε t` of half-open intervals, `[0, 1) ≃ₜ [0, ε)`. -/
-private noncomputable def icoScale {ε : ℝ} (hε : 0 < ε) :
-    ↥(Ico (0 : ℝ) 1) ≃ₜ ↥(Ico (0 : ℝ) ε) where
-  toFun t := ⟨ε * t, mul_nonneg hε.le t.2.1, mul_lt_of_lt_one_right hε t.2.2⟩
-  invFun s := ⟨s / ε, div_nonneg s.2.1 hε.le, (div_lt_one hε).2 s.2.2⟩
-  left_inv t := Subtype.ext (mul_div_cancel_left₀ _ hε.ne')
-  right_inv s := Subtype.ext (mul_div_cancel₀ _ hε.ne')
-  continuous_toFun := by fun_prop
-  continuous_invFun := by fun_prop
-
-private theorem coe_icoScale {ε : ℝ} (hε : 0 < ε) (t : ↥(Ico (0 : ℝ) 1)) :
-    (icoScale hε t : ℝ) = ε * t :=
-  (rfl)
-
 /-- The depth coordinate of a local collar: `t ∈ [0, 1)` is sent to the point of normal coordinate
 `ε t` of the initial segment `[0, ε)` of the one-dimensional half-space model. -/
 private noncomputable def depthHomeomorph {ε : ℝ} (hε : 0 < ε) :
-    ↥(Ico (0 : ℝ) 1) ≃ₜ ↥(EuclideanHalfSpace.normalIio ε) :=
-  (icoScale hε).trans (EuclideanHalfSpace.homeomorphNormalIio ε).symm
+    ↥(Ico (0 : ℝ) 1) ≃ₜ EuclideanHalfSpace.normalIioOpens ε :=
+  ((icoScale hε).trans (EuclideanHalfSpace.homeomorphNormalIio ε).symm).trans
+    (Homeomorph.setCongr (Set.ext fun _ ↦
+      EuclideanHalfSpace.mem_normalIio.trans EuclideanHalfSpace.mem_normalIioOpens.symm))
 
 private theorem depthHomeomorph_apply_coe_zero {ε : ℝ} (hε : 0 < ε) (t : ↥(Ico (0 : ℝ) 1)) :
     (depthHomeomorph hε t : EuclideanHalfSpace 1).1 0 = ε * t := by
-  rw [← EuclideanHalfSpace.coe_homeomorphNormalIio, depthHomeomorph, Homeomorph.trans_apply,
-    Homeomorph.apply_symm_apply, coe_icoScale]
+  have ht : (depthHomeomorph hε t : EuclideanHalfSpace 1) =
+      (EuclideanHalfSpace.homeomorphNormalIio ε).symm (icoScale hε t) :=
+    rfl
+  rw [ht, ← coe_icoScale hε, ← EuclideanHalfSpace.coe_homeomorphNormalIio,
+    Homeomorph.apply_symm_apply]
 
 variable {n : ℕ} {k : WithTop ℕ∞} {M : Type*} [TopologicalSpace M]
   [ChartedSpace (EuclideanHalfSpace (n + 1)) M]
@@ -90,58 +83,47 @@ namespace IsProductCollarChart
 variable {φ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n) × EuclideanHalfSpace 1)}
   {V : Set (EuclideanSpace ℝ (Fin n))} {ε : ℝ}
 
-/-- The boundary points lying in a set `s`, read as a subset of the boundary or of `s`. -/
-private def boundaryPreimageHomeomorph (s : Set M) :
-    ↥(((↑) : (𝓡∂ (n + 1)).boundary M → M) ⁻¹' s) ≃ₜ ↥(s ∩ (𝓡∂ (n + 1)).boundary M) where
-  toFun y := ⟨y.1, y.2, y.1.2⟩
-  invFun y := ⟨⟨y, y.2.2⟩, y.2.1⟩
-  continuous_toFun := by fun_prop
-  continuous_invFun := by fun_prop
-
 /-- The local collar of a product collar chart, as a homeomorphism from the boundary points of
 its source times `[0, 1)` onto its source. -/
 private noncomputable def collarHomeomorph (h : IsProductCollarChart k φ V ε) :
-    ↥(((↑) : (𝓡∂ (n + 1)).boundary M → M) ⁻¹' φ.source) × ↥(Ico (0 : ℝ) 1) ≃ₜ ↥φ.source :=
-  ((boundaryPreimageHomeomorph φ.source).prodCongr (depthHomeomorph h.height_pos)).trans
-    h.homeomorphProd.symm
-
-private theorem homeomorphProd_collarHomeomorph (h : IsProductCollarChart k φ V ε)
-    (p : ↥(((↑) : (𝓡∂ (n + 1)).boundary M → M) ⁻¹' φ.source) × ↥(Ico (0 : ℝ) 1)) :
-    h.homeomorphProd (h.collarHomeomorph p) =
-      (boundaryPreimageHomeomorph φ.source p.1, depthHomeomorph h.height_pos p.2) :=
-  h.homeomorphProd.apply_symm_apply _
+    h.sourceBoundaryOpens × ↥(Ico (0 : ℝ) 1) ≃ₜ h.sourceOpens :=
+  ((Homeomorph.refl _).prodCongr (depthHomeomorph h.height_pos)).trans h.homeomorphProdOpens.symm
 
 /-- The chart value of a point of the local collar has normal coordinate `ε t` at depth `t`. -/
 private theorem snd_collarHomeomorph (h : IsProductCollarChart k φ V ε)
-    (p : ↥(((↑) : (𝓡∂ (n + 1)).boundary M → M) ⁻¹' φ.source) × ↥(Ico (0 : ℝ) 1)) :
+    (p : h.sourceBoundaryOpens × ↥(Ico (0 : ℝ) 1)) :
     (φ (h.collarHomeomorph p)).2.1 0 = ε * p.2 := by
-  rw [← h.coe_homeomorphProd_snd, h.homeomorphProd_collarHomeomorph,
-    depthHomeomorph_apply_coe_zero]
+  rw [← h.coe_homeomorphProdOpens_snd, collarHomeomorph, Homeomorph.trans_apply,
+    Homeomorph.apply_symm_apply]
+  exact depthHomeomorph_apply_coe_zero h.height_pos p.2
 
 /-- The local collar sends a boundary point at depth zero to itself. -/
 private theorem collarHomeomorph_zero (h : IsProductCollarChart k φ V ε)
-    (y : ↥(((↑) : (𝓡∂ (n + 1)).boundary M → M) ⁻¹' φ.source)) :
+    (y : h.sourceBoundaryOpens) :
     (h.collarHomeomorph (y, ⟨0, le_rfl, zero_lt_one⟩) : M) = y := by
-  -- A boundary point of the chart source has normal coordinate zero, and both points have the
-  -- same tangential coordinate.
-  have hy0 : (φ y).2 = 0 := EuclideanHalfSpace.eq_zero_iff.2 ((h.mem_boundary_iff _ y.2).1 y.1.2)
-  refine φ.injOn (h.collarHomeomorph _).2 y.2 (Prod.ext ?_ ?_)
-  · have hfst := h.map_homeomorphProd_fst (h.collarHomeomorph (y, ⟨0, le_rfl, zero_lt_one⟩))
-    rw [h.homeomorphProd_collarHomeomorph] at hfst
-    exact (congrArg Prod.fst hfst).symm
-  · rw [hy0, EuclideanHalfSpace.eq_zero_iff, h.snd_collarHomeomorph, mul_zero]
+  -- Both points have the same tangential coordinate, and normal coordinate zero.
+  set z := h.collarHomeomorph (y, ⟨0, le_rfl, zero_lt_one⟩)
+  have hy : φ y = ((φ z).1, 0) := by
+    have hz : h.homeomorphProdOpens z =
+        (y, depthHomeomorph h.height_pos ⟨0, le_rfl, zero_lt_one⟩) :=
+      h.homeomorphProdOpens.apply_symm_apply _
+    simpa [hz] using h.map_homeomorphProdOpens_fst z
+  have hz0 : (φ z).2 = 0 := by
+    rw [EuclideanHalfSpace.eq_zero_iff, h.snd_collarHomeomorph, mul_zero]
+  exact φ.injOn (h.mem_sourceOpens.1 z.2) (h.mem_sourceBoundaryOpens.1 y.2)
+    ((show φ z = ((φ z).1, 0) from Prod.ext rfl hz0).trans hy.symm)
 
 /-- **The local collar of a product collar chart.** The boundary points of the source of a product
 collar chart have a collar in `M`, an open embedding of their product with `[0, 1)` whose zero
 slice is the inclusion, and whose points of positive depth are not boundary points of `M`. -/
 theorem exists_isCollar (h : IsProductCollarChart k φ V ε) :
-    ∃ c : ↥(((↑) : (𝓡∂ (n + 1)).boundary M → M) ⁻¹' φ.source) × ↥(Ico (0 : ℝ) 1) → M,
+    ∃ c : h.sourceBoundaryOpens × ↥(Ico (0 : ℝ) 1) → M,
       IsCollar (((↑) : (𝓡∂ (n + 1)).boundary M → M) ∘ (↑)) c ∧
         ∀ p, c p ∈ (𝓡∂ (n + 1)).boundary M → (p.2 : ℝ) = 0 := by
   refine ⟨fun p ↦ h.collarHomeomorph p,
-    ⟨φ.open_source.isOpenEmbedding_subtypeVal.comp h.collarHomeomorph.isOpenEmbedding,
+    ⟨h.sourceOpens.isOpen.isOpenEmbedding_subtypeVal.comp h.collarHomeomorph.isOpenEmbedding,
       h.collarHomeomorph_zero⟩, fun p hp ↦ ?_⟩
-  have hp0 := (h.mem_boundary_iff _ (h.collarHomeomorph p).2).1 hp
+  have hp0 := (h.mem_boundary_iff _ (h.mem_sourceOpens.1 (h.collarHomeomorph p).2)).1 hp
   rw [h.snd_collarHomeomorph] at hp0
   exact (mul_eq_zero.1 hp0).resolve_left h.height_pos.ne'
 
@@ -157,7 +139,8 @@ theorem isLocallyCollared_subtypeVal_boundary (hk : k ≠ 0) :
   refine isLocallyCollared_iff.2 fun x ↦ ?_
   obtain ⟨φ, V, ε, hxφ, h⟩ := exists_isProductCollarChart_of_mem_boundary hk x.2
   obtain ⟨c, hc, hc0⟩ := h.exists_isCollar
-  exact ⟨_, φ.open_source.preimage continuous_subtype_val, hxφ, c, hc,
+  exact ⟨h.sourceBoundaryOpens, h.sourceBoundaryOpens.isOpen, h.mem_sourceBoundaryOpens.2 hxφ,
+    c, hc,
     fun p ⟨y, hy⟩ ↦ hc0 p (hy ▸ y.2)⟩
 
 /-- **The collar of a compact boundary.** If the boundary of a Hausdorff `C^k` manifold, `k ≠ 0`,

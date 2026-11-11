@@ -55,31 +55,12 @@ relative singular homology, in every degree and for every coefficient object. -/
 theorem isIso_singularHomologyMap (h : IsCollar ((↑) : A → X) c) (R : C) (n : ℕ) :
     IsIso (TopPair.singularHomologyMap
       (TopPair.ofSubsetMap (𝟙 X) fun x hx ↦ h.range_subset_range ⟨⟨x, hx⟩, rfl⟩) R n) := by
-  set g := TopPair.ofSubsetMap (𝟙 X) fun x hx ↦ h.range_subset_range ⟨⟨x, hx⟩, rfl⟩
-  -- On the ambient space the map of pairs is the identity.
-  have hfst (m : ℕ) : IsIso (SSet.homologyMap (TopCat.toSSet.map (TopPair.Hom.fst g)) R m) := by
-    have hg : TopPair.Hom.fst g = 𝟙 X := TopPair.ofSubsetMap_fst _ _
-    have : IsIso (TopPair.Hom.fst g) := by
-      rw [hg]
-      exact IsIso.id X
-    infer_instance
-  -- On the subspaces it is the zero slice of the collar, a homotopy equivalence.
-  have hsnd (m : ℕ) : IsIso (SSet.homologyMap (TopCat.toSSet.map (TopPair.Hom.snd g)) R m) := by
-    let g₁ : (TopPair.ofSubset A).snd ⟶ (TopPair.ofSubset (range c)).snd :=
-      TopCat.ofHom h.homotopyEquivRange.toFun
-    have hg : TopPair.Hom.snd g = g₁ := by
-      ext x
-      exact Subtype.ext ((TopPair.ofSubsetMap_snd_apply _ _ x).trans
-        (h.coe_homotopyEquivRange_toFun_apply x).symm)
-    -- `((singularHomologyFunctor C m).obj R).map g₁` is `SSet.homologyMap (TopCat.toSSet.map g₁)`
-    -- by definition, so the homotopy equivalence gives an isomorphism in the latter form.
-    have h₁ : IsIso (SSet.homologyMap (TopCat.toSSet.map g₁) R m) := by
-      have := (h.homotopyEquivRange.singularHomologyIso R m).isIso_hom
-      rw [ContinuousMap.HomotopyEquiv.singularHomologyIso_hom] at this
-      exact this
-    rw [hg]
-    exact h₁
-  exact TopPair.isIso_singularHomologyMap_of_isIso R g n (hfst n) (hsnd n) (fun m _ ↦ hfst m)
-    fun m _ ↦ hsnd m
+  -- On the ambient space the map of pairs is the identity, and on the subspaces it is the zero
+  -- slice of the collar, a homotopy equivalence.
+  refine TopPair.isIso_singularHomologyMap_of_homotopyEquiv _ (.refl X) h.homotopyEquivRange
+    (TopPair.ofSubsetMap_fst _ _) ?_ R n
+  ext x
+  exact Subtype.ext ((TopPair.ofSubsetMap_snd_apply _ _ x).trans
+    (h.coe_homotopyEquivRange_apply x).symm)
 
 end TauCeti.IsCollar
