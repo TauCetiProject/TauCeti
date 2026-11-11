@@ -99,13 +99,13 @@ theorem neckSmoothingLinearEquiv_symm_apply (q : CircleSobolev s ℂ × CircleSo
   ext <;> simp
 
 /-- Derivatives of the moving data do not contribute at the zero smoothing coordinate. -/
-theorem hasFDerivAt_neckSmoothingMap (hp : AnalyticAt ℂ p (0, t)) :
+theorem hasFDerivAt_neckSmoothingMap (hp : DifferentiableAt ℂ p (0, t)) :
     HasFDerivAt (neckSmoothingMap p)
       (neckSmoothingLinearEquiv (A := A) (p (0, t)) : (ℂ × A) →L[ℂ] (ℂ × A)) (0, t) := by
-  have hF := ((coeffCLM 0).analyticAt _).comp (analyticAt_fst.comp hp)
-  have hG := ((coeffCLM 0).analyticAt _).comp (analyticAt_snd.comp hp)
+  have hF := (coeffCLM 0).differentiableAt.comp _ (differentiableAt_fst.comp _ hp)
+  have hG := (coeffCLM 0).differentiableAt.comp _ (differentiableAt_snd.comp _ hp)
   have h := (hasFDerivAt_fst (𝕜 := ℂ) (p := ((0 : ℂ), t))).mul
-    (hF.add hG).differentiableAt.hasFDerivAt.cexp
+    (hF.add hG).hasFDerivAt.cexp
   convert h.prodMk (hasFDerivAt_snd (𝕜 := ℂ) (p := ((0 : ℂ), t))) using 1
   · funext w
     simp [neckSmoothingMap, Function.comp_def]
@@ -114,7 +114,8 @@ theorem hasFDerivAt_neckSmoothingMap (hp : AnalyticAt ℂ p (0, t)) :
 private theorem hasStrictFDerivAt_neckSmoothingMap (hp : AnalyticAt ℂ p (0, t)) :
     HasStrictFDerivAt (neckSmoothingMap p)
       (neckSmoothingLinearEquiv (A := A) (p (0, t)) : (ℂ × A) →L[ℂ] (ℂ × A)) (0, t) :=
-  (hasFDerivAt_neckSmoothingMap hp).fderiv ▸ (analyticAt_neckSmoothingMap hp).hasStrictFDerivAt
+  (hasFDerivAt_neckSmoothingMap hp.differentiableAt).fderiv ▸
+    (analyticAt_neckSmoothingMap hp).hasStrictFDerivAt
 
 /-- The difference of the target smoothing coordinates at `a` and `σ(t)` is the source
 difference times a holomorphic unit. Its value at the node is the product of the two branch
@@ -138,7 +139,7 @@ theorem exists_analyticAt_neckSmoothingMap_sub_mul (hp : AnalyticAt ℂ p (0, t)
   rw [hσ0] at hv hGv
   have hvt : AnalyticAt ℂ (fun a : ℂ ↦ v (t, a)) 0 :=
     hv.comp (analyticAt_const.prod analyticAt_id)
-  have hd := (hasFDerivAt_neckSmoothingMap hp).fst.comp_hasDerivAt (0 : ℂ)
+  have hd := (hasFDerivAt_neckSmoothingMap hp.differentiableAt).fst.comp_hasDerivAt (0 : ℂ)
     ((hasDerivAt_id (0 : ℂ)).prodMk (hasDerivAt_const (0 : ℂ) t))
   have hd' : HasDerivAt (fun a : ℂ ↦ B (a, t))
       (exp ((p (0, t)).1.coeff 0 + (p (0, t)).2.coeff 0)) 0 := by
@@ -187,21 +188,23 @@ theorem node_mem_neckSmoothingChart_source (hp : AnalyticAt ℂ p (0, t)) :
 /-- The target of the smoothing chart contains the node. -/
 theorem node_mem_neckSmoothingChart_target (hp : AnalyticAt ℂ p (0, t)) :
     (0, t) ∈ (neckSmoothingChart hp).target := by
-  simpa using (neckSmoothingChart hp).map_source (node_mem_neckSmoothingChart_source hp)
+  simpa only [neckSmoothingChart, neckSmoothingMap_apply, zero_mul] using
+    (hasStrictFDerivAt_neckSmoothingMap hp).image_mem_toOpenPartialHomeomorph_target
 
 /-- The inverse chart fixes the central node. -/
 @[simp]
 theorem neckSmoothingChart_symm_node (hp : AnalyticAt ℂ p (0, t)) :
     (neckSmoothingChart hp).symm (0, t) = (0, t) := by
-  simpa using (neckSmoothingChart hp).left_inv (node_mem_neckSmoothingChart_source hp)
+  simpa only [neckSmoothingChart, HasStrictFDerivAt.localInverse_def,
+    neckSmoothingMap_apply, zero_mul] using
+    (hasStrictFDerivAt_neckSmoothingMap hp).localInverse_apply_image
 
 /-- The inverse smoothing coordinate is jointly holomorphic. -/
 theorem analyticAt_neckSmoothingChart_symm (hp : AnalyticAt ℂ p (0, t)) :
     AnalyticAt ℂ (neckSmoothingChart hp).symm (0, t) := by
-  have ha : AnalyticAt ℂ (neckSmoothingMap p) ((neckSmoothingChart hp).symm (0, t)) := by
-    simpa only [neckSmoothingChart_symm_node] using analyticAt_neckSmoothingMap hp
-  exact (hasStrictFDerivAt_neckSmoothingMap hp).analyticAt_toOpenPartialHomeomorph_symm
-    (node_mem_neckSmoothingChart_target hp) ha
+  simpa only [neckSmoothingChart, HasStrictFDerivAt.localInverse_def,
+    neckSmoothingMap_apply, zero_mul] using
+    (hasStrictFDerivAt_neckSmoothingMap hp).analyticAt_localInverse (analyticAt_neckSmoothingMap hp)
 
 /-- The inverse smoothing chart preserves the additional parameter. -/
 @[simp]
