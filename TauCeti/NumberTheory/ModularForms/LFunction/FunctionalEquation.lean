@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ModularForms.Fricke.Normalized
 public import TauCeti.NumberTheory.ModularForms.LFunction.Basic
 public import TauCeti.NumberTheory.ModularForms.ResToImagAxis
+import TauCeti.NumberTheory.ModularForms.FiniteDimensional
 
 /-!
 # The Fricke functional equation of a cusp form
@@ -31,9 +32,9 @@ entire `ModularForm.Λ`, so the completed function is entire.  On `Γ₁(N)`, Ta
 * `UpperHalfPlane.resToImagAxis_slash_frickeGL`: the Fricke slash on the rescaled imaginary axis.
 * `CuspForm.frickeCompletedL`: the level-`N` completed L-function.
 * `CuspForm.frickeCompletedL_eq_cpow_mul_Λ`: its expression as `N^(s/2) · ModularForm.Λ`.
-* `CuspForm.frickeCompletedL_sub_eq_I_zpow_mul`: `Λ_N(k - s, f) = i^k Λ_N(s, g)` for any
-  Fricke companion `g`, without weight or width hypotheses.
-* `CuspForm.frickeCompletedL_functional_equation`: the two-form Fricke functional equation.
+* `CuspForm.frickeCompletedL_functional_equation`: the two-form Fricke functional equation
+  `Λ_N(k - s, f) = i^k Λ_N(s, g)` for any Fricke companion `g`, without weight or width
+  hypotheses.
 * `CuspForm.frickeCompletedL_functional_equation_gamma1`: the functional equation on `Γ₁(N)`
   with the bundled normalized Fricke companion.
 
@@ -110,62 +111,69 @@ private lemma frickeGL_smul_scaledImLift {t : ℝ} (ht : 0 < t) :
 
 /-- The Fricke slash on the rescaled imaginary axis.  For `t > 0`,
 
-`(F ∣[k] W_N)(i t / √N) = (√N)^(k-2) i^(-k) t^(-k) F(i / (t√N))`.
+`(F ∣[k] W_N)(i t / √N) = (√N)^(k-2) i^(-k) t^(-k) F(i / (t√N))`;
+for `t ≤ 0` both sides vanish.
 
 The power of `√N` is exactly cancelled by the Petersson normalization of the Fricke operator. -/
-theorem resToImagAxis_slash_frickeGL (F : ℍ → ℂ) {t : ℝ} (ht : 0 < t) :
+theorem resToImagAxis_slash_frickeGL (F : ℍ → ℂ) {t : ℝ} :
     resToImagAxis (F ∣[k] TauCeti.frickeGL ℝ N) (t / Real.sqrt N) =
       (Real.sqrt N : ℂ) ^ (k - 2) * Complex.I ^ (-k) * (t : ℂ) ^ (-k) *
         resToImagAxis F (1 / t / Real.sqrt N) := by
-  have hN : 0 < Real.sqrt N := Real.sqrt_pos.mpr (by exact_mod_cast NeZero.pos N)
-  have hNc : (Real.sqrt N : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hN.ne'
-  have hsqN : (Real.sqrt N : ℂ) * (Real.sqrt N : ℂ) = (N : ℂ) := by
-    rw [← Complex.ofReal_mul, Real.mul_self_sqrt (Nat.cast_nonneg N)]
-    norm_cast
-  rw [resToImagAxis_scaled_eq (F ∣[k] TauCeti.frickeGL ℝ N) ht,
-    resToImagAxis_scaled_eq F (one_div_pos.mpr ht), ModularForm.slash_apply,
-    frickeGL_smul_scaledImLift ht]
-  have hσ : ∀ w : ℂ, UpperHalfPlane.σ (TauCeti.frickeGL ℝ N) w = w := fun w ↦ by
-    have hdet : (0 : ℝ) < ((TauCeti.frickeGL ℝ N).det : ℝ) :=
-      TauCeti.val_det_frickeGL_pos
-    simp only [UpperHalfPlane.σ]
-    split
-    · rfl
-    · rename_i h
-      exact (h hdet).elim
-  rw [hσ]
-  have hdet : |((TauCeti.frickeGL ℝ N).det : ℝ)| = (N : ℝ) := by
-    rw [TauCeti.val_det_frickeGL]
-    exact abs_of_nonneg (Nat.cast_nonneg N)
-  rw [hdet]
-  have hdenom : UpperHalfPlane.denom (TauCeti.frickeGL ℝ N) (scaledImLift (N := N) ht) =
-      (Real.sqrt N : ℂ) * Complex.I * (t : ℂ) := by
-    rw [UpperHalfPlane.denom, TauCeti.coe_frickeGL, scaledImLift_coe]
-    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.of_apply,
-      Matrix.cons_val', Matrix.empty_val', Matrix.cons_val_fin_one]
-    push_cast
-    -- `denom` leaves `N` as a complex cast; expose its square-root factorization for `field_simp`.
-    rw [show (N : ℂ) = (Real.sqrt N : ℂ) * (Real.sqrt N : ℂ) from hsqN.symm]
-    field_simp
+  rcases le_or_gt t 0 with ht | ht
+  · have hN : 0 < Real.sqrt N := Real.sqrt_pos.mpr (by exact_mod_cast NeZero.pos N)
+    rw [resToImagAxis_of_nonpos _ (div_nonpos_of_nonpos_of_nonneg ht hN.le),
+      resToImagAxis_of_nonpos F
+        (div_nonpos_of_nonpos_of_nonneg (one_div_nonpos.mpr ht) hN.le), mul_zero]
+  · have hN : 0 < Real.sqrt N := Real.sqrt_pos.mpr (by exact_mod_cast NeZero.pos N)
+    have hNc : (Real.sqrt N : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hN.ne'
+    have hsqN : (Real.sqrt N : ℂ) * (Real.sqrt N : ℂ) = (N : ℂ) := by
+      rw [← Complex.ofReal_mul, Real.mul_self_sqrt (Nat.cast_nonneg N)]
+      norm_cast
+    rw [resToImagAxis_scaled_eq (F ∣[k] TauCeti.frickeGL ℝ N) ht,
+      resToImagAxis_scaled_eq F (one_div_pos.mpr ht), ModularForm.slash_apply,
+      frickeGL_smul_scaledImLift ht]
+    have hσ : ∀ w : ℂ, UpperHalfPlane.σ (TauCeti.frickeGL ℝ N) w = w := fun w ↦ by
+      have hdet : (0 : ℝ) < ((TauCeti.frickeGL ℝ N).det : ℝ) :=
+        TauCeti.val_det_frickeGL_pos
+      simp only [UpperHalfPlane.σ]
+      split
+      · rfl
+      · rename_i h
+        exact (h hdet).elim
+    rw [hσ]
+    have hdet : |((TauCeti.frickeGL ℝ N).det : ℝ)| = (N : ℝ) := by
+      rw [TauCeti.val_det_frickeGL]
+      exact abs_of_nonneg (Nat.cast_nonneg N)
+    rw [hdet]
+    have hdenom : UpperHalfPlane.denom (TauCeti.frickeGL ℝ N) (scaledImLift (N := N) ht) =
+        (Real.sqrt N : ℂ) * Complex.I * (t : ℂ) := by
+      rw [UpperHalfPlane.denom, TauCeti.coe_frickeGL, scaledImLift_coe]
+      simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.of_apply,
+        Matrix.cons_val', Matrix.empty_val', Matrix.cons_val_fin_one]
+      push_cast
+      -- `denom` leaves `N` as a complex cast; expose its square-root factorization for
+      -- `field_simp`.
+      rw [show (N : ℂ) = (Real.sqrt N : ℂ) * (Real.sqrt N : ℂ) from hsqN.symm]
+      field_simp
+      ring
+    rw [hdenom]
+    have hN2 : ((N : ℝ) : ℂ) ^ (k - 1) = (Real.sqrt N : ℂ) ^ (2 * (k - 1)) := by
+      -- `zpow_mul` needs both the real/natural cast and the numeral exponent made syntactic.
+      rw [show ((N : ℝ) : ℂ) = (Real.sqrt N : ℂ) ^ (2 : ℤ) by
+        rw [show (2 : ℤ) = ((2 : ℕ) : ℤ) from rfl, zpow_natCast, sq]
+        exact hsqN.symm, ← zpow_mul]
+    have hsplit : ((Real.sqrt N : ℂ) * Complex.I * (t : ℂ)) ^ (-k) =
+        (Real.sqrt N : ℂ) ^ (-k) * Complex.I ^ (-k) * (t : ℂ) ^ (-k) := by
+      rw [mul_zpow, mul_zpow]
+    rw [mul_assoc, hN2, hsplit]
+    -- Reassociate the product and normalize its integer exponent so `zpow_add₀` sees the
+    -- cancellable square-root powers.
+    rw [show (Real.sqrt N : ℂ) ^ (2 * (k - 1)) *
+          ((Real.sqrt N : ℂ) ^ (-k) * Complex.I ^ (-k) * (t : ℂ) ^ (-k)) =
+        ((Real.sqrt N : ℂ) ^ (2 * (k - 1)) * (Real.sqrt N : ℂ) ^ (-k)) *
+          (Complex.I ^ (-k) * (t : ℂ) ^ (-k)) by ring,
+      ← zpow_add₀ hNc, show 2 * (k - 1) + -k = k - 2 by ring]
     ring
-  rw [hdenom]
-  have hN2 : ((N : ℝ) : ℂ) ^ (k - 1) = (Real.sqrt N : ℂ) ^ (2 * (k - 1)) := by
-    -- `zpow_mul` needs both the real/natural cast and the numeral exponent made syntactic.
-    rw [show ((N : ℝ) : ℂ) = (Real.sqrt N : ℂ) ^ (2 : ℤ) by
-      rw [show (2 : ℤ) = ((2 : ℕ) : ℤ) from rfl, zpow_natCast, sq]
-      exact hsqN.symm, ← zpow_mul]
-  have hsplit : ((Real.sqrt N : ℂ) * Complex.I * (t : ℂ)) ^ (-k) =
-      (Real.sqrt N : ℂ) ^ (-k) * Complex.I ^ (-k) * (t : ℂ) ^ (-k) := by
-    rw [mul_zpow, mul_zpow]
-  rw [mul_assoc, hN2, hsplit]
-  -- Reassociate the product and normalize its integer exponent so `zpow_add₀` sees the
-  -- cancellable square-root powers.
-  rw [show (Real.sqrt N : ℂ) ^ (2 * (k - 1)) *
-        ((Real.sqrt N : ℂ) ^ (-k) * Complex.I ^ (-k) * (t : ℂ) ^ (-k)) =
-      ((Real.sqrt N : ℂ) ^ (2 * (k - 1)) * (Real.sqrt N : ℂ) ^ (-k)) *
-        (Complex.I ^ (-k) * (t : ℂ) ^ (-k)) by ring,
-    ← zpow_add₀ hNc, show 2 * (k - 1) + -k = k - 2 by ring]
-  ring
 
 end UpperHalfPlane
 
@@ -229,10 +237,18 @@ theorem frickeCompletedL_eq_cpow_mul_Λ [Γ.IsArithmetic]
     show s / 2 = ((1 / 2 : ℝ) : ℂ) * s by push_cast; ring,
     Complex.cpow_mul_ofReal_nonneg (Nat.cast_nonneg _), ← Real.sqrt_eq_rpow]
 
-/-- The level-`N` completed L-function of a positive-weight cusp form is entire. -/
+/-- The level-`N` completed L-function of a cusp form is entire (in nonpositive weight the form,
+hence its completed L-function, is zero). -/
 theorem differentiable_frickeCompletedL [Γ.IsArithmetic]
-    (f : CuspForm Γ k) (N : ℕ+) (hk : 0 < k) :
+    (f : CuspForm Γ k) (N : ℕ+) :
     Differentiable ℂ (frickeCompletedL f N) := by
+  rcases lt_or_ge 0 k with hk | hk
+  swap
+  · have : frickeCompletedL f N = 0 := by
+      funext s
+      simp [frickeCompletedL, coe_eq_zero_of_weight_nonpos hk f, mellin]
+    rw [this]
+    exact differentiable_const 0
   rw [funext fun s ↦ frickeCompletedL_eq_sqrt_cpow_mul_Λ f N hk s]
   let _ : NeZero (Real.sqrt (N : ℕ) : ℂ) :=
     ⟨Complex.ofReal_ne_zero.mpr (Real.sqrt_pos.mpr (by exact_mod_cast N.pos)).ne'⟩
@@ -250,7 +266,7 @@ private lemma scaled_fricke_relation (H G : ℍ → ℂ)
   have htc : (t : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr ht.ne'
   rw [hG, congrFun (resToImagAxis_smul _ _) _]
   simp only [Pi.smul_apply]
-  rw [UpperHalfPlane.resToImagAxis_slash_frickeGL H ht]
+  rw [UpperHalfPlane.resToImagAxis_slash_frickeGL H]
   -- Bridge the real `rpow` used by the FE convention to the corresponding complex `zpow`.
   rw [smul_eq_mul, smul_eq_mul,
     show ((t ^ (k : ℝ) : ℝ) : ℂ) = (t : ℂ) ^ k by
@@ -271,10 +287,11 @@ private lemma scaled_fricke_relation (H G : ℍ → ℂ)
     ← zpow_add₀ Complex.I_ne_zero, ← zpow_add₀ htc, add_neg_cancel, zpow_zero,
     zpow_zero, one_mul, one_mul]
 
-/-- The identity underlying Hecke's two-form functional equation.  If `g` is the
-Petersson-normalized Fricke companion of `f`, then `Λ_N(k - s, f) = i^k Λ_N(s, g)`, without
-additional weight or width hypotheses; this follows from Mellin change of variables alone. -/
-theorem frickeCompletedL_sub_eq_I_zpow_mul
+/-- **Hecke's two-form functional equation.**  If `g` is the Petersson-normalized Fricke
+companion of `f`, then `Λ_N(k - s, f) = i^k Λ_N(s, g)`, without weight or width hypotheses; this
+follows from Mellin change of variables alone.  The two forms may live on different carriers, but
+both have weight `k`. -/
+theorem frickeCompletedL_functional_equation
     {Γ₁ Γ₂ : Subgroup (GL (Fin 2) ℝ)}
     (f : CuspForm Γ₁ k) (g : CuspForm Γ₂ k) (N : ℕ) [NeZero N]
     (hg : (g : ℍ → ℂ) =
@@ -315,36 +332,19 @@ theorem frickeCompletedL_sub_eq_I_zpow_mul
     show (fun t ↦ B (1 / t)) = (fun t ↦ B t⁻¹) by simp [one_div],
     mellin_comp_inv, neg_neg, smul_eq_mul]
 
-/-- Hecke's two-form functional equation.  If `f` and `g` are positive-weight, width-one cusp
-forms and `g` is the Petersson-normalized Fricke companion of `f`, then
-`Λ_N(k - s, f) = i^k Λ_N(s, g)`.  The two forms may live on different carriers, but both have
-weight `k`.  This is the classical hypothesis-bearing interface; for the stronger underlying
-Mellin identity, use `frickeCompletedL_sub_eq_I_zpow_mul`. -/
-theorem frickeCompletedL_functional_equation
-    {Γ₁ Γ₂ : Subgroup (GL (Fin 2) ℝ)}
-    (f : CuspForm Γ₁ k) (g : CuspForm Γ₂ k) (N : ℕ) [NeZero N]
-    (_hw₁ : Γ₁.strictWidthInfty = 1) (_hw₂ : Γ₂.strictWidthInfty = 1) (_hk : 0 < k)
-    (hg : (g : ℍ → ℂ) =
-      (Real.sqrt N : ℂ) ^ (2 - k) • ((f : ℍ → ℂ) ∣[k] TauCeti.frickeGL ℝ N))
-    (s : ℂ) :
-    frickeCompletedL f (N.toPNat (NeZero.pos N)) ((k : ℂ) - s) =
-      Complex.I ^ k * frickeCompletedL g (N.toPNat (NeZero.pos N)) s :=
-  frickeCompletedL_sub_eq_I_zpow_mul f g N hg s
-
 open Matrix.SpecialLinearGroup CongruenceSubgroup
 open TauCeti
 
 variable {N : ℕ} [NeZero N] {k : ℤ}
 
-/-- Hecke's functional equation for a positive-weight cusp form on `Γ₁(N)`, with the normalized
+/-- Hecke's functional equation for a cusp form on `Γ₁(N)`, with the normalized
 Fricke operator providing the companion cusp form. -/
 theorem frickeCompletedL_functional_equation_gamma1
-    (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) (hk : 0 < k) (s : ℂ) :
+    (f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) (s : ℂ) :
     frickeCompletedL f (N.toPNat (NeZero.pos N)) ((k : ℂ) - s) =
       Complex.I ^ k *
         frickeCompletedL (normalizedFrickeOperatorCusp k f) (N.toPNat (NeZero.pos N)) s := by
   apply frickeCompletedL_functional_equation f (normalizedFrickeOperatorCusp k f) N
-      (by simp) (by simp) hk
   simp only [coe_normalizedFrickeOperatorCusp, atkinLehnerNormalizer_def]
 
 end CuspForm

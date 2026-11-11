@@ -51,7 +51,8 @@ hyperplane `ker α_t` does not move with `t`, because the Gray vector field vani
 * `TauCeti.SmoothForm.preservesCoorientation_grayDiffeomorph`,
   `TauCeti.SmoothForm.isContactomorphism_grayDiffeomorph`: the flow maps are
   coorientation-preserving contactomorphisms.
-* `TauCeti.SmoothForm.contMDiff_grayDiffeomorph`: they form a smooth isotopy.
+* `TauCeti.SmoothForm.contMDiff_grayDiffeomorph`: they form a smooth isotopy, jointly smooth in
+  both times and the point.
 * `TauCeti.SmoothForm.grayDiffeomorph_apply_eq_self`: the isotopy fixes the points at which the
   contact hyperplane is stationary.
 
@@ -112,36 +113,72 @@ theorem grayRate_def (t : ℝ) (x : M) :
   (rfl)
 
 variable {α} [FiniteDimensional ℝ E]
-  (hc : ∀ t, (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).IsContactForm)
+
+section Slice
+
+variable {t : ℝ}
+  (hc : (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).IsContactForm)
 include hc
 
-/-- The Gray vector field is horizontal: `α_t(Y_t) = 0`. -/
-theorem apply_grayVectorField (t : ℝ) (x : M) :
+/-- The Gray vector field is horizontal: `α_t(Y_t) = 0` whenever the slice `α_t` is a contact
+form. -/
+theorem apply_grayVectorField (x : M) :
     (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x
       ![α.grayVectorField t x] = 0 :=
-  (hc t).apply_contactMoserVectorField _ x
+  hc.apply_contactMoserVectorField _ x
 
-/-- **The Gray vector field is characterized by the horizontal contact-Moser equation**: a tangent
-vector is the value of the Gray vector field at time `t` exactly when it lies in `ker α_t` and
-`(ι_v dα_t + ∂_t α_t)|ker α_t = 0`. -/
-theorem eq_grayVectorField_iff {t : ℝ} {x : M} {v : TangentSpace I x} :
+/-- **The Gray vector field is characterized by the horizontal contact-Moser equation**: if the
+slice `α_t` is a contact form, a tangent vector is the value of the Gray vector field at time `t`
+exactly when it lies in `ker α_t` and `(ι_v dα_t + ∂_t α_t)|ker α_t = 0`. -/
+theorem eq_grayVectorField_iff {x : M} {v : TangentSpace I x} :
     v = α.grayVectorField t x ↔
       (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x ![v] = 0 ∧
         ∀ w ∈ (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).kerDistribution x,
           mextDeriv (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x ![v, w] +
             (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 x ![w] =
               0 :=
-  (hc t).eq_contactMoserVectorField_iff
+  hc.eq_contactMoserVectorField_iff
 
-/-- **Gray's equation**: `L_{Y_t} α_t + ∂_t α_t = μ_t α_t`, where `μ_t = (∂_t α_t)(R_{α_t})` is
-the Gray rate, evaluated on a tangent vector. -/
-theorem mlieDerivForm_grayVectorField_add (t : ℝ) (x : M) (v : TangentSpace I x) :
+/-- **Gray's equation**: if the slice `α_t` is a contact form, then
+`L_{Y_t} α_t + ∂_t α_t = μ_t α_t`, where `μ_t = (∂_t α_t)(R_{α_t})` is the Gray rate, evaluated on
+a tangent vector. -/
+theorem mlieDerivForm_grayVectorField_add (x : M) (v : TangentSpace I x) :
     mlieDerivForm (α.grayVectorField t)
         (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x ![v] +
       (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 x ![v] =
         α.grayRate (t, x) *
           (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x ![v] :=
-  (hc t).mlieDerivForm_contactMoserVectorField_add _ x v
+  hc.mlieDerivForm_contactMoserVectorField_add _ x v
+
+/-- **The Gray vector field vanishes where the contact hyperplane is stationary.** If the slice
+`α_t` is a contact form and the hyperplane `ker α_u` at `x` is the same for all times `u`, then
+`Y_t(x) = 0`: the velocity `∂_t α_t` annihilates the hyperplane at `x`, which the contact-Moser
+field then ignores. -/
+theorem grayVectorField_eq_zero [I.Boundaryless] {x : M}
+    (hx : ∀ u, (mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).kerDistribution x =
+      (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).kerDistribution x) :
+    α.grayVectorField t x = 0 := by
+  rw [grayVectorField_def, hc.contactMoserVectorField_eq_zero_iff]
+  intro w hw
+  -- The vector `w` stays in the hyperplane at all times, so `u ↦ α_u(w)` vanishes identically,
+  -- and its derivative `(∂_t α_t)(w)` is zero.
+  have hzero (u : ℝ) :
+      (mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).1 x ![w] = 0 :=
+    mem_kerDistribution.1 (by rw [hx u]; exact hw)
+  have hd := (ContinuousAlternatingMap.apply ℝ E ℝ ![w]).hasFDerivAt.comp_hasDerivAt t
+    (α.hasDerivAt_mpullback_prodMk_timeDeriv t x)
+  have hfun : (⇑(ContinuousAlternatingMap.apply ℝ E ℝ ![w]) ∘ fun u ↦
+      (mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).1 x) = fun _ ↦ 0 :=
+    funext fun u ↦ ContinuousAlternatingMap.apply_apply.trans (hzero u)
+  rw [hfun] at hd
+  -- `ContinuousAlternatingMap.apply_apply` evaluates the left side, read in the fibre
+  -- `Trivial M ℝ x`, which is `ℝ`.
+  exact hd.unique (hasDerivAt_const t (0 : ℝ))
+
+end Slice
+
+variable (hc : ∀ t, (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).IsContactForm)
+include hc
 
 /-- The Gray vector field of a smooth family of contact forms depends smoothly on time and point:
 `(t, x) ↦ (x, Y_t(x))` is smooth into the tangent bundle. -/
@@ -152,40 +189,8 @@ theorem contMDiff_grayVectorField :
 
 /-- The Gray rate `μ_t = (∂_t α_t)(R_{α_t})` of a smooth family of contact forms depends smoothly
 on time and point. -/
-theorem contMDiff_grayRate : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) ∞ α.grayRate := fun p ↦ by
-  have hR := contMDiff_reebVectorField_mpullback_prodMk α hc p
-  have hβ := (contMDiffAt_sectionAlong_degreeOneEquiv_iff (b := Prod.snd)
-    (α := fun q : ℝ × M ↦ mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id)
-      α.timeDeriv)).2 (contMDiff_mpullback_prodMk α.timeDeriv p)
-  have h := (contMDiffAt_totalSpace.1
-    (ContMDiffAt.clm_bundle_apply (E₂ := Trivial M ℝ) hβ hR)).2
-  simp only [Trivial.eq_trivialization, degreeOneEquiv_apply_apply_vec] at h
-  -- This is the defining formula of the Gray rate.
-  exact h
-
-/-- **The Gray vector field vanishes where the contact hyperplane is stationary.** If the
-hyperplane `ker α_t` at `x` is the same for all times, then `Y_t(x) = 0` for all times: the
-velocity `∂_t α_t` annihilates the hyperplane at `x`, which the contact-Moser field then ignores. -/
-theorem grayVectorField_eq_zero [I.Boundaryless] {x : M}
-    (hx : ∀ u, (mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).kerDistribution x =
-      (mpullback (Prod.mk 0) (contMDiff_const.prodMk contMDiff_id) α).kerDistribution x)
-    (t : ℝ) : α.grayVectorField t x = 0 := by
-  rw [grayVectorField_def, (hc t).contactMoserVectorField_eq_zero_iff]
-  intro w hw
-  -- The vector `w` stays in the hyperplane at all times, so `u ↦ α_u(w)` vanishes identically,
-  -- and its derivative `(∂_t α_t)(w)` is zero.
-  have hzero (u : ℝ) :
-      (mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).1 x ![w] = 0 :=
-    mem_kerDistribution.1 (by rw [hx u, ← hx t]; exact hw)
-  have hd := (ContinuousAlternatingMap.apply ℝ E ℝ ![w]).hasFDerivAt.comp_hasDerivAt t
-    (α.hasDerivAt_mpullback_prodMk_timeDeriv t x)
-  have hfun : (⇑(ContinuousAlternatingMap.apply ℝ E ℝ ![w]) ∘ fun u ↦
-      (mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).1 x) = fun _ ↦ 0 :=
-    funext fun u ↦ ContinuousAlternatingMap.apply_apply.trans (hzero u)
-  rw [hfun] at hd
-  -- `ContinuousAlternatingMap.apply_apply` evaluates the left side, read in the fibre
-  -- `Trivial M ℝ x`, which is `ℝ`.
-  exact hd.unique (hasDerivAt_const t (0 : ℝ))
+theorem contMDiff_grayRate : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) ∞ α.grayRate :=
+  contMDiff_apply_reebVectorField_mpullback_prodMk α α.timeDeriv hc
 
 /-! ### Gray's stability theorem on compact manifolds -/
 
@@ -232,14 +237,14 @@ theorem grayDiffeomorph_grayDiffeomorph (r s t : ℝ) (x : M) :
     (isCompleteVectorField_timeDependentSuspensionField_grayVectorField hc)
     ((contMDiff_grayVectorField hc).of_le (by simp)) r s t x
 
-/-- Gray's isotopy depends smoothly on the final time and the point. -/
-theorem contMDiff_grayDiffeomorph (s : ℝ) :
-    ContMDiff (𝓘(ℝ, ℝ).prod I) I ∞ (fun p : ℝ × M ↦ grayDiffeomorph hc s p.1 p.2) := by
+/-- Gray's isotopy depends smoothly on the initial time, the final time and the point. -/
+theorem contMDiff_grayDiffeomorph :
+    ContMDiff ((𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ)).prod I) I ∞
+      (fun p : (ℝ × ℝ) × M ↦ grayDiffeomorph hc p.1.1 p.1.2 p.2) := by
   simp only [grayDiffeomorph_apply]
-  exact (contMDiff_timeDependentFlowOf
+  exact contMDiff_timeDependentFlowOf
     (isCompleteVectorField_timeDependentSuspensionField_grayVectorField hc) le_top
-    (contMDiff_grayVectorField hc)).comp
-      (((contMDiff_const (c := s)).prodMk contMDiff_fst).prodMk contMDiff_snd)
+    (contMDiff_grayVectorField hc)
 
 /-- **Gray's stability theorem.** On a compact manifold without boundary, the time-dependent flow
 `φ_{s,t}` of the Gray vector field of a smooth family of contact forms `α_t` rescales the forms:
@@ -259,7 +264,7 @@ theorem mpullback_grayDiffeomorph_apply (s t : ℝ) (x : M) :
     funext y
     ext v
     have hv : v = ![v 0] := funext fun i ↦ by fin_cases i; rfl
-    have h := mlieDerivForm_grayVectorField_add hc t y (v 0)
+    have h := mlieDerivForm_grayVectorField_add (hc t) y (v 0)
     rw [hv]
     simp only [coe_mpullback, coe_timeDeriv, Pi.add_apply, ContinuousAlternatingMap.add_apply,
       ContinuousAlternatingMap.smul_apply, smul_eq_mul] at h ⊢
@@ -297,6 +302,7 @@ theorem grayDiffeomorph_apply_eq_self {x : M}
     (s t : ℝ) : grayDiffeomorph hc s t x = x := by
   rw [grayDiffeomorph_apply]
   exact timeDependentFlowOf_eq_self_of_forall_eq_zero
-    ((contMDiff_grayVectorField hc).of_le (by simp)) (grayVectorField_eq_zero hc hx) s t
+    ((contMDiff_grayVectorField hc).of_le (by simp))
+    (fun u ↦ grayVectorField_eq_zero (hc u) fun v ↦ (hx v).trans (hx u).symm) s t
 
 end TauCeti.SmoothForm
