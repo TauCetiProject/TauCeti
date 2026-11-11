@@ -45,12 +45,7 @@ theorem exists_linearIndependent_pair_companion
     (pair_iff first_nonzero).mp independent
   by_cases mem_second : independentVector ∈ Submodule.span baseField {second}
   · refine ⟨first + independentVector, ?_, ?_⟩
-    · apply (pair_iff first_nonzero).mpr
-      intro sum_mem
-      apply outside_first
-      have first_mem : first ∈ Submodule.span baseField {first} :=
-        Submodule.subset_span (by simp)
-      simpa using (Submodule.span baseField {first}).sub_mem sum_mem first_mem
+    · exact LinearIndependent.pair_add_right_iff.mpr independent
     · apply (pair_iff second_nonzero).mpr
       intro sum_mem
       have first_mem : first ∈ Submodule.span baseField {second} := by
@@ -60,10 +55,10 @@ theorem exists_linearIndependent_pair_companion
         rintro rfl
         exact first_nonzero (by simpa using ha.symm)
       apply outside_first
-      have hsecond : second ∈ Submodule.span baseField {first} := by
-        rw [← ha, Submodule.mem_span_singleton]
-        exact ⟨a⁻¹, by simp [smul_smul, ha₀]⟩
-      exact (Submodule.span_le.mpr (by simpa using hsecond)) mem_second
+      have hsecond : second ∈ Submodule.span baseField {first} :=
+        (Submodule.span baseField {first}).smul_mem_iff ha₀ |>.mp
+          (ha.symm ▸ Submodule.mem_span_singleton_self first)
+      exact Submodule.mem_span_singleton_trans mem_second hsecond
   · exact ⟨independentVector, independent,
       (pair_iff second_nonzero).mpr mem_second⟩
 
