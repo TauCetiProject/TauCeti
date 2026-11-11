@@ -155,10 +155,7 @@ theorem Wkp.norm_ofTestFunctionₗ_le_of_eqOn_mul (k : ℕ) {psi : E → ℝ}
     ‖ofTestFunctionₗ (mu := mu) (p := p) k Phi‖ ≤ 2 ^ (k + 1) * M * ‖u‖ := by
   -- On an empty domain every Sobolev space is trivial, so both sides vanish.
   rcases (Omega : Set E).eq_empty_or_nonempty with hO | ⟨x₀, hx₀⟩
-  · have : Subsingleton (Wkp mu Omega p k) := ⟨fun a b => Wkp.ext k (Lp.ext (by
-      exact Filter.Eventually.filter_mono
-        (ae_eq_bot.2 (Measure.restrict_eq_zero.2 (by simp [hO]))).le
-        Filter.eventually_bot))⟩
+  · have := Wkp.subsingleton_of_eq_empty (mu := mu) (p := p) k hO
     rw [Subsingleton.elim u 0, Subsingleton.elim (ofTestFunctionₗ (mu := mu) (p := p) k Phi) 0]
     simp
   have hM : 0 ≤ M := (norm_nonneg _).trans (hbound 0 (Nat.zero_le k) x₀ hx₀)

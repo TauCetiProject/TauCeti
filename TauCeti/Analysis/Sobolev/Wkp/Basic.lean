@@ -479,6 +479,12 @@ theorem ext : ∀ (k : ℕ) {u v : Wkp mu Omega p k}, value k u = value k v → 
   | 0, _, _, h => by simpa only [value_zero] using h
   | k + 1, _, _, h => ext_lowerOrder k (ext k (by simpa only [value_succ] using h))
 
+/-- On an empty domain every Sobolev space is trivial. -/
+theorem subsingleton_of_eq_empty (k : ℕ) (h : (Omega : Set E) = ∅) :
+    Subsingleton (Wkp mu Omega p k) :=
+  ⟨fun _ _ ↦ ext k (Lp.ext (Filter.Eventually.filter_mono
+    (ae_eq_bot.2 (Measure.restrict_eq_zero.2 (by simp [h]))).le Filter.eventually_bot))⟩
+
 /-- The graph norm controls the one-order-lower Sobolev component. -/
 theorem norm_lowerOrder_le (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
     ‖lowerOrder k u‖ ≤ ‖u‖ := by

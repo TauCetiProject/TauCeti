@@ -273,8 +273,7 @@ theorem Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp {A : E →L[ℝ]
       (Filter.Eventually.of_forall fun x => Subsingleton.elim _ _)
     have hf0 : f = 0 := Lp.eq_zero_iff_ae_eq_zero.2 (by
       filter_upwards [hf] with x hx
-      rw [← hx, Subsingleton.elim (A ∘L Wkp.iteratedGradient 1 u x) 0, map_zero]
-      rfl)
+      rw [← hx, Subsingleton.elim (A ∘L Wkp.iteratedGradient 1 u x) 0, map_zero, Pi.zero_apply])
     simp [hu, hf0]
   have habs := abs_det_pos e
   have hmap : (mu.restrict U).map e ≤
