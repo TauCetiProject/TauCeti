@@ -21,8 +21,7 @@ the image of the component over `L`. This labelling remains bijective over every
 intermediate field.
 
 Taking `L` to be a separable closure gives a common finite separable extension distinguishing
-the geometric components on every affine chart. The assertion here concerns affine spectra;
-pullback identifications and gluing on overlapping affine opens are separate steps.
+the geometric components on every affine chart. These results concern affine spectra only.
 
 ## References
 

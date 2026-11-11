@@ -17,9 +17,7 @@ already be distinguished over a finite intermediate field. Contraction then give
 on minimal primes. This also holds over every larger intermediate field, so the field of
 definition may be enlarged to accommodate other finite splitting problems.
 
-For a finitely generated algebra `A`, finiteness of the minimal primes is automatic. Applied
-to a separable closure, this descends the irreducible components of an affine scheme to a
-finite separable extension, a step in labelling geometric components of curves.
+The finiteness hypothesis on the minimal primes holds whenever `L ⊗[K] A` is Noetherian.
 
 ## References
 
