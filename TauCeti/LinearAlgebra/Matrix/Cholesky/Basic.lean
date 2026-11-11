@@ -37,9 +37,6 @@ triangular and positive on the diagonal.
   2013, Section 7.2.
 -/
 
--- The declaration names and signatures of the Cholesky API below follow the skeleton pinned in
--- `TauCetiRoadmap/StandardDistributions/Suggested.lean`, section "Cholesky coordinates".
-
 public section
 
 noncomputable section
