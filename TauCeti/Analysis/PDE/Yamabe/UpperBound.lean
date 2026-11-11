@@ -15,6 +15,7 @@ import TauCeti.Analysis.PDE.Yamabe.Bubble.Cutoff
 import TauCeti.Geometry.Manifold.ContMDiff.ChartCutoff
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.Topology.Algebra.Support
 
 /-!
 # The Yamabe quotient is at most the Yamabe constant of the sphere
