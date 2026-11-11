@@ -1,0 +1,451 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.LinearAlgebra.Determinant
+public import TauCeti.Algebra.Homology.Periodic.ModuleCat
+public import TauCeti.LinearAlgebra.Basis.Exact
+import TauCeti.LinearAlgebra.Exact
+
+/-!
+# The torsion of a based two-periodic complex over a field
+
+A two-periodic complex `C` over a field `F` is a complex for the shape `ComplexShape.up (ZMod 2)`:
+an even space `C₀`, an odd space `C₁`, and differentials `d₀ : C₀ → C₁` and `d₁ : C₁ → C₀` with
+`d₁ d₀ = 0` and `d₀ d₁ = 0`. Fix an ordered basis `c i : Basis (Fin (n i)) F (C.X i)` of each of
+the two spaces. Write `B₀ ⊆ C₀` and `B₁ ⊆ C₁` for the boundaries, the images of `d₁` and `d₀`.
+
+When `C` is acyclic, in each degree `j` the sequence `0 → Bⱼ → Cⱼ → Bⱼ₊₁ → 0` is short exact, so
+a basis `bⱼ` of `Bⱼ` followed by lifts `sⱼ` of a basis `bⱼ₊₁` of `Bⱼ₊₁` is an ordered basis of
+`Cⱼ`. Its determinant with respect to `c j` is the *bracket* `[bⱼ sⱼ / cⱼ]`
+(`HomologicalComplex.parityTorsionBracket`), and the torsion of `C` is
+
+`τ(C) = [b₁ s₁ / c₁] · [b₀ s₀ / c₀]⁻¹`
+
+(`HomologicalComplex.parityTorsion`), the odd bracket over the even one; it is `0` when `C` is not
+acyclic. The product does not depend on the boundary bases nor on the lifts
+(`HomologicalComplex.parityTorsion_eq`): the lifts do not change the brackets, and changing `b₀`
+or `b₁` multiplies both brackets by the same determinant, because each boundary space appears in
+both degrees. Unlike the torsion of a `ℤ`-graded complex, no boundedness condition is needed.
+
+The normalization is that of the `ℤ`-graded torsion
+`HomologicalComplex.reidemeisterTorsion`, in which the bracket of degree `i` carries the exponent
+`(-1) ^ (i + 1)`. An acyclic complex with `d₀ = 0` has torsion the inverse of the determinant of
+`d₁ : C₁ → C₀` (`HomologicalComplex.parityTorsion_of_d_zero_one`); for instance multiplication by
+`a ≠ 0` on `F`, from the odd to the even degree, has torsion `a⁻¹`. Dually, an acyclic complex with
+`d₁ = 0` has torsion the determinant of `d₀` (`HomologicalComplex.parityTorsion_of_d_one_zero`),
+and the zero complex has torsion `1` (`HomologicalComplex.parityTorsion_eq_one`). A complex
+that is not acyclic has torsion `0`, and the torsion of an acyclic complex is nonzero
+(`HomologicalComplex.parityTorsion_eq_zero_iff`).
+
+Replacing the bases `c i` by `c' i` multiplies the torsion by `[c'₀ / c₀] · [c'₁ / c₁]⁻¹`, where
+`[c'ᵢ / cᵢ]` is the determinant of `c' i` with respect to `c i`
+(`HomologicalComplex.parityTorsion_eq_mul_det`). In particular reordering the bases multiplies the
+torsion by a sign, and rescaling the basis vectors by units multiplies it by a monomial in those
+units; these are the ambiguities of torsion invariants defined from bases chosen up to signs and
+deck transformations.
+
+Torsions of two-periodic complexes over Novikov rings, read in each field component of a total
+quotient ring, are the Floer analogues of the Reidemeister torsion of a closed manifold.
+
+## Main declarations
+
+* `HomologicalComplex.parityTorsionBracket`: the bracket `[bⱼ sⱼ / cⱼ]` of a degree.
+* `HomologicalComplex.parityTorsionBracket_eq_det_append`: the bracket is the determinant of the
+  boundary basis followed by the lifts.
+* `HomologicalComplex.parityTorsion`: the torsion of a based two-periodic complex.
+* `HomologicalComplex.parityTorsion_eq`: the torsion of an acyclic complex is the quotient of the
+  brackets for any boundary bases and lifts.
+* `HomologicalComplex.parityTorsion_eq_zero_iff`: the torsion vanishes exactly when the complex is
+  not acyclic.
+* `HomologicalComplex.parityTorsion_eq_mul_det`: the change of the torsion under a change of the
+  bases.
+* `HomologicalComplex.parityTorsion_reindex`, `HomologicalComplex.parityTorsion_unitsSMul`: the
+  change of the torsion under a reordering, and under a rescaling by units, of the bases.
+* `HomologicalComplex.parityTorsion_of_d_zero_one`,
+  `HomologicalComplex.parityTorsion_of_d_one_zero`: the torsion when one differential vanishes.
+* `HomologicalComplex.parityTorsion_eq_one`: the zero complex has torsion `1`.
+
+## References
+
+* M. Hutchings, Y.-J. Lee, *Circle-valued Morse theory, Reidemeister torsion, and Seiberg–Witten
+  invariants of 3-manifolds*, Topology 38 (1999), §2.
+* Y.-J. Lee, *Reidemeister torsion in Floer–Novikov theory and counting pseudo-holomorphic tori, I*,
+  J. Symplectic Geom. 3 (2005), §2.
+* J. Milnor, *Whitehead torsion*, Bull. Amer. Math. Soc. 72 (1966), §3.
+-/
+
+public section
+
+noncomputable section
+
+open CategoryTheory Module
+
+namespace HomologicalComplex
+
+variable {F : Type*} [Field F] {C : HomologicalComplex (ModuleCat F) (ComplexShape.up (ZMod 2))}
+  {n : ZMod 2 → ℕ} (c : ∀ i, Basis (Fin (n i)) F (C.X i))
+
+section Bracket
+
+variable {j k : ZMod 2} (hjk : j + 1 = k) (h : C.ExactAt j) {p q : ℕ}
+  (b₁ : Basis (Fin p) F (LinearMap.range (C.d k j).hom))
+  (b₀ : Basis (Fin q) F (LinearMap.range (C.d j k).hom))
+  (s : Fin q → C.X j) (hs : ∀ l, (C.d j k).hom (s l) = b₀ l)
+
+/-- The basis `(b₁, s)` of `Cⱼ` made of a basis `b₁` of the boundaries `Bⱼ` followed by lifts `s`
+of a basis `b₀` of the boundaries `Bⱼ₊₁`. -/
+private def bracketBasis : Basis (Fin p ⊕ Fin q) F (C.X j) :=
+  Basis.ofExactLift (Submodule.injective_subtype _)
+    (exact_subtype_rangeRestrict_of_add_one_eq hjk h) b₁ b₀ s fun l ↦ Subtype.ext (hs l)
+
+include c hjk h b₁ b₀ in
+/-- In a degree where the complex is exact, the dimension of `Cⱼ` is the sum of the dimensions of
+the boundaries `Bⱼ` and `Bⱼ₊₁`. -/
+private theorem dim_eq_add : n j = p + q := by
+  let _ : Module.Finite F (C.X j) := .of_basis (c j)
+  have hdim := (exact_subtype_rangeRestrict_of_add_one_eq hjk h).finrank_eq_add
+    (Submodule.injective_subtype _) (C.d j k).hom.surjective_rangeRestrict
+  simpa only [finrank_eq_card_basis (c j), finrank_eq_card_basis b₁, finrank_eq_card_basis b₀,
+    Fintype.card_fin] using hdim
+
+/-- The bracket `[b₁ s / cⱼ]`: the determinant, with respect to the basis `c j` of `Cⱼ`, of the
+family made of a basis `b₁` of the boundaries `Bⱼ ⊆ Cⱼ` followed by lifts `s` of a basis `b₀` of
+the boundaries `Bⱼ₊₁ ⊆ Cⱼ₊₁`. -/
+def parityTorsionBracket : F :=
+  ((c j).reindex ((finCongr (dim_eq_add c hjk h b₁ b₀)).trans
+    finSumFinEquiv.symm)).det (bracketBasis hjk h b₁ b₀ s hs)
+
+/-- The bracket `[b₁ s / cⱼ]` is the determinant, with respect to the basis `c j` of `Cⱼ`, of the
+family `(b₁, s)` obtained by appending the lifts `s` to the basis `b₁` of the boundaries `Bⱼ`. -/
+theorem parityTorsionBracket_eq_det_append (hn : n j = p + q) :
+    parityTorsionBracket c hjk h b₁ b₀ s hs =
+      (c j).det (Fin.append (fun l ↦ (b₁ l : C.X j)) s ∘ Fin.cast hn) := by
+  rw [parityTorsionBracket, Basis.det_reindex]
+  congr 1
+  ext l
+  obtain ⟨m, rfl⟩ := (finCongr hn.symm).surjective l
+  induction m using Fin.addCases <;> simp [bracketBasis]
+
+/-- Reindexing the boundary bases of a bracket along equalities of their lengths does not change
+the bracket. -/
+private theorem parityTorsionBracket_reindex {p' q' : ℕ} (hp : p = p') (hq : q = q') :
+    parityTorsionBracket c hjk h (b₁.reindex (finCongr hp)) (b₀.reindex (finCongr hq))
+      (s ∘ Fin.cast hq.symm) (fun l ↦ by simp [hs]) = parityTorsionBracket c hjk h b₁ b₀ s hs := by
+  subst hp hq
+  congr 1 <;> simp
+
+/-- Replacing the boundary bases and the lifts in a bracket multiplies it by the determinants of
+the new boundary bases with respect to the old ones; in particular the bracket does not depend on
+the lifts. -/
+theorem parityTorsionBracket_eq_mul (b₁' : Basis (Fin p) F (LinearMap.range (C.d k j).hom))
+    (b₀' : Basis (Fin q) F (LinearMap.range (C.d j k).hom))
+    (s' : Fin q → C.X j) (hs' : ∀ l, (C.d j k).hom (s' l) = b₀' l) :
+    parityTorsionBracket c hjk h b₁' b₀' s' hs' =
+      parityTorsionBracket c hjk h b₁ b₀ s hs * (b₁.det b₁' * b₀.det b₀') := by
+  simp only [parityTorsionBracket, bracketBasis]
+  exact Basis.det_ofExactLift _ _ _ _ _ _ _ _ _ _ _
+
+/-- Replacing the basis `c j` of `Cⱼ` by `c' j` multiplies a bracket by the determinant of
+`c j` with respect to `c' j`. -/
+theorem parityTorsionBracket_eq_det_mul (c' : ∀ i, Basis (Fin (n i)) F (C.X i)) :
+    parityTorsionBracket c' hjk h b₁ b₀ s hs =
+      (c' j).det (c j) * parityTorsionBracket c hjk h b₁ b₀ s hs := by
+  rw [parityTorsionBracket, parityTorsionBracket, ← Basis.det_mul_det _ ((c j).reindex
+    ((finCongr (dim_eq_add c hjk h b₁ b₀)).trans finSumFinEquiv.symm))]
+  simp [Basis.det_reindex, Function.comp_assoc, -Equiv.symm_trans, -Equiv.coe_trans]
+
+/-- A bracket is nonzero. -/
+theorem parityTorsionBracket_ne_zero : parityTorsionBracket c hjk h b₁ b₀ s hs ≠ 0 :=
+  (Basis.isUnit_det _ _).ne_zero
+
+/-- In a degree `j` where the boundaries `Bⱼ` fill `Cⱼ` (that is, `Bⱼ₊₁ = 0`, as the dimension
+`n j` is `p`), the bracket is the determinant of the basis `b₁` of `Bⱼ`. -/
+theorem parityTorsionBracket_eq_det_left (hp : n j = p) :
+    parityTorsionBracket c hjk h b₁ b₀ s hs =
+      (c j).det fun l ↦ (b₁ (Fin.cast hp l) : C.X j) := by
+  have hq : q = 0 := by have := dim_eq_add c hjk h b₁ b₀; omega
+  subst hq
+  rw [parityTorsionBracket_eq_det_append c hjk h b₁ b₀ s hs hp]
+  congr 1
+  ext l
+  exact Fin.append_left _ _ (Fin.cast hp l)
+
+/-- In a degree `j` where `Cⱼ` has no nonzero boundaries (that is, `Bⱼ = 0`, as the dimension
+`n j` is `q`), the bracket is the determinant of the lifts `s` of the basis `b₀` of `Bⱼ₊₁`. -/
+theorem parityTorsionBracket_eq_det_right (hq : n j = q) :
+    parityTorsionBracket c hjk h b₁ b₀ s hs = (c j).det (s ∘ Fin.cast hq) := by
+  have hp : p = 0 := by have := dim_eq_add c hjk h b₁ b₀; omega
+  subst hp
+  rw [parityTorsionBracket_eq_det_append c hjk h b₁ b₀ s hs (by omega)]
+  congr 1
+  ext l
+  rw [Function.comp_apply, Function.comp_apply, show Fin.cast (by omega) l =
+    Fin.natAdd 0 (Fin.cast hq l) from Fin.ext (by simp), Fin.append_right]
+
+end Bracket
+
+section Chosen
+
+variable (C)
+
+/-- The basis `Module.finBasis` of the boundaries in degree `j`, the image of the differential
+from degree `k`, used to define the torsion of a based two-periodic complex. -/
+private def boundaryBasis (k j : ZMod 2) :
+    Basis (Fin (finrank F (LinearMap.range (C.d k j).hom))) F (LinearMap.range (C.d k j).hom) :=
+  haveI : Module.Finite F (C.X k) := .of_basis (c k)
+  finBasis F _
+
+/-- Lifts of `boundaryBasis C c k j` through the differential, chosen by `Function.surjInv`. -/
+private def boundaryLift (k j : ZMod 2) (l : Fin (finrank F (LinearMap.range (C.d k j).hom))) :
+    C.X k :=
+  Function.surjInv (C.d k j).hom.surjective_rangeRestrict (boundaryBasis C c k j l)
+
+private theorem boundaryLift_spec (k j : ZMod 2) (l) :
+    (C.d k j).hom (boundaryLift C c k j l) = boundaryBasis C c k j l :=
+  congrArg Subtype.val (Function.surjInv_eq (C.d k j).hom.surjective_rangeRestrict _)
+
+/-- The torsion of a two-periodic complex of vector spaces with ordered bases `c 0` of the even
+space and `c 1` of the odd space: the quotient `[b₁ s₁ / c₁] · [b₀ s₀ / c₀]⁻¹` of the odd bracket
+by the even bracket when `C` is acyclic, for a choice of bases `b₀`, `b₁` of the boundaries and
+lifts `s₀`, `s₁`, and `0` otherwise. The quotient does not depend on these choices
+(`parityTorsion_eq`). -/
+def parityTorsion : F := by
+  classical
+  exact if h : C.Acyclic then
+    parityTorsionBracket c (by decide) (h 1) (boundaryBasis C c 0 1) (boundaryBasis C c 1 0)
+        (boundaryLift C c 1 0) (boundaryLift_spec C c 1 0) *
+      (parityTorsionBracket c (zero_add 1) (h 0) (boundaryBasis C c 1 0) (boundaryBasis C c 0 1)
+        (boundaryLift C c 0 1) (boundaryLift_spec C c 0 1))⁻¹
+  else 0
+
+/-- The torsion of a complex that is not acyclic is `0`. -/
+@[simp]
+theorem parityTorsion_of_not_acyclic (h : ¬C.Acyclic) : C.parityTorsion c = 0 := by
+  simp [parityTorsion, h]
+
+variable {C c}
+
+/-- The torsion of an acyclic two-periodic complex is the quotient
+`[b₁ s₁ / c₁] · [b₀ s₀ / c₀]⁻¹` of its odd bracket by its even bracket, for any bases `b₀` of the
+even boundaries `B₀ = im d₁` and `b₁` of the odd boundaries `B₁ = im d₀`, and any lifts `s₁` of
+`b₀` through `d₁` and `s₀` of `b₁` through `d₀`. -/
+theorem parityTorsion_eq (h : C.Acyclic) {p q : ℕ}
+    (b₀ : Basis (Fin p) F (LinearMap.range (C.d 1 0).hom))
+    (b₁ : Basis (Fin q) F (LinearMap.range (C.d 0 1).hom))
+    (s₀ : Fin q → C.X 0) (hs₀ : ∀ l, (C.d 0 1).hom (s₀ l) = b₁ l)
+    (s₁ : Fin p → C.X 1) (hs₁ : ∀ l, (C.d 1 0).hom (s₁ l) = b₀ l) :
+    C.parityTorsion c =
+      parityTorsionBracket c (by decide) (h 1) b₁ b₀ s₁ hs₁ *
+        (parityTorsionBracket c (zero_add 1) (h 0) b₀ b₁ s₀ hs₀)⁻¹ := by
+  have hp : finrank F (LinearMap.range (C.d 1 0).hom) = p := by
+    rw [finrank_eq_card_basis b₀, Fintype.card_fin]
+  have hq : finrank F (LinearMap.range (C.d 0 1).hom) = q := by
+    rw [finrank_eq_card_basis b₁, Fintype.card_fin]
+  -- Reindex the chosen boundary bases to `Fin p` and `Fin q`; then changing them to `b₀` and `b₁`
+  -- multiplies both brackets by the same nonzero factor.
+  rw [parityTorsion, dite_eq_left h,
+    ← parityTorsionBracket_reindex c (by decide) (h 1) _ _ _ (boundaryLift_spec C c 1 0) hq hp,
+    ← parityTorsionBracket_reindex c (zero_add 1) (h 0) _ _ _ (boundaryLift_spec C c 0 1) hp hq,
+    parityTorsionBracket_eq_mul c (by decide) (h 1) _ _ _ _ b₁ b₀ s₁ hs₁,
+    parityTorsionBracket_eq_mul c (zero_add 1) (h 0) _ _ _ _ b₀ b₁ s₀ hs₀,
+    mul_inv, mul_comm (Basis.det _ b₀), mul_mul_mul_comm, mul_inv_cancel₀, mul_one]
+  exact mul_ne_zero (Basis.isUnit_det _ _).ne_zero (Basis.isUnit_det _ _).ne_zero
+
+/-- The torsion of an acyclic two-periodic complex is nonzero. -/
+theorem parityTorsion_ne_zero (h : C.Acyclic) : C.parityTorsion c ≠ 0 := by
+  rw [parityTorsion, dite_eq_left h]
+  exact mul_ne_zero (parityTorsionBracket_ne_zero c _ _ _ _ _ _)
+    (inv_ne_zero (parityTorsionBracket_ne_zero c _ _ _ _ _ _))
+
+/-- The torsion of a based two-periodic complex vanishes if and only if the complex is not
+acyclic. -/
+theorem parityTorsion_eq_zero_iff : C.parityTorsion c = 0 ↔ ¬C.Acyclic :=
+  ⟨fun h₀ h ↦ parityTorsion_ne_zero h h₀, parityTorsion_of_not_acyclic C c⟩
+
+end Chosen
+
+section BasisChange
+
+variable (c' : ∀ i, Basis (Fin (n i)) F (C.X i))
+
+/-- The basis-change formula for the torsion: replacing the bases `c i` of `C` by `c' i`
+multiplies the torsion by `[c'₀ / c₀] · [c'₁ / c₁]⁻¹`, where `[c'ᵢ / cᵢ]` is the determinant of
+`c' i` with respect to `c i`. This holds for every complex, both sides being `0` when `C` is not
+acyclic. -/
+theorem parityTorsion_eq_mul_det :
+    C.parityTorsion c' = C.parityTorsion c * ((c 0).det (c' 0) * ((c 1).det (c' 1))⁻¹) := by
+  by_cases h : C.Acyclic
+  swap
+  · simp [parityTorsion_of_not_acyclic _ _ h]
+  -- Compute both torsions with the same boundary bases and lifts.
+  rw [parityTorsion_eq (c := c) h (boundaryBasis C c 1 0) (boundaryBasis C c 0 1)
+      (boundaryLift C c 0 1) (boundaryLift_spec C c 0 1) (boundaryLift C c 1 0)
+      (boundaryLift_spec C c 1 0),
+    parityTorsion_eq (c := c') h (boundaryBasis C c 1 0) (boundaryBasis C c 0 1)
+      (boundaryLift C c 0 1) (boundaryLift_spec C c 0 1) (boundaryLift C c 1 0)
+      (boundaryLift_spec C c 1 0),
+    parityTorsionBracket_eq_det_mul c _ _ _ _ _ _ c',
+    parityTorsionBracket_eq_det_mul c _ _ _ _ _ _ c']
+  have hinv (i : ZMod 2) : (c' i).det (c i) = ((c i).det (c' i))⁻¹ :=
+    eq_inv_of_mul_eq_one_left <| by rw [Basis.det_mul_det, Basis.det_self]
+  rw [hinv, hinv, mul_inv, inv_inv]
+  ring
+
+/-- Reordering the bases `c i` of `C` by permutations `σ i` multiplies the torsion by the product
+of the signs of `σ 0` and `σ 1`. -/
+theorem parityTorsion_reindex (σ : ∀ i, Equiv.Perm (Fin (n i))) :
+    C.parityTorsion (fun i ↦ (c i).reindex (σ i)) =
+      C.parityTorsion c *
+        (((Equiv.Perm.sign (σ 0) : ℤ) : F) * ((Equiv.Perm.sign (σ 1) : ℤ) : F)) := by
+  have hdet (i : ZMod 2) : (c i).det ((c i).reindex (σ i)) = ((Equiv.Perm.sign (σ i) : ℤ) : F) := by
+    rw [Basis.coe_reindex, AlternatingMap.map_perm, Basis.det_self, Equiv.Perm.sign_symm]
+    rcases Int.units_eq_one_or (Equiv.Perm.sign (σ i)) with hσ | hσ <;> simp [hσ]
+  rw [parityTorsion_eq_mul_det c, hdet, hdet]
+  rcases Int.units_eq_one_or (Equiv.Perm.sign (σ 1)) with hσ | hσ <;> simp [hσ]
+
+/-- Rescaling the vectors of the bases `c i` of `C` by units `w i l` multiplies the torsion by
+`(∏ₗ w 0 l) · (∏ₗ w 1 l)⁻¹`. -/
+theorem parityTorsion_unitsSMul (w : ∀ i, Fin (n i) → Fˣ) :
+    C.parityTorsion (fun i ↦ (c i).unitsSMul (w i)) =
+      C.parityTorsion c * ((∏ l, (w 0 l : F)) * (∏ l, (w 1 l : F))⁻¹) := by
+  rw [parityTorsion_eq_mul_det c]
+  simp
+
+end BasisChange
+
+section TwoTerm
+
+private theorem add_one_add_one (i : ZMod 2) : i + 1 + 1 = i := by
+  revert i
+  decide
+
+private theorem eq_or_eq_add_one (i m : ZMod 2) : m = i ∨ m = i + 1 := by
+  revert i m
+  decide
+
+include c in
+private theorem eq_zero_of_dim_eq_zero {i : ZMod 2} (hi : n i = 0) (x : C.X i) : x = 0 := by
+  have : IsEmpty (Fin (n i)) := by rw [hi]; infer_instance
+  exact (c i).repr.injective (Subsingleton.elim _ _)
+
+/-- A basis of the zero subspace, the boundaries of a vanishing differential. -/
+private def rangeBasisOfEqZero {i i' : ZMod 2} (hd : C.d i i' = 0) :
+    Basis (Fin 0) F (LinearMap.range (C.d i i').hom) :=
+  haveI : Subsingleton (LinearMap.range (C.d i i').hom) := by
+    rw [hd, ModuleCat.hom_zero, LinearMap.range_zero]
+    infer_instance
+  Basis.empty _
+
+/-- When the differential `C.d i i'` is injective, the images of the basis `c i` form a basis of
+its range. -/
+private def rangeBasisOfInjective {i i' : ZMod 2} (hd : Function.Injective (C.d i i').hom) :
+    Basis (Fin (n i)) F (LinearMap.range (C.d i i').hom) :=
+  (c i).map (LinearEquiv.ofInjective _ hd)
+
+@[simp]
+private theorem coe_rangeBasisOfInjective {i i' : ZMod 2} (hd : Function.Injective (C.d i i').hom)
+    (l : Fin (n i)) : (rangeBasisOfInjective c hd l : C.X i') = (C.d i i').hom (c i l) := by
+  simp [rangeBasisOfInjective]
+
+variable {c} in
+/-- The torsion of an acyclic complex with one vanishing differential `C.d i i'`, when the other
+differential `C.d i' i` is injective: it is the quotient of the determinants, in the bases `c`, of
+the images of `c i'` by `C.d i' i` and of `c i'` itself, placed according to the parity of `i'`.
+-/
+private theorem parityTorsion_of_d_eq_zero_of_injective {i i' : ZMod 2} (hii' : i + 1 = i')
+    (h : C.Acyclic) (hd : C.d i i' = 0) (hinj : Function.Injective (C.d i' i).hom)
+    (hn : n i = n i') :
+    parityTorsionBracket c (hii' ▸ add_one_add_one i) (h i')
+        (rangeBasisOfEqZero hd) (rangeBasisOfInjective c hinj) (c i') (fun l ↦ by simp) = 1 ∧
+      parityTorsionBracket c hii' (h i) (rangeBasisOfInjective c hinj) (rangeBasisOfEqZero hd)
+          Fin.elim0 (fun l ↦ l.elim0) =
+        (c i).det fun l ↦ (C.d i' i).hom (c i' (Fin.cast hn l)) := by
+  constructor
+  · rw [parityTorsionBracket_eq_det_right _ _ _ _ _ _ _ (by simp)]
+    simp [Basis.det_self]
+  · rw [parityTorsionBracket_eq_det_left _ _ _ _ _ _ _ hn]
+    simp
+
+/-- In a two-periodic complex with `d₀ = 0`, the differential `d₁ : C₁ → C₀` is injective when the
+complex is exact in the odd degree. -/
+private theorem injective_of_d_eq_zero {i i' : ZMod 2} (hii' : i + 1 = i') (hd : C.d i i' = 0)
+    (h : C.ExactAt i') : Function.Injective (C.d i' i).hom := by
+  rw [← LinearMap.ker_eq_bot, ← (C.exactAt_iff_range_eq_ker
+    (hii' ▸ add_one_add_one i)).1 h, hd, ModuleCat.hom_zero,
+    LinearMap.range_zero]
+
+variable {c} in
+/-- If the family of images of the basis `c i'` under `C.d i' i` has nonzero determinant with
+respect to `c i`, and `C.d i i' = 0`, the complex is acyclic. -/
+private theorem acyclic_of_det_ne_zero {i i' : ZMod 2} (hii' : i + 1 = i') (hd : C.d i i' = 0)
+    (hn : n i = n i') (hdet : (c i).det (fun l ↦ (C.d i' i).hom (c i' (Fin.cast hn l))) ≠ 0) :
+    C.Acyclic := by
+  -- The images of `c i'` form a basis of `C i`, so `C.d i' i` is bijective.
+  have hb := (c i).is_basis_iff_det.2 (isUnit_iff_ne_zero.2 hdet)
+  have hsurj : Function.Surjective (C.d i' i).hom := by
+    rw [← LinearMap.range_eq_top, eq_top_iff, ← hb.2, Submodule.span_le]
+    rintro _ ⟨l, rfl⟩
+    exact ⟨_, rfl⟩
+  have hinj : Function.Injective (C.d i' i).hom := by
+    let _ : Module.Finite F (C.X i) := .of_basis (c i)
+    let _ : Module.Finite F (C.X i') := .of_basis (c i')
+    exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (by
+      rw [finrank_eq_card_basis (c i), finrank_eq_card_basis (c i'), Fintype.card_fin,
+        Fintype.card_fin, hn])).2 hsurj
+  have hi'i : i' + 1 = i := hii' ▸ add_one_add_one i
+  intro m
+  obtain rfl | rfl : m = i ∨ m = i' := hii' ▸ eq_or_eq_add_one i m
+  · rw [C.exactAt_iff_range_eq_ker hii', hd, ModuleCat.hom_zero, LinearMap.ker_zero,
+      LinearMap.range_eq_top.2 hsurj]
+  · rw [C.exactAt_iff_range_eq_ker hi'i, hd, ModuleCat.hom_zero, LinearMap.range_zero,
+      LinearMap.ker_eq_bot.2 hinj]
+
+variable {c} in
+/-- The torsion of a two-periodic complex whose even-to-odd differential `d₀` vanishes and whose two
+spaces have the same dimension is the inverse of the determinant of the odd-to-even differential
+`d₁` in the bases `c`. Both sides vanish when `C` is not acyclic, that is when `d₁` is not
+invertible. For instance multiplication by `a` on `F` from the odd to the even degree has torsion
+`a⁻¹`. -/
+theorem parityTorsion_of_d_zero_one (hd : C.d 0 1 = 0) (hn : n 0 = n 1) :
+    C.parityTorsion c = ((c 0).det fun l ↦ (C.d 1 0).hom (c 1 (Fin.cast hn l)))⁻¹ := by
+  by_cases h : C.Acyclic
+  · have hinj := injective_of_d_eq_zero (zero_add 1) hd (h 1)
+    obtain ⟨h₁, h₀⟩ := parityTorsion_of_d_eq_zero_of_injective (c := c) (zero_add 1) h hd hinj hn
+    rw [parityTorsion_eq h (rangeBasisOfInjective c hinj) (rangeBasisOfEqZero hd) Fin.elim0
+      (fun l ↦ l.elim0) (c 1) (fun l ↦ by simp), h₁, h₀, one_mul]
+  · rw [parityTorsion_of_not_acyclic C c h, eq_comm, inv_eq_zero]
+    by_contra hdet
+    exact h (acyclic_of_det_ne_zero (zero_add 1) hd hn hdet)
+
+variable {c} in
+/-- The torsion of a two-periodic complex whose odd-to-even differential `d₁` vanishes and whose two
+spaces have the same dimension is the determinant of the even-to-odd differential `d₀` in the
+bases `c`. Both sides vanish when `C` is not acyclic, that is when `d₀` is not invertible. -/
+theorem parityTorsion_of_d_one_zero (hd : C.d 1 0 = 0) (hn : n 1 = n 0) :
+    C.parityTorsion c = (c 1).det fun l ↦ (C.d 0 1).hom (c 0 (Fin.cast hn l)) := by
+  by_cases h : C.Acyclic
+  · have hinj := injective_of_d_eq_zero (by decide) hd (h 0)
+    obtain ⟨h₀, h₁⟩ := parityTorsion_of_d_eq_zero_of_injective (c := c) (by decide) h hd hinj hn
+    rw [parityTorsion_eq h (rangeBasisOfEqZero hd) (rangeBasisOfInjective c hinj) (c 0)
+      (fun l ↦ by simp) Fin.elim0 (fun l ↦ l.elim0), h₀, h₁, inv_one, mul_one]
+  · rw [parityTorsion_of_not_acyclic C c h, eq_comm]
+    by_contra hdet
+    exact h (acyclic_of_det_ne_zero (by decide) hd hn hdet)
+
+variable {c} in
+/-- The zero two-periodic complex, with the empty bases, has torsion `1`. -/
+theorem parityTorsion_eq_one (h₀ : n 0 = 0) (h₁ : n 1 = 0) : C.parityTorsion c = 1 := by
+  have hd : C.d 1 0 = 0 := by
+    ext x
+    exact eq_zero_of_dim_eq_zero c h₀ _
+  have : IsEmpty (Fin (n 1)) := by rw [h₁]; infer_instance
+  rw [parityTorsion_of_d_one_zero hd (h₁.trans h₀.symm), Basis.det_isEmpty]
+  rfl
+
+end TwoTerm
+
+end HomologicalComplex
