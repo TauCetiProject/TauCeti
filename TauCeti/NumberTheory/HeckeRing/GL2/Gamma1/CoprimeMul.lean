@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma1.UpperTriCosets
 public import TauCeti.NumberTheory.HeckeRing.GLn.CoprimeMul
 import Mathlib.Data.Nat.Prime.Int
 import TauCeti.Data.ZMod.Units
+import TauCeti.GroupTheory.DoubleCoset.Identity
 import TauCeti.NumberTheory.HeckeRing.GL2.Gamma1.CoprimeCosets
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Adjugate
 
@@ -75,12 +76,17 @@ variable {N : ℕ}
 /-- **The elements of `Dₙ` are `!![1, *; 0, *]` modulo `N`.** Every element of
 `Γ₁(N) · diag(1, n) · Γ₁(N)` is represented by an integral matrix whose upper-left entry is `1`
 and whose lower-left entry is `0` modulo `N`. -/
-theorem exists_intMatrix_of_mem_doubleCoset_natDiagGL {n : ℕ} (hn : 0 < n) {x : GL (Fin 2) ℚ}
+theorem exists_intMatrix_of_mem_doubleCoset_natDiagGL {n : ℕ} {x : GL (Fin 2) ℚ}
     (hx : x ∈ doubleCoset (natDiagGL 2 ![1, n]) ((Gamma1 N).map (mapGL ℚ))
       ((Gamma1 N).map (mapGL ℚ))) :
     ∃ X : Matrix (Fin 2) (Fin 2) ℤ,
       (↑x : Matrix (Fin 2) (Fin 2) ℚ) = X.map (Int.cast : ℤ → ℚ) ∧
         ((X 0 0 : ℤ) : ZMod N) = 1 ∧ ((X 1 0 : ℤ) : ZMod N) = 0 := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · rw [natDiagGL_one_zero, TauCeti.doubleCoset_one_self] at hx
+    obtain ⟨g, hg, rfl⟩ := Subgroup.mem_map.mp hx
+    obtain ⟨h00, -, h10⟩ := (Gamma1_mem N g).mp hg
+    exact ⟨g, coe_mapGL_int g, h00, h10⟩
   obtain ⟨_, ⟨g₁, hg₁, rfl⟩, _, ⟨g₂, hg₂, rfl⟩, rfl⟩ := mem_doubleCoset.mp hx
   obtain ⟨h₁00, -, h₁10⟩ := (Gamma1_mem N g₁).mp hg₁
   obtain ⟨h₂00, -, h₂10⟩ := (Gamma1_mem N g₂).mp hg₂
@@ -100,7 +106,7 @@ Writing the element as `g₁ · diag(1, n) · g₂` with `gᵢ ∈ Γ₀(N)`, th
 diamond labels of `g₁` and `g₂` are inverse to each other, and a matrix `A ∈ Γ₀(N)` with
 upper-right entry divisible by `n` and the label of `g₁` moves across `diag(1, n)` to correct
 both factors at once. -/
-theorem mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 {n : ℕ} (hn : 0 < n)
+theorem mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 {n : ℕ}
     {x : GL (Fin 2) ℚ} {X : Matrix (Fin 2) (Fin 2) ℤ}
     (hX : (↑x : Matrix (Fin 2) (Fin 2) ℚ) = X.map (Int.cast : ℤ → ℚ))
     (hX00 : ((X 0 0 : ℤ) : ZMod N) = 1)
@@ -108,6 +114,16 @@ theorem mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 {n : ℕ} (hn : 0 < n)
       ((Gamma0 N).map (mapGL ℚ))) :
     x ∈ doubleCoset (natDiagGL 2 ![1, n]) ((Gamma1 N).map (mapGL ℚ))
       ((Gamma1 N).map (mapGL ℚ)) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · rw [natDiagGL_one_zero, TauCeti.doubleCoset_one_self] at hx ⊢
+    obtain ⟨g, hg, rfl⟩ := Subgroup.mem_map.mp hx
+    refine Subgroup.mem_map.mpr ⟨g, ?_, rfl⟩
+    have hXg : X = (g : Matrix (Fin 2) (Fin 2) ℤ) :=
+      Matrix.map_injective Int.cast_injective (hX.symm.trans (coe_mapGL_int g))
+    have h := intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0 hg
+    rw [hXg] at hX00
+    rw [mem_Gamma1_iff]
+    exact ⟨hg, by rwa [hX00, one_mul] at h⟩
   obtain ⟨_, ⟨g₁, hg₁, rfl⟩, _, ⟨g₂, hg₂, rfl⟩, rfl⟩ := mem_doubleCoset.mp hx
   have hXeq : X = (g₁ : Matrix (Fin 2) (Fin 2) ℤ) * !![1, 0; 0, (n : ℤ)] * g₂ :=
     Matrix.map_injective Int.cast_injective
@@ -150,7 +166,7 @@ theorem mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 {n : ℕ} (hn : 0 < n)
 /-- Left multiplication by an element `σ` of `Γ₀(N)` whose upper-left entry inverts the
 upper-left entry `a` of a matrix `B` modulo `N` carries the `Γ₀(N)` double coset of `diag(1, m)`
 into its `Γ₁(N)` double coset, for `B` with `N ∣ B₁₀` and `B₀₀ = a`. -/
-theorem mapGL_mul_mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 {m : ℕ} (hm_pos : 0 < m)
+theorem mapGL_mul_mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 {m : ℕ}
     {σ : SL(2, ℤ)} (hσ₀ : mapGL ℚ σ ∈ (Gamma0 N).map (mapGL ℚ)) {a : ℤ}
     (hσ00 : ((σ 0 0 : ℤ) : ZMod N) * (a : ZMod N) = 1)
     {y : GL (Fin 2) ℚ} {B : Matrix (Fin 2) (Fin 2) ℤ}
@@ -162,7 +178,7 @@ theorem mapGL_mul_mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 {m : ℕ} (hm
       ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ)) := by
   have hX := mapGL_mul_coe_eq_intMatrix 2 σ 1 y B hB
   rw [map_one, mul_one, SpecialLinearGroup.coe_one, mul_one] at hX
-  refine mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 hm_pos hX ?_ ?_
+  refine mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 hX ?_ ?_
   · obtain ⟨e, he⟩ := hB10
     simp only [Matrix.mul_apply, Fin.sum_univ_two, he]
     push_cast
@@ -183,24 +199,37 @@ theorem mem_doubleCoset_natDiagGL_Gamma1_of_primitive [NeZero N] (n : ℕ) {x : 
       (p : ℤ) ∣ X 1 1)) :
     x ∈ doubleCoset (natDiagGL 2 ![1, n]) ((Gamma1 N).map (mapGL ℚ))
       ((Gamma1 N).map (mapGL ℚ)) := by
-  have hn : 0 < n := by
-    have hne := Matrix.GeneralLinearGroup.det_ne_zero x
-    rw [hdet] at hne
-    exact Nat.pos_of_ne_zero (by exact_mod_cast hne)
-  refine mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 hn hX hX00 <|
+  refine mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 hX hX00 <|
     mem_doubleCoset_natDiagGL_of_primitive N n x X hX
       ((ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp hX10)
       (Int.isUnit_intCast_iff_gcd_eq_one.mp (hX00 ▸ isUnit_one)) hdet hprim
+
+/-- If coprime `m`, `n` have `m * n = 0`, then one of them is `0` and the other is `1`, so all of
+`diag(1, m)`, `diag(1, n)` and `diag(1, m n)` are the identity. -/
+private lemma natDiagGL_one_eq_one_of_coprime_of_mul_eq_zero {m n : ℕ} (hmn : m.Coprime n)
+    (h0 : m * n = 0) :
+    natDiagGL 2 ![1, m] = 1 ∧ natDiagGL 2 ![1, n] = 1 ∧ natDiagGL 2 ![1, m * n] = 1 := by
+  rcases Nat.mul_eq_zero.1 h0 with rfl | rfl
+  · obtain rfl : n = 1 := by simpa using hmn
+    exact ⟨natDiagGL_one_zero, natDiagGL_one_one, by rw [Nat.zero_mul]; exact natDiagGL_one_zero⟩
+  · obtain rfl : m = 1 := by simpa using hmn
+    exact ⟨natDiagGL_one_one, natDiagGL_one_zero, by rw [Nat.mul_zero]; exact natDiagGL_one_zero⟩
 
 /-- **The coprime sandwich.** For coprime `m`, `n` and `γ ∈ Γ₁(N)`, the product
 `diag(1, m) · γ · diag(1, n)` lies in `Γ₁(N) · diag(1, m n) · Γ₁(N)`. Its integral matrix
 `!![a, b n; m c, m n d]` is primitive: a prime dividing `a` and `b n` but not `b` divides `n`,
 hence not `m`, hence divides `c`, and no prime divides both `a` and `c`. -/
-theorem natDiagGL_mul_mapGL_mul_natDiagGL_mem_doubleCoset [NeZero N] {m n : ℕ} (hm : 0 < m)
-    (hn : 0 < n) (hmn : m.Coprime n) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma1 N) :
+theorem natDiagGL_mul_mapGL_mul_natDiagGL_mem_doubleCoset [NeZero N] {m n : ℕ}
+    (hmn : m.Coprime n) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma1 N) :
     natDiagGL 2 ![1, m] * mapGL ℚ γ * natDiagGL 2 ![1, n] ∈
       doubleCoset (natDiagGL 2 ![1, m * n]) ((Gamma1 N).map (mapGL ℚ))
         ((Gamma1 N).map (mapGL ℚ)) := by
+  by_cases h0 : m * n = 0
+  · obtain ⟨h1, h2, h3⟩ := natDiagGL_one_eq_one_of_coprime_of_mul_eq_zero hmn h0
+    rw [h1, h2, h3, one_mul, mul_one, TauCeti.doubleCoset_one_self]
+    exact Subgroup.mem_map_of_mem _ hγ
+  have hm : 0 < m := Nat.pos_of_ne_zero (left_ne_zero_of_mul h0)
+  have hn : 0 < n := Nat.pos_of_ne_zero (right_ne_zero_of_mul h0)
   obtain ⟨h00, -, h10⟩ := (Gamma1_mem N γ).mp hγ
   have hdet := γ.fin_two_mul_sub_mul_eq_one
   have hX : (↑(natDiagGL 2 ![1, m] * mapGL ℚ γ * natDiagGL 2 ![1, n]) :
@@ -234,12 +263,18 @@ theorem natDiagGL_mul_mapGL_mul_natDiagGL_mem_doubleCoset [NeZero N] {m n : ℕ}
 
 /-- **`Dₘₙ = Dₘ · Dₙ` for coprime `m`, `n`.** The product set of the double cosets of `diag(1, m)`
 and `diag(1, n)` at level `Γ₁(N)` is the single double coset of `diag(1, m n)`. -/
-theorem doubleCoset_natDiagGL_mul_of_coprime [NeZero N] {m n : ℕ} (hm : 0 < m) (hn : 0 < n)
-    (hmn : m.Coprime n) :
+theorem doubleCoset_natDiagGL_mul_of_coprime [NeZero N] {m n : ℕ} (hmn : m.Coprime n) :
     doubleCoset (natDiagGL 2 ![1, m * n]) ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ)) =
       doubleCoset (natDiagGL 2 ![1, m]) ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ)) *
         doubleCoset (natDiagGL 2 ![1, n]) ((Gamma1 N).map (mapGL ℚ))
           ((Gamma1 N).map (mapGL ℚ)) := by
+  -- if `m` or `n` is `0`, coprimality makes the other `1`, and all three diagonals are `1`
+  by_cases h0 : m * n = 0
+  · obtain ⟨h1, h2, h3⟩ := natDiagGL_one_eq_one_of_coprime_of_mul_eq_zero hmn h0
+    rw [h1, h2, h3, TauCeti.doubleCoset_one_self]
+    exact (Submonoid.coe_mul_self_eq ((Gamma1 N).map (mapGL ℚ)).toSubmonoid).symm
+  have hm : 0 < m := Nat.pos_of_ne_zero (left_ne_zero_of_mul h0)
+  have hn : 0 < n := Nat.pos_of_ne_zero (right_ne_zero_of_mul h0)
   have hδ : natDiagGL 2 ![1, m] * natDiagGL 2 ![1, n] = natDiagGL 2 ![1, m * n] := by
     rw [natDiagGL_mul 2 _ _ (fun i ↦ by fin_cases i <;> simp [hm]) fun i ↦ by
       fin_cases i <;> simp [hn]]
@@ -260,7 +295,7 @@ theorem doubleCoset_natDiagGL_mul_of_coprime [NeZero N] {m n : ℕ} (hm : 0 < m)
     obtain ⟨h₃, hh₃, h₄, hh₄, rfl⟩ := mem_doubleCoset.mp hz
     obtain ⟨γ, hγ, hγeq⟩ := Subgroup.mem_map.mp (mul_mem hh₂ hh₃)
     obtain ⟨k₁, hk₁, k₂, hk₂, hk⟩ :=
-      mem_doubleCoset.mp (natDiagGL_mul_mapGL_mul_natDiagGL_mem_doubleCoset hm hn hmn hγ)
+      mem_doubleCoset.mp (natDiagGL_mul_mapGL_mul_natDiagGL_mem_doubleCoset hmn hγ)
     refine mem_doubleCoset.mpr ⟨h₁ * k₁, mul_mem hh₁ hk₁, k₂ * h₄, mul_mem hk₂ hh₄, ?_⟩
     calc h₁ * natDiagGL 2 ![1, m] * h₂ * (h₃ * natDiagGL 2 ![1, n] * h₄)
         = h₁ * (natDiagGL 2 ![1, m] * (h₂ * h₃) * natDiagGL 2 ![1, n]) * h₄ := by group
@@ -283,7 +318,7 @@ then `Γ₁(N) b = Γ₁(N) b'`.
 The quotient `b' b⁻¹` is a determinant-one matrix which is integral after scaling by `n`, being
 `b' · adj(b) / n`, and after scaling by `m`, being conjugate through `a`, `a'` to an element of
 `Γ₁(N)`; so it is integral, and comparing `b' = (b' b⁻¹) b` modulo `N` puts it in `Γ₁(N)`. -/
-theorem op_smul_eq_of_op_mul_smul_eq {m n : ℕ} (hm : 0 < m) (hn : 0 < n)
+theorem op_smul_eq_of_op_mul_smul_eq {m n : ℕ}
     (hmn : m.Coprime n) {a a' b b' : GL (Fin 2) ℚ}
     (ha : a ∈ doubleCoset (natDiagGL 2 ![1, m]) ((Gamma1 N).map (mapGL ℚ))
       ((Gamma1 N).map (mapGL ℚ)))
@@ -297,10 +332,18 @@ theorem op_smul_eq_of_op_mul_smul_eq {m n : ℕ} (hm : 0 < m) (hn : 0 < n)
       MulOpposite.op (a' * b') • ((Gamma1 N).map (mapGL ℚ) : Set (GL (Fin 2) ℚ))) :
     MulOpposite.op b • ((Gamma1 N).map (mapGL ℚ) : Set (GL (Fin 2) ℚ)) =
       MulOpposite.op b' • ((Gamma1 N).map (mapGL ℚ) : Set (GL (Fin 2) ℚ)) := by
-  obtain ⟨A, hA, -, -⟩ := exists_intMatrix_of_mem_doubleCoset_natDiagGL hm ha
-  obtain ⟨A', hA', -, -⟩ := exists_intMatrix_of_mem_doubleCoset_natDiagGL hm ha'
-  obtain ⟨B, hB, hB00, hB10⟩ := exists_intMatrix_of_mem_doubleCoset_natDiagGL hn hb
-  obtain ⟨B', hB', hB'00, hB'10⟩ := exists_intMatrix_of_mem_doubleCoset_natDiagGL hn hb'
+  -- if `diag(1, n)` is the identity (the junk value, or `n = 1`), then `b, b' ∈ Γ₁(N)`
+  by_cases hdeg : natDiagGL 2 ![1, n] = 1
+  · rw [hdeg, TauCeti.doubleCoset_one_self] at hb hb'
+    rw [rightCoset_eq_iff]
+    exact mul_mem hb' (inv_mem hb)
+  have h0 : m * n ≠ 0 := fun h0 ↦ hdeg (natDiagGL_one_eq_one_of_coprime_of_mul_eq_zero hmn h0).2.1
+  have hn : 0 < n := Nat.pos_of_ne_zero (right_ne_zero_of_mul h0)
+  have hm : 0 < m := Nat.pos_of_ne_zero (left_ne_zero_of_mul h0)
+  obtain ⟨A, hA, -, -⟩ := exists_intMatrix_of_mem_doubleCoset_natDiagGL ha
+  obtain ⟨A', hA', -, -⟩ := exists_intMatrix_of_mem_doubleCoset_natDiagGL ha'
+  obtain ⟨B, hB, hB00, hB10⟩ := exists_intMatrix_of_mem_doubleCoset_natDiagGL hb
+  obtain ⟨B', hB', hB'00, hB'10⟩ := exists_intMatrix_of_mem_doubleCoset_natDiagGL hb'
   obtain ⟨σh, -, hσh⟩ := Subgroup.mem_map.mp (rightCoset_eq_iff _ |>.mp h)
   obtain ⟨H, hH⟩ := (hasIntEntries_iff 2).mp (hasIntEntries_of_mem_SLnZ 2 (coe_mem_SLnZ 2 σh))
   set Y := b' * b⁻¹ with hYdef

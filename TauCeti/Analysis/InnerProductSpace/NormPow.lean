@@ -344,6 +344,20 @@ private theorem exists_hasDerivAt_norm_rpow_hessian_line (p : ℝ) (b d v w : E)
       rw [h6, h4]
       ring
 
+/-- The derivative bound along a segment of `exists_hasDerivAt_norm_rpow_hessian_line`, with the
+power of the norm replaced by its bound `2 ^ (3 - p) * B ^ (p - 3)`. -/
+private theorem abs_mul_abs_sub_four_add_three_le {p n B D V W : ℝ} (hp : p ≤ 3) (hD : 0 ≤ D)
+    (hV : 0 ≤ V) (hW : 0 ≤ W) (hpow : n ^ (p - 3) ≤ 2 ^ (3 - p) * B ^ (p - 3)) :
+    |p * (p - 2)| * (|p - 4| + 3) * n ^ (p - 3) * D * V * W ≤
+      |p * (p - 2)| * (7 - p) * 2 ^ (3 - p) * D * B ^ (p - 3) * (V * W) := by
+  rw [abs_of_nonpos (by linarith : p - 4 ≤ 0)]
+  calc |p * (p - 2)| * (-(p - 4) + 3) * n ^ (p - 3) * D * V * W
+      = |p * (p - 2)| * (7 - p) * D * V * W * n ^ (p - 3) := by ring
+    _ ≤ |p * (p - 2)| * (7 - p) * D * V * W * (2 ^ (3 - p) * B ^ (p - 3)) := by
+      gcongr
+      exact mul_nonneg (mul_nonneg (mul_nonneg (mul_nonneg (abs_nonneg _) (by linarith)) hD) hV) hW
+    _ = _ := by ring
+
 /-- **Smoothness of the Hessian of `x ↦ ‖x‖ ^ p`** for `p ≤ 3`: if `2 ‖a - b‖ ≤ ‖b‖`, then
 
 `‖D²(‖·‖ ^ p)(a) - D²(‖·‖ ^ p)(b)‖ ≤ |p (p - 2)| (7 - p) 2 ^ (3 - p) ‖a - b‖ ‖b‖ ^ (p - 3)`.
@@ -370,13 +384,11 @@ theorem norm_iteratedFDeriv_two_norm_rpow_sub_le {p : ℝ} (hp : p ≤ 3) {a b :
     have htd : ‖t • d‖ ≤ ‖d‖ := by
       rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg ht.1]
       exact mul_le_of_le_one_left (norm_nonneg _) ht.2
-    have := norm_sub_norm_le b (-(t • d))
-    rw [sub_neg_eq_add, norm_neg] at this
-    linarith
+    linarith [norm_sub_le_norm_add b (t • d)]
   have hpow (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) :
       ‖b + t • d‖ ^ (p - 3) ≤ 2 ^ (3 - p) * ‖b‖ ^ (p - 3) := by
     calc ‖b + t • d‖ ^ (p - 3) ≤ (‖b‖ / 2) ^ (p - 3) :=
-          Real.rpow_le_rpow_of_nonpos (by positivity) (hseg t ht) (by linarith)
+          Real.rpow_le_rpow_of_nonpos (by positivity) (hseg t ht) (sub_nonpos.2 hp)
       _ = 2 ^ (3 - p) * ‖b‖ ^ (p - 3) := by
           rw [Real.div_rpow hbN.le zero_le_two, div_eq_mul_inv, ← Real.rpow_neg zero_le_two]
           ring_nf
@@ -402,16 +414,8 @@ theorem norm_iteratedFDeriv_two_norm_rpow_sub_le {p : ℝ} (hp : p ≤ 3) {a b :
       ‖d‖ * ‖b‖ ^ (p - 3) * (‖v‖ * ‖w‖)) fun t ht ↦ by
     have ht' : t ∈ Set.Icc (0 : ℝ) 1 := Set.Ico_subset_Icc_self ht
     rw [Real.norm_eq_abs]
-    refine (hg'b t ht').trans ?_
-    rw [abs_of_nonpos (by linarith : p - 4 ≤ 0)]
-    have := hpow t ht'
-    calc |p * (p - 2)| * (-(p - 4) + 3) * ‖b + t • d‖ ^ (p - 3) * ‖d‖ * ‖v‖ * ‖w‖
-        = |p * (p - 2)| * (7 - p) * ‖d‖ * ‖v‖ * ‖w‖ * ‖b + t • d‖ ^ (p - 3) := by ring
-      _ ≤ |p * (p - 2)| * (7 - p) * ‖d‖ * ‖v‖ * ‖w‖ * (2 ^ (3 - p) * ‖b‖ ^ (p - 3)) := by
-        gcongr
-        exact mul_nonneg (mul_nonneg (mul_nonneg (mul_nonneg (abs_nonneg _) (by linarith))
-          (norm_nonneg _)) (norm_nonneg _)) (norm_nonneg _)
-      _ = _ := by ring
+    exact (hg'b t ht').trans <| abs_mul_abs_sub_four_add_three_le hp (norm_nonneg _)
+      (norm_nonneg _) (norm_nonneg _) (hpow t ht')
   simpa only [hg, one_smul, zero_smul, add_zero, hd, add_sub_cancel, Matrix.cons_val_zero,
     Matrix.cons_val_one] using hmvt
 
