@@ -29,11 +29,11 @@ no serialization of `B` is needed and empty or finite limits need no separate ca
 
 The halves are disjoint at every stage and their union at stage `s` is the union of the batches
 `B t` for `t < s`, so the limits split the limit of `B`, with no hypothesis on `B`. When the
-binary codes of the stages of `B` and `C` are primitive recursive, so are the codes of the stage
-pairs, and both halves are c.e.
+binary codes of the stages of `B` and `C` are computable (respectively primitive recursive), so
+are the codes of the stage pairs, and both halves are c.e.
 
-The priority induction of [S, p.125] follows. Suppose `C` has monotone stages with primitive
-recursive codes and a noncomputable limit. By strong induction on `k`:
+The priority induction of [S, p.125] follows. Suppose `C` has monotone stages with computable
+codes and a noncomputable limit. By strong induction on `k`:
 
 * the higher-priority restraints are eventually bounded, so by the routing rule requirement `k` is
   injured only finitely often (`TauCeti.SacksSplitting.finite_injurySet`);
@@ -239,6 +239,11 @@ noncomputable def splitHalf (b : Bool) : Set ℕ :=
 theorem splitHalf_def (b : Bool) : splitHalf B C b = stageLimit (halfStage B C b) :=
   (rfl)
 
+/-- A number is in the half on side `b` exactly when it enters that half at some stage. -/
+@[simp]
+theorem mem_splitHalf {b : Bool} {x : ℕ} : x ∈ splitHalf B C b ↔ ∃ s, x ∈ halfStage B C b s :=
+  mem_stageLimit
+
 variable (B C) in
 /-- The two halves are disjoint. -/
 theorem disjoint_splitHalf : Disjoint (splitHalf B C false) (splitHalf B C true) := by
@@ -266,24 +271,46 @@ section Effectivity
 
 open Primrec
 
+/-- The list of recorded restraints at stage `s` reads `C` only through `C s`, and it is primitive
+recursive in the stage, the binary codes of the halves, and the binary code of `C s`. -/
+private theorem primrec_restraints_equivBitIndices :
+    Primrec fun p : (ℕ × ℕ × ℕ) × ℕ =>
+      restraints (fun _ => Finset.equivBitIndices p.2)
+        (Finset.equivBitIndices p.1.2.1, Finset.equivBitIndices p.1.2.2) p.1.1 := by
+  have hargs : Primrec₂ fun (p : (ℕ × ℕ × ℕ) × ℕ) (k : ℕ) =>
+      (((bif k.bodd then p.1.2.2 else p.1.2.1), p.2),
+        p.1.1, Denumerable.ofNat Oracle.Single.Code k.div2) :=
+    ((Primrec.cond (nat_bodd.comp snd) (snd.comp (snd.comp (fst.comp fst)))
+      (fst.comp (snd.comp (fst.comp fst)))).pair (snd.comp fst)).pair
+      ((fst.comp (fst.comp fst)).pair ((Primrec.ofNat _).comp (nat_div2.comp snd)))
+  refine (list_map (list_range.comp (nat_mul.comp (const 2) (fst.comp fst)))
+    (Oracle.Single.Code.primrec_agreementRestraint_equivBitIndices.comp₂ hargs)).of_eq
+    fun p => ?_
+  simp only [restraints]
+  refine List.map_congr_left fun k _ => ?_
+  rw [agreementRestraint_def]
+  cases k.bodd <;> simp
+
 /-- The list of recorded restraints is primitive recursive in the stage and the binary codes of the
 halves, when the binary codes of the stages of `C` are primitive recursive. -/
 theorem primrec_restraints (hC : Primrec fun s => Finset.equivBitIndices.symm (C s)) :
     Primrec fun p : ℕ × ℕ × ℕ =>
-      restraints C (Finset.equivBitIndices p.2.1, Finset.equivBitIndices p.2.2) p.1 := by
-  have hargs : Primrec₂ fun (p : ℕ × ℕ × ℕ) (k : ℕ) =>
-      (((bif k.bodd then p.2.2 else p.2.1), Finset.equivBitIndices.symm (C p.1)),
-        p.1, Denumerable.ofNat Oracle.Single.Code k.div2) :=
-    ((Primrec.cond (nat_bodd.comp snd) (snd.comp (snd.comp fst)) (fst.comp (snd.comp fst))).pair
-      (hC.comp (fst.comp fst))).pair
-      ((fst.comp fst).pair ((Primrec.ofNat _).comp (nat_div2.comp snd)))
-  refine (list_map (list_range.comp (nat_mul.comp (const 2) fst))
-    (Oracle.Single.Code.primrec_agreementRestraint_equivBitIndices.comp₂ hargs)).of_eq
-    fun p => ?_
-  simp only [restraints, Equiv.apply_symm_apply]
-  refine List.map_congr_left fun k _ => ?_
-  rw [agreementRestraint_def]
-  cases k.bodd <;> simp
+      restraints C (Finset.equivBitIndices p.2.1, Finset.equivBitIndices p.2.2) p.1 :=
+  (primrec_restraints_equivBitIndices.comp (Primrec.id.pair (hC.comp fst))).of_eq fun p => by
+    simp only [Equiv.apply_symm_apply]
+    rfl
+
+/-- The list of recorded restraints is computable in the stage and the binary codes of the
+halves, when the binary codes of the stages of `C` are computable. -/
+theorem computable_restraints (hC : Computable fun s => Finset.equivBitIndices.symm (C s)) :
+    Computable fun p : ℕ × ℕ × ℕ =>
+      restraints C (Finset.equivBitIndices p.2.1, Finset.equivBitIndices p.2.2) p.1 :=
+  (primrec_restraints_equivBitIndices.to_comp.comp
+    (Computable.id.pair (hC.comp Computable.fst))).of_eq fun p => by
+    simp only [Equiv.apply_symm_apply]
+    rfl
+
+section Primrec
 
 variable (hB : Primrec fun s => Finset.equivBitIndices.symm (B s))
   (hC : Primrec fun s => Finset.equivBitIndices.symm (C s))
@@ -312,11 +339,45 @@ theorem primrec_halfStage (b : Bool) :
   · exact (fst.comp (primrec_stage hB hC)).of_eq fun s => by simp
   · exact (snd.comp (primrec_stage hB hC)).of_eq fun s => by simp
 
-/-- Both halves are c.e. when the binary codes of the stages of `B` and `C` are primitive
-recursive. -/
+end Primrec
+
+section Computable
+
+variable (hB : Computable fun s => Finset.equivBitIndices.symm (B s))
+  (hC : Computable fun s => Finset.equivBitIndices.symm (C s))
+include hB hC
+
+/-- The binary codes of the stage pairs are computable, when those of the stages of `B` and `C`
+are. -/
+theorem computable_stage : Computable fun s =>
+    (Finset.equivBitIndices.symm (stage B C s).1, Finset.equivBitIndices.symm (stage B C s).2) := by
+  have hf : Computable₂ fun (_ : ℕ) (q : ℕ × ℕ × ℕ) =>
+      let A := step (restraints C (Finset.equivBitIndices q.2.1, Finset.equivBitIndices q.2.2) q.1)
+        (Finset.equivBitIndices q.2.1, Finset.equivBitIndices q.2.2) (B q.1)
+      (Finset.equivBitIndices.symm A.1, Finset.equivBitIndices.symm A.2) :=
+    (primrec_step.to_comp.comp ((computable_restraints hC).comp Computable.snd |>.pair
+      ((Computable.snd.comp Computable.snd).pair
+        (hB.comp (Computable.fst.comp Computable.snd))))).of_eq fun p => by simp
+  refine (Computable.nat_rec Computable.id (Computable.const (0, 0)) hf).of_eq fun s => ?_
+  dsimp only [id]
+  induction s with
+  | zero => simp
+  | succ s ih =>
+    simp only [ih, Equiv.apply_symm_apply, Prod.mk.eta, stage_succ]
+
+/-- The binary codes of the stages of each half are computable. -/
+theorem computable_halfStage (b : Bool) :
+    Computable fun s => Finset.equivBitIndices.symm (halfStage B C b s) := by
+  cases b
+  · exact (Computable.fst.comp (computable_stage hB hC)).of_eq fun s => by simp
+  · exact (Computable.snd.comp (computable_stage hB hC)).of_eq fun s => by simp
+
+/-- Both halves are c.e. when the binary codes of the stages of `B` and `C` are computable. -/
 theorem rePred_mem_splitHalf (b : Bool) : REPred (· ∈ splitHalf B C b) :=
   rePred_mem_stageLimit (computablePred_mem_of_computable_equivBitIndices
-    (primrec_halfStage hB hC b).to_comp)
+    (computable_halfStage hB hC b))
+
+end Computable
 
 end Effectivity
 
@@ -362,8 +423,8 @@ private theorem exists_restraint_eq_some_and_le (s : ℕ) :
         (Denumerable.ofNat Oracle.Single.Code k.div2) ((C s : Set ℕ).indicator 1) ≤ b :=
   ⟨_, restraint_def k s, (agreementRestraint_stage s k).ge⟩
 
-variable (hB : Primrec fun s => Finset.equivBitIndices.symm (B s)) (hCm : Monotone C)
-  (hC : Primrec fun s => Finset.equivBitIndices.symm (C s))
+variable (hB : Computable fun s => Finset.equivBitIndices.symm (B s)) (hCm : Monotone C)
+  (hC : Computable fun s => Finset.equivBitIndices.symm (C s))
   (hnc : ¬ComputablePred (· ∈ stageLimit C))
 include hB hCm hC hnc
 
@@ -374,7 +435,7 @@ private theorem eval_ne_oracle_of_finite_injurySet
     Oracle.Single.Code.eval (splitHalf B C k.bodd).oracle
       (Denumerable.ofNat Oracle.Single.Code k.div2) ≠ (stageLimit C).oracle := fun heval =>
   hnc <| Oracle.Single.Code.computablePred_mem_stageLimit_of_eval_eq
-    (monotone_halfStage B C k.bodd) hCm (primrec_halfStage hB hC k.bodd).to_comp hC.to_comp
+    (monotone_halfStage B C k.bodd) hCm (computable_halfStage hB hC k.bodd) hC
     (exists_restraint_eq_some_and_le (k := k)) hI heval
 
 /-- The three statements of the priority induction for requirement `k`: finite injury, and
@@ -405,8 +466,7 @@ private theorem finite_injurySet_and_exists_eventually_eq (k : ℕ) :
   exact ⟨n, b, hnb.mono fun s hs => by rwa [agreementLength_stage, agreementRestraint_stage]⟩
 
 /-- **Every requirement is injured only finitely often**, when `C` has monotone stages with
-primitive recursive codes and a noncomputable limit, and the stages of `B` have primitive recursive
-codes. -/
+computable codes and a noncomputable limit, and the stages of `B` have computable codes. -/
 theorem finite_injurySet (k : ℕ) : (injurySet (halfStage B C k.bodd) (restraint B C) k).Finite :=
   (finite_injurySet_and_exists_eventually_eq hB hCm hC hnc k).1
 
@@ -452,10 +512,10 @@ theorem exists_split_not_turingReducible {B C : Set ℕ} (hB : REPred (· ∈ B)
   have hCc : stageLimit c.domStage = C := by
     rw [Nat.Partrec.Code.stageLimit_domStage]
     exact Set.ext fun x => (hc x).symm
-  have hBp : Primrec fun s => Finset.equivBitIndices.symm (b.domStage s) :=
-    Nat.Partrec.Code.primrec_domStage.comp ((Primrec.const b).pair Primrec.id)
-  have hCp : Primrec fun s => Finset.equivBitIndices.symm (c.domStage s) :=
-    Nat.Partrec.Code.primrec_domStage.comp ((Primrec.const c).pair Primrec.id)
+  have hBp : Computable fun s => Finset.equivBitIndices.symm (b.domStage s) :=
+    (Nat.Partrec.Code.primrec_domStage.comp ((Primrec.const b).pair Primrec.id)).to_comp
+  have hCp : Computable fun s => Finset.equivBitIndices.symm (c.domStage s) :=
+    (Nat.Partrec.Code.primrec_domStage.comp ((Primrec.const c).pair Primrec.id)).to_comp
   rw [← hCc] at hnc ⊢
   rw [← hBc]
   exact ⟨_, _, rePred_mem_splitHalf hBp hCp false, rePred_mem_splitHalf hBp hCp true,
