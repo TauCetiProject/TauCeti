@@ -20,7 +20,7 @@ element is the negacyclic shift of the first `n - 1` coordinates times `-1` on t
 
 public section
 
-open Matrix
+open Matrix Equiv.Perm
 
 namespace TauCeti.Coxeter
 
@@ -80,7 +80,7 @@ theorem epsD_mul_reflMatrix_last (i : Fin (m + 3)) (hi : i.val = m + 2) :
     ite_false, lt_irrefl, or_true, and_true]
   split_ifs <;> omega
 
-theorem epsD_mul_reflMatrix_chain (i : Fin (m + 3)) (hi : i.val < m) :
+private theorem epsD_mul_reflMatrix_chain (i : Fin (m + 3)) (hi : i.val < m) :
     epsD m * reflMatrix (CartanMatrix.D (m + 3)) i =
       permMatrixHom (R := ℤ) (Equiv.swap i ⟨i.val + 1, by omega⟩) * epsD m := by
   ext a j
@@ -94,7 +94,7 @@ theorem epsD_mul_reflMatrix_chain (i : Fin (m + 3)) (hi : i.val < m) :
     h4, h5, h6, ite_false, and_true, and_false, false_and]
   split_ifs <;> (try simp only at *) <;> omega
 
-theorem epsD_mul_reflMatrix_branch (i : Fin (m + 3)) (hi : i.val = m) :
+private theorem epsD_mul_reflMatrix_branch (i : Fin (m + 3)) (hi : i.val = m) :
     epsD m * reflMatrix (CartanMatrix.D (m + 3)) i =
       permMatrixHom (R := ℤ) (Equiv.swap i ⟨i.val + 1, by omega⟩) * epsD m := by
   ext a j
@@ -108,7 +108,7 @@ theorem epsD_mul_reflMatrix_branch (i : Fin (m + 3)) (hi : i.val = m) :
   split_ifs <;> (try simp only [not_true_eq_false] at *) <;>
     omega
 
-theorem epsD_mul_reflMatrix_pre (i : Fin (m + 3)) (hi : i.val = m + 1) :
+private theorem epsD_mul_reflMatrix_pre (i : Fin (m + 3)) (hi : i.val = m + 1) :
     epsD m * reflMatrix (CartanMatrix.D (m + 3)) i =
       permMatrixHom (R := ℤ) (Equiv.swap i ⟨i.val + 1, by omega⟩) * epsD m := by
   ext a j
@@ -155,20 +155,21 @@ theorem epsD_mul_coxeterElement :
   rw [coxeterElement, List.finRange_succ_last, List.map_append, List.prod_append, List.map_map,
     ← Matrix.mul_assoc, hlist, List.map_cons, List.map_nil, List.prod_cons, List.prod_nil,
     Matrix.mul_one, Matrix.mul_assoc, epsD_mul_reflMatrix_last _ (by simp), ← Matrix.mul_assoc,
-    prod_adjSwap_eq_formPerm]
+    prod_adjSwap_eq_finRotate]
   congr 1
   ext a b
   rw [permMatrixHom_mul_apply]
-  obtain ⟨x, rfl⟩ := (List.finRange (m + 3)).formPerm.surjective a
-  have hval : ((List.finRange (m + 3)).formPerm x).val = (x.val + 1) % (m + 3) := by
-    rw [formPerm_finRange_apply]
+  obtain ⟨x, rfl⟩ := (finRotate (m + 3)).surjective a
+  have hval : (finRotate (m + 3) x).val = (x.val + 1) % (m + 3) := by
+    rw [finRotate_apply, Fin.val_add, Fin.val_one]
   rw [Equiv.symm_apply_apply]
   simp only [flipPair, negaD, Matrix.of_apply, Fin.ext_iff]
   rw [hval]
   by_cases hx : x.val + 1 < m + 3
   · have hm := Nat.mod_eq_of_lt hx
     split_ifs <;> omega
-  · have hm : (x.val + 1) % (m + 3) = 0 := by rw [show x.val + 1 = m + 3 by omega, Nat.mod_self]
+  · have hx' : x.val + 1 = m + 3 := by omega
+    have hm : (x.val + 1) % (m + 3) = 0 := by rw [hx', Nat.mod_self]
     split_ifs <;> omega
 
 /-- Closed form of `negaD m ^ k` for `k ≤ m + 2`. -/
@@ -334,12 +335,14 @@ theorem epsD_mul_left_cancel {X Y : Matrix (Fin (m + 3)) (Fin (m + 3)) ℤ}
   have hm := chain m le_rfl
   rw [ite_eq_left (by omega), ite_eq_left (by omega), ite_eq_left (Or.inl rfl)] at h1
   rw [ite_eq_right (by omega), ite_eq_left (by omega), ite_eq_left (Or.inr rfl)] at h2
-  simp only [Nat.add_sub_cancel, show m + 2 - 1 = m + 1 from rfl] at h1 h2
+  have hm1 : m + 2 - 1 = m + 1 := rfl
+  simp only [Nat.add_sub_cancel, hm1] at h1 h2
   rw [Matrix.zero_apply, hv]
   have hc := c.isLt
   by_cases hcm : c.val ≤ m
   · exact chain _ hcm
-  · rcases (show c.val = m + 1 ∨ c.val = m + 2 by omega) with hh | hh <;> rw [hh] <;> omega
+  · obtain hh | hh : c.val = m + 1 ∨ c.val = m + 2 := by omega
+    all_goals rw [hh]; omega
 
 /-- `epsD` is injective on the right. -/
 theorem epsD_mul_right_cancel {X Y : Matrix (Fin (m + 3)) (Fin (m + 3)) ℤ}
@@ -372,18 +375,9 @@ theorem epsD_mul_right_cancel {X Y : Matrix (Fin (m + 3)) (Fin (m + 3)) ℤ}
 /-- **The Coxeter element of type `Dₙ` has order `2n - 2`** (`n = m + 3`). -/
 theorem orderOf_coxeterElement_D (m : ℕ) :
     orderOf (coxeterElement (CartanMatrix.D (m + 3))) = 2 * (m + 2) := by
-  set c := coxeterElement (CartanMatrix.D (m + 3))
-  have hpow : ∀ k, epsD m * c ^ k = negaD m ^ k * epsD m := by
-    intro k
-    induction k with
-    | zero => simp
-    | succ k ih => rw [pow_succ, ← Matrix.mul_assoc, ih, Matrix.mul_assoc,
-        epsD_mul_coxeterElement, ← Matrix.mul_assoc, ← pow_succ]
-  rw [← orderOf_negaD]
-  refine orderOf_eq_orderOf_iff.2 fun k => ⟨fun h => epsD_mul_right_cancel ?_,
-    fun h => epsD_mul_left_cancel ?_⟩
-  · rw [← hpow, h, Matrix.mul_one, Matrix.one_mul]
-  · rw [hpow, h, Matrix.one_mul, Matrix.mul_one]
+  rw [← orderOf_negaD, orderOf_eq_orderOf_of_mul_eq_mul epsD_mul_coxeterElement
+    (fun k h => epsD_mul_left_cancel (h.trans (Matrix.mul_one _).symm))
+    (fun k h => epsD_mul_right_cancel (h.trans (Matrix.one_mul _).symm))]
 
 /-- The order `0, 1, …, n - 1` is a one-degenerate order of the Dynkin diagram of type `Dₙ`
 (`n = m + 3`): the fork node `n - 1` has the single earlier neighbour `n - 3`. -/

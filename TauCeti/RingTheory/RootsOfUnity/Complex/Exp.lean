@@ -12,12 +12,14 @@ public import Mathlib.RingTheory.RootsOfUnity.Complex
 
 Mathlib's `Complex.isPrimitiveRoot_exp` says that `exp(2πi / m)` is a primitive `m`-th root of
 unity. This file records that these roots are compatible along the power maps: for `n ∣ m` with
-`m ≠ 0`, `exp(2πi / m) ^ (m / n) = exp(2πi / n)`.
+`m ≠ 0`, `exp(2πi / m) ^ (m / n) = exp(2πi / n)`, and that `exp(2πi e / m)` is the `e`-th power of
+`exp(2πi / m)`.
 
 ## Main results
 
 * `TauCeti.exp_two_pi_I_div_pow_div`: `exp(2πi / m) ^ (m / n) = exp(2πi / n)` for `n ∣ m`,
   `m ≠ 0`.
+* `Complex.exp_two_pi_I_mul_div_eq_pow`: `exp(2πi e / m) = exp(2πi / m) ^ e`.
 -/
 
 public section
@@ -39,3 +41,14 @@ theorem exp_two_pi_I_div_pow_div {m n : ℕ} (hm : m ≠ 0) (h : n ∣ m) :
   field_simp
 
 end TauCeti
+
+namespace Complex
+
+/-- `exp(2πi e / m)` is the `e`-th power of the root of unity `exp(2πi / m)`. -/
+theorem exp_two_pi_I_mul_div_eq_pow (e m : ℕ) :
+    exp (2 * π * I * ((e : ℂ) / (m : ℂ))) = exp (2 * π * I / (m : ℂ)) ^ e := by
+  rw [← exp_nat_mul]
+  congr 1
+  ring
+
+end Complex
