@@ -7,6 +7,8 @@ module
 
 public import Mathlib.RingTheory.Filtration
 
+import TauCeti.RingTheory.Ideal.Operations
+
 /-!
 # Consequences of the Artin–Rees lemma for `I`-adic filtrations
 
@@ -39,8 +41,6 @@ the Huber development that consumes it.
 * `TauCeti.ArtinRees.exists_controlled_lift`: there is a shift depending only on `I` and the
   submodule — quantified before the surjection — for which every surjection onto that submodule
   admits lifts with control on the `I`-adic filtration.
-* `Submodule.map_subtype_smul_top_inf_comap`: transport of the filtration induced by
-  `J • ⊤` from a submodule `N₀` to the ambient module, where it becomes `J • N₀ ⊓ L`.
 * `Ideal.exists_pow_add_smul_inf_eq_pow_smul`: for `N₀` finitely generated and a submodule `L`,
   one shift `k` gives `I ^ (n + k) • N₀ ⊓ L = I ^ n • (I ^ k • N₀ ⊓ L)` for all `n`; this is the
   form used to compare natural topologies of finite modules over Huber rings.
@@ -101,22 +101,6 @@ theorem exists_controlled_lift [IsNoetherianRing R] [Module.Finite R M] (I : Ide
   exact Submodule.mem_map.mp hv_top
 
 end TauCeti.ArtinRees
-
-namespace Submodule
-
-variable {R : Type*} [Semiring R] {M : Type*} [AddCommMonoid M] [Module R M]
-
-/-- Pushing the filtration that `J • ⊤` induces on `L ∩ N₀`, viewed inside `N₀`, forward along
-the inclusion `N₀ → M` gives `J • N₀ ⊓ L`. -/
-@[simp]
-theorem map_subtype_smul_top_inf_comap (N₀ : Submodule R M) (J : Ideal R) (L : Submodule R M) :
-    (J • ⊤ ⊓ L.comap N₀.subtype).map N₀.subtype = J • N₀ ⊓ L := by
-  -- the injective inclusion commutes with `⊓`, and carries `L.comap N₀.subtype` to `N₀ ⊓ L`
-  rw [Submodule.map_inf _ N₀.injective_subtype, Submodule.map_comap_subtype, ← inf_assoc]
-  -- `map_smul''` carries `J • ⊤` to `J • N₀`, which lies in `N₀`
-  simp [Submodule.smul_le_right]
-
-end Submodule
 
 variable {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M] [Module R M]
 
