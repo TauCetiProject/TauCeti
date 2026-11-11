@@ -121,12 +121,9 @@ theorem measurable_measure_of_measurable_eval {f : Ω → StieltjesFunction ℝ}
   refine Measurable.measure_of_isPiSystem_of_iUnion
     (B := fun n : ℕ ↦ Ioc (-(n + 1 : ℝ)) (n + 1))
     (BorelSpace.measurable_eq.trans (borel_eq_generateFrom_Ioc ℝ))
-    (isPiSystem_Ioc id id) ?_ ?_ ?_ ?_ ?_
+    (isPiSystem_Ioc id id) ?_ ?_ ?_ ?_
   · intro n
     exact ⟨_, _, by have := Nat.cast_nonneg (α := ℝ) n; linarith, rfl⟩
-  · intro i j hij
-    exact Ioc_subset_Ioc (neg_le_neg (by exact_mod_cast Nat.add_le_add_right hij 1))
-      (by exact_mod_cast Nat.add_le_add_right hij 1)
   · ext x
     simp only [mem_iUnion, mem_Ioc, mem_univ, iff_true]
     obtain ⟨n, hn⟩ := exists_nat_gt |x|
