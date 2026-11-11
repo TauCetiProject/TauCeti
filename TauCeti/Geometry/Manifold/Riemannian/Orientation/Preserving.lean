@@ -9,8 +9,6 @@ public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm
 public import Mathlib.Analysis.InnerProductSpace.TwoDim
-public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-public import Mathlib.LinearAlgebra.Complex.Orientation
 
 /-!
 # Orientation-preserving maps into an oriented vector space
