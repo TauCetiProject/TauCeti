@@ -41,7 +41,7 @@ Along a line `t ↦ x + t • ξ`, the squared distance to a point `y` is the qu
   vector as a polynomial.
 * `TauCeti.norm_add_smul_sub_sq`: the squared distance along a line as a quadratic polynomial.
 * `TauCeti.norm_sub_le_add_div_sub_inner`: for unit vectors `a` and `ν`, the distance `‖a - ν‖`
-  is bounded by `η + 2 / η - 2 / η * ⟪ν, a⟫` for every `η > 0`.
+  is bounded by `η / 2 + 1 / η - 1 / η * ⟪ν, a⟫` for every `η > 0`.
 * `Finset.sum_mul_norm_sub_sq_eq` and `Finset.sum_mul_edist_sq_eq`: for finitely many points
   `x i` and weights `w i` summing to `1`, the weighted sum of the squared distances from `y` is
   the squared distance from `y` to the weighted mean `m = ∑ i, w i • x i` plus the weighted sum
@@ -92,13 +92,12 @@ theorem mul_norm_sq_add_mul_norm_sub_sq {a b : ℝ} (hab : a + b ≠ 0) (x y : F
 theorem norm_sq_div_two_add_norm_sub_sq_div {τ : ℝ} (hτ : τ ≠ 0) (hτ' : 1 + τ ≠ 0) (x y : F) :
     ‖y‖ ^ 2 / 2 + ‖x - y‖ ^ 2 / (2 * τ) =
       ‖x‖ ^ 2 / (2 * (1 + τ)) + (1 + τ) / (2 * τ) * ‖y - (1 + τ)⁻¹ • x‖ ^ 2 := by
-  have h₀ : 1 / 2 + 1 / (2 * τ) = (1 + τ) / (2 * τ) := by field_simp; ring
-  have h := mul_norm_sq_add_mul_norm_sub_sq (a := 1 / 2) (b := 1 / (2 * τ))
-    (h₀ ▸ div_ne_zero hτ' (mul_ne_zero two_ne_zero hτ)) x y
-  have h₁ : 1 / (2 * τ) / (1 / 2 + 1 / (2 * τ)) = (1 + τ)⁻¹ := by rw [h₀]; field_simp
-  have h₂ : 1 / 2 * (1 / (2 * τ)) / (1 / 2 + 1 / (2 * τ)) = 1 / (2 * (1 + τ)) := by
-    rw [h₀]; field_simp
-  rw [h₁, h₂, h₀] at h
+  have h₀ : 2⁻¹ + (2 * τ)⁻¹ = (1 + τ) / (2 * τ) := by field_simp; ring
+  have h₁ : (2 * τ)⁻¹ / ((1 + τ) / (2 * τ)) = (1 + τ)⁻¹ := by field_simp
+  have h := mul_norm_sq_add_mul_norm_sub_sq (a := 2⁻¹) (b := (2 * τ)⁻¹)
+    (by rw [h₀]; simp [hτ, hτ']) x y
+  rw [h₀, h₁] at h
+  field_simp at h ⊢
   linear_combination h
 
 /-- The completed square at the weights `1 - t` and `t`, for extended distances: for `t ∈ [0, 1]`,
@@ -114,25 +113,25 @@ theorem edist_smul_add_smul_sq_add {t : ℝ} (ht : t ∈ Set.Icc (0 : ℝ) 1) (x
   rw [sub_add_cancel, one_mul, div_one, div_one, sub_sub_sub_cancel_right, norm_sub_rev b x,
     norm_sub_rev b a, hcomb] at key
   simp only [edist_dist, dist_eq_norm, ← ENNReal.ofReal_pow (norm_nonneg _)]
-  rw [← ENNReal.ofReal_mul (mul_nonneg h₀ h₁), ← ENNReal.ofReal_mul h₁, ← ENNReal.ofReal_mul h₀,
-    ← ENNReal.ofReal_add (by positivity) (mul_nonneg (mul_nonneg h₀ h₁) (by positivity)),
-    ← ENNReal.ofReal_add (mul_nonneg h₁ (by positivity)) (mul_nonneg h₀ (by positivity))]
+  rw [← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_mul h₁, ← ENNReal.ofReal_mul h₀,
+    ← ENNReal.ofReal_add (by positivity) (by positivity),
+    ← ENNReal.ofReal_add (by positivity) (by positivity)]
   congr 1
   linarith
 
-/-- For unit vectors `a` and `ν` and `η > 0`, `‖a - ν‖ ≤ η + 2 / η - 2 / η * ⟪ν, a⟫`. The distance
-between two unit vectors is thus bounded by a constant plus a multiple of the deficit
+/-- For unit vectors `a` and `ν` and `η > 0`, `‖a - ν‖ ≤ η / 2 + 1 / η - 1 / η * ⟪ν, a⟫`. The
+distance between two unit vectors is thus bounded by a constant plus a multiple of the deficit
 `1 - ⟪ν, a⟫` of their inner product. -/
 theorem norm_sub_le_add_div_sub_inner {a ν : F} {η : ℝ} (ha : ‖a‖ = 1) (hν : ‖ν‖ = 1)
-    (hη : 0 < η) : ‖a - ν‖ ≤ η + 2 / η - 2 / η * ⟪ν, a⟫ := by
-  -- For unit vectors, `‖a - ν‖² = 2 (1 - ⟪a, ν⟫)` and `‖a - ν‖ ≤ η + ‖a - ν‖² / η`.
+    (hη : 0 < η) : ‖a - ν‖ ≤ η / 2 + 1 / η - 1 / η * ⟪ν, a⟫ := by
+  -- For unit vectors, `‖a - ν‖² = 2 (1 - ⟪a, ν⟫)`, and `2 η ‖a - ν‖ ≤ η² + ‖a - ν‖²`.
   have h := norm_sub_sq_real a ν
   rw [ha, hν, real_inner_comm] at h
-  have heq : η + 2 / η - 2 / η * ⟪ν, a⟫ = (η * η + ‖a - ν‖ ^ 2) / η := by
+  have heq : η / 2 + 1 / η - 1 / η * ⟪ν, a⟫ = (η ^ 2 + ‖a - ν‖ ^ 2) / (2 * η) := by
     field_simp
     linarith
-  rw [heq, le_div_iff₀ hη]
-  nlinarith [sq_nonneg (‖a - ν‖ - η), norm_nonneg (a - ν)]
+  rw [heq, le_div_iff₀ (by positivity)]
+  nlinarith [sq_nonneg (‖a - ν‖ - η)]
 
 end TauCeti
 
@@ -172,12 +171,8 @@ theorem sum_mul_edist_sq_eq (s : Finset ι) {w : ι → ℝ≥0} (hw : ∑ i ∈
     ∑ i ∈ s, (w i : ℝ≥0∞) * edist y (x i) ^ 2 =
       edist y (∑ i ∈ s, (w i : ℝ) • x i) ^ 2 +
         ∑ i ∈ s, (w i : ℝ≥0∞) * edist (∑ j ∈ s, (w j : ℝ) • x j) (x i) ^ 2 := by
-  have hmul (c : ℝ≥0) (a b : F) :
-      (c : ℝ≥0∞) * edist a b ^ 2 = ENNReal.ofReal (c * ‖a - b‖ ^ 2) := by
-    rw [edist_dist, dist_eq_norm, ← ENNReal.ofReal_pow (norm_nonneg _),
-      ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul c.coe_nonneg]
-  simp only [hmul]
-  simp only [edist_dist, dist_eq_norm, ← ENNReal.ofReal_pow (norm_nonneg _)]
+  simp only [edist_dist, dist_eq_norm, ← ENNReal.ofReal_pow (norm_nonneg _),
+    ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul (NNReal.coe_nonneg _)]
   rw [← ENNReal.ofReal_sum_of_nonneg fun i _ ↦ by positivity,
     ← ENNReal.ofReal_sum_of_nonneg fun i _ ↦ by positivity,
     ← ENNReal.ofReal_add (by positivity) (sum_nonneg fun i _ ↦ by positivity),

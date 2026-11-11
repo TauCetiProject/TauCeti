@@ -350,7 +350,7 @@ end Monoid
 section ConstantOrbitSum
 
 variable [TopologicalSpace Y] [T2Space Y] [LocallyCompactSpace Y] [PreconnectedSpace Y]
-  [Module.Free ℤ Λ] [Module.Finite ℤ Λ] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] {Γ : Type*} [Monoid Γ] [MulAction Γ Y] [ContinuousConstSMul Γ Y]
   (R : Γ → Y → E →+ E) (hone : ∀ (y : Y) (v : E), R 1 y v = v)
   (hmul : ∀ (g h : Γ) (y : Y) (v : E), R (g * h) y v = R g (h • y) (R h y v))

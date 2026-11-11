@@ -17,6 +17,9 @@ support. Consequently, an additive map on test functions which vanishes locally 
 continuity of the additive map is not required. Every compact subset of the domain also has a
 cutoff test function equal to one on a neighbourhood of it, and every point of the domain has a
 test function with a prescribed value there, supported in a given neighbourhood of the point.
+In a finite-dimensional space, a compact set `K` in the interior of a compact set `K'` has a
+complex smooth cutoff supported in `K'` and equal to one on `K`
+(`ContDiffMapSupportedIn.exists_eqOn_one_of_subset_interior`).
 
 Multiplication by a smooth function `χ` whose closed support meets `Ω` only inside an open set `U`
 sends tests on `Ω` to tests on `U`. This is `TestFunction.cutoffCLM`, a continuous linear map
@@ -180,6 +183,24 @@ theorem exists_norm_le_one_mul_eq_abs {s : Finset E} (a : E → ℝ) (hs : (s : 
       simp [φ, hχx, hψx, abs_of_neg (lt_of_not_ge hxpos)]
 
 end TestFunction
+
+namespace ContDiffMapSupportedIn
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- A compact set `K` in the interior of a compact set `K'` of a finite-dimensional space has a
+smooth cutoff supported in `K'` and equal to one on `K`. -/
+theorem exists_eqOn_one_of_subset_interior [FiniteDimensional ℝ E] {K K' : Compacts E}
+    (h : (K : Set E) ⊆ interior K') : ∃ χ : 𝓓_{K'}(E, ℂ), EqOn χ 1 K := by
+  obtain ⟨ψ, hψ, -, hψ1, -, hψK'⟩ := K.isCompact.exists_contDiff_cutoff isOpen_interior h
+  have hsmooth : ContDiff ℝ ∞ fun x ↦ (ψ x : ℂ) := Complex.ofRealCLM.contDiff.comp hψ
+  have hsupp : Function.support (fun x ↦ (ψ x : ℂ)) ⊆ K' := fun x hx ↦
+    interior_subset (hψK' (subset_tsupport ψ (by simpa using hx)))
+  refine ⟨.of_support_subset hsmooth hsupp, fun x hx ↦ ?_⟩
+  rw [ContDiffMapSupportedIn.coe_of_support_subset, interior_subset (hψ1 hx), Pi.one_apply,
+    Complex.ofReal_one]
+
+end ContDiffMapSupportedIn
 
 namespace AddMonoidHom
 

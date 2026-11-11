@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Continuity
+public import Mathlib.Analysis.Normed.Group.Uniform
+public import Mathlib.Analysis.Normed.Ring.Basic
 public import Mathlib.Topology.Instances.ENNReal.Lemmas
 
 /-!
@@ -21,6 +23,9 @@ subtraction-based estimates are unavailable, and the superadditivity of the lowe
   constant vanishes as `h → 0`.
 * `TauCeti.tendsto_of_le_add_of_le_add`: a family within `wᵢ` of `b` from both sides converges
   to `b` when `wᵢ → 0`.
+* `TauCeti.tendsto_ofReal_div_mul_add_mul_enorm_sub`: the bounds
+  `ENNReal.ofReal (K / m i) * T + M * ‖s i - a‖ₑ` converge to `ENNReal.ofReal (K / m₀) * T` along
+  a filter on which `m i → m₀ > 0` and `s i → a`, for finite `M`.
 * `ENNReal.le_liminf_add` and `ENNReal.sum_liminf_le_liminf_sum`: the sum of the lower limits of
   finitely many `ℝ≥0∞`-valued families is at most the lower limit of their sum.
 * `ENNReal.le_add_of_forall_one_lt_le_add_mul`: if `a ≤ b + t c` for every `t > 1`, then
@@ -132,5 +137,30 @@ theorem truncated_cost_le_add_of_label_eq {X Y ι κ : Type*} [PseudoMetricSpace
   · have hxy' : ¬(x' ∈ K ∧ y' ∈ L) := by rwa [← hxK, ← hyL]
     rw [hc', hc', ite_eq_right (by simpa using hxy), ite_eq_right (by simpa using hxy')]
     exact le_self_add
+
+/-- The bounds `ENNReal.ofReal (K / m i) * T + M * ‖s i - a‖ₑ` converge to
+`ENNReal.ofReal (K / m₀) * T` along a filter on which `m i → m₀ > 0` and `s i → a`, for finite
+`M`. The real constant `K` may be negative; the quotients are truncated at `0` by
+`ENNReal.ofReal`. -/
+theorem tendsto_ofReal_div_mul_add_mul_enorm_sub {ι F : Type*} [NormedAddCommGroup F]
+    {l : Filter ι} {K m₀ : ℝ} {a : F} {m : ι → ℝ} {s : ι → F} {T M : ℝ≥0∞} (hm₀ : 0 < m₀)
+    (hm : Filter.Tendsto m l (𝓝 m₀)) (hs : Filter.Tendsto s l (𝓝 a)) (hM : M ≠ ∞) :
+    Filter.Tendsto (fun i => ENNReal.ofReal (K / m i) * T + M * ‖s i - a‖ₑ) l
+      (𝓝 (ENNReal.ofReal (K / m₀) * T)) := by
+  have h0 : Filter.Tendsto (fun i ↦ s i - a) l (𝓝 0) := by simpa using hs.sub_const a
+  have h1 : Filter.Tendsto (fun i => ENNReal.ofReal (K / m i) * T) l
+      (𝓝 (ENNReal.ofReal (K / m₀) * T)) := by
+    rcases le_or_gt K 0 with hK | hK
+    · rw [ENNReal.ofReal_of_nonpos (div_nonpos_of_nonpos_of_nonneg hK hm₀.le), zero_mul]
+      refine tendsto_const_nhds.congr' ((hm.eventually (lt_mem_nhds hm₀)).mono fun i hi ↦ ?_)
+      beta_reduce
+      rw [ENNReal.ofReal_of_nonpos (div_nonpos_of_nonpos_of_nonneg hK hi.le), zero_mul]
+    refine ENNReal.Tendsto.mul_const
+      (ENNReal.tendsto_ofReal (tendsto_const_nhds.div hm hm₀.ne')) (Or.inl ?_)
+    exact (ENNReal.ofReal_pos.2 (div_pos hK hm₀)).ne'
+  have h2 : Filter.Tendsto (fun i => M * ‖s i - a‖ₑ) l (𝓝 0) := by
+    simpa [Function.comp_def] using
+      (ENNReal.Tendsto.const_mul ((continuous_enorm.tendsto (0 : F)).comp h0) (Or.inr hM))
+  simpa using h1.add h2
 
 end TauCeti

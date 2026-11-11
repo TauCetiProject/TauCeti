@@ -96,7 +96,7 @@ instance AtWorstNodalOfRelativeDimensionOne.descendsAlong_surjective_inf_flat_in
   let : ((pullback.fst f g).fiber x).Over (Spec (.of (X.residueField x))) :=
     ⟨(pullback.fst f g).fiberToSpecResidueField x⟩
   have hx := hfib x
-  rw [atWorstNodalOfRelativeDimensionOne_iff_of_isAffine _ (Iso.refl _)] at hx ⊢
+  rw [atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (Iso.refl _)] at hx ⊢
   simp only [Iso.refl_hom, Category.comp_id] at hx ⊢
   exact AffineAtWorstNodalOfRelativeDimensionOne.of_isPullback_of_faithfullyFlat H hx
 

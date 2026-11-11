@@ -86,7 +86,7 @@ theorem _root_.AlgebraicGeometry.Scheme.exists_isClosedImmersion_singularLocus_o
   have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R)) := hnodal.syntomic
   intro z
   have hAffine : AffineAtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of R)) :=
-    (atWorstNodalOfRelativeDimensionOne_iff_of_isAffine _ (Iso.refl _)).mp hnodal
+    (atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (Iso.refl _)).mp hnodal
   have : Unramified ((X.singularLocus R).subschemeι ≫ (X ↘ Spec (.of R))) :=
     hAffine.unramified_singularLocus
   obtain ⟨E, _, _, _, hE⟩ := ((X.singularLocus R).subschemeι ≫
@@ -133,7 +133,7 @@ theorem _root_.AlgebraicGeometry.Scheme.exists_singularLocus_iso_Spec_quotient_o
   have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R)) := hnodal.syntomic
   intro z hz
   have hAffine : AffineAtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of R)) :=
-    (atWorstNodalOfRelativeDimensionOne_iff_of_isAffine _ (Iso.refl _)).mp hnodal
+    (atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (Iso.refl _)).mp hnodal
   have : Unramified ((X.singularLocus R).subschemeι ≫ (X ↘ Spec (.of R))) :=
     hAffine.unramified_singularLocus
   obtain ⟨E, _, _, _, _, hE₀, hE⟩ := ((X.singularLocus R).subschemeι ≫

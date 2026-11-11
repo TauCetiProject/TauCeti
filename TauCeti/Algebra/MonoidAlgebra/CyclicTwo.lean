@@ -14,6 +14,7 @@ public import Mathlib.Tactic.Abel
 public import Mathlib.Tactic.LinearCombination
 public import Mathlib.Tactic.Ring
 public import TauCeti.Algebra.Ring.Prod
+public import TauCeti.Data.ZMod.Two
 
 /-!
 # The group algebra of the cyclic group of order two
@@ -81,26 +82,6 @@ theorem one_ne_ofAdd_one : (1 : Multiplicative (ZMod 2)) ≠ Multiplicative.ofAd
 theorem ofAdd_one_mul_ofAdd_one :
     (Multiplicative.ofAdd (1 : ZMod 2)) * Multiplicative.ofAdd 1 = 1 := by decide
 
-/-- Every element of `C₂` is `1` or the generator `σ = Multiplicative.ofAdd 1`. -/
-theorem eq_one_or_eq_ofAdd_one (g : Multiplicative (ZMod 2)) :
-    g = 1 ∨ g = Multiplicative.ofAdd 1 := by
-  revert g; decide
-
-/-- Every element of the Klein four-group `C₂ × C₂` is `1`, `(σ, 1)`, `(1, σ)` or `(σ, σ)`, where
-`σ = Multiplicative.ofAdd 1`. -/
-theorem prod_eq_one_or_eq_ofAdd_one (g : Multiplicative (ZMod 2) × Multiplicative (ZMod 2)) :
-    g = 1 ∨ g = (Multiplicative.ofAdd 1, 1) ∨ g = (1, Multiplicative.ofAdd 1) ∨
-      g = (Multiplicative.ofAdd 1, Multiplicative.ofAdd 1) := by
-  revert g; decide
-
-/-- A sum over `C₂` is the sum of the values at `1` and at the generator
-`σ = Multiplicative.ofAdd 1`. -/
-theorem sum_cyclicTwo {M : Type*} [AddCommMonoid M] (f : Multiplicative (ZMod 2) → M) :
-    ∑ g, f g = f 1 + f (Multiplicative.ofAdd 1) := by
-  have huniv : (Finset.univ : Finset (Multiplicative (ZMod 2))) = {1, Multiplicative.ofAdd 1} := by
-    decide
-  rw [huniv, Finset.sum_pair one_ne_ofAdd_one]
-
 end TauCeti
 
 namespace MonoidAlgebra
@@ -117,7 +98,7 @@ theorem eq_single_one_add_single_ofAdd_one (x : MonoidAlgebra R (Multiplicative 
     x = single 1 (x.coeff 1) +
       single (Multiplicative.ofAdd 1) (x.coeff (Multiplicative.ofAdd 1)) := by
   ext g
-  rcases eq_one_or_eq_ofAdd_one g with rfl | rfl <;>
+  rcases g.eq_one_or_eq_ofAdd_one with rfl | rfl <;>
     simp [coeff_add, coeff_single, one_ne_ofAdd_one, one_ne_ofAdd_one.symm]
 
 /-- The product of two elements of `R[C₂]` written as `a + bσ`: since `σ² = 1`,
