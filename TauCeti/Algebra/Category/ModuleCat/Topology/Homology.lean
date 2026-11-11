@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Topology.Homology
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
+public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Topology.Algebra.Module.Quotient
 import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 
@@ -280,8 +281,7 @@ theorem homologyMap_homologyπ_cyclesMkOfEq {L : HomologicalComplex (TopModuleCa
     (hj : c.next n = j) (hx : (K.d n j).hom x = 0) :
     homologyMap f n (K.homologyπ n (K.cyclesMkOfEq x j hj hx)) =
       L.homologyπ n (L.cyclesMkOfEq ((f.f n).hom x) j hj (by
-        rw [← ConcreteCategory.comp_apply, f.comm, ConcreteCategory.comp_apply, hx,
-          map_zero])) := by
+        rw [HomologicalComplex.Hom.comm_apply, hx, map_zero])) := by
   rw [← ConcreteCategory.comp_apply, homologyπ_naturality, ConcreteCategory.comp_apply]
   congr 1
   apply L.iCycles_injective n
@@ -296,7 +296,7 @@ theorem d_iCycles_apply (j : ι) (z : K.cycles n) : (K.d n j).hom (K.iCycles n z
 
 /-- The underlying element of the cycle `K.toCycles i n x` is the differential of `x`. -/
 @[simp]
-theorem iCycles_toCycles_apply (i : ι) [K.HasHomology n] (x : K.X i) :
+theorem iCycles_toCycles_apply (i : ι) (x : K.X i) :
     K.iCycles n (K.toCycles i n x) = (K.d i n).hom x := by
   have h := ConcreteCategory.congr_hom (K.toCycles_i i n) x
   simpa only [ConcreteCategory.comp_apply] using h

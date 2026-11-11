@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCiv
 public import Mathlib.Topology.Instances.Matrix
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Topology.Algebra.Module.BilinearForm
 import TauCeti.Topology.Instances.Matrix
@@ -233,17 +233,31 @@ section VectorSpace
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {ι : Type*} [Fintype ι] [DecidableEq ι] {G : E → E →L[ℝ] E →L[ℝ] ℝ} {z : E}
 
+omit [FiniteDimensional ℝ E] in
 /-- In a basis, the Christoffel symbols of the second kind of a field `G` of symmetric
-nondegenerate bilinear forms are the Christoffel symbols of its coordinate jet. -/
+bilinear forms are the Christoffel symbols of its coordinate jet. If `G z` is degenerate, both
+sides vanish. -/
 theorem repr_christoffelSecondKind_eq_christoffelOfJet (b : Basis ι ℝ E)
     (hG : DifferentiableAt ℝ G z) (hsymm : LinearMap.IsSymm (G z).toBilinForm)
-    (hnd : (G z).toBilinForm.Nondegenerate) (i j k : ι) :
+    (i j k : ι) :
     b.repr (christoffelSecondKind G z (b i) (b j)) k =
       christoffelOfJet (LinearMap.toMatrix₂ b b (G z).toBilinForm)
         (fun k i j ↦ fderiv ℝ (fun y ↦ G y (b i) (b j)) z (b k)) i j k := by
-  rw [repr_christoffelSecondKind (LinearMap.BilinForm.isSymm_iff.mpr hsymm) hnd, christoffelOfJet]
-  simp only [← fderiv_clm_apply_const_apply₂ hG]
+  have : FiniteDimensional ℝ E := Module.Finite.of_basis b
+  by_cases hnd : (G z).toBilinForm.Nondegenerate
+  · rw [repr_christoffelSecondKind (LinearMap.BilinForm.isSymm_iff.mpr hsymm) hnd, christoffelOfJet]
+    simp only [← fderiv_clm_apply_const_apply₂ hG]
+  · have hinv : ¬ (G z).IsInvertible := by
+      rwa [ContinuousLinearMap.isInvertible_iff_nondegenerate_toBilinForm]
+    have hdet : ¬ IsUnit (LinearMap.toMatrix₂ b b (G z).toBilinForm).det := by
+      rw [isUnit_iff_ne_zero, ← Matrix.nondegenerate_iff_det_ne_zero,
+        LinearMap.nondegenerate_toMatrix₂_iff]
+      exact hnd
+    simp [christoffelSecondKind_def, christoffelOfJet,
+      Matrix.nonsing_inv_apply_not_isUnit _ hdet,
+      ContinuousLinearMap.inverse_of_not_isInvertible hinv]
 
+omit [FiniteDimensional ℝ E] in
 /-- **The derivatives of the Christoffel symbols in a basis.** For a field `G` of bilinear forms
 that is `C²` at `z`, nondegenerate and symmetric at `z`, the `k`-th coordinate of
 `∂ₘ Γ(b i, b j)` is the derivative `christoffelDerivOfJet` of the Christoffel symbols of the
@@ -256,36 +270,19 @@ theorem repr_fderiv_christoffelSecondKind_eq_christoffelDerivOfJet (b : Basis ι
         (fun k i j ↦ fderiv ℝ (fun y ↦ G y (b i) (b j)) z (b k))
         (fun m k i j ↦ fderiv ℝ (fun y ↦ fderiv ℝ (fun y' ↦ G y' (b i) (b j)) y (b k)) z (b m))
         m i j k := by
+  have : FiniteDimensional ℝ E := Module.Finite.of_basis b
   have hΓ : DifferentiableAt ℝ (christoffelSecondKind G) z :=
     (contDiffAt_christoffelSecondKind (n := 1) hG (by norm_num) hnd).differentiableAt one_ne_zero
-  -- Nondegeneracy is open: the Gram determinant is continuous and nonzero at `z`.
-  have hdet : ContinuousAt (fun y ↦ (LinearMap.toMatrix₂ b b (G y).toBilinForm).det) z := by
-    refine continuous_id.matrix_det.continuousAt.comp
-      (f := fun y ↦ LinearMap.toMatrix₂ b b (G y).toBilinForm)
-      (continuousAt_pi.2 fun p ↦ continuousAt_pi.2 fun q ↦ ?_)
-    simpa using (hG.continuousAt.clm_apply (continuousAt_const (y := b p))).clm_apply
-      (continuousAt_const (y := b q))
-  have hnd' : ∀ᶠ y in 𝓝 z, (G y).toBilinForm.Nondegenerate :=
-    (hdet.eventually_ne ((LinearMap.nondegenerate_iff_det_ne_zero b).1 hnd)).mono
-      fun _ ↦ (LinearMap.nondegenerate_iff_det_ne_zero b).2
-  -- On an open neighbourhood of `z`, `G` is `C²` and nondegenerate.
-  obtain ⟨U, hU, hUo, hzU⟩ := eventually_nhds_iff.1 ((hG.eventually (by simp)).and hnd')
   have hGd : DifferentiableAt ℝ G z := hG.differentiableAt (by norm_num)
   -- The coefficient derivatives `y ↦ ∂ₖ g_ij(y)` are differentiable at `z`.
   have hcoeff (u v w : E) : DifferentiableAt ℝ (fun y ↦ fderiv ℝ (fun y' ↦ G y' v w) y u) z :=
     ((((hG.clm_apply contDiffAt_const).clm_apply contDiffAt_const).fderiv_right
       (m := 1) (by norm_num)).differentiableAt one_ne_zero).clm_apply (differentiableAt_const u)
   -- Lowering the index of `Γ` gives the Christoffel symbols of the first kind near `z`.
-  have hlow (l : ι) : (fun y ↦ G y (christoffelSecondKind G y (b i) (b j)) (b l)) =ᶠ[𝓝 z]
-      fun y ↦ 2⁻¹ * (fderiv ℝ (fun y' ↦ G y' (b j) (b l)) y (b i) +
-        fderiv ℝ (fun y' ↦ G y' (b i) (b l)) y (b j) -
-        fderiv ℝ (fun y' ↦ G y' (b i) (b j)) y (b l)) := by
-    filter_upwards [hUo.mem_nhds hzU] with y hy
-    have hy' := (hU y hy).1.differentiableAt (by norm_num)
-    rw [apply_christoffelSecondKind (hU y hy).2, christoffelFirstKind_apply,
-      fderiv_clm_apply_const_apply₂ hy', fderiv_clm_apply_const_apply₂ hy',
-      fderiv_clm_apply_const_apply₂ hy']
-    ring
+  have hlow (l : ι) :=
+    eventuallyEq_apply_christoffelSecondKind
+      ((hG.eventually (by simp)).mono fun y hy ↦ hy.differentiableAt (by norm_num)) hnd
+      (b i) (b j) (b l)
   -- Differentiating that identity in the direction `b m` gives the pairings of `∂ₘ Γ(b i, b j)`.
   have hpair (l : ι) : G z (fderiv ℝ (christoffelSecondKind G) z (b m) (b i) (b j)) (b l) =
       2⁻¹ * (fderiv ℝ (fun y ↦ fderiv ℝ (fun y' ↦ G y' (b j) (b l)) y (b i)) z (b m) +
@@ -313,10 +310,11 @@ theorem repr_fderiv_christoffelSecondKind_eq_christoffelDerivOfJet (b : Basis ι
   congr 2
   conv_lhs => rw [← b.sum_repr (christoffelSecondKind G z (b i) (b j))]
   simp only [map_sum, map_smul, _root_.sum_apply, _root_.smul_apply,
-    smul_eq_mul, repr_christoffelSecondKind_eq_christoffelOfJet b hGd hsymm hnd,
+    smul_eq_mul, repr_christoffelSecondKind_eq_christoffelOfJet b hGd hsymm,
     ← fderiv_clm_apply_const_apply₂ hGd]
   exact Finset.sum_congr rfl fun q _ ↦ mul_comm _ _
 
+omit [FiniteDimensional ℝ E] in
 /-- **The derivatives of the coordinates of the Christoffel symbols.** For a field `G` of
 bilinear forms that is `C²` at `z`, nondegenerate and symmetric at `z`, the derivative
 along `b m` of the `k`-th coordinate of `Γ(b i, b j)` is `christoffelDerivOfJet` of the coordinate
@@ -329,6 +327,7 @@ theorem fderiv_repr_christoffelSecondKind_eq_christoffelDerivOfJet (b : Basis ι
         (fun k i j ↦ fderiv ℝ (fun y ↦ G y (b i) (b j)) z (b k))
         (fun m k i j ↦ fderiv ℝ (fun y ↦ fderiv ℝ (fun y' ↦ G y' (b i) (b j)) y (b k)) z (b m))
         m i j k := by
+  have : FiniteDimensional ℝ E := Module.Finite.of_basis b
   have hΓ : DifferentiableAt ℝ (christoffelSecondKind G) z :=
     (contDiffAt_christoffelSecondKind (n := 1) hG (by norm_num) hnd).differentiableAt one_ne_zero
   rw [(hasFDerivAt_repr_christoffelSecondKind b hG hnd i j k).fderiv,
@@ -363,8 +362,7 @@ theorem IsLeviCivitaConnection.christoffelSymbol_eq_christoffelOfJet
   rw [(h.christoffelSymbol_eventuallyEq b hy hint i j k).self_of_nhds]
   exact repr_christoffelSecondKind_eq_christoffelOfJet b
     ((g.contDiffAt_chartMetric hy hint).differentiableAt (by simp))
-    (g.isSymm_chartMetric ((extChartAt I x₀).map_source hy))
-    (g.nondegenerate_chartMetric ((extChartAt I x₀).map_source hy)) i j k
+    (g.isSymm_chartMetric ((extChartAt I x₀).map_source hy)) i j k
 
 /-- **The derivatives of the Christoffel symbols of a Levi-Civita connection in a chart.** At a
 point `y` of the chart domain at `x₀` whose chart image `z` is interior, the derivative of the

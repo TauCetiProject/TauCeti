@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.MvPolynomial.Degrees
+public import Mathlib.Algebra.MvPolynomial.Funext
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import Mathlib.Algebra.Polynomial.Bivariate
 public import Mathlib.Algebra.Polynomial.Roots
@@ -14,6 +15,7 @@ public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.FieldTheory.Minpoly.Field
 public import Mathlib.SetTheory.Cardinal.ENat
 public import TauCeti.RingTheory.MvPolynomial.Dehomogenization
+import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 import TauCeti.Algebra.MvPolynomial.Monomial
 
 /-!
@@ -42,6 +44,8 @@ largest `s 0 + s 1` over its support.  These are the forms in which a plane curv
   possible monomial with exponent `n` in `X₁` is `X₁ ^ n`.
 * `MvPolynomial.totalDegree_pos_of_aeval_eq_zero`: if the coefficient of `X₁ ^ n` in `φ` is `1`,
   where `n` is the total degree of `φ`, and `φ` has a zero, then `n` is positive.
+* `MvPolynomial.sum_coeff_mul_div_pow_mul_inv_pow_eq_zero`: dividing a relation `φ(x, y) = 0` by
+  `y ^ totalDegree φ` gives a vanishing sum in the variables `x / y` and `y⁻¹`.
 * `MvPolynomial.exists_sum_coeff_mul_pow_ne_zero`: over a domain with more than `deg φ` elements,
   the leading form `φ_n` of `φ` satisfies `φ_n(c, 1) ≠ 0` for some `c`.
 * `MvPolynomial.natDegree_minpoly_le_totalDegree`: if `φ(u + c y, y) = 0` with `u ∈ K` and
@@ -57,6 +61,9 @@ largest `s 0 + s 1` over its support.  These are the forms in which a plane curv
   of degree `n`.
 * `Polynomial.Bivariate.isAlgebraic_of_aeval_algebraMap_eq_zero`: if `φ(a, T) ≠ 0` and
   `φ(a, y) = 0` for a constant `a ∈ k`, then `y` is algebraic over `k`.
+* `Polynomial.Bivariate.isAlgebraic_of_isAlgebraic_of_aeval_eq_zero`: if `φ` has coefficient `1`
+  on `X₁ ^ (total degree)`, `φ(u, y) = 0` and `u` is algebraic over `k`, then `y` is algebraic
+  over `k`.
 
 ## The chart at infinity
 
@@ -254,6 +261,25 @@ theorem coeff_single_one_inftyChart {φ : MvPolynomial (Fin 2) R} {n : ℕ}
     (inftyChart n φ).coeff (Finsupp.single 1 n) = φ.coeff (Finsupp.single 1 n) := by
   simpa using coeff_inftyChart hφ (Finsupp.single 1 n)
 
+/-- Dividing a plane relation `φ(x, y) = 0` by `y ^ totalDegree φ` gives a vanishing sum in the
+variables `x / y` and `y⁻¹`. -/
+theorem sum_coeff_mul_div_pow_mul_inv_pow_eq_zero {F : Type*} [Semifield F] [Algebra R F]
+    {φ : MvPolynomial (Fin 2) R} {x y : F}
+    (hφxy : aeval ![x, y] φ = 0) (hy0 : y ≠ 0) :
+    ∑ s ∈ φ.support, algebraMap R F (φ.coeff s) * (x / y) ^ s 0 *
+      y⁻¹ ^ (φ.totalDegree - (s 0 + s 1)) = 0 := by
+  have : ∑ s ∈ φ.support, algebraMap R F (φ.coeff s) * (x / y) ^ s 0 *
+      y⁻¹ ^ (φ.totalDegree - (s 0 + s 1)) = y⁻¹ ^ φ.totalDegree * aeval ![x, y] φ := by
+    rw [aeval_fin_two_eq_sum, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun s hs ↦ ?_
+    obtain ⟨d, hd⟩ := Nat.exists_eq_add_of_le (add_le_totalDegree_of_mem_support hs)
+    have hyy : y⁻¹ ^ s 1 * y ^ s 1 = 1 := by rw [← mul_pow, inv_mul_cancel₀ hy0, one_pow]
+    simp only [hd, Nat.add_sub_cancel_left, div_eq_mul_inv, mul_pow, pow_add]
+    calc _ = algebraMap R F (φ.coeff s) * (x ^ s 0 * y⁻¹ ^ s 0) * y⁻¹ ^ d *
+          (y⁻¹ ^ s 1 * y ^ s 1) := by rw [hyy, mul_one]
+      _ = _ := by ring
+  rw [this, hφxy, mul_zero]
+
 section Semifield
 
 variable {L : Type*} [Semifield L] [Algebra R L] {φ : MvPolynomial (Fin 2) R} {n : ℕ}
@@ -379,6 +405,34 @@ theorem natDegree_minpoly_le_totalDegree [CommSemiring k] {K F : Type*} [Field K
 
 end Algebra
 
+section Infinite
+
+variable {K : Type*} [Field K] [Infinite K]
+
+/-- A nonzero plane polynomial does not vanish at some point whose first coordinate is nonzero
+and whose slope `v 1 / v 0` avoids a given finite set. -/
+theorem exists_eval_ne_zero_and_div_notMem {H : MvPolynomial (Fin 2) K} (hH : H ≠ 0)
+    (s : Finset K) : ∃ v : Fin 2 → K, eval v H ≠ 0 ∧ v 0 ≠ 0 ∧ v 1 / v 0 ∉ s := by
+  classical
+  have hlinear (b : K) : (X 1 - C b * X 0 : MvPolynomial (Fin 2) K) ≠ 0 := by
+    intro hzero
+    have := congrArg (fun q : MvPolynomial (Fin 2) K ↦ q.coeff (Finsupp.single 1 1)) hzero
+    simp [coeff_X, coeff_C_mul, Finsupp.single_left_inj one_ne_zero] at this
+  have hQ : H * X 0 * ∏ b ∈ s, (X 1 - C b * X 0) ≠ 0 :=
+    mul_ne_zero (mul_ne_zero hH (X_ne_zero 0))
+      (Finset.prod_ne_zero_iff.2 fun b _ ↦ hlinear b)
+  obtain ⟨v, hv⟩ : ∃ v, eval v (H * X 0 * ∏ b ∈ s, (X 1 - C b * X 0)) ≠ 0 := by
+    by_contra h
+    apply hQ
+    exact MvPolynomial.funext fun v ↦ by
+      simpa only [map_zero] using (not_exists.mp h v |> not_not.mp)
+  simp only [map_mul, eval_X, map_prod, map_sub, eval_C, mul_ne_zero_iff,
+    Finset.prod_ne_zero_iff] at hv
+  have hv0 : v 0 ≠ 0 := hv.1.2
+  refine ⟨v, hv.1.1, hv0, fun hmem ↦ hv.2 _ hmem (by rw [div_mul_cancel₀ _ hv0, sub_self])⟩
+
+end Infinite
+
 end MvPolynomial
 
 namespace Polynomial.Bivariate
@@ -493,5 +547,24 @@ theorem isAlgebraic_of_aeval_algebraMap_eq_zero {k F : Type*} [CommRing k] [Comm
   rw [aeval_def] at h
   convert h.symm using 2
   refine ringHom_ext (fun r ↦ ?_) ?_ <;> simp [RingHom.algebraMap_toAlgebra]
+
+open scoped IntermediateField in
+/-- If `φ ∈ k[X₀, X₁]` has coefficient `1` on `X₁ ^ φ.totalDegree` (so it is monic in `X₁` over
+`k[X₀]`), `φ(u, y) = 0` and `u` is algebraic over `k`, then `y` is algebraic over `k`. -/
+theorem isAlgebraic_of_isAlgebraic_of_aeval_eq_zero {k F : Type*} [Field k] [Field F]
+    [Algebra k F] {φ : MvPolynomial (Fin 2) k}
+    (hlead : φ.coeff (Finsupp.single 1 φ.totalDegree) = 1) {u y : F}
+    (hu : IsAlgebraic k u) (hroot : MvPolynomial.aeval ![u, y] φ = 0) : IsAlgebraic k y := by
+  have := IntermediateField.isAlgebraic_adjoin_simple hu.isIntegral
+  have hdegL : (φ.map (algebraMap k k⟮u⟯)).totalDegree ≤ φ.totalDegree :=
+    Finset.sup_mono (MvPolynomial.support_map_subset _ _)
+  have hmonL := monic_equivMvPolynomial_symm hdegL
+    (by rw [MvPolynomial.coeff_map, hlead, map_one])
+  have hyL : IsAlgebraic k⟮u⟯ y :=
+    isAlgebraic_of_aeval_algebraMap_eq_zero
+      (a := IntermediateField.AdjoinSimple.gen k u) (hmonL.map _).ne_zero
+      (by rw [IntermediateField.AdjoinSimple.algebraMap_gen, MvPolynomial.aeval_map_algebraMap];
+          exact hroot)
+  exact hyL.restrictScalars_of_isIntegral k
 
 end Polynomial.Bivariate

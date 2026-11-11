@@ -302,9 +302,8 @@ theorem regularizedIncompleteBeta_pos_iff (ha : 0 < a) (hb : 0 < b) :
 /-! ## Tails -/
 
 /-- The upper tail of Euler's second beta integral, rewritten through the chart
-`u ↦ u / (1 - u)`. -/
-theorem integral_Ioi_rpow_one_add_rpow_eq_interval_tail {a b u0 : ℝ}
-    (hu00 : 0 ≤ u0) (hu01 : u0 < 1) :
+`u ↦ u / (1 - u)`, for every `u0 < 1`. -/
+theorem integral_Ioi_rpow_one_add_rpow_eq_interval_tail {a b u0 : ℝ} (hu01 : u0 < 1) :
     ∫ w in Ioi (u0 / (1 - u0)), w ^ (a - 1) * (1 + w) ^ (-(a + b)) =
       ∫ u in Ioo u0 1, u ^ (a - 1) * (1 - u) ^ (b - 1) := by
   have hderiv : ∀ u ∈ Ioo u0 1,
@@ -312,18 +311,16 @@ theorem integral_Ioi_rpow_one_add_rpow_eq_interval_tail {a b u0 : ℝ}
     fun u hu => (hasDerivAt_div_one_sub (ne_of_lt hu.2)).hasDerivWithinAt
   let k0 : ℝ → ℝ := fun w => w ^ (a - 1) * (1 + w) ^ (-(a + b))
   let k : ℝ → ℝ := fun u => u ^ (a - 1) * (1 - u) ^ (b - 1)
-  have hsub : Ioo u0 1 ⊆ Ioo (0 : ℝ) 1 := fun u hu =>
-    ⟨lt_of_le_of_lt hu00 hu.1, hu.2⟩
   have hcov : ∀ u ∈ Ioo u0 1, |((1 - u) ^ 2)⁻¹| • k0 (u / (1 - u)) = k u := by
     intro u hu
-    simpa [k0, k] using abs_deriv_smul_one_add_rpow a b (hsub hu)
+    simpa [k0, k] using abs_deriv_smul_one_add_rpow a b hu.2
   have himg :
       (fun u : ℝ => u / (1 - u)) '' Ioo u0 1 = Ioi (u0 / (1 - u0)) := by
     rw [image_div_one_sub_Ioo hu01]
   have h21 : ∫ u in Ioo u0 1, |((1 - u) ^ 2)⁻¹| • k0 (u / (1 - u)) =
       ∫ w in Ioi (u0 / (1 - u0)), k0 w := by
     rw [← integral_image_eq_integral_abs_deriv_smul measurableSet_Ioo hderiv
-        (injOn_div_one_sub_Ioo (u0 := u0)) k0, himg]
+        (strictMonoOn_div_one_sub.injOn.mono Ioo_subset_Iio_self) k0, himg]
   have h2 : ∫ w in Ioi (u0 / (1 - u0)), k0 w = ∫ u in Ioo u0 1, k u := by
     rw [← h21, setIntegral_congr_fun measurableSet_Ioo hcov]
   simpa [k0, k] using h2
@@ -331,9 +328,13 @@ theorem integral_Ioi_rpow_one_add_rpow_eq_interval_tail {a b u0 : ℝ}
 /-- The upper tail of the first beta-integral kernel is the total beta mass minus the normalized
 lower incomplete beta mass. -/
 theorem integral_Ioo_rpow_one_sub_rpow_tail_eq {a b u0 : ℝ} (ha : 0 < a) (hb : 0 < b)
-    (hu00 : 0 ≤ u0) (hu01 : u0 < 1) :
+    (hu00 : 0 ≤ u0) :
     ∫ u in Ioo u0 1, u ^ (a - 1) * (1 - u) ^ (b - 1) =
       beta a b * (1 - regularizedIncompleteBeta a b u0) := by
+  rcases lt_or_ge u0 1 with hu01 | hu01
+  swap
+  · simp [Set.Ioo_eq_empty (not_lt.2 hu01),
+      regularizedIncompleteBeta_eq_one_of_one_le ha.le hb hu01]
   let k : ℝ → ℝ := fun u => u ^ (a - 1) * (1 - u) ^ (b - 1)
   have hmem01 : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨le_rfl, zero_le_one⟩
   have hmem11 : (1 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨zero_le_one, le_rfl⟩
@@ -379,8 +380,8 @@ theorem integral_Ioi_rpow_one_add_rpow_tail_eq {a b u0 : ℝ} (ha : 0 < a) (hb :
     (hu00 : 0 ≤ u0) (hu01 : u0 < 1) :
     ∫ w in Ioi (u0 / (1 - u0)), w ^ (a - 1) * (1 + w) ^ (-(a + b)) =
       beta a b * (1 - regularizedIncompleteBeta a b u0) := by
-  rw [integral_Ioi_rpow_one_add_rpow_eq_interval_tail hu00 hu01,
-    integral_Ioo_rpow_one_sub_rpow_tail_eq ha hb hu00 hu01]
+  rw [integral_Ioi_rpow_one_add_rpow_eq_interval_tail hu01,
+    integral_Ioo_rpow_one_sub_rpow_tail_eq ha hb hu00]
 
 /-- The reflection formula `I_x(a, b) = 1 - I_{1-x}(b, a)`, valid at every real argument: the
 clamping convention makes both sides constant outside `[0, 1]`, so no restriction on `x` is
@@ -579,7 +580,6 @@ theorem tendsto_inverseRegularizedIncompleteBeta_zero (ha : 0 < a) (hb : 0 < b) 
   intro ε hε
   let x : ℝ := min (ε / 2) (1 / 2)
   have hx0 : 0 < x := by simp [x, hε]
-  have hx1 : x < 1 := lt_of_le_of_lt (min_le_right _ _) (by norm_num)
   have hxε : x < ε := lt_of_le_of_lt (min_le_left _ _) (by linarith)
   let δ := regularizedIncompleteBeta a b x
   have hδ0 : 0 < δ := (regularizedIncompleteBeta_pos_iff ha hb).2 hx0

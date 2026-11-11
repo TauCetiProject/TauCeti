@@ -74,7 +74,8 @@ namespace TauCeti.Huber
 variable {A : Type*} [CommRing A]
 
 /-- The *Tate gauge* of a subring `A₀`, a unit `ϖ` and a base `a`: the infimum of `a ^ (-n)` over
-the integers `n` with `ϖ ^ (-n) * x ∈ A₀`, that is with `x ∈ ϖ ^ n A₀`. -/
+the integers `n` with `ϖ ^ (-n) * x ∈ A₀`, that is with `x ∈ ϖ ^ n A₀`. If no such `n` exists, the
+set is empty and the gauge takes the junk value `sInf ∅ = 0`. -/
 noncomputable def tateGauge (A₀ : Subring A) (ϖ : Aˣ) (a : ℝ) (x : A) : ℝ :=
   sInf ((fun n : ℤ ↦ a ^ (-n)) '' {n | ((ϖ ^ (-n) : Aˣ) : A) * x ∈ A₀})
 

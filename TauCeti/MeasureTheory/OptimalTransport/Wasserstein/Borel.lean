@@ -16,8 +16,9 @@ import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.LowerSemicontinuous
 The finite-moment space `TauCeti.WassersteinSpace p X` and the anchored components
 `TauCeti.WassersteinComponent p μ₀` carry two structures of different origin: the measurable
 structure inherited from the Giry σ-algebra on `ProbabilityMeasure X`, and the topology of the
-Wasserstein metric. This file proves that, over a Polish ground space and for a finite exponent
-`1 ≤ p < ∞`, the first is the Borel σ-algebra of the second. Consequently the open sets of the
+Wasserstein metric. Over a Polish ground space, this file proves that the first is the Borel
+σ-algebra of the second for `P_p (X)` at finite exponents `1 ≤ p < ∞`, and for separable anchored
+components at every exponent `1 ≤ p ≤ ∞`. Consequently the open sets of the
 Wasserstein topology are measurable, and measures on the Wasserstein space — random laws, such as
 the population laws on `P_p (P_p (X))` of Wasserstein barycentre problems — may be manipulated with
 the topological and metric tools of a Borel space.
@@ -31,21 +32,22 @@ The comparison goes through the weak topology, which is coarser than the Wassers
 * Every Wasserstein-open set is Giry measurable: the space is separable
   (`TauCeti.WassersteinSpace.separableSpace`), so every open set is a countable union of balls; a
   ball is a strict sublevel set of `μ ↦ W_p (μ, ν)`, which is lower semicontinuous for the weak
-  topology (`TauCeti.lowerSemicontinuous_wassersteinEDist_of_ne_top`). Hence the ball is Borel for
+  topology (`TauCeti.lowerSemicontinuous_wassersteinEDist`). Hence the ball is Borel for
   the weak topology on the set of laws in question, and that set, being separable and
   pseudometrizable, carries the Giry σ-algebra as its weak Borel σ-algebra
   (`TauCeti.MeasureTheory.ProbabilityMeasure.borelSpace_subtype`).
 
-Separability is the only property of the carrier that the argument uses. It holds for `P_p (X)`,
-hence for every component anchored at a law of finite `p`-moment, which is isometric to it. The
-exponent `p = ∞` is excluded: `P_∞ (X)` need not be separable.
+Separability is the only property of the carrier that the argument uses. For finite exponents it
+holds for `P_p (X)`, hence for every component anchored at a law of finite `p`-moment, which is
+isometric to it. The separable-component theorem also applies at `p = ∞`, but separability must be
+supplied explicitly: `P_∞ (X)` need not be separable.
 
 ## Main statements
 
 * `TauCeti.WassersteinSpace.borelSpace` — `P_p (X)` is a Borel space for `1 ≤ p < ∞`, with
   `TauCeti.WassersteinSpace.instBorelSpace` its instance form;
-* `TauCeti.WassersteinComponent.borelSpace` — a separable anchored component is a Borel space, with
-  `TauCeti.WassersteinComponent.instBorelSpace` its instance form.
+* `TauCeti.WassersteinComponent.borelSpace` — the Borel space instance for a separable anchored
+  component.
 
 ## References
 
@@ -69,12 +71,12 @@ variable {X : Type u} [PseudoMetricSpace X] [MeasurableSpace X] [BorelSpace X] [
   {p : ℝ≥0∞}
 
 /-- A separable pseudometric space `Y` of laws on a Polish space whose distance is the
-`p`-Wasserstein distance, for a finite exponent, whose inclusion into `ProbabilityMeasure X` is
+`p`-Wasserstein distance, whose inclusion into `ProbabilityMeasure X` is
 weakly continuous, and whose measurable structure is pulled back from the Giry σ-algebra, is a Borel
 space. This is the common argument behind `TauCeti.WassersteinSpace.borelSpace` and
 `TauCeti.WassersteinComponent.borelSpace`. -/
 private theorem borelSpace_of_edist_eq {Y : Type*} [PseudoMetricSpace Y] [SeparableSpace Y]
-    [MeasurableSpace Y] (hp : p ≠ ∞) (toPM : Y → ProbabilityMeasure X) (hcont : Continuous toPM)
+    [MeasurableSpace Y] (toPM : Y → ProbabilityMeasure X) (hcont : Continuous toPM)
     (hm : ‹MeasurableSpace Y› = .comap toPM inferInstance)
     (hedist : ∀ μ ν, edist μ ν = wassersteinEDist p (toPM μ : Measure X) (toPM ν : Measure X)) :
     BorelSpace Y := by
@@ -100,7 +102,7 @@ private theorem borelSpace_of_edist_eq {Y : Type*} [PseudoMetricSpace Y] [Separa
     have hball : ∀ ν : Y, ∀ r, MeasurableSet (Metric.eball ν r) := fun ν r ↦ by
       have hlsc : LowerSemicontinuous fun s : S ↦
           wassersteinEDist p ((s : ProbabilityMeasure X) : Measure X) (toPM ν : Measure X) :=
-        (lowerSemicontinuous_wassersteinEDist_of_ne_top hp).comp
+        (lowerSemicontinuous_wassersteinEDist p).comp
           (continuous_subtype_val.prodMk continuous_const)
       have : Metric.eball ν r = e ⁻¹' {s | wassersteinEDist p
           ((s : ProbabilityMeasure X) : Measure X) (toPM ν : Measure X) < r} := by
@@ -126,7 +128,7 @@ the measurable structure of the finite-moment Wasserstein space, inherited from 
 on `ProbabilityMeasure X`, is the Borel σ-algebra of the Wasserstein metric. -/
 theorem borelSpace (hp : p ≠ ∞) : BorelSpace (WassersteinSpace p X) := by
   have := separableSpace (X := X) hp
-  refine borelSpace_of_edist_eq hp toProbabilityMeasure continuous_toProbabilityMeasure
+  refine borelSpace_of_edist_eq toProbabilityMeasure continuous_toProbabilityMeasure
     (le_antisymm (fun s hs ↦ ?_) measurable_toProbabilityMeasure.comap_le) edist_def
   -- The inherited structure is the pullback: `mk` is measurable out of the pulled-back structure.
   have h := @measurable_mk X p _ _ _ (.comap toProbabilityMeasure inferInstance) _
@@ -144,25 +146,19 @@ namespace WassersteinComponent
 
 variable [Fact (1 ≤ p)] {μ₀ : ProbabilityMeasure X}
 
-/-- **A separable Wasserstein component is a Borel space.** For a finite exponent `1 ≤ p < ∞` and a
-Polish ground space, if the finite-distance component anchored at `μ₀` is separable, then its
+/-- **A separable Wasserstein component is a Borel space.** For `1 ≤ p ≤ ∞` and a Polish ground
+space, if the finite-distance component anchored at `μ₀` is separable, then its
 measurable structure, inherited from the Giry σ-algebra on `ProbabilityMeasure X`, is the Borel
-σ-algebra of the Wasserstein metric. Separability holds for every anchor of finite `p`-moment,
-by `TauCeti.WassersteinComponent.separableSpace_of_hasFiniteMoment`. -/
-theorem borelSpace (hp : p ≠ ∞) [SeparableSpace (WassersteinComponent p μ₀)] :
+σ-algebra of the Wasserstein metric. At finite exponents, separability holds for every anchor of
+finite `p`-moment by `TauCeti.WassersteinComponent.separableSpace_of_hasFiniteMoment`. -/
+instance borelSpace [SeparableSpace (WassersteinComponent p μ₀)] :
     BorelSpace (WassersteinComponent p μ₀) := by
-  refine borelSpace_of_edist_eq hp toProbabilityMeasure continuous_toProbabilityMeasure
+  refine borelSpace_of_edist_eq toProbabilityMeasure continuous_toProbabilityMeasure
     (le_antisymm (fun s hs ↦ ?_) measurable_toProbabilityMeasure.comap_le) edist_def
   -- The inherited structure is the pullback: `mk` is measurable out of the pulled-back structure.
   have h := @measurable_mk X p _ _ μ₀ _ (.comap toProbabilityMeasure inferInstance) _
     (comap_measurable _) wassersteinEDist_anchor_ne_top
   simpa using h hs
-
-/-- A separable anchored component as a Borel space, reading the finiteness of the exponent off a
-`Fact`. -/
-instance instBorelSpace [Fact (p ≠ ∞)] [SeparableSpace (WassersteinComponent p μ₀)] :
-    BorelSpace (WassersteinComponent p μ₀) :=
-  borelSpace Fact.out
 
 end WassersteinComponent
 

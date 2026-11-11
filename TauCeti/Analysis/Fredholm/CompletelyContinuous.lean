@@ -18,7 +18,10 @@ On a Banach space over a complete nontrivially normed field, `1 - u` is Fredholm
 whenever `u` is a norm limit of operators of finite rank. In particular, injectivity, surjectivity
 and invertibility of `1 - u` are equivalent, and every nonzero spectral value of `u` is an
 eigenvalue. These statements apply over nonarchimedean fields without local compactness or
-spherical completeness.
+spherical completeness. Only the Fredholm and index statements need the scalar field to be
+complete; the equivalences of injectivity, surjectivity and invertibility, and the eigenvalue
+statement, follow from the algebraic fact that `1 + F` is injective if and only if it is
+surjective for `F` of finite rank, and hold over any nontrivially normed field.
 
 The native `ContinuousLinearMap.IsFredholm` conclusion includes strictness, closed range,
 finite-dimensional kernel and cokernel, and a continuous complement to the kernel.
@@ -80,27 +83,31 @@ theorem IsCompletelyContinuous.index_one_sub_eq_zero (hu : u.IsCompletelyContinu
   obtain ⟨e, w, hw, he⟩ := TauCeti.exists_equiv_add_hasFiniteRange hu
   rw [← he, index_add_of_hasFiniteRange e.isFredholm hw, e.index_eq_zero]
 
+omit [CompleteSpace K] in
+/-- For a completely continuous `u`, `1 - u` is injective if and only if it is surjective. -/
+theorem IsCompletelyContinuous.injective_one_sub_iff_surjective (hu : u.IsCompletelyContinuous) :
+    Function.Injective (1 - u : E →L[K] E) ↔ Function.Surjective (1 - u : E →L[K] E) := by
+  obtain ⟨e, w, hw, he⟩ := TauCeti.exists_equiv_add_hasFiniteRange hu
+  have hcoe : ⇑(1 - u : E →L[K] E) = ⇑((e.toLinearEquiv : E →ₗ[K] E) + w) := by
+    rw [← he]
+    ext x
+    simp
+  rw [hcoe]
+  exact hw.injective_equiv_add_iff_surjective
+
+omit [CompleteSpace K] in
 /-- For a completely continuous `u`, injectivity of `1 - u` is equivalent to invertibility. -/
 theorem IsCompletelyContinuous.isUnit_one_sub_iff_injective (hu : u.IsCompletelyContinuous) :
-    IsUnit (1 - u) ↔ Function.Injective (1 - u : E →L[K] E) := by
-  refine ⟨fun h ↦ (isUnit_iff_bijective.mp h).injective, fun hinj ↦ ?_⟩
-  have hfin := hu.isFredholm_one_sub.finite_coker
-  have hindex := hu.index_one_sub_eq_zero
-  rw [index_of_injective _ hinj] at hindex
-  have hdim : Module.finrank K (E ⧸ (1 - u : E →L[K] E).range) = 0 := by omega
-  have htop : (1 - u : E →L[K] E).range = ⊤ := by
-    have := Module.finrank_zero_iff.mp hdim
-    exact Submodule.Quotient.subsingleton_iff.mp inferInstance
-  exact isUnit_iff_bijective.mpr ⟨hinj, LinearMap.range_eq_top.mp htop⟩
+    IsUnit (1 - u) ↔ Function.Injective (1 - u : E →L[K] E) :=
+  isUnit_iff_bijective.trans ⟨And.left, fun h ↦ ⟨h, hu.injective_one_sub_iff_surjective.mp h⟩⟩
 
+omit [CompleteSpace K] in
 /-- For a completely continuous `u`, surjectivity of `1 - u` is equivalent to invertibility. -/
 theorem IsCompletelyContinuous.isUnit_one_sub_iff_surjective (hu : u.IsCompletelyContinuous) :
-    IsUnit (1 - u) ↔ Function.Surjective (1 - u : E →L[K] E) := by
-  refine ⟨fun h ↦ (isUnit_iff_bijective.mp h).surjective, fun hsurj ↦ ?_⟩
-  exact isUnit_iff_bijective.mpr <|
-    bijective_of_surjective_of_index_eq_zero _ hu.isFredholm_one_sub.finite_ker hsurj
-      hu.index_one_sub_eq_zero
+    IsUnit (1 - u) ↔ Function.Surjective (1 - u : E →L[K] E) :=
+  isUnit_iff_bijective.trans ⟨And.right, fun h ↦ ⟨hu.injective_one_sub_iff_surjective.mpr h, h⟩⟩
 
+omit [CompleteSpace K] in
 /-- Every nonzero spectral value of a completely continuous operator is an eigenvalue.
 The spectrum is the spectrum in the algebra of continuous endomorphisms. -/
 theorem IsCompletelyContinuous.hasEigenvalue_iff_mem_spectrum (hu : u.IsCompletelyContinuous)

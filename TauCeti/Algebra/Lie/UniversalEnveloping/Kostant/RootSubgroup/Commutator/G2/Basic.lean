@@ -164,10 +164,10 @@ theorem kostantRootSubgroupPoints_mul_of_lie_eq_three_nsmul
   have hwz' : Commute w z' := ((commute_of_lie_eq_zero ρ hlo).smul_left d).smul_right b
   have hvz' : Commute v z' := ((commute_of_lie_eq_zero ρ hmo).smul_left a).smul_right b
   -- Supply lattice stability for the divided powers of every scaled output root vector.
-  have hMz := dividedPower_zsmul_smul_mem c M (dividedPower_smul_mem_of_kostantForm_apply_mem hM k)
-  have hMw := dividedPower_zsmul_smul_mem d M (dividedPower_smul_mem_of_kostantForm_apply_mem hM l)
-  have hMv := dividedPower_zsmul_smul_mem a M (dividedPower_smul_mem_of_kostantForm_apply_mem hM m)
-  have hMz' := dividedPower_zsmul_smul_mem b M (dividedPower_smul_mem_of_kostantForm_apply_mem hM o)
+  have hMz := dividedPower_zsmul_apply_mem e h ρ M hM c k
+  have hMw := dividedPower_zsmul_apply_mem e h ρ M hM d l
+  have hMv := dividedPower_zsmul_apply_mem e h ρ M hM a m
+  have hMz' := dividedPower_zsmul_apply_mem e h ρ M hM b o
   -- Transport the integral exponential identity to the four caller-supplied additive-group points.
   refine Units.ext ?_
   simp only [Units.val_mul, kostantRootSubgroupPoints_val]

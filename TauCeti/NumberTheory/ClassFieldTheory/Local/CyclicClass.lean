@@ -279,8 +279,8 @@ theorem cup_kummerClass_eq_zero_iff_mem_normGroup (a b : Kˣ) {s : L}
     (hs : s ^ n = algebraMap K L b) (hgen : K⟮s⟯ = ⊤) :
     (kummerCupPairing ζ hζ).cup 1 1 (kummerClass K hn a) (kummerClass K hn b) = 0 ↔
       a ∈ normGroup K L := by
-  have := isGalois_of_pow_eq_of_adjoin_eq_top hζ b.ne_zero hs hgen
-  obtain ⟨g, hg, hd, hgs⟩ := exists_forall_mem_zpowers_apply_eq hζ b.ne_zero hs hgen
+  have := isGalois_of_pow_eq_of_adjoin_eq_top hζ hs hgen
+  obtain ⟨g, hg, hd, hgs⟩ := exists_forall_mem_zpowers_apply_eq hζ hs hgen
   let ι : L →ₐ[K] SeparableClosure K := IsSepClosed.lift
   rw [← map_eq_zero_iff _ (h2MuToBr_injective n K hn), ← kummerBrauerClass_def ζ hζ,
     kummerBrauerClass_eq_neg_relBrInfl_cyclicClass hζ a b hs hg hd hgs ι, neg_eq_zero,

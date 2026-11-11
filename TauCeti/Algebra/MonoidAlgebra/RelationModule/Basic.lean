@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import TauCeti.Algebra.MonoidAlgebra.Exactness
+import TauCeti.LinearAlgebra.FreeModule.PID
 
 /-!
 # The relation module of a family of group elements
@@ -39,6 +40,8 @@ generator rank of its absolute Galois group (NSW (7.4.1)) is its analogue over `
 * `TauCeti.MonoidAlgebra.range_linearCombination_eq_ker_augmentation`: the map is onto `I_G` when
   the `g_i` generate `G`, and `range_linearCombination_eq_ker_augmentation_iff` is the converse
   over a nontrivial ring.
+* `TauCeti.MonoidAlgebra.free_of_submodule_relationModule`: every `R[G]`-submodule of a relation
+  module over a principal ideal domain `R` is a free `R`-module.
 
 ## References
 
@@ -131,5 +134,19 @@ theorem range_linearCombination_eq_ker_augmentation_iff [Nontrivial R] {g : ι �
     Ideal.submodule_span_eq, eq_comm, Function.comp_def]
 
 end Group
+
+section PID
+
+/-- Every `R[G]`-submodule of the relation module of a family in a monoid `G` is a free `R`-module
+over a principal ideal domain `R`, as a submodule of the free `R`-module `R[G]^ι`. -/
+theorem free_of_submodule_relationModule {R : Type*} [CommRing R] [IsDomain R]
+    [IsPrincipalIdealRing R] {G : Type*} [Monoid G] {ι : Type*} [Fintype ι] {g : ι → G}
+    (N : Submodule (_root_.MonoidAlgebra R G) (relationModule R G g)) : Module.Free R N :=
+  Module.Free.of_injective_of_projective_of_isPrincipalIdealRing (R := R)
+    (M := ι → _root_.MonoidAlgebra R G) (N := N)
+    (((relationModule R G g).subtype ∘ₗ N.subtype).restrictScalars R)
+    (Subtype.val_injective.comp Subtype.val_injective)
+
+end PID
 
 end TauCeti.MonoidAlgebra

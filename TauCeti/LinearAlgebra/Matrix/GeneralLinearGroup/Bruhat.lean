@@ -338,19 +338,19 @@ in it if `F` has a nonzero element whose square is not one. -/
 theorem le_of_isSolvable (hF : ∃ a : F, a ≠ 0 ∧ a ^ 2 ≠ 1)
     (P : Subgroup (GL (Fin 2) F)) [Group.IsSolvable P]
     (hBP : GL2Borel F ≤ P) : P ≤ GL2Borel F := by
-  exact Subgroup.le_of_isSolvable_of_not_isSolvable_of_notMem_imp_mem_doubleCoset
+  exact (Subgroup.eq_of_isSolvable_of_not_isSolvable_of_notMem_imp_mem_doubleCoset
     (GL2Borel F) P (GL2WeylElement F) (Matrix.GeneralLinearGroup.not_isSolvable_fin_two F hF)
-    mem_doubleCoset_weyl_of_notMem hBP
+    mem_doubleCoset_weyl_of_notMem hBP).le
 
 /-- Every solvable subgroup of `GL₂` over an infinite field that contains the upper-triangular
 subgroup is contained in it. -/
 theorem le_of_isSolvable_of_infinite [Infinite F]
     (P : Subgroup (GL (Fin 2) F)) [Group.IsSolvable P]
     (hBP : GL2Borel F ≤ P) : P ≤ GL2Borel F := by
-  exact Subgroup.le_of_isSolvable_of_not_isSolvable_of_notMem_imp_mem_doubleCoset
+  exact (Subgroup.eq_of_isSolvable_of_not_isSolvable_of_notMem_imp_mem_doubleCoset
     (GL2Borel F) P (GL2WeylElement F)
     (Matrix.GeneralLinearGroup.not_isSolvable_fin_two_of_infinite F)
-    mem_doubleCoset_weyl_of_notMem hBP
+    mem_doubleCoset_weyl_of_notMem hBP).le
 
 end GL2Borel
 

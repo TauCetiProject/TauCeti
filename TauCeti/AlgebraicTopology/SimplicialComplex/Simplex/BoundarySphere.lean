@@ -353,8 +353,10 @@ theorem nonempty_homeomorph_simplexBoundary_sphere {ι : Type*}
   let P := simplexBoundary (Finset.univ : Finset (Fin (n + 2)))
   have hP : P = (standardSuccSimplexBoundary n).toPreAbstractSimplicialComplex :=
     (standardSuccSimplexBoundary_toPreAbstractSimplicialComplex n).symm
-  obtain ⟨r⟩ := nonempty_finsetRelabelingHomeomorph hV (fun f himage => by
-      rw [map_simplexBoundary, himage]) hP hA
+  obtain ⟨f, hf⟩ := Function.Embedding.exists_of_card_eq_finset (α := Fin (n + 2)) (s := V)
+    (by simpa using hV.symm)
+  let r := (P.realizationRelabelingHomeomorph (R := simplexBoundary V) f
+    (by rw [map_simplexBoundary, ← Finset.map_eq_image, hf]) hP hA).symm
   exact ⟨r.trans (realizationStandardSuccSimplexBoundaryHomeomorphSphere n)⟩
 
 end PreAbstractSimplicialComplex

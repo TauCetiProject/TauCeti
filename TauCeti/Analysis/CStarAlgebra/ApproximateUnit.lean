@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 public import TauCeti.Topology.ApproximateUnit
+import Mathlib.Algebra.Order.Interval.Set.Group
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 
 /-!
 # Increasing approximate units: images and uniform convergence
@@ -23,6 +25,10 @@ Since an increasing approximate unit eventually lies in the closed unit ball, th
 `a * e → a`, `Filter.IsIncreasingApproximateUnit.tendstoUniformlyOn_mul_left`. This controls
 `e * α_r(b) → α_r(b)` uniformly along a compact set of group elements `r` for a continuous action
 `α`, as needed for approximate units of twisted convolution algebras.
+
+`TauCeti.CStarAlgebra.norm_mul_star_sub_star_sq_le` is the estimate for a positive contraction `e`
+that drives the approximate-unit argument showing that closed two-sided ideals are self-adjoint:
+`‖e * star a - star a‖ ^ 2 ≤ ‖star a * a - e * (star a * a)‖`.
 -/
 
 public section
@@ -104,3 +110,43 @@ theorem map {l : Filter A} (hl : l.IsIncreasingApproximateUnit) (f : F)
 end Map
 
 end Filter.IsIncreasingApproximateUnit
+
+namespace TauCeti.CStarAlgebra
+
+open Unitization
+
+variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+
+/-- For a positive contraction `e` in a nonunital C⋆-algebra and any `a`, the C⋆-identity in the
+unitization gives `‖e * star a - star a‖ ^ 2 ≤ ‖star a * a - e * (star a * a)‖`. -/
+theorem norm_mul_star_sub_star_sq_le {e : A} (he₀ : 0 ≤ e) (he₁ : ‖e‖ ≤ 1) (a : A) :
+    ‖e * star a - star a‖ ^ 2 ≤ ‖star a * a - e * (star a * a)‖ := by
+  have he_icc : (e : A⁺¹) ∈ Set.Icc (0 : A⁺¹) 1 :=
+    CStarAlgebra.inr_mem_Icc_iff_norm_le.mpr ⟨he₀, he₁⟩
+  have h1_icc : 1 - (e : A⁺¹) ∈ Set.Icc (0 : A⁺¹) 1 :=
+    Set.sub_mem_Icc_zero_iff_right.mpr he_icc
+  obtain ⟨h1_nonneg, h1_norm⟩ := CStarAlgebra.mem_Icc_iff_norm_le_one.mp h1_icc
+  have h1_star : star (1 - (e : A⁺¹)) = 1 - (e : A⁺¹) :=
+    (IsSelfAdjoint.of_nonneg h1_nonneg).star_eq
+  let b : A⁺¹ := (1 - (e : A⁺¹)) * star (a : A⁺¹)
+  have hb_norm : ‖e * star a - star a‖ = ‖b‖ := by
+    rw [norm_sub_rev, ← Unitization.norm_inr (𝕜 := ℂ), Unitization.inr_sub,
+      Unitization.inr_mul, Unitization.inr_star]
+    congr 1
+    dsimp only [b]
+    rw [sub_mul, one_mul]
+  have hb_mul : b * star b = ((star a * a - e * (star a * a) : A) : A⁺¹) * (1 - (e : A⁺¹)) := by
+    simp only [b, star_mul, star_star, h1_star, Unitization.inr_sub, Unitization.inr_mul,
+      Unitization.inr_star]
+    noncomm_ring
+  calc
+    ‖e * star a - star a‖ ^ 2 = ‖b‖ ^ 2 := by rw [hb_norm]
+    _ = ‖b * star b‖ := by rw [sq, ← CStarRing.norm_self_mul_star]
+    _ = ‖((star a * a - e * (star a * a) : A) : A⁺¹) * (1 - (e : A⁺¹))‖ := by rw [hb_mul]
+    _ ≤ ‖((star a * a - e * (star a * a) : A) : A⁺¹)‖ * ‖1 - (e : A⁺¹)‖ := norm_mul_le _ _
+    _ ≤ ‖star a * a - e * (star a * a)‖ * 1 := by
+      rw [Unitization.norm_inr]
+      exact mul_le_mul_of_nonneg_left h1_norm (norm_nonneg _)
+    _ = ‖star a * a - e * (star a * a)‖ := mul_one _
+
+end TauCeti.CStarAlgebra

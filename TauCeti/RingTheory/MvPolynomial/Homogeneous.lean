@@ -13,6 +13,7 @@ import Mathlib.Algebra.MvPolynomial.NoZeroDivisors
 import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 -- `IsPrimitiveRoot.sum_zpow_pow_eq`, the orthogonality of the characters of `ℤ ⧸ n`.
 import TauCeti.RingTheory.RootsOfUnity.Basic
+import TauCeti.RingTheory.MvPolynomial.Initial.Weight
 
 /-!
 # Scaling the variables of a homogeneous polynomial
@@ -40,6 +41,8 @@ product of linear factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are hom
 homogeneous of degree `n`. Conversely, `MvPolynomial.homogeneousComponent_one_eq_sum` writes the
 degree-one component of a polynomial in finitely many variables as the linear form
 `∑ i, c i • X i` whose coefficients `c i` are the coefficients of the variables `X i`.
+The top component of a nonzero polynomial is nonzero
+(`MvPolynomial.homogeneousComponent_totalDegree_ne_zero`).
 Finally, `MvPolynomial.eval_eq_sum_homogeneousComponent_of_eval_smul` averages over the `n`-th
 roots of unity: if scaling the point by every `n`-th root of unity `ζ ^ j` scales the value by
 `(ζ ^ j) ^ a`, only the homogeneous components of degree congruent to `a` modulo `n` contribute.
@@ -251,6 +254,16 @@ section CommSemiring
 
 variable [CommSemiring R]
 
+/-- The homogeneous component in the total degree of a nonzero polynomial is nonzero. -/
+theorem homogeneousComponent_totalDegree_ne_zero (p : MvPolynomial σ R) (hp : p ≠ 0) :
+    homogeneousComponent p.totalDegree p ≠ 0 := by
+  -- Mathlib defines ordinary homogeneous components as weighted components at weight one.
+  have component_eq : homogeneousComponent p.totalDegree p =
+      weightedHomogeneousComponent (1 : σ → ℕ) p.totalDegree p := rfl
+  rw [component_eq]
+  simpa only [weightInitialForm_def, weightedTotalDegree_one] using
+    (weightInitialForm_eq_zero_iff (1 : σ → ℕ) p).not.mpr hp
+
 /-- The degree-one component of a polynomial in finitely many variables is the linear form whose
 coefficient of `X i` is the coefficient of `X i` in the polynomial. -/
 theorem homogeneousComponent_one_eq_sum [Fintype σ] (φ : MvPolynomial σ R) :
@@ -276,11 +289,11 @@ section Field
 unity `ζ ^ j` scales the value of `P` by `(ζ ^ j) ^ a`, then the value of `P` at `x` is the sum of
 the values of its homogeneous components of degree congruent to `a` modulo `n`. -/
 theorem eval_eq_sum_homogeneousComponent_of_eval_smul {K : Type*} [Field K]
-    (P : MvPolynomial σ K) {n : ℕ} [NeZero (n : K)] {ζ : K} (hζ : IsPrimitiveRoot ζ n) (a : ℤ)
+    (P : MvPolynomial σ K) {n : ℕ} [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n) (a : ℤ)
     (x : σ → K) (hx : ∀ j : ℕ, eval ((ζ ^ j) • x) P = (ζ ^ j) ^ a * eval x P) :
     eval x P = ∑ d ∈ (Finset.range (P.totalDegree + 1)).filter (fun d : ℕ => (n : ℤ) ∣ d - a),
       eval x (homogeneousComponent d P) := by
-  have : NeZero n := .of_neZero_natCast K
+  have : NeZero (n : K) := hζ.neZero'
   have hζ0 : ζ ≠ 0 := hζ.ne_zero (NeZero.ne n)
   have hn : (n : K) ≠ 0 := NeZero.ne _
   set E : ℕ → K := fun d => eval x (homogeneousComponent d P)

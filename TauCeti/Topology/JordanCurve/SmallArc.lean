@@ -148,12 +148,9 @@ theorem exists_isPreconnected_union_eq_compl_pair_circle_diam_le {z w : Circle} 
     ∃ P Q : Set Circle, IsPreconnected P ∧ IsPreconnected Q ∧
       P ∪ Q = ({z, w} : Set Circle)ᶜ ∧ Metric.diam (P ∪ {z, w}) ≤ π / 2 * dist z w := by
   -- The two pieces are Mathlib's open arcs, which cover the complement of `{z, w}`.
-  have hunion : Circle.path z w '' Ioo 0 1 ∪ Circle.path w z '' Ioo 0 1 =
-      ({z, w} : Set Circle)ᶜ := by
-    rw [← Circle.compl_range_path hzw.symm, ← Circle.compl_range_path hzw, ← compl_inter,
-      Circle.range_path_inter_range_path hzw.symm, pair_comm]
+  have hunion := Circle.path_image_Ioo_union hzw
   have hpre : ∀ x y : Circle, IsPreconnected (Circle.path x y '' Ioo 0 1) := fun x y =>
-    isPreconnected_Ioo.image _ (Circle.path x y).continuous.continuousOn
+    (Circle.isPathConnected_path_image_Ioo x y).isConnected.isPreconnected
   -- Putting the endpoints back — they are the values of the path at `0` and `1` — lands inside the
   -- closed arc `Circle.range_path`, whose diameter is at most its angle.
   have hdiam : ∀ x y : Circle,
@@ -458,7 +455,6 @@ theorem IsJordanCurve.exists_isCompact_isPreconnected_notMem_sdiff_subset_ball
   obtain ⟨η₀, hη₀, hη⟩ := Metric.continuousAt_iff.mp hcont r hr
   set η : ℝ := min η₀ (π / 2)
   have hηpos : 0 < η := lt_min hη₀ (by positivity)
-  have hηle : η ≤ π / 2 := min_le_right _ _
   have hηη₀ : η ≤ η₀ := min_le_left _ _
   set K : Set Circle := Circle.exp '' Icc (θ₀ + η) (θ₀ - η + 2 * π)
   set S : Set X := g '' K

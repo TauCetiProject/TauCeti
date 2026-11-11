@@ -83,6 +83,6 @@ theorem IsCompatible.coe_reindexDiffeomorph (h : D.IsCompatible I n) (r : K → 
     ⇑(h.reindexDiffeomorph r hcover) = D.reindexMap r := by
   let := D.chartedSpace H
   let := (D.reindex r).chartedSpace H
-  exact TauCeti.coe_diffeomorphOfBijective
+  exact IsLocalDiffeomorph.coe_diffeomorphOfBijective _ _
 
 end TopCat.GlueData

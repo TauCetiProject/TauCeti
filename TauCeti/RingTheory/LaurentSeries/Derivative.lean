@@ -45,10 +45,12 @@ operation is introduced.
 * `LaurentSeries.coeff_derivative_order_sub_one`: the coefficient of `X ^ (r - 1)` in `D f` is
   `r` times the leading coefficient of `f`, where `r = f.order`.
 * `LaurentSeries.orderTop_le_orderTop_derivative_add_one`: `ord f ≤ ord (D f) + 1`.
+* `LaurentSeries.zero_le_orderTop_derivative`: `D` maps power series to power series.
+* `LaurentSeries.zero_le_orderTop_mul_derivative`: if `f` and `g` are power series, so is `f D g`.
 * `LaurentSeries.orderTop_derivative_eq_sub_one`: the order of `D f` is one less than the first
   exponent whose coefficient survives differentiation.
 * `LaurentSeries.orderTop_derivative_eq_order_sub_one_of_cast_ne_zero`: if the order `r` of
-  `f ≠ 0` is nonzero in a ring without zero divisors, then `ord (D f) = r - 1`.
+  `f` is nonzero in a ring without zero divisors, then `ord (D f) = r - 1`.
 * `LaurentSeries.derivative_eq_zero_iff_exists_C`: without additive torsion the kernel of `D`
   consists of the constants.
 * `LaurentSeries.derivative_inv` and `LaurentSeries.derivative_div`: the inverse and quotient
@@ -192,6 +194,17 @@ theorem orderTop_le_orderTop_derivative_add_one (f : LaurentSeries V) :
   rw [← hk, ← WithTop.coe_one, ← WithTop.coe_add]
   exact orderTop_le_of_coeff_ne_zero (right_ne_zero_of_smul hc)
 
+/-- **Differentiation preserves power series**: if `f` has no negative powers of `X`, neither has
+`f'`. -/
+theorem zero_le_orderTop_derivative {f : LaurentSeries V} (hf : 0 ≤ f.orderTop) :
+    0 ≤ (derivative R f).orderTop := by
+  refine le_orderTop_iff_forall.2 fun n hn ↦ ?_
+  have hn : n < 0 := by exact_mod_cast hn
+  rw [coeff_derivative]
+  obtain hn' | hn' := lt_or_eq_of_le (show n + 1 ≤ 0 by lia)
+  · rw [coeff_eq_zero_of_lt_orderTop (hf.trans_lt' (by exact_mod_cast hn')), smul_zero]
+  · rw [hn', zero_smul]
+
 /-- If `n` is the first exponent with `n • f.coeff n ≠ 0`, then `f'` has order `n - 1`. -/
 theorem orderTop_derivative_eq_sub_one {f : LaurentSeries V} {n : ℤ} (hn : n • f.coeff n ≠ 0)
     (hlt : ∀ m < n, m • f.coeff m = 0) :
@@ -233,6 +246,13 @@ theorem derivative_eq_zero_iff_eq_single [IsAddTorsionFree V] {f : LaurentSeries
 
 end Module
 
+/-- **Vector fields regular at the origin preserve power series**: if `f` and `g` have no
+negative powers of `X`, neither has `f g'`. -/
+theorem zero_le_orderTop_mul_derivative {R : Type*} [Ring R] {f g : R⸨X⸩} (hf : 0 ≤ f.orderTop)
+    (hg : 0 ≤ g.orderTop) : 0 ≤ (f * derivative R g).orderTop :=
+  (zero_add (0 : WithTop ℤ)).symm.le.trans
+    ((add_le_add hf (zero_le_orderTop_derivative hg)).trans orderTop_add_le_mul)
+
 /-- The Euler operator `X D` multiplies the coefficient of `Xⁿ` by `n`. -/
 theorem coeff_single_one_mul_derivative {R : Type*} [Ring R] (f : R⸨X⸩) (n : ℤ) :
     (single (1 : ℤ) (1 : R) * derivative R f).coeff n = n • f.coeff n := by
@@ -244,14 +264,17 @@ theorem weightDerivation_intCastAddHom {R : Type*} [CommRing R] (f : R⸨X⸩) :
   ext n
   rw [coeff_weightDerivation, coeff_single_one_mul_derivative, Int.coe_castAddHom, zsmul_eq_mul]
 
-/-- If `f ≠ 0` has order `r` and `r` is nonzero in a ring `R` without zero divisors, for instance
-a field in which `r` is nonzero, then `f'` has order `r - 1`. -/
+/-- If the order `r` of `f` is nonzero in a ring `R` without zero divisors, for instance a field
+in which `r` is nonzero, then `f'` has order `r - 1`. Nonvanishing of `r` forces `f ≠ 0`, because
+the zero series has order `0`. -/
 theorem orderTop_derivative_eq_order_sub_one_of_cast_ne_zero {R : Type*} [Ring R]
-    [NoZeroDivisors R] {f : R⸨X⸩} (hf : f ≠ 0) (h : (f.order : R) ≠ 0) :
+    [NoZeroDivisors R] {f : R⸨X⸩} (h : (f.order : R) ≠ 0) :
     (derivative R f).orderTop = (f.order - 1 : ℤ) :=
   orderTop_derivative_eq_order_sub_one <| by
     rw [zsmul_eq_mul]
-    exact mul_ne_zero h (leadingCoeff_ne_zero.mpr hf)
+    refine mul_ne_zero h (leadingCoeff_ne_zero.mpr ?_)
+    rintro rfl
+    simp at h
 
 /-- **The kernel of the derivative.** Over a ring without additive torsion, for instance a field
 of characteristic zero, the Laurent series with derivative zero are exactly the constants. -/

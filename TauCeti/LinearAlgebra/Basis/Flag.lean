@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Basis.Flag
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+public import Mathlib.LinearAlgebra.TensorProduct.Basis
 import TauCeti.Data.Fin.Basic
 import TauCeti.LinearAlgebra.Basis.Basic
 
@@ -45,6 +46,7 @@ construct the Schubert cells or their closures as schemes.
 ## Main results
 
 * `Module.Basis.finrank_flag`: the flag subspace `F_k` has dimension `k`.
+* `Module.Basis.flag_baseChange`: the flag of a base-changed basis is the base change of the flag.
 * `Module.Basis.finrank_inf_flag`: `dim (W ⊓ F_j)` is the number of pivots of `W` below `j`.
 * `Module.Basis.card_flagPivots`: `W` has `dim W` pivots.
 * `Module.Basis.flagPivots_eq_iff`, `Module.Basis.flagPivots_eq_image_iff`: the pivot set is the
@@ -175,7 +177,32 @@ theorem finrank_flag [StrongRankCondition R] (b : Basis (Fin n) R M) (k : Fin (n
   simp [Fintype.card_subtype, Fin.lt_def, Fin.card_filter_val_lt]
   omega
 
+/-- If `x` lies in the span of basis vectors `b (e j)` whose indices `e j` are all below `k`, then
+every index in the support of `b.repr x` is below `k`. -/
+theorem lt_of_mem_support_repr_of_mem_span_range {k : ℕ} (b : Basis (Fin n) R M)
+    (e : Fin k → Fin n) (he : ∀ j, (e j).val < k) {x : M}
+    (hx : x ∈ Submodule.span R (Set.range fun j ↦ b (e j))) {i : Fin n}
+    (hi : i ∈ (b.repr x).support) : i.val < k := by
+  have hsupp := b.repr_support_subset_of_mem_span (Set.range e)
+    (by simpa only [← Set.range_comp, Function.comp_def] using hx)
+  rcases hsupp hi with ⟨i', hi'⟩
+  rw [← hi']
+  exact he i'
+
 end Semiring
+
+section CommSemiring
+
+variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] {n : ℕ}
+
+/-- `flag` commutes with base change: the flag of the base change of `b` to an `R`-algebra `A`
+consists of the base changes of the subspaces of the flag of `b`. -/
+theorem flag_baseChange (A : Type*) [Semiring A] [Algebra R A] (b : Basis (Fin n) R M)
+    (k : Fin (n + 1)) : (b.baseChange A).flag k = (b.flag k).baseChange A := by
+  rw [flag, flag, Submodule.baseChange_span, Set.image_image]
+  simp
+
+end CommSemiring
 
 section DivisionRing
 

@@ -18,9 +18,9 @@ braidings, which swap the factors.  This is the analogue for chosen finite produ
 
 public section
 
-namespace CategoryTheory.CartesianMonoidalCategory
+namespace CategoryTheory.Functor
 
-open MonoidalCategory
+open MonoidalCategory CartesianMonoidalCategory
 
 variable {C D : Type*} [Category* C] [Category* D] [CartesianMonoidalCategory C]
   [CartesianMonoidalCategory D] [BraidedCategory C] [BraidedCategory D] (F : C ⥤ D)
@@ -32,4 +32,4 @@ lemma map_braiding_hom_comp_prodComparison (A B : C) :
       prodComparison F A B ≫ (β_ (F.obj A) (F.obj B)).hom := by
   ext <;> simp [← Functor.map_comp]
 
-end CategoryTheory.CartesianMonoidalCategory
+end CategoryTheory.Functor

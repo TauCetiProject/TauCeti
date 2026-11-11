@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.AdjoinRoot.Basic
 public import TauCeti.RingTheory.PowerSeries.Entire.Division
 public import TauCeti.RingTheory.PowerSeries.Entire.Eval
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Topology.Algebra.Polynomial.Basic
 
 /-!
 # Resultants of monic polynomials and entire power series
@@ -44,6 +45,8 @@ determinants of compact operators, are reduced modulo polynomial factors.
 * `Polynomial.entireResultant_eq_prod_evalAt`: if `P = ∏ (X - aᵢ)`, then `Res(P, F) = ∏ F(aᵢ)`;
   in particular `Res(X - a, F) = F(a)` (`Polynomial.entireResultant_X_sub_C`).
 * `Polynomial.entireResultant_map`: compatibility with continuous coefficient homomorphisms.
+* `Polynomial.tendsto_entireResultant_trunc`: the entire resultant is the limit of the resultants
+  of the polynomial truncations.
 * `Polynomial.entireResultant_add_mul` and `Polynomial.entireResultant_mul`: invariance modulo
   `P` and multiplicativity in `F`.
 * `Polynomial.exists_C_entireResultant_eq`: the Bézout identity `Res(P, F) = P * G + H * F`.
@@ -159,6 +162,18 @@ theorem entireResultant_map {S : Type*} [CommRing S] [TopologicalSpace S] [T2Spa
         rw [hF.map_modByMonic hP φ hφ]
         exact natDegree_map_le),
     hF.map_modByMonic hP φ hφ, hP.natDegree_map, resultant_map_map]
+
+/-- **Continuity along truncations.** For monic `P` and entire `F`, the resultants of `P` with
+the polynomial truncations of `F` converge to `Res(P, F)`. -/
+theorem tendsto_entireResultant_trunc (hP : P.Monic) (hF : F.IsEntire) :
+    Filter.Tendsto (fun N ↦ entireResultant P (PowerSeries.trunc N F)) Filter.atTop
+      (nhds (entireResultant P F)) := by
+  have hdeg (G : R⟦X⟧) : (G.modByMonic P).natDegree ≤ P.natDegree := by
+    refine natDegree_le_iff_coeff_eq_zero.2 fun k hk ↦ ?_
+    rw [PowerSeries.coeff_modByMonic, ite_eq_right (by omega)]
+  simp only [entireResultant_eq_resultant_of_natDegree_le hP (hdeg _)]
+  exact tendsto_resultant (fun _ _ ↦ tendsto_const_nhds)
+    fun k _ ↦ hF.tendsto_coeff_modByMonic_trunc P k
 
 /-- **The Bézout identity for the entire resultant.** For monic `P` and entire `F` there are an
 entire series `G` and a polynomial `H` of degree less than `deg P` with

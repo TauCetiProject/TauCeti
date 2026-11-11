@@ -81,49 +81,58 @@ universe u
 
 variable {K : Type u} [Field K] [NumberField K]
 
-private abbrev FractionalOrderIdeal (O : NumberFieldOrder K) :=
-  FractionalIdeal (nonZeroDivisors O.toSubalgebra) K
+/-! ### The trace dual of a fractional ideal -/
 
-private noncomputable def integerBasis (O : NumberFieldOrder K) :=
-  Module.Free.chooseBasis ℤ (1 : FractionalOrderIdeal O)
+variable (O : NumberFieldOrder K)
 
-private noncomputable def rationalBasis (O : NumberFieldOrder K) :
-    Module.Basis (Module.Free.ChooseBasisIndex ℤ (1 : FractionalOrderIdeal O)) ℚ K := by
-  let b := O.integerBasis
-  refine Module.Basis.mk ?_ (O.span_rat_range_basis one_ne_zero b).ge
-  exact (LinearIndependent.iff_fractionRing ℤ ℚ).mp
-    (b.linearIndependent.map'
-      ((((1 : FractionalOrderIdeal O) : Submodule O.toSubalgebra K).restrictScalars ℤ).subtype)
-      (Submodule.ker_subtype _))
+/-- The trace dual of a nonzero fractional ideal is the `ℤ`-span of the trace-dual basis of a
+`ℚ`-basis spanning the ideal over `ℤ`. -/
+private theorem exists_basis_traceDual
+    {I : FractionalIdeal O.toSubalgebra⁰ K} (hI : I ≠ 0) :
+    ∃ b : Basis (Fin (finrank ℚ K)) ℚ K,
+      (I : Submodule O.toSubalgebra K).restrictScalars ℤ = span ℤ (Set.range b) ∧
+      (Submodule.traceDual ℤ ℚ (I : Submodule O.toSubalgebra K)).restrictScalars ℤ =
+        span ℤ (Set.range b.traceDual) := by
+  obtain ⟨b, hb⟩ := O.exists_basis_restrictScalars_eq_span hI
+  exact ⟨b, hb, Submodule.traceDual_span_of_basis ℤ _ b hb⟩
 
-private theorem range_rationalBasis (O : NumberFieldOrder K) :
-    Set.range O.rationalBasis = Set.range fun i ↦ (O.integerBasis i : K) := by
-  rw [rationalBasis, Module.Basis.coe_mk]
-
-private theorem restrictScalars_one_eq_span_integerBasis (O : NumberFieldOrder K) :
-    ((1 : Submodule O.toSubalgebra K).restrictScalars ℤ) =
-      Submodule.span ℤ (Set.range O.rationalBasis) := by
-  apply SetLike.coe_injective
-  rw [O.range_rationalBasis, O.span_int_range_basis, Submodule.coe_restrictScalars,
-    ← FractionalIdeal.coe_one, FractionalIdeal.coeToSet_coeToSubmodule]
-
-private theorem traceDual_restrictScalars_eq_span (O : NumberFieldOrder K) :
-    (Submodule.traceDual ℤ ℚ (1 : Submodule O.toSubalgebra K)).restrictScalars ℤ =
-      Submodule.span ℤ (Set.range O.rationalBasis.traceDual) := by
-  exact Submodule.traceDual_span_of_basis ℤ (1 : Submodule O.toSubalgebra K)
-    O.rationalBasis (O.restrictScalars_one_eq_span_integerBasis)
-
-private theorem traceDual_fg (O : NumberFieldOrder K) :
-    (Submodule.traceDual ℤ ℚ (1 : Submodule O.toSubalgebra K)).FG := by
-  rw [← Submodule.FG.restrictScalars_iff (R := ℤ), O.traceDual_restrictScalars_eq_span]
+/-- The trace dual of a nonzero fractional ideal of an order is a fractional ideal. -/
+theorem isFractional_traceDual {I : FractionalIdeal O.toSubalgebra⁰ K} (hI : I ≠ 0) :
+    IsFractional O.toSubalgebra⁰ (Submodule.traceDual ℤ ℚ (I : Submodule O.toSubalgebra K)) := by
+  obtain ⟨b, -, hb⟩ := O.exists_basis_traceDual hI
+  refine FractionalIdeal.isFractional_of_fg (Submodule.FG.of_restrictScalars ℤ ?_)
+  rw [hb]
   exact Submodule.fg_span (Set.finite_range _)
+
+/-- The trace dual of a nonzero fractional ideal of an order is not zero. -/
+private theorem traceDual_ne_bot {I : FractionalIdeal O.toSubalgebra⁰ K} (hI : I ≠ 0) :
+    Submodule.traceDual ℤ ℚ (I : Submodule O.toSubalgebra K) ≠ ⊥ := by
+  obtain ⟨b, -, hb⟩ := O.exists_basis_traceDual hI
+  obtain ⟨i⟩ := b.index_nonempty
+  intro h
+  have hi : b.traceDual i ∈
+      (Submodule.traceDual ℤ ℚ (I : Submodule O.toSubalgebra K)).restrictScalars ℤ :=
+    hb ▸ Submodule.subset_span ⟨i, rfl⟩
+  rw [h, Submodule.restrictScalars_bot, Submodule.mem_bot] at hi
+  exact b.traceDual.ne_zero i hi
+
+/-- Taking the trace dual twice returns a nonzero fractional ideal of an order. -/
+private theorem traceDual_traceDual_of_ne_zero
+    {I : FractionalIdeal O.toSubalgebra⁰ K} (hI : I ≠ 0) :
+    Submodule.traceDual ℤ ℚ (Submodule.traceDual ℤ ℚ (I : Submodule O.toSubalgebra K)) = I := by
+  obtain ⟨b, hI', hb⟩ := O.exists_basis_traceDual hI
+  apply Submodule.restrictScalars_injective ℤ
+  rw [Submodule.traceDual_span_of_basis ℤ _ b.traceDual hb,
+    Module.Basis.traceDual_traceDual, hI']
+
+variable {O}
 
 /-- The trace dual (or complementary module) of an order `O`:
 the fractional ideal of `x : K` such that `Tr_{K/ℚ}(xy)` is an integer for every `y ∈ O`. -/
 def traceDual (O : NumberFieldOrder K) :
     FractionalIdeal (nonZeroDivisors O.toSubalgebra) K :=
-  ⟨Submodule.traceDual ℤ ℚ (1 : Submodule O.toSubalgebra K),
-    FractionalIdeal.isFractional_of_fg O.traceDual_fg⟩
+  ⟨Submodule.traceDual ℤ ℚ (1 : Submodule O.toSubalgebra K), by
+    simpa only [FractionalIdeal.coe_one] using O.isFractional_traceDual (I := 1) one_ne_zero⟩
 
 @[simp]
 theorem coe_traceDual (O : NumberFieldOrder K) :
@@ -172,12 +181,8 @@ theorem traceDual_ne_zero (O : NumberFieldOrder K) : O.traceDual ≠ 0 := by
 theorem traceDual_traceDual (O : NumberFieldOrder K) :
     Submodule.traceDual ℤ ℚ (O.traceDual : Submodule O.toSubalgebra K) =
       (1 : Submodule O.toSubalgebra K) := by
-  rw [O.coe_traceDual]
-  apply Submodule.restrictScalars_injective ℤ
-  rw [Submodule.traceDual_span_of_basis ℤ
-      (Submodule.traceDual ℤ ℚ (1 : Submodule O.toSubalgebra K))
-      O.rationalBasis.traceDual O.traceDual_restrictScalars_eq_span,
-    Module.Basis.traceDual_traceDual, ← O.restrictScalars_one_eq_span_integerBasis]
+  simpa only [O.coe_traceDual, FractionalIdeal.coe_one] using
+    O.traceDual_traceDual_of_ne_zero (I := 1) one_ne_zero
 
 /-- The multiplier ring of the trace dual is the order itself. Thus the trace dual is always a
 proper fractional ideal, whether or not it is invertible. -/
@@ -202,50 +207,6 @@ theorem isProperFractionalIdeal_traceDual (O : NumberFieldOrder K) :
     O.IsProperFractionalIdeal O.traceDual := by
   rw [O.isProperFractionalIdeal_def]
   exact O.multiplierRing_traceDual
-
-/-! ### The trace dual of a fractional ideal -/
-
-variable (O : NumberFieldOrder K)
-
-/-- The trace dual of a nonzero fractional ideal is the `ℤ`-span of the trace-dual basis of a
-`ℚ`-basis spanning the ideal over `ℤ`. -/
-private theorem exists_basis_traceDual
-    {I : FractionalIdeal O.toSubalgebra⁰ K} (hI : I ≠ 0) :
-    ∃ b : Basis (Fin (finrank ℚ K)) ℚ K,
-      (I : Submodule O.toSubalgebra K).restrictScalars ℤ = span ℤ (Set.range b) ∧
-      (Submodule.traceDual ℤ ℚ (I : Submodule O.toSubalgebra K)).restrictScalars ℤ =
-        span ℤ (Set.range b.traceDual) := by
-  obtain ⟨b, hb⟩ := O.exists_basis_restrictScalars_eq_span hI
-  exact ⟨b, hb, Submodule.traceDual_span_of_basis ℤ _ b hb⟩
-
-/-- The trace dual of a nonzero fractional ideal of an order is a fractional ideal. -/
-theorem isFractional_traceDual {I : FractionalIdeal O.toSubalgebra⁰ K} (hI : I ≠ 0) :
-    IsFractional O.toSubalgebra⁰ (Submodule.traceDual ℤ ℚ (I : Submodule O.toSubalgebra K)) := by
-  obtain ⟨b, -, hb⟩ := O.exists_basis_traceDual hI
-  refine FractionalIdeal.isFractional_of_fg (Submodule.FG.of_restrictScalars ℤ ?_)
-  rw [hb]
-  exact Submodule.fg_span (Set.finite_range _)
-
-/-- The trace dual of a nonzero fractional ideal of an order is not zero. -/
-private theorem traceDual_ne_bot {I : FractionalIdeal O.toSubalgebra⁰ K} (hI : I ≠ 0) :
-    Submodule.traceDual ℤ ℚ (I : Submodule O.toSubalgebra K) ≠ ⊥ := by
-  obtain ⟨b, -, hb⟩ := O.exists_basis_traceDual hI
-  obtain ⟨i⟩ := b.index_nonempty
-  intro h
-  have hi : b.traceDual i ∈
-      (Submodule.traceDual ℤ ℚ (I : Submodule O.toSubalgebra K)).restrictScalars ℤ :=
-    hb ▸ Submodule.subset_span ⟨i, rfl⟩
-  rw [h, Submodule.restrictScalars_bot, Submodule.mem_bot] at hi
-  exact b.traceDual.ne_zero i hi
-
-/-- Taking the trace dual twice returns a nonzero fractional ideal of an order. -/
-private theorem traceDual_traceDual_of_ne_zero
-    {I : FractionalIdeal O.toSubalgebra⁰ K} (hI : I ≠ 0) :
-    Submodule.traceDual ℤ ℚ (Submodule.traceDual ℤ ℚ (I : Submodule O.toSubalgebra K)) = I := by
-  obtain ⟨b, hI', hb⟩ := O.exists_basis_traceDual hI
-  apply Submodule.restrictScalars_injective ℤ
-  rw [Submodule.traceDual_span_of_basis ℤ _ b.traceDual hb,
-    Module.Basis.traceDual_traceDual, hI']
 
 /-- The trace dual `Iᵛ = {x ∈ K | Tr_{K/ℚ}(x I) ⊆ ℤ}` of a fractional ideal `I` of an order, as a
 fractional ideal. For `I = 0` the trace dual is all of `K`, which is not fractional, and the

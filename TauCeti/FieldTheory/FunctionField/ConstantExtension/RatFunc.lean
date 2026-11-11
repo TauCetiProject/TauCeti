@@ -37,6 +37,8 @@ single place.
 * `TauCeti.constantCompositum_eq_top_of_X_mem`: a compositum `F · k'` inside `k'(X)` containing
   `X` is all of `k'(X)`.
 * `TauCeti.constantCompositum_ratFunc_eq_top`: `k'(X)` is the compositum of `k(X)` and `k'`.
+* `TauCeti.constantCompositum_adjoin_simple_ratFunc_eq_top`: if `z` generates `E` over `k'(X)`,
+  then `E` is the compositum of `k(X)(z)` and `k'`.
 * `TauCeti.Place.restrict_ratFunc_eq_infty_iff`: a place of `k'(X)` lies over the place at
   infinity of `k(X)` exactly when it is the place at infinity of `k'(X)`.
 * `TauCeti.Place.restrict_adicOfIrreducible_eq_iff`: the finite place of `q'` lies over the
@@ -90,6 +92,51 @@ theorem constantCompositum_ratFunc_eq_top [Algebra (RatFunc k) (RatFunc k')]
     constantCompositum (RatFunc k) k' (RatFunc k') = ⊤ :=
   constantCompositum_eq_top_of_X_mem (hX ▸ IntermediateField.algebraMap_mem _ RatFunc.X)
 
+section AdjoinSimple
+
+open _root_.IntermediateField
+
+variable {E : Type*} [Field E] [Algebra (RatFunc k) (RatFunc k')] [Algebra (RatFunc k') E]
+  [Algebra (RatFunc k) E] [IsScalarTower (RatFunc k) (RatFunc k') E] [Algebra k' E]
+  [IsScalarTower k' (RatFunc k') E]
+
+/-- **A simple extension descended to `k(X)` is a model.** If `z` generates `E` over `k'(X)`, then
+the compositum of `k(X)(z)` with the constants `k'` is all of `E`, for any `k(X)`-algebra
+structure on `k'(X)` sending `X` to `X`. -/
+theorem constantCompositum_adjoin_simple_ratFunc_eq_top
+    (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X) {z : E}
+    (hgen : (RatFunc k')⟮z⟯ = ⊤) :
+    constantCompositum (RatFunc k)⟮z⟯ k' E = ⊤ := by
+  set L := constantCompositum (RatFunc k)⟮z⟯ k' E
+  have hsub : ∀ x ∈ (RatFunc k)⟮z⟯, (x : E) ∈ L.toSubfield := fun x hx ↦ by
+    simpa using L.algebraMap_mem ⟨x, hx⟩
+  -- The rational functions over `k'` whose images lie in `L` form an intermediate field of
+  -- `k'(X) / k'`. It contains `X`, so it is all of `k'(X)`.
+  let M := (L.toSubfield.comap (algebraMap (RatFunc k') E)).toIntermediateField (K := k')
+    fun c ↦ by
+      rw [Subfield.mem_comap, ← IsScalarTower.algebraMap_apply]
+      exact algebraMap_mem_constantCompositum _ k' E c
+  have hXM : (RatFunc.X : RatFunc k') ∈ M.toSubfield := by
+    rw [Subfield.toIntermediateField_toSubfield, Subfield.mem_comap, ← hX,
+      ← IsScalarTower.algebraMap_apply]
+    exact hsub _ (IntermediateField.algebraMap_mem _ _)
+  have hM : M = ⊤ :=
+    eq_top_iff.mpr <| _root_.RatFunc.adjoin_X.symm.le.trans (adjoin_simple_le_iff.mpr hXM)
+  have hkt (f : RatFunc k') : algebraMap (RatFunc k') E f ∈ L.toSubfield := by
+    have hf : f ∈ M.toSubfield := (mem_toSubfield M f).mpr (hM ▸ mem_top)
+    rwa [Subfield.toIntermediateField_toSubfield, Subfield.mem_comap] at hf
+  -- So `L` is an intermediate field of `E / k'(X)`, and it contains the generator `z`.
+  let N := L.toSubfield.toIntermediateField hkt
+  have hzN : z ∈ N.toSubfield := by
+    rw [Subfield.toIntermediateField_toSubfield]
+    exact hsub _ (mem_adjoin_simple_self _ z)
+  have hN : N = ⊤ := eq_top_iff.mpr <| hgen.symm.le.trans (adjoin_simple_le_iff.mpr hzN)
+  refine eq_top_iff.mpr fun x _ ↦ ?_
+  have hx : x ∈ N.toSubfield := (mem_toSubfield N x).mpr (hN ▸ mem_top)
+  rwa [Subfield.toIntermediateField_toSubfield, mem_toSubfield] at hx
+
+end AdjoinSimple
+
 namespace Place
 
 variable [Algebra k k'] [FiniteDimensional k k']
@@ -118,17 +165,16 @@ namespace Place
 variable [Algebra k k'] [Algebra (RatFunc k) (RatFunc k')]
 variable [IsScalarTower k (RatFunc k) (RatFunc k')] [Algebra.IsIntegral (RatFunc k) (RatFunc k')]
 
-/-- At the finite place of `q'`, the order of a nonzero polynomial `q` over `k` is the
+/-- At the finite place of `q'`, the order of a polynomial `q` over `k` is the
 multiplicity of `q'` in `q`, and it is also `e` times the order of `q` at the place below. -/
 private theorem multiplicity_map_eq_ramificationIdx_mul_ord
     (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X) {q' : k'[X]}
-    (hq' : Irreducible q') {q : k[X]} (hq : q ≠ 0) :
+    (hq' : Irreducible q') {q : k[X]} :
     (multiplicity q' (q.map (algebraMap k k')) : ℤ) =
       ramificationIdx (RatFunc k) (adicOfIrreducible hq') *
         ((adicOfIrreducible hq').restrict k (RatFunc k)).ord (algebraMap k[X] (RatFunc k) q) := by
   rw [← ord_algebraMap_restrict, algebraMap_ratFunc_algebraMap_polynomial hX,
-    ord_adicOfIrreducible_algebraMap hq' ((Polynomial.map_ne_zero_iff
-      (algebraMap k k').injective).mpr hq)]
+    ord_adicOfIrreducible_algebraMap hq']
 
 /-- **A finite place of `k'(X)` lies over a finite place of `k(X)`**: `X` is regular at it. -/
 theorem restrict_adicOfIrreducible_ne_infty
@@ -149,7 +195,7 @@ theorem restrict_adicOfIrreducible_eq_iff
   have hfin : FiniteMultiplicity q' (q.map (algebraMap k k')) :=
     .of_not_isUnit hq'.not_isUnit ((Polynomial.map_ne_zero_iff
       (algebraMap k k').injective).mpr hq.ne_zero)
-  have h := multiplicity_map_eq_ramificationIdx_mul_ord hX hq' hq.ne_zero
+  have h := multiplicity_map_eq_ramificationIdx_mul_ord hX hq' (q := q)
   have he := ramificationIdx_pos (RatFunc k) (adicOfIrreducible hq')
   rw [← multiplicity_ne_zero hfin]
   constructor
@@ -195,7 +241,7 @@ theorem ramificationIdx_adicOfIrreducible_eq_multiplicity
     ramificationIdx (RatFunc k) (adicOfIrreducible hq') =
       multiplicity q' (q.map (algebraMap k k')) := by
   classical
-  have h := multiplicity_map_eq_ramificationIdx_mul_ord hX hq' hq.ne_zero
+  have h := multiplicity_map_eq_ramificationIdx_mul_ord hX hq' (q := q)
   rw [(restrict_adicOfIrreducible_eq_iff hX hq' hq).mpr hdvd,
     ord_adicOfIrreducible_algebraMap_irreducible hq hq, ite_eq_left (Associated.refl _)] at h
   omega

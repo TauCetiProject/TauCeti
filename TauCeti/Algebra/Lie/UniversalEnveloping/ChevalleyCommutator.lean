@@ -96,6 +96,11 @@ attribute [local instance high] Algebra.toModule
 
 variable {R : Type*} [CommRing R] [Algebra ℤ R]
 
+private theorem dp_zsmul (c : ℤ) {x : A} (M : S)
+    (hM : ∀ n, ∀ v ∈ M, dividedPower n x • v ∈ M) :
+    ∀ n, ∀ v ∈ M, dividedPower n (c • x) • v ∈ M :=
+  fun n => Associative.dividedPower_zsmul_smul_mem c x M (hM n)
+
 private theorem inv_exp_ofAdd_eq_zsmul (M : S) {x : A} (c : ℤ)
     (hM : ∀ n, ∀ v ∈ M, dividedPower n x • v ∈ M)
     (hcM : ∀ n, ∀ v ∈ M, dividedPower n (c • x) • v ∈ M)
@@ -126,7 +131,7 @@ private theorem exp_mul_of_commutator_eq_zsmul (M : S) {u₁ u₂ u₃ : A} (k r
     baseChangeExpHom u₁ M hM₁ hn₁ t * baseChangeExpHom u₂ M hM₂ hn₂ u =
       baseChangeExpHom u₂ M hM₂ hn₂ u * baseChangeExpHom (r • u₃) M hMr₃ (hn₃.smul r) (ofAdd s) *
         baseChangeExpHom u₁ M hM₁ hn₁ t := by
-  have hMkr₃ := dividedPower_zsmul_smul_mem (k * r) M hM₃
+  have hMkr₃ := dp_zsmul (k * r) M hM₃
   rw [baseChangeExpHom_mul_of_commutator_eq M h₁₂ h₁₃ h₂₃ hM₁ hM₂ hMkr₃
       hn₁ hn₂ (hn₃.smul (k * r)) t u,
     baseChangeExpHom_zsmul (k * r) M hM₃ hMkr₃ hn₃ (hn₃.smul (k * r)),
@@ -150,7 +155,7 @@ theorem commutatorElement_baseChangeExpHom_of_lie_lie_eq (ρ : F) (M : S) {x y z
   have _ : HasUniqueDiv L := .of_module_rat L
   have hxz : c • ⁅x, z⁆ = (2 * d) • w := by rw [← lie_zsmul, ← hxy, hxxy]
   have hyw := zsmul_lie_eq_zero_of_zsmul_lie_eq_two hxy hxz hyz
-  have hMcz := dividedPower_zsmul_smul_mem c M hMz; have hMdw := dividedPower_zsmul_smul_mem d M hMw
+  have hMcz := dp_zsmul c M hMz; have hMdw := dp_zsmul d M hMw
   let tr := toAdd t; let ur := toAdd u
   have hmul :
       baseChangeExpHom (ρ (ι ℚ x)) M hMx hx t * baseChangeExpHom (ρ (ι ℚ y)) M hMy hy u =
@@ -197,8 +202,8 @@ theorem commutatorElement_baseChangeExpHom_of_lie_lie_rev_eq (ρ : F) (M : S)
   have hzw : (c * (-d)) • ⁅z, w⁆ = 0 := by
     simpa only [neg_mul_comm] using
       zsmul_lie_eq_zero_of_lie_eq hyx hyw (zsmul_lie_eq_zero_of_zsmul_lie_eq_two hyx hyz hxz)
-  have hMcz := dividedPower_zsmul_smul_mem c M hMz
-  have hMdw := dividedPower_zsmul_smul_mem (-d) M hMw
+  have hMcz := dp_zsmul c M hMz
+  have hMdw := dp_zsmul (-d) M hMw
   rw [← commutatorElement_inv,
     commutatorElement_baseChangeExpHom_of_lie_lie_eq ρ M hyx hyyx hyw hxz
       hMy hMx hMz hMw hy hx hz hw u t, mul_inv_rev,
@@ -232,8 +237,8 @@ theorem commutatorElement_baseChangeExpHom_of_g2_short_pair (ρ : F) (M : S)
         baseChangeExpHom (ρ (ι ℚ s)) M hMs hs (ofAdd ((-a : R) * (3 * toAdd t * toAdd u ^ 2))) := by
   have _ : HasUniqueDiv L := .of_module_rat L
   have hyw := zsmul_lie_eq_zero_of_g2_short_pair hxy hxz hzy hxs
-  have hMcz := dividedPower_zsmul_smul_mem c M hMz; have hMdw := dividedPower_zsmul_smul_mem d M hMw
-  have hMas := dividedPower_zsmul_smul_mem a M hMs
+  have hMcz := dp_zsmul c M hMz; have hMdw := dp_zsmul d M hMw
+  have hMas := dp_zsmul a M hMs
   let tr := toAdd t; let ur := toAdd u
   -- Step 1: normal-order `E_x(t) E_y(u)` via the divided-power straightening rule.
   have hmul :
@@ -311,8 +316,8 @@ theorem commutatorElement_baseChangeExpHom_of_lie_eq_three_nsmul (ρ : F) (M : S
   have hyw := zsmul_lie_eq_zero_of_zsmul_lie_eq_two hxy hxz hyz
   have hym := zsmul_lie_eq_zsmul_of_lie_eq_three_nsmul hxy hxz hxw hwz hyz
   have hyo := zsmul_lie_fourth_eq_zero_of_lie_eq_three_nsmul hxy hxz hwz hyz
-  have hMcz := dividedPower_zsmul_smul_mem c M hMz; have hMdw := dividedPower_zsmul_smul_mem d M hMw
-  have hMam := dividedPower_zsmul_smul_mem a M hMm; have hMbo := dividedPower_zsmul_smul_mem b M hMo
+  have hMcz := dp_zsmul c M hMz; have hMdw := dp_zsmul d M hMw
+  have hMam := dp_zsmul a M hMm; have hMbo := dp_zsmul b M hMo
   let tr := toAdd t; let ur := toAdd u
   -- Step 1: normal-order `E_x(t) E_y(u)` via the four-root `G₂` straightening rule.
   have hmul :
@@ -401,8 +406,8 @@ theorem commutatorElement_baseChangeExpHom_of_lie_eq_three_nsmul_rev (ρ : F) (M
     rw [mul_neg, ← lie_skew w z, smul_neg, neg_zsmul, neg_neg, hzw]
   have hmz := zsmul_lie_third_eq_zero_of_lie_eq_three_nsmul_rev hzy hyw hzw hyo
   let tr := toAdd t; let ur := toAdd u
-  have hMcz := dividedPower_zsmul_smul_mem c M hMz; have hMdw := dividedPower_zsmul_smul_mem d M hMw
-  have hMam := dividedPower_zsmul_smul_mem a M hMm; have hMbo := dividedPower_zsmul_smul_mem b M hMo
+  have hMcz := dp_zsmul c M hMz; have hMdw := dp_zsmul d M hMw
+  have hMam := dp_zsmul a M hMm; have hMbo := dp_zsmul b M hMo
   have hcomm_ow : ∀ r, Commute (baseChangeExpHom (b • ρ (ι ℚ o)) M hMbo (ho.smul b) r)
       (baseChangeExpHom (d • ρ (ι ℚ w)) M hMdw (hw.smul d) (ofAdd (-(tr * ur ^ 2)))) :=
     fun r => commute_baseChangeExpHom M (comm_zsmul ρ d b hwo).symm hMbo hMdw (ho.smul b)
