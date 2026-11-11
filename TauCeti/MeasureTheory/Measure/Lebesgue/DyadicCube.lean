@@ -43,6 +43,8 @@ Mathlib's differentiation theorem along closed balls with moving centres.
   length around its centre.
 * `TauCeti.dist_lt_of_mem_dyadicCube`: two points of a cube of level `k` are at sup distance less
   than `2ᵏ`.
+* `TauCeti.dyadicCube_subset_ball_three_mul`: a ball `B(x, ρ)` meeting a dyadic cube whose centre
+  is at sup distance at least its side length from `x` has `B(x, 3ρ)` containing the cube.
 * `TauCeti.volume_dyadicCube`, `TauCeti.volume_dyadicCube_add_one`: a cube of level `k` has
   volume `(2ᵏ)ⁿ`, so its parent is `2ⁿ` times larger.
 * `TauCeti.exists_forall_lt_of_mul_volume_dyadicCube_lt`: in positive dimension, the dyadic cubes
@@ -240,6 +242,24 @@ theorem dist_lt_of_mem_dyadicCube (hx : x ∈ dyadicCube k m) (hy : y ∈ dyadic
   have hyi := hy i (mem_univ i)
   rw [Real.dist_eq, abs_sub_lt_iff]
   constructor <;> nlinarith [hxi.1, hxi.2, hyi.1, hyi.2]
+
+/-- If `x` is at sup distance at least the side length `2ᵏ` from the centre of a dyadic cube `Q`,
+then every ball `B(x, ρ)` meeting `Q` has radius more than half that side, so `B(x, 3ρ)` contains
+`Q`. -/
+theorem dyadicCube_subset_ball_three_mul
+    (hx : x ∉ ball (fun i => ((m i : ℝ) + 2⁻¹) * 2 ^ k) (2 ^ k)) {ρ : ℝ}
+    (hmeet : (ball x ρ ∩ dyadicCube k m).Nonempty) :
+    dyadicCube k m ⊆ ball x (3 * ρ) := by
+  obtain ⟨y, hyB, hyQ⟩ := hmeet
+  have hyc := mem_closedBall.1 (dyadicCube_subset_closedBall k m hyQ)
+  have hxc := not_lt.1 (mem_ball.not.1 hx)
+  have hxy := mem_ball'.1 hyB
+  have := dist_triangle x y (fun i => ((m i : ℝ) + 2⁻¹) * 2 ^ k)
+  intro z hz
+  rw [mem_ball']
+  calc dist x z ≤ dist x y + dist y z := dist_triangle _ _ _
+    _ < ρ + 2 ^ k := add_lt_add hxy (dist_lt_of_mem_dyadicCube hyQ hz)
+    _ ≤ 3 * ρ := by linarith
 
 /-- A dyadic cube of level `k` has volume `(2ᵏ)ⁿ`. -/
 theorem volume_dyadicCube (k : ℤ) (m : ι → ℤ) :

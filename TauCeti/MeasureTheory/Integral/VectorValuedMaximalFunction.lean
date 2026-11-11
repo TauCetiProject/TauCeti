@@ -8,6 +8,7 @@ module
 import TauCeti.MeasureTheory.Integral.CalderonZygmund.Decomposition
 public import TauCeti.MeasureTheory.Integral.MaximalFunction
 import TauCeti.Analysis.MeanInequalities
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Integral.MinkowskiIntegral
 import TauCeti.MeasureTheory.Integral.Marcinkiewicz.General
 
@@ -132,33 +133,11 @@ private theorem setLIntegral_cubeAverage (hq : q ∈ calderonZygmundCubes G t) :
       fun y hy => cubeAverage_of_mem hq hy, setLIntegral_const,
     mul_comm, measure_mul_setLAverage _ (volume_dyadicCube_ne_top _ _)]
 
-/-- The centre of the dyadic cube `q`. -/
-private noncomputable def cubeCentre (q : ℤ × (ι → ℤ)) : ι → ℝ :=
-  fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1
-
-/-- A ball `B(x, ρ)` meeting a dyadic cube `Q` whose centre is at distance at least the side of
-`Q` from `x` has radius more than half that side, so `B(x, 3ρ)` contains `Q`. -/
-private theorem dyadicCube_subset_ball_three_mul (hx : x ∉ ball (cubeCentre q) (2 ^ q.1))
-    {ρ : ℝ} (hmeet : (ball x ρ ∩ dyadicCube q.1 q.2).Nonempty) :
-    dyadicCube q.1 q.2 ⊆ ball x (3 * ρ) := by
-  obtain ⟨y, hyB, hyQ⟩ := hmeet
-  have hyc := mem_closedBall.1 (dyadicCube_subset_closedBall q.1 q.2 hyQ)
-  have hxc : 2 ^ q.1 ≤ dist x (cubeCentre q) := not_lt.1 (by simpa [mem_ball] using hx)
-  have hxy := mem_ball'.1 hyB
-  have hρ : (2 : ℝ) ^ q.1 < 2 * ρ := by
-    have := dist_triangle x y (cubeCentre q)
-    unfold cubeCentre at hxc hyc this
-    linarith
-  intro z hz
-  rw [mem_ball']
-  calc dist x z ≤ dist x y + dist y z := dist_triangle _ _ _
-    _ < ρ + 2 ^ q.1 := add_lt_add hxy (dist_lt_of_mem_dyadicCube hyQ hz)
-    _ ≤ 3 * ρ := by linarith
-
 /-- Away from the doubled Calderón–Zygmund cubes, the integral of `g` over a ball is at most the
 integral of the averaged function over the concentric ball of three times the radius. -/
 private theorem setLIntegral_ball_le_setLIntegral_cubeAverage
-    (hx : ∀ q ∈ calderonZygmundCubes G t, x ∉ ball (cubeCentre q) (2 ^ q.1)) {ρ : ℝ}
+    (hx : ∀ q ∈ calderonZygmundCubes G t,
+      x ∉ ball (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (2 ^ q.1)) {ρ : ℝ}
     (hρ : 0 < ρ) :
     ∫⁻ y in ball x ρ, g y ≤ ∫⁻ y in ball x (3 * ρ), cubeAverage G t g y := by
   set C := calderonZygmundCubes G t
@@ -189,7 +168,8 @@ private theorem setLIntegral_ball_le_setLIntegral_cubeAverage
 /-- Away from the doubled Calderón–Zygmund cubes, the maximal function of `g` is at most `3ⁿ`
 times the maximal function of the averaged function. -/
 private theorem maximalFunction_le_three_pow_mul_maximalFunction_cubeAverage
-    (hx : ∀ q ∈ calderonZygmundCubes G t, x ∉ ball (cubeCentre q) (2 ^ q.1)) :
+    (hx : ∀ q ∈ calderonZygmundCubes G t,
+      x ∉ ball (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (2 ^ q.1)) :
     maximalFunction volume g x ≤
       3 ^ Fintype.card ι * maximalFunction volume (cubeAverage G t g) x := by
   refine maximalFunction_le fun ρ hρ => ?_
@@ -212,11 +192,13 @@ private theorem maximalFunction_le_three_pow_mul_maximalFunction_cubeAverage
 
 /-- The doubled Calderón–Zygmund cubes of `G` at height `t` have total measure at most
 `2ⁿ ∫⁻ G / t`. -/
-private theorem mul_volume_biUnion_ball_cubeCentre_le (G : (ι → ℝ) → ℝ≥0∞) (t : ℝ≥0∞) :
-    t * volume (⋃ q ∈ calderonZygmundCubes G t, ball (cubeCentre q) (2 ^ q.1)) ≤
+private theorem mul_volume_biUnion_ball_le (G : (ι → ℝ) → ℝ≥0∞) (t : ℝ≥0∞) :
+    t * volume (⋃ q ∈ calderonZygmundCubes G t,
+        ball (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (2 ^ q.1)) ≤
       2 ^ Fintype.card ι * ∫⁻ x, G x := by
   set C := calderonZygmundCubes G t
-  have hsum : ∑' q : C, volume (ball (cubeCentre q.1) (2 ^ q.1.1)) =
+  have hsum :
+      ∑' q : C, volume (ball (fun i => ((q.1.2 i : ℝ) + 2⁻¹) * 2 ^ q.1.1) (2 ^ q.1.1)) =
       2 ^ Fintype.card ι * volume (⋃ q ∈ C, dyadicCube q.1 q.2) := by
     rw [measure_biUnion C.to_countable pairwiseDisjoint_calderonZygmundCubes
       fun q _ => measurableSet_dyadicCube q.1 q.2, ← ENNReal.tsum_mul_left]
@@ -224,8 +206,9 @@ private theorem mul_volume_biUnion_ball_cubeCentre_le (G : (ι → ℝ) → ℝ�
     rw [Real.volume_pi_ball _ (by positivity), volume_dyadicCube, mul_pow,
       ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow (by norm_num),
       ENNReal.ofReal_ofNat]
-  calc t * volume (⋃ q ∈ C, ball (cubeCentre q) (2 ^ q.1))
-      ≤ t * ∑' q : C, volume (ball (cubeCentre q.1) (2 ^ q.1.1)) := by
+  calc t * volume (⋃ q ∈ C, ball (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (2 ^ q.1))
+      ≤ t * ∑' q : C,
+          volume (ball (fun i => ((q.1.2 i : ℝ) + 2⁻¹) * 2 ^ q.1.1) (2 ^ q.1.1)) := by
         gcongr
         exact measure_biUnion_le _ C.to_countable _
     _ = 2 ^ Fintype.card ι * (t * volume (⋃ q ∈ C, dyadicCube q.1 q.2)) := by
@@ -284,7 +267,8 @@ omit [Countable κ] in
 /-- Away from the doubled Calderón–Zygmund cubes of `G`, the `ℓʳ` norm of the maximal functions
 of `g` is at most `3ⁿ` times that of the maximal functions of the averaged family. -/
 private theorem rpow_tsum_maximalFunction_rpow_le_three_pow_mul {G : (ι → ℝ) → ℝ≥0∞} (hr : 0 < r)
-    (hx : ∀ q ∈ calderonZygmundCubes G t, x ∉ ball (cubeCentre q) (2 ^ q.1)) :
+    (hx : ∀ q ∈ calderonZygmundCubes G t,
+      x ∉ ball (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (2 ^ q.1)) :
     (∑' i, maximalFunction volume (g i) x ^ r) ^ (1 / r) ≤
       3 ^ Fintype.card ι *
         (∑' i, maximalFunction volume (cubeAverage G t (g i)) x ^ r) ^ (1 / r) := by
@@ -391,7 +375,7 @@ private theorem mul_volume_lt_three_pow_mul_le (hg : ∀ i, Measurable (g i)) (h
   set G : (ι → ℝ) → ℝ≥0∞ := fun y => (∑' i, g i y ^ r) ^ (1 / r)
   set C := calderonZygmundCubes G t
   set h : κ → (ι → ℝ) → ℝ≥0∞ := fun i => cubeAverage G t (g i)
-  set Ωs := ⋃ q ∈ C, ball (cubeCentre q) (2 ^ q.1)
+  set Ωs := ⋃ q ∈ C, ball (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (2 ^ q.1)
   set S := {x | t ^ r ≤ ∑' i, maximalFunction volume (h i) x ^ r}
   have hr0 : 0 < r := by linarith
   have hsub : {x | 3 ^ n * t < (∑' i, maximalFunction volume (g i) x ^ r) ^ (1 / r)} ⊆
@@ -411,7 +395,7 @@ private theorem mul_volume_lt_three_pow_mul_le (hg : ∀ i, Measurable (g i)) (h
     _ = t * volume Ωs + t * volume S := mul_add _ _ _
     _ ≤ (2 ^ n * ∫⁻ x, G x) + ENNReal.ofReal (2 * r * 2 ^ (r - 1) / (r - 1)) * 4 ^ n *
           (2 ^ n) ^ (r - 1) * ∫⁻ x, G x :=
-        add_le_add (mul_volume_biUnion_ball_cubeCentre_le G t)
+        add_le_add (mul_volume_biUnion_ball_le G t)
           (mul_volume_le_tsum_maximalFunction_cubeAverage_rpow hg hr hfin ht ht')
     _ = _ := by ring
 
@@ -431,16 +415,6 @@ private theorem exists_measurable_maximalFunction_eq
     maximalFunction_congr_ae ?_, ae_all_iff.2 fun i => (hf i).ae_eq_mk⟩
   filter_upwards [(hf i).ae_eq_mk] with y hy
   rw [hy, enorm_eq_self]
-
-omit [Fintype ι] [Countable κ] in
-/-- The `ℓʳ` norm of a family restricted to a set is the restriction of its `ℓʳ` norm. -/
-private theorem rpow_tsum_indicator_rpow (V : Set (ι → ℝ)) (g : κ → (ι → ℝ) → ℝ≥0∞) (hr : 0 < r)
-    (x : ι → ℝ) :
-    (∑' i, V.indicator (g i) x ^ r) ^ (1 / r) =
-      V.indicator (fun y => (∑' i, g i y ^ r) ^ (1 / r)) x := by
-  by_cases hx : x ∈ V
-  · simp only [indicator_of_mem hx]
-  · simp [indicator_of_notMem hx, ENNReal.zero_rpow_of_pos hr, hr]
 
 /-- The part of a measurable family on a measurable set `V`, through the diagonal `Lʳ` bound and
 Chebyshev's inequality: the `ℓʳ` norm of its maximal functions reaches `t / 2` on a set of measure
