@@ -18,7 +18,7 @@ import TauCeti.MeasureTheory.Measure.MeasurableHull
 /-!
 # The Poincaré–Wirtinger inequality for `C¹` functions on a convex domain
 
-Let `Ω` be a bounded convex open subset of a finite-dimensional real normed space `E` of
+Let `Ω` be a bounded convex subset of a finite-dimensional real normed space `E` of
 dimension `n`, let `μ` be an additive Haar measure, and let `S ⊆ Ω` have positive measure. For a
 `C¹` function `u` on `Ω` and `1 ≤ p < ∞`, this file proves
 
@@ -28,6 +28,8 @@ dimension `n`, let `μ` be an additive Haar measure, and let `S ⊆ Ω` have pos
 The constant depends only on the dimension, through the Haar measure of the unit ball, on the
 diameter of `Ω` and on the measure of `S`, as it must: rescaling `Ω` by `t` multiplies it by
 `t`. The mean may be taken over any subset of positive measure, not only over `Ω` itself.
+`Ω` need not be open: the frontier of a convex set is null, so each statement reduces to the open
+convex set `interior Ω`, which has no larger diameter.
 
 The proof bounds the deviation `u x - ⨍ S u` pointwise by the Riesz potential
 `∫_Ω ‖Du y‖ ‖x - y‖ ^ (1 - n) dy` (`TauCeti.enorm_sub_setAverage_le_of_convex`), and bounds that
@@ -76,17 +78,34 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
   {μ : Measure E} [μ.IsAddHaarMeasure] {u : E → F} {Ω S : Set E}
 
+/-- A subset of a convex set `Ω` differs from its intersection with `interior Ω` by a null set,
+since the frontier of `Ω` is null. -/
+private lemma inter_interior_ae_eq_of_convex (hΩc : Convex ℝ Ω) (hS : S ⊆ Ω) :
+    S ∩ interior Ω =ᵐ[μ] S := by
+  simpa [inter_eq_left.2 hS] using ae_eq_set_inter (Filter.EventuallyEq.rfl : S =ᵐ[μ] S)
+    (interior_ae_eq_of_null_frontier (hΩc.addHaar_frontier μ))
+
 /-- **The Poincaré–Wirtinger inequality on a convex domain**, in `∫⁻` form. If `u` is `C¹` on a
-bounded convex open set `Ω` and `S ⊆ Ω` has positive measure, then for `1 ≤ p` the `p`-th power
+bounded convex set `Ω` and `S ⊆ Ω` has positive measure, then for `1 ≤ p` the `p`-th power
 of the deviation of `u` from its mean over `S` has integral over `Ω` at most `C ^ p` times the
 integral of `‖Du‖ ^ p` over `Ω`, where `C = μ(B(0, 1)) * (diam Ω) ^ (n + 1) / μ(S)` and `n` is
 the dimension of the space. -/
-theorem lintegral_enorm_sub_setAverage_rpow_le_of_convex (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
+theorem lintegral_enorm_sub_setAverage_rpow_le_of_convex (hΩc : Convex ℝ Ω)
     (hb : Bornology.IsBounded Ω) (hu : ContDiffOn ℝ 1 u Ω) (hS : S ⊆ Ω) (hS₀ : μ S ≠ 0) {p : ℝ}
     (hp : 1 ≤ p) :
     ∫⁻ x in Ω, ‖u x - ⨍ y in S, u y ∂μ‖ₑ ^ p ∂μ ≤
       ENNReal.ofReal ((μ.real (ball 0 1) * diam Ω ^ (finrank ℝ E + 1) / μ.real S) ^ p) *
         ∫⁻ y in Ω, ‖fderiv ℝ u y‖ₑ ^ p ∂μ := by
+  wlog hΩ : IsOpen Ω generalizing Ω S
+  · -- Pass to `interior Ω`, which is a.e. equal to `Ω` and has no larger diameter.
+    have hSae := inter_interior_ae_eq_of_convex (μ := μ) hΩc hS
+    have h := this (S := S ∩ interior Ω) hΩc.interior (hb.subset interior_subset)
+      (hu.mono interior_subset) inter_subset_right (by rwa [measure_congr hSae]) isOpen_interior
+    rw [Measure.restrict_congr_set (interior_ae_eq_of_null_frontier (hΩc.addHaar_frontier μ)),
+      Measure.restrict_congr_set hSae, measureReal_congr hSae] at h
+    refine h.trans (mul_le_mul_left (ENNReal.ofReal_le_ofReal ?_) _)
+    gcongr
+    exact diam_mono interior_subset hb
   set n := finrank ℝ E
   set d := diam Ω
   have hp0 : 0 ≤ p := zero_le_one.trans hp
@@ -146,17 +165,30 @@ theorem lintegral_enorm_sub_setAverage_rpow_le_of_convex (hΩ : IsOpen Ω) (hΩc
         ENNReal.ofReal_rpow_of_nonneg (by positivity) hp0]
 
 /-- **The Poincaré–Wirtinger inequality on a convex domain, localized to a subset.** If `u` is
-`C¹` on a bounded convex open set `Ω` and `S ⊆ Ω` has positive measure, then for every `A ⊆ Ω` the
+`C¹` on a bounded convex set `Ω` and `S ⊆ Ω` has positive measure, then for every `A ⊆ Ω` the
 integral over `A` of the deviation of `u` from its mean over `S` is at most
 `μ(B(0, 1)) ^ (1 - 1/n) * (diam Ω) ^ n / μ(S) * μ(A) ^ (1/n)` times the integral of `‖Du‖` over
 `Ω`, where `n` is the dimension of the space. The factor `μ(A) ^ (1/n)` makes this a weak-type
 `L^{n/(n-1)}` Poincaré inequality. -/
-theorem setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_of_convex (hΩ : IsOpen Ω)
+theorem setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_of_convex
     (hΩc : Convex ℝ Ω) (hb : Bornology.IsBounded Ω) (hu : ContDiffOn ℝ 1 u Ω) (hS : S ⊆ Ω)
     (hS₀ : μ S ≠ 0) {A : Set E} (hA : A ⊆ Ω) :
     ∫⁻ x in A, ‖u x - ⨍ y in S, u y ∂μ‖ₑ ∂μ ≤
       ENNReal.ofReal (μ.real (ball 0 1) ^ (1 - (finrank ℝ E : ℝ)⁻¹) * diam Ω ^ finrank ℝ E /
         μ.real S) * μ A ^ (finrank ℝ E : ℝ)⁻¹ * ∫⁻ y in Ω, ‖fderiv ℝ u y‖ₑ ∂μ := by
+  wlog hΩ : IsOpen Ω generalizing Ω S A
+  · -- Pass to `interior Ω`, which is a.e. equal to `Ω` and has no larger diameter.
+    have hSae := inter_interior_ae_eq_of_convex (μ := μ) hΩc hS
+    have hAae := inter_interior_ae_eq_of_convex (μ := μ) hΩc hA
+    have h := this (S := S ∩ interior Ω) (A := A ∩ interior Ω) hΩc.interior
+      (hb.subset interior_subset) (hu.mono interior_subset) inter_subset_right
+      (by rwa [measure_congr hSae]) inter_subset_right isOpen_interior
+    rw [Measure.restrict_congr_set (interior_ae_eq_of_null_frontier (hΩc.addHaar_frontier μ)),
+      Measure.restrict_congr_set hSae, Measure.restrict_congr_set hAae, measureReal_congr hSae,
+      measure_congr hAae] at h
+    refine h.trans (mul_le_mul_left (mul_le_mul_left (ENNReal.ofReal_le_ofReal ?_) _) _)
+    gcongr
+    exact diam_mono interior_subset hb
   set n := finrank ℝ E
   set d := diam Ω
   have hS_top : μ S ≠ ∞ := ((measure_mono hS).trans_lt hb.measure_lt_top).ne
@@ -207,18 +239,21 @@ theorem setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_of_convex (hΩ
         ring
 
 /-- **The Poincaré–Wirtinger inequality on a convex domain.** If `u` is `C¹` on a bounded convex
-open set `Ω` and `S ⊆ Ω` has positive measure, then for `1 ≤ p < ∞` the `Lᵖ(Ω)` seminorm of the
+set `Ω` and `S ⊆ Ω` has positive measure, then for `1 ≤ p < ∞` the `Lᵖ(Ω)` seminorm of the
 deviation of `u` from its mean over `S` is at most `μ(B(0, 1)) * (diam Ω) ^ (n + 1) / μ(S)` times
 the `Lᵖ(Ω)` seminorm of the derivative of `u`, where `n` is the dimension of the space. -/
-theorem eLpNorm_sub_setAverage_le_of_convex (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
+theorem eLpNorm_sub_setAverage_le_of_convex (hΩc : Convex ℝ Ω)
     (hb : Bornology.IsBounded Ω) (hu : ContDiffOn ℝ 1 u Ω) (hS : S ⊆ Ω) (hS₀ : μ S ≠ 0)
     {p : ℝ≥0∞} (hp : 1 ≤ p) (hp' : p ≠ ∞) :
     eLpNorm (fun x => u x - ⨍ y in S, u y ∂μ) p (μ.restrict Ω) ≤
       ENNReal.ofReal (μ.real (ball 0 1) * diam Ω ^ (finrank ℝ E + 1) / μ.real S) *
         eLpNorm (fderiv ℝ u) p (μ.restrict Ω) :=
   eLpNorm_le_eLpNorm_of_lintegral_rpow_le (by positivity) hp'
-    ((hu.continuousOn.aestronglyMeasurable hΩ.measurableSet).sub aestronglyMeasurable_const)
-    (lintegral_enorm_sub_setAverage_rpow_le_of_convex hΩ hΩc hb hu hS hS₀
+    ((((hu.continuousOn.mono interior_subset).aestronglyMeasurable
+      isOpen_interior.measurableSet).mono_measure (Measure.restrict_congr_set
+        (interior_ae_eq_of_null_frontier (hΩc.addHaar_frontier μ))).ge).sub
+      aestronglyMeasurable_const)
+    (lintegral_enorm_sub_setAverage_rpow_le_of_convex hΩc hb hu hS hS₀
       (by simpa using ENNReal.toReal_mono hp' hp))
 
 /-- **The Poincaré–Wirtinger inequality on a convex domain**, for `p = 2` and Bochner integrals.
@@ -230,25 +265,7 @@ theorem setIntegral_norm_sub_setAverage_sq_le_of_convex (hΩc : Convex ℝ Ω)
     ∫ x in Ω, ‖u x - ⨍ y in S, u y ∂μ‖ ^ 2 ∂μ ≤
       (μ.real (ball 0 1) * diam Ω ^ (finrank ℝ E + 1) / μ.real S) ^ 2 *
         ∫ x in Ω, ‖fderiv ℝ u x‖ ^ 2 ∂μ := by
-  wlog hΩ : IsOpen Ω generalizing Ω S
-  · -- A convex set differs from its interior by a null set, and the interior is no larger.
-    have hΩae : interior Ω =ᵐ[μ] Ω :=
-      interior_ae_eq_of_null_frontier (Convex.addHaar_frontier μ hΩc)
-    have hSae : S ∩ interior Ω =ᵐ[μ] S := by
-      simpa [inter_eq_left.2 hS] using
-        Filter.EventuallyEqSet.inter (rfl : S = S).eventuallyEqSet hΩae
-    have hS₀' : μ (S ∩ interior Ω) ≠ 0 := by rwa [measure_congr hSae]
-    have hd : diam (interior Ω) ≤ diam Ω := diam_mono interior_subset hb
-    have hint : ∀ f : E → ℝ, ∫ x in interior Ω, f x ∂μ = ∫ x in Ω, f x ∂μ := fun f =>
-      setIntegral_congr_set hΩae
-    have hbi : Bornology.IsBounded (interior Ω) := hb.subset interior_subset
-    have h := this (Ω := interior Ω) (S := S ∩ interior Ω) hΩc.interior hbi inter_subset_right
-      hS₀' isOpen_interior
-    rw [hint, hint, Measure.restrict_congr_set hSae, measureReal_congr hSae] at h
-    refine h.trans (mul_le_mul_of_nonneg_right ?_ (setIntegral_nonneg_of_ae_restrict
-      (ae_of_all _ fun _ => by positivity)))
-    gcongr
-  have h := lintegral_enorm_sub_setAverage_rpow_le_of_convex (μ := μ) hΩ hΩc hb hu.contDiffOn
+  have h := lintegral_enorm_sub_setAverage_rpow_le_of_convex (μ := μ) hΩc hb hu.contDiffOn
     hS hS₀ one_le_two
   have hpowF (v : F) : ENNReal.ofReal (‖v‖ ^ 2) = ‖v‖ₑ ^ 2 := by
     rw [← ofReal_norm, ENNReal.ofReal_pow (norm_nonneg _)]
