@@ -54,12 +54,6 @@ variable {ι ι' N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpa
 
 namespace IsDelzant
 
-/-- The facet pairings of a Delzant presentation in an integral lattice are nonzero. -/
-private theorem facetPairing_ne_zero (hi : IsIntegralLattice i) (hΔ : IsDelzant i u c) (j : ι) :
-    facetPairing i u j ≠ 0 := by
-  have := hi.finiteDimensional
-  simpa using (map_ne_zero_iff i hi.injective).2 (hΔ.isPrimitive j).ne_zero
-
 /-- **A Delzant polytope determines its presentation.** Two Delzant presentations in an integral
 lattice, indexed by finite types, describe the same polytope exactly when they agree up to
 relabelling the facets: same inward normals and same support constants. -/
@@ -69,7 +63,8 @@ theorem facetPolyhedron_eq_iff [Finite ι] [Finite ι'] (hi : IsIntegralLattice 
       ∃ e : ι ≃ ι', ∀ j, u' (e j) = u j ∧ c' (e j) = c j := by
   have := hi.finiteDimensional
   rw [facetPolyhedron_def, facetPolyhedron_def,
-    polyhedron_eq_iff_exists_equiv (facetPairing_ne_zero hi hΔ) (facetPairing_ne_zero hi hΔ')
+    polyhedron_eq_iff_exists_equiv (hΔ.facetPairing_ne_zero hi.injective)
+      (hΔ'.facetPairing_ne_zero hi.injective)
       (by simpa only [facetPolyhedron_def] using hΔ.irredundant)
       (by simpa only [facetPolyhedron_def] using hΔ'.irredundant)]
   constructor

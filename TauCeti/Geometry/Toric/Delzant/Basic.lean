@@ -80,6 +80,8 @@ freedom of shifting a moment map by a constant.
 * `TauCeti.Toric.isSmoothVertex_iff_span_eq_top`: a smooth vertex is a point whose active normals
   generate the lattice and number at most `rank N`.
 * `TauCeti.Toric.IsDelzant.isPrimitive`: the facet normals of a Delzant polytope are primitive.
+* `TauCeti.Toric.IsDelzant.facetPairing_ne_zero`: for an injective lattice map, the facet
+  pairings of a Delzant polytope are nonzero.
 * `TauCeti.Toric.IsDelzant.exists_activeSet_eq_empty`: for an injective lattice map, a Delzant
   polytope has a point on none of its facets.
 * `TauCeti.Toric.facetPolyhedron_add`, `TauCeti.Toric.isDelzant_add_iff`: translations.
@@ -298,6 +300,10 @@ theorem isPrimitive (j : ι) : IsPrimitive (u j) := by
   obtain ⟨x, hx, hj⟩ := hΔ.exists_mem_extremePoints_mem_activeSet j
   obtain ⟨b, hb⟩ := hΔ.isSmoothVertex x hx
   simpa only [hb] using b.isPrimitive ⟨j, hj⟩
+
+/-- For an injective lattice map, the facet pairings of a Delzant polytope are nonzero. -/
+theorem facetPairing_ne_zero (hi : Function.Injective i) (j : ι) : facetPairing i u j ≠ 0 :=
+  facetPairing_eq_zero_iff.not.2 ((map_ne_zero_iff i hi).2 (hΔ.isPrimitive j).ne_zero)
 
 /-- **A Delzant polytope has an interior point.** For an injective lattice map, some point of a
 Delzant polytope lies on none of its facets. -/
