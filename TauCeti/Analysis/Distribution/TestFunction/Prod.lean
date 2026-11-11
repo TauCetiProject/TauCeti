@@ -80,7 +80,6 @@ private def prodSMulSupportedInCLM (ψ : 𝓓(O, ℝ)) (K : Compacts E) :
     cont := by
       -- Leibniz: the `i`-th derivative is controlled by the first `i` derivatives of `φ`, with
       -- constants given by bounds for the derivatives of `ψ`.
-      have hle (m : ℕ) : (m : WithTop ℕ∞) ≤ (⊤ : ℕ∞) := mod_cast le_top
       choose M hM using fun j : ℕ ↦
         (ψ.contDiff.continuous_iteratedFDeriv (m := j) (mod_cast le_top)).norm
           |>.bddAbove_range_of_hasCompactSupport (ψ.hasCompactSupport.iteratedFDeriv j).norm
@@ -95,11 +94,11 @@ private def prodSMulSupportedInCLM (ψ : 𝓓(O, ℝ)) (K : Compacts E) :
       refine Finset.sum_le_sum fun j hj ↦ ?_
       have hj : j ≤ i := Nat.lt_succ_iff.1 (Finset.mem_range.1 hj)
       have hψj : ‖iteratedFDeriv ℝ j (ψ ∘ Prod.snd) p‖ ≤ |M j| :=
-        (norm_iteratedFDeriv_comp_snd_le ψ.contDiff p (hle j)).trans
+        (norm_iteratedFDeriv_comp_snd_le p).trans
           ((hM j ⟨p.2, rfl⟩).trans (le_abs_self _))
       have hφj : ‖iteratedFDeriv ℝ (i - j) (φ ∘ Prod.fst) p‖ ≤
           (Finset.range (i + 1)).sup (ContDiffMapSupportedIn.seminorm ℝ E F ⊤ K) φ :=
-        (norm_iteratedFDeriv_comp_fst_le φ.contDiff p (hle (i - j))).trans
+        (norm_iteratedFDeriv_comp_fst_le p).trans
           ((ContDiffMapSupportedIn.norm_iteratedFDeriv_apply_le_seminorm_top ℝ).trans
             (Seminorm.le_finset_sup_apply (Finset.mem_range.2 (by omega))))
       calc (i.choose j : ℝ) * ‖iteratedFDeriv ℝ j (fun p : E × D ↦ ψ p.2) p‖ *

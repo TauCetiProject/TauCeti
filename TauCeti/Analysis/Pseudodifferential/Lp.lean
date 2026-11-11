@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.Kernel.Basic
+public import TauCeti.Analysis.Pseudodifferential.Kernel
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Basic
 public import TauCeti.MeasureTheory.Integral.DecayMajorant
 
