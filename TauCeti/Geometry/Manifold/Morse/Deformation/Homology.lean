@@ -40,6 +40,15 @@ abelian category with coproducts (`TauCeti.singularHomologySublevelPairIsoOfColl
 identifications are induced by inclusions of pairs
 (`TauCeti.singularHomologyMap_innerToTotal_comp_singularHomologySublevelPairIsoOfCollars_hom`).
 
+In particular the relative homology of a band around an isolated critical value `c` depends only on
+`c`: if `c` is the only critical value of `f` in the compact bands `f⁻¹[s, t]` and `f⁻¹[s', t']`,
+with `s, s' < c < t, t'`, then `Hₙ({f ≤ t}, {f ≤ s})` and `Hₙ({f ≤ t'}, {f ≤ s'})` are both
+identified with `Hₙ({f ≤ min t t'}, {f ≤ max s s'})`
+(`TauCeti.singularHomologySublevelPairIsoOfCriticalValue`). This is the contribution of the
+critical level `c` to the Morse inequalities of a filtration of `M` by sublevels cut between the
+critical values (`TauCeti.sum_range_neg_one_pow_mul_finrank_singularHomology_le_sum_sublevelPair`),
+whatever the cut.
+
 ## Main results
 
 * `TauCeti.isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero`: a compact band without
@@ -48,6 +57,8 @@ identifications are induced by inclusions of pairs
   relative to its lower level has the relative homology of the sublevel pair.
 * `TauCeti.singularHomologySublevelPairIsoOfCollars`: regular collars can be cut off a band
   without changing the relative homology of the sublevel pair.
+* `TauCeti.singularHomologySublevelPairIsoOfCriticalValue`: the relative homology of a compact
+  band around an isolated critical value does not depend on the band.
 
 ## References
 
@@ -273,5 +284,41 @@ lemma singularHomologyMap_innerToTotal_comp_singularHomologySublevelPairIsoOfCol
       TopPair.singularHomologyMap (TopTriple.totalToOuter.app (TopTriple.ofInclusions
         (X := TopCat.of M) (sublevel_mono f has) (sublevel_mono f hst))) R n := by
   simp [singularHomologySublevelPairIsoOfCollars]
+
+/-- **The relative homology of an isolated critical value.** Let `f⁻¹[s, t]` and `f⁻¹[s', t']` be
+compact bands with `s, s' < c < t, t'`, in each of which every critical point of `f` lies on the
+level `c`. Then `Hₙ({f ≤ t}, {f ≤ s})` and `Hₙ({f ≤ t'}, {f ≤ s'})` are isomorphic: cutting off
+the regular collars identifies both with `Hₙ({f ≤ min t t'}, {f ≤ max s s'})`
+(`TauCeti.singularHomologySublevelPairIsoOfCollars`). So the relative homology of a band around an
+isolated critical value depends only on the value. -/
+def singularHomologySublevelPairIsoOfCriticalValue (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    {c s t s' t' : ℝ} (hsc : s < c) (hct : c < t) (hs'c : s' < c) (hct' : c < t')
+    (hcompact : IsCompact (f ⁻¹' Icc s t)) (hcompact' : IsCompact (f ⁻¹' Icc s' t'))
+    (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc s t → f x = c)
+    (hcrit' : ∀ x ∈ criticalPoints I f, f x ∈ Icc s' t' → f x = c) (R : A) (n : ℕ) :
+    (sublevelPair f (hsc.trans hct).le).singularHomology R n ≅
+      (sublevelPair f (hs'c.trans hct').le).singularHomology R n :=
+  have hu : max s s' < c := max_lt hsc hs'c
+  have hv : c < min t t' := lt_min hct hct'
+  have hfc := hf.continuous
+  -- Below `max s s'` and above `min t t'` the bands hold no critical point.
+  have hreg {a b : ℝ} (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c)
+      {a₁ b₁ : ℝ} (ha₁ : a ≤ a₁) (hb₁ : b₁ ≤ b) (hc : c ∉ Icc a₁ b₁) :
+      ∀ x, a₁ ≤ f x → f x ≤ b₁ → mfderiv I 𝓘(ℝ) f x ≠ 0 := fun x h₁ h₂ h₀ ↦ hc <| by
+    rw [← hcrit x (mem_criticalPoints_iff_mfderiv_eq_zero.2 h₀) ⟨ha₁.trans h₁, h₂.trans hb₁⟩]
+    exact ⟨h₁, h₂⟩
+  have hsub {a b a₁ b₁ : ℝ} (hcompact : IsCompact (f ⁻¹' Icc a b)) (ha₁ : a ≤ a₁)
+      (hb₁ : b₁ ≤ b) : IsCompact (f ⁻¹' Icc a₁ b₁) :=
+    hcompact.of_isClosed_subset (isClosed_Icc.preimage hfc) (preimage_mono (Icc_subset_Icc ha₁ hb₁))
+  singularHomologySublevelPairIsoOfCollars hf (le_max_left s s') (hu.trans hv).le
+      (min_le_left t t') (hsub hcompact le_rfl (hu.trans hct).le)
+      (hsub hcompact (hsc.trans hv).le le_rfl)
+      (hreg hcrit le_rfl (hu.trans hct).le fun h ↦ hu.not_ge h.2)
+      (hreg hcrit (hsc.trans hv).le le_rfl fun h ↦ hv.not_ge h.1) R n ≪≫
+    (singularHomologySublevelPairIsoOfCollars hf (le_max_right s s') (hu.trans hv).le
+      (min_le_right t t') (hsub hcompact' le_rfl (hu.trans hct').le)
+      (hsub hcompact' (hs'c.trans hv).le le_rfl)
+      (hreg hcrit' le_rfl (hu.trans hct').le fun h ↦ hu.not_ge h.2)
+      (hreg hcrit' (hs'c.trans hv).le le_rfl fun h ↦ hv.not_ge h.1) R n).symm
 
 end TauCeti
