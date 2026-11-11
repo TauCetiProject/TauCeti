@@ -60,9 +60,6 @@ asserted to be finite, perfect, or simple.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate VI.
 -/
 
--- Reinstates the declarations of https://github.com/TauCetiProject/TauCeti/pull/5968 under the
--- names the CFSG roadmap fixes for every branch.
-
 public section
 
 namespace TauCeti
