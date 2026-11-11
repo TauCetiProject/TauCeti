@@ -56,8 +56,12 @@ AINTLIB `LeanModularForms` project
 
 ## Main results
 
+* `Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_smul`: the slash by `s⁻¹ ∈ SL(2, ℝ)`, read
+  at `s • τ`, is `denom s τ ^ k * f τ`.
 * `ModularForm.slash_scalar`: a real scalar matrix acts by its scalar to the power `k - 2`
   under the weight-`k` slash action.
+* `SlashAction.slash_eq_of_rightCoset_eq`: slashing a `H₁`-invariant element by `x` depends
+  only on the right coset `H₁ x`, for any slash action.
 * `SlashInvariantFormClass.SL_slash_eq`: a form invariant under the image of `Γ ≤ SL(2, ℤ)`
   is fixed by the slash action of every element of `Γ`.
 * `SlashInvariantForm.slash_action_eqn_of_det_pos`: the transformation law
@@ -69,6 +73,8 @@ AINTLIB `LeanModularForms` project
 * `TauCeti.ModularForm.SL_slash_neg`, `TauCeti.ModularForm.SL_slash_zpow_eq_self_of_slash_eq`:
   for `A ∈ SL(2, ℤ)`, `f ∣[k] (-A) = (-1)^k • f ∣[k] A`, and invariance under `A` passes to
   every integer power of `A`.
+* `TauCeti.ModularForm.SL_slash_S_slash_S`: `(f ∣[k] S) ∣[k] S = (-1)^k • f`, the action of
+  `S² = -I`.
 * `Subgroup.IsArithmetic.isCusp_of_isCusp`: any two arithmetic groups have the same cusps.
 * `TauCeti.ModularForm.eq_zero_of_eq_const`: a constant slash-invariant form of nonzero weight
   vanishes when its group has finite-index intersection with the modular group.
@@ -170,6 +176,25 @@ analogue of Mathlib's `ModularForm.mcast_apply`, which Mathlib does not yet prov
 lemma _root_.CuspForm.mcast_apply {a b : ℤ} {Γ Γ' : Subgroup (GL (Fin 2) ℝ)} (h : a = b)
     (f : CuspForm Γ a) (hΓ : Γ' = Γ := by rfl) (z : ℍ) : CuspForm.mcast h f hΓ z = f z := (rfl)
 
+namespace SlashAction
+
+/-- **Slashing a `H₁`-invariant element depends only on the right coset.** If `H₁ x = H₁ y`
+then `f ∣[k] x = f ∣[k] y`, because `y = (y x⁻¹) x` with `y x⁻¹ ∈ H₁` and the slash by that
+factor is trivial on `f`.
+
+It is used in `HeckeSlash/Independence.lean` to show that Hecke slash sums do not depend on the
+choice of right-coset representatives. -/
+lemma slash_eq_of_rightCoset_eq {β H A : Type*} [Group H] [AddMonoid A] [SlashAction β H A]
+    {H₁ : Subgroup H} (k : β) {f : A} (hf : ∀ γ ∈ H₁, f ∣[k] γ = f) {x y : H}
+    (h : MulOpposite.op x • (H₁ : Set H) = MulOpposite.op y • (H₁ : Set H)) :
+    f ∣[k] x = f ∣[k] y := by
+  have hγ : y * x⁻¹ ∈ H₁ := (rightCoset_eq_iff H₁).mp h
+  calc f ∣[k] x = (f ∣[k] (y * x⁻¹)) ∣[k] x := by rw [hf _ hγ]
+    _ = f ∣[k] (y * x⁻¹ * x) := (SlashAction.slash_mul k (y * x⁻¹) x f).symm
+    _ = f ∣[k] y := by rw [inv_mul_cancel_right]
+
+end SlashAction
+
 namespace TauCeti.ModularForm
 
 variable {k : ℤ} {f : ℍ → ℂ}
@@ -186,6 +211,15 @@ theorem SL_slash_neg (k : ℤ) (f : ℍ → ℂ) (A : SL(2, ℤ)) :
     _root_.ModularForm.slash_neg_one]
   -- Mathlib states the `-I` law with the constant function `(-1) ^ k`; as a scalar it is `•`.
   exact ModularForm.SL_smul_slash k A f ((-1 : ℂ) ^ k)
+
+/-- The inversion `S` of `SL(2, ℤ)` acts twice by `S² = -I`, hence on the weight-`k` slash action
+by the scalar `(-1)^k`. -/
+@[simp]
+theorem SL_slash_S_slash_S (k : ℤ) (f : ℍ → ℂ) :
+    (f ∣[k] ModularGroup.S) ∣[k] ModularGroup.S = (-1 : ℂ) ^ k • f := by
+  have hS : ModularGroup.S * ModularGroup.S = (-1 : SL(2, ℤ)) :=
+    Subtype.ext (by simpa using ModularGroup.S_mul_S_eq)
+  rw [← SlashAction.slash_mul, hS, SL_slash_neg, SlashAction.slash_one]
 
 /-- Invariance under an element of `SL(2, ℤ)` passes to all its integer powers: the
 `SL(2, ℤ)` form of `slash_zpow_eq_self_of_slash_eq`. -/
@@ -218,6 +252,21 @@ theorem _root_.ModularForm.slash_apply_of_det_pos (k : ℤ) {g : GL (Fin 2) ℝ}
     (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ).det) (f : ℍ → ℂ) (τ : ℍ) :
     (f ∣[k] g) τ = f (g • τ) * |(g.det : ℝ)| ^ (k - 1) * denom g τ ^ (-k) :=
   congrFun (ModularForm.slash_def_of_det_pos k hg f) τ
+
+/-- The slash of `f` by the inverse of `s ∈ SL(2, ℝ)`, read at `s • τ`, is
+`denom s τ ^ k * f τ`. -/
+theorem _root_.Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_smul (s : SL(2, ℝ)) (k : ℤ)
+    (f : ℍ → ℂ) (τ : ℍ) :
+    (f ∣[k] Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹) (s • τ) =
+      denom (Matrix.SpecialLinearGroup.mapGL ℝ s) τ ^ k * f τ := by
+  have h1 := Matrix.SpecialLinearGroup.denom_mapGL_mul s⁻¹ s τ
+  rw [inv_mul_cancel, map_one, denom_one] at h1
+  have h2 : denom (Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹) ((s • τ : ℍ) : ℂ) =
+      (denom (Matrix.SpecialLinearGroup.mapGL ℝ s) τ)⁻¹ :=
+    eq_inv_of_mul_eq_one_left h1.symm
+  rw [ModularForm.slash_apply, σ_eq_refl_of_det_pos (by simp),
+    Matrix.SpecialLinearGroup.mapGL_smul, inv_smul_smul, h2]
+  simp [mul_comm]
 
 /-- **Scalars pass through the slash of a positive-determinant matrix.** Mathlib's
 `ModularForm.smul_slash` carries the twist `σ A c`, which is complex conjugation when the

@@ -7,10 +7,11 @@ module
 
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Basic
--- Proof-only: supplies `isIntegral_trans` and `Algebra.IsIntegral.adjoin`, the two facts the
--- argument runs through. The statement mentions only `IsIntegral`, which the public import
--- above already provides, so nothing here is re-exported.
+-- Proof-only: supplies integral-closure constructions and integrality transitivity.
+-- The statements only need the public imports above.
 import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
+import Mathlib.RingTheory.Polynomial.ScaleRoots
+import Mathlib.Tactic.ComputeDegree
 
 /-!
 # Integrality and clearing denominators
@@ -22,6 +23,9 @@ without either being an algebra over the other.
 
 ## Main results
 
+* `IsIntegral.exists_isIntegral_algebraMap_pow_mul`: if each element of `A` times a power of `r`
+  is integral over `P`, every element of an `A`-algebra integral over `A` becomes integral over
+  `P` after multiplication by a power of `r`.
 * `TauCeti.isIntegral_trans_common`: if every element of `P` becomes integral over `R` once
   mapped into `L`, then an element of `L` integral over `P` is integral over `R`.
 * `TauCeti.dvd_of_isIntegral_div`: an element of a field extension of `A` that is a quotient of
@@ -33,9 +37,64 @@ without either being an algebra over the other.
   clears the denominators of the product of differences from any one of its elements.
 * `TauCeti.isIntegral_rat_of_isIntegral_natCast_mul`: if `b x` is integral over `ℤ` for some
   `b ≠ 0`, then `x` is integral over `ℚ`.
+* `TauCeti.isIntegral_of_pow_add_pow_eq_mul_pow`: integrality from a monic power relation
+  with integral coefficients.
 -/
 
 public section
+
+section
+
+open Polynomial
+
+variable {P A B : Type*} [CommRing P] [CommRing A] [CommRing B] [Algebra P A] [Algebra A B]
+  [Algebra P B] [IsScalarTower P A B]
+
+/-- Let `r ∈ A` be such that every element of `A` times a power of `r` is integral over `P`. Then
+every element `c` of an `A`-algebra that is integral over `A` becomes integral over `P` after
+multiplication by a power of `r`. -/
+theorem IsIntegral.exists_isIntegral_algebraMap_pow_mul {c : B} (hc : IsIntegral A c) {r : A}
+    (H : ∀ a : A, ∃ m, IsIntegral P (r ^ m * a)) :
+    ∃ n, IsIntegral P (algebraMap A B r ^ n * c) := by
+  -- If `f` is a monic equation of `c` over `A` and `rᴺ` clears its coefficients, then `rᴺ c` is
+  -- a root of `f.scaleRoots rᴺ`, a monic polynomial with coefficients integral over `P`.
+  obtain ⟨f, hfm, hfc⟩ := hc
+  choose m hm using H
+  have hr : IsIntegral P r := .of_pow (Nat.succ_pos _) (by simpa [pow_succ] using hm r)
+  -- A common exponent `N` clearing all the coefficients of `f`.
+  set N := ∑ i ∈ Finset.range (f.natDegree + 1), m (f.coeff i)
+  have hcoeff (i : ℕ) : IsIntegral P (r ^ N * f.coeff i) := by
+    rcases le_or_gt i f.natDegree with hi | hi
+    · have : m (f.coeff i) ≤ N := Finset.single_le_sum (f := fun i ↦ m (f.coeff i))
+        (fun _ _ ↦ Nat.zero_le _) (Finset.mem_range.mpr (Nat.lt_succ_of_le hi))
+      rw [← Nat.sub_add_cancel this, pow_add, mul_assoc]
+      exact (hr.pow _).mul (hm _)
+    · rw [f.coeff_eq_zero_of_natDegree_lt hi, mul_zero]
+      exact isIntegral_zero
+  -- The coefficients of `f.scaleRoots rᴺ` lie in the integral closure `S` of `P` in `A`.
+  let S := integralClosure P A
+  have hg (i : ℕ) : (f.scaleRoots (r ^ N)).coeff i ∈ S := by
+    rw [coeff_scaleRoots, mem_integralClosure_iff]
+    rcases lt_or_ge i f.natDegree with hi | hi
+    · obtain ⟨k, hk⟩ : ∃ k, f.natDegree - i = k + 1 := ⟨f.natDegree - i - 1, by omega⟩
+      rw [hk, pow_succ, mul_comm, mul_assoc]
+      exact ((hr.pow N).pow k).mul (hcoeff i)
+    · rw [Nat.sub_eq_zero_of_le hi, pow_zero, mul_one]
+      rcases hi.eq_or_lt with h | h
+      · rw [← h, hfm.coeff_natDegree]
+        exact isIntegral_one
+      · rw [f.coeff_eq_zero_of_natDegree_lt h]
+        exact isIntegral_zero
+  obtain ⟨g, hgf, -, hgm⟩ := lifts_and_natDegree_eq_and_monic
+    ((lifts_iff_coeff_lifts (f := algebraMap S A) _).mpr fun i ↦ ⟨⟨_, hg i⟩, rfl⟩)
+    ((monic_scaleRoots_iff _).mpr hfm)
+  -- So `rᴺ c` is integral over `S`, which is integral over `P`.
+  have : IsIntegral S (algebraMap A B r ^ N * c) := ⟨g, hgm, by
+    rw [IsScalarTower.algebraMap_eq S A B, ← eval₂_map, hgf, ← map_pow, ← aeval_def]
+    exact scaleRoots_aeval_eq_zero hfc⟩
+  exact ⟨N, isIntegral_trans _ this⟩
+
+end
 
 namespace TauCeti
 
@@ -62,10 +121,11 @@ theorem isIntegral_trans_common {R P L : Type*} [CommRing R] [CommRing P]
 /-- An element of a field extension of `A` that is a quotient of elements of `A` and is integral
 over `A` has its numerator divisible by its denominator, when `A` is integrally closed. -/
 theorem dvd_of_isIntegral_div
-    {A L : Type*} [CommRing A] [IsDomain A]
+    {A L : Type*} [CommRing A]
     [IsIntegrallyClosed A] [Field L] [Algebra A L] [FaithfulSMul A L] {a d : A} (hd : d ≠ 0)
     (h : IsIntegral A (algebraMap A L a / algebraMap A L d)) : d ∣ a := by
   have hinj : Function.Injective (algebraMap A L) := FaithfulSMul.algebraMap_injective A L
+  have : IsDomain A := hinj.isDomain (algebraMap A L)
   let f : FractionRing A →ₐ[A] L := IsFractionRing.liftAlgHom (g := Algebra.ofId A L) hinj
   have hf : Function.Injective f := (f : FractionRing A →+* L).injective
   have hdF : algebraMap A (FractionRing A) d ≠ 0 := fun h' =>
@@ -102,5 +162,23 @@ theorem isIntegral_rat_of_isIntegral_natCast_mul {F : Type*} [Field F] [CharZero
     {b : ℕ} (hb : b ≠ 0) (hbx : IsIntegral ℤ ((b : F) * x)) : IsIntegral ℚ x := by
   have h := (isIntegral_algebraMap (R := ℚ) (x := ((b : ℚ)⁻¹))).mul (hbx.tower_top (A := ℚ))
   rwa [map_inv₀, map_natCast, ← mul_assoc, inv_mul_cancel₀ (by exact_mod_cast hb), one_mul] at h
+
+/-- If `(g ^ n + c) ^ m = z * (g ^ n) ^ k` with `0 < n`, `k < m`, and both `c` and `z`
+integral over `R`, then `g` is integral over `R`. The degree bound makes the relation monic
+in `g ^ n` over the integral closure, and integrality descends from this positive power. -/
+theorem isIntegral_of_pow_add_pow_eq_mul_pow {R A : Type*} [CommRing R] [CommRing A]
+    [Algebra R A] {z c g : A} (hz : IsIntegral R z) (hc : IsIntegral R c)
+    {n m k : ℕ} (hn : 0 < n) (hk : k < m)
+    (hg : (g ^ n + c) ^ m = z * (g ^ n) ^ k) : IsIntegral R g := by
+  let z' : integralClosure R A := ⟨z, hz⟩
+  let c' : integralClosure R A := ⟨c, hc⟩
+  have hpow : IsIntegral (integralClosure R A) (g ^ n) := by
+    refine ⟨(Polynomial.X + Polynomial.C c') ^ m -
+      Polynomial.C z' * Polynomial.X ^ k, ?_, ?_⟩
+    · monicity!; simp [hk.le, hk.not_ge]
+    · simpa only [Polynomial.eval₂_sub, Polynomial.eval₂_pow, Polynomial.eval₂_add,
+        Polynomial.eval₂_mul, Polynomial.eval₂_C, Polynomial.eval₂_X,
+        Subalgebra.algebraMap_apply] using sub_eq_zero.mpr hg
+  exact isIntegral_trans g (hpow.of_pow hn)
 
 end TauCeti

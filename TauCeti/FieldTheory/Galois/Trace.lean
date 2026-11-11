@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.IsGaloisGroup.Defs
 public import Mathlib.RingTheory.Trace.Basic
+import Mathlib.FieldTheory.Galois.IsGaloisGroup
 import Mathlib.FieldTheory.Normal.Basic
 import Mathlib.LinearAlgebra.LinearIndependent.Basic
 import TauCeti.GroupTheory.Coset.Fiber
@@ -14,10 +16,13 @@ import TauCeti.GroupTheory.Coset.Fiber
 # Sums of Galois automorphisms and the trace
 
 Mathlib's `trace_eq_sum_automorphisms` writes the trace of a finite Galois extension as the sum of
-its automorphisms. This file records two consequences for a tower `K ⊆ L ⊆ M`.
+its automorphisms. This file states it for an abstract finite Galois group and records two
+consequences for a tower `K ⊆ L ⊆ M`.
 
 ## Main results
 
+* `IsGaloisGroup.algebraMap_trace_eq_sum`: for a finite Galois group `G` of `L/K`, the trace of
+  `x` is the sum of the `g • x` over `g : G`.
 * `MonoidHom.sum_fiber_apply_eq_algebraMap_trace`: for `f : Gal(M/K) → Gal(L/K)` compatible with the
   inclusion `L ⊆ M`, the automorphisms in the fibre of `f` over `σ` sum to `σ ∘ Tr_{M/L}`, because
   that fibre is a coset of `Gal(M/L)`.
@@ -29,6 +34,22 @@ its automorphisms. This file records two consequences for a tower `K ⊆ L ⊆ M
 public section
 
 open Module
+
+namespace IsGaloisGroup
+
+variable (G K : Type*) {L : Type*} [Group G] [Field K] [Field L] [Algebra K L]
+  [MulSemiringAction G L] [IsGaloisGroup G K L] [Fintype G]
+
+/-- For a finite Galois group `G` of `L/K`, the trace of `x` is the sum of the `g • x` over
+`g : G`. This is `trace_eq_sum_automorphisms` for an abstract Galois group. -/
+theorem algebraMap_trace_eq_sum (x : L) :
+    algebraMap K L (Algebra.trace K L x) = ∑ g : G, g • x := by
+  have := finiteDimensional G K L
+  have := isGalois G K L
+  rw [trace_eq_sum_automorphisms]
+  exact (Fintype.sum_equiv (mulEquivAlgEquiv G K L).toEquiv _ _ fun _ ↦ by simp).symm
+
+end IsGaloisGroup
 
 namespace MonoidHom
 

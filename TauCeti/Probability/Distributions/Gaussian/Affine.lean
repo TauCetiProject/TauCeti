@@ -11,14 +11,21 @@ import Mathlib.Probability.Distributions.Gaussian.CharFun
 import Mathlib.Probability.Distributions.Gaussian.Fernique
 
 /-!
-# Affine images of multivariate Gaussian measures
+# Affine images of Gaussian measures
 
-This file proves that a multivariate Gaussian measure is carried by a rectangular affine map to
+An affine map on the real line transforms a Gaussian's mean and variance by `m ↦ a + b * m`
+and `v ↦ b ^ 2 * v`, including zero slopes and zero variances.
+
+This file also proves that a multivariate Gaussian measure is carried by a rectangular affine map to
 the multivariate Gaussian with the transformed mean and covariance.  Rectangular matrices are
 allowed, so the result applies both to embeddings and to possibly singular projections.
 
 ## Main results
 
+* `TauCeti.Probability.gaussianReal_map_const_add_const_mul`: the affine pushforward formula for
+  a real Gaussian measure.
+* `TauCeti.Probability.gaussianReal_map_linear_combination`: orthogonal combinations of two
+  independent standard Gaussians remain standard Gaussian.
 * `TauCeti.Probability.map_affine_multivariateGaussian`: the affine pushforward formula for a
   multivariate
   Gaussian measure.
@@ -41,9 +48,38 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory
-open scoped MatrixOrder RealInnerProductSpace
+open scoped MatrixOrder RealInnerProductSpace NNReal
 
 namespace TauCeti.Probability
+
+/-- An orthogonal combination of two independent standard Gaussians is standard Gaussian. -/
+theorem gaussianReal_map_linear_combination (a b : ℝ) (hab : a ^ 2 + b ^ 2 = 1) :
+    ((gaussianReal 0 1).prod (gaussianReal 0 1)).map
+      (fun p : ℝ × ℝ ↦ a * p.1 + b * p.2) = gaussianReal 0 1 := by
+  have hmap : ((gaussianReal 0 1).prod (gaussianReal 0 1)).map
+      (fun p : ℝ × ℝ ↦ a * p.1 + b * p.2) =
+      ((gaussianReal 0 1).map (fun x ↦ a * x)) ∗
+        ((gaussianReal 0 1).map (fun y ↦ b * y)) := by
+    rw [Measure.conv, Measure.map_prod_map _ _ (by fun_prop) (by fun_prop),
+      Measure.map_map (by fun_prop) (by fun_prop)]
+    rfl
+  rw [hmap, gaussianReal_map_const_mul, gaussianReal_map_const_mul]
+  simp only [mul_zero, mul_one, gaussianReal_conv_gaussianReal, zero_add]
+  congr 1
+  apply NNReal.coe_injective
+  simpa using hab
+
+/-- The affine image of a real Gaussian has mean `a + b * m` and variance `b ^ 2 * v`.
+This includes zero slopes and zero variances. -/
+@[simp]
+theorem gaussianReal_map_const_add_const_mul (m : ℝ) (v : ℝ≥0) (a b : ℝ) :
+    (gaussianReal m v).map (fun x ↦ a + b * x) =
+      gaussianReal (a + b * m) (NNReal.mk (b ^ 2) (sq_nonneg b) * v) := by
+  calc
+    _ = ((gaussianReal m v).map (fun x ↦ b * x)).map (fun x ↦ a + x) :=
+      (Measure.map_map (by fun_prop) (by fun_prop)).symm
+    _ = _ := by
+      rw [gaussianReal_map_const_mul, gaussianReal_map_const_add, add_comm (b * m) a]
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
 

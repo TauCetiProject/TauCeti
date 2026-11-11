@@ -73,6 +73,8 @@ isomorphism classes, so that it does not depend on the skeleton used to build it
   `TauCeti.SplitK0.map₂_of_of`: a bifunctor sends `([X], [Y])` to `[F(X, Y)]`.
 * `TauCeti.SplitK0.grothendieckAddGroupEquiv`: split `K₀` is the group completion of the additive
   monoid of isomorphism classes of objects.
+* `TauCeti.SplitK0.of_eq_of_iff`: two objects have the same class exactly when `X ⊞ T ≅ Y ⊞ T`
+  for some object `T`.
 
 ## References
 
@@ -612,6 +614,22 @@ lemma grothendieckAddGroupEquiv_symm_of (X : C) :
     (grothendieckAddGroupEquiv C).symm (of X) =
       Algebra.GrothendieckAddGroup.of (objectCode X) :=
   (grothendieckAddGroupEquiv C).symm_apply_eq.2 (grothendieckAddGroupEquiv_of_objectCode X).symm
+
+/-- Two objects have the same class in split `K₀` exactly when they become isomorphic after adding
+a common object: `[X] = [Y]` if and only if `X ⊞ T ≅ Y ⊞ T` for some `T`. This is equality in the
+group completion of the monoid of isomorphism classes. -/
+theorem of_eq_of_iff {X Y : C} :
+    (of X : SplitK0 C) = of Y ↔ ∃ T : C, Nonempty (X ⊞ T ≅ Y ⊞ T) := by
+  rw [← (grothendieckAddGroupEquiv C).symm.injective.eq_iff, grothendieckAddGroupEquiv_symm_of,
+    grothendieckAddGroupEquiv_symm_of]
+  refine (AddLocalization.addMonoidOf ⊤).eq_iff_exists.trans ⟨fun ⟨⟨c, _⟩, h⟩ => ?_,
+    fun ⟨T, h⟩ => ⟨⟨objectCode T, trivial⟩, ?_⟩⟩
+  · obtain ⟨T, rfl⟩ := objectCode_surjective c
+    rw [add_comm, add_comm _ (objectCode Y), ← objectCode_biprod, ← objectCode_biprod,
+      objectCode_eq_objectCode_iff] at h
+    exact ⟨T, h⟩
+  · have h := objectCode_eq_objectCode_iff.2 h
+    rwa [objectCode_biprod, objectCode_biprod, add_comm, add_comm (objectCode Y)] at h
 
 end SplitK0
 

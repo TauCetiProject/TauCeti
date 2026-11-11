@@ -272,7 +272,7 @@ variable {h e f : L} {t : IsSl2Triple h e f}
 is trivial.** The weight string of such a vector stops at once, so all three generators of `L` kill
 it; its invariants are therefore a nonzero Lie submodule, hence everything. -/
 theorem lie_eq_zero_of_hasPrimitiveVectorWith_zero (htop : t.toLieSubalgebra K = ⊤)
-    [IsTorsionFree K M] [IsNoetherian K M] [LieModule.IsIrreducible K L M] {m : M}
+    [IsNoetherian K M] [LieModule.IsIrreducible K L M] {m : M}
     (P : t.HasPrimitiveVectorWith m (0 : K)) (x : L) (v : M) : ⁅x, v⁆ = 0 := by
   have hfm : ⁅f, m⁆ = 0 := by
     have := P.pow_toEnd_f_eq_zero_of_eq_nat (n := 0) (by simp)

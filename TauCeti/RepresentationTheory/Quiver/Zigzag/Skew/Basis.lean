@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Basic.Finite.Sum
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Basis
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Skew.Basic
 
@@ -129,7 +130,9 @@ private theorem pathScale_eq_one (s : IncidentChoice G) (x : Quiver.TotalPath (D
     (hx : ∀ d : G.Dart, x ≠ dartBacktrack G d) : pathScale k G c s x = 1 := by
   rw [pathScale, dite_eq_right (not_exists.mpr hx)]
 
-variable [Finite V]
+section Basis
+
+variable [hV : Finite V]
 
 /-- The value on a path of the rescaling below: the path scaled by its path scale. -/
 private noncomputable def pathCoord (s : IncidentChoice G)
@@ -501,6 +504,24 @@ noncomputable def skewZigzagBasis :
   Module.Basis.mk (linearIndependent_skewZigzagBasisFun k G c t)
     (span_range_skewZigzagBasisFun_eq_top k G c t).ge
 
+include hV in
+/-- A skew-zigzag relation quotient with an incident edge at every vertex is finite over the
+base ring. -/
+theorem moduleFinite_skewZigzagQuotient (hns : ∀ i : V, ∃ j, G.Adj i j) :
+    Module.Finite k (skewZigzagQuotient k G c) := by
+  let : Finite G.Dart :=
+    Finite.of_injective _ (SimpleGraph.Dart.toProd_injective (G := G))
+  exact Module.Finite.of_basis
+    (skewZigzagBasis k G c fun i => ⟨(hns i).choose, (hns i).choose_spec⟩)
+
+include hV in
+/-- A skew-zigzag relation quotient with an incident edge at every vertex is free over the
+base ring. -/
+theorem moduleFree_skewZigzagQuotient (hns : ∀ i : V, ∃ j, G.Adj i j) :
+    Module.Free k (skewZigzagQuotient k G c) :=
+  Module.Free.of_basis
+    (skewZigzagBasis k G c fun i => ⟨(hns i).choose, (hns i).choose_spec⟩)
+
 @[simp]
 theorem skewZigzagBasis_apply (b : ZigzagBasisIndex G) :
     skewZigzagBasis k G c t b = skewZigzagBasisFun k G c t b :=
@@ -669,6 +690,8 @@ theorem skewZigzagMk_vertexIdempotent_mul_mul_vertexIdempotent_eq_zero {i j : V}
     k G c (fun p => (Submodule.mem_bot k).mpr
       (skewZigzagMk_ofPath_eq_zero_of_not_adj k G c hij h p)) z
 
+end Basis
+
 /-! ### The dimension and the comparison with the ordinary quotient -/
 
 /-- **The dimension of a skew-zigzag relation quotient.** A finite simple graph with no isolated
@@ -691,6 +714,10 @@ theorem finrank_skewZigzagQuotient_of_preconnected [Nontrivial k] [Fintype V] [N
   finrank_skewZigzagQuotient k G c fun i =>
     SimpleGraph.exists_adj_iff_not_isIsolated.mpr (hconn.not_isIsolated i)
 
+section Equiv
+
+variable [Finite V] (t : ∀ i : V, {j : V // G.Adj i j})
+
 /-- **A skew-zigzag relation quotient is a linear twist of the ordinary one**: the linear
 isomorphism matching the two vertex, arrow and volume bases. This constructs an isomorphism of the
 underlying modules only; no algebra equivalence is constructed here. -/
@@ -704,5 +731,7 @@ theorem skewZigzagQuotientLinearEquiv_skewZigzagBasisFun (b : ZigzagBasisIndex G
       = zigzagBasisFun k G b := by
   rw [← skewZigzagBasis_apply, skewZigzagQuotientLinearEquiv, Module.Basis.equiv_apply,
     Equiv.refl_apply, zigzagBasis_apply]
+
+end Equiv
 
 end TauCeti

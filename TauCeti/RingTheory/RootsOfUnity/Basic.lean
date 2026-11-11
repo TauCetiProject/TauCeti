@@ -20,8 +20,8 @@ and counts the square roots of unity in a domain in which `2 ≠ 0`; in any doma
 homomorphism into a domain, and with it the nonemptiness of `primitiveRoots n R`. For a prime
 `p` it relates the triviality of the `p`th roots of unity to the absence of a primitive one. It
 also records that roots of unity, and hence the values of a character of a finite group, are
-integral over `ℤ`. It identifies the `n`-torsion of a unit group, written additively, with the
-`n`-th roots of unity.
+integral over `ℤ`. It identifies the `n`-torsion of a unit group, written additively, and the
+kernel of the `n`-th power map of a commutative group with the `n`-th roots of unity.
 Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th roots of unity.
 
 ## Main definitions
@@ -30,8 +30,12 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
 
 * `TauCeti.torsionByUnitsEquivRootsOfUnity`: the `n`-torsion of `Mˣ`, written additively, is
   `μₙ(M)`, written additively.
+* `TauCeti.powMonoidHomKerEquivRootsOfUnity`: in a commutative group, the kernel of the `n`-th
+  power map is `μₙ`.
 * `TauCeti.rootsOfUnityPowOfDvd`: for `n ∣ m`, the power map `η ↦ η ^ (m / n)` from `μₘ(M)` to
   `μₙ(M)`.
+  Its kernel consists of the `(m / n)`-th roots of unity
+  (`TauCeti.mem_ker_rootsOfUnityPowOfDvd_iff`).
 
 ## Main results
 
@@ -61,6 +65,10 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
   exactly when there is no primitive `p`th root of unity.
 * `TauCeti.finite_torsionBy_additive_units`: the `n`-torsion of `Mˣ`, written additively, is
   finite when the `n`-th roots of unity are, for instance in a domain for `n ≠ 0`.
+* `TauCeti.exists_rootsOfUnity_isPrimitiveRoot_of_dvd`: for `k ∣ m`, if `M` has enough `k`-th roots
+  of unity, then some `m`-th root of unity is a primitive `k`-th root of unity.
+* `TauCeti.natCard_powMonoidHom_ker`: with enough `n`-th roots of unity, the kernel of the `n`-th
+  power map has `n` elements.
 -/
 
 public section
@@ -86,6 +94,16 @@ integral over `ℤ`. -/
 theorem _root_.MonoidHom.isIntegral_coe_apply {G : Type*} [Group G] [Finite G] (χ : G →* Rˣ)
     (g : G) : IsIntegral ℤ ((χ g : Rˣ) : R) :=
   (((Units.coeHom R).comp χ).isOfFinOrder (isOfFinOrder_of_finite g)).isIntegral
+
+/-- Multiplying by an `n`-th root of unity cannot turn an element whose `n`-th power
+is not one into one. This supplies the nonzero denominators in root averaging. -/
+theorem mul_sub_one_ne_zero_of_pow_eq_one {n : ℕ} {ζ y : R}
+    (hζ : ζ ^ n = 1) (hy : y ^ n ≠ 1) :
+    ζ * y - 1 ≠ 0 := by
+  intro h
+  apply hy
+  have hpow := congrArg (fun z : R ↦ z ^ n) (sub_eq_zero.mp h)
+  simpa [mul_pow, hζ] using hpow
 
 /-- In a commutative ring without zero divisors, a root of unity that is congruent to `1` modulo an
 ideal not containing its order is equal to `1`. -/
@@ -273,6 +291,31 @@ instance finite_torsionBy_additive_units {M : Type*} [CommMonoid M] (n : ℕ)
     [Finite (rootsOfUnity n M)] : Finite (Submodule.torsionBy ℤ (Additive Mˣ) (n : ℤ)) :=
   .of_equiv _ ((torsionByUnitsEquivRootsOfUnity n).toEquiv.trans Additive.toMul).symm
 
+/-- In a commutative group, the kernel of the `n`-th power map is the group of `n`-th roots of
+unity, through `toUnits`. -/
+def powMonoidHomKerEquivRootsOfUnity {G : Type*} [CommGroup G] (n : ℕ) :
+    (powMonoidHom n : G →* G).ker ≃* rootsOfUnity n G :=
+  { toUnits.toEquiv.subtypeEquiv fun u ↦ by simp [mem_rootsOfUnity, ← map_pow] with
+    map_mul' _ _ := Subtype.ext (map_mul toUnits _ _) }
+
+@[simp]
+theorem coe_powMonoidHomKerEquivRootsOfUnity_apply {G : Type*} [CommGroup G] (n : ℕ)
+    (u : (powMonoidHom n : G →* G).ker) :
+    (powMonoidHomKerEquivRootsOfUnity n u : Gˣ) = toUnits (u : G) :=
+  (rfl)
+
+@[simp]
+theorem coe_powMonoidHomKerEquivRootsOfUnity_symm_apply {G : Type*} [CommGroup G] (n : ℕ)
+    (ζ : rootsOfUnity n G) : ((powMonoidHomKerEquivRootsOfUnity n).symm ζ : G) = (ζ : Gˣ) :=
+  (rfl)
+
+/-- In a commutative group with enough `n`-th roots of unity, the kernel of the `n`-th power map
+has `n` elements. -/
+theorem natCard_powMonoidHom_ker (G : Type*) [CommGroup G] (n : ℕ) [NeZero n]
+    [HasEnoughRootsOfUnity G n] : Nat.card (powMonoidHom n : G →* G).ker = n :=
+  (Nat.card_congr (powMonoidHomKerEquivRootsOfUnity n).toEquiv).trans
+    (HasEnoughRootsOfUnity.natCard_rootsOfUnity G n)
+
 /-- For `n ∣ m`, raising to the power `m / n` maps the `m`-th roots of unity to the `n`-th roots of
 unity. -/
 def rootsOfUnityPowOfDvd {M : Type*} [CommMonoid M] {n m : ℕ} (h : n ∣ m) :
@@ -287,6 +330,21 @@ def rootsOfUnityPowOfDvd {M : Type*} [CommMonoid M] {n m : ℕ} (h : n ∣ m) :
 theorem coe_rootsOfUnityPowOfDvd_apply {M : Type*} [CommMonoid M] {n m : ℕ} (h : n ∣ m)
     (η : rootsOfUnity m M) : (rootsOfUnityPowOfDvd h η : Mˣ) = (η : Mˣ) ^ (m / n) :=
   (rfl)
+
+/-- The kernel of the power map `rootsOfUnityPowOfDvd h` consists of the `m`-th roots of unity
+that are `(m / n)`-th roots of unity. -/
+theorem mem_ker_rootsOfUnityPowOfDvd_iff {M : Type*} [CommMonoid M] {n m : ℕ} (h : n ∣ m)
+    {η : rootsOfUnity m M} : η ∈ (rootsOfUnityPowOfDvd h).ker ↔ (η : Mˣ) ^ (m / n) = 1 := by
+  rw [MonoidHom.mem_ker, ← Subtype.coe_inj, coe_rootsOfUnityPowOfDvd_apply, OneMemClass.coe_one]
+
+/-- For `k ∣ m`, if `M` has enough `k`-th roots of unity (in particular a primitive one), then some
+`m`-th root of unity is a primitive `k`-th root of unity. -/
+theorem exists_rootsOfUnity_isPrimitiveRoot_of_dvd {M : Type*} [CommMonoid M] {k m : ℕ}
+    [NeZero k] (h : k ∣ m) [HasEnoughRootsOfUnity M k] :
+    ∃ η : rootsOfUnity m M, IsPrimitiveRoot (η : Mˣ) k := by
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot M k
+  exact ⟨⟨hζ.toRootsOfUnity, rootsOfUnity_le_of_dvd h hζ.toRootsOfUnity.2⟩,
+    IsPrimitiveRoot.coe_units_iff.mp (by simpa using hζ)⟩
 
 /-- The power transition at a nonzero order is the identity. -/
 @[simp]

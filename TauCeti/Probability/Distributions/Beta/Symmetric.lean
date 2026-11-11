@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Beta.Square
 import TauCeti.Probability.Distributions.Beta.Reflection
+import TauCeti.Probability.Distributions.Affine
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 import Mathlib.MeasureTheory.Integral.Pi
 
@@ -44,6 +45,27 @@ namespace TauCeti.Probability
 
 variable {a q r : ℝ}
 
+variable (a) in
+/-- A centered symmetric Beta variable of shape `a` has density
+`ENNReal.ofReal ((1 - z ^ 2) ^ (a - 1) / B(1 / 2, a))` on `(-1, 1)`, that is, the positive part of
+the real expression `(1 - z ^ 2) ^ (a - 1) / B(1 / 2, a)`. For `0 < a` that expression is
+nonnegative and is the probability density; for a negative shape it can be negative (for
+instance `B(1 / 2, a) < 0` at `a = -1 / 4`), and only its positive part enters. -/
+theorem betaMeasure_map_centered_eq_withDensity :
+    (betaMeasure a a).map (fun x ↦ -1 + 2 * x) =
+      volume.withDensity ((Set.Ioo (-1) 1).indicator fun z ↦
+        ENNReal.ofReal ((1 - z ^ 2) ^ (a - 1) / beta (1 / 2) a)) := by
+  rw [betaMeasure, map_affine_withDensity_volume _ (by norm_num : (2 : ℝ) ≠ 0)]
+  congr 1
+  funext z
+  rw [affineDensity_apply, betaPDF, sub_neg_eq_add]
+  by_cases hz : z ∈ Set.Ioo (-1) 1
+  · rw [Set.indicator_of_mem hz, ← ENNReal.ofReal_mul (by norm_num),
+      betaPDFReal_self_add_one_div_two a hz, abs_two, inv_mul_cancel_left₀ two_ne_zero]
+  · have hx : ¬ (0 < (z + 1) / 2 ∧ (z + 1) / 2 < 1) := fun h ↦
+      hz ⟨by linarith [h.1], by linarith [h.2]⟩
+    rw [Set.indicator_of_notMem hz, betaPDFReal, ite_eq_right hx, ENNReal.ofReal_zero, mul_zero]
+
 /-- The sharp integrability criterion for mixed absolute and residual powers of a centered
 symmetric Beta variable. Both endpoint equalities belong to the divergent side. -/
 @[simp]
@@ -55,7 +77,7 @@ theorem integrable_abs_rpow_mul_one_sub_sq_rpow_map_centered_betaMeasure_iff (ha
   have hmap : ((betaMeasure a a).map (fun x ↦ -1 + 2 * x)).map (fun z ↦ z ^ 2) =
       betaMeasure (1 / 2) a := by
     rw [Measure.map_map (by fun_prop) (by fun_prop)]
-    exact betaMeasure_map_centered_sq ha
+    exact betaMeasure_map_centered_sq a
   rw [← hmap,
     integrable_map_measure (by fun_prop) (by fun_prop)] at h
   simp only [Function.comp_def, rpow_div_two_eq_sqrt q (sq_nonneg _), sqrt_sq_eq_abs] at h
@@ -73,7 +95,7 @@ theorem integral_abs_rpow_mul_one_sub_sq_rpow_map_centered_betaMeasure (ha : 0 <
   have hmap : ((betaMeasure a a).map (fun x ↦ -1 + 2 * x)).map (fun z ↦ z ^ 2) =
       betaMeasure (1 / 2) a := by
     rw [Measure.map_map (by fun_prop) (by fun_prop)]
-    exact betaMeasure_map_centered_sq ha
+    exact betaMeasure_map_centered_sq a
   rw [← hmap,
     integral_map (by fun_prop) (by fun_prop)] at h
   simp only [rpow_div_two_eq_sqrt q (sq_nonneg _), sqrt_sq_eq_abs] at h
@@ -112,19 +134,7 @@ theorem integral_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure (ha : 0 < a) (
   · simpa only [rpow_natCast, hn.pow_abs] using
       integral_abs_rpow_mul_one_sub_sq_rpow_map_centered_betaMeasure ha
         (by have := Nat.cast_nonneg (α := ℝ) n; linarith : (-1 : ℝ) < (n : ℝ)) hr
-  · let ν := (betaMeasure a a).map (fun x ↦ -1 + 2 * x)
-    have hneg : ν.map (fun z ↦ -z) = ν := by
-      calc
-        _ = ((betaMeasure a a).map (fun x ↦ 1 - x)).map (fun x ↦ -1 + 2 * x) := by
-          rw [Measure.map_map (by fun_prop) (by fun_prop)]
-          rw [Measure.map_map (by fun_prop) (by fun_prop)]
-          congr 1
-          funext x
-          dsimp
-          ring
-        _ = _ := by rw [betaMeasure_map_one_sub]
-    let _ : ν.IsNegInvariant := ⟨hneg⟩
-    exact integral_eq_zero_of_odd fun z ↦ by
+  · exact integral_eq_zero_of_odd fun z ↦ by
       simp [(Nat.not_even_iff_odd.1 hn).neg_pow, neg_mul]
 
 /-- Products of weighted natural powers of independent centered symmetric Beta variables
@@ -153,5 +163,22 @@ theorem integral_prod_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure {ι : Typ
   rw [integral_fintype_prod_eq_prod (fun i (z : ℝ) ↦ z ^ n i * (1 - z ^ 2) ^ r i)]
   exact Finset.prod_congr rfl fun i _ ↦
     integral_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure (ha i) (hr i) (n i)
+
+/-- Centered symmetric Beta variables lie in the open unit cube almost surely. -/
+theorem ae_abs_lt_one_pi_centered_betaMeasure {ι : Type*} [Fintype ι]
+    {a : ι → ℝ} (ha : ∀ ij, 0 < a ij) :
+    ∀ᵐ z ∂(Measure.pi fun ij ↦
+      (betaMeasure (a ij) (a ij)).map (fun x ↦ -1 + 2 * x)), ∀ ij, |z ij| < 1 := by
+  have (ij : ι) : IsProbabilityMeasure (betaMeasure (a ij) (a ij)) :=
+    isProbabilityMeasureBeta (ha ij) (ha ij)
+  apply ae_all_iff.2
+  intro ij
+  apply (Measure.tendsto_eval_ae_ae (α := fun _ ↦ ℝ) (μ := fun ij ↦
+    (betaMeasure (a ij) (a ij)).map (fun x ↦ -1 + 2 * x)) (i := ij)).eventually
+      (p := fun x : ℝ ↦ |x| < 1)
+  apply (ae_map_iff (by fun_prop) (by measurability)).2
+  filter_upwards [ae_mem_Ioo_betaMeasure (a ij) (a ij)] with x hx
+  rw [abs_lt]
+  constructor <;> linarith [hx.1, hx.2]
 
 end TauCeti.Probability

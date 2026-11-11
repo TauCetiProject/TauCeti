@@ -19,9 +19,9 @@ a divisor into its effective positive and negative parts.
 The point set `X →₀ ℤ` already carries the coefficientwise partial order, the lattice
 operations `⊔`/`⊓`, and (because `ℤ` is an ordered group) the lattice-ordered-group positive and
 negative parts `D⁺` and `D⁻` from Mathlib. The contribution here is to connect that order with
-the divisor vocabulary already in place: effectivity is nonnegativity, `D ≤ E` is effectivity of
-`E - D`, the pointwise maximum and minimum of effective divisors are effective, and every
-divisor decomposes as `D = D⁺ - D⁻` with `D⁺`, `D⁻` effective of disjoint support. We read off
+the divisor vocabulary already in place: the coefficientwise reading of `D ≤ E`, and the
+decomposition of every divisor as `D = D⁺ - D⁻` with `D⁺`, `D⁻` effective (nonnegative) of
+disjoint support. We read off
 the consequences for the unweighted and weighted degree maps and compute the decomposition of
 the basic degree-zero divisors `[x] - [y]`.
 
@@ -57,27 +57,9 @@ lemma zsmul_ofPoint_lt_zero (x : X) {n : ℤ} (hn : n < 0) : n • ofPoint x < 0
   exact lt_of_le_of_ne (Finsupp.single_nonpos.mpr hn.le)
     (mt Finsupp.single_eq_zero.mp hn.ne)
 
-/-- Effectivity is exactly nonnegativity in the coefficientwise order. -/
-lemma isEffective_iff_zero_le {D : WeilDivisor X} : IsEffective D ↔ 0 ≤ D := by
-  rw [isEffective_iff, le_iff]
-  simp
-
-/-- The divisor of a single point is nonnegative. -/
-lemma zero_le_ofPoint (x : X) : 0 ≤ ofPoint x :=
-  isEffective_iff_zero_le.mp (isEffective_ofPoint x)
-
 /-- Adding a point to a divisor gives a larger divisor. -/
 lemma le_add_ofPoint (D : WeilDivisor X) (x : X) : D ≤ D + ofPoint x :=
-  le_add_of_nonneg_right (zero_le_ofPoint x)
-
-/-- Membership in the effective submonoid is nonnegativity in the coefficientwise order. -/
-lemma mem_effectiveSubmonoid_iff_zero_le {D : WeilDivisor X} :
-    D ∈ effectiveSubmonoid X ↔ 0 ≤ D := by
-  rw [mem_effectiveSubmonoid, isEffective_iff_zero_le]
-
-/-- `D ≤ E` exactly when the difference `E - D` is effective. -/
-lemma le_iff_isEffective_sub {D E : WeilDivisor X} : D ≤ E ↔ IsEffective (E - D) := by
-  rw [isEffective_iff_zero_le, sub_nonneg]
+  le_add_of_nonneg_right (ofPoint_nonneg x)
 
 /-! ### Lattice operations -/
 
@@ -92,29 +74,6 @@ lemma coeff_sup (D E : WeilDivisor X) (x : X) :
 lemma coeff_inf (D E : WeilDivisor X) (x : X) :
     coeff (D ⊓ E) x = coeff D x ⊓ coeff E x :=
   Finsupp.inf_apply D E x
-
-/-- The pointwise maximum of an effective divisor with any divisor is effective. -/
-lemma IsEffective.sup {D E : WeilDivisor X} (hD : IsEffective D) :
-    IsEffective (D ⊔ E) :=
-  isEffective_iff_zero_le.mpr
-    (le_sup_of_le_left (isEffective_iff_zero_le.mp hD))
-
-/-- The pointwise minimum of two effective divisors is effective. -/
-lemma IsEffective.inf {D E : WeilDivisor X} (hD : IsEffective D) (hE : IsEffective E) :
-    IsEffective (D ⊓ E) :=
-  isEffective_iff_zero_le.mpr
-    (le_inf (isEffective_iff_zero_le.mp hD) (isEffective_iff_zero_le.mp hE))
-
-/-- A pointwise minimum is effective exactly when both divisors are effective. -/
-@[simp]
-lemma isEffective_inf_iff {D E : WeilDivisor X} :
-    IsEffective (D ⊓ E) ↔ IsEffective D ∧ IsEffective E := by
-  rw [isEffective_iff_zero_le, isEffective_iff_zero_le, isEffective_iff_zero_le]
-  constructor
-  · intro h
-    exact ⟨le_trans h inf_le_left, le_trans h inf_le_right⟩
-  · rintro ⟨hD, hE⟩
-    exact le_inf hD hE
 
 /-- Removing the infimum from each of two Weil divisors leaves disjoint residual divisors. -/
 lemma sub_inf_inf_sub_inf_eq_zero (D E : WeilDivisor X) : ((D - D ⊓ E) ⊓ (E - D ⊓ E)) = 0 := by
@@ -132,16 +91,6 @@ lemma coeff_posPart (D : WeilDivisor X) (x : X) : coeff D⁺ x = coeff D x ⊔ 0
 lemma coeff_negPart (D : WeilDivisor X) (x : X) : coeff D⁻ x = -coeff D x ⊔ 0 := by
   rw [negPart_def, coeff_sup, coeff_neg, coeff_zero]
 
-/-- The positive part of a Weil divisor is effective. -/
-@[simp]
-lemma isEffective_posPart (D : WeilDivisor X) : IsEffective D⁺ :=
-  isEffective_iff_zero_le.mpr (posPart_nonneg D)
-
-/-- The negative part of a Weil divisor is effective. -/
-@[simp]
-lemma isEffective_negPart (D : WeilDivisor X) : IsEffective D⁻ :=
-  isEffective_iff_zero_le.mpr (negPart_nonneg D)
-
 /-- The positive and negative parts of a Weil divisor have disjoint supports: no point carries
 both a positive and a negative coefficient. -/
 lemma support_posPart_disjoint_negPart (D : WeilDivisor X) :
@@ -154,14 +103,6 @@ lemma support_posPart_disjoint_negPart (D : WeilDivisor X) :
   rcases le_total (coeff D⁺ x) (coeff D⁻ x) with h | h
   · exact hxp (by rwa [inf_eq_left.mpr h] at hinf)
   · exact hxn (by rwa [inf_eq_right.mpr h] at hinf)
-
-/-- A divisor is effective exactly when its negative part vanishes. -/
-lemma negPart_eq_zero_iff_isEffective {D : WeilDivisor X} : D⁻ = 0 ↔ IsEffective D := by
-  rw [negPart_eq_zero, isEffective_iff_zero_le]
-
-/-- A divisor is effective exactly when it equals its own positive part. -/
-lemma posPart_eq_self_iff_isEffective {D : WeilDivisor X} : D⁺ = D ↔ IsEffective D := by
-  rw [posPart_eq_self, isEffective_iff_zero_le]
 
 /-! ### Degree of the decomposition -/
 

@@ -77,13 +77,15 @@ theorem mem_iInf_centralAugmentationIdeal_pow_iff
   rw [map_centralAugmentationCenterIdeal] at h
   exact h
 
-/-- If the Hopf algebra is finite over its Noetherian center, the base ring is nontrivial,
-and the Hopf algebra has no zero divisors, the central augmentation ideal is separated by
-its powers. -/
+/-- If the Hopf algebra is finite over its Noetherian center and has no zero divisors, the
+central augmentation ideal is separated by its powers. -/
 theorem iInf_centralAugmentationIdeal_pow_eq_bot
-    [Nontrivial K] [IsNoetherianRing (Subalgebra.center K H)]
+    [IsNoetherianRing (Subalgebra.center K H)]
     [hFinite : Module.Finite (Subalgebra.center K H) H] [NoZeroDivisors H] :
     ⨅ n : ℕ, centralAugmentationIdeal K H ^ n = ⊥ := by
+  rcases subsingleton_or_nontrivial K with hK | hK
+  · have : Subsingleton H := Module.subsingleton K H
+    exact Subsingleton.elim _ _
   have h : ⨅ n : ℕ,
       Ideal.map (algebraMap (Subalgebra.center K H) H)
         (centralAugmentationCenterIdeal K H) ^ n = ⊥ := by

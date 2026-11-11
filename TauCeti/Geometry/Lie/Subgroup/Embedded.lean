@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Lie.Subgroup.Atlas
 public import TauCeti.Geometry.Lie.Subgroup.Immersion
+public import Mathlib.Geometry.Manifold.SmoothEmbedding
+import TauCeti.Geometry.Manifold.Immersion.Differential
 
 /-!
 # Embedded Lie subgroups and the closed-subgroup theorem
@@ -36,6 +38,9 @@ differential of the inclusion is not proved here.
 * `TauCeti.Lie.EmbeddedLieSubgroupData.injective_mfderiv_subtypeVal`: the immersion half of being
   an embedded submanifold, read off from the data.  The topological-embedding half is
   `Topology.IsEmbedding.subtypeVal`, since `K` carries the subspace topology.
+* `TauCeti.Lie.EmbeddedLieSubgroupData.isSmoothEmbedding_subtypeVal`: the smooth embedding of
+  a subgroup with a finite-dimensional boundaryless ambient model.
+* `TauCeti.Lie.EmbeddedLieSubgroupData.ofIsClosed`: selected data for a closed subgroup.
 * `TauCeti.Lie.IsEmbeddedLieSubgroup`: a subgroup admits such data, with
   `TauCeti.Lie.isEmbeddedLieSubgroup_iff` its characterization.
 * `TauCeti.Lie.EmbeddedLieSubgroupData.isEmbeddedLieSubgroup`: data for a model space in the
@@ -44,6 +49,8 @@ differential of the inclusion is not proved here.
   **the closed-subgroup theorem with its model space**, the data for a closed subgroup with model
   space its Lie algebra.
 * `TauCeti.Lie.isEmbeddedLieSubgroup_of_isClosed`: **the closed-subgroup (Cartan) theorem**.
+* `TauCeti.Lie.discreteTopology_iff_lieSubalgebraOfSubgroup_eq_bot`: a closed subgroup is discrete
+  exactly when its Lie algebra is trivial.
 
 ## References
 
@@ -62,6 +69,7 @@ open scoped ContDiff Manifold
 namespace TauCeti.Lie
 
 attribute [local instance] ContMDiffMul.boundarylessManifold
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 /-- **Embedded-Lie-subgroup data** for a subgroup `K` of a charted group `G`, with model vector
 space `E'`: a smooth structure on `K`, for its subspace topology and with the boundaryless model
@@ -100,6 +108,16 @@ theorem injective_mfderiv_subtypeVal (d : EmbeddedLieSubgroupData I K E') (k : K
   dsimp only
   let _ : ChartedSpace E' K := d.chartedSpace
   exact (d.isDiffImmersionAt_subtypeVal k).mfderiv_injective
+
+/-- The inclusion of an embedded Lie subgroup is a smooth embedding. -/
+theorem isSmoothEmbedding_subtypeVal [FiniteDimensional ℝ E] [LieGroup I ∞ G]
+    [I.Boundaryless] (d : EmbeddedLieSubgroupData I K E') :
+    let _ := d.chartedSpace
+    Manifold.IsSmoothEmbedding 𝓘(ℝ, E') I ∞ (fun k : K ↦ (k : G)) := by
+  let _ := d.chartedSpace
+  let _ := d.lieGroup
+  exact ⟨d.contMDiff_subtypeVal.isImmersion_of_injective_mfderiv (by simp)
+    d.injective_mfderiv_subtypeVal, Topology.IsEmbedding.subtypeVal⟩
 
 end EmbeddedLieSubgroupData
 
@@ -151,6 +169,14 @@ theorem nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed {K 
              Subgroup.isDiffImmersionAt_subtypeVal_chartedSpaceOfIsSliceChart K Φ hslice h1 hΦ
                hΦsymm (by simp) k }⟩
 
+/-- The embedded Lie-subgroup structure selected for a closed subgroup, with its Lie algebra
+as model space. -/
+def EmbeddedLieSubgroupData.ofIsClosed [T2Space G] {K : Subgroup G}
+    (hK : IsClosed (K : Set G)) :
+    EmbeddedLieSubgroupData I K (lieSubalgebraOfSubgroup (I := I) K).toSubmodule :=
+  Classical.choice
+    (nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed (I := I) hK)
+
 /-- **The closed-subgroup (Cartan) theorem.** A closed subgroup of a finite-dimensional real Lie
 group is an embedded Lie subgroup: it is a Lie group for its subspace topology, and its inclusion
 is smooth with everywhere split differential. -/
@@ -159,5 +185,26 @@ theorem isEmbeddedLieSubgroup_of_isClosed {K : Subgroup G} (hK : IsClosed (K : S
   let _ : T2Space G := I.t2Space_of_lieGroup ∞
   obtain ⟨d⟩ := nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed (I := I) hK
   exact d.isEmbeddedLieSubgroup
+
+/-- **A closed subgroup is discrete exactly when its Lie algebra is trivial.** If `K` is discrete,
+each one-parameter subgroup lying in `K` is constant, so its generator vanishes. Conversely, by the
+closed-subgroup theorem `K` is a manifold modelled on its Lie algebra, which is then the zero
+space, so the points of `K` are open. -/
+theorem discreteTopology_iff_lieSubalgebraOfSubgroup_eq_bot [T2Space G] {K : Subgroup G}
+    (hK : IsClosed (K : Set G)) :
+    DiscreteTopology K ↔ lieSubalgebraOfSubgroup (I := I) K = ⊥ := by
+  constructor
+  · intro _
+    exact lieSubalgebraOfSubgroup_eq_bot_of_isTotallyDisconnected
+      (totallyDisconnectedSpace_subtype_iff.mp inferInstance)
+  · intro hbot
+    obtain ⟨d⟩ := nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed (I := I) hK
+    let _ := d.chartedSpace
+    have : Subsingleton (lieSubalgebraOfSubgroup (I := I) K).toSubmodule := by
+      refine ⟨fun ⟨a, ha⟩ ⟨b, hb⟩ ↦ ?_⟩
+      rw [LieSubalgebra.mem_toSubmodule, hbot, LieSubalgebra.mem_bot] at ha hb
+      subst ha hb
+      rfl
+    exact ChartedSpace.discreteTopology (lieSubalgebraOfSubgroup (I := I) K).toSubmodule K
 
 end TauCeti.Lie

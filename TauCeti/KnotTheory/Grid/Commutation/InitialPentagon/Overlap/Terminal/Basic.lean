@@ -158,6 +158,83 @@ theorem isRecut_recutRightEqRight :
   D.toGridRectangleDecomposition.isRecut_recut hone hfirst hsecond
 
 include hcommon in
+/-- The first branch of the common-terminal-side exchange count: neither rectangle meets the two
+columns next to the replaced line and the new pentagon has the original pentagon's rows, so the
+new decomposition covers the original's squares with the two columns exchanged. -/
+private theorem coveredSquares_val_add_val_eq_of_mem_cIoo_left
+    (E : GridInitialPentagonRectangleDecomposition a s x z)
+    (hrep : D.toGridRectangleDecomposition.IsRepartition E.toGridRectangleDecomposition)
+    (hcol : D.first.left ∈ Grid.cIoo D.second.left D.first.right)
+    (hEleft : E.second.left = D.first.left) (hEright : E.second.right = D.first.right)
+    (hEfirst : E.first.right = D.first.left) (hEbottom : E.first.bottom = D.second.bottom) :
+    E.pentagon.coveredSquares.val +
+        (E.second.toGridRectangle.coveredSquares.map
+          ((Equiv.swap a (finRotate n a)).prodCongr (Equiv.refl (Fin n))).toEmbedding).val =
+      D.first.toGridRectangle.coveredSquares.val + D.pentagon.coveredSquares.val := by
+  have htop := D.second_top_eq hcommon
+  rw [D.second_left_eq] at hcol
+  have ha : a ∉ Grid.cIco D.first.left D.first.right := fun h => by
+    simpa using Grid.cIco_subset_of_mem_cIoo hcol h
+  have hb' : finRotate n a ∉ Grid.cIco D.first.left D.first.right := fun h =>
+    Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hcol)
+      (Grid.left_mem_cIco (Grid.ne_left_of_mem_cIoo hcol).symm) h
+  refine D.coveredSquares_val_add_val_eq_of_isRepartition E hrep (fun t => ?_) (fun t => ?_)
+  · have hEtop : E.first.top = x D.first.left := by rw [GridRectangleBetween.top_def, hEfirst]
+    simp only [GridRectangleBetween.mem_toGridRectangle_coveredSquares, hEleft, hEright, ha,
+      hb', false_and, hEtop, htop]
+    omega
+  · simp only [GridRectangleBetween.mem_toGridRectangle_coveredSquares, hEleft, hEright, ha,
+      hb', false_and, hEbottom]
+    omega
+
+include hcommon hone hfirst hsecond in
+/-- The second branch of the common-terminal-side exchange count: both rectangles cover column `a`
+over the same rows, only the original rectangle covers the column after the replaced line, and the
+new pentagon reaches through the rows of the original rectangle. -/
+private theorem coveredSquares_val_add_val_eq_of_mem_cIoo_right
+    (E : GridInitialPentagonRectangleDecomposition a s x z)
+    (hrep : D.toGridRectangleDecomposition.IsRepartition E.toGridRectangleDecomposition)
+    (hcol : D.second.left ∈ Grid.cIoo D.first.left D.first.right)
+    (hmiddle : E.middle = x.swapColumns D.second.left D.first.right)
+    (hEleft : E.second.left = D.first.left) (hEfirst : E.first.right = D.first.right)
+    (hEright : E.second.right = D.second.left) (hEbottom : E.first.bottom = D.second.bottom) :
+    E.pentagon.coveredSquares.val +
+        (E.second.toGridRectangle.coveredSquares.map
+          ((Equiv.swap a (finRotate n a)).prodCongr (Equiv.refl (Fin n))).toEmbedding).val =
+      D.first.toGridRectangle.coveredSquares.val + D.pentagon.coveredSquares.val := by
+  have hbottom := D.second_bottom_eq hcommon hone
+  have htop := D.second_top_eq hcommon
+  have hb : D.second.left = finRotate n a := D.second_left_eq
+  rw [hb] at hcol hmiddle hEright
+  have hunion := Grid.cIco_union_cIco_eq_cIco_of_mem_cIoo hcol
+  have hcb : D.first.left ≠ finRotate n a := (Grid.ne_left_of_mem_cIoo hcol).symm
+  have ha : a ∈ Grid.cIco D.first.left D.first.right :=
+    hunion ▸ Finset.mem_union_left _ (Grid.self_mem_cIco_finRotate hcb)
+  have hb' : finRotate n a ∈ Grid.cIco D.first.left D.first.right :=
+    hunion ▸ Finset.mem_union_right _ (Grid.left_mem_cIco (Grid.ne_right_of_mem_cIoo hcol))
+  have hmidc : E.middle D.first.left = x D.first.left := by
+    rw [hmiddle, GridState.swapColumns_apply, Equiv.swap_apply_of_ne_of_ne hcb
+      D.first.left_ne_right]
+  have hmidb : E.middle (finRotate n a) = x D.first.right := by
+    rw [hmiddle, GridState.swapColumns_apply, Equiv.swap_apply_left]
+  refine D.coveredSquares_val_add_val_eq_of_isRepartition E hrep (fun t => ?_) (fun t => ?_)
+  · have hrow := (D.toGridRectangleDecomposition.cyclicOrder_of_isEmpty_of_right_eq_right hcommon
+      (hb ▸ hcb) hfirst hsecond).2
+    dsimp only [toGridRectangleDecomposition] at hrow
+    have hturn := D.second_turn_mem
+    rw [hbottom, GridRectangleBetween.bottom_def, GridRectangleBetween.top_def] at hrow
+    rw [hbottom, htop] at hturn
+    have hEtop : E.first.top = x D.first.right := by rw [GridRectangleBetween.top_def, hEfirst]
+    simp only [GridRectangleBetween.mem_toGridRectangle_coveredSquares, hEleft, hEright,
+      Grid.right_notMem_cIco, ha, false_and, true_and, hEtop, htop]
+    rw [Grid.ite_mem_cIoo_eq_add_of_mem_cIoo hrow hturn t]
+    simp only [↓reduceIte]
+    omega
+  · simp only [GridRectangleBetween.mem_toGridRectangle_coveredSquares, hEleft, hEright,
+      Grid.self_mem_cIco_finRotate hcb, hb', true_and, hmidc, hmidb, hEbottom]
+    omega
+
+include hcommon in
 /-- The promoted decomposition covers the squares of the original one with the same
 multiplicities, the rectangle of the commuted diagram being read in the original diagram with the
 two columns next to the replaced line exchanged. -/
@@ -172,60 +249,14 @@ theorem coveredSquares_val_add_val_recutRightEqRight :
     D.toGridRectangleDecomposition.isRecutOfRightEqRight_recut hcommon hone hfirst hsecond
   have hrep : D.toGridRectangleDecomposition.IsRepartition E.toGridRectangleDecomposition :=
     (D.isRecut_recutRightEqRight hcommon hone hfirst hsecond).isRepartition
-  have hbottom := D.second_bottom_eq hcommon hone
   have hEbottom : E.first.bottom = D.second.bottom := by
-    rw [GridRectangleBetween.bottom_def, E.first_left_eq, hbottom]
-  have htop := D.second_top_eq hcommon
+    rw [GridRectangleBetween.bottom_def, E.first_left_eq, D.second_bottom_eq hcommon hone]
   have hEleft : E.second.left = D.first.left := hdata.recut_sides.2
-  have hb : D.second.left = finRotate n a := D.second_left_eq
-  rcases hdata.recut_branch with ⟨hcol, -, hright, hEright⟩ | ⟨hcol, hmiddle, hright, hEright⟩
-  -- In the first column order neither rectangle meets the two columns next to the replaced line,
-  -- and the new pentagon has the original pentagon's rows.
-  · rw [hb] at hcol
-    have ha : a ∉ Grid.cIco D.first.left D.first.right := fun h => by
-      simpa using Grid.cIco_subset_of_mem_cIoo hcol h
-    have hb' : finRotate n a ∉ Grid.cIco D.first.left D.first.right := fun h =>
-      Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hcol)
-        (Grid.left_mem_cIco (Grid.ne_left_of_mem_cIoo hcol).symm) h
-    refine D.coveredSquares_val_add_val_eq_of_isRepartition E hrep (fun t => ?_) (fun t => ?_)
-    · have hEtop : E.first.top = x D.first.left := by rw [GridRectangleBetween.top_def, hright]
-      simp only [GridRectangleBetween.mem_toGridRectangle_coveredSquares, hEleft, hEright, ha,
-        hb', false_and, hEtop, htop]
-      omega
-    · simp only [GridRectangleBetween.mem_toGridRectangle_coveredSquares, hEleft, hEright, ha,
-        hb', false_and, hEbottom]
-      omega
-  -- In the second column order both rectangles cover column `a` over the same rows, only the
-  -- original rectangle covers the column after the replaced line, and the new pentagon reaches
-  -- through the rows of the original rectangle.
-  · rw [hb] at hcol hmiddle hEright
-    have hunion := Grid.cIco_union_cIco_eq_cIco_of_mem_cIoo hcol
-    have hcb : D.first.left ≠ finRotate n a := (Grid.ne_left_of_mem_cIoo hcol).symm
-    have ha : a ∈ Grid.cIco D.first.left D.first.right :=
-      hunion ▸ Finset.mem_union_left _ (Grid.self_mem_cIco_finRotate hcb)
-    have hb' : finRotate n a ∈ Grid.cIco D.first.left D.first.right :=
-      hunion ▸ Finset.mem_union_right _ (Grid.left_mem_cIco (Grid.ne_right_of_mem_cIoo hcol))
-    have hmidc : E.middle D.first.left = x D.first.left := by
-      rw [hmiddle, GridState.swapColumns_apply, Equiv.swap_apply_of_ne_of_ne hcb
-        D.first.left_ne_right]
-    have hmidb : E.middle (finRotate n a) = x D.first.right := by
-      rw [hmiddle, GridState.swapColumns_apply, Equiv.swap_apply_left]
-    refine D.coveredSquares_val_add_val_eq_of_isRepartition E hrep (fun t => ?_) (fun t => ?_)
-    · have hrow := (D.toGridRectangleDecomposition.cyclicOrder_of_isEmpty_of_right_eq_right hcommon
-        (hb ▸ hcb) hfirst hsecond).2
-      dsimp only [toGridRectangleDecomposition] at hrow
-      have hturn := D.second_turn_mem
-      rw [hbottom, GridRectangleBetween.bottom_def, GridRectangleBetween.top_def] at hrow
-      rw [hbottom, htop] at hturn
-      have hEtop : E.first.top = x D.first.right := by rw [GridRectangleBetween.top_def, hright]
-      simp only [GridRectangleBetween.mem_toGridRectangle_coveredSquares, hEleft, hEright,
-        Grid.right_notMem_cIco, ha, false_and, true_and, hEtop, htop]
-      rw [Grid.ite_mem_cIoo_eq_add_of_mem_cIoo hrow hturn t]
-      simp only [↓reduceIte]
-      omega
-    · simp only [GridRectangleBetween.mem_toGridRectangle_coveredSquares, hEleft, hEright,
-        Grid.self_mem_cIco_finRotate hcb, hb', true_and, hmidc, hmidb, hEbottom]
-      omega
+  rcases hdata.recut_branch with ⟨hcol, -, hEfirst, hEright⟩ | ⟨hcol, hmiddle, hEfirst, hEright⟩
+  · exact D.coveredSquares_val_add_val_eq_of_mem_cIoo_left hcommon E hrep hcol hEleft hEright
+      hEfirst hEbottom
+  · exact D.coveredSquares_val_add_val_eq_of_mem_cIoo_right hcommon hone hfirst hsecond E hrep
+      hcol hmiddle hEleft hEfirst hEright hEbottom
 
 end GridRectangleInitialPentagonDecomposition
 
@@ -326,10 +357,9 @@ private theorem initialPentagonTerminalOverlapPartner_injective :
   rw [← h] at hE
   obtain ⟨-, honeD, hfD, hsD⟩ := G.initialPentagonTerminalOverlapSource_data C D.val D.property
   obtain ⟨-, honeE, hfE, hsE⟩ := G.initialPentagonTerminalOverlapSource_data C E.val E.property
-  have hbackD := hD.symm honeD hfD hsD
-  have hbackE := hE.symm honeE hfE hsE
+  have hbackD := hD.symm hfD hsD
+  have hbackE := hE.symm hfE hsE
   have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hbackD
-    (D.val.toGridRectangleDecomposition.target_ne_source_of_hasOneCommonSide honeD)
   apply Subtype.ext
   apply GridRectangleInitialPentagonDecomposition.toGridRectangleDecomposition_injective
   exact (GridRectangleDecomposition.existsUnique_isRecut _ hone

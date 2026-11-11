@@ -49,6 +49,12 @@ theorem coverMap_comp_coe :
     coverMap h ∘ ((↑) : ℝ → AddCircle p) = ((↑) : ℝ → AddCircle q) :=
   funext (coverMap_coe h)
 
+/-- Reduction between period quotients is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_coverMap : Continuous (coverMap h) := by
+  rw [(QuotientAddGroup.isQuotientMap_mk _).continuous_iff, coverMap_comp_coe]
+  exact AddCircle.continuous_mk' q
+
 /-- The covering map is surjective. -/
 theorem coverMap_surjective : Function.Surjective (coverMap h) := fun y ↦ by
   obtain ⟨t, rfl⟩ := QuotientAddGroup.mk_surjective y

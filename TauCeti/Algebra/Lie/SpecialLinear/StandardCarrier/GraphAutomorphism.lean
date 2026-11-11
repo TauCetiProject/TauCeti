@@ -102,7 +102,7 @@ private theorem typeAGraphAutomorphism_kostantRootSubgroupMatrix
       (rep_kostantForm_mem_lattice r) k
       (isNilpotent_rep_rootGenerator r k) (latticeBasis r) (rootSource r k)
       (rootTarget r k) (rootTarget_ne_rootSource r k)
-      (nilpotencyClass_rep_rootGenerator r k) (rep_rootGenerator_latticeBasis_apply r k) q
+      (rep_rootGenerator_latticeBasis_apply r k) q
   have hgraph :=
     TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_transvectionUnit_of_action
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
@@ -110,7 +110,6 @@ private theorem typeAGraphAutomorphism_kostantRootSubgroupMatrix
       (isNilpotent_rep_rootGenerator r (graphRootPerm r k)) (latticeBasis r)
       (rootSource r (graphRootPerm r k)) (rootTarget r (graphRootPerm r k))
       (rootTarget_ne_rootSource r (graphRootPerm r k))
-      (nilpotencyClass_rep_rootGenerator r (graphRootPerm r k))
       (rep_rootGenerator_latticeBasis_apply r (graphRootPerm r k)) q
   rw [hk, hgraph]
   cases k with

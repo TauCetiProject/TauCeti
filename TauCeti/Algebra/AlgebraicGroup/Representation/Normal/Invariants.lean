@@ -9,6 +9,8 @@ public import Mathlib.RepresentationTheory.Invariants
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Normal.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Normal.SubgroupWeights
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Basic
+public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
 
 /-!
 # Invariants of normal closed subgroups
@@ -53,6 +55,8 @@ argument.
   stability in the scalar-extension form used to detect subcomodules.
 * `TauCeti.HopfIdeal.IsNormal.weightSpaceOneSubcomodule`: the scheme-theoretic invariant
   representation, admitting nonreduced normal subgroups.
+* `TauCeti.HopfIdeal.IsNormal.mem_weightSpaceOneSubcomodule_iff_coact_corestrict`: such an
+  invariant vector is one fixed by the coaction of the quotient Hopf algebra.
 
 ## References
 
@@ -230,6 +234,28 @@ theorem IsNormal.endOfPoint_comp_mkₐ_tmul_of_mem_weightSpaceOneSubcomodule
     endOfPoint_comp_mkₐ_tmul_of_mem_weightSpace g b hv'
 
 end SchemeTheoretic
+
+section Quotient
+
+variable {k : Type u} [Field k] [IsAlgClosed k] {H : CommHopfAlgCat.{u} k}
+  [Algebra.FiniteType k H] [IsReduced H] {I : HopfIdeal k H}
+
+/-- A vector lies in the invariants of a normal Hopf ideal exactly when the coaction of the
+quotient Hopf algebra fixes it. -/
+theorem IsNormal.mem_weightSpaceOneSubcomodule_iff_coact_corestrict (hI : I.IsNormal)
+    (V : Type u) [AddCommGroup V] [Module k V] [Comodule k H V] (v : V) :
+    v ∈ hI.weightSpaceOneSubcomodule V ↔
+      @Comodule.coact k (CommHopfAlgCat.quotient H I) V _ _ _ _ _ _
+        (Comodule.Corestrict (CommHopfAlgCat.mkQuotient H I).hom.toCoalgHom) v =
+          v ⊗ₜ[k] (1 : CommHopfAlgCat.quotient H I) := by
+  rw [hI.mem_weightSpaceOneSubcomodule, Comodule.corestrict_coact_apply]
+  have hq : (CommHopfAlgCat.mkQuotient H I).hom.toCoalgHom.toLinearMap =
+      (Ideal.Quotient.mkₐ k I.toIdeal).toLinearMap := by
+    ext x
+    exact (BialgHom.toCoalgHom_apply _ x).trans (CommHopfAlgCat.mkQuotient_apply H I x)
+  rw [hq]
+
+end Quotient
 
 namespace IsNormal
 

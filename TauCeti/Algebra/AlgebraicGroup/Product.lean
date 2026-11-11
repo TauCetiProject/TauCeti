@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
 public import TauCeti.Algebra.Bialgebra.TensorProduct
-public import TauCeti.Algebra.TensorProduct.Maps
+public import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
 # Products of convolution monoids of algebra maps

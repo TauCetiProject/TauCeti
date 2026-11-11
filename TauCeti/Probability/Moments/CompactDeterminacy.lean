@@ -6,14 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Algebra.Group.Submonoid.Finsupp
-import TauCeti.MeasureTheory.Measure.FiniteMeasureExt
+import Mathlib.LinearAlgebra.Vandermonde
+import TauCeti.MeasureTheory.Measure.FiniteMeasure.Ext
 
 /-!
 # Multivariate moment determinacy on a compact set
 
 Two finite measures on a compact subset of `ι → ℝ` (`ι` finite) that agree on every mixed monomial
 `x ↦ ∏ i, x i ^ n i` are equal.
+
+When the common support is a finite set `Z` of an `RCLike` field, finitely many moments suffice:
+those of order less than `card Z`.
 
 This complements the univariate mechanism in `TauCeti/Probability/Moments/Determinacy.lean`, which
 determines a finite measure on `ℝ` from its polynomial moments under a finite-exponential-moment
@@ -34,6 +39,9 @@ i.i.d. laws on a compact box.
   measures supported on a common compact set.
 * `Measure.ext_of_forall_integral_pow_eq_of_support` — the univariate form on `ℝ`: two finite
   measures supported on a common compact set and with the same moments `∫ xⁿ` are equal.
+* `Measure.ext_of_forall_lt_card_integral_pow_eq_of_support` — on an `RCLike` field, two finite
+  measures carried by a common finite set `Z` agree as soon as their moments `∫ wᵏ` agree for
+  `k < card Z`, by the invertibility of the Vandermonde matrix of the points of `Z`.
 
 ## Scope
 
@@ -167,5 +175,44 @@ theorem Measure.ext_of_forall_integral_pow_eq_of_support {K : Set ℝ} (hK : IsC
     · rw [e.measurableEmbedding.integral_map, e.measurableEmbedding.integral_map]
       simpa [e] using hmom (n ())
   simpa using congrArg (Measure.map e.symm) key
+
+/-- Two finite measures on `𝕜` carried by a finite set `Z` agree as soon as their moments
+`∫ wᵏ` agree for `k < card Z`. -/
+theorem Measure.ext_of_forall_lt_card_integral_pow_eq_of_support {𝕜 : Type*} [RCLike 𝕜]
+    {μ ν : Measure 𝕜} [IsFiniteMeasure μ] [IsFiniteMeasure ν] (Z : Finset 𝕜) (hμ : μ (↑Z)ᶜ = 0)
+    (hν : ν (↑Z)ᶜ = 0) (h : ∀ k < Z.card, ∫ w, w ^ k ∂μ = ∫ w, w ^ k ∂ν) : μ = ν := by
+  classical
+  -- Integrals against a measure carried by `Z` are finite sums over `Z`.
+  have hsum (ρ : Measure 𝕜) [IsFiniteMeasure ρ] (hρ : ρ (↑Z)ᶜ = 0) (k : ℕ) :
+      ∫ w, w ^ k ∂ρ = ∑ z ∈ Z, (ρ.real {z} : 𝕜) * z ^ k := by
+    calc ∫ w, w ^ k ∂ρ = ∫ w in (Z : Set 𝕜), w ^ k ∂ρ := by
+          rw [Measure.restrict_eq_self_of_ae_mem (mem_ae_iff.2 hρ)]
+      _ = ∑ z ∈ Z, ρ.real {z} • z ^ k := setIntegral_finset Z
+          ((continuous_pow k).continuousOn.integrableOn_compact Z.finite_toSet.isCompact)
+      _ = _ := by simp [RCLike.real_smul_eq_coe_mul]
+  -- The point masses agree, by the invertibility of the Vandermonde matrix of the points of `Z`,
+  -- enumerated by `e`.
+  have hpt : ∀ z ∈ Z, μ.real {z} = ν.real {z} := by
+    let e : Fin Z.card ≃ Z := Z.equivFin.symm
+    have hv := Matrix.eq_zero_of_forall_pow_sum_mul_pow_eq_zero (f := fun j => (e j : 𝕜))
+      (v := fun j => (μ.real {(e j : 𝕜)} : 𝕜) - ν.real {(e j : 𝕜)})
+      (fun a b hab => e.injective (Subtype.ext hab)) fun i => by
+        have hi := h i i.2
+        rw [hsum μ hμ, hsum ν hν, ← sub_eq_zero, ← Finset.sum_sub_distrib,
+          ← Finset.sum_coe_sort Z, ← e.sum_comp] at hi
+        simpa [sub_mul] using hi
+    intro z hz
+    simpa [sub_eq_zero] using congrFun hv (e.symm ⟨z, hz⟩)
+  ext s hs
+  have hfin (ρ : Measure 𝕜) (hρ : ρ (↑Z)ᶜ = 0) :
+      ρ s = ρ ↑({z ∈ Z | z ∈ s} : Finset 𝕜) := by
+    have hres := Measure.restrict_eq_self_of_ae_mem (μ := ρ) (s := (Z : Set 𝕜)) (mem_ae_iff.2 hρ)
+    calc ρ s = ρ.restrict Z s := by rw [hres]
+      _ = ρ (s ∩ Z) := Measure.restrict_apply hs
+      _ = _ := congrArg ρ (by ext w; simp [and_comm])
+  rw [hfin μ hμ, hfin ν hν, ← sum_measure_singleton, ← sum_measure_singleton]
+  refine Finset.sum_congr rfl fun z hz => ?_
+  rw [← ENNReal.toReal_eq_toReal_iff' (measure_ne_top _ _) (measure_ne_top _ _)]
+  exact hpt z (Finset.mem_filter.1 hz).1
 
 end TauCeti

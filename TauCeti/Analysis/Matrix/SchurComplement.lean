@@ -37,7 +37,7 @@ variable {m n : Type*}
 /-- Regression through a possibly singular covariance block preserves the cross covariance.
 This is the block cancellation identity used by Gaussian regression. -/
 theorem PosSemidef.toBlocks₁₂_mul_covariancePseudoInverse_mul
-    [Finite m] [Fintype n] [DecidableEq n] {S : Matrix (m ⊕ n) (m ⊕ n) ℝ}
+    [Fintype n] [DecidableEq n] {S : Matrix (m ⊕ n) (m ⊕ n) ℝ}
     (hS : S.PosSemidef) :
     S.toBlocks₁₂ * S.toBlocks₂₂.covariancePseudoInverse * S.toBlocks₂₂ = S.toBlocks₁₂ := by
   apply Matrix.toEuclideanLin.injective
@@ -56,7 +56,7 @@ theorem PosSemidef.toBlocks₁₂_mul_covariancePseudoInverse_mul
 /-- The generalized Schur complement of the observed block of a covariance matrix is
 positive semidefinite, with no nonsingularity assumption on that block. -/
 theorem PosSemidef.schur_complement₂₂_covariancePseudoInverse
-    [Finite m] [Fintype n] [DecidableEq n]
+    [Fintype n] [DecidableEq n]
     {A : Matrix m m ℝ} {B : Matrix m n ℝ} {D : Matrix n n ℝ}
     (h : (fromBlocks A B Bᴴ D).PosSemidef) :
     (A - B * D.covariancePseudoInverse * Bᴴ).PosSemidef :=
@@ -66,7 +66,7 @@ theorem PosSemidef.schur_complement₂₂_covariancePseudoInverse
 /-- The generalized Schur complement of the first block of a covariance matrix is
 positive semidefinite, including singular and zero first blocks. -/
 theorem PosSemidef.schur_complement₁₁_covariancePseudoInverse
-    [Fintype m] [DecidableEq m] [Finite n]
+    [Fintype m] [DecidableEq m]
     {A : Matrix m m ℝ} {B : Matrix m n ℝ} {D : Matrix n n ℝ}
     (h : (fromBlocks A B Bᴴ D).PosSemidef) :
     (D - Bᴴ * A.covariancePseudoInverse * B).PosSemidef :=
