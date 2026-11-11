@@ -20,17 +20,17 @@ domain (`k ≥ 1`), becomes holomorphic near each point after multiplication by 
 nowhere-zero `Cᵏ` integrating factor depending on the point. On a preconnected domain,
 a nonzero solution has isolated zeros and factors near each point as a nonnegative
 integral power of the complex coordinate times a factor `Cᵏ` at the point and nonzero
-there. For a solution on the plane that is nonzero outside a compact set, the zero set
-is finite, by the general finiteness criterion for local power factorizations
+there. The exponent of such a factorization is unique, already among factors that are only
+continuous at the point (`TauCeti.eq_of_eventually_sub_pow_mul_eq` in
+`TauCeti.Analysis.Analytic.Order`). For a solution on the plane that is nonzero outside a compact
+set, the zero set is finite, by the general finiteness criterion for local power factorizations
 `TauCeti.finite_setOfPred_eq_zero_of_eventually_eq_pow_mul`. No curvature equation or
 analyticity of the coefficient is needed.
 
-there. The exponent of such a factorization is unique, already among factors that are only
-continuous at the point. For a solution on the plane that is nonzero outside a compact set,
-the zero set is finite. No curvature equation or analyticity of the coefficient is needed.
-
-The integrating factor comes from the Cauchy transform; the holomorphic zero
-factorization is Mathlib's `AnalyticAt.exists_eventuallyEq_pow_smul_ne_zero_iff`.
+Every solution `g` of `bar∂ g = a` is an integrating factor: `exp (-g) f` is holomorphic
+(`TauCeti.differentiableAt_exp_neg_mul_of_conjWirtingerDeriv_apply_one_eq_mul`). Locally such a
+`g` comes from the Cauchy transform; the holomorphic zero factorization is Mathlib's
+`AnalyticAt.exists_eventuallyEq_pow_smul_ne_zero_iff`.
 
 ## References
 
@@ -47,6 +47,21 @@ namespace TauCeti
 
 variable {k : ℕ∞} {U : Set ℂ}
 
+/-- **The integrating factor of a scalar Cauchy–Riemann equation.** If `bar∂ f = a f` and
+`bar∂ g = a` at a point `w`, then `exp (-g) f` is complex differentiable at `w`. -/
+theorem differentiableAt_exp_neg_mul_of_conjWirtingerDeriv_apply_one_eq_mul {a f g : ℂ → ℂ}
+    {w : ℂ} (hg : DifferentiableAt ℝ g w) (hf : DifferentiableAt ℝ f w)
+    (hgeq : conjWirtingerDeriv g w 1 = a w) (heq : conjWirtingerDeriv f w 1 = a w * f w) :
+    DifferentiableAt ℂ (fun w ↦ exp (-g w) * f w) w := by
+  refine (differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero
+    ((hg.neg.cexp).mul hf)).mpr ?_
+  have hG := congrArg (fun c : ℂ ↦ 2 * c) hgeq
+  have hF := congrArg (fun c : ℂ ↦ 2 * c) heq
+  simp only [conjWirtingerDeriv_apply, smul_eq_mul, mul_one] at hG hF ⊢
+  rw [hg.hasFDerivAt.neg.cexp.mul hf.hasFDerivAt |>.fderiv]
+  simp only [add_apply, smul_apply, smul_eq_mul, neg_apply]
+  linear_combination exp (-g w) / 2 * (hF - f w * hG)
+
 /-- A `Cᵏ` integrating factor makes a solution of `bar∂ f = a f` holomorphic locally. -/
 theorem exists_contDiff_analyticAt_exp_neg_mul_of_conjWirtingerDeriv_apply_one_eq_mul {a f : ℂ → ℂ}
     (hn : 1 ≤ k) (hU : IsOpen U) (ha : ContDiffOn ℝ k a U)
@@ -57,16 +72,9 @@ theorem exists_contDiff_analyticAt_exp_neg_mul_of_conjWirtingerDeriv_apply_one_e
   obtain ⟨g, hg, hgeq⟩ := exists_contDiff_conjWirtingerDeriv_apply_one_eventually_eq hn hU ha hz
   refine ⟨g, hg, Complex.analyticAt_iff_eventually_differentiableAt.mpr ?_⟩
   filter_upwards [hgeq, hU.mem_nhds hz] with w hw hwU
-  have hgd := hg.differentiable (by exact_mod_cast (ne_of_gt (lt_of_lt_of_le zero_lt_one hn))) w
-  have hfd := (hf w hwU).differentiableAt (hU.mem_nhds hwU)
-  refine (differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero
-    ((hgd.neg.cexp).mul hfd)).mpr ?_
-  have hG := congrArg (fun c : ℂ ↦ 2 * c) hw
-  have hF := congrArg (fun c : ℂ ↦ 2 * c) (heq w hwU)
-  simp only [conjWirtingerDeriv_apply, smul_eq_mul, mul_one] at hG hF ⊢
-  rw [hgd.hasFDerivAt.neg.cexp.mul hfd.hasFDerivAt |>.fderiv]
-  simp only [add_apply, smul_apply, smul_eq_mul, neg_apply]
-  linear_combination exp (-g w) / 2 * (hF - f w * hG)
+  exact differentiableAt_exp_neg_mul_of_conjWirtingerDeriv_apply_one_eq_mul
+    (hg.differentiable (by exact_mod_cast (ne_of_gt (lt_of_lt_of_le zero_lt_one hn))) w)
+    ((hf w hwU).differentiableAt (hU.mem_nhds hwU)) hw (heq w hwU)
 
 private theorem exists_contDiff_analyticAt_exp_neg_mul_not_eventually_eq_zero
     {a f : ℂ → ℂ}
@@ -156,27 +164,5 @@ theorem finite_setOfPred_eq_zero_of_conjWirtingerDeriv_apply_one_eq_mul {a f : �
         isPreconnected_univ ha.contDiffOn hf.differentiableOn (fun w _ ↦ heq w) hne (mem_univ z))
   exact finite_setOfPred_eq_zero_of_eventually_eq_pow_mul
     (fun z ↦ ⟨v z, (hvc z).continuousAt, hv0 z, hvf z⟩) htail
-
-/-- The exponent of a local factorization `(w - z) ^ m * v w`, with `v` continuous and nonzero at
-`z`, is unique. -/
-theorem eq_of_eventually_sub_pow_mul_eq {z : ℂ} {m n : ℕ} {u v : ℂ → ℂ}
-    (hu : ContinuousAt u z) (hu₀ : u z ≠ 0) (hv : ContinuousAt v z) (hv₀ : v z ≠ 0)
-    (h : ∀ᶠ w in 𝓝 z, (w - z) ^ m * u w = (w - z) ^ n * v w) : m = n := by
-  wlog hmn : m < n generalizing m n u v
-  · rcases (not_lt.mp hmn).eq_or_lt with h' | h'
-    · exact h'.symm
-    · exact (this hv hv₀ hu hu₀ (h.mono fun w hw ↦ hw.symm) h').symm
-  exfalso
-  -- Off `z`, cancelling `(w - z) ^ m` gives `u w = (w - z) ^ (n - m) * v w`, which tends to `0`.
-  have hlim : Tendsto (fun w ↦ (w - z) ^ (n - m) * v w) (𝓝[≠] z) (𝓝 (u z)) := by
-    refine (hu.tendsto.mono_left nhdsWithin_le_nhds).congr' ?_
-    filter_upwards [nhdsWithin_le_nhds h, self_mem_nhdsWithin] with w hw hwz
-    apply mul_left_cancel₀ (pow_ne_zero m (sub_ne_zero.mpr hwz))
-    rw [hw, ← mul_assoc, ← pow_add, Nat.add_sub_cancel' hmn.le]
-  have h0 : Tendsto (fun w ↦ (w - z) ^ (n - m) * v w) (𝓝[≠] z) (𝓝 0) := by
-    have hc : ContinuousAt (fun w ↦ (w - z) ^ (n - m) * v w) z :=
-      ((continuousAt_id.sub continuousAt_const).pow _).mul hv
-    simpa [zero_pow (Nat.sub_ne_zero_of_lt hmn)] using hc.tendsto.mono_left nhdsWithin_le_nhds
-  exact hu₀ (tendsto_nhds_unique hlim h0)
 
 end TauCeti

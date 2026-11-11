@@ -124,10 +124,9 @@ directions before taking products.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/HeegaardFloer/README.md`, Lane G.3, "The
-complexes and `∂² = 0`", where the annular cases in the juxtaposition proof use the fact that
-the two complementary cyclic intervals partition the non-endpoint columns or rows. The
-terminology follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
+The annular cases in the juxtaposition proof of `∂² = 0` for grid complexes use the fact that the
+two complementary cyclic intervals partition the non-endpoint columns or rows. The terminology
+follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 3.
 -/
 
 public section
