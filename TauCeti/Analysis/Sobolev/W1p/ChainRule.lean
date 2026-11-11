@@ -466,7 +466,6 @@ theorem W1p.integrable_norm_gradient_div_value_sq {u : W1p mu Omega 2} (hε : 0 
   · exact (((Lp.aestronglyMeasurable (W1p.gradient u)).aemeasurable.norm.div
       (Lp.aestronglyMeasurable (W1p.value u)).aemeasurable).pow_const 2).aestronglyMeasurable
   · filter_upwards [hu] with x hx
-    have hU : 0 < W1p.value u x := hε.trans_le hx
     rw [Real.norm_eq_abs, abs_of_nonneg (by positivity), div_pow, div_eq_inv_mul]
     gcongr
 
