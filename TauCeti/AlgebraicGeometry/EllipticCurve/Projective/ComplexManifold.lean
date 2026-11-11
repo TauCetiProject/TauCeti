@@ -156,8 +156,13 @@ private theorem extChartAt_eq (P : W.Point) :
   let := slicePointChartedSpace W
   let := modelChartedSpace
   funext Q
-  change modelEquiv.toContDiffDiffeomorph ω (chartAt _ P Q) = modelEquiv (chartAt _ P Q)
-  rw [ContinuousLinearEquiv.coe_toContDiffDiffeomorph]
+  -- A chart of `instChartedSpace` is a zero locus chart followed by the single chart
+  -- `modelEquiv` of `modelChartedSpace`.
+  rw [extChartAt_coe, extChartAt_coe, instChartedSpace, chartAt_comp, modelChartedSpace,
+    OpenPartialHomeomorph.singletonChartedSpace_chartAt_eq]
+  simp only [OpenPartialHomeomorph.coe_trans, Homeomorph.toOpenPartialHomeomorph_apply,
+    Diffeomorph.coe_toHomeomorph, ContinuousLinearEquiv.coe_toContDiffDiffeomorph,
+    modelWithCornersSelf_coe, Function.comp_apply, id_eq]
 
 /-- The identity of `W.Point`, from the atlas modelled on `ℂ` to the zero locus atlas modelled on
 `Fin (2 - 1) → ℂ`. -/
