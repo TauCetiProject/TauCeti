@@ -60,7 +60,7 @@ theorem exists_integral_norm_fourierInv_one_add_norm_sq_rpow_mul_le (s : ℝ) {a
   -- The symbol is a band-limited Schwartz function at the scale `t = (√b + 1) R`, with constant
   -- `A = K (√b + 1) ^ N R ^ s`.
   refine ⟨C₀ * (K * (√b + 1) ^ N), fun R χ hR hχ hsupp hB ↦ ?_⟩
-  have hKχ := hKχ R χ hR hχ hsupp hB
+  have hKχ := hKχ R χ hR (hχ.of_le (mod_cast le_top)) hsupp hB
   set g : E → ℝ := fun ξ ↦ (1 + ‖ξ‖ ^ 2) ^ (s / 2) * χ ξ
   have hg : ContDiff ℝ ∞ g :=
     ((contDiff_const.add (contDiff_norm_sq ℝ)).rpow_const_of_ne fun ξ ↦ by positivity).mul hχ

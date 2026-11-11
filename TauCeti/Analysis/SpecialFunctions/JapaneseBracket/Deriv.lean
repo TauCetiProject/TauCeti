@@ -57,8 +57,6 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
 
 public section
 
-open scoped ContDiff
-
 variable {E G : Type*} [NormedAddCommGroup E] [NormedAddCommGroup G] [NormedSpace ℝ G]
 
 namespace ContinuousLinearMap
@@ -125,13 +123,11 @@ theorem exists_norm_iteratedFDeriv_comp_left_le_one_add_norm_sq_rpow {F : Type*}
     (hgk : ∃ C, ∀ x, ‖iteratedFDeriv ℝ k g x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ ρ) :
     ∃ C, ∀ x, ‖iteratedFDeriv ℝ k (fun x ↦ L (g x)) x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ ρ := by
   obtain ⟨C, hC⟩ := hgk
-  refine ⟨‖L‖ * max C 0, fun x ↦ ?_⟩
+  refine ⟨‖L‖ * C, fun x ↦ ?_⟩
   calc ‖iteratedFDeriv ℝ k (fun x ↦ L (g x)) x‖ ≤ ‖L‖ * ‖iteratedFDeriv ℝ k g x‖ :=
         L.norm_iteratedFDeriv_comp_left hg.contDiffAt le_rfl
-    _ ≤ ‖L‖ * (max C 0 * (1 + ‖x‖ ^ 2) ^ ρ) :=
-        mul_le_mul_of_nonneg_left ((hC x).trans
-          (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity))) (norm_nonneg L)
-    _ = ‖L‖ * max C 0 * (1 + ‖x‖ ^ 2) ^ ρ := (mul_assoc _ _ _).symm
+    _ ≤ ‖L‖ * (C * (1 + ‖x‖ ^ 2) ^ ρ) := mul_le_mul_of_nonneg_left (hC x) (norm_nonneg L)
+    _ = ‖L‖ * C * (1 + ‖x‖ ^ 2) ^ ρ := (mul_assoc _ _ _).symm
 
 end ContinuousLinearMap
 
@@ -198,11 +194,12 @@ end NormedSpace
 
 variable [InnerProductSpace ℝ E]
 
-/-- The derivative of `(1 + ‖x‖ ^ 2) ^ r` is `(1 + ‖x‖ ^ 2) ^ (r - 1)` times `2r ⟪x, ·⟫`. -/
-theorem hasFDerivAt_one_add_norm_sq_rpow (r : ℝ) (x : E) :
-    HasFDerivAt (fun x : E ↦ (1 + ‖x‖ ^ 2) ^ r)
+/-- The derivative of `(1 + ‖x‖ ^ 2) ^ r` is `(1 + ‖x‖ ^ 2) ^ (r - 1)` times `2r ⟪x, ·⟫`, in the
+strict sense. -/
+theorem hasStrictFDerivAt_one_add_norm_sq_rpow (r : ℝ) (x : E) :
+    HasStrictFDerivAt (fun x : E ↦ (1 + ‖x‖ ^ 2) ^ r)
       ((1 + ‖x‖ ^ 2) ^ (r - 1) • ((2 * r) • innerSL ℝ x)) x := by
-  have h := ((hasStrictFDerivAt_norm_sq x).hasFDerivAt.const_add 1).rpow_const (p := r)
+  have h := ((hasStrictFDerivAt_norm_sq x).const_add 1).rpow_const (p := r)
     (Or.inl (by positivity))
   convert h using 1
   ext v
@@ -224,7 +221,7 @@ theorem exists_norm_iteratedFDeriv_one_add_norm_sq_rpow_le (r : ℝ) (k : ℕ) :
   · -- The derivative is a lower bracket power times a continuous linear map.
     have hderiv : fderiv ℝ (fun x : E ↦ (1 + ‖x‖ ^ 2) ^ r) =
         fun x ↦ (1 + ‖x‖ ^ 2) ^ (r - 1) • ((2 * r) • innerSL ℝ) x :=
-      funext fun x ↦ (hasFDerivAt_one_add_norm_sq_rpow r x).fderiv
+      funext fun x ↦ (hasStrictFDerivAt_one_add_norm_sq_rpow r x).hasFDerivAt.fderiv
     have hcont : ContDiff ℝ k (fun x : E ↦ (1 + ‖x‖ ^ 2) ^ (r - 1)) :=
       (contDiff_const.add (contDiff_norm_sq ℝ)).rpow_const_of_ne fun x ↦ by positivity
     obtain ⟨C, hC⟩ :=
@@ -252,12 +249,12 @@ theorem exists_norm_iteratedFDeriv_inner_mul_one_add_norm_sq_rpow_le (v : E) (r 
 
 /-- **Bessel-weighted dyadic cutoffs are symbols of order `s` at scale `R`.** Let `a > 0`, `b`,
 `N` and `B : ℕ → ℝ`. There is a constant `K ≥ 0` with the following property. Let `R > 0` and let
-`χ` be a smooth real function such that `a R ^ 2 ≤ 1 + ‖ξ‖ ^ 2 ≤ b R ^ 2` on the support of `χ` and
+`χ` be a `C^N` real function such that `a R ^ 2 ≤ 1 + ‖ξ‖ ^ 2 ≤ b R ^ 2` on the support of `χ` and
 `‖D^k χ‖ ≤ B k / R ^ k` for `k ≤ N`. Then `‖D^k ((1 + ‖·‖ ^ 2) ^ (s / 2) χ)‖ ≤ K R ^ s / R ^ k` for
 `k ≤ N`. -/
 theorem exists_norm_iteratedFDeriv_one_add_norm_sq_rpow_mul_le (s : ℝ) {a b : ℝ}
     (ha : 0 < a) (N : ℕ) (B : ℕ → ℝ) :
-    ∃ K, 0 ≤ K ∧ ∀ (R : ℝ) (χ : E → ℝ), 0 < R → ContDiff ℝ ∞ χ →
+    ∃ K, 0 ≤ K ∧ ∀ (R : ℝ) (χ : E → ℝ), 0 < R → ContDiff ℝ N χ →
       (∀ ξ ∈ tsupport χ, a * R ^ 2 ≤ 1 + ‖ξ‖ ^ 2 ∧ 1 + ‖ξ‖ ^ 2 ≤ b * R ^ 2) →
       (∀ k ≤ N, ∀ ξ, ‖iteratedFDeriv ℝ k χ ξ‖ ≤ B k / R ^ k) → ∀ k ≤ N, ∀ ξ,
         ‖iteratedFDeriv ℝ k (fun ξ ↦ (1 + ‖ξ‖ ^ 2) ^ (s / 2) * χ ξ) ξ‖ ≤ K * R ^ s / R ^ k := by
@@ -275,7 +272,7 @@ theorem exists_norm_iteratedFDeriv_one_add_norm_sq_rpow_mul_le (s : ℝ) {a b : 
   refine ⟨∑ k ∈ Finset.range (N + 1), S k, Finset.sum_nonneg fun k _ ↦ hS0 k,
     fun R χ hR hχ hsupp hB k hk ξ ↦ ?_⟩
   set w : E → ℝ := fun ξ ↦ (1 + ‖ξ‖ ^ 2) ^ (s / 2)
-  have hw : ContDiff ℝ ∞ w :=
+  have hw : ContDiff ℝ N w :=
     (contDiff_const.add (contDiff_norm_sq ℝ)).rpow_const_of_ne fun ξ ↦ by positivity
   -- By the Leibniz rule, each term `D^i w D^(k-i) χ` is `O(R ^ (s - i) R ^ (-(k - i)))`, which is
   -- `O(R ^ s / R ^ k)`; it vanishes off the support of `χ`.
@@ -307,7 +304,7 @@ theorem exists_norm_iteratedFDeriv_one_add_norm_sq_rpow_mul_le (s : ℝ) {a b : 
     · rw [image_eq_zero_of_notMem_tsupport (fun h ↦ hξ (tsupport_iteratedFDeriv_subset _ h)),
         norm_zero, mul_zero]
       positivity
-  refine (norm_iteratedFDeriv_mul_le hw hχ ξ (by exact_mod_cast le_top)).trans
+  refine (norm_iteratedFDeriv_mul_le hw hχ ξ (by exact_mod_cast hk)).trans
     ((Finset.sum_le_sum hterm).trans ?_)
   rw [← Finset.sum_mul, mul_div_assoc]
   gcongr
@@ -319,29 +316,21 @@ theorem exists_norm_iteratedFDeriv_one_add_norm_smul_sq_rpow_le {c : ℝ} (hc : 
     (k : ℕ) :
     ∃ C, ∀ x : E, ‖iteratedFDeriv ℝ k (fun x : E ↦ (1 + ‖c • x‖ ^ 2) ^ r) x‖ ≤
       C * (1 + ‖x‖ ^ 2) ^ (r - k / 2) := by
-  set g : E →L[ℝ] E := c • ContinuousLinearMap.id ℝ E
   set f : E → ℝ := fun x ↦ (1 + ‖x‖ ^ 2) ^ r
   have hf : ContDiff ℝ k f :=
     (contDiff_const.add (contDiff_norm_sq ℝ)).rpow_const_of_ne fun x ↦ by positivity
-  have hg (x : E) : g x = c • x := by simp [g]
   obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_one_add_norm_sq_rpow_le (E := E) r k
   obtain ⟨K, hK⟩ := exists_one_add_norm_smul_sq_rpow_le (E := E) hc (r - k / 2)
-  refine ⟨max C 0 * K * ‖g‖ ^ k, fun x ↦ ?_⟩
-  have hcomp : (fun x : E ↦ (1 + ‖c • x‖ ^ 2) ^ r) = f ∘ g := by
-    funext x
-    simp only [Function.comp_apply, f, hg]
-  rw [hcomp, g.iteratedFDeriv_comp_right hf x le_rfl]
-  calc ‖(iteratedFDeriv ℝ k f (g x)).compContinuousLinearMap fun _ ↦ g‖
-        ≤ ‖iteratedFDeriv ℝ k f (g x)‖ * ∏ _ : Fin k, ‖g‖ :=
-        ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _
-    _ = ‖iteratedFDeriv ℝ k f (g x)‖ * ‖g‖ ^ k := by simp
-    _ ≤ max C 0 * (1 + ‖c • x‖ ^ 2) ^ (r - k / 2) * ‖g‖ ^ k := by
+  refine ⟨|c| ^ k * max C 0 * K, fun x ↦ ?_⟩
+  -- The `k`-th derivative of `x ↦ f (c • x)` is `c ^ k` times that of `f` at `c • x`.
+  rw [iteratedFDeriv_comp_const_smul c hf, norm_smul, norm_pow, Real.norm_eq_abs]
+  calc |c| ^ k * ‖iteratedFDeriv ℝ k f (c • x)‖
+      ≤ |c| ^ k * (max C 0 * (1 + ‖c • x‖ ^ 2) ^ (r - k / 2)) := by
         gcongr
-        rw [← hg]
-        exact (hC (g x)).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity))
-    _ ≤ max C 0 * (K * (1 + ‖x‖ ^ 2) ^ (r - k / 2)) * ‖g‖ ^ k := by
+        exact (hC (c • x)).trans (by gcongr; exact le_max_left _ _)
+    _ ≤ |c| ^ k * (max C 0 * (K * (1 + ‖x‖ ^ 2) ^ (r - k / 2))) := by
         gcongr
         exact hK x
-    _ = max C 0 * K * ‖g‖ ^ k * (1 + ‖x‖ ^ 2) ^ (r - k / 2) := by ring
+    _ = |c| ^ k * max C 0 * K * (1 + ‖x‖ ^ 2) ^ (r - k / 2) := by ring
 
 end TauCeti
