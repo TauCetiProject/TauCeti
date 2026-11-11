@@ -98,14 +98,6 @@ section CommSemiring
 
 variable {R R' : Type*} [CommSemiring R] [CommSemiring R']
 
-/-- Pushing an ideal forward along a ring isomorphism and then back along its inverse is the
-identity. `Ideal.map` takes a `RingHom` class, and `Ideal.map_map` composes `RingHom`s, so the
-statement writes both isomorphisms through their explicit `RingHom` coercions. -/
-private theorem map_symm_map_of_ringEquiv (e : R ≃+* R') (I : Ideal R) :
-    Ideal.map (e.symm : R' →+* R) (Ideal.map (e : R →+* R') I) = I := by
-  have hcomp : (e.symm : R' →+* R).comp (e : R →+* R') = RingHom.id R := by ext x; simp
-  rw [Ideal.map_map, hcomp, Ideal.map_id]
-
 /-- Divisibility of ideals is unchanged by pushing forward along a ring isomorphism: `Ideal.map e`
 and `Ideal.map e.symm` are mutually inverse homomorphisms of the semirings of ideals. -/
 theorem map_dvd_map_iff_of_ringEquiv (e : R ≃+* R') (I J : Ideal R) :
@@ -115,7 +107,7 @@ theorem map_dvd_map_iff_of_ringEquiv (e : R ≃+* R') (I J : Ideal R) :
   change Ideal.map (e : R →+* R') I ∣ Ideal.map (e : R →+* R') J ↔ I ∣ J
   refine ⟨fun h ↦ ?_, fun h ↦ by
     simpa only [mapHom_apply] using map_dvd (mapHom (e : R →+* R')) h⟩
-  simpa only [mapHom_apply, map_symm_map_of_ringEquiv] using
+  simpa only [mapHom_apply, Ideal.map_of_equiv] using
     map_dvd (mapHom (e.symm : R' →+* R)) h
 
 /-- The prime-power divisibility `p ^ n ∣ I` is unchanged by pushing forward along a ring
@@ -171,9 +163,9 @@ theorem count_factors_map_of_ringEquiv (e : R ≃+* R') {p I : Ideal R} :
     have hp' : ¬ Prime (Ideal.map e p) := fun h ↦ hp <| by
       have := Ideal.map_prime_of_equiv e.symm h h.ne_zero
       -- `Ideal.map_prime_of_equiv` states `Ideal.map` through the isomorphism class coercion; read
-      -- it through `RingHom` coercions, as `map_symm_map_of_ringEquiv` is stated.
+      -- it through `RingHom` coercions, as `Ideal.map_of_equiv` is stated.
       change Prime (Ideal.map (e.symm : R' →+* R) (Ideal.map (e : R →+* R') p)) at this
-      rwa [map_symm_map_of_ringEquiv] at this
+      rwa [Ideal.map_of_equiv] at this
     rw [Associates.count_reducible (mt Associates.irreducible_mk.mp
         (mt (irreducible_iff_prime.mp) hp')),
       Associates.count_reducible (mt Associates.irreducible_mk.mp (mt irreducible_iff_prime.mp hp))]
