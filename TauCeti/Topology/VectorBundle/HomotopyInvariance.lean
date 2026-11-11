@@ -7,11 +7,12 @@ module
 
 public import Mathlib.Topology.Compactness.Paracompact
 public import Mathlib.Topology.Homotopy.Basic
+public import Mathlib.Topology.Homotopy.HomotopyGroup
 public import Mathlib.Topology.VectorBundle.Constructions
 import TauCeti.Topology.FiberBundle.Pullback
 import TauCeti.Topology.Homotopy.CylinderSubdivision
+public import TauCeti.Topology.VectorBundle.Pullback
 import TauCeti.Topology.VectorBundle.Hom
-import TauCeti.Topology.VectorBundle.Pullback
 
 /-!
 # Homotopy invariance of vector bundles over paracompact bases
@@ -27,6 +28,11 @@ homotopic maps out of `X` are isomorphic
 (`ContinuousMap.Homotopic.exists_continuousLinearEquiv_pullback`), so that isomorphism classes of
 pulled-back bundles depend only on the homotopy class of the map, as homotopy invariance of
 topological K-theory requires.
+
+In particular a family of maps from a cube to `Y`, all sending the boundary of the cube to a point
+`y`, contracts to the constant map at `y`, so its pullback of `E` is trivial with fibre `E y`
+(`TauCeti.exists_isPullbackTrivialization_of_boundary`); this applies to based spheres
+`γ : Ω^ N Y y` (`TauCeti.exists_isPullbackTrivialization_genLoop`).
 
 No finite cover, bounded rank or compactness of `X` is assumed. The proof transports fibres along
 the time direction in three steps.
@@ -404,5 +410,42 @@ theorem _root_.ContinuousMap.Homotopic.exists_continuousLinearEquiv_pullback {f�
     H.apply_zero H.apply_one
 
 end Homotopy
+
+section Boundary
+
+open scoped Topology.Homotopy
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
+  {Y : Type*} [TopologicalSpace Y] {y : Y}
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+  {E : Y → Type*} [∀ y, AddCommGroup (E y)] [∀ y, Module 𝕜 (E y)]
+  [∀ y, TopologicalSpace (E y)] [TopologicalSpace (TotalSpace F E)]
+  [FiberBundle F E] [VectorBundle 𝕜 F E]
+  [∀ y, IsTopologicalAddGroup (E y)] [∀ y, ContinuousSMul 𝕜 (E y)]
+
+/-- A family of maps `f (z, ·)` from the cube to `Y`, all sending the boundary of the cube to `y`,
+has a pullback trivialization with fibre `E y`: the family contracts to the constant map at `y`
+by shrinking the cube to its corner `0`. -/
+theorem exists_isPullbackTrivialization_of_boundary {Z : Type*} [TopologicalSpace Z] [R1Space Z]
+    [ParacompactSpace Z] {N : Type*} [Nonempty N] (f : C(Z × I^N, Y))
+    (hf : ∀ z, ∀ c ∈ Cube.boundary N, f (z, c) = y) :
+    ∃ Φ : ∀ p, E (f p) ≃L[𝕜] E y, IsPullbackTrivialization F f y Φ := by
+  obtain ⟨Φ, h₁, h₂⟩ :=
+    ContinuousMap.Homotopic.exists_continuousLinearEquiv_pullback (𝕜 := 𝕜) (F := F) (E := E)
+      (f₀ := f) (f₁ := ContinuousMap.const _ y)
+      ⟨{ toFun := fun q ↦ f (q.2.1, fun i ↦ σ q.1 * q.2.2 i)
+         map_zero_left := fun p ↦ by simp
+         map_one_left := fun p ↦ hf _ _ ⟨Classical.arbitrary N, Or.inl (by simp)⟩ }⟩
+  exact ⟨Φ, h₁, h₂⟩
+
+/-- The pullback of `E` to the cube along a based sphere `γ : Ω^ N Y y` has a pullback
+trivialization with fibre `E y`. -/
+theorem exists_isPullbackTrivialization_genLoop {N : Type*} [Nonempty N] (γ : Ω^ N Y y) :
+    ∃ Φ : ∀ c, E (γ c) ≃L[𝕜] E y, IsPullbackTrivialization F γ y Φ := by
+  obtain ⟨Φ, hΦ⟩ := exists_isPullbackTrivialization_of_boundary (𝕜 := 𝕜) (E := E) (F := F)
+    (Z := Unit) ((γ : C(I^N, Y)).comp .snd) fun _ c hc ↦ GenLoop.boundary γ c hc
+  exact ⟨fun c ↦ Φ ((), c), hΦ.comp (g := fun c : I^N ↦ ((), c)) (by fun_prop)⟩
+
+end Boundary
 
 end TauCeti

@@ -70,6 +70,8 @@ continuous part of the Maslov index of a path of Lagrangian frames.
 * `Circle.exists_lift`: every path in the circle has a continuous lift through `Circle.exp`.
 * `Circle.angleChange`: the angle swept by a path in the circle.
 * `Circle.angleChange_eq_sub`: it is `θ 1 - θ 0` for every continuous lift `θ`.
+* `Circle.angleChange_eq_sub_of_reparam`: a reparametrization `t ↦ Q (r t)` of a path `Q` with a
+  continuous lift `θ` sweeps the angle `θ (r 1) - θ (r 0)`.
 * `Circle.angleChange_eq_of_homotopy`, `Circle.angleChange_eq_of_homotopic`: it is invariant
   under homotopies along which the quotient of the endpoints is constant, in particular under
   those fixing the endpoints.
@@ -184,6 +186,13 @@ theorem angleChange_congr {x y x' y' : Circle} (γ : Path x y) (γ' : Path x' y'
   obtain ⟨θ, hθ⟩ := exists_lift γ
   rw [angleChange_eq_sub γ θ.continuous hθ,
     angleChange_eq_sub γ' θ.continuous fun t => (hθ t).trans (h t)]
+
+/-- A path `P` which is a reparametrization `t ↦ Q (r t)` of a path `Q` sweeps the angle
+`θ (r 1) - θ (r 0)`, for every continuous lift `θ` of `Q`. -/
+theorem angleChange_eq_sub_of_reparam {x y x' y' : Circle} (P : Path x y) (Q : Path x' y')
+    {θ : I → ℝ} (hθ : Continuous θ) (hθQ : ∀ s, exp (θ s) = Q s) {r : I → I} (hr : Continuous r)
+    (h : ∀ t, P t = Q (r t)) : angleChange P = θ (r 1) - θ (r 0) :=
+  angleChange_eq_sub P (hθ.comp hr) fun t => by simp [hθQ, h]
 
 /-- The exponential of the angle swept by a path from `x` to `y` is `y / x`. -/
 theorem exp_angleChange {x y : Circle} (γ : Path x y) : exp (angleChange γ) = y / x := by
