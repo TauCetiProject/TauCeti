@@ -115,12 +115,13 @@ omit [Algebra k A] [J.IsTwoSided] in
 private theorem exists_mem_smul_coe_eq_mul {z : A} (hz : z ∈ J ^ 2) :
     ∃ t ∈ J • (⊤ : Submodule A ↥(J • (⊤ : Submodule A (Ideal.span {g} : Ideal A)))),
       ((t : (Ideal.span {g} : Ideal A)) : A) = z * g := by
-  rw [Submodule.pow_succ, Submodule.pow_one] at hz
-  refine Submodule.mul_induction_on hz (fun r hr s hs ↦ ?_) fun z₁ z₂ ⟨t₁, ht₁, h₁⟩
-    ⟨t₂, ht₂, h₂⟩ ↦ ⟨t₁ + t₂, add_mem ht₁ ht₂, by simp [h₁, h₂, add_mul]⟩
-  have hsg : s • spanSingletonGenerator g ∈ J • (⊤ : Submodule A (Ideal.span {g} : Ideal A)) :=
-    Submodule.smul_mem_smul hs Submodule.mem_top
-  exact ⟨r • ⟨_, hsg⟩, Submodule.smul_mem_smul hr Submodule.mem_top, by simp [mul_assoc]⟩
+  have h : z • spanSingletonGenerator g ∈
+      J • J • (⊤ : Submodule A (Ideal.span {g} : Ideal A)) := by
+    rw [Submodule.pow_succ, Submodule.pow_one] at hz
+    rw [← Submodule.mul_smul]
+    exact Submodule.smul_mem_smul hz Submodule.mem_top
+  exact ⟨⟨_, Submodule.smul_le_right h⟩, (Submodule.mem_smul_top_iff _ _ _).mpr h,
+    by simp [coe_spanSingletonGenerator]⟩
 
 /-- **The corners of the first radical layer.** For idempotents `f` and `g` and a two-sided ideal
 `J`, the piece `f M` of the first radical layer `M = J(Ag) / J²(Ag)` of the left ideal `Ag` is

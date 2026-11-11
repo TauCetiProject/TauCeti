@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Projective.RadicalExt
 public import TauCeti.RingTheory.Idempotents.Projective
-public import TauCeti.RingTheory.Idempotents.SimpleTop
+public import TauCeti.RingTheory.Idempotents.Simple.Top
 import TauCeti.RingTheory.Idempotents.Jacobson
 import Mathlib.LinearAlgebra.Dual.Lemmas
 
@@ -18,8 +18,9 @@ Let `A` be an algebra over a field `k`, with Jacobson radical `J`, and let `e : 
 complete family of orthogonal idempotents whose classes span `A ⧸ J` over `k`. This is the
 situation of a basic algebra over an algebraically closed field
 (`TauCeti.IsBasic.exists_completeOrthogonalIdempotents`), and of a bound quiver algebra with its
-vertex idempotents: `A ⧸ J` is then one copy of `k` for each index. Write
-`Sᵢ = Aeᵢ / J(Aeᵢ)` for the top of the projective left ideal `Aeᵢ`. This file proves
+vertex idempotents. When moreover every `eᵢ` is nonzero, `A ⧸ J` is one copy of `k` for each
+index. Write `Sᵢ = Aeᵢ / J(Aeᵢ)` for the top of the projective left ideal `Aeᵢ`. This file
+proves that, whenever `eⱼ ≠ 0`,
 
 `Ext¹_A(Sᵢ, Sⱼ) ≃ Homₖ(eⱼ (J / J²) eᵢ, k)`,
 
@@ -35,7 +36,7 @@ The proof has three steps.
   `A`-linear map from `M` to a module on which `eⱼ` acts as the identity is the same as a
   `k`-linear map out of the piece `eⱼ M`
   (`CompleteOrthogonalIdempotents.linearMapEquivSMulTopLinearMap`). The top `Sⱼ` is such a
-  module, and it is the line spanned by the class of `eⱼ`
+  module, and for `eⱼ ≠ 0` it is the line spanned by the class of `eⱼ`
   (`CompleteOrthogonalIdempotents.equivQuotientSMulTop`).
 * For idempotents `f` and `g` and any two-sided ideal `J`, the piece `f M` of the first radical
   layer `M = J(Ag) / J²(Ag)` of `Ag` is the corner `f (J / J²) g`
@@ -43,7 +44,7 @@ The proof has three steps.
 * The extensions of `Sᵢ` are computed from the first radical layer of `Aeᵢ` by
   `Submodule.radicalLayerHomEquivExt`.
 
-The first two steps live in `TauCeti.RingTheory.Idempotents.SimpleTop` and
+The first two steps live in `TauCeti.RingTheory.Idempotents.Simple.Top` and
 `TauCeti.RingTheory.Idempotents.Corner.RadicalLayer`.
 
 ## Main definitions

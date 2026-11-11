@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Torsion.Basic
+public import TauCeti.Algebra.Module.Torsion.ScalarAction
 public import TauCeti.RingTheory.Idempotents.Corner.RadicalLayer
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
@@ -40,29 +40,6 @@ module killed by `J` is a module over `A ⧸ J`, a product of copies of `k`, and
 public section
 
 open scoped Pointwise
-
-namespace Module.IsTorsionBySet
-
-variable {k A N : Type*} [CommSemiring k] [Ring A] [Algebra k A] {J : Ideal A}
-  [AddCommGroup N] [Module A N] [Module k N] [IsScalarTower k A N]
-
-/-- On a vector fixed by `f` in a module killed by `J`, an element `a` acts as the scalar `c`
-with `a * f ≡ c • f` modulo `J`. -/
-theorem smul_eq_smul_of_smul_eq_self (hN : Module.IsTorsionBySet A N J) {f a : A} {c : k}
-    (hr : a * f - c • f ∈ J) {n : N} (hn : f • n = n) : a • n = c • n :=
-  calc a • n = a • f • n := by rw [hn]
-    _ = (a * f - c • f) • n + (c • f) • n := by rw [← add_smul, sub_add_cancel, mul_smul]
-    _ = c • n := by rw [@hN n ⟨_, hr⟩, zero_add, smul_assoc, hn]
-
-/-- In a module killed by `J`, `f * a` acts as the scalar `c • f` with `f * a ≡ c • f`
-modulo `J`. -/
-theorem smul_smul_eq_smul_smul (hN : Module.IsTorsionBySet A N J) {f a : A} {c : k}
-    (hl : f * a - c • f ∈ J) (x : N) : f • a • x = c • f • x :=
-  calc f • a • x = (f * a - c • f) • x + (c • f) • x := by
-        rw [← add_smul, sub_add_cancel, mul_smul]
-    _ = c • f • x := by rw [@hN x ⟨_, hl⟩, zero_add, smul_assoc]
-
-end Module.IsTorsionBySet
 
 namespace TauCeti
 
