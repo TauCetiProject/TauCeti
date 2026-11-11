@@ -55,22 +55,34 @@ open TauCeti
 
 /-- Removing the last block of an independent three-block concatenation
 preserves independence. -/
-theorem fin_append_left_append [Ring R] [AddCommMonoid V] [Module R V] {r : ℕ}
+theorem fin_append_left_append [Semiring R] [AddCommMonoid V] [Module R V] {r : ℕ}
     {x : Fin p → V} {y : Fin q → V} {z : Fin r → V}
     (h : LinearIndependent R (Fin.append x (Fin.append y z))) :
     LinearIndependent R (Fin.append x y) := by
-  obtain ⟨hx, hyz, hd⟩ := linearIndependent_fin_append.mp h
-  exact linearIndependent_fin_append.mpr ⟨hx, (linearIndependent_fin_append.mp hyz).1,
-    hd.mono_right (by rw [span_range_fin_append]; exact le_sup_left)⟩
+  have hinj : Function.Injective (Fin.append (Fin.castAdd (q + r))
+      (fun j : Fin q ↦ Fin.natAdd p (Fin.castAdd r j))) := by
+    intro a b hab
+    induction a using Fin.addCases <;> induction b using Fin.addCases <;>
+      simp [Fin.ext_iff] at hab ⊢ <;> omega
+  convert h.comp _ hinj using 1
+  refine funext (Fin.addCases (fun i ↦ ?_) fun j ↦ ?_)
+  · simp
+  · simp
 
 /-- Removing the middle block of an independent three-block concatenation
 preserves independence. -/
-theorem fin_append_right_append [Ring R] [AddCommMonoid V] [Module R V] {r : ℕ}
+theorem fin_append_right_append [Semiring R] [AddCommMonoid V] [Module R V] {r : ℕ}
     {x : Fin p → V} {y : Fin q → V} {z : Fin r → V}
     (h : LinearIndependent R (Fin.append x (Fin.append y z))) :
     LinearIndependent R (Fin.append x z) := by
-  obtain ⟨hx, hyz, hd⟩ := linearIndependent_fin_append.mp h
-  exact linearIndependent_fin_append.mpr ⟨hx, (linearIndependent_fin_append.mp hyz).2.1,
-    hd.mono_right (by rw [span_range_fin_append]; exact le_sup_right)⟩
+  have hinj : Function.Injective (Fin.append (Fin.castAdd (q + r))
+      (fun j : Fin r ↦ Fin.natAdd p (Fin.natAdd q j))) := by
+    intro a b hab
+    induction a using Fin.addCases <;> induction b using Fin.addCases <;>
+      simp [Fin.ext_iff] at hab ⊢ <;> omega
+  convert h.comp _ hinj using 1
+  refine funext (Fin.addCases (fun i ↦ ?_) fun j ↦ ?_)
+  · simp
+  · simp
 
 end LinearIndependent
