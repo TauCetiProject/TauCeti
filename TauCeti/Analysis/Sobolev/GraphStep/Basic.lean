@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.TestFunctionLp.Basic
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.MeasureTheory.Function.Holder
 
+import TauCeti.Analysis.Normed.Lp.ProdLp
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
@@ -399,8 +400,8 @@ theorem norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq
 theorem norm_le_norm_prev_add_norm_weakFDeriv
     (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (u : WeakDerivStep mu Omega p base) :
     ‖u‖ ≤ ‖prev base u‖ + ‖weakFDeriv base u‖ := by
-  have h := norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq base u
-  nlinarith [norm_nonneg u, norm_nonneg (prev base u), norm_nonneg (weakFDeriv base u)]
+  rw [← Submodule.norm_coe, prev_coe, weakFDeriv_coe]
+  exact WithLp.prod_norm_le_norm_fst_add_norm_snd u.1
 
 /-- The sum of the component norms is at most `√2` times the graph norm. -/
 theorem norm_prev_add_norm_weakFDeriv_le
