@@ -50,18 +50,12 @@ complex dimension of the manifold model. -/
 theorem spanFinrank_maximalIdeal_stalk (x : X) :
     (maximalIdeal ((holomorphicStructureSheaf I X).presheaf.stalk x)).spanFinrank =
       Module.finrank ℂ E := by
-  let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
-  -- Use a finite coordinate space in Type so this also covers models in higher universes.
-  let V := Fin (Module.finrank ℂ E) → ℂ
-  let e : E ≃L[ℂ] V := ContinuousLinearEquiv.ofFinrankEq (by simp [V])
-  let σ := RingEquiv.ofBijective _ (stalkPullback_comp_extChartAt_bijective (I := I) x e)
-  rw [← Ideal.spanFinrank_map_eq_of_ringEquiv σ.symm,
+  rw [← Ideal.spanFinrank_map_eq_of_ringEquiv (stalkRingEquivModelSpace (I := I) x),
     map_ringEquiv_maximalIdeal, spanFinrank_maximalIdeal_eq_finrank_cotangentSpace]
-  simpa only [Function.comp_apply, V, Module.finrank_pi, Module.finrank_self, mul_one,
-    Fintype.card_fin] using
-    (OpenPartialHomeomorph.refl V).finrank_cotangentSpace_holomorphicStalk
-      (e (extChartAt I x x)) (Set.mem_univ _)
-      (StructureGroupoid.id_mem_maximalAtlas (contDiffGroupoid ω 𝓘(ℂ, V)))
+  let V := Fin (Module.finrank ℂ E) → ℂ
+  exact ((OpenPartialHomeomorph.refl V).finrank_cotangentSpace_holomorphicStalk
+    _ (Set.mem_univ _)
+    (StructureGroupoid.id_mem_maximalAtlas (contDiffGroupoid ω 𝓘(ℂ, V)))).trans (by simp [V])
 
 /-- The holomorphic local ring at a point of a complex manifold has Krull dimension equal to
 its complex dimension, including dimension zero. -/
@@ -73,12 +67,7 @@ theorem ringKrullDim_stalk (x : X) :
   · simpa only [spanFinrank_maximalIdeal_stalk] using
       ringKrullDim_le_spanFinrank_maximalIdeal
         ((holomorphicStructureSheaf I X).presheaf.stalk x)
-  · let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
-    let V := Fin (Module.finrank ℂ E) → ℂ
-    let e : E ≃L[ℂ] V := ContinuousLinearEquiv.ofFinrankEq (by simp [V])
-    let σ := RingEquiv.ofBijective _ (stalkPullback_comp_extChartAt_bijective (I := I) x e)
-    rw [← σ.ringKrullDim]
-    simpa [V] using finrank_le_ringKrullDim_stalk_modelSpace (e (extChartAt I x x))
+  · exact finrank_le_ringKrullDim_stalk x
 
 /-- Holomorphic stalks on finite-dimensional complex manifolds without boundary are regular
 local rings. No global separation or countability hypothesis is required. -/

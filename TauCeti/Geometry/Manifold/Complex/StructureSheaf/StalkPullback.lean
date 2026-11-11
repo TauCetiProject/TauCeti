@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Germ
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.LocalRing
 public import TauCeti.Order.Filter.Germ
+import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Geometry.Manifold.Complex.Analytic
 
 /-!
 # Pullback of holomorphic stalks by local analytic maps
@@ -193,6 +195,19 @@ theorem stalkPullback_comp_extChartAt_bijective (x : X) (e : E ≃L[ℂ] V) :
   · filter_upwards [hmem] with z hz
     simp only [Function.comp_apply, (extChartAt I x).right_inv hz,
       ContinuousLinearEquiv.apply_symm_apply]
+
+omit [IsManifold I ω X] in
+/-- A holomorphic stalk on a finite-dimensional boundaryless complex manifold is ring-isomorphic
+to a stalk on the standard coordinate space. This comparison also covers higher-universe models. -/
+def stalkRingEquivModelSpace [FiniteDimensional ℂ E] [IsManifold I 1 X] (x : X) :
+    let e : E ≃L[ℂ] (Fin (Module.finrank ℂ E) → ℂ) :=
+      ContinuousLinearEquiv.ofFinrankEq (by simp)
+    (holomorphicStructureSheaf I X).presheaf.stalk x ≃+*
+      (holomorphicStructureSheaf 𝓘(ℂ, Fin (Module.finrank ℂ E) → ℂ) _).presheaf.stalk
+        (e (extChartAt I x x)) := by
+  let : IsManifold I ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
+  exact (RingEquiv.ofBijective _ (stalkPullback_comp_extChartAt_bijective x
+    (ContinuousLinearEquiv.ofFinrankEq (by simp)))).symm
 
 end TauCeti.holomorphicStructureSheaf
 
