@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.NovikovModule.Leibniz
 public import TauCeti.RingTheory.NovikovModule.Tensor
 public import TauCeti.Algebra.Homology.SquareZero.Graded
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Associativity homotopies of supported kernel products
@@ -55,6 +57,23 @@ The kernel identity itself, and the potential bounds of the kernels, which come 
 estimate, remain hypotheses here: they are the geometric input from the compactified moduli
 spaces.
 
+On finite unions of torsors with invariant kernels, products and maps are given by matrices of
+Novikov series relative to reference generators (`NovikovModule.novikovProductOfMatrix`,
+`NovikovModule.novikovMapOfMatrix`), and a four-index matrix `T` gives a Novikov-trilinear map
+`T(a, b, c)ₗ = ∑ᵢ ∑ⱼ ∑ₖ aᵢ bⱼ cₖ Tᵢⱼₖₗ` (`NovikovModule.novikovTrilinearOfMatrix`). Both nested
+products, and the composites of a trilinear map with maps of matrices, are trilinear maps of the
+corresponding matrix products. So the kernel homotopy becomes the identity
+
+`∑ₜ Qᵢⱼₜ Q'ₜₖₗ - ∑ᵤ Pⱼₖᵤ P'ᵢᵤₗ = ∑ₘ Tᵢⱼₖₘ D₀ₘₗ + ∑ₘ D₁ᵢₘ Tₘⱼₖₗ + (-1)^(d₁ (r₁ i)) ∑ₘ D₂ⱼₘ Tᵢₘₖₗ +
+  (-1)^(d₁ (r₁ i) + d₂ (r₂ j)) ∑ₘ D₃ₖₘ Tᵢⱼₘₗ`
+
+between finite sums of Novikov series, and it gives the chain homotopy between the products of
+the matrices (`NovikovModule.novikovProductOfMatrix_novikovProductOfMatrix_sub_eq_add`), provided
+degrees change by even amounts within each orbit, so that the signs only depend on the orbits.
+This is the form in which counts indexed by classes of a period group enter. If the entries of
+`T` are homogeneous of the right degrees, its trilinear map has the degree of a homotopy
+(`NovikovModule.novikovTrilinearOfMatrix_mem_gradeBy`).
+
 ## Main results
 
 * `NovikovModule.kernelProduct_kernelProduct_left`,
@@ -68,6 +87,12 @@ spaces.
   cocycles the two products differ by a coboundary.
 * `NovikovModule.cohomologyProduct_kernelProduct_assoc`: the induced products on cohomology are
   associative.
+* `NovikovModule.novikovTrilinearOfMatrix`: the Novikov-trilinear map of a four-index matrix.
+* `NovikovModule.novikovProductOfMatrix_novikovProductOfMatrix_left`,
+  `NovikovModule.novikovProductOfMatrix_novikovProductOfMatrix_right`: the two nested products of
+  matrices are trilinear maps of matrices.
+* `NovikovModule.novikovProductOfMatrix_novikovProductOfMatrix_sub_eq_add`: the homotopy identity
+  between matrices gives a chain homotopy between the two nested products of matrices.
 
 ## References
 
@@ -84,6 +109,8 @@ noncomputable section
 namespace TauCeti
 
 namespace NovikovModule
+
+section Kernel
 
 variable {R S₁ S₂ S₃ S₀ S₁₂ S₂₃ : Type*}
   {F₁ : S₁ → ℝ} {F₂ : S₂ → ℝ} {F₃ : S₃ → ℝ} {F₀ : S₀ → ℝ} {F₁₂ : S₁₂ → ℝ} {F₂₃ : S₂₃ → ℝ}
@@ -372,6 +399,332 @@ theorem cohomologyProduct_kernelProduct_assoc
 end Cohomology
 
 end CommRing
+
+end Kernel
+
+section Matrix
+
+variable {R H ι₁ ι₂ ι₃ ι₀ ι₁₂ ι₂₃ : Type*} [AddCommGroup H] {N : H →+ ℝ}
+  {P₁ : ι₁ → Type*} {P₂ : ι₂ → Type*} {P₃ : ι₃ → Type*} {P₀ : ι₀ → Type*}
+  {P₁₂ : ι₁₂ → Type*} {P₂₃ : ι₂₃ → Type*}
+  [∀ i, AddTorsor H (P₁ i)] [∀ j, AddTorsor H (P₂ j)] [∀ k, AddTorsor H (P₃ k)]
+  [∀ l, AddTorsor H (P₀ l)] [∀ t, AddTorsor H (P₁₂ t)] [∀ u, AddTorsor H (P₂₃ u)]
+  {F₁ : (Σ i, P₁ i) → ℝ} {F₂ : (Σ j, P₂ j) → ℝ} {F₃ : (Σ k, P₃ k) → ℝ} {F₀ : (Σ l, P₀ l) → ℝ}
+  {F₁₂ : (Σ t, P₁₂ t) → ℝ} {F₂₃ : (Σ u, P₂₃ u) → ℝ}
+  (hF₁ : ∀ i h (p : P₁ i), F₁ ⟨i, h +ᵥ p⟩ = F₁ ⟨i, p⟩ - N h)
+  (hF₂ : ∀ j h (p : P₂ j), F₂ ⟨j, h +ᵥ p⟩ = F₂ ⟨j, p⟩ - N h)
+  (hF₃ : ∀ k h (p : P₃ k), F₃ ⟨k, h +ᵥ p⟩ = F₃ ⟨k, p⟩ - N h)
+  (hF₀ : ∀ l h (p : P₀ l), F₀ ⟨l, h +ᵥ p⟩ = F₀ ⟨l, p⟩ - N h)
+  (hF₁₂ : ∀ t h (p : P₁₂ t), F₁₂ ⟨t, h +ᵥ p⟩ = F₁₂ ⟨t, p⟩ - N h)
+  (hF₂₃ : ∀ u h (p : P₂₃ u), F₂₃ ⟨u, h +ᵥ p⟩ = F₂₃ ⟨u, p⟩ - N h)
+  (r₁ : ∀ i, P₁ i) (r₂ : ∀ j, P₂ j) (r₃ : ∀ k, P₃ k) (r₀ : ∀ l, P₀ l)
+  (r₁₂ : ∀ t, P₁₂ t) (r₂₃ : ∀ u, P₂₃ u)
+
+section Trilinear
+
+variable [CommSemiring R] [Fintype ι₁] [Fintype ι₂] [Fintype ι₃] [Finite ι₀]
+  (T : ι₁ → ι₂ → ι₃ → ι₀ → NovikovSeries R H N)
+
+/-- **The Novikov-trilinear map of a four-index matrix of Novikov series.** For finitely many
+orbits and reference generators `r₁`, `r₂`, `r₃` and `r₀`, a family `T` of Novikov series
+indexed by the orbits of three inputs and an output defines the map with reference coordinates
+`T(a, b, c)ₗ = ∑ᵢ ∑ⱼ ∑ₖ aᵢ bⱼ cₖ Tᵢⱼₖₗ`
+(`NovikovModule.coordinates_novikovTrilinearOfMatrix`), trilinear over the Novikov ring for the
+module structures of `TauCeti.NovikovModule.module`. -/
+def novikovTrilinearOfMatrix :
+    letI := module (R := R) hF₁
+    letI := module (R := R) hF₂
+    letI := module (R := R) hF₃
+    letI := module (R := R) hF₀
+    NovikovModule R F₁ →ₗ[NovikovSeries R H N] NovikovModule R F₂ →ₗ[NovikovSeries R H N]
+      NovikovModule R F₃ →ₗ[NovikovSeries R H N] NovikovModule R F₀ :=
+  letI := module (R := R) hF₁
+  letI := module (R := R) hF₂
+  letI := module (R := R) hF₃
+  letI := module (R := R) hF₀
+  { toFun a := LinearMap.mk₂ _ (fun b c => (coordinates hF₀ r₀).symm fun l =>
+        ∑ i, ∑ j, ∑ k, coordinates hF₁ r₁ a i * coordinates hF₂ r₂ b j *
+          coordinates hF₃ r₃ c k * T i j k l)
+      (fun b b' c => (coordinates hF₀ r₀).injective <| funext fun l => by
+        simp only [map_add, LinearEquiv.apply_symm_apply, Pi.add_apply, mul_add, add_mul,
+          Finset.sum_add_distrib])
+      (fun s b c => (coordinates hF₀ r₀).injective <| funext fun l => by
+        simp only [coordinates_smul, LinearEquiv.apply_symm_apply, Pi.smul_apply, smul_eq_mul,
+          Finset.mul_sum]
+        exact Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ =>
+          Finset.sum_congr rfl fun _ _ => by ring)
+      (fun b c c' => (coordinates hF₀ r₀).injective <| funext fun l => by
+        simp only [map_add, LinearEquiv.apply_symm_apply, Pi.add_apply, mul_add, add_mul,
+          Finset.sum_add_distrib])
+      (fun s b c => (coordinates hF₀ r₀).injective <| funext fun l => by
+        simp only [coordinates_smul, LinearEquiv.apply_symm_apply, Pi.smul_apply, smul_eq_mul,
+          Finset.mul_sum]
+        exact Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ =>
+          Finset.sum_congr rfl fun _ _ => by ring)
+    map_add' a a' := LinearMap.ext₂ fun b c => (coordinates hF₀ r₀).injective <| funext fun l => by
+      simp only [LinearMap.mk₂_apply, LinearMap.add_apply, map_add, LinearEquiv.apply_symm_apply,
+        Pi.add_apply, add_mul, Finset.sum_add_distrib]
+    map_smul' s a := LinearMap.ext₂ fun b c => (coordinates hF₀ r₀).injective <| funext fun l => by
+      rw [LinearMap.smul_apply, LinearMap.smul_apply, LinearMap.mk₂_apply, LinearMap.mk₂_apply,
+        RingHom.id_apply, coordinates_smul hF₀ r₀, coordinates_smul hF₁ r₁,
+        LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
+      simp only [Pi.smul_apply, smul_eq_mul, Finset.mul_sum, mul_assoc] }
+
+/-- **The matrix formula for the trilinear map of a matrix.** In the coordinates relative to the
+reference generators, `T(a, b, c)ₗ = ∑ᵢ ∑ⱼ ∑ₖ aᵢ bⱼ cₖ Tᵢⱼₖₗ`. -/
+theorem coordinates_novikovTrilinearOfMatrix (a : NovikovModule R F₁) (b : NovikovModule R F₂)
+    (c : NovikovModule R F₃) (l : ι₀) :
+    coordinates hF₀ r₀ (novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀ T a b c) l =
+      ∑ i, ∑ j, ∑ k, coordinates hF₁ r₁ a i * coordinates hF₂ r₂ b j *
+        coordinates hF₃ r₃ c k * T i j k l :=
+  congrFun ((coordinates hF₀ r₀).apply_symm_apply _) l
+
+/-- The trilinear map of a matrix on three reference basis vectors has the `(i, j, k)` entries of
+the matrix as its coordinates: `T(eᵢ, eⱼ, eₖ) = ∑ₗ Tᵢⱼₖₗ eₗ`. -/
+@[simp]
+theorem coordinates_novikovTrilinearOfMatrix_basis (i : ι₁) (j : ι₂) (k : ι₃) (l : ι₀) :
+    coordinates hF₀ r₀ (novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀ T
+      (basis hF₁ r₁ i) (basis hF₂ r₂ j) (basis hF₃ r₃ k)) l = T i j k l := by
+  classical
+  simp [coordinates_novikovTrilinearOfMatrix, Pi.single_apply]
+
+end Trilinear
+
+section Composition
+
+variable [CommSemiring R] [Fintype ι₁] [Fintype ι₂] [Fintype ι₃] [Finite ι₀] [Fintype ι₁₂]
+  [Fintype ι₂₃]
+
+/-- **A product of matrices with a product in its first input.** For matrices `Q` from the first
+two inputs to `ι₁₂` and `Q'` from `ι₁₂` and the third input to the output, the product
+`(a ⋆ b) ⋆' c` is the trilinear map of the matrix `∑ₜ Qᵢⱼₜ Q'ₜₖₗ`. -/
+theorem novikovProductOfMatrix_novikovProductOfMatrix_left
+    (Q : ι₁ → ι₂ → ι₁₂ → NovikovSeries R H N) (Q' : ι₁₂ → ι₃ → ι₀ → NovikovSeries R H N)
+    (a : NovikovModule R F₁) (b : NovikovModule R F₂) (c : NovikovModule R F₃) :
+    novikovProductOfMatrix hF₁₂ hF₃ hF₀ r₁₂ r₃ r₀ Q'
+        (novikovProductOfMatrix hF₁ hF₂ hF₁₂ r₁ r₂ r₁₂ Q a b) c =
+      novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀
+        (fun i j k l => ∑ t, Q i j t * Q' t k l) a b c := by
+  refine (coordinates hF₀ r₀).injective (funext fun l => ?_)
+  rw [coordinates_novikovTrilinearOfMatrix, coordinates_novikovProductOfMatrix]
+  simp only [coordinates_novikovProductOfMatrix, Finset.sum_mul, Finset.mul_sum]
+  -- Move the sums over `t` and then over `k` innermost on both sides.
+  simp_rw [Finset.sum_comm (s := (Finset.univ : Finset ι₁₂)),
+    Finset.sum_comm (s := (Finset.univ : Finset ι₃))]
+  refine Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ =>
+    Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => by ring
+
+/-- **A product of matrices with a product in its second input.** For matrices `P` from the last
+two inputs to `ι₂₃` and `P'` from the first input and `ι₂₃` to the output, the product
+`a ⋆' (b ⋆ c)` is the trilinear map of the matrix `∑ᵤ Pⱼₖᵤ P'ᵢᵤₗ`. -/
+theorem novikovProductOfMatrix_novikovProductOfMatrix_right
+    (P : ι₂ → ι₃ → ι₂₃ → NovikovSeries R H N) (P' : ι₁ → ι₂₃ → ι₀ → NovikovSeries R H N)
+    (a : NovikovModule R F₁) (b : NovikovModule R F₂) (c : NovikovModule R F₃) :
+    novikovProductOfMatrix hF₁ hF₂₃ hF₀ r₁ r₂₃ r₀ P' a
+        (novikovProductOfMatrix hF₂ hF₃ hF₂₃ r₂ r₃ r₂₃ P b c) =
+      novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀
+        (fun i j k l => ∑ u, P j k u * P' i u l) a b c := by
+  refine (coordinates hF₀ r₀).injective (funext fun l => ?_)
+  rw [coordinates_novikovTrilinearOfMatrix, coordinates_novikovProductOfMatrix]
+  simp only [coordinates_novikovProductOfMatrix, Finset.sum_mul, Finset.mul_sum]
+  simp_rw [Finset.sum_comm (s := (Finset.univ : Finset ι₂₃))]
+  refine Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ =>
+    Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => by ring
+
+variable {ι₄ : Type*} [Finite ι₄] {P₄ : ι₄ → Type*} [∀ m, AddTorsor H (P₄ m)]
+  {F₄ : (Σ m, P₄ m) → ℝ} (hF₄ : ∀ m h (p : P₄ m), F₄ ⟨m, h +ᵥ p⟩ = F₄ ⟨m, p⟩ - N h)
+  (r₄ : ∀ m, P₄ m) (T : ι₁ → ι₂ → ι₃ → ι₀ → NovikovSeries R H N)
+
+/-- The map of a matrix `M` after the trilinear map of a matrix `T` is the trilinear map of the
+matrix `∑ₘ Tᵢⱼₖₘ Mₘₗ`. -/
+theorem novikovMapOfMatrix_novikovTrilinearOfMatrix [Fintype ι₀]
+    (M : Matrix ι₀ ι₄ (NovikovSeries R H N))
+    (a : NovikovModule R F₁) (b : NovikovModule R F₂) (c : NovikovModule R F₃) :
+    novikovMapOfMatrix hF₀ hF₄ r₀ r₄ M
+        (novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀ T a b c) =
+      novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₄ r₁ r₂ r₃ r₄
+        (fun i j k l => ∑ m, T i j k m * M m l) a b c := by
+  refine (coordinates hF₄ r₄).injective (funext fun l => ?_)
+  rw [coordinates_novikovTrilinearOfMatrix, coordinates_novikovMapOfMatrix]
+  simp only [coordinates_novikovTrilinearOfMatrix, Finset.sum_mul, Finset.mul_sum]
+  simp_rw [Finset.sum_comm (s := (Finset.univ : Finset ι₀))]
+  refine Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ =>
+    Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => by ring
+
+/-- The trilinear map of a matrix `T` after the map of a matrix `M` in its first input is the
+trilinear map of the matrix `∑ₘ Mᵢₘ Tₘⱼₖₗ`. -/
+theorem novikovTrilinearOfMatrix_novikovMapOfMatrix_fst [Fintype ι₄]
+    (M : Matrix ι₄ ι₁ (NovikovSeries R H N))
+    (a : NovikovModule R F₄) (b : NovikovModule R F₂) (c : NovikovModule R F₃) :
+    novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀ T
+        (novikovMapOfMatrix hF₄ hF₁ r₄ r₁ M a) b c =
+      novikovTrilinearOfMatrix hF₄ hF₂ hF₃ hF₀ r₄ r₂ r₃ r₀
+        (fun i j k l => ∑ m, M i m * T m j k l) a b c := by
+  refine (coordinates hF₀ r₀).injective (funext fun l => ?_)
+  rw [coordinates_novikovTrilinearOfMatrix, coordinates_novikovTrilinearOfMatrix]
+  simp only [coordinates_novikovMapOfMatrix, Finset.sum_mul, Finset.mul_sum]
+  -- Move the sums over the three inputs innermost, in order, on both sides.
+  simp_rw [Finset.sum_comm (s := (Finset.univ : Finset ι₁)),
+    Finset.sum_comm (s := (Finset.univ : Finset ι₂)),
+    Finset.sum_comm (s := (Finset.univ : Finset ι₃))]
+  refine Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ =>
+    Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => by ring
+
+/-- The trilinear map of a matrix `T` after the map of a matrix `M` in its second input is the
+trilinear map of the matrix `∑ₘ Mⱼₘ Tᵢₘₖₗ`. -/
+theorem novikovTrilinearOfMatrix_novikovMapOfMatrix_snd [Fintype ι₄]
+    (M : Matrix ι₄ ι₂ (NovikovSeries R H N))
+    (a : NovikovModule R F₁) (b : NovikovModule R F₄) (c : NovikovModule R F₃) :
+    novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀ T a
+        (novikovMapOfMatrix hF₄ hF₂ r₄ r₂ M b) c =
+      novikovTrilinearOfMatrix hF₁ hF₄ hF₃ hF₀ r₁ r₄ r₃ r₀
+        (fun i j k l => ∑ m, M j m * T i m k l) a b c := by
+  refine (coordinates hF₀ r₀).injective (funext fun l => ?_)
+  rw [coordinates_novikovTrilinearOfMatrix, coordinates_novikovTrilinearOfMatrix]
+  simp only [coordinates_novikovMapOfMatrix, Finset.sum_mul, Finset.mul_sum]
+  -- Move the sums over the three inputs innermost, in order, on both sides.
+  simp_rw [Finset.sum_comm (s := (Finset.univ : Finset ι₁)),
+    Finset.sum_comm (s := (Finset.univ : Finset ι₂)),
+    Finset.sum_comm (s := (Finset.univ : Finset ι₃))]
+  refine Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ =>
+    Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => by ring
+
+/-- The trilinear map of a matrix `T` after the map of a matrix `M` in its third input is the
+trilinear map of the matrix `∑ₘ Mₖₘ Tᵢⱼₘₗ`. -/
+theorem novikovTrilinearOfMatrix_novikovMapOfMatrix_thd [Fintype ι₄]
+    (M : Matrix ι₄ ι₃ (NovikovSeries R H N))
+    (a : NovikovModule R F₁) (b : NovikovModule R F₂) (c : NovikovModule R F₄) :
+    novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀ T a b
+        (novikovMapOfMatrix hF₄ hF₃ r₄ r₃ M c) =
+      novikovTrilinearOfMatrix hF₁ hF₂ hF₄ hF₀ r₁ r₂ r₄ r₀
+        (fun i j k l => ∑ m, M k m * T i j m l) a b c := by
+  refine (coordinates hF₀ r₀).injective (funext fun l => ?_)
+  rw [coordinates_novikovTrilinearOfMatrix, coordinates_novikovTrilinearOfMatrix]
+  simp only [coordinates_novikovMapOfMatrix, Finset.sum_mul, Finset.mul_sum]
+  -- Move the sums over the three inputs innermost, in order, on both sides.
+  simp_rw [Finset.sum_comm (s := (Finset.univ : Finset ι₁)),
+    Finset.sum_comm (s := (Finset.univ : Finset ι₂)),
+    Finset.sum_comm (s := (Finset.univ : Finset ι₃))]
+  refine Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ =>
+    Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => by ring
+
+end Composition
+
+section Grading
+
+variable [CommSemiring R] [Fintype ι₁] [Fintype ι₂] [Fintype ι₃] [Finite ι₀]
+  {D : Type*} [AddCommGroup D] (δ : H →+ D) {d₁ : (Σ i, P₁ i) → D} {d₂ : (Σ j, P₂ j) → D}
+  {d₃ : (Σ k, P₃ k) → D} {d₀ : (Σ l, P₀ l) → D}
+  (hd₁ : ∀ i h (p : P₁ i), d₁ ⟨i, h +ᵥ p⟩ = δ h + d₁ ⟨i, p⟩)
+  (hd₂ : ∀ j h (p : P₂ j), d₂ ⟨j, h +ᵥ p⟩ = δ h + d₂ ⟨j, p⟩)
+  (hd₃ : ∀ k h (p : P₃ k), d₃ ⟨k, h +ᵥ p⟩ = δ h + d₃ ⟨k, p⟩)
+  (hd₀ : ∀ l h (p : P₀ l), d₀ ⟨l, h +ᵥ p⟩ = δ h + d₀ ⟨l, p⟩)
+
+include hd₁ hd₂ hd₃ hd₀ in
+/-- **Degree of the trilinear map of a matrix.** If degrees change along each orbit by a
+homomorphism `δ` and every entry `Tᵢⱼₖₗ` is homogeneous of degree
+`d₁(r₁ i) + d₂(r₂ j) + d₃(r₃ k) + ε - d₀(r₀ l)`, then the trilinear map of `T` shifts degrees
+by `ε`. -/
+theorem novikovTrilinearOfMatrix_mem_gradeBy {T : ι₁ → ι₂ → ι₃ → ι₀ → NovikovSeries R H N}
+    {ε : D} (hT : ∀ i j k l, T i j k l ∈ NovikovSeries.gradeBy R N δ
+      (d₁ ⟨i, r₁ i⟩ + d₂ ⟨j, r₂ j⟩ + d₃ ⟨k, r₃ k⟩ + ε - d₀ ⟨l, r₀ l⟩))
+    {e₁ e₂ e₃ : D} {a : NovikovModule R F₁} (ha : a ∈ gradeBy R F₁ d₁ e₁)
+    {b : NovikovModule R F₂} (hb : b ∈ gradeBy R F₂ d₂ e₂)
+    {c : NovikovModule R F₃} (hc : c ∈ gradeBy R F₃ d₃ e₃) :
+    novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀ T a b c ∈
+      gradeBy R F₀ d₀ (e₁ + e₂ + e₃ + ε) := by
+  rw [mem_gradeBy_iff_coordinates hF₁ δ hd₁ r₁] at ha
+  rw [mem_gradeBy_iff_coordinates hF₂ δ hd₂ r₂] at hb
+  rw [mem_gradeBy_iff_coordinates hF₃ δ hd₃ r₃] at hc
+  rw [mem_gradeBy_iff_coordinates hF₀ δ hd₀ r₀]
+  intro l
+  rw [coordinates_novikovTrilinearOfMatrix]
+  refine Submodule.sum_mem _ fun i _ => Submodule.sum_mem _ fun j _ =>
+    Submodule.sum_mem _ fun k _ => ?_
+  convert SetLike.mul_mem_graded (SetLike.mul_mem_graded (SetLike.mul_mem_graded (ha i) (hb j))
+    (hc k)) (hT i j k l) using 2
+  abel
+
+end Grading
+
+section Homotopy
+
+variable [CommRing R] [Fintype ι₁] [Fintype ι₂] [Fintype ι₃] [Fintype ι₀] [Fintype ι₁₂]
+  [Fintype ι₂₃]
+
+/-- **Associativity up to homotopy for matrices of Novikov series.** Let `Q`, `Q'` be the matrices
+of the products `⋆` and `⋆'` of the nested product `(a ⋆ b) ⋆' c`, and `P`, `P'` those of `⋆''`
+and `⋆'''` of the nested product `a ⋆''' (b ⋆'' c)`, relative to reference generators. Let `D₁`,
+`D₂`, `D₃`, `D₀` be matrices of maps on the three inputs and the output, and grade the first two
+inputs by `d₁`, `d₂`, with even changes of degree within each orbit. If a four-index matrix `T`
+obeys the identity
+
+`∑ₜ Qᵢⱼₜ Q'ₜₖₗ - ∑ᵤ Pⱼₖᵤ P'ᵢᵤₗ = ∑ₘ Tᵢⱼₖₘ D₀ₘₗ + ∑ₘ D₁ᵢₘ Tₘⱼₖₗ + (-1)^(d₁ (r₁ i)) ∑ₘ D₂ⱼₘ Tᵢₘₖₗ +
+  (-1)^(d₁ (r₁ i) + d₂ (r₂ j)) ∑ₘ D₃ₖₘ Tᵢⱼₘₗ`,
+
+which in Floer theory is the count of the ends of one-dimensional moduli spaces of a family of
+four-punctured spheres between reference generators, class by class, then its trilinear map `K`
+is a homotopy between the two nested products: for `a` of degree `e₁`, `b` of degree `e₂` and any
+`c`,
+
+`(a ⋆ b) ⋆' c - a ⋆''' (b ⋆'' c) =
+  D₀ K(a, b, c) + K(D₁ a, b, c) + (-1)^e₁ K(a, D₂ b, c) + (-1)^(e₁ + e₂) K(a, b, D₃ c)`. -/
+theorem novikovProductOfMatrix_novikovProductOfMatrix_sub_eq_add
+    (Q : ι₁ → ι₂ → ι₁₂ → NovikovSeries R H N) (Q' : ι₁₂ → ι₃ → ι₀ → NovikovSeries R H N)
+    (P : ι₂ → ι₃ → ι₂₃ → NovikovSeries R H N) (P' : ι₁ → ι₂₃ → ι₀ → NovikovSeries R H N)
+    (T : ι₁ → ι₂ → ι₃ → ι₀ → NovikovSeries R H N) (D₁ : Matrix ι₁ ι₁ (NovikovSeries R H N))
+    (D₂ : Matrix ι₂ ι₂ (NovikovSeries R H N)) (D₃ : Matrix ι₃ ι₃ (NovikovSeries R H N))
+    (D₀ : Matrix ι₀ ι₀ (NovikovSeries R H N))
+    {d₁ : (Σ i, P₁ i) → ℤ} (hd₁ : ∀ i (h : H) (p : P₁ i), Even (d₁ ⟨i, h +ᵥ p⟩ - d₁ ⟨i, p⟩))
+    {d₂ : (Σ j, P₂ j) → ℤ} (hd₂ : ∀ j (h : H) (p : P₂ j), Even (d₂ ⟨j, h +ᵥ p⟩ - d₂ ⟨j, p⟩))
+    (hassoc : ∀ i j k l, ∑ t, Q i j t * Q' t k l - ∑ u, P j k u * P' i u l =
+      ∑ m, T i j k m * D₀ m l + ∑ m, D₁ i m * T m j k l +
+        negOnePowCast R (d₁ ⟨i, r₁ i⟩) • ∑ m, D₂ j m * T i m k l +
+        negOnePowCast R (d₁ ⟨i, r₁ i⟩ + d₂ ⟨j, r₂ j⟩) • ∑ m, D₃ k m * T i j m l)
+    {e₁ e₂ : ℤ} {a : NovikovModule R F₁} (ha : a ∈ gradeBy R F₁ d₁ e₁)
+    {b : NovikovModule R F₂} (hb : b ∈ gradeBy R F₂ d₂ e₂) (c : NovikovModule R F₃) :
+    novikovProductOfMatrix hF₁₂ hF₃ hF₀ r₁₂ r₃ r₀ Q'
+        (novikovProductOfMatrix hF₁ hF₂ hF₁₂ r₁ r₂ r₁₂ Q a b) c -
+      novikovProductOfMatrix hF₁ hF₂₃ hF₀ r₁ r₂₃ r₀ P' a
+        (novikovProductOfMatrix hF₂ hF₃ hF₂₃ r₂ r₃ r₂₃ P b c) =
+      novikovMapOfMatrix hF₀ hF₀ r₀ r₀ D₀
+          (novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀ T a b c) +
+        novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀ T
+          (novikovMapOfMatrix hF₁ hF₁ r₁ r₁ D₁ a) b c +
+        negOnePowCast R e₁ • novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀ T a
+          (novikovMapOfMatrix hF₂ hF₂ r₂ r₂ D₂ b) c +
+        negOnePowCast R (e₁ + e₂) • novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀ T a b
+          (novikovMapOfMatrix hF₃ hF₃ r₃ r₃ D₃ c) := by
+  rw [novikovProductOfMatrix_novikovProductOfMatrix_left,
+    novikovProductOfMatrix_novikovProductOfMatrix_right,
+    novikovMapOfMatrix_novikovTrilinearOfMatrix, novikovTrilinearOfMatrix_novikovMapOfMatrix_fst,
+    novikovTrilinearOfMatrix_novikovMapOfMatrix_snd,
+    novikovTrilinearOfMatrix_novikovMapOfMatrix_thd]
+  refine (coordinates hF₀ r₀).injective (funext fun l => ?_)
+  have hs₁ := negOnePowCast_smul_coordinates_of_mem_gradeBy hF₁ r₁ hd₁ ha
+  have hs₂ := negOnePowCast_smul_coordinates_of_mem_gradeBy hF₂ r₂ hd₂ hb
+  simp only [map_sub, map_add, map_smul, Pi.sub_apply, Pi.add_apply, Pi.smul_apply,
+    coordinates_novikovTrilinearOfMatrix, Finset.smul_sum, ← Finset.sum_sub_distrib,
+    ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ =>
+    Finset.sum_congr rfl fun k _ => ?_
+  -- Termwise, this is the identity for `T`, with the signs of the orbits of `i` and `j` replaced
+  -- by the signs of the degrees of `a` and `b` on their nonzero coordinates.
+  have h := hassoc i j k l
+  have h₁ := hs₁ i
+  have h₂ := hs₂ j
+  simp only [Algebra.smul_def, negOnePowCast_add, map_mul] at h h₁ h₂ ⊢
+  linear_combination
+    coordinates hF₁ r₁ a i * coordinates hF₂ r₂ b j * coordinates hF₃ r₃ c k * h +
+    (coordinates hF₂ r₂ b j * coordinates hF₃ r₃ c k * ∑ m, D₂ j m * T i m k l +
+      algebraMap R _ (negOnePowCast R (d₂ ⟨j, r₂ j⟩)) * coordinates hF₂ r₂ b j *
+        coordinates hF₃ r₃ c k * ∑ m, D₃ k m * T i j m l) * h₁ +
+    algebraMap R _ (negOnePowCast R e₁) * coordinates hF₁ r₁ a i * coordinates hF₃ r₃ c k *
+      (∑ m, D₃ k m * T i j m l) * h₂
+
+end Homotopy
+
+end Matrix
 
 end NovikovModule
 
