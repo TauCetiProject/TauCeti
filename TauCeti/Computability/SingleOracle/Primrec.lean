@@ -224,6 +224,62 @@ private theorem primrec_mk_output_max_use {γ : Type*} [Primcodable γ] {d₁ d�
   Halt.primrec₂_mk.comp (Halt.primrec_output.comp h₂)
     (nat_max.comp (Halt.primrec_use.comp h₁) (Halt.primrec_use.comp h₂))
 
+/-- The `prec` clause of `evalnStep` is primitive recursive in the context and the two components
+of the program: the base program at zero, the recursion and the step program at a successor. -/
+private theorem primrec_evalnStep_prec {β : Type*} [Primcodable β]
+    {L : β → List (List (Option Halt))} {k n : β → ℕ} (hL : Primrec L) (hk : Primrec k)
+    (hn : Primrec n) :
+    Primrec₂ fun (b : β) (cs : Code × Code) =>
+      Nat.casesOn (motive := fun _ => Option Halt) (n b).unpair.2
+        (lup (L b) (k b + 1, cs.1) (n b).unpair.1) fun y =>
+          (lup (L b) (k b, prec cs.1 cs.2) (Nat.pair (n b).unpair.1 y)).bind fun di =>
+            (lup (L b) (k b + 1, cs.2) (Nat.pair (n b).unpair.1 (Nat.pair y di.output))).map
+              fun d => (⟨d.output, max di.use d.use⟩ : Halt) := by
+  dsimp only [Primrec₂]
+  have hL₁ : Primrec fun x : β × (Code × Code) => L x.1 := hL.comp fst
+  have hk₁ : Primrec fun x : β × (Code × Code) => k x.1 := hk.comp fst
+  have hn₁ : Primrec fun x : β × (Code × Code) => n x.1 := hn.comp fst
+  have hcf : Primrec fun x : β × (Code × Code) => x.2.1 := fst.comp snd
+  have hcg : Primrec fun x : β × (Code × Code) => x.2.2 := snd.comp snd
+  have hout := Halt.primrec_output
+  have ha₁ : Primrec fun x : β × (Code × Code) => (n x.1).unpair.1 :=
+    fst.comp (Primrec.unpair.comp hn₁)
+  refine nat_casesOn (snd.comp (Primrec.unpair.comp hn₁))
+    (primrec_lup hL₁ ((Primrec.succ.comp hk₁).pair hcf) ha₁) <| .mk <|
+    option_bind (primrec_lup (hL₁.comp fst) ((hk₁.comp fst).pair
+      (primrec₂_prec.comp (hcf.comp fst) (hcg.comp fst)))
+      (Primrec₂.natPair.comp (ha₁.comp fst) snd)) <| .mk <|
+    option_map (primrec_lup (hL₁.comp (fst.comp fst))
+      ((Primrec.succ.comp (hk₁.comp (fst.comp fst))).pair (hcg.comp (fst.comp fst)))
+      (Primrec₂.natPair.comp (ha₁.comp (fst.comp fst))
+        (Primrec₂.natPair.comp (snd.comp fst) (hout.comp snd)))) <| .mk <|
+    primrec_mk_output_max_use (snd.comp fst) snd
+
+/-- The `rfind'` clause of `evalnStep` is primitive recursive in the context and the component of
+the program: the program at the current point, then the search from the next point. -/
+private theorem primrec_evalnStep_rfind' {β : Type*} [Primcodable β]
+    {L : β → List (List (Option Halt))} {k n : β → ℕ} (hL : Primrec L) (hk : Primrec k)
+    (hn : Primrec n) :
+    Primrec₂ fun (b : β) (cf : Code) =>
+      (lup (L b) (k b + 1, cf) (n b)).bind fun dx =>
+        if dx.output = 0 then some (⟨(n b).unpair.2, dx.use⟩ : Halt) else
+          (lup (L b) (k b, rfind' cf) (Nat.pair (n b).unpair.1 ((n b).unpair.2 + 1))).map
+            fun d => (⟨d.output, max dx.use d.use⟩ : Halt) := by
+  dsimp only [Primrec₂]
+  have hout := Halt.primrec_output
+  have huse := Halt.primrec_use
+  have hn₁ : Primrec fun x : β × Code => n x.1 := hn.comp fst
+  have hu : Primrec fun x : (β × Code) × Halt => (n x.1.1).unpair :=
+    Primrec.unpair.comp (hn₁.comp fst)
+  refine option_bind
+    (primrec_lup (hL.comp fst) ((Primrec.succ.comp (hk.comp fst)).pair snd) hn₁) <| .mk <|
+    Primrec.ite (Primrec.eq.comp (hout.comp snd) (const 0))
+      (option_some.comp (Halt.primrec₂_mk.comp (snd.comp hu) (huse.comp snd))) <|
+    option_map (primrec_lup (hL.comp (fst.comp fst))
+      ((hk.comp (fst.comp fst)).pair (primrec_rfind'.comp (snd.comp fst)))
+      (Primrec₂.natPair.comp (fst.comp hu) (Primrec.succ.comp (snd.comp hu)))) <| .mk <|
+    primrec_mk_output_max_use (snd.comp fst) snd
+
 variable {α : Type*} [Primcodable α]
 
 private theorem primrec_evalnStep {σ : α → ℕ → Option ℕ} (hσ : Primrec₂ σ) {β : Type*}
@@ -270,31 +326,8 @@ private theorem primrec_evalnStep {σ : α → ℕ → Option ℕ} (hσ : Primre
       if dx.output = 0 then some ⟨(n b).unpair.2, dx.use⟩ else
         (lup (L b) (k b, rfind' cf) (Nat.pair (n b).unpair.1 ((n b).unpair.2 + 1))).map fun d =>
           ⟨d.output, max dx.use d.use⟩) ?_).of_eq fun b => by cases c b <;> rfl
-  · -- `prec`: the base program at zero, the recursion and the step program at a successor
-    have ha₁ : Primrec fun x : β × (Code × Code) => (n x.1).unpair.1 :=
-      fst.comp (Primrec.unpair.comp hn₁)
-    refine nat_casesOn (snd.comp (Primrec.unpair.comp hn₁))
-      (primrec_lup hL₁ ((Primrec.succ.comp hk₁).pair hcf) ha₁) <| .mk <|
-      option_bind (primrec_lup (hL₁.comp fst) ((hk₁.comp fst).pair
-        (primrec₂_prec.comp (hcf.comp fst) (hcg.comp fst)))
-        (Primrec₂.natPair.comp (ha₁.comp fst) snd)) <| .mk <|
-      option_map (primrec_lup (hL₁.comp (fst.comp fst))
-        ((Primrec.succ.comp (hk₁.comp (fst.comp fst))).pair (hcg.comp (fst.comp fst)))
-        (Primrec₂.natPair.comp (ha₁.comp (fst.comp fst))
-          (Primrec₂.natPair.comp (snd.comp fst) (hout.comp snd)))) <| .mk <|
-      primrec_mk_output_max_use (snd.comp fst) snd
-  · -- `rfind'`: the program at the current point, then the search from the next point
-    have hn₁ : Primrec fun x : β × Code => n x.1 := hn.comp fst
-    have hu : Primrec fun x : (β × Code) × Halt => (n x.1.1).unpair :=
-      Primrec.unpair.comp (hn₁.comp fst)
-    refine option_bind
-      (primrec_lup (hL.comp fst) ((Primrec.succ.comp (hk.comp fst)).pair snd) hn₁) <| .mk <|
-      Primrec.ite (Primrec.eq.comp (hout.comp snd) (const 0))
-        (option_some.comp (Halt.primrec₂_mk.comp (snd.comp hu) (huse.comp snd))) <|
-      option_map (primrec_lup (hL.comp (fst.comp fst))
-        ((hk.comp (fst.comp fst)).pair (primrec_rfind'.comp (snd.comp fst)))
-        (Primrec₂.natPair.comp (fst.comp hu) (Primrec.succ.comp (snd.comp hu)))) <| .mk <|
-      primrec_mk_output_max_use (snd.comp fst) snd
+  · exact primrec_evalnStep_prec hL hk hn
+  · exact primrec_evalnStep_rfind' hL hk hn
 
 /-- **Bounded evaluation is primitive recursive**, uniformly in a parameter `a` on which the
 oracle answers `σ a` depend primitive recursively: the output and the use of the run of the program
@@ -346,5 +379,16 @@ and `0` outside it, are primitive recursive in the code and the address. -/
 theorem primrec₂_setAnswers_equivBitIndices :
     Primrec₂ fun m z => setAnswers (Finset.equivBitIndices m : Set ℕ) z :=
   (option_some.comp indicator_equivBitIndices).of_eq fun _ => by simp
+
+/-- Bounded evaluation against computable finite stages is computable uniformly in the stage
+and the input. The stages are supplied by their binary finite-set codes. -/
+theorem computable₂_evaln_setAnswers {A : ℕ → Finset ℕ}
+    (hA : Computable fun s => Finset.equivBitIndices.symm (A s)) (c : Code) :
+    Computable₂ fun s x => evaln (setAnswers (A s)) s c x := by
+  have hargs : Computable (fun p : ℕ × ℕ =>
+      (Finset.equivBitIndices.symm (A p.1), p.1, c, p.2)) := (hA.comp Computable.fst).pair
+    (Computable.fst.pair ((Computable.const c).pair Computable.snd))
+  exact ((primrec_evaln primrec₂_setAnswers_equivBitIndices).to_comp.comp hargs).of_eq
+    fun p => by simp only [Finset.equivBitIndices.apply_symm_apply]
 
 end TauCeti.Oracle.Single.Code

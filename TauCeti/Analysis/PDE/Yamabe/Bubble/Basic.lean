@@ -140,6 +140,13 @@ theorem conformalCoefficient_pos {n : ℕ} (hn : 2 < n) : 0 < conformalCoefficie
   rw [conformalCoefficient_def]
   exact div_pos (by linarith) (by linarith)
 
+/-- The conformal coefficient is nonnegative in every dimension: positive for `n > 2`, `0` for
+`n = 1` and (by division by zero) `n = 2`, and `2` for `n = 0`. -/
+theorem conformalCoefficient_nonneg (n : ℕ) : 0 ≤ conformalCoefficient n := by
+  rcases lt_or_ge 2 n with hn | hn
+  · exact (conformalCoefficient_pos hn).le
+  · interval_cases n <;> norm_num [conformalCoefficient_def]
+
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- The **bubble** `U_{t,b}(x) = (2 t / (t² + ‖x - b‖²)) ^ ((n - 2) / 2)` of scale `t` centred at
@@ -181,6 +188,18 @@ theorem bubble_zero_smul {t : ℝ} (ht : 0 < t) (x : E) :
     field_simp
   rw [bubble_apply, bubble_apply, hbase, Real.mul_rpow (inv_nonneg.mpr ht.le) (by positivity),
     Real.inv_rpow ht.le, Real.rpow_neg ht.le]
+
+/-- The square of a bubble under translation and dilation:
+`U_{t,b}(b + t x)² = t ^ (-(n - 2)) U_{1,0}(x)²`. -/
+theorem bubble_sq_add_smul {t : ℝ} (ht : 0 < t) (b x : E) :
+    bubble t b (b + t • x) ^ 2 =
+      t ^ (-((finrank ℝ E : ℝ) - 2)) * bubble 1 0 x ^ 2 := by
+  have hb : bubble t b (b + t • x) =
+      t ^ (-(((finrank ℝ E : ℝ) - 2) / 2)) * bubble 1 0 x := by
+    rw [← bubble_zero_sub, add_sub_cancel_left, bubble_zero_smul ht]
+  have hexp : -(((finrank ℝ E : ℝ) - 2) / 2) * (2 : ℕ) =
+      -((finrank ℝ E : ℝ) - 2) := by push_cast; ring
+  rw [hb, mul_pow, ← Real.rpow_mul_natCast ht.le, hexp]
 
 /-- In dimension `n ≠ 2`, the critical power of a bubble is
 `U_{t,b} ^ pₙ = (2 t / (t² + ‖x - b‖²)) ^ n`. -/

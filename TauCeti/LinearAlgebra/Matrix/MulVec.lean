@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Matrix.Basic
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
-import TauCeti.Algebra.Ring.Hom
+import TauCeti.Algebra.Group.Hom.Defs
 
 /-!
 # Matrix-vector multiplication
@@ -114,8 +114,8 @@ end CommSemiring
 theorem comp_smul_dotProduct_mulVec_smul {R : Type*} [CommSemiring R] (Q : Matrix n n R)
     (σ : R →+* R) (c : R) (v : n → R) :
     (σ ∘ (c • v)) ⬝ᵥ (Q *ᵥ (c • v)) = σ c * c * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v)) := by
-  rw [RingHom.comp_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul, smul_eq_mul,
-    mul_assoc]
+  rw [TauCeti.map_comp_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul,
+    smul_eq_mul, mul_assoc]
 
 section OrderedSemiring
 

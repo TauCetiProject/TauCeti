@@ -27,7 +27,8 @@ For submodules `p` and `q`, every element of `(p ⊔ q) ⊗[R] M` is the sum of 
 Multiplication of tensor products of submodules is compatible with multiplication in each
 factor (`Submodule.map₂_tmul_mul_le`). If a scalar extension is finitely generated, some finitely
 generated submodule of the original module already spans that scalar extension
-(`Submodule.exists_fg_baseChange_eq_top`).
+(`Submodule.exists_fg_baseChange_eq_top`). A linear map of scalar factors carries one scalar
+extension of a submodule into another (`Submodule.map_mem_baseChange`).
 -/
 
 public section
@@ -84,6 +85,24 @@ theorem _root_.LinearMap.baseChange_range (f : M →ₗ[R] N) :
   rw [← Submodule.map_top, baseChange_map, baseChange_top, Submodule.map_top]
 
 end Map
+
+section ScalarMap
+
+variable {R M A B : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+  [Semiring A] [Semiring B] [Algebra R A] [Algebra R B]
+
+/-- A linear map of scalar factors carries the scalar extension of a submodule along `A` into its
+scalar extension along `B`. In particular, a scalar extension along `A` is stable under every
+linear endomorphism of `A`. -/
+theorem map_mem_baseChange (p : Submodule R M) (f : A →ₗ[R] B) {x : A ⊗[R] M}
+    (hx : x ∈ p.baseChange A) : TensorProduct.map f LinearMap.id x ∈ p.baseChange B := by
+  obtain ⟨y, rfl⟩ := hx
+  refine ⟨TensorProduct.map f LinearMap.id y, ?_⟩
+  induction y using TensorProduct.inductionOn with
+  | tmul a m => simp
+  | add y z hy hz => simp only [map_add, hy, hz]
+
+end ScalarMap
 
 section Finiteness
 

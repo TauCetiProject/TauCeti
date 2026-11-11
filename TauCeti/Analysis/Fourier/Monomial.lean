@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Fourier.AddCircle
+public import Mathlib.Analysis.Fourier.AddCircleMulti
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
+import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 
 /-!
 # Pointwise identities and estimates for the Fourier monomials
@@ -30,11 +33,19 @@ factor across a monomial reparametrized by the lift of a degree-one circle map.
 * `TauCeti.one_le_norm_fourier_sub_one`: `1 ≤ ‖e_n x - 1‖` for `T / (6 |n|) ≤ x ≤ T / (3 |n|)`.
 * `TauCeti.integral_fourier_mul_deriv_fourier_comp`: for a `C¹` lift `F` with
   `F (x + T) = F x + T`, `∫₀ᵀ e_{-n} (e_m ∘ F)' = (2πin/T) ∫₀ᵀ e_{-n} (e_m ∘ F)`.
+* `UnitAddTorus.mFourier_apply_add`, `TauCeti.UnitAddTorus.mFourier_coe_apply` and
+  `UnitAddTorus.norm_mFourier_apply`: the same pointwise facts for the multivariate
+  monomials `mFourier n` on the torus `UnitAddTorus d`, whose value at the image of `x : d → ℝ`
+  is `exp (2πi ∑ i, n i * x i)`.
+* `TauCeti.UnitAddTorus.contDiff_mFourier_coe` and
+  `TauCeti.UnitAddTorus.norm_iteratedFDeriv_mFourier_coe_le`: this lift of `mFourier n` is smooth,
+  and its `k`-th derivative is bounded by `(2π ∑ i, |n i|) ^ k`.
 -/
 
 public section
 
 open Complex Real
+open scoped ContDiff
 
 namespace TauCeti
 
@@ -148,3 +159,83 @@ theorem integral_fourier_mul_deriv_fourier_comp {F F' : ℝ → ℝ}
   ring
 
 end TauCeti
+
+namespace UnitAddTorus
+
+variable {d : Type*} [Fintype d]
+
+/-- A multivariate Fourier monomial turns a sum of points into a product:
+`mFourier n (x + y) = mFourier n x * mFourier n y`. -/
+theorem mFourier_apply_add (n : d → ℤ) (x y : UnitAddTorus d) :
+    mFourier n (x + y) = mFourier n x * mFourier n y := by
+  simp only [mFourier, ContinuousMap.coe_mk, Pi.add_apply, TauCeti.fourier_apply_add,
+    Finset.prod_mul_distrib]
+
+/-- Multivariate Fourier monomials take values in the unit circle. -/
+@[simp]
+theorem norm_mFourier_apply (n : d → ℤ) (z : UnitAddTorus d) : ‖mFourier n z‖ = 1 := by
+  simp [mFourier, norm_prod]
+
+end UnitAddTorus
+
+namespace TauCeti.UnitAddTorus
+
+open _root_.UnitAddTorus
+
+variable {d : Type*} [Fintype d]
+
+/-- The value of the multivariate Fourier monomial `mFourier n` at the image of `x : d → ℝ` is
+`exp (2πi ∑ i, n i * x i)`. -/
+theorem mFourier_coe_apply (n : d → ℤ) (x : d → ℝ) :
+    mFourier n (fun i ↦ (x i : UnitAddCircle)) = cexp (2 * π * I * ∑ i, (n i : ℂ) * x i) := by
+  simp only [mFourier, ContinuousMap.coe_mk, fourier_coe_apply, ← Complex.exp_sum]
+  rw [Finset.mul_sum]
+  refine congrArg cexp (Finset.sum_congr rfl fun i _ ↦ ?_)
+  push_cast
+  ring
+
+/-- The lift of the Fourier mode `mFourier n` to `d → ℝ` is smooth. -/
+theorem contDiff_mFourier_coe (n : d → ℤ) :
+    ContDiff ℝ ∞ fun y : d → ℝ ↦ mFourier n fun i ↦ (y i : UnitAddCircle) := by
+  have h : ContDiff ℝ ∞ fun t : ℝ ↦ (t : ℂ) := Complex.ofRealCLM.contDiff
+  simp only [mFourier_coe_apply]
+  fun_prop
+
+/-- The lift of the Fourier mode `mFourier n` has `k`-th derivative bounded by
+`(2π ∑ i, |n i|) ^ k`. -/
+theorem norm_iteratedFDeriv_mFourier_coe_le (n : d → ℤ) (k : ℕ) (x : d → ℝ) :
+    ‖iteratedFDeriv ℝ k (fun y : d → ℝ ↦ mFourier n fun i ↦ (y i : UnitAddCircle)) x‖ ≤
+      (2 * π * ∑ i, |(n i : ℝ)|) ^ k := by
+  -- The mode is `exp` composed with the real-linear map `y ↦ (∑ i, n i * y i) • 2πi`.
+  set L : (d → ℝ) →L[ℝ] ℝ := ∑ i, (n i : ℝ) • ContinuousLinearMap.proj i
+  have hLapply (y : d → ℝ) : L y = ∑ i, (n i : ℝ) * y i := by
+    simp [L]
+  have hL : ‖L‖ ≤ ∑ i, |(n i : ℝ)| := by
+    refine L.opNorm_le_bound (Finset.sum_nonneg fun i _ ↦ abs_nonneg _) fun y ↦ ?_
+    rw [hLapply, Finset.sum_mul]
+    refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
+    rw [abs_mul]
+    exact mul_le_mul_of_nonneg_left (norm_le_pi_norm y i) (abs_nonneg _)
+  set L' : (d → ℝ) →L[ℝ] ℂ := L.smulRight (2 * π * I)
+  have heq : (fun y : d → ℝ ↦ mFourier n fun i ↦ (y i : UnitAddCircle)) = cexp ∘ L' := by
+    funext y
+    simp only [mFourier_coe_apply, Function.comp_apply, L', ContinuousLinearMap.smulRight_apply,
+      hLapply, Complex.real_smul]
+    push_cast
+    ring_nf
+  have hnorm : ‖L'‖ ≤ 2 * π * ∑ i, |(n i : ℝ)| := by
+    rw [ContinuousLinearMap.norm_smulRight_apply, mul_comm]
+    have h2π : ‖(2 * π * I : ℂ)‖ = 2 * π := by
+      simp [abs_of_pos Real.pi_pos]
+    rw [h2π]
+    exact mul_le_mul_of_nonneg_left hL (by positivity)
+  rw [heq]
+  refine (L'.norm_iteratedFDeriv_comp_right_le Complex.contDiff_exp x
+    (mod_cast le_top)).trans ?_
+  -- `L' x` is purely imaginary, so every derivative of `exp` there has norm one.
+  have hre : (L' x).re = 0 := by
+    simp [L', ContinuousLinearMap.smulRight_apply]
+  rw [norm_iteratedFDeriv_real_cexp, Complex.norm_exp, hre, Real.exp_zero, one_mul]
+  exact pow_le_pow_left₀ (norm_nonneg _) hnorm k
+
+end TauCeti.UnitAddTorus

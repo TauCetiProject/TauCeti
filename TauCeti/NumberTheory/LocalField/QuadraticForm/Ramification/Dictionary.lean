@@ -143,7 +143,7 @@ theorem isSquare_mul_of_defectExponent_eq_two_mul (h2 : (2 : K) ≠ 0) {u w : K�
       push_cast [h4K]
       field_simp
       ring
-    have h := isSquare_of_eq_one_add_four_mul h2 hprod
+    have h := isSquare_of_eq_one_add_four_mul hprod
       (hprod ▸ valuation_one_add_four_mul h2 he _)
       (by rw [map_add, map_add, map_mul, map_mul, h4]; simpa using hsum)
     simpa using h.mul (IsSquare.sq (ξ * η))
@@ -208,27 +208,20 @@ theorem exists_defectExponent_mul_sq_eq_two_mul_natCastValuation (h2 : (2 : K) �
     rw [← defectExponent_eq_top_iff, hd]
     exact WithTop.coe_ne_top
   -- `a` has even valuation: an element of odd valuation is its own defect exponent.
-  obtain ⟨k, hk⟩ : Even (normalizedValuation K a).toAdd := by
+  have ha : Even (normalizedValuation K a).toAdd := by
     by_contra h
     rw [Int.not_even_iff_odd] at h
     rw [defectExponent_of_odd h, WithTop.coe_inj] at hd
     exact (Int.not_even_iff_odd.mpr h) (hd ▸ hev)
-  obtain ⟨ϖ, hϖ⟩ := exists_isUniformizer K
-  rw [isUniformizer_def] at hϖ
-  have hc : (normalizedValuation K (ϖ ^ (-k))).toAdd = -k := by
-    rw [normalizedValuation_zpow_of_eq_ofAdd_one hϖ, toAdd_ofAdd]
-  have hv : valuation K ((a * (ϖ ^ (-k)) ^ 2 : Kˣ) : K) = 1 := by
-    rw [← normalizedValuation_eq_one_iff, ← toAdd_eq_zero, map_mul, map_pow, toAdd_mul,
-      toAdd_pow, hk, hc, nsmul_eq_mul]
-    push_cast
-    ring
-  have hnsq : ¬IsSquare (a * (ϖ ^ (-k)) ^ 2) := fun h => hsq <| by
-    simpa using h.mul (IsSquare.sq (ϖ ^ (-k))⁻¹)
-  refine ⟨ϖ ^ (-k), hv, ?_⟩
-  -- The unit `a ϖ^{-2k}` has even defect exponent `d - 2k`, so it is not one of the odd ones.
+  obtain ⟨c, hv, hδ⟩ := exists_defectExponent_mul_sq_eq_sub_of_even_valuation hd ha
+  have hnsq : ¬IsSquare (a * c ^ 2) := fun h => hsq <| by
+    simpa using h.mul (IsSquare.sq c⁻¹)
+  refine ⟨c, hv, ?_⟩
+  -- The normalized unit has even defect exponent, so it is not one of the odd ones.
   rcases defectExponent_eq_two_mul_natCastValuation_or_odd h2 hv hnsq with h | ⟨j, -, hj⟩
   · exact h
-  · rw [defectExponent_mul_sq, hd, hc, ← WithTop.coe_add, WithTop.coe_inj] at hj
+  · rw [hδ, WithTop.coe_inj] at hj
+    obtain ⟨k, hk⟩ := ha
     obtain ⟨r, hr⟩ := hev
     omega
 
@@ -280,9 +273,9 @@ theorem unramified_class_unique (h2 : (2 : K) ≠ 0) (u u' : Kˣ)
       Even (normalizedValuation K b).toAdd) :
     IsSquare (u * u') := by
   obtain ⟨d, hd⟩ := WithTop.ne_top_iff_exists.mp
-    (mt defectExponent_eq_top_iff.mp (not_isSquare_of_unramified_class h2 hu))
+    (mt defectExponent_eq_top_iff.mp (not_isSquare_of_unramified_class hu))
   obtain ⟨d', hd'⟩ := WithTop.ne_top_iff_exists.mp
-    (mt defectExponent_eq_top_iff.mp (not_isSquare_of_unramified_class h2 hu'))
+    (mt defectExponent_eq_top_iff.mp (not_isSquare_of_unramified_class hu'))
   exact isSquare_mul_of_even_defectExponent h2 hd.symm hd'.symm
     ((unramified_class_iff_even_defectExponent h2 hd.symm).mp hu)
     ((unramified_class_iff_even_defectExponent h2 hd'.symm).mp hu')
@@ -296,12 +289,12 @@ theorem defectExponent_eq_two_mul_natCastValuation_iff_isSquare_mul (h2 : (2 : K
     (hu : valuation K (u : K) = 1) :
     defectExponent u = ((2 * natCastValuation K 2 h2 : ℕ) : ℤ) ↔ IsSquare (u * Δ) := by
   obtain ⟨dΔ, hdΔ⟩ := WithTop.ne_top_iff_exists.mp
-    (mt defectExponent_eq_top_iff.mp (not_isSquare_of_unramified_class h2 hΔ))
+    (mt defectExponent_eq_top_iff.mp (not_isSquare_of_unramified_class hΔ))
   refine ⟨fun h => isSquare_mul_of_even_defectExponent h2 h hdΔ.symm
     ⟨natCastValuation K 2 h2, by push_cast; ring⟩
     ((unramified_class_iff_even_defectExponent h2 hdΔ.symm).mp hΔ), fun h => ?_⟩
   have hu' := unramified_class_of_isSquare_mul h hΔ
-  have hsq := not_isSquare_of_unramified_class h2 hu'
+  have hsq := not_isSquare_of_unramified_class hu'
   obtain ⟨d, hd⟩ := WithTop.ne_top_iff_exists.mp (mt defectExponent_eq_top_iff.mp hsq)
   obtain ⟨r, hr⟩ := (unramified_class_iff_even_defectExponent h2 hd.symm).mp hu'
   rcases defectExponent_eq_two_mul_natCastValuation_or_odd h2 hu hsq with h' | ⟨k, -, hk⟩

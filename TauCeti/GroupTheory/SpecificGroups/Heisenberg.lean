@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Defs
+public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.GroupTheory.PGroup
 public import TauCeti.GroupTheory.PLowerCentralSeries
 public import TauCeti.GroupTheory.ProperPower
@@ -23,7 +24,9 @@ upper triangle, so that
   `(x, y, z) * (x', y', z') = (x + x', y + y', z + z' + x * y')`.
 
 It is nilpotent of class at most two: every commutator lies on the `z`-axis, which is central, and
-the commutator of `(x, y, z)` and `(x', y', z')` is `(0, 0, x * y' - x' * y)`. Over a ring of
+the commutator of `(x, y, z)` and `(x', y', z')` is `(0, 0, x * y' - x' * y)`. Every element of the
+`z`-axis is such a commutator, so the commutator subgroup is the `z`-axis and the abelianization is
+the additive group `R × R`, through `(x, y, z) ↦ (x, y)`. Over a ring of
 characteristic `p` the `p`-th power of every element lies on the `z`-axis as well, so the second
 term of the lower `p`-central series is trivial. Over `𝔽_p`, for a prime `p`, the group is
 nonabelian of order `p ^ 3`, hence the smallest nonabelian `p`-group, and has `p`-class exactly
@@ -39,10 +42,15 @@ group.
 * `TauCeti.HeisenbergGroup.toMatrix`: the unipotent upper triangular matrix
   `!![1, x, z; 0, 1, y; 0, 0, 1]` of `(x, y, z)`, an injective monoid homomorphism
   (`TauCeti.HeisenbergGroup.toMatrix_injective`).
+* `TauCeti.HeisenbergGroup.projXY`: the projection `(x, y, z) ↦ (x, y)` onto `R × R`.
+* `TauCeti.HeisenbergGroup.abelianizationMulEquiv`: the abelianization is `R × R`.
+* `TauCeti.HeisenbergGroup.opMulEquiv`: over a commutative ring, the group is isomorphic to its
+  opposite by `(x, y, z) ↦ (x, y, x * y - z)`.
 
 ## Main results
 
 * `TauCeti.HeisenbergGroup.commutatorElement_eq`: the commutator formula.
+* `TauCeti.HeisenbergGroup.commutator_eq_zAxis`: the commutator subgroup is the `z`-axis.
 * `TauCeti.HeisenbergGroup.pow_eq`: the power formula
   `(x, y, z) ^ n = (n • x, n • y, n • z + (n choose 2) • (x * y))`.
 * `TauCeti.HeisenbergGroup.pLowerCentralSeries_top_two_eq_bot`: over a ring of characteristic
@@ -224,6 +232,73 @@ theorem toMatrix_injective : Function.Injective (toMatrix : HeisenbergGroup R �
   · simpa using h01
   · simpa using h12
   · simpa using h02
+
+/-! ### The commutator subgroup and the abelianization -/
+
+/-- **The commutator subgroup of the Heisenberg group is its `z`-axis**: every commutator lies on
+the `z`-axis, and `(0, 0, c)` is the commutator of `(c, 0, 0)` and `(0, 1, 0)`. -/
+theorem commutator_eq_zAxis : commutator (HeisenbergGroup R) = zAxis := by
+  refine le_antisymm (commutator_le.mpr fun a _ b _ ↦ commutatorElement_mem_zAxis a b)
+    fun a ha ↦ ?_
+  obtain ⟨hax, hay⟩ := mem_zAxis_iff.mp ha
+  have h : ⁅(⟨a.z, 0, 0⟩ : HeisenbergGroup R), ⟨0, 1, 0⟩⁆ = a := by
+    rw [commutatorElement_eq]
+    ext <;> simp [hax, hay]
+  rw [← h]
+  exact commutator_mem_commutator (Subgroup.mem_top _) (Subgroup.mem_top _)
+
+/-- The projection `(x, y, z) ↦ (x, y)` of the Heisenberg group onto the additive group `R × R`,
+written multiplicatively. Its kernel is the `z`-axis (`TauCeti.HeisenbergGroup.ker_projXY`). -/
+def projXY : HeisenbergGroup R →* Multiplicative (R × R) where
+  toFun a := .ofAdd (a.x, a.y)
+  map_one' := rfl
+  map_mul' _ _ := rfl
+
+@[simp]
+theorem projXY_apply (a : HeisenbergGroup R) : projXY a = .ofAdd (a.x, a.y) :=
+  (rfl)
+
+/-- The kernel of the projection `(x, y, z) ↦ (x, y)` is the `z`-axis. -/
+theorem ker_projXY : (projXY : HeisenbergGroup R →* _).ker = zAxis := by
+  ext a
+  simp [MonoidHom.mem_ker, Prod.ext_iff]
+
+/-- **The abelianization of the Heisenberg group** is the additive group `R × R`, through the
+projection `(x, y, z) ↦ (x, y)`. -/
+def abelianizationMulEquiv : Abelianization (HeisenbergGroup R) ≃* Multiplicative (R × R) :=
+  (QuotientGroup.quotientMulEquivOfEq (commutator_eq_zAxis.trans ker_projXY.symm)).trans
+    (QuotientGroup.quotientKerEquivOfRightInverse (projXY : HeisenbergGroup R →* _)
+      (fun v ↦ (⟨v.toAdd.1, v.toAdd.2, 0⟩ : HeisenbergGroup R)) fun _ ↦ by rfl)
+
+@[simp]
+theorem abelianizationMulEquiv_of (a : HeisenbergGroup R) :
+    abelianizationMulEquiv (Abelianization.of a) = .ofAdd (a.x, a.y) :=
+  (rfl)
+
+@[simp]
+theorem abelianizationMulEquiv_symm_apply (v : Multiplicative (R × R)) :
+    abelianizationMulEquiv.symm v =
+      Abelianization.of (⟨v.toAdd.1, v.toAdd.2, 0⟩ : HeisenbergGroup R) :=
+  (rfl)
+
+/-- The Heisenberg group over a commutative ring is isomorphic to its opposite group by
+`(x, y, z) ↦ (x, y, x * y - z)`, an anti-automorphism fixing the first two coordinates. -/
+def opMulEquiv {R : Type*} [CommRing R] : HeisenbergGroup R ≃* (HeisenbergGroup R)ᵐᵒᵖ where
+  toFun a := .op ⟨a.x, a.y, a.x * a.y - a.z⟩
+  invFun a := ⟨a.unop.x, a.unop.y, a.unop.x * a.unop.y - a.unop.z⟩
+  left_inv a := by ext <;> simp
+  right_inv a := MulOpposite.unop_injective <| by ext <;> simp
+  map_mul' a b := MulOpposite.unop_injective <| by ext <;> simp <;> ring
+
+@[simp]
+theorem unop_opMulEquiv {R : Type*} [CommRing R] (a : HeisenbergGroup R) :
+    (opMulEquiv a).unop = ⟨a.x, a.y, a.x * a.y - a.z⟩ :=
+  (rfl)
+
+@[simp]
+theorem opMulEquiv_symm_apply {R : Type*} [CommRing R] (a : (HeisenbergGroup R)ᵐᵒᵖ) :
+    opMulEquiv.symm a = ⟨a.unop.x, a.unop.y, a.unop.x * a.unop.y - a.unop.z⟩ :=
+  (rfl)
 
 section CharP
 

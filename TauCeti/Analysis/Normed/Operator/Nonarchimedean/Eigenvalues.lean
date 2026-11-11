@@ -20,7 +20,8 @@ The general Fredholm alternative for completely continuous operators supplies th
 Combining it with the Fredholm-series description of the spectrum shows that every zero `a` of
 `H_u` gives the eigenvalue `a⁻¹`. The condition `a ≠ 0` is automatic because `H_u(0) = 1`.
 This identifies actual eigenvalues, without asserting an algebraic multiplicity or a dimension
-formula for a generalised eigenspace.
+formula for a generalised eigenspace. Nonzero eigenvalues in the original field are preserved
+and reflected by bounded field extension.
 
 ## References
 
@@ -30,7 +31,7 @@ formula for a generalised eigenspace.
 
 public section
 
-open scoped ZeroAtInfty
+open scoped ZeroAtInfty NNReal
 
 namespace ContinuousLinearMap
 
@@ -59,5 +60,25 @@ theorem IsRowCompact.evalAt_charPowerSeries_eq_zero_iff_hasEigenvalue (hu : u.Is
   rw [hu.evalAt_charPowerSeries_eq_zero_iff]
   exact and_congr_right fun ha ↦
     (hu.isCompletelyContinuous.hasEigenvalue_iff_mem_spectrum (inv_ne_zero ha)).symm
+
+variable {L : Type*} [NontriviallyNormedField L] [CompleteSpace L] [IsUltrametricDist L]
+
+/-- A nonzero scalar of the original field is an eigenvalue after bounded field extension
+exactly when it was an eigenvalue before extension. This does not address the eigenvalue zero.
+-/
+@[simp]
+theorem IsRowCompact.hasEigenvalue_mapCoeffs_iff (hu : u.IsRowCompact)
+    (f : K →+* L) (hf : ∃ C : ℝ≥0, ∀ x, ‖f x‖ ≤ C * ‖x‖) {μ : K} (hμ : μ ≠ 0) :
+    Module.End.HasEigenvalue
+      (u.mapCoeffs f hf : Module.End L C₀(I, L)) (f μ) ↔
+    Module.End.HasEigenvalue (u : Module.End K C₀(I, K)) μ := by
+  have hμ' : f μ ≠ 0 := (map_ne_zero f).2 hμ
+  have hK := hu.evalAt_charPowerSeries_eq_zero_iff_hasEigenvalue (a := μ⁻¹)
+  have hL := (hu.mapCoeffs f hf).evalAt_charPowerSeries_eq_zero_iff_hasEigenvalue
+    (a := f (μ⁻¹))
+  rw [hu.evalAt_charPowerSeries_mapCoeffs f hf] at hL
+  simp only [map_inv₀, ne_eq, inv_eq_zero, hμ, hμ', not_false_eq_true, inv_inv,
+    true_and, map_eq_zero] at hK hL
+  exact hL.symm.trans hK
 
 end ContinuousLinearMap

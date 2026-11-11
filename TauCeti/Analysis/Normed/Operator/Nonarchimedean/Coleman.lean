@@ -6,12 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Cyclicity
+public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Entire
+public import TauCeti.Analysis.Polynomial.Coleman.Entire
 public import TauCeti.RingTheory.Polynomial.Resultant.Coleman
 import Mathlib.Topology.Algebra.Polynomial
+import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Resolvent
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 
 /-!
-# Spectral mapping for Fredholm determinants under polynomials
+# Spectral mapping for Fredholm determinants under polynomials and entire functions
 
 Let `R` be a complete ultrametric normed commutative ring with `‖1‖ = 1` and Tate scalars, and
 let `u` be a row-compact endomorphism of the model space `C₀(I, R)`. For a polynomial `B` with
@@ -38,10 +41,20 @@ letting `S` grow: `B(π_S ∘ u)` converges to `B(u)` in operator norm, each Fre
 continuous in operator norm on row-compact operators, and each coefficient of Coleman's transform
 is continuous for coefficientwise convergence (`Polynomial.continuous_coeff_colemanDSeries`).
 
+The same identity holds for an entire series `B` with `B(0) = 0`, with `B(u) = Σ bₘ uᵐ` the
+norm-convergent evaluation `PowerSeries.evalAt` in the operator algebra and the entire transform
+`PowerSeries.colemanDEntire` on the right
+(`ContinuousLinearMap.IsRowCompact.charPowerSeries_matrixCoeff_evalAt`). Here the polynomials are
+the truncations of `B`: their values at `u` converge to `B(u)` in operator norm
+(`PowerSeries.IsEntire.tendsto_aeval_trunc`), and their polynomial-input transforms converge
+coefficientwise to the entire transform (`PowerSeries.tendsto_coeff_colemanDSeries_trunc`).
+
 ## Main results
 
 * `ContinuousLinearMap.IsRowCompact.charPowerSeries_matrixCoeff_aeval`: spectral mapping
-  `det (1 - T B(u)) = D(B, det (1 - T u))`.
+  `det (1 - T B(u)) = D(B, det (1 - T u))` for a polynomial `B`.
+* `ContinuousLinearMap.IsRowCompact.charPowerSeries_matrixCoeff_evalAt`: spectral mapping for an
+  entire series `B`.
 
 ## References
 
@@ -54,7 +67,7 @@ is continuous for coefficientwise convergence (`Polynomial.continuous_coeff_cole
 public section
 
 open Filter Topology ZeroAtInftyContinuousMap Polynomial
-open scoped ZeroAtInfty
+open scoped ZeroAtInfty PowerSeries
 
 variable {I R : Type*} [TopologicalSpace I] [DiscreteTopology I] [DecidableEq I]
 
@@ -100,5 +113,30 @@ theorem IsRowCompact.charPowerSeries_matrixCoeff_aeval (hu : u.IsRowCompact) {B 
     charPowerSeries_matrixCoeff_indicatorCLM_comp,
     colemanDSeries_coe_of_natDegree_le hB0 (Matrix.natDegree_charpolyRev_le _),
     Matrix.colemanDBounded_charpolyRev _ le_rfl]
+
+/-- **Spectral mapping for Fredholm determinants under entire functions.** If `u` is a row-compact
+endomorphism of a model space and `B` is an entire series with `B(0) = 0`, the Fredholm determinant
+of `B(u)` is Coleman's entire transform of that of `u`: `det (1 - T B(u)) = D(B, det (1 - T u))`. -/
+theorem IsRowCompact.charPowerSeries_matrixCoeff_evalAt (hu : u.IsRowCompact) {B : R⟦X⟧}
+    (hB : B.IsEntire) (hB0 : PowerSeries.constantCoeff B = 0) :
+    (B.evalAt u).matrixCoeff.charPowerSeries =
+      B.colemanDEntire u.matrixCoeff.charPowerSeries := by
+  have hB0' : PowerSeries.coeff 0 B = 0 := by rwa [PowerSeries.coeff_zero_eq_constantCoeff_apply]
+  have hw0 (m : ℕ) : (PowerSeries.trunc (m + 1) B).coeff 0 = 0 := by
+    simp [PowerSeries.coeff_trunc, hB0']
+  -- the truncations of `B`, evaluated at `u`, converge to `B(u)` in operator norm
+  have hw : Tendsto (fun m ↦ ‖Polynomial.aeval u (PowerSeries.trunc (m + 1) B) - B.evalAt u‖)
+      atTop (𝓝 0) :=
+    tendsto_iff_norm_sub_tendsto_zero.mp
+      ((hB.tendsto_aeval_trunc u).comp (tendsto_add_atTop_nat 1))
+  -- so the Fredholm coefficients of these polynomials in `u` converge to those of `B(u)`, and
+  -- by polynomial spectral mapping they are the coefficients of the polynomial-input transforms
+  ext k
+  refine tendsto_nhds_unique ?_ (PowerSeries.tendsto_coeff_colemanDSeries_trunc hB
+    hu.isEntire_charPowerSeries hB0' (by simp) k)
+  rw [Matrix.coeff_charPowerSeries]
+  refine (tendsto_charCoeff_matrixCoeff_of_tendsto (.of_forall fun m ↦ hu.aeval (hw0 m))
+    (hu.evalAt hB hB0) hw k).congr fun m ↦ ?_
+  rw [← Matrix.coeff_charPowerSeries, hu.charPowerSeries_matrixCoeff_aeval (hw0 m)]
 
 end ContinuousLinearMap

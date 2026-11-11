@@ -27,16 +27,18 @@ from Mathlib's maps of barycentric simplices. The bridge reuses
 last coordinate to the zeroth position. Every map of barycentric simplices induced by a map of
 vertices, read on full-dimensional simplices, is the restriction of the continuous affine map
 `simplexMapAmbient` of the ambient Euclidean spaces; the face inclusions are the case of the
-coface vertex maps `Fin.succAbove`. In coordinates, the face map omitting the vertex `e_j` inserts a
-zero `j`-th coordinate, and the face map omitting the origin puts the missing barycentric weight in
-front; a permutation of the vertices induces an affine symmetry of the simplex. Cycling the
-vertices relates the two readings of the face opposite the origin: through the coordinates other
-than the `j`-th one, and through the last coordinates as the face map does. The simplex is a
-compact convex set with nonempty interior, so derivatives within it are unique at every point
-(`TauCeti.uniqueDiffOn_fullSimplex`); this is what makes it a domain for derivatives and integrals
-of forms. The face maps are injective, hence closed embeddings of the ambient Euclidean spaces
-(`TauCeti.isClosedEmbedding_simplexMapAmbient_succAbove`), so pulling back along them preserves
-compact supports.
+coface vertex maps `Fin.succAbove`. More generally, every affine map of barycentric simplices with
+arbitrary vertices is the restriction of a continuous affine map of the ambient spaces
+(`TauCeti.exists_continuousAffineMap_eq_affineMapMk`). In coordinates, the face map omitting the
+vertex `e_j` inserts a zero `j`-th coordinate, and the face map omitting the origin puts the
+missing barycentric weight in front; a permutation of the vertices induces an affine symmetry of
+the simplex. Cycling the vertices relates the two readings of the face opposite the origin:
+through the coordinates other than the `j`-th one, and through the last coordinates as the face
+map does. The simplex is a compact convex set with nonempty interior, so derivatives within it are
+unique at every point (`TauCeti.uniqueDiffOn_fullSimplex`); this is what makes it a domain for
+derivatives and integrals of forms. The face maps are injective, hence closed embeddings of the
+ambient Euclidean spaces (`TauCeti.isClosedEmbedding_simplexMapAmbient_succAbove`), so pulling back
+along them preserves compact supports.
 
 This is the full-dimensional simplex convention used in Lee, *Introduction to Smooth Manifolds*,
 Chapter 18. The barycentric simplex, its topology, and its maps are those of Mathlib.
@@ -84,6 +86,12 @@ theorem nonempty_interior_fullSimplex (p : ℕ) : (interior (fullSimplex p)).Non
   rw [fullSimplex, ← h]
   exact (nonempty_interior_coordinateSimplex (Fin p)).preimage
     (EuclideanSpace.equiv (Fin p) ℝ).surjective
+
+/-- The full-dimensional simplex is the closure of its interior. -/
+theorem closure_interior_fullSimplex (p : ℕ) :
+    closure (interior (fullSimplex p)) = fullSimplex p := by
+  rw [(convex_fullSimplex p).closure_interior_eq_closure_of_nonempty_interior
+    (nonempty_interior_fullSimplex p), (isClosed_fullSimplex p).closure_eq]
 
 /-- Derivatives within the full-dimensional simplex are unique at each of its points, including
 the points of its faces and corners. -/
@@ -264,6 +272,23 @@ theorem image_simplexMapAmbient_perm {m : ℕ} (σ : Equiv.Perm (Fin (m + 1))) :
     Equiv.apply_symm_apply]
   exact congrArg Subtype.val ((congrArg _ (StdSimplex.map_id _)).trans
     ((fullSimplexEquivStdSimplex m).symm_apply_apply _))
+
+/-- Every affine map of barycentric simplices, given by its vertices `v`, read on full-dimensional
+simplices, is the restriction of a continuous affine map of the ambient Euclidean spaces. This
+extends `simplexMapAmbient_coe` from vertex maps to arbitrary vertices, such as the barycenters
+used in barycentric subdivision. -/
+theorem exists_continuousAffineMap_eq_affineMapMk {k m : ℕ}
+    (v : Fin (k + 1) → StdSimplex ℝ (Fin (m + 1))) :
+    ∃ A : EuclideanSpace ℝ (Fin k) →ᴬ[ℝ] EuclideanSpace ℝ (Fin m), ∀ x : fullSimplex k,
+      A x = ((fullSimplexEquivStdSimplex m).symm
+        (StdSimplex.affineMapMk v (fullSimplexEquivStdSimplex k x))).val := by
+  -- In coordinates, `x ↦ c₀ + ∑ⱼ xⱼ • (cⱼ₊₁ - c₀)` with `cᵢ` the vertex `v i`.
+  let c (i : Fin (k + 1)) := ((fullSimplexEquivStdSimplex m).symm (v i)).val
+  refine ⟨(∑ j, (EuclideanSpace.proj j).smulRight (c j.succ - c 0)).toContinuousAffineMap +
+    ContinuousAffineMap.const ℝ _ (c 0), fun x ↦ ?_⟩
+  ext j
+  simp [c, Fin.sum_univ_succ, mul_sub, Finset.sum_sub_distrib, ← Finset.sum_mul]
+  ring
 
 /-! ### The faces in coordinates -/
 

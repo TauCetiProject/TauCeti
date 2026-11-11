@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.CyclicClass
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
-import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 import TauCeti.NumberTheory.LocalField.Norm.Unramified.Basic
 import TauCeti.NumberTheory.LocalField.Unramified.Maximal
@@ -77,7 +77,7 @@ theorem localSymbol_kummerClass_eq_zero_of_mem_unitFiltration (hp : ¬ ringChar 
   have ha' : normalizedValuation K a = 1 :=
     (normalizedValuation_eq_one_iff a).2 ((mem_unitFiltration_zero a).1 ha)
   refine (localSymbol_eq_zero_iff_mem_normGroup hζ tr hn a b ht
-    (adjoin_adjoinSimple_gen_eq_top (K := K) s)).2 ?_
+    (adjoin_adjoinSimple_gen_eq_top (F := K) s)).2 ?_
   exact mem_normGroup_iff_dvd_normalizedValuation.2 (by simp [ha'])
 
 end TauCeti.ClassFieldTheory

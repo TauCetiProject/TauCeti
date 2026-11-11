@@ -190,8 +190,7 @@ theorem muInvariant_eq_add_of_exact [Module.Finite O⟦X⟧ N] (hN : Module.IsTo
 @[simp]
 theorem muInvariant_prod [Module.Finite O⟦X⟧ M] [Module.Finite O⟦X⟧ N] :
     muInvariant O (M × N) = muInvariant O M + muInvariant O N := by
-  rw [muInvariant_def, (Submodule.torsionProdEquiv O⟦X⟧ M N).charDivisor_eq,
-    charDivisor_prod torsion_isTorsion torsion_isTorsion, Finsupp.add_apply, muInvariant_def,
+  rw [muInvariant_def, charDivisor_torsion_prod, Finsupp.add_apply, muInvariant_def,
     muInvariant_def]
 
 /-- The `μ`-invariant of a finite product of finitely generated modules is the sum of their
@@ -200,18 +199,7 @@ theorem muInvariant_prod [Module.Finite O⟦X⟧ M] [Module.Finite O⟦X⟧ N] :
 theorem muInvariant_pi {ι : Type*} [Fintype ι] (M : ι → Type u) [∀ i, AddCommGroup (M i)]
     [∀ i, Module O⟦X⟧ (M i)] [∀ i, Module.Finite O⟦X⟧ (M i)] :
     muInvariant O (∀ i, M i) = ∑ i, muInvariant O (M i) := by
-  -- Reduce to `ι = Fin k`, then split off one factor at a time.
-  suffices h : ∀ (k : ℕ) (M : Fin k → Type u) [∀ i, AddCommGroup (M i)] [∀ i, Module O⟦X⟧ (M i)]
-      [∀ i, Module.Finite O⟦X⟧ (M i)], muInvariant O (∀ i, M i) = ∑ i, muInvariant O (M i) by
-    let e := (Fintype.equivFin ι).symm
-    rw [← (LinearEquiv.piCongrLeft O⟦X⟧ M e).muInvariant_eq, h]
-    exact e.sum_comp fun i ↦ muInvariant O (M i)
-  intro k
-  induction k with
-  | zero => intro M _ _ _; simp [muInvariant_eq_zero_of_isTorsionFree]
-  | succ k ih =>
-    intro M _ _ _
-    rw [← (Fin.consLinearEquiv O⟦X⟧ M).muInvariant_eq, muInvariant_prod, ih, Fin.sum_univ_succ]
+  simp only [muInvariant_def, charDivisor_torsion_pi, Finsupp.finsetSum_apply]
 
 /-- **The `μ`-invariant of a vertical factor.** For a uniformiser `ϖ` of `O`,
 `μ(O⟦X⟧ ⧸ (ϖ ^ m)) = m`. -/

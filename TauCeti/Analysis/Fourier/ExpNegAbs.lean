@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Fourier.FourierTransform
-public import TauCeti.MeasureTheory.Integral.ExpDecay
+public import TauCeti.MeasureTheory.Integral.Exp.Decay
 import TauCeti.Analysis.Complex.Coordinates
 import TauCeti.Analysis.SpecialFunctions.Exp.Oscillation
 

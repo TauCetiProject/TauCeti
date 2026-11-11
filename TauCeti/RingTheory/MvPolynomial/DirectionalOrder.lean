@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.MvPolynomial.OrderAt
 public import Mathlib.Algebra.Polynomial.Degree.TrailingDegree
-public import Mathlib.RingTheory.MvPolynomial.Homogeneous
+public import TauCeti.RingTheory.MvPolynomial.LineRestriction
 public import Mathlib.Algebra.MvPolynomial.Funext
 
 /-!
@@ -43,33 +43,6 @@ section CommSemiring
 
 variable [CommSemiring R]
 
-/-- Restriction to a line through the origin sends a monomial to a monomial of its total
-degree, with coefficient given by evaluation at the direction. -/
-theorem aeval_C_mul_X_monomial (v : σ → R) (d : σ →₀ ℕ) (r : R) :
-    aeval (fun i ↦ Polynomial.C (v i) * Polynomial.X) (monomial d r) =
-      Polynomial.monomial d.degree (eval v (monomial d r)) := by
-  simp only [aeval_monomial, Polynomial.algebraMap_apply, eval_monomial, Finsupp.prod,
-    mul_pow, ← map_pow, Finset.prod_mul_distrib, ← map_prod,
-    Finsupp.degree_apply]
-  rw [Finset.prod_pow_eq_pow_sum, ← mul_assoc, ← map_mul,
-    Algebra.algebraMap_self, RingHom.id_apply, Polynomial.C_mul_X_pow_eq_monomial]
-
-/-- The coefficient of a line restriction is the homogeneous component evaluated at its
-direction. -/
-@[simp]
-theorem coeff_aeval_C_mul_X (p : MvPolynomial σ R) (v : σ → R) (m : ℕ) :
-    (aeval (fun i ↦ Polynomial.C (v i) * Polynomial.X) p).coeff m =
-      eval v (homogeneousComponent m p) := by
-  classical
-  rw [p.as_sum]
-  simp only [map_sum, Polynomial.finsetSum_coeff]
-  simp only [aeval_C_mul_X_monomial, Polynomial.coeff_monomial,
-    homogeneousComponent_of_mem (isHomogeneous_monomial _ _)]
-  refine Finset.sum_congr rfl fun d _ ↦ ?_
-  by_cases h : d.degree = m
-  · simp [h]
-  · simp [h, Ne.symm h]
-
 /-- Translating the polynomial first gives the restriction to an affine line. -/
 theorem aeval_C_add_C_mul_X_eq (p : MvPolynomial σ R) (a v : σ → R) :
     aeval (fun i ↦ Polynomial.C (a i) + Polynomial.C (v i) * Polynomial.X) p =
@@ -78,25 +51,6 @@ theorem aeval_C_add_C_mul_X_eq (p : MvPolynomial σ R) (a v : σ → R) :
   congr 1
   ext i
   simp [add_comm]
-
-/-- Evaluation of the affine-line restriction is evaluation at the corresponding point. -/
-@[simp]
-theorem eval_aeval_C_add_C_mul_X (p : MvPolynomial σ R) (a v : σ → R) (t : R) :
-    (aeval (fun i ↦ Polynomial.C (a i) + Polynomial.C (v i) * Polynomial.X) p).eval t =
-      eval (a + t • v) p := by
-  have heq :
-      (aeval (fun i ↦ Polynomial.C (a i) + Polynomial.C (v i) * Polynomial.X) p).eval t =
-        aeval (fun i ↦ a i + v i * t) p := by
-    have h := comp_aeval_apply
-      (f := fun i ↦ Polynomial.C (a i) + Polynomial.C (v i) * Polynomial.X)
-      (Polynomial.aeval t : Polynomial R →ₐ[R] R) p
-    simp only [map_add, map_mul, Polynomial.aeval_C, Polynomial.aeval_X,
-      Algebra.algebraMap_self, RingHom.id_apply] at h
-    simpa only [Polynomial.coe_aeval_eq_eval] using h
-  have hpoint : (fun i ↦ a i + v i * t) = a + t • v := by
-    funext i
-    simp [mul_comm]
-  rw [heq, aeval_eq_eval, hpoint]
 
 /-- The coefficients of an affine-line restriction are the homogeneous Taylor components
 evaluated at the direction. -/

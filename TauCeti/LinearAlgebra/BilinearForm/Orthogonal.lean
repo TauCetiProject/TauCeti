@@ -78,6 +78,8 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
 * `LinearMap.BilinForm.restrict_nondegenerate_iff_disjoint_orthogonal`: for a reflexive form, a
   restriction is nondegenerate exactly when the submodule meets its orthogonal complement in zero,
   in any dimension.
+* `LinearMap.BilinForm.IsRefl.nondegenerate_restrict_of_isCompl_ker`: a reflexive form is
+  nondegenerate on every complement of its kernel.
 * `LinearMap.BilinForm.finrank_le_finrank_add_finrank_orthogonal` and
   `LinearMap.BilinForm.finrank_le_two_mul_finrank_of_orthogonal_le`: dimension lower bounds for
   orthogonal complements of an arbitrary bilinear form.
@@ -145,6 +147,32 @@ theorem apply_eq_zero_of_mem_biSup (B : LinearMap.BilinForm K V) {ι : Type*}
         iSup₂_le fun j hj y hy ↦ hO i j (hst.ne_of_mem hi hj) x hx y hy
       simpa only [Submodule.mem_iInf, LinearMap.mem_ker, flip_apply] using fun y hy ↦ hker hy
   simpa using (Submodule.mem_iInf _).mp ((Submodule.mem_iInf _).mp (hle hx) y) hy
+
+/-- Adjoining a submodule `S` to one member `N k` of a pairwise orthogonal family of submodules of
+the orthogonal complement of `S` keeps the family pairwise orthogonal. -/
+theorem apply_eq_zero_update_sup {B : LinearMap.BilinForm K V} (hB : B.IsRefl) {ι : Type*}
+    [DecidableEq ι] {S : Submodule K V} {N : ι → Submodule K V} (hN : ∀ i, N i ≤ B.orthogonal S)
+    (hO : ∀ i j, i ≠ j → ∀ x ∈ N i, ∀ y ∈ N j, B x y = 0) (k : ι) :
+    ∀ i j, i ≠ j → ∀ x ∈ Function.update N k (S ⊔ N k) i,
+      ∀ y ∈ Function.update N k (S ⊔ N k) j, B x y = 0 := by
+  have hSN {s : V} (hs : s ∈ S) {i : ι} {y : V} (hy : y ∈ N i) : B s y = 0 :=
+    mem_orthogonal_iff.mp (hN i hy) s hs
+  intro i j hij x hx y hy
+  by_cases hi : i = k <;> by_cases hj : j = k
+  · exact absurd (hi.trans hj.symm) hij
+  · subst hi
+    rw [Function.update_self] at hx
+    rw [Function.update_of_ne hj] at hy
+    obtain ⟨s, hs, x', hx', rfl⟩ := Submodule.mem_sup.mp hx
+    rw [map_add, LinearMap.add_apply, hSN hs hy, hO _ j hij x' hx' y hy, add_zero]
+  · subst hj
+    rw [Function.update_of_ne hi] at hx
+    rw [Function.update_self] at hy
+    obtain ⟨s, hs, y', hy', rfl⟩ := Submodule.mem_sup.mp hy
+    rw [map_add, hB.eq_zero (hSN hs hx), hO i _ hij x hx y' hy', add_zero]
+  · rw [Function.update_of_ne hi] at hx
+    rw [Function.update_of_ne hj] at hy
+    exact hO i j hij x hx y hy
 
 /-- The self-pairing of the sum of a finite orthogonal family is the sum of the self-pairings. -/
 theorem iIsOrtho.apply_sum_sum {B : LinearMap.BilinForm K V} {ι : Type*} [Fintype ι]
@@ -319,6 +347,18 @@ theorem restrict_nondegenerate_iff_disjoint_orthogonal {B : LinearMap.BilinForm 
   ⟨disjoint_orthogonal_of_restrict_nondegenerate,
     B.nondegenerate_restrict_of_disjoint_orthogonal hB⟩
 
+/-- For a reflexive form, and in particular for an alternating one, the restriction to a
+complement of the kernel is nondegenerate. This extends
+`LinearMap.IsSymm.nondegenerate_restrict_of_isCompl_ker` from symmetric to reflexive forms. -/
+theorem IsRefl.nondegenerate_restrict_of_isCompl_ker {B : LinearMap.BilinForm R M}
+    (hB : B.IsRefl) {W : Submodule R M} (hW : IsCompl W (LinearMap.ker B)) :
+    (B.restrict W).Nondegenerate := by
+  -- Since `W ⊔ ker B = ⊤`, the orthogonal complement of `W` is that of `⊤`, namely `ker B`.
+  have h : B.orthogonal W = LinearMap.ker B := by
+    rw [orthogonal, ← Submodule.orthogonalBilin_sup_ker B W, hW.sup_eq_top, ← orthogonal,
+      B.orthogonal_top_eq_ker hB]
+  exact B.nondegenerate_restrict_of_disjoint_orthogonal hB (h ▸ hW.disjoint)
+
 /-- A submodule with perfect flipped restricted pairing is complementary to its right orthogonal
 complement. -/
 theorem isCompl_orthogonal_of_flip_restrict_bijective
@@ -457,6 +497,15 @@ theorem orthogonal_orthogonal_of_isCompl {R : Type u} {M : Type v}
     simp [ht s' hs', ht't]
   simpa [ht0] using hs
 
+/-- For a nondegenerate reflexive form, the restriction to the orthogonal complement of a submodule
+complementary to its orthogonal complement is again nondegenerate. -/
+theorem nondegenerate_restrict_orthogonal_of_isCompl {B : LinearMap.BilinForm R M}
+    (hB : B.IsRefl) (hnd : B.Nondegenerate) {S : Submodule R M}
+    (hS : IsCompl S (B.orthogonal S)) : (B.restrict (B.orthogonal S)).Nondegenerate := by
+  apply B.nondegenerate_restrict_of_disjoint_orthogonal hB
+  rw [B.orthogonal_orthogonal_of_isCompl hB hnd.2 S hS]
+  exact hS.disjoint.symm
+
 /-- A vector `x` whose self-pairing `B x x` is a non-zero-divisor dividing every pairing `B x y`
 spans an orthogonal direct summand. Over a field this is the condition `B x x ≠ 0`; over a
 valuation ring it says that `B x x` has minimal valuation among the pairings of `x`. -/
@@ -550,16 +599,24 @@ open Module
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
   [FiniteDimensional K V] {B : LinearMap.BilinForm K V}
 
-/-- For a nondegenerate reflexive form in finite dimension, the orthogonal complement
+/-- For a nondegenerate form in finite dimension, the orthogonal complement
 of an intersection is the sum of the orthogonal complements. -/
 theorem orthogonal_inf (B : LinearMap.BilinForm K V) (hB : B.Nondegenerate)
-    (hRefl : B.IsRefl) (S T : Submodule K V) :
+    (S T : Submodule K V) :
     B.orthogonal (S ⊓ T) = B.orthogonal S ⊔ B.orthogonal T := by
-  have hsup : B.orthogonal (B.orthogonal S ⊔ B.orthogonal T) = S ⊓ T := by
-    rw [orthogonal, Submodule.orthogonalBilin_sup]
-    exact congrArg₂ (· ⊓ ·) (B.orthogonal_orthogonal hB hRefl S)
-      (B.orthogonal_orthogonal hB hRefl T)
-  rw [← hsup, B.orthogonal_orthogonal hB hRefl]
+  refine ((Submodule.eq_of_le_of_finrank_le
+    (sup_le (orthogonal_le inf_le_left) (orthogonal_le inf_le_right)) ?_).symm)
+  have hsup : B.orthogonal S ⊓ B.orthogonal T = B.orthogonal (S ⊔ T) :=
+    (Submodule.orthogonalBilin_sup (B := B) S T).symm
+  have h1 := Submodule.finrank_sup_add_finrank_inf_eq (B.orthogonal S) (B.orthogonal T)
+  have h2 := Submodule.finrank_sup_add_finrank_inf_eq S T
+  rw [hsup] at h1
+  simp only [finrank_orthogonal hB] at h1 ⊢
+  have := Submodule.finrank_le S
+  have := Submodule.finrank_le T
+  have := Submodule.finrank_le (S ⊔ T)
+  have := Submodule.finrank_le (S ⊓ T)
+  omega
 
 /-- The orthogonal complement of a vector with nonzero self-pairing has codimension one,
 without any symmetry or characteristic assumption on the bilinear form. -/
@@ -595,11 +652,13 @@ theorem two_mul_finrank_le_finrank_of_le_orthogonal (hB : B.Nondegenerate) {W : 
 
 variable [Invertible (2 : K)]
 
+omit [FiniteDimensional K V] in
 /-- A vector with nonzero self-pairing extends to an orthogonal basis of a symmetric bilinear
 space, with that vector in the first position. -/
 theorem IsSymm.exists_orthogonal_basis_apply_zero_eq (hB : B.IsSymm) {x : V}
     (hx : B x x ≠ 0) {n : ℕ} (hdim : finrank K V = n + 1) :
     ∃ b : Basis (Fin (n + 1)) K V, B.IsOrthoᵢ b ∧ b 0 = x := by
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   have hN : finrank K (B.orthogonal (K ∙ x)) = n := by
     have h := B.finrank_orthogonal_span_singleton_add_one hx
     omega
@@ -613,12 +672,14 @@ theorem IsSymm.exists_orthogonal_basis_apply_zero_eq (hB : B.IsSymm) {x : V}
     (mem_nonZeroDivisors_of_ne_zero hx) (fun _ ↦ hx.isUnit.dvd) hv'
   exact ⟨b, hb, hzero⟩
 
+omit [FiniteDimensional K V] in
 /-- An orthogonal pair with nonzero self-pairings extends to an orthogonal basis of a symmetric
 bilinear space, with the pair in the first two positions. -/
 theorem IsSymm.exists_orthogonal_basis_apply_zero_one_eq (hB : B.IsSymm) {x y : V}
     (hx : B x x ≠ 0) (hy : B y y ≠ 0) (hxy : B x y = 0) {n : ℕ}
     (hdim : finrank K V = n + 2) :
     ∃ b : Basis (Fin (n + 2)) K V, B.IsOrthoᵢ b ∧ b 0 = x ∧ b 1 = y := by
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   let N := B.orthogonal (K ∙ x)
   let y' : N := ⟨y, by simpa [N, orthogonal] using hxy⟩
   have hN : finrank K N = n + 1 := by
@@ -633,7 +694,28 @@ theorem IsSymm.exists_orthogonal_basis_apply_zero_one_eq (hB : B.IsSymm) {x y : 
 
 end LinearMap.BilinForm
 
+namespace Submodule
+
+/-- Composing a bilinear map with an injective map of its values does not change orthogonals. -/
+theorem orthogonalBilin_compr₂_of_injective {R M Q Q' : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid Q] [Module R Q] [AddCommMonoid Q'] [Module R Q']
+    {B : M →ₗ[R] M →ₗ[R] Q} {e : Q →ₗ[R] Q'} (he : Function.Injective e) (W : Submodule R M) :
+    W.orthogonalBilin (B.compr₂ e) = W.orthogonalBilin B := by
+  ext v
+  simp only [mem_orthogonalBilin, LinearMap.compr₂_apply]
+  exact forall₂_congr fun w _ ↦ by rw [← map_zero e, he.eq_iff]
+
+end Submodule
+
 namespace LinearMap
+
+/-- Composing a reflexive bilinear map with an injective map of its values keeps it reflexive. -/
+theorem IsRefl.compr₂_of_injective {R M Q Q' : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid Q] [Module R Q] [AddCommMonoid Q'] [Module R Q']
+    {B : M →ₗ[R] M →ₗ[R] Q} (hB : B.IsRefl) {e : Q →ₗ[R] Q'} (he : Function.Injective e) :
+    (B.compr₂ e).IsRefl := fun x y h ↦ by
+  rw [compr₂_apply, ← map_zero e, he.eq_iff] at h
+  rw [compr₂_apply, hB x y h, map_zero]
 
 /-- **Identifying a line with the scalars turns an injective line-valued form into a
 nondegenerate bilinear form.** If `L : V → Hom(V, Q)` is injective and `Q` is one-dimensional,
@@ -683,6 +765,20 @@ theorem mem_of_apply_eq_zero_of_two_mul_finrank_eq {K V Q : Type*} [Field K] [Ad
   rw [heq, BilinForm.mem_orthogonal_iff]
   intro b hb
   simp [B, ha b hb]
+
+/-- **Double orthogonality for a line-valued form.** If `L : V → Hom(V, Q)` is injective and
+reflexive, and `Q` is one-dimensional, then the orthogonal of the orthogonal of any subspace `W` is
+`W`. Identifying `Q` with the scalars turns `L` into a nondegenerate reflexive bilinear form. -/
+theorem IsRefl.orthogonalBilin_orthogonalBilin_of_injective {K V Q : Type*} [Field K]
+    [AddCommGroup V] [Module K V] [FiniteDimensional K V] [AddCommGroup Q] [Module K Q]
+    {L : V →ₗ[K] V →ₗ[K] Q} (hL : L.IsRefl) (hinj : Function.Injective L)
+    (hQ : Module.finrank K Q = 1) (W : Submodule K V) :
+    (W.orthogonalBilin L).orthogonalBilin L = W := by
+  obtain ⟨e, hnd⟩ := exists_nondegenerate_compr₂_of_injective hinj hQ
+  have h := BilinForm.orthogonal_orthogonal hnd (hL.compr₂_of_injective e.injective) W
+  rwa [BilinForm.orthogonal, BilinForm.orthogonal,
+    Submodule.orthogonalBilin_compr₂_of_injective e.injective,
+    Submodule.orthogonalBilin_compr₂_of_injective e.injective] at h
 
 end LinearMap
 

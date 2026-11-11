@@ -9,9 +9,13 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Standard
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 public import Mathlib.Geometry.Convex.Cone.Pointed
+public import Mathlib.Analysis.Convex.Extreme
+public import Mathlib.Topology.Instances.AddCircle.Defs
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.Pow
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
+import Mathlib.Analysis.SpecialFunctions.Complex.Arg
+import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Data.Set.Card
 
 /-!
@@ -50,9 +54,24 @@ The local invariants of the model are explicit:
 * the image of the derivative of `μ` at `z` is the span of the weights `α_i` with `z_i ≠ 0`, and
   the orbit through `z` has dimension the rank of these weights.
 
+Globally, the rotation by `θ` is the identity exactly when every `θ_i` lies in `2πℤ`, the full
+torus `(ℝ / 2πℤ)^ι` moves `z` to `w` exactly when `|z_i| = |w_i|` for every `i`, and a point is
+fixed by all of `𝔱` exactly when it vanishes along the nonzero weights. When the weights are
+linearly independent:
+
+* the moment map determines the moduli `|z_i|`, so every fibre of `μ` is a single orbit of `𝔱`;
+* the only fixed point is the origin, the only point mapped to the apex `0` of the moment cone;
+* the apex is an extreme point of the moment image.
+
+Some such hypothesis is needed for the apex to be a vertex: finitely many dependent weights can
+span a cone containing a line, so that `0` is not an extreme point of the image, or even all of
+`𝔱*`, so that `0` is an interior point.
+
 ## Main definitions
 
 * `TauCeti.weightRotation θ`: the rotation `z_i ↦ exp(i θ_i) z_i`.
+* `TauCeti.torusRotation θ`: the rotation `z_i ↦ exp(-i θ_i) z_i` by angles `θ ∈ (ℝ / 2πℤ)^ι`,
+  the weight-model rotation by `-t` for any representative `t` of `θ`.
 * `TauCeti.weightGenerator θ`: its infinitesimal generator `z_i ↦ i θ_i z_i`.
 * `TauCeti.weightMomentMap α`: the moment map `μ(q, p) = -½ Σ_i (q_i² + p_i²) α_i`.
 * `TauCeti.weightModelCoords`: the real coordinates `(q_i)_i ⊔ (p_i)_i` of `ℂ^ι`, indexed by
@@ -72,8 +91,12 @@ The local invariants of the model are explicit:
 * `TauCeti.hasDerivAt_weightRotation_hamiltonianVectorField`: `t ↦ (t ξ) • z` is the integral
   curve of the Hamiltonian vector field of `μ^ξ` through `z`.
 * `TauCeti.range_weightMomentMap`: the image of `μ` is the cone spanned by the `-α_i`.
+* `Module.Basis.range_weightMomentMap_neg`: when the negated weights form a basis `b` of `𝔱*`,
+  the image of `μ` is the cone of covectors with nonnegative coordinates in `b`.
 * `TauCeti.weightRotation_apply_eq_self_iff`, `TauCeti.weightGenerator_apply_eq_zero_iff`: the
   stabilizer and the infinitesimal stabilizer of a point.
+* `TauCeti.weightRotation_neg_apply_eq_self_iff`, `TauCeti.weightRotation_neg_apply_eq_iff`: the
+  stabilizer of a point, and when two rotations agree at a point, with angles in `ℝ / 2πℤ`.
 * `TauCeti.mem_ker_weightGenerator_iff`, `TauCeti.finrank_ker_weightGenerator`: the kernel of the
   generator of `θ` is the subspace of `z` with `z_i = 0` whenever `θ_i ≠ 0`, of dimension twice
   the number of `i` with `θ_i = 0`.
@@ -81,13 +104,24 @@ The local invariants of the model are explicit:
   with `z_i ≠ 0`.
 * `TauCeti.finrank_range_weightInfinitesimalAction`: the orbit through `z` has dimension the rank
   of the weights `α_i` with `z_i ≠ 0`.
+* `TauCeti.weightRotation_eq_id_iff`: the kernel of the rotation action.
+* `TauCeti.exists_weightRotation_apply_eq_iff`: the orbits of the full rotation torus.
+* `TauCeti.torusRotation_add`, `TauCeti.torusRotation_apply_eq_self_iff`,
+  `TauCeti.continuous_torusRotation`: `(ℝ / 2πℤ)^ι` acts continuously on `ℂ^ι` by rotations, and
+  `θ` fixes `z` exactly when `θ_i = 0` for every `i` with `z_i ≠ 0`.
+* `TauCeti.forall_weightRotation_apply_eq_self_iff`: the fixed points of the action of `𝔱`.
+* `TauCeti.weightMomentMap_eq_weightMomentMap_iff_exists_weightRotation`: for linearly independent
+  weights, the fibres of the moment map are orbits of `𝔱`.
+* `TauCeti.forall_weightRotation_apply_eq_self_iff_weightMomentMap_eq_zero`,
+  `TauCeti.zero_mem_extremePoints_range_weightMomentMap`: for linearly independent weights, the
+  fixed points are the preimage of the apex, which is an extreme point of the image.
 
 ## References
 
 * Victor Guillemin and Shlomo Sternberg, *Convexity properties of the moment mapping*, Invent.
   Math. 67 (1982), Section 2.
 * Ana Cannas da Silva, *Lectures on Symplectic Geometry*, Lecture Notes in Math. 1764, Springer
-  (2001), Sections 22 and 27.
+  (2001), Sections 22 and 27–29.
 -/
 
 public section
@@ -148,6 +182,12 @@ theorem weightRotation_add (θ θ' : ι → ℝ) :
     weightRotation (θ + θ') = (weightRotation θ).comp (weightRotation θ') := by
   ext x i <;> simp [cos_add, sin_add] <;> ring
 
+/-- Every rotation is injective, with inverse the rotation by the opposite angles. -/
+theorem weightRotation_injective (θ : ι → ℝ) : Function.Injective (weightRotation θ) :=
+  fun y z h ↦ by
+    simpa only [← ContinuousLinearMap.comp_apply, ← weightRotation_add, neg_add_cancel,
+      weightRotation_zero, ContinuousLinearMap.id_apply] using congrArg (weightRotation (-θ)) h
+
 /-- Rotations preserve the standard symplectic form. -/
 theorem stdSymplecticForm_weightRotation (θ : ι → ℝ)
     (x y : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
@@ -198,6 +238,18 @@ theorem weightMomentMap_apply (α : ι → StrongDual ℝ 𝔱)
 @[simp]
 theorem weightMomentMap_zero (α : ι → StrongDual ℝ 𝔱) : weightMomentMap α 0 = 0 := by
   simp [weightMomentMap]
+
+/-- The moment map of the weight model is the linear map `a ↦ Σ_i a_i (-α_i)` applied to the
+half squared radii `(q_i² + p_i²) / 2`. -/
+theorem weightMomentMap_eq_linearCombination (α : ι → StrongDual ℝ 𝔱)
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    weightMomentMap α x =
+      Fintype.linearCombination ℝ (-α) fun i ↦ (x.1 i ^ 2 + x.2 i ^ 2) / 2 := by
+  rw [weightMomentMap_def, Fintype.linearCombination_apply]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [Pi.neg_apply, smul_neg, ← neg_smul]
+  congr 1
+  ring
 
 /-- The moment map is invariant under every rotation. -/
 @[simp]
@@ -294,6 +346,22 @@ theorem range_weightMomentMap (α : ι → StrongDual ℝ 𝔱) :
     simp only [PiLp.zero_apply, h]
     ring
 
+/-- **The image of the weight model with a basis of negated weights.** If `b` is a basis of `𝔱*`,
+the moment map `μ = ½ Σ_i (q_i² + p_i²) b_i` has image the cone of covectors whose coordinates in
+`b` are nonnegative. -/
+theorem _root_.Module.Basis.range_weightMomentMap_neg (b : Module.Basis ι ℝ (StrongDual ℝ 𝔱)) :
+    Set.range (weightMomentMap (-⇑b)) = {ν | ∀ i, 0 ≤ b.repr ν i} := by
+  rw [range_weightMomentMap, neg_neg]
+  ext ν
+  rw [SetLike.mem_coe, PointedCone.hull, Submodule.mem_span_range_iff_exists_fun,
+    Set.mem_ofPred_eq]
+  constructor
+  · rintro ⟨c, rfl⟩ i
+    simp only [← Nonneg.coe_smul, b.repr_sum_self]
+    exact (c i).2
+  · intro h
+    exact ⟨fun i ↦ ⟨b.repr ν i, h i⟩, by simp [Nonneg.mk_smul]⟩
+
 /-- **Stabilizers in the weight model.** The rotation by `θ` fixes `z` exactly when `θ_i ∈ 2πℤ`
 for every coordinate `z_i = q_i + i p_i` that is nonzero. -/
 theorem weightRotation_apply_eq_self_iff (θ : ι → ℝ)
@@ -328,6 +396,32 @@ theorem weightRotation_apply_eq_self_iff (θ : ι → ℝ)
       · exact Or.inr (h i hi)
       · exact Or.inl (by tauto)
     exact ⟨fun i ↦ (key i).1, fun i ↦ (key i).2⟩
+
+/-- **Stabilizers in the weight model, on the circle.** The rotation by `-θ` fixes `z` exactly when
+the class of `θ_i` in `ℝ / 2πℤ` vanishes for every coordinate `z_i = q_i + i p_i` that is
+nonzero. -/
+theorem weightRotation_neg_apply_eq_self_iff (θ : ι → ℝ)
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    weightRotation (-θ) x = x ↔
+      ∀ i, (x.1 i ≠ 0 ∨ x.2 i ≠ 0) → (θ i : AddCircle (2 * π)) = 0 := by
+  rw [weightRotation_apply_eq_self_iff]
+  refine forall₂_congr fun i _ ↦ ?_
+  rw [AddCircle.coe_eq_zero_iff, Pi.neg_apply]
+  simp only [zsmul_eq_mul]
+  exact ⟨fun ⟨k, hk⟩ ↦ ⟨-k, by push_cast; linarith⟩, fun ⟨k, hk⟩ ↦ ⟨-k, by push_cast; linarith⟩⟩
+
+/-- The rotations of `z` by `-θ` and by `-t` agree exactly when `θ_i - t_i ∈ 2πℤ` at every
+coordinate `z_i = q_i + i p_i` of `z` that is nonzero. -/
+theorem weightRotation_neg_apply_eq_iff (θ t : ι → ℝ)
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    weightRotation (-θ) x = weightRotation (-t) x ↔
+      ∀ i, (x.1 i ≠ 0 ∨ x.2 i ≠ 0) → ((θ i - t i : ℝ) : AddCircle (2 * π)) = 0 := by
+  -- Rotating by `-θ` is rotating by `-(θ - t)` and then by `-t`. Cancel the injective rotation
+  -- by `-t` and apply the fixed-point criterion to the angles `θ - t`.
+  have hθ : -θ = -t + -(θ - t) := by abel
+  rw [hθ, weightRotation_add, ContinuousLinearMap.comp_apply,
+    (weightRotation_injective (-t)).eq_iff, weightRotation_neg_apply_eq_self_iff]
+  simp only [Pi.sub_apply]
 
 /-- **Infinitesimal stabilizers in the weight model.** The generator of `θ` vanishes at `z` exactly
 when `θ_i = 0` for every coordinate `z_i = q_i + i p_i` that is nonzero. -/
@@ -509,5 +603,277 @@ theorem finrank_range_weightInfinitesimalAction (α : ι → StrongDual ℝ 𝔱
     ← LinearMap.range_comp, key, LinearMap.range_neg,
     LinearMap.range_comp_of_range_eq_top _ D.range,
     LinearMap.finrank_range_dualMap_eq_finrank_range]
+
+/-! ### Orbits of the rotation torus -/
+
+/-- **The kernel of the rotation action.** The rotation by the angles `θ` is the identity of
+`ℂ^ι` exactly when every `θ_j` lies in `2πℤ`. -/
+theorem weightRotation_eq_id_iff (θ : ι → ℝ) :
+    weightRotation θ = ContinuousLinearMap.id ℝ _ ↔ ∀ j, ∃ k : ℤ, k * (2 * π) = θ j := by
+  refine ⟨fun h j ↦ ?_, fun h ↦ ContinuousLinearMap.ext fun x ↦
+    (weightRotation_apply_eq_self_iff θ x).2 fun j _ ↦ h j⟩
+  have hx : weightRotation θ (WithLp.toLp 2 fun _ ↦ (1 : ℝ), 0) = (WithLp.toLp 2 fun _ ↦ 1, 0) := by
+    rw [h, ContinuousLinearMap.id_apply]
+  exact (weightRotation_apply_eq_self_iff θ _).1 hx j (Or.inl (by simp))
+
+/-- **Orbits of the rotation torus.** Some rotation of `ℂ^ι` carries `z` to `w` exactly when
+`|z_j| = |w_j|` for every `j`. -/
+theorem exists_weightRotation_apply_eq_iff (x y : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    (∃ θ, weightRotation θ x = y) ↔ ∀ j, x.1 j ^ 2 + x.2 j ^ 2 = y.1 j ^ 2 + y.2 j ^ 2 := by
+  constructor
+  · rintro ⟨θ, rfl⟩ j
+    simp only [weightRotation_apply_fst, weightRotation_apply_snd]
+    linear_combination -(x.1 j ^ 2 + x.2 j ^ 2) * sin_sq_add_cos_sq (θ j)
+  · -- Two complex numbers of equal modulus differ by the rotation by the difference of their
+    -- arguments.
+    have hrotC (z w : ℂ) (hzw : ‖z‖ = ‖w‖) : ∃ θ : ℝ, cos θ * z.re - sin θ * z.im = w.re ∧
+        sin θ * z.re + cos θ * z.im = w.im := by
+      have hc := cos_add (w.arg - z.arg) z.arg
+      have hs := sin_add (w.arg - z.arg) z.arg
+      rw [sub_add_cancel] at hc hs
+      refine ⟨w.arg - z.arg, ?_, ?_⟩
+      · rw [← Complex.norm_mul_cos_arg z, ← Complex.norm_mul_sin_arg z,
+          ← Complex.norm_mul_cos_arg w, ← hzw, hc]
+        ring
+      · rw [← Complex.norm_mul_cos_arg z, ← Complex.norm_mul_sin_arg z,
+          ← Complex.norm_mul_sin_arg w, ← hzw, hs]
+        ring
+    intro h
+    -- Apply this to the coordinates `q_j + i p_j` of the two points.
+    have hrot (j : ι) : ∃ θ : ℝ, cos θ * x.1 j - sin θ * x.2 j = y.1 j ∧
+        sin θ * x.1 j + cos θ * x.2 j = y.2 j := by
+      refine hrotC ⟨x.1 j, x.2 j⟩ ⟨y.1 j, y.2 j⟩ ?_
+      rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), Complex.sq_norm, Complex.sq_norm,
+        Complex.normSq_mk, Complex.normSq_mk]
+      linear_combination h j
+    choose θ hθ using hrot
+    exact ⟨θ, by ext j <;> simp [hθ]⟩
+
+/-- **Fixed points of the weight action.** A point of `ℂ^ι` is fixed by the action of every
+`ξ ∈ 𝔱` exactly when its coordinates `z_j` vanish along the nonzero weights `α_j`. -/
+theorem forall_weightRotation_apply_eq_self_iff (α : ι → StrongDual ℝ 𝔱)
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    (∀ ξ, weightRotation (fun j ↦ α j ξ) x = x) ↔ ∀ j, α j ≠ 0 → x.1 j = 0 ∧ x.2 j = 0 := by
+  simp only [weightRotation_apply_eq_self_iff]
+  constructor
+  · intro h j hj
+    by_contra hx
+    obtain ⟨η, hη⟩ : ∃ η, α j η ≠ 0 := by
+      by_contra! H
+      exact hj (ContinuousLinearMap.ext H)
+    -- The element `ξ = (π / α_j(η)) η` rotates the `j`-th coordinate by the angle `π`.
+    obtain ⟨k, hk⟩ := h ((π / α j η) • η) j (by tauto)
+    rw [map_smul, smul_eq_mul, div_mul_cancel₀ _ hη] at hk
+    have h2k : ((2 * k : ℤ) : ℝ) = (1 : ℤ) :=
+      mul_right_cancel₀ pi_ne_zero (by push_cast; linear_combination hk)
+    have := Int.cast_injective h2k
+    omega
+  · intro h ξ j hj
+    by_cases hα : α j = 0
+    · exact ⟨0, by simp [hα]⟩
+    · exact absurd (h j hα) (by tauto)
+
+/-! ### Linearly independent weights -/
+
+/-- For linearly independent weights, the moment map determines the moduli `|z_j|`: two points of
+`ℂ^ι` have the same moment image exactly when `|z_j| = |w_j|` for every `j`. -/
+theorem weightMomentMap_eq_weightMomentMap_iff {α : ι → StrongDual ℝ 𝔱}
+    (hα : LinearIndependent ℝ α) (x y : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    weightMomentMap α x = weightMomentMap α y ↔
+      ∀ j, x.1 j ^ 2 + x.2 j ^ 2 = y.1 j ^ 2 + y.2 j ^ 2 := by
+  refine ⟨fun h j ↦ ?_, fun h ↦ ?_⟩
+  · have hsum : ∑ j, ((-(1 / 2) * (x.1 j ^ 2 + x.2 j ^ 2)) - (-(1 / 2) * (y.1 j ^ 2 + y.2 j ^ 2)))
+        • α j = 0 := by
+      rw [Finset.sum_congr rfl fun j _ ↦ sub_smul _ _ (α j), Finset.sum_sub_distrib,
+        ← weightMomentMap_def, ← weightMomentMap_def, h, sub_self]
+    linarith [Fintype.linearIndependent_iff.1 hα _ hsum j]
+  · simp only [weightMomentMap_def, h]
+
+/-- **Fibres of the moment map are orbits.** For linearly independent weights, two points of
+`ℂ^ι` have the same moment image exactly when the action of some `ξ ∈ 𝔱` carries one to the
+other. -/
+theorem weightMomentMap_eq_weightMomentMap_iff_exists_weightRotation {α : ι → StrongDual ℝ 𝔱}
+    (hα : LinearIndependent ℝ α) (x y : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    weightMomentMap α x = weightMomentMap α y ↔ ∃ ξ, weightRotation (fun j ↦ α j ξ) x = y := by
+  refine ⟨fun h ↦ ?_, fun ⟨ξ, hξ⟩ ↦ hξ ▸ (weightMomentMap_weightRotation α _ x).symm⟩
+  obtain ⟨θ, rfl⟩ := (exists_weightRotation_apply_eq_iff x y).2
+    ((weightMomentMap_eq_weightMomentMap_iff hα x y).1 h)
+  -- Linearly independent functionals take every family of values `θ` simultaneously.
+  have hli : LinearIndependent ℝ fun j ↦ ⇑(α j) :=
+    Fintype.linearIndependent_iff.2 fun g hg ↦ Fintype.linearIndependent_iff.1 hα g
+      (ContinuousLinearMap.ext fun ξ ↦ by simpa using congrFun hg ξ)
+  have hθ : θ ∈ Submodule.span ℝ (Set.range (flip fun j ↦ ⇑(α j))) := by
+    rw [span_flip_eq_top_iff_linearIndependent.2 hli]
+    trivial
+  let A : 𝔱 →ₗ[ℝ] ι → ℝ := LinearMap.pi fun j ↦ (α j : 𝔱 →ₗ[ℝ] ℝ)
+  have hA : Set.range (flip fun j ↦ ⇑(α j)) = (LinearMap.range A : Set (ι → ℝ)) := by
+    ext v
+    simp [A, flip, funext_iff]
+  rw [hA, Submodule.span_eq] at hθ
+  obtain ⟨ξ, hξ⟩ := hθ
+  exact ⟨ξ, by rw [← hξ]; rfl⟩
+
+/-- For linearly independent weights, the origin is the only point of `ℂ^ι` mapped to the apex
+`0` of the moment cone. -/
+@[simp]
+theorem weightMomentMap_eq_zero_iff {α : ι → StrongDual ℝ 𝔱} (hα : LinearIndependent ℝ α)
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) : weightMomentMap α x = 0 ↔ x = 0 := by
+  rw [← weightMomentMap_zero α, weightMomentMap_eq_weightMomentMap_iff hα]
+  simp only [Prod.fst_zero, Prod.snd_zero, PiLp.zero_apply, ne_eq, OfNat.ofNat_ne_zero,
+    not_false_eq_true, zero_pow, add_zero, Prod.ext_iff, PiLp.ext_iff]
+  refine ⟨fun h ↦ ⟨fun j ↦ ?_, fun j ↦ ?_⟩, fun h j ↦ by simp [h.1 j, h.2 j]⟩ <;>
+    nlinarith [h j, sq_nonneg (x.1 j), sq_nonneg (x.2 j)]
+
+/-- **Fixed points lie over the apex.** For linearly independent weights, a point of `ℂ^ι` is
+fixed by the whole action of `𝔱` exactly when its moment image is the apex `0` of the moment
+cone, and then it is the origin. -/
+theorem forall_weightRotation_apply_eq_self_iff_weightMomentMap_eq_zero
+    {α : ι → StrongDual ℝ 𝔱} (hα : LinearIndependent ℝ α)
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    (∀ ξ, weightRotation (fun j ↦ α j ξ) x = x) ↔ weightMomentMap α x = 0 := by
+  rw [forall_weightRotation_apply_eq_self_iff, weightMomentMap_eq_zero_iff hα]
+  simp only [fun j ↦ hα.ne_zero j, ne_eq, not_false_eq_true, forall_const, Prod.ext_iff,
+    PiLp.ext_iff, Prod.fst_zero, Prod.snd_zero, PiLp.zero_apply]
+  exact ⟨fun h ↦ ⟨fun j ↦ (h j).1, fun j ↦ (h j).2⟩, fun h j ↦ ⟨h.1 j, h.2 j⟩⟩
+
+/-- **The apex is a vertex.** For linearly independent weights, the apex `0` of the moment cone
+is an extreme point of the image of the moment map. -/
+theorem zero_mem_extremePoints_range_weightMomentMap {α : ι → StrongDual ℝ 𝔱}
+    (hα : LinearIndependent ℝ α) :
+    (0 : StrongDual ℝ 𝔱) ∈ Set.extremePoints ℝ (Set.range (weightMomentMap α)) := by
+  refine mem_extremePoints_iff_left.2 ⟨⟨0, weightMomentMap_zero α⟩, ?_⟩
+  rintro _ ⟨x, rfl⟩ _ ⟨y, rfl⟩ ⟨s, t, hs, ht, -, hst⟩
+  -- The coefficients of `s μ(x) + t μ(y)` in the independent weights all vanish.
+  have hsum : ∑ j, (s * (-(1 / 2) * (x.1 j ^ 2 + x.2 j ^ 2)) +
+      t * (-(1 / 2) * (y.1 j ^ 2 + y.2 j ^ 2))) • α j = 0 := by
+    rw [Finset.sum_congr rfl fun j _ ↦ (add_smul _ _ (α j)).trans
+        (congrArg₂ (· + ·) (mul_smul _ _ _) (mul_smul _ _ _)), Finset.sum_add_distrib,
+      ← Finset.smul_sum, ← Finset.smul_sum, ← weightMomentMap_def, ← weightMomentMap_def, hst]
+  have hx (j : ι) : x.1 j ^ 2 + x.2 j ^ 2 = 0 := by
+    have hc := Fintype.linearIndependent_iff.1 hα _ hsum j
+    have hx : 0 ≤ s * (x.1 j ^ 2 + x.2 j ^ 2) := by positivity
+    have hy : 0 ≤ t * (y.1 j ^ 2 + y.2 j ^ 2) := by positivity
+    exact (mul_eq_zero.1 (by linarith : s * (x.1 j ^ 2 + x.2 j ^ 2) = 0)).resolve_left hs.ne'
+  rw [← weightMomentMap_zero α, weightMomentMap_eq_weightMomentMap_iff hα]
+  simpa using hx
+
+/-! ### Rotations by multiples of `2π` -/
+
+/-- The action of `2π v` fixes `z` exactly when the weights along the nonzero coordinates of `z`
+take integer values at `v`. -/
+theorem weightRotation_two_pi_smul_apply_eq_self_iff (α : ι → StrongDual ℝ 𝔱) (v : 𝔱)
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    weightRotation (fun j ↦ α j ((2 * π) • v)) x = x ↔
+      ∀ j, (x.1 j ≠ 0 ∨ x.2 j ≠ 0) → ∃ k : ℤ, α j v = k := by
+  rw [weightRotation_apply_eq_self_iff]
+  refine forall₂_congr fun j _ ↦ exists_congr fun k ↦ ?_
+  rw [map_smul, smul_eq_mul, mul_comm (2 * π), mul_left_inj' two_pi_pos.ne', eq_comm]
+
+/-! ### The rotation torus `(ℝ / 2πℤ)^ι` -/
+
+/-- The rotation `z_j ↦ exp(-i θ_j) z_j` of `ℂ^ι` by angles `θ ∈ (ℝ / 2πℤ)^ι`, in the real
+coordinates `z_j = q_j + i p_j`. On representatives it is `TauCeti.weightRotation (-θ)`
+(`TauCeti.torusRotation_coe`). -/
+def torusRotation (θ : ι → AddCircle (2 * π)) :
+    (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) →L[ℝ] EuclideanSpace ℝ ι × EuclideanSpace ℝ ι :=
+  LinearMap.toContinuousLinearMap
+    { toFun := fun x ↦
+        (WithLp.toLp 2 fun j ↦ cos_periodic.lift (θ j) * x.1 j + sin_periodic.lift (θ j) * x.2 j,
+          WithLp.toLp 2 fun j ↦
+            -(sin_periodic.lift (θ j) * x.1 j) + cos_periodic.lift (θ j) * x.2 j)
+      map_add' := fun x y ↦ by ext j <;> simp <;> ring
+      map_smul' := fun a x ↦ by ext j <;> simp <;> ring }
+
+/-- The first coordinates of the rotation by `θ ∈ (ℝ / 2πℤ)^ι`. This is not a simp lemma, so that
+simp keeps `TauCeti.torusRotation_apply_normSq` available. -/
+theorem torusRotation_apply_fst (θ : ι → AddCircle (2 * π))
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) (j : ι) :
+    (torusRotation θ x).1 j = cos_periodic.lift (θ j) * x.1 j + sin_periodic.lift (θ j) * x.2 j :=
+  (rfl)
+
+/-- The second coordinates of the rotation by `θ ∈ (ℝ / 2πℤ)^ι`. This is not a simp lemma, so that
+simp keeps `TauCeti.torusRotation_apply_normSq` available. -/
+theorem torusRotation_apply_snd (θ : ι → AddCircle (2 * π))
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) (j : ι) :
+    (torusRotation θ x).2 j =
+      -(sin_periodic.lift (θ j) * x.1 j) + cos_periodic.lift (θ j) * x.2 j :=
+  (rfl)
+
+/-- On representatives `t : ι → ℝ` of the angles, the rotation of `ℂ^ι` by `t` modulo `2π` is
+`z_j ↦ exp(-i t_j) z_j`, the weight-model rotation by `-t`. -/
+@[simp]
+theorem torusRotation_coe (t : ι → ℝ) :
+    torusRotation (fun j ↦ (t j : AddCircle (2 * π))) = weightRotation (-t) := by
+  ext x j <;> simp [torusRotation, cos_neg, sin_neg]
+
+omit [Fintype ι] in
+/-- Every element of the torus `(ℝ / 2πℤ)^ι` has a representative in `ℝ^ι`. -/
+private theorem exists_coe_eq (θ : ι → AddCircle (2 * π)) :
+    ∃ t : ι → ℝ, (fun j ↦ (t j : AddCircle (2 * π))) = θ := by
+  choose t ht using fun j ↦ QuotientAddGroup.mk_surjective (θ j)
+  exact ⟨t, funext ht⟩
+
+@[simp]
+theorem torusRotation_zero :
+    torusRotation (0 : ι → AddCircle (2 * π)) = ContinuousLinearMap.id ℝ _ := by
+  simpa [← Pi.zero_def] using torusRotation_coe (0 : ι → ℝ)
+
+/-- Rotations compose by adding angles. -/
+theorem torusRotation_add (θ θ' : ι → AddCircle (2 * π)) :
+    torusRotation (θ + θ') = (torusRotation θ).comp (torusRotation θ') := by
+  obtain ⟨t, rfl⟩ := exists_coe_eq θ
+  obtain ⟨t', rfl⟩ := exists_coe_eq θ'
+  rw [torusRotation_coe, torusRotation_coe, ← weightRotation_add, ← neg_add, ← torusRotation_coe]
+  simp only [Pi.add_def, Pi.add_apply, QuotientAddGroup.mk_add]
+
+/-- The rotation `z_j ↦ exp(-i θ_j) z_j` preserves each modulus `|z_j|`. -/
+@[simp]
+theorem torusRotation_apply_normSq (θ : ι → AddCircle (2 * π))
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) (j : ι) :
+    (torusRotation θ x).1 j ^ 2 + (torusRotation θ x).2 j ^ 2 = x.1 j ^ 2 + x.2 j ^ 2 := by
+  obtain ⟨t, rfl⟩ := exists_coe_eq θ
+  rw [torusRotation_coe]
+  exact ((exists_weightRotation_apply_eq_iff x _).1 ⟨-t, rfl⟩ j).symm
+
+/-- **Stabilizers of the rotation torus.** The rotation by `θ ∈ (ℝ / 2πℤ)^ι` fixes `z ∈ ℂ^ι`
+exactly when `θ_j = 0` for every coordinate `z_j` that is nonzero. -/
+theorem torusRotation_apply_eq_self_iff (θ : ι → AddCircle (2 * π))
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    torusRotation θ x = x ↔ ∀ j, (x.1 j ≠ 0 ∨ x.2 j ≠ 0) → θ j = 0 := by
+  obtain ⟨t, rfl⟩ := exists_coe_eq θ
+  rw [torusRotation_coe, weightRotation_apply_eq_self_iff]
+  refine forall_congr' fun j ↦ imp_congr_right fun _ ↦ ?_
+  rw [AddCircle.coe_eq_zero_iff]
+  refine ⟨fun ⟨k, hk⟩ ↦ ⟨-k, ?_⟩, fun ⟨k, hk⟩ ↦ ⟨-k, ?_⟩⟩
+  · rw [zsmul_eq_mul]
+    simp only [Pi.neg_apply] at hk
+    push_cast
+    linarith
+  · rw [zsmul_eq_mul] at hk
+    simp only [Pi.neg_apply]
+    push_cast
+    linarith
+
+/-- The action of the rotation torus is jointly continuous. -/
+theorem continuous_torusRotation :
+    Continuous fun p : (ι → AddCircle (2 * π)) × (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ↦
+      torusRotation p.1 p.2 := by
+  have hcos : Continuous (cos_periodic.lift : AddCircle (2 * π) → ℝ) :=
+    continuous_quot_lift _ continuous_cos
+  have hsin : Continuous (sin_periodic.lift : AddCircle (2 * π) → ℝ) :=
+    continuous_quot_lift _ continuous_sin
+  have hθ (j : ι) : Continuous fun p : (ι → AddCircle (2 * π)) ×
+      (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ↦ p.1 j :=
+    (continuous_apply j).comp continuous_fst
+  have h1 (j : ι) : Continuous fun p : (ι → AddCircle (2 * π)) ×
+      (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ↦ p.2.1 j :=
+    (PiLp.continuous_apply 2 _ j).comp (continuous_fst.comp continuous_snd)
+  have h2 (j : ι) : Continuous fun p : (ι → AddCircle (2 * π)) ×
+      (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ↦ p.2.2 j :=
+    (PiLp.continuous_apply 2 _ j).comp (continuous_snd.comp continuous_snd)
+  refine Continuous.prodMk ((PiLp.continuous_toLp 2 _).comp (continuous_pi fun j ↦ ?_))
+    ((PiLp.continuous_toLp 2 _).comp (continuous_pi fun j ↦ ?_))
+  · exact ((hcos.comp (hθ j)).mul (h1 j)).add ((hsin.comp (hθ j)).mul (h2 j))
+  · exact (((hsin.comp (hθ j)).mul (h1 j)).neg).add ((hcos.comp (hθ j)).mul (h2 j))
 
 end TauCeti

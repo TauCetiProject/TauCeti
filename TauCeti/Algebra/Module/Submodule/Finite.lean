@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Finiteness.Basic
+public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.LinearAlgebra.Quotient.Basic
 import TauCeti.Order.CompactlyGenerated
 
@@ -33,6 +34,8 @@ scalar-restriction version of Mathlib's `Module.Finite.of_submodule_quotient`.
   semiring `A` exactly when its restriction of scalars to `A` is finitely generated.
 * `Module.Finite.of_restrictScalars_submodule_quotient`: finiteness of a submodule and quotient
   over a compatible semiring implies finiteness of the ambient module.
+* `Module.Finite.of_isCompl`: a complement of a submodule of a finitely generated module is
+  finitely generated.
 * `iSupIndep.finite_ne_bot_of_fg`: an independent family of submodules with finitely generated
   supremum has finite support.
 * `TauCeti.instModuleFiniteToAddSubgroup`: a finitely generated `ℤ`-submodule stays finitely
@@ -99,3 +102,9 @@ theorem Module.Finite.of_restrictScalars_submodule_quotient
   rw [← htop]
   exact (Submodule.fg_span (s.finite_toSet.image lift)).sup
     (Module.Finite.iff_fg.mp inferInstance)
+
+/-- A complement of a submodule of a finitely generated module is finitely generated: it is the
+image of the finitely generated module under the projection onto it. -/
+theorem Module.Finite.of_isCompl {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    [Module.Finite R M] {T T' : Submodule R M} (hcompl : IsCompl T T') : Module.Finite R T :=
+  Module.Finite.of_surjective (T.projectionOnto T' hcompl) (T.projectionOnto_surjective hcompl)

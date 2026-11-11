@@ -68,9 +68,10 @@ section Series
 variable {φ : A → R} {a : A} {C : ℝ}
 
 /-- Absolute convergence of the free cumulant series on an explicit disk. -/
-theorem summable_norm_coeff_freeCumulantSeries_mul_pow (hC : 0 ≤ C)
+theorem summable_norm_coeff_freeCumulantSeries_mul_pow
     (hm : ∀ k, 0 < k → ‖φ (a ^ k)‖ ≤ C ^ k) {z : R} (hz : 16 * C * ‖z‖ < 1) :
     Summable (fun n => ‖coeff n (freeCumulantSeries φ a) * z ^ n‖) := by
+  have hC : 0 ≤ C := by simpa using (norm_nonneg _).trans (hm 1 one_pos)
   refine Summable.of_nonneg_of_le (fun _ => norm_nonneg _) (fun n => ?_)
     (summable_geometric_of_lt_one (by positivity : 0 ≤ 16 * C * ‖z‖) hz)
   calc
@@ -84,9 +85,10 @@ theorem summable_norm_coeff_freeCumulantSeries_mul_pow (hC : 0 ≤ C)
     _ = (16 * C * ‖z‖) ^ n := (mul_pow _ _ _).symm
 
 /-- Absolute convergence of the shifted R-series on the same disk as the cumulant series. -/
-theorem summable_norm_coeff_rSeries_mul_pow (hC : 0 ≤ C)
+theorem summable_norm_coeff_rSeries_mul_pow
     (hm : ∀ k, 0 < k → ‖φ (a ^ k)‖ ≤ C ^ k) {z : R} (hz : 16 * C * ‖z‖ < 1) :
     Summable (fun n => ‖coeff n (rSeries φ a) * z ^ n‖) := by
+  have hC : 0 ≤ C := by simpa using (norm_nonneg _).trans (hm 1 one_pos)
   refine Summable.of_nonneg_of_le (fun _ => norm_nonneg _) (fun n => ?_)
     ((summable_geometric_of_lt_one (by positivity : 0 ≤ 16 * C * ‖z‖) hz).mul_left (16 * C))
   calc

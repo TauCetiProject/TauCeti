@@ -29,12 +29,12 @@ distances. The topology is the ordinary product topology on `E × ℝ`.
 * `TauCeti.ParabolicSpaceTime.ofCoords`, `space`, `time`: the coordinates of a point.
 * `TauCeti.ParabolicSpaceTime.dist_eq`: the parabolic distance formula.
 * `TauCeti.ParabolicSpaceTime.coordsHomeomorph`: the homeomorphism with ordinary `E × ℝ`.
-* `TauCeti.ParabolicSpaceTime.timeReverse`: reversal of time about `T`, an isometry.
+* `TauCeti.ParabolicSpaceTime.timeReverse`: the time reversal `(x, t) ↦ (x, T - t)`, an isometry.
 * `TauCeti.ParabolicSpaceTime.slab`: the closed time slab `E × [a, b]`.
 * `TauCeti.ParabolicSpaceTime.spatialSlice`, `TauCeti.ParabolicSpaceTime.timeSlice`: the
   continuous inclusions of a fixed-time spatial slice and of a fixed-position time slice.
-* `TauCeti.ParabolicSpaceTime.slabTimeReverse`: reversal of time about `T`, an isometry from the
-  slab `E × [T - b, T - a]` onto `E × [a, b]`.
+* `TauCeti.ParabolicSpaceTime.slabTimeReverse`: the time reversal `t ↦ T - t`, as an isometry from
+  the slab `E × [T - b, T - a]` onto `E × [a, b]`.
 * `TauCeti.ParabolicSpaceTime.slabSpaceMap`: a spatial map `f` acting on a slab by
   `(x, t) ↦ (f x, t)`, Lipschitz for the parabolic distance when `f` is.
 * `TauCeti.ParabolicSpaceTime.lipschitzWith_slabSpace`: the spatial position of a point of a slab
@@ -218,12 +218,6 @@ theorem lipschitzWith_slabSpaceMap {E' : Type*} [PseudoEMetricSpace E'] {a b : �
   · exact (hf _ _).trans (mul_le_mul_left (by exact_mod_cast le_max_left K 1) _)
   · exact le_mul_of_one_le_left (by positivity) (by exact_mod_cast le_max_right K 1)
 
-/-- The spatial position of a point of a slab is `1`-Lipschitz for the parabolic distance, so a
-time-independent spatial field keeps its Hölder exponent on the slab. -/
-theorem lipschitzWith_slab_space {a b : ℝ} :
-    LipschitzWith 1 fun p : slab (E := E) a b ↦ (p : ParabolicSpaceTime E).space :=
-  LipschitzWith.of_edist_le fun p q ↦ edist_space_le (p : ParabolicSpaceTime E) q
-
 end PseudoEMetricSpace
 
 section PseudoMetricSpace
@@ -249,6 +243,14 @@ theorem sqrt_abs_time_sub_le_dist (p q : ParabolicSpaceTime E) :
   rw [dist_eq]
   exact le_add_of_nonneg_left dist_nonneg
 
+/-- At parabolic distance at most one, the time-coordinate difference is bounded by the
+parabolic distance. -/
+theorem abs_time_sub_le_dist_of_dist_le_one (p q : ParabolicSpaceTime E)
+    (h : dist p q ≤ 1) : |p.time - q.time| ≤ dist p q := by
+  have hs := sqrt_abs_time_sub_le_dist p q
+  have hsq := Real.sq_sqrt (abs_nonneg (p.time - q.time))
+  nlinarith [Real.sqrt_nonneg |p.time - q.time|]
+
 /-- At a common time, the parabolic distance is the spatial distance. -/
 @[simp]
 theorem dist_ofCoords_ofCoords_same_time (x y : E) (t : ℝ) :
@@ -261,6 +263,12 @@ distance. -/
 theorem dist_ofCoords_ofCoords_same_space (x : E) (t s : ℝ) :
     dist (ofCoords x t) (ofCoords x s) = √|t - s| := by
   simp [dist_ofCoords]
+
+end PseudoMetricSpace
+
+section TopologicalSpace
+
+variable [TopologicalSpace E]
 
 /-- The homeomorphism between parabolic space-time and ordinary space-time `E × ℝ`. Functions on
 parabolic space-time are differentiated by transporting them along this map. -/
@@ -316,16 +324,27 @@ def timeSlice {a b : ℝ} (x : E) : C(Icc a b, slab (E := E) a b) :=
 theorem timeSlice_apply {a b : ℝ} (x : E) (t : Icc a b) : timeSlice x t = slabMk x t :=
   (rfl)
 
+theorem isClosed_slab (a b : ℝ) : IsClosed (slab (E := E) a b) :=
+  isClosed_Icc.preimage continuous_time
+
+end TopologicalSpace
+
 /-! ### Time reversal -/
 
-/-- Reversal of time about `T`, `(x, t) ↦ (x, T - t)`, an isometry of parabolic space-time. -/
+section TimeReversal
+
+variable [PseudoEMetricSpace E]
+
+/-- Time reversal `(x, t) ↦ (x, T - t)`, the reflection of time about `T / 2`, an isometry of
+parabolic space-time. -/
 def timeReverse (T : ℝ) : ParabolicSpaceTime E ≃ᵢ ParabolicSpaceTime E where
   toFun p := ofCoords p.space (T - p.time)
   invFun p := ofCoords p.space (T - p.time)
   left_inv p := by ext <;> simp
   right_inv p := by ext <;> simp
-  isometry_toFun := Isometry.of_dist_eq fun p q => by
-    rw [dist_ofCoords, dist_eq, sub_sub_sub_cancel_left, abs_sub_comm]
+  isometry_toFun p q := by
+    rw [edist_ofCoords, edist_eq, edist_dist, edist_dist p.time, Real.dist_eq, Real.dist_eq,
+      sub_sub_sub_cancel_left, abs_sub_comm]
 
 @[simp]
 theorem space_timeReverse (T : ℝ) (p : ParabolicSpaceTime E) :
@@ -335,7 +354,7 @@ theorem space_timeReverse (T : ℝ) (p : ParabolicSpaceTime E) :
 theorem time_timeReverse (T : ℝ) (p : ParabolicSpaceTime E) :
     (timeReverse T p).time = T - p.time := (rfl)
 
-/-- Time reversal about `T` is an involution. -/
+/-- Time reversal `t ↦ T - t` is an involution. -/
 @[simp]
 theorem timeReverse_timeReverse (T : ℝ) (p : ParabolicSpaceTime E) :
     timeReverse T (timeReverse T p) = p :=
@@ -345,17 +364,14 @@ theorem timeReverse_timeReverse (T : ℝ) (p : ParabolicSpaceTime E) :
 theorem timeReverse_symm (T : ℝ) :
     (timeReverse T).symm = (timeReverse T : ParabolicSpaceTime E ≃ᵢ _) := (rfl)
 
-theorem isClosed_slab (a b : ℝ) : IsClosed (slab (E := E) a b) :=
-  isClosed_Icc.preimage continuous_time
-
-/-- Reversal of time about `T` exchanges the slabs `E × [a, b]` and `E × [T - b, T - a]`. -/
+/-- Time reversal `t ↦ T - t` exchanges the slabs `E × [a, b]` and `E × [T - b, T - a]`. -/
 theorem preimage_timeReverse_slab (T a b : ℝ) :
     timeReverse T ⁻¹' slab (E := E) a b = slab (T - b) (T - a) := by
   ext p
   simp only [mem_preimage, mem_slab, time_timeReverse, mem_Icc]
   constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
 
-/-- Reversal of time about `T`, as an isometry from the slab `E × [a', b']` onto the slab
+/-- Time reversal `t ↦ T - t`, as an isometry from the slab `E × [a', b']` onto the slab
 `E × [a, b]`, where `a' = T - b` and `b' = T - a`. -/
 def slabTimeReverse (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T - a) :
     slab (E := E) a' b' ≃ᵢ slab (E := E) a b where
@@ -366,8 +382,7 @@ def slabTimeReverse (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T -
     exact q.2⟩
   left_inv p := Subtype.ext (timeReverse_timeReverse T (p : ParabolicSpaceTime E))
   right_inv q := Subtype.ext (timeReverse_timeReverse T (q : ParabolicSpaceTime E))
-  isometry_toFun := Isometry.of_dist_eq fun p q =>
-    (timeReverse T).dist_eq (p : ParabolicSpaceTime E) q
+  isometry_toFun p q := (timeReverse T).edist_eq (p : ParabolicSpaceTime E) q
 
 /-- Time reversal between slabs sends `(x, t)` to `(x, T - t)`. -/
 @[simp]
@@ -390,7 +405,7 @@ theorem slabTimeReverse_symm (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb :
     (slabTimeReverse (E := E) T ha hb).symm =
       slabTimeReverse T (by rw [hb, sub_sub_cancel]) (by rw [ha, sub_sub_cancel]) := (rfl)
 
-end PseudoMetricSpace
+end TimeReversal
 
 end ParabolicSpaceTime
 

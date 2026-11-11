@@ -19,7 +19,10 @@ Together with the finite étale surjectivity of the invariant-spectrum projectio
 the quotient as a torsor under the constant group scheme. The pullback square
 `isPullback_of_free` records both maps of its action relation, so it can be used for descent
 without replacing scheme morphisms by geometric points. In particular, over a disconnected test
-scheme the group element relating two lifts can vary between components.
+scheme the group element relating two lifts can vary between components. The same square, with the
+components reindexed by `g ↦ g⁻¹`, is `isPullback_specAction_of_free`, stated with the covariant
+action `specAction A G g`; this is the form that matches an action of `G` on a scheme by
+automorphisms.
 
 The proof uses the existing Chase–Harrison–Rosenberg isomorphism
 `TauCeti.MulSemiringAction.tensorToPi_bijective`, Mathlib's `sigmaSpec`, and `pullbackSpecIso`.
@@ -98,6 +101,20 @@ theorem isPullback_of_free [Finite G]
   have := (isIso_actionMap_iff A G).mpr hG
   exact IsPullback.of_iso_pullback ⟨by ext g; simp⟩ (asIso (actionMap A G))
     (actionMap_fst A G) (actionMap_snd A G)
+
+/-- **The torsor square, in terms of the covariant action.** For a free finite-group action, the
+identity and the automorphism `specAction A G g` on the component of `g` exhibit the disjoint union
+of copies of `Spec A` as the kernel pair of the quotient projection. -/
+theorem isPullback_specAction_of_free [Finite G]
+    (hG : ∀ g : G, g ≠ 1 → Ideal.span (Set.range fun a : A ↦ g • a - a) = ⊤) :
+    IsPullback (Sigma.desc (fun _ : G ↦ 𝟙 (Spec (CommRingCat.of A))))
+      (Sigma.desc fun g : G ↦ (specAction A G g).asIso.hom) (projection A G) (projection A G) := by
+  -- Reindex the components of `isPullback_of_free` along `g ↦ g⁻¹`.
+  refine (isPullback_of_free A G hG).of_iso
+    (Sigma.whiskerEquiv (Equiv.inv G) fun _ ↦ Iso.refl (Spec (CommRingCat.of A)))
+    (Iso.refl _) (Iso.refl _) (Iso.refl _) ?_ ?_ (by simp) (by simp) <;>
+  · ext g
+    simp [specAction_asIso_hom]
 
 end Group
 

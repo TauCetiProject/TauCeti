@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Braided.Basic
-public import TauCeti.CategoryTheory.Monoidal.TensorPow
+public import TauCeti.CategoryTheory.Monoidal.TensorPow.Basic
 
 /-!
 # Cyclic shifts of tensor powers in braided monoidal categories

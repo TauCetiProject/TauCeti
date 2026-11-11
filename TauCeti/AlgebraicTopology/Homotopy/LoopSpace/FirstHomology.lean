@@ -47,9 +47,8 @@ space with the second homotopy group of the original space. -/
 def pathLoopSpaceFirstHomologyAddEquiv (x : X) [PathConnectedSpace (Ω X x)] :
     Additive (π_ 2 X x) ≃+
       ((singularChains ℤ).obj (TopCat.of (Ω X x))).homology 1 :=
-  let e : FundamentalGroup (Ω X x) (Path.refl x) ≃* π_ 2 X x :=
-    pi1MulEquivFundamentalGroup.symm.trans (pathLoopSpaceMulEquiv 0)
-  ((Abelianization.equivOfComm.trans e.symm.abelianizationCongr).toAdditive).trans
+  ((Abelianization.equivOfComm.trans
+      fundamentalGroupLoopSpaceMulEquiv.symm.abelianizationCongr).toAdditive).trans
     (HurewiczOne.hurewiczHomologyAddEquiv (X := TopCat.of (Ω X x)) (Path.refl x))
 
 /-- The inverse Hurewicz isomorphism sends the homology class of a loop of loops to
@@ -65,9 +64,8 @@ theorem pathLoopSpaceFirstHomologyAddEquiv_symm_loopClass (x : X)
   rw [AddEquiv.symm_apply_eq]
   simp only [pathLoopSpaceFirstHomologyAddEquiv, AddEquiv.trans_apply,
     MulEquiv.toAdditive_apply_apply, toMul_ofMul, MulEquiv.trans_apply,
-    Abelianization.equivOfComm_apply,
-    abelianizationCongr_of, MulEquiv.symm_trans_apply, MulEquiv.symm_symm,
-    MulEquiv.symm_apply_apply, MulEquiv.apply_symm_apply]
+    ← fundamentalGroupLoopSpaceMulEquiv_apply, Abelianization.equivOfComm_apply,
+    abelianizationCongr_of, MulEquiv.symm_apply_apply]
   exact (HurewiczOne.hurewiczHomologyAddEquiv_ofMul_of_mk
     (X := TopCat.of (Ω X x)) γ).symm
 

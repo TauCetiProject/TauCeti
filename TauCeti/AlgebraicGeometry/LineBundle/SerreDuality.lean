@@ -127,9 +127,9 @@ theorem nonempty_cohomologyOneDualEquivCohomologyZero_tensor_dual
     simp [hneg, hωK]
   obtain ⟨etensor⟩ := (SchemeWeilDivisor.toLineBundleClass_eq_mk_iff hdim).mp htensor
   rw [SchemeWeilDivisor.toInvertibleSheaf_obj] at etensor
-  obtain ⟨η, -, hη, hgreat⟩ := exists_isGreatest_of_divisorClass_eq_canonicalClass hF hk hK
+  obtain ⟨η, -, -, hgreat⟩ := exists_isGreatest_of_divisorClass_eq_canonicalClass hF hk hK
   exact ⟨(Scheme.Modules.cohomologyBaseLinearEquivOfIso k eL 1).dualMap.symm.trans <|
-    (SchemeWeilDivisor.cohomologyOneDualEquivCohomologyZero hex hdim hF hk hη hgreat D).trans
+    (SchemeWeilDivisor.cohomologyOneDualEquivCohomologyZero hex hdim hF hk hgreat D).trans
       (Scheme.Modules.cohomologyBaseLinearEquivOfIso k etensor 0)⟩
 
 /-- **Serre duality in degree zero.** The dual of `H⁰(X, L)` is linearly isomorphic to

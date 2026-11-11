@@ -143,6 +143,42 @@ theorem mixedInner_self_eq_sum (x : mixedSpace K) :
     rfl
 
 open scoped Classical in
+open NumberField.InfinitePlace in
+/-- The squared sup norm is at most the Euclidean squared length, since the sup norm
+is the maximum of the absolute values at the infinite places. -/
+theorem norm_sq_le_mixedInner_self (x : mixedSpace K) : ‖x‖ ^ 2 ≤ mixedInner K x x := by
+  classical
+  obtain ⟨w, _, hw⟩ := Finset.exists_mem_eq_sup' Finset.univ_nonempty
+    (fun w ↦ normAtPlace w x)
+  rw [norm_eq_sup'_normAtPlace, hw, mixedInner_self_eq_sum]
+  exact Finset.single_le_sum (fun v _ ↦ sq_nonneg (normAtPlace v x)) (Finset.mem_univ w)
+
+open scoped Classical in
+/-- The squared Euclidean length of a mixed-space vector is nonnegative. -/
+theorem mixedInner_self_nonneg (x : mixedSpace K) : 0 ≤ mixedInner K x x :=
+  (sq_nonneg ‖x‖).trans (norm_sq_le_mixedInner_self K x)
+
+open scoped Classical in
+/-- A nonzero mixed-space vector has positive squared Euclidean length. -/
+theorem mixedInner_self_pos {x : mixedSpace K} (hx : x ≠ 0) : 0 < mixedInner K x x :=
+  (sq_pos_of_pos (norm_pos_iff.mpr hx)).trans_le (norm_sq_le_mixedInner_self K x)
+
+variable {K} in
+open NumberField.InfinitePlace in
+/-- Nonzero vectors of a discrete lattice have uniformly positive squared Euclidean length
+in the mixed embedding. The assertion also applies to the zero lattice. -/
+theorem exists_pos_le_mixedInner (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L] :
+    ∃ δ > 0, ∀ x : L, x ≠ 0 → δ ≤ mixedInner K x x := by
+  classical
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp (isOpen_discrete ({0} : Set L)) 0 (by simp)
+  refine ⟨ε ^ 2, sq_pos_of_pos hε, fun x hx ↦ ?_⟩
+  have hεx : ε ≤ ‖x‖ := le_of_not_gt fun h ↦ hx <| by
+    have := hball (by simpa using h)
+    simpa using this
+  rw [← Submodule.norm_coe] at hεx
+  exact (pow_le_pow_left₀ hε.le hεx 2).trans (norm_sq_le_mixedInner_self K x)
+
+open scoped Classical in
 /-- **The Euclidean model carries `mixedInner`**: Mathlib's continuous linear equivalence
 `euclidean.toMixed` carries the inner product of `euclidean.mixedSpace K` to `mixedInner`. -/
 @[simp]

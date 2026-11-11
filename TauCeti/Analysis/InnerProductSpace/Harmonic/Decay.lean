@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import Mathlib.Analysis.Convex.Integral
+import Mathlib.Analysis.Calculus.FDeriv.Basic
 import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Average
@@ -137,7 +138,7 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.measureReal_ball_mul_norm_sq_le_s
         = (μ.real (ball y s) * ‖u y‖) ^ 2 := by ring
       _ ≤ (∫ x in ball y s, ‖u x‖ ∂μ) ^ 2 := pow_le_pow_left₀ (by positivity) h1 2
       _ ≤ _ := MeasureTheory.sq_setIntegral_le_measureReal_mul_setIntegral_sq _ _
-          measure_ball_lt_top.ne hint.norm hint2
+          measure_ball_lt_top.ne hint2
   rcases hB.eq_or_lt with h0 | hpos
   · rw [← h0, zero_mul]
     exact setIntegral_nonneg measurableSet_ball fun _ _ ↦ by positivity
@@ -255,7 +256,7 @@ private lemma mul_norm_sub_le_of_norm_le (μ : Measure E) [μ.IsAddHaarMeasure] 
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- **The Lipschitz bound for bounded harmonic functions.** Let `u` be harmonic on neighbourhoods
-of the closed balls `closedBall y s` and `closedBall z s`, with `0 < s` and `dist y z ≤ s`, and let
+of the closed balls `closedBall y s` and `closedBall z s`, with `0 < s`, and let
 `‖u‖ ≤ M` on the open balls `ball y s` and `ball z s`. Then
 
 `‖u y - u z‖ ≤ 2ⁿ n M dist y z / s`,
@@ -264,8 +265,30 @@ where `n` is the dimension of `E`. This is the difference form of the interior g
 `|∇u| ≤ C M / s` for harmonic functions. -/
 theorem _root_.InnerProductSpace.HarmonicOnNhd.norm_sub_le_of_norm_le {y z : E} {s M : ℝ}
     (hy : HarmonicOnNhd u (closedBall y s)) (hz : HarmonicOnNhd u (closedBall z s))
-    (hM : ∀ x ∈ ball y s ∪ ball z s, ‖u x‖ ≤ M) (hs : 0 < s) (hyz : dist y z ≤ s) :
+    (hM : ∀ x ∈ ball y s ∪ ball z s, ‖u x‖ ≤ M) (hs : 0 < s) :
     ‖u y - u z‖ ≤ 2 ^ finrank ℝ E * finrank ℝ E * M * dist y z / s := by
+  by_cases hyz : dist y z ≤ s
+  swap
+  · -- Far apart, the trivial bound `2 M` is already below the right-hand side.
+    have hMy := hM y (Or.inl (mem_ball_self hs))
+    have hMz := hM z (Or.inr (mem_ball_self hs))
+    have hM0 : 0 ≤ M := (norm_nonneg _).trans hMy
+    rcases Nat.eq_zero_or_pos (finrank ℝ E) with hn | hn
+    · have : Subsingleton E := finrank_zero_iff.mp hn
+      simp [Subsingleton.elim y z]
+    · rw [le_div_iff₀ hs]
+      have h2 : (2 : ℝ) ≤ 2 ^ finrank ℝ E * finrank ℝ E := by
+        calc (2 : ℝ) = 2 ^ 1 * 1 := by norm_num
+          _ ≤ _ := by
+            gcongr
+            · norm_num
+            · exact hn
+            · exact_mod_cast hn
+      have hd := not_le.mp hyz
+      calc ‖u y - u z‖ * s ≤ (2 * M) * dist y z := by
+            gcongr
+            exact (norm_sub_le _ _).trans (by linarith)
+        _ ≤ _ := by gcongr
   borelize E
   have hmain := mul_norm_sub_le_of_norm_le Measure.addHaar hy hz hM hs
   set n := finrank ℝ E
@@ -297,6 +320,34 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.norm_sub_le_of_norm_le {y z : E} 
   linarith
 
 omit [MeasurableSpace E] [BorelSpace E] in
+/-- The actual Fréchet derivative of a harmonic function bounded by `M` on `ball x (2 * ρ)`
+has norm at most `2ⁿ n M / ρ`, where `n` is the domain dimension. -/
+theorem _root_.InnerProductSpace.HarmonicOnNhd.norm_fderiv_le_of_norm_le {x : E} {ρ M : ℝ}
+    (hu : HarmonicOnNhd u (ball x (2 * ρ)))
+    (hM : ∀ y ∈ ball x (2 * ρ), ‖u y‖ ≤ M) (hρ : 0 < ρ) :
+    ‖fderiv ℝ u x‖ ≤ 2 ^ finrank ℝ E * finrank ℝ E / ρ * M := by
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM x (mem_ball_self (by positivity)))
+  let A : ℝ := 2 ^ finrank ℝ E * finrank ℝ E / ρ * M
+  have hA : 0 ≤ A := by positivity
+  have hball {y : E} (hy : y ∈ ball x (ρ / 2)) : closedBall y ρ ⊆ ball x (2 * ρ) := by
+    intro w hw
+    rw [mem_ball] at hy ⊢
+    linarith [mem_closedBall.mp hw, dist_triangle w y x]
+  have hlip : LipschitzOnWith A.toNNReal u (ball x (ρ / 2)) := by
+    rw [lipschitzOnWith_iff_dist_le_mul]
+    intro y hy z hz
+    have hN : ∀ w ∈ ball y ρ ∪ ball z ρ, ‖u w‖ ≤ M := by
+      intro w hw
+      exact hM w (hw.elim (fun h ↦ hball hy (ball_subset_closedBall h))
+        (fun h ↦ hball hz (ball_subset_closedBall h)))
+    have h := (hu.mono (hball hy)).norm_sub_le_of_norm_le
+      (hu.mono (hball hz)) hN hρ
+    rw [dist_eq_norm, Real.coe_toNNReal _ hA]
+    exact h.trans_eq (by dsimp only [A]; ring)
+  have h := norm_fderiv_le_of_lipschitzOn ℝ (ball_mem_nhds x (half_pos hρ)) hlip
+  simpa only [Real.coe_toNNReal _ hA] using h
+
+omit [MeasurableSpace E] [BorelSpace E] in
 /-- On `ball x₀ ρ` with `8 ρ ≤ R`, a function harmonic on `ball x₀ R` with `‖u - c‖ ≤ M` on
 `ball x₀ (R / 2)` oscillates by at most `2ⁿ⁺³ n M ρ / R`. -/
 private lemma norm_sub_le_of_mem_ball_of_eight_mul_le {x₀ y z : E} {ρ R M : ℝ} {c : F}
@@ -316,7 +367,7 @@ private lemma norm_sub_le_of_mem_ball_of_eight_mul_le {x₀ y z : E} {ρ R M : �
   have hyz : dist y z < 2 * ρ := by linarith [dist_triangle_right y z x₀]
   have hv : HarmonicOnNhd (fun x ↦ u x - c) (ball x₀ R) := hu.sub (harmonicOnNhd_const c)
   have h := (hv.mono (hcl y hy)).norm_sub_le_of_norm_le (hv.mono (hcl z hz))
-    (fun x hx ↦ hM x (hx.elim (hop y hy ·) (hop z hz ·))) (by positivity) (by linarith)
+    (fun x hx ↦ hM x (hx.elim (hop y hy ·) (hop z hz ·))) (by positivity)
   rw [sub_sub_sub_cancel_right] at h
   have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM x₀ (mem_ball_self (half_pos hR)))
   refine h.trans ?_

@@ -61,6 +61,9 @@ installing a coercion; it is additive.
 * `EReal.coe_mul_coe_mul_add_coe_mul_sub` — nonnegative real scaling distributes through a
   weighted sum with a real subtrahend.
 * `EReal.ne_top_of_coe_mul_ne_top` — a positive real multiple can be `≠ ⊤` only if its operand is.
+* `EReal.coe_add_add_eq_of_add_add_eq` — an equation between two sums of an extended nonnegative
+  real and two real numbers follows from an equation of `ℝ≥0∞` sums and of real differences.
+* `EReal.coe_mul_le_coe_mul_iff` — multiplication by a positive real preserves and reflects `≤`.
 * `WithTop.toEReal_add` and `WithTop.toEReal_add_sub_coe_add` — the inclusion of `WithTop ℝ` into
   `EReal` is additive, and subtracting a real sum from the image of a sum splits termwise.
 -/
@@ -71,53 +74,53 @@ noncomputable section
 
 open scoped ENNReal
 
-namespace TauCeti
+namespace WithTop
 
 /-- Regard a real number with a possible top value as an extended real. This inclusion
 preserves `⊤` and never takes the value `⊥`. -/
-def _root_.WithTop.toEReal (x : WithTop ℝ) : EReal := WithBot.some x
+def toEReal (x : WithTop ℝ) : EReal := WithBot.some x
 
 /-- The inclusion into `EReal` agrees with the real coercion at finite values. -/
 @[simp]
-theorem _root_.WithTop.toEReal_coe (r : ℝ) : (r : WithTop ℝ).toEReal = (r : EReal) := (rfl)
+theorem toEReal_coe (r : ℝ) : (r : WithTop ℝ).toEReal = (r : EReal) := (rfl)
 
 /-- The inclusion into `EReal` preserves `⊤`. -/
 @[simp]
-theorem _root_.WithTop.toEReal_top : (⊤ : WithTop ℝ).toEReal = ⊤ := (rfl)
+theorem toEReal_top : (⊤ : WithTop ℝ).toEReal = ⊤ := (rfl)
 
 /-- The inclusion into `EReal` never takes the value `⊥`. -/
 @[simp]
-theorem _root_.WithTop.toEReal_ne_bot (x : WithTop ℝ) : x.toEReal ≠ ⊥ := WithBot.coe_ne_bot
+theorem toEReal_ne_bot (x : WithTop ℝ) : x.toEReal ≠ ⊥ := WithBot.coe_ne_bot
 
 /-- The inclusion into `EReal` preserves and reflects order. -/
 @[simp]
-theorem _root_.WithTop.toEReal_le_toEReal_iff {x y : WithTop ℝ} :
+theorem toEReal_le_toEReal_iff {x y : WithTop ℝ} :
     x.toEReal ≤ y.toEReal ↔ x ≤ y := WithBot.coe_le_coe
 
 /-- The inclusion into `EReal` preserves and reflects strict order. -/
 @[simp]
-theorem _root_.WithTop.toEReal_lt_toEReal_iff {x y : WithTop ℝ} :
+theorem toEReal_lt_toEReal_iff {x y : WithTop ℝ} :
     x.toEReal < y.toEReal ↔ x < y := WithBot.coe_lt_coe
 
 /-- The inclusion from `WithTop ℝ` into `EReal` is injective. -/
-theorem _root_.WithTop.toEReal_injective : Function.Injective WithTop.toEReal :=
+theorem toEReal_injective : Function.Injective WithTop.toEReal :=
   WithBot.coe_injective
 
 /-- A height maps to `⊤` in `EReal` exactly when it was already `⊤`. -/
 @[simp]
-theorem _root_.WithTop.toEReal_eq_top_iff {x : WithTop ℝ} :
+theorem toEReal_eq_top_iff {x : WithTop ℝ} :
     x.toEReal = ⊤ ↔ x = ⊤ := WithBot.coe_eq_top
 
 /-- The inclusion into `EReal` is additive. -/
 @[simp]
-theorem _root_.WithTop.toEReal_add (x y : WithTop ℝ) :
+theorem toEReal_add (x y : WithTop ℝ) :
     (x + y).toEReal = x.toEReal + y.toEReal := by
   induction x using WithTop.recTopCoe <;> induction y using WithTop.recTopCoe <;>
     simp [← WithTop.coe_add, ← EReal.coe_add]
 
 /-- Subtracting a sum of two reals from the image of a sum of two heights gives the sum of the
 two separate differences. -/
-theorem _root_.WithTop.toEReal_add_sub_coe_add (x y : WithTop ℝ) (a b : ℝ) :
+theorem toEReal_add_sub_coe_add (x y : WithTop ℝ) (a b : ℝ) :
     (x + y).toEReal - ((a + b : ℝ) : EReal) = (x.toEReal - a) + (y.toEReal - b) := by
   induction x using WithTop.recTopCoe <;> induction y using WithTop.recTopCoe
   case coe.coe r s =>
@@ -126,9 +129,13 @@ theorem _root_.WithTop.toEReal_add_sub_coe_add (x y : WithTop ℝ) (a b : ℝ) :
     ring
   all_goals simp [← EReal.coe_sub]
 
+end WithTop
+
+namespace EReal
+
 /-- Subtracting a real constant commutes with an infimum in `EReal`; both sides are `⊤` when the
 index type is empty. -/
-theorem _root_.EReal.iInf_sub_coe {ι : Sort*} (f : ι → EReal) (a : ℝ) :
+theorem iInf_sub_coe {ι : Sort*} (f : ι → EReal) (a : ℝ) :
     (⨅ i, (f i - (a : EReal))) = (⨅ i, f i) - (a : EReal) := by
   refine le_antisymm ?_ (le_iInf fun i => EReal.sub_le_sub (iInf_le f i) le_rfl)
   rw [EReal.le_sub_iff_add_le (.inl (EReal.coe_ne_bot a)) (.inl (EReal.coe_ne_top a))]
@@ -136,7 +143,7 @@ theorem _root_.EReal.iInf_sub_coe {ι : Sort*} (f : ι → EReal) (a : ℝ) :
 
 /-- Subtracting a real constant commutes with a supremum in `EReal`; both sides are `⊥` when the
 index type is empty. -/
-theorem _root_.EReal.iSup_sub_coe {ι : Sort*} (f : ι → EReal) (a : ℝ) :
+theorem iSup_sub_coe {ι : Sort*} (f : ι → EReal) (a : ℝ) :
     (⨆ i, (f i - (a : EReal))) = (⨆ i, f i) - (a : EReal) := by
   refine le_antisymm (iSup_le fun i => EReal.sub_le_sub (le_iSup f i) le_rfl) ?_
   rw [EReal.sub_le_iff_le_add (.inl (EReal.coe_ne_bot a)) (.inl (EReal.coe_ne_top a))]
@@ -145,7 +152,7 @@ theorem _root_.EReal.iSup_sub_coe {ι : Sort*} (f : ι → EReal) (a : ℝ) :
       (le_iSup (fun i => f i - (a : EReal)) i)
 
 /-- Subtracting a sum whose final term is real can be reassociated when the minuend is real. -/
-theorem _root_.EReal.coe_sub_add_coe (b : EReal) (d a : ℝ) :
+theorem coe_sub_add_coe (b : EReal) (d a : ℝ) :
     (d : EReal) - (b + (a : EReal)) = (d : EReal) - b - (a : EReal) := by
   induction b with
   | bot => simp
@@ -155,62 +162,63 @@ theorem _root_.EReal.coe_sub_add_coe (b : EReal) (d a : ℝ) :
 /-- With a real minuend, the subtrahend and the right-hand side of an inequality can be
 exchanged: `r - a ≤ b ↔ r - b ≤ a`. This is `sub_le_comm` for `EReal`, and it holds with no
 finiteness hypothesis on `a` or `b`. -/
-theorem _root_.EReal.coe_sub_le_comm {r : ℝ} {a b : EReal} :
+theorem coe_sub_le_comm {r : ℝ} {a b : EReal} :
     (r : EReal) - a ≤ b ↔ (r : EReal) - b ≤ a := by
   induction a <;> induction b <;> simp [← EReal.coe_sub, add_comm]
 
 /-- Negating a difference with a real subtrahend exchanges the operands, for every extended-real
 minuend. -/
-theorem _root_.EReal.neg_sub_coe (b : EReal) (r : ℝ) : -(b - (r : EReal)) = (r : EReal) - b := by
+theorem neg_sub_coe (b : EReal) (r : ℝ) : -(b - (r : EReal)) = (r : EReal) - b := by
   rw [EReal.neg_sub (.inr (EReal.coe_ne_bot r)) (.inr (EReal.coe_ne_top r)), add_comm,
     sub_eq_add_neg]
 
 /-- Negating a difference with a real minuend exchanges the operands, for every extended-real
 subtrahend. -/
-theorem _root_.EReal.neg_coe_sub (r : ℝ) (b : EReal) : -((r : EReal) - b) = b - (r : EReal) := by
+theorem neg_coe_sub (r : ℝ) (b : EReal) : -((r : EReal) - b) = b - (r : EReal) := by
   rw [← EReal.neg_sub_coe, neg_neg]
 
 /-- A real subtrahend inside a subtrahend can be pulled out as a summand, for all extended-real
 `x` and `y`: this is `sub_sub_eq_add_sub` for `EReal`, with no finiteness hypothesis. -/
-theorem _root_.EReal.sub_sub_coe_eq_add_coe_sub (x y : EReal) (a : ℝ) :
+theorem sub_sub_coe_eq_add_coe_sub (x y : EReal) (a : ℝ) :
     x - (y - (a : EReal)) = x + (a : EReal) - y := by
   rw [sub_eq_add_neg x, EReal.neg_sub_coe, sub_eq_add_neg, ← add_assoc, ← sub_eq_add_neg]
 
 /-- A real subtrahend commutes past a summand, for all extended-real `x` and `y`: this is
 `sub_add_eq_add_sub` for `EReal`, with no finiteness hypothesis. -/
-theorem _root_.EReal.sub_coe_add_eq_add_sub (x y : EReal) (a : ℝ) :
+theorem sub_coe_add_eq_add_sub (x y : EReal) (a : ℝ) :
     x - (a : EReal) + y = x + y - (a : EReal) := by
   rw [sub_eq_add_neg, sub_eq_add_neg, add_right_comm]
 
 /-- A real subtrahend can be moved across an equation in `EReal`, for all extended-real `x` and
 `y`: this is `sub_eq_iff_eq_add` for `EReal`, with no finiteness hypothesis. -/
-theorem _root_.EReal.sub_coe_eq_iff_eq_add_coe {x y : EReal} {a : ℝ} :
+theorem sub_coe_eq_iff_eq_add_coe {x y : EReal} {a : ℝ} :
     x - (a : EReal) = y ↔ x = y + (a : EReal) :=
   ⟨fun h => by rw [← h, EReal.sub_add_cancel], fun h => by rw [h, EReal.add_sub_cancel_right]⟩
 
 /-- An equation between a sum of extended reals and a real number can be negated term by term.
 Both sides force `x` and `y` to be real, so no finiteness hypothesis is needed, even though
 `-(x + y) = -x + -y` fails in `EReal` when `x` and `y` are opposite infinities. -/
-theorem _root_.EReal.add_eq_coe_iff_neg_add_neg_eq {x y : EReal} {r : ℝ} :
+theorem add_eq_coe_iff_neg_add_neg_eq {x y : EReal} {r : ℝ} :
     x + y = (r : EReal) ↔ -x + -y = ((-r : ℝ) : EReal) := by
-  induction x <;> induction y <;> simp [← EReal.coe_add, ← EReal.coe_neg, ← neg_add, -neg_add_rev]
+  induction x <;> induction y <;>
+    simp [← EReal.coe_add, ← EReal.coe_neg, ← _root_.neg_add, -neg_add_rev]
 
 /-- Adding a finite `I : ℝ≥0∞` to a real number in `EReal` is real addition: the inequality
 `x ≤ y + I` between extended reals is `x ≤ y + I.toReal` between reals. -/
-theorem _root_.EReal.coe_le_coe_add_coe_ennreal_iff {x y : ℝ} {I : ℝ≥0∞} (hI : I ≠ ∞) :
+theorem coe_le_coe_add_coe_ennreal_iff {x y : ℝ} {I : ℝ≥0∞} (hI : I ≠ ∞) :
     (x : EReal) ≤ y + I ↔ x ≤ y + I.toReal := by
   rw [← EReal.coe_ennreal_toReal hI, ← EReal.coe_add, EReal.coe_le_coe_iff]
 
 /-- Adding finite elements of `ℝ≥0∞` to real numbers in `EReal` is real addition: the inequality
 `x + I ≤ y + J` between extended reals is `x + I.toReal ≤ y + J.toReal` between reals. -/
-theorem _root_.EReal.coe_add_coe_ennreal_le_coe_add_coe_ennreal_iff {x y : ℝ} {I J : ℝ≥0∞}
+theorem coe_add_coe_ennreal_le_coe_add_coe_ennreal_iff {x y : ℝ} {I J : ℝ≥0∞}
     (hI : I ≠ ∞) (hJ : J ≠ ∞) :
     (x : EReal) + I ≤ y + J ↔ x + I.toReal ≤ y + J.toReal := by
   rw [← EReal.coe_ennreal_toReal hI, ← EReal.coe_ennreal_toReal hJ, ← EReal.coe_add,
     ← EReal.coe_add, EReal.coe_le_coe_iff]
 
 /-- A real number whose positive part is at most `a : ℝ≥0∞` is at most `a` in `EReal`. -/
-theorem _root_.EReal.coe_le_coe_ennreal_of_ofReal_le {x : ℝ} {a : ℝ≥0∞}
+theorem coe_le_coe_ennreal_of_ofReal_le {x : ℝ} {a : ℝ≥0∞}
     (h : ENNReal.ofReal x ≤ a) : (x : EReal) ≤ (a : EReal) := by
   calc
     (x : EReal) ≤ (ENNReal.ofReal x : EReal) := by
@@ -221,7 +229,7 @@ theorem _root_.EReal.coe_le_coe_ennreal_of_ofReal_le {x : ℝ} {a : ℝ≥0∞}
 /-- The coercion from `ℝ≥0∞` to `EReal` commutes with infima; both sides are `⊤` when the index
 type is empty. -/
 @[norm_cast]
-theorem _root_.EReal.coe_ennreal_iInf {ι : Sort*} (f : ι → ℝ≥0∞) :
+theorem coe_ennreal_iInf {ι : Sort*} (f : ι → ℝ≥0∞) :
     ((⨅ i, f i : ℝ≥0∞) : EReal) = ⨅ i, (f i : EReal) := by
   apply le_antisymm
   · exact le_iInf fun i ↦ EReal.coe_ennreal_le_coe_ennreal_iff.2 (iInf_le f i)
@@ -234,7 +242,7 @@ theorem _root_.EReal.coe_ennreal_iInf {ι : Sort*} (f : ι → ℝ≥0∞) :
 
 /-- A combination `s a + t b` with positive real weights `s`, `t` is `⊤` when neither `a` nor `b`
 is `⊥` and one of them is `⊤`. -/
-theorem _root_.EReal.coe_mul_add_coe_mul_eq_top {s t : ℝ} (hs : 0 < s) (ht : 0 < t) {a b : EReal}
+theorem coe_mul_add_coe_mul_eq_top {s t : ℝ} (hs : 0 < s) (ht : 0 < t) {a b : EReal}
     (ha : a ≠ ⊥) (hb : b ≠ ⊥) (h : a = ⊤ ∨ b = ⊤) : (s : EReal) * a + (t : EReal) * b = ⊤ := by
   rcases h with rfl | rfl
   · rw [EReal.coe_mul_top_of_pos hs]
@@ -248,7 +256,7 @@ theorem _root_.EReal.coe_mul_add_coe_mul_eq_top {s t : ℝ} (hs : 0 < s) (ht : 0
 
 /-- A combination `s a + t b - r` with nonnegative real weights `s`, `t` and a real subtrahend
 `r` is `≠ ⊤` when `a` and `b` are. -/
-theorem _root_.EReal.coe_mul_add_coe_mul_sub_coe_ne_top {a b : EReal} (ha : a ≠ ⊤) (hb : b ≠ ⊤)
+theorem coe_mul_add_coe_mul_sub_coe_ne_top {a b : EReal} (ha : a ≠ ⊤) (hb : b ≠ ⊤)
     {s t r : ℝ} (hs : 0 ≤ s) (ht : 0 ≤ t) :
     (s : EReal) * a + (t : EReal) * b - (r : EReal) ≠ ⊤ := by
   rw [sub_eq_add_neg, ← EReal.coe_neg]
@@ -257,7 +265,7 @@ theorem _root_.EReal.coe_mul_add_coe_mul_sub_coe_ne_top {a b : EReal} (ha : a �
 
 /-- A weighted sum with nonnegative real weights and a fixed subtrahend is monotone in both
 endpoint values. -/
-theorem _root_.EReal.coe_mul_add_coe_mul_sub_le_of_le {a b a' b' : EReal}
+theorem coe_mul_add_coe_mul_sub_le_of_le {a b a' b' : EReal}
     (ha : a ≤ a') (hb : b ≤ b') {s t : ℝ} (hs : 0 ≤ s) (ht : 0 ≤ t) (r : EReal) :
     (s : EReal) * a + (t : EReal) * b - r ≤ (s : EReal) * a' + (t : EReal) * b' - r :=
   EReal.sub_le_sub (add_le_add
@@ -266,19 +274,19 @@ theorem _root_.EReal.coe_mul_add_coe_mul_sub_le_of_le {a b a' b' : EReal}
 
 /-- Two combinations `s a + t b - r` with the same nonnegative real weights `s`, `t` and real
 subtrahends add termwise, as in `sub_add_sub_comm` for groups. -/
-theorem _root_.EReal.coe_mul_add_coe_mul_sub_add_sub_comm (a b a' b' : EReal) {s t : ℝ}
+theorem coe_mul_add_coe_mul_sub_add_sub_comm (a b a' b' : EReal) {s t : ℝ}
     (hs : 0 ≤ s) (ht : 0 ≤ t) (r r' : ℝ) :
     (s : EReal) * a + (t : EReal) * b - (r : EReal) + ((s : EReal) * a' + (t : EReal) * b' - r') =
       (s : EReal) * (a + a') + (t : EReal) * (b + b') - ((r + r' : ℝ) : EReal) := by
   rw [EReal.left_distrib_of_nonneg_of_ne_top (EReal.coe_nonneg.2 hs) (EReal.coe_ne_top _),
     EReal.left_distrib_of_nonneg_of_ne_top (EReal.coe_nonneg.2 ht) (EReal.coe_ne_top _)]
   simp only [sub_eq_add_neg, ← EReal.coe_neg]
-  rw [neg_add, EReal.coe_add]
+  rw [_root_.neg_add, EReal.coe_add]
   abel
 
 /-- The negative of a nonnegative combination `a x + b y` in `ℝ≥0∞`, read in `EReal`, is the
 same combination of `-x` and `-y`. -/
-theorem _root_.EReal.neg_coe_ennreal_ofReal_mul_add_ofReal_mul {a b : ℝ} (ha : 0 ≤ a)
+theorem neg_coe_ennreal_ofReal_mul_add_ofReal_mul {a b : ℝ} (ha : 0 ≤ a)
     (hb : 0 ≤ b) (x y : ℝ≥0∞) :
     -((ENNReal.ofReal a * x + ENNReal.ofReal b * y : ℝ≥0∞) : EReal) =
       (a : EReal) * -(x : EReal) + (b : EReal) * -(y : EReal) := by
@@ -287,7 +295,7 @@ theorem _root_.EReal.neg_coe_ennreal_ofReal_mul_add_ofReal_mul {a b : ℝ} (ha :
   simp [EReal.coe_ennreal_ofReal, ha, hb, sub_eq_add_neg]
 
 /-- Nonnegative real scaling distributes through a weighted sum with a real subtrahend. -/
-theorem _root_.EReal.coe_mul_coe_mul_add_coe_mul_sub (a b : EReal) {c : ℝ} (hc : 0 ≤ c)
+theorem coe_mul_coe_mul_add_coe_mul_sub (a b : EReal) {c : ℝ} (hc : 0 ≤ c)
     (s t r : ℝ) :
     (c : EReal) * ((s : EReal) * a + (t : EReal) * b - (r : EReal)) =
       (s : EReal) * ((c : EReal) * a) + (t : EReal) * ((c : EReal) * b) -
@@ -297,12 +305,47 @@ theorem _root_.EReal.coe_mul_coe_mul_add_coe_mul_sub (a b : EReal) {c : ℝ} (hc
     mul_left_comm, mul_left_comm (c : EReal) (t : EReal), ← EReal.coe_mul]
 
 /-- If a positive real multiple is not `⊤`, neither is the original extended real. -/
-theorem _root_.EReal.ne_top_of_coe_mul_ne_top {c : ℝ} (hc : 0 < c) {d : EReal}
+theorem ne_top_of_coe_mul_ne_top {c : ℝ} (hc : 0 < c) {d : EReal}
     (hd : (c : EReal) * d ≠ ⊤) : d ≠ ⊤ := by
   rintro rfl
   exact hd (EReal.coe_mul_top_of_pos hc)
 
-end TauCeti
+/-- If two sums `A + px + py` and `B + nx + ny` of extended nonnegative reals agree, with all
+summands but `A` and `B` finite, and the real differences `px - nx + (py - ny)` and
+`a + b - (a' + b')` agree, then `A + a + b = B + a' + b'` in `EReal`. -/
+theorem coe_add_add_eq_of_add_add_eq {A B px nx py ny : ℝ≥0∞}
+    (hpx : px ≠ ⊤) (hnx : nx ≠ ⊤) (hpy : py ≠ ⊤) (hny : ny ≠ ⊤)
+    (hres : A + px + py = B + nx + ny) {a b a' b' : ℝ}
+    (hdiff : px.toReal - nx.toReal + (py.toReal - ny.toReal) = a + b - (a' + b')) :
+    (A : EReal) + (a : EReal) + (b : EReal) = (B : EReal) + (a' : EReal) + (b' : EReal) := by
+  have hres' : (A : EReal) + ((px.toReal + py.toReal : ℝ) : EReal) =
+      (B : EReal) + ((nx.toReal + ny.toReal : ℝ) : EReal) := by
+    simpa [EReal.coe_ennreal_add, EReal.coe_add, EReal.coe_ennreal_toReal, hpx, hnx, hpy, hny,
+      add_assoc] using congrArg (fun t : ℝ≥0∞ ↦ (t : EReal)) hres
+  calc
+    (A : EReal) + (a : EReal) + (b : EReal) =
+        ((A : EReal) + ((px.toReal + py.toReal : ℝ) : EReal)) +
+          ((a + b - (px.toReal + py.toReal) : ℝ) : EReal) := by
+      simp only [← EReal.coe_add, add_assoc]
+      ring_nf
+    _ = ((B : EReal) + ((nx.toReal + ny.toReal : ℝ) : EReal)) +
+          ((a + b - (px.toReal + py.toReal) : ℝ) : EReal) := by
+      rw [hres']
+    _ = (B : EReal) + (a' : EReal) + (b' : EReal) := by
+      simp only [← EReal.coe_add, add_assoc]
+      congr 1
+      norm_cast
+      linarith
+
+/-- Multiplication by a positive real number `c` preserves and reflects the order of `EReal`. -/
+@[simp]
+theorem coe_mul_le_coe_mul_iff {c : ℝ} (hc : 0 < c) (a b : EReal) :
+    (c : EReal) * a ≤ (c : EReal) * b ↔ a ≤ b := by
+  have hc' : 0 < (c : EReal) := EReal.coe_pos.2 hc
+  rw [← EReal.div_le_iff_le_mul hc' (EReal.coe_ne_top c), ← EReal.mul_div,
+    EReal.mul_div_cancel (EReal.coe_ne_bot c) (EReal.coe_ne_top c) hc'.ne']
+
+end EReal
 
 end
 

@@ -186,7 +186,7 @@ lemma ιChainComplex_alexanderWhitneyDiagonal_f (X : TopCat.{w}) (u : T ⟶ R �
       CategoryTheory.Functor.map_id]
     rfl
   simp only [alexanderWhitneyDiagonal, comp_f,
-    TauCeti.SSet.ιChainComplex_chainComplexFunctor_map_app_f_assoc, SSet.ι_chainComplexMap_f_assoc,
+    SSet.ιChainComplex_chainComplexFunctor_map_app_f_assoc, SSet.ι_chainComplexMap_f_assoc,
     ιChainComplex_alexanderWhitney_f, hfst, hsnd]
   -- the simplex of `Sing X ⊗ Sing X` is the pair `(σ, σ)`
   exact congrArg (u ≫ ·) (SSet.ιChainComplex_alexanderWhitney_f (toSSet.obj X) (toSSet.obj X) R S

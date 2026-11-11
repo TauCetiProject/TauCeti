@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Polynomial.CommonRoots
 public import TauCeti.Analysis.Polynomial.RealRoots.Ordered
 
 import TauCeti.RingTheory.Polynomial.Roots
-import TauCeti.Topology.Algebra.Polynomial.RootMultiplicity
+import TauCeti.Topology.Algebra.Polynomial.Root.Multiplicity
 
 /-!
 # Common ordered real roots of a finite family of real polynomials
@@ -22,7 +22,7 @@ distinct members is locally constant. The family matching lemma
 members has a locally constant number of distinct complex roots, so the results of
 `TauCeti/Analysis/Polynomial/RealRoots/Ordered.lean` apply to the product.
 
-On a nonempty preconnected base this gives a single finite list of continuous, strictly increasing
+On a preconnected base this gives a single finite list of continuous, strictly increasing
 functions enumerating, at every parameter, the real roots of all the members together, such that
 the multiplicity of each listed root in each member is the same at every parameter. In particular
 membership of a listed root in the root set of each member does not depend on the parameter. This
@@ -40,7 +40,7 @@ coefficient hypotheses used to construct such enumerations.
 
 ## Main results
 
-* `TauCeti.exists_roots_of_locally`: glue local ordered real-root enumerations over a nonempty
+* `TauCeti.exists_roots_of_locally`: glue local ordered real-root enumerations over a
   preconnected base.
 * `Polynomial.eventually_card_aroots_prod_eq`: the product of the members has locally constant
   number of distinct complex roots.
@@ -67,11 +67,11 @@ namespace TauCeti
 variable {X ι : Type*} [TopologicalSpace X] {P : ι → X → ℝ[X]}
 
 /-- Local continuous strictly increasing enumerations `θ a` of an intrinsic set `Z y ⊆ ℝ` on
-open neighborhoods `U a` glue over a nonempty preconnected base. The local counts are globally
+open neighborhoods `U a` glue over a preconnected base. The local counts are globally
 constant, the glued root functions are continuous, strictly increasing and enumerate `Z`, and
 they agree with every local enumeration. If every local enumeration has constant root
 multiplicities in a family `P`, so do the glued roots. -/
-theorem exists_roots_of_locally [PreconnectedSpace X] [Nonempty X] {Z : X → Set ℝ}
+theorem exists_roots_of_locally [PreconnectedSpace X] {Z : X → Set ℝ}
     {U : X → Set X} (hU : ∀ x, IsOpen (U x)) (hxU : ∀ x, x ∈ U x) {c : X → ℕ}
     {θ : ∀ a, Fin (c a) → U a → ℝ} {μ : ∀ a, ι → Fin (c a) → ℕ}
     (hθc : ∀ a i, Continuous (θ a i)) (hθmono : ∀ a (y : U a), StrictMono fun i ↦ θ a i y)
@@ -83,6 +83,10 @@ theorem exists_roots_of_locally [PreconnectedSpace X] [Nonempty X] {Z : X → Se
       (∀ k i x, (P k x).rootMultiplicity (r i x) = m k i) ∧
       ∀ a (y : U a) i, r i y = θ a (Fin.cast (hc a).symm i) y := by
   classical
+  rcases isEmpty_or_nonempty X with hX | hX
+  · exact ⟨0, fun x => isEmptyElim x, fun _ x => isEmptyElim x, fun _ _ => 0,
+      fun _ => continuous_of_const fun x => isEmptyElim x, fun x => isEmptyElim x,
+      fun x => isEmptyElim x, fun _ _ x => isEmptyElim x, fun _ y => isEmptyElim y.1⟩
   let a₀ : X := Classical.arbitrary X
   have hcard (a : X) (y : U a) : Nat.card (Z y) = c a := by
     rw [← hθrange a y, Nat.card_range_of_injective (hθmono a y).injective]
@@ -210,14 +214,14 @@ theorem eventually_exists_bijOn_biUnion_aroots_toFinset_of_natDegree_gcd_derivat
 
 omit [Fintype ι] in
 /-- **Common ordered real roots.** Let `F k x` be real polynomials of degree `d k`, for `k` in a
-finite index type, whose coefficients depend continuously on a parameter in a nonempty
+finite index type, whose coefficients depend continuously on a parameter in a
 preconnected space. Suppose that the number of distinct complex roots of each member is locally
 nonincreasing, and the degree of the gcd of every pair of distinct members is locally constant.
 Then there are finitely many continuous functions `r x 0 < ⋯ < r x (n - 1)` whose values at each
 `x` are exactly the real roots of the members `F k x` together, and the multiplicity of `r x i` as
 a root of each member `F k x` does not depend on `x`. -/
 theorem exists_continuous_ordered_common_roots_of_preconnectedSpace [Finite ι]
-    [PreconnectedSpace B] [Nonempty B] (hF : ∀ k, ∀ i ≤ d k, Continuous (fun x => (F k x).coeff i))
+    [PreconnectedSpace B] (hF : ∀ k, ∀ i ≤ d k, Continuous (fun x => (F k x).coeff i))
     (hdeg : ∀ k x, (F k x).degree = d k)
     (hcard : ∀ k x₀, ∀ᶠ x in 𝓝 x₀,
       ((F k x).aroots ℂ).toFinset.card ≤ ((F k x₀).aroots ℂ).toFinset.card)
@@ -229,6 +233,9 @@ theorem exists_continuous_ordered_common_roots_of_preconnectedSpace [Finite ι]
       (∀ x t, (∃ k, (F k x).IsRoot t) ↔ ∃ i, r x i = t) ∧
       (∀ k i x y, (F k x).rootMultiplicity (r x i) = (F k y).rootMultiplicity (r y i)) := by
   cases nonempty_fintype ι
+  rcases isEmpty_or_nonempty B with hB | hB
+  · exact ⟨0, fun x => isEmptyElim x, fun i => i.elim0, fun x => isEmptyElim x,
+      fun x => isEmptyElim x, fun k i => i.elim0⟩
   have hne (k : ι) (x : B) : F k x ≠ 0 := by
     rintro h
     simpa [h] using hdeg k x
@@ -260,14 +267,14 @@ theorem exists_continuous_ordered_common_roots_of_preconnectedSpace [Finite ι]
 
 omit [Fintype ι] in
 /-- **Common ordered real roots, gcd form.** Let `F k x` be real polynomials of degree `d k`, for
-`k` in a finite index type, whose coefficients depend continuously on a parameter in a nonempty
+`k` in a finite index type, whose coefficients depend continuously on a parameter in a
 preconnected space. Suppose that the degree of the gcd of each member with its derivative, and
 the degree of the gcd of every pair of distinct members, are locally constant. Then there are
 finitely many continuous functions `r x 0 < ⋯ < r x (n - 1)` whose values at each `x` are exactly
 the real roots of the members `F k x` together, and the multiplicity of `r x i` as a root of each
 member `F k x` does not depend on `x`. -/
 theorem exists_continuous_ordered_common_roots_of_natDegree_gcd_derivative
-    [Finite ι] [PreconnectedSpace B] [Nonempty B]
+    [Finite ι] [PreconnectedSpace B]
     (hF : ∀ k, ∀ i ≤ d k, Continuous (fun x => (F k x).coeff i))
     (hdeg : ∀ k x, (F k x).degree = d k)
     (hder : ∀ k x₀, ∀ᶠ x in 𝓝 x₀,

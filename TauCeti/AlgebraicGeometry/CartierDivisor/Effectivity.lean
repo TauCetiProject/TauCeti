@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Monoid.Submonoid
 public import TauCeti.AlgebraicGeometry.CartierDivisor.Effective.Basic
 public import TauCeti.AlgebraicGeometry.CartierDivisor.WeilComparison
 
@@ -52,9 +53,9 @@ nonnegative. -/
 @[simp]
 theorem isEffective_iff_toWeilDivisor (hX : ∀ x : X, coheight x ≤ 1)
     (D : CartierDivisor X) :
-    D.IsEffective ↔ WeilDivisor.IsEffective D.toWeilDivisor := by
+    D.IsEffective ↔ 0 ≤ D.toWeilDivisor := by
   rw [isEffective_iff_one_mem_sections,
-    SchemeWeilDivisor.isEffective_iff_one_mem_sections,
+    SchemeWeilDivisor.nonneg_iff_one_mem_sections,
     sections_eq_toWeilDivisor hX]
 
 end Scheme.CartierDivisor
@@ -67,28 +68,27 @@ variable {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
 /-- The Weil–Cartier equivalence preserves effectivity. -/
 theorem isEffective_equivCartierDivisor_iff (hX : ∀ x : X, coheight x ≤ 1)
     (D : SchemeWeilDivisor X) :
-    (equivCartierDivisor hX D).IsEffective ↔
-      WeilDivisor.IsEffective D := by
+    (equivCartierDivisor hX D).IsEffective ↔ 0 ≤ D := by
   rw [Scheme.CartierDivisor.isEffective_iff_toWeilDivisor hX]
   rw [← equivCartierDivisor_symm_apply hX (equivCartierDivisor hX D),
     AddEquiv.symm_apply_apply]
 
 /-- The Weil–Cartier equivalence restricts to an additive equivalence of effective divisors. -/
 def effectiveEquivCartierDivisor (hX : ∀ x : X, coheight x ≤ 1) :
-    WeilDivisor.effectiveSubmonoid (CodimensionOnePoint X) ≃+
+    AddSubmonoid.nonneg (WeilDivisor (CodimensionOnePoint X)) ≃+
       Scheme.CartierDivisor.effectiveSubmonoid X :=
   (equivCartierDivisor hX).addSubmonoidMap
-      (WeilDivisor.effectiveSubmonoid (CodimensionOnePoint X)) |>.trans
+      (AddSubmonoid.nonneg (WeilDivisor (CodimensionOnePoint X))) |>.trans
     (AddEquiv.addSubmonoidCongr (by
       ext E
       constructor
       · rintro ⟨D, hD, rfl⟩
         exact (Scheme.CartierDivisor.mem_effectiveSubmonoid _).mpr
           ((isEffective_equivCartierDivisor_iff hX D).mpr
-            ((WeilDivisor.mem_effectiveSubmonoid _).mp hD))
+            (AddSubmonoid.mem_nonneg.mp hD))
       · intro hE
         refine ⟨(equivCartierDivisor hX).symm E, ?_, ?_⟩
-        · exact (WeilDivisor.mem_effectiveSubmonoid _).mpr
+        · exact AddSubmonoid.mem_nonneg.mpr
             ((isEffective_equivCartierDivisor_iff hX _).mp (by
               simpa only [AddEquiv.apply_symm_apply] using
                 (Scheme.CartierDivisor.mem_effectiveSubmonoid _).mp hE))
@@ -97,7 +97,7 @@ def effectiveEquivCartierDivisor (hX : ∀ x : X, coheight x ≤ 1) :
 /-- On underlying divisors, the effective equivalence is the Weil–Cartier equivalence. -/
 @[simp]
 theorem effectiveEquivCartierDivisor_apply (hX : ∀ x : X, coheight x ≤ 1)
-    (D : WeilDivisor.effectiveSubmonoid (CodimensionOnePoint X)) :
+    (D : AddSubmonoid.nonneg (WeilDivisor (CodimensionOnePoint X))) :
     ((effectiveEquivCartierDivisor hX D :
       Scheme.CartierDivisor.effectiveSubmonoid X) : Scheme.CartierDivisor X) =
       equivCartierDivisor hX D :=

@@ -88,22 +88,14 @@ def locallyNilpotentSubmodule (x : L)
     (hx : ∀ y : L, ∃ k : ℕ, ((ad R L x) ^ k) y = 0) : LieSubmodule R L M where
   __ := (toEnd R L M x).maxGenEigenspace 0
   lie_mem {y m} hm := by
-    have hy : y ∈ (ad R L x).maxGenEigenspace 0 := by
-      simp only [Module.End.mem_maxGenEigenspace, zero_smul, sub_zero]
-      exact hx y
-    simp only [AddSubsemigroup.mem_carrier, AddSubmonoid.mem_toSubsemigroup,
-      Submodule.mem_toAddSubmonoid] at hm ⊢
-    rw [← zero_add (0 : R)]
-    exact LieModule.lie_mem_maxGenEigenspace_toEnd hy hm
+    have hy : y ∈ (ad R L x).maxGenEigenspace 0 := by simpa using hx y
+    simpa using lie_mem_maxGenEigenspace_toEnd (χ₁ := 0) (χ₂ := 0) hy hm
 
 @[simp]
 theorem mem_locallyNilpotentSubmodule {x : L}
     {hx : ∀ y : L, ∃ k : ℕ, ((ad R L x) ^ k) y = 0} {m : M} :
     m ∈ locallyNilpotentSubmodule R M x hx ↔ ∃ k : ℕ, ((toEnd R L M x) ^ k) m = 0 := by
-  -- The constructor has no named lemma for its inherited carrier, so expose the definitionally
-  -- equal generalized eigenspace before applying its membership simp lemma.
-  change m ∈ (toEnd R L M x).maxGenEigenspace 0 ↔ _
-  simp
+  simp [locallyNilpotentSubmodule]
 
 /-- **Local nilpotence spreads over an irreducible module.** If `ad x` is locally nilpotent and
 some nonzero vector of an irreducible module `M` is annihilated by a power of `x`, then every
@@ -120,12 +112,6 @@ theorem exists_pow_toEnd_eq_zero_of_isIrreducible [LieModule.IsIrreducible R L M
 
 /-! ### Locally finite vectors -/
 
-/-- A subspace is stable under bracketing with `x` exactly when its image under the action of `x`
-is contained in it. -/
-private theorem map_toEnd_le_iff {x : L} {N : Submodule R M} :
-    N.map (toEnd R L M x) ≤ N ↔ ∀ u ∈ N, ⁅x, u⁆ ∈ N := by
-  simp [IsConcreteLE.le_iff]
-
 variable (R M) in
 /-- The vectors of `M` lying in some finitely generated `R`-submodule stable under bracketing with
 every element of `S`, as a Lie submodule of `M`.
@@ -138,31 +124,31 @@ def locallyFiniteSubmodule [Module.Finite R L] (S : Set L) : LieSubmodule R L M 
   zero_mem' := ⟨⊥, Submodule.fg_bot, by simp, Submodule.zero_mem ⊥⟩
   add_mem' := by
     rintro a c ⟨N₁, hfg₁, hst₁, ha⟩ ⟨N₂, hfg₂, hst₂, hc⟩
-    refine ⟨N₁ ⊔ N₂, hfg₁.sup hfg₂, fun x hx => ?_,
+    refine ⟨N₁ ⊔ N₂, hfg₁.sup hfg₂, fun x hx u hu => ?_,
       add_mem (Submodule.mem_sup_left ha) (Submodule.mem_sup_right hc)⟩
-    rw [← map_toEnd_le_iff, Submodule.map_sup]
-    exact sup_le_sup ((map_toEnd_le_iff).mpr (hst₁ x hx)) ((map_toEnd_le_iff).mpr (hst₂ x hx))
+    obtain ⟨b, hb, d, hd, rfl⟩ := Submodule.mem_sup.mp hu
+    rw [lie_add]
+    exact add_mem (Submodule.mem_sup_left (hst₁ x hx b hb))
+      (Submodule.mem_sup_right (hst₂ x hx d hd))
   smul_mem' := by
     rintro c a ⟨N, hfg, hst, ha⟩
     exact ⟨N, hfg, hst, N.smul_mem c ha⟩
   lie_mem := by
     rintro y m ⟨N, hfg, hst, hm⟩
-    let br : L →ₗ[R] M →ₗ[R] M :=
-      LinearMap.mk₂ R (fun (z : L) (u : M) => ⁅z, u⁆) add_lie smul_lie lie_add lie_smul
-    set Q : Submodule R M := Submodule.map₂ br ⊤ N with hQ
-    have hbr : ∀ (z : L) {u : M}, u ∈ N → ⁅z, u⁆ ∈ Q := fun z u hu =>
-      Submodule.apply_mem_map₂ br Submodule.mem_top hu
-    have hQfg : Q.FG := by
-      rw [hQ]
-      exact Module.Finite.fg_top.map₂ br hfg
-    refine ⟨N ⊔ Q, hfg.sup hQfg, fun x hx => ?_, Submodule.mem_sup_right (hbr y hm)⟩
-    rw [← map_toEnd_le_iff, Submodule.map_sup]
-    refine sup_le (((map_toEnd_le_iff).mpr (hst x hx)).trans le_sup_left) ?_
-    rw [hQ, Submodule.map_le_iff_le_comap, Submodule.map₂_le]
-    intro z _ u hu
-    -- `Submodule.map₂_le` exposes the locally defined bilinear map `br`; unfold its
-    -- definitional action to put the Jacobi identity into bracket notation.
-    change ⁅x, ⁅z, u⁆⁆ ∈ N ⊔ Q
+    -- `Q = ⁅L, N⁆` is finitely generated because `L` and `N` are.
+    let Q : Submodule R M := Submodule.map₂ (toEnd R L M : L →ₗ[R] End R M) ⊤ N
+    have hbr : ∀ (z : L) {u : M}, u ∈ N → ⁅z, u⁆ ∈ Q := fun z _ hu =>
+      Submodule.apply_mem_map₂ _ Submodule.mem_top hu
+    refine ⟨N ⊔ Q, hfg.sup (Module.Finite.fg_top.map₂ _ hfg), fun x hx u hu => ?_,
+      Submodule.mem_sup_right (hbr y hm)⟩
+    obtain ⟨a, ha, b, hb, rfl⟩ := Submodule.mem_sup.mp hu
+    rw [lie_add]
+    refine add_mem (Submodule.mem_sup_left (hst x hx a ha)) ?_
+    -- `Q` is spanned by the brackets `⁅z, u⁆` with `u ∈ N`, which the Jacobi identity
+    -- `⁅x, ⁅z, u⁆⁆ = ⁅⁅x, z⁆, u⁆ + ⁅z, ⁅x, u⁆⁆` sends back into `Q`.
+    refine (Submodule.map₂_le (r := (N ⊔ Q).comap (toEnd R L M x))).mpr
+      (fun z _ u hu => ?_) hb
+    simp only [LieHom.coe_toLinearMap, toEnd_apply_apply, Submodule.mem_comap]
     rw [leibniz_lie]
     exact add_mem (Submodule.mem_sup_right (hbr ⁅x, z⁆ hu))
       (Submodule.mem_sup_right (hbr z (hst x hx u hu)))
