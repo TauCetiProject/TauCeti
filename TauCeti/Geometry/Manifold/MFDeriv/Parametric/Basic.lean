@@ -44,7 +44,7 @@ boundary points.
   for `m + 1 ≤ n`. `ContMDiffAt.contMDiffAt_curveVelocity_fst` is the same statement for the
   curves `q ↦ f q r`, and `ContMDiffAt.contMDiffAt_curveVelocity_snd_slice` is its restriction
   to a fixed time.
-* `TauCeti.Manifold.contMDiffAt_variationField`: the variation field of a jointly `C^n` family
+* `ContMDiffAt.contMDiffAt_variationField`: the variation field of a jointly `C^n` family
   is a `C^m` field along its central curve for `m + 1 ≤ n`.
 * `TauCeti.Manifold.hasDerivAt_mvfderiv_apply`: the parameter derivative of the differential of a
   jointly `C²` family is the differential of its parameter derivative.
@@ -170,7 +170,7 @@ theorem _root_.ContMDiffAt.contMDiffAt_curveVelocity_snd_slice {f : 𝕜 → �
 /-- **Regularity of the variation field.** The variation field of a family `f : 𝕜 → 𝕜 → M` which
 is jointly `C^n` at `(0, v)` is a `C^m` field along the central curve `f 0` at `v`, for every `m`
 with `m + 1 ≤ n`. -/
-theorem contMDiffAt_variationField {f : 𝕜 → 𝕜 → M} {v : 𝕜}
+theorem _root_.ContMDiffAt.contMDiffAt_variationField {f : 𝕜 → 𝕜 → M} {v : 𝕜}
     (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I n (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (0, v)) (hmn : m + 1 ≤ n) :
     ContMDiffAt 𝓘(𝕜, 𝕜) I.tangent m
       (fun r ↦ TotalSpace.mk' E (f 0 r) (variationField I f r)) v := by
