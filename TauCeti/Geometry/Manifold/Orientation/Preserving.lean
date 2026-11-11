@@ -418,8 +418,7 @@ theorem IsOrientationPreservingAt.partialDiffeomorph_symm [IsManifold I 1 M]
     IsOrientationPreservingAt o' o Φ.symm y := by
   refine h.of_comp (isOrientationPreservingAt_of_apply_eq_of_mfderiv_eq_id o'
     (Φ.toPartialEquiv.right_inv hy) ?_) (Φ.symm.mdifferentiableAt hn hy)
-  have heq : ⇑Φ ∘ ⇑Φ.symm =ᶠ[𝓝 y] id :=
-    Filter.eventually_of_mem (Φ.open_target.mem_nhds hy) fun z hz ↦ Φ.toPartialEquiv.right_inv hz
+  have heq : ⇑Φ ∘ ⇑Φ.symm =ᶠ[𝓝 y] id := Φ.toOpenPartialHomeomorph.eventually_right_inverse hy
   rw [heq.mfderiv_eq, mfderiv_id]
   exact ContinuousLinearMap.ext fun _ ↦ rfl
 
