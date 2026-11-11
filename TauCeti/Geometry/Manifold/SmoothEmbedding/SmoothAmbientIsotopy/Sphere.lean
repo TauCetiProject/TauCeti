@@ -88,13 +88,7 @@ theorem exists_smoothAmbientIsotopic_mfderiv_eq (hn : 2 ≤ n) (hk : k ≠ 0)
     ∃ K' : SmoothEmbedding (𝓡 1) (𝓡 n) k Circle (sphere (0 : E) 1),
       K.SmoothAmbientIsotopic K' ∧ K' z₀ = L z₀ ∧
         mfderiv (𝓡 1) (𝓡 n) K' z₀ = mfderiv (𝓡 1) (𝓡 n) L z₀ := by
-  -- an injective derivative forces differentiability: off it `mfderiv` is the zero map
-  have hLd : MDifferentiableAt (𝓡 1) (𝓡 n) L z₀ := by
-    by_contra h
-    rw [mfderiv_zero_of_not_mdifferentiableAt h] at hL
-    obtain ⟨a, ha⟩ : ∃ a : TangentSpace (𝓡 1) z₀, a ≠ 0 :=
-      exists_ne (0 : EuclideanSpace ℝ (Fin 1))
-    exact ha (hL (by simp))
+  have hLd : MDifferentiableAt (𝓡 1) (𝓡 n) L z₀ := mdifferentiableAt_of_mfderiv_injective hL
   obtain ⟨t, rfl⟩ := Circle.exp_surjective z₀
   -- The points `x`, `y` and velocities `v`, `w` of `K` and `L` over `exp (t i)`, read in `E`.
   set γ : ℝ → E := fun s => (K (Circle.exp s) : E)
