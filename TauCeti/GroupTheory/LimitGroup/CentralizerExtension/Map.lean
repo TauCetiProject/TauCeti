@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Basic
 public import TauCeti.GroupTheory.PushoutI.Map
+import TauCeti.GroupTheory.Subgroup.Centralizer
 
 /-!
 # Extensions of centralizers along an embedding of the base group
@@ -47,16 +48,12 @@ namespace CentralizerExt
 
 variable {G K : Type*} [Group G] [Group K]
 
-/-- The restriction of `f : G →* K` to a homomorphism `C_G(u) →* C_K(f u)`. -/
-private def centralizerHom (f : G →* K) (u : G) : centralizer {u} →* centralizer {f u} :=
-  (f.comp (centralizer {u}).subtype).codRestrict _ fun c => by
-    simpa using map_centralizer_le_centralizer_image {u} f (mem_map_of_mem f c.2)
-
 /-- The homomorphism `G(u, ℤⁿ) →* K(f u, ℤⁿ)` induced by `f : G →* K`: it is `f` on `G` and the
 identity on the new letters. -/
 def map (f : G →* K) (u : G) (n : ℕ) : CentralizerExt u n →* CentralizerExt (f u) n :=
   -- Naming `f c` spares the elaborator a costly unification of `(of.comp f) c` with `of ?c`.
-  lift (of.comp f) t commute_t_t fun c hc => commute_of_t (c := f c) (centralizerHom f u ⟨c, hc⟩).2
+  lift (of.comp f) t commute_t_t fun c hc => commute_of_t (c := f c) <| by
+    simpa using (f.centralizerMap Set.image_singleton.superset ⟨c, hc⟩).2
 
 @[simp]
 theorem map_of (f : G →* K) (u : G) (n : ℕ) (g : G) : map f u n (of g) = of (f g) :=
@@ -83,28 +80,30 @@ itself on `G`, and its restriction to the centralizers times the identity on `C_
 private def factorMap (f : G →* K) (u : G) (n : ℕ) :
     ∀ b, CentralizerExtFactor u n b →* CentralizerExtFactor (f u) n b
   | false => f
-  | true => (centralizerHom f u).prodMap (.id _)
+  | true => (f.centralizerMap Set.image_singleton.superset).prodMap (.id _)
 
 private theorem factorMap_comp (f : G →* K) (u : G) (n : ℕ) (b : Bool) :
     (factorMap f u n b).comp (centralizerExtMap u n b) =
-      (centralizerExtMap (f u) n b).comp (centralizerHom f u) := by
-  -- After unfolding `centralizerExtMap`, both sides are `c ↦ f c`, respectively `c ↦ (f c, 1)`.
+      (centralizerExtMap (f u) n b).comp (f.centralizerMap Set.image_singleton.superset) := by
   cases b
-  · rw [centralizerExtMap_false, centralizerExtMap_false]
-    rfl
-  · rw [centralizerExtMap_true, centralizerExtMap_true]
+  · ext
+    simp [factorMap]
+  · -- Unfolding `factorMap`, `MonoidHom.prodMap` and `MonoidHom.inl`, both sides are
+    -- `c ↦ (f.centralizerMap _ c, 1)`.
+    rw [centralizerExtMap_true, centralizerExtMap_true]
     rfl
 
 /-- The induced homomorphism of extensions of centralizers, as a homomorphism of amalgamated
 products induced by homomorphisms of the factors. -/
 private theorem map_eq_pushoutIMap (f : G →* K) (u : G) (n : ℕ) :
     map f u n =
-      Monoid.PushoutI.map (factorMap f u n) (centralizerHom f u) (factorMap_comp f u n) := by
+      Monoid.PushoutI.map (factorMap f u n) (f.centralizerMap Set.image_singleton.superset)
+        (factorMap_comp f u n) := by
   refine hom_ext (MonoidHom.ext fun g => ?_) fun i => ?_
   · simpa [of_def, factorMap] using map_of f u n g
   · rw [map_t, t_def, t_def, Monoid.PushoutI.map_of]
     -- On the second factor the homomorphism is `(c, v) ↦ (f c, v)`, and `f 1 = 1`.
-    exact congrArg _ (Prod.ext (map_one (centralizerHom f u)).symm rfl)
+    exact congrArg _ (Prod.ext (map_one (f.centralizerMap _)).symm rfl)
 
 /-- The homomorphism of extensions of centralizers induced by an injective homomorphism is
 injective. -/
@@ -112,7 +111,7 @@ theorem map_injective {f : G →* K} (hf : Function.Injective f) (u : G) (n : �
     Function.Injective (map f u n) := by
   rw [map_eq_pushoutIMap]
   refine Monoid.PushoutI.map_injective _ (centralizerExtMap_injective (f u) n)
-    (fun c c' h => Subtype.ext (hf (congrArg Subtype.val h))) fun b => ?_
+    (MonoidHom.centralizerMap_injective hf _) fun b => ?_
   cases b
   · -- An element of `G` whose image centralizes `f u` centralizes `u`.
     rintro (g : G) ⟨c, hc⟩

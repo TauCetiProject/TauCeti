@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.PushoutI
+import TauCeti.GroupTheory.CoprodI.Word
+import TauCeti.GroupTheory.PushoutI.Reduced
 
 /-!
 # Homomorphisms of amalgamated products induced by homomorphisms of the factors
@@ -33,8 +35,7 @@ hypotheses they are.
 ## References
 
 * J.-P. Serre, *Trees*, Chapter I, §1.2, Theorem 1 (the normal form theorem for amalgamated
-  products, in Mathlib as `Monoid.PushoutI.NormalWord` and
-  `Monoid.PushoutI.Reduced.eq_empty_of_mem_range`).
+  products, in Mathlib as `Monoid.PushoutI.Reduced.eq_empty_of_mem_range`).
 -/
 
 public section
@@ -76,6 +77,18 @@ theorem map_comp_of (i : ι) : (map f k hfk).comp (of i) = (of i).comp (f i) :=
 theorem map_comp_base : (map f k hfk).comp (base φ) = (base φ').comp k :=
   MonoidHom.ext (map_base f k hfk)
 
+/-- On the free product of the factors, the induced homomorphism is the homomorphism of free
+products induced by the `f i`. -/
+@[simp]
+theorem map_comp_ofCoprodI :
+    (map f k hfk).comp ofCoprodI = ofCoprodI.comp (CoprodI.lift fun i => CoprodI.of.comp (f i)) :=
+  CoprodI.ext_hom _ _ fun i => by ext; simp
+
+@[simp]
+theorem map_ofCoprodI (x : CoprodI G) :
+    map f k hfk (ofCoprodI x) = ofCoprodI (CoprodI.lift (fun i => CoprodI.of.comp (f i)) x) :=
+  DFunLike.congr_fun (map_comp_ofCoprodI f k hfk) x
+
 @[simp]
 theorem map_id : map (φ := φ) (fun i => .id (G i)) (.id H) (fun _ => rfl) = .id (PushoutI φ) :=
   hom_ext (by simp) (by ext; simp)
@@ -95,35 +108,6 @@ section Group
 variable [∀ i, Group (G i)] [∀ i, Group (G' i)] [Group H] [Group H'] {φ : ∀ i, H →* G i}
   {φ' : ∀ i, H' →* G' i}
 
-/-- Every element of an amalgamated product of groups is the product of an element of the
-amalgamated subgroup and a reduced word. -/
-private theorem exists_eq_base_mul_ofCoprodI_prod (hφ : ∀ i, Injective (φ i)) (x : PushoutI φ) :
-    ∃ (h : H) (w : Word G), Reduced φ w ∧ x = base φ h * ofCoprodI w.prod := by
-  classical
-  obtain ⟨d⟩ := NormalWord.transversal_nonempty φ hφ
-  refine ⟨(NormalWord.equiv (d := d) x).head, (NormalWord.equiv (d := d) x).toWord, ?_,
-    (NormalWord.equiv.symm_apply_apply x).symm⟩
-  -- A nonidentity letter of the transversal is not in the amalgamated subgroup.
-  rintro ⟨i, g⟩ hl hg
-  have h1 := (d.compl i).equiv_fst_eq_self_of_mem_of_one_mem (d.one_mem i) hg
-  rw [(d.compl i).equiv_fst_eq_one_of_mem_of_one_mem (one_mem _)
-    ((NormalWord.equiv x).normalized i g hl)] at h1
-  exact (NormalWord.equiv x).ne_one _ hl (congrArg Subtype.val h1).symm
-
-/-- The image of a word of the free product under injective homomorphisms of the factors. -/
-private def mapWord (f : ∀ i, G i →* G' i) (hf : ∀ i, Injective (f i)) (w : Word G) : Word G' where
-  toList := w.toList.map fun l => ⟨l.1, f l.1 l.2⟩
-  ne_one := by
-    simp only [List.mem_map, forall_exists_index, and_imp]
-    rintro _ l hl rfl
-    exact (map_ne_one_iff _ (hf l.1)).2 (w.ne_one l hl)
-  chain_ne := (List.isChain_map _).2 w.chain_ne
-
-private theorem ofCoprodI_prod_mapWord {f : ∀ i, G i →* G' i} (hf : ∀ i, Injective (f i))
-    {k : H →* H'} (hfk : ∀ i, (f i).comp (φ i) = (φ' i).comp k) (w : Word G) :
-    ofCoprodI (φ := φ') (mapWord f hf w).prod = map f k hfk (ofCoprodI w.prod) := by
-  simp [mapWord, Word.prod, map_list_prod, List.map_map, Function.comp_def]
-
 /-- A homomorphism of amalgamated products of groups induced by homomorphisms `f i` of the factors
 and an injective homomorphism `k` of the amalgamated groups is injective if the structure maps of
 the target are injective and each `f i` pulls the amalgamated subgroup of the target back into the
@@ -134,20 +118,21 @@ theorem map_injective {f : ∀ i, G i →* G' i} {k : H →* H'}
   have hφk (i : ι) : Injective (f i ∘ φ i) := by
     rw [← MonoidHom.coe_comp, hfk]
     exact (hφ' i).comp hk
-  have hinj (i : ι) : Injective (f i) := (injective_iff_map_eq_one _).2 fun g hg => by
+  have hf1 (i : ι) (g : G i) (hg : f i g = 1) : g = 1 := by
     obtain ⟨h, rfl⟩ := hf i g (hg ▸ one_mem _)
     rw [hφk i (a₁ := h) (a₂ := 1) (by simpa using hg), map_one]
   refine (injective_iff_map_eq_one _).2 fun x hx => ?_
-  obtain ⟨h, w, hw, rfl⟩ := exists_eq_base_mul_ofCoprodI_prod (fun i => (hφk i).of_comp) x
-  have hw' : Reduced φ' (mapWord f hinj w) := fun l hl => by
+  obtain ⟨h, w, hw, rfl⟩ := exists_eq_base_mul_ofCoprodI_prod x
+  have hw' : Reduced φ' (w.map f hf1) := fun l hl => by
+    rw [Word.toList_map] at hl
     obtain ⟨l₀, hl₀, rfl⟩ := List.mem_map.1 hl
     exact fun hmem => hw l₀ hl₀ (hf _ _ hmem)
   have hempty : w = .empty := by
     have h' := hw'.eq_empty_of_mem_range hφ' ⟨k h⁻¹, by
-      rwa [map_inv, map_inv, eq_comm, ← mul_eq_one_iff_eq_inv', ofCoprodI_prod_mapWord hinj hfk,
-        ← map_base f k hfk, ← map_mul]⟩
+      rwa [map_inv, map_inv, eq_comm, ← mul_eq_one_iff_eq_inv', Word.prod_map,
+        ← map_ofCoprodI f k hfk, ← map_base f k hfk, ← map_mul]⟩
     ext1
-    simpa [mapWord, Word.empty] using congrArg Word.toList h'
+    simpa using congrArg Word.toList h'
   subst hempty
   simp only [Word.prod_empty, map_one, mul_one, map_base] at hx ⊢
   rw [(map_eq_one_iff _ hk).1 ((map_eq_one_iff _ (base_injective hφ')).1 hx), map_one]
