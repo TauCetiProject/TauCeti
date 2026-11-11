@@ -158,6 +158,14 @@ private lemma sectionsEquiv_apply (U : S.Opens) (s : Γ(M, U)) :
     sectionsEquiv M U s = U.ι.pullbackSectionsLE M U ⊤ (by simp) s :=
   rfl
 
+private lemma sectionsEquiv_add (F : S.Modules) (U : S.Opens) (s s' : Γ(F, U)) :
+    sectionsEquiv F U (s + s') = sectionsEquiv F U s + sectionsEquiv F U s' :=
+  map_add (U.ι.pullbackSectionsLE F U ⊤ (by simp)) s s'
+
+private lemma sectionsEquiv_smul (F : S.Modules) (U : S.Opens) (r : Γ(S, U)) (s : Γ(F, U)) :
+    sectionsEquiv F U (r • s) = (U.ι.appLE U ⊤ (by simp)).hom r • sectionsEquiv F U s :=
+  map_smulₛₗ (U.ι.pullbackSectionsLE F U ⊤ (by simp)) r s
+
 /-- The map on sections over `U` of the glued morphism. -/
 private noncomputable def sectionsMap (U : S.Opens) (s : Γ(M, U)) : Γ(N, U) :=
   (sectionsEquiv N U).symm (glue hR hm (opensOver U) (sectionsEquiv M U s))
@@ -178,16 +186,14 @@ private lemma bigSectionsRestrict_sectionsEquiv (F : S.Modules) {U U' : S.Opens}
 private lemma sectionsMap_add (U : S.Opens) (s s' : Γ(M, U)) :
     sectionsMap hR hm U (s + s') = sectionsMap hR hm U s + sectionsMap hR hm U s' :=
   (sectionsEquiv N U).injective (by
-    rw [sectionsEquiv_sectionsMap, sectionsEquiv_apply, sectionsEquiv_apply, map_add, map_add,
-      ← sectionsEquiv_apply, ← sectionsEquiv_apply, ← sectionsEquiv_apply, ← sectionsEquiv_apply,
-      glue_add, ← sectionsEquiv_sectionsMap, ← sectionsEquiv_sectionsMap])
+    rw [sectionsEquiv_add, sectionsEquiv_sectionsMap, sectionsEquiv_sectionsMap,
+      sectionsEquiv_sectionsMap, sectionsEquiv_add, glue_add])
 
 private lemma sectionsMap_smul (U : S.Opens) (r : Γ(S, U)) (s : Γ(M, U)) :
     sectionsMap hR hm U (r • s) = r • sectionsMap hR hm U s :=
   (sectionsEquiv N U).injective (by
-    rw [sectionsEquiv_sectionsMap, sectionsEquiv_apply, sectionsEquiv_apply, map_smulₛₗ,
-      map_smulₛₗ, ← sectionsEquiv_apply, ← sectionsEquiv_apply, glue_smul,
-      ← sectionsEquiv_sectionsMap])
+    rw [sectionsEquiv_smul, sectionsEquiv_sectionsMap, sectionsEquiv_sectionsMap,
+      sectionsEquiv_smul, glue_smul])
 
 private lemma sectionsMap_map {U U' : S.Opens} (i : U' ⟶ U) (s : Γ(M, U)) :
     sectionsMap hR hm U' (M.presheaf.map i.op s) = N.presheaf.map i.op (sectionsMap hR hm U s) :=
