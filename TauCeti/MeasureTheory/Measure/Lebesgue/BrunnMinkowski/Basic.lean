@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 import Mathlib.MeasureTheory.Measure.Real
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.Topology.Algebra.Group.Pointwise
 
 /-!
 # Brunn–Minkowski in finite-dimensional Euclidean spaces
@@ -91,23 +92,18 @@ theorem volume_rpow_mul_volume_rpow_le {A B : Set E} (hB : NullMeasurableSet B v
     {θ : ℝ} (hθ₀ : 0 < θ) (hθ₁ : θ < 1) :
     volume A ^ (1 - θ) * volume B ^ θ ≤ volume ((1 - θ) • A + θ • B) := by
   -- For compact `K`, an open set `U ⊇ (1 - θ) • A + θ • K` of almost minimal volume contains
-  -- `(1 - θ) • V + θ • K`, where the open set `V` of points `x` with `(1 - θ) • x + θ • K ⊆ U`
-  -- contains `A`.
+  -- `(1 - θ) • V + θ • K` for an open set `V ⊇ A`.
   have hcpt {K : Set E} (hK : IsCompact K) :
       volume A ^ (1 - θ) * volume K ^ θ ≤ volume ((1 - θ) • A + θ • K) := by
     refine le_of_forall_gt_imp_ge_of_dense fun r hr ↦ ?_
     obtain ⟨U, hAKU, hU, hUr⟩ := ((1 - θ) • A + θ • K).exists_isOpen_lt_of_lt r hr
-    let V := (fun x : E ↦ (1 - θ) • x) ⁻¹' (Uᶜ + -(θ • K))ᶜ
-    have hV : IsOpen V :=
-      (hU.isClosed_compl.add_right_of_isCompact (hK.smul θ).neg).isOpen_compl.preimage
-        (continuous_const_smul _)
-    have hAV : A ⊆ V := by
-      rintro x hx ⟨u, hu, w, hw, hux⟩
-      exact hu (hAKU ⟨_, smul_mem_smul_set hx, -w, hw, (eq_add_neg_of_add_eq hux).symm⟩)
-    have hVKU : (1 - θ) • V + θ • K ⊆ U := by
-      rintro _ ⟨_, ⟨v, hv, rfl⟩, w, hw, rfl⟩
-      by_contra h
-      exact hv ⟨_, h, -w, by simpa using hw, add_neg_cancel_right _ _⟩
+    obtain ⟨W, hW, hAW, hWKU⟩ := (hK.smul θ).exists_isOpen_superset_add_subset hU hAKU
+    -- Pull the open set `W ⊇ (1 - θ) • A` back along the dilation by `1 - θ`.
+    let V := (fun x : E ↦ (1 - θ) • x) ⁻¹' W
+    have hV : IsOpen V := hW.preimage (continuous_const_smul _)
+    have hAV : A ⊆ V := fun x hx ↦ hAW (smul_mem_smul_set hx)
+    have hVKU : (1 - θ) • V + θ • K ⊆ U :=
+      (add_subset_add_right (smul_set_subset_iff.2 fun _ hv ↦ hv)).trans hWKU
     calc volume A ^ (1 - θ) * volume K ^ θ ≤ volume V ^ (1 - θ) * volume K ^ θ := by gcongr
       _ ≤ volume ((1 - θ) • V + θ • K) :=
           volume_rpow_mul_volume_rpow_le_of_nullMeasurableSet hV.measurableSet.nullMeasurableSet
