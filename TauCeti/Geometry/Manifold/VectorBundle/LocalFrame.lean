@@ -63,6 +63,8 @@ trivialization.
   `Bundle.Trivialization.coordRatio_eq_of_eq_smul`: in a bundle with model fibre `𝕜`, over the
   base set of a trivialization, every vector is the multiple of a nonzero vector by their ratio
   read in the trivialization.
+  `Bundle.Trivialization.coordRatio_self` and `Bundle.Trivialization.coordRatio_smul_right` are
+  its simp normal forms.
 -/
 
 public section
@@ -274,6 +276,31 @@ theorem coordRatio_def (v w : L x) :
     e.coordRatio v w = e.continuousLinearMapAt 𝕜 x w / e.continuousLinearMapAt 𝕜 x v :=
   (rfl)
 
+/-- The ratio of a vector to `0`, read in a trivialization, is `0`. -/
+@[simp]
+theorem coordRatio_zero_left (w : L x) : e.coordRatio 0 w = 0 := by
+  rw [coordRatio_def, map_zero, div_zero]
+
+/-- The ratio of `0` to a vector, read in a trivialization, is `0`. -/
+@[simp]
+theorem coordRatio_zero_right (v : L x) : e.coordRatio v 0 = 0 := by
+  rw [coordRatio_def, map_zero, zero_div]
+
+/-- The ratio read in a trivialization is linear in its second argument: scaling `w` by `c`
+scales its ratio to `v` by `c`. -/
+@[simp]
+theorem coordRatio_smul_right (v w : L x) (c : 𝕜) :
+    e.coordRatio v (c • w) = c * e.coordRatio v w := by
+  rw [coordRatio_def, coordRatio_def, map_smul, smul_eq_mul, mul_div_assoc]
+
+/-- Over the base set of a trivialization of a bundle with model fibre `𝕜`, the ratio of a
+nonzero vector to itself, read in the trivialization, is `1`. -/
+@[simp]
+theorem coordRatio_self (hx : x ∈ e.baseSet) {v : L x} (hv : v ≠ 0) : e.coordRatio v v = 1 := by
+  have hv' : e.continuousLinearMapAt 𝕜 x v ≠ 0 := fun h ↦
+    hv (by rw [← e.symmL_continuousLinearMapAt (R := 𝕜) hx v, h, map_zero])
+  rw [coordRatio_def, div_self hv']
+
 /-- Over the base set of a trivialization of a bundle with model fibre `𝕜`, every vector `w` is
 the multiple of a nonzero vector `v` by their ratio read in the trivialization. -/
 theorem eq_coordRatio_smul (hx : x ∈ e.baseSet) {v : L x} (hv : v ≠ 0) (w : L x) :
@@ -289,9 +316,7 @@ theorem eq_coordRatio_smul (hx : x ∈ e.baseSet) {v : L x} (hv : v ≠ 0) (w : 
 `w = c • v` to a nonzero vector `v`, read in the trivialization, is `c`. -/
 theorem coordRatio_eq_of_eq_smul (hx : x ∈ e.baseSet) {v : L x} (hv : v ≠ 0) {w : L x} {c : 𝕜}
     (hw : w = c • v) : e.coordRatio v w = c := by
-  have hv' : e.continuousLinearMapAt 𝕜 x v ≠ 0 := fun h ↦
-    hv (by rw [← e.symmL_continuousLinearMapAt (R := 𝕜) hx v, h, map_zero])
-  rw [coordRatio_def, hw, map_smul, smul_eq_mul, mul_div_assoc, div_self hv', mul_one]
+  rw [hw, coordRatio_smul_right, coordRatio_self e hx hv, mul_one]
 
 end LineBundle
 
