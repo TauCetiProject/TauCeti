@@ -31,6 +31,8 @@ of finite length, an injective map between modules of the same finite length bei
   length.
 * `TauCeti.exists_apply_ne_zero_of_forall_isMaximal`: under the same hypotheses, `E` separates the
   points of every module.
+* `TauCeti.injective_flip_of_surjective`: a surjective pairing into `E` is non-degenerate in the
+  other variable.
 * `TauCeti.bijective_of_injective_of_injective_flip`: a pairing into `E` that is non-degenerate in
   both variables, one of which has finite length, identifies each side with the dual of the other.
 
@@ -147,6 +149,17 @@ theorem exists_apply_ne_zero_of_forall_isMaximal {M : Type w} [AddCommGroup M] [
   refine hm (injective_applyₗ_of_forall_isMaximal (nontrivial_linearMap_of_isMaximal hE) ?_)
   ext ψ
   simp [h ψ]
+
+/-- **A surjective pairing is non-degenerate in the other variable.** If `E` separates points and
+every linear form on `N` is of the form `f m`, then `f.flip : N → Hom_R(M, E)` is injective. -/
+theorem injective_flip_of_surjective {M N : Type*} [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] {f : M →ₗ[R] N →ₗ[R] E} (hf : Function.Surjective f) :
+    Function.Injective f.flip := by
+  refine (injective_iff_map_eq_zero _).mpr fun n hn ↦ ?_
+  by_contra hne
+  obtain ⟨ψ, hψ⟩ := exists_apply_ne_zero_of_forall_isMaximal hE hne
+  obtain ⟨m, rfl⟩ := hf ψ
+  exact hψ (by rw [← LinearMap.flip_apply, hn, LinearMap.zero_apply])
 
 /-- **A pairing that is non-degenerate in both variables is perfect** once one side has finite
 length. If `E` is injective and `Hom_R(R ⧸ 𝔪, E)` has length one for every maximal ideal `𝔪`, and
