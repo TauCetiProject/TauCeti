@@ -11,7 +11,7 @@ public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 public import Mathlib.Analysis.InnerProductSpace.TwoDim
 public import Mathlib.Analysis.Real.Sqrt
 public import TauCeti.Analysis.InnerProductSpace.TwoDim
-import Mathlib.Algebra.Order.ToIntervalMod
+import TauCeti.Algebra.Order.ToIntervalMod
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Shift
@@ -110,27 +110,13 @@ theorem differentiableAt (s : ℝ) : DifferentiableAt ℝ χ s :=
 theorem continuous : Continuous χ :=
   continuous_iff_continuousAt.2 fun s ↦ (χ.differentiableAt s).continuousAt
 
+@[simp]
 theorem deriv_add_period (s : ℝ) : deriv χ (s + χ.period) = deriv χ s :=
   χ.periodic.deriv s
 
 /-- The parametrization is injective on every half-open interval of length `L`. -/
-theorem injOn_Ico (s : ℝ) : InjOn χ (Ico s (s + χ.period)) := by
-  have hL := χ.period_pos
-  have hred : ∀ t, χ (toIcoMod hL 0 t) = χ t := fun t ↦ by
-    rw [toIcoMod, χ.periodic.sub_zsmul_eq]
-  intro t₁ ht₁ t₂ ht₂ h
-  have h' : toIcoMod hL 0 t₁ = toIcoMod hL 0 t₂ :=
-    χ.injOn (toIcoMod_mem_Ico' hL t₁) (toIcoMod_mem_Ico' hL t₂) (by rw [hred, hred, h])
-  obtain ⟨n, hn⟩ := (toIcoMod_eq_toIcoMod hL).1 h'
-  have hlt : |t₂ - t₁| < χ.period := by
-    rw [abs_lt]; constructor <;> linarith [ht₁.1, ht₁.2, ht₂.1, ht₂.2]
-  rw [hn, zsmul_eq_mul, abs_mul, abs_of_pos hL] at hlt
-  have hn0 : n = 0 := by
-    by_contra hn0
-    have : (1 : ℝ) ≤ |(n : ℝ)| := by exact_mod_cast Int.one_le_abs hn0
-    nlinarith
-  rw [hn0, zero_smul, sub_eq_zero] at hn
-  exact hn.symm
+theorem injOn_Ico (s : ℝ) : InjOn χ (Ico s (s + χ.period)) :=
+  χ.periodic.injOn_Ico χ.period_pos χ.injOn s
 
 theorem apply_ne_of_mem_Ioo {s t : ℝ} (ht : t ∈ Ioo s (s + χ.period)) : χ t ≠ χ s := fun h ↦
   ht.1.ne' (χ.injOn_Ico s ⟨ht.1.le, ht.2⟩ ⟨le_rfl, by linarith [χ.period_pos]⟩ h)
@@ -142,9 +128,11 @@ with tangential component `v`, where `J` is the rotation by a right angle. -/
 def outgoingDir (s v : ℝ) : E :=
   v • deriv χ s + √(1 - v ^ 2) • o.rightAngleRotation (deriv χ s)
 
+@[simp]
 theorem inner_deriv_outgoingDir (s v : ℝ) : ⟪deriv χ s, χ.outgoingDir s v⟫ = v := by
   simp [outgoingDir, inner_add_right, inner_smul_right, χ.norm_deriv _]
 
+@[simp]
 theorem areaForm_deriv_outgoingDir (s v : ℝ) :
     o.areaForm (deriv χ s) (χ.outgoingDir s v) = √(1 - v ^ 2) := by
   simp [outgoingDir, χ.norm_deriv _]
@@ -361,6 +349,7 @@ theorem outgoingDir_nextCollision {s v : ℝ} (hv : v ∈ Ioo (-1) 1) :
 
 /-! ### Equivariance under the deck translation -/
 
+@[simp]
 theorem outgoingDir_add_period (s v : ℝ) :
     χ.outgoingDir (s + χ.period) v = χ.outgoingDir s v := by
   rw [outgoingDir, outgoingDir, χ.deriv_add_period]
