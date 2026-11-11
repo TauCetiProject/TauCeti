@@ -43,6 +43,11 @@ theorem: a continuous linear map on test functions is determined by its values o
 modulated cutoffs, which grow at most polynomially, and the rapidly decreasing coefficients make
 the resulting double series converge.
 
+Conversely, a trigonometric series `∑ i, c i exp (2πi ⟪x, v i⟫)` whose coefficients decay faster
+than every power of the frequencies `v i` is a smooth function
+(`TauCeti.contDiff_tsum_mul_fourierChar`). Pairing a distribution with such expansions shows that
+it is smooth wherever its localized Fourier transforms decay rapidly.
+
 ## Main definitions
 
 * `ContDiffMapSupportedIn.modulate`: the modulation `x ↦ exp (2πi ⟪x, w⟫) • χ x` of a function
@@ -60,6 +65,10 @@ the resulting double series converge.
   smooth function supported in `K` decays rapidly along a lattice.
 * `ContDiffMapSupportedIn.hasSum_fourier_smul_modulate`: the Fourier expansion of a smooth
   function supported in `K`, converging in `𝓓_{K}(E, ℂ)`.
+* `TauCeti.contDiff_tsum_mul_fourierChar`: a trigonometric series with rapidly decreasing
+  coefficients is smooth.
+* `TauCeti.integral_mul_tsum_mul_fourierChar`: an integrable function integrated against a
+  trigonometric series with absolutely summable coefficients.
 
 ## References
 
@@ -358,3 +367,60 @@ theorem hasSum_fourier_smul_modulate (φ χ : 𝓓_{K}(E, ℂ))
     (mod_cast le_top), hφ]
 
 end ContDiffMapSupportedIn
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+open ContDiffMapSupportedIn in
+/-- **Rapidly decreasing coefficients give a smooth function.** A trigonometric series
+`∑ i, c i exp (2πi ⟪x, v i⟫)` whose coefficients satisfy `∑ i, (1 + ‖v i‖) ^ k ‖c i‖ < ∞` for every
+`k` is a smooth function of `x`. -/
+theorem contDiff_tsum_mul_fourierChar {ι : Type*} {v : ι → E} {c : ι → ℂ}
+    (hc : ∀ k : ℕ, Summable fun i ↦ (1 + ‖v i‖) ^ k * ‖c i‖) :
+    ContDiff ℝ ∞ fun x ↦ ∑' i, c i * 𝐞 ⟪x, v i⟫ := by
+  have hfun (i : ι) : (fun x ↦ c i * (𝐞 ⟪x, v i⟫ : ℂ)) = fun x ↦ c i • cexp (phase (v i) x) := by
+    ext x
+    rw [Real.fourierChar_apply, phase_apply, smul_eq_mul]
+    push_cast
+    ring_nf
+  refine contDiff_tsum (fun i ↦ ?_) (v := fun k i ↦ (2 * π) ^ k * ((1 + ‖v i‖) ^ k * ‖c i‖))
+    (fun k _ ↦ (hc k).mul_left _) fun k i x _ ↦ ?_
+  · rw [hfun]
+    exact (contDiff_exp_phase _).const_smul _
+  · rw [hfun, iteratedFDeriv_const_smul_apply'
+      ((contDiff_exp_phase _).contDiffAt.of_le (mod_cast le_top)), norm_smul]
+    calc ‖c i‖ * ‖iteratedFDeriv ℝ k (fun y ↦ cexp (phase (v i) y)) x‖
+        ≤ ‖c i‖ * (2 * π * ‖v i‖) ^ k := by
+          gcongr
+          exact norm_iteratedFDeriv_exp_phase_le _ x k
+      _ ≤ (2 * π) ^ k * ((1 + ‖v i‖) ^ k * ‖c i‖) := by
+          rw [mul_pow, mul_comm, mul_assoc]
+          gcongr
+          linarith
+
+variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+
+/-- **Pairing with a trigonometric series.** For an integrable `f` and absolutely summable
+coefficients `c`, integrating `f` against `∑ i, c i exp (2πi ⟪y, v i⟫)` gives
+`∑ i, c i 𝓕 f (-v i)`. -/
+theorem integral_mul_tsum_mul_fourierChar {ι : Type*} [Countable ι] {v : ι → E} {c : ι → ℂ}
+    (hc : Summable fun i ↦ ‖c i‖) {f : E → ℂ} (hf : MeasureTheory.Integrable f) :
+    ∫ y, f y * ∑' i, c i * 𝐞 ⟪y, v i⟫ = ∑' i, c i * 𝓕 f (-v i) := by
+  have hterm (i : ι) (y : E) : f y * (c i * 𝐞 ⟪y, v i⟫) = c i * (𝐞 (-⟪y, -v i⟫) • f y) := by
+    rw [inner_neg_right, neg_neg, Circle.smul_def, smul_eq_mul]
+    ring
+  have hint (i : ι) : MeasureTheory.Integrable fun y ↦ f y * (c i * 𝐞 ⟪y, v i⟫) := by
+    simp only [hterm]
+    exact ((Real.fourierIntegral_convergent_iff (-v i)).2 hf).const_mul (c i)
+  have hnorm (i : ι) : ∫ y, ‖f y * (c i * 𝐞 ⟪y, v i⟫)‖ = ‖c i‖ * ∫ y, ‖f y‖ := by
+    simp only [norm_mul, Circle.norm_coe, mul_one]
+    rw [← MeasureTheory.integral_const_mul]
+    exact MeasureTheory.integral_congr_ae (Filter.Eventually.of_forall fun y ↦ mul_comm _ _)
+  simp only [← tsum_mul_left]
+  rw [← MeasureTheory.integral_tsum_of_summable_integral_norm hint
+    (by simpa only [hnorm] using hc.mul_right _)]
+  refine tsum_congr fun i ↦ ?_
+  simp only [hterm, MeasureTheory.integral_const_mul, Real.fourier_eq]
+
+end TauCeti
