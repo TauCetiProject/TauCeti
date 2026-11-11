@@ -35,6 +35,8 @@ on the torus `S¹ × S¹` winding `p` times around the first circle and `q` time
 
 * `TauCeti.unitToCircle_surjective`, `TauCeti.unitToCircle_eq_one_iff`,
   `TauCeti.eq_or_of_unitToCircle_eq`: quotient properties of `unitToCircle`.
+* `ContinuousMap.ext_unitToCircle`: maps out of the circle agreeing on the image of
+  `unitToCircle` are equal.
 * `Path.toCircle_unitToCircle`, `Path.toCircle_exp`: `unitToCircle t = exp (2πit)` goes to `γ t`.
 * `Path.toCircle_one`: the point `1` goes to the base point.
 -/
@@ -117,6 +119,13 @@ theorem eq_or_of_unitToCircle_eq {s t : I} (h : unitToCircle s = unitToCircle t)
       Subtype.ext (by simpa using (by linarith [s.2.2, t.2.1] : (t : ℝ) = 0))⟩
 
 end TauCeti
+
+/-- Two maps out of the circle agreeing on every `unitToCircle t = exp (2πit)` are equal. -/
+theorem ContinuousMap.ext_unitToCircle {X : Type*} [TopologicalSpace X] {f g : C(Circle, X)}
+    (h : ∀ t, f (TauCeti.unitToCircle t) = g (TauCeti.unitToCircle t)) : f = g := by
+  ext1 w
+  obtain ⟨t, rfl⟩ := TauCeti.unitToCircle_surjective w
+  exact h t
 
 namespace Path
 

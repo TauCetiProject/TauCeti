@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.IntervalGenerator
+public import TauCeti.AlgebraicTopology.Singular.Sphere
+public import TauCeti.Geometry.Sphere.Circle
 public import TauCeti.Topology.Sphere.StandardCircle
 
 /-!
@@ -15,12 +17,16 @@ The circle `S¹ ⊆ ℝ²`, with the basepoint `(1, 0)`, is oriented by the stan
 `t ↦ (cos 2πt, sin 2πt)` (`TauCeti.circleLoop`). Its fundamental class in singular homology with
 coefficients in an object `A` of an abelian category with coproducts is the class of that loop.
 
+For Mathlib's complex unit circle `Circle`, the first homology `H₁(S¹; A)` is identified with `A`
+through the standard generator of the homology of `TopCat.sphere 1`.
+
 ## Main declarations
 
 * `TauCeti.circlePair`: the circle with its basepoint, as a topological pair.
 * `TauCeti.circleLoopPairHom`: the standard loop as a map of pairs `(I¹, ∂I¹) ⟶ (S¹, {(1, 0)})`.
 * `TauCeti.circleFundamentalClass`: the fundamental class `A ⟶ H₁(S¹; A)` of the unit circle in
   `ℝ²`, the class of the standard loop.
+* `Circle.singularHomologyOneIso`: `H₁(S¹; A) ≅ A` for the complex unit circle `Circle`.
 -/
 
 public section
@@ -75,3 +81,18 @@ theorem circleFundamentalClass_def :
   rw [circleFundamentalClass]
 
 end TauCeti
+
+namespace Circle
+
+open AlgebraicTopology TauCeti
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{0} C] [Abelian C] (A : C)
+
+/-- `H₁(S¹; A) ≅ A`, through the standard generator of the homology of `TopCat.sphere 1`
+(`TauCeti.reducedSingularHomologyTopCatSphereIso`), transported to the unit circle `Circle`. -/
+def singularHomologyOneIso :
+    ((singularHomologyFunctor C 1).obj A).obj (TopCat.of Circle) ≅ A :=
+  ((singularHomologyFunctor C 1).obj A).mapIso sphereOneIsoCircleUnlifted.symm ≪≫
+    ((reducedSingularHomologySuccIso A 0).app _).symm ≪≫ reducedSingularHomologyTopCatSphereIso A 1
+
+end Circle

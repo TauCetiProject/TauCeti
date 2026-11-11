@@ -32,6 +32,8 @@ continuous in `f`.
 
 * `Circle.freeLoopHomotopyEquiv`: the homotopy equivalence `C(S¹, S¹) ≃ₕ ℤ × S¹`.
 * `Circle.freeLoopHomotopyEquiv_symm_apply`: its homotopy inverse is `(n, z) ↦ (w ↦ z * w ^ n)`.
+* `Circle.freeLoopHomotopyEquiv_apply_symm_apply`: the equivalence is a left inverse of its
+  homotopy inverse.
 * `Circle.freeLoopHomotopyEquiv_apply_snd`: the circle coordinate is evaluation at `1`.
 * `Circle.sub_eq_freeLoopHomotopyEquiv_apply_fst_mul`,
   `Circle.freeLoopHomotopyEquiv_apply_fst_eq_degree`: the integer coordinate is the degree, read
@@ -41,6 +43,8 @@ continuous in `f`.
 * `Circle.sigmaFreeLoopHomotopyEquiv`, `Circle.freeLoopComponentInclusion`: the same equivalence
   from the disjoint union `Σ m : ℤ, S¹`, and its restriction `z ↦ (w ↦ z * w ^ m)` to the copy of
   index `m`, onto the loops of degree `m`.
+* `Circle.freeLoopHomotopyEquiv_freeLoopComponentInclusion`: the loop `w ↦ z * w ^ m` goes to
+  `(m, z)`.
 
 ## References
 
@@ -112,12 +116,16 @@ private theorem continuous_freeLoopDegree : Continuous freeLoopDegree := by
 private def powLoop (p : ℤ × Circle) : C(Circle, Circle) :=
   ⟨fun w ↦ p.2 * w ^ p.1, by fun_prop⟩
 
+private theorem powLoop_apply (p : ℤ × Circle) (w : Circle) : powLoop p w = p.2 * w ^ p.1 :=
+  (rfl)
+
 private theorem continuous_powLoop : Continuous powLoop := by
   refine ContinuousMap.continuous_of_continuous_uncurry _ ?_
-  -- the integer coordinate is discrete, so continuity can be checked one integer at a time
   have h : Function.uncurry (fun p ↦ powLoop p) =
-      fun q : (ℤ × Circle) × Circle ↦ q.1.2 * q.2 ^ q.1.1 := rfl
+      fun q : (ℤ × Circle) × Circle ↦ q.1.2 * q.2 ^ q.1.1 :=
+    funext fun q ↦ powLoop_apply q.1 q.2
   rw [h]
+  -- the integer coordinate is discrete, so continuity can be checked one integer at a time
   have hpow : Continuous fun q : ℤ × Circle ↦ q.2 ^ q.1 :=
     continuous_prod_of_discrete_left.2 fun n ↦ continuous_zpow n
   exact (continuous_snd.comp continuous_fst).mul
@@ -126,7 +134,7 @@ private theorem continuous_powLoop : Continuous powLoop := by
 private theorem freeLoopDegree_powLoop (p : ℤ × Circle) : freeLoopDegree (powLoop p) = p.1 := by
   refine degree_eq_of_sub_eq (normalizedLoop (powLoop p)) (θ := fun t ↦ p.1 * (2 * π * t))
     (by fun_prop) (fun t ↦ ?_) (by simp)
-  simp [normalizedLoop, powLoop, unitToCircle_apply, exp_intCast_mul]
+  simp [normalizedLoop, powLoop_apply, unitToCircle_apply, exp_intCast_mul]
 
 /-- The straight-line homotopy of angle functions from `t ↦ 2π n t` to the lifted angle of `f`,
 as a family of closed unit-interval loops at `f 1`. -/
@@ -174,41 +182,47 @@ private theorem straighteningHomotopy_unitToCircle (p : I × C(Circle, Circle)) 
   simp [straighteningHomotopy, circleMapHomeomorphClosedUnitPath_symm_unitToCircle,
     straighteningLoop_apply]
 
-/-- Two circle maps agreeing on every `e^{2πit}` are equal. -/
-private theorem circleMap_ext {f g : C(Circle, Circle)}
-    (h : ∀ t, f (unitToCircle t) = g (unitToCircle t)) : f = g := by
-  ext1 w
-  obtain ⟨t, rfl⟩ := unitToCircle_surjective w
-  exact h t
+/-- A circle map goes to its degree and its value at `1`. -/
+private def degreeEval : C(C(Circle, Circle), ℤ × Circle) :=
+  ⟨fun f ↦ (freeLoopDegree f, f 1), continuous_freeLoopDegree.prodMk (continuous_eval_const 1)⟩
+
+private theorem degreeEval_apply (f : C(Circle, Circle)) :
+    degreeEval f = (freeLoopDegree f, f 1) :=
+  (rfl)
+
+private theorem degreeEval_powLoop (p : ℤ × Circle) : degreeEval (powLoop p) = p := by
+  simp [degreeEval_apply, freeLoopDegree_powLoop, powLoop_apply]
 
 /-- The **free loop space of the circle** is homotopy equivalent to `ℤ × S¹`. A loop `f` goes to
 its degree and its value `f 1`; the homotopy inverse sends `(n, z)` to the loop `w ↦ z * w ^ n`. -/
 def freeLoopHomotopyEquiv : ContinuousMap.HomotopyEquiv C(Circle, Circle) (ℤ × Circle) where
-  toFun := ⟨fun f ↦ (freeLoopDegree f, f 1),
-    continuous_freeLoopDegree.prodMk (continuous_eval_const 1)⟩
+  toFun := degreeEval
   invFun := ⟨powLoop, continuous_powLoop⟩
   left_inv := ⟨{
     toContinuousMap := straighteningHomotopy
-    map_zero_left f := circleMap_ext fun t ↦ by
+    map_zero_left f := ContinuousMap.ext_unitToCircle fun t ↦ by
       rw [ContinuousMap.toFun_eq_coe, straighteningHomotopy_unitToCircle]
-      simp [straighteningAngle, powLoop, unitToCircle_apply, ← exp_intCast_mul, mul_assoc]
-    map_one_left f := circleMap_ext fun t ↦ by
+      simp [straighteningAngle, degreeEval_apply, powLoop_apply, unitToCircle_apply,
+        ← exp_intCast_mul, mul_assoc]
+    map_one_left f := ContinuousMap.ext_unitToCircle fun t ↦ by
       rw [ContinuousMap.toFun_eq_coe, straighteningHomotopy_unitToCircle]
       simp [straighteningAngle, exp_freeLoopAngle] }⟩
   right_inv := by
-    have h : (⟨fun f ↦ (freeLoopDegree f, f 1), continuous_freeLoopDegree.prodMk
-        (continuous_eval_const 1)⟩ : C(C(Circle, Circle), ℤ × Circle)).comp
-        ⟨powLoop, continuous_powLoop⟩ = ContinuousMap.id _ := by
-      ext p
-      · simp [freeLoopDegree_powLoop]
-      · simp [powLoop]
-    rw [h]
+    rw [show degreeEval.comp ⟨powLoop, continuous_powLoop⟩ = ContinuousMap.id _ from
+      ContinuousMap.ext degreeEval_powLoop]
 
 /-- The homotopy inverse of `Circle.freeLoopHomotopyEquiv` sends `(n, z)` to `w ↦ z * w ^ n`. -/
 @[simp]
 theorem freeLoopHomotopyEquiv_symm_apply (p : ℤ × Circle) (w : Circle) :
     freeLoopHomotopyEquiv.symm p w = p.2 * w ^ p.1 :=
   (rfl)
+
+/-- `Circle.freeLoopHomotopyEquiv` recovers `(n, z)` from the loop `w ↦ z * w ^ n`: that loop has
+degree `n` and value `z` at `1`. -/
+@[simp]
+theorem freeLoopHomotopyEquiv_apply_symm_apply (p : ℤ × Circle) :
+    freeLoopHomotopyEquiv (freeLoopHomotopyEquiv.symm p) = p :=
+  degreeEval_powLoop p
 
 /-- The circle coordinate of `Circle.freeLoopHomotopyEquiv` is evaluation at `1`. -/
 @[simp]
@@ -260,5 +274,12 @@ def freeLoopComponentInclusion (m : ℤ) : C(Circle, C(Circle, Circle)) :=
 theorem freeLoopComponentInclusion_apply (m : ℤ) (z w : Circle) :
     freeLoopComponentInclusion m z w = z * w ^ m :=
   freeLoopHomotopyEquiv_symm_apply (m, z) w
+
+/-- `Circle.freeLoopComponentInclusion m` lands in the loops of degree `m`: the loop
+`w ↦ z * w ^ m` goes to `(m, z)` under `Circle.freeLoopHomotopyEquiv`. -/
+@[simp]
+theorem freeLoopHomotopyEquiv_freeLoopComponentInclusion (m : ℤ) (z : Circle) :
+    freeLoopHomotopyEquiv (freeLoopComponentInclusion m z) = (m, z) :=
+  freeLoopHomotopyEquiv_apply_symm_apply (m, z)
 
 end Circle
