@@ -28,9 +28,9 @@ equation
 `Δw = h (exp (2w) - 1) / 8 + k`
 
 weakly (`TauCeti.Vortex.integral_inner_gradient_add_integral_mul_eq_zero`). The coefficients `h`
-and `k` are smooth, hence locally Lipschitz, so the regularity theorem for the reduced equation,
-`exists_contDiffOn_two_ae_eq_and_laplacian_eq_of_forall_integral_inner_gradient_eq_neg`,
-makes the minimizer a classical solution: it agrees almost everywhere with a `C²` function `w` that
+and `k` are smooth, so the regularity theorem for the reduced equation,
+`TauCeti.Vortex.exists_contDiff_two_ae_eq_and_laplacian_eq`, makes the minimizer a classical
+solution: it agrees almost everywhere with a `C²` function `w` that
 solves the equation at every point of the plane
 (`TauCeti.Vortex.exists_contDiff_ae_eq_and_laplacian_eq_of_forall_sobolevReducedFunctional_le`).
 
@@ -83,32 +83,16 @@ theorem exists_contDiff_ae_eq_and_laplacian_eq_of_forall_sobolevReducedFunctiona
       ∀ z, Δ w z = backgroundWeight P.eval z * (Real.exp (2 * w z) - 1) / 8 +
         backgroundSource P.eval z := by
   have hP : Differentiable ℂ P.eval := P.differentiable
-  have hh := contDiff_backgroundWeight (n := 1) ((hP.contDiff (n := 1)).restrict_scalars ℝ)
-  have hk := contDiff_backgroundSource (n := 1) hP
-  -- The weak Euler–Lagrange equation in the form of the regularity theorem.
-  have hw : ∀ φ : 𝓓((⊤ : Opens ℂ), ℝ),
-      ∫ z in (⊤ : Opens ℂ), ⟪W1p.gradient u z, ∇ (φ : ℂ → ℝ) z⟫_ℝ =
-        -∫ z in (⊤ : Opens ℂ), (backgroundWeight P.eval z *
-          (Real.exp (2 * W1p.value u z) - 1) / 8 + backgroundSource P.eval z) * φ z := by
-    intro φ
-    have hEL := integral_inner_gradient_add_integral_mul_eq_zero hm hu
-      (φ.contDiff.of_le (by exact_mod_cast le_top)) φ.hasCompactSupport
-    simp only [Opens.coe_top, Measure.restrict_univ]
-    rw [eq_neg_iff_add_eq_zero, ← hEL]
-    congr 2
-    ext z
-    rw [backgroundSource_def, backgroundWeight_def, Polynomial.deriv]
-    ring
-  -- The smooth coefficients are locally Lipschitz, hence locally Hölder of exponent one.
-  have hloc : ∀ {f : ℂ → ℝ}, ContDiff ℝ 1 f →
-      ∀ z ∈ (⊤ : Opens ℂ), ∃ T ∈ 𝓝 z, ∃ K : ℝ≥0, HolderOnWith K 1 f T := fun hf z _ => by
-    obtain ⟨K, T, hT, hK⟩ := hf.locallyLipschitz z
-    exact ⟨T, hT, K, holderOnWith_one.2 hK⟩
-  obtain ⟨w, hwc, huw, hΔ⟩ :=
-    exists_contDiffOn_two_ae_eq_and_laplacian_eq_of_forall_integral_inner_gradient_eq_neg
-      Complex.finrank_real_complex one_pos (hloc hh) (hloc hk) hw
-  simp only [Opens.coe_top, Measure.restrict_univ, contDiffOn_univ] at hwc huw
-  exact ⟨w, hwc, huw, fun z => hΔ z trivial⟩
+  refine exists_contDiff_two_ae_eq_and_laplacian_eq Complex.finrank_real_complex
+    (contDiff_backgroundWeight (hP.contDiff.restrict_scalars ℝ)) (contDiff_backgroundSource hP)
+    fun φ hφ hφc => ?_
+  -- The weak Euler–Lagrange equation, with its integrand rewritten in the background coefficients.
+  rw [← integral_inner_gradient_add_integral_mul_eq_zero hm hu
+    (hφ.of_le (by exact_mod_cast le_top)) hφc]
+  congr 2
+  ext z
+  rw [backgroundSource_def, backgroundWeight_def, Polynomial.deriv]
+  ring
 
 /-- **Existence of plane vortices with prescribed zeros.** Let `P` be a monic complex polynomial
 of degree `m ≥ 1`. There is a `C²` square-integrable function `w` on the plane such that the field

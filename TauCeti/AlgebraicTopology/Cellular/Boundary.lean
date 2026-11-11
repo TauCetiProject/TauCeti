@@ -15,9 +15,11 @@ import Mathlib.Algebra.Category.ModuleCat.AB
 The boundary of an `(n + 1)`-cell is the image of the fundamental class of its boundary sphere
 under the attaching map, followed by the quotient to `Hₙ(Xⁿ, Xⁿ⁻¹)`.  The theorem
 `TauCeti.ι_cellularChainGroupIso_inv_comp_cellularDifferential` expresses this formula using the
-coproduct identification of cellular chains.  Thus computing the differential reduces to
-computing the maps induced by the attaching spheres, rather than choosing singular chains
-representing each cell.
+coproduct identification of cellular chains. Its first half,
+`TauCeti.ι_cellularChainGroupIso_inv_comp_skeletonPairδ`, says that the connecting morphism
+`Hₙ₊₁(Xⁿ⁺¹, Xⁿ) ⟶ Hₙ(Xⁿ)` sends a cell to the image of the sphere under its attaching
+map.  Thus computing the differential reduces to computing the maps induced by the attaching
+spheres, rather than choosing singular chains representing each cell.
 
 The attaching maps here are restrictions of the characteristic maps, read on Euclidean disks
 through the same radial rescaling as the cellular generators.  The sphere class uses reduced
@@ -112,6 +114,27 @@ lemma ι_cellularChainGroupIso_inv_eq_singularHomologyMap_characteristicCellPair
         TopPair.singularHomologyMap (characteristicCellPairMap C j) R n :=
   ι_cellularChainGroupIso_inv C R n j
 
+/-- **The skeletal connecting morphism on a cell generator**: the connecting morphism
+`Hₙ₊₁(Xⁿ⁺¹, Xⁿ) ⟶ Hₙ(Xⁿ)` sends the generator of an `(n + 1)`-cell to the image of the reduced
+fundamental class of the boundary sphere, included in ordinary homology, under the attaching
+map. -/
+@[reassoc]
+lemma ι_cellularChainGroupIso_inv_comp_skeletonPairδ (n : ℕ)
+    [HasExactColimitsOfShape (Discrete (cell C (n + 1))) A] (j : cell C (n + 1)) :
+    Sigma.ι (fun _ : cell C (n + 1) ↦ R) j ≫
+        (cellularChainGroupIso C R (n + 1)).inv ≫ skeletonPairδ C R n =
+      (reducedSingularHomologyTopCatSphereIso R n).inv ≫
+        (reducedSingularHomologyι R n).app (TopCat.diskBoundary.{w} (n + 1)) ≫
+          SSet.homologyMap (TopCat.toSSet.map (cellAttachingMap j)) R n := by
+  rw [ι_cellularChainGroupIso_inv_assoc, ← characteristicCellPairMap_snd]
+  -- The connecting morphism is natural for the single-cell characteristic pair map.
+  have h := TopPair.singularHomologyδ_naturality R (characteristicCellPairMap C j) (n + 1) n
+  -- The sphere is the disk boundary, and skeletal homology is singular homology presented
+  -- through `TopCat.toSSet`; `erw` matches those object presentations beneath the functors.
+  erw [← h, singularHomologyDiskBoundaryPairIso_inv_comp_singularHomologyδ_assoc,
+    Category.assoc]
+  rfl
+
 /-- **The cellular boundary on a cell generator**: take the reduced fundamental class of the
 boundary sphere, include it in ordinary homology, apply the attaching map, and pass to the
 relative homology of consecutive skeleta.  This includes one-cells, whose reduced boundary
@@ -125,16 +148,11 @@ lemma ι_cellularChainGroupIso_inv_comp_cellularDifferential (n : ℕ)
         (reducedSingularHomologyι R n).app (TopCat.diskBoundary.{w} (n + 1)) ≫
           SSet.homologyMap (TopCat.toSSet.map (cellAttachingMap j)) R n ≫
             skeletonPairπ C R n := by
-  rw [ι_cellularChainGroupIso_inv_assoc,
-    cellularDifferential_eq_skeletonPairδ_comp_skeletonPairπ, ← characteristicCellPairMap_snd]
-  -- The connecting morphism is natural for the single-cell characteristic pair map.
-  have h := TopPair.singularHomologyδ_naturality R (characteristicCellPairMap C j) (n + 1) n
-  -- The sphere is the disk boundary, and skeletal homology is singular homology presented
-  -- through `TopCat.toSSet`; `erw` matches those object presentations beneath the functors.
-  erw [← Category.assoc (TopPair.singularHomologyMap _ R (n + 1)), ← h,
-    Category.assoc, singularHomologyDiskBoundaryPairIso_inv_comp_singularHomologyδ_assoc,
-    Category.assoc]
-  rfl
+  rw [cellularDifferential_eq_skeletonPairδ_comp_skeletonPairπ]
+  -- The sphere is the disk boundary only up to unfolding, so the generated reassociated lemma
+  -- keeps one bracket, which `Category.assoc` removes.
+  exact (ι_cellularChainGroupIso_inv_comp_skeletonPairδ_assoc C R n j _).trans
+    (congrArg (_ ≫ ·) (Category.assoc _ _ _))
 
 /-- **The cellular differential vanishes on cells attached two skeleta down.** If the boundary
 sphere of every `(n + 1)`-cell lies in the `(n - 1)`-skeleton `skeletonLT C n`, then the cellular

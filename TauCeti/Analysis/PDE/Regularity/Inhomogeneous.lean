@@ -12,7 +12,7 @@ import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.SpecificLimits.DecayIteration
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
-public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
+import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import TauCeti.MeasureTheory.Function.EssSup
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
@@ -49,11 +49,10 @@ and the iteration lemma `TauCeti.exists_le_mul_div_rpow_mul_add_mul_rpow_of_le_m
 this into a power law with exponent `min (2 - n/r) (α₀/2)`. The precise representative then
 converts the power law into a Hölder bound, as for the homogeneous equation.
 
-Applied on small balls, this gives local Hölder continuity, and hence continuity, of weak
-solutions whose right-hand side is only locally in `Lʳ`, tested against test functions; this is
-the form in which semilinear equations, whose right-hand side depends on the solution, are met. On
-a general finite-dimensional inner product space the Laplacian case follows by orthonormal
-coordinates.
+Applied on small balls, this gives continuity of weak solutions whose right-hand side is only
+locally in `Lʳ`, tested against test functions; this is the form in which semilinear equations,
+whose right-hand side depends on the solution, are met. On a general finite-dimensional inner
+product space the Laplacian case follows by orthonormal coordinates.
 
 ## Main declarations
 
@@ -69,14 +68,10 @@ All in the namespace `TauCeti.PDE`.
 * `exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_memLp`: the interior oscillation estimate.
 * `exists_holderOnWith_preciseRepresentative_of_memLp`: **De Giorgi's theorem with a right-hand
   side**, the Hölder continuity of the precise representative.
-* `exists_locally_holderOnWith_preciseRepresentative_of_forall_memLp`: for a weak solution with a
-  right-hand side in `Lʳ` on compact subsets of `Ω`, `r ≥ 2` and `r > n/2`, the precise
-  representative is Hölder continuous near every point of `Ω`, with one exponent;
-  `continuousOn_preciseRepresentative_of_forall_memLp` is its continuity.
-* `energyFormH1_one_zero_zero_compAffineIsometryEquivL_ofTestFunctionₗ`: Poisson's equation on a
-  finite-dimensional real inner product space, read in orthonormal coordinates.
-* `exists_locally_holderOnWith_ae_eq_of_forall_integral_inner_gradient_eq`,
-  `exists_continuousOn_ae_eq_of_forall_integral_inner_gradient_eq`: the same for Poisson's equation
+* `continuousOn_preciseRepresentative_of_forall_memLp`: for a weak solution with a right-hand
+  side in `Lʳ` on compact subsets of `Ω`, `r ≥ 2` and `r > n/2`, the precise representative is
+  continuous on `Ω`.
+* `exists_continuousOn_ae_eq_of_forall_integral_inner_gradient_eq`: the same for Poisson's equation
   `-Δu = f` on an open subset of a finite-dimensional real inner product space.
 
 ## References
@@ -509,25 +504,24 @@ theorem exists_holderOnWith_preciseRepresentative_of_memLp [Nonempty ι] {lam La
     rw [← hNdef]
     exact NNReal.max_two_mul_le_toNNReal hα1 hR hC₀.le hD.le hN0 hC hM hρ
 
-/-! ### Hölder continuity for a locally integrable right-hand side -/
+/-! ### Continuity for a locally integrable right-hand side -/
 
 open scoped Distributions
 
-/-- **Local Hölder continuity of weak solutions with a locally integrable right-hand side.** Let
-`n ≥ 1` be the dimension and let `r ≥ 2` with `r > n/2`. Let `a` be measurable and uniformly
-elliptic on `Ω`, and let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = f` against test functions,
-`a(u, φ) = ∫_Ω f φ`, where `f` lies in `Lʳ` on every compact subset of `Ω`. Then the precise
-representative of `u`, which agrees with `u` almost everywhere on `Ω`
-(`TauCeti.W1p.ae_eq_preciseRepresentative`), is Hölder continuous near every point of `Ω`, with
-one exponent `α > 0` and constants depending on the point.
+/-- **Continuity of weak solutions with a locally integrable right-hand side.** Let `n ≥ 1` be the
+dimension and let `r ≥ 2` with `r > n/2`. Let `a` be measurable and uniformly elliptic on `Ω`, and
+let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = f` against test functions, `a(u, φ) = ∫_Ω f φ`, where `f`
+lies in `Lʳ` on every compact subset of `Ω`. Then the precise representative of `u`, which agrees
+with `u` almost everywhere on `Ω` (`TauCeti.W1p.ae_eq_preciseRepresentative`), is continuous on
+`Ω`.
 
 No integrability of `f` on all of `Ω` is assumed. On each ball `B` whose closure lies in `Ω`, the
 equation holds against all of `H¹₀(B)` (`TauCeti.PDE.forall_energyFormH1_restrictL_eq_setIntegral`,
 which uses `f ∈ L²(B)`), and De Giorgi's theorem with a right-hand side,
 `TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_memLp`, makes the restriction of `u`
 Hölder continuous on the concentric ball of half the radius. -/
-theorem exists_locally_holderOnWith_preciseRepresentative_of_forall_memLp [Nonempty ι]
-    {lam Lam : ℝ} {r : ℝ≥0} (hr : 2 ≤ r) (hrn : (Fintype.card ι : ℝ) < 2 * r)
+theorem continuousOn_preciseRepresentative_of_forall_memLp [Nonempty ι] {lam Lam : ℝ}
+    {r : ℝ≥0} (hr : 2 ≤ r) (hrn : (Fintype.card ι : ℝ) < 2 * r)
     {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     {f : EuclideanSpace ℝ ι → ℝ} {u : W1p mu Omega 2}
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
@@ -536,11 +530,10 @@ theorem exists_locally_holderOnWith_preciseRepresentative_of_forall_memLp [Nonem
       MemLp f r (mu.restrict K))
     (hu : ∀ φ : 𝓓(Omega, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
       ∫ x in Omega, f x * φ x ∂mu) :
-    ∃ α : ℝ≥0, 0 < α ∧ ∀ x ∈ Omega, ∃ T ∈ 𝓝 x, ∃ K : ℝ≥0,
-      HolderOnWith K α (preciseRepresentative mu (W1p.value u)) T := by
+    ContinuousOn (preciseRepresentative mu (W1p.value u)) Omega := by
   obtain ⟨α, C, hα, -, -, hhol⟩ := exists_holderOnWith_preciseRepresentative_of_memLp
     (mu := mu) (lam := lam) (Lam := Lam) (lt_of_lt_of_le one_lt_two hr) hrn
-  refine ⟨α, hα, fun x hx => ?_⟩
+  intro x hx
   -- Work on a ball `B = B(x, ε)` whose closure lies in `Ω`.
   obtain ⟨ε, hε, hεΩ⟩ := nhds_basis_closedBall.mem_iff.1 (Omega.isOpen.mem_nhds hx)
   let B : Opens (EuclideanSpace ℝ ι) := ⟨ball x ε, isOpen_ball⟩
@@ -560,87 +553,35 @@ theorem exists_locally_holderOnWith_preciseRepresentative_of_forall_memLp [Nonem
   have hK : cthickening (ε / 4) (closedBall x (ε / 2)) ⊆ (B : Set (EuclideanSpace ℝ ι)) := by
     rw [cthickening_closedBall (by positivity) (by positivity)]
     exact closedBall_subset_ball (by linarith)
-  have hH := hhol hB haB hfB huB (by positivity) hK
-  -- On `B`, the precise representatives of `u` and of its restriction to `B` agree.
-  have heq : ∀ y ∈ (B : Set (EuclideanSpace ℝ ι)),
-      preciseRepresentative mu (W1p.value (W1p.restrictL hBΩ u)) y =
-        preciseRepresentative mu (W1p.value u) y := fun y hy =>
-    preciseRepresentative_congr_ae_nhds (B.isOpen.mem_nhds hy) (W1p.value_restrictL_ae hBΩ u)
-  have hsub : closedBall x (ε / 2) ⊆ (B : Set (EuclideanSpace ℝ ι)) :=
-    closedBall_subset_ball (by linarith)
-  obtain ⟨K, hK⟩ : ∃ K : ℝ≥0, HolderOnWith K α
-      (preciseRepresentative mu (W1p.value (W1p.restrictL hBΩ u))) (closedBall x (ε / 2)) :=
-    ⟨_, hH⟩
-  refine ⟨closedBall x (ε / 2), closedBall_mem_nhds x (by positivity), K, fun y hy z hz => ?_⟩
-  rw [← heq y (hsub hy), ← heq z (hsub hz)]
-  exact hK y hy z hz
-
-/-- **Continuity of weak solutions with a locally integrable right-hand side.** Let `n ≥ 1` be the
-dimension and let `r ≥ 2` with `r > n/2`. Let `a` be measurable and uniformly elliptic on `Ω`, and
-let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = f` against test functions, `a(u, φ) = ∫_Ω f φ`, where `f`
-lies in `Lʳ` on every compact subset of `Ω`. Then the precise representative of `u`, which agrees
-with `u` almost everywhere on `Ω` (`TauCeti.W1p.ae_eq_preciseRepresentative`), is continuous on
-`Ω`. This is the qualitative form of
-`TauCeti.PDE.exists_locally_holderOnWith_preciseRepresentative_of_forall_memLp`. -/
-theorem continuousOn_preciseRepresentative_of_forall_memLp [Nonempty ι] {lam Lam : ℝ}
-    {r : ℝ≥0} (hr : 2 ≤ r) (hrn : (Fintype.card ι : ℝ) < 2 * r)
-    {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-    {f : EuclideanSpace ℝ ι → ℝ} {u : W1p mu Omega 2}
-    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
-    (ha : AEStronglyMeasurable a (mu.restrict Omega))
-    (hf : ∀ K, IsCompact K → K ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
-      MemLp f r (mu.restrict K))
-    (hu : ∀ φ : 𝓓(Omega, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
-      ∫ x in Omega, f x * φ x ∂mu) :
-    ContinuousOn (preciseRepresentative mu (W1p.value u)) Omega := by
-  obtain ⟨α, hα, hhol⟩ :=
-    exists_locally_holderOnWith_preciseRepresentative_of_forall_memLp hr hrn h ha hf hu
-  exact continuousOn_of_locally_holderOnWith hα hhol
+  have hcont : ContinuousAt (preciseRepresentative mu (W1p.value (W1p.restrictL hBΩ u))) x :=
+    ((hhol hB haB hfB huB (by positivity) hK).continuousOn hα).continuousAt
+      (closedBall_mem_nhds x (by positivity))
+  -- Near `x`, the precise representatives of `u` and of its restriction to `B` agree.
+  have heq : preciseRepresentative mu (W1p.value (W1p.restrictL hBΩ u)) =ᶠ[𝓝 x]
+      preciseRepresentative mu (W1p.value u) := by
+    filter_upwards [isOpen_ball.mem_nhds (mem_ball_self hε)] with y hy
+    exact preciseRepresentative_congr_ae_nhds (isOpen_ball.mem_nhds hy)
+      (W1p.value_restrictL_ae hBΩ u)
+  exact (hcont.congr heq).continuousWithinAt
 
 open InnerProductSpace in
 open scoped Gradient InnerProductSpace in
-/-- **Poisson's equation in orthonormal coordinates.** Let `e : F ≃ₗᵢ[ℝ] ℝⁿ` be a linear isometry
-onto Euclidean space, and let `U ⊆ ℝⁿ` correspond to `V ⊆ F` under `e`. If `u ∈ H¹(V)` solves
-`-Δu = f` weakly, `∫_V ⟪∇u, ∇ψ⟫ = ∫_V f ψ` for every test function `ψ` on `V`, then `u ∘ e⁻¹`
-solves `-Δ(u ∘ e⁻¹) = f ∘ e⁻¹` on `U` in the form of the energy form of the Laplacian model,
-tested against test functions on `U`. This is the form in which the regularity theory on Euclidean
-space applies. -/
-theorem energyFormH1_one_zero_zero_compAffineIsometryEquivL_ofTestFunctionₗ {F : Type*}
-    [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] [MeasurableSpace F]
-    [BorelSpace F] (e : F ≃ₗᵢ[ℝ] EuclideanSpace ℝ ι) {U : Opens (EuclideanSpace ℝ ι)}
-    {V : Opens F} (hUV : (U : Set (EuclideanSpace ℝ ι)) = e.symm ⁻¹' V) {u : W1p volume V 2}
-    {f : F → ℝ}
-    (hu : ∀ ψ : 𝓓(V, ℝ), ∫ x in V, ⟪W1p.gradient u x, ∇ (ψ : F → ℝ) x⟫_ℝ = ∫ x in V, f x * ψ x)
-    (φ : 𝓓(U, ℝ)) :
-    energyFormH1 (fun _ => (1 : Matrix ι ι ℝ)) 0 0
-        (W1p.compAffineIsometryEquivL e.symm.toAffineIsometryEquiv hUV u)
-        (W1p.ofTestFunctionₗ volume U 2 φ) = ∫ y in U, f (e.symm y) * φ y := by
-  rw [energyFormH1_one_zero_zero_eq_inner, L2.inner_def]
-  refine (integral_congr_ae ?_).trans
-    (W1p.setIntegral_inner_gradient_compAffineIsometryEquivL_eq_setIntegral_mul e.symm hUV u hu φ)
-  filter_upwards [gradientTestFunctionLp_apply_ae (mu := volume) (Omega := U) 2 φ] with y hφy
-  rw [W1p.gradient_ofTestFunctionₗ, hφy]
+/-- **Continuity of weak solutions of Poisson's equation.** Let `E` be a real inner product space
+of finite dimension `n ≥ 1` with its volume, and let `r ≥ 2` with `r > n/2`. If `u ∈ H¹(Ω)` solves
+`-Δu = f` weakly, `∫_Ω ⟪∇u, ∇φ⟫ = ∫_Ω f φ` for every test function `φ` on `Ω`, where `f` lies in
+`Lʳ` on every compact subset of `Ω`, then `u` agrees almost everywhere on `Ω` with a function that
+is continuous on `Ω`.
 
-open InnerProductSpace in
-open scoped Gradient InnerProductSpace in
-/-- **Local Hölder continuity of weak solutions of Poisson's equation.** Let `E` be a real inner
-product space of finite dimension `n ≥ 1` with its volume, and let `r ≥ 2` with `r > n/2`. If
-`u ∈ H¹(Ω)` solves `-Δu = f` weakly, `∫_Ω ⟪∇u, ∇φ⟫ = ∫_Ω f φ` for every test function `φ` on `Ω`,
-where `f` lies in `Lʳ` on every compact subset of `Ω`, then `u` agrees almost everywhere on `Ω`
-with a function that is Hölder continuous near every point of `Ω`, with one exponent `α > 0`.
-
-This is the case `a = 1` of
-`TauCeti.PDE.exists_locally_holderOnWith_preciseRepresentative_of_forall_memLp`, transported to `E`
-through the coordinates of an orthonormal basis. -/
-theorem exists_locally_holderOnWith_ae_eq_of_forall_integral_inner_gradient_eq {E : Type*}
+This is the case `a = 1` of `TauCeti.PDE.continuousOn_preciseRepresentative_of_forall_memLp`,
+transported to `E` through the coordinates of an orthonormal basis. -/
+theorem exists_continuousOn_ae_eq_of_forall_integral_inner_gradient_eq {E : Type*}
     [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E]
     [BorelSpace E] [Nontrivial E] {r : ℝ≥0} (hr : 2 ≤ r) (hrn : (finrank ℝ E : ℝ) < 2 * r)
     {Omega : Opens E} {f : E → ℝ} {u : W1p volume Omega 2}
     (hf : ∀ K, IsCompact K → K ⊆ (Omega : Set E) → MemLp f r (volume.restrict K))
     (hu : ∀ φ : 𝓓(Omega, ℝ),
       ∫ x in Omega, ⟪W1p.gradient u x, ∇ (φ : E → ℝ) x⟫_ℝ = ∫ x in Omega, f x * φ x) :
-    ∃ α : ℝ≥0, 0 < α ∧ ∃ g : E → ℝ, (∀ x ∈ Omega, ∃ T ∈ 𝓝 x, ∃ K : ℝ≥0, HolderOnWith K α g T) ∧
-      W1p.value u =ᵐ[volume.restrict Omega] g := by
+    ∃ g : E → ℝ, ContinuousOn g Omega ∧ W1p.value u =ᵐ[volume.restrict Omega] g := by
   set n := finrank ℝ E
   have : Nonempty (Fin n) := ⟨⟨0, Module.finrank_pos⟩⟩
   -- Orthonormal coordinates `e : E ≃ ℝⁿ`, with inverse `g`, and `Ω' = e(Ω)`.
@@ -655,19 +596,22 @@ theorem exists_locally_holderOnWith_ae_eq_of_forall_integral_inner_gradient_eq {
   have hf' : ∀ K, IsCompact K → K ⊆ (Ω' : Set (EuclideanSpace ℝ (Fin n))) →
       MemLp (f ∘ g) r (volume.restrict K) := fun _ hK hKΩ =>
     g.toHomeomorph.memLp_comp_restrict_of_forall_isCompact hg hf hK hKΩ
-  obtain ⟨α, hα, hw⟩ := exists_locally_holderOnWith_preciseRepresentative_of_forall_memLp
-    (mu := volume) (a := fun _ => 1) (f := f ∘ g) (u := u') hr (by simpa [n] using hrn)
-    (uniformlyEllipticOn_const_one_one _) aestronglyMeasurable_const hf'
-    (energyFormH1_one_zero_zero_compAffineIsometryEquivL_ofTestFunctionₗ e rfl hu)
+  have hu' : ∀ φ' : 𝓓(Ω', ℝ), energyFormH1 (fun _ => (1 : Matrix (Fin n) (Fin n) ℝ)) 0 0 u'
+      (W1p.ofTestFunctionₗ volume Ω' 2 φ') = ∫ y in Ω', (f ∘ g) y * φ' y := by
+    -- The weak equation on `Ω'` is the one on `Ω` read in the coordinates `g`.
+    intro φ'
+    rw [energyFormH1_one_zero_zero_eq_inner, L2.inner_def]
+    refine (integral_congr_ae ?_).trans
+      (W1p.setIntegral_inner_gradient_compAffineIsometryEquivL_eq_setIntegral_mul e.symm rfl u hu
+        φ')
+    filter_upwards [gradientTestFunctionLp_apply_ae (mu := volume) (Omega := Ω') 2 φ'] with y hφy
+    rw [W1p.gradient_ofTestFunctionₗ, hφy]
+  have hw := continuousOn_preciseRepresentative_of_forall_memLp (mu := volume)
+    (a := fun _ => 1) (f := f ∘ g) (u := u') hr (by simpa [n] using hrn)
+    (uniformlyEllipticOn_const_one_one _) aestronglyMeasurable_const hf' hu'
   set w := preciseRepresentative volume (W1p.value u' : EuclideanSpace ℝ (Fin n) → ℝ)
   have huw : W1p.value u' =ᵐ[volume.restrict Ω'] w := W1p.ae_eq_preciseRepresentative u'
-  refine ⟨α, hα, w ∘ e, fun x hx => ?_, ?_⟩
-  · -- Hölder bounds pull back along the isometry `e`.
-    have hx' : x ∈ (Omega : Set E) := hx
-    rw [hΩ] at hx'
-    obtain ⟨T, hT, K, hK⟩ := hw (e x) hx'
-    refine ⟨e ⁻¹' T, e.continuous.continuousAt.preimage_mem_nhds hT, K, fun y hy z hz => ?_⟩
-    simpa only [Function.comp_apply, e.edist_map] using hK _ hy _ hz
+  refine ⟨w ∘ e, hw.comp e.continuous.continuousOn fun x hx => by rwa [hΩ] at hx, ?_⟩
   -- Pull the identity `u ∘ g = w` on `Ω'` back along `e`.
   have hres : MeasurePreserving e (volume.restrict Omega) (volume.restrict Ω') := by
     rw [hΩ]
@@ -675,26 +619,6 @@ theorem exists_locally_holderOnWith_ae_eq_of_forall_integral_inner_gradient_eq {
   filter_upwards [hres.quasiMeasurePreserving.ae_eq_comp
     ((W1p.value_compAffineIsometryEquivL_ae g (U := Ω') rfl u).symm.trans huw)] with x hx
   simpa [heg] using hx
-
-open InnerProductSpace in
-open scoped Gradient InnerProductSpace in
-/-- **Continuity of weak solutions of Poisson's equation.** Let `E` be a real inner product space
-of finite dimension `n ≥ 1` with its volume, and let `r ≥ 2` with `r > n/2`. If `u ∈ H¹(Ω)` solves
-`-Δu = f` weakly, `∫_Ω ⟪∇u, ∇φ⟫ = ∫_Ω f φ` for every test function `φ` on `Ω`, where `f` lies in
-`Lʳ` on every compact subset of `Ω`, then `u` agrees almost everywhere on `Ω` with a function that
-is continuous on `Ω`. This is the qualitative form of
-`TauCeti.PDE.exists_locally_holderOnWith_ae_eq_of_forall_integral_inner_gradient_eq`. -/
-theorem exists_continuousOn_ae_eq_of_forall_integral_inner_gradient_eq {E : Type*}
-    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E]
-    [BorelSpace E] [Nontrivial E] {r : ℝ≥0} (hr : 2 ≤ r) (hrn : (finrank ℝ E : ℝ) < 2 * r)
-    {Omega : Opens E} {f : E → ℝ} {u : W1p volume Omega 2}
-    (hf : ∀ K, IsCompact K → K ⊆ (Omega : Set E) → MemLp f r (volume.restrict K))
-    (hu : ∀ φ : 𝓓(Omega, ℝ),
-      ∫ x in Omega, ⟪W1p.gradient u x, ∇ (φ : E → ℝ) x⟫_ℝ = ∫ x in Omega, f x * φ x) :
-    ∃ g : E → ℝ, ContinuousOn g Omega ∧ W1p.value u =ᵐ[volume.restrict Omega] g := by
-  obtain ⟨α, hα, g, hg, hug⟩ :=
-    exists_locally_holderOnWith_ae_eq_of_forall_integral_inner_gradient_eq hr hrn hf hu
-  exact ⟨g, continuousOn_of_locally_holderOnWith hα hg, hug⟩
 
 end PDE
 

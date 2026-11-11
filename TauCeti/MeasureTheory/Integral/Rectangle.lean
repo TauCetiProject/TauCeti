@@ -47,7 +47,7 @@ open Set MeasureTheory
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {a₁ b₁ a₂ b₂ : ℝ}
 
 /-- **The fundamental theorem of calculus in the first coordinate.** The integral of a continuous
@@ -57,6 +57,9 @@ theorem setIntegral_rect_eq_setIntegral_sub_of_hasDerivAt_fst {Φ φ : ℝ × �
     (hφ : Continuous φ) (hΦ : ∀ s t, HasDerivAt (fun s ↦ Φ (s, t)) (φ (s, t)) s)
     (hab : a₁ ≤ b₁) :
     ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, φ z = ∫ t in Icc a₂ b₂, (Φ (b₁, t) - Φ (a₁, t)) := by
+  by_cases hE : CompleteSpace E
+  swap
+  · simp [integral_of_not_completeSpace hE]
   have hint : Integrable φ ((volume.restrict (Icc a₁ b₁)).prod (volume.restrict (Icc a₂ b₂))) := by
     rw [Measure.prod_restrict, ← Measure.volume_eq_prod]
     exact hφ.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
@@ -84,6 +87,9 @@ theorem setIntegral_rect_eq_setIntegral_sub_of_hasDerivAt_snd {Φ φ : ℝ × �
     (hφ : Continuous φ) (hΦ : ∀ s t, HasDerivAt (fun t ↦ Φ (s, t)) (φ (s, t)) t)
     (hab : a₂ ≤ b₂) :
     ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, φ z = ∫ s in Icc a₁ b₁, (Φ (s, b₂) - Φ (s, a₂)) := by
+  by_cases hE : CompleteSpace E
+  swap
+  · simp [integral_of_not_completeSpace hE]
   have hint : Integrable φ ((volume.restrict (Icc a₁ b₁)).prod (volume.restrict (Icc a₂ b₂))) := by
     rw [Measure.prod_restrict, ← Measure.volume_eq_prod]
     exact hφ.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
