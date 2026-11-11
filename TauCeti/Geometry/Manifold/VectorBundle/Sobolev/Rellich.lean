@@ -19,8 +19,8 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Basic
 Let `M` be a smooth Hausdorff manifold without boundary modelled on a finite-dimensional real inner
 product space `E`, let `V → M` be a smooth real vector bundle with finite-dimensional model fibre
 `F`, and let `A` be a finite bundle atlas, so that `M` is compact. For `1 ≤ p < ∞` and every order
-`k`, the inclusion `W^{k+1,p}(V) → W^{k,p}(V)` of `TauCeti.SobolevSection.lowerOrderL` is a compact
-operator (`TauCeti.SobolevSection.isCompactOperator_lowerOrderL`).
+`k`, the inclusion `W^{k+1,p}(V) → W^{k,p}(V)` of `TauCeti.SectionChartData.lowerOrderL` is a
+compact operator (`TauCeti.SobolevSection.isCompactOperator_lowerOrderL`).
 
 The local input is Rellich compactness on relatively compact subdomains,
 `TauCeti.Wkp.isCompactOperator_restrictL_lowerOrderL`. It does not apply directly to the chart
@@ -346,8 +346,8 @@ of the domains of charts `j` and `i` (read in chart `i`) and has compact closure
 domain, and `Q ⊆ A.image j` contains the image of `P` under the chart transition, then the chart-`i`
 components of an element of `W^{k,p}(V)` restricted to `P` are the transfer of its chart-`j`
 components restricted to `Q`. -/
-theorem restrictL_eq_transferL (hp : p ≠ ⊤) {w : SobolevData A μ p k}
-    (hw : w ∈ sobolevSections A μ p k) {i j : Fin A.n} {P Q : Opens E}
+theorem restrictL_eq_transferL (hp : p ≠ ⊤) {w : A.sectionChartData.SobolevData μ p k}
+    (hw : w ∈ A.sectionChartData.sobolevSections μ p k) {i j : Fin A.n} {P Q : Opens E}
     (hP : (P : Set E) ⊆ A.overlap j i) (hPc : IsCompact (closure (P : Set E)))
     (hPD : closure (P : Set E) ⊆ A.transferDomain i j) (hQ : Q ≤ A.image j)
     (hPQ : MapsTo ((A.chart i).symm ≫ₕ A.chart j) P Q) :
@@ -359,18 +359,20 @@ theorem restrictL_eq_transferL (hp : p ≠ ⊤) {w : SobolevData A μ p k}
   funext m
   refine Wkp.ext k (Lp.ext ?_)
   have hcompat := ae_restrict_of_ae_restrict_of_subset hP
-    ((compatible_iff _ _ _ _).1 (compatible_of_mem hw j i))
+    ((SectionChartData.compatible_iff _ _ _ _).1
+      (SectionChartData.compatible_of_mem (A.aeTransition_sectionChartData μ) hw j i))
   have htr : ∀ y ∈ (P : Set E), A.transition j i y = ((A.chart i).symm ≫ₕ A.chart j) y := by
     intro y hy
     obtain ⟨x, hx, rfl⟩ := A.mem_overlap.1 (hP hy)
     rw [A.transition_chart hx.2, OpenPartialHomeomorph.coe_trans, Function.comp_apply,
       (A.chart i).left_inv (A.dom_subset_chart_source i hx.2)]
   have hi := ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 hPi)
-    (A.chartValueL_apply_ae μ p k i w)
-  have hj : ∀ᵐ y ∂μ.restrict P, A.chartValueL μ p k j w (((A.chart i).symm ≫ₕ A.chart j) y) =
-      ∑ l, Wkp.value k (w j l) (((A.chart i).symm ≫ₕ A.chart j) y) • finBasis ℝ F l :=
+    (A.sectionChartData.chartValueL_apply_ae μ p k i w)
+  have hj : ∀ᵐ y ∂μ.restrict P,
+      A.sectionChartData.chartValueL μ p k j w (((A.chart i).symm ≫ₕ A.chart j) y) =
+        ∑ l, Wkp.value k (w j l) (((A.chart i).symm ≫ₕ A.chart j) y) • finBasis ℝ F l :=
     h.ae_comp (ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 hQ)
-      (A.chartValueL_apply_ae μ p k j w))
+      (A.sectionChartData.chartValueL_apply_ae μ p k j w))
   have hres : ∀ᵐ y ∂μ.restrict P, ∀ l, Wkp.value k (Wkp.restrictL hQ k (w j l))
       (((A.chart i).symm ≫ₕ A.chart j) y) =
         Wkp.value k (w j l) (((A.chart i).symm ≫ₕ A.chart j) y) :=
@@ -384,14 +386,16 @@ theorem restrictL_eq_transferL (hp : p ≠ ⊤) {w : SobolevData A μ p k}
     (fun l ↦ Wkp.compL h hp (Wkp.restrictL hQ k (w j l))) m
   filter_upwards [Wkp.value_restrictL_ae hPi k (w i m), hcompat, hi, hj, hres, hcomp, hop,
     ae_restrict_mem P.isOpen.measurableSet] with y hy₁ hy₂ hy₃ hy₄ hy₅ hy₆ hy₇ hyP
-  rw [htr y hyP] at hy₂
-  have hval : Wkp.value k (w i m) y = (finBasis ℝ F).repr (A.chartValueL μ p k i w y) m := by
+  rw [A.sectionChartData_coordChange_of_mem (hP hyP),
+    A.sectionChartData_transition_of_mem (hP hyP), htr y hyP] at hy₂
+  have hval : Wkp.value k (w i m) y =
+      (finBasis ℝ F).repr (A.sectionChartData.chartValueL μ p k i w y) m := by
     rw [hy₃, (finBasis ℝ F).repr_sum_self]
   simp only [transferL, ContinuousLinearMap.coe_comp, Function.comp_apply]
   rw [show (ContinuousLinearMap.piMap fun _ ↦ Wkp.compL h hp)
       (fun l ↦ Wkp.restrictL hQ k (w j l)) =
-        fun l ↦ Wkp.compL h hp (Wkp.restrictL hQ k (w j l)) from rfl,
-    hy₁, hval, hy₂, hy₄, hy₇]
+        fun l ↦ Wkp.compL h hp (Wkp.restrictL hQ k (w j l)) from rfl]
+  erw [hy₁, hval, hy₂, hy₄, hy₇]
   simp only [hy₆, hy₅, ContinuousLinearEquiv.coe_coe]
 
 end FiniteBundleAtlas
@@ -404,7 +408,7 @@ namespace SobolevSection
 finite bundle atlas of a Hausdorff manifold, the inclusion `W^{k+1,p}(V) → W^{k,p}(V)` is a compact
 operator for every order `k` and every `1 ≤ p < ∞`. -/
 theorem isCompactOperator_lowerOrderL [T2Space M] (hp : p ≠ ⊤) :
-    IsCompactOperator (lowerOrderL A μ p k) := by
+    IsCompactOperator (A.sectionChartData.lowerOrderL μ p k) := by
   obtain ⟨P, Q, hP, hPc, hPD, hQc, hQ, hPQ, hcov⟩ := A.exists_transfer_cover
   have hPi (i j : Fin A.n) : P i j ≤ A.image i :=
     SetLike.coe_subset_coe.1 ((hP i j).trans (A.overlap_subset_image j i))
@@ -414,60 +418,73 @@ theorem isCompactOperator_lowerOrderL [T2Space M] (hp : p ≠ ⊤) :
   -- depend compactly on the section by local Rellich compactness.
   have hpiece (i j : Fin A.n) (m : Fin (finrank ℝ F)) :
       IsCompactOperator fun w : SobolevSection A μ p (k + 1) ↦
-        Wkp.restrictL (hPi i j) k (Wkp.lowerOrder k ((w : SobolevData A μ p (k + 1)) i m)) := by
+        Wkp.restrictL (hPi i j) k
+          (Wkp.lowerOrder k ((w : A.sectionChartData.SobolevData μ p (k + 1)) i m)) := by
     have hrel : IsCompactOperator fun w : SobolevSection A μ p (k + 1) ↦ fun l ↦
-        Wkp.restrictL (hQi j) k (Wkp.lowerOrder k ((w : SobolevData A μ p (k + 1)) j l)) :=
+        Wkp.restrictL (hQi j) k
+          (Wkp.lowerOrder k ((w : A.sectionChartData.SobolevData μ p (k + 1)) j l)) :=
       IsCompactOperator.pi fun l ↦ by
         convert (Wkp.isCompactOperator_restrictL_lowerOrderL (hQc j) (hQ j) k).comp_clm
           ((ContinuousLinearMap.proj l).comp
-            ((ContinuousLinearMap.proj j).comp (sobolevSections A μ p (k + 1)).subtypeL))
+            ((ContinuousLinearMap.proj j).comp
+              (A.sectionChartData.sobolevSections μ p (k + 1)).subtypeL))
           using 1
         funext w
-        simp only [Function.comp_apply, ContinuousLinearMap.coe_comp,
-          ContinuousLinearMap.proj_apply, Submodule.subtypeL_apply]
+        simp only [Function.comp_apply, ContinuousLinearMap.coe_comp]
         rw [Wkp.lowerOrderL_apply]
+        rfl
     convert hrel.clm_comp ((ContinuousLinearMap.proj m).comp
       (A.transferL μ p k hp i j (hPc i j) (hPD i j) (hPQ i j))) using 1
     funext w
-    have h := congrFun (A.restrictL_eq_transferL μ p k hp (lowerOrderL A μ p k w).2 (hP i j)
-      (hPc i j) (hPD i j) (hQi j) (hPQ i j)) m
-    simp only [lowerOrderL_apply] at h
-    simp only [Function.comp_apply, ContinuousLinearMap.coe_comp, ContinuousLinearMap.proj_apply]
-    exact h
+    have e (i' : Fin A.n) (m' : Fin (finrank ℝ F)) :
+        (A.sectionChartData.lowerOrderL μ p k w : A.sectionChartData.SobolevData μ p k) i' m' =
+          Wkp.lowerOrder k ((w : A.sectionChartData.SobolevData μ p (k + 1)) i' m') :=
+      SectionChartData.lowerOrderL_apply _ _ _ _ w i' m'
+    exact (congrArg (Wkp.restrictL (hPi i j) k) (e i m).symm).trans
+      ((congrFun (A.restrictL_eq_transferL μ p k hp (A.sectionChartData.lowerOrderL μ p k w).2
+        (hP i j) (hPc i j) (hPD i j) (hQi j) (hPQ i j)) m).trans
+        (congrArg (fun u ↦ A.transferL μ p k hp i j (hPc i j) (hPD i j) (hPQ i j) u m)
+          (funext fun l ↦ congrArg (Wkp.restrictL (hQi j) k) (e j l))))
   -- Gluing the pieces gives compactness of the chart-`i` components.
   have hchart (i : Fin A.n) (m : Fin (finrank ℝ F)) :
       IsCompactOperator fun w : SobolevSection A μ p (k + 1) ↦
-        Wkp.lowerOrder k ((w : SobolevData A μ p (k + 1)) i m) := by
-    let R := Wkp.restrictCompatibleEquiv (mu := μ) (p := p) (hPi i) (hcov i) k
+        Wkp.lowerOrder k ((w : A.sectionChartData.SobolevData μ p (k + 1)) i m) := by
+    let R := Wkp.restrictCompatibleEquiv (mu := μ) (p := p) (Omega := A.sectionChartData.image i)
+      (hPi i) (hcov i) k
     have hfam : IsCompactOperator fun w : SobolevSection A μ p (k + 1) ↦
-        R (Wkp.lowerOrder k ((w : SobolevData A μ p (k + 1)) i m)) := by
+        R (Wkp.lowerOrder k ((w : A.sectionChartData.SobolevData μ p (k + 1)) i m)) := by
       convert (IsCompactOperator.pi fun j ↦ hpiece i j m).codRestrict
         (fun w ↦ Wkp.restrictL_mem_compatibleFamilies (hPi i) k
-          (Wkp.lowerOrder k ((w : SobolevData A μ p (k + 1)) i m)))
+          (Wkp.lowerOrder k ((w : A.sectionChartData.SobolevData μ p (k + 1)) i m)))
         (Wkp.isClosed_compatibleFamilies _ k) using 1
       funext w
       exact Subtype.ext (funext fun j ↦ by
-        rw [Set.val_codRestrict_apply, Wkp.restrictCompatibleEquiv_apply_coe])
+        rw [Set.val_codRestrict_apply]
+        exact Wkp.restrictCompatibleEquiv_apply_coe _ _ _ _ j)
     convert hfam.clm_comp R.symm.toContinuousLinearMap using 1
     funext w
     simp only [Function.comp_apply, ContinuousLinearEquiv.coe_coe,
       ContinuousLinearEquiv.symm_apply_apply]
   have hmem (w : SobolevSection A μ p (k + 1)) :
-      (fun i m ↦ Wkp.lowerOrder k ((w : SobolevData A μ p (k + 1)) i m)) ∈
-        sobolevSections A μ p k := by
-    convert (lowerOrderL A μ p k w).2 using 1
+      (fun i m ↦ Wkp.lowerOrder k ((w : A.sectionChartData.SobolevData μ p (k + 1)) i m)) ∈
+        A.sectionChartData.sobolevSections μ p k := by
+    convert (A.sectionChartData.lowerOrderL μ p k w).2 using 1
     funext i m
-    rw [lowerOrderL_apply]
-  convert (IsCompactOperator.pi fun i ↦ IsCompactOperator.pi fun m ↦ hchart i m).codRestrict hmem
-    (isClosed_sobolevSections A μ p k) using 1
-  funext w
-  exact Subtype.ext (funext fun i ↦ funext fun m ↦ by
-    rw [Set.val_codRestrict_apply, lowerOrderL_apply])
+    rw [SectionChartData.lowerOrderL_apply]
+  have key : ⇑(A.sectionChartData.lowerOrderL μ p k) = fun w : SobolevSection A μ p (k + 1) ↦
+      (⟨fun i m ↦ Wkp.lowerOrder k ((w : A.sectionChartData.SobolevData μ p (k + 1)) i m),
+        hmem w⟩ : A.sectionChartData.sobolevSections μ p k) :=
+    funext fun w ↦ Subtype.ext <| funext fun i ↦ funext fun m ↦
+      SectionChartData.lowerOrderL_apply A.sectionChartData μ p k w i m
+  rw [key]
+  exact (IsCompactOperator.pi fun (i : Fin A.sectionChartData.n) ↦
+    IsCompactOperator.pi fun m ↦ hchart i m).codRestrict hmem
+    (SectionChartData.isClosed_sobolevSections (A.aeTransition_sectionChartData μ))
 
 /-- **Compact inclusion into `Lᵖ`.** The inclusion `W^{1,p}(V) → W^{0,p}(V)` of first-order Sobolev
 sections into sections with `Lᵖ` chart data is compact for `1 ≤ p < ∞`. -/
 theorem isCompactOperator_lowerOrderL_zero [T2Space M] (hp : p ≠ ⊤) :
-    IsCompactOperator (lowerOrderL A μ p 0) :=
+    IsCompactOperator (A.sectionChartData.lowerOrderL μ p 0) :=
   isCompactOperator_lowerOrderL A μ p 0 hp
 
 end SobolevSection
