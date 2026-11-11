@@ -62,6 +62,8 @@ forcing the integral and real ranks to agree.
   the componentwise lattice map.
 * `TauCeti.Toric.IsIntegralLattice.isZLattice`: in a normed space the image of an integral
   lattice is discrete, hence a `ZLattice` in Mathlib's sense.
+* `TauCeti.Toric.IsIntegralLattice.isClosed_range_smul`: in a normed space every rescaling
+  `p i(N)` of the image of an integral lattice is closed.
 * `TauCeti.Toric.isIntegralLattice_subtype_of_isZLattice`: conversely, a full `ZLattice` in a
   finite-dimensional space is an integral lattice for its inclusion.
 
@@ -358,6 +360,22 @@ theorem IsIntegralLattice.isZLattice (h : IsIntegralLattice i) :
     IsZLattice ℝ (LinearMap.range i.toIntLinearMap) :=
   haveI := h.discreteTopology
   ⟨by rw [LinearMap.coe_range]; exact h.span_range_eq_top⟩
+
+/-- For an integral lattice `i`, the rescaled lattice `p i(N)` is closed in `V`: it is discrete
+for `p ≠ 0`, and zero for `p = 0`. -/
+theorem IsIntegralLattice.isClosed_range_smul (hi : IsIntegralLattice i) (p : ℝ) :
+    IsClosed ((p • i).range : Set V) := by
+  rcases eq_or_ne p 0 with rfl | hp
+  · simp
+  have := hi.discreteTopology
+  have h : IsClosed (LinearMap.range i.toIntLinearMap : Set V) :=
+    (LinearMap.range i.toIntLinearMap).toAddSubgroup.isClosed_of_discreteTopology
+  have hrange : ((p • i).range : Set V) =
+      Homeomorph.smulOfNeZero p hp '' (LinearMap.range i.toIntLinearMap) := by
+    ext v
+    simp [eq_comm]
+  rw [hrange]
+  exact (Homeomorph.smulOfNeZero p hp).isClosedMap _ h
 
 /-- Conversely, a full `ℤ`-lattice in Mathlib's sense, in a finite-dimensional normed real vector
 space, is an integral lattice for its inclusion: the space is the real scalar extension of the
