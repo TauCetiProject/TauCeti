@@ -51,6 +51,36 @@ theorem HasConstantSpeedOnWith.lipschitzOnWith {E : Type*} [PseudoEMetricSpace E
   simpa only [edist_dist, Real.dist_eq, abs_of_nonpos (sub_nonpos.mpr hxy), neg_sub]
     using hdist.trans_eq hmul
 
+/-- For a function of bounded variation on `s`, two cumulative variations from the same base point
+differ by at most the total variation on `s`. The base point and the two endpoints are arbitrary:
+every cumulative variation from `a` lies between minus the variation on the part of `s` below `a`
+and the variation on the part above `a`, and these two variations add up to at most the total. -/
+theorem variationOnFromTo.abs_sub_le_eVariationOn {α E : Type*} [LinearOrder α]
+    [TopologicalSpace E] [WeakPseudoEMetricSpace E] {f : α → E} {s : Set α}
+    (hf : BoundedVariationOn f s) {a x y : α} :
+    |variationOnFromTo f s a x - variationOnFromTo f s a y| ≤ (eVariationOn f s).toReal := by
+  have hLR : (eVariationOn f (s ∩ Iic a)).toReal + (eVariationOn f (s ∩ Ici a)).toReal ≤
+      (eVariationOn f s).toReal := by
+    rw [← ENNReal.toReal_add (hf.mono inter_subset_left) (hf.mono inter_subset_left)]
+    exact ENNReal.toReal_mono hf <| (eVariationOn.add_le_union f (s := s ∩ Iic a)
+      (t := s ∩ Ici a) fun _ hu _ hv ↦ hu.2.trans hv.2).trans <|
+        eVariationOn.mono f (union_subset inter_subset_left inter_subset_left)
+  have hmem (z : α) : -(eVariationOn f (s ∩ Iic a)).toReal ≤ variationOnFromTo f s a z ∧
+      variationOnFromTo f s a z ≤ (eVariationOn f (s ∩ Ici a)).toReal := by
+    rcases le_total a z with h | h
+    · rw [variationOnFromTo.eq_of_le f s h]
+      exact ⟨(neg_nonpos.2 ENNReal.toReal_nonneg).trans ENNReal.toReal_nonneg,
+        ENNReal.toReal_mono (hf.mono inter_subset_left)
+          (eVariationOn.mono f (inter_subset_inter_right s Icc_subset_Ici_self))⟩
+    · rw [variationOnFromTo.eq_of_ge f s h]
+      exact ⟨neg_le_neg (ENNReal.toReal_mono (hf.mono inter_subset_left)
+          (eVariationOn.mono f (inter_subset_inter_right s Icc_subset_Iic_self))),
+        (neg_nonpos.2 ENNReal.toReal_nonneg).trans ENNReal.toReal_nonneg⟩
+  obtain ⟨hx₁, hx₂⟩ := hmem x
+  obtain ⟨hy₁, hy₂⟩ := hmem y
+  rw [abs_le]
+  constructor <;> linarith
+
 /-- The extended diameter of the set of cumulative variations from any base point is at most the
 total variation on `s`. -/
 theorem variationOnFromTo.ediam_image_le {α E : Type*} [LinearOrder α] [TopologicalSpace E]
@@ -60,44 +90,9 @@ theorem variationOnFromTo.ediam_image_le {α E : Type*} [LinearOrder α] [Topolo
   swap
   · rw [BoundedVariationOn, not_ne_iff] at hf
     exact hf ▸ le_top
-  have hfin {t : Set α} (ht : t ⊆ s) : eVariationOn f t ≠ ⊤ :=
-    ne_top_of_le_ne_top hf (eVariationOn.mono f ht)
-  have hle {t : Set α} (ht : t ⊆ s) : (eVariationOn f t).toReal ≤ (eVariationOn f s).toReal :=
-    ENNReal.toReal_mono hf (eVariationOn.mono f ht)
-  have key {x y : α} (hx : x ∈ s) (hy : y ∈ s) (hxy : x ≤ y) :
-      |variationOnFromTo f s a x - variationOnFromTo f s a y| ≤ (eVariationOn f s).toReal := by
-    have hV : 0 ≤ (eVariationOn f s).toReal := ENNReal.toReal_nonneg
-    rcases le_total a x with h₁ | h₁
-    · have hsum := congrArg ENNReal.toReal (eVariationOn.Icc_add_Icc f h₁ hxy hx)
-      rw [ENNReal.toReal_add (hfin inter_subset_left) (hfin inter_subset_left)] at hsum
-      have h₃ := hle (inter_subset_left : s ∩ Icc x y ⊆ s)
-      have h₄ : 0 ≤ (eVariationOn f (s ∩ Icc x y)).toReal := ENNReal.toReal_nonneg
-      rw [variationOnFromTo.eq_of_le f s h₁, variationOnFromTo.eq_of_le f s (h₁.trans hxy),
-        abs_le]
-      constructor <;> linarith
-    rcases le_total a y with h₂ | h₂
-    · have h := (eVariationOn.add_le_union f (s := s ∩ Icc x a) (t := s ∩ Icc a y)
-        fun _ hu _ hv ↦ hu.2.2.trans hv.2.1).trans (eVariationOn.mono f
-          (union_subset inter_subset_left inter_subset_left : s ∩ Icc x a ∪ s ∩ Icc a y ⊆ s))
-      have h' := ENNReal.toReal_mono hf h
-      rw [ENNReal.toReal_add (hfin inter_subset_left) (hfin inter_subset_left)] at h'
-      have h₃ : 0 ≤ (eVariationOn f (s ∩ Icc x a)).toReal := ENNReal.toReal_nonneg
-      have h₄ : 0 ≤ (eVariationOn f (s ∩ Icc a y)).toReal := ENNReal.toReal_nonneg
-      rw [variationOnFromTo.eq_of_ge f s h₁, variationOnFromTo.eq_of_le f s h₂, abs_le]
-      constructor <;> linarith
-    · have hsum := congrArg ENNReal.toReal (eVariationOn.Icc_add_Icc f hxy h₂ hy)
-      rw [ENNReal.toReal_add (hfin inter_subset_left) (hfin inter_subset_left)] at hsum
-      have h₃ := hle (inter_subset_left : s ∩ Icc x y ⊆ s)
-      have h₄ : 0 ≤ (eVariationOn f (s ∩ Icc x y)).toReal := ENNReal.toReal_nonneg
-      rw [variationOnFromTo.eq_of_ge f s h₁, variationOnFromTo.eq_of_ge f s h₂, abs_le]
-      constructor <;> linarith
-  refine Metric.ediam_image_le_iff.2 fun x hx y hy ↦ ?_
+  refine Metric.ediam_image_le_iff.2 fun x _ y _ ↦ ?_
   rw [edist_dist, Real.dist_eq, ← ENNReal.ofReal_toReal hf]
-  refine ENNReal.ofReal_le_ofReal ?_
-  rcases le_total x y with hxy | hxy
-  · exact key hx hy hxy
-  · rw [abs_sub_comm]
-    exact key hy hx hxy
+  exact ENNReal.ofReal_le_ofReal (variationOnFromTo.abs_sub_le_eVariationOn hf)
 
 /-- The image of a curve of locally bounded variation has Hausdorff dimension at most one,
 because its natural parameterization is Lipschitz on a subset of the real line. -/
