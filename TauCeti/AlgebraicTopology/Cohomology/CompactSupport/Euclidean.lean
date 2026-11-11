@@ -112,14 +112,20 @@ def compactSupportCohomologyEuclideanIso (y : E) (n : ℕ) :
 
 @[reassoc (attr := simp)]
 lemma compactSupportCohomologyι_compactSupportCohomologyEuclideanIso_hom (y : E) (n : ℕ) :
-    compactSupportCohomologyι (X := TopCat.of E) n {y} ≫
+    compactSupportCohomologyι (X := TopCat.of E) n ({y} : Compacts E) ≫
         (compactSupportCohomologyEuclideanIso R k M y n).hom = 𝟙 _ := by
+  simp [compactSupportCohomologyEuclideanIso]
+
+@[reassoc (attr := simp)]
+lemma compactSupportCohomologyEuclideanIso_hom_compactSupportCohomologyι (y : E) (n : ℕ) :
+    (compactSupportCohomologyEuclideanIso R k M y n).hom ≫
+        compactSupportCohomologyι (X := TopCat.of E) n ({y} : Compacts E) = 𝟙 _ := by
   simp [compactSupportCohomologyEuclideanIso]
 
 @[simp]
 lemma compactSupportCohomologyEuclideanIso_inv (y : E) (n : ℕ) :
     (compactSupportCohomologyEuclideanIso R k M y n).inv =
-      compactSupportCohomologyι (X := TopCat.of E) n {y} :=
+      compactSupportCohomologyι (X := TopCat.of E) n ({y} : Compacts E) :=
   (rfl)
 
 /-- Every class with compact support on a real normed space comes from the local cohomology at
