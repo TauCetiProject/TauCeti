@@ -281,18 +281,7 @@ theorem sum_val_galEquivZMod_filter_inv_smul_eq_smul {m : ℕ} [NeZero m]
       ∑ i ∈ Finset.range (orderOf (p : ZMod m)),
         p ^ i * (galEquivZMod m K τ⁻¹ : ZMod m).val % m := by
   classical
-  -- `p` is prime, as `span {p}` is the contraction of the maximal ideal `P`
-  have : Fact p.Prime := ⟨by
-    have hmax : (span {(p : ℤ)}).IsMaximal := by
-      have := Ideal.IsMaximal.under ℤ P
-      rwa [← Ideal.LiesOver.over (p := span {(p : ℤ)}) (P := P)] at this
-    have hp0 : (p : ℤ) ≠ 0 := by
-      intro h
-      rw [h, Ideal.span_singleton_zero] at hmax
-      have := hmax.1.2 (span {(2 : ℤ)}) (bot_lt_iff_ne_bot.2 (by simp))
-      rw [Ideal.span_singleton_eq_top] at this
-      exact absurd (Int.isUnit_iff.1 this) (by omega)
-    exact Nat.prime_iff_prime_int.2 ((Ideal.span_singleton_prime hp0).1 hmax.isPrime)⟩
+  have : Fact p.Prime := ⟨NumberField.prime_of_isMaximal_of_liesOver P⟩
   have hcop : p.Coprime m := (Nat.Prime.coprime_iff_not_dvd Fact.out).2 hpm
   set u := ZMod.unitOfCoprime p hcop
   set a := galEquivZMod m K τ⁻¹ with hadef
