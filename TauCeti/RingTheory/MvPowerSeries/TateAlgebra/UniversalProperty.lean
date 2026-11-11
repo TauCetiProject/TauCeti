@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.Restricted.GaussNorm
 public import TauCeti.RingTheory.Huber.WeightedEval.UniversalProperty
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.BoundedEval
 
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
 
@@ -121,6 +122,17 @@ theorem restrictedLift_unique {ψ : IsRestricted.subring (R := R) (fun _ : Fin k
     (hX : ∀ i, ψ ⟨X i, isRestricted_X _ i⟩ = b i) : ψ = restrictedLift hφ hb :=
   isRestricted_subring_ringHom_ext_of_continuous hψ (continuous_restrictedLift hφ hb)
     (fun r ↦ by rw [hC, restrictedLift_algebraMap]) (fun i ↦ by rw [hX, restrictedLift_X])
+
+/-- The topological universal-property lift on the normed carrier is bounded normed evaluation
+whenever the coefficient and point norm bounds hold. -/
+theorem restrictedLift_eq_restrictedEval₂OfBound {T : Type*} [NormedCommRing T]
+    [IsUltrametricDist T] [CompleteSpace T] {ψ : R →+* T} {C : ℝ} {a : Fin k → T}
+    (hψ : ∀ r, ‖ψ r‖ ≤ C * ‖r‖) (ha : ∀ i, ‖a i‖ ≤ 1) (hψc : Continuous ψ)
+    (ha' : ∀ i, IsPowerBounded (a i)) :
+    restrictedLift hψc ha' = ψ.restrictedEval₂OfBound a hψ ha := by
+  exact ψ.eq_restrictedEval₂OfBound a hψ ha _
+    (continuous_restrictedLift hψc ha')
+    (restrictedLift_algebraMap hψc ha') (restrictedLift_X hψc ha')
 
 include hφ hb in
 /-- **The universal property of `R⟨X₁, …, Xₖ⟩` at power-bounded arguments.** For a continuous

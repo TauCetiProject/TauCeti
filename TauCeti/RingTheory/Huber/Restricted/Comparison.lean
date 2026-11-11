@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.Huber.Restricted.GaussNorm
 public import TauCeti.RingTheory.Huber.WeightedEval.Completion
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.BoundedEval
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UniversalProperty
 
 /-!
 # Coefficient maps and evaluation under the Gauss comparison
@@ -83,7 +82,8 @@ theorem restrictedMvPowerSeriesCompletionGaussEquiv_weightedMapCompletion
 include hφ in
 /-- A bounded coefficient map on Huber completions has the same bound in the compared Gauss
 norms. No norm on the topological completion is chosen independently of the comparison. -/
-theorem norm_weightedMapCompletion_le (f : restrictedMvPowerSeriesCompletion k R) :
+theorem norm_restrictedMvPowerSeriesCompletionGaussEquiv_weightedMapCompletion_le
+    (f : restrictedMvPowerSeriesCompletion k R) :
     ‖restrictedMvPowerSeriesCompletionGaussEquiv
         (weightedMapCompletion hφc isWeightFamily_one_weight isWeightFamily_one_weight
           (by simp) f)‖ ≤
@@ -109,15 +109,6 @@ theorem weightedEvalHom_eq_restrictedEval₂OfBound
       φ.restrictedEval₂OfBound a hφ ha (restrictedMvPowerSeriesGaussEquiv f) := by
   rw [coe_weightedEvalHom, RingHom.restrictedEval₂OfBound_apply,
     coe_restrictedMvPowerSeriesGaussEquiv]
-
-/-- The topological universal-property lift on the normed carrier is bounded normed evaluation
-whenever the coefficient and point norm bounds hold. -/
-theorem restrictedLift_eq_restrictedEval₂OfBound (hφc' : Continuous φ)
-    (ha' : ∀ i, IsPowerBounded (a i)) :
-    restrictedLift hφc' ha' = φ.restrictedEval₂OfBound a hφ ha := by
-  exact φ.eq_restrictedEval₂OfBound a hφ ha _
-    (continuous_restrictedLift hφc' ha')
-    (restrictedLift_algebraMap hφc' ha') (restrictedLift_X hφc' ha')
 
 include hφ ha in
 /-- Huber evaluation obeys the coefficient-map bound, measured in the Gauss norm. -/
