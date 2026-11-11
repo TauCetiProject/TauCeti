@@ -119,7 +119,7 @@ theorem finrank_smul_simple_piece_zero_mul_coeff_gradedCartanMatrix (i : I)
   exact (finrank_smul_simple_piece_zero_mul_coeff_repr S he he₀ hne hself hS _ i hconc p).trans
     (by rw [← GradedModuleCat.coeff_smulGradedDimension]
         exact GradedModuleCat.coeff_smulGradedDimension_ofIdeal_span_singleton
-          (he i) (he₀ i) hf hF p)
+          (he₀ i) hF p)
 
 include hj in
 /-- **An exact integer quotient computes graded Cartan coefficients over a nonsplitting
