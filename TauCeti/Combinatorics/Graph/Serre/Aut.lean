@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Graph.Serre.Convex
 public import TauCeti.Combinatorics.Graph.Serre.Dist
 public import Mathlib.GroupTheory.GroupAction.Defs
+public import Mathlib.Algebra.Group.Action.Pointwise.Set.Basic
 public import Mathlib.Combinatorics.Quiver.Cast
 
 /-!
@@ -20,7 +21,8 @@ group, as in Serre's *Trees*.
 
 Automorphisms preserve reduced paths and distances. In an acyclic graph an automorphism fixing
 two vertices fixes every dart of the reduced path between them, so the fixed vertices of an
-automorphism form a convex set.
+automorphism form a convex set. Automorphisms map convex sets of vertices to convex sets, and the
+darts induced by a set of vertices to the darts induced by its translate.
 
 The segment carries the automorphism exchanging its two vertices; it maps the edge to its
 reverse, which is the kind of inversion excluded from actions on trees.
@@ -162,6 +164,34 @@ theorem isConvex_fixedBy (h : Γ.IsAcyclic) (φ : Γ.Aut) :
     Γ.IsConvex (MulAction.fixedBy Γ.V φ) := isConvex_iff.mpr fun _ ha _ hb _ hp e he => by
   rw [MulAction.mem_fixedBy, ← src_smul,
     smul_eq_of_mem_darts h φ (MulAction.mem_fixedBy.mp ha) (MulAction.mem_fixedBy.mp hb) hp he]
+
+/-! ### Translates of sets of vertices -/
+
+open scoped Pointwise in
+/-- The translate of a set of vertices by an automorphism is convex exactly when the set is. -/
+@[simp] theorem isConvex_smul_set_iff (φ : Γ.Aut) {S : Set Γ.V} :
+    Γ.IsConvex (φ • S) ↔ Γ.IsConvex S := by
+  -- A reduced path between vertices of the translate is the image of one between vertices of the
+  -- set.
+  have key : ∀ (ψ : Γ.Aut) {S : Set Γ.V}, Γ.IsConvex S → Γ.IsConvex (ψ • S) := by
+    refine fun ψ S hS => isConvex_iff.mpr fun a ha b hb p hp e he => ?_
+    rw [Set.mem_smul_set_iff_inv_smul_mem] at ha hb ⊢
+    have he' : ψ⁻¹ • e ∈ Path.darts Γ (ψ⁻¹.toHom.toPrefunctor.mapPath p) := by
+      rw [Hom.darts_mapPath]
+      exact List.mem_map_of_mem he
+    have hsrc := isConvex_iff.mp hS (ψ⁻¹.toHom.toPrefunctor.obj a) ha
+      (ψ⁻¹.toHom.toPrefunctor.obj b) hb _
+      ((Hom.isReduced_mapPath_iff Γ _ ψ⁻¹.toHom_mapE_injective p).mpr hp) _ he'
+    rwa [src_smul] at hsrc
+  exact ⟨fun h => by simpa only [inv_smul_smul] using key φ⁻¹ h, key φ⟩
+
+open scoped Pointwise in
+/-- The darts induced by the translate of a set of vertices are the translates of the darts
+induced by the set. -/
+theorem smul_set_inducedDarts (φ : Γ.Aut) (C : Set Γ.V) :
+    φ • Γ.inducedDarts C = Γ.inducedDarts (φ • C) := by
+  ext e
+  simp only [Set.mem_smul_set_iff_inv_smul_mem, mem_inducedDarts_iff, src_smul, tgt_smul]
 
 end Aut
 

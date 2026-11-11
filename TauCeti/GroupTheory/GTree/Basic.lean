@@ -11,6 +11,7 @@ public import Mathlib.GroupTheory.GroupAction.Basic
 public import Mathlib.GroupTheory.GroupAction.Hom
 public import Mathlib.Algebra.Group.Subgroup.Actions
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
+public import Mathlib.Algebra.Group.Action.Pointwise.Set.Basic
 
 /-!
 # Group actions on trees
@@ -23,7 +24,7 @@ such actions.
   elliptic when it fixes a vertex. The vertices fixed by an element or a subgroup form a convex
   set, and an element is elliptic exactly when its translation length
   `ℓ(g) = min_v d(v, g v)` vanishes. Translation length is invariant under conjugation and
-  inversion.
+  inversion. The action maps convex sets of vertices to convex sets.
 * A `G`-tree is *minimal* when no nonempty convex `G`-invariant proper set of vertices exists,
   and it is *relative* to families `𝒜` and `ℋ` of subgroups when its dart stabilizers lie in `𝒜`
   and every member of `ℋ` is elliptic.
@@ -228,6 +229,34 @@ theorem IsEllipticSubgroup.map_conj {H : Subgroup G} (hH : T.IsEllipticSubgroup 
   refine ⟨fun h => (h.map_conj g⁻¹).mono fun x hx => ?_, fun h => h.map_conj g⟩
   refine Subgroup.mem_map.mpr ⟨MulAut.conj g x, Subgroup.mem_map_of_mem _ hx, ?_⟩
   simp [mul_assoc]
+
+/-! ### Translates of sets -/
+
+section Pointwise
+
+open scoped Pointwise
+
+variable (T)
+
+theorem smul_set_vertex_def (g : G) (S : Set T.V) : g • S = T.action g • S :=
+  Set.ext fun v => by simp only [Set.mem_smul_set, smul_vertex_def]
+
+theorem smul_set_dart_def (g : G) (S : Set T.E) : g • S = T.action g • S :=
+  Set.ext fun v => by simp only [Set.mem_smul_set, smul_dart_def]
+
+variable {T} in
+/-- The translate of a set of vertices is convex exactly when the set is. -/
+@[simp] theorem isConvex_smul_set_iff {g : G} {S : Set T.V} :
+    T.IsConvex (g • S) ↔ T.IsConvex S := by
+  rw [smul_set_vertex_def, Aut.isConvex_smul_set_iff]
+
+/-- The darts induced by the translate of a set of vertices are the translates of the darts
+induced by the set. -/
+theorem smul_set_inducedDarts (g : G) (C : Set T.V) :
+    g • T.inducedDarts C = T.inducedDarts (g • C) := by
+  rw [smul_set_vertex_def, smul_set_dart_def, Aut.smul_set_inducedDarts]
+
+end Pointwise
 
 /-! ### Fixed vertices -/
 

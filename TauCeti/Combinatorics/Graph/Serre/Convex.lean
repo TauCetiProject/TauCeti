@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Tree
+public import Mathlib.Data.Set.Finite.Basic
 
 /-!
 # Convex sets of vertices
@@ -13,7 +14,14 @@ public import TauCeti.Combinatorics.Graph.Serre.Tree
 A set of vertices of a Serre graph is convex when it contains every vertex crossed by a reduced
 path between two of its vertices. In a tree, the nonempty convex sets are the vertex sets of the
 subtrees, since reduced paths are the geodesics. Convex sets are closed under arbitrary
-intersections, and in an acyclic graph every singleton is convex.
+intersections, and in an acyclic graph every singleton and the pair of endpoints of every dart is
+convex.
+
+In a tree, a union of convex sets with a common vertex is convex, and a dart between two convex
+sets with a common vertex has both endpoints in one of them: subtrees through a common vertex
+glue to a subtree, without creating new edges. Here the edges of the subgraph on a set of vertices
+are its induced darts, `SerreGraph.inducedDarts`; a finite set of vertices of an acyclic graph
+induces finitely many of them.
 
 ## References
 
@@ -84,6 +92,131 @@ theorem IsAcyclic.isConvex_singleton (h : Γ.IsAcyclic) (v : Γ.V) : Γ.IsConvex
   rintro a rfl b rfl p hp e he
   rw [(isAcyclic_iff Γ).mp h b p hp, Path.darts_nil] at he
   exact absurd he List.not_mem_nil
+
+/-- In an acyclic graph, the two endpoints of a dart form a convex set. -/
+theorem IsAcyclic.isConvex_pair_src_tgt (h : Γ.IsAcyclic) (e : Γ.E) :
+    Γ.IsConvex {Γ.src e, Γ.tgt e} := by
+  rintro a (rfl | rfl) b (rfl | rfl) p hp f hf
+  · rw [(isAcyclic_iff Γ).mp h _ p hp, Path.darts_nil] at hf
+    exact absurd hf List.not_mem_nil
+  · rw [h.eq_of_isReduced hp (Path.isReduced_toPath Γ (Γ.dart e)), Path.darts_toPath,
+      List.mem_singleton, dart_val] at hf
+    exact hf ▸ Set.mem_insert _ _
+  · rw [h.eq_of_isReduced hp (Path.isReduced_toPath Γ (Quiver.reverse (Γ.dart e))),
+      Path.darts_toPath, List.mem_singleton, reverse_val, dart_val] at hf
+    exact hf ▸ Set.mem_insert_of_mem _ (Γ.src_rev e)
+  · rw [(isAcyclic_iff Γ).mp h _ p hp, Path.darts_nil] at hf
+    exact absurd hf List.not_mem_nil
+
+/-! ### Unions of convex sets in a tree -/
+
+/-- In a tree, the union of two convex sets with a common vertex is convex. -/
+theorem IsTree.isConvex_union (h : Γ.IsTree) {A B : Set Γ.V} (hA : Γ.IsConvex A)
+    (hB : Γ.IsConvex B) (hAB : (A ∩ B).Nonempty) : Γ.IsConvex (A ∪ B) := by
+  obtain ⟨c, hcA, hcB⟩ := hAB
+  -- A reduced path from one set to the other only crosses darts of the reduced paths from its
+  -- endpoints to the common vertex `c`.
+  have key : ∀ {A B : Set Γ.V}, Γ.IsConvex A → Γ.IsConvex B → c ∈ A → c ∈ B → ∀ a ∈ A, ∀ b ∈ B,
+      ∀ p : Γ.Path a b, Path.IsReduced Γ p → ∀ e ∈ Path.darts Γ p, Γ.src e ∈ A ∨ Γ.src e ∈ B := by
+    intro A B hA hB hcA hcB a ha b hb p hp e he
+    obtain ⟨q, hq, -⟩ := h.existsUnique_isReduced a c
+    obtain ⟨r, hr, -⟩ := h.existsUnique_isReduced c b
+    have he' := (h.isAcyclic.darts_sublist hp (q.comp r)).subset he
+    rw [Path.darts_comp, List.mem_append] at he'
+    exact he'.imp (hA a ha c hcA q hq e) (hB c hcB b hb r hr e)
+  rintro a (ha | ha) b (hb | hb) p hp e he
+  · exact Or.inl (hA a ha b hb p hp e he)
+  · exact key hA hB hcA hcB a ha b hb p hp e he
+  · exact (key hB hA hcB hcA a ha b hb p hp e he).symm
+  · exact Or.inr (hB a ha b hb p hp e he)
+
+/-- In a tree, a union of convex sets with a common vertex is convex. -/
+theorem IsTree.isConvex_iUnion (h : Γ.IsTree) {ι : Sort*} {A : ι → Set Γ.V} {x : Γ.V}
+    (hA : ∀ i, Γ.IsConvex (A i)) (hx : ∀ i, x ∈ A i) : Γ.IsConvex (⋃ i, A i) := by
+  intro a ha b hb p hp e he
+  obtain ⟨i, hi⟩ := Set.mem_iUnion.mp ha
+  obtain ⟨j, hj⟩ := Set.mem_iUnion.mp hb
+  exact (h.isConvex_union (hA i) (hA j) ⟨x, hx i, hx j⟩ a (Or.inl hi) b (Or.inr hj) p hp e he).elim
+    (fun h => Set.mem_iUnion.mpr ⟨i, h⟩) fun h => Set.mem_iUnion.mpr ⟨j, h⟩
+
+/-- In a tree, a dart from a convex set to a convex set meeting it has both endpoints in one of
+the two sets. -/
+theorem IsTree.tgt_mem_or_src_mem (h : Γ.IsTree) {A B : Set Γ.V} (hA : Γ.IsConvex A)
+    (hB : Γ.IsConvex B) (hAB : (A ∩ B).Nonempty) {e : Γ.E} (hs : Γ.src e ∈ A)
+    (ht : Γ.tgt e ∈ B) : Γ.tgt e ∈ A ∨ Γ.src e ∈ B := by
+  obtain ⟨c, hcA, hcB⟩ := hAB
+  obtain ⟨q, hq, -⟩ := h.existsUnique_isReduced (Γ.src e) c
+  obtain ⟨r, hr, -⟩ := h.existsUnique_isReduced c (Γ.tgt e)
+  -- The dart is the reduced path between its endpoints, so it lies on one of `q` and `r`.
+  have he := (h.isAcyclic.darts_sublist (Path.isReduced_toPath Γ (Γ.dart e)) (q.comp r)).subset
+    (by rw [Path.darts_toPath, dart_val]; exact List.mem_singleton_self e)
+  rw [Path.darts_comp, List.mem_append] at he
+  exact he.imp (hA.tgt_mem hs hcA hq) (hB c hcB _ ht r hr e)
+
+/-! ### The darts induced by a set of vertices -/
+
+variable (Γ) in
+/-- The darts induced by a set of vertices: those with both endpoints in the set. They are the
+darts of the subgraph induced on the set. -/
+def inducedDarts (C : Set Γ.V) : Set Γ.E :=
+  {e | Γ.src e ∈ C ∧ Γ.tgt e ∈ C}
+
+@[simp] theorem mem_inducedDarts_iff {C : Set Γ.V} {e : Γ.E} :
+    e ∈ Γ.inducedDarts C ↔ Γ.src e ∈ C ∧ Γ.tgt e ∈ C := Iff.rfl
+
+theorem rev_mem_inducedDarts_iff {C : Set Γ.V} {e : Γ.E} :
+    Γ.rev e ∈ Γ.inducedDarts C ↔ e ∈ Γ.inducedDarts C := by
+  rw [mem_inducedDarts_iff, mem_inducedDarts_iff, src_rev, tgt_rev, and_comm]
+
+theorem inducedDarts_mono {C D : Set Γ.V} (h : C ⊆ D) : Γ.inducedDarts C ⊆ Γ.inducedDarts D :=
+  fun _ he => ⟨h he.1, h he.2⟩
+
+@[simp] theorem inducedDarts_empty : Γ.inducedDarts ∅ = ∅ :=
+  Set.eq_empty_of_forall_notMem fun _ he => he.1
+
+@[simp] theorem inducedDarts_univ : Γ.inducedDarts Set.univ = Set.univ :=
+  Set.eq_univ_of_forall fun _ => ⟨trivial, trivial⟩
+
+/-- In an acyclic graph, a single vertex induces no dart. -/
+@[simp] theorem IsAcyclic.inducedDarts_singleton (h : Γ.IsAcyclic) (v : Γ.V) :
+    Γ.inducedDarts {v} = ∅ :=
+  Set.eq_empty_of_forall_notMem fun e he => h.src_ne_tgt e (he.1.trans he.2.symm)
+
+/-- In an acyclic graph, a finite set of vertices induces finitely many darts. -/
+theorem IsAcyclic.finite_inducedDarts (h : Γ.IsAcyclic) {C : Set Γ.V} (hC : C.Finite) :
+    (Γ.inducedDarts C).Finite := by
+  refine Set.Finite.of_finite_image (f := fun e => (Γ.src e, Γ.tgt e))
+    ((hC.prod hC).subset ?_) fun e _ f _ hef =>
+      h.eq_of_src_eq_of_tgt_eq (congrArg Prod.fst hef) (congrArg Prod.snd hef)
+  rintro _ ⟨e, he, rfl⟩
+  exact ⟨he.1, he.2⟩
+
+/-- In a tree, the union of two convex sets with a common vertex induces no dart beyond those
+induced by each of them. -/
+theorem IsTree.inducedDarts_union (h : Γ.IsTree) {A B : Set Γ.V} (hA : Γ.IsConvex A)
+    (hB : Γ.IsConvex B) (hAB : (A ∩ B).Nonempty) :
+    Γ.inducedDarts (A ∪ B) = Γ.inducedDarts A ∪ Γ.inducedDarts B := by
+  refine (Set.union_subset (inducedDarts_mono Set.subset_union_left)
+    (inducedDarts_mono Set.subset_union_right)).antisymm' ?_
+  rintro e ⟨hs | hs, ht | ht⟩
+  · exact Or.inl ⟨hs, ht⟩
+  · exact (h.tgt_mem_or_src_mem hA hB hAB hs ht).imp (fun h => ⟨hs, h⟩) fun h => ⟨h, ht⟩
+  · exact ((h.tgt_mem_or_src_mem hB hA (Set.inter_comm A B ▸ hAB) hs ht).imp
+      (fun h => ⟨hs, h⟩) fun h => ⟨h, ht⟩).symm
+  · exact Or.inr ⟨hs, ht⟩
+
+/-- In a tree, a union of convex sets with a common vertex induces no dart beyond those induced
+by each of them. -/
+theorem IsTree.inducedDarts_iUnion (h : Γ.IsTree) {ι : Sort*} {A : ι → Set Γ.V} {x : Γ.V}
+    (hA : ∀ i, Γ.IsConvex (A i)) (hx : ∀ i, x ∈ A i) :
+    Γ.inducedDarts (⋃ i, A i) = ⋃ i, Γ.inducedDarts (A i) := by
+  refine Set.Subset.antisymm ?_
+    (Set.iUnion_subset fun i => inducedDarts_mono (Set.subset_iUnion A i))
+  rintro e ⟨hs, ht⟩
+  obtain ⟨i, hi⟩ := Set.mem_iUnion.mp hs
+  obtain ⟨j, hj⟩ := Set.mem_iUnion.mp ht
+  exact (h.tgt_mem_or_src_mem (hA i) (hA j) ⟨x, hx i, hx j⟩ hi hj).elim
+    (fun h => Set.mem_iUnion.mpr ⟨i, hi, h⟩) fun h => Set.mem_iUnion.mpr ⟨j, h, hj⟩
 
 end SerreGraph
 end TauCeti

@@ -86,6 +86,23 @@ theorem IsAcyclic.src_ne_tgt (h : Γ.IsAcyclic) (e : Γ.E) : Γ.src e ≠ Γ.tgt
     cases h a f.toPath (Path.isReduced_toPath Γ f)
   exact key (Γ.dart e)
 
+variable {Γ} in
+/-- In an acyclic graph, a reduced path only crosses darts of any other path with the same
+endpoints, in the same order. -/
+theorem IsAcyclic.darts_sublist (h : Γ.IsAcyclic) {a b : Γ.V} {p : Γ.Path a b}
+    (hp : Path.IsReduced Γ p) (q : Γ.Path a b) : (Path.darts Γ p).Sublist (Path.darts Γ q) := by
+  rw [h.eq_of_isReduced hp (Path.isReduced_reduce Γ q)]
+  exact Path.darts_reduce_sublist Γ q
+
+variable {Γ} in
+/-- An acyclic graph has no parallel darts: a dart is determined by its endpoints. -/
+theorem IsAcyclic.eq_of_src_eq_of_tgt_eq (h : Γ.IsAcyclic) {e f : Γ.E}
+    (hs : Γ.src e = Γ.src f) (ht : Γ.tgt e = Γ.tgt f) : e = f := by
+  have key : ∀ {a b : Γ.V} (x y : Quiver.Hom a b), x.1 = y.1 := fun x y => by
+    simpa using congrArg (Path.darts Γ)
+      (h.eq_of_isReduced (Path.isReduced_toPath Γ x) (Path.isReduced_toPath Γ y))
+  exact (Γ.dart_val e).symm.trans (key (Γ.dart e) ⟨f, hs.symm, ht.symm⟩)
+
 /-- A graph is acyclic exactly when any two reduced paths with the same endpoints are equal. -/
 theorem isAcyclic_iff_eq_of_isReduced : Γ.IsAcyclic ↔
     ∀ ⦃a b : Γ.V⦄ (p q : Γ.Path a b), Path.IsReduced Γ p → Path.IsReduced Γ q → p = q :=
