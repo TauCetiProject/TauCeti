@@ -79,7 +79,7 @@ include h
 /-- The divisor of `f` has finite support in a subset of the certified rectangle. -/
 private theorem finite_support {S : Set ℂ} (hS : S ⊆ Rectangle z w) :
     (S ∩ Function.support (fun s ↦ (MeromorphicOn.divisor f U s).toNat)).Finite :=
-  zeroCount_support_finite <| h.meromorphicOn.divisor_finite_inter_support_of_isCompact
+  zeroCount_support_finite <| MeromorphicOn.divisor_finite_inter_support_of_isCompact
     (isCompact_rectangle z w) h.rectangle_subset hS
 
 /-- A certified rectangle has the same zero count as its interior. -/
