@@ -26,8 +26,11 @@ generators `X` of `N` with coefficient matrix `δ`, `δ^k x` is the sum over the
 twist (`TauCeti.UngradedAInfinityRightModule.twistedDifferential`) of the module of row vectors
 over the matrix algebra (`TauCeti.UngradedAInfinityRightModule.matrix`) by the Maurer–Cartan
 element `δ` (`TauCeti.TypeDStructure.typeABoxDifferential`). This differential is defined on all
-row vectors `X → M`; its restriction to the submodule `TauCeti.TypeDStructure.boxTensor` of
-`M ⊗ N` over the idempotents, which needs strict unitality of `M`, is not established here.
+row vectors `X → M`. The box tensor product over the idempotents is the submodule
+`TauCeti.TypeDStructure.typeABoxTensor` of the `φ` with `m₂(φ x, ι (idem x)) = φ x`, and the
+differential preserves it when the `ι s` are cycles and the higher operations of `M` vanish on
+them (`TauCeti.UngradedAInfinityRightModule.HigherActVanishesOn`), as they do for a strictly
+unital module over the ring of idempotents.
 
 The sum over `k` is infinite in general, and the box tensor product is only defined under a
 boundedness hypothesis. Two are treated here, over a ring of characteristic two; under either one
@@ -80,9 +83,22 @@ sum of `m_{i+j+k+3}(φ, δ…, F, δ'…, G, δ''…)` along the paths that step
 through `G`. This is the chain map identity for the morphism `fromCols F 0` from `N` into the
 mapping cone `TauCeti.TypeDStructure.cone` of `G`, read on its `N''`-components: the
 differential of `fromCols F 0` is `fromCols 0 (F * G)`, the `N'`-components of its induced map are
-`T_F`, and the `N''`-components of the differential of the cone see these through `T_G`. That
-identity morphisms induce identity maps up to homotopy is not established here; it needs a
-strictly unital module.
+`T_F`, and the `N''`-components of the differential of the cone see these through `T_G`.
+
+**The box tensor product over the idempotents.** Suppose the `ι s` are cycles and the higher
+operations of `M` vanish on them. The identity morphism `I`, the diagonal matrix of the
+idempotents, is then a two-sided unit for the coefficient matrix, so the operation `m₂(·, I)` of
+the matrix module commutes with the twisted differential
+(`TauCeti.UngradedAInfinityRightModule.act_one_twistedDifferential`); its fixed vectors form
+`M ⊗ N`, which the differential therefore preserves
+(`TauCeti.TypeDStructure.typeABoxDifferential_mem_typeABoxTensor`). The same argument on
+`X ⊕ X'` shows that the map induced by a morphism maps `M ⊗ N` into `M ⊗ N'`
+(`TauCeti.TypeDStructure.typeABoxMap_mem_typeABoxTensor`). The identity morphism induces `m₂(·, I)`,
+since every path of length at least two through it steps through an idempotent, so under either
+boundedness hypothesis it induces the identity of `M ⊗ N`
+(`TauCeti.TypeDStructure.typeABoxMap_idMorphism_of_act_eq_zero`,
+`TauCeti.TypeDStructure.typeABoxMap_idMorphism_of_lt`). For a differential module `M ⊗ N` is
+the submodule `TauCeti.TypeDStructure.boxTensor`.
 
 ## Main definitions
 
@@ -92,6 +108,8 @@ strictly unital module.
   type `D` structures.
 * `TauCeti.TypeDStructure.typeABoxCompHomotopy`: the homotopy between the composite of two induced
   maps and the map induced by the composite morphism.
+* `TauCeti.TypeDStructure.typeABoxTensor`, `TauCeti.TypeDStructure.typeABoxTensorDifferential`:
+  the box tensor product `M ⊗ N` over the idempotents and the differential restricted to it.
 
 ## Main results
 
@@ -128,6 +146,12 @@ strictly unital module.
   homomorphisms induce composites of the induced chain maps up to homotopy,
   `T_G ∘ T_F + T_{F G} = ∂'' ∘ K + K ∘ ∂`, when the module, respectively the type `D` structures,
   are bounded.
+* `TauCeti.TypeDStructure.typeABoxDifferential_mem_typeABoxTensor` and
+  `TauCeti.TypeDStructure.typeABoxMap_mem_typeABoxTensor`: the differential and the maps induced by
+  morphisms preserve the box tensor products over the idempotents.
+* `TauCeti.TypeDStructure.typeABoxMap_idMorphism_of_act_eq_zero` and
+  `TauCeti.TypeDStructure.typeABoxMap_idMorphism_of_lt`: the identity morphism induces the identity
+  of `M ⊗ N` when the module, respectively the type `D` structure, is bounded.
 
 ## References
 
@@ -928,6 +952,207 @@ theorem typeABoxMap_typeABoxMap_add_typeABoxMap_mul_of_lt [CharP R 2] (N : TypeD
 end Composition
 
 end Morphism
+
+/-! ### The box tensor product over the idempotents -/
+
+section Idempotent
+
+variable {X' : Type*} [Fintype X'] [DecidableEq X'] {N : TypeDStructure d ι X}
+  {N' : TypeDStructure d ι X'} {Mm : UngradedAInfinityRightModule d M}
+
+variable (N) in
+omit [DecidableEq X] in
+/-- The **box tensor product** `M ⊗ N` over the idempotents of an `A∞` right module `M` with a type
+`D` structure `N`, as the submodule of row vectors `φ : X → M`, standing for `∑ x, φ x ⊗ x`, with
+`m₂(φ x, ι (idem x)) = φ x`. For a differential module this is
+`TauCeti.TypeDStructure.boxTensor`
+(`TauCeti.TypeDStructure.typeABoxTensor_toUngradedAInfinityRightModule`). -/
+def typeABoxTensor (Mm : UngradedAInfinityRightModule d M) : Submodule R (X → M) where
+  carrier := {φ | ∀ x, Mm.act 1 (fun _ => ι (N.idem x)) (φ x) = φ x}
+  add_mem' {φ ψ} hφ hψ x := by simp [hφ x, hψ x]
+  zero_mem' := by simp
+  smul_mem' r φ hφ x := by simp [hφ x]
+
+omit [DecidableEq X] in
+@[simp]
+theorem mem_typeABoxTensor_iff {φ : X → M} :
+    φ ∈ N.typeABoxTensor Mm ↔ ∀ x, Mm.act 1 (fun _ => ι (N.idem x)) (φ x) = φ x :=
+  Iff.rfl
+
+/-- `M ⊗ N` is the submodule of row vectors fixed by the operation `m₂(·, I)` of the matrix
+module along the identity morphism `I`. -/
+theorem mem_typeABoxTensor_iff_matrixAct {φ : X → M} :
+    φ ∈ N.typeABoxTensor Mm ↔ Mm.matrixAct X 1 (fun _ => N.idMorphism) φ = φ := by
+  simp only [mem_typeABoxTensor_iff, funext_iff, idMorphism_def,
+    UngradedAInfinityRightModule.matrixAct_one_diagonal_apply]
+
+omit [DecidableEq X] in
+/-- For a differential module, viewed as an `A∞` module, `M ⊗ N` is
+`TauCeti.TypeDStructure.boxTensor`. -/
+theorem typeABoxTensor_toUngradedAInfinityRightModule [CharP R 2] [Module Aᵐᵒᵖ M]
+    [SMulCommClass R Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M] {dM : M →ₗ[R] M}
+    (hM : IsUngradedDGRightModule d dM) :
+    N.typeABoxTensor hM.toUngradedAInfinityRightModule = N.boxTensor M := by
+  ext φ
+  simp
+
+/-- **The box tensor differential preserves `M ⊗ N`.** Over a ring of characteristic two, if the
+`ι s` are cycles and the higher operations of `M` vanish on them, then `∂` maps `M ⊗ N` to itself:
+the identity morphism is a two-sided unit for the coefficient matrix, so `m₂(·, I)` commutes with
+the twisted differential of the matrix module. -/
+theorem typeABoxDifferential_mem_typeABoxTensor [CharP R 2] (hι : ∀ s, d (ι s) = 0)
+    (hU : Mm.HigherActVanishesOn (Set.range ι)) {φ : X → M} (hφ : φ ∈ N.typeABoxTensor Mm) :
+    N.typeABoxDifferential Mm φ ∈ N.typeABoxTensor Mm := by
+  rw [mem_typeABoxTensor_iff_matrixAct] at hφ ⊢
+  rw [typeABoxDifferential_def, ← UngradedAInfinityRightModule.matrix_act,
+    UngradedAInfinityRightModule.act_one_twistedDifferential (hU.matrix X) (e := N.idMorphism)
+      ⟨_, fun x => ⟨N.idem x, rfl⟩, idMorphism_def.symm⟩
+      (map_idMorphism N hι) (idMorphism_mul (coeff_mem_morphisms N))
+      (mul_idMorphism (coeff_mem_morphisms N)), UngradedAInfinityRightModule.matrix_act, hφ]
+
+variable (N) in
+/-- The box tensor differential restricted to `M ⊗ N`, when the `ι s` are cycles and the higher
+operations of `M` vanish on them. -/
+noncomputable def typeABoxTensorDifferential [CharP R 2] (hι : ∀ s, d (ι s) = 0)
+    (hU : Mm.HigherActVanishesOn (Set.range ι)) : N.typeABoxTensor Mm →ₗ[R] N.typeABoxTensor Mm :=
+  (N.typeABoxDifferential Mm).restrict fun _ hφ => typeABoxDifferential_mem_typeABoxTensor hι hU hφ
+
+@[simp]
+theorem coe_typeABoxTensorDifferential_apply [CharP R 2] (hι : ∀ s, d (ι s) = 0)
+    (hU : Mm.HigherActVanishesOn (Set.range ι)) (φ : N.typeABoxTensor Mm) :
+    (N.typeABoxTensorDifferential hι hU φ : X → M) = N.typeABoxDifferential Mm φ :=
+  (rfl)
+
+/-- The box tensor differential of a bounded module squares to zero on `M ⊗ N`. -/
+theorem typeABoxTensorDifferential_typeABoxTensorDifferential_of_act_eq_zero [CharP R 2]
+    (hι : ∀ s, d (ι s) = 0) (hU : Mm.HigherActVanishesOn (Set.range ι)) {K : ℕ}
+    (hK : ∀ n, K ≤ n → Mm.act n = 0) (φ : N.typeABoxTensor Mm) :
+    N.typeABoxTensorDifferential hι hU (N.typeABoxTensorDifferential hι hU φ) = 0 :=
+  Subtype.ext (N.typeABoxDifferential_typeABoxDifferential_of_act_eq_zero Mm hK φ)
+
+/-- The box tensor differential with a bounded type `D` structure squares to zero on `M ⊗ N`. -/
+theorem typeABoxTensorDifferential_typeABoxTensorDifferential_of_isBounded [CharP R 2]
+    (hι : ∀ s, d (ι s) = 0) (hU : Mm.HigherActVanishesOn (Set.range ι)) (hN : N.IsBounded)
+    (φ : N.typeABoxTensor Mm) :
+    N.typeABoxTensorDifferential hι hU (N.typeABoxTensorDifferential hι hU φ) = 0 :=
+  Subtype.ext (N.typeABoxDifferential_typeABoxDifferential_of_isBounded Mm hN φ)
+
+/-- **Maps induced by morphisms preserve the box tensor products.** Over a ring of characteristic
+two, if the `ι s` are cycles and the higher operations of `M` vanish on them, then the map `T_F`
+induced by a morphism `F` from `N` to `N'` maps `M ⊗ N` into `M ⊗ N'`: the diagonal matrix of the
+idempotents of `X ⊕ X'` is a two-sided unit for `fromBlocks δ F 0 δ'`. -/
+theorem typeABoxMap_mem_typeABoxTensor [CharP R 2] (hι : ∀ s, d (ι s) = 0)
+    (hU : Mm.HigherActVanishesOn (Set.range ι)) {F : Matrix X X' A} (hF : F ∈ morphisms N N')
+    {φ : X → M} (hφ : φ ∈ N.typeABoxTensor Mm) :
+    typeABoxMap N N' Mm F φ ∈ N'.typeABoxTensor Mm := by
+  -- The diagonal matrix of the idempotents of `X ⊕ X'` is a two-sided unit for the block matrix
+  -- `fromBlocks δ F 0 δ'`, so `m₂(·, E)` commutes with its twisted differential.
+  set E : Matrix (X ⊕ X') (X ⊕ X') A :=
+    Matrix.diagonal (Sum.elim (fun x => ι (N.idem x)) fun x => ι (N'.idem x)) with hE
+  have hEd : E = Matrix.fromBlocks N.idMorphism 0 0 N'.idMorphism := by
+    rw [hE, ← Matrix.fromBlocks_diagonal, idMorphism_def, idMorphism_def]
+  have hl :
+      E * Matrix.fromBlocks N.coeff F 0 N'.coeff = Matrix.fromBlocks N.coeff F 0 N'.coeff := by
+    rw [hEd, Matrix.fromBlocks_multiply]
+    simp [idMorphism_mul (coeff_mem_morphisms N), idMorphism_mul (coeff_mem_morphisms N'),
+      idMorphism_mul hF]
+  have hr :
+      Matrix.fromBlocks N.coeff F 0 N'.coeff * E = Matrix.fromBlocks N.coeff F 0 N'.coeff := by
+    rw [hEd, Matrix.fromBlocks_multiply]
+    simp [mul_idMorphism (coeff_mem_morphisms N), mul_idMorphism (coeff_mem_morphisms N'),
+      mul_idMorphism hF]
+  have hdE : E.map d = 0 := by
+    rw [hEd, Matrix.fromBlocks_map, map_idMorphism N hι, map_idMorphism N' hι]
+    simp
+  have key := UngradedAInfinityRightModule.act_one_twistedDifferential (hU.matrix (X ⊕ X'))
+    ⟨_, fun a => by cases a <;> exact ⟨_, rfl⟩, rfl⟩ hdE hl hr (Sum.elim φ 0)
+  have hφE : (Mm.matrix (X ⊕ X')).act 1 (fun _ => E) (Sum.elim φ 0) = Sum.elim φ 0 := by
+    refine funext fun a => ?_
+    rw [UngradedAInfinityRightModule.matrix_act, hE,
+      UngradedAInfinityRightModule.matrixAct_one_diagonal_apply]
+    cases a with
+    | inl x => exact hφ x
+    | inr x => simp
+  intro z
+  have h := congrFun key (Sum.inr z)
+  rw [hφE, UngradedAInfinityRightModule.matrix_act,
+    UngradedAInfinityRightModule.matrixAct_one_diagonal_apply] at h
+  simpa only [typeABoxMap_apply, Sum.elim_inr] using h
+
+/-- The path sum of `TauCeti.TypeDStructure.typeABoxMap_apply_eq_sum` for the identity morphism,
+over the lengths below `K ≥ 2`, is `m₂(φ z, ι (idem z))`: every path of length at least two steps
+through an idempotent or a zero entry of the identity morphism, and the paths of length one are the
+single steps `z → z`. -/
+private theorem sum_idMorphism_eq (hU : Mm.HigherActVanishesOn (Set.range ι)) {K : ℕ}
+    (hK2 : 2 ≤ K) (φ : X → M) (z : X) :
+    ∑ n ∈ range K, ∑ l : Fin n, ∑ x : Fin (n + 1) → X ⊕ X,
+      (if x (Fin.last n) = Sum.inr z then
+        Mm.act n (fun t => Function.update (fun _ => Matrix.fromBlocks N.coeff 0 0 N.coeff) l
+          (Matrix.fromBlocks 0 N.idMorphism 0 0) t (x t.castSucc) (x t.succ)) (Sum.elim φ 0 (x 0))
+      else 0) = Mm.act 1 (fun _ => ι (N.idem z)) (φ z) := by
+  -- The entries of the off-diagonal block `fromBlocks 0 I 0 0` are zero or idempotents.
+  have hent (a b : X ⊕ X) :
+      (Matrix.fromBlocks 0 N.idMorphism 0 0 : Matrix (X ⊕ X) (X ⊕ X) A) a b = 0 ∨
+        (Matrix.fromBlocks 0 N.idMorphism 0 0 : Matrix (X ⊕ X) (X ⊕ X) A) a b ∈ Set.range ι := by
+    rcases a with a | a <;> rcases b with b | b <;> simp only [Matrix.fromBlocks_apply₁₁,
+      Matrix.fromBlocks_apply₁₂, Matrix.fromBlocks_apply₂₁, Matrix.fromBlocks_apply₂₂,
+      Matrix.zero_apply, true_or, idMorphism_apply]
+    split_ifs
+    · exact Or.inr ⟨_, rfl⟩
+    · exact Or.inl rfl
+  rw [← sum_range_add_sum_Ico _ hK2,
+    sum_eq_zero (s := Ico 2 K) fun n hn => sum_eq_zero fun l _ => sum_eq_zero fun x _ => ?_,
+    add_zero]
+  · simp only [sum_range_succ, range_zero, sum_empty, Finset.univ_eq_empty, zero_add,
+      Fin.fin_one_eq_zero, Function.update_self, Fin.sum_univ_one]
+    rw [← (piFinTwoEquiv fun _ => X ⊕ X).symm.sum_comp, Fintype.sum_prod_type]
+    simp only [piFinTwoEquiv_symm_apply, Fin.castSucc_zero, Fin.succ_zero_eq_one, Fin.cons_zero,
+      Fin.cons_one, Fin.last, Fin.mk_one, Finset.sum_ite_eq', mem_univ, ite_true,
+      Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr, Matrix.fromBlocks_apply₁₂,
+      Matrix.fromBlocks_apply₂₂, Matrix.zero_apply, idMorphism_apply, Pi.zero_apply, map_zero,
+      sum_const_zero, add_zero]
+    rw [Fintype.sum_eq_single z fun x hx => by
+      rw [(Mm.act 1).map_coord_zero 0 (ite_eq_right hx), LinearMap.zero_apply]]
+    simp only [ite_true]
+  · have := (mem_Ico.mp hn).1
+    rcases hent (x l.castSucc) (x l.succ) with h | h
+    · rw [(Mm.act n).map_coord_zero l (by simpa using h), LinearMap.zero_apply, ite_self]
+    · rw [hU.act_eq_zero this _ l (by simpa using h), LinearMap.zero_apply, ite_self]
+
+/-- **The identity morphism induces `m₂(·, I)`.** If the operations `m_{n+1}` of `M` vanish for
+`n ≥ K` and the higher operations vanish on the `ι s`, the map induced by the identity morphism
+is `φ ↦ m₂(φ, I)`, whose `z`-component is `m₂(φ z, ι (idem z))`. -/
+theorem typeABoxMap_idMorphism_apply_of_act_eq_zero (hU : Mm.HigherActVanishesOn (Set.range ι))
+    {K : ℕ} (hK : ∀ n, K ≤ n → Mm.act n = 0) (φ : X → M) (z : X) :
+    typeABoxMap N N Mm N.idMorphism φ z = Mm.act 1 (fun _ => ι (N.idem z)) (φ z) := by
+  rw [typeABoxMap_apply_eq_sum_of_act_eq_zero N N Mm _ (K := K + 2) (fun n hn => hK n (by omega)),
+    sum_idMorphism_eq hU (by omega)]
+
+/-- **The identity morphism induces `m₂(·, I)`.** If a height on the generators strictly
+increases along the nonzero coefficients of `N` and the higher operations of `M` vanish on the
+`ι s`, the map induced by the identity morphism is `φ ↦ m₂(φ, I)`, whatever the operations of
+`M`. -/
+theorem typeABoxMap_idMorphism_apply_of_lt (hU : Mm.HigherActVanishesOn (Set.range ι))
+    (h : X → ℕ) (hh : ∀ x y, N.coeff x y ≠ 0 → h x < h y) (φ : X → M) (z : X) :
+    typeABoxMap N N Mm N.idMorphism φ z = Mm.act 1 (fun _ => ι (N.idem z)) (φ z) := by
+  rw [typeABoxMap_apply_eq_sum_of_lt N N Mm h hh h hh, sum_idMorphism_eq hU (by omega)]
+
+/-- **The identity morphism induces the identity of `M ⊗ N`** when `M` is bounded and its higher
+operations vanish on the `ι s`. -/
+theorem typeABoxMap_idMorphism_of_act_eq_zero (hU : Mm.HigherActVanishesOn (Set.range ι))
+    {K : ℕ} (hK : ∀ n, K ≤ n → Mm.act n = 0) {φ : X → M} (hφ : φ ∈ N.typeABoxTensor Mm) :
+    typeABoxMap N N Mm N.idMorphism φ = φ :=
+  funext fun z => (typeABoxMap_idMorphism_apply_of_act_eq_zero hU hK φ z).trans (hφ z)
+
+/-- **The identity morphism induces the identity of `M ⊗ N`** when a height on the generators
+strictly increases along the nonzero coefficients of `N` and the higher operations of `M` vanish
+on the `ι s`. -/
+theorem typeABoxMap_idMorphism_of_lt (hU : Mm.HigherActVanishesOn (Set.range ι)) (h : X → ℕ)
+    (hh : ∀ x y, N.coeff x y ≠ 0 → h x < h y) {φ : X → M} (hφ : φ ∈ N.typeABoxTensor Mm) :
+    typeABoxMap N N Mm N.idMorphism φ = φ :=
+  funext fun z => (typeABoxMap_idMorphism_apply_of_lt hU h hh φ z).trans (hφ z)
+
+end Idempotent
 
 end TypeDStructure
 
