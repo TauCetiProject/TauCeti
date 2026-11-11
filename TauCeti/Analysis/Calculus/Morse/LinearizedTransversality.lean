@@ -104,6 +104,42 @@ private def memLpSolutions (hf : LipschitzWith K (∇ f)) (y : E) (μ : Measure 
   smul_mem' c v hv := by
     simpa only [mem_ofPred_eq, map_smul, Pi.smul_def] using hv.const_smul c
 
+private theorem mem_memLpSolutions (hf : LipschitzWith K (∇ f)) {y : E} {μ : Measure ℝ} {v : E} :
+    v ∈ memLpSolutions hf y μ ↔ MemLp (fun s ↦ fderiv ℝ (negativeGradientFlow f hf s) y v) 2 μ :=
+  Iff.rfl
+
+/-- **The square-integrable solutions miss a subspace of the wrong sign.** Suppose that at a time
+`T` no solution of the linearized equation with `⟪w T, B (w T)⟫ < 0` lies in `L²(μ)`, and that
+the form of `B` is negative definite on `U`. Then `Dφ_T(y)` maps the initial values of the
+square-integrable solutions to a subspace disjoint from `U`, so their dimensions add up to at
+most `dim E`. -/
+private theorem finrank_memLpSolutions_add_finrank_le (hf : LipschitzWith K (∇ f))
+    (hfs : ContDiff ℝ 2 f) (y : E) {μ : Measure ℝ} {B : E →L[ℝ] E} {U : Submodule ℝ E} {c : ℝ}
+    (hc : 0 < c) (hU : ∀ u ∈ U, ⟪B u, u⟫ ≤ -(c * ‖u‖ ^ 2)) {T : ℝ}
+    (hT : ∀ w : ℝ → E,
+      (∀ s, HasDerivAt w (-hessianOperator f (negativeGradientFlow f hf s y) (w s)) s) →
+        ⟪w T, B (w T)⟫ < 0 → ¬ MemLp w 2 μ) :
+    Module.finrank ℝ (memLpSolutions hf y μ) + Module.finrank ℝ U ≤ Module.finrank ℝ E := by
+  have hd (t : ℝ) (z : E) : DifferentiableAt ℝ (negativeGradientFlow f hf t) z :=
+    differentiable_negativeGradientFlow_apply f hf hfs t z
+  obtain ⟨L, hL⟩ := (negativeGradientFlow f hf).isInvertible_fderiv (t := T) (x := y)
+    (hd _ _) (hd _ _)
+  have hdisj : Disjoint ((memLpSolutions hf y μ).map (L : E →ₗ[ℝ] E)) U := by
+    rw [Submodule.disjoint_def]
+    rintro _ ⟨v, hv, rfl⟩ hu
+    by_contra hne
+    have hneg := hU _ hu
+    have hpos : 0 < c * ‖(L : E →ₗ[ℝ] E) v‖ ^ 2 := by positivity
+    refine hT _ (hasDerivAt_fderiv_negativeGradientFlow_apply hf hfs y v) ?_
+      (mem_memLpSolutions hf |>.1 hv)
+    rw [real_inner_comm, ← hL, ContinuousLinearEquiv.coe_coe]
+    -- The coercions of `L` to a linear map and to a function agree definitionally.
+    have hLv : (L : E →ₗ[ℝ] E) v = L v := rfl
+    rw [hLv] at hneg hpos
+    linarith
+  have h := Submodule.finrank_add_finrank_le_of_disjoint hdisj
+  rwa [LinearEquiv.finrank_map_eq L.toLinearEquiv] at h
+
 namespace IsNondegenerateCriticalPoint
 
 /-- **Tangent vectors of a stable set decay along the flow.** Let `q` be a nondegenerate critical
@@ -150,33 +186,18 @@ theorem mem_span_tangentConeAt_stableSet_iff_memLp (hq : IsNondegenerateCritical
   have hfin : Module.finrank ℝ (memLpSolutions hf y (volume.restrict (Ici 0))) + morseIndex f q ≤
       Module.finrank ℝ E := by
     obtain ⟨T, hT⟩ := (eventually_not_memLp_restrict_Ici_of_inner_neg hA hBsym hα hBα 0).exists
-    obtain ⟨L, hL⟩ := φ.isInvertible_fderiv (t := T) (x := y) (hd _ _) (hd _ _)
-    have hdisj : Disjoint ((memLpSolutions hf y (volume.restrict (Ici 0))).map
-        (L : E →ₗ[ℝ] E)) hq.contDiffAt.unstableLinearSubspace := by
-      rw [Submodule.disjoint_def]
-      rintro _ ⟨v, hv, rfl⟩ hu
-      by_contra hne
-      have hneg := hBsym.re_inner_le_neg_mul_norm_sq_of_mem_negativeSpectralSubspace rfl
-        (fun i hi ↦ by simpa [abs_of_neg hi] using hceig i hi.ne)
-        ((hBsym.mem_negativeSpectralSubspace_iff rfl).2
-          (hq.contDiffAt.mem_unstableLinearSubspace_iff.1 hu))
-      have hpos : 0 < c * ‖(L : E →ₗ[ℝ] E) v‖ ^ 2 := by positivity
-      refine hT _ (hw v) ?_ hv
-      simp only [ContinuousLinearMap.coe_coe, RCLike.re_to_real, ← hB] at hneg hpos
-      rw [real_inner_comm, ← hL, ContinuousLinearEquiv.coe_coe]
-      -- The coercions of `L` to a linear map and to a function agree definitionally.
-      have hLv : (L : E →ₗ[ℝ] E) v = L v := rfl
-      rw [hLv] at hneg hpos
-      linarith
-    have h := Submodule.finrank_add_finrank_le_of_disjoint hdisj
-    rwa [LinearEquiv.finrank_map_eq L.toLinearEquiv,
-      hq.contDiffAt.finrank_unstableLinearSubspace] at h
+    rw [← hq.contDiffAt.finrank_unstableLinearSubspace]
+    refine finrank_memLpSolutions_add_finrank_le hf hfs y hc (fun u hu ↦ ?_) hT
+    have := hBsym.re_inner_le_neg_mul_norm_sq_of_mem_negativeSpectralSubspace rfl
+      (fun i hi ↦ by simpa [abs_of_neg hi] using hceig i hi.ne)
+      ((hBsym.mem_negativeSpectralSubspace_iff rfl).2
+        (hq.contDiffAt.mem_unstableLinearSubspace_iff.1 hu))
+    simpa only [ContinuousLinearMap.coe_coe, RCLike.re_to_real, ← hB] using this
   have heq := Submodule.eq_of_le_of_finrank_le hle (by
     have := hq.finrank_span_tangentConeAt_stableSet_add_morseIndex hfs hf hy
     rw [← hφ] at this
     omega)
-  rw [heq]
-  rfl
+  rw [heq, mem_memLpSolutions]
 
 /-- **Tangent vectors of an unstable set decay along the flow in backward time.** Let `p` be a
 nondegenerate critical point of a `C²` function with globally Lipschitz gradient, and `y` a point
@@ -223,37 +244,25 @@ theorem mem_span_tangentConeAt_unstableSet_iff_memLp (hp : IsNondegenerateCritic
     linarith
   -- At an early time `T`, the square-integrable solutions miss the positive spectral subspace.
   have hfin : Module.finrank ℝ (memLpSolutions hf y (volume.restrict (Iic 0))) +
-      (Module.finrank ℝ E - morseIndex f p) ≤ Module.finrank ℝ E := by
+      Module.finrank ℝ hp.contDiffAt.stableLinearSubspace ≤ Module.finrank ℝ E := by
     obtain ⟨T, hT⟩ := (eventually_not_memLp_restrict_Iic_of_inner_pos hA hBsym hα hBα 0).exists
-    obtain ⟨L, hL⟩ := φ.isInvertible_fderiv (t := T) (x := y) (hd _ _) (hd _ _)
-    have hdisj : Disjoint ((memLpSolutions hf y (volume.restrict (Iic 0))).map
-        (L : E →ₗ[ℝ] E)) hp.contDiffAt.stableLinearSubspace := by
-      rw [Submodule.disjoint_def]
-      rintro _ ⟨v, hv, rfl⟩ hu
-      by_contra hne
-      have hposf := hBsym.mul_norm_sq_le_re_inner_of_mem_positiveSpectralSubspace rfl
-        (fun i hi ↦ by simpa [abs_of_pos hi] using hceig i hi.ne')
-        ((hBsym.mem_positiveSpectralSubspace_iff rfl).2
-          (hp.contDiffAt.mem_stableLinearSubspace_iff.1 hu))
-      have hpos : 0 < c * ‖(L : E →ₗ[ℝ] E) v‖ ^ 2 := by positivity
-      refine hT _ (hw v) ?_ hv
-      simp only [ContinuousLinearMap.coe_coe, RCLike.re_to_real, ← hB] at hposf hpos
-      rw [real_inner_comm, ← hL, ContinuousLinearEquiv.coe_coe]
-      -- The coercions of `L` to a linear map and to a function agree definitionally.
-      have hLv : (L : E →ₗ[ℝ] E) v = L v := rfl
-      rw [hLv] at hposf hpos
-      linarith
-    have h := Submodule.finrank_add_finrank_le_of_disjoint hdisj
-    rw [LinearEquiv.finrank_map_eq L.toLinearEquiv] at h
-    have hst := hp.finrank_stableLinearSubspace_add_morseIndex
-    omega
+    -- Backward time is the forward-time argument for `-B`.
+    refine finrank_memLpSolutions_add_finrank_le hf hfs y (B := -B) hc (fun u hu ↦ ?_)
+      fun w hw' hneg ↦ hT w hw' (by simpa [inner_neg_right] using hneg)
+    have := hBsym.mul_norm_sq_le_re_inner_of_mem_positiveSpectralSubspace rfl
+      (fun i hi ↦ by simpa [abs_of_pos hi] using hceig i hi.ne')
+      ((hBsym.mem_positiveSpectralSubspace_iff rfl).2
+        (hp.contDiffAt.mem_stableLinearSubspace_iff.1 hu))
+    simp only [ContinuousLinearMap.coe_coe, RCLike.re_to_real, ← hB] at this
+    simp only [neg_apply, inner_neg_left]
+    linarith
   have heq := Submodule.eq_of_le_of_finrank_le hle (by
     have := hp.finrank_span_tangentConeAt_unstableSet hfs hf hy
     rw [← hφ] at this
+    have := hp.finrank_stableLinearSubspace_add_morseIndex
     have := morseIndex_le_finrank (f := f) (x := p)
     omega)
-  rw [heq]
-  rfl
+  rw [heq, mem_memLpSolutions]
 
 end IsNondegenerateCriticalPoint
 

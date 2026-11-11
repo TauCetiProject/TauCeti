@@ -41,7 +41,9 @@ When `p ≠ q` the trajectory is not constant, so the kernel is nonzero. Hence i
 surjective, its index is the positive dimension of its kernel, and `ind(q) < ind(p)`: a trajectory
 along which the linearized operator is onto can only lower the Morse index. Surjectivity of `D_γ`
 is the analytic form of the transversality of the unstable set of `p` and the stable set of `q`
-along `γ`; that equivalence is not proved here.
+along `γ`: this equivalence is
+`TauCeti.surjective_trajectoryOperator_hessianOperator_negativeGradientFlow_iff` in
+`TauCeti.Analysis.Calculus.Morse.LinearizedTransversality`.
 
 At the constant trajectory at a nondegenerate critical point the linearized operator has constant
 invertible coefficient, so it is bijective.
