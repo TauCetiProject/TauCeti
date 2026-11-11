@@ -69,9 +69,9 @@ def extendByZero (s : compactlySupported I F n
       filter_upwards [hK.isOpen_compl.mem_nhds hxK] with y hy
       by_cases hyU : y ∈ U
       · have hyS : (⟨y, hyU⟩ : U) ∉ s.1.tsupport := fun h => hy ⟨⟨y, hyU⟩, h, rfl⟩
-        -- Normalize the pullback fibre before comparing total-space values.
-        erw [dite_eq_left hyU, s.1.eq_zero_of_notMem_tsupport hyS]
-        rfl
+        -- Pullback fibres inherit zero from the ambient fibre; compare there first.
+        apply congrArg (TotalSpace.mk (F := F) y)
+        exact (dite_eq_left hyU).trans (s.1.eq_zero_of_notMem_tsupport hyS)
       · simp [hyU, zeroSection]
 
 /-- The pointwise formula for extension by zero. -/
@@ -86,8 +86,8 @@ theorem extendByZero_apply (s : compactlySupported I F n
 theorem extendByZero_apply_of_mem (s : compactlySupported I F n
     ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V)) (x : U) :
     dsimp% only [ContinuousMap.coe_mk] (extendByZero s x = s.1 x) := by
-  -- The dependent conditional has pullback fibres, definitionally equal to `V x`.
-  erw [extendByZero_apply, dite_eq_left x.2]
+  rw [extendByZero_apply]
+  exact dite_eq_left x.2
 
 /-- Outside the open subset, extension is zero. -/
 @[simp]

@@ -166,12 +166,13 @@ variable [∀ x, AddCommGroup (V x)]
 @[simp]
 theorem tsupport_restrict (s : Cₛ^n⟮I; F, V⟯) (U : Opens M) :
     (s.restrict U).tsupport = Subtype.val ⁻¹' s.tsupport := by
-  rw [tsupport_def, tsupport_def]
-  -- The open carrier and the subtype of its underlying set are the same manifold.
-  erw [U.isOpen.isOpenMap_subtype_val.preimage_closure_eq_closure_preimage
-    continuous_subtype_val {x | s x ≠ 0}]
-  -- Restriction evaluates at the inclusion, so the two nonzero loci agree.
-  congr 1
+  have hnonzero : {x : U | s.restrict U x ≠ 0} =
+      Subtype.val ⁻¹' {x : M | s x ≠ 0} := by
+    ext x
+    exact not_congr (iff_of_eq (congrArg (· = (0 : V x)) (restrict_apply s U x)))
+  have hopen : IsOpenMap (Subtype.val : U → M) := U.isOpen.isOpenMap_subtype_val
+  rw [tsupport_def, tsupport_def, hnonzero,
+    hopen.preimage_closure_eq_closure_preimage continuous_subtype_val]
 
 variable [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
 
