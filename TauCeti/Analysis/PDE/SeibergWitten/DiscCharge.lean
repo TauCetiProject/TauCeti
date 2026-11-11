@@ -13,7 +13,7 @@ import Mathlib.Analysis.Calculus.BumpFunction.Normed
 import Mathlib.MeasureTheory.Integral.CircleIntegral
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Contour.Winding.Integer
-import TauCeti.Analysis.Contour.Winding.Number.CircleLoop
+import TauCeti.Analysis.Contour.Winding.Number.Circle.Loop
 import TauCeti.Analysis.Normed.Module.Alternating.Bilinear
 import TauCeti.Topology.Discrete
 import TauCeti.Analysis.Contour.Winding.Number.Homotopy
@@ -337,8 +337,8 @@ theorem exists_int_integral_cutoffCurrent_comp_comp_closedBall_eq_mul {E : Type*
   have hsphere {w : ℂ} (hw : w ∈ Metric.sphere z₀ r) : ∃ t, circleMap z₀ r t = w := by
     rwa [← Set.mem_range, range_circleMap, abs_of_pos hr]
   have hbd' (t : ℝ) : χ (normSq (α ((σ ∘ θ) (circleMap z₁ r₁ t)))) = 1 := by
-    obtain ⟨t', ht'⟩ := hsphere (hℓs t)
-    rw [show (σ ∘ θ) (circleMap z₁ r₁ t) = σ (ℓ t) from rfl, ← ht']
+    obtain ⟨t', ht'⟩ := hsphere (hθs _ (circleMap_mem_sphere z₁ hr₁ t))
+    rw [Function.comp_apply, ← ht']
     exact hbd t'
   obtain ⟨m, hm, hI⟩ := exists_int_integral_cutoffCurrent_comp_closedBall hr.le hα hb hχ hχ₀ hσ hbd
   obtain ⟨k, hk, hI₁⟩ :=
@@ -360,11 +360,11 @@ theorem exists_int_integral_cutoffCurrent_comp_comp_closedBall_eq_mul {E : Type*
       exact ne_zero_of_cutoff_eq_one hχ₀ (hbd t))
     hℓc hℓs hclosed (-π)
   simp only [hℓ, Function.comp_assoc] at hk hw
-  rw [show -π + 2 * π = π by ring, hk, hn, hm] at hw
+  have hπ : -π + 2 * π = π := by ring
+  rw [hπ, hk, hn, hm] at hw
   refine ⟨n, hn, ?_⟩
-  rw [show (∫ z in Metric.closedBall z₁ r₁,
-      (cutoffCurrent χ b α (σ (θ z))).compContinuousLinearMap (fderiv ℝ (σ ∘ θ) z) ![1, I]) =
-      2 * π * k from hI₁, hI]
+  simp only [Function.comp_apply] at hI₁
+  rw [hI₁, hI]
   have hkm : (k : ℝ) = n * m := by exact_mod_cast hw
   rw [hkm]
   ring

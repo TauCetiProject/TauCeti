@@ -8,10 +8,10 @@ module
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
-import TauCeti.Analysis.Complex.BranchLogRoot
-import TauCeti.Analysis.Contour.Winding.Number.Circle
+import TauCeti.Analysis.Contour.Curve.Circle.Lift
+import TauCeti.Analysis.Contour.Winding.Number.Circle.Basic
+import TauCeti.Analysis.Contour.Winding.Number.Periodic
 import TauCeti.Analysis.Contour.Winding.Number.Reparam
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
 # The winding number of a function along a loop in a circle
@@ -44,52 +44,12 @@ public section
 
 noncomputable section
 
-open Complex Set MeasureTheory
+open Complex Set
 open scoped Real Interval
 
 namespace TauCeti.Contour
 
 variable {ℓ : ℝ → ℂ} {c : ℂ} {r : ℝ}
-
-/-- **An angle lift of a curve on a circle.** A `C¹` curve with values in the circle of radius
-`r > 0` about `c` is `circleMap c r ∘ φ` for a `C¹` angle `φ : ℝ → ℝ`. -/
-theorem exists_contDiff_eq_circleMap (hℓ : ContDiff ℝ 1 ℓ) (hr : 0 < r)
-    (hs : ∀ t, ℓ t ∈ Metric.sphere c r) :
-    ∃ φ : ℝ → ℝ, ContDiff ℝ 1 φ ∧ ∀ t, ℓ t = circleMap c r (φ t) := by
-  have hr' : (r : ℂ) ≠ 0 := ofReal_ne_zero.2 hr.ne'
-  obtain ⟨f, hf, hfe⟩ := exists_contDiff_eq_exp_ofReal_mul_I (h := fun z ↦ (ℓ z.re - c) / r)
-    (((hℓ.comp reCLM.contDiff).sub contDiff_const).div_const _) fun z ↦ by
-      rw [norm_div, ← dist_eq_norm, Metric.mem_sphere.1 (hs z.re), norm_real,
-        Real.norm_of_nonneg hr.le, div_self hr.ne']
-  refine ⟨fun t ↦ f t, hf.comp ofRealCLM.contDiff, fun t ↦ ?_⟩
-  have h := hfe t
-  rw [ofReal_re, div_eq_iff hr'] at h
-  simp only [circleMap]
-  linear_combination h
-
-/-- **Winding numbers of a periodic curve over whole periods.** If a `C¹` curve `γ` of period `T`
-avoids `w`, then its winding number around `w` over `n` periods, starting anywhere, is `n` times
-its winding number over one period. -/
-theorem windingNumber_add_mul_eq_of_periodic {γ : ℝ → ℂ} {T : ℝ} {w : ℂ} (hγ : ContDiff ℝ 1 γ)
-    (hper : Function.Periodic γ T) (hw : ∀ t, γ t ≠ w) (n : ℤ) (t s : ℝ) :
-    windingNumber γ t (t + n * T) w = n * windingNumber γ s (s + T) w := by
-  -- The index integrand is continuous and periodic.
-  set K : ℝ → ℂ := fun u ↦ (γ u - w)⁻¹ * deriv γ u with hKdef
-  have hKc : Continuous K :=
-    ((hγ.continuous.sub continuous_const).inv₀ fun u ↦ sub_ne_zero.2 (hw u)).mul
-      (hγ.continuous_deriv le_rfl)
-  have hKper : Function.Periodic K T := fun u ↦ by
-    have hd : deriv γ (u + T) = deriv γ u := by
-      rw [← deriv_comp_add_const]
-      exact congrArg (deriv · u) (funext hper)
-    simp only [hKdef, hd, hper u]
-  have hKint (t₁ t₂ : ℝ) : IntervalIntegrable K volume t₁ t₂ := hKc.intervalIntegrable _ _
-  rw [windingNumber_eq_integral_of_avoidance hγ.continuous.continuousOn (fun u _ ↦ hw u)
-      (hKint _ _),
-    windingNumber_eq_integral_of_avoidance hγ.continuous.continuousOn (fun u _ ↦ hw u)
-      (hKint _ _), ← zsmul_eq_mul, hKper.intervalIntegral_add_zsmul_eq n t hKint,
-    hKper.intervalIntegral_add_eq t s, zsmul_eq_mul]
-  ring
 
 /-- **The degree law for the winding number.** Let `ℓ : ℝ → ℂ` be a `C¹` curve with values in the
 circle of radius `r > 0` about `c` and with `ℓ a = ℓ b`, and let `g` be `C¹` near that circle and
@@ -102,7 +62,7 @@ theorem windingNumber_comp_eq_mul_of_mem_sphere {g : ℂ → ℂ} (hr : 0 < r)
     (s : ℝ) :
     windingNumber (g ∘ ℓ) a b 0 =
       windingNumber ℓ a b c * windingNumber (g ∘ circleMap c r) s (s + 2 * π) 0 := by
-  obtain ⟨φ, hφ, hℓφ⟩ := exists_contDiff_eq_circleMap hℓ hr hs
+  obtain ⟨φ, hφ, hℓφ⟩ := exists_contDiff_eq_circleMap (n := 1) hℓ hr hs
   have hℓ' : ℓ = circleMap c r ∘ φ := funext hℓφ
   have hφd (t : ℝ) : HasDerivAt φ (deriv φ t) t := (hφ.differentiable one_ne_zero t).hasDerivAt
   have hφc : ContinuousOn (deriv φ) (uIcc a b) := (hφ.continuous_deriv le_rfl).continuousOn
