@@ -43,21 +43,18 @@ variable {Ω ι : Type*} [LinearOrder ι] {τ : ℕ → ι} {n : ℕ} {a : ℕ �
 private theorem enorm_sq_simpleHolding (hτ : MonotoneOn τ (Set.Iic n)) (t : ι) (ω : Ω) :
     ‖simpleHolding τ n a t ω‖ₑ ^ 2 =
       ∑ j ∈ range n, (Ioc (τ j) (τ (j + 1))).indicator (fun _ ↦ ‖a j ω‖ₑ ^ 2) t := by
-  by_cases ht : t ∈ Ioc (τ 0) (τ n)
-  · obtain ⟨j, hj, hjt⟩ := exists_lt_mem_Ioc_of_mem_Ioc ht
+  by_cases ht : ∃ j < n, t ∈ Ioc (τ j) (τ (j + 1))
+  · obtain ⟨j, hj, hjt⟩ := ht
     rw [simpleHolding_of_mem_Ioc hτ hj hjt,
       sum_eq_single_of_mem j (mem_range.mpr hj), indicator_of_mem hjt]
     intro i hi hij
-    refine indicator_of_notMem (fun hit ↦ ?_) _
-    rcases lt_or_gt_of_ne hij with hij | hij
-    · exact (hit.2.trans (hτ (hij.trans hj) hj.le hij)).not_gt hjt.1
-    · exact (hjt.2.trans (hτ (hij.trans (mem_range.mp hi)) (mem_range.mp hi).le hij)).not_gt hit.1
-  · rw [simpleHolding_of_notMem_Ioc hτ ht]
-    simp only [enorm_zero, zero_pow two_ne_zero]
-    symm
-    refine sum_eq_zero fun i hi ↦ indicator_of_notMem (fun hit ↦ ht ?_) _
-    exact Ioc_subset_Ioc (hτ (Nat.zero_le n) (mem_range.mp hi).le (Nat.zero_le i))
-      (hτ (mem_range.mp hi) self_mem_Iic (mem_range.mp hi)) hit
+    exact indicator_of_notMem
+      (hτ.notMem_Ioc_of_mem_Ioc_of_ne (mem_range.mp hi) hj hij hjt) _
+  · have hzero {M : Type} [AddCommMonoid M] (b : ℕ → M) :
+        ∑ j ∈ range n, (Ioc (τ j) (τ (j + 1))).indicator (fun _ ↦ b j) t = 0 :=
+      sum_eq_zero fun j hj ↦ indicator_of_notMem (fun hjt ↦ ht ⟨j, mem_range.mp hj, hjt⟩) _
+    rw [simpleHolding_def, hzero (fun j ↦ a j ω), hzero (fun j ↦ ‖a j ω‖ₑ ^ 2)]
+    simp
 
 /-- The pathwise square energy of elementary holdings for any time measure is the
 sum of the squared heights times the masses of the disjoint trading intervals. -/
