@@ -59,15 +59,16 @@ energy density one at the origin and at most four on those discs, while the resc
 `c i + ε i • closedBall 0 (R i)` shrink to `z₀`
 (`TauCeti.SmoothTwoForm.exists_rescale_isComplexLinearMap_perturbedMFDeriv`).
 
-The symplectic area of a limit of rescaled maps is bounded by the energy concentrating at `z₀`. The energy
-densities `ε² e(u)(c + ε w)` of the rescaled maps converge to the area density `ω(∂_s v, ∂_t v)` of
-the limit `v` (`TauCeti.SmoothTwoForm.tendsto_floerEnergyDensity_rescale`), so by Fatou's lemma
-after the change of variables `z = c + ε w`, for every `δ > 0` the area of `v` over the whole plane
-is at most the lower limit of the Floer energies of the original maps over the disc of radius `δ`
-about `z₀` (`TauCeti.SmoothTwoForm.lintegral_eval₂_le_liminf_of_tendsto_rescale`). This is the
-energy accounting that bounds the energy of a bubble by the energy lost at its bubbling point. The
-values `ω(a, b)` along converging tangent vectors are read off in the trivialization at the limit
-point (`TauCeti.IsSmoothForm.tendsto_apply`).
+The symplectic area of a limit of rescaled maps is bounded by the energy concentrating at `z₀`.
+The energy densities `ε² e(u)(c + ε w)` of the rescaled maps converge to the area density
+`ω(∂_s v, ∂_t v)` of the limit `v` (`TauCeti.SmoothTwoForm.tendsto_floerEnergyDensity_rescale`),
+so by Fatou's lemma after the change of variables `z = c + ε w`, for every `δ > 0` the area of `v`
+over the whole plane is at most the lower limit of the Floer energies of the original maps over the
+disc of radius `δ` about `z₀`
+(`TauCeti.SmoothTwoForm.lintegral_eval₂_le_liminf_of_tendsto_rescale`). This is the energy
+accounting that bounds the energy of a bubble by the energy lost at its bubbling point. The values
+`ω(a, b)` along converging tangent vectors are read off in the trivialization at the limit point
+(`TauCeti.IsSmoothForm.tendsto_apply`).
 
 The convergence of the rescaled maps and the removal of the singularity at infinity of the limit
 plane are not carried out here.
