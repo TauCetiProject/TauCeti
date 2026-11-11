@@ -171,6 +171,7 @@ noncomputable def torusFamilyAffineQuotientPullbackDiffeomorph :
     (isLocalDiffeomorph_torusFamilyAffineQuotient_mk P hinj hP R ρ hequiv b hb hone hmul
       hbmul hR hbc hfree)
 
+omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- The differentiable covering comparison has the canonical homeomorphism as its underlying
 map, so its inverse and both projection formulas agree with the topological comparison. -/
 @[simp] theorem torusFamilyAffineQuotientPullbackDiffeomorph_toHomeomorph :

@@ -350,6 +350,7 @@ variable {m : ℕ} [NeZero m] {r : ℝ}
 
 include he
 
+omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The local equation of the cyclic quotient.** Let the `m`-th roots of unity act freely on a
 family of tori `X → D` over the disc by an affine action lifting the rotations. In every chart
 `e` of the quotient atlas of `Q = X / C_m`, the map `p_Q : Q → ℂ` induced by `z ↦ z ^ m` is
@@ -365,6 +366,7 @@ theorem torusFamilyAffineQuotientLift_rootsOfUnityBall_symm_eq_pow {w : ModelPro
   obtain ⟨hwz, hw⟩ := hz w hw
   rw [hw, rootsOfUnityBall.coe_chartAt_symm z hwz]
 
+omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The local equation of the cyclic quotient, on its source.** In every chart `e` of the
 quotient atlas of `Q = X / C_m`, the map `p_Q : Q → ℂ` induced by `z ↦ z ^ m` is the `m`-th power
 of the first coordinate `u` of `e`: `p_Q = u ^ m`. -/
@@ -380,6 +382,7 @@ theorem torusFamilyAffineQuotientLift_rootsOfUnityBall_eq_pow
   rw [← torusFamilyAffineQuotientLift_rootsOfUnityBall_symm_eq_pow P hcont hinj R ρ hequiv b hb
     hone hmul hbmul hRc hbc hfree he (e.map_source hx), e.left_inv hx]
 
+omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The central fibre in a chart of the cyclic quotient.** In every chart `e` of the quotient
 atlas of `Q = X / C_m`, the fibre over `0` of the map `p_Q : Q → ℂ` induced by `z ↦ z ^ m`, which
 is the image of the central torus
@@ -398,6 +401,7 @@ theorem image_source_inter_preimage_torusFamilyAffineQuotientLift_rootsOfUnityBa
   rw [torusFamilyAffineQuotientLift_rootsOfUnityBall_symm_eq_pow P hcont hinj R ρ hequiv b hb hone
       hmul hbmul hRc hbc hfree he hw, pow_eq_zero_iff (NeZero.ne m)]
 
+omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The central fibre has multiplicity `m`.** Let `x` be a point of the central fibre of the
 cyclic quotient `Q = X / C_m`, the fibre over `0` of the map `p_Q : Q → ℂ` induced by
 `z ↦ z ^ m`, and let `e` be a chart of the quotient atlas at `x`. Along the transverse line
@@ -460,6 +464,7 @@ variable {m : ℕ} [NeZero m] {r : ℝ}
     letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     IsCancelSMul (rootsOfUnity m ℂ) (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)))
 
+omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The cyclic quotient is a holomorphic submersion off the central fibre.** For a holomorphic
 family of tori `X → D` over the disc `D` and a free holomorphic affine action of the `m`-th roots of
 unity lifting the rotations, the map `p_Q : X / C_m → ℂ` induced by `z ↦ z ^ m` is a holomorphic

@@ -460,7 +460,7 @@ noncomputable def torusFamilyFiberMulAction :
   letI : SMul Γ (AddAction.orbitRel.Quotient (LinearMap.range (P y)) E) :=
     ⟨fun g ↦ AddEquiv.affineEquiv (torusFamilyFiberLinearPart R hone hmul P ρ hP (hy g))
       (torusFamilyFiberTranslationPart P b hb (hy g))⟩
-  letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+  letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
   (torusFamilyFiberMap_injective P y).mulAction _ fun g z ↦ by
     rw [torusFamilyAffineMulAction_smul,
       torusFamilyAffineMap_fiberMap R hone hmul P ρ hP b hb (hy g)]
@@ -471,14 +471,14 @@ noncomputable def torusFamilyFiberMulAction :
 `TauCeti.torusFamilyFiberTranslationPart`. -/
 theorem torusFamilyFiberMulAction_smul (g : Γ)
     (z : AddAction.orbitRel.Quotient (LinearMap.range (P y)) E) :
-    letI := torusFamilyFiberMulAction R hone hmul P ρ hP b hb hbone hbmul hy
+    letI := torusFamilyFiberMulAction R hone hmul P ρ hP b hb hbmul hy
     g • z = AddEquiv.affineEquiv (torusFamilyFiberLinearPart R hone hmul P ρ hP (hy g))
       (torusFamilyFiberTranslationPart P b hb (hy g)) z := (rfl)
 
 /-- An element `g` sends the class of `v` in the fibre over a fixed point to the class of
 `R g y v` translated by `TauCeti.torusFamilyFiberTranslationPart`. -/
 theorem torusFamilyFiberMulAction_smul_mk (g : Γ) (v : E) :
-    letI := torusFamilyFiberMulAction R hone hmul P ρ hP b hb hbone hbmul hy
+    letI := torusFamilyFiberMulAction R hone hmul P ρ hP b hb hbmul hy
     g • (Quotient.mk _ v : AddAction.orbitRel.Quotient (LinearMap.range (P y)) E) =
       Quotient.mk _ (R g y v) + torusFamilyFiberTranslationPart P b hb (hy g) := by
   rw [torusFamilyFiberMulAction_smul, AddEquiv.affineEquiv_apply, torusFamilyFiberLinearPart_mk]
@@ -486,8 +486,8 @@ theorem torusFamilyFiberMulAction_smul_mk (g : Γ) (v : E) :
 /-- **The inclusion of the fibre over a fixed point is equivariant.** -/
 theorem torusFamilyFiberMap_smul (g : Γ)
     (z : AddAction.orbitRel.Quotient (LinearMap.range (P y)) E) :
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
-    letI := torusFamilyFiberMulAction R hone hmul P ρ hP b hb hbone hbmul hy
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
+    letI := torusFamilyFiberMulAction R hone hmul P ρ hP b hb hbmul hy
     torusFamilyFiberMap P y (g • z) = g • torusFamilyFiberMap P y z := by
   rw [torusFamilyFiberMulAction_smul, torusFamilyAffineMulAction_smul,
     torusFamilyAffineMap_fiberMap R hone hmul P ρ hP b hb (hy g)]
@@ -496,34 +496,34 @@ theorem torusFamilyFiberMap_smul (g : Γ)
 fibre and the affine action on the family. -/
 def torusFamilyFiberMulActionHom :
     letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
-    letI := torusFamilyFiberMulAction R hone hmul P ρ hP b hb hbone hbmul hy
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
+    letI := torusFamilyFiberMulAction R hone hmul P ρ hP b hb hbmul hy
     AddAction.orbitRel.Quotient (LinearMap.range (P y)) E →[Γ]
       AddAction.orbitRel.Quotient Λ (Y × E) :=
-  letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
-  letI := torusFamilyFiberMulAction R hone hmul P ρ hP b hb hbone hbmul hy
+  letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
+  letI := torusFamilyFiberMulAction R hone hmul P ρ hP b hb hbmul hy
   { toFun := torusFamilyFiberMap P y
-    map_smul' := torusFamilyFiberMap_smul R hone hmul P ρ hP b hb hbone hbmul hy }
+    map_smul' := torusFamilyFiberMap_smul R hone hmul P ρ hP b hb hbmul hy }
 
 /-- The equivariant inclusion of the fibre is `TauCeti.torusFamilyFiberMap`. -/
 @[simp]
 theorem coe_torusFamilyFiberMulActionHom :
-    ⇑(torusFamilyFiberMulActionHom R hone hmul P ρ hP b hb hbone hbmul hy) =
+    ⇑(torusFamilyFiberMulActionHom R hone hmul P ρ hP b hb hbmul hy) =
       torusFamilyFiberMap P y := (rfl)
 
 /-- **Freeness on the fibre over a fixed point.** If the affine action on the family is free, so is
 the action on the fibre over a fixed point. -/
 theorem isCancelSMul_torusFamilyFiberMulAction
     (hfree : letI := periodAddAction P
-      letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+      letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
       IsCancelSMul Γ (AddAction.orbitRel.Quotient Λ (Y × E))) :
-    letI := torusFamilyFiberMulAction R hone hmul P ρ hP b hb hbone hbmul hy
+    letI := torusFamilyFiberMulAction R hone hmul P ρ hP b hb hbmul hy
     IsCancelSMul Γ (AddAction.orbitRel.Quotient (LinearMap.range (P y)) E) := by
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
-  let _ := torusFamilyFiberMulAction R hone hmul P ρ hP b hb hbone hbmul hy
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
+  let _ := torusFamilyFiberMulAction R hone hmul P ρ hP b hb hbmul hy
   rw [isCancelSMul_iff_eq_one_of_smul_eq] at hfree ⊢
   intro g z hz
-  exact hfree g _ (by rw [← torusFamilyFiberMap_smul R hone hmul P ρ hP b hb hbone hbmul hy, hz])
+  exact hfree g _ (by rw [← torusFamilyFiberMap_smul R hone hmul P ρ hP b hb hbmul hy, hz])
 
 end FixedPoint
 

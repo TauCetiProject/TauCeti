@@ -182,6 +182,7 @@ noncomputable def torusFamilyAffineQuotientChartedSpace (hcont : ∀ l, Continuo
   haveI := hfree
   MulAction.instChartedSpaceQuotient (H := ModelProd H E)
 
+omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- The inverse of a chart of the quotient atlas on `X / Γ` is the inverse of a chart of the
 family `X` followed by the orbit map `X → X / Γ`. -/
 theorem exists_symm_eq_mk_of_mem_atlas_torusFamilyAffineQuotient
@@ -227,6 +228,7 @@ variable (hR : ∀ g : Γ, ContMDiff (I.prod 𝓘(𝕜, E)) 𝓘(𝕜, E) n fun 
     letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     IsCancelSMul Γ (AddAction.orbitRel.Quotient Λ (Y × E)))
 
+omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- The orbit map `X → X / Γ` of a free `C^n` affine action is a `C^n` local diffeomorphism, and
 `X / Γ` is a `C^n` manifold. -/
 private theorem isLocalDiffeomorph_torusFamilyAffineQuotient_mk_and_isManifold :
@@ -256,6 +258,7 @@ private theorem isLocalDiffeomorph_torusFamilyAffineQuotient_mk_and_isManifold :
     hbmul hR hbc
   exact ⟨isLocalDiffeomorph_quotientMk, instIsManifoldQuotient⟩
 
+omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The quotient by a free affine action is a manifold.** Let `Γ` act properly discontinuously
 on `Y`, and freely on the family of tori `X = (Y × E)/Λ` of a `C^n` family of full lattices by an
 affine cocycle with `C^n` linear-part evaluations and translation sections. Then the orbit space
@@ -273,6 +276,7 @@ theorem isManifold_torusFamilyAffineQuotient :
   (isLocalDiffeomorph_torusFamilyAffineQuotient_mk_and_isManifold P hinj hP R ρ hequiv b hb hone
     hmul hbmul hR hbc hfree).2
 
+omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The orbit map of a free affine action is a local diffeomorphism.** Under the hypotheses of
 `TauCeti.isManifold_torusFamilyAffineQuotient`, the orbit map `X → X / Γ` is a `C^n` local
 diffeomorphism. Over `ℂ` with holomorphic data and `n = ω`, it is a local biholomorphism. -/

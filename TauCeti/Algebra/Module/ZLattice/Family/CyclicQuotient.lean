@@ -123,13 +123,13 @@ noncomputable def torusFamilyCyclicQuotientProjection :
 invariant map `z ↦ z ^ m` of the disc (`TauCeti.torusFamilyAffineQuotientLift`). -/
 theorem torusFamilyCyclicQuotientProjection_eq_torusFamilyAffineQuotientLift :
     letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
-    torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbone hbmul =
-      torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+    torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbmul =
+      torusFamilyAffineQuotientLift P R ρ hequiv b hb hone hmul hbmul
         (fun z : rootsOfUnityBall m r ↦ (z : ℂ) ^ m)
         (fun g z ↦ coe_smul_rootsOfUnityBall_pow g z) := by
   let _ := periodAddAction P
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
   exact funext <| Quotient.ind fun x ↦ by
     rw [torusFamilyCyclicQuotientProjection_mk, torusFamilyAffineQuotientLift_mk]
 
@@ -212,6 +212,7 @@ variable [Module.Free ℤ Λ] [Module.Finite ℤ Λ] {E : Type*} [NormedAddCommG
     letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     IsCancelSMul (rootsOfUnity m ℂ) (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)))
 
+omit [Module.Free ℤ Λ] [Module.Finite ℤ Λ] in
 /-- **The coordinate `t` is holomorphic.** If the cyclic affine action on the `C^n` family of tori
 `X` over the rotated disc is free, the map `X / C_m → ℂ` descended from `[z, v] ↦ z ^ m` is `C^n`
 for the quotient manifold structure (`TauCeti.isManifold_torusFamilyAffineQuotient`); with
