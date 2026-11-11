@@ -71,10 +71,10 @@ normal closure of `x ^ n` when `n ≠ 1`.
   injective coefficients, the radical of `x ^ n` (`n ≠ 0`) is the normal closure of `x`, which
   strictly contains that of `x ^ n` when `n ≠ 1`.
 * `TauCeti.GroupAlgGeom.Rad_pow_mul_inl_pow_eq_normalClosure`,
-  `TauCeti.GroupAlgGeom.normalClosure_pow_mul_inl_pow_ne_normalClosure`: over a group `H` with
+  `TauCeti.GroupAlgGeom.inr_of_mul_inl_notMem_normalClosure_pow_mul_inl`: over a group `H` with
   unique roots and injective coefficients, the radical of the one-variable equation
-  `x ^ n * b ^ n` (`n ≠ 0`) is the normal closure of `x * b`, which differs from that of
-  `x ^ n * b ^ n` when `n ≠ 1`.
+  `x ^ n * b ^ n` (`n ≠ 0`) is the normal closure of `x * b`. For `n ≠ 1`, the element `x * b`
+  does not lie in the normal closure of `x ^ n * d`, whatever the coefficients `b` and `d`.
 
 ## References
 
@@ -757,12 +757,13 @@ theorem Rad_pow_mul_inl_pow_eq_normalClosure [Subsingleton X] [HasUniqueRoots H]
     Rad ι {(inr (of x) : GX G X) ^ n * inl (b ^ n)} = normalClosure {inr (of x) * inl b} := by
   rw [Rad_pow_mul_inl_pow hn, Rad_inr_of_mul_inl hι]
 
-/-- The normal closure of the equation `x ^ n * b ^ n` does not contain `x * b` when `n ≠ 1`. -/
-theorem inr_of_mul_inl_notMem_normalClosure_pow {n : ℕ} (hn : n ≠ 1) (x : X) (b : G) :
-    (inr (of x) * inl b : GX G X) ∉ normalClosure {inr (of x) ^ n * inl (b ^ n)} := by
+/-- When `n ≠ 1`, the normal closure of the equation `x ^ n * d` does not contain `x * b`, for
+any coefficients `b` and `d`. -/
+theorem inr_of_mul_inl_notMem_normalClosure_pow_mul_inl {n : ℕ} (hn : n ≠ 1) (x : X) (b d : G) :
+    (inr (of x) * inl b : GX G X) ∉ normalClosure {inr (of x) ^ n * inl d} := by
   -- Send the coefficients to `1` and the variables to a generator of `ℤ / n`.
   let f : GX G X →* Multiplicative (ZMod n) := eval 1 fun _ => .ofAdd 1
-  have hle : normalClosure {(inr (of x) : GX G X) ^ n * inl (b ^ n)} ≤ f.ker := by
+  have hle : normalClosure {(inr (of x) : GX G X) ^ n * inl d} ≤ f.ker := by
     refine normalClosure_le_normal ?_
     rintro _ rfl
     simp [f, ← ofAdd_nsmul]
@@ -773,14 +774,7 @@ theorem inr_of_mul_inl_notMem_normalClosure_pow {n : ℕ} (hn : n ≠ 1) (x : X)
 /-- The normal closure of the one-variable equation `x ^ n` does not contain `x` when `n ≠ 1`. -/
 theorem inr_of_notMem_normalClosure_pow {n : ℕ} (hn : n ≠ 1) (x : X) :
     (inr (of x) : GX G X) ∉ normalClosure {inr (of x) ^ n} := by
-  simpa using inr_of_mul_inl_notMem_normalClosure_pow hn x (1 : G)
-
-/-- For `n ≠ 1`, the normal closure of `x ^ n * b ^ n` differs from the normal closure of
-`x * b`. -/
-theorem normalClosure_pow_mul_inl_pow_ne_normalClosure {n : ℕ} (hn : n ≠ 1) (x : X) (b : G) :
-    normalClosure {(inr (of x) : GX G X) ^ n * inl (b ^ n)} ≠
-      normalClosure {inr (of x) * inl b} := fun h =>
-  inr_of_mul_inl_notMem_normalClosure_pow hn x b (by rw [h]; exact subset_normalClosure rfl)
+  simpa using inr_of_mul_inl_notMem_normalClosure_pow_mul_inl hn x (1 : G) 1
 
 /-- For `n ≠ 1`, the normal closure of `x ^ n` differs from the normal closure of `x`. -/
 theorem normalClosure_pow_ne_normalClosure {n : ℕ} (hn : n ≠ 1) (x : X) :

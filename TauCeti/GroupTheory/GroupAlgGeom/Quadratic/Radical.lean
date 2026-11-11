@@ -20,13 +20,15 @@ If `x ↦ s` is a solution in `G`, then `d = b²` with `b = s⁻¹`, and the equ
 `x² = (b⁻¹)²`. A freely discriminated group has unique roots, so the equation has the same
 solutions as `x b = 1`, and the group `⟨G, x | x b = 1⟩` is `G` itself. Hence `R(S)` is the
 normal closure of `x b` in `G[x]`. It is strictly larger than the normal closure of `S`, since
-`x b` does not lie in the latter.
+`x b` does not lie in the latter. If the equation has no solution in `G`, its radical is the
+whole group `G[x]`, so over a group with unique roots the radical of `x² d = 1` is never the
+normal closure of the equation.
 
 The only property of the group in which the solutions are taken that the argument uses is
 uniqueness of roots (`HasUniqueRoots`), which holds in residually free groups and in torsion-free
-commutative-transitive groups. The statements are in one variable, as in the source: with
-further variables `Y` in the ambient alphabet, the same description of the radical is equivalent
-to `G[Y]` being separated by `G`.
+commutative-transitive groups. The descriptions of the radical are in one variable, as in the
+source: with further variables `Y` in the ambient alphabet, the same description of the radical
+is equivalent to `G[Y]` being separated by `G`.
 
 ## Main results
 
@@ -36,7 +38,8 @@ to `G[Y]` being separated by `G`.
   if `x² d = 1` has a solution in `G`, then `d = b²` for some `b` and the radical is the normal
   closure of `x b`.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.normalClosure_toWord_nonorientableCoeff_one_zero_ne_Rad`:
-  the radical of a consistent equation `x² d = 1` is not the normal closure of the equation.
+  over a group with unique roots, the radical of `x² d = 1` is not the normal closure of the
+  equation.
 * `TauCeti.GroupAlgGeom.Quadratic.rad_sq_mul_sq`: over `F(a, b)`, the radical of `x² a²` is the
   normal closure of `x a`.
 
@@ -85,15 +88,24 @@ theorem exists_sq_eq_and_Rad_toWord_nonorientableCoeff_one_zero [Subsingleton X]
   have hb : (v (x 0))⁻¹ ^ 2 = d := by rw [inv_pow, inv_eq_of_mul_eq_one_right hv]
   exact ⟨_, hb, Rad_toWord_nonorientableCoeff_one_zero Function.injective_id hb⟩
 
-/-- The radical of a consistent one-variable standard quadratic equation `x² d = 1` over a group
-`G` with unique roots is not the normal closure of the equation. -/
-theorem normalClosure_toWord_nonorientableCoeff_one_zero_ne_Rad [Subsingleton X] [HasUniqueRoots G]
-    (hS : (V (.id G) {(nonorientableCoeff 1 0 one_pos x z inj c hc d hd).toWord}).Nonempty) :
+/-- Over a group `G` with unique roots, the radical of the standard quadratic equation `x² d = 1`
+is not the normal closure of the equation. -/
+theorem normalClosure_toWord_nonorientableCoeff_one_zero_ne_Rad [HasUniqueRoots G] :
     normalClosure {(nonorientableCoeff 1 0 one_pos x z inj c hc d hd).toWord} ≠
       Rad (.id G) {(nonorientableCoeff 1 0 one_pos x z inj c hc d hd).toWord} := by
-  obtain ⟨b, rfl, hR⟩ := exists_sq_eq_and_Rad_toWord_nonorientableCoeff_one_zero hS
-  rw [hR, toWord_nonorientableCoeff_one_zero]
-  exact normalClosure_pow_mul_inl_pow_ne_normalClosure (by decide) _ _
+  rw [toWord_nonorientableCoeff_one_zero]
+  -- Some `x b` lies in the radical: any `b` if there is no solution, `b = s⁻¹` for a solution `s`.
+  obtain ⟨b, hb⟩ : ∃ b : G,
+      inr (FreeGroup.of (x 0)) * inl b ∈ Rad (.id G) {inr (FreeGroup.of (x 0)) ^ 2 * inl d} := by
+    rcases (V (.id G) {(inr (FreeGroup.of (x 0)) : GX G X) ^ 2 * inl d}).eq_empty_or_nonempty
+      with hV | ⟨v, hv⟩
+    · exact ⟨1, by simp [mem_Rad, hV]⟩
+    have hv : v (x 0) ^ 2 * d = 1 := by simpa [eval_inr_of] using hv
+    refine ⟨(v (x 0))⁻¹, ?_⟩
+    rw [← inv_eq_of_mul_eq_one_right hv, ← inv_pow, Rad_pow_mul_inl_pow two_ne_zero]
+    exact normalClosure_le_Rad _ (subset_normalClosure rfl)
+  intro h
+  exact inr_of_mul_inl_notMem_normalClosure_pow_mul_inl (n := 2) (by decide) (x 0) b d (h ▸ hb)
 
 end Standard
 
