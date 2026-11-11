@@ -21,9 +21,13 @@ is, in particular when `M` has independent columns.
 
 ## Main results
 
+* `Matrix.conjTranspose_map_ofReal`, `Matrix.map_ofReal_mul_map_ofReal`: the coercion of real
+  matrices commutes with conjugate transposition and with multiplication.
 * `Matrix.map_ofReal_mem_unitaryGroup`: an orthogonal real matrix is unitary.
 * `Matrix.map_re_conjTranspose_mul_self_mul_map_ofReal`: the real Gram matrix of `M N` for a real
   matrix `N` is `Nᵀ Re (Mᴴ M) N`.
+* `Matrix.conjTranspose_mul_self_map_ofReal_add_I_smul`: the Hermitian Gram matrix of `P + i Q`,
+  for real `P` and `Q`, is `(Pᵀ P + Qᵀ Q) + i (Pᵀ Q - Qᵀ P)`.
 * `Matrix.PosDef.map_re`: the real part of a positive definite complex matrix is positive
   definite.
 * `Matrix.PosDef.map_re_conjTranspose_mul_self`: the real Gram matrix of a complex matrix with
@@ -37,6 +41,17 @@ open scoped ComplexOrder
 namespace Matrix
 
 variable {l m n : Type*}
+
+/-- The conjugate transpose of a real matrix, as a complex matrix, is its transpose. -/
+theorem conjTranspose_map_ofReal (N : Matrix m n ℝ) :
+    (N.map ((↑) : ℝ → ℂ))ᴴ = Nᵀ.map ((↑) : ℝ → ℂ) := by
+  ext i j
+  simp
+
+/-- The product of real matrices, as complex matrices, is the coercion of their product. -/
+theorem map_ofReal_mul_map_ofReal [Fintype m] (M : Matrix l m ℝ) (N : Matrix m n ℝ) :
+    M.map ((↑) : ℝ → ℂ) * N.map ((↑) : ℝ → ℂ) = (M * N).map ((↑) : ℝ → ℂ) :=
+  (Matrix.map_mul (f := Complex.ofRealHom)).symm
 
 /-- An orthogonal real matrix is unitary as a complex matrix. -/
 theorem map_ofReal_mem_unitaryGroup [Fintype n] [DecidableEq n] {O : Matrix n n ℝ}
@@ -58,6 +73,23 @@ theorem map_re_conjTranspose_mul_self_mul_map_ofReal [Fintype m] [Fintype n] (M 
   exact ((map_algebraMap_mul Complex.reLm Nᵀ _).trans
     (congrArg (Nᵀ * ·) (map_mul_algebraMap Complex.reLm N (Mᴴ * M)))).trans
       (Matrix.mul_assoc _ _ _).symm
+
+/-- The Hermitian Gram matrix of `P + i Q`, for real matrices `P` and `Q`, is
+`(Pᵀ P + Qᵀ Q) + i (Pᵀ Q - Qᵀ P)`. Its imaginary part is the matrix of the standard symplectic
+form `Im ⟪·, ·⟫` on the columns of `P + i Q`. -/
+theorem conjTranspose_mul_self_map_ofReal_add_I_smul [Fintype m] (P Q : Matrix m n ℝ) :
+    (P.map ((↑) : ℝ → ℂ) + Complex.I • Q.map ((↑) : ℝ → ℂ))ᴴ *
+        (P.map ((↑) : ℝ → ℂ) + Complex.I • Q.map ((↑) : ℝ → ℂ)) =
+      (Pᵀ * P + Qᵀ * Q).map ((↑) : ℝ → ℂ) +
+        Complex.I • (Pᵀ * Q - Qᵀ * P).map ((↑) : ℝ → ℂ) := by
+  rw [conjTranspose_add, conjTranspose_smul, conjTranspose_map_ofReal, conjTranspose_map_ofReal,
+    Complex.star_def, Complex.conj_I]
+  simp only [Matrix.add_mul, Matrix.mul_add, Matrix.smul_mul, Matrix.mul_smul,
+    map_ofReal_mul_map_ofReal]
+  rw [Matrix.map_add _ fun _ _ ↦ Complex.ofReal_add _ _,
+    Matrix.map_sub _ fun _ _ ↦ Complex.ofReal_sub _ _, smul_add, smul_smul,
+    show Complex.I * -Complex.I = 1 by simp]
+  module
 
 /-- The real part of a positive definite complex matrix is positive definite. -/
 theorem PosDef.map_re [Finite n] {K : Matrix n n ℂ} (hK : K.PosDef) :

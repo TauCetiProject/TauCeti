@@ -40,6 +40,8 @@ contraction of `M` need not close up.
 
 * `Matrix.GeneralLinearGroup.realOrthonormalize`: the frame `M Re (Mᴴ M) ^ (-1/2)`, with the same
   real span as `M`, columns orthonormal for `Re ⟪·, ·⟫`, and continuous in `M`.
+* `Matrix.GeneralLinearGroup.realOrthonormalize_mem_unitaryGroup`: the real orthonormalization of a
+  frame with real Hermitian Gram matrix, a frame of a Lagrangian subspace, is unitary.
 * `TauCeti.exists_realImage_homotopy_unitaryGroup`: a closed frame deforms through closed frames
   to a path of unitary matrices.
 
@@ -133,6 +135,24 @@ theorem continuous_realOrthonormalize {X : Type*} [TopologicalSpace X] {M : X �
     (Matrix.contDiffOn_rpow (𝕜 := ℝ) (n := n) (-(1 / 2)) (k := 0)).continuousOn.comp_continuous
       hG fun x ↦ isStrictlyPositive_iff_posDef.1 (isStrictlyPositive_map_re (M x))
   exact hval.mul (hQ.matrix_map Complex.continuous_ofReal)
+
+/-- **The real orthonormalization of a Lagrangian frame is unitary.** If the Hermitian Gram
+matrix `Mᴴ M` of `M` is real, which says that `M ℝⁿ` is Lagrangian for `Im ⟪·, ·⟫`, then the
+columns of `realOrthonormalize M` are orthonormal for the Hermitian inner product. -/
+theorem realOrthonormalize_mem_unitaryGroup {M : GL n ℂ} {G : Matrix n n ℝ}
+    (hM : (M : Matrix n n ℂ)ᴴ * M = G.map ((↑) : ℝ → ℂ)) :
+    (realOrthonormalize M : Matrix n n ℂ) ∈ unitaryGroup n ℂ := by
+  obtain ⟨S, hU⟩ : ∃ S : Matrix n n ℝ,
+      (realOrthonormalize M : Matrix n n ℂ) = M * S.map ((↑) : ℝ → ℂ) :=
+    ⟨_, coe_realOrthonormalize M⟩
+  -- The real Gram matrix of `M S` is `Sᵀ G S`, and it is the identity.
+  have hre := map_re_conjTranspose_mul_self_realOrthonormalize M
+  rw [hU, map_re_conjTranspose_mul_self_mul_map_ofReal, hM,
+    show (G.map ((↑) : ℝ → ℂ)).map Complex.re = G by ext; simp] at hre
+  rw [mem_unitaryGroup_iff', star_eq_conjTranspose, hU, conjTranspose_mul, conjTranspose_map_ofReal,
+    Matrix.mul_assoc, ← Matrix.mul_assoc (M : Matrix n n ℂ)ᴴ, hM, map_ofReal_mul_map_ofReal,
+    map_ofReal_mul_map_ofReal, ← Matrix.mul_assoc, hre]
+  simp
 
 end Matrix.GeneralLinearGroup
 

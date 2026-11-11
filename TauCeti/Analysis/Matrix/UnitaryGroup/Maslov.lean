@@ -10,6 +10,7 @@ public import Mathlib.Basic.Real.Sign
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 public import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+public import TauCeti.LinearAlgebra.Matrix.OfReal
 public import TauCeti.Topology.Circle.Degree
 
 /-!
@@ -68,6 +69,8 @@ nor is the comparison with the definition of the index by crossing forms.
 
 * `Matrix.spectralAngleSum`: the sum of `arg (-λ) / (2π)` over the eigenvalues `λ ≠ 1`.
 * `Matrix.UnitaryGroup.souriau`: the Souriau map `U ↦ U Uᵀ`.
+* `Matrix.UnitaryGroup.souriau_mul_map_conj_of_eq_mul_map_ofReal`: for a unitary frame `U = M S`,
+  `S` real, of a Lagrangian frame `M`, the Souriau map is `M (conj M)⁻¹`.
 * `Matrix.UnitaryGroup.maslovIndex`: the Maslov index of a path of Lagrangian frames.
 
 ## References
@@ -169,6 +172,39 @@ theorem coe_souriau_of_coe_eq_diagonal {U : unitaryGroup n α} {d : n → α}
 theorem detCircle_souriau (U : unitaryGroup n ℂ) : detCircle (souriau U) = detCircle U ^ 2 := by
   refine Circle.ext ?_
   rw [coe_detCircle, coe_souriau, det_mul, det_transpose, Circle.coe_pow, coe_detCircle, sq]
+
+/-- **The Souriau map of a Lagrangian frame.** Let `M` be a frame whose Hermitian Gram matrix
+`Mᴴ M` is real, so that `M ℝⁿ` is Lagrangian, and let `U = M S` be a unitary frame with `S` real,
+which spans the same real subspace. Then the Souriau map `W = U Uᵀ` satisfies `W (conj M) = M`;
+when `M` is invertible, `W = M (conj M)⁻¹`. -/
+theorem souriau_mul_map_conj_of_eq_mul_map_ofReal {U : unitaryGroup n ℂ} {M : Matrix n n ℂ}
+    {S G : Matrix n n ℝ} (hU : (U : Matrix n n ℂ) = M * S.map ((↑) : ℝ → ℂ))
+    (hM : Mᴴ * M = G.map ((↑) : ℝ → ℂ)) :
+    (souriau U : Matrix n n ℂ) * M.map (starRingEnd ℂ) = M := by
+  -- Unitarity of `U = M S` says `Sᵀ G S = 1`.
+  have hSGS : Sᵀ * G * S = 1 := by
+    have hUU : (U : Matrix n n ℂ)ᴴ * U = 1 := by
+      rw [← star_eq_conjTranspose]
+      exact mem_unitaryGroup_iff'.1 U.2
+    rw [hU, conjTranspose_mul, conjTranspose_map_ofReal, Matrix.mul_assoc,
+      ← Matrix.mul_assoc Mᴴ, hM, map_ofReal_mul_map_ofReal, map_ofReal_mul_map_ofReal,
+      ← Matrix.mul_assoc] at hUU
+    exact Matrix.map_injective Complex.ofReal_injective
+      (hUU.trans (Matrix.map_one _ Complex.ofReal_zero Complex.ofReal_one).symm)
+  -- `Mᵀ (conj M)` is the conjugate of the Gram matrix `Mᴴ M = G`, which is real.
+  have hG : Mᵀ * M.map (starRingEnd ℂ) = G.map ((↑) : ℝ → ℂ) := by
+    have h : Mᵀ * M.map (starRingEnd ℂ) = (Mᴴ * M).map (starRingEnd ℂ) := by
+      rw [Matrix.map_mul (f := starRingEnd ℂ)]
+      congr 1
+      ext i j
+      simp
+    rw [h, hM]
+    ext i j
+    simp
+  have hS : S * (Sᵀ * G) = 1 := mul_eq_one_comm.1 hSGS
+  rw [coe_souriau, hU, transpose_mul, Matrix.mul_assoc, Matrix.mul_assoc, Matrix.mul_assoc _ Mᵀ,
+    hG, ← transpose_map, map_ofReal_mul_map_ofReal, map_ofReal_mul_map_ofReal, hS]
+  simp
 
 /-- The path of determinants `t ↦ det (γ t γ tᵀ) = det (γ t) ^ 2` of the Souriau maps along a
 path `γ` of frames: the Maslov phases of the Lagrangians `γ t ℝⁿ` relative to `ℝⁿ`. -/
