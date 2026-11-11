@@ -345,6 +345,23 @@ example (h : (X ^ 2 : (ZMod 2)[X]) ∈ degreeLT (ZMod 2) (∑ i, ![3] i)) :
   · rw [hermiteJet_apply]
     simpa using eval_hasseDeriv_X_sub_C_pow (0 : ZMod 2) 2 2
 
+/-- In characteristic `2` the ordinary jet map with one node of multiplicity `3` is not injective:
+it kills `X²`, so the unit hypothesis on the factorials is necessary. -/
+example : ¬ Injective (ordinaryHermiteJet ![(0 : ZMod 2)] ![3]) := by
+  intro h
+  have hX : (X ^ 2 : (ZMod 2)[X]) ∈ degreeLT (ZMod 2) (∑ i, ![3] i) := by
+    rw [mem_degreeLT]
+    compute_degree!
+  have h0 : (X ^ 2 : (ZMod 2)[X]) = 0 := by
+    refine congrArg Subtype.val (@h ⟨_, hX⟩ 0 ?_)
+    ext i k
+    rw [ordinaryHermiteJet_apply]
+    fin_cases i
+    fin_cases k <;> simp <;> rfl
+  have := congrArg (coeff · 2) h0
+  simp only [coeff_X_pow_self, coeff_zero] at this
+  exact absurd this (by decide)
+
 /-- `X² ∤ X`: the jet of order `1` of `X` at `0` is `1`. -/
 example : ¬ hermiteModulus ![(0 : ℚ)] ![2] ∣ X := by
   rw [← all_jets_vanish_iff_dvd (injective_of_subsingleton _)]
