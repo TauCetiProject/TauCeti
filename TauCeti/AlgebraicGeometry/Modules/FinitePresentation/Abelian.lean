@@ -10,17 +10,16 @@ public import TauCeti.AlgebraicGeometry.Modules.Restriction.FiniteType
 public import Mathlib.AlgebraicGeometry.Noetherian
 
 /-!
-# Finite presentation of ambient kernels and cokernels
+# Finite presentation of ambient kernels
 
-On any scheme, the cokernel of a morphism from a quasi-coherent sheaf of finite type to a
-finitely presented sheaf is finitely presented. On a locally Noetherian scheme, the kernel of
-a morphism from a quasi-coherent sheaf of finite type to a quasi-coherent sheaf is finitely
-presented. No quasi-compactness or separation assumption is needed.
+On a locally Noetherian scheme, the kernel of a morphism from a quasi-coherent sheaf of finite
+type to a quasi-coherent sheaf is finitely presented. No quasi-compactness or separation
+assumption is needed.
 
-Both statements follow from `Scheme.Modules.isFinitePresentation_cokernel_spec` and
-`Scheme.Modules.isFinitePresentation_kernel_spec` by restriction to affine opens and descent
-of finite presentation. They apply to ambient scheme modules independently of the bundled
-category of finitely presented sheaves.
+This follows from `Scheme.Modules.isFinitePresentation_kernel_spec` by restriction to affine
+opens and descent of finite presentation. It applies to ambient scheme modules independently
+of the bundled category of finitely presented sheaves. The corresponding cokernel result is
+provided by `Scheme.Modules.isFinitePresentation_cokernel` in the restriction module.
 
 ## References
 
@@ -37,19 +36,6 @@ universe u
 namespace AlgebraicGeometry.Scheme.Modules
 
 variable {X : Scheme.{u}} {M N : X.Modules}
-
-/-- The ambient cokernel of a morphism from a quasi-coherent sheaf of finite type to a finitely
-presented sheaf is finitely presented on any scheme. -/
-instance isFinitePresentation_cokernel (f : M ⟶ N) [M.IsQuasicoherent] [M.IsFiniteType]
-    [N.IsFinitePresentation] : (cokernel f).IsFinitePresentation := by
-  refine isFinitePresentation_of_isFinitePresentation_restrict (cokernel f)
-    (fun U : X.affineOpens ↦ U.1) (iSup_affineOpens_eq_top X) fun U ↦ ?_
-  let F := restrictFunctor U.1.ι
-  let G := restrictFunctor U.2.isoSpec.inv
-  apply (isFinitePresentation_restrict_iff_of_isIso _ U.2.isoSpec.inv).mp
-  exact (SheafOfModules.isFinitePresentation (Spec Γ(X, U.1)).ringCatSheaf).prop_of_iso
-    (G.mapIso (PreservesCokernel.iso F f) ≪≫ PreservesCokernel.iso G (F.map f)).symm
-    (isFinitePresentation_cokernel_spec (G.map (F.map f)))
 
 /-- On a locally Noetherian scheme the ambient kernel of a morphism from a quasi-coherent
 sheaf of finite type to a quasi-coherent sheaf is finitely presented. -/
