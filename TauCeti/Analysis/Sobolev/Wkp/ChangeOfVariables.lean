@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 public import TauCeti.MeasureTheory.Function.Lp.Precomposition
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.ContDiff.FaaDiBruno
 import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
@@ -428,6 +429,27 @@ theorem ae_comp [mu.IsAddHaarMeasure] (h : IsChangeOfVariables k U V Φ L c) {P 
     (Measure.absolutelyContinuous_of_le_smul (h.map_restrict_le mu)) hP
 
 end IsChangeOfVariables
+
+/-- **Changes of variables on relatively compact sets.** A map that is `Cⁿ` on an open set `Ω`,
+with `k ≤ n` and `1 ≤ n`, injective on `U` and mapping `U` into `V`, whose derivative is
+invertible on the compact set `closure U ⊆ Ω`, is a change of variables of order `k` from `U`
+into `V`: the derivative bounds and the lower bound for the Jacobian come from compactness. -/
+theorem exists_isChangeOfVariables_of_isCompact_closure {n : WithTop ℕ∞} {Ω : Set E}
+    (hΩ : IsOpen Ω) (hΦ : ContDiffOn ℝ n Φ Ω) (hk : k ≤ n) (hn : 1 ≤ n) (hinj : InjOn Φ U)
+    (hdet : ∀ x ∈ closure (U : Set E), (fderiv ℝ Φ x).det ≠ 0)
+    (hUc : IsCompact (closure (U : Set E))) (hUΩ : closure (U : Set E) ⊆ Ω)
+    (hUV : MapsTo Φ U V) : ∃ L c, IsChangeOfVariables k U V Φ L c := by
+  obtain ⟨L, -, hL⟩ := (hΦ.of_le hk).exists_nonneg_bound_iteratedFDeriv_of_isOpen hΩ hUc hUΩ
+  obtain ⟨c, -, hc, hcdet, -⟩ := exists_det_bounds_of_isCompact hΩ (hΦ.of_le hn) hUc hUΩ hdet
+  have hUΩ' := subset_closure.trans hUΩ
+  exact ⟨L, c,
+    { contDiffOn := (hΦ.of_le hk).mono hUΩ'
+      differentiableOn := ((hΦ.of_le hn).differentiableOn one_ne_zero).mono hUΩ'
+      injOn := hinj
+      mapsTo := hUV
+      norm_iteratedFDeriv_le := fun i _ hik x hx ↦ hL i hik x (subset_closure hx)
+      pos := hc
+      le_abs_det := fun x hx ↦ hcdet x (subset_closure hx) }⟩
 
 end Hypotheses
 

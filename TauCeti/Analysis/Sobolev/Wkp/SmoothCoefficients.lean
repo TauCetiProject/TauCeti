@@ -26,6 +26,8 @@ changes of a vector bundle that relate the chart data of a Sobolev section in tw
 
 ## Main declarations
 
+* `Module.Basis.contDiffOn_repr_apply`: the matrix entries of a smooth operator-valued function
+  are smooth.
 * `TauCeti.Wkp.contDiffOnMatrixSMulL`: multiplication by a smooth matrix of functions.
 * `TauCeti.Wkp.value_contDiffOnMatrixSMulL_ae`: its components are the pointwise matrix products.
 * `TauCeti.Wkp.contDiffOnOperatorSMulL`: multiplication by a smooth operator-valued coefficient in
@@ -37,28 +39,28 @@ public section
 
 noncomputable section
 
-namespace TauCeti
-
-namespace Wkp
-
 open MeasureTheory Module TopologicalSpace
 open scoped ContDiff
 
-section Coefficients
+namespace Module.Basis
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {U : Set E} {κ : Type*}
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {U : Set E} {ι κ : Type*}
   {F F' : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup F']
   [NormedSpace ℝ F'] {g : E → F →L[ℝ] F'}
 
 /-- The entries of the matrix of a smooth operator-valued function in bases of the source and
 target spaces are smooth. -/
-theorem contDiffOn_basis_repr_apply {ι : Type*} (b : Basis ι ℝ F) (b' : Basis κ ℝ F')
-    [FiniteDimensional ℝ F'] (hg : ContDiffOn ℝ ∞ g U) (m : κ) (l : ι) :
+theorem contDiffOn_repr_apply (b : Basis ι ℝ F) (b' : Basis κ ℝ F') [FiniteDimensional ℝ F']
+    (hg : ContDiffOn ℝ ∞ g U) (m : κ) (l : ι) :
     ContDiffOn ℝ ∞ (fun x ↦ b'.repr (g x (b l)) m) U :=
   ((b'.coord m).toContinuousLinearMap.contDiff.comp_contDiffOn
     (hg.clm_apply (contDiffOn_const (c := b l)))).congr fun _ _ ↦ by simp
 
-end Coefficients
+end Module.Basis
+
+namespace TauCeti
+
+namespace Wkp
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
@@ -114,7 +116,7 @@ def contDiffOnOperatorSMulL (hU : IsOpen U) (hΩ : IsCompact (closure (Omega : S
     (hΩU : closure (Omega : Set E) ⊆ U) (k : ℕ) (b : Basis ι ℝ F) (b' : Basis κ ℝ F')
     [FiniteDimensional ℝ F'] (hg : ContDiffOn ℝ ∞ g U) :
     (ι → Wkp mu Omega p k) →L[ℝ] (κ → Wkp mu Omega p k) :=
-  contDiffOnMatrixSMulL hU hΩ hΩU k (contDiffOn_basis_repr_apply b b' hg)
+  contDiffOnMatrixSMulL hU hΩ hΩU k (b.contDiffOn_repr_apply b' hg)
 
 /-- The components in `b'` of a product with a smooth operator coefficient are, almost everywhere
 on `Ω`, the components of `g x` applied to the vector whose components in `b` are the values of
@@ -126,7 +128,7 @@ theorem value_contDiffOnOperatorSMulL_ae (hU : IsOpen U)
     (value k (contDiffOnOperatorSMulL hU hΩ hΩU k b b' hg u m) : E → ℝ) =ᵐ[mu.restrict Omega]
       fun x ↦ b'.repr (g x (∑ l, value k (u l) x • b l)) m := by
   filter_upwards [value_contDiffOnMatrixSMulL_ae hU hΩ hΩU k
-    (contDiffOn_basis_repr_apply b b' hg) u m] with x hx
+    (b.contDiffOn_repr_apply b' hg) u m] with x hx
   rw [contDiffOnOperatorSMulL, hx]
   simp [mul_comm]
 

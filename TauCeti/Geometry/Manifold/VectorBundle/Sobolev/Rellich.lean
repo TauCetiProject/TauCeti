@@ -59,12 +59,12 @@ Sobolev sections is closed in the product of the chartwise Sobolev spaces.
   changes of variables of every order on relatively compact subsets of the transfer domain.
 * `TauCeti.FiniteBundleAtlas.contDiffOn_coordChangeL_transferDomain`: the coordinate change of the
   bundle, read in chart `i`, is smooth on the transfer domain.
+* `TauCeti.FiniteBundleAtlas.value_transferL_ae`: the components of a transfer are those of the
+  bundle coordinate change applied to the precomposed input values.
 * `TauCeti.FiniteBundleAtlas.restrictL_eq_transferL`: chart data of a Sobolev section are
   transferred between charts.
 * `TauCeti.SobolevSection.isCompactOperator_lowerOrderL`: **Rellich's theorem** for Sobolev
   sections, `W^{k+1,p}(V) → W^{k,p}(V)` is compact.
-* `TauCeti.SobolevSection.isCompactOperator_lowerOrderL_zero`: the inclusion
-  `W^{1,p}(V) → W^{0,p}(V) = Lᵖ(V)` is compact.
 
 ## References
 
@@ -228,13 +228,10 @@ private theorem det_fderiv_chart_coordChange_ne_zero {i j : Fin A.n} {y : E}
   have hid : e.symm ∘ e =ᶠ[𝓝 y] id := e.eventually_left_inverse hy
   have hcomp : (fderiv ℝ e.symm (e y)).comp (fderiv ℝ e y) = ContinuousLinearMap.id ℝ E := by
     rw [← fderiv_comp y hd (differentiableAt_chart_coordChange A hy), hid.fderiv_eq, fderiv_id]
-  intro h0
   have hdet := congrArg ContinuousLinearMap.det hcomp
-  change LinearMap.det ((fderiv ℝ e.symm (e y) : E →ₗ[ℝ] E) ∘ₗ (fderiv ℝ e y : E →ₗ[ℝ] E)) =
-    LinearMap.det (ContinuousLinearMap.id ℝ E : E →ₗ[ℝ] E) at hdet
-  rw [LinearMap.det_comp, show LinearMap.det (fderiv ℝ e y : E →ₗ[ℝ] E) = 0 from h0, mul_zero]
-    at hdet
-  simp at hdet
+  rw [ContinuousLinearMap.det, ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_comp,
+    ContinuousLinearMap.coe_id, LinearMap.det_comp, LinearMap.det_id] at hdet
+  exact right_ne_zero_of_mul_eq_one hdet
 
 end FiniteBundleAtlas
 
@@ -246,40 +243,6 @@ variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {M : Type
   [TopologicalSpace M] [ChartedSpace E M] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)]
   [FiberBundle F V] (A : FiniteBundleAtlas E M F V)
-
-namespace FiniteBundleAtlas
-
-/-- A smooth map on an open set `Ω`, injective on `P`, mapping `P` into `Q`, with invertible
-derivative on the compact set `closure P ⊆ Ω`, is a change of variables of every order from `P`
-into `Q`: derivative bounds and a lower bound for the Jacobian come from compactness. -/
-private theorem exists_isChangeOfVariables_of_isCompact_closure {k : ℕ} {Ω : Set E} {Φ : E → E}
-    {P Q : Opens E} (hΩ : IsOpen Ω) (hΦ : ContDiffOn ℝ ∞ Φ Ω) (hinj : InjOn Φ P)
-    (hdet : ∀ x ∈ closure (P : Set E), (fderiv ℝ Φ x).det ≠ 0)
-    (hPc : IsCompact (closure (P : Set E))) (hPΩ : closure (P : Set E) ⊆ Ω)
-    (hPQ : MapsTo Φ P Q) : ∃ L c, Wkp.IsChangeOfVariables k P Q Φ L c := by
-  have hsum : ContinuousOn
-      (fun x ↦ ∑ i ∈ Finset.range (k + 1), ‖iteratedFDeriv ℝ i Φ x‖) (closure (P : Set E)) :=
-    continuousOn_finsetSum _ fun i _ ↦ (ContinuousOn.continuousOn_iteratedFDeriv hΦ hΩ
-      (by exact_mod_cast le_top)).norm.mono hPΩ
-  obtain ⟨L, hL⟩ := hPc.exists_bound_of_continuousOn hsum
-  have hdetc : ContinuousOn (fun x ↦ |(fderiv ℝ Φ x).det|) (closure (P : Set E)) :=
-    (ContinuousLinearMap.continuous_det.comp_continuousOn
-      ((hΦ.continuousOn_fderiv_of_isOpen hΩ (by simp)).mono hPΩ)).abs
-  obtain ⟨c, hc, hcdet⟩ := hPc.exists_forall_le' hdetc fun x hx ↦ abs_pos.2 (hdet x hx)
-  refine ⟨L, c,
-    { contDiffOn := (hΦ.mono (subset_closure.trans hPΩ)).of_le (by exact_mod_cast le_top)
-      differentiableOn := (hΦ.mono (subset_closure.trans hPΩ)).differentiableOn (by simp)
-      injOn := hinj
-      mapsTo := hPQ
-      norm_iteratedFDeriv_le := fun i _ hik x hx ↦ ?_
-      pos := hc
-      le_abs_det := fun x hx ↦ hcdet x (subset_closure hx) }⟩
-  have hx := hL x (subset_closure hx)
-  rw [Real.norm_of_nonneg (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)] at hx
-  exact (Finset.single_le_sum (fun j _ ↦ norm_nonneg (iteratedFDeriv ℝ j Φ x))
-    (Finset.mem_range.2 (Nat.lt_succ_of_le hik))).trans hx
-
-end FiniteBundleAtlas
 
 variable [IsManifold 𝓘(ℝ, E) ∞ M]
 
@@ -294,8 +257,9 @@ theorem exists_isChangeOfVariables_coordChange (k : ℕ) {i j : Fin A.n} {P Q : 
     (hPQ : MapsTo ((A.chart i).symm ≫ₕ A.chart j) P Q) :
     ∃ L c, Wkp.IsChangeOfVariables k P Q ((A.chart i).symm ≫ₕ A.chart j) L c := by
   have hPO := hPD.trans (transferDomain_subset_source A i j)
-  exact exists_isChangeOfVariables_of_isCompact_closure
+  exact Wkp.exists_isChangeOfVariables_of_isCompact_closure
     ((A.chart i).symm ≫ₕ A.chart j).open_source (contDiffOn_chart_coordChange A i j)
+    (by exact_mod_cast le_top) (by simp)
     (((A.chart i).symm ≫ₕ A.chart j).injOn.mono (subset_closure.trans hPO))
     (fun x hx ↦ det_fderiv_chart_coordChange_ne_zero A (hPO hx)) hPc hPO hPQ
 
@@ -341,6 +305,24 @@ def transferL (hp : p ≠ ⊤) (i j : Fin A.n) {P Q : Opens E}
     (ContinuousLinearMap.piMap fun _ ↦ Wkp.compL
       (A.exists_isChangeOfVariables_coordChange k hPc hPD hPQ).choose_spec.choose_spec hp)
 
+/-- The chart-`i` components of a transfer are, almost everywhere on `P`, the components of the
+coordinate change from bundle chart `j` to bundle chart `i` applied to the vector whose components
+are the values of the input at the image of the point under the chart coordinate change. -/
+theorem value_transferL_ae (hp : p ≠ ⊤) (i j : Fin A.n) {P Q : Opens E}
+    (hPc : IsCompact (closure (P : Set E))) (hPD : closure (P : Set E) ⊆ A.transferDomain i j)
+    (hPQ : MapsTo ((A.chart i).symm ≫ₕ A.chart j) P Q) (u : Fin (finrank ℝ F) → Wkp μ Q p k)
+    (m : Fin (finrank ℝ F)) :
+    (Wkp.value k (A.transferL μ p k hp i j hPc hPD hPQ u m) : E → ℝ) =ᵐ[μ.restrict P]
+      fun y ↦ (finBasis ℝ F).repr ((A.triv j).coordChangeL ℝ (A.triv i) ((A.chart i).symm y)
+        (∑ l, Wkp.value k (u l) (((A.chart i).symm ≫ₕ A.chart j) y) • finBasis ℝ F l)) m := by
+  set h := (A.exists_isChangeOfVariables_coordChange k hPc hPD hPQ).choose_spec.choose_spec
+  filter_upwards [Wkp.value_contDiffOnOperatorSMulL_ae (A.isOpen_transferDomain i j) hPc hPD k
+      (finBasis ℝ F) (finBasis ℝ F) (A.contDiffOn_coordChangeL_transferDomain i j)
+      ((ContinuousLinearMap.piMap fun _ ↦ Wkp.compL h hp) u) m,
+    ae_all_iff.2 fun l ↦ Wkp.value_compL_ae h hp (u l)] with y hy hl
+  rw [transferL, ContinuousLinearMap.comp_apply, hy]
+  simp only [ContinuousLinearMap.coe_piMap', Pi.map_apply, hl, ContinuousLinearEquiv.coe_coe]
+
 /-- **Chart data of Sobolev sections are transferred between charts.** If `P` lies in the overlap
 of the domains of charts `j` and `i` (read in chart `i`) and has compact closure in the transfer
 domain, and `Q ⊆ A.image j` contains the image of `P` under the chart transition, then the chart-`i`
@@ -377,26 +359,17 @@ theorem restrictL_eq_transferL (hp : p ≠ ⊤) {w : A.sectionChartData.SobolevD
       (((A.chart i).symm ≫ₕ A.chart j) y) =
         Wkp.value k (w j l) (((A.chart i).symm ≫ₕ A.chart j) y) :=
     h.ae_comp (ae_all_iff.2 fun l ↦ Wkp.value_restrictL_ae hQ k (w j l))
-  have hcomp : ∀ᵐ y ∂μ.restrict P, ∀ l,
-      Wkp.value k (Wkp.compL h hp (Wkp.restrictL hQ k (w j l))) y =
-        Wkp.value k (Wkp.restrictL hQ k (w j l)) (((A.chart i).symm ≫ₕ A.chart j) y) :=
-    ae_all_iff.2 fun l ↦ Wkp.value_compL_ae h hp _
-  have hop := Wkp.value_contDiffOnOperatorSMulL_ae (A.isOpen_transferDomain i j) hPc hPD k
-    (finBasis ℝ F) (finBasis ℝ F) (A.contDiffOn_coordChangeL_transferDomain i j)
-    (fun l ↦ Wkp.compL h hp (Wkp.restrictL hQ k (w j l))) m
-  filter_upwards [Wkp.value_restrictL_ae hPi k (w i m), hcompat, hi, hj, hres, hcomp, hop,
-    ae_restrict_mem P.isOpen.measurableSet] with y hy₁ hy₂ hy₃ hy₄ hy₅ hy₆ hy₇ hyP
+  filter_upwards [Wkp.value_restrictL_ae hPi k (w i m), hcompat, hi, hj, hres,
+    A.value_transferL_ae μ p k hp i j hPc hPD hPQ (fun l ↦ Wkp.restrictL hQ k (w j l)) m,
+    ae_restrict_mem P.isOpen.measurableSet] with y hy₁ hy₂ hy₃ hy₄ hy₅ hy₆ hyP
   rw [A.sectionChartData_coordChange_of_mem (hP hyP),
     A.sectionChartData_transition_of_mem (hP hyP), htr y hyP] at hy₂
   have hval : Wkp.value k (w i m) y =
       (finBasis ℝ F).repr (A.sectionChartData.chartValueL μ p k i w y) m := by
     rw [hy₃, (finBasis ℝ F).repr_sum_self]
-  simp only [transferL, ContinuousLinearMap.coe_comp, Function.comp_apply]
-  rw [show (ContinuousLinearMap.piMap fun _ ↦ Wkp.compL h hp)
-      (fun l ↦ Wkp.restrictL hQ k (w j l)) =
-        fun l ↦ Wkp.compL h hp (Wkp.restrictL hQ k (w j l)) from rfl]
-  erw [hy₁, hval, hy₂, hy₄, hy₇]
-  simp only [hy₆, hy₅, ContinuousLinearEquiv.coe_coe]
+  refine hy₁.trans ((hval.trans ?_).trans hy₆.symm)
+  rw [hy₂, hy₄]
+  simp only [hy₅, ContinuousLinearEquiv.coe_coe]
 
 end FiniteBundleAtlas
 
@@ -480,12 +453,6 @@ theorem isCompactOperator_lowerOrderL [T2Space M] (hp : p ≠ ⊤) :
   exact (IsCompactOperator.pi fun (i : Fin A.sectionChartData.n) ↦
     IsCompactOperator.pi fun m ↦ hchart i m).codRestrict hmem
     (SectionChartData.isClosed_sobolevSections (A.aeTransition_sectionChartData μ))
-
-/-- **Compact inclusion into `Lᵖ`.** The inclusion `W^{1,p}(V) → W^{0,p}(V)` of first-order Sobolev
-sections into sections with `Lᵖ` chart data is compact for `1 ≤ p < ∞`. -/
-theorem isCompactOperator_lowerOrderL_zero [T2Space M] (hp : p ≠ ⊤) :
-    IsCompactOperator (A.sectionChartData.lowerOrderL μ p 0) :=
-  isCompactOperator_lowerOrderL A μ p 0 hp
 
 end SobolevSection
 
