@@ -23,8 +23,8 @@ then a quotient map as soon as it is surjective
 
 Over a Tate ring every generization in `Spa(A, A⁺)` is vertical: a continuous point that
 specializes to an analytic point has the same support
-(`TauCeti.ValuationSpectrum.IsContinuous.supp_eq_of_specializes`). Vertical generizations lift
-along any ring map to coarsenings
+(`TauCeti.ValuationSpectrum.IsContinuous.supp_eq_of_specializes`, in `Spa/Analytic.lean`).
+Vertical generizations lift along any ring map to coarsenings
 (`TauCeti.ValuationSpectrum.comap_ofValuation_coarsenByUnits_eq`). The coarsening is by a proper
 convex subgroup of the value group, because the generization is again analytic, so it is again
 continuous (`Valuation.IsContinuous.coarsenByUnits_restrict`), and it stays bounded by `1` on
@@ -32,8 +32,6 @@ continuous (`Valuation.IsContinuous.coarsenByUnits_restrict`), and it stays boun
 
 ## Main results
 
-* `TauCeti.ValuationSpectrum.IsContinuous.supp_eq_of_specializes`: a continuous point that
-  specializes to an analytic point has the same support.
 * `TauCeti.Huber.Pair.Hom.generalizingMap_spaComap_of_isTateRing`: a morphism of Huber pairs out
   of a Tate pair induces a generalizing map of adic spectra.
 * `TauCeti.Huber.Pair.Hom.isQuotientMap_spaComap_of_isTateRing`: if it is moreover surjective, it
@@ -46,42 +44,6 @@ continuous (`Valuation.IsContinuous.coarsenByUnits_restrict`), and it stays boun
 -/
 
 public section
-
-namespace TauCeti.ValuationSpectrum
-
-open TauCeti.Huber Valuation
-
-variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
-
-/-- **Generizations of analytic points are vertical.** A continuous point `x` of `Spv A` that
-specializes to an analytic point `x'` has the same support. -/
-theorem IsContinuous.supp_eq_of_specializes {x x' : Spv A} (hx : x.IsContinuous)
-    (hx' : IsAnalyticPoint x') (h : x ⤳ x') : x.supp = x'.supp := by
-  obtain ⟨t, ht, htx'⟩ :=
-    (isAnalyticPoint_iff_exists_isTopologicallyNilpotent_notMem_supp x').mp hx'
-  refine le_antisymm (fun a ha ↦ ?_) (fun a ha ↦ ?_)
-  · -- an element vanishing at `x` vanishes at its specialization
-    rw [mem_supp_iff] at ha ⊢
-    by_contra hax'
-    exact ((mem_basicOpen_iff _ _ _).mp (h.mem_open (isOpen_basicOpen a a)
-      ((mem_basicOpen_iff _ _ _).mpr ⟨x'.toValuativeRel.vle_refl a, hax'⟩))).2 ha
-  · -- `x'(a) = 0 ≤ x'(tⁿ) ≠ 0` gives `x(a) ≤ x(t)ⁿ` for all `n`, so `x(a) = 0` by continuity
-    rw [mem_supp_iff] at ha ⊢
-    by_contra hax
-    have hpos : x.valuation 0 < x.valuation a := by
-      rwa [valuation_lt_iff]
-    obtain ⟨n, hn⟩ := exists_pow_lt_of_isTopologicallyNilpotent (v := x.valuation)
-      ((Valuation.isContinuous_def.mp ((ValuationSpectrum.isContinuous_def x).mp hx) a).mem_nhds
-        hpos) ht
-    have htn : ¬ x'.toValuativeRel.vle (t ^ n) 0 := fun htn ↦
-      htx' ((inferInstance : x'.supp.IsPrime).mem_of_pow_mem n ((mem_supp_iff _ _).mpr htn))
-    have hle := ((mem_basicOpen_iff _ _ _).mp (h.mem_open (isOpen_basicOpen a (t ^ n))
-      ((mem_basicOpen_iff _ _ _).mpr
-        ⟨x'.toValuativeRel.vle_trans ha (@ValuativeRel.zero_vle A _ x'.toValuativeRel _), htn⟩))).1
-    rw [← valuation_le_iff, map_pow] at hle
-    exact hle.not_gt hn
-
-end TauCeti.ValuationSpectrum
 
 namespace TauCeti.Huber.Pair.Hom
 
@@ -114,12 +76,13 @@ theorem generalizingMap_spaComap_of_isTateRing (f : Hom S T) : GeneralizingMap f
     have hlt : x.1.valuation t < 1 :=
       ((ValuationSpectrum.isContinuous_def _).mp hxc).lt_one_of_isTopologicallyNilpotent ht
     rw [hsupp, supp_comap, supp_ofValuation, Ideal.mem_comap, Valuation.mem_supp_iff] at htx
-    have hle := (coarsenMapOfValueGroup_le_iff ⊤ 1 (Units.mk0 _ htx)).mpr
-      (Or.inr ConvexSubgroup.mem_top)
-    rw [Units.val_one, Units.val_mk0, ← map_one v.restrict, ← map_one f.toRingHom,
-      ← coarsenByUnits_apply, ← coarsenByUnits_apply, ← vle_ofValuation, ← comap_vle, hH,
-      ← valuation_le_iff, map_one] at hle
-    exact hle.not_gt hlt
+    -- coarsening by `⊤` collapses every nonzero value to `1`, so `x(1) ≤ x(t)`
+    have hle : x.1.valuation 1 ≤ x.1.valuation t := by
+      rw [← hH, valuation_le_iff, comap_vle, vle_ofValuation, coarsenByUnits_apply,
+        coarsenByUnits_apply]
+      simpa using (coarsenMapOfValueGroup_le_iff ⊤ one_ne_zero htx).mpr
+        (Or.inr ConvexSubgroup.mem_top)
+    exact (map_one x.1.valuation ▸ hle).not_gt hlt
   have hvc : v.IsContinuous :=
     (ValuationSpectrum.isContinuous_def _).mp ((mem_spa_iff _ _).mp y.2).1
   have hmem : ofValuation (v.restrict.coarsenByUnits H) ∈ spa T.plus := by

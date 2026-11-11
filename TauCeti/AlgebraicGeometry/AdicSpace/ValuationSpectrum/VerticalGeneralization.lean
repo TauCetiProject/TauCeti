@@ -133,18 +133,15 @@ theorem comap_ofValuation_coarsenByUnits_eq (hx : x ⤳ comap φ (ofValuation w)
     exact iff_of_true zero_le zero_le
   rcases eq_or_ne (w (φ b)) 0 with hb | hb
   · rw [hb, (hzero b).mpr hb, map_zero, le_zero_iff, le_zero_iff, map_eq_zero, hzero]
-  rw [← Units.val_mk0 ha, ← Units.val_mk0 hb, coarsenMapOfValueGroup_le_iff, ← Units.val_le_val,
-    Units.val_mk0, Units.val_mk0]
+  rw [coarsenMapOfValueGroup_le_iff _ ha hb]
   refine ⟨fun h ↦ h.elim (fun h ↦ valuation_le_of_le hx hsupp h)
     (valuation_le_of_mem_closure hx hsupp ha hb), fun h ↦ ?_⟩
   refine (le_or_gt (w (φ a)) (w (φ b))).imp id fun hlt ↦ ConvexSubgroup.subset_closure _ ?_
   -- `w(φ b) < w(φ a)` forces `x(a) = x(b)`, so the quotient is a generator
   refine ⟨?_, a, b, le_antisymm h (valuation_le_of_le hx hsupp hlt.le), mt (hzero b).mp hb, ?_⟩
-  · rw [← Units.val_le_val, Units.val_one, Units.val_mul, Units.val_inv_eq_inv_val,
-      Units.val_mk0, Units.val_mk0, ← div_eq_inv_mul, one_le_div₀ (zero_lt_iff.mpr hb)]
+  · rw [le_inv_mul_iff_mul_le, mul_one, ← Units.val_le_val, Units.val_mk0, Units.val_mk0]
     exact hlt.le
-  · rw [Units.val_mul, Units.val_inv_eq_inv_val, Units.val_mk0, Units.val_mk0, mul_comm,
-      ← mul_assoc, mul_inv_cancel₀ hb, one_mul]
+  · simp [mul_right_comm _ (w (φ a)), hb]
 
 /-- **Vertical generizations lift along ring maps.** If `x ∈ Spv A` specializes to the pullback
 of `y ∈ Spv B` along `φ` and has the same support, then some generization of `y` pulls back to

@@ -123,9 +123,11 @@ theorem isOpenMap_spaComap_of_isFiniteEtaleTorsor {φ : Hom S T}
   have hinv (g : G) (y : Spv B) :
       comap (MulSemiringAction.toRingHom G B g⁻¹) (comap (MulSemiringAction.toRingHom G B g) y) =
         y := by
-    rw [comap_comap, show (MulSemiringAction.toRingHom G B g).comp
-        (MulSemiringAction.toRingHom G B g⁻¹) = RingHom.id B from
-      RingHom.ext fun b ↦ smul_inv_smul g b, comap_id, _root_.id]
+    -- acting by `g⁻¹` and then by `g` is the identity of `B`
+    have hcomp : (MulSemiringAction.toRingHom G B g).comp (MulSemiringAction.toRingHom G B g⁻¹) =
+        RingHom.id B :=
+      RingHom.ext fun b ↦ smul_inv_smul g b
+    rw [comap_comap, hcomp, comap_id, _root_.id]
   intro U hU
   rw [← hquot.isOpen_preimage]
   -- the saturation of `U` is the union of its translates
@@ -142,7 +144,7 @@ theorem isOpenMap_spaComap_of_isFiniteEtaleTorsor {φ : Hom S T}
     refine ⟨σ g y, hg, (spaComap_eq_spaComap_iff_of_isFiniteEtaleTorsor (G := G) hφ).mpr
       ⟨g, (hinv g y.1).symm⟩⟩
 
-/-- **The adic spectrum of a finite étale torsor is a `G`-quotient of the base.** If `B` is a
+/-- **The base is the `G`-quotient of the adic spectrum of a finite étale torsor.** If `B` is a
 finite étale `G`-torsor over a Tate ring `A`, carries its natural topology and has plus ring the
 integral closure of `A⁺`, then `Spa(B, B⁺) → Spa(A, A⁺)` is surjective and open, and its fibres
 are the `G`-orbits for `(g • y)(b) = y(g⁻¹ • b)`. Hence it identifies `Spa(A, A⁺)` with the

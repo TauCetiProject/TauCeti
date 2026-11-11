@@ -26,7 +26,7 @@ facts the height-one generization of Wedhorn's Lemma 7.45 consumes.
 
 ## Main results
 
-* `TauCeti.coarsenMapOfValueGroup_le_iff` : two unit values compare after coarsening iff they
+* `TauCeti.coarsenMapOfValueGroup_le_iff` : two nonzero values compare after coarsening iff they
   already compare or their quotient lies in `H`.
 * `Valuation.coarsenByUnits_supp` : coarsening preserves the support.
 * `Valuation.coarsenByUnits_lt_one_of_notMem` : the collapse detects non-membership — a value
@@ -90,14 +90,16 @@ theorem coarsenMapOfValueGroup_apply_coe (H : ConvexSubgroup Γ₀ˣ) (g : Γ₀
   rw [coarsenMapOfValueGroup, MonoidWithZeroHom.comp_apply, h, WithZero.map'_coe]
 
 open Classical in
-/-- **Comparison after coarsening.** The values of two units `g` and `d` compare after collapsing
-`H` exactly when `g ≤ d` already holds or the quotient `d⁻¹ * g` lies in `H`. -/
-theorem coarsenMapOfValueGroup_le_iff (H : ConvexSubgroup Γ₀ˣ) (g d : Γ₀ˣ) :
-    coarsenMapOfValueGroup H (g : Γ₀) ≤ coarsenMapOfValueGroup H (d : Γ₀) ↔
-      g ≤ d ∨ d⁻¹ * g ∈ H := by
+/-- **Comparison after coarsening.** Two nonzero values `a` and `b` compare after collapsing `H`
+exactly when `a ≤ b` already holds or the quotient `b⁻¹ * a` of their units lies in `H`. -/
+theorem coarsenMapOfValueGroup_le_iff (H : ConvexSubgroup Γ₀ˣ) {a b : Γ₀} (ha : a ≠ 0)
+    (hb : b ≠ 0) :
+    coarsenMapOfValueGroup H a ≤ coarsenMapOfValueGroup H b ↔
+      a ≤ b ∨ (Units.mk0 b hb)⁻¹ * Units.mk0 a ha ∈ H := by
+  conv_lhs => rw [← Units.val_mk0 ha, ← Units.val_mk0 hb]
   rw [coarsenMapOfValueGroup_apply_coe, coarsenMapOfValueGroup_apply_coe, WithZero.coe_le_coe,
     QuotientGroup.mk'_apply, QuotientGroup.mk'_apply, quotient_le_iff, inv_mul_le_one_iff,
-    mem_toSubgroup]
+    mem_toSubgroup, ← Units.val_le_val, Units.val_mk0, Units.val_mk0]
 
 end
 
