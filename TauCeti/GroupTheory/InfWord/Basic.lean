@@ -1,0 +1,479 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Order.Group.Defs
+public import TauCeti.Algebra.Order.SuccPred
+public import Mathlib.Tactic.Abel
+
+/-!
+# Infinite words over an ordered abelian group
+
+Let `Λ` be a discretely ordered abelian group, i.e. a linearly ordered abelian group with a least
+positive element `1`, and let `X` be a set. A *`Λ`-word* (an *infinite word*) over `X` is a function
+`w : [1, α] → X^{±1}` on a closed interval `[1, α] = {β | 1 ≤ β ≤ α}` of `Λ`, where `α ≥ 0` is the
+*length* `|w|` of `w`. For `Λ = ℤ` these are the finite words in the letters `X^{±1}`; for a
+non-Archimedean `Λ` such as `ℤ[t]` they include words like `a^t`, the constant function `a` on
+`[1, t]`.
+
+This file defines the type `TauCeti.InfWord Λ X` of all `Λ`-words, with the letters `X^{±1}`
+represented as `X × Bool` as for Mathlib's `FreeGroup`, together with
+
+* the empty word `ε`, of length `0`;
+* the concatenation `u ++ v`, of length `|u| + |v|`, equal to `u` on `[1, |u|]` and to
+  `β ↦ v(β - |u|)` on `[|u| + 1, |u| + |v|]`;
+* the inverse `w⁻¹`, of length `|w|`, with `w⁻¹(β) = w(|w| + 1 - β)⁻¹`;
+* the initial segment `w.take β`, the restriction of `w` to `[1, β]`, and the complementary final
+  segment `w.drop β`, so that `w = w.take β ++ w.drop β`;
+* the predicate `TauCeti.InfWord.IsReduced`: `w(β + 1) ≠ w(β)⁻¹` for `1 ≤ β < |w|`.
+
+The reduced `Λ`-words form the set `R(Λ, X)` on which Myasnikov, Remeslennikov and Serbin define a
+partial multiplication. They write `u ∘ v` for the concatenation of two reduced words when it is
+again reduced; `TauCeti.InfWord.isReduced_append_iff` says that this happens exactly when the last
+letter of `u` is not the inverse of the first letter of `v`.
+
+## Implementation notes
+
+A word is stored as its length together with a function `letter : Λ → Option (X × Bool)` that is
+`none` exactly outside the domain. Two words are therefore equal as soon as they have the same
+length and the same letters (`TauCeti.InfWord.ext`), and no dependent types are needed to
+concatenate or restrict words.
+
+The domain is written `{β | 0 < β ≤ |w|}`. When `succ β = β + 1` and `Λ` has no largest element
+this is the interval `[1, |w|]` (`TauCeti.InfWord.isSome_letter_iff_mem_Icc`); the formulation
+with `0 < β` keeps the domain of the empty word empty also over the trivial group, where `1 = 0`.
+The hypotheses on `Λ` are Mathlib's `SuccAddOrder` on a linearly ordered additive commutative
+group: `β + 1` is the successor of `β`, so `1` is the least positive element if there is one.
+
+## Main definitions
+
+* `TauCeti.InfWord Λ X`: the `Λ`-words over `X`, with length `InfWord.length` and letters
+  `InfWord.letter`.
+* `TauCeti.InfWord.empty`: the empty word.
+* `TauCeti.InfWord.ofFun`: the word of a given length with letters given by a function on `Λ`.
+* `u ++ v`, `w⁻¹`, `TauCeti.InfWord.take`, `TauCeti.InfWord.drop`: concatenation, inverse, initial
+  and final segments.
+* `TauCeti.InfWord.IsReduced`: reduced words.
+
+## Main results
+
+* `TauCeti.InfWord.append_assoc`, `TauCeti.InfWord.empty_append`, `TauCeti.InfWord.append_empty`:
+  concatenation is associative with unit the empty word.
+* `TauCeti.InfWord.append_right_inj`, `TauCeti.InfWord.append_left_inj`: concatenation is
+  cancellative on both sides.
+* `TauCeti.InfWord.inv_append`: `(u ++ v)⁻¹ = v⁻¹ ++ u⁻¹`; inversion is an involution.
+* `TauCeti.InfWord.take_append_drop`: `w.take β ++ w.drop β = w`.
+* `TauCeti.InfWord.isReduced_append_iff`: the criterion for a concatenation to be reduced.
+* `TauCeti.InfWord.isReduced_inv`, `TauCeti.InfWord.IsReduced.take`,
+  `TauCeti.InfWord.IsReduced.drop`: inverses and segments of reduced words are reduced.
+* `TauCeti.InfWord.isReduced_ofFun_const`: the constant word `x^α` is reduced.
+
+## References
+
+* A. Myasnikov, V. Remeslennikov, D. Serbin, *Regular free length functions on Lyndon's free
+  `ℤ[t]`-group `F^{ℤ[t]}`*, Contemp. Math. 378 (2005), 37–77, §3.1, Definition 3.1.
+* O. Kharlampovich, A. Myasnikov, D. Serbin, *Actions, length functions, and non-Archimedean
+  words*, Internat. J. Algebra Comput. 23 (2013), 325–455, §6.1.
+-/
+
+public section
+
+namespace TauCeti
+
+/-- A *`Λ`-word* over `X`: a function `w : [1, α] → X^{±1}` on an interval of an ordered abelian
+group `Λ`, where `α ≥ 0` is the length of the word. The letters `X^{±1}` are represented by
+`X × Bool`, and the function by `letter : Λ → Option (X × Bool)`, which is `none` exactly outside
+the domain `{β | 0 < β ≤ α}`. -/
+structure InfWord (Λ X : Type*) [Zero Λ] [Preorder Λ] where
+  /-- The length `|w|` of the word. -/
+  length : Λ
+  /-- The letter at a position, which is `none` outside the domain `{β | 0 < β ≤ |w|}`. -/
+  letter : Λ → Option (X × Bool)
+  /-- The length is nonnegative. -/
+  length_nonneg : 0 ≤ length
+  /-- The letters are defined exactly at the positions `0 < β ≤ |w|`. -/
+  isSome_letter (β : Λ) : (letter β).isSome ↔ 0 < β ∧ β ≤ length
+
+namespace InfWord
+
+variable {Λ X : Type*}
+
+section Preorder
+
+variable [Zero Λ] [Preorder Λ] {u v w : InfWord Λ X} {β : Λ}
+
+theorem letter_eq_none_iff : w.letter β = none ↔ ¬(0 < β ∧ β ≤ w.length) := by
+  rw [← w.isSome_letter, Option.not_isSome_iff_eq_none]
+
+theorem letter_eq_none_of_not_pos (h : ¬0 < β) : w.letter β = none :=
+  letter_eq_none_iff.2 fun h' => h h'.1
+
+theorem letter_eq_none_of_not_le (h : ¬β ≤ w.length) : w.letter β = none :=
+  letter_eq_none_iff.2 fun h' => h h'.2
+
+/-- Two words are equal when they have the same length and the same letters. -/
+@[ext]
+theorem ext (hlen : u.length = v.length)
+    (h : ∀ β, 0 < β → β ≤ u.length → u.letter β = v.letter β) : u = v := by
+  obtain ⟨lu, fu, hu, hfu⟩ := u
+  obtain ⟨lv, fv, hv, hfv⟩ := v
+  obtain rfl : lu = lv := hlen
+  obtain rfl : fu = fv := by
+    funext β
+    by_cases hβ : 0 < β ∧ β ≤ lu
+    · exact h β hβ.1 hβ.2
+    · rw [Option.not_isSome_iff_eq_none.1 (mt (hfu β).1 hβ),
+        Option.not_isSome_iff_eq_none.1 (mt (hfv β).1 hβ)]
+  rfl
+
+variable (Λ X) in
+/-- The empty word `ε`, of length `0`. -/
+def empty : InfWord Λ X where
+  length := 0
+  letter _ := none
+  length_nonneg := le_rfl
+  isSome_letter β := by simpa using fun h : 0 < β => h.not_ge
+
+instance : Inhabited (InfWord Λ X) := ⟨empty Λ X⟩
+
+@[simp] theorem length_empty : (empty Λ X).length = 0 := (rfl)
+
+@[simp] theorem letter_empty (β : Λ) : (empty Λ X).letter β = none := (rfl)
+
+end Preorder
+
+section PartialOrder
+
+variable [Zero Λ] [PartialOrder Λ] {w : InfWord Λ X}
+
+@[simp]
+theorem length_eq_zero_iff : w.length = 0 ↔ w = empty Λ X := by
+  refine ⟨fun h => ext (by simp [h]) fun β h0 hβ => ?_, fun h => by simp [h]⟩
+  exact absurd (h ▸ hβ) h0.not_ge
+
+end PartialOrder
+
+section LinearOrder
+
+variable [Zero Λ] [LinearOrder Λ]
+
+/-- The word of length `max α 0` with letter `f β` at each position `0 < β ≤ α`. -/
+def ofFun (α : Λ) (f : Λ → X × Bool) : InfWord Λ X where
+  length := max α 0
+  letter β := if 0 < β ∧ β ≤ α then some (f β) else none
+  length_nonneg := le_max_right _ _
+  isSome_letter β := by split_ifs with h <;> grind
+
+@[simp]
+theorem length_ofFun (α : Λ) (f : Λ → X × Bool) : (ofFun α f).length = max α 0 := (rfl)
+
+theorem letter_ofFun (α : Λ) (f : Λ → X × Bool) (β : Λ) :
+    (ofFun α f).letter β = if 0 < β ∧ β ≤ α then some (f β) else none := (rfl)
+
+theorem letter_ofFun_of_mem {α β : Λ} (f : Λ → X × Bool) (h0 : 0 < β) (hβ : β ≤ α) :
+    (ofFun α f).letter β = some (f β) := by
+  simp [letter_ofFun, h0, hβ]
+
+/-- The initial segment `w|_β` of a word: its restriction to the positions `≤ β`. -/
+def take (w : InfWord Λ X) (β : Λ) : InfWord Λ X where
+  length := max 0 (min β w.length)
+  letter γ := if γ ≤ β then w.letter γ else none
+  length_nonneg := le_max_left _ _
+  isSome_letter γ := by
+    have := w.length_nonneg
+    split_ifs with h
+    · rw [isSome_letter]; grind
+    · simp only [Option.isSome_none, Bool.false_eq_true, false_iff]; grind
+
+@[simp]
+theorem length_take (w : InfWord Λ X) (β : Λ) :
+    (w.take β).length = max 0 (min β w.length) := (rfl)
+
+theorem length_take_of_le {w : InfWord Λ X} {β : Λ} (h0 : 0 ≤ β) (hβ : β ≤ w.length) :
+    (w.take β).length = β := by
+  simp [h0, hβ]
+
+theorem letter_take (w : InfWord Λ X) (β γ : Λ) :
+    (w.take β).letter γ = if γ ≤ β then w.letter γ else none := (rfl)
+
+@[simp]
+theorem take_zero (w : InfWord Λ X) : w.take 0 = empty Λ X := by
+  simp [← length_eq_zero_iff, w.length_nonneg]
+
+end LinearOrder
+
+section IsReduced
+
+variable [Zero Λ] [Preorder Λ] [Add Λ] [One Λ] {w : InfWord Λ X}
+
+/-- A word is *reduced* if no letter is followed by its inverse: `w(β + 1) ≠ w(β)⁻¹` for
+`1 ≤ β < |w|`. -/
+def IsReduced (w : InfWord Λ X) : Prop :=
+  ∀ β, 0 < β → β < w.length → w.letter (β + 1) ≠ (w.letter β).map (Prod.map id not)
+
+theorem isReduced_iff : w.IsReduced ↔
+    ∀ β, 0 < β → β < w.length → w.letter (β + 1) ≠ (w.letter β).map (Prod.map id not) := Iff.rfl
+
+@[simp]
+theorem isReduced_empty : (empty Λ X).IsReduced := fun _ h0 h => (h0.not_gt h).elim
+
+end IsReduced
+
+section SuccAddOrder
+
+variable [AddZeroClass Λ] [Preorder Λ] [One Λ] [SuccAddOrder Λ] [NoMaxOrder Λ]
+  {w : InfWord Λ X} {β : Λ}
+
+/-- When `succ β = β + 1` and there is no largest element, as in a nontrivial discretely ordered
+abelian group, the domain of a word is the interval `[1, |w|]`. -/
+theorem isSome_letter_iff_mem_Icc : (w.letter β).isSome ↔ β ∈ Set.Icc 1 w.length := by
+  rw [isSome_letter, Set.mem_Icc, ← Order.add_one_le_iff, zero_add]
+
+end SuccAddOrder
+
+section Group
+
+variable [AddCommGroup Λ] [LinearOrder Λ] [IsOrderedAddMonoid Λ] {u v w : InfWord Λ X} {β : Λ}
+
+/-- Concatenation of words. -/
+instance : Append (InfWord Λ X) where
+  append u v :=
+    { length := u.length + v.length
+      letter β := if β ≤ u.length then u.letter β else v.letter (β - u.length)
+      length_nonneg := add_nonneg u.length_nonneg v.length_nonneg
+      isSome_letter β := by
+        have := u.length_nonneg
+        have := v.length_nonneg
+        split_ifs with h <;> simp only [isSome_letter] <;> grind }
+
+@[simp]
+theorem length_append (u v : InfWord Λ X) : (u ++ v).length = u.length + v.length := (rfl)
+
+theorem letter_append (u v : InfWord Λ X) (β : Λ) :
+    (u ++ v).letter β = if β ≤ u.length then u.letter β else v.letter (β - u.length) := (rfl)
+
+theorem letter_append_of_le (v : InfWord Λ X) (h : β ≤ u.length) :
+    (u ++ v).letter β = u.letter β := by
+  simp [letter_append, h]
+
+theorem letter_append_of_lt (v : InfWord Λ X) (h : u.length < β) :
+    (u ++ v).letter β = v.letter (β - u.length) := by
+  simp [letter_append, h.not_ge]
+
+@[simp]
+theorem letter_append_add_length (u v : InfWord Λ X) (h : 0 < β) :
+    (u ++ v).letter (β + u.length) = v.letter β := by
+  rw [letter_append_of_lt _ (by grind), add_sub_cancel_right]
+
+@[simp]
+theorem empty_append (w : InfWord Λ X) : empty Λ X ++ w = w :=
+  ext (by simp) fun β h0 hβ => by simp [letter_append, h0.not_ge]
+
+@[simp]
+theorem append_empty (w : InfWord Λ X) : w ++ empty Λ X = w :=
+  ext (by simp) fun β h0 hβ => by simp [letter_append, show β ≤ w.length by simpa using hβ]
+
+@[simp]
+theorem append_assoc (u v w : InfWord Λ X) : u ++ v ++ w = u ++ (v ++ w) := by
+  have := u.length_nonneg
+  have := v.length_nonneg
+  refine ext (by simp [add_assoc]) fun β h0 hβ => ?_
+  simp only [letter_append, length_append]
+  split_ifs <;> first | rfl | (exfalso; grind) | rw [sub_sub]
+
+@[simp]
+theorem append_right_inj (u : InfWord Λ X) : u ++ v = u ++ w ↔ v = w := by
+  refine ⟨fun h => ext ?_ fun β h0 hβ => ?_, fun h => h ▸ rfl⟩
+  · simpa using congrArg length h
+  · simpa [h0] using congrArg (letter · (β + u.length)) h
+
+@[simp]
+theorem append_left_inj (u : InfWord Λ X) : v ++ u = w ++ u ↔ v = w := by
+  refine ⟨fun h => ?_, fun h => h ▸ rfl⟩
+  have hlen : v.length = w.length := by simpa using congrArg length h
+  refine ext hlen fun β h0 hβ => ?_
+  simpa [letter_append, hβ, hlen ▸ hβ] using congrArg (letter · β) h
+
+@[simp]
+theorem append_eq_empty_iff : u ++ v = empty Λ X ↔ u = empty Λ X ∧ v = empty Λ X := by
+  simp_rw [← length_eq_zero_iff, length_append]
+  exact add_eq_zero_iff_of_nonneg u.length_nonneg v.length_nonneg
+
+/-- The final segment of a word complementary to `w.take β`: for `0 ≤ β` the letter of `w.drop β`
+at a position `γ > 0` is the letter of `w` at `γ + β`, and `w.drop β = w` for `β ≤ 0`. -/
+def drop (w : InfWord Λ X) (β : Λ) : InfWord Λ X where
+  length := w.length - max 0 (min β w.length)
+  letter γ := if 0 < γ then w.letter (γ + max 0 β) else none
+  length_nonneg := by have := w.length_nonneg; grind
+  isSome_letter γ := by
+    have := w.length_nonneg
+    split_ifs with h
+    · rw [isSome_letter]; grind
+    · simp only [Option.isSome_none, Bool.false_eq_true, false_iff]; grind
+
+@[simp]
+theorem length_drop (w : InfWord Λ X) (β : Λ) :
+    (w.drop β).length = w.length - max 0 (min β w.length) := (rfl)
+
+theorem letter_drop (w : InfWord Λ X) (β γ : Λ) :
+    (w.drop β).letter γ = if 0 < γ then w.letter (γ + max 0 β) else none := (rfl)
+
+/-- A word is the concatenation of its initial segment `w.take β` and the complementary final
+segment `w.drop β`. -/
+@[simp]
+theorem take_append_drop (w : InfWord Λ X) (β : Λ) : w.take β ++ w.drop β = w := by
+  have := w.length_nonneg
+  refine ext (by simp) fun γ h0 hγ => ?_
+  simp only [length_append, length_take, length_drop] at hγ
+  simp only [letter_append, letter_take, letter_drop, length_take]
+  split_ifs <;> first | rfl | (exfalso; grind) | (congr 1; grind)
+
+@[simp]
+theorem take_length_append (u v : InfWord Λ X) : (u ++ v).take u.length = u := by
+  have := u.length_nonneg
+  have := v.length_nonneg
+  refine ext (by simp; grind) fun γ h0 hγ => ?_
+  have : γ ≤ u.length := by simp at hγ; grind
+  simp [letter_take, letter_append, this]
+
+@[simp]
+theorem drop_length_append (u v : InfWord Λ X) : (u ++ v).drop u.length = v := by
+  rw [← append_right_inj ((u ++ v).take u.length), take_append_drop, take_length_append]
+
+@[simp]
+theorem drop_zero (w : InfWord Λ X) : w.drop 0 = w := by
+  simpa using w.take_append_drop 0
+
+@[simp]
+theorem take_length (w : InfWord Λ X) : w.take w.length = w := by
+  simpa using take_length_append w (empty Λ X)
+
+@[simp]
+theorem drop_length (w : InfWord Λ X) : w.drop w.length = empty Λ X := by
+  simpa using drop_length_append w (empty Λ X)
+
+end Group
+
+section Discrete
+
+variable [AddCommGroup Λ] [LinearOrder Λ] [IsOrderedAddMonoid Λ] [One Λ] [SuccAddOrder Λ]
+  {u v w : InfWord Λ X} {α β : Λ}
+
+/-- The inverse of a word: `w⁻¹(β) = w(|w| + 1 - β)⁻¹`. -/
+instance : Inv (InfWord Λ X) where
+  inv w :=
+    { length := w.length
+      letter β := (w.letter (w.length + 1 - β)).map (Prod.map id not)
+      length_nonneg := w.length_nonneg
+      isSome_letter β := by
+        simp only [Option.isSome_map, isSome_letter]
+        refine ⟨fun h => ?_, fun h => ?_⟩
+        · have := Order.zero_lt_one_of_pos h.1
+          have := Order.le_of_lt_add_one (sub_pos.1 h.1)
+          grind
+        · have := Order.zero_lt_one_of_pos h.1
+          have := Order.add_one_le_of_lt h.1
+          grind }
+
+@[simp] theorem length_inv (w : InfWord Λ X) : w⁻¹.length = w.length := (rfl)
+
+theorem letter_inv (w : InfWord Λ X) (β : Λ) :
+    w⁻¹.letter β = (w.letter (w.length + 1 - β)).map (Prod.map id not) := (rfl)
+
+instance : InvolutiveInv (InfWord Λ X) where
+  inv_inv w := ext (by simp) fun β h0 hβ => by
+    simp [letter_inv, Function.comp_def, Prod.map]
+
+@[simp]
+theorem inv_empty : (empty Λ X)⁻¹ = empty Λ X := by
+  simp [← length_eq_zero_iff]
+
+theorem inv_append (u v : InfWord Λ X) : (u ++ v)⁻¹ = v⁻¹ ++ u⁻¹ := by
+  refine ext (by simp [add_comm]) fun β h0 hβ => ?_
+  have h01 := Order.zero_lt_one_of_pos h0
+  have := Order.add_one_le_of_lt (x := v.length) (y := β)
+  simp only [letter_inv, letter_append, length_append, length_inv]
+  split_ifs <;> first | (exfalso; grind) | (congr 2; abel)
+
+@[simp]
+theorem isReduced_ofFun_iff {f : Λ → X × Bool} : (ofFun α f).IsReduced ↔
+    ∀ β, 0 < β → β < α → f (β + 1) ≠ Prod.map id not (f β) := by
+  refine forall_congr' fun β => forall_congr' fun h0 => ?_
+  have h01 := Order.zero_lt_one_of_pos h0
+  have := Order.add_one_le_of_lt (x := β) (y := α)
+  by_cases hβ : β < α
+  · simp [letter_ofFun, h0, hβ, hβ.le, this hβ, h0.trans (lt_add_of_pos_right β h01)]
+  · simp only [length_ofFun, hβ, false_imp_iff, iff_true]
+    grind
+
+/-- The constant word `x^α`, with the letter `x` at every position of `[1, α]`, is reduced. -/
+theorem isReduced_ofFun_const (α : Λ) (x : X × Bool) : (ofFun α fun _ => x).IsReduced := by
+  simp [Prod.ext_iff]
+
+theorem IsReduced.inv (h : w.IsReduced) : w⁻¹.IsReduced := by
+  intro β h0 hβ h'
+  rw [letter_inv, letter_inv, Option.map_map,
+    show w.length + 1 - (β + 1) = w.length - β by abel,
+    show w.length + 1 - β = w.length - β + 1 by abel] at h'
+  refine h (w.length - β) (by simpa using hβ) (by simpa using h0) ?_
+  rw [h']
+  simp [Function.comp_def, Prod.map]
+
+@[simp]
+theorem isReduced_inv : w⁻¹.IsReduced ↔ w.IsReduced :=
+  ⟨fun h => by simpa using h.inv, IsReduced.inv⟩
+
+theorem IsReduced.left_of_append (h : (u ++ v).IsReduced) : u.IsReduced := by
+  intro β h0 hβ
+  have := h β h0 (by simpa using hβ.trans_le (le_add_of_nonneg_right v.length_nonneg))
+  rwa [letter_append_of_le _ (Order.add_one_le_of_lt hβ), letter_append_of_le _ hβ.le] at this
+
+theorem IsReduced.right_of_append (h : (u ++ v).IsReduced) : v.IsReduced := by
+  intro β h0 hβ
+  have h01 := Order.zero_lt_one_of_pos h0
+  have := h (β + u.length) (add_pos_of_pos_of_nonneg h0 u.length_nonneg)
+    (by simpa [add_comm u.length] using hβ)
+  rwa [add_right_comm, letter_append_add_length _ _ (h0.trans (lt_add_of_pos_right β h01)),
+    letter_append_add_length _ _ h0] at this
+
+/-- In a reduced concatenation the last letter of the first word is not the inverse of the first
+letter of the second. -/
+theorem IsReduced.letter_one_ne_of_append (h : (u ++ v).IsReduced) (hu : 0 < u.length)
+    (hv : 0 < v.length) : v.letter 1 ≠ (u.letter u.length).map (Prod.map id not) := by
+  have := h u.length hu (by simpa using hv)
+  rwa [add_comm, letter_append_add_length _ _ (Order.zero_lt_one_of_pos hu),
+    letter_append_of_le _ le_rfl] at this
+
+/-- The concatenation `u ++ v` of two words is reduced, written `u ∘ v`, exactly when `u` and `v`
+are reduced and the last letter of `u` is not the inverse of the first letter of `v`. -/
+theorem isReduced_append_iff : (u ++ v).IsReduced ↔ u.IsReduced ∧ v.IsReduced ∧
+    (0 < u.length → 0 < v.length → v.letter 1 ≠ (u.letter u.length).map (Prod.map id not)) := by
+  refine ⟨fun h => ⟨h.left_of_append, h.right_of_append, h.letter_one_ne_of_append⟩, ?_⟩
+  rintro ⟨hu, hv, huv⟩ β h0 hβ
+  have h01 := Order.zero_lt_one_of_pos h0
+  rw [length_append] at hβ
+  rcases lt_trichotomy β u.length with h | rfl | h
+  · rw [letter_append_of_le _ (Order.add_one_le_of_lt h), letter_append_of_le _ h.le]
+    exact hu β h0 h
+  · rw [add_comm, letter_append_add_length _ _ h01, letter_append_of_le _ le_rfl]
+    exact huv h0 (by simpa using hβ)
+  · obtain ⟨γ, rfl⟩ : ∃ γ, β = γ + u.length := ⟨β - u.length, by abel⟩
+    have hγ : 0 < γ := by simpa using h
+    rw [add_right_comm, letter_append_add_length _ _ (hγ.trans (lt_add_of_pos_right γ h01)),
+      letter_append_add_length _ _ hγ]
+    exact hv γ hγ (by simpa [add_comm u.length] using hβ)
+
+theorem IsReduced.take (h : w.IsReduced) (β : Λ) : (w.take β).IsReduced :=
+  IsReduced.left_of_append (v := w.drop β) (by rwa [take_append_drop])
+
+theorem IsReduced.drop (h : w.IsReduced) (β : Λ) : (w.drop β).IsReduced :=
+  IsReduced.right_of_append (u := w.take β) (by rwa [take_append_drop])
+
+end Discrete
+
+end InfWord
+
+end TauCeti
