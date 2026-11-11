@@ -156,7 +156,7 @@ theorem eval₂_suspensionForm_mk (θ : UnitAddCircle) (t : ℝ) (x : M) (a a' b
 omit [T2Space M] [LocallyCompactSpace M] in
 /-- Every tangent vector of `(ℝ / ℤ) × Y_φ` at `(θ, [t, x])` is `a ∂_s + b ∂_t + v` in the
 coordinates `(s, t, x)`. -/
-theorem exists_eq_symm_tangentSpaceProdEquiv [T2Space M] [LocallyCompactSpace M]
+private theorem exists_eq_symm_tangentSpaceProdEquiv [T2Space M] [LocallyCompactSpace M]
     (θ : UnitAddCircle) (t : ℝ) (x : M)
     (V : TangentSpace (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (θ, mk φ t x)) :
     ∃ (a b : ℝ) (v : TangentSpace I x), V = (Manifold.tangentSpaceProdEquiv _).symm

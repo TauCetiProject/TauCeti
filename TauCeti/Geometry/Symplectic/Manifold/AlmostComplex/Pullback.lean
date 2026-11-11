@@ -52,9 +52,6 @@ family of almost complex structures on a mapping torus has to reach after one tu
   `TauCeti.ContMDiffAlmostComplexStructure.pullback_neg`: regularity downgrade and negation.
 * The corresponding `TauCeti.SmoothAlmostComplexStructure` theorems are the infinite-order
   specializations of these results.
-* `Diffeomorph.conjContinuousAlgEquiv_mfderivToContinuousLinearEquiv`: pointwise, a structure
-  `J'` on `T_(h x) N` that makes `dh_x` complex linear from `J` is the conjugate of `J` by
-  `dh_x`.
 * `TauCeti.SmoothTwoForm.Tames.pullback`, `TauCeti.SmoothTwoForm.Invariant.pullback`,
   `TauCeti.SmoothTwoForm.Compatible.pullback`: tameness, invariance and compatibility pass to
   the pullbacks of the form and of the structure.
@@ -357,28 +354,5 @@ theorem Compatible.pullback (hJ : σ.Compatible J) (h : M ≃ₘ⟮I, I'⟯ N) :
   ⟨hJ.invariant.pullback h, hJ.tames.pullback h⟩
 
 end SmoothTwoForm
-
-omit [IsManifold I ∞ M] [IsManifold I' ∞ N] in
-/-- If the differential of a `Cʳ` diffeomorphism `h` at `x` intertwines a structure `J` on
-`T_x M` with a structure `J'` on `T_(h x) N`, that is `dh_x ∘ J = J' ∘ dh_x`, then `J'` is the
-conjugate of `J` by the linear equivalence `dh_x`. -/
-theorem _root_.Diffeomorph.conjContinuousAlgEquiv_mfderivToContinuousLinearEquiv
-    {r : WithTop ℕ∞} (h : M ≃ₘ^r⟮I, I'⟯ N) (hr : r ≠ 0) {x : M}
-    {J : AlmostComplexStructure (TangentSpace I x)}
-    {J' : AlmostComplexStructure (TangentSpace I' (h x))}
-    (hJ : ∀ v, mfderiv I I' h x (J v) = J' (mfderiv I I' h x v)) :
-    (h.mfderivToContinuousLinearEquiv hr x).conjContinuousAlgEquiv
-        (LinearMap.toContinuousLinearMap J.toLinearMap) =
-      LinearMap.toContinuousLinearMap J'.toLinearMap := by
-  ext w
-  set g := h.mfderivToContinuousLinearEquiv hr x
-  have hg : ∀ v, g v = mfderiv I I' h x v := fun v ↦
-    congrArg (· v) (h.mfderivToContinuousLinearEquiv_coe hr (x := x))
-  have h' := hJ (g.symm w)
-  rw [← hg, ← hg, ContinuousLinearEquiv.apply_symm_apply] at h'
-  rw [ContinuousLinearEquiv.conjContinuousAlgEquiv_apply_apply,
-    LinearMap.coe_toContinuousLinearMap', LinearMap.coe_toContinuousLinearMap']
-  -- An almost complex structure acts on vectors through its underlying linear map.
-  exact h'
 
 end TauCeti
