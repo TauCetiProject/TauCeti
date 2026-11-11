@@ -109,6 +109,7 @@ theorem completionNormalizedAbsValue_completionMap
 
 variable [NumberField K] [NumberField L]
 
+omit [NumberField K] in
 open Classical in
 /-- The product of normalized absolute values over the infinite places above `v` is the
 normalized absolute value at `v` raised to the global degree. -/
@@ -119,6 +120,8 @@ theorem prod_completionNormalizedAbsValue_completionMap
         (@LiesOver.completionMap K L _ _ _ v w.1 w.2 x) =
       completionNormalizedAbsValue v x ^ Module.finrank K L := by
   classical
+  have : CharZero K := (algebraMap K L).charZero
+  have : NumberField K := NumberField.of_tower ℚ L K
   have h (w : {w : InfinitePlace L // w.LiesOver v}) :
       completionNormalizedAbsValue w.1
         (@LiesOver.completionMap K L _ _ _ v w.1 w.2 x) =

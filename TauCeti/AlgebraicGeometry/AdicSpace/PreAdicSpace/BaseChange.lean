@@ -218,10 +218,8 @@ theorem prop_restrictPreimage_presentationLimitPreAdicSpaceComap_iff
         (by rw [rationalLocalizationPair_plus]
             exact P'.completionLocalization_ringOfDefinition_le_completedPlusSubring U'.plus hP' _
               _ L' hden')
-        (by rw [rationalLocalizationPair_plus]
-            exact isSheaf_presentationLimitPresheaf_completionLocalization P' U'.plus
-              U'.isRingOfIntegralElements.isPowerBounded_of_mem hP' _ _ L' hden'
-              (by rw [Finset.coe_image, ← Ideal.map_span]; exact hopen hT) hsheaf)) := by
+        (isSheaf_presentationLimitPresheaf_rationalLocalizationPair P' U' hP' _ _ L' hden'
+          (by rw [Finset.coe_image, ← Ideal.map_span]; exact hopen hT) hsheaf)) := by
   let _ := P.locUniformSpace T s L hden
   have _ := P.isUniformAddGroup_locUniformSpace T s L hden
   have _ := P.isTopologicalRing_locUniformSpace T s L hden
@@ -233,16 +231,8 @@ theorem prop_restrictPreimage_presentationLimitPreAdicSpaceComap_iff
   have hT' : IsOpen (Ideal.span ((T.image φ.toRingHom : Finset B) : Set B) : Set B) := by
     rw [Finset.coe_image, ← Ideal.map_span]
     exact hopen hT
-  have hsheafU' : Presheaf.IsSheaf (Opens.grothendieckTopology
-      ↥(spa (P'.rationalLocalizationPair U' hP' (T.image φ.toRingHom) (φ.toRingHom s) L'
-        hden').plus))
-      (presentationLimitPresheaf
-        (P'.completionLocalization (T.image φ.toRingHom) (φ.toRingHom s) L' hden')
-        (P'.rationalLocalizationPair U' hP' (T.image φ.toRingHom) (φ.toRingHom s) L'
-          hden').plus) := by
-    rw [rationalLocalizationPair_plus]
-    exact isSheaf_presentationLimitPresheaf_completionLocalization P' U'.plus
-      U'.isRingOfIntegralElements.isPowerBounded_of_mem hP' _ _ L' hden' hT' hsheaf
+  have hsheafU' := isSheaf_presentationLimitPresheaf_rationalLocalizationPair P' U' hP' _ _ L'
+    hden' hT' hsheaf
   -- the vertical sides of the square are open immersions onto `R(T/s)` and `R(φ(T)/φ(s))`
   have := isOpenImmersion_presentationLimitPreAdicSpaceComap_toCompletionLocHom P hP T s L hden hT
     hsheafU

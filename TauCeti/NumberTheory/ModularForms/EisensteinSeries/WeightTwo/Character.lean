@@ -215,7 +215,6 @@ theorem qExpansion_charG2MFRaise (htuv : t * (u * v) ∣ N) :
   rw [charG2MFRaise]
   exact ModularForm.qExpansion_levelRaise
     (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
-    (TauCeti.one_mem_strictPeriods_Gamma1_map N)
     (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv) _
 
 /-- The coefficients of `G₂^{ψ,φ,t}`: `a_n(G₂^{ψ,φ,t}) = a_{n/t}(G₂^{ψ,φ})` when `t ∣ n`, and
@@ -230,7 +229,6 @@ theorem qExpansion_charG2MFRaise_coeff (htuv : t * (u * v) ∣ N) (n : ℕ) :
   rw [charG2MFRaise]
   exact ModularForm.qExpansion_levelRaise_coeff
     (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
-    (TauCeti.one_mem_strictPeriods_Gamma1_map N)
     (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv) _ n
 
 /-- The `q`-expansion of `G₂^{ψ,φ,t}` is supported on the multiples of `t`. -/
@@ -242,7 +240,6 @@ theorem isSupportedOnDvd_qExpansion_charG2MFRaise (htuv : t * (u * v) ∣ N) :
   rw [charG2MFRaise]
   exact ModularForm.isSupportedOnDvd_qExpansion_levelRaise
     (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
-    (TauCeti.one_mem_strictPeriods_Gamma1_map N)
     (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv) _
 
 end TauCeti.EisensteinSeries

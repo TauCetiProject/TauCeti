@@ -445,9 +445,6 @@ theorem differentialFrame_smul (j : ℕ) (q : stabilizer Γ z) {g : SL(2, ℝ)}
     ψ.differentialFrame j (g • τ) =
       denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ (2 * (j : ℤ)) * ψ.differentialFrame j τ := by
   have hτ' : τ ∈ stabilizerBall Γ z ε := (mem_stabilizerBall Γ z ε).2 (mem_ball.mp hτ)
-  have hgτ : g • τ ∈ ball z ε := by
-    rw [← coe_smul_stabilizerBall_of_coe_eq q hg ⟨τ, hτ'⟩]
-    exact mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 (q • ⟨τ, hτ'⟩ : stabilizerBall Γ z ε).2)
   -- the local quotient coordinate is invariant under `g` near `τ`
   have hinv : (fun t : ℂ ↦ ψ.quotientCoordinateOnComplex
       (((g : PSL(2, ℝ)) • ofComplex t : ℍ) : ℂ)) =ᶠ[nhds (τ : ℂ)]
@@ -461,8 +458,7 @@ theorem differentialFrame_smul (j : ℕ) (q : stabilizer Γ z) {g : SL(2, ℝ)}
       ← ψ.quotientCoordinateOnComplex_coe ⟨σ, hσ'⟩] at h
     rw [ofComplex_apply, pslMk_smul]
     exact h
-  have hderiv := Matrix.ProjectiveSpecialLinearGroup.deriv_smul_mul_smulDeriv_of_eventuallyEq _
-    hinv (by rw [pslMk_smul]; exact ψ.differentiableAt_quotientCoordinateOnComplex hgτ)
+  have hderiv := Matrix.ProjectiveSpecialLinearGroup.deriv_smul_mul_smulDeriv_of_eventuallyEq _ hinv
   rw [pslMk_smul, Matrix.SpecialLinearGroup.smulDeriv_coe] at hderiv
   rw [differentialFrame_eq_deriv, differentialFrame_eq_deriv, ← hderiv, zpow_mul,
     zpow_ofNat, zpow_natCast, ← mul_pow, mul_left_comm,
