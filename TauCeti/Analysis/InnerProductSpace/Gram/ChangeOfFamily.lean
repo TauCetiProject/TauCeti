@@ -67,8 +67,14 @@ variable [DecidableEq ι]
 hypothesis. -/
 theorem det_gram_sum_smul (U : Matrix ι ι 𝕜) (v : ι → E) :
     (gram 𝕜 (fun i ↦ ∑ j, U i j • v j)).det = ((‖U.det‖ ^ 2 : ℝ) : 𝕜) * (gram 𝕜 v).det := by
-  rw [gram_sum_smul, det_mul, det_mul, det_transpose, ← RingHom.mapMatrix_apply,
-    ← RingHom.map_det, mul_right_comm, RCLike.conj_mul, RCLike.ofReal_pow]
+  -- Conjugating the entries conjugates the determinant: `U.map conj` is `Uᴴᵀ`, so this is
+  -- `det_transpose` followed by Mathlib's `det_conjTranspose`.
+  have hconj : (U.map (starRingEnd 𝕜)).det = starRingEnd 𝕜 U.det :=
+    (det_transpose Uᴴ).trans (det_conjTranspose U)
+  -- Expand the Gram matrix of the new family and split the determinant of the product.
+  rw [gram_sum_smul, det_mul, det_mul, det_transpose, hconj]
+  -- The two factors `conj (det U)` and `det U` combine to `‖det U‖ ^ 2`.
+  rw [mul_right_comm, RCLike.conj_mul, RCLike.ofReal_pow]
 
 /-- **The real Gram determinant under a change of family.** For `w i = ∑ j, U i j • v j` in a real
 inner product space, `det (gram ℝ w) = det U ^ 2 * det (gram ℝ v)`, with no independence or
@@ -76,7 +82,7 @@ dimension hypothesis. -/
 theorem det_gram_matrix_smul {F : Type*} [SeminormedAddCommGroup F] [InnerProductSpace ℝ F]
     (U : Matrix ι ι ℝ) (v : ι → F) :
     (gram ℝ (fun i ↦ ∑ j, U i j • v j)).det = U.det ^ 2 * (gram ℝ v).det := by
-  rw [det_gram_sum_smul, RCLike.ofReal_real_eq_id, id, Real.norm_eq_abs, sq_abs]
+  simp [det_gram_sum_smul, sq_abs]
 
 /-- A change of family of determinant one, such as an upper or lower unitriangular one, preserves
 the Gram determinant. -/
