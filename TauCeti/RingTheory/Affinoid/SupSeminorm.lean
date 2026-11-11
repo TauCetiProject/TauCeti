@@ -72,18 +72,6 @@ that affinoid algebras are Jacobson rings.
 
 public section
 
-namespace AlgHom
-
-/-- The spectral norm over `K` is invariant under `K`-algebra maps of fields. -/
-theorem spectralNorm_map {K : Type*} [NontriviallyNormedField K] {E L : Type*} [Field E]
-    [Algebra K E] [Field L] [Algebra K L] (ψ : E →ₐ[K] L) (y : E) :
-    spectralNorm K L (ψ y) = spectralNorm K E y := by
-  -- `spectralNorm K L y` is by definition `spectralValue (minpoly K y)`, and the injective map `ψ`
-  -- preserves minimal polynomials.
-  simp only [spectralNorm, minpoly.algHom_eq ψ (ψ : E →+* L).injective]
-
-end AlgHom
-
 namespace TauCeti
 
 open Polynomial
