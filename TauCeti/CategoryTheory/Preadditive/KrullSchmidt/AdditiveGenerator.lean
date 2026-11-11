@@ -32,7 +32,9 @@ indecomposable objects up to isomorphism.
 
 ## Main results
 
-* `TauCeti.IsAdditiveGenerator.of_retract` and `TauCeti.IsAdditiveGenerator.of_iso`: invariance
+* `TauCeti.isAdditiveGenerator_iff` and `TauCeti.IsAdditiveGenerator.nonempty_retract`: the
+  defining property.
+* `CategoryTheory.Retract.isAdditiveGenerator` and `TauCeti.IsAdditiveGenerator.of_iso`: invariance
   under adding direct summands and under isomorphism.
 * `CategoryTheory.Equivalence.isAdditiveGenerator_functor_obj_iff`: invariance under equivalence of
   categories.
@@ -62,27 +64,39 @@ of `G`. -/
 def IsAdditiveGenerator (G : C) : Prop :=
   ∀ X : C, Indecomposable X → Nonempty (Retract X G)
 
+/-- The defining property of an additive generator: every indecomposable object is a retract of
+it. -/
+theorem isAdditiveGenerator_iff {G : C} :
+    IsAdditiveGenerator G ↔ ∀ X : C, Indecomposable X → Nonempty (Retract X G) :=
+  Iff.rfl
+
+/-- **An object having an additive generator as a direct summand is an additive generator.** -/
+theorem _root_.CategoryTheory.Retract.isAdditiveGenerator {G G' : C} (h : Retract G G')
+    (hG : IsAdditiveGenerator G) : IsAdditiveGenerator G' :=
+  fun X hX ↦ (hG X hX).map (·.trans h)
+
 namespace IsAdditiveGenerator
 
 variable {G G' : C}
 
-/-- An object having an additive generator as a direct summand is an additive generator. -/
-theorem of_retract (hG : IsAdditiveGenerator G) (h : Retract G G') : IsAdditiveGenerator G' :=
-  fun X hX ↦ (hG X hX).map (·.trans h)
+/-- Every indecomposable object is a retract of an additive generator. -/
+theorem nonempty_retract (hG : IsAdditiveGenerator G) {X : C} (hX : Indecomposable X) :
+    Nonempty (Retract X G) :=
+  hG X hX
 
 /-- **Additive generators are invariant under isomorphism.** -/
 theorem of_iso (hG : IsAdditiveGenerator G) (e : G ≅ G') : IsAdditiveGenerator G' :=
-  hG.of_retract (.ofIso e)
+  (Retract.ofIso e).isAdditiveGenerator hG
 
 /-- Adding a direct summand to an additive generator gives an additive generator. -/
 theorem biprod_left [HasBinaryBiproduct G G'] (hG : IsAdditiveGenerator G) :
     IsAdditiveGenerator (G ⊞ G') :=
-  hG.of_retract ⟨biprod.inl, biprod.fst, by simp⟩
+  Retract.isAdditiveGenerator ⟨biprod.inl, biprod.fst, by simp⟩ hG
 
 /-- Adding a direct summand to an additive generator gives an additive generator. -/
 theorem biprod_right [HasBinaryBiproduct G' G] (hG : IsAdditiveGenerator G) :
     IsAdditiveGenerator (G' ⊞ G) :=
-  hG.of_retract ⟨biprod.inr, biprod.snd, by simp⟩
+  Retract.isAdditiveGenerator ⟨biprod.inr, biprod.snd, by simp⟩ hG
 
 end IsAdditiveGenerator
 

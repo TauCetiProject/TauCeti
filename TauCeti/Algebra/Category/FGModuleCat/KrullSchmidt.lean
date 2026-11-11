@@ -9,8 +9,10 @@ public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.RingTheory.Artinian.Defs
 public import TauCeti.Algebra.Category.FGModuleCat.Basic
+public import TauCeti.Algebra.Category.ModuleCat.FiniteLength
 public import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.Basic
 import Mathlib.RingTheory.HopkinsLevitzki
+import TauCeti.RingTheory.Artinian.FiniteLength
 import TauCeti.Algebra.Category.ModuleCat.KrullSchmidt
 import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.FullSubcategory
 import TauCeti.Algebra.Category.ModuleCat.Indecomposable
@@ -78,18 +80,21 @@ theorem isLocalRing_end_of_indecomposable {X : FGModuleCat.{w} A} [IsNoetherian 
   exact ((ObjectProperty.fullyFaithfulι _).ringEquivEnd X).symm.isLocalRing
 
 open TauCeti in
-/-- **`mod A` is Krull-Schmidt over a left Artinian ring `A`**, for instance an Artin algebra: a
-finitely generated module has finite length, so it is a finite biproduct of indecomposable modules,
-whose endomorphism rings are local by Fitting's lemma. -/
+/-- Over a left Artinian ring, a module is finitely generated exactly when it has finite length. -/
+theorem _root_.ModuleCat.isFiniteLength_eq_isFG [IsArtinianRing A] :
+    ModuleCat.isFiniteLength.{w} A = ModuleCat.isFG.{w} A :=
+  funext fun M ↦ propext <| by
+    rw [ModuleCat.isFiniteLength_iff, ModuleCat.isFG_iff]
+    refine ⟨fun h ↦ ?_, fun _ ↦ isFiniteLength_of_finite A M⟩
+    have := (isFiniteLength_iff_isNoetherian_isArtinian.1 h).1
+    infer_instance
+
+open TauCeti in
+/-- **`mod A` is Krull-Schmidt over a left Artinian ring `A`**, for instance an Artin algebra: the
+finitely generated modules are the modules of finite length, which form a Krull-Schmidt category
+(`TauCeti.isKrullSchmidt_isFiniteLength`). -/
 instance isKrullSchmidt_of_isArtinianRing [IsArtinianRing A] :
     IsKrullSchmidt (FGModuleCat.{w} A) :=
-  (ModuleCat.isFG.{w} A).isKrullSchmidt_fullSubcategory_of_exists_iso_biproduct fun X hX ↦ by
-    have : Module.Finite A X := (ModuleCat.isFG_iff X).mp hX
-    obtain ⟨n, P, hP, ⟨e⟩⟩ := exists_indecomposable_iso_biproduct X
-    refine ⟨n, P, fun i ↦ (indecomposable_iff_isLocalRing_end (P i) ?_).1 (hP i), ⟨e⟩⟩
-    -- Each summand is a retract of `X`, so it is finitely generated, hence of finite length.
-    have : Module.Finite A (P i) := (ModuleCat.isFG_iff _).mp ((ModuleCat.isFG A).prop_of_retract
-      ⟨biproduct.ι P i ≫ e.inv, e.hom ≫ biproduct.π P i, by simp⟩ hX)
-    exact isFiniteLength_iff_isNoetherian_isArtinian.2 ⟨inferInstance, inferInstance⟩
+  (ObjectProperty.fullSubcategoryCongr ModuleCat.isFiniteLength_eq_isFG).isKrullSchmidt
 
 end FGModuleCat

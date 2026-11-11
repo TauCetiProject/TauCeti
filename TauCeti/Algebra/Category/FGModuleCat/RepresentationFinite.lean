@@ -63,12 +63,12 @@ universe w v u
 variable (R : Type u) {A : Type v} [CommRing R] [IsArtinianRing R] [Ring A] [Algebra R A]
   [Module.Finite R A]
 
-/-- Over a representation-finite Noetherian ring `A`, every indecomposable object of
+/-- Over a representation-finite ring `A`, every indecomposable object of
 `FGModuleCat A` is isomorphic to one of finitely many objects `P i`. This is the form in which
 representation-finiteness enters the results for linear categories with finitely many
 indecomposable objects, such as
 `TauCeti.exists_jacobsonRadicalIdeal_pow_eq_bot_of_finite_indecomposables`. -/
-theorem IsRepresentationFinite.exists_indecomposable_iso [IsNoetherianRing A]
+theorem IsRepresentationFinite.exists_indecomposable_iso
     (h : IsRepresentationFinite.{w} A) :
     ∃ (m : ℕ) (P : Fin m → FGModuleCat.{w} A),
       ∀ X : FGModuleCat.{w} A, Indecomposable X → ∃ i, Nonempty (X ≅ P i) := by
@@ -113,22 +113,12 @@ theorem isRepresentationFinite_iff_exists_isAdditiveGenerator [IsArtinianRing A]
     IsRepresentationFinite.{w} A ↔ ∃ G : FGModuleCat.{w} A, IsAdditiveGenerator G := by
   rw [exists_isAdditiveGenerator_iff]
   refine ⟨fun h ↦ h.exists_indecomposable_iso, fun ⟨m, P, hP⟩ ↦ ?_⟩
-  rw [isRepresentationFinite_iff]
-  let Q : ObjectProperty (ModuleCat.{w} A) := fun M ↦ Module.Finite A M ∧ Indecomposable M
-  let S := Q.FullSubcategory
-  -- Each isomorphism class of finitely generated indecomposable modules contains some `P i`.
-  have hS (y : Skeleton S) : ∃ i, Nonempty (((fromSkeleton S).obj y).obj ≅ (P i).obj) := by
-    let Y := (fromSkeleton S).obj y
-    have : Module.Finite A Y.obj := Y.property.1
-    let X : FGModuleCat.{w} A := ⟨Y.obj, (ModuleCat.isFG_iff _).mpr Y.property.1⟩
-    have : IsLocalRing (End X) := FGModuleCat.isLocalRing_end_of_indecomposable Y.property.2
-    obtain ⟨i, ⟨e⟩⟩ := hP X indecomposable_of_isLocalRing_end
-    exact ⟨i, ⟨(ObjectProperty.ι _).mapIso e⟩⟩
-  choose f hf using hS
-  -- Classes with the same representative are equal, so there are at most `m` classes.
-  refine Finite.of_injective f fun y y' h ↦ skeleton_skeletal S ⟨(fromSkeleton S).preimageIso
-    (Q.fullyFaithfulι.preimageIso ((hf y).some ≪≫ eqToIso (congrArg (fun i ↦ (P i).obj) h) ≪≫
-      (hf y').some.symm))⟩
+  refine isRepresentationFinite_of_forall_exists_iso (S := Set.range fun i ↦ (P i).obj)
+    (Set.finite_range _) fun M hf hi ↦ ?_
+  let X : FGModuleCat.{w} A := ⟨M, (ModuleCat.isFG_iff _).mpr hf⟩
+  have : IsLocalRing (End X) := FGModuleCat.isLocalRing_end_of_indecomposable hi
+  obtain ⟨i, ⟨e⟩⟩ := hP X indecomposable_of_isLocalRing_end
+  exact ⟨_, ⟨i, rfl⟩, ⟨(ObjectProperty.ι _).mapIso e⟩⟩
 
 open ModuleCat.Algebra in
 include R in

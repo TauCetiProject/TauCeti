@@ -225,8 +225,7 @@ instance : (ModuleCat.isFG.{v} R).IsStableUnderRetracts where
   of_retract {M N} h hN := by
     have : Module.Finite R N := (ModuleCat.isFG_iff N).mp hN
     refine (ModuleCat.isFG_iff M).mpr (Module.Finite.of_surjective h.r.hom fun x ↦ ⟨h.i.hom x, ?_⟩)
-    rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, h.retract, ModuleCat.hom_id,
-      LinearMap.id_apply]
+    simp [← ModuleCat.comp_apply]
 
 instance : HasFiniteBiproducts (FGModuleCat.{v} R) :=
   .of_hasFiniteProducts
