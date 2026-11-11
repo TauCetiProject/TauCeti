@@ -121,9 +121,8 @@ theorem Contractable.condExp_block_comp_future_ae_eq {μ : Measure Ω} [IsFinite
   rw [tailFamily_eq_comap_shift X c]
   exact TauCeti.MeasureTheory.condExp_comp_ae_eq_of_pair_law_eq
     (fun ω i ↦ X (k i) ω) (fun ω i ↦ X (l i) ω) (fun ω n ↦ X (c + n) ω)
-    (Measurable.of_eval fun i ↦ hX_meas (k i))
-    (Measurable.of_eval fun i ↦ hX_meas (l i))
-    hpair hf
+    (AEMeasurable.of_eval fun i ↦ hX_ae (k i)) (AEMeasurable.of_eval fun i ↦ hX_ae (l i))
+    hpair hf.aestronglyMeasurable
 
 /-- **Tail-conditioned selection invariance for finite blocks.** For a contractable process, any
 two *strictly monotone* selections of the same length have the same conditional law given the

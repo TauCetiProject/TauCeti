@@ -12,6 +12,7 @@ public import Mathlib.Topology.MetricSpace.Pseudo.Real
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 public import Mathlib.Topology.UniformSpace.UniformConvergenceTopology
+public import Mathlib.Topology.UnitInterval
 
 import Mathlib.Topology.ContinuousMap.Bounded.ArzelaAscoli
 import Mathlib.Topology.MetricSpace.IsometricSMul
@@ -20,6 +21,7 @@ import Mathlib.Topology.MetricSpace.UniformConvergence
 import Mathlib.Topology.UniformSpace.Completion
 import TauCeti.Algebra.Order.Floor.Ring
 import TauCeti.Topology.UniformSpace.Ascoli
+import Mathlib.Topology.MetricSpace.UniformConvergence
 
 /-!
 # The Arzelà–Ascoli theorem in `C(X, Y)`
@@ -48,6 +50,8 @@ and adds companion statements used for compactness and finite approximation of f
   `ℝ →ᵤ M`.
 * The translates `(s, t) ↦ u(s + σₙ, t)`, `σₙ → ∞`, of a Lipschitz map on a half-plane `s ≥ b`
   with values in a compact set have a subsequence converging locally uniformly on the plane.
+* The `C`-Lipschitz paths `I → Y` starting at a point `x` form a compact subset of `C(I, Y)` when
+  the closed ball of radius `C` about `x` is compact, in particular when `Y` is proper.
 
 The pointwise hypothesis cannot be replaced by equicontinuity and a common starting point when `Y`
 is not proper. The curves `γₙ(t) = t • eₙ`, `t ∈ [0, 1]`, along the standard basis vectors of
@@ -74,6 +78,10 @@ endpoints `eₙ` stay at distance at least `1` from each other
 * `TauCeti.exists_subseq_tendstoLocallyUniformly_comp_add`: translates `u(s + σₙ, t)`, `σₙ → ∞`,
   of a Lipschitz map on a half-plane `s ≥ b` with values in a compact set have a locally
   uniformly convergent subsequence.
+* `TauCeti.isCompact_setOf_lipschitzWith_apply_zero_eq`: in a proper space, uniformly Lipschitz
+  paths with a common starting point form a compact set, with
+  `TauCeti.isCompact_setOf_lipschitzWith_apply_zero_eq_of_isCompact_closedBall` its form for a
+  compact closed ball.
 
 ## References
 
@@ -309,5 +317,42 @@ theorem exists_subseq_tendstoLocallyUniformly_comp_add {M : Type*} [PseudoMetric
     max_eq_left (by simp only [Function.comp_apply] at hn; linarith : b ≤ z.1 + σ (φ n))]
   congr 1
   ext <;> simp
+
+section Lipschitz
+
+open ContinuousMap
+open scoped NNReal unitInterval
+
+variable {Y : Type*} [MetricSpace Y]
+
+/-- The `C`-Lipschitz paths on the unit interval starting at `x` form a compact subset of
+`C(I, Y)` when the closed ball of radius `C` about `x` is compact. -/
+theorem isCompact_setOf_lipschitzWith_apply_zero_eq_of_isCompact_closedBall (C : ℝ≥0) (x : Y)
+    (hx : IsCompact (Metric.closedBall x C)) :
+    IsCompact {f : C(I, Y) | LipschitzWith C f ∧ f 0 = x} := by
+  set A := {f : C(I, Y) | LipschitzWith C f ∧ f 0 = x}
+  have hA : IsClosed A :=
+    ((isClosed_setOfPred_lipschitzWith C).preimage continuous_coeFun).inter
+      (isClosed_eq (continuous_eval_const 0) continuous_const)
+  have hequi : Equicontinuous fun f : A ↦ ⇑(f : C(I, Y)) :=
+    (LipschitzWith.uniformEquicontinuous _ C fun f ↦ f.2.1).equicontinuous
+  have hball (t : I) : ∃ Q : Set Y, IsCompact Q ∧ ∀ f : A, (f : C(I, Y)) t ∈ Q := by
+    refine ⟨Metric.closedBall x C, hx, fun f ↦ ?_⟩
+    have hd := f.2.1.dist_le_mul t 0
+    rw [f.2.2, Subtype.dist_eq, Icc.coe_zero, Real.dist_eq, sub_zero,
+      abs_of_nonneg t.2.1] at hd
+    exact Metric.mem_closedBall.2 (hd.trans (mul_le_of_le_one_right C.2 t.2.2))
+  have hrange := ArzelaAscoli.isCompact_closure_range_of_equicontinuous hequi hball
+  rw [Subtype.range_coe] at hrange
+  exact hrange.of_isClosed_subset hA subset_closure
+
+/-- In a proper space, the `C`-Lipschitz paths on the unit interval starting at `x` form a compact
+subset of `C(I, Y)`. -/
+theorem isCompact_setOf_lipschitzWith_apply_zero_eq [ProperSpace Y] (C : ℝ≥0) (x : Y) :
+    IsCompact {f : C(I, Y) | LipschitzWith C f ∧ f 0 = x} :=
+  isCompact_setOf_lipschitzWith_apply_zero_eq_of_isCompact_closedBall C x
+    (isCompact_closedBall x C)
+
+end Lipschitz
 
 end TauCeti
