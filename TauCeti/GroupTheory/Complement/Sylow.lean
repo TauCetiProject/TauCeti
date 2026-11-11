@@ -11,9 +11,9 @@ public import TauCeti.GroupTheory.Complement.Gaschutz
 /-!
 # Sylow detection of complements
 
-Let `N` be an abelian normal `p`-subgroup of a group `G` and `P` a Sylow `p`-subgroup of finite
-index. Then `N` has a complement in `G` if and only if it has a complement in `P`. The forward
-direction intersects a complement with `P`, which contains `N` because `N` is a normal
+Let `N` be a finite abelian normal `p`-subgroup of a group `G` and `P` a Sylow `p`-subgroup of
+finite index. Then `N` has a complement in `G` if and only if it has a complement in `P`. The
+forward direction intersects a complement with `P`, which contains `N` because `N` is a normal
 `p`-subgroup (`IsPGroup.le_sylow_of_normal`). The backward direction is Gaschütz's splitting
 theorem (`Subgroup.IsLocalComplement.exists_isComplement'_of_coprime_index`), since `[G : P]` is
 prime to `p` (`Sylow.not_dvd_index`) and hence to `|N|`.
