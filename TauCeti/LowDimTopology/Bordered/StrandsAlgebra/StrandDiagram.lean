@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Basic.PEquiv
 public import Mathlib.Data.Fintype.Prod
+public import Mathlib.Algebra.Order.BigOperators.Group.Finset
+public import Mathlib.Data.Fintype.Sort
 public import TauCeti.Data.Finset.Inversions
 import Mathlib.Basic.Finite.Prod
 import Mathlib.Data.Fintype.Option
@@ -43,6 +45,8 @@ product is associative in the form needed for the associativity of the strands a
 * `TauCeti.StrandDiagram.Composable`: the target of `φ` is the source of `ψ` and the inversion
   counts add, `inv (φ.trans ψ) = inv φ + inv ψ`; this is when the product of `φ` and `ψ` in the
   strands algebra is nonzero.
+* `TauCeti.StrandDiagram.length`: the total length of the strands, the number of points passed by
+  the strands counted with multiplicity.
 
 ## Main results
 
@@ -51,6 +55,8 @@ product is associative in the form needed for the associativity of the strands a
   product are nonzero under the same condition.
 * `TauCeti.StrandDiagram.composable_idOn_left_iff`, `TauCeti.StrandDiagram.idOn_trans_of_eq_source`
   and their right-hand versions: the identity diagrams are the units of composition.
+* `TauCeti.StrandDiagram.length_trans`, `TauCeti.StrandDiagram.length_eq_zero_iff`: lengths add
+  under concatenation, and the diagrams of length zero are the identity diagrams.
 
 ## References
 
@@ -598,6 +604,65 @@ theorem composable_single_single_iff {i j j' k : α} {h : i ≤ j} {h' : j' ≤ 
   subst hj
   refine ⟨by simp, ?_⟩
   rw [single_trans_single, inversionCount_single, inversionCount_single, inversionCount_single]
+
+/-! ### The length of a diagram -/
+
+/-- The position of a point of `α` in the order, counted from `0`. -/
+private def pos (x : α) : ℕ :=
+  (monoEquivOfFin α rfl).symm x
+
+private theorem pos_le_pos_iff {x y : α} : pos x ≤ pos y ↔ x ≤ y := by
+  simp only [pos, Fin.val_fin_le, OrderIso.le_iff_le]
+
+/-- The sum of the positions of the starting points of a diagram is at most that of its end
+points: each strand goes upwards. -/
+private theorem sum_pos_source_le_sum_pos_target (φ : StrandDiagram α) :
+    ∑ x ∈ φ.source, pos x ≤ ∑ y ∈ φ.target, pos y := by
+  rw [target_eq_image, sum_image φ.injOn_getD]
+  exact sum_le_sum fun x hx ↦ pos_le_pos_iff.2 (le_getD hx)
+
+/-- The **length** of a strand diagram: the number of points of `α` passed by its strands,
+counted with multiplicity, that is, the sum over the strands of the difference of the positions of
+their two ends. -/
+def length (φ : StrandDiagram α) : ℕ :=
+  ∑ y ∈ φ.target, pos y - ∑ x ∈ φ.source, pos x
+
+/-- **Lengths add under concatenation**: the length of the composite of a diagram `φ` with a
+diagram `ψ` starting where `φ` ends is the sum of their lengths. -/
+theorem length_trans {φ ψ : StrandDiagram α} (h : φ.target = ψ.source) :
+    (φ.trans ψ).length = φ.length + ψ.length := by
+  have hφ := φ.sum_pos_source_le_sum_pos_target
+  have hψ := ψ.sum_pos_source_le_sum_pos_target
+  rw [h] at hφ
+  simp only [length, source_trans_of_target_eq h, target_trans_of_target_eq h, h]
+  omega
+
+/-- The identity diagrams have length zero. -/
+@[simp]
+theorem length_idOn (s : Finset α) : (idOn s).length = 0 := by
+  simp [length]
+
+/-- **The diagrams of length zero are the identity diagrams**, those all of whose strands are
+horizontal. -/
+theorem length_eq_zero_iff {φ : StrandDiagram α} : φ.length = 0 ↔ φ = idOn φ.source := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ length_idOn _⟩
+  have hle : ∑ y ∈ φ.target, pos y ≤ ∑ x ∈ φ.source, pos x := Nat.sub_eq_zero_iff_le.1 h
+  rw [target_eq_image, sum_image φ.injOn_getD] at hle
+  -- Each strand goes upwards, so equality of the sums forces every strand to be horizontal.
+  have heq := (sum_eq_sum_iff_of_le fun x hx ↦ pos_le_pos_iff.2 (le_getD hx)).1
+    (le_antisymm (sum_le_sum fun x hx ↦ pos_le_pos_iff.2 (le_getD hx)) hle)
+  ext i j
+  by_cases hi : i ∈ φ.source
+  · have hj : (φ i).getD i = i :=
+      le_antisymm (pos_le_pos_iff.1 (heq i hi).ge) (le_getD hi)
+    have hφi := getD_mem hi
+    rw [hj, Option.mem_def] at hφi
+    simp [hφi, hi]
+  · simp [apply_eq_none_of_notMem_source hi, hi]
+
+/-- A diagram which is not an identity diagram has positive length. -/
+theorem one_le_length_iff {φ : StrandDiagram α} : 1 ≤ φ.length ↔ φ ≠ idOn φ.source := by
+  rw [Nat.one_le_iff_ne_zero, Ne, length_eq_zero_iff]
 
 end Finite
 

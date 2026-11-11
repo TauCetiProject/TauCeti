@@ -119,6 +119,9 @@ spanning the matched subalgebra are generators.
   `a(ρ, h)` is the matched subalgebra.
 * `TauCeti.StrandsAlgebra.differential_mem_matchedAlgebra`: the algebra of a matching is closed
   under the differential.
+* `TauCeti.StrandsAlgebra.repr_matchedIdem_mul_apply`: the coefficients of `I(s) x`.
+* `TauCeti.StrandsAlgebra.repr_apply_idOn_eq`: an element of the matched subalgebra takes the same
+  value at the identity diagrams of any two sets of points over the same pairs.
 
 ## References
 
@@ -1087,7 +1090,7 @@ private theorem swapHorizontal_mem_image_addHorizontal_iff (hρ : IsMatchedGener
     hρ.swapHorizontal_mem_image_addHorizontal hab.symm hφ.swapHorizontal h'
 
 /-- Any two summands of `a(ρ, h)` are related by moving horizontal strands to matched points. -/
-theorem matchedSetoid_addHorizontal (hρ : IsMatchedGenerator M ρ h) {U V : Finset α}
+private theorem matchedSetoid_addHorizontal (hρ : IsMatchedGenerator M ρ h) {U V : Finset α}
     (hU : U ∈ matchedChoices M h) (hV : V ∈ matchedChoices M h) :
     matchedSetoid M (ρ.addHorizontal U) (ρ.addHorizontal V) := by
   -- Move the horizontal strands of `U` outside `V` to `V` one at a time.
@@ -1224,6 +1227,65 @@ theorem differential_mem_matchedAlgebra {x : StrandsAlgebra R α} (hx : x ∈ ma
   exact differential_mem_matchedSubalgebra hx
 
 end Span
+
+/-! ### The idempotents `I(s)` and the identity diagrams -/
+
+section IdemIdOn
+
+variable [DecidableEq β] {M : α → β} {s : Finset β}
+
+/-- Multiplying a basis element `φ` on the left by `I(s)` keeps it when its starting points lie
+over the pairs of `s`, one over each, and gives zero otherwise. -/
+theorem matchedIdem_mul_of (φ : StrandDiagram α) :
+    matchedIdem R M s * of φ = if φ.source ∈ matchedChoices M s then of φ else 0 := by
+  simp only [matchedIdem_def, sum_mul, idem_mul_of, sum_ite_eq', mem_filter, mem_univ, true_and]
+  refine if_congr ?_ rfl rfl
+  rw [mem_matchedChoices]
+  exact and_congr_right fun h ↦ by rw [← card_image_iff, h, eq_comm]
+
+/-- The coefficients of `I(s) x` are those of `x` at the diagrams whose starting points lie over
+the pairs of `s`, one over each, and zero elsewhere. -/
+theorem repr_matchedIdem_mul_apply (x : StrandsAlgebra R α) (φ : StrandDiagram α) :
+    (basis R α).repr (matchedIdem R M s * x) φ =
+      if φ.source ∈ matchedChoices M s then (basis R α).repr x φ else 0 := by
+  induction x using induction_on with
+  | zero => simp
+  | add x y hx hy =>
+    rw [mul_add, map_add, Finsupp.add_apply, hx, hy, map_add, Finsupp.add_apply]
+    split_ifs <;> simp
+  | smul_of r ψ =>
+    rw [mul_smul_comm, matchedIdem_mul_of]
+    by_cases hψφ : ψ = φ
+    · subst hψφ
+      split_ifs <;> simp
+    · split_ifs <;> simp [hψφ]
+
+/-- The coefficient of `I(s)` at the identity diagram of a set `S` of points over `s` is `1`. -/
+@[simp]
+theorem repr_matchedIdem_apply_idOn {S : Finset α} (hS : S ∈ matchedChoices M s) :
+    (basis R α).repr (matchedIdem R M s) (idOn S) = 1 := by
+  rw [mem_matchedChoices] at hS
+  have hcard : #S = #s := by rw [← hS.1, card_image_of_injOn hS.2]
+  simp [repr_matchedIdem_apply, hS.1, hcard]
+
+/-- An element of the matched subalgebra takes the same value at the identity diagrams of any two
+sets of points over the same pairs: they differ by moving horizontal strands within matched
+pairs. -/
+theorem repr_apply_idOn_eq {x : StrandsAlgebra R α} (hx : x ∈ matchedSubalgebra R M)
+    {S T : Finset α} (hS : S ∈ matchedChoices M s) (hT : T ∈ matchedChoices M s) :
+    (basis R α).repr x (idOn S) = (basis R α).repr x (idOn T) := by
+  refine repr_eq_of_matchedSetoid hx ?_
+  simpa [idOn_addHorizontal] using
+    (isMatchedGenerator_idOn_empty M s).matchedSetoid_addHorizontal hS hT
+
+omit [LinearOrder α] in
+/-- There is a set of points over a set `s` of pairs: choose one point over each pair. -/
+theorem exists_mem_matchedChoices (hs : s ⊆ univ.image M) : ∃ S, S ∈ matchedChoices M s := by
+  obtain ⟨S, -, hinj, himage⟩ := exists_subset_injOn_image_eq_of_surjOn (f := M) Set.univ s
+    fun b hb ↦ by simpa using hs hb
+  exact ⟨S, mem_matchedChoices.2 ⟨himage, hinj⟩⟩
+
+end IdemIdOn
 
 /-! ### The unit of the matched subalgebra -/
 
