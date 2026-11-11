@@ -207,19 +207,13 @@ theorem windingNumber_eq_of_norm_sub_lt {f g : C(AddCircle T, ℂ)}
     (hf : ∀ x, f x ≠ 0) (hfg : ∀ x, ‖g x - f x‖ < ‖f x‖)
     (hg : ∀ x, g x ≠ 0 := fun x hx => by simpa [hx] using (hfg x).ne) :
     g.windingNumber hg = f.windingNumber hf := by
-  let H : C(I × AddCircle T, ℂ) :=
-    ⟨fun p => f p.2 + (p.1 : ℝ) • (g p.2 - f p.2), by fun_prop⟩
-  have hH (p : I × AddCircle T) : H p ≠ 0 := by
-    intro hp
-    have heq : (p.1 : ℝ) • (g p.2 - f p.2) = -f p.2 := eq_neg_of_add_eq_zero_right hp
-    have hnorm : ‖f p.2‖ = (p.1 : ℝ) * ‖g p.2 - f p.2‖ := by
-      simpa [norm_smul, Real.norm_eq_abs, abs_of_nonneg p.1.2.1] using
-        (congrArg norm heq).symm
-    have hle : (p.1 : ℝ) * ‖g p.2 - f p.2‖ ≤ 1 * ‖g p.2 - f p.2‖ :=
-      mul_le_mul_of_nonneg_right p.1.2.2 (norm_nonneg _)
-    linarith [hfg p.2]
-  exact (windingNumber_eq_of_homotopy hf hg H hH (fun x => by simp [H])
-    (fun x => by simp [H])).symm
+  rw [windingNumber_def, windingNumber_def]
+  exact Circle.degree_eq_of_norm_sub_lt (g.normalizedLoop hg) (f.normalizedLoop hf)
+    (z := fun t => g (((t : ℝ) * T : ℝ) : AddCircle T))
+    (w := fun t => f (((t : ℝ) * T : ℝ) : AddCircle T))
+    (fun t => by simp only [normalizedLoop_apply, coe_normalizeToCircle_apply])
+    (fun t => by simp only [normalizedLoop_apply, coe_normalizeToCircle_apply])
+    (fun t => hfg _)
 
 /-- The `k`-th Fourier monomial `x ↦ exp(2πikx / T)` has winding number `k`. -/
 @[simp]
@@ -288,7 +282,7 @@ theorem exists_eq_fourier_mul_exp [Fact (0 < T)] (f : C(AddCircle T, ℂ))
   obtain ⟨L, hL_cont, hL_exp⟩ := hasContinuousLogOn_iff.mp hd
   let g : C(AddCircle T, ℂ) := ⟨L, continuousOn_univ.mp hL_cont⟩
   have hfg (x : AddCircle T) : f x = fourier d x * Complex.exp (g x) := by
-    change f x = fourier d x * Complex.exp (L x)
+    simp only [g, ContinuousMap.coe_mk]
     rw [hL_exp x (mem_univ x), mul_div_cancel₀ _ (fourier_apply_ne_zero d x)]
   let eg : C(AddCircle T, ℂ) := ⟨fun x => Complex.exp (g x), by fun_prop⟩
   have heg : ∀ x, eg x ≠ 0 := fun _ => Complex.exp_ne_zero _
