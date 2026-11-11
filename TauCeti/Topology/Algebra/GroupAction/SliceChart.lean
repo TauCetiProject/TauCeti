@@ -14,8 +14,9 @@ import TauCeti.Topology.IsLocalHomeomorph
 
 Let a group `G` act on a topological space `X`, and let `σ : S → X` be a map from a topological
 space `S`, thought of as a slice. The **slice map** `(g, s) ↦ g • σ s : G × S → X` sweeps the
-slice along the orbits of the action. Suppose that on `G × U`, for an open set `U ⊆ S`, the slice
-map is injective and a local homeomorphism. Then:
+slice along the orbits of the action. If the slice map is injective on `G × U`, then distinct points
+of `U` lie in distinct orbits (`TauCeti.MulAction.injOn_quotientMk_slice`). Suppose moreover that
+`U ⊆ S` is open and that the slice map is a local homeomorphism on `G × U`. Then:
 
 * its restriction to `G × U` is an open embedding into `X`, so it identifies `G × U` with an open
   invariant neighbourhood of the orbits through `σ '' U`
@@ -42,11 +43,23 @@ public section
 
 open Function Set Topology
 
-variable {G X : Type*} [Group G] [MulAction G X] [TopologicalSpace G] [TopologicalSpace X]
+variable {G X : Type*} [Group G] [MulAction G X]
 
 namespace TauCeti.MulAction
 
-variable {S : Type*} [TopologicalSpace S] {σ : S → X} {U : Set S}
+variable {S : Type*} {σ : S → X} {U : Set S}
+
+/-- **Slices meet each orbit at most once.** If the slice map `(g, s) ↦ g • σ s` is injective on
+`G × U`, then distinct points of `U` lie in distinct orbits. -/
+theorem injOn_quotientMk_slice (hinj : InjOn (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ U)) :
+    InjOn (fun s ↦ Quotient.mk (MulAction.orbitRel G X) (σ s)) U := by
+  intro s hs s' hs' hss'
+  obtain ⟨g, hg⟩ := Quotient.exact hss'
+  have h1 := hinj (x₁ := (g, s')) (x₂ := (1, s)) ⟨mem_univ _, hs'⟩ ⟨mem_univ _, hs⟩
+    (by simpa only [one_smul] using hg)
+  exact (Prod.ext_iff.1 h1).2.symm
+
+variable [TopologicalSpace G] [TopologicalSpace X] [TopologicalSpace S]
 
 /-- **Slice maps parametrize open invariant neighbourhoods of orbits.** If the slice map
 `(g, s) ↦ g • σ s` is injective on `G × U` and a local homeomorphism there, for an open set `U`,
@@ -55,20 +68,19 @@ theorem isOpenEmbedding_smul_slice (hU : IsOpen U)
     (hinj : InjOn (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ U))
     (hloc : IsLocalHomeomorphOn (fun p : G × S ↦ p.1 • σ p.2) (univ ×ˢ U)) :
     IsOpenEmbedding fun p : G × U ↦ p.1 • σ p.2 := by
-  -- Identify `G × U` with the open subset `univ ×ˢ U` of `G × S`.
-  let e : G × U ≃ₜ (univ ×ˢ U : Set (G × S)) := (Homeomorph.Set.univ G).symm.prodCongr
-    (Homeomorph.refl U) |>.trans (Homeomorph.Set.prod univ U).symm
-  have he : (fun p : G × U ↦ p.1 • σ p.2) =
-      (univ ×ˢ U).domRestrict (fun p : G × S ↦ p.1 • σ p.2) ∘ e :=
-    rfl
-  rw [he]
-  refine IsOpenEmbedding.comp ?_ e.isOpenEmbedding
-  refine isOpenEmbedding_iff_continuous_injective_isOpenMap.2
-    ⟨hloc.continuousOn.domRestrict, hinj.injective, fun W hW ↦ ?_⟩
-  -- An open subset of `univ ×ˢ U` is open in `G × S`, and the slice map is open there.
-  obtain ⟨W', hW', rfl⟩ := hW
-  rw [domRestrict_eq, image_comp, Subtype.image_preimage_coe]
-  exact (hloc.mono inter_subset_left).isOpen_image ((isOpen_univ.prod hU).inter hW')
+  -- The restriction is the slice map composed with the inclusion `G × U → G × S`.
+  have hmaps : ∀ p : G × U, (p.1, (p.2 : S)) ∈ univ ×ˢ U := fun p ↦ ⟨mem_univ _, p.2.2⟩
+  refine isOpenEmbedding_iff_continuous_injective_isOpenMap.2 ⟨?_, ?_, fun W hW ↦ ?_⟩
+  · exact hloc.continuousOn.comp_continuous
+      (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd)) hmaps
+  · intro p q hpq
+    have h1 := hinj (hmaps p) (hmaps q) hpq
+    exact Prod.ext (Prod.ext_iff.1 h1).1 (Subtype.ext (Prod.ext_iff.1 h1).2)
+  · -- An open subset of `G × U` is open in `G × S`, and the slice map is open on `univ ×ˢ U`.
+    have hW' : IsOpen (Prod.map id ((↑) : U → S) '' W) :=
+      (IsOpenMap.id.prodMap hU.isOpenMap_subtype_val) W hW
+    have h1 := (hloc.mono (image_subset_iff.2 fun p _ ↦ hmaps p)).isOpen_image hW'
+    rwa [image_image] at h1
 
 /-- **Quotient charts from slices.** If the slice map `(g, s) ↦ g • σ s` is injective on `G × U`
 and a local homeomorphism there, for an open set `U`, then `s ↦ [σ s]` is an open embedding of `U`
@@ -86,27 +98,18 @@ theorem isOpenEmbedding_quotientMk_slice (hU : IsOpen U)
     simpa only [one_smul] using h1
   refine isOpenEmbedding_iff_continuous_injective_isOpenMap.2 ⟨?_, ?_, fun W hW ↦ ?_⟩
   · exact continuous_quot_mk.comp hσ.domRestrict
-  · intro s s' hss'
-    obtain ⟨g, hg⟩ := Quotient.exact hss'
-    have h1 := hinj (x₁ := (g, s')) (x₂ := (1, s)) ⟨mem_univ _, s'.2⟩ ⟨mem_univ _, s.2⟩
-      (by simpa only [one_smul] using hg)
-    exact Subtype.ext (Prod.ext_iff.1 h1).2.symm
+  · exact fun s s' hss' ↦ Subtype.ext (injOn_quotientMk_slice hinj s.2 s'.2 hss')
   · -- The orbits through the image of `W` pull back to the image of the open set `G × W` under
     -- the slice map.
     have hT : IsOpen (((↑) : U → S) '' W) := hU.isOpenMap_subtype_val W hW
     have hpre : Quotient.mk (MulAction.orbitRel G X) ⁻¹'
         ((fun s : U ↦ Quotient.mk (MulAction.orbitRel G X) (σ s)) '' W) =
         (fun p : G × S ↦ p.1 • σ p.2) '' (univ ×ˢ (((↑) : U → S) '' W)) := by
-      ext y
-      simp only [mem_preimage, mem_image, mem_prod, mem_univ, true_and, Prod.exists]
-      constructor
-      · rintro ⟨s, hs, hsy⟩
-        obtain ⟨g, hg⟩ :=
-          MulAction.mem_orbit_iff.1 (MulAction.orbitRel_apply.1 (Quotient.exact hsy))
-        exact ⟨g⁻¹, s, ⟨s, hs, rfl⟩, by rw [← hg, inv_smul_smul]⟩
-      · rintro ⟨g, _, ⟨s, hs, rfl⟩, rfl⟩
-        refine ⟨s, hs, Quotient.sound ?_⟩
-        exact MulAction.orbitRel_apply.2 (MulAction.mem_orbit_iff.2 ⟨g⁻¹, inv_smul_smul g _⟩)
+      convert MulAction.quotient_preimage_image_eq_union_mul (G := G) (σ '' (((↑) : U → S) '' W))
+        using 1
+      · simp only [image_image]; rfl
+      · rw [image_prod (fun (g : G) (s : S) ↦ g • σ s), ← iUnion_image_left, biUnion_univ]
+        simp only [image_image]
     -- The quotient topology is coinduced; `hpre` computes the preimage.
     rw [isOpen_coinduced]
     convert (hloc.mono (prod_mono_right (Subtype.coe_image_subset U W))).isOpen_image
