@@ -247,7 +247,7 @@ theorem range_subset_closure [PreconnectedSpace N] [LocallyConnectedSpace N]
         (hb.apply_mem_closure_image (by simp) ⟨y, hy⟩)
   rcases isClopen_iff.1 ⟨isClosed_closure.preimage hf.continuous, hopen⟩ with h0 | h1
   · -- If the set is empty, `A` is closed, as its closure misses `B` and the image of `f`. Then
-    -- `A` is clopen in the preconnected space `M`, hence `A` is `univ`, and then `M` is empty.
+    -- `A` is clopen in the preconnected space `M`, hence `A` is `univ`, and then `N` is empty.
     have hcl : closure A = A := by
       refine Subset.antisymm (fun p hp => ?_) subset_closure
       have hpB : p ∉ B := disjoint_left.1 (hAB.closure_left hB) hp
