@@ -76,6 +76,7 @@ lemma isFibrewiseEquiv_iff {X Y : StackInGroupoids.{u}} (f : Hom X Y) :
     f.IsFibrewiseEquiv ↔ ∀ T : Scheme.{u}, (f.app (.mk (op T))).toFunctor.IsEquivalence :=
   Iff.rfl
 
+@[simp]
 lemma isFibrewiseEquiv_id (X : StackInGroupoids.{u}) :
     IsFibrewiseEquiv (Pseudofunctor.StrongTrans.id X.toSchPseudofunctor) := fun _ ↦
   inferInstanceAs (Functor.id _).IsEquivalence
