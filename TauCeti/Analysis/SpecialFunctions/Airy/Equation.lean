@@ -36,6 +36,9 @@ Uniqueness is proved with Wronskians: the Wronskian of two entire solutions is c
 ## References
 
 * NIST Digital Library of Mathematical Functions, §9.2, <https://dlmf.nist.gov/9.2>.
+
+The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), files
+`DLMF/Airy/Basic/Properties.lean` and `DLMF/Bessel/Basic/RegularizedSeries.lean`.
 -/
 
 public section
