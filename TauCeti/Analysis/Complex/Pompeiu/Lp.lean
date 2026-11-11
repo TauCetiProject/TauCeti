@@ -203,4 +203,39 @@ theorem ae_integrable_cauchyTransform {f : ℂ → F} {c : ℂ} {r R : ℝ≥0} 
   exact hi.integrable_of_forall_notMem_eq_zero fun z hz ↦ by
     rw [notMem_support.mp (fun h ↦ hz (hs h)), smul_zero]
 
+/-- On an output disc, the Cauchy transform of `Lᵖ` data supported in an input disc is represented
+by the bounded operator `TauCeti.cauchyTransformLp`. -/
+theorem cauchyTransform_ae_eq_cauchyTransformLp {f : ℂ → F} {c : ℂ} {r R : ℝ≥0} {p : ℝ≥0∞}
+    [Fact (1 ≤ p)] (hf : MemLp f p (volume.restrict (closedBall c (r : ℝ))))
+    (hs : support f ⊆ closedBall c (r : ℝ)) :
+    cauchyTransform f =ᵐ[volume.restrict (closedBall c (R : ℝ))]
+      cauchyTransformLp c r R p (hf.toLp f) := by
+  filter_upwards [coeFn_cauchyTransformLp c r R p (hf.toLp f)] with w hw
+  rw [hw, cauchyTransform_eq_integral_closedBall hs]
+  congr 1
+  refine integral_congr_ae ?_
+  filter_upwards [hf.coeFn_toLp] with z hz
+  rw [hz]
+
+/-- If `g n → f` in `Lᵖ(ℂ)`, all supported in one closed disc, then `T (g n) → T f` in `Lᵖ` of
+every output disc, since `T` is bounded between the two discs. -/
+theorem tendsto_eLpNorm_cauchyTransform_sub {g : ℕ → ℂ → F} {f : ℂ → F} {c : ℂ} {r : ℝ≥0}
+    {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (hgm : ∀ n, MemLp (g n) p volume) (hgs : ∀ n, support (g n) ⊆ closedBall c (r : ℝ))
+    (hf : MemLp f p volume) (hs : support f ⊆ closedBall c (r : ℝ))
+    (h : Tendsto (fun n ↦ eLpNorm (g n - f) p volume) atTop (𝓝 0)) (R : ℝ≥0) :
+    Tendsto (fun n ↦ eLpNorm (fun w ↦ cauchyTransform (g n) w - cauchyTransform f w) p
+      (volume.restrict (closedBall c (R : ℝ)))) atTop (𝓝 0) := by
+  have hL : Tendsto (fun n ↦ ((hgm n).restrict (closedBall c (r : ℝ))).toLp (g n)) atTop
+      (𝓝 ((hf.restrict (closedBall c (r : ℝ))).toLp f)) :=
+    (Lp.tendsto_Lp_iff_tendsto_eLpNorm'' _ _ _ _).2 <|
+      tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h (fun _ ↦ zero_le)
+        fun _ ↦ eLpNorm_mono_measure _ Measure.restrict_le_self
+  have hT := ((cauchyTransformLp (F := F) c r R p).continuous.tendsto _).comp hL
+  rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'] at hT
+  refine hT.congr fun n ↦ eLpNorm_congr_ae ?_
+  filter_upwards [cauchyTransform_ae_eq_cauchyTransformLp (R := R) ((hgm n).restrict _) (hgs n),
+    cauchyTransform_ae_eq_cauchyTransformLp (R := R) (hf.restrict _) hs] with w h₁ h₂
+  simp [h₁, h₂]
+
 end TauCeti

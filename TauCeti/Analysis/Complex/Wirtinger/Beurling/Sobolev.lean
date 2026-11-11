@@ -74,42 +74,6 @@ namespace TauCeti
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
   {p : ℝ≥0∞} [Fact (1 ≤ p)] {f : ℂ → F} {c : ℂ} {r : ℝ≥0}
 
-omit [CompleteSpace F] in
-/-- On an output disc, the Cauchy transform of `Lᵖ` data supported in an input disc is represented
-by the bounded operator `TauCeti.cauchyTransformLp`. -/
-private theorem cauchyTransform_ae_eq_cauchyTransformLp {h : ℂ → F} {R : ℝ≥0}
-    (hh : MemLp h p (volume.restrict (closedBall c (r : ℝ))))
-    (hs : support h ⊆ closedBall c (r : ℝ)) :
-    cauchyTransform h =ᵐ[volume.restrict (closedBall c (R : ℝ))]
-      cauchyTransformLp c r R p (hh.toLp h) := by
-  filter_upwards [coeFn_cauchyTransformLp c r R p (hh.toLp h)] with w hw
-  rw [hw, cauchyTransform_eq_integral_closedBall hs]
-  congr 1
-  refine integral_congr_ae ?_
-  filter_upwards [hh.coeFn_toLp] with z hz
-  rw [hz]
-
-omit [CompleteSpace F] in
-/-- If `g n → f` in `Lᵖ(ℂ)`, all supported in one closed disc, then `T (g n) → T f` in `Lᵖ` of
-every output disc, since `T` is bounded between the two discs. -/
-private theorem tendsto_eLpNorm_cauchyTransform_sub {g : ℕ → ℂ → F}
-    (hgm : ∀ n, MemLp (g n) p volume) (hgs : ∀ n, support (g n) ⊆ closedBall c (r : ℝ))
-    (hf : MemLp f p volume) (hs : support f ⊆ closedBall c (r : ℝ))
-    (h : Tendsto (fun n ↦ eLpNorm (g n - f) p volume) atTop (𝓝 0)) (R : ℝ≥0) :
-    Tendsto (fun n ↦ eLpNorm (fun w ↦ cauchyTransform (g n) w - cauchyTransform f w) p
-      (volume.restrict (closedBall c (R : ℝ)))) atTop (𝓝 0) := by
-  have hL : Tendsto (fun n ↦ ((hgm n).restrict (closedBall c (r : ℝ))).toLp (g n)) atTop
-      (𝓝 ((hf.restrict (closedBall c (r : ℝ))).toLp f)) :=
-    (Lp.tendsto_Lp_iff_tendsto_eLpNorm'' _ _ _ _).2 <|
-      tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h (fun _ ↦ zero_le)
-        fun _ ↦ eLpNorm_mono_measure _ Measure.restrict_le_self
-  have hT := ((cauchyTransformLp (F := F) c r R p).continuous.tendsto _).comp hL
-  rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'] at hT
-  refine hT.congr fun n ↦ eLpNorm_congr_ae ?_
-  filter_upwards [cauchyTransform_ae_eq_cauchyTransformLp (R := R) ((hgm n).restrict _) (hgs n),
-    cauchyTransform_ae_eq_cauchyTransformLp (R := R) (hf.restrict _) hs] with w h₁ h₂
-  simp [h₁, h₂]
-
 /-- For smooth compactly supported `g`, the classical derivative of `T g` in the direction `v` is
 `v • B g + conj v • g` almost everywhere. -/
 private theorem fderiv_cauchyTransform_apply_ae_eq {g : ℂ → F} (hc : HasCompactSupport g)
@@ -121,6 +85,44 @@ private theorem fderiv_cauchyTransform_apply_ae_eq {g : ℂ → F} (hc : HasComp
   rw [fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv, hw,
     hc.conjWirtingerDeriv_cauchyTransform (hg.of_le (by simp))]
 
+/-- The weak derivative `w ↦ v • B f (w) + conj v • f (w)` lies in `Lᵖ(ℂ)`. -/
+private theorem memLp_smul_beurlingLp_add_smul (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞))
+    (hf : MemLp f p volume) (v : ℂ) :
+    MemLp (fun w ↦ v • beurlingLp p hp hp_top (hf.toLp f) w + conj v • f w) p volume :=
+  ((Lp.memLp _).const_smul v).add (hf.const_smul (conj v))
+
+/-- If smooth compactly supported `g n → f` in `Lᵖ(ℂ)`, then the classical derivatives of
+`T (g n)` in the direction `v` converge to `v • B f + conj v • f` in `Lᵖ(ℂ)`, since `B` is bounded
+on `Lᵖ(ℂ)`. -/
+private theorem tendsto_eLpNorm_fderiv_cauchyTransform_sub (hp : 1 < p)
+    (hp_top : p ≠ (∞ : ℝ≥0∞)) {g : ℕ → ℂ → F} (hgc : ∀ n, HasCompactSupport (g n))
+    (hgs : ∀ n, ContDiff ℝ ∞ (g n)) (hgm : ∀ n, MemLp (g n) p volume) (hf : MemLp f p volume)
+    (hconv : Tendsto (fun n ↦ eLpNorm (g n - f) p volume) atTop (𝓝 0)) (v : ℂ) :
+    Tendsto (fun n ↦ eLpNorm (fun w ↦ fderiv ℝ (cauchyTransform (g n)) w v -
+      (v • beurlingLp p hp hp_top (hf.toLp f) w + conj v • f w)) p volume) atTop (𝓝 0) := by
+  set B := beurlingLp (F := F) p hp hp_top
+  have hB : Tendsto (fun n ↦ eLpNorm (⇑(B ((hgm n).toLp (g n))) - ⇑(B (hf.toLp f))) p volume)
+      atTop (𝓝 0) :=
+    (Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).1 ((B.continuous.tendsto _).comp
+      ((Lp.tendsto_Lp_iff_tendsto_eLpNorm'' _ _ _ _).2 hconv))
+  have hle (n : ℕ) : eLpNorm (fun w ↦ fderiv ℝ (cauchyTransform (g n)) w v -
+      (v • B (hf.toLp f) w + conj v • f w)) p volume ≤
+      ‖v‖ₑ * eLpNorm (⇑(B ((hgm n).toLp (g n))) - ⇑(B (hf.toLp f))) p volume +
+        ‖v‖ₑ * eLpNorm (g n - f) p volume := by
+    calc _ = eLpNorm (v • (⇑(B ((hgm n).toLp (g n))) - ⇑(B (hf.toLp f))) +
+          conj v • (g n - f)) p volume := by
+          refine eLpNorm_congr_ae ?_
+          filter_upwards [fderiv_cauchyTransform_apply_ae_eq (hgc n) (hgs n) hp hp_top v]
+            with w hw
+          simp only [hw, Pi.add_apply, Pi.smul_apply, Pi.sub_apply, smul_sub]
+          abel
+      _ ≤ _ := by
+          refine (eLpNorm_add_le hp.le).trans ?_
+          rw [eLpNorm_const_smul, eLpNorm_const_smul, RCLike.enorm_conj]
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_ (fun _ ↦ zero_le) hle
+  simpa using (ENNReal.Tendsto.const_mul hB (.inr enorm_ne_top)).add
+    (ENNReal.Tendsto.const_mul hconv (.inr enorm_ne_top))
+
 /-- The weak derivative on a disc, by approximation with smooth data supported in a slightly
 larger disc. -/
 private theorem hasWeakLineDerivOn_cauchyTransform_ball (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞))
@@ -128,7 +130,6 @@ private theorem hasWeakLineDerivOn_cauchyTransform_ball (hp : 1 < p) (hp_top : p
     (R : ℝ≥0) (v : ℂ) :
     HasWeakLineDerivOn volume ⟨ball c R, isOpen_ball⟩ (cauchyTransform f)
       (fun w ↦ v • beurlingLp p hp hp_top (hf.toLp f) w + conj v • f w) v := by
-  set B := beurlingLp (F := F) p hp hp_top
   -- Smooth approximants `g n → f` in `Lᵖ`, supported in the disc of radius `r + 1`.
   have hr' : closedBall c ((r + 1 : ℝ≥0) : ℝ) ∈ 𝓝ˢ (closedBall c (r : ℝ)) :=
     mem_of_superset (isOpen_ball.mem_nhdsSet.2 (closedBall_subset_ball (by simp)))
@@ -160,33 +161,10 @@ private theorem hasWeakLineDerivOn_cauchyTransform_ball (hp : 1 < p) (hp_top : p
       ((hTg n).continuous.locallyIntegrable.locallyIntegrableOn _)
       ((hdTg n).locallyIntegrable.locallyIntegrableOn _)
       fun w _ ↦ ((hTg n).differentiable (by simp) w).hasFDerivAt.hasLineDerivAt v
-  -- They converge in `Lᵖ(ℂ)`: they are `v • B (g n) + conj v • g n`, and `B` is bounded on `Lᵖ(ℂ)`.
-  have hB : Tendsto (fun n ↦ eLpNorm (⇑(B ((hgm n).toLp (g n))) - ⇑(B (hf.toLp f))) p volume)
-      atTop (𝓝 0) :=
-    (Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).1 ((B.continuous.tendsto _).comp
-      ((Lp.tendsto_Lp_iff_tendsto_eLpNorm'' _ _ _ _).2 hconv))
-  have hle (n : ℕ) : eLpNorm (fun w ↦ fderiv ℝ (cauchyTransform (g n)) w v -
-      (v • B (hf.toLp f) w + conj v • f w)) p volume ≤
-      ‖v‖ₑ * eLpNorm (⇑(B ((hgm n).toLp (g n))) - ⇑(B (hf.toLp f))) p volume +
-        ‖v‖ₑ * eLpNorm (g n - f) p volume := by
-    calc _ = eLpNorm (v • (⇑(B ((hgm n).toLp (g n))) - ⇑(B (hf.toLp f))) +
-          conj v • (g n - f)) p volume := by
-          refine eLpNorm_congr_ae ?_
-          filter_upwards [fderiv_cauchyTransform_apply_ae_eq (hgc n) (hgs n) hp hp_top v]
-            with w hw
-          simp only [hw, Pi.add_apply, Pi.smul_apply, Pi.sub_apply, smul_sub]
-          abel
-      _ ≤ _ := by
-          refine (eLpNorm_add_le hp.le).trans ?_
-          rw [eLpNorm_const_smul, eLpNorm_const_smul, RCLike.enorm_conj]
-  have hD : Tendsto (fun n ↦ eLpNorm (fun w ↦ fderiv ℝ (cauchyTransform (g n)) w v -
-      (v • B (hf.toLp f) w + conj v • f w)) p volume) atTop (𝓝 0) := by
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_ (fun _ ↦ zero_le) hle
-    simpa using (ENNReal.Tendsto.const_mul hB (.inr enorm_ne_top)).add
-      (ENNReal.Tendsto.const_mul hconv (.inr enorm_ne_top))
-  -- `Lᵖ` convergence on the disc gives `L¹` convergence there, which passes to the limit.
-  have hDm : MemLp (fun w ↦ v • B (hf.toLp f) w + conj v • f w) p volume :=
-    ((Lp.memLp _).const_smul v).add (hf.const_smul (conj v))
+  -- They converge in `Lᵖ(ℂ)`, and `Lᵖ` convergence on the disc gives `L¹` convergence there, which
+  -- passes to the limit.
+  have hD := tendsto_eLpNorm_fderiv_cauchyTransform_sub hp hp_top hgc hgs hgm hf hconv v
+  have hDm := memLp_smul_beurlingLp_add_smul hp hp_top hf v
   have : IsFiniteMeasure (volume.restrict (closedBall c (R : ℝ))) :=
     isFiniteMeasure_restrict.2 measure_closedBall_lt_top.ne
   have : IsFiniteMeasure (volume.restrict (ball c (R : ℝ))) :=
@@ -217,11 +195,10 @@ theorem hasWeakLineDerivOn_cauchyTransform (hp : 1 < p) (hp_top : p ≠ (∞ : �
   have hfi : Integrable f := by
     have : IsFiniteMeasure (volume.restrict (closedBall c (r : ℝ))) :=
       isFiniteMeasure_restrict.2 measure_closedBall_lt_top.ne
-    have h : Integrable ((closedBall c (r : ℝ)).indicator f) :=
-      (integrable_indicator_iff measurableSet_closedBall).2 ((hf.restrict _).integrable hp.le)
-    rwa [indicator_eq_self.2 hs] at h
-  have hDm : MemLp (fun w ↦ v • beurlingLp p hp hp_top (hf.toLp f) w + conj v • f w) p volume :=
-    ((Lp.memLp _).const_smul v).add (hf.const_smul (conj v))
+    exact IntegrableOn.integrable_of_forall_notMem_eq_zero
+      ((hf.restrict (closedBall c (r : ℝ))).integrable hp.le)
+      fun y hy ↦ notMem_support.1 fun h ↦ hy (hs h)
+  have hDm := memLp_smul_beurlingLp_add_smul hp hp_top hf v
   refine hasWeakLineDerivOn_iff_testFunction.2 ⟨inferInstance,
     (locallyIntegrable_cauchyTransform hfi).locallyIntegrableOn _,
     (hDm.locallyIntegrable hp.le).locallyIntegrableOn _, fun φ ↦ ?_⟩
