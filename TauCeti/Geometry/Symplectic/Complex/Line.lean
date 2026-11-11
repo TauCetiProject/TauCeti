@@ -40,8 +40,6 @@ conjugating the coordinates exchanges them.
   is Lagrangian for the standard area form.
 * `TauCeti.stdComplexSymplecticForm_apply_ofComplexModule`: area paired with multiplication
   by `I` is the norm square.
-* `TauCeti.abs_stdComplexSymplecticForm_apply_le`: the area of the parallelogram spanned by two
-  vectors is at most the product of their lengths.
 * `TauCeti.stdComplexSymplecticForm_tames_iff_im_pos` and
   `TauCeti.stdComplexSymplecticForm_tames_or_tames_transport_conj`: the orientation criterion
   and coverage of both components by the usual and conjugate real coordinates.
@@ -161,16 +159,6 @@ theorem stdComplexSymplecticForm_apply_ofComplexModule (z : ℂ) :
       Complex.normSq z := by
   simp [stdComplexSymplecticForm_apply, AlmostComplexStructure.ofComplexModule_apply,
     Complex.normSq_apply]
-
-/-- The standard area form is `Im (conj z * w)`, so it is bounded by the product of the lengths:
-`|ω(z, w)| ≤ ‖z‖ ‖w‖`. -/
-theorem abs_stdComplexSymplecticForm_apply_le (z w : ℂ) :
-    |stdComplexSymplecticForm z w| ≤ ‖z‖ * ‖w‖ := by
-  have h : stdComplexSymplecticForm z w = ((starRingEnd ℂ) z * w).im := by
-    simp [stdComplexSymplecticForm_apply, Complex.mul_im]
-    ring
-  rw [h, ← Complex.norm_conj z, ← norm_mul]
-  exact Complex.abs_im_le_norm _
 
 private noncomputable def planeBasis (J : AlmostComplexStructure ℂ) : Basis (Fin 2) ℝ ℂ :=
   basisOfLinearIndependentOfCardEqFinrank' ![1, J 1]

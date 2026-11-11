@@ -14,6 +14,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Varying
 public import TauCeti.Geometry.Symplectic.Liouville.Linear
 public import TauCeti.Geometry.Symplectic.Prod.Skew
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
+import TauCeti.Geometry.Symplectic.CompatibleMetric
 
 /-!
 # The linear normal model of a pseudoholomorphic curve and its taming form
@@ -381,14 +382,19 @@ theorem le_normalModelForm_apply_normalModelStructure {p : ℂ × ℂ}
   have hJ : normalModelStructure ν μ p X = (I * X.1, I * X.2 + 2 * I * c * conj X.1) :=
     normalModelStructure_apply ν μ p X
   have h₀ : stdComplexSymplecticForm X.1 (I * X.1) = x ^ 2 := by
-    simp [stdComplexSymplecticForm_apply, x, ← Complex.normSq_eq_norm_sq, Complex.normSq_apply]
+    simpa [AlmostComplexStructure.ofComplexModule_apply, Complex.normSq_eq_norm_sq] using
+      stdComplexSymplecticForm_apply_ofComplexModule X.1
   have h₁ : stdComplexSymplecticForm X.2 (I * X.2 + 2 * I * c * conj X.1) =
       y ^ 2 + stdComplexSymplecticForm X.2 (2 * I * c * conj X.1) := by
     simp [stdComplexSymplecticForm_apply, y, ← Complex.normSq_eq_norm_sq, Complex.normSq_apply]
     ring
   have hn₁ : ‖2 * I * c * conj X.1‖ = 2 * C * x := by simp [C, x]
   have b₁ : |stdComplexSymplecticForm X.2 (2 * I * c * conj X.1)| ≤ y * (2 * C * x) :=
-    hn₁ ▸ abs_stdComplexSymplecticForm_apply_le _ _
+    hn₁ ▸ SymplecticForm.abs_apply_le_norm_mul_norm (J := AlmostComplexStructure.ofComplexModule ℂ)
+      (fun v w ↦ by
+        simp [stdComplexSymplecticForm_apply, AlmostComplexStructure.ofComplexModule_apply,
+          Complex.inner]
+        ring) _ _
   have hA₁ (ζ : ℂ) : |A p.1 (fun _ ↦ ζ)| ≤ a * ‖ζ‖ := by
     have h : |A p.1 (fun _ ↦ ζ)| ≤ ‖A p.1‖ * ‖ζ‖ := by
       simpa using (A p.1).le_opNorm (fun _ ↦ ζ)
