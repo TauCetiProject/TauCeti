@@ -12,7 +12,7 @@ public import Mathlib.Analysis.Normed.Operator.NormedSpace
 
 Postcomposition by a (semilinear) isometry `i` acts pointwise on continuous linear maps, and
 its image consists precisely of the operators whose values lie in the range of `i`
-(`LinearIsometry.mem_range_postcomp`). Consequently, if the range of `i` is closed, the
+(`LinearIsometry.range_postcomp`). Consequently, if the range of `i` is closed, the
 postcomposition operator also has closed range (`LinearIsometry.isClosed_range_postcomp`).
 This lets regularity of an operator-valued map be checked after a closed isometric embedding
 of the codomain, for instance of alternating maps into multilinear maps.
@@ -38,10 +38,12 @@ variable {𝕜 𝕜₂ 𝕜₃ D E F : Type*}
 
 variable [NormedAddCommGroup E] [NormedSpace 𝕜₂ E]
 
-/-- A continuous linear map is a postcomposition by a linear isometry exactly when all of its
-values lie in the range of that isometry. -/
-theorem mem_range_postcomp {i : E →ₛₗᵢ[σ₂₃] F} {g : D →SL[σ₁₃] F} :
-    g ∈ range (postcomp (σ₁₂ := σ₁₂) (σ₁₃ := σ₁₃) i) ↔ ∀ x, g x ∈ range i := by
+/-- The range of postcomposition by a linear isometry consists exactly of the continuous linear
+maps all of whose values lie in the range of that isometry. -/
+@[simp] theorem range_postcomp (i : E →ₛₗᵢ[σ₂₃] F) :
+    range (postcomp (σ₁₂ := σ₁₂) (σ₁₃ := σ₁₃) i) = {g : D →SL[σ₁₃] F | ∀ x, g x ∈ range i} := by
+  ext g
+  rw [mem_ofPred_eq]
   refine ⟨by rintro ⟨f, rfl⟩ x; exact ⟨f x, rfl⟩, fun hg ↦ ?_⟩
   choose f hf using hg
   let f' : D →ₛₗ[σ₁₂] E :=
@@ -59,6 +61,6 @@ theorem isClosed_range_postcomp (i : E →ₛₗᵢ[σ₂₃] F) (hi : IsClosed 
   convert isClosed_iInter fun x : D ↦
     hi.preimage (continuous_eval_const (F := D →SL[σ₁₃] F) x) using 1
   ext g
-  simp only [mem_range_postcomp, mem_iInter, mem_preimage]
+  simp only [range_postcomp, mem_ofPred_eq, mem_iInter, mem_preimage]
 
 end LinearIsometry
