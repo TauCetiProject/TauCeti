@@ -57,10 +57,6 @@ homology of the complex (Hatcher, Lemma 2.34(c)), already available as
   isomorphisms on singular homology below degree `n`.
 * `ContinuousMap.IsNConnected.epi_singularHomologyMap`: an `n`-connected map induces surjections
   on singular homology up to degree `n`.
-* `TauCeti.epi_twistedHomologyMap_subtypeVal_of_relHomotopyGroup`,
-  `TauCeti.isIso_twistedHomologyMap_subtypeVal_of_relHomotopyGroup_of_add_one_lt`: the inclusion
-  of a subspace is surjective on homology with local coefficients below the connectivity of the
-  pair, and bijective one degree lower.
 * `ContinuousMap.IsNConnected.isIso_twistedHomologyMap`,
   `ContinuousMap.IsNConnected.epi_twistedHomologyMap`: an `n`-connected map induces isomorphisms
   on homology with local coefficients below degree `n`, and surjections up to degree `n`.
@@ -186,76 +182,6 @@ theorem epi_singularHomologyMap_inclusion_skeletonLT (hA : (skeletonLT C (n + 1)
 end TauCeti
 
 /-! ### Local coefficients -/
-
-namespace TauCeti
-
-open LocalCoefficientSystem
-
-variable {R : Type u} [Ring R]
-
-/-- **The inclusion of a subspace is surjective on homology with local coefficients below the
-connectivity of the pair.** If every point of `X` is joined by a path to a point of `A`, and the
-relative homotopy set `π_{k+1}(X, A, a)` is trivial for every `k + 1 < n` and every `a ∈ A`, then
-for every local coefficient system `L` on `X` the inclusion of `A` induces an epimorphism
-`H_m(A; L|_A) ⟶ H_m(X; L)` for every `m < n`. -/
-theorem epi_twistedHomologyMap_subtypeVal_of_relHomotopyGroup {X : TopCat.{v}} {A : Set X}
-    {n : ℕ} (h₀ : ∀ x : X, ∃ a ∈ A, Joined x a)
-    (h : ∀ k : ℕ, k + 1 < n → ∀ a : A,
-      Subsingleton (RelHomotopyGroup (Fin k) ⟨TopPair.ofSubset A, a⟩))
-    (L : LocalCoefficientSystem.{u, v, v} R X) {m : ℕ} (hm : m < n) :
-    Epi (twistedHomologyMap (TopCat.ofHom (ContinuousMap.subtypeVal A)) L m) := by
-  obtain ⟨D⟩ := nonempty_subspaceCubeDeformation_of_relHomotopyGroup (n := n) h₀ fun k hk ↦
-    h k (by exact_mod_cast hk)
-  let i : TopCat.of A ⟶ X := TopCat.ofHom (ContinuousMap.subtypeVal A)
-  have : Epi (HomologicalComplex.homologyMap
-      (normalizedTwistedCubicalChainComplexMap i.hom L) m) :=
-    D.epi_homologyMap_normalizedTwistedCubicalChainComplexMap L (by exact_mod_cast hm)
-  -- Transport the cubical statement along the comparison with simplicial chains, which is natural
-  -- in the space and a quasi-isomorphism.
-  have hc := congrArg (HomologicalComplex.homologyMap · m)
-    (twistedCubicalToSingularMap_naturality i L)
-  simp only [HomologicalComplex.homologyMap_comp] at hc
-  have : Epi (HomologicalComplex.homologyMap
-      (twistedCubicalToSingularMap ((LocalCoefficientSystem.pullback i.hom).obj L)) m ≫
-        twistedHomologyMap i L m) := by
-    rw [twistedHomologyMap, ← hc]
-    infer_instance
-  exact epi_of_epi (HomologicalComplex.homologyMap
-    (twistedCubicalToSingularMap ((LocalCoefficientSystem.pullback i.hom).obj L)) m) _
-
-/-- **The inclusion of a subspace is an isomorphism on homology with local coefficients one degree
-below the connectivity of the pair.** If every point of `X` is joined by a path to a point of
-`A`, and the relative homotopy set `π_{k+1}(X, A, a)` is trivial for every `k + 1 < n` and every
-`a ∈ A`, then for every local coefficient system `L` on `X` the inclusion of `A` induces an
-isomorphism `H_m(A; L|_A) ≅ H_m(X; L)` for every `m + 1 < n`. -/
-theorem isIso_twistedHomologyMap_subtypeVal_of_relHomotopyGroup_of_add_one_lt {X : TopCat.{v}}
-    {A : Set X} {n : ℕ} (h₀ : ∀ x : X, ∃ a ∈ A, Joined x a)
-    (h : ∀ k : ℕ, k + 1 < n → ∀ a : A,
-      Subsingleton (RelHomotopyGroup (Fin k) ⟨TopPair.ofSubset A, a⟩))
-    (L : LocalCoefficientSystem.{u, v, v} R X) {m : ℕ} (hm : m + 1 < n) :
-    IsIso (twistedHomologyMap (TopCat.ofHom (ContinuousMap.subtypeVal A)) L m) := by
-  obtain ⟨D⟩ := nonempty_subspaceCubeDeformation_of_relHomotopyGroup (n := n) h₀ fun k hk ↦
-    h k (by exact_mod_cast hk)
-  let i : TopCat.of A ⟶ X := TopCat.ofHom (ContinuousMap.subtypeVal A)
-  have : IsIso (HomologicalComplex.homologyMap
-      (normalizedTwistedCubicalChainComplexMap i.hom L) m) := by
-    have := D.quasiIsoAt_normalizedTwistedCubicalChainComplexMap L (m := m)
-      (by exact_mod_cast hm)
-    rwa [quasiIsoAt_iff_isIso_homologyMap] at this
-  -- Transport the cubical statement along the comparison with simplicial chains, which is natural
-  -- in the space and a quasi-isomorphism.
-  have hc := congrArg (HomologicalComplex.homologyMap · m)
-    (twistedCubicalToSingularMap_naturality i L)
-  simp only [HomologicalComplex.homologyMap_comp] at hc
-  have : IsIso (HomologicalComplex.homologyMap
-      (twistedCubicalToSingularMap ((LocalCoefficientSystem.pullback i.hom).obj L)) m ≫
-        twistedHomologyMap i L m) := by
-    rw [twistedHomologyMap, ← hc]
-    infer_instance
-  exact IsIso.of_isIso_comp_left (HomologicalComplex.homologyMap
-    (twistedCubicalToSingularMap ((LocalCoefficientSystem.pullback i.hom).obj L)) m) _
-
-end TauCeti
 
 namespace ContinuousMap.IsNConnected
 
