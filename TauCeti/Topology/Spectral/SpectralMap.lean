@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.Topology.Spectral.Hom
+public import Mathlib.Topology.Constructible
 public import Mathlib.Topology.Bases
 public import Mathlib.Topology.Homeomorph.Lemmas
 public import Mathlib.Topology.Spectral.Basic
@@ -46,6 +47,8 @@ but no criterion that tests spectrality on a basis; this supplies the missing en
 * `Topology.IsOpenEmbedding.isSpectralMap` : an open embedding from a compact space into a
   quasiseparated space is spectral.
 * `TauCeti.spectralSpace_univ` : the full subspace of a spectral space is spectral.
+* `IsSpectralMap.isConstructible_preimage` : constructible sets pull back along spectral maps
+  from quasiseparated spaces to compact spaces.
 
 ## References
 
@@ -60,6 +63,15 @@ namespace TauCeti
 open Set Topology TopologicalSpace
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- A spectral map from a quasiseparated space to a compact space pulls constructible sets
+back to constructible sets. In particular this applies to maps between spectral spaces. -/
+theorem _root_.IsSpectralMap.isConstructible_preimage [QuasiSeparatedSpace X] [CompactSpace Y]
+    {f : X → Y} (hf : IsSpectralMap f) {s : Set Y} (hs : IsConstructible s) :
+    IsConstructible (f ⁻¹' s) :=
+  hs.preimage hf.continuous fun _ hUo hUc ↦
+    (hf.isCompact_preimage_of_isOpen hUo hUc.isCompact).isRetrocompact
+      (hUo.preimage hf.continuous)
 
 /-- **A basis criterion for spectral maps.** A continuous map is spectral as soon as the preimage
 of every member of a topological basis of the target is compact: a compact open set is a finite

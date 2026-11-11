@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangeFree
+public import TauCeti.Algebra.Module.ZLattice.BaseChange
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 import Mathlib.LinearAlgebra.Dual.Lemmas
@@ -61,6 +62,8 @@ forcing the integral and real ranks to agree.
   the componentwise lattice map.
 * `TauCeti.Toric.IsIntegralLattice.isZLattice`: in a normed space the image of an integral
   lattice is discrete, hence a `ZLattice` in Mathlib's sense.
+* `TauCeti.Toric.isIntegralLattice_subtype_of_isZLattice`: conversely, a full `ZLattice` in a
+  finite-dimensional space is an integral lattice for its inclusion.
 
 ## Implementation notes
 
@@ -239,6 +242,30 @@ theorem IsIntegralLattice.eq_realCharacter (h : IsIntegralLattice i) {m : N →+
   h.isBaseChange.algHom_ext φ (h.realCharacter m) fun n ↦ by
     simp only [AddMonoidHom.coe_toIntLinearMap, hφ, IsIntegralLattice.realCharacter_apply]
 
+/-- The real extension of an integral coordinate character is the corresponding coordinate of the
+real basis attached to an integral basis. -/
+theorem IsIntegralLattice.realCharacter_coord {ι : Type*} (h : IsIntegralLattice i)
+    (b : Module.Basis ι ℤ N) (j : ι) :
+    h.realCharacter (b.coord j).toAddMonoidHom = (h.isBaseChange.basis b).coord j := by
+  classical
+  refine (h.isBaseChange.basis b).ext fun k ↦ ?_
+  rw [Module.Basis.coord_apply, Module.Basis.repr_self, h.isBaseChange.basis_apply,
+    AddMonoidHom.coe_toIntLinearMap, h.realCharacter_apply, Finsupp.single_apply]
+  simp [Module.Basis.coord_apply, Finsupp.single_apply, eq_comm]
+
+/-- A real-linear functional is the real extension of an integral character exactly when it takes
+integer values at every lattice point. -/
+theorem IsIntegralLattice.exists_realCharacter_eq_iff (h : IsIntegralLattice i)
+    {φ : Module.Dual ℝ V} : (∃ m : N →+ ℤ, h.realCharacter m = φ) ↔ ∀ n, ∃ k : ℤ, φ (i n) = k := by
+  refine ⟨fun ⟨m, hm⟩ n ↦ ⟨m n, by rw [← hm, h.realCharacter_apply]⟩, fun hφ ↦ ?_⟩
+  choose k hk using hφ
+  let m : N →+ ℤ :=
+    { toFun := k
+      map_zero' := Int.cast_injective (α := ℝ) (by rw [← hk, map_zero, map_zero, Int.cast_zero])
+      map_add' := fun a b ↦ Int.cast_injective (α := ℝ) (by
+        rw [Int.cast_add, ← hk, ← hk, ← hk, map_add, map_add]) }
+  exact ⟨m, (h.eq_realCharacter (m := m) hk).symm⟩
+
 /-- Real extension of integral characters is injective. -/
 theorem IsIntegralLattice.realCharacter_injective (h : IsIntegralLattice i) :
     Function.Injective h.realCharacter := by
@@ -331,6 +358,13 @@ theorem IsIntegralLattice.isZLattice (h : IsIntegralLattice i) :
     IsZLattice ℝ (LinearMap.range i.toIntLinearMap) :=
   haveI := h.discreteTopology
   ⟨by rw [LinearMap.coe_range]; exact h.span_range_eq_top⟩
+
+/-- Conversely, a full `ℤ`-lattice in Mathlib's sense, in a finite-dimensional normed real vector
+space, is an integral lattice for its inclusion: the space is the real scalar extension of the
+lattice. -/
+theorem isIntegralLattice_subtype_of_isZLattice [FiniteDimensional ℝ V] (L : Submodule ℤ V)
+    [DiscreteTopology L] [IsZLattice ℝ L] : IsIntegralLattice L.subtype.toAddMonoidHom :=
+  ⟨ZLattice.module_free ℝ L, ZLattice.module_finite ℝ L, ZLattice.isBaseChange_subtype ℝ L⟩
 
 end Discrete
 

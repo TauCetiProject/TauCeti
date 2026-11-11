@@ -55,11 +55,9 @@ variable {A : Type} [CommRing A] [TopologicalSpace A] [DiscreteTopology A] [IsTo
 /-- Over a discrete ring, noetherian or not, the whole of `Spa(A, A⁺)` is an open affinoid of
 Huber's standing class. -/
 example :
-    ⊤ ∈ (presentationLimitPreAdicSpace P Aplus hAplus hP).huberStandardAffinoidOpens := by
-  have h : spaBasicOpen Aplus ({1} : Finset A) 1 = ⊤ := by
-    ext y
-    simp [mem_spaBasicOpen, rationalSubset_singleton_one]
-  exact h ▸ spaBasicOpen_mem_huberStandardAffinoidOpens P Aplus hAplus hP (isOpen_discrete _)
+    ⊤ ∈ (presentationLimitPreAdicSpace P Aplus hAplus hP).huberStandardAffinoidOpens :=
+  spaBasicOpen_singleton_one Aplus ▸
+    spaBasicOpen_mem_huberStandardAffinoidOpens P Aplus hAplus hP (isOpen_discrete _)
 
 /-- Over a discrete ring, open affinoids of Huber's standing class form a basis of `Spa(A, A⁺)`. -/
 example :

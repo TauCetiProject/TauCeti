@@ -10,7 +10,7 @@ public import TauCeti.RingTheory.Huber.NoetherianType.HuberStandard
 
 import TauCeti.RingTheory.AdicCompletion.Noetherian
 import TauCeti.RingTheory.Huber.Adic
-import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
+import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 /-!
 # Noetherianity of completions of adic rings and of rings of definition
@@ -227,7 +227,7 @@ instance IsHuberStandard.completion [IsHuberRing R] [IsHuberStandard R] :
           (φ := (Completion.coeRingHom : R →+* Completion R))).mp ‹_›
       inferInstance)
     fun _ ↦
-      have : DiscreteUniformity R := DiscreteUniformity.of_discreteTopology
+      have : DiscreteUniformity R := IsRightUniformAddGroup.discreteUniformity
       isHuberStandard_completion_iff.mpr inferInstance
 
 end TauCeti.Huber

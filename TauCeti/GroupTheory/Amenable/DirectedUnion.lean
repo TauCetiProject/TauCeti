@@ -89,8 +89,8 @@ amenable. -/
 theorem Amenable.of_directed_of_iSup_eq_top {ι : Type*} [Nonempty ι] {H : ι → Subgroup G}
     (hH : Directed (· ≤ ·) H) (htop : ⨆ i, H i = ⊤) [∀ i, Amenable (H i)] : Amenable G :=
   have := amenable_iSup_of_directed hH
-  .of_surjective (ContinuousMonoidHom.subgroupSubtype (⨆ i, H i)) fun x =>
-    ⟨⟨x, htop ▸ Subgroup.mem_top x⟩, rfl⟩
+  .of_denseRange (ContinuousMonoidHom.subgroupSubtype (⨆ i, H i))
+    (Function.Surjective.denseRange fun x => ⟨⟨x, htop ▸ Subgroup.mem_top x⟩, rfl⟩)
 
 /-- A topological group all of whose finitely generated subgroups are amenable is amenable. -/
 theorem Amenable.of_forall_fg (h : ∀ K : Subgroup G, K.FG → Amenable K) : Amenable G := by

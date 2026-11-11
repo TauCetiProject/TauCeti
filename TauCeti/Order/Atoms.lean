@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Order.Atoms
 public import Mathlib.Order.SupIndep
+public import Mathlib.Order.ModularLattice
+public import Mathlib.Data.Fintype.Powerset
+public import Mathlib.Data.Finset.Max
 
 /-!
 # Finite atom decompositions in a complemented modular lattice
@@ -27,6 +30,8 @@ arbitrary suprema — lattices of subobjects closed under finite meets and joins
 * `TauCeti.exists_finset_isAtom_sup_eq`: in a complemented modular lattice satisfying the
   descending chain condition, every element is the supremum of a finite independent family of
   atoms.
+* `TauCeti.exists_isCompl_finset_sup_of_isAtom`: if a finite family of atoms has supremum `⊤`, every
+  element has a complement that is the supremum of a subfamily.
 -/
 
 public section
@@ -37,34 +42,56 @@ variable {L : Type*} [Lattice L] [BoundedOrder L] [IsModularLattice L] [Compleme
   [WellFoundedLT L]
 
 /-- **Finite atom decomposition.** In a bounded modular lattice which is complemented and
-satisfies the descending chain condition, every element is the supremum of a finite family of
-atoms, pairwise independent. This is semisimplicity for a lattice of subobjects: `x` is the direct
-sum of finitely many simple subobjects. -/
+satisfies the descending chain condition, every element is the supremum of a finite independent
+family of atoms. This is semisimplicity for a lattice of subobjects: `x` is the direct sum of
+finitely many simple subobjects. -/
 theorem exists_finset_isAtom_sup_eq (x : L) :
     ∃ s : Finset L, (∀ a ∈ s, IsAtom a) ∧ s.SupIndep id ∧ s.sup id = x := by
   classical
   induction x using WellFoundedLT.induction with
   | ind x ih =>
-    rcases eq_or_ne x ⊥ with rfl | hx
-    · exact ⟨∅, by simp, Finset.supIndep_empty _, by simp⟩
-    obtain ⟨a, ha, hax⟩ := (eq_bot_or_exists_atom_le x).resolve_left hx
+    obtain rfl | ⟨a, ha, hax⟩ := eq_bot_or_exists_atom_le x
+    · exact ⟨∅, by simp⟩
     obtain ⟨b, hb⟩ := exists_isCompl a
     -- the meet of `x` with a complement of `a` is a complement of `a` inside `x`
-    have hinf : a ⊓ (b ⊓ x) = ⊥ :=
-      le_bot_iff.1 <| calc
-        a ⊓ (b ⊓ x) ≤ a ⊓ b := inf_le_inf_left _ inf_le_left
-        _ = ⊥ := hb.disjoint.eq_bot
-    have hsup : a ⊔ b ⊓ x = x := by
-      rw [← sup_inf_assoc_of_le _ hax, hb.codisjoint.eq_top, top_inf_eq]
-    have hlt : b ⊓ x < x := by
-      refine inf_le_right.lt_of_ne fun h ↦ ha.1 ?_
-      have hbot : a ⊓ x = ⊥ := h ▸ hinf
-      rwa [inf_eq_left.2 hax] at hbot
+    have hdisj : Disjoint a (b ⊓ x) := hb.disjoint.mono_right inf_le_left
+    have hlt : b ⊓ x < x :=
+      inf_le_right.lt_of_ne fun h ↦ ha.1 <| hdisj.eq_bot_of_le <| hax.trans h.ge
     obtain ⟨s, hatom, hindep, hssup⟩ := ih _ hlt
-    refine ⟨insert a s, ?_, hindep.insert ?_, ?_⟩
-    · exact fun c hc ↦ (Finset.mem_insert.1 hc).elim (fun h ↦ h ▸ ha) (hatom c)
-    · rw [hssup]
-      exact disjoint_iff.2 hinf
-    · rw [Finset.sup_insert, hssup, id_eq, hsup]
+    refine ⟨insert a s, (Finset.forall_mem_insert _ _ _).2 ⟨ha, hatom⟩,
+      hindep.insert (hssup ▸ hdisj), ?_⟩
+    simp [hssup, ← sup_inf_assoc_of_le _ hax, hb.sup_eq_top]
+
+section Complement
+
+variable {α : Type*} [Lattice α] [BoundedOrder α] [IsModularLattice α]
+
+/-- **Complements from a generating family of atoms.** In a bounded modular lattice, if a finite
+family of atoms has supremum `⊤`, then every element has a complement that is the supremum of a
+subfamily: a subfamily maximal among those whose supremum is disjoint from the element. -/
+theorem exists_isCompl_finset_sup_of_isAtom {ι : Type*} [Fintype ι] {N : ι → α}
+    (hN : ∀ i, IsAtom (N i)) (htop : Finset.univ.sup N = ⊤) (x : α) :
+    ∃ s : Finset ι, IsCompl x (s.sup N) := by
+  classical
+  obtain ⟨s, hs, hmax⟩ :=
+    (Finset.univ.powerset.filter fun t ↦ Disjoint x (t.sup N)).exists_max_image
+      Finset.card ⟨∅, by simp⟩
+  have hdis : Disjoint x (s.sup N) := (Finset.mem_filter.1 hs).2
+  refine ⟨s, hdis, codisjoint_iff.2 (eq_top_iff.2 ?_)⟩
+  rw [← htop]
+  refine Finset.sup_le fun j _ ↦ ?_
+  by_contra hj
+  -- Otherwise `N j` could be added to the subfamily, contradicting maximality.
+  have hdj : Disjoint (N j) (x ⊔ s.sup N) := (hN j).not_le_iff_disjoint.1 hj
+  have hjs : j ∉ s := fun h ↦ hj (le_sup_of_le_right (Finset.le_sup h))
+  have hins : Disjoint x ((insert j s).sup N) := by
+    rw [Finset.sup_insert, sup_comm]
+    exact hdis.disjoint_sup_right_of_disjoint_sup_left hdj.symm
+  have := hmax (insert j s)
+    (Finset.mem_filter.2 ⟨Finset.mem_powerset.2 (Finset.subset_univ _), hins⟩)
+  rw [Finset.card_insert_of_notMem hjs] at this
+  lia
+
+end Complement
 
 end TauCeti

@@ -36,7 +36,7 @@ For a finite simple graph `G` without isolated vertices, `M` is the zigzag grade
 (`TauCeti.zigzagGradedCartanMatrix_map_aeval_neg_X_eq_submatrix`). Hence `C_G(-X)⁻¹` has a negative
 coefficient as soon as the preprojective algebra of one orientation of `G` is finite-dimensional,
 which is the case for every finite simply-laced Dynkin diagram
-(`TauCeti.finiteDimensional_preprojectiveAlgebra_of_isSimplyLaced`). This is the numerical
+(`TauCeti.finiteDimensional_preprojectiveAlgebra_of_iso`). This is the numerical
 obstruction to the Koszulity of the zigzag algebras of these graphs: the inverse of the graded
 Cartan matrix of a Koszul algebra at `q = -X` is the matrix Hilbert series of its Koszul dual, so it
 has nonnegative coefficients. It contrasts with the finite preconnected graphs containing a cycle,

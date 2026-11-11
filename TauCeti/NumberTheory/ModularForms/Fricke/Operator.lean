@@ -23,7 +23,7 @@ a `ℂ`-linear endomorphism `frickeOperator` of `M_k(Γ₁(N))` and `frickeOpera
 
 `frickeOperator` is the **raw slash by `W`**: it carries no normalizing scalar, and it is
 therefore **not an involution**. With mathlib's weight-`k` slash and `W² = (-N) • 1`
-(`coe_frickeGL_sq`) it squares to multiplication by the scalar `N ^ (2 * (k - 1)) * (-N) ^ (-k)`,
+(`frickeGL_sq`) it squares to multiplication by the scalar `N ^ (2 * (k - 1)) * (-N) ^ (-k)`,
 that is `(-1) ^ k * N ^ (k - 2)`. That scalar is `frickeScalar N k` and the identity is
 `frickeGL_sq_slash`, both in `TauCeti/NumberTheory/ModularForms/Fricke/Involution.lean`; they are
 not restated here.

@@ -14,7 +14,7 @@ import TauCeti.Data.Set.Restrict
 /-!
 # Euler characteristics of branched covers
 
-Let `f : X → Y` be a finite holomorphic map from a compact connected Riemann surface to a
+Let `f : X → Y` be a finite holomorphic map from a compact Riemann surface to a
 connected Riemann surface, and let `S ⊆ Y` contain every branch value of `f`. Deleting `S` from
 the target and `f⁻¹(S)` from the source leaves a covering map whose fibres all have `degree f`
 points. Finite-cover multiplicativity of the Euler characteristic therefore gives
@@ -71,7 +71,7 @@ namespace TauCeti.RiemannSurface.FiniteHolomorphicMap
 variable {X Y : Type u} [TopologicalSpace X] [ChartedSpace ℂ X]
   [TopologicalSpace Y] [ChartedSpace ℂ Y]
   [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
-  [CompactSpace X] [T2Space X] [T2Space Y] [PreconnectedSpace X]
+  [CompactSpace X] [T2Space X] [T2Space Y]
   (f : FiniteHolomorphicMap X Y) {S : Set Y}
 
 /-- If the target punctured at a set containing every branch value has finite CW type, so does
@@ -79,7 +79,7 @@ the source punctured at its preimage. -/
 theorem finiteCWType_compl_preimage (hS : f.branchValues ⊆ S) [FiniteCWType ↥Sᶜ] :
     FiniteCWType ↥(f ⁻¹' S)ᶜ :=
   (f.isCoveringMap_restrictPreimage_compl hS).finiteCWType fun y ↦
-    ((finite_fiber_restrictPreimage_iff f Sᶜ y).2 (f.finite_fiber y)).to_subtype
+    (Sᶜ.finite_preimage_restrictPreimage_iff.2 (by simpa using f.finite_fiber y)).to_subtype
 
 variable [PreconnectedSpace Y]
 
@@ -90,7 +90,8 @@ theorem eulerChar_compl_preimage (hS : f.branchValues ⊆ S) [FiniteCWType ↥S�
     haveI := f.finiteCWType_compl_preimage hS
     eulerChar ↥(f ⁻¹' S)ᶜ = degree f * eulerChar ↥Sᶜ :=
   eulerChar_eq_mul_of_isCoveringMap (f.isCoveringMap_restrictPreimage_compl hS)
-    (fun y ↦ ((finite_fiber_restrictPreimage_iff f Sᶜ y).2 (f.finite_fiber y)).to_subtype)
+    (fun y ↦
+      (Sᶜ.finite_preimage_restrictPreimage_iff.2 (by simpa using f.finite_fiber y)).to_subtype)
     fun y ↦ by
       rw [Nat.card_coe_set_eq, f.ncard_fiber_restrictPreimage_compl hS]
 

@@ -31,14 +31,14 @@ namespace TauCeti
 variable {n : ℕ} {M : Type*} [TopologicalSpace M]
   [ChartedSpace (EuclideanHalfSpace (n + 1)) M] [IsManifold (𝓡∂ (n + 1)) 1 M]
 
-/-- At a boundary point an actual coordinate transition scales the normal coordinate by a
-strictly positive number. No block structure or orientation identity is assumed. -/
-theorem tangentCoordChange_normal_pos {α β x : M}
+/-- At a boundary point an actual coordinate transition maps the closed inward half-space
+`0 ≤ v 0` into itself: the normal coordinate of the image of an inward vector is nonnegative. -/
+theorem tangentCoordChange_normal_nonneg {α β x : M}
     (hx : x ∈ (𝓡∂ (n + 1)).boundary M)
     (hα : x ∈ (extChartAt (𝓡∂ (n + 1)) α).source)
-    (hβ : x ∈ (extChartAt (𝓡∂ (n + 1)) β).source) :
-    ∃ a : ℝ, 0 < a ∧ ∀ v : EuclideanSpace ℝ (Fin (n + 1)),
-      (tangentCoordChange (𝓡∂ (n + 1)) α β x v) 0 = a * v 0 := by
+    (hβ : x ∈ (extChartAt (𝓡∂ (n + 1)) β).source)
+    (v : EuclideanSpace ℝ (Fin (n + 1))) (hv : 0 ≤ v 0) :
+    0 ≤ (tangentCoordChange (𝓡∂ (n + 1)) α β x v) 0 := by
   let I := 𝓡∂ (n + 1)
   let y := extChartAt I α x
   let D := tangentCoordChange I α β x
@@ -77,8 +77,22 @@ theorem tangentCoordChange_normal_pos {α β x : M}
     rw [range_modelWithCornersEuclideanHalfSpace]
     simp only [mem_ofPred_eq, PiLp.add_apply, hy0, zero_add]
     exact hv
-  have hnonneg (v : EuclideanSpace ℝ (Fin (n + 1))) (hv : 0 ≤ v 0) : 0 ≤ (D v) 0 := by
-    exact hmin.hasFDerivWithinAt_nonneg hdf (hcone v hv)
+  exact hmin.hasFDerivWithinAt_nonneg hdf (hcone v hv)
+
+/-- At a boundary point an actual coordinate transition scales the normal coordinate by a
+strictly positive number. No block structure or orientation identity is assumed. -/
+theorem tangentCoordChange_normal_pos {α β x : M}
+    (hx : x ∈ (𝓡∂ (n + 1)).boundary M)
+    (hα : x ∈ (extChartAt (𝓡∂ (n + 1)) α).source)
+    (hβ : x ∈ (extChartAt (𝓡∂ (n + 1)) β).source) :
+    ∃ a : ℝ, 0 < a ∧ ∀ v : EuclideanSpace ℝ (Fin (n + 1)),
+      (tangentCoordChange (𝓡∂ (n + 1)) α β x v) 0 = a * v 0 := by
+  let I := 𝓡∂ (n + 1)
+  let D := tangentCoordChange I α β x
+  let π : EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ :=
+    PiLp.proj 2 (fun _ : Fin (n + 1) ↦ ℝ) 0
+  have hnonneg (v : EuclideanSpace ℝ (Fin (n + 1))) (hv : 0 ≤ v 0) : 0 ≤ (D v) 0 :=
+    tangentCoordChange_normal_nonneg hx hα hβ v hv
   let ν := EuclideanSpace.single (𝕜 := ℝ) (0 : Fin (n + 1)) 1
   let a := (D ν) 0
   have hfactor (v : EuclideanSpace ℝ (Fin (n + 1))) : (D v) 0 = a * v 0 :=

@@ -78,10 +78,10 @@ theorem W1p.gradient_translate_ae {Omega V : Opens E} {h : E}
   exact MemLp.coeFn_toLp _
 
 /-- **Translation preserves zero boundary values.** If translation by `h` maps `Ω` onto itself,
-that is `x + h ∈ Ω ↔ x ∈ Ω`, then for `p < ∞` the translate `x ↦ u (x + h)` of
+that is `x + h ∈ Ω ↔ x ∈ Ω`, then the translate `x ↦ u (x + h)` of
 `u ∈ W^{1,p}_0(Ω)` again lies in `W^{1,p}_0(Ω)`. A half-space, for instance, is mapped onto itself
 by every translation parallel to its boundary. -/
-theorem W1p.translate_mem_w1p0Submodule (hp : p ≠ ∞) {h : E} (hVO : MapsTo (· + h) Omega Omega)
+theorem W1p.translate_mem_w1p0Submodule {h : E} (hVO : MapsTo (· + h) Omega Omega)
     (hΩ : ∀ x, x + h ∈ Omega → x ∈ Omega) {u : W1p mu Omega p}
     (hu : u ∈ w1p0Submodule mu Omega p) :
     W1p.translate hVO u ∈ w1p0Submodule mu Omega p := by
@@ -98,7 +98,8 @@ theorem W1p.translate_mem_w1p0Submodule (hp : p ≠ ∞) {h : E} (hVO : MapsTo (
     W1p.ext_value (Lp.ext ((W1p.value_translate_ae _ u).trans
       (W1p.value_compMeasurePreservingL_ae _ hUV hl hM u).symm))
   rw [heq]
-  exact W1p.compMeasurePreservingL_mem_w1p0Submodule hp (Homeomorph.addRight h).isProperMap
+  exact W1p.compMeasurePreservingL_mem_w1p0Submodule_of_contDiff
+    (contDiff_id.add contDiff_const) (Homeomorph.addRight h).isProperMap
     (measurePreserving_add_right mu h) hUV hl hM hu
 
 end TauCeti

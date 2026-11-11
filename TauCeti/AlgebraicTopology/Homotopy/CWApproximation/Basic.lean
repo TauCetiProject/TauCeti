@@ -34,8 +34,11 @@ It is Hausdorff, has CW type (`TauCeti.cwType_cwApproximation`), and is path-con
 Let `k ≥ 1`. Stage `k + 2` carries the cells of dimension at most `k + 1`, so it maps onto `πₖ` of
 the colimit (Hatcher, Corollary 4.12). Its map to `X` is injective on `πₖ` by the inductive step,
 and surjective on `πₖ` because it extends the map of stage `k + 1`. So the map from the colimit is
-bijective on `πₖ`, and it is a weak homotopy equivalence when `X` is path-connected
-(`TauCeti.isWeakHomotopyEquivalence_cwApproximationMap`).
+bijective on `πₖ`, for every `X` (`TauCeti.bijective_homotopyGroupMap_cwApproximationMap`), and it
+is a weak homotopy equivalence when `X` is path-connected
+(`TauCeti.isWeakHomotopyEquivalence_cwApproximationMap`). For a space that is not path-connected,
+the CW approximation sees only the path component of `x`; assembling one approximation for each
+path component gives `TauCeti.sigmaCWApproximation`.
 
 ## Main definitions
 
@@ -50,6 +53,8 @@ bijective on `πₖ`, and it is a weak homotopy equivalence when `X` is path-con
 ## Main results
 
 * `TauCeti.cwType_cwApproximation`: the colimit has CW type.
+* `TauCeti.bijective_homotopyGroupMap_cwApproximationMap`: for every `X`, the map to `X` is
+  bijective on `πₖ` for `k ≥ 1`, at every point.
 * `TauCeti.isWeakHomotopyEquivalence_cwApproximationMap`: for path-connected `X`, the map to `X`
   is a weak homotopy equivalence.
 
@@ -330,6 +335,31 @@ private lemma injective_homotopyGroupMap_cwApproximationStage (k : ℕ) {b : X}
   obtain rfl := h.symm.trans (cwApproximationStepMap_cwApproximationStepIncl_apply _ _ _ _)
   exact injective_homotopyGroupMap_cwApproximationStepMap _ _ _
 
+/-- The map `TauCeti.cwApproximationMap X x` induces a bijection on `πₖ₊₁` at every point, whether
+or not `X` is path-connected: the CW approximation only sees the path component of `x`. -/
+theorem bijective_homotopyGroupMap_cwApproximationMap (k : ℕ) (p : cwApproximation X x) :
+    Function.Bijective
+      (HomotopyGroup.map (N := Fin (k + 1)) (cwApproximationMap X x).hom
+        (rfl : (cwApproximationMap X x).hom p = _)) := by
+  refine ((cwApproximationMap X x).hom.bijective_map_iff_of_path
+    (PathConnectedSpace.somePath (cwApproximationBasepoint X x) p)).1 ?_
+  -- Stage `k + 3` carries the cells of dimension at most `k + 2`, so it maps onto `πₖ₊₁` of the
+  -- colimit, and its map to `X` is bijective on `πₖ₊₁`.
+  rw [← colimit_ι_cwApproximationBasepoint X x (k + 2)]
+  have hsurj := (cwApproximationCWComplex X x).surjective_homotopyGroupMap_incl_app
+    (n := k + 2) (N := Fin (k + 1)) (by simp) (cwApproximationStage X x (k + 2)).2.1
+  have hcomp : HomotopyGroup.map (N := Fin (k + 1)) (cwApproximationMap X x).hom rfl ∘
+      HomotopyGroup.map (x := (cwApproximationStage X x (k + 2)).2.1)
+        (colimit.ι (cwApproximationTower X x) (k + 2 + 1)).hom rfl =
+      HomotopyGroup.map (cwApproximationStage X x (k + 2)).2.2.hom
+        (ConcreteCategory.congr_hom (colimit_ι_cwApproximationMap X x (k + 2)) _).symm :=
+    HomotopyGroup.map_comp_map_of_comp_eq
+      (congrArg TopCat.Hom.hom (colimit_ι_cwApproximationMap X x (k + 2))) _ _ _
+  exact ⟨Function.Injective.of_comp_right
+      (hcomp ▸ injective_homotopyGroupMap_cwApproximationStage X x k _) hsurj,
+    Function.Surjective.of_comp
+      (hcomp ▸ surjective_homotopyGroupMap_cwApproximationStage_succ X x k _)⟩
+
 /-- **CW approximation** (Hatcher, Proposition 4.13). For a path-connected space `X`, the map
 `TauCeti.cwApproximationMap X x` from the CW complex `TauCeti.cwApproximation X x` to `X` is a weak
 homotopy equivalence. -/
@@ -345,22 +375,6 @@ theorem isWeakHomotopyEquivalence_cwApproximationMap [PathConnectedSpace X] :
     have : Subsingleton (π_ 0 (cwApproximation X x) (cwApproximationBasepoint X x)) :=
       HomotopyGroup.pi0EquivZerothHomotopy.subsingleton
     exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨⟦GenLoop.const⟧, Subsingleton.elim _ _⟩⟩
-  | succ k =>
-    -- Stage `k + 3` carries the cells of dimension at most `k + 2`, so it maps onto `πₖ₊₁` of the
-    -- colimit, and its map to `X` is bijective on `πₖ₊₁`.
-    rw [← colimit_ι_cwApproximationBasepoint X x (k + 2)]
-    have hsurj := (cwApproximationCWComplex X x).surjective_homotopyGroupMap_incl_app
-      (n := k + 2) (N := Fin (k + 1)) (by simp) (cwApproximationStage X x (k + 2)).2.1
-    have hcomp : HomotopyGroup.map (N := Fin (k + 1)) (cwApproximationMap X x).hom rfl ∘
-        HomotopyGroup.map (x := (cwApproximationStage X x (k + 2)).2.1)
-          (colimit.ι (cwApproximationTower X x) (k + 2 + 1)).hom rfl =
-        HomotopyGroup.map (cwApproximationStage X x (k + 2)).2.2.hom
-          (ConcreteCategory.congr_hom (colimit_ι_cwApproximationMap X x (k + 2)) _).symm :=
-      HomotopyGroup.map_comp_map_of_comp_eq
-        (congrArg TopCat.Hom.hom (colimit_ι_cwApproximationMap X x (k + 2))) _ _ _
-    exact ⟨Function.Injective.of_comp_right
-        (hcomp ▸ injective_homotopyGroupMap_cwApproximationStage X x k _) hsurj,
-      Function.Surjective.of_comp
-        (hcomp ▸ surjective_homotopyGroupMap_cwApproximationStage_succ X x k _)⟩
+  | succ k => exact bijective_homotopyGroupMap_cwApproximationMap X x k _
 
 end TauCeti

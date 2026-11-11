@@ -39,14 +39,12 @@ instance t2Space_totalSpace [T2Space B] [T2Space F] : T2Space (TotalSpace F E) :
   by_cases h : x.proj = y.proj
   · -- Both points lie in the source of the trivialization at their common base point.
     let e := trivializationAt F E x.proj
-    have hx : x ∈ e.source := _root_.FiberBundle.mem_trivializationAt_proj_source
-    have hy : y ∈ e.source := by
-      rw [e.mem_source, ← h]
-      exact mem_baseSet_trivializationAt F E x.proj
+    have hx : x ∈ e.source := FiberBundle.mem_trivializationAt_proj_source
+    have hy : y ∈ e.source := e.mem_source.2 (h ▸ mem_baseSet_trivializationAt F E x.proj)
     exact (e.continuousAt hx).tendsto.disjoint
       (disjoint_nhds_nhds.2 fun hexy ↦ hxy (e.injOn hx hy hexy)) (e.continuousAt hy).tendsto
   · -- Points over distinct base points are separated through the projection.
-    have hproj := _root_.FiberBundle.continuous_proj F E
+    have hproj := FiberBundle.continuous_proj F E
     exact (hproj.tendsto x).disjoint (disjoint_nhds_nhds.2 h) (hproj.tendsto y)
 
 end TauCeti.FiberBundle

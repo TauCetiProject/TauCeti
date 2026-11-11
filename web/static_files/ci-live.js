@@ -35,6 +35,15 @@
       return "details";
     return "daily";
   }
+  function timestamp(value) {
+    if (!Number.isFinite(Date.parse(value))) return "time unavailable";
+    return age(value) + " (" + new Date(value).toISOString().slice(0, 16).replace("T", " ") + " UTC)";
+  }
+  function snapshotTime(ready) {
+    return Number.isFinite(Date.parse(ready.snapshot_at))
+      ? "snapshot " + timestamp(ready.snapshot_at)
+      : "recorded " + timestamp(ready.at) + "; snapshot time unavailable";
+  }
   function chartNote(image, manifest) {
     var file = new URL(image.src, document.baseURI).pathname.split("/").pop();
     var asset = (manifest.assets || {})[file];
@@ -49,15 +58,27 @@
       figure.append(note);
     }
     var name = group(file), data = (manifest.groups || {})[name] || {};
-    var text = "Updated " + age(data.published_at) + ".";
+    var text = "Chart published " + age(data.published_at) + ".";
+    if (name === "queue") {
+      var ready = data.latest_complete;
+      text = (ready
+        ? "Last complete count: " + ready.count + " PR" + (ready.count === 1 ? "" : "s") +
+          " · " + snapshotTime(ready) + ". "
+        : "Latest complete queue count unavailable. ") + text;
+      if (data.latest_scan_incomplete)
+        text += " Newer scans are incomplete; the plotted count has not been refreshed.";
+    }
     if (data.status === "stale" || data.status === "error")
       text = "Last available chart. " + text;
     if (name === "daily" || name === "details") text += " Today is provisional.";
     if (data.pending) text += " Some build details are still arriving.";
     if (data.gaps) text += " Some source data is unavailable.";
     note.textContent = text;
-    note.title = "Published: " + (data.published_at || "unknown") +
-      "; inventory checked through: " + (data.source_through || "unknown");
+    note.title = "Chart published: " + (data.published_at || "unknown") +
+      (name === "queue"
+        ? "; complete snapshot: " + ((data.latest_complete || {}).snapshot_at || "unknown") +
+          "; observations read through: "
+        : "; inventory checked through: ") + (data.source_through || "unknown");
   }
   function report(manifest, disconnected) {
     var current = manifest.current || {};
@@ -68,12 +89,12 @@
       Date.now() - Date.parse(current.as_of) > 30 * 60 * 1000;
     status.textContent =
       (disconnected
-        ? "Updates paused · last updated "
+        ? "Updates paused · counts refreshed "
         : delayed
-          ? "Updates delayed · last updated "
+          ? "Updates delayed · counts refreshed "
           : incomplete
-            ? "Counts may be incomplete · updated "
-            : "Updated ") + age(updated);
+            ? "Counts may be incomplete · refreshed "
+            : "Counts refreshed ") + age(updated);
     status.title = "Counts refreshed: " + (updated || "unknown") +
       "; inventory checked through: " + (current.as_of || "unknown");
     root.dataset.stale = String(!!(disconnected || delayed || incomplete));
@@ -110,10 +131,11 @@
       counts.append(cell);
     });
     var ready = current.ready_to_merge;
-    backlog.hidden = !ready || !ready.complete ||
-      !Number.isFinite(Date.parse(ready.at)) || Date.now() - Date.parse(ready.at) > 30 * 60 * 1000;
-    backlog.textContent = backlog.hidden ? "" : ready.count +
-      " pull request" + (ready.count === 1 ? "" : "s") + " ready to merge.";
+    backlog.hidden = !ready;
+    backlog.textContent = !ready ? "" : !ready.complete
+      ? "Ready-to-merge count unavailable: the latest scan is incomplete. See the last complete count below the queue chart."
+      : "Last complete count: " + ready.count + " pull request" +
+        (ready.count === 1 ? "" : "s") + " ready to merge · " + snapshotTime(ready) + ".";
     document.querySelectorAll("img.loc-graph").forEach(function (image) {
       chartNote(image, manifest);
     });

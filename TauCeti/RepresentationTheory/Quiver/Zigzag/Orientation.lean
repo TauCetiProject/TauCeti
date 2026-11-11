@@ -35,9 +35,11 @@ one convenient witness that every graph admits an orientation.
 * `TauCeti.DoubledQuiver.OrientedQuiver`: the quiver of the chosen darts.
 * `TauCeti.DoubledQuiver.OrientedQuiver.homEquiv`: its arrows over a pair of graph vertices are
   exactly the adjacency proofs whose dart the orientation selects.
-* `TauCeti.DoubledQuiver.OrientedQuiver.card_hom_ofLinearOrder` and
-  `TauCeti.DoubledQuiver.OrientedQuiver.isAcyclic_ofLinearOrder`: arrow counts and acyclicity for
-  the linear-order orientation.
+* `TauCeti.DoubledQuiver.OrientedQuiver.card_hom_ofLinearOrder`,
+  `TauCeti.DoubledQuiver.OrientedQuiver.lt_of_path_of_length_pos_ofLinearOrder`,
+  `TauCeti.DoubledQuiver.OrientedQuiver.le_of_path_ofLinearOrder`, and
+  `TauCeti.DoubledQuiver.OrientedQuiver.isAcyclic_ofLinearOrder`: arrow counts, path monotonicity,
+  and acyclicity for the linear-order orientation.
 * `TauCeti.DoubledQuiver.OrientedQuiver.card_symmetrify_hom`: symmetrifying an orientation
   recovers the adjacency counts of the graph.
 * `TauCeti.DoubledQuiver.OrientedQuiver.sum_card_hom_add_card_hom_mul`: a vertex weight summed
@@ -219,15 +221,16 @@ theorem card_hom_ofLinearOrder [LinearOrder V] (i j : V) [Decidable (i < j ∧ G
   · exact Nat.card_eq_one_iff_unique.2 ⟨⟨fun _ _ ↦ Subtype.ext rfl⟩, ⟨⟨h.2, h.1⟩⟩⟩
   · exact @Nat.card_of_isEmpty _ ⟨fun p ↦ h ⟨p.2, p.1⟩⟩
 
-private theorem path_length_zero_or_lt_ofLinearOrder [LinearOrder V]
+/-- Along any positive-length path in the linear-order orientation, the start vertex is strictly
+smaller than the end vertex. -/
+theorem lt_of_path_of_length_pos_ofLinearOrder [LinearOrder V]
     {a b : OrientedQuiver G (Orientation.ofLinearOrder G)}
-    (p : _root_.Quiver.Path a b) : p.length = 0 ∨
-      (vertexEquiv G (Orientation.ofLinearOrder G)).symm a <
-        (vertexEquiv G (Orientation.ofLinearOrder G)).symm b := by
+    (p : _root_.Quiver.Path a b) (hp : 0 < p.length) :
+    (vertexEquiv G (Orientation.ofLinearOrder G)).symm a <
+      (vertexEquiv G (Orientation.ofLinearOrder G)).symm b := by
   induction p with
-  | nil => exact Or.inl rfl
+  | nil => cases hp
   | @cons b c p e ih =>
-    right
     have he : (vertexEquiv G (Orientation.ofLinearOrder G)).symm b <
         (vertexEquiv G (Orientation.ofLinearOrder G)).symm c := by
       have he' := (homEquiv G (Orientation.ofLinearOrder G)
@@ -235,10 +238,20 @@ private theorem path_length_zero_or_lt_ofLinearOrder [LinearOrder V]
         ((vertexEquiv G (Orientation.ofLinearOrder G)).symm c)
         (by simpa only [← vertexEquiv_apply, Equiv.apply_symm_apply] using e)).2
       simpa only [Orientation.mem_ofLinearOrder_iff] using he'
-    rcases ih with hp | hp
-    · rw [(Path.eq_of_length_zero p hp)]
+    rcases Nat.eq_zero_or_pos p.length with h0 | hpos
+    · rw [Path.eq_of_length_zero p h0]
       exact he
-    · exact lt_trans hp he
+    · exact lt_trans (ih hpos) he
+
+/-- Along any path in the linear-order orientation, the start vertex is at most the end vertex. -/
+theorem le_of_path_ofLinearOrder [LinearOrder V]
+    {a b : OrientedQuiver G (Orientation.ofLinearOrder G)}
+    (p : _root_.Quiver.Path a b) :
+    (vertexEquiv G (Orientation.ofLinearOrder G)).symm a ≤
+      (vertexEquiv G (Orientation.ofLinearOrder G)).symm b := by
+  rcases Nat.eq_zero_or_pos p.length with h0 | hpos
+  · rw [Path.eq_of_length_zero p h0]
+  · exact (lt_of_path_of_length_pos_ofLinearOrder G p hpos).le
 
 /-- Orienting every edge of a graph from the smaller vertex to the larger makes an acyclic
 quiver. -/
@@ -246,9 +259,9 @@ theorem isAcyclic_ofLinearOrder [LinearOrder V] :
     TauCeti.Quiver.IsAcyclic (OrientedQuiver G (Orientation.ofLinearOrder G)) := by
   apply TauCeti.Quiver.isAcyclic_def.mpr
   intro a p
-  rcases path_length_zero_or_lt_ofLinearOrder G p with hp | hp
-  · exact p.eq_nil_of_length_zero hp
-  · exact (lt_irrefl _ hp).elim
+  rcases Nat.eq_zero_or_pos p.length with h0 | hpos
+  · exact p.eq_nil_of_length_zero h0
+  · exact (lt_irrefl _ (lt_of_path_of_length_pos_ofLinearOrder G p hpos)).elim
 
 /-- An orientation has one arrow, in total across the two directions, over each edge. -/
 theorem card_hom_add_card_hom [DecidableRel G.Adj] (i j : V) :

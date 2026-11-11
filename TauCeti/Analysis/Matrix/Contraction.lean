@@ -24,6 +24,10 @@ non-divergence-form operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` with constant coe
 * `Matrix.contraction_one`: contraction with the identity matrix is the trace.
 * `Matrix.abs_contraction_le`: if every entry of `M` is at most `ε` in absolute value,
   then the contraction of `H` with `M` is at most `n² ε ‖H‖` in absolute value.
+* `Matrix.abs_sum_sum_mul_apply_single_single_le`: the same bound for the contraction
+  `∑ᵢⱼ Mᵢⱼ B eᵢ eⱼ` of a continuous bilinear form `B`, such as a second derivative.
+* `Matrix.abs_sum_sum_mul_apply_single_le`: the contraction `∑ᵢⱼ Aᵢⱼ (T eⱼ)ᵢ` of an
+  endomorphism `T` is at most `(∑ᵢⱼ |Aᵢⱼ|) ‖T‖` in absolute value.
 -/
 
 public section
@@ -101,5 +105,42 @@ theorem abs_contraction_le {M : Matrix (Fin n) (Fin n) ℝ} {ε : ℝ}
     _ = n ^ 2 * ε * ‖H‖ := by
         simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
         ring
+
+/-- If every entry of `M` is at most `ε` in absolute value, then for a continuous bilinear form
+`B` on `EuclideanSpace ℝ ι`, `|∑ᵢⱼ Mᵢⱼ B eᵢ eⱼ| ≤ (card ι)² ε ‖B‖`. Applied to the second
+derivative of a function, this bounds the principal part `∑ᵢⱼ Mᵢⱼ ∂ᵢ∂ⱼh` of a
+non-divergence-form operator by the operator norm of the Hessian. -/
+theorem abs_sum_sum_mul_apply_single_single_le {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {M : Matrix ι ι ℝ} {ε : ℝ} (hM : ∀ i j, |M i j| ≤ ε)
+    (B : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) :
+    |∑ i, ∑ j, M i j * B (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤
+      Fintype.card ι ^ 2 * ε * ‖B‖ := by
+  calc |∑ i, ∑ j, M i j * B (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)|
+      ≤ ∑ _i : ι, ∑ _j : ι, ε * ‖B‖ := by
+        refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ => ?_)
+        refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun j _ => ?_)
+        rw [abs_mul]
+        refine mul_le_mul (hM i j) ?_ (abs_nonneg _) ((abs_nonneg _).trans (hM i j))
+        simpa using B.le_opNorm₂ (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
+    _ = Fintype.card ι ^ 2 * ε * ‖B‖ := by
+        simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+        ring
+
+/-- For an endomorphism `T` of `EuclideanSpace ℝ ι`, the contraction `∑ᵢⱼ Aᵢⱼ (T eⱼ)ᵢ`, such as
+the principal part `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu` with `T` a Hessian operator, is at most `(∑ᵢⱼ |Aᵢⱼ|) ‖T‖` in
+absolute value. -/
+theorem abs_sum_sum_mul_apply_single_le {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (A : Matrix ι ι ℝ) (T : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) :
+    |∑ i, ∑ j, A i j * T (EuclideanSpace.single j 1) i| ≤ (∑ i, ∑ j, |A i j|) * ‖T‖ := by
+  rw [Finset.sum_mul]
+  refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ => ?_)
+  rw [Finset.sum_mul]
+  refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun j _ => ?_)
+  rw [abs_mul]
+  refine mul_le_mul_of_nonneg_left ?_ (abs_nonneg _)
+  calc |T (EuclideanSpace.single j 1) i| ≤ ‖T (EuclideanSpace.single j 1)‖ := by
+        simpa only [Real.norm_eq_abs] using PiLp.norm_apply_le (T (EuclideanSpace.single j 1)) i
+    _ ≤ ‖T‖ * ‖EuclideanSpace.single j (1 : ℝ)‖ := T.le_opNorm _
+    _ = ‖T‖ := by simp
 
 end Matrix

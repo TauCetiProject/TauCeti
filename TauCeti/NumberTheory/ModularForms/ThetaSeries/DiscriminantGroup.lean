@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.ZLattice.Determinant
-public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Basic
+public import TauCeti.Algebra.Module.ZLattice.DiscriminantCharacter
+public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Translation
 
 /-!
 # Coset theta series on the discriminant group
@@ -20,8 +20,17 @@ needs no hypothesis on `L`. This is the family that the vector-valued inversion 
 series is stated for. It satisfies `θ_0 = Θ_L` and `θ_{-γ} = θ_γ`; in particular, whenever
 `A_L` has an element `γ ≠ -γ`, the family is not linearly independent.
 
-For an integral lattice, `A_L = L^∨ ⧸ L` is finite and the theta series of the dual lattice is the
-sum of the coset theta series, `Θ_{L^∨} = ∑_{γ ∈ A_L} θ_γ`
+For an even lattice `L` (in arbitrary dimension, without discreteness or fullness), every coset
+theta series `θ_γ` (`γ ∈ A_L`) has period `level L` and is invariant under `T ^ level L` in every
+weight (`ZLattice.IsEven.thetaCosetClass_slash_T_pow_level`), descending from the
+representative-level invariance `ZLattice.IsEven.thetaCoset_slash_T_pow_level`. When `L` is an even
+full lattice, the modular translation `T : τ ↦ τ + 1` acts on `θ_γ` with eigenvalue `e(q_L(γ))`
+(`ZLattice.IsEven.thetaCosetClass_slash_T`), where `e(q_L(γ))` is
+`ZLattice.IsEven.discriminantQuadraticChar`, and `level L` is the least positive exponent killing
+all of these eigenvalues (`ZLattice.IsEven.level_dvd_iff_discriminantQuadraticChar_pow_eq_one`).
+
+For an integral full lattice, `A_L = L^∨ ⧸ L` is finite and the theta series of the dual lattice is
+the sum of the coset theta series, `Θ_{L^∨} = ∑_{γ ∈ A_L} θ_γ`
 (`ZLattice.IsIntegral.thetaSeries_dual_eq_sum`), by splitting `L^∨` into the cosets of `L`.
 Integrality is needed: for `L = ½ ℤ ⊆ ℝ` the dual `L^∨ = 2 ℤ` lies in `L`, the discriminant group
 is trivial, and the identity would read `Θ_{2ℤ} = Θ_{½ℤ}`, which is false.
@@ -35,6 +44,10 @@ is trivial, and the identity would read `Θ_{2ℤ} = Θ_{½ℤ}`, which is false
 
 * `ZLattice.thetaCosetClass_mk`: `θ_γ` is the theta series of the translate `γ + L`.
 * `ZLattice.thetaCosetClass_zero`, `ZLattice.thetaCosetClass_neg`: `θ_0 = Θ_L`, `θ_{-γ} = θ_γ`.
+* `ZLattice.IsEven.thetaCosetClass_slash_T_pow_level`: `θ_γ` is invariant under `T ^ level L` in
+  every weight.
+* `ZLattice.IsEven.thetaCosetClass_slash_T`, `ZLattice.IsEven.thetaCosetClass_slash_T_zpow`:
+  `θ_γ ∣[k] T ^ n = e(q_L(γ))^n • θ_γ` for an even full lattice `L`.
 * `ZLattice.IsIntegral.thetaSeries_dual_eq_sum`: `Θ_{L^∨} = ∑_{γ ∈ A_L} θ_γ` for integral `L`.
 
 ## References
@@ -44,7 +57,8 @@ is trivial, and the identity would read `Θ_{2ℤ} = Θ_{½ℤ}`, which is false
 
 public section
 
-open scoped UpperHalfPlane
+open Complex
+open scoped Real ModularForm UpperHalfPlane
 
 namespace ZLattice
 
@@ -79,6 +93,55 @@ theorem thetaCosetClass_neg (γ : DiscriminantGroup L) :
   | H x => rw [← Submodule.Quotient.mk_neg, thetaCosetClass_mk, thetaCosetClass_mk,
       NegMemClass.coe_neg, thetaCoset_neg]
 
+/-! ### Translation invariance at the level -/
+
+section LevelTranslation
+
+variable {L}
+
+namespace IsEven
+
+/-- For an even lattice `L` and `γ : DiscriminantGroup L`, every integer multiple of `level L` is a
+period of `θ_γ`. -/
+theorem thetaCosetClass_intCast_vadd_of_level_dvd (hL : IsEven L) (γ : DiscriminantGroup L)
+    {N : ℤ} (hN : (level L : ℤ) ∣ N) (τ : ℍ) :
+    thetaCosetClass L γ ((N : ℝ) +ᵥ τ) = thetaCosetClass L γ τ := by
+  induction γ using Submodule.Quotient.induction_on with
+  | H x => exact hL.thetaCoset_intCast_vadd_of_level_dvd x.2 hN τ
+
+/-- For an even lattice `L` and `γ : DiscriminantGroup L`, `θ_γ` has period `level L`. -/
+@[simp]
+theorem thetaCosetClass_level_vadd (hL : IsEven L) (γ : DiscriminantGroup L) (τ : ℍ) :
+    thetaCosetClass L γ ((level L : ℝ) +ᵥ τ) = thetaCosetClass L γ τ := by
+  simpa using hL.thetaCosetClass_intCast_vadd_of_level_dvd γ dvd_rfl τ
+
+/-- For an even lattice `L` and `γ : DiscriminantGroup L`, `θ_γ` is invariant under `T ^ N` in
+every weight whenever `(level L : ℤ) ∣ N`. -/
+theorem thetaCosetClass_slash_T_zpow_of_level_dvd (hL : IsEven L) (γ : DiscriminantGroup L)
+    (k : ℤ) {N : ℤ} (hN : (level L : ℤ) ∣ N) :
+    thetaCosetClass L γ ∣[k] (ModularGroup.T ^ N) = thetaCosetClass L γ := by
+  induction γ using Submodule.Quotient.induction_on with
+  | H x => exact hL.thetaCoset_slash_T_zpow_of_level_dvd x.2 k hN
+
+/-- For an even lattice `L` and `γ : DiscriminantGroup L`, `θ_γ` is invariant under
+`T ^ (level L : ℤ)` in every weight. -/
+theorem thetaCosetClass_slash_T_zpow_level (hL : IsEven L) (γ : DiscriminantGroup L) (k : ℤ) :
+    thetaCosetClass L γ ∣[k] (ModularGroup.T ^ (level L : ℤ)) = thetaCosetClass L γ :=
+  hL.thetaCosetClass_slash_T_zpow_of_level_dvd γ k dvd_rfl
+
+/-- For an even lattice `L` and `γ : DiscriminantGroup L`, `θ_γ` is invariant under `T ^ level L`
+in every weight. -/
+@[simp]
+theorem thetaCosetClass_slash_T_pow_level (hL : IsEven L) (γ : DiscriminantGroup L) (k : ℤ) :
+    thetaCosetClass L γ ∣[k] (ModularGroup.T ^ level L) = thetaCosetClass L γ := by
+  rw [← zpow_natCast, hL.thetaCosetClass_slash_T_zpow_level γ k]
+
+end IsEven
+
+end LevelTranslation
+
+/-! ### Full lattices -/
+
 variable [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L] {L}
 
 /-- For an integral lattice `L`, the theta series of the dual lattice is the sum of the coset theta
@@ -90,5 +153,47 @@ theorem IsIntegral.thetaSeries_dual_eq_sum (h : IsIntegral L) [Fintype (Discrimi
   rw [← (hasSum_thetaCoset_out (dual L) (isIntegral_iff_le_dual.mp h) τ).tsum_eq, tsum_fintype]
   refine Finset.sum_congr rfl fun γ _ => ?_
   rw [← thetaCosetClass_mk, Submodule.Quotient.mk_out]
+
+namespace IsEven
+
+/-- The translation law of a coset theta series on the discriminant group of an even full lattice:
+for `γ : DiscriminantGroup L` and `n : ℤ`, `θ_γ(τ + n) = e(q_L(γ))^n θ_γ(τ)`. -/
+theorem thetaCosetClass_intCast_vadd (hL : IsEven L) (γ : DiscriminantGroup L) (n : ℤ) (τ : ℍ) :
+    thetaCosetClass L γ ((n : ℝ) +ᵥ τ) =
+      hL.discriminantQuadraticChar γ ^ n * thetaCosetClass L γ τ := by
+  induction γ using Submodule.Quotient.induction_on with
+  | H x =>
+    rw [thetaCosetClass_mk, hL.thetaCoset_intCast_vadd x.2, hL.discriminantQuadraticChar_mk,
+      ← Complex.exp_int_mul]
+    congr 2
+    ring
+
+/-- For an even full lattice `L` and `γ : DiscriminantGroup L`,
+`θ_γ(τ + 1) = e(q_L(γ)) θ_γ(τ)`. -/
+theorem thetaCosetClass_one_vadd (hL : IsEven L) (γ : DiscriminantGroup L) (τ : ℍ) :
+    thetaCosetClass L γ ((1 : ℝ) +ᵥ τ) =
+      hL.discriminantQuadraticChar γ * thetaCosetClass L γ τ := by
+  simpa using hL.thetaCosetClass_intCast_vadd γ 1 τ
+
+/-- In slash form, `θ_γ ∣[k] T ^ n = e(q_L(γ))^n • θ_γ` for an even full lattice `L` and
+`γ : DiscriminantGroup L`. -/
+theorem thetaCosetClass_slash_T_zpow (hL : IsEven L) (γ : DiscriminantGroup L) (k n : ℤ) :
+    thetaCosetClass L γ ∣[k] (ModularGroup.T ^ n) =
+      (hL.discriminantQuadraticChar γ ^ n) • thetaCosetClass L γ := by
+  induction γ using Submodule.Quotient.induction_on with
+  | H x =>
+    rw [thetaCosetClass_mk, hL.thetaCoset_slash_T_zpow x.2, hL.discriminantQuadraticChar_mk,
+      ← Complex.exp_int_mul]
+    congr 2
+    ring
+
+/-- In slash form, `θ_γ ∣[k] T = e(q_L(γ)) • θ_γ` for an even full lattice `L` and
+`γ : DiscriminantGroup L`. -/
+theorem thetaCosetClass_slash_T (hL : IsEven L) (γ : DiscriminantGroup L) (k : ℤ) :
+    thetaCosetClass L γ ∣[k] ModularGroup.T =
+      hL.discriminantQuadraticChar γ • thetaCosetClass L γ := by
+  simpa using hL.thetaCosetClass_slash_T_zpow γ k 1
+
+end IsEven
 
 end ZLattice

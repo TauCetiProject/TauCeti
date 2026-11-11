@@ -30,23 +30,25 @@ The differentiated action of the Lie algebra of `K` on `𝔤` is the bracket: a 
 of `K` acts by `⁅d, -⁆`, where `d` is viewed in `𝔤` through the differential of the inclusion
 `K ↪ G` (`TauCeti.differential_corestrict_adjointComodule`).
 
-For an `sl₂` triple `(h, e, f)` in `𝔤` over a field of characteristic zero take `K = C_G(h)`.
-Its Lie algebra is `𝔤(0) = ker (ad h)`, it acts on the grade-two space `𝔤(2)`, and the
-differential at `e` of the orbit map of this action is `y ↦ ⁅y, e⁆`. The identity
-`⁅𝔤(0), e⁆ = 𝔤(2)` (`IsSl2Triple.map_ad_e_eigenspace_zero`) says that this differential is onto
-(`IsSl2Triple.range_differential_flip_eigenspace_two_eq_top`). Over an algebraically closed field
-of characteristic zero, a vector at which the orbit differential is onto has an open orbit, so this
-is the hypothesis that makes `C_G(h) • e` open in `𝔤(2)`; the openness itself is not proved here.
-That open orbit is how one shows that two nilpotent elements with the same weighted Dynkin diagram
-are conjugate.
+For an `sl₂` triple `(h, e, f)` in `𝔤` over a field of characteristic zero take any closed subgroup
+`K ⊆ C_G(h)` whose Lie algebra still contains `𝔤(0) = ker (ad h)` (such as `C_G(h)` itself, or its
+identity component `C_G(h)°`). It acts on the grade-two space `𝔤(2)`, and the differential at `e`
+of the orbit map of this action is `y ↦ ⁅y, e⁆`. The identity `⁅𝔤(0), e⁆ = 𝔤(2)`
+(`IsSl2Triple.map_ad_e_eigenspace_zero`) says that this differential is onto
+(`IsSl2Triple.range_differential_flip_eigenspace_two_eq_top_of_lieSubalgebra_le` and
+`IsSl2Triple.range_differential_flip_eigenspace_two_eq_top`). Over an algebraically closed field of
+characteristic zero, `Centralizer.GradeTwoOrbit` uses this to prove openness of the `K`-orbit of
+`e` in `𝔤(2)` and `K(k)`-conjugacy of `sl₂` triples sharing `h`.
 
 ## Main declarations
 
 * `TauCeti.centralizerAdHom`: `ad x` as an endomorphism of the adjoint representation restricted
   to a closed subgroup of `C_G(x)`.
 * `TauCeti.differential_centralizerAdHom_eigenspace`: the same on an eigenspace of `ad x`.
-* `IsSl2Triple.range_differential_flip_eigenspace_two_eq_top`: the orbit differential of `e` for
-  the action of `C_G(h)` on `𝔤(2)` is onto.
+* `IsSl2Triple.range_differential_flip_eigenspace_two_eq_top_of_lieSubalgebra_le` and
+  `IsSl2Triple.range_differential_flip_eigenspace_two_eq_top`: the orbit differential of `e` for
+  the action on `𝔤(2)` of any closed subgroup `K ⊆ C_G(h)` with Lie algebra `𝔤(0)` (in particular
+  `C_G(h)`) is onto.
 
 ## References
 
@@ -172,15 +174,63 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 variable {h e f : Module.Dual k (Bialgebra.CotangentSpace k H)}
 
 /-- The nilpositive element `e` of an `sl₂` triple lies in the grade-two eigenspace of `ad h`,
+regarded as a representation of any closed subgroup of `C_G(h)`. -/
+theorem e_mem_eigenspace_two_of_le (t : IsSl2Triple h e f) {J : HopfIdeal k H}
+    (hJ : centralizerHopfIdeal H h ≤ J) :
+    letI := Comodule.Corestrict (M := Module.Dual k (Bialgebra.CotangentSpace k H))
+      (Bialgebra.Quotient.mkBialgHom (R := k) J.toIdeal).toCoalgHom
+    e ∈ (centralizerAdHom h hJ).eigenspace 2 := by
+  let := Comodule.Corestrict (M := Module.Dual k (Bialgebra.CotangentSpace k H))
+    (Bialgebra.Quotient.mkBialgHom (R := k) J.toIdeal).toCoalgHom
+  rw [Comodule.Hom.mem_eigenspace_iff, centralizerAdHom_apply]
+  exact t.lie_h_e_smul k
+
+/-- The nilpositive element `e` of an `sl₂` triple lies in the grade-two eigenspace of `ad h`,
 regarded as a representation of `C_G(h)`. -/
 theorem e_mem_eigenspace_two (t : IsSl2Triple h e f) :
     letI := Comodule.Corestrict (M := Module.Dual k (Bialgebra.CotangentSpace k H))
       (Bialgebra.Quotient.mkBialgHom (R := k) (centralizerHopfIdeal H h).toIdeal).toCoalgHom
-    e ∈ (centralizerAdHom h le_rfl).eigenspace 2 := by
+    e ∈ (centralizerAdHom h le_rfl).eigenspace 2 :=
+  t.e_mem_eigenspace_two_of_le le_rfl
+
+/-- **The orbit differential on the grade-two space is onto for any closed subgroup of `C_G(h)`
+with Lie algebra `𝔤(0)`.** If `K = Spec (H ⧸ J)` is contained in `C_G(h)` and its Lie algebra
+contains that of `C_G(h)`, then the differential at `e` of its orbit map on `𝔤(2)` is surjective. -/
+theorem range_differential_flip_eigenspace_two_eq_top_of_lieSubalgebra_le [CharZero k]
+    (t : IsSl2Triple h e f) {J : HopfIdeal k H} (hJ : centralizerHopfIdeal H h ≤ J)
+    (hlie : (centralizerHopfIdeal H h).lieSubalgebra (B := k) ≤ J.lieSubalgebra (B := k)) :
+    letI := Comodule.Corestrict (M := Module.Dual k (Bialgebra.CotangentSpace k H))
+      (Bialgebra.Quotient.mkBialgHom (R := k) J.toIdeal).toCoalgHom
+    LinearMap.range ((Comodule.differential (R := k) (H := H ⧸ J.toIdeal)
+        (M := (centralizerAdHom h hJ).eigenspace 2)).toLinearMap.flip
+        ⟨e, t.e_mem_eigenspace_two_of_le hJ⟩) = ⊤ := by
   let := Comodule.Corestrict (M := Module.Dual k (Bialgebra.CotangentSpace k H))
-    (Bialgebra.Quotient.mkBialgHom (R := k) (centralizerHopfIdeal H h).toIdeal).toCoalgHom
-  rw [Comodule.Hom.mem_eigenspace_iff, centralizerAdHom_apply]
-  exact t.lie_h_e_smul k
+    (Bialgebra.Quotient.mkBialgHom (R := k) J.toIdeal).toCoalgHom
+  rw [eq_top_iff]
+  rintro ⟨z, hz⟩ -
+  -- Write `z = ⁅e, y⁆` with `y ∈ 𝔤(0)`, and realize `-y` as a tangent vector of `K`.
+  rw [Comodule.Hom.mem_eigenspace_iff, centralizerAdHom_apply] at hz
+  have hz' : z ∈ (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) h).eigenspace 2 :=
+    Module.End.mem_eigenspace_iff.mpr hz
+  rw [← t.map_ad_e_eigenspace_zero] at hz'
+  obtain ⟨y, hy, rfl⟩ := hz'
+  have hy' : ⁅h, -y⁆ = 0 := by
+    have hy0 := Module.End.mem_eigenspace_iff.mp hy
+    rw [LieAlgebra.ad_apply, zero_smul] at hy0
+    rw [lie_neg, hy0, neg_zero]
+  have hmem : Derivation.cotangentDualLieEquiv (R := k) (H := H) (-y) ∈
+      J.lieSubalgebra (B := k) :=
+    hlie <| by
+      rw [mem_lieSubalgebra_centralizerHopfIdeal_iff,
+        ← (Derivation.cotangentDualLieEquiv (R := k) (H := H)).map_lie, hy', map_zero]
+  let d := (HopfIdeal.quotientLieEquiv (B := k) J).symm ⟨_, hmem⟩
+  have hd : J.quotientLieHom d =
+      Derivation.cotangentDualLieEquiv (R := k) (H := H) (-y) := by
+    rw [← HopfIdeal.quotientLieEquiv_apply_coe, LieEquiv.apply_symm_apply]
+  refine ⟨d, Subtype.ext ?_⟩
+  rw [LinearMap.flip_apply, LieHom.coe_toLinearMap, differential_centralizerAdHom_eigenspace,
+    hd, LieEquiv.symm_apply_apply, neg_lie, ← lie_skew, neg_neg]
+  exact (LieAlgebra.ad_apply (R := k) (L := Module.Dual k (Bialgebra.CotangentSpace k H)) e y).symm
 
 /-- **The orbit differential on the grade-two space is onto.** For an `sl₂` triple `(h, e, f)` in
 the Lie algebra `𝔤` of an affine group `G` over a field of characteristic zero, consider the
@@ -192,32 +242,7 @@ theorem range_differential_flip_eigenspace_two_eq_top [CharZero k] (t : IsSl2Tri
       (Bialgebra.Quotient.mkBialgHom (R := k) (centralizerHopfIdeal H h).toIdeal).toCoalgHom
     LinearMap.range ((Comodule.differential (R := k) (H := H ⧸ (centralizerHopfIdeal H h).toIdeal)
         (M := (centralizerAdHom h le_rfl).eigenspace 2)).toLinearMap.flip
-        ⟨e, t.e_mem_eigenspace_two⟩) = ⊤ := by
-  let := Comodule.Corestrict (M := Module.Dual k (Bialgebra.CotangentSpace k H))
-    (Bialgebra.Quotient.mkBialgHom (R := k) (centralizerHopfIdeal H h).toIdeal).toCoalgHom
-  rw [eq_top_iff]
-  rintro ⟨z, hz⟩ -
-  -- Write `z = ⁅e, y⁆` with `y ∈ 𝔤(0)`, and realize `-y` as a tangent vector of `C_G(h)`.
-  rw [Comodule.Hom.mem_eigenspace_iff, centralizerAdHom_apply] at hz
-  have hz' : z ∈ (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) h).eigenspace 2 :=
-    Module.End.mem_eigenspace_iff.mpr hz
-  rw [← t.map_ad_e_eigenspace_zero] at hz'
-  obtain ⟨y, hy, rfl⟩ := hz'
-  have hy' : ⁅h, -y⁆ = 0 := by
-    have hy0 := Module.End.mem_eigenspace_iff.mp hy
-    rw [LieAlgebra.ad_apply, zero_smul] at hy0
-    rw [lie_neg, hy0, neg_zero]
-  have hmem : Derivation.cotangentDualLieEquiv (R := k) (H := H) (-y) ∈
-      (centralizerHopfIdeal H h).lieSubalgebra (B := k) := by
-    rw [mem_lieSubalgebra_centralizerHopfIdeal_iff,
-      ← (Derivation.cotangentDualLieEquiv (R := k) (H := H)).map_lie, hy', map_zero]
-  let d := (HopfIdeal.quotientLieEquiv (B := k) (centralizerHopfIdeal H h)).symm ⟨_, hmem⟩
-  have hd : (centralizerHopfIdeal H h).quotientLieHom d =
-      Derivation.cotangentDualLieEquiv (R := k) (H := H) (-y) := by
-    rw [← HopfIdeal.quotientLieEquiv_apply_coe, LieEquiv.apply_symm_apply]
-  refine ⟨d, Subtype.ext ?_⟩
-  rw [LinearMap.flip_apply, LieHom.coe_toLinearMap, differential_centralizerAdHom_eigenspace,
-    hd, LieEquiv.symm_apply_apply, neg_lie, ← lie_skew, neg_neg]
-  exact (LieAlgebra.ad_apply (R := k) (L := Module.Dual k (Bialgebra.CotangentSpace k H)) e y).symm
+        ⟨e, t.e_mem_eigenspace_two⟩) = ⊤ :=
+  t.range_differential_flip_eigenspace_two_eq_top_of_lieSubalgebra_le le_rfl le_rfl
 
 end IsSl2Triple

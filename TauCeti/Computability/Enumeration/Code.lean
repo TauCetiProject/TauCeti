@@ -45,6 +45,8 @@ same stage.
 * `Nat.Partrec.Code.primrecRel_mem_domStage`, `Nat.Partrec.Code.primrec_domStage`: membership in
   the stages and their binary codes are primitive recursive, uniformly in the code and the stage.
   `Nat.Partrec.Code.primrecRel_mem_domStage_ofNat` indexes the codes by their numbers.
+* `TauCeti.Enumeration.computablePred_mem_of_computable_equivBitIndices`: membership in finite
+  stages with computable binary codes is computable.
 * `TauCeti.Enumeration.rePred_mem_stageLimit`: the limit of finite stages with computable
   membership is c.e.
 * `TauCeti.Enumeration.rePred_iff_exists_stages`: a predicate on `ℕ` is c.e. if and only if it is
@@ -144,6 +146,14 @@ namespace Enumeration
 
 open Nat.Partrec
 
+/-- Membership in finite stages is computable, uniformly in the stage and the number, when their
+binary finite-set codes are computable. -/
+theorem computablePred_mem_of_computable_equivBitIndices {A : ℕ → Finset ℕ}
+    (hA : Computable fun s => Finset.equivBitIndices.symm (A s)) :
+    ComputablePred fun p : ℕ × ℕ => p.2 ∈ A p.1 :=
+  (Primrec.mem_equivBitIndices.comp Primrec.fst Primrec.snd).decide.to_comp.comp
+    ((hA.comp Computable.fst).pair Computable.snd) |>.computablePred.of_eq fun p => by simp
+
 /-- The limit of finite stages is c.e. when membership in the stages is computable, uniformly in
 the stage and the number. -/
 theorem rePred_mem_stageLimit {A : ℕ → Finset ℕ}
@@ -169,10 +179,8 @@ theorem rePred_iff_exists_stages {p : ℕ → Prop} :
     ext x
     simp [Part.dom_iff_mem, Part.mem_assert_iff]
   · rintro ⟨A, -, -, hA, hlim⟩
-    have hmem : ComputablePred fun q : ℕ × ℕ => q.2 ∈ A q.1 :=
-      (Primrec.mem_equivBitIndices.comp Primrec.fst Primrec.snd).decide.to_comp.comp
-        (hA.comp Computable.fst |>.pair Computable.snd) |>.computablePred.of_eq fun q => by simp
-    exact (rePred_mem_stageLimit hmem).of_eq fun x => by rw [hlim, Set.mem_ofPred_eq]
+    exact (rePred_mem_stageLimit (computablePred_mem_of_computable_equivBitIndices hA)).of_eq
+      fun x => by rw [hlim, Set.mem_ofPred_eq]
 
 end Enumeration
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Contact.Reeb
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
+public import TauCeti.Geometry.Manifold.Distribution.Horizontal
 public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 /-!
@@ -21,6 +22,9 @@ For a contact form, the differential carries the Reeb field of the pulled-back f
 original Reeb field. Thus a strict contact diffeomorphism intertwines the Reeb fields, rather
 than merely preserving the contact hyperplanes. No compactness or completeness is needed for
 these statements, which concern vector fields rather than their global flows.
+
+A smooth map is horizontal for the kernel of a one-form exactly when it pulls the form back to
+zero (`TauCeti.SmoothForm.isHorizontalMap_kerDistribution_iff_mpullback_eq_zero`).
 
 The pointwise theorem applies to rough one-forms of class `C¹` at the image point and to
 maps of class `C²` there. All exterior derivatives and pullbacks use the
@@ -111,6 +115,26 @@ theorem kerDistribution_mpullback (f : M → N) (hf : ContMDiff I J ∞ f)
     fin_cases i
     rfl
   rw [hv]
+
+/-- **Horizontality is the vanishing of the pullback.** A smooth map is horizontal for the kernel
+of a one-form `α` exactly when it pulls `α` back to zero. -/
+theorem isHorizontalMap_kerDistribution_iff_mpullback_eq_zero {f : M → N}
+    (α : SmoothForm J N ℝ 1) (hf : ContMDiff I J ∞ f) :
+    IsHorizontalMap I α.kerDistribution f ↔ mpullback f hf α = 0 := by
+  have h (x : M) : (mpullback f hf α).1 x = 0 ↔
+      LinearMap.range (mfderiv I J f x).toLinearMap ≤ α.kerDistribution (f x) := by
+    rw [LinearMap.range_le_iff_comap, ← kerDistribution_mpullback f hf α x, kerDistribution_eq_ker,
+      RoughForm.ker_eq_top_iff]
+  simp only [isHorizontalMap_iff_range_mfderiv_le, ← h, Subtype.ext_iff, funext_iff,
+    ZeroMemClass.coe_zero, Pi.zero_apply]
+
+/-- A smooth map horizontal for the kernel of a one-form `α` also pulls back `dα` to zero. -/
+theorem mpullback_mextDerivₗ_eq_zero_of_isHorizontalMap {f : M → N}
+    {α : SmoothForm J N ℝ 1} (hf : ContMDiff I J ∞ f)
+    (hfα : IsHorizontalMap I α.kerDistribution f) :
+    mpullback f hf (mextDerivₗ J 1 α) = 0 := by
+  rw [← mextDerivₗ_mpullback, (isHorizontalMap_kerDistribution_iff_mpullback_eq_zero α hf).1 hfα,
+    map_zero]
 
 /-- Pullback by a smooth map with bijective differentials preserves contactness. -/
 theorem IsContactForm.mpullback {α : SmoothForm J N ℝ 1} (hα : α.IsContactForm)

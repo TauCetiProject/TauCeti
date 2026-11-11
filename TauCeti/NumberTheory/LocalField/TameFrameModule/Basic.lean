@@ -82,32 +82,39 @@ noncomputable def tameFrameRelationMap (σ τ : G) (a b : R) :
   LinearMap.toSpanSingleton (MonoidAlgebra R G) _
     ((tameFrameRelations R G σ τ a b).relation ())
 
+/-- The tame-frame relation map is `LinearMap.toSpanSingleton` of the defining relation
+`(σ - a, τ - b)`. -/
+theorem tameFrameRelationMap_def (σ τ : G) (a b : R) :
+    tameFrameRelationMap R G σ τ a b =
+      LinearMap.toSpanSingleton (MonoidAlgebra R G) (Fin 2 →₀ MonoidAlgebra R G)
+        ((tameFrameRelations R G σ τ a b).relation ()) :=
+  (rfl)
+
 /-- The tame-frame relation map sends `x` to `x` times the defining relation `(σ - a, τ - b)`. -/
 theorem tameFrameRelationMap_apply (σ τ : G) (a b : R) (x : MonoidAlgebra R G) :
-    tameFrameRelationMap R G σ τ a b x = x • (tameFrameRelations R G σ τ a b).relation () :=
-  LinearMap.toSpanSingleton_apply _ _ _ x
+    tameFrameRelationMap R G σ τ a b x = x • (tameFrameRelations R G σ τ a b).relation () := by
+  rw [tameFrameRelationMap_def, LinearMap.toSpanSingleton_apply]
 
 /-- The zeroth coordinate of the tame-frame relation map is right multiplication by `σ - a`. -/
 @[simp]
 theorem tameFrameRelationMap_apply_zero (σ τ : G) (a b : R) (x : MonoidAlgebra R G) :
     tameFrameRelationMap R G σ τ a b x 0 =
       x * (single σ 1 - single 1 a) := by
-  simp [tameFrameRelationMap, LinearMap.toSpanSingleton_apply, smul_eq_mul]
+  simp [tameFrameRelationMap_apply]
 
 /-- The first coordinate of the tame-frame relation map is right multiplication by `τ - b`. -/
 @[simp]
 theorem tameFrameRelationMap_apply_one (σ τ : G) (a b : R) (x : MonoidAlgebra R G) :
     tameFrameRelationMap R G σ τ a b x 1 =
       x * (single τ 1 - single 1 b) := by
-  simp [tameFrameRelationMap, LinearMap.toSpanSingleton_apply, smul_eq_mul]
+  simp [tameFrameRelationMap_apply]
 
 /-- The range of the tame-frame relation map is the relation submodule by which
 `TameFrameModule` is defined as a quotient. -/
 theorem range_tameFrameRelationMap (σ τ : G) (a b : R) :
     LinearMap.range (tameFrameRelationMap R G σ τ a b) =
       Submodule.span (MonoidAlgebra R G) (Set.range (tameFrameRelations R G σ τ a b).relation) := by
-  rw [Set.range_unique]
-  exact LinearMap.range_toSpanSingleton _
+  rw [tameFrameRelationMap_def, LinearMap.range_toSpanSingleton, Set.range_unique]
 
 variable {R G} {σ τ : G} {a b : R} {M : Type*} [AddCommGroup M] [Module (MonoidAlgebra R G) M]
 

@@ -29,7 +29,9 @@ of graded objects is short exact in every degree, and that totalizing a graded o
 diagram (`TauCeti.gradedObjectTotalIso`). Totalizing is therefore additive and preserves finite
 colimits; it also preserves finite limits when coproducts in `C` are exact, as for modules, so that
 it is an exact functor. The total object of an object placed in a single degree is that object
-(`TauCeti.gradedObjectTotalSingleIso`).
+(`TauCeti.gradedObjectTotalSingleIso`). A natural number `e` with `e • 𝟙 = 0` on each summand
+of a coproduct `X.mapObj p i` also kills the coproduct
+(`CategoryTheory.GradedObject.nsmul_id_mapObj_eq_zero`).
 
 Mathlib provides the category of graded objects and its grading shift, but not these
 structures. They are what homological algebra needs: `Ext` groups, and hence the graded
@@ -106,6 +108,15 @@ theorem smul_apply {β : Type w} {R : Type t} [Semiring R] [Preadditive C] [Line
 theorem mono_of_mono_apply {β : Type w} {X Y : GradedObject β C} (f : X ⟶ Y)
     (hf : ∀ i, Mono (f i)) : Mono f :=
   ⟨fun _ _ h => funext fun i => (cancel_mono (f i)).1 (congr_fun h i)⟩
+
+/-- A natural number `e` kills the coproduct `X.mapObj p i`, in the sense that
+`e • 𝟙 (X.mapObj p i) = 0`, if it kills every summand `X j` with `p j = i`. -/
+theorem nsmul_id_mapObj_eq_zero {β : Type w} {γ : Type t} [Preadditive C] {X : GradedObject β C}
+    {p : β → γ} [X.HasMap p] {i : γ} {e : ℕ} (h : ∀ j, p j = i → e • 𝟙 (X j) = 0) :
+    e • 𝟙 (X.mapObj p i) = 0 :=
+  mapObj_ext _ _ _ _ fun j hj ↦ by
+    rw [Preadditive.comp_nsmul, Category.comp_id, comp_zero,
+      ← Category.id_comp (X.ιMapObj p j i hj), ← Preadditive.nsmul_comp, h j hj, zero_comp]
 
 end CategoryTheory.GradedObject
 

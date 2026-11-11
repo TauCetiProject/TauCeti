@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Norm.Basic
 import TauCeti.Algebra.Group.PowerClassGroup.Card
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Finite
+import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
 # The cokernel of the completed norm
@@ -177,8 +178,8 @@ private theorem pow_smul_mem_range_padicCompletionUnitsNorm [Fact p.Prime] (hpK 
   have hn0 : n ≠ 0 := Nat.card_pos.ne'
   -- Write `p ^ m = n * (p ^ (m - v) * b⁻¹)` with `n = p ^ v * b` and `b` a `p`-adic unit.
   set b := ordCompl[p] n
-  have hb : IsUnit (b : ℤ_[p]) := PadicInt.isUnit_iff.2
-    (PadicInt.norm_natCast_eq_one_iff.2 (Nat.coprime_ordCompl Fact.out hn0))
+  have hb : IsUnit (b : ℤ_[p]) := PadicInt.isUnit_natCast_of_coprime
+    (Nat.coprime_ordCompl Fact.out hn0)
   have hnb : (n : ℤ_[p]) = (p : ℤ_[p]) ^ n.factorization p * b := by
     exact_mod_cast (Nat.ordProj_mul_ordCompl_eq_self n p).symm
   have hpm : (p : ℤ_[p]) ^ m =

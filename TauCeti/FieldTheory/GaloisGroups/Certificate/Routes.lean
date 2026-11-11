@@ -116,7 +116,7 @@ theorem hasGaloisLabel_five_one_of_isSquare_discr_of_hasSexticRoot_of_hasFactorD
     decide
   refine (hasGaloisLabel_five_zero_or_one_of_isSquare_discr_of_isRoot (hf.map _)
     (by simp) (PerfectField.separable_of_irreducible hirr) hirr
-    (natDegree_map_rat_eq_five hf hdeg) (hf.isSquare_discr_map_rat_iff.mpr hdisc)
+    (natDegree_map_rat_eq_five hf hdeg) ((isSquare_discr_map_rat_iff _).mpr hdisc)
     ha.resolventSeparationEvidence_rat ha.isRoot_specialize_rat).resolve_left fun h0 => ?_
   -- The cyclic group of order five has no element of order two.
   obtain ⟨σ, hσ, h2⟩ := hq.exists_orderOf_eq_two hf
@@ -132,7 +132,7 @@ theorem hasGaloisLabel_five_two_of_not_isSquare_discr_of_hasSexticRoot (hf : f.M
     (hdisc : ¬ IsSquare f.discr) {a : ℤ} (ha : HasSexticRoot f a) :
     HasGaloisLabel (f.map (Int.castRingHom ℚ)) (⟨2, by simp⟩ : TransitiveGroupIndex 5) :=
   hasGaloisLabel_five_two_of_not_isSquare_discr_of_isRoot (hf.map _) (by simp) hirr
-    (natDegree_map_rat_eq_five hf hdeg) (hf.isSquare_discr_map_rat_iff.not.mpr hdisc)
+    (natDegree_map_rat_eq_five hf hdeg) ((isSquare_discr_map_rat_iff _).not.mpr hdisc)
     ha.resolventSeparationEvidence_rat ha.isRoot_specialize_rat
 
 /-- **The alternating route: `5T4`.** A monic integral quintic, irreducible over `ℚ`, whose
@@ -149,7 +149,7 @@ theorem hasGaloisLabel_five_three_of_isSquare_discr_of_hasFactorDegrees (hf : f.
     (PerfectField.separable_of_irreducible hirr) hirr (natDegree_map_rat_eq_five hf hdeg)
   -- The square discriminant leaves the even labels `5T1`, `5T2` and `5T4`.
   have hpar := (hj.isSquare_discr_iff_five (by simp)).mp
-    (hf.isSquare_discr_map_rat_iff.mpr hdisc)
+    ((isSquare_discr_map_rat_iff _).mpr hdisc)
   -- An element of order three rules out `5T1` and `5T2`, of orders `5` and `10`.
   obtain ⟨σ, hσ, h3⟩ := hq.exists_orderOf_eq_three hf
   have h := hj.orderOf_dvd_natCard_referenceSubgroup hσ

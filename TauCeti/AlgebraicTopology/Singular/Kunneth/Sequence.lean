@@ -8,6 +8,13 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Sequence
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Basic
+import Mathlib.Algebra.Category.ModuleCat.Projective
+import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
+import Mathlib.RingTheory.Flat.CategoryTheory
+import TauCeti.Algebra.Category.ModuleCat.End
+import TauCeti.Algebra.Homology.ShortComplex.Splitting
+import TauCeti.CategoryTheory.GradedObject
+import TauCeti.CategoryTheory.Monoidal.Tor
 
 /-!
 # The Künneth short exact sequence for singular homology
@@ -57,6 +64,13 @@ coefficients in a hereditary commutative ring). The splitting is built from chos
 the cycles of the singular chain complexes and need not be natural in `X` and `Y`; that no natural
 splitting exists is not proved here.
 
+Through the splitting, a natural number `e` that kills the positive-degree homology of `X` and of
+`Y`, with coefficients in a hereditary commutative ring, also kills that of `X × Y`
+(`TopCat.nsmul_singularHomology_tensor_eq_zero`). Every tensor product summand has a factor of
+positive degree, and so does every `Tor₁` summand except `Tor₁(H₀(X; k), H_q(Y; k))`, which
+vanishes because `H₀(X; k)` is a free `k`-module. The same number `e` works for the product;
+without the splitting the extension would only show that `e²` kills it.
+
 ## Main definitions and results
 
 * `TopCat.singularHomologyToTor`: the map
@@ -74,6 +88,8 @@ splitting exists is not proved here.
   complexes induced by a pair of continuous maps and by a pair of maps of coefficient modules.
 * `TopCat.singularHomologyKunnethSplitting` and `TopCat.singularHomologyKunnethUnitSplitting`:
   **the splitting of the Künneth sequence**.
+* `TopCat.nsmul_singularHomology_tensor_eq_zero`: a number killing the positive-degree
+  homology of `X` and `Y` kills that of `X × Y`.
 
 ## References
 
@@ -433,6 +449,58 @@ the Künneth map, preceded by the map induced by the inverse unitor. -/
             inferInstanceAs (Module.Projective k k)
           isSplitMono_singularHomologyKunneth X Y (𝟙_ _) (𝟙_ _) (m + 1)) :=
   (rfl)
+
+/-- A number killing the positive-degree homology of `X` and of `Y` kills the tensor product
+term `⨁_{p + q = n + 1} Hₚ(X; k) ⊗ H_q(Y; k)` of the Künneth sequence: each summand has a factor
+of positive degree. -/
+private lemma nsmul_id_singularHomologyKunnethUnitShortComplex_X₁_eq_zero {e : ℕ}
+    (hX : ∀ p,
+      e • 𝟙 (((singularHomologyFunctor _ (p + 1)).obj (𝟙_ (ModuleCat.{w} k))).obj X) = 0)
+    (hY : ∀ q,
+      e • 𝟙 (((singularHomologyFunctor _ (q + 1)).obj (𝟙_ (ModuleCat.{w} k))).obj Y) = 0)
+    (n : ℕ) : e • 𝟙 (singularHomologyKunnethUnitShortComplex k X Y n).X₁ = 0 := by
+  refine GradedObject.nsmul_id_mapObj_eq_zero fun ⟨p, q⟩ h ↦ ?_
+  rcases p with _ | p
+  · obtain rfl : q = n + 1 := by simpa using h
+    exact nsmul_id_tensor_eq_zero_of_right (hY n) _
+  · exact nsmul_id_tensor_eq_zero_of_left (hX p) _
+
+/-- A number killing the positive-degree homology of `X` kills the `Tor₁` term
+`⨁_{p + q = n} Tor₁(Hₚ(X; k), H_q(Y; k))` of the Künneth sequence. The summands with `p = 0`
+vanish because `H₀(X; k)` is a free, hence flat, `k`-module. -/
+private lemma nsmul_id_singularHomologyKunnethUnitShortComplex_X₃_eq_zero {e : ℕ}
+    (hX : ∀ p,
+      e • 𝟙 (((singularHomologyFunctor _ (p + 1)).obj (𝟙_ (ModuleCat.{w} k))).obj X) = 0)
+    (n : ℕ) : e • 𝟙 (singularHomologyKunnethUnitShortComplex k X Y n).X₃ = 0 := by
+  refine GradedObject.nsmul_id_mapObj_eq_zero fun ⟨p, q⟩ _ ↦ ?_
+  rcases p with _ | p
+  · -- Tensoring with the flat module `H₀(X; k)` is exact, so `Tor₁(H₀(X; k), -)` vanishes.
+    let H₀ := ((singularHomologyFunctor _ 0).obj (𝟙_ (ModuleCat.{w} k))).obj X
+    have : Projective H₀ := Projective.of_iso (X.singularHomology₀Iso _).symm inferInstance
+    have : Module.Projective k H₀ := (IsProjective.iff_projective H₀).2 this
+    have : ((tensoringLeft (ModuleCat.{w} k)).obj H₀).PreservesHomology :=
+      Functor.preservesHomology_of_map_exact _ fun S hS ↦
+        Module.Flat.lTensor_shortComplex_exact H₀ S hS
+    exact IsZero.eq_of_src (Functor.isZero_leftDerived_succ _ _ 0) _ _
+  · exact nsmul_id_Tor_eq_zero (hX p) _ 1
+
+/-- **A number killing the homology of two spaces kills that of their product.** Over a
+hereditary commutative ring `k`, if a natural number `e` kills the positive-degree homology of
+spaces `X` and `Y`, then it kills the positive-degree homology of `X × Y`. -/
+theorem nsmul_singularHomology_tensor_eq_zero {e : ℕ}
+    (hX : ∀ p (x : ((singularHomologyFunctor _ (p + 1)).obj (𝟙_ (ModuleCat.{w} k))).obj X),
+      e • x = 0)
+    (hY : ∀ q (y : ((singularHomologyFunctor _ (q + 1)).obj (𝟙_ (ModuleCat.{w} k))).obj Y),
+      e • y = 0)
+    (n : ℕ) (z : ((singularHomologyFunctor _ (n + 1)).obj (𝟙_ (ModuleCat.{w} k))).obj (X ⊗ Y)) :
+    e • z = 0 := by
+  -- Work with the endomorphisms `e • 𝟙` of the homology modules.
+  replace hX p := ModuleCat.nsmul_id_eq_zero_iff.2 (hX p)
+  replace hY q := ModuleCat.nsmul_id_eq_zero_iff.2 (hY q)
+  exact ModuleCat.nsmul_id_eq_zero_iff.1
+    ((singularHomologyKunnethUnitSplitting k X Y n).nsmul_id_X₂_eq_zero
+      (nsmul_id_singularHomologyKunnethUnitShortComplex_X₁_eq_zero k X Y hX hY n)
+      (nsmul_id_singularHomologyKunnethUnitShortComplex_X₃_eq_zero k X Y hX n)) z
 
 end Unit
 

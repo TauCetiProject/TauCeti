@@ -185,25 +185,21 @@ theorem spaBasicOpen_mem_huberStandardAffinoidOpens {T : Finset A} {s : A}
     (hT : IsOpen (Ideal.span (T : Set A) : Set A)) :
     spaBasicOpen Aplus T s ∈
       (presentationLimitPreAdicSpace P Aplus hAplus hP).huberStandardAffinoidOpens := by
-  have hden := hasDenominatorPower_of_isOpen_span P T s (Localization.Away s) hT
-  let _ := locUniformSpace P T s _ hden
-  have _ := isUniformAddGroup_locUniformSpace P T s _ hden
-  have _ := isTopologicalRing_locUniformSpace P T s _ hden
-  have _ := isHuberRing_completion_locTopology P T s _ hden
-  have _ := isHuberStandard_completion_locTopology_of_isHuberStandard P
+  refine spaBasicOpen_mem_propOpens P Aplus hAplus hP PreAdicSpace.isHuberStandardAffinoid hT ?_
+  intro _ _ _
+  let hden := hasDenominatorPower_of_isOpen_span P T s (Localization.Away s) hT
+  have := isHuberStandard_completion_locTopology_of_isHuberStandard P
     (Ideal.isOpen_of_isOpen_subideal (Ideal.span_mono (Set.subset_insert _ _)) hT) _ hden
-  exact spaBasicOpen_mem_propOpens P Aplus T s _ hden hAplus hP hT
-    PreAdicSpace.isHuberStandardAffinoid
-    (PreAdicSpace.isHuberStandardAffinoid_presentationLimitPreAdicSpace _ _ _)
+  exact PreAdicSpace.isHuberStandardAffinoid_presentationLimitPreAdicSpace _ _
+    (completionLocalization_ringOfDefinition_le_completedPlusPair P Aplus hAplus hP T s _ hden)
 
 /-- **The open affinoids of Huber's standing class form a basis of `Spa(A, A⁺)`** when `A` is in
 Huber's standing class, since the rational opens do. -/
 theorem isBasis_huberStandardAffinoidOpens_presentationLimitPreAdicSpace :
-    Opens.IsBasis (presentationLimitPreAdicSpace P Aplus hAplus hP).huberStandardAffinoidOpens := by
-  refine Opens.isBasis_iff_nbhd.mpr fun {U x} hx ↦ ?_
-  obtain ⟨V, hV, hxV, hVU⟩ := Opens.isBasis_iff_nbhd.mp (isBasis_spaRationalOpens Aplus) hx
-  obtain ⟨T, s, hT, rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hV
-  exact ⟨_, spaBasicOpen_mem_huberStandardAffinoidOpens P Aplus hAplus hP hT, hxV, hVU⟩
+    Opens.IsBasis (presentationLimitPreAdicSpace P Aplus hAplus hP).huberStandardAffinoidOpens :=
+  isBasis_propOpens_presentationLimitPreAdicSpace P Aplus hAplus hP
+    PreAdicSpace.isHuberStandardAffinoid
+    fun hT ↦ spaBasicOpen_mem_huberStandardAffinoidOpens P Aplus hAplus hP hT
 
 end HuberStandard
 
@@ -224,22 +220,18 @@ theorem exists_mem_huberStandardAffinoidOpens_of_mem_analyticPoints_presentation
   rw [analyticPoints_presentationLimitPreAdicSpace] at hx
   obtain ⟨T, g, hT, hxg, hnil⟩ :=
     exists_mem_rationalSubset_isTopologicallyNilpotent_of_mem_spaAnalytic P Aplus hx
-  let L := Localization.Away g
-  have hden := P.hasDenominatorPower_of_isOpen_span T g L hT
-  let _ := locUniformSpace P T g L hden
-  have _ := isUniformAddGroup_locUniformSpace P T g L hden
-  have _ := isTopologicalRing_locUniformSpace P T g L hden
-  have _ := isHuberRing_completion_locTopology P T g L hden
-  have _ := isTateRing_completion_locTopology_of_isTopologicallyNilpotent P T g L hden hnil
-  have _ := isNoetherianType_completion_locTopology_of_isNoetherianType P
-    (Ideal.isOpen_of_isOpen_subideal (Ideal.span_mono (Set.subset_insert _ _)) hT) L hden
-  have _ : IsHuberStandard (UniformSpace.Completion L) :=
+  refine ⟨spaBasicOpen Aplus T g, ?_, mem_spaBasicOpen.mpr hxg⟩
+  refine spaBasicOpen_mem_propOpens P Aplus hAplus hP PreAdicSpace.isHuberStandardAffinoid hT ?_
+  intro _ _ _
+  let hden := P.hasDenominatorPower_of_isOpen_span T g (Localization.Away g) hT
+  let _ := locUniformSpace P T g (Localization.Away g) hden
+  have := isTateRing_completion_locTopology_of_isTopologicallyNilpotent P T g _ hden hnil
+  have := isNoetherianType_completion_locTopology_of_isNoetherianType P
+    (Ideal.isOpen_of_isOpen_subideal (Ideal.span_mono (Set.subset_insert _ _)) hT) _ hden
+  have : IsHuberStandard (UniformSpace.Completion (Localization.Away g)) :=
     isHuberStandard_iff_isNoetherianType.mpr inferInstance
-  exact ⟨spaBasicOpen Aplus T g,
-    spaBasicOpen_mem_propOpens P Aplus T g L hden hAplus hP hT
-      PreAdicSpace.isHuberStandardAffinoid
-      (PreAdicSpace.isHuberStandardAffinoid_presentationLimitPreAdicSpace _ _ _),
-    mem_spaBasicOpen.mpr hxg⟩
+  exact PreAdicSpace.isHuberStandardAffinoid_presentationLimitPreAdicSpace _ _
+    (completionLocalization_ringOfDefinition_le_completedPlusPair P Aplus hAplus hP T g _ hden)
 
 end Analytic
 

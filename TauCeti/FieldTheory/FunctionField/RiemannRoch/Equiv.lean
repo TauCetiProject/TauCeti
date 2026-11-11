@@ -13,8 +13,9 @@ public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Genus
 
 A field isomorphism carrying one constant field onto another identifies places and divisors,
 preserves residue-weighted degrees, and induces semilinear isomorphisms of Riemann–Roch spaces.
-Consequently it preserves the genus. Semilinearity is essential for Frobenius: over perfect
-constants Frobenius is an automorphism of the constants, not generally their identity.
+Consequently it preserves the genus and the index of specialty. Semilinearity is essential for
+Frobenius: over perfect constants Frobenius is an automorphism of the constants, not generally
+their identity.
 
 Divisor transport uses `Finsupp.domCongr` along `Place.equivOfRingEquiv`; no additional divisor
 carrier is introduced. These statements do not require exact constants or a function-field
@@ -106,5 +107,15 @@ theorem genus_eq_of_ringEquiv : genus k' F' = genus k F := by
     exact ⟨Finsupp.domCongr (Place.equivOfRingEquiv σ τ h) D, by
       simp only [Divisor.degree_domCongr_equivOfRingEquiv,
         Divisor.dim_domCongr_equivOfRingEquiv]⟩
+
+-- Transport rules run before `Finsupp.domCongr_apply` expands the divisor reindexing.
+/-- Semilinear transport preserves the index of specialty of a divisor. -/
+@[simp↓]
+theorem Divisor.indexOfSpecialty_domCongr_equivOfRingEquiv (D : Divisor k F) :
+    Divisor.indexOfSpecialty (Finsupp.domCongr (Place.equivOfRingEquiv σ τ h) D) =
+      Divisor.indexOfSpecialty D := by
+  rw [Divisor.indexOfSpecialty_def, Divisor.indexOfSpecialty_def,
+    Divisor.dim_domCongr_equivOfRingEquiv, Divisor.degree_domCongr_equivOfRingEquiv,
+    genus_eq_of_ringEquiv σ τ h]
 
 end TauCeti

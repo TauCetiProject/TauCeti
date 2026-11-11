@@ -108,6 +108,26 @@ theorem sphereBundleEquation_eq_zero_iff (r : B → ℝ) (p : TotalSpace F V)
   rw [sphereBundleEquation_apply, sub_eq_zero]
   exact (sq_eq_sq₀ (norm_nonneg _) hr)
 
+omit [∀ b, InnerProductSpace ℝ (V b)] [TopologicalSpace B]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle ℝ F V] in
+/-- The nonpositive sublevel of the sphere-bundle equation is the closed disc bundle. -/
+theorem sphereBundleEquation_le_zero_iff (r : B → ℝ) (p : TotalSpace F V)
+    (hr : 0 ≤ r p.proj) :
+    sphereBundleEquation r p ≤ 0 ↔ ‖p.2‖ ≤ r p.proj := by
+  rw [sphereBundleEquation_apply, sub_nonpos]
+  exact sq_le_sq₀ (norm_nonneg _) hr
+
+omit [∀ b, InnerProductSpace ℝ (V b)] [TopologicalSpace B]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle ℝ F V] in
+/-- The negative sublevel of the sphere-bundle equation is the open disc bundle. -/
+theorem sphereBundleEquation_lt_zero_iff (r : B → ℝ) (p : TotalSpace F V)
+    (hr : 0 ≤ r p.proj) :
+    sphereBundleEquation r p < 0 ↔ ‖p.2‖ < r p.proj := by
+  rw [sphereBundleEquation_apply, sub_neg]
+  exact sq_lt_sq₀ (norm_nonneg _) hr
+
 /-- The sphere-bundle equation is as smooth as the fibre metric and radius. -/
 theorem contMDiff_sphereBundleEquation {n : ℕ∞ω}
     [IsContMDiffRiemannianBundle I n F V] {r : B → ℝ}

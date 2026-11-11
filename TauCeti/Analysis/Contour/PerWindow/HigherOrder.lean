@@ -193,7 +193,6 @@ theorem perWindow_higherOrder_truncated_integral_tendsto {γ : ℝ → ℂ} {s :
     exists_exit_times_truncated_integral_split (by linarith) (by linarith) h_at hγ_cont hL_R hL_L
       h_tendsto_R h_tendsto_L h_unique (fun z => c / (z - s) ^ k)
       (fun ε hε a b ha hab hb => intervalIntegrable_pow_inv_mul_deriv_truncated c k
-        (hγ_cont.mono (by rw [uIcc_of_le hab]; exact Icc_subset_Icc ha hb))
         (hderiv_int.mono_set (by
           rw [uIcc_of_le hab, uIcc_of_le (by linarith : t_i - r ≤ t_i + r)]
           exact Icc_subset_Icc ha hb)) hε)

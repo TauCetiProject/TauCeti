@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Classical
 import TauCeti.MeasureTheory.Function.LocalRepresentative
 import TauCeti.Analysis.Sobolev.Mollification.Interior
-import Mathlib.Analysis.Calculus.BumpFunction.Convolution
+import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import Mathlib.Analysis.Calculus.UniformLimitsDeriv
 
 /-!
@@ -60,17 +60,14 @@ private theorem HasWeakFDerivOn.exists_contDiffOn_one_ae_eq_ball
     ∃ g : E → F, ContDiffOn ℝ 1 g (ball x (r / 2)) ∧
       u =ᵐ[mu.restrict (ball x (r / 2))] g := by
   let := h.completeSpace
-  let phi : ℕ → ContDiffBump (0 : E) := fun n =>
-    ⟨(r / (4 * ((n : ℝ) + 1))) / 2, r / (4 * ((n : ℝ) + 1)), by positivity,
-      half_lt_self (by positivity)⟩
-  have hphi : Tendsto (fun n => (phi n).rOut) atTop (𝓝 0) := by
-    simpa [phi, div_mul_eq_div_div, div_eq_mul_inv, mul_assoc, mul_comm, mul_left_comm] using
-      tendsto_one_div_add_atTop_nhds_zero_nat.const_mul (r / 4)
-  have hsmall : ∀ n, (phi n).rOut ≤ r / 4 := by
-    intro n
-    dsimp [phi]
-    apply div_le_div_of_nonneg_left hr.le (by positivity)
-    nlinarith [Nat.cast_nonneg (α := ℝ) n]
+  have hr4 : 0 < r / 4 := by positivity
+  let phi : ℕ → ContDiffBump (0 : E) := ContDiffBump.shrinking hr4
+  have hphi : Tendsto (fun n => (phi n).rOut) atTop (𝓝 0) := ContDiffBump.tendsto_rOut_shrinking hr4
+  have hsmall (n : ℕ) : (phi n).rOut ≤ r / 4 := by
+    rw [ContDiffBump.rOut_shrinking]
+    exact div_le_self hr4.le (by linarith [Nat.cast_nonneg (α := ℝ) n])
+  have hK (n : ℕ) : (phi n).rOut ≤ 2 * (phi n).rIn :=
+    (ContDiffBump.rOut_shrinking_eq_two_mul_rIn hr4 n).le
   let f := fun n => (ball x r).indicator u ⋆[
     (ContinuousLinearMap.lsmul ℝ ℝ).flip, mu] (phi n).normed mu
   let f' := fun n => (ball x r).indicator U ⋆[
@@ -82,31 +79,14 @@ private theorem HasWeakFDerivOn.exists_contDiffOn_one_ae_eq_ball
     apply closedBall_subset_ball'
     have := mem_ball.1 hy
     linarith [hsmall n]
-  have hUm : AEStronglyMeasurable ((ball x r).indicator U) mu :=
-    (hU.integrable_indicator measurableSet_ball).aestronglyMeasurable
-  -- The mollified derivative converges locally uniformly throughout the larger ball.
-  have hlocal : TendstoLocallyUniformlyOn f' ((ball x r).indicator U) atTop (ball x r) := by
-    rw [isOpen_ball.tendstoLocallyUniformlyOn_iff_forall_tendsto]
-    intro y hy
-    have hcont : ContinuousAt ((ball x r).indicator U) y :=
-      (hUc.congr fun z hz => indicator_of_mem hz U).continuousAt (isOpen_ball.mem_nhds hy)
-    have hconv : Tendsto (fun p : ℕ × E => f' p.1 p.2) (atTop ×ˢ 𝓝 y)
-        (𝓝 (((ball x r).indicator U) y)) := by
-      simp only [f', convolution_flip]
-      exact ContDiffBump.convolution_tendsto_right (hphi.comp tendsto_fst)
-        (Eventually.of_forall fun _ => hUm) (hcont.tendsto.comp tendsto_snd) tendsto_snd
-    apply tendsto_uniformity_iff_dist_tendsto_zero.2
-    simpa only [dist_self, Function.comp_apply] using
-      (hcont.tendsto.comp tendsto_snd).dist hconv
   have hsub : closedBall x (r / 2) ⊆ ball x r := closedBall_subset_ball (half_lt_self hr)
   have hunif : TendstoUniformlyOn f' ((ball x r).indicator U) atTop (ball x (r / 2)) :=
-    ((tendstoLocallyUniformlyOn_iff_tendstoUniformlyOn_of_compact
-      (isCompact_closedBall x (r / 2))).1 (hlocal.mono hsub)).mono ball_subset_closedBall
+    ContDiffBump.tendstoUniformlyOn_convolution_indicator_ball hr hUc hphi
   -- Almost everywhere convergence of the values supplies a single anchor point.
   have hae : ∀ᵐ y ∂mu, Tendsto (fun n => f n y) atTop (𝓝 ((ball x r).indicator u y)) := by
     simp only [f, convolution_flip]
     apply ContDiffBump.ae_convolution_tendsto_right_of_locallyIntegrable hphi
-      (K := 2) (Eventually.of_forall fun n => by dsimp [phi]; linarith)
+      (K := 2) (Eventually.of_forall hK)
     exact (hu.integrable_indicator measurableSet_ball).locallyIntegrable
   obtain ⟨y₀, hy₀, hy₀lim⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae
     (measure_ball_pos mu x (half_pos hr)).ne' (ae_restrict_of_ae hae)
@@ -140,7 +120,7 @@ theorem HasWeakFDerivOn.exists_contDiffOn_one_ae_eq
     ∃ g : E → F, ContDiffOn ℝ 1 g Omega ∧ u =ᵐ[mu.restrict Omega] g ∧
       ∀ x ∈ Omega, HasFDerivAt g (U x) x := by
   let := h.completeSpace
-  obtain ⟨g, hg, hug⟩ := exists_contDiffOn_ae_eq_of_locally Omega.isOpen (n := 1) fun x hx => by
+  obtain ⟨g, hg, hug⟩ := exists_contDiffOn_ae_eq_of_locally (n := 1) fun x hx => by
     obtain ⟨r, hr, hrO⟩ := nhds_basis_closedBall.mem_iff.1 (Omega.isOpen.mem_nhds hx)
     have hBO : ball x r ⊆ Omega := ball_subset_closedBall.trans hrO
     have hu : IntegrableOn u (ball x r) mu :=

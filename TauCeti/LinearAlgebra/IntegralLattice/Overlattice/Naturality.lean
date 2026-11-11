@@ -620,15 +620,15 @@ theorem isIntegral_orthogonalSumIntermediateCarrier_iff (P : L.IntermediateCarri
     constructor
     · intro x hx x' hx'
       have hxy := h (x, 0) (by simp [hx]) (x', 0) (by simp [hx'])
-      rw [orthogonalSum_form, orthogonalSumForm_apply] at hxy
+      rw [orthogonalSum_form, LinearMap.BilinForm.prod_apply] at hxy
       simpa using hxy
     · intro y hy y' hy'
       have hxy := h (0, y) (by simp [hy]) (0, y') (by simp [hy'])
-      rw [orthogonalSum_form, orthogonalSumForm_apply] at hxy
+      rw [orthogonalSum_form, LinearMap.BilinForm.prod_apply] at hxy
       simpa using hxy
   · rintro ⟨hP, hQ⟩ p hp q hq
     rw [mem_orthogonalSumIntermediateCarrier_iff] at hp hq
-    rw [orthogonalSum_form, orthogonalSumForm_apply]
+    rw [orthogonalSum_form, LinearMap.BilinForm.prod_apply]
     exact Submodule.add_mem _ (hP p.1 hp.1 q.1 hq.1) (hQ p.2 hp.2 q.2 hq.2)
 
 /-- The assembled carrier `P ⊕ Q` of two integral intermediate carriers is integral. -/
@@ -646,7 +646,7 @@ theorem isEven_orthogonalSumIntermediateCarrier_iff (P : L.IntermediateCarrier)
       IntermediateCarrier.IsEven P ∧ IntermediateCarrier.IsEven Q := by
   have hnorm : ∀ p : V × W,
       (L.orthogonalSum M).norm p = L.norm p.1 + M.norm p.2 := fun p ↦ by
-    rw [norm_apply, norm_apply, norm_apply, orthogonalSum_form, orthogonalSumForm_apply]
+    rw [norm_apply, norm_apply, norm_apply, orthogonalSum_form, LinearMap.BilinForm.prod_apply]
   rw [IntermediateCarrier.isEven_def, IntermediateCarrier.isEven_def,
     IntermediateCarrier.isEven_def]
   constructor

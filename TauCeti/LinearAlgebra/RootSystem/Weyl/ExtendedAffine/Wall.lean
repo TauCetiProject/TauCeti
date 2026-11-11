@@ -27,7 +27,9 @@ a permutation `σ` of the nodes with `a_{σ k} ∘ ω = aₖ`, so that `ω` carr
 the wall `a_{σ k} = 0`. This defines a homomorphism `Ω → Perm (Option b.support)`
 (`RootPairing.fundamentalAlcoveStabilizerToPerm`), and its image consists of symmetries of the
 affine Cartan matrix: `σ` preserves every Cartan integer `⟨αₖ, αₗ^∨⟩`
-(`RootPairing.fundamentalAlcoveStabilizerToPerm_mem_matrixSymmetryGroup`).
+(`RootPairing.fundamentalAlcoveStabilizerToPerm_mem_matrixSymmetryGroup`). For a root system the
+action is faithful (`RootPairing.fundamentalAlcoveStabilizerToPerm_injective`): an element of `Ω`
+fixing every wall fixes the values of the simple roots, which determine a point of `N`.
 
 ## The argument
 
@@ -47,12 +49,16 @@ the Weyl group, which preserves the pairing of roots and coroots
 
 * `RootPairing.fundamentalAlcoveStabilizerToPerm`: the action of `Ω` on the nodes of the affine
   Dynkin diagram, through its action on the walls of the fundamental alcove.
+* `RootPairing.fundamentalAlcoveStabilizerToMatrixSymmetryGroup`: the same action, as a
+  homomorphism to the symmetry group of the affine Cartan matrix.
 
 ## Main results
 
 * `RootPairing.affineSimpleRoot_fundamentalAlcoveStabilizerToPerm_apply`: `a_{σ k}(ω x) = aₖ(x)`.
 * `RootPairing.fundamentalAlcoveStabilizerToPerm_mem_matrixSymmetryGroup`: **the action of `Ω` on
   the walls preserves the affine Cartan matrix.**
+* `RootPairing.fundamentalAlcoveStabilizerToPerm_injective`: for a root system the action is
+  faithful.
 
 ## References
 
@@ -220,6 +226,49 @@ theorem fundamentalAlcoveStabilizerToPerm_mem_matrixSymmetryGroup
   refine FaithfulSMul.algebraMap_injective ℤ R ?_
   simp only [algebraMap_pairingIn]
   exact (P.pairing_eq_of_root'_apply_eq hw (hlin k) (hlin l)).symm
+
+/-- The action of the stabilizer of the fundamental alcove on the nodes of the affine Dynkin
+diagram, as a homomorphism to the symmetry group of the affine Cartan matrix. -/
+noncomputable def fundamentalAlcoveStabilizerToMatrixSymmetryGroup :
+    P.fundamentalAlcoveStabilizer b →* TauCeti.matrixSymmetryGroup b.affineCartanMatrix :=
+  (fundamentalAlcoveStabilizerToPerm b).codRestrict _
+    (fundamentalAlcoveStabilizerToPerm_mem_matrixSymmetryGroup b)
+
+@[simp]
+lemma coe_fundamentalAlcoveStabilizerToMatrixSymmetryGroup_apply
+    (ω : P.fundamentalAlcoveStabilizer b) :
+    (fundamentalAlcoveStabilizerToMatrixSymmetryGroup b ω : Equiv.Perm (Option b.support)) =
+      fundamentalAlcoveStabilizerToPerm b ω :=
+  (rfl)
+
+/-- **For a root system, `Ω` acts faithfully on the affine Dynkin diagram**: an element fixing
+every wall of the fundamental alcove is the identity, since the simple roots then take the same
+values at `x` and at `ω x`, and they determine a point of the coweight space. -/
+theorem fundamentalAlcoveStabilizerToPerm_injective [P.IsRootSystem] :
+    Function.Injective (fundamentalAlcoveStabilizerToPerm b) := by
+  rw [← MonoidHom.ker_eq_bot_iff, eq_bot_iff]
+  intro ω hω
+  rw [MonoidHom.mem_ker] at hω
+  rw [Subgroup.mem_bot]
+  refine Subtype.ext (AffineEquiv.ext fun x ↦ ?_)
+  -- Every simple root takes the same value at `ω x` and at `x`.
+  have hsimple (i : ι) (hi : i ∈ b.support) : P.root' i (ω.1 x - x) = 0 := by
+    have := affineSimpleRoot_fundamentalAlcoveStabilizerToPerm_apply b ω (some ⟨i, hi⟩) x
+    rw [hω, Equiv.Perm.coe_one, id, Base.affineSimpleRoot_some,
+      Base.affineSimpleRoot_some] at this
+    rw [map_sub, this, sub_self]
+  -- Hence so does every root, and the roots span the weight space.
+  simpa [sub_eq_zero] using (P.flip.eq_zero_iff_forall_coroot'_eq_zero.mpr
+    (P.flip.coroot'_eq_zero_of_forall_mem_support b.flip hsimple))
+
+/-- For a root system, the homomorphism from the fundamental alcove stabilizer to the symmetry
+group of the affine Cartan matrix is injective. -/
+theorem fundamentalAlcoveStabilizerToMatrixSymmetryGroup_injective [P.IsRootSystem] :
+    Function.Injective (fundamentalAlcoveStabilizerToMatrixSymmetryGroup b) := by
+  intro ω₁ ω₂ h
+  apply fundamentalAlcoveStabilizerToPerm_injective b
+  simpa only [coe_fundamentalAlcoveStabilizerToMatrixSymmetryGroup_apply] using
+    congrArg Subtype.val h
 
 end Field
 

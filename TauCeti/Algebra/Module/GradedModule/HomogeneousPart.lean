@@ -23,6 +23,9 @@ action by a scalar tower.
 
 The construction is shared by homogeneous splittings, polynomial-linear retractions, and the
 degree-zero lift that makes projective underlying modules projective in the graded category.
+Likewise, a map of degree `r` with values in the range of an injective degree-zero map factors
+through it by a map of degree `r`: injectivity forces the ungraded factorization to be
+homogeneous.
 
 ## References
 
@@ -301,5 +304,38 @@ theorem homogeneousPartOfGradedSMul_comp (f : N →ₗ[A] P) (r : ℤ) {g : M �
   exact homogeneousPartAddHom_comp_apply_of_mem G H I f.toAddMonoidHom r hg hx
 
 end GradedSMul
+
+section Factorization
+
+variable {A : Type uA} [Semiring A] [Module A M] [Module A N]
+  {P : Type uP} [AddCommMonoid P] [Module k P] [Module A P] (I : InternalGrading k P)
+
+/-- **Homogeneous factorization through an injective map.** If `f` is injective and homogeneous
+of degree zero, then a map of degree `r` whose range lies in the range of `f` factors through `f`
+by a map of degree `r`. -/
+theorem exists_isHomogeneous_comp_eq_of_injective {f : M →ₗ[A] N} (hf : Function.Injective f)
+    (hf₀ : TauCeti.LinearMap.IsHomogeneous f G.piece H.piece 0) {χ : P →ₗ[A] N} {r : ℤ}
+    (hχ : TauCeti.LinearMap.IsHomogeneous χ I.piece H.piece r)
+    (hrange : _root_.LinearMap.range χ ≤ _root_.LinearMap.range f) :
+    ∃ a : P →ₗ[A] M, TauCeti.LinearMap.IsHomogeneous a I.piece G.piece r ∧ f.comp a = χ := by
+  -- Injectivity gives an ungraded factorization `a`.
+  let a : P →ₗ[A] M := (LinearEquiv.ofInjective f hf).symm.toLinearMap.comp
+    (χ.codRestrict (_root_.LinearMap.range f) fun x ↦ hrange (_root_.LinearMap.mem_range_self χ x))
+  have ha : f.comp a = χ := _root_.LinearMap.ext fun x ↦ by simp [a]
+  refine ⟨a, ?_, ha⟩
+  rw [TauCeti.LinearMap.isHomogeneous_def]
+  intro p x hx
+  -- Applying the injective degree-zero map `f` shows that `a x` equals its degree-`(p + r)`
+  -- component, since `f (a x) = χ x` already has degree `p + r`.
+  have hax : a x = homogeneousPartAddHom I G a.toAddMonoidHom r x := hf <| by
+    rw [comp_homogeneousPartAddHom_apply_of_mem I G H a.toAddMonoidHom r hf₀ hx, add_zero,
+      homogeneousPartAddHom_apply_of_mem I H _ r hx]
+    rw [AddMonoidHom.comp_apply, _root_.LinearMap.toAddMonoidHom_coe,
+      _root_.LinearMap.toAddMonoidHom_coe, ← _root_.LinearMap.comp_apply, ha]
+    exact (DirectSum.decompose_of_mem_same H.piece (hχ.map_mem hx)).symm
+  rw [hax, homogeneousPartAddHom_apply_of_mem I G _ r hx]
+  exact (DirectSum.decompose G.piece (a x) (p + r)).property
+
+end Factorization
 
 end TauCeti.InternalGrading

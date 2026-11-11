@@ -106,6 +106,26 @@ theorem norm_coe_tmul_le (x : E) (y : F) :
   simpa [Completion.norm_coe, ProjectiveTensor.norm_def] using
     TensorProduct.projectiveSeminorm_tmul_le (𝕜 := 𝕜) x y
 
+/-- The canonical bounded bilinear map into the completed projective tensor product. -/
+noncomputable def tmulL : E →L[𝕜] F →L[𝕜] CompletedProjectiveTensor 𝕜 E F :=
+  (ContinuousLinearMap.compL 𝕜 F (ProjectiveTensor 𝕜 E F)
+    (CompletedProjectiveTensor 𝕜 E F) Completion.toComplL).comp
+      (ProjectiveTensor.tmulL 𝕜 E F)
+
+/-- The canonical bilinear map sends a pair to its completed pure tensor. -/
+@[simp]
+theorem tmulL_apply (x : E) (y : F) :
+    tmulL x y = ((⟨x ⊗ₜ y⟩ : ProjectiveTensor 𝕜 E F) : CompletedProjectiveTensor 𝕜 E F) := by
+  simp [tmulL]
+
+/-- The canonical bilinear map into the completed projective tensor product is contractive. -/
+theorem norm_tmulL_le : ‖tmulL (𝕜 := 𝕜) (E := E) (F := F)‖ ≤ 1 := by
+  apply ContinuousLinearMap.opNorm_le_bound _ zero_le_one
+  intro x
+  apply ContinuousLinearMap.opNorm_le_bound _ (by positivity)
+  intro y
+  simpa using norm_coe_tmul_le x y
+
 /-- The bounded operator `x ⊗ₜ y ↦ f x ⊗ₜ g y` between completed projective tensor products
 induced by bounded operators `f` and `g`. -/
 noncomputable def mapL (f : E →L[𝕜] E') (g : F →L[𝕜] F') :

@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import Mathlib.Topology.Algebra.Module.Basic
+public import Mathlib.Topology.ApproximateUnit
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import TauCeti.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.Algebra.Subalgebra.Center
@@ -15,7 +16,8 @@ public import TauCeti.Algebra.Subalgebra.Center
 /-!
 # Closed two-sided ideals
 
-The closure of a two-sided ideal in a topological ring is again two-sided. We
+The closure of a two-sided ideal in a topological ring is again two-sided, and closed two-sided
+ideals in rings with an approximate unit absorb compatible scalar multiplication. We
 also supply the topological-ring structure on Mathlib's existing quotient topology
 for quotients of noncommutative rings by native ideals. The closed ideal generated
 by an ideal of the center presents discrete modules with central relations.
@@ -33,7 +35,7 @@ the same native additive quotient and open quotient-map argument.
 
 public section
 
-open Topology
+open Filter Topology
 
 namespace Ideal
 
@@ -74,21 +76,35 @@ end MonoidHom
 
 namespace TwoSidedIdeal
 
-variable {A : Type*} [Ring A] [TopologicalSpace A] [IsTopologicalRing A]
+section TopologicalClosure
 
-/-- The topological closure of a two-sided ideal, as a native two-sided ideal. -/
+variable {A : Type*} [NonUnitalRing A] [TopologicalSpace A] [IsTopologicalRing A]
+
+/-- The topological closure of a two-sided ideal in a possibly nonunital topological ring, as a
+native two-sided ideal. -/
 def topologicalClosure (I : TwoSidedIdeal A) : TwoSidedIdeal A :=
-  I.asIdeal.closure.toTwoSided
+  TwoSidedIdeal.mk' (closure (I : Set A))
+    (subset_closure I.zero_mem)
+    (fun hx hy => map_mem_closure₂ continuous_add hx hy fun _ ha _ hb => I.add_mem ha hb)
+    (fun hx => map_mem_closure continuous_neg hx fun _ ha => I.neg_mem ha)
+    (fun {x _} hy => map_mem_closure (continuous_const_mul x) hy fun _ hb => I.mul_mem_left x _ hb)
+    (fun {_ y} hx => map_mem_closure (f := fun x : A => x * y) (s := (I : Set A))
+      (t := (I : Set A)) (continuous_mul_const y) hx fun _ ha => I.mul_mem_right _ y ha)
 
 @[simp]
 theorem coe_topologicalClosure (I : TwoSidedIdeal A) :
     (I.topologicalClosure : Set A) = closure (I : Set A) := by
   simp [topologicalClosure]
 
+@[simp]
+theorem mem_topologicalClosure {I : TwoSidedIdeal A} {a : A} :
+    a ∈ I.topologicalClosure ↔ a ∈ closure (I : Set A) := by
+  rw [← SetLike.mem_coe, coe_topologicalClosure]
+
 /-- A two-sided ideal is contained in its topological closure. -/
 theorem le_topologicalClosure (I : TwoSidedIdeal A) : I ≤ I.topologicalClosure := by
   intro a ha
-  rw [← SetLike.mem_coe, coe_topologicalClosure]
+  rw [mem_topologicalClosure]
   exact subset_closure ha
 
 /-- The topological closure is closed. -/
@@ -97,6 +113,25 @@ theorem isClosed_topologicalClosure (I : TwoSidedIdeal A) :
   rw [coe_topologicalClosure]
   exact isClosed_closure
 
+/-- A closed two-sided ideal equals its topological closure. -/
+@[simp]
+theorem topologicalClosure_eq_self (I : TwoSidedIdeal A) [hI : IsClosed (I : Set A)] :
+    I.topologicalClosure = I := by
+  ext a
+  rw [mem_topologicalClosure, hI.closure_eq, SetLike.mem_coe]
+
+/-- Taking topological closure of a two-sided ideal is idempotent. -/
+theorem topologicalClosure_idem (I : TwoSidedIdeal A) :
+    I.topologicalClosure.topologicalClosure = I.topologicalClosure := by
+  have : IsClosed (I.topologicalClosure : Set A) := I.isClosed_topologicalClosure
+  exact I.topologicalClosure.topologicalClosure_eq_self
+
+/-- Taking topological closure of two-sided ideals is monotone. -/
+theorem topologicalClosure_mono {I J : TwoSidedIdeal A} (h : I ≤ J) :
+    I.topologicalClosure ≤ J.topologicalClosure := by
+  rw [← SetLike.coe_subset_coe, coe_topologicalClosure, coe_topologicalClosure]
+  exact closure_mono h
+
 /-- The closure is the least closed two-sided ideal containing the original ideal. -/
 theorem topologicalClosure_le_iff (I J : TwoSidedIdeal A) (hJ : IsClosed (J : Set A)) :
     I.topologicalClosure ≤ J ↔ I ≤ J :=
@@ -104,6 +139,42 @@ theorem topologicalClosure_le_iff (I J : TwoSidedIdeal A) (hJ : IsClosed (J : Se
     fun h => by
       rw [← SetLike.coe_subset_coe, coe_topologicalClosure]
       exact closure_minimal h hJ⟩
+
+end TopologicalClosure
+
+section ClosedKer
+
+variable {A B F : Type*} [NonUnitalNonAssocRing A] [TopologicalSpace A]
+  [NonUnitalNonAssocSemiring B] [TopologicalSpace B] [T1Space B]
+  [FunLike F A B] [NonUnitalRingHomClass F A B]
+
+/-- The kernel two-sided ideal of a continuous nonunital ring homomorphism into a `T₁` space is
+closed. -/
+theorem isClosed_ker {f : F} (hf : Continuous f) : IsClosed (TwoSidedIdeal.ker f : Set A) := by
+  have hset : (TwoSidedIdeal.ker f : Set A) = f ⁻¹' {0} := by
+    ext x
+    exact TwoSidedIdeal.mem_ker f
+  rw [hset]
+  exact isClosed_singleton.preimage hf
+
+end ClosedKer
+
+section ApproximateUnit
+
+variable {R A : Type*} [Semiring R] [NonUnitalRing A] [TopologicalSpace A]
+  [Module R A] [IsScalarTower R A A] [ContinuousConstSMul R A]
+
+/-- In a topological ring with a scalar-compatible `R`-module structure and an approximate unit,
+every closed two-sided ideal is closed under scalar multiplication by `R`. -/
+theorem smul_mem_of_isApproximateUnit (I : TwoSidedIdeal A) [hI : IsClosed (I : Set A)]
+    {l : Filter A} (hl : l.IsApproximateUnit) (c : R) {a : A} (ha : a ∈ I) :
+    c • a ∈ I := by
+  have := hl.neBot
+  have hlim : Tendsto (fun e => (c • e) * a) l (𝓝 (c • a)) := by
+    simpa only [smul_mul_assoc] using (hl.tendsto_mul_right a).const_smul c
+  exact hI.mem_of_tendsto hlim (Eventually.of_forall fun e => I.mul_mem_left (c • e) a ha)
+
+end ApproximateUnit
 
 end TwoSidedIdeal
 

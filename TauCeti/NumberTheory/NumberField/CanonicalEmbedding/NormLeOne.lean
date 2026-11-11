@@ -36,18 +36,18 @@ variable {K : Type*} [Field K] [NumberField K]
 @[simp]
 theorem negAt_mem_fundamentalCone_iff (s : Set {w : InfinitePlace K // w.IsReal})
     (x : mixedSpace K) : negAt s x ∈ fundamentalCone K ↔ x ∈ fundamentalCone K :=
-  ⟨fun h ↦ fundamentalCone.mem_of_normAtPlace_eq h fun w ↦ by simp [normAtPlace_negAt],
-    fun h ↦ fundamentalCone.mem_of_normAtPlace_eq h fun w ↦ by simp [normAtPlace_negAt]⟩
+  ⟨fun h ↦ fundamentalCone.mem_of_normAtPlace_eq h fun w ↦ (normAtPlace_negAt s x w).symm,
+    fun h ↦ fundamentalCone.mem_of_normAtPlace_eq h (normAtPlace_negAt s x)⟩
 
-/-- Reflecting real coordinates preserves each unit translate of `normLeOne K`, since it commutes
-with the unit action. -/
+/-- Reflecting real coordinates preserves each unit translate `u • normLeOne K` of the
+norm-≤-one region. -/
 @[simp]
 theorem negAt_mem_unit_smul_normLeOne_iff (s : Set {w : InfinitePlace K // w.IsReal})
     (u : (𝓞 K)ˣ) (x : mixedSpace K) :
     negAt s x ∈ u • fundamentalCone.normLeOne K ↔ x ∈ u • fundamentalCone.normLeOne K := by
   simp only [Set.mem_smul_set_iff_inv_smul_mem, unitSMul_smul, fundamentalCone.mem_normLeOne,
     map_mul, norm_negAt]
-  refine and_congr_left fun _ ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩ <;>
-    exact fundamentalCone.mem_of_normAtPlace_eq h fun w ↦ by simp [map_mul, normAtPlace_negAt]
+  exact and_congr_left fun _ ↦ ⟨fun h ↦ fundamentalCone.mem_of_normAtPlace_eq h fun w ↦ by simp,
+    fun h ↦ fundamentalCone.mem_of_normAtPlace_eq h fun w ↦ by simp⟩
 
 end TauCeti.NumberField.mixedEmbedding

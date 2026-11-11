@@ -43,9 +43,8 @@ the closed unit ball of the sup norm on `N → ℝ`, collapsed by `TauCeti.unitB
 def cubeToOnePoint : C((N → I), OnePoint (N → ℝ)) where
   toFun z := unitBallToOnePoint (cubeHomeomorphClosedBall N z : N → ℝ)
   continuous_toFun :=
-    continuousOn_unitBallToOnePoint.comp_continuous
+    continuous_unitBallToOnePoint.comp
       (continuous_subtype_val.comp (cubeHomeomorphClosedBall N).continuous)
-      fun z => (cubeHomeomorphClosedBall N z).2
 
 variable {N}
 

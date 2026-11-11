@@ -26,6 +26,8 @@ schemes, in particular conjugacy of Borel subgroups and maximal tori.
   induced by conjugation by a rational point.
 * `TauCeti.HopfAlgebra.mapDomain_pointConjugationBialgEquiv`: its action on arbitrary
   algebra-valued points is group-theoretic conjugation.
+* `TauCeti.HopfAlgebra.comp_pointConjugationAlgHom_eq_symm_comp`: an intertwining equation for
+  inverse conjugation by `g` gives the inverse equation for conjugation by `g`.
 * `TauCeti.HopfAlgebra.pointConjugationFiniteTypeIso`: the same automorphism as an isomorphism
   in the category of finite-type commutative Hopf algebras.
 
@@ -98,6 +100,20 @@ theorem pointConjugationAlgHom_mul (g h : WithConv (H →ₐ[R] R)) :
   rw [toConv_pointConjugationAlgHom (g * h), toConv_pointConjugationAlgHom h]
   rw [map_mul (AlgHom.mapValue (H := H) (Algebra.ofId R H))]
   simp only [mul_inv_rev, mul_assoc]
+
+/-- If inverse conjugation by `g` intertwines an algebra map `π` out of `H` with an automorphism
+`e` of its target, then conjugation by `g` intertwines `π` with `e⁻¹`. -/
+theorem comp_pointConjugationAlgHom_eq_symm_comp {A : Type w} [Semiring A] [Algebra R A]
+    (π : H →ₐ[R] A) (g : WithConv (H →ₐ[R] R)) (e : A ≃ₐ[R] A)
+    (hg : π.comp (pointConjugationAlgHom g⁻¹) = e.toAlgHom.comp π) :
+    π.comp (pointConjugationAlgHom g) = e.symm.toAlgHom.comp π := by
+  have hinv : (pointConjugationAlgHom g⁻¹).comp (pointConjugationAlgHom g) = AlgHom.id R H := by
+    rw [← pointConjugationAlgHom_mul, mul_inv_cancel, pointConjugationAlgHom_one]
+  -- Precomposing `hg` with conjugation by `g` gives `π = e ∘ (π ∘ conj g)`.
+  have hπ := congrArg (·.comp (pointConjugationAlgHom g)) hg
+  simp only [AlgHom.comp_assoc, hinv, AlgHom.comp_id] at hπ
+  refine AlgHom.ext fun x ↦ e.injective ?_
+  simpa using (AlgHom.congr_fun hπ x).symm
 
 private theorem pointConjugationAlgHom_bijective (g : WithConv (H →ₐ[R] R)) :
     Function.Bijective (pointConjugationAlgHom g) := by

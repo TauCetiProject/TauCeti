@@ -89,6 +89,20 @@ def loweringMatrix (i : Fin 6) : Matrix (Fin 27 ⊕ Fin 27) (Fin 27 ⊕ Fin 27) 
   Matrix.fromBlocks (TauCeti.E6Minuscule.loweringMatrix i) 0 0
     (-TauCeti.E6Minuscule.raisingMatrix i)
 
+/-- The raising operator has the minuscule raising block and the negative dual lowering
+block. -/
+theorem raisingMatrix_eq_fromBlocks (i : Fin 6) :
+    raisingMatrix i = Matrix.fromBlocks (TauCeti.E6Minuscule.raisingMatrix i) 0 0
+      (-TauCeti.E6Minuscule.loweringMatrix i) := by
+  rw [raisingMatrix]
+
+/-- The lowering operator has the minuscule lowering block and the negative dual raising
+block. -/
+theorem loweringMatrix_eq_fromBlocks (i : Fin 6) :
+    loweringMatrix i = Matrix.fromBlocks (TauCeti.E6Minuscule.loweringMatrix i) 0 0
+      (-TauCeti.E6Minuscule.raisingMatrix i) := by
+  rw [loweringMatrix]
+
 /-- The integral `54`-dimensional representation `V(ϖ₁) ⊕ V(ϖ₆)` of the type-`E₆` Serre
 presentation. -/
 noncomputable def serreRepresentation :
@@ -217,6 +231,24 @@ theorem summandSign_inl (a : Fin 27) : summandSign (.inl a) = 1 := (rfl)
 /-- The structure constants of the `V(ϖ₆)` block are the negatives of the minuscule ones. -/
 @[simp]
 theorem summandSign_inr (a : Fin 27) : summandSign (.inr a) = -1 := (rfl)
+
+/-- A simple reflection preserves the root-matrix sign of its minuscule summand. -/
+@[simp]
+theorem summandSign_reflection (i : Fin 6) (a : Fin 27 ⊕ Fin 27) :
+    summandSign (reflection i a) = summandSign a := by
+  cases a <;> simp
+
+/-- The root-matrix sign on either minuscule summand squares to one. -/
+@[simp]
+theorem summandSign_mul_self (a : Fin 27 ⊕ Fin 27) :
+    summandSign a * summandSign a = 1 := by
+  cases a <;> simp
+
+/-- The summand sign still squares to one after changing the coefficient ring. -/
+@[simp]
+theorem summandSign_cast_sq {A : Type*} [Ring A] (a : Fin 27 ⊕ Fin 27) :
+    (summandSign a : A) ^ 2 = 1 := by
+  rw [sq, ← Int.cast_mul, summandSign_mul_self, Int.cast_one]
 
 /-- The Cartan generators are diagonal with the doubled minuscule weights on the diagonal. -/
 @[simp]

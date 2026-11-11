@@ -2,17 +2,32 @@ import VersoBlog
 open Verso Genre Blog
 open Verso.Output Verso.Output.Html
 
-/-- Cached reports update independently of the site build; static charts remain fallbacks. -/
-def liveStatus : Html := {{
-  <section class="ci-live" data-ci-live="true" aria-label="Current CI activity">
-    <div class="ci-live-heading">
-      <h2>"Jobs right now"</h2>
-      <p data-ci-status="true" role="status">"Loading live counts…"</p>
-    </div>
+/-- Prepared operational snapshots update without a website build. -/
+def operations : Html := {{
+  <section id="operations" class="ci-operations" data-operations="true" aria-label="Queue and runner operations">
+    <p class="ops-status" data-ops-health="true">"Loading queue and runner observations…"</p>
+    <span class="ops-announcement" data-ops-announcement="true" role="status"></span>
+    <nav class="ops-tabs" aria-label="Operations views">
+      <a href="ci/#now" data-ops-tab="now">"Now"</a>
+      <a href="ci/#queue" data-ops-tab="queue">"Queue"</a>
+      <a href="ci/#runners" data-ops-tab="runners">"Runners"</a>
+      <a href="ci/#history" data-ops-tab="history">"History"</a>
+    </nav>
+    <div data-ops-view="true"></div>
+    <noscript>"Enable JavaScript for the live queue, PR lookup and runner views. Historical charts follow below."</noscript>
+  </section>
+  <script src="static/ci-operations.js" defer="defer"></script>
+}}
+
+/-- Independent chart refresh, with its source cache behind a disclosure. -/
+def historicalStatus : Html := {{
+  <details class="ci-chart-source ops-diagnostics" data-ci-live="true">
+    <summary>"Historical chart source status"</summary>
+    <p>"Chart publisher cache · all organisation workflow jobs"</p>
+    <p data-ci-status="true">"Loading chart source status…"</p>
     <dl class="ci-live-counts" data-ci-counts="true"></dl>
     <p class="ci-live-backlog" data-ci-backlog="true" hidden="hidden"></p>
-    <noscript>"Enable JavaScript for live counts and automatic chart updates."</noscript>
-  </section>
+  </details>
   <script src="static/ci-live.js" defer="defer"></script>
 }}
 
@@ -56,7 +71,7 @@ def failuresGraph : Html := dailyChart "ci-failures.svg"
   "Failed PR builds per day by cause, and the failure rate"
   "Failed PR builds by cause; the dashed line is the share of PR builds that failed."
 def minutesGraph : Html := dailyChart "ci-runner-minutes.svg"
-  "Build minutes per day on GitHub, Namespace, eastanglia and leanfro, and cancelled PR builds"
+  "Build minutes per day by cloud runner and dedicated host, and cancelled PR builds"
   "Build minutes per day."
 def queueGraph : Html := dailyChart "ci-merge-queue.svg"
   "GitHub merge-queue and bors builds per day by outcome, and PRs landed"
@@ -73,42 +88,30 @@ def pickerGraph : Html := dailyChart "ci-picker.svg"
 
 #doc (Page) "CI" =>
 
-Build activity and runner queues across Tau Ceti. The charts update automatically.
+The merge queue, CI jobs and dedicated hosts share this operational view. Each source reports its own freshness.
+
+:::blob operations
+:::
+
+:::blob historicalStatus
+:::
 
 :::blob recentFleetGraph
 :::
 
-:::blob liveStatus
-:::
-
 # Understanding the fleet
 
-Where does Tau Ceti's continuous integration run, and how long does it wait? Every pull request
-is built in a sandbox. The fleet uses GitHub, Namespace, and the operator-provided servers
-*eastanglia* and *leanfro*. Pull-request builds prefer GitHub, then eastanglia, then leanfro when it accepts
-PR jobs, then Namespace. Bors staging builds prefer leanfro, then eastanglia, then Namespace,
-then GitHub. Currently leanfro accepts staging only. Each choice depends on available capacity;
-a host that is busy, offline or does not accept that job class is skipped.
+Every pull request is built in a sandbox. GitHub-hosted and Namespace runners provide cloud
+capacity; dedicated servers also run disposable CI guests and mathematics workers. The Runners
+tab shows every published host, including hosts with CI disabled. Routing and available slots
+change with the configured fleet policy. A requested cloud profile is not a measurement of
+physical utilization. Unobserved resource fields stay unknown.
 
-The eastanglia server has two job slots shared across PR and staging builds; leanfro has one staging slot.
-Namespace has an approximate shared cap of twenty queued or running build jobs. Concurrent
-picker decisions can briefly overshoot it. GitHub-hosted jobs are free for public repositories,
-and the organisation can run twenty at once; the picker reserves headroom for control jobs by
-sending new builds elsewhere once twelve GitHub jobs are busy. Namespace minutes are paid for.
-
-The fleet timelines have three panels on one time axis. The top panel shows how many jobs were
-running, averaged over each bin and stacked by runner and kind, against the twenty-job cap on
-GitHub-hosted jobs. "Other GitHub jobs" are mostly the label, notification and merge-bot jobs
-that run on every pull-request event; they are brief but numerous, and they compete with builds
-for the same twenty slots. Ticks below the panel mark pull-request builds that the runner picker
-sent to Namespace, and dotted lines mark changes to the CI configuration. The middle panel shows
-the most jobs waiting for a runner at any moment in each bin. The bottom panel shows the longest
-wait for a runner among jobs that started in the previous thirty minutes (or the previous bin,
-when bins are longer), for builds and for other jobs separately.
-
-GitHub merge-queue entries also run a performance-gate job, which bors staging builds do not.
-That difference affects the fleet and runner-minute totals across the transition. Pilot and
-unidentified bors builds remain in the other-job and cost totals.
+The queue owns admission, exact candidate versions, CI verdict bindings and landings. Its head
+runs staging CI while repair and preparation work can overlap it. A failed source build supplies
+repair evidence; the repaired candidate is tested again before promotion. The timelines retain
+each run attempt, including superseded candidates. Observer failures preserve the last known
+work and are reported separately from build silence.
 
 :::blob monthlyFleetGraph
 :::
@@ -122,6 +125,11 @@ being tested. The label is a readiness hint; admission still checks the current 
 reviews and scope. Missing observations leave gaps, and the line stops at the last sample.
 Initial candidate scans after a bot restart are omitted when their incompleteness is recorded.
 Older snapshots without that marker can briefly undercount.
+The latest complete count and its snapshot time appear below the chart. "Chart published"
+is when the chart was generated; its newest complete snapshot can be older, especially
+while a new scan is incomplete. During later scans, bors may reuse the previous complete
+snapshot. The ready-labelled backlog can differ from the active-batch total reported by
+`tauceti-fleet status`, which counts PRs already assigned to bors batches.
 
 :::blob queueSizeGraph
 :::
@@ -184,7 +192,7 @@ newer push to the same pull request replaced before it finished, whose minutes b
 
 How is merge validation doing? The chart includes both GitHub's merge queue and bors staging builds.
 Both test combined changes before they land on main. GitHub rebuilds the entries behind a failed
-entry; bors splits failed batches to isolate the failing pull requests. The bars count build jobs,
+entry; historical bors batches used splitting, while the current queue repairs a failed combined candidate. The bars count build jobs,
 including retries, so a bors batch containing several PRs is one build. Pilot batches and bors
 builds whose target branch is unknown are excluded from this chart.
 
@@ -202,7 +210,7 @@ The data comes from [TauCetiCI](https://github.com/TauCetiProject/TauCetiCI). It
 service receives GitHub workflow and job events, repairs current missing data and samples optional details
 within a shared GitHub request budget. New and corrected records update the affected time
 buckets. Reports update independently of this website's build, and the page checks for published
-updates once a minute while visible. Reading this page does not trigger GitHub API requests.
+operations updates every five seconds while visible; historical charts keep their separate cadence. Reading this page does not trigger GitHub API requests.
 During validation or an outage, the page retains its static or last successful reports.
 
 The [live report manifest](https://ci-data.taucetiproject.org/v1/ci/manifest.json) records

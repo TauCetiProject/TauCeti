@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.Adic
+public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.QuasiCompact
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.LocallyHuberStandard
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.LocallyOfFiniteType.OpenImmersion
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Adic
@@ -18,7 +19,7 @@ import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Cancel
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Comp
 
 /-!
-# Morphisms of adic spaces locally of weakly finite type
+# Morphisms of adic spaces locally of weakly finite type and of weakly finite type
 
 A morphism `f : X ⟶ Y` of adic spaces is *locally of weakly finite type* (Wedhorn, Definition
 8.48(1); Huber 1994, §3) if every point of `X` has an open neighbourhood `U`, mapped by `f` into
@@ -38,6 +39,12 @@ type. Being locally of weakly finite type is not a global condition on affinoids
 homomorphism of an affinoid morphism locally of weakly finite type need not be topologically of
 finite type (Wedhorn, Remark 8.52), so the last statement has no converse.
 
+A morphism is *of weakly finite type* if it is locally of weakly finite type and quasi-compact
+(`TauCeti.AdicSpace.QuasiCompact`; Wedhorn, Definition 8.48(1)). Identities, open immersions with
+quasi-compact source into a quasi-separated adic space, and morphisms out of the empty adic space
+are of weakly finite type, as is the morphism of affinoid adic spaces induced by a morphism of
+Huber pairs whose ring homomorphism is topologically of finite type.
+
 Because noetherian type and Huber's standing class ascend along ring homomorphisms topologically of
 finite type (`TauCeti.Huber.IsNoetherianType.of_isTopologicallyFiniteType`,
 `TauCeti.Huber.IsHuberStandard.of_isTopologicallyFiniteType`), and topological finite type cancels
@@ -50,6 +57,7 @@ weakly finite type (and hence of a morphism locally of finite type) to its sourc
 
 * `TauCeti.AdicSpace.LocallyOfWeaklyFiniteType`: morphisms of adic spaces locally of weakly finite
   type.
+* `TauCeti.AdicSpace.IsWeaklyFiniteType`: morphisms of adic spaces of weakly finite type.
 
 ## Main results
 
@@ -66,6 +74,12 @@ weakly finite type (and hence of a morphism locally of finite type) to its sourc
 * `TauCeti.AdicSpace.locallyOfWeaklyFiniteType_presentationLimitPreAdicSpaceComap`: the morphism
   `Spa(B, B⁺) ⟶ Spa(A, A⁺)` induced by a morphism of Huber pairs whose ring homomorphism is
   topologically of finite type is locally of weakly finite type.
+* `TauCeti.AdicSpace.IsWeaklyFiniteType.isAdic`: a morphism of weakly finite type is adic.
+* `TauCeti.AdicSpace.IsWeaklyFiniteType.of_isOpenImmersion`: an open immersion with quasi-compact
+  source into a quasi-separated adic space is of weakly finite type.
+* `TauCeti.AdicSpace.isWeaklyFiniteType_presentationLimitPreAdicSpaceComap`: the morphism of
+  affinoid adic spaces induced by a morphism of Huber pairs whose ring homomorphism is
+  topologically of finite type is of weakly finite type.
 * `TauCeti.AdicSpace.IsLocallyNoetherian.of_locallyOfWeaklyFiniteType` and
   `TauCeti.AdicSpace.IsLocallyNoetherian.of_locallyOfFiniteType`: locally noetherian structure
   ascends along morphisms locally of weakly finite type and locally of finite type.
@@ -181,6 +195,78 @@ theorem locallyOfWeaklyFiniteType_presentationLimitPreAdicSpaceComap {A : Type u
         T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf)) := by
   rw [locallyOfWeaklyFiniteType_iff_chartLocally, ObjectProperty.homMk_hom]
   exact chartLocally_presentationLimitPreAdicSpaceComap P P' hP hP' hsheaf φ hφ
+
+/-! ### Morphisms of weakly finite type -/
+
+/-- **Morphisms of weakly finite type** (Wedhorn, Definition 8.48(1)): a morphism of adic spaces
+is *of weakly finite type* when it is locally of weakly finite type and quasi-compact. -/
+def IsWeaklyFiniteType : MorphismProperty AdicSpace.{u} := fun _ _ f ↦
+  LocallyOfWeaklyFiniteType f ∧ QuasiCompact f
+
+/-- Unfolding lemma for `TauCeti.AdicSpace.IsWeaklyFiniteType`. -/
+theorem isWeaklyFiniteType_iff (f : X ⟶ Y) :
+    IsWeaklyFiniteType f ↔ LocallyOfWeaklyFiniteType f ∧ QuasiCompact f :=
+  Iff.rfl
+
+/-- A morphism of weakly finite type is locally of weakly finite type. -/
+theorem IsWeaklyFiniteType.locallyOfWeaklyFiniteType {f : X ⟶ Y} (hf : IsWeaklyFiniteType f) :
+    LocallyOfWeaklyFiniteType f :=
+  hf.1
+
+/-- A morphism of weakly finite type is quasi-compact. -/
+theorem IsWeaklyFiniteType.quasiCompact {f : X ⟶ Y} (hf : IsWeaklyFiniteType f) :
+    QuasiCompact f :=
+  hf.2
+
+/-- **A morphism of weakly finite type is adic.** -/
+theorem IsWeaklyFiniteType.isAdic {f : X ⟶ Y} (hf : IsWeaklyFiniteType f) : IsAdic f :=
+  hf.locallyOfWeaklyFiniteType.isAdic
+
+/-- **Identities are of weakly finite type**, including the identity of an adic space that is
+not quasi-compact. -/
+instance IsWeaklyFiniteType.containsIdentities :
+    IsWeaklyFiniteType.{u}.ContainsIdentities where
+  id_mem X := ⟨LocallyOfWeaklyFiniteType.id_mem X, QuasiCompact.id_mem X⟩
+
+/-- **Being of weakly finite type is invariant under isomorphisms** of the source and of the
+target. -/
+instance IsWeaklyFiniteType.respectsIso : IsWeaklyFiniteType.{u}.RespectsIso :=
+  MorphismProperty.RespectsIso.inf LocallyOfWeaklyFiniteType QuasiCompact
+
+/-- **An open immersion with quasi-compact source into a quasi-separated adic space is of weakly
+finite type.** -/
+theorem IsWeaklyFiniteType.of_isOpenImmersion (f : X ⟶ Y) [PreAdicSpace.IsOpenImmersion f.hom]
+    [CompactSpace X.obj] [QuasiSeparatedSpace Y.obj] : IsWeaklyFiniteType f :=
+  ⟨LocallyOfWeaklyFiniteType.of_isOpenImmersion f, QuasiCompact.of_isOpenImmersion f⟩
+
+/-- Every morphism out of an empty adic space is of weakly finite type. -/
+theorem IsWeaklyFiniteType.of_isEmpty (f : X ⟶ Y) [IsEmpty X.obj] : IsWeaklyFiniteType f :=
+  ⟨(locallyOfWeaklyFiniteType_iff_chartLocally f).mpr <| (chartLocally_iff _).mpr fun x ↦
+    isEmptyElim x, QuasiCompact.of_isEmpty f⟩
+
+/-- **Affinoid morphisms**: for a morphism of Huber pairs `φ : (A, A⁺) → (B, B⁺)` with `B`
+complete and Hausdorff, between pairs whose adic spectra are adic spaces, the morphism
+`Spa(B, B⁺) ⟶ Spa(A, A⁺)` induced by `φ` is of weakly finite type as soon as the ring
+homomorphism of `φ` is topologically of finite type. Such a homomorphism is adic, so rational
+subsets pull back to rational subsets. -/
+theorem isWeaklyFiniteType_presentationLimitPreAdicSpaceComap {A : Type u} [CommRing A]
+    [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A] {B : Type u} [CommRing B]
+    [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B] [CompleteSpace B] [T2Space B]
+    [IsHuberRing B] {S : Pair A} {T : Pair B} (P : PairOfDefinition A) (P' : PairOfDefinition B)
+    (hP : P.ringOfDefinition ≤ S.plus) (hP' : P'.ringOfDefinition ≤ T.plus)
+    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
+      (presentationLimitPresheaf P' T.plus))
+    (hA : PreAdicSpace.isAdic (presentationLimitPreAdicSpace P S.plus
+      S.isRingOfIntegralElements.isPowerBounded_of_mem hP)) (φ : Pair.Hom S T)
+    (hφ : IsTopologicallyFiniteType φ.toRingHom) :
+    IsWeaklyFiniteType (X := ⟨_, isAdic_presentationLimitPreAdicSpace P' T.plus
+        T.isRingOfIntegralElements.isPowerBounded_of_mem hP' hsheaf⟩) (Y := ⟨_, hA⟩)
+      (ObjectProperty.homMk (presentationLimitPreAdicSpaceComap φ.toRingHom
+        φ.continuous_toRingHom φ.map_mem_plus S.isRingOfIntegralElements.isPowerBounded_of_mem
+        T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf)) :=
+  ⟨locallyOfWeaklyFiniteType_presentationLimitPreAdicSpaceComap P P' hP hP' hsheaf hA φ hφ,
+    quasiCompact_presentationLimitPreAdicSpaceComap P P' hP hP' hsheaf hA φ
+      fun _ hJ ↦ hφ.isAdicHom.isOpen_map hJ⟩
 
 /-! ### Ascent of finiteness conditions on adic spaces -/
 
@@ -440,17 +526,17 @@ private theorem LocallyOfWeaklyFiniteType.forall_exists_mem_propOpens {f : X ⟶
   obtain ⟨C, _, _, _, _, _, _, _, SC, PC, hPC, ⟨eW⟩, htft⟩ := hQ ((mem_propOpens_iff _).mp hW)
   obtain ⟨TB, sB, hTB, hxR, hβ⟩ := exists_spaBasicOpen_tft_over_complete_open P hP P' hP' φ hφ
     hsheaf PC hPC eW hxW
-  have hden := P'.hasDenominatorPower_of_isOpen_span TB sB (Localization.Away sB) hTB
-  let _ := P'.locUniformSpace TB sB (Localization.Away sB) hden
-  have _ := P'.isUniformAddGroup_locUniformSpace TB sB (Localization.Away sB) hden
-  have _ := P'.isTopologicalRing_locUniformSpace TB sB (Localization.Away sB) hden
-  have _ := P'.isHuberRing_completion_locTopology TB sB (Localization.Away sB) hden
-  obtain ⟨β, hβtft⟩ := hβ
   have hRmem : spaBasicOpen T.plus TB sB ∈
       (presentationLimitPreAdicSpace P' T.plus
-        T.isRingOfIntegralElements.isPowerBounded_of_mem hP').propOpens Q :=
-    spaBasicOpen_mem_propOpens P' T.plus TB sB _ hden
-      T.isRingOfIntegralElements.isPowerBounded_of_mem hP' hTB Q (htft hβtft _ _ _)
+        T.isRingOfIntegralElements.isPowerBounded_of_mem hP').propOpens Q := by
+    refine spaBasicOpen_mem_propOpens P' T.plus
+      T.isRingOfIntegralElements.isPowerBounded_of_mem hP' Q hTB ?_
+    intro _ _ _
+    let hden := P'.hasDenominatorPower_of_isOpen_span TB sB (Localization.Away sB) hTB
+    obtain ⟨β, hβtft⟩ := hβ
+    exact htft hβtft _ _
+      (P'.completionLocalization_ringOfDefinition_le_completedPlusPair T.plus
+        T.isRingOfIntegralElements.isPowerBounded_of_mem hP' TB sB _ hden)
   have hUmem := (map_hom_base_mem_propOpens_iff Q eU).mpr hRmem
   exact ⟨U.isOpenEmbedding.isOpenMap.functor.obj ((Opens.map eU.hom.base).obj _),
     (mem_propOpens_restrict_iff X.obj U.isOpenEmbedding Q _).mp hUmem, ⟨x, hxU⟩, hxR, rfl⟩

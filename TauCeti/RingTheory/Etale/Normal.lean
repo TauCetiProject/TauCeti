@@ -31,6 +31,9 @@ The statements need no Noetherian, depth or dimension hypotheses.
 * `TauCeti.Algebra.Etale.isDomain_localization_atPrime_of_localization_under` and
   `isIntegrallyClosed_localization_atPrime_of_localization_under`: for `A → S` étale and a prime
   `q` of `S` over `p`, if `A_p` is an integrally closed domain then so is `S_q`.
+* `TauCeti.Algebra.IsEtaleAt.isDomain_localization_atPrime_of_localization_under` and
+  `isIntegrallyClosed_localization_atPrime_of_localization_under`: the same when `S` is only
+  finitely presented and étale at `q`, since then some `S_f` with `f ∉ q` is étale.
 * `TauCeti.Algebra.Etale.isIntegrallyClosed`: an étale domain over an integrally closed domain is
   integrally closed.
 * `TauCeti.Algebra.isNormalDomain_iff_of_etale`: Stacks 025P; normality is expressed by
@@ -154,6 +157,59 @@ theorem isIntegrallyClosed [IsDomain A] [IsIntegrallyClosed A] [IsDomain S] :
 end Pointwise
 
 end Etale
+
+namespace IsEtaleAt
+
+variable {A S : Type*} [CommRing A] [CommRing S] [_root_.Algebra A S]
+  [_root_.Algebra.FinitePresentation A S]
+
+variable (A) in
+/-- Let `S` be finitely presented over `A` and étale at a prime `q` over `p`. If `A_p` is an
+integrally closed domain, then so is `S_q`, as a conjunction. -/
+private theorem isDomain_and_isIntegrallyClosed_localization_atPrime (q : Ideal S) [q.IsPrime]
+    [_root_.Algebra.IsEtaleAt A q] [IsDomain (Localization.AtPrime (q.under A))]
+    [IsIntegrallyClosed (Localization.AtPrime (q.under A))] :
+    IsDomain (Localization.AtPrime q) ∧ IsIntegrallyClosed (Localization.AtPrime q) := by
+  -- Some `S_f` with `f ∉ q` is étale over `A`, and `S_q` is a localization of it at a prime `P`.
+  obtain ⟨f, hfq, _⟩ := _root_.Algebra.exists_etale_of_isEtaleAt (R := A) q
+  obtain ⟨P, _, hP, ⟨e⟩⟩ := IsLocalization.exists_ringEquiv_localization_atPrime
+    (Submonoid.powers f) (Localization.Away f) q
+    ((Ideal.disjoint_powers_iff_notMem_of_isPrime f).mpr hfq)
+  subst hP
+  -- The prime `(P.under S).under A` is `P.under A`, as `A → S_f` factors through `S`.
+  have : IsDomain (Localization.AtPrime (P.under A)) := by
+    convert (inferInstance : IsDomain (Localization.AtPrime ((P.under S).under A))) using 3 <;>
+      exact (Ideal.under_under P).symm
+  have : IsIntegrallyClosed (Localization.AtPrime (P.under A)) := by
+    convert (inferInstance : IsIntegrallyClosed (Localization.AtPrime ((P.under S).under A)))
+      using 3 <;> exact (Ideal.under_under P).symm
+  have := Etale.isDomain_localization_atPrime_of_localization_under A P
+  have := Etale.isIntegrallyClosed_localization_atPrime_of_localization_under A P
+  exact ⟨e.toMulEquiv.isDomain _, IsIntegrallyClosed.of_equiv e.symm⟩
+
+variable (A) in
+/-- **Local rings at étale points are domains.** Let `S` be finitely presented over `A` and étale
+at a prime `q` over `p`. If `A_p` is an integrally closed domain, then `S_q` is a domain. The
+pointwise étale case of Stacks, Lemma 10.163.9 (033C), in local form. -/
+@[stacks 033C "pointwise étale case, local form"]
+theorem isDomain_localization_atPrime_of_localization_under (q : Ideal S) [q.IsPrime]
+    [_root_.Algebra.IsEtaleAt A q] [IsDomain (Localization.AtPrime (q.under A))]
+    [IsIntegrallyClosed (Localization.AtPrime (q.under A))] :
+    IsDomain (Localization.AtPrime q) :=
+  (isDomain_and_isIntegrallyClosed_localization_atPrime A q).1
+
+variable (A) in
+/-- **Local rings at étale points are integrally closed.** Let `S` be finitely presented over `A`
+and étale at a prime `q` over `p`. If `A_p` is an integrally closed domain, then `S_q` is
+integrally closed. The pointwise étale case of Stacks, Lemma 10.163.9 (033C), in local form. -/
+@[stacks 033C "pointwise étale case, local form"]
+theorem isIntegrallyClosed_localization_atPrime_of_localization_under (q : Ideal S) [q.IsPrime]
+    [_root_.Algebra.IsEtaleAt A q] [IsDomain (Localization.AtPrime (q.under A))]
+    [IsIntegrallyClosed (Localization.AtPrime (q.under A))] :
+    IsIntegrallyClosed (Localization.AtPrime q) :=
+  (isDomain_and_isIntegrallyClosed_localization_atPrime A q).2
+
+end IsEtaleAt
 
 /-- **Normality along étale homomorphisms of local rings.** Let `A` be a local ring, `C` an étale
 `A`-algebra, `q` a prime of `C`, and `B` an `A`-algebra isomorphic to `C_q` with `A → B` local

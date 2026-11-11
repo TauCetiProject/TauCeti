@@ -510,11 +510,13 @@ theorem basicOpen_coord_sup_eq_top :
   have hp : p ∈ (⊤ : (projectiveLine R).Opens) := trivial
   rwa [← iSup_basicOpen_coord_eq_top R, TopologicalSpace.Opens.mem_iSup, Fin.exists_fin_two] at hp
 
-/-- The overlap `D₊(X₀) ⊓ D₊(X₁)` of the standard charts lies in `D₊((X₀X₁)ᵏ)` for `k > 0`. -/
-theorem inf_le_basicOpen_coord_mul_coord_pow {k : ℕ} (hk : 0 < k) :
+/-- The overlap `D₊(X₀) ⊓ D₊(X₁)` of the standard charts lies in `D₊((X₀X₁)ᵏ)`. -/
+theorem inf_le_basicOpen_coord_mul_coord_pow {k : ℕ} :
     Proj.basicOpen 𝒜 (coord R 0) ⊓ Proj.basicOpen 𝒜 (coord R 1) ≤
       Proj.basicOpen 𝒜 ((coord R 0 * coord R 1) ^ k) := by
-  rw [Proj.basicOpen_pow _ _ _ hk, Proj.basicOpen_mul]
+  rcases k.eq_zero_or_pos with rfl | hk
+  · simp
+  · rw [Proj.basicOpen_pow _ _ _ hk, Proj.basicOpen_mul]
 
 /-- The two polynomial chart ranges cover the projective line. -/
 theorem range_polynomialChartι_union_range_polynomialChartι :
