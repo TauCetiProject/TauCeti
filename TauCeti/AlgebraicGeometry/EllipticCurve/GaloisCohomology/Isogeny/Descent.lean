@@ -93,7 +93,8 @@ abbrev mapSeparableClosure (f : Hom W₁.toAffine W₂.toAffine) :
 
 open scoped Classical in
 /-- The point map of an isogeny over `Kˢ` agrees with its base-changed point homomorphism. -/
-theorem mapSeparableClosure_ofIsogeny_pointMap (φ : Isogeny W₁.toAffine W₂.toAffine)
+theorem pointMap_mapSeparableClosure_ofIsogeny_eq_toPointHom
+    (φ : Isogeny W₁.toAffine W₂.toAffine)
     [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField]
     (P : (W₁⁄(SeparableClosure K)).toAffine.Point) :
     (ofIsogeny φ).mapSeparableClosure.pointMap P =

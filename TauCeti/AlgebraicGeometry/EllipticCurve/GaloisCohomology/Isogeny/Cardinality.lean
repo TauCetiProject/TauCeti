@@ -43,11 +43,16 @@ def Hom.kerPointMapEquivInvariants [DecidableEq K] (f : Hom W₁.toAffine W₂.t
       map_zero' := by ext; simp
       map_add' _ _ := by ext; simp }
   apply AddEquiv.ofBijective ι
-  refine ⟨fun P Q h ↦ Subtype.ext (W₁.basePointCoeff_injective
-    (congrArg (fun x : H0 (AbsoluteGaloisGroup K) f.KerCoeff ↦ x.val.val) h)), ?_⟩
+  refine ⟨fun P Q h ↦ Subtype.ext (W₁.basePointEquivInvariants.injective
+    (Subtype.ext (by
+      simp only [coe_basePointEquivInvariants]
+      exact congrArg (fun x : H0 (AbsoluteGaloisGroup K) f.KerCoeff ↦ x.val.val) h))), ?_⟩
   intro P
-  obtain ⟨Q, hQ⟩ := W₁.mem_H0_pointCoeff_iff.1 <| (FixedPoints.mem_addSubgroup _ _ _).2
-    fun σ ↦ congrArg Subtype.val ((FixedPoints.mem_addSubgroup _ _ _).1 P.2 σ)
+  obtain ⟨Q, hQ⟩ := W₁.basePointEquivInvariants.surjective
+    ⟨P.val.val, (FixedPoints.mem_addSubgroup _ _ _).2
+      fun σ ↦ congrArg Subtype.val ((FixedPoints.mem_addSubgroup _ _ _).1 P.2 σ)⟩
+  have hQ : W₁.basePointCoeff Q = P.val.val := by
+    simpa only [coe_basePointEquivInvariants] using congrArg Subtype.val hQ
   have hker : Q ∈ f.pointMapHom.ker := by
     apply (Hom.mem_ker_pointMapHom_iff _ _).2
     apply W₂.basePointCoeff_injective
@@ -71,7 +76,7 @@ theorem natCard_kerCoeff_eq_degree
       P ∈ ((ofIsogeny φ).pointCoeffMap : W₁.PointCoeff →+ W₂.PointCoeff).ker ↔
         W₁.pointCoeffEquiv.symm P ∈ ψ.toPointHom.ker := by
     rw [AddMonoidHom.mem_ker, AddMonoidHom.coe_ofClass, AddMonoidHom.mem_ker,
-      ← Hom.mapSeparableClosure_ofIsogeny_pointMap,
+      ← Hom.pointMap_mapSeparableClosure_ofIsogeny_eq_toPointHom,
       ← Hom.pointCoeffEquiv_symm_pointCoeffMap]
     exact W₂.pointCoeffEquiv.symm.map_eq_zero_iff.symm
   rw [Nat.card_congr (Equiv.subtypeEquiv W₁.pointCoeffEquiv.symm.toEquiv hmem),
