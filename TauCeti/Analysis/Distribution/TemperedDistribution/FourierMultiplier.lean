@@ -19,12 +19,12 @@ transform. This file records that it is additive in the symbol, the tempered ana
 
 It also records how multipliers interact with frequency localization. A tempered distribution
 `u` is localized in frequency to the complement of a set `s` when its Fourier transform vanishes
-on `s` (`Distribution.IsVanishingOn (𝓕 u) s`). A multiplier whose symbol equals one away from a
-closed subset of `s` then fixes `u`, one whose symbol is supported in `s` annihilates `u`, and
-directional derivatives, which are the multipliers with
-symbols `2πi ⟪ξ, m⟫`, preserve the localization. This is how band-limited functions are
-reproduced by a multiplier with a smooth compactly supported symbol, the starting point of
-Bernstein's inequalities.
+on `s` (`Distribution.IsVanishingOn (𝓕 u) s`). Every multiplier whose symbol vanishes on `s`
+produces such a distribution. A multiplier whose symbol equals one away from a closed subset of
+`s` fixes `u`, one whose symbol is supported in `s` annihilates `u`, and directional derivatives,
+which are the multipliers with symbols `2πi ⟪ξ, m⟫`, preserve the localization. This is how
+band-limited functions are reproduced by a multiplier with a smooth compactly supported symbol,
+the starting point of Bernstein's inequalities.
 
 ## Main results
 
@@ -35,6 +35,8 @@ Bernstein's inequalities.
   is one outside the set where `𝓕 u` vanishes fixes `u`.
 * `TemperedDistribution.fourierMultiplierCLM_eq_zero_of_isVanishingOn`: a multiplier whose symbol
   is supported in the set where `𝓕 u` vanishes annihilates `u`.
+* `TemperedDistribution.isVanishingOn_fourier_fourierMultiplierCLM`: the Fourier transform of a
+  multiplier vanishes wherever its symbol does.
 * `TemperedDistribution.isVanishingOn_fourier_lineDerivOp`,
   `TemperedDistribution.isVanishingOn_fourier_iteratedLineDerivOp`: derivatives preserve the
   vanishing of the Fourier transform.
@@ -86,6 +88,25 @@ theorem isVanishingOn_fourier_iteratedLineDerivOp {u : 𝓢'(E, F)} {s : Set E}
   | succ k ih =>
     rw [LineDeriv.iteratedLineDerivOp_succ_left]
     exact isVanishingOn_fourier_lineDerivOp (ih _) _
+
+/-- **A multiplier localizes the spectrum to the support of its symbol.** If the symbol `g`
+vanishes on `s`, then the Fourier transform of `fourierMultiplierCLM F g u` vanishes on `s`, for
+every tempered distribution `u`. -/
+theorem isVanishingOn_fourier_fourierMultiplierCLM {g : E → ℂ} {s : Set E}
+    (hgs : ∀ ξ ∈ s, g ξ = 0) (u : 𝓢'(E, F)) :
+    IsVanishingOn (𝓕 (fourierMultiplierCLM F g u) : 𝓢'(E, F)) s := by
+  intro ψ hψ
+  have h : SchwartzMap.smulLeftCLM ℂ g ψ = 0 := by
+    by_cases hg : g.HasTemperateGrowth
+    · ext ξ
+      rw [SchwartzMap.smulLeftCLM_apply_apply hg, _root_.zero_apply]
+      by_cases hξ : ξ ∈ s
+      · rw [hgs ξ hξ, zero_smul]
+      · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hξ (hψ h), smul_zero]
+    · -- Without temperate growth, `SchwartzMap.smulLeftCLM` is zero by definition.
+      simp [SchwartzMap.smulLeftCLM, hg]
+  rw [fourierMultiplierCLM_apply, FourierTransform.fourier_fourierInv_eq, smulLeftCLM_apply_apply,
+    h, map_zero]
 
 /-- **A multiplier equal to one near the spectrum is the identity.** If the Fourier transform of a
 tempered distribution `u` vanishes on `s`, and the symbol `g` of temperate growth equals one

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Topology.MetricSpace.Holder
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -45,9 +46,9 @@ precomposed with `e` in every slot. Unlike `ContinuousLinearMap.iteratedFDeriv_c
 differentiability of `f` is needed. -/
 theorem iteratedFDeriv_comp_right (e : G ≃L[𝕜] E) (f : E → F) (x : G) (i : ℕ) :
     iteratedFDeriv 𝕜 i (f ∘ e) x =
-      (iteratedFDeriv 𝕜 i f (e x)).compContinuousLinearMap fun _ => (e : G →L[𝕜] E) := by
-  simpa only [← iteratedFDerivWithin_univ, Set.preimage_univ] using
-    e.iteratedFDerivWithin_comp_right f uniqueDiffOn_univ (Set.mem_univ _) i
+      (iteratedFDeriv 𝕜 i f (e x)).compContinuousLinearMap fun _ => (e : G →L[𝕜] E) :=
+  (e : G →L[𝕜] E).iteratedFDeriv_comp_right_of_rightInverse (e.symm : E →L[𝕜] G)
+    e.apply_symm_apply f x
 
 /-- **Second derivatives under a linear change of variables.** For a continuous linear
 equivalence `e`, the second derivative of `f ∘ e` at `z`, applied to `v` and `w`, is the second

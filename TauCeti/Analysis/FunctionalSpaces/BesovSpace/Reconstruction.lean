@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
-import TauCeti.Analysis.Normed.Lp.Basic
+import TauCeti.Analysis.Normed.Lp.Reindex
 
 /-!
 # Reconstruction from pieces with spectra in dyadic balls
@@ -88,20 +88,11 @@ private theorem exists_hasSum_geometric_shiftRight {q : ℝ≥0∞} [Fact (1 ≤
   have hq0 : q ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
   -- The right shift of `w` lies in `ℓ^q`, with norm at most `‖w‖`: it is `w` reindexed along
   -- `i ↦ i - M`, which is injective on `{i | M ≤ i}`.
-  have hinj : Set.InjOn (· - M) {i | shiftRight M w i ≠ 0} := by
-    intro a ha b hb hab
-    have hM {i : ℕ} (hi : shiftRight M w i ≠ 0) : M ≤ i :=
-      not_lt.1 fun h ↦ hi (shiftRight_of_lt w h)
-    have := hM ha
-    have := hM hb
-    simp only at hab
-    omega
-  have hle (i : ℕ) : ‖shiftRight M w i‖ ≤ ‖w (i - M)‖ := by
-    by_cases hi : M ≤ i
-    · simp [shiftRight, hi]
-    · simp [shiftRight_of_lt w (not_le.1 hi)]
-  let w' : lp (fun _ : ℕ ↦ ℝ) q := ⟨shiftRight M w, (lp.memℓp w).of_norm_le_comp hinj hle⟩
-  have hw' (i : ℕ) : w' i = shiftRight M w i := (rfl)
+  have hinj : {i | M ≤ i}.InjOn (· - M) := fun _ ha _ hb h ↦ tsub_inj_left ha hb h
+  let w' : lp (fun _ : ℕ ↦ ℝ) q :=
+    ⟨{i | M ≤ i}.indicator (w ∘ (· - M)), (lp.memℓp w).indicator_comp hinj⟩
+  have hw' (i : ℕ) : w' i = shiftRight M w i := by
+    by_cases hi : M ≤ i <;> simp [w', shiftRight, hi]
   have hgeom : Summable fun m : ℕ ↦ ‖r ^ m‖ := by
     simpa only [norm_pow, Real.norm_of_nonneg hr0] using summable_geometric_of_lt_one hr0 hr1
   obtain ⟨y, hy, hy_norm⟩ := lp.exists_eq_tsum_smul_add_and_norm_le hgeom w'
@@ -112,7 +103,8 @@ private theorem exists_hasSum_geometric_shiftRight {q : ℝ≥0∞} [Fact (1 ≤
     simpa only [hy k, hw', smul_eq_mul] using hsum.hasSum
   · rw [show (∑' m : ℕ, ‖r ^ m‖) = (1 - r)⁻¹ by
       simpa only [norm_pow, Real.norm_of_nonneg hr0] using tsum_geometric_of_lt_one hr0 hr1]
-    exact mul_le_mul_of_nonneg_left (lp.norm_le_of_norm_le_comp hq0 hinj hle)
+    exact mul_le_mul_of_nonneg_left
+      (lp.norm_le_of_forall_eq_indicator_comp hq0 hinj fun _ ↦ rfl)
       (inv_nonneg.2 (sub_nonneg.2 hr1.le))
 
 /-- **Reconstruction from pieces with spectra in dyadic balls** (Bahouri–Chemin–Danchin,

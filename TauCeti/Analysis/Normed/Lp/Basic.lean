@@ -36,13 +36,6 @@ dense subsets are dense.
 For `p ≠ ∞` the coordinate vectors span a dense subspace, so a uniformly bounded family of
 operators on `lp E p` that converges on every `single i x` converges at every vector
 (`lp.tendsto_apply_of_tendsto_apply_single`).
-
-Reindexing does not increase `ℓᵖ` norms: if `‖y k‖ ≤ ‖x (g k)‖` for a map `g` that is injective on
-the support of `y`, then `y ∈ ℓᵖ` whenever `x ∈ ℓᵖ` (`Memℓp.of_norm_le_comp`), with `‖y‖ ≤ ‖x‖`
-(`lp.norm_le_of_norm_le_comp`). This covers both shifts of a sequence on `ℕ`, `k ↦ x (k + m)` and
-`k ↦ x (k - m)` padded by zeros. Consequently a one-sided convolution with an `ℓ¹` kernel `a`,
-`k ↦ ∑ₘ aₘ x (k + m)`, is bounded on `ℓᵖ` for `1 ≤ p ≤ ∞` with norm at most `∑ₘ |aₘ|`
-(`lp.exists_eq_tsum_smul_add_and_norm_le`), a case of Young's inequality.
 -/
 
 public section
@@ -287,84 +280,3 @@ theorem lp.norm_le_of_norm_le_geometric [Fact (1 ≤ p)] {f : lp E p} (hr0 : 0 �
     _ = C * (1 - r)⁻¹ := by rw [tsum_mul_left, tsum_geometric_of_lt_one hr0 hr1]
 
 end Geometric
-
-section Reindex
-
-variable {ι κ E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F] {p : ℝ≥0∞}
-  {x : ι → E} {y : κ → F} {g : κ → ι}
-
-open Classical in
-/-- A finite sum of powers of the norms of `y` is bounded by a sum of the same powers of the norms
-of `x` over the image of the support of `y` under `g`. -/
-private theorem sum_norm_rpow_le_sum_image (hg : Set.InjOn g {k | y k ≠ 0})
-    (h : ∀ k, ‖y k‖ ≤ ‖x (g k)‖) {r : ℝ} (hr : 0 < r) (s : Finset κ) :
-    ∑ k ∈ s, ‖y k‖ ^ r ≤ ∑ i ∈ {k ∈ s | y k ≠ 0}.image g, ‖x i‖ ^ r := by
-  rw [Finset.sum_image (s := {k ∈ s | y k ≠ 0}) fun a ha b hb hab ↦
-      hg (Finset.mem_filter.1 ha).2 (Finset.mem_filter.1 hb).2 hab,
-    ← Finset.sum_filter_of_ne (p := fun k ↦ y k ≠ 0) fun k _ hk h0 ↦
-      hk (by simp [h0, Real.zero_rpow hr.ne'])]
-  gcongr with k
-  exact h k
-
-/-- **Reindexing in `ℓᵖ`.** If `‖y k‖ ≤ ‖x (g k)‖` for a map `g` that is injective on the support
-of `y`, and `x ∈ ℓᵖ`, then `y ∈ ℓᵖ`. -/
-theorem Memℓp.of_norm_le_comp (hx : Memℓp x p) (hg : Set.InjOn g {k | y k ≠ 0})
-    (h : ∀ k, ‖y k‖ ≤ ‖x (g k)‖) : Memℓp y p := by
-  classical
-  rcases p.trichotomy with rfl | rfl | hp
-  · refine memℓp_zero (Set.Finite.of_finite_image (hx.finite_dsupport.subset ?_) hg)
-    rintro _ ⟨k, hk, rfl⟩ h0
-    exact hk (norm_le_zero_iff.1 ((h k).trans_eq (by simp [h0])))
-  · obtain ⟨C, hC⟩ := memℓp_infty_iff.1 hx
-    exact memℓp_infty ⟨C, by rintro _ ⟨k, rfl⟩; exact (h k).trans (hC ⟨g k, rfl⟩)⟩
-  · exact memℓp_gen (summable_of_sum_le (c := ∑' i, ‖x i‖ ^ p.toReal) (fun k ↦ by positivity)
-      fun s ↦ (sum_norm_rpow_le_sum_image hg h hp s).trans
-        ((hx.summable hp).sum_le_tsum _ fun _ _ ↦ by positivity))
-
-/-- **Reindexing in `ℓᵖ` does not increase the norm.** If `‖y k‖ ≤ ‖x (g k)‖` for a map `g` that
-is injective on the support of `y`, then `‖y‖ ≤ ‖x‖` in `ℓᵖ`. -/
-theorem lp.norm_le_of_norm_le_comp (hp : p ≠ 0) {x : lp (fun _ : ι ↦ E) p}
-    {y : lp (fun _ : κ ↦ F) p} (hg : Set.InjOn g {k | y k ≠ 0})
-    (h : ∀ k, ‖y k‖ ≤ ‖x (g k)‖) : ‖y‖ ≤ ‖x‖ := by
-  classical
-  rcases eq_or_ne p ∞ with rfl | hp'
-  · exact lp.norm_le_of_forall_le (norm_nonneg' x) fun k ↦
-      (h k).trans (lp.norm_apply_le_norm hp x (g k))
-  have hpr : 0 < p.toReal := ENNReal.toReal_pos hp hp'
-  exact lp.norm_le_of_forall_sum_le hpr (norm_nonneg' x) fun s ↦
-    (sum_norm_rpow_le_sum_image hg h hpr s).trans (lp.sum_rpow_le_norm_rpow hpr x _)
-
-end Reindex
-
-section OneSided
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] {p : ℝ≥0∞}
-  [Fact (1 ≤ p)] {a : ℕ → ℝ}
-
-/-- **Young's inequality for a one-sided `ℓ¹` kernel.** For a summable kernel `a` and `x ∈ ℓᵖ`,
-`1 ≤ p ≤ ∞`, the sequence `k ↦ ∑ₘ aₘ x (k + m)` lies in `ℓᵖ` with norm at most
-`(∑ₘ |aₘ|) ‖x‖`. -/
-theorem lp.exists_eq_tsum_smul_add_and_norm_le (ha : Summable fun m ↦ ‖a m‖)
-    (x : lp (fun _ : ℕ ↦ E) p) :
-    ∃ y : lp (fun _ : ℕ ↦ E) p, (∀ k, y k = ∑' m, a m • x (k + m)) ∧
-      ‖y‖ ≤ (∑' m, ‖a m‖) * ‖x‖ := by
-  have hp : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
-  -- The shifted sequences `k ↦ x (k + m)` have norm at most `‖x‖`.
-  have hinj (m : ℕ) : Set.InjOn (· + m) {k | x (k + m) ≠ 0} :=
-    (add_left_injective m).injOn
-  let shift (m : ℕ) : lp (fun _ : ℕ ↦ E) p :=
-    ⟨fun k ↦ x (k + m), (lp.memℓp x).of_norm_le_comp (hinj m) fun _ ↦ le_rfl⟩
-  have hshift (m : ℕ) : ‖shift m‖ ≤ ‖x‖ :=
-    lp.norm_le_of_norm_le_comp hp (hinj m) fun _ ↦ le_rfl
-  have hbound (m : ℕ) : ‖a m • shift m‖ ≤ ‖a m‖ * ‖x‖ :=
-    (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_left (hshift m) (norm_nonneg _))
-  have hsum : Summable fun m ↦ a m • shift m :=
-    Summable.of_norm_bounded (ha.mul_right ‖x‖) hbound
-  refine ⟨∑' m, a m • shift m, fun k ↦ ?_, ?_⟩
-  · exact (hsum.hasSum.map (lp.evalCLM ℝ (fun _ : ℕ ↦ E) p k)
-      (lp.evalCLM ℝ (fun _ : ℕ ↦ E) p k).continuous).tsum_eq.symm
-  · calc ‖∑' m, a m • shift m‖ ≤ ∑' m, ‖a m‖ * ‖x‖ :=
-          tsum_of_norm_bounded (ha.mul_right ‖x‖).hasSum hbound
-      _ = (∑' m, ‖a m‖) * ‖x‖ := tsum_mul_right
-
-end OneSided
