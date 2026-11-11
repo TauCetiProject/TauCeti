@@ -52,8 +52,8 @@ converge.
 Adapted from the AINTLIB [`LeanModularForms`](https://github.com/CBirkbeck/AINTLIB) valence-formula
 development, whose `ForMathlib/GeneralizedResidueTheory/Residue.lean` and
 `.../Residue/GeneralizedTheoremBase.lean` apply the generalized residue theorem to `logDeriv f`;
-here stated against Mathlib's `meromorphicOrderAt` and the raw-`γ` design of the
-contour-integration roadmap.
+here stated against Mathlib's `meromorphicOrderAt` and curves given as raw functions
+`γ : ℝ → ℂ`.
 
 ## References
 

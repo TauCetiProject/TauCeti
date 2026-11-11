@@ -15,12 +15,11 @@ public import TauCeti.Analysis.Contour.Winding.StarConvex
 /-!
 # Contour integration in a star-shaped domain
 
-Layer 3 of the contour integration roadmap proves the homology Cauchy theorem, and Layers 2 and 4
-state the residue theorems, for a cycle that is **null-homologous** in the domain of holomorphy.
-That hypothesis is the right one — it is exactly what the proofs need — but it is not the one an
-application arrives with. An application arrives with an open disc, half-plane, strip, open
-rectangle or slit plane, or with a convex open neighborhood of a rectangle or triangle, and a
-contour drawn inside it.
+The homology Cauchy theorem and the residue theorems are stated for a cycle that is
+**null-homologous** in the domain of holomorphy. That hypothesis is the right one — it is exactly
+what the proofs need — but it is not the one an application arrives with. An application arrives
+with an open disc, half-plane, strip, open rectangle or slit plane, or with a convex open
+neighborhood of a rectangle or triangle, and a contour drawn inside it.
 
 `TauCeti.Contour.isNullHomologous_of_starConvex` closes that gap: a closed curve in a set that is
 star-shaped about some point is null-homologous there. This file records the resulting
@@ -52,21 +51,17 @@ A convex `Ω` is star-shaped about any of its points; a caller holding `hconv : 
 curve in `Ω` supplies `hconv.starConvex (hγΩ a left_mem_uIcc)`, and the `Metric.ball` statements
 below do exactly that.
 
-## Roadmap
+## Discs and half-planes
 
 The disc statements `TauCeti.Contour.cauchyTheorem_ball` and
-`TauCeti.Contour.cauchyIntegralFormula_ball`, with the star-shaped statements they specialise, are
-Layer 2's "Cauchy's theorem for a contractible contour as a corollary (reconciled with Mathlib's
-disc statements)": Mathlib's disc Cauchy theory integrates over the bounding circle, and these
-extend it to an arbitrary closed piecewise-`C¹` curve inside the disc. The residue and argument
-statements are what makes the rest of the tower applicable at all: Layer 2's classical residue
-theorem and argument principle, and Layer 4's Hungerbühler–Wasem theorem, are all stated for a
-null-homologous cycle, and the roadmap's acceptance criteria — poles inside a circle, a simple pole
-*on* the contour contributing the half-residue, an improper integral along the real axis — are
-posed on a disc or a half-plane, which are star-shaped. The roadmap's first client, the valence
-formula, integrates `logDeriv f` around a contour in the upper half-plane, which is star-shaped
-too, and passes through the elliptic points, so it consumes
-`TauCeti.Contour.hasCauchyPV_logDeriv_starConvex`.
+`TauCeti.Contour.cauchyIntegralFormula_ball`, with the star-shaped statements they specialise,
+reconcile Cauchy's theorem for a contractible contour with Mathlib's disc statements: Mathlib's
+disc Cauchy theory integrates over the bounding circle, and these extend it to an arbitrary closed
+piecewise-`C¹` curve inside the disc. The residue and argument statements make the null-homologous
+residue theorems, argument principle and Hungerbühler–Wasem theorem applicable to the classical
+settings — poles inside a circle, a simple pole *on* the contour contributing the half-residue, an
+improper integral along the real axis — which are posed on a disc or a half-plane, both
+star-shaped.
 
 ## Main results
 
