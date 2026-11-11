@@ -34,8 +34,8 @@ commuting with the actions of `𝔸¹_{Spec R}` is the relative spectrum of `Sym
 `Spec_{Spec R} (Sym M~) ≅ Spec (Sym_R M)` (`relativeSpecSymmetricAlgebraTildeIso`), points over
 `Spec S` become `R`-linear maps `M → S` (the comparison lemmas of `Points.lean`) and the action of
 `c ∈ S` becomes multiplication by `c`
-(`specSymmetricAlgebraHomEquiv_smul_comp_relativeSpecSymmetricAlgebraTildeIso_hom`), so this
-follows from the affine criterion above.
+(`specSymmetricAlgebraHomEquiv_smul_comp_relativeSpecSymmetricAlgebraTildeIso_hom` in
+`Scalar.lean`), so this follows from the affine criterion above.
 
 The morphisms `Spec_X (Sym a)` are the underlying morphisms of the morphisms of linear schemes
 `(linearSpec X).obj (op F) ⟶ (linearSpec X).obj (op F')`, that is of the morphisms preserving
@@ -51,11 +51,8 @@ comparison with `Spec (Sym_R M)`.
 * `TauCeti.AlgebraicGeometry.existsUnique_specSymmetricAlgebraMap_of_smul`: a morphism
   `Spec (Sym_R M) ⟶ Spec (Sym_R N)` commuting with scalars on points is induced by a unique linear
   map `N → M`;
-* `specSymmetricAlgebraHomEquiv_smul_comp_relativeSpecSymmetricAlgebraTildeIso_hom`: the comparison
-  `Spec_{Spec R} (Sym M~) ≅ Spec (Sym_R M)` turns the action of the affine line into scalar
-  multiplication of linear functionals;
-* `specSymmetricAlgebraPointsMap_app_smul_of_isModHom`: hence a morphism commuting with these
-  actions commutes with scalars on points;
+* `specSymmetricAlgebraPointsMap_app_smul_of_isModHom`: a morphism commuting with the actions of
+  the affine line commutes with scalars on points;
 * `TauCeti.AlgebraicGeometry.existsUnique_relativeSpec_map_tilde_of_isModHom` and
   `TauCeti.AlgebraicGeometry.existsUnique_relativeSpec_map_of_isModHom`: a morphism
   `Spec_{Spec R} (Sym F) ⟶ Spec_{Spec R} (Sym F')` commuting with the actions of the affine line is
@@ -176,32 +173,7 @@ noncomputable section
 
 open MonoidalCategory CartesianMonoidalCategory
 
-variable {R : CommRingCat.{u}} (M : ModuleCat.{u} R)
-
-/-- **Scalar multiples under `Spec_{Spec R} (Sym M~) ≅ Spec (Sym_R M)`.** For a commutative
-`R`-algebra `S`, a point `t` of `Spec_{Spec R} (Sym M~)` over `Spec S` and a function `a` on
-`Spec S`, the linear functional `M → S` of the scalar multiple `a • t`, for the action of the
-affine line, is the functional of `t` multiplied by the element of `S` corresponding to `a`. -/
-theorem specSymmetricAlgebraHomEquiv_smul_comp_relativeSpecSymmetricAlgebraTildeIso_hom
-    (S : CommAlgCat.{u} R) (a : (algSpec R).obj (op S) ⟶ 𝔸(PUnit.{u + 1}; Spec R).asOver (Spec R))
-    (t : (algSpec R).obj (op S) ⟶ (MorphismProperty.Over.forget _ _ (Spec R)).obj
-      ((relativeSpec (Spec R)).obj
-        (op ((symmetricAlgebra (Spec R)).obj ((tildeEquiv (R := R)).functor.obj M))))) :
-    specSymmetricAlgebraHomEquiv M S ((a • t) ≫
-        (MorphismProperty.Over.forget _ _ (Spec R)).map
-          (relativeSpecSymmetricAlgebraTildeIso M).hom) =
-      (Scheme.ΓSpecIso (CommRingCat.of S)).hom (AffineSpace.homAsOverEquiv _ a .unit) •
-        specSymmetricAlgebraHomEquiv M S (t ≫ (MorphismProperty.Over.forget _ _ (Spec R)).map
-          (relativeSpecSymmetricAlgebraTildeIso M).hom) := by
-  ext m
-  simp only [specSymmetricAlgebraHomEquiv_comp_relativeSpecSymmetricAlgebraTildeIso_hom,
-    Hom.smul_def, smul_relativeSpecSymmetricAlgebra,
-    relativeSpecSymmetricAlgebraTildeHomEquiv_lift_comp_smul, LinearMap.smul_apply, smul_eq_mul]
-  -- the product lies in `Γ(((algSpec R).obj (op S)).left, ⊤)`, which is `Γ(Spec S, ⊤)` only after
-  -- unfolding `algSpec`, so `simp` cannot use `map_mul`
-  exact map_mul _ _ _
-
-variable {M} {N : ModuleCat.{u} R}
+variable {R : CommRingCat.{u}} {M N : ModuleCat.{u} R}
 
 /-- **Module morphisms act linearly on points.** Under `Spec_{Spec R} (Sym M~) ≅ Spec (Sym_R M)`, a
 morphism `Spec_{Spec R} (Sym M~) ⟶ Spec_{Spec R} (Sym N~)` over `Spec R` commuting with the actions
