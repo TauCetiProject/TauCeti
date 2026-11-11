@@ -117,9 +117,12 @@ theorem fourierMultiplierCLM_apply_eq_integral (σ : 𝓢(E, ℂ)) (φ : 𝓢(E,
 
 /-- **`Lᵖ` bound for a multiplier with Schwartz symbol.** For `1 ≤ p ≤ ∞` the multiplier with a
 Schwartz symbol `σ` satisfies `‖T_σ φ‖_p ≤ ‖𝓕⁻ σ‖₁ ‖φ‖_p` on Schwartz functions. -/
-theorem eLpNorm_fourierMultiplierCLM_le [CompleteSpace F] (σ : 𝓢(E, ℂ)) (φ : 𝓢(E, F))
+theorem eLpNorm_fourierMultiplierCLM_le (σ : 𝓢(E, ℂ)) (φ : 𝓢(E, F))
     {p : ℝ≥0∞} (hp : 1 ≤ p) :
     eLpNorm (fourierMultiplierCLM F σ φ) p ≤ eLpNorm (𝓕⁻ (σ : E → ℂ)) 1 * eLpNorm φ p := by
+  by_cases hF : CompleteSpace F
+  swap
+  · simp [fourierMultiplierCLM_apply, fourier_eq_zero_of_not_completeSpace hF]
   have h : (fourierMultiplierCLM F σ φ : E → F) = ⇑(𝓕⁻ σ : 𝓢(E, ℂ)) ⋆[lsmul ℂ ℂ] φ := by
     funext x
     rw [fourierMultiplierCLM_eq_convolution, convolution_apply]
