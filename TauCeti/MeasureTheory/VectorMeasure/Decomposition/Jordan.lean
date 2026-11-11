@@ -74,6 +74,7 @@ theorem toJordanDecomposition_negPart_univ_eq_iSup (s : SignedMeasure α) :
 
 /-- The positive and negative parts of the Jordan decomposition of `s` have equal total mass if
 and only if `s` vanishes on the whole space. -/
+@[simp]
 theorem toJordanDecomposition_posPart_univ_eq_negPart_univ_iff (s : SignedMeasure α) :
     s.toJordanDecomposition.posPart univ = s.toJordanDecomposition.negPart univ ↔
       s univ = 0 := by
