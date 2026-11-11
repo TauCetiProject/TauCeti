@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Augmentation.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Grading
-public import TauCeti.RingTheory.GradedAlgebra.DegreeFiltration
+public import TauCeti.RingTheory.GradedAlgebra.Degree.Filtration
 
 /-!
 # Degree filtrations on graded universal enveloping algebras
@@ -44,6 +44,7 @@ noncomputable def degreeFiltration (hneg : ∀ n, d n < 0 → ℒ n = ⊥) :
     (fun _ hn => homogeneousSubmodule_eq_bot_of_degree_neg ℒ d hneg hn)
 
 /-- The enveloping degree filtration consists of the corresponding degree ideals. -/
+@[simp]
 theorem degreeFiltration_ideal (hneg : ∀ n, d n < 0 → ℒ n = ⊥) (k : ℕ) :
     (degreeFiltration ℒ d hneg).ideal k =
       TauCeti.GradedAlgebra.degreeIdeal (homogeneousSubmodule ℒ) d
