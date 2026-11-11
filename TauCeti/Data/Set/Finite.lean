@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Data.Set.Card
 public import Mathlib.Basic.Finite.Sigma
-import Mathlib.Data.Set.Finite.Lemmas
 import Mathlib.Data.Set.Finite.Range
 
 /-!
@@ -19,8 +18,9 @@ finite set of elements of a subgroup, a submodule or any other set-like structur
 that structure, which is the form the generation and rank statements over a `Finset` of a subgroup
 take.
 
-A finite family of functions on finite types into a type factors through one injective
-enumeration of the values (`TauCeti.exists_embedding_fin_comp_eq`).
+A finite family of finite sets has its index-element pairs enumerated by some `Fin m`
+(`Set.exists_enumeration_finite_family`), and a function on a finite type factors as an injective
+enumeration of its values after a surjection (`TauCeti.exists_embedding_fin_comp_eq`).
 -/
 
 public section
@@ -33,13 +33,9 @@ variable {α : Type*} {S s : Set α}
 elements. -/
 theorem exists_finset_subtype_image_val_eq (hs : s.Finite) (hsub : s ⊆ S) :
     ∃ t : Finset S, t.card = Nat.card s ∧ Subtype.val '' (t : Set S) = s := by
-  classical
-  have hpre : (Subtype.val ⁻¹' s : Set S).Finite := hs.preimage Subtype.val_injective.injOn
-  refine ⟨hpre.toFinset, ?_, ?_⟩
-  · rw [Nat.card_coe_set_eq, ← Set.ncard_coe_finset, hpre.coe_toFinset,
-      Set.ncard_preimage_of_injective_subset_range Subtype.val_injective
-        (by rwa [Subtype.range_coe])]
-  · rw [hpre.coe_toFinset, Subtype.image_preimage_coe, Set.inter_eq_right.2 hsub]
+  lift s to Set S using hsub
+  lift s to Finset S using Set.Finite.of_finite_image hs Subtype.val_injective.injOn
+  exact ⟨s, by simp [Set.ncard_image_of_injective _ Subtype.val_injective], rfl⟩
 
 end Set.Finite
 
@@ -56,12 +52,12 @@ theorem Set.exists_enumeration_finite_family {ι A : Type*} [Finite ι] (T : ι 
 
 namespace TauCeti
 
-/-- A function from a finite type factors through an injective enumeration `b : Fin m ↪ γ` of a
-finite subset of `γ`. -/
+/-- A function `h` from a finite type factors as an injective enumeration `b : Fin m ↪ γ` of its
+values after a surjection `g` onto `Fin m`. -/
 theorem exists_embedding_fin_comp_eq {δ γ : Type*} [Finite δ] (h : δ → γ) :
-    ∃ (m : ℕ) (b : Fin m ↪ γ) (g : δ → Fin m), b ∘ g = h := by
-  obtain ⟨m, b, hb⟩ := (Set.finite_range h).fin_embedding
-  obtain ⟨g, hg⟩ := Set.range_subset_range_iff_exists_comp.mp hb.ge
-  exact ⟨m, b, g, hg.symm⟩
+    ∃ (m : ℕ) (b : Fin m ↪ γ) (g : δ → Fin m), b ∘ g = h ∧ g.Surjective := by
+  obtain ⟨m, ⟨e⟩⟩ := Finite.exists_equiv_fin (Set.range h)
+  exact ⟨m, e.symm.toEmbedding.trans (.subtype _), e ∘ Set.rangeFactorization h,
+    by ext; simp, e.surjective.comp Set.rangeFactorization_surjective⟩
 
 end TauCeti

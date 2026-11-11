@@ -85,6 +85,7 @@ Morse-theoretic definitions that use them.
   separated product `z ↦ ∏ j, φ j (z j)` in its `i`-th variable replaces `φ i` by `φ i''`.
 * `TauCeti.fderiv_fderiv_fderiv_apply`: the second derivative of a directional derivative of a
   `C³` map is its third derivative.
+* `TauCeti.fderiv_fderiv_apply_comm`: mixed directional derivatives of a `C²` map commute.
 * `TauCeti.fderiv_fderiv_fderiv_apply_comm`: the third derivative of a sufficiently smooth map is
   symmetric in its last two directions.
 * `TauCeti.fderiv_fderiv_const_smul`: the second derivative of a constant multiple.
@@ -339,6 +340,18 @@ theorem fderiv_fderiv_fderiv_apply {g : E → F} {x : E} (hg : ContDiffAt 𝕜 3
     (by norm_num)), hfirst.fderiv_eq, fderiv_clm_apply (hD2.clm_apply (differentiableAt_const b))
     (differentiableAt_const v)]
   simp [fderiv_clm_apply_const_apply hD2]
+
+/-- **Mixed directional derivatives commute.** For a map that is `C^{minSmoothness 𝕜 2}` at `x`
+(so `C²` over `ℝ` or `ℂ`), the derivative in the direction `w` of `y ↦ Dg(y) v` equals the
+derivative in the direction `v` of `y ↦ Dg(y) w`. -/
+theorem fderiv_fderiv_apply_comm {n : WithTop ℕ∞} {g : E → F} {x : E}
+    (hg : ContDiffAt 𝕜 n g x) (hn : minSmoothness 𝕜 2 ≤ n) (v w : E) :
+    fderiv 𝕜 (fun y ↦ fderiv 𝕜 g y v) x w = fderiv 𝕜 (fun y ↦ fderiv 𝕜 g y w) x v := by
+  have hD : DifferentiableAt 𝕜 (fderiv 𝕜 g) x :=
+    (hg.fderiv_right (m := 1) ((by norm_num : ((1 : ℕ) : WithTop ℕ∞) + 1 ≤ 2).trans
+      (le_minSmoothness.trans hn))).differentiableAt one_ne_zero
+  rw [fderiv_clm_apply_const_apply hD, fderiv_clm_apply_const_apply hD]
+  exact (hg.isSymmSndFDerivAt hn).eq w v
 
 /-- **The third derivative is symmetric in its last two directions.** For a map that is
 `C^{minSmoothness 𝕜 3}` at `x` (so `C³` over `ℝ` or `ℂ`), differentiating the symmetry of the

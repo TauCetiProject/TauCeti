@@ -171,7 +171,7 @@ noncomputable def degreeOneEquivDegreeZeroClassGroup (hF : IsFunctionField k F)
     (fun P ↦ ⟨(Place.orderSystem hF).divisorClass (WeilDivisor.pointDifference P.1 P₀), by
       rw [AddMonoidHom.mem_ker, Divisor.degreeClass_divisorClass, WeilDivisor.pointDifference,
         Divisor.degree_sub, Divisor.degree_ofPoint, Divisor.degree_ofPoint, P.2, hP₀, sub_self]⟩)
-    ⟨fun P Q h ↦ Subtype.ext (eq_of_divisorClass_pointDifference_eq hF hex (by omega) P.2
+    ⟨fun P Q h ↦ Subtype.ext (eq_of_divisorClass_pointDifference_eq hF (by omega) P.2
         (congrArg Subtype.val h)),
       fun c ↦ by
         obtain ⟨P, hP, hc⟩ := exists_degree_eq_one_and_divisorClass_pointDifference_eq hF hex hg hP₀

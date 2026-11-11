@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
-import TauCeti.Analysis.Complex.OperatorNorm
+import TauCeti.Analysis.RCLike.OperatorNorm
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.ContinuousMap.Bounded.ArzelaAscoli
 import Mathlib.Topology.MetricSpace.UniformConvergence

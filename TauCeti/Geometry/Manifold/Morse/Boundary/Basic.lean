@@ -151,10 +151,9 @@ Morse–Smale condition, if `ind p = ind q + 1`, then the middle-level slice of 
 `p` to `q` is finite. -/
 theorem IsMorseSmale.finite_morseTrajectorySlice {hX : IsAdaptedPseudoGradient f X}
     (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {p q : M}
-    (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0) (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) :
     (hX.morseTrajectorySlice p q).Finite :=
-  h.finite_unstableSet_inter_stableSet_inter_level hf hp hq hind _
+  h.finite_unstableSet_inter_stableSet_inter_level hf hind _
 
 /-- **Counting unparametrized trajectories.** For distinct points `p` and `q`, the unparametrized
 trajectories from `p` to `q` are as many as the points of the middle-level slice
@@ -188,8 +187,7 @@ otherwise. The finiteness of the trajectory slice enters the definition, so no i
 silently counted as zero. -/
 noncomputable def morseBoundaryCoeff (p q : criticalPoints 𝓘(ℝ, E) f) : ZMod 2 :=
   if hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1 then
-    (h.finite_morseTrajectorySlice hf (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.2)
-      (mem_criticalPoints_iff_mfderiv_eq_zero.1 q.2) hind).toFinset.card
+    (h.finite_morseTrajectorySlice hf hind).toFinset.card
   else 0
 
 /-- For critical points of consecutive index, the boundary coefficient is the number of
@@ -198,8 +196,7 @@ theorem morseBoundaryCoeff_eq_ncard {p q : criticalPoints 𝓘(ℝ, E) f}
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) :
     h.morseBoundaryCoeff hf p q = ((hX.morseTrajectorySlice p q).ncard : ZMod 2) := by
   rw [morseBoundaryCoeff, dite_eq_left hind, ncard_eq_toFinset_card _
-    (h.finite_morseTrajectorySlice hf (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.2)
-      (mem_criticalPoints_iff_mfderiv_eq_zero.1 q.2) hind)]
+    (h.finite_morseTrajectorySlice hf hind)]
 
 /-- **The Morse boundary counts unparametrized trajectories.** For critical points of consecutive
 index, the coefficient of `q` in the mod-two Morse boundary of `p` is the number of unparametrized

@@ -60,12 +60,13 @@ easy half of Sarason's characterization.
   modulus.
 * `TauCeti.vmoModulus`, `TauCeti.MemVMO`: the VMO modulus and the space of functions of
   vanishing mean oscillation.
-* `TauCeti.enorm_setAverage_ball_two_pow_mul_sub_le`: the averages over `B(c, 2ᵏ ρ)` and
-  `B(c, ρ)` differ by at most `k 2ⁿ ‖f‖_{BMO}`.
 * `TauCeti.memVMO_of_tendsto_bmoSeminorm`: VMO is closed in BMO.
 * `UniformContinuous.memVMO`, `Continuous.memVMO_of_hasCompactSupport`: uniformly continuous
   functions of bounded mean oscillation, and continuous functions with compact support, have
   vanishing mean oscillation.
+* `TauCeti.enorm_setAverage_ball_two_pow_mul_sub_le`,
+  `TauCeti.enorm_setAverage_ball_sub_setAverage_ball_le`: for an additive Haar measure, the
+  averages over the concentric balls `B(c, 2ʲ r)` drift by at most `2ⁿ ‖f‖_{BMO}` per doubling.
 
 ## References
 
@@ -580,52 +581,70 @@ theorem bmoSeminorm_comp_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace �
 
 end Invariance
 
-section Dilation
+/-! ### Averages over concentric balls -/
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+section ConcentricBalls
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [FiniteDimensional ℝ E] {μ : Measure E} [μ.IsAddHaarMeasure] [NormedAddCommGroup F]
+  [NormedSpace ℝ F] [CompleteSpace F]
 
 /-- **Averages over concentric dyadic balls.** For an additive Haar measure on a real normed space
-of dimension `n`, the averages of `f` over `B(c, 2ᵏ ρ)` and `B(c, ρ)` differ by at most
-`k 2ⁿ ‖f‖_{BMO}`: each doubling of the radius moves the average by at most `2ⁿ` times the mean
+of finite dimension `n`, the averages of `b` over `B(c, 2ʲ r)` and `B(c, r)` differ by at most
+`j 2ⁿ ‖b‖_{BMO}`: each doubling of the radius moves the average by at most `2ⁿ` times the mean
 oscillation on the larger ball. -/
-theorem enorm_setAverage_ball_two_pow_mul_sub_le {f : E → F} (hf : AEStronglyMeasurable f μ)
-    (c : E) {ρ : ℝ} (hρ : 0 < ρ) (k : ℕ) :
-    ‖(⨍ z in ball c (2 ^ k * ρ), f z ∂μ) - ⨍ z in ball c ρ, f z ∂μ‖ₑ ≤
-      k * (2 ^ Module.finrank ℝ E * bmoSeminorm f μ) := by
-  set a : ℕ → F := fun j => ⨍ z in ball c (2 ^ j * ρ), f z ∂μ
-  have hstep (j : ℕ) : ‖a j - a (j + 1)‖ₑ ≤ 2 ^ Module.finrank ℝ E * bmoSeminorm f μ := by
-    have hρj : 0 < 2 ^ j * ρ := by positivity
-    have hsub : ball c (2 ^ j * ρ) ⊆ ball c (2 ^ (j + 1) * ρ) :=
-      ball_subset_ball (by gcongr <;> norm_num)
-    have hμ : μ (ball c (2 ^ (j + 1) * ρ)) =
-        2 ^ Module.finrank ℝ E * μ (ball c (2 ^ j * ρ)) := by
-      rw [Measure.addHaar_ball_of_pos μ c (by positivity), Measure.addHaar_ball_of_pos μ c hρj,
-        show 2 ^ (j + 1) * ρ = 2 * (2 ^ j * ρ) by ring, mul_pow,
-        ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat,
-        mul_assoc]
-    refine (enorm_setAverage_sub_le_of_subset hsub (measure_ball_pos μ c hρj).ne'
-      measure_ball_lt_top.ne hf.restrict (a (j + 1))).trans ?_
-    rw [hμ, ENNReal.mul_div_cancel_right (measure_ball_pos μ c hρj).ne' measure_ball_lt_top.ne]
+theorem enorm_setAverage_ball_two_pow_mul_sub_le {b : E → F} (hb : AEStronglyMeasurable b μ)
+    (c : E) {r : ℝ} (hr : 0 < r) (j : ℕ) :
+    ‖(⨍ y in ball c (2 ^ j * r), b y ∂μ) - ⨍ y in ball c r, b y ∂μ‖ₑ ≤
+      j * 2 ^ Module.finrank ℝ E * bmoSeminorm b μ := by
+  set n := Module.finrank ℝ E
+  have htri (u v w : F) : ‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ := by
+    simpa only [edist_eq_enorm_sub] using edist_triangle u v w
+  have hstep : ∀ ρ : ℝ, 0 < ρ →
+      ‖(⨍ y in ball c ρ, b y ∂μ) - ⨍ y in ball c (2 * ρ), b y ∂μ‖ₑ ≤ 2 ^ n * bmoSeminorm b μ :=
+    fun ρ hρ => by
+    have h0 : μ (ball c ρ) ≠ 0 := (measure_ball_pos μ c hρ).ne'
+    have htop : μ (ball c ρ) ≠ ∞ := measure_ball_lt_top.ne
+    refine (enorm_setAverage_sub_le_of_subset (ball_subset_ball (by linarith : ρ ≤ 2 * ρ)) h0
+      measure_ball_lt_top.ne hb.restrict _).trans ?_
+    rw [μ.addHaar_ball_mul_of_pos c two_pos, μ.addHaar_ball_center c,
+      ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat, ← μ.addHaar_ball_center c,
+      ENNReal.mul_div_cancel_right h0 htop]
     gcongr
-    exact setLAverage_enorm_sub_setAverage_le_bmoSeminorm f μ c _
-  have h0 : a 0 = ⨍ z in ball c ρ, f z ∂μ := by simp [a]
-  rw [← h0]
-  induction k with
-  | zero => simp [h0]
-  | succ k ih =>
-    calc ‖a (k + 1) - a 0‖ₑ = edist (a (k + 1)) (a 0) := (edist_eq_enorm_sub _ _).symm
-      _ ≤ edist (a (k + 1)) (a k) + edist (a k) (a 0) := edist_triangle _ _ _
-      _ = ‖a k - a (k + 1)‖ₑ + ‖a k - a 0‖ₑ := by
-          rw [edist_comm, edist_eq_enorm_sub, edist_eq_enorm_sub]
-      _ ≤ 2 ^ Module.finrank ℝ E * bmoSeminorm f μ +
-            k * (2 ^ Module.finrank ℝ E * bmoSeminorm f μ) :=
-          add_le_add (hstep k) ih
-      _ = ((k + 1 : ℕ) : ℝ≥0∞) * (2 ^ Module.finrank ℝ E * bmoSeminorm f μ) := by
-          push_cast
-          ring
+    exact setLAverage_enorm_sub_setAverage_le_bmoSeminorm b μ c (2 * ρ)
+  induction j with
+  | zero => simp
+  | succ j ih =>
+    calc ‖(⨍ y in ball c (2 ^ (j + 1) * r), b y ∂μ) - ⨍ y in ball c r, b y ∂μ‖ₑ
+        ≤ ‖(⨍ y in ball c (2 ^ j * r), b y ∂μ) - ⨍ y in ball c (2 ^ (j + 1) * r), b y ∂μ‖ₑ +
+            ‖(⨍ y in ball c (2 ^ j * r), b y ∂μ) - ⨍ y in ball c r, b y ∂μ‖ₑ := by
+          rw [enorm_sub_rev (⨍ y in ball c (2 ^ j * r), b y ∂μ), add_comm]
+          exact htri _ _ _
+      _ ≤ 2 ^ n * bmoSeminorm b μ + j * 2 ^ n * bmoSeminorm b μ := by
+          gcongr
+          rw [pow_succ, mul_comm _ (2 : ℝ), mul_assoc]
+          exact hstep _ (by positivity)
+      _ = ((j + 1 : ℕ) : ℝ≥0∞) * 2 ^ n * bmoSeminorm b μ := by push_cast; ring
 
-end Dilation
+/-- **Averages over concentric dyadic balls**, measured from `B(c, 2 r)`: the averages of `b` over
+the balls `B(c, 2ʲ r)` stay within `(j + 1) 2ⁿ ‖b‖_{BMO}` of the average over `B(c, 2 r)`. -/
+theorem enorm_setAverage_ball_sub_setAverage_ball_le {b : E → F} (hb : AEStronglyMeasurable b μ)
+    (c : E) {r : ℝ} (hr : 0 < r) (j : ℕ) :
+    ‖(⨍ y in ball c (2 ^ j * r), b y ∂μ) - ⨍ y in ball c (2 * r), b y ∂μ‖ₑ ≤
+      (j + 1) * 2 ^ Module.finrank ℝ E * bmoSeminorm b μ := by
+  have htri (u v w : F) : ‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ := by
+    simpa only [edist_eq_enorm_sub] using edist_triangle u v w
+  have h1 := enorm_setAverage_ball_two_pow_mul_sub_le hb c hr 1
+  rw [pow_one, Nat.cast_one, one_mul, enorm_sub_rev] at h1
+  calc ‖(⨍ y in ball c (2 ^ j * r), b y ∂μ) - ⨍ y in ball c (2 * r), b y ∂μ‖ₑ
+      ≤ ‖(⨍ y in ball c (2 ^ j * r), b y ∂μ) - ⨍ y in ball c r, b y ∂μ‖ₑ +
+          ‖(⨍ y in ball c r, b y ∂μ) - ⨍ y in ball c (2 * r), b y ∂μ‖ₑ :=
+        htri _ _ _
+    _ ≤ j * 2 ^ Module.finrank ℝ E * bmoSeminorm b μ +
+          2 ^ Module.finrank ℝ E * bmoSeminorm b μ :=
+        add_le_add (enorm_setAverage_ball_two_pow_mul_sub_le hb c hr j) h1
+    _ = (j + 1) * 2 ^ Module.finrank ℝ E * bmoSeminorm b μ := by ring
+
+end ConcentricBalls
 
 end TauCeti
