@@ -147,7 +147,7 @@ theorem root_rationalRootSystem_eq_add_zsmul_iff (α β γ : Fin t.numRoots) (n 
   simpa [root_rationalRootSystem, smul_eq_mul] using congrArg (fun z : ℤ => (z : ℚ)) hk
 
 /-- The rational and integral pinned bases define the same set of positive root indices. -/
-@[simp] theorem posRoots_rationalRootSystem :
+theorem posRoots_rationalRootSystem :
     posRoots (t.rationalRootSystem ht) (t.rationalBase ht) =
       posRoots (t.simplyConnectedRootDatum ht) (t.simplyConnectedBase ht) := by
   ext i
