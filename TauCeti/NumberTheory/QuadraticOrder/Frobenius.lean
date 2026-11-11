@@ -9,7 +9,6 @@ public import TauCeti.Algebra.QuadraticAlgebra.FiniteField
 public import TauCeti.NumberTheory.QuadraticOrder.PrimeIdeal
 import Mathlib.NumberTheory.LegendreSymbol.Basic
 import TauCeti.FieldTheory.Finite.Card
-import TauCeti.FieldTheory.Finite.EulerCriterion
 
 /-!
 # The integral Frobenius congruence in `ℤ[√r]`
@@ -78,8 +77,9 @@ theorem mapRingHom_intCastRingHom_pow_eq_star (hr : ¬IsSquare (r : ZMod p))
   exact key _ (map_zero _) _
 
 /-- **The integral Frobenius congruence.** For an integer `r`, a prime `p` modulo which `r` is not
-a square (so `p` is odd, `TauCeti.ZMod.ne_two_of_not_isSquare`), and every `z = u + v√r` in
-`ℤ[√r]`, `z ^ p ≡ u - v√r` modulo `p`: the difference `z ^ p - star z` lies in the ideal `(p)`. -/
+a square (so `p` is odd, `TauCeti.FiniteField.odd_card_of_not_isSquare`), and every
+`z = u + v√r` in `ℤ[√r]`, `z ^ p ≡ u - v√r` modulo `p`: the difference `z ^ p - star z` lies in the
+ideal `(p)`. -/
 theorem frobenius_congruence (hr : ¬IsSquare (r : ZMod p)) (z : QuadraticAlgebra ℤ r 0) :
     z ^ p - star z ∈ Ideal.span {(p : QuadraticAlgebra ℤ r 0)} := by
   rw [← ker_mapRingHom_intCastRingHom, RingHom.mem_ker, map_sub,
