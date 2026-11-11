@@ -128,8 +128,7 @@ theorem isJHolomorphic_fst_normalModelStructure :
     IsJHolomorphic (normalModelStructure ν μ) (fun _ ↦ AlmostComplexStructure.ofComplexModule ℂ)
       Prod.fst := by
   refine (isJHolomorphic_iff _ _ _).2 fun p ↦ isJHolomorphicAt_of_hasFDerivAt
-    (hasFDerivAt_fst (p := p)) ((isComplexLinearMap_iff_apply _ _ _).2 fun ξ ↦ ?_)
-  simp [normalModelStructure_apply, AlmostComplexStructure.ofComplexModule_apply]
+    (hasFDerivAt_fst (p := p)) (AlmostComplexStructure.isComplexLinearMap_skewProd_fst _ _ _)
 
 /-- **The normal fibres are holomorphic discs**: `J_N` restricts to multiplication by `I` on the
 vertical tangent spaces, so every fibre `{z₀} × ℂ` is a `J_N`-holomorphic curve. -/
@@ -137,8 +136,7 @@ theorem isJHolomorphic_prodMk_right_normalModelStructure (z₀ : ℂ) :
     IsJHolomorphic (fun _ ↦ AlmostComplexStructure.ofComplexModule ℂ) (normalModelStructure ν μ)
       (fun w ↦ (z₀, w)) := by
   refine (isJHolomorphic_iff _ _ _).2 fun w ↦ isJHolomorphicAt_of_hasFDerivAt
-    (hasFDerivAt_prodMk_right z₀ w) ((isComplexLinearMap_iff_apply _ _ _).2 fun ξ ↦ ?_)
-  simp [normalModelStructure_apply, AlmostComplexStructure.ofComplexModule_apply]
+    (hasFDerivAt_prodMk_right z₀ w) (AlmostComplexStructure.isComplexLinearMap_skewProd_inr _ _ _)
 
 /-- **Invariance under normal dilations.** For every real `a`, the fibrewise dilation
 `(z, w) ↦ (z, a w)` is `J_N`-holomorphic, because `J_N` depends linearly on the normal
@@ -182,8 +180,13 @@ theorem isJHolomorphicAt_graph_normalModelStructure_iff {s : ℂ → ℂ} {z : �
         ((ContinuousLinearMap.id ℝ ℂ).prod (fderiv ℝ s z) : ℂ →L[ℝ] ℂ × ℂ).toLinearMap ↔
       ∀ ξ : ℂ, fderiv ℝ s z (I * ξ) =
         I * fderiv ℝ s z ξ + 2 * I * (ν z * s z + μ z * conj (s z)) * conj ξ := by
-    simp [isComplexLinearMap_iff_apply, normalModelStructure_apply,
-      AlmostComplexStructure.ofComplexModule_apply]
+    rw [ContinuousLinearMap.coe_prod, ContinuousLinearMap.coe_id, normalModelStructure,
+      AlmostComplexStructure.isComplexLinearMap_id_prod_skewProd_iff, isComplexLinearMap_iff_apply]
+    simp only [normalModelShear, AlmostComplexStructure.ofComplexModule_apply]
+    refine forall_congr' fun ξ ↦ ?_
+    simp only [LinearMap.sub_apply, LinearMap.coe_mk, AddHom.coe_mk, smul_eq_mul, map_mul,
+      conj_I]
+    constructor <;> intro h <;> linear_combination h
   constructor
   · rw [isJHolomorphicAt_iff]
     rintro ⟨f', hf', hc⟩
