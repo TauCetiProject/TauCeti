@@ -126,7 +126,7 @@ theorem range_chevalleyRootSubgroup_sup_le_normalizer_posRoots_diff_singleton_G2
         (chevalleyRootSubgroup ρ M hM hnil γ A).range : Subgroup _) := by
   have hpositive (j : Fin G2.numRoots) :
       j ∈ posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht) ↔ j.val < 6 := by
-    rw [mem_posRoots_rationalBase_iff]
+    rw [posRoots_rationalRootSystem]
     have transport (P Q : RootDatum (Fin G2.numRoots)
         (Fin G2.rank → ℤ) (Fin G2.rank → ℤ)) (h : P = Q) (b : P.Base) :
         j ∈ posRoots P b ↔

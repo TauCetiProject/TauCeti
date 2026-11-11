@@ -32,7 +32,7 @@ every Dehn filling of the exterior of the unknot has Heegaard genus at most one
 For the `0`-surgery on the unknot, `S¹ × S²` (`TauCeti.unknotZeroDehnFilling`), the splitting
 consists of the solid tori `S¹ × D²₊` and `S¹ × D²₋` over the two closed hemispheres of `S²`. The
 fundamental group of `S¹ × S²` is nontrivial, being the product of those of `S¹` and `S²`
-(`TauCeti.FundamentalGroup.prodMulEquiv`), and its rank is at most the Heegaard genus
+(`FundamentalGroup.prodMulEquiv`), and its rank is at most the Heegaard genus
 (`TauCeti.rank_fundamentalGroup_le_heegaardGenus`). So `S¹ × S²` has Heegaard genus exactly one
 (`TauCeti.heegaardGenus_circle_prod_sphere`), equal to the rank of its fundamental group, as in
 Waldhausen's rank-versus-genus conjecture (`TauCeti.RankGenusConjecture`).
