@@ -34,7 +34,8 @@ with the original distance and size-scale budgets retained. -/
 theorem exists_doubling_controlled_point_of_bddAbove
     {X : Type*} [PseudoMetricSpace X]
     (f : X → ℝ) (p x : X)
-    (hbound : BddAbove (f '' Metric.closedBall x (dist p x / 2))) (hd : 0 < dist p x) (hx : 0 < f x) :
+    (hbound : BddAbove (f '' Metric.closedBall x (dist p x / 2)))
+    (hd : 0 < dist p x) (hx : 0 < f x) :
     ∃ q : X, ∃ r : ℝ, q ∈ Metric.ball x (dist p x / 2) ∧
       0 < r ∧ f x ≤ f q ∧ dist p x / 2 ≤ dist p q ∧
       r * f q = dist p x * f x / 4 ∧
