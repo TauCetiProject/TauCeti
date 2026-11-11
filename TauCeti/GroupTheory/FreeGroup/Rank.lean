@@ -22,8 +22,9 @@ rank, the least number of generators, is at most the cardinality of `α`.
 Conversely, a free basis has at most as many elements as any generating family. If a free group
 `H` with basis `ι` is the image of `FreeGroup α` for a finite type `α`, then `ι` is finite and
 `#ι ≤ #α`: the homomorphisms `H →* ℤ/2`, which correspond to the functions `ι → ℤ/2`, are
-determined by their values on the images of the elements of `α`. In the other direction, if every
-homomorphism `FreeGroup α →* ℤ/2` factors through `H`, then `#α ≤ #ι`.
+determined by their values on the images of the elements of `α`. In the other direction, if `ι`
+is finite and every homomorphism `FreeGroup α →* ℤ/2` factors through a homomorphism
+`FreeGroup α →* H`, then `#α ≤ #ι`.
 
 Consequently, a group with a free basis is finitely generated exactly when the basis is
 finite, and its rank is the cardinality of that basis. These results allow rank computations
@@ -68,15 +69,16 @@ theorem card_le_of_surjective (b : FreeGroupBasis ι H) [Finite α] (hf : Functi
     Fintype.card_multiplicative, ZMod.card] at hcard
   exact (Nat.pow_le_pow_iff_right Nat.one_lt_two).mp hcard
 
-/-- A free basis has at least as many elements as a finite generating family all of whose
-`ℤ/2`-valued assignments extend to the group: if `FreeGroup α` surjects onto a free group `H` with
-basis `ι` and every homomorphism `FreeGroup α →* ℤ/2` factors through `H`, then `#α ≤ #ι`. -/
-theorem card_le_of_forall_exists_comp_eq (b : FreeGroupBasis ι H) [Finite α]
-    (hf : Function.Surjective f)
+/-- A finite free basis has at least as many elements as any family all of whose `ℤ/2`-valued
+assignments extend to the group: if `H` has a finite free basis `ι` and every homomorphism
+`FreeGroup α →* ℤ/2` factors through `f : FreeGroup α →* H`, then `#α ≤ #ι`. -/
+theorem card_le_of_forall_exists_comp_eq (b : FreeGroupBasis ι H) [Finite ι]
     (h : ∀ v : α → Multiplicative (ZMod 2),
       ∃ φ : H →* Multiplicative (ZMod 2), φ.comp f = FreeGroup.lift v) :
     Nat.card α ≤ Nat.card ι := by
-  have := b.finite_of_surjective hf
+  obtain hα | hα := finite_or_infinite α
+  swap
+  · simp
   choose φ hφ using h
   have hinj : Function.Injective fun (v : α → Multiplicative (ZMod 2)) (i : ι) ↦ φ v (b i) :=
     fun v w hvw ↦ FreeGroup.lift.injective <| by

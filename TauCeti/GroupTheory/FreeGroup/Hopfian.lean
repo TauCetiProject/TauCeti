@@ -9,6 +9,7 @@ public import Mathlib.Data.ZMod.Defs
 public import Mathlib.GroupTheory.FreeGroup.IsFreeGroup
 public import Mathlib.GroupTheory.PresentedGroup
 public import Mathlib.SetTheory.Cardinal.Finite
+import Mathlib.GroupTheory.FreeGroup.NielsenSchreier
 import Mathlib.SetTheory.Cardinal.NatCard
 import TauCeti.GroupTheory.FreeGroup.Rank
 import TauCeti.GroupTheory.FreeGroup.ResiduallyP
@@ -21,15 +22,16 @@ Free groups are residually finite, and a finitely generated residually finite gr
 (Malcev): each of its surjective endomorphisms is injective. Consequently, if `FreeGroup α` with
 `α` finite surjects onto a group with a free basis `ι` having at least as many elements as `α`,
 the surjection is an isomorphism. This is the usual way to recognise that a generating family of
-the right cardinality is a free basis.
+the right cardinality is a free basis. Together with the Nielsen–Schreier theorem, it shows that a
+homomorphism from `FreeGroup α` to a free group is injective as soon as every homomorphism
+`FreeGroup α →* ℤ/2` factors through it.
 
 ## Main results
 
 * `FreeGroupBasis.injective_of_surjective_of_card_le`: a surjection from `FreeGroup α` onto a group
   with a free basis `ι`, where `#α ≤ #ι`, is injective.
-* `FreeGroupBasis.injective_of_surjective_of_forall_exists_comp_eq`: a surjection from
-  `FreeGroup α` onto a group with a free basis is injective if every homomorphism
-  `FreeGroup α →* ℤ/2` factors through it.
+* `IsFreeGroup.injective_of_forall_exists_comp_eq`: a homomorphism from `FreeGroup α` to a free
+  group is injective if every homomorphism `FreeGroup α →* ℤ/2` factors through it.
 * `PresentedGroup.not_isFreeGroup`: a group presented on finitely many generators, with a
   nontrivial relator, all of whose relators die in `ℤ/2` under every assignment of the generators,
   is not free.
@@ -61,17 +63,28 @@ theorem injective_of_surjective_of_card_le (b : FreeGroupBasis ι H) [Finite α]
   rw [MonoidHom.coe_comp] at hr
   exact hr.of_comp
 
-/-- A surjection from the free group on a finite type `α` onto a group `H` with a free basis is
-injective as soon as every homomorphism `FreeGroup α →* ℤ/2` factors through `H`: the group `H`
-then has as many homomorphisms to `ℤ/2` as `FreeGroup α`, hence the same rank. -/
-theorem injective_of_surjective_of_forall_exists_comp_eq (b : FreeGroupBasis ι H) [Finite α]
-    (hf : Function.Surjective f)
+end FreeGroupBasis
+
+namespace IsFreeGroup
+
+variable {α H : Type*} [Group H] [IsFreeGroup H] {f : FreeGroup α →* H}
+
+/-- A homomorphism from the free group on a finite type `α` to a free group is injective as soon
+as every homomorphism `FreeGroup α →* ℤ/2` factors through it. -/
+theorem injective_of_forall_exists_comp_eq [Finite α]
     (h : ∀ v : α → Multiplicative (ZMod 2),
       ∃ φ : H →* Multiplicative (ZMod 2), φ.comp f = FreeGroup.lift v) :
-    Function.Injective f :=
-  b.injective_of_surjective_of_card_le hf (b.card_le_of_forall_exists_comp_eq hf h)
+    Function.Injective f := by
+  -- The range of `f` is free by the Nielsen–Schreier theorem, and `f` surjects onto it.
+  let b := basis f.range
+  have hf := f.rangeRestrict_surjective
+  have := b.finite_of_surjective hf
+  refine MonoidHom.rangeRestrict_injective_iff.mp <| b.injective_of_surjective_of_card_le hf <|
+    b.card_le_of_forall_exists_comp_eq (f := f.rangeRestrict) fun v ↦ ?_
+  obtain ⟨φ, hφ⟩ := h v
+  exact ⟨φ.comp f.range.subtype, by rw [MonoidHom.comp_assoc, f.subtype_comp_rangeRestrict, hφ]⟩
 
-end FreeGroupBasis
+end IsFreeGroup
 
 namespace PresentedGroup
 
@@ -83,9 +96,8 @@ generators is injective. -/
 theorem injective_mk_of_isFreeGroup [IsFreeGroup (PresentedGroup rels)]
     (h : ∀ v : α → Multiplicative (ZMod 2), ∀ r ∈ rels, FreeGroup.lift v r = 1) :
     Function.Injective (mk rels) :=
-  (IsFreeGroup.basis _).injective_of_surjective_of_forall_exists_comp_eq (mk_surjective rels)
-    fun v ↦ ⟨toGroup (h v), FreeGroup.ext_hom _ _ fun _ ↦
-      (toGroup.of (h v)).trans FreeGroup.lift_apply_of.symm⟩
+  IsFreeGroup.injective_of_forall_exists_comp_eq fun v ↦ ⟨toGroup (h v), FreeGroup.ext_hom _ _
+    fun _ ↦ (toGroup.of (h v)).trans FreeGroup.lift_apply_of.symm⟩
 
 /-- A group presented on finitely many generators is not free if it has a nontrivial relator and
 every assignment of elements of `ℤ/2` to the generators kills the relators. -/

@@ -27,13 +27,13 @@ its rank would therefore be the number of generators. As free groups of finite r
 the defining surjection from the free group on the generators would be injective
 (`PresentedGroup.not_isFreeGroup`). It is not: the relator is a
 nontrivial element of the free group, as one sees by sending `a₁` and `b₁` to two noncommuting
-permutations, respectively `c₁` to an element of order three.
+permutations, respectively every `cᵢ` to `1 ∈ ℤ`.
 
 ## Main results
 
 * `TauCeti.SurfaceGroup.orientableRelator_ne_one` and
   `TauCeti.SurfaceGroup.nonorientableRelator_ne_one`: the relators of `S⁺(g, m)` and `S⁻(g, m)`
-  are nontrivial for `g ≠ 0`.
+  are nontrivial unless `g = m = 0`.
 * `TauCeti.SurfaceGroup.Orientable.not_isFreeGroup`: `S⁺(g, 0)` is not free for `g ≠ 0`.
 * `TauCeti.SurfaceGroup.Nonorientable.not_isFreeGroup`: `S⁻(g, 0)` is not free for `g ≠ 0`.
 
@@ -54,47 +54,50 @@ namespace TauCeti
 
 namespace SurfaceGroup
 
-variable {g : ℕ}
+variable {g m : ℕ}
 
-/-- The defining relator of an orientable surface group of positive genus is a nontrivial
-element of the free group on the generators. -/
-theorem orientableRelator_ne_one (hg : g ≠ 0) (m : ℕ) : orientableRelator g m ≠ 1 := by
-  obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hg
-  intro h
-  -- Send `a₁` and `b₁` to two noncommuting permutations and every other generator to `1`.
-  let f : FreeGroup (OrientableGenerator (n + 1) m) →* Equiv.Perm (Fin 3) := FreeGroup.lift fun
-    | .a i => Fin.cons (α := fun _ ↦ Equiv.Perm (Fin 3)) (Equiv.swap 0 1) (fun _ ↦ 1) i
-    | .b i => Fin.cons (α := fun _ ↦ Equiv.Perm (Fin 3)) (Equiv.swap 1 2) (fun _ ↦ 1) i
-    | .peripheral _ => 1
-  have hf : f (orientableRelator (n + 1) m) =
-      Equiv.swap 0 1 * Equiv.swap 1 2 * Equiv.swap 0 1 * Equiv.swap 1 2 := by
-    rw [orientableRelator_def, map_orientableWord]
-    simp [f, orientableWord_def, List.ofFn_const]
-  rw [h, map_one] at hf
-  exact absurd hf (by decide)
-
-/-- The defining relator of a nonorientable surface group of positive genus is a nontrivial
-element of the free group on the generators. -/
-theorem nonorientableRelator_ne_one (hg : g ≠ 0) (m : ℕ) : nonorientableRelator g m ≠ 1 := by
-  obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hg
-  intro h
-  -- Send `c₁` to an element of order three and every other generator to `1`.
-  let f : FreeGroup (NonorientableGenerator (n + 1) m) →* Multiplicative (ZMod 3) :=
-    FreeGroup.lift fun
-      | .c i => Fin.cons (α := fun _ ↦ Multiplicative (ZMod 3)) (.ofAdd 1) (fun _ ↦ 1) i
+/-- The defining relator of the orientable surface group `S⁺(g, m)` is a nontrivial element of
+the free group on the generators unless `g = m = 0`. -/
+theorem orientableRelator_ne_one (h : g ≠ 0 ∨ m ≠ 0) : orientableRelator g m ≠ 1 := by
+  intro hr
+  obtain ⟨n, rfl⟩ | hm := h.imp_left Nat.exists_eq_succ_of_ne_zero
+  · -- Send `a₁` and `b₁` to two noncommuting permutations and every other generator to `1`.
+    let f : FreeGroup (OrientableGenerator (n + 1) m) →* Equiv.Perm (Fin 3) := FreeGroup.lift fun
+      | .a i => Fin.cons (α := fun _ ↦ Equiv.Perm (Fin 3)) (Equiv.swap 0 1) (fun _ ↦ 1) i
+      | .b i => Fin.cons (α := fun _ ↦ Equiv.Perm (Fin 3)) (Equiv.swap 1 2) (fun _ ↦ 1) i
       | .peripheral _ => 1
-  have hf : f (nonorientableRelator (n + 1) m) = .ofAdd 1 ^ 2 := by
-    rw [nonorientableRelator_def, map_nonorientableWord]
-    simp [f, nonorientableWord_def, List.ofFn_const]
-  rw [h, map_one] at hf
-  exact absurd hf (by decide)
+    have hf : f (orientableRelator (n + 1) m) =
+        Equiv.swap 0 1 * Equiv.swap 1 2 * Equiv.swap 0 1 * Equiv.swap 1 2 := by
+      rw [orientableRelator_def, map_orientableWord]
+      simp [f, orientableWord_def, List.ofFn_const]
+    rw [hr, map_one] at hf
+    exact absurd hf (by decide)
+  · -- Send every peripheral generator to `1 ∈ ℤ` and every other generator to `0`.
+    have := congrArg (FreeGroup.lift fun
+      | OrientableGenerator.peripheral _ => Multiplicative.ofAdd (1 : ℤ)
+      | _ => 1) hr
+    rw [orientableRelator_def, map_orientableWord,
+      orientableWord_of_commute fun _ ↦ Commute.all _ _] at this
+    simp [List.ofFn_const, ← ofAdd_nsmul] at this
+    omega
+
+/-- The defining relator of the nonorientable surface group `S⁻(g, m)` is a nontrivial element of
+the free group on the generators unless `g = m = 0`. -/
+theorem nonorientableRelator_ne_one (h : g ≠ 0 ∨ m ≠ 0) : nonorientableRelator g m ≠ 1 := by
+  intro hr
+  -- Send every generator to `1 ∈ ℤ`; the relator goes to `2g + m`.
+  have := congrArg (FreeGroup.lift fun _ ↦ Multiplicative.ofAdd (1 : ℤ)) hr
+  rw [nonorientableRelator_def, map_nonorientableWord, nonorientableWord_eq_pow_two_mul] at this
+  simp [List.ofFn_const, ← ofAdd_nsmul, ← ofAdd_add] at this
+  omega
 
 namespace Orientable
 
 /-- **Closed orientable surface groups of positive genus are not free.** For `g ≠ 0` the group
 `S⁺(g, 0) = ⟨a₁, b₁, …, a_g, b_g | [a₁, b₁] ⋯ [a_g, b_g]⟩` is not a free group. -/
 theorem not_isFreeGroup (hg : g ≠ 0) : ¬IsFreeGroup (Orientable g 0) := by
-  refine PresentedGroup.not_isFreeGroup ?_ (Set.mem_singleton _) (orientableRelator_ne_one hg 0)
+  refine PresentedGroup.not_isFreeGroup ?_ (Set.mem_singleton _)
+    (orientableRelator_ne_one (.inl hg))
   -- A `ℤ/2`-valued assignment kills every commutator, hence the relator.
   rintro v _ rfl
   rw [orientableRelator_def, map_orientableWord, orientableWord_of_commute fun _ ↦ Commute.all _ _]
@@ -108,7 +111,7 @@ namespace Nonorientable
 `S⁻(g, 0) = ⟨c₁, …, c_g | c₁ ^ 2 ⋯ c_g ^ 2⟩` is not a free group. -/
 theorem not_isFreeGroup (hg : g ≠ 0) : ¬IsFreeGroup (Nonorientable g 0) := by
   refine PresentedGroup.not_isFreeGroup ?_ (Set.mem_singleton _)
-    (nonorientableRelator_ne_one hg 0)
+    (nonorientableRelator_ne_one (.inl hg))
   -- A `ℤ/2`-valued assignment kills every square, hence the relator.
   have hsq : ∀ x : Multiplicative (ZMod 2), x ^ 2 = 1 := by decide
   rintro v _ rfl
