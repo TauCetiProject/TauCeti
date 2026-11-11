@@ -48,7 +48,10 @@ open CategoryTheory LaurentPolynomial
 universe u v w
 
 variable (k : Type w) (Q : Type u) [Field k] [Quiver.{v} Q]
-  [Finite Q] [Module.Finite k (pathAlgebra k Q)]
+
+section Finite
+
+variable [Finite Q] [Module.Finite k (pathAlgebra k Q)]
   [HasExt.{max u v w} (GradedModuleCat.{max u v w} (integerGrade k Q))]
 
 /-- Every pair of finite graded modules over a finite-dimensional path algebra is graded
@@ -109,9 +112,13 @@ theorem gradedExtEulerForm_basis (i j : Q) :
     gradedExtEulerForm_of_of]
   exact gradedExtEuler_gradedVertexSimple_gradedVertexSimple k Q i j _
 
-variable [Fintype Q]
+end Finite
 
-omit [DecidableEq Q] in
+section Fintype
+
+variable [Fintype Q] [Module.Finite k (pathAlgebra k Q)]
+  [HasExt.{max u v w} (GradedModuleCat.{max u v w} (integerGrade k Q))]
+
 /-- **The graded Ringel formula on Grothendieck classes.** The vertex coordinates are the
 idempotent graded dimensions, and the source coordinates are conjugated by `q ↦ q⁻¹`. -/
 theorem gradedExtEulerForm_eq_sum
@@ -141,7 +148,6 @@ theorem gradedExtEulerForm_eq_sum
       AlgEquiv.coe_toRingEquiv]
     ring
 
-omit [DecidableEq Q] in
 /-- **The graded Ringel formula for finite-dimensional graded modules.** The coordinate at
 vertex `i` is the graded dimension of the image of its vertex idempotent. The formula holds
 for any admissibility witness, without choosing a composition series or support bounds. -/
@@ -170,5 +176,7 @@ theorem gradedExtEuler_eq_sum_smulGradedDimension
     rw [gradedVertexSimpleClassBasis_repr_apply]
     exact gradedIdempotentCoordinate_of _ _ _
   simpa only [hcoord] using hval
+
+end Fintype
 
 end TauCeti.PathAlgebra

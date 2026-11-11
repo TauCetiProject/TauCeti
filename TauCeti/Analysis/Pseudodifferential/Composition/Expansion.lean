@@ -52,6 +52,9 @@ the position and the frequency.
   `a # b = ∑_{k < N} sharpTerm a b k + sharpRemainder a b hb N`, for every `N`.
 * `TauCeti.Symbol.sharp_eq_comp_add_sharpRemainder_one`: in particular `a # b` agrees with the
   pointwise composition `a ∘ b` up to a symbol of order `m' + m - 1`.
+* `TauCeti.Symbol.exists_coefficient_eq_sharp_sub_sharp`: if `a` and `b` both have compact
+  spatial support and their values commute pointwise, for instance for scalar symbols, the
+  commutator symbol `a # b - b # a` has order `m' + m - 1`.
 * `TauCeti.ClassicalSymbol.exists_sharp_sub_cutoffSymbol_principal_comp`: **the principal symbol
   of a composition**. For classical `a` and `b`, the symbol `a # b` differs from the cut-off
   composition `χ(ξ) (σ(a) ∘ σ(b))` of the principal symbols by a symbol of order `m' + m - 1`.
@@ -636,6 +639,32 @@ theorem sharp_eq_comp_add_sharpRemainder_one (hb : b.HasCompactSpatialSupport) :
   simp
 
 end Symbol
+
+/-! ### Commutators -/
+
+section Commutator
+
+variable [CompleteSpace V]
+
+/-- **Commutators lower the order.** If two symbols `a` of order `m'` and `b` of order `m` with
+compact spatial support take commuting values `a(x, ξ)` and `b(x, ξ)` at every point, for instance
+scalar symbols, the composition symbol `a # b - b # a` of the commutator `[Op(a), Op(b)]` is a
+symbol of order `m' + m - 1`. -/
+theorem exists_coefficient_eq_sharp_sub_sharp {a : Symbol n V V m'} {b : Symbol n V V m}
+    (ha : a.HasCompactSpatialSupport) (hb : b.HasCompactSpatialSupport)
+    (hab : ∀ p, Commute (a.coefficient p) (b.coefficient p)) :
+    ∃ r : Symbol n V V (m' + m - 1),
+      r.coefficient = (a.sharp b hb).coefficient - (b.sharp a ha).coefficient := by
+  refine ⟨(inclusion (by simp) (a.sharpRemainder b hb 1) : Symbol n V V (m' + m - 1)) -
+    inclusion (by push_cast; linarith) (b.sharpRemainder a ha 1), ?_⟩
+  funext p
+  have h := (hab p).eq
+  simp only [ContinuousLinearMap.mul_def] at h
+  simp only [coefficient_sub, coefficient_inclusion, Pi.sub_apply, coefficient_sharpRemainder,
+    Finset.sum_range_one, coefficient_sharpTerm_zero, h]
+  abel
+
+end Commutator
 
 end Symbol
 

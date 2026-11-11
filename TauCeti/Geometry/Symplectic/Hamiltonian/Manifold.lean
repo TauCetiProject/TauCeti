@@ -90,7 +90,7 @@ Hamiltonian vector field of `g ∘ φ` to integral curves of that of `g`
   `C^(n+1)` families of Hamiltonians, such as time-dependent ones.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_smul`: `X^{cσ}_f = c⁻¹ X^σ_f`.
 * `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurveOn`: conservation
-  of energy along integral curves on open preconnected sets of times, with the global case
+  of energy along integral curves on preconnected sets of times, with the global case
   `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurve`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_or_exists_of_isMIntegralCurve_add_comp`:
   the dichotomy for the integral curves of `X_{G + f ∘ F}`.
@@ -170,20 +170,20 @@ theorem mvfderiv_apply_self (hX : σ.IsHamiltonianVectorField f X) (x : M) :
   exact SmoothForm.isAlt_bilinFormAt σ x (X x)
 
 /-- **Conservation of energy.** A Hamiltonian, differentiable along an integral curve of its
-Hamiltonian vector field on an open interval of times (or any open preconnected set of times), is
-constant along that curve. -/
+Hamiltonian vector field on an interval of times (or any preconnected set of times), is constant
+along that curve. -/
 theorem apply_eq_of_isMIntegralCurveOn (hX : σ.IsHamiltonianVectorField f X) {γ : ℝ → M}
-    {s : Set ℝ} (hs : IsOpen s) (hs' : IsPreconnected s) (hγ : IsMIntegralCurveOn γ X s)
+    {s : Set ℝ} (hs' : IsPreconnected s) (hγ : IsMIntegralCurveOn γ X s)
     (hf : ∀ t ∈ s, MDifferentiableAt I 𝓘(ℝ) f (γ t)) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
     f (γ t) = f (γ t₀) :=
-  hγ.apply_eq_of_mvfderiv_apply_eq_zero hs hs' hf (fun u _ ↦ hX.mvfderiv_apply_self (γ u)) ht₀ ht
+  hγ.apply_eq_of_mvfderiv_apply_eq_zero hs' hf (fun u _ ↦ hX.mvfderiv_apply_self (γ u)) ht₀ ht
 
 /-- **Conservation of energy** along a global integral curve: a Hamiltonian, differentiable along
 an integral curve of its Hamiltonian vector field, is constant along that curve. -/
 theorem apply_eq_of_isMIntegralCurve (hX : σ.IsHamiltonianVectorField f X) {γ : ℝ → M}
     (hγ : IsMIntegralCurve γ X) (hf : ∀ t, MDifferentiableAt I 𝓘(ℝ) f (γ t)) (s t : ℝ) :
     f (γ t) = f (γ s) :=
-  hX.apply_eq_of_isMIntegralCurveOn isOpen_univ isPreconnected_univ (hγ.isMIntegralCurveOn _)
+  hX.apply_eq_of_isMIntegralCurveOn isPreconnected_univ (hγ.isMIntegralCurveOn _)
     (fun t _ ↦ hf t) (Set.mem_univ s) (Set.mem_univ t)
 
 end IsHamiltonianVectorField
@@ -246,6 +246,21 @@ theorem hamiltonianVectorField_add_smul {x : M} (hf : MDifferentiableAt I 𝓘(�
     σ.hamiltonianVectorField (f + r • g) x =
       σ.hamiltonianVectorField f x + r • σ.hamiltonianVectorField g x := by
   rw [hamiltonianVectorField_add hf (hg.const_smul r), hamiltonianVectorField_const_smul]
+
+/-- The Hamiltonian vector field is subtractive on differentiable functions. -/
+theorem hamiltonianVectorField_sub {x : M} (hf : MDifferentiableAt I 𝓘(ℝ) f x)
+    (hg : MDifferentiableAt I 𝓘(ℝ) g x) :
+    σ.hamiltonianVectorField (f - g) x =
+      σ.hamiltonianVectorField f x - σ.hamiltonianVectorField g x := by
+  simp [hamiltonianVectorField_def, mvfderiv_sub hf hg]
+
+/-- The Hamiltonian vector field of a finite sum of functions differentiable at `x` is the sum of
+their Hamiltonian vector fields at `x`. -/
+theorem hamiltonianVectorField_fun_sum {ι : Type*} {s : Finset ι} {F : ι → M → ℝ} {x : M}
+    (hF : ∀ i ∈ s, MDifferentiableAt I 𝓘(ℝ) (F i) x) :
+    σ.hamiltonianVectorField (fun y ↦ ∑ i ∈ s, F i y) x =
+      ∑ i ∈ s, σ.hamiltonianVectorField (F i) x := by
+  simp only [hamiltonianVectorField_def, mvfderiv_fun_sum hF, map_sum]
 
 /-- At fixed `x`, the derivative in the real coefficient of `f + t • g`, read in the model
 space of the tangent fiber, is the Hamiltonian vector of `g` at `x`. -/
@@ -406,7 +421,7 @@ theorem IsNondegenerate.isMIntegralCurve_or_exists_of_isMIntegralCurve_add_comp
         ((isClosed_tsupport G).isOpen_compl.preimage hγc) t hmem
       refine Filter.mem_of_superset (Metric.ball_mem_nhds t hε) fun u hu ↦ ?_
       have h := (hγ.isMIntegralCurveOn (Metric.ball t ε)).apply_eq_of_mvfderiv_apply_eq_zero
-        Metric.isOpen_ball (convex_ball t ε).isPreconnected (fun v _ ↦ hF _) (fun v hv ↦ ?_)
+        (convex_ball t ε).isPreconnected (fun v _ ↦ hF _) (fun v hv ↦ ?_)
         (Metric.mem_ball_self hε) hu
       · exact h.trans ht
       rw [hXH, hXG _ (hball hv), zero_add, map_smul,
@@ -499,6 +514,36 @@ theorem poissonBracket_const_smul_right (c : ℝ) (x : M) :
     σ.poissonBracket f (c • g) x = c • σ.poissonBracket f g x := by
   simp only [poissonBracket_def, hamiltonianVectorField_const_smul c x,
     ← SmoothForm.bilinFormAt_apply, map_smul]
+
+/-- The Poisson bracket is subtractive in its first argument on differentiable functions. -/
+theorem poissonBracket_sub_left {k : M → ℝ} {x : M}
+    (hf : MDifferentiableAt I 𝓘(ℝ) f x) (hg : MDifferentiableAt I 𝓘(ℝ) g x) :
+    σ.poissonBracket (f - g) k x = σ.poissonBracket f k x - σ.poissonBracket g k x := by
+  simp only [poissonBracket_def, hamiltonianVectorField_sub hf hg,
+    ← SmoothForm.bilinFormAt_apply, map_sub, LinearMap.sub_apply]
+
+/-- The Poisson bracket is subtractive in its second argument on differentiable functions. -/
+theorem poissonBracket_sub_right {k : M → ℝ} {x : M}
+    (hf : MDifferentiableAt I 𝓘(ℝ) f x) (hg : MDifferentiableAt I 𝓘(ℝ) g x) :
+    σ.poissonBracket k (f - g) x = σ.poissonBracket k f x - σ.poissonBracket k g x := by
+  simp only [poissonBracket_def, hamiltonianVectorField_sub hf hg,
+    ← SmoothForm.bilinFormAt_apply, map_sub]
+
+/-- The Poisson bracket is additive in its first argument on finite sums of functions
+differentiable at the point: `{∑ fᵢ, g} = ∑ {fᵢ, g}`. -/
+theorem poissonBracket_fun_sum_left {ι : Type*} {s : Finset ι} {F : ι → M → ℝ} {x : M}
+    (hF : ∀ i ∈ s, MDifferentiableAt I 𝓘(ℝ) (F i) x) :
+    σ.poissonBracket (fun y ↦ ∑ i ∈ s, F i y) g x = ∑ i ∈ s, σ.poissonBracket (F i) g x := by
+  simp only [poissonBracket_def, hamiltonianVectorField_fun_sum hF,
+    ← SmoothForm.bilinFormAt_apply, map_sum, LinearMap.sum_apply]
+
+/-- The Poisson bracket is additive in its second argument on finite sums of functions
+differentiable at the point: `{f, ∑ gᵢ} = ∑ {f, gᵢ}`. -/
+theorem poissonBracket_fun_sum_right {ι : Type*} {s : Finset ι} {G : ι → M → ℝ} {x : M}
+    (hG : ∀ i ∈ s, MDifferentiableAt I 𝓘(ℝ) (G i) x) :
+    σ.poissonBracket f (fun y ↦ ∑ i ∈ s, G i y) x = ∑ i ∈ s, σ.poissonBracket f (G i) x := by
+  simp only [poissonBracket_def, hamiltonianVectorField_fun_sum hG,
+    ← SmoothForm.bilinFormAt_apply, map_sum]
 
 namespace IsNondegenerate
 

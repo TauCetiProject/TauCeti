@@ -5,27 +5,36 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 public import Mathlib.Algebra.BigOperators.NatAntidiagonal
 public import Mathlib.Algebra.Module.Defs
 import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 import Mathlib.Algebra.BigOperators.Intervals
 
 /-!
-# Sums over the antidiagonals of `ℕ × ℕ`
+# Sums and products over the antidiagonals of `ℕ × ℕ`
 
-Two identities for sums over `Finset.antidiagonal k`, the pairs `(i, j)` with `i + j = k`.
+Identities for sums and products over `Finset.antidiagonal k`, the pairs `(i, j)` with
+`i + j = k`.
 
-The first splits a sum over `i + j = k + 1`, weighted by `k + 1 = i + j`, into the parts weighted
+A product over the triples `(a, b, c)` with `a + b + c = n` can be computed by first splitting `n`
+as `(a + b) + c` and then `a + b`, or by first splitting `n` as `a + (b + c)` and then `b + c`.
+This associativity of the antidiagonal convolution is what makes a comultiplication
+`xₙ ↦ ∑_{i + j = n} xᵢ ⊗ xⱼ` coassociative.
+
+A sum over `i + j = k + 1`, weighted by `k + 1 = i + j`, splits into the parts weighted
 by `i` and by `j`, each reindexed over `i + j = k`. It is the step that turns a recursion
 `(k + 1) T (k + 1) = D (T k)` for the degree-`k` terms of a formal product, in which the
 derivation `D` acts on one factor at a time, into a recursion for the degree-`k` terms of a
 double product, as in generating-function arguments.
 
-The second rewrites the sum over all antidiagonals `i + j = k` with `k < N` as the sum over the
-triangle `i < N`, `j < N - i`, so that the inner sum can be evaluated for each fixed `i`.
+Finally, the sum over all antidiagonals `i + j = k` with `k < N` can be rewritten as the sum over
+the triangle `i < N`, `j < N - i`, so that the inner sum can be evaluated for each fixed `i`.
 
 ## Main results
 
+* `Finset.Nat.prod_antidiagonal_prod_antidiagonal_fst`: associativity of the antidiagonal
+  convolution.
 * `Finset.Nat.natCast_add_one_smul_sum_antidiagonal_succ`: the weighted split of a sum over
   `i + j = k + 1`.
 * `Finset.Nat.sum_range_sum_antidiagonal`: the sum over the antidiagonals below `N` as a sum over a
@@ -37,6 +46,19 @@ public section
 namespace Finset.Nat
 
 variable {M : Type*}
+
+/-- **Associativity of the antidiagonal convolution**: the product over `a + b + c = n` taken as
+`(a + b) + c` agrees with the product taken as `a + (b + c)`. -/
+@[to_additive /-- **Associativity of the antidiagonal convolution**: the sum over `a + b + c = n`
+taken as `(a + b) + c` agrees with the sum taken as `a + (b + c)`. -/]
+theorem prod_antidiagonal_prod_antidiagonal_fst [CommMonoid M] (n : ℕ)
+    (f : ℕ → ℕ → ℕ → M) :
+    ∏ p ∈ antidiagonal n, ∏ q ∈ antidiagonal p.1, f q.1 q.2 p.2 =
+      ∏ p ∈ antidiagonal n, ∏ q ∈ antidiagonal p.2, f p.1 q.1 q.2 := by
+  rw [prod_sigma', prod_sigma']
+  -- reindex the triples: `((a + b, c), (a, b)) ↦ ((a, b + c), (b, c))`
+  apply prod_nbij' (fun x => ⟨(x.2.1, x.2.2 + x.1.2), (x.2.2, x.1.2)⟩)
+    (fun x => ⟨(x.1.1 + x.2.1, x.2.2), (x.1.1, x.2.1)⟩) <;> aesop (add simp [add_assoc])
 
 /-- Weighting the terms `f (i, j)` with `i + j = k + 1` by `k + 1 = i + j` splits their sum into
 the parts weighted by `i` and by `j`, reindexed over `i + j = k`:
