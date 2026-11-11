@@ -118,11 +118,10 @@ theorem map_sub_prod_geometricMeasure {p : unitInterval} (hp : p ≠ 0) :
       discreteLaplaceMeasure 0 (1 - p) := by
   have hp0 : (0 : ℝ) < p := unitInterval.pos_iff_ne_zero.mpr hp
   have hq0 : (0 : ℝ) ≤ 1 - p := by simp [p.2.2]
-  have hq1 : (1 : ℝ) - p < 1 := by simp [hp0]
   refine Measure.ext_of_singleton fun k => ?_
   obtain ⟨n, rfl | rfl⟩ := k.eq_nat_or_neg
   · rw [map_sub_prod_geometricMeasure_singleton_natCast hp,
-      discreteLaplaceMeasure_singleton 0 hq0 hq1]
+      discreteLaplaceMeasure_singleton 0 hq0]
   · -- Negative integers reduce to natural ones by the symmetry of both laws.
     have hpre : Neg.neg ⁻¹' {-(n : ℤ)} = {(n : ℤ)} := by ext; simp
     rw [← Measure.map_neg_map_sub_prod_self _ (f := ((↑) : ℕ → ℤ)) measurable_from_top,
@@ -130,7 +129,7 @@ theorem map_sub_prod_geometricMeasure {p : unitInterval} (hp : p ≠ 0) :
       Measure.map_apply (by fun_prop) (measurableSet_singleton _),
       Measure.map_apply (by fun_prop) (measurableSet_singleton _), hpre,
       map_sub_prod_geometricMeasure_singleton_natCast hp,
-      discreteLaplaceMeasure_singleton 0 hq0 hq1]
+      discreteLaplaceMeasure_singleton 0 hq0]
 
 /-! ### Sums of geometric variables -/
 

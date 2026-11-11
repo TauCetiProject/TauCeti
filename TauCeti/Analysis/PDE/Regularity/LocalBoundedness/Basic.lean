@@ -207,7 +207,7 @@ private theorem exists_mem_w1p0Submodule_norm_gradient_sq_le_of_caccioppoli
   replace hcacc : ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu ≤ A * J + B * I := hcacc
   -- `∇ψ` vanishes off the support of `ψ`, where `(u - l)⁺ ≤ (u - k)⁺`.
   have hJ : J ≤ G ^ 2 * I := by
-    have hbound := W1p.setIntegral_norm_gradient_sq_mul_value_sq_le w hψ hG hT
+    have hbound := W1p.setIntegral_norm_gradient_sq_mul_value_sq_le w hψ hG (S := T)
       (by simp [T]) hwLp.integrable_sq (value_posPartAboveOfMemLp_sq_le_ae hkl.le hwl)
     simpa only [J, I] using hbound
   refine ⟨z, W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (by norm_num) hψ hM hψM'
@@ -272,11 +272,9 @@ theorem setIntegral_sq_mul_max_sub_sq_le_of_caccioppoli {q : ℝ≥0∞} (hq : 2
     exists_mem_w1p0Submodule_norm_gradient_sq_le_of_caccioppoli hkl hwLp hψ hcpt hts hG hA hcacc
   -- `z` vanishes off `A' = supp ψ ∩ {u > l}`, whose measure Chebyshev's inequality controls.
   set A' := T ∩ {x | l < W1p.value u x}
-  have hA' : MeasurableSet A' :=
-    hT.inter (measurableSet_lt measurable_const (Lp.stronglyMeasurable _).measurable)
   have hAfin : mu ((Omega : Set (EuclideanSpace ℝ ι)) ∩ A') ≠ (∞ : ℝ≥0∞) :=
     ne_top_of_le_ne_top hTfin (measure_mono (inter_subset_right.trans inter_subset_left))
-  have hsob := W1p.integral_value_sq_le_of_eLpNorm_le hq (hS z hz) hA' hAfin hvA
+  have hsob := W1p.integral_value_sq_le_of_eLpNorm_le hq (hS z hz) hAfin hvA
   -- Chebyshev: on `{u > l}`, the lower truncation `(u - k)⁺` is at least `l - k`.
   have hcheb : mu.real ((Omega : Set (EuclideanSpace ℝ ι)) ∩ A') ≤ I / (l - k) ^ 2 := by
     rw [← inter_assoc]
@@ -439,14 +437,14 @@ zeroth-order term of the Caccioppoli inequality at the level `l`. -/
 private theorem setIntegral_sq_mul_posPart_sq_le {u : W1p mu Omega 2} {k l : ℝ} (hkl : k ≤ l)
     (hwk : MemLp (fun x => max (W1p.value u x - k) 0) 2 (mu.restrict Omega))
     (hwl : MemLp (fun x => max (W1p.value u x - l) 0) 2 (mu.restrict Omega))
-    {ψ : EuclideanSpace ℝ ι → ℝ} (hψc : Continuous ψ) (hψ01 : range ψ ⊆ Icc 0 1) :
+    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ01 : range ψ ⊆ Icc 0 1) :
     ∫ x in Omega, ψ x ^ 2 *
       W1p.value (W1p.posPartAboveOfMemLp (by norm_num) l u hwl) x ^ 2 ∂mu ≤
       ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ tsupport ψ,
         max (W1p.value u x - k) 0 ^ 2 ∂mu :=
-  W1p.setIntegral_sq_mul_value_sq_le _ hψc.aestronglyMeasurable (fun x => by
+  W1p.setIntegral_sq_mul_value_sq_le _ (fun x => by
     obtain ⟨h0, h1⟩ := hψ01 (mem_range_self x)
-    exact pow_le_one₀ h0 h1) (isClosed_tsupport ψ).measurableSet subset_rfl
+    exact pow_le_one₀ h0 h1) subset_rfl
     hwk.integrable_sq (value_posPartAboveOfMemLp_sq_le_ae hkl hwl)
 
 /-- One step of De Giorgi's iteration on balls. Suppose that the truncations `(u - l)⁺` at every
@@ -497,7 +495,7 @@ private theorem setIntegral_ball_max_sub_sq_succ_le {q : ℝ≥0∞} (hq : 2 ≤
     (B := B)
     ((hcacc.setIntegral_sq_mul_norm_gradient_sq_le (hk0.trans hkl.le) hwl hψ hcpt hts).trans
       (add_le_add le_rfl (mul_le_mul_of_nonneg_left
-        (setIntegral_sq_mul_posPart_sq_le hkl.le hwk hwl hψ.continuous hψ01) hB)))
+        (setIntegral_sq_mul_posPart_sq_le hkl.le hwk hwl hψ01) hB)))
   -- Integrability of the truncations on `Ω`, and nonnegativity.
   have hint : ∀ m : ℝ, k₀ ≤ m →
       IntegrableOn (fun x => max (W1p.value u x - m) 0 ^ 2) (Omega : Set _) mu :=
