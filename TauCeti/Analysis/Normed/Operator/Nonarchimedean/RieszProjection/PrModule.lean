@@ -78,7 +78,7 @@ variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
 row-compact endomorphism of a module with property (Pr), and `a` a good zero of order `h` of its
 Fredholm series `H_u`: `ΔʲH_u(a) = 0` for `j < h` and `ΔʰH_u(a)` is a unit. Then `u` has a Riesz
 projection at `a` of order `h`. -/
-theorem IsPrCompact.exists_isRieszProjection [NormOneClass R]
+theorem IsPrCompact.exists_isRieszProjection
     (hu : u.IsPrCompact) (ha : u.charPowerSeries.IsGoodZero a h) :
     ∃ E, IsRieszProjection u a h E := by
   classical
@@ -125,7 +125,7 @@ end PrModule
 
 section Ring
 
-variable {R M : Type*} [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
+variable {R M : Type*} [NormedCommRing R] [IsUltrametricDist R]
   [CompleteSpace R] [TauCeti.NormedRing.IsTate R]
   [SeminormedAddCommGroup M] [Module R M] [ContinuousConstSMul R M]
   {u E : M →L[R] M} {a : R} {h n : ℕ}

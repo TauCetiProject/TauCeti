@@ -47,8 +47,6 @@ of the tube to `s₀`.
 * `TauCeti.pontryaginThomCollapseMap`: the collapse as a continuous map.
 * `TauCeti.pontryaginThomCollapseMap_homotopic`: isotopic tubes have homotopic collapses.
 * `TauCeti.pontryaginThomSphereMap`: the collapse onto the sphere `Sᵏ`.
-* `TauCeti.IsFramedTube.pontryaginThomSphereMap_eq_iff`: the collapse onto the sphere sends exactly
-  the core to the image of the origin.
 
 ## References
 
@@ -245,18 +243,6 @@ theorem pontryaginThomSphereMap_of_notMem_range {k : ℕ} [CompactSpace S] [T2Sp
     (s₀ : Metric.sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) {m : M} (hm : m ∉ range τ) :
     pontryaginThomSphereMap hτ s₀ m = s₀ := by
   simp [pontryaginThomSphereMap, pontryaginThomCollapse_of_notMem_range hm]
-
-/-- **The core is the preimage of the image of the origin.** The Pontryagin–Thom collapse of a
-framed tube onto the sphere sends a point to the image of the origin exactly when it lies on the
-core. -/
-theorem IsFramedTube.pontryaginThomSphereMap_eq_iff {k : ℕ} [CompactSpace S] [T2Space M]
-    {f : S → M} {τ : S × (Fin k → ℝ) → M} (h : IsFramedTube f τ)
-    (s₀ : Metric.sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) {m : M} :
-    pontryaginThomSphereMap h.isOpenEmbedding s₀ m =
-        onePointHomeomorphSphere k s₀ ((0 : Fin k → ℝ) : OnePoint (Fin k → ℝ)) ↔
-      m ∈ range f := by
-  rw [coe_pontryaginThomSphereMap, comp_apply, (onePointHomeomorphSphere k s₀).injective.eq_iff,
-    h.pontryaginThomCollapse_eq_zero_iff]
 
 /-- Isotopic tubes have homotopic collapses onto the sphere. -/
 theorem pontryaginThomSphereMap_homotopic {k : ℕ} [CompactSpace S] [T2Space M]

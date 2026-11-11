@@ -29,7 +29,10 @@ points, each pushed forward from a small neighbourhood of that point. For a prop
 connected manifold the degree is therefore the sum of the local indices over any finite fibre
 (`TauCeti.HomologicalOrientation.degree_eq_sum_localIndex`). This is how a degree is computed by
 counting the preimages of a regular value with signs, once the local index at a regular point is
-identified with the sign of the Jacobian.
+identified with the sign of the Jacobian. At a point where `f` is a local homeomorphism the local
+index is `±1`
+(`TauCeti.HomologicalOrientation.localIndex_eq_one_or_eq_neg_one_of_isLocalHomeomorphOn`), so a
+proper map whose fibre over a point of a connected target is a single such point has degree `±1`.
 
 ## Main definitions
 
@@ -45,10 +48,10 @@ identified with the sign of the Jacobian.
   finite fibre is the sum of the local indices over the fibre.
 * `TauCeti.HomologicalOrientation.degree_eq_sum_localIndex`: the degree of a proper map onto a
   preconnected manifold is the sum of the local indices over any finite fibre.
-* `TauCeti.HomologicalOrientation.isUnit_localIndex_of_isOpenEmbedding`: at a point near which
-  the map is an open embedding, the local index is `±1`.
-* `TauCeti.HomologicalOrientation.isUnit_degree_of_isOpenEmbedding`: a proper map with a fibre
-  consisting of a single such point has degree `±1`.
+* `TauCeti.HomologicalOrientation.localIndex_eq_one_or_eq_neg_one_of_isLocalHomeomorphOn`: a
+  local homeomorphism has local index `±1`.
+* `TauCeti.HomologicalOrientation.degree_eq_one_or_eq_neg_one_of_isLocalHomeomorphOn`: a proper
+  map with a one-point fibre, at whose point it is a local homeomorphism, has degree `±1`.
 
 ## References
 
@@ -98,21 +101,10 @@ private theorem localIndexClass_of_subset (f : C(M, N)) {x : M} {y : N} {U V : S
     (hU : ∀ z ∈ U, f z = y → z = x) :
     o.localIndexClass f hVo hx (fun z hz ↦ hU z (hVU hz)) =
       o.localIndexClass f hUo (hVU hx) hU := by
-  have hj := hUo.isOpenEmbedding_subtypeVal
-  have hk := hVo.isOpenEmbedding_subtypeVal
   have hincl : ContinuousMap.inclusion hVU ⁻¹' {⟨x, hVU hx⟩} ⊆ {⟨x, hx⟩} :=
     fun z hz ↦ Subtype.ext (by simpa [Subtype.ext_iff] using hz)
-  -- The inclusion `V → U` carries the local orientation of `V` at `x` to that of `U` at `x`, since
-  -- both map to `o x` under the excision isomorphism of `U`, which is injective.
-  have hmap : localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) (ContinuousMap.inclusion hVU) hincl n
-      ((hk.localOrientationEquiv ⟨x, hx⟩ n).symm (o x)).val =
-      ((hj.localOrientationEquiv ⟨x, hVU hx⟩ n).symm (o x)).val := by
-    refine (ConcreteCategory.bijective_of_isIso (localHomologyIsoOfIsOpenEmbedding
-      (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) hj ⟨x, hVU hx⟩ n).hom).1 ?_
-    rw [localHomologyIsoOfIsOpenEmbedding_hom, ← ConcreteCategory.comp_apply,
-      localHomologyMap_comp]
-    exact (hk.localHomologyMap_localOrientationEquiv_symm ⟨x, hx⟩ (o x) _).trans
-      (hj.localHomologyMap_localOrientationEquiv_symm ⟨x, hVU hx⟩ (o x) _).symm
+  -- The inclusion `V → U` carries the local orientation of `V` at `x` to that of `U` at `x`.
+  have hmap := hUo.localHomologyMap_inclusion_localOrientationEquiv_symm hVo hVU hx (o x) hincl
   have hcomp : (f.restrict U).comp (ContinuousMap.inclusion hVU) = f.restrict V :=
     ContinuousMap.ext fun _ ↦ rfl
   rw [localIndexClass, localIndexClass, ← hmap, ← ConcreteCategory.comp_apply,
@@ -336,39 +328,46 @@ theorem localIndex_id (x : M) : o.localIndex o (ContinuousMap.id M) x = 1 := by
   rw [← o.localDegree_eq_localIndex o hE hE _ (preimage_id (s := {x})), localDegree_id]
 
 include hF in
-/-- **A local homeomorphism has local index `±1`.** If `f` restricts to an open embedding on an
-open neighbourhood `U` of `x`, the local index of `f` at `x` is a unit of `ℤ`: the open embedding
-identifies the local homology of `M` at `x` with that of `N` at `f x`, so it carries the local
-orientation `o x` to one of the two local orientations `± o' (f x)`. -/
-theorem isUnit_localIndex_of_isOpenEmbedding (f : C(M, N)) {x : M} {U : Set M} (hUo : IsOpen U)
-    (hx : x ∈ U) (hfU : IsOpenEmbedding (f.restrict U)) : IsUnit (o.localIndex o' f x) := by
-  have hU : ∀ z ∈ U, f z = f x → z = x := fun z hz hfz ↦
-    congrArg Subtype.val (hfU.injective (a₁ := ⟨z, hz⟩) (a₂ := ⟨x, hx⟩) hfz)
-  -- The image of the local orientation `o x`, read in `U`, is a local orientation at `f x`.
-  set w := hfU.localOrientationEquiv ⟨x, hx⟩ n
-    ((hUo.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨x, hx⟩ n).symm (o x))
-  have hw : w.val = o.localIndex o' f x • (o' (f x)).val := by
-    rw [IsOpenEmbedding.coe_localOrientationEquiv, localHomologyIsoOfIsOpenEmbedding_hom]
-    exact o.localHomologyMap_restrict_localOrientationEquiv_symm o' f rfl hUo hx hU
+/-- **A local homeomorphism has local index `±1`.** If `f` is a local homeomorphism at `x`, it
+identifies the local homology of `M` at `x` with that of `N` at `f x`. So it carries the local
+orientation `o x` to a generator of `Hₙ(N, N ∖ {f x}; ℤ)`, which is `o' (f x)` or its
+negative. -/
+theorem localIndex_eq_one_or_eq_neg_one_of_isLocalHomeomorphOn {f : C(M, N)} {s : Set M}
+    (hf : IsLocalHomeomorphOn f s) {x : M} (hx : x ∈ s) :
+    o.localIndex o' f x = 1 ∨ o.localIndex o' f x = -1 := by
+  obtain ⟨e, hxe, hfe⟩ := hf x hx
+  have hU : IsOpenEmbedding (f.restrict e.source) := by
+    rw [ContinuousMap.coe_restrict, hfe]
+    exact e.isOpenEmbedding_restrict
+  have hfib : ∀ z ∈ e.source, f z = f x → z = x := fun z hz hfz ↦
+    congrArg Subtype.val (hU.injective (a₁ := ⟨z, hz⟩) (a₂ := ⟨x, hxe⟩) hfz)
+  -- The restriction of `f` to `e.source` carries the local orientation `o x`, read in
+  -- `e.source`, to the local orientation of `N` at `f x` corresponding to it, which is
+  -- `± o' (f x)`.
+  let w := hU.localOrientationEquiv ⟨x, hxe⟩ n
+    ((e.open_source.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨x, hxe⟩ n).symm (o x))
+  have hw := hU.localHomologyMap_localOrientationEquiv_symm ⟨x, hxe⟩ w
+    (fun z hz ↦ Subtype.ext (hfib z z.2 hz))
+  rw [Equiv.symm_apply_apply] at hw
+  have key (c : ℤ) (hc : w.val = c • (o' (f x)).val) : o.localIndex o' f x = c :=
+    (o.localIndex_eq_iff o' hF f rfl e.open_source hxe hfib).2 (hw.trans hc)
   subst hF
   rcases IsLocalOrientation.eq_or_eq_neg
       (singularHomologyComplSingletonFinrankIso _ (chartAt F (f x)) (mem_chart_source F (f x)))
       (o' (f x)).property w.property with h | h
-  · rw [h] at hw
-    exact o'.zsmul_left_injective rfl (f x) ((one_zsmul _).trans hw) ▸ isUnit_one
-  · rw [h] at hw
-    exact o'.zsmul_left_injective rfl (f x) ((neg_one_zsmul _).trans hw) ▸ isUnit_one.neg
+  · exact Or.inl (key 1 (by rw [h, one_zsmul]))
+  · exact Or.inr (key (-1) (by rw [h, neg_one_zsmul]))
 
 include hF in
-/-- **A map with a single, locally homeomorphic, point in a fibre has degree `±1`.** Let `f` be a
-proper map onto a preconnected manifold, `x` the only point of `M` sent to `f x`, and `U` an open
-neighbourhood of `x` on which `f` restricts to an open embedding. Then the degree of `f` is a unit
-of `ℤ`. -/
-theorem isUnit_degree_of_isOpenEmbedding [PreconnectedSpace N] {f : C(M, N)}
-    (hf : IsProperMap f) {x : M} (hx : f ⁻¹' {f x} = {x}) {U : Set M} (hUo : IsOpen U)
-    (hxU : x ∈ U) (hfU : IsOpenEmbedding (f.restrict U)) : IsUnit (o.degree o' hE f) := by
-  rw [← o.localDegree_eq_degree o' hE hF hf (f x), o.localDegree_eq_localIndex o' hE hF f hx]
-  exact o.isUnit_localIndex_of_isOpenEmbedding o' hF f hUo hxU hfU
+/-- **A map with a one-point fibre at which it is a local homeomorphism has degree `±1`.** For a
+proper map `f` onto a preconnected manifold, if `x` is the only point sent to `f x` and `f` is a
+local homeomorphism at `x`, then the degree of `f` is `1` or `-1`. -/
+theorem degree_eq_one_or_eq_neg_one_of_isLocalHomeomorphOn [PreconnectedSpace N] {f : C(M, N)}
+    (hf : IsProperMap f) {x : M} (hfib : f ⁻¹' {f x} = {x}) {s : Set M}
+    (hs : IsLocalHomeomorphOn f s) (hx : x ∈ s) :
+    o.degree o' hE f = 1 ∨ o.degree o' hE f = -1 := by
+  rw [← o.localDegree_eq_degree o' hE hF hf (f x), o.localDegree_eq_localIndex o' hE hF f hfib]
+  exact o.localIndex_eq_one_or_eq_neg_one_of_isLocalHomeomorphOn o' hF hs hx
 
 end HomologicalOrientation
 

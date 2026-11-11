@@ -9,163 +9,164 @@ public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.LocalIndex
 public import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 public import TauCeti.Geometry.Manifold.PontryaginThom.Basic
-import TauCeti.Geometry.Sphere.Connected
+public import TauCeti.Geometry.Sphere.Connected
 
 /-!
-# The degree of a Pontryagin–Thom collapse along a map
+# Degree of a Pontryagin–Thom collapse along a map meeting the core once
 
-Let `τ : S × ℝᵏ → M` be a framed tube around `f : S → M`, with `S` compact and `M` Hausdorff, and
-let `c : M → Sᵏ` be its Pontryagin–Thom collapse onto the sphere
-(`TauCeti.pontryaginThomSphereMap`). The collapse sends exactly the core `f(S)` to the image `p₀`
-of the origin of `ℝᵏ` (`TauCeti.IsFramedTube.pontryaginThomSphereMap_eq_iff`). So for a map
-`g : P → M` from a compact oriented `k`-manifold `P`, the fibre of `c ∘ g : P → Sᵏ` over `p₀` is the
-set `g⁻¹(f(S))` of points where `g` meets the core. When it is finite, the degree of `c ∘ g` is the
-sum of the local indices of `c ∘ g` over these points
+Let `τ : S × ℝᵏ → Q` be a framed tube around `f : S → Q` with compact core `S`, and let
+`c : Q → Sᵏ` be its Pontryagin–Thom collapse onto the sphere
+(`TauCeti.pontryaginThomSphereMap`). The core is exactly the preimage under `c` of the image
+`c₀` of the origin of `ℝᵏ` (`TauCeti.IsFramedTube.pontryaginThomSphereMap_eq_iff`).
+
+Let `σ : M → Q` be a map from a compact oriented `k`-manifold, `k ≥ 1`. The fibre of
+`c ∘ σ : M → Sᵏ` over `c₀` is the set `σ⁻¹(f(S))` of points where `σ` meets the core. When it is
+finite, the degree of `c ∘ σ` is the sum of the local indices of `c ∘ σ` over these points
 (`TauCeti.IsFramedTube.degree_pontryaginThomSphereMap_comp_eq_sum_localIndex`). This is the
-intersection number of `g` with the framed submanifold `f(S)`: by the identity
-`(c ∘ g)_*[P] = deg (c ∘ g) • [Sᵏ]` it computes the effect of the collapse on the fundamental class
-carried by `g`.
+intersection number of `σ` with the framed submanifold `f(S)`: by the identity
+`(c ∘ σ)_*[M] = deg (c ∘ σ) • [Sᵏ]` it computes the effect of the collapse on the fundamental class
+carried by `σ`.
 
-Near a point `x` of `g⁻¹(f(S))` the map `c ∘ g` is the normal coordinate of `g` in the tube,
-`z ↦ pr₂ (τ⁻¹ (g z))`, read in `Sᵏ`. The map `g` meets the core *transversely* at `x` when this
-normal coordinate restricts to an open embedding on a neighbourhood of `x`; for smooth `g` meeting a
-smooth framed submanifold transversely in the differential sense, the normal coordinate has
-invertible derivative at `x`, and the inverse function theorem gives this. At such a point the
-local index is `±1` (`TauCeti.HomologicalOrientation.isUnit_localIndex_of_isOpenEmbedding`).
-Hence when `g` meets the core in a single point, transversely, the degree of `c ∘ g` is `±1`
-(`TauCeti.IsFramedTube.isUnit_degree_pontryaginThomSphereMap_comp`). For connected `P` this says
-that `c ∘ g` induces a bijection `Hₖ(P; ℤ) → Hₖ(Sᵏ; ℤ)`
-(`TauCeti.IsFramedTube.bijective_singularHomologyMap_pontryaginThomSphereMap_comp`); for `g` from
-the sphere `Sᵏ` itself, `k ≥ 2`, the orientation of `Sᵏ` comes from simple connectivity
-(`TauCeti.IsFramedTube.bijective_singularHomologyMap_pontryaginThomSphereMap_comp_sphere`). The
-proof of Lemma 7.6 of Barraud–Damian–Humilière–Oancea uses this for a sphere meeting a framed
-submanifold transversely in one point; the sign of the degree depends on the orientations.
-
-Only the topology of the tube is used: `M` is an arbitrary Hausdorff space.
+Suppose now that `σ` meets the core in exactly one point `x`, and that `c ∘ σ` is a local
+homeomorphism at `x`. For a smooth tube and a smooth `σ` transverse to the core at `x`, the inverse
+function theorem in the normal coordinate of the tube gives this hypothesis; here it is assumed in
+its topological form. Then `x` is the only preimage of `c₀` under `c ∘ σ`, the local index there is
+`±1`, and so the degree of `c ∘ σ` is `±1`
+(`TauCeti.IsFramedTube.degree_pontryaginThomSphereMap_comp_eq_one_or_eq_neg_one`). For connected
+`M` the composite `c ∘ σ` therefore induces a bijection `Hₖ(M; ℤ) → Hₖ(Sᵏ; ℤ)`
+(`TauCeti.IsFramedTube.bijective_singularHomologyMap_pontryaginThomSphereMap_comp`). For `M = Sᵏ`
+with `k ≥ 2` the orientation comes from simple connectivity, and the self-map `c ∘ σ` of the sphere
+induces a bijection on `Hₖ(Sᵏ; ℤ)`
+(`TauCeti.IsFramedTube.bijective_singularHomologyMap_pontryaginThomSphereMap_comp_sphere`), as in
+the proof of Lemma 7.6 of Barraud–Damian–Humilière–Oancea.
 
 ## Main results
 
+* `TauCeti.IsFramedTube.pontryaginThomSphereMap_eq_iff`: the core is the fibre of the collapse
+  over the image of the origin.
 * `TauCeti.IsFramedTube.degree_pontryaginThomSphereMap_comp_eq_sum_localIndex`: the degree of
-  `c ∘ g` is the sum of the local indices over the points where `g` meets the core.
-* `TauCeti.IsFramedTube.isUnit_degree_pontryaginThomSphereMap_comp`: if `g` meets the core in a
-  single point, transversely, then `c ∘ g` has degree `±1`.
-* `TauCeti.IsFramedTube.bijective_singularHomologyMap_pontryaginThomSphereMap_comp`: for
-  connected `P` and `g` meeting the core once, transversely, `c ∘ g` is bijective on `Hₖ`; the
-  variant `TauCeti.IsFramedTube.bijective_singularHomologyMap_pontryaginThomSphereMap_comp_sphere`
-  treats `g : Sᵏ → M`, `k ≥ 2`, with no orientation hypotheses.
+  `c ∘ σ` is the sum of the local indices over the points where `σ` meets the core.
+* `TauCeti.IsFramedTube.degree_pontryaginThomSphereMap_comp_eq_one_or_eq_neg_one`: a map meeting
+  the core once, at a point where its composite with the collapse is a local homeomorphism, has
+  composite of degree `±1`.
+* `TauCeti.IsFramedTube.bijective_singularHomologyMap_pontryaginThomSphereMap_comp`: for connected
+  `M`, such a composite is bijective on `Hₖ(-; ℤ)`; the variant
+  `TauCeti.IsFramedTube.bijective_singularHomologyMap_pontryaginThomSphereMap_comp_sphere` treats
+  `M = Sᵏ`, `k ≥ 2`, with no orientation hypotheses.
 
 ## References
 
 * J. W. Milnor, *Topology from the Differentiable Viewpoint*, University Press of Virginia,
   1965, §§5 and 7.
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
-  Applications to cotangent bundles*, arXiv:2404.07953, Lemma 7.6.
+  Applications to cotangent bundles*, arXiv:2404.07953, §7, proof of Lemma 7.6.
 -/
 
 public section
 
-noncomputable section
-
-open Function Module Set Topology OnePoint Metric
+open Metric Module Set
 
 namespace TauCeti
 
 namespace IsFramedTube
 
-variable {S M : Type} [TopologicalSpace S] [CompactSpace S] [TopologicalSpace M] [T2Space M]
+variable {S Q : Type} [TopologicalSpace S] [CompactSpace S] [TopologicalSpace Q] [T2Space Q]
+  {k : ℕ} {f : S → Q} {τ : S × (Fin k → ℝ) → Q}
 
-variable {P E : Type} [TopologicalSpace P] [T2Space P] [CompactSpace P]
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E P] {k : ℕ}
-  (o : HomologicalOrientation P E (k + 1))
-  (o' : HomologicalOrientation (sphere (0 : EuclideanSpace ℝ (Fin (k + 2))) 1)
-    (EuclideanSpace ℝ (Fin (k + 1))) (k + 1))
-  (hE : finrank ℝ E = k + 1)
+/-- **The core is the fibre of the collapse over the image of the origin.** A point of `Q` is sent
+by the collapse onto the sphere to the image of the origin of `ℝᵏ` exactly when it lies on the core
+of the framed tube. -/
+theorem pontryaginThomSphereMap_eq_iff (h : IsFramedTube f τ)
+    (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) {m : Q} :
+    pontryaginThomSphereMap h.isOpenEmbedding s₀ m = onePointHomeomorphSphere k s₀ (0 : Fin k → ℝ)
+      ↔ m ∈ range f := by
+  rw [← h.pontryaginThomCollapse_eq_zero_iff, coe_pontryaginThomSphereMap, Function.comp_apply,
+    (onePointHomeomorphSphere k s₀).injective.eq_iff]
 
-/-- **The degree of a collapse along a map is an intersection number.** Let `c` be the
-Pontryagin–Thom collapse onto `Sᵏ⁺¹` of a framed tube around `f : S → M`, and `g : P → M` a map from
-a compact oriented manifold of dimension `k + 1` meeting the core `f(S)` in finitely many points.
-Then the degree of `c ∘ g` is the sum of the local indices of `c ∘ g` at these points. -/
-theorem degree_pontryaginThomSphereMap_comp_eq_sum_localIndex {f : S → M}
-    {τ : S × (Fin (k + 1) → ℝ) → M} (h : IsFramedTube f τ)
-    (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 2))) 1) (g : C(P, M))
-    (hg : (g ⁻¹' range f).Finite) :
-    o.degree o' hE ((pontryaginThomSphereMap h.isOpenEmbedding s₀).comp g) = ∑ x ∈ hg.toFinset,
-      o.localIndex o' ((pontryaginThomSphereMap h.isOpenEmbedding s₀).comp g) x := by
-  have := connectedSpace_euclideanSphere (by omega : 1 < k + 2)
-  have hpre : (pontryaginThomSphereMap h.isOpenEmbedding s₀).comp g ⁻¹'
-      {onePointHomeomorphSphere (k + 1) s₀ ((0 : Fin (k + 1) → ℝ) : OnePoint _)} = g ⁻¹' range f :=
-    ext fun x ↦ h.pontryaginThomSphereMap_eq_iff s₀
-  rw [o.degree_eq_sum_localIndex o' hE finrank_euclideanSpace_fin
-    ((pontryaginThomSphereMap h.isOpenEmbedding s₀).comp g).continuous.isProperMap
-    (hpre ▸ hg : (_ ⁻¹' {onePointHomeomorphSphere (k + 1) s₀ ((0 : Fin (k + 1) → ℝ) :
-      OnePoint _)}).Finite)]
+variable {M E : Type} [TopologicalSpace M] [T2Space M] [CompactSpace M]
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M]
+  (o : HomologicalOrientation M E k)
+  (o' : HomologicalOrientation (sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1)
+    (EuclideanSpace ℝ (Fin k)) k)
+  (hE : finrank ℝ E = k)
+
+/-- **The degree of a collapse along a map is an intersection number.** Let `σ : M → Q` be a map
+from a compact oriented `k`-manifold, `k ≥ 1`, meeting the core of a framed tube with fibre `ℝᵏ` in
+finitely many points. Then the degree of the composite of `σ` with the Pontryagin–Thom collapse onto
+`Sᵏ` is the sum of the local indices of this composite at these points. -/
+theorem degree_pontryaginThomSphereMap_comp_eq_sum_localIndex (h : IsFramedTube f τ)
+    (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) (hk : 1 ≤ k) (σ : C(M, Q))
+    (hσ : (σ ⁻¹' range f).Finite) :
+    o.degree o' hE ((pontryaginThomSphereMap h.isOpenEmbedding s₀).comp σ) = ∑ x ∈ hσ.toFinset,
+      o.localIndex o' ((pontryaginThomSphereMap h.isOpenEmbedding s₀).comp σ) x := by
+  have : ConnectedSpace (sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) :=
+    connectedSpace_euclideanSphere (by omega)
+  -- The fibre of the composite over the image of the origin is `σ⁻¹(range f)`.
+  have hpre : (pontryaginThomSphereMap h.isOpenEmbedding s₀).comp σ ⁻¹'
+      {onePointHomeomorphSphere k s₀ (0 : Fin k → ℝ)} = σ ⁻¹' range f :=
+    ext fun _ ↦ h.pontryaginThomSphereMap_eq_iff s₀
+  rw [o.degree_eq_sum_localIndex o' hE finrank_euclideanSpace_fin (map_continuous _).isProperMap
+    (hpre ▸ hσ : (_ ⁻¹' {onePointHomeomorphSphere k s₀ (0 : Fin k → ℝ)}).Finite)]
   exact Finset.sum_congr (Finite.toFinset_inj.2 hpre) fun _ _ ↦ rfl
 
-/-- **A map meeting the core once, transversely, is detected by the collapse.** Let `c` be the
-Pontryagin–Thom collapse onto `Sᵏ⁺¹` of a framed tube `τ` around `f : S → M`, and `g : P → M` a map
-from a compact oriented manifold of dimension `k + 1` meeting the core `f(S)` only at `x`. If `g`
-meets the core transversely at `x`, in the sense that its normal coordinate `pontryaginThomCollapse
-τ ∘ g` restricts to an open embedding on an open neighbourhood `U` of `x`, then `c ∘ g` has degree
-`±1`. -/
-theorem isUnit_degree_pontryaginThomSphereMap_comp {f : S → M}
-    {τ : S × (Fin (k + 1) → ℝ) → M} (h : IsFramedTube f τ)
-    (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 2))) 1) (g : C(P, M)) {x : P}
-    (hx : g ⁻¹' range f = {x}) {U : Set P} (hUo : IsOpen U) (hxU : x ∈ U)
-    (hgU : IsOpenEmbedding fun z : U ↦ pontryaginThomCollapse τ (g z)) :
-    IsUnit (o.degree o' hE ((pontryaginThomSphereMap h.isOpenEmbedding s₀).comp g)) := by
-  have := connectedSpace_euclideanSphere (by omega : 1 < k + 2)
-  have hgx : g x ∈ range f := hx.symm.subset (mem_singleton x)
-  -- On `U`, the collapse along `g` is the normal coordinate of `g` read in the sphere.
-  have hcU :
-      IsOpenEmbedding (((pontryaginThomSphereMap h.isOpenEmbedding s₀).comp g).restrict U) := by
-    rw [ContinuousMap.coe_restrict, ContinuousMap.coe_comp, coe_pontryaginThomSphereMap]
-    exact (onePointHomeomorphSphere (k + 1) s₀).isOpenEmbedding.comp hgU
-  refine o.isUnit_degree_of_isOpenEmbedding o' hE finrank_euclideanSpace_fin
-    ((pontryaginThomSphereMap h.isOpenEmbedding s₀).comp g).continuous.isProperMap
-    (ext fun z ↦ ?_) hUo hxU hcU
-  rw [mem_preimage, mem_singleton_iff, ContinuousMap.comp_apply, ContinuousMap.comp_apply,
-    (h.pontryaginThomSphereMap_eq_iff s₀).2 hgx, h.pontryaginThomSphereMap_eq_iff s₀,
-    ← mem_preimage, hx, mem_singleton_iff]
+/-- **A map meeting the core once has collapse of degree `±1`.** Let `σ : M → Q` be a map from a
+compact oriented `k`-manifold, `k ≥ 1`, meeting the core of a framed tube with fibre `ℝᵏ` in the
+single point `x`. If the composite of `σ` with the Pontryagin–Thom collapse onto `Sᵏ` is a local
+homeomorphism at `x`, then this composite has degree `1` or `-1`. -/
+theorem degree_pontryaginThomSphereMap_comp_eq_one_or_eq_neg_one (h : IsFramedTube f τ)
+    (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) (hk : 1 ≤ k) (σ : C(M, Q)) {x : M}
+    (hx : σ ⁻¹' range f = {x})
+    (hσ : IsLocalHomeomorphOn (pontryaginThomSphereMap h.isOpenEmbedding s₀ ∘ σ) {x}) :
+    o.degree o' hE ((pontryaginThomSphereMap h.isOpenEmbedding s₀).comp σ) = 1 ∨
+      o.degree o' hE ((pontryaginThomSphereMap h.isOpenEmbedding s₀).comp σ) = -1 := by
+  have : ConnectedSpace (sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) :=
+    connectedSpace_euclideanSphere (by omega)
+  have hσx : σ x ∈ range f := hx.symm.subset (mem_singleton x)
+  -- The fibre of the composite over the image of the origin is `σ⁻¹(range f) = {x}`.
+  have hfib : (pontryaginThomSphereMap h.isOpenEmbedding s₀).comp σ ⁻¹'
+      {(pontryaginThomSphereMap h.isOpenEmbedding s₀).comp σ x} = {x} := by
+    ext z
+    simp only [mem_preimage, mem_singleton_iff, ContinuousMap.comp_apply,
+      (h.pontryaginThomSphereMap_eq_iff s₀).2 hσx, h.pontryaginThomSphereMap_eq_iff s₀]
+    rw [← mem_preimage, hx, mem_singleton_iff]
+  exact o.degree_eq_one_or_eq_neg_one_of_isLocalHomeomorphOn o' hE finrank_euclideanSpace_fin
+    (map_continuous _).isProperMap hfib hσ (mem_singleton x)
 
 include o o' hE in
-/-- **A map meeting the core once, transversely, is detected on homology.** Let `c` be the
-Pontryagin–Thom collapse onto `Sᵏ⁺¹` of a framed tube `τ` around `f : S → M`, and `g : P → M` a map
-from a compact connected oriented manifold of dimension `k + 1` meeting the core `f(S)` only at
-`x`, transversely: its normal coordinate `pontryaginThomCollapse τ ∘ g` restricts to an open
-embedding on an open neighbourhood `U` of `x`. Then `c ∘ g : P → Sᵏ⁺¹` induces a bijection
-`Hₖ₊₁(P; ℤ) → Hₖ₊₁(Sᵏ⁺¹; ℤ)`. -/
-theorem bijective_singularHomologyMap_pontryaginThomSphereMap_comp [ConnectedSpace P]
-    {f : S → M} {τ : S × (Fin (k + 1) → ℝ) → M} (h : IsFramedTube f τ)
-    (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 2))) 1) (g : C(P, M)) {x : P}
-    (hx : g ⁻¹' range f = {x}) {U : Set P} (hUo : IsOpen U) (hxU : x ∈ U)
-    (hgU : IsOpenEmbedding fun z : U ↦ pontryaginThomCollapse τ (g z)) :
-    Function.Bijective (ContinuousMap.singularHomologyMap ℤ (k + 1)
-      ((pontryaginThomSphereMap h.isOpenEmbedding s₀).comp g)) := by
-  have := connectedSpace_euclideanSphere (by omega : 1 < k + 2)
-  exact (o.bijective_singularHomologyMap_iff_isUnit_degree o' hE finrank_euclideanSpace_fin _).2
-    (h.isUnit_degree_pontryaginThomSphereMap_comp o o' hE s₀ g hx hUo hxU hgU)
+/-- **A map meeting the core once is detected on homology.** Let `σ : M → Q` be a map from a
+compact connected oriented `k`-manifold, `k ≥ 1`, meeting the core of a framed tube with fibre `ℝᵏ`
+in the single point `x`. If the composite of `σ` with the Pontryagin–Thom collapse onto `Sᵏ` is a
+local homeomorphism at `x`, then this composite induces a bijection `Hₖ(M; ℤ) → Hₖ(Sᵏ; ℤ)`. -/
+theorem bijective_singularHomologyMap_pontryaginThomSphereMap_comp [ConnectedSpace M]
+    (h : IsFramedTube f τ) (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) (hk : 1 ≤ k)
+    (σ : C(M, Q)) {x : M} (hx : σ ⁻¹' range f = {x})
+    (hσ : IsLocalHomeomorphOn (pontryaginThomSphereMap h.isOpenEmbedding s₀ ∘ σ) {x}) :
+    Function.Bijective (ContinuousMap.singularHomologyMap ℤ k
+      ((pontryaginThomSphereMap h.isOpenEmbedding s₀).comp σ)) := by
+  have : ConnectedSpace (sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) :=
+    connectedSpace_euclideanSphere (by omega)
+  exact (o.bijective_singularHomologyMap_iff o' hE finrank_euclideanSpace_fin _).2
+    (h.degree_pontryaginThomSphereMap_comp_eq_one_or_eq_neg_one o o' hE s₀ hk σ hx hσ)
 
-/-- **A sphere meeting the core once, transversely, maps with degree `±1`.** Let `c` be the
-Pontryagin–Thom collapse onto `Sⁿ⁺²` of a framed tube `τ` around `f : S → M`, and `g : Sⁿ⁺² → M` a
-map meeting the core `f(S)` only at `x`, transversely: its normal coordinate
-`pontryaginThomCollapse τ ∘ g` restricts to an open embedding on an open neighbourhood `U` of `x`.
-Then `c ∘ g : Sⁿ⁺² → Sⁿ⁺²` induces a bijection on `Hₙ₊₂(Sⁿ⁺²; ℤ)`. -/
-theorem bijective_singularHomologyMap_pontryaginThomSphereMap_comp_sphere {n : ℕ} {f : S → M}
-    {τ : S × (Fin (n + 2) → ℝ) → M} (h : IsFramedTube f τ)
-    (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1)
-    (g : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1, M)) {x : sphere (0 : EuclideanSpace ℝ
-      (Fin (n + 3))) 1} (hx : g ⁻¹' range f = {x}) {U : Set (sphere (0 : EuclideanSpace ℝ
-      (Fin (n + 3))) 1)} (hUo : IsOpen U) (hxU : x ∈ U)
-    (hgU : IsOpenEmbedding fun z : U ↦ pontryaginThomCollapse τ (g z)) :
-    Function.Bijective (ContinuousMap.singularHomologyMap ℤ (n + 2)
-      ((pontryaginThomSphereMap h.isOpenEmbedding s₀).comp g)) := by
-  -- The sphere `Sⁿ⁺²` is simply connected, hence connected and orientable.
-  have := simplyConnectedSpace_sphere_euclideanSpace (n := n + 2) (by omega)
+/-- **The collapse of a sphere meeting the core once is bijective on `Hₖ(Sᵏ; ℤ)`.** For
+`k ≥ 2`, let `σ : Sᵏ → Q` meet the core of a framed tube with fibre `ℝᵏ` in the single point `x`.
+If the composite of `σ` with the Pontryagin–Thom collapse onto `Sᵏ` is a local homeomorphism at
+`x`, then this composite induces a bijection on `Hₖ(Sᵏ; ℤ)`. -/
+theorem bijective_singularHomologyMap_pontryaginThomSphereMap_comp_sphere (h : IsFramedTube f τ)
+    (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) (hk : 2 ≤ k)
+    (σ : C(sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1, Q)) {x : sphere (0 : EuclideanSpace ℝ
+      (Fin (k + 1))) 1} (hx : σ ⁻¹' range f = {x})
+    (hσ : IsLocalHomeomorphOn (pontryaginThomSphereMap h.isOpenEmbedding s₀ ∘ σ) {x}) :
+    Function.Bijective (ContinuousMap.singularHomologyMap ℤ k
+      ((pontryaginThomSphereMap h.isOpenEmbedding s₀).comp σ)) := by
+  -- The sphere `Sᵏ` is simply connected, hence connected and orientable.
+  have : SimplyConnectedSpace (sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) :=
+    simplyConnectedSpace_sphere_euclideanSpace hk
   obtain ⟨o⟩ := HomologicalOrientation.nonempty_of_simplyConnectedSpace
-    (M := sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1) (d := n + 2)
-    (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := n + 2))
+    (M := sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) (E := EuclideanSpace ℝ (Fin k))
+    finrank_euclideanSpace_fin
   exact h.bijective_singularHomologyMap_pontryaginThomSphereMap_comp o o finrank_euclideanSpace_fin
-    s₀ g hx hUo hxU hgU
+    s₀ (by omega) σ hx hσ
 
 end IsFramedTube
 

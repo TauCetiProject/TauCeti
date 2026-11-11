@@ -64,8 +64,12 @@ that are not surjective and is invariant under proper homotopies, that is homoto
   `f_*[M] = deg f • [N]` in `Hₙ(N; ℤ)`, and more generally
   `TauCeti.HomologicalOrientation.mapFundamentalClass_comp_eq_degree_smul`:
   `(g ∘ f)_*[M] = deg f • g_*[N]` for every continuous `g : N → X`.
-* `TauCeti.HomologicalOrientation.bijective_singularHomologyMap_iff_isUnit_degree`: for compact
-  connected `M` and `N`, `f_* : Hₙ(M; ℤ) → Hₙ(N; ℤ)` is bijective exactly when `deg f = ±1`.
+* `TauCeti.HomologicalOrientation.singularHomologyMap_eq_degree_smul`: a self-map of a compact
+  connected oriented manifold acts on top homology by multiplication by its degree.
+* `TauCeti.HomologicalOrientation.bijective_singularHomologyMap_iff`: for compact connected `M`
+  and `N`, `f_* : Hₙ(M; ℤ) → Hₙ(N; ℤ)` is bijective exactly when `deg f = ±1`; the same holds for
+  the `ULift ℤ` coefficients of the fundamental classes
+  (`TauCeti.HomologicalOrientation.bijective_singularHomologyFunctor_map_iff`).
 
 ## References
 
@@ -405,6 +409,18 @@ theorem mapFundamentalClass_comp_eq_degree_smul {X : Type} [TopologicalSpace X] 
   exact map_zsmul (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
     (ModuleCat.of ℤ (ULift.{0} ℤ))).map (TopCat.ofHom g)).hom _ _
 
+/-- **A self-map acts on top homology by its degree**: for a self-map `f` of a compact connected
+oriented `n`-manifold, `f_*` is multiplication by the degree of `f` on `Hₙ(M; ℤ)`. -/
+theorem singularHomologyMap_eq_degree_smul [ConnectedSpace M] (f : C(M, M))
+    (γ : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
+      (ModuleCat.of ℤ (ULift.{0} ℤ))).obj (TopCat.of M)) :
+    (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
+      (ModuleCat.of ℤ (ULift.{0} ℤ))).map (TopCat.ofHom f)).hom γ = o.degree o hE f • γ := by
+  obtain ⟨d, rfl⟩ := o.exists_eq_zsmul_fundamentalClass hE γ
+  have h := o.mapFundamentalClass_eq_degree_smul o hE hE f
+  rw [mapFundamentalClass_def] at h
+  exact (map_zsmul _ d _).trans ((congrArg (d • ·) h).trans (zsmul_comm _ _ _))
+
 end CompactSpace
 
 section Bijective
@@ -416,10 +432,10 @@ include hF in
 connected oriented `n`-manifolds, `f_* : Hₙ(M; ℤ) → Hₙ(N; ℤ)` is bijective exactly when the degree
 of `f` is `±1`: in the generators `[M]` and `[N]` of these infinite cyclic groups, `f_*` is
 multiplication by the degree. -/
-theorem bijective_singularHomologyFunctor_map_iff_isUnit_degree (f : C(M, N)) :
+theorem bijective_singularHomologyFunctor_map_iff (f : C(M, N)) :
     Function.Bijective (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
       (ModuleCat.of ℤ (ULift.{0} ℤ))).map (TopCat.ofHom f)).hom ↔
-      IsUnit (o.degree o' hE f) := by
+      o.degree o' hE f = 1 ∨ o.degree o' hE f = -1 := by
   -- `f_*`, typed on the homology groups in which the fundamental classes live.
   let φ : ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n :
       ModuleCat.{0} ℤ) →ₗ[ℤ]
@@ -439,15 +455,16 @@ theorem bijective_singularHomologyFunctor_map_iff_isUnit_degree (f : C(M, N)) :
     exact (congrArg (c • ·) h).trans (smul_smul _ _ _)
   change Function.Bijective φ ↔ _
   rw [key, (o'.fundamentalClassEquiv hF).bijective.of_comp_iff',
-    Function.Bijective.of_comp_iff _ (o.fundamentalClassEquiv hE).symm.bijective]
+    Function.Bijective.of_comp_iff _ (o.fundamentalClassEquiv hE).symm.bijective, ← Int.isUnit_iff]
   exact IsUnit.isUnit_iff_mulRight_bijective.symm
 
 include hF in
 /-- **The degree detects isomorphisms on integral top homology.** For a map `f : M → N` between
 compact connected oriented `n`-manifolds, `f_* : Hₙ(M; ℤ) → Hₙ(N; ℤ)` on singular homology with
 coefficients in the ring `ℤ` is bijective exactly when the degree of `f` is `±1`. -/
-theorem bijective_singularHomologyMap_iff_isUnit_degree (f : C(M, N)) :
-    Function.Bijective (ContinuousMap.singularHomologyMap ℤ n f) ↔ IsUnit (o.degree o' hE f) := by
+theorem bijective_singularHomologyMap_iff (f : C(M, N)) :
+    Function.Bijective (ContinuousMap.singularHomologyMap ℤ n f) ↔
+      o.degree o' hE f = 1 ∨ o.degree o' hE f = -1 := by
   -- The coefficient modules `ULift ℤ` and `ℤ` give naturally isomorphic homology functors.
   let α := (AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) n).mapIso
     (ULift.moduleEquiv : ULift.{0} ℤ ≃ₗ[ℤ] ℤ).toModuleIso
@@ -460,7 +477,7 @@ theorem bijective_singularHomologyMap_iff_isUnit_degree (f : C(M, N)) :
   -- with coefficients `ℤ`, but its source and target are stated through `singularChains`.
   change Function.Bijective (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
     (ModuleCat.of ℤ ℤ)).map (TopCat.ofHom f)).hom ↔ _
-  rw [← o.bijective_singularHomologyFunctor_map_iff_isUnit_degree o' hE hF f, hnat,
+  rw [← o.bijective_singularHomologyFunctor_map_iff o' hE hF f, hnat,
     ModuleCat.hom_comp, ModuleCat.hom_comp, LinearMap.coe_comp, LinearMap.coe_comp,
     Function.Bijective.of_comp_iff _ (ConcreteCategory.bijective_of_isIso _),
     Function.Bijective.of_comp_iff' (ConcreteCategory.bijective_of_isIso _)]
