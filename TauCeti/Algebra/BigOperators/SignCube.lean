@@ -11,7 +11,6 @@ public import Mathlib.Algebra.Module.BigOperators
 public import Mathlib.Algebra.Order.Module.Defs
 public import Mathlib.Algebra.Order.Star.Real
 public import Mathlib.Algebra.Star.BigOperators
-public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Data.Fintype.Pi
 public import Mathlib.Data.Int.Order.Units
 import Mathlib.Tactic.LinearCombination
@@ -29,9 +28,8 @@ noncommutative ring, such as a C⋆-algebra, so products are kept in order throu
 
 * `TauCeti.signAverage f`: the average `2⁻ⁿ ∑_ε f ε` of a function on the sign cube with values
   in a real vector space. It is linear, fixes constants, is invariant under translating the sign
-  vector, commutes with multiplication by a fixed element and with `star`, is monotone, and is
-  bounded in norm by any bound of `f`. It agrees with Mathlib's `𝔼` whenever both are defined
-  (`TauCeti.signAverage_eq_expect`).
+  vector, commutes with multiplication by a fixed element and with `star`, and is monotone. It
+  agrees with Mathlib's `𝔼` whenever both are defined (`TauCeti.signAverage_eq_expect`).
 * `TauCeti.rademacherSum x ε`: the Rademacher sum `∑ᵢ εᵢ • xᵢ`. It is additive and equivariant
   in the coefficient family `x`.
 * `TauCeti.signAverage_units_smul`, `TauCeti.signAverage_units_mul_units_smul`: the first and
@@ -326,15 +324,6 @@ theorem signAverage_nonneg [PartialOrder E] [IsOrderedAddMonoid E] [PosSMulMono 
   simpa using signAverage_mono (f := fun _ => 0) h
 
 end Average
-
-/-- The norm of an average over the sign cube is at most any uniform bound of the function. -/
-theorem norm_signAverage_le [SeminormedAddCommGroup E] [NormedSpace ℝ E]
-    {f : (ι → ℤˣ) → E} {r : ℝ} (h : ∀ ε, ‖f ε‖ ≤ r) : ‖signAverage f‖ ≤ r := by
-  have hcard : (0 : ℝ) < Fintype.card (ι → ℤˣ) := Nat.cast_pos.2 Fintype.card_pos
-  rw [signAverage_def, norm_smul, norm_inv, Real.norm_natCast, inv_mul_le_iff₀ hcard]
-  calc ‖∑ ε, f ε‖ ≤ ∑ ε, ‖f ε‖ := norm_sum_le _ _
-    _ ≤ ∑ _ε : ι → ℤˣ, r := Finset.sum_le_sum fun ε _ => h ε
-    _ = Fintype.card (ι → ℤˣ) * r := by simp
 
 /-! ### Rademacher sums -/
 

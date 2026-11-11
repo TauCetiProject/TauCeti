@@ -28,6 +28,8 @@ In particular `n` copies of a vector `y` of a real normed space have `R₂ = √
 
 ## Main declarations
 
+* `TauCeti.norm_signAverage_le`: an average over the sign cube in a real normed space is bounded
+  in norm by any uniform bound of the function.
 * `TauCeti.rademacherSecondMoment`: the Rademacher second moment `R₂(y)`.
 * `TauCeti.rademacherSecondMoment_comp_equiv`: invariance under reindexing.
 * `TauCeti.rademacherSecondMoment_sumElim_zero`: invariance under padding with zeros.
@@ -64,6 +66,21 @@ theorem expect_units_apply_mul_apply (i j : ι) :
   simpa [← signAverage_eq_expect] using signAverage_units_mul_units_smul (E := ℝ) i j 1
 
 end Signs
+
+section Average
+
+variable {ι E : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- The norm of an average over the sign cube is at most any uniform bound of the function. -/
+theorem norm_signAverage_le [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+    {f : (ι → ℤˣ) → E} {r : ℝ} (h : ∀ ε, ‖f ε‖ ≤ r) : ‖signAverage f‖ ≤ r := by
+  have hcard : (0 : ℝ) < Fintype.card (ι → ℤˣ) := Nat.cast_pos.2 Fintype.card_pos
+  rw [signAverage_def, norm_smul, norm_inv, Real.norm_natCast, inv_mul_le_iff₀ hcard]
+  calc ‖∑ ε, f ε‖ ≤ ∑ ε, ‖f ε‖ := norm_sum_le _ _
+    _ ≤ ∑ _ε : ι → ℤˣ, r := Finset.sum_le_sum fun ε _ => h ε
+    _ = Fintype.card (ι → ℤˣ) * r := by simp
+
+end Average
 
 variable {ι κ 𝕜 E : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
   [SeminormedAddCommGroup E]

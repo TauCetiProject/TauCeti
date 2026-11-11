@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 public import TauCeti.Algebra.BigOperators.SignCube
 public import TauCeti.Analysis.CStarAlgebra.Module.Constructions
+public import TauCeti.Analysis.Normed.Module.RademacherSum.Basic
 
 /-!
 # Rademacher sums in C⋆-algebras
@@ -25,10 +26,12 @@ the constant `3^(-1/2)`.
 * **The fourth moment estimate.** For self-adjoint `x₁, …, xₙ` and `S = ∑ₖ εₖ xₖ`,
   `‖𝔼 S⁴‖ ≤ 3 ‖∑ₖ xₖ²‖²` (`TauCeti.norm_signAverage_rademacherSum_mul_four_le`). The proof expands
   `𝔼 S⁴` over pairings (`TauCeti.signAverage_rademacherSum_mul_four`), bounds each of the three
-  pairing terms by `‖∑ₖ xₖ²‖²` (`TauCeti.norm_sum_mul_sum_mul_self_mul_le`, and for the crossing
-  term `TauCeti.norm_sum_sum_mul_mul_mul_le`, through the row–column inequality
-  `TauCeti.norm_sum_mul_le_sqrt_mul_sqrt`), and discards the nonpositive diagonal correction. The
-  constant `3` is optimal: for commuting scalars `xₖ = 1` the ratio is `3 - 2 / n`.
+  pairing terms by `‖∑ₖ xₖ²‖²`, and discards the nonpositive diagonal correction. With
+  `T = ∑ₖ xₖ²`, the term `∑ᵢ xᵢ T xᵢ` lies between `0` and `‖T‖ T`
+  (`TauCeti.norm_sum_mul_sum_mul_self_mul_le`), and the crossing term `∑ᵢ ∑ⱼ xᵢ xⱼ xᵢ xⱼ` is
+  bounded in norm by `‖∑ᵢ xᵢ T xᵢ‖` (`TauCeti.norm_sum_sum_mul_mul_mul_le`), by the row–column
+  inequality `TauCeti.norm_sum_mul_le_sqrt_mul_sqrt` for the products `xᵢ xⱼ`. The constant `3` is
+  optimal: for commuting scalars `xₖ = 1` the ratio is `3 - 2 / n`.
 
 ## References
 
@@ -74,6 +77,48 @@ theorem norm_sum_mul_star_le_of_norm_le {Φ : (ι → ℤˣ) → A} {r : ℝ} (h
   exact pow_le_pow_left₀ (norm_nonneg _) (h ε) 2
 
 end SquareFunction
+
+/-! ### The pairing terms of the fourth moment -/
+
+section PairingTerms
+
+variable {x : ι → A}
+
+/-- For a self-adjoint family with square sum `T = ∑ⱼ xⱼ²`, the sum `∑ᵢ xᵢ T xᵢ` lies between `0`
+and `‖T‖ T`, so its norm is at most `‖T‖²`. -/
+theorem norm_sum_mul_sum_mul_self_mul_le (hx : ∀ k, IsSelfAdjoint (x k)) :
+    ‖∑ i, x i * (∑ j, x j * x j) * x i‖ ≤ ‖∑ k, x k * x k‖ ^ 2 := by
+  have hstar (k : ι) : star (x k) = x k := (hx k).star_eq
+  have hT : 0 ≤ ∑ k, x k * x k :=
+    Finset.sum_nonneg fun k _ => by simpa only [hstar] using star_mul_self_nonneg (x k)
+  have hB : ∑ i, x i * (∑ j, x j * x j) * x i ≤ ‖∑ k, x k * x k‖ • ∑ k, x k * x k := by
+    rw [Finset.smul_sum]
+    refine Finset.sum_le_sum fun i _ => ?_
+    simpa only [hstar] using
+      CStarAlgebra.star_left_conjugate_le_norm_smul (x i) _ hT.isSelfAdjoint
+  have hB₀ : 0 ≤ ∑ i, x i * (∑ j, x j * x j) * x i :=
+    Finset.sum_nonneg fun i _ => by simpa only [hstar] using star_left_conjugate_nonneg hT (x i)
+  refine (CStarAlgebra.norm_le_norm_of_le_of_nonneg hB hB₀).trans_eq ?_
+  rw [norm_smul, norm_norm, sq]
+
+/-- For a self-adjoint family, the crossing sum `∑ᵢ ∑ⱼ xᵢ xⱼ xᵢ xⱼ` is bounded in norm by
+`∑ᵢ xᵢ (∑ⱼ xⱼ²) xᵢ`: this is the row–column inequality for the products `xᵢ xⱼ`. -/
+theorem norm_sum_sum_mul_mul_mul_le (hx : ∀ k, IsSelfAdjoint (x k)) :
+    ‖∑ i, ∑ j, x i * x j * x i * x j‖ ≤ ‖∑ i, x i * (∑ j, x j * x j) * x i‖ := by
+  have hstar (k : ι) : star (x k) = x k := (hx k).star_eq
+  have h := norm_sum_mul_le_sqrt_mul_sqrt (fun p : ι × ι => x p.1 * x p.2)
+    (fun p => x p.1 * x p.2)
+  have hrow : ∑ p : ι × ι, x p.1 * x p.2 * star (x p.1 * x p.2) =
+      ∑ i, x i * (∑ j, x j * x j) * x i := by
+    simp only [Fintype.sum_prod_type, star_mul, hstar, Finset.mul_sum, Finset.sum_mul, mul_assoc]
+  have hcol : ∑ p : ι × ι, star (x p.1 * x p.2) * (x p.1 * x p.2) =
+      ∑ i, x i * (∑ j, x j * x j) * x i := by
+    rw [Fintype.sum_prod_type, Finset.sum_comm]
+    simp only [star_mul, hstar, Finset.mul_sum, Finset.sum_mul, mul_assoc]
+  rw [hrow, hcol, Real.mul_self_sqrt (norm_nonneg _), Fintype.sum_prod_type] at h
+  simpa only [mul_assoc] using h
+
+end PairingTerms
 
 /-! ### The fourth moment estimate -/
 
