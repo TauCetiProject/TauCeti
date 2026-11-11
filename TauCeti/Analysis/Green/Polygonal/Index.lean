@@ -104,13 +104,11 @@ private theorem interior_edge_heights {c p q z : ℂ} (hdet : 0 < triangleDet c 
     simp only [mem_insert_iff, mem_singleton_iff]
     tauto
   exact ⟨im_div_pos_of_mem_interior_convexHull_triangle
-      (sub_ne_zero_of_triangleDet_pos hdet) (im_div_sub_pos_of_triangleDet_pos hdet).le hz,
+      (im_div_sub_pos_of_triangleDet_pos hdet).le hz,
     im_div_pos_of_mem_interior_convexHull_triangle
-      (sub_ne_zero_of_triangleDet_pos hdet₁) (im_div_sub_pos_of_triangleDet_pos hdet₁).le
-      (hset₁.symm ▸ hz),
+      (im_div_sub_pos_of_triangleDet_pos hdet₁).le (hset₁.symm ▸ hz),
     im_div_pos_of_mem_interior_convexHull_triangle
-      (sub_ne_zero_of_triangleDet_pos hdet₂) (im_div_sub_pos_of_triangleDet_pos hdet₂).le
-      (hset₂.symm ▸ hz)⟩
+      (im_div_sub_pos_of_triangleDet_pos hdet₂).le (hset₂.symm ▸ hz)⟩
 
 /-- A positively oriented triangle winds once around every point in its interior. -/
 theorem windingNumber_triangleCurve_eq_one {c p q z : ℂ} (hdet : 0 < triangleDet c p q)
