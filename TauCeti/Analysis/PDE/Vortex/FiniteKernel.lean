@@ -126,7 +126,7 @@ private theorem sum_sq_div_two_le (u : ℂ → EuclideanSpace ℝ (Fin 4)) {z : 
     have hs : 0 ≤ x z 2 ^ 2 + x z 3 ^ 2 := by positivity
     have hm : -(1 / 8) ≤ min (x z 2 ^ 2 + x z 3 ^ 2) ((12 * (x z 2 ^ 2 + x z 3 ^ 2) - 1) / 8) :=
       le_min (by linarith) (by linarith)
-    rw [vortexMass]
+    rw [vortexMass_def]
     linarith
   have hN : ‖u z‖ ^ 2 = u z 0 ^ 2 + u z 1 ^ 2 + u z 2 ^ 2 + u z 3 ^ 2 := by
     rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]

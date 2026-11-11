@@ -348,6 +348,13 @@ def vortexMass (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℝ :=
   min (x z 2 ^ 2 + x z 3 ^ 2) ((12 * (x z 2 ^ 2 + x z 3 ^ 2) - 1) / 8) -
     ‖covariantDerivative x z 1‖
 
+/-- The defining formula of `vortexMass`. -/
+theorem vortexMass_def (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    vortexMass x z =
+      min (x z 2 ^ 2 + x z 3 ^ 2) ((12 * (x z 2 ^ 2 + x z 3 ^ 2) - 1) / 8) -
+        ‖covariantDerivative x z 1‖ :=
+  (rfl)
+
 /-- At a point where the vortex equation holds, `κ = -(1 - |α|²) / 8` and `∂bar_a α = 0`, so the
 potential is `|φ|² |b|² + (3 |φ|² / 2 - 1 / 8) |ψ|²` plus a coupling through `∇₁ α` alone. -/
 theorem gaugeFixedPotential_eq_of_equation_eq_zero {z : ℂ} (hx : DifferentiableAt ℝ x z)
