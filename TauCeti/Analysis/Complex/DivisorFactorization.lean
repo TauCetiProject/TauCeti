@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.BranchLogRoot
 public import TauCeti.Analysis.Meromorphic.Order
 public import TauCeti.Analysis.Meromorphic.Divisor
 public import Mathlib.Analysis.Meromorphic.NormalForm
+import Mathlib.Analysis.Meromorphic.FactorizedRational
 
 /-!
 # Holomorphic functions with equal divisors differ by an exponential factor
@@ -25,6 +26,10 @@ exponent, for example to an affine function in Hadamard's theorem.
 
 Both functions must be nonzero somewhere: Mathlib's divisor assigns zero to
 an infinite-order germ, so the divisor of an identically zero function is zero.
+
+On a closed disc, `AnalyticOnNhd.exists_eq_finprod_zpow_mul` divides out the zeros lying in a
+smaller concentric closed disc: `f = (∏ᶠ ρ, (· - ρ) ^ m_ρ) * G` with `G` zero-free on the smaller
+disc and `m_ρ` the divisor of `f` there.
 -/
 
 public section
@@ -81,3 +86,73 @@ theorem exists_differentiableOn_eqOn_mul_exp_of_divisor_eq {U : Set ℂ} {f g : 
     _ = g z * exp (L z) := congrArg (fun a ↦ g z * a) (heq hz).symm
 
 end TauCeti
+
+namespace AnalyticOnNhd
+
+open Metric MeromorphicOn
+
+variable {f : ℂ → ℂ} {z₀ : ℂ} {r R : ℝ}
+
+/-- **Dividing out the zeros in a smaller disc.** If `f` is analytic on `closedBall z₀ R` and not
+identically zero there, and `r ≤ R`, then `f = (∏ᶠ ρ, (· - ρ) ^ m_ρ) * G` on `closedBall z₀ R`,
+where `m_ρ` is the divisor of `f` on `closedBall z₀ r` and `G` is analytic on `closedBall z₀ R`
+without zeros in `closedBall z₀ r`. -/
+theorem exists_eq_finprod_zpow_mul (hf : AnalyticOnNhd ℂ f (closedBall z₀ R))
+    (hR : 0 < R) (hrR : r ≤ R) (h₀ : ∃ u ∈ closedBall z₀ R, f u ≠ 0) :
+    ∃ G : ℂ → ℂ, AnalyticOnNhd ℂ G (closedBall z₀ R) ∧ (∀ z ∈ closedBall z₀ r, G z ≠ 0) ∧
+      ∀ z ∈ closedBall z₀ R,
+        f z = (∏ᶠ ρ, (z - ρ) ^ divisor f (closedBall z₀ r) ρ) * G z := by
+  classical
+  set D := divisor f (closedBall z₀ R)
+  set D' := divisor f (closedBall z₀ r)
+  have hz₀R : z₀ ∈ closedBall z₀ R := mem_closedBall_self hR.le
+  have hconn : IsConnected (closedBall z₀ R) :=
+    (convex_closedBall z₀ R).isConnected ⟨z₀, hz₀R⟩
+  obtain ⟨g, hg, hg0, hfg⟩ := hf.meromorphicOn.extract_zeros_poles
+    (fun u ↦ hf.meromorphicOrderAt_ne_top_of_exists_ne_zero hconn h₀ u.2)
+    (D.finiteSupport (isCompact_closedBall z₀ R))
+  have hD' (ρ : ℂ) : D' ρ = if ρ ∈ closedBall z₀ r then D ρ else 0 := by
+    rw [show D' = divisor f (closedBall z₀ r) from rfl,
+      ← hf.meromorphicOn.divisor_restrict (closedBall_subset_closedBall hrR),
+      Function.locallyFinsuppWithin.restrict_apply]
+  have hD (ρ : ℂ) : 0 ≤ D ρ := hf.divisor_nonneg ρ
+  have hD'D (ρ : ℂ) : 0 ≤ D' ρ ∧ D' ρ ≤ D ρ := by
+    rw [hD']; split_ifs <;> simp [hD ρ]
+  have hfin {d : ℂ → ℤ} (hd : d.support.Finite) :
+      (fun u ↦ (· - u) ^ d u : ℂ → ℂ → ℂ).HasFiniteMulSupport := by
+    rw [Function.HasFiniteMulSupport, Function.FactorizedRational.mulSupport]
+    exact hd
+  have hfinD : (fun u ↦ D u).support.Finite := D.finiteSupport (isCompact_closedBall _ _)
+  have hfinE : (fun u ↦ D u - D' u).support.Finite := hfinD.subset fun u hu h ↦ hu <| by
+    have := hD'D u
+    simp only [Function.mem_support] at h hu ⊢
+    omega
+  have hsplit : (∏ᶠ u, (· - u) ^ D u) =
+      (∏ᶠ u, (· - u) ^ D' u) * ∏ᶠ u, (· - u) ^ (D u - D' u) := by
+    rw [← finprod_mul_distrib (hfin (D'.finiteSupport (isCompact_closedBall _ _))) (hfin hfinE)]
+    refine finprod_congr fun u ↦ funext fun x ↦ ?_
+    simp only [Pi.mul_apply, Pi.pow_apply]
+    rw [← zpow_add']
+    · simp
+    · have := hD'D u
+      rcases eq_or_ne (D u) 0 with h | h
+      · exact .inr (.inr (by omega))
+      · exact .inr (.inl (by omega))
+  refine ⟨(∏ᶠ u, (· - u) ^ (D u - D' u)) * g, fun z hz ↦ ?_, fun z hz ↦ ?_, fun z hz ↦ ?_⟩
+  · exact (Function.FactorizedRational.analyticAt (d := fun u ↦ D u - D' u)
+      (sub_nonneg.2 (hD'D z).2)).mul (hg z hz)
+  · refine mul_ne_zero (Function.FactorizedRational.ne_zero (d := fun u ↦ D u - D' u) ?_)
+      (hg0 ⟨z, closedBall_subset_closedBall hrR hz⟩)
+    simp [hD' z, hz]
+  · have hQ : AnalyticOnNhd ℂ ((∏ᶠ u, (· - u) ^ D u) • g) (closedBall z₀ R) := fun x hx ↦
+      (Function.FactorizedRational.analyticAt (d := fun u ↦ D u) (hD x)).smul (hg x hx)
+    have hfreq : ∃ᶠ x in 𝓝[≠] z₀, f x = ((∏ᶠ u, (· - u) ^ D u) • g) x := by
+      have := mem_codiscreteWithin_iff_forall_mem_nhdsNE.1 hfg z₀ hz₀R
+      refine Eventually.frequently ?_
+      filter_upwards [this, nhdsWithin_le_nhds (closedBall_mem_nhds z₀ hR)] with x hx hxU
+      exact hx.resolve_right (not_not_intro hxU)
+    rw [hf.eqOn_of_preconnected_of_frequently_eq hQ hconn.isPreconnected hz₀R hfreq hz, hsplit,
+      Function.FactorizedRational.finprod_eq_fun (D'.finiteSupport (isCompact_closedBall _ _))]
+    simp only [Pi.mul_apply, smul_eq_mul, mul_assoc]
+
+end AnalyticOnNhd

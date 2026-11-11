@@ -10,9 +10,9 @@ public import Mathlib.Analysis.Calculus.LogDeriv
 import Mathlib.Analysis.Complex.AbsMax
 import Mathlib.Analysis.Complex.BorelCaratheodory
 import Mathlib.Analysis.Complex.Liouville
-import Mathlib.Analysis.Meromorphic.FactorizedRational
 import TauCeti.Analysis.Complex.BranchLogRoot
-import TauCeti.Analysis.Meromorphic.Order
+import TauCeti.Analysis.Complex.DivisorFactorization
+import TauCeti.Analysis.Complex.JensenFormula
 import TauCeti.Analysis.Convex.SimplyConnected
 
 /-!
@@ -22,9 +22,11 @@ Let `f` be analytic on `closedBall z₀ R` with `f z₀ ≠ 0` and `‖f w‖ �
 `sphere z₀ R`. Near `z₀` the logarithmic derivative of `f` is then its partial-fraction part over
 the zeros close to `z₀`, up to an error of size `log M / R`:
 for `‖z - z₀‖ ≤ R / 4` with `f z ≠ 0`,
-`‖logDeriv f z - ∑_{‖ρ - z₀‖ ≤ R / 2} m_ρ / (z - ρ)‖ ≤ 48 log M / R`,
-and there are at most `log M / log 2` such zeros, counted with multiplicity. Multiplicities are
-the values of Mathlib's divisor `MeromorphicOn.divisor f (closedBall z₀ (R / 2))`.
+`‖logDeriv f z - ∑_{‖ρ - z₀‖ ≤ R / 2} m_ρ / (z - ρ)‖ ≤ 48 log M / R`.
+Multiplicities are the values of Mathlib's divisor
+`MeromorphicOn.divisor f (closedBall z₀ (R / 2))`. The companion bound of at most
+`log M / log 2` such zeros, counted with multiplicity, is
+`AnalyticOnNhd.finsum_divisor_half_le` in `TauCeti.Analysis.Complex.JensenFormula`.
 
 The proof is the classical one (Titchmarsh, §3.9; Montgomery–Vaughan, Lemma 6.3). Write
 `f = P G` on `closedBall z₀ R`, where `P` is the finite product of the factors `(z - ρ) ^ m_ρ`
@@ -32,18 +34,19 @@ over the zeros in the smaller disc and `G` has no zeros there. On the outer sphe
 `P` is at least as large as at the centre, so the maximum modulus principle gives
 `‖G‖ ≤ M ‖G z₀‖` on the whole disc. A holomorphic logarithm `h` of `G / G z₀` on the smaller disc
 has `h z₀ = 0` and `re h ≤ log M`, so the Borel–Carathéodory theorem bounds `‖h‖`, and the Cauchy
-estimate bounds `h' = logDeriv f - logDeriv P`.
+estimate bounds `h' = logDeriv f - logDeriv P`. The last two steps form the standalone lemma
+`Complex.norm_deriv_le_of_forall_mem_ball_re_le`.
 
 ## Main results
 
-* `AnalyticOnNhd.exists_eq_finprod_zpow_mul`: dividing out the zeros in a smaller closed disc.
+* `Complex.norm_deriv_le_of_forall_mem_ball_re_le`: the derivative of a function holomorphic on a
+  ball, vanishing at the centre and with real part at most `A ≥ 0`, is bounded by
+  `4 (r + ‖z - z₀‖) / (r - ‖z - z₀‖) ^ 2 * A`.
 * `AnalyticOnNhd.norm_logDeriv_sub_finsum_divisor_le`: the lemma for zeros in `closedBall z₀ r`
   with `2 r ≤ R` and any `z` with `‖z - z₀‖ < r`, with the bound
   `4 (r + ‖z - z₀‖) / (r - ‖z - z₀‖) ^ 2 * log M`.
 * `AnalyticOnNhd.norm_logDeriv_sub_finsum_divisor_half_le`: the classical radii `R / 2` and
   `R / 4`, with the bound `48 / R * log M`.
-* `AnalyticOnNhd.finsum_divisor_le_log_div_log`, `AnalyticOnNhd.finsum_divisor_half_le`: Jensen's
-  count of the zeros under the same relative bound.
 
 ## References
 
@@ -55,82 +58,60 @@ public section
 
 open Metric MeromorphicOn Filter Topology Set
 
+/-- **Derivative bound from a one-sided real-part bound.** Let `g` be holomorphic on
+`ball z₀ r` with `g z₀ = 0` and `re (g w) ≤ A` there, where `0 ≤ A`. Then at every `z` with
+`‖z - z₀‖ < r`, `‖deriv g z‖ ≤ 4 (r + ‖z - z₀‖) / (r - ‖z - z₀‖) ^ 2 * A`. -/
+theorem Complex.norm_deriv_le_of_forall_mem_ball_re_le {g : ℂ → ℂ} {z₀ : ℂ} {r A : ℝ}
+    (hg : DifferentiableOn ℂ g (ball z₀ r)) (hg₀ : g z₀ = 0) (hA : 0 ≤ A)
+    (hre : ∀ w ∈ ball z₀ r, (g w).re ≤ A) {z : ℂ} (hz : ‖z - z₀‖ < r) :
+    ‖deriv g z‖ ≤ 4 * (r + ‖z - z₀‖) / (r - ‖z - z₀‖) ^ 2 * A := by
+  set d := ‖z - z₀‖
+  have hd : 0 ≤ d := norm_nonneg _
+  have hr : 0 < r := hd.trans_lt hz
+  -- Borel–Carathéodory for every real-part bound `K > A`.
+  have hBC (K : ℝ) (hK : A < K) (w : ℂ) (hw : w ∈ ball z₀ r) :
+      ‖g w‖ ≤ 2 * K * ‖w - z₀‖ / (r - ‖w - z₀‖) := by
+    have hball (u : ℂ) (hu : u ∈ ball (0 : ℂ) r) : z₀ + u ∈ ball z₀ r := by
+      simpa [dist_eq_norm] using hu
+    have := Complex.borelCaratheodory_zero (f := fun u ↦ g (z₀ + u)) (M := K)
+      (hA.trans_lt hK) (hg.comp (by fun_prop) fun u hu ↦ hball u hu)
+      (fun u hu ↦ (hre _ (hball u hu)).trans hK.le) hr
+      (by simpa [dist_eq_norm] using hw) (by simpa using hg₀)
+    simpa using this
+  -- The Cauchy estimate on the circle of radius `(r - d) / 2` about `z`.
+  have hderiv (K : ℝ) (hK : A < K) :
+      ‖deriv g z‖ ≤ 4 * (r + d) / (r - d) ^ 2 * K := by
+    have hK0 : 0 < K := hA.trans_lt hK
+    have hδ : 0 < (r - d) / 2 := by linarith
+    have hsub : closedBall z ((r - d) / 2) ⊆ ball z₀ r := fun w hw ↦ by
+      rw [mem_closedBall, dist_eq_norm] at hw
+      rw [mem_ball, dist_eq_norm]
+      linarith [norm_sub_le_norm_sub_add_norm_sub w z z₀]
+    have := Complex.norm_deriv_le_of_forall_mem_sphere_norm_le hδ
+      (DifferentiableOn.diffContOnCl (by rw [closure_ball z hδ.ne']; exact hg.mono hsub))
+      (C := 2 * K * ((r + d) / 2) / (r - (r + d) / 2)) fun w hw ↦ by
+        have hw' : ‖w - z₀‖ ≤ (r + d) / 2 := by
+          rw [mem_sphere, dist_eq_norm] at hw
+          linarith [norm_sub_le_norm_sub_add_norm_sub w z z₀]
+        refine (hBC K hK w (hsub (sphere_subset_closedBall hw))).trans ?_
+        gcongr
+        linarith
+    refine this.trans_eq ?_
+    have hrd : r - d ≠ 0 := by linarith
+    rw [show r - (r + d) / 2 = (r - d) / 2 by ring]
+    field_simp
+    ring
+  -- Let `K` decrease to `A`.
+  have hc : 0 < 4 * (r + d) / (r - d) ^ 2 := by
+    have : 0 < r - d := by linarith
+    positivity
+  refine le_of_forall_gt_imp_ge_of_dense fun a ha ↦ ?_
+  have := hderiv (a / (4 * (r + d) / (r - d) ^ 2)) (by rwa [lt_div_iff₀' hc])
+  rwa [mul_div_cancel₀ _ hc.ne'] at this
+
 namespace AnalyticOnNhd
 
 variable {f : ℂ → ℂ} {z₀ : ℂ} {r R : ℝ}
-
-/-- **Dividing out the zeros in a smaller disc.** If `f` is analytic on `closedBall z₀ R` and not
-identically zero there, and `r ≤ R`, then `f = (∏ᶠ ρ, (· - ρ) ^ m_ρ) * G` on `closedBall z₀ R`,
-where `m_ρ` is the divisor of `f` on `closedBall z₀ r` and `G` is analytic on `closedBall z₀ R`
-without zeros in `closedBall z₀ r`. -/
-theorem exists_eq_finprod_zpow_mul (hf : AnalyticOnNhd ℂ f (closedBall z₀ R))
-    (hR : 0 < R) (hrR : r ≤ R) (h₀ : ∃ u ∈ closedBall z₀ R, f u ≠ 0) :
-    ∃ G : ℂ → ℂ, AnalyticOnNhd ℂ G (closedBall z₀ R) ∧ (∀ z ∈ closedBall z₀ r, G z ≠ 0) ∧
-      ∀ z ∈ closedBall z₀ R,
-        f z = (∏ᶠ ρ, (z - ρ) ^ divisor f (closedBall z₀ r) ρ) * G z := by
-  classical
-  set D := divisor f (closedBall z₀ R)
-  set D' := divisor f (closedBall z₀ r)
-  have hz₀R : z₀ ∈ closedBall z₀ R := mem_closedBall_self hR.le
-  have hconn : IsConnected (closedBall z₀ R) :=
-    (convex_closedBall z₀ R).isConnected ⟨z₀, hz₀R⟩
-  obtain ⟨g, hg, hg0, hfg⟩ := hf.meromorphicOn.extract_zeros_poles
-    (fun u ↦ hf.meromorphicOrderAt_ne_top_of_exists_ne_zero hconn h₀ u.2)
-    (D.finiteSupport (isCompact_closedBall z₀ R))
-  have hD' (ρ : ℂ) : D' ρ = if ρ ∈ closedBall z₀ r then D ρ else 0 := by
-    rw [show D' = divisor f (closedBall z₀ r) from rfl,
-      ← hf.meromorphicOn.divisor_restrict (closedBall_subset_closedBall hrR),
-      Function.locallyFinsuppWithin.restrict_apply]
-  have hD (ρ : ℂ) : 0 ≤ D ρ := hf.divisor_nonneg ρ
-  have hD'D (ρ : ℂ) : 0 ≤ D' ρ ∧ D' ρ ≤ D ρ := by
-    rw [hD']; split_ifs <;> simp [hD ρ]
-  have hfin {d : ℂ → ℤ} (hd : d.support.Finite) :
-      (fun u ↦ (· - u) ^ d u : ℂ → ℂ → ℂ).HasFiniteMulSupport := by
-    rw [Function.HasFiniteMulSupport, Function.FactorizedRational.mulSupport]
-    exact hd
-  have hfinD : (fun u ↦ D u).support.Finite := D.finiteSupport (isCompact_closedBall _ _)
-  have hfinE : (fun u ↦ D u - D' u).support.Finite := hfinD.subset fun u hu h ↦ hu <| by
-    have := hD'D u
-    simp only [Function.mem_support] at h hu ⊢
-    omega
-  have hsplit : (∏ᶠ u, (· - u) ^ D u) =
-      (∏ᶠ u, (· - u) ^ D' u) * ∏ᶠ u, (· - u) ^ (D u - D' u) := by
-    rw [← finprod_mul_distrib (hfin (D'.finiteSupport (isCompact_closedBall _ _))) (hfin hfinE)]
-    refine finprod_congr fun u ↦ funext fun x ↦ ?_
-    simp only [Pi.mul_apply, Pi.pow_apply]
-    rw [← zpow_add']
-    · simp
-    · have := hD'D u
-      rcases eq_or_ne (D u) 0 with h | h
-      · exact .inr (.inr (by omega))
-      · exact .inr (.inl (by omega))
-  refine ⟨(∏ᶠ u, (· - u) ^ (D u - D' u)) * g, fun z hz ↦ ?_, fun z hz ↦ ?_, fun z hz ↦ ?_⟩
-  · exact (Function.FactorizedRational.analyticAt (d := fun u ↦ D u - D' u)
-      (sub_nonneg.2 (hD'D z).2)).mul (hg z hz)
-  · refine mul_ne_zero (Function.FactorizedRational.ne_zero (d := fun u ↦ D u - D' u) ?_)
-      (hg0 ⟨z, closedBall_subset_closedBall hrR hz⟩)
-    simp [hD' z, hz]
-  · have hQ : AnalyticOnNhd ℂ ((∏ᶠ u, (· - u) ^ D u) • g) (closedBall z₀ R) := fun x hx ↦
-      (Function.FactorizedRational.analyticAt (d := fun u ↦ D u) (hD x)).smul (hg x hx)
-    have hfreq : ∃ᶠ x in 𝓝[≠] z₀, f x = ((∏ᶠ u, (· - u) ^ D u) • g) x := by
-      have := mem_codiscreteWithin_iff_forall_mem_nhdsNE.1 hfg z₀ hz₀R
-      refine Eventually.frequently ?_
-      filter_upwards [this, nhdsWithin_le_nhds (closedBall_mem_nhds z₀ hR)] with x hx hxU
-      exact hx.resolve_right (not_not_intro hxU)
-    rw [hf.eqOn_of_preconnected_of_frequently_eq hQ hconn.isPreconnected hz₀R hfreq hz, hsplit,
-      Function.FactorizedRational.finprod_eq_fun (D'.finiteSupport (isCompact_closedBall _ _))]
-    simp only [Pi.mul_apply, smul_eq_mul, mul_assoc]
-
-/-- A relative bound `‖f w‖ ≤ M ‖f z₀‖` on the sphere `sphere z₀ R` about a point where `f` does
-not vanish forces `1 ≤ M`, by the maximum modulus principle. -/
-theorem one_le_of_forall_mem_sphere_norm_le_mul (hf : AnalyticOnNhd ℂ f (closedBall z₀ R))
-    (hR : 0 < R) (hz₀ : f z₀ ≠ 0) {M : ℝ} (hM : ∀ w ∈ sphere z₀ R, ‖f w‖ ≤ M * ‖f z₀‖) :
-    1 ≤ M := by
-  have := Complex.norm_le_of_forall_mem_frontier_norm_le (U := ball z₀ R) isBounded_ball
-    (DifferentiableOn.diffContOnCl (by rw [closure_ball z₀ hR.ne']; exact hf.differentiableOn))
-    (by rwa [frontier_ball z₀ hR.ne'])
-    (by rw [closure_ball z₀ hR.ne']; exact mem_closedBall_self hR.le)
-  rwa [le_mul_iff_one_le_left (norm_pos_iff.2 hz₀)] at this
 
 /-- **Landau's local logarithmic-derivative lemma.** Let `f` be analytic on `closedBall z₀ R`
 with `f z₀ ≠ 0` and `‖f w‖ ≤ M ‖f z₀‖` on `sphere z₀ R`, and let `0 < r` with `2 r ≤ R`. At every
@@ -205,40 +186,6 @@ theorem norm_logDeriv_sub_finsum_divisor_le (hf : AnalyticOnNhd ℂ f (closedBal
     rw [Real.le_log_iff_exp_le (by linarith), ← Complex.norm_exp, hexp, norm_div,
       div_le_iff₀ (norm_pos_iff.2 hGz₀)]
     exact hGle w (hballR hw)
-  have hBC (K : ℝ) (hK : Real.log M < K) (w : ℂ) (hw : w ∈ ball z₀ r) :
-      ‖h w‖ ≤ 2 * K * ‖w - z₀‖ / (r - ‖w - z₀‖) := by
-    have hball (u : ℂ) (hu : u ∈ ball (0 : ℂ) r) : z₀ + u ∈ ball z₀ r := by
-      simpa [dist_eq_norm] using hu
-    have := Complex.borelCaratheodory_zero (f := fun u ↦ h (z₀ + u)) (M := K)
-      ((Real.log_nonneg hM1).trans_lt hK)
-      (hhd.comp (by fun_prop) fun u hu ↦ hball u hu)
-      (fun u hu ↦ (hre _ (hball u hu)).trans hK.le) hr
-      (by simpa [dist_eq_norm] using hw) (by simpa using hh₀)
-    simpa using this
-  set d := ‖z - z₀‖
-  have hd : 0 ≤ d := norm_nonneg _
-  have hderiv (K : ℝ) (hK : Real.log M < K) :
-      ‖deriv h z‖ ≤ 4 * (r + d) / (r - d) ^ 2 * K := by
-    have hK0 : 0 < K := (Real.log_nonneg hM1).trans_lt hK
-    have hδ : 0 < (r - d) / 2 := by linarith
-    have hsub : closedBall z ((r - d) / 2) ⊆ ball z₀ r := fun w hw ↦ by
-      rw [mem_closedBall, dist_eq_norm] at hw
-      rw [mem_ball, dist_eq_norm]
-      linarith [norm_sub_le_norm_sub_add_norm_sub w z z₀]
-    have := Complex.norm_deriv_le_of_forall_mem_sphere_norm_le hδ
-      (DifferentiableOn.diffContOnCl (by rw [closure_ball z hδ.ne']; exact hhd.mono hsub))
-      (C := 2 * K * ((r + d) / 2) / (r - (r + d) / 2)) fun w hw ↦ by
-        have hw' : ‖w - z₀‖ ≤ (r + d) / 2 := by
-          rw [mem_sphere, dist_eq_norm] at hw
-          linarith [norm_sub_le_norm_sub_add_norm_sub w z z₀]
-        refine (hBC K hK w (hsub (sphere_subset_closedBall hw))).trans ?_
-        gcongr
-        linarith
-    refine this.trans_eq ?_
-    have hrd : r - d ≠ 0 := by linarith
-    rw [show r - (r + d) / 2 = (r - d) / 2 by ring]
-    field_simp
-    ring
   have hzb : z ∈ ball z₀ r := by rwa [mem_ball, dist_eq_norm]
   have hPz : P z ≠ 0 := by
     intro h0
@@ -271,12 +218,8 @@ theorem norm_logDeriv_sub_finsum_divisor_le (hf : AnalyticOnNhd ℂ f (closedBal
     simp only [div_eq_mul_inv]
     exact logDeriv_mul_const z _ (inv_ne_zero hGz₀)
   rw [hlogf, ← hlogP, add_sub_cancel_left, ← hlogG]
-  have hc : 0 < 4 * (r + d) / (r - d) ^ 2 := by
-    have : 0 < r - d := by linarith
-    positivity
-  refine le_of_forall_gt_imp_ge_of_dense fun a ha ↦ ?_
-  have := hderiv (a / (4 * (r + d) / (r - d) ^ 2)) (by rwa [lt_div_iff₀' hc])
-  rwa [mul_div_cancel₀ _ hc.ne'] at this
+  exact Complex.norm_deriv_le_of_forall_mem_ball_re_le hhd hh₀ (Real.log_nonneg hM1) hre hz
+
 /-- **Landau's local logarithmic-derivative lemma** in the classical normalization: zeros in
 `closedBall z₀ (R / 2)`, points `z` with `‖z - z₀‖ ≤ R / 4`, and the constant `48`. -/
 theorem norm_logDeriv_sub_finsum_divisor_half_le (hf : AnalyticOnNhd ℂ f (closedBall z₀ R))
@@ -294,34 +237,6 @@ theorem norm_logDeriv_sub_finsum_divisor_half_le (hf : AnalyticOnNhd ℂ f (clos
     _ = 48 / R := by
         field_simp
         ring
-
-/-- **Jensen's count with a relative bound.** If `‖f w‖ ≤ M ‖f z₀‖` on `sphere z₀ R`, then the
-number of zeros of `f` in `closedBall z₀ r`, counted with multiplicity, is at most
-`log M / log (R / r)`. -/
-theorem finsum_divisor_le_log_div_log (hf : AnalyticOnNhd ℂ f (closedBall z₀ R))
-    (hr : 0 < r) (hrR : r < R) (hz₀ : f z₀ ≠ 0) {M : ℝ}
-    (hM : ∀ w ∈ sphere z₀ R, ‖f w‖ ≤ M * ‖f z₀‖) :
-    ((∑ᶠ ρ, divisor f (closedBall z₀ r) ρ : ℤ) : ℝ) ≤ Real.log M / Real.log (R / r) := by
-  have hR : 0 < R := hr.trans hrR
-  have hc : (f z₀)⁻¹ ≠ 0 := inv_ne_zero hz₀
-  have := AnalyticOnNhd.sum_divisor_le (f := (f z₀)⁻¹ • f) (c := z₀) (r := r) (R := R) (M := M)
-    (by rwa [abs_of_pos hr]) (by rwa [abs_of_pos hr, abs_of_pos hR])
-    (hf.one_le_of_forall_mem_sphere_norm_le_mul hR hz₀ hM)
-    (by rw [abs_of_pos hR]; exact fun x hx ↦ analyticAt_const.smul (hf x hx))
-    (by simp [hz₀]) fun w hw ↦ by
-      rw [abs_of_pos hR] at hw
-      rw [Pi.smul_apply, norm_smul, norm_inv, inv_mul_le_iff₀ (norm_pos_iff.2 hz₀), mul_comm]
-      exact hM w hw
-  rwa [abs_of_pos hr, divisor_const_smul hc, Pi.smul_apply, smul_eq_mul,
-    inv_mul_cancel₀ hz₀, norm_one, div_one] at this
-
-/-- **Jensen's count in the classical normalization**: at most `log M / log 2` zeros of `f` in
-`closedBall z₀ (R / 2)` when `‖f w‖ ≤ M ‖f z₀‖` on `sphere z₀ R`. -/
-theorem finsum_divisor_half_le (hf : AnalyticOnNhd ℂ f (closedBall z₀ R))
-    (hR : 0 < R) (hz₀ : f z₀ ≠ 0) {M : ℝ} (hM : ∀ w ∈ sphere z₀ R, ‖f w‖ ≤ M * ‖f z₀‖) :
-    ((∑ᶠ ρ, divisor f (closedBall z₀ (R / 2)) ρ : ℤ) : ℝ) ≤ Real.log M / Real.log 2 := by
-  have := hf.finsum_divisor_le_log_div_log (r := R / 2) (by linarith) (by linarith) hz₀ hM
-  rwa [div_div_cancel₀ hR.ne'] at this
 
 end AnalyticOnNhd
 
