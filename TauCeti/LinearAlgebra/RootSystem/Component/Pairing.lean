@@ -14,9 +14,10 @@ public import TauCeti.LinearAlgebra.RootSystem.Component.Basic
 
 The roots and coroots of an irreducible component of a finite root system over a field form a root
 pairing on the component space and its coroot analogue, whose non-orthogonality graph is the
-component. It is a root system, irreducible when `2 ≠ 0` in the field, which then identifies the
-decomposition by connected components with the decomposition into irreducible root systems, and it
-inherits being crystallographic and being reduced.
+component. It is a root system, irreducible when `2 ≠ 0` in the field, so each component gives an
+irreducible root system and, by `RootPairing.isInternal_componentSpace`, the ambient space is the
+direct sum of their spaces. The component pairing inherits being crystallographic and being
+reduced.
 
 The pairing between the two component spaces is perfect because a root or coroot of a component is
 orthogonal to everything in the other components, so nondegeneracy of the ambient pairing already

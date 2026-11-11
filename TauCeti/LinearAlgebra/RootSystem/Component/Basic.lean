@@ -64,7 +64,8 @@ variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommG
   (P : RootPairing ι R M N)
 
 /-- The **non-orthogonality graph** of a root pairing: two distinct roots are joined when they are
-not orthogonal. A root is joined to its negative, when that is a different root. -/
+not orthogonal. When `2 ≠ 0`, a root is joined to its negative whenever that is a different
+root. -/
 def nonorthogonalGraph : SimpleGraph ι :=
   SimpleGraph.fromRel fun i j ↦ ¬ P.IsOrthogonal i j
 
