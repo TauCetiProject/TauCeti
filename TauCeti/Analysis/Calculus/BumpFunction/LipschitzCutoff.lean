@@ -20,12 +20,14 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 /-!
 # Radial cutoffs with almost optimal Lipschitz constant
 
-When `E` is nontrivial, a function equal to one on `closedBall x₀ r` and vanishing off
-`ball x₀ R` has Lipschitz constant at least `1 / (R - r)`, and the piecewise affine radial profile
-attains this bound but is not smooth. This file shows that every larger constant is attained by a
-smooth cutoff (`TauCeti.exists_contDiff_cutoff_closedBall_lipschitzWith`), so for nontrivial `E`
-the bound `1 / (R - r)` is the infimum of the Lipschitz constants of smooth cutoffs. For shells
-of width `h` this gives cutoffs with constant `t / h` for every `t > 1`
+When `E` is nontrivial and `0 ≤ r < R`, a function equal to one on `closedBall x₀ r` and vanishing
+off `ball x₀ R` has Lipschitz constant at least `1 / (R - r)`, and the piecewise affine radial
+profile attains this bound but is not smooth. This file shows that every larger constant is
+attained by a smooth cutoff (`TauCeti.exists_contDiff_cutoff_closedBall_lipschitzWith`), so for
+nontrivial `E` and `0 ≤ r < R` the bound `1 / (R - r)` is the infimum of the Lipschitz constants of
+smooth cutoffs. For `r < 0` the closed ball is empty, the zero function is a cutoff, and no positive
+lower bound holds; the existence statement is still true there. For shells of width `h` this gives
+cutoffs with constant `t / h` for every `t > 1`
 (`TauCeti.exists_contDiff_cutoff_closedBall_lipschitzWith_mul_inv`).
 
 Cutoffs with a universal but non-optimal constant `c / (R - r)` suffice for iteration arguments.
