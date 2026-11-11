@@ -43,6 +43,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   coordinate expression, and the resulting transfer of injectivity.
 * `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero`: the zeros of the manifold
   derivative are the zeros of the Fréchet derivative of the coordinate expression in any chart.
+* `TauCeti.mvfderiv_eq_of_fderiv_comp_extChartAt_symm_eq`: maps whose coordinate expressions in
+  some chart have equal Fréchet derivatives have equal differentials.
 * `TauCeti.eventually_mfderiv_eq_zero_iff_extChartAt_symm`: local uniqueness of critical points
   of a `C¹` family in the extended chart at `x` transfers to the manifold.
 * `ContMDiffAt.contDiffAt_comp_extChartAt_symm` and
@@ -234,6 +236,21 @@ theorem mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero
   · obtain ⟨w, rfl⟩ := L.surjective v
     exact DFunLike.congr_fun h w
   · exact DFunLike.congr_fun h (L w)
+
+/-- Read in a chart whose source contains `y`, two maps into a normed space with differentiable
+coordinate expressions have the same differential at `y` when their coordinate expressions have
+the same Fréchet derivative at the chart image of `y`. -/
+theorem mvfderiv_eq_of_fderiv_comp_extChartAt_symm_eq {g : M → F}
+    (hy : y ∈ (extChartAt I x).source)
+    (hf : DifferentiableAt 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x y))
+    (hg : DifferentiableAt 𝕜 (g ∘ (extChartAt I x).symm) (extChartAt I x y))
+    (h : fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x y) =
+      fderiv 𝕜 (g ∘ (extChartAt I x).symm) (extChartAt I x y)) :
+    mvfderiv I f y = mvfderiv I g y := by
+  simp only [mvfderiv, mfderiv_eq_fderiv_comp_mfderiv_extChartAt hy hf,
+    mfderiv_eq_fderiv_comp_mfderiv_extChartAt hy hg, h]
+  -- The two sides differ only in the point indexing the tangent space of `F`, which is `F`.
+  rfl
 
 open Filter in
 /-- If the critical point of the coordinate expression `fun v ↦ f (q.1, (extChartAt I x).symm v)`
