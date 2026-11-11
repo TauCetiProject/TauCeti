@@ -30,7 +30,8 @@ conjugating the coordinates exchanges them.
 
 ## Main declarations
 
-* `TauCeti.stdComplexSymplecticForm`: the standard symplectic area form on `ℂ`.
+* `TauCeti.stdComplexSymplecticForm`: the standard symplectic area form on `ℂ`, which is
+  `Im (conj z * w)` (`TauCeti.stdComplexSymplecticForm_apply_eq_im_conj_mul`).
 * `TauCeti.isComplexLinearMap_equivRealProdCLM_symm` and
   `TauCeti.isSymplectomorphism_equivRealProdCLM_symm`: the coordinate equivalence preserves
   the standard complex and symplectic structures.
@@ -93,6 +94,12 @@ lemma isComplexLinearMap_equivRealProdCLM :
 lemma stdComplexSymplecticForm_apply (z w : ℂ) :
     stdComplexSymplecticForm z w = z.re * w.im - z.im * w.re := by
   simp [stdComplexSymplecticForm]
+  ring
+
+/-- The standard symplectic form on `ℂ` is `Im (conj z * w)`. -/
+lemma stdComplexSymplecticForm_apply_eq_im_conj_mul (z w : ℂ) :
+    stdComplexSymplecticForm z w = ((starRingEnd ℂ) z * w).im := by
+  simp only [stdComplexSymplecticForm_apply, Complex.mul_im, Complex.conj_re, Complex.conj_im]
   ring
 
 /-- The associated compatible metric on `ℂ` is the standard real dot product. -/

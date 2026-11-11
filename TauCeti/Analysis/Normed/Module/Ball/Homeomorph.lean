@@ -40,6 +40,10 @@ valued in the closed unit ball.
   statements read pointwise on norms, for the homeomorphism and its inverse.
 * `TauCeti.isOpenEmbedding_inclusion_comp_unitBall`: `E` embeds openly in its closed unit ball.
 * `Homeomorph.unitBall_symm_apply_coe`: the inverse radial map in explicit coordinates.
+* `OpenPartialHomeomorph.univBall_apply_of_pos` and
+  `OpenPartialHomeomorph.univBall_symm_apply_of_pos`: Mathlib's diffeomorphism `univBall c r` of
+  `E` onto the ball of radius `r > 0` and its inverse, `x ↦ r (1 + ‖x‖²)^(-1/2) x +ᵥ c` and
+  `y ↦ (r² - dist y c²)^(-1/2) (y -ᵥ c)`.
 * `TauCeti.cubeHomeomorphClosedBall`: the cube `I^N` is the closed unit ball of the sup norm on
   `N → ℝ`, through `t ↦ 2 * t - 1` in every coordinate.
 * `TauCeti.nonempty_homeomorph_cube_closedBall`: the closed unit ball of a real normed space of
@@ -69,6 +73,37 @@ theorem _root_.Homeomorph.unitBall_symm_apply_coe (y : ball (0 : W) 1) :
     ((OpenPartialHomeomorph.toHomeomorphSourceTarget_symm_apply_coe
       (OpenPartialHomeomorph.univUnitBall (E := W)) y).trans
       (OpenPartialHomeomorph.univUnitBall_symm_apply y.1))
+
+/-- For `r > 0`, `univBall c r` is the radial map `x ↦ r (1 + ‖x‖²)^(-1/2) x` followed by the
+translation to `c`. -/
+theorem _root_.OpenPartialHomeomorph.univBall_apply_of_pos {P : Type*} [PseudoMetricSpace P]
+    [NormedAddTorsor W P] (c : P) {r : ℝ} (hr : 0 < r) (x : W) :
+    OpenPartialHomeomorph.univBall c r x = (r * (Real.sqrt (1 + ‖x‖ ^ 2))⁻¹) • x +ᵥ c := by
+  -- For `r > 0`, `univBall c r` is `univUnitBall` followed by `x ↦ r • x +ᵥ c`, by definition.
+  have h : OpenPartialHomeomorph.univBall c r x =
+      r • OpenPartialHomeomorph.univUnitBall x +ᵥ c := by
+    simp only [OpenPartialHomeomorph.univBall, hr, ↓reduceDIte]
+    rfl
+  rw [h, OpenPartialHomeomorph.univUnitBall_apply, smul_smul]
+
+/-- For `r > 0`, the inverse of `univBall c r` is `y ↦ (r² - dist y c ²)^(-1/2) (y - c)`. Outside
+the ball both sides vanish, since the square root of a negative number is `0`. -/
+theorem _root_.OpenPartialHomeomorph.univBall_symm_apply_of_pos {P : Type*} [PseudoMetricSpace P]
+    [NormedAddTorsor W P] (c : P) {r : ℝ} (hr : 0 < r) (y : P) :
+    (OpenPartialHomeomorph.univBall c r).symm y =
+      (Real.sqrt (r ^ 2 - dist y c ^ 2))⁻¹ • (y -ᵥ c) := by
+  -- For `r > 0`, the inverse is `y ↦ r⁻¹ • (y -ᵥ c)` followed by the inverse of `univUnitBall`.
+  have h : (OpenPartialHomeomorph.univBall c r).symm y =
+      OpenPartialHomeomorph.univUnitBall.symm (r⁻¹ • (y -ᵥ c)) := by
+    simp only [OpenPartialHomeomorph.univBall, hr, ↓reduceDIte]
+    rfl
+  rw [h, OpenPartialHomeomorph.univUnitBall_symm_apply, smul_smul, norm_smul, Real.norm_eq_abs,
+    abs_inv, abs_of_pos hr, dist_eq_norm_vsub W]
+  -- `√(1 - ‖y - c‖² / r²) = √(r² - ‖y - c‖²) / r`, since `r > 0`.
+  congr 1
+  rw [show 1 - (r⁻¹ * ‖y -ᵥ c‖) ^ 2 = (r ^ 2)⁻¹ * (r ^ 2 - ‖y -ᵥ c‖ ^ 2) by field_simp,
+    Real.sqrt_mul (by positivity), Real.sqrt_inv, Real.sqrt_sq hr.le, mul_inv, inv_inv,
+    mul_right_comm, mul_inv_cancel₀ hr.ne', one_mul]
 
 namespace ContinuousLinearEquiv
 
