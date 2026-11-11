@@ -22,10 +22,13 @@ open scoped NNReal
 
 namespace ProbabilityTheory.HasSubgaussianMGF
 
-/-- A sub-Gaussian MGF bound forces the expectation to vanish. -/
+/-- Under a zero or probability measure, a sub-Gaussian MGF bound forces the expectation to
+vanish. -/
 theorem integral_eq_zero {Ω : Type*} [MeasurableSpace Ω]
-    {μ : Measure Ω} [IsProbabilityMeasure μ] {X : Ω → ℝ} {c : ℝ≥0}
+    {μ : Measure Ω} [IsZeroOrProbabilityMeasure μ] {X : Ω → ℝ} {c : ℝ≥0}
     (hX : HasSubgaussianMGF X c μ) : μ[X] = 0 := by
+  rcases eq_zero_or_isProbabilityMeasure μ with rfl | hprob
+  · simp
   have hset := hX.integrableExpSet_eq_univ
   have hm : 0 ∈ interior (integrableExpSet X μ) := by simp [hset]
   let g : ℝ → ℝ := (fun t ↦ Real.exp ((c : ℝ) * t ^ 2 / 2)) - mgf X μ

@@ -9,7 +9,7 @@ public import Mathlib.Basic.NNReal.Basic
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import Mathlib.Probability.Distributions.Gaussian.Real
 public import Mathlib.Probability.Independence.Basic
-public import Mathlib.Probability.Moments.SubGaussian
+public import TauCeti.Probability.Moments.SubGaussian.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Probability.Distributions.Gaussian.ChiSquared
 import TauCeti.Probability.Moments.Basic
@@ -50,40 +50,6 @@ variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X : Ω → ℝ} {c
 theorem mono {c₁ c₂ : ℝ≥0} (h : HasSubgaussianMGF X c₁ μ) (hle : c₁ ≤ c₂) :
     HasSubgaussianMGF X c₂ μ :=
   ⟨h.integrable_exp_mul, fun t ↦ (h.mgf_le t).trans <| by gcongr⟩
-
-/-- Under a zero or probability measure, every sub-Gaussian random variable has expectation zero. -/
-theorem integral_eq_zero [IsZeroOrProbabilityMeasure μ] (h : HasSubgaussianMGF X c μ) :
-    μ[X] = 0 := by
-  rcases eq_zero_or_isProbabilityMeasure μ with rfl | hprob
-  · simp
-  · let m : ℝ := μ[X]
-    have hquad (t : ℝ) : t * m ≤ (c : ℝ) * t ^ 2 / 2 := by
-      have hmul : Integrable (fun ω ↦ t * (X ω - m)) μ :=
-        (h.integrable.sub (integrable_const m)).const_mul t
-      have hf : Integrable (fun ω ↦ 1 + t * (X ω - m)) μ := (integrable_const 1).add hmul
-      have hg : Integrable (fun ω ↦ exp (-t * m) * exp (t * X ω)) μ :=
-        (h.integrable_exp_mul t).const_mul (exp (-t * m))
-      have hpt (ω : Ω) : 1 + t * (X ω - m) ≤ exp (-t * m) * exp (t * X ω) := by
-        have hlin : -t * m + t * X ω = t * (X ω - m) := by ring
-        rw [← exp_add, hlin]
-        linarith [add_one_le_exp (t * (X ω - m))]
-      have hlhs : ∫ ω, (1 + t * (X ω - m)) ∂μ = 1 := by
-        rw [integral_add (integrable_const 1) hmul, integral_const_mul,
-          integral_sub h.integrable (integrable_const m)]; simp [m, probReal_univ]
-      have hrhs : ∫ ω, exp (-t * m) * exp (t * X ω) ∂μ ≤ exp (-t * m + (c : ℝ) * t ^ 2 / 2) := by
-        rw [integral_const_mul, exp_add]
-        exact mul_le_mul_of_nonneg_left (h.mgf_le t) (exp_pos _).le
-      linarith [Real.one_le_exp_iff.mp (hlhs ▸ (integral_mono hf hg hpt).trans hrhs)]
-    have hc1 : (c : ℝ) + 1 ≠ 0 := by positivity
-    have hstep := mul_le_mul_of_nonneg_left (hquad (m / ((c : ℝ) + 1)))
-      (by positivity : (0 : ℝ) ≤ 2 * ((c : ℝ) + 1) ^ 2)
-    have hlhs_alg : 2 * ((c : ℝ) + 1) ^ 2 * (m / ((c : ℝ) + 1) * m) =
-        2 * ((c : ℝ) + 1) * m ^ 2 := by field_simp
-    have hrhs_alg : 2 * ((c : ℝ) + 1) ^ 2 * ((c : ℝ) * (m / ((c : ℝ) + 1)) ^ 2 / 2) =
-        (c : ℝ) * m ^ 2 := by field_simp
-    rw [hlhs_alg, hrhs_alg] at hstep
-    have h0 : ((c : ℝ) + 2) * m ^ 2 = 0 := le_antisymm (by linarith) (by positivity)
-    exact sq_eq_zero_iff.mp ((mul_eq_zero.mp h0).resolve_left (by positivity))
 
 private theorem lintegral_ofReal_exp_mul_sq_le (h : HasSubgaussianMGF X c μ) {s : ℝ}
     (hs0 : 0 ≤ s) (hs : 2 * (c : ℝ) * s < 1) :
