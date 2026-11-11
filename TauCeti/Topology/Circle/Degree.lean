@@ -9,6 +9,8 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Homotopy.Lifting
 public import Mathlib.Topology.Homotopy.Path
 
+import TauCeti.Analysis.Normed.Module.Normalize
+
 /-!
 # The degree of a loop and the angle swept by a path in the circle
 
@@ -307,12 +309,11 @@ theorem degree_eq_of_homotopy_div_norm {x y : Circle} (γ₀ : Path x x) (γ₁ 
     (F : C(I × I, ℂ)) (hne : ∀ st, F st ≠ 0) (h₀ : ∀ t, (γ₀ t : ℂ) = F (0, t) / ‖F (0, t)‖)
     (h₁ : ∀ t, (γ₁ t : ℂ) = F (1, t) / ‖F (1, t)‖) (hF : ∀ s, F (s, 0) = F (s, 1)) :
     degree γ₀ = degree γ₁ := by
-  have hnorm (st : I × I) : (‖F st‖ : ℂ) ≠ 0 := by exact_mod_cast norm_ne_zero_iff.2 (hne st)
-  have hmem (st : I × I) : F st / ‖F st‖ ∈ Submonoid.unitSphere ℂ :=
-    mem_sphere_zero_iff_norm.2 (by simp [hne st])
-  let G : C(I × I, Circle) := ⟨fun st => ⟨_, hmem st⟩,
-    (F.continuous.div (by fun_prop) hnorm).subtype_mk hmem⟩
-  have hG (st : I × I) : (G st : ℂ) = F st / ‖F st‖ := rfl
+  let G : C(I × I, Circle) := TauCeti.normalizeToSphere F F.continuous hne
+  have hG (st : I × I) : (G st : ℂ) = F st / ‖F st‖ := by
+    change ((TauCeti.normalizeToSphere F F.continuous hne st : Metric.sphere (0 : ℂ) 1) : ℂ) = _
+    rw [TauCeti.coe_normalizeToSphere_apply, NormedSpace.normalize, Complex.real_smul,
+      Complex.ofReal_inv, inv_mul_eq_div]
   exact degree_eq_of_homotopy γ₀ γ₁ G (fun t => Circle.ext (by rw [hG, h₀]))
     (fun t => Circle.ext (by rw [hG, h₁])) (fun s => Circle.ext (by rw [hG, hG, hF]))
 
