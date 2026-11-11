@@ -13,6 +13,8 @@ import Mathlib.Topology.MetricSpace.Equicontinuity
 import Mathlib.Topology.Sequences
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.Analysis.Calculus.UniformLimitsDeriv
+import TauCeti.Analysis.Normed.Operator.Holder
+import TauCeti.Analysis.SpecialFunctions.Pow.Holder
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -25,6 +27,10 @@ The actual normalized Cauchy integral is
 the output disc. Smooth normalized bump approximations preserve the source bounds. Their
 Cauchy derivatives have a uniformly convergent subsequence by Arzelà–Ascoli; the derivative
 limit theorem identifies the limit with the derivative of the actual Cauchy integral.
+
+As a check, `TauCeti.contDiffOn_holderOnWith_fderiv_cauchyTransform_norm_rpow_mul` applies the
+gain to the cone-point source `‖z‖ ^ α χ(z)` for a compactly supported `C¹` cutoff `χ`: its
+Cauchy transform is `C¹` with `α`-Hölder derivative near every closed disc about `0`.
 -/
 
 public noncomputable section
@@ -416,5 +422,74 @@ theorem exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul
     exact (L.opNorm_comp_le _).trans (mul_le_mul_of_nonneg_left
       (ContinuousLinearMap.norm_pi_le_of_le (fun i ↦ (hS i).2.2.1 x hx) (by positivity))
       (norm_nonneg _))
+
+section ConePoint
+
+/-- The source `‖z‖ ^ α χ(z)` of the cone-point check is globally `α`-Hölder for a compactly
+supported `C¹` cutoff `χ`. -/
+private theorem exists_holderWith_norm_rpow_mul {α : ℝ≥0} (hα1 : α ≤ 1) {χ : ℂ → ℝ}
+    (hχ : ContDiff ℝ 1 χ) (hc : HasCompactSupport χ) :
+    ∃ H : ℝ≥0, HolderWith H α (fun z : ℂ ↦ ((‖z‖ ^ (α : ℝ) * χ z : ℝ) : ℂ)) := by
+  obtain ⟨ρ, -, hsub⟩ := hc.isCompact.isBounded.subset_closedBall_lt 0 (0 : ℂ)
+  obtain ⟨A, hA⟩ := hχ.continuous.bounded_above_of_compact_support hc
+  obtain ⟨L, hL⟩ := ContDiff.lipschitzWith_of_hasCompactSupport hc hχ one_ne_zero
+  have hχH := (hL.lipschitzOnWith (s := univ)).holderOnWith_of_norm_le (M := A.toNNReal)
+    (fun x _ ↦ (hA x).trans (Real.le_coe_toNNReal A)) hα1
+  -- The cone factor `‖z‖ ^ α` is `α`-Hölder with constant one and bounded on the support of `χ`.
+  have hpow : HolderOnWith 1 α (fun z : ℂ ↦ ((‖z‖ ^ (α : ℝ) : ℝ) : ℂ)) (closedBall 0 ρ) :=
+    HolderOnWith.of_dist_le fun x _ y _ ↦ by
+      rw [dist_eq_norm, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs,
+        NNReal.coe_one, one_mul]
+      exact (Real.abs_rpow_sub_rpow_le (norm_nonneg _) (norm_nonneg _) α.coe_nonneg hα1).trans
+        (Real.rpow_le_rpow (abs_nonneg _) (by rw [dist_eq_norm]; exact abs_norm_sub_norm_le x y)
+          α.coe_nonneg)
+  have hpowM (z : ℂ) (hz : z ∈ closedBall 0 ρ) :
+      ‖((‖z‖ ^ (α : ℝ) : ℝ) : ℂ)‖ ≤ (ρ ^ (α : ℝ)).toNNReal := by
+    rw [Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+    exact (Real.rpow_le_rpow (norm_nonneg _) (mem_closedBall_zero_iff.mp hz) α.coe_nonneg).trans
+      (Real.le_coe_toNNReal _)
+  have h := (holderOnWith_univ.mp hχH).smul_of_eq_zero hpow
+    (fun x ↦ (hA x).trans (Real.le_coe_toNNReal A)) hpowM
+    (fun x hx ↦ image_eq_zero_of_notMem_tsupport fun h ↦ hx (hsub h))
+  have he : (fun z : ℂ ↦ χ z • ((‖z‖ ^ (α : ℝ) : ℝ) : ℂ)) =
+      fun z : ℂ ↦ ((‖z‖ ^ (α : ℝ) * χ z : ℝ) : ℂ) :=
+    funext fun z ↦ by rw [Complex.real_smul, ← Complex.ofReal_mul, mul_comm]
+  exact ⟨_, he ▸ h⟩
+
+/-- **The cone-point check for the Hölder gain.** For `0 < α < 1` and a compactly supported `C¹`
+cutoff `χ`, the Cauchy transform of the source `‖z‖ ^ α χ(z)` is `C¹` near every closed disc
+about `0`, with `α`-Hölder derivative there. -/
+theorem contDiffOn_holderOnWith_fderiv_cauchyTransform_norm_rpow_mul {α : ℝ≥0} (hα : 0 < α)
+    (hα1 : α < 1) {χ : ℂ → ℝ} (hχ : ContDiff ℝ 1 χ) (hc : HasCompactSupport χ) {R : ℝ}
+    (hR : 0 ≤ R) :
+    ContDiffOn ℝ 1 (cauchyTransform fun z : ℂ ↦ ((‖z‖ ^ (α : ℝ) * χ z : ℝ) : ℂ))
+        (ball 0 (R + 1)) ∧
+      ∃ C : ℝ≥0, HolderOnWith C α
+        (fderiv ℝ (cauchyTransform fun z : ℂ ↦ ((‖z‖ ^ (α : ℝ) * χ z : ℝ) : ℂ)))
+        (closedBall 0 R) := by
+  obtain ⟨H, hH⟩ := exists_holderWith_norm_rpow_mul hα1.le hχ hc
+  obtain ⟨ρ, hρ, hsub⟩ := hc.isCompact.isBounded.subset_closedBall_lt 0 (0 : ℂ)
+  obtain ⟨A, hA⟩ := hχ.continuous.bounded_above_of_compact_support hc
+  obtain ⟨C, hC⟩ :=
+    exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul
+      (F := ℂ) hα hα1 0 hρ.le hR
+  have hs : Function.support (fun z : ℂ ↦ ((‖z‖ ^ (α : ℝ) * χ z : ℝ) : ℂ)) ⊆
+      closedBall 0 ρ := fun z hz ↦ by
+    refine hsub (subset_tsupport _ fun h ↦ hz ?_)
+    simp only [h, mul_zero, Complex.ofReal_zero]
+  have hM (z : ℂ) : ‖((‖z‖ ^ (α : ℝ) * χ z : ℝ) : ℂ)‖ ≤ (ρ ^ (α : ℝ) * A).toNNReal := by
+    refine le_trans ?_ (Real.le_coe_toNNReal _)
+    by_cases h : χ z = 0
+    · simp only [h, mul_zero, Complex.ofReal_zero, norm_zero]
+      exact mul_nonneg (by positivity) ((norm_nonneg _).trans (hA z))
+    have hz : ‖z‖ ≤ ρ := by simpa using hsub (subset_tsupport _ h)
+    rw [Complex.norm_real, Real.norm_eq_abs, abs_mul, abs_of_nonneg (by positivity)]
+    exact mul_le_mul (Real.rpow_le_rpow (norm_nonneg _) hz α.coe_nonneg) (hA z) (abs_nonneg _)
+      (by positivity)
+  obtain ⟨hcd, hD, -, -⟩ := hC hs hH hM
+  rw [funext (cauchyTransform_apply _)]
+  exact ⟨hcd, _, hD⟩
+
+end ConePoint
 
 end TauCeti

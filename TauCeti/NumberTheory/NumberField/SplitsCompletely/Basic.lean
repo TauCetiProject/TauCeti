@@ -87,6 +87,7 @@ theorem ncard_primesOver_eq_finrank_iff (K : Type*) [Field K] [NumberField K] [I
       (span {(p : ℤ)}).ramificationIdxIn (𝓞 K) = 1 ∧ (span {(p : ℤ)}).inertiaDegIn (𝓞 K) = 1 :=
   ncard_primesOver_eq_finrank_iff_of_isGalois ℚ K (span {(p : ℤ)})
 
+omit [NumberField K] in
 /-- In a Galois extension of number fields, a base ideal `P` has `[L : K]` primes above it
 iff the decomposition group of a prime `Q` above it is trivial. The base ring may be `𝓞 K`
 or, when `K = ℚ`, the rational integers. -/
@@ -94,6 +95,8 @@ theorem ncard_primesOver_eq_finrank_iff_stabilizer_eq_bot {A : Type*} [CommRing 
     [Algebra A (𝓞 L)] [IsGaloisGroup Gal(L/K) A (𝓞 L)] (P : Ideal A)
     (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver P] :
     (primesOver P (𝓞 L)).ncard = finrank K L ↔ stabilizer Gal(L/K) Q = ⊥ := by
+  have : CharZero K := (algebraMap K L).charZero
+  have : NumberField K := NumberField.of_tower ℚ L K
   rw [← IsGaloisGroup.card_eq_finrank Gal(L/K) K L,
     ncard_primesOver_eq_natCard_iff_stabilizer_eq_bot _ _ Q]
 
@@ -104,10 +107,13 @@ namespace Ideal
 /-- **A full complement of primes forces unramifiedness.** If `𝓞 L` has `[L : K]` primes above a
 prime ideal `𝔭` of `𝓞 K`, then every prime `Q` of `𝓞 L` above `𝔭` is unramified over `𝓞 K`.
 No Galois hypothesis is needed. -/
-theorem isUnramifiedAt_of_ncard_primesOver_eq_finrank {K L : Type*} [Field K] [NumberField K]
-    [Field L] [NumberField L] [Algebra K L] (𝔭 : Ideal (𝓞 K)) [𝔭.IsPrime]
+theorem isUnramifiedAt_of_ncard_primesOver_eq_finrank {K L : Type*} [Field K]
+    [Field L] [NumberField L] [Algebra K L] (𝔭 : Ideal (𝓞 K))
     (hsplit : (primesOver 𝔭 (𝓞 L)).ncard = finrank K L) (Q : Ideal (𝓞 L)) [Q.IsPrime]
     [Q.LiesOver 𝔭] : Algebra.IsUnramifiedAt (𝓞 K) Q := by
+  have : CharZero K := (algebraMap K L).charZero
+  have : NumberField K := NumberField.of_tower ℚ L K
+  have := Ideal.isPrime_of_liesOver Q 𝔭
   -- The fundamental identity `∑ e f = [L : K]` leaves no room for `e > 1` once the primes above
   -- `𝔭` already number the rank; that count is taken over the rings, so the degree of the field
   -- extension has to be transported down to `𝓞 L` over `𝓞 K` first.
@@ -130,7 +136,7 @@ theorem bijective_algebraMap_int_quotient_of_ncard_primesOver_eq_finrank {K : Ty
 `p` splits completely in `K` then the inertia degree at each prime `𝔭` above `p` is `1`, so the
 residue field at `𝔭` is `ℤ/p` and `N(𝔭) = p`. No Galois hypothesis is needed. -/
 theorem absNorm_eq_of_ncard_primesOver_eq_finrank {K : Type*} [Field K] [NumberField K]
-    {p : ℕ} [Fact p.Prime] (𝔭 : Ideal (𝓞 K)) [𝔭.IsPrime] [𝔭.LiesOver (span {(p : ℤ)})]
+    {p : ℕ} (𝔭 : Ideal (𝓞 K)) [𝔭.IsPrime] [𝔭.LiesOver (span {(p : ℤ)})]
     (hsplit : (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = finrank ℚ K) :
     absNorm 𝔭 = p := by
   have hinertia : 𝔭.inertiaDeg ℤ = 1 :=

@@ -118,6 +118,35 @@ private lemma jointActCommIso_hom_app_comp_return {p q : Γ} (g : p ⟶ q)
     ((congrArg (_ ≫ ·) (N.jointComp_hom_app_comp_target_return g a x)).trans
       ((congrArg (· ≫ _) hi).trans (Category.assoc _ _ _)))
 
+/-- The inverse comparison of the action on a fiber, followed by the unit transport and the
+action of the counit, is the counit at the acted-on object: the mate equation for
+`actInverseIso`. -/
+private lemma actInverseIso_hom_app_comp_transportId_comp_map_counit {p : Γ}
+    (a : SingleObj.star H ⟶ SingleObj.star H) (x : fiber actions p) :
+    (N.toLift.actInverseIso p a).hom.app x ≫
+      (N.transportId p).hom.app
+        ((act actions p a).obj ((N.toLift.fiberEquivalence p).inverse.obj x)) ≫
+      (act actions p a).map ((N.toLift.fiberEquivalence p).counit.app x) =
+    (N.toLift.fiberEquivalence p).counit.app ((act actions p a).obj x) := by
+  have hh : (N.toLift.actInverseIso p a).hom.app x ≫
+      (N.transportId p).hom.app
+        ((act actions p a).obj ((N.toLift.fiberEquivalence p).inverse.obj x)) =
+      (N.toLift.fiberEquivalence p).counit.app ((act actions p a).obj x) ≫
+        (act actions p a).map ((N.toLift.fiberEquivalence p).counitInv.app x) := by
+    have h := N.toLift.functor_map_actInverseIso_hom_app_comp p a x
+    simp only [fiberEquivalence_functor, toLift_comparison, comparison_app,
+      Cat.Hom.id_toFunctor] at h
+    erw [comparisonNaturality_hom_app, N.comparison_naturality_hom_app] at h
+    exact h
+  -- `erw`: the goal lives in the joint fiber `N.toLift.jointFiber p`, which is only
+  -- definitionally equal to `fiber actions p` (the type of `hh`), so `rw` cannot match `hh`.
+  erw [← Category.assoc, hh, Category.assoc, ← Functor.map_comp]
+  have hi : (N.toLift.fiberEquivalence p).counitInv.app x ≫
+      (N.toLift.fiberEquivalence p).counit.app x = 𝟙 x :=
+    (N.toLift.fiberEquivalence p).counitIso.inv_hom_id_app x
+  -- `erw`: same joint-fiber versus `fiber actions p` defeq as above.
+  erw [hi, (act actions p a).map_id, Category.comp_id]
+
 /-- The canonical comparison with reconstructed transport commutes with every prescribed
 action, including its chosen commuting isomorphism. -/
 @[reassoc]
@@ -154,12 +183,9 @@ lemma toLiftTransportIso_hom_app_comp_transportCommIso {p q : Γ} (g : p ⟶ q)
         ((N.transport g).obj ((act actions p (𝟙 _)).obj y)))) ≫
       (act actions q a).map ((N.transport g).map ((act actions p (𝟙 _)).map ε) ≫
         (N.transport g).map ((actId actions p).hom.app x))
-  have he : (N.transport g).map ((act actions p (𝟙 _)).map ε) ≫
-      (N.transport g).map ((actId actions p).hom.app x) =
-      (N.transport g).map ((actId actions p).hom.app y) ≫ (N.transport g).map ε := by
-    rw [← Functor.map_comp, (actId actions p).hom.naturality, Functor.map_comp]
-    rfl
-  rw [he]
+  have hnat := (Functor.whiskerRight (actId actions p).hom (N.transport g)).naturality ε
+  simp only [Functor.comp_map, Functor.id_map, Functor.whiskerRight_app] at hnat
+  rw [hnat]
   simp only [Functor.map_comp, Category.assoc]
   -- Remove the unit transports from the two factorizations of the joint arrow.
   have hk : κ ≫ (N.transportId q).hom.app ((act actions q a).obj
@@ -174,17 +200,7 @@ lemma toLiftTransportIso_hom_app_comp_transportCommIso {p q : Γ} (g : p ⟶ q)
   erw [hk']
   -- The mate equation for the source inverse comparison cancels the remaining counits.
   have hα : α ≫ (N.transportId p).hom.app ((act actions p a).obj y) ≫
-      (act actions p a).map ε = εa := by
-    have hh : α ≫ (N.transportId p).hom.app ((act actions p a).obj y) =
-        εa ≫ (act actions p a).map εi := by
-        have h := N.toLift.functor_map_actInverseIso_hom_app_comp p a x
-        simp only [fiberEquivalence_functor, toLift_comparison, comparison_app,
-          Cat.Hom.id_toFunctor] at h
-        erw [comparisonNaturality_hom_app, N.comparison_naturality_hom_app] at h
-        exact h
-    rw [← Category.assoc, hh, Category.assoc, ← Functor.map_comp]
-    have hi : εi ≫ ε = 𝟙 x := (N.toLift.fiberEquivalence p).counitIso.inv_hom_id_app x
-    rw [hi, (act actions p a).map_id, Category.comp_id]
+      (act actions p a).map ε = εa := N.actInverseIso_hom_app_comp_transportId_comp_map_counit a x
   -- Naturality carries the source counit through the prescribed commuting cell.
   rw [← N.transportCommIso_hom_naturality]
   have hn := (actId actions p).hom.naturality ((act actions p a).map ε)
