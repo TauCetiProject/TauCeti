@@ -351,6 +351,14 @@ theorem endpoint_startpoint {φ : StrandDiagram α} {y : α} (hy : y ∈ φ.targ
     φ.endpoint (φ.startpoint y) = y :=
   endpoint_eq_of_mem (mem_startpoint hy)
 
+/-- If `φ` ends where `ψ` starts, the strand of their concatenation starting at a point `i` of
+the source of `φ` follows the strand of `φ` from `i` and then the strand of `ψ`. -/
+theorem endpoint_trans_of_target_eq {φ ψ : StrandDiagram α} (h : φ.target = ψ.source) {i : α}
+    (hi : i ∈ φ.source) :
+    (φ.trans ψ).endpoint i = ψ.endpoint (φ.endpoint i) :=
+  endpoint_eq_of_mem
+    (mem_trans.2 ⟨_, endpoint_mem hi, endpoint_mem (h ▸ endpoint_mem_target hi)⟩)
+
 theorem idOn_trans_of_eq_source {s : Finset α} {φ : StrandDiagram α} (h : s = φ.source) :
     (idOn s).trans φ = φ := by
   ext i k
