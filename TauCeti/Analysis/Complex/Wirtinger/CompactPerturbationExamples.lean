@@ -6,17 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 
 /-!
 # The compact perturbation `\bar∂ + 1` and its kernel
 
-The Cauchy–Riemann operator `\bar∂` on functions over the unit disc with real boundary values has
-index `1`, and its kernel consists of the real constants. Adding the compact zeroth-order term
-`1` does not change the index, but it does change the kernel: this file records the explicit
-computation behind that example, which is a check on the compact-perturbation and deformation
-statements for real Cauchy–Riemann operators.
+As background, not established here: realized as a Fredholm operator between Sobolev spaces of
+functions over the unit disc with real boundary values, the Cauchy–Riemann operator `\bar∂` has
+index `1` and its kernel consists of the real constants, and the compact zeroth-order perturbation
+`\bar∂ + 1` has the same index. This file records the pointwise kernel computation behind that
+example, which is a check on the compact-perturbation statement for real Cauchy–Riemann
+operators: the perturbation changes the kernel.
 
 The integrating factor `e^{conj z}` turns `\bar∂ + 1` into `\bar∂`: for `ξ` real differentiable,
 `\bar∂(e^{conj z} ξ) = e^{conj z} (\bar∂ξ + ξ)`, since `\bar∂ e^{conj z} = e^{conj z}`. Hence the
@@ -26,10 +26,10 @@ hand `e^{-2 s} = e^{-conj z} e^{-z}` (with `z = s + i t`) is a nonzero solution 
 the whole plane, in particular on the unit circle. So the kernel with real boundary values
 contains `e^{-2 s}` and no nonzero constant.
 
-For the deformation statement, the family `\bar∂ + t` with `t ∈ [0, 1]` has a continuous
-zeroth-order term, whereas the family `\bar∂ + t / (1 - t)` does not extend continuously to
-`t = 1`: its zeroth-order term, the constant `t / (1 - t)`, has `L^p` norm tending to infinity as
-`t → 1⁻` for every finite nonzero measure.
+The companion check for the deformation statement, that the zeroth-order term `t / (1 - t)` has
+`L^p` norm tending to infinity as `t → 1⁻`, is
+`MeasureTheory.Measure.tendsto_norm_lpConst_div_one_sub` in
+`TauCeti/MeasureTheory/Function/Lp/Const.lean`.
 
 Here `\bar∂ξ` is `conjWirtingerDeriv ξ z 1 = (∂ₛξ + i ∂ₜξ) / 2`.
 
@@ -42,15 +42,11 @@ Here `\bar∂ξ` is `conjWirtingerDeriv ξ z 1 = (∂ₛξ + i ∂ₜξ) / 2`.
   exactly when `\bar∂ξ + ξ = 0` there.
 * `TauCeti.conjWirtingerDeriv_add_eq_zero_iff_exists_eq_cexp_neg_conj_smul`: on an open set, the
   solutions of `\bar∂ξ + ξ = 0` are the maps `e^{-conj z} h` with `h` holomorphic.
-* `TauCeti.conjWirtingerDeriv_const_apply_one_add_eq_zero_iff`: a constant solves `\bar∂ξ + ξ = 0`
-  only if it is zero.
 * `TauCeti.conjWirtingerDeriv_ofReal_exp_neg_two_mul_re_apply_one_add`: `e^{-2 s}` solves
   `\bar∂ξ + ξ = 0`.
 * `TauCeti.compactPerturbation_disc_kernel_check`: on the unit disc with real values on the unit
   circle, the constants solving `\bar∂ξ = 0` are the real ones, the only constant solving
   `\bar∂ξ + ξ = 0` is `0`, and `e^{-2 s}` solves `\bar∂ξ + ξ = 0`.
-* `TauCeti.tendsto_div_one_sub_nhdsLT_one`, `TauCeti.tendsto_norm_lpConst_div_one_sub`: the
-  zeroth-order term `t / (1 - t)` is unbounded as `t → 1⁻`, also in `L^p` norm.
 
 ## References
 
@@ -59,20 +55,31 @@ Here `\bar∂ξ` is `conjWirtingerDeriv ξ z 1 = (∂ₛξ + i ∂ₜξ) / 2`.
 
 public section
 
-open Complex Filter Metric Set MeasureTheory
-open scoped ComplexConjugate ENNReal Topology
+open Complex Filter Metric Set
+open scoped ComplexConjugate
 
-namespace TauCeti
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-
-/-! ### The integrating factor `e^{conj z}` -/
+namespace Complex
 
 /-- The real derivative of `w ↦ e^{conj w}`. -/
 theorem hasFDerivAt_cexp_conj (z : ℂ) :
     HasFDerivAt (fun w : ℂ ↦ cexp (conj w))
       (cexp (conj z) • (conjCLE : ℂ ≃L[ℝ] ℂ).toContinuousLinearMap) z :=
   (conjCLE : ℂ ≃L[ℝ] ℂ).hasFDerivAt.cexp
+
+/-- In the coordinate `z = s + i t`, `e^{-2 s} = e^{-conj z} e^{-z}`. -/
+theorem ofReal_exp_neg_two_mul_re (z : ℂ) :
+    ((Real.exp (-2 * z.re) : ℝ) : ℂ) = cexp (-conj z) * cexp (-z) := by
+  rw [ofReal_exp, ← exp_add]
+  congr 1
+  apply Complex.ext <;> simp; ring
+
+end Complex
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-! ### The integrating factor `e^{conj z}` -/
 
 /-- The antiholomorphic exponential is its own conjugate Wirtinger derivative:
 `\bar∂ e^{conj z} = e^{conj z}`. -/
@@ -127,24 +134,6 @@ theorem conjWirtingerDeriv_add_eq_zero_iff_exists_eq_cexp_neg_conj_smul {ξ : �
 
 /-! ### Constants and the solution `e^{-2 s}` -/
 
-/-- For a constant `c`, `(\bar∂ + 1) c = c`. -/
-theorem conjWirtingerDeriv_const_apply_one_add (c : E) (z : ℂ) :
-    conjWirtingerDeriv (fun _ : ℂ ↦ c) z 1 + c = c := by
-  simp
-
-/-- A constant solves `\bar∂ξ + ξ = 0` only if it is zero: the constants are not in the kernel
-of `\bar∂ + 1`. -/
-theorem conjWirtingerDeriv_const_apply_one_add_eq_zero_iff (c : E) (z : ℂ) :
-    conjWirtingerDeriv (fun _ : ℂ ↦ c) z 1 + c = 0 ↔ c = 0 := by
-  rw [conjWirtingerDeriv_const_apply_one_add]
-
-/-- In the coordinate `z = s + i t`, `e^{-2 s} = e^{-conj z} e^{-z}`. -/
-theorem ofReal_exp_neg_two_mul_re (z : ℂ) :
-    ((Real.exp (-2 * z.re) : ℝ) : ℂ) = cexp (-conj z) * cexp (-z) := by
-  rw [ofReal_exp, ← exp_add]
-  congr 1
-  apply Complex.ext <;> simp; ring
-
 /-- The real function `e^{-2 s}` solves `\bar∂ξ + ξ = 0` on the whole plane. -/
 theorem conjWirtingerDeriv_ofReal_exp_neg_two_mul_re_apply_one_add (z : ℂ) :
     conjWirtingerDeriv (fun w : ℂ ↦ ((Real.exp (-2 * w.re) : ℝ) : ℂ)) z 1 +
@@ -158,8 +147,8 @@ unit circle:
 * a constant is in the kernel of `\bar∂` exactly when it is real;
 * the only constant in the kernel of `\bar∂ + 1` is `0`;
 * the function `e^{-2 s}`, which is nonzero and real everywhere, is in the kernel of `\bar∂ + 1`.
-So the kernel changes under the compact perturbation `\bar∂ ↦ \bar∂ + 1`, while the index does
-not. -/
+
+So the kernel changes under the compact perturbation `\bar∂ ↦ \bar∂ + 1`. -/
 theorem compactPerturbation_disc_kernel_check :
     (∀ c : ℂ, ((∀ z ∈ ball (0 : ℂ) 1, conjWirtingerDeriv (fun _ : ℂ ↦ c) z 1 = 0) ∧
         ∀ z ∈ sphere (0 : ℂ) 1, c.im = 0) ↔ c.im = 0) ∧
@@ -176,35 +165,10 @@ theorem compactPerturbation_disc_kernel_check :
       conjWirtingerDeriv_ofReal_exp_neg_two_mul_re_apply_one_add z, fun z _ ↦ ofReal_im _,
       fun z ↦ ofReal_ne_zero.2 (Real.exp_pos _).ne'⟩
   · simp
-  · exact (conjWirtingerDeriv_const_apply_one_add_eq_zero_iff c 0).1 (h.1 0 (by simp))
+  · simpa using h.1 0 (by simp)
   · simp [h]
   · exact fun z _ ↦ (Complex.ofRealCLM.differentiableAt.comp z
       ((Real.differentiableAt_exp).comp z
         ((reCLM.differentiableAt).const_mul (-2)))).differentiableWithinAt
-
-/-! ### Unbounded zeroth-order terms -/
-
-/-- The zeroth-order coefficient `t / (1 - t)` tends to infinity as `t → 1⁻`. -/
-theorem tendsto_div_one_sub_nhdsLT_one :
-    Tendsto (fun t : ℝ ↦ t / (1 - t)) (𝓝[<] 1) atTop := by
-  have h1 : Tendsto (fun t : ℝ ↦ t) (𝓝[<] 1) (𝓝 1) := tendsto_nhdsWithin_of_tendsto_nhds tendsto_id
-  have h2 : Tendsto (fun t : ℝ ↦ 1 - t) (𝓝[<] 1) (𝓝[>] 0) := by
-    refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
-    · simpa using ((tendsto_const_nhds (x := (1 : ℝ))).sub h1)
-    · filter_upwards [self_mem_nhdsWithin] with t ht
-      exact sub_pos.2 ht
-  simpa [div_eq_mul_inv] using h1.pos_mul_atTop one_pos (tendsto_inv_nhdsGT_zero.comp h2)
-
-/-- **Check: the family `\bar∂ + t / (1 - t)` is not continuous at `t = 1`.** For a finite nonzero
-measure `μ` and `p ≠ 0`, the `L^p(μ)` norm of the constant zeroth-order term `t / (1 - t)` tends
-to infinity as `t → 1⁻`; applied to Lebesgue measure on the unit disc, the multiplication
-operators have unbounded norm, so the deformation invariance of the index does not apply. -/
-theorem tendsto_norm_lpConst_div_one_sub {α : Type*} [MeasurableSpace α] (μ : Measure α)
-    [IsFiniteMeasure μ] [NeZero μ] {p : ℝ≥0∞} (hp : p ≠ 0) :
-    Tendsto (fun t : ℝ ↦ ‖Lp.const p μ (((t / (1 - t) : ℝ)) : ℂ)‖) (𝓝[<] 1) atTop := by
-  simp only [Lp.norm_const _ _ _ hp, norm_real, Real.norm_eq_abs]
-  have hμ : 0 < μ.real univ ^ (1 / p.toReal) :=
-    Real.rpow_pos_of_pos (measureReal_univ_pos) _
-  exact (tendsto_abs_atTop_atTop.comp tendsto_div_one_sub_nhdsLT_one).atTop_mul_const hμ
 
 end TauCeti
