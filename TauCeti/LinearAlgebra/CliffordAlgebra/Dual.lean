@@ -73,6 +73,18 @@ theorem cliffordReverseDual_ι (ρ : CliffordAlgebra Q →ₐ[R] Module.End K S)
     cliffordReverseDual ρ (ι Q v) = (ρ (ι Q v)).dualMap := by
   rw [cliffordReverseDual_apply, reverse_ι]
 
+/-- The transpose of a Clifford grading anticommutes with the reverse-dual vector action. -/
+theorem dualMap_mul_cliffordReverseDual_ι
+    (ρ : CliffordAlgebra Q →ₐ[R] Module.End K S) (γ : Module.End K S)
+    (hγρ : ∀ v, γ * ρ (ι Q v) = -(ρ (ι Q v) * γ)) (v : V) :
+    γ.dualMap * ρ.cliffordReverseDual (ι Q v) =
+      -(ρ.cliffordReverseDual (ι Q v) * γ.dualMap) := by
+  ext φ e
+  simp only [cliffordReverseDual_ι, mul_apply_eq_comp, LinearMap.dualMap_apply,
+    LinearMap.neg_apply]
+  exact neg_eq_iff_eq_neg.mp (by
+    simpa using (congrArg φ (LinearMap.congr_fun (hγρ v) e)).symm)
+
 /-- The reverse-dual action is the unique Clifford algebra action with the prescribed
 transposed vector action. -/
 theorem cliffordReverseDual_unique (ρ : CliffordAlgebra Q →ₐ[R] Module.End K S)

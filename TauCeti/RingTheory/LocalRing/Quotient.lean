@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dimension.Free
 public import Mathlib.RingTheory.Ideal.Cotangent
 public import Mathlib.RingTheory.Ideal.Over
+public import Mathlib.RingTheory.LocalRing.Quotient
 
 /-!
 # The maximal ideal and the cotangent space of a quotient of a local ring
@@ -20,17 +21,24 @@ and they are linearly independent modulo it.
 For a local homomorphism `R → S` with `S` local and an ideal `J` of `R`, the induced map
 `R ⧸ J → S ⧸ J S` is again local. Dividing both sides of a local homomorphism by an ideal of the
 base, as in inductions on the dimension of the base, therefore stays among local homomorphisms.
+When `J` is the maximal ideal of `R` and generates the maximal ideal of `S`, this map is the
+residue field extension, whose degree is then the rank of a finite free `S`.
 
 ## Main results
 
 * `TauCeti.IsLocalRing.apply_mem_maximalIdeal_sq_iff`: `π a ∈ 𝔪_A²` if and only if
   `a ∈ ker π + 𝔪_Q²`.
+* `TauCeti.IsLocalRing.not_isPrincipal_maximalIdeal_of_ker_le_sq`: if `ker π ≤ 𝔪_Q²` and no
+  single element spans `𝔪_Q` modulo `𝔪_Q²`, then `𝔪_A` is not principal.
 * `TauCeti.IsLocalRing.maximalIdeal_quotient_eq_span_range`: if `𝔪_Q = J + (yⱼ)`, then the images
   of the `yⱼ` generate the maximal ideal of `Q ⧸ J`.
 * `TauCeti.IsLocalRing.exists_lift_finBasis_cotangentSpace`: lifts to `Q` of a basis of the
   cotangent space of `A`.
 * `Ideal.Quotient.isLocalHom_algebraMap_quotient_map_quotient`: `R ⧸ J → S ⧸ J S` is a local
   homomorphism when `R → S` is one and `S` is local.
+* `TauCeti.IsLocalRing.finrank_residueField_eq_finrank`: if `S` is finite free over `R` and
+  `𝔪_R S = 𝔪_S`, the residue field extension has degree `[S : R]`, by Mathlib's
+  `IsLocalRing.finrank_quotient_map`.
 -/
 
 public section
@@ -47,6 +55,27 @@ theorem apply_mem_maximalIdeal_sq_iff {π : Q →+* A} (hπ : Function.Surjectiv
     π a ∈ maximalIdeal A ^ 2 ↔ a ∈ RingHom.ker π ⊔ maximalIdeal Q ^ 2 := by
   rw [← map_maximalIdeal_of_surjective π hπ, ← Ideal.map_pow, ← Ideal.mem_comap,
     Ideal.comap_map_of_surjective' _ hπ, sup_comm]
+
+/-- Along a surjective homomorphism of local rings `π : Q → A` with `ker π ≤ 𝔪_Q²`, the maximal
+ideal of `A` is not principal as soon as no single element of `𝔪_Q` spans `𝔪_Q` modulo `𝔪_Q²`:
+a generator `π z` of `𝔪_A` would give `𝔪_Q ≤ (z) + ker π ≤ (z) + 𝔪_Q²`. -/
+theorem not_isPrincipal_maximalIdeal_of_ker_le_sq {π : Q →+* A} (hπ : Function.Surjective π)
+    (hker : RingHom.ker π ≤ maximalIdeal Q ^ 2)
+    (h : ∀ z ∈ maximalIdeal Q, ¬ maximalIdeal Q ≤ Ideal.span {z} ⊔ maximalIdeal Q ^ 2) :
+    ¬ (maximalIdeal A).IsPrincipal := by
+  rintro ⟨z', hz'⟩
+  obtain ⟨z, rfl⟩ := hπ z'
+  rw [Ideal.submodule_span_eq] at hz'
+  have : IsLocalHom π := .of_surjective π hπ
+  have hzm : z ∈ maximalIdeal Q := by
+    rw [← maximalIdeal_comap π, Ideal.mem_comap, hz']
+    exact Ideal.mem_span_singleton_self _
+  refine h z hzm ?_
+  calc maximalIdeal Q ≤ (maximalIdeal A).comap π := (maximalIdeal_comap π).ge
+    _ = Ideal.span {z} ⊔ RingHom.ker π := by
+      rw [hz', ← Set.image_singleton, ← Ideal.map_span, Ideal.comap_map_of_surjective _ hπ,
+        RingHom.ker_eq_comap_bot]
+    _ ≤ Ideal.span {z} ⊔ maximalIdeal Q ^ 2 := sup_le_sup_left hker _
 
 omit [IsLocalRing A] in
 /-- If the maximal ideal of `Q` is `J + (yⱼ)`, then the images of the `yⱼ` generate the maximal
@@ -148,3 +177,29 @@ instance isLocalHom_algebraMap_quotient_map_quotient (J : Ideal R) :
   exact (isUnit_of_map_unit (algebraMap R S) r (isUnit_of_map_unit (mk _) _ ha)).map _
 
 end Ideal.Quotient
+
+namespace TauCeti.IsLocalRing
+
+open _root_.IsLocalRing Module
+
+variable {R S : Type*} [CommRing R] [IsLocalRing R] [CommRing S] [IsLocalRing S] [Algebra R S]
+  [IsLocalHom (algebraMap R S)]
+
+/-- **Residue degree of a finite free extension in which the maximal ideal stays maximal.** If
+`S` is a finite free extension of the local ring `R` and the maximal ideal of `R` generates the
+maximal ideal of `S`, then the residue field extension has degree `[S : R]`.
+
+The proof is adapted from that of Mathlib's `IsLocalRing.finrank_eq_finrank_residueField`, the
+étale special case, and goes through Mathlib's `IsLocalRing.finrank_quotient_map`. -/
+theorem finrank_residueField_eq_finrank [Module.Free R S] [Module.Finite R S]
+    (h : (maximalIdeal R).map (algebraMap R S) = maximalIdeal S) :
+    finrank (ResidueField R) (ResidueField S) = finrank R S := by
+  rw [← finrank_quotient_map (R := R) (S := S)]
+  -- `ResidueField R` is `R ⧸ 𝔪_R` and `ResidueField S` is `S ⧸ 𝔪_S`, by definition.
+  refine (AddEquiv.toLinearEquiv (R := R ⧸ maximalIdeal R) (Ideal.quotEquivOfEq h).toAddEquiv
+    fun r x ↦ ?_).finrank_eq.symm
+  obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective r
+  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
+  rfl
+
+end TauCeti.IsLocalRing

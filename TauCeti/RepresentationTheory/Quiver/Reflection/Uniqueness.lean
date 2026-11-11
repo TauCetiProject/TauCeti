@@ -90,7 +90,7 @@ private theorem nonempty_iso_of_dimVector_eq_of_reflectionFunctorList :
     ∀ (l : List V) (q : _root_.Quiver.{w} V)
       (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b))
       (hl : Quiver.IsSinkAdmissible q l)
-      (M N : @QuiverRep.{u, v, w, max v w x} k V fld q),
+      (M N : @QuiverRep.{u, v, w, max v w x} k V _ q),
       Indecomposable M → Indecomposable N →
       @IsFinDim.{u, v, w, max v w x} k V fld q M →
       @IsFinDim.{u, v, w, max v w x} k V fld q N →
@@ -151,7 +151,7 @@ hypothesis applies and the pass reflects the isomorphism it produces. -/
 private theorem nonempty_iso_of_dimVector_eq_of_isZero_iterate
     (q : _root_.Quiver.{w} V) (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b))
     {l : List V} (hnd : l.Nodup) (hall : ∀ v : V, v ∈ l) (hl : Quiver.IsSinkAdmissible q l) :
-    ∀ (n : ℕ) (M N : @QuiverRep.{u, v, w, max v w x} k V fld q),
+    ∀ (n : ℕ) (M N : @QuiverRep.{u, v, w, max v w x} k V _ q),
       Indecomposable M → Indecomposable N →
       @IsFinDim.{u, v, w, max v w x} k V fld q M →
       @IsFinDim.{u, v, w, max v w x} k V fld q N →
@@ -208,7 +208,7 @@ indecomposable is a positive root is
 theorem nonempty_iso_of_dimVector_eq_of_indecomposable (q : _root_.Quiver.{w} V)
     (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b)) {l : List V} (hnd : l.Nodup)
     (hall : ∀ v : V, v ∈ l) (hl : Quiver.IsSinkAdmissible q l)
-    (hpd : (@titsForm V q fV hq).PosDef) (M N : @QuiverRep.{u, v, w, max v w x} k V fld q)
+    (hpd : (@titsForm V q fV hq).PosDef) (M N : @QuiverRep.{u, v, w, max v w x} k V _ q)
     (hM : Indecomposable M) (hN : Indecomposable N)
     (hfdM : @IsFinDim.{u, v, w, max v w x} k V fld q M)
     (hfdN : @IsFinDim.{u, v, w, max v w x} k V fld q N)

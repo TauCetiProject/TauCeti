@@ -24,7 +24,7 @@ in `A`. No binomial-ring structure on `A` is asserted: in positive characteristi
 algebra need not embed in a polynomial algebra over `A`.
 
 The basis of binomial polynomials is supplied by
-`TauCeti.RingTheory.Polynomial.BinomialBasis`. The multiplication law is
+`TauCeti.RingTheory.Polynomial.Binomial.Basis`. The multiplication law is
 `ringChoose_mul_ringChoose`; scalar extension uses `Module.Basis.baseChange`.
 
 ## References

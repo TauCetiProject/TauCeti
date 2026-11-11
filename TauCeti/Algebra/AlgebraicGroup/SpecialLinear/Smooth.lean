@@ -16,8 +16,8 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Lift
 The coordinate algebra of `SLₙ` is smooth over every commutative ring. The proof uses the
 infinitesimal lifting criterion for formal smoothness. Under the algebra-valued-points
 equivalence, lifting a coordinate-algebra map through a square-zero quotient is exactly lifting a
-special-linear matrix;
-`Matrix.SpecialLinearGroup.map_quotient_mk_surjective_of_isNilpotent` supplies that lift. Finite
+special-linear matrix; `Matrix.SpecialLinearGroup.map_surjective` supplies that lift, since the
+quotient map by a nilpotent ideal reflects units. Finite
 presentation is inherited from the determinant localization presenting `GLₙ` and the principal
 determinant-one quotient presenting `SLₙ`.
 
@@ -58,8 +58,10 @@ private instance instFormallySmoothCoordinateHopfAlgebra :
     Algebra.FormallySmooth R (coordinateHopfAlgebra R n) := by
   apply Algebra.FormallySmooth.of_comp_surjective
   intro B _ _ I hI f
+  have : IsLocalHom (Ideal.Quotient.mk I) :=
+    ⟨fun _ ↦ (IsNilpotent.isUnit_quotient_mk_iff ⟨2, hI⟩).mp⟩
   obtain ⟨t, ht⟩ :=
-    Matrix.SpecialLinearGroup.map_quotient_mk_surjective_of_isNilpotent I ⟨2, hI⟩
+    Matrix.SpecialLinearGroup.map_surjective (Ideal.Quotient.mk I) Ideal.Quotient.mk_surjective
       ((pointsMulEquiv (R := R) (A := B ⧸ I) n) (toConv f))
   let g : WithConv (coordinateHopfAlgebra R n →ₐ[R] B) :=
     (pointsMulEquiv (R := R) (A := B) n).symm t

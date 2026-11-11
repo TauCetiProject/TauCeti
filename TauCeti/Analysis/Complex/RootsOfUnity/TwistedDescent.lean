@@ -42,6 +42,8 @@ unique continuous function with this factorization (`TauCeti.eqOn_descendPowTwis
 * `TauCeti.pow_smul_descendPowTwist_pow`: the factorization `f u = u ^ r • g (u ^ m)` on `s`.
 * `TauCeti.eqOn_descendPowTwist`: uniqueness of the factorization.
 * `TauCeti.analyticOrderAt_eq_add_analyticOrderAt_descendPowTwist_mul`: `ord₀ f = r + ord₀ g * m`.
+* `TauCeti.apply_rootsOfUnity_two_smul_of_apply_neg`: for `m = 2` the equivariance is the parity
+  `f (-u) = (-1) ^ r • f u`.
 
 ## References
 
@@ -183,5 +185,18 @@ theorem analyticOrderAt_eq_add_analyticOrderAt_descendPowTwist_mul [CompleteSpac
   rw [← analyticOrderAt_congr heq, analyticOrderAt_smul (by fun_prop) hcomp, hpow,
     analyticOrderAt_centeredMonomial,
     analyticOrderAt_comp_pow_zero hGa (Nat.pos_of_neZero m)]
+
+omit [NeZero m] in
+/-- For `m = 2` the transformation by the character `ζ ↦ ζ ^ r` of the square roots of unity is
+the parity condition `f (-u) = (-1) ^ r • f u`. -/
+theorem apply_rootsOfUnity_two_smul_of_apply_neg {f : ℂ → E} {u : ℂ}
+    (hf : f (-u) = (-1 : ℂ) ^ r • f u) (ζ : rootsOfUnity 2 ℂ) :
+    f (ζ • u) = ((ζ : ℂˣ) : ℂ) ^ r • f u := by
+  have hζ : ((ζ : ℂˣ) : ℂ) * ((ζ : ℂˣ) : ℂ) = 1 := by
+    rw [← sq, ← Units.val_pow_eq_pow_val, (mem_rootsOfUnity 2 (ζ : ℂˣ)).mp ζ.2, Units.val_one]
+  rw [rootsOfUnity.smul_eq_mul]
+  rcases mul_self_eq_one_iff.mp hζ with h | h <;> rw [h]
+  · simp
+  · rwa [neg_one_mul]
 
 end TauCeti

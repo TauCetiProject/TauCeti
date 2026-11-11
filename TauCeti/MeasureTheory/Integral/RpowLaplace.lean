@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
+import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Integral.Prod
 
@@ -24,17 +25,31 @@ The only hypothesis is integrability of the left-hand integrand, which by Tonell
 is exactly the absolute integrability needed for Fubini's theorem. This reduces singular
 power-law integrals, such as the compensated integrals against stable Lévy measures, to
 integrals of rational Laplace transforms. For the sine-compensated kernel
-`exp (i t x) - 1 - i t sin x` of those integrals, this Laplace transform is computed explicitly.
+`exp (i t x) - 1 - i t sin x` and its real counterpart `exp (-a * x) - 1 + a * sin x`,
+these Laplace transforms are computed explicitly.
+
+The substitution `t ↦ 1 / t` turns Euler's integral into
+`∫ t in Ioi 0, t ^ (-(a + 1)) * exp (-(r / t)) = (1 / r) ^ a * Γ(a)` for `0 < a` and `0 < r`, the
+normalization of the inverse-gamma density; averaging Gaussians `exp (-π ‖z‖² / t)` in the scale
+`t` against such powers produces the kernels `‖z‖ ^ (-2a)` of the Riesz potentials and transforms.
 
 ## Main results
 
+* `TauCeti.integrableOn_rpow_mul_exp_neg_mul_Ioi`: the integrand of Euler's integral
+  `∫ t in Ioi 0, t ^ (a - 1) * exp (-(r * t))` is integrable.
+* `TauCeti.integral_rpow_mul_exp_neg_div_Ioi`, `TauCeti.integrableOn_rpow_mul_exp_neg_div_Ioi`:
+  Euler's integral in the inverted variable.
 * `TauCeti.integrable_rpow_mul_exp_neg_mul_smul_prod`: the joint integrand of the Gamma-mixture
   representation is integrable on the product of two half-lines, so Fubini's theorem applies.
 * `TauCeti.integrableOn_rpow_smul_integral_exp_neg_mul_smul`: the power-weighted Laplace
   transform is integrable on the positive half-line.
 * `TauCeti.integral_Ioi_rpow_neg_smul`: the exchange identity displayed above.
+* `TauCeti.integral_Ioi_exp_neg_mul_mul_sin`: the Laplace transform
+  `1 / (1 + s ^ 2)` of `sin` on the positive half-line.
 * `TauCeti.integral_Ioi_exp_neg_mul_smul_cexp_sub_one_sub_sin`: the Laplace transform
   `(s - i t)⁻¹ - s⁻¹ - i t / (1 + s ^ 2)` of the sine-compensated kernel.
+* `TauCeti.integral_Ioi_exp_neg_mul_mul_exp_sub_one_add_sin`: the Laplace transform
+  `(s + a)⁻¹ - s⁻¹ + a / (1 + s ^ 2)` of the real sine-compensated kernel.
 -/
 
 public section
@@ -53,6 +68,42 @@ private lemma integral_rpow_mul_exp_neg_mul_Ioi_eq (hα : -1 < α) {x : ℝ} (hx
     ∫ s in Ioi (0 : ℝ), s ^ α * exp (-(x * s)) = x ^ (-(α + 1)) * Gamma (α + 1) := by
   have h := integral_rpow_mul_exp_neg_mul_Ioi (a := α + 1) (by linarith) hx
   rwa [add_sub_cancel_right, one_div, inv_rpow hx.le, ← rpow_neg hx.le] at h
+
+/-- The integrand `t ^ (a - 1) exp (-r t)` of Euler's integral is integrable on the positive
+half-line for `0 < a` and `0 < r`. -/
+theorem integrableOn_rpow_mul_exp_neg_mul_Ioi {a r : ℝ} (ha : 0 < a) (hr : 0 < r) :
+    IntegrableOn (fun t : ℝ ↦ t ^ (a - 1) * exp (-(r * t))) (Ioi 0) := by
+  refine (integrableOn_rpow_mul_exp_neg_mul_rpow (p := 1) (s := a - 1) (by linarith)
+    one_pos hr).congr_fun (fun t _ ↦ ?_) measurableSet_Ioi
+  simp [neg_mul]
+
+/-- The substitution `t ↦ t⁻¹` turns the integrand `t ^ (a - 1) exp (-r t)` of Euler's integral,
+multiplied by the Jacobian `t⁻²`, into `t ^ (-(a + 1)) exp (-r / t)`. -/
+private lemma abs_neg_mul_rpow_smul_rpow_mul_exp_neg_mul {a r t : ℝ} (ht : 0 < t) :
+    (|-1| * t ^ (-1 - 1 : ℝ)) • ((t ^ (-1 : ℝ)) ^ (a - 1) * exp (-(r * t ^ (-1 : ℝ)))) =
+      t ^ (-(a + 1)) * exp (-(r / t)) := by
+  simp only [smul_eq_mul, abs_neg, abs_one, one_mul, rpow_neg_one]
+  rw [inv_rpow ht.le, ← rpow_neg ht.le, div_eq_mul_inv, ← mul_assoc, ← rpow_add ht]
+  ring_nf
+
+/-- **Euler's integral in the inverted variable**:
+`∫₀^∞ t ^ (-(a + 1)) exp (-r / t) dt = (1 / r) ^ a Γ(a)` for `0 < a` and `0 < r`, by the
+substitution `t ↦ 1 / t` in `Real.integral_rpow_mul_exp_neg_mul_Ioi`. -/
+theorem integral_rpow_mul_exp_neg_div_Ioi {a r : ℝ} (ha : 0 < a) (hr : 0 < r) :
+    ∫ t in Ioi (0 : ℝ), t ^ (-(a + 1)) * exp (-(r / t)) = (1 / r) ^ a * Gamma a := by
+  rw [← integral_rpow_mul_exp_neg_mul_Ioi ha hr,
+    ← integral_comp_rpow_Ioi (fun t ↦ t ^ (a - 1) * exp (-(r * t))) (p := -1) (by norm_num)]
+  exact setIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) ↦
+    (abs_neg_mul_rpow_smul_rpow_mul_exp_neg_mul ht).symm
+
+/-- The integrand `t ^ (-(a + 1)) exp (-r / t)` of Euler's integral in the inverted variable is
+integrable on the positive half-line for `0 < a` and `0 < r`. -/
+theorem integrableOn_rpow_mul_exp_neg_div_Ioi {a r : ℝ} (ha : 0 < a) (hr : 0 < r) :
+    IntegrableOn (fun t : ℝ ↦ t ^ (-(a + 1)) * exp (-(r / t))) (Ioi 0) := by
+  have h := integrableOn_rpow_mul_exp_neg_mul_Ioi ha hr
+  rw [← integrableOn_Ioi_comp_rpow_iff _ (p := -1) (by norm_num)] at h
+  exact h.congr_fun (fun t (ht : 0 < t) ↦ abs_neg_mul_rpow_smul_rpow_mul_exp_neg_mul ht)
+    measurableSet_Ioi
 
 /-- The joint integrand `(x, s) ↦ s ^ α exp (-x s) • g x` of the Gamma-mixture representation is
 integrable on the product of two positive half-lines whenever `x ↦ x ^ (-(α + 1)) • g x` is
@@ -102,11 +153,14 @@ theorem integrableOn_rpow_smul_integral_exp_neg_mul_smul (hα : -1 < α)
 half-line integral is a power-weighted integral of Laplace transforms:
 `∫ x in Ioi 0, x ^ (-(α + 1)) • g x =
   Γ(α + 1)⁻¹ • ∫ s in Ioi 0, s ^ α • ∫ x in Ioi 0, exp (-(x * s)) • g x`. -/
-theorem integral_Ioi_rpow_neg_smul [CompleteSpace E] (hα : -1 < α)
+theorem integral_Ioi_rpow_neg_smul (hα : -1 < α)
     (hint : IntegrableOn (fun x ↦ x ^ (-(α + 1)) • g x) (Ioi 0)) :
     ∫ x in Ioi (0 : ℝ), x ^ (-(α + 1)) • g x =
       (Gamma (α + 1))⁻¹ •
         ∫ s in Ioi (0 : ℝ), s ^ α • ∫ x in Ioi (0 : ℝ), exp (-(x * s)) • g x := by
+  by_cases hE : CompleteSpace E
+  swap
+  · simp [integral_of_not_completeSpace hE]
   have hΓ : 0 < Gamma (α + 1) := Gamma_pos_of_pos (by linarith)
   calc
     _ = ∫ x in Ioi (0 : ℝ), (Gamma (α + 1))⁻¹ •
@@ -123,6 +177,30 @@ theorem integral_Ioi_rpow_neg_smul [CompleteSpace E] (hα : -1 < α)
       congr 1
       refine setIntegral_congr_fun measurableSet_Ioi fun s _ ↦ ?_
       simp only [mul_smul, integral_smul]
+
+/-- **The Laplace transform of sine.** For `0 < s`, the Laplace transform of `sin` on the
+positive half-line is `1 / (1 + s ^ 2)`. -/
+theorem integral_Ioi_exp_neg_mul_mul_sin {s : ℝ} (hs : 0 < s) :
+    ∫ x in Ioi (0 : ℝ), exp (-(x * s)) * sin x = 1 / (1 + s ^ 2) := by
+  let a : ℂ := -s + Complex.I
+  have ha : a.re < 0 := by simpa [a] using hs
+  have hint := integrableOn_exp_mul_complex_Ioi ha 0
+  calc
+    ∫ x in Ioi (0 : ℝ), exp (-(x * s)) * sin x =
+        ∫ x in Ioi (0 : ℝ), (Complex.exp (a * x)).im := by
+      refine setIntegral_congr_fun measurableSet_Ioi fun x _ ↦ ?_
+      rw [Complex.exp_im]
+      simp [a, mul_comm]
+    _ = (∫ x in Ioi (0 : ℝ), Complex.exp (a * x)).im := integral_im hint
+    _ = 1 / (1 + s ^ 2) := by
+      have hre : a.re = -s := by simp [a]
+      have him : a.im = 1 := by simp [a]
+      rw [integral_exp_mul_complex_Ioi ha 0, Complex.ofReal_zero, mul_zero, Complex.exp_zero,
+        Complex.div_im]
+      simp only [hre, him, Complex.neg_im, Complex.one_im, Complex.neg_re, Complex.one_re,
+        neg_one_mul, Complex.normSq_apply]
+      field_simp [show s ^ 2 + 1 ≠ 0 by positivity]
+      ring
 
 /-- **The Laplace transform of the sine-compensated kernel.** For `0 < s`, the kernel
 `x ↦ exp (i t x) - 1 - i t sin x` has Laplace transform
@@ -172,5 +250,37 @@ theorem integral_Ioi_exp_neg_mul_smul_cexp_sub_one_sub_sin {s : ℝ} (hs : 0 < s
       ring_nf
       simp only [Complex.I_sq, Complex.I_pow_three, Complex.I_pow_four]
       ring
+
+/-- The Laplace transform of the real sine-compensated exponential kernel, for
+`0 < s` and `0 < s + a`. -/
+theorem integral_Ioi_exp_neg_mul_mul_exp_sub_one_add_sin {s a : ℝ}
+    (hs : 0 < s) (ha : 0 < s + a) :
+    ∫ x in Ioi (0 : ℝ), exp (-(x * s)) * (exp (-a * x) - 1 + a * sin x) =
+      (s + a)⁻¹ - s⁻¹ + a / (1 + s ^ 2) := by
+  have hC : (-s + Complex.I : ℂ).re < 0 := by simpa using hs
+  have hformC (x : ℝ) : (Complex.exp ((-s + Complex.I) * x)).im =
+      exp (-s * x) * sin x := by simp [Complex.exp_im]
+  have hi : IntegrableOn (fun x : ℝ ↦ exp (-s * x) * sin x) (Ioi 0) := by
+    simpa only [RCLike.im_to_complex, hformC] using
+      (integrableOn_exp_mul_complex_Ioi hC 0).im
+  have heq : ∫ x in Ioi (0 : ℝ), exp (-s * x) * sin x = (1 + s ^ 2)⁻¹ := by
+    have h := congrArg Complex.im (integral_exp_mul_complex_Ioi hC 0)
+    rw [← RCLike.im_to_complex, ← integral_im (integrableOn_exp_mul_complex_Ioi hC 0)] at h
+    simp only [RCLike.im_to_complex, hformC] at h
+    simpa [Complex.div_im, Complex.normSq_apply, pow_two, div_eq_mul_inv, add_comm] using h
+  have hexp := integrableOn_exp_mul_Ioi (a := -(s + a)) (by linarith) 0
+  have hbase := integrableOn_exp_mul_Ioi (a := -s) (by linarith) 0
+  have hform (x : ℝ) : exp (-(x * s)) * (exp (-a * x) - 1 + a * sin x) =
+      exp (-(s + a) * x) - exp (-s * x) + a * (exp (-s * x) * sin x) := by
+    have he : -(x * s) + -a * x = -(s + a) * x := by ring
+    rw [mul_add, mul_sub, ← exp_add, he]
+    simp only [neg_mul, mul_comm x s]
+    ring
+  rw [setIntegral_congr_fun measurableSet_Ioi (fun x _ ↦ hform x),
+    integral_add (hexp.sub' hbase) (hi.const_mul a), integral_sub hexp hbase,
+    integral_const_mul, integral_exp_mul_Ioi (by linarith : -(s + a) < 0) 0,
+    integral_exp_mul_Ioi (by linarith : -s < 0) 0, heq]
+  simp only [mul_zero, exp_zero, neg_div, div_neg, one_div, neg_neg]
+  ring
 
 end TauCeti

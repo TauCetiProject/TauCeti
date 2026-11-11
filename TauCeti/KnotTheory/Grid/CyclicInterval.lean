@@ -40,6 +40,8 @@ directions before taking products.
 * `TauCeti.Grid.cIoo_union_swap`: the two opposite arcs cover the endpoint complement.
 * `TauCeti.Grid.mem_cIoo_cyclic_left`, `TauCeti.Grid.mem_cIoo_cyclic_right`: the two rotations
   of a cyclic order of three points.
+* `TauCeti.Grid.notMem_cIoo_of_mem_cIoo`: if `a` lies on the arc from `d` to `b`, then `d` is not
+  on the arc from `a` to `b`.
 * `TauCeti.Grid.mem_cIoo_swap_of_notMem`: a point off both endpoints that misses one arc lies on
   the opposite arc.
 * `TauCeti.Grid.mem_cIoo_of_mem_cIoo_of_mem_cIoo_swap`: if `a` and `b` lie on opposite arcs from
@@ -96,6 +98,8 @@ directions before taking products.
   its own cyclic successor.
 * `TauCeti.Grid.self_mem_cIco_finRotate`: a point always lies in a nondegenerate half-open arc
   ending at its own cyclic successor.
+* `TauCeti.Grid.notMem_cIco_of_mem_cIoo_finRotate`: a point and its cyclic successor both miss
+  the half-open arc ending strictly before the successor.
 * `TauCeti.Grid.mem_cIco_finRotate_iff_mem_insert_cIoo`: the half-open arc between cyclic
   successors is the open arc with its terminal endpoint restored.
 * `TauCeti.Grid.ite_mem_cIco_finRotate_sub_ite_mem_cIco_finRotate`: moving from `p` to `q` enters
@@ -279,14 +283,16 @@ theorem right_notMem_cIco (a b : Fin n) : b ∉ cIco a b := by
   · rw [cIco_of_ne hab, Finset.mem_insert]
     exact fun h => h.elim (fun hba => hab hba.symm) (right_notMem_cIoo a b)
 
+/-- The endpoints of a nonempty half-open cyclic interval are distinct. -/
+theorem ne_of_mem_cIco {a b x : Fin n} (h : x ∈ cIco a b) : a ≠ b := fun hab => by
+  rw [hab, cIco_self] at h
+  exact absurd h (Finset.notMem_empty x)
+
 /-- A point of a half-open cyclic interval other than its initial endpoint lies in the open
 interval with the same endpoints. -/
 theorem mem_cIoo_of_mem_cIco {a b x : Fin n} (h : x ∈ cIco a b) (hx : x ≠ a) : x ∈ cIoo a b := by
-  by_cases hab : a = b
-  · rw [hab, cIco_self] at h
-    exact absurd h (Finset.notMem_empty x)
-  · rw [cIco_of_ne hab, Finset.mem_insert] at h
-    exact h.resolve_left hx
+  rw [cIco_of_ne (ne_of_mem_cIco h), Finset.mem_insert] at h
+  exact h.resolve_left hx
 
 /-- The open cyclic interval is contained in the half-open one with the same endpoints. -/
 theorem cIoo_subset_cIco (a b : Fin n) : cIoo a b ⊆ cIco a b := by
@@ -638,6 +644,11 @@ theorem mem_cIoo_cyclic_left {a b c : Fin n} (h : b ∈ cIoo a c) : c ∈ cIoo b
 theorem mem_cIoo_cyclic_right {a b c : Fin n} (h : b ∈ cIoo a c) : a ∈ cIoo c b := by
   simp only [cIoo, Set.Finite.mem_toFinset, Set.mem_cIoo] at h ⊢
   exact sbtw_cyclic_right h
+
+/-- If `a` lies on the clockwise arc from `d` to `b`, then `d` does not lie on the clockwise arc
+from `a` to `b`. -/
+theorem notMem_cIoo_of_mem_cIoo {a b d : Fin n} (h : a ∈ cIoo d b) : d ∉ cIoo a b := fun h' =>
+  (Finset.disjoint_left.mp (disjoint_cIoo_swap a b)) h' (mem_cIoo_cyclic_right h)
 
 /-- A point off both endpoints and outside one cyclic arc lies on the opposite arc. -/
 theorem mem_cIoo_swap_of_notMem {a b u : Fin n} (hab : a ≠ b)
@@ -1193,6 +1204,14 @@ theorem self_mem_cIco_finRotate {a c : Fin n} (h : c ≠ finRotate n a) :
   -- `notMem_cIco_finRotate_left`, which `simp` applies once `finRotate n a` is normalized.
   exact (Finset.mem_union.mp hmem).resolve_right (by simp)
 
+/-- If `m` lies strictly between `l` and the cyclic successor of `a`, then neither `a` nor its
+successor lies in the half-open arc from `l` to `m`. -/
+theorem notMem_cIco_of_mem_cIoo_finRotate {l m a : Fin n} (h : m ∈ cIoo l (finRotate n a)) :
+    a ∉ cIco l m ∧ finRotate n a ∉ cIco l m :=
+  ⟨fun ha => Finset.disjoint_left.mp (disjoint_cIco_cIco_of_mem_cIoo h) ha
+      (self_mem_cIco_finRotate (ne_right_of_mem_cIoo h)),
+    fun hb => right_notMem_cIco l (finRotate n a) (mem_cIco_of_mem_cIco_of_mem_cIoo hb h)⟩
+
 /-- A point missing both halves of a half-open cyclic interval cut at an interior point
 misses the whole interval. -/
 theorem notMem_cIco_of_cIco_union {p r₀ r₁ s : Fin n}
@@ -1241,6 +1260,35 @@ theorem mem_cIco_and_mem_cIoo_of_mem_cIoo_of_mem_cIco {a b c s s' : Fin n} (hs :
     (hs' : s' ∈ cIoo s c) (h : s' ∈ cIco a b) : s ∈ cIco a b ∧ s' ∈ cIoo s b := by
   simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at hs hs' h ⊢
   split_ifs at hs hs' h ⊢ <;> omega
+
+/-- Let `m` lie strictly between `a` and `c`, let `s` lie in the half-open cyclic interval from `a`
+to `m` and `s'` in the one from `m` to `c`. Then `s` lies in the half-open interval from `a` to `c`
+and `s'` strictly between `s` and `c`. -/
+theorem mem_cIco_and_mem_cIoo_of_mem_cIco_of_mem_cIco {a m c s s' : Fin n} (hm : m ∈ cIoo a c)
+    (hs : s ∈ cIco a m) (hs' : s' ∈ cIco m c) : s ∈ cIco a c ∧ s' ∈ cIoo s c := by
+  simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at *
+  split_ifs at * <;> omega
+
+/-- Let `m` lie strictly between `a` and `c`, let `s` lie in the half-open cyclic interval from `a`
+to `m` and `s'` in the one from `m` to `c`. A point lies in the half-open interval from `a` to `s`
+or strictly between `s'` and `c` exactly when it lies in the half-open interval from `a` to `c`
+outside the closed interval from `s` to `s'`, and it never lies in both. -/
+theorem mem_cIco_or_mem_cIoo_iff_mem_cIco_and_notMem_insert_cIco {a m c s s' r : Fin n}
+    (hm : m ∈ cIoo a c) (hs : s ∈ cIco a m) (hs' : s' ∈ cIco m c) :
+    (r ∈ cIco a s ∨ r ∈ cIoo s' c ↔ r ∈ cIco a c ∧ r ∉ insert s' (cIco s s')) ∧
+      ¬(r ∈ cIco a s ∧ r ∈ cIoo s' c) := by
+  simp only [mem_cIco, mem_cIoo, Finset.mem_insert, ne_eq, ← Fin.val_inj] at *
+  split_ifs at * <;> omega
+
+/-- Let `m` lie strictly between `a` and `c`, let `s` lie in the half-open cyclic interval from `a`
+to `m` and `s'` in the one from `m` to `c`. A point lies strictly between `s` and `m` or in the
+half-open interval from `m` to `s'` exactly when it lies strictly between `s` and `s'`, and it
+never lies in both. -/
+theorem mem_cIoo_or_mem_cIco_iff_mem_cIoo {a m c s s' r : Fin n} (hm : m ∈ cIoo a c)
+    (hs : s ∈ cIco a m) (hs' : s' ∈ cIco m c) :
+    (r ∈ cIoo s m ∨ r ∈ cIco m s' ↔ r ∈ cIoo s s') ∧ ¬(r ∈ cIoo s m ∧ r ∈ cIco m s') := by
+  simp only [mem_cIco, mem_cIoo, ne_eq, ← Fin.val_inj] at *
+  split_ifs at * <;> omega
 
 /-- A point of the closed arc from `s'` to `s` misses the open arc from `s` to `b`, and a point of
 the closed arc from `s` to `s'` misses the arc from `a` to `s`, when `s` but not `s'` lies in the

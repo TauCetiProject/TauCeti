@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.Rank
-public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+public import TauCeti.LinearAlgebra.Matrix.Rank.Closed
+public import TauCeti.MeasureTheory.Measure.Lebesgue.Matrix
 public import TauCeti.MeasureTheory.Measure.MvPolynomialZeroLocus
 import Mathlib.LinearAlgebra.Matrix.MvPolynomial
 import TauCeti.MeasureTheory.Constructions.Pi
@@ -22,11 +22,37 @@ by `MvPolynomial.volume_setOfPred_eval_eq_zero`.
 
 These results apply to matrices with dependent entries as well as independent ones, provided
 the joint law has a density. Empty row, column, and minor index types are allowed.
+
+The exact-rank strata are measurable, and the maximal-rank conclusion is available both for
+function-valued arrays and for the bundled `Matrix` type.
 -/
 
 public section
 
 open MeasureTheory
+
+namespace Matrix
+
+/-- The real matrices of rank exactly `k` form a measurable set. -/
+theorem measurableSet_setOfPred_rank_eq {m n : Type*} [Finite m] [Fintype n] (k : ℕ) :
+    MeasurableSet {A : Matrix m n ℝ | A.rank = k} := by
+  classical
+  let _ := Fintype.ofFinite m
+  cases k with
+  | zero =>
+      simpa only [Nat.le_zero] using
+        (isClosed_setOfPred_rank_le (m := m) (n := n) (K := ℝ) 0).measurableSet
+  | succ k =>
+      have hle :=
+        (isClosed_setOfPred_rank_le (m := m) (n := n) (K := ℝ) (k + 1)).measurableSet
+      have hlt :=
+        (isClosed_setOfPred_rank_le (m := m) (n := n) (K := ℝ) k).measurableSet
+      convert hle.inter hlt.compl using 1
+      ext A
+      simp only [Set.mem_ofPred_eq, Set.mem_inter_iff, Set.mem_compl_iff]
+      omega
+
+end Matrix
 
 namespace MeasureTheory.Measure
 
@@ -76,5 +102,17 @@ theorem ae_rank_eq_min (μ : Measure (m → n → ℝ)) (hμ : μ ≪ volume) :
   apply le_antisymm (le_min (Matrix.of A).rank_le_card_height (Matrix.of A).rank_le_card_width)
   simpa only [Matrix.rank_of_det_ne_zero hA, Fintype.card_fin] using
     (Matrix.of A).rank_submatrix_le r c
+
+/-- A real matrix whose law is absolutely continuous with respect to product Lebesgue measure
+has maximal rank almost surely, including when one index type is empty. -/
+theorem ae_rank_eq_min_matrix (μ : Measure (Matrix m n ℝ)) (hμ : μ ≪ volume) :
+    ∀ᵐ X ∂μ, X.rank = min (Fintype.card m) (Fintype.card n) := by
+  classical
+  have hflat := ae_rank_eq_min
+    (volume : Measure (m → n → ℝ)) Measure.AbsolutelyContinuous.rfl
+  have hmatrix := ((Matrix.volume_preserving_ofMeasurableEquiv m n ℝ).symm
+    (Matrix.ofMeasurableEquiv m n ℝ)).quasiMeasurePreserving.ae hflat
+  refine hμ.ae_le (hmatrix.mono fun X hX ↦ ?_)
+  simpa only [Matrix.ofMeasurableEquiv_symm_apply, Equiv.apply_symm_apply] using hX
 
 end MeasureTheory.Measure

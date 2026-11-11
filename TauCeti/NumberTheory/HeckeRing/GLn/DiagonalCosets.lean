@@ -435,10 +435,6 @@ section ProductCriterion
 
 variable {n}
 
--- The multiplication this section is about needs the arithmetic Hecke triple, whose
--- instance carries `NeZero n`.
-variable [NeZero n]
-
 /-- **The product criterion for diagonal Hecke elements.** If every pair in the coset
 decomposition of `T(a) · T(b)` multiplies into the single double coset `T(c)`, and `T(c)`
 occurs there with multiplicity at most one, then `T(a) · T(b) = T(c)`.
@@ -456,6 +452,8 @@ theorem diagElem_mul_of_mulMap_eq (a b c : Fin n → ℕ)
     diagElem a * diagElem b = diagElem c := by
   rw [diagElem_def, diagElem_def, diagElem_def]
   exact HeckeCosetModule.mul_single_single_of_mulMap_eq ℤ _ _ _ hmulMap hmul
+
+variable [NeZero n]
 
 end ProductCriterion
 

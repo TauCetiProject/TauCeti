@@ -54,6 +54,8 @@ at every point: there is one `l : Λ` with `∑ j < m, β (g ^ j • y) = P y l`
 
 * `TauCeti.torusFamilyAffineMap`: the affine map of the family defined by `g`.
 * `TauCeti.torusFamilyAffineMulAction`: the affine action of `Γ` on the family.
+* `TauCeti.torusFamilyAffineProjectionHom`: the projection of the family, as a map equivariant for
+  the affine action.
 
 ## Main results
 
@@ -231,6 +233,21 @@ def torusFamilyAffineMulAction :
     letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
     g • x = torusFamilyAffineMap R P ρ hP b hb g x := (rfl)
 
+/-- The projection `[y, v] ↦ y` of a family of tori, as a map equivariant for the affine action of
+`Γ` on the family and the action of `Γ` on the base. -/
+def torusFamilyAffineProjectionHom :
+    letI := periodAddAction P
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+    AddAction.orbitRel.Quotient Λ (Y × E) →[Γ] Y :=
+  letI := periodAddAction P
+  letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+  { toFun := torusFamilyProjection P
+    map_smul' g x := by simp }
+
+@[simp] theorem coe_torusFamilyAffineProjectionHom :
+    ⇑(torusFamilyAffineProjectionHom R hone hmul P ρ hP b hb hbone hbmul) =
+      torusFamilyProjection P := (rfl)
+
 /-- **Faithfulness of the affine action.** The affine action on the family of tori is faithful
 when the action on the base is: two elements acting alike on the family act alike on the base,
 since the projection of the family is equivariant and every point of the base is the image of
@@ -333,7 +350,7 @@ end Monoid
 section ConstantOrbitSum
 
 variable [TopologicalSpace Y] [T2Space Y] [LocallyCompactSpace Y] [PreconnectedSpace Y]
-  [Module.Free ℤ Λ] [Module.Finite ℤ Λ] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] {Γ : Type*} [Monoid Γ] [MulAction Γ Y] [ContinuousConstSMul Γ Y]
   (R : Γ → Y → E →+ E) (hone : ∀ (y : Y) (v : E), R 1 y v = v)
   (hmul : ∀ (g h : Γ) (y : Y) (v : E), R (g * h) y v = R g (h • y) (R h y v))

@@ -128,6 +128,16 @@ theorem const_mem_relativeRepartitionSpace [Algebra.IsIntegral F F'] (hF : IsFun
   Filter.eventually_cofinite.mpr
     (Place.finite_setOf_not_isIntegral hF x (Algebra.IsIntegral.isIntegral x))
 
+open scoped Classical in
+/-- The family that is `z` at `P` and `0` elsewhere is a relative repartition: its entries are `0`,
+hence integral, at every place other than `P`. -/
+theorem single_mem_relativeRepartitionSpace (P : Place k F) (z : F') :
+    Pi.single P z ∈ relativeRepartitionSpace k F F' :=
+  mem_relativeRepartitionSpace_iff.mpr <| Filter.eventually_cofinite.mpr <|
+    (Set.finite_singleton P).subset fun Q hQ ↦ by
+      by_contra hQP
+      exact hQ (by simp [Pi.single_eq_of_ne hQP, isIntegral_zero])
+
 /-! ### Pulling relative repartitions back to `F'` -/
 
 section Pullback
@@ -405,6 +415,18 @@ theorem repartitionTrace_smul (hF : IsFunctionField k F) (f : F)
     let _ := relativeRepartitionSpaceModule (F' := F') hF
     let _ := repartitionSpaceModule hF
     exact map_smul (repartitionTrace k F F' hF) f β
+
+open scoped Classical in
+/-- The trace of the fibre-constant repartition `z` over `P` is `Tr z` at `P`. -/
+@[simp]
+theorem repartitionTrace_single (hF : IsFunctionField k F) (P : Place k F) (z : F') :
+    repartitionTrace k F F' hF ⟨_, single_mem_relativeRepartitionSpace P z⟩ =
+      singleRepartition P (Algebra.trace F F' z) :=
+  Subtype.ext <| funext fun Q ↦ by
+    rw [repartitionTrace_apply]
+    rcases eq_or_ne Q P with rfl | hQ
+    · simp
+    · simp [hQ, singleRepartition_of_ne hQ]
 
 /-- **The trace estimate** (Stichtenoth, proof of Theorem 3.4.6): if the pullback of a relative
 repartition `β` to `F'` lies in `A_{F'}(Con D + Diff(F'/F))`, then its trace lies in `A_F(D)`.

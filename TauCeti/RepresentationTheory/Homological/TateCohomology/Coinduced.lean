@@ -44,9 +44,9 @@ representation. This is the form in which the graded pieces `A ⧸ ϖ • A` of 
   `Ĥⁿ(S, Coind_⊥^G X) = Ĥⁿ(S, Ind_⊥^G X) = Ĥⁿ(S, k[G]) = 0` for all `n : ℤ`.
 * `TauCeti.TateCohomology.isZero_of_forall_eq_sum`: if the identity of `C` is a norm
   `x ↦ ∑ g, g φ(g⁻¹ x)`, then `Ĥⁿ(G, C) = 0` for all `n : ℤ`.
-* `TauCeti.TateCohomology.isZero_restrictScalarsInt_of_equiv_leftRegular`: if `V` is free of rank
+* `TauCeti.TateCohomology.isZero_restrictScalars_of_equiv_leftRegular`: if `V` is free of rank
   one over `k[G]`, then `Ĥⁿ(G, V) = 0` over `ℤ`.
-* `TauCeti.TateCohomology.isZero_restrictScalarsInt_quotSMulTop_of_equiv_leftRegular`: if `V` is
+* `TauCeti.TateCohomology.isZero_restrictScalars_quotSMulTop_of_equiv_leftRegular`: if `V` is
   free of rank one over `k[G]`, then `Ĥⁿ(G, V ⧸ r • V) = 0` over `ℤ` for every `r : k`.
 
 ## References
@@ -298,9 +298,9 @@ variable {k : Type*} {G V : Type} [Group G] [Fintype G] [AddCommGroup V]
 
 /-- If the identity of `ρ` is the norm `x ↦ ∑ g, ρ g (φ (ρ g⁻¹ x))` of a `k`-linear map `φ`, then
 all Tate cohomology of `ρ`, read as an integral representation, vanishes. -/
-theorem isZero_restrictScalarsInt_of_forall_eq_sum [Semiring k] [Module k V]
+theorem isZero_restrictScalars_of_forall_eq_sum [Semiring k] [Module k V]
     {ρ : Representation k G V} (φ : V →ₗ[k] V) (hφ : ∀ x, x = ∑ g : G, ρ g (φ (ρ g⁻¹ x)))
-    (n : ℤ) : IsZero (tateCohomology (Rep.of ρ.restrictScalarsInt) n) :=
+    (n : ℤ) : IsZero (tateCohomology (Rep.of (ρ.restrictScalars ℤ)) n) :=
   isZero_of_forall_eq_sum (C := Rep.of _) (φ.restrictScalars ℤ) (fun x ↦ by simpa using hφ x) n
 
 /-- If `ρ` is free of rank one over the group ring `k[G]`, then the identity of `ρ` is the norm
@@ -325,32 +325,32 @@ theorem exists_forall_eq_sum_of_equiv_leftRegular [Semiring k] [Module k V]
 
 /-- If `ρ` is free of rank one over the group ring `k[G]`, then all Tate cohomology of `ρ`, read
 as an integral representation, vanishes. -/
-theorem isZero_restrictScalarsInt_of_equiv_leftRegular [Semiring k] [Module k V]
+theorem isZero_restrictScalars_of_equiv_leftRegular [Semiring k] [Module k V]
     {ρ : Representation k G V} (e : (Representation.leftRegular k G).Equiv ρ) (n : ℤ) :
-    IsZero (tateCohomology (Rep.of ρ.restrictScalarsInt) n) :=
+    IsZero (tateCohomology (Rep.of (ρ.restrictScalars ℤ)) n) :=
   let ⟨φ, hφ⟩ := exists_forall_eq_sum_of_equiv_leftRegular e
-  isZero_restrictScalarsInt_of_forall_eq_sum φ hφ n
+  isZero_restrictScalars_of_forall_eq_sum φ hφ n
 
 variable [CommRing k] [Module k V] {ρ : Representation k G V}
 
 /-- If the identity of `ρ` is the norm `x ↦ ∑ g, ρ g (φ (ρ g⁻¹ x))` of a `k`-linear map `φ`, then
 for every `r : k` all Tate cohomology of the reduction `V ⧸ r • V`, as an integral representation,
 vanishes: its identity is the norm of the reduction of `φ`. -/
-theorem isZero_restrictScalarsInt_quotSMulTop_of_forall_eq_sum (φ : V →ₗ[k] V)
+theorem isZero_restrictScalars_quotSMulTop_of_forall_eq_sum (φ : V →ₗ[k] V)
     (hφ : ∀ x, x = ∑ g : G, ρ g (φ (ρ g⁻¹ x))) (r : k) (n : ℤ) :
-    IsZero (tateCohomology (Rep.of (ρ.quotSMulTop r).restrictScalarsInt) n) :=
-  isZero_restrictScalarsInt_of_forall_eq_sum _ (ρ.quotSMulTop_forall_eq_sum φ hφ r) n
+    IsZero (tateCohomology (Rep.of ((ρ.quotSMulTop r).restrictScalars ℤ)) n) :=
+  isZero_restrictScalars_of_forall_eq_sum _ (ρ.quotSMulTop_forall_eq_sum φ hφ r) n
 
 /-- **A free representation modulo a scalar has trivial Tate cohomology.** If `ρ` is free of rank
 one over the group ring `k[G]`, then for every `r : k` all Tate cohomology of the reduction
 `V ⧸ r • V`, a free module of rank one over `(k ⧸ (r))[G]`, read as an integral representation,
 vanishes. Its identity is the norm of the reduction of the projection onto the coefficient of
 `1 ∈ G`. -/
-theorem isZero_restrictScalarsInt_quotSMulTop_of_equiv_leftRegular
+theorem isZero_restrictScalars_quotSMulTop_of_equiv_leftRegular
     (e : (Representation.leftRegular k G).Equiv ρ) (r : k) (n : ℤ) :
-    IsZero (tateCohomology (Rep.of (ρ.quotSMulTop r).restrictScalarsInt) n) :=
+    IsZero (tateCohomology (Rep.of ((ρ.quotSMulTop r).restrictScalars ℤ)) n) :=
   let ⟨φ, hφ⟩ := exists_forall_eq_sum_of_equiv_leftRegular e
-  isZero_restrictScalarsInt_quotSMulTop_of_forall_eq_sum φ hφ r n
+  isZero_restrictScalars_quotSMulTop_of_forall_eq_sum φ hφ r n
 
 end QuotSMulTop
 

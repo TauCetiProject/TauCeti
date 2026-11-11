@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Constructions.UnitInterval
-public import TauCeti.MeasureTheory.Integral.DominatedMeasure
+public import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedMeasure
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Partial.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Duality.LowerSemicontinuous
 
@@ -44,7 +44,8 @@ Borel counterexample where unrelaxed duality fails:
 4. **Duality gap for `{0, 1, ∞}`-valued Borel costs.** On the unit interval `I = [0, 1]` with
    Lebesgue measure, `TauCeti.borelGapCost` (`0` for `x < y`, `1` on the diagonal, `∞` for `x > y`)
    has relaxed value and dual supremum `0` via small upward shifts on `[0, 1 - δ]`, whereas every
-   full coupling concentrates on the diagonal and pays cost `1`.
+   full coupling of finite cost concentrates on the diagonal and pays cost `1` (any other full
+   coupling puts positive mass below the diagonal and has cost `∞`).
 
 ## Main statements
 
@@ -353,29 +354,20 @@ theorem transportCost_borelGapCost_self (μ : Measure I) [IsProbabilityMeasure �
         ext z; simp [A]
       let u : I → ℝ≥0∞ := fun x ↦ ENNReal.ofReal (x : ℝ)
       have hu_meas : Measurable u := continuous_subtype_val.measurable.ennreal_ofReal
-      let w : I × I → ℝ≥0∞ := fun z ↦ u z.2 - u z.1
-      have hw_meas : Measurable w :=
-        (hu_meas.comp measurable_snd).sub (hu_meas.comp measurable_fst)
-      have hu_fin : ∫⁻ x, u x ∂μ ≠ ∞ := ne_top_of_le_ne_top (b := 1) ENNReal.one_ne_top <|
-        (lintegral_mono fun x : I ↦ ENNReal.ofReal_le_one.2 x.2.2).trans_eq (by simp)
-      have hadd_eq : (∫⁻ x, u x ∂μ) + ∫⁻ z, w z ∂π = (∫⁻ x, u x ∂μ) + 0 :=
-        calc
-          (∫⁻ x, u x ∂μ) + ∫⁻ z, w z ∂π
-              = (∫⁻ z, u z.1 ∂π) + ∫⁻ z, w z ∂π := by
-                rw [hπ.lintegral_comp_fst hu_meas.aemeasurable]
-          _ = ∫⁻ z, (u z.1 + w z) ∂π := (lintegral_add_right _ hw_meas).symm
-          _ = ∫⁻ z, u z.2 ∂π :=
-            lintegral_congr_ae (hae_le.mono fun z hz ↦
-              add_tsub_cancel_of_le (ENNReal.ofReal_le_ofReal hz))
-          _ = (∫⁻ x, u x ∂μ) + 0 := by
-            rw [hπ.lintegral_comp_snd hu_meas.aemeasurable, add_zero]
-      have hw0 : w =ᵐ[π] 0 :=
-        (lintegral_eq_zero_iff hw_meas).1 ((ENNReal.add_right_inj hu_fin).1 hadd_eq)
+      have hu_fin : ∫⁻ z, u z.1 ∂π ≠ ∞ := by
+        rw [hπ.lintegral_comp_fst hu_meas.aemeasurable]
+        exact ne_top_of_le_ne_top ENNReal.one_ne_top <|
+          (lintegral_mono fun x : I ↦ ENNReal.ofReal_le_one.2 x.2.2).trans_eq (by simp)
+      have hu_eq : (fun z : I × I ↦ u z.1) =ᵐ[π] fun z ↦ u z.2 :=
+        ae_eq_of_ae_le_of_lintegral_le
+          (hae_le.mono fun _ hz ↦ ENNReal.ofReal_le_ofReal hz) hu_fin
+          (hu_meas.comp measurable_snd).aemeasurable <| by
+            rw [hπ.lintegral_comp_fst hu_meas.aemeasurable,
+              hπ.lintegral_comp_snd hu_meas.aemeasurable]
       have hae_cost : borelGapCost =ᵐ[π] 1 := by
-        filter_upwards [hae_le, hw0] with z hz hwz
-        have hge : (z.2 : ℝ) ≤ (z.1 : ℝ) :=
-          (ENNReal.ofReal_le_ofReal_iff z.1.2.1).1 (tsub_eq_zero_iff_le.1 hwz)
-        have hzeq : z.1 = z.2 := Subtype.ext (le_antisymm hz hge)
+        filter_upwards [hu_eq] with z huz
+        have hzeq : z.1 = z.2 :=
+          Subtype.ext ((ENNReal.ofReal_eq_ofReal_iff z.1.2.1 z.2.2.1).1 huz)
         rw [← Prod.eta z, hzeq]
         exact borelGapCost_self z.2
       rw [lintegral_congr_ae hae_cost]

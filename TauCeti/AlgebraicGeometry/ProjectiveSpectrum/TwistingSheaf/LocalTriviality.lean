@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Basic
 public import TauCeti.AlgebraicGeometry.LineBundle.Basic
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 
 /-!
 # Local trivializations of twisting sheaves
@@ -144,6 +145,25 @@ def chartSectionsLinearEquiv :
 theorem chartSectionsLinearEquiv_apply (a : Γ(Proj 𝒜, U)) :
     chartSectionsLinearEquiv n f hf U hU a = a • chartGenerator n f hf U hU :=
   (rfl)
+
+/-- On the chart `D₊(g)`, a homogeneous section `r` has coordinate `r/gⁿ` in the standard
+trivialization of `𝒪(n)`. -/
+theorem toTwistingSheaf_eq_smul_chartGenerator (n : ℕ) (r : 𝒜 n)
+    {g : A} (hg : g ∈ 𝒜 1) :
+    toTwistingSheaf 𝒜 rfl (basicOpen 𝒜 g) r =
+      awayToSection 𝒜 g (HomogeneousLocalization.Away.mk 𝒜 hg n r
+        (by simpa only [smul_eq_mul, mul_one] using r.2)) •
+        chartGenerator (n : ℤ) g hg (basicOpen 𝒜 g) le_rfl := by
+  apply ext
+  intro x
+  let := x.1.isPrime
+  -- The scheme and topological-space presentations of the section domain agree only after
+  -- unfolding the structure of `Proj`; `erw` crosses this presentation boundary.
+  erw [smul_apply, toTwistingSheaf_apply_apply, val_awayToSection_mk_apply,
+    chartGenerator_apply, Localization.mk_mul]
+  apply Localization.mk_eq_mk_iff.mpr
+  apply Localization.r_of_eq
+  simp [mul_comm]
 
 /-- The forward chart coordinate map is multiplication by `fⁿ` in each localization. -/
 @[simp]

@@ -64,6 +64,26 @@ theorem schwarzChristoffelIntegrand_affine_prevertices (a e : ι → ℝ) {c : �
   rw [Complex.ofReal_sum]
   exact (cpow_sum (Complex.ofReal_ne_zero.mpr hc.ne') (fun i ↦ (e i : ℂ)) Finset.univ).symm
 
+/-- The normalized primitive for the affinely changed prevertices and base point, composed with the
+affine map, has derivative the scaled integrand. -/
+private lemma hasDerivAt_primitive_comp_affine (a e : ι → ℝ) (z₀ : UpperHalfPlane) {c : ℝ}
+    (hc : 0 < c) (d : ℝ) {w : ℂ} (hw : w ∈ upperHalfPlaneSet) :
+    HasDerivAt
+      (schwarzChristoffelPrimitive (fun i ↦ c * a i + d) e
+          (d +ᵥ ((⟨c, hc⟩ : {x : ℝ // 0 < x}) • z₀)) ∘
+        fun ζ : ℂ ↦ (c : ℂ) * ζ + (d : ℂ))
+      ((c : ℂ) ^ (((∑ i, e i) + 1 : ℝ) : ℂ) * schwarzChristoffelIntegrand a e w) w := by
+  have hinner : HasDerivAt (fun ζ : ℂ ↦ (c : ℂ) * ζ + (d : ℂ)) (c : ℂ) w := by
+    simpa using ((hasDerivAt_id w).const_mul (c : ℂ)).add_const (d : ℂ)
+  have hcomp :=
+    (hasDerivAt_schwarzChristoffelPrimitive (fun i ↦ c * a i + d) e
+      (d +ᵥ ((⟨c, hc⟩ : {x : ℝ // 0 < x}) • z₀))
+      (by simpa [upperHalfPlaneSet, mul_im] using mul_pos hc hw)).comp w hinner
+  refine hcomp.congr_deriv ?_
+  rw [schwarzChristoffelIntegrand_affine_prevertices a e hc d w, Complex.ofReal_add,
+    Complex.ofReal_one, Complex.cpow_add _ _ (Complex.ofReal_ne_zero.mpr hc.ne'), Complex.cpow_one]
+  ring
+
 /-- The normalized Schwarz--Christoffel primitive is covariant under a simultaneous positive
 affine change of its prevertices, base point, and argument.  Its scale exponent is one more than
 the total turning exponent. -/
@@ -83,30 +103,10 @@ theorem schwarzChristoffelPrimitive_affine_prevertices (a e : ι → ℝ)
     simp [z₀', UpperHalfPlane.coe_vadd, UpperHalfPlane.coe_pos_real_smul,
       Complex.real_smul, add_comm]
   have hC : C = (c : ℂ) ^ ((∑ i, e i : ℝ) : ℂ) * (c : ℂ) := by
-    dsimp only [C]
-    have h_exp : (((∑ i, e i) + 1 : ℝ) : ℂ) = ((∑ i, e i : ℝ) : ℂ) + 1 := by
-      push_cast
-      ring
-    rw [h_exp, Complex.cpow_add _ _ hc₀, Complex.cpow_one]
-  have hleft : ∀ w ∈ upperHalfPlaneSet,
-      HasDerivAt
-        (schwarzChristoffelPrimitive a' e z₀' ∘
-          fun ζ : ℂ ↦ (c : ℂ) * ζ + (d : ℂ))
-        (C * schwarzChristoffelIntegrand a e w) w := by
-    intro w hw
-    have hinner : HasDerivAt (fun ζ : ℂ ↦ (c : ℂ) * ζ + (d : ℂ)) (c : ℂ) w := by
-      simpa using ((hasDerivAt_id w).const_mul (c : ℂ)).add_const (d : ℂ)
-    have hcomp :=
-      (hasDerivAt_schwarzChristoffelPrimitive a' e z₀'
-        (by simpa [upperHalfPlaneSet, mul_im] using mul_pos hc hw)).comp w hinner
-    have hderiv :
-        schwarzChristoffelIntegrand a' e
-            ((c : ℂ) * w + (d : ℂ)) * (c : ℂ) =
-          C * schwarzChristoffelIntegrand a e w := by
-      simp only [a']
-      rw [schwarzChristoffelIntegrand_affine_prevertices a e hc d w, hC]
-      ring
-    exact hcomp.congr_deriv hderiv
+    simp only [C]
+    rw [Complex.ofReal_add, Complex.ofReal_one, Complex.cpow_add _ _ hc₀, Complex.cpow_one]
+  have hleft := fun w (hw : w ∈ upperHalfPlaneSet) ↦
+    hasDerivAt_primitive_comp_affine a e z₀ hc d hw
   have hC₀ : C ≠ 0 := by
     rw [hC]
     exact mul_ne_zero (Complex.cpow_ne_zero_iff.mpr (Or.inl hc₀)) hc₀

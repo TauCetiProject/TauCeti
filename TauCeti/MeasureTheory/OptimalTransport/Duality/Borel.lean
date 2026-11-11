@@ -334,9 +334,8 @@ private lemma exists_convex_comb_potentials_tendsto_L2 [IsFiniteMeasure μ] [IsF
       rw [Real.norm_of_nonneg ((hv_props n).2.1 y).1]; exact ((hv_props n).2.1 y).2
   have hsum_c (n : ℕ) : ∑ i ∈ t n, ENNReal.ofReal (c n i) = 1 := by
     rw [← ENNReal.ofReal_sum_of_nonneg (hc0 n), hc1 n, ENNReal.ofReal_one]
-  let e := (WithLp.prodContinuousLinearEquiv 2 ℝ (Lp ℝ 2 μ) (Lp ℝ 2 ν)).toContinuousLinearMap
-  let π₁ : H →L[ℝ] Lp ℝ 2 μ := ContinuousLinearMap.fst ℝ (Lp ℝ 2 μ) (Lp ℝ 2 ν) ∘L e
-  let π₂ : H →L[ℝ] Lp ℝ 2 ν := ContinuousLinearMap.snd ℝ (Lp ℝ 2 μ) (Lp ℝ 2 ν) ∘L e
+  let π₁ := WithLp.fstL 2 ℝ (Lp ℝ 2 μ) (Lp ℝ 2 ν)
+  let π₂ := WithLp.sndL 2 ℝ (Lp ℝ 2 μ) (Lp ℝ 2 ν)
   refine ⟨π₁ p_lim, π₂ p_lim, u', v', hu'_lp, hv'_lp, fun n ↦ (hu_props n).1,
     fun n ↦ (hu_props n).2.1, fun n ↦ (hv_props n).1, fun n ↦ (hv_props n).2.1, ?_, ?_, ?_, ?_⟩
   · intro n x y
@@ -363,11 +362,13 @@ private lemma exists_convex_comb_potentials_tendsto_L2 [IsFiniteMeasure μ] [IsF
       _ = M := by rw [← Finset.sum_mul, hsum_c n, one_mul]
   · have hfst (n : ℕ) : (hu'_lp n).toLp (u' n) = π₁ (W n) := by
       rw [← hW_eq n, map_sum, (hu_props n).2.2.2.2 (hu'_lp n)]
-      exact Finset.sum_congr rfl fun i _ ↦ by rw [map_smul]; rfl
+      exact Finset.sum_congr rfl fun i _ ↦ by
+        simp [π₁, F, WithLp.fst, u]
     simp_rw [hfst]; exact (π₁.continuous.tendsto p_lim).comp hW_tendsto
   · have hsnd (n : ℕ) : (hv'_lp n).toLp (v' n) = π₂ (W n) := by
       rw [← hW_eq n, map_sum, (hv_props n).2.2.2.2 (hv'_lp n)]
-      exact Finset.sum_congr rfl fun i _ ↦ by rw [map_smul]; rfl
+      exact Finset.sum_congr rfl fun i _ ↦ by
+        simp [π₂, F, WithLp.snd, v]
     simp_rw [hsnd]; exact (π₂.continuous.tendsto p_lim).comp hW_tendsto
 
 /-- Dominated convergence of `∫⁻ z, ENNReal.ofReal (w j z) ∂ρ` to the integral of its pointwise

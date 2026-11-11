@@ -26,6 +26,8 @@ copies of `v i`, and no positive multiple of a member is a sum of negated member
   which `v` sums to `m • v i` is `m` copies of `i`.
 * `LinearIndependent.nsmul_notMem_closure_range_neg`: for a family independent over `ℤ`, a
   positive multiple `m • v i` is not a sum of negated members of `v`.
+* `LinearIndependent.zero_notMem_closure_range`: for a family independent over `ℤ`, zero is not a
+  nonempty sum of members of `v`.
 -/
 
 public section
@@ -62,5 +64,24 @@ theorem nsmul_notMem_closure_range_neg [AddCommGroup M] {v : ι → M}
   simp only [Finsupp.add_apply, Finsupp.single_eq_same, Finsupp.coe_zero, Pi.zero_apply] at h0
   have := hn i
   omega
+
+/-- For a family linearly independent over `ℤ`, zero is not a nonempty sum of members: such a sum
+would express the negative of a member as a sum of members, or would make a member zero. -/
+theorem zero_notMem_closure_range [AddCommGroup M] {v : ι → M} (hv : LinearIndependent ℤ v) :
+    (0 : M) ∉ AddSubsemigroup.closure (Set.range v) := by
+  have key {x : M} (hx : x ∈ AddSubsemigroup.closure (Set.range v)) :
+      ∃ i, x = v i ∨ x - v i ∈ AddSubsemigroup.closure (Set.range v) := by
+    induction hx using AddSubsemigroup.closure_induction with
+    | mem _ hx =>
+      obtain ⟨i, rfl⟩ := hx
+      exact ⟨i, .inl rfl⟩
+    | add x y hx hy ih _ =>
+      obtain ⟨i, rfl | hi⟩ := ih
+      · exact ⟨i, .inr (by simpa using hy)⟩
+      · exact ⟨i, .inr (by simpa [sub_add_eq_add_sub] using add_mem hi hy)⟩
+  intro h0
+  obtain ⟨i, hi | hi⟩ := key h0
+  · exact hv.ne_zero i hi.symm
+  · exact hv.neg.nsmul_notMem_closure_range_neg i one_ne_zero (by simpa using hi)
 
 end LinearIndependent

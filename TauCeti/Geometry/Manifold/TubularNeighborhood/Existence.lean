@@ -22,6 +22,10 @@ An auxiliary smooth Riemannian metric is chosen on the ambient tangent bundle us
 coordinates. The conclusion uses the intrinsic quotient normal bundle and its existing
 complementary-coordinate atlas, both independent of that metric.
 
+Projecting the tubular neighbourhood to the base gives a smooth retraction of an open
+neighbourhood of the image onto the embedded manifold
+(`TauCeti.SmoothEmbedding.exists_contMDiffOn_retraction`).
+
 ## References
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, second edition, Theorem 6.24.
@@ -67,5 +71,36 @@ theorem exists_diffeomorph_normalBundle_subset
   let : IsContMDiffRiemannianBundle J ∞ V (fun y : N ↦ TangentSpace J y) :=
     Bundle.instIsContMDiffRiemannianBundle g
   exact f.exists_diffeomorph_normalBundle_riemannian_subset hdim hO hfO
+
+/-- **Smooth retractions onto embedded submanifolds.** A smooth embedding `f : M → N` of a
+nonempty boundaryless manifold into a second countable Hausdorff boundaryless manifold has a
+smooth retraction `r : N → M` on an open neighbourhood `W` of its image, inside any prescribed
+open neighbourhood `O` of the image: `r` is smooth on `W` and `r ∘ f = id`. Outside `W` the
+values of `r` are arbitrary. -/
+theorem exists_contMDiffOn_retraction [Nonempty M] (f : SmoothEmbedding I J ∞ M N) {O : Set N}
+    (hO : IsOpen O) (hfO : range f ⊆ O) :
+    ∃ W : Set N, IsOpen W ∧ range f ⊆ W ∧ W ⊆ O ∧
+      ∃ r : N → M, ContMDiffOn J I ∞ r W ∧ ∀ x, r (f x) = x := by
+  classical
+  have hn : (∞ : ℕ∞ω) ≠ 0 := by simp
+  let P := EuclideanSpace ℝ (Fin (Module.finrank ℝ V - Module.finrank ℝ E))
+  have hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E :=
+    finrank_euclideanSpace_fin
+  let := f.normalSpaceFiberBundle hn hdim
+  -- A tubular neighbourhood `Φ` of `f`; the retraction is its base projection.
+  obtain ⟨W, hWO, Φ, hΦ⟩ := f.exists_diffeomorph_normalBundle_subset (P := P) hdim hO hfO
+  let r : N → M := fun y ↦ if h : y ∈ W then (Φ.symm ⟨y, h⟩).proj else Classical.arbitrary M
+  have hrW (w : W) : r w = (Φ.symm w).proj := by simp [r, w.2]
+  have hfW (x : M) : f x ∈ W := by
+    rw [← hΦ x]
+    exact (Φ _).2
+  refine ⟨W, W.isOpen, range_subset_iff.2 hfW, hWO, r, fun y hy ↦ ?_, fun x ↦ ?_⟩
+  · have hsmooth : ContMDiff J I ∞ fun w : W ↦ r w := by
+      simp only [hrW]
+      exact (contMDiff_proj (fun x ↦ f.NormalSpace x hn)).comp Φ.symm.contMDiff
+    exact (contMDiffAt_subtype_iff (x := ⟨y, hy⟩).1 (hsmooth _)).contMDiffWithinAt
+  · have h : Φ.symm ⟨f x, hfW x⟩ = zeroSection P (fun x ↦ f.NormalSpace x hn) x :=
+      Φ.symm_apply_eq.2 (Subtype.ext (hΦ x).symm)
+    rw [hrW ⟨f x, hfW x⟩, h, zeroSection_proj]
 
 end TauCeti.SmoothEmbedding

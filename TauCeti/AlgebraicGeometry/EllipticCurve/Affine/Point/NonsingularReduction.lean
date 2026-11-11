@@ -58,6 +58,8 @@ whichever variable has a nonvanishing partial derivative at the point of `W_k`
   of the reduced curve.
 * `WeierstrassCurve.Affine.mem_nonsingularReduction_of_one_lt`: the kernel of reduction is
   contained in `E₀(F)`.
+* `WeierstrassCurve.Affine.nonsingularReduction_congr`: equivalent valuations have the same
+  `E₀(F)`.
 * `WeierstrassCurve.Affine.equivVariableChange_mem_nonsingularReduction_iff` and
   `WeierstrassCurve.Affine.nonsingularReduction_baseChange_smul`: a change of variables over `O`
   identifies `E₀` of the two integral models.
@@ -172,6 +174,34 @@ theorem mem_nonsingularReduction_of_one_lt {P : W.Point} (hP : 1 < v P.xCoord) :
   rw [mem_nonsingularReduction_iff, (Point.reduction_eq_zero_iff v P).mpr (.inr hP),
     Projective.nonsingularLift_iff]
   exact Projective.nonsingular_zero
+
+/-- **`E₀(F)` depends only on the valuation ring**: equivalent valuations, which have the same
+valuation ring and so the same integral model and reduced curve, have the same subgroup of points
+with nonsingular reduction. -/
+theorem nonsingularReduction_congr {Γ₀' : Type*} [LinearOrderedCommGroupWithZero Γ₀']
+    {v' : Valuation F Γ₀'} [IsIntegral v'.valuationSubring W] (h : v.IsEquiv v') :
+    W.nonsingularReduction v = W.nonsingularReduction v' := by
+  have hA := (Valuation.isEquiv_iff_valuationSubring v v').1 h
+  ext P
+  rcases P with _ | ⟨x, y, hP⟩
+  · simp only [← Point.zero_def, zero_mem]
+  by_cases hx : v x ≤ 1
+  · rw [some_mem_nonsingularReduction_iff v hP hx,
+      some_mem_nonsingularReduction_iff v' hP (h.le_one_iff_le_one.1 hx)]
+    -- both sides are the same condition, read in the common valuation ring
+    have key (A B : ValuationSubring F) (hAB : A = B) [IsIntegral A W] [IsIntegral B W]
+        (hxA : x ∈ A) (hyA : y ∈ A) (hxB : x ∈ B) (hyB : y ∈ B) :
+        ((integralModel A W).map (residue A)).toAffine.Nonsingular (residue A ⟨x, hxA⟩)
+            (residue A ⟨y, hyA⟩) ↔
+          ((integralModel B W).map (residue B)).toAffine.Nonsingular (residue B ⟨x, hxB⟩)
+            (residue B ⟨y, hyB⟩) := by
+      subst hAB
+      rfl
+    exact key _ _ hA _ _ _ _
+  · rw [not_le] at hx
+    exact iff_of_true (mem_nonsingularReduction_of_one_lt v (by rwa [Point.xCoord_some]))
+      (mem_nonsingularReduction_of_one_lt v'
+        (by rw [Point.xCoord_some]; exact not_le.1 fun h' ↦ hx.not_ge (h.le_one_iff_le_one.2 h')))
 
 /-! ### Changes of variables over the valuation ring -/
 

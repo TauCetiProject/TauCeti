@@ -8,13 +8,14 @@ module
 public import Mathlib.Data.Set.Prod
 
 /-!
-# Fibre products of functions
+# Graphs and fibre products of functions
 
-This file adds to Mathlib's API for the fibre product `Function.Pullback f g` of two functions with
-a common codomain.
+This file adds to Mathlib's API for graphs of functions over a set and for the fibre product
+`Function.Pullback f g` of two functions with a common codomain.
 
 ## Main results
 
+* `Set.graphOn_const`: the graph of a constant function over `s` is a horizontal slice `s ×ˢ {b}`.
 * `Function.Pullback.ext`: a point of the fibre product is determined by its two coordinates.
 * `Function.Pullback.fstPreimageEquiv`: the fibre of the projection `X ×_Y Z → X` over `x` is the
   fibre of `g` over `f x`.
@@ -23,6 +24,13 @@ a common codomain.
 public section
 
 open Function
+
+/-- The graph of a constant function over a set `s` is the slice `s ×ˢ {b}`. -/
+@[simp]
+theorem Set.graphOn_const {α β : Type*} (s : Set α) (b : β) :
+    s.graphOn (Function.const α b) = s ×ˢ {b} := by
+  ext ⟨x, y⟩
+  simp [eq_comm]
 
 variable {X Y Z : Type*} {f : X → Y} {g : Z → Y}
 

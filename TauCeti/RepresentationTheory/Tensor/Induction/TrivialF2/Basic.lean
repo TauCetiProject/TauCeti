@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialF2
-import TauCeti.LinearAlgebra.PiTensorProduct.ZMod
+import TauCeti.RingTheory.PiTensorProduct.Surjective
 public import TauCeti.RepresentationTheory.Tensor.Induction.Smooth
 
 /-!
@@ -78,7 +78,7 @@ private noncomputable def tensorInducedTrivialF2LinearEquiv :=
       (fun _ ↦ (trivialF2Equiv U).toIntLinearEquiv
         (modM := (DiscreteRep.trivialF2 U).module)
         (modM₂ := AddCommGroup.toIntModule (ZMod 2))) ≪≫ₗ
-    PiTensorProduct.zmodEquiv 2
+    (PiTensorProduct.constantAlgEquivOfSurjective (ZMod.ringHom_surjective _)).toLinearEquiv
 
 private theorem tensorInducedTrivialF2LinearEquiv_tprod
     (x : G ⧸ U → (DiscreteRep.trivialF2 U).V) :
@@ -87,7 +87,8 @@ private theorem tensorInducedTrivialF2LinearEquiv_tprod
   let _ : Module ℤ (DiscreteRep.trivialF2 U).V := (DiscreteRep.trivialF2 U).module
   rw [smoothTensorInducedTrivialF2Tprod_eq]
   simp only [tensorInducedTrivialF2LinearEquiv, LinearEquiv.trans_apply,
-    PiTensorProduct.congr_tprod, PiTensorProduct.zmodEquiv_tprod]
+    PiTensorProduct.congr_tprod, AlgEquiv.coe_toLinearEquiv,
+    PiTensorProduct.constantAlgEquivOfSurjective_tprod]
   rfl
 
 private theorem tensorInducedTrivialF2LinearEquiv_ρ (g : G)

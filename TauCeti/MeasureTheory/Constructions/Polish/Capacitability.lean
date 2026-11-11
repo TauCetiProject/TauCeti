@@ -8,15 +8,14 @@ module
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import Mathlib.MeasureTheory.Measure.NullMeasurable
 
-import Mathlib.Analysis.SpecificLimits.Basic
-import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
+import TauCeti.Topology.Instances.NatNat
 
 /-!
 # Choquet's capacitability theorem
 
 This file defines Choquet capacities taking values in `ℝ≥0∞` and proves Choquet's capacitability
-theorem: on a metrizable space, the capacity of every analytic set is the supremum of the
+theorem: on a Hausdorff space, the capacity of every analytic set is the supremum of the
 capacities of its compact subsets.
 
 A set function `I : Set X → ℝ≥0∞` is a Choquet capacity (`TauCeti.IsChoquetCapacity`) when it is
@@ -24,14 +23,16 @@ monotone, upward continuous along arbitrary increasing sequences of sets, and do
 along decreasing sequences of closed sets. On a compact space, downward continuity along closed
 sets reduces to downward continuity along compact sets
 (`TauCeti.IsChoquetCapacity.of_compactSpace`).
-On a non-compact metrizable space, downward continuity along closed sets is genuinely stronger and
+On a non-compact Hausdorff space, downward continuity along closed sets is genuinely stronger and
 is required for inner compact approximation: on Baire space `ℕ → ℕ`, the `{0, 1}`-valued indicator
 of not being contained in a countable union of compact sets is monotone, upward continuous on all
 increasing sequences, and zero on every compact set, yet assigns value `1` to `Set.univ`.
 
 No finiteness or vanishing-on-empty hypothesis is imposed on `I`: the coordinate-bounding recursion
 in Baire space works directly with strict `ℝ≥0` lower bounds below `I (Set.range f)` via density of
-`ℝ≥0` in `ℝ≥0∞`, so capacities taking the value `∞` are covered uniformly.
+`ℝ≥0` in `ℝ≥0∞`, so capacities taking the value `∞` are covered uniformly. Neither metrizability
+nor separability of `X` is needed, since `TauCeti.iInter_closure_image_subset_image_Iic` holds in
+every Hausdorff space.
 
 ## Main definitions
 
@@ -44,18 +45,18 @@ in Baire space works directly with strict `ℝ≥0` lower bounds below `I (Set.r
   decreasing sequences of compact sets suffices.
 * `TauCeti.IsChoquetCapacity.measure`: every finite Borel-compatible measure is a Choquet capacity.
 * `TauCeti.IsChoquetCapacity.exists_isCompact_subset_lt`: strict inner compact approximation of an
-  analytic set in a metrizable space.
+  analytic set in a Hausdorff space.
 * `TauCeti.IsChoquetCapacity.analyticSet_eq_biSup_isCompact`: **Choquet's capacitability theorem**
   expressing `I S` as the supremum of `I K` over compact `K ⊆ S` for every analytic set `S`.
 
 ## Provenance
 
-The Baire-space coordinate-bounding diagonal lemma `iInter_closure_image_bounded_subset` is
-factored out from the finite-measure universal-measurability development in
-`TauCeti.MeasureTheory.MeasurableSpace.Analytic`, adapted from Daniel Lyng's Apache-2.0 Econlib
-formalization (`Econlib/Math/MeasureTheory/AnalyticNullMeasurable.lean`, commit
-`003655ccf010cdf44c4f67d6675167b54ce0e9df`), and generalized from finite outer measures to
-arbitrary `ℝ≥0∞`-valued Choquet capacities.
+The coordinate-bounding recursion adapts the finite-measure universal-measurability argument from
+Daniel Lyng's Apache-2.0 Econlib formalization
+(`Econlib/Math/MeasureTheory/AnalyticNullMeasurable.lean`, commit
+`003655ccf010cdf44c4f67d6675167b54ce0e9df`) to arbitrary `ℝ≥0∞`-valued Choquet capacities in
+Hausdorff spaces, using the ultrafilter closure lemma
+`TauCeti.iInter_closure_image_subset_image_Iic` from `TauCeti.Topology.Instances.NatNat`.
 
 ## References
 
@@ -130,62 +131,15 @@ end Basic
 
 /-! ### Baire-space coordinate bounding and capacitability -/
 
-/-- For a continuous map `f` from Baire space into a metric space and coordinate bounds `N`, every
-point lying in the closure of all finite-stage coordinate-bounded images already belongs to the
-image of the compact infinite product `{β | ∀ k, β k ≤ N k}`. -/
-private theorem iInter_closure_image_bounded_subset {X : Type*} [MetricSpace X]
-    {f : (ℕ → ℕ) → X} (hf : Continuous f) (N : ℕ → ℕ) :
-    ⋂ n, closure (f '' {β | ∀ k < n, β k ≤ N k}) ⊆ f '' {β | ∀ k, β k ≤ N k} := by
-  intro x hx
-  simp only [mem_iInter] at hx
-  have happrox : ∀ n : ℕ, ∃ β : ℕ → ℕ, (∀ k < n, β k ≤ N k) ∧ dist x (f β) < 1 / (n + 1) := by
-    intro n
-    have hpos : (0 : ℝ) < 1 / (n + 1) := by positivity
-    obtain ⟨y, ⟨β, hβ, rfl⟩, hy_dist⟩ := Metric.mem_closure_iff.mp (hx n) _ hpos
-    exact ⟨β, hβ, hy_dist⟩
-  choose β hβ_bdd hβ_dist using happrox
-  have hC_compact : IsCompact (univ.pi fun k ↦ Iic (N k)) :=
-    isCompact_univ_pi fun k ↦ (finite_Iic (N k)).isCompact
-  have hθ_mem : ∀ n, (fun k ↦ min (β n k) (N k)) ∈ univ.pi fun k ↦ Iic (N k) :=
-    fun _ _ _ ↦ mem_Iic.mpr (min_le_right _ _)
-  obtain ⟨βlim, hβlim_mem, φ, hφ_mono, hφ_tendsto⟩ := hC_compact.tendsto_subseq hθ_mem
-  have hβφ_tendsto : Tendsto (fun j ↦ β (φ j)) atTop (𝓝 βlim) := by
-    rw [tendsto_pi_nhds]
-    intro k
-    have hθk : Tendsto (fun j ↦ min (β (φ j) k) (N k)) atTop (𝓝 (βlim k)) :=
-      (continuous_apply k).continuousAt.tendsto.comp hφ_tendsto
-    have hsingleton : {βlim k} ∈ 𝓝 (βlim k) := by simp [nhds_discrete]
-    have hev_trunc_eq : ∀ᶠ j in atTop, min (β (φ j) k) (N k) = βlim k := hθk hsingleton
-    have hev_no_trunc : ∀ᶠ j in atTop, min (β (φ j) k) (N k) = β (φ j) k := by
-      filter_upwards [eventually_gt_atTop k] with j hj
-      exact min_eq_left (hβ_bdd (φ j) k (hj.trans_le hφ_mono.le_apply))
-    refine Tendsto.congr' ?_ tendsto_const_nhds
-    filter_upwards [hev_trunc_eq, hev_no_trunc] with j h1 h2
-    rw [← h2, h1]
-  have hx_tendsto : Tendsto (fun j ↦ f (β (φ j))) atTop (𝓝 x) := by
-    rw [tendsto_iff_dist_tendsto_zero]
-    refine squeeze_zero (fun _ ↦ dist_nonneg) (fun j ↦ ?_) tendsto_one_div_add_atTop_nhds_zero_nat
-    have hφj : (j : ℝ) + 1 ≤ (φ j : ℝ) + 1 := by
-      have : (j : ℝ) ≤ (φ j : ℝ) := Nat.cast_le.mpr hφ_mono.le_apply
-      linarith
-    calc
-      dist (f (β (φ j))) x = dist x (f (β (φ j))) := dist_comm _ _
-      _ ≤ 1 / ((φ j : ℝ) + 1) := (hβ_dist (φ j)).le
-      _ ≤ 1 / ((j : ℝ) + 1) := one_div_le_one_div_of_le (by positivity) hφj
-  exact ⟨βlim, fun k ↦ hβlim_mem k (mem_univ k),
-    tendsto_nhds_unique ((hf.tendsto βlim).comp hβφ_tendsto) hx_tendsto⟩
+section Hausdorff
 
-section Metrizable
+variable {X : Type*} [TopologicalSpace X] [T2Space X] {I : Set X → ℝ≥0∞}
 
-variable {X : Type*} [TopologicalSpace X] [TopologicalSpace.MetrizableSpace X]
-  {I : Set X → ℝ≥0∞}
-
-/-- Every strict lower bound on the capacity of a continuous image of Baire space is witnessed by
-a compact subset of that image. -/
+/-- Every strict lower bound on the capacity of a continuous image of Baire space into a Hausdorff
+space is witnessed by a compact subset of that image. -/
 theorem IsChoquetCapacity.exists_isCompact_subset_range_lt (hI : IsChoquetCapacity I)
     {f : (ℕ → ℕ) → X} (hf : Continuous f) {r : ℝ≥0∞} (hr : r < I (range f)) :
     ∃ K : Set X, IsCompact K ∧ K ⊆ range f ∧ r < I K := by
-  let _ : MetricSpace X := TopologicalSpace.metrizableSpaceMetric X
   obtain ⟨p, hrp, hp⟩ := ENNReal.lt_iff_exists_nnreal_btwn.1 hr
   obtain ⟨q, hpq, hq⟩ := ENNReal.lt_iff_exists_nnreal_btwn.1 hp
   set δ : ℝ≥0 := q - p
@@ -237,29 +191,28 @@ theorem IsChoquetCapacity.exists_isCompact_subset_range_lt (hI : IsChoquetCapaci
         simp [a, δ, add_tsub_cancel_of_le (ENNReal.coe_lt_coe.1 hpq).le]
       simpa [F, ha0] using hq.le
     | succ n ih => exact hMof n (F n) ih
-  have hC_compact : IsCompact {β : ℕ → ℕ | ∀ k, β k ≤ N k} := by
-    have : {β : ℕ → ℕ | ∀ k, β k ≤ N k} = univ.pi fun k ↦ Iic (N k) := by
+  have hC_compact : IsCompact (Iic N) := by
+    have : Iic N = univ.pi fun k ↦ Iic (N k) := by
       ext β; simp [Pi.le_def]
     rw [this]
     exact isCompact_univ_pi fun k ↦ (finite_Iic (N k)).isCompact
-  refine ⟨f '' {β | ∀ k, β k ≤ N k}, hC_compact.image hf, image_subset_range f _, ?_⟩
-  have hD_anti : Antitone fun n ↦ closure (f '' F n) := fun m n hmn ↦ by
-    refine closure_mono (image_mono ?_)
-    rw [hF_eq m, hF_eq n]
-    exact fun _ hβ k hk ↦ hβ k (hk.trans_le hmn)
-  have hsub : ⋂ n, closure (f '' F n) ⊆ f '' {β | ∀ k, β k ≤ N k} := by
-    simpa only [← hF_eq] using iInter_closure_image_bounded_subset hf N
-  have hp_le : (p : ℝ≥0∞) ≤ I (f '' {β | ∀ k, β k ≤ N k}) := by
+  refine ⟨f '' Iic N, hC_compact.image hf, image_subset_range f _, ?_⟩
+  have hD_anti : Antitone fun n ↦ closure (f '' F n) :=
+    antitone_nat_of_succ_le fun n ↦
+      closure_mono (image_mono (by rw [hF_succ]; exact inter_subset_left))
+  have hsub : ⋂ n, closure (f '' F n) ⊆ f '' Iic N := by
+    simpa only [← hF_eq] using iInter_closure_image_subset_image_Iic hf N
+  have hp_le : (p : ℝ≥0∞) ≤ I (f '' Iic N) := by
     calc
       (p : ℝ≥0∞) ≤ ⨅ n, I (closure (f '' F n)) :=
         le_iInf fun n ↦ (ENNReal.coe_le_coe.2 le_self_add).trans <|
           (hinv n).trans (hI.mono subset_closure)
       _ = I (⋂ n, closure (f '' F n)) :=
         (hI.iInter_isClosed_eq _ (fun _ ↦ isClosed_closure) hD_anti).symm
-      _ ≤ I (f '' {β | ∀ k, β k ≤ N k}) := hI.mono hsub
+      _ ≤ I (f '' Iic N) := hI.mono hsub
   exact hrp.trans_le hp_le
 
-/-- **Strict inner compact approximation of analytic sets.** In a metrizable space, every value
+/-- **Strict inner compact approximation of analytic sets.** In a Hausdorff space, every value
 strictly below the Choquet capacity of an analytic set is exceeded on a compact subset. -/
 theorem IsChoquetCapacity.exists_isCompact_subset_lt (hI : IsChoquetCapacity I)
     {S : Set X} (hS : AnalyticSet S) {r : ℝ≥0∞} (hr : r < I S) :
@@ -272,7 +225,7 @@ theorem IsChoquetCapacity.exists_isCompact_subset_lt (hI : IsChoquetCapacity I)
     rw [← hsurj.range_comp f] at hr ⊢
     exact hI.exists_isCompact_subset_range_lt (hf_cont.comp hg) hr
 
-/-- **Choquet's capacitability theorem.** On a metrizable space, the capacity of every analytic set
+/-- **Choquet's capacitability theorem.** On a Hausdorff space, the capacity of every analytic set
 equals the supremum of the capacities of its compact subsets. -/
 theorem IsChoquetCapacity.analyticSet_eq_biSup_isCompact (hI : IsChoquetCapacity I)
     {S : Set X} (hS : AnalyticSet S) :
@@ -283,7 +236,7 @@ theorem IsChoquetCapacity.analyticSet_eq_biSup_isCompact (hI : IsChoquetCapacity
   exact hrK.trans_le (le_iSup₂_of_le K hKc (le_iSup_of_le hKS le_rfl))
 
 /-- Quantitative additive-slack inner compact approximation of an analytic set of finite Choquet
-capacity. -/
+capacity in a Hausdorff space. -/
 theorem IsChoquetCapacity.exists_isCompact_subset_le_add (hI : IsChoquetCapacity I)
     {S : Set X} (hS : AnalyticSet S) (hfin : I S ≠ ∞) {ε : ℝ≥0∞} (hε : ε ≠ 0) :
     ∃ K : Set X, IsCompact K ∧ K ⊆ S ∧ I S ≤ I K + ε := by
@@ -294,6 +247,6 @@ theorem IsChoquetCapacity.exists_isCompact_subset_le_add (hI : IsChoquetCapacity
     hI.exists_isCompact_subset_lt hS (ENNReal.sub_lt_self hfin hS0 hε)
   exact ⟨K, hKc, hKS, tsub_le_iff_right.mp hlt.le⟩
 
-end Metrizable
+end Hausdorff
 
 end TauCeti

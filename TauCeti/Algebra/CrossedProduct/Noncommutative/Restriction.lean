@@ -40,9 +40,7 @@ variable {k D G H : Type*} [CommSemiring k] [Semiring D] [_root_.Algebra k D]
 def comap (c : CrossedSystem k D G) (f : H →* G) : CrossedSystem k D H where
   action h := c.action (f h)
   factor h j := c.factor (f h) (f j)
-  action_one := by simp
   factor_one_left h := by simp
-  factor_one_right h := by simp
   action_mul h j d := by simpa only [map_mul] using c.action_mul (f h) (f j) d
   factor_assoc h j l := by simpa only [map_mul] using c.factor_assoc (f h) (f j) (f l)
 

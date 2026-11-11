@@ -26,9 +26,14 @@ how small nonzero values of integer polynomials of degree at most `n` can be at 
 ## Main results
 
 * `linearFormApproximations_antitone`: the solution sets shrink as the exponent grows.
+* `ofReal_le_linearFormExponent_of_forall_lt`: if every exponent below `w` has infinitely many
+  solutions, then `w ≤ w(θ)`.
 * `linearFormExponent_comp_le`: forgetting coordinates along an injective reindexing can only
   decrease the exponent; in particular Mahler's exponent is monotone in the degree
   (`mahlerExponent_mono`).
+* `linearFormExponent_le_of_map`: an integer change of variables that multiplies the linear
+  form by a fixed nonzero factor and grows sup norms at most linearly can only increase the
+  exponent.
 * `linearFormExponent_of_isEmpty`: the empty vector has exponent `0`.
 * `linearFormExponent_one_add`: for every real `ξ`, `w(ξ) + 1 = μ(ξ)`, where `μ` is the
   irrationality exponent. Consequently rational numbers have exponent `0`
@@ -155,29 +160,117 @@ theorem infinite_linearFormApproximations_of_lt {θ : ι → ℝ} {w : ℝ}
   obtain ⟨hinf, hlt⟩ := hw'
   exact hinf.mono (linearFormApproximations_antitone θ (ENNReal.ofReal_lt_ofReal_iff'.mp hlt).1.le)
 
+/-- For a positive exponent with infinitely many solutions, the solutions have arbitrarily small
+nonzero linear forms. -/
+private theorem exists_mem_abs_lt_of_infinite {θ : ι → ℝ} {w : ℝ} (hw0 : 0 < w)
+    (hw : (linearFormApproximations θ w).Infinite) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ x ∈ linearFormApproximations θ w, |(x.1 : ℝ) + ∑ i, (x.2 i : ℝ) * θ i| < δ := by
+  obtain ⟨x, hxS, hx⟩ : ∃ x ∈ linearFormApproximations θ w, δ ^ (-w⁻¹) < ‖x‖ := by
+    by_contra! h
+    exact hw ((isCompact_closedBall (0 : ℤ × (ι → ℤ)) (δ ^ (-w⁻¹))).finite_of_discrete.subset
+      fun x hx ↦ mem_closedBall_zero_iff.2 (h x hx))
+  refine ⟨x, hxS, hxS.2.trans_lt ?_⟩
+  calc ‖x‖ ^ (-w) < (δ ^ (-w⁻¹)) ^ (-w) :=
+        Real.rpow_lt_rpow_of_neg (by positivity) hx (by linarith)
+    _ = δ := by rw [← Real.rpow_mul hδ.le, neg_mul_neg, inv_mul_cancel₀ hw0.ne', Real.rpow_one]
+
+/-- If every exponent below `w` has infinitely many solutions, then `w` is at most the linear-form
+exponent. -/
+theorem ofReal_le_linearFormExponent_of_forall_lt {θ : ι → ℝ} {w : ℝ}
+    (h : ∀ w' < w, (linearFormApproximations θ w').Infinite) :
+    ENNReal.ofReal w ≤ linearFormExponent θ := by
+  refine le_of_forall_lt fun c hc ↦ ?_
+  have hctop : c ≠ ⊤ := ne_top_of_lt hc
+  rw [ENNReal.lt_ofReal_iff_toReal_lt hctop] at hc
+  obtain ⟨w', hcw', hw'⟩ := exists_between hc
+  calc c = ENNReal.ofReal c.toReal := (ENNReal.ofReal_toReal hctop).symm
+    _ < ENNReal.ofReal w' := (ENNReal.ofReal_lt_ofReal_iff_of_nonneg ENNReal.toReal_nonneg).2 hcw'
+    _ ≤ linearFormExponent θ := le_linearFormExponent_of_infinite (h w' hw')
+
+/-- **Transfer of the linear-form exponent.** Let `f` send integer vectors for `θ` to integer
+vectors for `θ'`, multiplying the linear form by a fixed nonzero factor `r` and growing the sup
+norm at most linearly. Then `w(θ) ≤ w(θ')`. -/
+theorem linearFormExponent_le_of_map {θ : ι → ℝ} {θ' : κ → ℝ}
+    (f : ℤ × (ι → ℤ) → ℤ × (κ → ℤ)) {r A : ℝ} (hr : r ≠ 0)
+    (hf : ∀ x, ((f x).1 : ℝ) + ∑ k, ((f x).2 k : ℝ) * θ' k =
+      r * ((x.1 : ℝ) + ∑ i, (x.2 i : ℝ) * θ i))
+    (hA : ∀ x, ‖f x‖ ≤ A * ‖x‖) :
+    linearFormExponent θ ≤ linearFormExponent θ' := by
+  rw [linearFormExponent_le_iff]
+  intro w hw
+  rcases le_or_gt w 0 with hw0 | hw0
+  · simp [ENNReal.ofReal_of_nonpos hw0]
+  -- The images of the solutions for `θ` solve the problem for `θ'` up to the constant factor
+  -- `B` below, which is absorbed by passing to any smaller exponent `w' < w`.
+  set L : ℤ × (ι → ℤ) → ℝ := fun x ↦ (x.1 : ℝ) + ∑ i, (x.2 i : ℝ) * θ i
+  set L' : ℤ × (κ → ℤ) → ℝ := fun y ↦ (y.1 : ℝ) + ∑ k, (y.2 k : ℝ) * θ' k
+  have hf' (x : ℤ × (ι → ℤ)) : |L' (f x)| = |r| * |L x| := by
+    simp only [L', L, hf, abs_mul]
+  set S := linearFormApproximations θ w
+  -- The images of the solutions have arbitrarily small nonzero linear forms, so they form an
+  -- infinite set.
+  have hT : (f '' S).Infinite := by
+    intro hfin
+    obtain ⟨_, ⟨y, hy, rfl⟩, hmin⟩ :=
+      Set.exists_min_image (f '' S) (fun y ↦ |L' y|) hfin (hw.nonempty.image f)
+    obtain ⟨x, hx, hlt⟩ := exists_mem_abs_lt_of_infinite hw0 hw hy.1
+    have h := hmin (f x) ⟨x, hx, rfl⟩
+    rw [hf', hf'] at h
+    exact (mul_lt_mul_of_pos_left hlt (abs_pos.2 hr)).not_ge h
+  -- Every image satisfies `0 < |L' y| ≤ B ‖y‖ ^ (-w)`.
+  set A' := max A 1
+  have hA' : 0 < A' := lt_max_of_lt_right one_pos
+  set B := |r| * A' ^ w
+  have hB : ∀ y ∈ f '' S, 0 < |L' y| ∧ |L' y| ≤ B * ‖y‖ ^ (-w) := by
+    rintro _ ⟨x, hx, rfl⟩
+    have hLx : 0 < |L' (f x)| := by rw [hf']; exact mul_pos (abs_pos.2 hr) hx.1
+    refine ⟨hLx, ?_⟩
+    have hy : 0 < ‖f x‖ := norm_pos_iff.2 fun h0 ↦ by simp [L', h0] at hLx
+    have hxy : ‖f x‖ / A' ≤ ‖x‖ := by
+      rw [div_le_iff₀ hA']
+      exact (hA x).trans (by rw [mul_comm]; gcongr; exact le_max_left _ _)
+    rw [hf']
+    calc |r| * |L x| ≤ |r| * ‖x‖ ^ (-w) := by gcongr; exact hx.2
+      _ ≤ |r| * (‖f x‖ / A') ^ (-w) := by
+          exact mul_le_mul_of_nonneg_left
+            (Real.rpow_le_rpow_of_nonpos (by positivity) hxy (neg_nonpos.2 hw0.le)) (abs_nonneg r)
+      _ = B * ‖f x‖ ^ (-w) := by
+          rw [Real.div_rpow hy.le hA'.le, Real.rpow_neg hA'.le, div_inv_eq_mul]
+          ring
+  -- For `w' < w` the images of norm larger than `B ^ (w - w')⁻¹` are solutions for `θ'` with
+  -- exponent `w'`, and all but finitely many images are that large.
+  refine ofReal_le_linearFormExponent_of_forall_lt fun w' hw' ↦ ?_
+  set N := B ^ (w - w')⁻¹
+  refine (hT.sdiff (isCompact_closedBall (0 : ℤ × (κ → ℤ)) N).finite_of_discrete).mono ?_
+  rintro y ⟨hyT, hyN⟩
+  rw [Metric.mem_closedBall, dist_zero_right, not_le] at hyN
+  obtain ⟨hpos, hle⟩ := hB y hyT
+  have hy : 0 < ‖y‖ := (Real.rpow_nonneg (by positivity) _).trans_lt hyN
+  refine ⟨hpos, hle.trans ?_⟩
+  have hBy : B ≤ ‖y‖ ^ (w - w') := by
+    calc B = N ^ (w - w') := by
+          rw [← Real.rpow_mul (by positivity), inv_mul_cancel₀ (by linarith), Real.rpow_one]
+      _ ≤ ‖y‖ ^ (w - w') := Real.rpow_le_rpow (by positivity) hyN.le (by linarith)
+  calc B * ‖y‖ ^ (-w) ≤ ‖y‖ ^ (w - w') * ‖y‖ ^ (-w) := by gcongr
+    _ = ‖y‖ ^ (-w') := by rw [← Real.rpow_add hy]; ring_nf
+
 /-- Restricting `θ` along an injective reindexing can only decrease the linear-form exponent:
 a solution for `θ ∘ f` extends by zero to a solution for `θ` with the same linear form and the
 same norm. -/
 theorem linearFormExponent_comp_le (θ : κ → ℝ) {f : ι → κ} (hf : Injective f) :
     linearFormExponent (θ ∘ f) ≤ linearFormExponent θ := by
-  rw [linearFormExponent_le_iff]
-  intro w hw
-  let e : ℤ × (ι → ℤ) → ℤ × (κ → ℤ) := fun x ↦ (x.1, extend f x.2 0)
-  have he : Injective e := fun x y hxy ↦ by
-    simp only [e, Prod.mk.injEq] at hxy
-    exact Prod.ext hxy.1 (funext fun i ↦ by simpa [hf.extend_apply] using congrFun hxy.2 (f i))
-  refine le_linearFormExponent_of_infinite (hw.image he.injOn |>.mono ?_)
-  rintro _ ⟨x, hx, rfl⟩
-  have hsum : ∑ k, ((extend f x.2 0 k : ℤ) : ℝ) * θ k = ∑ i, (x.2 i : ℝ) * θ (f i) := by
-    rw [← Finset.sum_extend_zero_of_injective _ hf fun _ ↦ Finset.mem_univ _]
+  refine linearFormExponent_le_of_map (fun x ↦ (x.1, extend f x.2 0)) one_ne_zero (A := 1)
+    (fun x ↦ ?_) (fun x ↦ ?_)
+  · rw [one_mul, ← Finset.sum_extend_zero_of_injective _ hf fun _ ↦ Finset.mem_univ _]
+    congr 1
     refine Finset.sum_congr rfl fun k _ ↦ ?_
     by_cases hk : ∃ i, f i = k
     · obtain ⟨i, rfl⟩ := hk
       simp [hf.extend_apply]
     · simp [extend_apply' _ _ _ hk]
-  have hnorm : ‖extend f x.2 0‖ = ‖x.2‖ :=
-    (hf.factorsThrough x.2).norm_extend (by simp)
-  simpa [e, mem_linearFormApproximations, Prod.norm_def, hsum, hnorm] using hx
+  · have hnorm : ‖extend f x.2 0‖ = ‖x.2‖ :=
+      (hf.factorsThrough x.2).norm_extend (by simp)
+    simp [Prod.norm_def, hnorm]
 
 /-- The empty vector has linear-form exponent `0`: the linear form is then the integer `x₀`, which
 is at most `|x₀| ^ (-w)` in absolute value only for `x₀ = ± 1` when `0 < w`. -/

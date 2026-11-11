@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.MvPolynomial.Degrees
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.LinearAlgebra.Matrix.MvPolynomial
+public import Mathlib.RingTheory.MvPolynomial.MonomialOrder
 public import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 import Mathlib.Algebra.MvPolynomial.CommRing
 
@@ -26,6 +27,17 @@ The generic determinant is a non-zero-divisor over every commutative ring.
 Translating the generic matrix by the identity and embedding into power series
 reduces this to its constant coefficient being one.
 
+Order the variables `X (i, j)` of the generic matrix row by row, by renaming them along `toLex`
+to the lexicographically ordered pairs `m ×ₗ n`, and use the lexicographic monomial order
+`MonomialOrder.lex`, for which `X (0, 0)` is the largest variable, followed by `X (0, 1)`. Every
+minor on sorted rows `r` and sorted columns `c` then has its main diagonal `∏ i, X (r i, c i)` as
+leading term, with coefficient one: in the Leibniz expansion, a permutation other than the
+identity first differs from the diagonal at some row `r j₀`, where it uses a column to the right
+of `c j₀`, so the diagonal exponent is lexicographically larger. Thus this order is a diagonal
+term order on the generic matrix. Leading terms of minors are the input to Gröbner and SAGBI
+bases of determinantal and flag-minor algebras. For finite index types such as `Fin p` and
+`Fin q`, the hypothesis `WellFoundedGT (m ×ₗ n)` is found by instance search.
+
 ## Main results
 
 * `Matrix.degreeOf_det_le_sum`: the partial degree of a determinant is bounded by
@@ -33,6 +45,16 @@ reduces this to its constant coefficient being one.
 * `Matrix.aeval_det_submatrix_mvPolynomialX` and `Matrix.aeval_det_submatrix_pow_mvPolynomialX`:
   the minors of a matrix `Z`, and of `Z ^ j`, are evaluations of minors of the generic matrix.
 * `Matrix.det_mvPolynomialX_mem_nonZeroDivisors`: the generic determinant is regular.
+* `Matrix.degree_rename_toLex_det_submatrix_mvPolynomialX`,
+  `Matrix.monic_rename_toLex_det_submatrix_mvPolynomialX` and
+  `Matrix.leadingTerm_rename_toLex_det_submatrix_mvPolynomialX`: for the row-major
+  lexicographic order, a minor of the generic matrix on sorted rows and columns is monic with
+  leading term the product of its diagonal entries.
+
+## References
+
+* E. Miller, B. Sturmfels, *Combinatorial Commutative Algebra*, Graduate Texts in Mathematics
+  227, Springer, 2005, Chapter 14 (diagonal term orders and leading terms of minors).
 -/
 
 public section
@@ -116,5 +138,142 @@ theorem aeval_det_submatrix_pow_mvPolynomialX [Fintype n] [DecidableEq n] (Z : M
     (mvPolynomialX_mapMatrix_aeval R Z)
 
 end Minors
+
+section LeadingTerm
+
+open MonomialOrder
+
+variable {R m n ι : Type*} [CommRing R] [LinearOrder ι] [Fintype ι]
+
+/-- The Leibniz expansion of a minor of the generic matrix, with its variables indexed by the
+lexicographically ordered pairs: the term of `σ` is the monomial `∏ i, X (r i, c (σ i))`. -/
+private theorem rename_toLex_det_submatrix_mvPolynomialX (r : ι → m) (c : ι → n) :
+    rename toLex ((mvPolynomialX m n R).submatrix r c).det =
+      ∑ σ : Equiv.Perm ι, ((Equiv.Perm.sign σ : ℤ) •
+        monomial (∑ i, Finsupp.single (toLex (r i, c (σ i))) 1) (1 : R)) := by
+  rw [← det_transpose, det_apply, map_sum]
+  refine Finset.sum_congr rfl fun σ _ ↦ ?_
+  rw [Units.smul_def, map_zsmul, map_prod, monomial_sum_one]
+  simp [X, rename_monomial]
+
+variable [LinearOrder m] [LinearOrder n]
+
+/-- For sorted rows `r` and columns `c`, the exponent of the main diagonal is lexicographically
+larger than the exponent of the term of any other permutation in the Leibniz expansion. -/
+private theorem toLex_sum_single_lt {r : ι → m} {c : ι → n} (hr : StrictMono r)
+    (hc : StrictMono c) {σ : Equiv.Perm ι} (hσ : σ ≠ 1) :
+    toLex (∑ i, Finsupp.single (toLex (r i, c (σ i))) 1) <
+      toLex (∑ i, Finsupp.single (toLex (r i, c i)) 1) := by
+  classical
+  obtain ⟨j, hj⟩ : ∃ j, σ j ≠ j := by
+    by_contra! h
+    exact hσ (Equiv.ext h)
+  -- Let `j₀` be the first index moved by `σ`. It is sent to a larger index.
+  set s := Finset.univ.filter fun j ↦ σ j ≠ j
+  have hs : s.Nonempty := ⟨j, by simp [s, hj]⟩
+  let j₀ := s.min' hs
+  have hj₀ : σ j₀ ≠ j₀ := by simpa [s] using s.min'_mem hs
+  have hfix : ∀ i < j₀, σ i = i := fun i hi ↦ by
+    by_contra h
+    exact (s.min'_le i (by simp [s, h])).not_gt hi
+  have hlt : j₀ < σ j₀ :=
+    lt_of_le_of_ne (not_lt.1 fun h ↦ hj₀ (σ.injective (hfix _ h))) hj₀.symm
+  -- From row `j₀` on, both monomials only involve variables at least `(r j₀, c j₀)`.
+  have hge : ∀ i, j₀ ≤ i → toLex (r j₀, c j₀) ≤ toLex (r i, c (σ i)) ∧
+      toLex (r j₀, c j₀) ≤ toLex (r i, c i) := by
+    intro i hi
+    rcases hi.eq_or_lt with rfl | hi
+    · simp [Prod.Lex.toLex_le_toLex, (hc hlt).le]
+    · simp [Prod.Lex.toLex_le_toLex, hr hi]
+  rw [Finsupp.Lex.lt_iff]
+  refine ⟨toLex (r j₀, c j₀), fun w hw ↦ ?_, ?_⟩
+  · simp only [ofLex_toLex, Finset.sum_apply']
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    by_cases hi : i < j₀
+    · rw [hfix i hi]
+    · obtain ⟨h₁, h₂⟩ := hge i (not_lt.1 hi)
+      rw [Finsupp.single_eq_of_ne (hw.trans_le h₁).ne, Finsupp.single_eq_of_ne (hw.trans_le h₂).ne]
+  · simp only [ofLex_toLex, Finset.sum_apply']
+    -- The variable `(r j₀, c j₀)` occurs on the diagonal but not in the term of `σ`.
+    rw [Finset.sum_eq_zero fun i _ ↦ Finsupp.single_eq_of_ne fun h ↦ ?_]
+    · exact (Finset.single_le_sum (f := fun i ↦ Finsupp.single (toLex (r i, c i)) 1 _)
+        (fun _ _ ↦ Nat.zero_le _) (Finset.mem_univ j₀)).trans_lt' (by simp)
+    · obtain ⟨h₁, h₂⟩ := Prod.ext_iff.1 (toLex.injective h)
+      obtain rfl := hr.injective h₁
+      exact hj₀ (hc.injective h₂.symm)
+
+/-- The diagonal monomial occurs with coefficient one in a minor on sorted rows and columns. -/
+private theorem coeff_rename_toLex_det_submatrix_mvPolynomialX {r : ι → m} {c : ι → n}
+    (hr : StrictMono r) (hc : StrictMono c) :
+    (rename toLex ((mvPolynomialX m n R).submatrix r c).det).coeff
+      (∑ i, Finsupp.single (toLex (r i, c i)) 1) = 1 := by
+  classical
+  rw [rename_toLex_det_submatrix_mvPolynomialX, coeff_sum, Finset.sum_eq_single 1]
+  · simp
+  · intro σ _ hσ
+    have h : ∑ i, Finsupp.single (toLex (r i, c (σ i))) 1 ≠
+        ∑ i, Finsupp.single (toLex (r i, c i)) 1 :=
+      fun h ↦ (toLex_sum_single_lt hr hc hσ).ne (congrArg toLex h)
+    rw [coeff_smul, coeff_monomial]
+    simp [h]
+  · simp
+
+variable [WellFoundedGT (m ×ₗ n)]
+
+/-- Every monomial of a minor on sorted rows and columns is at most the diagonal monomial. -/
+private theorem le_of_mem_support_rename_toLex_det_submatrix_mvPolynomialX {r : ι → m}
+    {c : ι → n} (hr : StrictMono r) (hc : StrictMono c) {a : m ×ₗ n →₀ ℕ}
+    (ha : a ∈ (rename toLex ((mvPolynomialX m n R).submatrix r c).det).support) :
+    a ≼[lex] ∑ i, Finsupp.single (toLex (r i, c i)) 1 := by
+  classical
+  rw [mem_support_iff, rename_toLex_det_submatrix_mvPolynomialX, coeff_sum] at ha
+  obtain ⟨σ, -, hσ⟩ := Finset.exists_ne_zero_of_sum_ne_zero ha
+  rw [coeff_smul, coeff_monomial] at hσ
+  obtain rfl : ∑ i, Finsupp.single (toLex (r i, c (σ i))) 1 = a := by
+    by_contra h
+    simp [h] at hσ
+  rw [lex_le_iff]
+  rcases eq_or_ne σ 1 with rfl | hσ₁
+  · simp
+  · exact (toLex_sum_single_lt hr hc hσ₁).le
+
+/-- For the lexicographic order on the variables `X (i, j)` ordered row by row, a minor of the
+generic matrix on sorted rows `r` and sorted columns `c` has the main diagonal
+`∏ i, X (r i, c i)` as its leading monomial. -/
+@[simp]
+theorem degree_rename_toLex_det_submatrix_mvPolynomialX [Nontrivial R] {r : ι → m}
+    {c : ι → n} (hr : StrictMono r) (hc : StrictMono c) :
+    lex.degree (rename toLex ((mvPolynomialX m n R).submatrix r c).det) =
+      ∑ i, Finsupp.single (toLex (r i, c i)) 1 :=
+  lex.toSyn.injective <| le_antisymm
+    (lex.degree_le_iff.2 fun _ ↦ le_of_mem_support_rename_toLex_det_submatrix_mvPolynomialX hr hc)
+    (lex.le_degree <| by
+      rw [mem_support_iff, coeff_rename_toLex_det_submatrix_mvPolynomialX hr hc]
+      exact one_ne_zero)
+
+/-- For the lexicographic order on the variables `X (i, j)` ordered row by row, a minor of the
+generic matrix on sorted rows and sorted columns is monic. -/
+@[simp]
+theorem monic_rename_toLex_det_submatrix_mvPolynomialX {r : ι → m} {c : ι → n}
+    (hr : StrictMono r) (hc : StrictMono c) :
+    lex.Monic (rename toLex ((mvPolynomialX m n R).submatrix r c).det) := by
+  nontriviality R
+  rw [Monic, leadingCoeff, degree_rename_toLex_det_submatrix_mvPolynomialX hr hc,
+    coeff_rename_toLex_det_submatrix_mvPolynomialX hr hc]
+
+/-- For the lexicographic order on the variables `X (i, j)` ordered row by row, the leading term
+of a minor of the generic matrix on sorted rows `r` and sorted columns `c` is the product
+`∏ i, X (r i, c i)` of its diagonal entries. -/
+@[simp]
+theorem leadingTerm_rename_toLex_det_submatrix_mvPolynomialX {r : ι → m} {c : ι → n}
+    (hr : StrictMono r) (hc : StrictMono c) :
+    lex.leadingTerm (rename toLex ((mvPolynomialX m n R).submatrix r c).det) =
+      ∏ i, X (toLex (r i, c i)) := by
+  nontriviality R
+  rw [leadingTerm, degree_rename_toLex_det_submatrix_mvPolynomialX hr hc,
+    (monic_rename_toLex_det_submatrix_mvPolynomialX hr hc).leadingCoeff_eq_one, monomial_sum_one]
+  simp [X]
+
+end LeadingTerm
 
 end Matrix

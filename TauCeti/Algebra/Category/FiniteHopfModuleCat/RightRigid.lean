@@ -28,6 +28,8 @@ be bijective. Left duals, which use the inverse of the antipode, are not constru
 * `TauCeti.FiniteHopfModuleCat.dual`: the contragredient of a finite-dimensional module.
 * `TauCeti.FiniteHopfModuleCat.dualEvaluation`: evaluation `dual M ⊗ M ⟶ 𝟙_`.
 * `TauCeti.FiniteHopfModuleCat.dualCoevaluation`: coevaluation `𝟙_ ⟶ M ⊗ dual M`.
+* `TauCeti.FiniteHopfModuleCat.coevaluation_eq_dualCoevaluation`: identifies the chosen
+  right-dual coevaluation with `dualCoevaluation`.
 * `TauCeti.FiniteHopfModuleCat.instRightRigidCategory`: finite-dimensional modules over a Hopf
   algebra form a right rigid monoidal category.
 * `TauCeti.FiniteHopfModuleCat.evaluation_tmul`,
@@ -121,6 +123,11 @@ instance instHasRightDual (M : FiniteHopfModuleCat k H) : HasRightDual M :=
 
 /-- Finite-dimensional modules over a Hopf algebra form a right rigid monoidal category. -/
 instance instRightRigidCategory : RightRigidCategory (FiniteHopfModuleCat k H) where
+
+/-- The chosen right-dual coevaluation is the named contragredient coevaluation. -/
+-- Keep this as a named rewrite so the generic exact-pairing zigzag simp rules still match.
+theorem coevaluation_eq_dualCoevaluation (M : FiniteHopfModuleCat k H) :
+    η_ M Mᘁ = dualCoevaluation M := (rfl)
 
 /-- Evaluation of the right dual applies the functional to the vector. -/
 @[simp]
