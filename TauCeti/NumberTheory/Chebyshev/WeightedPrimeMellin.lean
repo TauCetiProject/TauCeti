@@ -38,9 +38,10 @@ both by the elementary bound `‖weightedPrimeSum a t‖ ≤ (1 + log t)²`.
 * `TauCeti.weightedPrimeSum_add`, `TauCeti.weightedPrimeSum_smul`, `TauCeti.weightedPrimeSum_neg`,
   `TauCeti.weightedPrimeSum_sub`: linearity in the weights;
 * `TauCeti.norm_weightedPrimeSum_le`: `‖weightedPrimeSum a t‖ ≤ (1 + log t)²` when `‖a p‖ ≤ 1`;
-* `TauCeti.smul_intervalIntegral_weightedPrimeSum`: the finite-cutoff partial summation formula;
-* `TauCeti.integrableOn_weightedPrimeSum`: Bochner integrability of `t^(-1-η) • A(t)` on
-  `(1, ∞)`;
+* `TauCeti.smul_intervalIntegral_rpow_smul_weightedPrimeSum`: the finite-cutoff partial summation
+  formula;
+* `TauCeti.integrableOn_rpow_smul_weightedPrimeSum`: Bochner integrability of `t^(-1-η) • A(t)`
+  on `(1, ∞)`;
 * `TauCeti.summable_weightedPrimeSeries`, `TauCeti.hasSum_weightedPrimeSeries`,
   `TauCeti.tsum_weightedPrimeSeries`: summability of `Σ_p (log p / p^(1+η)) • a p` over
   `Nat.Primes` and the Mellin identity.
@@ -63,7 +64,7 @@ noncomputable def weightedPrimeSum (a : ℕ → E) (x : ℝ) : E :=
 theorem weightedPrimeSum_def (a : ℕ → E) (x : ℝ) :
     weightedPrimeSum a x = ∑ p ∈ Nat.primesLE ⌊x⌋₊, (log p / p) • a p := (rfl)
 
-@[simp] theorem weightedPrimeSum_natCast (a : ℕ → E) (n : ℕ) :
+theorem weightedPrimeSum_natCast (a : ℕ → E) (n : ℕ) :
     weightedPrimeSum a n = ∑ p ∈ Nat.primesLE n, (log p / p) • a p := by
   rw [weightedPrimeSum_def, Nat.floor_natCast]
 
@@ -165,7 +166,7 @@ theorem norm_weightedPrimeSum_le {a : ℕ → E} (ha : ∀ p, p.Prime → ‖a p
 /-! ### Partial summation at a finite cutoff -/
 
 /-- On `[n, n + 1]` the weighted integrand agrees almost everywhere with `t^(-1-η) • A(n)`. -/
-private theorem ae_weightedPrimeSum_eq (a : ℕ → E) (η : ℝ) (n : ℕ) :
+private theorem ae_rpow_smul_weightedPrimeSum_eq (a : ℕ → E) (η : ℝ) (n : ℕ) :
     ∀ᵐ t ∂volume, t ∈ Ι (n : ℝ) (n + 1) →
       t ^ (-1 - η) • weightedPrimeSum a t = t ^ (-1 - η) • weightedPrimeSum a n := by
   filter_upwards [Measure.ae_ne volume ((n : ℝ) + 1)] with t hne ht
@@ -173,18 +174,19 @@ private theorem ae_weightedPrimeSum_eq (a : ℕ → E) (η : ℝ) (n : ℕ) :
   rw [weightedPrimeSum_of_mem_Ico a ⟨ht.1.le, lt_of_le_of_ne ht.2 hne⟩]
 
 /-- The weighted integrand is interval integrable on each step `[n, n + 1]` with `n ≥ 1`. -/
-theorem intervalIntegrable_weightedPrimeSum_succ (a : ℕ → E) (η : ℝ) {n : ℕ} (hn : 1 ≤ n) :
+theorem intervalIntegrable_rpow_smul_weightedPrimeSum_succ (a : ℕ → E) (η : ℝ) {n : ℕ}
+    (hn : 1 ≤ n) :
     IntervalIntegrable (fun t ↦ t ^ (-1 - η) • weightedPrimeSum a t) volume n (n + 1) := by
   have hn0 : (0 : ℝ) < n := by exact_mod_cast hn
-  refine (ContinuousOn.intervalIntegrable ?_).congr_ae
-    (EventuallyEq.symm ((ae_restrict_iff' measurableSet_uIoc).2 (ae_weightedPrimeSum_eq a η n)))
+  refine (ContinuousOn.intervalIntegrable ?_).congr_ae (EventuallyEq.symm
+    ((ae_restrict_iff' measurableSet_uIoc).2 (ae_rpow_smul_weightedPrimeSum_eq a η n)))
   refine ContinuousOn.smul (fun t ht ↦ ?_) continuousOn_const
   refine (continuousAt_rpow_const _ _ (Or.inl ?_)).continuousWithinAt
   rw [uIcc_of_le (by linarith)] at ht
   exact (hn0.trans_le ht.1).ne'
 
 /-- The weighted integrand is interval integrable on `[1, n]`. -/
-theorem intervalIntegrable_weightedPrimeSum (a : ℕ → E) (η : ℝ) (n : ℕ) :
+theorem intervalIntegrable_rpow_smul_weightedPrimeSum (a : ℕ → E) (η : ℝ) (n : ℕ) :
     IntervalIntegrable (fun t ↦ t ^ (-1 - η) • weightedPrimeSum a t) volume 1 n := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · refine (intervalIntegrable_const (c := (0 : E))).congr_ae
@@ -195,15 +197,15 @@ theorem intervalIntegrable_weightedPrimeSum (a : ℕ → E) (η : ℝ) (n : ℕ)
   | base => simp
   | succ n hn ih =>
     push_cast
-    exact ih.trans (intervalIntegrable_weightedPrimeSum_succ a η hn)
+    exact ih.trans (intervalIntegrable_rpow_smul_weightedPrimeSum_succ a η hn)
 
 /-- The integral over one step `[n, n + 1]`. -/
-private theorem integral_weightedPrimeSum_succ [CompleteSpace E] (a : ℕ → E) {η : ℝ}
-    (hη : η ≠ 0) {n : ℕ} (hn : 1 ≤ n) :
+private theorem integral_rpow_smul_weightedPrimeSum_succ [CompleteSpace E] (a : ℕ → E)
+    {η : ℝ} (hη : η ≠ 0) {n : ℕ} (hn : 1 ≤ n) :
     ∫ t in (n : ℝ)..(n + 1), t ^ (-1 - η) • weightedPrimeSum a t =
       (((n : ℝ) ^ (-η) - ((n : ℝ) + 1) ^ (-η)) / η) • weightedPrimeSum a n := by
   have hn0 : (0 : ℝ) < n := by exact_mod_cast hn
-  rw [intervalIntegral.integral_congr_ae (ae_weightedPrimeSum_eq a η n),
+  rw [intervalIntegral.integral_congr_ae (ae_rpow_smul_weightedPrimeSum_eq a η n),
     intervalIntegral.integral_smul_const, integral_rpow (Or.inr ⟨?_, ?_⟩)]
   · congr 1
     rw [show -1 - η + 1 = -η by ring, div_neg, ← neg_div, neg_sub]
@@ -212,15 +214,10 @@ private theorem integral_weightedPrimeSum_succ [CompleteSpace E] (a : ℕ → E)
   · rw [uIcc_of_le (by linarith)]
     exact fun h ↦ hn0.not_ge h.1
 
-private theorem rpow_neg_mul_log_div {x η : ℝ} (hx : 0 < x) :
-    x ^ (-η) * (log x / x) = log x / x ^ (1 + η) := by
-  rw [rpow_add hx, rpow_one, rpow_neg hx.le]
-  field_simp
-
 /-- **Partial summation at a finite cutoff**: for `n ≥ 1`,
 `η ∫_1^n t^(-1-η) • A(t) dt = Σ_{p ≤ n} (log p / p^(1+η)) • a p - n^(-η) • A(n)`. -/
-theorem smul_intervalIntegral_weightedPrimeSum [CompleteSpace E] (a : ℕ → E) {η : ℝ}
-    (hη : η ≠ 0) {n : ℕ} (hn : 1 ≤ n) :
+theorem smul_intervalIntegral_rpow_smul_weightedPrimeSum [CompleteSpace E] (a : ℕ → E)
+    {η : ℝ} (hη : η ≠ 0) {n : ℕ} (hn : 1 ≤ n) :
     η • ∫ t in (1 : ℝ)..n, t ^ (-1 - η) • weightedPrimeSum a t =
       ∑ p ∈ Nat.primesLE n, (log p / (p : ℝ) ^ (1 + η)) • a p -
         (n : ℝ) ^ (-η) • weightedPrimeSum a n := by
@@ -229,9 +226,9 @@ theorem smul_intervalIntegral_weightedPrimeSum [CompleteSpace E] (a : ℕ → E)
   | succ n hn ih =>
     push_cast
     rw [← intervalIntegral.integral_add_adjacent_intervals
-      (intervalIntegrable_weightedPrimeSum a η n)
-      (intervalIntegrable_weightedPrimeSum_succ a η hn), smul_add, ih,
-      integral_weightedPrimeSum_succ a hη hn, smul_smul, mul_div_cancel₀ _ hη]
+      (intervalIntegrable_rpow_smul_weightedPrimeSum a η n)
+      (intervalIntegrable_rpow_smul_weightedPrimeSum_succ a η hn), smul_add, ih,
+      integral_rpow_smul_weightedPrimeSum_succ a hη hn, smul_smul, mul_div_cancel₀ _ hη]
     have h := weightedPrimeSum_natCast_succ a n
     push_cast at h
     rw [h, Nat.primesLE_succ]
@@ -246,42 +243,10 @@ theorem smul_intervalIntegral_weightedPrimeSum [CompleteSpace E] (a : ℕ → E)
 
 /-! ### The limit of the cutoff -/
 
-/-- `(1 + log t)² ≤ exp(η/2) (4/η)² t^(η/2)` for `t ≥ 1`, from `log(e t) ≤ (e t)^(η/4) / (η/4)`. -/
-private theorem one_add_log_sq_le {η t : ℝ} (hη : 0 < η) (ht : 1 ≤ t) :
-    (1 + log t) ^ 2 ≤ exp (η / 2) * (4 / η) ^ 2 * t ^ (η / 2) := by
-  have ht0 : 0 < t := by linarith
-  have h0 : 0 ≤ 1 + log t := by linarith [log_nonneg ht]
-  have h1 : 1 + log t ≤ (exp 1 * t) ^ (η / 4) / (η / 4) := by
-    have he : 1 + log t = log (exp 1 * t) := by rw [log_mul (exp_pos 1).ne' ht0.ne', log_exp]
-    rw [he]
-    exact log_le_rpow_div (by positivity) (by positivity)
-  calc (1 + log t) ^ 2 ≤ ((exp 1 * t) ^ (η / 4) / (η / 4)) ^ 2 := pow_le_pow_left₀ h0 h1 2
-    _ = exp (η / 2) * (4 / η) ^ 2 * t ^ (η / 2) := by
-      rw [div_pow, ← rpow_natCast ((exp 1 * t) ^ (η / 4)), ← rpow_mul (by positivity),
-        mul_rpow (exp_pos 1).le ht0.le, exp_one_rpow]
-      push_cast
-      rw [show η / 4 * 2 = η / 2 by ring]
-      field_simp
-
-/-- The majorant `t^(-1-η) (1 + log t)²` is integrable on `(1, ∞)` for `η > 0`. -/
-private theorem integrableOn_rpow_mul_one_add_log_sq {η : ℝ} (hη : 0 < η) :
-    IntegrableOn (fun t ↦ t ^ (-1 - η) * (1 + log t) ^ 2) (Ioi 1) := by
-  refine ((integrableOn_Ioi_rpow_of_lt (a := -1 - η / 2) (by linarith) zero_lt_one).const_mul
-    (exp (η / 2) * (4 / η) ^ 2)).mono' (by fun_prop) ?_
-  refine (ae_restrict_iff' measurableSet_Ioi).2 (ae_of_all _ fun t ht ↦ ?_)
-  have ht0 : 0 < t := zero_lt_one.trans ht
-  rw [norm_mul, norm_of_nonneg (rpow_nonneg ht0.le _), norm_of_nonneg (sq_nonneg _)]
-  calc t ^ (-1 - η) * (1 + log t) ^ 2
-      ≤ t ^ (-1 - η) * (exp (η / 2) * (4 / η) ^ 2 * t ^ (η / 2)) :=
-        mul_le_mul_of_nonneg_left (one_add_log_sq_le hη (le_of_lt ht)) (rpow_nonneg ht0.le _)
-    _ = exp (η / 2) * (4 / η) ^ 2 * t ^ (-1 - η / 2) := by
-        rw [mul_left_comm, ← rpow_add ht0]
-        ring_nf
-
 /-- For weights bounded by `1` on primes and `η > 0`, `t ↦ t^(-1-η) • A(t)` is Bochner integrable
 on `(1, ∞)`. -/
-theorem integrableOn_weightedPrimeSum {a : ℕ → E} (ha : ∀ p, p.Prime → ‖a p‖ ≤ 1) {η : ℝ}
-    (hη : 0 < η) :
+theorem integrableOn_rpow_smul_weightedPrimeSum {a : ℕ → E} (ha : ∀ p, p.Prime → ‖a p‖ ≤ 1)
+    {η : ℝ} (hη : 0 < η) :
     IntegrableOn (fun t ↦ t ^ (-1 - η) • weightedPrimeSum a t) (Ioi 1) := by
   have hg := integrableOn_rpow_mul_one_add_log_sq hη
   have hbound : ∀ t ∈ Ioi (1 : ℝ),
@@ -296,7 +261,7 @@ theorem integrableOn_weightedPrimeSum {a : ℕ → E} (ha : ∀ p, p.Prime → �
     · rw [Ioc_eq_empty (not_lt.2 h)]
       exact integrableOn_empty
     · exact (intervalIntegrable_iff_integrableOn_Ioc_of_le h).1
-        (intervalIntegrable_weightedPrimeSum a η n)
+        (intervalIntegrable_rpow_smul_weightedPrimeSum a η n)
   refine integrableOn_Ioi_of_intervalIntegral_norm_bounded
     (∫ t in Ioi 1, t ^ (-1 - η) * (1 + log t) ^ 2) 1 hfi tendsto_natCast_atTop_atTop ?_
   filter_upwards [eventually_ge_atTop 1] with n hn
@@ -372,12 +337,13 @@ theorem hasSum_weightedPrimeSeries [CompleteSpace E] {a : ℕ → E}
       hf.hasSum.tendsto_sum_nat.comp (tendsto_add_atTop_nat 1)
   have h2 : Tendsto (fun n : ℕ ↦ ∑ p ∈ Nat.primesLE n, (log p / (p : ℝ) ^ (1 + η)) • a p)
       atTop (𝓝 (mellinWeightIntegral η (weightedPrimeSum a))) := by
-    have hI := ((intervalIntegral_tendsto_integral_Ioi 1 (integrableOn_weightedPrimeSum ha hη)
-      tendsto_natCast_atTop_atTop).const_smul η).add (tendsto_rpow_neg_smul_weightedPrimeSum ha hη)
+    have hI := ((intervalIntegral_tendsto_integral_Ioi 1
+      (integrableOn_rpow_smul_weightedPrimeSum ha hη) tendsto_natCast_atTop_atTop).const_smul
+        η).add (tendsto_rpow_neg_smul_weightedPrimeSum ha hη)
     rw [add_zero, ← mellinWeightIntegral_def] at hI
     refine hI.congr' ?_
     filter_upwards [eventually_ge_atTop 1] with n hn
-    rw [smul_intervalIntegral_weightedPrimeSum a hη.ne' hn, sub_add_cancel]
+    rw [smul_intervalIntegral_rpow_smul_weightedPrimeSum a hη.ne' hn, sub_add_cancel]
   rw [← tendsto_nhds_unique h1 h2]
   exact hasSum_subtype_iff_indicator.2 hf.hasSum
 
