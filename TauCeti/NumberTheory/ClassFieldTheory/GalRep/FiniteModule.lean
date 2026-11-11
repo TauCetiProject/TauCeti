@@ -26,12 +26,20 @@ variable (K : Type) [Field K] (M : Type) [AddCommGroup M] [TopologicalSpace M]
   [DiscreteTopology M] [DistribMulAction (AbsoluteGaloisGroup K) M]
   [ContinuousSMul (AbsoluteGaloisGroup K) M] [Finite M]
 
+-- Keep the scalar structure shared by the representation and its smoothness proof local.
+private abbrev finiteModuleZModModule : Module (ZMod (Nat.card M)) M :=
+  AddCommGroup.zmodModule (fun _ ↦ card_nsmul_eq_zero')
+
+attribute [local instance] finiteModuleZModModule
+
+private abbrev finiteModuleContinuousSMul : ContinuousSMul (ZMod (Nat.card M)) M :=
+  ⟨continuous_of_discreteTopology⟩
+
+attribute [local instance] finiteModuleContinuousSMul
+
 /-- A finite discrete Galois module as a representation over `ZMod (Nat.card M)`,
 with the algebraic-closure Galois group acting by restriction to the separable closure. -/
 def finiteModuleRep : GalRep (Nat.card M) K :=
-  let : Module (ZMod (Nat.card M)) M := AddCommGroup.zmodModule
-    (fun _ ↦ card_nsmul_eq_zero')
-  let : ContinuousSMul (ZMod (Nat.card M)) M := ⟨continuous_of_discreteTopology⟩
   TopRep.res
     (absoluteGaloisGroupRestrictEquiv K : Field.absoluteGaloisGroup K →* AbsoluteGaloisGroup K)
     (ofDiscreteModule (ZMod (Nat.card M)) (AbsoluteGaloisGroup K) M)
@@ -47,6 +55,17 @@ instance : Finite (finiteModuleRep K M).V := inferInstanceAs (Finite M)
 `TopRep.res` and `ofDiscreteModule` retain the carrier, so this map is the identity. -/
 def finiteModuleEquivRep : M ≃+ (finiteModuleRep K M).V := AddEquiv.refl _
 
+-- The carrier stays unexposed, so its identity dictionary is characterized heterogeneously.
+omit [ContinuousSMul (AbsoluteGaloisGroup K) M] [Finite M] in
+@[simp]
+theorem finiteModuleEquivRep_apply (x : M) :
+    HEq (finiteModuleEquivRep K M x) x := (HEq.rfl)
+
+omit [ContinuousSMul (AbsoluteGaloisGroup K) M] [Finite M] in
+@[simp]
+theorem finiteModuleEquivRep_symm_apply (x : (finiteModuleRep K M).V) :
+    HEq ((finiteModuleEquivRep K M).symm x) x := (HEq.rfl)
+
 attribute [local instance] TopRep.distribMulAction
 
 omit [ContinuousSMul (AbsoluteGaloisGroup K) M] [Finite M] in
@@ -61,12 +80,6 @@ theorem finiteModuleEquivRep_smul (g : Field.absoluteGaloisGroup K) (x : M) :
 
 /-- Continuity of the original action makes the associated representation smooth discrete. -/
 instance : Fact (IsSmoothDiscrete (ZMod (Nat.card M)) (finiteModuleRep K M)) := by
-  -- These local instances reproduce those in `finiteModuleRep`: the module uses the same
-  -- `AddCommGroup.zmodModule` construction, and the continuity proofs are proof-irrelevant.
-  -- Unfolding `finiteModuleRep` therefore gives exactly the restricted representation below.
-  let : Module (ZMod (Nat.card M)) M := AddCommGroup.zmodModule
-    (fun _ ↦ card_nsmul_eq_zero')
-  let : ContinuousSMul (ZMod (Nat.card M)) M := ⟨continuous_of_discreteTopology⟩
   exact ⟨(ofDiscreteModule_isSmoothDiscrete (ZMod (Nat.card M))
     (AbsoluteGaloisGroup K) M).res (absoluteGaloisGroupRestrictEquiv K).continuous⟩
 
