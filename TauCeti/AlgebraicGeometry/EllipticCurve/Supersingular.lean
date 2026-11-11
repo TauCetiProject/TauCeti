@@ -15,8 +15,6 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Torsion.AlgClo
 -- Proof-only: over an algebraically closed field, the `2`- and `3`-torsion in characteristic `2`
 -- and `3`, read off the roots of `ΨSqₙ`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Torsion.Roots
--- Proof-only: an elliptic curve has infinitely many points over an algebraically closed field.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
 
 /-!
 # Supersingular and ordinary Weierstrass curves
