@@ -102,8 +102,7 @@ the unparametrized trajectories between distinct critical points `a` and `b`, if
 form a smooth manifold of dimension `ind a - ind b - 1`. Its charts are those of a level slice,
 transported along `TauCeti.IsAdaptedPseudoGradient.exists_orbitQuotient_homeomorph_levelSlice`.
 -/
-theorem exists_isManifold_orbitQuotient (ha : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f a = 0)
-    (hb : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f b = 0) (hab : a ≠ b)
+theorem exists_isManifold_orbitQuotient (hab : a ≠ b)
     (hne : (hX.flow.unstableSet a ∩ hX.flow.stableSet b).Nonempty) :
     ∃ L : Submodule ℝ E,
       Module.finrank ℝ L + manifoldMorseIndex 𝓘(ℝ, E) f b + 1 =
@@ -114,7 +113,7 @@ theorem exists_isManifold_orbitQuotient (ha : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f a
   have hmd : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
   obtain ⟨y, hy⟩ := hne
   have hc := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hmd hab hy
-  obtain ⟨L, hL, C, hC, -⟩ := h.exists_unstableSet_inter_stableSet_level_isManifold hf ha hb hab
+  obtain ⟨L, hL, C, hC, -⟩ := h.exists_unstableSet_inter_stableSet_level_isManifold hf hab
     ⟨y, hy, rfl⟩
   obtain ⟨e, -⟩ := hX.exists_orbitQuotient_homeomorph_levelSlice hmd hab hc
   let := C

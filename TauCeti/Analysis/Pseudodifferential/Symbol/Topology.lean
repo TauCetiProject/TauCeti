@@ -139,7 +139,7 @@ private theorem seminormAux_smul_le (K : Compacts (CoordinateSpace n)) (α β : 
   seminormAux_le_bound K α β _ (mul_nonneg (norm_nonneg c) (seminormAux_nonneg K α β a))
     fun x hx ξ => by
       rw [coefficient_smul]
-      exact norm_mixedDeriv_smul_le a.contDiff_coefficient c (le_seminormAux K α β a hx ξ)
+      exact norm_mixedDeriv_smul_le c (le_seminormAux K α β a hx ξ)
 
 /-- The seminorm `p_{K,α,β}` on the symbols of order `m`: the best constant `C` in the estimate
 `‖∂_x^α ∂_ξ^β a(x, ξ)‖ ≤ C ⟨ξ⟩^(m - |β|)` for all positions `x ∈ K` and all frequencies `ξ`,
@@ -381,7 +381,7 @@ def mixedDerivCLM (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
   let L : Symbol n V W m →ₗ[ℂ] V →L[ℂ] W :=
     { toFun a := mixedDeriv α β a.coefficient x ξ
       map_add' a b := mixedDeriv_add a.contDiff_coefficient b.contDiff_coefficient α β x ξ
-      map_smul' c a := mixedDeriv_const_smul a.contDiff_coefficient c α β x ξ }
+      map_smul' c a := mixedDeriv_const_smul c α β x ξ }
   { toLinearMap := L
     cont := WithSeminorms.continuous_of_isBounded withSeminorms (norm_withSeminorms ℂ _) L
       (Seminorm.IsBounded.of_real fun _ => ⟨{({x}, α, β)},

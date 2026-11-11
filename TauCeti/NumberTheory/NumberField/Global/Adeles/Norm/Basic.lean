@@ -211,6 +211,7 @@ theorem infiniteAdeleNorm_apply (x : InfiniteAdeleRing L) (v : InfinitePlace K) 
       ∏ᶠ w : {w : InfinitePlace L // w.LiesOver v}, Algebra.norm v.Completion (x w.1) :=
   (rfl)
 
+omit [NumberField K] in
 /-- The infinite adele norm extends the norm of `L / K` along the diagonal embeddings. -/
 @[simp]
 theorem infiniteAdeleNorm_algebraMap (x : L) :
@@ -222,6 +223,7 @@ theorem infiniteAdeleNorm_algebraMap (x : L) :
   -- The diagonal components are the images of `x` and `N_{L/K}(x)` in the completions.
   exact (algebraMap_norm_eq_prod_norm_infiniteCompletion L v x).symm
 
+omit [NumberField K] in
 /-- The norm of an infinite adele extended from `K` is its `[L : K]`-th power. -/
 @[simp]
 theorem infiniteAdeleNorm_infiniteAdeleExtension (a : InfiniteAdeleRing K) :

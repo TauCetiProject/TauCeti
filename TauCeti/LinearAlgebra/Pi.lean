@@ -85,6 +85,22 @@ public theorem disjoint_pi_compl_bot_of_disjoint {R ι : Type*} {M : ι → Type
     · exact ht i (Set.disjoint_left.mp h hi)
     · exact hs i hi
 
+/-- **Infinitely many submodules.** For an infinite index type, `ι → R` has infinitely many
+submodules over a nontrivial semiring `R`: the lines spanned by the coordinate vectors are
+pairwise distinct. -/
+public theorem infinite_pi_of_infinite {R ι : Type*} [Semiring R] [Nontrivial R] [Infinite ι] :
+    Infinite (Submodule R (ι → R)) := by
+  classical
+  refine Infinite.of_injective (fun i => span R {Pi.single i (1 : R)}) fun i j h => ?_
+  simp only at h
+  by_contra hij
+  have hmem : (Pi.single i (1 : R) : ι → R) ∈ span R {Pi.single j (1 : R)} := by
+    rw [← h]
+    exact subset_span rfl
+  obtain ⟨a, ha⟩ := mem_span_singleton.mp hmem
+  have := congrFun ha i
+  simp [hij] at this
+
 end Submodule
 
 namespace LinearEquiv

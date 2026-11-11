@@ -239,7 +239,7 @@ private theorem center_mem_closure_component_iff (hp : IsCoveringMap p)
     have hU : U ∈ 𝓝 (PunctureFilling.center (chart p) j) := by
       apply (PunctureFilling.hasBasis_nhds_center
         (fun i ↦ (isOpenEmbedding_chart hp hfin i).continuous)
-        (isOpenEmbedding_chart hp hfin j)).mem_iff.2
+        (isOpenEmbedding_chart hp hfin j).isOpenMap).mem_iff.2
       exact ⟨1, zero_lt_one, Subset.rfl⟩
     obtain ⟨z, hzU, x, ⟨hx, hc⟩, hzx⟩ := (mem_closure_iff_nhds.1 hclosure U hU)
     obtain ⟨d, -, rfl⟩ := hzU

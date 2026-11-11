@@ -9,7 +9,7 @@ public import TauCeti.Topology.VectorBundle.Density
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 import Mathlib.Geometry.Manifold.Algebra.SMul
-import TauCeti.Analysis.Calculus.FDeriv.Det
+import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-!
@@ -47,6 +47,7 @@ namespace Bundle.Trivialization
 variable (e e' : Trivialization F (π F V)) [MemTrivializationAtlas e]
   [MemTrivializationAtlas e']
 
+omit [FiniteDimensional ℝ F] in
 /-- Density transitions have the regularity of the vector-bundle transitions, since their
 absolute determinants are evaluated only at invertible maps. -/
 theorem contMDiffOn_densityCoordChange :

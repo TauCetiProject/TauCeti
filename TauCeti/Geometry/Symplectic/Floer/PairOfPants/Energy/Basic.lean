@@ -206,7 +206,7 @@ theorem abs_integral_floerEnergyDensity_pairOfPantsEndComponent_sub_le (ω : Sym
   have hb : 0 < q.endSign * b.1 := hmem ⟨hab, le_rfl⟩
   -- On `U`, the components are those of the smooth continuation datum `β(±s - 1) H_q(t) dt`.
   have hKs : ContDiffOn ℝ 1 (uncurry (pairOfPantsEndComponent H q 1)) (U ×ˢ univ) :=
-    contDiffOn_const.congr fun p hp ↦ pairOfPantsEndComponent_one_of_pos hH (hUq hp.1) p.2
+    contDiffOn_const.congr fun p hp ↦ pairOfPantsEndComponent_one_of_pos (hUq hp.1) p.2
   have hKt : ContDiffOn ℝ 1 (uncurry (pairOfPantsEndComponent H q I)) (U ×ˢ univ) := by
     refine ContDiffOn.congr ?_ fun p hp ↦ pairOfPantsEndComponent_I_of_pos hH (hUq hp.1) p.2
     exact ((smoothTransition.contDiff.comp ((contDiff_const.mul (contDiff_fst.comp
@@ -217,12 +217,12 @@ theorem abs_integral_floerEnergyDensity_pairOfPantsEndComponent_sub_le (ω : Sym
   have hs₁ : ∫ s in a.1..b.1, pairOfPantsEndComponent H q 1 (s, a.2) (u (s, a.2)) = 0 :=
     intervalIntegral.integral_zero_ae (.of_forall fun s hs ↦ by
       rw [uIoc_of_le hab.1] at hs
-      exact pairOfPantsEndComponent_one_of_pos hH (hmem (z := (s, a.2))
+      exact pairOfPantsEndComponent_one_of_pos (hmem (z := (s, a.2))
         ⟨⟨hs.1.le, le_rfl⟩, ⟨hs.2, hab.2⟩⟩) _)
   have hs₂ : ∫ s in a.1..b.1, pairOfPantsEndComponent H q 1 (s, b.2) (u (s, b.2)) = 0 :=
     intervalIntegral.integral_zero_ae (.of_forall fun s hs ↦ by
       rw [uIoc_of_le hab.1] at hs
-      exact pairOfPantsEndComponent_one_of_pos hH (hmem (z := (s, b.2))
+      exact pairOfPantsEndComponent_one_of_pos (hmem (z := (s, b.2))
         ⟨⟨hs.1.le, hab.2⟩, ⟨hs.2, le_rfl⟩⟩) _)
   have ht₁ : ∫ t in a.2..b.2, pairOfPantsEndComponent H q I (b.1, t) (u (b.1, t)) =
       ∫ t in a.2..b.2, smoothTransition (q.endSign * b.1 - 1) * H q t (u (b.1, t)) :=
