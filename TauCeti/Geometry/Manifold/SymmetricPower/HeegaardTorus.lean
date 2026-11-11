@@ -72,12 +72,6 @@ variable {α : Type*} [TopologicalSpace α] [ChartedSpace ℂ α]
 
 /-! ### Reading the torus and the curves in charts -/
 
-/-- The chart of the torus `(S¹)ⁿ` at `x` lifts each angle of `x` to `ℝ`. -/
-private theorem coe_extChartAt_pi_self (x : Fin n → AddCircle p) (i : Fin n) :
-    ((extChartAt (ModelWithCorners.pi fun _ : Fin n => 𝓘(ℝ)) x x i : ℝ) : AddCircle p) = x i := by
-  rw [extChartAt_pi_apply]
-  simpa using AddCircle.coe_apply_of_mem_atlas (chart_mem_atlas ℝ (x i)) (mem_chart_source ℝ (x i))
-
 /-- In the chart of the torus `(S¹)ⁿ` at `x`, which lifts the angles to `ℝ`, and the
 elementary-symmetric chart at the image, a map `f` into the symmetric power reads as
 `u ↦ f ([u₁], …, [uₙ])`. -/
@@ -94,37 +88,10 @@ private theorem writtenInExtChartAt_eventuallyEq [T2Space α] (x : Fin n → Add
   have hsymm : (extChartAt (ModelWithCorners.pi fun _ : Fin n => 𝓘(ℝ)) x).symm u =
       fun i => (u i : AddCircle p) := by
     rw [extChartAt_pi] at hu ⊢
-    funext i
-    have hui : u i ∈ (chartAt ℝ (x i)).target := by simpa using hu i (mem_univ i)
-    simpa using AddCircle.symm_apply_of_coe_apply
-      (fun y hy => AddCircle.coe_apply_of_mem_atlas (chart_mem_atlas ℝ (x i)) hy) hui
+    rw [PartialEquiv.pi_symm_apply]
+    exact funext fun i => AddCircle.extChartAt_symm_apply (x i) (hu i (mem_univ i))
   simp only [writtenInExtChartAt, Function.comp_apply, hsymm]
   simp
-
-/-- A `C^k` map out of the circle, precomposed with the quotient map `ℝ → S¹` and read in a chart
-of its target, is `C^k`. -/
-private theorem contDiffAt_chartAt_comp_coe {k : ℕ∞ω} {f : AddCircle p → α} {t : ℝ}
-    (hf : ContMDiffAt 𝓘(ℝ) 𝓘(ℝ, ℂ) k f t) :
-    ContDiffAt ℝ k (fun s : ℝ => chartAt ℂ (f t) (f s)) t := by
-  have h := (contMDiffAt_iff.1 (hf.comp t ((AddCircle.contMDiff_coe p k) t))).2
-  simpa [Function.comp_def, contDiffWithinAt_univ] using h
-
-/-- A map out of the circle with derivative `L`, precomposed with the quotient map `ℝ → S¹` and
-read in a chart of its target, has derivative `L`. -/
-private theorem hasFDerivAt_chartAt_comp_coe {f : AddCircle p → α} {t : ℝ} {L : ℝ →L[ℝ] ℂ}
-    (hf : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ, ℂ) f t L) :
-    HasFDerivAt (fun s : ℝ => chartAt ℂ (f t) (f s)) L t := by
-  have h := (hf.comp t (AddCircle.hasMFDerivAt_coe p t)).2
-  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_symm,
-    PartialEquiv.refl_coe, Function.comp_id, modelWithCornersSelf_coe, range_id,
-    hasFDerivWithinAt_univ] at h
-  -- The tangent spaces are the model spaces, and the casts between them are identities.
-  convert h using 1
-  · funext s
-    simp
-  · ext
-    rfl
-  · rfl
 
 omit [TopologicalSpace α] [ChartedSpace ℂ α] in
 /-- At the lifts of the angles of `x`, curves with pairwise disjoint ranges pass through pairwise
@@ -135,7 +102,7 @@ private theorem injective_apply_coe_extChartAt_pi_self
       γ i ((extChartAt (ModelWithCorners.pi fun _ : Fin n => 𝓘(ℝ)) x x i : ℝ) : AddCircle p) := by
   intro i j h
   by_contra hij
-  simp only [coe_extChartAt_pi_self] at h
+  simp only [extChartAt_pi_apply, AddCircle.coe_extChartAt_self] at h
   exact disjoint_left.1 (hdisj hij) (mem_range_self (x i)) ⟨x j, h.symm⟩
 
 /-- At the lifts of the angles of `x`, the curves give the tuple at `x`, which lies in the source of
@@ -144,7 +111,7 @@ private theorem ofFn_apply_coe_extChartAt_pi_self_mem_source [T2Space α] (x : F
     (Sym.ofFn fun i =>
       γ i ((extChartAt (ModelWithCorners.pi fun _ : Fin n => 𝓘(ℝ)) x x i : ℝ) : AddCircle p)) ∈
       (symChartAt (K := ℂ) (Sym.ofFn fun i => γ i (x i))).source := by
-  simpa only [coe_extChartAt_pi_self] using
+  simpa only [extChartAt_pi_apply, AddCircle.coe_extChartAt_self] using
     mem_symChartAt_source (K := ℂ) (Sym.ofFn fun i => γ i (x i))
 
 /-! ### Smoothness and total reality -/
@@ -169,7 +136,7 @@ theorem _root_.Sym.contMDiff_ofFn_map {k : ℕ∞ω} (hγ : ∀ i, ContMDiff �
   have hc (i : Fin n) : ContinuousAt (fun t : ℝ => γ i t) (u₀ i) :=
     ((hγ i).continuous.comp (AddCircle.contMDiff_coe p 0).continuous).continuousAt
   have hk (i : Fin n) : ContDiffAt ℝ k (fun t : ℝ => chartAt ℂ (γ i (u₀ i)) (γ i t)) (u₀ i) :=
-    contDiffAt_chartAt_comp_coe ((hγ i).contMDiffAt)
+    AddCircle.contDiffAt_chartAt_comp_coe ((hγ i).contMDiffAt)
   -- In charts, the map is the product of the lifted curves, which is as smooth as they are.
   have hd : ContDiffAt ℝ k (fun u : Fin n → ℝ => symChartAt (K := ℂ)
       (Sym.ofFn fun i => γ i (x i)) (Sym.ofFn fun i => γ i (u i : AddCircle p))) u₀ :=
@@ -205,10 +172,9 @@ theorem _root_.Sym.isMaximalTotallyRealMap_ofFn_map
   -- The velocity of each lifted curve, read in a chart, is its derivative on the unit vector.
   have hv (i : Fin n) : HasDerivAt (fun t : ℝ => chartAt ℂ (γ i (u₀ i)) (γ i t))
       (mfderiv 𝓘(ℝ) 𝓘(ℝ, ℂ) (γ i) (u₀ i) (1 : ℝ)) (u₀ i) :=
-    (hasFDerivAt_chartAt_comp_coe (hdiff i _).hasMFDerivAt).hasDerivAt
-  have hv0 (i : Fin n) : mfderiv 𝓘(ℝ) 𝓘(ℝ, ℂ) (γ i) (u₀ i) (1 : ℝ) ≠ 0 := fun h =>
-    one_ne_zero (show (1 : ℝ) = 0 from
-      hγ i _ (a₁ := (1 : ℝ)) (a₂ := (0 : ℝ)) (h.trans (map_zero _).symm))
+    (AddCircle.hasFDerivAt_chartAt_comp_coe (hdiff i _).hasMFDerivAt).hasDerivAt
+  have hv0 (i : Fin n) : mfderiv 𝓘(ℝ) 𝓘(ℝ, ℂ) (γ i) (u₀ i) (1 : ℝ) ≠ 0 :=
+    ((hγ i (u₀ i)).ne (one_ne_zero' ℝ)).trans_eq (map_zero _)
   -- The derivative of the map is the derivative of its expression in charts.
   have hD := (differentiableAt_symChartAt_ofFn (γ := fun i (t : ℝ) => γ i t) hinj hcont hv
     (Sym.ofFn fun i => γ i (x i)) hs).hasFDerivAt
