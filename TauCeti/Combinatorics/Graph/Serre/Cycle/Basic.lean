@@ -101,6 +101,27 @@ theorem incidenceBoundary_single_eq_zero_iff (R : Type*) [Ring R] [Nontrivial R]
   rw [incidenceBoundary_single, one_smul, sub_eq_zero]
   exact (Finsupp.single_left_inj (one_ne_zero : (1 : R) ≠ 0)).trans eq_comm
 
+/-- The incidence boundary vanishes identically when every chosen dart is a loop. -/
+theorem incidenceBoundary_eq_zero (R : Type*) [Ring R] (h : ∀ e ∈ O, Γ.src e = Γ.tgt e) :
+    Γ.incidenceBoundary O R = 0 := by
+  apply Finsupp.lhom_ext
+  intro e r
+  simp [h e.1 e.2]
+
+/-- Over a nontrivial ring, the incidence boundary vanishes identically exactly when every
+chosen dart is a loop. Thus a single dart that is not a loop excludes zero incidence. -/
+theorem incidenceBoundary_eq_zero_iff (R : Type*) [Ring R] [Nontrivial R] :
+    Γ.incidenceBoundary O R = 0 ↔ ∀ e ∈ O, Γ.src e = Γ.tgt e :=
+  ⟨fun h e he => (incidenceBoundary_single_eq_zero_iff R ⟨e, he⟩).mp (by simp [h]),
+    incidenceBoundary_eq_zero R⟩
+
+/-- The difference of two parallel darts, with the same source and the same target, is a
+cycle over any ring. -/
+theorem single_sub_single_mem_ker_incidenceBoundary (R : Type*) [Ring R] {e f : O}
+    (hsrc : Γ.src f.1 = Γ.src e.1) (htgt : Γ.tgt f.1 = Γ.tgt e.1) :
+    Finsupp.single f (1 : R) - Finsupp.single e 1 ∈ (Γ.incidenceBoundary O R).ker := by
+  simp [hsrc, htgt]
+
 /-- An individual dart is an integral cycle exactly when it is a loop. -/
 theorem single_mem_cycleLattice_iff (e : O) :
     Finsupp.single e (1 : ℤ) ∈ Γ.cycleLattice O ↔ Γ.src e.1 = Γ.tgt e.1 := by

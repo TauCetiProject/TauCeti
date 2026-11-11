@@ -98,4 +98,13 @@ noncomputable def cycleLatticeModTwoEquiv (Γ : SerreGraph) (O : Set Γ.E) :
     (Γ.cycleLatticeModTwoEquiv O (r ⊗ₜ[ℤ] c)).val e = r * (c.val e : ZMod 2) := by
   simp [cycleLatticeModTwoEquiv]
 
+/-- The integral unit cycle on a loop reduces to the binary unit cycle on the same loop. -/
+theorem cycleLatticeModTwoEquiv_one_tmul_single (e : O) (h : Γ.src e.1 = Γ.tgt e.1) :
+    (Γ.cycleLatticeModTwoEquiv O
+      (1 ⊗ₜ[ℤ] ⟨Finsupp.single e 1, (single_mem_cycleLattice_iff e).mpr h⟩)).val =
+        Finsupp.single e 1 := by
+  classical
+  ext f
+  simp [Finsupp.single_apply]
+
 end TauCeti.SerreGraph
