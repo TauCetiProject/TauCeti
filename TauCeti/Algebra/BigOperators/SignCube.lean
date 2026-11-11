@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Expect
 public import Mathlib.Algebra.GroupWithZero.Units.Fintype
 public import Mathlib.Algebra.Module.BigOperators
 public import Mathlib.Algebra.Order.Module.Defs
@@ -27,8 +28,10 @@ noncommutative ring, such as a C⋆-algebra, so products are kept in order throu
 ## Main declarations
 
 * `TauCeti.signAverage f`: the average `2⁻ⁿ ∑_ε f ε` of a function on the sign cube with values
-  in a real vector space. It is linear, fixes constants, commutes with multiplication by a fixed
-  element and with `star`, is monotone, and is bounded in norm by any bound of `f`.
+  in a real vector space. It is linear, fixes constants, is invariant under translating the sign
+  vector, commutes with multiplication by a fixed element and with `star`, is monotone, and is
+  bounded in norm by any bound of `f`. It agrees with Mathlib's `𝔼` whenever both are defined
+  (`TauCeti.signAverage_eq_expect`).
 * `TauCeti.rademacherSum x ε`: the Rademacher sum `∑ᵢ εᵢ • xᵢ`. It is additive and equivariant
   in the coefficient family `x`.
 * `TauCeti.signAverage_units_smul`, `TauCeti.signAverage_units_mul_units_smul`: the first and
@@ -57,6 +60,7 @@ public section
 noncomputable section
 
 open Finset
+open scoped BigOperators
 
 namespace TauCeti
 
@@ -69,6 +73,10 @@ def rademacherSum [AddCommGroup E] (x : ι → E) (ε : ι → ℤˣ) : E :=
 /-- Unfolding lemma for `TauCeti.rademacherSum`. -/
 theorem rademacherSum_def [AddCommGroup E] (x : ι → E) (ε : ι → ℤˣ) :
     rademacherSum x ε = ∑ i, (ε i : ℤ) • x i := (rfl)
+
+/-- The Rademacher sum written with the action of the signs `ℤˣ` themselves. -/
+theorem rademacherSum_eq_sum_units_smul [AddCommGroup E] (x : ι → E) (ε : ι → ℤˣ) :
+    rademacherSum x ε = ∑ i, ε i • x i := (rfl)
 
 /-- The Rademacher sum of the zero family vanishes. -/
 @[simp]
@@ -196,6 +204,24 @@ theorem signAverage_def (f : (ι → ℤˣ) → E) :
 
 private theorem card_signCube_ne_zero : (Fintype.card (ι → ℤˣ) : ℝ) ≠ 0 :=
   Nat.cast_ne_zero.2 Fintype.card_ne_zero
+
+/-- The average over the sign cube is invariant under any permutation of the sign cube. -/
+theorem signAverage_comp_equiv (e : (ι → ℤˣ) ≃ (ι → ℤˣ)) (f : (ι → ℤˣ) → E) :
+    signAverage (fun ε => f (e ε)) = signAverage f := by
+  rw [signAverage_def, signAverage_def, e.sum_comp]
+
+/-- The average over the sign cube is invariant under translating the sign vector. -/
+@[simp]
+theorem signAverage_comp_mul_left (σ : ι → ℤˣ) (f : (ι → ℤˣ) → E) :
+    signAverage (fun ε => f (σ * ε)) = signAverage f :=
+  signAverage_comp_equiv (Equiv.mulLeft σ) f
+
+/-- The average over the sign cube is Mathlib's expectation `𝔼` whenever the latter is
+defined. -/
+theorem signAverage_eq_expect [Module ℚ≥0 E] (f : (ι → ℤˣ) → E) :
+    signAverage f = 𝔼 ε, f ε := by
+  rw [signAverage_def, ← Fintype.card_smul_expect, ← Nat.cast_smul_eq_nsmul ℝ,
+    inv_smul_smul₀ card_signCube_ne_zero]
 
 /-- Averaging a constant function returns the constant. -/
 @[simp]
