@@ -368,9 +368,7 @@ theorem IsRealForm.exists_isRealStructure (h : IsRealForm ρ σ) :
   have hφ : ∀ (g : G) (u : ℂ ⊗[ℝ] W), e (baseChange ℂ σ g u) = ρ g (e u) := fun g u => by
     simpa [he, Equiv.toLinearEquiv_apply] using φ.isIntertwining (g := g) (v := u)
   -- The witness is a composition of semilinear maps; `LinearMap.comp` supplies its map laws.
-  refine ⟨e.toLinearMap ∘ₛₗ (tmulConj W ∘ₛₗ e.symm.toLinearMap), ?_, ?_⟩
-  · intro v
-    simp
+  refine ⟨e.conjugationOfComplexification, e.conjugationOfComplexification_involutive, ?_⟩
   · intro g v
     have hu : tmulConj W (baseChange ℂ σ g (e.symm v))
         = baseChange ℂ σ g (tmulConj W (e.symm v)) := by
@@ -378,7 +376,7 @@ theorem IsRealForm.exists_isRealStructure (h : IsRealForm ρ σ) :
       exact tmulConj_baseChange (σ g) (e.symm v)
     have hsymm : e.symm (ρ g v) = baseChange ℂ σ g (e.symm v) := by
       rw [e.symm_apply_eq, hφ, e.apply_symm_apply]
-    simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe]
+    simp only [LinearEquiv.conjugationOfComplexification_apply]
     rw [hsymm, hu, hφ]
 
 /-- **Realizability over `ℝ` is the existence of a real structure.**  This is the working form of

@@ -49,7 +49,7 @@ For mollification by a nonnegative compactly supported kernel `ρ` of integral `
 records two bounds that need no regularity of the mollified function `u`. One-sided bounds on the
 forward differences of `u` in a direction pass to the directional derivative of `ρ ⋆ u`: this is
 how a nonsmooth subsolution of a Hamilton–Jacobi inequality, such as a Hopf–Lax function, becomes
-a smooth one. And a bounded `u` has a mollification with bounded derivative.
+a smooth one. And a bounded `u` has a mollification with bounded derivative, hence Lipschitz.
 
 ## Main declarations
 
@@ -71,6 +71,8 @@ a smooth one. And a bounded `u` has a mollification with bounded derivative.
   the bound `∂_d (ρ ⋆ u) ≤ c` on the directional derivative.
 * `HasCompactSupport.norm_fderiv_convolution_left_le`: the mollification of a function bounded by
   `M` has derivative bounded by `M * ∫ ‖Dρ‖`.
+* `HasCompactSupport.lipschitzWith_convolution_left`: so it is Lipschitz with constant
+  `M * ∫ ‖Dρ‖`.
 -/
 
 public section
@@ -349,6 +351,7 @@ theorem _root_.HasCompactSupport.fderiv_convolution_left_apply_le (hρc : HasCom
   rw [smul_eq_mul, inv_mul_le_iff₀ hs0]
   linarith
 
+omit [SFinite μ] in
 /-- The mollification `ρ ⋆ u` of a function bounded by `M`, by a `C¹` compactly supported kernel
 `ρ`, has derivative bounded by `M * ∫ ‖Dρ‖`, uniformly in the point. -/
 theorem _root_.HasCompactSupport.norm_fderiv_convolution_left_le [IsFiniteMeasureOnCompacts μ]
@@ -356,6 +359,8 @@ theorem _root_.HasCompactSupport.norm_fderiv_convolution_left_le [IsFiniteMeasur
     (huM : ∀ y, ‖u y‖ ≤ M) (x : G) :
     ‖fderiv ℝ (ρ ⋆[lsmul ℝ ℝ, μ] u) x‖ ≤ M * ∫ y, ‖fderiv ℝ ρ y‖ ∂μ := by
   have hM : 0 ≤ M := (norm_nonneg _).trans (huM 0)
+  obtain rfl | hfd := hρc.eq_zero_or_finiteDimensional ℝ hρ.continuous
+  · simp [zero_convolution]
   refine opNorm_le_bound _ (mul_nonneg hM (integral_nonneg fun y ↦ norm_nonneg _)) fun d ↦ ?_
   have hgi : Integrable (fun y ↦ ‖fderiv ℝ ρ y‖) μ :=
     (hρ.continuous_fderiv one_ne_zero).norm.integrable_of_hasCompactSupport (hρc.fderiv ℝ).norm
@@ -368,6 +373,18 @@ theorem _root_.HasCompactSupport.norm_fderiv_convolution_left_le [IsFiniteMeasur
       _ = ‖fderiv ℝ ρ (x - y)‖ * (M * ‖d‖) := by ring
   · rw [integral_mul_const, integral_sub_left_eq_self (fun y ↦ ‖fderiv ℝ ρ y‖) μ x]
     ring
+
+omit [SFinite μ] in
+/-- The mollification `ρ ⋆ u` of a function bounded by `M`, by a `C¹` compactly supported kernel
+`ρ`, is Lipschitz with constant `M * ∫ ‖Dρ‖`. -/
+theorem _root_.HasCompactSupport.lipschitzWith_convolution_left [IsFiniteMeasureOnCompacts μ]
+    (hρc : HasCompactSupport ρ) (hρ : ContDiff ℝ 1 ρ) {u : G → E'} (hu : LocallyIntegrable u μ)
+    (huM : ∀ y, ‖u y‖ ≤ M) :
+    LipschitzWith (M * ∫ y, ‖fderiv ℝ ρ y‖ ∂μ).toNNReal (ρ ⋆[lsmul ℝ ℝ, μ] u) := by
+  refine lipschitzWith_of_nnnorm_fderiv_le
+    ((hρc.contDiff_convolution_left (lsmul ℝ ℝ) hρ hu).differentiable one_ne_zero) fun x ↦ ?_
+  rw [← NNReal.coe_le_coe, coe_nnnorm]
+  exact (hρc.norm_fderiv_convolution_left_le hρ hu huM x).trans (Real.le_coe_toNNReal _)
 
 end Mollifier
 

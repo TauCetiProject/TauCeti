@@ -394,7 +394,7 @@ private theorem abs_deriv_mul_fisherSnedecorPDFReal (hm : 0 < m) (hn : 0 < n)
   rw [hscale]
   have hsum : m / 2 + n / 2 = (m + n) / 2 := by ring
   rw [← hsum]
-  have hchart := abs_deriv_smul_one_add_rpow (m / 2) (n / 2) hu
+  have hchart := abs_deriv_smul_one_add_rpow (m / 2) (n / 2) hu.2
   simp only [smul_eq_mul, abs_of_pos (inv_pos.mpr (sq_pos_of_pos h1u))] at hchart
   calc
     (n / m) * ((1 - u) ^ 2)⁻¹ *

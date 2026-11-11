@@ -29,32 +29,32 @@ category and abelian structures, instance search does not find the site-level in
 
 public section
 
-namespace TauCeti
+namespace AlgebraicGeometry.Scheme.Modules
 
-open AlgebraicGeometry CategoryTheory Limits
+open AlgebraicGeometry CategoryTheory Limits TauCeti
 
 universe u
 
 variable {X : Scheme.{u}} (M N : X.Modules)
 
 /-- The direct sum of two quasi-coherent `𝒪ₓ`-modules is quasi-coherent. -/
-instance _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_biprod [M.IsQuasicoherent]
+instance isQuasicoherent_biprod [M.IsQuasicoherent]
     [N.IsQuasicoherent] : (M ⊞ N).IsQuasicoherent :=
   SheafOfModules.isQuasicoherent_biprod (M := M) (N := N)
 
 /-- The direct sum of two `𝒪ₓ`-modules of finite type is of finite type. -/
-instance _root_.AlgebraicGeometry.Scheme.Modules.isFiniteType_biprod [M.IsFiniteType]
+instance isFiniteType_biprod [M.IsFiniteType]
     [N.IsFiniteType] : (M ⊞ N).IsFiniteType :=
   SheafOfModules.isFiniteType_biprod (M := M) (N := N)
 
 /-- The direct sum of two finitely presented `𝒪ₓ`-modules is finitely presented. -/
-instance _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_biprod
+instance isFinitePresentation_biprod
     [M.IsFinitePresentation] [N.IsFinitePresentation] : (M ⊞ N).IsFinitePresentation :=
   SheafOfModules.isFinitePresentation_biprod (M := M) (N := N)
 
 /-- The direct sum of two locally free `𝒪ₓ`-modules is locally free. -/
-instance _root_.AlgebraicGeometry.Scheme.Modules.isLocallyFree_biprod [M.IsLocallyFree]
+instance isLocallyFree_biprod [M.IsLocallyFree]
     [N.IsLocallyFree] : (M ⊞ N).IsLocallyFree :=
   SheafOfModules.isLocallyFree_biprod (M := M) (N := N)
 
-end TauCeti
+end AlgebraicGeometry.Scheme.Modules

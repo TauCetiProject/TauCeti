@@ -296,14 +296,15 @@ private theorem exists_comp_absoluteGaloisGroupMap_eq_comp_restrictNormalHom
       change g.toMul (τ ζ) = τ ζ ^ _
       rw [← absoluteGaloisGroupMap_commutes, hg, map_pow]
     congr 2
-    exact Units.ext ((hζv.coe_autToPow_eq_natCast hgv).trans (ZMod.natCast_zmod_val _)).symm
+    exact Units.ext ((hζv.coe_autToPow_eq_natCast_iff.2 hgv).trans (ZMod.natCast_zmod_val _)).symm
   · -- Arithmetic Frobenius raises `τ ζ` to the `q`-th power, so `χ_v (Frob) = 1 / n`.
     have hf := frobeniusAlgEquiv_apply_of_pow_natCard_pow_eq_self hn
       (show ζv ^ Nat.card 𝓀[v.adicCompletion K] ^ n = ζv from Subtype.ext hτζ)
     change ψ (.ofMul (hζv.autToPow _ _)) = _
     rw [← hψ]
     congr 2
-    exact Units.ext ((hζv.coe_autToPow_eq_natCast hf).trans (ZMod.coe_unitOfCoprime _ _).symm)
+    exact Units.ext
+      ((hζv.coe_autToPow_eq_natCast_iff.2 hf).trans (ZMod.coe_unitOfCoprime _ _).symm)
 
 /-- **A class of `H²(G_K, I_{Kˢ})` localizing to the invariant `1 / n` at `v` and to `0` at every
 other place**: the carry class of a cyclotomic character and of an idele of `K` concentrated at
@@ -339,7 +340,7 @@ private theorem exists_ideleLocalization_eq_sumLocalInvSection_one_div_aux {E : 
   let := algebraicExtensionNormedFieldTopology (v.adicCompletion K) Ev
   have := finiteExtension_isNonarchimedeanLocalField (v.adicCompletion K) Ev
   have := algebraicExtension_valuativeExtension (v.adicCompletion K) Ev
-  have : IsUnramified (v.adicCompletion K) Ev := isUnramified_unramifiedExtension hn
+  have : IsUnramified (v.adicCompletion K) Ev := isUnramified_unramifiedExtension
   obtain ⟨χv, hχv, hfrob⟩ :=
     exists_comp_absoluteGaloisGroupMap_eq_comp_restrictNormalHom hn τ Ev le_rfl hζ ψ hψ
   -- The carry class of `χ` and the idele concentrated at `v` with component `π`.
@@ -1006,7 +1007,6 @@ theorem exists_ideleSumLocalInv_eq_one_div_degree_of_isCyclic
       L.degree_eq_natCard_gal.symm
   obtain ⟨χ', hχ'⟩ := CharacterModule.exists_apply_eq_inv_addOrderOf
     (Additive.ofMul (Abelianization.of γ))
-    (by rw [addOrderOf_ofMul_eq_orderOf, hof]; exact L.degree_pos.ne')
   obtain ⟨y, hy⟩ := exists_ideleSumLocalInv_eq_apply_absoluteGaloisGroupMap L χ' τ g hg
   refine ⟨y, hy.trans ?_⟩
   have hγ' : (QuotientGroup.mk (⟨absoluteGaloisGroupMap τ g, hg⟩ : L.ground) : L.Gal) = γ :=
@@ -1081,7 +1081,7 @@ private theorem autToPow_absoluteGaloisGroupMap_of_isReal {w : InfinitePlace K} 
       rw [map_pow]
       exact (coe_absoluteGaloisGroupRestrictEquiv_apply w.Completion σ _).trans
         (h.trans (congrArg _ (by decide : ((-1 : (ZMod 4)ˣ) : ZMod 4).val = 3)))
-  refine Units.ext ((hζ.coe_autToPow_eq_natCast hg).trans ?_)
+  refine Units.ext ((hζ.coe_autToPow_eq_natCast_iff.2 hg).trans ?_)
   decide
 
 /-- **A class of `H²(G_K, I_{Kˢ})` localizing to the nonzero class at a real place `w` and to `0`
@@ -1107,7 +1107,7 @@ private theorem exists_ideleLocalization_eq_pi_single_aux {E : Ω}
   obtain ⟨ψ, hψ⟩ : ∃ ψ : Additive (ZMod 4)ˣ →+ AddCircle (1 : ℚ),
       ψ (Additive.ofMul (-1)) =
         ((1 / addOrderOf (Additive.ofMul (-1 : (ZMod 4)ˣ)) : ℚ) : AddCircle (1 : ℚ)) :=
-    CharacterModule.exists_apply_eq_inv_addOrderOf _ (hneg.trans_ne (by decide))
+    CharacterModule.exists_apply_eq_inv_addOrderOf _
   set χ := ψ.comp (hζ.autToPow K).toAdditive with hχ_def
   have hχ := hζ.isOpen_ker_comp_autToPow (K := K) ψ
   refine ⟨characterCarryCocycle χ hχ a, DFinsupp.ext fun v ↦ ?_, fun u' hu' ↦ ?_, ?_⟩
@@ -1165,7 +1165,7 @@ private theorem exists_ideleLocalization_eq_pi_single [DecidableEq (InfinitePlac
   -- At the real place `w` the two nonzero classes have the same invariant `1 / 2`.
   have hb' : (ideleLocalization K x).2 w = b := by
     refine infiniteInvMap_injective w ?_
-    rw [hw', infiniteInvMap_apply_of_isReal w hw]
+    rw [hw', infiniteInvMap_apply_eq_ite w]
     simp [hb]
   refine ⟨x, Prod.ext hfin (funext fun u ↦ ?_)⟩
   dsimp only

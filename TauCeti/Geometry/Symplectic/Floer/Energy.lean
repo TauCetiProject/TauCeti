@@ -60,6 +60,8 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
   `X_K = ds ⊗ X_{K_s} + dt ⊗ X_{K_t}`.
 * `TauCeti.SymplecticForm.perturbedFDeriv`: the perturbed derivative `du - X_K`.
 * `TauCeti.SymplecticForm.floerEnergyDensity`: the Floer energy density.
+* `TauCeti.SymplecticForm.stripEnergyMeasure`: the measure on `ℝ` giving each set `A` of
+  `s`-values the energy over `A × [0, 1]`.
 
 ## Main results
 
@@ -86,8 +88,13 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
   `SymplecticForm.hamiltonianCurvature_cylindrical`,
   `SymplecticForm.hamiltonianCurvature_homotopy`,
   `SymplecticForm.hamiltonianCurvature_continuation`: the curvature of perturbations without `ds`
-  component, and `SymplecticForm.hamiltonianCurvature_eq_zero_of_cylindrical`, its local form
-  along a line near which the perturbation is cylindrical.
+  component. Its local form along a line near which the perturbation is cylindrical is
+  `SymplecticForm.hamiltonianCurvature_eq_zero_of_cylindrical`, the constant-form case of the
+  manifold statement in `TauCeti.Geometry.Symplectic.Floer.Manifold`.
+* `SymplecticForm.perturbedFDeriv_add_const`, `SymplecticForm.floerEnergyDensity_add_const`,
+  `SymplecticForm.hamiltonianCurvature_add_const`: adding a target-independent one-form
+  `k = k_s ds + k_t dt` to `K` changes neither the perturbed derivative nor the energy density,
+  and adds `∂_s k_t - ∂_t k_s` to the curvature (`SymplecticForm.hamiltonianCurvature_const`).
 * `SymplecticForm.hamiltonianCurvature_congr_of_eventuallyEq`,
   `SymplecticForm.hamiltonianCurvature_comp_add_right`: the curvature is local in the domain and
   commutes with domain translations (so data that agree on an open set have the same integrated
@@ -97,7 +104,8 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
   `SymplecticForm.perturbedFDeriv_comp_add_right`) and the energy density
   (`SymplecticForm.floerEnergyDensity_congr_of_eventuallyEq`,
   `SymplecticForm.floerEnergyDensity_comp_add_right`); hence translations preserve the energy
-  (`SymplecticForm.lintegral_floerEnergyDensity_comp_add_right`).
+  (`SymplecticForm.lintegral_floerEnergyDensity_comp_add_right`) and translate the strip energy
+  measure (`SymplecticForm.stripEnergyMeasure_comp_add_right`).
 
 ## References
 
@@ -220,6 +228,48 @@ theorem setLIntegral_enorm_hamiltonianCurvature_congr_of_isOpen (ω : Symplectic
     rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (hs.eventuallyEq_of_mem (hU.mem_nhds hz))
       (ht.eventuallyEq_of_mem (hU.mem_nhds hz))]
 
+/-- If both components of a Hamiltonian one-form vanish near a domain point, its curvature
+vanishes there. No differentiability assumption is needed. -/
+theorem hamiltonianCurvature_eq_zero_of_eventuallyEq_zero (ω : SymplecticForm V)
+    {Ks Kt : ℝ × ℝ → V → ℝ} {z : ℝ × ℝ}
+    (hs : Ks =ᶠ[𝓝 z] 0) (ht : Kt =ᶠ[𝓝 z] 0) (x : V) :
+    ω.hamiltonianCurvature Ks Kt z x = 0 := by
+  rw [ω.hamiltonianCurvature_congr_of_eventuallyEq hs ht]
+  simp [hamiltonianCurvature_def]
+
+/-- If both components of a Hamiltonian one-form vanish off a closed domain set, its curvature
+also vanishes off that set. No differentiability assumption is needed. -/
+theorem hamiltonianCurvature_eq_zero_of_notMem (ω : SymplecticForm V)
+    {Ks Kt : ℝ × ℝ → V → ℝ} {D : Set (ℝ × ℝ)} (hD : IsClosed D)
+    (hs : ∀ z ∉ D, Ks z = 0) (ht : ∀ z ∉ D, Kt z = 0)
+    {z : ℝ × ℝ} (hz : z ∉ D) (x : V) : ω.hamiltonianCurvature Ks Kt z x = 0 := by
+  have h : ∀ᶠ w in 𝓝 z, w ∉ D := hD.isOpen_compl.mem_nhds hz
+  exact ω.hamiltonianCurvature_eq_zero_of_eventuallyEq_zero
+    (h.mono fun w hw ↦ hs w hw) (h.mono fun w hw ↦ ht w hw) x
+
+/-- Adding a perturbation supported in a closed set inside an open region where the original
+one-form vanishes adds their curvatures exactly: there are no mixed Poisson-bracket terms. -/
+theorem hamiltonianCurvature_add_of_eq_zero_on (ω : SymplecticForm V)
+    {Ks Kt δs δt : ℝ × ℝ → V → ℝ} {D U : Set (ℝ × ℝ)}
+    (hD : IsClosed D) (hU : IsOpen U) (hDU : D ⊆ U)
+    (hKs : ∀ z ∈ U, Ks z = 0) (hKt : ∀ z ∈ U, Kt z = 0)
+    (hδs : ∀ z ∉ D, δs z = 0) (hδt : ∀ z ∉ D, δt z = 0) (z : ℝ × ℝ) (x : V) :
+    ω.hamiltonianCurvature (fun w y ↦ Ks w y + δs w y) (fun w y ↦ Kt w y + δt w y) z x =
+      ω.hamiltonianCurvature Ks Kt z x + ω.hamiltonianCurvature δs δt z x := by
+  by_cases hz : z ∈ D
+  · have hs : Ks =ᶠ[𝓝 z] 0 := eventually_of_mem (hU.mem_nhds (hDU hz)) hKs
+    have ht : Kt =ᶠ[𝓝 z] 0 := eventually_of_mem (hU.mem_nhds (hDU hz)) hKt
+    rw [ω.hamiltonianCurvature_congr_of_eventuallyEq
+      (Ks' := δs) (Kt' := δt)
+      (hs.mono fun w hw ↦ by simp [hw]) (ht.mono fun w hw ↦ by simp [hw]),
+      ω.hamiltonianCurvature_eq_zero_of_eventuallyEq_zero hs ht x, zero_add]
+  · have hs : δs =ᶠ[𝓝 z] 0 := eventually_of_mem (hD.isOpen_compl.mem_nhds hz) hδs
+    have ht : δt =ᶠ[𝓝 z] 0 := eventually_of_mem (hD.isOpen_compl.mem_nhds hz) hδt
+    rw [ω.hamiltonianCurvature_congr_of_eventuallyEq
+      (Ks' := Ks) (Kt' := Kt)
+      (hs.mono fun w hw ↦ by simp [hw]) (ht.mono fun w hw ↦ by simp [hw]),
+      ω.hamiltonianCurvature_eq_zero_of_eventuallyEq_zero hs ht x, add_zero]
+
 /-- Curvature commutes with translations of the domain. -/
 theorem hamiltonianCurvature_comp_add_right (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
     (v z : ℝ × ℝ) (x : V) :
@@ -227,23 +277,6 @@ theorem hamiltonianCurvature_comp_add_right (ω : SymplecticForm V) (Ks Kt : ℝ
       ω.hamiltonianCurvature Ks Kt (z + v) x := by
   simp only [hamiltonianCurvature_def]
   rw [fderiv_comp_add_right (f := fun w ↦ Kt w x), fderiv_comp_add_right (f := fun w ↦ Ks w x)]
-
-/-- A datum `K = K_s ds + K_t dt` with `K_s = 0` and `K_t` independent of `s` near the line
-`s = c` has zero curvature along that line. -/
-theorem hamiltonianCurvature_eq_zero_of_cylindrical (ω : SymplecticForm V)
-    {Ks Kt : ℝ × ℝ → V → ℝ} {c : ℝ} (hKs : ∀ᶠ s in 𝓝 c, ∀ t, Ks (s, t) = 0)
-    (hKt : ∀ᶠ s in 𝓝 c, ∀ t, Kt (s, t) = Kt (c, t)) (t : ℝ) (x : V) :
-    ω.hamiltonianCurvature Ks Kt (c, t) x = 0 := by
-  have hfst : Tendsto Prod.fst (𝓝 ((c, t) : ℝ × ℝ)) (𝓝 c) := continuous_fst.tendsto (c, t)
-  have hs : Ks =ᶠ[𝓝 (c, t)] fun _ _ ↦ 0 := by
-    filter_upwards [hfst.eventually hKs] with w hw
-    funext x
-    simpa using congrFun (hw w.2) x
-  have ht : Kt =ᶠ[𝓝 (c, t)] fun w ↦ Kt (c, w.2) := by
-    filter_upwards [hfst.eventually hKt] with w hw
-    simpa using hw w.2
-  rw [ω.hamiltonianCurvature_congr_of_eventuallyEq hs ht]
-  exact ω.hamiltonianCurvature_cylindrical (fun t ↦ Kt (c, t)) (c, t) x
 
 end Curvature
 
@@ -347,6 +380,13 @@ theorem perturbedFDeriv_congr_of_eventuallyEq (ω : SymplecticForm V) (Ks Kt : �
   refine ContinuousLinearMap.ext fun a ↦ ?_
   simp only [perturbedFDeriv_apply, h.fderiv_eq, h.eq_of_nhds]
 
+/-- The perturbed derivative at `z` only depends on the components of the perturbation at `z`. -/
+theorem perturbedFDeriv_congr (ω : SymplecticForm V) {Ks Kt Ks' Kt' : ℝ × ℝ → V → ℝ}
+    (u : ℝ × ℝ → V) {z : ℝ × ℝ} (hs : Ks z = Ks' z) (ht : Kt z = Kt' z) :
+    ω.perturbedFDeriv Ks Kt u z = ω.perturbedFDeriv Ks' Kt' u z := by
+  refine ContinuousLinearMap.ext fun a ↦ ?_
+  simp only [perturbedFDeriv_apply, hs, ht]
+
 end Differential
 
 section Density
@@ -387,6 +427,15 @@ theorem floerEnergyDensity_congr_of_eventuallyEq (ω : SymplecticForm V) (Ks Kt 
     ω.floerEnergyDensity Ks Kt u z = ω.floerEnergyDensity Ks Kt u' z := by
   rw [floerEnergyDensity_def, floerEnergyDensity_def,
     ω.perturbedFDeriv_congr_of_eventuallyEq Ks Kt h]
+
+/-- The Floer energy density at `z` only depends on the values `K_s(z)` and `K_t(z)` of the
+perturbation at `z`, not on its derivatives. -/
+theorem floerEnergyDensity_congr_perturbation (ω : SymplecticForm V)
+    {Ks Kt Ks' Kt' : ℝ × ℝ → V → ℝ} (u : ℝ × ℝ → V) {z : ℝ × ℝ} (hs : Ks z = Ks' z)
+    (ht : Kt z = Kt' z) :
+    ω.floerEnergyDensity Ks Kt u z = ω.floerEnergyDensity Ks' Kt' u z := by
+  simp only [floerEnergyDensity_def, perturbedFDeriv_apply_stdComplexLineReal,
+    perturbedFDeriv_apply_stdComplexLineImag, hs, ht]
 
 variable {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {z : ℝ × ℝ}
 
@@ -553,6 +602,81 @@ theorem floerEnergyDensity_add_hamiltonianCurvature_eq (ω : SymplecticForm V)
     ω.neg_eq (fderiv ℝ u z stdComplexLineImag) (fderiv ℝ u z stdComplexLineReal)
 
 end Density
+
+section TargetIndependent
+
+/-! ### Target-independent perturbations
+
+Adding to `K` a one-form `k = k_s ds + k_t dt` whose components are functions of the domain point
+alone changes no Hamiltonian vector field. The perturbed derivative, and with it the Floer equation
+and the energy density, are unchanged, while the curvature changes by the exterior derivative
+`∂_s k_t - ∂_t k_s` of `k`. Normalizing the Hamiltonians on the ends by functions of time is the
+main example. -/
+
+/-- The curvature of a target-independent perturbation `k = k_s ds + k_t dt` is the exterior
+derivative `∂_s k_t - ∂_t k_s`; the Poisson bracket term vanishes. -/
+@[simp]
+theorem hamiltonianCurvature_const (ω : SymplecticForm V) (ks kt : ℝ × ℝ → ℝ) (z : ℝ × ℝ)
+    (x : V) :
+    ω.hamiltonianCurvature (fun w _ ↦ ks w) (fun w _ ↦ kt w) z x =
+      fderiv ℝ kt z stdComplexLineReal - fderiv ℝ ks z stdComplexLineImag := by
+  simp [hamiltonianCurvature_def]
+
+/-- A target-independent perturbation has no Hamiltonian vector fields, so its perturbed
+derivative is the derivative of the map. -/
+@[simp]
+theorem perturbedFDeriv_const (ω : SymplecticForm V) (ks kt : ℝ × ℝ → ℝ) (u : ℝ × ℝ → V) :
+    ω.perturbedFDeriv (fun w _ ↦ ks w) (fun w _ ↦ kt w) u = fderiv ℝ u := by
+  funext z
+  simp [perturbedFDeriv]
+
+/-- Adding a target-independent one-form to the perturbation adds its exterior derivative to the
+curvature: `R_{K + k} = R_K + ∂_s k_t - ∂_t k_s`, at a point where the components are
+differentiable in the domain. -/
+theorem hamiltonianCurvature_add_const (ω : SymplecticForm V) {Ks Kt : ℝ × ℝ → V → ℝ}
+    {ks kt : ℝ × ℝ → ℝ} {z : ℝ × ℝ} {x : V} (hKs : DifferentiableAt ℝ (fun w ↦ Ks w x) z)
+    (hKt : DifferentiableAt ℝ (fun w ↦ Kt w x) z) (hks : DifferentiableAt ℝ ks z)
+    (hkt : DifferentiableAt ℝ kt z) :
+    ω.hamiltonianCurvature (fun w y ↦ Ks w y + ks w) (fun w y ↦ Kt w y + kt w) z x =
+      ω.hamiltonianCurvature Ks Kt z x +
+        ω.hamiltonianCurvature (fun w _ ↦ ks w) (fun w _ ↦ kt w) z x := by
+  rw [hamiltonianCurvature_const, hamiltonianCurvature_def, hamiltonianCurvature_def,
+    fderiv_fun_add hKt hkt, fderiv_fun_add hKs hks]
+  simp only [add_apply, poissonBracket_add_const_left,
+    poissonBracket_add_const_right]
+  ring
+
+/-- Adding a target-independent one-form to the perturbation does not change the Hamiltonian
+one-form `X_K`. -/
+@[simp]
+theorem hamiltonianOneForm_add_const (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (ks kt : ℝ × ℝ → ℝ) :
+    ω.hamiltonianOneForm (fun w y ↦ Ks w y + ks w) (fun w y ↦ Kt w y + kt w) =
+      ω.hamiltonianOneForm Ks Kt := by
+  funext z x
+  simp only [hamiltonianOneForm, hamiltonianVectorField_add_const]
+
+/-- Adding a target-independent one-form to the perturbation does not change the perturbed
+derivative, so a map solves the Floer equation for `K + k` exactly when it solves it for `K`. -/
+@[simp]
+theorem perturbedFDeriv_add_const (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (ks kt : ℝ × ℝ → ℝ) (u : ℝ × ℝ → V) :
+    ω.perturbedFDeriv (fun w y ↦ Ks w y + ks w) (fun w y ↦ Kt w y + kt w) u =
+      ω.perturbedFDeriv Ks Kt u := by
+  funext z
+  simp only [perturbedFDeriv, hamiltonianVectorField_add_const]
+
+/-- Adding a target-independent one-form to the perturbation does not change the Floer energy
+density. -/
+@[simp]
+theorem floerEnergyDensity_add_const (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (ks kt : ℝ × ℝ → ℝ) (u : ℝ × ℝ → V) :
+    ω.floerEnergyDensity (fun w y ↦ Ks w y + ks w) (fun w y ↦ Kt w y + kt w) u =
+      ω.floerEnergyDensity Ks Kt u := by
+  funext z
+  rw [floerEnergyDensity_def, floerEnergyDensity_def, perturbedFDeriv_add_const]
+
+end TargetIndependent
 
 section Integral
 
@@ -745,5 +869,79 @@ theorem setLIntegral_norm_sq_add_norm_sq_perturbedFDeriv_le (ω : SymplecticForm
     (hJM z hz) (h z hz)
 
 end Integral
+
+section Measure
+
+variable (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V)
+
+/-- The *strip energy measure* of a map `u` of the strip `ℝ × [0, 1]`: the measure on `ℝ` giving
+each set `A` of `s`-values the Floer energy of `u` over `A × [0, 1]` for the perturbation data
+`Ks`, `Kt` (`TauCeti.SymplecticForm.stripEnergyMeasure_apply`). It is the pushforward to the
+`s`-axis of the energy density on the strip. -/
+noncomputable def stripEnergyMeasure : Measure ℝ :=
+  ((volume.restrict ((univ : Set ℝ) ×ˢ Icc (0 : ℝ) 1)).withDensity fun z ↦
+    ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z)).map Prod.fst
+
+/-- The strip energy measure is the pushforward to the `s`-axis of the measure with density the
+positive part of the energy density on the strip. -/
+theorem stripEnergyMeasure_def :
+    ω.stripEnergyMeasure Ks Kt u =
+      ((volume.restrict ((univ : Set ℝ) ×ˢ Icc (0 : ℝ) 1)).withDensity fun z ↦
+        ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z)).map Prod.fst :=
+  (rfl)
+
+/-- The strip energy measure of a measurable set `A` is the energy over `A × [0, 1]`. -/
+theorem stripEnergyMeasure_apply {A : Set ℝ} (hA : MeasurableSet A) :
+    ω.stripEnergyMeasure Ks Kt u A =
+      ∫⁻ z in A ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) := by
+  rw [stripEnergyMeasure, Measure.map_apply measurable_fst hA,
+    withDensity_apply _ (measurable_fst hA), Measure.restrict_restrict (measurable_fst hA),
+    ← prod_univ, prod_inter_prod, inter_univ, univ_inter]
+
+/-- The total mass of the strip energy measure is the energy over the strip. -/
+theorem stripEnergyMeasure_univ :
+    ω.stripEnergyMeasure Ks Kt u univ =
+      ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) :=
+  ω.stripEnergyMeasure_apply Ks Kt u MeasurableSet.univ
+
+variable {ω Ks Kt u}
+
+/-- The strip energy measure of a map of finite energy is finite. -/
+theorem isFiniteMeasure_stripEnergyMeasure
+    (hfin : ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1,
+      ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) ≠ ⊤) :
+    IsFiniteMeasure (ω.stripEnergyMeasure Ks Kt u) :=
+  ⟨by rw [stripEnergyMeasure_univ]; exact hfin.lt_top⟩
+
+/-- The strip energy measure vanishes exactly when the energy over the strip does. -/
+theorem stripEnergyMeasure_eq_zero_iff :
+    ω.stripEnergyMeasure Ks Kt u = 0 ↔
+      ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) = 0 := by
+  rw [← Measure.measure_univ_eq_zero, stripEnergyMeasure_univ]
+
+variable (ω Ks Kt u)
+
+/-- **Translations translate the strip energy measure.** Translating a map and its perturbation
+data by `(c, 0)` translates its strip energy measure by `-c`. -/
+theorem stripEnergyMeasure_comp_add_right (c : ℝ) :
+    ω.stripEnergyMeasure (fun w ↦ Ks (w + (c, 0))) (fun w ↦ Kt (w + (c, 0)))
+        (fun w ↦ u (w + (c, 0))) =
+      (ω.stripEnergyMeasure Ks Kt u).map (· - c) := by
+  ext A hA
+  have hpre : A ×ˢ Icc (0 : ℝ) 1 = (· + (c, 0)) ⁻¹' (((· - c) ⁻¹' A) ×ˢ Icc 0 1) := by
+    ext z
+    simp
+  rw [Measure.map_apply (measurable_sub_const c) hA, stripEnergyMeasure_apply _ _ _ _ hA,
+    stripEnergyMeasure_apply _ _ _ _ (measurable_sub_const c hA), hpre,
+    lintegral_floerEnergyDensity_comp_add_right]
+
+/-- For the cylindrical perturbation `K = H_t dt`, translating the map by `(c, 0)` translates its
+strip energy measure by `-c`. -/
+theorem stripEnergyMeasure_cylindrical_comp_add_right (H : ℝ → V → ℝ) (c : ℝ) :
+    ω.stripEnergyMeasure (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ u (w + (c, 0))) =
+      (ω.stripEnergyMeasure (fun _ _ ↦ 0) (fun w ↦ H w.2) u).map (· - c) := by
+  simpa using ω.stripEnergyMeasure_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) u c
+
+end Measure
 
 end TauCeti.SymplecticForm

@@ -273,7 +273,7 @@ theorem tendsto_cutoff_bubble_sobolev_quotient (hn : 2 < finrank ℝ E)
   have henergy := tendsto_conformalCoefficient_mul_integral_norm_fderiv_cutoff_bubble_sq
     hn hχ hχc hχle b hχone
   have hlim := henergy.div hden (Real.rpow_pos_of_pos (roundSphereVolume_pos _) _).ne'
-  simpa only [Pi.div_def, ← sphereYamabeConstant_eq_div (show finrank ℝ E ≠ 0 by omega)]
+  simpa only [Pi.div_def, ← sphereYamabeConstant_eq_div]
     using hlim
 
 /-- Two-sided bounds for the power `2 / pₙ` of the critical mass of a cutoff bubble:
@@ -357,7 +357,7 @@ theorem isBigO_cutoff_bubble_sobolev_quotient_sub_sphereYamabeConstant (hn : 2 <
   -- The mass error enters through the denominator.
   obtain ⟨hlow, hup⟩ := cutoff_bubble_critical_norm_bounds hn hχ.continuous.measurable hχle hr
     hball ht (by linarith)
-  rw [sphereYamabeConstant_eq_div (by omega), Real.norm_eq_abs,
+  rw [sphereYamabeConstant_eq_div, Real.norm_eq_abs,
     Real.norm_of_nonneg (by positivity)]
   refine (abs_div_sub_div_le hD hN hsn' hlow hup hE).trans ?_
   have hst : s ^ (n - 2) = (2 / r) ^ (n - 2) * t ^ (n - 2) := by

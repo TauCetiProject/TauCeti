@@ -43,7 +43,9 @@ This file develops `Γ` for an arbitrary additive group `S` with two such homomo
 
 ## Main results
 
-* `PeriodGroup.ext_iff`: a class in `Γ` is determined by its area and first Chern number.
+* `PeriodGroup.ext_iff`: a class in `Γ` is determined by its area and first Chern number;
+  equivalently the kernels of area and Chern number are disjoint
+  (`PeriodGroup.disjoint_ker_area_ker_chern`).
 * `PeriodGroup.subsingleton_iff`: `Γ` is trivial exactly when area and Chern number vanish on
   `S`, as for symplectically aspherical manifolds.
 * `PeriodGroup.chern_injective_iff`, `PeriodGroup.area_injective_iff`: the Chern number (resp.
@@ -236,6 +238,21 @@ theorem degree_injective_iff :
   refine ⟨fun h γ γ' hγ => h ?_, fun h γ γ' hγ => h ?_⟩
   · rw [degree_apply, degree_apply, hγ]
   · simpa using hγ
+
+variable (ω c) in
+/-- A class has degree zero exactly when its first Chern number vanishes. -/
+@[simp]
+theorem ker_degree : (degree ω c).ker = (chern ω c).ker := by
+  ext γ
+  simp [AddMonoidHom.mem_ker]
+
+variable (ω c) in
+/-- Area and first Chern number are jointly injective on the period group: the only class with
+vanishing area and vanishing first Chern number is zero. -/
+theorem disjoint_ker_area_ker_chern : Disjoint (area ω c).ker (chern ω c).ker :=
+  disjoint_iff_inf_le.2 fun γ hγ => AddSubgroup.mem_bot.2 <|
+    ext (by rw [AddMonoidHom.mem_ker.1 hγ.1, map_zero])
+      (by rw [AddMonoidHom.mem_ker.1 hγ.2, map_zero])
 
 /-- If every spherical class with vanishing first Chern number has vanishing area, the period
 group is cyclic. -/

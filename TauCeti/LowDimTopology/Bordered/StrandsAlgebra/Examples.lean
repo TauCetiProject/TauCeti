@@ -13,7 +13,8 @@ import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Matched
 # Products and gradings in small strands algebras
 
 Two products in the strands algebras `A(4, 2)` and `A(3, 1)` of Lipshitz, Ozsváth and Thurston
-over `𝔽₂`, and one grading, with points `1, …, n` written `0, …, n - 1`.
+over `𝔽₂`, one grading, and the noncommutativity of the grading group, with points `1, …, n`
+written `0, …, n - 1`.
 
 * In `A(4, 2)` the diagrams `φ = (1 ↦ 3, 2 ↦ 2)` and `ψ = (2 ↦ 4, 3 ↦ 3)` each have one
   crossing, and their composite `(1 ↦ 3, 2 ↦ 4)` has none. Since `0 ≠ 1 + 1` the concatenation
@@ -23,6 +24,9 @@ over `𝔽₂`, and one grading, with points `1, …, n` written `0, …, n - 1`
 * In `A(3, 1)` the strand `(1 ↦ 2)` has grading `(-1/2, e₂ - e₁)`: it has no crossing, and the
   multiplicity of its class at its starting point is `1/2`. This is the grading of the chord `ρ₁`
   of the torus algebra.
+* The gradings of `(1 ↦ 2)` and `(2 ↦ 3)` do not commute: `gr(1 ↦ 2) gr(2 ↦ 3)` is
+  `λ gr(2 ↦ 3) gr(1 ↦ 2)`. The classes are the segments `[1, 2]` and `[2, 3]`, and the correction
+  terms `L([1, 2], [2, 3]) = 1/2` and `L([2, 3], [1, 2]) = -1/2` differ by one.
 
 Two products in the algebra `A(T²)` of the genus-one pointed matched circle, whose points
 `1, 2, 3, 4` are matched as `{1, 3}` and `{2, 4}`, encoded by the parity of `0, 1, 2, 3`. Its Reeb
@@ -118,7 +122,32 @@ example :
       Finset.disjoint_empty_right _, Finset.disjoint_empty_right _⟩
   refine ⟨?_, ?_⟩
   · rw [horizontalCompletion_mul_horizontalCompletion (hgen 0 1 (by decide)) (hgen 1 2 (by decide))]
-    simp [composable_single_single]
+    simp
   · rw [horizontalCompletion_mul_horizontalCompletion (hgen 1 2 (by decide)) (hgen 0 1 (by decide))]
     refine ite_eq_right_iff.2 fun hc ↦ absurd hc.2.target_eq ?_
     simp
+
+example :
+    (single (0 : Fin 3) 1 (by decide)).grading * (single 1 2 (by decide)).grading =
+      lambda * ((single (1 : Fin 3) 2 (by decide)).grading *
+        (single 0 1 (by decide)).grading) := by
+  have hb₁ : (single (0 : Fin 3) 1 (by decide)).boundary = ![-1, 1, 0] := by
+    funext x
+    simp only [boundary_apply, target_single, source_single, Finset.mem_singleton]
+    revert x
+    decide
+  have hb₂ : (single (1 : Fin 3) 2 (by decide)).boundary = ![0, -1, 1] := by
+    funext x
+    simp only [boundary_apply, target_single, source_single, Finset.mem_singleton]
+    revert x
+    decide
+  -- The correction terms of the two products differ by one.
+  have hL₁ : linking (![-1, 1, 0] : Fin 3 → ℤ) ![0, -1, 1] = 1 / 2 := by
+    norm_num [linking_apply, pointMultiplicity_apply, Finset.sum_filter, Fin.sum_univ_three]
+  have hL₂ : linking (![0, -1, 1] : Fin 3 → ℤ) ![-1, 1, 0] = -1 / 2 := by
+    norm_num [linking_apply, pointMultiplicity_apply, Finset.sum_filter, Fin.sum_univ_three]
+  refine StrandGradingGroup.ext ?_ ?_
+  · rw [mul_maslov, mul_maslov, mul_maslov, lambda_maslov, lambda_boundary, map_zero,
+      AddMonoidHom.zero_apply, grading_boundary, grading_boundary, hb₁, hb₂, hL₁, hL₂]
+    ring
+  · rw [mul_boundary, mul_boundary, mul_boundary, lambda_boundary, zero_add, add_comm]

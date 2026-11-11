@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.LocalFlow
 public import TauCeti.Geometry.Manifold.IntegralCurve.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
@@ -63,28 +64,12 @@ theorem exists_contMDiffAt_localFlow [FiniteDimensional ℝ E] [I.Boundaryless]
       CMDiffAt ∞ (fun p : M × ℝ ↦ Φ p.1 p.2) (a, 0) ∧
         ∀ x ∈ U, Φ x 0 = x ∧ IsMIntegralCurveOn (Φ x) v s ∧
           ∀ t ∈ s, ∀ u, Φ x (t + u) = Φ (Φ x t) u := by
-  let e := trivializationAt E (TangentSpace I) a
-  let w : E → E := fun z ↦
-    (e (⟨(extChartAt I a).symm z, v ((extChartAt I a).symm z)⟩ : TangentBundle I M)).2
+  let w : E → E := fun z ↦ (trivializationAt E (TangentSpace I) a
+    (⟨(extChartAt I a).symm z, v ((extChartAt I a).symm z)⟩ : TangentBundle I M)).2
   let W := interior (extChartAt I a).target ∩ (extChartAt I a).symm ⁻¹' V
-  have hws : ContDiffOn ℝ ∞ w W := by
-    have hsection : ContMDiffOn (modelWithCornersSelf ℝ E) I.tangent ∞
-        ((fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) ∘ (extChartAt I a).symm)
-        W := hv.comp
-      ((contMDiffOn_extChartAt_symm a).mono (inter_subset_left.trans interior_subset))
-      (fun _ hz ↦ hz.2)
-    have hmap : MapsTo
-        ((fun x ↦ (⟨x, v x⟩ : TangentBundle I M)) ∘ (extChartAt I a).symm)
-        W e.source := by
-      intro z hz
-      rw [TangentBundle.trivializationAt_source]
-      -- Membership in this preimage reduces definitionally by projecting the displayed
-      -- tangent-bundle point to its base point; there is no separate projection lemma to apply.
-      change (extChartAt I a).symm z ∈ (chartAt H a).source
-      simpa only [extChartAt_source] using
-        (extChartAt I a).map_target (interior_subset hz.1)
-    have hcoord := ((e.contMDiffOn_iff hmap).mp hsection).2
-    simpa only [w, Function.comp_apply] using hcoord.contDiffOn
+  have hws : ContDiffOn ℝ ∞ w W :=
+    haveI : IsManifold I (∞ + 1) M := inferInstanceAs (IsManifold I ∞ M)
+    contDiffOn_trivializationAt_extChartAt_symm (n := ∞) v a hv
   have haTarget : extChartAt I a a ∈ (extChartAt I a).target := mem_extChartAt_target a
   have hsymmV : (extChartAt I a).symm ⁻¹' V ∈ nhds (extChartAt I a a) := by
     apply (continuousAt_extChartAt_symm'' haTarget).preimage_mem_nhds
@@ -96,29 +81,7 @@ theorem exists_contMDiffAt_localFlow [FiniteDimensional ℝ E] [I.Boundaryless]
       W := by simpa using hws
   obtain ⟨φ, hφ, hφ0, hφadd, hφderiv⟩ :=
     ODE.exists_contDiffAt_localFlow (n := (⊤ : ℕ∞)) w hws' hatarget
-  let Φ : M → ℝ → M := fun x t ↦
-    (extChartAt I a).symm (φ (extChartAt I a x) t)
-  have hΦsmooth : CMDiffAt ∞ (fun p : M × ℝ ↦ Φ p.1 p.2) (a, 0) := by
-    have hchart : CMDiffAt ∞ (fun p : M × ℝ ↦ extChartAt I a p.1) (a, 0) :=
-      contMDiffAt_extChartAt.comp (a, 0) contMDiffAt_fst
-    have hcoord : ContMDiffAt (I.prod (modelWithCornersSelf ℝ ℝ))
-        ((modelWithCornersSelf ℝ E).prod (modelWithCornersSelf ℝ ℝ)) ∞
-        (fun p : M × ℝ ↦ (extChartAt I a p.1, p.2)) (a, 0) :=
-      hchart.prodMk contMDiffAt_snd
-    have hφ' : ContDiffAt ℝ ∞ (fun p : E × ℝ ↦ φ p.1 p.2)
-        (extChartAt I a a, 0) := by simpa using hφ
-    have hφM := hφ'.contMDiffAt
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at hφM
-    have hinner : CMDiffAt ∞
-        (fun p : M × ℝ ↦ φ (extChartAt I a p.1) p.2) (a, 0) := by
-      have h := hφM.comp (a, 0) hcoord
-      simpa only [Function.comp_def] using h
-    have hinv : CMDiffAt ∞ (extChartAt I a).symm (extChartAt I a a) := by
-      rw [← contMDiffWithinAt_univ, ← I.range_eq_univ]
-      exact contMDiffWithinAt_extChartAt_symm_range_self a
-    have hvalue : φ (extChartAt I a a) 0 = extChartAt I a a := hφ0 _
-    have hcomp := hinv.comp_of_eq hinner hvalue
-    simpa only [Φ, Function.comp_def] using hcomp
+  have hφ' : ContDiffAt ℝ ∞ (fun p : E × ℝ ↦ φ p.1 p.2) (extChartAt I a a, 0) := by simpa using hφ
   have htarget : ∀ᶠ p in nhds ((extChartAt I a a, 0) : E × ℝ),
       φ p.1 p.2 ∈ interior (extChartAt I a).target := by
     have hmem : extChartAt I a a ∈ interior (extChartAt I a).target :=
@@ -134,34 +97,20 @@ theorem exists_contMDiffAt_localFlow [FiniteDimensional ℝ E] [I.Boundaryless]
     ((continuousAt_extChartAt a).preimage_mem_nhds (inter_mem hu₁ hu₂))
     (extChartAt_source_mem_nhds (I := I) a)
   obtain ⟨s, hst, hsopen, hs0⟩ := mem_nhds_iff.mp (inter_mem ht₁ ht₂)
-  refine ⟨U, hU, s, hsopen.mem_nhds hs0, hsopen, Φ, hΦsmooth, ?_⟩
+  refine ⟨U, hU, s, hsopen.mem_nhds hs0, hsopen,
+    fun x t ↦ (extChartAt I a).symm (φ (extChartAt I a x) t),
+    contMDiffAt_extChartAt_symm_comp_extChartAt_prod a hφ' (hφ0 _), ?_⟩
   intro x hx
   have hxcoord : u₁ (extChartAt I a x) ∧ u₂ (extChartAt I a x) := hx.1
   refine ⟨?_, ?_, ?_⟩
-  · simp only [Φ, hφ0]
+  · simp only [hφ0]
     exact (extChartAt I a).left_inv hx.2
-  · intro t ht
-    have hcurve : IsMIntegralCurveAt (Φ x) v t := by
-      apply IsMIntegralCurveAt.of_extChartAt_symm
-      · filter_upwards [hsopen.mem_nhds ht] with r hr
-        exact hmem hxcoord.2 (hst hr).2
-      · filter_upwards [hsopen.mem_nhds ht] with r hr
-        have hw_eq (z : E) : w z =
-            tangentCoordChange I ((extChartAt I a).symm z) a ((extChartAt I a).symm z)
-              (v ((extChartAt I a).symm z)) := by
-          -- The fibre coordinate of the preferred trivialization is the second coordinate of the
-          -- tangent-bundle chart, whose conversion to `tangentCoordChange` is recorded explicitly.
-          change (chartAt (ModelProd H E)
-            (⟨a, 0⟩ : TangentBundle I M)
-            (⟨(extChartAt I a).symm z, v ((extChartAt I a).symm z)⟩ :
-              TangentBundle I M)).2 = _
-          exact TangentBundle.coe_chartAt_snd
-        simpa only [hw_eq] using hderiv hxcoord.1 (hst hr).1
-    exact hcurve.self_of_nhds.hasMFDerivWithinAt
+  · exact isMIntegralCurveOn_extChartAt_symm_comp v a hsopen
+      (fun t ht ↦ hmem hxcoord.2 (hst ht).2) fun t ht ↦ hderiv hxcoord.1 (hst ht).1
   · intro t ht u
     have hφtarget : φ (extChartAt I a x) t ∈ (extChartAt I a).target :=
       interior_subset (hmem hxcoord.2 (hst ht).2)
-    simp only [Φ]
+    simp only
     rw [(extChartAt I a).right_inv hφtarget, hφadd]
 
 end TauCeti.Manifold

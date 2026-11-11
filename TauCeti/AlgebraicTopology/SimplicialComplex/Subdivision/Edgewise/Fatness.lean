@@ -143,10 +143,10 @@ theorem mul_sum_abs_le_norm_sum_smul_edgewisePoint (hρ : ρ ∈ K.edgewiseSubdi
     by_contra hne
     have hne' : a.1 ≠ b.1 := fun h => hne (Subtype.ext h)
     rcases le_or_le_of_mem_edgewiseSubdivision hρ a.2 b.2 with h | h
-    · obtain ⟨j, hj⟩ := exists_card_filter_lt_card_filter a.1.2.1 b.1.2.1 h
+    · obtain ⟨j, hj⟩ := exists_card_filter_lt_card_filter h
         (fun h' => hne' (Subtype.ext h'))
       exact hj.ne (congrFun hab ⟨a.1.1 j, hσ a.1 a.2 j⟩).symm
-    · obtain ⟨j, hj⟩ := exists_card_filter_lt_card_filter b.1.2.1 a.1.2.1 h
+    · obtain ⟨j, hj⟩ := exists_card_filter_lt_card_filter h
         (fun h' => hne' (Subtype.ext h').symm)
       exact hj.ne (congrFun hab ⟨b.1.1 j, hσ b.1 b.2 j⟩)
   have hmain := sum_abs_le_two_mul_sum_abs_sum_mul C univ hchain hinj v hv
