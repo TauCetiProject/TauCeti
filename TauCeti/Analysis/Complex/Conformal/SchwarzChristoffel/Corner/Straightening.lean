@@ -84,18 +84,24 @@ theorem exists_corner_power_of_arg_mem_sector {Ω : Set ℂ} {f : ℂ → ℂ} {
   have hxclosed : (x : ℂ) ∈ Ω ∩ {z : ℂ | 0 ≤ z.im} := ⟨hxΩ, by simp⟩
   have hq_ne : ∀ z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}, z ≠ (x : ℂ) → f z - w ≠ 0 := fun z hz hzx h =>
     hzx (hfinj hz hxclosed ((sub_eq_zero.mp h).trans hfx.symm))
+  have hsector_open' : ∀ z ∈ Ω ∩ {z : ℂ | 0 < z.im},
+      (f z - w).arg ∈ Ioo (-(β * Real.pi / 2)) (β * Real.pi / 2) := by
+    simpa only [mul_comm] using hsector_open
+  have hangle := pi_mul_div_two_lt_pi hβ.2
   have hsector_closed := fun z (hz : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}) =>
-    arg_sub_mem_Icc_of_arg_mem_sector hΩopen (Ioo_subset_Icc_self hβ) hfcont hsector_open hz
+    arg_mem_Icc_of_arg_mem_sector (f := fun z => f z - w) hΩopen
+      ⟨div_nonneg (mul_nonneg hβ.1.le Real.pi_pos.le) (by norm_num), hangle.le⟩
+      (hfcont.sub continuousOn_const) hsector_open' hz
   have hrecover : ∀ z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im},
       ((f z - w) ^ ((β⁻¹ : ℝ) : ℂ)) ^ (β : ℂ) = f z - w := fun z hz => by
     refine cpow_inv_cpow_of_arg_mem_Ioc hβ.1 (Icc_subset_Ioc ?_ ?_ (hsector_closed z hz)) <;>
-      linarith [mul_pos Real.pi_pos hβ.1, pi_mul_div_two_lt_pi hβ.2]
+      linarith [mul_pos Real.pi_pos hβ.1, hangle]
   -- The shared straightening of a corner, applied to the translated map `f - w`.
   obtain ⟨hgcont, hgd, hgupper⟩ := straighten_sector (f := fun z => f z - w) hβ
     (hfcont.sub continuousOn_const) (hfd.sub_const w)
     (fun z hz hzim => (mem_closed_and_ne_of_mem_upper hq_ne ⟨hz, hzim⟩).2)
     (fun z hz hzim => by
-      have := hsector_open z ⟨hz, hzim⟩
+      have := hsector_open' z ⟨hz, hzim⟩
       rw [abs_lt]
       constructor <;> linarith [this.1, this.2])
     (fun z hz => by

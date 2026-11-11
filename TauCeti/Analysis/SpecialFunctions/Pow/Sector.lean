@@ -62,34 +62,29 @@ theorem cpow_inv_re_pos_of_arg_mem_sector {z : ℂ} {β : ℝ} (hβ : 0 < β) (h
 
 /-- A sector of opening `β * π` with `β < 2` has half-opening less than `π`. -/
 theorem pi_mul_div_two_lt_pi {β : ℝ} (hβ : β < 2) :
-    Real.pi * β / 2 < Real.pi := by
+    β * Real.pi / 2 < Real.pi := by
   nlinarith [mul_pos Real.pi_pos (sub_pos.mpr hβ)]
 
-/-- The closed upper part of the corner stays in the closed sector: the argument condition on the
-open upper part passes to its closure by continuity of `f`. -/
-theorem arg_sub_mem_Icc_of_arg_mem_sector {Ω : Set ℂ} {f : ℂ → ℂ} {w : ℂ} {β : ℝ}
-    (hΩopen : IsOpen Ω) (hβ : β ∈ Icc (0 : ℝ) 2)
+/-- The closed upper part stays in the closed sector of half-opening `a`: the argument condition
+on the open upper part passes to its closure by continuity of `f`. -/
+theorem arg_mem_Icc_of_arg_mem_sector {Ω : Set ℂ} {f : ℂ → ℂ} {a : ℝ}
+    (hΩopen : IsOpen Ω) (ha : a ∈ Icc (0 : ℝ) Real.pi)
     (hfcont : ContinuousOn f (Ω ∩ {z : ℂ | 0 ≤ z.im}))
-    (hsector_open : ∀ z ∈ Ω ∩ {z : ℂ | 0 < z.im},
-      (f z - w).arg ∈ Ioo (-(Real.pi * β / 2)) (Real.pi * β / 2))
+    (hsector_open : ∀ z ∈ Ω ∩ {z : ℂ | 0 < z.im}, (f z).arg ∈ Ioo (-a) a)
     {z : ℂ} (hz : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}) :
-    (f z - w).arg ∈ Icc (-(Real.pi * β / 2)) (Real.pi * β / 2) := by
-  have hangle : Real.pi * β / 2 ∈ Icc (0 : ℝ) Real.pi :=
-    ⟨div_nonneg (mul_nonneg Real.pi_pos.le hβ.1) (by norm_num),
-      by nlinarith [Real.pi_pos, hβ.2]⟩
+    (f z).arg ∈ Icc (-a) a := by
   have hzclosure : z ∈ closure (Ω ∩ {y : ℂ | 0 < y.im}) := by
     apply hΩopen.inter_closure
     exact ⟨hz.1, by simpa only [Complex.closure_setOfPred_lt_im, mem_ofPred_eq] using hz.2⟩
-  have hqcont : ContinuousWithinAt (fun y => f y - w) (Ω ∩ {y : ℂ | 0 < y.im}) z :=
-    ((hfcont z hz).sub continuousWithinAt_const).mono fun y hy =>
-      ⟨hy.1, by simpa only [mem_ofPred_eq] using hy.2.le⟩
-  have htarget : IsClosed {q : ℂ | ‖q‖ * Real.cos (Real.pi * β / 2) ≤ q.re} :=
+  have hqcont : ContinuousWithinAt f (Ω ∩ {y : ℂ | 0 < y.im}) z :=
+    (hfcont z hz).mono fun y hy => ⟨hy.1, by simpa only [mem_ofPred_eq] using hy.2.le⟩
+  have htarget : IsClosed {q : ℂ | ‖q‖ * Real.cos a ≤ q.re} :=
     isClosed_le (continuous_norm.mul continuous_const) Complex.continuous_re
-  apply (arg_mem_Icc_iff_norm_mul_cos_le_re hangle).2
-  have hmem : f z - w ∈ closure {q : ℂ | ‖q‖ * Real.cos (Real.pi * β / 2) ≤ q.re} := by
+  apply (arg_mem_Icc_iff_norm_mul_cos_le_re ha).2
+  have hmem : f z ∈ closure {q : ℂ | ‖q‖ * Real.cos a ≤ q.re} := by
     apply hqcont.mem_closure hzclosure
     intro y hy
-    exact (arg_mem_Icc_iff_norm_mul_cos_le_re hangle).1
+    exact (arg_mem_Icc_iff_norm_mul_cos_le_re ha).1
       (Ioo_subset_Icc_self (hsector_open y hy))
   simpa only [htarget.closure_eq, mem_ofPred_eq] using hmem
 

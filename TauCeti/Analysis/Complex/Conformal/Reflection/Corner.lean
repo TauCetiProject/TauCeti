@@ -75,7 +75,7 @@ theorem straighten_sector {Ω : Set ℂ} {f : ℂ → ℂ} {β : ℝ} (hβ : β 
       MapsTo (fun z => I * f z ^ ((β⁻¹ : ℝ) : ℂ)) (Ω ∩ {z : ℂ | 0 < z.im})
         {z : ℂ | 0 < z.im} := by
   have hβinv : 0 < β⁻¹ := inv_pos.mpr hβ.1
-  have hangle : β * Real.pi / 2 < Real.pi := by nlinarith [Real.pi_pos, hβ.2]
+  have hangle := pi_mul_div_two_lt_pi hβ.2
   have hslit : ∀ z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}, f z ≠ 0 → f z ∈ slitPlane := by
     intro z hz hfz
     refine mem_slitPlane_iff_arg.mpr ⟨?_, hfz⟩
