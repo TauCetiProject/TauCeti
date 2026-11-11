@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Pseudodifferential.RightQuantization
+import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+import TauCeti.Analysis.Pseudodifferential.OutputSupport
 import TauCeti.Analysis.Fourier.Adjoint
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
@@ -38,7 +40,9 @@ support.
 * `TauCeti.Symbol.spatialDeriv_adjoint`, `TauCeti.Symbol.frequencyDeriv_adjoint`: derivatives
   commute with taking adjoint symbols, `∂ (a*) = (∂ a)*`.
 * `TauCeti.Symbol.integral_inner_quantizeSchwartzValue_adjoint`: the quantization of `a*` is the
-  formal adjoint of the quantization of `a`.
+  formal adjoint of the quantization of `a`, and
+  `TauCeti.Symbol.coefficient_eq_adjoint_of_forall_integral_inner_eq`: `a*` is the only symbol, of
+  any order, with this property.
 * `TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_fourier_slice_sub_smul_le`: the decay of
   `â(θ, ξ - sθ)` in `θ`, uniformly for bounded shifts `s`, with the continuity, integrability and
   growth bound of the integrand `exp(2πi ⟪θ, x⟫) â(θ, ξ - sθ)`
@@ -47,7 +51,8 @@ support.
   `HasCompactSpatialSupport.exists_norm_integral_fourierChar_smul_fourier_slice_sub_smul_le`).
 
 The asymptotic expansion `a* ∼ ∑_α (1 / α!) ∂_ξ^α D_x^α a†` of the adjoint symbol is in
-`TauCeti.Analysis.Pseudodifferential.Adjoint.Expansion`.
+`TauCeti.Analysis.Pseudodifferential.Adjoint.Expansion`, and the adjoint of a classical symbol in
+`TauCeti.Analysis.Pseudodifferential.Adjoint.Classical`.
 
 ## Construction
 
@@ -410,6 +415,38 @@ theorem integral_inner_quantizeSchwartzValue_adjoint (a : Symbol n V W m)
           adjointIntegrand a u v y q.1 q.2) hG).symm
     _ = ∫ y, ∫ η, ∫ θ, adjointIntegrand a u v y η θ :=
         integral_congr_ae (hG.prod_right_ae.mono fun y hy ↦ integral_prod _ hy)
+
+/-- **Uniqueness of the adjoint symbol.** A symbol `b`, of any order, whose quantization is the
+formal adjoint of the quantization of `a` on compactly supported Schwartz functions,
+`∫ ⟪Op(a) u, v⟫ = ∫ ⟪u, Op(b) v⟫`, has the coefficient of the adjoint symbol `a*`. -/
+theorem coefficient_eq_adjoint_of_forall_integral_inner_eq (ha : a.HasCompactSpatialSupport)
+    {m' : ℝ} {b : Symbol n W V m'}
+    (h : ∀ (u : 𝓢(CoordinateSpace n, V)) (v : 𝓢(CoordinateSpace n, W)), HasCompactSupport u →
+      HasCompactSupport v →
+        ∫ x, inner ℂ (quantizeSchwartzValue a.coefficient u x) (v x) =
+          ∫ x, inner ℂ (u x) (quantizeSchwartzValue b.coefficient v x)) :
+    b.coefficient = (adjoint a ha).coefficient := by
+  refine coefficient_eq_of_forall_quantizeSchwartzValue_eq fun v hv ↦ funext fun x ↦ ?_
+  have hf := (b.contDiff_quantizeSchwartzValue v).continuous
+  have hf' := ((adjoint a ha).contDiff_quantizeSchwartzValue v).continuous
+  -- Both quantizations have the same pairing with every `x ↦ g x • e`, `g` a smooth bump.
+  refine ext_inner_left ℂ fun e ↦ ?_
+  have hcont (f : CoordinateSpace n → V) (hf : Continuous f) :
+      Continuous fun y ↦ inner ℂ e (f y) := continuous_const.inner hf
+  refine congrFun (((hcont _ hf).ae_eq_iff_eq volume (hcont _ hf')).1
+    (ae_eq_of_integral_contDiff_smul_eq (hcont _ hf).locallyIntegrable
+      (hcont _ hf').locallyIntegrable fun g hg hgc ↦ ?_)) x
+  have hu : HasCompactSupport fun y ↦ g y • e := hgc.smul_right
+  have huc : ContDiff ℝ ∞ fun y ↦ g y • e := hg.smul contDiff_const
+  have key := (h (hu.toSchwartzMap huc) v hu hv).symm.trans
+    (integral_inner_quantizeSchwartzValue_adjoint a ha (hu.toSchwartzMap huc) v)
+  have hcoe : ⇑(hu.toSchwartzMap huc) = fun y ↦ g y • e :=
+    funext (HasCompactSupport.toSchwartzMap_toFun _ _)
+  have hinner (y : CoordinateSpace n) (w : V) :
+      inner ℂ (g y • e) w = (g y : ℂ) * inner ℂ e w := by
+    rw [RCLike.real_smul_eq_coe_smul (K := ℂ), inner_smul_left]
+    simp
+  simpa only [hcoe, hinner, Complex.real_smul] using key
 
 end Adjoint
 
