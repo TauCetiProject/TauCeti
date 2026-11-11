@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Basic
 public import TauCeti.GroupTheory.LimitGroup.ResiduallyFree
+public import TauCeti.GroupTheory.PushoutI.Reduced
 public import Mathlib.Data.Matrix.Mul
 import TauCeti.Data.Matrix.DotProduct
 
@@ -188,20 +189,10 @@ private theorem exists_eq_of_mul_prod (x : CentralizerExt u n) :
     ∃ (h : G) (L : List (Σ b, CentralizerExtFactor u n b)),
       L.IsChain (fun l l' => l.1 ≠ l'.1) ∧ (∀ l ∈ L, l.2 ∉ (centralizerExtMap u n l.1).range) ∧
       x = of h * (L.map fun l => Monoid.PushoutI.of (φ := centralizerExtMap u n) l.1 l.2).prod := by
-  classical
-  obtain ⟨d⟩ := Monoid.PushoutI.NormalWord.transversal_nonempty _ (centralizerExtMap_injective u n)
-  set W := Monoid.PushoutI.NormalWord.equiv (d := d) x
-  refine ⟨W.head, W.toList, W.chain_ne, ?_, ?_⟩
-  · -- A nonidentity letter of the transversal is not in the amalgamated subgroup.
-    rintro ⟨i, g⟩ hl hg
-    have h1 := (d.compl i).equiv_fst_eq_self_of_mem_of_one_mem (d.one_mem i) hg
-    rw [(d.compl i).equiv_fst_eq_one_of_mem_of_one_mem (one_mem _) (W.normalized i g hl)] at h1
-    exact W.ne_one _ hl (congrArg Subtype.val h1).symm
-  · have hW : W.prod = x := Monoid.PushoutI.NormalWord.equiv.symm_apply_apply x
-    conv_lhs => rw [← hW]
-    rw [Monoid.PushoutI.NormalWord.prod, ← Monoid.PushoutI.of_apply_eq_base _ false,
-      Monoid.CoprodI.Word.prod, map_list_prod, List.map_map]
-    simp [Function.comp_def, of_def]
+  obtain ⟨h, L, hc, hred, rfl⟩ :=
+    Monoid.PushoutI.exists_eq_base_mul_list_prod (centralizerExtMap_injective u n) x
+  exact ⟨h, L, hc, hred, by
+    rw [← Monoid.PushoutI.of_apply_eq_base _ false, centralizerExtMap_false, coe_subtype, of_def]⟩
 
 /-- A product of letters of the factor `G` lies in `G`. -/
 private theorem prod_mem_range_of {L : List (Σ b, CentralizerExtFactor u n b)}
