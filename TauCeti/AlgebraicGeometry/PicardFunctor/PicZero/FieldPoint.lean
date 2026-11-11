@@ -18,7 +18,7 @@ Let `f : X ⟶ S` be a morphism of schemes and `g : Spec L ⟶ S` a point with v
 trivial (`TauCeti.AlgebraicGeometry.relativePicardPresheafObjMulEquiv`). This file identifies the
 value of the degree-zero subfunctor `Pic⁰_{X/S}` at `g` inside it.
 
-When `f` is quasi-compact and separated, a geometric point `Spec Ω ⟶ Spec L` only extends the
+When `f` is quasi-compact with affine diagonal, a geometric point `Spec Ω ⟶ Spec L` only extends the
 ground field of `X_L`, which does not change the Euler-characteristic degree of a line bundle
 (`TauCeti.AlgebraicGeometry.LineBundleClass.eulerDegree_pullback`). So the fibre degree of a
 class on `X_L` at every geometric point is its degree over `L`, and the class lies in
@@ -69,12 +69,13 @@ variable {S X : Scheme.{u}} (f : X ⟶ S)
 
 section FieldPoint
 
-variable [QuasiCompact f] [IsSeparated f] {L : Type u} [Field L] (g : Spec (.of L) ⟶ S)
+variable [QuasiCompact f] [IsAffineHom (pullback.diagonal f)] {L : Type u} [Field L]
+  (g : Spec (.of L) ⟶ S)
 
 /-- **At a field-valued point, the fibre degree is the degree on the fibre.** For `f`
-quasi-compact and separated and a point `g : Spec L ⟶ S`, the degree of a line-bundle class on
-`X_L = Spec L ×_S X` on the fibre over any point `Spec Ω ⟶ Spec L` is its degree over `L`:
-extending the ground field does not change the degree. -/
+quasi-compact with affine diagonal and a point `g : Spec L ⟶ S`, the degree of a line-bundle
+class on `X_L = Spec L ×_S X` on the fibre over any point `Spec Ω ⟶ Spec L` is its degree over
+`L`: extending the ground field does not change the degree. -/
 theorem relativePicardFiberDegree_mk_eq_eulerDegree {Ω : Type u} [Field Ω]
     (ξ : Spec (.of Ω) ⟶ Spec (.of L)) (a : LineBundleClass (pullback g f)) :
     relativePicardFiberDegree f (T := op (Over.mk g)) ξ (QuotientGroup.mk a) =
@@ -87,12 +88,23 @@ theorem relativePicardFiberDegree_mk_eq_eulerDegree {Ω : Type u} [Field Ω]
   let _ : Algebra L Ω := (Spec.preimage ξ).hom.toAlgebra
   have hξ : Spec.map (CommRingCat.ofHom (algebraMap L Ω)) = ξ := by
     rw [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom, Spec.map_preimage]
-  -- `X_L` is quasi-compact and separated, as a base change of `f`.
+  -- `X_L` is quasi-compact with affine diagonal, as a base change of `f`.
   have : CompactSpace ↥(pullback g f) :=
     (quasiCompact_iff_compactSpace (pullback.fst g f)).mp inferInstance
-  have : IsSeparated (terminal.from (pullback g f)) := by
+  have : IsAffineHom (pullback.diagonal (terminal.from (pullback g f))) := by
+    -- Instance search does not find these closure properties of `@IsAffineHom` and its diagonal.
+    have : MorphismProperty.RespectsIso @IsAffineHom.{u} :=
+      MorphismProperty.IsStableUnderBaseChange.respectsIso
+    have : MorphismProperty.IsStableUnderComposition @IsAffineHom.{u} :=
+      MorphismProperty.IsMultiplicative.toIsStableUnderComposition
+    have : (MorphismProperty.diagonal @IsAffineHom.{u}).IsStableUnderBaseChange :=
+      MorphismProperty.IsStableUnderBaseChange.diagonal
+    have : (MorphismProperty.diagonal @IsAffineHom.{u}).IsStableUnderComposition :=
+      MorphismProperty.diagonal_isStableUnderComposition
     rw [← terminal.comp_from (pullback.fst g f)]
-    infer_instance
+    exact MorphismProperty.comp_mem (MorphismProperty.diagonal @IsAffineHom) _ _
+      (MorphismProperty.pullback_fst g f ‹IsAffineHom (pullback.diagonal f)›)
+      (inferInstanceAs (IsAffineHom (pullback.diagonal (terminal.from (Spec (.of L))))))
   -- The fibre over `ξ` is the base change of `X_L` along `ξ`.
   have hsnd : pullback.map (ξ ≫ g) f g f ξ (𝟙 X) (𝟙 S) (by simp) (by simp) ≫ pullback.snd g f =
       pullback.snd (ξ ≫ g) f := by
@@ -106,8 +118,8 @@ theorem relativePicardFiberDegree_mk_eq_eulerDegree {Ω : Type u} [Field Ω]
   exact (relativePicardFiberDegree_mk f (T := op (Over.mk g)) ξ a).trans
     (LineBundleClass.eulerDegree_pullback H a)
 
-/-- **`Pic⁰_{X/S}` at a field-valued point.** For `f` quasi-compact and separated and a point
-`g : Spec L ⟶ S`, a section of `Pic(X_L) / Pic(Spec L) = Pic(X_L)` at `g`, with
+/-- **`Pic⁰_{X/S}` at a field-valued point.** For `f` quasi-compact with affine diagonal and a
+point `g : Spec L ⟶ S`, a section of `Pic(X_L) / Pic(Spec L) = Pic(X_L)` at `g`, with
 `X_L = Spec L ×_S X`, lies in `Pic⁰_{X/S}` exactly when its line-bundle class on `X_L` has degree
 zero over `L`. -/
 theorem mem_relativePicardDegreeZeroSubfunctor_obj_iff_eulerDegree_eq_zero
