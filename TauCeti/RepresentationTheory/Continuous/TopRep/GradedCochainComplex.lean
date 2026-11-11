@@ -391,6 +391,15 @@ theorem gradedCochainComplexResMap_f_apply (φ : H →* G) (F : TopRep.res φ M 
   exact congrArg F.hom ((gradedCochainComplexLift_apply _ _ _ _ _ _ _ _ _ v).trans
     (gradedCochainComplexι_apply M ℳ hρ d hd hdd n v))
 
+/-- Restricting a homogeneous term does not change its underlying vector. -/
+private theorem resGradedCochainComplexHom_f_apply (φ : H →* G) (n : ℕ)
+    (z : ((resFunctor φ).obj ((M.gradedCochainComplex ℳ hρ d hd hdd).X n)).V) :
+    (((resGradedCochainComplexHom (hρ := hρ) (hd := hd) (hdd := hdd) φ).f n).hom z).1 =
+      z.1 := by
+  dsimp only [resGradedCochainComplexHom, HomologicalComplex.Hom.f]
+  rw [gradedCochainComplexLift_apply, resFunctor_map_hom,
+    ContIntertwiningMap.restrict_apply, gradedCochainComplexι_apply]
+
 /-- Forming the complex of a graded representation commutes with restriction of the group.
 The comparison is the identity on the homogeneous vectors in every degree. -/
 noncomputable def resGradedCochainComplexIso (φ : H →* G) :
@@ -399,10 +408,8 @@ noncomputable def resGradedCochainComplexIso (φ : H →* G) :
         (TauCeti.LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ hd.map_mem hx)
         (by rw [← Functor.map_comp, hdd, Functor.map_zero]) := by
   let f := resGradedCochainComplexHom (M := M) (hρ := hρ) (hd := hd) (hdd := hdd) φ
-  have hf (n : ℕ) (z) : ((f.f n).hom z).1 = z.1 := by
-    dsimp only [f, resGradedCochainComplexHom, HomologicalComplex.Hom.f]
-    rw [gradedCochainComplexLift_apply, resFunctor_map_hom,
-      ContIntertwiningMap.restrict_apply, gradedCochainComplexι_apply]
+  have hf (n : ℕ) (z) : ((f.f n).hom z).1 = z.1 :=
+    resGradedCochainComplexHom_f_apply φ n z
   let e (n : ℕ) : _ ≅ _ :=
     { hom := f.f n
       inv := ofHom
@@ -430,11 +437,8 @@ noncomputable def resGradedCochainComplexIso (φ : H →* G) :
 theorem resGradedCochainComplexIso_hom_f_apply (φ : H →* G) (n : ℕ)
     (z : ((resFunctor φ).obj ((M.gradedCochainComplex ℳ hρ d hd hdd).X n)).V) :
     (((resGradedCochainComplexIso (hρ := hρ) (hd := hd) (hdd := hdd) φ).hom.f n).hom z).1 =
-      z.1 := by
-  dsimp only [resGradedCochainComplexIso, HomologicalComplex.Hom.isoOfComponents,
-    resGradedCochainComplexHom]
-  rw [gradedCochainComplexLift_apply, resFunctor_map_hom,
-    ContIntertwiningMap.restrict_apply, gradedCochainComplexι_apply]
+      z.1 :=
+  resGradedCochainComplexHom_f_apply φ n z
 
 -- Not a simp lemma: simplifying the source changes a term of the restricted complex through
 -- Functor.mapHomologicalComplex_obj_X, so the indexed left-hand side is not in normal form.

@@ -39,26 +39,24 @@ noncomputable def ofIso (c : ResolutionContraction X J) (e : K ≅ J) :
     simp only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
       hom_comp, ← ContIntertwiningMap.toContinuousLinearMap_apply,
       ContIntertwiningMap.toContinuousLinearMap_comp, ContinuousLinearMap.comp_apply]
-    rw [ContIntertwiningMap.toContinuousLinearMap_apply,
-      ContIntertwiningMap.toContinuousLinearMap_apply,
-      ← ConcreteCategory.comp_apply, ← HomologicalComplex.comp_f, e.inv_hom_id]
-    exact c.proj_ι x
+    simp only [ContIntertwiningMap.toContinuousLinearMap_apply]
+    exact (congrArg c.proj
+      (ConcreteCategory.congr_hom (HomologicalComplex.Hom.isoApp e 0).inv_hom_id
+        (c.ι.hom x))).trans (c.proj_ι x)
   ι_proj_add_hom_d z := by
     simp only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
       ContIntertwiningMap.toContinuousLinearMap_apply]
     rw [← ConcreteCategory.comp_apply, ← e.hom.comm,
       ConcreteCategory.comp_apply (e.hom.f 0) (J.d 0 1), ConcreteCategory.comp_apply,
-      ← map_add, c.ι_proj_add_hom_d, ← ConcreteCategory.comp_apply,
-      ← HomologicalComplex.comp_f, e.hom_inv_id]
-    rfl
+      ← map_add, c.ι_proj_add_hom_d]
+    exact ConcreteCategory.congr_hom (HomologicalComplex.Hom.isoApp e 0).hom_inv_id z
   d_hom_add_hom_d n z := by
     simp only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
       ContIntertwiningMap.toContinuousLinearMap_apply]
     rw [← ConcreteCategory.comp_apply, e.inv.comm, ConcreteCategory.comp_apply,
       ← ConcreteCategory.comp_apply (K.d (n + 1) (n + 2)), ← e.hom.comm,
-      ConcreteCategory.comp_apply, ← map_add, c.d_hom_add_hom_d,
-      ← ConcreteCategory.comp_apply, ← HomologicalComplex.comp_f, e.hom_inv_id]
-    rfl
+      ConcreteCategory.comp_apply, ← map_add, c.d_hom_add_hom_d]
+    exact ConcreteCategory.congr_hom (HomologicalComplex.Hom.isoApp e (n + 1)).hom_inv_id z
   continuous_proj := by
     have h := c.continuous_proj.comp
       (((map_continuous (e.hom.f 0).hom).comp continuous_fst).prodMk continuous_snd)

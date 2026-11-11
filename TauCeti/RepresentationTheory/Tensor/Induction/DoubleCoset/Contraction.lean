@@ -14,12 +14,12 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution
 
 The orbitwise tensor complex in the Mackey decomposition is a resolution of the restriction
 of the tensor-induced coefficients. Restrict the contraction of the ambient tensor resolution
-and pull it back along the Mackey chain isomorphism. Its augmentation is the orbitwise tensor
-augmentation followed by the coefficient Mackey comparison.
+and pull it back along the Mackey chain isomorphism. Its augmentation is the inverse coefficient
+Mackey comparison followed by the orbitwise tensor augmentation in every factor.
 
 Consequently an invariant cocycle in the orbitwise complex has a canonical continuous
-cohomology class. The Mackey comparison preserves that class, and restriction of a class
-computed in the ambient tensor resolution can be computed in the orbitwise complex. This is
+cohomology class. Restriction of a class computed in the ambient tensor resolution can be
+computed in the orbitwise complex via the Mackey comparison. This is
 the additive comparison needed before identifying the orbitwise class with a cup product.
 
 ## References
@@ -74,11 +74,9 @@ theorem smoothTensorInducedMackeyRestrictedResolutionIso_hom_f_apply (n : ℕ)
     (((smoothTensorInducedMackeyRestrictedResolutionIso U V hU r hr t s A hA).hom.f n).hom z).1 =
       (smoothTensorInducedMackeyIso U V hU r hr t s
         (smoothGradedResolutionFunctor.obj A)).hom.hom.hom z.1 := by
-  unfold smoothTensorInducedMackeyRestrictedResolutionIso
-  -- The restriction functor and the smooth dictionary have identical underlying carriers.
-  erw [Iso.trans_hom, HomologicalComplex.comp_f, ConcreteCategory.comp_apply,
-    Iso.symm_hom, TopRep.resGradedCochainComplexIso_inv_f_apply,
-    smoothTensorInducedMackeyResolutionIso_hom_f_apply]
+  -- The restriction comparison identifies the homogeneous carriers without changing vectors.
+  exact (TopRep.resGradedCochainComplexIso_inv_f_apply V.subtype n _).trans
+    (smoothTensorInducedMackeyResolutionIso_hom_f_apply U V hU r hr t s A hA n z)
 
 omit [LinearOrder (G ⧸ U)] in
 /-- The inverse restricted chain comparison applies the inverse Mackey regrouping. -/
@@ -86,11 +84,9 @@ theorem smoothTensorInducedMackeyRestrictedResolutionIso_inv_f_apply (n : ℕ) (
     (((smoothTensorInducedMackeyRestrictedResolutionIso U V hU r hr t s A hA).inv.f n).hom z).1 =
       (smoothTensorInducedMackeyIso U V hU r hr t s
         (smoothGradedResolutionFunctor.obj A)).inv.hom.hom z.1 := by
-  unfold smoothTensorInducedMackeyRestrictedResolutionIso
-  -- The restriction functor and the smooth dictionary have identical underlying carriers.
-  erw [Iso.trans_inv, HomologicalComplex.comp_f, ConcreteCategory.comp_apply,
-    smoothTensorInducedMackeyResolutionIso_inv_f_apply,
-    Iso.symm_inv, TopRep.resGradedCochainComplexIso_hom_f_apply]
+  -- Apply the inverse Mackey map after the vector-preserving restriction comparison.
+  exact (smoothTensorInducedMackeyResolutionIso_inv_f_apply U V hU r hr t s A hA n _).trans
+    (congrArg _ (TopRep.resGradedCochainComplexIso_hom_f_apply V.subtype n z))
 
 /-- The Mackey-decomposed tensor complex contracts onto the restriction to `V` of the
 coefficients tensor induced from `U` to `G`. No compactness or openness of `V` is needed. -/
@@ -114,14 +110,10 @@ theorem smoothTensorInducedMackeyResolutionContraction_ι :
         (smoothTensorInducedGradedResolutionContraction U hU s A hA).ι ≫
           (smoothTensorInducedMackeyRestrictedResolutionIso U V hU r hr t s A hA).inv.f 0 := by
   unfold smoothTensorInducedMackeyResolutionContraction
-  exact (TopRep.ResolutionContraction.ofIso_ι
-    (TopRep.ResolutionContraction.res.{u, v, max u w}
-      (ContinuousMonoidHom.subgroupSubtype V)
-      (smoothTensorInducedGradedResolutionContraction U hU s A hA))
-    (smoothTensorInducedMackeyRestrictedResolutionIso U V hU r hr t s A hA)).trans
-      (congrArg
-        (· ≫ (smoothTensorInducedMackeyRestrictedResolutionIso U V hU r hr t s A hA).inv.f 0)
-        (TopRep.ResolutionContraction.res_ι _ _))
+  refine (TopRep.ResolutionContraction.ofIso_ι _ _).trans ?_
+  rw [TopRep.ResolutionContraction.res_ι]
+  -- Forgetting continuity of the subgroup inclusion gives precisely `V.subtype`.
+  rfl
 
 /-- Applying the Mackey chain comparison to the orbitwise augmentation recovers the
 restricted ambient augmentation. -/
@@ -151,9 +143,12 @@ tensor-induced coefficients. -/
   have hc := congrArg Subtype.val (ConcreteCategory.congr_hom
     (smoothTensorInducedMackeyResolutionContraction_ι_comp_hom U V hU r hr t s A hA)
     ((smoothTensorInducedMackeyIso U V hU r hr t s A).hom.hom.hom x))
-  -- The homogeneous subtype and its restriction carry the same vectors.
-  erw [ConcreteCategory.comp_apply,
-    smoothTensorInducedMackeyRestrictedResolutionIso_hom_f_apply] at hc
+  -- Use the restricted application formula to identify the homogeneous carriers explicitly.
+  have hm := smoothTensorInducedMackeyRestrictedResolutionIso_hom_f_apply
+    U V hU r hr t s A hA 0
+    ((smoothTensorInducedMackeyResolutionContraction U V hU r hr t s A hA).ι.hom
+      ((smoothTensorInducedMackeyIso U V hU r hr t s A).hom.hom.hom x))
+  have hc := hm.symm.trans hc
   have hres := congrArg
     (fun f ↦ (f ((smoothTensorInducedMackeyIso U V hU r hr t s A).hom.hom.hom x)).1)
     (TopRep.resFunctor_map_hom V.subtype
@@ -172,12 +167,10 @@ and then applies its tensor projection. -/
         (((smoothTensorInducedMackeyRestrictedResolutionIso U V hU r hr t s A hA).hom.f 0).hom
           z) := by
   unfold smoothTensorInducedMackeyResolutionContraction
-  exact (TopRep.ResolutionContraction.ofIso_proj_apply _ _ z).trans
-    (congrArg (fun f ↦ f
-      (((smoothTensorInducedMackeyRestrictedResolutionIso U V hU r hr t s A hA).hom.f 0).hom z))
-      (TopRep.ResolutionContraction.res_proj.{u, v, max u w}
-        (ContinuousMonoidHom.subgroupSubtype V)
-        (smoothTensorInducedGradedResolutionContraction U hU s A hA)))
+  refine (TopRep.ResolutionContraction.ofIso_proj_apply _ _ z).trans ?_
+  rw [TopRep.ResolutionContraction.res_proj]
+  -- The restricted term and its smooth presentation have the same subtype carrier.
+  rfl
 
 /-- The orbitwise homotopy is the conjugate of the ambient tensor homotopy by the Mackey
 comparison. -/
@@ -189,13 +182,10 @@ comparison. -/
           (((smoothTensorInducedMackeyRestrictedResolutionIso U V hU r hr t s A hA).hom.f
             (n + 1)).hom z)) := by
   unfold smoothTensorInducedMackeyResolutionContraction
-  exact (TopRep.ResolutionContraction.ofIso_hom_apply _ _ n z).trans
-    (congrArg (fun f ↦
-      ((smoothTensorInducedMackeyRestrictedResolutionIso U V hU r hr t s A hA).inv.f n).hom
-        (f (((smoothTensorInducedMackeyRestrictedResolutionIso U V hU r hr t s A hA).hom.f
-          (n + 1)).hom z))) (TopRep.ResolutionContraction.res_hom.{u, v, max u w}
-            (ContinuousMonoidHom.subgroupSubtype V)
-            (smoothTensorInducedGradedResolutionContraction U hU s A hA) n))
+  refine (TopRep.ResolutionContraction.ofIso_hom_apply _ _ n z).trans ?_
+  rw [TopRep.ResolutionContraction.res_hom]
+  -- The restricted terms and their smooth presentations have the same subtype carriers.
+  rfl
 
 /-- Restriction of a class computed on the ambient tensor resolution is computed on the
 orbitwise tensor resolution by the inverse Mackey comparison. This holds in every degree
