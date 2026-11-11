@@ -355,11 +355,16 @@ private theorem IsNoncrossing.false_of_mem_union (hP : P.IsNoncrossing) {i j : �
 
 /-- Merging the parts through two positions `i ≤ j` of `s` with no position of `s` strictly
 between them keeps a noncrossing partition noncrossing: there is a coarser noncrossing partition
-whose part through `i` is the union of the parts through `i` and `j`. -/
+whose part through `i` is the union of the parts through `i` and `j`. (If `j ∉ s`, its part is
+empty and `P` itself works.) -/
 theorem IsNoncrossing.exists_part_eq_union (hP : P.IsNoncrossing) {i j : α} (hi : i ∈ s)
-    (hj : j ∈ s) (hij : i ≤ j) (hadj : ∀ z ∈ s, z ≤ i ∨ j ≤ z) :
+    (hij : i ≤ j) (hadj : ∀ z ∈ s, z ≤ i ∨ j ≤ z) :
     ∃ Q : Finpartition s, Q.IsNoncrossing ∧ P ≤ Q ∧ Q.part i = P.part i ∪ P.part j := by
   classical
+  by_cases hj : j ∈ s
+  swap
+  · -- the part through a position outside `s` is empty
+    exact ⟨P, hP, le_rfl, by rw [(P.part_eq_empty).2 hj, union_empty]⟩
   -- Label each position by its part, relabelling the part through `j` as the part through `i`.
   let key : α → Finset α := fun x => if P.part x = P.part j then P.part i else P.part x
   let Q := ofSetSetoid (Setoid.ker key) s
@@ -582,7 +587,7 @@ theorem sup_pairPartition_eq_top_iff {i j : α} (hij : {i, j} ⊆ s) (hle : i �
   have hj : j ∈ s := hij (mem_insert_of_mem (mem_singleton_self j))
   refine ⟨fun hx => ?_, fun hx => ?_⟩
   · -- Merging the parts of `x` through `i` and `j` gives an upper bound of `x` and the atom.
-    obtain ⟨Q, hQ, hxQ, hQi⟩ := x.2.exists_part_eq_union hi hj hle hadj
+    obtain ⟨Q, hQ, hxQ, hQi⟩ := x.2.exists_part_eq_union hi hle hadj
     have hsup : x ⊔ ⟨pairPartition s i j hij, isNoncrossing_pairPartition hij⟩ ≤ ⟨Q, hQ⟩ :=
       sup_le (Subtype.coe_le_coe.1 hxQ)
         (pairPartition_le (hij := hij) (hQi ▸ mem_union_right _ (x.1.mem_part_self.2 hj)))

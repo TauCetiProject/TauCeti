@@ -98,13 +98,13 @@ theorem hasWeakFDerivOn_newtonianKernel (hn : 3 ≤ n) (Ω : Opens (EuclideanSpa
 /-- Away from the pole, the gradient pairing `∇Gₙ · ∇f` is `-(n ωₙ)⁻¹ ‖x‖⁻ⁿ f' x x`. -/
 private lemma sum_fderiv_newtonianKernel_mul_fderiv (hn : 3 ≤ n)
     (b : OrthonormalBasis (Fin n) ℝ (EuclideanSpace ℝ (Fin n)))
-    (f : EuclideanSpace ℝ (Fin n) → ℝ) {x : EuclideanSpace ℝ (Fin n)} (hx : x ≠ 0) :
+    (f : EuclideanSpace ℝ (Fin n) → ℝ) (x : EuclideanSpace ℝ (Fin n)) :
     ∑ i, fderiv ℝ (newtonianKernel n) x (b i) * fderiv ℝ f x (b i) =
       -((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
         (‖x‖ ^ (-(n : ℝ)) * fderiv ℝ f x x) := by
   have hx' : fderiv ℝ f x x = ∑ i, ⟪b i, x⟫ * fderiv ℝ f x (b i) := by
     simpa using congrArg (fderiv ℝ f x) (b.sum_repr' x).symm
-  simp_rw [fderiv_newtonianKernel_apply n (by omega) hx, hx', Finset.mul_sum, real_inner_comm x]
+  simp_rw [fderiv_newtonianKernel_apply n (by omega), hx', Finset.mul_sum, real_inner_comm x]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   ring
 
@@ -124,9 +124,8 @@ theorem integral_laplacian_mul_newtonianKernel (hn : 3 ≤ n)
   set b := EuclideanSpace.basisFun (Fin n) ℝ
   have hsum : (fun x ↦ ∑ i, fderiv ℝ (newtonianKernel n) x (b i) * fderiv ℝ f x (b i)) =ᵐ[volume]
       fun x ↦ -((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
-        (‖x‖ ^ (-(n : ℝ)) * fderiv ℝ f x x) := by
-    filter_upwards [volume.ae_ne 0] with x hx
-    exact sum_fderiv_newtonianKernel_mul_fderiv hn b f hx
+        (‖x‖ ^ (-(n : ℝ)) * fderiv ℝ f x x) :=
+    ae_of_all _ (sum_fderiv_newtonianKernel_mul_fderiv hn b f)
   rw [(locallyIntegrable_newtonianKernel n).integral_laplacian_mul_eq_neg_integral_sum
       (locallyIntegrable_fderiv_newtonianKernel n)
       (fun _ ↦ integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul hn) hf hc b,

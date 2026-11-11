@@ -22,10 +22,11 @@ the final value. The explicit-partition induction follows the pattern of the Apa
 formalization, revision `24f32e4d600878bfaac6bc2f2f9324175571c321`, as used in
 `TauCeti/Geometry/Manifold/Riemannian/EDistComparison.lean`.
 
-Scaling a ray by a unit commutes with negating it (`Module.Ray.units_smul_neg`), complementing
-Mathlib's `Module.Ray.neg_units_smul`, and with transporting it along a linear equivalence
-(`Module.Ray.map_units_smul`). Over a linearly ordered ring, any map of rays commuting with negation
-also commutes with scaling by units (`Module.Ray.units_smul_of_map_neg`).
+Negating a ray twice gives it back (`Module.Ray.neg_neg`), in a form that `rw` and `simp` find on
+orientations. Scaling a ray by a unit commutes with negating it (`Module.Ray.units_smul_neg`),
+complementing Mathlib's `Module.Ray.neg_units_smul`, and with transporting it along a linear
+equivalence (`Module.Ray.map_units_smul`). Over a linearly ordered ring, any map of rays
+commuting with negation also commutes with scaling by units (`Module.Ray.units_smul_of_map_neg`).
 
 Two nonzero vectors in the same ray cannot cancel: their sum is again nonzero. This is the
 non-degeneracy needed to merge adjacent segments of a piecewise-linear path that point in the same
@@ -115,6 +116,12 @@ section Neg
 
 variable {R M : Type*} [CommRing R] [PartialOrder R] [IsStrictOrderedRing R]
   [AddCommGroup M] [Module R M]
+
+/-- Negating a ray twice produces the original ray. This is Mathlib's `neg_neg` stated with the
+instance `Neg (Module.Ray R M)`, so that `rw` and `simp` also find it on orientations, where the
+generic lemma does not match. -/
+theorem Module.Ray.neg_neg (v : Module.Ray R M) : - -v = v :=
+  _root_.neg_neg v
 
 /-- Scaling a ray by a unit commutes with negating it. -/
 theorem Module.Ray.units_smul_neg (u : Rˣ) (v : Module.Ray R M) : u • -v = -(u • v) := by

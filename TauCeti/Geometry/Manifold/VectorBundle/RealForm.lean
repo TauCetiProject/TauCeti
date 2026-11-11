@@ -6,18 +6,29 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Complexification
+public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
+public import TauCeti.Topology.VectorBundle.RealForm
+import TauCeti.Geometry.Manifold.ContMDiff.LeftInverse
 import TauCeti.Topology.VectorBundle.RestrictScalars
 import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
 
 /-!
-# Smooth conjugation determined by a maximal real form
+# Smooth conjugation and projection determined by a maximal real form
 
 A smooth real inclusion with maximal totally real image identifies a complex bundle with the
 complexification of its real source. Transporting the native tensor conjugation through this
 identification gives the smooth fiber involution fixing exactly the given real form.
 Maximality is essential: the fixed vectors of a conjugate-linear involution span the complex
 fiber. The base is a real charted space, and real and complex scalar structures are explicit.
+
+For a real subbundle `L` whose fibres are maximal totally real, `V x = L x ⊕ i L x`, and the
+projection `P x` of `V x` onto `L x` along `i L x` (`TauCeti.totallyRealProjection`, defined for
+topological bundles in `TauCeti.Topology.VectorBundle.RealForm`) is a smooth bundle endomorphism.
+This is checked in a local frame `X` of `L`: read in a trivialization, the real frame `X` becomes
+a smooth family of complex-linear isomorphisms `ℂᵏ → F`, and `P` is the conjugate by this family
+of the coordinatewise real part. The computation is local, so the projection is `C^n` wherever it
+is defined on a neighbourhood.
 
 ## Main declarations
 
@@ -33,6 +44,8 @@ fiber. The base is a real charted space, and real and complex scalar structures 
   `TauCeti.maximalRealFormConjugationDiffeomorph_natural`.
 * `TauCeti.maximalRealFormConjugationDiffeomorph_subtype_eq_self_iff`: the case of a subbundle
   given by submodules.
+* `TauCeti.contMDiffAt_totallyRealProjection`, `TauCeti.contMDiff_totallyRealProjection`: the
+  projection is a smooth bundle endomorphism.
 
 ## References
 
@@ -376,5 +389,107 @@ theorem maximalRealFormConjugationDiffeomorph_subtype_eq_self_iff
         simpa only [Submodule.toLinearMap_subtypeL, Submodule.range_subtype] using hmax x) p
 
 end Submodule
+
+end TauCeti
+
+namespace TauCeti
+
+open Set
+
+section Projection
+
+variable {X H B F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+  [TopologicalSpace H] {IB : ModelWithCorners ℝ X H}
+  [TopologicalSpace B] [ChartedSpace H B]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F]
+  [FiniteDimensional ℂ F]
+  {V : B → Type*}
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, Module ℂ (V x)]
+  [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, TopologicalSpace (V x)]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [∀ x, ContinuousConstSMul ℂ (V x)]
+  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℂ F V]
+  {n : ℕ∞ω} {ι : Type*} [Finite ι] {L : ∀ x, Submodule ℝ (V x)}
+
+local instance realFormProjectionVectorBundleReal : VectorBundle ℝ F V :=
+  VectorBundle.restrictScalars ℝ ℂ F V
+
+section Frame
+
+variable {U : Set B} {X : ι → Π x, V x}
+
+omit [∀ x, ContinuousConstSMul ℂ (V x)] in
+/-- **The projection onto a totally real subbundle is smooth, locally.** Let `L` have a `C^n`
+frame on an open set `U` whose points all have maximal totally real fibres. A field of
+endomorphisms equal on `U` to the projection onto `L` along `i L` is `C^n` at each point of `U`. -/
+theorem contMDiffAt_totallyRealProjection [ContMDiffVectorBundle n F V IB] (hU : IsOpen U)
+    (hX : IsSubbundleFrameOn F L X U) (hXs : ∀ i, CMDiff[U] n (T% (X i)))
+    (hL : ∀ y ∈ U,
+      IsMaximalTotallyReal ((LinearMap.lsmul ℂ (V y) Complex.I).restrictScalars ℝ) (L y))
+    {P : ∀ y, V y →L[ℝ] V y} (hP : ∀ y (hy : y ∈ U), P y = totallyRealProjection F (hL y hy))
+    {x₀ : B} (hx₀ : x₀ ∈ U) :
+    ContMDiffAt IB (IB.prod 𝓘(ℝ, F →L[ℝ] F)) n (fun x ↦ TotalSpace.mk' (F →L[ℝ] F)
+      (E := fun y ↦ V y →L[ℝ] V y) x (P x)) x₀ := by
+  let := Fintype.ofFinite ι
+  rw [contMDiffAt_hom_bundle]
+  refine ⟨contMDiffAt_id, ?_⟩
+  set e := trivializationAt F V x₀
+  have he₀ : x₀ ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt F V x₀
+  let A : B → (ι → ℂ) →L[ℂ] F := IsSubbundleFrameOn.trivOperator ℂ F X x₀
+  have hA : ContMDiffAt IB 𝓘(ℝ, (ι → ℂ) →L[ℂ] F) n A x₀ :=
+    IsSubbundleFrameOn.contMDiffAt_trivOperator
+      (fun i ↦ (hXs i).contMDiffAt (hU.mem_nhds hx₀)) he₀
+  have hAapply {y : B} (hy : y ∈ e.baseSet) (c : ι → ℂ) :
+      A y c = (e ⟨y, ∑ i, c i • X i y⟩).2 :=
+    IsSubbundleFrameOn.trivOperator_apply hy c
+  have hA₀ := hX.bijective_trivOperator hx₀ he₀ (hL x₀ hx₀)
+  have hleft : (A x₀).HasLeftInverse := by
+    let a := LinearEquiv.ofBijective (A x₀ : (ι → ℂ) →ₗ[ℂ] F) hA₀
+    refine ⟨(a.toContinuousLinearEquiv.symm : F →L[ℂ] (ι → ℂ)), fun c ↦ ?_⟩
+    have : a.toContinuousLinearEquiv c = A x₀ c := rfl
+    rw [ContinuousLinearEquiv.coe_coe, ← this, ContinuousLinearEquiv.symm_apply_apply]
+  obtain ⟨Linv, hLinv, hLA⟩ := hA.exists_contMDiffAt_leftInverse hleft
+  let R : (ι → ℂ) →L[ℝ] (ι → ℂ) := ContinuousLinearMap.pi fun i ↦
+    Complex.ofRealCLM ∘L Complex.reCLM ∘L ContinuousLinearMap.proj i
+  have hAr : ContMDiffAt IB 𝓘(ℝ, (ι → ℂ) →L[ℝ] F) n (fun y ↦ (A y).restrictScalars ℝ) x₀ :=
+    (ContinuousLinearMap.restrictScalarsL ℂ (ι → ℂ) F ℝ ℝ).contDiff.comp_contMDiffAt hA
+  have hLr : ContMDiffAt IB 𝓘(ℝ, F →L[ℝ] (ι → ℂ)) n (fun y ↦ (Linv y).restrictScalars ℝ) x₀ :=
+    (ContinuousLinearMap.restrictScalarsL ℂ F (ι → ℂ) ℝ ℝ).contDiff.comp_contMDiffAt hLinv
+  refine (hAr.clm_comp ((contMDiffAt_const (c := R)).clm_comp hLr)).congr_of_eventuallyEq ?_
+  filter_upwards [hLA, hU.mem_nhds hx₀, e.open_baseSet.mem_nhds he₀] with y hyL hyU hye
+  ext w
+  obtain ⟨c, rfl⟩ : ∃ c, A y c = w := (hX.bijective_trivOperator hyU hye (hL y hyU)).2 w
+  have hc : Linv y (A y c) = c := hyL c
+  have hsymm : e.symm y (A y c) = ∑ i, c i • X i y := by
+    rw [hAapply hye, e.symm_apply_apply_mk hye]
+  rw [ContinuousLinearMap.inCoordinates_eq hye hye]
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars', hc,
+    ContinuousLinearEquiv.coe_coe, Trivialization.continuousLinearEquivAt_symm_apply]
+  rw [hsymm, Trivialization.continuousLinearEquivAt_apply, hP y hyU, totallyRealProjection_apply,
+    (hL y hyU).projection_sum_smul (fun i ↦ hX.apply_mem i hyU), hAapply hye]
+  have hR : ∑ i, R c i • X i y = ∑ i, (c i).re • X i y :=
+    Finset.sum_congr rfl fun i _ ↦ by
+      simp only [R, ContinuousLinearMap.pi_apply, ContinuousLinearMap.comp_apply,
+        ContinuousLinearMap.proj_apply, Complex.reCLM_apply, Complex.ofRealCLM_apply]
+      rw [← smul_one_smul ℂ (c i).re (X i y), Complex.real_smul, mul_one]
+  rw [hR]
+
+end Frame
+
+omit [∀ x, ContinuousConstSMul ℂ (V x)] in
+/-- **The projection onto a smooth totally real subbundle is smooth.** If the fibres of a
+real subbundle `L` with `C^n` local frames are maximal totally real, the projection onto `L`
+along `i L` is a `C^n` section of the endomorphism bundle. -/
+theorem contMDiff_totallyRealProjection [ContMDiffVectorBundle n F V IB]
+    (hLs : HasLocalContMDiffSubbundleFrames IB n F ι L)
+    (hL : ∀ x, IsMaximalTotallyReal ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (L x)) :
+    ContMDiff IB (IB.prod 𝓘(ℝ, F →L[ℝ] F)) n (fun x ↦ TotalSpace.mk' (F →L[ℝ] F)
+      (E := fun y ↦ V y →L[ℝ] V y) x (totallyRealProjection F (hL x))) := by
+  intro x₀
+  let := Fintype.ofFinite ι
+  obtain ⟨U, hU, hx₀, X, hX, hXs⟩ := hasLocalContMDiffSubbundleFrames_iff.mp hLs x₀
+  exact contMDiffAt_totallyRealProjection hU hX hXs (fun y _ ↦ hL y) (fun _ _ ↦ rfl) hx₀
+
+end Projection
 
 end TauCeti

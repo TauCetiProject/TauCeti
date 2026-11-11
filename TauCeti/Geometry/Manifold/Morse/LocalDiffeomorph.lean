@@ -39,10 +39,10 @@ preimages of those of `f`, with the same nondegeneracy and indices.
 
 public section
 
-open Filter Function Set Topology
+open Filter Function Set Topology TauCeti
 open scoped ContDiff Manifold
 
-namespace TauCeti
+namespace IsLocalDiffeomorphAt
 
 variable {E H M M' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M] [ChartedSpace H M]
@@ -52,7 +52,7 @@ variable {E H M M' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologi
 /-- **Nondegeneracy under a local diffeomorphism.** If `π` is a `C^n` local diffeomorphism at `x`
 with `2 ≤ n`, then `x` is a nondegenerate critical point of `f ∘ π` exactly when `π x` is a
 nondegenerate critical point of `f`. -/
-theorem _root_.IsLocalDiffeomorphAt.isManifoldNondegenerateCriticalPoint_comp_iff
+theorem isManifoldNondegenerateCriticalPoint_comp_iff
     (hπ : IsLocalDiffeomorphAt I I n π x) (hn : 2 ≤ n) {f : M' → ℝ} :
     IsManifoldNondegenerateCriticalPoint I (f ∘ π) x ↔
       IsManifoldNondegenerateCriticalPoint I f (π x) := by
@@ -69,7 +69,7 @@ theorem _root_.IsLocalDiffeomorphAt.isManifoldNondegenerateCriticalPoint_comp_if
 /-- **The Morse index under a local diffeomorphism.** If `π` is a `C^n` local diffeomorphism at
 `x` with `2 ≤ n`, and `π x` is a critical point of a function `f` which is `C²` there, then the
 Morse index of `f ∘ π` at `x` is the Morse index of `f` at `π x`. -/
-theorem _root_.IsLocalDiffeomorphAt.manifoldMorseIndex_comp
+theorem manifoldMorseIndex_comp
     (hπ : IsLocalDiffeomorphAt I I n π x) (hn : 2 ≤ n) {f : M' → ℝ}
     (hf : ContMDiffAt I 𝓘(ℝ) 2 f (π x)) (hcrit : π x ∈ criticalPoints I f) :
     manifoldMorseIndex I (f ∘ π) x = manifoldMorseIndex I f (π x) := by
@@ -86,4 +86,4 @@ theorem _root_.IsLocalDiffeomorphAt.manifoldMorseIndex_comp
       (mem_chart_source H (π x)) hf (mem_criticalPoints.1 hcrit),
     morseIndex_congr_of_eventuallyEq (hcomp f), hpt]
 
-end TauCeti
+end IsLocalDiffeomorphAt

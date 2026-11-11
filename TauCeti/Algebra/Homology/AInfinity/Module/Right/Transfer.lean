@@ -541,7 +541,6 @@ theorem transferBarDifferential_comp_self :
       0 :=
   LinearSpecialContraction.perturbedDifferential_comp_perturbedDifferential_eq_zero _ _
     MM.unaryBarDifferential_add_higherBarDifferential_comp_self
-    (MM.isUnit_one_add_higherBarDifferential_mul_barContraction_homotopy c hh hincl hproj)
     MM.unaryBarDifferential_differential_comp_self
 
 include hincl hproj in

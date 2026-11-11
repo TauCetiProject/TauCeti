@@ -24,6 +24,9 @@ then multiplies the smooth representative by a fixed test function equal to one 
 smaller domain. Interior derivative identities identify all its derivatives with mollified
 weak derivative fields.
 
+The mollified fields `TauCeti.Wkp.smoothField` converge in `Lᵖ(Ω)` as the bump radii tend to
+zero (`TauCeti.Wkp.tendsto_eLpNorm_smoothField_sub`).
+
 ## References
 
 L. C. Evans, *Partial Differential Equations*, Chapter 5, §5.3.1. The proof uses the
@@ -109,6 +112,21 @@ private theorem localAverage_ae {F : Type*} [NormedAddCommGroup F] [NormedSpace 
     (ae_mono (Measure.restrict_mono_set mu (subset_univ (U : Set E))))
   exact (Lp.coeFn_LpToLpOfMeasureLeSMul _ _ _).trans (by
     simpa only [Measure.restrict_univ, smoothField_def] using he')
+
+/-- As the bump radii tend to zero, the mollifications of a zero-extended field
+`f ∈ Lᵖ(Ω; F)`, `p < ∞`, converge to `f` in `Lᵖ(Ω; F)`. -/
+theorem tendsto_eLpNorm_smoothField_sub {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [CompleteSpace F] (hp : p ≠ ∞) {I : Type*} {l : Filter I} {phi : I → ContDiffBump (0 : E)}
+    (hphi : Tendsto (fun i => (phi i).rOut) l (𝓝 0)) (f : Lp F p (mu.restrict Omega)) :
+    Tendsto (fun i => eLpNorm (smoothField (phi i) f - (f : E → F)) p (mu.restrict Omega)) l
+      (𝓝 0) := by
+  have h := (Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).1
+    (tendsto_normedBumpLp_extendByZero_restrict hp Omega.isOpen.measurableSet subset_rfl hphi f)
+  refine h.congr fun i => eLpNorm_congr_ae ?_
+  filter_upwards [localAverage_ae (U := Omega) hp (phi i) f,
+    Lp.coeFn_LpToLpOfMeasureLeSMul (μ := mu.restrict (Omega : Set E))
+      (ν := mu.restrict (Omega : Set E)) (c := 1) (by simp) (by simp) f] with x h1 h2
+  simp only [Pi.sub_apply, ← h1, h2, localAverage]
 
 /-- The restriction to `U` of the `W^{k,p}(Ω)` element of a test function is represented on `U`
 by that test function. -/

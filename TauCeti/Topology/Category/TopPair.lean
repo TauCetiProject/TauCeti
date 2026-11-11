@@ -187,6 +187,23 @@ lemma ofInclusionMap_comp (g : C(t, t')) (g' : C(t', t''))
       ofInclusionMap hst hst' g hg ≫ ofInclusionMap hst' hst'' g' hg' := by
   ext : 2 <;> rfl
 
+variable {hst''} in
+/-- Two composites `(t, s) ⟶ (t', s') ⟶ (t'', s'')` and `(t, s) ⟶ (t₀, s₀) ⟶ (t'', s'')` of maps
+of pairs induced by continuous maps of subspaces agree whenever the composites of the continuous
+maps agree. -/
+lemma ofInclusionMap_comp_ofInclusionMap_eq {W : TopCat.{u}} {s₀ t₀ : Set W} {hst₀ : s₀ ⊆ t₀}
+    (g : C(t, t')) (hg : ∀ x : t, (x : X) ∈ s → (g x : Y) ∈ s')
+    (g' : C(t', t'')) (hg' : ∀ x : t', (x : Y) ∈ s' → (g' x : Z) ∈ s'')
+    (k : C(t, t₀)) (hk : ∀ x : t, (x : X) ∈ s → (k x : W) ∈ s₀)
+    (k' : C(t₀, t'')) (hk' : ∀ x : t₀, (x : W) ∈ s₀ → (k' x : Z) ∈ s'')
+    (h : ∀ x, (g' (g x) : Z) = k' (k x)) :
+    ofInclusionMap hst hst' g hg ≫ ofInclusionMap hst' hst'' g' hg' =
+      ofInclusionMap hst hst₀ k hk ≫ ofInclusionMap hst₀ hst'' k' hk' := by
+  rw [← ofInclusionMap_comp, ← ofInclusionMap_comp]
+  congr 1
+  ext x
+  exact h x
+
 /-- A homotopy between maps `t → t'` which keeps `s` inside `s'` at every time induces a homotopy
 between the induced maps of pairs `(t, s) ⟶ (t', s')`. -/
 def ofInclusionHomotopy {g₀ g₁ : C(t, t')} (F : g₀.Homotopy g₁)
