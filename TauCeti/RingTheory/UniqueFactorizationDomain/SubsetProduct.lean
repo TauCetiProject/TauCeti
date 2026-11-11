@@ -46,16 +46,20 @@ theorem normalizedFactors_finset_prod_of_prime (hS : ∀ p ∈ S, Prime p) :
   rw [Finset.prod_eq_multiset_prod, Multiset.map_id']
   exact normalizedFactors_prod_of_prime hS
 
+omit [NormalizationMonoid α] in
 /-- A finite set of primes is determined by its product. -/
 @[simp]
 theorem finset_prod_eq_iff_of_prime (hS : ∀ p ∈ S, Prime p) (hT : ∀ p ∈ T, Prime p) :
     ∏ p ∈ S, p = ∏ p ∈ T, p ↔ S = T := by
+  obtain ⟨_⟩ : Nonempty (NormalizationMonoid α) := inferInstance
   refine ⟨fun h => Finset.val_inj.1 ?_, fun h => by rw [h]⟩
   rw [← normalizedFactors_finset_prod_of_prime hS, ← normalizedFactors_finset_prod_of_prime hT, h]
 
+omit [NormalizationMonoid α] in
 /-- The divisors of a product of distinct primes are exactly the products of subsets of them. -/
 theorem dvd_finset_prod_iff_of_prime (hS : ∀ p ∈ S, Prime p) {a : α} :
     a ∣ ∏ p ∈ S, p ↔ ∃ T ⊆ S, a = ∏ p ∈ T, p := by
+  obtain ⟨_⟩ : Nonempty (NormalizationMonoid α) := inferInstance
   refine ⟨fun hdvd => ?_, fun ⟨T, hTS, ha⟩ => ha ▸ Finset.prod_dvd_prod_of_subset T S _ hTS⟩
   cases subsingleton_or_nontrivial α
   · exact ⟨∅, Finset.empty_subset S, Subsingleton.elim _ _⟩
