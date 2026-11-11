@@ -203,6 +203,13 @@ lemma vertexTransport_def (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
     vertexTransport α σ = pathTransport σ (toTopInitialVertex m.unop)
       (toTop.map α.unop (toTopInitialVertex n.unop)) := (rfl)
 
+/-- Pushing a simplex forward carries vertex transport to vertex transport in its image. -/
+lemma map_vertexTransport (f : X ⟶ Y) (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
+    (FundamentalGroupoid.map f.hom).map (vertexTransport α σ) =
+      vertexTransport α ((TopCat.toSSet.map f).app m σ) := by
+  simp only [vertexTransport_def]
+  exact map_pathTransport f σ _ _
+
 /-- Inverse vertex transport runs inside the original simplex from the reindexed initial
 vertex back to the original initial vertex. -/
 lemma inv_vertexTransport (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
@@ -1041,8 +1048,7 @@ def twistedChainsMap : twistedChains ((pullback f.hom).obj L) ⟶ twistedChains 
     refine Eq.trans ?_ (ιTwistedChains_map L α ((TopCat.toSSet.map f).app m σ)).symm
     exact congrArg (· ≫ ιTwistedChains L ((TopCat.toSSet.obj Y).map α
         ((TopCat.toSSet.map f).app m σ)))
-      (congrArg L.map (map_pathTransport f σ (toTopInitialVertex m.unop)
-        (toTop.map α.unop (toTopInitialVertex n.unop))))
+      (congrArg L.map (map_vertexTransport f α σ))
 
 /-- A continuous map sends the summand of a simplex `σ` of `X` identically onto the summand of its
 image simplex in `Y`. -/
@@ -1093,6 +1099,36 @@ lemma twistedChainComplexMap_f_ι_apply (k : ℕ) (σ : (TopCat.toSSet.obj X) _�
     ((twistedChainComplexMap f L).f k).hom ((ιTwistedChainComplex _ k σ).hom x) =
       (ιTwistedChainComplex L k ((TopCat.toSSet.map f).app _ σ)).hom x :=
   congrArg (fun φ ↦ φ.hom x) (ιTwistedChainComplex_twistedChainComplexMap_f f L k σ)
+
+/-- Along an injective map, the coefficient of a pushed-forward chain on the image of a simplex
+is the coefficient of the original chain on that simplex. -/
+@[reassoc (attr := simp)]
+lemma twistedChainComplexMap_f_comp_twistedChainComplexCoeff [Mono f] {k : ℕ}
+    (τ : (TopCat.toSSet.obj X) _⦋k⦌) :
+    (twistedChainComplexMap f L).f k ≫
+        twistedChainComplexCoeff L ((TopCat.toSSet.map f).app _ τ) =
+      twistedChainComplexCoeff ((pullback f.hom).obj L) τ := by
+  refine twistedChainComplex_hom_ext _ fun σ ↦ ?_
+  rw [ιTwistedChainComplex_twistedChainComplexMap_f_assoc]
+  -- The fibres of `L` at the image vertex and of the pullback at the original vertex agree only
+  -- definitionally, so the two sides are compared through `Eq.trans` rather than rewriting.
+  by_cases h : σ = τ
+  · subst h
+    exact (ιTwistedChainComplex_twistedChainComplexCoeff L _).trans
+      (ιTwistedChainComplex_twistedChainComplexCoeff ((pullback f.hom).obj L) σ).symm
+  · exact (ιTwistedChainComplex_twistedChainComplexCoeff_of_ne L
+      fun h' ↦ h (injective_of_mono ((TopCat.toSSet.map f).app _) h')).trans
+        (ιTwistedChainComplex_twistedChainComplexCoeff_of_ne ((pullback f.hom).obj L) h).symm
+
+/-- Along an injective map, the coefficient of a pushed-forward chain on the image of a simplex
+is the coefficient of the original chain on that simplex. -/
+@[simp]
+lemma twistedChainComplexCoeff_twistedChainComplexMap_f_apply [Mono f] {k : ℕ}
+    (τ : (TopCat.toSSet.obj X) _⦋k⦌) (c : ((pullback f.hom).obj L).twistedChainComplex.X k) :
+    (twistedChainComplexCoeff L ((TopCat.toSSet.map f).app _ τ)).hom
+        (((twistedChainComplexMap f L).f k).hom c) =
+      (twistedChainComplexCoeff ((pullback f.hom).obj L) τ).hom c :=
+  congrArg (fun φ ↦ φ.hom c) (twistedChainComplexMap_f_comp_twistedChainComplexCoeff f L τ)
 
 /-- The map on twisted homology induced by a continuous map, from the homology of `X` twisted by
 the pullback system to the homology of `Y` twisted by `L`. -/

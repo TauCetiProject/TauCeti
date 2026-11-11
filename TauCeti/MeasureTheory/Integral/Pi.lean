@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Pi
 public import Mathlib.MeasureTheory.Integral.Prod
 public import TauCeti.MeasureTheory.Constructions.Pi
 import Mathlib.MeasureTheory.Integral.Marginal
+import Mathlib.Probability.HasLaw
 import TauCeti.MeasureTheory.Function.Lp.Iterated
 
 /-!
@@ -36,7 +37,7 @@ Mathlib's: reduce a `Fin (n + 1)`-indexed product to a binary product measure al
 * `TauCeti.lintegral_fintype_prod_eq_prod`: the product formula, for measurable factors.
 * `TauCeti.lintegral_fintype_prod_eq_prod₀`: the same for almost everywhere measurable factors.
 * `TauCeti.lintegral_pi_update`: refreshing a coordinate preserves lower integrals.
-* `TauCeti.ae_memLp_two_pi_update`: almost every refreshed coordinate slice is in L².
+* `TauCeti.ae_memLp_pi_update`: almost every refreshed coordinate slice is in `Lᵖ`.
 * `TauCeti.integral_pi_eq_integral_integral_update`: the two-coordinate Fubini
   identity.
 * `TauCeti.integral_pi_succ`: splitting off the zeroth coordinate of a finite product measure.
@@ -45,6 +46,7 @@ Mathlib's: reduce a `Fin (n + 1)`-indexed product to a binary product measure al
 * `MeasureTheory.Measure.integrable_comp_finCons_of_abs_le`: a bounded measurable function
   composed with `Fin.cons` is integrable on the head-tail product.
 * `TauCeti.integrable_pi_succ`: the integrability counterpart of `TauCeti.integral_pi_succ`.
+* `TauCeti.integral_integral_update_pi`: the one-coordinate Fubini identity.
 * `TauCeti.integral_pi_sum_mul`: Fubini over a sum of index types, for a product of a function of
   each block of coordinates.
 * `TauCeti.setIntegral_prod_le_exp_mul_pow`: the exponential-moment (Chernoff) bound for the
@@ -77,23 +79,13 @@ theorem lintegral_pi_update (μ : ∀ i, Measure (α i)) [∀ i, IsProbabilityMe
   simp only [Function.update_idem]
   simp
 
-/-- For an L² function on a finite product of probability spaces, almost every one-coordinate
-slice obtained by an independent refresh is again in L². -/
-theorem ae_memLp_two_pi_update (μ : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (μ i)]
-    {g : (∀ i, α i) → ℝ} (hg : Measurable g) (hL : MemLp g 2 (Measure.pi μ)) (i : ι) :
-    ∀ᵐ x ∂Measure.pi μ, MemLp (fun y ↦ g (Function.update x i y)) 2 (μ i) := by
-  have hm : Measurable (fun q : (∀ j, α j) × α i ↦ g (Function.update q.1 i q.2)) :=
-    hg.comp measurable_update'
-  have hupdate : MemLp (fun q : (∀ j, α j) × α i ↦ g (Function.update q.1 i q.2))
-      2 ((Measure.pi μ).prod (μ i)) := by
-    apply (eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top (p := 2) (by norm_num) (by norm_num)
-      hm.aestronglyMeasurable).mpr
-    simp only [ENNReal.toReal_ofNat]
-    rw [lintegral_prod _ (hm.enorm.pow_const (2 : ℝ)).aemeasurable,
-      lintegral_pi_update μ (hg.enorm.pow_const (2 : ℝ)) i]
-    exact (eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top (p := 2) (by norm_num) (by norm_num)
-      hg.aestronglyMeasurable).mp hL
-  exact hupdate.ae_memLp_prod_right
+/-- For an `Lᵖ` function on a finite product of sigma-finite measures, almost every one-coordinate
+slice obtained by an independent refresh at a probability coordinate is again in `Lᵖ`. -/
+theorem ae_memLp_pi_update {E : Type*} [NormedAddCommGroup E] (μ : ∀ i, Measure (α i))
+    [∀ i, SigmaFinite (μ i)] (i : ι) [IsProbabilityMeasure (μ i)] {p : ℝ≥0∞}
+    {g : (∀ i, α i) → E} (hL : MemLp g p (Measure.pi μ)) :
+    ∀ᵐ x ∂Measure.pi μ, MemLp (fun y ↦ g (Function.update x i y)) p (μ i) :=
+  (hL.comp_measurePreserving (measurePreserving_update_prod_pi μ i)).ae_memLp_prod_right
 
 /-- **Fubini after a two-coordinate refresh.** An integral against a finite product of sigma-finite
 measures is an outer integral over the assignment and an inner integral over a fresh independent
@@ -121,6 +113,17 @@ theorem integral_pi_eq_integral_integral_update {E : Type*} [NormedAddCommGroup 
         integral_map hmp.measurable.aemeasurable hae
     _ = ∫ z, (∫ p : α a × α b, f (update (update z a p.1) b p.2) ∂(μ a).prod (μ b))
           ∂(Measure.pi μ) := integral_prod _ hcomp
+
+/-- Averaging an integrable function over a freshly resampled probability coordinate preserves its
+expectation under `Measure.pi`. -/
+theorem integral_integral_update_pi {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (μ : ∀ i, Measure (α i)) [∀ i, SigmaFinite (μ i)] (i : ι) [IsProbabilityMeasure (μ i)]
+    {h : (∀ j, α j) → E} (hh : Integrable h (Measure.pi μ)) :
+    ∫ x, ∫ y, h (Function.update x i y) ∂μ i ∂Measure.pi μ = ∫ x, h x ∂Measure.pi μ := by
+  have hmp := measurePreserving_update_prod_pi μ i
+  have hint := hmp.integrable_comp_of_integrable hh
+  refine (integral_prod _ hint).symm.trans ?_
+  exact hmp.hasLaw.integral_comp hh.aestronglyMeasurable
 
 /-- The product formula for a `Fin n`-indexed product measure, by induction on `n`. -/
 private theorem lintegral_fin_nat_prod_eq_prod {n : ℕ} {α : Fin n → Type*}

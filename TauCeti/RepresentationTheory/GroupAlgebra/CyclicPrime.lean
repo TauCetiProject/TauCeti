@@ -51,8 +51,9 @@ private theorem prod_lift_average [Fintype G] (hχ : χ ≠ 1) :
     (lift ℚ ℚ G 1).prod (lift ℚ K G χ) (GroupAlgebra.average ℚ G) = (1, 0) := by
   ext <;> simp [GroupAlgebra.lift_average_of_ne_one hχ]
 
-private theorem bijective_prod_lift [Finite G] (hG : Nat.card G = p) (hχ : χ ≠ 1) :
+private theorem bijective_prod_lift (hG : Nat.card G = p) (hχ : χ ≠ 1) :
     Function.Bijective ((lift ℚ ℚ G 1).prod (lift ℚ K G χ)) := by
+  have : Finite G := Nat.finite_of_card_ne_zero (by rw [hG]; exact hp.out.ne_zero)
   have := Fintype.ofFinite G
   set f := (lift ℚ ℚ G 1).prod (lift ℚ K G χ)
   obtain ⟨g, hg⟩ := DFunLike.ne_iff.1 hχ
@@ -84,7 +85,7 @@ variable (K) in
 /-- For a group `G` of prime order `p`, a `p`-th cyclotomic field `K` and a nontrivial character
 `χ : G →* K`, the `ℚ`-algebra isomorphism `ℚ[G] ≃ ℚ × K` sending `x` to its augmentation and its
 image under `χ`. -/
-noncomputable def groupAlgebraEquivProd [Finite G] (hG : Nat.card G = p) (hχ : χ ≠ 1) :
+noncomputable def groupAlgebraEquivProd (hG : Nat.card G = p) (hχ : χ ≠ 1) :
     MonoidAlgebra ℚ G ≃ₐ[ℚ] ℚ × K :=
   AlgEquiv.ofBijective _ (bijective_prod_lift hG hχ)
 
@@ -92,13 +93,13 @@ variable (hG : Nat.card G = p) (hχ : χ ≠ 1)
 
 /-- The isomorphism `ℚ[G] ≃ ℚ × K` is the augmentation in the first component and `χ` in the
 second. -/
-theorem groupAlgebraEquivProd_apply [Finite G] (x : MonoidAlgebra ℚ G) :
+theorem groupAlgebraEquivProd_apply (x : MonoidAlgebra ℚ G) :
     groupAlgebraEquivProd K hG hχ x = (lift ℚ ℚ G 1 x, lift ℚ K G χ x) :=
   (rfl)
 
 /-- The isomorphism `ℚ[G] ≃ ℚ × K` sends a group element `g` to `(1, χ g)`. -/
 @[simp]
-theorem groupAlgebraEquivProd_single [Finite G] (g : G) :
+theorem groupAlgebraEquivProd_single (g : G) :
     groupAlgebraEquivProd K hG hχ (single g 1) = (1, χ g) :=
   prod_lift_single g
 

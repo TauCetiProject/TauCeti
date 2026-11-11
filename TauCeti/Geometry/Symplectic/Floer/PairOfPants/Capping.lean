@@ -73,8 +73,8 @@ negative planes and the output by a positive plane.
   `H(t) dt`.
 * `TauCeti.Floer.contMDiff_negativePlanePerturbation`: for a period-one Hamiltonian of class
   `C^n`, the plane datum is of class `C^n` on all of `ℂ × M`, including the pole.
-* `TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le`: its
-  integrated curvature along any map is at most a bound for `|H|`.
+* `TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le`: its
+  integrated curvature along any map into a manifold is at most a bound for `|H|`.
 * `TauCeti.SymplecticForm.integral_floerEnergyDensity_negativePlanePerturbation_closedBall`: the
   energy identity over the disc bounded by the circle `s = -R` of the end.
 * `SymplecticForm.abs_integral_floerEnergyDensity_negativePlanePerturbation_closedBall_sub_le`: the
@@ -85,7 +85,7 @@ negative planes and the output by a positive plane.
   class `C^n` on the cylinder obtained by capping.
 * `TauCeti.Floer.contDiffAt_uncurry_plumbedPerturbation_single_inf`: the same for a vector space
   target, in real coordinates on the domain.
-* `TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_inf_le`:
+* `TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_inf_le`:
   the integrated curvature of the capping family is bounded uniformly in the neck length.
 * `TauCeti.Floer.positivePlanePerturbation_eq_zero_of_le_norm`: the positive plane datum vanishes
   off the disc `‖w‖ < exp (-2π) / 2`, in particular near its pole `∞`.
@@ -93,8 +93,8 @@ negative planes and the output by a positive plane.
   `H(t) dt`.
 * `TauCeti.Floer.contMDiffAt_positivePlanePerturbation`: for a period-one Hamiltonian of class
   `C^n`, the positive plane datum is of class `C^n` on `(ℂ ∖ {0}) × M`.
-* `TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_positivePlanePerturbation_le`: its
-  integrated curvature along any map is at most a bound for `|H|`.
+* `TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_positivePlanePerturbation_le`: its
+  integrated curvature along any map into a manifold is at most a bound for `|H|`.
 * `SymplecticForm.integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdiff_ball`: the
   energy identity over the annulus whose inner boundary is the circle `s = R` of the end.
 * `abs_integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdiff_ball_sub_le`: the
@@ -103,8 +103,14 @@ negative planes and the output by a positive plane.
   disc `‖w‖ < exp (-2π) / 2`.
 * `TauCeti.Floer.contMDiffAt_plumbedPerturbation_single_zero`: for `L > 4` the output-capped datum
   is of class `C^n` off the two input punctures.
-* `TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_zero_le`:
+* `TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_zero_le`:
   the integrated curvature of the output-capping family is bounded uniformly in the neck length.
+
+The four curvature bounds hold for Hamiltonians on a manifold `M` with a smooth two-form, such as
+a closed symplectic manifold. A symplectic vector space is the case of the constant form
+`TauCeti.SymplecticForm.constSmooth`, and the `TauCeti.SymplecticForm` versions of the bounds are
+derived from the manifold ones in this way. The energy identities on discs and annuli are stated
+for a symplectic vector space target.
 
 ## References
 
@@ -138,6 +144,13 @@ theorem negativePlanePerturbation_def (H : ℝ → M → ℝ) (w : ℂ) (x : M) 
         inf.endAngularForm w :=
   (rfl)
 
+/-- The negative plane datum of the zero Hamiltonian vanishes. -/
+@[simp]
+theorem negativePlanePerturbation_zero (w : ℂ) (x : M) :
+    negativePlanePerturbation (0 : ℝ → M → ℝ) w x = 0 := by
+  ext v
+  simp [negativePlanePerturbation_def]
+
 /-- **The plane is a pair of pants with zero inputs.** The pair-of-pants perturbation whose input
 Hamiltonians vanish and whose output Hamiltonian is `H` is the negative plane perturbation of
 `H`. -/
@@ -169,15 +182,8 @@ theorem negativePlanePerturbation_neg (hH : Periodic H 1) (w : ℂ) (x : M) :
   · -- At the pole both sides vanish.
     have h : (inf.endCoord 0).re = 0 := by simpa using re_endCoord_endCenter inf
     simp [negativePlanePerturbation_def, h, smoothTransition.zero_of_nonpos]
-  · obtain ⟨k, hk⟩ := exists_endCoord_inf_neg hw
-    have hcast : (1 / 2 + k : ℂ) = ((1 / 2 + k : ℝ) : ℂ) := by push_cast; ring
-    have him : (inf.endCoord (-w)).im + 1 / 2 = (inf.endCoord w).im + (k + 1) := by
-      rw [hk, Complex.add_im, Complex.mul_I_im, hcast, Complex.ofReal_re]
-      ring
-    have hp : H ((inf.endCoord w).im + (k + 1)) = H (inf.endCoord w).im := by
-      simpa using hH.int_mul (k + 1) (inf.endCoord w).im
-    simp only [negativePlanePerturbation_def, re_endCoord_inf_neg, endAngularForm_inf_neg, him, hp,
-      smul_neg]
+  · simp only [negativePlanePerturbation_def, re_endCoord_inf_neg, endAngularForm_inf_neg,
+      apply_im_endCoord_inf_neg_add_half hH hw, smul_neg]
 
 /-- Families indexed by the ends that are `H` at the end `p` and zero at the other two ends
 inherit any property shared by `H` and `0`. -/
@@ -212,16 +218,26 @@ private theorem eventually_negativePlanePerturbation_eq_zero {w : ℂ}
   filter_upwards [continuous_norm.continuousAt.eventually (gt_mem_nhds hw)] with w' hw'
   exact funext (negativePlanePerturbation_eq_zero_of_norm_le hw'.le)
 
-/-- **The perturbation on the end.** On the half-plane `Re z < 0`, the pullback of the negative
-plane perturbation along the end lift `φ` is the continuation datum `β(-s - 1) H(t) dt`: it sends
-a tangent vector `v` of the cylinder to `Im v · β(-Re z - 1) H(Im z)`. -/
-theorem negativePlanePerturbation_cylindricalEndLift_of_neg (hH : Periodic H 1) {z : ℂ}
-    (hz : z.re < 0) (x : M) (v : ℂ) :
+/-- **The perturbation on the end.** The pullback of the negative plane perturbation along the end
+lift `φ` is the continuation datum `β(-s - 1) H(t) dt`: it sends a tangent vector `v` of the
+cylinder to `Im v · β(-Re z - 1) H(Im z)`. On the half-plane `Re z ≥ 0` both sides vanish. -/
+theorem negativePlanePerturbation_cylindricalEndLift_apply (hH : Periodic H 1) (z : ℂ) (x : M)
+    (v : ℂ) :
     negativePlanePerturbation H (inf.cylindricalEndLift z) x (deriv inf.cylindricalEndLift z * v) =
       v.im * (smoothTransition (-z.re - 1) * H z.im x) := by
-  have h := pairOfPantsPerturbation_cylindricalEndLift_of_pos (H := Pi.single inf H) (q := inf)
-    (by simpa using hH) (z := z) (by simpa using hz) x v
-  simpa [pairOfPantsPerturbation_single_inf] using h
+  rcases lt_or_ge z.re 0 with hz | hz
+  · have h := pairOfPantsPerturbation_cylindricalEndLift_of_pos (H := Pi.single inf H) (q := inf)
+      (by simpa using hH) (z := z) (by simpa using hz) x v
+    simpa [pairOfPantsPerturbation_single_inf] using h
+  · -- The end lift lands in the pole disc, where the perturbation vanishes.
+    have hw : ‖inf.cylindricalEndLift z‖ ≤ 2 * Real.exp (2 * π) := by
+      have h := norm_cylindricalEndLift_sub_endCenter inf z
+      rw [endCenter_inf, sub_zero, endScale_inf, Complex.norm_ofNat] at h
+      rw [h]
+      gcongr
+      nlinarith [Real.pi_pos]
+    rw [negativePlanePerturbation_eq_zero_of_norm_le hw, smoothTransition.zero_of_nonpos
+      (by linarith), zero_mul, mul_zero, zero_apply]
 
 /-- **The perturbation is `H(t) dt` far out on the end.** On the half-plane `Re z ≤ -2`, the
 pullback of the negative plane perturbation along the end lift sends a tangent vector `v` of the
@@ -230,7 +246,7 @@ theorem negativePlanePerturbation_cylindricalEndLift (hH : Periodic H 1) {z : �
     (hz : z.re ≤ -2) (x : M) (v : ℂ) :
     negativePlanePerturbation H (inf.cylindricalEndLift z) x (deriv inf.cylindricalEndLift z * v) =
       v.im * H z.im x := by
-  rw [negativePlanePerturbation_cylindricalEndLift_of_neg hH (by linarith),
+  rw [negativePlanePerturbation_cylindricalEndLift_apply hH,
     smoothTransition.one_of_one_le (by linarith), one_mul]
 
 /-! ### The positive plane -/
@@ -288,18 +304,29 @@ private theorem eventually_positivePlanePerturbation_eq_zero_one :
     ∀ᶠ w in 𝓝 (1 : ℂ), positivePlanePerturbation H w = fun _ ↦ 0 :=
   eventually_positivePlanePerturbation_eq_zero (by simpa using exp_neg_two_mul_pi_div_two_lt_one)
 
-/-- **The perturbation on the end.** On the half-plane `Re z > 0`, the pullback of the positive
-plane perturbation along the end lift `φ` of the end at `0` is the continuation datum
-`β(s - 1) H(t) dt`: it sends a tangent vector `v` of the cylinder to
-`Im v · β(Re z - 1) H(Im z)`. -/
-theorem positivePlanePerturbation_cylindricalEndLift_of_pos (hH : Periodic H 1) {z : ℂ}
-    (hz : 0 < z.re) (x : M) (v : ℂ) :
+/-- **The perturbation on the end.** The pullback of the positive plane perturbation along the end
+lift `φ` of the end at `0` is the continuation datum `β(s - 1) H(t) dt`: it sends a tangent vector
+`v` of the cylinder to `Im v · β(Re z - 1) H(Im z)`. On the half-plane `Re z ≤ 0` both sides
+vanish. -/
+theorem positivePlanePerturbation_cylindricalEndLift_apply (hH : Periodic H 1) (z : ℂ) (x : M)
+    (v : ℂ) :
     positivePlanePerturbation H (zero.cylindricalEndLift z) x
         (deriv zero.cylindricalEndLift z * v) =
       v.im * (smoothTransition (z.re - 1) * H z.im x) := by
-  have h := pairOfPantsPerturbation_cylindricalEndLift_of_pos (H := Pi.single zero H) (q := zero)
-    (by simpa using hH) (z := z) (by simpa using hz) x v
-  simpa [pairOfPantsPerturbation_single_zero] using h
+  rcases lt_or_ge 0 z.re with hz | hz
+  · have h := pairOfPantsPerturbation_cylindricalEndLift_of_pos (H := Pi.single zero H) (q := zero)
+      (by simpa using hH) (z := z) (by simpa using hz) x v
+    simpa [pairOfPantsPerturbation_single_zero] using h
+  · -- The end lift lies off the disc of radius `exp (-2π) / 2`, where the perturbation vanishes.
+    have hw : Real.exp (-(2 * π)) / 2 ≤ ‖zero.cylindricalEndLift z‖ := by
+      have h := norm_cylindricalEndLift_sub_endCenter zero z
+      rw [endCenter_zero, sub_zero, endScale_zero, norm_div, norm_one, Complex.norm_ofNat] at h
+      have h' : -(2 * π) ≤ -(2 * π * z.re) := by nlinarith [Real.pi_pos]
+      have := Real.exp_le_exp.2 h'
+      rw [h]
+      linarith
+    rw [positivePlanePerturbation_eq_zero_of_le_norm hw, smoothTransition.zero_of_nonpos
+      (by linarith), zero_mul, mul_zero, zero_apply]
 
 /-- **The perturbation is `H(t) dt` far out on the end.** On the half-plane `Re z ≥ 2`, the
 pullback of the positive plane perturbation along the end lift of the end at `0` sends a tangent
@@ -309,7 +336,7 @@ theorem positivePlanePerturbation_cylindricalEndLift (hH : Periodic H 1) {z : �
     positivePlanePerturbation H (zero.cylindricalEndLift z) x
         (deriv zero.cylindricalEndLift z * v) =
       v.im * H z.im x := by
-  rw [positivePlanePerturbation_cylindricalEndLift_of_pos hH (by linarith),
+  rw [positivePlanePerturbation_cylindricalEndLift_apply hH,
     smoothTransition.one_of_one_le (by linarith), one_mul]
 
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
@@ -500,6 +527,104 @@ theorem contMDiffAt_plumbedPerturbation_single_zero {n : ℕ∞} (hHa : ∀ r, P
 
 end TauCeti.Floer
 
+namespace TauCeti.SmoothTwoForm
+
+open Floer MeasureTheory
+
+variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
+  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
+  {H : ℝ → M → ℝ} {Hb : Puncture → ℝ → M → ℝ} {q : Puncture} {L : ℝ}
+
+/-- **The integrated curvature of the negative plane, for a manifold target.** Let `K` be the
+negative plane perturbation of a period-one `C¹` Hamiltonian `H` on a manifold `M` with a two-form
+`ω`, with `|H| ≤ B`, and write its components in the global coordinate `z = s + i t` of `ℂ` as
+`K_s(z) = K(z)(1)` and `K_t(z) = K(z)(i)`. Then for every map `u` into `M`, the integral of
+`|R_K(z, u(z))|` over the plane is at most `B`. -/
+theorem lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le (ω : SmoothTwoForm I M)
+    (hH : Periodic H 1) (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) {B : ℝ}
+    (hB : ∀ t x, |H t x| ≤ B) (u : ℝ × ℝ → M) :
+    ∫⁻ z, ‖ω.hamiltonianCurvature
+        (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z)‖ₑ ≤ ENNReal.ofReal B := by
+  have h := ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le
+    (forall_single inf (P := fun f => Periodic f 1) (fun _ => rfl) hH)
+    (forall_single inf (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f))
+      contMDiff_const hHs)
+    (abs_single_le inf hB) u
+  rwa [pairOfPantsPerturbation_single_inf, Fintype.sum_eq_single inf fun r hr => by
+    simp [Pi.single_eq_of_ne hr], Pi.single_eq_same] at h
+
+/-- **The integrated curvature of the capping family, for a manifold target.** Plumb the negative
+plane with Hamiltonian `Hb q` into the input end `q` of the pair of pants with period-one `C¹`
+Hamiltonians `Hb` on a manifold `M` with a two-form `ω`, along a neck of length `L > 4`. If
+`|Hb r| ≤ Bb r`, then for every map `u` into `M` the integral of `|R_K(z, u(z))|` over the plane
+is at most `Bb q + ∑ r, Bb r`, which does not depend on `L`. -/
+theorem lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_inf_le
+    (ω : SmoothTwoForm I M) (hq : q ≠ inf) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r))) (hL : 4 < L)
+    {Bb : Puncture → ℝ} (hBb : ∀ r t x, |Hb r t x| ≤ Bb r) (u : ℝ × ℝ → M) :
+    ∫⁻ z, ‖ω.hamiltonianCurvature
+        (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb q)) Hb q L
+          (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb q)) Hb q L
+          (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z)‖ₑ ≤ ENNReal.ofReal (Bb q) + ∑ r, ENNReal.ofReal (Bb r) := by
+  have h := ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le hq
+    (forall_single inf (P := fun f => Periodic f 1) (fun _ => rfl) (hHb q)) hHb
+    (forall_single inf (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f))
+      contMDiff_const (hHbs q)) hHbs
+    (by simp) hL (abs_single_le inf (hBb q)) hBb u
+  rwa [Fintype.sum_eq_single inf fun r hr => by simp [Pi.single_eq_of_ne hr],
+    Pi.single_eq_same] at h
+
+/-- **The integrated curvature of the positive plane, for a manifold target.** Let `K` be the
+positive plane perturbation of a period-one `C¹` Hamiltonian `H` on a manifold `M` with a two-form
+`ω`, with `|H| ≤ B`, and write its components in the global coordinate `z = s + i t` of `ℂ` as
+`K_s(z) = K(z)(1)` and `K_t(z) = K(z)(i)`. Then for every map `u` into `M`, the integral of
+`|R_K(z, u(z))|` over the plane is at most `B`. -/
+theorem lintegral_enorm_hamiltonianCurvature_positivePlanePerturbation_le (ω : SmoothTwoForm I M)
+    (hH : Periodic H 1) (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) {B : ℝ}
+    (hB : ∀ t x, |H t x| ≤ B) (u : ℝ × ℝ → M) :
+    ∫⁻ z, ‖ω.hamiltonianCurvature
+        (fun z x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z)‖ₑ ≤ ENNReal.ofReal B := by
+  have h := ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le
+    (forall_single zero (P := fun f => Periodic f 1) (fun _ => rfl) hH)
+    (forall_single zero (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f))
+      contMDiff_const hHs)
+    (abs_single_le zero hB) u
+  rwa [pairOfPantsPerturbation_single_zero, Fintype.sum_eq_single zero fun r hr => by
+    simp [Pi.single_eq_of_ne hr], Pi.single_eq_same] at h
+
+/-- **The integrated curvature of the output-capping family, for a manifold target.** Plumb the
+output end of the pair of pants with period-one `C¹` Hamiltonians `Ha` on a manifold `M` with a
+two-form `ω` into the input end of the positive plane with Hamiltonian `Ha ∞`, along a neck of
+length `L > 4`. If `|Ha r| ≤ Ba r`, then for every map `u` into `M` the integral of
+`|R_K(z, u(z))|` over the plane is at most `∑ r, Ba r + Ba ∞`, which does not depend on `L`. -/
+theorem lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_zero_le
+    (ω : SmoothTwoForm I M) {Ha : Puncture → ℝ → M → ℝ} (hHa : ∀ r, Periodic (Ha r) 1)
+    (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r))) (hL : 4 < L)
+    {Ba : Puncture → ℝ} (hBa : ∀ r t x, |Ha r t x| ≤ Ba r) (u : ℝ × ℝ → M) :
+    ∫⁻ z, ‖ω.hamiltonianCurvature
+        (fun z x ↦ plumbedPerturbation Ha (Pi.single zero (Ha inf)) zero L
+          (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation Ha (Pi.single zero (Ha inf)) zero L
+          (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z)‖ₑ ≤ ∑ r, ENNReal.ofReal (Ba r) + ENNReal.ofReal (Ba inf) := by
+  have h := ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le (q := zero) (by decide)
+    hHa (forall_single zero (P := fun f => Periodic f 1) (fun _ => rfl) (hHa inf)) hHas
+    (forall_single zero (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f))
+      contMDiff_const (hHas inf))
+    (by simp) hL hBa (abs_single_le zero (hBa inf)) u
+  have hs : ∑ r, ENNReal.ofReal ((Pi.single zero (Ba inf) : Puncture → ℝ) r) =
+      ENNReal.ofReal (Ba inf) := by
+    rw [Fintype.sum_eq_single zero fun r hr => by simp [Pi.single_eq_of_ne hr], Pi.single_eq_same]
+  rwa [hs] at h
+
+end TauCeti.SmoothTwoForm
+
 namespace TauCeti.SymplecticForm
 
 open Floer MeasureTheory
@@ -518,12 +643,8 @@ theorem lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le (ω : 
         (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)‖ₑ ≤ ENNReal.ofReal B := by
-  have h := ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le
-    (forall_single inf (P := fun f => Periodic f 1) (fun _ => rfl) hH)
-    (forall_single inf (P := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const hHs)
-    (abs_single_le inf hB) u
-  rwa [pairOfPantsPerturbation_single_inf, Fintype.sum_eq_single inf fun r hr => by
-    simp [Pi.single_eq_of_ne hr], Pi.single_eq_same] at h
+  simpa using ω.constSmooth.lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le hH
+    (contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff) hB u
 
 omit [FiniteDimensional ℝ V] in
 /-- The components of the negative plane perturbation in real coordinates are `C¹` jointly in the
@@ -593,7 +714,7 @@ theorem integral_floerEnergyDensity_negativePlanePerturbation_closedBall (ω : S
       (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x v) =ᶠ[𝓝 z] 0 :=
     (Complex.equivRealProdCLM.symm.continuous.continuousAt.eventually
       (eventually_negativePlanePerturbation_eq_zero (H := H)
-        (mem_ball_zero_iff.1 (closedBall_sdiff_truncation_subset_ball (by linarith) hz)))).mono
+        (mem_ball_zero_iff.1 (closedBall_sdiff_truncation_subset_ball hz)))).mono
       fun _ h ↦ funext fun _ ↦ by simp [h]
   have hK (v : ℂ) : ContDiffOn ℝ 1
       (uncurry fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x v)
@@ -645,12 +766,8 @@ theorem lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_inf_le
         (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb q)) Hb q L
           (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)‖ₑ ≤ ENNReal.ofReal (Bb q) + ∑ r, ENNReal.ofReal (Bb r) := by
-  have h := ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le hq
-    (forall_single inf (P := fun f => Periodic f 1) (fun _ => rfl) (hHb q)) hHb
-    (forall_single inf (P := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const (hHbs q)) hHbs
-    (by simp) hL (abs_single_le inf (hBb q)) hBb u
-  rwa [Fintype.sum_eq_single inf fun r hr => by simp [Pi.single_eq_of_ne hr],
-    Pi.single_eq_same] at h
+  simpa using ω.constSmooth.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_inf_le
+    hq hHb (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHbs r).contMDiff) hL hBb u
 
 
 /-! ### The positive plane and capping the output -/
@@ -666,12 +783,8 @@ theorem lintegral_enorm_hamiltonianCurvature_positivePlanePerturbation_le (ω : 
         (fun z x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)‖ₑ ≤ ENNReal.ofReal B := by
-  have h := ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le
-    (forall_single zero (P := fun f => Periodic f 1) (fun _ => rfl) hH)
-    (forall_single zero (P := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const hHs)
-    (abs_single_le zero hB) u
-  rwa [pairOfPantsPerturbation_single_zero, Fintype.sum_eq_single zero fun r hr => by
-    simp [Pi.single_eq_of_ne hr], Pi.single_eq_same] at h
+  simpa using ω.constSmooth.lintegral_enorm_hamiltonianCurvature_positivePlanePerturbation_le hH
+    (contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff) hB u
 
 omit [FiniteDimensional ℝ V] in
 /-- The components of the positive plane perturbation in real coordinates are `C¹` jointly in the
@@ -778,8 +891,7 @@ theorem integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdiff_b
   set T := Complex.equivRealProdCLM.symm ⁻¹' truncation R
   have hDc : IsCompact D := Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
     ((isCompact_closedBall _ _).diff Metric.isOpen_ball)
-  have hTc : IsCompact T :=
-    Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation R)
+  have hTc : IsCompact T := isCompact_preimage_truncation R
   -- Both the annulus and the truncation avoid the puncture `0`.
   have hDP : D ∪ T ⊆ P := by
     rintro z (hz | hz) h₀
@@ -858,13 +970,8 @@ theorem lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_zero_le
         (fun z x ↦ plumbedPerturbation Ha (Pi.single zero (Ha inf)) zero L
           (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)‖ₑ ≤ ∑ r, ENNReal.ofReal (Ba r) + ENNReal.ofReal (Ba inf) := by
-  have h := ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le (q := zero) (by decide)
-    hHa (forall_single zero (P := fun f => Periodic f 1) (fun _ => rfl) (hHa inf)) hHas
-    (forall_single zero (P := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const (hHas inf))
-    (by simp) hL hBa (abs_single_le zero (hBa inf)) u
-  have hs : ∑ r, ENNReal.ofReal ((Pi.single zero (Ba inf) : Puncture → ℝ) r) =
-      ENNReal.ofReal (Ba inf) := by
-    rw [Fintype.sum_eq_single zero fun r hr => by simp [Pi.single_eq_of_ne hr], Pi.single_eq_same]
-  rwa [hs] at h
+  simpa using
+    ω.constSmooth.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_zero_le hHa
+      (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHas r).contMDiff) hL hBa u
 
 end TauCeti.SymplecticForm

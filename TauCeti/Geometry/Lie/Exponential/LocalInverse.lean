@@ -48,7 +48,6 @@ noncomputable section
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
-  [IsManifold I 1 G]
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 private theorem smoothOrder_ne_zero : (∞ : ℕ∞ω) ≠ 0 := by

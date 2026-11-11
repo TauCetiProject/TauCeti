@@ -129,8 +129,7 @@ private theorem integrableOn_summand_of_mem_slitPlane {u v w : ℂ} (hu : u ∈ 
     (TauCeti.continuousOn_ofReal_add_cpow hv (-(1 / 2)))).mul
     (TauCeti.continuousOn_ofReal_add_cpow hw (-(1 / 2)))).mul
     Complex.continuous_ofReal.continuousOn
-  obtain ⟨Cu, hCu0, hCu⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_one_add_rpow hu
-    (r := -(3 / 2)) (by norm_num)
+  obtain ⟨Cu, hCu0, hCu⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_one_add_rpow hu (-(3 / 2))
   have hr : (-(1 / 2) : ℝ) ≤ 0 := by norm_num
   obtain ⟨Cv, hCv⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow hv hr
   obtain ⟨Cw, hCw⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow hw hr
@@ -406,8 +405,9 @@ private theorem continuousWithinAt_carlsonRGPrimitive {x y z : ℂ} (hx : x ∈ 
   have hre : 0 < (1 / 2 : ℂ).re := by simp
   have hcont : ContinuousOn (carlsonRGPrimitive x y z) (Ici 0) := by
     rw [hfun]
-    exact ((((continuousOn_const.mul (TauCeti.continuousOn_ofReal_add_cpow_Ici_of_re_pos hx
-      hre)).add hxt).mul (TauCeti.continuousOn_ofReal_add_cpow_Ici hy _)).mul
+    exact ((((continuousOn_const.mul
+      (TauCeti.continuous_ofReal_add_cpow_of_re_pos hre).continuousOn).add hxt).mul
+      (TauCeti.continuousOn_ofReal_add_cpow_Ici hy _)).mul
       (TauCeti.continuousOn_ofReal_add_cpow_Ici hz _)).neg
   exact hcont 0 self_mem_Ici
 

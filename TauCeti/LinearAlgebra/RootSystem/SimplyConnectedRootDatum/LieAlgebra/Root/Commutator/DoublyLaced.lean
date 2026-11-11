@@ -108,8 +108,8 @@ private theorem chevalleyRootSubgroup_eq_kostantRootSubgroupPoints
         (kostantForm_chevalleySystem_smul_mem ρ M hM hnil) i
         (isNilpotent_apply_ι_chevalleySystem ρ hnil i)
         ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (.ofAdd u)) := by
-  rw [← kostantRootSubgroupParam_chevalleySystem ρ M hM hnil
-    (kostantForm_chevalleySystem_smul_mem ρ M hM hnil), kostantRootSubgroupParam_apply]
+  rw [← kostantRootSubgroupParam_chevalleySystem ρ M hM hnil,
+    kostantRootSubgroupParam_apply]
 
 /-- Reordering root-subgroup elements with sum roots `α + β` and `2α + β`, when the
 further sums `3α + β` and `α + 2β` are not roots, uses the integral Chevalley coefficients. -/

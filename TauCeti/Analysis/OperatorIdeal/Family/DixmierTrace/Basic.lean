@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Normed.Order.GeneralizedLimit
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Diagonal
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Modulus
 public import TauCeti.Analysis.OperatorIdeal.Family.Logarithmic
+public import TauCeti.Analysis.SpecificLimits.LogarithmicTauberian
 import Mathlib.NumberTheory.Harmonic.Bounds
 
 /-!
@@ -37,6 +38,10 @@ the logarithmic means converge, `Tr_ω(T)` is their limit for every `ω`. The di
 approximation numbers `1 / (j + 1)` has Dixmier trace `1`, by the logarithmic growth of the
 harmonic numbers.
 
+The logarithmic means converge to `L` exactly when the singular-value zeta function
+`ζ_T(s) = ∑ⱼ aⱼ(T) ^ s`, which converges for `s > 1` on `L^(1,∞)`, has residue
+`lim_(s ↓ 1) (s - 1) ζ_T(s) = L`. In that case every Dixmier trace of `T` is this residue.
+
 Additivity on positive operators, `Tr_ω(S + T) = Tr_ω(S) + Tr_ω(T)`, needs in addition that `ω`
 is dilation invariant (`TauCeti.GeneralizedLimit.IsDilationInvariant`), together with the
 superadditivity `K_N(S) + K_N(T) ≤ K_(2N)(S + T)` of the Ky Fan sums of positive operators.
@@ -59,6 +64,10 @@ superadditivity `K_N(S) + K_N(T) ≤ K_(2N)(S + T)` of the Ky Fan sums of positi
   logarithmic means tending to `1` and Dixmier trace `1`.
 * `TauCeti.dixmierTrace_diagonalCLM_eq_one`: a diagonal operator on `ℓ²` whose coefficients have
   modulus `1 / (j + 1)` has Dixmier trace `1`.
+* `TauCeti.tendsto_kyFanLogMean_iff_tendsto_sub_one_mul_tsum_rpow`: on `L^(1,∞)`, convergence of
+  the logarithmic means is equivalent to the same residue of the singular-value zeta function.
+* `TauCeti.dixmierTrace_eq_of_tendsto_sub_one_mul_tsum_rpow`: a zeta residue `L` gives
+  `Tr_ω(T) = L` for every `ω`.
 
 ## References
 
@@ -296,5 +305,36 @@ theorem dixmierTrace_diagonalCLM_eq_one (d : ℓ^∞(ℕ, 𝕜)) (hd : ∀ j, �
   refine dixmierTrace_eq_one_of_singularValue_eq ω fun j ↦ ?_
   rw [lp.singularValue_diagonalCLM d hanti, ← NNReal.coe_inj]
   simp [hd]
+
+/-! ### Zeta residues -/
+
+/-- **The logarithmic Tauberian theorem on `L^(1,∞)`.** For `T` in the logarithmic ideal, the
+logarithmic means of `T` tend to `L` exactly when `(s - 1) ∑ⱼ aⱼ(T) ^ s` tends to `L` as `s ↓ 1`;
+the series converges for every `s > 1`. -/
+theorem tendsto_kyFanLogMean_iff_tendsto_sub_one_mul_tsum_rpow {T : E →L[𝕜] F}
+    (hT : T ∈ ((logarithmic 𝕜).operatorGauge E F).finiteSubmodule) {L : ℝ} :
+    Tendsto T.kyFanLogMean atTop (𝓝 L) ↔
+      Tendsto (fun s : ℝ ↦ (s - 1) * ∑' j, (T.singularValue j : ℝ) ^ s) (𝓝[>] 1) (𝓝 L) := by
+  have hmean : T.kyFanLogMean = fun N : ℕ ↦
+      (∑ j ∈ Finset.range (N + 1), (T.singularValue j : ℝ)) / Real.log ((N : ℝ) + 2) := by
+    ext N
+    rw [kyFanLogMean_def, kyFanGauge_def, NNReal.coe_sum]
+  have hanti : Antitone fun j ↦ (T.singularValue j : ℝ) := fun i j hij ↦
+    NNReal.coe_le_coe.2 (T.antitone_singularValue hij)
+  have hsum (s : ℝ) (hs : 1 < s) : Summable fun j ↦ (T.singularValue j : ℝ) ^ s :=
+    summable_rpow_of_sum_le_mul_log (fun j ↦ NNReal.coe_nonneg _) hanti (fun N ↦ by
+      rw [← div_le_iff₀ (Real.log_natCast_add_pos one_lt_two N), ← congrFun hmean N]
+      exact kyFanLogMean_le_toReal_gauge_logarithmic hT N) hs
+  rw [hmean]
+  exact (tendsto_sub_one_mul_tsum_rpow_iff_tendsto_sum_div_log
+    (fun j ↦ NNReal.coe_nonneg _) hanti hsum).symm
+
+/-- **Dixmier traces as zeta residues.** If `T ∈ L^(1,∞)` and `(s - 1) ∑ⱼ aⱼ(T) ^ s` tends to `L`
+as `s ↓ 1`, then `Tr_ω(T) = L` for every generalized limit `ω`. -/
+theorem dixmierTrace_eq_of_tendsto_sub_one_mul_tsum_rpow {T : E →L[𝕜] F}
+    (hT : T ∈ ((logarithmic 𝕜).operatorGauge E F).finiteSubmodule) {L : ℝ}
+    (h : Tendsto (fun s : ℝ ↦ (s - 1) * ∑' j, (T.singularValue j : ℝ) ^ s) (𝓝[>] 1) (𝓝 L)) :
+    dixmierTrace ω T = L :=
+  dixmierTrace_eq_of_tendsto ω ((tendsto_kyFanLogMean_iff_tendsto_sub_one_mul_tsum_rpow hT).2 h)
 
 end TauCeti

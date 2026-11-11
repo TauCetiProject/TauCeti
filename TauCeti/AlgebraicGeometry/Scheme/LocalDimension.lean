@@ -224,7 +224,7 @@ theorem height_apply_eq_height_of_residueDegree_ne_zero {Y : Scheme.{u}} [Y.Over
   have : IsScalarTower k (Y.residueField (f x)) (X.residueField x) :=
     IsScalarTower.of_algebraMap_eq fun c ↦ (f.residueFieldMap_algebraMap k x c).symm
   have : Module.Finite (Y.residueField (f x)) (X.residueField x) :=
-    (residueDegree_ne_zero_iff f x).mp hx
+    (f.residueDegree_ne_zero_iff x).mp hx
   -- `κ(x)` is algebraic over `κ(f x)`, so both residue fields have the same transcendence degree
   -- over `k`.
   rw [height_eq_toNat_trdeg_residueField k, height_eq_toNat_trdeg_residueField k,

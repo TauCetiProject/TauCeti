@@ -9,7 +9,9 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Data.List.Sublists
+public import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 import TauCeti.Analysis.Calculus.ParametricFDeriv
 
 /-!
@@ -31,12 +33,15 @@ products with a scalar function (`TauCeti.norm_coordinateDeriv_smul_le`). It is 
 homogeneous in `f`. Smoothness is preserved, also jointly in an additional parameter
 (`ContDiff.coordinateDeriv_snd`, `ContDiff.coordinateDeriv_fst`). For a smooth function of two
 variables, iterated coordinate derivatives in the two variables commute
-(`TauCeti.coordinateDeriv_coordinateDeriv_comm`), by the symmetry of second derivatives.
+(`TauCeti.coordinateDeriv_coordinateDeriv_comm`), and so do two coordinate derivatives of a `C²`
+function of one variable (`TauCeti.coordinateDeriv_pair_comm`), by the symmetry of second
+derivatives.
 
 For a function `a(x, ξ)` of a position and a frequency, `TauCeti.mixedDeriv α β a x ξ` is the
 mixed derivative `∂_x^α ∂_ξ^β a(x, ξ)`, taking the frequency derivatives first. It is linear in
-smooth `a`, local in the position, and for smooth `a` the order of the two kinds of derivatives
-does not matter (`TauCeti.mixedDeriv_eq_coordinateDeriv_snd`).
+smooth `a`, depends only on the germ of `a` at `(x, ξ)` (`Filter.EventuallyEq.mixedDeriv_eq`), and
+for smooth `a` the order of the two kinds of derivatives does not matter
+(`TauCeti.mixedDeriv_eq_coordinateDeriv_snd`).
 
 Both satisfy the general Leibniz rule for a continuous bilinear map `B`: the derivative of
 `x ↦ B (f x) (g x)` along a word `α` is the sum, over the pairs `(s, t)` of complementary subwords
@@ -51,14 +56,30 @@ symbol calculus. Its first-order case for a pointwise composition of continuous 
 * `TauCeti.CoordinateSpace n`: the Euclidean space `ℝⁿ = EuclideanSpace ℝ (Fin n)`.
 * `TauCeti.coordinateDeriv`: the iterated coordinate derivative along a word of indices.
 * `TauCeti.coordinateDeriv_eq_iteratedFDeriv`: its comparison with `iteratedFDeriv`.
+* `TauCeti.norm_iteratedFDeriv_le_sum_coordinateDeriv`,
+  `TauCeti.norm_iteratedFDeriv_succ_le_sum_coordinateDeriv`: the converse estimates, bounding a
+  Fréchet derivative by coordinate derivatives, or by Fréchet derivatives of the first partial
+  derivatives.
 * `ContDiff.coordinateDeriv_snd`: joint smoothness of partial derivatives in the second variable.
 * `TauCeti.coordinateDeriv_coordinateDeriv_comm`: partial derivatives in different variables
-  commute.
+  commute; `TauCeti.coordinateDeriv_pair_comm`: so do two partial derivatives in one variable.
 * `TauCeti.mixedDeriv`: the mixed position-frequency derivative `∂_x^α ∂_ξ^β`.
+* `TauCeti.mixedDeriv_eq_iteratedFDerivAlong`, `TauCeti.iteratedFDerivAlong_map_mixedDirection`:
+  mixed derivatives are the iterated directional derivatives `TauCeti.iteratedFDerivAlong` along
+  words of position and frequency directions (`TauCeti.mixedDirection`), in any interleaving for
+  smooth functions.
 * `TauCeti.mixedDeriv_eq_iteratedFDeriv`, `TauCeti.mixedDeriv_eq_iteratedFDeriv_append`: its
   comparison with `iteratedFDeriv` on the directions `TauCeti.mixedDirections`.
+* `TauCeti.exists_bound_mixedDeriv_comp_snd`: symbol-type estimates for a position-independent
+  function from estimates of the Fréchet derivatives of its profile.
 * `ContinuousLinearMap.coordinateDeriv_of_bilinear`, `ContinuousLinearMap.mixedDeriv_of_bilinear`:
   the Leibniz rules.
+* `ContinuousLinearMap.apply_eq_sum_single`, `ContinuousLinearMap.opNorm_le_of_apply_eq_sum`:
+  a continuous linear map on `ℝⁿ` (or on `ℝⁿ × ℝⁿ`) in terms of its values on the standard basis.
+* `TauCeti.fderiv_apply_eq_sum_coordinateDeriv`: the derivative of a function of a position and a
+  frequency in terms of its first-order coordinate derivatives in the two variables.
+* `TauCeti.norm_mixedDeriv_comp_snd_smul_le`: the Leibniz bound for the product `ψ(ξ) a(x, ξ)`
+  with a frequency cutoff.
 -/
 
 public section
@@ -211,6 +232,30 @@ theorem norm_coordinateDeriv_smul_le (α : List (Fin n)) {ψ : CoordinateSpace n
   exact norm_iteratedFDeriv_le_sum_coordinateDeriv
     (hg.of_le (by exact_mod_cast Nat.sub_le _ _)) x
 
+/-- The `(k + 1)`-st Fréchet derivative of a smooth function is bounded by the `k`-th Fréchet
+derivatives of its first partial derivatives: `‖D^(k+1) f x‖ ≤ ∑ⱼ ‖D^k (∂ⱼ f) x‖`. -/
+theorem norm_iteratedFDeriv_succ_le_sum_coordinateDeriv {k : ℕ} {f : CoordinateSpace n → A}
+    (hf : ContDiff ℝ (k + 1) f) (x : CoordinateSpace n) :
+    ‖iteratedFDeriv ℝ (k + 1) f x‖ ≤ ∑ j, ‖iteratedFDeriv ℝ k (coordinateDeriv [j] f) x‖ := by
+  set b := EuclideanSpace.basisFun (Fin n) ℝ
+  set T : Fin n → A →L[ℝ] CoordinateSpace n →L[ℝ] A := fun j ↦
+    ContinuousLinearMap.smulRightL ℝ (CoordinateSpace n) A (innerSL ℝ (b j))
+  have hfd : fderiv ℝ f = ∑ j, T j ∘ coordinateDeriv [j] f := by
+    funext y
+    ext h
+    conv_lhs => rw [← b.sum_repr' h]
+    simp [T, coordinateDeriv_cons, b]
+  have hT (j : Fin n) : ‖T j‖ ≤ 1 :=
+    ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun w ↦ by
+      simp [T, ContinuousLinearMap.norm_smulRight_apply, innerSL_apply_norm, b.orthonormal.1 j]
+  have hdf (j : Fin n) : ContDiff ℝ k (coordinateDeriv [j] f) :=
+    hf.coordinateDeriv_of_le [j] (by simp)
+  rw [← norm_iteratedFDeriv_fderiv, hfd,
+    iteratedFDeriv_sum_apply fun j _ ↦ ((T j).contDiff.comp (hdf j)).contDiffAt]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_)
+  refine ((T j).norm_iteratedFDeriv_comp_left (hdf j).contDiffAt le_rfl).trans ?_
+  exact mul_le_of_le_one_left (norm_nonneg _) (hT j)
+
 theorem coordinateDeriv_add (α : List (Fin n)) {f g : CoordinateSpace n → A}
     (hf : ContDiff ℝ α.length f) (hg : ContDiff ℝ α.length g) :
     coordinateDeriv α (f + g) = coordinateDeriv α f + coordinateDeriv α g := by
@@ -219,14 +264,17 @@ theorem coordinateDeriv_add (α : List (Fin n)) {f g : CoordinateSpace n → A}
     coordinateDeriv_eq_iteratedFDeriv α hf, coordinateDeriv_eq_iteratedFDeriv α hg,
     iteratedFDeriv_add_apply hf.contDiffAt hg.contDiffAt, add_apply]
 
-theorem coordinateDeriv_const_smul {R : Type*} [Semiring R] [Module R A] [SMulCommClass ℝ R A]
-    [ContinuousConstSMul R A] (α : List (Fin n)) {f : CoordinateSpace n → A}
-    (hf : ContDiff ℝ α.length f) (c : R) :
+/-- Scalar multiples commute with coordinate derivatives, with no smoothness assumption. -/
+@[simp]
+theorem coordinateDeriv_const_smul {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 A]
+    [SMulCommClass ℝ 𝕜 A] (α : List (Fin n)) (f : CoordinateSpace n → A) (c : 𝕜) :
     coordinateDeriv α (c • f) = c • coordinateDeriv α f := by
-  funext x
-  rw [Pi.smul_apply, coordinateDeriv_eq_iteratedFDeriv α (f := c • f) (hf.const_smul c),
-    coordinateDeriv_eq_iteratedFDeriv α hf, iteratedFDeriv_const_smul_apply hf.contDiffAt,
-    smul_apply]
+  induction α generalizing f with
+  | nil => rfl
+  | cons j js ih =>
+    funext x
+    rw [coordinateDeriv_cons, ih, Pi.smul_apply, coordinateDeriv_cons]
+    simp only [fderiv_const_smul_field, Pi.smul_apply, smul_apply]
 
 @[simp]
 theorem coordinateDeriv_neg (α : List (Fin n)) (f : CoordinateSpace n → A) :
@@ -292,6 +340,17 @@ theorem coordinateDeriv_const (c : A) {α : List (Fin n)} (hα : α ≠ []) :
   rw [coordinateDeriv_eq_iteratedFDeriv _ contDiff_const,
     iteratedFDeriv_const_of_ne (n := (j :: js).length) (List.length_pos_of_ne_nil hα).ne',
     Pi.zero_apply, Pi.zero_apply, zero_apply]
+
+/-- Two coordinate derivatives of a `C²` function commute, by the symmetry of its second
+derivative. -/
+theorem coordinateDeriv_pair_comm {f : CoordinateSpace n → A} (hf : ContDiff ℝ 2 f)
+    (j l : Fin n) (x : CoordinateSpace n) :
+    coordinateDeriv [j, l] f x = coordinateDeriv [l, j] f x := by
+  have h (i : Fin n) : coordinateDeriv [i] f = fun y ↦ fderiv ℝ f y (EuclideanSpace.single i 1) :=
+    funext fun y ↦ coordinateDeriv_cons i [] f y
+  simpa [coordinateDeriv_cons, h, iteratedFDerivAlong_cons] using
+    congrFun (iteratedFDerivAlong_swap (𝕜 := ℝ) hf (EuclideanSpace.single j 1)
+      (EuclideanSpace.single l 1) [] le_rfl) x
 
 /-- Partial coordinate derivatives in the second variable, along a word of length `k`, of a `C^N`
 function of two variables are jointly `C^m` whenever `m + k ≤ N`. -/
@@ -422,16 +481,28 @@ theorem mixedDeriv_nil_comp_fst (f : CoordinateSpace n → A) (α : List (Fin n)
     mixedDeriv α [] (fun p => f p.1) x ξ = coordinateDeriv α f x := by
   simp only [mixedDeriv_def, coordinateDeriv_nil]
 
+/-- The coordinate direction of `ℝⁿ × ℝⁿ` named by a letter: `Sum.inl j` is the `j`-th position
+direction `(eⱼ, 0)` and `Sum.inr j` the `j`-th frequency direction `(0, eⱼ)`. -/
+def mixedDirection : Fin n ⊕ Fin n → CoordinateSpace n × CoordinateSpace n :=
+  Sum.elim (fun j => (EuclideanSpace.single j 1, 0)) fun j => (0, EuclideanSpace.single j 1)
+
+@[simp]
+theorem mixedDirection_inl (j : Fin n) :
+    mixedDirection (Sum.inl j) = (EuclideanSpace.single j 1, 0) := (rfl)
+
+@[simp]
+theorem mixedDirection_inr (j : Fin n) :
+    mixedDirection (Sum.inr j) = (0, EuclideanSpace.single j 1) := (rfl)
+
 /-- The directions of the mixed derivative `∂_x^α ∂_ξ^β` in `ℝⁿ × ℝⁿ`: the standard basis vectors
 of the position space named by `α`, followed by those of the frequency space named by `β`. -/
 def mixedDirections (α β : List (Fin n)) : List (CoordinateSpace n × CoordinateSpace n) :=
-  α.map (fun j => (EuclideanSpace.single j 1, 0)) ++
-    β.map (fun j => (0, EuclideanSpace.single j 1))
+  (α.map Sum.inl ++ β.map Sum.inr).map mixedDirection
 
 theorem mixedDirections_def (α β : List (Fin n)) :
     mixedDirections α β = α.map (fun j => (EuclideanSpace.single j 1, 0)) ++
-      β.map (fun j => (0, EuclideanSpace.single j 1)) :=
-  (rfl)
+      β.map (fun j => (0, EuclideanSpace.single j 1)) := by
+  simp [mixedDirections, Function.comp_def]
 
 @[simp]
 theorem mixedDirections_cons (j : Fin n) (α β : List (Fin n)) :
@@ -543,6 +614,88 @@ theorem norm_mixedDeriv_le (α β : List (Fin n)) {a : CoordinateSpace n × Coor
         ∏ i, ‖(mixedDirections α β).get i‖ := ContinuousMultilinearMap.le_opNorm _ _
     _ = _ := by rw [prod_norm_mixedDirections, mul_one]
 
+/-- A position-independent function has no position derivatives. -/
+theorem mixedDeriv_comp_snd (f : CoordinateSpace n → A) {α : List (Fin n)} (hα : α ≠ [])
+    (β : List (Fin n)) (x ξ : CoordinateSpace n) :
+    mixedDeriv α β (fun p => f p.2) x ξ = 0 := by
+  simp only [mixedDeriv_def]
+  rw [coordinateDeriv_const _ hα, Pi.zero_apply]
+
+/-- The frequency derivatives of a position-independent function are those of its profile. -/
+theorem mixedDeriv_nil_comp_snd (f : CoordinateSpace n → A) (β : List (Fin n))
+    (x ξ : CoordinateSpace n) :
+    mixedDeriv [] β (fun p => f p.2) x ξ = coordinateDeriv β f ξ := by
+  simp only [mixedDeriv_def, coordinateDeriv_nil]
+
+/-- Frequency-only symbol estimates: if the `|β|`-th derivative of a `C^|β|` function `f` on `ℝⁿ`
+satisfies `‖D^|β| f(ξ)‖ ≤ C ⟨ξ⟩^(m - |β|)`, then the mixed derivative `∂_x^α ∂_ξ^β` of the
+position-independent function `(x, ξ) ↦ f ξ` satisfies the same estimate, with a nonnegative
+constant independent of the position. -/
+theorem exists_bound_mixedDeriv_comp_snd {f : CoordinateSpace n → A} {β : List (Fin n)}
+    (hf : ContDiff ℝ β.length f) {m : ℝ}
+    (hbound : ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ β.length f ξ‖ ≤
+      C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)) (α : List (Fin n)) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ x ξ,
+      ‖mixedDeriv α β (fun p => f p.2) x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
+  rcases eq_or_ne α [] with rfl | hα
+  · obtain ⟨C, hC⟩ := hbound
+    refine ⟨max C 0, le_max_right _ _, fun x ξ => ?_⟩
+    rw [mixedDeriv_nil_comp_snd]
+    calc ‖coordinateDeriv β f ξ‖ ≤ ‖iteratedFDeriv ℝ β.length f ξ‖ :=
+          norm_coordinateDeriv_le β hf ξ
+      _ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := hC ξ
+      _ ≤ max C 0 * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) :=
+          mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
+  · exact ⟨0, le_rfl, fun x ξ => by simp [mixedDeriv_comp_snd f hα]⟩
+
+section IteratedFDerivAlong
+
+/-! ### Comparison with iterated directional derivatives -/
+
+/-- Coordinate derivatives are the iterated directional derivatives along the standard basis
+vectors named by the word. -/
+theorem coordinateDeriv_eq_iteratedFDerivAlong (α : List (Fin n)) (f : CoordinateSpace n → A) :
+    coordinateDeriv α f = iteratedFDerivAlong ℝ (α.map fun j => EuclideanSpace.single j 1) f := by
+  induction α with
+  | nil => simp
+  | cons j α ih =>
+    funext x
+    rw [coordinateDeriv_cons, ih, List.map_cons, iteratedFDerivAlong_cons_apply]
+
+variable {a : CoordinateSpace n × CoordinateSpace n → A}
+
+/-- The mixed derivative `∂_x^α ∂_ξ^β` of a `C^(|α| + |β|)` function is the iterated directional
+derivative along its directions `TauCeti.mixedDirections α β`. -/
+theorem mixedDeriv_eq_iteratedFDerivAlong (α β : List (Fin n))
+    (ha : ContDiff ℝ (α.length + β.length) a) (x ξ : CoordinateSpace n) :
+    mixedDeriv α β a x ξ = iteratedFDerivAlong ℝ (mixedDirections α β) a (x, ξ) := by
+  rw [mixedDeriv_eq_iteratedFDeriv α β ha, ← iteratedFDerivAlong_ofFn_eq_iteratedFDeriv
+    (by simpa using ha), List.ofFn_get]
+
+/-- The iterated directional derivative of a `C^|w|` function along any word `w` of position and
+frequency directions is the mixed derivative along its position letters and its frequency
+letters, whatever their interleaving. -/
+theorem iteratedFDerivAlong_map_mixedDirection (w : List (Fin n ⊕ Fin n))
+    (ha : ContDiff ℝ w.length a) (p : CoordinateSpace n × CoordinateSpace n) :
+    iteratedFDerivAlong ℝ (w.map mixedDirection) a p =
+      mixedDeriv (w.filterMap Sum.getLeft?) (w.filterMap Sum.getRight?) a p.1 p.2 := by
+  have hperm : w.Perm ((w.filterMap Sum.getLeft?).map Sum.inl ++
+      (w.filterMap Sum.getRight?).map Sum.inr) := by
+    clear ha
+    induction w with
+    | nil => rfl
+    | cons l w ih =>
+      cases l with
+      | inl j => simpa [List.filterMap_cons] using ih
+      | inr j => simpa [List.filterMap_cons] using (ih.cons (Sum.inr j)).trans List.perm_middle.symm
+  have hlen : (w.filterMap Sum.getLeft?).length + (w.filterMap Sum.getRight?).length =
+      w.length := by
+    simpa using hperm.length_eq.symm
+  rw [mixedDeriv_eq_iteratedFDerivAlong _ _ (by exact_mod_cast hlen ▸ ha), mixedDirections,
+    (hperm.map mixedDirection).iteratedFDerivAlong_eq ha (by simp)]
+
+end IteratedFDerivAlong
+
 section Linear
 
 variable {a b : CoordinateSpace n × CoordinateSpace n → A}
@@ -572,18 +725,17 @@ theorem mixedDeriv_add (ha : ContDiff ℝ ∞ a) (hb : ContDiff ℝ ∞ b) (α �
     (contDiff_infty.1 (contDiff_coordinateDeriv_slice ha β ξ) _)
     (contDiff_infty.1 (contDiff_coordinateDeriv_slice hb β ξ) _), Pi.add_apply]
 
-theorem mixedDeriv_const_smul {R : Type*} [Semiring R] [Module R A] [SMulCommClass ℝ R A]
-    [ContinuousConstSMul R A] (ha : ContDiff ℝ ∞ a) (c : R) (α β : List (Fin n))
-    (x ξ : CoordinateSpace n) :
+/-- Scalar multiples commute with mixed derivatives, with no smoothness assumption. -/
+@[simp]
+theorem mixedDeriv_const_smul {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 A]
+    [SMulCommClass ℝ 𝕜 A] (c : 𝕜) (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     mixedDeriv α β (c • a) x ξ = c • mixedDeriv α β a x ξ := by
   have h : (fun y => coordinateDeriv β (fun η => (c • a) (y, η)) ξ) =
       c • fun y => coordinateDeriv β (fun η => a (y, η)) ξ := by
     funext y
-    exact congrFun
-      (coordinateDeriv_const_smul β (contDiff_infty.1 (ha.comp (contDiff_prodMk_right y)) _) c) ξ
+    exact congrFun (coordinateDeriv_const_smul β (fun η => a (y, η)) c) ξ
   simp only [mixedDeriv_def]
-  rw [h, coordinateDeriv_const_smul α
-    (contDiff_infty.1 (contDiff_coordinateDeriv_slice ha β ξ) _), Pi.smul_apply]
+  rw [h, coordinateDeriv_const_smul α, Pi.smul_apply]
 
 @[simp]
 theorem mixedDeriv_neg (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
@@ -631,6 +783,37 @@ theorem mixedDeriv_indicator_prod_univ_of_mem {U : Set (CoordinateSpace n)} (hU 
   filter_upwards [hU.mem_nhds hx] with y hy η
   exact Set.indicator_of_mem (Set.mk_mem_prod hy (Set.mem_univ η)) _
 
+/-- Mixed derivatives at `(x, ξ)` only depend on the germ of the function at `(x, ξ)`. -/
+theorem _root_.Filter.EventuallyEq.mixedDeriv_eq {x ξ : CoordinateSpace n}
+    (h : a =ᶠ[nhds (x, ξ)] b) (α β : List (Fin n)) :
+    mixedDeriv α β a x ξ = mixedDeriv α β b x ξ := by
+  rw [nhds_prod_eq] at h
+  obtain ⟨pa, hpa, pb, hpb, hab⟩ := Filter.eventually_prod_iff.1 h
+  have h' : (fun y => coordinateDeriv β (fun η => a (y, η)) ξ) =ᶠ[nhds x]
+      fun y => coordinateDeriv β (fun η => b (y, η)) ξ := by
+    filter_upwards [hpa] with y hy
+    have hy' : (fun η => a (y, η)) =ᶠ[nhds ξ] fun η => b (y, η) := by
+      filter_upwards [hpb] with η hη using hab hy hη
+    exact (hy'.coordinateDeriv β).eq_of_nhds
+  rw [mixedDeriv_def, mixedDeriv_def, (h'.coordinateDeriv α).eq_of_nhds]
+
+/-- Mixed derivatives of a finite sum of smooth functions are the sums of the mixed
+derivatives. -/
+theorem mixedDeriv_sum {ι : Type*} {s : Finset ι}
+    {f : ι → CoordinateSpace n × CoordinateSpace n → A} (hf : ∀ i ∈ s, ContDiff ℝ ∞ (f i))
+    (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
+    mixedDeriv α β (∑ i ∈ s, f i) x ξ = ∑ i ∈ s, mixedDeriv α β (f i) x ξ := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    have hs : ContDiff ℝ ∞ (∑ j ∈ s, f j) := by
+      rw [Finset.sum_fn]
+      exact ContDiff.sum fun j hj => hf j (Finset.mem_insert_of_mem hj)
+    rw [Finset.sum_insert hi, Finset.sum_insert hi,
+      mixedDeriv_add (hf i (Finset.mem_insert_self i s)) hs,
+      ih fun j hj => hf j (Finset.mem_insert_of_mem hj)]
+
 variable {α β : List (Fin n)} {x ξ : CoordinateSpace n} {C D w : ℝ}
 
 /-- Bounds `C * w` and `D * w` on mixed derivatives of smooth `a` and `b` add to a bound on the
@@ -641,12 +824,12 @@ theorem norm_mixedDeriv_add_le (ha : ContDiff ℝ ∞ a) (hb : ContDiff ℝ ∞ 
   rw [mixedDeriv_add ha hb, add_mul]
   exact (norm_add_le _ _).trans (add_le_add haC hbD)
 
-/-- A bound `C * w` on a mixed derivative of smooth `a` gives the bound `(‖c‖ * C) * w` on the
+/-- A bound `C * w` on a mixed derivative of `a` gives the bound `(‖c‖ * C) * w` on the
 mixed derivative of `c • a`. -/
 theorem norm_mixedDeriv_smul_le {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 A]
-    [SMulCommClass ℝ 𝕜 A] (ha : ContDiff ℝ ∞ a) (c : 𝕜) (haC : ‖mixedDeriv α β a x ξ‖ ≤ C * w) :
+    [SMulCommClass ℝ 𝕜 A] (c : 𝕜) (haC : ‖mixedDeriv α β a x ξ‖ ≤ C * w) :
     ‖mixedDeriv α β (c • a) x ξ‖ ≤ (‖c‖ * C) * w := by
-  rw [mixedDeriv_const_smul ha, norm_smul, mul_assoc]
+  rw [mixedDeriv_const_smul, norm_smul, mul_assoc]
   exact mul_le_mul_of_nonneg_left haC (norm_nonneg c)
 
 end Linear
@@ -757,5 +940,123 @@ theorem coordinateDeriv_singleton_clm_comp {𝕜 : Type*} [NontriviallyNormedFie
   simpa [List.revzip, add_comm] using h
 
 end Leibniz
+
+section Prod
+
+/-! ### Derivatives of functions of a position and a frequency -/
+
+/-- A continuous linear map on `ℝⁿ` is determined by its values on the standard basis. -/
+theorem _root_.ContinuousLinearMap.apply_eq_sum_single (L : CoordinateSpace n →L[ℝ] A)
+    (h : CoordinateSpace n) : L h = ∑ j, h j • L (EuclideanSpace.single j 1) := by
+  conv_lhs => rw [← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr h]
+  simp
+
+/-- A combination `∑ j, h j • X j` has norm at most `‖h‖ ∑ j, ‖X j‖`. -/
+theorem CoordinateSpace.norm_sum_smul_le (h : CoordinateSpace n) (X : Fin n → A) :
+    ‖∑ j, h j • X j‖ ≤ ‖h‖ * ∑ j, ‖X j‖ := by
+  rw [Finset.mul_sum]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_)
+  rw [norm_smul]
+  gcongr
+  exact PiLp.norm_apply_le h j
+
+/-- A continuous linear map on `ℝⁿ × ℝⁿ` given by coordinates has norm at most the sum of the
+norms of its values on the standard basis. -/
+theorem _root_.ContinuousLinearMap.opNorm_le_of_apply_eq_sum
+    (L : CoordinateSpace n × CoordinateSpace n →L[ℝ] A) (X Ξ : Fin n → A)
+    (hL : ∀ v, L v = ∑ j, v.1 j • X j + ∑ j, v.2 j • Ξ j) :
+    ‖L‖ ≤ ∑ j, ‖X j‖ + ∑ j, ‖Ξ j‖ := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
+  rw [hL]
+  calc _ ≤ ‖v.1‖ * ∑ j, ‖X j‖ + ‖v.2‖ * ∑ j, ‖Ξ j‖ :=
+        (norm_add_le _ _).trans (add_le_add (CoordinateSpace.norm_sum_smul_le _ _)
+          (CoordinateSpace.norm_sum_smul_le _ _))
+    _ ≤ ‖v‖ * ∑ j, ‖X j‖ + ‖v‖ * ∑ j, ‖Ξ j‖ := by
+        gcongr
+        · exact norm_fst_le v
+        · exact norm_snd_le v
+    _ = _ := by ring
+
+/-- The derivative of a function of a position and a frequency, differentiable at `p`, in the
+direction `v` is the sum of its coordinate derivatives in the position and in the frequency,
+weighted by the coordinates of `v`. -/
+theorem fderiv_apply_eq_sum_coordinateDeriv
+    {f : CoordinateSpace n × CoordinateSpace n → A} {p : CoordinateSpace n × CoordinateSpace n}
+    (hf : DifferentiableAt ℝ f p) (v : CoordinateSpace n × CoordinateSpace n) :
+    fderiv ℝ f p v = ∑ j, v.1 j • coordinateDeriv [j] (fun x ↦ f (x, p.2)) p.1 +
+      ∑ j, v.2 j • coordinateDeriv [j] (fun ξ ↦ f (p.1, ξ)) p.2 := by
+  have h₁ : fderiv ℝ (fun x ↦ f (x, p.2)) p.1 = (fderiv ℝ f p).comp
+      (ContinuousLinearMap.inl ℝ (CoordinateSpace n) (CoordinateSpace n)) :=
+    (hf.hasFDerivAt.comp p.1 (hasFDerivAt_prodMk_left p.1 p.2)).fderiv
+  have h₂ : fderiv ℝ (fun ξ ↦ f (p.1, ξ)) p.2 = (fderiv ℝ f p).comp
+      (ContinuousLinearMap.inr ℝ (CoordinateSpace n) (CoordinateSpace n)) :=
+    (hf.hasFDerivAt.comp p.2 (hasFDerivAt_prodMk_right p.1 p.2)).fderiv
+  have hv : v = (v.1, 0) + (0, v.2) := by simp
+  simp only [coordinateDeriv_cons, coordinateDeriv_nil, h₁, h₂, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.inl_apply, ContinuousLinearMap.inr_apply]
+  conv_lhs => rw [hv, map_add]
+  congr 1
+  · simpa using ((fderiv ℝ f p).comp (ContinuousLinearMap.inl ℝ _ _)).apply_eq_sum_single v.1
+  · simpa using ((fderiv ℝ f p).comp (ContinuousLinearMap.inr ℝ _ _)).apply_eq_sum_single v.2
+
+/-- A coordinate derivative in the position of a function differentiable at `p` is its derivative
+in the direction `(e_j, 0)`. -/
+theorem coordinateDeriv_fst_eq_fderiv {f : CoordinateSpace n × CoordinateSpace n → A}
+    {p : CoordinateSpace n × CoordinateSpace n} (hf : DifferentiableAt ℝ f p) (j : Fin n) :
+    coordinateDeriv [j] (fun x ↦ f (x, p.2)) p.1 = fderiv ℝ f p (EuclideanSpace.single j 1, 0) := by
+  rw [fderiv_apply_eq_sum_coordinateDeriv hf]
+  simp
+
+/-- A coordinate derivative in the frequency of a function differentiable at `p` is its
+derivative in the direction `(0, e_j)`. -/
+theorem coordinateDeriv_snd_eq_fderiv {f : CoordinateSpace n × CoordinateSpace n → A}
+    {p : CoordinateSpace n × CoordinateSpace n} (hf : DifferentiableAt ℝ f p) (j : Fin n) :
+    coordinateDeriv [j] (fun ξ ↦ f (p.1, ξ)) p.2 = fderiv ℝ f p (0, EuclideanSpace.single j 1) := by
+  rw [fderiv_apply_eq_sum_coordinateDeriv hf]
+  simp
+
+end Prod
+
+/-! ### Products with a frequency cutoff -/
+
+section Cutoff
+
+variable {ψ : CoordinateSpace n → ℝ} {a : CoordinateSpace n × CoordinateSpace n → A}
+
+/-- The Leibniz bound for a mixed derivative of the product `ψ(ξ) a(x, ξ)` of a smooth function of
+the frequency alone and a smooth function of the position and the frequency, in terms of the
+derivatives of `ψ` at `ξ` and the mixed derivatives of `a` at `(x, ξ)`. -/
+theorem norm_mixedDeriv_comp_snd_smul_le (hψ : ContDiff ℝ ∞ ψ) (ha : ContDiff ℝ ∞ a)
+    (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
+    ‖mixedDeriv α β (fun p => ψ p.2 • a p) x ξ‖ ≤
+      ∑ i ∈ Finset.range (β.length + 1), (β.length.choose i : ℝ) * ‖iteratedFDeriv ℝ i ψ ξ‖ *
+        ∑ w : Fin (β.length - i) → Fin n, ‖mixedDeriv α (List.ofFn w) a x ξ‖ := by
+  have hf : ContDiff ℝ ∞ fun p : CoordinateSpace n × CoordinateSpace n => ψ p.2 • a p :=
+    (hψ.comp contDiff_snd).smul ha
+  -- take the position derivatives first; the cutoff does not depend on the position
+  have hg : ContDiff ℝ ∞ fun η => coordinateDeriv α (fun y => a (y, η)) x :=
+    (ha.coordinateDeriv_fst α).comp (contDiff_const.prodMk contDiff_id)
+  have hpos (η : CoordinateSpace n) :
+      coordinateDeriv α (fun y => ψ η • a (y, η)) x =
+        ψ η • coordinateDeriv α (fun y => a (y, η)) x := by
+    exact congrFun (coordinateDeriv_const_smul α (fun y => a (y, η)) (ψ η)) x
+  rw [mixedDeriv_eq_coordinateDeriv_snd hf]
+  simp only [hpos]
+  refine (norm_coordinateDeriv_smul_le β (hψ.of_le (by exact_mod_cast le_top))
+    (hg.of_le (by exact_mod_cast le_top)) ξ).trans_eq ?_
+  simp only [mixedDeriv_eq_coordinateDeriv_snd ha]
+
+/-- Away from the support of a smooth frequency cutoff `ψ`, every mixed derivative of
+`ψ(ξ) a(x, ξ)` vanishes. -/
+theorem mixedDeriv_comp_snd_smul_eq_zero_of_notMem_tsupport (hψ : ContDiff ℝ ∞ ψ)
+    (ha : ContDiff ℝ ∞ a) (α β : List (Fin n)) (x : CoordinateSpace n) {ξ : CoordinateSpace n}
+    (hξ : ξ ∉ tsupport ψ) :
+    mixedDeriv α β (fun p => ψ p.2 • a p) x ξ = 0 := by
+  refine norm_le_zero_iff.1 ((norm_mixedDeriv_comp_snd_smul_le hψ ha α β x ξ).trans_eq ?_)
+  refine Finset.sum_eq_zero fun i _ => ?_
+  rw [Function.notMem_support.1 (fun h => hξ (support_iteratedFDeriv_subset (𝕜 := ℝ) i h)),
+    norm_zero, mul_zero, zero_mul]
+
+end Cutoff
 
 end TauCeti

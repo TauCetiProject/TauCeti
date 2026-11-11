@@ -327,19 +327,20 @@ theorem realizationTopHomeomorphStdSimplex_symm_apply_val (x : Convexity.StdSimp
       (topFace (ι := ι)) _)
 
 omit [Fintype ι] [Nonempty ι] in
-/-- The coordinate vectors of the realization of the full complex on a finite type are the weight
-vectors of the standard simplex. -/
-theorem range_realization_coe_top [Finite ι] :
+/-- The coordinate vectors of the realization of the full complex are the weight vectors of the
+standard simplex. -/
+theorem range_realization_coe_top :
     range (fun x : Realization (⊤ : AbstractSimplicialComplex ι) => (x.1 : ι → ℝ)) =
       range fun t : Convexity.StdSimplex ℝ ι => ⇑t.weights := by
-  have := Fintype.ofFinite ι
-  rcases isEmpty_or_nonempty ι with hι | hι
-  · ext z
-    rw [mem_range_realization_coe_iff, Convexity.StdSimplex.range_toFun_comp_weights]
-    simp
-  · rw [← realizationTopHomeomorphStdSimplex.surjective.range_comp]
-    exact congrArg range (funext fun x => funext fun i =>
-      (realizationTopHomeomorphStdSimplex_apply x i).symm)
+  ext z
+  constructor
+  · rintro ⟨x, rfl⟩
+    obtain ⟨hnn, hsum, -⟩ := TauCeti.mem_standardGeometricComplex_space_iff.mp x.2
+    exact ⟨⟨x.1, fun i => hnn i, hsum⟩, rfl⟩
+  · rintro ⟨t, rfl⟩
+    refine ⟨⟨t.weights, TauCeti.mem_standardGeometricComplex_space_iff.mpr
+      ⟨fun i => t.nonneg i, t.total, ?_⟩⟩, rfl⟩
+    exact t.support_weights_nonempty
 
 /-- The realization of the standard one-simplex is homeomorphic to the unit interval. The zeroth
 vertex maps to `0` and the first vertex maps to `1`; see the two endpoint lemmas below. -/

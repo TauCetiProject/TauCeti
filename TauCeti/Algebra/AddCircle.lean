@@ -52,11 +52,16 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
   `p / 2`.
 * `AddCircle.addOrderOf_period_div_of_ne_zero`: for a nonzero period and positive `n`, the class
   of `p / n` has additive order `n`.
+* `AddCircle.infinite_of_neZero`: the instance that `AddCircle p` is infinite for a nonzero
+  period in characteristic zero.
 * `AddCircle.natCard_torsionBy`: for positive `n`, the `n`-torsion of `AddCircle p` has exactly `n`
-  elements.
+  elements; for `n = 0` the statement holds only through the junk value `Nat.card = 0` of the
+  infinite group.
 * `AddCircle.eq_torsionBy_of_natCard_eq`: a subgroup of `AddCircle p` with `n` elements is the
   `n`-torsion; equivalently, `AddCircle.exists_eq_torsionBy` writes every finite subgroup as a
-  torsion subgroup.
+  torsion subgroup, and `AddCircle.isAddCyclic_of_finite` shows that it is cyclic.
+* `AddCircle.isCyclic_of_finite_multiplicative`: a finite subgroup of the multiplicative copy of a
+  circle `𝕜 ⧸ p ℤ` over a characteristic-zero division ring is cyclic.
 * `AddCircle.torsionBy_le_torsionBy_iff` and `AddCircle.torsionBy_inj`: the torsion subgroups
   are ordered by divisibility, and pairwise distinct.
 * `AddCircle.nsmul_coe_period_div` and `AddCircle.nsmul_coe_period_div_of_mul_eq`: scaling the
@@ -253,6 +258,12 @@ theorem exists_eq_torsionBy {H : AddSubgroup (AddCircle p)} [Finite H] :
   ⟨Nat.card H, Nat.card_pos,
     eq_torsionBy_of_natCard_eq p (Nat.cast_ne_zero.mpr Nat.card_pos.ne') rfl⟩
 
+/-- Every finite subgroup of `AddCircle p` is cyclic. -/
+theorem isAddCyclic_of_finite (H : AddSubgroup (AddCircle p)) [Finite H] : IsAddCyclic H := by
+  obtain ⟨n, hn, hH⟩ := exists_eq_torsionBy p (H := H)
+  rw [hH]
+  exact isAddCyclic_torsionBy p (Nat.cast_ne_zero.mpr hn.ne')
+
 end FiniteSubgroups
 
 section ExactOrder
@@ -278,8 +289,20 @@ theorem addOrderOf_period_div_of_ne_zero (hn : 0 < n) :
   have hdvd : (n : ℤ) ∣ m := ⟨k, by rw [mul_comm]; exact_mod_cast hkm⟩
   exact hmn.not_ge (Nat.le_of_dvd hm (Int.natCast_dvd_natCast.mp hdvd))
 
-/-- The `n`-torsion of `AddCircle p` has exactly `n` elements. -/
-theorem natCard_torsionBy (hn : 0 < n) : Nat.card ((AddCircle p)[(n : ℤ)]) = n := by
+/-- For a nonzero period in characteristic zero, `AddCircle p` is infinite: the classes of
+`p / (k + 1)` have pairwise distinct additive orders. -/
+instance infinite_of_neZero : Infinite (AddCircle p) :=
+  Infinite.of_injective (fun k : ℕ ↦ ((p / (k + 1 : ℕ) : 𝕜) : AddCircle p)) fun a b h ↦ by
+    have := congrArg addOrderOf h
+    rw [addOrderOf_period_div_of_ne_zero p (Nat.succ_pos _),
+      addOrderOf_period_div_of_ne_zero p (Nat.succ_pos _)] at this
+    exact Nat.succ_injective this
+
+/-- The `n`-torsion of `AddCircle p` has exactly `n` elements. For `n = 0` this is the junk value
+`Nat.card = 0` of the infinite group `AddCircle p`. -/
+theorem natCard_torsionBy : Nat.card ((AddCircle p)[(n : ℤ)]) = n := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp [Nat.card_eq_zero_of_infinite]
   rw [torsionBy_eq_zmultiples p (Nat.cast_ne_zero.mpr hn.ne'), Nat.card_zmultiples,
     addOrderOf_period_div_of_ne_zero p hn]
 
@@ -362,20 +385,22 @@ variable {n : ℕ} {H : Type*}
 
 An *invariant map* on a group `H` is an injective homomorphism `f : H →+ AddCircle p` whose
 image is the `n`-torsion. For `n` nonzero in the division ring, `H` is cyclic and the element
-of invariant `p / n` is a distinguished generator. For a nonzero period in characteristic zero,
-`H` has order exactly `n`. Over `ℚ` with `p = 1` this is the normalization that produces the
-fundamental class of a class formation from its invariant map. -/
+of invariant `p / n` is a distinguished generator. For a nonzero period in characteristic zero
+and positive `n`, `H` has order exactly `n`. Over `ℚ` with `p = 1` this is the normalization that
+produces the fundamental class of a class formation from its invariant map. -/
 
 section Card
 
 variable {𝕜 : Type*} [DivisionRing 𝕜] [CharZero 𝕜] (p : 𝕜) [NeZero p] {f : H → AddCircle p}
 
-/-- A type with an injective map onto the `n`-torsion has exactly `n` elements. -/
-theorem natCard_eq_of_injective_of_range_eq_torsionBy (hn : 0 < n) (hf : Function.Injective f)
+/-- A type with an injective map onto the `n`-torsion has exactly `n` elements. For `n = 0` the map
+is a bijection onto the infinite group `AddCircle p`, and the statement holds only through the junk
+value `Nat.card = 0`. -/
+theorem natCard_eq_of_injective_of_range_eq_torsionBy (hf : Function.Injective f)
     (hr : Set.range f = ((AddCircle p)[(n : ℤ)] : Set (AddCircle p))) :
     Nat.card H = n := by
   have e : H ≃ ((AddCircle p)[(n : ℤ)]) := (Equiv.ofInjective f hf).trans (Set.equivOfEq hr)
-  rw [Nat.card_congr e, natCard_torsionBy p hn]
+  rw [Nat.card_congr e, natCard_torsionBy p]
 
 end Card
 
@@ -425,7 +450,7 @@ noncomputable def zmodAddEquivOfInjectiveOfRangeEqTorsionBy (hn : 0 < n) (hf : F
   zmodAddEquivOfGenerator
     (fun x ↦ mem_zmultiples_iff.mpr
       (exists_zsmul_eq_of_apply_eq_coe_period_div p (Nat.cast_ne_zero.mpr hn.ne') hf hr hu x))
-    (natCard_eq_of_injective_of_range_eq_torsionBy p hn hf hr)
+    (natCard_eq_of_injective_of_range_eq_torsionBy p hf hr)
 
 /-- The isomorphism `AddCircle.zmodAddEquivOfInjectiveOfRangeEqTorsionBy` sends the class of an
 integer `i` to the multiple `i • u` of the element `u` of invariant `p / n`. -/
@@ -493,6 +518,22 @@ end Rat
 
 end AddCircle
 
+/-- Every finite subgroup of the multiplicative copy of a circle `𝕜 ⧸ p ℤ` over a
+characteristic-zero division ring is cyclic. -/
+theorem AddCircle.isCyclic_of_finite_multiplicative {𝕜 : Type*} [DivisionRing 𝕜] [CharZero 𝕜]
+    (p : 𝕜) (H : Subgroup (Multiplicative (AddCircle p))) [Finite H] : IsCyclic H := by
+  set A : AddSubgroup (AddCircle p) := Subgroup.toAddSubgroup' H
+  have : Finite A := Finite.of_injective
+    (fun a : A ↦ (⟨Multiplicative.ofAdd a.val, a.property⟩ : H)) fun a b h ↦
+    Subtype.ext (congrArg (fun y : H ↦ y.val.toAdd) h)
+  have : IsAddCyclic A := AddCircle.isAddCyclic_of_finite p A
+  let j : H →* Multiplicative A := {
+    toFun := fun y ↦ Multiplicative.ofAdd ⟨y.val.toAdd, y.property⟩
+    map_one' := rfl
+    map_mul' := fun _ _ ↦ rfl }
+  exact isCyclic_of_injective j fun y z h ↦ Subtype.ext (Multiplicative.toAdd.injective
+    (congrArg (fun t : Multiplicative A ↦ (t.toAdd : AddCircle p)) h))
+
 namespace ZMod
 
 variable (n : ℕ)
@@ -522,11 +563,16 @@ theorem toRatAddCircle_natCast (k : ℕ) :
   simpa using toRatAddCircle_intCast n (k : ℤ)
 
 /-- The value of `ZMod.toRatAddCircle` on the canonical representative of a residue class. -/
-theorem toRatAddCircle_apply [NeZero n] (x : ZMod n) :
+theorem toRatAddCircle_apply (x : ZMod n) :
     toRatAddCircle n x = ((x.val / n : ℚ) : AddCircle (1 : ℚ)) := by
-  have hx : ((x.val : ℕ) : ZMod n) = x := ZMod.natCast_rightInverse x
-  conv_lhs => rw [← hx]
-  rw [toRatAddCircle_natCast]
+  rcases eq_or_ne n 0 with rfl | hn
+  · conv_lhs => rw [← ZMod.intCast_zmod_cast x]
+    rw [toRatAddCircle_intCast]
+    simp
+  · have : NeZero n := ⟨hn⟩
+    have hx : ((x.val : ℕ) : ZMod n) = x := ZMod.natCast_rightInverse x
+    conv_lhs => rw [← hx]
+    rw [toRatAddCircle_natCast]
 
 /-- Only the zero residue has integral image in `ℚ/ℤ`. -/
 @[simp]

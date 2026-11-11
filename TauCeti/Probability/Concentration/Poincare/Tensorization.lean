@@ -40,6 +40,60 @@ open scoped ENNReal NNReal ContDiff
 namespace MeasureTheory.Measure
 
 
+section Marginals
+
+variable {ι : Type*} [Fintype ι] {E : ι → Type*}
+  [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace ℝ (E i)]
+  [∀ i, MeasurableSpace (E i)]
+  [∀ i, BorelSpace (E i)] [∀ i, SecondCountableTopology (E i)]
+
+/-- Every marginal of a finite `PiLp 2` product inherits its Poincaré inequality. -/
+theorem PoincareInequality.of_piLp {μ : ∀ i, Measure (E i)}
+    [∀ i, IsProbabilityMeasure (μ i)] {C : ℝ}
+    (h : PoincareInequality ((Measure.pi μ).map (WithLp.toLp 2)) C) (i : ι) :
+    PoincareInequality (μ i) C := by
+  classical
+  let ρ := (Measure.pi μ).map (WithLp.toLp 2)
+  let q := (PiLp.proj 2 E i : PiLp 2 E →L[ℝ] E i)
+  have hm : MeasurePreserving q ρ (μ i) := by
+    refine ⟨q.continuous.measurable, ?_⟩
+    dsimp only [ρ]
+    rw [Measure.map_map q.continuous.measurable (WithLp.measurable_toLp 2 _)]
+    exact (measurePreserving_eval μ i).map_eq
+  rw [PoincareInequality_def]
+  intro f hf hfL hdf
+  have hn (x : PiLp 2 E) :
+      ‖fderiv ℝ (fun y : PiLp 2 E ↦ f (q y)) x‖ = ‖fderiv ℝ f (q x)‖ := by
+    have hderiv : fderiv ℝ (fun y : PiLp 2 E ↦ f (q y)) x =
+        (fderiv ℝ f (q x)).comp q := by
+      simpa only [Function.comp_def] using
+        ((hf.differentiable (by simp) (q x)).hasFDerivAt.comp x q.hasFDerivAt).fderiv
+    rw [hderiv]
+    apply le_antisymm
+    · refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg (fderiv ℝ f (q x))) fun y ↦ ?_
+      exact ((fderiv ℝ f (q x)).le_opNorm (q y)).trans
+        (mul_le_mul_of_nonneg_left (PiLp.norm_apply_le y i) (norm_nonneg _))
+    · refine ContinuousLinearMap.opNorm_le_bound _
+        (norm_nonneg ((fderiv ℝ f (q x)).comp q)) fun y ↦ ?_
+      have hle := ((fderiv ℝ f (q x)).comp q).le_opNorm (PiLp.single 2 i y)
+      simpa only [ContinuousLinearMap.comp_apply, q, PiLp.proj_apply,
+        PiLp.ofLp_single, Pi.single_eq_same, PiLp.norm_single] using hle
+  have hd : MemLp (fun x : PiLp 2 E ↦ ‖fderiv ℝ (fun y ↦ f (q y)) x‖) 2 ρ := by
+    simp only [hn]
+    exact hdf.comp_measurePreserving hm
+  have hv := h.apply (fun x ↦ f (q x)) (hf.comp q.contDiff)
+    (hfL.comp_measurePreserving hm) hd
+  rw [hm.variance_fun_comp hfL.aemeasurable] at hv
+  have he : (∫ x, ‖fderiv ℝ (fun y ↦ f (q y)) x‖ ^ 2 ∂ρ) =
+      ∫ y, ‖fderiv ℝ f y‖ ^ 2 ∂μ i := by
+    simp only [hn]
+    have hint : AEStronglyMeasurable (fun y ↦ ‖fderiv ℝ f y‖ ^ 2) (ρ.map q) :=
+      hm.map_eq.symm ▸ hdf.integrable_sq.aestronglyMeasurable
+    rw [← hm.map_eq, integral_map hm.measurable.aemeasurable hint]
+  rwa [he] at hv
+
+end Marginals
+
 variable {ι : Type*} [Fintype ι] {E : ι → Type*}
   [∀ i, NormedAddCommGroup (E i)] [∀ i, InnerProductSpace ℝ (E i)]
   [∀ i, CompleteSpace (E i)] [∀ i, MeasurableSpace (E i)]
@@ -76,8 +130,8 @@ theorem PoincareInequality.piLp (μ : ∀ i, Measure (E i)) [∀ i, IsProbabilit
     have hsec : ∀ᵐ x ∂Measure.pi μ,
         evariance (fun y ↦ F (Function.update x i y)) (μ i) ≤
           (C : ℝ≥0∞) * ∫⁻ y, (ENNReal.ofReal ‖G (Function.update x i y) i‖) ^ 2 ∂μ i := by
-      filter_upwards [TauCeti.ae_memLp_two_pi_update μ hFm hFL i,
-        TauCeti.ae_memLp_two_pi_update μ (hGim i) (hGiL i) i]
+      filter_upwards [TauCeti.ae_memLp_pi_update μ i hFL,
+        TauCeti.ae_memLp_pi_update μ i (hGiL i)]
         with x hxF hxG
       have hs : ContDiff ℝ ∞ (fun y ↦ F (Function.update x i y)) :=
         hf.comp (PiLp.contDiff_toLp.comp (contDiff_update ∞ x i))
