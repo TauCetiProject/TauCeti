@@ -26,7 +26,7 @@ open scoped ENNReal
 
 namespace TauCeti
 
-variable {α F : Type*} [MeasurableSpace α] {μ : Measure α} [SigmaFinite μ]
+variable {α F : Type*} [MeasurableSpace α] {μ : Measure α} [SFinite μ]
   [NormedAddCommGroup F] {f : α → F}
 
 /-- The `Lᵖ` seminorm is bounded by the integral of the `p`th roots of the measures of
