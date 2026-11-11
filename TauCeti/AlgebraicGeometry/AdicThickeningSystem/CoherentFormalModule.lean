@@ -392,16 +392,9 @@ def pullback (g : 𝔛 ⟶ 𝔜) : CoherentFormalModule 𝔜 ⥤ CoherentFormalM
   map {M N} φ :=
     { app n := (Scheme.Modules.pullback (g.app n)).map (φ.app n)
       naturality n := by
-        have h := (Scheme.Modules.pullbackComp _ _ ≪≫
-          Scheme.Modules.pullbackCongr (g.naturality n) ≪≫
-            (Scheme.Modules.pullbackComp _ _).symm).hom.naturality_assoc (φ.app (n + 1))
-              ((Scheme.Modules.pullback (g.app n)).map (N.transitionIso n).hom)
-        rw [Functor.comp_map, Functor.comp_map] at h
-        -- Reduce the projections of the structures built in `obj`.
-        dsimp only
-        rw [Iso.trans_hom, Iso.trans_hom, Iso.app_hom, Iso.app_hom, Functor.mapIso_hom,
-          Functor.mapIso_hom, h, Category.assoc, ← Functor.map_comp, Hom.naturality,
-          Functor.map_comp] }
+        simp only [Iso.trans_hom, Iso.app_hom, Functor.mapIso_hom, Category.assoc]
+        rw [← Functor.comp_map, NatTrans.naturality_assoc, Functor.comp_map, ← Functor.map_comp,
+          Hom.naturality, Functor.map_comp] }
   map_id M := hom_ext fun n ↦ (Scheme.Modules.pullback (g.app n)).map_id (M.obj n)
   map_comp φ ψ := hom_ext fun n ↦
     (Scheme.Modules.pullback (g.app n)).map_comp (φ.app n) (ψ.app n)
