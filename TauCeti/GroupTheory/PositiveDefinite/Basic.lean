@@ -23,7 +23,7 @@ operations used to pass between a group and its subgroups:
 * pointwise limits along any nontrivial filter;
 * extension by zero from a subgroup `H` to `G`;
 * induction from a subgroup `H` of finite index: for a section `s` of `G → G ⧸ H`, the function
-  `g ↦ [G : H]⁻¹ ∑_{x ∈ G ⧸ H} φ̃ ((s (g • x))⁻¹ * g * s x)`, with `φ̃` the extension of `φ`
+  `g ↦ [G : H]⁻¹ ∑_{x ∈ G ⧸ H} φ₀ ((s (g • x))⁻¹ * g * s x)`, with `φ₀` the extension of `φ`
   by zero. Its arguments `(s (g • x))⁻¹ * g * s x` lie in `H`; it agrees with `φ` at `1`, vanishes
   at infinity when `φ` does, and is uniformly close to `1` on `g` when `φ` is close to `1` at
   the finitely many points `(s (g • x))⁻¹ * g * s x`.
