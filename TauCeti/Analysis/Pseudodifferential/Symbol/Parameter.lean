@@ -734,6 +734,7 @@ def shiftedLaplacian (s : ℝ) : ParameterSymbol n Λ V V 2 where
     have hq' : q.2 ∈ Λ := hq
     simp [laplacianSymbol, hq']
 
+@[simp]
 theorem coefficient_shiftedLaplacian (s : ℝ) (x ξ : CoordinateSpace n) {z : ℂ} (hz : z ∈ Λ) :
     (shiftedLaplacian V s : ParameterSymbol n Λ V V 2).coefficient ((x, ξ), z) =
       (((s + ‖ξ‖ ^ 2 : ℝ) : ℂ) - z) • ContinuousLinearMap.id ℂ V :=
