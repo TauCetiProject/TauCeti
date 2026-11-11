@@ -26,7 +26,7 @@ module. This includes every finite-dimensional module over an algebra over a fie
 
 public section
 
-namespace TauCeti
+namespace LinearEquiv
 
 universe u w
 
@@ -39,7 +39,7 @@ be a left `A`-module identified with `Module.Dual k A` by a `k`-linear equivalen
 action of `a` to precomposition with right multiplication by `a`. Every left `A`-module that is
 finite projective over `k`, with compatible scalar actions, embeds `A`-linearly into a finite
 power of `Q`. -/
-theorem _root_.LinearEquiv.exists_injective_linearMap_pi_of_dual
+theorem exists_injective_linearMap_pi_of_dual
     (e : Q ≃ₗ[k] Module.Dual k A)
     (he : ∀ (a : A) (q : Q) (x : A), e (a • q) x = e q (x * a)) (M : Type*) [AddCommMonoid M]
     [Module A M] [Module k M] [IsScalarTower k A M] [Module.Projective k M] [Module.Finite k M] :
@@ -56,4 +56,4 @@ theorem _root_.LinearEquiv.exists_injective_linearMap_pi_of_dual
   refine ⟨n, f, fun m m' hm ↦ hg (funext fun i ↦ ?_)⟩
   simpa [f, hf₀] using congr(e ($hm i) 1)
 
-end TauCeti
+end LinearEquiv

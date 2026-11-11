@@ -131,6 +131,22 @@ theorem projectiveSeminormOf_map_le (p : ∀ i, Seminorm 𝕜 (E i))
 
 end PiTensorProduct
 
+namespace PiTensorProduct
+
+variable {ι 𝕜 : Type*} [Fintype ι] [NormedField 𝕜]
+variable {E : ι → Type*} [∀ i, SeminormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)]
+
+/-- For the norm seminorms, the projective construction recovers Mathlib's projective
+seminorm on the tensor product of seminormed spaces. -/
+@[simp]
+theorem projectiveSeminormOf_normSeminorm :
+    projectiveSeminormOf (fun i => normSeminorm 𝕜 (E i)) =
+      normSeminorm 𝕜 (⨂[𝕜] i, E i) := by
+  ext x
+  rfl
+
+end PiTensorProduct
+
 namespace TauCeti
 
 variable {ι κ 𝕜 : Type*} [Fintype ι] [Fintype κ] [NormedField 𝕜]

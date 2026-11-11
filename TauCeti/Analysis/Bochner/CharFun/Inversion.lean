@@ -155,8 +155,7 @@ theorem charFunDensity_nonneg [IsFiniteMeasure μ] (x : ℝ) : 0 ≤ charFunDens
   · rw [charFunDensity_eq_re_fourierInv]
     exact TauCeti.fourierInv_re_nonneg_of_posSemidef _
       TauCeti.posSemidef_charFun_neg_two_pi_smul_sub
-      (h.comp_smul TauCeti.neg_two_pi_ne_zero) (continuous_charFun.comp (continuous_const_smul _))
-      x
+      (continuous_charFun.comp (continuous_const_smul _)) x
   · rw [charFunDensity_of_not_integrable h]
 
 /-- The inversion density of a finite measure is continuous. -/

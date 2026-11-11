@@ -132,7 +132,7 @@ private theorem sub_two_mul_integral_radial_bubble (hn : 2 < finrank ℝ E) {t :
       (fun r _ ↦ ?_) measurableSet_Ioi
     simp only [hφ, smul_eq_mul, ← hn_def]
     field_simp
-  exact sub_two_mul_integral_radial hn ht h₁ h₂
+  exact sub_two_mul_integral_radial hn h₁ h₂
 
 /-- **The energy identity of a bubble**: in dimension `n > 2`,
 `aₙ ∫ ‖dU_{t,b}‖² = n (n - 1) ∫ U_{t,b} ^ pₙ` for every additive Haar measure. -/

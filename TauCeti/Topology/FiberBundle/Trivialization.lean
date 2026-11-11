@@ -18,6 +18,8 @@ trivialization over their union, with the same forward and inverse maps on each 
 The coordinate change between two trivializations is jointly continuous in the base point and the
 fibre coordinate over the overlap of their base sets, which makes the transition functions of a
 fibre bundle continuous.
+Finally, the inverse of a trivialization undoes a coordinate change into it, and over a point
+of its base set a trivialization is an equivalence between the fibre and the model fibre.
 
 ## Main results
 
@@ -27,6 +29,10 @@ fibre bundle continuous.
   space lies over a finite union of preferred trivializing base sets.
 * `Bundle.Trivialization.continuousOn_coordChange`: coordinate changes are jointly continuous over
   the overlap of the base sets.
+* `Bundle.Trivialization.symm_mk_coordChange`: the inverse of `e₂` undoes the coordinate change
+  from `e₁` to `e₂`, landing on the point with the original fibre coordinate in `e₁`.
+* `Bundle.Trivialization.equivAt`: a trivialization as an equivalence between the fibre over a
+  point of its base set and the model fibre.
 * `Bundle.Trivialization.isOpen_sheet`: for a trivialization with discrete fibre of a map,
   the sheet of a given index over an open subset of the base set is open.
 * `Bundle.Trivialization.map_mem_sheet_iff`, `Bundle.Trivialization.map_symm_eq_of_mem_sheet`:
@@ -193,6 +199,40 @@ theorem iUnion_symm_apply {i : ι} {p : B × F} (hp : p.1 ∈ (e i).baseSet) :
   iUnionInv_eq e hd hp
 
 end DisjointUnion
+
+section CoordChange
+
+variable {B F : Type*} {E : B → Type*} [TopologicalSpace B] [TopologicalSpace F]
+  [TopologicalSpace (TotalSpace F E)] [∀ x, Nonempty (E x)]
+
+/-- Reading a coordinate change from `e₁` to `e₂` back through `e₂` gives the point of the fibre
+that `e₁` sends to the original fibre coordinate. -/
+theorem symm_mk_coordChange (e₁ e₂ : Trivialization F (π F E)) {b : B} (h₁ : b ∈ e₁.baseSet)
+    (h₂ : b ∈ e₂.baseSet) (v : F) :
+    e₂.toOpenPartialHomeomorph.symm (b, e₁.coordChange e₂ b v) = ⟨b, e₁.symm b v⟩ := by
+  rw [e₁.mk_coordChange e₂ h₁ h₂, e₂.symm_apply_apply
+    (e₂.mem_source.2 (by rwa [e₁.proj_symm_apply' h₁])), e₁.mk_symm h₁]
+
+/-- The equivalence between the fibre over a point of the base set of a trivialization and the
+model fibre, given by the trivialization. Compare `Bundle.Trivialization.linearEquivAt`. -/
+noncomputable def equivAt (e : Trivialization F (π F E)) (b : B) (hb : b ∈ e.baseSet) :
+    E b ≃ F where
+  toFun p := (e ⟨b, p⟩).2
+  invFun := e.symm b
+  left_inv := e.symm_apply_apply_mk hb
+  right_inv v := by simp [e.apply_mk_symm hb]
+
+@[simp]
+theorem equivAt_apply (e : Trivialization F (π F E)) (b : B) (hb : b ∈ e.baseSet) (p : E b) :
+    e.equivAt b hb p = (e ⟨b, p⟩).2 :=
+  (rfl)
+
+@[simp]
+theorem equivAt_symm_apply (e : Trivialization F (π F E)) (b : B) (hb : b ∈ e.baseSet) (v : F) :
+    (e.equivAt b hb).symm v = e.symm b v :=
+  (rfl)
+
+end CoordChange
 
 end Bundle.Trivialization
 

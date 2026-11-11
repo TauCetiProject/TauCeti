@@ -25,7 +25,6 @@ boundary sphere is spread over the outer shell of a disk, as in cell reattachmen
 * `TauCeti.TopCat.norm_diskRadialPush_one`: at the end it sends the shell `r ≤ ‖x‖` into the
   boundary sphere.
 * `TauCeti.TopCat.coe_diskRadialPush_one_of_norm_le`,
-  `TauCeti.TopCat.diskRadialPush_one_of_norm_le`,
   `TauCeti.TopCat.coe_diskRadialPush_one_of_le_norm`: its end map is `x ↦ r⁻¹ • x` on the ball
   of radius `r` and `x ↦ x / ‖x‖` on the shell `r ≤ ‖x‖`.
 -/
@@ -46,7 +45,7 @@ variable {n : ℕ} {r : ℝ}
 `TopCat.disk n`: at time `t` it sends `x` to `(1 - t) • x + t • r⁻¹ • radialRetraction r x`. -/
 def diskRadialPush (n : ℕ) (hr : 0 ≤ r) : C(I × TopCat.disk.{u} n, TopCat.disk.{u} n) where
   toFun p := ULift.up ⟨radialPush r p.1 p.2.down.1, mem_closedBall_zero_iff.2 <|
-    norm_radialPush_le_one hr p.1 (mem_closedBall_zero_iff.1 p.2.down.2)⟩
+    norm_radialPush_le_one p.1 (mem_closedBall_zero_iff.1 p.2.down.2)⟩
   continuous_toFun := continuous_uliftUp.comp <| ((continuous_radialPush hr).comp
     (continuous_fst.prodMk (continuous_subtype_val.comp
       (continuous_uliftDown.comp continuous_snd)))).subtype_mk _
@@ -81,12 +80,6 @@ theorem norm_diskRadialPush_one (hr : 0 < r) {x : TopCat.disk.{u} n} (hx : r ≤
 theorem coe_diskRadialPush_one_of_norm_le (hr : 0 ≤ r) {x : TopCat.disk.{u} n}
     (hx : ‖x.down.1‖ ≤ r) : (diskRadialPush n hr (1, x)).down.1 = r⁻¹ • x.down.1 := by
   rw [coe_diskRadialPush_apply_down, radialPush_one, radialRetraction_of_norm_le hx]
-
-/-- At the end, the radial push on the disk sends a point `x` of the ball of radius `r` to the
-point `y = r⁻¹ • x`. -/
-theorem diskRadialPush_one_of_norm_le (hr : 0 ≤ r) {x y : TopCat.disk.{u} n}
-    (hx : ‖x.down.1‖ ≤ r) (hy : y.down.1 = r⁻¹ • x.down.1) : diskRadialPush n hr (1, x) = y :=
-  ULift.ext (Subtype.ext ((coe_diskRadialPush_one_of_norm_le hr hx).trans hy.symm))
 
 /-- At the end, the radial push on the disk sends a point `x` of the shell `r ≤ ‖x‖` to
 `x / ‖x‖`. -/
