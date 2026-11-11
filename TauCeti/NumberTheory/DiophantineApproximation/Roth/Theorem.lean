@@ -194,7 +194,7 @@ theorem _root_.IsAlgebraic.finite_setOfPred_abs_sub_le_mulHeight₁_rpow_neg {α
   set L := max (σ⁻¹ * (5 * log (12 * b * max 1 (house α)) / 2 + 5 * n)) (C₂ / ε)
   -- Good approximations of rapidly increasing heights.
   obtain ⟨β, hβ, h₀, hh⟩ := Northcott.exists_seq_mem_lt (logHeight₁ (K := ℚ))
-    (fun x ↦ 2 / σ * x) hS L
+    (fun x ↦ 2 / σ * logHeight₁ x) hS L
   have key := roth_inequality hb hbα hε₀ hε hn hd hκ₀.le (M := 2 / σ)
     (by rw [mul_div_cancel₀ _ hσ₀.ne']) (le_max_left _ _) hβ h₀.le fun k ↦ (hh k).le
   have hn₁ : (1 : ℝ) ≤ n := by exact_mod_cast hn
