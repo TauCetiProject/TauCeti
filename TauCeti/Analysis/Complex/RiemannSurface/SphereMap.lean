@@ -177,18 +177,6 @@ private theorem exists_mdifferentiableAt_eventuallyEq {g : ℂ → ℂ} {z₀ : 
 
 /-! ### Holomorphy -/
 
-open scoped ContDiff in
-/-- The chart at `x` is analytic at `x` itself, for any charted space structure. -/
-private theorem contMDiffAt_chartAt_self (x : X) :
-    ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) ω (chartAt ℂ x) x := by
-  rw [contMDiffAt_iff]
-  refine ⟨(chartAt ℂ x).continuousAt (mem_chart_source ℂ x), ?_⟩
-  simp only [extChartAt, OpenPartialHomeomorph.extend, ModelWithCorners.range_eq_univ,
-    contDiffWithinAt_univ]
-  refine contDiffAt_id.congr_of_eventuallyEq ?_
-  filter_upwards [(chartAt ℂ x).eventually_right_inverse (by simp)] with y hy
-  simpa using hy
-
 /-- Near a point where `f` is meromorphic, `sphereMap f` is the composite of the chart with a map
 to the sphere which is holomorphic near the coordinate of the point, and `f` agrees with this
 composite on a punctured neighbourhood. -/
@@ -211,13 +199,15 @@ private theorem exists_eventuallyEq_comp_chartAt (hf : MeromorphicAt f x) :
     simpa [(chartAt ℂ x).left_inv hy] using hΦy
   exact ⟨Φ, hΦ, hfeq, sphereMap_eventuallyEq hfeq hcont, hinf⟩
 
+open scoped ContDiff in
 /-- **Meromorphic functions are holomorphic maps to the Riemann sphere.** If `f` is meromorphic at
 `x`, then `sphereMap f` is holomorphic at `x`. -/
 theorem mdifferentiableAt_sphereMap (hf : MeromorphicAt f x) :
     MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (sphereMap f) x := by
   obtain ⟨Φ, hΦ, -, heq, -⟩ := exists_eventuallyEq_comp_chartAt hf
   exact (hΦ.self_of_nhds.comp x
-    ((contMDiffAt_chartAt_self x).mdifferentiableAt (by simp))).congr_of_eventuallyEq heq
+    ((contMDiffAt_extChartAt (I := 𝓘(ℂ)) (n := ω) (x := x)).mdifferentiableAt
+      (by simp))).congr_of_eventuallyEq heq
 
 /-- **Meromorphic functions are holomorphic maps to the Riemann sphere.** If `f` is meromorphic at
 every point, then `sphereMap f` is holomorphic. -/
@@ -261,7 +251,7 @@ theorem contMDiffAt_affineChart_sphereMap (hf : MeromorphicAt f x)
     filter_upwards [hΦ.self_of_nhds.continuousAt.eventually (isOpen_ne.mem_nhds hΦx), hΦ] with
       z hz hΦz
     exact (mdifferentiableAt_atlas (Or.inl rfl) (by simpa using hz)).comp z hΦz
-  exact (hh.comp x (contMDiffAt_chartAt_self x)).congr_of_eventuallyEq
+  exact (hh.comp x (contMDiffAt_extChartAt (I := 𝓘(ℂ)) (n := ω) (x := x))).congr_of_eventuallyEq
     (heq.mono fun y hy ↦ by simp [hy])
 
 /-- At a point where `f` is meromorphic, `sphereMap f` takes a finite value `c` exactly when `f`
