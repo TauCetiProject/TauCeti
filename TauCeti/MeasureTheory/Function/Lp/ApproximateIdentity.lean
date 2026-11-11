@@ -232,6 +232,35 @@ theorem tendsto_lintegral_enorm_normed_convolution_sub [CompleteSpace F] {I : Ty
   simp_rw [eLpNorm_one_eq_lintegral_enorm (hi _).aestronglyMeasurable] at h
   exact h
 
+/-- **Mollification converges in `Lᵖ_loc`.** If `f` belongs to `Lᵖ` on every compact set,
+`1 ≤ p < ∞`, normalized smooth mollifications converge in `Lᵖ` on every compact set. -/
+theorem tendsto_eLpNorm_normed_convolution_sub_restrict [CompleteSpace F] {I : Type*}
+    {l : Filter I} (hp : p ≠ ∞) {phi : I → ContDiffBump (0 : E)}
+    (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0)) {f : E → F}
+    (hf : ∀ K, IsCompact K → MemLp f p (mu.restrict K)) {K : Set E} (hK : IsCompact K) :
+    Tendsto (fun i ↦ eLpNorm ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f - f) p
+      (mu.restrict K)) l (nhds 0) := by
+  -- Small bumps only see `f` on a fixed compact thickening of `K`.
+  set s := cthickening 1 K
+  have hs : IsCompact s := hK.cthickening
+  have hfs : MemLp (s.indicator f) p mu :=
+    (memLp_indicator_iff_restrict hs.measurableSet.nullMeasurableSet).2 (hf s hs)
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+    (tendsto_eLpNorm_normed_convolution_sub hp hphi hfs)
+    (.of_forall fun _ ↦ zero_le) ?_
+  filter_upwards [hphi.eventually (gt_mem_nhds one_pos)] with i hi
+  have heq : ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f - f) =ᵐ[mu.restrict K]
+      ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] s.indicator f - s.indicator f) := by
+    filter_upwards [ae_restrict_mem hK.measurableSet] with x hx
+    simp only [Pi.sub_apply]
+    rw [indicator_of_mem (self_subset_cthickening K hx)]
+    refine congrArg (· - f x) (convolution_indicator_eq_of_forall_sub_mem _ fun t ht ↦ ?_).symm
+    rw [(phi i).support_normed_eq, mem_ball_zero_iff] at ht
+    refine mem_cthickening_of_dist_le _ x _ _ hx ?_
+    rw [dist_eq_norm, sub_sub_cancel_left, norm_neg]
+    exact ht.le.trans hi.le
+  exact (eLpNorm_congr_ae heq).trans_le (eLpNorm_mono_measure _ Measure.restrict_le_self)
+
 /-- **Mollification converges in `L¹_loc`.** For a locally integrable `f` and normalized smooth
 bumps `phi i` centred at zero whose outer radii tend to zero, the classical convolutions
 `(phi i).normed mu ⋆ f` converge to `f` in `L¹(K)` for every compact set `K`. -/
@@ -241,26 +270,9 @@ theorem tendsto_setLIntegral_enorm_normed_convolution_sub [CompleteSpace F] {I :
     {K : Set E} (hK : IsCompact K) :
     Tendsto (fun i ↦ ∫⁻ x in K, ‖((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x - f x‖ₑ ∂mu) l
       (nhds 0) := by
-  -- On `K`, bumps of radius less than one only see `f` on the compact set `cthickening 1 K`,
-  -- where `f` is integrable, so the whole-space `L¹` convergence applies.
-  set s := cthickening 1 K
-  have hs : IsCompact s := hK.cthickening
-  have hfs : MemLp (s.indicator f) 1 mu := memLp_one_iff_integrable.2 <|
-    (hf.integrableOn_isCompact hs).integrable_indicator hs.measurableSet
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-    (tendsto_eLpNorm_normed_convolution_sub ENNReal.one_ne_top hphi hfs)
-    (.of_forall fun _ ↦ zero_le) ?_
-  filter_upwards [hphi.eventually (gt_mem_nhds one_pos)] with i hi
-  have hKs (x : E) (hx : x ∈ K) :
-      ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x - f x =
-        ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] s.indicator f) x - s.indicator f x := by
-    rw [indicator_of_mem (self_subset_cthickening K hx)]
-    refine congrArg (· - f x) (convolution_indicator_eq_of_forall_sub_mem _ fun t ht ↦ ?_).symm
-    rw [(phi i).support_normed_eq, mem_ball_zero_iff] at ht
-    refine mem_cthickening_of_dist_le _ x _ _ hx ?_
-    rw [dist_eq_norm, sub_sub_cancel_left, norm_neg]
-    exact ht.le.trans hi.le
-  rw [setLIntegral_congr_fun hK.measurableSet fun x hx ↦ by rw [hKs x hx]]
-  exact (setLIntegral_le_lintegral _ _).trans lintegral_enorm_le_eLpNorm_one
+    (tendsto_eLpNorm_normed_convolution_sub_restrict ENNReal.one_ne_top hphi
+      (fun S hS ↦ memLp_one_iff_integrable.mpr (hf.integrableOn_isCompact hS)) hK)
+    (.of_forall fun _ ↦ zero_le) (.of_forall fun _ ↦ lintegral_enorm_le_eLpNorm_one)
 
 end TauCeti
