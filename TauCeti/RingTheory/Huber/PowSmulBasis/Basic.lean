@@ -111,7 +111,7 @@ theorem eventually_smul_mem_pow_smul (P : PairOfDefinition A) {s : A} (hs : IsPs
     (hm : m ∈ Submodule.span A (M₀ : Set M)) (n : ℕ) :
     ∀ᶠ a in 𝓝 (0 : P.ringOfDefinition), a • m ∈ (⟨s, hs0⟩ : P.ringOfDefinition) ^ n • M₀ := by
   obtain ⟨k, hk⟩ := P.ringOfDefinition.exists_pow_smul_mem P.isOpen_ringOfDefinition
-    hs.isTopologicallyNilpotent hs0 M₀ hm
+    hs.isTopologicallyNilpotent M₀ hm
   have hnhd : ∀ᶠ a : P.ringOfDefinition in 𝓝 0,
       (a : A) ∈ (s ^ (n + k)) • (P.ringOfDefinition : Set A) :=
     continuous_subtype_val.continuousAt.preimage_mem_nhds
@@ -176,7 +176,7 @@ def powSmulModuleFilterBasis (P : PairOfDefinition A) {s : A} (hs : IsPseudoUnif
   smul_right' := by
     rintro m _ ⟨n, rfl⟩
     obtain ⟨k, hk⟩ := P.ringOfDefinition.exists_pow_smul_mem P.isOpen_ringOfDefinition
-      hs.isTopologicallyNilpotent hs0 M₀
+      hs.isTopologicallyNilpotent M₀
       (hspan ▸ Submodule.mem_top)
     filter_upwards [(hs.hasBasis_nhds_zero P).mem_of_mem (i := n + k) trivial] with c hc
     obtain ⟨b, hb, hcb⟩ := hc

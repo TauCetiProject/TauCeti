@@ -101,8 +101,7 @@ def unitaryQuotientHomeomorph :
   Continuous.homeoOfEquivCompactToT2 (f := QuotientGroup.congrComapOfSurjectiveMk Unitary.toUnits
       (upperTriangularGroup ι 𝕜) (toUnits_mk_surjective ι 𝕜)) <| by
     rw [(QuotientGroup.isQuotientMap_mk _).continuous_iff]
-    exact (continuous_quotient_mk'.comp <| Units.continuous_iff.2
-      ⟨continuous_subtype_val, continuous_subtype_val.star⟩).congr fun U =>
+    exact (continuous_quotient_mk'.comp Unitary.continuous_toUnits).congr fun U =>
         (QuotientGroup.congrComapOfSurjectiveMk_mk _ _ _ U).symm
 
 @[simp]

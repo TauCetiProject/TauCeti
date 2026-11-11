@@ -6,9 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Ring.Periodic
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Add
+public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Normed.Group.AddCircle
+public import Mathlib.Topology.ContinuousMap.Defs
 
+import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.Deriv.Inverse
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Shift
@@ -31,6 +35,8 @@ the derivative of a lift is a Lipschitz constant of the circle map for the quoti
 ## Main declarations
 
 * `AddCircle.periodic_deriv_of_lift`: the derivative of a lift is `T`-periodic.
+* `AddCircle.derivOfLift`: the derivative `F'` of a lift, as a continuous complex function on the
+  circle; it is smooth when `F'` is (`AddCircle.contDiff_derivOfLift`).
 * `AddCircle.hasDerivAt_add_mul_sub`, `AddCircle.one_sub_add_mul_pos`: for a weight
   `c ∈ [0, 1]`, the interpolation `x ↦ x + c * (F x - x)` between the identity and a lift `F`
   with `F' > 0` (again a lift, `AddCircle.add_mul_sub_add_period`) has positive derivative.
@@ -47,6 +53,8 @@ the derivative of a lift is a Lipschitz constant of the circle map for the quoti
 
 public section
 
+open scoped ContDiff
+
 namespace AddCircle
 
 variable {T : ℝ} {F F' : ℝ → ℝ}
@@ -58,6 +66,43 @@ theorem periodic_deriv_of_lift (hF : ∀ x, HasDerivAt F (F' x) x)
   have h₂ : HasDerivAt (fun y ↦ F (y + T)) (F' x) x := by
     simpa only [hper] using (hF x).add_const T
   exact h₁.unique h₂
+
+/-- The derivative `F'` of a lift `F`, `F (x + T) = F x + T`, regarded as a continuous complex
+function on the circle; it is well defined since `F'` is `T`-periodic
+(`AddCircle.periodic_deriv_of_lift`). -/
+noncomputable def derivOfLift (hF : ∀ x, HasDerivAt F (F' x) x)
+    (hper : ∀ x, F (x + T) = F x + T) (hF'c : Continuous F') : C(AddCircle T, ℂ) where
+  toFun z := ((periodic_deriv_of_lift hF hper).lift z : ℂ)
+  continuous_toFun :=
+    (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.2 (Complex.continuous_ofReal.comp hF'c)
+
+@[simp]
+theorem derivOfLift_coe (hF : ∀ x, HasDerivAt F (F' x) x) (hper : ∀ x, F (x + T) = F x + T)
+    (hF'c : Continuous F') (x : ℝ) : derivOfLift hF hper hF'c x = F' x :=
+  (rfl)
+
+/-- A function on the circle which agrees with the derivative `F'` of a lift on every point of
+`ℝ` is `AddCircle.derivOfLift`. -/
+theorem eq_derivOfLift_of_coe (hF : ∀ x, HasDerivAt F (F' x) x)
+    (hper : ∀ x, F (x + T) = F x + T) (hF'c : Continuous F') {f' : AddCircle T → ℂ}
+    (hf' : ∀ x : ℝ, f' x = F' x) : f' = derivOfLift hF hper hF'c := funext fun y ↦ by
+  obtain ⟨x, rfl⟩ := QuotientAddGroup.mk_surjective y
+  rw [hf', derivOfLift_coe]
+
+/-- The derivative of a lift with `0 < c ≤ F'` does not vanish on the circle. -/
+theorem derivOfLift_ne_zero (hF : ∀ x, HasDerivAt F (F' x) x) (hper : ∀ x, F (x + T) = F x + T)
+    {c : ℝ} (hc : 0 < c) (hcF : ∀ x, c ≤ F' x) (hF'c : Continuous F') (y : AddCircle T) :
+    derivOfLift hF hper hF'c y ≠ 0 := by
+  obtain ⟨x, rfl⟩ := QuotientAddGroup.mk_surjective y
+  rw [derivOfLift_coe, Complex.ofReal_ne_zero]
+  exact (hc.trans_le (hcF x)).ne'
+
+/-- The derivative of a lift with smooth derivative is a smooth function on the circle. -/
+theorem contDiff_derivOfLift (hF : ∀ x, HasDerivAt F (F' x) x)
+    (hper : ∀ x, F (x + T) = F x + T) (hF' : ContDiff ℝ ∞ F') (hF'c : Continuous F') :
+    ContDiff ℝ ∞ fun x : ℝ ↦ derivOfLift hF hper hF'c x := by
+  simp only [derivOfLift_coe]
+  exact Complex.ofRealCLM.contDiff.comp hF'
 
 /-- The interpolation `x ↦ x + c * (F x - x)` between the identity and `F` has derivative
 `1 - c + c * F'` wherever `F` has derivative `F'`. -/

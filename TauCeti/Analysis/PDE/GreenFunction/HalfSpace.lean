@@ -83,7 +83,7 @@ interior points. -/
 theorem halfSpaceGreenKernel_pos (hn : n ≠ 2) {v : U} {x y : E}
     (hx : 0 < ⟪(v : E), x⟫_ℝ) (hy : 0 < ⟪(v : E), y⟫_ℝ) (hxy : y ≠ x) :
     0 < halfSpaceGreenKernel n v x y := by
-  have hlt := norm_sub_lt_norm_sub_reflection_orthogonal_singleton v.property hx hy
+  have hlt := norm_sub_lt_norm_sub_reflection_orthogonal_singleton hx hy
   rw [halfSpaceGreenKernel_def]
   exact sub_pos.mpr (newtonianKernel_lt_newtonianKernel_of_norm_lt n hn
     (sub_ne_zero.mpr hxy) hlt)

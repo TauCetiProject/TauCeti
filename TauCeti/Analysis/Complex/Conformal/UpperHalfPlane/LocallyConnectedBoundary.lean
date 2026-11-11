@@ -152,8 +152,7 @@ theorem subsingleton_real_fiber_of_isPreconnectedApproachAt {F : ℂ → ℂ} {p
   have hκH : BijOn κ (ball 0 1) upperHalfPlaneSet := bijOn_I_mul_one_add_div_one_sub_ball
   have hκc {w : ℂ} (hw : w ≠ 1) : ContinuousAt κ w :=
     (hasDerivAt_I_mul_one_add_div_one_sub hw).continuousAt
-  have hball1 {w : ℂ} (hw : w ∈ ball (0 : ℂ) 1) : w ≠ 1 :=
-    ne_of_mem_ball_of_norm_eq_one hw norm_one
+  have hball1 {w : ℂ} (hw : w ∈ ball (0 : ℂ) 1) : w ≠ 1 := ne_of_mem_of_not_mem hw (by simp)
   have hGc : ContinuousOn (update (F ∘ κ) 1 p) (closedBall 0 1) := by
     refine continuousOn_update_iff.mpr ⟨fun w hw => ?_, fun _ => ?_⟩
     · exact (hFc _ (hκK.mapsTo hw)).comp (hκc hw.2).continuousWithinAt hκK.mapsTo

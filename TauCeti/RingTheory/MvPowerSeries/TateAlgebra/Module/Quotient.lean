@@ -180,7 +180,7 @@ theorem isometry_gaussFamilySubtype : Isometry (gaussFamilySubtype (c := c) N) :
 
 /-- The coefficient quotient map is contractive for the Gauss seminorm. -/
 theorem norm_gaussFamilyMkQ_le (a : Gauss c E) : ‖gaussFamilyMkQ N a‖ ≤ ‖a‖ := by
-  simpa [gaussFamilyMkQ] using Gauss.norm_mapLinearMap_le N.mkQ (C := 1) zero_le_one
+  simpa [gaussFamilyMkQ] using Gauss.norm_mapLinearMap_le N.mkQ (C := 1)
     (fun e ↦ by simpa using Submodule.Quotient.norm_mk_le N e) a
 
 variable [IsClosed (N : Set E)]
@@ -193,7 +193,7 @@ theorem exists_gaussFamilyMkQ_eq_and_norm_le {L : ℝ} (hL : 1 < L)
   obtain ⟨a, ha, hcoeff⟩ :=
     exists_restrictedFamilyMkQ_eq_and_norm_coeff_le N hL b.toAddSubgroup
   refine ⟨Gauss.ofAddSubgroup a, Gauss.ext fun t ↦ ?_,
-    Gauss.norm_le_mul_of_norm_coeff_le (zero_lt_one.trans hL).le hcoeff⟩
+    Gauss.norm_le_mul_of_norm_coeff_le hcoeff⟩
   simpa only [gaussFamilyMkQ_apply, Gauss.ofAddSubgroup_apply,
     restrictedFamilyMkQ_apply]
     using congrFun (congrArg Subtype.val ha) t
@@ -207,7 +207,7 @@ theorem isOpenMap_gaussFamilyMkQ : IsOpenMap (gaussFamilyMkQ (c := c) N) :=
 theorem isQuotientMap_gaussFamilyMkQ :
     Topology.IsQuotientMap (gaussFamilyMkQ (c := c) N) :=
   (isOpenMap_gaussFamilyMkQ N).isQuotientMap
-    (Gauss.uniformContinuous_mapLinearMap N.mkQ zero_le_one
+    (Gauss.uniformContinuous_mapLinearMap N.mkQ
       (fun e ↦ by simpa using Submodule.Quotient.norm_mk_le N e)).continuous
     (gaussFamilyMkQ_surjective N)
 

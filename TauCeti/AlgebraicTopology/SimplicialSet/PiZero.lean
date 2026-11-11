@@ -7,6 +7,8 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.FundamentalGroupoid.Homotopy
 public import Mathlib.AlgebraicTopology.SimplicialSet.PiZero
+public import TauCeti.AlgebraicTopology.Quasicategory.Core
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homotopy
 
 /-!
 # Connected components of simplicial sets
@@ -17,6 +19,11 @@ of a simplicial homotopy equivalence induce mutually inverse bijections on them.
 components of a discrete simplicial set are its vertices (`SSet.constπ₀Equiv`), lifting a simplicial
 set to a larger universe does not change its connected components (`SSet.π₀UliftEquiv`), and a
 simplicial set whose vertices form a `w`-small type has `w`-small connected components.
+
+Homotopic maps `X ⟶ Z` lie in the same connected component of the simplicial set
+`Fun(X, Z)` of maps, and when `Z` is a Kan complex the converse holds
+(`SSet.π₀_mk_ihomObj₀Equiv_symm_eq_iff`), so that homotopy of maps into a Kan complex is
+symmetric and transitive (`SSet.Homotopy.nonempty_symm`, `SSet.Homotopy.nonempty_trans`).
 
 Connected components commute with finite products: two vertices of `X ⊗ Y` lie in the same
 component exactly when both of their coordinates do (`SSet.π₀ProdEquiv`). Hence the functor
@@ -102,6 +109,59 @@ lemma π₀UliftEquiv_mk (x : (uliftFunctor.{v}.obj X) _⦋0⦌) :
 lemma π₀UliftEquiv_symm_mk (x : X _⦋0⦌) :
     (π₀UliftEquiv X).symm (π₀.mk x) = π₀.mk (X := uliftFunctor.{v}.obj X) (ULift.up x) :=
   (rfl)
+
+section MappingSpace
+
+open CategoryTheory.MonoidalClosed
+
+variable {Z : SSet.{u}} (f g : X ⟶ Z)
+
+variable {f g} in
+/-- Homotopic maps `X ⟶ Z` lie in the same connected component of `Fun(X, Z)`. -/
+lemma Homotopy.π₀_mk_ihomObj₀Equiv_symm_eq (H : Homotopy f g) :
+    π₀.mk ((ihomObj₀Equiv X Z).symm f) = π₀.mk ((ihomObj₀Equiv X Z).symm g) :=
+  π₀.sound ((ihomEdgeEquiv f g).symm H)
+
+/-- For a Kan complex `Z`, two maps `X ⟶ Z` lie in the same connected component of `Fun(X, Z)`
+exactly when they are homotopic. -/
+lemma π₀_mk_ihomObj₀Equiv_symm_eq_iff [KanComplex Z] :
+    π₀.mk ((ihomObj₀Equiv X Z).symm f) = π₀.mk ((ihomObj₀Equiv X Z).symm g) ↔
+      Nonempty (Homotopy f g) := by
+  rw [π₀.mk_eq_mk_iff_nonempty_edge, (ihomEdgeEquiv f g).nonempty_congr]
+
+variable {f g} in
+/-- Homotopy of maps into a Kan complex is symmetric. -/
+lemma Homotopy.nonempty_symm [KanComplex Z] (H : Homotopy f g) : Nonempty (Homotopy g f) :=
+  (π₀_mk_ihomObj₀Equiv_symm_eq_iff g f).1 H.π₀_mk_ihomObj₀Equiv_symm_eq.symm
+
+variable {f g} in
+/-- Homotopy of maps into a Kan complex is transitive. -/
+lemma Homotopy.nonempty_trans [KanComplex Z] {h : X ⟶ Z} (H : Homotopy f g)
+    (H' : Homotopy g h) : Nonempty (Homotopy f h) :=
+  (π₀_mk_ihomObj₀Equiv_symm_eq_iff f h).1
+    (H.π₀_mk_ihomObj₀Equiv_symm_eq.trans H'.π₀_mk_ihomObj₀Equiv_symm_eq)
+
+variable (X Z) in
+/-- Every connected component of `Fun(X, Z)` is the component of a map `X ⟶ Z`. -/
+lemma π₀_mk_ihomObj₀Equiv_symm_surjective :
+    Function.Surjective fun f : X ⟶ Z ↦ π₀.mk ((ihomObj₀Equiv X Z).symm f) :=
+  π₀.mk_surjective.comp (ihomObj₀Equiv X Z).symm.surjective
+
+/-- Precomposition with `f : X ⟶ Y` sends the component of `g : Y ⟶ Z` in `Fun(Y, Z)` to the
+component of `f ≫ g` in `Fun(X, Z)`. -/
+lemma mapπ₀_pre_app_π₀_mk_ihomObj₀Equiv_symm (f : X ⟶ Y) (g : Y ⟶ Z) :
+    mapπ₀ ((pre f).app Z) (π₀.mk ((ihomObj₀Equiv Y Z).symm g)) =
+      π₀.mk ((ihomObj₀Equiv X Z).symm (f ≫ g)) := by
+  rw [mapπ₀_mk, pre_app_app_ihomObj₀Equiv_symm]
+
+/-- Precomposition with a composite acts on connected components of mapping spaces as the
+composite of the precompositions. -/
+lemma mapπ₀_pre_app_comp (f : X ⟶ Y) (g : Y ⟶ Z) (W : SSet.{u}) :
+    mapπ₀ ((pre (f ≫ g)).app W) = mapπ₀ ((pre f).app W) ∘ mapπ₀ ((pre g).app W) := by
+  funext c
+  rw [pre_map, NatTrans.comp_app, Function.comp_apply, mapπ₀_comp_apply]
+
+end MappingSpace
 
 section Prod
 

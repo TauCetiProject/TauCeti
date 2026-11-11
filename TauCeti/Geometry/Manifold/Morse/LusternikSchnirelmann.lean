@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
-public import TauCeti.Topology.Homotopy.LusternikSchnirelmann.Basic
+public import TauCeti.Topology.Homotopy.LusternikSchnirelmann.CupLength
 import TauCeti.Geometry.Manifold.LocallyContractible
 import TauCeti.Geometry.Manifold.Morse.Deformation
 
@@ -43,6 +43,10 @@ components recovers the bound for `M`. In dimension zero the bound is an equalit
 being the number of points of `M`
 (`TauCeti.lsCategoryCount_univ_eq_totalCriticalCount_of_subsingleton`).
 
+Combined with the cup-length lower bound for the Lusternik–Schnirelmann category, on a nonempty
+compact manifold every smooth function has at least `lsCupLength M R + 1` critical points, for any
+commutative ring `R` (`TauCeti.lsCupLength_add_one_le_totalCriticalCount`).
+
 ## Main declarations
 
 * `TauCeti.lsCategoryCount_sublevel_le_of_band`: the count of `{f ≤ b}` is at most that of
@@ -57,6 +61,7 @@ being the number of points of `M`
   part of `M`, such as a connected component of a compact manifold.
 * `TauCeti.lsCategoryCount_univ_eq_totalCriticalCount_of_subsingleton`: equality in dimension
   zero.
+* `TauCeti.lsCupLength_add_one_le_totalCriticalCount`: the cup-length bound on critical points.
 
 ## References
 
@@ -243,5 +248,13 @@ theorem lsCategoryCount_univ_le_encard_criticalPoints_inter {C : Set M}
   rw [totalCriticalCount_comp_subtypeVal] at h
   -- The open submanifold `U` has carrier `C` by construction, so `↥U` is the subtype `↥C`.
   exact h
+
+/-- **The cup-length bound on critical points.** On a nonempty compact boundaryless manifold `M`,
+every smooth function has at least `lsCupLength M R + 1` critical points, for every commutative
+ring `R` in the universe of `M`. The critical points may be degenerate; if there are infinitely
+many, their count is `⊤`. -/
+theorem lsCupLength_add_one_le_totalCriticalCount [CompactSpace M] [Nonempty M] (R : Type _)
+    [CommRing R] (hf : ContMDiff I 𝓘(ℝ) ∞ f) : lsCupLength M R + 1 ≤ totalCriticalCount I f :=
+  lsCupLength_add_one_le_lsCategoryCount_univ.trans (lsCategoryCount_univ_le_totalCriticalCount hf)
 
 end TauCeti

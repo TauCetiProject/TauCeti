@@ -18,9 +18,11 @@ surjective. A global section `q` of `Q` has a sheaf of lifts `U ↦ {b ∈ B(U) 
 which `A` acts by left multiplication. It is an `A`-torsor, and its class is the value of the
 connecting map `Q(C) → H¹(A)` at `q`.
 
-This file constructs the connecting map and proves the two exactness statements about it which
-do not involve `H¹(B)`:
+This file constructs the connecting map and proves the exactness statements which do not involve
+`H¹(B)`:
 
+* exactness at `A(C)` and `B(C)`: a global section of `B` maps to the unit section of `Q` if and
+  only if it comes from a global section of `A`, which is then unique;
 * exactness at `Q(C)`: the class of `q` is trivial if and only if `q` lifts to a global section
   of `B`;
 * its fibres are the orbits of the global sections of `B`, acting on those of `Q` by right
@@ -30,6 +32,8 @@ do not involve `H¹(B)`:
 
 * `CategoryTheory.Sheaf.IsGroupExtension i π`: the sequence `1 → A → B → Q → 1` given by
   `i : A ⟶ B` and `π : B ⟶ Q` is exact.
+* `CategoryTheory.Sheaf.IsGroupExtension.existsUnique_sections_iff`: exactness at `A(C)` and
+  `B(C)`.
 * `CategoryTheory.Sheaf.IsGroupExtension.lifts`: the `A`-torsor of local lifts of a global
   section of `Q`.
 * `CategoryTheory.Sheaf.IsGroupExtension.liftsObjEquiv`: the sections of the torsor of lifts are
@@ -84,6 +88,20 @@ include hE in
 lemma exists_app_eq {U : Cᵒᵖ} {b : B.obj.obj U} (hb : π.hom.app U b = 1) :
     ∃ a, i.hom.app U a = b :=
   (hE.range_eq_ker U).ge hb
+
+include hE in
+/-- Exactness of `1 → A(C) → B(C) → Q(C)`: a global section of `B` maps to the unit section of
+`Q` if and only if it comes from a unique global section of `A`. -/
+theorem existsUnique_sections_iff (b : (B.obj ⋙ forget GrpCat).sections) :
+    (∃! a : (A.obj ⋙ forget GrpCat).sections, ∀ U, i.hom.app U (a.1 U) = b.1 U) ↔
+      ∀ U, π.hom.app U (b.1 U) = 1 := by
+  refine ⟨fun ⟨a, ha, _⟩ U ↦ ha U ▸ hE.app_app_eq_one (a.1 U), fun hb ↦ ?_⟩
+  choose a ha using fun U ↦ hE.exists_app_eq (hb U)
+  refine ⟨⟨a, fun {U V} f ↦ hE.injective V ?_⟩, ha, fun a' ha' ↦ ?_⟩
+  · -- `i` commutes with restriction, and `b` is compatible.
+    exact (NatTrans.naturality_apply i.hom f (a U)).trans
+      ((congrArg _ (ha U)).trans ((b.2 f).trans (ha V).symm))
+  · exact Subtype.ext (funext fun U ↦ hE.injective U ((ha' U).trans (ha U).symm))
 
 variable (π) in
 /-- The subpresheaf of `B`, viewed as a presheaf of sets, of lifts of a global section `q` of `Q`:

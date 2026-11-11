@@ -11,6 +11,7 @@ import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.Order.Fin.Tuple
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
+import TauCeti.Order.Hom.PowersetCard
 
 /-!
 # Coordinate projections on an exterior algebra
@@ -144,104 +145,18 @@ private theorem basisEraseSign_eq_neg_one_pow_card_filter_lt_of_mem
   -- which the shuffle crosses when it moves the singleton `{i}` to the front.
   let e : Fin (n + 1) ↪o I := s.orderEmbOfFin hsCard
   let k : Fin (n + 1) := (s.orderIsoOfFin hsCard).symm ⟨i, hi⟩
-  have hek : e k = i := by
-    exact congrArg Subtype.val ((s.orderIsoOfFin hsCard).apply_symm_apply ⟨i, hi⟩)
-  have hremove : k.removeNth (fun j ↦ e j) =
-      (s.erase i).orderEmbOfFin (show (s.erase i).card = n from rfl) := by
-    apply Finset.orderEmbOfFin_unique
-    · intro j
-      exact Finset.mem_erase.mpr ⟨fun h ↦ k.succAbove_ne j (e.injective (h.trans hek.symm)),
-        Finset.orderEmbOfFin_mem s hsCard _⟩
-    · exact e.strictMono.comp (Fin.strictMono_succAbove k)
+  have hek : e k = i :=
+    congrArg Subtype.val ((s.orderIsoOfFin hsCard).apply_symm_apply ⟨i, hi⟩)
   let u : Set.powersetCard I 1 := ⟨{i}, Finset.card_singleton i⟩
   let t : Set.powersetCard I n := ⟨s.erase i, rfl⟩
   have hdisj : Disjoint u.val t.val := by simp [u, t]
-  have hsCard' : s.card = 1 + n := hsCard.trans (Nat.add_comm n 1)
-  have hunion : Set.powersetCard.disjUnion hdisj =
-      (Set.powersetCard.ofCard (s := s) hsCard' : Set.powersetCard I (1 + n)) := by
-    apply Subtype.ext
-    simp [u, t, hi]
   let p : Equiv.Perm (Fin (1 + n)) := Set.powersetCard.permOfDisjoint hdisj
-  let c : Fin (1 + n) ≃ Fin (n + 1) := finCongr (Nat.add_comm 1 n)
-  let p' : Equiv.Perm (Fin (n + 1)) := c.symm.trans (p.trans c)
   -- After reconciling the two cardinality presentations, this shuffle is the inverse cycle
   -- which moves position `k` to the front and shifts the preceding positions one step right.
-  have hec : (fun q ↦ e (c q)) =
-      (Set.powersetCard.disjUnion hdisj).val.orderEmbOfFin
-        (Set.powersetCard.disjUnion hdisj).prop := by
-    apply Finset.orderEmbOfFin_unique
-    · intro q
-      have hdval : (Set.powersetCard.disjUnion hdisj).val = s :=
-        congrArg Subtype.val hunion
-      rw [hdval]
-      exact Finset.orderEmbOfFin_mem s hsCard (c q)
-    · intro a b hab
-      apply e.strictMono
-      simpa [c, Fin.ext_iff] using hab
-  have hp : p' = k.cycleRange.symm := by
-    apply Equiv.ext
-    intro j
-    apply e.injective
-    -- Unfold the conjugated shuffle so both sides are compared in the increasing enumeration.
-    change e (c (p (c.symm j))) = e (k.cycleRange.symm j)
-    have hrhs : e (k.cycleRange.symm j) =
-        (Fin.cons (e k) (k.removeNth (fun q ↦ e q)) : Fin (n + 1) → I) j := by
-      simpa only [Function.comp_apply] using
-        congrFun (Fin.cons_removeNth_eq_comp_cycleRange_symm e k) j |>.symm
-    rw [hrhs, hek]
-    -- The disjoint-union permutation enumerates the singleton first and the erased set second.
-    change e (c (p (c.symm j))) =
-      (Fin.cons i (k.removeNth (fun q ↦ e q)) : Fin (n + 1) → I) j
-    rw [hremove]
-    -- Expose the function represented by the increasing enumeration before applying `hec`.
-    change (fun q ↦ e (c q)) (p (c.symm j)) = _
-    rw [hec]
-    let x : (Set.powersetCard.disjUnion hdisj).val :=
-      Equiv.Finset.disjUnionEquiv u.val t.val hdisj
-        (((Set.powersetCard.orderIsoOfFin u).sumCongr
-          (Set.powersetCard.orderIsoOfFin t)) (finSumFinEquiv.symm (c.symm j)))
-    have hx : (Set.powersetCard.disjUnion hdisj).val.orderEmbOfFin
-        (Set.powersetCard.disjUnion hdisj).prop (p (c.symm j)) = x := by
-      have hpApply : p (c.symm j) =
-          (Set.powersetCard.orderIsoOfFin (Set.powersetCard.disjUnion hdisj)).symm x := rfl
-      rw [hpApply]
-      exact congrArg Subtype.val
-        ((Set.powersetCard.orderIsoOfFin (Set.powersetCard.disjUnion hdisj)).apply_symm_apply x)
-    rw [hx]
-    cases j using Fin.cases with
-    | zero =>
-        have hzero : finSumFinEquiv.symm (c.symm 0) = Sum.inl (0 : Fin 1) := by
-          apply finSumFinEquiv.injective
-          apply Fin.ext
-          rfl
-        simp only [x, hzero, Fin.cons_zero]
-        -- Coercing the disjoint-union subtype reveals the singleton entry.
-        change ↑(Equiv.Finset.disjUnionEquiv u.val t.val hdisj
-          (Sum.inl ((Set.powersetCard.orderIsoOfFin u) 0))) = i
-        rw [Equiv.Finset.disjUnionEquiv_inl]
-        dsimp only [Set.powersetCard.orderIsoOfFin, u]
-        -- The unique increasing enumeration of a singleton is constant at its element.
-        change Finset.orderEmbOfFin {i} (Finset.card_singleton i) 0 = i
-        exact Finset.orderEmbOfFin_singleton i 0
-    | succ q =>
-        have hsucc : finSumFinEquiv.symm (c.symm q.succ) = Sum.inr q := by
-          apply finSumFinEquiv.injective
-          rw [finSumFinEquiv.apply_symm_apply]
-          apply Fin.ext
-          simp [c]
-          omega
-        simp only [x, hsucc, Fin.cons_succ]
-        -- Coercing the right summand reveals the increasing enumeration of `s.erase i`.
-        change ↑(Equiv.Finset.disjUnionEquiv u.val t.val hdisj
-          (Sum.inr ((Set.powersetCard.orderIsoOfFin t) q))) =
-            (s.erase i).orderEmbOfFin (show (s.erase i).card = n from rfl) q
-        rw [Equiv.Finset.disjUnionEquiv_inr]
-        dsimp only [Set.powersetCard.orderIsoOfFin, t]
-        change (s.erase i).orderEmbOfFin (show (s.erase i).card = n from rfl) q =
-          (s.erase i).orderEmbOfFin (show (s.erase i).card = n from rfl) q
-        rfl
-  have hsign : Equiv.Perm.sign p' = Equiv.Perm.sign p := by
-    simp [p']
+  have hp := Set.powersetCard.conj_permOfDisjoint_singleton_erase i s hi rfl hsCard hdisj
+  have hsign : Equiv.Perm.sign ((finCongr (Nat.add_comm 1 n)).symm.trans
+      (p.trans (finCongr (Nat.add_comm 1 n)))) = Equiv.Perm.sign p :=
+    Equiv.Perm.sign_symm_trans_trans p (finCongr (Nat.add_comm 1 n))
   rw [basisEraseSign]
   -- Unfolding the local permutation exposes the sign computed above.
   change Equiv.Perm.sign p = _

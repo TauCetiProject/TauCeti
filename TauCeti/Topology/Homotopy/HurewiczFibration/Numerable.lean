@@ -663,6 +663,44 @@ private theorem PartialLift.advanceTube {ι : Type*} {A : Type w} [TopologicalSp
   obtain ⟨Llast, hLlast⟩ := step (Fin.last (m + 1))
   exact ⟨Llast.congrTime (clipSegTime_last hτ m), hLlast⟩
 
+/-- Glue partial lifts defined on pairwise disjoint open sets `S i` into a partial lift on their
+union, which agrees with `LF i` on `S i`. -/
+private theorem PartialLift.exists_of_pairwise_disjoint_isOpen {X : Type*} [TopologicalSpace X]
+    {p : E → B} {f : C(X, E)} {H : C(I × X, B)} {τ : C(X, I)} {κ : Type*} {S : κ → Set X}
+    (hS : ∀ i, IsOpen (S i)) (hdisj : ∀ i j x, x ∈ S i → x ∈ S j → i = j)
+    (LF : ∀ i, PartialLift p (f.restrict (S i)) (restrictHomotopy H (S i)) (τ.restrict (S i))) :
+    ∃ LO : PartialLift p (f.restrict (⋃ i, S i)) (restrictHomotopy H (⋃ i, S i))
+        (τ.restrict (⋃ i, S i)),
+      ∀ i t (x : ⋃ i, S i) (hx : x.1 ∈ S i), LO.map (t, x) = (LF i).map (t, ⟨x.1, hx⟩) := by
+  let T (i : κ) : Set (I × ⋃ i, S i) := {z | z.2.1 ∈ S i}
+  let φ (i : κ) : C(T i, E) :=
+    (LF i).map.comp ⟨fun z ↦ (z.1.1, ⟨z.1.2.1, z.2⟩), by fun_prop⟩
+  let onO : C(I × ⋃ i, S i, E) :=
+    ContinuousMap.liftCover T φ
+      (fun i j z hzi hzj ↦ by
+        cases hdisj i j z.2.1 hzi hzj
+        rfl)
+      fun z ↦ by
+        obtain ⟨i, hi⟩ := mem_iUnion.1 z.2.2
+        exact ⟨i, ((hS i).preimage continuous_subtype_val).preimage continuous_snd |>.mem_nhds hi⟩
+  have honO_stratum : ∀ i t (x : ⋃ i, S i) (hx : x.1 ∈ S i),
+      onO (t, x) = (LF i).map (t, ⟨x.1, hx⟩) :=
+    fun i t x hx ↦ ContinuousMap.liftCover_coe (φ := φ) (i := i) ⟨(t, x), hx⟩
+  refine ⟨{ map := onO
+            proj_eq := fun t x ↦ ?_
+            zero_eq := fun x ↦ ?_
+            const_of_ge := fun t x ht ↦ ?_ }, honO_stratum⟩
+  · obtain ⟨i, hxi⟩ := mem_iUnion.1 x.2
+    rw [honO_stratum i t x hxi]
+    exact (LF i).proj_eq t ⟨x.1, hxi⟩
+  · obtain ⟨i, hxi⟩ := mem_iUnion.1 x.2
+    rw [honO_stratum i 0 x hxi]
+    exact (LF i).zero_eq ⟨x.1, hxi⟩
+  · obtain ⟨i, hxi⟩ := mem_iUnion.1 x.2
+    rw [ContinuousMap.restrict_apply, honO_stratum i t x hxi,
+      honO_stratum i (τ x.1) x hxi]
+    exact (LF i).const_of_ge t ⟨x.1, hxi⟩ ht
+
 end PartialLift
 
 section SequentialSchedule
@@ -740,56 +778,24 @@ private theorem PartialLift.advanceGapStep {ι : Type*} {E : Type u} {B : Type v
     rw [tubePartition, PartitionOfUnity.ofExistsPos_pos_iff] at hν_pos
     exact pos_of_tubeWeight_pos (tubeWeight_pos_of_truncTubeWeight_pos hν_pos) k ht
   choose LF hLF using hlocal
-  let hasStratum (a : A) : Prop :=
-    ∃ F : {F : Finset (Σ m : ℕ, Fin (m + 1) → ι) // F.card = n ∧ F.Nonempty}, a ∈ Stratum F.1
-  let O : Set A := {a : A | hasStratum a}
-  have hO : IsOpen O := by
-    convert isOpen_iUnion fun F : {F // F.card = n ∧ F.Nonempty} ↦ hStratum_open F.1
-    ext a; simp [O, hasStratum]
-  have hclos_sub : closure {a : A | τ₁ a < τ₂ a} ⊆ O := fun a ha ↦ by
+  have hclos_sub : closure {a : A | τ₁ a < τ₂ a} ⊆
+      ⋃ F : {F : Finset (Σ m : ℕ, Fin (m + 1) → ι) // F.card = n ∧ F.Nonempty}, Stratum F.1 :=
+    fun a ha ↦ by
     have hsupp_gap : a ∈ support (ν.gapPartition n) :=
       ν.gapPartition.tsupport_shrink_subset_support n (closure_cumTime_lt_subset μ n ha)
     have hpos_gap : 0 < ν.gapPartition n a :=
       lt_of_le_of_ne (ν.gapPartition.nonneg n a) (Ne.symm hsupp_gap)
     obtain ⟨F, hcard, hgap⟩ := ν.exists_gap_pos_of_gapPartition_pos hpos_gap
-    exact ⟨⟨F, hcard, (ν.gap_pos_iff.1 hgap).1⟩, hgap⟩
-  let onO_fun (z : I × O) : E := (LF z.2.2.choose).map (z.1, ⟨z.2.1, z.2.2.choose_spec⟩)
-  have honO_stratum :
-      ∀ (F : {F : Finset (Σ m : ℕ, Fin (m + 1) → ι) // F.card = n ∧ F.Nonempty})
-        (t : I) (x : O) (hx : x.1 ∈ Stratum F.1),
-        onO_fun (t, x) = (LF F).map (t, ⟨x.1, hx⟩) := by
-    intro F t x hx
-    have hsub : x.2.choose = F := Subtype.ext <|
-      ν.eq_of_gap_pos_of_card_eq x.2.choose_spec hx (x.2.choose.2.1.trans F.2.1.symm)
-    cases hsub; rfl
-  have honO_cont : Continuous onO_fun := by
-    refine continuous_iff_continuousAt.2 fun ⟨t₀, x₀⟩ ↦ ?_
-    obtain ⟨F, hx₀F⟩ := x₀.2
-    let UF : Set O := {x : O | x.1 ∈ Stratum F.1}
-    have hUF_open : IsOpen UF := (hStratum_open F.1).preimage continuous_subtype_val
-    have hOn : ContinuousOn onO_fun (univ ×ˢ UF) :=
-      continuousOn_iff_continuous_domRestrict.2 <|
-        (by fun_prop : Continuous fun z : univ ×ˢ UF ↦ (LF F).map (z.1.1, ⟨z.1.2.1, z.2.2⟩)).congr
-          fun z ↦ (honO_stratum F z.1.1 z.1.2 z.2.2).symm
-    exact hOn.continuousAt ((isOpen_univ.prod hUF_open).mem_nhds ⟨mem_univ t₀, hx₀F⟩)
-  let LO : PartialLift p (f.restrict O) (restrictHomotopy H O) (τ₂.restrict O) :=
-    { map := ⟨onO_fun, honO_cont⟩
-      proj_eq := fun t x ↦ by
-        obtain ⟨F, hxF⟩ := x.2
-        rw [ContinuousMap.coe_mk, honO_stratum F t x hxF]
-        exact (LF F).proj_eq t ⟨x.1, hxF⟩
-      zero_eq := fun x ↦ by
-        obtain ⟨F, hxF⟩ := x.2
-        rw [ContinuousMap.coe_mk, honO_stratum F 0 x hxF]
-        exact (LF F).zero_eq ⟨x.1, hxF⟩
-      const_of_ge := fun t x ht ↦ by
-        obtain ⟨F, hxF⟩ := x.2
-        rw [ContinuousMap.coe_mk, ContinuousMap.restrict_apply,
-          honO_stratum F t x hxF, honO_stratum F (τ₂ x.1) x hxF]
-        exact (LF F).const_of_ge t ⟨x.1, hxF⟩ ht }
-  refine L.extendFromOpen hτ hO hclos_sub LO fun t x heq ↦ ?_
-  obtain ⟨F, hxF⟩ := x.2
-  exact (honO_stratum F t x hxF).trans (hLF F t ⟨x.1, hxF⟩ heq)
+    exact mem_iUnion.2 ⟨⟨F, hcard, (ν.gap_pos_iff.1 hgap).1⟩, hgap⟩
+  obtain ⟨LO, hLO⟩ := PartialLift.exists_of_pairwise_disjoint_isOpen
+    (S := fun F : {F : Finset (Σ m : ℕ, Fin (m + 1) → ι) // F.card = n ∧ F.Nonempty} ↦
+      Stratum F.1) (fun F ↦ hStratum_open F.1)
+    (fun F F' x hF hF' ↦ Subtype.ext (ν.eq_of_gap_pos_of_card_eq hF hF' (F.2.1.trans F'.2.1.symm)))
+    LF
+  refine L.extendFromOpen hτ ?_ hclos_sub LO fun t x heq ↦ ?_
+  · exact isOpen_iUnion fun F ↦ hStratum_open F.1
+  obtain ⟨F, hxF⟩ := mem_iUnion.1 x.2
+  exact (hLO F t x hxF).trans (hLF F t ⟨x.1, hxF⟩ heq)
 
 end SequentialSchedule
 

@@ -222,6 +222,40 @@ theorem valuation_trace_le_exp (hF' : IsFunctionField k' F') (P : Place k F) (n 
     _ ≤ WithZero.exp n * 1 := by gcongr
     _ = WithZero.exp n := mul_one _
 
+open Classical in
+/-- By the valuation criterion for the complementary module, there is a function `z₀` of `F'` with
+order exactly `-(d(Q' ∣ P) + [Q' = P'])` at every place `Q'` over `P = P'.restrict k F`, and a
+`b ∈ 𝒪'_P` such that `z₀ * b` has a trace of negative order at `P`. -/
+private lemma exists_valuation_eq_and_one_lt_valuation_trace (hF' : IsFunctionField k' F')
+    (P' : Place k' F') :
+    ∃ (z₀ : F') (b : integralClosure (P'.restrict k F).integers F'), z₀ ≠ 0 ∧
+      (∀ Q' : Place k' F', Q'.restrict k F = P'.restrict k F →
+        Q'.valuation z₀ =
+          WithZero.exp ((differentExponent k F Q' : ℤ) + if Q' = P' then 1 else 0)) ∧
+      1 < (P'.restrict k F).valuation (Algebra.trace F F' (z₀ * algebraMap _ F' b)) := by
+  classical
+  set P := P'.restrict k F with hP
+  obtain ⟨z₀, hz₀0, hz₀⟩ := exists_ne_zero_forall_mem_ord_eq
+    (finite_setOf_restrict_eq (k' := k') (F' := F') k F P).toFinset
+    fun Q' ↦ -((differentExponent k F Q' : ℤ) + if Q' = P' then 1 else 0)
+  have hval (Q' : Place k' F') (hQ' : Q'.restrict k F = P) :
+      Q'.valuation z₀ =
+        WithZero.exp ((differentExponent k F Q' : ℤ) + if Q' = P' then 1 else 0) := by
+    rw [Q'.valuation_eq_exp_neg_ord hz₀0, hz₀ Q' (by simpa using hQ'), neg_neg]
+  have hnot : z₀ ∉ Submodule.traceDual P.integers F
+      (1 : Submodule (integralClosure P.integers F') F') := by
+    rw [mem_traceDual_iff_forall_valuation_le k F hF' P]
+    intro h
+    have h' := h P' rfl
+    rw [hval P' rfl] at h'
+    simp only [↓reduceIte, WithZero.exp_le_exp] at h'
+    omega
+  obtain ⟨a, ha, hy⟩ : ∃ a ∈ (1 : Submodule (integralClosure P.integers F') F'),
+      Algebra.trace F F' (z₀ * a) ∉ (algebraMap P.integers F).range := by
+    simpa [Submodule.mem_traceDual, Algebra.traceForm_apply] using hnot
+  obtain ⟨b, rfl⟩ := Submodule.mem_one.mp ha
+  exact ⟨z₀, b, hz₀0, hval, lt_of_not_ge fun h ↦ hy ⟨⟨_, P.mem_integers_iff.mpr h⟩, rfl⟩⟩
+
 /-- **The trace estimate is sharp** (Stichtenoth, proof of Theorem 3.4.6): relaxing the bound of
 `TauCeti.Place.valuation_trace_le_exp` by one at a single place `P'` over `P` relaxes the bound on
 the traces by one.  Every `x ∈ F` with `ord_P x ≥ -(n + 1)` is the trace of some `z ∈ F'` with
@@ -238,32 +272,8 @@ theorem exists_forall_valuation_le_and_trace_eq (hF' : IsFunctionField k' F')
   rcases eq_or_ne x 0 with rfl | hx0
   · exact ⟨0, fun _ _ _ ↦ by simp, by simp, by simp⟩
   set P := P'.restrict k F with hP
-  -- By the valuation criterion for `C_P`, a function `z₀` of `F'` with order exactly
-  -- `-(d(P' ∣ P) + 1)` at `P'` and at least `-d(Q' ∣ P)` at the other places over `P` lies outside
-  -- `C_P`; then some `z₀ * b` with `b ∈ 𝒪'_P` has a trace `y ∉ 𝒪_P`, and `(x / y) * z₀ * b` works.
-  obtain ⟨z₀, hz₀0, hz₀⟩ := exists_ne_zero_forall_mem_ord_eq
-    (finite_setOf_restrict_eq (k' := k') (F' := F') k F P).toFinset
-    fun Q' ↦ -((differentExponent k F Q' : ℤ) + if Q' = P' then 1 else 0)
-  have hval (Q' : Place k' F') (hQ' : Q'.restrict k F = P) :
-      Q'.valuation z₀ =
-        WithZero.exp ((differentExponent k F Q' : ℤ) + if Q' = P' then 1 else 0) := by
-    rw [Q'.valuation_eq_exp_neg_ord hz₀0, hz₀ Q' (by simpa using hQ'), neg_neg]
-  have hnot : z₀ ∉ Submodule.traceDual P.integers F
-      (1 : Submodule (integralClosure P.integers F') F') := by
-    rw [mem_traceDual_iff_forall_valuation_le k F hF' P]
-    intro h
-    have h' := h P' rfl
-    rw [hval P' rfl] at h'
-    simp only [↓reduceIte, WithZero.exp_le_exp] at h'
-    omega
-  -- so some multiple of it by an element `a` of `𝒪'_P` has a trace `y` outside `𝒪_P`
-  obtain ⟨a, ha, hy⟩ : ∃ a ∈ (1 : Submodule (integralClosure P.integers F') F'),
-      Algebra.trace F F' (z₀ * a) ∉ (algebraMap P.integers F).range := by
-    simpa [Submodule.mem_traceDual, Algebra.traceForm_apply] using hnot
-  obtain ⟨b, rfl⟩ := Submodule.mem_one.mp ha
+  obtain ⟨z₀, b, hz₀0, hval, hy1⟩ := exists_valuation_eq_and_one_lt_valuation_trace k F hF' P'
   set y := Algebra.trace F F' (z₀ * algebraMap _ F' b) with hydef
-  have hy1 : 1 < P.valuation y := by
-    refine lt_of_not_ge fun h ↦ hy ⟨⟨y, P.mem_integers_iff.mpr h⟩, rfl⟩
   have hy0 : y ≠ 0 := by
     rintro h
     simp [h] at hy1

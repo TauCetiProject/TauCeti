@@ -286,14 +286,12 @@ theorem valuation_eq_exp_coeff_poles_iff (hF : IsFunctionField k F) (z : Fˣ) (P
   omega
 
 @[simp]
-theorem isEffective_zeros (hF : IsFunctionField k F) (z : Fˣ) :
-    WeilDivisor.IsEffective (zeros hF z) :=
-  WeilDivisor.isEffective_posPart _
+theorem zeros_nonneg (hF : IsFunctionField k F) (z : Fˣ) : 0 ≤ zeros hF z :=
+  posPart_nonneg _
 
 @[simp]
-theorem isEffective_poles (hF : IsFunctionField k F) (z : Fˣ) :
-    WeilDivisor.IsEffective (poles hF z) :=
-  WeilDivisor.isEffective_negPart _
+theorem poles_nonneg (hF : IsFunctionField k F) (z : Fˣ) : 0 ≤ poles hF z :=
+  negPart_nonneg _
 
 /-- **The divisor of a function splits into its zeros and its poles**: `div z = (z)₀ - (z)_∞`. -/
 theorem zeros_sub_poles (hF : IsFunctionField k F) (z : Fˣ) :

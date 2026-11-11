@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
+public import Mathlib.Topology.MetricSpace.Holder
 
 /-!
 # Iterated derivatives of iterated derivatives
@@ -15,10 +16,15 @@ as its `(i + m)`-th iterated derivative. This extends Mathlib's `norm_iteratedFD
 case `m = 1`, and lets bounds on all iterated derivatives of a function transfer to its iterated
 derivative fields. The file also supplies the two-variable currying isometry used to identify
 continuous multilinear second derivatives with curried bilinear maps, and the corresponding
-exact comparison for differences of second derivatives.
+exact comparison for differences of second derivatives, which transfers Hölder bounds between
+the two forms of the second derivative. Where a function `ζ` equals one on a neighbourhood of a
+point, every iterated derivative of `ζ * u` there is that of `u`
+(`Filter.EventuallyEq.iteratedFDeriv_mul_eq`).
 -/
 
 public section
+
+open scoped NNReal Topology
 
 namespace TauCeti
 
@@ -70,6 +76,14 @@ theorem norm_fderiv_fderiv_sub (f : E → F) (x y : E) :
     ← continuousMultilinearCurryFin2_iteratedFDeriv_two f y, ← LinearIsometryEquiv.map_sub,
     LinearIsometryEquiv.norm_map]
 
+/-- The curried second Fréchet derivative is `r`-Hölder with constant `C` on a set exactly when
+the second iterated derivative is, without differentiability assumptions: the two differ by the
+currying isometry. -/
+theorem holderOnWith_fderiv_fderiv_iff_iteratedFDeriv_two {C r : ℝ≥0} {s : Set E} (f : E → F) :
+    HolderOnWith C r (fderiv 𝕜 (fderiv 𝕜 f)) s ↔ HolderOnWith C r (iteratedFDeriv 𝕜 2 f) s := by
+  simp only [HolderOnWith, ← continuousMultilinearCurryFin2_iteratedFDeriv_two,
+    LinearIsometryEquiv.edist_map]
+
 /-- The `i`-th iterated derivative of the `m`-th iterated derivative of `f` has the same norm as
 the `(i + m)`-th iterated derivative of `f`. -/
 theorem norm_iteratedFDeriv_iteratedFDeriv (f : E → F) (i m : ℕ) (x : E) :
@@ -92,5 +106,16 @@ theorem norm_iteratedFDeriv_iteratedFDeriv (f : E → F) (i m : ℕ) (x : E) :
       (fderiv 𝕜 (iteratedFDeriv 𝕜 m f)) x i
     rw [← h] at he
     rw [he, norm_iteratedFDeriv_fderiv, ih, Nat.add_right_comm, Nat.add_assoc]
+
+/-- Where a function `ζ` equals one on a neighbourhood of `x`, every iterated derivative of `ζ * u`
+at `x` is that of `u`. -/
+theorem _root_.Filter.EventuallyEq.iteratedFDeriv_mul_eq {𝕜 F A : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedRing A] [NormedSpace 𝕜 A] {k : ℕ}
+    {ζ u : F → A} {x : F} (hζ : ζ =ᶠ[𝓝 x] 1) :
+    iteratedFDeriv 𝕜 k (ζ * u) x = iteratedFDeriv 𝕜 k u x := by
+  have hev : ζ * u =ᶠ[𝓝 x] u := by
+    filter_upwards [hζ] with y hy
+    simp only [Pi.mul_apply, hy, Pi.one_apply, one_mul]
+  exact (hev.iteratedFDeriv 𝕜 k).eq_of_nhds
 
 end TauCeti

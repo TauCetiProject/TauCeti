@@ -244,6 +244,43 @@ private theorem windingNumber_sub_eq_add_three_of_notMem {γ : ℝ → ℂ} {a b
     h₂.windingNumber_concat h₃ (mt (image_mono h₂d ·) hw₂) (mt (image_mono h₃d ·) hw₂)]
   ring
 
+/-- The winding-number normal jump of the local tangent curve `L` splits into the jumps on the two
+outer pieces and the jump of the middle straight segment, once the test points `z₀ ± h • (I * v)`
+miss the trace of `L` and `L` agrees with the segment on the middle piece. -/
+private theorem eventuallyEq_windingNumber_sub_add_three {L : ℝ → ℂ} {t₀ δ : ℝ} {v z₀ : ℂ}
+    (hδ : 0 < δ)
+    (hac₁ : AbsolutelyContinuousOnInterval L (t₀ - δ) (t₀ - δ / 2))
+    (hac₂ : AbsolutelyContinuousOnInterval L (t₀ - δ / 2) (t₀ + δ / 2))
+    (hac₃ : AbsolutelyContinuousOnInterval L (t₀ + δ / 2) (t₀ + δ))
+    (hoff_pos : ∀ {h : ℝ}, 0 < h → z₀ + h • (I * v) ∉ L '' uIcc (t₀ - δ) (t₀ + δ))
+    (hoff_neg : ∀ {h : ℝ}, 0 < h → z₀ - h • (I * v) ∉ L '' uIcc (t₀ - δ) (t₀ + δ))
+    (hmid_seg : ∀ w, windingNumber L (t₀ - δ / 2) (t₀ + δ / 2) w =
+      windingNumber (fun t : ℝ ↦ v * (t : ℂ) + (z₀ - v * (t₀ : ℂ)))
+        (t₀ - δ / 2) (t₀ + δ / 2) w) :
+    (fun h : ℝ ↦
+      (windingNumber L (t₀ - δ) (t₀ - δ / 2) (z₀ + h • (I * v)) -
+        windingNumber L (t₀ - δ) (t₀ - δ / 2) (z₀ - h • (I * v))) +
+      (windingNumber (fun t : ℝ ↦ v * (t : ℂ) + (z₀ - v * (t₀ : ℂ)))
+          (t₀ - δ / 2) (t₀ + δ / 2) (v * (t₀ + h * I) + (z₀ - v * (t₀ : ℂ))) -
+        windingNumber (fun t : ℝ ↦ v * (t : ℂ) + (z₀ - v * (t₀ : ℂ)))
+          (t₀ - δ / 2) (t₀ + δ / 2) (v * (t₀ - h * I) + (z₀ - v * (t₀ : ℂ)))) +
+      (windingNumber L (t₀ + δ / 2) (t₀ + δ) (z₀ + h • (I * v)) -
+        windingNumber L (t₀ + δ / 2) (t₀ + δ) (z₀ - h • (I * v))))
+      =ᶠ[𝓝[>] 0] fun h : ℝ ↦
+        windingNumber L (t₀ - δ) (t₀ + δ) (z₀ + h • (I * v)) -
+          windingNumber L (t₀ - δ) (t₀ + δ) (z₀ - h • (I * v)) := by
+  have hle₁ : t₀ - δ ≤ t₀ - δ / 2 := by linarith
+  have hle₂ : t₀ - δ / 2 ≤ t₀ + δ / 2 := by linarith
+  have hle₃ : t₀ + δ / 2 ≤ t₀ + δ := by linarith
+  filter_upwards [self_mem_nhdsWithin] with h hh
+  have hp_pos : v * (t₀ + h * I) + (z₀ - v * (t₀ : ℂ)) = z₀ + h • (I * v) := by
+    rw [Complex.real_smul]; ring
+  have hp_neg : v * (t₀ - h * I) + (z₀ - v * (t₀ : ℂ)) = z₀ - h • (I * v) := by
+    rw [Complex.real_smul]; ring
+  rw [windingNumber_sub_eq_add_three_of_notMem hle₁ hle₂ hle₃ hac₁ hac₂ hac₃
+      (hoff_pos hh) (hoff_neg hh),
+    hmid_seg, hmid_seg, hp_pos, hp_neg]
+
 /-- Near `t₀`, `localTangentCurve` has winding-number normal jump tending to `1`. -/
 private theorem tendsto_windingNumber_localTangentCurve_sub {γ : ℝ → ℂ} {t₀ δ : ℝ} {v : ℂ}
     (hv : v ≠ 0) (hδ : 0 < δ) (hleft : ((γ (t₀ - δ) - γ t₀) / v).re < 0)
@@ -283,27 +320,8 @@ private theorem tendsto_windingNumber_localTangentCurve_sub {γ : ℝ → ℂ} {
         (t₀ - δ / 2) (t₀ + δ / 2) w := fun w ↦
     windingNumber_congr_curve fun t ht ↦
       eqOn_localTangentCurve_mid hδ (Ioo_subset_Icc_self (uIoo_of_le hle₂ ▸ ht))
-  have heq : (fun h : ℝ ↦
-      (windingNumber L (t₀ - δ) (t₀ - δ / 2) (γ t₀ + h • (I * v)) -
-        windingNumber L (t₀ - δ) (t₀ - δ / 2) (γ t₀ - h • (I * v))) +
-      (windingNumber (fun t : ℝ ↦ v * (t : ℂ) + (γ t₀ - v * (t₀ : ℂ)))
-          (t₀ - δ / 2) (t₀ + δ / 2) (v * (t₀ + h * I) + (γ t₀ - v * (t₀ : ℂ))) -
-        windingNumber (fun t : ℝ ↦ v * (t : ℂ) + (γ t₀ - v * (t₀ : ℂ)))
-          (t₀ - δ / 2) (t₀ + δ / 2) (v * (t₀ - h * I) + (γ t₀ - v * (t₀ : ℂ)))) +
-      (windingNumber L (t₀ + δ / 2) (t₀ + δ) (γ t₀ + h • (I * v)) -
-        windingNumber L (t₀ + δ / 2) (t₀ + δ) (γ t₀ - h • (I * v))))
-      =ᶠ[𝓝[>] 0] fun h : ℝ ↦
-        windingNumber L (t₀ - δ) (t₀ + δ) (γ t₀ + h • (I * v)) -
-          windingNumber L (t₀ - δ) (t₀ + δ) (γ t₀ - h • (I * v)) := by
-    filter_upwards [self_mem_nhdsWithin] with h hh
-    have hp_pos : v * (t₀ + h * I) + (γ t₀ - v * (t₀ : ℂ)) = γ t₀ + h • (I * v) := by
-      rw [Complex.real_smul]; ring
-    have hp_neg : v * (t₀ - h * I) + (γ t₀ - v * (t₀ : ℂ)) = γ t₀ - h • (I * v) := by
-      rw [Complex.real_smul]; ring
-    rw [windingNumber_sub_eq_add_three_of_notMem hle₁ hle₂ hle₃ hac₁ hac₂ hac₃
-        (hoff_pos hh) (hoff_neg hh),
-      hmid_seg, hmid_seg, hp_pos, hp_neg]
-  refine Tendsto.congr' heq ?_
+  refine Tendsto.congr' (eventuallyEq_windingNumber_sub_add_three hδ hac₁ hac₂ hac₃ hoff_pos
+    hoff_neg hmid_seg) ?_
   have hs : t₀ ∈ Ioo (t₀ - δ / 2) (t₀ + δ / 2) := ⟨by linarith, by linarith⟩
   simpa using (((hac₁.tendsto_windingNumber_add_smul_sub hp₁ (I * v)).mono_left
       nhdsWithin_le_nhds).add
@@ -350,6 +368,25 @@ private theorem eventually_notMem_trace_add_sub_I_mul {γ : ℝ → ℂ} {a b t�
     eventually_notMem_trace_smul hab hγ hv (by norm_num : (0 : ℝ) < (-1 : ℝ) ^ 2)
       haδ hbδ hle_mid hp₁ hp₃ (hγ_slit (-1))] with h hpos hneg
   exact ⟨by simpa using hpos, by simpa [sub_eq_add_neg, neg_smul] using hneg⟩
+
+/-- A curve agreeing with `localTangentCurve` at both endpoints, and lying in the slit plane
+`slitCompl (γ t₀) v σ`, has the same winding number as `localTangentCurve` about every point
+outside that slit plane. -/
+private theorem windingNumber_eq_localTangentCurve {γ : ℝ → ℂ} {t₀ δ : ℝ} {v : ℂ} {σ : ℝ} {w : ℂ}
+    (hv : v ≠ 0) (hδ : 0 < δ) (hleft : ((γ (t₀ - δ) - γ t₀) / v).re < 0)
+    (hright : 0 < ((γ (t₀ + δ) - γ t₀) / v).re)
+    (hγ : AbsolutelyContinuousOnInterval γ (t₀ - δ) (t₀ + δ))
+    (hacL : AbsolutelyContinuousOnInterval (localTangentCurve γ t₀ δ v) (t₀ - δ) (t₀ + δ))
+    (hLa : localTangentCurve γ t₀ δ v (t₀ - δ) = γ (t₀ - δ))
+    (hLb : localTangentCurve γ t₀ δ v (t₀ + δ) = γ (t₀ + δ))
+    (hγ_slit : ∀ t ∈ uIcc (t₀ - δ) (t₀ + δ), γ t ∈ slitCompl (γ t₀) v σ)
+    (hw : w ∉ slitCompl (γ t₀) v σ) :
+    windingNumber γ (t₀ - δ) (t₀ + δ) w =
+      windingNumber (localTangentCurve γ t₀ δ v) (t₀ - δ) (t₀ + δ) w :=
+  hγ.windingNumber_eq_of_starConvex_of_eq_endpoints hacL (starConvex_slitCompl (γ t₀) v σ)
+    hLa.symm hLb.symm hγ_slit
+    (fun t ht ↦ localTangentCurve_mem_slitCompl hv hδ hleft hright σ
+      (uIcc_of_le (by linarith : t₀ - δ ≤ t₀ + δ) ▸ ht)) hw
 
 /-- Choose a symmetric parameter window `[t₀ - δ, t₀ + δ] ⊂ (a, b)` on which `γ` lies in every
 normalized slit plane `slitCompl (γ t₀) v σ`, crosses from negative to positive normalized real
@@ -457,20 +494,10 @@ theorem tendsto_windingNumber_add_I_mul_sub
       =ᶠ[𝓝[>] 0] fun h : ℝ ↦
         windingNumber γ a b (γ t₀ + h • (I * v)) - windingNumber γ a b (γ t₀ - h • (I * v)) := by
     filter_upwards [self_mem_nhdsWithin, havoid] with h hh ⟨hpos, hneg⟩
-    have hw_pos : windingNumber γ (t₀ - δ) (t₀ + δ) (γ t₀ + h • (I * v)) =
-        windingNumber (localTangentCurve γ t₀ δ v) (t₀ - δ) (t₀ + δ) (γ t₀ + h • (I * v)) :=
-      hγ₂.windingNumber_eq_of_starConvex_of_eq_endpoints hacL
-        (starConvex_slitCompl (γ t₀) v 1) hLa.symm hLb.symm (hγ_slit 1)
-        (fun t ht ↦ localTangentCurve_mem_slitCompl hv hδ hleft hright 1
-          (uIcc_of_le hle_mid ▸ ht))
-        (notMem_slitCompl_add_smul hv hh)
-    have hw_neg : windingNumber γ (t₀ - δ) (t₀ + δ) (γ t₀ - h • (I * v)) =
-        windingNumber (localTangentCurve γ t₀ δ v) (t₀ - δ) (t₀ + δ) (γ t₀ - h • (I * v)) :=
-      hγ₂.windingNumber_eq_of_starConvex_of_eq_endpoints hacL
-        (starConvex_slitCompl (γ t₀) v (-1)) hLa.symm hLb.symm (hγ_slit (-1))
-        (fun t ht ↦ localTangentCurve_mem_slitCompl hv hδ hleft hright (-1)
-          (uIcc_of_le hle_mid ▸ ht))
-        (notMem_slitCompl_sub_smul hv hh)
+    have hw_pos := windingNumber_eq_localTangentCurve hv hδ hleft hright hγ₂ hacL hLa hLb
+      (hγ_slit 1) (notMem_slitCompl_add_smul hv hh)
+    have hw_neg := windingNumber_eq_localTangentCurve hv hδ hleft hright hγ₂ hacL hLa hLb
+      (hγ_slit (-1)) (notMem_slitCompl_sub_smul hv hh)
     rw [windingNumber_sub_eq_add_three_of_notMem haδ.le hle_mid hbδ.le hγ₁ hγ₂ hγ₃ hpos hneg,
       hw_pos, hw_neg]
   refine Tendsto.congr' heq ?_

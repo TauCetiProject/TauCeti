@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import Mathlib.LinearAlgebra.UnitaryGroup
 import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
@@ -32,6 +33,7 @@ sphere.
 ## Main declarations
 
 * `Matrix.specialUnitaryGroup.toSL`: the inclusion `SU(n) → SL(n)`.
+* `Matrix.specialUnitaryGroup.toGL_toSL`: in `GL(n)`, it agrees with the unitary units.
 * `Matrix.specialUnitaryGroup.toPSL`: the homomorphism `SU(n) → PSL(n)`, whose range is `PSU(n)`.
 * `Matrix.specialUnitaryGroup.ker_toPSL`: its kernel is the preimage of the center of `SL(n)`.
 * `Matrix.specialUnitaryGroup.mk_mem_range_toPSL_iff`: over `ℝ` or `ℂ`, the class of a matrix of
@@ -66,6 +68,13 @@ def toSL : specialUnitaryGroup n α →* SpecialLinearGroup n α where
 theorem coe_toSL (A : specialUnitaryGroup n α) :
     ((toSL A : SpecialLinearGroup n α) : Matrix n n α) = A :=
   (rfl)
+
+/-- A special unitary matrix, viewed in `GL(n, α)`, is the unit of the corresponding unitary
+matrix. -/
+theorem toGL_toSL (A : specialUnitaryGroup n α) :
+    SpecialLinearGroup.toGL (toSL A) =
+      Unitary.toUnits (Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup A) :=
+  Units.ext (rfl)
 
 theorem toSL_injective : Function.Injective (toSL : specialUnitaryGroup n α →* _) :=
   fun A B h => Subtype.ext <| by
@@ -130,7 +139,7 @@ theorem center_le_range_toSL :
   have hnorm : ‖r‖ = 1 := by
     rw [← pow_eq_one_iff_of_nonneg (norm_nonneg r) (Fintype.card_ne_zero (α := n)), ← norm_pow,
       hr, norm_one]
-  rw [scalar_apply, diagonal_mem_unitaryGroup_iff]
+  rw [scalar_apply, diagonal_mem_unitary, Pi.mem_unitary_iff]
   exact fun _ => Unitary.mem_iff_star_mul_self.mpr <| by
     rw [RCLike.star_def, RCLike.conj_mul, hnorm]
     simp

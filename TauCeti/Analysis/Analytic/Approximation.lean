@@ -124,8 +124,7 @@ private theorem exists_differentiable_approx {g : ℝ → ℝ} (hg : ContDiff �
   have hc0 : 0 ≤ c := by positivity
   let F : ℂ → ℂ := fun z ↦ ∫ y in a..b, ((A * g y : ℝ) : ℂ) * cexp (-(c : ℂ) * (z - y) ^ 2)
   have hF : Differentiable ℂ F :=
-    differentiable_intervalIntegral_mul_cexp_neg_mul_sub_sq
-      ((by fun_prop : Continuous fun y : ℝ ↦ ((A * g y : ℝ) : ℂ)).intervalIntegrable _ _) _
+    differentiable_intervalIntegral_mul_cexp_neg_mul_sub_sq _
   have hFx (x : ℝ) : F x = (heatKernel t ⋆ g) x := by
     rw [heatKernel_convolution_eq_intervalIntegral ((subset_tsupport g).trans hgs) hab,
       ← intervalIntegral.integral_ofReal]

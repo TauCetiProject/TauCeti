@@ -182,6 +182,18 @@ theorem bubble_zero_smul {t : ℝ} (ht : 0 < t) (x : E) :
   rw [bubble_apply, bubble_apply, hbase, Real.mul_rpow (inv_nonneg.mpr ht.le) (by positivity),
     Real.inv_rpow ht.le, Real.rpow_neg ht.le]
 
+/-- The square of a bubble under translation and dilation:
+`U_{t,b}(b + t x)² = t ^ (-(n - 2)) U_{1,0}(x)²`. -/
+theorem bubble_sq_add_smul {t : ℝ} (ht : 0 < t) (b x : E) :
+    bubble t b (b + t • x) ^ 2 =
+      t ^ (-((finrank ℝ E : ℝ) - 2)) * bubble 1 0 x ^ 2 := by
+  have hb : bubble t b (b + t • x) =
+      t ^ (-(((finrank ℝ E : ℝ) - 2) / 2)) * bubble 1 0 x := by
+    rw [← bubble_zero_sub, add_sub_cancel_left, bubble_zero_smul ht]
+  have hexp : -(((finrank ℝ E : ℝ) - 2) / 2) * (2 : ℕ) =
+      -((finrank ℝ E : ℝ) - 2) := by push_cast; ring
+  rw [hb, mul_pow, ← Real.rpow_mul_natCast ht.le, hexp]
+
 /-- In dimension `n ≠ 2`, the critical power of a bubble is
 `U_{t,b} ^ pₙ = (2 t / (t² + ‖x - b‖²)) ^ n`. -/
 theorem bubble_rpow_criticalExponent (hn : finrank ℝ E ≠ 2) {t : ℝ} (ht : 0 < t) (b x : E) :

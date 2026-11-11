@@ -24,8 +24,8 @@ import TauCeti.Topology.ConnectedComponents
 # Topological branched covers of the sphere with branch values in `{0, 1, ∞}`
 
 A *topological branched cover of degree `n`* (`TauCeti.TopBranchedCover n`) is a compact,
-connected, Hausdorff, second countable space `Z` with a surjective continuous map
-`π : Z → OnePoint ℂ` that is a covering map of degree `n` over the thrice-punctured sphere, the
+connected, Hausdorff space `Z` with a continuous map `π : Z → OnePoint ℂ` that is a covering map
+of degree `n` over the thrice-punctured sphere, the
 complement of the three marked points `0`, `1` and `∞` (`TauCeti.ThricePuncturedSphere.marked`),
 and that is locally `w ↦ w ^ e`, in charts, at every point over a marked point. These are the
 objects that analytic Riemann existence for three-point covers classifies, by finite covers of
@@ -51,9 +51,12 @@ of the map cluster in a connected subset of a finite fibre, hence at a single po
 particular the deck group of `π` is the deck group of the unbranched cover
 (`TauCeti.TopBranchedCover.deckMulEquivDeckRestrict`).
 
-The data carries no atlas. The local models at marked points and the covering map elsewhere
-already provide a chart around every point (`TauCeti.TopBranchedCover.exists_mem_source`), so `Z`
-is a topological surface, and properness of `π` is a consequence of compactness
+The data carries no atlas and no surjectivity or countability axiom. The local models at marked
+points and the covering map elsewhere already provide a chart around every point
+(`TauCeti.TopBranchedCover.exists_mem_source`), so `Z` is a compact topological surface, hence
+second countable (`TauCeti.TopBranchedCover.instSecondCountableTopology`); they also make `π`
+open, so `π` is surjective onto the connected sphere
+(`TauCeti.TopBranchedCover.surjective`), and properness of `π` is a consequence of compactness
 (`TauCeti.TopBranchedCover.isProperMap`).
 
 ## Main definitions
@@ -135,10 +138,14 @@ open ThricePuncturedSphere
 universe u
 
 /-- A **topological branched cover of the sphere of degree `n` with branch values in
-`{0, 1, ∞}`**: a compact, connected, Hausdorff, second countable space `Z` with a surjective
-continuous map `π : Z → OnePoint ℂ` which is a covering map with fibres of `n` points over the
-complement of the marked points, and which is locally `w ↦ w ^ e`, in a chart at the source and
-one at the target, at every point over a marked point.
+`{0, 1, ∞}`**: a compact, connected, Hausdorff space `Z` with a continuous map
+`π : Z → OnePoint ℂ` which is a covering map with fibres of `n` points over the complement of the
+marked points, and which is locally `w ↦ w ^ e`, in a chart at the source and one at the target,
+at every point over a marked point.
+
+The usual requirements that `π` be surjective and that `Z` be second countable are consequences
+(`TauCeti.TopBranchedCover.surjective`, `TauCeti.TopBranchedCover.instSecondCountableTopology`),
+so they are not part of the data.
 
 The exponent `e` is not part of the data: it is unique (`TauCeti.IsLocalPowerAt.unique`), and is
 recorded as `TauCeti.TopBranchedCover.localDegree`. The degree hypothesis only concerns unmarked
@@ -152,11 +159,8 @@ structure TopBranchedCover (n : ℕ) : Type (u + 1) where
   [instCompactSpace : CompactSpace Z]
   [instConnectedSpace : ConnectedSpace Z]
   [instT2Space : T2Space Z]
-  [instSecondCountableTopology : SecondCountableTopology Z]
   /-- The branched covering map. -/
   π : C(Z, OnePoint ℂ)
-  /-- The branched covering map is surjective. -/
-  surjective : Function.Surjective π
   /-- Off the three marked points, `π` is a covering map. -/
   isCoveringMapOn : IsCoveringMapOn π markedᶜ
   /-- Off the three marked points, the fibres of `π` have `n` points. -/
@@ -168,7 +172,6 @@ structure TopBranchedCover (n : ℕ) : Type (u + 1) where
 namespace TopBranchedCover
 
 attribute [instance] instTopologicalSpace instCompactSpace instConnectedSpace instT2Space
-  instSecondCountableTopology
 
 variable {n : ℕ} (X : TopBranchedCover n)
 
@@ -215,6 +218,31 @@ theorem exists_mem_source (z : X.Z) : ∃ φ : OpenPartialHomeomorph X.Z ℂ, z 
   obtain ⟨e, he⟩ := X.exists_isLocalPowerAt z
   obtain ⟨φ, -, hz, -⟩ := isLocalPowerAt_iff.1 he
   exact ⟨φ, hz⟩
+
+/-- The total space is second countable: it is compact and covered by charts to `ℂ`. -/
+instance instSecondCountableTopology : SecondCountableTopology X.Z :=
+  letI : ChartedSpace ℂ X.Z :=
+    { atlas := range fun z ↦ (X.exists_mem_source z).choose
+      chartAt z := (X.exists_mem_source z).choose
+      mem_chart_source z := (X.exists_mem_source z).choose_spec
+      chart_mem_atlas z := mem_range_self z }
+  ChartedSpace.secondCountable_of_sigmaCompact ℂ X.Z
+
+/-- The branched covering map is surjective: by the local power models it is open at every point,
+and its image is compact, hence closed, in the connected sphere. -/
+theorem surjective : Function.Surjective X.π := by
+  have hopen : IsOpen (range X.π) := by
+    refine isOpen_iff_mem_nhds.2 ?_
+    rintro _ ⟨z, rfl⟩
+    obtain ⟨e, he⟩ := X.exists_isLocalPowerAt z
+    obtain ⟨V, -, -, -, hV⟩ := he.exists_ncard_inter_preimage_eq univ_mem
+    filter_upwards [eventually_nhdsWithin_iff.1 hV] with y hy
+    by_cases h : y = X.π z
+    · exact h ▸ mem_range_self z
+    · obtain ⟨w, hw⟩ := nonempty_of_ncard_ne_zero ((hy h).trans_ne he.ne_zero)
+      exact ⟨w, hw.2⟩
+  exact range_eq_univ.1 (IsClopen.eq_univ ⟨(isCompact_range X.π.continuous).isClosed, hopen⟩
+    (range_nonempty _))
 
 /-- The **local degree** of a branched cover at a point `z`: the exponent `e` for which `π` is
 `w ↦ w ^ e` near `z`, in charts (`TauCeti.TopBranchedCover.localDegree_eq_iff`). It is `1` off
@@ -858,9 +886,7 @@ theorem coe_deckMulEquivDeckRestrict_symm_apply (ψ : deck X.restrict)
 degree `1`, unbranched everywhere. -/
 def sphere : TopBranchedCover 1 where
   Z := OnePoint ℂ
-  instSecondCountableTopology := ChartedSpace.secondCountable_of_sigmaCompact ℂ (OnePoint ℂ)
   π := ContinuousMap.id _
-  surjective := Function.surjective_id
   isCoveringMapOn := (isLocalHomeomorph_iff_isCoveringMap.1
     (Homeomorph.refl (OnePoint ℂ)).isLocalHomeomorph).isCoveringMapOn.mono (subset_univ _)
   natCard_preimage_singleton _ _ := by simp

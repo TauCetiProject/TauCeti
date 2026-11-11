@@ -83,8 +83,8 @@ theorem supSeminorm_mul (hA : IsAffinoidAlgebra K A)
     rwa [hA.mem_topologicallyNilpotentIdeal_iff_supSeminorm_lt_one, Subring.coe_mul] at this
   have hcd : ((c : K) • f ^ m * ((d : K) • g ^ m)) = ((c : K) * d) • (f * g) ^ m := by
     rw [smul_mul_smul_comm, mul_pow]
-  rw [hcd, hA.supSeminorm_smul, hA.supSeminorm_pow _ hm0, not_lt] at hprod
-  rw [hA.supSeminorm_smul, hA.supSeminorm_pow _ hm0] at hc hd
+  rw [hcd, supSeminorm_smul, supSeminorm_pow _ hm0, not_lt] at hprod
+  rw [supSeminorm_smul, supSeminorm_pow _ hm0] at hc hd
   -- Hence `(|f|sup |g|sup) ^ m ≤ |f g|sup ^ m`.
   refine le_of_pow_le_pow_left₀ hm0 (supSeminorm_nonneg _) ?_
   have hcd0 : 0 < ‖(c : K) * d‖ := norm_pos_iff.mpr (mul_ne_zero c.ne_zero d.ne_zero)

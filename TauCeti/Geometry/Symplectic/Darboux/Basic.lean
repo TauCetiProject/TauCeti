@@ -11,6 +11,7 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Poincare
 import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Analysis.Calculus.Moser
 import TauCeti.Dynamics.Flow.RestPoint
+import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
@@ -166,5 +167,46 @@ theorem exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq
           ← ContinuousAlternatingMap.alternatizeUncurryFinCLM_apply, map_zero])
       (fun x hx ↦ hdω x (hρW hx)) hdα hα₀ rfl hnd
   exact ⟨ψ, hfix.self_of_nhds hα₀, hψ⟩
+
+/-- **Darboux's theorem, centred inverse form.** In the situation of
+`exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq`, subtracting `x₀` from the inverse
+of the diffeomorphism gives a `C^r` diffeomorphism `Φ` of the space with `Φ x₀ = 0` such that the
+form `ω` is, on an open neighbourhood `V₀ ⊆ W` of `x₀`, the pullback of the constant form `ω(x₀)`
+by `Φ`. -/
+theorem exists_diffeomorph_centered_forall_mem_eq_compContinuousLinearMap_fderiv
+    {ω : V → V [⋀^Fin 2]→L[ℝ] ℝ} {W : Set V} {x₀ : V} {r : ℕ∞} (hr : 1 ≤ r) (hW : IsOpen W)
+    (hx₀ : x₀ ∈ W) (hω : ContDiffOn ℝ r ω W) (hdω : ∀ x ∈ W, extDeriv ω x = 0)
+    (hnd : ∀ v, (∀ w, ω x₀ ![v, w] = 0) → v = 0) :
+    ∃ (Φ : V ≃ₘ^r⟮𝓘(ℝ, V), 𝓘(ℝ, V)⟯ V) (V₀ : Set V), Φ x₀ = 0 ∧ IsOpen V₀ ∧ x₀ ∈ V₀ ∧
+      V₀ ⊆ W ∧ ∀ y ∈ V₀, ω y = (ω x₀).compContinuousLinearMap (fderiv ℝ Φ y) := by
+  obtain ⟨ψ, hψx₀, hev⟩ :=
+    exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq hr hW hx₀ hω hdω hnd
+  have hψsymm : ψ.symm x₀ = x₀ := ψ.symm_apply_eq.2 hψx₀.symm
+  have hnhds : {y : V | (ω (ψ (ψ.symm y))).compContinuousLinearMap (fderiv ℝ ψ (ψ.symm y)) =
+      ω x₀} ∩ W ∈ 𝓝 x₀ := by
+    refine Filter.inter_mem ?_ (hW.mem_nhds hx₀)
+    have hcont : ContinuousAt ψ.symm x₀ := ψ.symm.continuous.continuousAt
+    rw [ContinuousAt, hψsymm] at hcont
+    exact hcont hev
+  obtain ⟨V₀, hV₀_sub, hV₀_open, hx₀V₀⟩ := _root_.mem_nhds_iff.1 hnhds
+  have hr0 : (r : WithTop ℕ∞) ≠ 0 := by
+    have : (1 : WithTop ℕ∞) ≤ r := by exact_mod_cast hr
+    exact (lt_of_lt_of_le zero_lt_one this).ne'
+  let Φ : V ≃ₘ^r⟮𝓘(ℝ, V), 𝓘(ℝ, V)⟯ V :=
+    ψ.symm.trans (Diffeomorph.smulAdd r (1 : ℝ) (-x₀) one_ne_zero)
+  have hΦ_coe : ⇑Φ = fun y ↦ ψ.symm y - x₀ := by
+    ext y
+    simp [Φ, sub_eq_add_neg]
+  refine ⟨Φ, V₀, by rw [hΦ_coe]; simp [hψsymm], hV₀_open, hx₀V₀, fun y hy ↦ (hV₀_sub hy).2,
+    fun y hy ↦ ?_⟩
+  have hzy : (ω y).compContinuousLinearMap (fderiv ℝ ψ (ψ.symm y)) = ω x₀ := by
+    have := (hV₀_sub hy).1
+    simpa only [mem_ofPred_eq, ψ.apply_symm_apply] using this
+  rw [hΦ_coe, fderiv_sub_const, ← hzy]
+  ext v
+  simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply]
+  congr 1
+  ext i
+  exact (ψ.fderiv_apply_fderiv_symm_apply hr0 y (v i)).symm
 
 end TauCeti

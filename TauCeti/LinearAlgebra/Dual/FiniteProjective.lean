@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Equiv.Opposite
 public import Mathlib.RingTheory.Finiteness.Projective
-public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
+public import TauCeti.LinearAlgebra.Dual.Basis
 
 /-!
 # Opposite duals of finite projective modules
@@ -34,41 +33,40 @@ public section
 
 namespace TauCeti
 
-variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [Module.Finite R M]
+variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
 
--- The constructions use Mathlib's `Module.Basis.constr` and
+-- The free case transports the coordinates `Module.Basis.oppositeDualEquiv`. The other cases use
 -- `Module.Finite.exists_comp_eq_id_of_projective`, following the retract argument of
 -- `Module.dual_projective` and `Module.dual_finite` for commutative scalars.
 
+variable [Module.Finite R M]
+
 /-- The dual of a finite free left module is free over the opposite semiring. -/
-noncomputable instance oppositeDual_free [Module.Free R M] :
-    Module.Free Rᵐᵒᵖ (Module.Dual R M) := by
-  let b := Module.Free.chooseBasis R M
-  let e := (b.constr Rᵐᵒᵖ (M' := R)).symm.trans
-    (LinearEquiv.piCongrRight fun _ => MulOpposite.opLinearEquiv Rᵐᵒᵖ)
-  exact Module.Free.of_equiv e.symm
+instance oppositeDual_free [Module.Free R M] :
+    Module.Free Rᵐᵒᵖ (Module.Dual R M) :=
+  .of_equiv (Module.Free.chooseBasis R M).oppositeDualEquiv.symm
+
+/-- The opposite dual of a finite projective module is a retract of the opposite dual of a
+finite free module. -/
+private theorem exists_oppositeDual_retract [Module.Projective R M] :
+    ∃ (n : ℕ) (i : Module.Dual R M →ₗ[Rᵐᵒᵖ] Module.Dual R (Fin n → R))
+      (s : Module.Dual R (Fin n → R) →ₗ[Rᵐᵒᵖ] Module.Dual R M), s ∘ₗ i = .id := by
+  obtain ⟨n, f, g, -, -, hfg⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
+  refine ⟨n, f.lcomp Rᵐᵒᵖ R, g.lcomp Rᵐᵒᵖ R, ?_⟩
+  ext φ x
+  simp [← LinearMap.comp_apply f g, hfg]
 
 /-- The dual of a finite projective left module is projective over the opposite semiring. -/
 instance oppositeDual_projective [Module.Projective R M] :
-    Module.Projective Rᵐᵒᵖ (Module.Dual R M) := by
-  obtain ⟨n, f, g, -, -, hfg⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
-  apply Module.Projective.of_split (f.lcomp Rᵐᵒᵖ R) (g.lcomp Rᵐᵒᵖ R)
-  ext φ x
-  simpa only [LinearMap.comp_apply, LinearMap.id_apply, LinearMap.lcomp_apply] using
-    congrArg φ (LinearMap.congr_fun hfg x)
+    Module.Projective Rᵐᵒᵖ (Module.Dual R M) :=
+  have ⟨_, i, s, hsi⟩ := exists_oppositeDual_retract (R := R) (M := M)
+  .of_split i s hsi
 
 /-- The dual of a finite projective left module is finitely generated over the opposite semiring. -/
 instance oppositeDual_finite [Module.Projective R M] :
-    Module.Finite Rᵐᵒᵖ (Module.Dual R M) := by
-  obtain ⟨n, f, g, -, -, hfg⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
-  let e := ((Pi.basisFun R (Fin n)).constr Rᵐᵒᵖ (M' := R)).symm.trans
-    (LinearEquiv.piCongrRight fun _ => MulOpposite.opLinearEquiv Rᵐᵒᵖ)
-  have : Module.Finite Rᵐᵒᵖ (Module.Dual R (Fin n → R)) := Module.Finite.equiv e.symm
-  apply Module.Finite.of_surjective (g.lcomp Rᵐᵒᵖ R)
-  intro φ
-  refine ⟨f.lcomp Rᵐᵒᵖ R φ, ?_⟩
-  ext x
-  simpa only [LinearMap.comp_apply, LinearMap.id_apply, LinearMap.lcomp_apply] using
-    congrArg φ (LinearMap.congr_fun hfg x)
+    Module.Finite Rᵐᵒᵖ (Module.Dual R M) :=
+  have ⟨n, i, s, hsi⟩ := exists_oppositeDual_retract (R := R) (M := M)
+  have := Module.Finite.equiv (Pi.basisFun R (Fin n)).oppositeDualEquiv.symm
+  .of_surjective s (LinearMap.surjective_of_comp_eq_id i s hsi)
 
 end TauCeti

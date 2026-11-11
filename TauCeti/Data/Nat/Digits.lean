@@ -15,7 +15,7 @@ import Mathlib.Data.Nat.Prime.Factorial
 import Mathlib.Tactic.LinearCombination
 
 /-!
-# Digits of `j + b * y`, factorials of digits, and cyclic shifts of digits
+# Digits of `j + b * y`, factorials of digits, cyclic shifts of digits and redundant words
 
 For a digit `j < b`, the base-`b` digits of `j + b * y` are `j` followed by the digits of `y`.
 This gives the digit sum and the products over the digits of `j + b * y` in terms of those of
@@ -30,8 +30,15 @@ For `a = (b ^ f - 1) / m * t` this reads `m s(a) = (b - 1) ∑_{i < f} (b ^ i t 
 and `b ^ f = q` the size of a finite field, this identity turns the digit-sum valuation of Gauss
 sums into the exponents `t` of Stickelberger's element `∑ t σ_t⁻¹`.
 
+Allowing the digits `0, …, 2b`, every `z ≤ 2 b ^ n` with `n ≥ 1` is the base-`b` value of a word
+of length exactly `n`. Such redundant words of a fixed length let an automaton append the same
+suffix of length `n` to two prefixes and reach every offset in the doubled interval `[0, 2 b ^ n]`,
+as in Krebs's proof of Cobham's theorem.
+
 ## Main results
 
+* `Nat.exists_length_eq_ofDigits_eq_of_le_two_mul_pow`: for `n ≥ 1`, every `z ≤ 2 b ^ n` is the
+  value of a word of length `n` with digits at most `2b`.
 * `Nat.sum_digits_add_mul`: the digit sum of `j + b * y` is `j` plus the digit sum of `y`.
 * `Nat.prod_map_digits_add_mul`: `∏ g(dᵢ)` over the digits of `j + b * y` is `g j` times the
   product over the digits of `y`, whenever `g 0 = 1`.
@@ -50,11 +57,39 @@ sums into the exponents `t` of Stickelberger's element `∑ t σ_t⁻¹`.
 
 * S. A. Katre, *Gauss–Jacobi sums and Stickelberger's theorem*, §3.
 * L. C. Washington, *Introduction to Cyclotomic Fields*, 2nd ed., §6.2.
+* Thijmen J. P. Krebs, *A more reasonable proof of Cobham's theorem*, 2018, arXiv:1801.06704, §3.
 -/
 
 public section
 
 namespace Nat
+
+/-- Mapping canonical digits into `Fin b` and then taking their values recovers the digits. -/
+theorem map_val_map_ofNat_digits {b : ℕ} [NeZero b] (hb : 2 ≤ b) (n : ℕ) :
+    ((digits b n).map (Fin.ofNat b)).map Fin.val = digits b n := by
+  rw [List.map_map]
+  conv_rhs => rw [← List.map_id (digits b n)]
+  exact List.map_congr_left fun d hd ↦ Nat.mod_eq_of_lt (digits_lt_base hb hd)
+
+/-- **Short redundant words cover a doubled radix interval.** For `n ≥ 1`, every `z ≤ 2 b ^ n` is
+the base-`b` value, read least significant digit first, of a word of length exactly `n` with digits
+at most `2b`. The upper endpoint `2 b ^ n` is included; for `n = 0` only `z = 0` is the value of a
+word of length `n`. -/
+theorem exists_length_eq_ofDigits_eq_of_le_two_mul_pow {b n z : ℕ} (hn : 0 < n)
+    (hz : z ≤ 2 * b ^ n) :
+    ∃ w : List (Fin (2 * b + 1)), w.length = n ∧ ofDigits b (w.map Fin.val) = z := by
+  induction n, hn using Nat.le_induction generalizing z with
+  | base => exact ⟨[⟨z, by simpa using Nat.lt_succ_of_le hz⟩], rfl, ofDigits_singleton⟩
+  | succ n hn ih =>
+    -- Split off the last digit `z % b`; the quotient `z / b` is at most `2 b ^ n`.
+    obtain ⟨w, hw, hwz⟩ := ih (z := z / b) (Nat.div_le_of_le_mul (hz.trans_eq (by ring)))
+    have hr : z % b < 2 * b + 1 := by
+      rcases Nat.eq_zero_or_pos b with rfl | hb
+      · simp_all
+      · have := Nat.mod_lt z hb
+        omega
+    refine ⟨⟨z % b, hr⟩ :: w, by simp [hw], ?_⟩
+    rw [List.map_cons, ofDigits_cons, hwz, Nat.mod_add_div]
 
 /-- The digit sum of `j + b * y`, for a digit `j < b`, is `j` plus the digit sum of `y`. -/
 theorem sum_digits_add_mul {b j : ℕ} (hj : j < b) (y : ℕ) :
@@ -210,5 +245,17 @@ theorem sub_one_mul_sum_pow_mul_mod_eq_mul_sum_digits_div_mul {b f m t : ℕ}
   simp_rw [hd, mul_comm m d, mul_left_comm _ d t, Nat.mul_mod_mul_left, ← mul_sum,
     mul_left_comm _ d, mul_assoc d m] at h
   exact Nat.eq_of_mul_eq_mul_left hd0 h
+
+-- The endpoint has a redundant most-significant-first representation [4, 0].
+example : ofDigits 2 (([4, 0] : List ℕ).reverse) = 2 * 2 ^ 2 := by decide
+
+-- Positive length matters, even though leading zero digits are allowed.
+example : ¬ ∃ w : List (Fin 5), w.length = 0 ∧ ofDigits 2 (w.map Fin.val) = 2 := by
+  simp
+
+-- Zero has a representation at every positive prescribed length.
+example {n : ℕ} (hn : 0 < n) :
+    ∃ w : List (Fin 5), w.length = n ∧ ofDigits 2 (w.map Fin.val) = 0 :=
+  exists_length_eq_ofDigits_eq_of_le_two_mul_pow (b := 2) hn (Nat.zero_le _)
 
 end Nat

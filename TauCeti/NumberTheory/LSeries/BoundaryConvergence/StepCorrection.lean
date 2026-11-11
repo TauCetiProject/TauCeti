@@ -94,7 +94,7 @@ theorem differentiable_stepCorrectionTerm (a : ℕ → ℂ) (n : ℕ) :
     have hsubst := intervalIntegral_ofReal_cpow_neg_sub_one hn' (v := n + 1) (by positivity)
     simp_rw [hsubst]
     simpa using differentiable_intervalIntegral_mul_cexp_neg_mul (f := fun _ ↦ (1 : ℂ))
-      (a := Real.log n) (b := Real.log (n + 1)) intervalIntegrable_const
+      (a := Real.log n) (b := Real.log (n + 1))
   have hpow : Differentiable ℂ fun z : ℂ ↦ (n : ℂ) ^ (-z - 1) :=
     (differentiable_id.neg.sub_const 1).const_cpow (Or.inl (Nat.cast_ne_zero.mpr hn))
   have h : stepCorrectionTerm a n =

@@ -49,8 +49,6 @@ variable (n : ℕ)
 
 section Scalar
 
-variable [NeZero n]
-
 private lemma mulMap_const_eq (c : ℕ) (hc : 0 < c) (b : Fin n → ℕ) (hb : ∀ i, 0 < b i)
     (p : DecompQuotient (SLnZ n) (SLnZ n)
         (((diagCoset fun _ : Fin n ↦ c).rep : GL (Fin n) ℚ)) ×

@@ -52,7 +52,7 @@ torsion `G`-module `M` and every `i`, then `CohomologicalDimensionLE p H n` impl
 `CohomologicalDimensionLE p G n`. -/
 theorem CohomologicalDimensionLE.of_forall_res_injective {H : Subgroup G}
     (hres : ∀ (M : Type (max u v)) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-      [DistribMulAction G M] [ContinuousSMul G M], IsPPrimaryTorsion p M → ∀ i : ℕ,
+      [DistribMulAction G M] [ContinuousSMul G M], IsAddPGroup p M → ∀ i : ℕ,
       Function.Injective (ContinuousCohomology.res H (ofDiscreteModule ℤ G M) (i + 1)).hom)
     {n : ℕ} (h : CohomologicalDimensionLE.{v} p H n) : CohomologicalDimensionLE.{v} p G n := by
   rw [cohomologicalDimensionLE_iff] at h ⊢
@@ -71,7 +71,7 @@ theorem CohomologicalDimensionLE.of_forall_res_injective {H : Subgroup G}
 every `i`, then the `p`-cohomological dimension of `G` is at most that of `H`. -/
 theorem cohomologicalDimensionAt_le_of_forall_res_injective {H : Subgroup G}
     (hres : ∀ (M : Type (max u v)) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-      [DistribMulAction G M] [ContinuousSMul G M], IsPPrimaryTorsion p M → ∀ i : ℕ,
+      [DistribMulAction G M] [ContinuousSMul G M], IsAddPGroup p M → ∀ i : ℕ,
       Function.Injective (ContinuousCohomology.res H (ofDiscreteModule ℤ G M) (i + 1)).hom) :
     cohomologicalDimensionAt.{v} p G ≤ cohomologicalDimensionAt.{v} p H := by
   induction hcd : cohomologicalDimensionAt.{v} p H using ENat.recTopCoe with

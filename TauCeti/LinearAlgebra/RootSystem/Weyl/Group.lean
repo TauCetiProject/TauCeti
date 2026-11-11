@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Finite.Perm
 public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
 public import TauCeti.LinearAlgebra.RootSystem.HomInvariance
+import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
 
 /-!
 # Permutation actions of Weyl groups
@@ -46,6 +47,9 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
   on the weight space is the identity.
 * `RootPairing.weylGroup.ext` says two Weyl-group elements agreeing on the weight space are
   equal.
+* `RootPairing.weylGroup.eq_one_of_forall_smul_root_eq` says a Weyl-group element fixing every root
+  of a finite anisotropic root pairing over a domain is the identity, whether or not the roots
+  span.
 * `RootPairing.weylGroup.ofIdx_weylGroupToPerm_eq_conj` says that conjugating a simple
   reflection by a Weyl-group element gives the reflection in the image root index.
 * `RootPairing.reflection_weylGroupToPerm_smul` says the reflection in the image `w β` of a root
@@ -270,6 +274,38 @@ theorem weylGroup.eq_one_of_smul_eq_self
     rw [map_one]
     exact LinearEquiv.ext fun x ↦ h x
   exact Subtype.ext (by simpa using hw)
+
+variable {P} in
+/-- A Weyl-group element fixing every root of a finite anisotropic root pairing over a domain is the
+identity. The roots need not span the weight space. -/
+theorem weylGroup.eq_one_of_forall_smul_root_eq [Fintype ι] [IsDomain R] [P.IsAnisotropic]
+    {w : P.weylGroup} (hfix : ∀ i, w • P.root i = P.root i) : w = 1 := by
+  have hidx : ∀ i, (w : P.Aut).indexEquiv i = i := fun i =>
+    P.root.injective (by rw [Equiv.root_indexEquiv_eq_smul]; exact hfix i)
+  have hcor : ∀ i x, P.coroot' i ((w : P.Aut) • x) = P.coroot' i x := fun i x => by
+    have := Equiv.coroot'_weightEquiv (w : P.Aut) i x
+    rw [hidx] at this
+    exact this
+  have hspan : ∀ g ∈ P.weylGroup, ∀ x : M, g • x - x ∈ P.rootSpan R := by
+    intro g hg
+    induction hg using weylGroup.induction with
+    | mem i =>
+      intro x
+      rw [Equiv.reflection_smul, reflection_apply, sub_sub_cancel_left]
+      exact neg_mem (Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩))
+    | one => intro x; simp
+    | mul g h _ _ hg hh =>
+      intro x
+      rw [mul_smul, show g • h • x - x = (g • (h • x) - h • x) + (h • x - x) by abel]
+      exact add_mem (hg _) (hh x)
+  refine weylGroup.eq_one_of_smul_eq_self fun x => ?_
+  have hker : (w : P.Aut) • x - x ∈ LinearMap.ker P.RootForm := by
+    rw [LinearMap.mem_ker]
+    ext z
+    simp [rootForm_apply_apply, map_sub, hcor]
+  rw [Subgroup.smul_def]
+  exact sub_eq_zero.1
+    (Submodule.disjoint_def.1 P.disjoint_rootSpan_ker_rootForm _ (hspan _ w.2 x) hker)
 
 variable {P} in
 /-- Two Weyl-group elements agreeing on the weight space are equal. -/

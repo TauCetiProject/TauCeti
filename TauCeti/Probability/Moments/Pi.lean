@@ -43,7 +43,9 @@ mean by at least `t` with probability at most `Var[f] / (n t²)`.
 * `TauCeti.integrableExpSet_sum_pi` — for a product of probability measures, its
   exponential-integrability domain is the intersection of the coordinate domains;
 * `TauCeti.meas_ge_le_variance_div_card_mul_sq_pi` — the weak law of large numbers in Chebyshev's
-  form, for the average of independent copies of a square-integrable statistic.
+  form, for the average of independent copies of a square-integrable statistic;
+* `TauCeti.measureReal_pi_deviation_le` — its specialization to a statistic with values in
+  `[0, 1]`, whose variance is at most `1 / 4`.
 -/
 
 public section
@@ -149,6 +151,25 @@ theorem meas_ge_le_variance_div_card_mul_sq_pi [Nonempty ι] {f : Ω → ℝ} (h
     field_simp
   have h := meas_ge_le_variance_div_sq hmemLp ht
   rwa [hvar, hmean, div_div] at h
+
+/-- **Weak law of large numbers for a bounded statistic.** For an almost everywhere measurable
+`f : Ω → ℝ` with values almost everywhere in `[0, 1]`, the average of `f` over the `|ι|`
+coordinates of the product measure deviates from its mean by at least `δ` with probability at most
+`1 / (4 |ι| δ²)`: the variance of `f` is at most `1 / 4`. -/
+theorem measureReal_pi_deviation_le [Nonempty ι] {f : Ω → ℝ} (hfm : AEMeasurable f ν)
+    (hf01 : ∀ᵐ x ∂ν, f x ∈ Set.Icc (0 : ℝ) 1) {δ : ℝ} (hδ : 0 < δ) :
+    (Measure.pi fun _ : ι => ν).real
+        {x | δ ≤ |(∑ j, f (x j)) / Fintype.card ι - ∫ a, f a ∂ν|} ≤
+      1 / 4 / (Fintype.card ι * δ ^ 2) := by
+  have hvar : Var[f; ν] ≤ 1 / 4 := by
+    have := variance_le_sq_of_bounded hf01 hfm
+    norm_num at this
+    exact this
+  refine ENNReal.toReal_le_of_le_ofReal (by positivity) ?_
+  refine (meas_ge_le_variance_div_card_mul_sq_pi
+    (memLp_of_bounded hf01 hfm.aestronglyMeasurable 2) hδ).trans
+    (ENNReal.ofReal_le_ofReal ?_)
+  gcongr
 
 end WeakLaw
 

@@ -11,11 +11,15 @@ public import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 public import TauCeti.LinearAlgebra.Span.Basic
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Ideal.AssociatedPrime.Basic
+import Mathlib.Algebra.Module.SpanRankOperations
+import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.RingTheory.Ideal.AssociatedPrime.Finiteness
 import Mathlib.RingTheory.Ideal.Cotangent
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.RingTheory.Nakayama
+import TauCeti.RingTheory.Ideal.Cotangent.Basic
+import TauCeti.RingTheory.Ideal.Cotangent.LinearIndependent
 
 /-!
 # Elements of `𝔪 \ 𝔪²` in a local ring
@@ -37,7 +41,9 @@ of a minimal system of generators of `𝔪`.
   local ring whose maximal ideal is not an associated prime there is a nonzerodivisor in
   `𝔪 \ 𝔪²`;
 * `TauCeti.IsLocalRing.exists_comp_eq_id_of_notMem_sq`: for `x ∈ 𝔪 \ 𝔪²`, the residue field of
-  `R ⧸ (x)` is a direct summand of `𝔪 ⧸ x 𝔪` as an `R ⧸ (x)`-module.
+  `R ⧸ (x)` is a direct summand of `𝔪 ⧸ x 𝔪` as an `R ⧸ (x)`-module;
+* `TauCeti.IsLocalRing.mem_maximalIdeal_of_sum_mul_mem_sq`: a minimal system of generators of `𝔪`
+  is linearly independent modulo `𝔪²`.
 
 ## References
 
@@ -231,5 +237,22 @@ theorem exists_comp_eq_id_of_notMem_sq {x : R} (hxm : x ∈ maximalIdeal R)
   rw [LinearMap.comp_apply, LinearMap.comp_apply, Submodule.mkQ_apply, hi1, hr,
     LinearMap.comp_apply, LinearMap.id_apply, Submodule.mkQ_apply, Ideal.Quotient.mk_eq_mk,
     map_one]
+
+/-- **A minimal system of generators of `𝔪` is linearly independent modulo `𝔪²`.** Let
+`x₁, …, xₙ` generate the maximal ideal `𝔪` of a local ring, with `n` the least number of
+generators of `𝔪`. If `∑ cᵢ xᵢ ∈ 𝔪²`, then every coefficient `cᵢ` lies in `𝔪`. -/
+theorem mem_maximalIdeal_of_sum_mul_mem_sq {n : ℕ} {x : Fin n → R}
+    (hx : span (Set.range x) = maximalIdeal R) (hn : (maximalIdeal R).spanFinrank = n)
+    {c : Fin n → R} (hc : ∑ i, c i * x i ∈ maximalIdeal R ^ 2) (i : Fin n) :
+    c i ∈ maximalIdeal R := by
+  have hxm (i : Fin n) : x i ∈ maximalIdeal R := hx ▸ subset_span ⟨i, rfl⟩
+  -- The classes of the `xᵢ` span the cotangent space, whose dimension is `n`.
+  let w : Fin n → maximalIdeal R := fun i ↦ ⟨x i, hxm i⟩
+  have hli : LinearIndependent (ResidueField R) fun i ↦ (maximalIdeal R).toCotangent (w i) :=
+    linearIndependent_of_top_le_span_of_card_eq_finrank
+      (Ideal.span_range_toCotangent_eq_top hx).ge (by
+        rw [Fintype.card_fin, ← hn, spanFinrank_maximalIdeal_eq_finrank_cotangentSpace_of_fg
+          (hx ▸ Submodule.fg_span (Set.finite_range x))])
+  exact ((maximalIdeal R).linearIndependent_toCotangent_iff w).mp hli c hc i
 
 end TauCeti.IsLocalRing

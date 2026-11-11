@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.CSA
-public import TauCeti.GroupTheory.FreeGroup.MaximalRoot
+public import TauCeti.GroupTheory.FreeGroup.MaximalRoot.Basic
 public import TauCeti.GroupTheory.HNNExtension
 
 /-!

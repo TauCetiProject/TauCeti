@@ -479,8 +479,8 @@ theorem cutColumn_X_mem_toGridRectangle_coveredSquares {x y : GridState n}
     (P : GridCommutationHexagonBetween C.column C.turnRow C.oppositeTurnRow x y) :
     (P.cutColumn, G.X P.cutColumn) ∈ P.toGridRectangleBetween.toGridRectangle.coveredSquares := by
   cases P with
-  | inl P => exact G.column_mem_toGridRectangle_coveredSquares P C.X_column_below
-  | inr P => exact G.next_mem_toGridRectangle_coveredSquares P C.X_next_above
+  | inl P => exact P.mk_mem_toGridRectangle_coveredSquares_of_mem C.X_column_below
+  | inr P => exact P.mk_mem_toGridRectangle_coveredSquares_of_mem C.X_next_above
 
 /-- A commutation hexagon is counted exactly when its underlying rectangle is empty and carries
 exactly one `X`-marking, that of the column the hexagon cuts away. -/

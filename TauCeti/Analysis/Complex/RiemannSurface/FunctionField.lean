@@ -277,7 +277,7 @@ theorem coe_ofMeromorphic : ⇑(ofMeromorphic hh) = sphereMap h :=
 `h` on a punctured neighbourhood of every point. -/
 theorem finitePart_ofMeromorphic_eventuallyEq (x : X) :
     (ofMeromorphic hh).finitePart =ᶠ[𝓝[≠] x] h :=
-  (eventually_sphereMap_eq (hh x)).mono fun _ hy ↦ finitePart_of_eq_coe (by rwa [coe_ofMeromorphic])
+  affineChart_sphereMap_eventuallyEq (hh x)
 
 /-- At a point where `h` is continuous,
 `TauCeti.RiemannSurface.MeromorphicFunction.ofMeromorphic hh` takes the value of `h`. -/

@@ -194,50 +194,7 @@ equivalence `(Fin n → ℂ) ≃L[ℝ] Fin m → ℝ` to an `n`-dimensional real
 theorem isAnalyticSubmanifold_image_setOf_star_eq {n m : ℕ}
     (e : (Fin n → ℂ) ≃L[ℝ] Fin m → ℝ) :
     IsAnalyticSubmanifold n (e '' {z : Fin n → ℂ | star z = z}) := by
-  let σ₀ : Fin 2 × Fin n ≃ Fin (2 * n) := finProdFinEquiv
-  let σ₁ : Fin 2 × Fin n ≃ Fin (2 * n) :=
-    ((Equiv.prodComm (Fin 2) (Fin n)).trans finProdFinEquiv).trans (finCongr (Nat.mul_comm n 2))
-  let τ : Fin (2 * n) ≃ Fin (2 * n) := σ₀.symm.trans σ₁
-  have hσ₀ (i : Fin n) : σ₀ (1, i) = ⟨n + i.val, by omega⟩ := by
-    ext
-    simp [σ₀, finProdFinEquiv]
-    omega
-  have hσ₁ (i : Fin n) : σ₁ (1, i) = ⟨2 * i.val + 1, by omega⟩ := by
-    ext
-    simp [σ₁, finProdFinEquiv]
-    omega
-  have hperm : complexPiEquivRealPi n '' {z : Fin n → ℂ | star z = z} =
-      (fun y : Fin (2 * n) → ℝ ↦ y ∘ τ) ⁻¹'
-        {w : Fin (2 * n) → ℝ | ∀ k : Fin (2 * n), n ≤ k.val → w k = 0} := by
-    ext y
-    rw [ContinuousLinearEquiv.image_eq_preimage_symm]
-    simp only [mem_preimage, mem_ofPred_eq, Function.comp_apply]
-    constructor
-    · intro hy ⟨k, hk⟩ hnk
-      dsimp at hnk
-      let i : Fin n := ⟨k - n, by omega⟩
-      have hk_eq : (⟨k, hk⟩ : Fin (2 * n)) = σ₀ (1, i) := by
-        rw [hσ₀]
-        ext
-        dsimp [i]
-        omega
-      have hτk : τ ⟨k, hk⟩ = ⟨2 * i.val + 1, by omega⟩ := by
-        rw [hk_eq]
-        simpa [τ] using hσ₁ i
-      have him : ((complexPiEquivRealPi n).symm y i).im = 0 := by
-        have := congrArg Complex.im (congrFun hy i)
-        simp only [Pi.star_apply, Complex.star_def, Complex.conj_im] at this
-        linarith
-      rw [complexPiEquivRealPi_symm_apply] at him
-      rwa [hτk]
-    · intro hy
-      ext i
-      rw [Pi.star_apply, Complex.star_def, complexPiEquivRealPi_symm_apply]
-      have hτi : τ (σ₀ (1, i)) = ⟨2 * i.val + 1, by omega⟩ := by simpa [τ] using hσ₁ i
-      have him : y ⟨2 * i.val + 1, by omega⟩ = 0 := by
-        rw [← hτi]
-        exact hy (σ₀ (1, i)) (by rw [hσ₀]; dsimp; omega)
-      apply Complex.ext <;> simp [him]
+  obtain ⟨τ, hperm⟩ := image_complexPiEquivRealPi_setOf_star_eq n
   have hbase :
       IsAnalyticSubmanifold n (complexPiEquivRealPi n '' {z : Fin n → ℂ | star z = z}) := by
     rw [hperm]

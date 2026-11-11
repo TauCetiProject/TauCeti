@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Projective.MinimalResolution.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Projective.FiniteResolution
+public import TauCeti.Algebra.Homology.ModuleCat.Minimal
 
 /-!
 # Bounded minimal free chain resolutions
@@ -71,6 +72,20 @@ theorem isMinimal_iff_forall_range_d_le {M : ModuleCat.{v} R}
       LinearMap.range_comp_of_range_eq_top i.hom haug] at hi
     exact .step hQ i p zero hp hi (ih fun n ↦ by simpa only [d_step_succ] using h (n + 1))
 
+/-- Converting a minimal finite resolution by projective modules to a projective resolution
+preserves minimality of its complex. -/
+theorem IsMinimal.isMinimal_toProjectiveResolution_complex {M : ModuleCat.{v} R}
+    {r : (ExactStructure.abelian (ModuleCat.{v} R)).FiniteResolution P M}
+    (hr : r.IsMinimal) (hP : P ≤ CategoryTheory.isProjective (ModuleCat.{v} R)) :
+    (r.toProjectiveResolution hP).complex.IsMinimal := by
+  rw [ChainComplex.isMinimal_iff_range_d_succ_le_maximalIdeal_smul]
+  intro i
+  simp only [toProjectiveResolution_complex_d, ModuleCat.hom_comp]
+  rw [LinearMap.comp_assoc, LinearMap.range_comp]
+  exact Submodule.map_le_iff_le_comap.mpr <|
+    ((LinearMap.range_comp_le_range _ _).trans (hr.range_d_le i)).trans <|
+      Submodule.smul_top_le_comap_smul_top _ _
+
 end TauCeti.ExactStructure.FiniteResolution
 
 namespace ModuleCat
@@ -85,20 +100,14 @@ theorem exists_projectiveResolution_finite_free_minimal {R : Type u} [CommRing R
     ∃ F : ProjectiveResolution M,
       (∀ i, Module.Finite R (F.complex.X i) ∧ Module.Free R (F.complex.X i)) ∧
       (∀ i, n < i → IsZero (F.complex.X i)) ∧
-      ∀ i, LinearMap.range (F.complex.d (i + 1) i).hom ≤ maximalIdeal R • ⊤ := by
+      F.complex.IsMinimal := by
   obtain ⟨r, hr, hmin⟩ :=
     TauCeti.exists_minimal_finiteProjectiveResolution_of_hasProjectiveDimensionLE hM
   have hP := TauCeti.finiteProjectiveModules_le_categoryTheory_isProjective R
   refine ⟨r.toProjectiveResolution hP, fun i ↦ ?_, fun i hi ↦
-    r.isZero_toProjectiveResolution_X_of_length_lt hP (by omega),
-    fun i ↦ ?_⟩
+    r.isZero_toProjectiveResolution_X_of_length_lt hP (by omega), ?_⟩
   · have := r.finite_toProjectiveResolution_X hP i
     exact ⟨inferInstance, Module.free_of_flat_of_isLocalRing⟩
-  · simp only [TauCeti.ExactStructure.FiniteResolution.toProjectiveResolution_complex_d,
-      ModuleCat.hom_comp]
-    rw [LinearMap.comp_assoc, LinearMap.range_comp]
-    exact Submodule.map_le_iff_le_comap.mpr <|
-      ((LinearMap.range_comp_le_range _ _).trans (hmin.range_d_le i)).trans <|
-        Submodule.smul_top_le_comap_smul_top _ _
+  · exact hmin.isMinimal_toProjectiveResolution_complex hP
 
 end ModuleCat

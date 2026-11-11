@@ -231,11 +231,11 @@ theorem normSubgroup_mono : Monotone F.normSubgroup := fun _ _ h _ ha ↦
 /-- **The layer of the whole group has the whole level `A^G` as its norm subgroup**: it cuts out the
 ground field itself, whose norm to itself is the identity. -/
 @[simp]
-theorem normSubgroup_top : F.normSubgroup (openNormalSubgroupTop G) = ⊤ := by
-  have hV : (NormalLayer.ofOpenNormal (openNormalSubgroupTop G)).top =
-      (NormalLayer.ofOpenNormal (openNormalSubgroupTop G)).ground := by
+theorem normSubgroup_top : F.normSubgroup ⊤ = ⊤ := by
+  have hV : (NormalLayer.ofOpenNormal (⊤ : OpenNormalSubgroup G)).top =
+      (NormalLayer.ofOpenNormal (⊤ : OpenNormalSubgroup G)).ground := by
     rw [NormalLayer.top_ofOpenNormal, NormalLayer.ground_ofOpenNormal]
-    exact OpenSubgroup.toSubgroup_injective (openNormalSubgroupTop_toSubgroup G)
+    exact OpenSubgroup.toSubgroup_injective OpenNormalSubgroup.toSubgroup_top
   rw [normSubgroup, NormalLayer.normSubgroup_eq_top_of_top_eq_ground _ F hV, Submodule.comap_top]
 
 /-- **A norm from the layer of `V` is a norm from every open subgroup containing `V`.** For an open

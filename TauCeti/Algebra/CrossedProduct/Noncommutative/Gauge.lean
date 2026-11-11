@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.CrossedProduct.Noncommutative.Basic
+public import TauCeti.Algebra.CrossedProduct.Noncommutative.Opposite
 public import Mathlib.LinearAlgebra.Basis.SMul
 
 /-!
@@ -19,6 +19,9 @@ its inverse sends `d[g]` to `d b(g)⁻¹[g]`.
 The factors and coefficient algebra may be noncommutative. This comparison makes the
 crossed product attached to a group-extension section independent of that section up to
 algebra isomorphism, while retaining the actual change of basis.
+
+For right-coefficient multiplicities, `opInvGaugeEquiv` compares the opposite-coefficient,
+inverse-factor systems, with gauge coefficient `op (b(g)⁻¹)`.
 
 ## References
 
@@ -92,5 +95,53 @@ theorem gaugeEquiv_symm_basis (g : G) :
   apply (gaugeEquiv c c' b hb hact hfactor).injective
   rw [smul_def, map_mul, gaugeEquiv_inc, gaugeEquiv_basis, ← smul_def, smul_smul]
   simp
+
+/-- The same gauge compares the opposite-coefficient, inverse-factor algebras.
+The new basis element maps to `op (b(g)⁻¹) [g]`, as required for right-coefficient
+multiplicity modules. -/
+noncomputable def opInvGaugeEquiv : Algebra c'.opInv ≃ₐ[k] Algebra c.opInv := by
+  have hinv (d : Dˣ) :
+      (↑(Units.opEquiv.symm (MulOpposite.op d))⁻¹ : Dᵐᵒᵖ) =
+        MulOpposite.op (↑d⁻¹ : D) := by
+    rw [← map_inv, Units.coe_opEquiv_symm, MulOpposite.unop_inv, MulOpposite.unop_op]
+  exact gaugeEquiv c.opInv c'.opInv (fun g ↦ Units.opEquiv.symm (MulOpposite.op (b g)⁻¹))
+    (by simp [hb])
+    (fun g d ↦ by
+      apply MulOpposite.unop_injective
+      simpa only [CrossedSystem.opInv_action, MulOpposite.unop_op,
+        MulOpposite.unop_mul, Units.coe_opEquiv_symm, hinv,
+        MulOpposite.unop_inv, inv_inv, mul_assoc] using hact g d.unop)
+    (fun g h ↦ by
+      have hu : c'.factor g h = b g * Units.map (c.action g).toMonoidHom (b h) *
+          c.factor g h * (b (g * h))⁻¹ := Units.ext (hfactor g h)
+      apply MulOpposite.unop_injective
+      simpa [hinv, mul_assoc] using congrArg (fun a : Dˣ ↦ (↑a⁻¹ : D)) hu)
+
+/-- The opposite-inverse gauge comparison fixes coefficients. -/
+@[simp]
+theorem opInvGaugeEquiv_inc (d : Dᵐᵒᵖ) :
+    opInvGaugeEquiv c c' b hb hact hfactor (inc c'.opInv d) = inc c.opInv d := by
+  simp [opInvGaugeEquiv]
+
+/-- The opposite-inverse gauge comparison uses the opposite inverse gauge unit. -/
+@[simp]
+theorem opInvGaugeEquiv_basis (g : G) :
+    opInvGaugeEquiv c c' b hb hact hfactor (basis c'.opInv g) =
+      MulOpposite.op (↑(b g)⁻¹ : D) • basis c.opInv g := by
+  simp only [opInvGaugeEquiv, gaugeEquiv_basis, Units.coe_opEquiv_symm,
+    MulOpposite.unop_op]
+
+/-- The inverse opposite-inverse gauge comparison fixes coefficients. -/
+@[simp]
+theorem opInvGaugeEquiv_symm_inc (d : Dᵐᵒᵖ) :
+    (opInvGaugeEquiv c c' b hb hact hfactor).symm (inc c.opInv d) = inc c'.opInv d := by
+  simp [opInvGaugeEquiv]
+
+/-- The inverse opposite-inverse gauge comparison uses the opposite gauge unit. -/
+@[simp]
+theorem opInvGaugeEquiv_symm_basis (g : G) :
+    (opInvGaugeEquiv c c' b hb hact hfactor).symm (basis c.opInv g) =
+      MulOpposite.op (b g : D) • basis c'.opInv g := by
+  simp [opInvGaugeEquiv]
 
 end TauCeti.CrossedSystem.Algebra

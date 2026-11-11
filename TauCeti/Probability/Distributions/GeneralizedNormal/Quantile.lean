@@ -90,7 +90,7 @@ theorem quantile_generalizedNormalMeasure (hs : 0 < s) (hp : 0 < p) (hu : u ∈ 
 /-- Generalized normal quantiles vary continuously with interior probability levels. -/
 theorem continuousOn_quantile_generalizedNormalMeasure (hs : 0 < s) (hp : 0 < p) :
     ContinuousOn (generalizedNormalMeasure m s p).quantile (Ioo 0 1) :=
-  Measure.continuousOn_quantile _ (continuous_cdf_generalizedNormalMeasure hs hp)
+  Measure.continuousOn_quantile _
     ((strictMono_cdf_generalizedNormalMeasure hs hp).strictMonoOn _)
 
 /-- Generalized normal quantiles tend to minus infinity as the level decreases to zero. -/

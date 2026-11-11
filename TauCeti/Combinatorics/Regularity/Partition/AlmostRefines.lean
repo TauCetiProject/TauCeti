@@ -12,6 +12,7 @@ import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
+import TauCeti.Combinatorics.Regularity.Partition.Equitabilise
 import TauCeti.Order.Partition.Finpartition
 
 /-!
@@ -93,13 +94,8 @@ uncovered. -/
 theorem IsEquipartition.exists_equipartition_card_eq_almostRefines (hP : P.IsEquipartition)
     {n : ℕ} (hn : n ≠ 0) (hns : n ≤ #s) (hδ : 2 * #P.parts ≤ δ * n) :
     ∃ Q : Finpartition s, Q.IsEquipartition ∧ #Q.parts = n ∧ Q.AlmostRefines P δ := by
-  have hsum : (n - #s % n) * (#s / n) + #s % n * (#s / n + 1) = #s := by
-    rw [tsub_mul, mul_add, ← add_assoc,
-      tsub_add_cancel_of_le (Nat.mul_le_mul_right _ (Nat.mod_lt _ hn.bot_lt).le), mul_one,
-      add_comm, Nat.mod_add_div]
-  refine ⟨P.equitabilise hsum, equitabilise_isEquipartition, ?_, almostRefines_iff.2 ?_⟩
-  · rw [card_parts_equitabilise _ _ (Nat.div_pos hns hn.bot_lt).ne',
-      tsub_add_cancel_of_le (Nat.mod_lt _ hn.bot_lt).le]
+  obtain ⟨a, b, hsum, hcard⟩ := P.exists_card_parts_equitabilise_eq hn hns
+  refine ⟨P.equitabilise hsum, equitabilise_isEquipartition, hcard, almostRefines_iff.2 ?_⟩
   intro A hA
   have hk : 0 < #P.parts := card_pos.2 ⟨A, hA⟩
   -- An equipartition part is large: `#s ≤ 2 * #P.parts * #A`.

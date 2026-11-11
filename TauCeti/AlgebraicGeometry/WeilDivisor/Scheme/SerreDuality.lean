@@ -108,7 +108,7 @@ section Duality
 variable [IsNoetherian X] (hF : IsFunctionField k X.functionField)
 
 variable (hk : IsIntegrallyClosedIn k X.functionField)
-  {ω : Module.Dual k (repartitionSpace k X.functionField)} (hω : ω ≠ 0) {K : SchemeWeilDivisor X}
+  {ω : Module.Dual k (repartitionSpace k X.functionField)} {K : SchemeWeilDivisor X}
   (hK : IsGreatest {E : Divisor k X.functionField | ω ∈ weilDifferentialFiltration E}
     (equivFunctionFieldDivisor hex hdim K))
 
@@ -123,7 +123,7 @@ def cohomologyOneDualEquivCohomologyZero (D : SchemeWeilDivisor X) :
     Module.Dual k (Scheme.Modules.Cohomology (sheaf D) 1) ≃ₗ[k]
       Scheme.Modules.Cohomology (sheaf (K - D)) 0 :=
   (cohomologyOneDualEquivWeilDifferentialFiltration hex hdim hF D).trans <|
-    (riemannRochSpaceEquivWeilDifferentialFiltration hF hk hω hK _).symm.trans <|
+    (riemannRochSpaceEquivWeilDifferentialFiltration hF hk hK _).symm.trans <|
       (LinearEquiv.ofEq _ _ (by rw [map_sub])).trans <|
         (globalSectionsEquivRiemannRochSpace hex hdim (K - D)).symm.trans
           (Scheme.Modules.cohomologyZeroBaseLinearEquiv k X (sheaf (K - D))).symm
@@ -137,7 +137,7 @@ repartition on the left-hand side, so this rule would not be in simp-normal form
 lemma cohomologyOneDualEquivCohomologyZero_symm_apply_repartitionToCohomologyOne
     (D : SchemeWeilDivisor X) (s : Scheme.Modules.Cohomology (sheaf (K - D)) 0)
     (a : repartitionSpace k X.functionField) :
-    (cohomologyOneDualEquivCohomologyZero hex hdim hF hk hω hK D).symm s
+    (cohomologyOneDualEquivCohomologyZero hex hdim hF hk hK D).symm s
         (repartitionToCohomologyOne hex hdim D a) =
       ω (repartitionMul hF (Scheme.rationalFunctionsEquiv ⊤
         ((sheafι (K - D)).app ⊤ (Scheme.Modules.cohomologyZeroEquiv _ s))) a) := by
@@ -150,9 +150,9 @@ theorem cohomologyOneDualEquivCohomologyZero_symm_naturality
     {D E : SchemeWeilDivisor X} (h : D ≤ E)
     (s : Scheme.Modules.Cohomology (sheaf (K - E)) 0)
     (x : Scheme.Modules.Cohomology (sheaf D) 1) :
-    (cohomologyOneDualEquivCohomologyZero hex hdim hF hk hω hK D).symm
+    (cohomologyOneDualEquivCohomologyZero hex hdim hF hk hK D).symm
         (Scheme.Modules.cohomologyMapBaseLinear k X (sheafHomOfLE (sub_le_sub_left h K)) 0 s) x =
-      (cohomologyOneDualEquivCohomologyZero hex hdim hF hk hω hK E).symm s
+      (cohomologyOneDualEquivCohomologyZero hex hdim hF hk hK E).symm s
         (Scheme.Modules.cohomologyMapBaseLinear k X (sheafHomOfLE h) 1 x) := by
   obtain ⟨a, rfl⟩ := repartitionToCohomologyOne_surjective hex hdim D x
   rw [repartitionToCohomologyOne_naturality,
@@ -174,11 +174,11 @@ opposite map on `H⁰` induced by `K - E ≤ K - D`. -/
 theorem cohomologyOneDualEquivCohomologyZero_naturality
     {D E : SchemeWeilDivisor X} (h : D ≤ E)
     (φ : Module.Dual k (Scheme.Modules.Cohomology (sheaf E) 1)) :
-    cohomologyOneDualEquivCohomologyZero hex hdim hF hk hω hK D
+    cohomologyOneDualEquivCohomologyZero hex hdim hF hk hK D
         ((Scheme.Modules.cohomologyMapBaseLinear k X (sheafHomOfLE h) 1).dualMap φ) =
       Scheme.Modules.cohomologyMapBaseLinear k X (sheafHomOfLE (sub_le_sub_left h K)) 0
-        (cohomologyOneDualEquivCohomologyZero hex hdim hF hk hω hK E φ) := by
-  apply (cohomologyOneDualEquivCohomologyZero hex hdim hF hk hω hK D).symm.injective
+        (cohomologyOneDualEquivCohomologyZero hex hdim hF hk hK E φ) := by
+  apply (cohomologyOneDualEquivCohomologyZero hex hdim hF hk hK D).symm.injective
   rw [LinearEquiv.symm_apply_apply]
   ext x
   rw [cohomologyOneDualEquivCohomologyZero_symm_naturality, LinearEquiv.symm_apply_apply]
@@ -204,10 +204,10 @@ theorem finrank_cohomology_one_sheaf_eq_finrank_cohomology_zero_sheaf_sub
     (D : SchemeWeilDivisor X) :
     finrank k (Scheme.Modules.Cohomology (sheaf D) 1) =
       finrank k (Scheme.Modules.Cohomology (sheaf (K - D)) 0) := by
-  obtain ⟨ω, -, hω, hW⟩ := exists_isGreatest_of_divisorClass_eq_canonicalClass hF hk hK
+  obtain ⟨ω, -, -, hW⟩ := exists_isGreatest_of_divisorClass_eq_canonicalClass hF hk hK
   have := finiteDimensional_cohomology_one_sheaf_of_isFunctionField hex hdim hF D
   rw [← Subspace.dual_finrank_eq]
-  exact (cohomologyOneDualEquivCohomologyZero hex hdim hF hk hω hW D).finrank_eq
+  exact (cohomologyOneDualEquivCohomologyZero hex hdim hF hk hW D).finrank_eq
 
 include hex hdim hF hk in
 /-- When `k` is integrally closed in `k(X)`, the first cohomology of `𝒪_X(0)` has dimension the

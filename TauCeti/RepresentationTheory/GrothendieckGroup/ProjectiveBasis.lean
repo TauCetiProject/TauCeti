@@ -191,6 +191,18 @@ theorem isExhaustiveIndecomposableProjectiveFamily_iff :
         ∃ i, Nonempty (↥X.obj ≃ₗ[R] ↥(P i).obj) :=
   (Iff.rfl)
 
+omit [IsArtinianRing R] in
+/-- The class of a subsingleton finitely generated projective module is zero, so it lies in the
+span of the classes of any family. -/
+private theorem mem_span_of_subsingleton (X : (finiteProjectiveModules R).FullSubcategory)
+    (hX : Subsingleton X.obj) :
+    (ExactK0.of X : ExactK0.{u} (finiteProjectiveModulesExactStructure R)) ∈
+      Submodule.span ℤ (Set.range fun i ↦
+        (ExactK0.of (P i) : ExactK0.{u} (finiteProjectiveModulesExactStructure R))) := by
+  convert Submodule.zero_mem _ using 1
+  exact ExactK0.of_eq_zero_of_isZero (IsZero.of_full_of_faithful_of_isZero
+    (finiteProjectiveModules R).ι X (ModuleCat.isZero_of_subsingleton X.obj))
+
 /-- Splitting off one indecomposable summand at a time expresses the class of a finitely generated
 projective module of length at most `n` in terms of the exhaustive family.  Each step replaces the
 module by a complement of an indecomposable summand, whose length is strictly smaller. -/
@@ -200,22 +212,15 @@ private theorem mem_span_of_length_le
       (ExactK0.of X : ExactK0.{u} (finiteProjectiveModulesExactStructure R)) ∈
         Submodule.span ℤ (Set.range fun i ↦
           (ExactK0.of (P i) : ExactK0.{u} (finiteProjectiveModulesExactStructure R))) := by
-  have hzero : ∀ X : (finiteProjectiveModules R).FullSubcategory, Subsingleton X.obj →
-      (ExactK0.of X : ExactK0.{u} (finiteProjectiveModulesExactStructure R)) ∈
-        Submodule.span ℤ (Set.range fun i ↦
-          (ExactK0.of (P i) : ExactK0.{u} (finiteProjectiveModulesExactStructure R))) := by
-    intro X hX
-    convert Submodule.zero_mem _ using 1
-    exact ExactK0.of_eq_zero_of_isZero (IsZero.of_full_of_faithful_of_isZero
-      (finiteProjectiveModules R).ι X (ModuleCat.isZero_of_subsingleton X.obj))
   induction n with
   | zero =>
     intro X hX
-    exact hzero X (Module.length_eq_zero_iff.mp (le_antisymm (by simpa using hX) zero_le))
+    exact mem_span_of_subsingleton P X
+      (Module.length_eq_zero_iff.mp (le_antisymm (by simpa using hX) zero_le))
   | succ n ih =>
     intro X hX
     rcases subsingleton_or_nontrivial (X.obj : Type u) with hsub | hnt
-    · exact hzero X hsub
+    · exact mem_span_of_subsingleton P X hsub
     obtain ⟨T, T', hcompl, hTind⟩ := exists_isCompl_isIndecomposableModule (A := R) (M := X.obj)
     have hTproj : Module.Projective R T :=
       Module.Projective.of_split T.subtype (T.projectionOnto T' hcompl) (by ext x; simp)
@@ -224,26 +229,8 @@ private theorem mem_span_of_length_le
     set XT : (finiteProjectiveModules R).FullSubcategory :=
       ⟨ModuleCat.of R T, finiteProjectiveModules_iff.mpr ⟨inferInstance, hTproj⟩⟩
     set XT' : (finiteProjectiveModules R).FullSubcategory :=
-      ⟨ModuleCat.of R T', finiteProjectiveModules_iff.mpr ⟨inferInstance, hT'proj⟩⟩ with hXT'def
-    have hker : LinearMap.ker (T'.projectionOnto T hcompl.symm) = T := by
-      ext x
-      simp
-    have hex : Function.Exact T.subtype (T'.projectionOnto T hcompl.symm) :=
-      LinearMap.exact_iff.mpr (by rw [hker, Submodule.range_subtype])
-    set f : XT ⟶ X := ObjectProperty.homMk (ModuleCat.ofHom T.subtype)
-    set g : X ⟶ XT' :=
-      ObjectProperty.homMk (ModuleCat.ofHom (T'.projectionOnto T hcompl.symm)) with hgdef
-    have hzeroc : f ≫ g = 0 := by
-      refine ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext fun x ↦ ?_))
-      exact (Submodule.projectionOnto_apply_eq_zero_iff hcompl.symm).mpr x.2
-    have hconf : (finiteProjectiveModulesExactStructure R).Conflation
-        (ShortComplex.mk f g hzeroc) := by
-      rw [finiteProjectiveModulesExactStructure_conflation_iff]
-      apply ModuleCat.shortComplex_shortExact
-      · exact hex
-      · exact T.injective_subtype
-      · exact Submodule.projectionOnto_surjective hcompl.symm
-    have hsum := ExactK0.of_conflation.{u, u, u + 1} hconf
+      ⟨ModuleCat.of R T', finiteProjectiveModules_iff.mpr ⟨inferInstance, hT'proj⟩⟩
+    have hsum := exactK0_of_eq_add_of_isCompl X hcompl
     have hTmem : (ExactK0.of XT : ExactK0.{u} (finiteProjectiveModulesExactStructure R)) ∈
         Submodule.span ℤ (Set.range fun i ↦
           (ExactK0.of (P i) : ExactK0.{u} (finiteProjectiveModulesExactStructure R))) := by

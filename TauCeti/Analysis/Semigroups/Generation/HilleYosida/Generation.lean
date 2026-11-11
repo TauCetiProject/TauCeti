@@ -58,6 +58,8 @@ This proves the Hille--Yosida milestone in Part A of the
 
 public section
 
+open _root_.LinearPMap (yosidaApproximation)
+
 noncomputable section
 
 open Filter NormedSpace

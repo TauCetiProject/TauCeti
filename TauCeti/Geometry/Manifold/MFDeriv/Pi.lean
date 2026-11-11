@@ -27,12 +27,16 @@ These are the finite-product analogues of Mathlib's `mfderiv_fst` and `mfderiv_p
 read forms and vector fields on a product, such as the coordinate time forms of a torus, through
 the factors. The smoothness of the coordinate insertions is `TauCeti.contMDiff_update`.
 
+A map into the product has derivative the product of the derivatives of its components
+(`TauCeti.hasMFDerivAt_pi`, `TauCeti.mfderiv_pi`).
+
 ## Main declarations
 
 * `TauCeti.hasMFDerivAt_apply`, `TauCeti.mfderiv_apply`: the derivative of a coordinate
   projection.
 * `TauCeti.hasMFDerivAt_update`, `TauCeti.mfderiv_update`: the derivative of a coordinate
   insertion.
+* `TauCeti.hasMFDerivAt_pi`, `TauCeti.mfderiv_pi`: the derivative of a map into a product.
 
 ## References
 
@@ -82,6 +86,38 @@ projection `ContinuousLinearMap.proj i`. -/
 theorem mfderiv_apply (i : ι) (x : ∀ i, M i) :
     mfderiv (ModelWithCorners.pi I) (I i) (fun x : ∀ i, M i ↦ x i) x = ContinuousLinearMap.proj i :=
   (hasMFDerivAt_apply i x).mfderiv
+
+section Pi
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H']
+  {J : ModelWithCorners 𝕜 E' H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- A map into a finite product of manifolds has derivative the product of the derivatives of its
+components. -/
+theorem hasMFDerivAt_pi {f : N → ∀ i, M i} {y : N} {f' : ∀ i, TangentSpace J y →L[𝕜] E i}
+    (hf : ∀ i, HasMFDerivAt J (I i) (fun z ↦ f z i) y (f' i)) :
+    HasMFDerivAt J (ModelWithCorners.pi I) f y (ContinuousLinearMap.pi f') := by
+  have hd : MDifferentiableAt J (ModelWithCorners.pi I) f y :=
+    mdifferentiableAt_pi_iff.2 fun i ↦ (hf i).mdifferentiableAt
+  -- Each component of `mfderiv f y` is the derivative of the corresponding component of `f`.
+  have h : mfderiv J (ModelWithCorners.pi I) f y = ContinuousLinearMap.pi f' := by
+    ext v
+    funext i
+    have h := mfderiv_comp (I' := ModelWithCorners.pi I) y
+      (hasMFDerivAt_apply i (f y)).mdifferentiableAt hd
+    rw [mfderiv_apply, Function.comp_def, (hf i).mfderiv] at h
+    exact (DFunLike.congr_fun h v).symm
+  exact h ▸ hd.hasMFDerivAt
+
+/-- The derivative of a map into a finite product of manifolds is the product of the derivatives
+of its components. -/
+theorem mfderiv_pi {f : N → ∀ i, M i} {y : N}
+    (hf : ∀ i, MDifferentiableAt J (I i) (fun z ↦ f z i) y) :
+    mfderiv J (ModelWithCorners.pi I) f y =
+      ContinuousLinearMap.pi fun i ↦ mfderiv J (I i) (fun z ↦ f z i) y :=
+  (hasMFDerivAt_pi fun i ↦ (hf i).hasMFDerivAt).mfderiv
+
+end Pi
 
 variable [DecidableEq ι]
 

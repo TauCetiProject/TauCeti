@@ -320,12 +320,7 @@ theorem isSplitEpi_iff_exists_map_eq_zero_and_app_ne_zero_of_hom_simpleRep_src
       -- same step, at the vertex spaces of `simpleRep`, of `indecProjRep`, or of both.
       change Z.map (arrowPath (default : A))
         (((simpleRepSelfEquiv k src (ψ.app src x))⁻¹ * simpleRepSelfEquiv k src y) • x) = 0
-      have hsm : Z.map (arrowPath (default : A))
-            (((simpleRepSelfEquiv k src (ψ.app src x))⁻¹ * simpleRepSelfEquiv k src y) • x)
-          = ((simpleRepSelfEquiv k src (ψ.app src x))⁻¹ * simpleRepSelfEquiv k src y)
-            • Z.map (arrowPath (default : A)) x := map_smul _ _ _
-      exact hsm.trans ((congrArg (fun z ↦ ((simpleRepSelfEquiv k src (ψ.app src x))⁻¹
-        * simpleRepSelfEquiv k src y) • z) hx).trans (smul_zero _))
+      rw [map_smul, hx, smul_zero]
     · refine kroneckerRep_hom_ext ?_ ((isZero_simpleRep_obj src_ne_tgt.symm).eq_of_src _ _)
       refine (NatTrans.comp_app _ _ _).trans (Eq.trans ?_ (NatTrans.id_app _ _).symm)
       rw [kroneckerHom_app_src]
@@ -335,18 +330,9 @@ theorem isSplitEpi_iff_exists_map_eq_zero_and_app_ne_zero_of_hom_simpleRep_src
       -- `isSplitEpi_iff_exists_map_eq_zero_and_app_ne_zero_of_hom_simpleRep_src`).
       change (ψ.app src) (((simpleRepSelfEquiv k src (ψ.app src x))⁻¹
         * simpleRepSelfEquiv k src y) • x) = y
-      have hsm : (ψ.app src) (((simpleRepSelfEquiv k src (ψ.app src x))⁻¹
-            * simpleRepSelfEquiv k src y) • x)
-          = ((simpleRepSelfEquiv k src (ψ.app src x))⁻¹ * simpleRepSelfEquiv k src y)
-            • (ψ.app src) x := map_smul _ _ _
-      refine (simpleRepSelfEquiv k src).injective
-        ((congrArg (⇑(simpleRepSelfEquiv k src)) hsm).trans ?_)
-      have hsm' : simpleRepSelfEquiv k src
-            (((simpleRepSelfEquiv k src (ψ.app src x))⁻¹ * simpleRepSelfEquiv k src y)
-              • (ψ.app src) x)
-          = ((simpleRepSelfEquiv k src (ψ.app src x))⁻¹ * simpleRepSelfEquiv k src y)
-            • simpleRepSelfEquiv k src ((ψ.app src) x) := map_smul _ _ _
-      refine hsm'.trans ?_
+      refine (simpleRepSelfEquiv k src).injective ?_
+      rw [map_smul]
+      refine (map_smul (simpleRepSelfEquiv k src) _ _).trans ?_
       rw [smul_eq_mul]
       field_simp
 
@@ -432,24 +418,17 @@ theorem isRightAlmostSplit_kroneckerARSequence_g :
       refine LinearMap.mem_ker.mpr ?_
       have h0 : ψ.app src x = 0 := hker0 x (LinearMap.mem_ker.mp hx)
       exact (congrArg (⇑(simpleRepSelfEquiv k src)) h0).trans (map_zero _)
-    -- A functional killing the kernel of the arrow factors through it: descend it to the
-    -- quotient by that kernel, read that quotient as the range of the arrow, and extend the
-    -- resulting functional on the range to the whole target vertex space.
+    -- A functional killing the kernel of the arrow lies in its dual annihilator, which is
+    -- the range of the arrow's dual map. Thus it equals θ composed with the arrow for some
+    -- functional θ on the target vertex space.
     obtain ⟨θ, hθ⟩ : ∃ θ : W.obj tgt →ₗ[k] k, ∀ x,
         θ ((W.map (arrowPath (default : A))).hom x)
           = ((simpleRepSelfEquiv k src).toLinearMap ∘ₗ (ψ.app src).hom) x := by
-      set u := (W.map (arrowPath (default : A))).hom
-      set φ := (simpleRepSelfEquiv k src).toLinearMap ∘ₗ (ψ.app src).hom
-      obtain ⟨θ, hθ⟩ :=
-        ((LinearMap.ker u).liftQ φ hker ∘ₗ u.quotKerEquivRange.symm.toLinearMap).exists_extend
-      refine ⟨θ, fun x ↦ ?_⟩
-      -- `hθ` evaluated at `u x`: the descended functional sends the class of `x` back to `φ x`,
-      -- because `u.quotKerEquivRange.symm ⟨u x, _⟩` is the class of `x` and `liftQ` inverts `mkQ`.
-      have h := LinearMap.congr_fun hθ ⟨u x, LinearMap.mem_range_self u x⟩
-      rw [LinearMap.comp_apply, LinearMap.comp_apply, Submodule.subtype_apply,
-        LinearEquiv.coe_coe, LinearMap.quotKerEquivRange_symm_apply_image, Submodule.mkQ_apply,
-        Submodule.liftQ_apply] at h
-      exact h
+      obtain ⟨θ, hθ⟩ : _ ∈ LinearMap.range (W.map (arrowPath (default : A))).hom.dualMap := by
+        rw [LinearMap.range_dualMap_eq_dualAnnihilator_ker, Submodule.mem_dualAnnihilator]
+        exact fun x hx ↦ hker hx
+      exact ⟨θ, fun x ↦ by
+        simpa only [LinearMap.dualMap_apply] using LinearMap.congr_fun hθ x⟩
     refine ⟨kroneckerHom
       (ModuleCat.ofHom ((kroneckerProjSrcEquiv k A).symm.toLinearMap ∘ₗ
         ((simpleRepSelfEquiv k src).toLinearMap ∘ₗ (ψ.app src).hom)))

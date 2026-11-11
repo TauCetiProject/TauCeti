@@ -12,7 +12,7 @@ public import TauCeti.Probability.Distributions.YuleSimon.Basic
 import Mathlib.Analysis.PSeries
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
-import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Probability.Moments.IntegrableExpMul
 
 /-!

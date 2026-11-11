@@ -582,6 +582,68 @@ private theorem exists_insert_congr_of_not_straddle
       · simpa using hcol
       · simpa using seifertMatrix_insert_mid_self u v i ε hG1
 
+/-- The row and the column of the new loop `β` in the matrix of `exists_insert_congr_of_straddle`,
+after the change of basis `T` that replaces `α` by `α + δ + β`: each is zero except at the piece `δ`
+of `γ`. The row of `β` has the entry `-ε` at `δ` if `ε = 1` and `0` otherwise; the column of `β` has
+the entry `-ε` at `δ` if `ε = -1` and `0` otherwise. -/
+private theorem insert_straddle_row_col_inr_one {γ : (u ++ v).seifertLoops}
+    (G : (u ++ v).seifertLoops ⊕ Fin 2 ≃ (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops)
+    (T : Matrix ((u ++ v).seifertLoops ⊕ Fin 2) ((u ++ v).seifertLoops ⊕ Fin 2) ℤ)
+    (hT : T = 1 + vecMulVec (Pi.single (.inl γ) 1) (Pi.single (.inr 0) 1 + Pi.single (.inr 1) 1))
+    (hα : (G (.inl γ)).1 = (insShift u.length γ.1.1, u.length))
+    (hG0 : (G (.inr 0)).1 = (u.length + 1, insShift u.length γ.1.2))
+    (hG1 : (G (.inr 1)).1 = (u.length, u.length + 1))
+    (hαβ : G (.inl γ) ≠ G (.inr 1)) (hδβ : G (.inr 0) ≠ G (.inr 1))
+    (hmid : ∀ d, d ≠ γ →
+      (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix (G (.inr 1)) (G (.inl d)) = 0 ∧
+        (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix (G (.inl d)) (G (.inr 1)) = 0) :
+    (T * (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix.submatrix G G * Tᵀ) (.inr 1) =
+      Pi.single (.inr 0) (if (ε : ℤ) = 1 then -(ε : ℤ) else 0) ∧
+    (T * (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix.submatrix G G * Tᵀ).col (.inr 1) =
+      Pi.single (.inr 0) (if (ε : ℤ) = 1 then 0 else -(ε : ℤ)) := by
+  subst hT
+  refine ⟨?_, ?_⟩
+  · ext (d | k)
+    · simp only [one_add_vecMulVec_single_add_single_mul_mul_transpose_apply, submatrix_apply,
+        reduceCtorEq, false_and, ite_false, add_zero, Sum.inl.injEq]
+      by_cases hd : d = γ
+      · subst hd
+        rw [seifertMatrix_insert_mid_apply u v i ε hG1 hαβ,
+          seifertMatrix_insert_mid_apply u v i ε hG1 hδβ, seifertMatrix_insert_mid_self u v i ε hG1,
+          hα, hG0]
+        rcases Int.units_eq_one_or ε with rfl | rfl <;> simp
+      · simp [hd, (hmid d hd).1]
+    · fin_cases k
+      · simp only [Fin.zero_eta, one_add_vecMulVec_single_add_single_mul_mul_transpose_apply,
+          submatrix_apply, reduceCtorEq, false_and, ite_false, add_zero]
+        rw [seifertMatrix_insert_mid_apply u v i ε hG1 hδβ, hG0]
+        rcases Int.units_eq_one_or ε with rfl | rfl <;> simp
+      · simp only [Fin.mk_one, one_add_vecMulVec_single_add_single_mul_mul_transpose_apply,
+          submatrix_apply, reduceCtorEq, and_false, ite_false, add_zero,
+          seifertMatrix_insert_mid_self u v i ε hG1]
+        simp
+  · ext (d | k)
+    · simp only [col_apply, one_add_vecMulVec_single_add_single_mul_mul_transpose_apply,
+        submatrix_apply, reduceCtorEq, and_false, ite_false, add_zero, Sum.inl.injEq]
+      by_cases hd : d = γ
+      · subst hd
+        rw [seifertMatrix_insert_apply_mid u v i ε hG1 hαβ,
+          seifertMatrix_insert_apply_mid u v i ε hG1 hδβ, seifertMatrix_insert_mid_self u v i ε hG1,
+          hα, hG0]
+        rcases Int.units_eq_one_or ε with rfl | rfl <;> simp
+      · simp [hd, (hmid d hd).2]
+    · fin_cases k
+      · simp only [Fin.zero_eta, col_apply,
+          one_add_vecMulVec_single_add_single_mul_mul_transpose_apply,
+          submatrix_apply, reduceCtorEq, and_false, ite_false, add_zero]
+        rw [seifertMatrix_insert_apply_mid u v i ε hG1 hδβ, hG0]
+        rcases Int.units_eq_one_or ε with rfl | rfl <;> simp
+      · simp only [Fin.mk_one, col_apply,
+          one_add_vecMulVec_single_add_single_mul_mul_transpose_apply, submatrix_apply,
+          reduceCtorEq, and_false, ite_false, add_zero,
+          seifertMatrix_insert_mid_self u v i ε hG1]
+        simp
+
 /-- If the loop `γ` of level `i` runs across the insertion point, replacing its cut-short image
 `α` by `α + δ + β`, the sum of its three pieces, gives back the Seifert matrix of `u ++ v`, and the
 two new loops `δ` and `β` meet only each other. -/
@@ -637,48 +699,8 @@ private theorem exists_insert_congr_of_straddle {γ : (u ++ v).seifertLoops}
         (hGd c hc) + (hmid c hc).2
     · simp only [hc, hd, false_and, ite_false, add_zero]
       exact seifertMatrix_insert_moved u v i ε (hGd c hc) (hGd d hd)
-  -- the row of `β`: it meets the two pieces of `γ` next to it with opposite signs
-  · ext (d | k)
-    · simp only [one_add_vecMulVec_single_add_single_mul_mul_transpose_apply, submatrix_apply,
-        reduceCtorEq, false_and, ite_false, add_zero, Sum.inl.injEq]
-      by_cases hd : d = γ
-      · subst hd
-        rw [seifertMatrix_insert_mid_apply u v i ε hG1 hαβ,
-          seifertMatrix_insert_mid_apply u v i ε hG1 hδβ, seifertMatrix_insert_mid_self u v i ε hG1,
-          hα, hG0]
-        rcases Int.units_eq_one_or ε with rfl | rfl <;> simp
-      · simp [hd, (hmid d hd).1]
-    · fin_cases k
-      · simp only [Fin.zero_eta, one_add_vecMulVec_single_add_single_mul_mul_transpose_apply,
-          submatrix_apply, reduceCtorEq, false_and, ite_false, add_zero]
-        rw [seifertMatrix_insert_mid_apply u v i ε hG1 hδβ, hG0]
-        rcases Int.units_eq_one_or ε with rfl | rfl <;> simp
-      · simp only [Fin.mk_one, one_add_vecMulVec_single_add_single_mul_mul_transpose_apply,
-          submatrix_apply, reduceCtorEq, and_false, ite_false, add_zero,
-          seifertMatrix_insert_mid_self u v i ε hG1]
-        simp
-  -- the column of `β`, likewise
-  · ext (d | k)
-    · simp only [col_apply, one_add_vecMulVec_single_add_single_mul_mul_transpose_apply,
-        submatrix_apply, reduceCtorEq, and_false, ite_false, add_zero, Sum.inl.injEq]
-      by_cases hd : d = γ
-      · subst hd
-        rw [seifertMatrix_insert_apply_mid u v i ε hG1 hαβ,
-          seifertMatrix_insert_apply_mid u v i ε hG1 hδβ, seifertMatrix_insert_mid_self u v i ε hG1,
-          hα, hG0]
-        rcases Int.units_eq_one_or ε with rfl | rfl <;> simp
-      · simp [hd, (hmid d hd).2]
-    · fin_cases k
-      · simp only [Fin.zero_eta, col_apply,
-          one_add_vecMulVec_single_add_single_mul_mul_transpose_apply,
-          submatrix_apply, reduceCtorEq, and_false, ite_false, add_zero]
-        rw [seifertMatrix_insert_apply_mid u v i ε hG1 hδβ, hG0]
-        rcases Int.units_eq_one_or ε with rfl | rfl <;> simp
-      · simp only [Fin.mk_one, col_apply,
-          one_add_vecMulVec_single_add_single_mul_mul_transpose_apply, submatrix_apply,
-          reduceCtorEq, and_false, ite_false, add_zero,
-          seifertMatrix_insert_mid_self u v i ε hG1]
-        simp
+  · exact (insert_straddle_row_col_inr_one u v i ε G _ rfl hα hG0 hG1 hαβ hδβ hmid).1
+  · exact (insert_straddle_row_col_inr_one u v i ε G _ rfl hα hG0 hG1 hαβ hδβ hmid).2
 
 /-- The outcome of the comparison for one insertion: after matching the loops by `G` and changing
 basis by `T`, the matrix restricts to the Seifert matrix of `u ++ v` and the new loop `inr 1`

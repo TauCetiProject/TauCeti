@@ -40,6 +40,10 @@ theorem from arrow families to simple graphs.
   adjacency arrow family.
 * `SimpleGraph.reachable_induce_iff`: two vertices of a vertex set `S` are reachable in the
   subgraph induced on `S` exactly when some walk between them stays in `S`.
+* `SimpleGraph.reachableAvoiding_singleton_adjHom_iff`: avoiding one vertex along the adjacency
+  arrow family is witnessed by a simple-graph walk whose support avoids that vertex.
+* `TauCeti.ReachableAvoiding.reachable`: avoiding vertices still implies ordinary simple-graph
+  reachability.
 * `SimpleGraph.reachable_induce_compl_iff`: reachability after deleting a set `X` of vertices is
   reachability along the adjacency arrow family avoiding `X`.
 -/
@@ -250,6 +254,23 @@ theorem reachableAvoiding_adjHom_iff {X : Set V} :
     ReachableAvoiding G.AdjHom X s t ↔ ∃ p : G.Walk s t, ∀ v ∈ p.support, v ∉ X :=
   ⟨fun h ↦ let ⟨q, hq⟩ := reachableAvoiding_def.1 h; ⟨q.toWalk, by simpa using hq⟩,
     fun ⟨p, hp⟩ ↦ reachableAvoiding_def.2 ⟨p.toArrowWalk, by simpa using hp⟩⟩
+
+/-- Avoiding one vertex along the adjacency arrow family is the existence of a simple-graph walk
+whose support avoids that vertex. -/
+theorem reachableAvoiding_singleton_adjHom_iff {x : V} :
+    ReachableAvoiding G.AdjHom {x} s t ↔ ∃ p : G.Walk s t, x ∉ p.support := by
+  rw [reachableAvoiding_adjHom_iff]
+  constructor
+  · rintro ⟨p, hp⟩
+    exact ⟨p, fun hx ↦ hp x hx rfl⟩
+  · rintro ⟨p, hp⟩
+    exact ⟨p, fun v hv hvx ↦ hp (hvx ▸ hv)⟩
+
+/-- Reachability while avoiding vertices implies ordinary simple-graph reachability. -/
+theorem _root_.TauCeti.ReachableAvoiding.reachable {X : Set V}
+    (h : ReachableAvoiding G.AdjHom X s t) : G.Reachable s t := by
+  obtain ⟨p, -⟩ := reachableAvoiding_adjHom_iff.mp h
+  exact ⟨p⟩
 
 /-- Reachability after deleting a set `X` of vertices, in the subgraph induced on its complement,
 is reachability along the adjacency arrow family avoiding `X`. -/

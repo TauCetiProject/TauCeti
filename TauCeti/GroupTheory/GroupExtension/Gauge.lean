@@ -78,6 +78,13 @@ theorem gauge_sectionDiff (σ τ : S.Section) : σ.gauge (sectionDiff τ σ) = �
   intro g
   simp
 
+/-- The difference of two normalized sections is normalized. -/
+@[simp]
+theorem sectionDiff_one (σ τ : S.Section) (hσ : σ 1 = 1) (hτ : τ 1 = 1) :
+    sectionDiff σ τ 1 = 1 := by
+  apply S.inl_injective
+  simp [hσ, hτ]
+
 /-- Changing the section conjugates each kernel automorphism by the gauge value. -/
 theorem conjAct_gauge (σ : S.Section) (b : G → M) (g : G) (m : M) :
     S.conjAct (σ.gauge b g) m = b g * S.conjAct (σ g) m * (b g)⁻¹ := by

@@ -32,14 +32,36 @@ noncomputable section
 
 namespace TauCeti.CharacterModule
 
-/-- A character of the units modulo `2^(n+3)` detects complex conjugation and has kernel of
-order at most two. Its value on `5` has order `2^(n+1)`. -/
-theorem exists_character_units_two_pow (n : ℕ) :
+/-- A character of the units modulo `2^(n+3)` taking the value `1 / 2^(n+1)` at `5` has kernel of
+order at most two. -/
+private theorem card_ker_le_two_of_apply_unitFive (n : ℕ)
+    (χ : Additive (ZMod (2 ^ (n + 3)))ˣ →+ AddCircle (1 : ℚ))
+    (hχu : χ (Additive.ofMul (ZMod.unitFive (n := n + 3))) =
+      ((1 / 2 ^ (n + 1) : ℚ) : AddCircle (1 : ℚ))) : Nat.card χ.ker ≤ 2 := by
+  -- The image-order bound and the kernel/image formula give the index-two bound.
+  have hcard : Nat.card (Additive (ZMod (2 ^ (n + 3)))ˣ) = 2 * 2 ^ (n + 1) := by
+    rw [Nat.card_eq_fintype_card, Fintype.card_additive, ZMod.card_units_eq_totient,
+      Nat.totient_prime_pow Nat.prime_two (by omega)]
+    simp [pow_succ, Nat.mul_comm]
+  have hrange : 2 ^ (n + 1) ≤ Nat.card χ.range := by
+    have hmem : χ (Additive.ofMul ZMod.unitFive) ∈ χ.range := ⟨_, rfl⟩
+    have hdvd := χ.range.addOrderOf_dvd_natCard hmem
+    have hord : addOrderOf ((1 / 2 ^ (n + 1) : ℚ) : AddCircle (1 : ℚ)) = 2 ^ (n + 1) := by
+      simpa only [Nat.cast_pow, Nat.cast_ofNat] using
+        AddCircle.addOrderOf_period_div_of_ne_zero (1 : ℚ) (n := 2 ^ (n + 1)) (by positivity)
+    rw [hχu, hord] at hdvd
+    exact Nat.le_of_dvd Nat.card_pos hdvd
+  have hmul := AddSubgroup.card_ker_mul_card_range χ
+  rw [hcard] at hmul
+  have hpos : 0 < 2 ^ (n + 1) := by positivity
+  nlinarith
+
+/-- Existence of a character of the units modulo `2^(n+3)` with the prescribed value at `5` and
+nonzero value at `-1`. -/
+private theorem exists_character_apply_unitFive_apply_neg_one_ne_zero (n : ℕ) :
     ∃ χ : Additive (ZMod (2 ^ (n + 3)))ˣ →+ AddCircle (1 : ℚ),
       χ (Additive.ofMul (ZMod.unitFive (n := n + 3))) =
-          ((1 / 2 ^ (n + 1) : ℚ) : AddCircle (1 : ℚ)) ∧
-      χ (Additive.ofMul (-1)) ≠ 0 ∧ Nat.card χ.ker ≤ 2 := by
-  -- The value at five forces a cyclic image of order at least half the unit group.
+          ((1 / 2 ^ (n + 1) : ℚ) : AddCircle (1 : ℚ)) ∧ χ (Additive.ofMul (-1)) ≠ 0 := by
   let u : (ZMod (2 ^ (n + 3)))ˣ := ZMod.unitFive
   have hu : addOrderOf (Additive.ofMul u) = 2 ^ (n + 1) := by
     rw [addOrderOf_ofMul_eq_orderOf]
@@ -81,23 +103,16 @@ theorem exists_character_units_two_pow (n : ℕ) :
       rw [hz, addOrderOf_zero] at hord
       omega
     · exact h
-  -- The image-order bound and the kernel/image formula give the index-two bound.
-  have hcard : Nat.card (Additive (ZMod (2 ^ (n + 3)))ˣ) = 2 * 2 ^ (n + 1) := by
-    rw [Nat.card_eq_fintype_card, Fintype.card_additive, ZMod.card_units_eq_totient,
-      Nat.totient_prime_pow Nat.prime_two (by omega)]
-    simp [pow_succ, Nat.mul_comm]
-  have hrange : 2 ^ (n + 1) ≤ Nat.card χ.range := by
-    have hmem : χ (Additive.ofMul u) ∈ χ.range := ⟨_, rfl⟩
-    have hdvd := χ.range.addOrderOf_dvd_natCard hmem
-    have hord : addOrderOf ((1 / 2 ^ (n + 1) : ℚ) : AddCircle (1 : ℚ)) = 2 ^ (n + 1) := by
-      simpa only [Nat.cast_pow, Nat.cast_ofNat] using
-        AddCircle.addOrderOf_period_div_of_ne_zero (1 : ℚ) (n := 2 ^ (n + 1)) (by positivity)
-    rw [hχu, hord] at hdvd
-    exact Nat.le_of_dvd Nat.card_pos hdvd
-  refine ⟨χ, hχu, hχneg, ?_⟩
-  have hmul := AddSubgroup.card_ker_mul_card_range χ
-  rw [hcard] at hmul
-  have hpos : 0 < 2 ^ (n + 1) := by positivity
-  nlinarith
+  exact ⟨χ, hχu, hχneg⟩
+
+/-- A character of the units modulo `2^(n+3)` detects complex conjugation and has kernel of
+order at most two. Its value on `5` has order `2^(n+1)`. -/
+theorem exists_character_units_two_pow (n : ℕ) :
+    ∃ χ : Additive (ZMod (2 ^ (n + 3)))ˣ →+ AddCircle (1 : ℚ),
+      χ (Additive.ofMul (ZMod.unitFive (n := n + 3))) =
+          ((1 / 2 ^ (n + 1) : ℚ) : AddCircle (1 : ℚ)) ∧
+      χ (Additive.ofMul (-1)) ≠ 0 ∧ Nat.card χ.ker ≤ 2 := by
+  obtain ⟨χ, hχu, hχneg⟩ := exists_character_apply_unitFive_apply_neg_one_ne_zero n
+  exact ⟨χ, hχu, hχneg, card_ker_le_two_of_apply_unitFive n χ hχu⟩
 
 end TauCeti.CharacterModule

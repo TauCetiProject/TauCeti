@@ -108,4 +108,22 @@ theorem heatCauchyPotentialBCF_of_nonpos {t : ℝ} (ht : t ≤ 0) :
   ext g x
   exact heatCauchyPotential_of_nonpos g ht x
 
+/-- The heat operators on bounded continuous functions satisfy the semigroup law at
+nonnegative times. Strong continuity at zero requires uniformly continuous data. -/
+theorem heatCauchyPotentialBCF_add {s t : ℝ} (hs : 0 ≤ s) (ht : 0 ≤ t) :
+    heatCauchyPotentialBCF (E := E) (F := F) (s + t) =
+      (heatCauchyPotentialBCF s).comp (heatCauchyPotentialBCF t) := by
+  rcases hs.eq_or_lt with rfl | hs
+  · simp
+  rcases ht.eq_or_lt with rfl | ht
+  · simp
+  ext g x
+  simp only [ContinuousLinearMap.comp_apply]
+  rw [coe_heatCauchyPotentialBCF_of_pos (add_pos hs ht),
+    coe_heatCauchyPotentialBCF_of_pos hs, coe_heatCauchyPotentialBCF_of_pos ht,
+    ← heatKernel_convolution_heatKernel hs ht]
+  exact congrFun (convolution_lsmul_assoc_of_integrable_of_ae_norm_le
+    (integrable_heatKernel hs) (integrable_heatKernel ht) g.continuous.aestronglyMeasurable
+    (ae_of_all _ g.norm_coe_le_norm)) x
+
 end TauCeti

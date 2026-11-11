@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.TotalComplexSymmetry
 public import Mathlib.CategoryTheory.GradedObject.Monoidal
 public import TauCeti.Algebra.Homology.ComplexShape.Signs
-public import TauCeti.Algebra.Homology.Embedding.DownNatSucc
+public import TauCeti.Algebra.Homology.Embedding.DownNatAdd
 public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Basic
 public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 
@@ -238,7 +238,7 @@ in degree `Q`. -/
 namespace HomologicalComplex₂
 
 open HomologicalComplex
-open ComplexShape (embeddingDownNatSucc embeddingDownNatSucc_f)
+open ComplexShape (embeddingDownNatAdd embeddingDownNatAdd_f)
 
 section Preadditive
 
@@ -344,15 +344,17 @@ private lemma d₂_dropRowZeroX_succ (p q n : ℕ) :
 /-- The projection killing row `0`, as a chain map out of the total complex restricted to the
 degrees `≥ 1`. -/
 private noncomputable def dropRowZeroAux :
-    (K.total (ComplexShape.down ℕ)).restriction embeddingDownNatSucc ⟶
+    (K.total (ComplexShape.down ℕ)).restriction (embeddingDownNatAdd 1) ⟶
       (rowsSucc K).total (ComplexShape.down ℕ) where
-  f n := dropRowZeroX K n
+  f n := ((K.total (ComplexShape.down ℕ)).restrictionXIso (embeddingDownNatAdd 1)
+    (embeddingDownNatAdd_f 1 n)).hom ≫ dropRowZeroX K n
   comm' := by
     rintro _ n rfl
-    refine total.hom_ext _ fun p q h ↦ ?_
     -- The differential of the restriction is that of the total complex in the shifted degrees.
-    dsimp only [HomologicalComplex.restriction]
-    simp only [embeddingDownNatSucc_f] at h ⊢
+    rw [restriction_d_eq _ _ (embeddingDownNatAdd_f 1 (n + 1)) (embeddingDownNatAdd_f 1 n)]
+    simp only [Category.assoc, Iso.inv_hom_id_assoc]
+    congr 1
+    refine total.hom_ext _ fun p q h ↦ ?_
     rcases q with _ | q
     · simp only [ιTotal_dropRowZeroX_zero_assoc, zero_comp, total_d, Preadditive.add_comp,
         Preadditive.comp_add, ι_D₁_assoc, ι_D₂_assoc, d₁_dropRowZeroX_zero,
@@ -361,9 +363,9 @@ private noncomputable def dropRowZeroAux :
         Preadditive.comp_add, ι_D₁_assoc, ι_D₂_assoc, ι_D₁, ι_D₂, d₁_dropRowZeroX_succ,
         d₂_dropRowZeroX_succ]
 
--- Every predecessor of a degree in the image of `embeddingDownNatSucc` is again in the image.
-private lemma hasLift_dropRowZeroAux : embeddingDownNatSucc.HasLift (dropRowZeroAux K) :=
-  fun j hj ↦ (hj.2 (j + 1) (ComplexShape.down_mk _ _ rfl)).elim
+-- Every predecessor of a degree in the image of `embeddingDownNatAdd 1` is again in the image.
+private lemma hasLift_dropRowZeroAux : (embeddingDownNatAdd 1).HasLift (dropRowZeroAux K) :=
+  fun j hj ↦ (hj.2 (j + 1) (ComplexShape.down_mk _ _ (by simp))).elim
 
 /-- The retraction of the total complex onto row `0` in degree `n`. -/
 private noncomputable def rowZeroπX (n : ℕ) : (K.total (ComplexShape.down ℕ)).X n ⟶ (K.X n).X 0 :=
@@ -408,16 +410,15 @@ variable [HasZeroObject C]
 degree higher. -/
 noncomputable def dropRowZero :
     K.total (ComplexShape.down ℕ) ⟶
-      ((rowsSucc K).total (ComplexShape.down ℕ)).extend embeddingDownNatSucc :=
-  embeddingDownNatSucc.liftExtend (dropRowZeroAux K) (hasLift_dropRowZeroAux K)
+      ((rowsSucc K).total (ComplexShape.down ℕ)).extend (embeddingDownNatAdd 1) :=
+  (embeddingDownNatAdd 1).liftExtend (dropRowZeroAux K) (hasLift_dropRowZeroAux K)
 
 private lemma dropRowZero_f_succ (n : ℕ) :
     (dropRowZero K).f (n + 1) =
-      dropRowZeroX K n ≫ (((rowsSucc K).total (ComplexShape.down ℕ)).extendXIso embeddingDownNatSucc
-        (embeddingDownNatSucc_f n)).inv := by
-  rw [dropRowZero, embeddingDownNatSucc.liftExtend_f _ _ (embeddingDownNatSucc_f n)]
-  -- The restriction isomorphism is an `eqToHom` between definitionally equal objects.
-  exact Category.id_comp _
+      dropRowZeroX K n ≫ (((rowsSucc K).total (ComplexShape.down ℕ)).extendXIso
+        (embeddingDownNatAdd 1) (embeddingDownNatAdd_f 1 n)).inv := by
+  rw [dropRowZero, (embeddingDownNatAdd 1).liftExtend_f _ _ (embeddingDownNatAdd_f 1 n)]
+  simp [dropRowZeroAux]
 
 /-- The projection killing row `0` vanishes on the summands of row `0`. -/
 @[reassoc (attr := simp)]
@@ -433,8 +434,8 @@ degree `n + 1` to the same summand of the total complex of `rowsSucc K` in degre
 lemma ιTotal_dropRowZero_f_succ (p q n : ℕ) (h) :
     K.ιTotal (ComplexShape.down ℕ) p (q + 1) (n + 1) h ≫ (dropRowZero K).f (n + 1) =
       (rowsSucc K).ιTotal (ComplexShape.down ℕ) p q n (by simp at h ⊢; omega) ≫
-        (((rowsSucc K).total (ComplexShape.down ℕ)).extendXIso embeddingDownNatSucc
-          (embeddingDownNatSucc_f n)).inv := by
+        (((rowsSucc K).total (ComplexShape.down ℕ)).extendXIso (embeddingDownNatAdd 1)
+          (embeddingDownNatAdd_f 1 n)).inv := by
   simp [dropRowZero_f_succ]
 
 @[reassoc (attr := simp)]
@@ -470,8 +471,8 @@ private noncomputable def rowZeroShortComplexXSplitting (n : ℕ) :
         simp }
   | n + 1 =>
     { r := rowZeroπX K (n + 1)
-      s := (((rowsSucc K).total (ComplexShape.down ℕ)).extendXIso embeddingDownNatSucc
-        (embeddingDownNatSucc_f n)).hom ≫
+      s := (((rowsSucc K).total (ComplexShape.down ℕ)).extendXIso (embeddingDownNatAdd 1)
+        (embeddingDownNatAdd_f 1 n)).hom ≫
         dropRowZeroSectionX K n
       f_r := by simp
       s_g := by simp [dropRowZero_f_succ]
@@ -507,7 +508,7 @@ private noncomputable def rowZeroShortComplexMap :
     rowZeroShortComplex K ⟶ rowZeroShortComplex L where
   τ₁ := ((eval C (ComplexShape.down ℕ) 0).mapHomologicalComplex _).map φ
   τ₂ := total.map φ (ComplexShape.down ℕ)
-  τ₃ := extendMap (total.map (rowsSuccMap φ) (ComplexShape.down ℕ)) embeddingDownNatSucc
+  τ₃ := extendMap (total.map (rowsSuccMap φ) (ComplexShape.down ℕ)) (embeddingDownNatAdd 1)
   comm₁₂ := by
     ext n
     simp
@@ -516,7 +517,7 @@ private noncomputable def rowZeroShortComplexMap :
     rcases n with _ | n
     · exact (isZero_extend_X _ _ 0 fun _ ↦ by simp).eq_of_tgt _ _
     · simp only [HomologicalComplex.comp_f, dropRowZero_f_succ,
-        extendMap_f _ embeddingDownNatSucc (embeddingDownNatSucc_f n), Category.assoc,
+        extendMap_f _ (embeddingDownNatAdd 1) (embeddingDownNatAdd_f 1 n), Category.assoc,
         Iso.inv_hom_id_assoc]
       rw [dropRowZeroX_naturality_assoc]
 
@@ -564,15 +565,17 @@ private lemma total_map_aux (Q : ℕ) :
     · refine isIso_homologyMap_τ₂ (rowZeroShortComplexMap φ) (rowZeroShortComplex_shortExact K)
         (rowZeroShortComplex_shortExact L) m ?_ inferInstance ?_ fun _ _ ↦ inferInstance
       · rintro i rfl
-        exact (epi_homologyMap_extendMap_iff _ (embeddingDownNatSucc_f m)).2 (hepi m (by omega))
+        exact (epi_homologyMap_extendMap_iff _ (embeddingDownNatAdd_f 1 m)).2 (hepi m (by omega))
       · rcases m with _ | m
         · exact isIso_homologyMap_extendMap_of_forall_ne _ fun _ ↦ by simp
         · have := ih₁ m (by omega)
           rw [← quasiIsoAt_iff_isIso_homologyMap] at this ⊢
-          exact (quasiIsoAt_extendMap_iff _ embeddingDownNatSucc (embeddingDownNatSucc_f m)).2 this
+          exact (quasiIsoAt_extendMap_iff _ (embeddingDownNatAdd 1)
+            (embeddingDownNatAdd_f 1 m)).2 this
     · exact epi_homologyMap_τ₂ (rowZeroShortComplexMap φ) (rowZeroShortComplex_shortExact K)
         (rowZeroShortComplex_shortExact L) (Q + 1) inferInstance
-        ((epi_homologyMap_extendMap_iff _ (embeddingDownNatSucc_f Q)).2 ih₂) fun _ _ ↦ inferInstance
+        ((epi_homologyMap_extendMap_iff _ (embeddingDownNatAdd_f 1 Q)).2 ih₂)
+        fun _ _ ↦ inferInstance
 
 /-- **A map of first-quadrant bicomplexes which is a quasi-isomorphism on every row induces a
 quasi-isomorphism of total complexes.** Here the row `q` of a bicomplex `K` is the complex

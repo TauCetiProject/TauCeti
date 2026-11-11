@@ -86,6 +86,20 @@ section DimensionBound
 variable [CompleteSpace E] [FiniteDimensional ℝ E] [IsManifold I 2 M] [IsManifold J 2 N]
   {n : ℕ∞ω} {k : ℕ}
 
+/-- The tangent image of a horizontal map, viewed in the contact hyperplane, is isotropic for the
+Levi form. -/
+theorem IsHorizontalMap.le_orthogonalBilin [IsManifold I (n + 1) M]
+    (hD : IsContactDistribution I n D) (hn : 1 ≤ n) (hf : IsHorizontalMap J D f) {y : N}
+    (hfy : ContMDiffAt J I 2 f y) :
+    (LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype ≤
+      ((LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype).orthogonalBilin
+        (distributionLeviForm D (f y)) := by
+  have hk : finrank ℝ E - 1 + 1 = finrank ℝ E := by
+    have := hD.finrank_add_one (f y)
+    omega
+  rintro ⟨_, hu⟩ ⟨v, rfl⟩ ⟨_, hu'⟩ ⟨w, rfl⟩
+  exact hf.distributionLeviForm_eq_zero hD.isContMDiffDistribution hk hn hfy w v
+
 /-- **Isotropic maps into a contact manifold have at most half the dimension of the contact
 hyperplanes.** If `D` is a `C^n` contact structure, with `1 ≤ n`, on a manifold of dimension
 `2 m + 1`, and `f` is horizontal for `D`, that is isotropic, of class `C²` at `y` and with
@@ -95,14 +109,10 @@ theorem IsHorizontalMap.two_mul_finrank_add_one_le [IsManifold I (n + 1) M]
     (hfy : ContMDiffAt J I 2 f y) (hinj : Injective (mfderiv J I f y)) :
     2 * finrank ℝ E' + 1 ≤ finrank ℝ E := by
   have : FiniteDimensional ℝ (TangentSpace I (f y)) := inferInstanceAs (FiniteDimensional ℝ E)
-  have hk : finrank ℝ E - 1 + 1 = finrank ℝ E := by
-    have := hD.finrank_add_one (f y)
-    omega
   -- The tangent image, as a subspace of the contact hyperplane.
   set W := (LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype
-  have hW : ∀ u ∈ W, ∀ u' ∈ W, distributionLeviForm D (f y) u u' = 0 := by
-    rintro ⟨_, hu⟩ ⟨v, rfl⟩ ⟨_, hu'⟩ ⟨w, rfl⟩
-    exact hf.distributionLeviForm_eq_zero hD.isContMDiffDistribution hk hn hfy v w
+  have hW : ∀ u ∈ W, ∀ u' ∈ W, distributionLeviForm D (f y) u u' = 0 :=
+    fun u hu u' hu' ↦ hf.le_orthogonalBilin hD hn hfy hu' u hu
   have hle := LinearMap.two_mul_finrank_le_finrank_of_apply_eq_zero_of_injective
     (hD.bijective_distributionLeviForm (f y)).injective (hD.finrank_quotient (f y)) hW
   have hWf : finrank ℝ W = finrank ℝ E' := by

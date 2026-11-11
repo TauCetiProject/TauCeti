@@ -42,6 +42,18 @@ minimal-rank transform `Polynomial.colemanD` then agrees with every bounded one
 (`Polynomial.colemanD_eq_colemanDBounded`). The bound `m` is irrelevant once it bounds the
 degree of `B` (`Polynomial.colemanDBounded_of_natDegree_le`).
 
+Evaluating the transform at a scalar `t` gives the resultant over `R` of `reflect n P` and
+`1 - t B` (`Polynomial.eval_colemanDBounded`). For a polynomial `Q` with `Q(0) = 1` and invertible
+leading coefficient, and `c` the inverse of that coefficient, the polynomial `B = 1 - c Q*` built
+from the reversal `Q* = Q.reverse` vanishes at `0` and sends every inverse root of `Q` to `1`.
+Accordingly `D(B, Q) = (1 - T) ^ deg Q` (`Polynomial.colemanDSeries_one_sub_C_mul_reverse_self`),
+while the value at `T = 1` of the transform of any `F` is the resultant of the monic polynomial
+`c Q` and `F` (`Polynomial.eval_one_colemanDBounded_one_sub_C_mul_reflect`), a unit exactly when
+`Q` and `F` are coprime (`Polynomial.isUnit_eval_one_colemanDBounded_one_sub_C_mul_reverse_iff`).
+So if a Fredholm determinant factors as `Q S`, its transform along `B` is `(1 - T) ^ deg Q` times
+the transform of `S`. For a polynomial `S` with `S(0) = 1` the latter is a unit at `T = 1` exactly
+when `Q` and `S` are coprime: a coprime polynomial factor becomes a zero of order `deg Q` at one.
+
 When `B(0) = 0`, the `k`-th coefficient of `D_(n,m)(B, P)` only involves the coefficients of `P`
 of index at most `k m` (`Polynomial.coeff_colemanDBounded_congr`): in the Leibniz expansion of
 the Sylvester matrix, a term contributing to `Tᵏ` moves exactly `k` of the first `n` columns down,
@@ -69,6 +81,13 @@ determinants of polynomials in compact operators.
 * `Polynomial.colemanDBounded_X_left`, `Polynomial.colemanDBounded_zero_left`,
   `Polynomial.colemanDBounded_one_right`: the values `D(T, P) = P`, `D(0, P) = 1` and
   `D(B, 1) = (1 - B(0) T) ^ n`.
+* `Polynomial.eval_colemanDBounded`: the value at `t` is `Res_(n,m)(reflect n P, 1 - t B)`.
+* `Polynomial.colemanDBounded_one_sub_C_mul_reflect_self`: `D_(n,n)(1 - c P*, P) = (1 - T) ^ n`
+  for the reversal `P* = reflect n P`.
+* `Polynomial.eval_one_colemanDBounded_one_sub_C_mul_reflect`: the value at `T = 1` of
+  `D_(n,d)(1 - c Q*, F)` is `Res_(d,n)(c Q, F)` for `Q* = reflect d Q`.
+* `Polynomial.isUnit_eval_one_colemanDBounded_one_sub_C_mul_reverse_iff`: for `c` inverting the
+  leading coefficient of `Q`, that value is a unit exactly when `Q` and `F` are coprime.
 * `Polynomial.coeff_prod_sylvester_colemanDBounded`: the terms of the Leibniz expansion of the
   Sylvester matrix defining the transform when `B(0) = 0`.
 * `Polynomial.coeff_colemanDBounded_congr`: locality of the coefficients in `P` when `B(0) = 0`.
@@ -76,11 +95,13 @@ determinants of polynomials in compact operators.
   `Polynomial.coeff_colemanDSeries_eq_coeff_colemanDBounded`, `Polynomial.coeff_colemanDSeries`,
   `Polynomial.colemanDSeries_coe`, `Polynomial.colemanDSeries_mul` and
   `Polynomial.continuous_coeff_colemanDSeries`.
+* `Polynomial.colemanDSeries_one_sub_C_mul_reverse_self`: `D(1 - c Q*, Q) = (1 - T) ^ deg Q` when
+  `Q(0) = 1` and `c` inverts the leading coefficient of `Q`.
 
 ## References
 
 * R. Coleman, *p-adic Banach spaces and families of modular forms*, Invent. Math. **127** (1997),
-  417–479, Appendix A3.
+  417–479, Appendices A3–A4.
 -/
 
 public section
@@ -214,18 +235,24 @@ theorem natDegree_colemanDBounded_le (B P : R[X]) (n m : ℕ) :
   rw [colemanDBounded, resultant]
   simpa [Fin.sum_univ_add] using key
 
+/-- The value of Coleman's transform at `t` is the resultant over `R` of the reversal of `P` and
+`1 - t B`, with the same degree bounds. -/
+theorem eval_colemanDBounded (B P : R[X]) (n m : ℕ) (t : R) :
+    (colemanDBounded B P n m).eval t = resultant (P.reflect n) (1 - C t * B) n m := by
+  -- `simp` cannot rewrite the arguments of `resultant`, whose degree bounds are `optParam`s
+  -- depending on them, so the evaluations at `T = t` are computed separately
+  have hC : (evalRingHom t).comp C = RingHom.id R := by ext; simp
+  have hf : ((P.reflect n).map C).map (evalRingHom t) = P.reflect n := by
+    simp [Polynomial.map_map, hC]
+  have hg : (1 - C X * B.map C).map (evalRingHom t) = 1 - C t * B := by
+    simp [Polynomial.map_map, hC]
+  rw [← coe_evalRingHom, colemanDBounded, ← resultant_map_map, hf, hg]
+
 /-- Coleman's transform has constant coefficient one. -/
 @[simp]
 theorem coeff_zero_colemanDBounded (hP0 : P.coeff 0 = 1) (B : R[X]) (n m : ℕ) :
     (colemanDBounded B P n m).coeff 0 = 1 := by
-  -- `simp` cannot rewrite the arguments of `resultant`, whose degree bounds are `optParam`s
-  -- depending on them, so the evaluations at `T = 0` are computed separately
-  have hC : (evalRingHom (0 : R)).comp C = RingHom.id R := by ext; simp
-  have hf : ((P.reflect n).map C).map (evalRingHom 0) = P.reflect n := by
-    simp [Polynomial.map_map, hC]
-  have hg : (1 - C X * B.map C).map (evalRingHom (0 : R)) = 1 := by simp
-  rw [coeff_zero_eq_eval_zero, ← coe_evalRingHom, colemanDBounded, ← resultant_map_map, hf, hg,
-    resultant_one_right]
+  rw [coeff_zero_eq_eval_zero, eval_colemanDBounded, C_0, zero_mul, sub_zero, resultant_one_right]
   simp [coeff_reflect, hP0]
 
 /-- With `B = T`, Coleman's transform returns `P`: the eigenvalues are unchanged. -/
@@ -273,6 +300,62 @@ theorem colemanDBounded_prod_one_sub_C_mul_X {ι : Type*} (s : Finset ι) (α : 
       colemanDBounded_one_sub_C_mul_X hB, ih]
     exact (natDegree_prod_le _ _).trans
       (by simpa using Finset.sum_le_sum fun i _ ↦ natDegree_one_sub_C_mul_X_le (α i))
+
+/-- Along `B = 1 - c P*`, where `P* = reflect n P` is the reversal of `P` in its rank `n`,
+Coleman's transform of `P` is `(1 - T) ^ n`: if `P = ∏ (1 - αᵢ T)`, then `P* = ∏ (X - αᵢ)` and
+`B(αᵢ) = 1` for every `i`. No hypothesis on `c` is needed. -/
+theorem colemanDBounded_one_sub_C_mul_reflect_self (hP : P.natDegree ≤ n) (hP0 : P.coeff 0 = 1)
+    (c : R) : colemanDBounded (1 - C c * P.reflect n) P n n = (1 - X) ^ n := by
+  -- the kernel `1 - T B(X)` is `1 - T` plus a multiple of `P*` of degree zero in `X`
+  have h : 1 - C X * (1 - C c * P.reflect n).map C =
+      C (1 - X) + (P.reflect n).map C * C (C c * X) := by
+    simp only [Polynomial.map_sub, Polynomial.map_one, Polynomial.map_mul, map_C, C_sub, C_1,
+      C_mul]
+    ring
+  rw [colemanDBounded, h, resultant_add_mul_right _ _ _ _ _ (by rw [natDegree_C, zero_add])
+    (natDegree_map_reflect_le_of_natDegree_le C hP), resultant_C_right, coeff_map,
+    coeff_reflect_self, hP0, C_1, one_pow, one_mul]
+
+/-- Along `B = 1 - c Q*`, where `Q* = reflect d Q`, the value at `T = 1` of Coleman's transform of
+`F` is the resultant of `c Q` and `F`. If `c Q = ∏ (T - rᵢ)` and `F = ∏ (1 - βⱼ T)` have degrees
+`d` and `n`, then `1 - B = c Q* = ∏ (1 - rᵢ X)` and both sides are `∏ᵢ ∏ⱼ (1 - rᵢ βⱼ)`. -/
+theorem eval_one_colemanDBounded_one_sub_C_mul_reflect (c : R) (F Q : R[X]) (n d : ℕ) :
+    (colemanDBounded (1 - C c * Q.reflect d) F n d).eval 1 = resultant (C c * Q) F d n := by
+  rw [eval_colemanDBounded, C_1, one_mul, sub_sub_cancel, resultant_C_mul_right,
+    resultant_reflect, resultant_comm F Q, resultant_C_mul_left]
+  simp [mul_comm n d, ← mul_assoc, ← mul_pow]
+
+section RieszColeman
+
+variable {Q F : R[X]} {c : R}
+
+/-- If `c` inverts the leading coefficient of `Q`, then `1 - c Q*` vanishes at `0`, since the
+constant coefficient of the reversal `Q*` is the leading coefficient of `Q`. -/
+theorem coeff_zero_one_sub_C_mul_reverse (hc : c * Q.leadingCoeff = 1) :
+    (1 - C c * Q.reverse).coeff 0 = 0 := by
+  simp [coeff_zero_reverse, hc]
+
+/-- The polynomial `1 - c Q*` has degree at most that of `Q`. -/
+theorem natDegree_one_sub_C_mul_reverse_le (c : R) (Q : R[X]) :
+    (1 - C c * Q.reverse).natDegree ≤ Q.natDegree :=
+  (natDegree_sub_le _ _).trans (max_le (by simp)
+    ((natDegree_C_mul_le _ _).trans (reverse_natDegree_le Q)))
+
+/-- Let `c` invert the leading coefficient of `Q`. Along `B = 1 - c Q*`, the value at `T = 1` of
+Coleman's transform of a polynomial `F` of degree at most `n` is a unit exactly when `Q` and `F`
+are coprime. This is the polynomial step of Coleman's Appendix A4, in which a coprime factor `Q` of
+a Fredholm determinant becomes a zero at `T = 1` along `1 - lc(Q)⁻¹ Q*`. -/
+theorem isUnit_eval_one_colemanDBounded_one_sub_C_mul_reverse_iff
+    (hc : c * Q.leadingCoeff = 1) (hF : F.natDegree ≤ n) :
+    IsUnit ((colemanDBounded (1 - C c * Q.reverse) F n Q.natDegree).eval 1) ↔ IsCoprime Q F := by
+  have hq : (C c * Q).Monic := monic_C_mul_of_mul_leadingCoeff_eq_one hc
+  have hd : (C c * Q).natDegree = Q.natDegree :=
+    natDegree_C_mul_eq_of_mul_eq_one (by rw [mul_comm]; exact hc)
+  rw [reverse, eval_one_colemanDBounded_one_sub_C_mul_reflect, ← hd, hq.resultant_of_le hF,
+    isUnit_resultant_iff_isCoprime hq,
+    isCoprime_mul_unit_left_left (isUnit_C.2 (IsUnit.of_mul_eq_one _ hc))]
+
+end RieszColeman
 
 /-- An entry of the Sylvester matrix defining Coleman's transform `D_(n,m)(B, P)` with `B(0) = 0`,
 in row `i` and column `x`, inside the band where it can be nonzero, is a monomial in `T`. In the
@@ -513,6 +596,17 @@ theorem colemanDSeries_zero_left (F : PowerSeries R) : (0 : R[X]).colemanDSeries
 theorem colemanDSeries_one_right (hB0 : B.coeff 0 = 0) : B.colemanDSeries 1 = 1 := by
   rw [← Polynomial.coe_one, colemanDSeries_coe hB0, colemanD_def, natDegree_one,
     colemanDBounded_one_right le_rfl, pow_zero]
+
+/-- Let `Q(0) = 1` and let `c` invert the leading coefficient of `Q`, so that `B = 1 - c Q*`
+vanishes at `0`. Coleman's transform of `Q` along `B` is `(1 - T) ^ deg Q`: the polynomial `B`
+sends every inverse root of `Q` to `1`. -/
+theorem colemanDSeries_one_sub_C_mul_reverse_self {Q : R[X]} {c : R} (hQ0 : Q.coeff 0 = 1)
+    (hc : c * Q.leadingCoeff = 1) :
+    colemanDSeries (1 - C c * Q.reverse) Q = (1 - PowerSeries.X) ^ Q.natDegree := by
+  rw [colemanDSeries_coe_of_natDegree_le (coeff_zero_one_sub_C_mul_reverse hc) le_rfl,
+    ← colemanDBounded_of_natDegree_le (natDegree_one_sub_C_mul_reverse_le c Q) hQ0, reverse,
+    colemanDBounded_one_sub_C_mul_reflect_self le_rfl hQ0]
+  simp
 
 open scoped PowerSeries.WithPiTopology in
 /-- Each coefficient of Coleman's transform is a continuous function of `F` for the topology of
