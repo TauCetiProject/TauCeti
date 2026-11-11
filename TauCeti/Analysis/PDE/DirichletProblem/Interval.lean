@@ -66,11 +66,23 @@ values `g₀` and `g₁`, written in terms of `G = ∫_{x₀}^x f + F`: the flux
 def intervalDirichletFluxConst (x₀ x₁ g₀ g₁ : ℝ) (G a : ℝ → ℝ) : ℝ :=
   (g₁ - g₀ + ∫ t in Ioo x₀ x₁, (a t)⁻¹ * G t) / ∫ t in Ioo x₀ x₁, (a t)⁻¹
 
+/-- The defining formula of `intervalDirichletFluxConst`. -/
+theorem intervalDirichletFluxConst_def (x₀ x₁ g₀ g₁ : ℝ) (G a : ℝ → ℝ) :
+    intervalDirichletFluxConst x₀ x₁ g₀ g₁ G a =
+      (g₁ - g₀ + ∫ t in Ioo x₀ x₁, (a t)⁻¹ * G t) / ∫ t in Ioo x₀ x₁, (a t)⁻¹ :=
+  (rfl)
+
 /-- The derivative `(k - G) / a` of the solution of the linear problem `-(a u' + F)' = f` on
 `(x₀, x₁)` with endpoint values `g₀` and `g₁`, where `G = ∫_{x₀}^x f + F` and `k` is
 `intervalDirichletFluxConst x₀ x₁ g₀ g₁ G a`. -/
 def intervalDirichletSlope (x₀ x₁ g₀ g₁ : ℝ) (G a : ℝ → ℝ) (t : ℝ) : ℝ :=
   (a t)⁻¹ * (intervalDirichletFluxConst x₀ x₁ g₀ g₁ G a - G t)
+
+/-- The defining formula of `intervalDirichletSlope`. -/
+theorem intervalDirichletSlope_def (x₀ x₁ g₀ g₁ : ℝ) (G a : ℝ → ℝ) (t : ℝ) :
+    intervalDirichletSlope x₀ x₁ g₀ g₁ G a t =
+      (a t)⁻¹ * (intervalDirichletFluxConst x₀ x₁ g₀ g₁ G a - G t) :=
+  (rfl)
 
 /-- For `λ ≤ a ≤ M` the flux constant is bounded by `M / (x₁ - x₀) (|g₁ - g₀| + ‖G‖₁ / λ)`. -/
 theorem abs_intervalDirichletFluxConst_le (hx : x₀ < x₁) (hlam : 0 < lam) (g₀ g₁ : ℝ)
