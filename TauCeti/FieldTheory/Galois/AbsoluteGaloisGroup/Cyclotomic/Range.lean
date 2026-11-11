@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Characte
 public import TauCeti.NumberTheory.Padics.PrincipalUnits
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Basic
+import TauCeti.NumberTheory.Cyclotomic.CyclotomicCharacter
 import TauCeti.NumberTheory.Cyclotomic.Irreducible
 
 /-!
@@ -21,10 +22,10 @@ character `χ = localCyclotomicCharacter p K`.
   `Gal(K^alg/K)` on the `p ^ n`-th roots of unity. So when `p` is invertible in `K`, the image of
   `χ` lies in the principal unit group `U^(n) = 1 + p ^ n ℤ_p` exactly when `K` contains a
   primitive `p ^ n`-th root of unity.
-* **A square root of `-2`.** If `2 ≠ 0` in `K` and `-2` is a square in `K`, every value of the
-  `2`-adic character is `1` or `3` modulo `8`: a square root of `-2` in the algebraic closure is
+* **A square root of `-2`.** If `-2` is a square in `K`, every value of the `2`-adic character is
+  `1` or `3` modulo `8`. When `2 ≠ 0` in `K`, a square root of `-2` in the algebraic closure is
   `ξ + ξ ^ 3` for a primitive eighth root of unity `ξ`, and it is negated by the automorphisms
-  acting on `ξ` by the exponents `5` and `7`.
+  acting on `ξ` by the exponents `5` and `7`; in characteristic `2` the character is trivial.
 * **Infinitude over a finite extension of `ℚ_p`.** For `K` finite over `ℚ_p`, the image of `χ` is
   infinite. If it had `m` elements, every `p`-power root of unity would have at most `m`
   conjugates over `K`, hence degree at most `[K : ℚ_p] · m` over `ℚ_p`. This contradicts the
@@ -42,8 +43,7 @@ subgroups of `ℤ₂ˣ`, determine the image of `χ` in each branch of the marke
 * `TauCeti.range_localCyclotomicCharacter_le_unitsPrincipal_iff`: if `p` is invertible in `K`,
   the image lies in `U^(n)` if and only if `μ_{p ^ n} ⊆ K`.
 * `TauCeti.toZModPow_three_localCyclotomicCharacter_eq_one_or_eq_three`: if `-2` is a square in
-  `K` and `2 ≠ 0` in `K`, every value of the `2`-adic cyclotomic character is `1` or `3` modulo
-  `8`.
+  `K`, every value of the `2`-adic cyclotomic character is `1` or `3` modulo `8`.
 * `TauCeti.isClosed_range_localCyclotomicCharacter`: the image is closed, since the absolute
   Galois group is compact.
 * `TauCeti.infinite_range_localCyclotomicCharacter`: the image is infinite when `K` is a finite
@@ -134,14 +134,28 @@ theorem range_localCyclotomicCharacter_le_unitsPrincipal_iff [NeZero (p : K)] (n
   rw [IsScalarTower.algebraMap_apply K (perfectClosure K (AlgebraicClosure K)), hζ]
   exact hξ
 
-/-- **The cyclotomic character of a field containing `√-2`.** If `2 ≠ 0` in `K` and `s ^ 2 = -2`
-for some `s ∈ K`, every value of the `2`-adic cyclotomic character of `K` is `1` or `3` modulo `8`.
-Equivalently, `σ ζ = ζ` or `σ ζ = ζ ^ 3` for every primitive eighth root of unity `ζ` of the
-algebraic closure. -/
-theorem toZModPow_three_localCyclotomicCharacter_eq_one_or_eq_three [NeZero (2 : K)] {s : K}
+/-- **The cyclotomic character of a field containing `√-2`.** If `s ^ 2 = -2` for some `s ∈ K`,
+every value of the `2`-adic cyclotomic character of `K` is `1` or `3` modulo `8`. Equivalently,
+`σ ζ = ζ` or `σ ζ = ζ ^ 3` for every primitive eighth root of unity `ζ` of the algebraic closure.
+In characteristic `2` the algebraic closure has no primitive `2`-nd root of unity, so Mathlib's
+cyclotomic character is the trivial character there and the statement holds with the value `1`. -/
+theorem toZModPow_three_localCyclotomicCharacter_eq_one_or_eq_three {s : K}
     (hs : s ^ 2 = -2) (σ : Field.absoluteGaloisGroup K) :
     PadicInt.toZModPow 3 (localCyclotomicCharacter 2 K σ : ℤ_[2]) = 1 ∨
       PadicInt.toZModPow 3 (localCyclotomicCharacter 2 K σ : ℤ_[2]) = 3 := by
+  rcases eq_or_ne (2 : K) 0 with hK2 | hK2
+  · -- In characteristic `2` there is no primitive square root of unity: the character is trivial.
+    have hH : ¬ ∀ i : ℕ, ∃ ζ : AlgebraicClosure K, IsPrimitiveRoot ζ (2 ^ i) := by
+      intro H
+      obtain ⟨ζ, hζ⟩ := H 1
+      have hz2 : (2 : AlgebraicClosure K) = 0 := by
+        rw [← map_ofNat (algebraMap K (AlgebraicClosure K)) 2, hK2, map_zero]
+      exact hζ.neZero'.out (by rw [Nat.cast_pow, Nat.cast_ofNat, hz2, zero_pow one_ne_zero])
+    have hχ : (localCyclotomicCharacter 2 K σ : ℤ_[2]) = 1 := by
+      simp [localCyclotomicCharacter_apply,
+        cyclotomicCharacter_eq_one_of_not_forall_isPrimitiveRoot 2 hH]
+    exact Or.inl (by rw [hχ, map_one])
+  have : NeZero (2 : K) := ⟨hK2⟩
   have h2 : (2 : AlgebraicClosure K) ≠ 0 := by
     rw [← map_ofNat (algebraMap K (AlgebraicClosure K)) 2]
     exact (_root_.map_ne_zero _).2 (NeZero.ne 2)

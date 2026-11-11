@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Calculus.Deriv.MeanValue
 public import Mathlib.Analysis.Convex.Deriv
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.Topology.Order.MonotoneConvergence
-public import TauCeti.Analysis.Calculus.IteratedDerivWithin
+public import TauCeti.Analysis.Calculus.IteratedDeriv.Within
 import TauCeti.Topology.Order.MonotoneConvergence
 
 /-!
@@ -271,7 +271,7 @@ lemma hasDerivAt_iteratedDerivWithin_succ
     HasDerivAt (iteratedDerivWithin k f (Ici 0))
       (iteratedDerivWithin (k + 1) f (Ici 0) t) t :=
   hcm.contDiffOn.hasDerivAt_iteratedDerivWithin (mod_cast ENat.natCast_lt_top k)
-    (uniqueDiffOn_Ici 0) (Ici_mem_nhds ht)
+    (Ici_mem_nhds ht)
 
 /-- Completely monotone functions are closed under addition. -/
 lemma add (hf : IsCompletelyMonotone f) (hg : IsCompletelyMonotone g) :

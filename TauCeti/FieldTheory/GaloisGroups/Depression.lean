@@ -174,15 +174,15 @@ theorem hasGaloisLabel_comp_X_add_C_iff {f : F[X]} {t : F} {n : ℕ}
     have hsep := separable_comp_X_add_C_iff.mp h.separable
     have hn : f.natDegree = n := hdeg ▸ h.natDegree_eq
     subst hn
-    obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f hsep
-    refine HasGaloisLabel.mk hsep rfl e ?_
+    obtain ⟨e⟩ := nonempty_rootSet_equiv_fin hsep (SplittingField.splits f)
+    refine HasGaloisLabel.mk hsep e ?_
     rw [← key]
     exact h.transitiveGroupLabel _
   · intro h
     have hn := h.natDegree_eq
     subst hn
-    obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f h.separable
-    refine HasGaloisLabel.mk (separable_comp_X_add_C_iff.mpr h.separable) hdeg (ε.trans e) ?_
+    obtain ⟨e⟩ := nonempty_rootSet_equiv_fin h.separable (SplittingField.splits f)
+    refine HasGaloisLabel.mk (separable_comp_X_add_C_iff.mpr h.separable) (ε.trans e) ?_
     rw [key]
     exact h.transitiveGroupLabel e
 

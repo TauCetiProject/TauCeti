@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.EMetricSpace.BoundedVariation
 import Mathlib.Algebra.Order.Group.Pointwise.Interval
 public import Mathlib.Topology.Subpath
+public import TauCeti.Topology.Homotopy.Path
 
 /-!
 # Total variation of paths
@@ -33,11 +34,6 @@ open scoped unitInterval ENNReal
 namespace Path
 
 variable {X : Type*} [TopologicalSpace X] {x y z : X}
-
-/-- The function underlying a subpath is composition with the affine parameter map. -/
-@[simp]
-theorem coe_subpath (γ : Path x y) (s t : I) :
-    ⇑(γ.subpath s t) = γ ∘ Icc.convexComb s t := (rfl)
 
 variable [WeakPseudoEMetricSpace X]
 

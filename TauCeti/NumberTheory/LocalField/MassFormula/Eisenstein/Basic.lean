@@ -126,8 +126,8 @@ theorem exists_isRoot_adjoin_eq_top_of_eisenstein {f : 𝒪[K][X]} (hf : f.IsEis
       (x := y) L.val.injective).mp hx
   have : Module.IsTorsionFree 𝒪[K] L := Module.IsTorsionFree.trans K
   have hassoc : Associated (minpoly 𝒪[K] y) f :=
-    associated_minpoly_of_eisenstein_isRoot y f hf (by
-      simpa only [IsRoot, eval_map, ← aeval_def] using hy)
+    hf.associated_minpoly hf.isUnit_leadingCoeff <| by
+      simpa only [IsRoot, eval_map, ← aeval_def] using hy
   have hf0 : f ≠ 0 := by
     rintro rfl
     exact hf.leading (by simp)
@@ -137,7 +137,7 @@ theorem exists_isRoot_adjoin_eq_top_of_eisenstein {f : 𝒪[K][X]} (hf : f.IsEis
   -- Fix the integer-ring algebra explicitly to avoid searching through the ambient closure.
   let : Algebra 𝒪[L] L := Algebra.ofSubsemiring (R := L) (A := L) 𝒪[L]
   have : IsScalarTower 𝒪[K] 𝒪[L] L := .of_algebraMap_eq' rfl
-  refine ⟨π, ?_, IntermediateField.AdjoinSimple.adjoin_gen_eq_top x⟩
+  refine ⟨π, ?_, IntermediateField.adjoin_adjoinSimple_gen_eq_top x⟩
   rw [IsRoot, eval_map, ← aeval_def]
   exact (aeval_algebraMap_eq_zero_iff_of_injective
     (IsFractionRing.injective 𝒪[L] L)).mp hy

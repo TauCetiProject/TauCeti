@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.LinearAlgebra.Complex.Module
 
+import TauCeti.LinearAlgebra.Complex.Orientation
+
 /-!
 # Almost complex structures as complex module structures
 
@@ -33,11 +35,18 @@ structure induced from `ofComplexModule` recovers the original complex module st
 * `TauCeti.AlmostComplexStructure.complexModule_ofReal_smul`: the induced action restricts to the
   original real action.
 * `TauCeti.AlmostComplexStructure.complexModule_isScalarTower`: `ℝ`, `ℂ`, `V` form a scalar tower.
+* `TauCeti.AlmostComplexStructure.ofRestrictScalars`: the canonical almost complex structure
+  on a complex module with scalars restricted to the reals, using `RestrictScalars.realModule`.
 * `TauCeti.AlmostComplexStructure.ofComplexModule`: the almost complex structure `v ↦ i • v` on a
   complex module.
 * `TauCeti.AlmostComplexStructure.ofComplexModule_complexModule`: the round trip recovers `J`.
 * `TauCeti.AlmostComplexStructure.complexModule_ofComplexModule`: the opposite round trip
   recovers the original complex module structure.
+* `TauCeti.AlmostComplexStructure.exists_basis_apply_one_eq`: in finite dimension, `J` has an
+  adapted real basis `(v₁, J v₁, …, vₙ, J vₙ)`, the real basis underlying a basis of the induced
+  complex vector space.
+* `TauCeti.AlmostComplexStructure.span_image_fst_lt_mem_invtSubmodule`: for an adapted basis, the
+  span of the first `i` adapted pairs is `J`-invariant.
 -/
 
 public section
@@ -141,6 +150,67 @@ lemma complexModule_ofComplexModule {V : Type*}
     rw [ofComplexModule_apply, Complex.re_smul_add_im_smul]
     rfl)
 
+section Basis
+
+variable [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
+
+/-- An almost complex structure `J` on a finite-dimensional real vector space has an *adapted*
+basis `(v₁, J v₁, …, vₙ, J vₙ)`, indexed by `Fin n × Fin 2` with `vᵢ` at `(i, 0)` and `J vᵢ` at
+`(i, 1)`: the real basis underlying any basis of the complex vector space `(V, J)`. -/
+theorem exists_basis_apply_one_eq (J : AlmostComplexStructure V) :
+    ∃ (n : ℕ) (b : Module.Basis (Fin n × Fin 2) ℝ V), ∀ i, b (i, 1) = J (b (i, 0)) := by
+  let := J.complexModule
+  have := J.complexModule_isScalarTower
+  have : FiniteDimensional ℂ V := Module.Finite.of_restrictScalars_finite ℝ ℂ V
+  refine ⟨_, (Module.finBasis ℂ V).complexToReal, fun i ↦ ?_⟩
+  simp [J.complexModule_I_smul]
+
+omit [FiniteDimensional ℝ V] in
+/-- For a `J`-adapted basis `b`, the span of the first `i` adapted pairs `(b (j, 0), J b (j, 0))`
+is `J`-invariant. -/
+theorem span_image_fst_lt_mem_invtSubmodule (J : AlmostComplexStructure V) {n : ℕ}
+    {b : Module.Basis (Fin n × Fin 2) ℝ V} (hb : ∀ i, b (i, 1) = J (b (i, 0))) (i : Fin n) :
+    Submodule.span ℝ (b '' {r | r.1 < i}) ∈ Module.End.invtSubmodule J.toLinearMap := by
+  rw [Module.End.mem_invtSubmodule, Submodule.span_le]
+  rintro _ ⟨⟨j, a⟩, hj, rfl⟩
+  rw [SetLike.mem_coe, Submodule.mem_comap]
+  have hbS (a : Fin 2) : b (j, a) ∈ Submodule.span ℝ (b '' {r | r.1 < i}) :=
+    Submodule.subset_span ⟨(j, a), hj, rfl⟩
+  fin_cases a
+  · exact hb j ▸ hbS 1
+  · have : J.toLinearMap (b (j, 1)) = -b (j, 0) := by
+      rw [hb]
+      exact J.apply_apply _
+    simpa [this] using hbS 0
+
+end Basis
+
 end AlmostComplexStructure
 
 end TauCeti
+
+
+namespace TauCeti.AlmostComplexStructure
+
+/-- Multiplication by `I` is the canonical almost complex structure on a complex module
+with scalars restricted to the reals. -/
+noncomputable def ofRestrictScalars (M : Type*) [AddCommGroup M] [Module ℂ M] :
+    @AlmostComplexStructure (RestrictScalars ℝ ℂ M)
+      (instAddCommGroupRestrictScalars ℝ ℂ M) (RestrictScalars.realModule M) := by
+  letI := RestrictScalars.realModule M
+  letI : @Module ℂ (RestrictScalars ℝ ℂ M) Complex.instSemiring
+      (instAddCommGroupRestrictScalars ℝ ℂ M).toAddCommMonoid :=
+    RestrictScalars.moduleOrig ℝ ℂ M
+  exact ofComplexModule (RestrictScalars ℝ ℂ M)
+
+/-- The scalar-restricted complex structure multiplies the original vector by `I`. -/
+@[simp]
+theorem ofRestrictScalars_apply (M : Type*) [AddCommGroup M] [Module ℂ M]
+    (x : RestrictScalars ℝ ℂ M) :
+    let := RestrictScalars.realModule M
+    (ofRestrictScalars M).toLinearMap x = (RestrictScalars.addEquiv ℝ ℂ M).symm
+      (Complex.I • RestrictScalars.addEquiv ℝ ℂ M x) := by
+  let := RestrictScalars.realModule M
+  rfl
+
+end TauCeti.AlmostComplexStructure

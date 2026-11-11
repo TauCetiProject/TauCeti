@@ -1,4 +1,4 @@
-"""Exercise batch routing, trusted progress recovery, and runner-free debounce contracts."""
+"""Exercise label batching and the retirement of finite Actions admission execution."""
 
 import json
 import pathlib
@@ -17,40 +17,27 @@ def workflow(name):
 
 
 class ControlBatches(unittest.TestCase):
-    def test_single_global_delayed_job_replaces_per_pr_jobs(self):
-        groups = []
-        for name in ("auto-merge.yml", LABELS):
-            with self.subTest(workflow=name):
-                doc = workflow(name)
-                self.assertEqual(len(doc["jobs"]), 1)
-                self.assertNotIn("concurrency", doc, "irrelevant events must filter before grouping")
-                job = next(iter(doc["jobs"].values()))
-                self.assertFalse(job["concurrency"]["cancel-in-progress"])
-                group = job["concurrency"]["group"]
-                self.assertNotIn("${{", group, "each PR must share the same pending batch")
-                groups.append(group)
-                self.assertEqual(job["environment"], dict(name="control-batch-debounce", deployment=False))
-                self.assertNotIn("strategy", job, "PR matrices reintroduce one job per PR")
-                self.assertIn("nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0", job["runs-on"])
-                for step in job["steps"]:
-                    self.assertNotIn("sleep ", step.get("run", ""), "debouncing must hold no runner")
-        self.assertEqual(len(set(groups)), 2, "label and merge events must not displace each other's pending work")
+    def test_label_batch_filters_before_one_runner_free_debounce_group(self):
+        doc = workflow(LABELS)
+        self.assertEqual(len(doc["jobs"]), 1)
+        self.assertNotIn("concurrency", doc)
+        job = next(iter(doc["jobs"].values()))
+        self.assertFalse(job["concurrency"]["cancel-in-progress"])
+        self.assertNotIn("${{", job["concurrency"]["group"])
+        self.assertEqual(job["environment"], dict(name="control-batch-debounce", deployment=False))
+        self.assertNotIn("strategy", job)
+        self.assertIn("nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0", job["runs-on"])
+        for step in job["steps"]:
+            self.assertNotIn("sleep ", step.get("run", ""))
 
-    def test_merge_uses_existing_pinned_batch_policy_and_saves_fairness(self):
-        job = workflow("auto-merge.yml")["jobs"]["sweep"]
-        self.assertNotIn("resolve", workflow("auto-merge.yml")["jobs"])
-        self.assertIn("github.event.changes.body.from", job["if"], "scoreboard deletion must wake revocation")
-        self.assertIn("github.event.label.name == 'ready-to-merge'", job["if"])
-        self.assertTrue(any(s.get("uses") == "./.github/actions/checkout-merge-policy" for s in job["steps"]))
-        policy = next(s for s in job["steps"] if s.get("run") == "python3 scripts/control_batches/merge_batch.py")
-        self.assertEqual(policy["env"]["FOCUSED"], "1")
-        self.assertIn("SWEEP_PROGRESS_FILE", policy["env"])
-        self.assertNotIn("PR", policy["env"], "the triggering PR must not limit the candidate set")
-        self.assertTrue(any(s.get("uses") == "actions/cache/save@v4" and s.get("if") == "always()"
-                            for s in job["steps"]))
-        triggers = workflow("auto-merge.yml").get("on", workflow("auto-merge.yml").get(True))
-        self.assertEqual(triggers["pull_request_target"]["branches"], ["main"])
-        self.assertNotIn("pull_request", triggers, "secret-bearing code must come from the trusted base")
+    def test_admission_has_no_actions_execution_or_sweep_wake(self):
+        for name in ("auto-merge.yml", "merge-sweep.yml", "queue-release.yml"):
+            self.assertFalse((ROOT / ".github/workflows" / name).exists())
+        self.assertFalse((ROOT / "scripts/control_batches/merge_batch.py").exists())
+        for path in (ROOT / ".github/workflows").glob("*.yml"):
+            self.assertNotIn("merge-sweep.yml", path.read_text(), path.name)
+            self.assertNotIn("merge_batch.py", path.read_text(), path.name)
+        self.assertFalse(workflow("review.yml")["jobs"]["review"]["with"]["enable_automerge"])
 
     def test_label_batch_has_stateful_discovery_and_no_duplicate_event_workflow(self):
         self.assertFalse((ROOT / ".github/workflows/roadmap-label.yml").exists())

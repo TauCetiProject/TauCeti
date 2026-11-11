@@ -65,6 +65,29 @@ variable {N : ℕ} [NeZero N]
 
 /-! ### Equivalence of cusps -/
 
+/-- Without the sign: `(c', d') ≡ (δ₁₀, δ₁₁ + j δ₁₀)` modulo `N` makes `δ • ∞` and `γ' • ∞`
+equivalent cusps of `Γ₁(N)`, via `δ T^j γ'⁻¹ ∈ Γ₁(N)`. -/
+private theorem cuspOrbitOfSL2Z_Gamma1_eq_of_intCast_eq {δ γ' : SL(2, ℤ)} (j : ℤ)
+    (hc : ((γ' 1 0 : ℤ) : ZMod N) = δ 1 0)
+    (hd : ((γ' 1 1 : ℤ) : ZMod N) = δ 1 1 + j * δ 1 0) :
+    (Gamma1 N).cuspOrbitOfSL2Z δ = (Gamma1 N).cuspOrbitOfSL2Z γ' := by
+  have h10 : (δ * T ^ j) 1 0 = δ 1 0 := by
+    simp [coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two]
+  have h11 : (δ * T ^ j) 1 1 = δ 1 1 + j * δ 1 0 := by
+    simp [coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two]
+    ring
+  refine (Subgroup.cuspOrbitOfSL2Z_eq_iff _ _ _).mpr
+    ⟨δ * T ^ j * γ'⁻¹, mul_inv_mem_Gamma1_iff_dvd_sub.mpr ⟨?_, ?_⟩, ?_⟩
+  · rw [h10, ← ZMod.intCast_zmod_eq_zero_iff_dvd]
+    push_cast
+    exact sub_eq_zero.mpr hc.symm
+  · rw [h11, ← ZMod.intCast_zmod_eq_zero_iff_dvd]
+    push_cast
+    exact sub_eq_zero.mpr hd.symm
+  · have hT : δ⁻¹ * (δ * T ^ j * γ'⁻¹) * γ' = T ^ j := by group
+    rw [hT, coe_T_zpow]
+    rfl
+
 /-- **The criterion for equivalence of cusps of `Γ₁(N)`.** For `γ` and `γ'` with bottom rows
 `(c, d)` and `(c', d')`, the cusps `γ • ∞` and `γ' • ∞` are `Γ₁(N)`-equivalent exactly when
 `(c', d') ≡ ±(c, d + j c)` modulo `N` for some integer `j`. -/
@@ -74,27 +97,6 @@ theorem cuspOrbitOfSL2Z_Gamma1_eq_iff (γ γ' : SL(2, ℤ)) :
           ((γ' 1 1 : ℤ) : ZMod N) = γ 1 1 + j * γ 1 0) ∨
         (((γ' 1 0 : ℤ) : ZMod N) = -γ 1 0 ∧
           ((γ' 1 1 : ℤ) : ZMod N) = -γ 1 1 - j * γ 1 0) := by
-  -- Without the sign: `(c', d') ≡ (δ₁₀, δ₁₁ + j δ₁₀)` makes `δ • ∞` and `γ' • ∞` equivalent,
-  -- via `δ T^j γ'⁻¹ ∈ Γ₁(N)`.
-  have key (δ : SL(2, ℤ)) (j : ℤ) (hc : ((γ' 1 0 : ℤ) : ZMod N) = δ 1 0)
-      (hd : ((γ' 1 1 : ℤ) : ZMod N) = δ 1 1 + j * δ 1 0) :
-      (Gamma1 N).cuspOrbitOfSL2Z δ = (Gamma1 N).cuspOrbitOfSL2Z γ' := by
-    have hdet := intCast_fin_two_mul_sub_mul_eq_one (R := ZMod N) γ'
-    refine (Subgroup.cuspOrbitOfSL2Z_eq_iff _ _ _).mpr
-      ⟨δ * T ^ j * γ'⁻¹, mem_Gamma1_iff.mpr ⟨Gamma0_mem.mpr ?_, ?_⟩, ?_⟩
-    · simp only [coe_mul, coe_inv, adjugate_fin_two, Matrix.mul_apply, Fin.sum_univ_two,
-        of_apply, cons_val', cons_val_zero, cons_val_one, empty_val', cons_val_fin_one,
-        coe_T_zpow]
-      push_cast
-      linear_combination (δ 1 0 : ZMod N) * hd - (δ 1 0 * j + δ 1 1 : ZMod N) * hc
-    · simp only [coe_mul, coe_inv, adjugate_fin_two, Matrix.mul_apply, Fin.sum_univ_two,
-        of_apply, cons_val', cons_val_zero, cons_val_one, empty_val', cons_val_fin_one,
-        coe_T_zpow]
-      push_cast
-      linear_combination (γ' 0 1 : ZMod N) * hc - (γ' 0 0 : ZMod N) * hd + hdet
-    · have hT : δ⁻¹ * (δ * T ^ j * γ'⁻¹) * γ' = T ^ j := by group
-      rw [hT, coe_T_zpow]
-      rfl
   constructor
   · rw [Subgroup.cuspOrbitOfSL2Z_eq_iff]
     rintro ⟨h, hh, hM⟩
@@ -125,9 +127,10 @@ theorem cuspOrbitOfSL2Z_Gamma1_eq_iff (γ γ' : SL(2, ℤ)) :
         push_cast at e11 ⊢
         linear_combination e11
   · rintro ⟨j, ⟨hc, hd⟩ | ⟨hc, hd⟩⟩
-    · exact key γ j hc hd
+    · exact cuspOrbitOfSL2Z_Gamma1_eq_of_intCast_eq j hc hd
     · rw [← Subgroup.cuspOrbitOfSL2Z_neg]
-      refine key (-γ) j ?_ ?_ <;> simp only [coe_neg, Matrix.neg_apply, Int.cast_neg]
+      refine cuspOrbitOfSL2Z_Gamma1_eq_of_intCast_eq (δ := -γ) j ?_ ?_ <;>
+        simp only [coe_neg, Matrix.neg_apply, Int.cast_neg]
       · exact hc
       · linear_combination hd
 

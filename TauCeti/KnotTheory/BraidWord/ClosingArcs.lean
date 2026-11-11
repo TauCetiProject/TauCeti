@@ -125,6 +125,15 @@ theorem closingHalfEdge_ne_edgePair_closingHalfEdge (v : BraidWord n) (p q : Fin
   rw [← heq, hqorient, hporient] at harc
   contradiction
 
+/-- The outgoing half-edge at any crossing is not the partner of a closing endpoint. -/
+theorem crossing_outgoingSlot_ne_edgePair_closingHalfEdge (v : BraidWord n) {j : Fin v.length}
+    (p : Fin n) {q : Fin n} (hq : v.crossingsAt q ≠ []) :
+    v.closure.crossing j (v.outgoingSlot j p) ≠
+      v.closure.edgePair.val (v.closingHalfEdge q hq) := by
+  have hx : v.closure.orientation (v.closure.crossing j (v.outgoingSlot j p)) = true := by
+    rcases v.outgoingSlot_eq_one_or_two j p with hs | hs <;> simp [hs]
+  exact v.closure.ne_edgePair_of_orientation_eq (hx.trans (v.orientation_closingHalfEdge q hq).symm)
+
 /-- An outgoing half-edge is a closing endpoint exactly when it is the last crossing
 on that same strand position. -/
 theorem crossing_outgoingSlot_eq_closingHalfEdge_iff (v : BraidWord n) {j : Fin v.length}
@@ -141,6 +150,28 @@ theorem crossing_outgoingSlot_eq_closingHalfEdge_iff (v : BraidWord n) {j : Fin 
     exact ⟨v.eq_of_outgoingSlot_eq hj (List.getLast_mem hq) hs, rfl⟩
   · rintro ⟨rfl, rfl⟩
     rfl
+
+open BraidGroup in
+/-- An old outgoing half-edge which is neither closing endpoint on the two strand positions `i` and
+`i + 1` does not lie on one of the two positions at the crossing whose successor wraps around to
+the first crossing there. -/
+theorem not_nextCrossing_eq_head_of_ne_closingHalfEdge (v : BraidWord n) (i : Fin (n - 1))
+    (hp : v.crossingsAt (strand i) ≠ []) (hq : v.crossingsAt (strandSucc i) ≠ [])
+    {j : Fin v.length} {p : Fin n} (hjold : j ∈ v.crossingsAt p)
+    (hxp : v.closure.crossing j (v.outgoingSlot j p) ≠ v.closingHalfEdge (strand i) hp)
+    (hxq : v.closure.crossing j (v.outgoingSlot j p) ≠ v.closingHalfEdge (strandSucc i) hq) :
+    ¬ ((p = strand i ∨ p = strandSucc i) ∧
+      v.nextCrossing p j = (v.crossingsAt p).head (List.ne_nil_of_mem hjold)) := by
+  rintro ⟨hpos, hn⟩
+  rcases hpos with rfl | rfl
+  · apply hxp
+    apply (crossing_outgoingSlot_eq_closingHalfEdge_iff v hjold hp).mpr
+    refine ⟨rfl, (v.nextCrossing (strand i)).injective ?_⟩
+    simpa using hn
+  · apply hxq
+    apply (crossing_outgoingSlot_eq_closingHalfEdge_iff v hjold hq).mpr
+    refine ⟨rfl, (v.nextCrossing (strandSucc i)).injective ?_⟩
+    simpa using hn
 
 open BraidGroup
 

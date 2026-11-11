@@ -6,6 +6,7 @@ Authors: Codex, The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Gumbel.Basic
+import TauCeti.Probability.Distributions.Affine
 import TauCeti.Probability.Distributions.Gumbel.PDF
 import TauCeti.Probability.Quantile.Map
 
@@ -19,13 +20,16 @@ Reflecting a maximum-convention Gumbel variable produces the minimum convention.
 
 and quantile `-m + s * log (-log (1 - u))`. Thus the reflected location is `-m`.
 The measure is kept as the reflection of `gumbelMeasure`; no parallel family definition is
-needed.
+needed. It is also the law of every negative-slope affine image of a Gumbel variable.
 
 ## Main results
 
 * `TauCeti.Probability.gumbelMeasure_map_neg` identifies the reflected law as an exponential
   pushforward, with the random-variable form
   `TauCeti.Probability.hasLaw_neg_gumbelMeasure_of_hasLaw_expMeasure`;
+* `TauCeti.Probability.map_affine_gumbelMeasure_of_neg` identifies a negative-slope affine image
+  of a Gumbel law as a reflected Gumbel law, with the random-variable form
+  `TauCeti.Probability.hasLaw_affine_gumbelMeasure_of_neg`;
 * `TauCeti.Probability.cdf_neg_gumbelMeasure_eq` computes the cdf;
 * `TauCeti.Probability.quantile_neg_gumbelMeasure` computes the interior quantile;
 * `TauCeti.Probability.tendsto_quantile_neg_gumbelMeasure_nhdsGT_zero` and
@@ -70,6 +74,21 @@ theorem hasLaw_neg_gumbelMeasure_of_hasLaw_expMeasure {Ω : Type*} [MeasurableSp
   rw [gumbelMeasure_map_neg hs]
   exact (hasLaw_map
     (measurable_const.add (measurable_const.mul Real.measurable_log)).aemeasurable).comp hE
+
+/-- **Negative affine transport.** For `b < 0`, the law of `a + b X` for a Gumbel variable `X` with
+location `m` and scale `s` is the reflection of the Gumbel law with location `-a + -b * m` and
+scale `-b * s`. The identity also respects the nonpositive-scale zero-measure branch. -/
+theorem map_affine_gumbelMeasure_of_neg {b : ℝ} (hb : b < 0) (a m s : ℝ) :
+    (gumbelMeasure m s).map (fun x => a + b * x) = (gumbelMeasure (-a + -b * m) (-b * s)).neg := by
+  rw [← map_affine_gumbelMeasure (neg_pos.mpr hb), neg_map_affine, neg_neg, neg_neg]
+
+/-- The random-variable form of negative affine transport of the Gumbel law. -/
+theorem hasLaw_affine_gumbelMeasure_of_neg {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} {X : Ω → ℝ} {b : ℝ} (hb : b < 0) (a : ℝ)
+    (hX : HasLaw X (gumbelMeasure m s) P) :
+    HasLaw (fun ω => a + b * X ω) (gumbelMeasure (-a + -b * m) (-b * s)).neg P := by
+  rw [← map_affine_gumbelMeasure_of_neg hb]
+  exact (hasLaw_map (by fun_prop : Measurable fun x : ℝ => a + b * x).aemeasurable).comp hX
 
 /-- The cdf of the reflected positive-scale Gumbel law, in the minimum convention. -/
 theorem cdf_neg_gumbelMeasure_eq (hs : 0 < s) (m x : ℝ) :

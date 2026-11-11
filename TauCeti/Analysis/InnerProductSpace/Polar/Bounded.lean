@@ -26,7 +26,8 @@ with `V |T| = T` that vanishes on `ker T`.
 The adjoint of the polar factor inverts it on the modulus, `U† T = |T|`, and conjugates the two
 moduli into each other, `|T†| = T U† = U |T| U†`. Consequently the polar factor of `T†` is `U†`,
 and `T = |T†| U` is the left polar decomposition. When `T` is injective the polar factor is an
-isometry, and when `|T|` is invertible it is `T |T|⁻¹`.
+isometry, and when `|T|` is invertible it is `T |T|⁻¹`, so that it then depends continuously
+on `T`.
 
 ## Main declarations
 
@@ -44,6 +45,8 @@ isometry, and when `|T|` is invertible it is `T |T|⁻¹`.
   `|T†| U = T`.
 * `ContinuousLinearMap.polarFactor_eq_comp_inverse`: `U = T |T|⁻¹` when `|T|` is invertible.
 * `ContinuousLinearMap.norm_sub_polarFactor_le`: `‖T - U‖ ≤ ‖|T| - 1‖` for an endomorphism `T`.
+* `ContinuousLinearMap.continuousOn_polarFactor`: on real Hilbert spaces, `U` depends
+  continuously on `T` where `|T|` is invertible.
 
 ## References
 
@@ -149,6 +152,22 @@ theorem eq_polarFactor_iff {V : E →L[𝕜] F} :
   rintro rfl
   exact ⟨T.polarFactor_comp_modulus, fun _ ↦ T.polarFactor_apply_of_mem_ker⟩
 
+/-- The polar factor is natural under linear isometric equivalences of the source and target:
+the polar factor of `e₁ T e₂⁻¹` is `e₁ U e₂⁻¹`. In particular the polar factor commutes with
+conjugation by a linear isometric equivalence. -/
+theorem polarFactor_conj {E' F' : Type*} [NormedAddCommGroup E'] [InnerProductSpace 𝕜 E']
+    [CompleteSpace E'] [NormedAddCommGroup F'] [InnerProductSpace 𝕜 F'] [CompleteSpace F']
+    (e₁ : F ≃ₗᵢ[𝕜] F') (e₂ : E ≃ₗᵢ[𝕜] E') (T : E →L[𝕜] F) :
+    ((e₁ : F →L[𝕜] F') ∘L T ∘L (e₂.symm : E' →L[𝕜] E)).polarFactor =
+      (e₁ : F →L[𝕜] F') ∘L T.polarFactor ∘L (e₂.symm : E' →L[𝕜] E) := by
+  refine (eq_polarFactor ?_ fun x hx ↦ ?_).symm
+  · rw [modulus_conj]
+    ext x
+    simp
+  · simp only [LinearMap.mem_ker, coe_coe, comp_apply] at hx ⊢
+    rw [T.polarFactor_apply_of_mem_ker (LinearMap.mem_ker.2 ((e₁ : F →L[𝕜] F').map_eq_zero_iff
+      e₁.injective |>.1 hx)), map_zero]
+
 /-- The polar factor of the zero operator is zero. -/
 @[simp]
 theorem polarFactor_zero : (0 : E →L[𝕜] F).polarFactor = 0 :=
@@ -219,8 +238,32 @@ theorem polarFactor_eq_comp_inverse (hT : IsUnit T.modulus) :
     T.polarFactor = T ∘L Ring.inverse T.modulus :=
   factorThru_eq_comp_inverse hT
 
+/-- The polar factor of an invertible operator is invertible. -/
+@[simp]
+theorem isUnit_polarFactor (T : E →L[𝕜] E) (hT : IsUnit T) : IsUnit T.polarFactor := by
+  have hP := (T.isStrictlyPositive_modulus_of_isUnit hT).isUnit
+  exact hP.mul_right_iff.mp (by simpa only [mul_def, polarFactor_comp_modulus] using hT)
+
 /-- The polar factor `U` of an endomorphism `T` satisfies `‖T - U‖ ≤ ‖|T| - 1‖`. -/
 theorem norm_sub_polarFactor_le (T : E →L[𝕜] E) : ‖T - T.polarFactor‖ ≤ ‖T.modulus - 1‖ :=
   norm_sub_factorThru_le fun x ↦ (T.norm_modulus_apply x).ge
+
+section Continuity
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
+
+/-- The polar factor of an operator between real Hilbert spaces depends continuously on the
+operator, in operator norm, wherever the modulus is invertible: there it is `T |T|⁻¹`. -/
+theorem continuousOn_polarFactor :
+    ContinuousOn (polarFactor : (E →L[ℝ] F) → E →L[ℝ] F) {T | IsUnit T.modulus} := by
+  have hinv : ContinuousOn (fun T : E →L[ℝ] F ↦ Ring.inverse T.modulus) {T | IsUnit T.modulus} :=
+    fun T hT ↦ by
+      obtain ⟨u, hu⟩ := id hT
+      exact ((hu ▸ NormedRing.inverse_continuousAt u).comp
+        continuous_modulus.continuousAt).continuousWithinAt
+  exact (continuousOn_id.clm_comp hinv).congr fun T hT ↦ polarFactor_eq_comp_inverse T hT
+
+end Continuity
 
 end ContinuousLinearMap

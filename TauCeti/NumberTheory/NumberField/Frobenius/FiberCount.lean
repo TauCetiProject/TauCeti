@@ -113,7 +113,7 @@ theorem frobenius_fiber_card_mul_orderOf_eq_card_centralizer (𝔭 : Ideal (𝓞
   have hstab : MulAction.stabilizer (Subgroup.centralizer {σ}) Q
       = (Subgroup.zpowers σ).subgroupOf (Subgroup.centralizer {σ}) := by
     ext τ
-    rw [Subgroup.mem_subgroupOf, Q.zpowers_eq_stabilizer_of_isArithFrobAt hσ.ne_bot hσ,
+    rw [Subgroup.mem_subgroupOf, Q.zpowers_eq_stabilizer_of_isArithFrobAt hσ,
       MulAction.mem_stabilizer_iff, MulAction.mem_stabilizer_iff, Subgroup.smul_def]
   have key := Nat.card_congr
     (MulAction.orbitProdStabilizerEquivGroup (Subgroup.centralizer {σ}) Q)

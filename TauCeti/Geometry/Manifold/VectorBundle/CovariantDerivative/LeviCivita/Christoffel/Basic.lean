@@ -333,8 +333,24 @@ theorem hasFDerivAt_repr_christoffelSecondKind {ι : Type*} (b : Module.Basis ι
   exact (b.coord k).toContinuousLinearMap.hasFDerivAt.comp x
     ((hΓ.clm_apply (differentiableAt_const _)).clm_apply (differentiableAt_const _)).hasFDerivAt
 
+/-- Near a point where a field `g` of bilinear forms is differentiable on a neighbourhood and
+nondegenerate, lowering the index of the Christoffel symbols of the second kind gives the
+first-kind formula in terms of the derivatives of the scalar functions `y ↦ g y u v`. -/
+theorem eventuallyEq_apply_christoffelSecondKind (hg : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ g y)
+    (hnd : (g x).toBilinForm.Nondegenerate) (u v w : E) :
+    (fun y ↦ g y (christoffelSecondKind g y u v) w) =ᶠ[𝓝 x]
+      fun y ↦ 2⁻¹ * (fderiv ℝ (fun y' ↦ g y' v w) y u + fderiv ℝ (fun y' ↦ g y' u w) y v -
+        fderiv ℝ (fun y' ↦ g y' u v) y w) := by
+  filter_upwards [hg.self_of_nhds.continuousAt.eventually_toBilinForm_nondegenerate hnd,
+    hg] with y hnd' hy'
+  rw [apply_christoffelSecondKind hnd', christoffelFirstKind_apply,
+    fderiv_clm_apply_const_apply₂ hy', fderiv_clm_apply_const_apply₂ hy',
+    fderiv_clm_apply_const_apply₂ hy']
+  ring
+
 /-! ### The index formula -/
 
+omit [FiniteDimensional ℝ E] in
 /-- **The index formula for the Christoffel symbols.** For a basis `b` of `E`, the `k`-th
 coordinate of `Γ(b i, b j)` is `(1/2) Σ_l g^(kl) (∂_i g_jl + ∂_j g_il - ∂_l g_ij)`, where `g^(kl)`
 is the inverse of the Gram matrix `g_ij = g(b i, b j)` of the symmetric nondegenerate metric at
@@ -346,6 +362,7 @@ theorem repr_christoffelSecondKind {ι : Type*} [Fintype ι] [DecidableEq ι]
       2⁻¹ * ∑ l, (LinearMap.toMatrix₂ b b (g x).toBilinForm)⁻¹ k l *
         (fderiv ℝ g x (b i) (b j) (b l) + fderiv ℝ g x (b j) (b i) (b l) -
           fderiv ℝ g x (b l) (b i) (b j)) := by
+  have : FiniteDimensional ℝ E := Module.Finite.of_basis b
   rw [LinearMap.BilinForm.Nondegenerate.repr_eq_sum_inv_toMatrix₂_mul_apply hnd, Finset.mul_sum]
   refine Finset.sum_congr rfl fun l _ ↦ ?_
   rw [toBilinForm_apply, isSymm_toBilinForm_iff.1 hsymm, apply_christoffelSecondKind hnd,
