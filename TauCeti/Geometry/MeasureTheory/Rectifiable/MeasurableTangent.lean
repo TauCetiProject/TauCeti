@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.Bilipschitz
-public import TauCeti.Geometry.MeasureTheory.Rectifiable.TangentCone
+public import TauCeti.Geometry.MeasureTheory.Rectifiable.Tangent.Cone
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.ContinuousLinearMap
 import TauCeti.MeasureTheory.Function.SpecialFunctions.Projection
 import TauCeti.Geometry.Euclidean.Volume.Measure

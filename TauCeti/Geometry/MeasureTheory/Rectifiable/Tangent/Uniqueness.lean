@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.Bilipschitz
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.Density
-public import TauCeti.Geometry.MeasureTheory.Rectifiable.TangentCone
+public import TauCeti.Geometry.MeasureTheory.Rectifiable.Tangent.Cone
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
+import TauCeti.Geometry.Euclidean.Volume.FormCone
 import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
@@ -18,8 +20,10 @@ import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 A `k`-plane `P` is an approximate tangent plane of a set `E` at `x` if, for every `ε > 0`, the
 part of `E ∩ closedBall x r` outside the cone `{z | infDist (z - x) P ≤ ε dist z x}` has
 `k`-dimensional density zero at `x`, measured with the normalized Hausdorff measure `μHE[k]`
-against the volume of a ball of `EuclideanSpace ℝ (Fin k)`. Such planes exist almost everywhere
-on a countably `k`-rectifiable set
+against the volume of a ball of `EuclideanSpace ℝ (Fin k)`. Let `E` be a countably
+`k`-rectifiable set that is `μHE[k]`-null-measurable and whose restricted measure
+`μHE[k].restrict E` is locally finite. Approximate tangent `k`-planes of such a set exist almost
+everywhere on it
 (`TauCeti.CountablyRectifiable.ae_exists_submodule_tendsto_measure_outside_cone_div`). This file
 proves that they are almost everywhere unique.
 
@@ -53,86 +57,6 @@ namespace TauCeti
 
 variable {k : ℕ}
 
-/-- The cone of vectors of the closed unit ball on which a linear form is at most `t` times the
-norm. -/
-private noncomputable def unitFormCone (ψ : EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ) (t : ℝ) :
-    Set (EuclideanSpace ℝ (Fin k)) :=
-  closedBall 0 1 ∩ {v | |ψ v| ≤ t * ‖v‖}
-
-/-- The thin cones about the kernel of a nonzero linear form have volume tending to zero. -/
-private theorem tendsto_volume_unitFormCone {ψ : EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ} (hψ : ψ ≠ 0) :
-    Tendsto (fun n : ℕ ↦ volume (unitFormCone ψ (1 / (n + 1)))) atTop (𝓝 0) := by
-  have hmeas (n : ℕ) : NullMeasurableSet (unitFormCone ψ (1 / (n + 1))) volume :=
-    (isClosed_closedBall.inter (isClosed_le
-      (by fun_prop : Continuous fun v : EuclideanSpace ℝ (Fin k) ↦ |ψ v|)
-      (by fun_prop : Continuous fun v : EuclideanSpace ℝ (Fin k) ↦ 1 / ((n : ℝ) + 1) * ‖v‖)))
-      |>.measurableSet.nullMeasurableSet
-  have hanti : Antitone fun n : ℕ ↦ unitFormCone ψ (1 / (n + 1)) := by
-    intro m n hmn
-    change unitFormCone ψ _ ⊆ unitFormCone ψ _
-    intro v hv
-    simp only [unitFormCone, mem_inter_iff, mem_ofPred_eq] at hv ⊢
-    refine ⟨hv.1, hv.2.trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg v))⟩
-    gcongr
-  have hfin : volume (unitFormCone ψ (1 / ((0 : ℕ) + 1))) ≠ ∞ :=
-    (measure_mono (inter_subset_left : unitFormCone ψ (1 / (((0 : ℕ) : ℝ) + 1)) ⊆
-      closedBall 0 1)).trans_lt measure_closedBall_lt_top |>.ne
-  have hlim := tendsto_measure_iInter_atTop hmeas hanti ⟨0, hfin⟩
-  set W := LinearMap.ker (ψ : EuclideanSpace ℝ (Fin k) →ₗ[ℝ] ℝ)
-  have hker : ⋂ n : ℕ, unitFormCone ψ (1 / (n + 1)) ⊆ (W : Set (EuclideanSpace ℝ (Fin k))) := by
-    intro v hv
-    simp only [mem_iInter] at hv
-    simp only [SetLike.mem_coe, W, LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
-    refine abs_eq_zero.mp (le_antisymm (le_of_forall_pos_le_add fun δ hδ ↦ ?_) (abs_nonneg _))
-    obtain ⟨n, hn⟩ := exists_nat_one_div_lt hδ
-    have hv1 : ‖v‖ ≤ 1 := mem_closedBall_zero_iff.mp (hv n).1
-    calc |ψ v| ≤ 1 / (n + 1) * ‖v‖ := (hv n).2
-      _ ≤ 1 / (n + 1) * 1 := by gcongr
-      _ ≤ 0 + δ := by linarith
-  have hker0 : volume (W : Set (EuclideanSpace ℝ (Fin k))) = 0 := by
-    refine Measure.addHaar_submodule _ _ fun htop ↦ hψ ?_
-    ext v
-    have hv : v ∈ W := htop ▸ Submodule.mem_top
-    simpa [W] using hv
-  rwa [measure_mono_null hker hker0] at hlim
-
-/-- Scaling the unit cone: the vectors of the closed ball of radius `R` on which `|ψ| ≤ t ‖·‖`
-have volume `R ^ k` times that of the unit cone. -/
-private theorem volume_formCone_closedBall (ψ : EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ) (t : ℝ)
-    {R : ℝ} (hR : 0 < R) :
-    volume {v ∈ closedBall (0 : EuclideanSpace ℝ (Fin k)) R | |ψ v| ≤ t * ‖v‖} =
-      ENNReal.ofReal (R ^ k) * volume (unitFormCone ψ t) := by
-  have hset : {v ∈ closedBall (0 : EuclideanSpace ℝ (Fin k)) R | |ψ v| ≤ t * ‖v‖} =
-      R • unitFormCone ψ t := by
-    ext v
-    rw [mem_smul_set_iff_inv_smul_mem₀ hR.ne']
-    simp only [unitFormCone, mem_inter_iff, mem_ofPred_eq, mem_closedBall_zero_iff, map_smul,
-      smul_eq_mul, norm_smul, Real.norm_eq_abs, abs_mul, abs_inv, abs_of_pos hR]
-    constructor
-    · rintro ⟨h1, h2⟩
-      refine ⟨by rw [inv_mul_le_iff₀ hR]; linarith, ?_⟩
-      rw [mul_left_comm]
-      exact mul_le_mul_of_nonneg_left h2 (inv_nonneg.mpr hR.le)
-    · rintro ⟨h1, h2⟩
-      refine ⟨by rw [inv_mul_le_iff₀ hR] at h1; linarith, ?_⟩
-      rw [mul_left_comm] at h2
-      exact le_of_mul_le_mul_left h2 (inv_pos.mpr hR)
-  rw [hset, Measure.addHaar_smul, finrank_euclideanSpace_fin, abs_of_pos (pow_pos hR k)]
-
-/-- The vector `w` orthogonal to `P` bounds the pairing of `w` with `z` by the distance from `z`
-to `P`. -/
-private theorem abs_inner_le_norm_mul_infDist {V : Type*} [NormedAddCommGroup V]
-    [InnerProductSpace ℝ V] {P : Submodule ℝ V} {w : V} (hw : ∀ p ∈ P, ⟪w, p⟫ = 0) (z : V) :
-    |⟪w, z⟫| ≤ ‖w‖ * infDist z (P : Set V) := by
-  rcases eq_or_ne w 0 with rfl | hw0
-  · simp
-  have hpos : 0 < ‖w‖ := norm_pos_iff.mpr hw0
-  rw [← div_le_iff₀' hpos]
-  refine (le_infDist ⟨0, P.zero_mem⟩).mpr fun p hp ↦ ?_
-  rw [div_le_iff₀' hpos, dist_eq_norm]
-  calc |⟪w, z⟫| = |⟪w, z - p⟫| := by rw [inner_sub_right, hw p hp, sub_zero]
-    _ ≤ ‖w‖ * ‖z - p‖ := abs_real_inner_le_norm w (z - p)
-
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   [MeasurableSpace V] [BorelSpace V]
 
@@ -162,9 +86,7 @@ private theorem eq_range_fderiv_of_tendsto_measure_outside_cone_div
     hne (Submodule.eq_of_le_of_finrank_eq hle (hrange.trans hPk.symm)).symm
   obtain ⟨y, ⟨v₀, rfl⟩, hy⟩ := IsConcreteLE.not_le_iff_exists.mp hnle
   set w := D v₀ - P.starProjection (D v₀)
-  have hwP : ∀ p ∈ P, ⟪w, p⟫ = 0 := fun p hp ↦ by
-    rw [real_inner_comm]
-    exact Submodule.inner_right_of_mem_orthogonal hp (P.sub_starProjection_mem_orthogonal _)
+  have hwP : w ∈ Pᗮ := P.sub_starProjection_mem_orthogonal _
   have hw0 : w ≠ 0 := fun h ↦ by
     rw [sub_eq_zero] at h
     have hmem : D v₀ ∈ P := by rw [h]; exact P.starProjection_apply_mem _
@@ -177,7 +99,8 @@ private theorem eq_range_fderiv_of_tendsto_measure_outside_cone_div
       simpa [ψ] using congrArg (fun φ : EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ ↦ φ v₀) h
     have h2 : ⟪w, D v₀⟫ = ⟪w, w⟫ := by
       have : D v₀ = w + P.starProjection (D v₀) := (sub_add_cancel _ _).symm
-      rw [this, inner_add_right, hwP _ (P.starProjection_apply_mem _), add_zero]
+      rw [this, inner_add_right,
+        Submodule.inner_left_of_mem_orthogonal (P.starProjection_apply_mem _) hwP, add_zero]
     exact hw0 (inner_self_eq_zero.mp (h2 ▸ h1))
   -- The constant `a` with `μHE[k] (patch part) ≤ a r ^ k vol (cone)`.
   set a : ℝ≥0∞ := (K : ℝ≥0∞) ^ k * ENNReal.ofReal (((L : ℝ) + 1) ^ k) with ha
@@ -187,12 +110,13 @@ private theorem eq_range_fderiv_of_tendsto_measure_outside_cone_div
   have hB₁0 : B₁ ≠ 0 := (measure_ball_pos _ _ one_pos).ne'
   have hB₁top : B₁ ≠ ∞ := measure_ball_lt_top.ne
   -- Choose the thickness `t` of the parameter cone so that its share is below one.
+  set C : ℝ → Set (EuclideanSpace ℝ (Fin k)) := fun t ↦ closedBall 0 1 ∩ {v | |ψ v| ≤ t * ‖v‖}
   have hlt : a * 0 < B₁ := by rw [mul_zero]; exact pos_iff_ne_zero.mpr hB₁0
-  obtain ⟨n, hn⟩ := ((ENNReal.Tendsto.const_mul (tendsto_volume_unitFormCone hψ)
-    (Or.inr ha_top)).eventually (gt_mem_nhds hlt)).exists
-  set t : ℝ := 1 / (n + 1)
-  have ht : 0 < t := by positivity
-  set m : ℝ≥0∞ := a * volume (unitFormCone ψ t) / B₁
+  obtain ⟨t, hn, ht⟩ := (((ENNReal.Tendsto.const_mul
+    (tendsto_addHaar_closedBall_inter_setOf_abs_le_mul_norm volume hψ) (Or.inr ha_top)).eventually
+      (gt_mem_nhds hlt)).and self_mem_nhdsWithin).exists
+  replace ht : 0 < t := ht
+  set m : ℝ≥0∞ := a * volume (C t) / B₁
   have hm : m < 1 := (ENNReal.div_lt_iff (Or.inl hB₁0) (Or.inl hB₁top)).mpr (by simpa using hn)
   -- Choose the cone aperture `ε` and the differentiability error `η`.
   set ε : ℝ := t / (2 * ‖w‖ * ((K : ℝ) + 1))
@@ -209,7 +133,7 @@ private theorem eq_range_fderiv_of_tendsto_measure_outside_cone_div
   obtain ⟨ρ, hρ, hρd⟩ := Metric.eventually_nhds_iff.mp (hd.hasFDerivAt.isLittleO.def hη)
   -- For small radii, `E ∩ closedBall x r` is covered by three controlled pieces.
   set S : ℝ → Set (EuclideanSpace ℝ (Fin k)) := fun r ↦
-    {v ∈ closedBall 0 (((L : ℝ) + 1) * r) | |ψ v| ≤ t * ‖v‖}
+    closedBall 0 (((L : ℝ) + 1) * r) ∩ {v | |ψ v| ≤ t * ‖v‖}
   have hcover : ∀ r, 0 < r → ((L : ℝ) + 1) * r < ρ →
       E ∩ closedBall x r ⊆ {z ∈ E ∩ closedBall x r | ε * dist z x < infDist (z - x) (P : Set V)} ∪
         ((E \ f '' A) ∩ closedBall x r) ∪ f '' (A ∩ (fun u ↦ u - u₀) ⁻¹' S r) := by
@@ -255,10 +179,12 @@ private theorem eq_range_fderiv_of_tendsto_measure_outside_cone_div
     have himage := (hf.lipschitzOnWith (s := A ∩ (fun u ↦ u - u₀) ⁻¹' S r)
       ).euclideanHausdorffMeasure_image_le k
     have hvol : μHE[k] (A ∩ (fun u ↦ u - u₀) ⁻¹' S r) ≤
-        ENNReal.ofReal ((((L : ℝ) + 1) * r) ^ k) * volume (unitFormCone ψ t) := by
+        ENNReal.ofReal ((((L : ℝ) + 1) * r) ^ k) * volume (C t) := by
       have hμ : (μHE[k] : Measure (EuclideanSpace ℝ (Fin k))) = volume :=
         EuclideanSpace.euclideanHausdorffMeasure_eq_volume k
-      rw [hμ, ← volume_formCone_closedBall ψ t hR]
+      have hvolS := addHaar_closedBall_inter_setOf_abs_le_mul_norm volume ψ t hR
+      rw [finrank_euclideanSpace_fin] at hvolS
+      rw [hμ, ← hvolS]
       refine (measure_mono inter_subset_right).trans_eq ?_
       simp only [sub_eq_add_neg]
       exact measure_preimage_add_right _ _ _
@@ -266,10 +192,10 @@ private theorem eq_range_fderiv_of_tendsto_measure_outside_cone_div
     calc μHE[k] (f '' (A ∩ (fun u ↦ u - u₀) ⁻¹' S r)) /
           (ENNReal.ofReal (r ^ k) * B₁)
         ≤ (K : ℝ≥0∞) ^ k * (ENNReal.ofReal ((((L : ℝ) + 1) * r) ^ k) *
-            volume (unitFormCone ψ t)) / (ENNReal.ofReal (r ^ k) * B₁) := by
+            volume (C t)) / (ENNReal.ofReal (r ^ k) * B₁) := by
           gcongr
           exact himage.trans (by gcongr)
-      _ = ENNReal.ofReal (r ^ k) * (a * volume (unitFormCone ψ t)) /
+      _ = ENNReal.ofReal (r ^ k) * (a * volume (C t)) /
             (ENNReal.ofReal (r ^ k) * B₁) := by
           rw [mul_pow, ENNReal.ofReal_mul (by positivity), ha]
           congr 1
@@ -279,8 +205,9 @@ private theorem eq_range_fderiv_of_tendsto_measure_outside_cone_div
   -- Passing to the limit gives `1 ≤ 0 + 0 + m`, contradicting `m < 1`.
   have hlim : (1 : ℝ≥0∞) ≤ 0 + 0 + m := by
     refine le_of_tendsto_of_tendsto hE1 (((hP ε hε).add hE0).add tendsto_const_nhds) ?_
+    have hρL : 0 < ρ / ((L : ℝ) + 1) := by positivity
     filter_upwards [self_mem_nhdsWithin, eventually_nhdsWithin_of_eventually_nhds
-      (eventually_lt_nhds (show (0 : ℝ) < ρ / ((L : ℝ) + 1) by positivity))] with r hr hrρ
+      (eventually_lt_nhds hρL)] with r hr hrρ
     have hrρ' : ((L : ℝ) + 1) * r < ρ := by
       rwa [lt_div_iff₀' (by positivity)] at hrρ
     calc μHE[k] (E ∩ closedBall x r) / volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)
