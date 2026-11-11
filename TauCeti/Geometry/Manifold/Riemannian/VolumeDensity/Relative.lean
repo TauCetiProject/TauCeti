@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Conformal
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 
 /-!
 # The relative volume density of two Riemannian metrics
@@ -72,23 +73,6 @@ open LinearMap (BilinForm)
 
 variable {V : Type*} [AddCommGroup V] [Module ℝ V]
 
-/-- The Gram determinant of a bilinear form in a reindexed basis. -/
-private theorem det_toMatrix_reindex {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ]
-    [DecidableEq κ] (b : Module.Basis ι ℝ V) (e : ι ≃ κ) (B : BilinForm ℝ V) :
-    (BilinForm.toMatrix (b.reindex e) B).det = (BilinForm.toMatrix b B).det := by
-  have h : BilinForm.toMatrix (b.reindex e) B = (BilinForm.toMatrix b B).submatrix e.symm e.symm :=
-    by ext i j; simp [BilinForm.toMatrix_apply]
-  rw [h, Matrix.det_submatrix_equiv_self]
-
-/-- Under a change of basis, the Gram determinant is multiplied by the square of the determinant
-of the change of basis matrix. -/
-theorem det_toMatrix_basis_eq {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (b c : Module.Basis ι ℝ V) (B : BilinForm ℝ V) :
-    (BilinForm.toMatrix c B).det = (b.toMatrix c).det ^ 2 * (BilinForm.toMatrix b B).det := by
-  rw [← BilinForm.toMatrix_mul_basis_toMatrix (b := b) c B, Matrix.det_mul, Matrix.det_mul,
-    Matrix.det_transpose]
-  ring
-
 /-- The Gram determinant of a symmetric positive-definite bilinear form is positive in every
 basis. -/
 theorem det_toMatrix_pos {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι ℝ V)
@@ -115,9 +99,11 @@ theorem bilinFormDetRatio_eq {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Mod
   have hP : (b₀.toMatrix b).det ≠ 0 := by
     rw [← Module.Basis.det_apply]
     exact (b₀.isUnit_det b).ne_zero
-  rw [bilinFormDetRatio, ← det_toMatrix_reindex _ ((Module.finBasis ℝ V).indexEquiv b) B,
-    ← det_toMatrix_reindex _ ((Module.finBasis ℝ V).indexEquiv b) B', det_toMatrix_basis_eq b₀ b,
-    det_toMatrix_basis_eq b₀ b, mul_div_mul_left _ _ (pow_ne_zero 2 hP)]
+  rw [bilinFormDetRatio,
+    ← BilinForm.det_toMatrix_reindex _ ((Module.finBasis ℝ V).indexEquiv b) B,
+    ← BilinForm.det_toMatrix_reindex _ ((Module.finBasis ℝ V).indexEquiv b) B',
+    BilinForm.det_toMatrix_eq_det_sq_mul_det b₀ b, BilinForm.det_toMatrix_eq_det_sq_mul_det b₀ b,
+    mul_div_mul_left _ _ (pow_ne_zero 2 hP)]
 
 /-- In a basis in which `B` has the identity Gram matrix, `bilinFormDetRatio B B'` is the Gram
 determinant of `B'`. -/
