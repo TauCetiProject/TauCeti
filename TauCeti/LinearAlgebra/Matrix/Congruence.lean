@@ -98,29 +98,15 @@ theorem sum_sum_smul_congruence {m n R P : Type*} [Fintype m] [Fintype n] [CommS
     [AddCommMonoid P] [Module R P] (M : Matrix m n R) (A : Matrix n n R) (T : m → m → P) :
     ∑ x : n, ∑ y : n, A x y • ∑ a : m, ∑ b : m, (M a x * M b y) • T a b =
       ∑ a : m, ∑ b : m, (M * A * Mᵀ) a b • T a b := by
-  have hcoef : ∀ a b : m, ∑ x : n, ∑ y : n, A x y * (M a x * M b y) = (M * A * Mᵀ) a b := by
-    intro a b
-    rw [Matrix.mul_apply, Finset.sum_comm]
-    refine Finset.sum_congr rfl fun y _ => ?_
-    rw [Matrix.mul_apply, Finset.sum_mul]
-    refine Finset.sum_congr rfl fun x _ => ?_
-    simp only [Matrix.transpose_apply]
-    ring
   calc ∑ x : n, ∑ y : n, A x y • ∑ a : m, ∑ b : m, (M a x * M b y) • T a b
-      = ∑ x : n, ∑ y : n, ∑ a : m, ∑ b : m, (A x y * (M a x * M b y)) • T a b := by
-        simp only [Finset.smul_sum, smul_smul]
-    -- move the two outer sums past the two inner ones, one adjacent swap at a time
-    _ = ∑ x : n, ∑ a : m, ∑ y : n, ∑ b : m, (A x y * (M a x * M b y)) • T a b :=
-        Finset.sum_congr rfl fun _ _ => Finset.sum_comm
-    _ = ∑ a : m, ∑ x : n, ∑ y : n, ∑ b : m, (A x y * (M a x * M b y)) • T a b := Finset.sum_comm
-    _ = ∑ a : m, ∑ x : n, ∑ b : m, ∑ y : n, (A x y * (M a x * M b y)) • T a b :=
-        Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => Finset.sum_comm
-    _ = ∑ a : m, ∑ b : m, ∑ x : n, ∑ y : n, (A x y * (M a x * M b y)) • T a b :=
-        Finset.sum_congr rfl fun _ _ => Finset.sum_comm
+      = ∑ x : n, ∑ y : n, ∑ a : m, ∑ b : m, (M a x * (A x y * M b y)) • T a b := by
+        simp only [Finset.smul_sum, smul_smul, mul_left_comm (A _ _)]
+    -- bring `a` to the front and `b` right behind it, each by cycling three nested sums
+    _ = ∑ a : m, ∑ b : m, ∑ x : n, ∑ y : n, (M a x * (A x y * M b y)) • T a b :=
+        Finset.sum_comm_cycle.trans (Finset.sum_congr rfl fun _ _ => Finset.sum_comm_cycle)
     _ = ∑ a : m, ∑ b : m, (M * A * Mᵀ) a b • T a b := by
-        refine Finset.sum_congr rfl fun a _ => Finset.sum_congr rfl fun b _ => ?_
-        simp only [← Finset.sum_smul]
-        rw [hcoef a b]
+        rw [Matrix.mul_assoc]
+        simp only [Matrix.mul_apply, transpose_apply, Finset.mul_sum, Finset.sum_smul]
 
 /-- Twisted congruence by a product is congruence by one factor after the other:
 `((M N) ^ σ)ᵀ Q (M N) = (N ^ σ)ᵀ ((M ^ σ)ᵀ Q M) N`, where `^ σ` applies `σ` to every entry. -/
@@ -132,27 +118,28 @@ theorem transpose_map_mul_mul_mul {l m n R : Type*} [Fintype l] [Fintype m] [Com
 
 section BasisSubstitution
 
-variable {R κ : Type*} [CommRing R] [Fintype κ] [DecidableEq κ]
+variable {R κ : Type*} [Fintype κ] [DecidableEq κ]
 
 /-- Replacing the basis vector `r` by `r + a + b` is unimodular. -/
-theorem det_one_add_vecMulVec_single_add_single {r a b : κ} (ha : r ≠ a) (hb : r ≠ b) :
+theorem det_one_add_vecMulVec_single_add_single [CommRing R] {r a b : κ} (ha : r ≠ a)
+    (hb : r ≠ b) :
     (1 + vecMulVec (Pi.single r (1 : R)) (Pi.single a 1 + Pi.single b 1)).det = 1 := by
   rw [vecMulVec_eq Unit, det_one_add_replicateCol_mul_replicateRow, dotProduct_single]
   simp [Ne.symm ha, Ne.symm hb]
 
 /-- The entries of a bilinear form after replacing the basis vector `r` by `r + a + b`. -/
-theorem one_add_vecMulVec_single_add_single_mul_mul_transpose_apply
+theorem one_add_vecMulVec_single_add_single_mul_mul_transpose_apply [NonAssocSemiring R]
     (M : Matrix κ κ R) (r a b x y : κ) :
     ((1 + vecMulVec (Pi.single r 1) (Pi.single a 1 + Pi.single b 1)) * M *
         (1 + vecMulVec (Pi.single r 1) (Pi.single a 1 + Pi.single b 1))ᵀ : Matrix κ κ R) x y =
       M x y + (if x = r then M a y + M b y else 0) + (if y = r then M x a + M x b else 0) +
         (if x = r ∧ y = r then M a a + M a b + M b a + M b b else 0) := by
-  simp only [Matrix.add_mul, Matrix.mul_add, Matrix.one_mul, transpose_add,
-    transpose_one, transpose_vecMulVec, vecMulVec_mul, mul_vecMulVec, Matrix.add_apply,
-    vecMulVec_apply, add_vecMul, mulVec_add, single_one_vecMul, mulVec_single_one,
-    Pi.add_apply, Matrix.row, Matrix.col, Pi.single_apply, mul_one]
+  simp only [add_mul, one_mul, transpose_add, transpose_one, Matrix.mul_apply, Matrix.add_apply,
+    vecMulVec_apply, Pi.single_apply, Pi.add_apply, mul_add, mul_ite, mul_one, mul_zero, ite_mul,
+    zero_mul, Finset.sum_add_distrib, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte,
+    Matrix.one_apply, transpose_apply, ite_and]
   split_ifs <;> simp_all
-  ring
+  abel
 
 end BasisSubstitution
 
