@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.CochainComplex.Opcycles
 public import TauCeti.Algebra.Homology.DerivedCategory.ProjectiveResolution
+public import TauCeti.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.Algebra.Homology.HomologicalComplex.Projective.Cycles
 public import TauCeti.Algebra.Homology.DerivedCategory.Singularity.Basic
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.EnoughProjectives
@@ -152,20 +153,18 @@ theorem exists_singleHom_eq_zero_of_perfect {K : DerivedCategory.Bounded C}
 end ExtOrthogonal
 
 /-- Let `K` be a complex of projective objects which is strictly `≤ b` and has no cohomology in
-degrees `< m`, for some `m ≤ b`. If the cokernel `K.opcycles m` of the differential into degree
-`m` is projective, then `K` is isomorphic in the derived category to a bounded complex of
-projective objects (namely its canonical truncation `K.truncGE m`). -/
+degrees `< m`. If the cokernel `K.opcycles m` of the differential into degree `m` is projective,
+then `K` is isomorphic in the derived category to a bounded complex of projective objects (namely
+its canonical truncation `K.truncGE m`). -/
 theorem exists_bounded_projective_of_projective_opcycles {K : CochainComplex C ℤ} {m b : ℤ}
-    (hmb : m ≤ b) [K.IsStrictlyLE b] [K.IsGE m] (hK : ∀ n, Projective (K.X n))
+    [K.IsStrictlyLE b] [K.IsGE m] (hK : ∀ n, Projective (K.X n))
     [Projective (K.opcycles m)] :
     ∃ (L : CochainComplex C ℤ) (a b : ℤ), L.IsStrictlyGE a ∧ L.IsStrictlyLE b ∧
       (∀ n, Projective (L.X n)) ∧ Nonempty (Q.obj L ≅ Q.obj K) := by
   have : QuasiIso (K.πTruncGE m) := (K.quasiIso_πTruncGE_iff m).2 inferInstance
   refine ⟨K.truncGE m, m, b, inferInstance, ?_, fun i ↦ ?_,
     ⟨(asIso (Q.map (K.πTruncGE m))).symm⟩⟩
-  · rw [CochainComplex.isStrictlyLE_iff]
-    intro i hi
-    exact (K.isZero_of_isStrictlyLE b i hi).of_iso (K.truncGEXIso m i (by lia))
+  · exact CochainComplex.isStrictlyLE_truncGE K m b
   · obtain hi | rfl | hi := lt_trichotomy i m
     · exact Projective.of_iso ((K.truncGE m).isZero_of_isStrictlyGE m i hi).isoZero.symm
         inferInstance
@@ -199,7 +198,7 @@ theorem exists_bounded_projective_of_perfect [EnoughProjectives C] {X : DerivedC
     (K.retractOpcyclesOfHomotopy (by lia) (HomotopyCategory.homotopyOfEq f 0
       (by rw [hf', Functor.map_zero]))).projective
   obtain ⟨L, a', b', _, _, hL, ⟨e'⟩⟩ :=
-    exists_bounded_projective_of_projective_opcycles (m := m) (b := d) (by lia) hK
+    exists_bounded_projective_of_projective_opcycles (m := m) (b := d) hK
   exact ⟨L, a', b', ‹_›, ‹_›, hL, ⟨e' ≪≫ e⟩⟩
 
 /-- **Bounded complexes of projectives in finite global dimension**: in an abelian category with
@@ -225,8 +224,8 @@ theorem exists_bounded_projective_of_hasProjectiveDimensionLT [EnoughProjectives
     (K.exactAt_of_isGE a (m + 1) (by lia))
   have : Projective (K.opcycles m) :=
     Projective.of_iso (asIso (K.opcyclesToCycles m (m + 1))).symm inferInstance
-  obtain ⟨L, a', b', _, _, hL, ⟨e'⟩⟩ := exists_bounded_projective_of_projective_opcycles
-    (by lia : m ≤ b) hK
+  obtain ⟨L, a', b', _, _, hL, ⟨e'⟩⟩ :=
+    exists_bounded_projective_of_projective_opcycles (m := m) (b := b) hK
   exact ⟨L, a', b', ‹_›, ‹_›, hL, ⟨e' ≪≫ e⟩⟩
 
 end DerivedCategory
