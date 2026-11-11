@@ -246,9 +246,14 @@ theorem pairOfPantsEndComponent_of_pos (hH : Function.Periodic (H q) 1) {z : ℝ
   pairOfPantsPerturbation_cylindricalEndLift_of_pos hH hz x v
 
 /-- On the part `±s > 0` of the end `q`, the `ds` component of the perturbation vanishes. -/
-theorem pairOfPantsEndComponent_one_of_pos (hH : Function.Periodic (H q) 1) {z : ℝ × ℝ}
+theorem pairOfPantsEndComponent_one_of_pos {z : ℝ × ℝ}
     (hz : 0 < q.endSign * z.1) (x : M) : pairOfPantsEndComponent H q 1 z x = 0 := by
-  simp [pairOfPantsEndComponent_of_pos hH hz]
+  rw [pairOfPantsEndComponent_def, pairOfPantsPerturbation, Finset.sum_eq_single q]
+  · rw [smul_apply, endAngularForm_cylindricalEndLift]
+    simp
+  · intro r _ hr
+    simp [smoothTransition_endCoord_cylindricalEndLift_eq_zero (z := ⟨z.1, z.2⟩) hr hz]
+  · simp
 
 /-- On the part `±s > 0` of the end `q`, the `dt` component of the perturbation is
 `β(±s - 1) H_q(t)`. -/
@@ -280,7 +285,7 @@ theorem eventuallyEq_pairOfPantsEndComponent (hH : Function.Periodic (H q) 1) {z
         fun w x ↦ smoothTransition (q.endSign * w.1 - 1) * H q w.2 x := by
   have h := (isOpen_endSign_mul_fst_pos q).mem_nhds hz
   refine ⟨?_, ?_⟩ <;> filter_upwards [h] with w hw <;> funext x
-  exacts [pairOfPantsEndComponent_one_of_pos hH hw x, pairOfPantsEndComponent_I_of_pos hH hw x]
+  exacts [pairOfPantsEndComponent_one_of_pos hw x, pairOfPantsEndComponent_I_of_pos hH hw x]
 
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]

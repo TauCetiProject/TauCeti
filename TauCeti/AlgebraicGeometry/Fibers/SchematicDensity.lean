@@ -78,9 +78,10 @@ instance isSchemeTheoreticallyDominant_genericFiberι_int
 /-- Over a Bezout domain `R`, a scheme whose generic fibre is scheme-theoretically dense is flat.
 This is the converse of `TauCeti.isSchemeTheoreticallyDominant_genericFiberι`. -/
 theorem flat_of_isSchemeTheoreticallyDominant_genericFiberι {R : Type u} (K : Type u) [CommRing R]
-    [IsDomain R] [IsBezout R] [Field K] [Algebra R K] [FaithfulSMul R K]
+    [IsBezout R] [Field K] [Algebra R K] [FaithfulSMul R K]
     (toBase : X ⟶ Spec (.of R)) [IsSchemeTheoreticallyDominant (genericFiberι R K toBase)] :
     Flat toBase := by
+  have : IsDomain R := (FaithfulSMul.algebraMap_injective R K).isDomain _
   have := (genericFiberι R K toBase).flat_imageι_comp toBase (genericFiber R K toBase).hom
     (genericFiberι_toBase R K toBase)
   rw [← IsIso.inv_hom_id_assoc (genericFiberι R K toBase).imageι toBase]

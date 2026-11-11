@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.Composition
+public import TauCeti.Analysis.Pseudodifferential.Composition.Basic
 public import TauCeti.Analysis.Pseudodifferential.Frequency.Multiplier
 public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
 import TauCeti.Analysis.Distribution.TemperateGrowth
@@ -102,13 +102,13 @@ theorem sharp_assoc [CompleteSpace V] [CompleteSpace U'] (a : Symbol n U U' m'')
     {b : Symbol n W U m'} {c : Symbol n V W m} (hb : b.HasCompactSpatialSupport)
     (hc : c.HasCompactSpatialSupport) :
     (a.sharp b hb).sharp c hc =
-      inclusion (add_assoc m'' m' m).ge (a.sharp (b.sharp c hc) (hb.sharp_right c hc)) := by
+      inclusion (add_assoc m'' m' m).ge (a.sharp (b.sharp c hc) (hb.sharp hc)) := by
   ext1
   rw [coefficient_inclusion]
   refine coefficient_eq_of_forall_quantizeSchwartzValue_eq fun u _ ↦ ?_
   rw [← quantizeSchwartzValue_quantizeUniformCLM (a.sharp b hb) hc,
     ← quantizeSchwartzValue_quantizeUniformCLM a hb,
-    ← quantizeSchwartzValue_quantizeUniformCLM a (hb.sharp_right c hc),
+    ← quantizeSchwartzValue_quantizeUniformCLM a (hb.sharp hc),
     quantizeUniformCLM_sharp hb.isUniform hc, ContinuousLinearMap.comp_apply]
 
 end Sharp

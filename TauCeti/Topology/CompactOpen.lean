@@ -33,6 +33,9 @@ function spaces `C(G, C(G, …))` of the coinduced resolution of a topological r
 
 Finally, the constant maps embed `Y` in `C(X, Y)` whenever `X` is nonempty
 (`ContinuousMap.isEmbedding_const`): evaluation at any point is a continuous left inverse.
+Postcomposition with a closed embedding `g` is a closed embedding
+(`ContinuousMap.isClosedEmbedding_postcomp`): its range consists of the maps with values in the
+closed range of `g`, a condition closed under pointwise limits.
 -/
 
 public section
@@ -102,5 +105,24 @@ nonempty. Evaluation at any point is a continuous left inverse. -/
 theorem isEmbedding_const [Nonempty X] : Topology.IsEmbedding (const X : Y → C(X, Y)) :=
   Function.LeftInverse.isEmbedding (f := fun f : C(X, Y) ↦ f (Classical.arbitrary X))
     (fun _ ↦ rfl) (continuous_eval_const _) continuous_const'
+
+variable {Z : Type*} [TopologicalSpace Z]
+
+/-- The maps obtained by postcomposition with a topology inducing map `g` are exactly the maps
+with values in the range of `g`. -/
+theorem range_postcomp (g : C(Y, Z)) (hg : Topology.IsInducing g) :
+    Set.range (g.comp : C(X, Y) → C(X, Z)) = {f | ∀ x, f x ∈ Set.range g} := by
+  refine Set.Subset.antisymm (Set.range_subset_iff.2 fun f x ↦ ⟨f x, rfl⟩) fun f hf ↦ ?_
+  choose k hk using hf
+  refine ⟨⟨k, hg.continuous_iff.2 ?_⟩, ext hk⟩
+  simpa [Function.comp_def, hk] using f.continuous
+
+/-- If `g : C(Y, Z)` is a closed embedding, then the composition
+`ContinuousMap.comp g : C(X, Y) → C(X, Z)` is a closed embedding too. -/
+theorem isClosedEmbedding_postcomp (g : C(Y, Z)) (hg : Topology.IsClosedEmbedding g) :
+    Topology.IsClosedEmbedding (g.comp : C(X, Y) → C(X, Z)) := by
+  refine ⟨isEmbedding_postcomp g hg.isEmbedding, ?_⟩
+  simp only [range_postcomp g hg.isInducing, Set.ofPred_forall]
+  exact isClosed_iInter fun x ↦ hg.isClosed_range.preimage (continuous_eval_const x)
 
 end ContinuousMap
