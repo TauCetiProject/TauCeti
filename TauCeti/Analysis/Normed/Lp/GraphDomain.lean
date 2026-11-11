@@ -33,7 +33,7 @@ public section
 
 namespace TauCeti
 
-open Set TopologicalSpace Filter Topology
+open Set TopologicalSpace
 open scoped NNReal
 
 variable {E : Type*}
@@ -44,8 +44,7 @@ variable [TopologicalSpace E]
 
 /-- The open half-space to the right of the normal coordinate `a` in the ℓ² product `ℝ × E`. -/
 def normalHalfSpace (a : ℝ) : Opens (WithLp 2 (ℝ × E)) :=
-  ⟨{x | a < (WithLp.ofLp x).1},
-    isOpen_lt continuous_const (WithLp.prod_continuous_ofLp 2 ℝ E).fst⟩
+  ⟨{x | a < (WithLp.ofLp x).1}, isOpen_lt continuous_const (by fun_prop)⟩
 
 /-- Membership in the normal-coordinate half-space is a strict inequality. -/
 @[simp]
@@ -107,12 +106,10 @@ theorem injective_normalGraphEmbedding (φ : E → ℝ) :
 theorem range_normalGraphEmbedding (φ : E → ℝ) :
     range (normalGraphEmbedding φ) = {x | x.fst = φ x.snd} := by
   ext x
-  constructor
+  refine ⟨?_, fun hx ↦ ⟨x.snd, ?_⟩⟩
   · rintro ⟨y, rfl⟩
     simp
-  · intro hx
-    refine ⟨x.snd, (WithLp.ext_iff 2).2 ?_⟩
-    exact Prod.ext hx.symm rfl
+  · simp [WithLp.ext_iff, Prod.ext_iff, normalGraphEmbedding, hx.symm]
 
 /-- The second projection is a `1`-Lipschitz inverse to the graph parametrization on its range. -/
 theorem antilipschitzWith_normalGraphEmbedding [PseudoMetricSpace E] (φ : E → ℝ) :
@@ -122,17 +119,19 @@ theorem antilipschitzWith_normalGraphEmbedding [PseudoMetricSpace E] (φ : E →
     WithLp.dist_snd_le (normalGraphEmbedding φ x) (normalGraphEmbedding φ y)
 
 /-- A `K`-Lipschitz function has a `(K + 1)`-Lipschitz normal graph parametrization. -/
-theorem _root_.LipschitzWith.normalGraphEmbedding [SeminormedAddCommGroup E] {K : ℝ≥0} {φ : E → ℝ}
+theorem _root_.LipschitzWith.normalGraphEmbedding [PseudoMetricSpace E] {K : ℝ≥0} {φ : E → ℝ}
     (hφ : LipschitzWith K φ) :
     LipschitzWith (K + 1) (TauCeti.normalGraphEmbedding φ) := by
   refine LipschitzWith.of_dist_le_mul fun x y ↦ ?_
+  have hx := dist_nonneg (x := φ x) (y := φ y)
+  have hy := dist_nonneg (x := x) (y := y)
   calc
-    dist (TauCeti.normalGraphEmbedding φ x) (TauCeti.normalGraphEmbedding φ y) ≤
-        dist (TauCeti.normalGraphEmbedding φ x) (WithLp.toLp 2 (φ y, x)) +
-          dist (WithLp.toLp 2 (φ y, x)) (TauCeti.normalGraphEmbedding φ y) :=
-      dist_triangle _ _ _
-    _ = dist (φ x) (φ y) + dist x y := by
-      simp [TauCeti.normalGraphEmbedding, WithLp.prod_dist_eq_of_L2]
+    dist (TauCeti.normalGraphEmbedding φ x) (TauCeti.normalGraphEmbedding φ y) =
+        √(dist (φ x) (φ y) ^ 2 + dist x y ^ 2) := by
+      simp [WithLp.prod_dist_eq_add, Real.sqrt_eq_rpow]
+    -- `a ^ 2 + b ^ 2 ≤ (a + b) ^ 2`, since `0 ≤ a * b`.
+    _ ≤ dist (φ x) (φ y) + dist x y := Real.sqrt_le_iff.2 ⟨by positivity,
+      by linarith [add_sq (dist (φ x) (φ y)) (dist x y), mul_nonneg hx hy]⟩
     _ ≤ K * dist x y + dist x y := add_le_add (hφ.dist_le_mul x y) le_rfl
     _ = (K + 1) * dist x y := by ring
 
@@ -144,29 +143,19 @@ variable [TopologicalSpace E]
 theorem _root_.Continuous.isClosed_range_normalGraphEmbedding {φ : E → ℝ} (hφ : Continuous φ) :
     IsClosed (range (TauCeti.normalGraphEmbedding φ)) := by
   rw [range_normalGraphEmbedding]
-  exact isClosed_eq (WithLp.prod_continuous_ofLp 2 ℝ E).fst
-    (hφ.comp (WithLp.prod_continuous_ofLp 2 ℝ E).snd)
+  exact isClosed_eq (by fun_prop) (by fun_prop)
 
 /-- The frontier of the region strictly above the graph of a continuous function is the
 graph. -/
 theorem frontier_setOf_lt_fst {γ : E → ℝ} (hγ : Continuous γ) :
     frontier {x : WithLp 2 (ℝ × E) | γ x.snd < x.fst} = {x | x.fst = γ x.snd} := by
-  have hopen : IsOpen {x : WithLp 2 (ℝ × E) | γ x.snd < x.fst} :=
-    isOpen_lt (by fun_prop) (by fun_prop)
-  refine Subset.antisymm
-    (fun x hx => (frontier_lt_subset_eq (by fun_prop) (by fun_prop) hx).symm) fun x hx => ?_
-  rw [mem_ofPred_eq] at hx
-  rw [hopen.frontier_eq, Set.mem_sdiff, mem_ofPred_eq]
-  refine ⟨?_, fun h => h.ne' hx⟩
-  -- A graph point is the limit of the points `(x.fst + t, x.snd)` above it, as `t → 0⁺`.
-  have hlim : Tendsto (fun t : ℝ => WithLp.toLp 2 (x.fst + t, x.snd)) (𝓝[>] 0) (𝓝 x) := by
-    have hcont : Continuous fun t : ℝ => WithLp.toLp 2 (x.fst + t, x.snd) := by fun_prop
-    have h0 := (hcont.tendsto 0).mono_left (nhdsWithin_le_nhds (s := Ioi 0))
-    rwa [add_zero, ← WithLp.ofLp_fst, ← WithLp.ofLp_snd, Prod.mk.eta, WithLp.toLp_ofLp] at h0
-  refine mem_closure_of_tendsto hlim ?_
-  filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
-  simp only [WithLp.toLp_fst, WithLp.toLp_snd, ← hx]
-  linarith
+  -- `x ↦ x.fst - γ x.snd` is an open map, with the continuous section `s ↦ (s + γ x.snd, x.snd)`
+  -- through each point `x`, so it pulls the frontier `{0}` of `Ioi 0` back to the frontier.
+  have hf : IsOpenMap fun x : WithLp 2 (ℝ × E) ↦ x.fst - γ x.snd :=
+    .of_sections fun x ↦ ⟨fun s ↦ WithLp.toLp 2 (s + γ x.snd, x.snd), by fun_prop,
+      by simp [WithLp.ext_iff, Prod.ext_iff], fun s ↦ by simp⟩
+  simpa [frontier_Ioi, preimage, sub_pos, sub_eq_zero] using
+    (hf.preimage_frontier_eq_frontier_preimage (by fun_prop) (Ioi 0)).symm
 
 end
 
