@@ -216,8 +216,12 @@ theorem coe_negativeNormalSpaceEquiv_apply (g' : RiemannianMetric fun s ↦ i.No
     {s : S} (v : h.negativeNormalSpace hn g s) :
     (h.negativeNormalSpaceEquiv hn g g' s v : i.NormalSpace s hn) =
       (h.negativeNormalSpace hn g' s).projection (h.positiveNormalSpace hn g' s)
-        (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g' s) v :=
-  (rfl)
+        (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g' s) v := by
+  rw [negativeNormalSpaceEquiv, LinearEquiv.trans_apply,
+    ← LinearEquiv.coe_toLinearMap (Submodule.quotientEquivOfIsCompl _ _ _).symm,
+    Submodule.toLinearMap_symm_quotientEquivOfIsCompl, LinearMap.comp_apply, Submodule.mkQ_apply,
+    Submodule.quotientEquivOfIsCompl_apply_mk, Submodule.coe_projectionOnto_apply,
+    Submodule.subtype_apply]
 
 /-- For a single metric the identification of the negative normal spaces is the identity. -/
 @[simp]
@@ -244,8 +248,12 @@ theorem coe_positiveNormalSpaceEquiv_apply (g' : RiemannianMetric fun s ↦ i.No
     {s : S} (v : h.positiveNormalSpace hn g s) :
     (h.positiveNormalSpaceEquiv hn g g' s v : i.NormalSpace s hn) =
       (h.positiveNormalSpace hn g' s).projection (h.negativeNormalSpace hn g' s)
-        (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g' s).symm v :=
-  (rfl)
+        (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g' s).symm v := by
+  rw [positiveNormalSpaceEquiv, LinearEquiv.trans_apply,
+    ← LinearEquiv.coe_toLinearMap (Submodule.quotientEquivOfIsCompl _ _ _).symm,
+    Submodule.toLinearMap_symm_quotientEquivOfIsCompl, LinearMap.comp_apply, Submodule.mkQ_apply,
+    Submodule.quotientEquivOfIsCompl_apply_mk, Submodule.coe_projectionOnto_apply,
+    Submodule.subtype_apply]
 
 /-- For a single metric the identification of the positive normal spaces is the identity. -/
 @[simp]

@@ -290,7 +290,7 @@ theorem hasLocalContMDiffSubbundleFrames_positiveNormalSpace_of_preconnectedSpac
 along the positive normal bundle, is a `C^k` map of total spaces. In the trivialization at any
 point it reads `(s, y) ↦ (s, p s y)` for the `C^k` family of projections `p` of
 `exists_contMDiffOn_negativeNormalSpace_eq_map`. -/
-private theorem contMDiff_projection_negativeNormalSpace
+theorem contMDiff_projection_negativeNormalSpace
     (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n)
     (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
     (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
@@ -350,7 +350,7 @@ private theorem contMDiff_projection_negativeNormalSpace
 /-- Projecting the normal bundle onto the positive normal bundle relative to a `C^k` fibre metric,
 along the negative normal bundle, is a `C^k` map of total spaces: it is the identity minus the
 projection of `contMDiff_projection_negativeNormalSpace`. -/
-private theorem contMDiff_projection_positiveNormalSpace
+theorem contMDiff_projection_positiveNormalSpace
     (h : i.IsNondegenerateCriticalSubmanifold f) (hk : k + 1 ≤ n)
     (hf : ∀ s, ContMDiffAt I 𝓘(ℝ) (k + 2) f (i s))
     (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
