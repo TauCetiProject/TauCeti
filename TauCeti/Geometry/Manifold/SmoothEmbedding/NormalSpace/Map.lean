@@ -11,9 +11,9 @@ public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 /-!
 # Maps between intrinsic normal spaces
 
-A commuting square of differentiable maps between two smooth embeddings induces a continuous
-linear map between their normal spaces. The ambient differential carries tangent vectors to
-tangent vectors, so it descends to the quotient. The induced map is an equivalence when the base
+A commuting square between two smooth embeddings whose base map is differentiable induces a
+continuous linear map between their normal spaces. The ambient differential carries tangent vectors
+to tangent vectors, so it descends to the quotient. The induced map is an equivalence when the base
 differential is surjective and the ambient map is a local diffeomorphism. In particular, these
 equivalences identify intrinsic normal fibres in different submanifold coordinates, without
 choosing a metric or a complement.
@@ -21,8 +21,9 @@ choosing a metric or a complement.
 The square need only commute near the chosen base point. This local formulation allows the
 construction to be applied to coordinate maps and to their restrictions.
 
-A globally commuting square of differentiable maps also induces a map of intrinsic normal total
-spaces, acting on each fibre by the normal map; these maps respect identities and composition.
+A globally commuting square whose base map is differentiable also induces a map of intrinsic
+normal total spaces, acting on each fibre by the normal map; these maps respect identities and
+composition.
 
 ## References
 
@@ -224,17 +225,19 @@ theorem normalBundleMap_comp (hn : n ≠ 0) (hm : m ≠ 0) (hr : r ≠ 0)
 end Composition
 
 /-- In a square commuting near `x` whose ambient map is differentiable at `f x`, a base map with
-surjective differential is differentiable at `x`. Otherwise its differential vanishes, so its
-target tangent space is trivial and differentiability reduces to continuity, which the
-embedding `g` reflects. -/
-private theorem mdifferentiableAt_of_surjective_mfderiv (hv : MDifferentiableAt J J' v (f x))
+surjective differential is differentiable at `x`. -/
+theorem mdifferentiableAt_of_surjective_mfderiv (hv : MDifferentiableAt J J' v (f x))
     (h : v ∘ f =ᶠ[𝓝 x] g ∘ u) (hsurj : Surjective (mfderiv I I' u x)) :
     MDifferentiableAt I I' u x := by
+  -- Otherwise the differential vanishes, forcing the target model space to be trivial.
+  -- Differentiability then reduces to continuity, which the embedding g reflects.
   by_contra hu
-  have : Subsingleton E' := ⟨fun a b ↦ by
+  have ht : Subsingleton (TangentSpace I' (u x)) := ⟨fun a b ↦ by
     obtain ⟨a, rfl⟩ := hsurj a
     obtain ⟨b, rfl⟩ := hsurj b
-    simp [mfderiv_zero_of_not_mdifferentiableAt hu]; rfl⟩
+    simp only [mfderiv_zero_of_not_mdifferentiableAt hu, zero_apply]⟩
+  -- The tangent space is a type synonym for the target model space.
+  have : Subsingleton E' := ht
   refine hu ((mdifferentiableAt_iff u x).mpr ⟨?_, ?_⟩)
   · exact g.isEmbedding.isInducing.continuousAt_iff.mpr
       ((hv.continuousAt.comp f.contMDiff.continuous.continuousAt).congr h)
@@ -290,10 +293,11 @@ def normalSpaceEquiv {l : ℕ∞ω} (hn : n ≠ 0) (hm : m ≠ 0)
 /-- The normal-fibre equivalence has the normal map as its underlying continuous linear map. -/
 @[simp]
 theorem normalSpaceEquiv_toContinuousLinearMap {l : ℕ∞ω} (hn : n ≠ 0) (hm : m ≠ 0)
-    (hu : MDifferentiableAt I I' u x) (hv : IsLocalDiffeomorphAt J J' l v (f x))
+    (hv : IsLocalDiffeomorphAt J J' l v (f x))
     (hsurj : Surjective (mfderiv I I' u x)) (hl : l ≠ 0) (h : v ∘ f =ᶠ[𝓝 x] g ∘ u) :
     (f.normalSpaceEquiv g hn hm hv hsurj hl h).toContinuousLinearMap =
-      f.normalMap g hn hm hu h := by
+      f.normalMap g hn hm
+        (f.mdifferentiableAt_of_surjective_mfderiv g (hv.mdifferentiableAt hl) h hsurj) h := by
   ext z
   obtain ⟨w, rfl⟩ := f.normalClass_surjective x hn z
   simp only [ContinuousLinearEquiv.coe_apply, normalSpaceEquiv,
@@ -312,9 +316,7 @@ theorem normalSpaceEquiv_normalClass {l : ℕ∞ω} (hn : n ≠ 0) (hm : m ≠ 0
         (tangentSpaceCast J' (v (f x)) (g (u x)) (mfderiv J J' v (f x) w)) := by
   simpa only [ContinuousLinearEquiv.coe_apply, normalMap_normalClass] using
     congrArg (fun L => L (f.normalClass x hn w))
-      (f.normalSpaceEquiv_toContinuousLinearMap g hn hm
-        (f.mdifferentiableAt_of_surjective_mfderiv g (hv.mdifferentiableAt hl) h hsurj)
-        hv hsurj hl h)
+      (f.normalSpaceEquiv_toContinuousLinearMap g hn hm hv hsurj hl h)
 
 /-- On representatives, the inverse normal-fibre equivalence applies the inverse ambient
 differential, after identifying the equal ambient base points. -/
