@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.FiberBundle.Basic
 public import TauCeti.Geometry.Manifold.Submersion.Basic
+public import TauCeti.Geometry.Manifold.RegularValue
 
 /-!
 # The projection of a smooth fibre bundle with manifold fibre is a submersion
@@ -26,6 +27,8 @@ Smooth descent along the projection, which needs no submersion theory, is in
 
 * `TauCeti.ManifoldTotalSpace.isSubmersionOfComplement_proj` and `isSubmersion_proj`: the projection
   of a `C^n` fibre bundle is a `C^n` submersion.
+* `TauCeti.ManifoldTotalSpace.isRegularValue_proj`: every base point is a regular value
+  of the projection when `1 ≤ n`.
 
 ## References
 
@@ -72,5 +75,15 @@ theorem isSubmersion_proj :
     Manifold.IsSubmersion (IB.prod IF) IB n
       fun x : ManifoldTotalSpace F E ↦ ((homeomorph F E).symm x).proj :=
   (isSubmersionOfComplement_proj n F E IB IF).isSubmersion
+
+/-- Every base point is a regular value of a smooth bundle projection, including when its
+fibre is empty. -/
+theorem isRegularValue_proj (hn : 1 ≤ n) (b : B) :
+    TauCeti.IsRegularValue (IB.prod IF) IB
+      (fun x : ManifoldTotalSpace F E ↦ ((homeomorph F E).symm x).proj) b := by
+  rw [TauCeti.isRegularValue_iff]
+  exact fun x _ ↦ TauCeti.isRegularPoint_iff.2
+    ((isSubmersion_proj n F E IB IF).surjective_mfderiv
+      (ne_of_gt (zero_lt_one.trans_le hn)) x)
 
 end TauCeti.ManifoldTotalSpace
