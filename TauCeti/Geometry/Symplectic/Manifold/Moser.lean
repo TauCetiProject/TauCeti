@@ -158,6 +158,7 @@ theorem eq_moserVectorField_iff {t : ℝ} {x : M} {v : TangentSpace I x} :
 
 /-- **The Moser vector field vanishes where the primitive does**: `X_t(x) = 0` exactly when
 `α_t` vanishes at `x`. -/
+@[simp]
 theorem moserVectorField_eq_zero_iff {t : ℝ} {x : M} :
     σ.moserVectorField α t x = 0 ↔
       (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x = 0 := by
