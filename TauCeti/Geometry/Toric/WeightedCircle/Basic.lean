@@ -40,6 +40,9 @@ weight exceeds `1`):
   `z₂ = 0` have the cyclic stabilizer of `a`-th roots of unity, of order `a`
   (`TauCeti.Toric.natCard_stabilizer_weightedEllipsoid_of_snd_eq_zero`), and those on the axis
   `z₁ = 0` the cyclic stabilizer of order `b`.
+* **Periods.** Accordingly the rotation by the angle `θ` has least period `2π` at the points off
+  the axes (`TauCeti.Toric.isLeast_weightedRotation_exp_neg_eq_self`), and least periods `2π / a`
+  and `2π / b` on the axes `z₂ = 0` and `z₁ = 0`.
 * **The quotient.** The weighted Hopf map `z ↦ [z₁ ^ b : z₂ ^ a]` to the complex projective line
   is invariant, because `u` multiplies both homogeneous coordinates by `u ^ (a b)`. Its fibres on
   `E` are exactly the orbits: if `(z₁ ^ b, z₂ ^ a) = c (w₁ ^ b, w₂ ^ a)` for `z, w ∈ E`, comparing
@@ -70,6 +73,10 @@ over the two poles are recorded separately and are not erased.
 ## Main results
 
 * `TauCeti.Toric.weightedRotation_eq_self_iff`: the stabilizer of a point of `ℂ²`.
+* `TauCeti.Toric.isLeast_weightedRotation_exp_neg_eq_self`,
+  `TauCeti.Toric.isLeast_weightedRotation_exp_neg_eq_self_of_snd_eq_zero`,
+  `TauCeti.Toric.isLeast_weightedRotation_exp_neg_eq_self_of_fst_eq_zero`: the least periods
+  `2π`, `2π / a` and `2π / b` of the rotations off the axes and on the two axes.
 * `TauCeti.Toric.isCompact_weightedEllipsoid`: the ellipsoid is compact.
 * `TauCeti.Toric.stabilizer_weightedEllipsoid_eq_bot`: the action is free off the axes.
 * `TauCeti.Toric.natCard_stabilizer_weightedEllipsoid_of_snd_eq_zero`,
@@ -96,7 +103,7 @@ public section
 
 noncomputable section
 
-open Set Filter Topology Projectivization
+open Set Filter Topology Projectivization Real
 open scoped LinearAlgebra.Projectivization
 
 namespace TauCeti.Toric
@@ -143,6 +150,89 @@ theorem weightedRotation_eq_self_iff {u : Circle} {z : ℂ × ℂ} :
   simp only [Prod.ext_iff, weightedRotation_fst, weightedRotation_snd, mul_left_eq_self₀,
     ← Circle.coe_pow, Circle.coe_eq_one]
   tauto
+
+/-! ### Periods of the weighted rotations -/
+
+private theorem isLeast_pos_int_mul {c : ℝ} (hc : 0 < c) :
+    IsLeast {θ : ℝ | 0 < θ ∧ ∃ n : ℤ, θ = n * c} c := by
+  refine ⟨⟨hc, 1, by simp⟩, ?_⟩
+  rintro θ ⟨hθ, n, rfl⟩
+  have hn : (0 : ℝ) < n := pos_of_mul_pos_left hθ hc.le
+  have hn' : (1 : ℝ) ≤ n := by exact_mod_cast Int.cast_pos.1 hn
+  nlinarith
+
+/-- The circle element `exp(-i θ)` has `a`-th power one exactly when `θ` is an integer multiple
+of `2π / a`. -/
+private theorem exp_neg_pow_eq_one_iff (ha : 0 < a) {θ : ℝ} :
+    Circle.exp (-θ) ^ a = 1 ↔ ∃ n : ℤ, θ = n * (2 * π / a) := by
+  have ha' : (a : ℝ) ≠ 0 := by exact_mod_cast ha.ne'
+  rw [← Circle.exp_natCast_mul, Circle.exp_eq_one]
+  constructor
+  · rintro ⟨n, hn⟩
+    exact ⟨-n, by field_simp; push_cast; linarith⟩
+  · rintro ⟨n, rfl⟩
+    exact ⟨-n, by field_simp; push_cast; ring⟩
+
+/-- **The periods of a point off the axes.** For coprime weights, the rotation by the angle `θ`,
+`z_j ↦ exp(-i a_j θ) z_j`, fixes a point with both coordinates nonzero exactly when `θ` is an
+integer multiple of `2π`. -/
+theorem weightedRotation_exp_neg_eq_self_iff (hab : a.Coprime b) {z : ℂ × ℂ} (h₁ : z.1 ≠ 0)
+    (h₂ : z.2 ≠ 0) {θ : ℝ} :
+    weightedRotation a b (Circle.exp (-θ)) z = z ↔ ∃ n : ℤ, θ = n * (2 * π) := by
+  rw [weightedRotation_eq_self_iff]
+  simp only [ne_eq, h₁, not_false_eq_true, forall_const, h₂]
+  constructor
+  · rintro ⟨h₁, h₂⟩
+    have h := pow_gcd_eq_one.2 ⟨h₁, h₂⟩
+    rw [hab.gcd_eq_one, pow_one, Circle.exp_eq_one] at h
+    obtain ⟨n, hn⟩ := h
+    exact ⟨-n, by push_cast; linarith⟩
+  · rintro ⟨n, rfl⟩
+    have h : Circle.exp (-(n * (2 * π))) = 1 := by
+      rw [← neg_mul, ← Int.cast_neg]
+      exact Circle.exp_int_mul_two_pi _
+    simp [h]
+
+/-- **The least period of a point off the axes** is `2π` for coprime weights. -/
+theorem isLeast_weightedRotation_exp_neg_eq_self (hab : a.Coprime b) {z : ℂ × ℂ} (h₁ : z.1 ≠ 0)
+    (h₂ : z.2 ≠ 0) :
+    IsLeast {θ : ℝ | 0 < θ ∧ weightedRotation a b (Circle.exp (-θ)) z = z} (2 * π) := by
+  simp_rw [weightedRotation_exp_neg_eq_self_iff hab h₁ h₂]
+  exact isLeast_pos_int_mul (by positivity)
+
+/-- **The periods of a point on the axis `z₂ = 0`.** The rotation by the angle `θ` fixes a point
+`(z₁, 0)` with `z₁ ≠ 0` exactly when `θ` is an integer multiple of `2π / a`. -/
+theorem weightedRotation_exp_neg_eq_self_iff_of_snd_eq_zero (ha : 0 < a) {z : ℂ × ℂ}
+    (h₁ : z.1 ≠ 0) (h₂ : z.2 = 0) {θ : ℝ} :
+    weightedRotation a b (Circle.exp (-θ)) z = z ↔ ∃ n : ℤ, θ = n * (2 * π / a) := by
+  rw [weightedRotation_eq_self_iff]
+  simp only [ne_eq, h₁, not_false_eq_true, forall_const, h₂, not_true_eq_false,
+    IsEmpty.forall_iff, and_true]
+  exact exp_neg_pow_eq_one_iff ha
+
+/-- **The least period of a point on the axis `z₂ = 0`** is `2π / a`. -/
+theorem isLeast_weightedRotation_exp_neg_eq_self_of_snd_eq_zero (ha : 0 < a) {z : ℂ × ℂ}
+    (h₁ : z.1 ≠ 0) (h₂ : z.2 = 0) :
+    IsLeast {θ : ℝ | 0 < θ ∧ weightedRotation a b (Circle.exp (-θ)) z = z} (2 * π / a) := by
+  simp_rw [weightedRotation_exp_neg_eq_self_iff_of_snd_eq_zero ha h₁ h₂]
+  exact isLeast_pos_int_mul (by positivity)
+
+/-- **The periods of a point on the axis `z₁ = 0`.** The rotation by the angle `θ` fixes a point
+`(0, z₂)` with `z₂ ≠ 0` exactly when `θ` is an integer multiple of `2π / b`. -/
+theorem weightedRotation_exp_neg_eq_self_iff_of_fst_eq_zero (hb : 0 < b) {z : ℂ × ℂ}
+    (h₁ : z.1 = 0) (h₂ : z.2 ≠ 0) {θ : ℝ} :
+    weightedRotation a b (Circle.exp (-θ)) z = z ↔ ∃ n : ℤ, θ = n * (2 * π / b) := by
+  rw [weightedRotation_eq_self_iff]
+  simp only [ne_eq, h₁, not_true_eq_false, IsEmpty.forall_iff, h₂, not_false_eq_true,
+    forall_const, true_and]
+  exact exp_neg_pow_eq_one_iff hb
+
+/-- **The least period of a point on the axis `z₁ = 0`** is `2π / b`. -/
+theorem isLeast_weightedRotation_exp_neg_eq_self_of_fst_eq_zero (hb : 0 < b) {z : ℂ × ℂ}
+    (h₁ : z.1 = 0) (h₂ : z.2 ≠ 0) :
+    IsLeast {θ : ℝ | 0 < θ ∧ weightedRotation a b (Circle.exp (-θ)) z = z} (2 * π / b) := by
+  simp_rw [weightedRotation_exp_neg_eq_self_iff_of_fst_eq_zero hb h₁ h₂]
+  exact isLeast_pos_int_mul (by positivity)
 
 /-! ### The ellipsoid -/
 
@@ -196,6 +286,21 @@ theorem coe_smul_weightedEllipsoid (u : Circle) (z : weightedEllipsoid a b ε) :
 instance : ContinuousSMul Circle (weightedEllipsoid a b ε) :=
   ⟨continuous_induced_rng.2 <| continuous_weightedRotation.comp
     (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))⟩
+
+/-! ### Exchanging the coordinates -/
+
+/-- Exchanging the coordinates intertwines the rotations with weights `(a, b)` and `(b, a)`. -/
+@[simp]
+theorem swap_weightedRotation (u : Circle) (z : ℂ × ℂ) :
+    (weightedRotation a b u z).swap = weightedRotation b a u z.swap :=
+  Prod.ext (by simp) (by simp)
+
+/-- Exchanging the coordinates carries the ellipsoid with weights `(a, b)` onto the ellipsoid with
+weights `(b, a)`. -/
+theorem swap_mem_weightedEllipsoid {z : ℂ × ℂ} :
+    z.swap ∈ weightedEllipsoid b a ε ↔ z ∈ weightedEllipsoid a b ε := by
+  simp only [mem_weightedEllipsoid, Prod.fst_swap, Prod.snd_swap]
+  rw [add_comm]
 
 /-! ### Stabilizers -/
 
