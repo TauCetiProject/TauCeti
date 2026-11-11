@@ -35,14 +35,14 @@ Here `\bar∂ξ` is `conjWirtingerDeriv ξ z 1 = (∂ₛξ + i ∂ₜξ) / 2`.
 
 ## Main results
 
-* `TauCeti.conjWirtingerDeriv_cexp_conj_apply_one`: `\bar∂ e^{conj z} = e^{conj z}`.
+* `Complex.conjWirtingerDeriv_cexp_conj_apply_one`: `\bar∂ e^{conj z} = e^{conj z}`.
 * `TauCeti.conjWirtingerDeriv_cexp_conj_smul_apply_one`: the integrating factor identity
   `\bar∂(e^{conj z} ξ) = e^{conj z} (\bar∂ξ + ξ)`.
 * `TauCeti.differentiableAt_cexp_conj_smul_iff`: `e^{conj z} ξ` is complex differentiable at `z`
   exactly when `\bar∂ξ + ξ = 0` there.
 * `TauCeti.conjWirtingerDeriv_add_eq_zero_iff_exists_eq_cexp_neg_conj_smul`: on an open set, the
   solutions of `\bar∂ξ + ξ = 0` are the maps `e^{-conj z} h` with `h` holomorphic.
-* `TauCeti.conjWirtingerDeriv_ofReal_exp_neg_two_mul_re_apply_one_add`: `e^{-2 s}` solves
+* `Complex.conjWirtingerDeriv_ofReal_exp_neg_two_mul_re_apply_one_add`: `e^{-2 s}` solves
   `\bar∂ξ + ξ = 0`.
 * `TauCeti.compactPerturbation_disc_kernel_check`: on the unit disc with real values on the unit
   circle, the constants solving `\bar∂ξ = 0` are the real ones, the only constant solving
@@ -60,6 +60,8 @@ open scoped ComplexConjugate
 
 namespace Complex
 
+open TauCeti
+
 /-- The real derivative of `w ↦ e^{conj w}`. -/
 theorem hasFDerivAt_cexp_conj (z : ℂ) :
     HasFDerivAt (fun w : ℂ ↦ cexp (conj w))
@@ -73,12 +75,6 @@ theorem ofReal_exp_neg_two_mul_re (z : ℂ) :
   congr 1
   apply Complex.ext <;> simp; ring
 
-end Complex
-
-namespace TauCeti
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-
 /-! ### The integrating factor `e^{conj z}` -/
 
 /-- The antiholomorphic exponential is its own conjugate Wirtinger derivative:
@@ -89,6 +85,12 @@ theorem conjWirtingerDeriv_cexp_conj_apply_one (z : ℂ) :
   simp only [smul_apply, ContinuousLinearEquiv.coe_coe, conjCLE_apply, map_one, smul_eq_mul,
     mul_one, conj_I]
   linear_combination -cexp (conj z) / 2 * I_sq
+
+end Complex
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-- **The integrating factor** for `\bar∂ + 1`: `\bar∂(e^{conj z} ξ) = e^{conj z} (\bar∂ξ + ξ)`. -/
 theorem conjWirtingerDeriv_cexp_conj_smul_apply_one {ξ : ℂ → E} {z : ℂ}
@@ -132,6 +134,12 @@ theorem conjWirtingerDeriv_add_eq_zero_iff_exists_eq_cexp_neg_conj_smul {ξ : �
     filter_upwards [hΩ.mem_nhds hz] with w hw
     rw [hξ hw, smul_smul, ← exp_add, add_neg_cancel, exp_zero, one_smul]
 
+end TauCeti
+
+namespace Complex
+
+open TauCeti
+
 /-! ### Constants and the solution `e^{-2 s}` -/
 
 /-- The real function `e^{-2 s}` solves `\bar∂ξ + ξ = 0` on the whole plane. -/
@@ -141,6 +149,10 @@ theorem conjWirtingerDeriv_ofReal_exp_neg_two_mul_re_apply_one_add (z : ℂ) :
   ((conjWirtingerDeriv_add_eq_zero_iff_exists_eq_cexp_neg_conj_smul isOpen_univ).2
     ⟨fun w : ℂ ↦ cexp (-w), (differentiable_id.neg.cexp).differentiableOn,
       fun (w : ℂ) _ ↦ by simp only [smul_eq_mul, ofReal_exp_neg_two_mul_re]⟩).2 z (mem_univ z)
+
+end Complex
+
+namespace TauCeti
 
 /-- **Check: compact perturbation changes the kernel.** On the unit disc with real values on the
 unit circle:
