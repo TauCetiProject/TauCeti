@@ -44,7 +44,7 @@ theorem contMDiff_powPullbackPeriod (l : Λ) :
   simpa only [powPullbackPeriod_apply, Function.comp_def] using
     (hP l).comp rootsOfUnityBall.contMDiff_powMap
 
-variable [Module.Free ℤ Λ] [Module.Finite ℤ Λ] [FiniteDimensional ℂ E]
+variable [FiniteDimensional ℂ E]
   [∀ t, DiscreteTopology (LinearMap.range (P t))]
   [∀ t, IsZLattice ℝ (LinearMap.range (P t))]
   (hinj : ∀ t, Function.Injective (P t))
