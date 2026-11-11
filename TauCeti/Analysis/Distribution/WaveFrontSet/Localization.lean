@@ -62,7 +62,8 @@ decays rapidly, and the remaining terms are controlled by the rapid decay of `a_
   `Distribution.isMicrolocallySmoothAt_smulLeftCLM_iff`,
   `Distribution.waveFrontSet_smulLeftCLM_subset`, `Distribution.mem_waveFrontSet_smulLeftCLM_iff`:
   the wave front set of a smooth multiple `g T` lies in that of `T` over `tsupport g`, with
-  equality at the points where `g ≠ 0`.
+  equality at the points where `g ≠ 0`, and everywhere when `g` vanishes nowhere on `Ω`
+  (`Distribution.waveFrontSet_smulLeftCLM_of_ne_zero`).
 * `Distribution.isMicrolocallySmoothAt_restrictCLM_iff`, `Distribution.waveFrontSet_restrictCLM`:
   for an open subset `Ω' ≤ Ω`, `WF(T|_{Ω'}) = WF(T) ∩ (Ω' × E)`.
 * `Distribution.waveFrontSet_inter_eq_of_restrictCLM_eq`: distributions with the same restriction
@@ -369,6 +370,15 @@ as `T`. -/
 theorem mem_waveFrontSet_smulLeftCLM_iff {T : 𝓓'(Ω, ℂ)} {x ξ : E} (hg : ContDiff ℝ ∞ g)
     (hx : g x ≠ 0) : (x, ξ) ∈ (smulLeftCLM hg T).waveFrontSet ↔ (x, ξ) ∈ T.waveFrontSet := by
   simp [isMicrolocallySmoothAt_smulLeftCLM_iff hg hx]
+
+/-- Multiplying by a smooth function that vanishes nowhere on `Ω` does not change the wave front
+set. -/
+theorem waveFrontSet_smulLeftCLM_of_ne_zero (T : 𝓓'(Ω, ℂ)) (hg : ContDiff ℝ ∞ g)
+    (hg0 : ∀ x ∈ Ω, g x ≠ 0) : (smulLeftCLM hg T).waveFrontSet = T.waveFrontSet := by
+  ext ⟨x, ξ⟩
+  by_cases hx : x ∈ Ω
+  · exact mem_waveFrontSet_smulLeftCLM_iff hg (hg0 x hx)
+  · simp [hx]
 
 end SmulLeft
 

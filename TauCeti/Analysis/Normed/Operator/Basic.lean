@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import Mathlib.Analysis.Normed.Module.FiniteDimension
+import Mathlib.Analysis.Normed.Operator.NNNorm
 import Mathlib.LinearAlgebra.Pi
 
 /-!
@@ -30,7 +31,10 @@ In particular, it supplies the common continuity step for
 
 A left inverse `S` of `T` modulo an error term gives the estimate
 `‖x‖ ≤ ‖S‖ ‖T x‖ + ‖(S ∘ T - 1) x‖`
-(`ContinuousLinearMap.norm_le_opNorm_mul_norm_add_norm_comp_sub_one`).
+(`ContinuousLinearMap.norm_le_opNorm_mul_norm_add_norm_comp_sub_one`). The difference of two
+compositions obeys the three-term estimate
+`‖A' ∘ B' - A ∘ B‖ ≤ ‖A' - A‖ ‖B' - B‖ + ‖A' - A‖ ‖B‖ + ‖A‖ ‖B' - B‖`
+(`ContinuousLinearMap.enorm_comp_sub_comp_le`).
 
 Finally, an operator bounded below is injective
 (`ContinuousLinearMap.injective_of_forall_norm_le`), its lower and upper bounds satisfy
@@ -47,6 +51,8 @@ and conversely a lower bound `‖x‖ ≤ M ‖A x‖` bounds the norm of the in
 (`ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le`). An operator bounded below
 is invertible if a sufficiently nearby operator is invertible
 (`ContinuousLinearMap.isUnit_of_forall_mul_norm_le_of_norm_sub_lt`).
+A family of operators continuous at a point and invertible there changes the size of a
+function near that point only up to constant factors (`TauCeti.isTheta_clm_apply_of_isUnit`).
 
 The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous bilinear map along vectors of norm at
 most one, such as the trace of `A` along an orthonormal basis, is bounded by `#s * ‖A‖`
@@ -163,6 +169,22 @@ theorem norm_le_opNorm_mul_norm_add_norm_comp_sub_one (T : X →L[𝕜] Y) (S : 
   calc ‖x‖ = ‖S (T x) - (S.comp T - 1 : X →L[𝕜] X) x‖ := congrArg _ hx
     _ ≤ ‖S (T x)‖ + ‖(S.comp T - 1 : X →L[𝕜] X) x‖ := norm_sub_le _ _
     _ ≤ ‖S‖ * ‖T x‖ + ‖(S.comp T - 1 : X →L[𝕜] X) x‖ := by gcongr; exact S.le_opNorm _
+
+/-- The three-term estimate for the difference of two compositions:
+`‖A' ∘ B' - A ∘ B‖ ≤ ‖A' - A‖ ‖B' - B‖ + ‖A' - A‖ ‖B‖ + ‖A‖ ‖B' - B‖`, in extended norms. -/
+theorem enorm_comp_sub_comp_le {Z : Type*} [SeminormedAddCommGroup Z] [NormedSpace 𝕜 Z]
+    (A' A : Y →L[𝕜] Z) (B' B : X →L[𝕜] Y) :
+    ‖A'.comp B' - A.comp B‖ₑ ≤
+      ‖A' - A‖ₑ * ‖B' - B‖ₑ + ‖A' - A‖ₑ * ‖B‖ₑ + ‖A‖ₑ * ‖B' - B‖ₑ := by
+  have hsplit : A'.comp B' - A.comp B =
+      (A' - A).comp (B' - B) + (A' - A).comp B + A.comp (B' - B) := by
+    ext v
+    simp only [add_apply, sub_apply, coe_comp, Function.comp_apply, map_sub]
+    abel
+  rw [hsplit]
+  calc _ ≤ ‖(A' - A).comp (B' - B)‖ₑ + ‖(A' - A).comp B‖ₑ + ‖A.comp (B' - B)‖ₑ :=
+        (enorm_add_le _ _).trans (add_le_add_left (enorm_add_le _ _) _)
+    _ ≤ _ := by gcongr <;> exact opENorm_comp_le _ _
 
 section Inverse
 
@@ -490,6 +512,8 @@ theorem ContinuousLinearMap.exists_pi_update_equiv {ι : Type*} [Finite ι] [Dec
 
 namespace TauCeti
 
+section
+
 variable {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
 
 /-- If `J² = -1`, then `J₂ = diag(J, J)` satisfies `J₂² = -1`. -/
@@ -497,6 +521,35 @@ theorem prodMap_mul_self_eq_neg_one {A : V →L[𝕜] V} (hA : A * A = -1) :
     A.prodMap A * A.prodMap A = -1 := by
   have h (v : V) : A (A v) = -v := by simpa using congr($hA v)
   refine ContinuousLinearMap.ext fun x => Prod.ext ?_ ?_ <;> simp [h]
+
+end
+
+section
+
+open Filter Topology
+
+variable {𝕜 α E : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace α] [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [CompleteSpace E] {Φ : α → E →L[𝕜] E} {σ : α → E} {a : α}
+
+/-- A family of linear maps continuous at `a` and invertible there changes the size of a
+function near `a` only up to constant factors. -/
+theorem isTheta_clm_apply_of_isUnit (hΦ : ContinuousAt Φ a) (hΦa : IsUnit (Φ a)) :
+    (fun x ↦ Φ x (σ x)) =Θ[𝓝 a] σ := by
+  -- a family of operators bounded near `a` changes a function only up to a constant factor
+  have hbound : ∀ {M : α → E →L[𝕜] E} {τ : α → E}, ContinuousAt M a →
+      (fun x ↦ M x (τ x)) =O[𝓝 a] τ := fun {M τ} hM ↦ by
+    refine .of_bound (‖M a‖ + 1) ?_
+    filter_upwards [hM.norm.eventually (gt_mem_nhds (lt_add_one ‖M a‖))] with x hx
+    exact (M x).le_of_opNorm_le hx.le (τ x)
+  refine ⟨hbound hΦ, ?_⟩
+  -- near `a` the operators stay invertible, and `σ` is recovered by applying their inverses
+  have hinv : ContinuousAt (fun x ↦ Ring.inverse (Φ x)) a :=
+    (NormedRing.inverse_continuousAt hΦa.unit).comp_of_eq hΦ hΦa.unit_spec.symm
+  refine (hbound (τ := fun x ↦ Φ x (σ x)) hinv).congr' ?_ EventuallyEq.rfl
+  filter_upwards [hΦ.eventually (Units.isOpen.mem_nhds hΦa)] with x hx
+  exact ContinuousLinearMap.ringInverse_apply_apply hx (σ x)
+
+end
 
 end TauCeti
 

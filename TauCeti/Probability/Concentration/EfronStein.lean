@@ -132,7 +132,7 @@ private theorem efronStein_fin : ∀ {n : ℕ} {α : Fin n → Type u} [∀ i, M
     -- Step 3: the first-coordinate term is the `i = 0` summand.
     have h2 := lintegral_evariance_piFinSuccAbove_symm_zero μ hf
     calc evariance f (Measure.pi μ) = evariance F _ := hEv
-      _ ≤ _ := evariance_prod_le hFm hFL
+      _ ≤ _ := evariance_prod_le hFL
       _ ≤ (∑ j : Fin n, ∫⁻ x, G (Fin.succAbove 0 j) x ∂Measure.pi μ) +
           ∫⁻ x, G 0 x ∂Measure.pi μ := add_le_add h1 h2.le
       _ = ∑ i, ∫⁻ x, G i x ∂Measure.pi μ := by rw [Fin.sum_univ_succAbove _ 0, add_comm]
