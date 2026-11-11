@@ -437,7 +437,7 @@ theorem mk_mem_gPrime {δ : α → ℤ} (hδ : ∑ x, δ x = 0) :
     mk ((#{x | Odd (δ x)} : ℚ) / 4) δ ∈ gPrime :=
   ⟨⟨0, by simp⟩, by simpa using hδ⟩
 
-/-- **The center of the extension `G'(n)`.** The elements of `G'(n)` with zero class are exactly
+/-- **The kernel of the class map on `G'(n)`.** The elements of `G'(n)` with zero class are exactly
 the powers of `λ`: the condition `j ≡ ε(0) = 0 (mod 1)` makes their Maslov component an integer. -/
 theorem mem_zpowers_lambda_iff {g : StrandGradingGroup α} :
     g ∈ Subgroup.zpowers lambda ↔ g ∈ gPrime ∧ g.boundary = 0 := by
