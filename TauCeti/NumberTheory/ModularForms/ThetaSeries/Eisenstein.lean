@@ -104,11 +104,13 @@ theorem thetaSeries_eq_E₄ (hL : IsEven L) (hU : IsUnimodular L) (h8 : finrank 
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by omega)
   rw [← coe_thetaForm hL hU (k := 4) h8, hL.thetaForm_eq_E₄ hU h8]
 
+omit [FiniteDimensional ℝ E] in
 /-- **Representation numbers in rank `8`**: an even unimodular lattice of rank `8` has
 `240 σ₃(m)` vectors of squared norm `2m`, for every `m ≥ 1`. -/
 theorem representationNumber_two_mul_of_finrank_eq_eight (hL : IsEven L) (hU : IsUnimodular L)
     (h8 : finrank ℝ E = 8) {m : ℕ} (hm : m ≠ 0) :
     representationNumber L (2 * m : ℝ) = 240 * σ 3 m := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by omega)
   have h := hL.representationNumber_two_mul_of_thetaSeries_eq_E _ ⟨2, rfl⟩
     (hL.thetaSeries_eq_E₄ hU h8) hm
   rw [show bernoulli 4 = -1 / 30 by decide +kernel] at h
@@ -119,7 +121,6 @@ omit [FiniteDimensional ℝ E] in
 vectors of squared norm `2`. -/
 theorem representationNumber_two_of_finrank_eq_eight (hL : IsEven L) (hU : IsUnimodular L)
     (h8 : finrank ℝ E = 8) : representationNumber L 2 = 240 := by
-  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by omega)
   simpa using hL.representationNumber_two_mul_of_finrank_eq_eight hU h8 one_ne_zero
 
 /-! ### Rank `16` -/
@@ -147,11 +148,13 @@ theorem thetaForm_eq_E_eight (hL : IsEven L) (hU : IsUnimodular L) (h16 : finran
     thetaForm hL hU (k := 8) h16 = ModularForm.E (by norm_num : 3 ≤ 8) :=
   hL.thetaForm_eq_of_qExpansion_coeff_zero hU h16 (by norm_num) (E_qExpansion_coeff_zero _ ⟨4, rfl⟩)
 
+omit [FiniteDimensional ℝ E] in
 /-- **Representation numbers in rank `16`**: an even unimodular lattice of rank `16` has
 `480 σ₇(m)` vectors of squared norm `2m`, for every `m ≥ 1`. -/
 theorem representationNumber_two_mul_of_finrank_eq_sixteen (hL : IsEven L) (hU : IsUnimodular L)
     (h16 : finrank ℝ E = 16) {m : ℕ} (hm : m ≠ 0) :
     representationNumber L (2 * m : ℝ) = 480 * σ 7 m := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by omega)
   have h := hL.representationNumber_two_mul_of_thetaSeries_eq_E _ ⟨4, rfl⟩
     (by rw [← coe_thetaForm hL hU (k := 8) h16, hL.thetaForm_eq_E_eight hU h16]) hm
   rw [show bernoulli 8 = -1 / 30 by decide +kernel] at h
