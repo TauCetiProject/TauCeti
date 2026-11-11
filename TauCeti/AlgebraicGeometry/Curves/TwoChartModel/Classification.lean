@@ -79,7 +79,7 @@ noncomputable def isoTwoChartModel :
     X ≅ twoChartModel (IsCurveOver.isFunctionField (k := k) (X := X)) hx :=
   have := twoChartModel.isProper (hF := IsCurveOver.isFunctionField (k := k) (X := X)) (hx := hx)
   isoOfFunctionFieldAlgEquiv (IsCurveOver.valuationRing_stalk k X)
-    (twoChartModel.valuationRing_stalk hxt) (twoChartModel.functionFieldEquiv hxt)
+    (twoChartModel.valuationRing_stalk) (twoChartModel.functionFieldEquiv hxt)
 
 /-- The isomorphism `X ⟶ M` of `isoTwoChartModel` is a morphism over `k`. -/
 instance : (X.isoTwoChartModel hx hxt).hom.IsOver (Spec (.of k)) := by

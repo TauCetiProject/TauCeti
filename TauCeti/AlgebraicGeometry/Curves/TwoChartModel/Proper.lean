@@ -77,7 +77,7 @@ noncomputable def equivPlace (hxt : Transcendental k x) :
     CodimensionOnePoint (twoChartModel hF hx) ≃ Place k F :=
   haveI := isDiscreteValuationRing_stalk (hF := hF) (hx := hx)
   (CodimensionOnePoint.equivPlace (k := k) (valuativeCriterion_existence hF hx)
-    (coheight_le_one hxt)).trans (Place.mapEquiv (functionFieldEquiv hxt))
+    coheight_le_one).trans (Place.mapEquiv (functionFieldEquiv hxt))
 
 /-- `TauCeti.AlgebraicGeometry.twoChartModel.equivPlace` is the place attached to the point by
 `AlgebraicGeometry.Scheme.toPlace`, transported along `k(X) ≃ₐ[k] F`. -/
@@ -162,7 +162,7 @@ theorem mem_range_ιFinite_iff (hxt : Transcendental k x)
         ((finiteChartSectionsEquiv hF hx).symm f))
       rw [functionFieldEquiv_germToFunctionField, AlgEquiv.apply_symm_apply,
         RingEquiv.apply_symm_apply]
-    obtain ⟨y, hy, hyP⟩ := CodimensionOnePoint.exists_toPlace_eq_of_lift (coheight_le_one hxt)
+    obtain ⟨y, hy, hyP⟩ := CodimensionOnePoint.exists_toPlace_eq_of_lift coheight_le_one
       P _ hl
     rw [toPlace_eq_iff] at hyP
     exact ⟨_, (Scheme.Hom.comp_apply _ _ _).symm.trans (hy.symm.trans hyP)⟩

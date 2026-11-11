@@ -101,7 +101,7 @@ noncomputable def globalSectionsEquivRiemannRochSpace (hxt : Transcendental k x)
   haveI := isDiscreteValuationRing_stalk (hF := hF) (hx := hx)
   haveI := isNoetherian (hF := hF) (hx := hx)
   (SchemeWeilDivisor.globalSectionsEquivRiemannRochSpace
-      (valuativeCriterion_existence hF hx) (coheight_le_one hxt) D).trans
+      (valuativeCriterion_existence hF hx) coheight_le_one D).trans
     ((riemannRochSpaceFunctionFieldEquiv hxt _).trans (LinearEquiv.ofEq _ _
       (congrArg riemannRochSpace (domCongr_equivOfRingEquiv_equivFunctionFieldDivisor hxt D))))
 
@@ -209,7 +209,7 @@ noncomputable def repartitionToCohomologyOne (hxt : Transcendental k x)
     repartitionSpaceEquivOfRingEquiv (RingEquiv.refl k) (functionFieldEquiv hxt).toRingEquiv
       (id (functionFieldEquiv hxt).commutes)
   (SchemeWeilDivisor.repartitionToCohomologyOne (valuativeCriterion_existence hF hx)
-    (coheight_le_one hxt) D).comp e.symm.toLinearMap
+    coheight_le_one D).comp e.symm.toLinearMap
 
 -- Not `@[simp]`: `SchemeWeilDivisor.repartitionToCohomologyOne_apply` would further expand the
 -- right-hand side into `principalPartsBoundary`.
@@ -221,7 +221,7 @@ theorem repartitionToCohomologyOne_apply (hxt : Transcendental k x)
     haveI := isNoetherian (hF := hF) (hx := hx)
     repartitionToCohomologyOne hxt D a =
       SchemeWeilDivisor.repartitionToCohomologyOne (valuativeCriterion_existence hF hx)
-        (coheight_le_one hxt) D
+        coheight_le_one D
         ((repartitionSpaceEquivOfRingEquiv (RingEquiv.refl k)
           (functionFieldEquiv hxt).toRingEquiv
           (id (functionFieldEquiv hxt).commutes)).symm a) :=
@@ -240,7 +240,7 @@ theorem repartitionToCohomologyOne_surjective (hxt : Transcendental k x)
     repartitionSpaceEquivOfRingEquiv (RingEquiv.refl k) (functionFieldEquiv hxt).toRingEquiv
       (id (functionFieldEquiv hxt).commutes)
   exact (SchemeWeilDivisor.repartitionToCohomologyOne_surjective
-    (valuativeCriterion_existence hF hx) (coheight_le_one hxt) D).comp e.symm.surjective
+    (valuativeCriterion_existence hF hx) coheight_le_one D).comp e.symm.surjective
 
 private noncomputable def repartitionQuotientFunctionFieldEquiv (hxt : Transcendental k x)
     (D : Divisor k (twoChartModel hF hx).functionField) :
@@ -278,7 +278,7 @@ noncomputable def repartitionQuotientEquivCohomologyOne (hxt : Transcendental k 
       (domCongr_equivOfRingEquiv_equivFunctionFieldDivisor hxt D).symm)).trans <|
     (repartitionQuotientFunctionFieldEquiv hxt _).symm.trans
       (SchemeWeilDivisor.repartitionQuotientEquivCohomologyOne
-        (valuativeCriterion_existence hF hx) (coheight_le_one hxt)
+        (valuativeCriterion_existence hF hx) coheight_le_one
         (isFunctionField_functionField hxt) D)
 
 /-- `repartitionQuotientEquivCohomologyOne` sends the class of `a ∈ A_F` to
@@ -340,7 +340,7 @@ noncomputable def cohomologyOneDualEquivWeilDifferentialFiltration (hxt : Transc
   haveI := isDiscreteValuationRing_stalk (hF := hF) (hx := hx)
   haveI := isNoetherian (hF := hF) (hx := hx)
   (SchemeWeilDivisor.cohomologyOneDualEquivWeilDifferentialFiltration
-      (valuativeCriterion_existence hF hx) (coheight_le_one hxt)
+      (valuativeCriterion_existence hF hx) coheight_le_one
       (isFunctionField_functionField hxt) D).trans <|
     (weilDifferentialFiltrationFunctionFieldEquiv hxt _).trans (LinearEquiv.ofEq _ _
       (congrArg weilDifferentialFiltration
@@ -396,7 +396,7 @@ theorem finrank_cohomology_one_sheaf_eq_dim_sub (hxt : Transcendental k x)
   let _ := isNoetherian (hF := hF) (hx := hx)
   obtain ⟨ω, -, -, hgreat⟩ := exists_isGreatest_of_divisorClass_eq_canonicalClass hF hk hW
   have := SchemeWeilDivisor.finiteDimensional_cohomology_one_sheaf_of_isFunctionField
-    (valuativeCriterion_existence hF hx) (coheight_le_one hxt)
+    (valuativeCriterion_existence hF hx) coheight_le_one
     (isFunctionField_functionField hxt) D
   rw [← Subspace.dual_finrank_eq,
     (cohomologyOneDualEquivWeilDifferentialFiltration hxt D).finrank_eq,
@@ -416,7 +416,7 @@ theorem finrank_cohomology_one_sheaf_eq_finrank_cohomology_zero_sheaf_sub
   let _ := isDiscreteValuationRing_stalk (hF := hF) (hx := hx)
   let _ := isNoetherian (hF := hF) (hx := hx)
   refine SchemeWeilDivisor.finrank_cohomology_one_sheaf_eq_finrank_cohomology_zero_sheaf_sub
-    (valuativeCriterion_existence hF hx) (coheight_le_one hxt)
+    (valuativeCriterion_existence hF hx) coheight_le_one
     (isFunctionField_functionField hxt) (isIntegrallyClosedIn_functionField hxt hk) ?_ D
   apply (Divisor.classGroupEquivOfRingEquiv (RingEquiv.refl k)
     (functionFieldEquiv hxt).toRingEquiv (id (functionFieldEquiv hxt).commutes)
@@ -465,7 +465,7 @@ noncomputable def cohomologyOneDualEquivCohomologyZero (hxt : Transcendental k x
   haveI := isDiscreteValuationRing_stalk (hF := hF) (hx := hx)
   haveI := isNoetherian (hF := hF) (hx := hx)
   SchemeWeilDivisor.cohomologyOneDualEquivCohomologyZero (valuativeCriterion_existence hF hx)
-    (coheight_le_one hxt) (isFunctionField_functionField hxt)
+    coheight_le_one (isFunctionField_functionField hxt)
     (isIntegrallyClosedIn_functionField hxt hk)
     ((isGreatest_weilDifferentialFiltration_repartitionDualEquivOfRingEquiv_iff
       (RingEquiv.refl k) (functionFieldEquiv hxt).toRingEquiv
@@ -538,7 +538,7 @@ noncomputable def canonicalBundle (hxt : Transcendental k x) (hk : IsIntegrallyC
     InvertibleSheaf (twoChartModel hF hx) :=
   letI := isDiscreteValuationRing_stalk (hF := hF) (hx := hx)
   letI := isNoetherian (hF := hF) (hx := hx)
-  InvertibleSheaf.canonicalBundle (valuativeCriterion_existence hF hx) (coheight_le_one hxt)
+  InvertibleSheaf.canonicalBundle (valuativeCriterion_existence hF hx) coheight_le_one
     (isFunctionField_functionField hxt) (isIntegrallyClosedIn_functionField hxt hk)
 
 /-- A Weil divisor `K` on `X_F` represents the class of `canonicalBundle` if and only if
@@ -549,12 +549,12 @@ theorem mk_canonicalBundle_eq_iff (hxt : Transcendental k x) (hk : IsIntegrallyC
     haveI := isDiscreteValuationRing_stalk (hF := hF) (hx := hx)
     haveI := isNoetherian (hF := hF) (hx := hx)
     LineBundleClass.mk (canonicalBundle hxt hk) =
-        SchemeWeilDivisor.toLineBundleClass (coheight_le_one hxt) K ↔
+        SchemeWeilDivisor.toLineBundleClass coheight_le_one K ↔
       (Place.orderSystem hF).divisorClass (equivDivisor hxt K) = canonicalClass hF hk := by
   let _ := isDiscreteValuationRing_stalk (hF := hF) (hx := hx)
   let _ := isNoetherian (hF := hF) (hx := hx)
   rw [canonicalBundle, InvertibleSheaf.mk_canonicalBundle_eq_iff
-      (valuativeCriterion_existence hF hx) (coheight_le_one hxt)
+      (valuativeCriterion_existence hF hx) coheight_le_one
       (isFunctionField_functionField hxt) (isIntegrallyClosedIn_functionField hxt hk) K,
     ← (Divisor.classGroupEquivOfRingEquiv (RingEquiv.refl k) (functionFieldEquiv hxt).toRingEquiv
       (id (functionFieldEquiv hxt).commutes)
@@ -574,7 +574,7 @@ theorem picardEquivClassGroup_canonicalBundle (hxt : Transcendental k x)
   let _ := isNoetherian (hF := hF) (hx := hx)
   obtain ⟨W, hW⟩ := (Place.orderSystem hF).divisorClass_surjective (canonicalClass hF hk)
   have hmk : LineBundleClass.mk (canonicalBundle (hF := hF) (hx := hx) hxt hk) =
-      SchemeWeilDivisor.toLineBundleClass (coheight_le_one hxt) ((equivDivisor hxt).symm W) := by
+      SchemeWeilDivisor.toLineBundleClass coheight_le_one ((equivDivisor hxt).symm W) := by
     rw [mk_canonicalBundle_eq_iff hxt hk, AddEquiv.apply_symm_apply, hW]
   rw [hmk, picardEquivClassGroup_toLineBundleClass, AddEquiv.apply_symm_apply, hW]
 
@@ -597,7 +597,7 @@ theorem finrank_cohomology_zero_canonicalBundle (hxt : Transcendental k x)
   let _ := isProper (hF := hF) (hx := hx)
   rw [← genus_eq_genus hxt hk]
   exact InvertibleSheaf.finrank_cohomology_zero_eq_genus_of_mk_eq_canonicalBundle
-    (valuativeCriterion_existence hF hx) (coheight_le_one hxt)
+    (valuativeCriterion_existence hF hx) coheight_le_one
     (isFunctionField_functionField hxt) (isIntegrallyClosedIn_functionField hxt hk) _ rfl
 
 /-- **`dim_k H¹(X_F, ω_{X_F}) = 1`.** -/
@@ -609,7 +609,7 @@ theorem finrank_cohomology_one_canonicalBundle (hxt : Transcendental k x)
   let _ := isDiscreteValuationRing_stalk (hF := hF) (hx := hx)
   let _ := isNoetherian (hF := hF) (hx := hx)
   exact InvertibleSheaf.finrank_cohomology_one_eq_one_of_mk_eq_canonicalBundle
-    (valuativeCriterion_existence hF hx) (coheight_le_one hxt)
+    (valuativeCriterion_existence hF hx) coheight_le_one
     (isFunctionField_functionField hxt) (isIntegrallyClosedIn_functionField hxt hk) _ rfl
 
 section InvertibleDifferentials
@@ -627,7 +627,7 @@ theorem nonempty_iso_relativeDifferentials_canonicalBundle (hxt : Transcendental
   let _ := isNoetherian (hF := hF) (hx := hx)
   exact TauCeti.AlgebraicGeometry.nonempty_iso_relativeDifferentials_canonicalBundle
     (isFunctionField_functionField hxt) (isIntegrallyClosedIn_functionField hxt hk)
-    (coheight_le_one hxt) (valuativeCriterion_existence hF hx)
+    coheight_le_one (valuativeCriterion_existence hF hx)
 
 /-- **When `Ω_{X_F/k}` is invertible, its class in `Pic(X_F) ≃+ Cl(F)` is `canonicalClass hF hk`.**
 -/
@@ -690,7 +690,7 @@ theorem finrank_cohomology_zero_sub_finrank_cohomology_zero_differentials_tensor
   exact
     AlgebraicGeometry.finrank_cohomology_zero_sub_finrank_cohomology_zero_differentials_tensor_dual
       (isFunctionField_functionField hxt) (isIntegrallyClosedIn_functionField hxt hk)
-      (coheight_le_one hxt) (valuativeCriterion_existence hF hx) L
+      coheight_le_one (valuativeCriterion_existence hF hx) L
 
 end InvertibleDifferentials
 

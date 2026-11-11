@@ -125,13 +125,23 @@ theorem isIntegrallyClosedIn_functionField (hxt : Transcendental k x)
     IsIntegrallyClosedIn k (twoChartModel hF hx).functionField :=
   (functionFieldEquiv hxt).isIntegrallyClosedIn.mpr hk
 
-/-- **Every point of the two-chart model has codimension at most one**, for `x` transcendental
-over `k`. -/
-theorem coheight_le_one (hxt : Transcendental k x) (p : twoChartModel hF hx) :
-    coheight p ≤ 1 := by
-  have := TauCeti.coheight_le_topologicalKrullDim p
-  rw [topologicalKrullDim_eq_one hxt] at this
-  exact_mod_cast this
+/-- **Every point of the two-chart model has codimension at most one**: each chart is the spectrum
+of a Dedekind domain, so it has dimension at most one, and the charts are open. -/
+theorem coheight_le_one (p : twoChartModel hF hx) : coheight p ≤ 1 := by
+  have h1 := isDedekindDomain_holomorphyRing_setOf_mem hF x
+  have h2 := isDedekindDomain_holomorphyRing_setOf_mem hF x⁻¹
+  rcases (Set.ext_iff.mp (range_ιFinite_union_range_ιInfinity hF hx) p).mpr trivial with
+    ⟨q, rfl⟩ | ⟨q, rfl⟩
+  · refine ((ιFinite hF hx).isOpenEmbedding.generalizingMap.coheight_apply_le_coheight
+      (ιFinite hF hx).continuous q).trans ?_
+    exact_mod_cast (TauCeti.coheight_le_topologicalKrullDim q).trans
+      ((PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim (R := holomorphyRing _)).le.trans
+        (Ring.krullDimLE_iff.mp inferInstance))
+  · refine ((ιInfinity hF hx).isOpenEmbedding.generalizingMap.coheight_apply_le_coheight
+      (ιInfinity hF hx).continuous q).trans ?_
+    exact_mod_cast (TauCeti.coheight_le_topologicalKrullDim q).trans
+      ((PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim (R := holomorphyRing _)).le.trans
+        (Ring.krullDimLE_iff.mp inferInstance))
 
 /-- **The two-chart model is regular**: its local rings are the local rings of the Dedekind
 domains `𝒪_x` and `𝒪_{x⁻¹}`, which are regular. -/
@@ -152,13 +162,14 @@ theorem isDiscreteValuationRing_stalk
   have := isRegularLocalRing_stalk (hF := hF) (hx := hx) (p : twoChartModel hF hx)
   exact CodimensionOnePoint.isDiscreteValuationRing_stalk p
 
-/-- **The local rings of the two-chart model are valuation rings**, for `x` transcendental over
-`k`: at the generic point the local ring is the function field, and at every other point it is a
-discrete valuation ring. -/
-theorem valuationRing_stalk (hxt : Transcendental k x) (p : twoChartModel hF hx) :
+/-- **The local rings of the two-chart model are valuation rings**: at the generic point the local
+ring is the function field, and at every other point it is a discrete valuation ring. -/
+theorem valuationRing_stalk (p : twoChartModel hF hx) :
     ValuationRing ((twoChartModel hF hx).presheaf.stalk p) := by
   have := isDiscreteValuationRing_stalk (hF := hF) (hx := hx)
-  exact Scheme.valuationRing_stalk_of_topologicalKrullDim_le_one
-    (topologicalKrullDim_eq_one hxt).le p
+  have hdim : topologicalKrullDim (twoChartModel hF hx) ≤ 1 := by
+    rw [TauCeti.topologicalKrullDim_eq_iSup_coheight]
+    exact iSup_le fun q ↦ by exact_mod_cast coheight_le_one q
+  exact Scheme.valuationRing_stalk_of_topologicalKrullDim_le_one hdim p
 
 end TauCeti.AlgebraicGeometry.twoChartModel

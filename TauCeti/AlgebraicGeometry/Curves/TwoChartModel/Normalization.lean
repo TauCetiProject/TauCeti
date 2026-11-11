@@ -70,12 +70,9 @@ noncomputable def normalizationIso (hxt : Transcendental k x) :
     ((twoChartModel hF' hx').fromSpecStalk (genericPoint _) ≫
       map hF hF' hx hx' h).normalization ≅ twoChartModel hF' hx' :=
   have := isFinite_map hF hF' hx hx' h hxt
-  have hxt' : Transcendental k x' := by
-    rw [← h]
-    exact (transcendental_algebraMap_iff (algebraMap F F').injective).mpr hxt
   -- The local rings of the model of `F'` are valuation rings, hence integrally closed.
   have := isIso_normalizationDesc_fromSpecStalk_genericPoint
-    (fun p ↦ have := valuationRing_stalk (hF := hF') (hx := hx') hxt' p; inferInstance)
+    (fun p ↦ have := valuationRing_stalk (hF := hF') (hx := hx') p; inferInstance)
     (map hF hF' hx hx' h)
   asIso (Scheme.Hom.normalizationDesc _ _ (map hF hF' hx hx' h) rfl)
 

@@ -87,7 +87,7 @@ fields, for transcendental `x ∈ F` and `x' ∈ F'`: the unique dominant `k`-mo
 noncomputable def homOfAlgHom (hxt : Transcendental k x) (hx't : Transcendental k x')
     (φ : F →ₐ[k] F') : twoChartModel hF' hx' ⟶ twoChartModel hF hx :=
   have := isProper (hF := hF) (hx := hx)
-  Scheme.homOfFunctionFieldAlgHom (valuationRing_stalk hx't) (functionFieldAlgHom hxt hx't φ)
+  Scheme.homOfFunctionFieldAlgHom valuationRing_stalk (functionFieldAlgHom hxt hx't φ)
 
 variable (φ : F →ₐ[k] F')
 
@@ -181,7 +181,7 @@ noncomputable def isoOfAlgEquiv (e : F ≃ₐ[k] F') :
     twoChartModel hF' hx' ≅ twoChartModel hF hx :=
   have := isProper (hF := hF) (hx := hx)
   have := isProper (hF := hF') (hx := hx')
-  Scheme.isoOfFunctionFieldAlgEquiv (valuationRing_stalk hx't) (valuationRing_stalk hxt)
+  Scheme.isoOfFunctionFieldAlgEquiv valuationRing_stalk valuationRing_stalk
     (((functionFieldEquiv hxt).trans e).trans (functionFieldEquiv hx't).symm)
 
 variable {hF hF' hx hx'} in

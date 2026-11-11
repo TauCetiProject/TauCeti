@@ -66,7 +66,7 @@ theorem genus_eq_genus (hxt : Transcendental k x) (hk : IsIntegrallyClosedIn k F
   have := isDiscreteValuationRing_stalk (hF := hF) (hx := hx)
   have := isNoetherian (hF := hF) (hx := hx)
   rw [SchemeWeilDivisor.genus_eq_genus_functionField (valuativeCriterion_existence hF hx)
-    (coheight_le_one hxt) (isFunctionField_functionField hxt)
+    coheight_le_one (isFunctionField_functionField hxt)
     (isIntegrallyClosedIn_functionField hxt hk)]
   exact (genus_eq_of_ringEquiv (RingEquiv.refl k) (functionFieldEquiv hxt).toRingEquiv
     (functionFieldEquiv hxt).commutes).symm
@@ -86,7 +86,7 @@ theorem finrank_cohomology_zero_sheaf_natCast_zsmul_ofPoint_of_genus_eq_one
   have := isDiscreteValuationRing_stalk (hF := hF) (hx := hx)
   have := isNoetherian (hF := hF) (hx := hx)
   have := isProper (hF := hF) (hx := hx)
-  have : Fact (∀ y : twoChartModel hF hx, coheight y ≤ 1) := ⟨coheight_le_one hxt⟩
+  have : Fact (∀ y : twoChartModel hF hx, coheight y ≤ 1) := ⟨coheight_le_one⟩
   have := finiteDimensional_cohomology_one_trivial_of_isProper k (X := twoChartModel hF hx)
     (topologicalKrullDim_eq_one hxt)
   rw [SchemeWeilDivisor.finrank_cohomology_zero_sheaf_natCast_zsmul_ofPoint_of_genus_eq_one k
