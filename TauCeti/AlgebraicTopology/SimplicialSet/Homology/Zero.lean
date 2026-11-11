@@ -37,7 +37,7 @@ def ιHomology₀ (x : X _⦋0⦌) : R ⟶ X.homology R 0 :=
     (X.chainComplex R).homologyπ 0
 
 /-- A vertex class is the homology class of the cycle given by the vertex. -/
-lemma ιHomology₀_eq (x : X _⦋0⦌) :
+lemma ιHomology₀_def (x : X _⦋0⦌) :
     ιHomology₀ R x = (X.chainComplex R).liftCycles (X.ιChainComplex x) 0 (by simp) (by simp) ≫
       (X.chainComplex R).homologyπ 0 := by
   rw [ιHomology₀]
@@ -55,7 +55,7 @@ lemma homology₀_hom_ext {T : C} {f g : X.homology R 0 ⟶ T}
     (h : ∀ x, ιHomology₀ R x ≫ f = ιHomology₀ R x ≫ g) : f = g := by
   apply (cancel_epi ((X.chainComplex R).homologyπ 0)).1
   apply (cancel_epi ((X.chainComplex R).cycles₀Iso.inv)).1
-  apply _root_.SSet.chainComplex_hom_ext
+  apply chainComplex_hom_ext
   intro x
   have hx : X.ιChainComplex x ≫ (X.chainComplex R).cycles₀Iso.inv =
       (X.chainComplex R).liftCycles (X.ιChainComplex x) 0 (by simp) (by simp) := by

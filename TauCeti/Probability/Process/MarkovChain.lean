@@ -313,11 +313,10 @@ theorem markovChainLaw_map_pair_succ [SFinite ν] (n : ℕ) :
         Measure.map_prodMap_compProd_comap _ _ hlast
     _ = _ := by rw [Measure.map_map hlast (by fun_prop)]; rfl
 
-/-- **The time-`n` laws of the chain satisfy the forward recursion**: the law at time `n + 1` is the
-law at time `n` pushed through the transition kernel. With `markovChainLaw_map_eval_zero` this
-identifies every one-dimensional marginal of the chain. -/
-@[simp]
-theorem markovChainLaw_map_eval_succ [SFinite ν] (n : ℕ) :
+/-- The forward recursion for the time-`n` laws, for an s-finite initial law: the form used to
+identify the marginals of the path-law kernel, from which `markovChainLaw_map_eval_succ` follows
+for every initial law. -/
+private theorem markovChainLaw_map_eval_succ_of_sFinite [SFinite ν] (n : ℕ) :
     (markovChainLaw ν κ).map (fun x => x (n + 1))
       = κ ∘ₘ ((markovChainLaw ν κ).map fun x => x n) := by
   rw [← Measure.snd_compProd, ← markovChainLaw_map_pair_succ, Measure.snd_map_prodMk₀]
@@ -336,7 +335,8 @@ theorem _root_.ProbabilityTheory.Kernel.markovChainKernel_map_eval (n : ℕ) :
     -- The unit of the monoid of kernels `Kernel α α` is `Kernel.id`, which has no rewrite lemma.
     exact (Kernel.id_apply x).symm
   | succ n ih =>
-    rw [markovChainLaw_map_eval_succ, ih, add_comm, Kernel.pow_add, pow_one, Kernel.comp_apply]
+    rw [markovChainLaw_map_eval_succ_of_sFinite, ih, add_comm, Kernel.pow_add, pow_one,
+      Kernel.comp_apply]
 
 /-- **The time-`n` marginal of the chain**: the state at time `n` has law `(κ ^ n) ∘ₘ ν`, the
 initial law propagated by the `n`-step transition kernel. This holds for every initial measure
@@ -345,6 +345,16 @@ theorem _root_.MeasureTheory.Measure.markovChainLaw_map_eval (n : ℕ) :
     (markovChainLaw ν κ).map (fun w => w n) = (κ ^ n) ∘ₘ ν := by
   rw [Measure.markovChainLaw_eq_comp, Measure.map_comp _ _ (measurable_pi_apply n),
     Kernel.markovChainKernel_map_eval]
+
+/-- **The time-`n` laws of the chain satisfy the forward recursion**: the law at time `n + 1` is the
+law at time `n` pushed through the transition kernel. With `markovChainLaw_map_eval_zero` this
+identifies every one-dimensional marginal of the chain, for every initial law `ν`. -/
+@[simp]
+theorem markovChainLaw_map_eval_succ (n : ℕ) :
+    (markovChainLaw ν κ).map (fun x => x (n + 1))
+      = κ ∘ₘ ((markovChainLaw ν κ).map fun x => x n) := by
+  rw [Measure.markovChainLaw_map_eval, Measure.markovChainLaw_map_eval, Measure.comp_assoc,
+    add_comm, Kernel.pow_add, pow_one]
 
 /-- The chain is at `y` at time `n` with probability `((κ ^ n) ∘ₘ ν) {y}`. -/
 theorem _root_.MeasureTheory.Measure.markovChainLaw_setOf_apply_eq_comp
@@ -379,11 +389,9 @@ private theorem comap_apply_prodMk_preimage_singleton {n : ℕ}
     rw [hfibre]
     simp [hv]
 
-/-- **The finite path masses of the chain.** On a state space with measurable singletons the mass a
-homogeneous Markov chain gives to a finite path is the initial weight of its first state times the
-product of the transition weights along it. This is the defining product form of the
-finite-dimensional laws of a Markov chain. -/
-theorem markovChainLaw_map_prefix_apply_singleton [SFinite ν]
+/-- The finite path masses of the chain for an s-finite initial law, used to derive
+`markovChainLaw_map_prefix_apply_singleton` for every initial law. -/
+private theorem markovChainLaw_map_prefix_apply_singleton_of_sFinite [SFinite ν]
     [MeasurableSingletonClass α] (n : ℕ) (w : Fin (n + 1) → α) :
     ((markovChainLaw ν κ).map fun x (i : Fin (n + 1)) => x i.1) {w}
       = ν {w 0} * ∏ i : Fin n, κ (w i.castSucc) {w i.succ} := by
@@ -423,11 +431,31 @@ theorem markovChainLaw_map_prefix_apply_singleton [SFinite ν]
     simp only [Fin.init, Fin.castSucc_zero, hsucc, Fin.succ_castSucc]
     ring
 
+/-- **The finite path masses of the chain.** On a state space with measurable singletons the mass a
+homogeneous Markov chain gives to a finite path is the initial weight of its first state times the
+product of the transition weights along it. This is the defining product form of the
+finite-dimensional laws of a Markov chain. -/
+theorem markovChainLaw_map_prefix_apply_singleton
+    [MeasurableSingletonClass α] (n : ℕ) (w : Fin (n + 1) → α) :
+    ((markovChainLaw ν κ).map fun x (i : Fin (n + 1)) => x i.1) {w}
+      = ν {w 0} * ∏ i : Fin n, κ (w i.castSucc) {w i.succ} := by
+  have hg : Measurable fun (x : ℕ → α) (i : Fin (n + 1)) => x i.1 := by fun_prop
+  rw [Measure.markovChainLaw_eq_comp, Measure.map_comp _ _ hg,
+    Measure.bind_apply (measurableSet_singleton w) (Kernel.aemeasurable _)]
+  have hx (x : α) : (κ.markovChainKernel.map fun x (i : Fin (n + 1)) => x i.1) x {w}
+      = ({w 0} : Set α).indicator (fun _ => ∏ i : Fin n, κ (w i.castSucc) {w i.succ}) x := by
+    rw [Kernel.map_apply _ hg, Kernel.markovChainKernel_apply,
+      markovChainLaw_map_prefix_apply_singleton_of_sFinite (Measure.dirac x) κ n w,
+      Measure.dirac_apply' _ (measurableSet_singleton _)]
+    by_cases h : x = w 0 <;> simp [h]
+  rw [lintegral_congr hx, lintegral_indicator (measurableSet_singleton _), setLIntegral_const,
+    mul_comm]
+
 /-- **The finite path masses of the chain, as prefix laws.** The product formula
 `markovChainLaw_map_prefix_apply_singleton`, restated for the prefix laws of the coordinate process;
 this is the form consumed by statements about the finite path laws of a process. -/
 theorem _root_.MeasureTheory.Measure.markovChainLaw_prefixLaw_singleton
-    [SFinite ν] [MeasurableSingletonClass α]
+    [MeasurableSingletonClass α]
     (n : ℕ) (w : Fin (n + 1) → α) :
     prefixLaw (markovChainLaw ν κ) (fun i x => x i) (n + 1) {w}
       = ν {w 0} * ∏ i : Fin n, κ (w i.castSucc) {w i.succ} := by

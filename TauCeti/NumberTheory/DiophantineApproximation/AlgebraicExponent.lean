@@ -161,7 +161,7 @@ private theorem coeffVec_primitiveMinpoly_mem_linearFormApproximations {n : ℕ}
     simpa using congrArg norm (aeval_algebraMap_apply ℂ ξ (primitiveMinpoly α))
   -- `F_α(ξ) ≠ 0`, since otherwise `α` would be a conjugate of `ξ`.
   have hne : aeval ξ (primitiveMinpoly α) ≠ 0 := fun h₀ ↦ hconj <| by
-    rw [← minpoly_eq_of_aeval_primitiveMinpoly_eq_zero halg h₀, mem_rootSet]
+    rw [← minpoly_eq_of_aeval_primitiveMinpoly_eq_zero h₀, mem_rootSet]
     exact ⟨minpoly.ne_zero halg.isIntegral, minpoly.aeval ℚ α⟩
   have hx₀ : x ≠ 0 := fun hx ↦ hne (by rw [← hL, hx]; simp)
   have hξα : ‖(ξ : ℂ) - α‖ ≤ 1 :=
@@ -175,7 +175,7 @@ private theorem coeffVec_primitiveMinpoly_mem_linearFormApproximations {n : ℕ}
     linarith [abs_nonneg ξ]
   calc |aeval ξ (primitiveMinpoly α)| ≤ K * H * ‖(ξ : ℂ) - α‖ := by
         rw [← hLℂ]
-        refine (norm_aeval_primitiveMinpoly_le halg hξα).trans ?_
+        refine (norm_aeval_primitiveMinpoly_le halg).trans ?_
         gcongr
     _ ≤ K * H * H ^ (-w - 1) := by gcongr
     _ = K * H ^ (-w) := by

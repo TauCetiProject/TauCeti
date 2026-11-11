@@ -16,8 +16,25 @@ The blocked marking is an old `O`-marking carried into the stabilized diagram. O
 the map merges the stabilization variables and kills the chosen variable. On homology, it
 takes a cycle class to the class of its stabilization image.
 
-This file constructs that comparison, including its action on cycles and boundaries; it does
-not assert invertibility or grading compatibility.
+This file constructs that comparison, including its action on cycles and boundaries, and shows
+that it is bijective. It does not treat grading compatibility.
+
+Bijectivity is deduced from stabilization invariance of `GH⁻`: blocking a marking is the quotient
+of `GC⁻` by multiplication by its variable, and the stabilization map carries the variable of the
+transported marking to that of the original one, so it is a morphism between the short exact
+sequences `0 → GC⁻ --V--> GC⁻ → GC^ → 0` of the two diagrams
+(`GridDiagram.exists_sub_simplyBlockedStabilizeXMap_mem_range` and
+`GridDiagram.mem_range_of_simplyBlockedStabilizeXMap_mem_range`).
+
+## Main definitions
+
+* `TauCeti.GridDiagram.IsKnot.simplyBlockedStabilizeXHomologyMap`: the map induced on `G-hat` by
+  the stabilization chain map.
+
+## Main results
+
+* `TauCeti.GridDiagram.IsKnot.simplyBlockedStabilizeXHomologyMap_bijective`: **stabilization
+  invariance of `G-hat`** for this stabilization type, the map is bijective.
 
 ## References
 
@@ -111,5 +128,35 @@ theorem simplyBlockedStabilizeXHomologyMap_oneVariableSpecializationHomologyClas
   rw [Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply,
     simplyBlockedHomologyIsoQuotient_hom_class, simplyBlockedHomologyIsoQuotient_hom_class,
     Submodule.mapQ_apply]
+
+/-- **Stabilization invariance of `G-hat`.** The map induced on simply blocked grid homology by
+the `X`-stabilization chain map, from the stabilized knot grid with the transported marking
+blocked to the old grid with the original marking blocked, is bijective. -/
+theorem simplyBlockedStabilizeXHomologyMap_bijective :
+    Function.Bijective (hG.simplyBlockedStabilizeXHomologyMap s i R) := by
+  refine ⟨(injective_iff_map_eq_zero _).mpr fun y hy => ?_, fun y => ?_⟩
+  · -- A cycle whose stabilization image is a boundary is a boundary.
+    obtain ⟨z, rfl⟩ := (G').oneVariableSpecializationHomologyClass_surjective R j y
+    rw [simplyBlockedStabilizeXHomologyMap_oneVariableSpecializationHomologyClass,
+      oneVariableSpecializationHomologyClass_eq_zero_iff, hG.mem_simplyBlockedBoundaries_iff R i,
+      simplyBlockedChainEquiv_simplyBlockedStabilizeXCyclesMap] at hy
+    rw [oneVariableSpecializationHomologyClass_eq_zero_iff,
+      (hG').mem_simplyBlockedBoundaries_iff R j]
+    exact G.mem_range_of_simplyBlockedStabilizeXMap_mem_range s i R
+      (((hG').mem_simplyBlockedCycles R j z).mp z.2) hy
+  · -- Every cycle differs from the stabilization image of a cycle by a boundary.
+    obtain ⟨y, rfl⟩ := G.oneVariableSpecializationHomologyClass_surjective R i y
+    obtain ⟨x, hx, hxy⟩ := G.exists_sub_simplyBlockedStabilizeXMap_mem_range s i R
+      ((hG.mem_simplyBlockedCycles R i y).mp y.2)
+    let z : (hG').simplyBlockedCycles R j :=
+      ⟨((G').simplyBlockedChainEquiv R j).symm x, by
+        rw [(hG').mem_simplyBlockedCycles R j, LinearEquiv.apply_symm_apply]
+        exact hx⟩
+    refine ⟨(G').oneVariableSpecializationHomologyClass R j z, ?_⟩
+    rw [simplyBlockedStabilizeXHomologyMap_oneVariableSpecializationHomologyClass,
+      oneVariableSpecializationHomologyClass_eq_iff, hG.mem_simplyBlockedBoundaries_iff R i,
+      Submodule.coe_sub, map_sub, simplyBlockedChainEquiv_simplyBlockedStabilizeXCyclesMap,
+      LinearEquiv.apply_symm_apply, ← neg_sub]
+    exact neg_mem hxy
 
 end TauCeti.GridDiagram.IsKnot

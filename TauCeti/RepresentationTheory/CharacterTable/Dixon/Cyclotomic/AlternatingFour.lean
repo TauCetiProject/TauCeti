@@ -303,8 +303,7 @@ theorem alternatingGroupFour_centralCharacterSearch :
     alternatingGroupFourClassData.centralCharacterSearch (F := ZMod 7) =
       alternatingGroupFourModularCentralRows := by
   rw [alternatingGroupFourModularCentralRows]
-  apply alternatingGroupFourClassData.centralCharacterSearch_eq_rowsOfMap_of_isGoodDixonPrime
-    isGoodDixonPrime_alternatingGroup_four_seven
+  apply alternatingGroupFourClassData.centralCharacterSearch_eq_rowsOfMap
     (Cyclotomic.reduce 7 alternatingGroupFourDixonPrimeData.root)
     alternatingGroupFourExactCentralCharacterTable
   · intro i
