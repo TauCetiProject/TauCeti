@@ -8,9 +8,12 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.RingTheory.IntegralDomain
+public import Mathlib.Topology.Homeomorph.Quotient
 public import TauCeti.Algebra.Group.Coprime
 public import TauCeti.RingTheory.RootsOfUnity.Basic
 public import TauCeti.Topology.Algebra.Projectivization
+import TauCeti.Algebra.Order.Ring.IntMul
+import TauCeti.Analysis.Complex.Circle
 
 /-!
 # The weighted circle action on `ℂ²` and its ellipsoid quotient
@@ -69,6 +72,8 @@ over the two poles are recorded separately and are not erased.
   the circle.
 * `TauCeti.Toric.weightedHopf hε`: the map `z ↦ [z₁ ^ b : z₂ ^ a]` from the ellipsoid to `ℂℙ¹`.
 * `TauCeti.Toric.weightedOrbitHomeomorph`: the homeomorphism of the orbit space with `ℂℙ¹`.
+* `TauCeti.Toric.swapOrbitHomeomorph a b ε`: exchanging the coordinates, the homeomorphism of the
+  orbit spaces for the weights `(b, a)` and `(a, b)`.
 
 ## Main results
 
@@ -153,26 +158,6 @@ theorem weightedRotation_eq_self_iff {u : Circle} {z : ℂ × ℂ} :
 
 /-! ### Periods of the weighted rotations -/
 
-private theorem isLeast_pos_int_mul {c : ℝ} (hc : 0 < c) :
-    IsLeast {θ : ℝ | 0 < θ ∧ ∃ n : ℤ, θ = n * c} c := by
-  refine ⟨⟨hc, 1, by simp⟩, ?_⟩
-  rintro θ ⟨hθ, n, rfl⟩
-  have hn : (0 : ℝ) < n := pos_of_mul_pos_left hθ hc.le
-  have hn' : (1 : ℝ) ≤ n := by exact_mod_cast Int.cast_pos.1 hn
-  nlinarith
-
-/-- The circle element `exp(-i θ)` has `a`-th power one exactly when `θ` is an integer multiple
-of `2π / a`. -/
-private theorem exp_neg_pow_eq_one_iff (ha : 0 < a) {θ : ℝ} :
-    Circle.exp (-θ) ^ a = 1 ↔ ∃ n : ℤ, θ = n * (2 * π / a) := by
-  have ha' : (a : ℝ) ≠ 0 := by exact_mod_cast ha.ne'
-  rw [← Circle.exp_natCast_mul, Circle.exp_eq_one]
-  constructor
-  · rintro ⟨n, hn⟩
-    exact ⟨-n, by field_simp; push_cast; linarith⟩
-  · rintro ⟨n, rfl⟩
-    exact ⟨-n, by field_simp; push_cast; ring⟩
-
 /-- **The periods of a point off the axes.** For coprime weights, the rotation by the angle `θ`,
 `z_j ↦ exp(-i a_j θ) z_j`, fixes a point with both coordinates nonzero exactly when `θ` is an
 integer multiple of `2π`. -/
@@ -207,8 +192,8 @@ theorem weightedRotation_exp_neg_eq_self_iff_of_snd_eq_zero (ha : 0 < a) {z : �
     weightedRotation a b (Circle.exp (-θ)) z = z ↔ ∃ n : ℤ, θ = n * (2 * π / a) := by
   rw [weightedRotation_eq_self_iff]
   simp only [ne_eq, h₁, not_false_eq_true, forall_const, h₂, not_true_eq_false,
-    IsEmpty.forall_iff, and_true]
-  exact exp_neg_pow_eq_one_iff ha
+    IsEmpty.forall_iff, and_true, Circle.exp_pow_eq_one_iff ha.ne']
+  constructor <;> rintro ⟨n, hn⟩ <;> exact ⟨-n, by push_cast; linarith⟩
 
 /-- **The least period of a point on the axis `z₂ = 0`** is `2π / a`. -/
 theorem isLeast_weightedRotation_exp_neg_eq_self_of_snd_eq_zero (ha : 0 < a) {z : ℂ × ℂ}
@@ -224,8 +209,8 @@ theorem weightedRotation_exp_neg_eq_self_iff_of_fst_eq_zero (hb : 0 < b) {z : �
     weightedRotation a b (Circle.exp (-θ)) z = z ↔ ∃ n : ℤ, θ = n * (2 * π / b) := by
   rw [weightedRotation_eq_self_iff]
   simp only [ne_eq, h₁, not_true_eq_false, IsEmpty.forall_iff, h₂, not_false_eq_true,
-    forall_const, true_and]
-  exact exp_neg_pow_eq_one_iff hb
+    forall_const, true_and, Circle.exp_pow_eq_one_iff hb.ne']
+  constructor <;> rintro ⟨n, hn⟩ <;> exact ⟨-n, by push_cast; linarith⟩
 
 /-- **The least period of a point on the axis `z₁ = 0`** is `2π / b`. -/
 theorem isLeast_weightedRotation_exp_neg_eq_self_of_fst_eq_zero (hb : 0 < b) {z : ℂ × ℂ}
@@ -301,6 +286,27 @@ theorem swap_mem_weightedEllipsoid {z : ℂ × ℂ} :
     z.swap ∈ weightedEllipsoid b a ε ↔ z ∈ weightedEllipsoid a b ε := by
   simp only [mem_weightedEllipsoid, Prod.fst_swap, Prod.snd_swap]
   rw [add_comm]
+
+variable (a b ε) in
+/-- Exchanging the coordinates identifies the orbit spaces of the ellipsoids with weights `(b, a)`
+and `(a, b)`. -/
+def swapOrbitHomeomorph :
+    MulAction.orbitRel.Quotient Circle (weightedEllipsoid b a ε) ≃ₜ
+      MulAction.orbitRel.Quotient Circle (weightedEllipsoid a b ε) :=
+  Homeomorph.Quotient.congr
+    ((Homeomorph.prodComm ℂ ℂ).subtype fun _ ↦ swap_mem_weightedEllipsoid.symm) fun z w ↦ by
+      simp only [MulAction.orbitRel_apply, MulAction.mem_orbit_iff, ← Subtype.coe_inj,
+        coe_smul_weightedEllipsoid]
+      refine exists_congr fun u ↦ ?_
+      -- The homeomorphism of ellipsoids acts on the underlying points by `Prod.swap`.
+      change _ ↔ weightedRotation a b u (w : ℂ × ℂ).swap = (z : ℂ × ℂ).swap
+      rw [← swap_weightedRotation, Prod.swap_inj]
+
+/-- The exchange of coordinates on orbit spaces sends the orbit of `z` to the orbit of `z.swap`. -/
+theorem swapOrbitHomeomorph_mk (z : weightedEllipsoid b a ε) :
+    swapOrbitHomeomorph a b ε (Quotient.mk _ z) =
+      Quotient.mk _ ⟨(z : ℂ × ℂ).swap, swap_mem_weightedEllipsoid.2 z.2⟩ :=
+  (rfl)
 
 /-! ### Stabilizers -/
 

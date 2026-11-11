@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Complex.RootsOfUnity.Circle
 public import TauCeti.Geometry.Symplectic.Complex.Line
 public import TauCeti.Geometry.Symplectic.Prod.Basic
 public import TauCeti.Geometry.Toric.WeightedCircle.Basic
+import TauCeti.Analysis.Complex.Circle
 
 /-!
 # Slice charts of the weighted ellipsoid quotient
@@ -206,15 +207,6 @@ theorem fst_ne_zero_iff_of_mem_weightedEllipsoid (ha : 0 < a) {z : ℂ × ℂ}
     rw [this] at hz
     linarith
 
-/-- Rotating a complex number by minus its argument puts it on the nonnegative real axis. -/
-private theorem circleExp_neg_arg_mul_self (x : ℂ) :
-    (Circle.exp (-Complex.arg x) : ℂ) * x = ‖x‖ := by
-  rw [Circle.coe_exp]
-  nth_rewrite 2 [← Complex.norm_mul_exp_arg_mul_I x]
-  rw [mul_left_comm, ← Complex.exp_add]
-  push_cast
-  rw [neg_mul, neg_add_cancel, Complex.exp_zero, mul_one]
-
 /-- **Every orbit meets the slice over `z₁ ≠ 0`.** For a point `z` of the ellipsoid, the circle
 element `u = exp(-i arg(z₁) / a)` rotates `z₁` onto the nonnegative real axis, so it maps `z` to the
 slice point over `u ^ b z₂`, whose norm is that of `z₂`. This lies in the open disc `b |w|² < 2 ε`
@@ -235,7 +227,7 @@ theorem exists_weightedRotation_eq_weightedSliceFst (ha : 0 < a) {z : ℂ × ℂ
     field_simp
     linarith
   rw [weightedRotation_fst, weightedSliceFst_fst, hs, Real.sqrt_sq (norm_nonneg _),
-    ← Circle.coe_pow, hua, circleExp_neg_arg_mul_self]
+    ← Circle.coe_pow, hua, Circle.exp_neg_arg_mul_self]
 
 /-- **Every orbit meets the slice over `z₂ ≠ 0`**, at the slice point over `u ^ a z₁` for
 `u = exp(-i arg(z₂) / b)`. -/
@@ -249,12 +241,6 @@ theorem exists_weightedRotation_eq_weightedSliceSnd (hb : 0 < b) {z : ℂ × ℂ
   rwa [swap_weightedRotation, Prod.swap_swap, Prod.snd_swap, ← weightedSliceSnd_eq_swap] at h
 
 /-! ### The residual cyclic groups -/
-
-/-- For `k ∈ ℤ / a`, the circle element `exp(-2π i k / a)` is an `a`-th root of unity. -/
-private theorem toCircle_neg_pow (a : ℕ) [NeZero a] (k : ZMod a) :
-    ZMod.toCircle (-k) ^ a = 1 := by
-  rw [← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, ZMod.natCast_self, zero_mul,
-    AddChar.map_zero_eq_one]
 
 /-- **The slice over `z₁ ≠ 0` meets each orbit in an orbit of `ℤ / a`.** On the open disc
 `b |w|² < 2 ε`, the slice points over `w` and `w'` lie in the same circle orbit exactly when
@@ -270,7 +256,7 @@ theorem exists_weightedRotation_weightedSliceFst_eq_iff [NeZero a] {w : ℂ}
     obtain ⟨j, rfl⟩ := ZMod.exists_toCircle_eq_of_pow_eq_one hu
     exact ⟨-j, by rw [neg_neg, Circle.coe_pow]⟩
   · rintro ⟨k, rfl⟩
-    exact ⟨ZMod.toCircle (-k), toCircle_neg_pow a k, by rw [Circle.coe_pow]⟩
+    exact ⟨ZMod.toCircle (-k), ZMod.toCircle_pow_eq_one (-k), by rw [Circle.coe_pow]⟩
 
 /-- **The slice over `z₂ ≠ 0` meets each orbit in an orbit of `ℤ / b`.** On the open disc
 `a |u|² < 2 ε`, the slice points over `u` and `u'` lie in the same circle orbit exactly when
@@ -335,7 +321,7 @@ theorem weightedRotation_weightedSliceFst_eq_weightedSliceSnd (ha : 0 < a) (hb :
     have hv : b * -(Complex.arg w / b) = -Complex.arg w := by field_simp
     rw [weightedRotation_snd, weightedSliceSnd_snd, hs, Real.sqrt_sq (norm_nonneg _),
       weightedSliceFst_snd, ← Circle.coe_pow, ← Circle.exp_natCast_mul, hv,
-      circleExp_neg_arg_mul_self]
+      Circle.exp_neg_arg_mul_self]
 
 /-- **The change of slices retains the residual group `ℤ / b`.** For a nonzero `w` in the closed
 disc `b |w|² ≤ 2 ε`, the slice point over `w` and the slice point over `u` of the slice over
@@ -454,6 +440,16 @@ def weightedSliceChartSnd [NeZero b] (u : {u : ℂ // a * ‖u‖ ^ 2 < 2 * ε})
   Quotient.mk _
     ⟨weightedSliceSnd a b ε u, weightedSliceSnd_mem_weightedEllipsoid (NeZero.pos b) u.2.le⟩
 
+theorem weightedSliceChartFst_apply [NeZero a] (w : {w : ℂ // b * ‖w‖ ^ 2 < 2 * ε}) :
+    weightedSliceChartFst a b ε w = Quotient.mk _
+      ⟨weightedSliceFst a b ε w, weightedSliceFst_mem_weightedEllipsoid (NeZero.pos a) w.2.le⟩ :=
+  (rfl)
+
+theorem weightedSliceChartSnd_apply [NeZero b] (u : {u : ℂ // a * ‖u‖ ^ 2 < 2 * ε}) :
+    weightedSliceChartSnd a b ε u = Quotient.mk _
+      ⟨weightedSliceSnd a b ε u, weightedSliceSnd_mem_weightedEllipsoid (NeZero.pos b) u.2.le⟩ :=
+  (rfl)
+
 theorem continuous_weightedSliceChartFst [NeZero a] : Continuous (weightedSliceChartFst a b ε) :=
   continuous_quotient_mk'.comp
     ((continuous_weightedSliceFst.comp continuous_subtype_val).subtype_mk _)
@@ -469,8 +465,8 @@ private theorem weightedSliceChartFst_eq_iff_exists [NeZero a]
     weightedSliceChartFst a b ε w = weightedSliceChartFst a b ε w' ↔
       ∃ u : Circle,
         weightedRotation a b u (weightedSliceFst a b ε w) = weightedSliceFst a b ε w' := by
-  rw [eq_comm, weightedSliceChartFst, weightedSliceChartFst, Quotient.eq, MulAction.orbitRel_apply,
-    MulAction.mem_orbit_iff]
+  rw [eq_comm, weightedSliceChartFst_apply, weightedSliceChartFst_apply, Quotient.eq,
+    MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
   simp only [← Subtype.coe_inj, coe_smul_weightedEllipsoid]
 
 /-- **The fibres of the slice chart over `z₁ ≠ 0` are the orbits of `ℤ / a`**: two points `w, w'`
@@ -485,8 +481,8 @@ of the disc go to the same orbit exactly when `u' = exp(-2π i a k / b) u` for s
 theorem weightedSliceChartSnd_eq_iff [NeZero b] {u u' : {u : ℂ // a * ‖u‖ ^ 2 < 2 * ε}} :
     weightedSliceChartSnd a b ε u = weightedSliceChartSnd a b ε u' ↔
       ∃ k : ZMod b, (u' : ℂ) = ((ZMod.toCircle (-k) ^ a : Circle) : ℂ) * u := by
-  rw [← exists_weightedRotation_weightedSliceSnd_eq_iff u.2, eq_comm, weightedSliceChartSnd,
-    weightedSliceChartSnd, Quotient.eq, MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
+  rw [← exists_weightedRotation_weightedSliceSnd_eq_iff u.2, eq_comm, weightedSliceChartSnd_apply,
+    weightedSliceChartSnd_apply, Quotient.eq, MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
   simp only [← Subtype.coe_inj, coe_smul_weightedEllipsoid]
 
 /-- **The image of the slice chart over `z₁ ≠ 0`** is the set of orbits of points with `z₁ ≠ 0`. -/
@@ -497,13 +493,14 @@ theorem range_weightedSliceChartFst [NeZero a] :
   ext q
   constructor
   · rintro ⟨w, rfl⟩
-    exact ⟨_, weightedSliceFst_fst_ne_zero ha w.2, rfl⟩
+    exact ⟨_, weightedSliceFst_fst_ne_zero ha w.2, (weightedSliceChartFst_apply w).symm⟩
   · rintro ⟨z, hz, rfl⟩
     obtain ⟨u, hu⟩ := exists_weightedRotation_eq_weightedSliceFst (ε := ε) ha z.2
     have hw : b * ‖(u : ℂ) ^ b * (z : ℂ × ℂ).2‖ ^ 2 < 2 * ε := by
       simpa [norm_pow] using (fst_ne_zero_iff_of_mem_weightedEllipsoid ha z.2).1 hz
     refine ⟨⟨_, hw⟩, ?_⟩
-    rw [weightedSliceChartFst, Quotient.eq, MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
+    rw [weightedSliceChartFst_apply, Quotient.eq, MulAction.orbitRel_apply,
+      MulAction.mem_orbit_iff]
     exact ⟨u, Subtype.ext (by rw [coe_smul_weightedEllipsoid, hu])⟩
 
 /-- **The image of the slice chart over `z₂ ≠ 0`** is the set of orbits of points with `z₂ ≠ 0`. -/
@@ -514,49 +511,64 @@ theorem range_weightedSliceChartSnd [NeZero b] :
   ext q
   constructor
   · rintro ⟨u, rfl⟩
-    exact ⟨_, weightedSliceFst_fst_ne_zero (a := b) (b := a) hb u.2, rfl⟩
+    refine ⟨_, show (weightedSliceSnd a b ε u).2 ≠ 0 from ?_, (weightedSliceChartSnd_apply u).symm⟩
+    rw [weightedSliceSnd_eq_swap, Prod.snd_swap]
+    exact weightedSliceFst_fst_ne_zero hb u.2
   · rintro ⟨z, hz, rfl⟩
     obtain ⟨v, hv⟩ := exists_weightedRotation_eq_weightedSliceSnd (ε := ε) hb z.2
     have hu : a * ‖(v : ℂ) ^ a * (z : ℂ × ℂ).1‖ ^ 2 < 2 * ε := by
       simpa [norm_pow] using
         (fst_ne_zero_iff_of_mem_weightedEllipsoid hb (swap_mem_weightedEllipsoid.2 z.2)).1 hz
     refine ⟨⟨_, hu⟩, ?_⟩
-    rw [weightedSliceChartSnd, Quotient.eq, MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
+    rw [weightedSliceChartSnd_apply, Quotient.eq, MulAction.orbitRel_apply,
+      MulAction.mem_orbit_iff]
     exact ⟨v, Subtype.ext (by rw [coe_smul_weightedEllipsoid, hv])⟩
 
-/-- **The slice chart over `z₁ ≠ 0` is an open map.** Fix `w₀` in an open set `U` of the disc and a
-radius `ρ > |w₀|` with `b ρ² < 2 ε`. The points of the closed disc of radius `ρ` not related to `U`
-by the residual group form a compact set, whose circle saturation `F` in the ellipsoid is compact,
-hence closed. Every point `z` of the ellipsoid with `|z₂| < ρ` and outside `F` has its orbit through
-a slice point over a point related to `U`. So these points form an open neighbourhood of the orbit
-of `w₀` inside the preimage of the image of `U`. -/
+/-- **The saturation of an open set under the residual group is open.** For an open set `U` of the
+disc `b |w|² < 2 ε`, the points of the disc with the same image under the slice chart over
+`z₁ ≠ 0` as a point of `U` form an open set: it is the union of the images of `U` under the
+residual action of the `a`-th roots of unity. -/
+theorem isOpen_preimage_image_weightedSliceChartFst [NeZero a]
+    {U : Set {w : ℂ // b * ‖w‖ ^ 2 < 2 * ε}} (hU : IsOpen U) :
+    IsOpen (weightedSliceChartFst a b ε ⁻¹' (weightedSliceChartFst a b ε '' U)) := by
+  have hT : weightedSliceChartFst a b ε ⁻¹' (weightedSliceChartFst a b ε '' U) =
+      ⋃ (ζ : Circle) (_ : ζ ^ a = 1), (fun w : {w : ℂ // b * ‖w‖ ^ 2 < 2 * ε} ↦
+        (⟨(ζ : ℂ) ^ b * w, by simpa [norm_pow] using w.2⟩ : {w : ℂ // b * ‖w‖ ^ 2 < 2 * ε})) ⁻¹'
+          U := by
+    ext w
+    simp only [mem_preimage, mem_image, mem_iUnion]
+    constructor
+    · rintro ⟨w', hw', h⟩
+      obtain ⟨u, hu⟩ := weightedSliceChartFst_eq_iff_exists.1 h.symm
+      obtain ⟨hua, huw⟩ := (weightedRotation_weightedSliceFst_eq_iff (NeZero.pos a) w.2).1 hu
+      refine ⟨u, hua, ?_⟩
+      convert hw' using 1
+      exact Subtype.ext huw.symm
+    · rintro ⟨ζ, hζ, hw⟩
+      refine ⟨_, hw, weightedSliceChartFst_eq_iff_exists.2 ⟨ζ⁻¹, ?_⟩⟩
+      rw [weightedRotation_weightedSliceFst (by rw [inv_pow, hζ, inv_one]), ← mul_assoc, ← mul_pow,
+        ← Circle.coe_mul, inv_mul_cancel, Circle.coe_one, one_pow, one_mul]
+  rw [hT]
+  exact isOpen_iUnion fun ζ ↦ isOpen_iUnion fun _ ↦ hU.preimage <|
+    (continuous_const.mul continuous_subtype_val).subtype_mk _
+
+/-- **The slice chart over `z₁ ≠ 0` is an open map**, for any positive weights (coprimality is not
+needed). -/
 theorem isOpenMap_weightedSliceChartFst [NeZero a] : IsOpenMap (weightedSliceChartFst a b ε) := by
+  -- Fix `w₀` in an open set `U` of the disc and a radius `ρ > |w₀|` with `b ρ² < 2 ε`. The points
+  -- of the closed disc of radius `ρ` outside the saturation `T` of `U` under the residual group
+  -- form a compact set, whose circle saturation `F` in the ellipsoid is compact, hence closed.
+  -- Every point `z` of the ellipsoid with `|z₂| < ρ` and outside `F` has its orbit through a slice
+  -- point over a point of `T`. So these points form an open neighbourhood of the orbit of `w₀`
+  -- inside the preimage of the image of `U`.
   have ha := NeZero.pos a
   set D := {w : ℂ // b * ‖w‖ ^ 2 < 2 * ε}
   set s : D → weightedEllipsoid a b ε := fun w ↦
     ⟨weightedSliceFst a b ε w, weightedSliceFst_mem_weightedEllipsoid ha w.2.le⟩ with hs_def
   have hs : Continuous s := (continuous_weightedSliceFst.comp continuous_subtype_val).subtype_mk _
   intro U hU
-  -- The points of the disc related to `U` by the residual group form an open set `T`.
-  set T : Set D := ⋃ (ζ : Circle) (_ : ζ ^ a = 1),
-    (fun w : D ↦ (⟨(ζ : ℂ) ^ b * w, by simpa [norm_pow] using w.2⟩ : D)) ⁻¹' U with hT_def
-  have hT : IsOpen T := isOpen_iUnion fun ζ ↦ isOpen_iUnion fun _ ↦ hU.preimage <|
-    (continuous_const.mul continuous_subtype_val).subtype_mk _
-  have hTU : ∀ w ∈ T, weightedSliceChartFst a b ε w ∈ weightedSliceChartFst a b ε '' U := by
-    simp only [hT_def, mem_iUnion, mem_preimage]
-    rintro w ⟨ζ, hζ, hw⟩
-    refine ⟨_, hw, weightedSliceChartFst_eq_iff_exists.2 ⟨ζ⁻¹, ?_⟩⟩
-    rw [weightedRotation_weightedSliceFst (by rw [inv_pow, hζ, inv_one]), ← mul_assoc, ← mul_pow,
-      ← Circle.coe_mul, inv_mul_cancel, Circle.coe_one, one_pow, one_mul]
-  have hUT : ∀ w w', w' ∈ U →
-      weightedSliceChartFst a b ε w = weightedSliceChartFst a b ε w' → w ∈ T := by
-    intro w w' hw' h
-    obtain ⟨u, hu⟩ := weightedSliceChartFst_eq_iff_exists.1 h
-    obtain ⟨hua, huw⟩ := (weightedRotation_weightedSliceFst_eq_iff ha w.2).1 hu
-    simp only [hT_def, mem_iUnion, mem_preimage]
-    refine ⟨u, hua, ?_⟩
-    convert hw' using 1
-    exact Subtype.ext huw.symm
+  set T := weightedSliceChartFst a b ε ⁻¹' (weightedSliceChartFst a b ε '' U)
+  have hT : IsOpen T := isOpen_preimage_image_weightedSliceChartFst hU
   rw [← isQuotientMap_quotient_mk'.isOpen_preimage, isOpen_iff_forall_mem_open]
   rintro z₀ ⟨w₀, hw₀U, hz₀⟩
   -- A radius `ρ > |w₀|` with `b ρ² < 2 ε`.
@@ -596,7 +608,7 @@ theorem isOpenMap_weightedSliceChartFst [NeZero a] : IsOpenMap (weightedSliceCha
       by_contra hcT
       refine hzF ⟨(u⁻¹, c), ⟨mem_univ _, by simpa [c, norm_pow] using hzρ.le, hcT⟩, ?_⟩
       simp only [← hc, inv_smul_smul]
-    obtain ⟨w, hwU, hw⟩ := hTU c hcT
+    obtain ⟨w, hwU, hw⟩ := hcT
     exact ⟨w, hwU, hw.trans (Quotient.sound ⟨u, hc⟩)⟩
   -- The neighbourhood is open.
   · exact (isOpen_lt (continuous_norm.comp (continuous_snd.comp continuous_subtype_val))
@@ -605,57 +617,21 @@ theorem isOpenMap_weightedSliceChartFst [NeZero a] : IsOpenMap (weightedSliceCha
   · obtain ⟨u, hu⟩ : ∃ u : Circle, u • s w₀ = z₀ := Quotient.exact hz₀.symm
     refine ⟨?_, ?_⟩
     · simpa [← hu, hs_def, norm_pow] using hρw
-    · rintro ⟨⟨v, c⟩, ⟨-, -, hcT⟩, hc⟩
-      have hc' : v • s c = z₀ := hc
-      refine hcT (hUT c w₀ hw₀U (Quotient.sound ⟨v⁻¹ * u, ?_⟩))
-      beta_reduce
-      rw [mul_smul, hu, ← hc', inv_smul_smul]
+    · rintro ⟨⟨v, c⟩, ⟨-, -, hcT⟩, hc : v • s c = z₀⟩
+      refine hcT ⟨w₀, hw₀U, Quotient.sound (MulAction.mem_orbit_iff.2 ⟨u⁻¹ * v, ?_⟩)⟩
+      rw [mul_smul, hc, ← hu, inv_smul_smul]
 
 /-- **The slice chart over `z₁ ≠ 0` has open image**, the set of orbits with `z₁ ≠ 0`. -/
 theorem isOpen_range_weightedSliceChartFst [NeZero a] :
     IsOpen (range (weightedSliceChartFst a b ε)) :=
   isOpenMap_weightedSliceChartFst.isOpen_range
 
-/-- Exchanging the coordinates, from the ellipsoid with weights `(b, a)` to the ellipsoid with
-weights `(a, b)`. -/
-private def swapEllipsoid (a b : ℕ) (ε : ℝ) (z : weightedEllipsoid b a ε) :
-    weightedEllipsoid a b ε :=
-  ⟨(z : ℂ × ℂ).swap, swap_mem_weightedEllipsoid.1 (by rw [Prod.swap_swap]; exact z.2)⟩
-
-private theorem continuous_swapEllipsoid (a b : ℕ) (ε : ℝ) : Continuous (swapEllipsoid a b ε) :=
-  (continuous_swap.comp continuous_subtype_val).subtype_mk _
-
-private theorem swapEllipsoid_swapEllipsoid (a b : ℕ) (ε : ℝ) (z : weightedEllipsoid a b ε) :
-    swapEllipsoid a b ε (swapEllipsoid b a ε z) = z :=
-  Subtype.ext (Prod.swap_swap _)
-
-private theorem orbitRel_swapEllipsoid (a b : ℕ) (ε : ℝ) (z w : weightedEllipsoid b a ε)
-    (h : MulAction.orbitRel Circle _ z w) :
-    MulAction.orbitRel Circle _ (swapEllipsoid a b ε z) (swapEllipsoid a b ε w) := by
-  obtain ⟨u, rfl⟩ := h
-  exact ⟨u, Subtype.ext (by simp [swapEllipsoid])⟩
-
-/-- Exchanging the coordinates identifies the orbit spaces for the weights `(b, a)` and `(a, b)`. -/
-private def swapOrbitHomeomorph (a b : ℕ) (ε : ℝ) :
-    MulAction.orbitRel.Quotient Circle (weightedEllipsoid b a ε) ≃ₜ
-      MulAction.orbitRel.Quotient Circle (weightedEllipsoid a b ε) where
-  toFun := Quotient.map' (swapEllipsoid a b ε) (orbitRel_swapEllipsoid a b ε)
-  invFun := Quotient.map' (swapEllipsoid b a ε) (orbitRel_swapEllipsoid b a ε)
-  left_inv q := by
-    induction q using Quotient.inductionOn' with
-    | h z => exact congrArg Quotient.mk'' (swapEllipsoid_swapEllipsoid b a ε z)
-  right_inv q := by
-    induction q using Quotient.inductionOn' with
-    | h z => exact congrArg Quotient.mk'' (swapEllipsoid_swapEllipsoid a b ε z)
-  continuous_toFun := (continuous_swapEllipsoid a b ε).quotient_map' _
-  continuous_invFun := (continuous_swapEllipsoid b a ε).quotient_map' _
-
 /-- The slice chart over `z₂ ≠ 0` is, by definition, the slice chart over `z₁ ≠ 0` for the exchanged
 weights followed by the exchange of coordinates. -/
-private theorem weightedSliceChartSnd_eq_swapOrbitHomeomorph [NeZero b]
+theorem weightedSliceChartSnd_eq_swapOrbitHomeomorph [NeZero b]
     (u : {u : ℂ // a * ‖u‖ ^ 2 < 2 * ε}) :
     weightedSliceChartSnd a b ε u = swapOrbitHomeomorph a b ε (weightedSliceChartFst b a ε u) :=
-  (rfl)
+  by rw [weightedSliceChartSnd_apply, weightedSliceChartFst_apply, swapOrbitHomeomorph_mk]; rfl
 
 /-- **The slice chart over `z₂ ≠ 0` is an open map.** It is the slice chart over `z₁ ≠ 0` for the
 exchanged weights, followed by the homeomorphism of orbit spaces exchanging the coordinates. -/
