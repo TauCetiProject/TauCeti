@@ -113,6 +113,14 @@ theorem coefficientComparison_surjective (hq : Function.Surjective q) :
     Function.surjective_id (neg_surjective.comp hq) b
   exact ⟨a, (coefficientComparison_apply q hω a).trans ha⟩
 
+/-- An injective map of class groups gives an injective comparison: the coefficient of the
+comparison at `-q A` is the coefficient at `A`. -/
+theorem coefficientComparison_injective (hq : Function.Injective q) :
+    Function.Injective (coefficientComparison (R := R) q hω) := fun a b hab =>
+  map_injective (RingHom.id R : R →+ R) (-q) ⟨1, one_pos, period_rescale_neg hω⟩
+    Function.injective_id (fun _ _ h => hq (neg_injective h)) <| by
+      rwa [← coefficientComparison_apply, ← coefficientComparison_apply]
+
 /-- If source and target Chern maps agree under class projection, the comparison negates the
 Chern number of a homogeneous support. -/
 theorem chern_support_coefficientComparison (c : S →+ ℤ) (c' : Γ →+ ℤ)
