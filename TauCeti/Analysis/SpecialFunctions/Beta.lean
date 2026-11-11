@@ -34,7 +34,7 @@ It also records Euler's *second* beta integral, the half-line form
 statement, and specialises it to the Cauchy-type kernel `(1 + x ^ 2) ^ (-s)` on the whole line.
 
 These are the analytic prerequisites of
-`TauCeti/Analysis/SpecialFunctions/IncompleteBeta.lean`;
+`TauCeti/Analysis/SpecialFunctions/IncompleteBeta/Basic.lean`;
 `TauCeti/Probability/Distributions/Beta/Basic.lean` uses the beta integral for its moment formula,
 and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its density with the
 `(1 + x ^ 2) ^ (-s)` form of the second integral.
