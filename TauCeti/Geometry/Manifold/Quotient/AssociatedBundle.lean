@@ -60,7 +60,7 @@ holomorphically trivial exactly when `χ = 1`
   `IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_characterCore_iff`: an associated
   line bundle is trivial exactly when there is a nowhere-vanishing equivariant function upstairs.
 * `IsQuotientCoveringMap.contMDiff_section_associatedCore_iff_exists_eq_const`: over a compact
-  connected complex manifold `E`, holomorphic sections are constant `ρ`-invariant functions
+  preconnected complex manifold `E`, holomorphic sections are constant `ρ`-invariant functions
   upstairs.
 * `IsQuotientCoveringMap.eq_zero_of_contMDiff_section_characterCore`,
   `IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_characterCore_iff_eq_one`: over a
@@ -216,24 +216,27 @@ variable {EM : Type*} [NormedAddCommGroup EM] [NormedSpace ℂ EM] {HM : Type*}
   (hpd : IsLocalDiffeomorph I IB n p)
 include hpd
 
-/-- Over a compact connected complex manifold `E`, a section of the bundle associated with `ρ` is
+/-- Over a compact preconnected complex manifold `E`, a section of the bundle associated with `ρ` is
 `C^m`, for `0 < m ≤ n`, exactly when its equivariant function upstairs is constant, with a
-`ρ`-invariant value. Thus the holomorphic sections of the associated bundle are the
-`G`-invariant vectors of `F`. -/
-theorem contMDiff_section_associatedCore_iff_exists_eq_const [ConnectedSpace E] (hm : m ≤ n)
+`ρ`-invariant value. Thus every holomorphic section is represented by a constant `G`-invariant
+function upstairs. -/
+theorem contMDiff_section_associatedCore_iff_exists_eq_const [PreconnectedSpace E] (hm : m ≤ n)
     (hm₀ : m ≠ 0) {σ : ∀ x, (hp.associatedCore ρ).Fiber x} :
     ContMDiff IB (IB.prod 𝓘(ℂ, F)) m (fun x ↦ TotalSpace.mk' F x (σ x)) ↔
       ∃ v : F, (∀ g : G, (ρ g : F →L[ℂ] F) v = v) ∧
         (hp.associatedSectionEquiv ρ σ : E → F) = Function.const E v := by
   rw [hp.contMDiff_section_associatedCore_iff ρ hpd hm]
   refine ⟨fun hf ↦ ?_, fun ⟨v, _, hv⟩ ↦ hv ▸ contMDiff_const⟩
-  -- A holomorphic function on a compact connected complex manifold is constant.
-  obtain ⟨v, hv⟩ := (hf.mdifferentiable hm₀).exists_eq_const_of_compactSpace
-  refine ⟨v, fun g ↦ ?_, hv⟩
-  obtain ⟨y⟩ : Nonempty E := inferInstance
-  have h := (hp.associatedSectionEquiv ρ σ).2 g y
-  rw [hv, Function.const_apply, Function.const_apply] at h
-  exact h.symm
+  cases isEmpty_or_nonempty E with
+  | inl hE => exact ⟨0, fun g ↦ map_zero _, funext fun y ↦ isEmptyElim y⟩
+  | inr hE =>
+    -- A holomorphic function on a compact connected complex manifold is constant.
+    obtain ⟨v, hv⟩ := (hf.mdifferentiable hm₀).exists_eq_const_of_compactSpace
+    refine ⟨v, fun g ↦ ?_, hv⟩
+    obtain ⟨y⟩ : Nonempty E := inferInstance
+    have h := (hp.associatedSectionEquiv ρ σ).2 g y
+    rw [hv, Function.const_apply, Function.const_apply] at h
+    exact h.symm
 
 /-- Over a compact preconnected complex manifold `E`, the line bundle of a nontrivial character
 `χ` of the deck group has no nonzero `C^m` section, for `0 < m ≤ n`. In particular it has no
@@ -244,7 +247,6 @@ theorem eq_zero_of_contMDiff_section_characterCore [PreconnectedSpace E] {χ : G
   obtain ⟨g, hg⟩ := DFunLike.ne_iff.1 hχ
   funext x
   obtain ⟨y, rfl⟩ := hp.surjective x
-  have : ConnectedSpace E := { toNonempty := ⟨y⟩ }
   revert σ
   rw [characterCore_def]
   intro σ hσ
