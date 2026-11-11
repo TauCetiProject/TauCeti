@@ -11,6 +11,7 @@ public import TauCeti.Analysis.SpecialFunctions.Sigmoid
 public import TauCeti.Probability.Moments.ComplexMGF
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
+import TauCeti.Algebra.Order.Field.Basic
 
 /-!
 # Transforms of the logistic distribution
@@ -116,16 +117,6 @@ theorem integrableExpSet_id_logisticMeasure (hs : 0 < s) :
   rw [integrableExpSet, mem_ofPred_eq, mem_Ioo]
   simpa only [id_eq] using
     (integrable_exp_mul_id_logisticMeasure_iff (m := m) (t := t) hs)
-
-/-- The interval `(-1 / s, 1 / s)` is nonempty only for a positive scale `s`: it is empty for
-`s = 0` by the convention `1 / 0 = 0`, and for `s < 0` its endpoints are reversed. -/
-theorem pos_of_mem_Ioo_neg_one_div (ht : t ∈ Ioo (-1 / s) (1 / s)) : 0 < s := by
-  by_contra h
-  rcases (not_lt.1 h).lt_or_eq with hs | rfl
-  · have h1 : 1 / s < 0 := one_div_neg.2 hs
-    have h2 : -1 / s = -(1 / s) := neg_div s 1
-    linarith [ht.1, ht.2]
-  · simp at ht
 
 /-- The moment-generating function of a logistic law on its exact finiteness domain. The
 hypothesis `ht` forces the scale `s` to be positive. -/
