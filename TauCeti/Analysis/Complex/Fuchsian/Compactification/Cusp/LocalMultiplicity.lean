@@ -69,7 +69,7 @@ theorem localMultiplicity_compactifiedQuotientMap_ofCusp_eq_widthIndex [Discrete
     filter_upwards [hex ▸ e.open_target.mem_nhds (e.map_source hxe)] with z hz
     have hz' : e.symm z ∈ cuspNhd D D.width := by
       simpa [e] using e.map_target hz
-    rw [cuspChart_compactifiedQuotientMap_eq_pow_widthIndex h D E hc hσ hD hz']
+    rw [cuspChart_compactifiedQuotientMap_eq_pow_widthIndex h D E hσ hD hz']
     simp [e, n, e.right_inv hz]
   exact localMultiplicity_eq_of_coordinate_eventuallyEq_pow_zero
     he he' hxe hfxe hf hex hefx hpow

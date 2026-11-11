@@ -43,7 +43,7 @@ theorem width_factor_tower (D : Δ.CuspDatum) (E : Γ.CuspDatum) (F : Θ.CuspDat
 
 /-- The positive integer by which the cusp width grows under a subgroup inclusion, for
 normalized cusp data with the same scaling (and hence the same representative,
-`TauCeti.Subgroup.CuspDatum.cusp_eq_of_scaling_eq`). -/
+`Subgroup.CuspDatum.cusp_eq_of_scaling_eq`). -/
 def widthIndex (h : Δ ≤ Γ) (D : Δ.CuspDatum) (E : Γ.CuspDatum)
     (hσ : D.scaling = E.scaling) : ℕ :=
   (exists_width_eq_nat_mul h D E hσ).choose
