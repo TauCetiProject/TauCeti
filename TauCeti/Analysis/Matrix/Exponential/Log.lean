@@ -34,6 +34,9 @@ topology is the native matrix topology.
 * `Matrix.IsHermitian.cfc_log_exp`, `Matrix.PosDef.exp_cfc_log`: the logarithm inverts the
   exponential on the Hermitian matrices, and the exponential inverts the logarithm on the positive
   definite matrices.
+* `Matrix.IsHermitian.exp_eq_exp_iff`: the exponential is injective on the Hermitian matrices.
+* `Matrix.IsHermitian.commute_exp_iff`: a unitary matrix commutes with the exponential of a
+  Hermitian matrix exactly when it commutes with the matrix.
 * `Matrix.PosDef.rpow_eq_exp_smul_cfc_log`: `P ^ s = exp (s • log P)` for positive definite `P`.
 * `Matrix.contDiffOn_cfc_log`, `Matrix.contDiffOn_rpow`, `Matrix.contDiffOn_sqrt`: the logarithm,
   every real power and the square root are `C^n` on the positive definite matrices.
@@ -67,6 +70,26 @@ theorem IsHermitian.cfc_log_exp {X : Matrix n n 𝕜} (hX : X.IsHermitian) :
     cfc Real.log (exp X) = X := by
   let : NormedAlgebra ℝ (Matrix n n 𝕜) := Matrix.l2OpNormedAlgebraReal
   exact CFC.log_exp X hX.isSelfAdjoint
+
+/-- The exponential is injective on the Hermitian matrices. -/
+theorem IsHermitian.exp_eq_exp_iff {X Y : Matrix n n 𝕜} (hX : X.IsHermitian) (hY : Y.IsHermitian) :
+    exp X = exp Y ↔ X = Y :=
+  ⟨fun h ↦ by rw [← hX.cfc_log_exp, h, hY.cfc_log_exp], fun h ↦ h ▸ rfl⟩
+
+/-- A unitary matrix commutes with the exponential of a Hermitian matrix exactly when it commutes
+with the matrix itself. -/
+theorem IsHermitian.commute_exp_iff {X U : Matrix n n 𝕜} (hX : X.IsHermitian)
+    (hU : U ∈ unitaryGroup n 𝕜) : Commute U (exp X) ↔ Commute U X := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.exp_right⟩
+  have hUU : Uᴴ * U = 1 := by rw [← star_eq_conjTranspose]; exact mem_unitaryGroup_iff'.1 hU
+  have hUU' : U * Uᴴ = 1 := by rw [← star_eq_conjTranspose]; exact mem_unitaryGroup_iff.1 hU
+  -- `U (exp X) Uᴴ = exp (U X Uᴴ)` with `U X Uᴴ` Hermitian, so `U X Uᴴ = X` by injectivity.
+  have hconj : U * X * Uᴴ = X := by
+    rw [← (isHermitian_mul_mul_conjTranspose U hX).exp_eq_exp_iff hX, ← inv_eq_left_inv hUU,
+      Matrix.exp_conj _ _ ⟨⟨U, Uᴴ, hUU', hUU⟩, rfl⟩, inv_eq_left_inv hUU, h.eq,
+      Matrix.mul_assoc, hUU', Matrix.mul_one]
+  calc U * X = U * X * (Uᴴ * U) := by rw [hUU, Matrix.mul_one]
+    _ = X * U := by rw [← Matrix.mul_assoc, hconj]
 
 /-- The exponential of the logarithm of a positive definite matrix is the matrix itself. -/
 @[simp, grind =]
