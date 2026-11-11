@@ -20,22 +20,15 @@ public section
 
 namespace TauCeti
 
-variable (G : Type*) [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [T2Space G]
 
 /-- In a compact Hausdorff topological group, the set of conjugate pairs is closed. -/
-theorem isClosed_isConj_pair : IsClosed {q : G × G | IsConj q.1 q.2} := by
-  let f : G × G → G × G := fun q ↦ (q.2, q.1 * q.2 * q.1⁻¹)
-  have hf : Continuous f := continuous_snd.prodMk IsTopologicalGroup.continuous_conj_prod
-  have hrange : Set.range f = {q : G × G | IsConj q.1 q.2} := by
-    ext q
-    constructor
-    · rintro ⟨⟨g, x⟩, rfl⟩
-      exact isConj_iff.mpr ⟨g, rfl⟩
-    · intro h
-      obtain ⟨g, hg⟩ := isConj_iff.mp h
-      exact ⟨(g, q.1), Prod.ext rfl hg⟩
-  rw [← hrange]
-  exact (isCompact_range hf).isClosed
+theorem isClosed_isConj_prod : IsClosed {q : G × G | IsConj q.1 q.2} := by
+  have h : {q : G × G | IsConj q.1 q.2} = Set.range fun p : G × G ↦ (p.2, p.1 * p.2 * p.1⁻¹) := by
+    ext ⟨a, b⟩
+    simp [isConj_iff]
+  rw [h]
+  exact (isCompact_range (continuous_snd.prodMk IsTopologicalGroup.continuous_conj_prod)).isClosed
 
 end TauCeti

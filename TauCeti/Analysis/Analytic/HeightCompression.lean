@@ -25,7 +25,9 @@ the inverse `β` of the normalized hyperbolic sine `t ↦ sinh t / sinh 1`, whic
   nowhere-vanishing `h : 𝕜 → 𝕜`. It is analytic, with analytic inverse, wherever `h` is.
 * `TauCeti.heightCompression E`: the automorphism `g₂ (u, t) = (u, β (t / √(1 + ‖u‖²)))` of
   `E × ℝ`. It is increasing on every vertical line and sends `(u, t)` into the strip `|s| < 1`
-  exactly when `t² < 1 + ‖u‖²` (`TauCeti.abs_heightCompression_snd_lt_one_iff`). When `E` is a
+  exactly when `t² < 1 + ‖u‖²` (`TauCeti.abs_heightCompression_snd_lt_one_iff`), and to a height
+  at least (at most) `s` exactly when `t` is at least (at most) `√(1 + ‖u‖²) * (sinh s / sinh 1)`
+  (`TauCeti.le_heightCompression_snd_iff`, `TauCeti.heightCompression_snd_le_iff`). When `E` is a
   real inner product space, it is analytic with analytic inverse.
 * `TauCeti.mapsTo_heightCompression_comp_baseScaling`: if `√(t² - 1) < |h t| * γ t` whenever
   `|t| ≥ 1`, then `g₂ ∘ g₁` maps every point `(u, t)` with `γ t ≤ ‖u‖` into the strip `|s| < 1`.
@@ -51,6 +53,8 @@ its projection to the base.
 * `TauCeti.dist_snd_le_three_mul_dist_fst_of_mem_image_heightCompression_comp_baseScaling`: if
   `2 * k ≤ |h|` on `D` and `L * a ≤ 1`, then `g₁` produces Lipschitz constant at most `1` and
   `g₂ ∘ g₁` produces Lipschitz constant at most `3`, a bound independent of the graph.
+* `TauCeti.isBounded_image_heightCompression_comp_baseScaling`: `g₂ ∘ g₁` maps a set of points with
+  bounded base points and heights in a compact set, on which `h` is continuous, to a bounded set.
 
 The scaling function `h` itself is chosen analytic and positive, with
 `√(t² - 1) < h t * γ t` for every `t` and, on each height interval `D` of a locally finite family
@@ -62,7 +66,8 @@ Since `g₂` does not move base points, the projection of the image of a graph u
 the projection of its image under `g₁`. In Łojasiewicz's lemma the graphs are pieces of a
 locally finite family, with constants `k`, `a` and height intervals `D` depending on the piece:
 the last result gives the uniform Lipschitz bound for the straightened family, and the ball
-covering result shows that the projections of its members contain balls of radius `a * c`.
+covering result shows that the projections of its members contain balls of radius `a * c`. The
+lemma itself is assembled from these results in `TauCeti.Analysis.Analytic.GraphStraightening`.
 
 ## References
 
@@ -252,6 +257,22 @@ theorem abs_heightCompression_snd_lt_one_iff {p : E × ℝ} :
   rw [heightCompression_apply, abs_normalizedArsinh_lt_one_iff, abs_div, abs_of_pos hpos,
     div_lt_one hpos, lt_sqrt (abs_nonneg _), sq_abs]
 
+/-- The height compression takes `(u, t)` to a height at least `s` exactly when `t` is at least
+`√(1 + ‖u‖²) * (sinh s / sinh 1)`, the height over `u` that it takes to `s`. -/
+theorem le_heightCompression_snd_iff {u : E} {s t : ℝ} :
+    s ≤ (heightCompression E (u, t)).2 ↔ √(1 + ‖u‖ ^ 2) * (sinh s / sinh 1) ≤ t := by
+  have hpos : 0 < √(1 + ‖u‖ ^ 2) := sqrt_pos.2 (by positivity)
+  conv_lhs => rw [← normalizedArsinh_sinh_div s]
+  rw [heightCompression_apply, normalizedArsinh_le_normalizedArsinh, le_div_iff₀ hpos, mul_comm]
+
+/-- The height compression takes `(u, t)` to a height at most `s` exactly when `t` is at most
+`√(1 + ‖u‖²) * (sinh s / sinh 1)`, the height over `u` that it takes to `s`. -/
+theorem heightCompression_snd_le_iff {u : E} {s t : ℝ} :
+    (heightCompression E (u, t)).2 ≤ s ↔ t ≤ √(1 + ‖u‖ ^ 2) * (sinh s / sinh 1) := by
+  have hpos : 0 < √(1 + ‖u‖ ^ 2) := sqrt_pos.2 (by positivity)
+  conv_lhs => rw [← normalizedArsinh_sinh_div s]
+  rw [heightCompression_apply, normalizedArsinh_le_normalizedArsinh, div_le_iff₀ hpos, mul_comm]
+
 /-- If `√(t² - 1) < |h t| * γ t` whenever `|t| ≥ 1`, then rescaling the base by the
 nowhere-vanishing function `h` and compressing the height maps every point `(u, t)` with
 `γ t ≤ ‖u‖` into the strip `|s| < 1`. -/
@@ -364,6 +385,34 @@ theorem dist_snd_le_three_mul_dist_fst_of_mem_image_heightCompression_comp_baseS
   have := dist_snd_le_mul_dist_fst_of_mem_image_heightCompression h₁ p hp q hq
   norm_num at this
   exact this
+
+/-- **Bounded pieces have bounded images.** Let `s ⊆ E × ℝ` consist of points with base points of
+norm at most `a` and heights in a compact set `D`, on which `h` is continuous. Then the image of
+`s` under the base scaling followed by the height compression is bounded. -/
+theorem isBounded_image_heightCompression_comp_baseScaling [NormedSpace ℝ E] {h : ℝ → ℝ}
+    (hh : ∀ t, h t ≠ 0) {s : Set (E × ℝ)} {D : Set ℝ} {a : ℝ} (hsa : ∀ p ∈ s, ‖p.1‖ ≤ a)
+    (hsD : ∀ p ∈ s, p.2 ∈ D) (hD : IsCompact D) (hhD : ContinuousOn h D) :
+    Bornology.IsBounded ((heightCompression E ∘ baseScaling hh) '' s) := by
+  obtain ⟨C, hC⟩ := hD.exists_bound_of_continuousOn hhD
+  obtain ⟨T, hT⟩ := hD.isBounded.exists_norm_le
+  refine isBounded_iff_forall_norm_le.2 ⟨max (C * a) (2 * T), ?_⟩
+  rintro _ ⟨p, hp, rfl⟩
+  have hρ : 1 ≤ √(1 + ‖h p.2 • p.1‖ ^ 2) := one_le_sqrt.2 (le_add_of_nonneg_right (sq_nonneg _))
+  -- `β` is `2`-Lipschitz and vanishes at `0`, and the height is divided by `√(1 + ‖u‖²) ≥ 1`.
+  have hβ := lipschitzWith_normalizedArsinh.dist_le_mul (p.2 / √(1 + ‖h p.2 • p.1‖ ^ 2)) 0
+  rw [normalizedArsinh_zero, Real.dist_eq, Real.dist_eq, sub_zero, sub_zero, abs_div,
+    abs_of_pos (zero_lt_one.trans_le hρ)] at hβ
+  rw [Function.comp_apply, baseScaling_apply, heightCompression_apply, Prod.norm_def]
+  refine max_le_max ?_ ?_
+  · rw [norm_smul]
+    exact mul_le_mul (hC _ (hsD p hp)) (hsa p hp) (norm_nonneg _)
+      ((norm_nonneg _).trans (hC _ (hsD p hp)))
+  · rw [Real.norm_eq_abs]
+    refine hβ.trans ?_
+    push_cast
+    gcongr
+    exact (div_le_self (abs_nonneg _) hρ).trans
+      ((Real.norm_eq_abs _).symm.trans_le (hT _ (hsD p hp)))
 
 variable [InnerProductSpace ℝ E]
 

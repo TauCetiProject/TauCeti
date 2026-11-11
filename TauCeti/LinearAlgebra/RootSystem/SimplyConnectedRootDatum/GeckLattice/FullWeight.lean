@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Torus
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Torus.Basic
 
 /-!
 # The pinned Geck carrier is full-weight in the unimodular types
@@ -27,8 +27,9 @@ Neither form is transported from the other, since the identification of the poin
 two general criteria live beside the carrier in
 `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.GroupScheme`, and both are
 stated against the finite-ordinal weights `TauCeti.DynkinType.geckWeightFin` that the construction
-consumes, so the bridge to the merged spanning results is the reindexing lemma
-`TauCeti.DynkinType.range_geckWeightFin`.
+consumes, so the spanning results are applied through the reindexing lemma
+`TauCeti.DynkinType.span_range_geckWeightFin_eq_top_iff` from
+`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.WeightSpan`.
 
 Nothing here asserts that the Geck carrier is reductive, that its weight torus is a *maximal* torus,
 or that the carrier realizes the pinned root datum. Neither does anything here bear on the other six
@@ -37,11 +38,8 @@ admissible lattice is needed before the same two statements can hold.
 
 ## Main results
 
-* `TauCeti.DynkinType.range_geckWeightFin`: the finite-ordinal reindexing does not change the set
-  of Geck weights, so the two spanning conditions agree
-  (`TauCeti.DynkinType.span_range_geckWeightFin_eq_top_iff`).
 * `TauCeti.DynkinType.isClosedImmersion_geckWeightTorus_E8`, and the analogous `F4` and `G2`
-  instances, imported from `GeckLattice.Torus`: the weight torus is a closed subgroup scheme
+  instances, imported from `GeckLattice.Torus.Basic`: the weight torus is a closed subgroup scheme
   of the carrier.
 * `TauCeti.DynkinType.geckTorusPoints_E8_injective`, and the analogous `F4` and `G2` results: the
   weight torus is injective on points.
@@ -66,20 +64,6 @@ universe v
 noncomputable section
 
 variable (t : DynkinType) (ht : t.Valid)
-
-/-- Reindexing the Geck weights by a finite ordinal does not change the set of weights. -/
-@[simp]
-theorem range_geckWeightFin :
-    Set.range (t.geckWeightFin ht) = Set.range (t.geckWeight ht) :=
-  EquivLike.range_comp (t.geckWeight ht) (Fintype.equivFin (t.GeckIndex ht)).symm
-
-/-- The finite-ordinal Geck weights generate the character lattice exactly when the Geck weights
-do. This is the bridge between the weights the carrier is built from and the weights the spanning
-results are stated for. -/
-theorem span_range_geckWeightFin_eq_top_iff :
-    Submodule.span ℤ (Set.range (t.geckWeightFin ht)) = ⊤ ↔
-      Submodule.span ℤ (Set.range (t.geckWeight ht)) = ⊤ := by
-  rw [range_geckWeightFin]
 
 /-! ## The three unimodular types -/
 

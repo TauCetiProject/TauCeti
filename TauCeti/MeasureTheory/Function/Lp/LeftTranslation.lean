@@ -43,7 +43,7 @@ on bounded uniformly continuous functions with invariant means on `L∞` of a Ha
 * `MeasureTheory.Lp.coeFn_leftTranslation`: `L_g f` is almost everywhere `x ↦ f (g⁻¹ * x)`.
 * `MeasureTheory.Lp.leftTranslation_le_leftTranslation_iff`: left translation is an order
   automorphism of real `Lᵖ`.
-* `MeasureTheory.Lp.leftTranslation_linftyOne`: it fixes the constant class one in `L∞`.
+* `MeasureTheory.Lp.leftTranslation_one`: it fixes the constant class one in `L∞`.
 * `MeasureTheory.Lp.leftTranslation_linftyIndicator`: it takes the indicator class of `s` in
   `L∞` to that of `g • s`.
 * `MeasureTheory.Lp.integral_leftTranslation`: left translation preserves integrals.
@@ -116,13 +116,12 @@ theorem leftTranslation_le_leftTranslation_iff {g : G} {f f' : Lp ℝ p μ} :
 
 /-- Left translation fixes the constant class one of `L∞`. -/
 @[simp]
-theorem leftTranslation_linftyOne (g : G) :
-    leftTranslation μ ∞ ℝ g TauCeti.linftyOne = TauCeti.linftyOne := by
+theorem leftTranslation_one (g : G) : leftTranslation μ ∞ ℝ g (1 : Lp ℝ ∞ μ) = 1 := by
   refine ext ?_
-  filter_upwards [coeFn_leftTranslation (𝕜 := ℝ) g TauCeti.linftyOne, TauCeti.coeFn_linftyOne,
-    (measurePreserving_mul_left μ g⁻¹).quasiMeasurePreserving.ae TauCeti.coeFn_linftyOne]
+  filter_upwards [coeFn_leftTranslation (𝕜 := ℝ) g (1 : Lp ℝ ∞ μ), coeFn_one (E := ℝ) (μ := μ),
+    (measurePreserving_mul_left μ g⁻¹).quasiMeasurePreserving.ae (coeFn_one (E := ℝ) (μ := μ))]
     with x hx h1 h1'
-  rw [hx, h1, h1']
+  rw [hx, h1, h1', Pi.one_apply, Pi.one_apply]
 
 /-- Left translation preserves the integral of an `Lᵖ` class, since `μ` is left invariant. -/
 @[simp]

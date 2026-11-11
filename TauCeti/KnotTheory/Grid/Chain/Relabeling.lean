@@ -31,6 +31,9 @@ differential is a separate property proved where a differential is defined.
   `TauCeti.GridChain.relabelColumnsEquiv_single`: the action on a basis generator.
 * `TauCeti.GridChain.relabelRowsEquiv_apply` and
   `TauCeti.GridChain.relabelColumnsEquiv_apply`: the coefficient formulas.
+* `TauCeti.GridChain.relabelRowsEquiv_apply_relabelRows` and
+  `TauCeti.GridChain.relabelColumnsEquiv_apply_relabelColumns`: the coefficient at a relabeled
+  state.
 * `TauCeti.GridChain.relabelRowsEquiv_symm` and
   `TauCeti.GridChain.relabelColumnsEquiv_symm`: inverse relabelings use inverse permutations.
 
@@ -126,6 +129,21 @@ theorem relabelColumnsEquiv_apply (κ : Equiv.Perm (Fin n)) (f : GridChain R n)
     relabelColumnsEquiv κ f y = f (y.relabelColumns κ.symm) := by
   rw [relabelColumnsEquiv, Finsupp.domLCongr_apply]
   exact Finsupp.equivMapDomain_apply _ _ _
+
+/-- The coefficient of a row-relabeled chain at a relabeled state is the original coefficient. -/
+theorem relabelRowsEquiv_apply_relabelRows (ρ : Equiv.Perm (Fin n)) (f : GridChain R n)
+    (y : GridState n) :
+    relabelRowsEquiv ρ f (y.relabelRows ρ) = f y := by
+  rw [relabelRowsEquiv_apply, GridState.relabelRows_relabelRows, Equiv.self_trans_symm,
+    GridState.relabelRows_refl]
+
+/-- The coefficient of a column-relabeled chain at a relabeled state is the original
+coefficient. -/
+theorem relabelColumnsEquiv_apply_relabelColumns (κ : Equiv.Perm (Fin n)) (f : GridChain R n)
+    (y : GridState n) :
+    relabelColumnsEquiv κ f (y.relabelColumns κ) = f y := by
+  rw [relabelColumnsEquiv_apply, GridState.relabelColumns_relabelColumns, Equiv.self_trans_symm,
+    GridState.relabelColumns_refl]
 
 /-- The inverse of a row relabeling is induced by the inverse row permutation. -/
 @[simp]

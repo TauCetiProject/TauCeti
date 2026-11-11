@@ -162,7 +162,7 @@ theorem range_derivationCompLieHom_weightTorusToBaseChangeCoordinateMap_eq_span 
 theorem linearIndependent_cartanVector : LinearIndependent R (cartanVector R) := by
   simpa only [derivationCompLieHom_apply, ← corootCocharacter_def R,
     ← cartanVector_eq_derivationComp_corootCocharacter R] using
-    SplitTorus.linearIndependent_derivationComp_cocharacter
+    SplitTorus.linearIndependent_derivationCompLieHom_cocharacter
       (B := R) (weightTorusToBaseChangeCoordinateMap R).hom
       (derivationCompLieHom_injective_of_surjective _
         (weightTorusToBaseChangeCoordinateMap_surjective R))

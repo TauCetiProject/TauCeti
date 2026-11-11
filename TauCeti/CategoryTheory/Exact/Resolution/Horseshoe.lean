@@ -95,6 +95,133 @@ private noncomputable def Data.toHorseshoe {S : ShortComplex C}
   split := h.split
   length_le := h.length_le
 
+/-- The horseshoe step when the left resolution has ended: continue it by zero. -/
+private theorem nonempty_data_base_step {S : ShortComplex C} (h₁ : E.isProjective S.X₁)
+    {K₃ Q₃ : C} (hQ₃ : E.isProjective Q₃) {i₃ : K₃ ⟶ Q₃} {p₃ : Q₃ ⟶ S.X₃}
+    {z₃ : i₃ ≫ p₃ = 0} (hc₃ : E.Conflation (ShortComplex.mk i₃ p₃ z₃))
+    (r₃ : E.FiniteResolution E.isProjective K₃) {K : C} {u : K ⟶ S.X₁ ⊞ Q₃}
+    {a : S.X₁ ⊞ Q₃ ⟶ S.X₂} {zu : u ≫ a = 0} (hc : E.Conflation (ShortComplex.mk u a zu))
+    {v : (0 : C) ⟶ K} {w : K ⟶ K₃} {zv : v ≫ w = 0} (ha₁ : biprod.inl ≫ a = 𝟙 S.X₁ ≫ S.f)
+    (ha₃ : a ≫ S.g = biprod.snd ≫ p₃) (hu₃ : u ≫ biprod.snd = w ≫ i₃)
+    (h : Data (ShortComplex.mk v w zv) (.base E.isProjective.prop_zero) r₃) :
+    Nonempty (Data S (.base h₁) (.step hQ₃ i₃ p₃ z₃ hc₃ r₃)) := by
+  refine
+    ⟨{
+      resolution := .step (E.isProjective_biprod h₁ hQ₃) u a zu hc h.resolution
+      left := fun n => match n with | 0 => biprod.inl | _ + 1 => 0
+      right := fun n => match n with | 0 => biprod.snd | n + 1 => h.right n
+      left_comm := ?_
+      right_comm := ?_
+      zero := ?_
+      left_aug := by simpa using ha₁
+      right_aug := by simpa using ha₃.symm
+      split := ?_
+      length_le := ?_ }⟩
+  · intro n; cases n <;> simp
+  · intro n
+    cases n with
+    | zero => simp [reassoc_of% h.right_aug, hu₃]
+    | succ n => simpa using h.right_comm n
+  · intro n; cases n <;> simp
+  · intro n
+    cases n with
+    | zero => exact ⟨ShortComplex.Splitting.ofHasBinaryBiproduct _ _⟩
+    | succ n =>
+        have hz : h.left n = 0 := by
+          cases n <;> exact (isZero_zero C).eq_of_src _ _
+        cases n with
+        | zero => simpa only [hz] using h.split 0
+        | succ n => simpa only [hz] using h.split (n + 1)
+  · have := h.length_le
+    simp only [length_step, length_base] at *
+    omega
+
+/-- The horseshoe step when the right resolution has ended: continue it by zero. -/
+private theorem nonempty_data_step_base {S : ShortComplex C} {K₁ Q₁ : C}
+    (hQ₁ : E.isProjective Q₁) {i₁ : K₁ ⟶ Q₁} {p₁ : Q₁ ⟶ S.X₁} {z₁ : i₁ ≫ p₁ = 0}
+    (hc₁ : E.Conflation (ShortComplex.mk i₁ p₁ z₁)) (r₁ : E.FiniteResolution E.isProjective K₁)
+    (h₃ : E.isProjective S.X₃) {K : C} {u : K ⟶ Q₁ ⊞ S.X₃} {a : Q₁ ⊞ S.X₃ ⟶ S.X₂}
+    {zu : u ≫ a = 0} (hc : E.Conflation (ShortComplex.mk u a zu)) {v : K₁ ⟶ K}
+    {w : K ⟶ (0 : C)} {zv : v ≫ w = 0} (ha₁ : biprod.inl ≫ a = p₁ ≫ S.f)
+    (ha₃ : a ≫ S.g = biprod.snd ≫ 𝟙 S.X₃) (hu₁ : v ≫ u = i₁ ≫ biprod.inl)
+    (hu₃ : u ≫ biprod.snd = w ≫ 0)
+    (h : Data (ShortComplex.mk v w zv) r₁ (.base E.isProjective.prop_zero)) :
+    Nonempty (Data S (.step hQ₁ i₁ p₁ z₁ hc₁ r₁) (.base h₃)) := by
+  refine
+    ⟨{
+      resolution := .step (E.isProjective_biprod hQ₁ h₃) u a zu hc h.resolution
+      left := fun n => match n with | 0 => biprod.inl | n + 1 => h.left n
+      right := fun n => match n with | 0 => biprod.snd | _ + 1 => 0
+      left_comm := ?_
+      right_comm := ?_
+      zero := ?_
+      left_aug := by simpa using ha₁
+      right_aug := by simpa using ha₃.symm
+      split := ?_
+      length_le := ?_ }⟩
+  · intro n
+    cases n with
+    | zero => simp [reassoc_of% h.left_aug, hu₁]
+    | succ n => simpa using h.left_comm n
+  · intro n; cases n <;> simp [hu₃]
+  · intro n; cases n <;> simp
+  · intro n
+    cases n with
+    | zero => exact ⟨ShortComplex.Splitting.ofHasBinaryBiproduct _ _⟩
+    | succ n =>
+        have hz : h.right n = 0 := by
+          cases n <;> exact (isZero_zero C).eq_of_tgt _ _
+        cases n with
+        | zero => simpa only [hz] using h.split 0
+        | succ n => simpa only [hz] using h.split (n + 1)
+  · have := h.length_le
+    simp only [length_step, length_base] at *
+    omega
+
+/-- The horseshoe step when neither resolution has ended: prepend the biproduct of the covers. -/
+private theorem nonempty_data_step_step {S : ShortComplex C} {K₁ Q₁ K₃ Q₃ : C}
+    (hQ₁ : E.isProjective Q₁) {i₁ : K₁ ⟶ Q₁} {p₁ : Q₁ ⟶ S.X₁} {z₁ : i₁ ≫ p₁ = 0}
+    (hc₁ : E.Conflation (ShortComplex.mk i₁ p₁ z₁)) (r₁ : E.FiniteResolution E.isProjective K₁)
+    (hQ₃ : E.isProjective Q₃) {i₃ : K₃ ⟶ Q₃} {p₃ : Q₃ ⟶ S.X₃} {z₃ : i₃ ≫ p₃ = 0}
+    (hc₃ : E.Conflation (ShortComplex.mk i₃ p₃ z₃)) (r₃ : E.FiniteResolution E.isProjective K₃)
+    {K : C} {u : K ⟶ Q₁ ⊞ Q₃} {a : Q₁ ⊞ Q₃ ⟶ S.X₂} {zu : u ≫ a = 0}
+    (hc : E.Conflation (ShortComplex.mk u a zu)) {v : K₁ ⟶ K} {w : K ⟶ K₃}
+    {zv : v ≫ w = 0} (ha₁ : biprod.inl ≫ a = p₁ ≫ S.f) (ha₃ : a ≫ S.g = biprod.snd ≫ p₃)
+    (hu₁ : v ≫ u = i₁ ≫ biprod.inl) (hu₃ : u ≫ biprod.snd = w ≫ i₃)
+    (h : Data (ShortComplex.mk v w zv) r₁ r₃) :
+    Nonempty (Data S (.step hQ₁ i₁ p₁ z₁ hc₁ r₁) (.step hQ₃ i₃ p₃ z₃ hc₃ r₃)) := by
+  refine
+    ⟨{
+      resolution := .step (E.isProjective_biprod hQ₁ hQ₃) u a zu hc h.resolution
+      left := fun n => match n with | 0 => biprod.inl | n + 1 => h.left n
+      right := fun n => match n with | 0 => biprod.snd | n + 1 => h.right n
+      left_comm := ?_
+      right_comm := ?_
+      zero := ?_
+      left_aug := by simpa using ha₁
+      right_aug := by simpa using ha₃.symm
+      split := ?_
+      length_le := ?_ }⟩
+  · intro n
+    cases n with
+    | zero => simp [reassoc_of% h.left_aug, hu₁]
+    | succ n => simpa using h.left_comm n
+  · intro n
+    cases n with
+    | zero => simp [reassoc_of% h.right_aug, hu₃]
+    | succ n => simpa using h.right_comm n
+  · intro n
+    cases n with
+    | zero => simp
+    | succ n => exact h.zero n
+  · intro n
+    cases n with
+    | zero => exact ⟨ShortComplex.Splitting.ofHasBinaryBiproduct _ _⟩
+    | succ n => exact h.split n
+  · have := h.length_le
+    simp only [length_step] at *
+    omega
+
 /-- Iterate the one-step horseshoe, keeping the syzygy maps so that the component maps commute
 with the spliced differentials. A length-zero outer resolution is continued by the trivial
 conflation `0 ↪ X ↠ X`; no length is added to the result when both resolutions have ended. -/
@@ -125,108 +252,20 @@ private theorem horseshoeData :
         E.exists_conflation_biprod_of_conflation_of_projective hS
           (E.conflation_zero_id S.X₁) hc₃ hQ₃
       obtain ⟨h⟩ := horseshoeData hK (.base (E.isProjective.prop_zero)) r₃
-      refine
-        ⟨{
-          resolution := .step (E.isProjective_biprod h₁ hQ₃) u a zu hc h.resolution
-          left := fun n => match n with | 0 => biprod.inl | _ + 1 => 0
-          right := fun n => match n with | 0 => biprod.snd | n + 1 => h.right n
-          left_comm := ?_
-          right_comm := ?_
-          zero := ?_
-          left_aug := by simpa using ha₁
-          right_aug := by simpa using ha₃.symm
-          split := ?_
-          length_le := ?_ }⟩
-      · intro n; cases n <;> simp
-      · intro n
-        cases n with
-        | zero => simp [reassoc_of% h.right_aug, hu₃]
-        | succ n => simpa using h.right_comm n
-      · intro n; cases n <;> simp
-      · intro n
-        cases n with
-        | zero => exact ⟨ShortComplex.Splitting.ofHasBinaryBiproduct _ _⟩
-        | succ n =>
-            have hz : h.left n = 0 := by
-              cases n <;> exact (isZero_zero C).eq_of_src _ _
-            cases n with
-            | zero => simpa only [hz] using h.split 0
-            | succ n => simpa only [hz] using h.split (n + 1)
-      · have := h.length_le
-        simp only [length_step, length_base] at *
-        omega
+      exact nonempty_data_base_step h₁ hQ₃ hc₃ r₃ hc ha₁ ha₃ hu₃ h
   | S, hS, .step hQ₁ i₁ p₁ z₁ hc₁ r₁, .base h₃ => by
       -- Dually, continue the right resolution by zero while resolving the left syzygy.
       obtain ⟨K, u, a, zu, v, w, zv, hc, hK, ha₁, ha₃, hu₁, hu₃⟩ :=
         E.exists_conflation_biprod_of_conflation_of_projective hS hc₁
           (E.conflation_zero_id S.X₃) h₃
       obtain ⟨h⟩ := horseshoeData hK r₁ (.base (E.isProjective.prop_zero))
-      refine
-        ⟨{
-          resolution := .step (E.isProjective_biprod hQ₁ h₃) u a zu hc h.resolution
-          left := fun n => match n with | 0 => biprod.inl | n + 1 => h.left n
-          right := fun n => match n with | 0 => biprod.snd | _ + 1 => 0
-          left_comm := ?_
-          right_comm := ?_
-          zero := ?_
-          left_aug := by simpa using ha₁
-          right_aug := by simpa using ha₃.symm
-          split := ?_
-          length_le := ?_ }⟩
-      · intro n
-        cases n with
-        | zero => simp [reassoc_of% h.left_aug, hu₁]
-        | succ n => simpa using h.left_comm n
-      · intro n; cases n <;> simp [hu₃]
-      · intro n; cases n <;> simp
-      · intro n
-        cases n with
-        | zero => exact ⟨ShortComplex.Splitting.ofHasBinaryBiproduct _ _⟩
-        | succ n =>
-            have hz : h.right n = 0 := by
-              cases n <;> exact (isZero_zero C).eq_of_tgt _ _
-            cases n with
-            | zero => simpa only [hz] using h.split 0
-            | succ n => simpa only [hz] using h.split (n + 1)
-      · have := h.length_le
-        simp only [length_step, length_base] at *
-        omega
+      exact nonempty_data_step_base hQ₁ hc₁ r₁ h₃ hc ha₁ ha₃ hu₁ hu₃ h
   | S, hS, .step hQ₁ i₁ p₁ z₁ hc₁ r₁, .step hQ₃ i₃ p₃ z₃ hc₃ r₃ => by
       -- Resolve the syzygy conflation recursively, then prepend the biproduct of the covers.
       obtain ⟨K, u, a, zu, v, w, zv, hc, hK, ha₁, ha₃, hu₁, hu₃⟩ :=
         E.exists_conflation_biprod_of_conflation_of_projective hS hc₁ hc₃ hQ₃
       obtain ⟨h⟩ := horseshoeData hK r₁ r₃
-      refine
-        ⟨{
-          resolution := .step (E.isProjective_biprod hQ₁ hQ₃) u a zu hc h.resolution
-          left := fun n => match n with | 0 => biprod.inl | n + 1 => h.left n
-          right := fun n => match n with | 0 => biprod.snd | n + 1 => h.right n
-          left_comm := ?_
-          right_comm := ?_
-          zero := ?_
-          left_aug := by simpa using ha₁
-          right_aug := by simpa using ha₃.symm
-          split := ?_
-          length_le := ?_ }⟩
-      · intro n
-        cases n with
-        | zero => simp [reassoc_of% h.left_aug, hu₁]
-        | succ n => simpa using h.left_comm n
-      · intro n
-        cases n with
-        | zero => simp [reassoc_of% h.right_aug, hu₃]
-        | succ n => simpa using h.right_comm n
-      · intro n
-        cases n with
-        | zero => simp
-        | succ n => exact h.zero n
-      · intro n
-        cases n with
-        | zero => exact ⟨ShortComplex.Splitting.ofHasBinaryBiproduct _ _⟩
-        | succ n => exact h.split n
-      · have := h.length_le
-        simp only [length_step] at *
-        omega
+      exact nonempty_data_step_step hQ₁ hc₁ r₁ hQ₃ hc₃ r₃ hc ha₁ ha₃ hu₁ hu₃ h
 termination_by _ _ r₁ r₃ => r₁.length + r₃.length
 
 /-- **The finite projective horseshoe lemma.** A conflation and finite projective resolutions of

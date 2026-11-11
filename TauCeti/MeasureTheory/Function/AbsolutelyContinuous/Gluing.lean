@@ -13,8 +13,9 @@ import Mathlib.Analysis.Normed.Affine.AddTorsor
 
 Absolute continuity on adjacent intervals implies absolute continuity on their union in a
 pseudometric space. This permits splitting and reassembling raw curves with either orientation,
-and gluing finite subdivisions, including subdivisions into affine cells in a real seminormed
-space. In particular a polygonal curve (`TauCeti.IsPolygonalOnInterval`) is absolutely continuous.
+and gluing finite subdivisions, including subdivisions into affine cells
+(`TauCeti.absolutelyContinuousOnInterval_add_smul`) in a real seminormed space. In particular a
+polygonal curve (`TauCeti.IsPolygonalOnInterval`) is absolutely continuous.
 -/
 
 public section
@@ -101,6 +102,14 @@ theorem of_subdivision {N : ℕ} {s : Fin (N + 1) → ℝ}
       ih (s := fun j ↦ s j.castSucc) hprev
     exact hp.trans (h (Fin.last N))
 
+/-- An affine curve `t ↦ c + t • v` in a real seminormed space is absolutely continuous on every
+parameter interval. -/
+theorem _root_.TauCeti.absolutelyContinuousOnInterval_add_smul {E : Type*}
+    [SeminormedAddCommGroup E] [NormedSpace ℝ E] (c v : E) (a b : ℝ) :
+    AbsolutelyContinuousOnInterval (fun t : ℝ ↦ c + t • v) a b :=
+  (lipschitzWith_lineMap c (c + v)).lipschitzOnWith.absolutelyContinuousOnInterval.congr
+    fun _ _ ↦ by simp [AffineMap.lineMap_apply_module', add_comm]
+
 /-- A finite increasing subdivision with affine interpolation on every cell gives an absolutely
 continuous curve. The subdivision may have no cells. -/
 theorem of_affine_subdivision {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
@@ -113,17 +122,15 @@ theorem of_affine_subdivision {E : Type*} [SeminormedAddCommGroup E] [NormedSpac
     AbsolutelyContinuousOnInterval f a b := by
   have hedge (i : Fin N) :
       AbsolutelyContinuousOnInterval f (s i.castSucc) (s i.succ) := by
-    have hparam : LipschitzWith ‖(s i.succ - s i.castSucc)⁻¹‖₊
-        (fun t : ℝ ↦ (t - s i.castSucc) / (s i.succ - s i.castSucc)) := by
-      simpa only [Function.comp_def, smul_eq_mul, mul_one, sub_eq_add_neg, div_eq_inv_mul]
-        using (lipschitzWith_smul (s i.succ - s i.castSucc)⁻¹).comp
-          (isometry_add_right (-s i.castSucc)).lipschitzWith
-    have hc := (lipschitzWith_lineMap (f (s i.castSucc)) (f (s i.succ))).comp hparam
-    apply hc.lipschitzOnWith.absolutelyContinuousOnInterval.congr
-    intro t ht
+    let Δ := s i.succ - s i.castSucc
+    let d := f (s i.succ) - f (s i.castSucc)
+    refine (TauCeti.absolutelyContinuousOnInterval_add_smul
+      (f (s i.castSucc) - (s i.castSucc / Δ) • d) (Δ⁻¹ • d) _ _).congr fun t ht ↦ ?_
     rw [Set.uIcc_of_le (hs i.castSucc_lt_succ).le] at ht
-    simpa only [Function.comp_apply, AffineMap.lineMap_apply_module', add_comm] using
-      (hsegments i t ht).symm
+    rw [hsegments i t ht]
+    dsimp only [Δ, d]
+    rw [← mul_smul, ← div_eq_mul_inv, sub_div, sub_smul]
+    abel
   simpa only [ha, hb] using of_subdivision hedge
 
 end AbsolutelyContinuousOnInterval

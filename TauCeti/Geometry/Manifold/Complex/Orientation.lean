@@ -8,13 +8,17 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+public import TauCeti.Geometry.Manifold.Complex.Euclidean
 public import TauCeti.Geometry.Manifold.IsManifold.RestrictScalars
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.RestrictScalars
+public import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.LinearEquiv
 public import TauCeti.Geometry.Manifold.Orientation.Atlas
+public import TauCeti.Geometry.Manifold.Orientation.LinearEquiv
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
 public import TauCeti.Geometry.Manifold.Orientation.Prod
 public import TauCeti.Geometry.Manifold.Orientation.Pullback
 public import TauCeti.LinearAlgebra.Complex.Orientation
+import Mathlib.LinearAlgebra.Complex.Determinant
 import TauCeti.Analysis.Calculus.TangentCone.Chart
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
@@ -62,7 +66,35 @@ product orientation is the canonical one: the derivative of every product `Prod.
 holomorphic charts carries it to the canonical real orientation of `E × E'`
 (`TauCeti.map_orientationAt_prod_complexManifoldOrientation`), and this property of the preferred
 product charts characterizes it (`TauCeti.eq_prod_complexManifoldOrientation_iff`). The linear
-input is `TauCeti.prod_complexOrientation`.
+input is `TauCeti.prod_complexOrientation`. Exchanging factors of real dimensions `m` and `n`
+multiplies product orientations by `(-1) ^ (m * n)`; both real dimensions are even here, so
+`Prod.swap : M × M' → M' × M` carries the canonical orientation of `M × M'` to that of `M' × M`
+(`TauCeti.isOrientationPreservingAt_swap_prod_complexManifoldOrientation`).
+
+More generally, any boundaryless complex model `I : ModelWithCorners ℂ E H` restricts scalars to
+`I.restrictScalars ℝ : ModelWithCorners ℝ E H` on the same chart carrier `H`. Holomorphic
+coordinate changes in `I` preserve orientation in `I.restrictScalars ℝ`
+(`ModelWithCorners.contDiffGroupoid_complex_le_orientationPreservingGroupoid_restrictScalars`),
+giving the canonical orientation `I.complexManifoldOrientation M` and canonical lift
+`I.complexOrientationLift M`, which agree with `complexManifoldOrientation E M` and
+`complexOrientationLift E M` on `𝓘(ℂ, E)`.
+
+Because restriction of scalars commutes with `ModelWithCorners.transContinuousLinearEquiv`,
+recharting `I` along a complex continuous linear equivalence `e : E ≃L[ℂ] F` transports the
+canonical orientation along `e.restrictScalars' ℝ` to the canonical orientation of the recharted
+complex manifold
+(`ModelWithCorners.orientationAt_transContinuousLinearEquiv_complexManifoldOrientation`,
+`ModelWithCorners.complexManifoldOrientation_transContinuousLinearEquiv_self`). Recharting along a
+real continuous linear equivalence `e : E ≃L[ℝ] G` preserves the transported orientation
+(`TauCeti.Manifold.Orientation.isOrientationPreservingAt_id_transContinuousLinearEquiv`); by
+contrast, comparing `I.complexManifoldOrientation M` against the orientation of the recharted
+manifold with a *separately fixed* model orientation has `orientationSign` equal to the sign of the
+real determinant of `e`
+(`ModelWithCorners.orientationSign_toTransContinuousLinearEquiv_complexManifoldOrientation`,
+`TauCeti.orientationSign_id_conjCLE`). On `EuclideanSpace ℂ (Fin n)`,
+recharting to `TauCeti.complexEuclideanRealModel n` along
+`TauCeti.complexEuclideanRealLinearIsometryEquiv n` carries the canonical orientation to the
+standard orientation of `EuclideanSpace ℝ (Fin (2 * n))`.
 
 ## Main declarations
 
@@ -72,11 +104,13 @@ input is `TauCeti.prod_complexOrientation`.
   changes preserve orientation; contrast
   `TauCeti.not_contDiffGroupoid_le_orientationPreservingGroupoid`.
 * `TauCeti.isOrientedAtlas_maximalAtlas_complex`: the holomorphic charts form an oriented atlas.
-* `TauCeti.complexManifoldOrientation`: the canonical orientation of a complex manifold.
+* `TauCeti.complexManifoldOrientation`, `ModelWithCorners.complexManifoldOrientation`: the canonical
+  orientation of a complex manifold.
 * `TauCeti.orientationAt_complexManifoldOrientation`: its tangent orientation at a point, read
   through any holomorphic chart.
-* `TauCeti.complexOrientationLift`: the canonical orientation as a lift indexed by
-  `Fin (finrank ℝ E)`, with all chart signs `1` (`TauCeti.complexOrientationLift_sign`).
+* `TauCeti.complexOrientationLift`, `ModelWithCorners.complexOrientationLift`: the canonical
+  orientation as a lift indexed by `Fin (finrank ℝ E)`, with all chart signs `1`
+  (`TauCeti.complexOrientationLift_sign`).
 * `TauCeti.orientationAt_complexOrientationLift` and `TauCeti.eq_complexOrientationLift_iff`: it
   represents the reindexed canonical orientation, and is characterized by this and its model
   orientation.
@@ -92,14 +126,29 @@ input is `TauCeti.prod_complexOrientation`.
   the product of canonical orientations to the canonical orientation of the product model.
 * `TauCeti.eq_prod_complexManifoldOrientation_iff`: this property of the preferred product charts
   characterizes the product of canonical orientations.
+* `TauCeti.isOrientationPreservingAt_swap_prod_complexManifoldOrientation`: exchanging the factors
+  preserves the products of canonical orientations, with no sign.
+
+* `ModelWithCorners.complexManifoldOrientation_transContinuousLinearEquiv_self`,
+  `ModelWithCorners.orientationAt_transContinuousLinearEquiv_complexManifoldOrientation`:
+  compatibility with complex continuous linear recharting.
+* `ModelWithCorners.orientationSign_toTransContinuousLinearEquiv_complexManifoldOrientation`,
+  `TauCeti.orientationSign_id_conjCLE`: comparison with a fixed canonical
+  model orientation under real continuous linear recharting has the sign of the real determinant.
+* `TauCeti.orientationAt_complexManifoldOrientation_complexEuclideanRealModel`: recharting to
+  `complexEuclideanRealModel n` carries the canonical orientation to the standard Euclidean one.
 
 ## Implementation notes
 
 Tangent orientations are stated for the underlying real manifold structure
-`IsManifold 𝓘(ℝ, E) n M`, obtained from the complex one by `IsManifold.restrictScalars`. This
-file provides it as the scoped instance `TauCeti.ComplexManifold.isManifold_real`, so callers
-enable it with `open scoped TauCeti.ComplexManifold`. Since `IsManifold` is a `Prop`, any other
-proof of the real structure works as well.
+`IsManifold 𝓘(ℝ, E) n M` (or `IsManifold (I.restrictScalars ℝ) n M` for a general boundaryless
+complex model `I`), obtained from the complex one by `IsManifold.restrictScalars` and
+`ModelWithCorners.isManifold_restrictScalars`. Alongside
+`TauCeti.ComplexManifold.isManifold_restrictScalars_real` and
+`TauCeti.ComplexManifold.isManifold_complexEuclideanRealModel`, this file provides the scoped
+instance `TauCeti.ComplexManifold.isManifold_real`, so callers enable them with
+`open scoped TauCeti.ComplexManifold`. Since `IsManifold` is a `Prop`, any other proof of the real
+structure works as well.
 
 ## References
 
@@ -204,7 +253,7 @@ variable [IsManifold 𝓘(ℂ, E) 1 M]
 
 omit [FiniteDimensional ℂ E] in
 /-- The real dimension `finrank ℝ E = 2 * finrank ℂ E` indexes the canonical orientations. -/
-private theorem card_fin_two_mul_finrank_complex :
+theorem card_fin_two_mul_finrank_complex :
     Fintype.card (Fin (2 * finrank ℂ E)) = finrank ℝ E := by
   rw [Fintype.card_fin, finrank_real_of_complex]
 
@@ -513,6 +562,586 @@ theorem eq_prod_complexManifoldOrientation_iff
     obtain ⟨L, hL, hmap⟩ := h x
     exact (Orientation.map _ L.toLinearEquiv).injective (hmap.trans (hmem x L hL).symm)
 
+/-- Exchanging the factors of a product of complex manifolds, `Prod.swap : M × M' → M' × M`,
+preserves the products of the canonical orientations at every point. No sign occurs because both
+real dimensions are even. -/
+theorem isOrientationPreservingAt_swap_prod_complexManifoldOrientation (x : M × M') :
+    Manifold.Orientation.IsOrientationPreservingAt
+      ((complexManifoldOrientation E M).prod (complexManifoldOrientation E' M'))
+      (((complexManifoldOrientation E' M').prod (complexManifoldOrientation E M)).reindex
+        (finCongr (add_comm _ _))) Prod.swap x :=
+  Manifold.Orientation.isOrientationPreservingAt_swap_prod _ _ ((even_two_mul _).mul_right _) x
+
 end Prod
+
+end TauCeti
+
+/-! ### Boundaryless complex models and restriction of scalars -/
+
+namespace ModelWithCorners
+
+open TauCeti
+open scoped Topology TauCeti.ComplexManifold
+
+section RestrictScalars
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+  [TopologicalSpace H]
+
+private theorem orientationPreservingOn_restrictScalars_of_mem_contDiffGroupoid
+    (I : ModelWithCorners ℂ E H) [I.Boundaryless] {n : ℕ∞ω} [NeZero n]
+    {φ : OpenPartialHomeomorph H H} (hφ : φ ∈ contDiffGroupoid n I) :
+    OrientationPreservingOn (I.restrictScalars ℝ) φ φ.source := by
+  have hn : n ≠ 0 := NeZero.ne n
+  have hsymm : φ.symm ∈ contDiffGroupoid n I := (contDiffGroupoid n I).symm hφ
+  rw [contDiffGroupoid, mem_groupoid_of_pregroupoid] at hφ hsymm
+  have hf : DifferentiableOn ℂ (I ∘ φ ∘ I.symm) (I.symm ⁻¹' φ.source) := by
+    have h := hφ.1.differentiableOn hn
+    rwa [I.range_eq_univ, inter_univ] at h
+  have hg : DifferentiableOn ℂ (I ∘ φ.symm ∘ I.symm) (I.symm ⁻¹' φ.target) := by
+    have h := hsymm.1.differentiableOn hn
+    rwa [I.range_eq_univ, inter_univ] at h
+  have hs : IsOpen (I.symm ⁻¹' φ.source) := φ.open_source.preimage I.continuous_symm
+  have ht : IsOpen (I.symm ⁻¹' φ.target) := φ.open_target.preimage I.continuous_symm
+  rw [orientationPreservingOn_iff]
+  intro x hx
+  rw [coe_restrictScalars, coe_restrictScalars_symm, I.range_eq_univ, differentiableWithinAt_univ,
+    fderivWithin_univ]
+  have hx' : I x ∈ I.symm ⁻¹' φ.source := by simpa using hx
+  have hφx' : I (φ x) ∈ I.symm ⁻¹' φ.target := by simpa using φ.map_source hx
+  have hfx : DifferentiableAt ℂ (I ∘ φ ∘ I.symm) (I x) :=
+    hf.differentiableAt (hs.mem_nhds hx')
+  have hgx : DifferentiableAt ℂ (I ∘ φ.symm ∘ I.symm) ((I ∘ φ ∘ I.symm) (I x)) := by
+    simpa [Function.comp_apply] using hg.differentiableAt (ht.mem_nhds hφx')
+  have heq : (I ∘ φ.symm ∘ I.symm) ∘ (I ∘ φ ∘ I.symm) =ᶠ[𝓝 (I x)] id := by
+    filter_upwards [hs.mem_nhds hx'] with y hy
+    have hy_range : y ∈ range I := by rw [I.range_eq_univ]; trivial
+    simp only [Function.comp_apply, id_eq, I.left_inv, φ.left_inv hy, I.right_inv hy_range]
+  have hcomp :
+      (fderiv ℂ (I ∘ φ.symm ∘ I.symm) ((I ∘ φ ∘ I.symm) (I x))).comp
+        (fderiv ℂ (I ∘ φ ∘ I.symm) (I x)) = ContinuousLinearMap.id ℂ E := by
+    rw [← fderiv_comp (I x) hgx hfx, heq.fderiv_eq, fderiv_id]
+  have hdet_ne : LinearMap.det (fderiv ℂ (I ∘ φ ∘ I.symm) (I x) : E →ₗ[ℂ] E) ≠ 0 := by
+    intro hzero
+    have h1 := congrArg (fun T : E →L[ℂ] E ↦ LinearMap.det (T : E →ₗ[ℂ] E)) hcomp
+    simp [LinearMap.det_comp, hzero] at h1
+  refine ⟨hfx.restrictScalars ℝ, ?_⟩
+  rw [hfx.fderiv_restrictScalars ℝ, ContinuousLinearMap.coe_restrictScalars,
+    LinearMap.det_restrictScalars_eq_normSq]
+  exact Complex.normSq_pos.mpr hdet_ne
+
+/-- Holomorphic coordinate changes in a boundaryless complex model `I` preserve orientation in the
+underlying real model `I.restrictScalars ℝ`. -/
+theorem contDiffGroupoid_complex_le_orientationPreservingGroupoid_restrictScalars
+    (I : ModelWithCorners ℂ E H) [I.Boundaryless] (n : ℕ∞ω) [NeZero n] :
+    contDiffGroupoid n I ≤ orientationPreservingGroupoid (I.restrictScalars ℝ) := fun _ hφ ↦
+  mem_orientationPreservingGroupoid_iff.2
+    ⟨orientationPreservingOn_restrictScalars_of_mem_contDiffGroupoid I hφ,
+     orientationPreservingOn_restrictScalars_of_mem_contDiffGroupoid I
+       ((contDiffGroupoid n I).symm hφ)⟩
+
+variable (I : ModelWithCorners ℂ E H) [I.Boundaryless]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- The atlas of a manifold modelled on a boundaryless complex model `I` has orientation-preserving
+coordinate changes over `I.restrictScalars ℝ`. -/
+instance hasGroupoid_orientationPreservingGroupoid_restrictScalars
+    {I : ModelWithCorners ℂ E H} [I.Boundaryless] [IsManifold I 1 M] :
+    HasGroupoid M (orientationPreservingGroupoid (I.restrictScalars ℝ)) :=
+  hasGroupoid_of_le (G₁ := contDiffGroupoid 1 I) inferInstance
+    (I.contDiffGroupoid_complex_le_orientationPreservingGroupoid_restrictScalars 1)
+
+/-- For `n ≠ 0`, the maximal holomorphic `C^n` atlas of a manifold modelled on a boundaryless
+complex model `I` is an oriented atlas over `I.restrictScalars ℝ`. -/
+theorem isOrientedAtlas_maximalAtlas_complex
+    (n : ℕ∞ω) [NeZero n] [IsManifold I n M] :
+    IsOrientedAtlas (I.restrictScalars ℝ) n (IsManifold.maximalAtlas I n M) where
+  subset_maximalAtlas := I.maximalAtlas_subset_restrictScalars ℝ
+  exists_mem_source x := ⟨chartAt H x, IsManifold.chart_mem_maximalAtlas x, mem_chart_source H x⟩
+  symm_trans_mem he he' :=
+    I.contDiffGroupoid_complex_le_orientationPreservingGroupoid_restrictScalars n
+      (IsManifold.compatible_of_mem_maximalAtlas he he')
+
+variable [IsManifold I 1 M]
+
+variable (M) in
+/-- The canonical orientation of a complex manifold `M` modelled on a boundaryless complex model
+`I : ModelWithCorners ℂ E H`, as a manifold orientation over `I.restrictScalars ℝ`. -/
+def complexManifoldOrientation :
+    Manifold.Orientation (I.restrictScalars ℝ) M (Fin (2 * finrank ℂ E)) :=
+  (I.isOrientedAtlas_maximalAtlas_complex (M := M) 1).orientation (complexOrientation E)
+    card_fin_two_mul_finrank_complex
+
+/-- Every chart of the maximal holomorphic atlas of `I` carries `I.complexManifoldOrientation M`
+to the canonical real orientation of `E`. -/
+theorem map_orientationAt_complexManifoldOrientation (n : ℕ∞ω) [NeZero n]
+    {e : OpenPartialHomeomorph M H} (he : e ∈ IsManifold.maximalAtlas I n M) {x : M}
+    (hx : x ∈ e.source) (L : TangentSpace (I.restrictScalars ℝ) x ≃L[ℝ] E)
+    (hL : (L : TangentSpace (I.restrictScalars ℝ) x →L[ℝ] E) =
+      mfderiv (I.restrictScalars ℝ) (I.restrictScalars ℝ) e x) :
+    Orientation.map _ L.toLinearEquiv
+      ((I.complexManifoldOrientation M).orientationAt x) = complexOrientation E := by
+  have he1 : e ∈ IsManifold.maximalAtlas I 1 M :=
+    IsManifold.maximalAtlas_subset_of_le (ENat.one_le_iff_ne_zero_withTop.mpr (NeZero.ne n)) he
+  obtain ⟨L', hL', hmap⟩ :=
+    (I.isOrientedAtlas_maximalAtlas_complex (M := M) 1).orientation_spec
+      (complexOrientation E) card_fin_two_mul_finrank_complex he1 hx
+  rwa [ContinuousLinearEquiv.coe_injective (hL'.trans hL.symm)] at hmap
+
+/-- `I.complexManifoldOrientation M` is characterized by the fact that, at every point `x`, the
+derivative of the preferred chart at `x` carries it to `complexOrientation E`. -/
+theorem eq_complexManifoldOrientation_iff
+    (o : Manifold.Orientation (I.restrictScalars ℝ) M (Fin (2 * finrank ℂ E))) :
+    o = I.complexManifoldOrientation M ↔ ∀ x : M,
+      ∃ L : TangentSpace (I.restrictScalars ℝ) x ≃L[ℝ] E,
+        (L : TangentSpace (I.restrictScalars ℝ) x →L[ℝ] E) =
+          mfderiv (I.restrictScalars ℝ) (I.restrictScalars ℝ) (chartAt H x) x ∧
+          Orientation.map _ L.toLinearEquiv (o.orientationAt x) = complexOrientation E := by
+  constructor
+  · rintro rfl x
+    exact (I.isOrientedAtlas_maximalAtlas_complex (M := M) 1).orientation_spec
+      (complexOrientation E) card_fin_two_mul_finrank_complex
+      (IsManifold.chart_mem_maximalAtlas x) (mem_chart_source H x)
+  · intro h
+    ext x
+    obtain ⟨L, hL, hmap⟩ := h x
+    exact (Orientation.map _ L.toLinearEquiv).injective (hmap.trans
+      (I.map_orientationAt_complexManifoldOrientation 1 (IsManifold.chart_mem_maximalAtlas x)
+        (mem_chart_source H x) L hL).symm)
+
+/-- At every point `x`, the tangent orientation of `I.complexManifoldOrientation M`, read in the
+preferred chart at `x`, is `complexOrientation E`. -/
+@[simp]
+theorem orientationAt_complexManifoldOrientation_eq_complexOrientation (x : M) :
+    (I.complexManifoldOrientation M).orientationAt x = complexOrientation E :=
+  (I.isOrientedAtlas_maximalAtlas_complex 1).orientationAt_orientation _ _
+    (IsManifold.chart_mem_maximalAtlas x)
+
+/-- `I.complexManifoldOrientation M` is represented by `OrientationLift.ofHasGroupoid` with model
+orientation `complexOrientation E`. -/
+theorem complexManifoldOrientation_eq_mk_ofHasGroupoid :
+    I.complexManifoldOrientation M =
+      Manifold.Orientation.mk
+        (Manifold.OrientationLift.ofHasGroupoid (complexOrientation E)
+          card_fin_two_mul_finrank_complex) := by
+  ext x
+  simp only [orientationAt_complexManifoldOrientation_eq_complexOrientation,
+    Manifold.Orientation.orientationAt_mk, Manifold.OrientationLift.orientationAt_ofHasGroupoid]
+  -- The tangent space at `x` is the model space, with its own scalar structure.
+  rfl
+
+variable (M) in
+/-- The canonical orientation lift of a complex manifold `M` modelled on a boundaryless complex
+model `I`, indexed by `Fin (finrank ℝ E)`, with all chart signs `1`. -/
+def complexOrientationLift :
+    Manifold.OrientationLift (I.restrictScalars ℝ) M (Fin (finrank ℝ E)) :=
+  Manifold.OrientationLift.ofHasGroupoid
+    (Orientation.reindex ℝ E (finCongr (finrank_real_of_complex E).symm) (complexOrientation E))
+    (Fintype.card_fin _)
+
+@[simp]
+theorem complexOrientationLift_modelOrientation :
+    (I.complexOrientationLift M).modelOrientation =
+      Orientation.reindex ℝ E (finCongr (finrank_real_of_complex E).symm)
+        (complexOrientation E) := by
+  simp [complexOrientationLift]
+
+@[simp]
+theorem complexOrientationLift_sign (α : M) (x : (chartAt H α).source) :
+    (I.complexOrientationLift M).sign α x = 1 := by
+  simp [complexOrientationLift]
+
+@[simp]
+theorem orientationAt_complexOrientationLift (x : M) :
+    (I.complexOrientationLift M).orientationAt x =
+      Orientation.reindex ℝ E (finCongr (finrank_real_of_complex E).symm)
+        (complexOrientation E) :=
+  Manifold.OrientationLift.orientationAt_ofHasGroupoid _ _ x
+
+end RestrictScalars
+
+/-! ### Recharting along complex continuous linear equivalences -/
+
+section ComplexLinearEquiv
+
+variable {E F H M : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+  [NormedAddCommGroup F] [NormedSpace ℂ F] [FiniteDimensional ℂ F]
+  [TopologicalSpace H] (I : ModelWithCorners ℂ E H) [I.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+
+/-- Recharting a boundaryless complex model `I` along a complex continuous linear equivalence
+`e : E ≃L[ℂ] F` transports `I.complexManifoldOrientation M` along `e.restrictScalars' ℝ` to the
+canonical orientation of `(M, I.transContinuousLinearEquiv e)`, up to the index cast induced by
+`finrank ℂ E = finrank ℂ F`. -/
+theorem orientationAt_transContinuousLinearEquiv_complexManifoldOrientation
+    (e : E ≃L[ℂ] F) (x : M) :
+    ((I.complexManifoldOrientation M).transContinuousLinearEquiv
+        (e.restrictScalars' ℝ)).orientationAt x =
+      Orientation.reindex ℝ F (finCongr (by rw [e.toLinearEquiv.finrank_eq]))
+        (((I.transContinuousLinearEquiv e).complexManifoldOrientation M).orientationAt x) := by
+  have htr := (I.isOrientedAtlas_maximalAtlas_complex (M := M) 1
+      ).orientation_transContinuousLinearEquiv
+    (complexOrientation E) card_fin_two_mul_finrank_complex (e.restrictScalars' ℝ)
+  rw [ModelWithCorners.complexManifoldOrientation, htr,
+    IsOrientedAtlas.orientationAt_orientation _ _ _ (IsManifold.chart_mem_maximalAtlas x),
+    ContinuousLinearEquiv.restrictScalars'_toLinearEquiv, e.toLinearEquiv.map_complexOrientation,
+    (I.transContinuousLinearEquiv e).orientationAt_complexManifoldOrientation_eq_complexOrientation]
+
+/-- For a complex continuous linear equivalence `e : E ≃L[ℂ] F`, the real derivative of
+`ContinuousLinearEquiv.toTransContinuousLinearEquiv` carries `I.complexManifoldOrientation M` at `x`
+to `(I.transContinuousLinearEquiv e).complexManifoldOrientation M`, up to the index cast from
+`finrank ℂ E = finrank ℂ F`. -/
+theorem map_orientationAt_toTransContinuousLinearEquiv_complexManifoldOrientation
+    {m : ℕ∞ω} (e : E ≃L[ℂ] F) (x : M)
+    (D : TangentSpace (I.restrictScalars ℝ) x ≃L[ℝ]
+      TangentSpace ((I.restrictScalars ℝ).transContinuousLinearEquiv (e.restrictScalars' ℝ))
+        (ContinuousLinearEquiv.toTransContinuousLinearEquiv (n := m)
+          (I.restrictScalars ℝ) M (e.restrictScalars' ℝ) x))
+    (hD : (D : TangentSpace (I.restrictScalars ℝ) x →L[ℝ] _) =
+      mfderiv (I.restrictScalars ℝ)
+        ((I.restrictScalars ℝ).transContinuousLinearEquiv (e.restrictScalars' ℝ))
+        (ContinuousLinearEquiv.toTransContinuousLinearEquiv (n := m)
+          (I.restrictScalars ℝ) M (e.restrictScalars' ℝ)) x) :
+    Orientation.map _ D.toLinearEquiv ((I.complexManifoldOrientation M).orientationAt x) =
+      Orientation.reindex ℝ F (finCongr (by rw [e.toLinearEquiv.finrank_eq]))
+        (((I.transContinuousLinearEquiv e).complexManifoldOrientation M).orientationAt
+          (ContinuousLinearEquiv.toTransContinuousLinearEquiv (n := m)
+            (I.restrictScalars ℝ) M (e.restrictScalars' ℝ) x)) :=
+  ((I.complexManifoldOrientation M).map_orientationAt_id_transContinuousLinearEquiv
+    (e.restrictScalars' ℝ) x D hD).trans
+    (I.orientationAt_transContinuousLinearEquiv_complexManifoldOrientation e x)
+
+/-- Recharting `I` along a complex continuous linear automorphism `e : E ≃L[ℂ] E` transports
+`I.complexManifoldOrientation M` along `e.restrictScalars' ℝ` directly to
+`(I.transContinuousLinearEquiv e).complexManifoldOrientation M`. -/
+@[simp]
+theorem complexManifoldOrientation_transContinuousLinearEquiv_self
+    (e : E ≃L[ℂ] E) :
+    ((I.transContinuousLinearEquiv e).complexManifoldOrientation M).congrModel
+        (I.restrictScalars_transContinuousLinearEquiv ℝ e) =
+      (I.complexManifoldOrientation M).transContinuousLinearEquiv (e.restrictScalars' ℝ) := by
+  ext x
+  rw [Manifold.Orientation.orientationAt_congrModel,
+    I.orientationAt_transContinuousLinearEquiv_complexManifoldOrientation e x]
+  simp only [finCongr_refl, Orientation.reindex_refl, Equiv.refl_apply,
+    orientationAt_complexManifoldOrientation_eq_complexOrientation]
+  -- Both tangent spaces at `x` are the model space `E`, with their own scalar structures.
+  rfl
+
+/-- Recharting `I` along a complex continuous linear automorphism `e : E ≃L[ℂ] E` transports
+`I.complexOrientationLift M` along `e.restrictScalars' ℝ` directly to
+`(I.transContinuousLinearEquiv e).complexOrientationLift M`. -/
+@[simp]
+theorem complexOrientationLift_transContinuousLinearEquiv_self
+    (e : E ≃L[ℂ] E) :
+    ((I.transContinuousLinearEquiv e).complexOrientationLift M).congrModel
+        (I.restrictScalars_transContinuousLinearEquiv ℝ e) =
+      (I.complexOrientationLift M).transContinuousLinearEquiv (e.restrictScalars' ℝ) := by
+  ext α x
+  · simp only [Manifold.OrientationLift.congrModel_modelOrientation,
+      complexOrientationLift_modelOrientation,
+      Manifold.OrientationLift.transContinuousLinearEquiv_modelOrientation,
+      ContinuousLinearEquiv.restrictScalars'_toLinearEquiv]
+    rw [Orientation.map_reindex, e.toLinearEquiv.map_complexOrientation_self]
+  · simp
+
+/-- For a complex continuous linear automorphism `e : E ≃L[ℂ] E`, the identity map from `(M, I)` to
+`(M, I.transContinuousLinearEquiv e)` preserves canonical orientations at every point. -/
+@[simp]
+theorem isOrientationPreservingAt_id_complexManifoldOrientation_transContinuousLinearEquiv_self
+    (e : E ≃L[ℂ] E) (x : M) :
+    Manifold.Orientation.IsOrientationPreservingAt (I.complexManifoldOrientation M)
+      ((I.transContinuousLinearEquiv e).complexManifoldOrientation M) (id : M → M) x := by
+  rw [← Manifold.Orientation.isOrientationPreservingAt_congrModel_right
+      (I.restrictScalars_transContinuousLinearEquiv ℝ e),
+    I.complexManifoldOrientation_transContinuousLinearEquiv_self e]
+  exact Manifold.Orientation.isOrientationPreservingAt_id_transContinuousLinearEquiv _ _ x
+
+/-- For a complex continuous linear automorphism `e : E ≃L[ℂ] E`, the orientation sign of `id`
+between canonical orientations on `(M, I)` and `(M, I.transContinuousLinearEquiv e)` is `1`. -/
+@[simp]
+theorem orientationSign_id_complexManifoldOrientation_transContinuousLinearEquiv_self
+    (e : E ≃L[ℂ] E) (x : M) :
+    Manifold.Orientation.orientationSign (I.complexManifoldOrientation M)
+      ((I.transContinuousLinearEquiv e).complexManifoldOrientation M) (id : M → M) x = 1 :=
+  Manifold.Orientation.orientationSign_of_isOrientationPreservingAt
+    (I.isOrientationPreservingAt_id_complexManifoldOrientation_transContinuousLinearEquiv_self e x)
+
+end ComplexLinearEquiv
+
+/-! ### Recharting along real continuous linear equivalences and sign of the real determinant -/
+
+section RealLinearEquiv
+
+variable {E G H M : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+  [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
+  [TopologicalSpace H] (I : ModelWithCorners ℂ E H) [I.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+
+/-- Transporting `I.complexManifoldOrientation M` along a real continuous linear equivalence
+`e : E ≃L[ℝ] G` gives the manifold orientation of `(M, (I.restrictScalars ℝ).trans e)` determined
+by the maximal holomorphic atlas and `Orientation.map _ e.toLinearEquiv (complexOrientation E)`.
+By `Manifold.Orientation.isOrientationPreservingAt_id_transContinuousLinearEquiv`, the comparison
+diffeomorphism always preserves this transported orientation with sign `1`. -/
+theorem transContinuousLinearEquiv_complexManifoldOrientation_eq (e : E ≃L[ℝ] G) :
+    (I.complexManifoldOrientation M).transContinuousLinearEquiv e =
+      ((isOrientedAtlas_transContinuousLinearEquiv_iff (I.restrictScalars ℝ) 1 e).2
+        (I.isOrientedAtlas_maximalAtlas_complex 1)).orientation
+        (Orientation.map _ e.toLinearEquiv (complexOrientation E))
+        (card_fin_two_mul_finrank_complex.trans e.toLinearEquiv.finrank_eq) :=
+  (I.isOrientedAtlas_maximalAtlas_complex 1).orientation_transContinuousLinearEquiv _ _ e
+
+/-- Against the separately fixed canonical orientation `complexOrientation E` on `E`, transporting
+`I.complexManifoldOrientation M` along `e : E ≃L[ℝ] E` gives the fixed-model orientation when
+`0 < LinearMap.det e`. -/
+theorem transContinuousLinearEquiv_complexManifoldOrientation_eq_of_det_pos
+    {e : E ≃L[ℝ] E} (he : 0 < LinearMap.det (e : E →ₗ[ℝ] E)) :
+    (I.complexManifoldOrientation M).transContinuousLinearEquiv e =
+      Manifold.Orientation.mk
+        (Manifold.OrientationLift.ofHasGroupoid
+          (I := (I.restrictScalars ℝ).transContinuousLinearEquiv e)
+          (complexOrientation E) card_fin_two_mul_finrank_complex) := by
+  rw [I.complexManifoldOrientation_eq_mk_ofHasGroupoid,
+    Manifold.Orientation.transContinuousLinearEquiv_mk,
+    Manifold.OrientationLift.ofHasGroupoid_transContinuousLinearEquiv]
+  congr 2
+  exact (Orientation.map_eq_iff_det_pos (complexOrientation E) e.toLinearEquiv
+    card_fin_two_mul_finrank_complex).2 he
+
+/-- Against the separately fixed canonical orientation `complexOrientation E` on `E`, transporting
+`I.complexManifoldOrientation M` along `e : E ≃L[ℝ] E` gives the opposite of the fixed-model
+orientation when `LinearMap.det e < 0`. -/
+theorem transContinuousLinearEquiv_complexManifoldOrientation_eq_neg_of_det_neg
+    {e : E ≃L[ℝ] E} (he : LinearMap.det (e : E →ₗ[ℝ] E) < 0) :
+    (I.complexManifoldOrientation M).transContinuousLinearEquiv e =
+      -Manifold.Orientation.mk
+        (Manifold.OrientationLift.ofHasGroupoid
+          (I := (I.restrictScalars ℝ).transContinuousLinearEquiv e)
+          (complexOrientation E) card_fin_two_mul_finrank_complex) := by
+  rw [I.complexManifoldOrientation_eq_mk_ofHasGroupoid,
+    Manifold.Orientation.transContinuousLinearEquiv_mk,
+    Manifold.OrientationLift.ofHasGroupoid_transContinuousLinearEquiv,
+    (Orientation.map_eq_neg_iff_det_neg (complexOrientation E) e.toLinearEquiv
+      card_fin_two_mul_finrank_complex).2 he,
+    Manifold.Orientation.neg_mk]
+  congr 1
+  ext α x <;> simp
+
+/-- Against the separately fixed canonical orientation `complexOrientation E` on `E`, real
+recharting along `e : E ≃L[ℝ] E` preserves orientation when `0 < LinearMap.det e`. -/
+theorem isOrientationPreservingAt_toTransContinuousLinearEquiv_of_det_pos
+    {m : ℕ∞ω} {e : E ≃L[ℝ] E} (he : 0 < LinearMap.det (e : E →ₗ[ℝ] E))
+    (x : M) :
+    Manifold.Orientation.IsOrientationPreservingAt (I.complexManifoldOrientation M)
+      (Manifold.Orientation.mk
+        (Manifold.OrientationLift.ofHasGroupoid
+          (I := (I.restrictScalars ℝ).transContinuousLinearEquiv e)
+          (complexOrientation E) card_fin_two_mul_finrank_complex))
+      (ContinuousLinearEquiv.toTransContinuousLinearEquiv (n := m)
+        (I.restrictScalars ℝ) M e) x := by
+  rw [← I.transContinuousLinearEquiv_complexManifoldOrientation_eq_of_det_pos he]
+  exact Manifold.Orientation.isOrientationPreservingAt_id_transContinuousLinearEquiv _ e x
+
+/-- Against the separately fixed canonical orientation `complexOrientation E` on `E`, real
+recharting along `e : E ≃L[ℝ] E` reverses orientation when `LinearMap.det e < 0`. -/
+theorem isOrientationReversingAt_toTransContinuousLinearEquiv_of_det_neg
+    {m : ℕ∞ω} {e : E ≃L[ℝ] E} (he : LinearMap.det (e : E →ₗ[ℝ] E) < 0)
+    (x : M) :
+    Manifold.Orientation.IsOrientationReversingAt (I.complexManifoldOrientation M)
+      (Manifold.Orientation.mk
+        (Manifold.OrientationLift.ofHasGroupoid
+          (I := (I.restrictScalars ℝ).transContinuousLinearEquiv e)
+          (complexOrientation E) card_fin_two_mul_finrank_complex))
+      (ContinuousLinearEquiv.toTransContinuousLinearEquiv (n := m)
+        (I.restrictScalars ℝ) M e) x := by
+  rw [← Manifold.Orientation.isOrientationPreservingAt_neg_right,
+    ← I.transContinuousLinearEquiv_complexManifoldOrientation_eq_neg_of_det_neg he]
+  exact Manifold.Orientation.isOrientationPreservingAt_id_transContinuousLinearEquiv _ e x
+
+/-- Comparing `I.complexManifoldOrientation M` with the orientation on
+`(M, (I.restrictScalars ℝ).transContinuousLinearEquiv e)` induced by the separately fixed canonical
+model orientation `complexOrientation E` has `orientationSign` equal to the sign of the real
+determinant of `e : E ≃L[ℝ] E`. -/
+theorem orientationSign_toTransContinuousLinearEquiv_complexManifoldOrientation
+    {m : ℕ∞ω} (e : E ≃L[ℝ] E) (x : M) :
+    Manifold.Orientation.orientationSign (I.complexManifoldOrientation M)
+        (Manifold.Orientation.mk
+          (Manifold.OrientationLift.ofHasGroupoid
+            (I := (I.restrictScalars ℝ).transContinuousLinearEquiv e)
+            (complexOrientation E) card_fin_two_mul_finrank_complex))
+        (ContinuousLinearEquiv.toTransContinuousLinearEquiv (n := m)
+          (I.restrictScalars ℝ) M e) x =
+      (SignType.sign (LinearMap.det (e : E →ₗ[ℝ] E)) : ℤ) := by
+  rw [I.complexManifoldOrientation_eq_mk_ofHasGroupoid]
+  exact Manifold.OrientationLift.orientationSign_toTransContinuousLinearEquiv_ofHasGroupoid
+    (complexOrientation E) card_fin_two_mul_finrank_complex e x
+
+end RealLinearEquiv
+
+end ModelWithCorners
+
+namespace TauCeti
+
+open scoped ComplexManifold
+
+section SelfAndSpecializations
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+
+/-- A complex manifold modelled on a boundaryless complex model `I` is orientable over
+`I.restrictScalars ℝ`. -/
+instance orientable_restrictScalars_of_complex {H M : Type*} [TopologicalSpace H]
+    {I : ModelWithCorners ℂ E H} [I.Boundaryless]
+    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] :
+    Orientable (I.restrictScalars ℝ) M :=
+  Orientable.of_hasGroupoid
+
+/-- On the self-model `𝓘(ℂ, E)`, `ModelWithCorners.complexManifoldOrientation` agrees with
+`TauCeti.complexManifoldOrientation` under `modelWithCornersSelf_restrictScalars`. -/
+@[simp]
+theorem modelWithCornersSelf_complexManifoldOrientation
+    {X : Type*} [TopologicalSpace X] [ChartedSpace E X] [IsManifold 𝓘(ℂ, E) 1 X] :
+    (𝓘(ℂ, E).complexManifoldOrientation X).congrModel (modelWithCornersSelf_restrictScalars ℝ) =
+      complexManifoldOrientation E X := by
+  ext x
+  simp only [Manifold.Orientation.orientationAt_congrModel,
+    ModelWithCorners.orientationAt_complexManifoldOrientation_eq_complexOrientation,
+    orientationAt_complexManifoldOrientation_eq_complexOrientation]
+  -- Both tangent spaces at `x` are the model space `E`, with their own scalar structures.
+  rfl
+
+/-- On the self-model `𝓘(ℂ, E)`, `ModelWithCorners.complexOrientationLift` agrees with
+`TauCeti.complexOrientationLift` under `modelWithCornersSelf_restrictScalars`. -/
+@[simp]
+theorem modelWithCornersSelf_complexOrientationLift
+    {X : Type*} [TopologicalSpace X] [ChartedSpace E X] [IsManifold 𝓘(ℂ, E) 1 X] :
+    (𝓘(ℂ, E).complexOrientationLift X).congrModel (modelWithCornersSelf_restrictScalars ℝ) =
+      complexOrientationLift E X := by
+  ext α x <;> simp
+
+/-- Comparing `complexManifoldOrientation E X` against the fixed model orientation
+`complexOrientation E` after recharting `𝓘(ℝ, E)` along `e : E ≃L[ℝ] E` has `orientationSign` equal
+to the sign of `LinearMap.det e`. -/
+theorem orientationSign_toTransContinuousLinearEquiv_complexManifoldOrientation
+    {m : ℕ∞ω} {X : Type*} [TopologicalSpace X] [ChartedSpace E X]
+    [IsManifold 𝓘(ℂ, E) 1 X] (e : E ≃L[ℝ] E) (x : X) :
+    Manifold.Orientation.orientationSign (complexManifoldOrientation E X)
+        (Manifold.Orientation.mk
+          (Manifold.OrientationLift.ofHasGroupoid (I := 𝓘(ℝ, E).transContinuousLinearEquiv e)
+            (complexOrientation E) card_fin_two_mul_finrank_complex))
+        (ContinuousLinearEquiv.toTransContinuousLinearEquiv (n := m) 𝓘(ℝ, E) X e) x =
+      (SignType.sign (LinearMap.det (e : E →ₗ[ℝ] E)) : ℤ) := by
+  have h : complexManifoldOrientation E X =
+      Manifold.Orientation.mk
+        (Manifold.OrientationLift.ofHasGroupoid (I := 𝓘(ℝ, E)) (complexOrientation E)
+          card_fin_two_mul_finrank_complex) := by
+    ext y
+    simp only [orientationAt_complexManifoldOrientation_eq_complexOrientation,
+      Manifold.Orientation.orientationAt_mk, Manifold.OrientationLift.orientationAt_ofHasGroupoid]
+    -- The tangent space at `y` is the model space `E`, with its own scalar structure.
+    rfl
+  rw [h]
+  exact Manifold.OrientationLift.orientationSign_toTransContinuousLinearEquiv_ofHasGroupoid
+    (complexOrientation E) card_fin_two_mul_finrank_complex e x
+
+end SelfAndSpecializations
+
+section Conj
+
+/-- On a 1-dimensional complex manifold `X` modelled on `𝓘(ℂ, ℂ)`, recharting the underlying real
+model along complex conjugation `Complex.conjCLE : ℂ ≃L[ℝ] ℂ` reverses orientation relative to the
+separately fixed canonical orientation `complexOrientation ℂ` (since `det conjCLE = -1 < 0`). -/
+theorem isOrientationReversingAt_toTransContinuousLinearEquiv_conjCLE
+    {m : ℕ∞ω} {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X]
+    [IsManifold 𝓘(ℂ, ℂ) 1 X] (x : X) :
+    Manifold.Orientation.IsOrientationReversingAt (complexManifoldOrientation ℂ X)
+      (Manifold.Orientation.mk
+        (Manifold.OrientationLift.ofHasGroupoid
+          (I := 𝓘(ℝ, ℂ).transContinuousLinearEquiv Complex.conjCLE)
+          (complexOrientation ℂ) card_fin_two_mul_finrank_complex))
+      (ContinuousLinearEquiv.toTransContinuousLinearEquiv (n := m)
+        𝓘(ℝ, ℂ) X Complex.conjCLE) x := by
+  have hdet : LinearMap.det (Complex.conjCLE : ℂ →ₗ[ℝ] ℂ) < 0 := by
+    have h : (Complex.conjCLE : ℂ →ₗ[ℝ] ℂ) = Complex.conjAe.toLinearEquiv.toLinearMap := rfl
+    rw [h, Complex.det_conjAe]
+    norm_num
+  have h :=
+    𝓘(ℂ, ℂ).isOrientationReversingAt_toTransContinuousLinearEquiv_of_det_neg
+      (M := X) (m := m) hdet x
+  have hmod :
+      ((𝓘(ℂ, ℂ).restrictScalars ℝ).transContinuousLinearEquiv Complex.conjCLE) =
+        𝓘(ℝ, ℂ).transContinuousLinearEquiv Complex.conjCLE := by
+    rw [modelWithCornersSelf_restrictScalars]
+  have ho :
+      (Manifold.Orientation.mk
+        (Manifold.OrientationLift.ofHasGroupoid
+          (I := (𝓘(ℂ, ℂ).restrictScalars ℝ).transContinuousLinearEquiv Complex.conjCLE)
+          (M := X) (complexOrientation ℂ) card_fin_two_mul_finrank_complex)).congrModel hmod =
+        Manifold.Orientation.mk
+          (Manifold.OrientationLift.ofHasGroupoid
+            (I := 𝓘(ℝ, ℂ).transContinuousLinearEquiv Complex.conjCLE)
+            (M := X) (complexOrientation ℂ) card_fin_two_mul_finrank_complex) := by
+    ext y
+    simp only [Manifold.Orientation.orientationAt_congrModel, Manifold.Orientation.orientationAt_mk,
+      Manifold.OrientationLift.orientationAt_ofHasGroupoid]
+    -- Both tangent spaces at `y` are `ℂ`, with their own scalar structures.
+    rfl
+  rw [← modelWithCornersSelf_complexManifoldOrientation, ← ho,
+    Manifold.Orientation.isOrientationReversingAt_congrModel_left,
+    Manifold.Orientation.isOrientationReversingAt_congrModel_right]
+  exact h
+
+/-- On a 1-dimensional complex manifold `X` modelled on `𝓘(ℂ, ℂ)`, the orientation sign of `id`
+from `complexManifoldOrientation ℂ X` to the orientation on
+`𝓘(ℝ, ℂ).transContinuousLinearEquiv Complex.conjCLE` with fixed model orientation
+`complexOrientation ℂ` is `-1`. -/
+@[simp]
+theorem orientationSign_id_conjCLE
+    {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X]
+    [IsManifold 𝓘(ℂ, ℂ) 1 X] (x : X) :
+    Manifold.Orientation.orientationSign (complexManifoldOrientation ℂ X)
+      (Manifold.Orientation.mk
+        (Manifold.OrientationLift.ofHasGroupoid
+          (I := 𝓘(ℝ, ℂ).transContinuousLinearEquiv Complex.conjCLE)
+          (complexOrientation ℂ) card_fin_two_mul_finrank_complex))
+      (id : X → X) x = -1 :=
+  Manifold.Orientation.orientationSign_of_isOrientationReversingAt
+    (isOrientationReversingAt_toTransContinuousLinearEquiv_conjCLE (m := 1) x)
+
+end Conj
+
+section Euclidean
+
+/-- A complex manifold modelled on `𝓘(ℂ, EuclideanSpace ℂ (Fin d))` has orientation-preserving
+coordinate changes over `complexEuclideanRealModel d`. -/
+instance hasGroupoid_orientationPreservingGroupoid_complexEuclideanRealModel {d : ℕ} {X : Type*}
+    [TopologicalSpace X] [ChartedSpace (EuclideanSpace ℂ (Fin d)) X]
+    [IsManifold 𝓘(ℂ, EuclideanSpace ℂ (Fin d)) 1 X] :
+    HasGroupoid X (orientationPreservingGroupoid (complexEuclideanRealModel d)) := by
+  rw [complexEuclideanRealModel_def]
+  infer_instance
+
+/-- Recharting `complexManifoldOrientation (EuclideanSpace ℂ (Fin d)) X` along
+`complexEuclideanRealLinearIsometryEquiv d` to `complexEuclideanRealModel d` gives the standard
+basis orientation of `EuclideanSpace ℝ (Fin (2 * d))` in every preferred chart, up to the index cast
+from `finrank ℂ (EuclideanSpace ℂ (Fin d)) = d`. -/
+@[simp]
+theorem orientationAt_complexManifoldOrientation_complexEuclideanRealModel {d : ℕ} {X : Type*}
+    [TopologicalSpace X] [ChartedSpace (EuclideanSpace ℂ (Fin d)) X]
+    [IsManifold 𝓘(ℂ, EuclideanSpace ℂ (Fin d)) 1 X] (x : X) :
+    (((complexManifoldOrientation (EuclideanSpace ℂ (Fin d)) X).transContinuousLinearEquiv
+        (complexEuclideanRealLinearIsometryEquiv d).toContinuousLinearEquiv).congrModel
+        (complexEuclideanRealModel_def d).symm).orientationAt x =
+      Orientation.reindex ℝ _ (finCongr (by rw [finrank_euclideanSpace_fin]))
+        (EuclideanSpace.basisFun (Fin (2 * d)) ℝ).toBasis.orientation := by
+  have htr := (isOrientedAtlas_maximalAtlas_complex (E := EuclideanSpace ℂ (Fin d)) (M := X) 1
+      ).orientation_transContinuousLinearEquiv (complexOrientation (EuclideanSpace ℂ (Fin d)))
+    card_fin_two_mul_finrank_complex
+    (complexEuclideanRealLinearIsometryEquiv d).toContinuousLinearEquiv
+  rw [Manifold.Orientation.orientationAt_congrModel, complexManifoldOrientation, htr,
+    IsOrientedAtlas.orientationAt_orientation _ _ _ (IsManifold.chart_mem_maximalAtlas x)]
+  exact map_complexEuclideanRealLinearIsometryEquiv_complexOrientation d
+
+end Euclidean
 
 end TauCeti

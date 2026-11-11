@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
 public import Mathlib.Data.Nat.Pairing
+import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # Countably rectifiable sets
@@ -20,6 +21,8 @@ We prove closure under subsets, countable unions and null modifications, and tra
 by maps Lipschitz on the set. These operations allow rectifiable sets to be localized
 and their parametrizations to be composed without imposing regularity on the exceptional set.
 Patches are maps from subtypes, so even an empty target requires no arbitrary base point.
+In a finite-dimensional real normed space, the patches extend to Lipschitz maps defined
+on all of `EuclideanSpace ℝ (Fin k)` (`TauCeti.CountablyRectifiable.exists_lipschitzWith_cover`).
 
 The image estimates use `LipschitzOnWith.euclideanHausdorffMeasure_image_le`, which
 explicitly compares the normalized measure with Mathlib's raw Hausdorff measure.
@@ -188,5 +191,36 @@ Hausdorff measure, without a measurability assumption on either representative. 
 theorem countablyRectifiable_congr (hst : s =ᵐ[μHE[k]] t) :
     CountablyRectifiable k s ↔ CountablyRectifiable k t :=
   ⟨fun hs ↦ hs.congr hst, fun ht ↦ ht.congr hst.symm⟩
+
+section FiniteDimensional
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  [MeasurableSpace V] [BorelSpace V]
+
+/-- A countably `k`-rectifiable subset of a finite-dimensional real normed space is covered, up
+to a `μHE[k]`-null set, by the ranges of countably many Lipschitz maps defined on all of
+`EuclideanSpace ℝ (Fin k)`. -/
+theorem CountablyRectifiable.exists_lipschitzWith_cover {k : ℕ} {s : Set V}
+    (hs : CountablyRectifiable k s) :
+    ∃ F : ℕ → EuclideanSpace ℝ (Fin k) → V, (∀ n, ∃ K : ℝ≥0, LipschitzWith K (F n)) ∧
+      μHE[k] (s \ ⋃ n, range (F n)) = 0 := by
+  classical
+  obtain ⟨A, f, hf, hnull⟩ := countablyRectifiable_iff.mp hs
+  choose K hK using hf
+  have hext (n : ℕ) : ∃ F : EuclideanSpace ℝ (Fin k) → V,
+      (∃ K' : ℝ≥0, LipschitzWith K' F) ∧ ∀ x : A n, F x = f n x := by
+    -- Extend subtype-valued patches to the whole parameter space.
+    let g : EuclideanSpace ℝ (Fin k) → V := Function.extend Subtype.val (f n) (fun _ ↦ 0)
+    have hg (x : A n) : g x = f n x := Subtype.val_injective.extend_apply _ _ x
+    have hlip : LipschitzOnWith (K n) g (A n) := fun x hx y hy ↦ by
+      simpa only [hg ⟨x, hx⟩, hg ⟨y, hy⟩, Subtype.edist_eq] using hK n ⟨x, hx⟩ ⟨y, hy⟩
+    obtain ⟨F, hF, hFeq⟩ := hlip.extend_finite_dimension
+    exact ⟨F, ⟨_, hF⟩, fun x ↦ (hFeq x.property).symm.trans (hg x)⟩
+  choose F hF hFf using hext
+  refine ⟨F, hF, measure_mono_null (sdiff_subset_sdiff_right (iUnion_mono fun n ↦ ?_)) hnull⟩
+  rintro _ ⟨x, rfl⟩
+  exact ⟨x, hFf n x⟩
+
+end FiniteDimensional
 
 end TauCeti

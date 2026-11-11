@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 public import TauCeti.AlgebraicGeometry.Blowup.AffineCharts
+import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Proper
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 import TauCeti.AlgebraicGeometry.AffineScheme
 import TauCeti.AlgebraicGeometry.Restrict
+import TauCeti.RingTheory.GradedAlgebra.FiniteType
 
 /-!
 # The blowup of an affine scheme away from its center
@@ -25,7 +28,9 @@ localization of the intermediate algebra at `a` with `R_a`; the map from `R` nee
 For instance, if `π ∈ I`, this applies to `U = D(π)`: blowing up a center contained in `V(π)`
 changes nothing over `D(π)`. When `R` is an algebra over a discrete valuation ring with
 uniformizer `π`, the open `D(π)` is the generic fibre. The isomorphism over this open preserves
-the generic-fibre identification; no properness or flatness assertion is made here.
+the generic-fibre identification; no flatness assertion is made here.
+
+When `I` is finitely generated, the blowup is moreover proper over `Spec R`.
 
 ## Main results
 
@@ -38,6 +43,8 @@ All results are in the namespace `TauCeti.AlgebraicGeometry`.
 * `isIso_morphismRestrict_toSpecZero_reesAlgebra_of_disjoint_zeroLocus`: the blowup
   `Proj R[It] ⟶ Spec R` restricts to an isomorphism over every open subset of `Spec R` that is
   disjoint from `V(I)`.
+* `isProper_toSpecZero_reesAlgebra`: for finitely generated `I`, the blowup `Proj R[It] ⟶ Spec R`
+  is proper.
 
 ## References
 
@@ -162,5 +169,17 @@ theorem isIso_morphismRestrict_toSpecZero_reesAlgebra_of_disjoint_zeroLocus
     (morphismRestrictRestrict f U (V b))).mpr ?_
   exact (MorphismProperty.isomorphisms.iff _).mpr
     (isIso_morphismRestrict_of_le_basicOpen b.2 (U.ι.image_preimage_le _))
+
+/-- **The blowup along a finitely generated ideal is proper.** If `I` is finitely generated, the
+blowup `Proj R[It] ⟶ Spec R` of `Spec R` along `V(I)` is proper. -/
+theorem isProper_toSpecZero_reesAlgebra (hI : I.FG) :
+    IsProper (Proj.toSpecZero (grade I) ≫ Spec.map (gradeZeroEquiv I).toCommRingCatIso.hom) := by
+  -- The Rees algebra of a finitely generated ideal is of finite type, so the blowup `Proj` is
+  -- proper over its degree-zero part.
+  have := reesAlgebra.finiteType_of_fg hI
+  -- Instance search does not find `ContainsIdentities` through `IsMultiplicative` here.
+  have : MorphismProperty.ContainsIdentities @IsProper :=
+    MorphismProperty.IsMultiplicative.toContainsIdentities
+  exact MorphismProperty.comp_mem (W := @IsProper) _ _ inferInstance (MorphismProperty.of_isIso _ _)
 
 end TauCeti.AlgebraicGeometry

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Operator.WeaklyCompact
+public import TauCeti.Analysis.Normed.Operator.WeaklyCompact.Basic
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Discrete
 import TauCeti.Analysis.Normed.Module.WeakSpace.Bounded
 import TauCeti.Topology.Algebra.Module.WeakSpace

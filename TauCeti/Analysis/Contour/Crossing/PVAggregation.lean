@@ -130,7 +130,6 @@ theorem exists_hasCauchyPVAt_re_eq_of_perWindow_tendsto_of_interiorDisjoint
     (fun _ _ _ _ _ ⟨v₁, h₁, r₁⟩ ⟨v₂, h₂, r₂⟩ ↦
       ⟨v₁ + v₂, h₁.concat h₂, by rw [Complex.add_re, r₁, r₂]; ring⟩)
     (crossings.sort (· ≤ ·)) (Finset.sortedLT_sort crossings)
-    (fun h ↦ hr_nonneg (Finset.nonempty_iff_ne_empty.mpr fun he ↦ h (by simp [he])))
     a le_rfl hab
     (fun t ht ↦ h_lo t ((Finset.mem_sort _).mp ht))
     (fun t ht ↦ h_hi t ((Finset.mem_sort _).mp ht))
@@ -170,7 +169,6 @@ theorem cauchyPVExistsAt_of_perWindow_tendsto_of_interiorDisjoint {γ : ℝ → 
       ⟨_, hasCauchyPVAt_plain_piece hm_pos h_int_tr hA hlu hu h_far'⟩)
     (fun _ _ _ _ _ ⟨v₁, h₁⟩ ⟨v₂, h₂⟩ ↦ ⟨v₁ + v₂, h₁.concat h₂⟩)
     (crossings.sort (· ≤ ·)) (Finset.sortedLT_sort crossings)
-    (fun h ↦ hr_nonneg (Finset.nonempty_iff_ne_empty.mpr fun he ↦ h (by simp [he])))
     a le_rfl hab
     (fun t ht ↦ h_lo t ((Finset.mem_sort _).mp ht))
     (fun t ht ↦ h_hi t ((Finset.mem_sort _).mp ht))
@@ -220,7 +218,6 @@ theorem hasCauchyPVAt_of_perWindow_boundary_tendsto_of_interiorDisjoint {γ : �
       have h_tel : (Φ (γ u₀) - Φ (γ l)) + (Φ (γ u) - Φ (γ u₀)) = Φ (γ u) - Φ (γ l) := by ring
       rwa [h_tel] at h0)
     (crossings.sort (· ≤ ·)) (Finset.sortedLT_sort crossings)
-    (fun h ↦ hr_nonneg (Finset.nonempty_iff_ne_empty.mpr fun he ↦ h (by simp [he])))
     a le_rfl hab
     (fun t ht ↦ h_lo t ((Finset.mem_sort _).mp ht))
     (fun t ht ↦ h_hi t ((Finset.mem_sort _).mp ht))

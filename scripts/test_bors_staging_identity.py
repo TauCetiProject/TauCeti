@@ -1,5 +1,6 @@
 """Fixtures for the staging concurrency expression in pr-build.yml."""
 import re
+import json
 from pathlib import Path
 from types import SimpleNamespace as NS
 import unittest
@@ -12,22 +13,31 @@ PAYLOAD = dict(batch_id=12, head_sha='a' * 40, base_sha='b' * 40, base_ref='main
 
 
 def group(*, event='repository_dispatch', action='tauceti-bors-staging',
-          run=1, repo=1, payload=None, pr='', manual=''):
+          run=1, repo=1, payload=None, pr='', manual='', label='unrelated', labels=()):
     data = PAYLOAD if payload is None else dict.fromkeys(PAYLOAD) | payload
     github = NS(event_name=event, run_id=run, repository_id=repo, event=NS(
-        action=action, client_payload=NS(**data, pr=pr),
-        pull_request=NS(number=pr if event == 'pull_request_target' else ''),
+        action=action, label=NS(name=label), client_payload=NS(**data, pr=pr),
+        pull_request=NS(number=pr if event == 'pull_request_target' else '', label_names=labels),
         merge_group=NS(head_sha='c' * 40 if event == 'merge_group' else '')))
     expression = WORKFLOW['concurrency']['group'].split('${{', 1)[1].removesuffix('}}')
     expression = re.sub(r'\s+', ' ', expression).replace('&&', ' and ').replace('||', ' or ')
+    expression = expression.replace('!(', 'not (').replace('.labels.*.name', '.label_names')
     return 'pr-build-' + str(eval(expression.strip(), {'__builtins__': {},
-        'github': github, 'inputs': NS(pr=manual), 'format': lambda s, *args: s.format(*args)}))
+        'github': github, 'inputs': NS(pr=manual), 'fromJSON': json.loads,
+        'contains': lambda values, value: value in values, 'format': lambda s, *args: s.format(*args)}))
 
 
 class ConcurrencyTests(unittest.TestCase):
     def test_same_candidate_supersedes_across_runs(self):
         self.assertEqual(group(), group(run=2))
         self.assertIs(WORKFLOW['concurrency']['cancel-in-progress'], True)
+
+    def test_unrelated_labels_cannot_cancel_the_self_tested_binding_run(self):
+        binding = dict(event='pull_request_target', action='labeled', pr=7, labels=('self-tested',))
+        self.assertEqual(group(**binding, label='self-tested'), 'pr-build-7')
+        self.assertEqual(group(**binding, label='full-lint'), 'pr-build-7')
+        self.assertEqual(group(**binding), 'pr-build-irrelevant-label-1')
+        self.assertEqual(group(**binding, run=2), 'pr-build-irrelevant-label-2')
 
     def test_distinct_candidates_repositories_and_bases_are_isolated(self):
         for changes in [dict(batch_id=13), dict(head_sha='d' * 40),

@@ -18,7 +18,8 @@ import TauCeti.Algebra.BigOperators.Fin
 
 A common divisor of the entries of a matrix survives multiplication on either side: every
 entry of `P * A * Q` is an `S`-combination of entries of `A`, so anything dividing all of
-those divides all of these.
+those divides all of these. Likewise a common divisor of the coordinates of a vector divides
+every coordinate of its product with a matrix.
 
 Nothing in the entrywise statements needs invertibility, a square shape, or a diagonal target —
 only that the products are conformable — so they are at `NonUnitalCommSemiring` and
@@ -42,6 +43,8 @@ proves the uniqueness of the Smith normal form, from one diagonal factor to two.
 
 * `Matrix.dvd_mul_mul_apply`: a common divisor of the entries of `A` divides every entry of
   `P * A * Q`.
+* `Matrix.dvd_mulVec_apply`: a common divisor of the coordinates of `v` divides every
+  coordinate of `N *ᵥ v`.
 * `Matrix.dvd_diag_of_dvd_entries`: if `L * A * R` is `Matrix.diagonal d`, then a common
   divisor of the entries of `A` divides every `d k`.
 * `Matrix.forall_dvd_apply_iff_of_mul_eq_mul`: if `W * B = A * W`, then an element coprime to
@@ -84,6 +87,12 @@ theorem dvd_mul_mul_apply [Fintype m] [Fintype n] {A : Matrix m n S} {c : S}
   refine Finset.dvd_sum fun k _ ↦ ?_
   rw [Matrix.mul_apply]
   exact Dvd.dvd.mul_right (Finset.dvd_sum fun p _ ↦ (hc p k).mul_left _) _
+
+/-- **A common divisor of the coordinates survives multiplication by a matrix.** If `c` divides
+every coordinate of `v`, then it divides every coordinate of `N *ᵥ v`. -/
+theorem dvd_mulVec_apply [Fintype n] {v : n → S} {c : S} (hc : ∀ j, c ∣ v j) (N : Matrix m n S)
+    (i : m) : c ∣ (N *ᵥ v) i :=
+  Finset.dvd_sum fun j _ ↦ (hc j).mul_left _
 
 /-- **Every common divisor of the entries divides every diagonal entry.** Each `d k` is the
 `(k, k)` entry of `L * A * R`, hence an `S`-combination of the entries of `A`. -/

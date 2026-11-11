@@ -56,6 +56,10 @@ theorem mem_positiveSingletons_iff (μ : Measure X) (x : X) :
 /-- The restriction of a measure to all of its positive-mass singleton points. -/
 def atomicPart (μ : Measure X) : Measure X := μ.restrict (positiveSingletons μ)
 
+/-- The atomic part is the restriction to the positive-mass singleton points. -/
+theorem atomicPart_def (μ : Measure X) :
+    atomicPart μ = μ.restrict (positiveSingletons μ) := (rfl)
+
 /-- Evaluate the atomic part on a measurable set. -/
 @[simp]
 theorem atomicPart_apply (μ : Measure X) (s : Set X) (hs : MeasurableSet s) :
@@ -64,6 +68,10 @@ theorem atomicPart_apply (μ : Measure X) (s : Set X) (hs : MeasurableSet s) :
 
 /-- The complementary restriction to the points with zero singleton mass. -/
 def diffusePart (μ : Measure X) : Measure X := μ.restrict (positiveSingletons μ)ᶜ
+
+/-- The diffuse part is the restriction to the zero-mass singleton points. -/
+theorem diffusePart_def (μ : Measure X) :
+    diffusePart μ = μ.restrict (positiveSingletons μ)ᶜ := (rfl)
 
 /-- Evaluate the diffuse part on a measurable set. -/
 @[simp]

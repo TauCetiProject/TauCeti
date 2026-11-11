@@ -58,6 +58,8 @@ relations, for instance the rationalisation of a module over an integral group r
 * `TensorProduct.exists_one_tmul_eq`: every element of `(R ⧸ I) ⊗ M` is `1 ⊗ x`.
 * `TensorProduct.one_tmul_eq_zero_iff_exists_smul_eq`: `1 ⊗ x` vanishes in
   `(R ⧸ (r)) ⊗ M` exactly when `x` is a multiple of `r`.
+* `TensorProduct.mk_one_bijective_of_ker_le_annihilator`: if `R → S` is surjective and its
+  kernel annihilates `M`, then `x ↦ 1 ⊗ x` is a bijection `M → S ⊗[R] M`.
 * `LinearMap.exact_lTensor_quotient_span_singleton`: if `a : M → N` and `b : N → M` compose in
   both orders to multiplication by `r`, and `r` is regular on `M`, then the reductions of `b` and
   `a` modulo `r` form an exact pair.
@@ -103,6 +105,27 @@ theorem one_tmul_eq_zero_iff_exists_smul_eq (r : R) (x : M) :
     Submodule.Quotient.mk_eq_zero, Submodule.ideal_span_singleton_smul,
     Submodule.mem_smul_pointwise_iff_exists]
   exact ⟨fun ⟨y, _, hy⟩ ↦ ⟨y, hy⟩, fun ⟨y, hy⟩ ↦ ⟨y, Submodule.mem_top, hy⟩⟩
+
+/-- **Base change to a quotient ring that already acts.** If `R → S` is surjective and its kernel
+annihilates `M`, then `x ↦ 1 ⊗ x` is a bijection `M → S ⊗[R] M`: writing `S = R ⧸ I`, the
+tensor product is `M ⧸ I M = M`. -/
+theorem mk_one_bijective_of_ker_le_annihilator {S : Type*} [CommRing S] [Algebra R S]
+    (hS : Function.Surjective (algebraMap R S))
+    (hM : RingHom.ker (algebraMap R S) ≤ Module.annihilator R M) :
+    Function.Bijective (TensorProduct.mk R S M 1) := by
+  refine ⟨?_, TensorProduct.mk_surjective R M S hS⟩
+  let I := RingHom.ker (algebraMap R S)
+  let e₀ := (Ideal.quotientKerAlgEquivOfSurjective (f := Algebra.ofId R S) hS).symm
+  let e : S ≃ₗ[R] R ⧸ I := e₀.toLinearEquiv
+  have hI : I • (⊤ : Submodule R M) = ⊥ := eq_bot_iff.mpr <|
+    (Submodule.smul_mono_left hM).trans_eq <| by
+      rw [← Submodule.annihilator_top, Submodule.annihilator_smul]
+  -- A left inverse: `S ⊗[R] M ≃ (R ⧸ I) ⊗[R] M ≃ M ⧸ I M ≃ M`, sending `1 ⊗ x` to `x`.
+  let ψ := (Submodule.quotEquivOfEqBot _ hI).toLinearMap ∘ₗ
+    (quotTensorEquivQuotSMul M I).toLinearMap ∘ₗ e.toLinearMap.rTensor M
+  have he : e 1 = 1 := map_one e₀
+  refine Function.LeftInverse.injective (g := ψ) fun x ↦ ?_
+  simp [ψ, he]
 
 end TensorProduct
 

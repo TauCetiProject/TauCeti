@@ -13,8 +13,9 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjJ
 
 Reflection is the substitution `(x, y) ↦ (x, -y)`, sending `(a, b, c)` to `(a, -b, c)`.
 It is an involution, preserves content and discriminant, commutes with primitive normalization,
-and carries properly equivalent forms to properly equivalent forms. These are the form-side
-operations needed by the improper-automorphism criterion for binary integral lattices.
+and carries properly equivalent forms to properly equivalent forms, so it descends to the
+involution `reflectedClass` of the proper classes of primitive positive definite forms. These are
+the form-side operations needed by the improper-automorphism criterion for binary integral lattices.
 -/
 
 public section
@@ -67,6 +68,13 @@ def reflected [Neg R] (f : BinaryQuadraticForm R) : BinaryQuadraticForm R :=
     f.reflected.IsPrimitive ↔ f.IsPrimitive := by
   rw [isPrimitive_iff, isPrimitive_iff, content_reflected]
 
+/-- Reflection preserves the primitive positive definite forms of discriminant `-n`. -/
+theorem reflected_mem_posDef_inf_primitiveForms_iff {n : ℕ} [NeZero n]
+    {f : BinaryQuadraticForm ℤ} :
+    f.reflected ∈ posDef n ⊓ primitiveForms (-n) ↔ f ∈ posDef n ⊓ primitiveForms (-n) := by
+  simp only [mem_posDef_inf_primitiveForms, discrim_reflected, reflected_a,
+    isPrimitive_reflected_iff]
+
 /-- Primitive normalization commutes with reflection, including for the zero form. -/
 @[simp] theorem primPart_reflected (f : BinaryQuadraticForm ℤ) :
     f.reflected.primPart = f.primPart.reflected := by
@@ -84,5 +92,26 @@ def reflected [Neg R] (f : BinaryQuadraticForm R) : BinaryQuadraticForm R :=
   all_goals simp only [SpecialLinearGroup.coe_conjJ, Matrix.of_apply,
     Matrix.cons_val_zero, Matrix.cons_val_one]
   all_goals ring
+
+/-- The reflection `(a, b, c) ↦ (a, -b, c)` on proper classes of primitive positive definite
+forms of discriminant `-n`; it is well defined since `reflected_smul` carries properly equivalent
+forms to properly equivalent forms. -/
+def reflectedClass (n : ℕ) [NeZero n] : PosDefProperClass n → PosDefProperClass n :=
+  Quotient.map (fun f ↦ ⟨(f : BinaryQuadraticForm ℤ).reflected,
+      reflected_mem_posDef_inf_primitiveForms_iff.2 f.2⟩)
+    fun f g h ↦ by
+      obtain ⟨γ, rfl⟩ := MulAction.mem_orbit_iff.1 h
+      exact MulAction.mem_orbit_iff.2 ⟨SpecialLinearGroup.conjJ γ, Subtype.ext <|
+        (SubMulAction.val_smul _ _).trans (reflected_smul γ (g : BinaryQuadraticForm ℤ)).symm⟩
+
+/-- The reflection of the class of a form is the class of the reflected form. -/
+@[simp] theorem reflectedClass_mk {n : ℕ} [NeZero n] (f : ↥(posDef n ⊓ primitiveForms (-n))) :
+    reflectedClass n (Quotient.mk _ f) = Quotient.mk _ ⟨(f : BinaryQuadraticForm ℤ).reflected,
+      reflected_mem_posDef_inf_primitiveForms_iff.2 f.2⟩ :=
+  (rfl)
+
+/-- Reflection on proper classes is an involution. -/
+theorem reflectedClass_involutive (n : ℕ) [NeZero n] : Function.Involutive (reflectedClass n) :=
+  Quotient.ind fun _ ↦ congrArg (Quotient.mk _) (Subtype.ext (reflected_reflected _))
 
 end TauCeti.BinaryQuadraticForm

@@ -152,11 +152,8 @@ def projectiveSpecialLinearEquivGroup (r : ℕ) (q : PrimePower)
     ProjectiveSpecialLinearGroup (Fin ((ofA r q hv).1.rank + 1))
       (GaloisField (ofA r q hv).1.characteristic (ofA r q hv).1.fieldExponent) ≃*
       (ofA r q hv).Group :=
-  letI : Group.IsPerfect (SpecialLinearGroup (Fin ((ofA r q hv).1.rank + 1))
-      (GaloisField (ofA r q hv).1.characteristic (ofA r q hv).1.fieldExponent)) :=
-    ⟨commutator_specialLinearGroup_eq_top r q hv⟩
-  DerivedCentralQuotient.mulEquivQuotientCenter.symm.trans
-    (DerivedCentralQuotient.congr (specialLinearEquivFixedPoints r q hv))
+  DerivedCentralQuotient.quotientCenterEquivOfPerfect (commutator_specialLinearGroup_eq_top r q hv)
+    (specialLinearEquivFixedPoints r q hv)
 
 /-- The isomorphism with `PSL_{r+1}(𝔽_q)` sends the class of a matrix in the derived subgroup to
 the class of the corresponding fixed point. -/
@@ -169,13 +166,8 @@ theorem projectiveSpecialLinearEquivGroup_mk (r : ℕ) (q : PrimePower)
         (x : Matrix.SpecialLinearGroup (Fin ((ofA r q hv).1.rank + 1))
           (GaloisField (ofA r q hv).1.characteristic (ofA r q hv).1.fieldExponent))) =
       ((MulEquiv.commutatorCongr (specialLinearEquivFixedPoints r q hv) x :
-        commutator (ofA r q hv).FixedPoints) : (ofA r q hv).Group) := by
-  let _ : Group.IsPerfect (SpecialLinearGroup (Fin ((ofA r q hv).1.rank + 1))
-      (GaloisField (ofA r q hv).1.characteristic (ofA r q hv).1.fieldExponent)) :=
-    ⟨commutator_specialLinearGroup_eq_top r q hv⟩
-  rw [projectiveSpecialLinearEquivGroup, MulEquiv.trans_apply,
-    ← DerivedCentralQuotient.mulEquivQuotientCenter_mk, MulEquiv.symm_apply_apply,
-    DerivedCentralQuotient.congr_mk]
+        commutator (ofA r q hv).FixedPoints) : (ofA r q hv).Group) :=
+  DerivedCentralQuotient.quotientCenterEquivOfPerfect_mk _ _ x
 
 /-- **The group attached to `A_r(q)` is simple**, for every valid index: it is `PSL_{r+1}(𝔽_q)`,
 which is simple by Iwasawa's criterion because `SL_{r+1}(𝔽_q)` is perfect. -/

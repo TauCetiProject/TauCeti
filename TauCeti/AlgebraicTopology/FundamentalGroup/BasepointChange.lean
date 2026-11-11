@@ -27,7 +27,8 @@ independent of the chosen path.
 It also records the element-level behaviour of the transport: path-quotient formulas, its
 compatibility with concatenation of paths and with induced maps, and the comparison of the maps
 induced by freely homotopic maps, which differ by basepoint change along the trace of the homotopy.
-Surjectivity of an induced fundamental-group map transports along a path in its source.
+Surjectivity, injectivity and bijectivity of an induced fundamental-group map transport along a
+path in its source.
 
 Mathlib already supplies the fundamental-group isomorphism
 `FundamentalGroup.fundamentalGroupMulEquivOfPath`; the declarations here are the computation
@@ -50,8 +51,9 @@ rules, subgroup, and normalizer-quotient bookkeeping built on it.
   conjugation by its class.
 * `FundamentalGroup.map_fundamentalGroupMulEquivOfPath`: induced maps commute with basepoint
   change.
-* `FundamentalGroup.map_surjective_of_path`: surjectivity of an induced map transports along
-  paths.
+* `FundamentalGroup.map_surjective_of_path`, `FundamentalGroup.map_injective_of_path`,
+  `FundamentalGroup.map_bijective_of_path`: surjectivity, injectivity and bijectivity of an
+  induced map transport along paths.
 * `ContinuousMap.Homotopy.fundamentalGroupMulEquivOfPath_evalAt_map`: **freely homotopic maps
   induce the same map on fundamental groups, up to basepoint change along the trace of the
   homotopy.**
@@ -218,6 +220,24 @@ lemma map_surjective_of_path {X Y : Type*} [TopologicalSpace X] [TopologicalSpac
   obtain ⟨k, hk⟩ := hf ((fundamentalGroupMulEquivOfPath (γ.map f.continuous)).symm h)
   exact ⟨fundamentalGroupMulEquivOfPath γ k, by
     rw [map_fundamentalGroupMulEquivOfPath, hk, MulEquiv.apply_symm_apply]⟩
+
+/-- **Injectivity of an induced map moves along paths.** If `f` induces an injection of
+fundamental groups at `x₀`, then it induces one at every point joined to `x₀` by a path. -/
+lemma map_injective_of_path {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    (f : C(X, Y)) {x₀ x₁ : X} (γ : Path x₀ x₁) (hf : Function.Injective (map f x₀)) :
+    Function.Injective (map f x₁) := by
+  intro g h hgh
+  refine (fundamentalGroupMulEquivOfPath γ).symm.injective (hf <|
+    (fundamentalGroupMulEquivOfPath (γ.map f.continuous)).injective ?_)
+  rwa [← map_fundamentalGroupMulEquivOfPath, ← map_fundamentalGroupMulEquivOfPath,
+    MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply]
+
+/-- **Bijectivity of an induced map moves along paths.** If `f` induces a bijection of
+fundamental groups at `x₀`, then it induces one at every point joined to `x₀` by a path. -/
+lemma map_bijective_of_path {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    (f : C(X, Y)) {x₀ x₁ : X} (γ : Path x₀ x₁) (hf : Function.Bijective (map f x₀)) :
+    Function.Bijective (map f x₁) :=
+  ⟨map_injective_of_path f γ hf.1, map_surjective_of_path f γ hf.2⟩
 
 open CategoryTheory in
 /-- **Freely homotopic maps induce the same map on fundamental groups, up to basepoint change.**

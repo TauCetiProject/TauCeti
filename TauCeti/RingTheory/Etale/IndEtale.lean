@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Algebra.Category.CommAlgCat.Basic
 public import Mathlib.CategoryTheory.Filtered.Basic
+public import Mathlib.CategoryTheory.MorphismProperty.Ind
 public import Mathlib.CategoryTheory.ObjectProperty.Ind
 public import Mathlib.RingTheory.Etale.Basic
+public import Mathlib.RingTheory.RingHom.Etale
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.Smooth.Flat
 import TauCeti.Algebra.Category.AlgCat.FilteredColimits
@@ -16,6 +18,7 @@ import TauCeti.Algebra.Category.CommAlgCat.BaseChange
 import TauCeti.Algebra.Category.CommAlgCat.FilteredColimits
 import TauCeti.Algebra.Category.CommAlgCat.Localization
 import TauCeti.RingTheory.Flat.Colimit
+import TauCeti.RingTheory.RingHom.Etale
 
 /-!
 # Ind-étale algebras
@@ -40,6 +43,11 @@ fact that filtered colimits of flat modules are flat.
   extension of scalars.
 * `TauCeti.Algebra.IndEtale.of_isLocalization`: every localization is ind-étale, as the filtered
   colimit of the étale principal localizations at finite products of denominators.
+* `TauCeti.Algebra.IndEtale.iff_ind_etale`: `S` is ind-étale over `R` if and only if its
+  structure map is a filtered colimit of étale ring maps, in the sense of Mathlib's
+  `CategoryTheory.MorphismProperty.ind` on commutative rings.
+* `TauCeti.Algebra.IndEtale.comp`: ind-étale algebras are stable under composition
+  (Stacks, Tag 0BSI).
 
 ## Implementation notes
 
@@ -50,6 +58,7 @@ and types preserve small filtered colimits.
 ## References
 
 * [Stacks Project, Tag 05UU](https://stacks.math.columbia.edu/tag/05UU)
+* [Stacks Project, Tag 0BSI](https://stacks.math.columbia.edu/tag/0BSI)
 * B. Bhatt and P. Scholze, *The pro-étale topology for schemes*, Astérisque 369 (2015),
   Definition 2.2.1
 -/
@@ -130,6 +139,34 @@ theorem of_isLocalization (M : Submonoid R) [IsLocalization M S] : IndEtale R S 
 /-- The canonical localization algebra is ind-étale over its base ring. -/
 instance localization (M : Submonoid R) : IndEtale R (Localization M) :=
   of_isLocalization M
+
+/-- An `R`-algebra is ind-étale if and only if its structure map is a filtered colimit of étale
+ring maps, in the sense of `MorphismProperty.ind` on commutative rings. The two notions are
+related by the equivalence between commutative `R`-algebras and commutative rings under `R`. -/
+theorem iff_ind_etale : IndEtale R S ↔ MorphismProperty.ind.{u}
+    (RingHom.toMorphismProperty RingHom.Etale) (CommRingCat.ofHom (algebraMap R S)) := by
+  have : (RingHom.toMorphismProperty RingHom.Etale).RespectsIso :=
+    RingHom.toMorphismProperty_respectsIso_iff.mp RingHom.Etale.respectsIso
+  have h := ObjectProperty.ind_inverseImage_eq_of_isEquivalence.{u}
+    (RingHom.toMorphismProperty RingHom.Etale).underObj
+    (commAlgCatEquivUnder (CommRingCat.of R)).functor
+  have he : (RingHom.toMorphismProperty RingHom.Etale).underObj.inverseImage
+      (commAlgCatEquivUnder (CommRingCat.of R)).functor =
+        fun A : CommAlgCat.{u} R ↦ Algebra.Etale R A := by
+    ext A
+    exact RingHom.etale_algebraMap (R := R) (S := A)
+  have key := Iff.of_eq (congrFun h (CommAlgCat.of R S))
+  rw [he] at key
+  rw [MorphismProperty.ind_iff_ind_underMk]
+  -- The equivalence sends `S` to `Under.mk (CommRingCat.ofHom (algebraMap R S))` by definition.
+  exact ⟨fun h' ↦ key.mp h'.ind_etale, fun h' ↦ ⟨key.mpr h'⟩⟩
+
+/-- Ind-étale algebras are stable under composition: an ind-étale algebra over an ind-étale
+`R`-algebra is ind-étale over `R` (Stacks, Tag 0BSI). -/
+theorem comp (T : Type u) [CommRing T] [Algebra R T] [Algebra S T] [IsScalarTower R S T]
+    [IndEtale R S] [IndEtale S T] : IndEtale R T := by
+  rw [iff_ind_etale, IsScalarTower.algebraMap_eq R S T, CommRingCat.ofHom_comp]
+  exact MorphismProperty.comp_mem _ _ _ (iff_ind_etale.mp ‹_›) (iff_ind_etale.mp ‹_›)
 
 end IndEtale
 

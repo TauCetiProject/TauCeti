@@ -17,19 +17,24 @@ restriction to the scalar subalgebra vanishes. Thus they are the kernel of restr
 unit-preserving scalar inclusion `R → A`. The Hochschild coboundary preserves this kernel and
 defines the reduced cyclic cochain complex.
 
-This construction is different from relative cyclic cohomology of a possibly nonunital algebra.
-The latter first passes to the forced unitization and takes the kernel of its augmentation
-splitting; the reduced theory here uses the given unit of `A`. In particular, the reduced complex
-of the ground ring is zero, whereas relative forced-unitization cohomology recovers the full cyclic
-theory of a unital algebra.
+The relative cyclic cohomology of a possibly nonunital algebra `A`
+(`TauCeti.relativeCyclicCohomology`) is the reduced cyclic cohomology of its forced unitization
+`Unitization R A`. It is a different functor of `A` from the reduced theory here, which uses the
+given unit of `A`: the reduced complex of the ground ring is zero, whereas the relative
+forced-unitization cohomology of a unital algebra recovers its full cyclic theory.
 
 ## Main definitions
 
 * `TauCeti.scalarCyclicRestriction`: restriction to the scalar subalgebra.
 * `TauCeti.reducedCyclicCochains`: the kernel of scalar restriction.
+* `TauCeti.reducedCyclicCocycles`, `TauCeti.reducedCyclicCoboundaries`: concrete cocycles and
+  coboundaries.
 * `TauCeti.reducedCyclicCochainComplex`: the reduced cyclic cochain complex.
 * `TauCeti.reducedCyclicCohomology`: reduced cyclic cohomology.
+* `TauCeti.reducedCyclicCohomology.mk`: the class of a reduced cyclic cocycle.
 * `TauCeti.reducedCyclicCochainsMap`: contravariant pullback along a unital algebra homomorphism.
+* `TauCeti.reducedCyclicCohomology.toCyclic`: the map from reduced cyclic cohomology to cyclic
+  cohomology induced by the inclusion of reduced cochains.
 
 ## References
 
@@ -144,6 +149,70 @@ theorem reducedCyclicHochschildCoboundary_comp_reducedCyclicHochschildCoboundary
 
 end Cochains
 
+section Cocycles
+
+variable (R : Type*) (A : Type u) (M : Type*) [CommSemiring R] [Semiring A] [Algebra R A]
+  [AddCommGroup M] [Module R M]
+
+/-- The reduced cyclic `n`-cocycles: reduced cyclic cochains annihilated by the reduced Hochschild
+coboundary. -/
+def reducedCyclicCocycles (n : ℕ) : Submodule R (reducedCyclicCochains R A M n) :=
+  LinearMap.ker (reducedCyclicHochschildCoboundary R A M n)
+
+/-- A reduced cyclic cochain is a cocycle exactly when its reduced Hochschild coboundary
+vanishes. -/
+@[simp]
+theorem mem_reducedCyclicCocycles_iff {n : ℕ} {phi : reducedCyclicCochains R A M n} :
+    phi ∈ reducedCyclicCocycles R A M n ↔ reducedCyclicHochschildCoboundary R A M n phi = 0 :=
+  LinearMap.mem_ker
+
+variable {R A M} in
+/-- A reduced cyclic cochain is a cyclic cocycle exactly when it is a reduced cyclic cocycle. -/
+theorem coe_mem_cyclicCocycles_iff_mem_reducedCyclicCocycles {n : ℕ}
+    {phi : reducedCyclicCochains R A M n} :
+    (phi : cyclicCochains R A M n) ∈ cyclicCocycles R A M n ↔
+      phi ∈ reducedCyclicCocycles R A M n := by
+  simp [mem_cyclicCocycles_iff, mem_reducedCyclicCocycles_iff, Subtype.ext_iff,
+    coe_reducedCyclicHochschildCoboundary_apply, coe_cyclicHochschildCoboundary_apply]
+
+/-- The reduced cyclic coboundaries: zero in degree zero, and in positive degree the image of the
+reduced Hochschild coboundary. -/
+def reducedCyclicCoboundaries : (n : ℕ) → Submodule R (reducedCyclicCochains R A M n)
+  | 0 => ⊥
+  | n + 1 => LinearMap.range (reducedCyclicHochschildCoboundary R A M n)
+
+/-- There are no nonzero reduced cyclic coboundaries in degree zero. -/
+@[simp]
+theorem reducedCyclicCoboundaries_zero : reducedCyclicCoboundaries R A M 0 = ⊥ := (rfl)
+
+/-- In positive degree the reduced cyclic coboundaries are the image of the reduced Hochschild
+coboundary. -/
+theorem reducedCyclicCoboundaries_succ (n : ℕ) :
+    reducedCyclicCoboundaries R A M (n + 1) =
+      LinearMap.range (reducedCyclicHochschildCoboundary R A M n) :=
+  (rfl)
+
+/-- A reduced cyclic cochain in positive degree is a coboundary exactly when it is the reduced
+Hochschild coboundary of a reduced cochain in the preceding degree. -/
+@[simp]
+theorem mem_reducedCyclicCoboundaries_succ_iff {n : ℕ}
+    {phi : reducedCyclicCochains R A M (n + 1)} :
+    phi ∈ reducedCyclicCoboundaries R A M (n + 1) ↔
+      ∃ psi : reducedCyclicCochains R A M n,
+        reducedCyclicHochschildCoboundary R A M n psi = phi := by
+  rw [reducedCyclicCoboundaries_succ, LinearMap.mem_range]
+
+/-- Every reduced cyclic coboundary is a reduced cyclic cocycle. -/
+theorem reducedCyclicCoboundaries_le_reducedCyclicCocycles (n : ℕ) :
+    reducedCyclicCoboundaries R A M n ≤ reducedCyclicCocycles R A M n := by
+  cases n with
+  | zero => simp
+  | succ n =>
+    exact LinearMap.range_le_ker_iff.2
+      (reducedCyclicHochschildCoboundary_comp_reducedCyclicHochschildCoboundary R A M n)
+
+end Cocycles
+
 section Complex
 
 variable (R : Type*) (A : Type u) (M : Type*) [CommRing R] [Semiring A] [Algebra R A]
@@ -178,6 +247,92 @@ abbrev reducedCyclicCohomology (n : ℕ) : ModuleCat R :=
   (reducedCyclicCochainComplex R A M).homology n
 
 end Complex
+
+section Cohomology
+
+variable (R : Type*) (A : Type u) (M : Type*) [CommRing R] [Semiring A] [Algebra R A]
+  [AddCommGroup M] [Module R M]
+
+/-- A reduced cyclic cochain is a cocycle exactly when the differential of the reduced cyclic
+cochain complex kills the corresponding element of the complex. -/
+theorem mem_reducedCyclicCocycles_iff_complex (n : ℕ) (phi : reducedCyclicCochains R A M n) :
+    phi ∈ reducedCyclicCocycles R A M n ↔
+      (reducedCyclicCochainComplex R A M).d n (n + 1)
+        ((reducedCyclicCochainComplexXIso R A M n).inv phi) = 0 := by
+  rw [mem_reducedCyclicCocycles_iff,
+    (reducedCyclicCochainComplex R A M).moduleCat_d_inv_eq_zero_iff
+      (reducedCyclicHochschildCoboundary R A M) (reducedCyclicCochainComplex_d R A M)]
+
+private theorem mem_reducedCyclicCoboundaries_iff_complex (n : ℕ)
+    (phi : reducedCyclicCochains R A M n) :
+    phi ∈ reducedCyclicCoboundaries R A M n ↔
+      ∃ y : (reducedCyclicCochainComplex R A M).X ((ComplexShape.up ℕ).prev n),
+        (reducedCyclicCochainComplex R A M).d ((ComplexShape.up ℕ).prev n) n y =
+          (reducedCyclicCochainComplexXIso R A M n).inv phi :=
+  (reducedCyclicCochainComplex R A M).moduleCat_mem_iff_exists_d_eq_inv
+    (V := fun n ↦ reducedCyclicCochains R A M n) (e := reducedCyclicCochainComplexXIso R A M)
+    (reducedCyclicCoboundaries R A M) (reducedCyclicHochschildCoboundary R A M)
+    (reducedCyclicCochainComplex_d R A M) (reducedCyclicCoboundaries_zero R A M)
+    (reducedCyclicCoboundaries_succ R A M) n phi
+
+private abbrev toCycles (n : ℕ) (phi : reducedCyclicCocycles R A M n) :=
+  (reducedCyclicCochainComplex R A M).moduleCatCyclesMk
+    ((reducedCyclicCochainComplexXIso R A M n).inv phi.1) (n + 1) (CochainComplex.next ℕ n)
+    ((mem_reducedCyclicCocycles_iff_complex R A M n phi.1).1 phi.2)
+
+private theorem iCycles_toCycles (n : ℕ) (phi : reducedCyclicCocycles R A M n) :
+    (reducedCyclicCochainComplex R A M).iCycles n (toCycles R A M n phi) =
+      (reducedCyclicCochainComplexXIso R A M n).inv phi.1 :=
+  (reducedCyclicCochainComplex R A M).iCycles_moduleCatCyclesMk _ _ _ _ _
+
+namespace reducedCyclicCohomology
+
+/-- The reduced cyclic cohomology class of a reduced cyclic cocycle. -/
+def mk (n : ℕ) : reducedCyclicCocycles R A M n →ₗ[R] reducedCyclicCohomology R A M n :=
+  (reducedCyclicCochainComplex R A M).moduleCatCohomologyClassOfIso
+    (fun n ↦ reducedCyclicCochains R A M n) (reducedCyclicCocycles R A M)
+    (reducedCyclicCochainComplexXIso R A M) (mem_reducedCyclicCocycles_iff_complex R A M) n
+
+/-- The class of a reduced cyclic cocycle is the homology class of the corresponding cycle. -/
+private theorem mk_apply (n : ℕ) (phi : reducedCyclicCocycles R A M n) :
+    mk R A M n phi =
+      (reducedCyclicCochainComplex R A M).homologyπ n (toCycles R A M n phi) :=
+  (reducedCyclicCochainComplex R A M).moduleCatCohomologyClassOfIso_apply
+    (fun n ↦ reducedCyclicCochains R A M n) (reducedCyclicCocycles R A M)
+    (reducedCyclicCochainComplexXIso R A M) (mem_reducedCyclicCocycles_iff_complex R A M) n phi
+
+/-- Every reduced cyclic cohomology class is represented by a reduced cyclic cocycle. -/
+theorem mk_surjective (n : ℕ) : Function.Surjective (mk R A M n) := by
+  exact (reducedCyclicCochainComplex R A M).moduleCatCohomologyClassOfIso_surjective
+    (fun n ↦ reducedCyclicCochains R A M n) (reducedCyclicCocycles R A M)
+    (reducedCyclicCochainComplexXIso R A M) (mem_reducedCyclicCocycles_iff_complex R A M) n
+
+/-- A reduced cyclic cocycle has zero cohomology class exactly when it is a reduced cyclic
+coboundary. -/
+@[simp]
+theorem mk_eq_zero_iff (n : ℕ) (phi : reducedCyclicCocycles R A M n) :
+    mk R A M n phi = 0 ↔
+      (phi : reducedCyclicCochains R A M n) ∈ reducedCyclicCoboundaries R A M n := by
+  exact (reducedCyclicCochainComplex R A M).moduleCatCohomologyClassOfIso_eq_zero_iff
+    (fun n ↦ reducedCyclicCochains R A M n) (reducedCyclicCocycles R A M)
+    (reducedCyclicCoboundaries R A M) (reducedCyclicCochainComplexXIso R A M)
+    (mem_reducedCyclicCocycles_iff_complex R A M)
+    (mem_reducedCyclicCoboundaries_iff_complex R A M) n phi
+
+/-- Two reduced cyclic cocycles have the same class exactly when they differ by a reduced cyclic
+coboundary. -/
+theorem mk_eq_mk_iff (n : ℕ) (phi psi : reducedCyclicCocycles R A M n) :
+    mk R A M n phi = mk R A M n psi ↔
+      (phi : reducedCyclicCochains R A M n) - psi ∈ reducedCyclicCoboundaries R A M n := by
+  exact (reducedCyclicCochainComplex R A M).moduleCatCohomologyClassOfIso_eq_iff
+    (fun n ↦ reducedCyclicCochains R A M n) (reducedCyclicCocycles R A M)
+    (reducedCyclicCoboundaries R A M) (reducedCyclicCochainComplexXIso R A M)
+    (mem_reducedCyclicCocycles_iff_complex R A M)
+    (mem_reducedCyclicCoboundaries_iff_complex R A M) n phi psi
+
+end reducedCyclicCohomology
+
+end Cohomology
 
 section Map
 
@@ -238,6 +393,14 @@ theorem reducedCyclicHochschildCoboundary_reducedCyclicCochainsMap
   exact cyclicHochschildCoboundary_cyclicCochainsMap f.toNonUnitalAlgHom
     (phi : cyclicCochains R B M n)
 
+/-- Pullback along a unital algebra homomorphism sends reduced cyclic cocycles to reduced cyclic
+cocycles. -/
+theorem reducedCyclicCochainsMap_mem_reducedCyclicCocycles (f : A →ₐ[R] B) {n : ℕ}
+    (phi : reducedCyclicCocycles R B M n) :
+    reducedCyclicCochainsMap M f n phi ∈ reducedCyclicCocycles R A M n := by
+  rw [mem_reducedCyclicCocycles_iff, reducedCyclicHochschildCoboundary_reducedCyclicCochainsMap,
+    phi.2, map_zero]
+
 end Map
 
 section ComplexMap
@@ -297,6 +460,24 @@ def map (f : A →ₐ[R] B) (n : ℕ) :
     reducedCyclicCohomology R B M n ⟶ reducedCyclicCohomology R A M n :=
   HomologicalComplex.homologyMap (reducedCyclicCochainComplexMap M f) n
 
+/-- The induced map sends the class of a reduced cocycle to the class of its pullback. -/
+@[simp]
+theorem map_mk (f : A →ₐ[R] B) {n : ℕ} (phi : reducedCyclicCocycles R B M n) :
+    map M f n (mk R B M n phi) =
+      mk R A M n
+        ⟨reducedCyclicCochainsMap M f n phi,
+          reducedCyclicCochainsMap_mem_reducedCyclicCocycles (R := R) (M := M) f phi⟩ := by
+  rw [map, mk_apply, mk_apply, ← ConcreteCategory.comp_apply,
+    HomologicalComplex.homologyπ_naturality, ConcreteCategory.comp_apply]
+  congr 1
+  apply (reducedCyclicCochainComplex R A M).moduleCat_iCycles_injective n
+  rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply, iCycles_toCycles, iCycles_toCycles,
+    -- Insert a `hom ≫ inv` pair so that the elementwise `reducedCyclicCochainComplexMap_f_apply`,
+    -- which is stated through `reducedCyclicCochainComplexXIso`, can fire.
+    ← Iso.hom_inv_id_apply (reducedCyclicCochainComplexXIso R A M n)
+      ((reducedCyclicCochainComplexMap M f).f n _),
+    reducedCyclicCochainComplexMap_f_apply, Iso.inv_hom_id_apply]
+
 /-- The identity homomorphism induces the identity on reduced cyclic cohomology. -/
 @[simp]
 theorem map_id (n : ℕ) : map M (AlgHom.id R A) n = 𝟙 _ := by
@@ -312,26 +493,10 @@ end reducedCyclicCohomology
 
 end ComplexMap
 
-section ComplexKernel
+section Inclusion
 
-variable (R A : Type u) (M : Type*) [CommRing R] [Semiring A] [Algebra R A]
+variable (R : Type*) (A : Type u) (M : Type*) [CommRing R] [Semiring A] [Algebra R A]
   [AddCommGroup M] [Module R M]
-
-/-- Restriction of cyclic cochain complexes along the scalar inclusion. -/
-def scalarCyclicRestrictionComplexMap :
-    cyclicCochainComplex R A M ⟶ cyclicCochainComplex R R M :=
-  cyclicCochainComplexMap M (Algebra.ofId R A).toNonUnitalAlgHom
-
-/-- The components of scalar restriction of cyclic cochain complexes are scalar restriction of
-cyclic cochains. -/
-@[reassoc, elementwise]
-theorem scalarCyclicRestrictionComplexMap_f (n : ℕ) :
-    (scalarCyclicRestrictionComplexMap R A M).f n ≫
-        (cyclicCochainComplexXIso R R M n).hom =
-      (cyclicCochainComplexXIso R A M n).hom ≫
-        ModuleCat.ofHom (scalarCyclicRestriction R A M n) := by
-  rw [scalarCyclicRestrictionComplexMap, cyclicCochainComplexMap_f,
-    scalarCyclicRestriction]
 
 /-- The inclusion of the reduced cyclic cochain complex into the full cyclic cochain complex. -/
 def reducedCyclicCochainComplexι :
@@ -356,6 +521,72 @@ theorem reducedCyclicCochainComplexι_f (n : ℕ) :
       (reducedCyclicCochainComplexXIso R A M n).hom ≫
         ModuleCat.ofHom (reducedCyclicCochains R A M n).subtype := by
   simp [reducedCyclicCochainComplexι, Category.assoc]
+
+end Inclusion
+
+section ToCyclic
+
+variable (R : Type*) (A : Type u) (M : Type*) [CommRing R] [Ring A] [Algebra R A]
+  [AddCommGroup M] [Module R M]
+
+namespace reducedCyclicCohomology
+
+/-- The map from reduced cyclic cohomology to cyclic cohomology induced by the inclusion of
+reduced cyclic cochains. -/
+def toCyclic (n : ℕ) : reducedCyclicCohomology R A M n ⟶ cyclicCohomology R A M n :=
+  HomologicalComplex.homologyMap (reducedCyclicCochainComplexι R A M) n
+
+variable {R A M}
+
+/-- The class of a reduced cyclic cocycle maps to its class as a cyclic cocycle. -/
+@[simp]
+theorem toCyclic_mk {n : ℕ} (phi : reducedCyclicCocycles R A M n) :
+    toCyclic R A M n (mk R A M n phi) =
+      cyclicCohomology.mk R A M n
+        ⟨_, coe_mem_cyclicCocycles_iff_mem_reducedCyclicCocycles.2 phi.2⟩ := by
+  rw [toCyclic, mk_apply]
+  refine (HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk _ _ _ _ _).trans
+    (cyclicCohomology.mk_eq_homologyπ R A M _ _ ?_).symm
+  rw [HomologicalComplex.iCycles_moduleCatCyclesMk, reducedCyclicCochainComplexι_f_apply,
+    Iso.inv_hom_id_apply]
+
+/-- The map to cyclic cohomology is natural for unital algebra homomorphisms. -/
+theorem toCyclic_map {B : Type u} [Ring B] [Algebra R B] (f : A →ₐ[R] B) (n : ℕ)
+    (c : reducedCyclicCohomology R B M n) :
+    toCyclic R A M n (map M f n c) =
+      cyclicCohomology.map M (f : A →ₙₐ[R] B) n (toCyclic R B M n c) := by
+  obtain ⟨phi, rfl⟩ := mk_surjective R B M n c
+  simp only [map_mk, toCyclic_mk, cyclicCohomology.map_mk]
+  refine congrArg _ (Subtype.ext ?_)
+  rw [coe_reducedCyclicCochainsMap_apply]
+  -- Both sides pull back along the underlying linear map of `f`, read once through the algebra
+  -- homomorphism and once through the nonunital algebra homomorphism.
+  rfl
+
+end reducedCyclicCohomology
+
+end ToCyclic
+
+section ComplexKernel
+
+variable (R A : Type u) (M : Type*) [CommRing R] [Semiring A] [Algebra R A]
+  [AddCommGroup M] [Module R M]
+
+/-- Restriction of cyclic cochain complexes along the scalar inclusion. -/
+def scalarCyclicRestrictionComplexMap :
+    cyclicCochainComplex R A M ⟶ cyclicCochainComplex R R M :=
+  cyclicCochainComplexMap M (Algebra.ofId R A).toNonUnitalAlgHom
+
+/-- The components of scalar restriction of cyclic cochain complexes are scalar restriction of
+cyclic cochains. -/
+@[reassoc, elementwise]
+theorem scalarCyclicRestrictionComplexMap_f (n : ℕ) :
+    (scalarCyclicRestrictionComplexMap R A M).f n ≫
+        (cyclicCochainComplexXIso R R M n).hom =
+      (cyclicCochainComplexXIso R A M n).hom ≫
+        ModuleCat.ofHom (scalarCyclicRestriction R A M n) := by
+  rw [scalarCyclicRestrictionComplexMap, cyclicCochainComplexMap_f,
+    scalarCyclicRestriction]
 
 /-- The reduced-complex inclusion followed by scalar restriction is zero. -/
 @[reassoc (attr := simp)]

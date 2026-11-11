@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.SkewAdjoint
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Geometry.Symplectic.Darboux.Basis
@@ -34,7 +35,12 @@ The underlying algebraic statement is available separately
 hypotheses are a complex structure `J` compatible with `ω` and an arbitrary pairwise commuting
 family `f` of `J`-complex-linear maps preserving `ω`, with no group, topology or norm. It yields a
 Darboux basis with `pₖ = J qₖ` in which each `fᵢ` rotates every line `span(qₖ, J qₖ)` by a
-complex number of modulus one. For a compact abelian group,
+complex number of modulus one. The same splitting works for any commuting family of
+`J`-complex-linear maps preserving the symplectic complements of their joint complex eigenlines
+(`TauCeti.SymplecticForm.exists_isDarbouxBasis_forall_apply_eq_of_forall_mapsTo`), in particular
+for commuting `J`-complex-linear elements of the symplectic Lie algebra `sp(V, ω)`
+(`TauCeti.SymplecticForm.exists_isDarbouxBasis_forall_apply_eq_of_skewAdjoint`), which then act
+on each line by an arbitrary complex number. For a compact abelian group,
 `TauCeti.SymplecticForm.exists_compatible_forall_isComplexLinearMap` supplies `J`, and continuity
 of `π` makes the rotation numbers continuous characters of `G`.
 
@@ -46,6 +52,9 @@ several times, and a trivial character marks a fixed direction.
 * `TauCeti.SymplecticForm.exists_isDarbouxBasis_forall_apply_eq_of_pairwise_commute`: a
   commuting family of complex-linear symplectic maps is simultaneously diagonal, by unit complex
   numbers, in a Darboux basis adapted to `J`.
+* `TauCeti.SymplecticForm.exists_isDarbouxBasis_forall_apply_eq_of_skewAdjoint`: a commuting
+  family of complex-linear elements of `sp(V, ω)` is simultaneously diagonal, by complex numbers,
+  in a Darboux basis adapted to `J`.
 * `TauCeti.SymplecticForm.exists_isDarbouxBasis_forall_apply_eq`: the weight decomposition of a
   symplectic representation of a compact commutative group.
 
@@ -142,21 +151,79 @@ private theorem coe_lineBasis_apply (J : AlmostComplexStructure V) {q : V} (hq :
     (k : Fin 1 × Fin 2) : (lineBasis J hq k : V) = ![q, J q] k.2 := by
   simp [lineBasis, Basis.span_apply]
 
+/-- The symplectic complement of a complex line `span(q, J q)` of a nonzero vector has smaller
+dimension than the ambient space. -/
+private theorem finrank_orthogonal_span_pair_lt [FiniteDimensional ℝ V] {q : V} (hq : q ≠ 0) :
+    finrank ℝ (ω.orthogonal (Submodule.span ℝ {q, J q})) < finrank ℝ V := by
+  rw [ω.finrank_orthogonal]
+  have hUpos : 0 < finrank ℝ V := Module.finrank_pos_iff_exists_ne_zero.2 ⟨q, hq⟩
+  have hPpos : 0 < finrank ℝ (Submodule.span ℝ {q, J q}) :=
+    Module.finrank_pos_iff_exists_ne_zero.2
+      ⟨⟨q, Submodule.subset_span (by simp)⟩, by simpa using hq⟩
+  omega
+
+/-- The basis `(q, J q)` of a complex line with `ω(q, J q) = 1` is a Darboux basis of the
+restriction of `ω` to the line, whenever the line has a symplectic complement. -/
+private theorem isDarbouxBasis_restrict_lineBasis {q : V} (hq : q ≠ 0) (hqJq : ω q (J q) = 1)
+    (hcompl : IsCompl (Submodule.span ℝ {q, J q}) (ω.orthogonal (Submodule.span ℝ {q, J q}))) :
+    (ω.restrict (Submodule.span ℝ {q, J q})
+      (ω.toBilinForm.nondegenerate_restrict_of_disjoint_orthogonal ω.isRefl
+        hcompl.disjoint)).IsDarbouxBasis (lineBasis J hq) := by
+  refine ⟨fun i j ↦ ?_, fun i j ↦ ?_, fun i j ↦ ?_⟩
+  · simp [coe_lineBasis_apply]
+  · simp [coe_lineBasis_apply]
+  · obtain rfl := Subsingleton.elim i j
+    simp [coe_lineBasis_apply, hqJq]
+
+/-- The invariance hypothesis of
+`TauCeti.SymplecticForm.exists_isDarbouxBasis_forall_apply_eq_of_forall_mapsTo` passes to a
+subspace `W` invariant under `J` and the family: the symplectic complement in `W` of a complex line
+of `W` is the intersection of `W` with its symplectic complement in `V`. -/
+private theorem forall_mapsTo_orthogonal_restrict {ι : Type*} {f : ι → V →ₗ[ℝ] V}
+    {W : Submodule ℝ V} (hW : (ω.toBilinForm.restrict W).Nondegenerate) (hWJ : ∀ x ∈ W, J x ∈ W)
+    (hWf : ∀ i, ∀ x ∈ W, f i x ∈ W)
+    (hf : ∀ i q, ω q (J q) = 1 → (∀ j, ∃ a b : ℝ, f j q = a • q + b • J q) →
+      ∀ x ∈ ω.orthogonal (Submodule.span ℝ {q, J q}),
+        f i x ∈ ω.orthogonal (Submodule.span ℝ {q, J q}))
+    (i : ι) (r : W) (hr : ω.restrict W hW r (J.restrict W hWJ r) = 1)
+    (heig : ∀ j, ∃ a b : ℝ, (f j).restrict (hWf j) r = a • r + b • J.restrict W hWJ r) :
+    ∀ x ∈ (ω.restrict W hW).orthogonal (Submodule.span ℝ {r, J.restrict W hWJ r}),
+      (f i).restrict (hWf i) x ∈
+        (ω.restrict W hW).orthogonal (Submodule.span ℝ {r, J.restrict W hWJ r}) := by
+  intro x hx
+  have hr' : ω r (J r) = 1 := by simpa using hr
+  have heig' (j : ι) : ∃ a b : ℝ, f j r = a • (r : V) + b • J r := by
+    obtain ⟨a, b, hab⟩ := heig j
+    exact ⟨a, b, by simpa using congrArg Subtype.val hab⟩
+  simp only [mem_orthogonal_span_iff, Set.mem_insert_iff, Set.mem_singleton_iff,
+    forall_eq_or_imp, forall_eq, restrict_toBilinForm, LinearMap.BilinForm.restrict_apply,
+    AlmostComplexStructure.coe_restrict_apply, LinearMap.domRestrict_apply,
+    LinearMap.coe_restrict_apply] at hx ⊢
+  have h := hf i r hr' heig' x (by
+    simp only [mem_orthogonal_span_iff, Set.mem_insert_iff, Set.mem_singleton_iff,
+      forall_eq_or_imp, forall_eq]
+    exact hx)
+  simpa only [mem_orthogonal_span_iff, Set.mem_insert_iff, Set.mem_singleton_iff,
+    forall_eq_or_imp, forall_eq] using h
+
 /-- The induction on the dimension behind
-`TauCeti.SymplecticForm.exists_isDarbouxBasis_forall_apply_eq_of_pairwise_commute`: split off the
+`TauCeti.SymplecticForm.exists_isDarbouxBasis_forall_apply_eq_of_forall_mapsTo`: split off the
 complex line of a joint eigenvector and recurse on its symplectic complement. -/
 private theorem exists_isDarbouxBasis_aux {ι : Type*} (n : ℕ) :
     ∀ {U : Type u} [AddCommGroup U] [Module ℝ U] [FiniteDimensional ℝ U]
       (ω : SymplecticForm U) (J : AlmostComplexStructure U) (f : ι → U →ₗ[ℝ] U),
       ω.Compatible J → (Pairwise fun i j ↦ Commute (f i) (f j)) →
-      (∀ i x y, ω (f i x) (f i y) = ω x y) → (∀ i, IsComplexLinearMap J J (f i)) →
+      (∀ i, IsComplexLinearMap J J (f i)) →
+      (∀ i q, ω q (J q) = 1 → (∀ j, ∃ a b : ℝ, f j q = a • q + b • J q) →
+        ∀ x ∈ ω.orthogonal (Submodule.span ℝ {q, J q}),
+          f i x ∈ ω.orthogonal (Submodule.span ℝ {q, J q})) →
       finrank ℝ U ≤ n →
       ∃ (m : ℕ) (b : Basis (Fin m × Fin 2) ℝ U), ω.IsDarbouxBasis b ∧
         (∀ k, b (k, 1) = J (b (k, 0))) ∧
         ∀ i k, ∃ c : ℂ, f i (b (k, 0)) = c.re • b (k, 0) + c.im • b (k, 1) := by
   induction n using Nat.strong_induction_on with
   | _ n ih =>
-  intro U _ _ _ ω J f hJ hcomm hf hfJ hn
+  intro U _ _ _ ω J f hJ hcomm hfJ hf hn
   rcases subsingleton_or_nontrivial U with _ | _
   · exact ⟨0, Basis.empty _, ⟨fun i ↦ i.elim0, fun i ↦ i.elim0, fun i ↦ i.elim0⟩,
       fun k ↦ k.elim0, fun _ k ↦ k.elim0⟩
@@ -164,14 +231,12 @@ private theorem exists_isDarbouxBasis_aux {ι : Type*} (n : ℕ) :
   -- symplectic complement of that line are invariant, and the complement is again a symplectic
   -- space with a compatible complex structure, of smaller dimension.
   obtain ⟨c, q, hqJq, hcq⟩ := exists_jointEigenvector_apply_eq_one hJ f hcomm hfJ
-  have hq : q ≠ 0 := by
-    rintro rfl
-    simp at hqJq
+  have hq : q ≠ 0 := fun h ↦ by simp [h] at hqJq
   -- The line `span(q, J q)` and its symplectic complement `W`, invariant under `J` and `f`.
   have hcompl : IsCompl (Submodule.span ℝ {q, J q}) (ω.orthogonal (Submodule.span ℝ {q, J q})) :=
     (LinearMap.BilinForm.isCompl_orthogonal_iff_disjoint ω.isRefl).2
       (ω.disjoint_span_pair_orthogonal (by rw [hqJq]; exact one_ne_zero))
-  have hWf (i : ι) := mapsTo_orthogonal_span_pair (hf i) (hfJ i) hqJq (hcq i)
+  have hWf (i : ι) := hf i q hqJq fun j ↦ ⟨_, _, hcq j⟩
   have hWJ := mapsTo_orthogonal_span_pair_apply hJ.invariant q
   let JW := J.restrict _ hWJ
   let ωW := ω.restrict (ω.orthogonal (Submodule.span ℝ {q, J q}))
@@ -179,28 +244,15 @@ private theorem exists_isDarbouxBasis_aux {ι : Type*} (n : ℕ) :
   let fW (i : ι) := (f i).restrict (hWf i)
   have hJW : ωW.Compatible JW := hJ.restrict _ _ hWJ
   have hcommW : Pairwise fun i j ↦ Commute (fW i) (fW j) := fun i j hij ↦
-    LinearMap.ext fun x ↦ Subtype.ext (LinearMap.congr_fun (hcomm hij).eq x)
+    LinearMap.restrict_commute (hcomm hij) (hWf i) (hWf j)
   have hfJW (i : ι) : IsComplexLinearMap JW JW (fW i) :=
-    (isComplexLinearMap_iff_apply _ _ _).2 fun x ↦
-      Subtype.ext (by simp [JW, fW, (isComplexLinearMap_iff_apply _ _ _).1 (hfJ i)])
-  have hqP : q ∈ Submodule.span ℝ {q, J q} := Submodule.subset_span (by simp)
-  have hlt : finrank ℝ (ω.orthogonal (Submodule.span ℝ {q, J q})) < finrank ℝ U := by
-    rw [ω.finrank_orthogonal]
-    have hUpos : 0 < finrank ℝ U := Module.finrank_pos_iff_exists_ne_zero.2 ⟨q, hq⟩
-    have hPpos : 0 < finrank ℝ (Submodule.span ℝ {q, J q}) :=
-      Module.finrank_pos_iff_exists_ne_zero.2 ⟨⟨q, hqP⟩, by simpa using hq⟩
-    omega
+    (hfJ i).restrict hWJ (hWf i)
+  have hfW := forall_mapsTo_orthogonal_restrict
+    (ω.nondegenerate_restrict_orthogonal_of_isCompl hcompl) hWJ hWf hf
   obtain ⟨m, bW, hbW, hJbW, hrotW⟩ :=
-    ih _ (lt_of_lt_of_le hlt hn) ωW JW fW hJW hcommW (fun i x y ↦ hf i x y) hfJW le_rfl
-  -- The basis `(q, J q)` of the line is a Darboux basis of the restriction of `ω`.
-  have hbP : (ω.restrict (Submodule.span ℝ {q, J q})
-      (ω.toBilinForm.nondegenerate_restrict_of_disjoint_orthogonal ω.isRefl
-        hcompl.disjoint)).IsDarbouxBasis (lineBasis J hq) := by
-    refine ⟨fun i j ↦ ?_, fun i j ↦ ?_, fun i j ↦ ?_⟩
-    · simp [coe_lineBasis_apply]
-    · simp [coe_lineBasis_apply]
-    · obtain rfl := Subsingleton.elim i j
-      simp [coe_lineBasis_apply, hqJq]
+    ih _ (lt_of_lt_of_le (finrank_orthogonal_span_pair_lt hq) hn) ωW JW fW hJW hcommW hfJW hfW
+      le_rfl
+  have hbP := isDarbouxBasis_restrict_lineBasis hq hqJq hcompl
   -- Concatenate the bases of the line and of `W` along their direct sum.
   let σ : (Fin 1 × Fin 2) ⊕ (Fin m × Fin 2) ≃ Fin (1 + m) × Fin 2 :=
     (Equiv.sumProdDistrib _ _ _).symm.trans (finSumFinEquiv.prodCongr (Equiv.refl _))
@@ -229,6 +281,33 @@ private theorem exists_isDarbouxBasis_aux {ι : Type*} (n : ℕ) :
 
 /-! ### Simultaneous diagonalization -/
 
+/-- **Simultaneous normal form of commuting complex-linear maps.** Let `J` be a complex structure
+compatible with a symplectic form `ω` on a finite-dimensional space, and let `f` be a pairwise
+commuting family of `J`-complex-linear maps. Suppose that each `f i` preserves the symplectic
+complement of every complex line `span(q, J q)`, normalized by `ω(q, J q) = 1`, on which all the
+`f j` act by complex numbers. Then there is a Darboux basis `(q₁, p₁, …, qₙ, pₙ)` with
+`pₖ = J qₖ` in which every `f i` acts on every line `span(qₖ, pₖ)` by a complex number
+`c i k = a + b i`: `f i qₖ = a qₖ + b pₖ` and `f i pₖ = -b qₖ + a pₖ`.
+
+The invariance hypothesis holds for maps preserving `ω`
+(`TauCeti.SymplecticForm.exists_isDarbouxBasis_forall_apply_eq_of_pairwise_commute`) and for
+elements of `sp(V, ω)`
+(`TauCeti.SymplecticForm.exists_isDarbouxBasis_forall_apply_eq_of_skewAdjoint`). -/
+theorem exists_isDarbouxBasis_forall_apply_eq_of_forall_mapsTo [FiniteDimensional ℝ V]
+    (hJ : ω.Compatible J) {ι : Type*} (f : ι → V →ₗ[ℝ] V)
+    (hcomm : Pairwise fun i j ↦ Commute (f i) (f j)) (hfJ : ∀ i, IsComplexLinearMap J J (f i))
+    (hf : ∀ i q, ω q (J q) = 1 → (∀ j, ∃ a b : ℝ, f j q = a • q + b • J q) →
+      ∀ x ∈ ω.orthogonal (Submodule.span ℝ {q, J q}),
+        f i x ∈ ω.orthogonal (Submodule.span ℝ {q, J q})) :
+    ∃ (n : ℕ) (b : Basis (Fin n × Fin 2) ℝ V) (c : ι → Fin n → ℂ), ω.IsDarbouxBasis b ∧
+      (∀ k, b (k, 1) = J (b (k, 0))) ∧ ∀ i k,
+        f i (b (k, 0)) = (c i k).re • b (k, 0) + (c i k).im • b (k, 1) ∧
+        f i (b (k, 1)) = -(c i k).im • b (k, 0) + (c i k).re • b (k, 1) := by
+  obtain ⟨n, b, hb, hbJ, hc⟩ := exists_isDarbouxBasis_aux _ ω J f hJ hcomm hfJ hf le_rfl
+  choose c hc using hc
+  refine ⟨n, b, c, hb, hbJ, fun i k ↦ ⟨hc i k, ?_⟩⟩
+  rw [hbJ k, (hfJ i).apply_apply_eq_of_apply_eq (by rw [hc i k, hbJ]), neg_smul]
+
 /-- **Simultaneous diagonalization of commuting complex-linear symplectic maps.** Let `J` be a
 complex structure compatible with a symplectic form `ω` on a finite-dimensional space, and let
 `f` be a pairwise commuting family of `J`-complex-linear maps preserving `ω`. Then there is a
@@ -243,18 +322,57 @@ theorem exists_isDarbouxBasis_forall_apply_eq_of_pairwise_commute [FiniteDimensi
       (∀ k, b (k, 1) = J (b (k, 0))) ∧ ∀ i k,
         f i (b (k, 0)) = (c i k : ℂ).re • b (k, 0) + (c i k : ℂ).im • b (k, 1) ∧
         f i (b (k, 1)) = -(c i k : ℂ).im • b (k, 0) + (c i k : ℂ).re • b (k, 1) := by
-  obtain ⟨n, b, hb, hbJ, hc⟩ := exists_isDarbouxBasis_aux _ ω J f hJ hcomm hf hfJ le_rfl
-  choose c hc using hc
+  obtain ⟨n, b, c, hb, hbJ, hc⟩ := exists_isDarbouxBasis_forall_apply_eq_of_forall_mapsTo hJ f
+    hcomm hfJ fun i q hq heig ↦ by
+      obtain ⟨a, b, h⟩ := heig i
+      exact mapsTo_orthogonal_span_pair (hf i) (hfJ i) hq h
   have hq (k : Fin n) : ω (b (k, 0)) (J (b (k, 0))) ≠ 0 := by
     rw [← hbJ, hb.apply_fst_snd]
     simp
   have hnorm (i : ι) (k : Fin n) : ‖c i k‖ = 1 := by
-    have h := sq_add_sq_eq_one_of_apply_eq (hf i) (hfJ i) (hq k) (by rw [hc i k, hbJ])
+    have h := sq_add_sq_eq_one_of_apply_eq (hf i) (hfJ i) (hq k) (by rw [(hc i k).1, hbJ])
     rw [Complex.norm_def, Complex.normSq_apply, ← sq, ← sq, h, Real.sqrt_one]
   let χ (i : ι) (k : Fin n) : Circle := ⟨c i k, mem_sphere_zero_iff_norm.2 (hnorm i k)⟩
-  have hχ (i : ι) (k : Fin n) : (χ i k : ℂ) = c i k := rfl
-  refine ⟨n, b, χ, hb, hbJ, fun i k ↦ ⟨by rw [hχ, hc i k], ?_⟩⟩
-  rw [hχ, hbJ k, (hfJ i).apply_apply_eq_of_apply_eq (by rw [hc i k, hbJ]), neg_smul]
+  exact ⟨n, b, χ, hb, hbJ, hc⟩
+
+/-- An element `A` of `sp(V, ω)` preserves the symplectic complement of any line on which it acts
+by a complex number. -/
+private theorem mapsTo_orthogonal_span_pair_of_skewAdjoint {A : V →ₗ[ℝ] V}
+    (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) (hAJ : IsComplexLinearMap J J A) {q : V}
+    {a b : ℝ}
+    (h : A q = a • q + b • J q) :
+    ∀ x ∈ ω.orthogonal (Submodule.span ℝ {q, J q}),
+      A x ∈ ω.orthogonal (Submodule.span ℝ {q, J q}) := by
+  intro x hx
+  simp only [mem_orthogonal_span_iff, Set.mem_insert_iff, Set.mem_singleton_iff,
+    forall_eq_or_imp, forall_eq] at hx ⊢
+  have hJq := hAJ.apply_apply_eq_of_apply_eq h
+  have e₁ := (LinearMap.mem_skewAdjointSubmodule A).1 hA q x
+  have e₂ := (LinearMap.mem_skewAdjointSubmodule A).1 hA (J q) x
+  rw [h] at e₁
+  rw [hJq] at e₂
+  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
+    Pi.neg_apply, map_neg, hx.1, hx.2, mul_zero, add_zero] at e₁ e₂
+  exact ⟨by linarith, by linarith⟩
+
+/-- **Simultaneous diagonalization in `sp(V, ω) ∩ gl(V, J)`.** Let `J` be a complex structure
+compatible with a symplectic form `ω` on a finite-dimensional space, and let `f` be a pairwise
+commuting family of `J`-complex-linear elements of the symplectic Lie algebra `sp(V, ω)`. Then
+there is a Darboux basis `(q₁, p₁, …, qₙ, pₙ)` with `pₖ = J qₖ` in which every `f i` acts on
+every line `span(qₖ, pₖ)` by a complex number `c i k = a + b i`:
+`f i qₖ = a qₖ + b pₖ` and `f i pₖ = -b qₖ + a pₖ`. -/
+theorem exists_isDarbouxBasis_forall_apply_eq_of_skewAdjoint [FiniteDimensional ℝ V]
+    (hJ : ω.Compatible J) {ι : Type*} (f : ι → V →ₗ[ℝ] V)
+    (hcomm : Pairwise fun i j ↦ Commute (f i) (f j))
+    (hf : ∀ i, f i ∈ skewAdjointLieSubalgebra ω.toBilinForm)
+    (hfJ : ∀ i, IsComplexLinearMap J J (f i)) :
+    ∃ (n : ℕ) (b : Basis (Fin n × Fin 2) ℝ V) (c : ι → Fin n → ℂ), ω.IsDarbouxBasis b ∧
+      (∀ k, b (k, 1) = J (b (k, 0))) ∧ ∀ i k,
+        f i (b (k, 0)) = (c i k).re • b (k, 0) + (c i k).im • b (k, 1) ∧
+        f i (b (k, 1)) = -(c i k).im • b (k, 0) + (c i k).re • b (k, 1) :=
+  exists_isDarbouxBasis_forall_apply_eq_of_forall_mapsTo hJ f hcomm hfJ fun i q _ heig ↦ by
+    obtain ⟨a, b, h⟩ := heig i
+    exact mapsTo_orthogonal_span_pair_of_skewAdjoint (hf i) (hfJ i) h
 
 /-- **Weight decomposition of a symplectic representation of a compact abelian group.** A
 continuous linear action `π` of a compact commutative group `G` on a finite-dimensional real space

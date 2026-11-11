@@ -145,6 +145,19 @@ theorem commonKernelHopfIdeal_comp_of_injective {K' : ι → _root_.CommHopfAlgC
     exact (hm i).eq_iff' (map_zero _)
   simp only [commonKernelHopfIdeal, hker]
 
+/-- Isomorphisms of the ambient algebra and of each generator's codomain transport the
+common-kernel ideal when the corresponding generator squares commute. -/
+theorem map_commonKernelHopfIdeal_of_comp_eq
+    {H' : _root_.CommHopfAlgCat.{v} R} {K' : ι → _root_.CommHopfAlgCat.{v} R}
+    (f : ∀ i, H ⟶ K i) (ambient : H ≅ H') (e : ∀ i, K i ≅ K' i)
+    (g : ∀ i, H' ⟶ K' i) (h : ∀ i, (ambient.inv ≫ f i) ≫ (e i).hom = g i) :
+    (commonKernelHopfIdeal f).map ambient.hom.hom = commonKernelHopfIdeal g := by
+  rw [map_commonKernelHopfIdeal]
+  rw [← commonKernelHopfIdeal_comp_of_injective
+    (fun i ↦ ambient.inv ≫ f i) (fun i ↦ (e i).hom)
+    fun i ↦ (ConcreteCategory.bijective_of_isIso (e i).hom).1]
+  exact congrArg commonKernelHopfIdeal (funext h)
+
 /-- **Dropping redundant members of a family.** If every member indexed by `κ` kills the
 common-kernel ideal of the members indexed by `ι`, then adjoining them does not change the
 common-kernel ideal.

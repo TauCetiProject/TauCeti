@@ -59,6 +59,9 @@ ground level of every layer `V ◁ G_K`, that is, of every finite Galois extensi
   `ideleLevelEquiv` and the quotient map from ideles to idele classes.
 * `TauCeti.ClassFieldTheory.globalGroundEquiv_mk`: the class of an idele of `K` goes to the class
   of its extension to `Kˢ`.
+* `TauCeti.ClassFieldTheory.coe_ideleClassLevelEquiv_ideleClassExtension` and
+  `TauCeti.ClassFieldTheory.LayerRestriction.groundInclusion_ideleClassLevelEquiv`: extension of
+  idele classes agrees with inclusion of levels.
 
 ## References
 
@@ -202,6 +205,36 @@ theorem ideleClassHom_ideleLevelEquiv (a : IdeleGroup (𝓞 E) E) :
   rw [ideleLevelEquiv_apply_coe, ideleClassHom_hom_apply, ideleClassLevelEquiv_mk]
 
 end Level
+
+/-- **Extension of idele classes is inclusion of levels.** For finite subextensions `F ⊆ E`
+inside `Kˢ`, extending an idele class from `F` to `E` does not change its image in the ambient
+idele-class formation. -/
+theorem coe_ideleClassLevelEquiv_ideleClassExtension
+    {F E : IntermediateField K (SeparableClosure K)} [NumberField F] [NumberField E]
+    [Algebra F E] [IsScalarTower F E (SeparableClosure K)]
+    {U W : OpenSubgroup (AbsoluteGaloisGroup K)}
+    (hF : fixedField U.toSubgroup = F) (hE : fixedField W.toSubgroup = E)
+    (c : IdeleClassGroup (𝓞 F) F) :
+    (ideleClassLevelEquiv hE (.ofMul (GlobalNumberFields.ideleClassExtension F E c)) :
+        (globalFormation K).toRep.V) =
+      (ideleClassLevelEquiv hF (.ofMul c) : (globalFormation K).toRep.V) := by
+  induction c using QuotientGroup.induction_on with | H a => ?_
+  rw [GlobalNumberFields.ideleClassExtension_mk, ideleClassLevelEquiv_mk,
+    ideleClassLevelEquiv_mk, ideleCoeffOfIntermediateField_ideleExtension]
+
+/-- **The ground inclusion of the idele-class formation is extension of idele classes.**
+If a layer restriction raises the ground field from `F` to `E`, its ground inclusion is the
+usual map `C_F → C_E` under the fixed-field level identifications. -/
+theorem LayerRestriction.groundInclusion_ideleClassLevelEquiv
+    {F E : IntermediateField K (SeparableClosure K)} [NumberField F] [NumberField E]
+    [Algebra F E] [IsScalarTower F E (SeparableClosure K)]
+    {small big : NormalLayer (AbsoluteGaloisGroup K)} (T : LayerRestriction small big)
+    (hF : fixedField big.ground.toSubgroup = F)
+    (hE : fixedField small.ground.toSubgroup = E) (c : IdeleClassGroup (𝓞 F) F) :
+    T.groundInclusion (globalFormation K) (ideleClassLevelEquiv hF (.ofMul c)) =
+      ideleClassLevelEquiv hE (.ofMul (GlobalNumberFields.ideleClassExtension F E c)) := by
+  apply Subtype.ext
+  rw [groundInclusion_apply_coe, coe_ideleClassLevelEquiv_ideleClassExtension hF hE]
 
 /-! ### The ground level -/
 

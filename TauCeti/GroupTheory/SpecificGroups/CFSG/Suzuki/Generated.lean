@@ -44,10 +44,11 @@ of the Suzuki group by its generators, so clients need not unfold the subgroup d
 * `TauCeti.Suzuki.unipotent_inj` and `TauCeti.Suzuki.unipotent_eq_one_iff`: a unipotent
   generator determines its parameters, and is the identity exactly at `(0, 0)`.
 * `TauCeti.Suzuki.weyl_mul_weyl`: the Weyl generator is an involution.
-* `TauCeti.Suzuki.isPGroup_unipotentSubgroupOf`: the unipotent subgroup is a `2`-group.
-* `TauCeti.Suzuki.exists_pow_two_pow_succ_ne_sq`: for `n ≠ 0` the generator field has a unit
-  `κ` with `κ^θ ≠ κ^2`, so the torus of the Suzuki group acts nontrivially on its unipotent
-  generators.
+* `TauCeti.Suzuki.isPGroup_unipotentSubgroup` and `TauCeti.Suzuki.isPGroup_unipotentSubgroupOf`:
+  the unipotent subgroup is a `2`-group.
+* `TauCeti.Suzuki.exists_pow_two_pow_succ_ne_sq_iff`: the generator field has a unit `κ` with
+  `κ^θ ≠ κ^2` exactly when `n ≠ 0`, so for `n ≠ 0` the torus of the Suzuki group acts
+  nontrivially on its unipotent generators.
 
 ## References
 
@@ -68,49 +69,44 @@ namespace Suzuki
 
 variable (n : ℕ)
 
-/-- The generator field of a Suzuki group has `2 ^ (2n + 1)` elements. -/
-private theorem card_galoisField : Nat.card (GaloisField 2 (2 * n + 1)) = 2 ^ (2 * n + 1) :=
-  GaloisField.card 2 (2 * n + 1) (by omega)
-
 /-- Applying `x ↦ x ^ 2 ^ (n + 1)` twice on `𝔽_(2^(2n+1))` is the Frobenius `x ↦ x ^ 2`. -/
 @[simp]
 theorem pow_two_pow_succ_pow_two_pow_succ (x : GaloisField 2 (2 * n + 1)) :
     (x ^ 2 ^ (n + 1)) ^ 2 ^ (n + 1) = x ^ 2 := by
   let _ : Fintype (GaloisField 2 (2 * n + 1)) := Fintype.ofFinite _
-  have hcard : Fintype.card (GaloisField 2 (2 * n + 1)) = 2 ^ (2 * n + 1) := by
-    rw [← Nat.card_eq_fintype_card, card_galoisField]
-  have hexp : 2 ^ (n + 1) * 2 ^ (n + 1) = 2 ^ (2 * n + 1) * 2 := by
-    rw [← pow_add, ← pow_succ]
-    congr 1
-    omega
-  rw [← pow_mul, hexp, pow_mul, ← hcard, FiniteField.pow_card]
+  have hcard : Fintype.card (GaloisField 2 (2 * n + 1)) = 2 ^ (2 * n + 1) :=
+    Nat.card_eq_fintype_card.symm.trans (GaloisField.card 2 _ (by omega))
+  -- The exponent `2 ^ (n + 1)` squares to twice the field size `2 ^ (2n + 1)`.
+  have hexp : 2 ^ (n + 1) * 2 ^ (n + 1) = 2 ^ (2 * n + 1) * 2 := by ring
+  calc (x ^ 2 ^ (n + 1)) ^ 2 ^ (n + 1) = (x ^ 2 ^ (2 * n + 1)) ^ 2 := by
+        rw [← pow_mul, hexp, pow_mul]
+    _ = x ^ 2 := by rw [← hcard, FiniteField.pow_card]
 
-/-- For `n ≠ 0`, some unit `κ` of `𝔽_(2^(2n+1))` has `κ ^ 2 ^ (n + 1) ≠ κ ^ 2`. This fails at
-`n = 0`, where the field is `𝔽₂`. -/
-theorem exists_pow_two_pow_succ_ne_sq (hn : n ≠ 0) :
-    ∃ κ : (GaloisField 2 (2 * n + 1))ˣ,
-      (κ : GaloisField 2 (2 * n + 1)) ^ 2 ^ (n + 1) ≠ (κ : GaloisField 2 (2 * n + 1)) ^ 2 := by
+/-- Some unit `κ` of `𝔽_(2^(2n+1))` has `κ ^ 2 ^ (n + 1) ≠ κ ^ 2` exactly when `n ≠ 0`; at
+`n = 0` the two exponents agree. -/
+@[simp]
+theorem exists_pow_two_pow_succ_ne_sq_iff :
+    (∃ κ : (GaloisField 2 (2 * n + 1))ˣ,
+      (κ : GaloisField 2 (2 * n + 1)) ^ 2 ^ (n + 1) ≠ (κ : GaloisField 2 (2 * n + 1)) ^ 2) ↔
+      n ≠ 0 := by
+  refine ⟨by rintro ⟨κ, hκ⟩ rfl; exact hκ rfl, fun hn => ?_⟩
   let _ : Fintype (GaloisField 2 (2 * n + 1)) := Fintype.ofFinite _
-  have hcard : Fintype.card (GaloisField 2 (2 * n + 1)) = 2 ^ (2 * n + 1) := by
-    rw [← Nat.card_eq_fintype_card, card_galoisField]
-  have hfour : 4 ≤ 2 ^ (n + 1) := by
-    calc 4 = 2 ^ 2 := by norm_num
-      _ ≤ 2 ^ (n + 1) := Nat.pow_le_pow_right (by norm_num) (by omega)
+  have hcard : Fintype.card (GaloisField 2 (2 * n + 1)) = 2 ^ (2 * n + 1) :=
+    Nat.card_eq_fintype_card.symm.trans (GaloisField.card 2 _ (by omega))
+  have hfour : 2 ^ 2 ≤ 2 ^ (n + 1) := Nat.pow_le_pow_right two_pos (by omega)
+  have hlt : 2 ^ (n + 1) < 2 ^ (2 * n + 1) := Nat.pow_lt_pow_right one_lt_two (by omega)
   by_contra! h
-  have hall : ∀ κ : (GaloisField 2 (2 * n + 1))ˣ, κ ^ (2 ^ (n + 1) - 2) = 1 := fun κ => by
+  have hdvd : 2 ^ (2 * n + 1) - 1 ∣ 2 ^ (n + 1) - 2 := by
+    rw [← hcard, ← FiniteField.forall_pow_eq_one_iff]
+    intro κ
     have hκ : κ ^ 2 ^ (n + 1) = κ ^ 2 := Units.ext (by simpa using h κ)
-    have : κ ^ (2 ^ (n + 1) - 2) * κ ^ 2 = κ ^ 2 := by
-      rw [← pow_add, Nat.sub_add_cancel (by omega), hκ]
-    exact mul_eq_right.mp this
-  have hdvd := (FiniteField.forall_pow_eq_one_iff _ _).1 hall
-  rw [hcard] at hdvd
-  have hlt : 2 ^ (n + 1) < 2 ^ (2 * n + 1) := Nat.pow_lt_pow_right (by norm_num) (by omega)
+    rw [pow_sub _ (by omega), hκ, mul_inv_cancel]
   have := Nat.le_of_dvd (by omega) hdvd
   omega
 
 /-- The standard unipotent matrix generator of a Suzuki group, over `𝔽_(2^(2n+1))`, where
 `x ↦ x ^ 2 ^ (n + 1)` is the field endomorphism squaring to the Frobenius. -/
-def unipotentMatrix (n : ℕ) (a b : GaloisField 2 (2 * n + 1)) :
+def unipotentMatrix (a b : GaloisField 2 (2 * n + 1)) :
     Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * n + 1)) :=
   ![![1, 0, 0, 0],
     ![a, 1, 0, 0],
@@ -118,7 +114,7 @@ def unipotentMatrix (n : ℕ) (a b : GaloisField 2 (2 * n + 1)) :
     ![a ^ 2 * a ^ 2 ^ (n + 1) + a * b + b ^ 2 ^ (n + 1), b, a, 1]]
 
 /-- The standard Weyl generator matrix of a Suzuki group. -/
-def weylMatrix (n : ℕ) : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * n + 1)) :=
+def weylMatrix : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * n + 1)) :=
   ![![0, 0, 0, 1],
     ![0, 0, 1, 0],
     ![0, 1, 0, 0],
@@ -148,15 +144,12 @@ theorem weylMatrix_apply (i j : Fin 4) :
 @[simp]
 theorem det_unipotentMatrix (a b : GaloisField 2 (2 * n + 1)) :
     (unipotentMatrix n a b).det = 1 := by
-  rw [det_succ_row_zero, Fin.sum_univ_four]
-  simp [det_fin_three, unipotentMatrix, submatrix]
+  simp [det_succ_row_zero, Fin.sum_univ_succ]
 
 /-- The Weyl generator matrix has determinant one. -/
 @[simp]
 theorem det_weylMatrix : (weylMatrix n).det = 1 := by
-  rw [det_succ_row_zero, Fin.sum_univ_four]
-  simp [det_fin_three, weylMatrix, submatrix, Fin.succAbove]
-  ring
+  norm_num [det_succ_row_zero, Fin.sum_univ_succ, Fin.succAbove]
 
 /-- A standard unipotent generator as an element of the general linear group. -/
 def unipotent (a b : GaloisField 2 (2 * n + 1)) : GL (Fin 4) (GaloisField 2 (2 * n + 1)) :=
@@ -193,15 +186,10 @@ theorem unipotent_zero_zero : unipotent n 0 0 = 1 := by
 theorem unipotent_mul_unipotent (a b c d : GaloisField 2 (2 * n + 1)) :
     unipotent n a b * unipotent n c d =
       unipotent n (a + c) (b + d + a * c ^ 2 ^ (n + 1)) := by
-  have htwo : (2 : GaloisField 2 (2 * n + 1)) = 0 := CharTwo.two_eq_zero
-  have hthree : (3 : GaloisField 2 (2 * n + 1)) = 1 := by linear_combination htwo
-  apply Matrix.GeneralLinearGroup.ext
-  intro i j
+  ext i j
   simp only [Units.val_mul, coe_unipotent]
   fin_cases i <;> fin_cases j <;>
-    simp [Matrix.mul_apply, Fin.sum_univ_four, mul_pow, add_pow_char_pow]
-  all_goals ring_nf
-  all_goals simp [htwo, hthree]
+    simp [Matrix.mul_apply, Fin.sum_univ_four, mul_pow, add_pow_char_pow] <;> grind
 
 /-- The inverse of a unipotent generator: `u(a, b)⁻¹ = u(a, b + a^(1+θ))`. -/
 theorem unipotent_inv (a b : GaloisField 2 (2 * n + 1)) :
@@ -212,28 +200,13 @@ theorem unipotent_inv (a b : GaloisField 2 (2 * n + 1)) :
   linear_combination (b + a * a ^ 2 ^ (n + 1)) *
     (CharTwo.two_eq_zero : (2 : GaloisField 2 (2 * n + 1)) = 0)
 
-/-- Every standard unipotent generator has order dividing four:
-`u(a, b)² = u(0, a^(1+θ))` and `u(0, c)² = 1`. -/
-@[simp]
-theorem unipotent_pow_four (a b : GaloisField 2 (2 * n + 1)) : unipotent n a b ^ 4 = 1 := by
-  have h2 : unipotent n a b ^ 2 = unipotent n 0 (a * a ^ 2 ^ (n + 1)) := by
-    rw [sq, unipotent_mul_unipotent, CharTwo.add_self_eq_zero, CharTwo.add_self_eq_zero, zero_add]
-  calc unipotent n a b ^ 4 = (unipotent n a b ^ 2) ^ 2 := by rw [← pow_mul]
-    _ = 1 := by
-      rw [h2, sq, unipotent_mul_unipotent]
-      simp [CharTwo.add_self_eq_zero]
-
 /-- The unipotent generators are determined by their parameters. -/
 @[simp]
 theorem unipotent_inj {a b c d : GaloisField 2 (2 * n + 1)} :
     unipotent n a b = unipotent n c d ↔ a = c ∧ b = d := by
-  refine ⟨fun h => ⟨?_, ?_⟩, fun h => by rw [h.1, h.2]⟩
-  · have := congrArg (fun g : GL (Fin 4) (GaloisField 2 (2 * n + 1)) =>
-      (g : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * n + 1))) 1 0) h
-    simpa using this
-  · have := congrArg (fun g : GL (Fin 4) (GaloisField 2 (2 * n + 1)) =>
-      (g : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * n + 1))) 3 1) h
-    simpa using this
+  refine ⟨fun h => ?_, fun h => by rw [h.1, h.2]⟩
+  have h := Units.ext_iff.mp h
+  exact ⟨by simpa using congr_fun₂ h 1 0, by simpa using congr_fun₂ h 3 1⟩
 
 /-- A unipotent generator is the identity exactly at the parameters `(0, 0)`. -/
 @[simp]
@@ -241,11 +214,16 @@ theorem unipotent_eq_one_iff {a b : GaloisField 2 (2 * n + 1)} :
     unipotent n a b = 1 ↔ a = 0 ∧ b = 0 := by
   rw [← unipotent_zero_zero n, unipotent_inj]
 
+/-- Every standard unipotent generator has order dividing four. -/
+@[simp]
+theorem unipotent_pow_four (a b : GaloisField 2 (2 * n + 1)) : unipotent n a b ^ 4 = 1 := by
+  simp [pow_succ, CharTwo.add_self_eq_zero]
+  grind
+
 /-- The Weyl generator is an involution. -/
 @[simp]
 theorem weyl_mul_weyl : weyl n * weyl n = 1 := by
-  apply Matrix.GeneralLinearGroup.ext
-  intro i j
+  ext i j
   simp only [Units.val_mul, coe_weyl]
   fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_four]
 
@@ -272,6 +250,8 @@ def suzukiGroup (n : ℕ) : Subgroup (GL (Fin 4) (GaloisField 2 (2 * n + 1))) :=
 
 namespace Suzuki
 
+variable {n : ℕ}
+
 /-- A subgroup contains the Suzuki group iff it contains every unipotent generator and the
 Weyl generator. -/
 @[simp]
@@ -297,8 +277,7 @@ theorem weyl_mem_suzukiGroup : weyl n ∈ suzukiGroup n :=
 
 /-- **A Suzuki group lies in the special linear group**: its two families of generating matrices
 have determinant one, so every element of the group does. -/
-theorem det_eq_one_of_mem_suzukiGroup (n : ℕ)
-    {g : GL (Fin 4) (GaloisField 2 (2 * n + 1))}
+theorem det_eq_one_of_mem_suzukiGroup {g : GL (Fin 4) (GaloisField 2 (2 * n + 1))}
     (hg : g ∈ suzukiGroup n) :
     (g : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * n + 1))).det = 1 := by
   have hle : suzukiGroup n ≤ (Matrix.GeneralLinearGroup.det).ker := by
@@ -309,7 +288,7 @@ theorem det_eq_one_of_mem_suzukiGroup (n : ℕ)
 
 /-! ## The unipotent subgroup -/
 
-variable (n : ℕ)
+variable (n)
 
 /-- The unipotent subgroup `U = {u(a, b)}` of `GL₄(𝔽_(2^(2n+1)))`, consisting of the standard
 unipotent generators of the Suzuki group. -/
@@ -340,10 +319,13 @@ abbrev unipotentSubgroupOf : Subgroup (suzukiGroup n) :=
   (unipotentSubgroup n).subgroupOf (suzukiGroup n)
 
 /-- The unipotent subgroup is a `2`-group: each of its elements has order dividing four. -/
-theorem isPGroup_unipotentSubgroupOf : IsPGroup 2 (unipotentSubgroupOf n) := fun g ↦ by
-  obtain ⟨a, b, hg⟩ := Subgroup.mem_subgroupOf.mp g.2
-  refine ⟨2, Subtype.ext (Subtype.ext ?_)⟩
-  simp [← hg]
+theorem isPGroup_unipotentSubgroup : IsPGroup 2 (unipotentSubgroup n) := fun g ↦ by
+  obtain ⟨a, b, hg⟩ := g.2
+  exact ⟨2, Subtype.ext (by simp [← hg])⟩
+
+/-- The unipotent subgroup is a `2`-group inside the Suzuki group. -/
+theorem isPGroup_unipotentSubgroupOf : IsPGroup 2 (unipotentSubgroupOf n) :=
+  (isPGroup_unipotentSubgroup n).comap_subtype
 
 /-- The Weyl generator, as an element of the Suzuki group. -/
 abbrev weylOf : suzukiGroup n :=

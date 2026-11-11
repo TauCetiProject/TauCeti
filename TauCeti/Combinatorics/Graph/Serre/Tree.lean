@@ -93,10 +93,15 @@ theorem isAcyclic_iff_eq_of_isReduced : Γ.IsAcyclic ↔
     fun h u p hp => h p .nil hp (Path.isReduced_nil Γ u)⟩
 
 variable {Γ} in
+/-- In a tree, any two vertices are joined by a path. -/
+theorem IsTree.nonempty_path (h : Γ.IsTree) (a b : Γ.V) : Nonempty (Γ.Path a b) :=
+  Γ.preconnected_iff.mp (Γ.connected_iff.mp h.connected).2 a b
+
+variable {Γ} in
 /-- In a tree, any two vertices are joined by exactly one reduced path. -/
 theorem IsTree.existsUnique_isReduced (h : Γ.IsTree) (a b : Γ.V) :
     ∃! p : Γ.Path a b, Path.IsReduced Γ p := by
-  obtain ⟨p⟩ := Γ.preconnected_iff.mp (Γ.connected_iff.mp h.connected).2 a b
+  obtain ⟨p⟩ := h.nonempty_path a b
   exact ⟨Path.reduce Γ p, Path.isReduced_reduce Γ p,
     fun q hq => h.isAcyclic.eq_of_isReduced hq (Path.isReduced_reduce Γ p)⟩
 

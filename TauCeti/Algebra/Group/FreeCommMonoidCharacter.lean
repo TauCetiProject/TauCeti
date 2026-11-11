@@ -55,15 +55,8 @@ noncomputable def freeCommMonoidCharEquiv :
   invFun c := AddMonoidHom.toMultiplicativeLeft
     (Finsupp.liftAddHom fun i => (multiplesHom (Additive M)) (Additive.ofMul (c i)))
   map_mul' _ _ := rfl
-  right_inv c := by
-    funext i
-    simp
-  left_inv χ := by
-    apply Multiplicative.monoidHom_ext
-    apply Finsupp.addHom_ext'
-    intro x
-    apply AddMonoidHom.ext_nat
-    simp
+  right_inv c := by ext; simp
+  left_inv χ := by ext; simp
 
 /-- The forward direction of `freeCommMonoidCharEquiv` evaluates a character on the standard
 generator indexed by `i`. -/
@@ -78,14 +71,13 @@ exponents as the corresponding product of powers of the chosen coordinates. -/
 theorem freeCommMonoidCharEquiv_symm_apply_ofAdd (c : σ → M) (m : σ →₀ ℕ) :
     (freeCommMonoidCharEquiv (M := M)).symm c (Multiplicative.ofAdd m) =
       m.prod fun i n => c i ^ n := by
-  simp [freeCommMonoidCharEquiv, Finsupp.liftAddHom_apply, Finsupp.sum, Finsupp.prod,
-    toMul_sum, multiplesHom_apply]
+  simp [freeCommMonoidCharEquiv, Finsupp.prod, Finsupp.sum]
 
 /-- Reading off generator values is natural in the target monoid: post-composing with a
 homomorphism `ψ : M →* N` commutes with `freeCommMonoidCharEquiv`. -/
 theorem freeCommMonoidCharEquiv_comp {N : Type*} [CommMonoid N] (ψ : M →* N)
     (χ : Multiplicative (σ →₀ ℕ) →* M) (i : σ) :
-    freeCommMonoidCharEquiv (ψ.comp χ) i = ψ (freeCommMonoidCharEquiv χ i) := by
-  simp only [freeCommMonoidCharEquiv_apply, MonoidHom.coe_comp, Function.comp_apply]
+    freeCommMonoidCharEquiv (ψ.comp χ) i = ψ (freeCommMonoidCharEquiv χ i) :=
+  (rfl)
 
 end TauCeti

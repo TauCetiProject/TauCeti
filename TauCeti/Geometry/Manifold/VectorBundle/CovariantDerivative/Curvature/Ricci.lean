@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 public import Mathlib.Analysis.InnerProductSpace.Trace
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+import Mathlib.LinearAlgebra.Basis.Prod
 import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.IsManifold.Basic
@@ -26,13 +28,15 @@ The connection need not preserve this metric or be torsion free,
 and the metric need not vary smoothly. Compactness and absence of boundary are not required.
 
 We give the coordinate formula in any basis and the inner-product formula in an
-orthonormal basis. The constant-curvature calculation fixes the sign convention:
+orthonormal basis, including contraction in factor bases on a product manifold.
+The constant-curvature calculation fixes the sign convention:
 `R(w,u)v = κ (⟪u,v⟫ w - ⟪w,v⟫ u)` gives `Ric = (dim - 1) κ g`.
 The calculation is stated for any bilinear form in place of `κ g`, and then specialised
 to `κ g`.
 
 The Ricci coefficients of a smooth connection in a chart-local frame are smooth on the chart, so
-the Ricci tensor pairs vector fields differentiable at a point to a function differentiable there.
+the Ricci tensor pairs vector fields differentiable (respectively smooth) at a point to a function
+differentiable (respectively smooth) there.
 
 The convention follows J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed.,
 Springer GTM 176 (2018), Chapter 7. The curvature tensor being contracted is
@@ -246,5 +250,76 @@ theorem mdifferentiableAt_ricciTensor_apply {σ τ : Π x : M, TangentSpace I x}
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
   ring
+
+open Riemannian.Tensor in
+/-- The Ricci tensor of a smooth connection pairs two vector fields that are `C^∞` at `x` to a
+function that is `C^∞` at `x`. No metric is involved. -/
+theorem contMDiffAt_ricciTensor_apply {σ τ : Π x : M, TangentSpace I x} {x : M}
+    (hσ : CMDiffAt ∞ (T% σ) x) (hτ : CMDiffAt ∞ (T% τ) x) :
+    ContMDiffAt I 𝓘(ℝ) ∞ (fun y ↦ cov.ricciTensor y (σ y) (τ y)) x := by
+  let e := trivializationAt E (TangentSpace I : M → Type _) x
+  let b := Module.finBasis ℝ E
+  have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x
+  -- Expand both fields in the chart-local frame at `x`, whose Ricci coefficients are smooth.
+  have hsum : ContMDiffAt I 𝓘(ℝ) ∞ (fun y ↦ ∑ i, ∑ j, e.localFrameCoeff I b i y (σ y) *
+      e.localFrameCoeff I b j y (τ y) *
+        cov.ricciTensor y (chartLocalFrame (I := I) x i y) (chartLocalFrame (I := I) x j y)) x :=
+    contMDiffAt_finsetSum fun i _ ↦ contMDiffAt_finsetSum fun j _ ↦
+      ((contMDiffAt_localFrameCoeff b hx hσ i).mul (contMDiffAt_localFrameCoeff b hx hτ j)).mul
+      ((cov.contMDiffOn_ricciTensor_chartLocalFrame x i j).contMDiffAt
+        ((chartAt H x).open_source.mem_nhds (mem_chart_source H x)))
+  refine hsum.congr_of_eventuallyEq ?_
+  filter_upwards [e.eventually_eq_localFrame_sum_coeff_smul (I := I) b (s := σ) hx,
+    e.eventually_eq_localFrame_sum_coeff_smul (I := I) b (s := τ) hx] with y hσy hτy
+  conv_lhs => rw [hσy, hτy]
+  simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul,
+    chartLocalFrame_def, Finset.mul_sum]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+  ring
+
+section Prod
+
+open TauCeti.Manifold
+
+variable
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {G : Type*} [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace G N] [IsManifold J ∞ N] [T2Space N]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
+
+/-- Contract the curvature of any smooth connection on a product manifold in the standard
+orthonormal bases of the factors. Ricci is an ordinary trace, so no metric on the product,
+metric compatibility, or torsion assumption is needed. -/
+theorem ricciTensor_eq_sum_factor_basis
+    (covProd : CovariantDerivative (I.prod J) (E × F) (TangentSpace (I.prod J) : M × N → Type _))
+    [ContMDiffCovariantDerivative covProd ∞] (p : M × N)
+    (u v : TangentSpace (I.prod J) p) :
+    covProd.ricciTensor p u v =
+      (∑ i, inner ℝ (stdOrthonormalBasis ℝ (TangentSpace I p.1) i)
+        (tangentSpaceProdEquiv p
+          (covProd.curvatureTensor p
+            ((tangentSpaceProdEquiv p).symm (stdOrthonormalBasis ℝ (TangentSpace I p.1) i, 0))
+            u v)).1) +
+      ∑ j, inner ℝ (stdOrthonormalBasis ℝ (TangentSpace J p.2) j)
+        (tangentSpaceProdEquiv p
+          (covProd.curvatureTensor p
+            ((tangentSpaceProdEquiv p).symm (0, stdOrthonormalBasis ℝ (TangentSpace J p.2) j))
+            u v)).2 := by
+  set b := stdOrthonormalBasis ℝ (TangentSpace I p.1) with hb
+  set c := stdOrthonormalBasis ℝ (TangentSpace J p.2) with hc
+  rw [ricciTensor_eq_sum _ p
+    ((b.toBasis.prod c.toBasis).map (tangentSpaceProdEquiv p).symm.toLinearEquiv),
+    Fintype.sum_sum_type]
+  simp only [Module.Basis.map_apply, Module.Basis.prod_apply, Module.Basis.map_repr,
+    Sum.elim_inl, Sum.elim_inr, Function.comp_apply, LinearMap.inl_apply, LinearMap.inr_apply,
+    LinearEquiv.trans_apply, ContinuousLinearEquiv.coe_symm_toLinearEquiv,
+    ContinuousLinearEquiv.coe_toLinearEquiv, ContinuousLinearEquiv.symm_symm,
+    Module.Basis.prod_repr_inl, Module.Basis.prod_repr_inr,
+    OrthonormalBasis.coe_toBasis_repr_apply, OrthonormalBasis.repr_apply_apply,
+    OrthonormalBasis.coe_toBasis]
+
+end Prod
 
 end CovariantDerivative

@@ -128,13 +128,6 @@ theorem coordinateMap_def :
         (definingHopfIdeal R n) :=
   GeneralLinear.weightParabolicCoordinateMap_def R (weights n)
 
-/-- The upper-triangular coordinate morphism sends an ambient coordinate to its quotient
-class. -/
-theorem coordinateMap_apply (h : GeneralLinear.coordinateHopfAlgebra R n) :
-    (coordinateMap R n).hom h =
-      Ideal.Quotient.mkₐ R (definingHopfIdeal R n).toIdeal h :=
-  GeneralLinear.weightParabolicCoordinateMap_apply R (weights n) h
-
 /-- The upper-triangular affine group scheme. -/
 noncomputable abbrev groupScheme :=
   GeneralLinear.weightParabolicGroupScheme R (weights n)
@@ -162,18 +155,18 @@ theorem finiteTypeCoordinateHopfAlgebra_obj :
 
 section Points
 
-variable {A : Type w} [CommRing A] [Algebra R A]
-
 /-- A morphism out of the coordinate algebra of `GL_n` kills the upper-triangular defining Hopf
 ideal as soon as it kills every matrix coordinate strictly below the diagonal. -/
-theorem definingHopfIdeal_toIdeal_le_ker
-    (f : GeneralLinear.coordinateHopfAlgebra R n →ₐ[R] A)
+theorem definingHopfIdeal_toIdeal_le_ker {A : Type w} [Semiring A]
+    (f : GeneralLinear.coordinateHopfAlgebra R n →+* A)
     (hf : ∀ i j, j < i → f (GeneralLinear.coordinateHopfAlgebraAlgEquiv R n
       (GeneralLinear.coordinateRingMap R n (MvPolynomial.X (i, j)))) = 0) :
-    (definingHopfIdeal R n).toIdeal ≤ RingHom.ker f.toRingHom := by
+    (definingHopfIdeal R n).toIdeal ≤ RingHom.ker f := by
   rw [definingHopfIdeal]
   exact GeneralLinear.weightParabolicDefiningHopfIdeal_toIdeal_le_ker R (weights n) f
     fun i j h ↦ hf i j ((weights_lt_weights_iff n i j).mp h)
+
+variable {A : Type w} [CommRing A] [Algebra R A]
 
 /-- A morphism out of the coordinate algebra of `GL_n` whose tautological matrix point is upper
 triangular kills the upper-triangular defining Hopf ideal. -/
@@ -182,8 +175,9 @@ theorem definingHopfIdeal_toIdeal_le_ker_of_isUpperTriangular
     (hf : ((GeneralLinear.pointToGeneralLinear n (toConv f) :
         Matrix.GeneralLinearGroup (Fin n) A) : Matrix (Fin n) (Fin n) A).IsUpperTriangular) :
     (definingHopfIdeal R n).toIdeal ≤ RingHom.ker f.toRingHom :=
-  definingHopfIdeal_toIdeal_le_ker R n f fun _ _ hji => by
-    simpa only [GeneralLinear.pointToGeneralLinear_apply, WithConv.ofConv_toConv] using hf hji
+  definingHopfIdeal_toIdeal_le_ker R n f.toRingHom fun _ _ hji => by
+    simpa only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, GeneralLinear.pointToGeneralLinear_apply,
+      WithConv.ofConv_toConv] using hf hji
 
 /-- An ambient `GL_n`-point belongs to the upper-triangular closed subgroup exactly when its
 matrix is upper triangular. -/
@@ -445,7 +439,7 @@ theorem pointsMulEquiv_rootSubgroupCoordinateMap (hij : i < j)
   ext a b
   rw [GeneralLinear.pointToGeneralLinear_apply, CommHopfAlgCat.quotientPointsHom_apply_apply]
   simp only [AlgHom.comp_apply, BialgHom.coe_toAlgHom]
-  rw [← coordinateMap_apply, ← CommHopfAlgCat.comp_apply,
+  rw [← CommHopfAlgCat.mkQuotient_apply, ← coordinateMap_def, ← CommHopfAlgCat.comp_apply,
     coordinateMap_comp_rootSubgroupCoordinateMap, GeneralLinear.rootSubgroupCoordinateMap_apply_X]
   simp [Matrix.transvection, Matrix.one_apply, Matrix.single_apply, apply_ite f.ofConv]
 

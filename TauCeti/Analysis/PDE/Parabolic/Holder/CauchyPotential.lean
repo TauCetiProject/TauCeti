@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.HeatKernel.CauchyPotential
-public import TauCeti.Analysis.PDE.Parabolic.Holder.Trace
+public import TauCeti.Analysis.PDE.Parabolic.Holder.Operator
 import TauCeti.Analysis.Holder.Laplacian
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
@@ -281,5 +281,16 @@ theorem spatialTrace_heatCauchyPotentialL_left (hb : 0 < b) (g : CkHolderSpace 2
     (heatCauchyPotentialL hb le_rfl g).spatialTrace ⟨0, left_mem_Icc.2 hb.le⟩ = g := by
   ext x
   simp
+
+/-- The Cauchy heat potential is annihilated by the scalar Euclidean heat operator, including
+at both endpoints of the time slab. -/
+theorem ParabolicC2HolderSpace.euclideanParabolicOperatorL_heatCauchyPotentialL
+    {ι : Type*} [Fintype ι] [DecidableEq ι] (hα : α ≤ 1) (hab : a < b) (ha : 0 ≤ a)
+    (g : CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ) :
+    euclideanParabolicOperatorL hα (fun i j ↦ HolderSpace.const ((1 : Matrix ι ι ℝ) i j)) 0 0
+      (heatCauchyPotentialL hab ha g) = 0 := by
+  ext p
+  rw [euclideanParabolicOperatorL_one_apply, timeDerivL_heatCauchyPotentialL_eq_laplacian, sub_self,
+    HolderSpace.zero_apply]
 
 end TauCeti

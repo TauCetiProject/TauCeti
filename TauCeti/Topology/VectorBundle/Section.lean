@@ -27,6 +27,10 @@ multiples use `Continuous.smul_totalSpace`), and a function with
 closed support inside an open set multiplies a section continuous on that set into a globally
 continuous section (`ContinuousOn.smul_section_of_tsupport`).
 
+A linear trivialization reconstructs a section from arbitrary model coordinates by
+`Bundle.Trivialization.sectionFromCoordinates`, with the two coordinate inverse laws on its base
+set. This construction is purely topological and requires no manifold structure.
+
 The main result, `TauCeti.exists_continuous_section_forall_mem_convex_of_local`, is the bundle form
 of `exists_continuous_forall_mem_convex_of_local`: over a normal paracompact base, if convex
 fibrewise conditions can be met by sections that are continuous near each point, then they are met
@@ -191,6 +195,16 @@ theorem Continuous.finsum_section_of_locallyFinite
   filter_upwards [hU] with y hy
   rw [finsum_eq_sum_of_support_subset _ fun i hi ↦ hfin.mem_toFinset.mpr ⟨y, hi, hy⟩]
 
+omit [VectorBundle 𝕜 F E] in
+/-- The section with constant coordinates `v` in a linear trivialization `e` is continuous on the
+base set of `e`. -/
+theorem Bundle.Trivialization.continuousOn_mk_symmL (e : Trivialization F (π F E))
+    [e.IsLinear 𝕜] (v : F) :
+    ContinuousOn (fun x ↦ TotalSpace.mk' F x (e.symmL 𝕜 x v)) e.baseSet :=
+  (e.continuousOn_symm_prodMk_left (v := v)).congr fun x hx ↦ by
+    rw [e.symmL_apply hx]
+    exact e.mk_symm hx v
+
 end Operations
 
 namespace TauCeti
@@ -221,3 +235,35 @@ theorem exists_continuous_section_forall_mem_convex_of_local (t : ∀ x, Set (E 
     exact hst i x (interior_subset (hρ i (subset_closure hi)))
 
 end TauCeti
+
+namespace Bundle.Trivialization
+
+variable {𝕜 M F : Type*} [NontriviallyNormedField 𝕜]
+  [TopologicalSpace M] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V]
+  (e : Trivialization F (TotalSpace.proj : TotalSpace F V → M)) [e.IsLinear 𝕜]
+
+/-- Reconstruct a section from its model coordinates in a chosen frame. -/
+noncomputable def sectionFromCoordinates (A : M → F) (x : M) : V x := e.symmL 𝕜 x (A x)
+
+/-- Evaluate the reconstructed section through the native inverse frame map. -/
+@[simp]
+theorem sectionFromCoordinates_apply (A : M → F) (x : M) :
+    sectionFromCoordinates (𝕜 := 𝕜) e A x = e.symmL 𝕜 x (A x) := by rfl
+
+/-- Reading the reconstructed section in the same frame recovers the model field. -/
+theorem continuousLinearMapAt_sectionFromCoordinates (A : M → F) {x : M}
+    (hx : x ∈ e.baseSet) :
+    e.continuousLinearMapAt 𝕜 x (sectionFromCoordinates (𝕜 := 𝕜) e A x) = A x := by
+  rw [sectionFromCoordinates_apply, e.continuousLinearMapAt_symmL hx]
+
+/-- Reconstructing the coordinates of a section recovers it on the frame domain. -/
+theorem sectionFromCoordinates_continuousLinearMapAt (s : ∀ x, V x) {x : M}
+    (hx : x ∈ e.baseSet) :
+    sectionFromCoordinates (𝕜 := 𝕜) e (fun y ↦ e.continuousLinearMapAt 𝕜 y (s y)) x = s x := by
+  rw [sectionFromCoordinates_apply, e.symmL_continuousLinearMapAt hx]
+
+
+end Bundle.Trivialization

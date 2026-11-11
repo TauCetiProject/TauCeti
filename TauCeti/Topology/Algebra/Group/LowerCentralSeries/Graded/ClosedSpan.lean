@@ -26,42 +26,46 @@ namespace TauCeti
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
-/-- The brackets with a topological generating set generate the next closed-series graded piece
-after taking closure. -/
-theorem topologicalClosure_closure_gradedBracket_eq_top (n : ℕ) {S : Set G}
-    (hS : (Subgroup.closure S).topologicalClosure = ⊤) :
-    (AddSubgroup.closure (Set.range (fun sy : S × gradedPiece 0 G n ↦
-      gradedBracket 0 G 0 n (gradedMkZero 0 G sy.1) sy.2))).topologicalClosure = ⊤ := by
-  let W : AddSubgroup (gradedPiece 0 G (0 + n + 1)) :=
-    (AddSubgroup.closure (Set.range (fun sy : S × gradedPiece 0 G n ↦
-      gradedBracket 0 G 0 n (gradedMkZero 0 G sy.1) sy.2))).topologicalClosure
-  have hWclosed : IsClosed (W : Set (gradedPiece 0 G (0 + n + 1))) :=
-    AddSubgroup.isClosed_topologicalClosure _
-  have hbracket (g : G) (y : gradedPiece 0 G n) :
-      gradedBracket 0 G 0 n (gradedMkZero 0 G g) y ∈ W := by
-    -- For fixed `y`, the preimage of `W` is a closed subgroup containing `S`, hence all of `G`.
-    let V : Subgroup G :=
-      { carrier := {g | gradedBracket 0 G 0 n (gradedMkZero 0 G g) y ∈ W}
-        one_mem' := by simp
-        mul_mem' := by
-          intro a b ha hb
-          simpa only [Set.mem_ofPred_eq, gradedMkZero_mul, map_add, AddMonoidHom.add_apply]
-            using W.add_mem ha hb
-        inv_mem' := by
-          intro a ha
-          simpa only [Set.mem_ofPred_eq, gradedMkZero_inv, map_neg, AddMonoidHom.neg_apply]
-            using W.neg_mem ha }
-    have hVclosed : IsClosed (V : Set G) := by
-      convert hWclosed.preimage ((continuous_gradedBracket (p := 0) (G := G) 0 n).comp
-        ((continuous_gradedMkZero (p := 0) (G := G)).prodMk
-          (continuous_const : Continuous fun _ : G ↦ y))) using 1
-      rfl
-    have hSV : Subgroup.closure S ≤ V := (Subgroup.closure_le V).mpr (by
-      rintro s hs
-      exact AddSubgroup.le_topologicalClosure _
-        (AddSubgroup.subset_closure ⟨(⟨s, hs⟩, y), rfl⟩))
-    have htop := Subgroup.topologicalClosure_minimal _ hSV hVclosed
-    exact htop (hS.symm ▸ Subgroup.mem_top g)
+/-- A closed additive subgroup of the next graded piece that contains the brackets of a
+topological generating set with the graded piece `n` contains all brackets of `G` with it. -/
+theorem gradedBracket_gradedMkZero_mem_of_isClosed (n : ℕ) {S : Set G}
+    (hS : (Subgroup.closure S).topologicalClosure = ⊤)
+    {W : AddSubgroup (gradedPiece 0 G (0 + n + 1))}
+    (hWclosed : IsClosed (W : Set (gradedPiece 0 G (0 + n + 1))))
+    (hgen : ∀ s ∈ S, ∀ y : gradedPiece 0 G n,
+      gradedBracket 0 G 0 n (gradedMkZero 0 G s) y ∈ W)
+    (g : G) (y : gradedPiece 0 G n) :
+    gradedBracket 0 G 0 n (gradedMkZero 0 G g) y ∈ W := by
+  -- For fixed `y`, the preimage of `W` is a closed subgroup containing `S`, hence all of `G`.
+  let V : Subgroup G :=
+    { carrier := {g | gradedBracket 0 G 0 n (gradedMkZero 0 G g) y ∈ W}
+      one_mem' := by simp
+      mul_mem' := by
+        intro a b ha hb
+        simpa only [Set.mem_ofPred_eq, gradedMkZero_mul, map_add, AddMonoidHom.add_apply]
+          using W.add_mem ha hb
+      inv_mem' := by
+        intro a ha
+        simpa only [Set.mem_ofPred_eq, gradedMkZero_inv, map_neg, AddMonoidHom.neg_apply]
+          using W.neg_mem ha }
+  have hVclosed : IsClosed (V : Set G) := by
+    convert hWclosed.preimage ((continuous_gradedBracket (p := 0) (G := G) 0 n).comp
+      ((continuous_gradedMkZero (p := 0) (G := G)).prodMk
+        (continuous_const : Continuous fun _ : G ↦ y))) using 1
+    rfl
+  have hSV : Subgroup.closure S ≤ V := (Subgroup.closure_le V).mpr fun s hs ↦ hgen s hs y
+  have htop := Subgroup.topologicalClosure_minimal _ hSV hVclosed
+  exact htop (hS.symm ▸ Subgroup.mem_top g)
+
+/-- A closed additive subgroup of the next graded piece that contains every bracket of `G` with
+the graded piece `n` is the whole piece. The closed commutator step of the closed lower central
+series is what makes the brackets span. -/
+theorem eq_top_of_isClosed_of_gradedBracket_mem (n : ℕ)
+    {W : AddSubgroup (gradedPiece 0 G (0 + n + 1))}
+    (hWclosed : IsClosed (W : Set (gradedPiece 0 G (0 + n + 1))))
+    (hbracket : ∀ (g : G) (y : gradedPiece 0 G n),
+      gradedBracket 0 G 0 n (gradedMkZero 0 G g) y ∈ W) :
+    W = ⊤ := by
   let K : Subgroup G := pLowerCentralSeries 0 G n
   let H : Subgroup G := pLowerCentralSeries 0 G (0 + n + 1)
   -- Pull `W` back along the graded quotient map. Every commutator from `G` and `K` lies
@@ -105,6 +109,17 @@ theorem topologicalClosure_closure_gradedBracket_eq_top (n : ℕ) {S : Set G}
   obtain ⟨y, hy, hxy⟩ := hseries x.2
   have hxy' : y = x := Subtype.ext hxy
   simpa [U, hxy'] using hy
+
+/-- The brackets with a topological generating set generate the next closed-series graded piece
+after taking closure. -/
+theorem topologicalClosure_closure_gradedBracket_eq_top (n : ℕ) {S : Set G}
+    (hS : (Subgroup.closure S).topologicalClosure = ⊤) :
+    (AddSubgroup.closure (Set.range (fun sy : S × gradedPiece 0 G n ↦
+      gradedBracket 0 G 0 n (gradedMkZero 0 G sy.1) sy.2))).topologicalClosure = ⊤ :=
+  eq_top_of_isClosed_of_gradedBracket_mem n (AddSubgroup.isClosed_topologicalClosure _)
+    (gradedBracket_gradedMkZero_mem_of_isClosed n hS (AddSubgroup.isClosed_topologicalClosure _)
+      fun s hs y ↦ AddSubgroup.le_topologicalClosure _
+        (AddSubgroup.subset_closure ⟨(⟨s, hs⟩, y), rfl⟩))
 
 /-- If a finite indexed family topologically generates the group and the source graded piece is
 compact, every class in the next graded piece is a sum of one bracket with each member of the

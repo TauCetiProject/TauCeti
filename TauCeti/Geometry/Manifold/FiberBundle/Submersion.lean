@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.FiberBundle.Basic
-public import TauCeti.Geometry.Manifold.Submersion
+public import TauCeti.Geometry.Manifold.Submersion.Basic
 
 /-!
 # The projection of a smooth fibre bundle with manifold fibre is a submersion

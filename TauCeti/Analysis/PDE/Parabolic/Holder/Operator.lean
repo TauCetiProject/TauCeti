@@ -135,25 +135,29 @@ theorem parabolicOperatorL_sub_parabolicOperatorL :
   rw [spatialOperatorL_sub, parabolicOperatorL_def, parabolicOperatorL_def]
   abel
 
+/-- **The pointwise bound for the spatial operator.**
+`‖L u‖ ≤ ‖A‖ ‖D²u‖ + ‖B‖ ‖Du‖ + ‖C‖ ‖u‖`, where `‖u‖` is the Hölder norm of the value. -/
+theorem norm_spatialOperatorL_apply_le (u : ParabolicC2HolderSpace α E F ht) :
+    ‖spatialOperatorL hα A B C u‖ ≤
+      ‖A‖ * ‖spatialSecondFDerivL u‖ + ‖B‖ * ‖spatialFDerivHolderL hα u‖ +
+        ‖C‖ * ‖valueHolderL hα u‖ := by
+  have hA := ContinuousLinearMap.norm_id_compHolder₂_apply_le A (spatialSecondFDerivL u)
+  have hB := ContinuousLinearMap.norm_id_compHolder₂_apply_le B (spatialFDerivHolderL hα u)
+  have hC := ContinuousLinearMap.norm_id_compHolder₂_apply_le C (valueHolderL hα u)
+  exact (norm_add_le _ _).trans (add_le_add ((norm_add_le _ _).trans (add_le_add hA hB)) hC)
+
 /-- **The operator bound for the spatial operator.**
 `‖L‖ ≤ ‖A‖ + 24 (‖B‖ + ‖C‖)`, uniformly over the spaces and the slab. -/
 theorem norm_spatialOperatorL_le :
     ‖spatialOperatorL (ht := ht) hα A B C‖ ≤ ‖A‖ + 24 * (‖B‖ + ‖C‖) := by
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun u ↦ ?_
-  -- Pointwise application of a coefficient field does not increase norms.
-  have hA := ContinuousLinearMap.norm_id_compHolder₂_apply_le A (spatialSecondFDerivL u)
-  have hB := ContinuousLinearMap.norm_id_compHolder₂_apply_le B (spatialFDerivHolderL hα u)
-  have hC := ContinuousLinearMap.norm_id_compHolder₂_apply_le C (valueHolderL hα u)
   have h₂ := norm_spatialSecondFDerivL_le u
   have h₁ := norm_valueHolderL_add_norm_spatialFDerivHolderL_le hα u one_pos le_rfl
   simp only [Real.one_rpow, mul_one] at h₁
   have hv := norm_valueL_le u
   have hDu := norm_nonneg (spatialFDerivHolderL hα u)
   have hu := norm_nonneg (valueHolderL hα u)
-  have hL : ‖spatialOperatorL (ht := ht) hα A B C u‖ ≤
-      ‖A‖ * ‖spatialSecondFDerivL u‖ + ‖B‖ * ‖spatialFDerivHolderL hα u‖ +
-        ‖C‖ * ‖valueHolderL hα u‖ :=
-    (norm_add_le _ _).trans (add_le_add ((norm_add_le _ _).trans (add_le_add hA hB)) hC)
+  have hL := norm_spatialOperatorL_apply_le (A := A) (B := B) (C := C) hα u
   nlinarith [mul_le_mul_of_nonneg_left h₂ (norm_nonneg A),
     mul_le_mul_of_nonneg_left (show ‖spatialFDerivHolderL hα u‖ ≤ 24 * ‖u‖ by linarith)
       (norm_nonneg B),
@@ -274,6 +278,20 @@ theorem euclideanParabolicOperatorL_apply
         (EuclideanSpace.single j 1) + ∑ i, b i p * spatialFDerivL u p (EuclideanSpace.single i 1) +
         c p * u p) := by
   simp [euclideanParabolicOperatorL]
+
+open Laplacian in
+/-- With the identity coefficient matrix and no lower-order terms, the Euclidean operator is the
+heat operator `∂ₜu - Δu`, with the Laplacian taken on the time slice through `p`. -/
+theorem euclideanParabolicOperatorL_one_apply
+    (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ ht)
+    (p : slab (E := EuclideanSpace ℝ ι) t₀ t₁) :
+    euclideanParabolicOperatorL hα (fun i j ↦ HolderSpace.const ((1 : Matrix ι ι ℝ) i j)) 0 0 u p =
+      timeDerivL u p - Δ (fun y ↦ u (slabMk y (slabTime p)))
+        (p : ParabolicSpaceTime (EuclideanSpace ℝ ι)).space := by
+  rw [euclideanParabolicOperatorL_apply,
+    InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis _ (EuclideanSpace.basisFun ι ℝ)]
+  simp only [u.iteratedFDeriv_two_apply, slabMk_space_slabTime]
+  simp [Matrix.one_apply]
 
 /-- At an interior time, the time slice through `x`, shifted to start at `0`, has the recorded
 time derivative as its ordinary derivative. -/

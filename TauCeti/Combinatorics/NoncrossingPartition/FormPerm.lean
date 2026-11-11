@@ -23,7 +23,9 @@ other words, the bar after `x` is followed in its part of `K(P)` by the bar afte
 that precedes the successor `γ x` of `x` in increasing cyclic order. Combined with
 `#P.parts + #K(P).parts = n + 1`, this shows that a noncrossing partition of `Fin n`, `n ≥ 1`,
 satisfies the geodesic condition: the permutation `p` of `P` and `p⁻¹ * γ` have `n + 1` cycles in
-total, fixed points included.
+total, fixed points included. The converse, that every permutation satisfying the geodesic
+condition comes from a noncrossing partition, is in
+`TauCeti/Combinatorics/NoncrossingPartition/Geodesic.lean`.
 
 ## Main results
 

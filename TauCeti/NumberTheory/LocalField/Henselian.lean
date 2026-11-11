@@ -22,6 +22,8 @@ root congruent to it modulo `𝓂[K] ^ (n + 1)`.
 
 * `TauCeti.henselianLocalRing_integer`: the integer ring of a nonarchimedean local field is a
   Henselian local ring.
+* `TauCeti.henselianLocalRing_valuationSubring`: the same Henselian structure for the valuation
+  subring used by valuation-based reduction APIs.
 * `TauCeti.isAdicComplete_maximalIdeal_pow_succ`: the integer ring is complete for the adic
   topology of each positive power of its maximal ideal, hence Henselian at it through Mathlib's
   `IsAdicComplete.henselianRing`.
@@ -43,6 +45,12 @@ instance henselianLocalRing_integer : HenselianLocalRing 𝒪[K] where
     let _ := IsTopologicalAddGroup.rightUniformSpace K
     let _ := isUniformAddGroup_of_addCommGroup (G := K)
     exact IsAdicComplete.henselianLocalRing 𝒪[K] |>.is_henselian
+
+/-- The valuation subring of a nonarchimedean local field is Henselian. -/
+instance henselianLocalRing_valuationSubring : HenselianLocalRing (valuation K).valuationSubring :=
+  -- Mathlib defines `Valuation.valuationSubring` by extending `Valuation.integer`, so both
+  -- presentations inherit the same ring structure on the same subtype.
+  inferInstanceAs (HenselianLocalRing 𝒪[K])
 
 /-- The integer ring of a nonarchimedean local field is complete for the adic topology of every
 positive power of its maximal ideal. Mathlib records the completeness at `𝓂[K]` itself for the

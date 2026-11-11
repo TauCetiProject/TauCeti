@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.Polynomial.Basic
 public import TauCeti.Algebra.Homology.Linear
-public import TauCeti.KnotTheory.Grid.Homology.SimplyBlocked
+public import TauCeti.KnotTheory.Grid.Homology.SimplyBlocked.Basic
 public import TauCeti.KnotTheory.Grid.XHomotopy.Complex
 
 /-!

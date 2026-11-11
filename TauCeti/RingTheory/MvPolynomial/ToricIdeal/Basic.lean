@@ -40,6 +40,8 @@ every commutative ring: such a family is selected over `ℤ` by noetherianity an
   `X^u - X^v` lies in the toric ideal exactly when `A u = A v`.
 * `TauCeti.toricIdeal_comp_of_injective`: the toric ideal does not depend on the
   ambient monoid.
+* `TauCeti.toricIdeal_eq_ker_aeval_monomial`: for exponents in `σ →₀ ℕ`, the toric ideal is the
+  kernel of `X i ↦ X ^ (a i)` into `MvPolynomial σ R`.
 * `TauCeti.map_toricIdeal`: the toric ideal over `S` is the extension of the toric
   ideal over `R` along any ring homomorphism `R →+* S`.
 * `TauCeti.quotientToricIdealAlgEquiv`: if the `a i` generate `M`, the quotient by the
@@ -141,6 +143,13 @@ theorem toricIdeal_comp_of_injective (a : ι → M) {g : M →+ N} (hg : Functio
   rw [mem_toricIdeal_iff, mem_toricIdeal_iff, Function.comp_def, h, AlgHom.comp_apply,
     mapDomainAlgHom_apply, ← mapDomain_zero g]
   exact (mapDomain_injective hg).eq_iff
+
+/-- For exponents `a i : σ →₀ ℕ`, the toric ideal is the kernel of the map
+`MvPolynomial ι R → MvPolynomial σ R` sending `X i` to the monomial `X ^ (a i)`, since
+`MvPolynomial σ R` is the semigroup algebra `R[σ →₀ ℕ]`. -/
+theorem toricIdeal_eq_ker_aeval_monomial {σ : Type*} (a : ι → σ →₀ ℕ) :
+    toricIdeal R a = RingHom.ker (aeval fun i ↦ monomial (a i) (1 : R)) := by
+  simp_rw [toricIdeal, single_eq_monomial]
 
 end CommSemiring
 

@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 public import TauCeti.FieldTheory.FunctionField.Basic
+import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
 
 /-!
 # The function field of an integral scheme of finite type over a field
@@ -71,12 +72,8 @@ private lemma exists_finiteType_isFractionRing_functionField :
   let φ : k →+* Γ(X, U) :=
     ((X ↘ Spec (.of k)).appLE ⊤ U le_top).hom.comp (Scheme.ΓSpecIso (.of k)).inv.hom
   let _ : Algebra k Γ(X, U) := φ.toAlgebra
-  have hft : Algebra.FiniteType k Γ(X, U) := by
-    refine RingHom.FiniteType.comp
-      (HasRingHomProperty.appLE @LocallyOfFiniteType (X ↘ Spec (.of k)) inferInstance
-        ⟨⊤, isAffineOpen_top _⟩ ⟨U, hU⟩ le_top) ?_
-    exact RingHom.FiniteType.of_surjective _
-      (Scheme.ΓSpecIso (.of k)).symm.commRingCatIsoToRingEquiv.surjective
+  have hft : Algebra.FiniteType k Γ(X, U) :=
+    (X ↘ Spec (.of k)).finiteType_ΓSpecIso_inv_comp_appLE hU
   have htower : IsScalarTower k Γ(X, U) X.functionField :=
     .of_algebraMap_eq' (Scheme.baseRingToFunctionField_eq_comp_appLE k X U)
   refine ⟨Γ(X, U), inferInstance, inferInstance, inferInstance, inferInstance, htower, hft,

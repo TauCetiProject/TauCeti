@@ -22,7 +22,7 @@ Both halves of the correspondence use the description of the cone hull of a subf
 of conical combinations supported on that subfamily. That a face is spanned by the generators it
 contains holds for any generating set, and the family-indexed form
 `PointedCone.Face.eq_hull_image` is a reindexing of
-`PointedCone.Face.eq_hull_inter_of_eq_hull`. The converse, that every subfamily spans a face, is
+`PointedCone.IsFaceOf.eq_hull_inter_of_eq_hull`. The converse, that every subfamily spans a face, is
 where linear independence enters: if `a • x + y` has no `v j` component for `j` outside a subset
 `A`, then neither does `x`, because the two nonnegative contributions to the `j`-th coefficient
 cannot cancel.
@@ -150,8 +150,8 @@ theorem salient_hull_range (hv : LinearIndependent R v) :
 contains. -/
 theorem Face.eq_hull_image (F : C.Face) (hC : C = hull R (Set.range v)) :
     F.toPointedCone = hull R (v '' {j | v j ∈ F}) := by
-  rw [F.eq_hull_inter_of_eq_hull (Set.range v) hC]
-  refine congrArg (hull R) (Set.ext fun y ↦ ⟨?_, ?_⟩)
+  refine (F.isFaceOf.eq_hull_inter_of_eq_hull hC).trans
+    (congrArg (hull R) (Set.ext fun y ↦ ⟨?_, ?_⟩))
   · rintro ⟨⟨j, rfl⟩, hy⟩
     exact ⟨j, hy, rfl⟩
   · rintro ⟨j, hj, rfl⟩
