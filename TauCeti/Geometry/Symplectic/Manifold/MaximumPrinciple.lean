@@ -111,8 +111,6 @@ theorem laplacian_comp_eq_of_mvfderiv_comp_eq_neg
   have hrange : range I = univ := I.range_eq_univ
   have hsrc : ∀ᶠ w in 𝓝 z, u w ∈ (extChartAt I (u z)).source :=
     hu.continuousAt.preimage_mem_nhds (extChartAt_source_mem_nhds (u z))
-  have htgt : (extChartAt I (u z)).target ∈ 𝓝 (extChartAt I (u z) (u z)) :=
-    extChartAt_target_mem_nhds (u z)
   -- Regularity of the coordinate expressions.
   have huc : ContDiffAt ℝ 2 (extChartAt I (u z) ∘ u) z :=
     contMDiffAt_iff_contDiffAt.1 ((contMDiffAt_extChartAt (x := u z)).comp z hu)
