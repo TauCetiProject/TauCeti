@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Submersion.ONeill
 import TauCeti.Geometry.Manifold.Distribution.Kernel
 import TauCeti.Geometry.Manifold.Riemannian.Submersion.Connection
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Prod
 
 /-!
 # Symmetries of O'Neill's tensors and integrability of the horizontal distribution
@@ -22,18 +23,25 @@ orthogonal projections. O'Neill's tensors `A` and `T` (`IsRiemannianSubmersion.o
 * `A_X` and `T_U` exchange the horizontal and vertical spaces.
 * `A` is alternating on horizontal vectors: `A_X Y = -A_Y X`.
 * The vertical part of the bracket of two horizontal fields is `v [X, Y] = 2 A_X Y`. So `A`
-  measures the failure of the horizontal distribution to be closed under brackets.
+  measures the failure of the horizontal distribution to be closed under brackets; by
+  skew-adjointness, `A` vanishes at `x` precisely when it vanishes on horizontal pairs there.
 * `T` is symmetric on vertical vectors: `T_U V = T_V U`. This expresses the integrability of the
   vertical distribution, whose leaves are the fibres; on vertical vectors, `T` is the second
   fundamental form of the fibres.
+* On basic horizontal fields (horizontal lifts of fields on the base), the Lie bracket decomposes
+  into the lifted base bracket plus `2 A_X Y`, the Levi-Civita derivative along a horizontal lift
+  decomposes into the lifted base derivative plus `A_X Y`, and the horizontal part of the
+  Levi-Civita derivative along a vertical vector `U` is `A_Y U`.
+* On a Riemannian product projection `Prod.fst : M × N → M`, both `A` and `T` vanish identically.
 
-These are the algebraic inputs to O'Neill's curvature equations. For instance, they are used to
-compare the sectional curvature of a horizontal plane with that of its image in the base.
+These are the algebraic and connection inputs to O'Neill's curvature equations. For instance, they
+are used to compare the sectional curvature of a horizontal plane with that of its image in the
+base.
 
-The alternating property is proved with basic horizontal fields, which are horizontal lifts of
-vector fields on the base. Their bracket with a vertical field is vertical, by naturality of the
-Lie bracket (`ContMDiffAt.mlieBracket_mem_ker_mfderiv_of_eventually_related`). Their squared
-norm is constant along the fibres.
+The alternating property and the vertical-direction basic-lift formula are proved with basic
+horizontal fields, whose bracket with a vertical field is vertical by naturality of the Lie
+bracket (`ContMDiffAt.mlieBracket_mem_ker_mfderiv_of_eventually_related`) and whose squared norm
+is constant along the fibres.
 
 ## Main results
 
@@ -51,12 +59,21 @@ norm is constant along the fibres.
   `A` is alternating on horizontal vectors.
 * `TauCeti.IsRiemannianSubmersion.starProjection_ker_mlieBracket`: `v [X, Y] = 2 A_X Y` for
   horizontal fields `X` and `Y`.
+* `TauCeti.IsRiemannianSubmersion.oneillA_eq_zero_iff` and
+  `TauCeti.IsRiemannianSubmersion.oneillA_eq_zero_iff_horizontalLift`: `A` vanishes at a point
+  precisely when it vanishes on horizontal pairs there.
 * `TauCeti.IsRiemannianSubmersion.oneillT_comm`: `T` is symmetric on vertical vectors.
+* `TauCeti.IsRiemannianSubmersion.mlieBracket_horizontalLift`,
+  `TauCeti.IsRiemannianSubmersion.leviCivitaConnection_horizontalLift`, and
+  `TauCeti.IsRiemannianSubmersion.leviCivitaConnection_horizontalLift_of_mem_ker`: the Lie bracket
+  and Levi-Civita derivative of basic horizontal lifts.
+* `TauCeti.oneillA_fst` and `TauCeti.oneillT_fst`: both O'Neill tensors vanish for the Riemannian
+  product projection `Prod.fst : M × N → M`.
 
 ## References
 
 * B. O'Neill, *The fundamental equations of a submersion*, Michigan Math. J. 13 (1966),
-  459–469, Lemmas 2 and 3.
+  459–469, Lemmas 1, 2, and 3.
 * A. L. Besse, *Einstein Manifolds*, Springer, 1987, Chapter 9, §C.
 -/
 
@@ -395,6 +412,353 @@ theorem oneillT_comm {u w : TangentSpace I x} (hu : u ∈ (mfderiv I J f x).ker)
   rw [← hT, map_sub, sub_eq_zero, ← hUW, ← hWU, hUx, hWx] at hbr
   exact hbr
 
+/-- O'Neill's horizontal tensor `A` vanishes at `x` if and only if it vanishes on every pair of
+horizontal vectors at `x`. Skew-adjointness controls vertical second arguments from horizontal
+ones, and the first argument factors through its horizontal projection. -/
+theorem oneillA_eq_zero_iff :
+    h.oneillA x = 0 ↔
+      ∀ u v : TangentSpace I x, u ∈ (mfderiv I J f x).kerᗮ →
+        v ∈ (mfderiv I J f x).kerᗮ → h.oneillA x u v = 0 := by
+  refine ⟨fun h0 u v _ _ ↦ by simp [h0], fun h0 ↦ ?_⟩
+  ext u v
+  simp only [zero_apply]
+  rw [← h.oneillA_starProjection_orthogonal_ker x u,
+    ← (mfderiv I J f x).ker.starProjection_add_starProjection_orthogonal v, map_add,
+    h0 _ _ (Submodule.starProjection_apply_mem _ _) (Submodule.starProjection_apply_mem _ _),
+    add_zero]
+  set p := (mfderiv I J f x).kerᗮ.starProjection u
+  set q := (mfderiv I J f x).ker.starProjection v
+  have hpq : h.oneillA x p q ∈ (mfderiv I J f x).kerᗮ :=
+    h.oneillA_apply_mem_orthogonal_ker p (Submodule.starProjection_apply_mem _ _)
+  apply (inner_self_eq_zero (𝕜 := ℝ)).mp
+  rw [h.inner_oneillA, h0 p (h.oneillA x p q) (Submodule.starProjection_apply_mem _ _) hpq,
+    inner_zero_right, neg_zero]
+
+/-- O'Neill's horizontal tensor `A` vanishes at `x` if and only if it vanishes on every pair of
+horizontal lifts at `x`. -/
+theorem oneillA_eq_zero_iff_horizontalLift :
+    h.oneillA x = 0 ↔
+      ∀ u v : TangentSpace J (f x),
+        h.oneillA x (h.horizontalLift x u) (h.horizontalLift x v) = 0 := by
+  rw [h.oneillA_eq_zero_iff]
+  refine ⟨fun h0 u v ↦ h0 _ _ (h.horizontalLift_mem_orthogonal_ker x u)
+    (h.horizontalLift_mem_orthogonal_ker x v), fun h0 u v hu hv ↦ ?_⟩
+  rw [← h.horizontalLift_mfderiv_of_mem x hu, ← h.horizontalLift_mfderiv_of_mem x hv]
+  exact h0 _ _
+
+/-- When the vertical kernel at `x` is trivial, O'Neill's horizontal tensor vanishes at `x`. -/
+theorem oneillA_eq_zero_of_ker_eq_bot (hker : (mfderiv I J f x).ker = ⊥) :
+    h.oneillA x = 0 := by
+  rw [h.oneillA_eq_zero_iff]
+  intro u v _ hv
+  have hmem := h.oneillA_apply_mem_ker u hv
+  rwa [hker, Submodule.mem_bot] at hmem
+
+omit [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)] [IsManifold J ∞ N] in
+/-- When the vertical kernel at `x` is trivial, O'Neill's vertical tensor vanishes at `x`. -/
+theorem oneillT_eq_zero_of_ker_eq_bot (hker : (mfderiv I J f x).ker = ⊥) :
+    h.oneillT x = 0 := by
+  ext u v
+  have hu0 : (mfderiv I J f x).ker.starProjection u = 0 :=
+    (Submodule.starProjection_apply_eq_zero_iff _).mpr (by simp [hker])
+  rw [← h.oneillT_starProjection_ker x u, hu0]
+  simp
+
 end Symmetry
 
+/-! ### Basic horizontal lifts -/
+
+section BasicLift
+
+variable {x : M}
+
+/-- The Lie bracket of two basic horizontal lifts decomposes into the horizontal lift of the base
+bracket plus `2 A_X Y` vertically. -/
+theorem mlieBracket_horizontalLift {X Y : Π y : N, TangentSpace J y}
+    (hX : CMDiffAt 1 (T% X) (f x)) (hY : CMDiffAt 1 (T% Y) (f x)) :
+    mlieBracket I (fun y ↦ h.horizontalLift y (X (f y)))
+        (fun y ↦ h.horizontalLift y (Y (f y))) x =
+      h.horizontalLift x (mlieBracket J X Y (f x)) +
+        (2 : ℝ) • h.oneillA x (h.horizontalLift x (X (f x)))
+          (h.horizontalLift x (Y (f x))) := by
+  let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
+    rw [one_add_one_eq_two]
+    exact .of_le (by norm_cast)
+  have hXd := (h.contMDiffAt_horizontalLift hX (by norm_num)).mdifferentiableAt one_ne_zero
+  have hYd := (h.contMDiffAt_horizontalLift hY (by norm_num)).mdifferentiableAt one_ne_zero
+  rw [← (mfderiv I J f x).ker.starProjection_add_starProjection_orthogonal
+      (mlieBracket I (fun y ↦ h.horizontalLift y (X (f y)))
+        (fun y ↦ h.horizontalLift y (Y (f y))) x),
+    add_comm, ← h.horizontalLift_mfderiv, h.mfderiv_mlieBracket_horizontalLift hX hY,
+    h.starProjection_ker_mlieBracket hXd hYd
+      (.of_forall fun y ↦ h.horizontalLift_mem_orthogonal_ker y _)
+      (.of_forall fun y ↦ h.horizontalLift_mem_orthogonal_ker y _)]
+
+/-- **O'Neill's connection equation on basic horizontal lifts.** Along a horizontally lifted
+vector, the Levi-Civita derivative of a basic horizontal lift decomposes into the lifted base
+Levi-Civita derivative plus O'Neill's `A` tensor vertically. -/
+theorem leviCivitaConnection_horizontalLift {Y : Π y : N, TangentSpace J y}
+    (hY : CMDiffAt 1 (T% Y) (f x)) (v : TangentSpace J (f x)) :
+    CovariantDerivative.leviCivitaConnection I M
+        (fun y ↦ h.horizontalLift y (Y (f y))) x (h.horizontalLift x v) =
+      h.horizontalLift x (CovariantDerivative.leviCivitaConnection J N Y (f x) v) +
+        h.oneillA x (h.horizontalLift x v) (h.horizontalLift x (Y (f x))) := by
+  let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
+    rw [one_add_one_eq_two]
+    exact .of_le (by norm_cast)
+  have hYd := (h.contMDiffAt_horizontalLift hY (by norm_num)).mdifferentiableAt one_ne_zero
+  have hA := h.oneillA_apply_of_eventually_mem_orthogonal_ker hYd
+    (.of_forall fun y ↦ h.horizontalLift_mem_orthogonal_ker y _) (h.horizontalLift x v)
+  rw [Submodule.starProjection_eq_self_iff.mpr (h.horizontalLift_mem_orthogonal_ker x v)] at hA
+  rw [← (mfderiv I J f x).ker.starProjection_add_starProjection_orthogonal
+      (CovariantDerivative.leviCivitaConnection I M
+        (fun y ↦ h.horizontalLift y (Y (f y))) x (h.horizontalLift x v)),
+    add_comm,
+    h.starProjection_covariantDerivative_horizontalLift
+      (CovariantDerivative.isLeviCivitaConnection_leviCivitaConnection I)
+      (CovariantDerivative.isLeviCivitaConnection_leviCivitaConnection J) hY v,
+    ← hA]
+
+/-- **O'Neill's Lemma 2.** The horizontal part of the Levi-Civita derivative of a basic horizontal
+lift `Y` in a vertical direction `u` equals `A_Y u`. -/
+theorem starProjection_orthogonal_ker_leviCivitaConnection_horizontalLift_of_mem_ker
+    {Y : Π y : N, TangentSpace J y} (hY : CMDiffAt 1 (T% Y) (f x))
+    {u : TangentSpace I x} (hu : u ∈ (mfderiv I J f x).ker) :
+    (mfderiv I J f x).kerᗮ.starProjection
+        (CovariantDerivative.leviCivitaConnection I M
+          (fun y ↦ h.horizontalLift y (Y (f y))) x u) =
+      h.oneillA x (h.horizontalLift x (Y (f x))) u := by
+  let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
+    rw [one_add_one_eq_two]
+    exact .of_le (by norm_cast)
+  set X : Π y : M, TangentSpace I y := fun y ↦ h.horizontalLift y (Y (f y))
+  have hXd : MDiffAt (T% X) x :=
+    (h.contMDiffAt_horizontalLift hY (by norm_num)).mdifferentiableAt one_ne_zero
+  obtain ⟨V, hVd, rfl, hVv⟩ := h.exists_vertical_extension hu
+  have hT := ((CovariantDerivative.torsion_eq_zero_iff _).mp
+    (CovariantDerivative.torsion_leviCivitaConnection_eq_zero I)) hXd hVd
+  -- Since `X` is `f`-related to `Y` and `V` is vertical, `[X, V]` is vertical.
+  have hbr : (mfderiv I J f x).kerᗮ.starProjection (mlieBracket I X V x) = 0 :=
+    (Submodule.starProjection_apply_eq_zero_iff _).mpr <| by
+      rw [Submodule.orthogonal_orthogonal]
+      exact (h.isSubmersion.contMDiff x).mlieBracket_mem_ker_mfderiv_of_eventually_related
+        (by simp [minSmoothness_of_isRCLikeNormedField]) hXd hVd
+        (hY.mdifferentiableAt one_ne_zero)
+        (.of_forall fun y ↦ h.mfderiv_horizontalLift y _) (.of_forall hVv)
+  have hA := h.oneillA_apply_of_eventually_mem_ker hVd (.of_forall hVv) (X x)
+  rw [Submodule.starProjection_eq_self_iff.mpr (h.horizontalLift_mem_orthogonal_ker x _)] at hA
+  rw [← hT, map_sub, sub_eq_zero] at hbr
+  exact hbr.symm.trans hA.symm
+
+/-- Along a vertical vector `u`, the Levi-Civita derivative of a basic horizontal lift `Y`
+decomposes into `A_Y u` horizontally plus `T_u Y` vertically. -/
+theorem leviCivitaConnection_horizontalLift_of_mem_ker
+    {Y : Π y : N, TangentSpace J y} (hY : CMDiffAt 1 (T% Y) (f x))
+    {u : TangentSpace I x} (hu : u ∈ (mfderiv I J f x).ker) :
+    CovariantDerivative.leviCivitaConnection I M
+        (fun y ↦ h.horizontalLift y (Y (f y))) x u =
+      h.oneillA x (h.horizontalLift x (Y (f x))) u +
+        h.oneillT x u (h.horizontalLift x (Y (f x))) := by
+  let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
+    rw [one_add_one_eq_two]
+    exact .of_le (by norm_cast)
+  have hYd := (h.contMDiffAt_horizontalLift hY (by norm_num)).mdifferentiableAt one_ne_zero
+  have hT := h.oneillT_apply_of_eventually_mem_orthogonal_ker hYd
+    (.of_forall fun y ↦ h.horizontalLift_mem_orthogonal_ker y _) u
+  rw [Submodule.starProjection_eq_self_iff.mpr hu] at hT
+  rw [← (mfderiv I J f x).ker.starProjection_add_starProjection_orthogonal
+      (CovariantDerivative.leviCivitaConnection I M
+        (fun y ↦ h.horizontalLift y (Y (f y))) x u),
+    add_comm,
+    h.starProjection_orthogonal_ker_leviCivitaConnection_horizontalLift_of_mem_ker hY hu, ← hT]
+
+/-- The horizontal part of the Levi-Civita derivative of a basic horizontal lift `Y` along an
+arbitrary tangent vector `w` is the lifted base derivative along `df_x w` plus `A_Y (v w)`. -/
+theorem starProjection_orthogonal_ker_leviCivitaConnection_horizontalLift
+    {Y : Π y : N, TangentSpace J y} (hY : CMDiffAt 1 (T% Y) (f x))
+    (w : TangentSpace I x) :
+    (mfderiv I J f x).kerᗮ.starProjection
+        (CovariantDerivative.leviCivitaConnection I M
+          (fun y ↦ h.horizontalLift y (Y (f y))) x w) =
+      h.horizontalLift x
+          (CovariantDerivative.leviCivitaConnection J N Y (f x) (mfderiv I J f x w)) +
+        h.oneillA x (h.horizontalLift x (Y (f x)))
+          ((mfderiv I J f x).ker.starProjection w) := by
+  have hw : w = (mfderiv I J f x).ker.starProjection w +
+      h.horizontalLift x (mfderiv I J f x w) := by
+    rw [h.horizontalLift_mfderiv, Submodule.starProjection_add_starProjection_orthogonal]
+  conv_lhs => rw [hw]
+  rw [map_add, map_add,
+    h.starProjection_orthogonal_ker_leviCivitaConnection_horizontalLift_of_mem_ker hY
+      (Submodule.starProjection_apply_mem _ _),
+    h.starProjection_covariantDerivative_horizontalLift
+      (CovariantDerivative.isLeviCivitaConnection_leviCivitaConnection I)
+      (CovariantDerivative.isLeviCivitaConnection_leviCivitaConnection J) hY,
+    add_comm]
+
+/-- Along an arbitrary tangent vector `w`, the Levi-Civita derivative of a basic horizontal lift
+`Y` decomposes into its lifted base derivative, horizontal-horizontal `A`, horizontal-vertical `A`,
+and vertical-horizontal `T` components. -/
+theorem leviCivitaConnection_horizontalLift_apply
+    {Y : Π y : N, TangentSpace J y} (hY : CMDiffAt 1 (T% Y) (f x))
+    (w : TangentSpace I x) :
+    CovariantDerivative.leviCivitaConnection I M
+        (fun y ↦ h.horizontalLift y (Y (f y))) x w =
+      h.horizontalLift x
+          (CovariantDerivative.leviCivitaConnection J N Y (f x) (mfderiv I J f x w)) +
+        h.oneillA x w (h.horizontalLift x (Y (f x))) +
+        h.oneillA x (h.horizontalLift x (Y (f x)))
+          ((mfderiv I J f x).ker.starProjection w) +
+        h.oneillT x w (h.horizontalLift x (Y (f x))) := by
+  have hw : w = (mfderiv I J f x).ker.starProjection w +
+      h.horizontalLift x (mfderiv I J f x w) := by
+    rw [h.horizontalLift_mfderiv, Submodule.starProjection_add_starProjection_orthogonal]
+  conv_lhs => rw [hw]
+  rw [map_add, h.leviCivitaConnection_horizontalLift_of_mem_ker hY
+      (Submodule.starProjection_apply_mem _ _),
+    h.leviCivitaConnection_horizontalLift hY, h.horizontalLift_mfderiv,
+    h.oneillA_starProjection_orthogonal_ker,
+    ← h.oneillT_starProjection_ker x w]
+  abel
+
+end BasicLift
+
 end TauCeti.IsRiemannianSubmersion
+
+namespace TauCeti
+
+/-! ### Product Riemannian submersions -/
+
+section Product
+
+open scoped TauCeti
+
+variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {G : Type*} [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace G N] [IsManifold J ∞ N]
+  [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
+  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)]
+
+omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)] in
+/-- For the product Riemannian submersion `Prod.fst : M × N → M`, the horizontal projection keeps
+the first tangent component and zeroes the second. -/
+theorem starProjection_orthogonal_ker_fst (p : M × N) (v : TangentSpace (I.prod J) p) :
+    (mfderiv (I.prod J) I (@Prod.fst M N) p).kerᗮ.starProjection v =
+      (Manifold.tangentSpaceProdEquiv p).symm ((Manifold.tangentSpaceProdEquiv p v).1, 0) := by
+  have hmf : mfderiv (I.prod J) I (@Prod.fst M N) p v =
+      (Manifold.tangentSpaceProdEquiv p v).1 := by
+    apply ext_inner_left ℝ
+    intro w
+    rw [← ContinuousLinearMap.adjoint_inner_left,
+      ← (isRiemannianSubmersion_fst (I := I) (J := J)).horizontalLift_apply,
+      horizontalLift_fst, Manifold.inner_tangentSpace_prod,
+      ContinuousLinearEquiv.apply_symm_apply, inner_zero_left, add_zero]
+  rw [← (isRiemannianSubmersion_fst (I := I) (J := J)).horizontalLift_mfderiv,
+    horizontalLift_fst, hmf]
+
+omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)] in
+/-- For the product Riemannian submersion `Prod.fst : M × N → M`, the vertical projection zeroes
+the first tangent component and keeps the second. -/
+theorem starProjection_ker_fst (p : M × N) (v : TangentSpace (I.prod J) p) :
+    (mfderiv (I.prod J) I (@Prod.fst M N) p).ker.starProjection v =
+      (Manifold.tangentSpaceProdEquiv p).symm (0, (Manifold.tangentSpaceProdEquiv p v).2) := by
+  apply (Manifold.tangentSpaceProdEquiv p).injective
+  rw [eq_sub_of_add_eq
+      ((mfderiv (I.prod J) I (@Prod.fst M N) p).ker.starProjection_add_starProjection_orthogonal v),
+    starProjection_orthogonal_ker_fst, map_sub,
+    ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.apply_symm_apply]
+  ext <;> simp only [Prod.fst_sub, Prod.snd_sub, sub_self, sub_zero]
+
+/-- O'Neill's horizontal tensor vanishes identically for the Riemannian product projection
+`Prod.fst : M × N → M`. -/
+@[simp]
+theorem oneillA_fst (p : M × N) :
+    (isRiemannianSubmersion_fst (I := I) (J := J)).oneillA p = 0 := by
+  rw [(isRiemannianSubmersion_fst (I := I) (J := J)).oneillA_eq_zero_iff_horizontalLift]
+  intro u v
+  let Y₁ : Π x : M, TangentSpace I x := FiberBundle.extend E v
+  have hY₁ : MDiffAt (T% Y₁) p.1 := FiberBundle.mdifferentiableAt_extend I E v
+  have h0N : MDiffAt (T% (0 : Π z : N, TangentSpace J z)) p.2 :=
+    (contMDiff_zeroSection ℝ (TangentSpace J)).mdifferentiableAt one_ne_zero
+  have hY : MDiffAt (T% (Manifold.prodVectorField Y₁ (0 : Π z : N, TangentSpace J z))) p :=
+    Manifold.mdifferentiableAt_prodVectorField hY₁ h0N
+  have hYp : Manifold.prodVectorField Y₁ (0 : Π z : N, TangentSpace J z) p =
+      (isRiemannianSubmersion_fst (I := I) (J := J)).horizontalLift p v := by
+    rw [horizontalLift_fst]
+    apply (Manifold.tangentSpaceProdEquiv p).injective
+    rw [Manifold.tangentSpaceProdEquiv_prodVectorField, ContinuousLinearEquiv.apply_symm_apply]
+    ext <;> simp [Y₁, FiberBundle.extend_apply_self]
+  have hYh (q : M × N) :
+      Manifold.prodVectorField Y₁ (0 : Π z : N, TangentSpace J z) q ∈
+        (mfderiv (I.prod J) I (@Prod.fst M N) q).kerᗮ := by
+    rw [← Submodule.starProjection_eq_self_iff, starProjection_orthogonal_ker_fst]
+    apply (Manifold.tangentSpaceProdEquiv q).injective
+    rw [ContinuousLinearEquiv.apply_symm_apply, Manifold.tangentSpaceProdEquiv_prodVectorField]
+    rfl
+  rw [← hYp, (isRiemannianSubmersion_fst
+        (I := I) (J := J)).oneillA_apply_of_eventually_mem_orthogonal_ker hY (.of_forall hYh),
+    starProjection_ker_fst,
+    Manifold.tangentSpaceProdEquiv_leviCivitaConnection_prodVectorField hY₁ h0N,
+    (CovariantDerivative.leviCivitaConnection J N).isCovariantDerivativeOnUniv.zero]
+  simp only [zero_apply, Prod.mk_zero_zero, map_zero]
+
+/-- O'Neill's vertical tensor vanishes identically for the Riemannian product projection
+`Prod.fst : M × N → M`. -/
+@[simp]
+theorem oneillT_fst (p : M × N) :
+    (isRiemannianSubmersion_fst (I := I) (J := J)).oneillT p = 0 := by
+  ext u v
+  let Y₁ : Π x : M, TangentSpace I x :=
+    FiberBundle.extend E (Manifold.tangentSpaceProdEquiv p v).1
+  let Y₂ : Π y : N, TangentSpace J y :=
+    FiberBundle.extend F (Manifold.tangentSpaceProdEquiv p v).2
+  have hY₁ : MDiffAt (T% Y₁) p.1 := FiberBundle.mdifferentiableAt_extend I E _
+  have hY₂ : MDiffAt (T% Y₂) p.2 := FiberBundle.mdifferentiableAt_extend J F _
+  have h0M : MDiffAt (T% (0 : Π x : M, TangentSpace I x)) p.1 :=
+    (contMDiff_zeroSection ℝ (TangentSpace I)).mdifferentiableAt one_ne_zero
+  have h0N : MDiffAt (T% (0 : Π y : N, TangentSpace J y)) p.2 :=
+    (contMDiff_zeroSection ℝ (TangentSpace J)).mdifferentiableAt one_ne_zero
+  have hY : MDiffAt (T% (Manifold.prodVectorField Y₁ Y₂)) p :=
+    Manifold.mdifferentiableAt_prodVectorField hY₁ hY₂
+  have hYp : Manifold.prodVectorField Y₁ Y₂ p = v := by
+    apply (Manifold.tangentSpaceProdEquiv p).injective
+    rw [Manifold.tangentSpaceProdEquiv_prodVectorField]
+    ext <;> simp [Y₁, Y₂, FiberBundle.extend_apply_self]
+  have hH : (fun q ↦ (mfderiv (I.prod J) I (@Prod.fst M N) q).kerᗮ.starProjection
+      (Manifold.prodVectorField Y₁ Y₂ q)) =
+      Manifold.prodVectorField Y₁ (0 : Π y : N, TangentSpace J y) := by
+    funext q
+    apply (Manifold.tangentSpaceProdEquiv q).injective
+    rw [starProjection_orthogonal_ker_fst, ContinuousLinearEquiv.apply_symm_apply,
+      Manifold.tangentSpaceProdEquiv_prodVectorField,
+      Manifold.tangentSpaceProdEquiv_prodVectorField]
+    rfl
+  have hV : (fun q ↦ (mfderiv (I.prod J) I (@Prod.fst M N) q).ker.starProjection
+      (Manifold.prodVectorField Y₁ Y₂ q)) =
+      Manifold.prodVectorField (0 : Π x : M, TangentSpace I x) Y₂ := by
+    funext q
+    apply (Manifold.tangentSpaceProdEquiv q).injective
+    rw [starProjection_ker_fst, ContinuousLinearEquiv.apply_symm_apply,
+      Manifold.tangentSpaceProdEquiv_prodVectorField,
+      Manifold.tangentSpaceProdEquiv_prodVectorField]
+    rfl
+  simp only [zero_apply]
+  rw [← hYp, (isRiemannianSubmersion_fst (I := I) (J := J)).oneillT_apply hY u, hV, hH,
+    starProjection_orthogonal_ker_fst, starProjection_ker_fst, starProjection_ker_fst,
+    Manifold.tangentSpaceProdEquiv_leviCivitaConnection_prodVectorField h0M hY₂,
+    Manifold.tangentSpaceProdEquiv_leviCivitaConnection_prodVectorField hY₁ h0N,
+    (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv.zero,
+    (CovariantDerivative.leviCivitaConnection J N).isCovariantDerivativeOnUniv.zero]
+  simp only [zero_apply, Prod.mk_zero_zero, map_zero, add_zero]
+
+end Product
+
+end TauCeti
