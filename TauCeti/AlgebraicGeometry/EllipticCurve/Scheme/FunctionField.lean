@@ -10,7 +10,9 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Gener
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Integral
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Points
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
+public import TauCeti.FieldTheory.FunctionField.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Eval
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Finrank
 import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.Chart.Basic
 
 /-!
@@ -44,6 +46,9 @@ affine coordinate ring `R[x, y] ⧸ (W(x, y))`. No ellipticity hypothesis is nee
   the generic point `Spec K(E) ⟶ E` of the projective model is the point with homogeneous
   coordinates `[x : y : 1]`, where `x` and `y` are the affine coordinates in
   `W.toAffine.FunctionField`.
+
+* `WeierstrassCurve.isFunctionField_functionField_projModel`: over a field `K`, the function field
+  `K(E)` of the projective model is an algebraic function field of one variable over `K`.
 
 ## References
 
@@ -317,6 +322,15 @@ theorem projModelFunctionFieldBaseAlgEquiv_symm_apply [IsDomain R]
     (z : W.toAffine.FunctionField) :
     W.projModelFunctionFieldBaseAlgEquiv.symm z = W.projModelFunctionFieldEquiv.symm z :=
   AlgEquiv.ofRingEquiv_symm_apply _ z
+
+/-- The function field of the projective model of a Weierstrass curve is an algebraic function
+field of one variable over the base field. -/
+theorem isFunctionField_functionField_projModel {K : Type u} [Field K] (W : WeierstrassCurve K) :
+    TauCeti.IsFunctionField K W.projModel.functionField := by
+  have := W.toAffine.isFunctionField.essFiniteType
+  have := (Algebra.EssFiniteType.iff_of_algEquiv W.projModelFunctionFieldBaseAlgEquiv).2 this
+  rw [TauCeti.isFunctionField_iff_trdeg_eq_one, W.projModelFunctionFieldBaseAlgEquiv.trdeg_eq]
+  exact W.toAffine.isFunctionField.trdeg_eq_one
 
 end BaseAlgebra
 
