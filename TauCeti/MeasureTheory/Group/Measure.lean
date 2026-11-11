@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Measure.WithDensity
 -- Proof-only: change of variables in set integrals along a measurable embedding.
 import Mathlib.MeasureTheory.Integral.Lebesgue.Map
--- Proof-only: pushing a measure forward along a measurable equivalence.
+-- Proof-only: pushing a measure forward along a measurable embedding.
 import TauCeti.MeasureTheory.Measure.AEMeasurable
 
 /-!
@@ -145,7 +145,7 @@ theorem map_inv_comp {G H : Type*} [MeasurableSpace G] [MeasurableSpace H] [Invo
     [MeasurableInv G] (μ : Measure G) {f : G → H} :
     μ.inv.map (f ∘ Inv.inv) = μ.map f := by
   have h : (μ.inv.map Inv.inv).map f = μ.inv.map (f ∘ Inv.inv) :=
-    MeasurableEquiv.map_map_measure (MeasurableEquiv.inv G) μ.inv f
+    measurableEmbedding_inv.map_map_measure μ.inv f
   rw [← inv_def, Measure.inv_inv] at h
   exact h.symm
 
