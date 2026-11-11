@@ -202,7 +202,7 @@ theorem index_liftSL (Γ : Subgroup (ProjectiveSpecialLinearGroup n R)) :
 
 instance (Γ : Subgroup (ProjectiveSpecialLinearGroup n R)) [Γ.FiniteIndex] :
     Γ.liftSL.FiniteIndex :=
-  ⟨by rw [index_liftSL]; exact FiniteIndex.index_ne_zero⟩
+  inferInstanceAs (Γ.comap (QuotientGroup.mk' (center (SpecialLinearGroup n R)))).FiniteIndex
 
 /-- Lifting commutes with conjugation: the lift of the conjugate of `Γ` by the class of `g` is the
 conjugate of the lift of `Γ` by `g`. -/
