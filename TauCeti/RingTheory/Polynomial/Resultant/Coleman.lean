@@ -163,12 +163,16 @@ theorem colemanDBounded_of_natDegree_le (hB : B.natDegree ≤ m) (hP0 : P.coeff 
 
 /-- Padding the rank by one multiplies Coleman's transform by `1 - B(0) T`, the factor of an
 additional zero eigenvalue. -/
-theorem colemanDBounded_succ (hP : P.natDegree ≤ n) (hB : B.natDegree ≤ m) :
+theorem colemanDBounded_succ (hP : P.natDegree ≤ n) :
     colemanDBounded B P (n + 1) m = (1 - C (B.coeff 0) * X) * colemanDBounded B P n m := by
+  -- only the coefficients of `B` of index at most `m` matter, so `B` may be truncated there
+  obtain ⟨B', hB, hBB'⟩ := exists_natDegree_le_forall_coeff_eq B m
+  rw [colemanDBounded_congr hBB' fun _ _ ↦ rfl, colemanDBounded_congr hBB' fun _ _ ↦ rfl,
+    hBB' 0 (Nat.zero_le _)]
   have hX : P.reflect (n + 1) = X * P.reflect n := by
     simpa [reflect_one, add_comm 1 n] using reflect_mul (1 : R[X]) P (F := 1) (by simp) hP
   -- the resultant with `X` at degree bound one is the constant coefficient
-  have hXres : X.resultant (1 - C X * B.map C) 1 m = 1 - C (B.coeff 0) * X := by
+  have hXres : X.resultant (1 - C X * B'.map C) 1 m = 1 - C (B'.coeff 0) * X := by
     have h := resultant_X_pow_left _ 1 m (natDegree_one_sub_C_X_mul_map_le hB)
     rw [pow_one, pow_one] at h
     simp [h, X_mul_C]
@@ -179,20 +183,18 @@ theorem colemanDBounded_succ (hP : P.natDegree ≤ n) (hB : B.natDegree ≤ m) :
     hXres, colemanDBounded]
 
 /-- Padding the rank by `k` multiplies Coleman's transform by `(1 - B(0) T) ^ k`. -/
-theorem colemanDBounded_add (hP : P.natDegree ≤ n) (hB : B.natDegree ≤ m) (k : ℕ) :
+theorem colemanDBounded_add (hP : P.natDegree ≤ n) (k : ℕ) :
     colemanDBounded B P (n + k) m = (1 - C (B.coeff 0) * X) ^ k * colemanDBounded B P n m := by
   induction k with
   | zero => simp
   | succ k ih =>
-    rw [← add_assoc, colemanDBounded_succ (hP.trans (Nat.le_add_right n k)) hB, ih, pow_succ',
+    rw [← add_assoc, colemanDBounded_succ (hP.trans (Nat.le_add_right n k)), ih, pow_succ',
       mul_assoc]
 
 /-- When `B(0) = 0`, Coleman's transform does not depend on the rank. -/
 theorem colemanDBounded_add_of_coeff_zero (hP : P.natDegree ≤ n) (hB0 : B.coeff 0 = 0) (k : ℕ) :
     colemanDBounded B P (n + k) m = colemanDBounded B P n m := by
-  obtain ⟨B', hB', hBB'⟩ := exists_natDegree_le_forall_coeff_eq B m
-  rw [colemanDBounded_congr hBB' fun _ _ ↦ rfl, colemanDBounded_congr hBB' fun _ _ ↦ rfl]
-  simp [colemanDBounded_add hP hB', ← hBB' 0 (Nat.zero_le _), hB0]
+  simp [colemanDBounded_add hP, hB0]
 
 /-- When `B(0) = 0`, the minimal-rank transform equals every bounded Coleman transform. -/
 theorem colemanD_eq_colemanDBounded (hP : P.natDegree ≤ n) (hB : B.natDegree ≤ m)
