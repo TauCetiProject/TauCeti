@@ -66,16 +66,15 @@ once.
 
 Independently reconstructed; no formalization is vendored. The AINTLIB `LeanModularForms`
 development ([github.com/CBirkbeck/AINTLIB](https://github.com/CBirkbeck/AINTLIB), Apache-2.0) is
-the existing source for this area, and its
-`LeanModularForms/ForMathlib/HungerbuhlerWasem/Crossing.lean` covers Prop 2.2 and the sector
-geometry. That file was consulted and carries no excise-and-cap construction: at revision `340875a`
-it is the per-pole principal-value composition (`HasCauchyPV.add`, `HasCauchyPV.finset_sum`,
-`cpv_polarPart_at_pole_under_conditions`) together with the crossing angle-compatibility lemmas, and
-the surgered curve `\tilde{Λ}` is never built there either. The one place AINTLIB names this
-excision, `ForMathlib/ExitTime.lean`, constructs only the exit-time parameters bounding the window
-(`firstExitTimeLeft`, `firstExitTimeRight`), not the spliced curve. So the definitions and proofs
-below are new, assembled from Tau Ceti's existing winding-number API for reparametrisation and
-circles.
+the existing source for this area. Its file covering crossings,
+`LeanModularForms/ForMathlib/HungerbuhlerWasem/Crossing.lean`, was consulted and carries no
+excise-and-cap construction: at revision `340875a` it is the per-pole principal-value composition
+(`HasCauchyPV.add`, `HasCauchyPV.finset_sum`, `cpv_polarPart_at_pole_under_conditions`) together
+with the crossing angle-compatibility lemmas, and the surgered curve `\tilde{Λ}` is never built
+there either. The one place AINTLIB names this excision, `ForMathlib/ExitTime.lean`, constructs only
+the exit-time parameters bounding the window (`firstExitTimeLeft`, `firstExitTimeRight`), not the
+spliced curve. So the definitions and proofs below are new, assembled from Tau Ceti's existing
+winding-number API for reparametrisation and circles.
 
 ## References
 

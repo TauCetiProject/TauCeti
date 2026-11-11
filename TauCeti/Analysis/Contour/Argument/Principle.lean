@@ -49,7 +49,7 @@ meaningless — since the results are stated up to the meromorphic normal form o
 Adapted from the AINTLIB `LeanModularForms` project (the argument-principle specialisation of
 `ForMathlib/GeneralizedResidueTheory/Residue.lean` and
 `.../Residue/GeneralizedTheoremBase.lean`, where the residue theorem is applied to `logDeriv f`),
-specialised to a circle and to curves given as raw functions `γ : ℝ → ℂ`.
+specialised to a circle (Mathlib's `circleIntegral`).
 
 ## References
 

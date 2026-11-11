@@ -36,8 +36,7 @@ The simple-pole splitting `logDeriv_eventuallyEq_principalPart` and the residue 
 the AINTLIB `LeanModularForms` project (the argument-principle and residue material of
 `ForMathlib/GeneralizedResidueTheory/Residue.lean` and
 `.../Residue/GeneralizedTheoremBase.lean`, where the residue theorem is applied to `logDeriv f`),
-here specialised to Mathlib's `meromorphicOrderAt` API and to curves given as raw functions
-`γ : ℝ → ℂ`.
+here specialised to Mathlib's `meromorphicOrderAt` API.
 
 ## References
 

@@ -30,8 +30,8 @@ each value plays downstream, which is why they sit here rather than in the gener
 ## Provenance
 
 Migrated and adapted from the AINTLIB `LeanModularForms` project (the sector-geometry material of
-`ForMathlib/HungerbuhlerWasem/Crossing.lean`), specialised to curves given as raw functions
-`γ : ℝ → ℂ` on `[a, b]`.
+`ForMathlib/HungerbuhlerWasem/Crossing.lean`), here stated as integrals over arcs of Mathlib's
+`circleMap`.
 
 ## References
 
