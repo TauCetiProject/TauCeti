@@ -14,6 +14,7 @@ public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.Analysis.InnerProductSpace.QuadraticForm.Bounds
 
 /-!
 # Tangent cones of sets flattened by a differentiable chart
@@ -177,37 +178,6 @@ namespace IsSliceChart
 
 open scoped RealInnerProductSpace
 
-/-- The form `⟪B v, v⟫` stays nonnegative under a small relative perturbation of a vector `u` on
-which it is coercive: if `c ‖u‖ ^ 2 ≤ ⟪B u, u⟫` and `‖u - v‖ ≤ δ ‖v‖` with `δ ≤ 1 / 2` and
-`‖B‖ δ ≤ c / 12`, then `0 ≤ ⟪B v, v⟫`. -/
-private theorem inner_nonneg_of_norm_sub_le {H : Type*} [NormedAddCommGroup H]
-    [InnerProductSpace ℝ H] {B : H →L[ℝ] H} {c δ : ℝ} (hc : 0 ≤ c) (hδ : 0 ≤ δ)
-    (hδ₁ : δ ≤ 1 / 2) (hδ₂ : ‖B‖ * δ ≤ c / 12) {u v : H} (hu : c * ‖u‖ ^ 2 ≤ ⟪B u, u⟫)
-    (huv : ‖u - v‖ ≤ δ * ‖v‖) : 0 ≤ ⟪B v, v⟫ := by
-  have hexp : ⟪B v, v⟫ = ⟪B u, u⟫ - ⟪B (u - v), u⟫ - ⟪B v, u - v⟫ := by
-    simp only [map_sub, inner_sub_left, inner_sub_right]
-    ring
-  have h₁ : ⟪B (u - v), u⟫ ≤ ‖B‖ * ‖u - v‖ * ‖u‖ :=
-    (real_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_right (B.le_opNorm _) (norm_nonneg _))
-  have h₂ : ⟪B v, u - v⟫ ≤ ‖B‖ * ‖v‖ * ‖u - v‖ :=
-    (real_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_right (B.le_opNorm _) (norm_nonneg _))
-  have hun : ‖v‖ / 2 ≤ ‖u‖ := by
-    have := norm_sub_norm_le v u
-    rw [norm_sub_rev] at this
-    nlinarith [norm_nonneg v]
-  have hun' : ‖u‖ ≤ 3 / 2 * ‖v‖ := by
-    have := norm_le_norm_add_norm_sub' u v
-    nlinarith [norm_nonneg v]
-  have h₃ : ‖B‖ * ‖u - v‖ * ‖u‖ ≤ ‖B‖ * (δ * ‖v‖) * (3 / 2 * ‖v‖) :=
-    mul_le_mul (mul_le_mul_of_nonneg_left huv (norm_nonneg _)) hun' (norm_nonneg _)
-      (by positivity)
-  have h₄ : ‖B‖ * ‖v‖ * ‖u - v‖ ≤ ‖B‖ * ‖v‖ * (δ * ‖v‖) :=
-    mul_le_mul_of_nonneg_left huv (by positivity)
-  have h₅ : c * (‖v‖ / 2) ^ 2 ≤ c * ‖u‖ ^ 2 :=
-    mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (by positivity) hun 2) hc
-  have h₆ := mul_le_mul_of_nonneg_right hδ₂ (sq_nonneg ‖v‖)
-  nlinarith
-
 /-- **Tangent spaces near a point of tangency stay in a coercive cone.** Near a point `x` at which
 a `C¹` chart `e` flattening `S` onto a closed subspace `L` is tangent to the identity, the tangent
 spaces of `S` lie in the cone `⟪B v, v⟫ ≥ 0`, as soon as the form `⟪B u, u⟫` is coercive on `L`. -/
@@ -233,7 +203,8 @@ theorem eventually_forall_mem_span_tangentConeAt_inner_nonneg {H : Type*} [Norme
     ((heCs _ (e.map_source hz)).differentiableAt one_ne_zero)
   rw [hS.span_tangentConeAt_eq_comap hLc hz hzS hA] at hv
   -- The vector `A v` lies in `L` and is `δ`-close to `v`.
-  refine inner_nonneg_of_norm_sub_le (u := A v) hc.le hδpos.le (min_le_left _ _) hδ₂ (hL _ hv) ?_
+  refine ContinuousLinearMap.re_inner_apply_nonneg_of_norm_sub_le (𝕜 := ℝ) (u := A v) hc.le
+    hδpos.le (min_le_left _ _) hδ₂ (hL _ hv) ?_
   have h : A v - v = (fderiv ℝ e z - ContinuousLinearMap.id ℝ H) v := by
     rw [hA.fderiv, sub_apply, ContinuousLinearMap.id_apply, ContinuousLinearEquiv.coe_coe]
   rw [h]

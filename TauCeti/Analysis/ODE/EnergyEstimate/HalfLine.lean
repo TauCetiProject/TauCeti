@@ -105,14 +105,6 @@ theorem inner_apply_add_integral_le (hBsym : (B : E →ₗ[ℝ] E).IsSymmetric)
     linarith
   simpa [hGdef] using hanti (mem_Ici.2 le_rfl) (mem_Ici.2 hs) hs
 
-/-- From the convergence `A(s) → B`, a time after which `‖A(s) - B‖ ≤ α / 2`. -/
-private theorem exists_forall_norm_sub_le (hA : Tendsto A atTop (𝓝 B)) (hα : 0 < α) :
-    ∀ᶠ T in atTop, ∀ s, T ≤ s → ‖A s - B‖ ≤ α / 2 := by
-  obtain ⟨T₀, hT₀⟩ := eventually_atTop.1 (hA.eventually (Metric.closedBall_mem_nhds B
-    (half_pos hα)))
-  filter_upwards [eventually_ge_atTop T₀] with T hT s hs
-  simpa [dist_eq_norm] using hT₀ s (hT.trans hs)
-
 /-- **Solutions with an eventually nonnegative Lyapunov function are square integrable at
 `+∞`.** Let `A(s) → B` as `s → +∞`, with `B` symmetric and `α ‖v‖ ≤ ‖B v‖` for some `α > 0`. If
 a solution of `w' = -A(s) w` has `⟪w s, B (w s)⟫ ≥ 0` for all large `s`, then `w` is square
@@ -122,7 +114,8 @@ theorem memLp_restrict_Ici_of_eventually_inner_nonneg (hA : Tendsto A atTop (�
     (hw : ∀ s, HasDerivAt w (-A s (w s)) s) (hV : ∀ᶠ s in atTop, 0 ≤ ⟪w s, B (w s)⟫) (a : ℝ) :
     MemLp w 2 (volume.restrict (Ici a)) := by
   have hwc : Continuous w := continuous_iff_continuousAt.2 fun s ↦ (hw s).continuousAt
-  obtain ⟨T, hT⟩ := eventually_atTop.1 ((exists_forall_norm_sub_le hA hα).and
+  obtain ⟨T, hT⟩ := eventually_atTop.1 ((eventually_forall_ge_atTop.2
+    ((tendsto_iff_norm_sub_tendsto_zero.1 hA).eventually (eventually_le_nhds (half_pos hα)))).and
     ((eventually_forall_ge_atTop.2 hV).and (eventually_ge_atTop a)))
   obtain ⟨hAB, hVT, haT⟩ := hT T le_rfl
   have hsq : Continuous fun s ↦ ‖w s‖ ^ 2 := hwc.norm.pow 2
@@ -149,7 +142,8 @@ theorem eventually_not_memLp_restrict_Ici_of_inner_neg (hA : Tendsto A atTop (�
     (hBsym : (B : E →ₗ[ℝ] E).IsSymmetric) (hα : 0 < α) (hBα : ∀ v, α * ‖v‖ ≤ ‖B v‖) (a : ℝ) :
     ∀ᶠ T in atTop, ∀ w : ℝ → E, (∀ s, HasDerivAt w (-A s (w s)) s) →
       ⟪w T, B (w T)⟫ < 0 → ¬ MemLp w 2 (volume.restrict (Ici a)) := by
-  filter_upwards [exists_forall_norm_sub_le hA hα] with T hAB w hw hneg hmem
+  filter_upwards [eventually_forall_ge_atTop.2 ((tendsto_iff_norm_sub_tendsto_zero.1 hA).eventually
+    (eventually_le_nhds (half_pos hα)))] with T hAB w hw hneg hmem
   have hwc : Continuous w := continuous_iff_continuousAt.2 fun s ↦ (hw s).continuousAt
   set d := -⟪w T, B (w T)⟫
   have hd : 0 < d := neg_pos.2 hneg
