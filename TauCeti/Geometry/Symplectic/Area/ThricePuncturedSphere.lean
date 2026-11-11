@@ -120,7 +120,7 @@ theorem integral_fderiv_apply_truncation (ω : SymplecticForm V) {u : ℂ → V}
       norm_num
       ring
     have e₂ : ‖inf.endScale‖ * Real.exp (-(2 * π * (inf.endSign * R))) = ρ := by
-      rw [hρ_def, endScale_inf, endSign_inf, show -(2 * π * (-1 * R)) = 2 * π * R by ring]
+      rw [hρ_def, endScale_inf, endSign_inf, neg_one_mul, mul_neg, neg_neg]
       norm_num
     simp only [loopArea_cylindricalEndLift]
     rw [sum_univ, e₀, e₁, e₂, Finset.sum_pair (by decide), endSign_zero, endSign_one,
@@ -191,8 +191,8 @@ theorem integral_fderiv_apply_closedBall_sdiff_iUnion_ball_eq_sum_loopArea_sub
   have hinf : ω.loopArea (fun t ↦ u (inf.cylindricalEndLift (-R + t * I))) =
       -ω.loopArea (fun t ↦ u (circleMap 0 (2 * Real.exp (2 * π * R)) (2 * π * t))) := by
     have h := ω.loopArea_cylindricalEndLift u inf (-R)
-    simp only [ofReal_neg, endCenter_inf, endScale_inf, Complex.norm_ofNat,
-      show -(2 * π * -R) = 2 * π * R by ring] at h
+    simp only [ofReal_neg, endCenter_inf, endScale_inf, Complex.norm_ofNat, mul_neg,
+      neg_neg] at h
     exact h
   have hD := ω.integral_fderiv_apply_closedBall_sdiff_biUnion_ball Finset.univ 0
     (ρ := 2 * Real.exp (2 * π * R)) (by positivity) c
