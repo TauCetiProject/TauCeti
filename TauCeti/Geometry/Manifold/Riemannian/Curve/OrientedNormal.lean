@@ -18,7 +18,8 @@ by `+π/2` in the oriented tangent plane and divided by its speed, `ν = J γ' /
 points it is a unit vector orthogonal to the velocity, and the oriented area of the pair
 `(γ', ν)` is the speed, so `ν` points to the left of `γ` with respect to the orientation. Along a
 positively oriented boundary curve of a domain it is the inward normal. It vanishes where the
-velocity does, and reversing the curve reverses it.
+velocity does, increasing reparametrizations do not change it, and reversing the curve reverses
+it.
 
 ## Main results
 
@@ -28,6 +29,8 @@ velocity does, and reversing the curve reverses it.
   vector orthogonal to the velocity.
 * `TauCeti.Manifold.riemannianVolumeForm_curveVelocity_orientedUnitNormal`: the oriented area of
   the velocity and the normal is the speed.
+* `TauCeti.Manifold.orientedUnitNormal_comp`: an increasing reparametrization does not change the
+  normal.
 * `TauCeti.Manifold.orientedUnitNormal_comp_const_sub`: reversing the curve reverses the normal.
 
 ## References
@@ -117,5 +120,14 @@ theorem orientedUnitNormal_comp_const_sub (o : Orientation I M (Fin 2)) (γ : �
         mfderiv_zero_of_not_mdifferentiableAt hγ']
       exact neg_zero.symm
   rw [orientedUnitNormal_apply, orientedUnitNormal_apply, hv, NormedSpace.normalize_neg, map_neg]
+
+/-- A reparametrization with positive derivative at `t` does not change the oriented unit normal
+at `t`. -/
+theorem orientedUnitNormal_comp (o : Orientation I M (Fin 2)) {γ : ℝ → M} {φ : ℝ → ℝ}
+    {c t : ℝ} (hφ : HasDerivAt φ c t) (hc : 0 < c) (hγ : MDifferentiableAt 𝓘(ℝ) I γ (φ t)) :
+    orientedUnitNormal o (γ ∘ φ) t = orientedUnitNormal o γ (φ t) := by
+  rw [orientedUnitNormal_apply, orientedUnitNormal_apply, curveVelocity_comp hφ hγ,
+    NormedSpace.normalize_smul_of_pos hc]
+  rfl
 
 end TauCeti.Manifold

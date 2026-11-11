@@ -7,9 +7,12 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Acceleration
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.Curve.OrientedNormal
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 import TauCeti.Geometry.Manifold.Riemannian.Curve.Speed
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Metric
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 
 /-!
 # The signed geodesic curvature of a curve
@@ -31,6 +34,16 @@ differentiating `⟪n, γ'⟫ = 0` gives `⟪D_t n, γ'⟫ = -k_g ‖γ'‖²`. 
 spanned by `γ'` and `n`, which gives the two structure equations of the moving frame `(γ', n)`:
 `D_t γ' = k_g n` for a unit-speed curve, and `D_t n = -k_g γ'`.
 
+The geodesic curvature does not depend on the parametrization: for a change of parameter `φ` with
+`φ' ≠ 0` and a normal orthogonal to the velocity, the acceleration of `γ ∘ φ` is
+`φ'' γ' + φ'² D_t γ'`, whose normal component is `φ'²` times that of `D_t γ'`, while the squared
+speed is multiplied by `φ'²`. The oriented unit normal is unchanged by increasing
+reparametrizations and reversed by reversing the curve, so the geodesic curvature relative to it
+changes sign when the curve is reversed. In particular the total geodesic curvature `∫ k_g ds` of
+an arc shared by two adjacent domains, which traverse it in opposite directions, cancels when the
+two are added. Relative to the oriented unit normal, `k_g` is the oriented area of `(γ', D_t γ')`
+divided by `‖γ'‖³`, which makes it continuous along a regular `C²` curve.
+
 ## Main definitions and results
 
 * `TauCeti.Manifold.geodesicCurvature`: the signed geodesic curvature of a curve relative to a
@@ -44,6 +57,17 @@ spanned by `γ'` and `n`, which gives the two structure equations of the moving 
   with unit normal `n` satisfies `D_t γ' = k_g n`.
 * `TauCeti.Manifold.alongCurve_eq_neg_geodesicCurvature_smul_curveVelocity`: on a surface, a
   unit normal field `n` along a regular curve satisfies `D_t n = -k_g γ'`.
+* `TauCeti.Manifold.geodesicCurvature_comp` and `TauCeti.Manifold.geodesicCurvature_comp_const_sub`:
+  invariance under reparametrization.
+* `TauCeti.Manifold.geodesicCurvature_orientedUnitNormal`: relative to the oriented unit normal,
+  `k_g = vol(γ', D_t γ') / ‖γ'‖³`.
+* `TauCeti.Manifold.geodesicCurvature_orientedUnitNormal_comp` and
+  `TauCeti.Manifold.geodesicCurvature_orientedUnitNormal_comp_const_sub`: relative to the oriented
+  unit normal, `k_g` is unchanged by increasing reparametrizations and changes sign under reversal.
+* `TauCeti.Manifold.integral_geodesicCurvature_orientedUnitNormal_comp_const_sub`: reversing an
+  arc reverses the sign of its total geodesic curvature.
+* `TauCeti.Manifold.continuous_geodesicCurvature_orientedUnitNormal`: along a regular `C²` curve,
+  the geodesic curvature relative to the oriented unit normal is continuous.
 
 ## References
 
@@ -168,5 +192,153 @@ theorem alongCurve_eq_neg_geodesicCurvature_smul_curveVelocity
   have hcoeff := inner_alongCurve_curveVelocity_eq_neg_geodesicCurvature_mul hγ hn hnγ
   rw [← hc, real_inner_smul_left, real_inner_self_eq_norm_sq, ← neg_mul] at hcoeff
   rw [← hc, mul_right_cancel₀ (pow_ne_zero 2 (norm_ne_zero_iff.mpr hγ₀)) hcoeff, neg_smul]
+
+/-- **Reparametrization invariance of the geodesic curvature.** Let `γ` be a `C²` curve and `φ` a
+differentiable change of parameter with `φ'(t) ≠ 0` and `φ'` differentiable at `t`. If `n (φ t)`
+is orthogonal to the velocity of `γ` at `φ t`, then the geodesic curvature of `γ ∘ φ` relative to
+`n ∘ φ` at `t` is that of `γ` relative to `n` at `φ t`. -/
+theorem geodesicCurvature_comp (hγ : ContMDiff 𝓘(ℝ) I 2 γ) {φ : ℝ → ℝ}
+    (hφ : Differentiable ℝ φ) (hφ' : DifferentiableAt ℝ (deriv φ) t) (hφ₀ : deriv φ t ≠ 0)
+    (hn : ⟪n (φ t), curveVelocity I γ (φ t)⟫_ℝ = 0) :
+    geodesicCurvature (γ ∘ φ) (fun r ↦ n (φ r)) t = geodesicCurvature γ n (φ t) := by
+  have hV := differentiableAt_sectionCoord_curveVelocity (I := I) (E := E) (γ := γ)
+    hγ.contMDiffOn isOpen_univ (Set.mem_univ (φ t))
+  rw [geodesicCurvature_def, geodesicCurvature_def,
+    acceleration_comp _ γ hφ hφ' (hγ.mdifferentiable two_ne_zero) hV,
+    curveVelocity_comp (hφ t).hasDerivAt (hγ.mdifferentiable two_ne_zero (φ t)),
+    inner_add_left, real_inner_smul_left, real_inner_smul_left, real_inner_comm, hn, norm_smul,
+    mul_pow, Real.norm_eq_abs, sq_abs, mul_zero, zero_add,
+    mul_div_mul_left _ _ (pow_ne_zero 2 hφ₀)]
+
+/-- **Reversing the parametrization** of a `C²` curve together with its normal field does not
+change the geodesic curvature. Unlike `TauCeti.Manifold.geodesicCurvature_comp`, the normal field
+need not be orthogonal to the velocity, since the reversal `r ↦ d - r` has no second derivative.
+-/
+theorem geodesicCurvature_comp_const_sub (hγ : ContMDiff 𝓘(ℝ) I 2 γ) (d t : ℝ) :
+    geodesicCurvature (fun r ↦ γ (d - r)) (fun r ↦ n (d - r)) t =
+      geodesicCurvature γ n (d - t) := by
+  have hd : deriv (fun r : ℝ ↦ d - r) = fun _ ↦ -1 := by
+    funext r
+    simp
+  have hV := differentiableAt_sectionCoord_curveVelocity (I := I) (E := E) (γ := γ)
+    hγ.contMDiffOn isOpen_univ (Set.mem_univ (d - t))
+  have hacc := acceleration_comp (leviCivitaConnection I M) γ (φ := fun r ↦ d - r) (t := t)
+    (by fun_prop) (by rw [hd]; fun_prop) (hγ.mdifferentiable two_ne_zero) hV
+  have hv := curveVelocity_comp ((hasDerivAt_id t).const_sub d)
+    (hγ.mdifferentiable two_ne_zero (d - t))
+  simp only [Function.comp_def, hd, deriv_const, zero_smul, neg_one_sq, one_smul,
+    zero_add, id_eq, neg_smul] at hacc hv
+  rw [geodesicCurvature_def, geodesicCurvature_def, hacc, hv, norm_neg]
+
+section Oriented
+
+/-! ### The oriented unit normal -/
+
+variable (o : Orientation I M (Fin 2))
+
+/-- **The geodesic curvature relative to the oriented unit normal** is the oriented area of the
+velocity and the covariant acceleration divided by the cubed speed,
+`k_g = vol(γ', D_t γ') / ‖γ'‖³`. -/
+theorem geodesicCurvature_orientedUnitNormal (γ : ℝ → M) (t : ℝ) :
+    geodesicCurvature γ (orientedUnitNormal o γ) t =
+      riemannianVolumeForm o (γ t) ![curveVelocity I γ t,
+        acceleration (leviCivitaConnection I M) γ t] / ‖curveVelocity I γ t‖ ^ 3 := by
+  let := o.fact_finrank_tangentSpace (γ t)
+  rw [geodesicCurvature_def, orientedUnitNormal_apply, NormedSpace.normalize, map_smul,
+    real_inner_smul_right, real_inner_comm,
+    (o.orientationAt (γ t)).inner_rightAngleRotation_left, riemannianVolumeForm_apply,
+    ← (o.orientationAt (γ t)).areaForm_to_volumeForm]
+  ring
+
+/-- Positive reparametrization of a `C²` curve does not change its geodesic curvature relative to
+the oriented unit normal. -/
+theorem geodesicCurvature_orientedUnitNormal_comp (hγ : ContMDiff 𝓘(ℝ) I 2 γ) {φ : ℝ → ℝ}
+    (hφ : Differentiable ℝ φ) (hφ' : DifferentiableAt ℝ (deriv φ) t) (hφ₀ : 0 < deriv φ t) :
+    geodesicCurvature (γ ∘ φ) (orientedUnitNormal o (γ ∘ φ)) t =
+      geodesicCurvature γ (orientedUnitNormal o γ) (φ t) := by
+  rw [← geodesicCurvature_comp hγ hφ hφ' hφ₀.ne' (inner_orientedUnitNormal_curveVelocity o γ _),
+    geodesicCurvature_def, geodesicCurvature_def,
+    orientedUnitNormal_comp o (hφ t).hasDerivAt hφ₀ (hγ.mdifferentiable two_ne_zero (φ t))]
+
+/-- Reversing the parametrization of a `C²` curve reverses the sign of its geodesic curvature
+relative to the oriented unit normal. -/
+theorem geodesicCurvature_orientedUnitNormal_comp_const_sub (hγ : ContMDiff 𝓘(ℝ) I 2 γ)
+    (d t : ℝ) :
+    geodesicCurvature (fun r ↦ γ (d - r)) (orientedUnitNormal o fun r ↦ γ (d - r)) t =
+      -geodesicCurvature γ (orientedUnitNormal o γ) (d - t) := by
+  rw [funext (orientedUnitNormal_comp_const_sub o γ d), geodesicCurvature_fun_neg,
+    geodesicCurvature_comp_const_sub hγ]
+
+/-- **Cancellation along a common arc.** Traversing a `C²` arc backwards reverses the sign of its
+total geodesic curvature `∫ k_g ds` relative to the oriented unit normal. Hence the contributions
+of an arc shared by two adjacent domains, each with its boundary oriented positively, cancel. -/
+theorem integral_geodesicCurvature_orientedUnitNormal_comp_const_sub
+    (hγ : ContMDiff 𝓘(ℝ) I 2 γ) (d a b : ℝ) :
+    ∫ t in a..b, geodesicCurvature (fun r ↦ γ (d - r)) (orientedUnitNormal o fun r ↦ γ (d - r)) t *
+        ‖curveVelocity I (fun r ↦ γ (d - r)) t‖ =
+      -∫ t in d - b..d - a, geodesicCurvature γ (orientedUnitNormal o γ) t *
+        ‖curveVelocity I γ t‖ := by
+  have hv (t : ℝ) : curveVelocity I (fun r ↦ γ (d - r)) t = -curveVelocity I γ (d - t) := by
+    simpa [Function.comp_def] using curveVelocity_comp ((hasDerivAt_id t).const_sub d)
+      (hγ.mdifferentiable two_ne_zero (d - t))
+  simp_rw [geodesicCurvature_orientedUnitNormal_comp_const_sub o hγ, hv, norm_neg, neg_mul]
+  rw [intervalIntegral.integral_neg,
+    intervalIntegral.integral_comp_sub_left
+      (fun r ↦ geodesicCurvature γ (orientedUnitNormal o γ) r * ‖curveVelocity I γ r‖) d]
+
+/-- The geodesic curvature of a periodic `C²` curve relative to its oriented unit normal is
+periodic, with the same period. -/
+theorem _root_.Function.Periodic.geodesicCurvature_orientedUnitNormal (hγ : ContMDiff 𝓘(ℝ) I 2 γ)
+    {a : ℝ} (hper : Function.Periodic γ a) :
+    Function.Periodic (geodesicCurvature γ (orientedUnitNormal o γ)) a := by
+  intro t
+  have h := geodesicCurvature_orientedUnitNormal_comp o hγ (φ := (· + a)) (t := t) (by fun_prop)
+    (by simp) (by simp)
+  rwa [show γ ∘ (· + a) = γ from funext hper, eq_comm] at h
+
+/-- The geodesic curvature of a `C²` curve relative to its oriented unit normal is continuous at
+every parameter where the velocity does not vanish. -/
+theorem continuousAt_geodesicCurvature_orientedUnitNormal (hγ : ContMDiff 𝓘(ℝ) I 2 γ)
+    (hne : curveVelocity I γ t ≠ 0) :
+    ContinuousAt (geodesicCurvature γ (orientedUnitNormal o γ)) t := by
+  have : IsManifold I (0 + 1) M := by simpa using (inferInstance : IsManifold I 1 M)
+  have : ContMDiffVectorBundle (0 + 1) E (TangentSpace I : M → Type _) I := by
+    simpa using (inferInstance : ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I)
+  have hV : ContMDiff 𝓘(ℝ) I.tangent (0 + 1)
+      fun r ↦ TotalSpace.mk' E (γ r) (curveVelocity I γ r) := by
+    rw [zero_add, ← funext fun r ↦ curveVelocityLift_apply (I := I) γ r, ← contMDiffOn_univ,
+      ← curveVelocityLiftWithin_univ]
+    exact hγ.contMDiffOn.contMDiffOn_curveVelocityLiftWithin (by norm_num) uniqueMDiffOn_univ
+  have hA : ContMDiff 𝓘(ℝ) I.tangent 0
+      (fun r ↦ TotalSpace.mk' E (γ r) (acceleration (leviCivitaConnection I M) γ r)) := by
+    simpa only [acceleration_def] using
+      (leviCivitaConnection I M).contMDiff_alongCurve γ (curveVelocity I γ)
+        (fun x ↦ contMDiffCovariantDerivativeOn_leviCivitaConnection (n := 0) (m := 2) (k := 1)
+          (trivializationAt E (TangentSpace I) x).open_baseSet (by norm_num) (by norm_num)) hV
+  have hvol := ((isSmoothForm_riemannianVolumeForm (n := 0) o).contMDiff (γ t)).comp t
+    (hγ.of_le (by norm_num) t)
+  have heval := hvol.continuousAlternatingMap_bundle_apply
+    (v := fun i r ↦ ![curveVelocity I γ r, acceleration (leviCivitaConnection I M) γ r] i)
+    (fun i ↦ by
+      fin_cases i
+      · exact (hV.of_le (by norm_num)) t
+      · exact hA t)
+  have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 1) (F := E)
+    (V := fun x : M ↦ TangentSpace I x)
+  have hnorm : Continuous fun r ↦ ‖curveVelocity I γ r‖ :=
+    (continuous_norm_bundle E (TangentSpace I)).comp hV.continuous
+  exact ((contMDiffAt_totalSpace.mp heval).2.continuousAt.div (hnorm.pow 3).continuousAt
+    (pow_ne_zero 3 (norm_ne_zero_iff.mpr hne))).congr
+    (Eventually.of_forall fun r ↦ (geodesicCurvature_orientedUnitNormal o γ r).symm)
+
+/-- The geodesic curvature of a regular `C²` curve relative to its oriented unit normal is
+continuous. -/
+theorem continuous_geodesicCurvature_orientedUnitNormal (hγ : ContMDiff 𝓘(ℝ) I 2 γ)
+    (hne : ∀ t, curveVelocity I γ t ≠ 0) :
+    Continuous (geodesicCurvature γ (orientedUnitNormal o γ)) :=
+  continuous_iff_continuousAt.mpr fun t ↦
+    continuousAt_geodesicCurvature_orientedUnitNormal o hγ (hne t)
+
+end Oriented
 
 end TauCeti.Manifold
