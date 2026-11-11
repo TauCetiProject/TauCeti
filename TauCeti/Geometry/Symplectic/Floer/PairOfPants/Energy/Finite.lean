@@ -102,7 +102,7 @@ private theorem floerEnergyDensity_endChart_nonneg (ω : SymplecticForm V)
       stdComplexLineReal ζ = fun _ ↦ 0 := by
     funext x
     rw [perturbationPullback_endChart, equivRealProdCLM_symm_stdComplexLineReal,
-      pairOfPantsEndComponent_one_of_pos (hH q) hpos]
+      pairOfPantsEndComponent_one_of_pos hpos]
   have hKt : perturbationPullback (endChart q)
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)

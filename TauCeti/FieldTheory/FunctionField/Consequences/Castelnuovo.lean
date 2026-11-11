@@ -509,7 +509,7 @@ finite over both, and `F / F₁` separable. Then
 
 `g(F) ≤ [F : F₁] g(F₁) + [F : F₂] g(F₂) + ([F : F₁] - 1) ([F : F₂] - 1)`. -/
 private theorem genus_le_of_isSeparable (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
-    {x : F} (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] [Algebra.IsSeparable F₁ F]
+    {x : F} [Algebra.IsSeparable k⟮x⟯ F] [Algebra.IsSeparable F₁ F]
     (htop : IntermediateField.adjoin F₁ (Set.range (algebraMap F₂ F)) = ⊤) :
     genus k F ≤ Module.finrank F₁ F * genus k F₁ + Module.finrank F₂ F * genus k F₂ +
       (Module.finrank F₁ F - 1) * (Module.finrank F₂ F - 1) := by
@@ -526,7 +526,7 @@ private theorem genus_le_of_isSeparable (hF : IsFunctionField k F) (hex : IsInte
     rw [← hyz']
     exact Finset.sum_congr rfl fun i _ ↦ by rw [hz, Algebra.smul_def]
   obtain ⟨P₁, hP₁sep, φ, hmin, hsep, hc, hz', hd⟩ := exists_place_separable_reduction hF y c z
-    (Place.infinite_setOf_isSeparable_residueField_of_finiteDimensional (E := F₁) hF hx)
+    (Place.infinite_setOf_isSeparable_residueField_of_finiteDimensional (E := F₁) hF (x := x))
   /- The places of `F` over `P₁` are unramified, so their residue fields are separable over that
   of `P₁`, hence over `k`. -/
   have hsepR (R : Place k F) (hR : R.restrict k F₁ = P₁) :
@@ -540,7 +540,7 @@ private theorem genus_le_of_isSeparable (hF : IsFunctionField k F) (hex : IsInte
   Galois extension `k'` of `k`. -/
   have hSR := Place.finite_setOf_restrict_eq (k' := k) (F' := F) k F₁ P₁
   obtain ⟨TQ, hTQsep, hTQ⟩ := (Place.infinite_setOf_isSeparable_residueField_of_finiteDimensional
-    (E := F₂) hF hx).exists_subset_card_eq (genus k F₂ + Module.finrank F₁ F)
+    (E := F₂) hF (x := x)).exists_subset_card_eq (genus k F₂ + Module.finrank F₁ F)
   obtain ⟨F', k', _, _, _, h, hembR, hembQ⟩ :=
     Place.exists_constantCompositum_eq_top_nonempty_algHom hF hF.of_isAlgebraic_top hSR.toFinset
       TQ (fun R hR ↦ hsepR R (hSR.mem_toFinset.mp hR)) fun Q hQ ↦ hTQsep hQ
@@ -564,13 +564,13 @@ theorem genus_le_finrank_mul_genus_add_finrank_mul_genus_add (hF : IsFunctionFie
   have : Algebra.EssFiniteType F₂ F := .of_comp k F₂ F
   rcases isSeparable_left_or_right_of_adjoin_eq_top hdim htop with h₁ | h₂
   · have := h₁
-    exact genus_le_of_isSeparable hF hex hx htop
+    exact genus_le_of_isSeparable hF hex (x := x) htop
   · have := h₂
     have htop' : IntermediateField.adjoin F₂ (Set.range (algebraMap F₁ F)) = ⊤ := by
       apply IntermediateField.toSubfield_injective
       simpa only [IntermediateField.adjoin_toSubfield, IntermediateField.top_toSubfield,
         Set.union_comm] using congrArg IntermediateField.toSubfield htop
-    simpa [add_comm, mul_comm] using genus_le_of_isSeparable hF hex hx htop'
+    simpa [add_comm, mul_comm] using genus_le_of_isSeparable hF hex (x := x) htop'
 
 /-- **Castelnuovo's inequality** over a perfect constant field (Stichtenoth, Theorem 3.11.3): if
 `F = F₁ F₂` is finite over both subfields and has exact constants, then
