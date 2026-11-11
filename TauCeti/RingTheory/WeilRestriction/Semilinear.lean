@@ -10,7 +10,7 @@ public import TauCeti.RingTheory.WeilRestriction.Basic
 /-!
 # Semilinear functoriality of the Weil restriction and induced Galois actions
 
-Let `B` be a finite projective `A`-algebra and `C`, `D` finitely presented `B`-algebras. Besides
+Let `B` be a finite projective `A`-algebra and `C`, `D` arbitrary `B`-algebras. Besides
 `B`-algebra homomorphisms, the Weil restriction is functorial in pairs `(σ, φ)` consisting of an
 `A`-algebra automorphism `σ` of `B` and a ring homomorphism `φ : C →+* D` that is semilinear
 over `σ`, in the sense that `φ (b • c) = σ b • φ c`. The induced `A`-algebra homomorphism
@@ -70,7 +70,6 @@ variable {A B C D E : Type*} [CommRing A] [CommRing B] [CommRing C] [CommRing D]
 section Semilinear
 
 variable [Module.Finite A B] [Module.Projective A B]
-  [FinitePresentation B C] [FinitePresentation B D] [FinitePresentation B E]
 
 /-- The **semilinear functoriality of the Weil restriction**: a ring homomorphism `φ : C →+* D`
 that is semilinear over an `A`-algebra automorphism `σ` of `B`, in the sense that
@@ -185,7 +184,7 @@ end Semilinear
 
 section Action
 
-variable [Module.Finite A B] [Module.Projective A B] [FinitePresentation B C]
+variable [Module.Finite A B] [Module.Projective A B]
   {Γ : Type*} [Monoid Γ] (ρB : Γ →* (B ≃ₐ[A] B)) (ρC : Γ →* RingAut C)
   (h : ∀ γ b, ρC γ (algebraMap B C b) = algebraMap B C (ρB γ b))
 

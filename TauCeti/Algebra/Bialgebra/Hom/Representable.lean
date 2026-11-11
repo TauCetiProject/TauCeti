@@ -149,11 +149,13 @@ variable {T : Type*} [CommRing T] [Algebra R T]
 private def toAlgHom (g : Ambient R H G →ₐ[R] T) : T ⊗[R] H →ₐ[T] T ⊗[R] G :=
   AlgHom.liftEquiv R T H _ (TauCeti.Algebra.WeilRestriction.tensorHomEquiv R G H T g)
 
+omit [Algebra.FinitePresentation R H] in
 private lemma tensorHomEquiv_eq (g : Ambient R H G →ₐ[R] T) :
     TauCeti.Algebra.WeilRestriction.tensorHomEquiv R G H T g =
       (map g (AlgHom.id R G)).comp (univ R H G) := by
   rw [univ, ← TauCeti.Algebra.WeilRestriction.tensorHomEquiv_comp, AlgHom.comp_id]
 
+omit [Algebra.FinitePresentation R H] in
 private lemma tensorHomEquiv_comp_comulLeft (g : Ambient R H G →ₐ[R] T) :
     TauCeti.Algebra.WeilRestriction.tensorHomEquiv R (G ⊗[R] G) H T (g.comp (comulLeft R H G)) =
       (map (AlgHom.id R T) (_root_.Bialgebra.comulAlgHom R G)).comp
@@ -163,6 +165,7 @@ private lemma tensorHomEquiv_comp_comulLeft (g : Ambient R H G →ₐ[R] T) :
     ← Algebra.TensorProduct.map_comp, AlgHom.comp_id, AlgHom.id_comp, AlgHom.comp_id,
     AlgHom.id_comp]
 
+omit [Algebra.FinitePresentation R H] in
 private lemma tensorHomEquiv_comp_comulRight (g : Ambient R H G →ₐ[R] T) :
     TauCeti.Algebra.WeilRestriction.tensorHomEquiv R (G ⊗[R] G) H T (g.comp (comulRight R H G)) =
       ((mulBaseChange R T G G).restrictScalars R).comp
@@ -173,6 +176,7 @@ private lemma tensorHomEquiv_comp_comulRight (g : Ambient R H G →ₐ[R] T) :
     ← AlgHom.comp_assoc, AlgHom.map_comp_mulBaseChange, Algebra.TensorProduct.map_comp]
   simp only [AlgHom.comp_assoc]
 
+omit [Algebra.FinitePresentation R H] in
 private lemma comp_counitLeft (g : Ambient R H G →ₐ[R] T) :
     g.comp (counitLeft R H G) =
       ((_root_.Bialgebra.counitAlgHom T (T ⊗[R] G)).restrictScalars R).comp
@@ -184,6 +188,7 @@ private lemma comp_counitLeft (g : Ambient R H G →ₐ[R] T) :
     Algebra.TensorProduct.ext' fun a x ↦ by simp [Algebra.smul_def]
   rw [counitLeft, ← AlgHom.comp_assoc, hg, AlgHom.comp_assoc]
 
+omit [Algebra.FinitePresentation R H] in
 private lemma comp_counitRight (g : Ambient R H G →ₐ[R] T) :
     g.comp (counitRight R H G) = (Algebra.ofId R T).comp (_root_.Bialgebra.counitAlgHom R H) := by
   ext; simp [counitRight]
@@ -203,6 +208,7 @@ private lemma ideal_le_ker_iff_toAlgHom (g : Ambient R H G →ₐ[R] T) :
   simp only [toAlgHom, Equiv.symm_apply_apply, tensorHomEquiv_eq,
     eq_comm (a := map (AlgHom.id R T) _ |>.comp _)]
 
+omit [Algebra.FinitePresentation R H] in
 private lemma toAlgHom_symm (F : T ⊗[R] H →ₐ[T] T ⊗[R] G) :
     toAlgHom ((TauCeti.Algebra.WeilRestriction.tensorHomEquiv R G H T).symm
       ((AlgHom.liftEquiv R T H _).symm F)) = F := by

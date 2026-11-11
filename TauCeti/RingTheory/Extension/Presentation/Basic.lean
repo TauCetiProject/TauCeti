@@ -18,6 +18,8 @@ by its values on the generators (`Algebra.Generators.algHom_ext`, in
 
 ## Main definitions
 
+* `Algebra.Generators.toPresentation P`: the presentation using the chosen generators of `P`
+  and every element of its kernel as a relation.
 * `Algebra.Presentation.lift P x hx`: the `R`-algebra homomorphism out of `S` sending the
   generators of `P` to a family `x` satisfying the relations of `P`.
 
@@ -37,6 +39,24 @@ open MvPolynomial TensorProduct
 namespace Algebra
 
 variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+
+/-- The presentation attached to a family of algebra generators, taking every element of the
+kernel as a defining relation. No finiteness assumption on the generators or relations is needed. -/
+def Generators.toPresentation {ι : Type*} (P : Generators R S ι) :
+    Presentation R S ι P.ker where
+  toGenerators := P
+  relation := Subtype.val
+  span_range_relation_eq_ker := by rw [Subtype.range_coe, Ideal.span_eq]
+
+/-- Taking all kernel relations preserves the chosen generators. -/
+@[simp]
+theorem Generators.toPresentation_toGenerators {ι : Type*} (P : Generators R S ι) :
+    P.toPresentation.toGenerators = P := (rfl)
+
+/-- The relations in the presentation of a generating family are the kernel elements themselves. -/
+@[simp]
+theorem Generators.toPresentation_relation {ι : Type*} (P : Generators R S ι) (r : P.ker) :
+    P.toPresentation.relation r = r := (rfl)
 
 namespace Presentation
 
@@ -81,16 +101,12 @@ theorem _root_.MvPolynomial.map_ker_aeval_eq_ker_aeval_tmul {ι : Type*} {val : 
       RingHom.ker (aeval (R := B) fun v ↦ (1 : B) ⊗ₜ[R] val v :
         MvPolynomial ι B →ₐ[B] B ⊗[R] S) := by
   let PA : Presentation R S ι (RingHom.ker (aeval (R := R) val) : Set (MvPolynomial ι R)) :=
-    { toGenerators := .ofSurjective val hϕ
-      relation := Subtype.val
-      span_range_relation_eq_ker := by
-        rw [Subtype.range_coe, Ideal.span_eq, Generators.ker_eq_ker_aeval_val,
-          funext (Generators.ofSurjective_val val hϕ)] }
+    (Generators.ofSurjective val hϕ).toPresentation
   have h := PA.span_range_relation_eq_ker_baseChange B
   have h₁ : (Set.range fun i ↦ map (algebraMap R B) (PA.relation i)) =
       map (algebraMap R B) '' (RingHom.ker (aeval (R := R) val) : Set (MvPolynomial ι R)) := by
     ext
-    simp [PA]
+    simp [PA, Generators.toPresentation]
   have h₂ : (PA.toGenerators.baseChange B).val = fun v ↦ 1 ⊗ₜ val v := by
     ext
     simp [PA]

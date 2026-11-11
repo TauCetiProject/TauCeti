@@ -10,8 +10,8 @@ public import TauCeti.RingTheory.WeilRestriction.Basic
 /-!
 # Weil restriction preserves products of affine schemes
 
-For a finite projective algebra `B` over `A`, the Weil restriction of a product of finitely
-presented affine `B`-schemes is the product of their Weil restrictions. On coordinate rings,
+For a finite projective algebra `B` over `A`, the Weil restriction of a product of
+affine `B`-schemes is the product of their Weil restrictions. On coordinate rings,
 `tensorAlgEquiv` identifies the Weil restriction of `C ⊗[B] D` with the tensor product over `A`
 of the Weil restrictions of `C` and `D`.
 
@@ -35,12 +35,7 @@ namespace TauCeti.Algebra.WeilRestriction
 
 variable {A B C D : Type*} [CommRing A] [CommRing B] [CommRing C] [CommRing D]
   [Algebra A B] [Module.Finite A B] [Module.Projective A B]
-  [Algebra B C] [Algebra B D] [Algebra.FinitePresentation B C]
-  [Algebra.FinitePresentation B D]
-
--- Cache the finite-presentation proof for the product, by base change and transitivity.
-local instance : Algebra.FinitePresentation B (C ⊗[B] D) :=
-  .trans B C (C ⊗[B] D)
+  [Algebra B C] [Algebra B D]
 
 -- The universal pair of points, viewed as a point of the product over `B`.
 private def tensorPoint : C ⊗[B] D →ₐ[B]
@@ -86,7 +81,7 @@ private lemma toTensor_comp_map_includeRight :
   simp [toTensor, tensorPoint]
 
 variable (A B C D) in
-/-- Weil restriction along a finite projective algebra preserves products of finitely presented
+/-- Weil restriction along a finite projective algebra preserves products of
 affine schemes: the coordinate algebra of the restricted product is the tensor product of the
 restricted coordinate algebras. -/
 def tensorAlgEquiv : WeilRestriction A B (C ⊗[B] D) ≃ₐ[A]
@@ -169,8 +164,7 @@ theorem tensorAlgEquiv_symm_comp_includeRight :
 
 /-- The product comparison is natural in both coordinate algebras. -/
 theorem tensorAlgEquiv_natural {C' D' : Type*} [CommRing C'] [CommRing D']
-    [Algebra B C'] [Algebra B D'] [Algebra.FinitePresentation B C']
-    [Algebra.FinitePresentation B D'] (f : C →ₐ[B] C') (g : D →ₐ[B] D') :
+    [Algebra B C'] [Algebra B D'] (f : C →ₐ[B] C') (g : D →ₐ[B] D') :
     (tensorAlgEquiv A B C' D').toAlgHom.comp (map A B (Algebra.TensorProduct.map f g)) =
       (Algebra.TensorProduct.map (map A B f) (map A B g)).comp
         (tensorAlgEquiv A B C D).toAlgHom := by
