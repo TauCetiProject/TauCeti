@@ -460,13 +460,12 @@ theorem isNonarchimedean_supSeminorm (hA : IsAffinoidAlgebra K A) :
 
 /-- A polynomial with coefficients in the unit ball of `K` and no constant term, evaluated at
 elements of supremum seminorm at most `ε ≤ 1`, has supremum seminorm at most `ε`. -/
-theorem supSeminorm_aeval_le {σ : Type*} [Finite σ] (hA : IsAffinoidAlgebra K A) {x : σ → A}
+theorem supSeminorm_aeval_le {σ : Type*} (hA : IsAffinoidAlgebra K A) {x : σ → A}
     {ε : ℝ} (hε0 : 0 ≤ ε) (hε1 : ε ≤ 1) (hx : ∀ i, supSeminorm K (x i) ≤ ε)
     {q : MvPolynomial σ K} (hq0 : q.coeff 0 = 0) (hq : ∀ t, ‖q.coeff t‖ ≤ 1) :
     supSeminorm K (MvPolynomial.aeval x q) ≤ ε := by
   classical
-  have := Fintype.ofFinite σ
-  rw [MvPolynomial.aeval_def, MvPolynomial.eval₂_eq']
+  rw [MvPolynomial.aeval_def, MvPolynomial.eval₂_eq]
   refine Finset.sum_induction _ (fun b ↦ supSeminorm K b ≤ ε)
     (fun a b ha hb ↦ (hA.supSeminorm_add_le a b).trans (max_le ha hb))
     (supSeminorm_zero.trans_le hε0) fun t ht ↦ ?_
@@ -474,7 +473,7 @@ theorem supSeminorm_aeval_le {σ : Type*} [Finite σ] (hA : IsAffinoidAlgebra K 
   obtain ⟨i, hi⟩ : ∃ i, t i ≠ 0 := by
     by_contra! h
     exact MvPolynomial.mem_support_iff.mp ht (by rw [show t = 0 from Finsupp.ext h, hq0])
-  have hrest : supSeminorm K (∏ j ∈ Finset.univ.erase i, x j ^ t j) ≤ 1 :=
+  have hrest : supSeminorm K (∏ j ∈ t.support.erase i, x j ^ t j) ≤ 1 :=
     Finset.prod_induction _ (fun b ↦ supSeminorm K b ≤ 1)
       (fun a b ha hb ↦ (hA.supSeminorm_mul_le a b).trans
         ((mul_le_of_le_one_left (supSeminorm_nonneg b) ha).trans hb))
@@ -483,8 +482,9 @@ theorem supSeminorm_aeval_le {σ : Type*} [Finite σ] (hA : IsAffinoidAlgebra K 
           rw [y.pointNorm_pow]
           exact pow_le_one₀ (pointNorm_nonneg _)
             ((hA.pointNorm_le_supSeminorm y _).trans ((hx j).trans hε1))
-  rw [← Algebra.smul_def, supSeminorm_smul, ← Finset.mul_prod_erase _ _ (Finset.mem_univ i)]
-  calc ‖q.coeff t‖ * supSeminorm K (x i ^ t i * ∏ j ∈ Finset.univ.erase i, x j ^ t j)
+  rw [← Algebra.smul_def, supSeminorm_smul,
+    ← Finset.mul_prod_erase _ _ (Finsupp.mem_support_iff.mpr hi)]
+  calc ‖q.coeff t‖ * supSeminorm K (x i ^ t i * ∏ j ∈ t.support.erase i, x j ^ t j)
       ≤ 1 * (ε * 1) := by
         refine mul_le_mul (hq t) ((hA.supSeminorm_mul_le _ _).trans (mul_le_mul ?_ hrest
           (supSeminorm_nonneg _) hε0)) (supSeminorm_nonneg _) zero_le_one
