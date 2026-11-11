@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Isomorphisms
 public import TauCeti.Analysis.Pseudodifferential.Elliptic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Homogeneous
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 
 /-!
 # Classical symbols
@@ -39,6 +40,8 @@ and proves:
 * `TauCeti.ClassicalSymbol.principal`, the principal symbol, with
   `TauCeti.ClassicalSymbol.exists_sub_cutoffSymbol_principal`: the full symbol and its cut-off
   principal symbol differ by a symbol of order `m - 1`;
+* `TauCeti.ClassicalSymbol.tendsto_rpow_neg_smul_coefficient_smul`: at a nonzero frequency the
+  principal symbol is the high-frequency limit `σ(a)(x, ξ) = lim_{t → ∞} t ^ (-m) a(x, t ξ)`;
 * `TauCeti.ClassicalSymbol.principal_eq_zero_iff` and
   `TauCeti.ClassicalSymbol.principal_surjective`: the principal symbol vanishes exactly on the
   classical symbols of order `m - 1`, and every homogeneous symbol of degree `m` is a principal
@@ -348,6 +351,76 @@ theorem exists_norm_toSymbol_sub_principal_le {K : Set (CoordinateSpace n)} (hK 
   have h := congrFun hr (x, ξ)
   rw [Symbol.coefficient_sub, Pi.sub_apply, coefficient_cutoffSymbol_of_two_le_norm _ _ hξ] at h
   exact h ▸ hC x hx ξ
+
+/-- **The principal symbol is the high-frequency limit of the full symbol.** At a nonzero
+frequency `ξ`, `t ^ (-m) a(y, t ζ) → σ(a)(x, ξ)` as `t → ∞` and `(y, ζ) → (x, ξ)`. -/
+theorem tendsto_rpow_neg_smul_coefficient_smul {x ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
+    Tendsto (fun p : ℝ × (CoordinateSpace n × CoordinateSpace n) ↦
+        p.1 ^ (-m) • a.toSymbol.coefficient (p.2.1, p.1 • p.2.2))
+      (atTop ×ˢ 𝓝 (x, ξ)) (𝓝 (a.principal.coefficient (x, ξ))) := by
+  set σ := a.principal.coefficient
+  have hσ : ContinuousAt σ (x, ξ) :=
+    a.principal.contDiffOn_coefficient.continuousOn.continuousAt
+      ((isOpen_ne.preimage continuous_snd).mem_nhds hξ)
+  obtain ⟨C, hC⟩ := a.exists_norm_toSymbol_sub_principal_le (isCompact_closedBall x 1)
+  set r := ‖ξ‖
+  have hr : 0 < r := norm_pos_iff.2 hξ
+  set M := max (((r / 2) ^ 2) ^ ((m - 1) / 2)) ((1 + (3 * r / 2) ^ 2) ^ ((m - 1) / 2))
+  -- For `‖ζ - ξ‖ < r / 2` and `t ≥ max 1 (4 / r)`, the difference between the rescaled symbol
+  -- and its principal part is at most `C M t⁻¹`.
+  have herr : Tendsto (fun p : ℝ × (CoordinateSpace n × CoordinateSpace n) ↦
+      p.1 ^ (-m) • (a.toSymbol.coefficient (p.2.1, p.1 • p.2.2) - σ (p.2.1, p.1 • p.2.2)))
+      (atTop ×ˢ 𝓝 (x, ξ)) (𝓝 0) := by
+    have hlim : Tendsto (fun p : ℝ × (CoordinateSpace n × CoordinateSpace n) ↦ C * M * p.1⁻¹)
+        (atTop ×ˢ 𝓝 (x, ξ)) (𝓝 0) := by
+      simpa using (tendsto_inv_atTop_zero.comp tendsto_fst).const_mul (C * M)
+    refine squeeze_zero_norm' ?_ hlim
+    have hN : Metric.closedBall x 1 ×ˢ Metric.ball ξ (r / 2) ∈ 𝓝 (x, ξ) :=
+      prod_mem_nhds (Metric.closedBall_mem_nhds x one_pos) (Metric.ball_mem_nhds ξ (by positivity))
+    filter_upwards [prod_mem_prod (eventually_ge_atTop (max 1 (4 / r))) hN]
+    rintro ⟨t, y, ζ⟩ ⟨ht, hy, hζ⟩
+    have ht1 : 1 ≤ t := (le_max_left _ _).trans ht
+    have ht4 : 4 / r ≤ t := (le_max_right _ _).trans ht
+    have ht0 : 0 < t := one_pos.trans_le ht1
+    rw [Metric.mem_ball, dist_eq_norm] at hζ
+    have hζ1 : r / 2 ≤ ‖ζ‖ := by
+      have := norm_sub_norm_le ξ ζ
+      rw [norm_sub_rev] at this
+      linarith
+    have hζ2 : ‖ζ‖ ≤ 3 * r / 2 := by
+      have := norm_le_norm_add_norm_sub' ζ ξ
+      linarith
+    have htζ : ‖t • ζ‖ = t * ‖ζ‖ := by rw [norm_smul, Real.norm_of_nonneg ht0.le]
+    have h2 : 2 ≤ ‖t • ζ‖ := by
+      rw [htζ]
+      have : 4 ≤ t * r := by rwa [div_le_iff₀ hr] at ht4
+      nlinarith
+    have hlo : t * (r / 2) ≤ t * ‖ζ‖ := mul_le_mul_of_nonneg_left hζ1 ht0.le
+    have hhi : t * ‖ζ‖ ≤ t * (3 * r / 2) := mul_le_mul_of_nonneg_left hζ2 ht0.le
+    have hbr : (1 + ‖t • ζ‖ ^ 2) ^ ((m - 1) / 2) ≤ M * t ^ (m - 1) :=
+      one_add_norm_sq_rpow_half_le (by positivity) ht0
+        ⟨by rw [htζ]; nlinarith, by rw [htζ]; nlinarith⟩ _
+    have hle := hC y hy (t • ζ) h2
+    have hC0 : 0 ≤ C := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans hle) (by positivity)
+    calc ‖t ^ (-m) • (a.toSymbol.coefficient (y, t • ζ) - σ (y, t • ζ))‖
+        = t ^ (-m) * ‖a.toSymbol.coefficient (y, t • ζ) - σ (y, t • ζ)‖ := by
+          rw [norm_smul, Real.norm_of_nonneg (by positivity)]
+      _ ≤ t ^ (-m) * (C * (M * t ^ (m - 1))) := by
+          gcongr
+          exact hle.trans (mul_le_mul_of_nonneg_left hbr hC0)
+      _ = C * M * t⁻¹ := by
+          rw [← Real.rpow_neg_one, mul_left_comm, mul_left_comm (t ^ (-m)), ← Real.rpow_add ht0]
+          ring_nf
+  -- By homogeneity, `t ^ (-m) σ(y, t ζ) = σ(y, ζ)`, which tends to `σ(x, ξ)`.
+  have heq : ∀ᶠ p : ℝ × (CoordinateSpace n × CoordinateSpace n) in atTop ×ˢ 𝓝 (x, ξ),
+      σ p.2 + p.1 ^ (-m) • (a.toSymbol.coefficient (p.2.1, p.1 • p.2.2) - σ (p.2.1, p.1 • p.2.2)) =
+        p.1 ^ (-m) • a.toSymbol.coefficient (p.2.1, p.1 • p.2.2) := by
+    filter_upwards [prod_mem_prod (eventually_gt_atTop (0 : ℝ)) (univ_mem (f := 𝓝 (x, ξ)))]
+    rintro ⟨t, y, ζ⟩ ⟨ht, -⟩
+    dsimp only at ht ⊢
+    rw [smul_sub, show σ (y, t • ζ) = t ^ m • σ (y, ζ) from a.principal.homogeneous _ _ _ ht,
+      smul_smul, ← Real.rpow_add ht, neg_add_cancel, Real.rpow_zero, one_smul, add_sub_cancel]
+  simpa using ((hσ.tendsto.comp tendsto_snd).add herr).congr' heq
 
 @[simp]
 theorem principal_zero : (0 : ClassicalSymbol n V W m).principal = 0 :=
