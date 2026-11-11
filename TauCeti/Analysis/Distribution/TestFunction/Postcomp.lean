@@ -14,6 +14,12 @@ A continuous linear equivalence of coefficient spaces induces a continuous linea
 of native test-function spaces. These maps preserve the exact support
 and commute with extension to a larger open domain. Continuity uses Mathlib's
 `TestFunction.postcompCLM`, hence the native locally convex inductive-limit topology.
+
+For complex-valued smooth functions supported in a compact set, postcomposition with the real and
+imaginary parts `Complex.reCLM` and `Complex.imCLM` gives real-valued ones. This file records how
+these parts transform under complex scalars, that they recover a real function viewed as a complex
+one through `Complex.ofRealCLM`, and that they do not increase the `C^k` seminorms
+(`ContDiffMapSupportedIn.supSeminorm_postcompLM_le`).
 -/
 
 public section
@@ -93,3 +99,53 @@ theorem postcompCLE_monoCLM (e : F ≃L[𝕜] G) {m : ℕ∞}
   by_cases h : m ≤ n ∧ Ω ≤ Ω' <;> simp [h]
 
 end TestFunction
+
+namespace ContDiffMapSupportedIn
+
+open Complex
+open scoped Distributions
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {K : TopologicalSpace.Compacts E}
+  {n : ℕ∞}
+
+theorem postcompLM_reCLM_smul (c : ℂ) (φ : 𝓓^{n}_{K}(E, ℂ)) :
+    postcompLM (𝕜 := ℝ) reCLM (c • φ) =
+      c.re • postcompLM (𝕜 := ℝ) reCLM φ - c.im • postcompLM (𝕜 := ℝ) imCLM φ := by
+  ext x
+  simp
+
+theorem postcompLM_imCLM_smul (c : ℂ) (φ : 𝓓^{n}_{K}(E, ℂ)) :
+    postcompLM (𝕜 := ℝ) imCLM (c • φ) =
+      c.re • postcompLM (𝕜 := ℝ) imCLM φ + c.im • postcompLM (𝕜 := ℝ) reCLM φ := by
+  ext x
+  simp
+
+@[simp]
+theorem postcompLM_reCLM_ofRealCLM (φ : 𝓓^{n}_{K}(E, ℝ)) :
+    postcompLM (𝕜 := ℝ) reCLM (postcompLM (𝕜 := ℝ) ofRealCLM φ) = φ := by
+  ext x
+  simp
+
+@[simp]
+theorem postcompLM_imCLM_ofRealCLM (φ : 𝓓^{n}_{K}(E, ℝ)) :
+    postcompLM (𝕜 := ℝ) imCLM (postcompLM (𝕜 := ℝ) ofRealCLM φ) = 0 := by
+  ext x
+  simp
+
+/-- The `C^k` seminorms do not increase under postcomposition with a real-linear map
+`ℂ →L[ℝ] ℝ` of norm at most one, such as the real and imaginary parts. -/
+theorem supSeminorm_postcompLM_le {T : ℂ →L[ℝ] ℝ} (hT : ‖T‖ ≤ 1) (k : ℕ)
+    (φ : 𝓓^{n}_{K}(E, ℂ)) :
+    ContDiffMapSupportedIn.supSeminorm ℝ E ℝ n K k (postcompLM (𝕜 := ℝ) T φ) ≤
+      ContDiffMapSupportedIn.supSeminorm ℂ E ℂ n K k φ := by
+  refine Seminorm.finset_sup_apply_le (apply_nonneg _ _) fun i hi ↦ ?_
+  calc ContDiffMapSupportedIn.seminorm ℝ E ℝ n K i (postcompLM (𝕜 := ℝ) T φ)
+      ≤ ‖T‖ * ContDiffMapSupportedIn.seminorm ℝ E ℂ n K i φ :=
+        seminorm_postcompLM_le ℝ T φ
+    _ ≤ ContDiffMapSupportedIn.seminorm ℂ E ℂ n K i φ := by
+        rw [ContDiffMapSupportedIn.seminorm_apply, ContDiffMapSupportedIn.seminorm_apply,
+          structureMapCLM_eq_of_scalars ℝ ℂ]
+        exact mul_le_of_le_one_left (by positivity) hT
+    _ ≤ _ := Seminorm.le_finset_sup_apply hi
+
+end ContDiffMapSupportedIn

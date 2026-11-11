@@ -93,7 +93,7 @@ noncomputable def toSupportedInCLM {K : Compacts E} (hΩK : (Ω : Set E) ⊆ K) 
     (fun K' hK' ↦ (ContDiffMapSupportedIn.monoCLM ℝ (K₁ := K') (K₂ := K) (n₁ := n)
       (n₂ := n)).continuous.congr fun φ ↦ by
         ext x
-        simp [show K' ≤ K from hK'.trans hΩK])
+        simp [SetLike.coe_subset_coe.1 (hK'.trans hΩK)])
 
 @[simp]
 theorem toSupportedInCLM_apply {K : Compacts E} (hΩK : (Ω : Set E) ⊆ K) (φ : 𝓓^{n}(Ω, F)) :
@@ -107,6 +107,6 @@ theorem ofSupportedIn_toSupportedInCLM {Ω' : Opens E} {K : Compacts E}
     (hΩ'K : (Ω' : Set E) ⊆ K) (hKΩ : (K : Set E) ⊆ Ω) (φ : 𝓓^{n}(Ω', F)) :
     ofSupportedIn hKΩ (toSupportedInCLM hΩ'K φ) = monoCLM ℝ φ := by
   ext x
-  simp [show Ω' ≤ Ω from hΩ'K.trans hKΩ]
+  simp [SetLike.coe_subset_coe.1 (hΩ'K.trans hKΩ)]
 
 end TestFunction

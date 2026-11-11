@@ -14,6 +14,7 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.Distribution.Gluing
 import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Analysis.Distribution.TestFunction.Postcomp
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Analysis.Distribution.TestFunction.TensorDensity
 import TauCeti.Analysis.Normed.Operator.ContinuousLinearEquiv
@@ -440,45 +441,7 @@ section Complexify
 
 variable {E D : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup D]
   [NormedSpace ℝ D] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
-  {K K₁ : Compacts E} {K₂ : Compacts D}
-
-private theorem postcompLM_reCLM_smul (c : ℂ) (φ : 𝓓_{K}(E, ℂ)) :
-    postcompLM (𝕜 := ℝ) reCLM (c • φ) =
-      c.re • postcompLM (𝕜 := ℝ) reCLM φ - c.im • postcompLM (𝕜 := ℝ) imCLM φ := by
-  ext x
-  simp
-
-private theorem postcompLM_imCLM_smul (c : ℂ) (φ : 𝓓_{K}(E, ℂ)) :
-    postcompLM (𝕜 := ℝ) imCLM (c • φ) =
-      c.re • postcompLM (𝕜 := ℝ) imCLM φ + c.im • postcompLM (𝕜 := ℝ) reCLM φ := by
-  ext x
-  simp
-
-private theorem postcompLM_reCLM_ofRealCLM (φ : 𝓓_{K}(E, ℝ)) :
-    postcompLM (𝕜 := ℝ) reCLM (postcompLM (𝕜 := ℝ) ofRealCLM φ) = φ := by
-  ext x
-  simp
-
-private theorem postcompLM_imCLM_ofRealCLM (φ : 𝓓_{K}(E, ℝ)) :
-    postcompLM (𝕜 := ℝ) imCLM (postcompLM (𝕜 := ℝ) ofRealCLM φ) = 0 := by
-  ext x
-  simp
-
-/-- The `C^k` seminorms do not increase under postcomposition with a real-linear map
-`ℂ →L[ℝ] ℝ` of norm at most one, such as the real and imaginary parts. -/
-private theorem supSeminorm_postcompLM_le {T : ℂ →L[ℝ] ℝ} (hT : ‖T‖ ≤ 1) (k : ℕ)
-    (φ : 𝓓_{K}(E, ℂ)) :
-    ContDiffMapSupportedIn.supSeminorm ℝ E ℝ ⊤ K k (postcompLM (𝕜 := ℝ) T φ) ≤
-      ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K k φ := by
-  refine Seminorm.finset_sup_apply_le (apply_nonneg _ _) fun i hi ↦ ?_
-  calc ContDiffMapSupportedIn.seminorm ℝ E ℝ ⊤ K i (postcompLM (𝕜 := ℝ) T φ)
-      ≤ ‖T‖ * ContDiffMapSupportedIn.seminorm ℝ E ℂ ⊤ K i φ :=
-        seminorm_postcompLM_le ℝ T φ
-    _ ≤ ContDiffMapSupportedIn.seminorm ℂ E ℂ ⊤ K i φ := by
-        rw [ContDiffMapSupportedIn.seminorm_apply, ContDiffMapSupportedIn.seminorm_apply,
-          structureMapCLM_eq_of_scalars ℝ ℂ]
-        exact mul_le_of_le_one_left (by positivity) hT
-    _ ≤ _ := Seminorm.le_finset_sup_apply hi
+  {K₁ : Compacts E} {K₂ : Compacts D}
 
 /-- The complex-bilinear extension
 `(φ, ψ) ↦ B (Re φ) (Re ψ) - B (Im φ) (Im ψ) + i (B (Re φ) (Im ψ) + B (Im φ) (Re ψ))` of a
@@ -658,13 +621,13 @@ private theorem exists_kernel_box
         𝓓_{i.outer}(a → ℝ, ℂ)) =
       postcompLM (𝕜 := ℝ) ofRealCLM (toSupportedInCLM (hφ.trans i.inner_subset_outer) φ) := by
     ext x
-    simp [show i.inner ≤ i.outer from i.inner_subset_outer]
+    simp [SetLike.coe_subset_coe.1 i.inner_subset_outer]
   have hmono₂ : (ContDiffMapSupportedIn.monoCLM ℂ
       (ContDiffMapSupportedIn.postcompCLM (𝕜 := ℝ) ofRealCLM (toSupportedInCLM hψ ψ)) :
         𝓓_{j.outer}(b → ℝ, ℂ)) =
       postcompLM (𝕜 := ℝ) ofRealCLM (toSupportedInCLM (hψ.trans j.inner_subset_outer) ψ) := by
     ext x
-    simp [show j.inner ≤ j.outer from j.inner_subset_outer]
+    simp [SetLike.coe_subset_coe.1 j.inner_subset_outer]
   simp only [ContinuousLinearMap.coe_comp, Function.comp_apply,
     ContinuousLinearMap.coe_restrictScalars', htensor, hT, hmono₁, hmono₂,
     complexify_postcompLM_ofRealCLM, restrictOuter, compl₁₂_apply, ContinuousLinearMap.coe_coe,
