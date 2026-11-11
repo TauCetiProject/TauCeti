@@ -5,14 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Star.Basic
+public import Mathlib.Algebra.Star.Module
 
 /-!
-# Absorption on involution-closed subsets and annihilators under proper star
+# Involution-closed absorption, proper-star annihilators, and scalar commutation
 
 In any magma `A` with an antimultiplicative involution (`StarMul A`), a subset closed under `star`
 (`StarMemClass S A`) that absorbs multiplication by ambient elements on the left also absorbs
-multiplication on the right via `x * a = star (star a * star x)`.
+multiplication on the right via `x * a = star (star a * star x)`. Similarly, in a star module over
+`R` with `StarMul A` and `IsScalarTower R A A`, applying `star` shows that scalars commute with
+left multiplication (`x * (c • y) = c • (x * y)`), so `SMulCommClass R A A` is automatic.
 
 In a star ring whose star is proper (`IsProperStar`: `star x * x = 0` forces `x = 0`), such as a
 C⋆-algebra, an element killed by every two-sided multiplication `star d * X * c` vanishes. This is
@@ -33,6 +35,9 @@ centralizers.
 * `TauCeti.faithfulSMul_mulOpposite_of_isProperStar`: if `c * x = c * y` for all `c`, then
   `x = y`.
 * `TauCeti.faithfulSMul_of_isProperStar`: if `x * c = y * c` for all `c`, then `x = y`.
+* `TauCeti.mul_smul_comm_of_starModule`: in a star module with a multiplicative star and a scalar
+  tower, scalars commute with left multiplication, so no `SMulCommClass` assumption is needed
+  there.
 -/
 
 public section
@@ -79,5 +84,21 @@ instance faithfulSMul_of_isProperStar [InvolutiveStar R] [IsProperStar R] :
     exact sub_eq_zero.mp (star_mul_self_eq_zero.mp (by rw [hs, zero_mul]))
 
 end Ring
+
+end TauCeti
+
+namespace TauCeti
+
+variable {R A : Type*} [Star R] [Mul A] [StarMul A] [SMul R A] [StarModule R A]
+  [IsScalarTower R A A]
+
+/-- **Scalars commute with left multiplication in a star module.** If `A` has a multiplicative
+star (`StarMul A`) and is a star module over `R` with `IsScalarTower R A A`, then
+`x * (c • y) = c • (x * y)`. In particular `SMulCommClass R A A` is automatic. -/
+theorem mul_smul_comm_of_starModule (c : R) (x y : A) : x * (c • y) = c • (x * y) := by
+  -- apply `star`, which turns the goal into the identity `(star c • star y) * star x =
+  -- star c • (star y * star x)`, an instance of `IsScalarTower R A A`
+  apply star_injective
+  rw [star_mul, star_smul, smul_mul_assoc, star_smul, star_mul]
 
 end TauCeti
