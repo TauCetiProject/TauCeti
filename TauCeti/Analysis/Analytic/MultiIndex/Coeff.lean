@@ -32,6 +32,8 @@ coordinate by coordinate, as in transcendence proofs by auxiliary functions in s
   `∑ α ∈ univ.piAntidiag k, (∏ i, z i ^ α i) • p.mvCoeff α`.
 * `FormalMultilinearSeries.sum_norm_mvCoeff_le`: the coefficients of total degree `k` have norms
   summing to at most `(card ι) ^ k * ‖p k‖`.
+* `FormalMultilinearSeries.summable_norm_prod_pow_smul_mvCoeff`: the multi-index series converges
+  absolutely wherever the homogeneous terms, weighted by `(card ι) ^ k`, do.
 * `HasFPowerSeriesOnBall.hasSum_mvCoeff`: a function with a power series is the sum of its
   multi-index series wherever the homogeneous terms, weighted by `(card ι) ^ k`, converge
   absolutely.
@@ -51,10 +53,12 @@ public section
 open Filter Finset Topology
 open scoped ENNReal
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {ι : Type*} [Fintype ι]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-
 namespace FormalMultilinearSeries
+
+section NormedField
+
+variable {𝕜 : Type*} [NormedField 𝕜] {ι : Type*} [Fintype ι]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 open Classical in
 /-- The **multi-index coefficient** of a formal multilinear series `p` on `ι → 𝕜` at `α : ι → ℕ`:
@@ -139,6 +143,15 @@ theorem apply_eq_sum_mvCoeff [DecidableEq ι] (p : FormalMultilinearSeries 𝕜 
   congr 1
   simpa using (Fintype.prod_fiberwise' a z).symm
 
+end NormedField
+
+end FormalMultilinearSeries
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {ι : Type*} [Fintype ι]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+namespace FormalMultilinearSeries
+
 /-- The multi-index coefficients of total degree `k` have norms summing to at most
 `(card ι) ^ k * ‖p k‖`. -/
 theorem sum_norm_mvCoeff_le [DecidableEq ι] (p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F)
@@ -157,6 +170,36 @@ theorem sum_norm_mvCoeff_le [DecidableEq ι] (p : FormalMultilinearSeries 𝕜 (
         rw [sum_fiberwise_of_maps_to (fun a _ ↦ hcount a)]
         simp
 
+/-- **Absolute convergence of the multi-index series**: if the homogeneous terms of `p` at `z`,
+weighted by `(card ι) ^ k`, converge absolutely, then so does the multi-index series
+`∑ α, (∏ i, z i ^ α i) • p.mvCoeff α`. -/
+theorem summable_norm_prod_pow_smul_mvCoeff (p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F)
+    {z : ι → 𝕜} (h : Summable fun k ↦ (Fintype.card ι : ℝ) ^ k * ‖p k‖ * ‖z‖ ^ k) :
+    Summable fun α : ι → ℕ ↦ ‖(∏ i, z i ^ α i) • p.mvCoeff α‖ := by
+  classical
+  -- The terms of total degree `k` have norms summing to at most the `k`-th weighted term.
+  have hdeg (k : ℕ) : ∑ α ∈ univ.piAntidiag k, ‖(∏ i, z i ^ α i) • p.mvCoeff α‖ ≤
+      (Fintype.card ι : ℝ) ^ k * ‖p k‖ * ‖z‖ ^ k := calc
+    _ ≤ ∑ α ∈ univ.piAntidiag k, ‖z‖ ^ k * ‖p.mvCoeff α‖ := by
+        refine sum_le_sum fun α hα ↦ ?_
+        rw [norm_smul, norm_prod, ← (mem_piAntidiag.1 hα).1, ← prod_pow_eq_pow_sum]
+        gcongr with i
+        rw [norm_pow]
+        gcongr
+        exact norm_le_pi_norm z i
+    _ ≤ _ := by
+        rw [← mul_sum, mul_comm]
+        gcongr
+        exact_mod_cast sum_norm_mvCoeff_le p k
+  -- A finite sum splits by total degree, and each degree is bounded by its weighted term.
+  refine summable_of_sum_le (c := ∑' k, (Fintype.card ι : ℝ) ^ k * ‖p k‖ * ‖z‖ ^ k)
+    (fun _ ↦ norm_nonneg _) fun s ↦ ?_
+  rw [← sum_fiberwise_of_maps_to (g := fun α ↦ ∑ i, α i) (t := s.image (fun α ↦ ∑ i, α i))
+    (fun α hα ↦ mem_image_of_mem _ hα)]
+  refine (sum_le_sum fun k _ ↦ ?_).trans (h.sum_le_tsum _ fun _ _ ↦ by positivity)
+  refine (sum_le_sum_of_subset_of_nonneg (fun α hα ↦ ?_) fun _ _ _ ↦ norm_nonneg _).trans (hdeg k)
+  exact mem_piAntidiag.2 ⟨(mem_filter.1 hα).2, by simp⟩
+
 end FormalMultilinearSeries
 
 namespace HasFPowerSeriesOnBall
@@ -166,7 +209,8 @@ open FormalMultilinearSeries
 /-- **An analytic function is the sum of its multi-index series**: if `f` has the power series
 `p` on a ball about `x`, then `f (x + z)` is the sum of `(∏ i, z i ^ α i) • p.mvCoeff α` over all
 multi-indices `α`, for `z` in the ball at which the homogeneous terms, weighted by `(card ι) ^ k`,
-converge absolutely. The sum is then absolutely convergent. -/
+converge absolutely. The sum is then absolutely convergent
+(`FormalMultilinearSeries.summable_norm_prod_pow_smul_mvCoeff`). -/
 theorem hasSum_mvCoeff {f : (ι → 𝕜) → F} {p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F}
     {x : ι → 𝕜} {r : ℝ≥0∞} (hf : HasFPowerSeriesOnBall f p x r) {z : ι → 𝕜}
     (hz : z ∈ Metric.eball (0 : ι → 𝕜) r)
@@ -183,29 +227,8 @@ theorem hasSum_mvCoeff {f : (ι → 𝕜) → F} {p : FormalMultilinearSeries �
   have hdisj (K : ℕ) : (range K : Set ℕ).PairwiseDisjoint (univ.piAntidiag (ι := ι) ·) :=
     fun k _ l _ hkl ↦ disjoint_left.2 fun α hk hl ↦
       hkl ((mem_piAntidiag.1 hk).1.symm.trans (mem_piAntidiag.1 hl).1)
-  -- The terms of total degree `k` have norms summing to at most the `k`-th weighted term.
-  have hdeg (k : ℕ) : ∑ α ∈ univ.piAntidiag k, ‖(∏ i, z i ^ α i) • p.mvCoeff α‖ ≤
-      (Fintype.card ι : ℝ) ^ k * ‖p k‖ * ‖z‖ ^ k := calc
-    _ ≤ ∑ α ∈ univ.piAntidiag k, ‖z‖ ^ k * ‖p.mvCoeff α‖ := by
-        refine sum_le_sum fun α hα ↦ ?_
-        rw [norm_smul, norm_prod, ← (mem_piAntidiag.1 hα).1, ← prod_pow_eq_pow_sum]
-        gcongr with i
-        rw [norm_pow]
-        gcongr
-        exact norm_le_pi_norm z i
-    _ ≤ _ := by
-        rw [← mul_sum, mul_comm]
-        gcongr
-        exact_mod_cast sum_norm_mvCoeff_le p k
-  have hsummable : Summable fun α : ι → ℕ ↦ ‖(∏ i, z i ^ α i) • p.mvCoeff α‖ := by
-    refine summable_of_sum_le (c := ∑' k, (Fintype.card ι : ℝ) ^ k * ‖p k‖ * ‖z‖ ^ k)
-      (fun _ ↦ norm_nonneg _) fun s ↦ ?_
-    calc _ ≤ ∑ α ∈ S (s.sup (fun α ↦ ∑ i, α i) + 1), ‖(∏ i, z i ^ α i) • p.mvCoeff α‖ :=
-          sum_le_sum_of_subset_of_nonneg (hS s _ (lt_add_one _)) fun _ _ _ ↦ norm_nonneg _
-      _ ≤ _ := by
-          rw [sum_biUnion (hdisj _)]
-          exact (sum_le_sum fun k _ ↦ hdeg k).trans (h.sum_le_tsum _ fun _ _ ↦ by positivity)
-  refine hasSum_of_subseq_of_summable hsummable (s := S) (p := atTop) ?_ ?_
+  refine hasSum_of_subseq_of_summable (p.summable_norm_prod_pow_smul_mvCoeff h) (s := S)
+    (p := atTop) ?_ ?_
   · exact tendsto_atTop_atTop.2 fun s ↦ ⟨s.sup (fun α ↦ ∑ i, α i) + 1,
       fun K hK ↦ hS s K ((lt_add_one _).trans_le hK)⟩
   · simp_rw [S, sum_biUnion (hdisj _), ← apply_eq_sum_mvCoeff]
