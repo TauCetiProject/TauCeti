@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Data.Fintype.Fiber
+import TauCeti.Logic.Equiv.Basic
 public import Mathlib.Data.Fintype.CardEmbedding
 public import Mathlib.Data.Fintype.BigOperators
 public import Mathlib.Data.Finset.Sort
@@ -17,7 +18,8 @@ import Mathlib.Data.Finset.Pairwise
 The injective maps `α → β` between finite types correspond to the embeddings `α ↪ β`, so there
 are `(card β).descFactorial (card α)` of them. We restate `Fintype.card_embedding_eq` for the
 subtype of injective functions, the form in which counts over injective tuples `Fin n → V` are
-taken.
+taken. A map `α → β` fails to be injective when it identifies two distinct points `i` and `j`, and
+there are `card β ^ (card α - 1)` maps with `f i = f j`.
 
 We also count embeddings into prescribed cells. Given a family `c : ι → Finset V` of cells, we
 count the embeddings `f : ι ↪ V` with `f i ∈ c i` for every `i`. When the cells are taken from a
@@ -37,6 +39,8 @@ embeddings sending some increasing `m`-tuple into a prescribed set `T` of `m`-tu
 
 * `Fintype.card_subtype_injective`: there are `(card β).descFactorial (card α)` injective maps
   `α → β`.
+* `Fintype.card_subtype_apply_eq_apply`: there are `card β ^ (card α - 1)` maps `α → β`
+  identifying two given distinct points.
 * `Equiv.embeddingMemEquivPi`: over a pairwise disjoint family of cells, the embeddings into the
   cells are the families of embeddings, one for each cell, of the indices assigned to that cell.
 * `Nat.card_embedding_mem_eq_prod_descFactorial`: the count over a pairwise disjoint family
@@ -66,6 +70,15 @@ theorem card_subtype_injective {α β : Type*} [Fintype α] [Fintype β]
     [Fintype {f : α → β // Function.Injective f}] :
     card {f : α → β // Function.Injective f} = (card β).descFactorial (card α) := by
   rw [card_congr (Equiv.subtypeInjectiveEquivEmbedding _ _), card_embedding_eq]
+
+/-- There are `card β ^ (card α - 1)` maps `f : α → β` with `f i = f j` at two distinct points:
+such a map is determined by its values away from `j`. -/
+theorem card_subtype_apply_eq_apply {α β : Type*} [Fintype α] [Fintype β] {i j : α}
+    (hij : i ≠ j) [Fintype {f : α → β // f i = f j}] :
+    card {f : α → β // f i = f j} = card β ^ (card α - 1) := by
+  classical
+  rw [card_congr (Equiv.subtypeApplyEqApplyEquivFun hij), card_fun, card_subtype_compl]
+  simp
 
 end Fintype
 

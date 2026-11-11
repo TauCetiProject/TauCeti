@@ -106,27 +106,6 @@ theorem uniformOn_not_injective_apply_eq [MeasurableSpace κ] [MeasurableSinglet
   rw [← Set.compl_ofPred, prob_compl_eq_one_sub (Set.toFinite _).measurableSet,
     uniformOn_injective_apply_eq]
 
-private noncomputable def eqAtEquiv (i j : ι) (hij : i ≠ j) :
-    {x : ι → κ | x i = x j} ≃ ({a : ι // a ≠ j} → κ) := by
-  classical
-  exact
-    { toFun := fun x a => x.1 a.1
-      invFun := fun x =>
-        ⟨fun a => if ha : a = j then x ⟨i, hij⟩ else x ⟨a, ha⟩, by simp [hij]⟩
-      left_inv := fun ⟨x, (hx : x i = x j)⟩ => by
-        ext a
-        by_cases ha : a = j <;> simp [ha, hx]
-      right_inv := fun x => by
-        funext a
-        simp [a.2] }
-
-private theorem card_mul_ncard_eqAt (i j : ι) (hij : i ≠ j) :
-    Fintype.card κ * Set.ncard {x : ι → κ | x i = x j} = Fintype.card κ ^ Fintype.card ι := by
-  classical
-  rw [← Nat.card_coe_set_eq, Nat.card_congr (eqAtEquiv i j hij), Nat.card_eq_fintype_card,
-    Fintype.card_fun, Fintype.card_subtype_compl, ← pow_succ']
-  simp [Nat.sub_add_cancel (Fintype.card_pos_iff.2 ⟨i⟩)]
-
 end
 
 section
@@ -146,10 +125,16 @@ theorem uniformOn_apply_eq_apply [Finite ι] [MeasurableSpace κ]
       1 / (Fintype.card κ : ℝ≥0∞) := by
   classical
   cases nonempty_fintype ι
+  -- The `card κ ^ (card ι - 1)` maps identifying `i` and `j`, times `card κ`, are all maps.
+  have hcard : Fintype.card κ * Set.ncard {x : ι → κ | x i = x j} =
+      Fintype.card κ ^ Fintype.card ι := by
+    rw [← Nat.card_coe_set_eq, Set.coe_ofPred, Nat.card_eq_fintype_card,
+      Fintype.card_subtype_apply_eq_apply hij, ← pow_succ',
+      Nat.sub_add_cancel (Fintype.card_pos_iff.2 ⟨i⟩)]
   rw [uniformOn_univ, Measure.count_apply_finite _ (Set.toFinite _),
     ← Set.ncard_eq_toFinset_card _, ENNReal.div_eq_div_iff (by simp) (by simp) (by simp) (by simp),
     Fintype.card_fun, mul_one]
-  exact_mod_cast card_mul_ncard_eqAt i j hij
+  exact_mod_cast hcard
 
 end
 
