@@ -19,7 +19,9 @@ Let `f` be a smooth real function on a boundaryless finite-dimensional manifold 
 sublevel `{f ≤ a}` is a strong deformation retract of `{f ≤ b}`
 (`TauCeti.exists_sublevelDeformation`), so the relative singular homology of the sublevel pair
 `({f ≤ b}, {f ≤ a})` vanishes in every degree, for coefficients in any preadditive category with
-coproducts and homology (`TauCeti.isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero`).
+coproducts and homology (`TauCeti.isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero`), and
+the inclusion `{f ≤ a} ⊆ {f ≤ b}` induces isomorphisms on singular homology
+(`TauCeti.isIso_homologyMap_map_sublevelPair_of_mfderiv_ne_zero`).
 
 The band `f⁻¹[a, b]` itself, relative to its lower level `f⁻¹(a)`, has the same relative homology
 as the sublevel pair, whatever the critical points inside the band, as soon as `a` is a regular
@@ -44,6 +46,8 @@ identifications are induced by inclusions of pairs
 
 * `TauCeti.isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero`: a compact band without
   critical points carries no relative homology.
+* `TauCeti.isIso_homologyMap_map_sublevelPair_of_mfderiv_ne_zero`: so the inclusion of the lower
+  sublevel into the upper one induces isomorphisms on homology.
 * `TauCeti.isIso_singularHomologyMap_bandPairInclusion`: above a regular value, a compact band
   relative to its lower level has the relative homology of the sublevel pair.
 * `TauCeti.singularHomologySublevelPairIsoOfCollars`: regular collars can be cut off a band
@@ -125,6 +129,17 @@ private theorem isZero_singularHomology_collar {a' : ℝ} (hf : Continuous f) (�
         simp [r, hxa] } R n
 
 variable {A : Type v} [Category.{w} A] [HasCoproducts.{u} A] [Abelian A]
+
+/-- **Crossing a band without critical points does not change homology.** If the band `f⁻¹[a, b]`
+is compact and contains no critical point of the smooth function `f`, the inclusion of
+`{f ≤ a}` into `{f ≤ b}` induces isomorphisms on singular homology in every degree. -/
+theorem isIso_homologyMap_map_sublevelPair_of_mfderiv_ne_zero (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (hreg : ∀ x, a ≤ f x → f x ≤ b → mfderiv I 𝓘(ℝ) f x ≠ 0) (R : A) (n : ℕ) :
+    IsIso (SSet.homologyMap (TopCat.toSSet.map (sublevelPair f hab).map) R n) :=
+  (sublevelPair f hab).isIso_homologyMap_map_of_isZero R
+    (isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hf hab hcompact hreg R (n + 1))
+    (isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hf hab hcompact hreg R n)
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
 /-- The excision step: for a collar `f⁻¹[a, a']` with `a < a'`, or with `a' = b`, excising
