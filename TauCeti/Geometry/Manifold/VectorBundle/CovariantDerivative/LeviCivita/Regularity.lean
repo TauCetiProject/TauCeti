@@ -69,11 +69,11 @@ merely to be written down, are carried for the same reason.
   its model-space Christoffel map are `C^n` on a trivialization base set.
 * `TauCeti.Manifold.contMDiffOn_alongCurveWithin_leviCivitaConnection` and
   `TauCeti.Manifold.differentiableWithinAt_sectionCoord_alongCurveWithin_leviCivitaConnection`:
-  along a curve, the Levi-Civita derivative of a section with a `C²` tangent-bundle lift has a
-  `C¹` lift and differentiable coordinate readings.
+  along a curve on a `C³` manifold with a `C²` metric, the Levi-Civita derivative of a section
+  with a `C²` tangent-bundle lift has a `C¹` lift and differentiable coordinate readings.
 * `TauCeti.Manifold.contMDiffWithinAt_alongCurveWithin_leviCivitaConnection` and
   `TauCeti.Manifold.contMDiffAt_alongCurve_leviCivitaConnection`: the pointwise forms, for a
-  section whose lift is `C²` at a single parameter, on a `C³` manifold with a `C²` metric.
+  section whose lift is `C²` at a single parameter.
 
 ## References
 
@@ -381,49 +381,10 @@ open CovariantDerivative
 variable
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 3 M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I 2 E (fun x : M ↦ TangentSpace I x)]
   {γ : ℝ → M} {V : ∀ t, TangentSpace I (γ t)} {s : Set ℝ} {t : ℝ}
-
-section Smooth
-
-variable [IsManifold I ∞ M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-
-/-- The Levi-Civita covariant derivative of a section with a `C²` tangent-bundle lift, within a
-parameter set with unique derivatives, has a `C¹` tangent-bundle lift. -/
-theorem contMDiffOn_alongCurveWithin_leviCivitaConnection (hs : UniqueDiffOn ℝ s)
-    (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 2 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s) :
-    ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
-      (fun r ↦ TotalSpace.mk' E (γ r)
-        (alongCurveWithin (leviCivitaConnection I M) γ V s r)) s := by
-  let : IsManifold I (1 + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  let : IsManifold I (1 + 1 + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  let : ContMDiffVectorBundle (1 + 1) E (TangentSpace I : M → Type _) I :=
-    TangentBundle.contMDiffVectorBundle
-  exact CovariantDerivative.contMDiffOn_alongCurveWithin (n := 1)
-    (leviCivitaConnection I M) γ V
-    (fun x ↦ contMDiffCovariantDerivativeOn_leviCivitaConnection
-      (m := ∞) (k := ∞) (trivializationAt E (TangentSpace I) x).open_baseSet
-      (by simp) (by simp)) hs hV
-
-/-- The Levi-Civita covariant derivative of a section with a `C²` tangent-bundle lift, within a
-parameter set with unique derivatives, has differentiable coordinate readings there. -/
-theorem differentiableWithinAt_sectionCoord_alongCurveWithin_leviCivitaConnection
-    (hs : UniqueDiffOn ℝ s)
-    (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 2 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s)
-    (ht : t ∈ s) :
-    DifferentiableWithinAt ℝ
-      (sectionCoord (F := E) γ (alongCurveWithin (leviCivitaConnection I M) γ V s) (γ t)) s t :=
-  TauCeti.Manifold.differentiableWithinAt_sectionCoord γ _
-    ((contMDiffOn_alongCurveWithin_leviCivitaConnection hs hV t ht).mdifferentiableWithinAt
-      one_ne_zero)
-    (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
-
-end Smooth
-
-section Pointwise
-
-variable [IsManifold I 3 M] [IsContMDiffRiemannianBundle I 2 E (fun x : M ↦ TangentSpace I x)]
 
 /-- The Levi-Civita covariant derivative within a parameter set with unique derivatives of a
 section whose tangent-bundle lift is `C²` within that set at `t` has a lift that is `C¹` within
@@ -458,6 +419,26 @@ theorem contMDiffAt_alongCurve_leviCivitaConnection
     contMDiffWithinAt_alongCurveWithin_leviCivitaConnection uniqueDiffOn_univ (mem_univ t)
       hV.contMDiffWithinAt
 
-end Pointwise
+/-- The Levi-Civita covariant derivative of a section with a `C²` tangent-bundle lift, within a
+parameter set with unique derivatives, has a `C¹` tangent-bundle lift. -/
+theorem contMDiffOn_alongCurveWithin_leviCivitaConnection (hs : UniqueDiffOn ℝ s)
+    (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 2 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s) :
+    ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
+      (fun r ↦ TotalSpace.mk' E (γ r)
+        (alongCurveWithin (leviCivitaConnection I M) γ V s r)) s :=
+  fun _ ht ↦ contMDiffWithinAt_alongCurveWithin_leviCivitaConnection hs ht (hV _ ht)
+
+/-- The Levi-Civita covariant derivative of a section with a `C²` tangent-bundle lift, within a
+parameter set with unique derivatives, has differentiable coordinate readings there. -/
+theorem differentiableWithinAt_sectionCoord_alongCurveWithin_leviCivitaConnection
+    (hs : UniqueDiffOn ℝ s)
+    (hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 2 (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s)
+    (ht : t ∈ s) :
+    DifferentiableWithinAt ℝ
+      (sectionCoord (F := E) γ (alongCurveWithin (leviCivitaConnection I M) γ V s) (γ t)) s t :=
+  TauCeti.Manifold.differentiableWithinAt_sectionCoord γ _
+    ((contMDiffOn_alongCurveWithin_leviCivitaConnection hs hV t ht).mdifferentiableWithinAt
+      one_ne_zero)
+    (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
 
 end TauCeti.Manifold
