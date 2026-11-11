@@ -52,14 +52,16 @@ theorem exists_finset_subset_addSubgroupClosure_eq_natCard_eq_pow {p : ℕ} [Fac
     [Finite (AddSubgroup.closure s)] :
     ∃ b : Finset M, (b : Set M) ⊆ s ∧ AddSubgroup.closure (b : Set M) = AddSubgroup.closure s ∧
       Nat.card (AddSubgroup.closure s) = p ^ b.card := by
-  have hfin : Finite (Submodule.span (ZMod p) s) := by
-    rwa [← span_zmod_eq_addSubgroupClosure (n := p)] at ‹Finite (AddSubgroup.closure s)›
+  -- The generated subgroup and the span have the same elements; this equiv carries both the
+  -- finiteness hypothesis and the cardinality between them.
+  have e : AddSubgroup.closure s ≃ Submodule.span (ZMod p) s :=
+    Equiv.subtypeEquivRight fun _ ↦ by
+      rw [← span_zmod_eq_addSubgroupClosure (n := p), Submodule.mem_toAddSubgroup]
+  have : Finite (Submodule.span (ZMod p) s) := Finite.of_equiv _ e
   obtain ⟨b, hbs, hcard, hbspan, -⟩ := Submodule.exists_finset_span_eq_linearIndepOn (ZMod p) s
   refine ⟨b, hbs, ?_, ?_⟩
   · rw [← span_zmod_eq_addSubgroupClosure (n := p), ← span_zmod_eq_addSubgroupClosure (n := p),
       hbspan]
-  · rw [hcard, ← span_zmod_eq_addSubgroupClosure (n := p),
-      Nat.card_congr (Equiv.subtypeEquivRight fun _ ↦ Submodule.mem_toAddSubgroup _),
-      Module.natCard_eq_pow_finrank (K := ZMod p), Nat.card_zmod]
+  · rw [hcard, Nat.card_congr e, Module.natCard_eq_pow_finrank (K := ZMod p), Nat.card_zmod]
 
 end Set
