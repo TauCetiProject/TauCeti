@@ -711,53 +711,6 @@ theorem hasDensityAt_of_mem_reducedBoundary (hn : 2 ≤ finrank ℝ E)
 
 /-! ### Convergence of the perimeter of the blow-ups -/
 
-omit [μ.IsAddHaarMeasure] in
-/-- The perimeter measure of a set `B ⊆ S` is at most the pairing of `Dχ_s` with a field `ψ` that
-is a multiple `a • ν`, `0 ≤ a ≤ 1`, of `ν = ν_s x`, equals `ν` on `B` and vanishes off `S`, plus
-the error `∫_S ‖ν_s - ν‖ d|Dχ_s|`. -/
-private theorem measureReal_le_integral_inner_outerNormal_add {ψ : 𝓓(Ω, E)} {B S : Set Ω}
-    (hBm : MeasurableSet B) (hSm : MeasurableSet S) (hBS : B ⊆ S)
-    (hSfin : variationMeasure μ Ω (s.indicator 1) S ≠ ∞)
-    (hψ : ∀ y, ∃ a ∈ Icc (0 : ℝ) 1, ψ y = a • outerNormal μ Ω s x)
-    (hψB : ∀ y : Ω, y ∈ B → ψ y = outerNormal μ Ω s x) (hψS : ∀ y : Ω, y ∉ S → ψ y = 0)
-    (hν : ‖outerNormal μ Ω s x‖ = 1) :
-    (variationMeasure μ Ω (s.indicator 1)).real B ≤
-      ∫ y, ⟪ψ y, outerNormal μ Ω s y⟫ ∂variationMeasure μ Ω (s.indicator 1) +
-        ∫ y in S, ‖outerNormal μ Ω s y - outerNormal μ Ω s x‖
-          ∂variationMeasure μ Ω (s.indicator 1) := by
-  set lam := variationMeasure μ Ω (s.indicator 1)
-  set ν := outerNormal μ Ω s x
-  have hBfin : lam B ≠ ∞ := ne_top_of_le_ne_top hSfin (measure_mono hBS)
-  have hint : Integrable (fun y : Ω => ⟪ψ y, outerNormal μ Ω s y⟫) lam :=
-    (integrable_inner_polarDensity ψ.continuous ψ.hasCompactSupport ψ.tsupport_subset).neg.congr
-      (by filter_upwards [ae_outerNormal_eq] with y hy; simp [hy, inner_neg_right])
-  have hg : IntegrableOn (fun y : Ω => ‖outerNormal μ Ω s y - ν‖) S lam :=
-    ((integrableOn_outerNormal hSfin).sub (integrableOn_const hSfin)).norm
-  rw [← integral_indicator hSm, ← integral_add hint (hg.integrable_indicator hSm),
-    ← integral_indicator_one hBm]
-  refine integral_mono_ae ((integrable_indicator_iff hBm).2 (integrableOn_const hBfin))
-    (hint.add (hg.integrable_indicator hSm)) ?_
-  filter_upwards [ae_mem_reducedBoundary] with y hy
-  have hνy : ‖outerNormal μ Ω s y‖ = 1 := norm_outerNormal hy
-  -- For unit vectors, `⟪a • ν, ν_s⟫ + ‖ν_s - ν‖ ≥ a`, since `⟪ν, ν_s⟫ ≥ 1 - ‖ν_s - ν‖`.
-  have hkey : 1 - ‖outerNormal μ Ω s y - ν‖ ≤ ⟪ν, outerNormal μ Ω s y⟫ := by
-    have h := abs_real_inner_le_norm ν (outerNormal μ Ω s y - ν)
-    have h' : ⟪ν, outerNormal μ Ω s y⟫ = 1 + ⟪ν, outerNormal μ Ω s y - ν⟫ := by
-      rw [inner_sub_right, real_inner_self_eq_norm_sq, hν]
-      ring
-    rw [hν, one_mul] at h
-    linarith [neg_abs_le ⟪ν, outerNormal μ Ω s y - ν⟫]
-  have hnorm := norm_nonneg (outerNormal μ Ω s y - ν)
-  obtain ⟨a, ⟨ha0, ha1⟩, hψa⟩ := hψ y
-  by_cases hyB : y ∈ B
-  · rw [indicator_of_mem hyB, indicator_of_mem (hBS hyB), hψB y hyB, Pi.one_apply]
-    linarith
-  rw [indicator_of_notMem hyB]
-  by_cases hyS : y ∈ S
-  · rw [indicator_of_mem hyS, hψa, real_inner_smul_left]
-    nlinarith
-  · simp [indicator_of_notMem hyS, hψS y hyS]
-
 /-- The key estimate for the upper bound on the perimeter of the blow-ups. Let `x` be a point of
 the reduced boundary of `s` in `Ω`, with outer normal `ν`, let `0 < R` and let `φ` be a test
 vector field that is a multiple `a • ν`, `0 ≤ a ≤ 1`, of `ν`, equals `ν` on `ball 0 R` and has
@@ -840,36 +793,23 @@ private theorem eventually_perimeter_ball_zero_preimage_add_smul_le_integral
           mul_le_mul_of_nonneg_left
             (h1.trans (mul_le_mul_of_nonneg_left hlamS (by positivity))) (by positivity)
       _ = A * η := by
-          rw [show r / r ^ n * (2 * η * (2 * (n * (R' * r) ^ (n - 1) * ω))) =
-            4 * n * ω * η * (r / r ^ n * (R' * r) ^ (n - 1)) by ring, hrn, hAdef]
+          have hsplit : r / r ^ n * (2 * η * (2 * (n * (R' * r) ^ (n - 1) * ω))) =
+              4 * n * ω * η * (r / r ^ n * (R' * r) ^ (n - 1)) := by
+            ring
+          rw [hsplit, hrn, hAdef]
           ring
       _ ≤ ε := by
           rw [mul_div_assoc', div_le_iff₀ (by positivity)]
           nlinarith
+  -- The rewrites above produced `finrank ℝ E`, `variationMeasure μ Ω (s.indicator 1)` and
+  -- `(↑) ⁻¹' ball x (r * R)`, which are by definition the local abbreviations `n`, `lam` and `B`
+  -- introduced by `set` before the rewrites.
   change ENNReal.ofReal (r / r ^ n) * lam B ≤ _
   rw [← ofReal_measureReal hBfin, ← ENNReal.ofReal_mul (by positivity)]
   refine ENNReal.ofReal_le_ofReal ?_
   have := mul_le_mul_of_nonneg_left hmain (by positivity : (0 : ℝ) ≤ r / r ^ n)
   rw [mul_add] at this
   linarith
-
-/-- The half-space `{y | ⟪y, ν⟫ < 0}` is a cone, so its perimeter in `ball 0 (t * R)` is
-`t ^ (n - 1)` times its perimeter in `ball 0 R`, `n = dim E`. -/
-private theorem perimeter_ball_zero_mul_setOf_inner_lt [Nontrivial E] (ν : E) {t : ℝ} (ht : 0 < t)
-    (R : ℝ) :
-    perimeter μ ⟨ball 0 (t * R), isOpen_ball⟩ {y | ⟪y, ν⟫ < 0} =
-      ENNReal.ofReal (t ^ (finrank ℝ E - 1)) *
-        perimeter μ ⟨ball 0 R, isOpen_ball⟩ {y | ⟪y, ν⟫ < 0} := by
-  have hpre : (fun y => (0 : E) + t • y) ⁻¹' {y : E | ⟪y, ν⟫ < 0} = {y | ⟪y, ν⟫ < 0} := by
-    ext y
-    simp only [zero_add, mem_preimage, mem_ofPred_eq, real_inner_smul_left]
-    exact ⟨fun h => neg_of_mul_neg_right h ht.le, fun h => mul_neg_of_pos_of_neg ht h⟩
-  have h := perimeter_ball_zero_preimage_add_smul (μ := μ) (s := {y : E | ⟪y, ν⟫ < 0})
-    (x := 0) ht R
-  rw [hpre] at h
-  obtain ⟨m, hm⟩ : ∃ m, finrank ℝ E = m + 1 := ⟨_, (Nat.sub_add_cancel finrank_pos).symm⟩
-  rw [h, ← mul_assoc, ← ENNReal.ofReal_mul (by positivity), hm, Nat.add_sub_cancel,
-    show t ^ m * (t / t ^ (m + 1)) = 1 by field_simp; ring, ENNReal.ofReal_one, one_mul]
 
 /-- **The perimeter of the blow-ups converges to that of the half-space.** Let `E` have dimension
 `n ≥ 2`, let `μ` be an additive Haar measure, and let `x` be a point of the reduced boundary of `s`
