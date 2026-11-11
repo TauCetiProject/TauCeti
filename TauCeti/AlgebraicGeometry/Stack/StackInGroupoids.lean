@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Sites.Fpqc
 public import Mathlib.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
 public import Mathlib.CategoryTheory.Sites.Descent.IsStack
 public import TauCeti.AlgebraicGeometry.Stack.Basic
+public import TauCeti.CategoryTheory.Sites.Descent.Discrete
 
 /-!
 # Stacks in groupoids over schemes
@@ -28,11 +29,15 @@ Morphisms of stacks in groupoids are strong transformations of the underlying ps
 * `TauCeti.AlgebraicGeometry.StackInGroupoids.Hom.IsFiberwiseEquiv`: a morphism whose component
   on every scheme is an equivalence of fibre groupoids. It holds for identities, is closed under
   composition, and satisfies two-out-of-three.
+* `TauCeti.AlgebraicGeometry.StackInGroupoids.ofSheaf`: the stack in setoids of an fppf sheaf of
+  sets, whose fibre over `T` is the discrete groupoid on its sections over `T` (Stacks,
+  Lemma 0432).
 
 ## References
 
 * [Stacks Project, Definition 026F](https://stacks.math.columbia.edu/tag/026F)
 * [Stacks Project, Definition 02ZI](https://stacks.math.columbia.edu/tag/02ZI)
+* [Stacks Project, Lemma 0432](https://stacks.math.columbia.edu/tag/0432)
 -/
 
 public section
@@ -108,6 +113,20 @@ lemma IsFiberwiseEquiv.of_comp_left (hf : f.IsFiberwiseEquiv)
   Functor.isEquivalence_of_comp_left (f.app (.mk (op T))).toFunctor _
 
 end Hom
+
+/-- The stack in setoids of an fppf sheaf of sets `F` (Stacks, Lemma 0432): the discrete
+pseudofunctor `Pseudofunctor.ofPresheaf` of `F`, whose fibre over `T` is the discrete groupoid on
+`F(T)`. -/
+@[expose, stacks 0432]
+def ofSheaf (F : Sheaf Scheme.fppfTopology.{u} (Type u)) : StackInGroupoids.{u} where
+  toSchPseudofunctor := Pseudofunctor.ofPresheaf.{u + 1} F.obj
+  isGroupoid _ := inferInstance
+  isStack := inferInstance
+
+@[simp]
+lemma ofSheaf_toSchPseudofunctor (F : Sheaf Scheme.fppfTopology.{u} (Type u)) :
+    (ofSheaf F).toSchPseudofunctor = Pseudofunctor.ofPresheaf.{u + 1} F.obj :=
+  rfl
 
 end StackInGroupoids
 
