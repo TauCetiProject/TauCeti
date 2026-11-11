@@ -58,12 +58,12 @@ theorem norm_inverse_one_sub_le {x : R} (hx : ‖x‖ < 1) :
 
 omit [HasSummableGeomSeries R] in
 /-- In a normed ring, perturbing a unit `u` by `t` with `‖u⁻¹‖ * ‖t‖ < 1` gives an element whose
-inverse has norm at most `‖u⁻¹‖ / (1 - ‖u⁻¹‖ * ‖t‖)`. No summability of geometric series is needed:
-if the perturbed element is not a unit its inverse is `0`, and if it is a unit its inverse
-satisfies the resolvent identity. -/
+inverse has norm at most `‖u⁻¹‖ / (1 - ‖u⁻¹‖ * ‖t‖)`. No completeness or summability hypothesis is
+assumed: `u + t` need not be a unit, in which case `Ring.inverse (u + t) = 0`. -/
 theorem norm_inverse_add_le (u : Rˣ) {t : R}
     (ht : ‖(↑u⁻¹ : R)‖ * ‖t‖ < 1) :
     ‖Ring.inverse (↑u + t)‖ ≤ ‖(↑u⁻¹ : R)‖ / (1 - ‖(↑u⁻¹ : R)‖ * ‖t‖) := by
+  -- a non-unit has inverse `0`; a unit `v` has inverse satisfying the resolvent identity
   have hden : 0 < 1 - ‖(↑u⁻¹ : R)‖ * ‖t‖ := by linarith
   by_cases hunit : IsUnit (↑u + t : R)
   · obtain ⟨v, hv⟩ := hunit
