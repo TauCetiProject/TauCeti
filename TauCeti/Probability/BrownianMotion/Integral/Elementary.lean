@@ -232,26 +232,17 @@ theorem integral_sq_sum_mul_sub_min (hW : IsFilteredPreBrownianReal ℱ W P)
       (fun hij => (min_le_left _ _).trans hij) (fun hji => (min_le_left _ _).trans hji))
     (fun i hi => hX i (mem_filter.mp hi).1)
     (fun i hi => hXi i (mem_filter.mp hi).1)
-  have hsum (ω : Ω) :
-      (∑ i ∈ I, X i ω * (W (min (t i) T) ω - W (min (s i) T) ω)) =
-        ∑ i ∈ I.filter (fun i => s i < T), X i ω * (W (min (t i) T) ω - W (s i) ω) := by
+  have hfilter (c : ι → ℝ) (f : ι → ℝ≥0 → ℝ) :
+      (∑ i ∈ I, c i * (f i (min (t i) T) - f i (min (s i) T))) =
+        ∑ i ∈ I.filter (fun i => s i < T), c i * (f i (min (t i) T) - f i (s i)) := by
     rw [sum_filter]
     refine sum_congr rfl fun i hi => ?_
     by_cases hs : s i < T
     · simp [hs, min_eq_left hs.le]
     · have hTs : T ≤ s i := le_of_not_gt hs
       simp [hs, min_eq_right hTs, min_eq_right (hTs.trans (hst i hi))]
-  have henergy :
-      (∑ i ∈ I, (∫ ω, X i ω ^ 2 ∂P) * (↑(min (t i) T) - ↑(min (s i) T))) =
-        ∑ i ∈ I.filter (fun i => s i < T),
-          (∫ ω, X i ω ^ 2 ∂P) * (↑(min (t i) T) - ↑(s i)) := by
-    rw [sum_filter]
-    refine sum_congr rfl fun i hi => ?_
-    by_cases hs : s i < T
-    · simp [hs, min_eq_left hs.le]
-    · have hTs : T ≤ s i := le_of_not_gt hs
-      simp [hs, min_eq_right hTs, min_eq_right (hTs.trans (hst i hi))]
-  simp_rw [hsum, henergy]
+  have hsum (ω : Ω) := hfilter (fun i => X i ω) (fun _ r => W r ω)
+  simp_rw [hsum, hfilter]
   exact h
 
 end TauCeti.Probability.IsFilteredPreBrownianReal
