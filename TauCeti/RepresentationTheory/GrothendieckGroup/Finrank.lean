@@ -157,9 +157,9 @@ end Finrank
 section SimpleCoordinates
 
 -- `[IsArtinianRing A]` follows from `[FiniteDimensional k A]`, but `TauCeti.jordanHolderCoordinate`
--- and `TauCeti.IsExhaustiveSimpleFamily` take it as an instance argument and both appear in the
--- statements below, so it cannot be confined to the proofs; and an instance deriving it from
--- `[FiniteDimensional k A]` has no synthesization order, since `k` is not determined by the goal.
+-- takes it as an instance argument and appears in the statement below, so it cannot be confined
+-- to the proof; and an instance deriving it from `[FiniteDimensional k A]` has no synthesization
+-- order, since `k` is not determined by the goal.
 variable (k : Type u) [Field k] (A : Type u) [Ring A] [Algebra k A] [FiniteDimensional k A]
   [IsArtinianRing A] {I : Type v} (S : I → FGModuleCat.{u} A) [∀ i, IsSimpleModule A (S i)]
   (hnoniso : Pairwise fun i j ↦ IsEmpty ((S i : Type u) ≃ₗ[A] S j))
@@ -189,12 +189,8 @@ end SimpleCoordinates
 
 section UniqueSimple
 
--- `[IsArtinianRing A]` follows from `[FiniteDimensional k A]`, but
--- `TauCeti.IsExhaustiveSimpleFamily` takes it as an instance argument and appears in the statements
--- below, so it cannot be confined to the proofs; and an instance deriving it from
--- `[FiniteDimensional k A]` has no synthesization order, since `k` is not determined by the goal.
 variable (k : Type u) [Field k] (A : Type u) [Ring A] [Algebra k A] [FiniteDimensional k A]
-  [IsArtinianRing A] (S : FGModuleCat.{u} A)
+  (S : FGModuleCat.{u} A)
   (hexhaustive : IsExhaustiveSimpleFamily fun _ : Unit ↦ S)
 
 include hexhaustive in
@@ -205,6 +201,7 @@ up to isomorphism, which is what the composition-series induction behind
 `TauCeti.span_range_exactK0OfFamily_eq_top` consumes. -/
 theorem eq_finrankK0_smul_of_finrank_eq_one (hdim : Module.finrank k S.obj = 1)
     (x : ExactK0 (finiteModulesExactStructure A)) : x = finrankK0 k A x • ExactK0.of S := by
+  have : IsArtinianRing A := .of_finite k A
   have hrange : Set.range (exactK0OfFamily fun _ : Unit ↦ S) = {ExactK0.of S} := by
     ext y
     refine ⟨?_, ?_⟩

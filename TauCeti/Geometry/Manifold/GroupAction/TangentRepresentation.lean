@@ -168,6 +168,7 @@ variable {𝕜 E H M G : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpac
   [TopologicalSpace M] [ChartedSpace H M] [Group G] [MulAction G M] [ContinuousConstSMul G M]
   {x : M} [Finite (stabilizer G x)]
 
+omit [CompleteSpace E] in
 /-- **The tangent representation detects the ineffective kernel.** Let the finite stabilizer of
 `x` act by maps that are `C¹` at `x` on a manifold without boundary. An element of the stabilizer
 has derivative the identity at `x` exactly when it acts as the identity near `x`, that is, lies in
@@ -202,6 +203,7 @@ theorem tangentRepresentation_eq_one_iff
   refine (χ.map_eq_one_iff_mem_germKernel hxχ (fun k ↦ k.2) σ hσ g).trans ?_
   simp only [mem_germKernel, Subgroup.smul_def]
 
+omit [CompleteSpace E] in
 /-- The kernel of the tangent representation of a finite stabilizer acting by maps that are `C¹`
 at `x` is the germ kernel at `x`, viewed as a subgroup of the stabilizer. -/
 theorem ker_tangentRepresentation

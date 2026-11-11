@@ -42,7 +42,7 @@ following hold (see `TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Compactn
 The hypotheses on the energy are those of Ambrosio–Gigli–Savaré for the narrow topology: `φ` is
 narrowly lower semicontinuous along bounded sequences, bounded sequences along which it is bounded
 above are tight (automatic on a proper space), and it is coercive, `φ_{τ₀}(μ₀) > -∞` for some time
-step `τ₀` and law `μ₀`. Then the resolvent is nonempty for every `0 < τ < τ₀` and every law
+step `τ₀` and law `μ₀`. Then the resolvent is nonempty for every `τ < τ₀` and every law
 (`TauCeti.WassersteinSpace.moreauYosidaResolvent_nonempty`), and every law starts a JKO sequence
 (`TauCeti.WassersteinSpace.exists_forall_mem_moreauYosidaResolvent`). Uniqueness of the step is a
 separate matter, settled by convexity along generalized geodesics
@@ -110,7 +110,7 @@ space, `1 ≤ p`, and `φ` an energy on `P_p (X)` such that
 * bounded sequences of `P_p (X)` along which `φ` is bounded above are tight;
 * `φ` is coercive: `φ_{τ₀}(μ₀) > -∞` for some time step `τ₀` and law `μ₀`.
 
-Then for every time step `0 < τ < τ₀` and every law `μ` of `P_p (X)`, some law `ν` minimizes
+Then for every time step `τ < τ₀` and every law `μ` of `P_p (X)`, some law `ν` minimizes
 `φ ν + W_p (μ, ν) ^ 2 / (2τ)`. -/
 theorem moreauYosidaResolvent_nonempty {φ : WassersteinSpace p X → EReal} {τ τ₀ : ℝ≥0}
     {μ₀ : WassersteinSpace p X}
@@ -121,12 +121,12 @@ theorem moreauYosidaResolvent_nonempty {φ : WassersteinSpace p X → EReal} {τ
     (htight : ∀ (c : ℝ) ⦃v : ℕ → WassersteinSpace p X⦄, Bornology.IsBounded (range v) →
       (∀ n, φ (v n) ≤ c) →
       IsTightMeasureSet {((ν : ProbabilityMeasure X) : Measure X) | ν ∈ range v})
-    (hτ : 0 < τ) (hττ₀ : τ < τ₀) (h₀ : moreauYosida φ τ₀ μ₀ ≠ ⊥) (μ : WassersteinSpace p X) :
+    (hττ₀ : τ < τ₀) (h₀ : moreauYosida φ τ₀ μ₀ ≠ ⊥) (μ : WassersteinSpace p X) :
     (moreauYosidaResolvent φ τ μ).Nonempty :=
   TauCeti.moreauYosidaResolvent_nonempty (l := fun ν ↦ comap (↑) (𝓝 (ν : ProbabilityMeasure X)))
     (fun _ _ h ↦ edist_le_liminf (tendsto_comap_iff.1 h))
     (fun _ _ hv h ↦ hφ (Metric.isBounded_iff_ediam_ne_top.2 hv) (tendsto_comap_iff.1 h))
-    (exists_strictMono_tendsto_comap htight) hτ hττ₀ (edist_ne_top μ μ₀) h₀
+    (exists_strictMono_tendsto_comap htight) hττ₀ (edist_ne_top μ μ₀) h₀
 
 /-- **Existence of Jordan–Kinderlehrer–Otto sequences.** Under the hypotheses of
 `TauCeti.WassersteinSpace.moreauYosidaResolvent_nonempty`, every law `μ` of `P_p (X)` starts a
@@ -141,14 +141,14 @@ theorem exists_forall_mem_moreauYosidaResolvent {φ : WassersteinSpace p X → E
     (htight : ∀ (c : ℝ) ⦃v : ℕ → WassersteinSpace p X⦄, Bornology.IsBounded (range v) →
       (∀ n, φ (v n) ≤ c) →
       IsTightMeasureSet {((ν : ProbabilityMeasure X) : Measure X) | ν ∈ range v})
-    (hτ : 0 < τ) (hττ₀ : τ < τ₀) (h₀ : moreauYosida φ τ₀ μ₀ ≠ ⊥) (μ : WassersteinSpace p X) :
+    (hττ₀ : τ < τ₀) (h₀ : moreauYosida φ τ₀ μ₀ ≠ ⊥) (μ : WassersteinSpace p X) :
     ∃ u : ℕ → WassersteinSpace p X, u 0 = μ ∧
       ∀ n, u (n + 1) ∈ moreauYosidaResolvent φ τ (u n) :=
   TauCeti.exists_forall_mem_moreauYosidaResolvent
     (l := fun ν ↦ comap (↑) (𝓝 (ν : ProbabilityMeasure X)))
     (fun _ _ _ h ↦ edist_le_liminf (tendsto_comap_iff.1 h))
     (fun _ _ hv h ↦ hφ (Metric.isBounded_iff_ediam_ne_top.2 hv) (tendsto_comap_iff.1 h))
-    (exists_strictMono_tendsto_comap htight) hτ hττ₀ (edist_ne_top μ μ₀) h₀
+    (exists_strictMono_tendsto_comap htight) hττ₀ (edist_ne_top μ μ₀) h₀
 
 end Narrow
 
@@ -160,7 +160,7 @@ variable {X : Type*} {p : ℝ≥0∞} [MetricSpace X] [MeasurableSpace X] [Borel
 /-- **Existence of the Jordan–Kinderlehrer–Otto step on a proper space.** On a proper metric
 space, such as `ℝⁿ`, bounded sets of `P_p (X)` are tight, so the JKO step exists for every energy
 that is narrowly lower semicontinuous along bounded sequences and coercive,
-`φ_{τ₀}(μ₀) > -∞`: for every time step `0 < τ < τ₀` and every law `μ`, some law `ν` minimizes
+`φ_{τ₀}(μ₀) > -∞`: for every time step `τ < τ₀` and every law `μ`, some law `ν` minimizes
 `φ ν + W_p (μ, ν) ^ 2 / (2τ)`. -/
 theorem moreauYosidaResolvent_nonempty_of_properSpace {φ : WassersteinSpace p X → EReal}
     {τ τ₀ : ℝ≥0} {μ₀ : WassersteinSpace p X}
@@ -168,15 +168,15 @@ theorem moreauYosidaResolvent_nonempty_of_properSpace {φ : WassersteinSpace p X
       Bornology.IsBounded (range v) →
       Tendsto (fun n ↦ (v n : ProbabilityMeasure X)) atTop (𝓝 ν) →
       φ ν ≤ liminf (fun n ↦ φ (v n)) atTop)
-    (hτ : 0 < τ) (hττ₀ : τ < τ₀) (h₀ : moreauYosida φ τ₀ μ₀ ≠ ⊥) (μ : WassersteinSpace p X) :
+    (hττ₀ : τ < τ₀) (h₀ : moreauYosida φ τ₀ μ₀ ≠ ⊥) (μ : WassersteinSpace p X) :
     (moreauYosidaResolvent φ τ μ).Nonempty :=
-  moreauYosidaResolvent_nonempty hφ (fun _ _ hv _ ↦ isTightMeasureSet_of_isBounded hv) hτ hττ₀ h₀ μ
+  moreauYosidaResolvent_nonempty hφ (fun _ _ hv _ ↦ isTightMeasureSet_of_isBounded hv) hττ₀ h₀ μ
 
 /-- **The JKO step for a potential energy.** On a proper complete separable metric space, let `V`
-be a lower semicontinuous potential bounded below. Then for every time step `τ > 0` and every law
+be a lower semicontinuous potential bounded below. Then for every time step `τ` and every law
 `μ` of `P_p (X)`, some law `ν` of `P_p (X)` minimizes `∫ V dν + W_p (μ, ν) ^ 2 / (2τ)`. -/
 theorem moreauYosidaResolvent_potentialEnergy_nonempty {V : X → ℝ}
-    (hV : LowerSemicontinuous V) (hb : BddBelow (range V)) {τ : ℝ≥0} (hτ : 0 < τ)
+    (hV : LowerSemicontinuous V) (hb : BddBelow (range V)) {τ : ℝ≥0}
     (μ : WassersteinSpace p X) :
     (moreauYosidaResolvent
       (fun ν : WassersteinSpace p X ↦ potentialEnergy V ((ν : ProbabilityMeasure X) : Measure X))
@@ -191,7 +191,7 @@ theorem moreauYosidaResolvent_potentialEnergy_nonempty {V : X → ℝ}
             one_smul]
       _ ≤ _ := potentialEnergy_mono (.of_forall fun x ↦ hc (mem_range_self x))
   refine moreauYosidaResolvent_nonempty_of_properSpace (τ₀ := τ + 1) (μ₀ := μ)
-    (fun v ν _ h ↦ (hlsc.le_liminf _).trans h.liminf_le_liminf_comp) hτ
+    (fun v ν _ h ↦ (hlsc.le_liminf _).trans h.liminf_le_liminf_comp)
     (lt_add_of_pos_right τ one_pos) (ne_bot_of_le_ne_bot (EReal.coe_ne_bot c) ?_) μ
   exact le_moreauYosida_iff.2 fun ν _ ↦
     (hge ν).trans (le_add_of_nonneg_right (EReal.coe_ennreal_nonneg _))
