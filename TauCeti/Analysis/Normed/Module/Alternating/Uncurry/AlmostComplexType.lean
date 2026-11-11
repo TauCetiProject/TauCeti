@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Module.Alternating.AlmostComplexType
 public import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.Fin
+import TauCeti.LinearAlgebra.Complex.LinearPart
 
 /-!
 # Alternation and the `(p,q)` type of complex-valued forms
@@ -395,19 +396,29 @@ private theorem isOfType_linearPart (hJ : ∀ v, J (J v) = -v) (hη : ∀ v, (η
       (∀ v, (((2 : ℂ)⁻¹ • (η + I • η ∘L J)) v).IsOfType J p q) ∧
       (∀ v, ((2 : ℂ)⁻¹ • (η + I • η ∘L J)) (J v) = -I • ((2 : ℂ)⁻¹ • (η + I • η ∘L J)) v) ∧
       (2 : ℂ)⁻¹ • (η - I • η ∘L J) + (2 : ℂ)⁻¹ • (η + I • η ∘L J) = η := by
+  -- The two parts are `TauCeti.complexLinearPart` and `TauCeti.complexAntilinearPart` of `η` for
+  -- `J` and multiplication by `I` on forms.
+  let J' : (E [⋀^Fin k]→L[ℝ] F) →ₗ[ℝ] E [⋀^Fin k]→L[ℝ] F := I • LinearMap.id
+  have hJJ : (J : E →ₗ[ℝ] E) ∘ₗ J = -LinearMap.id := LinearMap.ext hJ
+  have hJ'J' : J' ∘ₗ J' = -LinearMap.id := by
+    ext β : 1
+    simp [J', smul_smul]
+  have hlin : ((2⁻¹ : ℂ) • (η - I • η ∘L J)).toLinearMap =
+      TauCeti.complexLinearPart J J' η := by
+    ext v : 1
+    simp [J', ← Complex.coe_smul]
+  have hanti : ((2⁻¹ : ℂ) • (η + I • η ∘L J)).toLinearMap =
+      TauCeti.complexAntilinearPart J J' η := by
+    ext v : 1
+    simp [J', ← Complex.coe_smul]
   refine ⟨fun v ↦ ((hη v).sub ((hη (J v)).smul I)).smul _, fun v ↦ ?_,
     fun v ↦ ((hη v).add ((hη (J v)).smul I)).smul _, fun v ↦ ?_, ?_⟩
-  · simp only [_root_.smul_apply, _root_.sub_apply, ContinuousLinearMap.comp_apply, hJ, map_neg,
-      smul_neg, sub_neg_eq_add, smul_sub, smul_smul]
-    match_scalars
-    · linear_combination (2⁻¹ : ℂ) * I_sq
-    · ring
-  · simp only [_root_.smul_apply, _root_.add_apply, ContinuousLinearMap.comp_apply, hJ, map_neg,
-      smul_neg, smul_add, smul_smul]
-    match_scalars
-    · linear_combination (2⁻¹ : ℂ) * I_sq
-    · ring
-  · module
+  · simpa [← hlin, J'] using (TauCeti.complexLinearPart_isComplexLinear hJJ hJ'J' η).apply v
+  · simpa [← hanti, J', add_comm] using
+      (TauCeti.complexAntilinearPart_isComplexAntilinear hJJ hJ'J' η).apply v
+  · refine ContinuousLinearMap.coe_injective ?_
+    rw [ContinuousLinearMap.toLinearMap_add, hlin, hanti,
+      TauCeti.complexLinearPart_add_complexAntilinearPart]
 
 /-- **The `(p+1,q)` component for a constant structure.** If every form `η v` of a family has type
 `(p,q)` for `J` with `J² = -1`, the component of type `(p+1,q)` of the alternation of `η` is the
