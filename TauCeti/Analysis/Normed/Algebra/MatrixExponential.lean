@@ -11,7 +11,8 @@ public import Mathlib.Analysis.SpecialFunctions.Exponential
 public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.Trace
-public import TauCeti.Analysis.Calculus.FDeriv.Det
+import Mathlib.Order.Interval.Set.OrdConnected
+public import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 public import TauCeti.Analysis.Matrix.Normed
 public import TauCeti.LinearAlgebra.Matrix.Triangular
 
@@ -51,6 +52,7 @@ exponentials whenever all their powers agree at those entries.
 ## Main results
 
 * `Matrix.exp_series_hasSum_exp_apply`: the rational exponential series at a matrix entry.
+* `Matrix.IsUpperTriangular.exp_submatrix`: restriction to order-connected index sets.
 * `Matrix.exp_apply_eq_of_forall_pow_apply_eq`: comparison of exponential entries through powers.
 * `Matrix.IsUpperTriangular.exp_apply_diag`: diagonal entries of a triangular exponential.
 * `Matrix.det_exp`: `det (exp A) = exp (trace A)`.
@@ -113,6 +115,29 @@ theorem IsUpperTriangular.exp_apply_diag {n : Type*} [Fintype n] [LinearOrder n]
       simp only [pow_apply_diag_of_isUpperTriangular hA, diagonal_pow, diagonal_apply_eq,
         Pi.pow_apply])
   simpa only [exp_diagonal, diagonal_apply_eq, Pi.coe_exp] using h
+
+/-- The exponential of an upper-triangular matrix commutes with restriction to an
+order-connected set of indices. -/
+theorem IsUpperTriangular.exp_submatrix {ι κ : Type*} [LinearOrder ι]
+    [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
+    {A : Matrix ι ι R} (hA : A.IsUpperTriangular)
+    (e : κ ↪ ι) (he : Set.OrdConnected (Set.range e)) :
+    (NormedSpace.exp A).submatrix e e = NormedSpace.exp (A.submatrix e e) := by
+  ext i j
+  exact Matrix.exp_apply_eq_of_forall_pow_apply_eq A (A.submatrix e e) (e i) (e j) i j
+    (fun n ↦ congrArg (fun M : Matrix κ κ R ↦ M i j) (hA.submatrix_pow e he n))
+
+/-- Taking the leading principal block of an upper-triangular matrix commutes
+with exponentiation. -/
+theorem IsUpperTriangular.exp_submatrix_castSucc {n : ℕ}
+    {X : Matrix (Fin (n + 1)) (Fin (n + 1)) R} (hX : X.IsUpperTriangular) :
+    (exp X).submatrix Fin.castSucc Fin.castSucc =
+      exp (X.submatrix Fin.castSucc Fin.castSucc) := by
+  have he : Set.OrdConnected (Set.range (Fin.castSuccEmb : Fin n → Fin (n + 1))) := by
+    rw [Fin.coe_castSuccEmb, Fin.range_castSucc]
+    -- The range of `castSucc` is the initial segment below the final index.
+    exact Set.ordConnected_Iio (a := Fin.last n)
+  simpa only [Fin.coe_castSuccEmb] using hX.exp_submatrix Fin.castSuccEmb he
 
 end EntrySeries
 
