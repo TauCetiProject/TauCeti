@@ -156,7 +156,7 @@ theorem tendsto_integral_renewalCountNat_div (hT : ∀ n, Measurable (T n))
   set r := (∫⁻ ω, (T 0 ω : ℝ≥0∞) ∂P)⁻¹.toReal
   have hint : ∀ t : ℝ≥0, Integrable (fun ω ↦ (renewalCountNat T t ω : ℝ) / t) P := fun t ↦
     ((integrable_toReal_renewalCount hT hindep hid hzero t).congr <| by
-      filter_upwards [ae_natCast_renewalCountNat hT hindep hid hzero] with ω hω
+      filter_upwards [ae_natCast_renewalCountNat hindep hid hzero] with ω hω
       rw [← hω t, ENNReal.toReal_natCast]).div_const _
   have h := tendsto_integral_of_L1' (fun _ ↦ r) (Eventually.of_forall hint)
     (tendsto_eLpNorm_renewalCountNat_div_sub hT hindep hid hzero)

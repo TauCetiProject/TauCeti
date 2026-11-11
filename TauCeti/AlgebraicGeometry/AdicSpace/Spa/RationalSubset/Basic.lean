@@ -79,7 +79,8 @@ layer deferred above.
   among the numerators.
 * `TauCeti.ValuationSpectrum.rationalSubset_image_mul_right` : multiplying every numerator and
   the denominator by the same unit does not change the rational subset.
-* `TauCeti.ValuationSpectrum.rationalSubset_singleton_one` : the whole spectrum is the
+* `TauCeti.ValuationSpectrum.rationalSubset_singleton_one` and
+  `TauCeti.ValuationSpectrum.spaBasicOpen_singleton_one` : the whole spectrum is the
   rational subset `R({1}/1)` — Wedhorn's "`Spa (A, A⁺)` itself is rational".
 * `TauCeti.ValuationSpectrum.mem_rationalSubset_singleton_one_iff` : `R({1}/s)` is the locus
   `v(s) ≥ 1`.
@@ -325,6 +326,13 @@ def spaBasicOpen (Aplus : Subring A) (T : Finset A) (s : A) :
 theorem mem_spaBasicOpen {Aplus : Subring A} {T : Finset A} {s : A} {v : ↥(spa Aplus)} :
     v ∈ spaBasicOpen Aplus T s ↔ (v : Spv A) ∈ rationalSubset Aplus T s :=
   Iff.rfl
+
+/-- The basic open `R({1}/1)` is the whole adic spectrum `⊤`. -/
+@[simp]
+theorem spaBasicOpen_singleton_one (Aplus : Subring A) :
+    spaBasicOpen Aplus {1} 1 = ⊤ := by
+  ext x
+  simp [mem_spaBasicOpen, rationalSubset_singleton_one]
 
 /-- **Containment of basic opens** is containment of the underlying rational subsets, since every
 rational subset already lies in `spa A⁺`. -/

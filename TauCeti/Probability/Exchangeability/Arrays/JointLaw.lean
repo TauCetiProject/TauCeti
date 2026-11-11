@@ -193,14 +193,14 @@ theorem SeparatelyExchangeable.jointLaw_arrayRow_colReindex_eq [IsFiniteMeasure 
       = μ.map fun ω ↦ (ν ω, fun p : ℕ × ℕ ↦ X p ω) :=
   h.jointLaw_arrayRow_pairReindex_eq hν 1 τ
 
-/-- **De Finetti for the rows, with the inherited joint symmetry.** Over a nonempty standard Borel
+/-- **De Finetti for the rows, with the inherited joint symmetry.** Over a standard Borel
 state space a separately exchangeable array has a row directing measure whose joint law with the
 array is equivariant for the two axis permutations.
 
 This refines `SeparatelyExchangeable.exists_directing_arrayRow_mixingLaw_invariant`, whose
 conclusion is the first marginal of this one. -/
 theorem SeparatelyExchangeable.exists_directing_arrayRow_jointLaw_equivariant
-    [StandardBorelSpace α] [Nonempty α] [IsFiniteMeasure μ]
+    [StandardBorelSpace α] [IsFiniteMeasure μ]
     (h : SeparatelyExchangeable μ X) (hX : ∀ p, AEMeasurable (X p) μ) :
     ∃ ν : Ω → ProbabilityMeasure (ℕ → α), ConditionallyIIDWith μ (arrayRow X) ν ∧
       ∀ σ τ : Equiv.Perm ℕ,
@@ -268,7 +268,7 @@ theorem SeparatelyExchangeable.jointLaw_arrayCol_colReindex_eq [IsFiniteMeasure 
 
 /-- **De Finetti for the columns, with the inherited joint symmetry.** -/
 theorem SeparatelyExchangeable.exists_directing_arrayCol_jointLaw_equivariant
-    [StandardBorelSpace α] [Nonempty α] [IsFiniteMeasure μ]
+    [StandardBorelSpace α] [IsFiniteMeasure μ]
     (h : SeparatelyExchangeable μ X) (hX : ∀ p, AEMeasurable (X p) μ) :
     ∃ ν : Ω → ProbabilityMeasure (ℕ → α), ConditionallyIIDWith μ (arrayCol X) ν ∧
       ∀ σ τ : Equiv.Perm ℕ,

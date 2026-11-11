@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Exchangeability.L2.Covariance
 import TauCeti.Probability.Exchangeability.Map
-import TauCeti.MeasureTheory.Function.BoundedMemLp
 
 /-!
 # Bounded observables of contractable processes in L²
@@ -68,7 +67,8 @@ theorem Contractable.covariance_structure_comp_of_bound {μ : Measure Ω} [IsFin
         cov[fun ω => f (X i ω), fun ω => f (X j ω); μ] =
           cov[fun ω => f (X k ω), fun ω => f (X l ω); μ]) :=
   hX_contractable.covariance_structure_comp hX_meas hf fun i =>
-    memLp_comp_of_bound hf (hX_meas i) C (by simpa only [Real.norm_eq_abs] using hf_bound i) 2
+    MemLp.of_bound (hf.comp_aemeasurable (hX_meas i)).aestronglyMeasurable C
+      (by simpa only [Real.norm_eq_abs] using hf_bound i)
 
 end Probability
 

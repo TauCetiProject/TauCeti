@@ -44,6 +44,10 @@ so `f + g` corresponds to the product of the underlying morphisms (`CommGrp.add_
 * `CategoryTheory.CommGrp.intCast_hom_hom_hom`: the integer `n` in the endomorphism ring of a
   commutative group object `A` is the `n`-th power of the identity of `A.X` for the group law on
   points, that is, multiplication by `n`.
+* `CategoryTheory.Functor.mapCommGrp_map_intCast` and
+  `CategoryTheory.Functor.mapCommGrp_map_natCast`: a braided functor takes multiplication by `n` to
+  multiplication by `n`. For group schemes, this is the compatibility of multiplication by `n` with
+  base change.
 -/
 
 public section
@@ -135,3 +139,33 @@ theorem natCast_hom_hom_hom (A : CommGrp C) (n : ℕ) :
   rw [← Int.cast_natCast, intCast_hom_hom_hom, zpow_natCast]
 
 end CategoryTheory.CommGrp
+
+namespace CategoryTheory.Functor
+
+open scoped Obj
+
+universe v u v₁ u₁
+
+variable {C : Type u} [Category.{v} C] [CartesianMonoidalCategory C] [BraidedCategory C]
+  {D : Type u₁} [Category.{v₁} D] [CartesianMonoidalCategory D] [BraidedCategory D]
+  (F : C ⥤ D) [F.Braided]
+
+/-- A braided functor takes multiplication by an integer `n` on a commutative group object `A` to
+multiplication by `n` on the image of `A`. -/
+@[simp]
+theorem mapCommGrp_map_intCast (A : CommGrp C) (n : ℤ) :
+    F.mapCommGrp.map (n : End A).asHom = (n : End (F.mapCommGrp.obj A)).asHom := by
+  refine CommGrp.hom_ext _ _ ?_
+  rw [CommGrp.intCast_hom_hom_hom]
+  -- The underlying morphism of `F.mapCommGrp.map g` is `F.map` of the underlying morphism of `g`.
+  exact (congrArg F.map (CommGrp.intCast_hom_hom_hom A n)).trans <|
+    (map_zpow F.homMonoidHom (𝟙 A.X) n).trans (congrArg (· ^ n) (F.map_id A.X))
+
+/-- A braided functor takes multiplication by a natural number `n` on a commutative group object `A`
+to multiplication by `n` on the image of `A`. -/
+@[simp]
+theorem mapCommGrp_map_natCast (A : CommGrp C) (n : ℕ) :
+    F.mapCommGrp.map (n : End A).asHom = (n : End (F.mapCommGrp.obj A)).asHom := by
+  simpa only [Int.cast_natCast] using F.mapCommGrp_map_intCast A n
+
+end CategoryTheory.Functor

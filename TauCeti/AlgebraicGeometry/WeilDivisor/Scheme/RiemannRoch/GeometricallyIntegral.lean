@@ -68,10 +68,9 @@ theorem finrank_cohomology_zero_sheaf_sub_finrank_cohomology_one_sheaf_of_geomet
   have := finiteDimensional_cohomology_one_trivial_of_isProper k hdim
   rw [← Scheme.Modules.eulerCharBelow_two,
     eulerCharBelow_sheaf_eq_relativeDegree_add k hcoheight D,
-    Scheme.Modules.eulerCharBelow_two,
-    finrank_cohomology_zero_trivial_eq_one_of_surjective k
-      (X.baseRingToGlobalSections_bijective_of_geometricallyIntegral k).surjective]
-  push_cast
+    eulerCharBelow_trivial_eq_one_sub_genus_of_surjective k
+      (X.baseRingToGlobalSections_bijective_of_geometricallyIntegral k).surjective,
+    Scheme.genus_def]
   ring
 
 /-- Riemann's inequality on a geometrically integral proper curve, without assuming a rational

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.CharacterModule
+public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.RingTheory.RootsOfUnity.Complex
 
@@ -26,6 +27,10 @@ abelian group gives a complex character that is trivial exactly when the origina
 orthogonality relation for such characters is the basic input of Gauss sums of finite quadratic
 modules.
 
+The file also records a local property of the real exponential `Circle.exp` of Mathlib's unit
+circle: small nonzero rotations move every point, so the angular coordinate `t ↦ ω * Circle.exp t`
+around `ω` sends punctured neighbourhoods of `0` to punctured neighbourhoods of `ω`.
+
 ## Main declarations
 
 * `TauCeti.expCircle`: the additive character `r mod ℤ ↦ e^{2πi r}` of `AddCircle (1 : ℚ)`.
@@ -40,6 +45,9 @@ modules.
 * `CharacterModule.sum_expCircle`: the orthogonality relation
   `∑ m, e^{2πi χ(m)} = if χ = 0 then #M else 0` for a `ℚ/ℤ`-valued character `χ` of a finite
   abelian group `M`.
+* `Circle.tendsto_mul_exp_nhdsNE`: moving a small nonzero angle `t` along the unit circle from `ω`
+  leaves `ω`, that is, `t ↦ ω * Circle.exp t` maps punctured neighbourhoods of `0` into punctured
+  neighbourhoods of `ω`.
 -/
 
 public section
@@ -147,3 +155,23 @@ theorem sum_expCircle {M : Type*} [AddCommGroup M] [Fintype M] (χ : CharacterMo
     _ = _ := if_congr hψ rfl rfl
 
 end CharacterModule
+
+namespace Circle
+
+open Filter Topology
+
+/-- **Small nonzero rotations move every point of the circle.** As `t → 0` with `t ≠ 0`, the point
+`ω * Circle.exp t` tends to `ω` without being equal to `ω`. -/
+theorem tendsto_mul_exp_nhdsNE (ω : Circle) :
+    Tendsto (fun t : ℝ => ω * Circle.exp t) (𝓝[≠] 0) (𝓝[≠] ω) := by
+  refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_
+  · exact tendsto_nhdsWithin_of_tendsto_nhds
+      ((continuous_const.mul Circle.exp.continuous).tendsto' 0 ω (by simp))
+  · have hpi := Real.pi_pos
+    filter_upwards [nhdsWithin_le_nhds (Ioo_mem_nhds (neg_neg_of_pos hpi) hpi),
+      self_mem_nhdsWithin] with t ht ht0
+    rw [Set.mem_compl_singleton_iff, Ne, mul_eq_left, ← Circle.exp_zero]
+    exact fun h => ht0 (Circle.exp_injOn_Ioc (a := -Real.pi) (b := Real.pi) (by linarith)
+      (Set.Ioo_subset_Ioc_self ht) ⟨neg_neg_of_pos hpi, hpi.le⟩ h)
+
+end Circle

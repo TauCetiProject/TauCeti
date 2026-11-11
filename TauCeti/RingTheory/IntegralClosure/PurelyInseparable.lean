@@ -187,10 +187,11 @@ theorem IsIntegralClosure.finite_mvPolynomial_of_isPurelyInseparable (R : Type*)
   have _ : ExpChar K p := expChar_of_injective_algebraMap
     (IsFractionRing.injective (MvPolynomial σ R) K) p
   set n := IsPurelyInseparable.exponent K M
-  -- a `K`-basis of `M`, and (D1) preimages in `P` of the `p ^ n`-th powers of its vectors
-  obtain ⟨m, b, g, hgg⟩ :=
-    IsPurelyInseparable.exists_basis_iterateFrobenius_eq_algebraMap (MvPolynomial σ R) K M p
-      (le_refl n)
+  -- a `K`-basis `b` of `M`, and (D1) preimages in `P` of the `p ^ n`-th powers of its vectors
+  obtain ⟨w, g, hgg⟩ :=
+    IsPurelyInseparable.exists_iterateFrobenius_unitsSMul_eq_algebraMap (MvPolynomial σ R) K M p
+      (le_refl n) (Module.finBasis K M)
+  set b := (Module.finBasis K M).unitsSMul w
   -- B1: a finite integrally closed extension of `R` holding `p ^ n`-th roots of the coefficients
   -- of the `g j`
   obtain ⟨R', _, _, _, hR'fin, _, hR'inj, hR'root⟩ :=
@@ -236,6 +237,6 @@ theorem IsIntegralClosure.finite_mvPolynomial_of_isPurelyInseparable (R : Type*)
         = algebraMap (MvPolynomial σ R) (MvPolynomial σ R') (g j) := by
       rw [RingHom.algebraMap_toAlgebra]
       rfl
-    rw [hfg, ← IsScalarTower.algebraMap_apply, ← hgg j, ← IsScalarTower.algebraMap_apply]
+    rw [hfg, ← IsScalarTower.algebraMap_apply, hgg j, ← IsScalarTower.algebraMap_apply]
 
 end TauCeti

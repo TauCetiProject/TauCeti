@@ -6,20 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.E7.Minuscule.Basic
-public import TauCeti.Algebra.Lie.Matrix.IntegralCast
-import TauCeti.Algebra.Lie.Sl2.Basic
-import TauCeti.LinearAlgebra.Matrix.MulVec
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.CoordinateLattice
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Serre
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.MinusculeWeightTable
 
 /-!
 # The admissible lattice in the type-E7 minuscule representation
 
-This file extends the integral `56`-dimensional minuscule representation of the type-`E₇`
-Serre presentation to the rational Serre algebra and proves that its coordinate `ℤ`-lattice is
-preserved by the Serre Kostant form. The raising and lowering matrices have integral entries, are
-square-zero, and preserve the coordinate lattice. The Cartan matrices act diagonally through the
-weights `TauCeti.DynkinType.e7MinusculeWeight`.
+This file reads the rational extension of the integral `56`-dimensional minuscule representation
+of the type-`E₇` Serre presentation, and the admissibility of its coordinate `ℤ`-lattice for the
+Serre Kostant form, off the minuscule weight table `TauCeti.E7Minuscule.weightTable`, where they
+are proved for an arbitrary table.
 
 Thus the minuscule coordinate lattice is an admissible lattice for the explicit Serre-generator
 Kostant form. Its weights span the full type-`E₇` character lattice by
@@ -28,25 +23,26 @@ the full-weight type-`E₇` Chevalley--Demazure carrier in Layer 9 of the Reduct
 
 ## Main declarations
 
-* `TauCeti.E7Minuscule.rationalSerreRepresentation`: the rational minuscule representation.
-* `TauCeti.E7Minuscule.rep`: its extension to the universal enveloping algebra.
+* `TauCeti.E7Minuscule.rep`: the rational minuscule representation of the universal enveloping
+  algebra.
 * `TauCeti.E7Minuscule.isSl2Triple_rep_serreRootGenerator`: the represented generators at every
   simple node form an `sl₂` triple.
 * `TauCeti.E7Minuscule.isNilpotent_rep_serreRootGenerator`: the simple-root generators act
   nilpotently.
+* `TauCeti.E7Minuscule.rep_serreRootGenerator_inl_latticeBasis_eq_sum` and
+  `TauCeti.E7Minuscule.rep_serreRootGenerator_inr_latticeBasis_eq_sum`: the represented root
+  generators act on the lattice basis by the raising and lowering matrices.
 * `TauCeti.E7Minuscule.lattice`: the coordinate `ℤ`-lattice in the rational module.
-* `TauCeti.E7Minuscule.rep_serreKostantForm_apply_mem_lattice`: the Serre Kostant form preserves
-  the lattice.
+* `TauCeti.E7Minuscule.rep_kostantForm_mem_lattice`: the generic Kostant form preserves the
+  lattice.
 
 ## References
 
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate VI.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §§13 and 26--27.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1--2.
-
-The formal organization follows the parallel type-`E₆` admissible-lattice development in
-TauCetiProject/TauCeti#5204, specialized here to the already constructed `E₇` minuscule Serre
-system.
+* The rational representation and admissibility results specialize
+  `TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.MinusculeWeightTable`.
 -/
 
 public section
@@ -59,170 +55,38 @@ open TauCeti.DynkinType
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-/-! ## Extension from the integral representation -/
-
-/-- The rational raising matrix obtained from the integral minuscule representation. -/
-noncomputable def raisingMatrixRat (i : Fin 7) : Matrix (Fin 56) (Fin 56) ℚ :=
-  matrixIntCastLieHom ℚ (raisingMatrix i)
-
-/-- The rational lowering matrix obtained from the integral minuscule representation. -/
-noncomputable def loweringMatrixRat (i : Fin 7) : Matrix (Fin 56) (Fin 56) ℚ :=
-  matrixIntCastLieHom ℚ (loweringMatrix i)
-
-/-- The rational Cartan matrix obtained from the integral minuscule representation. -/
-noncomputable def cartanMatrixRat (i : Fin 7) : Matrix (Fin 56) (Fin 56) ℚ :=
-  matrixIntCastLieHom ℚ (cartanMatrix i)
-
-/-- The entries of the rational raising matrix are the integral minuscule raising coefficients. -/
-@[simp]
-theorem raisingMatrixRat_apply (i : Fin 7) (a b : Fin 56) :
-    raisingMatrixRat i a b =
-      if e7MinusculeWeight b i = -1 ∧ a = e7MinusculeReflection i b then 1 else 0 := by
-  rw [raisingMatrixRat, matrixIntCastLieHom_apply, raisingMatrix_apply]
-  split_ifs <;> norm_num
-
-/-- The entries of the rational lowering matrix are the integral minuscule lowering coefficients. -/
-@[simp]
-theorem loweringMatrixRat_apply (i : Fin 7) (a b : Fin 56) :
-    loweringMatrixRat i a b =
-      if e7MinusculeWeight b i = 1 ∧ a = e7MinusculeReflection i b then 1 else 0 := by
-  rw [loweringMatrixRat, matrixIntCastLieHom_apply, loweringMatrix_apply]
-  split_ifs <;> norm_num
-
-/-- The rational Cartan matrix is diagonal with the minuscule weights on its diagonal. -/
-@[simp]
-theorem cartanMatrixRat_apply (i : Fin 7) (a b : Fin 56) :
-    cartanMatrixRat i a b = if a = b then (e7MinusculeWeight a i : ℚ) else 0 := by
-  rw [cartanMatrixRat, matrixIntCastLieHom_apply, cartanMatrix_apply]
-  split_ifs <;> norm_num
-
-/-- The rational minuscule matrices satisfy the type-`E₇` Serre relations. -/
-theorem isSerreSystemRat :
-    TauCeti.IsSerreSystem ℚ (CartanMatrix.E 7)
-      cartanMatrixRat raisingMatrixRat loweringMatrixRat := by
-  have h := isSerreSystem.map (matrixIntCastLieHom ℚ)
-  have hH : matrixIntCastLieHom ℚ ∘ cartanMatrix = cartanMatrixRat := rfl
-  have hE : matrixIntCastLieHom ℚ ∘ raisingMatrix = raisingMatrixRat := rfl
-  have hF : matrixIntCastLieHom ℚ ∘ loweringMatrix = loweringMatrixRat := rfl
-  rw [hH, hE, hF] at h
-  refine { h with
-    ad_pow_lie_E_E := ?_
-    ad_pow_lie_F_F := ?_ }
-  · intro i j
-    rw [← ad_pow_apply_eq_ad_pow_apply ℤ ℚ]
-    exact h.ad_pow_lie_E_E i j
-  · intro i j
-    rw [← ad_pow_apply_eq_ad_pow_apply ℤ ℚ]
-    exact h.ad_pow_lie_F_F i j
-
-/-- At each simple node, the three rational minuscule generator matrices form an `sl₂` triple. -/
-theorem isSl2TripleRat (i : Fin 7) :
-    _root_.IsSl2Triple (cartanMatrixRat i) (raisingMatrixRat i) (loweringMatrixRat i) :=
-  (isSl2Triple i).map (matrixIntCastLieHom ℚ) fun hzero ↦
-    (isSl2Triple i).h_ne_zero <| by
-      ext a b
-      simpa using congrFun (congrFun hzero a) b
-
-/-- The rational `56`-dimensional minuscule representation of the type-`E₇` Serre
-presentation. -/
-noncomputable def rationalSerreRepresentation :
-    Matrix.ToLieAlgebra ℚ (CartanMatrix.E 7) →ₗ⁅ℚ⁆ Matrix (Fin 56) (Fin 56) ℚ :=
-  TauCeti.serreLift isSerreSystemRat
-
-/-- The rational Serre representation sends `H_i` to the rational Cartan matrix. -/
-@[simp]
-theorem rationalSerreRepresentation_serreH (i : Fin 7) :
-    rationalSerreRepresentation (TauCeti.serreH ℚ (CartanMatrix.E 7) i) = cartanMatrixRat i :=
-  TauCeti.serreLift_serreH isSerreSystemRat i
-
-/-- The rational Serre representation sends `E_i` to the rational raising matrix. -/
-@[simp]
-theorem rationalSerreRepresentation_serreE (i : Fin 7) :
-    rationalSerreRepresentation (TauCeti.serreE ℚ (CartanMatrix.E 7) i) = raisingMatrixRat i :=
-  TauCeti.serreLift_serreE isSerreSystemRat i
-
-/-- The rational Serre representation sends `F_i` to the rational lowering matrix. -/
-@[simp]
-theorem rationalSerreRepresentation_serreF (i : Fin 7) :
-    rationalSerreRepresentation (TauCeti.serreF ℚ (CartanMatrix.E 7) i) = loweringMatrixRat i :=
-  TauCeti.serreLift_serreF isSerreSystemRat i
-
 /-! ## The enveloping-algebra representation -/
 
 /-- The rational minuscule representation extended to the universal enveloping algebra. -/
 noncomputable def rep :
-    _root_.UniversalEnvelopingAlgebra ℚ (Matrix.ToLieAlgebra ℚ (CartanMatrix.E 7)) →ₐ[ℚ]
+    _root_.UniversalEnvelopingAlgebra ℚ
+        (Matrix.ToLieAlgebra ℚ weightTable.cartanMatrix) →ₐ[ℚ]
       Module.End ℚ (Fin 56 → ℚ) :=
-  _root_.UniversalEnvelopingAlgebra.lift ℚ
-    (Matrix.toLinAlgEquiv'.toAlgHom.toLieHom.comp
-      rationalSerreRepresentation)
+  weightTable.rep
 
-/-- The enveloping-algebra inclusion acts by multiplying with the represented matrix. -/
-theorem rep_ι_apply (x : Matrix.ToLieAlgebra ℚ (CartanMatrix.E 7)) (v : Fin 56 → ℚ) :
-    rep (_root_.UniversalEnvelopingAlgebra.ι ℚ x) v = rationalSerreRepresentation x *ᵥ v := by
-  simp [rep]
+/-- The rational minuscule representation is the representation of the minuscule weight
+table. -/
+theorem rep_def : rep = weightTable.rep :=
+  (rfl)
 
-/-- The enveloping-algebra inclusion acts through the represented rational matrix, read as an
-endomorphism by `Matrix.toLinAlgEquiv'`. -/
-private theorem rep_ι_eq_toLinAlgEquiv' (x : Matrix.ToLieAlgebra ℚ (CartanMatrix.E 7)) :
-    rep (_root_.UniversalEnvelopingAlgebra.ι ℚ x) =
-      Matrix.toLinAlgEquiv' (rationalSerreRepresentation x) := by
-  apply LinearMap.ext
-  intro v
-  rw [rep_ι_apply, Matrix.toLinAlgEquiv'_apply]
-
-/-- The represented positive and negative simple generators at a common type-`E₇` node, together
-with the represented Cartan generator, form an `sl₂` triple. -/
-theorem isSl2Triple_rep_serreRootGenerator (i : Fin 7) :
-    _root_.IsSl2Triple
-      (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ (TauCeti.serreH ℚ (CartanMatrix.E 7) i)))
-      (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
-        (TauCeti.serreRootGenerator (CartanMatrix.E 7) (.inl i))))
-      (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
-        (TauCeti.serreRootGenerator (CartanMatrix.E 7) (.inr i)))) := by
-  have hne : Matrix.toLinAlgEquiv' (R := ℚ) (n := Fin 56) (cartanMatrixRat i) ≠ 0 := fun hz ↦
-    (isSl2TripleRat i).h_ne_zero
-      ((Matrix.toLinAlgEquiv' (R := ℚ) (n := Fin 56)).injective (hz.trans (map_zero _).symm))
-  have h := (isSl2TripleRat i).map
-    (Matrix.toLinAlgEquiv' (R := ℚ) (n := Fin 56)).toAlgHom.toLieHom hne
-  simp only [AlgHom.toLieHom_apply, AlgEquiv.toAlgHom_apply] at h
-  rw [TauCeti.serreRootGenerator_inl, TauCeti.serreRootGenerator_inr]
-  simpa only [rep_ι_eq_toLinAlgEquiv', rationalSerreRepresentation_serreH,
-    rationalSerreRepresentation_serreE, rationalSerreRepresentation_serreF] using h
-
-/-- Every rational minuscule raising matrix squares to zero. -/
-@[simp]
-theorem raisingMatrixRat_pow_two (i : Fin 7) : raisingMatrixRat i ^ 2 = 0 := by
-  rw [raisingMatrixRat, pow_two, ← matrixIntCastLieHom_mul, raisingMatrix_mul_self, map_zero]
-
-/-- Every rational minuscule lowering matrix squares to zero. -/
-@[simp]
-theorem loweringMatrixRat_pow_two (i : Fin 7) : loweringMatrixRat i ^ 2 = 0 := by
-  rw [loweringMatrixRat, pow_two, ← matrixIntCastLieHom_mul, loweringMatrix_mul_self, map_zero]
-
-/-- Every simple-root generator acts with square zero in the rational minuscule
-representation. -/
-theorem pow_two_rep_serreRootGenerator_eq_zero (k : Fin 7 ⊕ Fin 7) :
-    rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
-      (TauCeti.serreRootGenerator (CartanMatrix.E 7) k)) ^ 2 = 0 := by
-  apply LinearMap.ext
-  intro v
-  rw [pow_two, mul_apply_eq_comp]
-  cases k with
-  | inl i =>
-      simpa only [TauCeti.serreRootGenerator_inl, rep_ι_apply,
-        rationalSerreRepresentation_serreE, LinearMap.zero_apply] using
-        mulVec_mulVec_eq_zero_of_pow_two_eq_zero (raisingMatrixRat_pow_two i) v
-  | inr i =>
-      simpa only [TauCeti.serreRootGenerator_inr, rep_ι_apply,
-        rationalSerreRepresentation_serreF, LinearMap.zero_apply] using
-        mulVec_mulVec_eq_zero_of_pow_two_eq_zero (loweringMatrixRat_pow_two i) v
-
-/-- Every represented simple-root generator is nilpotent, with nilpotence index at most two. -/
+/-- Every represented positive or negative Serre root generator acts nilpotently. -/
 theorem isNilpotent_rep_serreRootGenerator (k : Fin 7 ⊕ Fin 7) :
     IsNilpotent (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
-      (TauCeti.serreRootGenerator (CartanMatrix.E 7) k))) :=
-  ⟨2, pow_two_rep_serreRootGenerator_eq_zero k⟩
+      (TauCeti.serreRootGenerator weightTable.cartanMatrix k))) :=
+  weightTable.isNilpotent_rep_serreRootGenerator k
+
+/-- The represented Cartan, positive, and negative Serre generators at every node form an `sl₂`
+triple: each simple-coroot coordinate takes the value `-1` on some minuscule weight. -/
+theorem isSl2Triple_rep_serreRootGenerator (i : Fin 7) :
+    _root_.IsSl2Triple
+      (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ (TauCeti.serreH ℚ weightTable.cartanMatrix i)))
+      (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator weightTable.cartanMatrix (.inl i))))
+      (rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator weightTable.cartanMatrix (.inr i)))) := by
+  obtain ⟨a, ha⟩ := exists_e7MinusculeWeight_apply_eq_neg_one i
+  exact weightTable.isSl2Triple_rep_serreRootGenerator i
+    ⟨a, by rw [weightTable_weight, ha]; decide⟩
 
 /-! ## The admissible coordinate lattice -/
 
@@ -230,11 +94,9 @@ theorem isNilpotent_rep_serreRootGenerator (k : Fin 7 ⊕ Fin 7) :
 noncomputable def lattice : Submodule ℤ (Fin 56 → ℚ) :=
   TauCeti.coordinateLattice (Fin 56)
 
-/-- A minuscule-module vector belongs to the lattice exactly when every coordinate is integral. -/
-@[simp]
-theorem mem_lattice_iff {v : Fin 56 → ℚ} :
-    v ∈ lattice ↔ ∀ a, ∃ z : ℤ, (z : ℚ) = v a :=
-  TauCeti.mem_coordinateLattice_iff (Fin 56)
+/-- The minuscule lattice is the standard coordinate lattice. -/
+theorem lattice_def : lattice = TauCeti.coordinateLattice (Fin 56) :=
+  (rfl)
 
 /-- The coordinate basis of the minuscule lattice. -/
 noncomputable def latticeBasis : Module.Basis (Fin 56) ℤ lattice :=
@@ -248,53 +110,45 @@ theorem coe_latticeBasis (a : Fin 56) :
   rw [← Pi.basisFun_apply, latticeBasis]
   exact TauCeti.coe_coordinateLatticeBasis (Fin 56) a
 
-/-- Every simple-root generator preserves the minuscule coordinate lattice. -/
-theorem rep_serreRootGenerator_apply_mem_lattice (k : Fin 7 ⊕ Fin 7) {v : Fin 56 → ℚ}
-    (hv : v ∈ lattice) :
-    rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
-      (TauCeti.serreRootGenerator (CartanMatrix.E 7) k)) v ∈ lattice := by
-  rw [rep_ι_apply]
-  cases k with
-  | inl i =>
-      rw [TauCeti.serreRootGenerator_inl, rationalSerreRepresentation_serreE, raisingMatrixRat]
-      exact Matrix.intCastLieHom_mulVec_mem_coordinateLattice (raisingMatrix i) hv
-  | inr i =>
-      rw [TauCeti.serreRootGenerator_inr, rationalSerreRepresentation_serreF, loweringMatrixRat]
-      exact Matrix.intCastLieHom_mulVec_mem_coordinateLattice (loweringMatrix i) hv
-
-/-- Each coordinate basis vector has the corresponding minuscule weight for the Cartan
-generators. -/
-theorem isCartanWeightVector_single (a : Fin 56) :
-    TauCeti.UniversalEnvelopingAlgebra.IsCartanWeightVector
-      (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep (e7MinusculeWeight a) (Pi.single a 1) := by
-  refine (TauCeti.UniversalEnvelopingAlgebra.isCartanWeightVector_iff
-    (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep).mpr fun i ↦ ?_
-  rw [rep_ι_apply, rationalSerreRepresentation_serreH]
-  ext b
-  by_cases h : b = a
-  · subst b
-    simp [Matrix.mulVec, dotProduct, cartanMatrixRat_apply, Pi.single_apply]
-  · simp [Matrix.mulVec, dotProduct, cartanMatrixRat_apply, Pi.single_apply, h]
-
 /-- Every minuscule lattice-basis vector is a Cartan weight vector with its minuscule weight. -/
 theorem isCartanWeightVector_latticeBasis (a : Fin 56) :
     TauCeti.UniversalEnvelopingAlgebra.IsCartanWeightVector
-      (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep (e7MinusculeWeight a)
+      (TauCeti.serreH ℚ weightTable.cartanMatrix) rep (e7MinusculeWeight a)
       ((latticeBasis a : lattice) : Fin 56 → ℚ) := by
   rw [coe_latticeBasis]
-  exact isCartanWeightVector_single a
+  simpa only [rep, weightTable_weight] using weightTable.isCartanWeightVector_single a
 
-/-- **The minuscule coordinate lattice is admissible for the type-`E₇` Serre Kostant form.** -/
-theorem rep_serreKostantForm_apply_mem_lattice
-    {u : _root_.UniversalEnvelopingAlgebra ℚ
-      (Matrix.ToLieAlgebra ℚ (CartanMatrix.E 7))}
-    (hu : u ∈ TauCeti.serreKostantForm (CartanMatrix.E 7)) {v : Fin 56 → ℚ}
-    (hv : v ∈ lattice) : rep u v ∈ lattice := by
-  rw [TauCeti.serreKostantForm_def] at hu
-  exact TauCeti.UniversalEnvelopingAlgebra.kostantForm_apply_mem_coordinateLattice
-    (TauCeti.serreRootGenerator (CartanMatrix.E 7))
-    (TauCeti.serreH ℚ (CartanMatrix.E 7)) rep
-    (wt := e7MinusculeWeight) pow_two_rep_serreRootGenerator_eq_zero
-    (fun k _ hw ↦ rep_serreRootGenerator_apply_mem_lattice k hw) isCartanWeightVector_single hu hv
+/-- A represented positive Serre root generator acts on the minuscule lattice basis by the
+raising matrix. -/
+theorem rep_serreRootGenerator_inl_latticeBasis_eq_sum (i : Fin 7) (s : Fin 56) :
+    rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator weightTable.cartanMatrix (.inl i)))
+        ((latticeBasis s : lattice) : Fin 56 → ℚ) =
+      ∑ r, raisingMatrix i r s • ((latticeBasis r : lattice) : Fin 56 → ℚ) := by
+  rw [rep_def, ← weightTable_raisingMatrix]
+  simpa only [coe_latticeBasis, TauCeti.coe_coordinateLatticeBasis, Pi.basisFun_apply] using
+    weightTable.rep_serreRootGenerator_inl_coordinateLatticeBasis_eq_sum i s
+
+/-- A represented negative Serre root generator acts on the minuscule lattice basis by the
+lowering matrix. -/
+theorem rep_serreRootGenerator_inr_latticeBasis_eq_sum (i : Fin 7) (s : Fin 56) :
+    rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
+        (TauCeti.serreRootGenerator weightTable.cartanMatrix (.inr i)))
+        ((latticeBasis s : lattice) : Fin 56 → ℚ) =
+      ∑ r, loweringMatrix i r s • ((latticeBasis r : lattice) : Fin 56 → ℚ) := by
+  rw [rep_def, ← weightTable_loweringMatrix]
+  simpa only [coe_latticeBasis, TauCeti.coe_coordinateLatticeBasis, Pi.basisFun_apply] using
+    weightTable.rep_serreRootGenerator_inr_coordinateLatticeBasis_eq_sum i s
+
+/-- The minuscule coordinate lattice is stable under the generic Kostant form built from the
+type-`E₇` Serre generators. This is the form consumed by the carrier and base-change APIs. -/
+theorem rep_kostantForm_mem_lattice
+    (u : _root_.UniversalEnvelopingAlgebra ℚ
+      (Matrix.ToLieAlgebra ℚ weightTable.cartanMatrix))
+    (hu : u ∈ TauCeti.UniversalEnvelopingAlgebra.kostantForm
+      (TauCeti.serreRootGenerator weightTable.cartanMatrix)
+      (TauCeti.serreH ℚ weightTable.cartanMatrix))
+    (v : Fin 56 → ℚ) (hv : v ∈ lattice.toAddSubgroup) : rep u v ∈ lattice.toAddSubgroup :=
+  weightTable.rep_kostantForm_mem_lattice u hu v hv
 
 end TauCeti.E7Minuscule

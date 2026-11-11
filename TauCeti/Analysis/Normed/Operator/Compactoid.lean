@@ -210,11 +210,13 @@ theorem ContinuousLinearMap.IsCompletelyContinuous.hasCompactoidImage {u : E →
     have ⟨v, hv, huv⟩ := isCompletelyContinuous_iff.1 hu ε hε
     ⟨v, hv.hasCompactoidImage, huv⟩
 
+omit [CompleteSpace K] in
 /-- Over a locally compact nontrivially normed field, such as `ℚ_p`, **completely continuous maps
 into a Banach space are compact operators**: the image of the closed unit ball is compactoid, hence
 totally bounded, so its closure is compact. -/
 theorem ContinuousLinearMap.IsCompletelyContinuous.isCompactOperator [ProperSpace K]
     [CompleteSpace F] {u : E →L[K] F} (hu : u.IsCompletelyContinuous) : IsCompactOperator u :=
-  isCompactOperator_of_totallyBounded_image_closedBall one_pos hu.hasCompactoidImage.totallyBounded
+  (isCompactOperator_iff_totallyBounded_image_closedBall _ one_pos).mpr
+    hu.hasCompactoidImage.totallyBounded
 
 end Complete

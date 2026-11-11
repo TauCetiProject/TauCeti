@@ -7,15 +7,20 @@ module
 
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Graph
 public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Basic
+public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Symplectic
 public import TauCeti.Geometry.Symplectic.Lagrangian.Graph
 
 /-!
-# Embedded Lagrangian graphs
+# Embedded Lagrangian and symplectic graphs
 
 The graph of a diffeomorphism is a Lagrangian embedding for the difference of two
 nondegenerate forms exactly when the diffeomorphism preserves those forms. In particular,
 the diagonal is a Lagrangian embedding. This realizes identity correspondences and graphs of
 canonical transformations as actual embedded submanifolds.
+
+The graph of a smooth map `f : M → N` is a symplectic submanifold embedding for the sum
+`pr₁*σ + pr₂*τ` of two nondegenerate forms exactly when `σ + f*τ` is nondegenerate. In
+particular every slice `x ↦ (x, c)` of `M × N` is a symplectic submanifold embedding.
 
 ## References
 
@@ -54,5 +59,25 @@ theorem isLagrangianEmbedding_diagonal (hσ : σ.IsNondegenerate) :
     (hσ.twistedProd hσ).IsLagrangianEmbedding I (fun x : M ↦ (x, x)) := by
   exact (isLagrangianEmbedding_iff_of_isSmoothEmbedding
     contMDiff_id.isSmoothEmbedding_graph).mpr hσ.isLagrangianMap_diagonal
+
+/-- The graph of a smooth map `f` is a symplectic submanifold embedding for the product form
+`pr₁*σ + pr₂*τ` exactly when `σ + f*τ` is nondegenerate. -/
+theorem isSymplecticSubmanifoldEmbedding_graph_iff (hσ : σ.IsNondegenerate)
+    (hτ : τ.IsNondegenerate) {f : M → N} (hf : ContMDiff I J ∞ f) :
+    (hσ.prod hτ).IsSymplecticSubmanifoldEmbedding I (fun x ↦ (x, f x)) ↔
+      SmoothTwoForm.IsNondegenerate (σ + SmoothForm.mpullback f hf τ) := by
+  rw [isSymplecticSubmanifoldEmbedding_iff_of_isSmoothEmbedding hf.isSmoothEmbedding_graph,
+    hσ.hasSymplecticTangentImages_graph_iff hτ (hf.mdifferentiable (by simp)),
+    isNondegenerate_iff_separatingLeft]
+  simp only [SmoothBundleForm.eval₂_add, SmoothForm.eval₂_mpullback]
+
+/-- Every slice `x ↦ (x, c)` of a product is a symplectic submanifold embedding for the product
+form. -/
+@[simp]
+theorem isSymplecticSubmanifoldEmbedding_prodMkLeft (hσ : σ.IsNondegenerate)
+    (hτ : τ.IsNondegenerate) (c : N) :
+    (hσ.prod hτ).IsSymplecticSubmanifoldEmbedding I (fun x : M ↦ (x, c)) :=
+  (isSymplecticSubmanifoldEmbedding_iff_of_isSmoothEmbedding
+    contMDiff_const.isSmoothEmbedding_graph).2 (hσ.hasSymplecticTangentImages_prodMkLeft hτ c)
 
 end TauCeti.SmoothTwoForm.IsNondegenerate

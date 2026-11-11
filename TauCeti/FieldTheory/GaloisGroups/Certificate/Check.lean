@@ -186,7 +186,7 @@ theorem Verifies.hasGaloisLabel (hf : f.Monic) (h : cert.Verifies f) :
   cases cert with
   | cyclic p b =>
     obtain ⟨hp, hb⟩ := verifies_cyclic_iff.mp h
-    exact hasGaloisLabel_five_zero_of_hasSecondRootInRootField hf (hp.irreducible_map_rat hf)
+    exact hasGaloisLabel_five_zero_of_hasSecondRootInRootField (hp.irreducible_map_rat hf)
       (by simpa using (hp.sum_eq_natDegree hf).symm) hb
   | dihedral p q s a =>
     obtain ⟨hp, hs, ha, hq⟩ := verifies_dihedral_iff.mp h

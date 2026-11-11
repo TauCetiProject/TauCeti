@@ -529,6 +529,11 @@ vertices `A = {0, 1}` and the demand vertices `B = {2, 3}`, the assignment satur
 an `A`–`B` flow with excesses `-2, -1, 1, 2`, so of value `3`. This is the capacity of the cut `A`,
 so the flow is maximum. The corresponding flow of the auxiliary network also has value `3`, and
 carries `2` on the arrow from the fresh source to `0`.
+
+For the same vertex and arrow types, take unit capacities in both directions between `0` and `1`
+and zero capacities elsewhere. Saturating these two arrows is a nonzero circulation. With no
+supply vertices and demand vertices `{2, 3}`, it is a set flow of value zero. Its corresponding
+auxiliary flow retains the unit value on the original arrow `0 → 1` and also has value zero.
 -/
 
 private abbrev ExHom (_ _ : Fin 4) : Type := Unit
@@ -564,5 +569,34 @@ example : exSetFlow.toAuxFlow.val = 3 := by
 example : exSetFlow.toAuxFlow.toFun
     (AuxTerminalHom.source (B := {2, 3}) (a := 0) (by decide)) = 2 := by
   simp [excessAt_def, Fin.sum_univ_four, exSetFlow, exCap]
+
+private def emptySourceCap : Assignment ExHom ℤ := fun v w _ ↦
+  if (v = 0 ∧ w = 1) ∨ (v = 1 ∧ w = 0) then 1 else 0
+
+private def emptySourceSetFlow : SetFlow emptySourceCap ∅ {2, 3} where
+  toFun := emptySourceCap
+  mem_Icc := ⟨fun v w _ ↦ by
+    simp only [emptySourceCap]
+    split_ifs <;> norm_num, le_rfl⟩
+  conserve v _ _ := by
+    fin_cases v <;> simp [excessAt_def, emptySourceCap]
+  excessAt_nonpos a ha := by simp at ha
+  excessAt_nonneg b hb := by
+    fin_cases b <;> simp_all [excessAt_def, emptySourceCap]
+
+-- A set flow with no supply terminals can carry a nonzero circulation, but its value is zero.
+example :
+    emptySourceSetFlow.toFun (x := 0) (y := 1) () = 1 ∧
+      (∀ v, excessAt emptySourceSetFlow.toFun v = 0) ∧ emptySourceSetFlow.val = 0 := by
+  refine ⟨by simp [emptySourceSetFlow, emptySourceCap], ?_, SetFlow.val_empty_left _⟩
+  intro v
+  fin_cases v <;> simp [excessAt_def, emptySourceSetFlow, emptySourceCap]
+
+-- The auxiliary-terminal correspondence retains the original circulation and its zero value.
+example :
+    emptySourceSetFlow.toAuxFlow.toFun (AuxTerminalHom.original (v := 0) (w := 1) ()) = 1 ∧
+      emptySourceSetFlow.toAuxFlow.val = 0 := by
+  rw [SetFlow.val_toAuxFlow]
+  exact ⟨by simp [emptySourceSetFlow, emptySourceCap], SetFlow.val_empty_left _⟩
 
 end TauCeti

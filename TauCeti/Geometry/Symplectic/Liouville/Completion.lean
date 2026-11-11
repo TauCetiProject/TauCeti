@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
 public import TauCeti.Geometry.Symplectic.Liouville.Domain
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
+import TauCeti.Geometry.Symplectic.Liouville.Scaling
 import TauCeti.Geometry.Symplectic.Manifold.Flat
 
 /-!
@@ -61,6 +62,10 @@ point-set description of the end; the identification of the primitive on it with
   `M \ int W`.
 * `TauCeti.IsLiouvilleCompletion.flowOf_flowOf`: the Liouville flow of a completion is a global
   flow, satisfying the group law.
+* `TauCeti.IsLiouvilleCompletion.flowOf_eq_globalFlowDiffeomorph`: its time-`t` map is a
+  diffeomorphism.
+* `TauCeti.IsLiouvilleCompletion.mpullback_globalFlowDiffeomorph_eq_exp_smul`: this
+  diffeomorphism `ψₜ` is conformally symplectic, `ψₜ^* ω = e^t ω`.
 * `TauCeti.IsLiouvilleCompletion.flowOf_neg_mem_interior`: the backward Liouville flow carries
   the Liouville domain into its interior.
 
@@ -110,13 +115,13 @@ theorem flowOf_notMem (h : IsLiouvilleDomain ω α W) (hZ : RoughForm.interior Z
   have hlt := (isMIntegralCurveOn_flowOf hZs x).lt_apply_of_le_apply hs hIcc
     (hf.comp_continuousOn ((isMIntegralCurveOn_flowOf hZs x).continuousOn.mono hIcc))
     (fun τ _ hτ ↦ ⟨(hfc _ hτ).1.mdifferentiableAt (by simp), (hfc _ hτ).2⟩)
-    (by rwa [flowOf_zero hZs]) ⟨ht, le_rfl⟩
+    (by rwa [flowOf_zero Z]) ⟨ht, le_rfl⟩
   exact not_le.2 hlt
 
 /-- **The Liouville trajectories through the boundary are disjoint.** If the Liouville field `Z`
 of a Liouville domain `W` is complete, then `(y, t) ↦ ψ_t(y)` is injective on `∂W × ℝ`, where `ψ`
 is the flow of `Z`. -/
-theorem injOn_flowOf [FiniteDimensional ℝ E] (h : IsLiouvilleDomain ω α W)
+theorem injOn_flowOf (h : IsLiouvilleDomain ω α W)
     (hZ : RoughForm.interior Z ω.1 = α.1) (hc : IsCompleteVectorField Z) :
     InjOn (fun p : M × ℝ ↦ flowOf Z p.2 p.1) (frontier W ×ˢ univ) := by
   have hZs : ContMDiff I I.tangent 1 (T% Z) := (h.contMDiff_of_interior_eq hZ).of_le (by simp)
@@ -252,11 +257,31 @@ theorem exists_flow_eq (h : IsLiouvilleCompletion ω α W)
   exact ⟨globalFlow Z hZs (h.isCompleteVectorField hZ), fun t x ↦
     congrFun₂ (flowOf_eq_globalFlow hZs (h.isCompleteVectorField hZ)) t x⟩
 
-/-- The Liouville flow of a completion fixes every point at time zero. -/
-theorem flowOf_zero (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.1 = α.1)
-    (x : M) : flowOf Z 0 x = x := by
-  obtain ⟨ψ, hψ⟩ := h.exists_flow_eq hZ
-  rw [hψ, Flow.map_zero_apply]
+/-- On a completion, the time-`t` map of the Liouville flow is the diffeomorphism
+`TauCeti.globalFlowDiffeomorph` of the complete smooth Liouville field. -/
+theorem flowOf_eq_globalFlowDiffeomorph (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.1 = α.1) (t : ℝ) :
+    flowOf Z t =
+      globalFlowDiffeomorph (h.isCompleteVectorField hZ) le_top (h.contMDiff_of_interior_eq hZ) t :=
+  funext fun y ↦ by
+    rw [globalFlowDiffeomorph_apply, flowOf_eq_globalFlow
+      ((h.contMDiff_of_interior_eq hZ).of_le (by simp)) (h.isCompleteVectorField hZ)]
+
+/-- **The Liouville flow of a completion is conformally symplectic**: its time-`t` map `ψₜ`, a
+diffeomorphism, satisfies `ψₜ^* ω = e^t ω`. -/
+theorem mpullback_globalFlowDiffeomorph_eq_exp_smul (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.1 = α.1) (t : ℝ) :
+    SmoothForm.mpullback
+        (globalFlowDiffeomorph (h.isCompleteVectorField hZ) le_top
+          (h.contMDiff_of_interior_eq hZ) t)
+        (globalFlowDiffeomorph (h.isCompleteVectorField hZ) le_top
+          (h.contMDiff_of_interior_eq hZ) t).contMDiff ω =
+      Real.exp t • ω := Subtype.ext <| by
+  have hZs := h.contMDiff_of_interior_eq hZ
+  rw [SmoothForm.coe_mpullback, ← h.flowOf_eq_globalFlowDiffeomorph hZ,
+    flowOf_eq_globalFlow (hZs.of_le (by simp)) (h.isCompleteVectorField hZ)]
+  exact (h.isLiouvilleVectorField hZ).mpullback_globalFlow_eq_exp_smul
+    (h.isCompleteVectorField hZ) (hZs.of_le (by simp)) ω.mdifferentiable t
 
 /-- **The group law for the Liouville flow of a completion**: `ψ_s (ψ_t x) = ψ_{s + t} x`. -/
 theorem flowOf_flowOf (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.1 = α.1)
@@ -271,14 +296,14 @@ theorem flowOf_neg_mem_interior (h : IsLiouvilleCompletion ω α W)
     flowOf Z (-t) x ∈ interior W := by
   by_contra hn
   refine h.flowOf_notMem hZ hn ht ((h.isCompleteVectorField hZ).mem_flowDomain _ _) ?_
-  rwa [h.flowOf_flowOf hZ, add_neg_cancel, h.flowOf_zero hZ]
+  rwa [h.flowOf_flowOf hZ, add_neg_cancel, flowOf_zero Z]
 
 /-- The backward Liouville flow of a completion preserves the Liouville domain. -/
 theorem flowOf_neg_mem (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.1 = α.1)
     {x : M} (hx : x ∈ W) {t : ℝ} (ht : 0 ≤ t) : flowOf Z (-t) x ∈ W := by
   rcases ht.lt_or_eq with ht | rfl
   · exact interior_subset (h.flowOf_neg_mem_interior hZ hx ht)
-  · rwa [neg_zero, h.flowOf_zero hZ]
+  · rwa [neg_zero, flowOf_zero Z]
 
 /-- On a completion, the Liouville trajectory of a boundary point lies in the Liouville domain
 exactly at nonpositive times. -/
@@ -295,7 +320,7 @@ theorem exists_mem_frontier_flowOf_eq (h : IsLiouvilleCompletion ω α W)
     (hZ : RoughForm.interior Z ω.1 = α.1) {x : M} (hx : x ∉ interior W) :
     ∃ y ∈ frontier W, ∃ s, 0 ≤ s ∧ flowOf Z s y = x := by
   by_cases hxW : x ∈ W
-  · refine ⟨x, ?_, 0, le_rfl, h.flowOf_zero hZ x⟩
+  · refine ⟨x, ?_, 0, le_rfl, flowOf_zero Z x⟩
     rw [h.isClosed.frontier_eq]
     exact ⟨hxW, hx⟩
   · obtain ⟨⟨y, s⟩, ⟨hy, hs, hyx⟩, -⟩ := h.existsUnique_flowOf_eq hZ hxW
@@ -329,7 +354,7 @@ theorem bijOn_flowOf_Ici_prod_frontier (h : IsLiouvilleCompletion ω α W)
     BijOn (fun p : ℝ × M ↦ flowOf Z p.1 p.2) (Ici 0 ×ˢ frontier W) (interior W)ᶜ := by
   refine ⟨fun p hp ↦ ?_, h.injOn_flowOf_prod_frontier hZ, fun x hx ↦ ?_⟩
   · rcases hp.1.eq_or_lt' with h0 | hpos
-    · simpa only [h0, h.flowOf_zero hZ, mem_compl_iff] using hp.2.2
+    · simpa only [h0, flowOf_zero Z, mem_compl_iff] using hp.2.2
     · exact fun hW ↦ (not_le.2 hpos)
         ((h.flowOf_mem_iff_of_mem_frontier hZ hp.2).1 (interior_subset hW))
   · obtain ⟨y, hy, t, ht, hyx⟩ := h.exists_mem_frontier_flowOf_eq hZ hx

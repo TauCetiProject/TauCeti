@@ -11,7 +11,7 @@ public import TauCeti.NumberTheory.LocalField.Norm.Basic
 /-!
 # Normalized absolute values under extension of adic completions
 
-Let `R ⊆ B` be infinite Dedekind domains with finite quotients and fraction fields `K ⊆ L`.
+Let `R ⊆ B` be Dedekind domains with finite quotients and fraction fields `K ⊆ L`.
 For height-one primes `w ∣ v`, the canonical map `K_v → L_w` raises the residue-cardinality
 normalized absolute value to the local degree `[L_w : K_v]`. In particular, this map need
 not preserve the norm.
@@ -36,23 +36,23 @@ related by
 
 public section
 
-open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField
+open TauCeti IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField
 open scoped AdicCompletionExtension
 
-namespace TauCeti
+namespace IsDedekindDomain.HeightOneSpectrum
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
-  [Ring.HasFiniteQuotients R] [Infinite R]
+  [Ring.HasFiniteQuotients R]
   {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
   {B : Type*} [CommRing B] [IsDedekindDomain B] [Algebra R B]
-  [Ring.HasFiniteQuotients B] [Infinite B]
+  [Ring.HasFiniteQuotients B]
   {L : Type*} [Field L] [Algebra K L] [Algebra R L] [IsScalarTower R K L]
   [Algebra B L] [IsFractionRing B L] [IsScalarTower R B L]
 
 /-- The normalized absolute value of the image in `L_w` is the normalized absolute value in
 `K_v` raised to the local degree `[L_w : K_v]`. No Galois hypothesis is needed. -/
 @[simp]
-theorem _root_.IsDedekindDomain.HeightOneSpectrum.norm_adicCompletionExtension
+theorem norm_adicCompletionExtension
     (v : HeightOneSpectrum R) (w : HeightOneSpectrum B)
     [w.asIdeal.LiesOver v.asIdeal] (x : v.adicCompletion K) :
     ‖v.adicCompletionExtension K L w x‖ =
@@ -80,7 +80,7 @@ theorem _root_.IsDedekindDomain.HeightOneSpectrum.norm_adicCompletionExtension
 /-- The field norm between adic completions preserves the residue-cardinality normalized
 absolute value. This differs from extension of scalars, which raises it to the local degree. -/
 @[simp]
-theorem _root_.IsDedekindDomain.HeightOneSpectrum.norm_norm_adicCompletion
+theorem norm_norm_adicCompletion
     (v : HeightOneSpectrum R) (w : HeightOneSpectrum B)
     [w.asIdeal.LiesOver v.asIdeal] (x : w.adicCompletion L) :
     ‖Algebra.norm (v.adicCompletion K) x‖ = ‖x‖ := by
@@ -103,4 +103,4 @@ theorem _root_.IsDedekindDomain.HeightOneSpectrum.norm_norm_adicCompletion
   simp only [hcard, Nat.cast_pow, NNReal.coe_zpow,
     ← zpow_natCast, ← zpow_mul, mul_comm]
 
-end TauCeti
+end IsDedekindDomain.HeightOneSpectrum

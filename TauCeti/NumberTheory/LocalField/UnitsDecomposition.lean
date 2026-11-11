@@ -231,20 +231,28 @@ theorem unitFiltration_zero_sup_zpowers_eq_top (hϖ : normalizedValuation K ϖ =
   eq_top_iff.mpr fun x _ ↦
     (mem_unitFiltration_sup_zpowers_iff hϖ).mpr (mul_zpow_neg_mem_unitFiltration_zero hϖ x)
 
-/-- For a uniformizer `ϖ`, the units of `𝒪[K]` lying in `U(K,i) · ϖ ^ ℤ` are those of `U(K,i)`. -/
+/-- For `ϖ` of nonzero valuation (for instance a uniformizer), the units of `𝒪[K]` lying in
+`U(K,i) · ϖ ^ ℤ` are those of `U(K,i)`. -/
 theorem unitFiltration_sup_zpowers_inf_unitFiltration_zero
-    (hϖ : normalizedValuation K ϖ = .ofAdd 1) (i : ℕ) :
+    (hϖ : normalizedValuation K ϖ ≠ 1) (i : ℕ) :
     (unitFiltration K i ⊔ Subgroup.zpowers ϖ) ⊓ unitFiltration K 0 = unitFiltration K i := by
   refine le_antisymm (fun x ⟨hx, hx0⟩ ↦ ?_)
     (le_inf le_sup_left (unitFiltration_antitone (Nat.zero_le i)))
-  have hv : normalizedValuation K x = 1 := by
-    rwa [← MonoidHom.mem_ker, ker_normalizedValuation]
-  simpa [hv] using (mem_unitFiltration_sup_zpowers_iff hϖ).mp hx
+  obtain ⟨u, hu, _, ⟨k, rfl⟩, rfl⟩ := Subgroup.mem_sup.mp hx
+  have hu0 : normalizedValuation K u = 1 := by
+    rw [← MonoidHom.mem_ker, ker_normalizedValuation]
+    exact unitFiltration_antitone (Nat.zero_le i) hu
+  have hx0' : normalizedValuation K (u * ϖ ^ k) = 1 := by
+    rw [← MonoidHom.mem_ker, ker_normalizedValuation]
+    exact hx0
+  rw [map_mul, hu0, one_mul, map_zpow] at hx0'
+  have hk : k = 0 := (IsMulTorsionFree.zpow_eq_one_iff_right hϖ).mp hx0'
+  simpa [hk] using hu
 
-/-- For a uniformizer `ϖ`, a step `U(K,j)` lies in `U(K,i) · ϖ ^ ℤ` exactly when it lies in
-`U(K,i)`. -/
+/-- For `ϖ` of nonzero valuation (for instance a uniformizer), a step `U(K,j)` lies in
+`U(K,i) · ϖ ^ ℤ` exactly when it lies in `U(K,i)`. -/
 theorem unitFiltration_le_unitFiltration_sup_zpowers_iff
-    (hϖ : normalizedValuation K ϖ = .ofAdd 1) {i j : ℕ} :
+    (hϖ : normalizedValuation K ϖ ≠ 1) {i j : ℕ} :
     unitFiltration K j ≤ unitFiltration K i ⊔ Subgroup.zpowers ϖ ↔
       unitFiltration K j ≤ unitFiltration K i := by
   conv_rhs => rw [← unitFiltration_sup_zpowers_inf_unitFiltration_zero hϖ i]
@@ -262,7 +270,8 @@ theorem index_unitFiltration_sup_zpowers (hϖ : normalizedValuation K ϖ = .ofAd
         _, mul_zpow_neg_mem_unitFiltration_zero hϖ x, by
           rw [← mul_assoc, mul_right_comm, ← zpow_add, add_neg_cancel, zpow_zero, one_mul]⟩
   rw [← Subgroup.relIndex_top_right, ← htop, Subgroup.relIndex_sup_left,
-    ← Subgroup.inf_relIndex_right, unitFiltration_sup_zpowers_inf_unitFiltration_zero hϖ]
+    ← Subgroup.inf_relIndex_right,
+    unitFiltration_sup_zpowers_inf_unitFiltration_zero (by simp [hϖ])]
 
 end Uniformizer
 

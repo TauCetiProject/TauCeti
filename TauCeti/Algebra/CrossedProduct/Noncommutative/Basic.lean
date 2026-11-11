@@ -52,12 +52,10 @@ structure CrossedSystem where
   action : G → D ≃ₐ[k] D
   /-- The twisting units in the coefficient algebra. -/
   factor : G → G → Dˣ
-  /-- The identity element acts trivially. -/
-  action_one : action 1 = 1
-  /-- Left normalization of the factor. -/
+  /-- Left normalization of the factor. The identity acting trivially and the right
+  normalization follow from it (`TauCeti.CrossedSystem.action_one`,
+  `TauCeti.CrossedSystem.factor_one_right`). -/
   factor_one_left (g : G) : factor 1 g = 1
-  /-- Right normalization of the factor. -/
-  factor_one_right (g : G) : factor g 1 = 1
   /-- The automorphisms compose up to the specified inner conjugation. -/
   action_mul (g h : G) (d : D) :
     action g (action h d) * factor g h = factor g h * action (g * h) d
@@ -69,7 +67,26 @@ variable {k D G}
 
 namespace CrossedSystem
 
-attribute [simp] action_one factor_one_left factor_one_right
+attribute [simp] factor_one_left
+
+variable (c : CrossedSystem k D G)
+
+/-- The identity element acts trivially. -/
+@[simp]
+theorem action_one : c.action 1 = 1 := by
+  ext d
+  -- the composition law at `(1, 1)` makes `action 1` an idempotent automorphism
+  have h := c.action_mul 1 1 d
+  rw [c.factor_one_left, Units.val_one, mul_one, one_mul, one_mul] at h
+  simpa using (c.action 1).injective h
+
+/-- Right normalization of the factor: `factor g 1 = 1`. -/
+@[simp]
+theorem factor_one_right (g : G) : c.factor g 1 = 1 := by
+  -- the cocycle law at `(g, 1, 1)` makes `factor g 1` an idempotent unit
+  have h := c.factor_assoc g 1 1
+  rw [mul_one, mul_one, c.factor_one_left, Units.val_one, map_one, one_mul] at h
+  exact mul_eq_right.mp (Units.ext (by simpa [Units.val_mul] using h))
 
 /-- The crossed-product algebra of a normalized crossed system, with finite-support
 coordinates indexed by the acting monoid. -/

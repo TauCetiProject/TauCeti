@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.ModularForms.Conjugate
 public import TauCeti.NumberTheory.ModularForms.Newforms.Newform
 import TauCeti.NumberTheory.ModularForms.Petersson.Conjugate
 import TauCeti.NumberTheory.ModularForms.Newforms.PeterssonAdjoint
-import TauCeti.NumberTheory.ModularForms.Newforms.StrongMultiplicityOne
+import TauCeti.NumberTheory.ModularForms.Newforms.StrongMultiplicityOne.Basic
 
 /-!
 # The conjugate of a newform
@@ -99,7 +99,7 @@ noncomputable def conj (f : Newform N k) : Newform N k where
   mem_charSpace := CuspForm.conj_mem_cuspFormCharSpace f.mem_charSpace
   eigenvalue n hn := starRingEnd ℂ (f.eigenvalue n hn)
   isEigen n hn := by
-    have h := CuspForm.heckeRingHomCuspCharSpace_conjCharSpace_eq_smul n.ne_zero (f.isEigen n hn)
+    have h := CuspForm.heckeRingHomCuspCharSpace_conjCharSpace_eq_smul n (f.isEigen n hn)
     have he : CuspForm.conjCharSpace k f.χ ⟨f.toCuspForm, f.mem_charSpace⟩ =
         ⟨_, CuspForm.conj_mem_cuspFormCharSpace f.mem_charSpace⟩ :=
       Subtype.ext (CuspForm.coe_conjCharSpace_apply _)

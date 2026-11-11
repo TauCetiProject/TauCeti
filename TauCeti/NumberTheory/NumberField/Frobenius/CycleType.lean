@@ -96,7 +96,8 @@ theorem fullCycleType_galActionHom_restrict_eq_factorDegrees (hf : f.Monic)
   let := ZMod.algebra (𝓞 M ⧸ Q) p
   have : Algebra.IsAlgebraic (ZMod p) (𝓞 M ⧸ Q) := Algebra.IsAlgebraic.of_finite _ _
   obtain ⟨hsplit, e, he⟩ :=
-    splits_and_exists_rootSet_equiv_of_squarefree_map_zmod hf hsq Fact.out (Ideal.Quotient.mk Q)
+    splits_and_exists_rootSet_equiv_of_separable_map hf
+      (PerfectField.separable_iff_squarefree.mpr hsq) Fact.out (Ideal.Quotient.mk Q)
   have : Fact _ := ⟨hsplit⟩
   rw [factorDegrees_def, ← Equiv.Perm.fullCycleType_permCongr e]
   -- Match the concrete `ZMod` decision procedure with the classical one in the finite-field API.

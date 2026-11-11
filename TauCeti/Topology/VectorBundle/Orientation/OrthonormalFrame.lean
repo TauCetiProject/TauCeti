@@ -94,6 +94,12 @@ theorem orientation_toOrientationCover (o : Orientation ℝ V ι)
       Orientation.map ι p.frame.toLinearEquiv o :=
   (rfl)
 
+/-- The point of the orientation double cover determined by a frame is its base point with the
+orientation it transports. -/
+theorem toOrientationCover_eq_mk (o : Orientation ℝ V ι) (p : OrthonormalFrameBundle ℝ F E V) :
+    toOrientationCover o p = ⟨p.proj, Orientation.map ι p.frame.toLinearEquiv o⟩ :=
+  (rfl)
+
 section Action
 
 variable [CompleteSpace V]

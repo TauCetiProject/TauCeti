@@ -18,7 +18,9 @@ The numbered triality `(0 2 3)` has six orbits on the positive roots.
 
 `TauCeti.D4Triality.rootEquiv` proves completeness of the enumeration using
 `TauCeti.typeDNormTwoShellEquiv`. `TauCeti.D4Triality.sameCycle_next_iff` identifies exactly
-its root orbits. `TauCeti.D4Triality.inversionSign_root` computes the pinning signs from the
+its root orbits. `TauCeti.D4Triality.minimalPeriod_representative` certifies their actual
+lengths, and `TauCeti.D4Triality.prod_rootSign_orbit` computes monodromy over those lengths.
+`TauCeti.D4Triality.inversionSign_root` computes the pinning signs from the
 ordered sign cover, and `TauCeti.D4Triality.orbitCoeff_next` gives the coefficients of the
 signed invariant root vectors. The two nonconstant sign patterns cannot be omitted when
 constructing the fixed Lie algebra. The finite coordinate, index, and sign tables are exposed
@@ -123,6 +125,10 @@ theorem natCard_positiveRoots :
   left_inv := by decide
   right_inv := by decide
 
+/-- The order-three relation on the root table. -/
+@[simp]
+theorem next_pow_three : next ^ 3 = 1 := by decide
+
 /-- Labels for the six distinct positive-root orbits. -/
 @[expose] def orbit : Fin 12 → Fin 6 := ![0, 0, 0, 1, 2, 2, 2, 3, 3, 3, 4, 5]
 
@@ -131,6 +137,23 @@ theorem natCard_positiveRoots :
 
 @[simp]
 theorem orbit_representative (o : Fin 6) : orbit (representative o) = o := by decide +revert
+
+/-- The positive-root orbits have lengths three, one, three, three, one, one. -/
+@[expose] def orbitLength : Fin 6 → ℕ := ![3, 1, 3, 3, 1, 1]
+
+/-- Every positive-root index occurs in exactly one of the six listed orbits. -/
+theorem existsUnique_orbit (i : Fin 12) :
+    ∃! o : Fin 6, ∃ k : Fin (orbitLength o), (next ^ k.val) (representative o) = i := by
+  unfold ExistsUnique
+  fin_cases i <;> decide +kernel
+
+/-- Each stated orbit length is the actual minimal positive period. -/
+theorem minimalPeriod_representative (o : Fin 6) :
+    Function.minimalPeriod next (representative o) = orbitLength o := by
+  let : Fact (Nat.Prime 3) := ⟨by decide⟩
+  fin_cases o <;> first
+    | exact Function.minimalPeriod_eq_one_iff_isFixedPt.mpr (by decide)
+    | exact Function.minimalPeriod_eq_prime (p := 3) (by decide) (by decide)
 
 /-- The labels distinguish exactly the triality orbits, not merely invariant subsets. -/
 theorem sameCycle_next_iff (i j : Fin 12) : next.SameCycle i j ↔ orbit i = orbit j := by
@@ -184,5 +207,10 @@ theorem orbitCoeff_next (i : Fin 12) :
 /-- The product of the signs along three successive triality steps is one. -/
 theorem rootSign_cycle (i : Fin 12) :
     rootSign i * rootSign (next i) * rootSign (next (next i)) = 1 := by decide +revert
+
+/-- Monodromy along the actual orbit length is one, including singleton orbits. -/
+theorem prod_rootSign_orbit (o : Fin 6) :
+    ∏ k : Fin (orbitLength o), rootSign ((next ^ k.val) (representative o)) = 1 := by
+  fin_cases o <;> decide +kernel
 
 end TauCeti.D4Triality

@@ -294,6 +294,19 @@ theorem discriminantGroupPiEquiv_discriminantGroupEquiv_piCongrLeft (σ : κ ≃
     simp only [Isometry.discriminantGroupEquiv_mk, discriminantGroupPiEquiv_mk]
     exact congrArg Submodule.Quotient.mk (Subtype.ext (by simp))
 
+/-- On discriminant groups the one-summand isometry extracts the unique component. -/
+@[simp]
+theorem Isometry.discriminantGroupEquiv_piUnique [Unique ι]
+    (c : (IntegralLattice.pi L).DiscriminantGroup) :
+    (Isometry.piUnique L).discriminantGroupEquiv c = discriminantGroupPiEquiv L c default := by
+  induction c using Submodule.Quotient.induction_on with
+  | _ x =>
+    rw [Isometry.discriminantGroupEquiv_mk, discriminantGroupPiEquiv_mk]
+    apply congrArg Submodule.Quotient.mk
+    apply Subtype.ext
+    simpa only [Isometry.coe_dualCarrierEquiv_apply, coe_piDualCarrierEquiv_apply] using
+      Isometry.piUnique_apply L x
+
 /-- **Naturality of the summandwise alphabet isometry under reindexing.**  Reindexing the
 orthogonal sum by `σ : κ ≃ ι` transports the class of an alphabet family `x` over `κ` to the class
 of the reindexed family `Equiv.piCongrLeft A σ x` over `ι`. -/

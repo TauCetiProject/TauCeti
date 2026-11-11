@@ -38,8 +38,9 @@ contractive. For complete ultrametric `E`, summing these vectors gives a continu
 `TauCeti.AnalyticStage.amiceMap : C₀(ℕ, E) → LA_h(E)`,  `(cₙ) ↦ ∑ₙ e_{h,n} • cₙ`,
 
 which does not increase norms. Followed by evaluation, it is the Mahler series with
-coefficients `m_h(n) • cₙ` (`TauCeti.AnalyticStage.eval_amiceMap`). Amice's theorem, which is not
-proved here, asserts that `amiceMap` is an isometric isomorphism.
+coefficients `m_h(n) • cₙ` (`TauCeti.AnalyticStage.eval_amiceMap`). Amice's theorem, that
+`amiceMap` is an isometric isomorphism, is `TauCeti.AnalyticStage.amiceEquiv` in
+`TauCeti.NumberTheory.Padics.Distribution.Amice.Isometry`.
 
 Its arithmetic input is the reduction of Amice's polynomials modulo `p`. Write `n = pʰ q + r`
 with `r < pʰ`, and let `a` be a natural number. In `∏_{i < n} (a - i + pʰ w)`, the factors with

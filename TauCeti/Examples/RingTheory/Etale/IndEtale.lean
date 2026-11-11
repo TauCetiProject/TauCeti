@@ -13,7 +13,8 @@ import TauCeti.RingTheory.Henselization.IndEtale
 # Base-change checks for ind-étale algebras
 
 These checks exercise arbitrary and successive base change, including reduction modulo five
-and a zero base ring, on the henselization of a pair. They also check the computational API
+and a zero base ring, on the henselization of a pair, and the composition of the localization at
+a prime with the henselization of the resulting local ring. They also check the computational API
 of the scalar-extension adjunction from an importing module.
 -/
 
@@ -58,6 +59,17 @@ example (R : Type u) [CommRing R] (I : Ideal R) :
 
 example : Algebra.IndEtale (ZMod 1)
     ((ZMod 1) ⊗[ZMod 1] Henselization.algebra (⊤ : Ideal (ZMod 1))) := inferInstance
+
+-- Composing with the ind-étale localization, the henselization of `R_p` at its maximal ideal is
+-- ind-étale over `R` itself.
+example (R : Type u) [CommRing R] (p : Ideal R) [p.IsPrime] :
+    let H := Henselization.algebra (IsLocalRing.maximalIdeal (Localization.AtPrime p))
+    letI : _root_.Algebra R H := _root_.Algebra.compHom H (algebraMap R (Localization.AtPrime p))
+    Algebra.IndEtale R H := by
+  intro H
+  let : _root_.Algebra R H := _root_.Algebra.compHom H (algebraMap R (Localization.AtPrime p))
+  have : IsScalarTower R (Localization.AtPrime p) H := .of_algebraMap_eq' rfl
+  exact Algebra.IndEtale.comp (S := Localization.AtPrime p) H
 
 -- Left adjointness gives preservation for every diagram size, not only filtered ones.
 example (R : Type u) (S : Type v) [CommRing R] [CommRing S] [Algebra R S] :

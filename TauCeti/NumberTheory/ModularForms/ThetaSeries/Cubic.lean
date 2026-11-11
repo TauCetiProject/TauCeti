@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Inversion
 import TauCeti.Analysis.Normed.Ring.InfiniteSum
+import TauCeti.NumberTheory.ModularForms.ThetaSeries.Functoriality
 
 /-!
 # Theta series of cubic lattices
@@ -21,7 +22,8 @@ over the coordinates, and
 ```
 the `n`-th power of Jacobi's theta function `θ(τ) = ∑_{m ∈ ℤ} exp (π i m² τ)`
 (`ZLattice.thetaSeries_span_orthonormalBasis`). For `n = 1` this is
-`ZLattice.thetaSeries_span_one`.
+`ZLattice.thetaSeries_span_one`. Scaling the lattice by `c ≠ 0` scales the variable by `c²`, so
+`Θ_{c ℤ b}(τ) = jacobiTheta(c² τ) ^ n` (`ZLattice.thetaSeries_smul_span_orthonormalBasis`).
 
 The cubic lattice is unimodular with covolume one, so in even dimension `n = 2k` the inversion
 law of theta series reads `Θ_{ℤ b}(-1/τ) = (-i τ)^k Θ_{ℤ b}(τ)`
@@ -36,6 +38,7 @@ inversion law against the classical rank-one formula.
 ## Main statements
 
 * `ZLattice.thetaSeries_span_orthonormalBasis`: `Θ_{ℤ b} = jacobiTheta ^ n`.
+* `ZLattice.thetaSeries_smul_span_orthonormalBasis`: `Θ_{c ℤ b}(τ) = jacobiTheta(c² τ) ^ n`.
 * `ZLattice.thetaSeries_span_orthonormalBasis_S_smul`: in dimension `2k`,
   `Θ_{ℤ b}(-1/τ) = (-i τ)^k Θ_{ℤ b}(τ)`.
 * `jacobiTheta_S_smul_sq`: `jacobiTheta(-1/τ)² = -i τ jacobiTheta(τ)²`, from the
@@ -50,7 +53,7 @@ inversion law against the classical rank-one formula.
 public section
 
 open Complex Module Submodule
-open scoped Real RealInnerProductSpace UpperHalfPlane
+open scoped Pointwise Real RealInnerProductSpace UpperHalfPlane
 
 namespace ZLattice
 
@@ -83,6 +86,14 @@ theorem thetaSeries_span_orthonormalBasis (τ : ℍ) :
   rw [LinearEquiv.coe_toEquiv, hn, ← Complex.exp_sum]
   push_cast
   simp only [Finset.mul_sum, Finset.sum_mul]
+
+/-- **The theta series of a scaled cubic lattice**: for an orthonormal basis `b` indexed by `ι`
+and `c ≠ 0`, `Θ_{c ℤ b}(τ) = jacobiTheta(c² τ) ^ |ι|`. -/
+theorem thetaSeries_smul_span_orthonormalBasis {c : ℝ} (hc : c ≠ 0) (τ : ℍ) :
+    thetaSeries (c • span ℤ (Set.range b)) τ =
+      jacobiTheta ((c ^ 2 : ℝ) * τ) ^ Fintype.card ι := by
+  rw [thetaSeries_smul _ hc, thetaSeries_span_orthonormalBasis, UpperHalfPlane.coe_pos_real_smul,
+    Complex.real_smul]
 
 variable {k : ℕ}
 

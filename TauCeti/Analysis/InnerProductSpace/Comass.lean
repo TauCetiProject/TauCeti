@@ -163,6 +163,13 @@ theorem formDualEquiv_alternatingFormEquiv (ξ η : ⋀[ℝ]^k E) :
   ext v
   simp
 
+/-- The inner product pairing is bounded by the mass of `ξ` times the comass of the form
+associated to `η`. -/
+theorem inner_le_norm_formDualEquiv_mul (ξ η : ⋀[ℝ]^k E) :
+    ⟪η, ξ⟫ ≤ ‖formDualEquiv ℝ E k ξ‖ * ‖TauCeti.alternatingFormEquiv E k η‖ := by
+  rw [← formDualEquiv_alternatingFormEquiv]
+  exact (Real.le_norm_self _).trans ((formDualEquiv ℝ E k ξ).le_opNorm _)
+
 /-- The inner product norm of a `k`-vector is at most its mass, the norm of `ξ` as a functional
 on forms. -/
 theorem norm_le_norm_formDualEquiv (ξ : ⋀[ℝ]^k E) : ‖ξ‖ ≤ ‖formDualEquiv ℝ E k ξ‖ := by
@@ -170,10 +177,9 @@ theorem norm_le_norm_formDualEquiv (ξ : ⋀[ℝ]^k E) : ‖ξ‖ ≤ ‖formDua
   · rw [← h]
     exact norm_nonneg (formDualEquiv ℝ E k ξ)
   refine le_of_mul_le_mul_right ?_ h
-  calc ‖ξ‖ * ‖ξ‖ = formDualEquiv ℝ E k ξ (TauCeti.alternatingFormEquiv E k ξ) := by
-        rw [formDualEquiv_alternatingFormEquiv, real_inner_self_eq_norm_mul_norm]
+  calc ‖ξ‖ * ‖ξ‖ = ⟪ξ, ξ⟫ := real_inner_self_eq_norm_mul_norm ξ |>.symm
     _ ≤ ‖formDualEquiv ℝ E k ξ‖ * ‖TauCeti.alternatingFormEquiv E k ξ‖ :=
-      (Real.le_norm_self _).trans ((formDualEquiv ℝ E k ξ).le_opNorm _)
+      inner_le_norm_formDualEquiv_mul ξ ξ
     _ ≤ ‖formDualEquiv ℝ E k ξ‖ * ‖ξ‖ := by gcongr; exact TauCeti.norm_alternatingFormEquiv_le ξ
 
 /-- **The mass of a simple `k`-vector is its volume**: as a functional on forms, `v₁ ∧ ⋯ ∧ vₖ` has

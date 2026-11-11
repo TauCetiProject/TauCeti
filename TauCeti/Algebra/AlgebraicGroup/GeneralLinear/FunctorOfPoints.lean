@@ -39,7 +39,8 @@ uniformizer `ϖ` does not, although its entries are integral and its determinant
 * `TauCeti.GeneralLinear.pointToGeneralLinear`: the invertible matrix read from a point, with
   `TauCeti.GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear` identifying it with the
   transported generic matrix.
-* `TauCeti.GeneralLinear.generalLinearToPoint`: the point obtained by matrix evaluation.
+* `TauCeti.GeneralLinear.generalLinearToPoint`: the point obtained by matrix evaluation;
+  `TauCeti.GeneralLinear.generalLinearToPoint_one` identifies the identity point.
 * `TauCeti.GeneralLinear.pointsMulEquiv`: the group equivalence between convolution points and
   invertible matrices.
 * `TauCeti.GeneralLinear.pointToGeneralLinear_mapValue` and
@@ -240,6 +241,11 @@ determinant localization. -/
 theorem pointsMulEquiv_symm_apply (g : Matrix.GeneralLinearGroup (Fin n) A) :
     (pointsMulEquiv (R := R) n).symm g = generalLinearToPoint (R := R) n g :=
   (rfl)
+
+/-- The identity matrix defines the identity convolution point. -/
+@[simp]
+theorem generalLinearToPoint_one : generalLinearToPoint (R := R) (A := A) n 1 = 1 := by
+  simpa only [pointsMulEquiv_symm_apply] using (pointsMulEquiv (R := R) (A := A) n).symm.map_one
 
 /-- The entries of the invertible matrix of a point inverse are the values of the point on the
 antipodes of the generic entries. -/

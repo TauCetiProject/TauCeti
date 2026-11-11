@@ -125,20 +125,16 @@ theorem exists_continuous_feasible_pair_dominating (hc : Continuous c)
     have hcK := (le_abs_self (c (x, Classical.arbitrary Y))).trans (hK' _)
     linarith [hfeas x (Classical.arbitrary Y)]
   set ψ' : Y → ℝ := fun y ↦ ⨅ x, (c (x, y) - φ x) with hψ'
-  have hbddψ : ∀ y, BddBelow (Set.range fun x ↦ c (x, y) - φ x) := by
-    refine fun y ↦ ⟨-K - (K - ψ (Classical.arbitrary Y)), ?_⟩
-    rintro _ ⟨x, rfl⟩
-    linarith [neg_abs_le (c (x, y)), hK' (x, y), hφub x]
-  have hψ'ub : ∀ y, ψ' y ≤ K - φ (Classical.arbitrary X) := fun y ↦ by
-    have hle := ciInf_le (hbddψ y)
-      (f := fun x ↦ c (x, y) - φ x) (Classical.arbitrary X)
-    have hcK := (le_abs_self (c (Classical.arbitrary X, y))).trans (hK' _)
-    simpa only [hψ'] using hle.trans (sub_le_sub_right hcK _)
+  have hbddψ (y : Y) : BddBelow (Set.range fun x ↦ c (x, y) - φ x) :=
+    ⟨-K - (K - ψ (Classical.arbitrary Y)), Set.forall_mem_range.2 fun x ↦ by
+      linarith [neg_abs_le (c (x, y)), hK' (x, y), hφub x]⟩
+  have hψ'ub : ∀ y, ψ' y ≤ K - φ (Classical.arbitrary X) := fun y ↦
+    (ciInf_le (hbddψ y) (Classical.arbitrary X)).trans
+      (sub_le_sub_right ((le_abs_self _).trans (hK' _)) _)
   set φ' : X → ℝ := fun x ↦ ⨅ y, (c (x, y) - ψ' y) with hφ'
-  have hbddφ : ∀ x, BddBelow (Set.range fun y ↦ c (x, y) - ψ' y) := by
-    refine fun x ↦ ⟨-K - (K - φ (Classical.arbitrary X)), ?_⟩
-    rintro _ ⟨y, rfl⟩
-    linarith [neg_abs_le (c (x, y)), hK' (x, y), hψ'ub y]
+  have hbddφ (x : X) : BddBelow (Set.range fun y ↦ c (x, y) - ψ' y) :=
+    ⟨-K - (K - φ (Classical.arbitrary X)), Set.forall_mem_range.2 fun y ↦ by
+      linarith [neg_abs_le (c (x, y)), hK' (x, y), hψ'ub y]⟩
   have hψcoe : cTransform c (fun x ↦ (φ x : EReal)) = fun y ↦ (ψ' y : EReal) := by
     funext y
     simpa only [hψ'] using cTransform_coe c φ y (hbddψ y)
@@ -157,25 +153,13 @@ theorem exists_continuous_feasible_pair_dominating (hc : Continuous c)
     rw [hψcoe, hφcoe] at h
     exact h
   have hcu : UniformContinuous c := CompactSpace.uniformContinuous_of_continuous hc
-  have hcuY : ∀ ε > 0, ∃ δ > 0, ∀ x y y', dist y y' < δ →
-      dist (c (x, y)) (c (x, y')) < ε := fun ε hε ↦ by
-    obtain ⟨δ, hδ, hcδ⟩ := Metric.uniformContinuous_iff.1 hcu ε hε
-    exact ⟨δ, hδ, fun x y y' hyy' ↦
-      hcδ (by simpa [Prod.dist_eq, max_eq_right dist_nonneg] using hyy')⟩
-  refine ⟨φ', ψ', ?_, (uniformContinuous_iInf_sub hcuY hbddψ).continuous, ?_, hφle, hψle⟩
-  · have hcuX : ∀ ε > 0, ∃ δ > 0, ∀ y x x', dist x x' < δ →
-        dist (c (x, y)) (c (x', y)) < ε := fun ε hε ↦ by
-      obtain ⟨δ, hδ, hcδ⟩ := Metric.uniformContinuous_iff.1 hcu ε hε
-      refine ⟨δ, hδ, fun y x x' hxx' ↦ ?_⟩
-      have hprod : dist ((x, y) : X × Y) (x', y) < δ := by
-        simpa [Prod.dist_eq] using hxx'
-      exact hcδ hprod
-    exact (uniformContinuous_iInf_sub (c := fun q : Y × X ↦ c (q.2, q.1))
-      (φ := ψ') hcuX hbddφ).continuous
+  refine ⟨φ', ψ', ?_, (uniformContinuous_iInf_sub_of_uniformContinuous hcu hbddψ).continuous, ?_,
+    hφle, hψle⟩
+  · exact (uniformContinuous_iInf_sub_of_uniformContinuous (c := fun q : Y × X ↦ c (q.2, q.1))
+      (hcu.comp uniformContinuous_swap) hbddφ).continuous
   · intro x y
     have h := cTransformSymm_add_le c (fun y ↦ (ψ' y : EReal)) x y
-    rw [hφcoe] at h
-    rw [← EReal.coe_add] at h
+    rw [hφcoe, ← EReal.coe_add] at h
     exact EReal.coe_le_coe_iff.1 h
 
 end Transform
@@ -346,28 +330,19 @@ theorem exists_continuous_forall_add_le_transportCost_le [IsProbabilityMeasure �
   -- discretise both factors finely enough that the cost varies by less than `ε / 2`
   have hcu : UniformContinuous c := CompactSpace.uniformContinuous_of_continuous hc
   obtain ⟨δ, hδ, hcδ⟩ := Metric.uniformContinuous_iff.1 hcu (ε / 2) (by positivity)
-  obtain ⟨n, v, qX, hqX, hvX⟩ :=
-    exists_measurable_dist_lt X isCompact_univ.totallyBounded hδ
-  obtain ⟨m, w, qY, hqY, hwY⟩ :=
-    exists_measurable_dist_lt Y isCompact_univ.totallyBounded hδ
+  obtain ⟨n, v, qX, hqX, hvX⟩ := exists_measurable_dist_lt X isCompact_univ.totallyBounded hδ
+  obtain ⟨m, w, qY, hqY, hwY⟩ := exists_measurable_dist_lt Y isCompact_univ.totallyBounded hδ
+  set pμ : PMF (Fin n) := (μ.map qX).toPMF
+  set pν : PMF (Fin m) := (ν.map qY).toPMF
+  have hpμ : ∀ i, pμ i = μ (qX ⁻¹' {i}) := fun i ↦
+    (Measure.toPMF_apply _ i).trans (Measure.map_apply hqX (measurableSet_singleton i))
+  have hpν : ∀ i, pν i = ν (qY ⁻¹' {i}) := fun i ↦
+    (Measure.toPMF_apply _ i).trans (Measure.map_apply hqY (measurableSet_singleton i))
   have hosc : ∀ x y, |c (x, y) - c (v (qX x), w (qY y))| < ε / 2 := fun x y ↦ by
     have hd : dist ((x, y) : X × Y) (v (qX x), w (qY y)) < δ := by
       rw [Prod.dist_eq]
       exact max_lt (hvX x) (hwY y)
     simpa [Real.dist_eq] using hcδ hd
-  -- the two discretised marginals
-  have hsumX : ∑ i, μ (qX ⁻¹' {i}) = 1 := by
-    rw [MeasureTheory.sum_measure_preimage_singleton _
-      fun i _ ↦ hqX (MeasurableSet.singleton i)]
-    simp
-  have hsumY : ∑ j, ν (qY ⁻¹' {j}) = 1 := by
-    rw [MeasureTheory.sum_measure_preimage_singleton _
-      fun j _ ↦ hqY (MeasurableSet.singleton j)]
-    simp
-  set pμ : PMF (Fin n) := PMF.ofFintype _ hsumX
-  set pν : PMF (Fin m) := PMF.ofFintype _ hsumY
-  have hpμ : ∀ i, pμ i = μ (qX ⁻¹' {i}) := fun i ↦ rfl
-  have hpν : ∀ j, pν j = ν (qY ⁻¹' {j}) := fun j ↦ rfl
   -- solve the finite problem for the cost read at the marked points
   set C : Fin n × Fin m → ℝ := fun p ↦ max 0 (c (v p.1, w p.2) - ε / 2)
   have hC0 : ∀ p, 0 ≤ C p := fun p ↦ le_max_left _ _

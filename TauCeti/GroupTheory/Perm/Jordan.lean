@@ -105,7 +105,9 @@ theorem exists_eqOn_compl_support_mul_mul_inv_mem_zpowers {g x : Perm α}
       refine (card_dvd_of_le inf_le_right).trans (dvd_of_eq ?_)
       rw [← Nat.card_congr (MonoidHom.ofInjective ofSubtype_injective).toEquiv, Nat.card_perm,
         Nat.card_eq_fintype_card, Fintype.card_coe]
-    exact hgp.not_sq_dvd_factorial (h.trans hcard)
+    have := hgp.sq_dvd_factorial_iff.1 (h.trans hcard)
+    have := hgp.pos
+    omega
   obtain ⟨y, hy⟩ := exists_mul_mul_inv_mem_zpowers_of_not_sq_dvd hsq
     (g := ⟨g, hgF⟩) (h := ⟨x * g * x⁻¹, hg'F⟩) (by rw [orderOf_mk, hgc.orderOf])
     (by rw [orderOf_mk, hgc.conj.orderOf, card_support_conj])

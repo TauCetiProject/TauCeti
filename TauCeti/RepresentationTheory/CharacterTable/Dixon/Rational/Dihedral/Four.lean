@@ -130,8 +130,7 @@ theorem dihedralGroupFour_centralCharacterSearch :
       (dihedralClassData 4).rowsOfMap
         (fun x : ℤ => (x : ZMod dihedralGroupFourDixonPrimeData.p))
         dihedralGroupFourCentralCharacterTable :=
-  (dihedralClassData 4).centralCharacterSearch_eq_rowsOfMap_of_isGoodDixonPrime
-    dihedralGroupFourDixonPrimeData.isGoodDixonPrime
+  (dihedralClassData 4).centralCharacterSearch_eq_rowsOfMap
     (fun x : ℤ => (x : ZMod dihedralGroupFourDixonPrimeData.p))
     dihedralGroupFourCentralCharacterTable
     (by intro i; fin_cases i <;> decide)

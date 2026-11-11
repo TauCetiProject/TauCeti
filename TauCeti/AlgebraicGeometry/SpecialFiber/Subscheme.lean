@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 public import TauCeti.AlgebraicGeometry.Fibers
 public import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop
 
@@ -39,6 +40,14 @@ this effective Cartier divisor with the Weil divisor of `π` is not done here.
 * `TauCeti.specialFiberIsoSubscheme`: the special fibre is isomorphic over `X` to the zero scheme
   of `𝔪·𝒪_X`, and `TauCeti.isPullback_subschemeι_specialFiber` records the resulting pullback
   square.
+* `TauCeti.subschemeToSpecialFiber`: a closed subscheme of `X` contained in the special fibre,
+  that is, whose ideal sheaf contains `𝔪·𝒪_X`, is a closed subscheme of the special fibre;
+* `TauCeti.subschemeOverResidueField`: such a closed subscheme is a scheme over the residue field
+  of `R`, proper when `X` is proper over `R`
+  (`TauCeti.isProper_subschemeOverResidueField`). Two such closed subschemes have the same
+  structure morphism on their intersection (`TauCeti.pullback_fst_subschemeToSpecialFiber`). For
+  instance, the irreducible components of the special fibre, with their reduced structures, are
+  schemes over the residue field in this way.
 
 ## References
 
@@ -130,5 +139,64 @@ theorem isPullback_subschemeι_specialFiber :
     (Iso.refl _) (Iso.refl _)
     ((Category.comp_id _).trans (specialFiberIsoSubscheme_hom_subschemeι R toBase).symm)
     (by rw [Iso.refl_hom, Category.comp_id, Iso.hom_inv_id_assoc]) (by simp) (by simp)
+
+section ResidueField
+
+variable {R toBase}
+
+/-- A closed subscheme of `X` contained in the special fibre, in the sense that its ideal sheaf
+contains the ideal sheaf `𝔪·𝒪_X` of the special fibre, is a closed subscheme of the special
+fibre. -/
+noncomputable def subschemeToSpecialFiber {I : X.IdealSheafData}
+    (hI : (specialFiberι R toBase).ker ≤ I) : I.subscheme ⟶ (specialFiber R toBase).left :=
+  haveI := isClosedImmersion_specialFiberι R toBase
+  IsClosedImmersion.lift _ I.subschemeι (by rwa [Scheme.IdealSheafData.ker_subschemeι])
+
+/-- The inclusion of a closed subscheme contained in the special fibre factors through the special
+fibre. -/
+@[reassoc (attr := simp)]
+lemma subschemeToSpecialFiber_specialFiberι {I : X.IdealSheafData}
+    (hI : (specialFiberι R toBase).ker ≤ I) :
+    subschemeToSpecialFiber hI ≫ specialFiberι R toBase = I.subschemeι :=
+  haveI := isClosedImmersion_specialFiberι R toBase
+  IsClosedImmersion.lift_fac _ _ _
+
+/-- A closed subscheme contained in the special fibre is a closed subscheme of the special
+fibre. -/
+lemma isClosedImmersion_subschemeToSpecialFiber {I : X.IdealSheafData}
+    (hI : (specialFiberι R toBase).ker ≤ I) : IsClosedImmersion (subschemeToSpecialFiber hI) := by
+  have := isClosedImmersion_specialFiberι R toBase
+  have : IsClosedImmersion (subschemeToSpecialFiber hI ≫ specialFiberι R toBase) := by
+    rw [subschemeToSpecialFiber_specialFiberι]
+    infer_instance
+  exact .of_comp_isClosedImmersion _ (specialFiberι R toBase)
+
+/-- Two closed subschemes contained in the special fibre induce the same morphism to the special
+fibre on their intersection. -/
+@[reassoc]
+lemma pullback_fst_subschemeToSpecialFiber {I J : X.IdealSheafData}
+    (hI : (specialFiberι R toBase).ker ≤ I) (hJ : (specialFiberι R toBase).ker ≤ J) :
+    pullback.fst I.subschemeι J.subschemeι ≫ subschemeToSpecialFiber hI =
+      pullback.snd I.subschemeι J.subschemeι ≫ subschemeToSpecialFiber hJ := by
+  have := isClosedImmersion_specialFiberι R toBase
+  rw [← cancel_mono (specialFiberι R toBase)]
+  simp only [Category.assoc, subschemeToSpecialFiber_specialFiberι, pullback.condition]
+
+/-- A closed subscheme of `X` contained in the special fibre is a scheme over the residue field of
+`R`, through the special fibre. -/
+noncomputable abbrev subschemeOverResidueField {I : X.IdealSheafData}
+    (hI : (specialFiberι R toBase).ker ≤ I) : I.subscheme.Over (Spec (.of (ResidueField R))) :=
+  ⟨subschemeToSpecialFiber hI ≫ (specialFiber R toBase).hom⟩
+
+/-- A closed subscheme of a proper scheme over `R` contained in the special fibre is proper over the
+residue field. -/
+lemma isProper_subschemeOverResidueField [IsProper toBase] {I : X.IdealSheafData}
+    (hI : (specialFiberι R toBase).ker ≤ I) :
+    letI := subschemeOverResidueField hI
+    IsProper (I.subscheme ↘ Spec (.of (ResidueField R))) := by
+  have := isClosedImmersion_subschemeToSpecialFiber hI
+  exact inferInstanceAs (IsProper (subschemeToSpecialFiber hI ≫ pullback.snd toBase _))
+
+end ResidueField
 
 end TauCeti

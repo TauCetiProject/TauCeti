@@ -8,12 +8,12 @@ module
 public import Mathlib.Algebra.Algebra.Rat
 public import Mathlib.RingTheory.Derivation.Basic
 public import Mathlib.RingTheory.Nilpotent.Lemmas
-import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Ring
 
 /-!
 # Derivations preserve nilpotence in characteristic zero
 
-Let `D` be a derivation of a commutative ring `A`, and let `p` be a prime ideal of `A`
+Let `D` be a derivation of a commutative semiring `A`, and let `p` be a prime ideal of `A`
 containing no positive integer, so that `A ⧸ p` has characteristic zero. Then `D` carries every
 nilpotent element of `A` into `p`. Over a `ℚ`-algebra every prime ideal qualifies, so a
 derivation of a `ℚ`-algebra carries nilpotent elements to nilpotent elements: the nilradical is
@@ -44,7 +44,7 @@ public section
 
 namespace Derivation
 
-variable {R A : Type*} [CommSemiring R] [CommRing A] [Algebra R A]
+variable {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
 
 /-- **A derivation sends nilpotent elements into every prime ideal of residual characteristic
 zero.** The hypothesis `hchar` says that `p` contains no positive integer. -/
@@ -52,30 +52,23 @@ theorem apply_mem_of_isNilpotent (D : Derivation R A A) {p : Ideal A} [hp : p.Is
     (hchar : ∀ n : ℕ, (n : A) ∈ p → n = 0) {x : A} (hx : IsNilpotent x) : D x ∈ p := by
   by_contra hDx
   obtain ⟨m, hm⟩ := hx
-  -- Differentiating an annihilation relation and multiplying by `s` lowers the exponent;
-  -- if `D x ∉ p`, the new annihilator `(n + 1) s² D(x)` still lies outside `p`.
-  have step : ∀ n : ℕ, (∃ s ∉ p, s * x ^ (n + 1) = 0) → ∃ s ∉ p, s * x ^ n = 0 := by
-    rintro n ⟨s, hs, hsx⟩
+  -- Descend from the vanishing power `x ^ m` to `x ^ 0`, keeping an annihilator outside `p`:
+  -- differentiating `s * x ^ (n + 1) = 0` and multiplying by `s` shows that `(n + 1) s² D(x)`
+  -- annihilates `x ^ n`, and it lies outside `p` as long as `D x ∉ p`.
+  suffices ∀ n, ∀ s ∉ p, s * x ^ n ≠ 0 from
+    this m 1 ((Ideal.ne_top_iff_one p).mp hp.ne_top) (by rw [hm, mul_zero])
+  intro n
+  induction n with
+  | zero => simpa using fun s hs h ↦ hs (h ▸ p.zero_mem)
+  | succ n ih =>
+    intro s hs hsx
     have hn : ((n + 1 : ℕ) : A) ∉ p := fun h ↦ n.succ_ne_zero (hchar _ h)
-    refine ⟨((n + 1 : ℕ) : A) * (s * s * D x),
-      hp.mul_notMem hn (hp.mul_notMem (hp.mul_notMem hs hs) hDx), ?_⟩
+    refine ih _ (hp.mul_notMem hn (hp.mul_notMem (hp.mul_notMem hs hs) hDx)) ?_
     have hD := congrArg D hsx
     rw [D.leibniz, D.leibniz_pow, map_zero, Nat.add_sub_cancel] at hD
     simp only [smul_eq_mul, nsmul_eq_mul] at hD
-    linear_combination s * hD - D s * hsx
-  -- Descend from a vanishing power to `x ^ 0`, forcing an element outside `p` to be zero.
-  have key : ∀ j ≤ m, ∃ s ∉ p, s * x ^ (m - j) = 0 := by
-    intro j hj
-    induction j with
-    | zero => exact ⟨1, (Ideal.ne_top_iff_one p).mp hp.ne_top, by rw [Nat.sub_zero, hm, mul_zero]⟩
-    | succ j ih =>
-      apply step
-      have hsub : m - (j + 1) + 1 = m - j := by omega
-      rw [hsub]
-      exact ih (by omega)
-  obtain ⟨s, hs, hsx⟩ := key m le_rfl
-  rw [Nat.sub_self, pow_zero, mul_one] at hsx
-  exact hs (hsx ▸ p.zero_mem)
+    rw [← mul_zero s, ← hD, mul_add, ← mul_assoc s (x ^ (n + 1)), hsx]
+    ring
 
 /-- **In a `ℚ`-algebra, a derivation sends nilpotent elements to nilpotent elements**: the
 nilradical is a differential ideal. -/

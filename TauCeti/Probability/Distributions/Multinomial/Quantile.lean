@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: Codex, Claude
 -/
 module
 
@@ -14,6 +14,7 @@ public import TauCeti.Probability.Distributions.Multinomial.Marginal
 A coordinate of a multinomial count vector has a binomial law. Consequently, after casting the
 coordinate to the reals, its interior quantiles and one-sided endpoint limits are the corresponding
 binomial quantities. This includes zero trials and the deterministic cell-probability boundaries.
+The interior quantile is also characterized as the least crossing of the binomial cumulative mass.
 
 ## References
 
@@ -25,7 +26,7 @@ public section
 
 noncomputable section
 
-open Convexity Filter MeasureTheory Set Topology
+open Convexity Filter MeasureTheory ProbabilityTheory Set Topology
 
 namespace TauCeti.Probability
 
@@ -43,6 +44,18 @@ theorem quantile_map_cast_eval_multinomialMeasure (n : ℕ) (p : StdSimplex NNRe
       (Nat.cast : ℕ → ℝ) ∘ fun k ↦ k i by rfl,
     ← Measure.map_map (by fun_prop) (by fun_prop),
     map_eval_multinomialMeasure]
+
+/-- A natural number is the lower quantile of a multinomial coordinate exactly when it is the
+least count whose binomial cumulative mass reaches the level. -/
+theorem quantile_map_cast_eval_multinomialMeasure_eq_iff (n : ℕ)
+    (p : StdSimplex NNReal ι) (i : ι) {u : ℝ} (hu : u ∈ Ioo 0 1) (k : ℕ) :
+    ((multinomialMeasure n p).map (fun x ↦ (x i : ℝ))).quantile u = k ↔
+      IsLeast
+        {j : ℕ | u ≤ if n ≤ j then 1 else
+          regularizedIncompleteBeta ((n : ℝ) - j) ((j : ℝ) + 1) (1 - (p.weights i : ℝ))}
+        k := by
+  rw [quantile_map_cast_eval_multinomialMeasure,
+    quantile_map_cast_binomial_eq_iff hu, StdSimplex.coe_multinomialCellProbability]
 
 /-- At level zero, a multinomial coordinate quantile tends to the trial count when all mass is
 in that cell, and to zero otherwise. -/
