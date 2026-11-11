@@ -47,6 +47,8 @@ reachability after deleting a set of vertices of `G` is reachability avoiding th
   along the bidirected arrow family.
 * `Graph.reachableAvoiding_bidirectedHom_iff`: reachability after deleting a set of vertices is
   reachability along the bidirected arrow family avoiding that set.
+* `Graph.reachableWithout_bidirectedHom_iff`: reachability after deleting a set of edges is
+  reachability along the bidirected arrow family without the arrows those edges give.
 * `TauCeti.ArrowWalk.internallyDisjoint_toGraphWalk_iff`: the identification preserves and
   reflects internal disjointness.
 -/
@@ -72,6 +74,15 @@ vertices of its bidirected arrow family. -/
 instance [Finite E(G)] (x y : V(G)) : Finite (G.BidirectedHom x y) :=
   Finite.of_injective (fun e ↦ (⟨e.1, e.2.edge_mem⟩ : E(G))) fun _ _ h ↦
     Subtype.ext (Subtype.mk.inj h)
+
+/-- Changing the endpoints of a bidirected arrow does not change its underlying edge. -/
+@[simp]
+theorem BidirectedHom.fst_cast {x y x' y' : V(G)} (a : G.BidirectedHom x y)
+    (hx : x = x') (hy : y = y') :
+    (@Quiver.Hom.cast G.vertexSet (Quiver.mk G.BidirectedHom) x y x' y' hx hy a).1 = a.1 := by
+  cases hx
+  cases hy
+  rfl
 
 variable {G}
 
@@ -216,6 +227,18 @@ theorem bidirectedEquiv_symm_apply {x y : V(G)} (q : ArrowWalk G.BidirectedHom x
     (bidirectedEquiv G x y).symm q = q.toGraphWalk :=
   (rfl)
 
+/-- Changing the endpoints of a directed walk before forgetting directions changes the endpoints
+of the resulting graph walk by the underlying equalities. -/
+@[simp]
+theorem _root_.TauCeti.ArrowWalk.toGraphWalk_cast {x y x' y' : V(G)}
+    (q : ArrowWalk G.BidirectedHom x y) (hx : x = x') (hy : y = y') :
+    @TauCeti.ArrowWalk.toGraphWalk α β G x' y'
+      (@Quiver.Path.cast G.vertexSet (Quiver.mk G.BidirectedHom) x y x' y' hx hy q) =
+      q.toGraphWalk.copy (congrArg Subtype.val hx) (congrArg Subtype.val hy) := by
+  cases hx
+  cases hy
+  simp
+
 /-! ### Transport of lengths, vertices, edges, paths, and cycles -/
 
 /-- The directed walk has the same length as the walk. -/
@@ -352,6 +375,20 @@ theorem reachableAvoiding_bidirectedHom_iff {Y : Set α} {x y : V(G)} :
     fun ⟨p, _, hp⟩ ↦ ⟨p.toBidirected x.2, fun v hv ↦ hp v ?_⟩⟩
   rw [← Walk.vertices_toBidirected p x.2]
   exact List.mem_unattach.2 ⟨v.2, hv⟩
+
+/-- Two actual vertices are reachable after deleting a set `E` of edges of `G` exactly when a
+directed walk of the bidirected arrow family joins them using no arrow given by an edge of `E`. -/
+theorem reachableWithout_bidirectedHom_iff {E : Set β} {x y : V(G)} :
+    ReachableWithout {a : Σ v w, G.BidirectedHom v w | a.2.2.1 ∈ E} x y ↔
+      (G.deleteEdges E).Reachable x y := by
+  rw [reachableWithout_def, reachable_deleteEdges_iff_exists_walk]
+  refine ⟨fun ⟨q, hq⟩ ↦ ⟨x.2, q.toGraphWalk, fun e he heE ↦ ?_⟩,
+    fun ⟨_, p, hp⟩ ↦ ⟨Walk.bidirectedEquiv G x y p, fun a ha haE ↦ ?_⟩⟩
+  · rw [ArrowWalk.edges_toGraphWalk, List.mem_map] at he
+    obtain ⟨a, ha, rfl⟩ := he
+    exact hq a ha heE
+  · rw [Walk.bidirectedEquiv_apply] at ha
+    exact hp _ (Walk.edges_toBidirected p x.2 ▸ List.mem_map_of_mem ha) haE
 
 /-- A set of actual vertices that the bidirected arrow family cannot avoid on its way from `x` to
 `y` separates `x` from `y` in `G`. -/

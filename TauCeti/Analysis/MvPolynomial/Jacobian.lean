@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Analysis.Analytic.Polynomial
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
-public import TauCeti.RingTheory.MvPolynomial.Jacobian
+public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import TauCeti.RingTheory.MvPolynomial.Jacobian.Basic
 
 /-!
 # Analytic derivatives of multivariate polynomial families
@@ -16,7 +17,10 @@ The formal partial derivatives of a multivariate polynomial give its Fréchet de
 finite coordinate space over any nontrivially normed field. For a family of equations, with the
 product topology on its target, this identifies the analytic derivative with the linear map of
 `TauCeti.jacobiMatrixAt`. In particular the derivative is surjective exactly when the Jacobian
-matrix is, and over a complete field the evaluation map of the family is analytic.
+matrix is, and the evaluation map of the family is analytic.
+
+For real or complex Euclidean coordinate spaces, we also give the derivative applied to an
+arbitrary direction and to a standard coordinate direction.
 -/
 
 public section
@@ -51,6 +55,39 @@ theorem MvPolynomial.hasFDerivAt_eval (p : MvPolynomial σ 𝕜) (x : σ → �
       simp [Finset.sum_add_distrib, mul_add, Finset.mul_sum,
         Pi.single_apply, apply_ite, mul_comm, mul_left_comm]
 
+section
+
+variable {𝕜 : Type*} [RCLike 𝕜]
+
+namespace MvPolynomial
+
+/-- The Fréchet derivative of polynomial evaluation on Euclidean space, applied to a direction,
+is the evaluated formal gradient paired with that direction. -/
+theorem fderiv_eval_euclidean_apply (p : MvPolynomial σ 𝕜)
+    (x v : EuclideanSpace 𝕜 σ) :
+    fderiv 𝕜 (fun y : EuclideanSpace 𝕜 σ ↦ eval y p) x v =
+      ∑ i, eval x (pderiv i p) * v i := by
+  have h := (p.hasFDerivAt_eval (EuclideanSpace.equiv σ 𝕜 x)).comp x
+    (EuclideanSpace.equiv σ 𝕜).hasFDerivAt
+  simpa [PiLp.coe_continuousLinearEquiv, Function.comp_def] using
+    congrArg (fun L ↦ L v) h.fderiv
+
+omit [Fintype σ] in
+/-- Differentiating polynomial evaluation in a standard coordinate direction gives evaluation
+of the corresponding formal partial derivative. This also simplifies derivatives along
+`EuclideanSpace.basisFun`, whose simp normal form is `EuclideanSpace.single i 1`. -/
+@[simp]
+theorem fderiv_eval_euclidean_single [Finite σ] [DecidableEq σ] (p : MvPolynomial σ 𝕜)
+    (x : EuclideanSpace 𝕜 σ) (i : σ) :
+    fderiv 𝕜 (fun y : EuclideanSpace 𝕜 σ ↦ eval y p) x
+      (EuclideanSpace.single i 1) = eval x (pderiv i p) := by
+  let := Fintype.ofFinite σ
+  simp [fderiv_eval_euclidean_apply, PiLp.single_apply]
+
+end MvPolynomial
+
+end
+
 namespace TauCeti
 
 /-- The analytic derivative of a polynomial family is its Jacobian matrix, viewed as a
@@ -80,9 +117,10 @@ theorem surjective_fderiv_eval_family_iff (p : ι → MvPolynomial σ 𝕜) (x :
   simp only [ContinuousLinearMap.coe_coe, Matrix.coe_mulVecLin] at h
   rw [h]
 
-/-- Over a complete field, the evaluation map of a polynomial family is analytic. -/
-theorem analyticOnNhd_eval_family [CompleteSpace 𝕜] [Fintype ι] (p : ι → MvPolynomial σ 𝕜) :
+/-- The evaluation map of a polynomial family is analytic. -/
+theorem analyticOnNhd_eval_family [Fintype ι] (p : ι → MvPolynomial σ 𝕜) :
     AnalyticOnNhd 𝕜 (fun x : σ → 𝕜 ↦ fun i ↦ eval x (p i)) Set.univ :=
-  AnalyticOnNhd.pi fun i ↦ AnalyticOnNhd.eval_mvPolynomial (p i)
+  AnalyticOnNhd.pi fun i ↦
+    AnalyticOnNhd.eval_continuousLinearMap (ContinuousLinearMap.id 𝕜 (σ → 𝕜)) (p i)
 
 end TauCeti

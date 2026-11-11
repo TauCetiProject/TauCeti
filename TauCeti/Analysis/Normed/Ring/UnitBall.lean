@@ -43,6 +43,8 @@ the valuation ring of a nonarchimedean field.
 
 ## Main results
 
+* `TauCeti.exists_norm_lt_one_forall_norm_le_of_fg`: if the open-ball ideal is finitely
+  generated, some element has the largest norm less than one.
 * `TauCeti.isTopologicallyNilpotent_iff_norm_lt_one_of_isPowMul`: for a power-multiplicative
   norm, topological nilpotence is equivalent to norm less than one.
 * `TauCeti.norm_inverse_one_sub` and `TauCeti.norm_inverse_one_sub_sub_one`: the ultrametric
@@ -57,6 +59,8 @@ the valuation ring of a nonarchimedean field.
 * `TauCeti.isUnit_unitClosedBall_iff_norm_eq_one`, `TauCeti.isLocalRing_unitClosedBall` and
   `TauCeti.maximalIdeal_unitClosedBall`: over an ultrametric normed division ring the unit ball
   is a local ring, and over an ultrametric normed field its maximal ideal is the open-ball ideal.
+* `TauCeti.isPrincipalIdealRing_unitClosedBall_of_norm_eq_zpow`: if the nonzero norms of `K` are
+  the integer powers of `‖π‖` for some `0 < ‖π‖ < 1`, then `K⁰` is a principal ideal ring.
 * `TauCeti.norm_map_eq_one_of_isUnit`: a ring homomorphism into the closed unit ball maps units
   to elements of norm one.
 * `TauCeti.norm_map_eq_one_iff_isUnit` and `TauCeti.norm_map_lt_one_iff_mem_maximalIdeal`: a
@@ -103,6 +107,31 @@ theorem unitBallIdeal_ne_top : unitBallIdeal R ≠ ⊤ := by
   rw [Ne, Ideal.eq_top_iff_one, mem_unitBallIdeal]
   simp
 
+variable {R} in
+/-- **A largest norm below one.** If the open-ball ideal is finitely generated, for instance when
+the closed unit ball is noetherian, some `π` has the largest norm less than one: the generator of
+largest norm bounds every combination of the generators, by the ultrametric inequality. -/
+theorem exists_norm_lt_one_forall_norm_le_of_fg (h : (unitBallIdeal R).FG) :
+    ∃ π : R, ‖π‖ < 1 ∧ ∀ a : R, ‖a‖ < 1 → ‖a‖ ≤ ‖π‖ := by
+  classical
+  obtain ⟨S, hS⟩ : ∃ S : Finset (Subring.unitClosedBall R),
+      Submodule.span (Subring.unitClosedBall R) (S : Set _) = unitBallIdeal R := h
+  obtain ⟨π, hπ, hπS⟩ : ∃ π ∈ unitBallIdeal R, ∀ b ∈ S, ‖(b : R)‖ ≤ ‖(π : R)‖ := by
+    rcases S.eq_empty_or_nonempty with rfl | hne
+    · exact ⟨0, zero_mem _, by simp⟩
+    · obtain ⟨π, hπ, hmax⟩ := S.exists_max_image (fun b ↦ ‖(b : R)‖) hne
+      exact ⟨π, hS ▸ Ideal.subset_span hπ, hmax⟩
+  refine ⟨π, mem_unitBallIdeal.1 hπ, fun a ha ↦ ?_⟩
+  have haS : (⟨a, Subring.mem_unitClosedBall.2 ha.le⟩ : Subring.unitClosedBall R) ∈
+      Submodule.span (Subring.unitClosedBall R) (S : Set (Subring.unitClosedBall R)) :=
+    hS ▸ mem_unitBallIdeal.2 ha
+  refine Submodule.span_induction
+    (p := fun (x : Subring.unitClosedBall R) _ ↦ ‖(x : R)‖ ≤ ‖(π : R)‖) hπS (by simp)
+    (fun x y _ _ hx hy ↦ ?_) (fun b x _ hx ↦ ?_) haS
+  · simpa using (IsUltrametricDist.norm_add_le_max _ _).trans (max_le hx hy)
+  · simpa using (norm_mul_le _ _).trans
+      ((mul_le_of_le_one_left (norm_nonneg _) (Subring.mem_unitClosedBall.1 b.2)).trans hx)
+
 end UnitBallIdeal
 
 /-- **Topological nilpotence for power-multiplicative norms.** If `‖x ^ n‖ = ‖x‖ ^ n` for all
@@ -136,19 +165,20 @@ theorem norm_inverse_one_sub (hx : ‖x‖ < 1) : ‖Ring.inverse (1 - x)‖ = 1
   have hinv := (Units.isNormMulUnit_iff_norm_inv u).mp (hu ▸ isNormMulUnit_one_sub hx)
   rw [← hu, Ring.inverse_unit, hinv, h1, inv_one]
 
-/-- **Ultrametric Neumann estimate.** In a normed ring with `‖1‖ = 1`, convergent geometric
-series and an ultrametric norm, `‖(1 - x)⁻¹ - 1‖ = ‖x‖` whenever `‖x‖ < 1`. -/
+omit [NormOneClass R] in
+/-- **Ultrametric Neumann estimate.** In a normed ring with convergent geometric series and an
+ultrametric norm, `‖(1 - x)⁻¹ - 1‖ = ‖x‖` whenever `‖x‖ < 1`. -/
 @[simp]
 theorem norm_inverse_one_sub_sub_one (hx : ‖x‖ < 1) : ‖Ring.inverse (1 - x) - 1‖ = ‖x‖ := by
-  have h1 := norm_inverse_one_sub hx
-  obtain ⟨u, hu⟩ := (isNormMulUnit_one_sub hx).isUnit
-  have hinv : IsNormMulUnit ((u⁻¹ : Rˣ) : R) :=
-    IsNormMulUnit.units_inv (hu ▸ isNormMulUnit_one_sub hx)
-  rw [← hu, Ring.inverse_unit] at h1 ⊢
+  -- multiplication by `1 - x` preserves norms
+  have key (w : R) : ‖(1 - x) * w‖ = ‖w‖ := by
+    simpa [sub_eq_add_neg] using norm_one_add_mul_of_norm_lt_one (a := -x) (by simpa using hx) w
+  obtain ⟨u, hu⟩ := IsUnit.one_sub_of_norm_lt_one hx
+  rw [← hu, Ring.inverse_unit]
   -- `u⁻¹ - 1 = u⁻¹ - u⁻¹ * (1 - x) = u⁻¹ * x`
   have hsub : ((u⁻¹ : Rˣ) : R) - 1 = ((u⁻¹ : Rˣ) : R) * x := by
     rw [← Units.inv_mul u, hu, mul_sub, mul_one, sub_sub_cancel]
-  rw [hsub, hinv.norm_mul, h1, one_mul]
+  rw [hsub, ← key (((u⁻¹ : Rˣ) : R) * x), ← mul_assoc, ← hu, Units.mul_inv, one_mul]
 
 /-- **Units of the unit ball.** In a normed ring with `‖1‖ = 1`, convergent geometric series and
 an ultrametric norm, an element of the closed unit ball within distance less than one of `1` is
@@ -260,6 +290,40 @@ theorem maximalIdeal_unitClosedBall :
 `K⁰ ⧸ K⁰⁰` is a field (`Ideal.Quotient.field`). -/
 instance isMaximal_unitBallIdeal : (unitBallIdeal K).IsMaximal :=
   maximalIdeal_unitClosedBall (K := K) ▸ IsLocalRing.maximalIdeal.isMaximal _
+
+/-- **Discretely valued fields.** If every nonzero norm of `K` is an integer power of `‖π‖` for
+some `0 < ‖π‖ < 1`, then the unit ball `K⁰` is a principal ideal ring, hence noetherian: a nonzero
+ideal is generated by any of its elements of largest norm. -/
+theorem isPrincipalIdealRing_unitClosedBall_of_norm_eq_zpow {π : K} (hπ0 : 0 < ‖π‖)
+    (hπ1 : ‖π‖ < 1) (hdisc : ∀ x : K, x ≠ 0 → ∃ k : ℤ, ‖x‖ = ‖π‖ ^ k) :
+    IsPrincipalIdealRing (Subring.unitClosedBall K) := by
+  -- Nonzero elements of `K⁰` have norm `‖π‖ ^ n` for a natural number `n`.
+  have hnat (x : Subring.unitClosedBall K) (hx : x ≠ 0) : ∃ n : ℕ, ‖(x : K)‖ = ‖π‖ ^ n := by
+    obtain ⟨k, hk⟩ := hdisc x fun h ↦ hx (Subtype.ext h)
+    have hk0 : 0 ≤ k := (zpow_le_one_iff_right_of_lt_one₀ hπ0 hπ1).1
+      (hk ▸ Subring.mem_unitClosedBall.1 x.2)
+    exact ⟨k.toNat, by rw [hk, ← zpow_natCast, Int.toNat_of_nonneg hk0]⟩
+  refine ⟨fun I ↦ ⟨?_⟩⟩
+  classical
+  by_cases hI : I = ⊥
+  · exact ⟨0, by rw [hI, Submodule.span_zero_singleton]⟩
+  have hex : ∃ n : ℕ, ∃ x ∈ I, x ≠ 0 ∧ ‖(x : K)‖ = ‖π‖ ^ n := by
+    obtain ⟨x, hxI, hx⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hI
+    obtain ⟨n, hn⟩ := hnat x hx
+    exact ⟨n, x, hxI, hx, hn⟩
+  obtain ⟨x, hxI, hx, hxn⟩ := Nat.find_spec hex
+  refine ⟨x, le_antisymm (fun y hy ↦ ?_) ((Ideal.span_singleton_le_iff_mem _).2 hxI)⟩
+  rcases eq_or_ne y 0 with rfl | hy0
+  · exact zero_mem _
+  obtain ⟨m, hm⟩ := hnat y hy0
+  have hle : ‖(y : K)‖ ≤ ‖(x : K)‖ := by
+    rw [hm, hxn]
+    exact pow_le_pow_of_le_one hπ0.le hπ1.le (Nat.find_min' hex ⟨y, hy, hy0, hm⟩)
+  have hx0 : (x : K) ≠ 0 := fun h ↦ hx (Subtype.ext h)
+  refine Ideal.mem_span_singleton'.2 ⟨⟨y / x, Subring.mem_unitClosedBall.2 ?_⟩, Subtype.ext ?_⟩
+  · rw [norm_div]
+    exact div_le_one_of_le₀ hle (norm_nonneg _)
+  · simp [hx0]
 
 end Field
 

@@ -8,13 +8,18 @@ module
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Weighted
 public import Mathlib.Algebra.Group.EvenFunction
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.NumberTheory.ModularForms.QExpansion
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.Analysis.SpecialFunctions.Exp.Summable
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Cotangent
+import TauCeti.Basic.Complex.Basic
+import TauCeti.Data.Nat.Cast.Order.Field
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.NumberTheory.ModularForms.Basic
+import TauCeti.NumberTheory.TsumDivisorsAntidiagonal
 import Mathlib.Analysis.Normed.Group.Tannery
+import Mathlib.Analysis.Normed.Ring.Finite
 
 /-!
 # Weight-one Eisenstein series weighted by a function of residues
@@ -76,6 +81,21 @@ constant `π cot (π a₁ / N)` if `a₀ = 0`. So `E₁^W` tends to `N⁻¹ ∑_
 (`TauCeti.EisensteinSeries.tendsto_weightedE1_atImInfty`). With the slash action this gives the
 value at `i∞` of every `SL(2, ℤ)`-translate, that is, the constant terms of `E₁^W` at all cusps.
 
+For the `q`-expansion each cotangent at a point `w` of the upper half-plane is expanded as
+`π cot (π w) = -π i - 2π i ∑_{k ≥ 1} e(k w)`, with `e(w) = e^(2π i w)`
+(`TauCeti.hasSum_pi_mul_cot_pi_mul_add_pi_mul_I`). In the row `m` at `x = (a₀ z + a₁) / N`, write
+`x - m z = (n z + a₁) / N` with `n = a₀ - m N`: as `m` runs over `ℤ`, `n` runs over the residue
+class of `a₀`, the classes `n = c ≥ 1` and `n = -c ≤ -1` expand in powers of `e(z / N)`, and the
+cotangents `π cot (π m z)` cancel in pairs
+(`TauCeti.hasSum_pi_mul_cot_pi_mul_intCast_mul_add_sign`,
+`TauCeti.hasSum_pi_mul_cot_pi_mul_div_sub_intCast_mul_add_pi_mul_cot`). Hence `F_a` minus its
+constant term `c_a` is
+`-2π i ∑_{c, k ≥ 1} D_a(c, k) e(z / N)^(c k)`, where `D_a(c, k)` is `e(k a₁ / N)` if `c ≡ a₀`
+minus `e(-k a₁ / N)` if `c ≡ -a₀`; the rows at the division points `z / 2` and `1 / 2` of the
+quasi-periods have no nonconstant terms. Summing over `a`, `E₁^W` minus its value at `i∞` is
+`-2π i / N ∑_{c, k ≥ 1} (∑_j (W(c, j) - W(-c, -j)) e(k j / N)) e(z / N)^(c k)`
+(`TauCeti.EisensteinSeries.hasSum_weightedE1_sub_valueAtInfty`); only the odd part of `W` enters.
+
 ## Main definitions
 
 * `TauCeti.EisensteinSeries.weightedE1`: the weight-one series weighted by `W`.
@@ -96,6 +116,8 @@ value at `i∞` of every `SL(2, ℤ)`-translate, that is, the constant terms of 
   `TauCeti.EisensteinSeries.valueAtInfty_weightedE1`: the limit at `i∞`.
 * `TauCeti.EisensteinSeries.valueAtInfty_weightedE1_slash`: the value at `i∞` of every
   `SL(2, ℤ)`-translate.
+* `TauCeti.EisensteinSeries.hasSum_weightedE1_sub_valueAtInfty`: the `q`-expansion in
+  `e(z / N)`, as an absolutely convergent double series.
 
 ## References
 
@@ -320,6 +342,7 @@ theorem weightedE1_eq_zero_of_even {W : (Fin 2 → ZMod N) → ℂ} (hW : W.Even
 
 /-! ### Holomorphy -/
 
+omit [NeZero N] in
 /-- The corrected division values are holomorphic on `ℍ`: the quasi-periods are the division
 values `η₁ = 2 ζ(z / 2)` and `η₂ = 2 ζ(1 / 2)`. -/
 private lemma mdifferentiable_zetaValue (b : Fin 2 → ℤ) : MDiff (zetaValue N b) := by
@@ -401,23 +424,6 @@ private lemma cotConst_nonneg (M : ℕ) : 0 ≤ cotConst M := by
   have : 0 ≤ π * (1 / (M : ℝ)) := by positivity
   linarith
 
-/-- `π cot (π u)` is within `cotConst M e^(-2π r)` of `-π i` when `1 / M ≤ Im u` and `r ≤ Im u`. -/
-private lemma norm_cot_add_le {M : ℕ} (hM : 0 < M) {u : ℂ} {r : ℝ} (hu : 1 / (M : ℝ) ≤ u.im)
-    (hr : r ≤ u.im) :
-    ‖π * cot (π * u) + π * Complex.I‖ ≤ cotConst M * Real.exp (-2 * π * r) := by
-  refine (norm_pi_mul_cot_pi_mul_add_pi_mul_I_le (by positivity) hu).trans
-    (mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr ?_) (cotConst_nonneg M))
-  nlinarith [Real.pi_pos]
-
-/-- `π cot (π u)` is within `cotConst M e^(-2π r)` of `π i` when `1 / M ≤ -Im u` and
-`r ≤ -Im u`. -/
-private lemma norm_cot_sub_le {M : ℕ} (hM : 0 < M) {u : ℂ} {r : ℝ} (hu : 1 / (M : ℝ) ≤ -u.im)
-    (hr : r ≤ -u.im) :
-    ‖π * cot (π * u) - π * Complex.I‖ ≤ cotConst M * Real.exp (-2 * π * r) := by
-  refine (norm_pi_mul_cot_pi_mul_sub_pi_mul_I_le (by positivity) hu).trans
-    (mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr ?_) (cotConst_nonneg M))
-  nlinarith [Real.pi_pos]
-
 /-- The bounds for the cotangent rows at `(b₀ z + b₁) / M`: a summable majorant independent of
 `z` on `1 ≤ Im z`. -/
 private def rowBound (M b₁ : ℕ) (m : ℤ) : ℝ :=
@@ -433,74 +439,64 @@ private lemma summable_rowBound (M b₁ : ℕ) : Summable (rowBound M b₁) :=
   (summable_exp_neg_two_pi_mul_abs_sub_one.mul_left _).add
     (summable_of_ne_finset_zero (s := {0}) fun m hm ↦ by simp_all)
 
-/-- **The cotangent rows at a division point are bounded** on `1 ≤ Im z`: for
-`x = (b₀ z + b₁) / M` with `b₀ < M` and `m ≠ 0`, the imaginary parts of `x - m z` and of `m z`
-have opposite signs and absolute values at least `max (1 / M) (|m| - 1)`, so the two cotangents
-approach `± π i` with opposite signs. -/
-private lemma norm_cotRow_le {M b₀ b₁ : ℕ} (hb : b₀ < M) (m : ℤ) {z : ℍ} (hz : 1 ≤ z.im) :
+/-- The cotangent row `m = 0` at a division point is bounded: it is `π cot (π x)`, which is
+bounded by `cotConst M + π` if `b₀ ≠ 0` and is the constant `π cot (π b₁ / M)` if `b₀ = 0`. -/
+private lemma norm_cotRow_zero_le {M b₀ b₁ : ℕ} (hM : 0 < M) {z : ℍ} (hz : 1 ≤ z.im) :
+    ‖cotRow ((b₀ * (z : ℂ) + b₁) / M) 0 z‖ ≤ rowBound M b₁ 0 := by
+  have hM' : (0 : ℝ) < M := by exact_mod_cast hM
+  simp only [cotRow, Int.cast_zero, zero_mul, sub_zero, mul_zero, cot_zero, add_zero, rowBound,
+    ↓reduceIte]
+  refine le_add_of_nonneg_of_le (by positivity [cotConst_nonneg M]) ?_
+  rcases Nat.eq_zero_or_pos b₀ with hb₀ | hb₀
+  · simp only [hb₀, CharP.cast_eq_zero, zero_mul, zero_add]
+    exact le_add_of_nonneg_left (by positivity [cotConst_nonneg M])
+  have hx : 1 / (M : ℝ) ≤ ((b₀ * (z : ℂ) + b₁) / M).im := by
+    have h : ((b₀ * (z : ℂ) + b₁) / M - ((0 : ℤ) : ℂ) * z).im =
+        ((b₀ : ℝ) / M - ((0 : ℤ) : ℝ)) * z.im := by
+      exact_mod_cast im_ofReal_mul_add_ofReal_div_sub_ofReal_mul b₀ b₁ M 0 z
+    simp only [Int.cast_zero, zero_mul, sub_zero] at h
+    rw [h]
+    have : 1 / (M : ℝ) ≤ b₀ / M := by
+      gcongr
+      exact_mod_cast hb₀
+    nlinarith [mul_nonneg (by positivity : (0 : ℝ) ≤ b₀ / M) (sub_nonneg.2 hz)]
+  exact (norm_pi_mul_cot_pi_mul_le (div_pos one_pos hM') hx).trans
+    (le_add_of_nonneg_right (norm_nonneg _))
+
+/-- **The cotangent rows `m ≠ 0` at a division point are bounded** on `1 ≤ Im z`: for
+`x = (b₀ z + b₁) / M` with `b₀ < M`, the imaginary parts of `x - m z` and of `m z` have opposite
+signs and absolute values at least `max (1 / M) (|m| - 1)`, so the two cotangents approach
+`± π i` with opposite signs. -/
+private lemma norm_cotRow_le_of_ne_zero {M b₀ b₁ : ℕ} (hb : b₀ < M) {m : ℤ} (hm : m ≠ 0)
+    {z : ℍ} (hz : 1 ≤ z.im) :
     ‖cotRow ((b₀ * (z : ℂ) + b₁) / M) m z‖ ≤ rowBound M b₁ m := by
   have hM : 0 < M := by omega
   have hM' : (0 : ℝ) < M := by exact_mod_cast hM
-  have hK := cotConst_nonneg M
-  have hpi : ‖(π * Complex.I : ℂ)‖ = π := by simp [abs_of_pos Real.pi_pos]
   -- the imaginary part of `x - m z` is `(b₀ / M - m) Im z`, with `b₀ / M ≤ 1 - 1 / M`
-  have hc1 : (b₀ : ℝ) / M ≤ 1 - 1 / M := by
-    rw [le_sub_iff_add_le, ← add_div, div_le_one hM']
-    exact_mod_cast hb
-  have him : ((b₀ * (z : ℂ) + b₁) / M - m * z).im = ((b₀ : ℝ) / M - m) * z.im := by
-    simp only [Complex.sub_im, Complex.div_natCast_im, Complex.add_im, Complex.mul_im,
-      Complex.natCast_re, Complex.natCast_im, Complex.intCast_re, Complex.intCast_im,
-      UpperHalfPlane.coe_re, UpperHalfPlane.coe_im, zero_mul, add_zero]
-    ring
+  have hc1 := Nat.cast_div_le_one_sub_inv (α := ℝ) hb
+  have him : ((b₀ * (z : ℂ) + b₁) / M - m * z).im = ((b₀ : ℝ) / M - m) * (z : ℂ).im := by
+    exact_mod_cast im_ofReal_mul_add_ofReal_div_sub_ofReal_mul b₀ b₁ M m z
   set c : ℝ := b₀ / M
   have hc0 : 0 ≤ c := by positivity
   have him' : ((m : ℂ) * z).im = m * z.im := by simp
   have hM1 : 1 / (M : ℝ) ≤ 1 := div_le_one_of_le₀ (by exact_mod_cast hM) hM'.le
-  rcases lt_trichotomy m 0 with hm | rfl | hm
+  have hrow : cotRow ((b₀ * (z : ℂ) + b₁) / M) m z =
+      π * cot (π * ((b₀ * (z : ℂ) + b₁) / M - m * z)) + π * cot (π * (m * z)) := by
+    simp only [cotRow]
+  simp only [rowBound, hm, ↓reduceIte, add_zero]
+  rcases hm.lt_or_gt with hm | hm
   · -- `m < 0`: `x - m z` lies in the upper and `m z` in the lower half-plane
     have hm1 : (m : ℝ) ≤ -1 := by exact_mod_cast Int.le_sub_one_of_lt hm
     have habs : |(m : ℝ)| = -m := abs_of_neg (by exact_mod_cast hm)
     have h₁ : -(m : ℝ) ≤ ((b₀ * (z : ℂ) + b₁) / M - m * z).im := by
-      rw [him]
+      rw [him, UpperHalfPlane.coe_im]
       nlinarith
     have h₂ : -(m : ℝ) ≤ -((m : ℂ) * z).im := by
       rw [him']
       nlinarith
-    have hrow : cotRow ((b₀ * (z : ℂ) + b₁) / M) m z =
-        (π * cot (π * ((b₀ * (z : ℂ) + b₁) / M - m * z)) + π * Complex.I) +
-          (π * cot (π * (m * z)) - π * Complex.I) := by
-      simp only [cotRow]
-      ring
-    simp only [hrow, rowBound, hm.ne, ↓reduceIte, add_zero, habs, two_mul, add_mul]
-    refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-    · exact norm_cot_add_le hM (hM1.trans (by linarith)) (by linarith)
-    · exact norm_cot_sub_le hM (hM1.trans (by linarith)) (by linarith)
-  · -- `m = 0`: the cotangent at `x` itself
-    simp only [cotRow, Int.cast_zero, zero_mul, sub_zero, mul_zero, cot_zero, add_zero,
-      rowBound, ↓reduceIte]
-    refine le_add_of_nonneg_of_le (by positivity) ?_
-    rcases Nat.eq_zero_or_pos b₀ with hb₀ | hb₀
-    · simp only [hb₀, CharP.cast_eq_zero, zero_mul, zero_add]
-      exact le_add_of_nonneg_left (by positivity)
-    have hx : 1 / (M : ℝ) ≤ ((b₀ * (z : ℂ) + b₁) / M).im := by
-      have h := him
-      simp only [Int.cast_zero, zero_mul, sub_zero] at h
-      rw [h]
-      have : 1 / (M : ℝ) ≤ c := by
-        simp only [c]
-        gcongr
-        exact_mod_cast hb₀
-      nlinarith
-    set x := (b₀ * (z : ℂ) + b₁) / M
-    calc ‖π * cot (π * x)‖ ≤ ‖π * cot (π * x) + π * Complex.I‖ + ‖(π * Complex.I : ℂ)‖ := by
-          simpa using norm_sub_le (π * cot (π * x) + π * Complex.I) (π * Complex.I)
-      _ ≤ cotConst M * Real.exp (-2 * π * 0) + π := by
-          rw [hpi]
-          gcongr
-          exact norm_cot_add_le hM hx ((div_pos one_pos hM').le.trans hx)
-      _ ≤ _ := by
-          simp only [mul_zero, Real.exp_zero, mul_one]
-          exact le_add_of_nonneg_right (norm_nonneg _)
+    rw [hrow, habs]
+    exact norm_pi_mul_cot_pi_mul_add_pi_mul_cot_pi_mul_le (div_pos one_pos hM')
+      (hM1.trans (by linarith)) (by linarith) (hM1.trans (by linarith)) (by linarith)
   · -- `m > 0`: `x - m z` lies in the lower and `m z` in the upper half-plane
     have hm1 : (1 : ℝ) ≤ m := by exact_mod_cast hm
     have habs : |(m : ℝ)| = m := abs_of_pos (by exact_mod_cast hm)
@@ -508,23 +504,24 @@ private lemma norm_cotRow_le {M b₀ b₁ : ℕ} (hb : b₀ < M) (m : ℤ) {z : 
     have hmc' : (m : ℝ) - c ≤ (m - c) * z.im :=
       le_mul_of_one_le_right ((div_pos one_pos hM').le.trans hmc) hz
     have h₁ : 1 / (M : ℝ) ≤ -((b₀ * (z : ℂ) + b₁) / M - m * z).im := by
-      rw [him]
+      rw [him, UpperHalfPlane.coe_im]
       linarith
     have h₁' : (m : ℝ) - 1 ≤ -((b₀ * (z : ℂ) + b₁) / M - m * z).im := by
-      rw [him]
+      rw [him, UpperHalfPlane.coe_im]
       linarith [div_pos one_pos hM']
     have h₂ : (m : ℝ) ≤ ((m : ℂ) * z).im := by
       rw [him']
       nlinarith
-    have hrow : cotRow ((b₀ * (z : ℂ) + b₁) / M) m z =
-        (π * cot (π * ((b₀ * (z : ℂ) + b₁) / M - m * z)) - π * Complex.I) +
-          (π * cot (π * (m * z)) + π * Complex.I) := by
-      simp only [cotRow]
-      ring
-    simp only [hrow, rowBound, hm.ne', ↓reduceIte, add_zero, habs, two_mul, add_mul]
-    refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-    · exact norm_cot_sub_le hM h₁ h₁'
-    · exact norm_cot_add_le hM (hM1.trans (by linarith)) (by linarith)
+    rw [hrow, add_comm, habs]
+    exact norm_pi_mul_cot_pi_mul_add_pi_mul_cot_pi_mul_le (div_pos one_pos hM')
+      (hM1.trans (by linarith)) (by linarith) h₁ h₁'
+
+/-- **The cotangent rows at a division point are bounded** on `1 ≤ Im z`. -/
+private lemma norm_cotRow_le {M b₀ b₁ : ℕ} (hb : b₀ < M) (m : ℤ) {z : ℍ} (hz : 1 ≤ z.im) :
+    ‖cotRow ((b₀ * (z : ℂ) + b₁) / M) m z‖ ≤ rowBound M b₁ m := by
+  rcases eq_or_ne m 0 with rfl | hm
+  · exact norm_cotRow_zero_le (by omega) hz
+  · exact norm_cotRow_le_of_ne_zero hb hm hz
 
 /-- The summable majorant of the rows of the corrected division values on `1 ≤ Im z`. -/
 private def zetaBound (N b₁ : ℕ) (m : ℤ) : ℝ :=
@@ -608,16 +605,10 @@ private lemma tendsto_cotRow_atImInfty {M b₀ b₁ : ℕ} (hb : b₀ < M) (m : 
       (𝓝 (if m = 0 then (if b₀ = 0 then π * cot (π * (b₁ / M)) else -(π * Complex.I))
         else 0)) := by
   have hM' : (0 : ℝ) < M := by exact_mod_cast (Nat.zero_le _).trans_lt hb
-  -- the imaginary part of `x - m z` is `(b₀ / M - m) Im z`, with `b₀ / M ≤ 1 - 1 / M`
-  have hc1 : (b₀ : ℝ) / M ≤ 1 - 1 / M := by
-    rw [le_sub_iff_add_le, ← add_div, div_le_one hM']
-    exact_mod_cast hb
+  have hc1 := Nat.cast_div_le_one_sub_inv (α := ℝ) hb
   have him (m : ℤ) (z : ℍ) :
-      ((b₀ * (z : ℂ) + b₁) / M - m * z).im = ((b₀ : ℝ) / M - m) * z.im := by
-    simp only [Complex.sub_im, Complex.div_natCast_im, Complex.add_im, Complex.mul_im,
-      Complex.natCast_re, Complex.natCast_im, Complex.intCast_re, Complex.intCast_im,
-      UpperHalfPlane.coe_re, UpperHalfPlane.coe_im, zero_mul, add_zero]
-    ring
+      ((b₀ * (z : ℂ) + b₁) / M - m * z).im = ((b₀ : ℝ) / M - m) * (z : ℂ).im := by
+    exact_mod_cast im_ofReal_mul_add_ofReal_div_sub_ofReal_mul b₀ b₁ M m z
   have hc0 : (0 : ℝ) ≤ b₀ / M := by positivity
   have hM1 : 0 < 1 / (M : ℝ) := div_pos one_pos hM'
   rcases lt_trichotomy m 0 with hm | rfl | hm
@@ -625,7 +616,7 @@ private lemma tendsto_cotRow_atImInfty {M b₀ b₁ : ℕ} (hb : b₀ < M) (m : 
     have hm1 : (m : ℝ) ≤ -1 := by exact_mod_cast Int.le_sub_one_of_lt hm
     have h₁ := tendsto_pi_mul_cot_pi_mul_add_pi_mul_I_atImInfty
       (w := fun z : ℍ ↦ (b₀ * (z : ℂ) + b₁) / M - m * z) one_pos fun z ↦ by
-        rw [him]
+        rw [him, UpperHalfPlane.coe_im]
         nlinarith [z.im_pos]
     have h₂ := tendsto_pi_mul_cot_pi_mul_sub_pi_mul_I_atImInfty (w := fun z : ℍ ↦ (m : ℂ) * z)
       one_pos fun z ↦ by
@@ -644,7 +635,7 @@ private lemma tendsto_cotRow_atImInfty {M b₀ b₁ : ℕ} (hb : b₀ < M) (m : 
       (w := fun z : ℍ ↦ (b₀ * (z : ℂ) + b₁) / M) (c := 1 / M) hM1 fun z ↦ by
         have h := him 0 z
         simp only [Int.cast_zero, zero_mul, sub_zero] at h
-        rw [h]
+        rw [h, UpperHalfPlane.coe_im]
         have : 1 / (M : ℝ) ≤ b₀ / M := by
           gcongr
           exact_mod_cast Nat.one_le_iff_ne_zero.mpr hb₀
@@ -654,7 +645,7 @@ private lemma tendsto_cotRow_atImInfty {M b₀ b₁ : ℕ} (hb : b₀ < M) (m : 
     have hm1 : (1 : ℝ) ≤ m := by exact_mod_cast hm
     have h₁ := tendsto_pi_mul_cot_pi_mul_sub_pi_mul_I_atImInfty
       (w := fun z : ℍ ↦ (b₀ * (z : ℂ) + b₁) / M - m * z) hM1 fun z ↦ by
-        rw [him]
+        rw [him, UpperHalfPlane.coe_im]
         nlinarith [z.im_pos]
     have h₂ := tendsto_pi_mul_cot_pi_mul_add_pi_mul_I_atImInfty (w := fun z : ℍ ↦ (m : ℂ) * z)
       one_pos fun z ↦ by
@@ -739,6 +730,135 @@ theorem valueAtInfty_weightedE1_slash (W : (Fin 2 → ZMod N) → ℂ) (γ : SL(
         if (a 0).val = 0 then π * cot (π * ((a 1).val / N))
         else π * Complex.I * (2 * (a 0).val / N - 1) := by
   rw [weightedE1_slash_apply, valueAtInfty_weightedE1]
+
+/-! ### The `q`-expansion -/
+
+/-- The coefficient of `e^(2π i c k z / M)` in the cotangent rows at the division point
+`(b₀ z + b₁) / M`: `e(k b₁ / M)` if `c ≡ b₀` minus `e(-k b₁ / M)` if `c ≡ -b₀` modulo `M`. -/
+private def divCoeff (M b₀ b₁ c k : ℕ) [NeZero M] : ℂ :=
+  (if (c : ZMod M) = b₀ then ZMod.stdAddChar ((k : ZMod M) * (b₁ : ZMod M)) else 0) -
+    if (c : ZMod M) = -(b₀ : ZMod M) then ZMod.stdAddChar (-((k : ZMod M) * (b₁ : ZMod M))) else 0
+
+private lemma norm_divCoeff_le (M b₀ b₁ c k : ℕ) [NeZero M] : ‖divCoeff M b₀ b₁ c k‖ ≤ 2 := by
+  refine (norm_sub_le _ _).trans ?_
+  have h₁ : ‖(if (c : ZMod M) = b₀ then ZMod.stdAddChar ((k : ZMod M) * (b₁ : ZMod M))
+      else 0 : ℂ)‖ ≤ 1 := by
+    split_ifs <;> simp
+  have h₂ : ‖(if (c : ZMod M) = -(b₀ : ZMod M) then
+      ZMod.stdAddChar (-((k : ZMod M) * (b₁ : ZMod M))) else 0 : ℂ)‖ ≤ 1 := by
+    split_ifs <;> simp
+  linarith
+
+omit [NeZero N] in
+/-- The rows at the division points `z / 2` and `1 / 2` of the quasi-periods have no
+nonconstant terms, as `1 ≡ -1` modulo `2`. -/
+private lemma divCoeff_two_one_zero (c k : ℕ) : divCoeff 2 1 0 c k = 0 := by
+  simp [divCoeff, ZMod.neg_eq_self_mod_two]
+
+omit [NeZero N] in
+private lemma divCoeff_two_zero_one (c k : ℕ) : divCoeff 2 0 1 c k = 0 := by
+  simp [divCoeff, ZMod.neg_eq_self_mod_two]
+
+/-- **The `q`-expansion of a corrected division value**: `F_a - c_a` is
+`-2π i ∑_{c, k ≥ 1} D_a(c, k) e(z / N)^(c k)`, where `c_a` is the constant term
+`zetaValueLimit a`. The rows at `z / 2` and `1 / 2` of the quasi-periods contribute only their
+constants `-π i` and `0`. -/
+private lemma hasSum_zetaValue_lift_sub (a : Fin 2 → ZMod N) (z : ℍ) :
+    HasSum (fun p : ℕ+ × ℕ+ ↦ -2 * π * Complex.I * divCoeff N (a 0).val (a 1).val p.1 p.2 *
+        cexp (2 * π * Complex.I * z / N) ^ ((p.1 : ℕ) * p.2))
+      (zetaValue N (lift a) z - zetaValueLimit a) := by
+  have hs : Summable fun p : ℕ+ × ℕ+ ↦ -2 * π * Complex.I *
+      divCoeff N (a 0).val (a 1).val p.1 p.2 *
+        cexp (2 * π * Complex.I * z / N) ^ ((p.1 : ℕ) * p.2) :=
+    summable_mul_pow_mul (by simpa [Function.Periodic.qParam] using
+      UpperHalfPlane.norm_qParam_lt_one N z) (C := ‖-2 * π * Complex.I‖ * 2) fun p ↦ by
+      rw [norm_mul]
+      gcongr
+      exact norm_divCoeff_le ..
+  convert hs.hasSum using 1
+  by_cases ha : a = 0
+  · subst ha
+    simp [lift_zero, zetaValue_zero, zetaValueLimit, divCoeff]
+  have hcot : cot (π * (1 / 2)) = 0 := by
+    rw [Complex.cot_eq_cos_div_sin, ← div_eq_mul_one_div, Complex.cos_pi_div_two, zero_div]
+  have hcot' : cot (π * 2⁻¹) = 0 := by
+    rw [← one_div, hcot]
+  -- the cotangent rows at the division point `(b₀ z + b₁) / M`
+  have hdiv {M b₀ : ℕ} [NeZero M] (hb : b₀ < M) (b₁ : ℕ) :
+      HasSum (fun m ↦ cotRow ((b₀ * (z : ℂ) + b₁) / M) m z)
+        ((if b₀ = 0 then π * cot (π * (b₁ / M)) else -(π * Complex.I)) +
+          ∑' p : ℕ+ × ℕ+, -2 * π * Complex.I * divCoeff M b₀ b₁ p.1 p.2 *
+            cexp (2 * π * Complex.I * z / M) ^ ((p.1 : ℕ) * p.2)) := by
+    simpa [cotRow, divCoeff] using
+      hasSum_pi_mul_cot_pi_mul_div_sub_intCast_mul_add_pi_mul_cot hb (b₁ : ℤ) z.im_pos
+  have h₁ := hdiv (ZMod.val_lt (a 0)) (a 1).val
+  have h₂ := hdiv (M := 2) (b₀ := 1) (by norm_num) 0
+  have h₃ := hdiv (M := 2) (b₀ := 0) (by norm_num) 1
+  rw [← (div_two_eq z).1] at h₂
+  rw [← (div_two_eq z).2] at h₃
+  have h₂' : HasSum (fun m ↦ cotRow (z / 2) m z) (-(π * Complex.I)) := by
+    simpa [divCoeff_two_one_zero] using h₂
+  have h₃' : HasSum (fun m ↦ cotRow (1 / 2) m z) 0 := by
+    simpa [divCoeff_two_zero_one, hcot'] using h₃
+  have hrow : HasSum (fun m ↦ zetaRow a m z) _ :=
+    (h₁.sub (h₂'.mul_left (2 * (a 0).val / N : ℂ))).sub (h₃'.mul_left (2 * (a 1).val / N : ℂ))
+  rw [(hasSum_zetaValue_lift ha z).unique hrow, zetaValueLimit]
+  split_ifs with h0
+  · simp only [h0, Nat.cast_zero]
+    ring
+  · ring
+
+/-- The weighted sum of the coefficients `D_a(c, k)` of the corrected division values. -/
+private lemma sum_mul_divCoeff (W : (Fin 2 → ZMod N) → ℂ) (c k : ℕ) :
+    ∑ a, W a * divCoeff N (a 0).val (a 1).val c k =
+      ∑ j, (W ![(c : ZMod N), j] - W ![-(c : ZMod N), -j]) *
+        ZMod.stdAddChar ((k : ZMod N) * j) := by
+  -- a sum over residue pairs whose summand vanishes off the first coordinate `d`
+  have hpair (d : ZMod N) (g : ZMod N → ℂ) :
+      ∑ a, W a * (if d = a 0 then g (a 1) else 0) = ∑ j, W ![d, j] * g j := by
+    rw [← (finTwoArrowEquiv (ZMod N)).symm.sum_comp, Fintype.sum_prod_type]
+    simp [mul_ite, Finset.sum_ite_irrel]
+  have hneg (x : ZMod N) : ((c : ZMod N) = -x) ↔ (-(c : ZMod N) = x) :=
+    neg_eq_iff_eq_neg.symm
+  calc ∑ a, W a * divCoeff N (a 0).val (a 1).val c k
+      = ∑ a, W a * (if (c : ZMod N) = a 0 then ZMod.stdAddChar ((k : ZMod N) * a 1) else 0) -
+          ∑ a, W a * (if -(c : ZMod N) = a 0 then
+            ZMod.stdAddChar (-((k : ZMod N) * a 1)) else 0) := by
+        rw [← Finset.sum_sub_distrib]
+        refine Finset.sum_congr rfl fun a _ ↦ ?_
+        simp only [divCoeff, ZMod.natCast_zmod_val, hneg]
+        ring
+    _ = ∑ j, W ![(c : ZMod N), j] * ZMod.stdAddChar ((k : ZMod N) * j) -
+          ∑ j, W ![-(c : ZMod N), -j] * ZMod.stdAddChar ((k : ZMod N) * j) := by
+        rw [hpair _ fun j ↦ ZMod.stdAddChar ((k : ZMod N) * j),
+          hpair _ fun j ↦ ZMod.stdAddChar (-((k : ZMod N) * j)),
+          ← Equiv.sum_comp (Equiv.neg (ZMod N))
+          (fun j ↦ W ![-(c : ZMod N), j] * ZMod.stdAddChar (-((k : ZMod N) * j)))]
+        simp
+    _ = _ := by
+        rw [← Finset.sum_sub_distrib]
+        simp only [sub_mul]
+
+/-- **The `q`-expansion of the weighted weight-one series at level `Γ(N)`.** With
+`e(z / N) = e^(2π i z / N)`, the series minus its value at `i∞` is the double series
+`-2π i / N ∑_{c, k ≥ 1} (∑_j (W(c, j) - W(-c, -j)) e(k j / N)) e(z / N)^(c k)`, which converges
+absolutely; grouping by `n = c k` gives the `q`-expansion in `e(z / N)`. -/
+theorem hasSum_weightedE1_sub_valueAtInfty (W : (Fin 2 → ZMod N) → ℂ) (z : ℍ) :
+    HasSum (fun p : ℕ+ × ℕ+ ↦ -2 * π * Complex.I / N *
+        (∑ j, (W ![((p.1 : ℕ) : ZMod N), j] - W ![-((p.1 : ℕ) : ZMod N), -j]) *
+          ZMod.stdAddChar (((p.2 : ℕ) : ZMod N) * j)) *
+        cexp (2 * π * Complex.I * z / N) ^ ((p.1 : ℕ) * p.2))
+      (weightedE1 W z - valueAtInfty (weightedE1 W)) := by
+  have h := (hasSum_sum (s := Finset.univ) fun a _ ↦
+    (hasSum_zetaValue_lift_sub a z).mul_left (W a)).mul_left (N : ℂ)⁻¹
+  convert h using 1
+  · ext p
+    rw [← sum_mul_divCoeff, Finset.mul_sum, Finset.sum_mul, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun a _ ↦ ?_
+    ring
+  · rw [valueAtInfty_weightedE1, weightedE1_eq_sum_zetaValue, ← mul_sub,
+      ← Finset.sum_sub_distrib]
+    simp [zetaValueLimit, mul_sub]
 
 /-! ### The modular form -/
 

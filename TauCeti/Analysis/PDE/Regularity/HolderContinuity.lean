@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Oscillation
 public import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Hölder continuity of weak solutions (De Giorgi)
@@ -129,20 +131,15 @@ theorem exists_holderOnWith_preciseRepresentative_drift [Nonempty ι] (σ : ℝ)
     (NNReal.coe_pos.1 hα) (NNReal.coe_pos.1 (hρ ▸ half_pos hR)) hf
     (fun x hx r hr hrR => ?_) (fun x hx => ?_)).mono_const ?_
   · -- Oscillation: `u` lies in an interval of length `L ≤ 2 C r^α` on `B(x, r)`.
-    rw [hρ] at hrR
-    obtain ⟨m', hm'⟩ := hosc h ha hb hb_bound hu hr hrR (hball x hx) hβR
-    have hL : C₀ * (r / R) ^ (α : ℝ) * (R ^ (-(Fintype.card ι : ℝ) / 2) *
-        √(∫ y in ball x R, W1p.value u y ^ 2 ∂mu)) ≤ 2 * (C * r ^ (α : ℝ)) :=
-      calc _ ≤ C₀ * (r / R) ^ (α : ℝ) * N := by gcongr; exact hN x hx
-        _ = 2 * (C * r ^ (α : ℝ)) := by rw [hC, Real.div_rpow hr.le hR.le]; field_simp
-    refine ⟨m' + C * r ^ (α : ℝ), ?_⟩
-    filter_upwards [hm'] with y hy
+    obtain ⟨m', hm'⟩ := hosc h ha hb hb_bound hu hr (hρ ▸ hrR) (hball x hx) hβR
+    have hL := Real.mul_rpow_div_mul_le_two_mul hC₀.le hr.le hR (hN x hx) hC
+    refine ⟨m' + C * r ^ (α : ℝ), hm'.mono fun y hy => ?_⟩
     rw [mem_closedBall, Real.dist_eq, abs_le]
     constructor <;> linarith [hy.1, hy.2]
   · -- Boundedness: `|u| ≤ D N` on `B(x, R/2)`, by local boundedness, since `(βR/λ)² ≤ σ²`.
     rw [hρ]
     filter_upwards [hbound (gamma := 0) h ha hb aestronglyMeasurable_const hb_bound
-      (fun _ _ => by simp) (fun _ _ => le_rfl) hu hR (hball x hx)] with y hy'
+      (fun _ _ => by simp) (fun _ _ => le_rfl) hu (hball x hx)] with y hy'
     rw [Real.norm_eq_abs, hM]
     refine hy'.trans ?_
     rw [mul_assoc]
@@ -153,21 +150,7 @@ theorem exists_holderOnWith_preciseRepresentative_drift [Nonempty ι] (σ : ℝ)
         ((div_le_iff₀ h.pos).2 hβR) 2
     · exact hN x hx
   · -- The constant: `2 C = C₀ N R^(-α)` and `2 M / ρ^α = 2^(1+α) D N R^(-α) ≤ 4 D N R^(-α)`.
-    have h2α : (2 : ℝ) ^ (α : ℝ) ≤ 2 := by
-      simpa using Real.rpow_le_rpow_of_exponent_le one_le_two hα1
-    rw [Real.le_toNNReal_iff_coe_le (by positivity)]
-    push_cast
-    rw [hC, hM, hρ, Real.div_rpow hR.le zero_le_two, Real.rpow_neg hR.le]
-    refine max_le ?_ ?_
-    · calc 2 * (C₀ * N / R ^ (α : ℝ) / 2) = C₀ * (R ^ (α : ℝ))⁻¹ * N := by field_simp
-        _ ≤ _ := by gcongr; exact le_max_left _ _
-    · calc 2 * (D * N) / (R ^ (α : ℝ) / 2 ^ (α : ℝ))
-          = 2 * 2 ^ (α : ℝ) * D * (R ^ (α : ℝ))⁻¹ * N := by field_simp
-        _ ≤ 2 * 2 * D * (R ^ (α : ℝ))⁻¹ * N := by gcongr
-        _ ≤ _ := by
-          rw [show (2 : ℝ) * 2 * D = 4 * D by ring]
-          gcongr
-          exact le_max_right _ _
+    exact NNReal.max_two_mul_le_toNNReal hα1 hR hC₀.le (by positivity) (by positivity) hC hM hρ
 
 /-- **De Giorgi's theorem: Hölder continuity of weak solutions.** Let `n ≥ 1` be the
 dimension. There are `α ∈ (0, 1]` and `C > 0`, depending only on `λ`, `Λ`, the dimension and the
@@ -235,14 +218,16 @@ theorem exists_holderOnWith_preciseRepresentative_of_isCompact_drift [Nonempty �
           nlinarith
   exact ⟨_, hhol h ha hb hb_bound hu hR ((cthickening_mono (min_le_left _ _) K).trans hR₀K) hβR⟩
 
-/-- **De Giorgi's theorem on compact sets.** Let `n ≥ 1` be the dimension. There is
-`α ∈ (0, 1]`, depending only on `λ`, `Λ`, the dimension and the normalization of the additive
-Haar measure `mu`, such that the following holds. Let `a` be measurable and uniformly elliptic on
-`Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = 0`. Then the
-precise representative of `u` is Hölder continuous with exponent `α` on every compact `K ⊆ Ω`.
-This is the case `b = 0` of
-`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_isCompact_drift`. -/
-theorem exists_holderOnWith_preciseRepresentative_of_isCompact [Nonempty ι] :
+/-- **De Giorgi's theorem on compact sets.** In every finite dimension `n` there is `α ∈ (0, 1]`,
+depending only on `λ`, `Λ`, the dimension and the normalization of the additive Haar measure `mu`,
+such that the following holds. Let `a` be measurable and uniformly elliptic on `Ω` with constants
+`λ, Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = 0`. Then the precise
+representative of `u` is Hölder continuous with exponent `α` on every compact `K ⊆ Ω`.
+For `n ≥ 1` this is the case `b = 0` of
+`TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_isCompact_drift`. In dimension zero the
+space is a single point, so every function is Hölder continuous there with exponent `α = 1` and
+constant `0`. -/
+theorem exists_holderOnWith_preciseRepresentative_of_isCompact :
     ∃ α : ℝ≥0, 0 < α ∧ α ≤ 1 ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)}
       {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {u : W1p mu Omega 2}
       {K : Set (EuclideanSpace ℝ ι)},
@@ -251,11 +236,19 @@ theorem exists_holderOnWith_preciseRepresentative_of_isCompact [Nonempty ι] :
       (∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) = 0) →
       IsCompact K → K ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
         ∃ C : ℝ≥0, HolderOnWith C α (preciseRepresentative mu (W1p.value u)) K := by
-  obtain ⟨α, hα, hα1, hhol⟩ :=
-    exists_holderOnWith_preciseRepresentative_of_isCompact_drift (mu := mu) (lam := lam)
-      (Lam := Lam)
-  exact ⟨α, hα, hα1, fun h ha hu hK hKΩ =>
-    hhol (beta := 0) h ha aestronglyMeasurable_const (fun _ _ => by simp) hu hK hKΩ⟩
+  cases isEmpty_or_nonempty ι with
+  | inl h =>
+      let : IsEmpty ι := h
+      refine ⟨1, zero_lt_one, le_rfl, ?_⟩
+      intro Omega a u K _ _ _ _ _
+      exact ⟨0, Set.subsingleton_of_subsingleton.holderOnWith 0 1 _⟩
+  | inr h =>
+      let : Nonempty ι := h
+      obtain ⟨α, hα, hα1, hhol⟩ :=
+        exists_holderOnWith_preciseRepresentative_of_isCompact_drift (mu := mu) (lam := lam)
+          (Lam := Lam)
+      exact ⟨α, hα, hα1, fun h ha hu hK hKΩ =>
+        hhol (beta := 0) h ha aestronglyMeasurable_const (fun _ _ => by simp) hu hK hKΩ⟩
 
 /-- **Continuity of weak solutions with a drift.** Let `n ≥ 1` be the dimension. Let `a` be
 measurable and uniformly elliptic on `Ω`, let `b` be measurable and bounded on `Ω`, and let

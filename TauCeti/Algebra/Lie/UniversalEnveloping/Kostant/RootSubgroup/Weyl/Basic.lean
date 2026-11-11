@@ -113,13 +113,16 @@ theorem weylUnit_smul_mem {v : V} (hv : v ∈ M) :
     ((weylUnit hi hj : (Module.End ℚ V)ˣ) : Module.End ℚ V) • v ∈ M := by
   rw [coe_weylUnit, mul_smul, mul_smul]
   simpa using
-    (exp_zsmul_smul_mem hi (fun n _ hw =>
+    (exp_zsmul_smul_mem
+     (x := ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) (fun n _ hw =>
         dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i n hw) 1
       (by simpa using
-        (exp_zsmul_smul_mem hj (fun n _ hw =>
+        (exp_zsmul_smul_mem
+         (x := ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))) (fun n _ hw =>
             dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM j n hw) (-1)
           (by simpa using
-            (exp_zsmul_smul_mem hi (fun n _ hw =>
+            (exp_zsmul_smul_mem
+             (x := ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) (fun n _ hw =>
               dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i n hw) 1 hv)))))
 
 /-- The inverse of the Weyl element preserves the lattice, by the same computation with every
@@ -128,13 +131,16 @@ theorem inv_weylUnit_smul_mem {v : V} (hv : v ∈ M) :
     (((weylUnit hi hj : (Module.End ℚ V)ˣ)⁻¹ : (Module.End ℚ V)ˣ) : Module.End ℚ V) • v ∈ M := by
   rw [coe_inv_weylUnit, mul_smul, mul_smul]
   simpa using
-    (exp_zsmul_smul_mem hi (fun n _ hw =>
+    (exp_zsmul_smul_mem
+     (x := ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) (fun n _ hw =>
         dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i n hw) (-1)
       (by simpa using
-        (exp_zsmul_smul_mem hj (fun n _ hw =>
+        (exp_zsmul_smul_mem
+         (x := ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))) (fun n _ hw =>
             dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM j n hw) 1
           (by simpa using
-            (exp_zsmul_smul_mem hi (fun n _ hw =>
+            (exp_zsmul_smul_mem
+             (x := ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) (fun n _ hw =>
               dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i n hw) (-1) hv)))))
 
 /-- The Weyl element restricted to an integral automorphism of the lattice. -/
@@ -142,6 +148,14 @@ noncomputable def kostantWeylRestrict : M ≃ₗ[ℤ] M :=
   integralUnitRestrict (weylUnit hi hj) M
     (fun _ hv => weylUnit_smul_mem e h ρ M hM hi hj hv)
     (fun _ hv => inv_weylUnit_smul_mem e h ρ M hM hi hj hv)
+
+/-- The integral Weyl automorphism is the restriction of the rational Weyl unit. -/
+theorem kostantWeylRestrict_eq_integralUnitRestrict :
+    kostantWeylRestrict e h ρ M hM hi hj =
+      integralUnitRestrict (weylUnit hi hj) M
+        (fun _ hv => weylUnit_smul_mem e h ρ M hM hi hj hv)
+        (fun _ hv => inv_weylUnit_smul_mem e h ρ M hM hi hj hv) :=
+  (rfl)
 
 @[simp]
 theorem coe_kostantWeylRestrict_apply (v : M) :
@@ -263,13 +277,8 @@ theorem kostantWeylPoints_conj_baseChangeExp (u : A) :
       Associative.dividedPower n (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))) • v ∈ M :=
     fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM j n hv
   have hMneg : ∀ n, ∀ v ∈ M,
-      Associative.dividedPower n (-ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))) • v ∈ M := by
-    intro n v hv
-    rcases Nat.even_or_odd n with hn | hn
-    · rw [Associative.dividedPower_neg, hn.neg_one_pow, one_smul]
-      exact hMj n v hv
-    · rw [Associative.dividedPower_neg, hn.neg_one_pow, neg_one_smul, neg_smul]
-      exact neg_mem (hMj n v hv)
+      Associative.dividedPower n (-ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))) • v ∈ M :=
+    fun n => Associative.dividedPower_neg_smul_mem _ M (hMj n)
   have hconj : ((weylUnit hi hj : (Module.End ℚ V)ˣ) : Module.End ℚ V) *
       ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) *
       (((weylUnit hi hj)⁻¹ : (Module.End ℚ V)ˣ) : Module.End ℚ V) =

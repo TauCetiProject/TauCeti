@@ -24,13 +24,13 @@ type synonym `FullConvolutionAlgebra α μ`. Since the full seminorm is a submul
 star-invariant seminorm satisfying the C⋆-identity, the completion
 `FullCrossedProduct α μ` is a nonunital C⋆-algebra. The canonical ⋆-homomorphism
 `FullCrossedProduct.of` from the twisted convolution algebra has dense range, and
-`‖of f‖ = ‖f‖ᵤ`. It is injective whenever `A` has a faithful representation in its own universe
-and `μ` is inner regular for compact sets on sets of finite measure
+`‖of f‖ = ‖f‖ᵤ`. It is injective whenever `A` has a faithful representation and `μ` is inner
+regular for compact sets on sets of finite measure
 (`μ.InnerRegularCompactLTTop`).
 
-Every integrated form `π ⋊ U` of a covariant representation on a Hilbert space in the universe
-`max u v` extends uniquely to a ⋆-homomorphism `CovariantRepresentation.integratedFull` on the
-full crossed product. The norm of `A ⋊_α G` is the supremum of the norms of these extensions,
+Every integrated form `π ⋊ U` of a covariant representation, on a Hilbert space in any universe,
+extends uniquely to a ⋆-homomorphism `CovariantRepresentation.integratedFull` on the full crossed
+product. The norm of `A ⋊_α G` is the supremum of the norms of these extensions,
 `FullCrossedProduct.norm_le_iff`. No unit, separability, σ-finiteness or nondegeneracy is
 assumed.
 
@@ -42,6 +42,8 @@ assumed.
   C⋆-algebra.
 * `TauCeti.CStarAction.FullCrossedProduct.of`: the canonical ⋆-homomorphism from the twisted
   convolution algebra, with dense range.
+* `TauCeti.CStarAction.FullCrossedProduct.lift`: extension of a ⋆-homomorphism bounded by the
+  full seminorm to the full crossed product.
 * `TauCeti.CStarAction.CovariantRepresentation.integratedFull`: the extension of the integrated
   form of a covariant representation to the full crossed product.
 
@@ -54,6 +56,9 @@ assumed.
   crossed product are determined on the twisted convolution algebra.
 * `TauCeti.CStarAction.FullCrossedProduct.norm_le_iff`: the norm of the full crossed product is
   the least bound for the integrated forms of covariant representations.
+* `TauCeti.CStarAction.FullCrossedProduct.of_eq_of_iff`: two elements of the twisted convolution
+  algebra have the same image in the full crossed product exactly when all their integrated forms
+  agree.
 
 ## References
 
@@ -69,7 +74,7 @@ open MeasureTheory UniformSpace
 
 namespace TauCeti.CStarAction
 
-universe u v
+universe u v w
 
 variable {G : Type u} {A : Type v} [Group G] [TopologicalSpace G] [MeasurableSpace G]
   [NonUnitalCStarAlgebra A] {α : CStarAction G A} {μ : Measure G}
@@ -324,10 +329,10 @@ theorem induction_on {p : FullCrossedProduct α μ → Prop} (x : FullCrossedPro
     (hp : IsClosed {x | p x}) (ih : ∀ f, p (of α μ f)) : p x :=
   Completion.induction_on (p := p) x hp fun f => coe_toFull_eq_of (ofFull f) ▸ ih (ofFull f)
 
-/-- If `A` has a faithful representation on a Hilbert space `H : Type v` and `μ` is inner regular
-for compact sets on sets of finite measure, the canonical map from the twisted convolution algebra
-into the full crossed product is injective. -/
-theorem of_injective [μ.InnerRegularCompactLTTop] {H : Type v} [NormedAddCommGroup H]
+/-- If `A` has a faithful representation on a Hilbert space `H` and `μ` is inner regular for compact
+sets on sets of finite measure, the canonical map from the twisted convolution algebra into the full
+crossed product is injective. -/
+theorem of_injective [μ.InnerRegularCompactLTTop] {H : Type w} [NormedAddCommGroup H]
     [InnerProductSpace ℂ H] [CompleteSpace H] {ρ : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
     (hρ : Function.Injective ρ) : Function.Injective (of α μ) :=
   (injective_iff_map_eq_zero (of α μ)).2 fun f hf =>
@@ -343,35 +348,35 @@ theorem starAlgHom_ext {B : Type*} [NonUnitalCStarAlgebra B]
   NonUnitalStarAlgHom.ext fun x => induction_on x (isClosed_eq (map_continuous φ)
     (map_continuous ψ)) fun f => congr($h f)
 
-end FullCrossedProduct
+/-- Continuous linear maps out of the full crossed product are determined by their values on
+the twisted convolution algebra. -/
+@[ext]
+theorem continuousLinearMap_ext {E : Type*} [TopologicalSpace E] [T2Space E] [AddCommMonoid E]
+    [Module ℂ E] {S T : FullCrossedProduct α μ →L[ℂ] E}
+    (h : ∀ f, S (of α μ f) = T (of α μ f)) : S = T :=
+  ContinuousLinearMap.ext fun x => induction_on x (isClosed_eq S.continuous T.continuous) h
 
-namespace CovariantRepresentation
+variable {D : Type*} [NonUnitalCStarAlgebra D]
+  (ρ : ConvolutionAlgebra α μ →⋆ₙₐ[ℂ] D)
+  (hρ : ∀ f, ‖ρ f‖ ≤ ConvolutionAlgebra.fullSeminorm α μ f)
 
-open FullCrossedProduct
-
-variable {H : Type (max u v)} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
-  [CompleteSpace H] (P : CovariantRepresentation α H)
-
-variable (μ) in
-/-- The integrated form `π ⋊ U` as a continuous linear map on the twisted convolution algebra
-with the full seminorm, for which it is a contraction. -/
-private def integratedFullCLM : FullConvolutionAlgebra α μ →L[ℂ] (H →L[ℂ] H) :=
-  ((P.integratedStarAlgHom μ : ConvolutionAlgebra α μ →ₗ[ℂ] (H →L[ℂ] H)).comp
+/-- A ⋆-homomorphism bounded by the full seminorm is continuous for that seminorm. -/
+private def liftCLM : FullConvolutionAlgebra α μ →L[ℂ] D :=
+  ((ρ : ConvolutionAlgebra α μ →ₗ[ℂ] D).comp
     ((toFullStarAlgEquiv α μ).symm :
       FullConvolutionAlgebra α μ →ₗ[ℂ] ConvolutionAlgebra α μ)).mkContinuous 1 fun f => by
-      simpa [norm_def] using ConvolutionAlgebra.norm_integratedStarAlgHom_le_fullSeminorm P
-        (ofFull f)
+      simpa [norm_def] using hρ (ofFull f)
 
-private theorem fromCompletion_integratedFullCLM_of (f : ConvolutionAlgebra α μ) :
-    (integratedFullCLM μ P).fromCompletion (of α μ f) = P.integratedStarAlgHom μ f := by
-  simpa [integratedFullCLM] using
-    ContinuousLinearMap.fromCompletion_apply_coe (integratedFullCLM μ P) (toFull f)
+private theorem fromCompletion_liftCLM_of (f : ConvolutionAlgebra α μ) :
+    (liftCLM ρ hρ).fromCompletion (of α μ f) = ρ f := by
+  simpa [liftCLM] using
+    ContinuousLinearMap.fromCompletion_apply_coe (liftCLM ρ hρ) (toFull f)
 
-variable (μ) in
-/-- The integrated form `π ⋊ U` of a covariant representation on a Hilbert space in the universe
-`max u v`, extended by continuity to a ⋆-homomorphism on the full crossed product. -/
-def integratedFull : FullCrossedProduct α μ →⋆ₙₐ[ℂ] (H →L[ℂ] H) where
-  toFun := (integratedFullCLM μ P).fromCompletion
+/-- Extend a ⋆-homomorphism bounded by the full seminorm to the full crossed product.
+Its values on compactly supported coefficients are given by `lift_of`, and these determine
+it uniquely by `starAlgHom_ext`. -/
+def lift : FullCrossedProduct α μ →⋆ₙₐ[ℂ] D where
+  toFun := (liftCLM ρ hρ).fromCompletion
   map_smul' := map_smul _
   map_zero' := map_zero _
   map_add' := map_add _
@@ -381,17 +386,43 @@ def integratedFull : FullCrossedProduct α μ →⋆ₙₐ[ℂ] (H →L[ℂ] H) 
     | ih f =>
       induction y using induction_on with
       | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-      | ih g => simp only [← map_mul, fromCompletion_integratedFullCLM_of]
+      | ih g => simp only [← map_mul, fromCompletion_liftCLM_of]
   map_star' x := by
     induction x using induction_on with
     | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-    | ih f => simp only [← map_star, fromCompletion_integratedFullCLM_of]
+    | ih f => simp only [← map_star, fromCompletion_liftCLM_of]
+
+/-- The extension agrees with the original ⋆-homomorphism on compactly supported coefficients. -/
+@[simp]
+theorem lift_of (f : ConvolutionAlgebra α μ) : lift ρ hρ (of α μ f) = ρ f :=
+  fromCompletion_liftCLM_of ρ hρ f
+
+/-- Composing the extension with the canonical map recovers the original ⋆-homomorphism. -/
+@[simp]
+theorem lift_comp_of : (lift ρ hρ).comp (of α μ) = ρ :=
+  NonUnitalStarAlgHom.ext (lift_of ρ hρ)
+
+end FullCrossedProduct
+
+namespace CovariantRepresentation
+
+open FullCrossedProduct
+
+variable {H : Type w} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
+  [CompleteSpace H] (P : CovariantRepresentation α H)
+
+variable (μ) in
+/-- The integrated form `π ⋊ U` of a covariant representation on a Hilbert space in any universe,
+extended by continuity to a ⋆-homomorphism on the full crossed product. -/
+def integratedFull : FullCrossedProduct α μ →⋆ₙₐ[ℂ] (H →L[ℂ] H) :=
+  lift (P.integratedStarAlgHom μ)
+    (ConvolutionAlgebra.norm_integratedStarAlgHom_le_fullSeminorm P)
 
 /-- On the twisted convolution algebra, the extended integrated form is the integrated form. -/
 @[simp]
 theorem integratedFull_of (f : ConvolutionAlgebra α μ) :
     P.integratedFull μ (of α μ f) = P.integratedStarAlgHom μ f :=
-  fromCompletion_integratedFullCLM_of P f
+  lift_of _ _ f
 
 @[simp]
 theorem integratedFull_comp_of :
@@ -402,9 +433,9 @@ end CovariantRepresentation
 
 namespace FullCrossedProduct
 
-/-- The norm of the full crossed product is the least nonnegative bound for the extended
+/-- The norm of the full crossed product is the least bound for the extended
 integrated forms of covariant representations on Hilbert spaces in the universe `max u v`. -/
-theorem norm_le_iff {x : FullCrossedProduct α μ} {c : ℝ} (hc : 0 ≤ c) :
+theorem norm_le_iff {x : FullCrossedProduct α μ} {c : ℝ} :
     ‖x‖ ≤ c ↔
       ∀ (H : Type (max u v)) [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
         (P : CovariantRepresentation α H), ‖P.integratedFull μ x‖ ≤ c := by
@@ -415,7 +446,7 @@ theorem norm_le_iff {x : FullCrossedProduct α μ} {c : ℝ} (hc : 0 ≤ c) :
   obtain ⟨f, hf⟩ := (denseRange_of (α := α) (μ := μ)).exists_dist_lt x (half_pos hε)
   have hf' : ‖x - of α μ f‖ < ε / 2 := by rwa [← dist_eq_norm]
   have hfc : ‖of α μ f‖ ≤ c + ε / 2 := by
-    rw [norm_of, ConvolutionAlgebra.fullSeminorm_le_iff (by positivity)]
+    rw [norm_of, ConvolutionAlgebra.fullSeminorm_le_iff]
     intro H _ _ _ P
     rw [← P.integratedFull_of]
     calc ‖P.integratedFull μ (of α μ f)‖
@@ -426,6 +457,20 @@ theorem norm_le_iff {x : FullCrossedProduct α μ} {c : ℝ} (hc : 0 ≤ c) :
           add_le_add (h H P) ((NonUnitalStarAlgHom.norm_apply_le _ _).trans hf'.le)
   calc ‖x‖ ≤ ‖of α μ f‖ + ‖x - of α μ f‖ := norm_le_insert' x (of α μ f)
     _ < c + ε := by linarith
+
+/-- Two elements of the twisted convolution algebra have the same image in the full crossed
+product exactly when their integrated forms agree for every covariant representation on a
+Hilbert space in the universe `max u v`. -/
+theorem of_eq_of_iff {f g : ConvolutionAlgebra α μ} :
+    of α μ f = of α μ g ↔
+      ∀ (H : Type (max u v)) [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+        (P : CovariantRepresentation α H),
+          P.integratedStarAlgHom μ f = P.integratedStarAlgHom μ g := by
+  refine ⟨fun h H _ _ _ P => by simpa using congr(P.integratedFull μ $h), fun h => ?_⟩
+  rw [← sub_eq_zero, ← map_sub, ← norm_eq_zero, norm_of]
+  refine le_antisymm (ConvolutionAlgebra.fullSeminorm_le_iff.2 fun H _ _ _ P => ?_)
+    (apply_nonneg _ _)
+  rw [map_sub, h H P, sub_self, norm_zero]
 
 end FullCrossedProduct
 

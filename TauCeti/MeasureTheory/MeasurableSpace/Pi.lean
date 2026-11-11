@@ -17,7 +17,13 @@ records that reindexing as a measurable equivalence, together with the restricti
 subblock.
 
 It also records that extending a family along an arbitrary map of index types, with a fixed
-default outside the range, is measurable in the family (`TauCeti.MeasureTheory.measurable_extend`).
+default outside the range, is measurable in the family
+(`TauCeti.MeasureTheory.measurable_extend`), and that reading a family along an arbitrary map of
+index types is measurable in the family (`TauCeti.MeasureTheory.measurable_comp_apply`).
+
+It also records that recombining a block `z` on a finset `s` with the remaining coordinates of a
+point `w` of a dependent product is the finset update of `w` by `z`
+(`Finset.measurableEquiv_piEquivPiSubtypeProd_symm_apply_eq_updateFinset`).
 
 These are general measurable product constructions, independent of any measure or stochastic
 process.
@@ -44,29 +50,22 @@ of width `m`. The outer coordinate chooses the small block and the inner coordin
 position within it. -/
 def blockSplitEquiv (α : Type*) [MeasurableSpace α] (m n : ℕ) :
     (Fin (n * m) → α) ≃ᵐ (Fin n → Fin m → α) :=
-  (MeasurableEquiv.piCongrLeft (fun _ : Fin (n * m) => α)
-    (finProdFinEquiv : Fin n × Fin m ≃ Fin (n * m))).symm.trans
-      (MeasurableEquiv.curry (Fin n) (Fin m) α)
+  (MeasurableEquiv.arrowCongr' finProdFinEquiv.symm (.refl α)).trans
+    (MeasurableEquiv.curry (Fin n) (Fin m) α)
 
 /-- Splitting a finite block reads its `(r, j)` coordinate at the flattened index
 `j + m * r`. -/
 @[simp]
 theorem blockSplitEquiv_apply (m n : ℕ) (x : Fin (n * m) → α) (r : Fin n) (j : Fin m) :
-    blockSplitEquiv α m n x r j = x (finProdFinEquiv (r, j)) := by
-  have h : (MeasurableEquiv.piCongrLeft (fun _ : Fin (n * m) => α)
-      (finProdFinEquiv : Fin n × Fin m ≃ Fin (n * m))).toEquiv
-      = Equiv.piCongrLeft (fun _ : Fin (n * m) => α) finProdFinEquiv :=
-    Equiv.coe_fn_injective (MeasurableEquiv.coe_piCongrLeft finProdFinEquiv)
-  rw [blockSplitEquiv, MeasurableEquiv.trans_apply, MeasurableEquiv.coe_curry,
-    Function.curry_apply, ← MeasurableEquiv.coe_toEquiv_symm, h, Equiv.piCongrLeft_symm_apply]
+    blockSplitEquiv α m n x r j = x (finProdFinEquiv (r, j)) :=
+  (rfl)
 
 /-- Joining split blocks reads a flattened coordinate from its quotient and remainder. -/
 @[simp]
 theorem blockSplitEquiv_symm_apply (m n : ℕ) (x : Fin n → Fin m → α) (k : Fin (n * m)) :
     (blockSplitEquiv α m n).symm x k =
-      x (finProdFinEquiv.symm k).1 (finProdFinEquiv.symm k).2 := by
-  conv_rhs => rw [← (blockSplitEquiv α m n).apply_symm_apply x]
-  rw [blockSplitEquiv_apply, Prod.mk.eta, Equiv.apply_symm_apply]
+      x (finProdFinEquiv.symm k).1 (finProdFinEquiv.symm k).2 :=
+  (rfl)
 
 /-- Restriction of a block of width `n * m` to its `r`-th consecutive subblock of width `m`. -/
 def blockRestriction (m n : ℕ) (r : Fin n) : (Fin (n * m) → α) → (Fin m → α) :=
@@ -75,8 +74,8 @@ def blockRestriction (m n : ℕ) (r : Fin n) : (Fin (n * m) → α) → (Fin m �
 /-- Restricting a finite block reads the corresponding flattened coordinate. -/
 @[simp]
 theorem blockRestriction_apply (m n : ℕ) (r : Fin n) (x : Fin (n * m) → α) (j : Fin m) :
-    blockRestriction (α := α) m n r x j = x (finProdFinEquiv (r, j)) := by
-  simp only [blockRestriction, blockSplitEquiv_apply]
+    blockRestriction (α := α) m n r x j = x (finProdFinEquiv (r, j)) :=
+  (rfl)
 
 /-- Restriction to a fixed subblock is measurable. -/
 theorem measurable_blockRestriction (m n : ℕ) (r : Fin n) :
@@ -88,11 +87,27 @@ range of `f`, is measurable in `g`. For `f = Subtype.val` this is extension of a
 default value. -/
 theorem measurable_extend {ι κ : Type*} (f : ι → κ) (e : κ → α) :
     Measurable fun g : ι → α ↦ Function.extend f g e := by
-  refine measurable_pi_iff.2 fun k ↦ ?_
-  by_cases h : ∃ i, f i = k
-  · simp only [Function.extend, h, dite_true]
-    exact measurable_pi_apply _
-  · simp [Function.extend_apply' _ _ _ h]
+  refine Measurable.of_eval fun k ↦ ?_
+  simp only [Function.extend]
+  split_ifs <;> fun_prop
+
+/-- Recombining a block `z` on a finset `s` with the coordinates of `w` outside `s` is the update
+of `w` on `s` by `z`. -/
+theorem _root_.Finset.measurableEquiv_piEquivPiSubtypeProd_symm_apply_eq_updateFinset
+    {ι : Type*} [DecidableEq ι] {π : ι → Type*} [∀ i, MeasurableSpace (π i)]
+    (s : Finset ι) (w : ∀ i, π i) (z : ∀ i : s, π i) :
+    (MeasurableEquiv.piEquivPiSubtypeProd π fun i => i ∈ s).symm
+      (z, (MeasurableEquiv.piEquivPiSubtypeProd π (fun i => i ∈ s) w).2) =
+      Function.updateFinset w s z := by
+  ext i
+  simp only [MeasurableEquiv.piEquivPiSubtypeProd_symm_apply,
+    MeasurableEquiv.piEquivPiSubtypeProd_apply, Function.updateFinset_def]
+
+/-- Reading a family `u : κ → α` along a map `e : ι → κ`, that is, precomposing with `e`, is
+measurable in `u`. -/
+theorem measurable_comp_apply {ι κ : Type*} (e : ι → κ) :
+    Measurable fun (u : κ → α) (a : ι) ↦ u (e a) :=
+  Measurable.of_eval fun a ↦ measurable_pi_apply (e a)
 
 end MeasureTheory
 

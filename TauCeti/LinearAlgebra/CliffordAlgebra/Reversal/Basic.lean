@@ -68,6 +68,14 @@ def reverseEven (Q : QuadraticForm R M) : ↥(even Q) →ₗ[R] ↥(even Q) :=
   apply Subtype.ext
   simp [even.ι]
 
+/-- Clifford reversal negates the even bivector of two orthogonal vectors. -/
+theorem reverseEven_even_ι_bilin_of_isOrtho {x y : M} (h : Q.IsOrtho x y) :
+    reverseEven Q ((even.ι Q).bilin x y) = -(even.ι Q).bilin x y := by
+  rw [reverseEven_ι]
+  apply Subtype.ext
+  simp only [even.ι, NegMemClass.coe_neg]
+  exact ι_mul_ι_comm_of_isOrtho h.symm
+
 /-- Reversal restricted to the even subalgebra is an involution. -/
 @[simp] theorem reverseEven_reverseEven (x : ↥(even Q)) :
     reverseEven Q (reverseEven Q x) = x := by
@@ -211,6 +219,18 @@ theorem reverse_prod_map_ι_mul_prod_map_ι (l : List M) :
 theorem star_mul_self_eq_reverse_mul_self_of_mem_even {x : CliffordAlgebra Q}
     (hx : x ∈ evenOdd Q 0) : star x * x = reverse x * x := by
   rw [star_def, involute_eq_of_mem_even hx]
+
+/-- For an even element, the conditions of being negated by `star` and of preserving the
+generating-vector subspace under commutators are the conditions of being negated by reversal and
+of sending every generator back into that subspace. -/
+theorem mem_even_and_star_eq_neg_and_commutator_mem_iff (Q : QuadraticForm R M)
+    (x : CliffordAlgebra Q) :
+    (x ∈ even Q ∧ star x = -x ∧
+        ∀ y ∈ LinearMap.range (ι Q), x * y - y * x ∈ LinearMap.range (ι Q)) ↔
+      x ∈ even Q ∧ reverse x = -x ∧ ∀ v, x * ι Q v - ι Q v * x ∈ LinearMap.range (ι Q) := by
+  refine and_congr_right fun he ↦ and_congr ?_
+    ⟨fun h v ↦ h _ ⟨v, rfl⟩, fun h ↦ by rintro _ ⟨v, rfl⟩; exact h v⟩
+  rw [reverse_eq_star_of_mem_even ⟨x, he⟩]
 
 /-- On an odd element, the `star` norm is the negative of the `reverse` norm. -/
 theorem star_mul_self_eq_neg_reverse_mul_self_of_mem_odd {x : CliffordAlgebra Q}

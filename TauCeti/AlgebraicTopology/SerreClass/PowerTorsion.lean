@@ -17,6 +17,13 @@ This file proves that abelian groups annihilated by some power of a fixed intege
 zero, subobject, quotient, and extension closure properties in Mathlib's Serre-class interface.
 Such classes are used in Hurewicz theorems modulo a Serre class.
 
+## Main definitions
+
+* `AddCommGrpCat.isKilledBySomePower d`: the abelian groups annihilated by some power of `d`, as
+  an object property of `AddCommGrpCat`, with its `IsSerreClass` instance.
+
+## References
+
 * J.-P. Serre, *Groupes d'homotopie et classes de groupes abéliens*, Ann. of Math. 58 (1953).
 -/
 
@@ -42,39 +49,24 @@ lemma prop_isKilledBySomePower_iff (d : ℕ) (M : AddCommGrpCat.{u}) :
 /-- For fixed `d`, abelian groups annihilated by some power of `d` satisfy the closure properties
 of a Serre class in an abelian category. -/
 instance (d : ℕ) : (isKilledBySomePower d).IsSerreClass where
-  exists_zero := by
-    refine ⟨AddCommGrpCat.of PUnit, AddCommGrpCat.isZero_of_subsingleton _, ?_⟩
-    rw [prop_isKilledBySomePower_iff]
-    refine ⟨1, fun x ↦ ?_⟩
-    have hx : x = 0 := Subsingleton.elim _ _
-    simp [hx]
+  exists_zero := ⟨AddCommGrpCat.of PUnit, isZero_of_subsingleton _,
+    (prop_isKilledBySomePower_iff _ _).2 ⟨0, fun _ ↦ Subsingleton.elim _ _⟩⟩
   prop_of_mono {M N} f hf hN := by
-    rw [AddCommGrpCat.mono_iff_injective] at hf
-    rw [prop_isKilledBySomePower_iff] at hN ⊢
-    obtain ⟨n, hn⟩ := hN
-    refine ⟨n, fun x ↦ hf ?_⟩
-    simp only [map_zsmul, hn, map_zero]
+    obtain ⟨n, hn⟩ := (prop_isKilledBySomePower_iff d N).1 hN
+    exact (prop_isKilledBySomePower_iff d M).2
+      ⟨n, fun x ↦ (AddCommGrpCat.mono_iff_injective f).1 hf (by simp [hn])⟩
   prop_of_epi {M N} f hf hM := by
-    rw [AddCommGrpCat.epi_iff_surjective] at hf
-    rw [prop_isKilledBySomePower_iff] at hM ⊢
-    obtain ⟨n, hn⟩ := hM
-    refine ⟨n, fun y ↦ ?_⟩
-    obtain ⟨x, rfl⟩ := hf y
+    obtain ⟨n, hn⟩ := (prop_isKilledBySomePower_iff d M).1 hM
+    refine (prop_isKilledBySomePower_iff d N).2 ⟨n, fun y ↦ ?_⟩
+    obtain ⟨x, rfl⟩ := (AddCommGrpCat.epi_iff_surjective f).1 hf y
     rw [← map_zsmul, hn, map_zero]
   prop_X₂_of_shortExact {S} hS h₁ h₃ := by
-    rw [prop_isKilledBySomePower_iff] at h₁ h₃ ⊢
-    obtain ⟨m, hm⟩ := h₁
-    obtain ⟨n, hn⟩ := h₃
-    refine ⟨m + n, fun x₂ ↦ ?_⟩
-    have hx₃ : S.g (((d : ℤ) ^ n) • x₂) = 0 := by
-      simp only [map_zsmul, hn]
-    obtain ⟨x₁, hx₁⟩ := (ShortComplex.ab_exact_iff S).1 hS.exact
-      (((d : ℤ) ^ n) • x₂) hx₃
-    calc
-      ((d : ℤ) ^ (m + n)) • x₂ = ((d : ℤ) ^ m) • (((d : ℤ) ^ n) • x₂) := by
-        rw [pow_add, mul_smul]
-      _ = ((d : ℤ) ^ m) • S.f x₁ := by rw [hx₁]
-      _ = S.f (((d : ℤ) ^ m) • x₁) := by rw [← map_zsmul]
-      _ = 0 := by rw [hm]; simp
+    obtain ⟨m, hm⟩ := (prop_isKilledBySomePower_iff d _).1 h₁
+    obtain ⟨n, hn⟩ := (prop_isKilledBySomePower_iff d _).1 h₃
+    refine (prop_isKilledBySomePower_iff d _).2 ⟨m + n, fun x₂ ↦ ?_⟩
+    -- `d ^ n • x₂` lies in the kernel of `S.g`, hence comes from some `x₁ : S.X₁`.
+    obtain ⟨x₁, hx₁⟩ :=
+      (ShortComplex.ab_exact_iff S).1 hS.exact ((d : ℤ) ^ n • x₂) (by simp [hn])
+    rw [pow_add, mul_smul, ← hx₁, ← map_zsmul, hm, map_zero]
 
 end AddCommGrpCat

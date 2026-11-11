@@ -40,10 +40,12 @@ any finiteness or simplicity statement.
 
 ## Main declarations
 
-* `TauCeti.E7Minuscule.frobenius`: the `p ^ k`-power Frobenius on the carrier's points.
+* `TauCeti.E7Minuscule.frobenius` and `frobenius_def`: the `p ^ k`-power Frobenius on the
+  carrier's points, the functorial image of the iterated Frobenius of the value ring.
 * `TauCeti.E7Minuscule.coe_frobenius` and `coe_frobenius_apply`: its matrix and entrywise actions.
 * `TauCeti.E7Minuscule.frobenius_rootSubgroupPoints`: its action on every numbered simple-root
-  subgroup.
+  subgroup, and `TauCeti.E7Minuscule.rootSubgroupPoints_mem_fixedSubgroup_frobenius`: the
+  simple-root points with Frobenius-fixed parameter are fixed.
 * `TauCeti.E7Minuscule.frobenius_weightTorusPoints`: its action on the split weight torus.
 * `TauCeti.E7Minuscule.frobenius_zero`, `frobenius_add` and `frobenius_pow`: its iteration laws.
 * `TauCeti.E7Minuscule.frobenius_eq_self_iff` and
@@ -80,6 +82,15 @@ of the carrier's points for `q = p ^ k`. -/
 def frobenius : points A →* points A :=
   (pointsPresentation A).map (pointsPresentation A) (iterateFrobenius A p k)
 
+/-- The Frobenius endomorphism is the functorial image of the iterated Frobenius of the value
+ring. -/
+-- Not `@[simp]`: `coe_frobenius_apply` and the root-subgroup and torus equations are the normal
+-- forms, and unfolding to the functorial map would keep them from firing.
+theorem frobenius_def :
+    frobenius p k A =
+      (pointsPresentation A).map (pointsPresentation A) (iterateFrobenius A p k) :=
+  (rfl)
+
 /-- The Frobenius endomorphism of the type-`E₇` minuscule carrier acts by entrywise Frobenius.
 
 This is not a `simp` lemma because `coe_frobenius_apply` is the canonical coefficient-level
@@ -108,6 +119,14 @@ theorem frobenius_rootSubgroupPoints (i : Fin 7 ⊕ Fin 7) (u : Multiplicative A
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ p ^ k)) := by
   rw [frobenius, map_rootSubgroupPoints]
   exact Subtype.ext (by rw [iterateFrobenius_def])
+
+/-- A numbered simple-root point whose parameter lies in the Frobenius-fixed subring is fixed by
+Frobenius. -/
+theorem rootSubgroupPoints_mem_fixedSubgroup_frobenius (i : Fin 7 ⊕ Fin 7) (u : A)
+    (hu : u ∈ frobeniusFixedSubring A p k) :
+    rootSubgroupPoints i A (Multiplicative.ofAdd u) ∈ fixedSubgroup (frobenius p k A) := by
+  rw [mem_fixedSubgroup, frobenius_rootSubgroupPoints, toAdd_ofAdd,
+    mem_frobeniusFixedSubring.mp hu]
 
 /-- **Frobenius raises every coordinate of the pinned split weight torus to its `p ^ k`-th
 power.** -/

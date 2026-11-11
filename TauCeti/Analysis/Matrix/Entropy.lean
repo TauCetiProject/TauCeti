@@ -9,8 +9,11 @@ public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 public import Mathlib.Data.EReal.Basic
 public import TauCeti.Analysis.Matrix.FunctionalCalculus
+public import TauCeti.LinearAlgebra.Matrix.Trace.Partial
+import TauCeti.Analysis.Matrix.Kronecker
 import TauCeti.Analysis.Matrix.Spectrum
 import TauCeti.Analysis.SpecialFunctions.Log.MulLog
+import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
 # Entropy and relative entropy of finite matrices
@@ -34,6 +37,25 @@ The trace formula `Matrix.IsHermitian.trace_cfc_mul_cfc` reduces it to the scala
 doubly stochastic overlaps `‖⟪uᵢ, vⱼ⟫‖²` of their eigenvectors; the support condition removes the
 pairs with `b = 0 < a`, for which the scalar inequality fails.
 
+Klein's inequality against a product state gives the **subadditivity** of the von Neumann entropy:
+for a density matrix `ρ` of a bipartite system, indexed by `m × n`, with reduced density matrices
+`ρ_A = Tr₂ ρ` and `ρ_B = Tr₁ ρ`, `S(ρ) ≤ S(ρ_A) + S(ρ_B)`. Since
+`log (σ_A ⊗ₖ σ_B) = log σ_A ⊗ₖ 1 + 1 ⊗ₖ log σ_B` for positive definite `σ_A` and `σ_B`, the partial
+traces turn `Tr (ρ log (σ_A ⊗ₖ σ_B))` into `Tr (ρ_A log σ_A) + Tr (ρ_B log σ_B)`. The reduced
+density matrices may be singular, so we compare `ρ` with `σ_A ⊗ₖ σ_B`, where `σ_A` and `σ_B`
+replace the zero eigenvalues of `ρ_A` and `ρ_B` by `t > 0`. This leaves `Tr (ρ_A log σ_A) = -S(ρ_A)`
+unchanged, and the error in the traces vanishes as `t → 0`.
+
+If `0 ≤ A ≤ B`, that is `A` and `B - A` are positive semidefinite, then
+`Tr (A log A) ≤ Tr (A log B)`, or equivalently `D(A ‖ B) ≤ 0`; this trace inequality is a
+consequence of the operator monotonicity of the logarithm. It bounds the entropy of a sum:
+`S(A + B) ≤ S(A) + S(B)` for positive semidefinite `A` and `B`, and hence the upper mixture bound
+`S(∑ᵢ pᵢ ρᵢ) ≤ ∑ᵢ pᵢ S(ρᵢ) - ∑ᵢ pᵢ log pᵢ` for density matrices `ρᵢ` and a probability vector `p`.
+The matching lower bound is the **concavity** of the entropy: `∑ᵢ pᵢ S(ρᵢ) ≤ S(∑ᵢ pᵢ ρᵢ)`.
+Together these mixture bounds control the entropy of a mixture by the entropies of its components
+up to the Shannon entropy of the weights, as needed for the affinity of the mean entropy of quantum
+spin systems.
+
 ## Main results
 
 * `Matrix.PosSemidef.re_trace_sub_trace_le_relativeEntropy` — Klein's inequality: for positive
@@ -42,13 +64,21 @@ pairs with `b = 0 < a`, for which the scalar inequality fails.
   semidefinite matrices of equal trace, in particular of two density matrices;
 * `Matrix.PosSemidef.vonNeumannEntropy_nonneg` and
   `Matrix.PosSemidef.vonNeumannEntropy_le_log_card` — `0 ≤ S(ρ) ≤ log (card n)` for a density
-  matrix `ρ`.
+  matrix `ρ`;
+* `Matrix.PosSemidef.vonNeumannEntropy_le_partialTraceRight_add_partialTraceLeft` —
+  subadditivity, `S(ρ) ≤ S(Tr₂ ρ) + S(Tr₁ ρ)` for a density matrix `ρ` of a bipartite system;
+* `Matrix.PosSemidef.re_trace_mul_cfc_log_le` and `Matrix.PosSemidef.relativeEntropy_nonpos` —
+  if `0 ≤ A ≤ B`, then `Tr (A log A) ≤ Tr (A log B)` and `D(A ‖ B) ≤ 0`;
+* `Matrix.concaveOn_vonNeumannEntropy` and `Matrix.sum_mul_vonNeumannEntropy_le` — concavity,
+  `∑ᵢ pᵢ S(ρᵢ) ≤ S(∑ᵢ pᵢ ρᵢ)`;
+* `Matrix.vonNeumannEntropy_sum_smul_le` — the upper mixture bound
+  `S(∑ᵢ pᵢ ρᵢ) ≤ ∑ᵢ (pᵢ S(ρᵢ) - pᵢ log pᵢ · Tr ρᵢ)`.
 
 ## References
 
 * M. A. Nielsen, I. L. Chuang, *Quantum Computation and Quantum Information*, Cambridge
-  University Press (2000), Section 11.3 (von Neumann entropy, quantum relative entropy and Klein's
-  inequality).
+  University Press (2000), Section 11.3 (von Neumann entropy, quantum relative entropy, Klein's
+  inequality, subadditivity, concavity and the upper mixture bound).
 * E. A. Carlen, *Trace inequalities and quantum entropy: an introductory course*, Contemporary
   Mathematics 529 (2010), Section 2 (Klein's inequality).
 * O. Bratteli, D. W. Robinson, *Operator Algebras and Quantum Statistical Mechanics 2*, second
@@ -59,7 +89,8 @@ public section
 
 noncomputable section
 
-open scoped InnerProductSpace ComplexOrder
+open Filter Topology
+open scoped InnerProductSpace ComplexOrder Kronecker
 
 namespace Matrix
 
@@ -244,5 +275,246 @@ theorem PosSemidef.vonNeumannEntropy_le_log_card (hρ : ρ.PosSemidef) (htr : ρ
   rw [hρ.1.relativeEntropy_smul_one (inv_ne_zero hn.ne'), htr, RCLike.one_re, mul_one,
     Real.log_inv, ← EReal.coe_zero, EReal.coe_le_coe_iff] at hnonneg
   linarith
+
+/-! ### Subadditivity -/
+
+/-- Replacing the zero eigenvalues of a positive semidefinite `P` by `t > 0` gives a positive
+definite `σ` with `Tr (P log σ) = -S(P)` and `Tr σ ≤ Tr P + t · card n`. -/
+private theorem PosSemidef.exists_posDef_regularization {P : Matrix n n 𝕜} (hP : P.PosSemidef)
+    {t : ℝ} (ht : 0 < t) :
+    ∃ σ : Matrix n n 𝕜, σ.PosDef ∧ RCLike.re (P * cfc Real.log σ).trace = -P.vonNeumannEntropy ∧
+      ∃ r : ℝ, σ.trace = r ∧ 0 ≤ r ∧ r ≤ RCLike.re P.trace + t * Fintype.card n := by
+  set g : ℝ → ℝ := fun x ↦ if x = 0 then t else x
+  have hgc : ContinuousOn g (spectrum ℝ P) := P.finite_real_spectrum.continuousOn _
+  have hg : ∀ x ∈ spectrum ℝ P, 0 < g x := by
+    intro x hx
+    rw [hP.1.spectrum_real_eq_range_eigenvalues] at hx
+    obtain ⟨i, rfl⟩ := hx
+    by_cases h0 : hP.1.eigenvalues i = 0
+    · simp [g, h0, ht]
+    · simpa [g, h0] using lt_of_le_of_ne (hP.eigenvalues_nonneg i) (Ne.symm h0)
+  have hgle (i : n) : g (hP.1.eigenvalues i) ≤ hP.1.eigenvalues i + t := by
+    by_cases h0 : hP.1.eigenvalues i = 0 <;> simp [g, h0, ht.le]
+  refine ⟨cfc g P, ?_, ?_, ∑ i, g (hP.1.eigenvalues i), by simp [hP.1.trace_cfc], ?_, ?_⟩
+  · open scoped MatrixOrder in
+    exact isStrictlyPositive_iff_posDef.1
+      ((cfc_isStrictlyPositive_iff g P hgc hP.1.isSelfAdjoint).2 hg)
+  · -- `x * log (g x) = x * log x` for every `x`, since `g` only changes the value at `0`.
+    rw [← cfc_comp' Real.log g P ((P.finite_real_spectrum.image g).continuousOn _) hgc
+      hP.1.isSelfAdjoint, hP.1.mul_cfc, hP.1.vonNeumannEntropy_eq_neg_re_trace_mul_cfc_log,
+      hP.1.mul_cfc, neg_neg]
+    congr 3
+    funext x
+    by_cases hx : x = 0 <;> simp [g, hx]
+  · exact Finset.sum_nonneg fun i _ ↦ (hg _ (hP.1.eigenvalues_mem_spectrum_real i)).le
+  · calc ∑ i, g (hP.1.eigenvalues i) ≤ ∑ i, (hP.1.eigenvalues i + t) :=
+          Finset.sum_le_sum fun i _ ↦ hgle i
+      _ = RCLike.re P.trace + t * Fintype.card n := by
+        simp [Finset.sum_add_distrib, hP.1.trace_eq_sum_eigenvalues, mul_comm]
+
+variable {m : Type*} [Fintype m] [DecidableEq m]
+
+/-- **Subadditivity of the von Neumann entropy.** For a density matrix `ρ` of a bipartite system,
+indexed by `m × n`, the entropy is at most the sum of the entropies of its reduced density
+matrices: `S(ρ) ≤ S(Tr₂ ρ) + S(Tr₁ ρ)`. -/
+theorem PosSemidef.vonNeumannEntropy_le_partialTraceRight_add_partialTraceLeft
+    {ρ : Matrix (m × n) (m × n) 𝕜} (hρ : ρ.PosSemidef) (htr : ρ.trace = 1) :
+    ρ.vonNeumannEntropy ≤
+      ρ.partialTraceRight.vonNeumannEntropy + ρ.partialTraceLeft.vonNeumannEntropy := by
+  set SA := ρ.partialTraceRight.vonNeumannEntropy
+  set SB := ρ.partialTraceLeft.vonNeumannEntropy
+  set a : ℝ := (Fintype.card m : ℝ)
+  set b : ℝ := (Fintype.card n : ℝ)
+  -- Klein's inequality against the regularized product state `σ_A ⊗ₖ σ_B` at level `t`.
+  have key (t : ℝ) (ht : 0 < t) :
+      ρ.vonNeumannEntropy ≤ SA + SB + ((1 + t * a) * (1 + t * b) - 1) := by
+    obtain ⟨σA, hσA, hlogA, rA, htrA, -, hrA⟩ :=
+      hρ.partialTraceRight.exists_posDef_regularization ht
+    obtain ⟨σB, hσB, hlogB, rB, htrB, hrB0, hrB⟩ :=
+      hρ.partialTraceLeft.exists_posDef_regularization ht
+    have hσ := hσA.kronecker hσB
+    have hker : LinearMap.ker (σA ⊗ₖ σB).mulVecLin ≤ LinearMap.ker ρ.mulVecLin := by
+      rw [LinearMap.ker_eq_bot.mpr (by exact hσ.mulVec_injective)]
+      exact bot_le
+    -- The partial traces split `Tr (ρ log (σ_A ⊗ₖ σ_B))` into the two reduced terms.
+    have hlog : RCLike.re (ρ * cfc Real.log (σA ⊗ₖ σB)).trace = -SA - SB := by
+      rw [hσA.cfc_log_kronecker hσB, mul_add, trace_add, map_add,
+        ← trace_partialTraceRight (ρ * _), partialTraceRight_mul_kronecker_one,
+        ← trace_partialTraceLeft (ρ * _), partialTraceLeft_mul_one_kronecker, hlogA, hlogB]
+      ring
+    have htrace : RCLike.re (ρ.trace - (σA ⊗ₖ σB).trace) = 1 - rA * rB := by
+      simp [trace_kronecker, htrA, htrB, htr]
+    have hklein := hρ.re_trace_sub_trace_le_relativeEntropy hσ.posSemidef
+    rw [hρ.1.relativeEntropy_eq_neg_vonNeumannEntropy_sub hker, EReal.coe_le_coe_iff, hlog,
+      htrace] at hklein
+    simp only [trace_partialTraceRight, trace_partialTraceLeft, htr, RCLike.one_re] at hrA hrB
+    have hprod : rA * rB ≤ (1 + t * a) * (1 + t * b) :=
+      mul_le_mul (by linarith) (by linarith) hrB0 (by positivity)
+    linarith
+  -- The error term `(1 + t a)(1 + t b) - 1` vanishes as `t → 0⁺`.
+  have hlim : Tendsto (fun t : ℝ ↦ SA + SB + ((1 + t * a) * (1 + t * b) - 1)) (𝓝[>] 0)
+      (𝓝 (SA + SB)) := by
+    have : Continuous fun t : ℝ ↦ SA + SB + ((1 + t * a) * (1 + t * b) - 1) := by fun_prop
+    simpa using (this.tendsto 0).mono_left nhdsWithin_le_nhds
+  exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall key)
+
+/-! ### The relative entropy below the reference in the Loewner order -/
+
+/-- **A trace inequality for the logarithm.** If `A` and `B - A` are positive semidefinite, that is
+`0 ≤ A ≤ B`, then `Tr (A log A) ≤ Tr (A log B)`. The matrix `A` may be
+singular; the convention `0 log 0 = 0` applies. -/
+theorem PosSemidef.re_trace_mul_cfc_log_le {A B : Matrix n n 𝕜} (hA : A.PosSemidef)
+    (hBA : (B - A).PosSemidef) :
+    RCLike.re (A * cfc Real.log A).trace ≤ RCLike.re (A * cfc Real.log B).trace := by
+  have hB : B.PosSemidef := by simpa using hA.add hBA
+  have hker : LinearMap.ker B.mulVecLin ≤ LinearMap.ker A.mulVecLin := fun x hx ↦
+    hA.mulVec_eq_zero_of_posSemidef_sub hBA hx
+  have hAB : A * cfc Real.log B = cfc (fun x : ℝ ↦ x) A * cfc Real.log B := by
+    rw [cfc_id' ℝ A hA.1.isSelfAdjoint]
+  -- Expand both traces in the eigenbases of `A` and `B`.
+  rw [hAB, hA.1.mul_cfc, ← mul_one (cfc _ A), ← cfc_const_one ℝ B hB.1.isSelfAdjoint,
+    IsHermitian.re_trace_cfc_mul_cfc hA.1 hB.1, IsHermitian.re_trace_cfc_mul_cfc hA.1 hB.1,
+    ← sub_nonpos, ← Finset.sum_sub_distrib]
+  refine Finset.sum_nonpos fun i _ ↦ ?_
+  set a := hA.1.eigenvalues i
+  set w : n → ℝ := fun j ↦ ‖⟪hA.1.eigenvectorBasis i, hB.1.eigenvectorBasis j⟫_𝕜‖ ^ 2
+  have hw : ∑ j, w j = 1 := by
+    simp only [w]
+    rw [OrthonormalBasis.sum_sq_norm_inner_left, hA.1.eigenvectorBasis.orthonormal.1 i, one_pow]
+  obtain ha | ha := (hA.eigenvalues_nonneg i).eq_or_lt
+  · simp [a, ← ha]
+  rw [← Finset.sum_sub_distrib]
+  -- Bound each term by `log x ≤ x - 1`; the bounds sum to `a (a ∑ⱼ bⱼ⁻¹ wⱼ - 1)`, which is
+  -- nonpositive by the inverse bound `a ⟪u, B⁻¹ u⟫ ≤ 1` for the eigenvector `u` of `a`.
+  calc ∑ j, (a * Real.log a * 1 * w j - a * Real.log (hB.1.eigenvalues j) * w j)
+      ≤ ∑ j, a * (a * (hB.1.eigenvalues j)⁻¹ - 1) * w j := by
+        refine Finset.sum_le_sum fun j _ ↦ ?_
+        by_cases hij : ⟪hA.1.eigenvectorBasis i, hB.1.eigenvectorBasis j⟫_𝕜 = 0
+        · simp [w, hij]
+        have hb : 0 < hB.1.eigenvalues j := (hB.eigenvalues_nonneg j).lt_of_ne fun h ↦
+          ha.ne' (hA.1.eigenvalues_eq_zero_of_inner_ne_zero hB.1 hker hij h.symm)
+        have key := Real.log_le_sub_one_of_pos (div_pos ha hb)
+        rw [Real.log_div ha.ne' hb.ne', div_eq_mul_inv] at key
+        have hw0 : 0 ≤ w j := by positivity
+        nlinarith [mul_le_mul_of_nonneg_left key (mul_nonneg ha.le hw0)]
+    _ = a * (a * ∑ j, (hB.1.eigenvalues j)⁻¹ * w j - ∑ j, w j) := by
+        simp only [Finset.mul_sum, ← Finset.sum_sub_distrib]
+        exact Finset.sum_congr rfl fun j _ ↦ by ring
+    _ ≤ 0 := by
+        rw [hw]
+        exact mul_nonpos_of_nonneg_of_nonpos ha.le
+          (by linarith [hA.eigenvalues_mul_sum_inv_mul_le_one hBA hB.1 i])
+
+/-- **Nonpositivity of the relative entropy under Loewner domination.** If `A` and `B - A` are
+positive semidefinite, that is `0 ≤ A ≤ B`, then `D(A ‖ B) ≤ 0`. The support condition holds
+automatically, so the relative entropy is finite. -/
+theorem PosSemidef.relativeEntropy_nonpos {A B : Matrix n n 𝕜} (hA : A.PosSemidef)
+    (hBA : (B - A).PosSemidef) : relativeEntropy A B ≤ 0 := by
+  rw [relativeEntropy_of_ker_le fun x hx ↦ hA.mulVec_eq_zero_of_posSemidef_sub hBA hx, mul_sub,
+    trace_sub, map_sub, ← EReal.coe_zero, EReal.coe_le_coe_iff, sub_nonpos]
+  exact hA.re_trace_mul_cfc_log_le hBA
+
+/-! ### Concavity and mixture bounds -/
+
+/-- Scaling a Hermitian matrix by a real number `c` scales its entropy and adds `-c log c` times its
+trace: `S(c ρ) = c S(ρ) - c log c · Tr ρ`. -/
+theorem IsHermitian.vonNeumannEntropy_smul (hρ : ρ.IsHermitian) (c : ℝ) :
+    (c • ρ).vonNeumannEntropy =
+      c * ρ.vonNeumannEntropy + Real.negMulLog c * RCLike.re ρ.trace := by
+  rw [vonNeumannEntropy_def, ← cfc_comp_smul c Real.negMulLog ρ
+    Real.continuous_negMulLog.continuousOn hρ.isSelfAdjoint, hρ.trace_cfc,
+    hρ.vonNeumannEntropy_eq_sum_negMulLog, hρ.trace_eq_sum_eigenvalues]
+  simp only [map_sum, RCLike.ofReal_re, smul_eq_mul, Real.negMulLog_mul, Finset.sum_add_distrib,
+    Finset.mul_sum]
+  rw [add_comm]
+  congr 1
+  exact Finset.sum_congr rfl fun _ _ ↦ mul_comm _ _
+
+/-- The von Neumann entropy is subadditive on positive semidefinite summands:
+`S(A + B) ≤ S(A) + S(B)`. -/
+theorem PosSemidef.vonNeumannEntropy_add_le {A B : Matrix n n 𝕜} (hA : A.PosSemidef)
+    (hB : B.PosSemidef) :
+    (A + B).vonNeumannEntropy ≤ A.vonNeumannEntropy + B.vonNeumannEntropy := by
+  -- Both summands lie below the sum, so `D(A ‖ A + B) ≤ 0` and `D(B ‖ A + B) ≤ 0` in trace form.
+  have hlA := hA.re_trace_mul_cfc_log_le (B := A + B) (by simpa using hB)
+  have hlB := hB.re_trace_mul_cfc_log_le (B := A + B) (by simpa using hA)
+  rw [hA.1.vonNeumannEntropy_eq_neg_re_trace_mul_cfc_log,
+    hB.1.vonNeumannEntropy_eq_neg_re_trace_mul_cfc_log,
+    (hA.1.add hB.1).vonNeumannEntropy_eq_neg_re_trace_mul_cfc_log, add_mul, trace_add, map_add]
+  linarith
+
+/-- The entropy of a finite sum of positive semidefinite matrices is at most the sum of their
+entropies. -/
+theorem vonNeumannEntropy_sum_le {ι : Type*} (s : Finset ι) {ρ : ι → Matrix n n 𝕜}
+    (hρ : ∀ i ∈ s, (ρ i).PosSemidef) :
+    (∑ i ∈ s, ρ i).vonNeumannEntropy ≤ ∑ i ∈ s, (ρ i).vonNeumannEntropy := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    rw [Finset.sum_insert hi, Finset.sum_insert hi]
+    have hs := posSemidef_sum s fun j hj ↦ hρ j (Finset.mem_insert_of_mem hj)
+    refine ((hρ i (Finset.mem_insert_self i s)).vonNeumannEntropy_add_le hs).trans ?_
+    gcongr
+    exact ih fun j hj ↦ hρ j (Finset.mem_insert_of_mem hj)
+
+/-- **Upper mixture bound for the entropy.** For positive semidefinite `ρᵢ` and weights `pᵢ ≥ 0`,
+`S(∑ᵢ pᵢ ρᵢ) ≤ ∑ᵢ (pᵢ S(ρᵢ) - pᵢ log pᵢ · Tr ρᵢ)`. For density matrices and a probability vector
+`p` the error term is the Shannon entropy `-∑ᵢ pᵢ log pᵢ` of `p`. -/
+theorem vonNeumannEntropy_sum_smul_le {ι : Type*} (s : Finset ι) {p : ι → ℝ}
+    {ρ : ι → Matrix n n 𝕜} (hp : ∀ i ∈ s, 0 ≤ p i) (hρ : ∀ i ∈ s, (ρ i).PosSemidef) :
+    (∑ i ∈ s, p i • ρ i).vonNeumannEntropy ≤
+      ∑ i ∈ s, (p i * (ρ i).vonNeumannEntropy + Real.negMulLog (p i) * RCLike.re (ρ i).trace) :=
+  (vonNeumannEntropy_sum_le s fun i hi ↦ (hρ i hi).smul (hp i hi)).trans_eq <|
+    Finset.sum_congr rfl fun i hi ↦ (hρ i hi).1.vonNeumannEntropy_smul (p i)
+
+/-- **Concavity of the von Neumann entropy** on the positive semidefinite matrices: for positive
+semidefinite `x` and `y` and weights `a, b ≥ 0` with `a + b = 1`,
+`a S(x) + b S(y) ≤ S(a x + b y)`. -/
+theorem concaveOn_vonNeumannEntropy :
+    ConcaveOn ℝ {ρ : Matrix n n 𝕜 | ρ.PosSemidef} vonNeumannEntropy := by
+  refine ⟨fun x hx y hy a b ha hb _ ↦ (hx.smul ha).add (hy.smul hb), ?_⟩
+  intro x hx y hy a b ha hb hab
+  simp only [Set.mem_ofPred_eq] at hx hy
+  obtain rfl | ha := ha.eq_or_lt
+  · obtain rfl : b = 1 := by simpa using hab
+    simp
+  obtain rfl | hb := hb.eq_or_lt
+  · obtain rfl : a = 1 := by simpa using hab
+    simp
+  set ρ := a • x + b • y
+  have hρ : ρ.PosSemidef := (hx.smul ha.le).add (hy.smul hb.le)
+  -- Klein's inequality for a summand `z` of the mixture, relative to the mixture `ρ`.
+  have klein {z : Matrix n n 𝕜} (hz : z.PosSemidef) {c : ℝ} (hc : 0 < c)
+      (hρz : (ρ - c • z).PosSemidef) :
+      RCLike.re z.trace - RCLike.re ρ.trace ≤
+        -z.vonNeumannEntropy - RCLike.re (z * cfc Real.log ρ).trace := by
+    have hker : LinearMap.ker ρ.mulVecLin ≤ LinearMap.ker z.mulVecLin := fun v hv ↦ by
+      have h := (hz.smul hc.le).mulVec_eq_zero_of_posSemidef_sub hρz hv
+      rw [smul_mulVec, smul_eq_zero] at h
+      exact h.resolve_left hc.ne'
+    have h := hz.re_trace_sub_trace_le_relativeEntropy hρ
+    rwa [hz.1.relativeEntropy_eq_neg_vonNeumannEntropy_sub hker, EReal.coe_le_coe_iff,
+      map_sub] at h
+  -- The weighted sum of the two Klein inequalities is `0 ≤ S(ρ) - a S(x) - b S(y)`.
+  have hkx := klein hx ha (by simpa [ρ] using hy.smul hb.le)
+  have hky := klein hy hb (by simpa [ρ] using hx.smul ha.le)
+  have hS := hρ.1.vonNeumannEntropy_eq_neg_re_trace_mul_cfc_log
+  have htr : RCLike.re ρ.trace = a * RCLike.re x.trace + b * RCLike.re y.trace := by
+    simp [ρ, trace_add, trace_smul, RCLike.smul_re]
+  have hlog : RCLike.re (ρ * cfc Real.log ρ).trace =
+      a * RCLike.re (x * cfc Real.log ρ).trace + b * RCLike.re (y * cfc Real.log ρ).trace := by
+    simp only [ρ, add_mul, smul_mul_assoc, trace_add, trace_smul, map_add, RCLike.smul_re]
+  have hab' := congrArg (· * RCLike.re ρ.trace) hab
+  simp only [smul_eq_mul, add_mul, one_mul] at hab' ⊢
+  nlinarith [mul_le_mul_of_nonneg_left hkx ha.le, mul_le_mul_of_nonneg_left hky hb.le]
+
+/-- **Lower mixture bound for the entropy**, the finite form of its concavity: for positive
+semidefinite `ρᵢ` and a probability vector `p`, `∑ᵢ pᵢ S(ρᵢ) ≤ S(∑ᵢ pᵢ ρᵢ)`. -/
+theorem sum_mul_vonNeumannEntropy_le {ι : Type*} (s : Finset ι) {p : ι → ℝ}
+    {ρ : ι → Matrix n n 𝕜} (hp : ∀ i ∈ s, 0 ≤ p i) (hp₁ : ∑ i ∈ s, p i = 1)
+    (hρ : ∀ i ∈ s, (ρ i).PosSemidef) :
+    ∑ i ∈ s, p i * (ρ i).vonNeumannEntropy ≤ (∑ i ∈ s, p i • ρ i).vonNeumannEntropy :=
+  concaveOn_vonNeumannEntropy.le_map_sum (t := s) (w := p) (p := ρ) hp hp₁ hρ
 
 end Matrix

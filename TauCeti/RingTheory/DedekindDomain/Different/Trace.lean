@@ -80,7 +80,7 @@ theorem map_intTrace_pow_le_pow_iff (hP : P ≠ ⊥) (hPe : p.map (algebraMap A 
   · have hIQ : P ^ (e * r - m) * P ^ m = (p ^ r).map (algebraMap A B) := by
       rw [Ideal.map_pow, hPe, ← pow_mul, ← pow_add, Nat.sub_add_cancel hm]
     rw [← dvd_differentIdeal_iff_forall_intTrace_mem A (pow_ne_zero r hp) _ _ hIQ,
-      pow_dvd_differentIdeal_iff_le_multiplicity A hP]
+      pow_dvd_differentIdeal_iff_le_multiplicity A Ideal.IsPrime.ne_top']
     omega
   · refine iff_of_true (fun x hx ↦ Algebra.intTrace_mem_of_mem_map ?_) (by omega)
     rw [Ideal.map_pow, hPe, ← pow_mul]

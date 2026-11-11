@@ -92,6 +92,22 @@ def glueLabelEquiv : (t : DynkinType) → (ht : t.IsSimplyLaced) →
   exact Prod.ext (Fin.cast_val_eq_self (i.divNat (m := 2) (n := 2))).symm
     (Fin.cast_val_eq_self (i.modNat (m := 2) (n := 2))).symm
 
+open IntegralLattice in
+/-- For even `Dₙ`, label `1` represents the checkerboard spinor class in simple-root
+coordinates. -/
+theorem glueAlphabetIsometry_glueLabelEquiv_one_D_of_even (n : ℕ) (hv : (D n).Valid)
+    (ht : (D n).IsSimplyLaced) (hn : Even n) :
+    (D n).glueAlphabetIsometry hv ht ((D n).glueLabelEquiv ht (1 : Fin 4)) =
+      (rootLatticeIsometryCheckerboard n (valid_D.mp hv) ht).discriminantGroupEquiv.symm
+        (checkerboardSpinorClass n) := by
+  have : NeZero n := ⟨by have := valid_D.mp hv; omega⟩
+  rw [glueAlphabetIsometry_D_apply_of_even n hv ht hn]
+  have hdigit : FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_D_of_even n ht hn)
+      ((D n).glueLabelEquiv ht (1 : Fin 4)) = (0, 1) :=
+    glueLabelEquiv_D_of_even n ht hn 1
+  rw [hdigit, zmodTwoProdAddEquivCheckerboardDiscriminantGroup_apply_zero_one,
+    Isometry.discriminantGroupEquiv_symm]
+
 /-- In odd rank, type-`D` labels enumerate the cyclic group of order four. -/
 @[simp] theorem glueLabelEquiv_D_of_odd (n : ℕ) (ht : (D n).IsSimplyLaced) (hn : Odd n)
     (i : Fin 4) :
@@ -118,6 +134,18 @@ def glueLabelEquiv : (t : DynkinType) → (ht : t.IsSimplyLaced) →
 /-- The only label of `E₈` is the zero class. -/
 @[simp] theorem glueLabelEquiv_E8 (ht : E8.IsSimplyLaced) (i : Fin 1) :
     E8.glueLabelEquiv ht i = 0 := Subsingleton.elim _ _
+
+/-- **Labels are unchanged by identifying the glue alphabets of equal types**: a class and its
+image under `TauCeti.DynkinType.glueAlphabet_congr` carry the same Conway--Sloane label. -/
+theorem val_glueLabelEquiv_symm_ofEq {t s : DynkinType} (h : t = s) (ht : t.IsSimplyLaced)
+    (hs : s.IsSimplyLaced) (x : t.glueAlphabet ht) :
+    ((s.glueLabelEquiv hs).symm
+        (FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_congr h ht hs) x)).val =
+      ((t.glueLabelEquiv ht).symm x).val := by
+  subst h
+  rw [FiniteQuadraticModule.Isometry.ofEq_rfl]
+  -- The identity isometry acts as the identity, and the two simply-laced proofs are equal.
+  rfl
 
 /-- The glue alphabet has exactly one element for each of its labels. -/
 theorem natCard_glueAlphabet_eq_glueLabelCount (t : DynkinType) (ht : t.IsSimplyLaced) :

@@ -283,8 +283,7 @@ theorem dyadicJordanProfile_rankOne_two_pow_mul (i : ℕ) {u : ℤ} (hu : Odd u)
       L.localIntegralForm 2 (b j) (b k) = 2 ^ i * Matrix.of (fun _ _ ↦ (u : ℤ_[2])) j k := by
     rw [Subsingleton.elim j 0, Subsingleton.elim k 0, hb, Matrix.of_apply]
   have hmod : (L.localIntegralForm 2).IsModular (2 ^ i) :=
-    b.isModular_of_isUnit_det (pow_mem (mem_nonZeroDivisors_of_ne_zero two_ne_zero) i) hb'
-      (by simpa using hu')
+    b.isModular_of_isUnit_det hb' (by simpa using hu')
   rw [dyadicJordanProfile_eq hmod.isJordanSplitting]
   ext j
   · rw [hmod.dyadicJordanProfile_ranks, Module.finrank_baseChange, finrank_rankOne,

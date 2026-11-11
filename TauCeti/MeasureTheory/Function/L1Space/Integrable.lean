@@ -6,16 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
-import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
+import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.Tactic.NormNum
 
 /-!
-# Integrability under signed real coefficients
+# Integrability criteria
 
 Taking the absolute value of an almost everywhere measurable real coefficient does not change
 integrability of its scalar product with a real normed-space-valued function, even when that
 function is not measurable by itself. The equivalence permits signed Jacobians in oriented
 change of variables for arbitrary rough-form coefficients.
+
+For absolute moments, membership of the identity in `Lᵖ` gives integrability of its norm
+power even on a seminormed group. On the real line, positive-order `Lᵖ` membership is
+equivalent to integrability of the corresponding absolute power.
+
+The pointwise supremum of finitely many integrable lattice-valued functions is integrable
+(`MeasureTheory.integrable_finset_sup'`).
 -/
 
 public section
@@ -52,14 +59,23 @@ theorem integrable_smul_iff_abs_smul {X F : Type*} [MeasurableSpace X]
   exact ⟨fun h ↦ (h.bdd_smul 1 hu hb).congr hmul,
     fun h ↦ (h.bdd_smul 1 hu hb).congr hinv⟩
 
-/-- Integrability with respect to a measure on a countable type with measurable singletons implies
+/-- Integrability with respect to a measure on a type with measurable singletons implies
 summability of the singleton masses weighted by the norms of the function values. -/
 theorem summable_measureReal_mul_norm_of_integrable {X E : Type*} [MeasurableSpace X]
-    [Countable X] [MeasurableSingletonClass X] [NormedAddCommGroup E]
+    [MeasurableSingletonClass X] [NormedAddCommGroup E]
     {ν : Measure X} {f : X → E} (hf : Integrable f ν) :
     Summable (fun x : X ↦ ν.real {x} * ‖f x‖) := by
-  rw [← Measure.sum_smul_dirac ν] at hf
-  simpa only [measureReal_def] using hf.summable_of_dirac
+  refine summable_of_sum_le (c := ∫ x, ‖f x‖ ∂ν) (fun x ↦ by positivity) fun S ↦ ?_
+  calc ∑ x ∈ S, ν.real {x} * ‖f x‖
+      = ∑ x ∈ S, ∫ y in {x}, ‖f y‖ ∂ν := by
+        refine Finset.sum_congr rfl fun x _ ↦ ?_
+        rw [integral_singleton, smul_eq_mul]
+    _ = ∫ y in ⋃ x ∈ S, {x}, ‖f y‖ ∂ν := by
+        rw [integral_biUnion_finset S (fun x _ ↦ measurableSet_singleton x)
+          (fun x _ y _ hxy ↦ by simpa using hxy)
+          (fun x _ ↦ hf.norm.integrableOn)]
+    _ ≤ ∫ y, ‖f y‖ ∂ν :=
+        setIntegral_le_integral hf.norm (Filter.Eventually.of_forall fun y ↦ norm_nonneg _)
 
 /-- An integrable function whose norm is almost everywhere at least one can only be carried by a
 finite measure. -/
@@ -70,4 +86,46 @@ theorem isFiniteMeasure_of_integrable_of_one_le {X F : Type*} [MeasurableSpace X
     hf.norm.mono' aestronglyMeasurable_const (by simpa only [norm_one] using h_one)
   exact (integrable_const_iff_isFiniteMeasure one_ne_zero).mp hconst
 
+/-- The pointwise supremum over a nonempty finset of integrable functions with values in a normed
+lattice is integrable. -/
+theorem integrable_finset_sup' {X β κ : Type*} [MeasurableSpace X] [NormedAddCommGroup β]
+    [Lattice β] [HasSolidNorm β] [IsOrderedAddMonoid β] {μ : Measure X} {s : Finset κ}
+    (hs : s.Nonempty) {f : κ → X → β} (hf : ∀ i ∈ s, Integrable (f i) μ) :
+    Integrable (fun x ↦ s.sup' hs fun i ↦ f i x) μ := by
+  simpa only [← Finset.sup'_apply] using
+    Finset.sup'_induction (p := fun h ↦ Integrable h μ) hs f (fun _ h₁ _ h₂ ↦ h₁.sup h₂) hf
+
+/-- For a positive real order `p`, if `g` lies in `Lᵖ` then `g ^ p` is integrable. -/
+theorem MemLp.integrable_rpow {X : Type*} [MeasurableSpace X] {μ : Measure X} {g : X → ℝ}
+    {p : ℝ} (hp : 0 < p) (hg : MemLp g (ENNReal.ofReal p) μ) :
+    Integrable (fun y => g y ^ p) μ := by
+  have hn := hg.integrable_norm_rpow (ENNReal.ofReal_pos.2 hp).ne' ENNReal.ofReal_ne_top
+  rw [ENNReal.toReal_ofReal hp.le] at hn
+  exact hn.mono' (hg.aestronglyMeasurable.aemeasurable.pow_const p).aestronglyMeasurable
+    (Filter.Eventually.of_forall fun y => by
+      simpa only [Real.norm_eq_abs, abs_abs] using Real.abs_rpow_le_abs_rpow (g y) p)
+
 end MeasureTheory
+
+namespace TauCeti
+
+open MeasureTheory
+
+/-- On a finite measure, `Lᵖ` membership of the identity gives integrability of its norm
+power, including for seminormed groups and order zero. -/
+theorem integrable_norm_rpow_of_memLp_id_ofReal {E : Type*} [SeminormedAddCommGroup E]
+    [MeasurableSpace E] {p : ℝ} (hp : 0 ≤ p) {ν : Measure E} [IsFiniteMeasure ν]
+    (hν : MemLp id (ENNReal.ofReal p) ν) : Integrable (fun x : E ↦ ‖x‖ ^ p) ν := by
+  -- Apply the normed-target moment lemma to the real-valued norm.
+  simpa only [ENNReal.toReal_ofReal hp, id_eq, norm_norm] using
+    (hν.of_le_enorm hν.aestronglyMeasurable.norm (by simp)).integrable_norm_rpow'
+
+/-- For a positive real order, `Lᵖ` membership of the identity on the real line is
+equivalent to integrability of the absolute power. -/
+theorem memLp_id_ofReal_iff_integrable_abs_rpow {q : ℝ} (hq : 0 < q) (μ : Measure ℝ) :
+    MemLp id (ENNReal.ofReal q) μ ↔ Integrable (fun x : ℝ ↦ |x| ^ q) μ := by
+  simpa only [id_eq, Real.norm_eq_abs, ENNReal.toReal_ofReal hq.le] using
+    (integrable_norm_rpow_iff (f := id) (μ := μ) aestronglyMeasurable_id
+      (ENNReal.ofReal_pos.mpr hq).ne' ENNReal.ofReal_ne_top).symm
+
+end TauCeti

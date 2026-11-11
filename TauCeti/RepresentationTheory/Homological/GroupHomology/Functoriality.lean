@@ -17,15 +17,22 @@ matching Mathlib's instance for its cohomological counterpart `groupCohomology.c
 
 It also records how the map on first homology induced by a group homomorphism `f : H →* G` reads
 through Mathlib's identification `H₁(G, A) ≃ Gᵃᵇ ⊗ A` for trivial coefficients: it is
-`Abelianization.map f` tensored with the coefficients.
+`Abelianization.map f` tensored with the coefficients. With trivial coefficients, the vanishing
+of group homology is also transported along isomorphisms of groups.
 
 ## Main results
 
 * `TauCeti.groupHomology.chainsFunctorAdditive`: the chains functor is additive.
+* `groupHomology.map_id_nsmul_id`: so `Hₙ(G, -)` sends `c • 𝟙` to multiplication by `c`.
 * `TauCeti.groupHomology.map_mkH1OfIsTrivial`: with trivial coefficients, the map on `H₁` induced
   by `f : H →* G` and `φ : A ⟶ Res(f)(B)` sends the class of `x ⊗ a` to that of `f x ⊗ φ a`.
 * `TauCeti.groupHomology.H1AddEquivOfIsTrivial_map`: with trivial coefficients, change of group
   and a coefficient map act as `Abelianization.map f ⊗ φ`.
+* `MulEquiv.subsingleton_groupHomology`: vanishing of group homology
+  with trivial coefficients is invariant under group isomorphisms.
+* `Rep.chainsMap_inclusion_comp_chainsMap_subtype`: the maps of inhomogeneous
+  chains induced by inclusions of subgroups `S ≤ T ≤ G` compose.
+* `Rep.map_inclusion_comp_map_subtype`: so do the induced maps on homology.
 -/
 
 public noncomputable section
@@ -99,6 +106,65 @@ theorem H1AddEquivOfIsTrivial_map {A : Rep R H} {B : Rep R G} [A.IsTrivial] [B.I
     simpa using H1AddEquivOfIsTrivial_single B (f h) (φ.hom a)
   | add t t' ht ht' => rw [map_add, map_add, map_add, ht, ht', map_add]
 
+/-- Group homology with trivial coefficients is invariant under isomorphisms of groups: if it
+vanishes in degree `n` for `H`, then it vanishes in degree `n` for every group `G ≃* H`. -/
+theorem _root_.MulEquiv.subsingleton_groupHomology (e : G ≃* H) {n : ℕ}
+    [Subsingleton (groupHomology (Rep.trivial R H R) n)] :
+    Subsingleton (groupHomology (Rep.trivial R G R) n) :=
+  (mapIso (A := Rep.trivial R G R) (B := Rep.trivial R H R) e (LinearEquiv.refl R R)
+    (fun _ ↦ by ext; simp) n).toLinearEquiv.toEquiv.subsingleton
+
 end IsTrivial
 
 end TauCeti.groupHomology
+
+namespace groupHomology
+
+variable {R G : Type u} [CommRing R] [Group G]
+
+/-- The map on group homology induced by the multiple `c • 𝟙` of the identity of a representation
+is multiplication by `c`. -/
+@[simp]
+theorem map_id_nsmul_id (A : Rep R G) (c n : ℕ) :
+    map (MonoidHom.id G) (c • 𝟙 A) n = c • 𝟙 _ := by
+  -- `Hₙ(G, -)` is the composite of two additive functors.
+  have h : map (MonoidHom.id G) (c • 𝟙 A) n =
+      (HomologicalComplex.homologyFunctor _ _ n).map ((chainsFunctor R G).map (c • 𝟙 A)) := by
+    rw [map, HomologicalComplex.homologyFunctor_map, chainsFunctor_map]
+    rfl
+  rw [h, Functor.map_nsmul, Functor.map_nsmul, CategoryTheory.Functor.map_id]
+  exact congrArg (c • ·) (CategoryTheory.Functor.map_id _ _)
+
+end groupHomology
+
+namespace Rep
+
+variable {R G : Type u} [CommRing R] [Group G]
+
+open groupHomology
+
+/-- The maps of inhomogeneous chains induced by inclusions of subgroups compose: the inclusion of
+`S` into `T` followed by that of `T` into `G` is the inclusion of `S` into `G`. -/
+@[reassoc]
+theorem chainsMap_inclusion_comp_chainsMap_subtype (A : Rep R G) {S T : Subgroup G}
+    (h : S ≤ T) :
+    chainsMap (Subgroup.inclusion h) (resInclusionHom A h) ≫
+        chainsMap T.subtype (𝟙 (res T.subtype A)) =
+      chainsMap S.subtype (𝟙 (res S.subtype A)) := by
+  rw [← chainsMap_comp]
+  congr 1
+  ext a
+  exact resInclusionHom_hom_apply A h a
+
+/-- The maps on group homology induced by inclusions of subgroups compose: the inclusion of `S`
+into `T` followed by that of `T` into `G` is the inclusion of `S` into `G`. -/
+@[reassoc]
+theorem map_inclusion_comp_map_subtype (A : Rep R G) {S T : Subgroup G} (h : S ≤ T) (n : ℕ) :
+    map (Subgroup.inclusion h) (resInclusionHom A h) n ≫ map T.subtype (𝟙 (res T.subtype A)) n =
+      map S.subtype (𝟙 (res S.subtype A)) n := by
+  rw [← map_comp]
+  congr 1
+  ext a
+  exact resInclusionHom_hom_apply A h a
+
+end Rep

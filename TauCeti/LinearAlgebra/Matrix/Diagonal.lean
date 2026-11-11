@@ -14,10 +14,10 @@ import Mathlib.Algebra.Group.Pi.Units
 # Diagonal matrices: products with matrix units, and commutation
 
 This file records generic identities about diagonal matrices. Multiplying a rectangular matrix
-unit on both sides by diagonal matrices of the corresponding row and column sizes rescales its one
-nonzero entry. And a matrix commuting with a diagonal matrix has no entry away from the diagonal
-wherever that diagonal matrix separates two coordinates, so a matrix commuting with a diagonal
-matrix of pairwise distinct entries is itself diagonal.
+unit on one or both sides by diagonal matrices of the corresponding row and column sizes rescales
+its one nonzero entry. And a matrix commuting with a diagonal matrix has no entry away from the
+diagonal wherever that diagonal matrix separates two coordinates, so a matrix commuting with a
+diagonal matrix of pairwise distinct entries is itself diagonal.
 
 Neither statement needs a unit or an associative multiplication in the entries: the first holds
 over a `NonUnitalNonAssocSemiring`, and the second adds commutativity and cancellation by nonzero
@@ -30,6 +30,8 @@ basis vector maps to the corresponding scalar multiple of the target basis vecto
 
 * `TauCeti.diagonal_mul_single_mul_diagonal`: multiplying `Eᵢⱼ(c)` on the left and right by
   diagonal matrices rescales its entry by the corresponding diagonal coefficients.
+* `TauCeti.diagonal_mul_single`, `TauCeti.single_mul_diagonal`: multiplying `Eᵢⱼ(c)` on one side
+  by a diagonal matrix rescales its entry by the diagonal coefficient of its row or column.
 * `TauCeti.isUnit_diagonal_iff`: a diagonal matrix over a possibly noncommutative semiring is a
   unit exactly when its diagonal is.
 * `TauCeti.isUnit_diagonal_snoc_one_iff`: `diagonal (1, …, 1, x)` is a unit exactly when `x` is.
@@ -50,17 +52,29 @@ namespace TauCeti
 variable {m n : Type*} [DecidableEq m] [Fintype m] [DecidableEq n] [Fintype n]
 variable {A : Type*} [NonUnitalNonAssocSemiring A] {i : m} {j : n}
 
+omit [Fintype n] in
+/-- Multiplying a matrix unit on the left by a diagonal matrix rescales its nonzero entry by the
+diagonal entry of its row. -/
+@[simp]
+theorem diagonal_mul_single (v : m → A) (c : A) :
+    diagonal v * single i j c = single i j (v i * c) := by
+  ext a b
+  by_cases h : i = a <;> simp [Matrix.diagonal_mul, Matrix.single_apply, h]
+
+omit [Fintype m] in
+/-- Multiplying a matrix unit on the right by a diagonal matrix rescales its nonzero entry by the
+diagonal entry of its column. -/
+@[simp]
+theorem single_mul_diagonal (w : n → A) (c : A) :
+    single i j c * diagonal w = single i j (c * w j) := by
+  ext a b
+  by_cases h : j = b <;> simp [Matrix.mul_diagonal, Matrix.single_apply, h]
+
 /-- Multiplying a matrix unit on the left and right by diagonal matrices rescales its nonzero
 entry by the corresponding diagonal entries. -/
-@[simp]
 theorem diagonal_mul_single_mul_diagonal {v : m → A} {w : n → A} (c : A) :
     diagonal v * single i j c * diagonal w = single i j (v i * c * w j) := by
-  ext a b
-  simp only [Matrix.mul_diagonal, Matrix.diagonal_mul, Matrix.single_apply]
-  by_cases h : i = a ∧ j = b
-  · obtain ⟨rfl, rfl⟩ := h
-    simp
-  · simp [h]
+  rw [diagonal_mul_single, single_mul_diagonal]
 
 /-- A diagonal matrix is a unit exactly when its family of diagonal entries is. Unlike Mathlib's
 `Matrix.isUnit_diagonal`, the entries need not commute. -/
@@ -86,11 +100,10 @@ variable {k : Type*} [NonUnitalNonAssocCommSemiring k] [IsLeftCancelMulZero k]
 matrix separates the coordinates `i` and `j`. -/
 theorem apply_eq_zero_of_commute_diagonal {t : ι → k} {g : Matrix ι ι k}
     (hg : Commute (Matrix.diagonal t) g) {i j : ι} (hij : t i ≠ t j) : g i j = 0 := by
-  have hentry : (Matrix.diagonal t * g) i j = (g * Matrix.diagonal t) i j := by rw [hg.eq]
-  rw [Matrix.diagonal_mul, Matrix.mul_diagonal] at hentry
-  -- `hentry : t i * g i j = g i j * t j`; cancelling `g i j` on the left would give `t i = t j`.
-  by_contra h
-  exact hij (mul_left_cancel₀ h (by rw [mul_comm (g i j) (t i)]; exact hentry))
+  have hentry := congr_fun₂ hg.eq i j
+  rw [Matrix.diagonal_mul, Matrix.mul_diagonal, mul_comm] at hentry
+  -- `hentry : g i j * t i = g i j * t j`; cancelling a nonzero `g i j` would give `t i = t j`.
+  exact of_not_not fun h ↦ hij (mul_left_cancel₀ h hentry)
 
 /-- **A matrix commuting with a diagonal matrix of pairwise distinct entries is diagonal.** -/
 theorem isDiag_of_commute_diagonal {t : ι → k} (ht : Function.Injective t)
@@ -112,14 +125,8 @@ theorem toMatrix_eq_diagonal_iff
     (b : Module.Basis ι R M) (b' : Module.Basis ι R N) (f : M →ₗ[R] N) (c : ι → R) :
     LinearMap.toMatrix b b' f = Matrix.diagonal c ↔ ∀ i, f (b i) = c i • b' i := by
   rw [← (Matrix.toLin b b').injective.eq_iff, Matrix.toLin_toMatrix]
-  constructor
-  · intro h i
-    simpa only [Matrix.toLin_self, Matrix.diagonal_apply, ite_smul, zero_smul,
-      Finset.sum_ite_eq', Finset.mem_univ, ite_true] using congrArg (fun g : M →ₗ[R] N => g (b i)) h
-  · intro hf
-    apply b.ext
-    intro i
-    simpa only [Matrix.toLin_self, Matrix.diagonal_apply, ite_smul, zero_smul,
-      Finset.sum_ite_eq', Finset.mem_univ, ite_true] using hf i
+  refine ⟨fun h i ↦ ?_, fun hf ↦ b.ext fun i ↦ ?_⟩
+  · simp [h, Matrix.toLin_self, Matrix.diagonal_apply]
+  · simp [hf, Matrix.toLin_self, Matrix.diagonal_apply]
 
 end Module.Basis

@@ -73,9 +73,9 @@ theorem volume_rightHalfPlane (g : PSL(2, ℝ)) : volume (rightHalfPlane g) = �
   rw [rightHalfPlane_def, measure_smul]
   refine ENNReal.eq_top_of_forall_nnreal_le fun r ↦ ?_
   -- the half-plane `{Re z > 0}` contains regions above height `1` of every width
-  calc (r : ENNReal) = ENNReal.ofReal (((r : ℝ) + 1 - 1) / 1) := by simp
+  calc (r : ENNReal) = volume (Set.Ico 1 ((r : ℝ) + 1)) * ENNReal.ofReal 1⁻¹ := by simp
     _ = volume {z : ℍ | z.re ∈ Set.Ico 1 ((r : ℝ) + 1) ∧ 1 < z.im} :=
-      (volume_setOf_re_mem_Ico_and_lt_im 1 ((r : ℝ) + 1) one_pos).symm
+      (volume_setOf_re_mem_and_lt_im _ one_pos).symm
     _ ≤ volume {z : ℍ | 0 < z.re} := measure_mono fun z hz ↦ one_pos.trans_le hz.1.1
 
 /-- The open left half-plane of a geodesic line has infinite area. -/
@@ -220,17 +220,6 @@ theorem volume_carrier_of_vertex_zero (h₀ : P.vertex 0 = .inr ∞) :
     P.sum_interiorAngle_eq_of_vertex_zero h₀]
   simp_rw [sub_sub]
   rw [Finset.sum_sub_distrib, Finset.sum_Ico_one_sub_one_const (by omega) π]
-
-/-- The angular defect of a convex polygon whose `vertex 0` is `∞` is nonnegative. -/
-theorem sum_interiorAngle_le_of_vertex_zero (h₀ : P.vertex 0 = .inr ∞) :
-    ∑ i, P.interiorAngle i ≤ (n - 2) * π := by
-  have hn := P.three_le
-  have hle := Finset.sum_le_sum fun k (hk : k ∈ Finset.Ico 1 (n - 1)) ↦
-    P.vertexAngle_add_vertexAngle_le_pi_natCast h₀
-      (Nat.one_le_iff_ne_zero.1 (Finset.mem_Ico.1 hk).1)
-      (by have := (Finset.mem_Ico.1 hk).2; omega)
-  rw [P.sum_interiorAngle_eq_of_vertex_zero h₀]
-  exact hle.trans_eq (Finset.sum_Ico_one_sub_one_const (by omega) π)
 
 /-! ### Gauss–Bonnet -/
 

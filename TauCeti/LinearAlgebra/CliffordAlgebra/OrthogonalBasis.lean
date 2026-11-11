@@ -48,6 +48,8 @@ of the pairing: if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0
   scalar part.
 * `CliffordAlgebra.basis_eq_prod_map_sort`: for an orthogonal basis, the basis vector indexed by
   `s` is the product of the generators of `s` in increasing order.
+* `CliffordAlgebra.exists_basis_eq_ι_mul`: for an orthogonal basis, a two-element index set `s` can
+  be written `{k, l}` so that the basis vector indexed by `s` is `ι Q (b k) * ι Q (b l)`.
 * `CliffordAlgebra.involute_basis` and `CliffordAlgebra.basis_repr_involute`: for an orthogonal
   basis, the grade involution acts on `e_s` and on the coordinate at `s` by `(-1) ^ |s|`.
 * `CliffordAlgebra.basis_mul_basis_of_disjoint`: for an orthogonal basis, basis vectors with
@@ -118,7 +120,8 @@ variable {b : Module.Basis I R M}
 
 /-- The generators of a finite set of indices of an orthogonal basis, listed in increasing order,
 are pairwise orthogonal. -/
-private theorem pairwise_isOrtho_map_sort (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+theorem _root_.LinearMap.IsOrthoᵢ.pairwise_isOrtho_map_sort
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
     (s : Finset I) : (s.sort.map b).Pairwise Q.IsOrtho :=
   List.pairwise_map.mpr <| (s.sort_nodup _).imp fun hij ↦
     QuadraticMap.associated_isOrtho.mp (hb hij)
@@ -129,8 +132,22 @@ is needed beyond the orthogonality of `b`; in particular `Q` may be degenerate. 
 theorem basis_eq_prod_map_sort (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (s : Finset I) :
     basis Q b s = ((s.sort.map b).map (ι Q)).prod := by
   rw [basis_apply, LinearEquiv.symm_apply_eq,
-    equivExterior_prod_map_ι_of_pairwise_isOrtho Q (pairwise_isOrtho_map_sort hb s),
+    equivExterior_prod_map_ι_of_pairwise_isOrtho Q (hb.pairwise_isOrtho_map_sort s),
     Module.Basis.exteriorAlgebra_eq_prod_map_sort]
+
+/-- For an orthogonal basis `b`, a two-element index set `s` is `{k, l}`, and the Clifford basis
+vector indexed by `s` is `ι Q (b k) * ι Q (b l)`. -/
+theorem exists_basis_eq_ι_mul (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    (s : Set.powersetCard I 2) :
+    ∃ k l, (∀ i, i ∈ s.val ↔ i = k ∨ i = l) ∧ basis Q b s = ι Q (b k) * ι Q (b l) := by
+  obtain ⟨k, l, hsort⟩ := List.length_eq_two.1
+    (by rw [Finset.length_sort, Set.powersetCard.mem_iff.1 s.2] :
+      ((s : Finset I).sort (· ≤ ·)).length = 2)
+  refine ⟨k, l, fun i ↦ ?_, ?_⟩
+  · rw [← Finset.mem_sort (· ≤ ·), hsort]
+    simp
+  · rw [basis_eq_prod_map_sort hb, hsort]
+    simp
 
 /-- For an orthogonal basis, the grade involution multiplies the Clifford basis vector indexed by
 `s` by the sign `(-1) ^ |s|` of its degree. -/
@@ -154,7 +171,7 @@ theorem basis_univ_mem_center_of_odd_card [Fintype I]
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hodd : Odd (Fintype.card I)) :
     basis Q b Finset.univ ∈ Subalgebra.center R (CliffordAlgebra Q) := by
   rw [basis_eq_prod_map_sort hb]
-  apply prod_map_ι_mem_center_of_odd_length (pairwise_isOrtho_map_sort hb Finset.univ)
+  apply prod_map_ι_mem_center_of_odd_length (hb.pairwise_isOrtho_map_sort Finset.univ)
   · simpa only [List.length_map, Finset.length_sort, Finset.card_univ] using hodd
   · apply le_antisymm le_top
     rw [← b.span_eq]
@@ -196,7 +213,7 @@ theorem basis_mul_ι_of_mem (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) {s :
     (hi : i ∈ s) :
     basis Q b s * ι Q (b i) = ((-1 : R) ^ (s.card - 1)) • (ι Q (b i) * basis Q b s) := by
   rw [basis_eq_prod_map_sort hb, ← s.length_sort (· ≤ ·), ← List.length_map b]
-  exact prod_map_ι_mul_ι_of_mem_span (pairwise_isOrtho_map_sort hb s)
+  exact prod_map_ι_mul_ι_of_mem_span (hb.pairwise_isOrtho_map_sort s)
     (Submodule.subset_span (List.mem_map.2 ⟨i, (Finset.mem_sort _).2 hi, rfl⟩))
 
 /-- **A basis generator crosses a basis vector not containing it at the cost of `(-1) ^ |s|`**,
@@ -220,6 +237,23 @@ theorem basis_insert_of_forall_lt (hb : (QuadraticMap.associated Q).IsOrthoᵢ b
     Finset.sort_insert _ (fun x hx ↦ (ha x hx).le) fun h ↦ lt_irrefl a (ha a h)]
   simp
 
+/-- **A generator below every index times a basis vector**, for an orthogonal basis: if `a` is
+smaller than every index of `s`, then `ι Q (b a) * e_s` is the basis vector of `insert a s`, which
+is the case `k = 0` and `a ∉ s` of `CliffordAlgebra.ι_mul_basis`. -/
+private theorem ι_mul_basis_of_forall_lt (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) {a : I}
+    {s : Finset I} (hat : ∀ x ∈ s, a < x) :
+    ι Q (b a) * basis Q b s =
+      ((-1 : R) ^ (s.filter (· < a)).card * if a ∈ s then Q (b a) else 1) •
+        basis Q b (s ∆ {a}) := by
+  have ha : a ∉ s := fun h ↦ lt_irrefl a (hat a h)
+  have hsd : s ∆ {a} = insert a s := by
+    simpa only [Finset.union_singleton] using
+      Finset.symmDiff_eq_union (Finset.disjoint_singleton_right.mpr ha)
+  have hf : s.filter (· < a) = ∅ :=
+    Finset.filter_eq_empty_iff.mpr fun x hx ↦ not_lt.mpr (hat x hx).le
+  rw [hsd, hf, ite_eq_right ha, basis_insert_of_forall_lt hb hat]
+  simp
+
 /-- **A generator times a basis vector**, for an orthogonal basis: `ι Q (b a) * e_t` is the basis
 vector of `t ∆ {a}`, with the sign `(-1) ^ k` for the number `k` of indices of `t` below `a`, and
 the scalar `Q (b a)` when `a ∈ t`, since the generator then meets itself. -/
@@ -236,17 +270,12 @@ theorem ι_mul_basis (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (a : I) (t 
     rw [basis_insert_of_forall_lt hb hc]
     rcases lt_trichotomy a c with h | rfl | h
     · -- `a` lies below every index, so its generator is adjoined in front.
-      have hat : ∀ x ∈ insert c t, a < x := by
-        simp only [Finset.mem_insert, forall_eq_or_imp]
-        exact ⟨h, fun x hx ↦ h.trans (hc x hx)⟩
-      have ha : a ∉ insert c t := fun h ↦ lt_irrefl a (hat a h)
-      have hsd : insert c t ∆ {a} = insert a (insert c t) := by
-        ext x; simp only [Finset.mem_symmDiff, Finset.mem_insert, Finset.mem_singleton]; grind
-      have hf : (insert c t).filter (· < a) = ∅ :=
-        Finset.filter_eq_empty_iff.mpr fun x hx ↦ not_lt.mpr (hat x hx).le
-      rw [← basis_insert_of_forall_lt hb hc, ← basis_insert_of_forall_lt hb hat, hsd, hf,
-        ite_eq_right ha]
-      simp
+      rw [← basis_insert_of_forall_lt hb hc]
+      exact ι_mul_basis_of_forall_lt hb fun x hx ↦ by
+        simp only [Finset.mem_insert] at hx
+        rcases hx with rfl | hx
+        · exact h
+        · exact h.trans (hc x hx)
     · -- `a` is the least index, and its generator squares to the scalar `Q (b a)`.
       have hsd : insert a t ∆ {a} = t := by
         ext x; simp only [Finset.mem_symmDiff, Finset.mem_insert, Finset.mem_singleton]; grind
@@ -537,11 +566,16 @@ theorem scalarTrace_reverse_mul_self_eq_zero_iff_basis_repr_eq_zero [IsStrictOrd
     · simp [hs]
     · simp [h s hs]
 
+omit [LinearOrder I] in
 /-- **Faithfulness of the trace pairing**: if `Q` is positive on an orthogonal basis, then
-`τ (reverse x * x) = 0` only for `x = 0`. -/
+`τ (reverse x * x) = 0` only for `x = 0`. The index type of the basis need not be ordered. -/
 theorem scalarTrace_reverse_mul_self_eq_zero_iff [IsStrictOrderedRing R]
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, 0 < Q (b i))
     {x : CliffordAlgebra Q} : scalarTrace Q (reverse x * x) = 0 ↔ x = 0 := by
+  classical
+  -- The order only enters through the auxiliary basis `CliffordAlgebra.basis`, so any linear order
+  -- on `I` will do.
+  let _ : LinearOrder I := linearOrderOfSTO WellOrderingRel
   rw [scalarTrace_reverse_mul_self_eq_zero_iff_basis_repr_eq_zero hb fun i ↦ (hQ i).le,
     forall_prod_ne_zero_basis_repr_eq_zero_iff fun i ↦ (hQ i).ne']
 

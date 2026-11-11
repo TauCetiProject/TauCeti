@@ -466,7 +466,7 @@ private theorem isRat_setOf_iff (P : Spv (𝒯 K) → Prop) :
   have hpre : (Homeomorph.setCongr (closedPolydisc_def 1 K)).symm ⁻¹'
       {v : closedPolydisc 1 K | P v.1} = {v : spa (powerBoundedSubring (𝒯 K)) | P v.1} := by
     ext v
-    simp only [Set.mem_preimage, Set.mem_ofPred_eq, TauCeti.Homeomorph.setCongr_symm_apply]
+    simp only [Set.mem_preimage, Set.mem_ofPred_eq, Homeomorph.setCongr_symm_apply]
   rw [IsRat, hpre]
 
 omit [IsUltrametricDist K] in
@@ -497,7 +497,7 @@ private theorem isRat_setOf_vle (b d : K) :
   have hspan : Ideal.span (({C d} : Finset (𝒯 K)) : Set (𝒯 K)) = ⊤ :=
     Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (by simp)) ((isUnit_iff_ne_zero.mpr hd).map C)
   rw [IsRat, setOf_vle_eq_rationalSubset _ (isUnit_iff_ne_zero.mpr hd), Set.preimage_preimage]
-  simp only [TauCeti.Homeomorph.setCongr_symm_apply]
+  simp only [Homeomorph.setCongr_symm_apply]
   exact mem_spaRationalFamily_iff.mpr ⟨_, _, by rw [hspan]; simp, rfl⟩
 
 /-- The complement `{v : v(f) ≤ v(r) or v(σ) ≤ v(f)}` of an open annulus is rational. -/
@@ -726,7 +726,8 @@ private theorem isRat_setOf_vle_union_biUnion_closedSubdisc (F : Finset (K × K)
           ((hdist hq hq₀).trans hτq₀) ((hτc hq).trans hτq₀))
         (Set.subset_biUnion_of_mem (u := fun q : K × K ↦ closedSubdisc q.1 q.2) hq₀)
     obtain ⟨hc₀, hb₀, hs₀⟩ := hF q₀ hq₀
-    rw [hU, closedSubdisc_eq_setOf_vle _ hc₀, setOf_vle_eq_of_norm_sub_lt hb₀, Set.union_comm]
+    rw [hU, closedSubdisc_eq_setOf_vle _ (isUnit_iff_ne_zero.mpr hc₀),
+      setOf_vle_eq_of_norm_sub_lt hb₀, Set.union_comm]
     exact isRat_setOf_vle_or_vle _ hc₀ hs₀
   push Not at hA
   -- otherwise `τ` is the distance `q'.1 - q₁.1` between two centres
@@ -808,7 +809,7 @@ private theorem closedSubdisc_union_setOf_vle_eq_univ {a c b₀ d₀ : K} (hc : 
     (hd : ‖d₀‖ ≤ ‖c‖) (ha : ‖a - b₀‖ ≤ ‖c‖) :
     closedSubdisc a c ∪ {v | v.1.toValuativeRel.vle (C d₀) (T - C b₀)} = Set.univ := by
   refine Set.eq_univ_of_forall fun x ↦ ?_
-  rw [closedSubdisc_eq_setOf_vle a hc]
+  rw [closedSubdisc_eq_setOf_vle a (isUnit_iff_ne_zero.mpr hc)]
   simp only [Set.mem_union, Set.mem_ofPred_eq, ← valuation_le_iff]
   refine or_iff_not_imp_right.mpr fun h ↦ ?_
   rw [not_le] at h

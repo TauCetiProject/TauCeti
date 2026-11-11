@@ -131,7 +131,7 @@ theorem add (hf : IsDivisorSectionAt D f x) (hg : IsDivisorSectionAt D g x) :
     IsDivisorSectionAt D (f + g) x where
   meromorphicAt := hf.meromorphicAt.add hg.meromorphicAt
   neg_le_meromorphicOrderAt := (le_min hf.neg_le_meromorphicOrderAt
-    hg.neg_le_meromorphicOrderAt).trans (meromorphicOrderAt_add hf.meromorphicAt hg.meromorphicAt)
+    hg.neg_le_meromorphicOrderAt).trans (meromorphicOrderAt_add hg.meromorphicAt)
   contMDiffAt hD := (hf.contMDiffAt hD).add (hg.contMDiffAt hD)
   apply_eq_zero hD := by simp [hf.apply_eq_zero hD, hg.apply_eq_zero hD]
 
@@ -181,7 +181,7 @@ theorem isDivisorSectionAt_iff_of_eq_zero {D : WeilDivisor X} {f : X → ℂ} {x
   exact
   { meromorphicAt := meromorphicAt_of_eventually_mdifferentiableAt hev
     neg_le_meromorphicOrderAt := by
-      simpa [hD] using meromorphicOrderAt_nonneg_of_eventually_mdifferentiableAt hev
+      simpa [hD] using meromorphicOrderAt_nonneg_of_continuousAt hf.continuousAt
     contMDiffAt := fun _ ↦ hf
     apply_eq_zero := fun h ↦ absurd hD h.ne' }
 
@@ -224,6 +224,15 @@ theorem isDivisorSectionAt_extend {U : Opens X} {f : U → ℂ} (hf : f ∈ divi
   rw [← U.isOpenEmbedding'.map_nhds_eq x, EventuallyEq, eventually_map]
   filter_upwards [e] with y hy
   rw [Subtype.val_injective.extend_apply, hy, Function.comp_apply]
+
+/-- A global divisor section, read as a function on the surface, is a local divisor section
+at every point. -/
+theorem divisorSections.isDivisorSectionAt (f : divisorSections D ⊤) (x : X) :
+    IsDivisorSectionAt D (fun y ↦ f.1 ⟨y, trivial⟩) x := by
+  have h := isDivisorSectionAt_extend f.property (⟨x, trivial⟩ : (⊤ : Opens X))
+  exact h.congr (.of_forall fun y ↦ by
+    simpa using (Subtype.val_injective.extend_apply f.1 0
+      (⟨y, trivial⟩ : (⊤ : Opens X))))
 
 /-- Sections of `𝒪_D` restrict to smaller open sets. -/
 theorem comp_inclusion_mem_divisorSections {U V : Opens X} (h : V ≤ U) {f : U → ℂ}

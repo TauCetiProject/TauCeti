@@ -36,6 +36,10 @@ trace. This is the whole-space comparison principle applied to the Hölder class
 * `TauCeti.ParabolicC2HolderSpace.norm_parabolicOperatorL_le` and
   `TauCeti.ParabolicC2HolderSpace.norm_parabolicOperatorL_sub_le`: the operator bound and the
   Lipschitz dependence on the coefficients.
+* `TauCeti.ParabolicC2HolderSpace.euclideanSecondOrderCoeff`,
+  `TauCeti.ParabolicC2HolderSpace.euclideanFirstOrderCoeff` and
+  `TauCeti.ParabolicC2HolderSpace.euclideanZerothOrderCoeff`: the coefficient fields assembled
+  from scalar Hölder coefficients `aⁱʲ`, `bⁱ`, `c` on `ℝⁿ`.
 * `TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL`: the operator with Hölder
   coefficients `aⁱʲ`, `bⁱ`, `c` on `ℝⁿ`.
 * `TauCeti.ParabolicC2HolderSpace.le_exp_mul_mul_add_mul_of_euclideanParabolicOperatorL_le`,
@@ -131,25 +135,29 @@ theorem parabolicOperatorL_sub_parabolicOperatorL :
   rw [spatialOperatorL_sub, parabolicOperatorL_def, parabolicOperatorL_def]
   abel
 
+/-- **The pointwise bound for the spatial operator.**
+`‖L u‖ ≤ ‖A‖ ‖D²u‖ + ‖B‖ ‖Du‖ + ‖C‖ ‖u‖`, where `‖u‖` is the Hölder norm of the value. -/
+theorem norm_spatialOperatorL_apply_le (u : ParabolicC2HolderSpace α E F ht) :
+    ‖spatialOperatorL hα A B C u‖ ≤
+      ‖A‖ * ‖spatialSecondFDerivL u‖ + ‖B‖ * ‖spatialFDerivHolderL hα u‖ +
+        ‖C‖ * ‖valueHolderL hα u‖ := by
+  have hA := ContinuousLinearMap.norm_id_compHolder₂_apply_le A (spatialSecondFDerivL u)
+  have hB := ContinuousLinearMap.norm_id_compHolder₂_apply_le B (spatialFDerivHolderL hα u)
+  have hC := ContinuousLinearMap.norm_id_compHolder₂_apply_le C (valueHolderL hα u)
+  exact (norm_add_le _ _).trans (add_le_add ((norm_add_le _ _).trans (add_le_add hA hB)) hC)
+
 /-- **The operator bound for the spatial operator.**
 `‖L‖ ≤ ‖A‖ + 24 (‖B‖ + ‖C‖)`, uniformly over the spaces and the slab. -/
 theorem norm_spatialOperatorL_le :
     ‖spatialOperatorL (ht := ht) hα A B C‖ ≤ ‖A‖ + 24 * (‖B‖ + ‖C‖) := by
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun u ↦ ?_
-  -- Pointwise application of a coefficient field does not increase norms.
-  have hA := ContinuousLinearMap.norm_id_compHolder₂_apply_le A (spatialSecondFDerivL u)
-  have hB := ContinuousLinearMap.norm_id_compHolder₂_apply_le B (spatialFDerivHolderL hα u)
-  have hC := ContinuousLinearMap.norm_id_compHolder₂_apply_le C (valueHolderL hα u)
   have h₂ := norm_spatialSecondFDerivL_le u
   have h₁ := norm_valueHolderL_add_norm_spatialFDerivHolderL_le hα u one_pos le_rfl
   simp only [Real.one_rpow, mul_one] at h₁
   have hv := norm_valueL_le u
   have hDu := norm_nonneg (spatialFDerivHolderL hα u)
   have hu := norm_nonneg (valueHolderL hα u)
-  have hL : ‖spatialOperatorL (ht := ht) hα A B C u‖ ≤
-      ‖A‖ * ‖spatialSecondFDerivL u‖ + ‖B‖ * ‖spatialFDerivHolderL hα u‖ +
-        ‖C‖ * ‖valueHolderL hα u‖ :=
-    (norm_add_le _ _).trans (add_le_add ((norm_add_le _ _).trans (add_le_add hA hB)) hC)
+  have hL := norm_spatialOperatorL_apply_le (A := A) (B := B) (C := C) hα u
   nlinarith [mul_le_mul_of_nonneg_left h₂ (norm_nonneg A),
     mul_le_mul_of_nonneg_left (show ‖spatialFDerivHolderL hα u‖ ≤ 24 * ‖u‖ by linarith)
       (norm_nonneg B),
@@ -184,6 +192,61 @@ coefficients for the reason explained at the Hessian shortcut. -/
 local instance : NormedAddCommGroup (EuclideanSpace ℝ ι →L[ℝ] ℝ) := inferInstance
 /-- A local shortcut for scalar operations on covectors. -/
 local instance : NormedSpace ℝ (EuclideanSpace ℝ ι →L[ℝ] ℝ) := inferInstance
+/-- A local shortcut for the norm on Euclidean Hessians, needed to state the type of the
+second-order coefficient field outside `parabolicOperatorL`. -/
+local instance : NormedAddCommGroup (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) :=
+  inferInstance
+/-- A local shortcut for scalar operations on Euclidean Hessians. -/
+local instance : NormedSpace ℝ (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) :=
+  inferInstance
+
+/-- The second-order coefficient field `H ↦ aⁱʲ H(eᵢ, eⱼ)` on `ℝⁿ = EuclideanSpace ℝ ι` assembled
+from scalar coefficients `aⁱʲ` in `C_b^{α,α/2}`. -/
+def euclideanSecondOrderCoeff
+    (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁)
+      ((EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) →L[ℝ] ℝ) :=
+  ∑ i, ∑ j, (ContinuousLinearMap.lsmul ℝ ℝ).compHolder₂ (a i j)
+    (HolderSpace.const ((ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single j 1)).comp
+      (ContinuousLinearMap.apply ℝ _ (EuclideanSpace.single i 1))))
+
+/-- The first-order coefficient field `v ↦ bⁱ v(eᵢ)` on `ℝⁿ = EuclideanSpace ℝ ι` assembled from
+scalar coefficients `bⁱ` in `C_b^{α,α/2}`. -/
+def euclideanFirstOrderCoeff (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ((EuclideanSpace ℝ ι →L[ℝ] ℝ) →L[ℝ] ℝ) :=
+  ∑ i, (ContinuousLinearMap.lsmul ℝ ℝ).compHolder₂ (b i)
+    (HolderSpace.const (ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single i 1)))
+
+omit [DecidableEq ι] in
+/-- The zeroth-order coefficient field `y ↦ c y` assembled from a scalar coefficient `c` in
+`C_b^{α,α/2}`. -/
+def euclideanZerothOrderCoeff (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) (ℝ →L[ℝ] ℝ) :=
+  (ContinuousLinearMap.lsmul ℝ ℝ).compHolder₂ c (HolderSpace.const (ContinuousLinearMap.id ℝ ℝ))
+
+@[simp]
+theorem euclideanSecondOrderCoeff_apply
+    (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (p : slab (E := EuclideanSpace ℝ ι) t₀ t₁)
+    (H : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) :
+    euclideanSecondOrderCoeff a p H =
+      ∑ i, ∑ j, a i j p * H (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) := by
+  simp [euclideanSecondOrderCoeff]
+
+@[simp]
+theorem euclideanFirstOrderCoeff_apply
+    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (p : slab (E := EuclideanSpace ℝ ι) t₀ t₁) (v : EuclideanSpace ℝ ι →L[ℝ] ℝ) :
+    euclideanFirstOrderCoeff b p v = ∑ i, b i p * v (EuclideanSpace.single i 1) := by
+  simp [euclideanFirstOrderCoeff]
+
+omit [DecidableEq ι] in
+@[simp]
+theorem euclideanZerothOrderCoeff_apply
+    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (p : slab (E := EuclideanSpace ℝ ι) t₀ t₁) (y : ℝ) :
+    euclideanZerothOrderCoeff c p y = c p * y := by
+  simp [euclideanZerothOrderCoeff]
 
 /-- The parabolic operator `P u = ∂ₜu - aⁱʲ ∂ᵢ∂ⱼu - bⁱ ∂ᵢu - c u` on `ℝⁿ = EuclideanSpace ℝ ι`
 with scalar coefficients `aⁱʲ`, `bⁱ`, `c` in `C_b^{α,α/2}`, as a continuous linear map from
@@ -194,14 +257,8 @@ def euclideanParabolicOperatorL (hα : α ≤ 1)
     (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
     ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ ht →L[ℝ]
       HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ :=
-  parabolicOperatorL hα
-    (∑ i, ∑ j, (ContinuousLinearMap.lsmul ℝ ℝ).compHolder₂ (a i j)
-      (HolderSpace.const ((ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single j 1)).comp
-        (ContinuousLinearMap.apply ℝ _ (EuclideanSpace.single i 1)))))
-    (∑ i, (ContinuousLinearMap.lsmul ℝ ℝ).compHolder₂ (b i)
-      (HolderSpace.const (ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single i 1))))
-    ((ContinuousLinearMap.lsmul ℝ ℝ).compHolder₂ c
-      (HolderSpace.const (ContinuousLinearMap.id ℝ ℝ)))
+  parabolicOperatorL hα (euclideanSecondOrderCoeff a) (euclideanFirstOrderCoeff b)
+    (euclideanZerothOrderCoeff c)
 
 variable (hα : α ≤ 1) {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
   {b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
@@ -209,14 +266,8 @@ variable (hα : α ≤ 1) {a : ι → ι → HolderSpace α (slab (E := Euclidea
 
 theorem euclideanParabolicOperatorL_def :
     euclideanParabolicOperatorL (ht := ht) hα a b c =
-      parabolicOperatorL hα
-        (∑ i, ∑ j, (ContinuousLinearMap.lsmul ℝ ℝ).compHolder₂ (a i j)
-          (HolderSpace.const ((ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single j 1)).comp
-            (ContinuousLinearMap.apply ℝ _ (EuclideanSpace.single i 1)))))
-        (∑ i, (ContinuousLinearMap.lsmul ℝ ℝ).compHolder₂ (b i)
-          (HolderSpace.const (ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single i 1))))
-        ((ContinuousLinearMap.lsmul ℝ ℝ).compHolder₂ c
-          (HolderSpace.const (ContinuousLinearMap.id ℝ ℝ))) := (rfl)
+      parabolicOperatorL hα (euclideanSecondOrderCoeff a) (euclideanFirstOrderCoeff b)
+        (euclideanZerothOrderCoeff c) := (rfl)
 
 @[simp]
 theorem euclideanParabolicOperatorL_apply
@@ -227,6 +278,20 @@ theorem euclideanParabolicOperatorL_apply
         (EuclideanSpace.single j 1) + ∑ i, b i p * spatialFDerivL u p (EuclideanSpace.single i 1) +
         c p * u p) := by
   simp [euclideanParabolicOperatorL]
+
+open Laplacian in
+/-- With the identity coefficient matrix and no lower-order terms, the Euclidean operator is the
+heat operator `∂ₜu - Δu`, with the Laplacian taken on the time slice through `p`. -/
+theorem euclideanParabolicOperatorL_one_apply
+    (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ ht)
+    (p : slab (E := EuclideanSpace ℝ ι) t₀ t₁) :
+    euclideanParabolicOperatorL hα (fun i j ↦ HolderSpace.const ((1 : Matrix ι ι ℝ) i j)) 0 0 u p =
+      timeDerivL u p - Δ (fun y ↦ u (slabMk y (slabTime p)))
+        (p : ParabolicSpaceTime (EuclideanSpace ℝ ι)).space := by
+  rw [euclideanParabolicOperatorL_apply,
+    InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis _ (EuclideanSpace.basisFun ι ℝ)]
+  simp only [u.iteratedFDeriv_two_apply, slabMk_space_slabTime]
+  simp [Matrix.one_apply]
 
 /-- At an interior time, the time slice through `x`, shifted to start at `0`, has the recorded
 time derivative as its ordinary derivative. -/

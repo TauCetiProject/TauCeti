@@ -43,8 +43,12 @@ computation every matrix model of a Lie algebra performs on its root vectors.
   `LinearMap.exists_toMatrixRight'_comp_eq_fromBlocks`: a direct summand of `m → R` is presented
   by an idempotent matrix, and a split short exact sequence of such summands presents its middle
   term by the block-diagonal sum of the idempotent matrices of its outer terms.
+* `Matrix.linearIndependent_row_one`: over any semiring, the rows of an identity matrix are
+  linearly independent.
 * `Algebra.toLin_leftMulMatrix`: the linear map of the left multiplication matrix of `x` is left
   multiplication by `x`.
+* `Algebra.leftMulMatrix_algebraMap`: the left multiplication matrix of an element of the base ring
+  is the corresponding scalar matrix.
 * `Module.Basis.equivFun_list_prod_smul`: the coordinates of a product of linear automorphisms
   applied to a vector are the product of their matrices applied to its coordinates.
 
@@ -173,8 +177,8 @@ theorem exists_toMatrixRight'_comp_eq_fromBlocks [Fintype n] [DecidableEq n]
     funext fun _ ↦ by simp [e, LinearMap.funLeft_apply]
   have hr (u : m → R) (v : n → R) : LinearMap.funLeft R R Sum.inr (e.symm (u, v)) = v :=
     funext fun _ ↦ by simp [e, LinearMap.funLeft_apply]
-  have hl' (x : m ⊕ n → R) : LinearMap.funLeft R R Sum.inl x = x ∘ Sum.inl := rfl
-  have hr' (x : m ⊕ n → R) : LinearMap.funLeft R R Sum.inr x = x ∘ Sum.inr := rfl
+  have hl' (x : m ⊕ n → R) : LinearMap.funLeft R R Sum.inl x = x ∘ Sum.inl := (rfl)
+  have hr' (x : m ⊕ n → R) : LinearMap.funLeft R R Sum.inr x = x ∘ Sum.inr := (rfl)
   refine ⟨f ∘ₗ s₁ ∘ₗ LinearMap.funLeft R R Sum.inl + σ ∘ₗ s₃ ∘ₗ LinearMap.funLeft R R Sum.inr,
     e.symm.toLinearMap ∘ₗ (i₁ ∘ₗ r).prod (i₃ ∘ₗ g), ?_, ?_⟩
   · refine LinearMap.ext fun x ↦ ?_
@@ -188,6 +192,18 @@ theorem exists_toMatrixRight'_comp_eq_fromBlocks [Fintype n] [DecidableEq n]
 
 end LinearMap
 
+namespace Matrix
+
+/-- The rows of an identity matrix are linearly independent: they are the standard basis
+vectors `Pi.single i 1`. -/
+theorem linearIndependent_row_one {R m : Type*} [Semiring R] [DecidableEq m] :
+    LinearIndependent R (1 : Matrix m m R).row := by
+  convert Pi.linearIndependent_single_one m R using 1
+  ext i j
+  exact one_eq_pi_single
+
+end Matrix
+
 namespace Algebra
 
 /-- The linear map of the left multiplication matrix of `x` in a basis `b` is left multiplication
@@ -197,6 +213,35 @@ theorem toLin_leftMulMatrix {R S : Type*} [CommSemiring R] [Semiring S] [Algebra
     {m : Type*} [Fintype m] [DecidableEq m] (b : Module.Basis m R S) (x : S) :
     Matrix.toLin b b (leftMulMatrix b x) = LinearMap.mulLeft R x := by
   rw [← toMatrix_lmul_eq, Matrix.toLin_toMatrix]
+
+-- Not a `simp` lemma: `simp` rewrites the left-hand side through `AlgHom.commutes` first, into
+-- `algebraMap R (Matrix ι ι R) r`, so this lemma would never fire.
+/-- Left multiplication by an element of the base ring is the corresponding scalar matrix. -/
+theorem leftMulMatrix_algebraMap {R S : Type*} [CommSemiring R] [Semiring S] [Algebra R S]
+    {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι R S) (r : R) :
+    leftMulMatrix b (algebraMap R S r) = Matrix.scalar ι r := by
+  simp [Matrix.algebraMap_eq_diagonal, Matrix.scalar_apply]
+
+/-- The matrix of multiplication by `ψ x` in the image of a basis is the image of the matrix of
+multiplication by `x`. -/
+lemma leftMulMatrix_map {R B R' B' : Type*} [CommSemiring R] [Semiring B]
+    [Algebra R B] [CommSemiring R'] [Semiring B'] [Algebra R' B']
+    {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι R B)
+    (b' : Module.Basis ι R' B') (σ : R →+* R') (ψ : B →+* B')
+    (hψ : ∀ r, ψ (algebraMap R B r) = algebraMap R' B' (σ r))
+    (hb : ∀ i, b' i = ψ (b i))
+    (x : B) : leftMulMatrix b' (ψ x) = (leftMulMatrix b x).map σ := by
+  have hrepr (y : B) : b'.repr (ψ y) = Finsupp.mapRange σ σ.map_zero (b.repr y) := by
+    conv_lhs => rw [← b.sum_repr y]
+    rw [map_sum]
+    simp_rw [Algebra.smul_def, map_mul, hψ, ← hb, ← Algebra.smul_def]
+    ext i
+    rw [b'.repr_sum_self, Finsupp.mapRange_apply]
+  ext i j
+  rw [Matrix.map_apply, leftMulMatrix_eq_repr_mul, leftMulMatrix_eq_repr_mul, hb, ← map_mul,
+    hrepr, Finsupp.mapRange_apply]
+
 
 end Algebra
 

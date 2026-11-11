@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Sym.Card
+public import Mathlib.Data.Sym.NatCard
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basis
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Data.Sym.Basic
@@ -40,7 +40,9 @@ orderings of an unordered tuple differ by a permutation.
 * `Module.Basis.map_symmetricPower_apply_eq_symmetricPower_map`: a linear map sending basis
   vectors to basis vectors sends the induced basis vectors of the symmetric powers to induced basis
   vectors, the index `s` going to its image `s.map π`.
-* `SymmetricPower.finrank_eq`: the rank of `Sym[R]^n M` is `Nat.multichoose (finrank R M) n`.
+* `SymmetricPower.finrank_eq`: for free `M`, the rank of `Sym[R]^n M` is
+  `Nat.multichoose (finrank R M) n`; for finite free `M` this counts the unordered `n`-tuples of
+  basis indices.
 * `Module.Basis.trace_map_symmetricPower_of_apply`: the trace on `Sym[R]^n M` of an endomorphism
   that is diagonal in a basis is the sum, over the unordered `n`-tuples of basis indices, of the
   product of the corresponding eigenvalues. This is the complete homogeneous symmetric polynomial
@@ -59,15 +61,15 @@ variable {R : Type} {M : Type v} {κ : Type w} {n : ℕ}
 
 namespace SymmetricPower
 
-/-- A choice of ordering of an unordered tuple: an arbitrary section of `TauCeti.Sym.ofFn`, used
+/-- A choice of ordering of an unordered tuple: an arbitrary section of `Sym.ofFn`, used
 only to write down a pure symmetric tensor with prescribed factors. Any two orderings of the same
-unordered tuple differ by a permutation, by `TauCeti.Sym.ofFn_eq_ofFn_iff`, so the choice never
+unordered tuple differ by a permutation, by `Sym.ofFn_eq_ofFn_iff`, so the choice never
 escapes into the API below. -/
 private noncomputable def orderOfSym (s : Sym κ n) : Fin n → κ :=
-  Function.surjInv TauCeti.Sym.ofFn_surjective s
+  Function.surjInv Sym.ofFn_surjective s
 
-private theorem ofFn_orderOfSym (s : Sym κ n) : TauCeti.Sym.ofFn (orderOfSym s) = s :=
-  Function.surjInv_eq TauCeti.Sym.ofFn_surjective s
+private theorem ofFn_orderOfSym (s : Sym κ n) : Sym.ofFn (orderOfSym s) = s :=
+  Function.surjInv_eq Sym.ofFn_surjective s
 
 section CommSemiring
 
@@ -85,10 +87,10 @@ noncomputable def tprodOfSym (v : κ → M) (s : Sym κ n) : Sym[R]^n M :=
 choice of ordering hidden in the definition of `tprodOfSym` does not matter. -/
 @[simp]
 theorem tprodOfSym_ofFn (v : κ → M) (f : Fin n → κ) :
-    tprodOfSym R v (TauCeti.Sym.ofFn f) = ⨂ₛ[R] i, v (f i) := by
-  obtain ⟨σ, hσ⟩ := TauCeti.Sym.ofFn_eq_ofFn_iff.1 (ofFn_orderOfSym (TauCeti.Sym.ofFn f))
+    tprodOfSym R v (Sym.ofFn f) = ⨂ₛ[R] i, v (f i) := by
+  obtain ⟨σ, hσ⟩ := Sym.ofFn_eq_ofFn_iff.1 (ofFn_orderOfSym (Sym.ofFn f))
   conv_rhs => rw [← hσ]
-  exact (tprod_equiv (R := R) σ fun i => v (orderOfSym (TauCeti.Sym.ofFn f) i)).symm
+  exact (tprod_equiv (R := R) σ fun i => v (orderOfSym (Sym.ofFn f) i)).symm
 
 /-! ### The coordinate map in a basis -/
 
@@ -98,10 +100,10 @@ variable (b : Basis κ R M)
 power. -/
 private noncomputable def toFinsuppAux : (⨂[R] (_ : Fin n), M) →ₗ[R] (Sym κ n →₀ R) :=
   (Basis.piTensorProduct fun _ : Fin n => b).constr R
-    fun f => Finsupp.single (TauCeti.Sym.ofFn f) 1
+    fun f => Finsupp.single (Sym.ofFn f) 1
 
 private theorem toFinsuppAux_tprod_basis (f : Fin n → κ) :
-    toFinsuppAux b (⨂ₜ[R] i, b (f i)) = Finsupp.single (TauCeti.Sym.ofFn f) 1 := by
+    toFinsuppAux b (⨂ₜ[R] i, b (f i)) = Finsupp.single (Sym.ofFn f) 1 := by
   rw [toFinsuppAux, ← Basis.piTensorProduct_apply, Basis.constr_basis]
 
 /-- Permuting the factors of a pure tensor does not change the unordered tuple of its indices. -/
@@ -112,7 +114,7 @@ private theorem toFinsuppAux_reindex (e : Equiv.Perm (Fin n)) :
   rw [LinearMap.comp_apply, LinearEquiv.coe_coe, Basis.piTensorProduct_apply,
     PiTensorProduct.reindex_tprod, toFinsuppAux_tprod_basis b fun i => f (e.symm i),
     toFinsuppAux_tprod_basis b f]
-  exact congrArg (Finsupp.single · (1 : R)) (TauCeti.Sym.ofFn_comp_perm e.symm f)
+  exact congrArg (Finsupp.single · (1 : R)) (Sym.ofFn_comp_perm e.symm f)
 
 /-- The multilinear form of the coordinate map, before descending to the symmetric power. -/
 private noncomputable def toFinsuppMultilinear :
@@ -133,7 +135,7 @@ private noncomputable def toFinsupp : Sym[R]^n M →ₗ[R] (Sym κ n →₀ R) :
   lift (toFinsuppMultilinear b) (toFinsuppMultilinear_domDomCongr b)
 
 private theorem toFinsupp_tprod_basis (f : Fin n → κ) :
-    toFinsupp n b (⨂ₛ[R] i, b (f i)) = Finsupp.single (TauCeti.Sym.ofFn f) 1 := by
+    toFinsupp n b (⨂ₛ[R] i, b (f i)) = Finsupp.single (Sym.ofFn f) 1 := by
   rw [toFinsupp, lift_tprod, toFinsuppMultilinear, LinearMap.compMultilinearMap_apply,
     toFinsuppAux_tprod_basis]
 
@@ -181,7 +183,7 @@ theorem _root_.Module.Basis.map_symmetricPower_of_apply (f : M →ₗ[R] M) (a :
     (hf : ∀ i, f (b i) = a i • b i) (s : Sym κ n) :
     map (ι := Fin n) f (b.symmetricPower n s) =
       ((s : Multiset κ).map a).prod • b.symmetricPower n s := by
-  obtain ⟨p, rfl⟩ := TauCeti.Sym.ofFn_surjective s
+  obtain ⟨p, rfl⟩ := Sym.ofFn_surjective s
   simp [hf, (tprod R).map_smul_univ, List.prod_ofFn]
 
 /-- **A linear map sending basis vectors to basis vectors does so on the symmetric power**: if
@@ -192,8 +194,8 @@ theorem _root_.Module.Basis.map_symmetricPower_apply_eq_symmetricPower_map {N : 
     [AddCommMonoid N] [Module R N] {κ' : Type*} (b' : Basis κ' R N) (f : M →ₗ[R] N)
     (π : κ → κ') (hf : ∀ i, f (b i) = b' (π i)) (s : Sym κ n) :
     map (ι := Fin n) f (b.symmetricPower n s) = b'.symmetricPower n (s.map π) := by
-  obtain ⟨p, rfl⟩ := TauCeti.Sym.ofFn_surjective s
-  simp [hf, TauCeti.Sym.map_ofFn]
+  obtain ⟨p, rfl⟩ := Sym.ofFn_surjective s
+  simp [hf, Sym.map_ofFn]
 
 /-! ### Freeness and rank -/
 
@@ -201,13 +203,13 @@ theorem _root_.Module.Basis.map_symmetricPower_apply_eq_symmetricPower_map {N : 
 instance free [Module.Free R M] : Module.Free R (Sym[R]^n M) :=
   Module.Free.of_basis ((Module.Free.chooseBasis R M).symmetricPower n)
 
-/-- The rank of a symmetric power of a finite free module: the number of unordered `n`-tuples of
-basis indices, `Nat.multichoose (finrank R M) n`. -/
-theorem finrank_eq [StrongRankCondition R] [Module.Free R M] [Module.Finite R M] :
+/-- The rank of a symmetric power of a free module is `Nat.multichoose (finrank R M) n`. When `M`
+is finite this is the number of unordered `n`-tuples of basis indices. When `M` is not finite,
+`finrank R M = 0` and both sides are `0` for `n > 0` and `1` for `n = 0`. -/
+theorem finrank_eq [StrongRankCondition R] [Module.Free R M] :
     Module.finrank R (Sym[R]^n M) = Nat.multichoose (Module.finrank R M) n := by
-  classical
-  rw [Module.finrank_eq_card_basis ((Module.Free.chooseBasis R M).symmetricPower n),
-    Sym.card_sym_eq_multichoose, Module.finrank_eq_card_chooseBasisIndex]
+  rw [Module.finrank_eq_nat_card_basis ((Module.Free.chooseBasis R M).symmetricPower n),
+    Sym.natCard_sym_eq_multichoose, Module.finrank_eq_nat_card_basis (Module.Free.chooseBasis R M)]
 
 /-! ### Traces -/
 

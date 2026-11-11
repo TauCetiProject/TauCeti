@@ -149,11 +149,11 @@ theorem isFrobeniusFunctional_apply_one {e : A ≃ₗ[k] Module.Dual k A}
   constructor
   · intro a ha
     refine e.injective (LinearMap.ext fun b => ?_)
-    rw [map_zero, LinearMap.zero_apply, ← LinearEquiv.coe_coe, dualLinearMap_apply_apply he]
+    rw [map_zero, LinearMap.zero_apply, apply_apply_eq_apply_one_mul he]
     simpa using ha b
   · intro b hb
     exact (Module.forall_dual_apply_eq_zero_iff k b).mp fun f => by
-      rw [← e.apply_symm_apply f, ← LinearEquiv.coe_coe, dualLinearMap_apply_apply he]
+      rw [← e.apply_symm_apply f, apply_apply_eq_apply_one_mul he]
       simpa using hb _
 
 end Projective
@@ -245,7 +245,7 @@ theorem toDualEquiv_isFrobeniusFunctional_apply_one {e : A ≃ₗ[k] Module.Dual
     (LinearMap.isFrobeniusFunctional_apply_one he).toDualEquiv = e :=
   LinearEquiv.ext fun a => LinearMap.ext fun b => by
     rw [LinearMap.IsFrobeniusFunctional.toDualEquiv_apply_apply]
-    exact (dualLinearMap_apply_apply (e := e.toLinearMap) (fun x y => he x y) a b).symm
+    exact (apply_apply_eq_apply_one_mul he a b).symm
 
 variable (k A) in
 /-- **Frobenius functionals are the isomorphisms `A ≅ A⁺` of right modules.** The pointwise form of

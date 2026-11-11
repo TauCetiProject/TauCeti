@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
-public import Mathlib.LinearAlgebra.UnitaryGroup
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
 /-!
 # Scalar, diagonal and determinant facts for orthogonal matrices
@@ -18,8 +18,9 @@ Over a ring without zero divisors an orthogonal matrix has determinant `1` or `-
 occur as soon as the index type is nonempty: the diagonal reflection negating one coordinate is an
 orthogonal matrix of determinant `-1`.
 
-For a trivial star operation the unitary elements of the general linear group are the orthogonal
-matrices.
+Permutation matrices are orthogonal, and a matrix is orthogonal exactly when it preserves the dot
+product. The columns of an orthogonal matrix are orthonormal for the dot product. For a trivial
+star operation the unitary elements of the general linear group are the orthogonal matrices.
 
 ## Main definitions
 
@@ -32,6 +33,11 @@ matrices.
 * `TauCeti.det_eq_one_or_neg_one_of_mem_orthogonalGroup`: the determinant of an orthogonal matrix
   is `1` or `-1`.
 * `TauCeti.det_orthogonalDiagonalReflection`: the diagonal reflection has determinant `-1`.
+* `Matrix.permMatrix_mem_orthogonalGroup`: a permutation matrix is orthogonal.
+* `Matrix.mem_orthogonalGroup_iff_dotProduct_mulVec`: a matrix is orthogonal exactly when it
+  preserves the dot product.
+* `Matrix.col_dotProduct_col_of_mem_orthogonalGroup`: the columns of an orthogonal matrix are
+  orthonormal.
 * `Matrix.GeneralLinearGroup.mem_unitarySubgroup_iff_mem_orthogonalGroup`: for a trivial star
   operation, the unitary elements of `GL n R` are the orthogonal matrices.
 -/
@@ -91,6 +97,37 @@ theorem det_orthogonalDiagonalReflection (i : n) :
 end DiagonalReflection
 
 end TauCeti
+
+namespace Matrix
+
+/-- A permutation matrix is orthogonal. This is `Matrix.permMatrix_mem_unitaryGroup` for the
+trivial star operation `starRingOfComm`, which defines `Matrix.orthogonalGroup`. -/
+theorem permMatrix_mem_orthogonalGroup {n : Type*} [Fintype n] [DecidableEq n] (R : Type*)
+    [CommRing R] (σ : Equiv.Perm n) : σ.permMatrix R ∈ orthogonalGroup n R :=
+  letI := starRingOfComm (R := R)
+  permMatrix_mem_unitaryGroup σ
+
+/-- A square matrix is orthogonal exactly when it preserves the dot product. -/
+theorem mem_orthogonalGroup_iff_dotProduct_mulVec {n R : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] {A : Matrix n n R} :
+    A ∈ orthogonalGroup n R ↔ ∀ x y, (A *ᵥ x) ⬝ᵥ (A *ᵥ y) = x ⬝ᵥ y := by
+  rw [mem_orthogonalGroup_iff']
+  refine ⟨fun h x y => ?_, fun h => Matrix.ext fun i j => ?_⟩
+  · rw [dotProduct_mulVec, ← mulVec_transpose, mulVec_mulVec, h, one_mulVec]
+  · have hij := h (Pi.single i 1) (Pi.single j 1)
+    simp only [mulVec_single_one, single_dotProduct, one_mul] at hij
+    rw [Matrix.mul_apply, Matrix.one_apply]
+    simpa [dotProduct, Pi.single_apply, eq_comm] using hij
+
+/-- The columns of an orthogonal matrix are orthonormal for the dot product: the dot product of
+columns `i` and `j` is the `(i, j)` entry of the identity matrix. -/
+theorem col_dotProduct_col_of_mem_orthogonalGroup {n R : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] {A : Matrix n n R} (hA : A ∈ orthogonalGroup n R) (i j : n) :
+    A.col i ⬝ᵥ A.col j = (1 : Matrix n n R) i j := by
+  rw [← (mem_orthogonalGroup_iff' _ _).1 hA, mul_apply']
+  rfl
+
+end Matrix
 
 namespace Matrix.GeneralLinearGroup
 

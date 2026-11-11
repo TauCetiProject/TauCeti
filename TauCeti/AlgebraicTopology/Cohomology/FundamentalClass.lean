@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Kronecker
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Degree
 
 /-!
 # Evaluating cohomology classes on fundamental classes
@@ -23,7 +23,9 @@ tangent plane field.
 The pairing is natural: evaluating `c` on the image of `[N]` under `f` is evaluating the pull-back
 `f^* c` on `[N]` itself, and for a further map `g : X → Y`, evaluating `c` on `(g ∘ f)_*[N]` is
 evaluating `g^* c` on `f_*[N]`. The class `f_*[N]`, and so the pairing, depends only on the
-homotopy class of `f`, and reversing the orientation of `N` negates both.
+homotopy class of `f`, and reversing the orientation of `N` negates both. For a map `f : N → P` to
+a second compact preconnected oriented `n`-manifold, the pairing scales by the degree of `f`:
+`⟨f^* c, [N]⟩ = deg f • ⟨c, [P]⟩`.
 
 The pairing is non-degenerate on the manifold itself. If `N` is moreover connected and `M` is an
 injective abelian group, such as `ℚ` or `ℚ / ℤ`, then `c ↦ ⟨c, [N]⟩` is a bijection
@@ -47,6 +49,11 @@ coefficients (`TopCat.singularKroneckerEquiv`), and `Hₙ(N; ℤ)` is freely gen
   same pairing.
 * `TauCeti.HomologicalOrientation.evalFundamentalClass_neg`: reversing the orientation negates the
   pairing.
+* `TauCeti.HomologicalOrientation.evalFundamentalClass_id_singularCohomologyMap_eq_degree_smul`:
+  for a map `f : N → P` of compact oriented `n`-manifolds with `P` preconnected,
+  `⟨f^* c, [N]⟩ = deg f • ⟨c, [P]⟩`, and more generally
+  `TauCeti.HomologicalOrientation.evalFundamentalClass_comp_eq_degree_smul`:
+  `⟨c, (g ∘ f)_*[N]⟩ = deg f • ⟨c, g_*[P]⟩`.
 * `TauCeti.HomologicalOrientation.evalFundamentalClass_id_bijective`: for a compact connected
   oriented manifold and injective coefficients, evaluation on the fundamental class is a bijection
   `Hⁿ(N; M) → M`.
@@ -165,6 +172,38 @@ theorem evalFundamentalClass_id_bijective [ConnectedSpace N] [CategoryTheory.Inj
   rw [h]
   exact (LinearEquiv.bijective _).comp ((LinearEquiv.bijective _).comp
     (ModuleCat.hom_bijective.comp ((TopCat.of N).singularKroneckerEquiv ℤ n).bijective))
+
+section Degree
+
+variable {P G : Type} [TopologicalSpace P] [T2Space P]
+  [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G] [ChartedSpace G P]
+  [CompactSpace P] [PreconnectedSpace P] (o' : HomologicalOrientation P G n)
+  (hG : finrank ℝ G = n)
+
+include hG in
+/-- **The degree formula for the pairing**: for a map `f : N → P` of compact oriented
+`n`-manifolds with `P` preconnected and any continuous `g : P → X`,
+`⟨c, (g ∘ f)_*[N]⟩ = deg f • ⟨c, g_*[P]⟩`. -/
+theorem evalFundamentalClass_comp_eq_degree_smul (g : C(P, X)) (f : C(N, P))
+    (c : (TopCat.of X).singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ M n) :
+    o.evalFundamentalClass hn M (g.comp f) c =
+      o.degree o' hn f • o'.evalFundamentalClass hG M g c := by
+  rw [evalFundamentalClass_apply, evalFundamentalClass_apply,
+    o.mapFundamentalClass_comp_eq_degree_smul o' hn hG, map_zsmul]
+
+include hG in
+/-- **The degree formula for characteristic numbers**: for a map `f : N → P` of compact oriented
+`n`-manifolds with `P` preconnected, evaluating the pull-back of `c ∈ Hⁿ(P; M)` on `[N]` is the
+degree of `f` times evaluating `c` on `[P]`: `⟨f^* c, [N]⟩ = deg f • ⟨c, [P]⟩`. -/
+theorem evalFundamentalClass_id_singularCohomologyMap_eq_degree_smul (f : C(N, P))
+    (c : (TopCat.of P).singularCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ M n) :
+    o.evalFundamentalClass hn M (ContinuousMap.id N)
+        (TopCat.singularCohomologyMap (TopCat.ofHom f) n c) =
+      o.degree o' hn f • o'.evalFundamentalClass hG M (ContinuousMap.id P) c := by
+  rw [evalFundamentalClass_id_singularCohomologyMap, ← ContinuousMap.id_comp f,
+    o.evalFundamentalClass_comp_eq_degree_smul hn M o' hG, ContinuousMap.id_comp]
+
+end Degree
 
 end HomologicalOrientation
 

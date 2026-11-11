@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Analytic
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Comap
-public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Complete
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.ChartLocally
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.AdicHom
+public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.LocallyTate
 
 /-!
 # Adic morphisms of adic spaces
@@ -51,8 +49,8 @@ homomorphism is. Adic morphisms are thus the morphisms that restrict to the anal
   are adic, composites of adic morphisms are adic, and adicness is invariant under isomorphisms.
 * `TauCeti.AdicSpace.IsAdic.of_isOpenImmersion`: open immersions are adic.
 * `TauCeti.AdicSpace.IsAdic.of_comp`: if `f ≫ g` is adic, then `f` is adic.
-* `TauCeti.AdicSpace.IsAdic.of_analyticPoints_eq_univ`: every morphism into an adic space all of
-  whose points are analytic is adic.
+* `TauCeti.AdicSpace.IsAdic.of_analyticPoints_eq_univ`, `TauCeti.AdicSpace.IsAdic.of_isAnalytic`:
+  every morphism into an analytic adic space is adic.
 * `TauCeti.AdicSpace.IsAdic.iff_isAdicHom`: a morphism of affinoid adic spaces induced by a
   morphism of Huber pairs is adic exactly when its ring homomorphism is.
 
@@ -132,8 +130,10 @@ private theorem isAdic_of_mapsTo_analyticPoints {f : X ⟶ Y}
   obtain ⟨U, hU, hxU, hUV⟩ := Opens.isBasis_iff_nbhd.mp
     (isBasis_affinoidOpens X.property.isLocallyAffinoid) (U := (Opens.map f.hom.base).obj V)
     (x := x) hxV
-  obtain ⟨B, _, _, _, _, _, _, _, T, P', hP', ⟨eU⟩⟩ := (isAffinoid_iff_exists_complete _).mp hU
-  obtain ⟨A, _, _, _, _, _, _, _, S, P, hP, ⟨eV⟩⟩ := (isAffinoid_iff_exists_complete _).mp hV
+  obtain ⟨B, _, _, _, _, _, _, _, T, P', hP', ⟨eU⟩⟩ := (isAffinoid_iff_exists_complete _).mp
+    ((mem_propOpens_iff _).mp hU)
+  obtain ⟨A, _, _, _, _, _, _, _, S, P, hP, ⟨eV⟩⟩ := (isAffinoid_iff_exists_complete _).mp
+    ((mem_propOpens_iff _).mp hV)
   have hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
       (presentationLimitPresheaf P' T.plus) :=
     (isSheafy_presentationLimitPreAdicSpace_iff P' T.plus _ hP').mp
@@ -214,6 +214,10 @@ every morphism `X ⟶ Y` is adic. -/
 theorem IsAdic.of_analyticPoints_eq_univ (f : X ⟶ Y) (hY : Y.obj.analyticPoints = Set.univ) :
     IsAdic f :=
   (isAdic_iff_mapsTo_analyticPoints f).mpr fun _ _ ↦ hY ▸ Set.mem_univ _
+
+/-- **Every morphism into an analytic adic space is adic** (Huber 1996, §1.2). -/
+theorem IsAdic.of_isAnalytic (f : X ⟶ Y) (hY : Y.IsAnalytic) : IsAdic f :=
+  of_analyticPoints_eq_univ f hY.analyticPoints_eq_univ
 
 /-- **Affinoid morphisms**: for a morphism of Huber pairs `φ : (A, A⁺) → (B, B⁺)` with `B`
 complete and Hausdorff, between pairs whose adic spectra are adic spaces, the morphism

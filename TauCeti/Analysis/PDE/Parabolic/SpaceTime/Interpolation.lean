@@ -39,6 +39,8 @@ Its constants depend neither on the dimension nor on the slab. For `α < 1` the 
 * `TauCeti.ParabolicSpaceTime.spaceEHolderNorm_one_le_of_hasFDerivAt` and
   `TauCeti.ParabolicSpaceTime.timeEHolderNorm_one_le_of_hasDerivWithinAt`: bounded derivatives
   give Lipschitz bounds in space and in time.
+* `TauCeti.ParabolicSpaceTime.timeEHolderNorm_le_of_timeEHolderNorm_le`: the temporal seminorm
+  with a smaller exponent, from a temporal seminorm and an oscillation bound.
 * `TauCeti.ParabolicSpaceTime.eHolderNorm_le_of_spaceEHolderNorm_le_of_timeEHolderNorm_le`:
   the parabolic seminorm with a smaller exponent, from separate seminorms and an oscillation
   bound.
@@ -61,6 +63,20 @@ namespace TauCeti.ParabolicSpaceTime
 
 variable {E F : Type*} {a b : ℝ}
 
+/-- **The temporal seminorm at a smaller exponent.** Let `v` be a function on the slab
+`E × [a, b]` whose values lie within distance `D` of each other, with temporal `β`-seminorm at
+most `K`. If `γ ≤ β`, then for every scale `δ > 0` the temporal `γ`-seminorm of `v` is at most
+`K δ^(β - γ) + D δ^(-γ)`. -/
+theorem timeEHolderNorm_le_of_timeEHolderNorm_le [PseudoMetricSpace F]
+    {v : slab (E := E) a b → F} {β γ K D δ : ℝ≥0} (h : timeEHolderNorm β v ≤ K)
+    (hD : ∀ p q, dist (v p) (v q) ≤ D) (hγ : γ ≤ β) (hδ : 0 < δ) :
+    timeEHolderNorm γ v ≤ ↑(K * δ ^ ((β : ℝ) - γ) + D * δ ^ (-(γ : ℝ))) := by
+  refine timeEHolderNorm_le_iff.2 fun x => ?_
+  have hx : HolderOnWith K β (fun t => v (slabMk x t)) univ :=
+    fun t _ s _ => timeEHolderNorm_le_iff.1 h x t s
+  exact fun t s => HolderOnWith.of_le_of_dist_le (fun _ ht _ hs _ => hx.dist_le ht hs)
+    (fun _ _ _ _ => hD _ _) hγ hδ t (mem_univ t) s (mem_univ s)
+
 /-- **The parabolic seminorm at a smaller exponent.** Let `v` be a function on the slab
 `E × [a, b]` whose values lie within distance `D` of each other, with spatial `β₁`-seminorm at most
 `K₁` and temporal `β₂`-seminorm at most `K₂`. If `α ≤ β₁` and `α / 2 ≤ β₂`, then for all spatial
@@ -79,13 +95,9 @@ theorem eHolderNorm_le_of_spaceEHolderNorm_le_of_timeEHolderNorm_le [MetricSpace
   · refine spaceEHolderNorm_le_iff.2 fun t => ?_
     have ht : HolderOnWith K₁ β₁ (fun x => v (slabMk x t)) univ :=
       fun x _ y _ => spaceEHolderNorm_le_iff.1 h₁ t x y
-    exact fun x y => ht.of_le_of_dist_le (fun _ _ _ _ => hD _ _) hα₁ hδ₁ x (mem_univ x) y
-      (mem_univ y)
-  · refine timeEHolderNorm_le_iff.2 fun x => ?_
-    have hx : HolderOnWith K₂ β₂ (fun t => v (slabMk x t)) univ :=
-      fun t _ s _ => timeEHolderNorm_le_iff.1 h₂ x t s
-    exact fun t s => hx.of_le_of_dist_le (fun _ _ _ _ => hD _ _) hα₂ hδ₂ t (mem_univ t) s
-      (mem_univ s)
+    exact fun x y => HolderOnWith.of_le_of_dist_le (fun _ hx _ hy _ => ht.dist_le hx hy)
+      (fun _ _ _ _ => hD _ _) hα₁ hδ₁ x (mem_univ x) y (mem_univ y)
+  · exact timeEHolderNorm_le_of_timeEHolderNorm_le h₂ hD hα₂ hδ₂
 
 /-- Values bounded in norm by `C` on the slab lie within distance `2 C` of each other. -/
 private theorem dist_le_two_mul_of_norm_le [SeminormedAddCommGroup F] {w : E → ℝ → F} {C : ℝ≥0}

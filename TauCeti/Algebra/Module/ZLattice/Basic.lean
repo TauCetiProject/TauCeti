@@ -20,13 +20,17 @@ The coordinates of a real basis `b` carry any additive Haar measure `μ` to Lebe
 
 It also records basic facts about lattices: a full lattice is the `ℤ`-span of a basis of
 the ambient space, and membership in the pull-back `ZLattice.comap` of a lattice is membership of
-the image. The pull-back `L ∩ V` of a discrete subgroup to a subspace `V` is again discrete.
+the image. The pull-back `L ∩ V` of a discrete subgroup to a subspace `V` is again discrete, and
+so is the pull-back of a discrete subgroup or of a full lattice along a linear isometry
+equivalence. A discrete subgroup containing a full lattice is a full lattice.
 
 ## Main results
 
 * `ZSpan.convex_fundamentalDomain`: the fundamental domain of a real basis is convex.
 * `ZSpan.eq_of_sub_mem_fundamentalDomain`: two integer-span translates placing a point in the
   fundamental domain are equal.
+* `ZSpan.fundamentalDomain_pi_basis`: the fundamental domain of a product basis is the product of
+  the fundamental domains.
 * `Module.Basis.addHaar_eq_measure_fundamentalDomain_mul_volume_image`: `μ s` is the measure of
   the fundamental domain of `b` times the Lebesgue measure of the coordinate image of `s`.
 * `Module.Basis.mem_span_basisFun_iff`: a point of `ℝ^ι` lies in the standard lattice `ℤ^ι`
@@ -35,6 +39,14 @@ the image. The pull-back `L ∩ V` of a discrete subgroup to a subspace `V` is a
 * `ZLattice.mem_comap`: `x ∈ ZLattice.comap K L e` if and only if `e x ∈ L`.
 * `ZLattice.instDiscreteTopologyComapSubtype`: the restriction `L ∩ V` of a discrete subgroup `L`
   to a subspace `V` is discrete.
+* `ZLattice.instDiscreteTopologyComapLinearIsometryEquiv`,
+  `ZLattice.instIsZLatticeComapLinearIsometryEquiv`: the pull-back of a discrete subgroup, or of a
+  full lattice, along a linear isometry equivalence is again one.
+* `ZLattice.finiteDimensional_of_isZLattice`: a finitely generated full lattice in a normed
+  space over a normed field forces the space to be finite-dimensional.
+* `ZLattice.discreteTopology_of_norm_sq_mem_int_mul`: a lattice whose squared norms are all
+  multiples of a positive constant `c` by integers is discrete.
+* `IsZLattice.of_le`: a discrete subgroup containing a full lattice is a full lattice.
 * `TauCeti.discreteTopology_span_one`: the integer span of `1` in `ℝ` is discrete.
 -/
 
@@ -63,20 +75,22 @@ theorem _root_.ZSpan.convex_fundamentalDomain (β : Basis ι ℝ E) :
 
 /-- Two vectors in the integer span that translate the same point into the fundamental domain
 in subtraction form are equal. -/
-theorem _root_.ZSpan.eq_of_sub_mem_fundamentalDomain [Finite ι] (β : Basis ι ℝ E)
+theorem _root_.ZSpan.eq_of_sub_mem_fundamentalDomain (β : Basis ι ℝ E)
     {x w₁ w₂ : E} (hw₁ : w₁ ∈ Submodule.span ℤ (Set.range β))
     (hw₂ : w₂ ∈ Submodule.span ℤ (Set.range β))
     (h₁ : x - w₁ ∈ ZSpan.fundamentalDomain β)
     (h₂ : x - w₂ ∈ ZSpan.fundamentalDomain β) : w₁ = w₂ := by
-  have hn₁ : -w₁ ∈ Submodule.span ℤ (Set.range β) := neg_mem hw₁
-  have hn₂ : -w₂ ∈ Submodule.span ℤ (Set.range β) := neg_mem hw₂
-  have subtype_vadd (w : E) (hw : w ∈ Submodule.span ℤ (Set.range β)) :
-      (⟨w, hw⟩ : Submodule.span ℤ (Set.range β)) +ᵥ x = w + x := rfl
-  have heq : (⟨-w₁, hn₁⟩ : Submodule.span ℤ (Set.range β)) = ⟨-w₂, hn₂⟩ :=
-    (ZSpan.exist_unique_vadd_mem_fundamentalDomain β x).unique
-      (by rw [subtype_vadd]; simpa only [sub_eq_add_neg, add_comm] using h₁)
-      (by rw [subtype_vadd]; simpa only [sub_eq_add_neg, add_comm] using h₂)
-  exact neg_injective (congrArg Subtype.val heq)
+  refine β.repr.injective (Finsupp.ext fun i ↦ ?_)
+  obtain ⟨a, ha⟩ := (β.mem_span_iff_repr_mem ℤ _).1 hw₁ i
+  obtain ⟨b, hb⟩ := (β.mem_span_iff_repr_mem ℤ _).1 hw₂ i
+  have h₁i := (ZSpan.mem_fundamentalDomain β).1 h₁ i
+  have h₂i := (ZSpan.mem_fundamentalDomain β).1 h₂ i
+  simp only [map_sub, Finsupp.sub_apply, ← ha, ← hb, eq_intCast, Set.mem_Ico] at h₁i h₂i ⊢
+  have h₃ : (a : ℝ) < b + 1 := by linarith [h₁i.1, h₁i.2, h₂i.1, h₂i.2]
+  have h₄ : (b : ℝ) < a + 1 := by linarith [h₁i.1, h₁i.2, h₂i.1, h₂i.2]
+  have h₅ : a < b + 1 := by exact_mod_cast h₃
+  have h₆ : b < a + 1 := by exact_mod_cast h₄
+  rw [show a = b by omega]
 
 /-- The coordinates of a real basis `b` carry an additive Haar measure `μ` to Lebesgue measure on
 `ι → ℝ`, scaled by the measure of the fundamental domain of `b`: every set `s` has
@@ -106,6 +120,15 @@ theorem _root_.Module.Basis.addHaar_eq_measure_fundamentalDomain_mul_volume_imag
     simp
   rw [hμ s, hμ, hF, Real.volume_pi_Ico]
   simp
+
+/-- The fundamental domain of a product basis `Pi.basis b` is the product of the fundamental
+domains of the factors `b i`. -/
+theorem _root_.ZSpan.fundamentalDomain_pi_basis {η : Type*} [Fintype η] {F : η → Type*}
+    [∀ i, NormedAddCommGroup (F i)] [∀ i, NormedSpace ℝ (F i)] {κ : η → Type*}
+    (b : ∀ i, Basis (κ i) ℝ (F i)) :
+    ZSpan.fundamentalDomain (Pi.basis b) = Set.univ.pi fun i ↦ ZSpan.fundamentalDomain (b i) := by
+  ext x
+  simp [ZSpan.mem_fundamentalDomain, Sigma.forall]
 
 /-- A point of `ℝ^ι` lies in the standard lattice `ℤ^ι` exactly when it is the vector of
 coordinates in the `ℤ`-basis `b` of some `l : Λ`, read in `ℝ`. -/
@@ -142,6 +165,57 @@ instance instDiscreteTopologyComapSubtype {K : Type*} [NormedField K] {E : Type*
     [NormedAddCommGroup E] [NormedSpace K E] (L : Submodule ℤ E) [DiscreteTopology L]
     (V : Submodule K E) : DiscreteTopology (ZLattice.comap K L V.subtype) :=
   comap_discreteTopology K L continuous_subtype_val V.injective_subtype
+
+section LinearIsometryEquiv
+
+variable {K : Type*} [NormedField K] {E F : Type*} [NormedAddCommGroup E] [NormedSpace K E]
+  [NormedAddCommGroup F] [NormedSpace K F] (L : Submodule ℤ E) [DiscreteTopology L]
+  (e : F ≃ₗᵢ[K] E)
+
+-- Mathlib states these instances for the map underlying a continuous linear equivalence; the
+-- map underlying a linear isometry equivalence is the same by definition, but instance search
+-- does not see through `LinearIsometryEquiv.toContinuousLinearEquiv`.
+/-- The pull-back of a discrete subgroup along a linear isometry equivalence is discrete. -/
+instance instDiscreteTopologyComapLinearIsometryEquiv :
+    DiscreteTopology (ZLattice.comap K L e.toLinearEquiv.toLinearMap) :=
+  inferInstanceAs (DiscreteTopology (ZLattice.comap K L e.toContinuousLinearEquiv.toLinearMap))
+
+/-- The pull-back of a full lattice along a linear isometry equivalence is a full lattice. -/
+instance instIsZLatticeComapLinearIsometryEquiv [IsZLattice K L] :
+    IsZLattice K (ZLattice.comap K L e.toLinearEquiv.toLinearMap) :=
+  inferInstanceAs (IsZLattice K (ZLattice.comap K L e.toContinuousLinearEquiv.toLinearMap))
+
+end LinearIsometryEquiv
+
+/-- A finitely generated full lattice in a normed space over a normed field `K` forces the space
+to be finite-dimensional over `K`: finitely many generators span it. -/
+theorem finiteDimensional_of_isZLattice {K : Type*} [NormedField K] {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace K E] (L : Submodule ℤ E) [DiscreteTopology L]
+    [IsZLattice K L] [Module.Finite ℤ L] : FiniteDimensional K E :=
+  Module.finite_def.2 <| by
+    simpa [IsZLattice.span_top] using (Module.Finite.iff_fg.1 ‹Module.Finite ℤ L›).span (A := K)
+
+/-- A lattice whose squared norms are all multiples `c m` (`m : ℤ`) of a constant `c > 0` is
+discrete: a nonzero vector has squared norm at least `c`, hence norm at least `√c`. -/
+theorem discreteTopology_of_norm_sq_mem_int_mul {E : Type*} [NormedAddCommGroup E]
+    {L : Submodule ℤ E} {c : ℝ} (hc : 0 < c) (h : ∀ x ∈ L, ∃ m : ℤ, ‖x‖ ^ 2 = c * m) :
+    DiscreteTopology L := by
+  refine DiscreteTopology.of_forall_le_norm (Real.sqrt_pos.2 hc) fun y hy ↦ ?_
+  obtain ⟨m, hm⟩ := h y y.2
+  have hy0 : 0 < ‖(y : E)‖ := norm_pos_iff.2 fun h0 ↦ hy (Subtype.ext h0)
+  have hm1 : (1 : ℝ) ≤ m := by
+    have hmpos : (0 : ℝ) < m := by
+      by_contra hneg
+      nlinarith [pow_pos hy0 2]
+    exact_mod_cast (Int.cast_pos.1 hmpos : 0 < m)
+  have h1 : c ≤ ‖(y : E)‖ ^ 2 := by nlinarith
+  exact (Real.sqrt_le_iff.2 ⟨hy0.le, h1⟩).trans_eq (Submodule.norm_coe y).symm
+
+/-- A discrete subgroup containing a full lattice is a full lattice. -/
+theorem _root_.IsZLattice.of_le {K : Type*} [NormedField K] {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace K E] {L₁ L₂ : Submodule ℤ E} [DiscreteTopology L₁] [IsZLattice K L₁]
+    [DiscreteTopology L₂] (h : L₁ ≤ L₂) : IsZLattice K L₂ :=
+  ⟨eq_top_iff.2 (IsZLattice.span_top (K := K) (L := L₁) ▸ Submodule.span_mono h)⟩
 
 variable (K : Type*) [NormedField K] [LinearOrder K] [IsStrictOrderedRing K] [HasSolidNorm K]
   [FloorRing K] {E : Type u} [NormedAddCommGroup E] [NormedSpace K E] [FiniteDimensional K E]

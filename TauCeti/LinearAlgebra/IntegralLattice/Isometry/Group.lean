@@ -42,6 +42,8 @@ and in rank one `O(L) = {±1}`.
 * `TauCeti.IntegralLattice.Isometry.det`: the determinant `O(L) →* ℤˣ`.
 * `TauCeti.IntegralLattice.specialOrthogonalGroup`: the subgroup `SO(L)` of determinant one.
 * `TauCeti.IntegralLattice.Isometry.neg`: negation, the element `-1` of `O(L)`.
+* `TauCeti.IntegralLattice.Isometry.unitsSMul`: multiplication by a unit `u` of `ℤ`, so the
+  identity for `u = 1` and negation for `u = -1`.
 * `TauCeti.IntegralLattice.specialOrthogonalGroup.toSpecialLinearGroup`: restriction to the
   carrier as a group homomorphism from `SO(L)` to the special linear group of the carrier.
 * `TauCeti.IntegralLattice.specialOrthogonalGroup.toMatrix`: the matrix of a proper isometry in a
@@ -205,6 +207,54 @@ theorem det_neg (L : IntegralLattice V) : det L (neg L) = (-1) ^ Module.finrank 
     simp
   rw [h, LinearMap.det_smul, LinearMap.det_id, mul_one]
 
+/-- Multiplication by a unit `u` of `ℤ`, that is by `±1`, is a self-isometry of every integral
+lattice. -/
+def unitsSMul (u : ℤˣ) (L : IntegralLattice V) : Isometry L L where
+  toIsometryEquiv :=
+    { toFun x := (u : ℤ) • x
+      invFun x := (u : ℤ) • x
+      map_add' := smul_add _
+      map_smul' c x := smul_comm _ c x
+      left_inv x := by simp [smul_smul]
+      right_inv x := by simp [smul_smul]
+      map_app' x y := by
+        simp only [map_zsmul, LinearMap.smul_apply, smul_smul, ← Units.val_mul,
+          Int.units_mul_self, Units.val_one, one_smul] }
+  map_carrier := by
+    ext x
+    simp only [Submodule.mem_map]
+    refine ⟨?_, fun hx ↦ ⟨(u : ℤ) • x, zsmul_mem hx _, by simp [smul_smul]⟩⟩
+    rintro ⟨y, hy, rfl⟩
+    exact zsmul_mem hy _
+
+@[simp]
+theorem unitsSMul_apply (u : ℤˣ) (L : IntegralLattice V) (x : V) :
+    unitsSMul u L x = (u : ℤ) • x := (rfl)
+
+/-- Multiplication by the unit `1` is the identity of `O(L)`. -/
+@[simp]
+theorem unitsSMul_one (L : IntegralLattice V) : unitsSMul 1 L = 1 := by
+  ext x
+  simp
+
+/-- Multiplication by the unit `-1` is negation. -/
+@[simp]
+theorem unitsSMul_neg_one (L : IntegralLattice V) : unitsSMul (-1) L = neg L := by
+  ext x
+  simp
+
+/-- Multiplication by a product of units is the product in `O(L)` of the multiplications. -/
+theorem unitsSMul_mul (u v : ℤˣ) (L : IntegralLattice V) :
+    unitsSMul (u * v) L = unitsSMul u L * unitsSMul v L := by
+  ext x
+  simp [mul_smul]
+
+/-- Multiplication by a unit of `ℤ` is an involution, since `u * u = 1`. -/
+@[simp]
+theorem symm_unitsSMul (u : ℤˣ) (L : IntegralLattice V) :
+    (unitsSMul u L).symm = unitsSMul u L := by
+  rw [← inv_def, inv_eq_iff_mul_eq_one, ← unitsSMul_mul, Int.units_mul_self, unitsSMul_one]
+
 end Isometry
 
 /-- The special isometry group `SO(L)`: the subgroup of the isometry group `O(L) = Isometry L L`
@@ -336,8 +386,8 @@ open scoped Pointwise
 
 /-- A self-isometry of a lattice, as an element of the isometry group of its rational form. -/
 noncomputable def toIsometryGroup (L : IntegralLattice V) :
-    Isometry L L →* isometryGroup L.form where
-  toFun g := (isometryGroupEquivIsometryEquiv L.form).symm g.toIsometryEquiv
+    Isometry L L →* L.form.isometryGroup where
+  toFun g := (L.form.isometryGroupEquivIsometryEquiv).symm g.toIsometryEquiv
   map_one' := Subtype.ext (LinearEquiv.ext fun x ↦ by simp)
   map_mul' g h := Subtype.ext (LinearEquiv.ext fun x ↦ by simp)
 
@@ -352,10 +402,10 @@ theorem toIsometryGroup_injective (L : IntegralLattice V) :
 
 /-- A rational isometry of `L` which, together with its inverse, maps the carrier into itself is an
 isometry of `L`. -/
-noncomputable def ofIsometryGroup (G : isometryGroup L.form)
+noncomputable def ofIsometryGroup (G : L.form.isometryGroup)
     (h : ∀ x ∈ L.carrier, (G : V ≃ₗ[ℚ] V) x ∈ L.carrier)
     (h' : ∀ x ∈ L.carrier, (G : V ≃ₗ[ℚ] V).symm x ∈ L.carrier) : Isometry L L where
-  toIsometryEquiv := isometryGroupEquivIsometryEquiv L.form G
+  toIsometryEquiv := L.form.isometryGroupEquivIsometryEquiv G
   map_carrier := by
     apply le_antisymm
     · rintro _ ⟨x, hx, rfl⟩
@@ -364,12 +414,12 @@ noncomputable def ofIsometryGroup (G : isometryGroup L.form)
       exact ⟨_, h' x hx, by simp⟩
 
 @[simp]
-theorem ofIsometryGroup_apply (G : isometryGroup L.form) (h h') (x : V) :
+theorem ofIsometryGroup_apply (G : L.form.isometryGroup) (h h') (x : V) :
     ofIsometryGroup G h h' x = (G : V ≃ₗ[ℚ] V) x := by
   simp [ofIsometryGroup, ← Isometry.coe_toIsometryEquiv]
 
 @[simp]
-theorem toIsometryGroup_ofIsometryGroup (G : isometryGroup L.form) (h h') :
+theorem toIsometryGroup_ofIsometryGroup (G : L.form.isometryGroup) (h h') :
     toIsometryGroup L (ofIsometryGroup G h h') = G :=
   Subtype.ext (LinearEquiv.ext fun x ↦ by simp)
 
@@ -380,7 +430,7 @@ theorem ofIsometryGroup_toIsometryGroup (g : Isometry L L) (h h') :
 
 /-- A rational isometry of `L` comes from a self-isometry of `L` exactly when it preserves
 membership in the carrier. -/
-theorem mem_range_toIsometryGroup_iff {G : isometryGroup L.form} :
+theorem mem_range_toIsometryGroup_iff {G : L.form.isometryGroup} :
     G ∈ (toIsometryGroup L).range ↔ ∀ x, (G : V ≃ₗ[ℚ] V) x ∈ L.carrier ↔ x ∈ L.carrier := by
   refine ⟨?_, fun h ↦ ⟨ofIsometryGroup G (fun x hx ↦ (h x).mpr hx) fun x hx ↦ (h _).mp ?_,
     toIsometryGroup_ofIsometryGroup G _ _⟩⟩
@@ -390,7 +440,7 @@ theorem mem_range_toIsometryGroup_iff {G : isometryGroup L.form} :
 
 /-- A subgroup of rational isometries of `L` each mapping the carrier into itself consists of
 self-isometries of `L`. -/
-theorem le_range_toIsometryGroup {H : Subgroup (isometryGroup L.form)}
+theorem le_range_toIsometryGroup {H : Subgroup (L.form.isometryGroup)}
     (hH : ∀ G ∈ H, ∀ x ∈ L.carrier, (G : V ≃ₗ[ℚ] V) x ∈ L.carrier) :
     H ≤ (toIsometryGroup L).range := fun G hG ↦
   mem_range_toIsometryGroup_iff.mpr fun x ↦ ⟨fun hx ↦ by

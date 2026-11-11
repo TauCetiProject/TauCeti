@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
+public import TauCeti.LinearAlgebra.QuadraticForm.Basic
+import TauCeti.Analysis.Complex.Circle
 
 /-!
 # The group `Spinᶜ(Q)`
@@ -40,16 +42,28 @@ a double cover of `SO(Q) × U(1)` whenever `Spin(Q)` is a double cover of `SO(Q)
 * `CliffordAlgebra.spinCGroup.det Q hQ`: the determinant character `[s, z] ↦ z²`.
 * `CliffordAlgebra.spinCGroup.toSpecialOrthogonal Q hQ`: the rotation homomorphism
   `[s, z] ↦ π(s)`.
+* `QuadraticMap.Isometry.spinCGroupMap f hQ hP`: the homomorphism `[s, z] ↦ [f s, z]` induced by
+  a quadratic isometry `f`.
 
 ## Main results
 
 * `CliffordAlgebra.mem_spinCKernel_iff`: the subgroup `spinCKernel Q hQ` is `{1, (-1, -1)}`.
+* `CliffordAlgebra.coe_spinCKernel`: the underlying set of that subgroup is the diagonal pair.
+* `CliffordAlgebra.finite_spinCKernel`: the diagonal kernel is finite.
 * `CliffordAlgebra.spinCGroup.mk_eq_mk_iff`: `[s, z] = [s', z']` exactly when
   `(s', z') = (s, z)` or `(s', z') = (-s, -z)`.
 * `CliffordAlgebra.spinCGroup.mem_ker_toSpecialOrthogonal_prod_det_iff`: the kernel of
   `Spinᶜ(Q) → SO(Q) × U(1)` is `{1, [1, -1]}`.
+* `CliffordAlgebra.spinCGroup.coe_ker_toSpecialOrthogonal_prod_det`: the underlying set of that
+  kernel is the pair `{1, [1, -1]}`.
+* `CliffordAlgebra.spinCGroup.finite_ker_toSpecialOrthogonal_prod_det`: that kernel is finite.
 * `CliffordAlgebra.spinCGroup.toSpecialOrthogonal_prod_det_surjective`: this map is onto when the
   Spin action is onto `SO(Q)`.
+* `CliffordAlgebra.spinCGroup.circle_hom_ext`: a homomorphism from the circle to `Spinᶜ(Q)` is
+  determined by its composite with `Spinᶜ(Q) → SO(Q) × U(1)`.
+* `QuadraticMap.Isometry.det_spinCGroupMap` and
+  `QuadraticMap.Isometry.toSpecialOrthogonal_spinCGroupMap_apply`: the induced map preserves the
+  determinant character, and its rotations extend the rotations of the source along `f`.
 
 ## References
 
@@ -87,6 +101,18 @@ theorem mem_spinCKernel_iff {p : spinGroup Q × Circle} :
     · exact one_mem _
     · exact Subgroup.mem_zpowers _
 
+/-- The underlying set of `spinCKernel Q hQ` is the diagonal pair `{1, (-1, -1)}`. -/
+theorem coe_spinCKernel :
+    (spinCKernel Q hQ : Set (spinGroup Q × Circle)) =
+      {1, (spinGroup.negOne Q hQ, -1)} := by
+  ext p
+  simp [mem_spinCKernel_iff]
+
+/-- The diagonal order-two kernel defining `Spinᶜ(Q)` is finite. -/
+theorem finite_spinCKernel : (spinCKernel Q hQ : Set (spinGroup Q × Circle)).Finite := by
+  rw [coe_spinCKernel]
+  exact Set.toFinite _
+
 /-- `(-1, -1)` lies in `spinCKernel Q hQ`. -/
 theorem negOne_neg_one_mem_spinCKernel : (spinGroup.negOne Q hQ, -1) ∈ spinCKernel Q hQ :=
   Subgroup.mem_zpowers _
@@ -118,6 +144,11 @@ def mk : spinGroup Q × Circle →* spinCGroup Q hQ :=
 theorem mk_apply (p : spinGroup Q × Circle) : mk Q hQ p = (p : spinCGroup Q hQ) :=
   (rfl)
 
+/-- The underlying function of `mk` is the quotient projection. This is not a simp lemma:
+simplifying partially applied `mk` would prevent representative lemmas from matching. -/
+theorem coe_mk : ⇑(mk Q hQ) = QuotientGroup.mk :=
+  (rfl)
+
 /-- Every element of `Spinᶜ(Q)` is a class `[s, z]`. -/
 theorem mk_surjective : Function.Surjective (mk Q hQ) :=
   QuotientGroup.mk'_surjective _
@@ -126,6 +157,14 @@ theorem mk_surjective : Function.Surjective (mk Q hQ) :=
 @[simp]
 theorem ker_mk : (mk Q hQ).ker = spinCKernel Q hQ :=
   QuotientGroup.ker_mk' _
+
+/-- Every fibre of `Spin(Q) × Circle → Spinᶜ(Q)` has exactly two elements. -/
+theorem card_fiber_mk (x : spinCGroup Q hQ) : Nat.card ((mk Q hQ) ⁻¹' {x}) = 2 := by
+  rw [Nat.card_congr (MonoidHom.fiberEquivKerOfSurjective (mk_surjective Q hQ) x), ker_mk]
+  refine (Nat.card_congr (Set.equivOfEq (coe_spinCKernel Q hQ))).trans ?_
+  exact Set.ncard_pair (by
+    intro h
+    exact spinGroup.negOne_ne_one Q hQ (congrArg Prod.fst h).symm)
 
 /-- `[-1, -1] = 1` in `Spinᶜ(Q)`. -/
 @[simp]
@@ -252,9 +291,10 @@ theorem toSpecialOrthogonal_ofCircle (z : Circle) :
 
 /-- **The kernel of `Spinᶜ(Q) → SO(Q) × U(1)`**, `[s, z] ↦ (π(s), z²)`, is `{1, [1, -1]}` for a
 finite-dimensional nondegenerate quadratic form in positive dimension. -/
-theorem mem_ker_toSpecialOrthogonal_prod_det_iff [FiniteDimensional ℝ M] [Nontrivial M]
+theorem mem_ker_toSpecialOrthogonal_prod_det_iff [FiniteDimensional ℝ M]
     (hQn : Q.Nondegenerate) (x : spinCGroup Q hQ) :
     x ∈ ((toSpecialOrthogonal Q hQ).prod (det Q hQ)).ker ↔ x = 1 ∨ x = ofCircle Q hQ (-1) := by
+  have : Nontrivial M := QuadraticMap.nontrivial_of_ne_zero hQ
   obtain ⟨⟨s, z⟩, rfl⟩ := mk_surjective Q hQ x
   constructor
   · intro hx
@@ -273,6 +313,23 @@ theorem mem_ker_toSpecialOrthogonal_prod_det_iff [FiniteDimensional ℝ M] [Nont
     · exact Or.inl (mk_negOne_neg_one Q hQ)
   · rintro (h | h) <;> simp [h]
 
+/-- The underlying set of the frame-and-determinant kernel is `{1, [1, -1]}` for a
+finite-dimensional nondegenerate form in positive dimension. -/
+theorem coe_ker_toSpecialOrthogonal_prod_det [FiniteDimensional ℝ M]
+    (hQn : Q.Nondegenerate) :
+    (((toSpecialOrthogonal Q hQ).prod (det Q hQ)).ker : Set (spinCGroup Q hQ)) =
+      {1, ofCircle Q hQ (-1)} := by
+  ext x
+  simp [mem_ker_toSpecialOrthogonal_prod_det_iff Q hQ hQn]
+
+/-- The frame-and-determinant kernel is finite for a nondegenerate form in positive finite
+dimension. -/
+theorem finite_ker_toSpecialOrthogonal_prod_det [FiniteDimensional ℝ M]
+    (hQn : Q.Nondegenerate) :
+    (((toSpecialOrthogonal Q hQ).prod (det Q hQ)).ker : Set (spinCGroup Q hQ)).Finite := by
+  rw [coe_ker_toSpecialOrthogonal_prod_det Q hQ hQn]
+  exact Set.toFinite _
+
 /-- **`Spinᶜ(Q) → SO(Q) × U(1)` is onto** whenever the Spin action is onto `SO(Q)`: every unit
 complex number has a square root on the circle. -/
 theorem toSpecialOrthogonal_prod_det_surjective
@@ -284,6 +341,120 @@ theorem toSpecialOrthogonal_prod_det_surjective
   rw [MonoidHom.prod_apply, toSpecialOrthogonal_mk, det_mk, ← Circle.exp_nsmul, nsmul_eq_mul,
     Nat.cast_ofNat, mul_div_cancel₀ _ two_ne_zero, Circle.exp_arg]
 
+/-- Every fibre of the frame-and-determinant map has two elements when it is surjective and
+the form is nondegenerate in positive finite dimension. -/
+theorem card_fiber_toSpecialOrthogonal_prod_det [FiniteDimensional ℝ M]
+    (hQn : Q.Nondegenerate)
+    (hsurj : Function.Surjective ((toSpecialOrthogonal Q hQ).prod (det Q hQ)))
+    (y : TauCeti.QuadraticMap.specialOrthogonalGroup Q × Circle) :
+    Nat.card (((toSpecialOrthogonal Q hQ).prod (det Q hQ)) ⁻¹' {y}) = 2 := by
+  rw [Nat.card_congr (MonoidHom.fiberEquivKerOfSurjective hsurj y)]
+  refine (Nat.card_congr
+    (Set.equivOfEq (coe_ker_toSpecialOrthogonal_prod_det Q hQ hQn))).trans ?_
+  exact Set.ncard_pair (by
+    intro h
+    have hone : ofCircle Q hQ (1 : Circle) = 1 := map_one _
+    exact Circle.neg_ne_self (1 : Circle)
+      ((ofCircle_injective Q hQ) (h.symm.trans hone.symm)))
+
+/-! ### Homomorphisms from the circle -/
+
+/-- **A homomorphism from the circle to `Spinᶜ(Q)` is determined by its composite with
+`Spinᶜ(Q) → SO(Q) × U(1)`**, for a finite-dimensional nondegenerate form. Two such homomorphisms
+differ by a homomorphism into the central kernel `{1, [1, -1]}`, and this is trivial because every
+point of the circle is a square while the kernel has exponent two. -/
+theorem circle_hom_ext [FiniteDimensional ℝ M] (hQn : Q.Nondegenerate)
+    {φ ψ : Circle →* spinCGroup Q hQ}
+    (h : ((toSpecialOrthogonal Q hQ).prod (det Q hQ)).comp φ =
+      ((toSpecialOrthogonal Q hQ).prod (det Q hQ)).comp ψ) :
+    φ = ψ := by
+  have : Nontrivial M := QuadraticMap.nontrivial_of_ne_zero hQ
+  -- The defect `φ y (ψ y)⁻¹` lies in the kernel `{1, [1, -1]}`: it is central and squares to `1`.
+  have hk (y : Circle) :
+      φ y * (ψ y)⁻¹ ∈ Subgroup.center (spinCGroup Q hQ) ∧ (φ y * (ψ y)⁻¹) ^ 2 = 1 := by
+    have hmem : φ y * (ψ y)⁻¹ ∈ ((toSpecialOrthogonal Q hQ).prod (det Q hQ)).ker := by
+      rw [MonoidHom.mem_ker, map_mul, map_inv, ← MonoidHom.comp_apply, h, MonoidHom.comp_apply,
+        mul_inv_cancel]
+    rcases (mem_ker_toSpecialOrthogonal_prod_det_iff Q hQ hQn _).mp hmem with h₁ | h₁ <;>
+      rw [h₁]
+    · exact ⟨one_mem _, one_pow 2⟩
+    · exact ⟨ofCircle_mem_center Q hQ _, by rw [← map_pow]; simp⟩
+  ext z
+  obtain ⟨y, rfl⟩ := z.exists_pow_nat_eq two_ne_zero
+  obtain ⟨hc, hsq⟩ := hk y
+  have hcomm : Commute (φ y * (ψ y)⁻¹) (ψ y) := (Subgroup.mem_center_iff.mp hc (ψ y)).symm
+  rw [map_pow, map_pow, ← inv_mul_cancel_right (φ y) (ψ y), hcomm.mul_pow, hsq, one_mul]
+
 end spinCGroup
 
 end CliffordAlgebra
+
+/-! ### Functoriality -/
+
+namespace QuadraticMap.Isometry
+
+open CliffordAlgebra
+
+variable {M N L : Type*} [AddCommGroup M] [Module ℝ M] [AddCommGroup N] [Module ℝ N]
+  [AddCommGroup L] [Module ℝ L] {Q : QuadraticForm ℝ M} {P : QuadraticForm ℝ N}
+  {R : QuadraticForm ℝ L} (f : Q →qᵢ P) (hQ : Q ≠ 0) (hP : P ≠ 0)
+
+/-- **The homomorphism of `Spinᶜ` groups induced by a quadratic isometry** `f`,
+`[s, z] ↦ [f s, z]`, where `f s` is the image of `s` under the induced homomorphism
+`QuadraticMap.Isometry.spinGroupMap` of Spin groups. It is well defined because `f` preserves the
+scalar `-1`. For the inclusion of an orthogonal summand, such as the stabilization `V → ℝ × V` by
+an extra line, it extends the structure group of a `Spinᶜ` structure on `V` to that of `ℝ × V`. -/
+def spinCGroupMap : spinCGroup Q hQ →* spinCGroup P hP :=
+  spinCGroup.lift Q hQ ((spinCGroup.mk P hP).comp (f.spinGroupMap.prodMap (MonoidHom.id Circle)))
+    (by simp)
+
+/-- The induced map sends `[s, z]` to `[f s, z]`. -/
+@[simp]
+theorem spinCGroupMap_mk (p : spinGroup Q × Circle) :
+    f.spinCGroupMap hQ hP (spinCGroup.mk Q hQ p) = spinCGroup.mk P hP (f.spinGroupMap p.1, p.2) :=
+  (rfl)
+
+@[simp]
+theorem spinCGroupMap_ofSpin (s : spinGroup Q) :
+    f.spinCGroupMap hQ hP (spinCGroup.ofSpin Q hQ s) =
+      spinCGroup.ofSpin P hP (f.spinGroupMap s) := by
+  simp [spinCGroup.ofSpin_apply]
+
+@[simp]
+theorem spinCGroupMap_ofCircle (z : Circle) :
+    f.spinCGroupMap hQ hP (spinCGroup.ofCircle Q hQ z) = spinCGroup.ofCircle P hP z := by
+  simp [spinCGroup.ofCircle_apply]
+
+/-- The identity isometry induces the identity of `Spinᶜ(Q)`. -/
+@[simp]
+theorem spinCGroupMap_id : (Isometry.id Q).spinCGroupMap hQ hQ = MonoidHom.id _ := by
+  refine MonoidHom.ext fun x ↦ ?_
+  obtain ⟨p, rfl⟩ := spinCGroup.mk_surjective Q hQ x
+  simp
+
+/-- The maps induced by quadratic isometries respect composition. -/
+@[simp]
+theorem spinCGroupMap_comp (g : P →qᵢ R) (hR : R ≠ 0) :
+    (g.spinCGroupMap hP hR).comp (f.spinCGroupMap hQ hP) = (g.comp f).spinCGroupMap hQ hR := by
+  refine MonoidHom.ext fun x ↦ ?_
+  obtain ⟨p, rfl⟩ := spinCGroup.mk_surjective Q hQ x
+  rw [MonoidHom.comp_apply, spinCGroupMap_mk, spinCGroupMap_mk, spinCGroupMap_mk,
+    ← spinGroupMap_comp g f, MonoidHom.comp_apply]
+
+/-- The induced map preserves the determinant character. -/
+@[simp]
+theorem det_spinCGroupMap (x : spinCGroup Q hQ) :
+    spinCGroup.det P hP (f.spinCGroupMap hQ hP x) = spinCGroup.det Q hQ x := by
+  obtain ⟨p, rfl⟩ := spinCGroup.mk_surjective Q hQ x
+  simp
+
+/-- **The rotation of an induced element extends the rotation of the source along `f`**: on the
+image of `f`, the rotation `π([f s, z])` acts as `f ∘ π([s, z])`. -/
+@[simp]
+theorem toSpecialOrthogonal_spinCGroupMap_apply (x : spinCGroup Q hQ) (m : M) :
+    (spinCGroup.toSpecialOrthogonal P hP (f.spinCGroupMap hQ hP x) : N ≃ₗ[ℝ] N) (f m) =
+      f ((spinCGroup.toSpecialOrthogonal Q hQ x : M ≃ₗ[ℝ] M) m) := by
+  obtain ⟨p, rfl⟩ := spinCGroup.mk_surjective Q hQ x
+  simp
+
+end QuadraticMap.Isometry

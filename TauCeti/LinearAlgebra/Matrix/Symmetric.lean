@@ -8,8 +8,10 @@ module
 public import Mathlib.Algebra.Group.Even
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
+public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.Ring.Int.Parity
+import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import Mathlib.Data.Sym.Card
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
@@ -36,10 +38,17 @@ form on `O` below by `d ∑ sᵢ²`.
 
 A symmetric matrix whose entries are divisible by `c` and whose diagonal entries are divisible by
 `2 * c` is `c • (D + Dᵀ)`, the shape in which even forms enter Hensel-type arguments when `2` is
-not a unit. The inverse of an invertible symmetric matrix with even diagonal has even diagonal.
+not a unit. The inverse of an invertible symmetric matrix with even diagonal has even diagonal,
+and the trace of the product of two symmetric matrices, one of them with even diagonal, is even.
+Consequently, if `G * H = a • 1` for a non-zero-divisor `a` and a symmetric `H`, a symmetric
+perturbation `G - (a * r) • E` with `2 ∣ r` has determinant `(1 + 2 r t) det G`, provided `H` or
+`E` has even diagonal: to first order the determinant changes by `-r tr(E H)`, which the parity of
+the trace makes divisible by `2 r`.
 
 A symmetric `n × n` matrix is determined by its entries on and above the diagonal, that is by a
-function on the unordered pairs `Sym2 n`, so there are `#R ^ (n (n + 1) / 2)` of them.
+function on the unordered pairs `Sym2 n`, so there are `#R ^ (n (n + 1) / 2)` of them. More
+generally, for an alternating matrix `Q` the solutions `S` of `S - Sᵀ = Q` are determined in the
+same way by their entries on and above the diagonal, in every characteristic.
 
 ## Main results
 
@@ -56,8 +65,14 @@ function on the unordered pairs `Sym2 n`, so there are `#R ^ (n (n + 1) / 2)` of
   and diagonal entries divisible by `2 * c` is `c • (D + Dᵀ)`.
 * `Matrix.IsSymm.two_dvd_inv_apply_self`: the inverse of an invertible symmetric matrix with even
   diagonal has even diagonal.
+* `Matrix.IsSymm.two_dvd_trace_mul`: the trace of the product of two symmetric matrices, the second
+  with even diagonal, is even.
+* `Matrix.IsSymm.exists_det_sub_smul_eq_mul_det`: perturbing a matrix with a symmetric inverse up
+  to the scalar `a` by `(a * r) • E` multiplies its determinant by an element of `1 + 2 r R`.
 * `Matrix.natCard_isSymm`: the number of symmetric `n × n` matrices over `R` is
   `Nat.card R ^ (n + 1).choose 2`.
+* `Matrix.subTransposeEqEquiv`: for an alternating `Q`, the solutions of `S - Sᵀ = Q` are
+  parametrized by the functions on `Sym2 n`.
 -/
 
 public section
@@ -189,6 +204,50 @@ theorem IsSymm.two_dvd_inv_apply_self {n R : Type*} [Fintype n] [DecidableEq n] 
   rw [this, Matrix.add_apply, transpose_apply, ← two_mul]
   exact dvd_mul_right _ _
 
+/-- The trace of the product of two symmetric matrices, the second with even diagonal, is even:
+the off-diagonal terms `H i i' * E i' i` and `H i' i * E i i'` agree. -/
+theorem IsSymm.two_dvd_trace_mul {n R : Type*} [Fintype n] [CommRing R] {H E : Matrix n n R}
+    (hH : H.IsSymm) (hE : E.IsSymm) (hd : ∀ i, 2 ∣ E i i) : 2 ∣ (H * E).trace := by
+  obtain ⟨D, hD⟩ := hE.exists_eq_smul_add_transpose 1 (fun _ _ ↦ one_dvd _) (by simpa using hd)
+  rw [one_smul] at hD
+  have hDt : (H * Dᵀ).trace = (H * D).trace := by
+    rw [← trace_transpose, transpose_mul, transpose_transpose, hH.eq, trace_mul_comm]
+  exact ⟨(H * D).trace, by rw [hD, Matrix.mul_add, trace_add, hDt, two_mul]⟩
+
+/-- **Determinants of symmetric perturbations.** Let `G * H = a • 1` for a non-zero-divisor `a`
+and a symmetric matrix `H`, and let `E` be symmetric, with `H` or `E` of even diagonal. If
+`2 ∣ r`, then `det (G - (a * r) • E) = (1 + 2 r t) det G` for some `t`. For instance, if the
+entries of the symmetric matrix `G` lie in `ℤ_[2]` and `G` is perturbed by `2 a` times a
+symmetric matrix, where `a • G⁻¹` is integral with even diagonal, then the determinant changes by
+a factor `1 + 4 t`: its unit part is unchanged modulo `4`. -/
+theorem IsSymm.exists_det_sub_smul_eq_mul_det {n R : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] {G H E : Matrix n n R} {a r : R} (hH : H.IsSymm) (hE : E.IsSymm)
+    (hGH : G * H = a • 1) (ha : a ∈ nonZeroDivisors R) (hd : (∀ i, 2 ∣ H i i) ∨ ∀ i, 2 ∣ E i i)
+    (hr : 2 ∣ r) :
+    ∃ t, (G - (a * r) • E).det = (1 + 2 * r * t) * G.det := by
+  obtain ⟨k, rfl⟩ := hr
+  -- The trace of `E * H` is even.
+  obtain ⟨s, hs⟩ : 2 ∣ (E * H).trace := by
+    rcases hd with hd | hd
+    · exact hE.two_dvd_trace_mul hH hd
+    · exact trace_mul_comm H E ▸ hH.two_dvd_trace_mul hE hd
+  -- Multiplying by `H` turns the perturbation into `a • (1 + r • X)` with `X = -(E * H)`.
+  have hmul : (G - (a * (2 * k)) • E) * H = a • (1 + (2 * k) • -(E * H)) := by
+    rw [Matrix.sub_mul, hGH, Matrix.smul_mul, mul_smul]
+    simp only [smul_add, smul_neg, sub_eq_add_neg]
+  -- To first order, `det (1 + r • X) = 1 + r tr X`.
+  obtain ⟨c, hc⟩ : ∃ c, det (1 + (2 * k) • -(E * H)) = 1 + -(2 * s) * (2 * k) + c * (2 * k) ^ 2 :=
+    ⟨_, by rw [det_one_add_smul, trace_neg, hs]⟩
+  have hdet := congrArg det hmul
+  have hGHdet := congrArg det hGH
+  rw [det_mul, det_smul, hc] at hdet
+  rw [det_mul, det_smul, det_one, mul_one] at hGHdet
+  have hH : H.det ∈ nonZeroDivisors R :=
+    (mul_mem_nonZeroDivisors.mp (hGHdet ▸ pow_mem ha (Fintype.card n))).2
+  refine ⟨-s + k * c, (mul_cancel_right_mem_nonZeroDivisors hH).mp ?_⟩
+  rw [hdet, mul_assoc, hGHdet]
+  ring
+
 /-- **The number of symmetric matrices**: a symmetric `n × n` matrix over `R` is a function on the
 unordered pairs of indices, so there are `Nat.card R ^ (n + 1).choose 2` of them. -/
 theorem natCard_isSymm (n R : Type*) [Fintype n] :
@@ -199,5 +258,55 @@ theorem natCard_isSymm (n R : Type*) [Fintype n] :
     fun M => ?_).trans (Sym2.lift (α := n) (β := R))
   rw [IsSymm.ext_iff]
   exact ⟨fun h a b => h b a, fun h a b => h b a⟩
+
+section SubTranspose
+
+variable {n R : Type*} [AddCommGroup R] [LinearOrder n] {Q : Matrix n n R}
+
+/-- For an alternating matrix `Q`, with `Qᵀ = -Q` and zero diagonal, the solutions `S` of
+`S - Sᵀ = Q` are parametrized by their entries on and above the diagonal, that is by a function on
+the unordered pairs `Sym2 n`: the solution attached to `g` is the symmetric matrix of `g` plus the
+strictly lower triangular part of `Q`. No division by two is involved, so this holds with entries
+in every additive commutative group, including rings of characteristic two. -/
+def subTransposeEqEquiv (hQ : Qᵀ = -Q) (hQd : ∀ i, Q i i = 0) :
+    {S : Matrix n n R // S - Sᵀ = Q} ≃ (Sym2 n → R) where
+  toFun S := Sym2.lift ⟨fun i j => S.1 (min i j) (max i j), fun i j => by
+    simp only [min_comm i j, max_comm i j]⟩
+  invFun g := ⟨of fun i j => g s(i, j) + if j < i then Q i j else 0, by
+    ext i j
+    have hji : Q j i = -Q i j := by simpa using congrFun (congrFun hQ i) j
+    rcases lt_trichotomy i j with h | rfl | h
+    · simp [h, h.not_gt, hji, Sym2.eq_swap]
+    · simp [hQd]
+    · simp [h, h.not_gt, Sym2.eq_swap]⟩
+  left_inv S := by
+    ext i j
+    have hS : S.1 i j - S.1 j i = Q i j := by simpa using congrFun (congrFun S.2 i) j
+    rcases le_or_gt i j with h | h
+    · simp [h, h.not_gt]
+    · simp [h, h.le, ← hS]
+  right_inv g := by
+    funext z
+    induction z using Sym2.ind with
+    | h i j =>
+      rcases le_total i j with h | h
+      · simp [h]
+      · simp [h, Sym2.eq_swap]
+
+/-- The parameter of a solution of `S - Sᵀ = Q` records its entries on and above the diagonal. -/
+theorem subTransposeEqEquiv_apply_mk_of_le (hQ : Qᵀ = -Q) (hQd : ∀ i, Q i i = 0)
+    (S : {S : Matrix n n R // S - Sᵀ = Q}) {i j : n} (h : i ≤ j) :
+    subTransposeEqEquiv hQ hQd S s(i, j) = S.1 i j := by
+  simp [subTransposeEqEquiv, h]
+
+/-- The solution of `S - Sᵀ = Q` with parameter `g` has entries `g s(i, j)` on and above the
+diagonal, and `g s(i, j) + Q i j` below it. -/
+@[simp]
+theorem coe_subTransposeEqEquiv_symm_apply (hQ : Qᵀ = -Q) (hQd : ∀ i, Q i i = 0)
+    (g : Sym2 n → R) (i j : n) :
+    ((subTransposeEqEquiv hQ hQd).symm g).1 i j = g s(i, j) + if j < i then Q i j else 0 :=
+  (rfl)
+
+end SubTranspose
 
 end Matrix

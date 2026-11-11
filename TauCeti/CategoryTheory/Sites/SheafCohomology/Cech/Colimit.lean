@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.Grp.AB
 public import Mathlib.CategoryTheory.Limits.Connected
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Basic
 
@@ -53,6 +54,8 @@ the degree `0` Čech cohomology of `P` for a connected system is `P(T)`
   compatible with the maps induced by morphisms of families.
 * `TauCeti.CategoryTheory.isZero_cechCohomology_obj`: the Čech cohomology vanishes if every family
   of the system is empty.
+* `TauCeti.CategoryTheory.isZero_cechCohomology_obj_succ_of_quasiIso`: the Čech cohomology vanishes
+  in positive degrees if every family of the system is acyclic.
 * `TauCeti.CategoryTheory.cechCohomologyZeroIso_hom_naturality`: the identification in degree `0`
   is natural in the presheaf.
 
@@ -101,6 +104,19 @@ theorem cechCohomologyDiagram_map {i j : J} (f : i ⟶ j) (φ : E j ⟶ E i) :
     (cechCohomologyDiagram A E hE n).map f = cechComplexHomologyMap A n φ :=
   cechComplexHomologyMap_eq A n _ φ
 
+/-- Fixed-family Čech cohomology is additive in the coefficient presheaf. -/
+instance cechCohomologyDiagram_obj_additive (j : J) :
+    ((cechCohomologyDiagram A E hE n).obj j).Additive :=
+  inferInstanceAs (cechComplexFunctor (E j).obj ⋙
+    HomologicalComplex.homologyFunctor A _ n).Additive
+
+/-- The diagram of Čech cohomologies is additive in the coefficient presheaf. -/
+instance cechCohomologyDiagram_flip_additive :
+    (cechCohomologyDiagram A E hE n).flip.Additive where
+  map_add {P Q} {f g} := by
+    ext j
+    exact Functor.map_add ((cechCohomologyDiagram A E hE n).obj j)
+
 /-! ### The colimit -/
 
 variable [HasColimitsOfShape J A]
@@ -112,6 +128,10 @@ that its values unfold to colimits in `A`. -/
 @[expose]
 def cechCohomology : (Cᵒᵖ ⥤ A) ⥤ A :=
   (cechCohomologyDiagram A E hE n).flip ⋙ colim
+
+/-- Čech cohomology is additive in the coefficient presheaf. -/
+instance cechCohomology_additive : (cechCohomology A E hE n).Additive :=
+  inferInstanceAs ((cechCohomologyDiagram A E hE n).flip ⋙ colim).Additive
 
 /-- The Čech cohomology of `P` for the system `E` is the colimit of the Čech cohomologies of `P`
 for the families of the system. -/
@@ -288,5 +308,15 @@ theorem cechCohomologyZeroIso_hom_naturality {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q)
               (Category.assoc _ _ _).symm)).trans (Category.assoc _ _ _).symm
 
 end Zero
+
+/-- **Acyclic systems have no higher Čech cohomology.** If the augmented Čech complex of `P` for
+every family of the system is exact, then the Čech cohomology of `P` for the system vanishes in
+every positive degree. -/
+theorem isZero_cechCohomology_obj_succ_of_quasiIso {T : C} (hT : IsTerminal T) [HasZeroObject A]
+    (P : Cᵒᵖ ⥤ A) (h : ∀ j, QuasiIso (cechAugmentation (E j).obj hT P)) :
+    IsZero ((cechCohomology A E hE (n + 1)).obj P) := by
+  refine (IsZero.iff_id_eq_zero _).2 (cechCohomology_obj_hom_ext fun j ↦ ?_)
+  -- each Čech complex is exact in positive degrees
+  exact ((((quasiIso_cechAugmentation_iff _ hT P).1 (h j)).2 n).isZero_homology).eq_of_src _ _
 
 end TauCeti.CategoryTheory

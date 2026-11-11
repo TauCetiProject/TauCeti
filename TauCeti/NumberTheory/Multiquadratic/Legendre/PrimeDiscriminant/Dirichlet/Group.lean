@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.DirichletCharacter.Subgroup
 public import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Dirichlet.Character
 public import Mathlib.Data.Fintype.Sets
 public import Mathlib.NumberTheory.MulChar.Duality
+import TauCeti.NumberTheory.MulChar.Basic
 import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Dirichlet.Basic
 
 /-!
@@ -98,7 +99,7 @@ theorem primeDiscriminantCharAtLevel_apply_int (P : s) (n : ℤ)
 /-- A lifted prime-discriminant character is quadratic. -/
 theorem isQuadratic_primeDiscriminantCharAtLevel (P : s) :
     (primeDiscriminantCharAtLevel s hs P).IsQuadratic :=
-  isQuadratic_changeLevel (isQuadratic_primeDiscriminantChar P (hs P P.property)) _
+  (isQuadratic_primeDiscriminantChar P (hs P P.property)).changeLevel _
 
 /-- A lifted prime-discriminant character squares to the trivial character. -/
 @[simp] theorem primeDiscriminantCharAtLevel_sq (P : s) :
@@ -144,8 +145,8 @@ theorem genusCharAtLevel_apply_int (t : Finset s) (n : ℤ)
 /-- Multiplication of subset characters corresponds to symmetric difference of the subsets. -/
 @[simp] theorem genusCharAtLevel_symmDiff (t u : Finset s) :
     genusCharAtLevel s hs (t ∆ u) = genusCharAtLevel s hs t * genusCharAtLevel s hs u := by
-  rw [genusCharAtLevel_def, genusCharAtLevel_def, genusCharAtLevel_def, Finset.symmDiff_def]
-  exact TauCeti.prod_sdiff_union_sdiff _ fun P _ ↦ primeDiscriminantCharAtLevel_sq s hs P
+  rw [genusCharAtLevel_def, genusCharAtLevel_def, genusCharAtLevel_def]
+  exact TauCeti.prod_symmDiff _ fun P _ ↦ primeDiscriminantCharAtLevel_sq s hs P
 
 /-- Every subset character is quadratic. -/
 theorem isQuadratic_genusCharAtLevel (t : Finset s) : (genusCharAtLevel s hs t).IsQuadratic :=
@@ -159,7 +160,7 @@ theorem conductor_genusCharAtLevel
       IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q) :
     (genusCharAtLevel s hs t).conductor = ∏ P ∈ t, P.val.natAbs := by
   let _ := neZero_natAbs_prod_of_forall_isPrimeDiscriminant hs
-  rw [genusCharAtLevel_def, TauCeti.conductor_prod_eq_prod_of_pairwise_coprime]
+  rw [genusCharAtLevel_def, DirichletCharacter.conductor_prod_of_pairwise_coprime]
   · simp
   · intro P hPt Q hQt hPQ
     simp only [conductor_primeDiscriminantCharAtLevel]
@@ -240,7 +241,7 @@ theorem genusCharGroup_eq_closure :
       Subgroup.closure (Set.range (primeDiscriminantCharAtLevel s hs)) := by
   apply SetLike.coe_injective
   rw [← Set.image_univ, ← Finset.coe_univ,
-    TauCeti.closure_image_eq_image_powerset (Finset.univ : Finset s)
+    Finset.closure_image_eq_image_powerset (Finset.univ : Finset s)
       (primeDiscriminantCharAtLevel s hs) (fun P _ ↦ primeDiscriminantCharAtLevel_sq s hs P)]
   ext chi
   simp only [SetLike.mem_coe, mem_genusCharGroup_iff, Set.mem_image,

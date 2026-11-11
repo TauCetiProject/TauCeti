@@ -54,16 +54,19 @@ satisfies `D H + H D = 1 - e ⊗ ⋯ ⊗ e` (`TauCeti.PiTensorProduct.slotSum_co
 cross terms appear twice and cancel, and the diagonal terms telescope. This is the sign-free,
 characteristic-two form of the tensor trick, whose Koszul-signed version on words of every length
 is formalized in `TauCeti/Algebra/Homology/Contraction/TensorTrick.lean`. The homotopy depends on
-the ordering, but it need not be equivariant for anything. Dependent factors arise when tensor
-induction is regrouped by double cosets: each orbit contributes its own tensor-induced resolution.
+the ordering, but it need not be equivariant for anything. Like the slot sum, it is natural in
+factorwise maps intertwining the data `e` and `h` (`TauCeti.PiTensorProduct.slotHomotopy_comp_map`).
+Dependent factors arise when tensor induction is regrouped by double cosets: each orbit contributes
+its own tensor-induced resolution.
 
 Finally, gradings `ℳ i` of the factors `M i` induce the total-degree grading of `⨂[R] i, M i`
 (`TauCeti.PiTensorProduct.totalDegreePiece`), spanned by pure tensors of homogeneous factors whose
 degrees add up to the given degree. Factorwise maps of degrees `a i` shift total degree by
 `∑ i, a i`, while the slot sum of a family `f i` of common degree `a` shifts total degree by `a`.
 When all the `h i` have the same degree, the slot homotopy shifts total degree by that degree.
-For a grading without negative pieces, the tensor product of retractions vanishing in positive
-degrees vanishes in positive total degree. The slot homotopy of homotopies vanishing in degree
+For a grading without negative pieces, the total-degree grading has no negative pieces either,
+and the tensor product of retractions vanishing in positive degrees vanishes in positive total
+degree. The slot homotopy of homotopies vanishing in degree
 zero vanishes in total degree zero.
 
 These are the data with which a tensor power of the total coinduced resolution, with its
@@ -97,6 +100,8 @@ representing cocycle in the tensor-induced resolution.
   `TauCeti.PiTensorProduct.isHomogeneous_reindex` and
   `TauCeti.PiTensorProduct.isHomogeneous_slotHomotopy`: the degrees of these maps for the
   total-degree grading.
+* `TauCeti.PiTensorProduct.totalDegreePiece_eq_bot_of_neg`: gradings without negative pieces
+  induce a total-degree grading without negative pieces.
 * `TauCeti.PiTensorProduct.map_mem_totalDegreePiece_zero`,
   `TauCeti.PiTensorProduct.map_eq_zero_of_mem_totalDegreePiece_of_pos` and
   `TauCeti.PiTensorProduct.slotHomotopy_eq_zero_of_mem_totalDegreePiece_zero`: the tensor powers of
@@ -296,6 +301,23 @@ theorem totalDegreePiece_le_iff {n : A} {P : Submodule R (⨂[R] i, M i)} :
   · rintro h _ ⟨p, m, hm, hp, rfl⟩
     exact h p m hm hp
 
+/-- Collecting the tensor products of homogeneous pieces by the sum of their degrees gives
+the total-degree piece. -/
+theorem totalDegreePiece_eq_iSup (n : A) :
+    totalDegreePiece ι ℳ n = ⨆ p : ι → A, ⨆ _ : ∑ i, p i = n,
+      LinearMap.range (PiTensorProduct.map fun i ↦ (ℳ i (p i)).subtype) := by
+  apply le_antisymm
+  · refine totalDegreePiece_le_iff.2 ?_
+    intro p m hm hp
+    exact Submodule.mem_iSup_of_mem p (Submodule.mem_iSup_of_mem hp
+      ⟨PiTensorProduct.tprod R (fun i ↦ (⟨m i, hm i⟩ : ℳ i (p i))),
+        PiTensorProduct.map_tprod _ _⟩)
+  · refine iSup_le fun p ↦ iSup_le fun hp ↦ ?_
+    rw [PiTensorProduct.map_range_eq_span_tprod, Submodule.span_le]
+    rintro _ ⟨m, rfl⟩
+    subst n
+    exact tprod_mem_totalDegreePiece fun i ↦ (m i).property
+
 /-- Factorwise maps of degrees `a i` shift the total degree by `∑ i, a i`. -/
 theorem isHomogeneous_map {𝒩 : ∀ i, A → Submodule R (N i)} {g : ∀ i, N i →ₗ[R] M i}
     {a : ι → A} (hg : ∀ i, LinearMap.IsHomogeneous (g i) (𝒩 i) (ℳ i) (a i)) :
@@ -320,6 +342,32 @@ theorem isHomogeneous_reindex [Fintype κ] (σ : ι ≃ κ) :
   rw [Submodule.mem_comap, LinearEquiv.coe_coe, PiTensorProduct.reindex_tprod, add_zero,
     ← σ.symm.sum_comp p]
   exact tprod_mem_totalDegreePiece fun k ↦ hm (σ.symm k)
+
+/-- Reindexing a tensor product detects as well as preserves total degree. -/
+@[simp]
+theorem reindex_mem_totalDegreePiece_iff [Fintype κ]
+    (ℳ : ∀ i, A → Submodule R (M i)) (σ : ι ≃ κ) (n : A) (z : ⨂[R] i, M i) :
+    PiTensorProduct.reindex R M σ z ∈ totalDegreePiece κ (fun j ↦ ℳ (σ.symm j)) n ↔
+      z ∈ totalDegreePiece ι ℳ n := by
+  constructor
+  · intro hz
+    have h : totalDegreePiece κ (fun j ↦ ℳ (σ.symm j)) n ≤
+        (totalDegreePiece ι ℳ n).comap (PiTensorProduct.reindex R M σ).symm.toLinearMap := by
+      refine totalDegreePiece_le_iff.2 ?_
+      intro p m hm hp
+      obtain ⟨m, rfl⟩ := (Equiv.piCongrLeft' M σ).surjective m
+      rw [funext (Equiv.piCongrLeft'_apply M σ m)] at hm ⊢
+      simp only [Submodule.mem_comap, LinearEquiv.coe_coe,
+        PiTensorProduct.reindex_symm_tprod]
+      rw [← hp, ← σ.sum_comp p]
+      apply tprod_mem_totalDegreePiece
+      intro i
+      obtain ⟨j, rfl⟩ := σ.symm.surjective i
+      simpa only [σ.apply_symm_apply] using hm j
+    simpa only [Submodule.mem_comap, LinearEquiv.coe_coe,
+      LinearEquiv.symm_apply_apply] using h hz
+  · intro hz
+    simpa only [LinearEquiv.coe_coe, add_zero] using (isHomogeneous_reindex σ).map_mem hz
 
 /-- A factorwise map of degree zero in every factor but one, where it has degree `a`, shifts the
 total degree by `a`. -/
@@ -371,6 +419,18 @@ theorem map_eq_zero_of_mem_totalDegreePiece_of_pos [LinearOrder A] [IsOrderedAdd
   rw [LinearMap.mem_ker, PiTensorProduct.map_tprod]
   exact (PiTensorProduct.tprod R).map_coord_zero i (hπ i _ hi _ (hm i))
 
+/-- For gradings without negative pieces, the total-degree grading has no negative pieces either:
+a pure tensor of homogeneous factors of negative total degree has a factor of negative degree. -/
+theorem totalDegreePiece_eq_bot_of_neg [LinearOrder A] [IsOrderedAddMonoid A]
+    (hneg : ∀ i p, p < 0 → ℳ i p = ⊥) {n : A} (hn : n < 0) : totalDegreePiece ι ℳ n = ⊥ := by
+  refine eq_bot_iff.2 (totalDegreePiece_le_iff.2 ?_)
+  rintro p m hm rfl
+  obtain ⟨i, hi⟩ : ∃ i, p i < 0 := by
+    by_contra! h
+    exact hn.not_ge (Finset.sum_nonneg fun i _ ↦ h i)
+  have hmi : m i = 0 := by simpa [hneg i _ hi] using hm i
+  rw [Submodule.mem_bot, (PiTensorProduct.tprod R).map_coord_zero i hmi]
+
 /-- On a tensor product with a single factor `i₀`, the identification
 `PiTensorProduct.subsingletonEquiv` with that factor preserves the degree. -/
 theorem isHomogeneous_subsingletonEquiv [Subsingleton ι] (i₀ : ι) :
@@ -389,7 +449,9 @@ end Grading
 section SlotHomotopy
 
 variable [Fintype ι] [LinearOrder ι]
-  {M : ι → Type uM} [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+  {M : ι → Type uM} {N : ι → Type uN}
+  [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+  [∀ i, AddCommMonoid (N i)] [∀ i, Module R (N i)]
 
 variable (ι) in
 /-- The **slot homotopy** of a family of homotopies `h` relative to endomorphisms `e`, for a linear
@@ -414,6 +476,24 @@ theorem slotHomotopy_tprod (e h : ∀ i, Module.End R (M i)) (m : ∀ i, M i) :
   · simp
   · simp only [update_of_ne hj]
     split_ifs <;> rfl
+
+/-- **Naturality of the slot homotopy**: a family of factorwise maps intertwining `e'` with `e`
+and `h'` with `h` intertwines their slot homotopies. -/
+theorem slotHomotopy_comp_map {e h : ∀ i, Module.End R (M i)} {e' h' : ∀ i, Module.End R (N i)}
+    (g : ∀ i, N i →ₗ[R] M i) (he : ∀ i, e i ∘ₗ g i = g i ∘ₗ e' i)
+    (hh : ∀ i, h i ∘ₗ g i = g i ∘ₗ h' i) :
+    slotHomotopy ι e h ∘ₗ PiTensorProduct.map g =
+      PiTensorProduct.map g ∘ₗ slotHomotopy ι e' h' := by
+  ext m
+  simp only [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply, PiTensorProduct.map_tprod,
+    slotHomotopy_tprod, map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ congrArg _ (funext fun j ↦ ?_)
+  rcases eq_or_ne j i with rfl | hj
+  · simpa using LinearMap.congr_fun (hh j) (m j)
+  · simp only [update_of_ne hj]
+    split_ifs
+    · exact LinearMap.congr_fun (he j) (m j)
+    · rfl
 
 variable [AddCommMonoid A] {ℳ : ∀ i, A → Submodule R (M i)}
 

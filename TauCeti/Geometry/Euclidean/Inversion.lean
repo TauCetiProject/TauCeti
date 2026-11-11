@@ -30,8 +30,11 @@ isometry fixing the centre commutes with the inversion. This is the compatibilit
 inversion charts of the closed unit balls of two inner product spaces along a linear isometry.
 
 For a nonzero radius `R`, the derivative of the inversion at a point `x ≠ c` is a positive
-multiple of the reflection in the hyperplane orthogonal to `x - c` (`hasFDerivAt_inversion`), so
-in finite dimension its determinant is negative: inversion reverses orientation. A transition
+multiple of the reflection in the hyperplane orthogonal to `x - c` (`hasFDerivAt_inversion`). So
+inversion is conformal, and it preserves the metric `⟪u, v⟫ / dist x c ^ 2` on the complement of
+`c`, the product metric of a cylinder in polar coordinates about `c`. In finite positive dimension
+`n` the determinant of the derivative is `-(R / dist x c) ^ (2 * n)`, which is negative away from
+the centre: inversion reverses orientation. A transition
 between two inversion charts whose linear isometries lie in the same orientation class is a
 composite of two inversions and a linear isometry of positive determinant, so it preserves
 orientation. This is how the inversion charts of the closed unit ball attached to the isometries
@@ -47,8 +50,18 @@ of one orientation class give an oriented atlas.
 * `AffineIsometry.map_inversion`: an affine isometry carries inversion in the sphere of centre `c`
   and radius `R` to inversion in the sphere of centre `f c` and radius `R`.
 * `LinearIsometry.map_inversion`: the same for a linear isometry.
+* `EuclideanGeometry.norm_inversion_zero`, `EuclideanGeometry.norm_inversion_zero_one`: the norm
+  of the inversion about the origin.
+* `EuclideanGeometry.inv_lt_norm_inversion_iff`, `EuclideanGeometry.norm_inversion_lt_inv_iff`:
+  the inversion about the origin in the unit sphere exchanges the regions `‖v‖ < r` and
+  `r⁻¹ < ‖w‖`.
+* `EuclideanGeometry.inner_fderiv_inversion`: inversion is conformal, its derivative scales inner
+  products by `(R / dist x c) ^ 4`.
+* `EuclideanGeometry.inner_fderiv_inversion_div_dist_sq`: inversion preserves the cylinder metric
+  `⟪u, v⟫ / dist x c ^ 2`.
 * `LinearIsometryEquiv.map_inversion_zero`: a linear isometry equivalence commutes with inversion
   in a sphere about `0`.
+* `EuclideanGeometry.det_fderiv_inversion`: the Jacobian determinant of an inversion.
 * `EuclideanGeometry.det_fderiv_inversion_neg`: the derivative of an inversion has negative
   determinant.
 -/
@@ -112,25 +125,85 @@ theorem hasFDerivAt_inversionFDerivEquiv {V : Type*} [NormedAddCommGroup V]
   -- Reflection followed by scalar multiplication evaluates to Mathlib’s derivative formula.
   rfl
 
+/-- The norm of the inversion about the origin in a sphere of radius `R`. -/
+@[simp]
+theorem norm_inversion_zero {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    (R : ℝ) (x : V) : ‖inversion (0 : V) R x‖ = R ^ 2 / ‖x‖ := by
+  simpa only [dist_zero_right] using dist_inversion_center (0 : V) x R
+
+/-- The norm of the inversion about the origin in the unit sphere is the inverse norm. -/
+theorem norm_inversion_zero_one {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    (x : V) : ‖inversion (0 : V) 1 x‖ = ‖x‖⁻¹ := by
+  rw [norm_inversion_zero, one_pow, one_div]
+
+/-- The inversion about the origin in the unit sphere carries the region `‖v‖ < r` onto
+`r⁻¹ < ‖w‖`. -/
+theorem inv_lt_norm_inversion_iff {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    {r : ℝ} (hr : 0 < r) {v : V} (hv : v ≠ 0) :
+    r⁻¹ < ‖inversion (0 : V) 1 v‖ ↔ ‖v‖ < r := by
+  rw [norm_inversion_zero_one, inv_lt_inv₀ hr (norm_pos_iff.2 hv)]
+
+/-- The inversion about the origin in the unit sphere carries the region `r < ‖v‖` onto
+`‖w‖ < r⁻¹`. -/
+theorem norm_inversion_lt_inv_iff {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    {r : ℝ} (hr : 0 < r) {v : V} (hv : v ≠ 0) :
+    ‖inversion (0 : V) 1 v‖ < r⁻¹ ↔ r < ‖v‖ := by
+  rw [norm_inversion_zero_one, inv_lt_inv₀ (norm_pos_iff.2 hv) hr]
+
+/-- **Inversion is conformal**: its derivative at `x` multiplies inner products by
+`(R / dist x c) ^ 4`. At the centre both sides vanish. -/
+theorem inner_fderiv_inversion {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    (c x : V) (R : ℝ) (u v : V) :
+    inner ℝ (fderiv ℝ (inversion c R) x u) (fderiv ℝ (inversion c R) x v) =
+      (R / dist x c) ^ 4 * inner ℝ u v := by
+  simp only [fderiv_inversion, FunLike.coe_smul, Pi.smul_apply,
+    real_inner_smul_left, real_inner_smul_right, ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv, LinearIsometryEquiv.inner_map_map]
+  ring
+
+/-- **Inversion preserves the cylinder metric.** The metric `⟪u, v⟫ / dist x c ^ 2` on the
+complement of `c`, which in polar coordinates about `c` is the product metric of the cylinder
+`ℝ × S`, is invariant under the inversion in a sphere of nonzero radius about `c`. -/
+theorem inner_fderiv_inversion_div_dist_sq {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] (c x : V) {R : ℝ} (hR : R ≠ 0) (u v : V) :
+    inner ℝ (fderiv ℝ (inversion c R) x u) (fderiv ℝ (inversion c R) x v) /
+        dist (inversion c R x) c ^ 2 =
+      inner ℝ u v / dist x c ^ 2 := by
+  rw [inner_fderiv_inversion, dist_inversion_center]
+  rcases eq_or_ne (dist x c) 0 with hx | hx
+  · simp [hx]
+  · field_simp
+
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
 
-/-- **Inversion reverses orientation**: away from its centre, the derivative of the inversion in a
-sphere of nonzero radius has negative determinant. The derivative is `(R / dist x c) ^ 2` times
-the reflection in the hyperplane orthogonal to `x - c`, whose determinant is `-1`. -/
-theorem det_fderiv_inversion_neg {c x : F} {R : ℝ} (hR : R ≠ 0) (hx : x ≠ c) :
-    LinearMap.det (fderiv ℝ (inversion c R) x : F →ₗ[ℝ] F) < 0 := by
+/-- **The Jacobian determinant of inversion**: in a nontrivial space of finite dimension `n`,
+`LinearMap.det (fderiv ℝ (inversion c R) x) = -(R / dist x c) ^ (2 * n)` for every point `x` and
+every radius `R`. Away from the centre the derivative is `(R / dist x c) ^ 2` times the reflection
+in the hyperplane orthogonal to `x - c`, whose determinant is `-1`. At the centre `fderiv` is `0`
+and both sides vanish: for `R ≠ 0` the inversion is not differentiable there, so `fderiv` takes
+its default value `0`, while for `R = 0` the inversion is constant. -/
+theorem det_fderiv_inversion [Nontrivial F] (c x : F) (R : ℝ) :
+    LinearMap.det (fderiv ℝ (inversion c R) x : F →ₗ[ℝ] F) =
+      -(R / dist x c) ^ (2 * Module.finrank ℝ F) := by
+  rcases eq_or_ne x c with rfl | hx
+  · simp [Module.finrank_pos.ne']
   have hK : Module.finrank ℝ (ℝ ∙ (x - c))ᗮᗮ = 1 := by
     rw [Submodule.orthogonal_orthogonal, finrank_span_singleton (sub_ne_zero.2 hx)]
-  have hpos : 0 < (R / dist x c) ^ 2 := by
-    have : R / dist x c ≠ 0 := div_ne_zero hR (dist_ne_zero.2 hx)
-    positivity
-  rw [(hasFDerivAt_inversion hx).fderiv, ContinuousLinearMap.toLinearMap_smul, LinearMap.det_smul]
-  -- The reflection, coerced to a continuous linear map and then to a linear map, is its
-  -- underlying linear map.
   have hrefl : (((ℝ ∙ (x - c))ᗮ.reflection : F →L[ℝ] F) : F →ₗ[ℝ] F) =
-      (ℝ ∙ (x - c))ᗮ.reflection.toLinearMap := (rfl)
-  rw [hrefl, Submodule.det_reflection, hK, pow_one, mul_neg_one, neg_lt_zero]
-  exact pow_pos hpos _
+      (ℝ ∙ (x - c))ᗮ.reflection.toLinearMap := LinearMap.ext fun v ↦ by simp
+  have hdet : LinearMap.det (((ℝ ∙ (x - c))ᗮ.reflection : F →L[ℝ] F) : F →ₗ[ℝ] F) = -1 := by
+    rw [hrefl, Submodule.det_reflection, hK, pow_one]
+  rw [fderiv_inversion, ContinuousLinearMap.toLinearMap_smul, LinearMap.det_smul, hdet]
+  ring
+
+/-- **Inversion reverses orientation**: away from its centre, the derivative of the inversion in a
+sphere of nonzero radius has negative determinant. -/
+theorem det_fderiv_inversion_neg {c x : F} {R : ℝ} (hR : R ≠ 0) (hx : x ≠ c) :
+    LinearMap.det (fderiv ℝ (inversion c R) x : F →ₗ[ℝ] F) < 0 := by
+  have : Nontrivial F := ⟨⟨x, c, hx⟩⟩
+  have : R / dist x c ≠ 0 := div_ne_zero hR (dist_ne_zero.2 hx)
+  rw [det_fderiv_inversion, neg_lt_zero, pow_mul]
+  positivity
 
 end EuclideanGeometry
 

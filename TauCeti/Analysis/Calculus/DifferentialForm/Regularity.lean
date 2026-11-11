@@ -69,6 +69,19 @@ theorem contDiffAt_extDeriv (hω : ContDiffAt 𝕜 p ω x) (hrp : r + 1 ≤ p) :
   simpa only [extDerivWithin_univ] using
     contDiffWithinAt_extDerivWithin hω uniqueDiffOn_univ hrp (Set.mem_univ x)
 
+/-- A `C^p` form on an open set has a `C^r` exterior derivative on that set, provided
+`r + 1 ≤ p`. -/
+theorem contDiffOn_extDeriv (hω : ContDiffOn 𝕜 p ω s) (hs : IsOpen s) (hrp : r + 1 ≤ p) :
+    ContDiffOn 𝕜 r (extDeriv ω) s :=
+  fun _ hx ↦ (contDiffAt_extDeriv (hω.contDiffAt (hs.mem_nhds hx)) hrp).contDiffWithinAt
+
+/-- The exterior derivative of a form that is C¹ at `x`, evaluated on fixed vectors, is
+continuous at `x`. -/
+theorem continuousAt_extDeriv_apply (hω : ContDiffAt 𝕜 1 ω x) (v : Fin (k + 1) → E) :
+    ContinuousAt (fun y ↦ extDeriv ω y v) x :=
+  (ContinuousAlternatingMap.apply 𝕜 E F v).continuous.continuousAt.comp
+    (contDiffAt_extDeriv hω (r := 0) (by simp)).continuousAt
+
 /-- Pulling back a `C^r` differential form by a `C^(r+1)` map gives a `C^r` form at a point.
 Only the analytic order requires the arity factorial to be nonzero in the scalar field. -/
 theorem _root_.ContDiffAt.differentialForm_pullback

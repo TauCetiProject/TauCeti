@@ -126,7 +126,7 @@ theorem mem_newtonSlopes {m : ℝ} :
 variable {f v}
 
 /-- Transport of finite slopes along a matching of finite unit edges. -/
-private theorem newtonSlopes_eq_map {g : S[X]} {w : AddValuation S (WithTop ℝ)}
+theorem newtonSlopes_eq_map {g : S[X]} {w : AddValuation S (WithTop ℝ)}
     {φ : ℕ → ℕ} (hφ : Set.InjOn φ (finiteEdges (f.newtonPolygon v))) {t : ℝ → ℝ}
     (hedges : finiteEdges (g.newtonPolygon w) = φ '' finiteEdges (f.newtonPolygon v))
     (hslope : ∀ n ∈ finiteEdges (f.newtonPolygon v),
@@ -201,7 +201,7 @@ theorem count_newtonSlopes_of_isFiniteFace {σ : ℝ} {l u : ℕ}
 variable (f v) in
 /-- The number of finite slopes satisfying a predicate is the number of finite unit edges whose
 slope satisfies it. -/
-private theorem card_filter_newtonSlopes (p : ℝ → Prop) [DecidablePred p] :
+theorem card_filter_newtonSlopes (p : ℝ → Prop) [DecidablePred p] :
     ((f.newtonSlopes v).filter p).card =
       {i | i ∈ finiteEdges (f.newtonPolygon v) ∧ p (unitSlope (f.newtonPolygon v) i)}.ncard := by
   rw [newtonSlopes_def, Multiset.filter_map, Multiset.card_map, ← Finset.filter_val,
@@ -336,7 +336,7 @@ theorem newtonSlopes_comp_C_mul_X {c : R} (hc : v c ≠ ⊤) :
   obtain ⟨r, hr⟩ := WithTop.ne_top_iff_exists.mp hc
   have hpoly : (f.comp (C c * X)).newtonPolygon v =
       fun n => f.newtonPolygon v n + ((0 + r * n : ℝ) : WithTop ℝ) := by
-    simp only [f.newtonPolygon_comp_C_mul_X v hc, ← hr, ← WithTop.coe_nsmul, nsmul_eq_mul,
+    simp only [f.newtonPolygon_comp_C_mul_X v c, ← hr, ← WithTop.coe_nsmul, nsmul_eq_mul,
       zero_add, mul_comm]
   refine newtonSlopes_eq_map (φ := id) Function.injective_id.injOn
     (by rw [hpoly, finiteEdges_add_affine, Set.image_id]) fun n hn => ?_
@@ -376,8 +376,10 @@ theorem newtonSlopes_map_eq_map_mul (φ : R →+* S) {w : AddValuation S (WithTo
     (f.map φ).newtonSlopes w = (f.newtonSlopes v).map (c * ·) := by
   have hpoly := f.newtonPolygon_map_eq_map_mul v φ hc hφ
   exact newtonSlopes_eq_map (φ := id) Function.injective_id.injOn
-    (by rw [hpoly, finiteEdges_map_mul, Set.image_id])
-    fun n _ => by rw [hpoly, id, unitSlope_map_mul]
+    (by rw [hpoly, finiteEdges_map (f := (c * ·)), Set.image_id])
+    fun n _ => by
+      rw [hpoly, id]
+      simpa using unitSlope_map (h := f.newtonPolygon v) (AddMonoidHom.mulLeft c) n
 
 /-! ### Linear polynomials -/
 

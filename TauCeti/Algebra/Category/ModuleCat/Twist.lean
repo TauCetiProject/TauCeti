@@ -34,11 +34,17 @@ sense of Mathlib's `MonoidalLeftAction`, that is, a coherent categorical action 
   and `MonoidHom.actionLeftTensorIso_restrictScalarsMonoidalLeftAction`).
 * The action functors are additive equivalences, and they are `R`-linear for an `R`-algebra `A`
   when `H` acts by `R`-algebra automorphisms.
+* `MonoidHom.twistElem`: an element of `M` viewed in its twist, with the twisting action of `A`
+  (`MonoidHom.smul_twistElem`) and the unitor and associator computed on such elements. When `H`
+  acts by `R`-algebra automorphisms, `MonoidHom.twistLinearEquiv` identifies `M` with its twists
+  as `R`-modules.
 * A property of modules is stable under the action when it is preserved by each twist. This is
   the case for the discrete modules of a topological ring (`TauCeti.discreteModules`) when `H`
   acts by homeomorphisms, and for the smooth modules for a family of left ideals
   (`TauCeti.smoothModules`) when each twist preserves the family up to cofinality. The action
   then restricts to these full subcategories.
+* `RingHom.leftLinearRestrictScalars`: restriction of scalars along a ring homomorphism
+  intertwining two such actions is equivariant for the twisting actions, with identity lineators.
 
 Through `MonoidalLeftAction.pseudofunctor`, the action is a pseudofunctor out of the one-object
 bicategory of `H` whose unit and composition comparisons are those of restriction of scalars.
@@ -212,6 +218,114 @@ lemma linear_actionLeft_restrictScalarsMonoidalLeftAction (R : Type*) [CommSemir
     rw [RingEquiv.symm_apply_eq, ha]
   inferInstanceAs ((ModuleCat.restrictScalars e.toAlgHom.toRingHom).Linear R)
 
+section TwistElem
+
+/-- An element of an `A`-module `X`, viewed in its twist `c ⊙ₗ X`. The twist has the same
+underlying abelian group, so this is the identity; it records the twisted type, so that rewriting
+lemmas about elements of twists stay type-correct. -/
+-- The body is exposed: a twisted element must be definitionally the element itself, so that maps
+-- between twists that are identities of the underlying abelian groups can be computed by `rfl`.
+@[expose]
+def twistElem (c : Discrete H) {X : ModuleCat.{v} A} (x : X) :
+    letI := a.restrictScalarsMonoidalLeftAction.{v}
+    ↑(c ⊙ₗ X : ModuleCat.{v} A) :=
+  x
+
+/-- Viewing elements in a twist is additive. -/
+@[simp]
+lemma twistElem_add (c : Discrete H) {X : ModuleCat.{v} A} (x y : X) :
+    a.twistElem c (x + y) = a.twistElem c x + a.twistElem c y :=
+  (rfl)
+
+/-- Every element of a twist is a twisted element. -/
+lemma exists_twistElem_eq (c : Discrete H) {X : ModuleCat.{v} A}
+    (x : letI := a.restrictScalarsMonoidalLeftAction.{v}; ↑(c ⊙ₗ X : ModuleCat.{v} A)) :
+    ∃ y : X, a.twistElem c y = x :=
+  ⟨x, rfl⟩
+
+/-- An element `t` acts on the twist by `c` as `(a c)⁻¹ t` acts on the module. -/
+lemma smul_twistElem (c : Discrete H) {X : ModuleCat.{v} A} (t : A) (x : X) :
+    t • a.twistElem c x = a.twistElem c ((a c.as).symm t • x) :=
+  ModuleCat.restrictScalars.smul_def ((a c.as).symm : A →+* A) t x
+
+/-- The twist of a morphism acts on twisted elements as the morphism. -/
+@[simp]
+lemma actionHomRight_hom_twistElem (c : Discrete H) {X Y : ModuleCat.{v} A} (g : X ⟶ Y)
+    (x : X) :
+    letI := a.restrictScalarsMonoidalLeftAction.{v}
+    (c ⊴ₗ g).hom (a.twistElem c x) = a.twistElem c (g.hom x) :=
+  (rfl)
+
+/-- The associator of the twisting action is the identity on twisted elements. -/
+@[simp]
+lemma actionAssocIso_hom_twistElem (c c' : Discrete H) {X : ModuleCat.{v} A} (x : X) :
+    letI := a.restrictScalarsMonoidalLeftAction.{v}
+    (αₗ c c' X).hom.hom (a.twistElem (c ⊗ c') x) = a.twistElem c (a.twistElem c' x) :=
+  (rfl)
+
+/-- The inverse of the associator of the twisting action is the identity on twisted elements. -/
+@[simp]
+lemma actionAssocIso_inv_twistElem (c c' : Discrete H) {X : ModuleCat.{v} A} (x : X) :
+    letI := a.restrictScalarsMonoidalLeftAction.{v}
+    (αₗ c c' X).inv.hom (a.twistElem c (a.twistElem c' x)) = a.twistElem (c ⊗ c') x :=
+  (rfl)
+
+/-- The unitor of the twisting action is the identity on twisted elements. -/
+@[simp]
+lemma actionUnitIso_hom_twistElem {X : ModuleCat.{v} A} (x : X) :
+    letI := a.restrictScalarsMonoidalLeftAction.{v}
+    (λₗ[Discrete H] X).hom.hom (a.twistElem (𝟙_ (Discrete H)) x) = x :=
+  (rfl)
+
+/-- The inverse of the unitor of the twisting action is the identity on twisted elements. -/
+lemma actionUnitIso_inv_twistElem {X : ModuleCat.{v} A} (x : X) :
+    letI := a.restrictScalarsMonoidalLeftAction.{v}
+    (λₗ[Discrete H] X).inv.hom x = a.twistElem (𝟙_ (Discrete H)) x :=
+  (rfl)
+
+open ModuleCat.Algebra in
+/-- If `A` is an `R`-algebra and `H` acts by `R`-algebra automorphisms, an `A`-module and its
+twist are the same `R`-module. -/
+def twistLinearEquiv (R : Type*) [CommSemiring R] [Algebra R A]
+    (ha : ∀ h r, a h (algebraMap R A r) = algebraMap R A r) (c : Discrete H)
+    (M : ModuleCat.{v} A) :
+    letI := a.restrictScalarsMonoidalLeftAction.{v}
+    M ≃ₗ[R] ↑(c ⊙ₗ M : ModuleCat.{v} A) where
+  toFun := a.twistElem c
+  invFun x := x
+  map_add' := a.twistElem_add c
+  map_smul' r x := by
+    rw [RingHom.id_apply, ← algebraMap_smul A r x, ← algebraMap_smul A r (a.twistElem c x),
+      smul_twistElem, (RingEquiv.symm_apply_eq _).2 (ha c.as r).symm]
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+open ModuleCat.Algebra in
+@[simp]
+lemma twistLinearEquiv_apply (R : Type*) [CommSemiring R] [Algebra R A]
+    (ha : ∀ h r, a h (algebraMap R A r) = algebraMap R A r) (c : Discrete H)
+    {M : ModuleCat.{v} A} (x : M) :
+    a.twistLinearEquiv R ha c M x = a.twistElem c x :=
+  (rfl)
+
+open ModuleCat.Algebra in
+@[simp]
+lemma twistLinearEquiv_symm_apply (R : Type*) [CommSemiring R] [Algebra R A]
+    (ha : ∀ h r, a h (algebraMap R A r) = algebraMap R A r) (c : Discrete H)
+    {M : ModuleCat.{v} A} (x : M) :
+    (a.twistLinearEquiv R ha c M).symm (a.twistElem c x) = x :=
+  (rfl)
+
+open ModuleCat.Algebra in
+/-- If `H` acts by `R`-algebra automorphisms, twisting commutes with the action of `R`. -/
+lemma twistElem_smul {R : Type*} [CommSemiring R] [Algebra R A]
+    (ha : ∀ h r, a h (algebraMap R A r) = algebraMap R A r) (c : Discrete H)
+    {M : ModuleCat.{v} A} (r : R) (x : M) :
+    a.twistElem c (r • x) = r • a.twistElem c x :=
+  (a.twistLinearEquiv R ha c M).map_smul r x
+
+end TwistElem
+
 /-- A property of `A`-modules is stable under the twisting action if and only if it is preserved
 by restriction of scalars along each `(a h)⁻¹`. -/
 lemma isStableUnderLeftAction_restrictScalarsMonoidalLeftAction_iff {a : H →* RingAut A}
@@ -243,6 +357,77 @@ lemma isStableUnderLeftAction_smoothModules {ι : Type*} (J : ι → Submodule A
     TauCeti.smoothModules_restrictScalars _ (hJ h) hM
 
 end MonoidHom
+
+namespace RingHom
+
+open Functor.LaxLeftLinear Functor.OplaxLeftLinear
+
+variable {H : Type*} [Monoid H] {A : Type u} [Ring A] {B : Type*} [Ring B] (f : A →+* B)
+  {a : H →* RingAut A} {b : H →* RingAut B} (hf : ∀ h x, f (a h x) = b h (f x))
+
+include hf in
+/-- If a ring homomorphism `f : A →+* B` intertwines actions `a` and `b` of `H` by ring
+automorphisms, then restriction of scalars along `f` is equivariant for the twisting actions.
+Twisting the restriction of a `B`-module by `h` and restricting its twist are both restriction
+of scalars along `f ∘ (a h)⁻¹ = (b h)⁻¹ ∘ f`, and the lineators are the identity maps of the
+underlying abelian group. -/
+@[instance_reducible]
+noncomputable def leftLinearRestrictScalars :
+    letI := a.restrictScalarsMonoidalLeftAction.{v}
+    letI := b.restrictScalarsMonoidalLeftAction.{v}
+    (ModuleCat.restrictScalars.{v} f).LeftLinear (Discrete H) :=
+  letI := a.restrictScalarsMonoidalLeftAction.{v}
+  letI := b.restrictScalarsMonoidalLeftAction.{v}
+  have hsymm (h : H) (x : A) : f ((a h).symm x) = (b h).symm (f x) := by
+    rw [RingEquiv.eq_symm_apply, ← hf, RingEquiv.apply_symm_apply]
+  -- Both lineators are the identity on the carrier of `M`. By
+  -- `ModuleCat.restrictScalars.smul_def`, `r : A` acts on that carrier by `f ((a c).symm r)`
+  -- through the twisted restriction and by `(b c).symm (f r)` through the restricted twist; these
+  -- agree by `hsymm`. The ascription `show M from x` views `x` in `M`, so that both sides are the
+  -- action of `B` on `M` and differ only in the scalar.
+  { μₗ c M := ModuleCat.ofHom
+      (X := (c ⊙ₗ (ModuleCat.restrictScalars f).obj M : ModuleCat.{v} A))
+      (Y := (ModuleCat.restrictScalars f).obj (c ⊙ₗ M : ModuleCat.{v} B))
+      { toFun := fun x => x
+        map_add' _ _ := rfl
+        map_smul' r x := congrArg (· • (show M from x)) (hsymm c.as r) }
+    δₗ c M := ModuleCat.ofHom
+      (X := (ModuleCat.restrictScalars f).obj (c ⊙ₗ M : ModuleCat.{v} B))
+      (Y := (c ⊙ₗ (ModuleCat.restrictScalars f).obj M : ModuleCat.{v} A))
+      { toFun := fun x => x
+        map_add' _ _ := rfl
+        map_smul' r x :=
+          (congrArg (· • (show M from x)) (hsymm c.as r)).symm }
+    μₗ_naturality_left _ _ := by ext; rfl
+    μₗ_naturality_right _ _ _ _ := by ext; rfl
+    μₗ_associativity _ _ _ := by ext; rfl
+    μₗ_unitality _ := by ext; rfl
+    δₗ_naturality_left _ _ := by ext; rfl
+    δₗ_naturality_right _ _ _ _ := by ext; rfl
+    δₗ_associativity _ _ _ := by ext; rfl
+    δₗ_unitality_inv _ := by ext; rfl
+    μₗ_comp_δₗ _ _ := by ext; rfl
+    δₗ_comp_μₗ _ _ := by ext; rfl }
+
+/-- The lax lineators of `RingHom.leftLinearRestrictScalars` are identity maps. -/
+@[simp]
+lemma leftLinearRestrictScalars_μₗ_apply (c : Discrete H) (M : ModuleCat.{v} B) (x : M) :
+    letI := a.restrictScalarsMonoidalLeftAction.{v}
+    letI := b.restrictScalarsMonoidalLeftAction.{v}
+    letI := f.leftLinearRestrictScalars hf
+    μₗ (ModuleCat.restrictScalars.{v} f) c M x = x :=
+  (rfl)
+
+/-- The oplax lineators of `RingHom.leftLinearRestrictScalars` are identity maps. -/
+@[simp]
+lemma leftLinearRestrictScalars_δₗ_apply (c : Discrete H) (M : ModuleCat.{v} B) (x : M) :
+    letI := a.restrictScalarsMonoidalLeftAction.{v}
+    letI := b.restrictScalarsMonoidalLeftAction.{v}
+    letI := f.leftLinearRestrictScalars hf
+    δₗ (ModuleCat.restrictScalars.{v} f) c M x = x :=
+  (rfl)
+
+end RingHom
 
 namespace TauCeti
 

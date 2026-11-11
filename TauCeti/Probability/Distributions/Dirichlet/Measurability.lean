@@ -68,12 +68,13 @@ theorem measurable_dirichletMeasure :
 open scoped NNReal in
 /-- Reading a Dirichlet vector through a simplex-weight extension preserves its coordinates
 almost surely, independently of the chosen fallback point. -/
-theorem ae_extendWeights_dirichletMeasure [Nonempty ι] {a : ι → ℝ} (ha : ∀ i, 0 < a i)
+theorem ae_extendWeights_dirichletMeasure {a : ι → ℝ}
     (p : Convexity.StdSimplex ℝ≥0 ι) :
     ∀ᵐ x ∂dirichletMeasure a, ∀ i,
       ((p.extendWeights (fun j ↦ (x j).toNNReal)).weights i : ℝ) = x i := by
   classical
-  filter_upwards [ae_pos_dirichletMeasure ha, ae_sum_eq_one_dirichletMeasure ha] with x hx hsum
+  filter_upwards [ae_pos_dirichletMeasure (a := a), ae_sum_eq_one_dirichletMeasure (a := a)]
+    with x hx hsum
   have hw : (fun i ↦ (x i).toNNReal) ∈
       Set.range (fun q : Convexity.StdSimplex ℝ≥0 ι ↦ (q.weights : ι → ℝ≥0)) := by
     rw [Convexity.StdSimplex.range_toFun_comp_weights]

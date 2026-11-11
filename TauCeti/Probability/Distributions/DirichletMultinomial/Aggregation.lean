@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import TauCeti.Algebra.Order.BigOperators.Sum.Filter
 public import TauCeti.Probability.Distributions.DirichletMultinomial.Basic
 public import TauCeti.Probability.Distributions.Dirichlet.Aggregation
 public import TauCeti.Probability.Distributions.Dirichlet.Marginal
@@ -69,16 +70,16 @@ theorem map_funOnFinite_map_dirichletMultinomialMeasure [Nonempty ι] [Nonempty 
     obtain ⟨i, hi⟩ := hf j
     exact Finset.sum_pos (fun k _ ↦ ha k) ⟨i, by simp [hi]⟩
   have hweights : ∀ᵐ x ∂dirichletMeasure a, ∀ i, ((p x).weights i : ℝ) = x i :=
-    ae_extendWeights_dirichletMeasure ha (StdSimplex.single (Classical.arbitrary ι))
-  have hmerged : ∀ᵐ x ∂dirichletMeasure (fun j ↦ ∑ i with f i = j, a i),
+    ae_extendWeights_dirichletMeasure (StdSimplex.single (Classical.arbitrary ι))
+  have hqweights : ∀ᵐ x ∂dirichletMeasure (fun j ↦ ∑ i with f i = j, a i),
       ∀ j, ((q x).weights j : ℝ) = x j :=
-    ae_extendWeights_dirichletMeasure hpos (StdSimplex.single (Classical.arbitrary κ))
+    ae_extendWeights_dirichletMeasure (StdSimplex.single (Classical.arbitrary κ))
+  have hmerged := hqweights
   rw [← map_euclideanFiberSum_dirichletMeasure hf ha] at hmerged
   have hmerged' := ae_of_ae_map (measurable_euclideanFiberSum f).aemeasurable hmerged
   rw [dirichletMultinomialMeasure_eq_bind n p hweights,
     Measure.map_bind hkernel.aemeasurable (.of_discrete),
-    dirichletMultinomialMeasure_eq_bind n q
-      (ae_extendWeights_dirichletMeasure hpos (StdSimplex.single (Classical.arbitrary κ))),
+    dirichletMultinomialMeasure_eq_bind n q hqweights,
     ← map_euclideanFiberSum_dirichletMeasure hf ha,
     Measure.bind_map (measurable_euclideanFiberSum f).aemeasurable
       hkernelq.aemeasurable]
@@ -106,13 +107,10 @@ theorem map_eval_dirichletMultinomialMeasure [DecidableEq ι] [Nontrivial ι]
   have hkernel : Measurable (fun x ↦ multinomialMeasure n (p x)) :=
     measurable_multinomialMeasure.comp (measurable_const.prodMk hp)
   have hweights : ∀ᵐ x ∂dirichletMeasure a, ∀ i, ((p x).weights i : ℝ) = x i :=
-    ae_extendWeights_dirichletMeasure ha (StdSimplex.single (Classical.arbitrary ι))
-  have hrest : 0 < ∑ j with j ≠ i, a j := by
-    obtain ⟨j, hj⟩ := exists_ne i
-    exact Finset.sum_pos (fun k _ ↦ ha k) ⟨j, by simp [hj]⟩
+    ae_extendWeights_dirichletMeasure (StdSimplex.single (Classical.arbitrary ι))
   rw [dirichletMultinomialMeasure_eq_bind n p hweights,
     Measure.map_bind hkernel.aemeasurable (.of_discrete),
-    betaBinomialMeasure_eq_bind (ha i) hrest,
+    betaBinomialMeasure_eq_bind (ha i) (Finset.sum_filter_ne_pos ha i),
     ← map_eval_dirichletMeasure ha i,
     Measure.bind_map (by fun_prop) (by fun_prop)]
   apply Measure.bind_congr_right

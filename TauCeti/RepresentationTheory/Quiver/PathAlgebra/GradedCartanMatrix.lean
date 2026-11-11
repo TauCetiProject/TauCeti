@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import TauCeti.Algebra.Polynomial.Laurent.Coeff
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Projective
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Projective.Basic
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.GradedSimple
 
 /-!
@@ -79,7 +79,7 @@ def gradedVertexProjectiveClassBasis :
   let _ := integerGradedAlgebra k Q
   let _ := Fintype.ofFinite Q
   gradedIdempotentProjectiveBasis (completeOrthogonalIdempotents_vertexIdempotent k Q)
-    (vertexIdempotent_mem_integerGrade_zero k Q) (isHomogeneous_span_vertexIdempotent k Q)
+    (isHomogeneous_span_vertexIdempotent k Q)
     (fun _ => integerGrade_eq_bot_of_neg k Q)
     (integerGrade_zero_eq_span_range_vertexIdempotent k Q).le vertexIdempotent_ne_zero
 

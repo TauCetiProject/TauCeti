@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.RootsOfUnity.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Basic
+public import TauCeti.LinearAlgebra.Matrix.SkewAdjoint
 
 /-!
 # The center of the symplectic group
@@ -106,11 +107,17 @@ theorem mem_center_of_val_eq_scalar {g : GLSymplecticFin m R} {c : R}
     (Matrix.scalar_commute c (fun r ↦ Commute.all c r)
       (h.val : Matrix (Fin (m + m)) (Fin (m + m)) R)).eq.symm
 
-/-- In positive rank the center of the symplectic group consists exactly of scalar matrices
-whose scalar squares to one. No reducedness or characteristic assumption is needed. -/
-theorem mem_center_iff (hm : m ≠ 0) (g : GLSymplecticFin m R) :
+/-- The center of the symplectic group consists exactly of scalar matrices whose scalar squares to
+one. No reducedness or characteristic assumption is needed, and in rank zero the group is trivial
+and the scalar can be chosen to be `1`. -/
+theorem mem_center_iff (g : GLSymplecticFin m R) :
     g ∈ Subgroup.center (GLSymplecticFin m R) ↔
       ∃ c : R, (g.val : Matrix _ _ R) = Matrix.scalar (Fin (m + m)) c ∧ c ^ 2 = 1 := by
+  rcases eq_or_ne m 0 with rfl | hm
+  · have h (A B : Matrix (Fin (0 + 0)) (Fin (0 + 0)) R) : A = B := by
+      ext i
+      exact Fin.elim0 i
+    exact iff_of_true (mem_center_of_val_eq_scalar (c := 1) (h _ _)) ⟨1, h _ _, one_pow 2⟩
   constructor
   · intro hg
     obtain ⟨c, hc⟩ := Matrix.mem_range_scalar_of_commute_symplectic
@@ -119,7 +126,8 @@ theorem mem_center_iff (hm : m ≠ 0) (g : GLSymplecticFin m R) :
         exact congrArg (fun x : GLSymplecticFin m R ↦
           (x.val : Matrix (Fin (m + m)) (Fin (m + m)) R)) he.symm)
     refine ⟨c, hc.symm, ?_⟩
-    apply sq_eq_one_of_smul_one_mul_JFin_mul_transpose_eq hm
+    have : Nonempty (Fin (m + m)) := ⟨⟨0, by omega⟩⟩
+    apply Matrix.sq_eq_one_of_smul_one_mul_mul_transpose_eq (isUnit_JFin m R)
     simpa only [← hc, Matrix.scalar_apply, Matrix.smul_one_eq_diagonal] using
       GLSymplecticFin.mem_iff.mp g.property
   · rintro ⟨c, hc, -⟩
@@ -134,7 +142,7 @@ instance instNontrivialQuotientCenter [Nontrivial R] [NeZero m] :
   let i : Fin m := ⟨0, Nat.pos_of_ne_zero (NeZero.ne m)⟩
   have hg : positiveLongRootTransvectionUnit i (1 : R) ∈
       Subgroup.center (GLSymplecticFin m R) := htop ▸ Subgroup.mem_top _
-  obtain ⟨c, hc, -⟩ := (mem_center_iff (NeZero.ne m) _).mp hg
+  obtain ⟨c, hc, -⟩ := (mem_center_iff _).mp hg
   have hij : Fin.castAdd m i ≠ i.addNat m := by
     simpa only [finSumFinEquiv_apply_left, finSumFinEquiv_apply_right,
       Fin.natAdd_eq_addNat] using finSumFinEquiv_inl_ne_inr i i

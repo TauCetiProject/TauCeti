@@ -47,6 +47,9 @@ laws after the coordinate maps themselves have been evaluated on quotients. Fina
 `Subgroup.sum_out_smul_eq_relIndex_nsmul` sums an orbit map along a tower: for `K ≤ H` and an
 element `m` of an additive commutative monoid on which `G` acts, fixed by `H`, the sum of
 `q.out • m` over the cosets of `K` is `[H : K]` times the sum over the cosets of `H`.
+`Subgroup.finite_image_mk_of_inv_mul_mem` passes finiteness of the image of a set in `G ⧸ K` to
+`G ⧸ L` when congruence modulo `K` on the set implies congruence modulo `L`.
+`Subgroup.card_fiber_quotientMapOfLE` counts every fibre of `G / H → G / K` as `[K : H]`.
 -/
 
 public section
@@ -144,6 +147,24 @@ expand to quotient maps. -/
 
 end QuotientTower
 
+/-- Each fibre of the map `G / H → G / K`, for `H ≤ K`, has cardinality `[K : H]`.
+No finiteness or normality assumption on either subgroup is needed. -/
+@[to_additive /-- Each fibre of the map `G / H → G / K`, for `H ≤ K`, has cardinality
+`[K : H]`. No finiteness assumption on either additive subgroup is needed. -/]
+theorem card_fiber_quotientMapOfLE {G : Type*} [Group G] {H K : Subgroup G}
+    (hHK : H ≤ K) (q : G ⧸ K) :
+    Nat.card {p : G ⧸ H // quotientMapOfLE hHK p = q} = H.relIndex K := by
+  let e := (quotientEquivProdOfLE hHK).subtypeEquiv
+    (p := fun p ↦ quotientMapOfLE hHK p = q) (q := fun p ↦ p.1 = q)
+    -- The first coordinate of the tower equivalence is the quotient map itself.
+    (fun p ↦ Iff.rfl)
+  rw [Nat.card_congr e,
+    Nat.card_congr (Equiv.prodSubtypeFstEquivSubtypeProd
+      (β := K ⧸ H.subgroupOf K) (p := fun a ↦ a = q)),
+    Nat.card_prod, Nat.card_unique, one_mul]
+  -- Relative index is the cardinality of the quotient by the subgroup inside `K`.
+  rfl
+
 /-- **Transversals multiply along a tower.** For subgroups `K ≤ H` of `G`, the products
 `p.out * k.out` of the chosen representatives of the cosets `p ∈ G ⧸ H` and
 `k ∈ H ⧸ K.subgroupOf H` represent each coset of `K` in `G` exactly once. -/
@@ -191,6 +212,33 @@ theorem mk_mulEquiv_out_bijective {G G' : Type*} [Group G] [Group G'] {H : Subgr
     simp [QuotientGroup.eq, ← he]
   exact ⟨fun q q' h ↦ by simpa using (hmk _ _).1 h,
     fun q' ↦ ⟨e.symm q'.out, by simpa using (hmk _ (e.symm q'.out)).2 (QuotientGroup.out_eq' _)⟩⟩
+
+section FiniteImage
+
+variable {G : Type*} [Group G]
+
+/-- Finiteness of a coset image passes to another quotient if congruence on the set modulo the
+first subgroup implies congruence modulo the second: for a set `s` with finite image in `G ⧸ K`,
+if any two elements of `s` congruent modulo `K` are congruent modulo `L`, then `s` has finite
+image in `G ⧸ L`. No normality and no containment between `K` and `L` is needed. -/
+theorem finite_image_mk_of_inv_mul_mem {K L : Subgroup G} {s : Set G}
+    (hfin : (((↑) : G → G ⧸ K) '' s).Finite)
+    (hcong : ∀ x ∈ s, ∀ y ∈ s, x⁻¹ * y ∈ K → x⁻¹ * y ∈ L) :
+    (((↑) : G → G ⧸ L) '' s).Finite := by
+  classical
+  -- Send a coarse class to the fine class of a chosen representative from `s`.
+  let f : G ⧸ K → G ⧸ L := fun q ↦
+    if h : ∃ x ∈ s, (x : G ⧸ K) = q then ((h.choose : G) : G ⧸ L) else ((1 : G) : G ⧸ L)
+  refine (hfin.image f).subset ?_
+  rintro _ ⟨x, hx, rfl⟩
+  refine ⟨(x : G ⧸ K), ⟨x, hx, rfl⟩, ?_⟩
+  have h : ∃ y ∈ s, (y : G ⧸ K) = x := ⟨x, hx, rfl⟩
+  obtain ⟨hy, hyx⟩ := h.choose_spec
+  have hf : f (x : G ⧸ K) = ((h.choose : G) : G ⧸ L) := by simp only [f, h, ↓reduceDIte]
+  rw [hf]
+  exact QuotientGroup.eq.mpr (hcong _ hy x hx (QuotientGroup.eq.mp hyx))
+
+end FiniteImage
 
 end Subgroup
 

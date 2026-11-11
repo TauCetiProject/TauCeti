@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+import TauCeti.Geometry.Manifold.ExtChartAt
 
 /-!
 # Composing a metric on `M × ℝ` with a map of the time coordinate
@@ -88,7 +89,7 @@ def compTime (hφ : ContDiff ℝ ∞ φ) :
           (trivializationAt (E × ℝ) (TangentSpace (I.prod 𝓘(ℝ))) (p₀.1, φ p₀.2)).symm
             (q.1, φ q.2) u := by
       rw [← Trivialization.symmL_apply (R := ℝ) _ hq, ← Trivialization.symmL_apply (R := ℝ) _ hq']
-      exact symmL_trivializationAt_prod_model_space hq₁ _ _ u
+      exact symmL_trivializationAt_prod_model_space _ _ u
     refine ContinuousLinearMap.ext fun v ↦ ContinuousLinearMap.ext fun w ↦ ?_
     simp only [hom_trivializationAt_apply, Function.comp_apply]
     refine (inCoordinates_apply_eq₂ (𝕜 := ℝ) (F₃ := ℝ) (E₃ := fun _ : M × ℝ ↦ ℝ) (x := q)
@@ -115,10 +116,10 @@ theorem chartMetric_compTime (hφ : ContDiff ℝ ∞ φ) (x₀ : M) (t₀ s : �
     (G.compTime hφ).toNondegenerateMetric.chartMetric (x₀, t₀) (z, τ) =
       G.toNondegenerateMetric.chartMetric (x₀, s) (z, φ τ) := by
   have hz₁ : (z, τ) ∈ (extChartAt (I.prod 𝓘(ℝ)) (x₀, t₀)).target := by
-    rw [extChartAt_prod, PartialEquiv.prod_target]
+    rw [TauCeti.extChartAt_prod_target]
     exact ⟨hz, by simp⟩
   have hz₂ : (z, φ τ) ∈ (extChartAt (I.prod 𝓘(ℝ)) (x₀, s)).target := by
-    rw [extChartAt_prod, PartialEquiv.prod_target]
+    rw [TauCeti.extChartAt_prod_target]
     exact ⟨hz, by simp⟩
   set y := (extChartAt (I.prod 𝓘(ℝ)) (x₀, t₀)).symm (z, τ)
   have hy : y = ((extChartAt I x₀).symm z, τ) := by
@@ -140,7 +141,7 @@ theorem chartMetric_compTime (hφ : ContDiff ℝ ∞ φ) (x₀ : M) (t₀ s : �
         (trivializationAt (E × ℝ) (TangentSpace (I.prod 𝓘(ℝ))) (x₀, s)).symm (y.1, φ y.2) v := by
     rw [← Trivialization.symmL_apply (R := ℝ) _ hbase₁,
       ← Trivialization.symmL_apply (R := ℝ) _ hbase₂]
-    exact symmL_trivializationAt_prod_model_space hy₁ _ _ v
+    exact symmL_trivializationAt_prod_model_space _ _ v
   refine ContinuousLinearMap.ext fun u ↦ ContinuousLinearMap.ext fun w ↦ ?_
   rw [TauCeti.Manifold.ContMDiffNondegenerateMetric.chartMetric_apply _ hz₁,
     TauCeti.Manifold.ContMDiffNondegenerateMetric.chartMetric_apply _ hz₂, hpt]

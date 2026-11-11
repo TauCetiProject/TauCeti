@@ -47,6 +47,11 @@ records that none of them is admissible.
 
 ## Main results
 
+* `TauCeti.IntegralLattice.four_dvd_sigPos_sub_sigNeg_of_level_dvd_two`: an even lattice whose
+  level divides `2`, that is, whose `q_L` takes values in `½ℤ/ℤ`, has `t₊ − t₋ ≡ 0 (mod 4)`.
+  Condition 3 is its `2`-elementary case.
+* `TauCeti.IntegralLattice.four_dvd_finrank_of_level_dvd_two`: in particular a positive definite
+  even lattice of level dividing `2` has rank divisible by `4`.
 * `TauCeti.IntegralLattice.twoElementaryLatticeWithInvariants_iff`: the defining characterization
   of the existence predicate.
 * `TauCeti.IntegralLattice.twoElementaryAdmissible_sigPos_sigNeg`: the invariants of an even
@@ -100,6 +105,45 @@ theorem not_twoElementaryAdmissible_boundary_witnesses :
   · rcases h.pm_one_of_a_one rfl with h' | h' <;> exact absurd h' (by decide)
   · exact absurd (h.delta_zero_of_a_two rfl (by decide)) (by decide)
   · exact absurd (h.eight_of_a_eq_rank rfl rfl) (by decide)
+
+/-! ## Even lattices of level dividing two -/
+
+section LevelDvdTwo
+
+variable (L : IntegralLattice V)
+
+/-- **An even lattice of level dividing `2` has signature divisible by `4`.** The level divides
+`2` exactly when `q_L` takes values in `½ℤ/ℤ`, so the Gauss-sum invariant of `q_L` is `0` or `4`,
+and by Milgram's theorem it is `t₊ − t₋` modulo `8`. -/
+theorem four_dvd_sigPos_sub_sigNeg_of_level_dvd_two [L.IsNondegenerate] (hL : L.IsEven)
+    (h2 : L.level ∣ 2) : (4 : ℤ) ∣ L.sigPos - L.sigNeg := by
+  have hq (x : L.DiscriminantGroup) :
+      L.discriminantQuadraticMap hL x + L.discriminantQuadraticMap hL x = 0 := by
+    rw [← two_zsmul]
+    exact (hL.level_dvd_iff 2).mp (by exact_mod_cast h2) x
+  obtain ⟨k, hk⟩ := FiniteQuadraticModule.exists_gaussSign_eq_four_mul_of_quadratic_add_self_eq_zero
+    (L.isNondegenerate_discriminantQuadraticModule hL) hq
+  rw [L.gaussSign_discriminantQuadraticModule_eq_sigPos_sub_sigNeg hL] at hk
+  -- Reduce `t₊ − t₋ = 4k` from `ℤ/8` to `ℤ/4`.
+  have h := congrArg (ZMod.castHom (by norm_num : 4 ∣ 8) (ZMod 4)) hk
+  simp only [map_sub, map_mul, map_natCast, map_ofNat] at h
+  have h4 : (4 : ZMod 4) = 0 := rfl
+  refine (ZMod.intCast_zmod_eq_zero_iff_dvd _ 4).mp ?_
+  push_cast
+  linear_combination h + ZMod.castHom (by norm_num : 4 ∣ 8) (ZMod 4) k * h4
+
+/-- The rank of a positive definite even lattice of level dividing `2` is divisible by `4`. -/
+theorem four_dvd_finrank_of_level_dvd_two (hL : L.IsEven) (h2 : L.level ∣ 2)
+    (hP : L.IsPosDef) : 4 ∣ Module.finrank ℚ V := by
+  have : L.IsNondegenerate := ⟨(L.isPosDef_iff_isPosSemidef_and_nondegenerate.mp hP).2⟩
+  obtain ⟨hNull, hNeg⟩ := L.isPosDef_iff_sigNull_eq_zero_and_sigNeg_eq_zero.mp hP
+  have hSig := L.signature_sum_eq_finrank
+  have hDiv := L.four_dvd_sigPos_sub_sigNeg_of_level_dvd_two hL h2
+  simp only [hNull, hNeg, add_zero, Nat.cast_zero, sub_zero] at hSig hDiv
+  rw [← hSig]
+  exact_mod_cast hDiv
+
+end LevelDvdTwo
 
 /-! ## Necessity of Nikulin's conditions -/
 
@@ -162,6 +206,57 @@ private theorem eight_dvd_sigPos_sub_sigNeg_of_carrier_eq_two_nsmul
   rw [← hpos, ← hneg]
   exact T.eight_dvd_sigPos_sub_sigNeg_of_isUnimodular hTe hTu
 
+/-- Nikulin's condition 4: a trivial discriminant group has zero form and zero invariant. -/
+private theorem delta_eq_zero_and_eight_dvd_of_natCard_eq_one {δ : ZMod 2}
+    (hδ : δ = 0 ↔ ∀ x : L.DiscriminantGroup,
+      L.discriminantQuadraticMap hL x + L.discriminantQuadraticMap hL x = 0)
+    (hcard : Nat.card L.DiscriminantGroup = 2 ^ 0) :
+    δ = 0 ∧ (((L.sigPos : ℤ) - (L.sigNeg : ℤ) : ℤ) : ZMod 8) = 0 := by
+  have hmil := L.gaussSign_discriminantQuadraticModule_eq_sigPos_sub_sigNeg hL
+  have : Subsingleton L.DiscriminantGroup :=
+    (Nat.card_eq_one_iff_unique.mp (hcard.trans (pow_zero 2))).1
+  have hsub : Subsingleton (L.discriminantQuadraticModule hL) := this
+  refine ⟨hδ.mpr fun x ↦ by rw [Subsingleton.elim x 0, map_zero, add_zero], ?_⟩
+  rw [FiniteQuadraticModule.gaussSign_eq_zero_of_subsingleton] at hmil
+  push_cast
+  exact hmil.symm
+
+include hL in
+/-- Nikulin's condition 5: a nondegenerate module of order two has invariant `±1`. -/
+private theorem sigPos_sub_sigNeg_eq_one_or_neg_one_of_natCard_eq_two
+    (hcard : Nat.card L.DiscriminantGroup = 2 ^ 1) :
+    (((L.sigPos : ℤ) - (L.sigNeg : ℤ) : ℤ) : ZMod 8) = 1 ∨
+      (((L.sigPos : ℤ) - (L.sigNeg : ℤ) : ℤ) : ZMod 8) = -1 := by
+  have hmil := L.gaussSign_discriminantQuadraticModule_eq_sigPos_sub_sigNeg hL
+  push_cast
+  rw [← hmil]
+  exact FiniteQuadraticModule.gaussSign_eq_one_or_eq_neg_one_of_natCard_eq_two
+    (L.isNondegenerate_discriminantQuadraticModule hL) (hcard.trans (pow_one 2))
+
+/-- Nikulin's condition 6: a module of order four with invariant `4` takes values in `½ℤ/ℤ`. -/
+private theorem delta_eq_zero_of_natCard_eq_four {δ : ZMod 2}
+    (hδ : δ = 0 ↔ ∀ x : L.DiscriminantGroup,
+      L.discriminantQuadraticMap hL x + L.discriminantQuadraticMap hL x = 0)
+    (h2 : ∀ x : L.DiscriminantGroup, 2 • x = 0) (hcard : Nat.card L.DiscriminantGroup = 2 ^ 2)
+    (hs : (((L.sigPos : ℤ) - (L.sigNeg : ℤ) : ℤ) : ZMod 8) = 4) : δ = 0 := by
+  have hmil := L.gaussSign_discriminantQuadraticModule_eq_sigPos_sub_sigNeg hL
+  push_cast at hs
+  exact hδ.mpr (FiniteQuadraticModule.quadratic_add_self_eq_zero_of_gaussSign_eq_four
+    (L.isNondegenerate_discriminantQuadraticModule hL) h2 (hcard.trans (by norm_num))
+    (hmil.trans hs))
+
+/-- Nikulin's condition 7: if `#A_L = 2^n` with `n` the rank, and `q_L` takes values in `½ℤ/ℤ`,
+then `L = 2Lᵛ` and `Lᵛ(2)` is even unimodular, so `t₊ - t₋ ≡ 0 (mod 8)`. -/
+private theorem eight_dvd_of_natCard_eq_two_pow_finrank {δ : ZMod 2}
+    (hδ : δ = 0 ↔ ∀ x : L.DiscriminantGroup,
+      L.discriminantQuadraticMap hL x + L.discriminantQuadraticMap hL x = 0)
+    (h2 : ∀ x : L.DiscriminantGroup, 2 • x = 0)
+    (hcard : Nat.card L.DiscriminantGroup = 2 ^ finrank ℚ V) (hδ0 : δ = 0) :
+    (((L.sigPos : ℤ) - (L.sigNeg : ℤ) : ℤ) : ZMod 8) = 0 := by
+  have hS := fun x hx ↦ L.exists_mem_dualCarrier_eq_nsmul 2 h2 hcard (x := x) hx
+  have h8 := L.eight_dvd_sigPos_sub_sigNeg_of_carrier_eq_two_nsmul hL h2 hS (hδ.mp hδ0)
+  exact (ZMod.intCast_zmod_eq_zero_iff_dvd _ 8).mpr (by exact_mod_cast h8)
+
 /-- **The invariants of an even `2`-elementary lattice satisfy Nikulin's conditions.** If the
 discriminant group of an even nondegenerate lattice `L` is `(ℤ/2)^a`, and `δ = 0` exactly when
 `q_L` takes values in `½ℤ/ℤ`, then `(δ; t₊, t₋, a)` satisfies `TwoElementaryAdmissible`. -/
@@ -201,41 +296,24 @@ theorem twoElementaryAdmissible_sigPos_sigNeg {a : ℕ}
     have h2' : (2 : ZMod 2) = 0 := rfl
     push_cast
     linear_combination h + (L.sigNeg + a + ZMod.castHom (by norm_num : 2 ∣ 8) (ZMod 2) k) * h2'
-  · -- (3) If `q_L` takes values in `½ℤ/ℤ`, then `sign q_L ∈ {0, 4}`.
-    obtain ⟨k, hk⟩ :=
-      FiniteQuadraticModule.exists_gaussSign_eq_four_mul_of_quadratic_add_self_eq_zero hA
-        (hδ.mp hδ0)
-    rw [hmil] at hk
-    have h := congrArg (ZMod.castHom (by norm_num : 4 ∣ 8) (ZMod 4)) hk
-    simp only [map_sub, map_mul, map_natCast, map_ofNat] at h
-    have h4 : (4 : ZMod 4) = 0 := rfl
-    push_cast
-    linear_combination h + ZMod.castHom (by norm_num : 4 ∣ 8) (ZMod 4) k * h4
+  · -- (3) If `q_L` takes values in `½ℤ/ℤ`, then the level divides `2`.
+    have h2 : L.level ∣ 2 := Int.natCast_dvd_natCast.mp <| (hL.level_dvd_iff 2).mpr fun x ↦ by
+      rw [two_zsmul]
+      exact hδ.mp hδ0 x
+    exact (ZMod.intCast_zmod_eq_zero_iff_dvd _ 4).mpr
+      (by exact_mod_cast L.four_dvd_sigPos_sub_sigNeg_of_level_dvd_two hL h2)
   · -- (4) A trivial discriminant group has zero form and zero invariant.
     subst ha
-    have : Subsingleton L.DiscriminantGroup :=
-      (Nat.card_eq_one_iff_unique.mp (hcard.trans (pow_zero 2))).1
-    have hsub : Subsingleton A := this
-    refine ⟨hδ.mpr fun x ↦ by rw [Subsingleton.elim x 0, map_zero, add_zero], ?_⟩
-    rw [FiniteQuadraticModule.gaussSign_eq_zero_of_subsingleton] at hmil
-    push_cast
-    exact hmil.symm
+    exact delta_eq_zero_and_eight_dvd_of_natCard_eq_one L hL hδ hcard
   · -- (5) A nondegenerate module of order two has invariant `±1`.
     subst ha
-    push_cast
-    rw [← hmil]
-    exact FiniteQuadraticModule.gaussSign_eq_one_or_eq_neg_one_of_natCard_eq_two hA
-      (hcard.trans (pow_one 2))
+    exact sigPos_sub_sigNeg_eq_one_or_neg_one_of_natCard_eq_two L hL (hcard.trans (pow_one 2))
   · -- (6) A module of order four with invariant `4` takes values in `½ℤ/ℤ`.
     subst ha
-    push_cast at hs
-    exact hδ.mpr (FiniteQuadraticModule.quadratic_add_self_eq_zero_of_gaussSign_eq_four hA h2
-      (hcard.trans (by norm_num)) (hmil.trans hs))
+    exact delta_eq_zero_of_natCard_eq_four L hL hδ h2 hcard hs
   · -- (7) If `#A_L = 2^n`, then `L = 2Lᵛ` and `Lᵛ(2)` is even unimodular.
-    have hS := fun x hx ↦ L.exists_mem_dualCarrier_eq_nsmul 2 h2
-      (hcard.trans (by rw [ha, hrank])) (x := x) hx
-    have h8 := L.eight_dvd_sigPos_sub_sigNeg_of_carrier_eq_two_nsmul hL h2 hS (hδ.mp hδ0)
-    exact (ZMod.intCast_zmod_eq_zero_iff_dvd _ 8).mpr (by exact_mod_cast h8)
+    exact eight_dvd_of_natCard_eq_two_pow_finrank L hL hδ h2
+      (hcard.trans (by rw [ha, hrank])) hδ0
 
 end Necessity
 

@@ -52,6 +52,9 @@ are unique, a vanishing image forces a vanishing gradient, so the map is injecti
 * `TauCeti.d1p0Submodule` and `TauCeti.D1p0`: the space `D^{1,p}_0(Ω)`, complete for the
   gradient norm, with the dense linear map `TauCeti.D1p0.ofTestFunctionₗ` from the test
   functions (`TauCeti.D1p0.denseRange_ofTestFunctionₗ`, `TauCeti.D1p0.norm_ofTestFunctionₗ`).
+* `TauCeti.mapsTo_d1p0Submodule` and `TauCeti.D1p0.ofLpEquiv`: a linear isometric equivalence of
+  `Lᵖ(Ω, E)` that maps test-function gradients to test-function gradients, as does its inverse,
+  restricts to `D^{1,p}_0(Ω)`. Translations and dilations of the whole space act this way.
 * `TauCeti.D1p0.inner_def` and `TauCeti.D1p0.inner_ofTestFunctionₗ`: the Hilbert space structure
   of `D^{1,2}_0(Ω)`.
 * `TauCeti.D1p0.sobolevEmbeddingL`: the Sobolev embedding `D^{1,p}_0(Ω) →L[ℝ] L^{p⋆}(Ω)`, with
@@ -78,7 +81,7 @@ noncomputable section
 namespace TauCeti
 
 open MeasureTheory Module Set TopologicalSpace
-open scoped Distributions ENNReal Gradient InnerProductSpace NNReal
+open scoped Distributions ENNReal Gradient InnerProductSpace NNReal Topology
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} {Omega : Opens E} {p : ENNReal}
@@ -158,6 +161,54 @@ theorem D1p0.denseRange_ofTestFunctionₗ : DenseRange (D1p0.ofTestFunctionₗ m
   convert hu using 3
   exact funext D1p0.coe_ofTestFunctionₗ
 
+/-- A continuous map of `Lᵖ(Ω, E)` that sends the gradient of every test function to the gradient
+of a test function preserves `D^{1,p}_0(Ω)`. -/
+theorem mapsTo_d1p0Submodule {T : Lp E p (mu.restrict Omega) → Lp E p (mu.restrict Omega)}
+    (hT : Continuous T)
+    (hgrad : ∀ phi : 𝓓(Omega, ℝ), ∃ psi : 𝓓(Omega, ℝ),
+      T (gradientTestFunctionLp p phi) = gradientTestFunctionLp p psi) :
+    MapsTo T (d1p0Submodule mu Omega p : Set _) (d1p0Submodule mu Omega p : Set _) := by
+  rw [coe_d1p0Submodule]
+  refine MapsTo.closure ?_ hT
+  rintro _ ⟨phi, rfl⟩
+  obtain ⟨psi, h⟩ := hgrad phi
+  exact h ▸ mem_range_self psi
+
+/-- A linear isometric equivalence of `Lᵖ(Ω, E)` which, together with its inverse, preserves
+`D^{1,p}_0(Ω)` restricts to a linear isometric equivalence of `D^{1,p}_0(Ω)`. -/
+def D1p0.ofLpEquiv (T : Lp E p (mu.restrict Omega) ≃ₗᵢ[ℝ] Lp E p (mu.restrict Omega))
+    (hT : MapsTo T (d1p0Submodule mu Omega p : Set _) (d1p0Submodule mu Omega p : Set _))
+    (hT' : MapsTo T.symm (d1p0Submodule mu Omega p : Set _) (d1p0Submodule mu Omega p : Set _)) :
+    D1p0 mu Omega p ≃ₗᵢ[ℝ] D1p0 mu Omega p where
+  toFun u := ⟨T u, hT u.property⟩
+  invFun u := ⟨T.symm u, hT' u.property⟩
+  left_inv u := Subtype.ext (T.symm_apply_apply (u : Lp E p (mu.restrict Omega)))
+  right_inv u := Subtype.ext (T.apply_symm_apply (u : Lp E p (mu.restrict Omega)))
+  map_add' _ _ := Subtype.ext (map_add T _ _)
+  map_smul' _ _ := Subtype.ext (map_smul T _ _)
+  norm_map' u := T.norm_map (u : Lp E p (mu.restrict Omega))
+
+/-- The restriction `TauCeti.D1p0.ofLpEquiv` acts on the recorded gradient by the original
+equivalence. -/
+@[simp]
+theorem D1p0.coe_ofLpEquiv (T : Lp E p (mu.restrict Omega) ≃ₗᵢ[ℝ] Lp E p (mu.restrict Omega))
+    (hT : MapsTo T (d1p0Submodule mu Omega p : Set _) (d1p0Submodule mu Omega p : Set _))
+    (hT' : MapsTo T.symm (d1p0Submodule mu Omega p : Set _) (d1p0Submodule mu Omega p : Set _))
+    (u : D1p0 mu Omega p) :
+    (D1p0.ofLpEquiv T hT hT' u : Lp E p (mu.restrict Omega)) = T u :=
+  (rfl)
+
+/-- The inverse of the restriction `TauCeti.D1p0.ofLpEquiv` acts on the recorded gradient by the
+inverse of the original equivalence. -/
+@[simp]
+theorem D1p0.coe_ofLpEquiv_symm
+    (T : Lp E p (mu.restrict Omega) ≃ₗᵢ[ℝ] Lp E p (mu.restrict Omega))
+    (hT : MapsTo T (d1p0Submodule mu Omega p : Set _) (d1p0Submodule mu Omega p : Set _))
+    (hT' : MapsTo T.symm (d1p0Submodule mu Omega p : Set _) (d1p0Submodule mu Omega p : Set _))
+    (u : D1p0 mu Omega p) :
+    ((D1p0.ofLpEquiv T hT hT').symm u : Lp E p (mu.restrict Omega)) = T.symm u :=
+  (rfl)
+
 /-! ### The Hilbert space `D^{1,2}_0(Ω)` -/
 
 /-- The inner product of `D^{1,2}_0(Ω)` is the Dirichlet inner product `∫_Ω ⟪∇u, ∇v⟫`. -/
@@ -217,6 +268,56 @@ theorem D1p0.sobolevEmbeddingL_ofTestFunctionₗ (hpstar : pstar ≠ ∞)
   let _ := Fact.mk (one_le_of_inv_add_eq_inv hexp)
   exact (LinearMap.extendOfNorm_eq (D1p0.denseRange_ofTestFunctionₗ (mu := mu) (Omega := Omega))
     ⟨_, D1p0.norm_testFunctionLp_le hpstar hexp⟩ phi).trans (testFunctionLpₗ_apply pstar phi)
+
+/-- Simultaneous `L^{p⋆}` convergence of test functions to `f` and `Lᵖ` convergence of their
+gradients to `g` represent `f` by an element of `D^{1,p}_0(Ω)` with recorded gradient `g`.
+No classical differentiability of `f` is required. -/
+theorem D1p0.exists_sobolevEmbeddingL_ae_eq_of_tendsto (hpstar : pstar ≠ ∞)
+    (hexp : pstar⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹)
+    {f : E → ℝ} {g : E → E} (hf : MemLp f pstar (mu.restrict Omega))
+    (hg : MemLp g p (mu.restrict Omega)) (phi : ℕ → 𝓓(Omega, ℝ))
+    (hfun : Filter.Tendsto (fun n ↦ eLpNorm ((phi n : E → ℝ) - f)
+      pstar (mu.restrict Omega)) Filter.atTop (𝓝 0))
+    (hgrad : Filter.Tendsto (fun n ↦ eLpNorm (∇ (phi n : E → ℝ) - g)
+      p (mu.restrict Omega)) Filter.atTop (𝓝 0)) :
+    ∃ u : D1p0 mu Omega p,
+      (D1p0.sobolevEmbeddingL hexp u : E → ℝ) =ᵐ[mu.restrict Omega] f ∧
+      (u : Lp E p (mu.restrict Omega)) =ᵐ[mu.restrict Omega] g := by
+  let _ := Fact.mk (one_le_of_inv_add_eq_inv hexp)
+  let G := hg.toLp g
+  have hseq : Filter.Tendsto (fun n ↦ gradientTestFunctionLp (mu := mu) p (phi n))
+      Filter.atTop (𝓝 G) := by
+    apply (Lp.tendsto_Lp_iff_tendsto_eLpNorm _ _ hg).mpr
+    convert hgrad using 1
+    funext n
+    exact eLpNorm_congr_ae (by
+      filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) p (phi n)] with x hx
+      exact congrArg (· - g x) hx)
+  -- The limiting gradient lies in the closed space generated by test-function gradients.
+  have hG : G ∈ (d1p0Submodule mu Omega p : Set _) := by
+    rw [coe_d1p0Submodule]
+    exact isClosed_closure.mem_of_tendsto hseq
+      (Filter.Eventually.of_forall fun n ↦ subset_closure ⟨phi n, rfl⟩)
+  let u : D1p0 mu Omega p := ⟨G, hG⟩
+  refine ⟨u, ?_, hg.coeFn_toLp⟩
+  have huseq : Filter.Tendsto (fun n ↦ D1p0.ofTestFunctionₗ mu Omega p (phi n))
+      Filter.atTop (𝓝 u) := by
+    apply tendsto_subtype_rng.mpr
+    simpa only [D1p0.coe_ofTestFunctionₗ] using hseq
+  have hfseq : Filter.Tendsto (fun n ↦ testFunctionLp (mu := mu) pstar (phi n))
+      Filter.atTop (𝓝 (hf.toLp f)) := by
+    apply (Lp.tendsto_Lp_iff_tendsto_eLpNorm _ _ hf).mpr
+    convert hfun using 1
+    funext n
+    exact eLpNorm_congr_ae (by
+      filter_upwards [testFunctionLp_apply_ae (mu := mu) pstar (phi n)] with x hx
+      exact congrArg (· - f x) hx)
+  -- Continuity of the embedding identifies its image with the limit of the functions.
+  have hemb := ((D1p0.sobolevEmbeddingL (mu := mu) (Omega := Omega) hexp).continuous.tendsto
+    u).comp huseq
+  simp only [Function.comp_def, D1p0.sobolevEmbeddingL_ofTestFunctionₗ hpstar] at hemb
+  rw [tendsto_nhds_unique hemb hfseq]
+  exact hf.coeFn_toLp
 
 /-- **The Gagliardo--Nirenberg--Sobolev inequality on `D^{1,p}_0(Ω)`**: `‖u‖_{p⋆} ≤ C ‖∇u‖_p`, with
 Mathlib's constant `MeasureTheory.SNormLESNormFDerivOfEqConst`, which depends only on `E`, `mu`

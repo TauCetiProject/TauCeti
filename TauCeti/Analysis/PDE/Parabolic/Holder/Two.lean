@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Parabolic.SpaceTime.Holder
+public import TauCeti.Analysis.PDE.Parabolic.SpaceTime.Calculus
 public import TauCeti.Analysis.Holder.Normed
 public import TauCeti.Analysis.Calculus.UniformLimitsDeriv
 public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
@@ -87,6 +88,66 @@ omit [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSp
 /-- The total time slice evaluates the slab map at the clamped time. -/
 theorem timeExtension_def (hab : a ≤ b) (f : slab (E := E) a b → F) (x : E) :
     timeExtension hab f x = fun t ↦ f (slabMk x (projIcc a b hab t)) := (rfl)
+
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace ℝ F] in
+/-- Clamped time extension preserves addition of slab maps. -/
+@[simp]
+theorem timeExtension_add (hab : a ≤ b) (f g : slab (E := E) a b → F) :
+    timeExtension hab (f + g) = timeExtension hab f + timeExtension hab g := by
+  funext x t
+  simp only [timeExtension_def, Pi.add_apply]
+
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
+/-- Clamped time extension preserves scalar multiplication of slab maps. -/
+@[simp]
+theorem timeExtension_smul (hab : a ≤ b) (c : ℝ) (f : slab (E := E) a b → F) :
+    timeExtension hab (c • f) = c • timeExtension hab f := by
+  funext x t
+  simp only [timeExtension_def, Pi.smul_apply]
+
+omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
+/-- The clamped time extension of a continuous slab map is jointly continuous. -/
+theorem continuous_timeExtension (hab : a ≤ b) {f : slab (E := E) a b → F}
+    (hf : Continuous f) : Continuous (fun p : ℝ × E => timeExtension hab f p.2 p.1) := by
+  simpa only [timeExtension_def, Function.comp_def] using hf.comp (continuous_slabMk.comp
+    (continuous_snd.prodMk ((continuous_projIcc (h := hab)).comp continuous_fst)))
+
+omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
+/-- Clamping time preserves the supremum bound of a bounded continuous slab map. -/
+theorem norm_timeExtension_le (hab : a ≤ b) (f : slab (E := E) a b →ᵇ F)
+    (s : ℝ) (x : E) : ‖timeExtension hab f x s‖ ≤ ‖f‖ := by
+  rw [timeExtension_def]
+  exact f.norm_coe_le_norm _
+
+omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
+/-- Every spatial slice of a clamped Hölder extension has the same Hölder constant. -/
+theorem holderWith_timeExtension (hab : a ≤ b) {C : ℝ≥0} {f : slab (E := E) a b → F}
+    (hf : HolderWith C α f) (s : ℝ) :
+    HolderWith C α (fun x => timeExtension hab f x s) := by
+  intro x y
+  simpa only [timeExtension_def, edist_slabMk, edist_self,
+    ENNReal.zero_rpow_of_pos (by norm_num : (0 : ℝ) < 1 / 2), add_zero] using
+    hf (slabMk x (projIcc a b hab s)) (slabMk y (projIcc a b hab s))
+
+omit [NormedSpace ℝ E] in
+/-- Every spatial slice of a clamped bounded Hölder map has Hölder constant at most its
+bounded Hölder norm. -/
+theorem holderWith_timeExtension_holderSpace (hab : a ≤ b)
+    (f : HolderSpace α (slab (E := E) a b) F) (s : ℝ) :
+    HolderWith ‖f‖₊ α (fun x => timeExtension hab f x s) := by
+  apply holderWith_timeExtension hab
+  simpa only [HolderSpace.coe_toBoundedContinuousFunction] using
+    f.memHolder.holderWith.mono f.nnHolderNorm_le
+
+omit [NormedSpace ℝ E] in
+/-- The clamped extension of a bounded Hölder map is pointwise bounded by its bounded
+Hölder norm. -/
+theorem norm_timeExtension_holderSpace_le (hab : a ≤ b)
+    (f : HolderSpace α (slab (E := E) a b) F) (s : ℝ) (x : E) :
+    ‖timeExtension hab f x s‖ ≤ ‖f‖ := by
+  simpa only [HolderSpace.coe_toBoundedContinuousFunction] using
+    (norm_timeExtension_le hab f.toBoundedContinuousFunction s x).trans
+      f.norm_toBoundedContinuousFunction_le
 
 omit [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] in
 @[simp]
@@ -277,6 +338,67 @@ theorem deriv_eq (f : ParabolicC2HolderSpace α E F hab) (x : E) (t : Icc a b)
       timeDerivL f (slabMk x t) :=
   ((f.hasTimeDerivWithinAt x t).hasDerivAt (Icc_mem_nhds ht.1 ht.2)).deriv
 
+/-! ### Locality of the derivative fields -/
+
+section Locality
+
+variable {f g : ParabolicC2HolderSpace α E F hab} {U : Set (slab (E := E) a b)}
+
+/-- The spatial gradient is local: maps that agree on an open subset of the slab have the same
+spatial gradient there. -/
+theorem eqOn_spatialFDerivL_of_eqOn (hU : IsOpen U) (h : EqOn f g U) :
+    EqOn (spatialFDerivL f) (spatialFDerivL g) U := by
+  intro p hp
+  obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
+  have hev : (fun y ↦ f (slabMk y t)) =ᶠ[𝓝 x] fun y ↦ g (slabMk y t) :=
+    eventually_of_mem ((hU.preimage (spatialSlice t).continuous).mem_nhds (by simpa using hp))
+      fun _ hy ↦ h (by simpa using hy)
+  rw [← f.fderiv_eq, ← g.fderiv_eq, hev.fderiv_eq]
+
+/-- The spatial Hessian is local: maps that agree on an open subset of the slab have the same
+spatial Hessian there. -/
+theorem eqOn_spatialSecondFDerivL_of_eqOn (hU : IsOpen U) (h : EqOn f g U) :
+    EqOn (spatialSecondFDerivL f) (spatialSecondFDerivL g) U := by
+  have hx := eqOn_spatialFDerivL_of_eqOn hU h
+  intro p hp
+  obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
+  have hev : (fun y ↦ spatialFDerivL f (slabMk y t)) =ᶠ[𝓝 x]
+      fun y ↦ spatialFDerivL g (slabMk y t) :=
+    eventually_of_mem ((hU.preimage (spatialSlice t).continuous).mem_nhds (by simpa using hp))
+      fun _ hy ↦ hx (by simpa using hy)
+  rw [← f.fderiv_spatialFDeriv_eq, ← g.fderiv_spatialFDeriv_eq, hev.fderiv_eq]
+
+/-- The time derivative is local: maps that agree on an open subset of the slab have the same
+time derivative there, also at the endpoints of the time interval. -/
+theorem eqOn_timeDerivL_of_eqOn (hU : IsOpen U) (h : EqOn f g U) :
+    EqOn (timeDerivL f) (timeDerivL g) U := by
+  intro p hp
+  obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
+  -- The times `s ∈ [a, b]` with `(x, s) ∈ U` form a neighbourhood of `t` within `[a, b]`.
+  have hU' : (↑) '' (timeSlice x ⁻¹' U) ∈ 𝓝[Icc a b] (t : ℝ) :=
+    mem_nhds_subtype_iff_nhdsWithin.1
+      ((hU.preimage (timeSlice x).continuous).mem_nhds (by simpa using hp))
+  have hev : timeExtension hab.le f x =ᶠ[𝓝[Icc a b] (t : ℝ)] timeExtension hab.le g x := by
+    filter_upwards [hU'] with _ ⟨s, hs, hst⟩
+    rw [← hst, timeExtension_of_mem, timeExtension_of_mem]
+    exact h (by simpa using hs)
+  rw [← f.derivWithin_eq, ← g.derivWithin_eq,
+    hev.derivWithin_eq (by rw [timeExtension_of_mem, timeExtension_of_mem]; exact h hp)]
+
+/-- A map vanishing at parabolic distance greater than `r` from `z` has spatial Hessian vanishing
+there. This is the support condition under which a principal coefficient can be frozen at `z`
+(`TauCeti.ParabolicC2HolderSpace.norm_spatialOperatorL_sub_const_apply_le`). -/
+theorem spatialSecondFDerivL_eq_zero_of_forall_lt_dist {z : slab (E := E) a b} {r : ℝ}
+    (h : ∀ q, r < dist q z → f q = 0) (p : slab (E := E) a b) (hp : r < dist p z) :
+    spatialSecondFDerivL f p = 0 := by
+  have hU : IsOpen {q : slab (E := E) a b | r < dist q z} :=
+    isOpen_lt continuous_const (continuous_id.dist continuous_const)
+  have h0 : EqOn f (0 : ParabolicC2HolderSpace α E F hab) {q | r < dist q z} := fun q hq ↦ by
+    rw [h q hq, zero_apply]
+  rw [eqOn_spatialSecondFDerivL_of_eqOn hU h0 hp, map_zero, HolderSpace.zero_apply]
+
+end Locality
+
 /-- Construct an element from its bounded fields and the three derivative identities. -/
 def mk (u : slab (E := E) a b →ᵇ F) (ux : slab (E := E) a b →ᵇ (E →L[ℝ] F))
     (uxx : HolderSpace α (slab (E := E) a b) (E →L[ℝ] E →L[ℝ] F))
@@ -411,6 +533,13 @@ theorem norm_timeDerivL_le (f : ParabolicC2HolderSpace α E F hab) :
   linarith [norm_nonneg (valueL f), norm_nonneg (spatialFDerivL f),
     norm_nonneg (spatialSecondFDerivL f)]
 
+/-- The Hölder norms of the Hessian and time-derivative fields together are bounded by the reduced
+parabolic norm. -/
+theorem norm_spatialSecondFDerivL_add_norm_timeDerivL_le (f : ParabolicC2HolderSpace α E F hab) :
+    ‖spatialSecondFDerivL f‖ + ‖timeDerivL f‖ ≤ ‖f‖ := by
+  rw [norm_eq]
+  linarith [norm_nonneg (valueL f), norm_nonneg (spatialFDerivL f)]
+
 /-- The time-derivative projection has operator norm at most one. -/
 theorem norm_timeDerivL_le_one :
     ‖timeDerivL (α := α) (E := E) (F := F) (hab := hab)‖ ≤ 1 :=
@@ -467,6 +596,18 @@ theorem timeEHolderNorm_spatialFDeriv_lt_top (f : ParabolicC2HolderSpace α E F 
     ⟨(spatialSecondFDerivL f).memHolder.eHolderNorm_lt_top,
       (timeDerivL f).memHolder.eHolderNorm_lt_top⟩)
 
+/-- The temporal `(1 + α) / 2`-seminorm of the gradient, as a real number, is at most the sum of
+the Hölder norms of the Hessian and of the time derivative. -/
+theorem toReal_timeEHolderNorm_spatialFDeriv_le (f : ParabolicC2HolderSpace α E F hab) :
+    (timeEHolderNorm ((1 + α) / 2) (spatialFDerivL f : _ → _)).toReal ≤
+      ‖spatialSecondFDerivL f‖ + ‖timeDerivL f‖ := by
+  have h := f.timeEHolderNorm_spatialFDeriv_le
+  rw [← (spatialSecondFDerivL f).memHolder.coe_nnHolderNorm_eq_eHolderNorm,
+    ← (timeDerivL f).memHolder.coe_nnHolderNorm_eq_eHolderNorm, ← ENNReal.coe_add] at h
+  have hr := ENNReal.toReal_mono ENNReal.coe_ne_top h
+  rw [ENNReal.coe_toReal, NNReal.coe_add] at hr
+  linarith [(spatialSecondFDerivL f).nnHolderNorm_le, (timeDerivL f).nnHolderNorm_le]
+
 /-- The full order-two norm, including the separate temporal gradient seminorm. -/
 def fullNorm (f : ParabolicC2HolderSpace α E F hab) : ℝ :=
   ‖f‖ + (timeEHolderNorm ((1 + α) / 2) (spatialFDerivL f : _ → _)).toReal
@@ -480,47 +621,25 @@ theorem fullNorm_def (f : ParabolicC2HolderSpace α E F hab) :
 theorem norm_le_fullNorm_le (f : ParabolicC2HolderSpace α E F hab) :
     ‖f‖ ≤ f.fullNorm ∧ f.fullNorm ≤ 2 * ‖f‖ := by
   refine ⟨le_add_of_nonneg_right ENNReal.toReal_nonneg, ?_⟩
-  have h := f.timeEHolderNorm_spatialFDeriv_le
-  rw [← (spatialSecondFDerivL f).memHolder.coe_nnHolderNorm_eq_eHolderNorm,
-    ← (timeDerivL f).memHolder.coe_nnHolderNorm_eq_eHolderNorm] at h
-  have hr := ENNReal.toReal_mono (by finiteness) h
-  simp only [← ENNReal.coe_add, ENNReal.coe_toReal, NNReal.coe_add] at hr
-  have hs := (spatialSecondFDerivL f).nnHolderNorm_le
-  have ht := (timeDerivL f).nnHolderNorm_le
+  have hr := f.toReal_timeEHolderNorm_spatialFDeriv_le
   rw [fullNorm, norm_eq]
   nlinarith [norm_nonneg (valueL f), norm_nonneg (spatialFDerivL f)]
 
-private def spatialSlice (t : Icc a b) : C(E, slab (E := E) a b) :=
-  ⟨fun x ↦ slabMk x t, continuous_slabMk.comp (continuous_id.prodMk continuous_const)⟩
-
-private def timeSlice (x : E) : C(Icc a b, slab (E := E) a b) :=
-  ⟨slabMk x, continuous_slabMk.comp (continuous_const.prodMk continuous_id)⟩
-
 private theorem isClosed_spatialGraph (t : Icc a b) : IsClosed {J : Jet α E F a b |
       ∀ x, HasFDerivAt (fun y ↦ valueJetL J (slabMk y t))
-        (spatialJetL J (slabMk x t)) x} := by
-    simpa only [preimage_ofPred_eq, Function.comp_def,
-      BoundedContinuousFunction.coe_compContinuous, BoundedContinuousFunction.compContinuous_apply,
-      HolderSpace.toBoundedContinuousFunctionCLM_apply,
-      HolderSpace.toBoundedContinuousFunction_apply, spatialSlice, ContinuousMap.coe_mk] using
-      (isClosed_setOf_hasFDerivAt (𝕜 := ℝ) (E := E) (Y := F)).preimage
-      (((BoundedContinuousFunction.continuous_compContinuous (spatialSlice t)).comp
-        valueJetL.continuous).prodMk
-          ((BoundedContinuousFunction.continuous_compContinuous (spatialSlice t)).comp
-            spatialJetL.continuous))
+        (spatialJetL J (slabMk x t)) x} :=
+  (isClosed_setOf_hasFDerivAt_spatialSlice t).preimage
+    (valueJetL.continuous.prodMk spatialJetL.continuous)
 
 private theorem isClosed_secondGraph (t : Icc a b) : IsClosed {J : Jet α E F a b |
       ∀ x, HasFDerivAt (fun y ↦ spatialJetL J (slabMk y t))
         (secondJetL J (slabMk x t)) x} := by
-    simpa only [preimage_ofPred_eq, Function.comp_def,
-      BoundedContinuousFunction.coe_compContinuous, BoundedContinuousFunction.compContinuous_apply,
-      HolderSpace.toBoundedContinuousFunctionCLM_apply,
-      HolderSpace.toBoundedContinuousFunction_apply, spatialSlice, ContinuousMap.coe_mk] using
-      (isClosed_setOf_hasFDerivAt (𝕜 := ℝ) (E := E) (Y := E →L[ℝ] F)).preimage
-      (((BoundedContinuousFunction.continuous_compContinuous (spatialSlice t)).comp
-        spatialJetL.continuous).prodMk
-          ((BoundedContinuousFunction.continuous_compContinuous (spatialSlice t)).comp
-            (HolderSpace.toBoundedContinuousFunctionCLM.continuous.comp secondJetL.continuous)))
+  simpa only [preimage_ofPred_eq, Function.comp_def,
+    HolderSpace.toBoundedContinuousFunctionCLM_apply,
+    HolderSpace.toBoundedContinuousFunction_apply] using
+    (isClosed_setOf_hasFDerivAt_spatialSlice (G := E →L[ℝ] F) t).preimage
+      (spatialJetL.continuous.prodMk
+        (HolderSpace.toBoundedContinuousFunctionCLM.continuous.comp secondJetL.continuous))
 
 private theorem isClosed_timeGraph (x : E) : IsClosed {J : Jet α E F a b |
       ∀ t : Icc a b, HasDerivWithinAt (timeExtension hab.le (valueJetL J) x)
@@ -528,7 +647,7 @@ private theorem isClosed_timeGraph (x : E) : IsClosed {J : Jet α E F a b |
     simpa only [preimage_ofPred_eq, Function.comp_def,
       BoundedContinuousFunction.coe_compContinuous, BoundedContinuousFunction.compContinuous_apply,
       HolderSpace.toBoundedContinuousFunctionCLM_apply,
-      HolderSpace.toBoundedContinuousFunction_apply, timeSlice, ContinuousMap.coe_mk,
+      HolderSpace.toBoundedContinuousFunction_apply, timeSlice_apply,
       timeExtension_def] using
       (isClosed_setOf_hasDerivWithinAt_Icc (F := F) hab).preimage
       (((BoundedContinuousFunction.continuous_compContinuous (timeSlice x)).comp

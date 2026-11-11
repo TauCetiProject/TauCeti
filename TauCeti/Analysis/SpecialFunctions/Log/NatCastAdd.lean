@@ -10,7 +10,8 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 /-!
 # Logarithmic cutoffs along the natural numbers
 
-For any real shift `c`, the logarithms `log (N + c)` of the shifted natural numbers tend to `+∞`.
+The logarithms `log (N + c)` of the shifted natural numbers are positive for a real shift
+`c > 1`, and tend to `+∞` for any real shift `c`.
 The logarithms `log n` cut `(0, ∞)` into the steps `(log n, log (n + 1))`, on each of which the
 step function `t ↦ ⌊exp t⌋₊` is constant, equal to `n`. At the cutoffs `log (N + 1)`, the
 truncated Laplace integral of `t ↦ a ⌊exp t⌋₊` is therefore the partial sum of the Dirichlet
@@ -18,8 +19,9 @@ series of `a` plus the corresponding partial sum of a step correction.
 
 ## Main results
 
+* `Real.log_natCast_add_pos` — `log (N + c)` is positive for every shift `c > 1`.
 * `Real.tendsto_log_natCast_add_atTop` — `log (N + c)` tends to `atTop` as `N → ∞`.
-* `Real.floor_exp_eq_of_mem_Ioo` — `⌊exp t⌋₊ = n` for `t ∈ (log n, log (n + 1))`, `n > 0`.
+* `Real.floor_exp_eq_of_mem_Ioo` — `⌊exp t⌋₊ = n` for `t ∈ (log n, log (n + 1))`.
 -/
 
 public section
@@ -28,14 +30,22 @@ namespace Real
 
 open Filter Set
 
+/-- For a real shift `c > 1`, `log (N + c)` is positive for every natural number `N`. -/
+theorem log_natCast_add_pos {c : ℝ} (hc : 1 < c) (N : ℕ) : 0 < log (N + c) :=
+  log_pos (by linarith [N.cast_nonneg (α := ℝ)])
+
 /-- For any real shift `c`, `log (N + c)` tends to `+∞` as the natural number `N` does. -/
 theorem tendsto_log_natCast_add_atTop (c : ℝ) :
     Tendsto (fun N : ℕ ↦ log (N + c)) atTop atTop :=
   tendsto_log_atTop.comp (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds)
 
-/-- On the open step `(log n, log (n + 1))`, `n > 0`, the floor of `exp t` is `n`. -/
-theorem floor_exp_eq_of_mem_Ioo {n : ℕ} (hn : (0 : ℝ) < n) {t : ℝ}
+/-- On the open step `(log n, log (n + 1))`, the floor of `exp t` is `n`. For `n = 0` the step is
+empty. -/
+theorem floor_exp_eq_of_mem_Ioo {n : ℕ} {t : ℝ}
     (ht : t ∈ Ioo (log n) (log (n + 1))) : ⌊exp t⌋₊ = n := by
+  rcases n.eq_zero_or_pos with rfl | hn'
+  · simp at ht
+  have hn : (0 : ℝ) < n := Nat.cast_pos.mpr hn'
   have hlo : (n : ℝ) < exp t := by simpa [exp_log hn] using exp_lt_exp.mpr ht.1
   have hhi : exp t < n + 1 := by
     simpa [exp_log (by positivity : (0 : ℝ) < n + 1)] using exp_lt_exp.mpr ht.2

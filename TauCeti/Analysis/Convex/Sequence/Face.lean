@@ -31,8 +31,11 @@ Thus unbounded finite edge slopes guarantee finite faces at every real slope, ev
 unbounded domain. Finite unit slopes before a finite face are strictly less than its slope,
 on the face they equal its slope, and after it they are strictly greater. Consequently, on a
 domain with a first finite index, a finite face's left and right endpoints count the unit
-slopes respectively below and at most the face slope. These absolute endpoints are the
+slopes respectively below and at most the face slope, and the unit edges of the face slope are
+exactly those inside the face, so their number is its width. These absolute endpoints are the
 geometric interface later used to identify extremal coefficients and count slope multiplicities.
+A sequence lying above a line of slope `τ` meets every line of smaller slope only finitely often,
+which bounds the supporting faces of smaller slope.
 
 A supporting line of a point set also supports its lower convex envelope, and every contact
 point with the points is a contact point with the envelope. The envelope touches the line no
@@ -100,7 +103,7 @@ theorem IsConvexSeq.isSupportingLine_iff_unitSlope {h : ℕ → WithTop ℝ}
     rcases lt_trichotomy k n with hkn | rfl | hnk
     · obtain ⟨i, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : n ≠ 0)
       have hi : h i ≠ ⊤ := hh.ne_top_of_le_of_le hk hn (by omega) (by omega)
-      have hs := hh.sub_le_mul_slope hk hn hi hn hkn.le le_rfl
+      have hs := hh.sub_le_mul_slope hk hn hkn.le le_rfl
       have hb := hleft i rfl hi
       rw [Nat.cast_sub hkn.le] at hs
       have hdiff : (0 : ℝ) ≤ (i + 1 : ℕ) - (k : ℝ) :=
@@ -108,7 +111,7 @@ theorem IsConvexSeq.isSupportingLine_iff_unitSlope {h : ℕ → WithTop ℝ}
       nlinarith
     · simp
     · have hn' := hh.ne_top_of_le_of_le hn hk (Nat.le_succ n) hnk
-      have hs := hh.mul_slope_le_sub hn hk hn hn' hnk.le le_rfl
+      have hs := hh.mul_slope_le_sub hk hn hnk.le le_rfl
       have hb := hright hn'
       rw [Nat.cast_sub hnk.le] at hs
       have hdiff : 0 ≤ (k : ℝ) - n := sub_nonneg.mpr (Nat.cast_le.mpr hnk.le)
@@ -263,6 +266,27 @@ theorem unique (hf : IsFiniteFace h σ l u) {l' u' : ℕ}
   subst d
   exact (Set.Icc_eq_Icc_iff hf.left_le_right).mp (hface.symm.trans hface')
 
+/-- If a convex sequence `g` lies above `h` and agrees with it at both endpoints of a finite
+face of `h`, then that is also a finite face of `g`. No new contacts appear outside its
+interval. -/
+theorem of_le_of_eq_endpoints (hf : IsFiniteFace h σ l u) {g : ℕ → WithTop ℝ}
+    (hg : IsConvexSeq g) (hhg : h ≤ g) (hl : g l = h l) (hu : g u = h u) :
+    IsFiniteFace g σ l u := by
+  obtain ⟨c, hc, hface⟩ := hf.exists_intercept
+  have hgc : IsSupportingLine g σ c := fun n => (hc n).trans (hhg n)
+  have hgl : l ∈ supportingFace g σ c := by
+    rw [mem_supportingFace, hl]
+    exact mem_supportingFace.mp (hface.symm.subset ⟨le_rfl, hf.left_le_right⟩)
+  have hgu : u ∈ supportingFace g σ c := by
+    rw [mem_supportingFace, hu]
+    exact mem_supportingFace.mp (hface.symm.subset ⟨hf.left_le_right, le_rfl⟩)
+  refine ⟨hf.left_le_right, c, hgc, Set.Subset.antisymm ?_ ?_⟩
+  · intro n hn
+    apply hface.subset
+    exact mem_supportingFace.mpr (le_antisymm
+      ((hhg n).trans_eq (mem_supportingFace.mp hn)) (hc n))
+  · exact (hg.ordConnected_supportingFace hgc).out hgl hgu
+
 /-- The height at the left endpoint of a finite face is finite. -/
 theorem left_ne_top (hf : IsFiniteFace h σ l u) : h l ≠ ⊤ := by
   obtain ⟨c, _, hface⟩ := hf.exists_intercept
@@ -319,7 +343,7 @@ theorem unitSlope_lt (hf : IsFiniteFace h σ l u) (hh : IsConvexSeq h)
     omega
   have hi_strict : c + σ * i < (h i).untop₀ :=
     lt_of_le_of_ne hi_lower hi_ne.symm
-  have hs := hh.mul_slope_le_sub hif.1 hf.left_ne_top hif.1 hif.2 hil.le le_rfl
+  have hs := hh.mul_slope_le_sub hf.left_ne_top hif.1 hil.le le_rfl
   rw [hl_real, Nat.cast_sub hil.le] at hs
   have hil_real : (i : ℝ) < l := Nat.cast_lt.mpr hil
   nlinarith
@@ -361,7 +385,7 @@ theorem lt_unitSlope (hf : IsFiniteFace h σ l u) (hh : IsConvexSeq h)
     omega
   have hi_strict : c + σ * (i + 1) < (h (i + 1)).untop₀ :=
     lt_of_le_of_ne hi_lower hi_ne.symm
-  have hs := hh.sub_le_mul_slope hf.right_ne_top hif.2 hif.1 hif.2
+  have hs := hh.sub_le_mul_slope hf.right_ne_top hif.2
     (hui.trans (Nat.le_succ i)) le_rfl
   rw [hu_real, Nat.cast_sub (hui.trans (Nat.le_succ i))] at hs
   push_cast at hs
@@ -428,6 +452,31 @@ theorem right_eq_start_add_ncard_unitSlope_le (hf : IsFiniteFace h σ l u)
       · exact (hf.unitSlope_eq (le_of_not_gt hil) hiu).le
   rw [hset, Set.ncard_Ico_nat]
   omega
+
+/-- The finite unit edges of slope `σ` are exactly the unit edges inside the finite face of
+slope `σ`. -/
+theorem setOf_unitSlope_eq (hf : IsFiniteFace h σ l u) (hh : IsConvexSeq h) :
+    {i | i ∈ finiteEdges h ∧ unitSlope h i = σ} = Set.Ico l u := by
+  ext i
+  simp only [Set.mem_ofPred_eq, Set.mem_Ico]
+  refine ⟨fun ⟨hi, hslope⟩ ↦ ⟨le_of_not_gt fun hil ↦ (hf.unitSlope_lt hh hi hil).ne hslope,
+    lt_of_not_ge fun hui ↦ (hf.lt_unitSlope hh hi hui).ne' hslope⟩, fun ⟨hli, hiu⟩ ↦ ?_⟩
+  exact ⟨mem_finiteEdges.mpr ⟨hh.ne_top_of_le_of_le hf.left_ne_top hf.right_ne_top hli hiu.le,
+    hh.ne_top_of_le_of_le hf.left_ne_top hf.right_ne_top (hli.trans (Nat.le_succ i)) hiu⟩,
+    hf.unitSlope_eq hli hiu⟩
+
+/-- The number of finite unit edges of slope `σ` is the width `u - l` of the finite face of
+slope `σ`. -/
+theorem ncard_setOf_unitSlope_eq (hf : IsFiniteFace h σ l u) (hh : IsConvexSeq h) :
+    {i | i ∈ finiteEdges h ∧ unitSlope h i = σ}.ncard = u - l := by
+  rw [hf.setOf_unitSlope_eq hh, Set.ncard_Ico_nat]
+
+/-- Only finitely many finite unit edges have slope at most the slope of a finite face: all of
+them lie before its right endpoint. -/
+theorem finite_setOf_unitSlope_le (hf : IsFiniteFace h σ l u) (hh : IsConvexSeq h) :
+    {i | i ∈ finiteEdges h ∧ unitSlope h i ≤ σ}.Finite :=
+  (Set.finite_Iio u).subset fun _ hi ↦ Set.mem_Iio.mpr <| lt_of_not_ge fun hui ↦
+    (hf.lt_unitSlope hh hi.1 hui).not_ge hi.2
 
 end IsFiniteFace
 
@@ -513,7 +562,7 @@ theorem IsConvexSeq.supportingFace_subset_Iic_of_lt_unitSlope {h : ℕ → WithT
     rw [mem_supportingFace] at hn
     rw [hn]
     exact WithTop.coe_ne_top
-  have hs := hh.mul_slope_le_sub hmf.1 hn_top hmf.1 hmf.2 hmn.le le_rfl
+  have hs := hh.mul_slope_le_sub hn_top hmf.1 hmn.le le_rfl
   rw [Nat.cast_sub hmn.le] at hs
   have hcm := hc m
   rw [← WithTop.coe_untop₀_of_ne_top hmf.1, WithTop.coe_le_coe] at hcm
@@ -547,7 +596,7 @@ theorem IsConvexSeq.exists_isFiniteFace_of_lt_unitSlope {h : ℕ → WithTop ℝ
     · have hcn : c ≤ (h n).untop₀ - σ * n := hmin n ⟨hnm, hn⟩
       linarith
     · have hmn : m ≤ n := (lt_of_not_ge hnm).le
-      have htail := hh.mul_slope_le_sub hmf.1 hn hmf.1 hmf.2 hmn le_rfl
+      have htail := hh.mul_slope_le_sub hn hmf.1 hmn le_rfl
       rw [Nat.cast_sub hmn] at htail
       have hprod := mul_nonneg (sub_nonneg.mpr hσ.le)
         (sub_nonneg.mpr (Nat.cast_le.mpr hmn) : (0 : ℝ) ≤ n - m)
@@ -573,11 +622,28 @@ theorem IsConvexSeq.exists_isFiniteFace_of_unbounded_unitSlope {h : ℕ → With
   obtain ⟨l, u, hf, _⟩ := hh.exists_isFiniteFace_of_lt_unitSlope hm hσ
   exact ⟨l, u, hf⟩
 
+/-- A height sequence lying above a line of slope `τ` meets every line of a smaller slope `σ` in
+only finitely many indices: at a contact index `n`, `c + σ n ≥ d + τ n`. No convexity is used. -/
+theorem IsSupportingLine.finite_supportingFace {h : ℕ → WithTop ℝ} {τ d σ : ℝ}
+    (hd : IsSupportingLine h τ d) (hστ : σ < τ) (c : ℝ) : (supportingFace h σ c).Finite := by
+  refine (Set.finite_Iic ⌈(c - d) / (τ - σ)⌉₊).subset fun n hn ↦ ?_
+  have hle := hd n
+  rw [mem_supportingFace.mp hn, WithTop.coe_le_coe] at hle
+  have hn' : (n : ℝ) ≤ (c - d) / (τ - σ) := by
+    rw [le_div_iff₀ (sub_pos.mpr hστ)]
+    linarith
+  exact Set.mem_Iic.mpr (Nat.cast_le.mp (hn'.trans (Nat.le_ceil _)))
+
 /-! ### Supporting faces of lower convex envelopes -/
 
 namespace IsLowerConvexEnvelope
 
 variable {a h : ℕ → WithTop ℝ} {σ c : ℝ}
+
+/-- A height sequence and its lower convex envelope have the same supporting lines. -/
+theorem isSupportingLine_iff (hh : IsLowerConvexEnvelope a h) :
+    IsSupportingLine h σ c ↔ IsSupportingLine a σ c := by
+  rw [TauCeti.isSupportingLine_iff, TauCeti.isSupportingLine_iff, hh.supportingValue_eq]
 
 /-- Every contact point of a supporting line with the point heights is a contact point with
 their lower convex envelope. -/

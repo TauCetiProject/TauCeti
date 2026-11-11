@@ -23,14 +23,15 @@ already forces `B x y = B 1 (x * y)`, so the form is multiplication followed by 
 functional `B 1`, the Frobenius trace; perfectness is nondegeneracy in the strong form which also
 makes every functional on `A` of the shape `B · a`.
 
-Two general facts about Baer modules are proved along the way and stated in Mathlib's `Module.Baer`
-namespace, which has neither. A retract of a Baer module is Baer (`Module.Baer.of_leftInverse`),
-and consequently the left ideal cut out by an idempotent is Baer over a self-injective ring
-(`Module.Baer.of_isIdempotentElem`): over a self-injective ring the principal projective modules
-are injective. More generally, every finitely generated projective module over a self-injective
-ring is injective (`Module.Injective.of_finite_projective`). The two Baer facts are stated for
-`Module.Baer` rather than `Module.Injective` because the two convert freely in one direction only,
-`Module.Baer.of_injective` costing a smallness hypothesis on the ring.
+Two general facts about retracts and idempotent corners are proved along the way. A retract of a
+Baer module is Baer (`Module.Baer.of_leftInverse`). Consequently the left ideal cut out by an
+idempotent is Baer over a self-injective ring (`Module.Baer.of_isIdempotentElem`): over a
+self-injective ring the principal projective modules are injective. More generally, every finitely
+generated projective module over a self-injective ring is injective
+(`Module.Injective.of_finite_projective`). The Baer facts are stated for
+`Module.Baer` because `Module.Baer.of_isIdempotentElem` is a statement about ideals and the
+conversion `Module.Baer.of_injective` from injective modules costs a smallness hypothesis on the
+ring.
 
 ## Main results
 

@@ -39,7 +39,12 @@ constant never matters for cutting off, where one is free to shrink the radius i
   onto the closed ball of radius `r` centred at the origin.
 * `TauCeti.centeredRadialRetraction`: the corresponding retraction onto a closed ball with an
   arbitrary centre.
+* `TauCeti.radialRetractionToClosedBall`: for `0 ≤ r`, the radial retraction as a map into the
+  closed ball of radius `r`.
 * `TauCeti.norm_radialRetraction`: for `0 ≤ r`, its norm is `min ‖x‖ r`.
+* `TauCeti.norm_sub_radialRetraction`: for `0 ≤ r`, it moves `x` by `max (‖x‖ - r) 0`.
+* `TauCeti.max_norm_smul_radialRetraction`: scaling the retraction of `x` by `max ‖x‖ r` gives
+  `r • x`, so `x` is recovered from its retraction and its norm.
 * `TauCeti.radialRetraction_eventuallyEq_id`: inside the open ball, it agrees locally with the
   identity.
 * `TauCeti.lipschitzWith_radialRetraction`: for `0 ≤ r`, it is `2`-Lipschitz.
@@ -197,6 +202,19 @@ theorem norm_radialRetraction (hr : 0 ≤ r) (x : E) : ‖radialRetraction r x�
   rw [radialRetraction, norm_smul, Real.norm_of_nonneg (by positivity),
     min_mul_of_nonneg _ _ (norm_nonneg x), one_mul, div_mul_cancel₀ _ hx]
 
+/-- For nonnegative radius, the radial retraction moves `x` by `max (‖x‖ - r) 0`. -/
+theorem norm_sub_radialRetraction (hr : 0 ≤ r) (x : E) :
+    ‖x - radialRetraction r x‖ = max (‖x‖ - r) 0 := by
+  by_cases hx : ‖x‖ = 0
+  · simp [hx, hr]
+  rcases le_total ‖x‖ r with h | h
+  · rw [radialRetraction_of_norm_pos_of_norm_le ((norm_nonneg x).lt_of_ne' hx) h, sub_self,
+      norm_zero, max_eq_right (sub_nonpos.2 h)]
+  · have hsub : x - (r / ‖x‖) • x = (1 - r / ‖x‖) • x := by rw [sub_smul, one_smul]
+    rw [radialRetraction_of_le_norm h, max_eq_left (sub_nonneg.2 h), hsub, norm_smul,
+      Real.norm_of_nonneg (sub_nonneg.2 ((div_le_one ((norm_nonneg x).lt_of_ne' hx)).2 h)),
+      sub_mul, one_mul, div_mul_cancel₀ _ hx]
+
 /-- For nonnegative radius, the centred radial retraction is at distance `min (dist x x₀) r`
 from its centre. -/
 @[simp]
@@ -236,6 +254,22 @@ theorem mapsTo_radialRetraction (hr : 0 ≤ r) :
 theorem mapsTo_centeredRadialRetraction {x₀ : E} (hr : 0 ≤ r) :
     MapsTo (centeredRadialRetraction x₀ r) univ (closedBall x₀ r) :=
   fun x _ ↦ centeredRadialRetraction_mem_closedBall hr x
+
+/-- For nonnegative radius `r`, the radial retraction as a map into the closed ball of radius
+`r`. -/
+noncomputable def radialRetractionToClosedBall (hr : 0 ≤ r) (x : E) : closedBall (0 : E) r :=
+  ⟨radialRetraction r x, radialRetraction_mem_closedBall hr x⟩
+
+/-- The radial retraction into the closed ball of radius `r` is the radial retraction. -/
+@[simp]
+theorem coe_radialRetractionToClosedBall (hr : 0 ≤ r) (x : E) :
+    (radialRetractionToClosedBall hr x : E) = radialRetraction r x :=
+  (rfl)
+
+/-- The norm of the radial retraction into the closed ball of radius `r` is `min ‖x‖ r`. -/
+theorem norm_radialRetractionToClosedBall (hr : 0 ≤ r) (x : E) :
+    ‖(radialRetractionToClosedBall hr x : E)‖ = min ‖x‖ r :=
+  norm_radialRetraction hr x
 
 /-- The radial retraction distorts distance by at most a factor of two when the points are
 ordered by norm. This is the asymmetric half of `TauCeti.lipschitzWith_radialRetraction`. -/
@@ -298,6 +332,11 @@ theorem lipschitzWith_radialRetraction (hr : 0 ≤ r) :
   · exact norm_radialRetraction_sub_le hr h
   · simpa only [norm_sub_rev] using norm_radialRetraction_sub_le hr h
 
+/-- The radial retraction into the closed ball of radius `r` is continuous. -/
+theorem continuous_radialRetractionToClosedBall (hr : 0 ≤ r) :
+    Continuous (radialRetractionToClosedBall (E := E) hr) :=
+  (lipschitzWith_radialRetraction hr).continuous.subtype_mk _
+
 /-- Radial retraction onto a ball with an arbitrary centre is `2`-Lipschitz. -/
 theorem lipschitzWith_centeredRadialRetraction {x₀ : E} (hr : 0 ≤ r) :
     LipschitzWith 2 (centeredRadialRetraction x₀ r) := by
@@ -308,6 +347,33 @@ theorem lipschitzWith_centeredRadialRetraction {x₀ : E} (hr : 0 ≤ r) :
     (lipschitzWith_radialRetraction hr).dist_le_mul (x - x₀) (y - x₀)
 
 end Seminormed
+
+section Normed
+
+variable [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- The radial retraction into the closed ball of radius `r` fixes the points of that ball. -/
+theorem radialRetractionToClosedBall_of_norm_le (hr : 0 ≤ r) (h : ‖x‖ ≤ r) :
+    radialRetractionToClosedBall hr x = ⟨x, mem_closedBall_zero_iff.2 h⟩ :=
+  Subtype.ext (radialRetraction_of_norm_le h)
+
+/-- Scaling the radial retraction of `x` by `max ‖x‖ r` gives `r • x`: the radial retraction loses
+only the radial information `max ‖x‖ r`. -/
+theorem max_norm_smul_radialRetraction (r : ℝ) (x : E) :
+    max ‖x‖ r • radialRetraction r x = r • x := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  rcases le_total ‖x‖ r with h | h
+  · rw [max_eq_right h, radialRetraction_of_norm_le h]
+  · rw [max_eq_left h, radialRetraction_of_le_norm h, smul_smul,
+      mul_div_cancel₀ _ (norm_ne_zero_iff.2 hx)]
+
+/-- A vector is its radial retraction onto the closed unit ball scaled back by `max ‖x‖ 1`. -/
+theorem max_norm_one_smul_radialRetraction_one (x : E) :
+    max ‖x‖ 1 • radialRetraction 1 x = x := by
+  rw [max_norm_smul_radialRetraction, one_smul]
+
+end Normed
 
 end TauCeti
 

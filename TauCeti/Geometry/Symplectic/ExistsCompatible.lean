@@ -199,8 +199,9 @@ theorem even_finrank [FiniteDimensional ℝ V] (ω : SymplecticForm V) : Even (f
   J.even_finrank_real
 
 /-- A real vector space of odd dimension carries no symplectic form. -/
-theorem isEmpty_of_odd_finrank [FiniteDimensional ℝ V] (h : Odd (finrank ℝ V)) :
+theorem isEmpty_of_odd_finrank (h : Odd (finrank ℝ V)) :
     IsEmpty (SymplecticForm V) :=
+  haveI : Module.Finite ℝ V := Module.finite_of_finrank_pos h.pos
   ⟨fun ω => (Nat.not_even_iff_odd.2 h) ω.even_finrank⟩
 
 end SymplecticForm

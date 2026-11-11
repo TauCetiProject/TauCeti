@@ -36,6 +36,8 @@ returning is the product `ofArrow (arrow G h.symm) * ofArrow (arrow G h)`.
 * `TauCeti.DoubledQuiver.exists_eq_comp_arrowPath` and
   `TauCeti.DoubledQuiver.exists_eq_backtrackPath`: every length-two path is a composite of two
   arrows, and every length-two path returning to its source is a backtrack.
+* `TauCeti.DoubledQuiver.isChain_map_vertices`: the vertices of a path of the doubled quiver form
+  a walk of the graph.
 * `TauCeti.DoubledQuiver.ofArrow_symm_mul_ofArrow`: a backtrack element is the product of an arrow
   with its reverse.
 * the corner identities `TauCeti.DoubledQuiver.vertexIdempotent_mul_ofArrow`,
@@ -131,6 +133,28 @@ theorem exists_eq_backtrackPath {i : V} (p : _root_.Quiver.Path (vertex G i) (ve
     (hp : p.length = 2) : ∃ (j : V) (h : G.Adj i j), p = backtrackPath G h := by
   obtain ⟨j, h, _, rfl⟩ := exists_eq_comp_arrowPath G p hp
   exact ⟨j, h, rfl⟩
+
+/-! ### Vertices of paths of a doubled quiver -/
+
+/-- **The vertices of a path of a doubled quiver form a walk of the graph.** -/
+theorem isChain_map_vertices {a b : DoubledQuiver G} (p : _root_.Quiver.Path a b) :
+    (p.vertices.map (vertexEquiv G).symm).IsChain G.Adj := by
+  induction p with
+  | nil => simp
+  | @cons b c p e ih =>
+    obtain ⟨i, rfl⟩ := exists_eq_vertex G b
+    obtain ⟨j, rfl⟩ := exists_eq_vertex G c
+    rw [_root_.Quiver.Path.vertices_cons, List.concat_eq_append, List.map_append,
+      List.isChain_append]
+    refine ⟨ih, List.isChain_singleton _, fun x hx y hy => ?_⟩
+    rw [List.getLast?_map, List.getLast?_eq_some_getLast p.vertices_ne_nil,
+      _root_.Quiver.Path.vertices_getLast] at hx
+    simp only [Option.map_some, Option.mem_def, Option.some.injEq,
+      vertexEquiv_symm_vertex] at hx
+    simp only [List.map_cons, List.map_nil, List.head?_cons, Option.mem_def, Option.some.injEq,
+      vertexEquiv_symm_vertex] at hy
+    subst hx hy
+    exact (nonempty_hom_iff G).mp ⟨e⟩
 
 /-! ### The path-algebra elements of vertices, oriented edges, and backtracks -/
 

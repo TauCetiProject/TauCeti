@@ -1,0 +1,281 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Polynomial.Coleman.Basic
+import TauCeti.RingTheory.PowerSeries.GaussNorm
+
+/-!
+# Coleman's transform with entire functional input
+
+For entire series `B` and `F`, with `B(0) = 0` and `F(0) = 1`,
+`PowerSeries.colemanDEntire B F` is the limit of the finite Coleman transforms of their
+polynomial truncations. The two truncation orders tend to infinity independently.
+The coefficientwise Cauchy estimate constructs the limit, and a common null coefficient
+majorant upgrades convergence to every positive-radius Gauss norm. Thus the construction
+does not depend on a diagonal choice of truncations.
+
+The transform is entire, normalized, and uniquely characterized by coefficient convergence.
+It agrees with `Polynomial.colemanDSeries` on polynomial functional input, and the transforms
+of polynomial truncations of an entire function converge coefficientwise to it.
+The cases `B = 0`, `B = X`, and `F = 1` are included. The zero constant term of `B` is essential:
+otherwise padding finite ranks introduces extra factors from zero eigenvalues.
+
+For a polynomial `B` the transform is the polynomial-input transform
+`Polynomial.colemanDSeries B F` (`PowerSeries.colemanDEntire_coe`), and for an entire `B` the
+polynomial-input transforms of the truncations of `B` converge coefficientwise to it
+(`PowerSeries.tendsto_coeff_colemanDSeries_trunc`). These two facts pass spectral mapping from
+polynomial to entire functions of an operator.
+
+The transform is multiplicative in the functional input, `D(B, F G) = D(B, F) D(B, G)`
+(`PowerSeries.colemanDEntire_mul`). At finite level, the product of the transforms of the
+truncations of `F` and `G` at order `N + 1` is the transform of the product of those truncations,
+which agrees with the truncation of `F G` below degree `N + 1`. A Newton majorant common to all
+these polynomials makes Coleman's perturbation bound applicable, so the two finite transforms
+differ by `O(2 ^ (-N))` in each coefficient
+(`PowerSeries.dist_coeff_colemanDBounded_trunc_mul_trunc_le`).
+
+## References
+
+* R. Coleman, *p-adic Banach spaces and families of modular forms*, Invent. Math. **127**
+  (1997), 417–479, Appendix A3.
+-/
+
+public section
+
+namespace PowerSeries
+
+open Filter Finset
+open scoped Topology Polynomial
+
+variable {R : Type*} [NormedCommRing R]
+
+/-- The coefficientwise limit of the finite Coleman transforms of the truncations of `B` and
+`F`. Its convergence and entire-series interpretation hold when `B` and `F` are entire,
+`coeff 0 B = 0`, and `coeff 0 F = 1`. -/
+noncomputable def colemanDEntire (B F : R⟦X⟧) : R⟦X⟧ :=
+  mk fun k ↦ limUnder atTop fun p : ℕ × ℕ ↦
+    (Polynomial.colemanDBounded (trunc (p.2 + 1) B) (trunc (p.1 + 1) F) p.1 p.2).coeff k
+
+/-- The defining coefficient formula for the entire Coleman transform. The limit is taken in
+the coefficient ring, with the rank and functional truncation order independent. -/
+theorem coeff_colemanDEntire (B F : R⟦X⟧) (k : ℕ) :
+    coeff k (colemanDEntire B F) = limUnder atTop fun p : ℕ × ℕ ↦
+      (Polynomial.colemanDBounded (trunc (p.2 + 1) B) (trunc (p.1 + 1) F) p.1 p.2).coeff k :=
+  coeff_mk _ _
+
+variable {B F G : R⟦X⟧}
+
+section Entire
+
+variable [CompleteSpace R] [NormOneClass R] [IsUltrametricDist R]
+
+/-- The finite transforms converge coefficientwise to the entire Coleman transform. -/
+theorem tendsto_coeff_colemanDBounded_trunc (hB : B.IsEntire) (hF : F.IsEntire)
+    (hB₀ : coeff 0 B = 0) (hF₀ : coeff 0 F = 1) (k : ℕ) :
+    Tendsto (fun p : ℕ × ℕ ↦
+      (Polynomial.colemanDBounded (trunc (p.2 + 1) B) (trunc (p.1 + 1) F) p.1 p.2).coeff k)
+      atTop (𝓝 (coeff k (colemanDEntire B F))) := by
+  obtain ⟨ρ, hρ₀, hρ, _, hbound⟩ := hF.exists_newtonMajorant (by simp [hF₀])
+  rw [coeff_colemanDEntire]
+  exact (cauchySeq_coeff_colemanDBounded_trunc (fun i ↦ (hρ₀ i).le) hρ hbound hF₀
+    (fun i ↦ hB.isRestricted _) hB₀ k).tendsto_limUnder
+
+/-- A nonnegative antitone product majorant of `F` bounds the coefficients of the transform by
+products of the Coleman majorants of `B`. -/
+theorem norm_coeff_colemanDEntire_le {ρ : ℕ → ℝ} (hρ₀ : ∀ i, 0 ≤ ρ i)
+    (hρ : Antitone ρ) (hbound : ∀ j, ‖coeff j F‖ ≤ ∏ i ∈ range j, ρ i)
+    (hB : B.IsEntire) (hF : F.IsEntire) (hB₀ : coeff 0 B = 0) (hF₀ : coeff 0 F = 1)
+    (k : ℕ) : ‖coeff k (colemanDEntire B F)‖ ≤ ∏ i ∈ range k, colemanMajorant B (ρ i) := by
+  exact le_of_tendsto (tendsto_coeff_colemanDBounded_trunc hB hF hB₀ hF₀ k).norm
+    (Eventually.of_forall fun p ↦ norm_coeff_colemanDBounded_trunc_le hρ₀ hρ hbound
+      (fun i ↦ hB.isRestricted _) hB₀ p.1 p.2 (p.2 + 1) (p.1 + 1) k)
+
+/-- Coleman's transform of normalized entire input along a zero-constant entire function is
+entire over a complete ultrametric norm-one coefficient ring. -/
+theorem isEntire_colemanDEntire (hB : B.IsEntire) (hF : F.IsEntire)
+    (hB₀ : coeff 0 B = 0) (hF₀ : coeff 0 F = 1) : (colemanDEntire B F).IsEntire := by
+  obtain ⟨ρ, hρ₀, hρ, hlim, hbound⟩ := hF.exists_newtonMajorant (by simp [hF₀])
+  exact isEntire_of_norm_coeff_le_prod
+    (tendsto_colemanMajorant (hB.isRestricted 1) zero_lt_one (fun i ↦ (hρ₀ i).le) hlim)
+    (norm_coeff_colemanDEntire_le (fun i ↦ (hρ₀ i).le) hρ hbound hB hF hB₀ hF₀)
+
+/-- The finite transforms converge in every positive-radius Gauss norm, with the two
+truncation orders tending to infinity independently. -/
+theorem tendsto_gaussNorm_colemanDBounded_trunc_sub_colemanDEntire
+    (hB : B.IsEntire) (hF : F.IsEntire) (hB₀ : coeff 0 B = 0) (hF₀ : coeff 0 F = 1)
+    {r : ℝ} (hr : 0 < r) :
+    Tendsto (fun p : ℕ × ℕ ↦
+      ((Polynomial.colemanDBounded (trunc (p.2 + 1) B) (trunc (p.1 + 1) F) p.1 p.2 : R⟦X⟧) -
+        colemanDEntire B F).gaussNorm norm r) atTop (𝓝 0) := by
+  obtain ⟨ρ, hρ₀, hρ, hlim, hbound⟩ := hF.exists_newtonMajorant (by simp [hF₀])
+  let β : ℕ → ℝ := fun i ↦ colemanMajorant B (ρ i)
+  have hβ₀ (i) : 0 ≤ β i := colemanMajorant_nonneg _ (hρ₀ i).le
+  have hβ : Tendsto β atTop (𝓝 0) :=
+    tendsto_colemanMajorant (hB.isRestricted 1) zero_lt_one (fun i ↦ (hρ₀ i).le) hlim
+  -- The series with coefficients equal to the common product bounds is entire too.
+  have hprod : (mk fun k ↦ (∏ i ∈ range k, β i : ℝ)).IsEntire :=
+    isEntire_of_norm_coeff_le_prod hβ (fun k ↦ by
+      rw [coeff_mk, Real.norm_eq_abs, abs_of_nonneg (prod_nonneg fun i _ ↦ hβ₀ i)])
+  refine TauCeti.PowerSeries.tendsto_gaussNorm_zero_of_coeff_bound
+    (b := fun k ↦ (∏ i ∈ range k, β i) * r ^ k) ?_ ?_ ?_
+  · intro k
+    simpa only [map_sub, Polynomial.coeff_coe, sub_self] using
+      (tendsto_coeff_colemanDBounded_trunc hB hF hB₀ hF₀ k).sub_const
+        (coeff k (colemanDEntire B F))
+  · intro p k
+    rw [map_sub, Polynomial.coeff_coe]
+    refine mul_le_mul_of_nonneg_right ?_ (pow_nonneg hr.le _)
+    have hsub (x y : R) : ‖x - y‖ ≤ max ‖x‖ ‖y‖ := by
+      simpa only [sub_eq_add_neg, norm_neg] using IsUltrametricDist.norm_add_le_max x (-y)
+    exact (hsub _ _).trans (max_le
+      (norm_coeff_colemanDBounded_trunc_le (fun i ↦ (hρ₀ i).le) hρ hbound
+        (fun i ↦ hB.isRestricted _) hB₀ p.1 p.2 (p.2 + 1) (p.1 + 1) k)
+      (norm_coeff_colemanDEntire_le (fun i ↦ (hρ₀ i).le) hρ hbound hB hF hB₀ hF₀ k))
+  · simpa only [coeff_mk, Real.norm_eq_abs,
+      abs_of_nonneg (prod_nonneg fun i _ ↦ hβ₀ i)] using
+      (isRestricted_iff' r _).mp (hprod.isRestricted r)
+
+end Entire
+
+/-- For zero-constant entire `B`, the polynomial-input transforms of its truncations converge
+coefficientwise to the entire-input transform. The rank used to compute coefficient `k` grows
+at least as fast as `k` times the truncation degree. -/
+theorem tendsto_coeff_colemanDSeries_trunc [CompleteSpace R] [NormOneClass R]
+    [IsUltrametricDist R] (hB : B.IsEntire) (hF : F.IsEntire)
+    (hB₀ : coeff 0 B = 0) (hF₀ : coeff 0 F = 1) (k : ℕ) :
+    Tendsto (fun n ↦ coeff k ((trunc (n + 1) B).colemanDSeries F))
+      atTop (𝓝 (coeff k (colemanDEntire B F))) := by
+  have hp : Tendsto (fun n : ℕ ↦ ((k + 1) * n, n)) atTop atTop := by
+    refine tendsto_atTop_atTop.2 fun p ↦ ⟨max p.1 p.2, fun n hn ↦ ?_⟩
+    exact ⟨(le_max_left _ _).trans (hn.trans (Nat.le_mul_of_pos_left n (by omega))),
+      (le_max_right _ _).trans hn⟩
+  refine ((tendsto_coeff_colemanDBounded_trunc hB hF hB₀ hF₀ k).comp hp).congr fun n ↦ ?_
+  exact (Polynomial.coeff_colemanDSeries_of_natDegree_le (by simp [coeff_trunc, hB₀])
+    (by simpa only [← coeff_zero_eq_constantCoeff] using hF₀)
+    (Nat.lt_succ_iff.1 (natDegree_trunc_lt B n))
+    (Nat.mul_le_mul_right n (Nat.le_succ k))).symm
+
+/-- Uniqueness of the Coleman transform from its defining coefficient limits. -/
+theorem colemanDEntire_eq_of_tendsto_coeff
+    (hG : ∀ k, Tendsto (fun p : ℕ × ℕ ↦
+      (Polynomial.colemanDBounded (trunc (p.2 + 1) B) (trunc (p.1 + 1) F) p.1 p.2).coeff k)
+      atTop (𝓝 (coeff k G))) : colemanDEntire B F = G := by
+  ext k
+  rw [coeff_colemanDEntire]
+  exact (hG k).limUnder_eq
+
+/-- On polynomial functional input with zero constant term, the entire Coleman transform
+agrees with the algebraic power-series transform. No analyticity hypothesis on `F` is needed. -/
+@[simp]
+theorem colemanDEntire_coe {B : R[X]} (hB₀ : B.coeff 0 = 0) (hF₀ : coeff 0 F = 1) :
+    colemanDEntire (B : R⟦X⟧) F = B.colemanDSeries F := by
+  apply colemanDEntire_eq_of_tendsto_coeff
+  intro k
+  apply tendsto_const_nhds.congr'
+  filter_upwards [eventually_ge_atTop (k * B.natDegree, B.natDegree)] with p hp
+  have htrunc : trunc (p.2 + 1) (B : R⟦X⟧) = B :=
+    trunc_coe_eq_self (Nat.lt_succ_of_le hp.2)
+  rw [htrunc, Polynomial.colemanDBounded_of_natDegree_le hp.2
+    (by simp [coeff_trunc, hF₀])]
+  exact Polynomial.coeff_colemanDSeries hB₀ hp.1
+
+/-- The entire Coleman transform is normalized to have constant coefficient one. -/
+@[simp]
+theorem coeff_zero_colemanDEntire (hF₀ : coeff 0 F = 1) :
+    coeff 0 (colemanDEntire B F) = 1 := by
+  rw [coeff_colemanDEntire]
+  apply Filter.Tendsto.limUnder_eq
+  apply tendsto_const_nhds.congr'
+  exact Eventually.of_forall fun p ↦
+    (Polynomial.coeff_zero_colemanDBounded (by simp [coeff_trunc, hF₀]) _ p.1 p.2).symm
+
+/-- The zero functional input gives the constant series one. -/
+@[simp]
+theorem colemanDEntire_zero_left (hF₀ : coeff 0 F = 1) :
+    colemanDEntire 0 F = 1 := by
+  apply colemanDEntire_eq_of_tendsto_coeff
+  intro k
+  apply tendsto_const_nhds.congr'
+  exact Eventually.of_forall fun p ↦ by
+    have hF₀' : (trunc (p.1 + 1) F).coeff 0 = 1 := by simp [coeff_trunc, hF₀]
+    simp only [map_zero, Polynomial.colemanDBounded_zero_left hF₀', coeff_one,
+      Polynomial.coeff_one]
+
+/-- The transform of the constant series one is one, regardless of the truncation rank. -/
+@[simp]
+theorem colemanDEntire_one_right (hB₀ : coeff 0 B = 0) :
+    colemanDEntire B 1 = 1 := by
+  apply colemanDEntire_eq_of_tendsto_coeff
+  intro k
+  have hD (p : ℕ × ℕ) :
+      Polynomial.colemanDBounded (trunc (p.2 + 1) B) (trunc (p.1 + 1) (1 : R⟦X⟧)) p.1 p.2 = 1 := by
+    rw [trunc_one, Polynomial.colemanDBounded_one_right
+      (Nat.lt_succ_iff.mp (natDegree_trunc_lt _ _))]
+    simp [coeff_trunc, hB₀]
+  simpa only [hD, ← Polynomial.coeff_coe, Polynomial.coe_one] using
+    (tendsto_const_nhds : Tendsto (fun _ : ℕ × ℕ ↦ coeff k (1 : R⟦X⟧)) atTop (𝓝 _))
+
+/-- Substituting the identity function in Coleman's transform returns the original series. -/
+@[simp]
+theorem colemanDEntire_X_left (hF₀ : coeff 0 F = 1) :
+    colemanDEntire X F = F := by
+  nontriviality R
+  apply colemanDEntire_eq_of_tendsto_coeff
+  intro k
+  apply tendsto_const_nhds.congr'
+  filter_upwards [eventually_ge_atTop (k, 1)] with p hp
+  have hX : trunc (p.2 + 1) (X : R⟦X⟧) = Polynomial.X :=
+    trunc_X_of (by have := hp.2; omega)
+  have hdeg : (Polynomial.X : R[X]).natDegree ≤ p.2 := by
+    simpa using hp.2
+  have hF₀' : (trunc (p.1 + 1) F).coeff 0 = 1 := by simp [coeff_trunc, hF₀]
+  rw [hX, Polynomial.colemanDBounded_of_natDegree_le hdeg hF₀',
+    Polynomial.natDegree_X,
+    Polynomial.colemanDBounded_X_left (Nat.lt_succ_iff.mp (natDegree_trunc_lt _ _))]
+  simp [coeff_trunc, Nat.lt_succ_of_le hp.1]
+
+section Mul
+
+variable [CompleteSpace R] [NormOneClass R] [IsUltrametricDist R]
+
+/-- **Coleman's transform is multiplicative in the functional input.** For entire series `B`, `F`
+and `G` with `B(0) = 0` and `F(0) = G(0) = 1`, `D(B, F G) = D(B, F) D(B, G)`. -/
+theorem colemanDEntire_mul (hB : B.IsEntire) (hF : F.IsEntire) (hG : G.IsEntire)
+    (hB₀ : coeff 0 B = 0) (hF₀ : coeff 0 F = 1) (hG₀ : coeff 0 G = 1) :
+    colemanDEntire B (F * G) = colemanDEntire B F * colemanDEntire B G := by
+  obtain ⟨ρ, hρ₀, hρ, -, hFG⟩ := hF.exists_newtonMajorant_mul hG (by simp [hF₀]) (by simp [hG₀])
+  refine colemanDEntire_eq_of_tendsto_coeff fun k ↦ ?_
+  -- the products of the finite transforms of the truncations of `F` and `G` converge
+  have hprod : Tendsto (fun p : ℕ × ℕ ↦
+      (Polynomial.colemanDBounded (trunc (p.2 + 1) B) (trunc (p.1 + 1) F) p.1 p.2 *
+        Polynomial.colemanDBounded (trunc (p.2 + 1) B) (trunc (p.1 + 1) G) p.1 p.2).coeff k)
+      atTop (𝓝 (coeff k (colemanDEntire B F * colemanDEntire B G))) := by
+    simp only [Polynomial.coeff_mul, coeff_mul]
+    exact tendsto_finsetSum _ fun x _ ↦ (tendsto_coeff_colemanDBounded_trunc hB hF hB₀ hF₀ x.1).mul
+      (tendsto_coeff_colemanDBounded_trunc hB hG hB₀ hG₀ x.2)
+  -- the two finite transforms differ by at most `2 ^ (-(N + 1))` times a bound independent of `N`
+  set K := ∏ i ∈ range k, colemanMajorant B (2 * ρ i)
+  have hlim : Tendsto (fun p : ℕ × ℕ ↦ K * 2⁻¹ ^ (p.1 + 1)) atTop (𝓝 0) := by
+    have hfst : Tendsto (fun p : ℕ × ℕ ↦ p.1 + 1) atTop atTop :=
+      tendsto_atTop_atTop.2 fun N ↦ ⟨(N, 0), fun p hp ↦ by have := (Prod.mk_le_mk.1 hp).1; omega⟩
+    simpa using ((tendsto_pow_atTop_nhds_zero_of_lt_one (by norm_num : (0 : ℝ) ≤ 2⁻¹)
+      (by norm_num)).comp hfst).const_mul K
+  refine hprod.congr_dist (squeeze_zero (fun _ ↦ dist_nonneg) (fun p ↦ ?_) hlim)
+  -- both transforms are taken at the doubled rank, where the finite transform is multiplicative
+  have hdB : (trunc (p.2 + 1) B).natDegree ≤ p.2 := Nat.lt_succ_iff.1 (natDegree_trunc_lt B p.2)
+  have hd (H : R⟦X⟧) : (trunc (p.1 + 1) H).natDegree ≤ p.1 :=
+    Nat.lt_succ_iff.1 (natDegree_trunc_lt H p.1)
+  rw [← Polynomial.colemanDBounded_mul (hd F) (hd G) hdB,
+    ← Polynomial.colemanDBounded_add_of_coeff_zero (hd (F * G)) hdB (by simp [coeff_trunc, hB₀]),
+    dist_comm, inv_pow, ← div_eq_mul_inv,
+    le_div_iff₀ (by positivity)]
+  exact dist_coeff_colemanDBounded_trunc_mul_trunc_le (fun i ↦ (hρ₀ i).le) hρ hFG one_le_two
+    (fun i ↦ hB.isRestricted _) hB₀ _ _ _ _ k
+
+end Mul
+
+end PowerSeries

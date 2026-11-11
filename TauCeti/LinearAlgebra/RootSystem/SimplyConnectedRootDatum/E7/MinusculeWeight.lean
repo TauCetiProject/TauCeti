@@ -25,16 +25,40 @@ weights span the complete character lattice. The spanning statement is the input
 weight torus in the eventual integral minuscule carrier be a closed immersion, rather than seeing
 only the index-two root lattice of the adjoint representation.
 
+The table is closed under negation, and it carries an alternating sign, normalized to `1` at
+`ϖ₇`, which reverses along every nontrivial simple reflection and between a weight and its
+negative. The sign supplies the entries of the invariant alternating form of the minuscule
+carrier.
+
+Twice the inverse Cartan matrix defines an integral quadratic form on the weight lattice.
+The table is exactly the set of weights with coordinates in `[-1, 1]` and quadratic value `3`
+under this form.
+
 ## Main declarations
 
 * `TauCeti.DynkinType.e7MinusculeWeight`: the fifty-six weights in fundamental coordinates.
+* `TauCeti.DynkinType.e7TwiceInverse`: the integral twice-inverse Cartan matrix.
+* `TauCeti.DynkinType.cartanMatrix_E7_mul_e7TwiceInverse`: its product with the Cartan matrix
+  is twice the identity.
+* `TauCeti.DynkinType.mem_range_e7MinusculeWeight_of_bounded_of_quadratic_eq_three`: weights
+  with coordinates in `[-1, 1]` and quadratic value `3` belong to the table.
+* `TauCeti.DynkinType.odd_e7MinusculeWeight_add_add`: every weight pairs oddly with the sum of
+  the simple coroots at the Bourbaki nodes `2`, `5` and `7`.
 * `TauCeti.DynkinType.e7MinusculeReflection`: the permutation induced by a simple reflection.
 * `TauCeti.DynkinType.e7MinusculeWeight_reflection`: the simple-reflection equation.
+* `TauCeti.DynkinType.exists_e7MinusculeWeight_apply_eq_neg_one_iff_ne_zero`: the highest weight
+  `ϖ₇`, at index `0`, is the only weight with no simple-coroot coordinate equal to `-1`.
 * `TauCeti.DynkinType.exists_e7MinusculeReflections_eq`: every table index is reached from
   the highest weight by simple reflections.
 * `TauCeti.DynkinType.range_e7MinusculeWeight`: the table is exactly the Weyl orbit of `ϖ₇`.
 * `TauCeti.DynkinType.span_range_e7MinusculeWeight_eq_top`: the weights span the character
   lattice.
+* `TauCeti.DynkinType.e7MinusculeSign`: the alternating sign on the weight graph, normalized to
+  `1` at `ϖ₇`, with `e7MinusculeSign_reflection` reversing it along nontrivial simple
+  reflections.
+* `TauCeti.DynkinType.exists_e7MinusculeWeight_eq_neg`: the table is closed under negation, and
+  `TauCeti.DynkinType.e7MinusculeSign_eq_neg_of_weight_eq_neg`: opposite weights have opposite
+  signs.
 
 ## References
 
@@ -89,6 +113,44 @@ def e7MinusculeWeight : Fin 56 → Fin 7 → ℤ := ![
   ![0, 0, 0, -1, 1, 0, 0], ![0, 0, 0, 0, -1, 1, 0],
   ![0, 0, 0, 0, 0, -1, 1], ![0, 0, 0, 0, 0, 0, -1]]
 
+/-- Twice the inverse of the type-`E₇` Cartan matrix in Bourbaki node order (Plate VI).
+Its integral entries allow finite checks of the weight-lattice quadratic form. -/
+def e7TwiceInverse : Matrix (Fin 7) (Fin 7) ℤ := !![
+  4, 4, 6, 8, 6, 4, 2;
+  4, 7, 8, 12, 9, 6, 3;
+  6, 8, 12, 16, 12, 8, 4;
+  8, 12, 16, 24, 18, 12, 6;
+  6, 9, 12, 18, 15, 10, 5;
+  4, 6, 8, 12, 10, 8, 4;
+  2, 3, 4, 6, 5, 4, 3]
+
+/-- The E₇ Cartan matrix times its integral twice-inverse is twice the identity. -/
+theorem cartanMatrix_E7_mul_e7TwiceInverse : CartanMatrix.E 7 * e7TwiceInverse = 2 := by
+  rw [CartanMatrix.E_seven_eq]
+  decide
+
+private theorem bounded_weights_exhaustion : ∀ w : Fin 7 → Fin 3,
+    (∑ i, (∑ j, e7TwiceInverse i j * ((w j : ℤ) - 1)) * ((w i : ℤ) - 1)) = 3 →
+      ∃ a, e7MinusculeWeight a = fun j ↦ (w j : ℤ) - 1 := by
+  unfold e7TwiceInverse
+  simp only [Fin.forall_fin_succ_pi, Fin.forall_fin_zero_pi]
+  decide +kernel
+
+/-- An integral weight with simple-coroot coordinates in `[-1, 1]` and quadratic value `3`
+under twice the inverse Cartan matrix belongs to the minuscule table. -/
+theorem mem_range_e7MinusculeWeight_of_bounded_of_quadratic_eq_three (w : Fin 7 → ℤ)
+    (hw : ∀ i, -1 ≤ w i ∧ w i ≤ 1)
+    (hn : (∑ i, (∑ j, e7TwiceInverse i j * w j) * w i) = 3) :
+    w ∈ Set.range e7MinusculeWeight := by
+  let v : Fin 7 → Fin 3 := fun i ↦ ⟨(w i + 1).toNat, by have := hw i; omega⟩
+  have hv : (fun i ↦ (v i : ℤ) - 1) = w := by
+    funext i
+    have := hw i
+    simp only [v]
+    omega
+  obtain ⟨a, ha⟩ := bounded_weights_exhaustion v (by simpa only [← hv] using hn)
+  exact ⟨a, ha.trans hv⟩
+
 /-- The fifty-six minuscule weights are pairwise distinct. -/
 theorem e7MinusculeWeight_injective : Function.Injective e7MinusculeWeight := by
   decide +kernel +revert
@@ -103,6 +165,20 @@ theorem e7MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one (a : Fin 56) (i 
     e7MinusculeWeight a i = -1 ∨ e7MinusculeWeight a i = 0 ∨
       e7MinusculeWeight a i = 1 := by
   fin_cases a <;> fin_cases i <;> decide
+
+/-- **Every `E₇` minuscule weight pairs oddly with the sum of the simple coroots at the Bourbaki
+nodes `2`, `5` and `7`** (zero-based indices `1`, `4` and `6`). These are the nodes at which `ϖ₇`
+has a half-integral coefficient in the simple-root basis, and the parity is constant along the
+Weyl orbit. -/
+theorem odd_e7MinusculeWeight_add_add (a : Fin 56) :
+    Odd (e7MinusculeWeight a 1 + e7MinusculeWeight a 4 + e7MinusculeWeight a 6) := by
+  fin_cases a <;> decide
+
+/-- The highest weight `ϖ₇`, at index `0`, is the only weight of the table with no simple-coroot
+coordinate equal to `-1`. -/
+theorem exists_e7MinusculeWeight_apply_eq_neg_one_iff_ne_zero (a : Fin 56) :
+    (∃ i, e7MinusculeWeight a i = -1) ↔ a ≠ 0 := by
+  decide +kernel +revert
 
 /-! ## Simple reflections -/
 
@@ -377,5 +453,43 @@ theorem span_range_e7MinusculeWeight_eq_top :
   · change Pi.single (6 : Fin 7) 1 ∈ S
     rw [show Pi.single (6 : Fin 7) 1 = e7MinusculeWeight 0 by decide +kernel]
     exact h 0
+
+/-! ## Signs on opposite weights -/
+
+/-- The sign changes along the parent tree. A weight index supplies enough fuel because every
+parent has smaller index. -/
+private def e7MinusculeSignAux : ℕ → Fin 56 → ℤ
+  | 0, _ => 1
+  | n + 1, a => if h : a = 0 then 1 else -e7MinusculeSignAux n
+      (e7MinusculeParent (a.pred h))
+
+/-- The alternating sign on the minuscule weight graph, normalized to `1` at `ϖ₇`. -/
+def e7MinusculeSign (a : Fin 56) : ℤ := e7MinusculeSignAux a.val a
+
+@[simp]
+theorem e7MinusculeSign_zero : e7MinusculeSign 0 = 1 := by
+  decide +kernel
+
+@[simp]
+theorem e7MinusculeSign_mul_self (a : Fin 56) :
+    e7MinusculeSign a * e7MinusculeSign a = 1 := by
+  decide +kernel +revert
+
+/-- A nontrivial simple reflection reverses the sign. -/
+theorem e7MinusculeSign_reflection (i : Fin 7) (a : Fin 56)
+    (h : e7MinusculeWeight a i ≠ 0) :
+    e7MinusculeSign (e7MinusculeReflection i a) = -e7MinusculeSign a := by
+  decide +kernel +revert
+
+/-- The minuscule weight table is closed under negation. -/
+theorem exists_e7MinusculeWeight_eq_neg (a : Fin 56) :
+    ∃ b, e7MinusculeWeight b = -e7MinusculeWeight a := by
+  decide +kernel +revert
+
+/-- Opposite weights have opposite signs. -/
+theorem e7MinusculeSign_eq_neg_of_weight_eq_neg (a b : Fin 56)
+    (h : e7MinusculeWeight b = -e7MinusculeWeight a) :
+    e7MinusculeSign b = -e7MinusculeSign a := by
+  decide +kernel +revert
 
 end TauCeti.DynkinType

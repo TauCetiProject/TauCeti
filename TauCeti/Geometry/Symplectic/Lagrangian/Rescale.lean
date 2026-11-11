@@ -6,15 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Lagrangian.Exact
+public import TauCeti.Geometry.Symplectic.Lagrangian.SymplecticTangent
 public import TauCeti.Geometry.Symplectic.Manifold.Rescale
 
 /-!
 # Lagrangian maps under constant rescaling
 
-Nonzero real rescaling of the ambient two-form leaves isotropic, coisotropic and Lagrangian
-tangent images unchanged. It therefore preserves Lagrangian immersions, with the same smooth
-immersion and dimension condition. These facts apply to embedded submanifolds through any smooth
-embedding parametrizing them.
+Nonzero real rescaling of the ambient two-form leaves isotropic, coisotropic, Lagrangian and
+symplectic tangent images unchanged. It therefore preserves Lagrangian immersions, with the same
+smooth immersion and dimension condition. These facts apply to embedded submanifolds through any
+smooth embedding parametrizing them.
 
 For an exact Lagrangian map with `f*θ = dh`, scaling the ambient primitive to `c • θ` scales its
 specified primitive function to `c • h`. Both implications hold for every nonzero real `c`;
@@ -63,6 +64,14 @@ theorem isLagrangianMap_smul_iff (c : ℝ) (hc : c ≠ 0) :
   simp only [isLagrangianMap_iff_forall]
   refine forall_congr' fun x ↦ ?_
   rw [hσ.symplecticFormAt_smul c hc, SymplecticForm.isLagrangian_rescale_iff]
+
+/-- Symplectic tangent images are unchanged by nonzero constant rescaling. -/
+@[simp]
+theorem hasSymplecticTangentImages_smul_iff (c : ℝ) (hc : c ≠ 0) :
+    (hσ.smul c hc).HasSymplecticTangentImages J f ↔ hσ.HasSymplecticTangentImages J f := by
+  simp only [hasSymplecticTangentImages_iff_forall]
+  refine forall_congr' fun x ↦ ?_
+  rw [hσ.symplecticFormAt_smul c hc, SymplecticForm.isSymplectic_rescale_iff]
 
 /-- Nonzero constant rescaling preserves and reflects Lagrangian immersions. -/
 @[simp]

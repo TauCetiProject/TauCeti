@@ -23,6 +23,8 @@ requiring a zero in the ambient monoid.
 
 * `TauCeti.mem_range_iff_exists_units_map_eq`: a unit lies in the range of a local monoid
   homomorphism exactly when it is the image of a unit under `Units.map`.
+* `Units.eq_of_mul_mul_inv_eq_of_commute`: if the conjugate of `a` by a unit `u` is an element
+  commuting with `u`, then `a` equals it.
 * `Units.val_mul_zpow_natCast_mul`: nonnegative product powers give consecutive monomials.
 * `Units.val_mul_zpow_neg_natCast_succ_mul`: negative product powers give inverse monomials.
 -/
@@ -45,6 +47,12 @@ theorem mem_range_iff_exists_units_map_eq {M N F : Type*} [Monoid M] [Monoid N]
 end TauCeti
 
 namespace Units
+
+/-- If the conjugate of `a` by a unit `u` is an element `z` that commutes with `u`, then `a = z`. -/
+theorem eq_of_mul_mul_inv_eq_of_commute {A : Type*} [Monoid A] {a z : A} (u : Aˣ)
+    (h : (u : A) * a * ↑u⁻¹ = z) (hz : Commute z u) : a = z := by
+  calc a = ↑u⁻¹ * ((u : A) * a * ↑u⁻¹) * u := by simp [mul_assoc]
+    _ = z := by rw [h, mul_assoc, hz.eq, Units.inv_mul_cancel_left]
 
 /-- A nonnegative power of the product of two units gives consecutive monomial exponents
 after multiplication by the first unit. -/

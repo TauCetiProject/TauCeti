@@ -90,7 +90,7 @@ theorem windingNumber_fdBoundary_eq_zero_of_im_lt (hH : Real.sqrt 3 / 2 ≤ H) {
       fun _ h ↦ ⟨h.1, h.2⟩) hw
   · rintro z hz ⟨t, ht, rfl⟩
     rw [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 5)] at ht
-    exact absurd hz (not_lt.mpr (sqrt_three_div_two_le_im_fdBoundary hH ht))
+    exact absurd hz (not_lt.mpr (sqrt_three_div_two_le_im_fdBoundary hH))
 
 /-- Every point strictly right of the fundamental strip winds zero. The bound is stated
 in simp-normal form so the lemma can participate in simplification. -/
@@ -158,8 +158,8 @@ theorem windingNumber_fdBoundary_eq_zero_of_norm_lt_one (hH : 1 ≤ H) {w : ℂ}
   · rintro z (hz | hz) ⟨t, ht, rfl⟩ <;>
       rw [uIcc_of_le (by norm_num : (0 : ℝ) ≤ 5)] at ht
     · rw [Metric.mem_ball, dist_zero_right] at hz
-      exact absurd hz (not_lt.mpr (one_le_norm_fdBoundary hH ht))
-    · exact absurd hz (not_lt.mpr (sqrt_three_div_two_le_im_fdBoundary (h32.trans hH) ht))
+      exact absurd hz (not_lt.mpr (one_le_norm_fdBoundary hH))
+    · exact absurd hz (not_lt.mpr (sqrt_three_div_two_le_im_fdBoundary (h32.trans hH)))
 
 
 /-- The boundary contour is null-homologous in the truncated fundamental domain: every

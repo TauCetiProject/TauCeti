@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Network.MinimumCut.Basic
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.EdgeSide
-import Mathlib.Combinatorics.SimpleGraph.Star
+import TauCeti.Combinatorics.SimpleGraph.Finite
 
 /-!
 # Flow-equivalent trees and cut trees
@@ -28,9 +28,12 @@ This file develops what these properties give, independently of how such a tree 
   minimizes `f` among all sets separating two vertices, with value that minimum weight.
 * `IsFlowEquivalentTree.card_image_pairMinimumValue_le`: the minimum cut values between distinct
   vertices take at most `|V| - 1` distinct values, since each is a tree-edge weight.
+* `IsCutTree.of_isMinimum_edgeSide`: a tree whose edges all leave minimum cuts between their ends
+  is a cut tree for the weights given by those minimum cut values.
 
 Neither property assumes symmetry or submodularity of `f`. The results here take the tree as
-given; for symmetric submodular `f`, Gomory and Hu show that a cut tree always exists.
+given; for symmetric submodular `f`, a cut tree always exists by the Gomory–Hu theorem
+`TauCeti.TerminalCut.exists_isCutTree`.
 
 ## References
 
@@ -104,9 +107,21 @@ theorem exists_weight_le (hT : IsFlowEquivalentTree f T w) {S : Finset V} {s t :
   obtain ⟨e, he, hwe⟩ := hT.exists_weight_eq hst hp
   exact ⟨e, p.edges_subset_edgeSet he, hwe ▸ pairMinimumValue_le f hs ht⟩
 
+end IsFlowEquivalentTree
+
+end FlowEquivalent
+
+section CutTree
+
+variable [Fintype V] [Zero K] [LinearOrder K]
+
+namespace IsFlowEquivalentTree
+
+variable {f : Finset V → K} {T : SimpleGraph V} {w : Sym2 V → K}
+
 /-- The minimum cut values between distinct vertices take at most `|V| - 1` distinct values,
 since each is the weight of a tree edge. -/
-theorem card_image_pairMinimumValue_le [Fintype V] [DecidableEq V] [DecidableEq K]
+theorem card_image_pairMinimumValue_le [DecidableEq V] [DecidableEq K]
     (hT : IsFlowEquivalentTree f T w) :
     #((univ.filter fun p : V × V ↦ p.1 ≠ p.2).image fun p ↦ pairMinimumValue f p.1 p.2) ≤
       Fintype.card V - 1 := by
@@ -124,12 +139,6 @@ theorem card_image_pairMinimumValue_le [Fintype V] [DecidableEq V] [DecidableEq 
 
 end IsFlowEquivalentTree
 
-end FlowEquivalent
-
-section CutTree
-
-variable [Fintype V] [Zero K] [LinearOrder K]
-
 /-- A cut tree, or Gomory–Hu tree, for `f`: a flow-equivalent tree in which, for every tree edge
 `s(u, v)`, the side of `u` left by deleting that edge is a minimum `u`–`v` cut. -/
 structure IsCutTree (f : Finset V → K) (T : SimpleGraph V) (w : Sym2 V → K) : Prop
@@ -140,6 +149,43 @@ structure IsCutTree (f : Finset V → K) (T : SimpleGraph V) (w : Sym2 V → K) 
 namespace IsCutTree
 
 variable {f : Finset V → K} {T : SimpleGraph V} {w : Sym2 V → K}
+
+/-- A tree is a cut tree as soon as deleting any of its edges leaves a minimum cut between the
+ends of that edge, with the edge weighted by their minimum cut value: flow-equivalence then
+follows from the ultrametric inequality along tree paths. -/
+theorem of_isMinimum_edgeSide (hT : T.IsTree)
+    (hmin : ∀ ⦃u v : V⦄, T.Adj u v → IsMinimum f {u} {v} (T.edgeSide u v))
+    (hw : ∀ ⦃u v : V⦄, T.Adj u v → w s(u, v) = pairMinimumValue f u v) : IsCutTree f T w := by
+  -- An edge on a tree path separates its ends, so its weight bounds their minimum cut value.
+  have hle ⦃s t : V⦄ ⦃p : T.Walk s t⦄ (hp : p.IsPath) ⦃e : Sym2 V⦄ (he : e ∈ p.edges) :
+      pairMinimumValue f s t ≤ w e := by
+    induction e using Sym2.ind with | _ a b => ?_
+    have hab := p.adj_of_mem_edges he
+    rcases (hT.connected.preconnected a s).mem_edgeSide_or_mem_edgeSide (v := b) with hs | hs
+    · rw [hw hab, (hmin hab).pairMinimumValue_eq]
+      exact pairMinimumValue_le f hs ((hp.mem_edges_iff_notMem_edgeSide hT.isAcyclic hs).mp he)
+    · rw [Sym2.eq_swap] at he ⊢
+      rw [hw hab.symm, (hmin hab.symm).pairMinimumValue_eq]
+      exact pairMinimumValue_le f hs ((hp.mem_edges_iff_notMem_edgeSide hT.isAcyclic hs).mp he)
+  -- Along any walk between distinct vertices, some edge weighs at most their minimum cut value.
+  have hex ⦃s t : V⦄ (p : T.Walk s t) (hst : s ≠ t) :
+      ∃ e ∈ p.edges, w e ≤ pairMinimumValue f s t := by
+    induction p with
+    | nil => exact absurd rfl hst
+    | @cons s v t hsv q ih =>
+      obtain rfl | hvt := eq_or_ne v t
+      · exact ⟨s(s, v), by simp, (hw hsv).le⟩
+      obtain ⟨e, he, hwe⟩ := ih hvt
+      rcases min_le_iff.mp (min_pairMinimumValue_le f hst v) with h | h
+      · exact ⟨s(s, v), by simp, (hw hsv).trans_le h⟩
+      · exact ⟨e, by simp [he], hwe.trans h⟩
+  exact
+    { isTree := hT
+      le_weight := hle
+      exists_weight_eq := fun s t hst p hp ↦
+        let ⟨e, he, hwe⟩ := hex p hst
+        ⟨e, he, le_antisymm hwe (hle hp he)⟩
+      isMinimum_edgeSide := hmin }
 
 /-- The side left by deleting a tree edge has value equal to the weight of that edge. -/
 theorem apply_edgeSide (hT : IsCutTree f T w) {u v : V} (huv : T.Adj u v) :
@@ -170,100 +216,25 @@ theorem apply_edgeSide_le (hT : IsCutTree f T w) {u v : V} (huv : T.Adj u v)
   rw [hT.apply_edgeSide huv]
   exact (hmin e he).trans hle
 
+/-- A minimum-weight edge of a cut tree leaves a side minimizing the set function among all
+nonempty proper vertex sets. -/
+theorem exists_edgeSide_apply_le (hT : IsCutTree f T w) [Nontrivial V] :
+    ∃ u v, T.Adj u v ∧ ∀ S : Finset V, S.Nonempty → S ≠ univ →
+      f (T.edgeSide u v) ≤ f S := by
+  have hTne : T ≠ ⊥ := by
+    intro h
+    rw [h] at hT
+    exact SimpleGraph.not_preconnected_bot hT.isTree.connected.preconnected
+  obtain ⟨u, v, huv, hmin⟩ := T.exists_minimum_weight_edge hTne w
+  refine ⟨u, v, huv, fun S hS hSuniv ↦ ?_⟩
+  obtain ⟨s, hs⟩ := hS
+  obtain ⟨t, ht⟩ : ∃ t, t ∉ S := by
+    by_contra! h
+    exact hSuniv (eq_univ_iff_forall.mpr h)
+  exact hT.apply_edgeSide_le huv hmin hs ht
+
 end IsCutTree
 
 end CutTree
-
-/-!
-## Examples
-
-On four vertices, let `f S = min (|S|, 4 - |S|)`. Every two distinct vertices have minimum cut
-value one, so any tree with unit weights is flow-equivalent for `f`. The unit-weight star is a cut
-tree, but the unit-weight path is not: deleting its middle edge leaves a side of value two. Thus
-flow-equivalence records the numerical minimum cut values without their minimizing cuts.
--/
-
-/-- The balanced cut function on four vertices. -/
-private def balanced (S : Finset (Fin 4)) : ℕ := min #S (4 - #S)
-
-private theorem balanced_compl (S : Finset (Fin 4)) : balanced Sᶜ = balanced S := by
-  have h : #S ≤ 4 := by simpa using card_le_univ S
-  simp only [balanced, card_compl, Fintype.card_fin]
-  omega
-
-private theorem pairMinimumValue_balanced {s t : Fin 4} (hst : s ≠ t) :
-    pairMinimumValue balanced s t = 1 := by
-  obtain ⟨S, hS⟩ := exists_minimum balanced (disjoint_singleton.mpr hst)
-  obtain ⟨hs, ht⟩ := isAdmissible_singleton.mp hS.admissible
-  refine le_antisymm ((pairMinimumValue_le balanced (mem_singleton_self s)
-    (notMem_singleton.mpr hst.symm)).trans (by simp [balanced])) ?_
-  have h1 : 0 < #S := card_pos.mpr ⟨s, hs⟩
-  have h2 : #S < 4 := by simpa using card_lt_univ_of_notMem ht
-  rw [hS.pairMinimumValue_eq, balanced]
-  omega
-
-/-- Every unit-weight tree on four vertices is flow-equivalent for the balanced cut function. -/
-private theorem isFlowEquivalentTree_balanced {T : SimpleGraph (Fin 4)} (hT : T.IsTree) :
-    IsFlowEquivalentTree balanced T fun _ ↦ 1 where
-  isTree := hT
-  le_weight s t _ _ _ _ := by
-    rcases eq_or_ne s t with rfl | hst
-    · simp
-    · rw [pairMinimumValue_balanced hst]
-  exists_weight_eq s t hst p _ := by
-    obtain ⟨e, he⟩ := List.exists_mem_of_ne_nil p.edges
-      (by rw [Ne, Walk.edges_eq_nil]; exact Walk.not_nil_of_ne hst)
-    exact ⟨e, he, (pairMinimumValue_balanced hst).symm⟩
-
-/-- The unit-weight star is a cut tree for the balanced cut function. -/
-example : IsCutTree balanced (starGraph 0) fun _ ↦ 1 := by
-  refine ⟨isFlowEquivalentTree_balanced (isTree_starGraph 0), fun u v huv ↦ ?_⟩
-  have hbridge : (starGraph (0 : Fin 4)).IsBridge s(u, v) :=
-    isAcyclic_iff_forall_adj_isBridge.mp (isAcyclic_starGraph 0) huv
-  have hleaf : ∀ {a b : Fin 4}, a ≠ 0 → (starGraph 0).edgeSide a b = {a} ∨ b ≠ 0 := by
-    intro a b ha
-    by_cases hb : b = 0
-    · subst hb
-      exact .inl (edgeSide_eq_singleton fun y hy ↦ by simp_all [starGraph_adj])
-    · exact .inr hb
-  -- One end of a star edge is the centre; the side of the leaf is a singleton, and the side of
-  -- the centre is its complement.
-  have hval : balanced ((starGraph 0).edgeSide u v) = 1 := by
-    rw [starGraph_adj] at huv
-    rcases huv with ⟨hne, rfl | rfl⟩
-    · rw [← balanced_compl, hbridge.compl_edgeSide (connected_starGraph 0).preconnected,
-        (hleaf hne.symm).resolve_right (not_not.mpr rfl)]
-      rfl
-    · rw [(hleaf hne).resolve_right (not_not.mpr rfl)]
-      rfl
-  rw [isMinimum_singleton_iff_pairMinimumValue_eq, pairMinimumValue_balanced huv.ne]
-  exact ⟨self_mem_edgeSide _ u v, hbridge.notMem_edgeSide, hval⟩
-
-/-- The unit-weight path is flow-equivalent for the balanced cut function. -/
-example : IsFlowEquivalentTree balanced (pathGraph 4) fun _ ↦ 1 :=
-  isFlowEquivalentTree_balanced (isTree_pathGraph_add_one 3)
-
-/-- The unit-weight path is not a cut tree for the balanced cut function: deleting its middle edge
-leaves the side `{0, 1}`, of value two. -/
-example : ¬IsCutTree balanced (pathGraph 4) fun _ ↦ 1 := by
-  intro hT
-  have h12 : (pathGraph 4).Adj 1 2 := by simp [pathGraph_adj]
-  have hbridge : (pathGraph 4).IsBridge s(1, 2) :=
-    isAcyclic_iff_forall_adj_isBridge.mp (isAcyclic_pathGraph 4) h12
-  have hside : (pathGraph 4).edgeSide 1 2 = {0, 1} := by
-    have h0 : (0 : Fin 4) ∈ (pathGraph 4).edgeSide 1 2 :=
-      mem_edgeSide.mpr (deleteEdges_adj.mpr ⟨by simp [pathGraph_adj], by decide⟩).reachable
-    have h3 : (3 : Fin 4) ∈ (pathGraph 4).edgeSide 2 1 :=
-      mem_edgeSide.mpr (deleteEdges_adj.mpr ⟨by simp [pathGraph_adj], by decide⟩).reachable
-    have h2 := hbridge.notMem_edgeSide
-    ext x
-    fin_cases x
-    · simpa using h0
-    · simp
-    · simpa using h2
-    · simpa using fun h ↦ Finset.disjoint_left.mp hbridge.disjoint_edgeSide h h3
-  have := hT.apply_edgeSide h12
-  rw [hside] at this
-  exact absurd this (by decide)
 
 end TauCeti.TerminalCut

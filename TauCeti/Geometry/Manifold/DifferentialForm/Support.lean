@@ -16,7 +16,11 @@ import Mathlib.Topology.Compactness.LocallyFinite
 
 This file establishes how the topological support of a rough differential form behaves under
 scalar multiplication, pullback, exterior differentiation and finite partition localization.
-Pullback along a homeomorphism with invertible derivative carries the support to its preimage.
+Pullback along a continuous open map with invertible derivative carries the support to its
+preimage.
+A form supported in the source of an open partial homeomorphism `e` and agreeing there with the
+pullback of `φ` along a map that coincides with `e` on that source has its support carried by `e`
+into that of `φ`, and compact when the support of `φ` is compact and lies in the target of `e`.
 Locality of the exterior derivative
 preserves support and compact support without any regularity assumption. A rough form is a dependent
 function whose fibre at `x` is
@@ -124,10 +128,7 @@ theorem tsupport_mpullback_subset_preimage {f : X → Y} (hf : Continuous f)
   intro x hx
   apply subset_tsupport (α := E' [⋀^Fin k]→L[ℝ] F) φ
   intro hφ
-  apply hx
-  ext v
-  simp [mpullback_apply, hφ]
-  rfl
+  exact hx (mpullback_apply_eq_zero hφ)
 
 /-- Pullback by a proper map preserves compact topological support. -/
 theorem isCompact_tsupport_mpullback {f : X → Y} (hf : IsProperMap f)
@@ -138,22 +139,16 @@ theorem isCompact_tsupport_mpullback {f : X → Y} (hf : IsProperMap f)
     (_root_.isClosed_tsupport (α := E [⋀^Fin k]→L[ℝ] F) _)
     (tsupport_mpullback_subset_preimage hf.continuous φ)
 
-/-- Along a homeomorphism whose manifold derivative is invertible at every point, the
-topological support of a pullback is the preimage of the support of the form. -/
-theorem tsupport_mpullback_eq_preimage (φ : RoughForm I' Y F k) (f : X ≃ₜ Y)
-    (hd : ∀ x, (mfderiv I I' f x).IsInvertible) :
+/-- Along a continuous open map whose manifold derivative is invertible at every point, for
+instance a homeomorphism or an open embedding, the topological support of a pullback is the
+preimage of the support of the form. -/
+theorem tsupport_mpullback_eq_preimage (φ : RoughForm I' Y F k) {f : X → Y} (hf : Continuous f)
+    (hfo : IsOpenMap f) (hd : ∀ x, (mfderiv I I' f x).IsInvertible) :
     _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (mpullback I I' f φ) =
       f ⁻¹' _root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] F) φ := by
-  refine (tsupport_mpullback_subset_preimage f.continuous φ).antisymm fun x hx ↦ ?_
-  suffices h : _root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] F) φ ⊆
-      f.symm ⁻¹' _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (mpullback I I' f φ) by
-    simpa only [mem_preimage, f.symm_apply_apply] using h hx
-  refine closure_minimal ?_
-    ((_root_.isClosed_tsupport (α := E [⋀^Fin k]→L[ℝ] F) _).preimage f.symm.continuous)
-  intro y hx
-  obtain ⟨x, rfl⟩ := f.surjective y
-  rw [mem_preimage, f.symm_apply_apply]
-  apply _root_.subset_tsupport (α := E [⋀^Fin k]→L[ℝ] F) (mpullback I I' f φ)
+  refine (tsupport_mpullback_subset_preimage hf φ).antisymm ?_
+  -- An open continuous map pulls closures back to closures, so it suffices to compare supports.
+  refine (hfo.preimage_closure_eq_closure_preimage hf _).trans_subset (closure_mono fun x hx ↦ ?_)
   intro h₀
   apply hx
   obtain ⟨e, he⟩ := hd x
@@ -168,6 +163,48 @@ theorem tsupport_mpullback_eq_preimage (φ : RoughForm I' Y F k) (f : X ≃ₜ Y
 end RoughForm
 
 end TauCeti
+
+namespace OpenPartialHomeomorph
+
+open TauCeti
+
+variable {E H X E' H' Y F : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace X] [ChartedSpace H X]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace Y] [ChartedSpace H' Y]
+  [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] {k : ℕ}
+  (e : OpenPartialHomeomorph X Y) {f : X → Y}
+
+/-- Let `e` be an open partial homeomorphism agreeing with a map `f` on its source. A form `ψ`
+supported in the source of `e` that agrees there with `f^*φ` has its support carried by `e` into
+the support of `φ`. -/
+theorem mapsTo_tsupport_of_eq_mpullback (hfe : EqOn f e e.source) {φ : RoughForm I' Y F k}
+    {ψ : RoughForm I X F k} (hψ : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) ψ ⊆ e.source)
+    (hψφ : ∀ x ∈ e.source, ψ x = mpullback I I' f φ x) :
+    MapsTo e (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) ψ)
+      (_root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] F) φ) := fun x hx ↦ by
+  refine closure_mono ?_ ((e.continuousAt (hψ hx)).continuousWithinAt.mem_closure_image hx)
+  rintro _ ⟨z, hz, rfl⟩ hφz
+  have hzs := hψ (subset_tsupport (α := E [⋀^Fin k]→L[ℝ] F) ψ hz)
+  have hφz' : φ (f z) = 0 := by rw [hfe hzs]; exact hφz
+  exact hz ((hψφ z hzs).trans (mpullback_apply_eq_zero hφz'))
+
+/-- Let `e` be an open partial homeomorphism agreeing with a map `f` on its source, and let `φ` be
+a form with compact support in the target of `e`. A form `ψ` supported in the source of `e` that
+agrees there with `f^*φ` has compact support: a closed subset of the image of the support of `φ`
+under the inverse of `e`. -/
+theorem isCompact_tsupport_of_eq_mpullback (hfe : EqOn f e e.source) {φ : RoughForm I' Y F k}
+    {ψ : RoughForm I X F k} (hφ : IsCompact (_root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] F) φ))
+    (hφt : _root_.tsupport (α := E' [⋀^Fin k]→L[ℝ] F) φ ⊆ e.target)
+    (hψ : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) ψ ⊆ e.source)
+    (hψφ : ∀ x ∈ e.source, ψ x = mpullback I I' f φ x) :
+    IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) ψ) :=
+  (hφ.image_of_continuousOn (e.continuousOn_symm.mono hφt)).of_isClosed_subset
+    (_root_.isClosed_tsupport (α := E [⋀^Fin k]→L[ℝ] F) _)
+    fun x hx ↦ ⟨e x, e.mapsTo_tsupport_of_eq_mpullback hfe hψ hψφ hx, e.left_inv (hψ hx)⟩
+
+end OpenPartialHomeomorph
 
 namespace TauCeti.RoughForm
 

@@ -20,7 +20,8 @@ weighted antidiagonal `Finset.weightedFinsuppAntidiag s m n` of the assignments 
 `s` with `∑ c ∈ s, m c * l c = n`. When every `f c` has constant term `1`, factors with
 `n < m c` do not change the `n`-th coefficient. So if only finitely many `m c` lie below each
 bound, the infinite product converges in the coefficientwise topology
-(`PowerSeries.WithPiTopology`), and each coefficient is that of a finite product.
+(`PowerSeries.WithPiTopology`), and each coefficient is that of a finite product. Over a finite
+field with `q` elements, the iterates of `expand q` are the `q ^ j`-th power maps.
 
 ## Main declarations
 
@@ -39,6 +40,8 @@ bound, the infinite product converges in the coefficientwise topology
 * `PowerSeries.hasProd_expand`, `PowerSeries.multipliable_expand`,
   `PowerSeries.coeff_tprod_expand`: the infinite product of the expanded series and its
   coefficients, when `{c | m c ≤ n}` is finite for every `n`.
+* `FiniteField.PowerSeries.expand_card_pow_apply`: over a finite field `K` with `q` elements, the
+  `j`-th iterate of `expand q` is the `q ^ j`-th power map.
 -/
 
 public section
@@ -71,9 +74,12 @@ theorem mem_weightedFinsuppAntidiag {s : Finset ι} {m : ι → ℕ+} {n : ℕ} 
 
 /-- Every summand `m c * l c` of an element `l` of the weighted antidiagonal is at most `n`. -/
 theorem mul_le_of_mem_weightedFinsuppAntidiag {s : Finset ι} {m : ι → ℕ+} {n : ℕ}
-    {l : ι →₀ ℕ} (hl : l ∈ s.weightedFinsuppAntidiag m n) {c : ι} (hc : c ∈ s) :
-    (m c : ℕ) * l c ≤ n :=
-  mul_le_of_sum_mul_eq (mem_weightedFinsuppAntidiag.1 hl).2 hc
+    {l : ι →₀ ℕ} (hl : l ∈ s.weightedFinsuppAntidiag m n) (c : ι) :
+    (m c : ℕ) * l c ≤ n := by
+  obtain ⟨hsupp, hsum⟩ := mem_weightedFinsuppAntidiag.1 hl
+  by_cases hc : c ∈ s
+  · exact mul_le_of_sum_mul_eq hsum hc
+  · simp [Finsupp.notMem_support_iff.1 fun h ↦ hc (hsupp h)]
 
 end Finset
 
@@ -175,7 +181,7 @@ theorem coeff_prod_expand_of_subset {s t : Finset ι} (hst : s ⊆ t) {m : ι �
   -- An element of the weighted antidiagonal over `t` vanishes at every adjoined index.
   have hzero : ∀ l ∈ t.weightedFinsuppAntidiag m n, ∀ c ∈ t, c ∉ s → l c = 0 := by
     intro l hl c hct hcs
-    have hle := Finset.mul_le_of_mem_weightedFinsuppAntidiag hl hct
+    have hle := Finset.mul_le_of_mem_weightedFinsuppAntidiag hl c
     have := h c hct hcs
     by_contra hlc
     have := Nat.le_mul_of_pos_right (m c : ℕ) (Nat.pos_of_ne_zero hlc)
@@ -252,5 +258,19 @@ theorem coeff_tprod_expand [T2Space R] {m : ι → ℕ+}
   have hsub : (hm n).toFinset ⊆ s := fun c hc ↦ hs c (by simpa using hc)
   refine (coeff_prod_expand_of_subset hsub (fun c _ hc ↦ ?_) fun c _ _ ↦ hf c).symm
   simpa using hc
+
+section FiniteField
+
+variable {K : Type*} [Field K] [Fintype K]
+
+/-- Over a finite field `K` with `q` elements, the `j`-th iterate of `expand q` is the
+`q ^ j`-th power map. -/
+theorem _root_.FiniteField.PowerSeries.expand_card_pow_apply (j : ℕ) (F : PowerSeries K) :
+    (expand (Fintype.card K) Fintype.card_ne_zero ^ j) F = F ^ Fintype.card K ^ j := by
+  induction j with
+  | zero => simp
+  | succ j ih => simp [pow_succ', ih, FiniteField.PowerSeries.expand_card, pow_mul']
+
+end FiniteField
 
 end PowerSeries

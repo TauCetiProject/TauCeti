@@ -25,7 +25,7 @@ valuation ring, the least valuation of a `k × k` minor of `A` is therefore
 `v s₀ + ⋯ + v sₖ₋₁`, and `v (det A)` is the sum of all the `v sᵢ`. All row and column choices
 are needed here; the principal minors alone need not attain the minimum.
 
-Over a discrete valuation ring, every square matrix of nonzero determinant has such a Smith
+Over a discrete valuation ring, every square matrix has such a Smith
 normal form: `Matrix.exists_smith_normal_form_of_isDiscreteValuationRing` in
 `TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Basic`.
 
@@ -110,8 +110,8 @@ divides every `k × k` minor of `A`, on arbitrary rows and columns. -/
 theorem prod_dvd_det_submatrix_of_mul_mul_eq_diagonal (hL : IsUnit L.det) (hQ : IsUnit Q.det)
     (hs : ∀ ⦃i j : Fin n⦄, i ≤ j → s i ∣ s j) (h : L * A * Q = diagonal s) {k : ℕ} (hk : k ≤ n)
     (f g : Fin k → Fin n) : ∏ j : Fin k, s (Fin.castLE hk j) ∣ (A.submatrix f g).det := by
-  rw [← GeneralLinearGroup.inv_mul_mul_inv_of_mul_mul_eq (nonsingInvUnit L hL)
-    (nonsingInvUnit Q hQ) h]
+  rw [← (GeneralLinearGroup.inv_mul_mul_inv_eq_iff_mul_mul_eq (nonsingInvUnit L hL)
+    (nonsingInvUnit Q hQ)).2 h]
   refine dvd_det_submatrix_mul_mul (fun f' g' ↦ ?_) _ _ f g
   simpa using prod_castLE_mul_prod_castLE_dvd_det_submatrix_diagonal_mul_diagonal hs
     (c₂ := 1) (fun _ _ _ ↦ dvd_rfl) 1 hk f' g'

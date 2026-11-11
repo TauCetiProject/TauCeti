@@ -23,7 +23,8 @@ so no containment hypotheses are needed. `Subpolyad3.unionSupport` collects the 
 of a finite family. A family of at most `r` members has the same union as one indexed by `Fin r`.
 When the pair graphs of a polyad `P'`, possibly over another skeleton, lie in those of `P`,
 `Subpolyad3.inclusion` regards each subpolyad of `P'` as a subpolyad of `P` with the same
-support.
+support. For arbitrary polyads `P` and `P'`, `Subpolyad3.restrict` intersects the selected pair
+graphs with those of `P`; the resulting support is the part of the original one lying in `P`.
 
 ## References
 
@@ -302,6 +303,50 @@ theorem support_inclusion (Q : Subpolyad3 P') :
 
 end inclusion
 
+section restrict
+
+variable {κ' : Type*} {S' : PairSkeleton3 κ' V} {P' : Polyad3 S'}
+
+/-- The restriction of a subpolyad of `P'` to a polyad `P`, possibly over another skeleton: each
+selected pair graph is intersected with the corresponding pair graph of `P`. Its support
+consists of the triples supported by both the subpolyad and `P`. -/
+noncomputable def restrict (Q : Subpolyad3 P') (P : Polyad3 S) : Subpolyad3 P where
+  pair₀₁ := Q.pair₀₁ ∩ P.pairSupport₀₁
+  pair₀₂ := Q.pair₀₂ ∩ P.pairSupport₀₂
+  pair₁₂ := Q.pair₁₂ ∩ P.pairSupport₁₂
+  pair₀₁_sub := inter_subset_right
+  pair₀₂_sub := inter_subset_right
+  pair₁₂_sub := inter_subset_right
+
+/-- The restriction keeps the selected zero-one pairs lying in the pair graph of `P`. -/
+@[simp]
+theorem restrict_pair₀₁ (Q : Subpolyad3 P') (P : Polyad3 S) :
+    (Q.restrict P).pair₀₁ = Q.pair₀₁ ∩ P.pairSupport₀₁ :=
+  (rfl)
+
+/-- The restriction keeps the selected zero-two pairs lying in the pair graph of `P`. -/
+@[simp]
+theorem restrict_pair₀₂ (Q : Subpolyad3 P') (P : Polyad3 S) :
+    (Q.restrict P).pair₀₂ = Q.pair₀₂ ∩ P.pairSupport₀₂ :=
+  (rfl)
+
+/-- The restriction keeps the selected one-two pairs lying in the pair graph of `P`. -/
+@[simp]
+theorem restrict_pair₁₂ (Q : Subpolyad3 P') (P : Polyad3 S) :
+    (Q.restrict P).pair₁₂ = Q.pair₁₂ ∩ P.pairSupport₁₂ :=
+  (rfl)
+
+/-- The support of a restriction is the part of the original support lying in `P`. -/
+@[simp]
+theorem support_restrict (Q : Subpolyad3 P') (P : Polyad3 S) :
+    (Q.restrict P).support = Q.support ∩ P.support := by
+  ext x
+  simp only [mem_support_iff_coordPair_mem, restrict_pair₀₁, restrict_pair₀₂, restrict_pair₁₂,
+    mem_inter, Polyad3.mem_support_iff_coordPair_mem]
+  tauto
+
+end restrict
+
 /-- The union of the supports of a finite family of subpolyads of `P`. -/
 noncomputable def unionSupport {ι : Type*} [Fintype ι] (Q : ι → Subpolyad3 P) :
     Finset {x : Fin 3 → V // Function.Injective x} :=
@@ -370,6 +415,14 @@ theorem unionSupport_inclusion {κ' : Type*} {S' : PairSkeleton3 κ' V} {P' : Po
     unionSupport (fun i ↦ (Q i).inclusion h₀₁ h₀₂ h₁₂) = unionSupport Q := by
   ext x
   simp
+
+/-- Restricting every member of a family to `P` restricts its union support to `P`. -/
+@[simp]
+theorem unionSupport_restrict {κ' : Type*} {S' : PairSkeleton3 κ' V} {P' : Polyad3 S'}
+    (Q : ι → Subpolyad3 P') (P : Polyad3 S) :
+    unionSupport (fun i ↦ (Q i).restrict P) = unionSupport Q ∩ P.support := by
+  ext x
+  simp only [mem_unionSupport, support_restrict, mem_inter, exists_and_right]
 
 end Subpolyad3
 

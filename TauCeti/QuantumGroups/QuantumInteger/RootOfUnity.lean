@@ -7,7 +7,7 @@ module
 
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.QuantumGroups.QuantumInteger.Chebyshev
-public import TauCeti.QuantumGroups.QuantumInteger.Laurent
+public import TauCeti.QuantumGroups.QuantumInteger.Laurent.Basic
 
 import TauCeti.Algebra.Ring.Units
 
@@ -19,7 +19,7 @@ import Mathlib.Tactic.LinearCombination
 
 The quantum integers `TauCeti.qInt R δ n` are defined at an arbitrary loop parameter `δ`, with no
 `q` in sight. At `δ = u + u⁻¹` for a unit `u` they satisfy `(u - u⁻¹) [n] = uⁿ - u⁻ⁿ`
-(`TauCeti.sub_inv_mul_qInt_add_inv`, in `TauCeti/QuantumGroups/QuantumInteger/Laurent.lean`).
+(`TauCeti.sub_inv_mul_qInt_add_inv`, in `TauCeti/QuantumGroups/QuantumInteger/Laurent/Basic.lean`).
 This file derives from it the dictionary between the vanishing of quantum integers at `δ` and
 `q` being a root of unity.
 
@@ -72,6 +72,13 @@ theorem qInt_add_inv_eq_zero_iff [NoZeroDivisors R] {u : Rˣ} (hu₁ : u ≠ 1) 
   refine (mul_eq_zero.1 ?_).resolve_left (Units.val_sub_val_inv_ne_zero hu₁ hu₂)
   rw [sub_inv_mul_qInt_add_inv, sub_eq_zero]
   exact_mod_cast congrArg Units.val h
+
+/-- Away from `±1`, the vanishing indices are the multiples of the multiplicative order of
+`u²`. This includes index zero and units of infinite order (`orderOf (u ^ 2) = 0`). -/
+theorem qInt_add_inv_eq_zero_iff_orderOf_sq_dvd [NoZeroDivisors R] {u : Rˣ}
+    (hu₁ : u ≠ 1) (hu₂ : u ≠ -1) (n : ℕ) :
+    qInt R (u + ↑u⁻¹) n = 0 ↔ orderOf (u ^ 2) ∣ n := by
+  rw [qInt_add_inv_eq_zero_iff hu₁ hu₂, orderOf_dvd_iff_pow_eq_one, ← pow_mul]
 
 end Units
 

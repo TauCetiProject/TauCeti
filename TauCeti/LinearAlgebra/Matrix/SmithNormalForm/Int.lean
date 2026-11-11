@@ -13,7 +13,7 @@ import Mathlib.Algebra.EuclideanDomain.Int
 -- below.
 import TauCeti.LinearAlgebra.Matrix.Divisibility
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
-import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Basic
+import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Diagonal
 -- `prod_eq_det_of_mul_mul_eq_diagonal`, `exists_SL_mul_mul_eq_of_mul_mul_eq` and
 -- `TauCeti.fin_two_eq_of_normalize_eq_of_dvd_of_dvd_of_mul_eq_mul`, used only inside the `2 × 2`
 -- classification below.
@@ -51,9 +51,10 @@ operations of determinant one:
   integer matrix is determined up to `SL₂(ℤ)`-equivalence by its determinant and the common
   divisors of its entries.
 
-`Matrix.exists_mul_mul_eq_diagonal_of_det_ne_zero` in
-`TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Basic` diagonalises over a PID with transformations
-of unit determinant; this file refines it over `ℤ` in three ways that the general result does not
+`Matrix.exists_mul_mul_eq_diagonal` in
+`TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Diagonal` diagonalises over a PID with transformations
+of unit determinant, allowing singular matrices; this file refines its nonsingular case over `ℤ`
+in three ways that the general result does not
 give: the transforming matrices have determinant `1` (not merely unit
 determinant), the diagonal entries are positive, and successive entries divide each other
 (the invariant-factor chain).  The proof first diagonalises using the general theorem,
@@ -206,7 +207,7 @@ private theorem exists_diagonal_of_det_pos (A : Matrix (Fin n) (Fin n) ℤ) (hde
       (L : Matrix (Fin n) (Fin n) ℤ) * A * (R : Matrix (Fin n) (Fin n) ℤ) =
       Matrix.diagonal d := by
   obtain ⟨P, Q, a, hP_unit, hQ_unit, hdiag⟩ :=
-    exists_mul_mul_eq_diagonal_of_det_ne_zero A hdet.ne'
+    exists_mul_mul_eq_diagonal A
   have ha_ne : ∀ i, a i ≠ 0 := by
     have hprod : P.det * A.det * Q.det = ∏ i, a i := by
       rw [← det_mul, ← det_mul, hdiag, det_diagonal]
@@ -742,7 +743,7 @@ theorem smith_normal_form_unique {c d : Fin n → ℤ} (hc_pos : ∀ i, 0 ≤ c 
       (R : Matrix (Fin n) (Fin n) ℤ) = Matrix.diagonal d) : c = d := by
   have h' : (↑L⁻¹ : Matrix (Fin n) (Fin n) ℤ) * Matrix.diagonal d *
       (↑R⁻¹ : Matrix (Fin n) (Fin n) ℤ) = Matrix.diagonal c :=
-    L.inv_mul_mul_inv_of_mul_mul_eq R h
+    (L.inv_mul_mul_inv_eq_iff_mul_mul_eq R).2 h
   have key : ∀ k (hk : k ≤ n),
       ∏ j : Fin k, c ⟨j.val, by omega⟩ = ∏ j : Fin k, d ⟨j.val, by omega⟩ := fun k hk ↦
     Int.dvd_antisymm
@@ -800,7 +801,7 @@ theorem invariant_factor_zero_dvd_entries {S : Type*} [CommSemiring S] [NeZero n
     (L R : GeneralLinearGroup (Fin n) S)
     (h : (L : Matrix (Fin n) (Fin n) S) * A * (R : Matrix (Fin n) (Fin n) S) =
       Matrix.diagonal d) (i j : Fin n) : d 0 ∣ A i j := by
-  rw [← L.inv_mul_mul_inv_of_mul_mul_eq R h]
+  rw [← (L.inv_mul_mul_inv_eq_iff_mul_mul_eq R).2 h]
   refine dvd_mul_mul_apply (fun p q ↦ ?_) _ _ i j
   rcases eq_or_ne p q with rfl | hpq
   · simpa using hd0 p

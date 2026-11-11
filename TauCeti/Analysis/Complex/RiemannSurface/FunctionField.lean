@@ -13,6 +13,7 @@ import Mathlib.Geometry.Manifold.Complex
 import Mathlib.Order.Filter.Germ.Basic
 import TauCeti.Analysis.Complex.RiemannSurface.LocalNormalForm
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
+import TauCeti.Geometry.Manifold.Complex.Analytic
 
 /-!
 # The field of meromorphic functions on a connected Riemann surface
@@ -68,9 +69,10 @@ neighbourhood and its inverse is a multiplicative inverse.
   operations.
 * `TauCeti.RiemannSurface.MeromorphicFunction.inv_apply_of_eq_infty`: the inverse of a meromorphic
   function vanishes at its poles.
-* `TauCeti.RiemannSurface.MeromorphicFunction.finite_setOf_eq_infty` and
-  `TauCeti.RiemannSurface.MeromorphicFunction.finite_setOf_eq_zero`: on a compact connected Riemann
-  surface, a meromorphic function has finitely many poles, and a nonzero one finitely many zeros.
+* `TauCeti.RiemannSurface.MeromorphicFunction.finite_setOf_eq_infty`: on a compact preconnected
+  Riemann surface, a meromorphic function has finitely many poles.
+* `TauCeti.RiemannSurface.MeromorphicFunction.finite_setOf_eq_zero`: on a compact connected Riemann
+  surface, a nonzero meromorphic function has finitely many zeros.
 * `TauCeti.RiemannSurface.MeromorphicFunction.exists_algebraMap_eq_of_forall_ne_infty`: the maximum
   principle, a meromorphic function without poles on a compact connected Riemann surface is
   constant.
@@ -167,6 +169,14 @@ theorem mdifferentiableAt_finitePart (h : f x ≠ ∞) :
     MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f.finitePart x :=
   (mdifferentiableAt_atlas (Or.inl rfl) (by simpa using h)).comp x (f.mdifferentiable x)
 
+open scoped ContDiff in
+/-- Away from the poles, the finite part of a meromorphic function is complex analytic. -/
+theorem contMDiffAt_finitePart [IsManifold 𝓘(ℂ) 1 X] (h : f x ≠ (∞ : OnePoint ℂ)) :
+    ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) ω f.finitePart x := by
+  apply (contMDiffAt_iff_eventually_mdifferentiableAt (by simp)).2
+  filter_upwards [f.continuous.continuousAt.eventually (isOpen_ne.mem_nhds h)] with y hy
+  exact f.mdifferentiableAt_finitePart hy
+
 /-- The value of a meromorphic function at `x` is the limit at `x`, along the punctured
 neighbourhoods of `x`, of any map to the sphere that agrees with it near `x`. -/
 theorem apply_eq_of_tendsto {φ : X → OnePoint ℂ} {c : OnePoint ℂ} (hφ : Tendsto φ (𝓝[≠] x) (𝓝 c))
@@ -205,7 +215,7 @@ theorem meromorphicAt_finitePart (f : MeromorphicFunction X) (x : X) :
       (hmd (Or.inr rfl) (by simp [invChart_source, hx]))).inv
   · exact meromorphicAt_of_eventually_mdifferentiableAt (hmd (Or.inl rfl) (by simpa using hx))
 
-/-! ### Isolated poles -/
+/-! ### Isolated poles and finiteness of poles -/
 
 section Preconnected
 
@@ -230,6 +240,14 @@ theorem eq_of_eventuallyEq_finitePart (h : ∀ x, f.finitePart =ᶠ[𝓝[≠] x]
   refine eq_of_eventually_apply_eq fun x ↦ ?_
   filter_upwards [h x, f.eventually_ne_infty x, g.eventually_ne_infty x] with y hy hf hg
   rw [← coe_finitePart hf, ← coe_finitePart hg, hy]
+
+/-- **A meromorphic function on a compact preconnected Riemann surface has finitely many poles.** -/
+theorem finite_setOf_eq_infty [CompactSpace X] (f : MeromorphicFunction X) :
+    {x | f x = ∞}.Finite := by
+  have h : {x | f x ≠ ∞} ∈ Filter.codiscrete X :=
+    eventually_codiscrete_iff_forall_eventually_nhdsNE.2 f.eventually_ne_infty
+  exact (isCompact_univ.finite_sdiff_of_mem_codiscreteWithin h).subset fun y hy ↦
+    ⟨mem_univ y, (· hy)⟩
 
 end Preconnected
 
@@ -259,7 +277,7 @@ theorem coe_ofMeromorphic : ⇑(ofMeromorphic hh) = sphereMap h :=
 `h` on a punctured neighbourhood of every point. -/
 theorem finitePart_ofMeromorphic_eventuallyEq (x : X) :
     (ofMeromorphic hh).finitePart =ᶠ[𝓝[≠] x] h :=
-  (eventually_sphereMap_eq (hh x)).mono fun _ hy ↦ finitePart_of_eq_coe (by rwa [coe_ofMeromorphic])
+  affineChart_sphereMap_eventuallyEq (hh x)
 
 /-- At a point where `h` is continuous,
 `TauCeti.RiemannSurface.MeromorphicFunction.ofMeromorphic hh` takes the value of `h`. -/
@@ -494,6 +512,20 @@ theorem coe_algebraMap (c : ℂ) :
     ⇑(algebraMap ℂ (MeromorphicFunction X) c) = fun _ ↦ (c : OnePoint ℂ) :=
   sphereMap_const c
 
+/-- A meromorphic function outside the range of the constant functions takes two distinct
+values on the Riemann sphere. -/
+theorem exists_apply_ne_of_notMem_range_algebraMap
+    (hf : f ∉ Set.range (algebraMap ℂ (MeromorphicFunction X))) : ∃ x y, f x ≠ f y := by
+  by_contra! h
+  let x := Classical.arbitrary X
+  have heq : ⇑f = fun _ ↦ f x := funext fun y ↦ h y x
+  rcases eq_or_ne (f x) (∞ : OnePoint ℂ) with hx | hx
+  · exact f.coe_ne_infty (by simpa [hx] using heq)
+  · obtain ⟨c, hc⟩ := OnePoint.ne_infty_iff_exists.mp hx
+    apply hf
+    refine ⟨c, ext fun y ↦ ?_⟩
+    simpa only [coe_algebraMap] using ((h y x).trans hc.symm).symm
+
 @[simp]
 theorem finitePart_algebraMap (c : ℂ) :
     (algebraMap ℂ (MeromorphicFunction X) c).finitePart = fun _ ↦ c :=
@@ -692,18 +724,11 @@ theorem inv_apply_of_eq_infty (hf : f x = ∞) : f⁻¹ x = ((0 : ℂ) : OnePoin
   filter_upwards [f.eventually_ne_infty x, nhdsWithin_le_nhds hne0] with y hy hy0
   rw [inv_apply hy hy0, finitePart_def, ← inv_invChart, inv_inv]
 
-/-! ### Finiteness of zeros and poles, and the maximum principle -/
+/-! ### Finiteness of zeros, and the maximum principle -/
 
 section Compact
 
 variable [CompactSpace X]
-
-/-- **A meromorphic function on a compact connected Riemann surface has finitely many poles.** -/
-theorem finite_setOf_eq_infty (f : MeromorphicFunction X) : {x | f x = ∞}.Finite := by
-  have h : {x | f x ≠ ∞} ∈ Filter.codiscrete X :=
-    eventually_codiscrete_iff_forall_eventually_nhdsNE.2 f.eventually_ne_infty
-  exact (isCompact_univ.finite_sdiff_of_mem_codiscreteWithin h).subset fun y hy ↦
-    ⟨mem_univ y, (· hy)⟩
 
 /-- **A nonzero meromorphic function on a compact connected Riemann surface has finitely many
 zeros.** -/
