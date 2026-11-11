@@ -70,8 +70,7 @@ analytic diffeomorphism with derivative `p⁻¹ * q`.
   derivative of `f`. Conversely a continuous lift of a `C^n` map is `C^n`
   (`AddCircle.contDiff_of_comp_coe_eq`).
 * `AddCircle.hasMFDerivAt_coe`, `AddCircle.mfderiv_add_right`: the quotient map and the
-  translations have derivative the identity of `ℝ`. So do the rotations `(s, y) ↦ (s + c, y)` of
-  the circle factor of a product `AddCircle p × Y` (`AddCircle.mfderiv_prodMap_add_right`).
+  translations have derivative the identity of `ℝ`.
 * `AddCircle.isLocalDiffeomorph_prodMap_coe`, `AddCircle.hasMFDerivAt_prodMap_coe`,
   `AddCircle.mfderiv_prodMap_coe`: the quotient map
   `ℝ × ℝ → AddCircle p × AddCircle q` is an analytic local diffeomorphism whose differential is the
@@ -591,18 +590,6 @@ theorem mfderiv_zsmul (k : ℤ) (x : AddCircle p) :
   -- Multiplication by `k` lifts multiplication by `k` on `ℝ`.
   exact (hasMFDerivAt_of_comp_coe_eq (funext fun u ↦ (QuotientAddGroup.mk_zsmul _ u k).symm)
     ((hasFDerivAt_id t).const_smul k)).mfderiv
-
-variable {p} in
-/-- The rotations `(s, y) ↦ (s + c, y)` of the circle factor of `AddCircle p × Y` are the identity
-on tangent vectors. -/
-theorem mfderiv_prodMap_add_right {E H Y : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace Y] [ChartedSpace H Y]
-    (c : AddCircle p) (x : AddCircle p × Y) (w : TangentSpace (𝓘(ℝ).prod I) x) :
-    mfderiv (𝓘(ℝ).prod I) (𝓘(ℝ).prod I) (Prod.map (· + c) id) x w = w := by
-  rw [((mdifferentiableAt_add_right (I := 𝓘(ℝ)) (a := c) (b := x.1)).hasMFDerivAt.prodMap
-    (hasMFDerivAt_id (I := I) x.2)).mfderiv, mfderiv_add_right, mfderiv_id]
-  -- `(id ×ₗ id) w = (w.1, w.2)`, which is `w` by the eta rule for pairs.
-  rfl
 
 /-! ### Rescaling the period -/
 

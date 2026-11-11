@@ -18,14 +18,6 @@ vertices `w 0, …, w n`, this gives the alternating sum of the values on the fa
 `Fin.removeNth j w` (`AlternatingMap.map_succ_sub_zero`). This is how a form evaluated on the edges
 of the face opposite the origin of the standard simplex splits into its coordinate coefficients, in
 the boundary term of Stokes' theorem for simplices.
-
-A vector `w` whose interior product with an alternating map `f` vanishes, `f.curryLeft w = 0`,
-lies in the kernel of `f` in every argument: `f` vanishes as soon as `w` is one of its arguments
-(`AlternatingMap.map_update_eq_zero_of_curryLeft_eq_zero`), so adding independent multiples of `w`
-to the arguments does not change the value
-(`AlternatingMap.map_add_smul_of_curryLeft_eq_zero`). For a differential form whose contraction with
-a vector field vanishes, this says that its values only depend on tangent vectors modulo that
-field.
 -/
 
 public section
@@ -33,8 +25,6 @@ public section
 open Function
 
 namespace AlternatingMap
-
-section Ring
 
 variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N]
   [Module R N]
@@ -90,51 +80,5 @@ theorem map_succ_sub_zero {n : ℕ} (f : M [⋀^Fin n]→ₗ[R] N) (w : Fin (n +
   simp only [h, Fin.val_succ, pow_succ, mul_neg, mul_one, neg_smul, Finset.sum_neg_distrib,
     Fin.val_zero, pow_zero, one_smul]
   exact sub_eq_add_neg _ _
-
-end Ring
-
-section Semiring
-
-variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N]
-  [Module R N]
-
-/-- If the interior product of `f` with `w` vanishes, then `f` vanishes whenever one of its
-arguments is `w`. -/
-theorem map_update_eq_zero_of_curryLeft_eq_zero {n : ℕ} {f : M [⋀^Fin (n + 1)]→ₗ[R] N} {w : M}
-    (hw : f.curryLeft w = 0) (v : Fin (n + 1) → M) (i : Fin (n + 1)) : f (update v i w) = 0 := by
-  -- With `w` in the first argument, this is the hypothesis.
-  have h₀ (u : Fin (n + 1) → M) : f (update u 0 w) = 0 := by
-    have h := congrArg (fun g : M [⋀^Fin n]→ₗ[R] N ↦ g (Fin.tail u)) hw
-    simp only [curryLeft_apply_apply, zero_apply] at h
-    -- `Matrix.vecCons` is `Fin.cons` by definition.
-    rwa [← Fin.cons_self_tail (update u 0 w), update_self, Fin.tail_update_zero]
-  rcases eq_or_ne i 0 with rfl | hi
-  · exact h₀ v
-  -- Otherwise swapping the arguments `0` and `i` moves `w` to the first argument.
-  have h := f.map_swap_add (update v i w) hi.symm
-  rwa [update_comp_equiv, Equiv.symm_swap, Equiv.swap_apply_right, h₀, zero_add] at h
-
-/-- If the interior product of `f` with `w` vanishes, then adding multiples of `w` to the
-arguments of `f` does not change its value. -/
-theorem map_add_smul_of_curryLeft_eq_zero {n : ℕ} {f : M [⋀^Fin (n + 1)]→ₗ[R] N} {w : M}
-    (hw : f.curryLeft w = 0) (v : Fin (n + 1) → M) (c : Fin (n + 1) → R) :
-    f (fun i ↦ v i + c i • w) = f v := by
-  classical
-  -- Expand multilinearly: every term with some argument `c i • w` vanishes.
-  have h := f.toMultilinearMap.map_add_univ v fun i ↦ c i • w
-  simp only [coe_multilinearMap, Pi.add_def] at h
-  rw [h, Finset.sum_eq_single Finset.univ]
-  · simp
-  · intro s _ hs
-    obtain ⟨i, hi⟩ : ∃ i, i ∉ s := by
-      by_contra! h
-      exact hs (Finset.eq_univ_of_forall h)
-    have hu : s.piecewise v (fun i ↦ c i • w) =
-        update (s.piecewise v fun i ↦ c i • w) i (c i • w) := by
-      rw [eq_comm, update_eq_self_iff, Finset.piecewise_eq_of_notMem _ _ _ hi]
-    rw [hu, f.map_update_smul, map_update_eq_zero_of_curryLeft_eq_zero hw, smul_zero]
-  · exact fun h ↦ absurd (Finset.mem_univ _) h
-
-end Semiring
 
 end AlternatingMap
