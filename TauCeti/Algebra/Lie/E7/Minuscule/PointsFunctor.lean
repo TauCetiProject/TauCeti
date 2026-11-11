@@ -49,8 +49,8 @@ theorem map_rootSubgroupPoints (f : A →+* B) (k : Fin 7 ⊕ Fin 7)
   apply Subtype.ext
   have h := congrArg Subtype.val
     (UniversalEnvelopingAlgebra.map_kostantToralRootSubgroupPoints
-      (e := TauCeti.serreRootGenerator (CartanMatrix.E 7))
-      (h := TauCeti.serreH ℚ (CartanMatrix.E 7)) (ρ := rep) (M := lattice.toAddSubgroup)
+      (e := TauCeti.serreRootGenerator weightTable.cartanMatrix)
+      (h := TauCeti.serreH ℚ weightTable.cartanMatrix) (ρ := rep) (M := lattice.toAddSubgroup)
       (hM := rep_kostantForm_mem_lattice) (hnil := isNilpotent_rep_serreRootGenerator)
       (b := latticeBasis) (wt := TauCeti.DynkinType.e7MinusculeWeight) f k u)
   rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map] at h
@@ -67,8 +67,8 @@ theorem map_weightTorusPoints (f : A →+* B) (s : Fin 7 → Aˣ) :
   apply Subtype.ext
   have h := congrArg Subtype.val
     (UniversalEnvelopingAlgebra.map_kostantToralWeightTorusPoints
-      (e := TauCeti.serreRootGenerator (CartanMatrix.E 7))
-      (h := TauCeti.serreH ℚ (CartanMatrix.E 7)) (ρ := rep) (M := lattice.toAddSubgroup)
+      (e := TauCeti.serreRootGenerator weightTable.cartanMatrix)
+      (h := TauCeti.serreH ℚ weightTable.cartanMatrix) (ρ := rep) (M := lattice.toAddSubgroup)
       (hM := rep_kostantForm_mem_lattice) (hnil := isNilpotent_rep_serreRootGenerator)
       (b := latticeBasis) (wt := TauCeti.DynkinType.e7MinusculeWeight) f s)
   rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map] at h

@@ -149,17 +149,24 @@ theorem compLeft_comp {G : Type*} [SeminormedAddCommGroup G] [Module R G] [Conti
     (hu : ∃ C, ∀ x, ‖u x‖ ≤ C * ‖x‖) (hvu : ∃ C, ∀ x, ‖v.comp u x‖ ≤ C * ‖x‖) :
     compLeft (α := α) (v.comp u) hvu = (compLeft v hv).comp (compLeft u hu) := (rfl)
 
-/-- A uniform bound `C ≥ 0` for `u` is also a uniform bound for its coordinatewise action. -/
-theorem norm_compLeft_apply_le (u : E →L[R] F) {C : ℝ} (hC₀ : 0 ≤ C)
-    (hC : ∀ x, ‖u x‖ ≤ C * ‖x‖) (f : C₀(α, E)) : ‖compLeft u ⟨C, hC⟩ f‖ ≤ C * ‖f‖ :=
-  (norm_le (by positivity)).2 fun x ↦
-    (hC (f x)).trans (mul_le_mul_of_nonneg_left (norm_coe_le_norm f x) hC₀)
+/-- A uniform bound `C` for `u` is also a uniform bound for its coordinatewise action. -/
+theorem norm_compLeft_apply_le (u : E →L[R] F) {C : ℝ}
+    (hC : ∀ x, ‖u x‖ ≤ C * ‖x‖) (f : C₀(α, E)) : ‖compLeft u ⟨C, hC⟩ f‖ ≤ C * ‖f‖ := by
+  rcases le_or_gt 0 C with hC₀ | hC₀
+  · exact (norm_le (by positivity)).2 fun x ↦
+      (hC (f x)).trans (mul_le_mul_of_nonneg_left (norm_coe_le_norm f x) hC₀)
+  · have hf : ∀ x, ‖f x‖ = 0 := fun x ↦ by
+      have h1 := (norm_nonneg (u (f x))).trans (hC (f x))
+      nlinarith [norm_nonneg (f x)]
+    have h0 : ‖f‖ = 0 := le_antisymm ((norm_le le_rfl).2 fun x ↦ (hf x).le) (norm_nonneg _)
+    rw [h0, mul_zero]
+    exact (norm_le le_rfl).2 fun x ↦ by simpa [hf x] using (hC (f x))
 
 /-- The coordinatewise action of a bounded coefficient map is itself uniformly bounded. -/
 theorem exists_norm_compLeft_apply_le (u : E →L[R] F) (hu : ∃ C, ∀ x, ‖u x‖ ≤ C * ‖x‖) :
     ∃ C, ∀ f : C₀(α, E), ‖compLeft u hu f‖ ≤ C * ‖f‖ := by
   obtain ⟨C, hC⟩ := hu
-  refine ⟨max C 0, norm_compLeft_apply_le u (le_max_right C 0) fun x ↦ ?_⟩
+  refine ⟨max C 0, norm_compLeft_apply_le u fun x ↦ ?_⟩
   exact (hC x).trans (mul_le_mul_of_nonneg_right (le_max_left C 0) (norm_nonneg x))
 
 variable (R E) in

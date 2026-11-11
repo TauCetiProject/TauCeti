@@ -9,6 +9,7 @@ public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.Convex.PartitionOfUnity
+import TauCeti.Analysis.InnerProductSpace.BilinearSum
 import TauCeti.Analysis.Matrix.Grothendieck
 import TauCeti.LinearAlgebra.BilinearMap.Sum
 
@@ -96,18 +97,8 @@ private theorem exists_matrix_norm_sub_le [NormalSpace K] [NormalSpace L]
   -- The approximating sum is the matrix sum, and the error is controlled by `δ`.
   set f' : ι → C(K, 𝕜) := fun i ↦ ∑ k : s, f i k • φ k
   set g' : ι → C(L, 𝕜) := fun i ↦ ∑ l : t, g i l • ψ l
-  have hmat : ∑ k : s, ∑ l : t, B (φ k) (ψ l) * ⟪(WithLp.toLp 2 fun i ↦ star (f i k) :
-      EuclideanSpace 𝕜 ι), WithLp.toLp 2 fun i ↦ g i l⟫_𝕜 = ∑ i, B (f' i) (g' i) := by
-    simp only [f', g', apply_sum_smul_sum_smul, smul_eq_mul, EuclideanSpace.inner_toLp_toLp,
-      dotProduct, Pi.star_apply, star_star, Finset.mul_sum]
-    calc _ = ∑ k : s, ∑ l : t, ∑ i, B (φ k) (ψ l) * f i k * g i l :=
-          Finset.sum_congr rfl fun k _ ↦ Finset.sum_congr rfl fun l _ ↦
-            Finset.sum_congr rfl fun i _ ↦ by ring
-      _ = ∑ k : s, ∑ i, ∑ l : t, B (φ k) (ψ l) * f i k * g i l :=
-          Finset.sum_congr rfl fun k _ ↦ Finset.sum_comm
-      _ = ∑ i, ∑ k : s, ∑ l : t, B (φ k) (ψ l) * f i k * g i l := Finset.sum_comm
-      _ = _ := Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun k _ ↦
-          Finset.sum_congr rfl fun l _ ↦ by ring
+  have hmat := sum_apply_sum_smul_sum_smul_eq B φ ψ (fun i (k : s) ↦ f i k)
+    fun i (l : t) ↦ g i l
   rw [hmat, ← Finset.sum_sub_distrib]
   have hterm (i : ι) : ‖B (f i) (g i) - B (f' i) (g' i)‖ ≤ 2 * C * δ := by
     have heq : B (f i) (g i) - B (f' i) (g' i) =

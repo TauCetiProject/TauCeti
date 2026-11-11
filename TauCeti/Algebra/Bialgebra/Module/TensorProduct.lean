@@ -25,9 +25,9 @@ constructs pure tensors. `tensorMap` tensors native `H`-linear intertwiners.
 The coproduct action restricts `tensorPairAction` along `Bialgebra.comulAlgHom`.
 
 `BialgebraModule.Trivial` is the base semiring with `H` acting through its counit. The
-associativity equivalence `assoc` and the unit equivalences `lid` and `rid` are the native
-tensor-product equivalences, which are `H`-linear by coassociativity and the two counit laws;
-`assoc` is natural in tensor products of intertwiners and satisfies Mac Lane's pentagon identity.
+associativity equivalence `assoc` (with its naturality `tensorMap_tensorMap_assoc` and pentagon
+coherence `assoc_pentagon`) and the unit equivalences `lid` and `rid` are the native
+tensor-product equivalences, which are `H`-linear by coassociativity and the two counit laws.
 Together with the trivial module these are the data of the monoidal structure on modules over a
 bialgebra; see C. Kassel, *Quantum Groups*, Chapter III.
 -/
@@ -63,12 +63,12 @@ variable [Module H M] [IsScalarTower R H M] [Module H N] [IsScalarTower R H N]
 
 /-- The representation of `H` on the native tensor product obtained from its coproduct. -/
 noncomputable def tensorAction : H →ₐ[R] Module.End R (M ⊗[R] N) :=
-  (tensorPairAction R H M N).comp (Bialgebra.comulAlgHom R H)
+  (tensorPairAction R M N).comp (Bialgebra.comulAlgHom R H)
 
 /-- The coproduct action is the pair action applied to the coproduct. -/
 theorem tensorAction_apply (h : H) (x : M ⊗[R] N) :
     tensorAction R H M N h x =
-      tensorPairAction R H M N (Coalgebra.comul h) x := (rfl)
+      tensorPairAction R M N (Coalgebra.comul h) x := (rfl)
 
 /-- The coproduct module structure on the tensor carrier. -/
 @[no_expose] noncomputable instance : Module H (Tensor R H M N) :=
@@ -140,13 +140,13 @@ variable {M N} in
 /-- Pure tensors distribute over finite sums in the first factor. -/
 theorem sum_tmul {ι : Type*} (s : Finset ι) (m : ι → M) (n : N) :
     tmul R H (∑ i ∈ s, m i) n = ∑ i ∈ s, tmul R H (m i) n :=
-  (tensorEquiv R H M N).injective <| by simp [TensorProduct.sum_tmul]
+  (tensorEquiv R H M N).injective (by simp [TensorProduct.sum_tmul])
 
 variable {M N} in
 /-- Pure tensors distribute over finite sums in the second factor. -/
-theorem tmul_sum (m : M) {ι : Type*} (s : Finset ι) (n : ι → N) :
+theorem tmul_sum {ι : Type*} (s : Finset ι) (m : M) (n : ι → N) :
     tmul R H m (∑ i ∈ s, n i) = ∑ i ∈ s, tmul R H m (n i) :=
-  (tensorEquiv R H M N).injective <| by simp [TensorProduct.tmul_sum]
+  (tensorEquiv R H M N).injective (by simp [TensorProduct.tmul_sum])
 
 variable {M N} in
 /-- Base scalars may be applied to the first factor. -/
@@ -230,7 +230,7 @@ noncomputable def tensorMap (f : M →ₗ[H] M') (g : N →ₗ[H] N') :
   map_smul' h x := by
     apply (tensorEquiv R H M' N').injective
     simpa [tensorAction_apply] using
-      tensorPairAction_natural R H f g (Coalgebra.comul h) (tensorEquiv R H M N x)
+      tensorPairAction_natural R f g (Coalgebra.comul h) (tensorEquiv R H M N x)
 
 variable {M N} in
 /-- The underlying map of a tensor intertwiner is the native tensor product of maps. -/
@@ -259,39 +259,39 @@ section TensorMapLinearity
 
 variable {M N}
 
-/-- Tensoring with zero on the left gives zero. -/
-@[simp] theorem tensorMap_zero_left (g : N →ₗ[H] N') : tensorMap R H (0 : M →ₗ[H] M') g = 0 := by
-  ext m n; simp
+/-- Tensoring with the zero intertwiner on the left gives zero. -/
+@[simp] theorem tensorMap_zero_left (g : N →ₗ[H] N') : tensorMap R H (0 : M →ₗ[H] M') g = 0 :=
+  Tensor.ext fun _ _ => by simp
 
-/-- Tensoring with zero on the right gives zero. -/
-@[simp] theorem tensorMap_zero_right (f : M →ₗ[H] M') : tensorMap R H f (0 : N →ₗ[H] N') = 0 := by
-  ext m n; simp
+/-- Tensoring with the zero intertwiner on the right gives zero. -/
+@[simp] theorem tensorMap_zero_right (f : M →ₗ[H] M') : tensorMap R H f (0 : N →ₗ[H] N') = 0 :=
+  Tensor.ext fun _ _ => by simp
 
-/-- `tensorMap` is additive in the first intertwiner. -/
-theorem tensorMap_add_left (f₁ f₂ : M →ₗ[H] M') (g : N →ₗ[H] N') :
-    tensorMap R H (f₁ + f₂) g = tensorMap R H f₁ g + tensorMap R H f₂ g := by ext m n; simp
+/-- `tensorMap` is additive in its left intertwiner argument. -/
+@[simp] theorem tensorMap_add_left (f₁ f₂ : M →ₗ[H] M') (g : N →ₗ[H] N') :
+    tensorMap R H (f₁ + f₂) g = tensorMap R H f₁ g + tensorMap R H f₂ g :=
+  Tensor.ext fun _ _ => by simp [add_tmul]
 
-/-- `tensorMap` is additive in the second intertwiner. -/
-theorem tensorMap_add_right (f : M →ₗ[H] M') (g₁ g₂ : N →ₗ[H] N') :
-    tensorMap R H f (g₁ + g₂) = tensorMap R H f g₁ + tensorMap R H f g₂ := by ext m n; simp
+/-- `tensorMap` is additive in its right intertwiner argument. -/
+@[simp] theorem tensorMap_add_right (f : M →ₗ[H] M') (g₁ g₂ : N →ₗ[H] N') :
+    tensorMap R H f (g₁ + g₂) = tensorMap R H f g₁ + tensorMap R H f g₂ :=
+  Tensor.ext fun _ _ => by simp [tmul_add]
 
-/-- `tensorMap` distributes over finite sums in the first intertwiner. -/
-theorem tensorMap_sum_left {ι : Type*} (s : Finset ι) (f : ι → M →ₗ[H] M') (g : N →ₗ[H] N') :
+/-- `tensorMap` commutes with finite sums in its left intertwiner argument. -/
+theorem tensorMap_sum_left {ι : Type*} (s : Finset ι) (f : ι → (M →ₗ[H] M')) (g : N →ₗ[H] N') :
     tensorMap R H (∑ i ∈ s, f i) g = ∑ i ∈ s, tensorMap R H (f i) g := by
-  ext m n; simp [LinearMap.sum_apply, sum_tmul]
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert _ _ ha ih => rw [Finset.sum_insert ha, tensorMap_add_left, ih, Finset.sum_insert ha]
 
-/-- `tensorMap` distributes over finite sums in the second intertwiner. -/
-theorem tensorMap_sum_right {ι : Type*} (s : Finset ι) (f : M →ₗ[H] M') (g : ι → N →ₗ[H] N') :
+/-- `tensorMap` commutes with finite sums in its right intertwiner argument. -/
+theorem tensorMap_sum_right {ι : Type*} (s : Finset ι) (f : M →ₗ[H] M') (g : ι → (N →ₗ[H] N')) :
     tensorMap R H f (∑ i ∈ s, g i) = ∑ i ∈ s, tensorMap R H f (g i) := by
-  ext m n; simp [LinearMap.sum_apply, tmul_sum]
-
-/-- `tensorMap` is `R`-linear in the first intertwiner. -/
-theorem tensorMap_smul_left (r : R) (f : M →ₗ[H] M') (g : N →ₗ[H] N') :
-    tensorMap R H (r • f) g = r • tensorMap R H f g := by ext m n; simp [← smul_tmul']
-
-/-- `tensorMap` is `R`-linear in the second intertwiner. -/
-theorem tensorMap_smul_right (r : R) (f : M →ₗ[H] M') (g : N →ₗ[H] N') :
-    tensorMap R H f (r • g) = r • tensorMap R H f g := by ext m n; simp
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert _ _ ha ih => rw [Finset.sum_insert ha, tensorMap_add_right, ih, Finset.sum_insert ha]
 
 end TensorMapLinearity
 
@@ -308,20 +308,6 @@ variable {M N} in
   apply Tensor.ext
   intro m n
   simp
-
-variable {M N} in
-/-- Tensoring a composite intertwiner with the identity on the right factors as a composite. -/
-@[simp] theorem tensorMap_comp_left (f : M →ₗ[H] M') (f' : M' →ₗ[H] M'') :
-    tensorMap R H (f'.comp f) (LinearMap.id : N →ₗ[H] N) =
-      (tensorMap R H f' LinearMap.id).comp (tensorMap R H f LinearMap.id) := by
-  rw [← tensorMap_comp, LinearMap.id_comp]
-
-variable {M N} in
-/-- Tensoring the identity on the left with a composite intertwiner factors as a composite. -/
-@[simp] theorem tensorMap_comp_right (g : N →ₗ[H] N') (g' : N' →ₗ[H] N'') :
-    tensorMap R H (LinearMap.id : M →ₗ[H] M) (g'.comp g) =
-      (tensorMap R H LinearMap.id g').comp (tensorMap R H LinearMap.id g) := by
-  rw [← tensorMap_comp, LinearMap.id_comp]
 
 variable {M N} in
 /-- Tensor products of module isomorphisms, for the coproduct actions. -/
@@ -383,7 +369,7 @@ the reassociated iterated coproduct. -/
 private theorem assoc_tensorPairAction_left (m : M) (n : N) (p : P) (t : H ⊗[R] H) :
     TensorProduct.assoc R M N P
         (TensorProduct.congr (tensorEquiv R H M N) (LinearEquiv.refl R P)
-          (tensorPairAction R H (Tensor R H M N) P t (tmul R H m n ⊗ₜ[R] p))) =
+          (tensorPairAction R (Tensor R H M N) P t (tmul R H m n ⊗ₜ[R] p))) =
       TensorProduct.map ((LinearMap.toSpanSingleton H M m).restrictScalars R)
         (TensorProduct.map ((LinearMap.toSpanSingleton H N n).restrictScalars R)
           ((LinearMap.toSpanSingleton H P p).restrictScalars R))
@@ -402,7 +388,7 @@ variable {M N P} in
 coproduct. -/
 private theorem tensorPairAction_right (m : M) (n : N) (p : P) (t : H ⊗[R] H) :
     TensorProduct.congr (LinearEquiv.refl R M) (tensorEquiv R H N P)
-        (tensorPairAction R H M (Tensor R H N P) t (m ⊗ₜ[R] tmul R H n p)) =
+        (tensorPairAction R M (Tensor R H N P) t (m ⊗ₜ[R] tmul R H n p)) =
       TensorProduct.map ((LinearMap.toSpanSingleton H M m).restrictScalars R)
         (TensorProduct.map ((LinearMap.toSpanSingleton H N n).restrictScalars R)
           ((LinearMap.toSpanSingleton H P p).restrictScalars R))
@@ -480,47 +466,42 @@ variable {M N P} in
 
 section Naturality
 
-variable {M N P M' N' P' : Type*}
-  [AddCommMonoid M] [Module R M] [Module H M] [IsScalarTower R H M]
-  [AddCommMonoid N] [Module R N] [Module H N] [IsScalarTower R H N]
-  [AddCommMonoid P] [Module R P] [Module H P] [IsScalarTower R H P]
+variable {M N P} {M' N' P' : Type*}
   [AddCommMonoid M'] [Module R M'] [Module H M'] [IsScalarTower R H M']
   [AddCommMonoid N'] [Module R N'] [Module H N'] [IsScalarTower R H N']
   [AddCommMonoid P'] [Module R P'] [Module H P'] [IsScalarTower R H P']
 
-/-- Naturality of `assoc` with respect to tensor products of intertwiners, as an equality of
-linear maps. -/
-theorem tensorMap_tensorMap_comp_assoc_eq (f : M →ₗ[H] M') (g : N →ₗ[H] N') (h : P →ₗ[H] P') :
-    tensorMap R H f (tensorMap R H g h) ∘ₗ (assoc R H M N P).toLinearMap =
-      (assoc R H M' N' P').toLinearMap ∘ₗ tensorMap R H (tensorMap R H f g) h := by
-  refine Tensor.ext fun xy p => ?_
-  induction xy using Tensor.inductionOn with
+/-- The associativity equivalence is natural in all three module factors. -/
+theorem tensorMap_tensorMap_comp_assoc (f : M →ₗ[H] M') (g : N →ₗ[H] N') (h : P →ₗ[H] P') :
+    (tensorMap R H f (tensorMap R H g h)).comp (assoc R H M N P).toLinearMap =
+      (assoc R H M' N' P').toLinearMap.comp (tensorMap R H (tensorMap R H f g) h) := by
+  refine Tensor.ext fun x _ => ?_
+  induction x using Tensor.inductionOn with
   | htmul m n => simp
-  | hadd x y hx hy => simp only [add_tmul, LinearMap.comp_apply, map_add, hx, hy]
+  | hadd _ _ hx hy => simp only [add_tmul, map_add, hx, hy]
 
-/-- Naturality of `assoc` with respect to tensor products of intertwiners. -/
+/-- Pointwise naturality of the associativity equivalence with respect to `tensorMap`. -/
 theorem tensorMap_tensorMap_assoc (f : M →ₗ[H] M') (g : N →ₗ[H] N') (h : P →ₗ[H] P')
     (x : Tensor R H (Tensor R H M N) P) :
     tensorMap R H f (tensorMap R H g h) (assoc R H M N P x) =
       assoc R H M' N' P' (tensorMap R H (tensorMap R H f g) h x) :=
-  congr($(tensorMap_tensorMap_comp_assoc_eq R H f g h) x)
+  LinearMap.congr_fun (tensorMap_tensorMap_comp_assoc R H f g h) x
 
-/-- Naturality of `assoc.symm` with respect to tensor products of intertwiners, as an equality
-of linear maps. -/
-theorem tensorMap_tensorMap_comp_assoc_symm_eq (f : M →ₗ[H] M') (g : N →ₗ[H] N') (h : P →ₗ[H] P') :
-    tensorMap R H (tensorMap R H f g) h ∘ₗ (assoc R H M N P).symm.toLinearMap =
-      (assoc R H M' N' P').symm.toLinearMap ∘ₗ tensorMap R H f (tensorMap R H g h) := by
-  refine Tensor.ext fun m np => ?_
-  induction np using Tensor.inductionOn with
+/-- The inverse associativity equivalence is natural in all three module factors. -/
+theorem tensorMap_tensorMap_comp_assoc_symm (f : M →ₗ[H] M') (g : N →ₗ[H] N') (h : P →ₗ[H] P') :
+    (tensorMap R H (tensorMap R H f g) h).comp (assoc R H M N P).symm.toLinearMap =
+      (assoc R H M' N' P').symm.toLinearMap.comp (tensorMap R H f (tensorMap R H g h)) := by
+  refine Tensor.ext fun _ x => ?_
+  induction x using Tensor.inductionOn with
   | htmul n p => simp
-  | hadd x y hx hy => simp only [tmul_add, LinearMap.comp_apply, map_add, hx, hy]
+  | hadd _ _ hx hy => simp only [tmul_add, map_add, hx, hy]
 
-/-- Naturality of `assoc.symm` with respect to tensor products of intertwiners. -/
+/-- Pointwise naturality of the inverse associativity equivalence with respect to `tensorMap`. -/
 theorem tensorMap_tensorMap_assoc_symm (f : M →ₗ[H] M') (g : N →ₗ[H] N') (h : P →ₗ[H] P')
     (x : Tensor R H M (Tensor R H N P)) :
     tensorMap R H (tensorMap R H f g) h ((assoc R H M N P).symm x) =
       (assoc R H M' N' P').symm (tensorMap R H f (tensorMap R H g h) x) :=
-  congr($(tensorMap_tensorMap_comp_assoc_symm_eq R H f g h) x)
+  LinearMap.congr_fun (tensorMap_tensorMap_comp_assoc_symm R H f g h) x
 
 end Naturality
 
@@ -528,29 +509,29 @@ section Pentagon
 
 variable (Q : Type*) [AddCommMonoid Q] [Module R Q] [Module H Q] [IsScalarTower R H Q]
 
-/-- Mac Lane's pentagon identity for the coproduct tensor associator: the two reassociation
-paths from `((M ⊗ N) ⊗ P) ⊗ Q` to `M ⊗ (N ⊗ (P ⊗ Q))` agree as `H`-linear equivalences. -/
+/-- Mac Lane's pentagon identity for the coproduct tensor associativity equivalence: the two
+ways of reassociating `((M ⊗ N) ⊗ P) ⊗ Q` into `M ⊗ (N ⊗ (P ⊗ Q))` agree. -/
 theorem assoc_pentagon :
     (assoc R H (Tensor R H M N) P Q).trans (assoc R H M N (Tensor R H P Q)) =
-      (tensorCongr R H (assoc R H M N P) (LinearEquiv.refl H Q)).trans
-        ((assoc R H M (Tensor R H N P) Q).trans
-          (tensorCongr R H (LinearEquiv.refl H M) (assoc R H N P Q))) := by
-  refine LinearEquiv.toLinearMap_injective <| Tensor.ext fun xyz q => ?_
-  induction xyz using Tensor.inductionOn with
-  | hadd x y hx hy => simp only [add_tmul, map_add, hx, hy]
-  | htmul xy p =>
-    induction xy using Tensor.inductionOn with
-    | hadd x y hx hy => simp only [add_tmul, map_add, hx, hy]
+      ((tensorCongr R H (assoc R H M N P) (LinearEquiv.refl H Q)).trans
+        (assoc R H M (Tensor R H N P) Q)).trans
+        (tensorCongr R H (LinearEquiv.refl H M) (assoc R H N P Q)) := by
+  refine LinearEquiv.toLinearMap_injective (Tensor.ext fun x _ => ?_)
+  induction x using Tensor.inductionOn with
+  | hadd _ _ hx hy => simp only [add_tmul, map_add, hx, hy]
+  | htmul y _ =>
+    induction y using Tensor.inductionOn with
+    | hadd _ _ hy hz => simp only [add_tmul, map_add, hy, hz]
     | htmul m n => simp
 
 variable {M N P Q} in
-/-- Pointwise form of Mac Lane's pentagon identity for the coproduct tensor associator. -/
-theorem assoc_assoc (x : Tensor R H (Tensor R H (Tensor R H M N) P) Q) :
+/-- Pointwise form of Mac Lane's pentagon identity for `BialgebraModule.assoc`. -/
+theorem assoc_pentagon_apply (x : Tensor R H (Tensor R H (Tensor R H M N) P) Q) :
     assoc R H M N (Tensor R H P Q) (assoc R H (Tensor R H M N) P Q x) =
       tensorMap R H LinearMap.id (assoc R H N P Q).toLinearMap
         (assoc R H M (Tensor R H N P) Q
           (tensorMap R H (assoc R H M N P).toLinearMap LinearMap.id x)) :=
-  congr($(congrArg LinearEquiv.toLinearMap (assoc_pentagon R H M N P Q)) x)
+  LinearEquiv.congr_fun (assoc_pentagon R H M N P Q) x
 
 end Pentagon
 
@@ -611,7 +592,7 @@ followed by the action on the other factor. -/
 private theorem lid_tensorPairAction (r : Trivial R H) (m : M) (t : H ⊗[R] H) :
     TensorProduct.lid R M
         (TensorProduct.congr (trivialEquiv R H) (LinearEquiv.refl R M)
-          (tensorPairAction R H (Trivial R H) M t (r ⊗ₜ[R] m))) =
+          (tensorPairAction R (Trivial R H) M t (r ⊗ₜ[R] m))) =
       trivialEquiv R H r •
         TensorProduct.lid R H (Coalgebra.counit.rTensor H t) • m := by
   induction t using TensorProduct.inductionOn with
@@ -624,7 +605,7 @@ contraction followed by the action on the other factor. -/
 private theorem rid_tensorPairAction (m : M) (r : Trivial R H) (t : H ⊗[R] H) :
     TensorProduct.rid R M
         (TensorProduct.congr (LinearEquiv.refl R M) (trivialEquiv R H)
-          (tensorPairAction R H M (Trivial R H) t (m ⊗ₜ[R] r))) =
+          (tensorPairAction R M (Trivial R H) t (m ⊗ₜ[R] r))) =
       trivialEquiv R H r •
         TensorProduct.rid R H (Coalgebra.counit.lTensor H t) • m := by
   induction t using TensorProduct.inductionOn with

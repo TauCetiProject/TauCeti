@@ -350,6 +350,39 @@ theorem finsum_weight_traceDetFiber_add_two (hn : 0 < n) :
 
 /-! ### Very negative trace -/
 
+/-- For `t ≤ -D`, the third summand of the weight of `⟨a, b, c, d⟩` is a single chain weight. -/
+private theorem weight₃_eq_of_le {a b c d D : ℤ} (hD : 0 < D)
+    (hdisc : (a - d) ^ 2 + 4 * b * c = -D) (htr : a + d = t) (ht : t ≤ -D) :
+    weight₃ a b c d = chainWeight₄ 0 (a - d) c (-b) := by
+  unfold weight₃
+  split_ifs with hg
+  · rfl
+  · by_contra hne
+    obtain ⟨h0, hy, hz⟩ := le_of_chainWeight₄_ne_zero (Ne.symm hne)
+    have hc : 0 < c := by
+      rcases hy.lt_or_eq with hy | hy
+      · omega
+      · nlinarith
+    -- `3 c² ≤ D`, so `a - d ≤ c ≤ D ≤ -t`
+    have : 3 * c ^ 2 ≤ D := by nlinarith [mul_le_mul_of_nonneg_left hz hc.le]
+    have : c ≤ D := by nlinarith
+    omega
+
+/-- For `t ≤ -D`, the fourth summand of the weight of `⟨a, b, c, d⟩` is a single chain weight. -/
+private theorem weight₄_eq_of_le {a b c d D : ℤ} (hD : 0 < D)
+    (hdisc : (a - d) ^ 2 + 4 * b * c = -D) (htr : a + d = t) (ht : t ≤ -D) :
+    weight₄ a b c d = chainWeight₄ 0 (a - d) (-b) c := by
+  unfold weight₄
+  split_ifs with hg
+  · rfl
+  · by_contra hne
+    obtain ⟨h0, hy, hz⟩ := le_of_chainWeight₄_ne_zero (Ne.symm hne)
+    have hb : 0 < -b := by
+      rcases hy.lt_or_eq with hy | hy
+      · omega
+      · nlinarith
+    omega
+
 open BinaryQuadraticForm in
 /-- For `t ≤ -D`, only `T₃` and `T₄` contribute to the weight of a matrix of trace `t` and
 determinant `n`, without their second-line conditions; in terms of `Q_M = ⟨a', b', c'⟩` their
@@ -388,31 +421,8 @@ private theorem weight_eq_of_le {M : Matrix (Fin 2) (Fin 2) ℤ} {D : ℤ} (hD :
         have hxy : 0 ≤ 4 * -b - (a - d) := by omega
         nlinarith [mul_nonneg hzy hx₀, mul_nonneg hy₁ hxy]
     · rfl
-  have h₃ : weight₃ a b c d = chainWeight₄ 0 (a - d) c (-b) := by
-    unfold weight₃
-    split_ifs with hg
-    · rfl
-    · by_contra hne
-      obtain ⟨h0, hy, hz⟩ := le_of_chainWeight₄_ne_zero (Ne.symm hne)
-      have hc : 0 < c := by
-        rcases hy.lt_or_eq with hy | hy
-        · omega
-        · nlinarith
-      -- `3 c² ≤ D`, so `a - d ≤ c ≤ D ≤ -t`
-      have : 3 * c ^ 2 ≤ D := by nlinarith [mul_le_mul_of_nonneg_left hz hc.le]
-      have : c ≤ D := by nlinarith
-      omega
-  have h₄ : weight₄ a b c d = chainWeight₄ 0 (a - d) (-b) c := by
-    unfold weight₄
-    split_ifs with hg
-    · rfl
-    · by_contra hne
-      obtain ⟨h0, hy, hz⟩ := le_of_chainWeight₄_ne_zero (Ne.symm hne)
-      have hb : 0 < -b := by
-        rcases hy.lt_or_eq with hy | hy
-        · omega
-        · nlinarith
-      omega
+  have h₃ := weight₃_eq_of_le hD hdisc htr ht
+  have h₄ := weight₄_eq_of_le hD hdisc htr ht
   rw [h₁, h₂, h₃, h₄]
   ring
 

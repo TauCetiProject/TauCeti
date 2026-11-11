@@ -63,6 +63,9 @@ operators, whose Fredholm determinants are entire series.
 * `PowerSeries.IsEntire.add_divByMonic` and `PowerSeries.IsEntire.smul_divByMonic`, with their
   `modByMonic` companions: on entire series, quotient and remainder are additive and
   `R`-linear.
+* `PowerSeries.IsEntire.tendsto_coeff_divByMonic_trunc` and
+  `PowerSeries.IsEntire.tendsto_coeff_modByMonic_trunc`: the quotients and remainders of the
+  polynomial truncations converge coefficientwise.
 * `PowerSeries.IsEntire.map_divByMonic` and `PowerSeries.IsEntire.map_modByMonic`: continuous
   coefficient homomorphisms commute with quotient and remainder.
 * `PowerSeries.divByMonic_coe` and `PowerSeries.modByMonic_coe`: on polynomials, these are
@@ -323,6 +326,36 @@ theorem IsEntire.smul_divByMonic (hf : f.IsEntire) (a : R) (p : Polynomial R) :
 theorem IsEntire.smul_modByMonic (hf : f.IsEntire) (a : R) (p : Polynomial R) :
     (a • f).modByMonic p = a • f.modByMonic p := by
   rw [modByMonic, modByMonic, hf.smul_divByMonic, ← map_smul, mul_smul_comm, smul_sub]
+
+/-- The quotients of the polynomial truncations of an entire series converge coefficientwise to
+its quotient: each coefficient of the quotient of `trunc N f` is a partial sum of the series
+defining that of `f`. -/
+theorem IsEntire.tendsto_coeff_divByMonic_trunc (hf : f.IsEntire) (p : Polynomial R) (n : ℕ) :
+    Tendsto (fun N ↦ coeff n ((trunc N f : R⟦X⟧).divByMonic p)) atTop
+      (𝓝 (coeff n (f.divByMonic p))) := by
+  refine ((hasSum_coeff_divByMonic hf p n).tendsto_sum_nat.comp
+    (tendsto_sub_atTop_nat (n + p.natDegree))).congr fun N ↦ ?_
+  have hcoeff (k : ℕ) : coeff (n + p.natDegree + k) (trunc N f : R⟦X⟧) =
+      if k < N - (n + p.natDegree) then coeff (n + p.natDegree + k) f else 0 := by
+    rw [Polynomial.coeff_coe, coeff_trunc]
+    exact if_congr (by omega) rfl rfl
+  rw [Function.comp_apply, coeff_divByMonic, tsum_eq_sum (s := range (N - (n + p.natDegree)))
+    fun k hk ↦ by rw [hcoeff, ite_eq_right (by simpa using hk), zero_mul]]
+  exact sum_congr rfl fun k hk ↦ by rw [hcoeff, ite_eq_left (by simpa using hk)]
+
+/-- The remainders of the polynomial truncations of an entire series converge coefficientwise to
+its remainder. -/
+theorem IsEntire.tendsto_coeff_modByMonic_trunc (hf : f.IsEntire) (p : Polynomial R) (n : ℕ) :
+    Tendsto (fun N ↦ ((trunc N f : R⟦X⟧).modByMonic p).coeff n) atTop
+      (𝓝 ((f.modByMonic p).coeff n)) := by
+  simp only [coeff_modByMonic]
+  split_ifs
+  · simp only [map_sub, coeff_mul, Polynomial.coeff_coe]
+    refine Tendsto.sub (tendsto_const_nhds.congr' ?_) (tendsto_finsetSum _ fun x _ ↦
+      (hf.tendsto_coeff_divByMonic_trunc p x.2).const_mul _)
+    filter_upwards [eventually_gt_atTop n] with N hN
+    rw [coeff_trunc, ite_eq_left hN]
+  · exact tendsto_const_nhds
 
 section Map
 

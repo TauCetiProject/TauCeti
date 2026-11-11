@@ -153,6 +153,57 @@ private theorem exists_backward_break_of_index_one {p r y : E}
   exact ⟨z, ⟨hza, hzS⟩, n ∘ ψ, t ∘ ψ, hnψ, ht.comp hψ.tendsto_atTop,
     hzlim.comp hψ.tendsto_atTop⟩
 
+/-- **Endpoints of a limit on a regular level.** A sequence in `Wᵘ(p) ∩ Wˢ(q) ∩ {f = c}` on a
+regular level has a subsequence converging to a point `y` of the level, which lies in
+`Wᵘ(a) ∩ Wˢ(b)` for critical points `a`, `b` with `morseIndex f b < morseIndex f a`, and
+`a` (resp. `b`) has strictly smaller (resp. larger) index than `p` (resp. `q`) unless it
+equals it. -/
+private theorem exists_subseq_endpoints_of_regular_level {p q : E} {c : ℝ}
+    (hreg : ∀ y, f y = c → fderiv ℝ f y ≠ 0) {u : ℕ → E}
+    (hu : ∀ n, u n ∈ Flow.unstableSet (negativeGradientFlow f hf) p ∩
+      Flow.stableSet (negativeGradientFlow f hf) q ∩ {z | f z = c}) :
+    ∃ (n : ℕ → ℕ) (y a b : E), StrictMono n ∧ f y = c ∧
+      Tendsto (fun k ↦ u (n k)) atTop (𝓝 y) ∧
+      IsNondegenerateCriticalPoint f a ∧ IsNondegenerateCriticalPoint f b ∧
+      y ∈ Flow.unstableSet (negativeGradientFlow f hf) a ∩
+        Flow.stableSet (negativeGradientFlow f hf) b ∧
+      morseIndex f b < morseIndex f a ∧
+      (a ≠ p → morseIndex f a < morseIndex f p) ∧
+      (b ≠ q → morseIndex f q < morseIndex f b) := by
+  let φ := negativeGradientFlow f hf
+  obtain ⟨y, -, n, hn, hlim⟩ := (hcompact c).tendsto_subseq
+    (x := u) (fun n ↦ (hu n).2.le)
+  have hyc : f y = c :=
+    (isClosed_eq hfs.continuous continuous_const).mem_of_tendsto hlim
+      (Eventually.of_forall fun k ↦ (hu (n k)).2)
+  have hyU : y ∈ closure (Flow.unstableSet φ p) :=
+    mem_closure_of_tendsto hlim (Eventually.of_forall fun k ↦ (hu (n k)).1.1)
+  have hyS : y ∈ closure (Flow.stableSet φ q) :=
+    mem_closure_of_tendsto hlim (Eventually.of_forall fun k ↦ (hu (n k)).1.2)
+  obtain ⟨a, ha, hya⟩ :=
+    exists_unstableSet_of_mem_closure_unstableSet_of_isCompact_sublevel
+      hfs hf hM (hcompact _) hyU
+  obtain ⟨b, hb, hyb⟩ := exists_stableSet_of_isCompact_sublevel hfs hf hM y (hcompact _)
+  have hab : a ≠ b := by
+    intro hab
+    subst b
+    have hya' := Flow.IsNegativeGradient.eq_of_mem_unstableSet_inter_stableSet
+      (isNegativeGradient_negativeGradientFlow f hf)
+      (fun _ ↦ (hfs.differentiable (by norm_num)).differentiableAt)
+      hfs.continuous.continuousAt ⟨hya, hyb⟩
+    exact hreg y hyc (hya' ▸ ha.fderiv_eq_zero)
+  have hba := htr.morseIndex_lt ha hb hfs hab hya hyb
+  have hpa : a ≠ p → morseIndex f a < morseIndex f p := fun hap ↦
+    ha.morseIndex_lt_of_mem_closure_unstableSet_inter_unstableSet hfs hf (Ne.symm hap)
+      ⟨y, hyU, hya⟩
+      (fun {_} hw ↦ exists_unstableSet_of_mem_closure_unstableSet_of_isCompact_sublevel
+        hfs hf hM (hcompact _) hw) htr
+  have hqb : b ≠ q → morseIndex f q < morseIndex f b := fun hbq ↦
+    hb.morseIndex_lt_of_mem_closure_stableSet_inter_stableSet hfs hf (Ne.symm hbq)
+      ⟨y, hyS, hyb⟩
+      (fun {_} _ ↦ exists_stableSet_of_isCompact_sublevel hfs hf hM _ (hcompact _)) htr
+  exact ⟨n, y, a, b, hn, hyc, hlim, ha, hb, ⟨hya, hyb⟩, hba, hpa, hqb⟩
+
 /-- **Index-two sequential compactness at a regular intermediate level.** Every sequence in
 `Wᵘ(p) ∩ Wˢ(q) ∩ {f = c}` has a subsequence converging locally uniformly in time to an
 unbroken connecting trajectory or to one component of a pair broken at a critical point `r`.
@@ -195,37 +246,8 @@ theorem exists_subseq_unbroken_or_broken_of_morseIndex_eq_add_two
   -- Strict index drops leave at most one extra component; a second exit-point extraction
   -- recovers it from the original sequence while preserving the first orbit limit.
   let φ := negativeGradientFlow f hf
-  obtain ⟨y, -, n, hn, hlim⟩ := (hcompact c).tendsto_subseq
-    (x := u) (fun n ↦ (hu n).2.le)
-  have hyc : f y = c :=
-    (isClosed_eq hfs.continuous continuous_const).mem_of_tendsto hlim
-      (Eventually.of_forall fun k ↦ (hu (n k)).2)
-  have hyU : y ∈ closure (Flow.unstableSet φ p) :=
-    mem_closure_of_tendsto hlim (Eventually.of_forall fun k ↦ (hu (n k)).1.1)
-  have hyS : y ∈ closure (Flow.stableSet φ q) :=
-    mem_closure_of_tendsto hlim (Eventually.of_forall fun k ↦ (hu (n k)).1.2)
-  obtain ⟨a, ha, hya⟩ :=
-    exists_unstableSet_of_mem_closure_unstableSet_of_isCompact_sublevel
-      hfs hf hM (hcompact _) hyU
-  obtain ⟨b, hb, hyb⟩ := exists_stableSet_of_isCompact_sublevel hfs hf hM y (hcompact _)
-  have hab : a ≠ b := by
-    intro hab
-    subst b
-    have hya' := Flow.IsNegativeGradient.eq_of_mem_unstableSet_inter_stableSet
-      (isNegativeGradient_negativeGradientFlow f hf)
-      (fun _ ↦ (hfs.differentiable (by norm_num)).differentiableAt)
-      hfs.continuous.continuousAt ⟨hya, hyb⟩
-    exact hreg y hyc (hya' ▸ ha.fderiv_eq_zero)
-  have hba := htr.morseIndex_lt ha hb hfs hab hya hyb
-  have hpa : a ≠ p → morseIndex f a < morseIndex f p := fun hap ↦
-    ha.morseIndex_lt_of_mem_closure_unstableSet_inter_unstableSet hfs hf (Ne.symm hap)
-      ⟨y, hyU, hya⟩
-      (fun {_} hw ↦ exists_unstableSet_of_mem_closure_unstableSet_of_isCompact_sublevel
-        hfs hf hM (hcompact _) hw) htr
-  have hqb : b ≠ q → morseIndex f q < morseIndex f b := fun hbq ↦
-    hb.morseIndex_lt_of_mem_closure_stableSet_inter_stableSet hfs hf (Ne.symm hbq)
-      ⟨y, hyS, hyb⟩
-      (fun {_} _ ↦ exists_stableSet_of_isCompact_sublevel hfs hf hM _ (hcompact _)) htr
+  obtain ⟨n, y, a, b, hn, hyc, hlim, ha, hb, ⟨hya, hyb⟩, hba, hpa, hqb⟩ :=
+    exists_subseq_endpoints_of_regular_level hfs hf hM hcompact htr hreg hu
   -- Three nonconstant components would force an index drop of at least three.
   have hends : a = p ∨ b = q := by
     by_cases hap : a = p

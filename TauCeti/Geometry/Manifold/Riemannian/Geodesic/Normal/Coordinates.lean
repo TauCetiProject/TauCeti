@@ -111,6 +111,7 @@ variable [I.Boundaryless] [T2Space M]
 
 namespace IsNormalDomain
 
+omit [I.Boundaryless] [T2Space M] in
 /-- **The normal coordinate field at `exp_p v`** is the differential of the exponential map at `v`
 applied to `w`. -/
 @[simp] theorem normalCoordinateField_riemannianExp (h : IsNormalDomain I M p U) (hv : v ∈ U)
@@ -124,12 +125,25 @@ applied to `w`. -/
     (h.mfderiv_riemannianLog_comp_mfderiv_riemannianExp hv)
     (h.mfderiv_riemannianExp_comp_mfderiv_riemannianLog hv)) _
 
+omit [I.Boundaryless] [T2Space M] in
+/-- Normal coordinate fields associated to independent tangent vectors remain linearly independent
+on the normal neighbourhood. -/
+theorem linearIndependent_normalCoordinateField (h : IsNormalDomain I M p U)
+    {ι : Type*} {v : ι → TangentSpace I p} (hv : LinearIndependent ℝ v)
+    {q : M} (hq : q ∈ riemannianExp I M p '' U) :
+    LinearIndependent ℝ (fun i ↦ normalCoordinateField I M p U (v i) q) := by
+  obtain ⟨w, hw, rfl⟩ := hq
+  simp_rw [h.normalCoordinateField_riemannianExp hw]
+  exact hv.map' _ (LinearMap.ker_eq_bot.mpr
+    ((h.isLocalDiffeomorphOn ⟨w, hw⟩).isInvertible_mfderiv (by simp)).injective)
+
 /-- **The normal coordinate field at the centre** `p` is the tangent vector it is defined by. -/
 @[simp] theorem normalCoordinateField_self (h : IsNormalDomain I M p U) (w : TangentSpace I p) :
     normalCoordinateField I M p U w p = w := by
   have h0 := h.normalCoordinateField_riemannianExp h.zero_mem w
   rwa [mfderiv_riemannianExp_apply_zero, riemannianExp_zero] at h0
 
+omit [I.Boundaryless] [T2Space M] in
 /-- **The normal coordinate fields are smooth** on the normal neighbourhood. -/
 theorem contMDiffOn_normalCoordinateField (h : IsNormalDomain I M p U) (w : TangentSpace I p) :
     CMDiff[riemannianExp I M p '' U] ∞ (T% (normalCoordinateField I M p U w)) := by
@@ -138,6 +152,7 @@ theorem contMDiffOn_normalCoordinateField (h : IsNormalDomain I M p U) (w : Tang
     (h.contMDiffOn_riemannianLog.contMDiffAt (h.isOpen_image.mem_nhds hq))
     (h.isInvertible_mfderiv_riemannianLog hq) (by simp)).contMDiffWithinAt
 
+omit [I.Boundaryless] [T2Space M] in
 /-- The normal coordinate fields are differentiable at every point of the normal
 neighbourhood. -/
 theorem mdifferentiableAt_normalCoordinateField (h : IsNormalDomain I M p U)

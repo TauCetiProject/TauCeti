@@ -283,7 +283,7 @@ theorem isCompletelyContinuous_iff_forall_mapsTo {u : M →L[R] N} {M₀ : Set M
   obtain ⟨g, hg, hug⟩ := h _ (Metric.ball_mem_nhds 0 (mul_pos (half_pos hε) hϖ))
   refine ⟨g, hg, ?_⟩
   have hle := ϖ.ringOpNorm_le_of_forall_norm_lt (u - g) k (by rwa [zpow_natCast])
-    (mul_pos (half_pos hε) hϖ).le fun x hx ↦
+    fun x hx ↦
       (mem_ball_zero_iff.mp (hug (hrM₀ (mem_ball_zero_iff.mpr hx)))).le
   rw [mul_inv_cancel_right₀ hϖ.ne'] at hle
   exact hle.trans_lt (half_lt_self hε)

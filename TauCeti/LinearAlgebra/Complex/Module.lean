@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Complex.Module
 import Mathlib.Algebra.Ring.Action.ConjAct
+import Mathlib.Tactic.FastInstance
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
@@ -19,17 +20,41 @@ This decomposition applies to any real module structure compatible with the comp
 
 For a real-linear map `L` into a complex module, its defect from complex linearity
 `e ↦ L e + I • L (I * e)` is conjugate-linear and is therefore determined by its value at `1`.
+A real-linear map vanishing at `I` is unchanged by conjugating its argument
+(`LinearMap.apply_conj_of_apply_I_eq_zero`). A real-linear map with `L I = A (L 1)`, for `A`
+squaring to `-1`, satisfies `L (b * I) = A (L b)` for every `b`
+(`LinearMap.apply_mul_I_eq_of_apply_I_eq`), and a real-linear map intertwines multiplication by
+`I` with such an `A` exactly when `L 1 + A (L I) = 0` (`LinearMap.forall_apply_I_mul_eq_iff`).
+A a real-bilinear map vanishing at `(1, I)` and
+`(I, 1)` is unchanged by conjugating both arguments.
 Multiplication by `I` and by `-I` are mutually inverse on any complex multiplication action.
+Multiplication by `I` squares to `-1` as a real-linear endomorphism of a complex module
+(`Complex.toLinearMap_I_comp_toLinearMap_I`).
 
 A real-linear map between complex modules that commutes with multiplication by `I` is complex
-linear (`LinearMap.complexOfMapISmul`).
+linear (`LinearMap.complexOfMapISmul`). Conversely, a conjugate-linear equivalence between complex
+modules is real-linear (`LinearEquiv.toRealLinearEquiv`). The non-instance
+`RestrictScalars.realModule` normalizes the restricted real module at the additive-group parent
+for use in constructions on real modules.
 
 Likewise an `ℝ`-algebra map out of the complex plane is determined by its value at `I`, so a
 conjugacy `g z = w * f z * w⁻¹` by a unit `w` between two such maps holds everywhere once it holds
 at `I` (`Units.conj_complexAlgHom_apply`).
+
+The real part `ℜ a = (a + a*) / 2` of an element of a complex star module is `a` corrected by
+half its skew difference `a* - a` (`TauCeti.realPart_eq_add_half_star_sub`).
 -/
 
 public section
+
+/-- The restricted real module indexed by the inherited additive-group parent.
+This normalizes the inherited additive-monoid instance of the scalar-restriction type alias. -/
+@[expose, instance_reducible]
+noncomputable def RestrictScalars.realModule (M : Type*) [AddCommGroup M] [Module ℂ M] :
+    @Module ℝ (RestrictScalars ℝ ℂ M) Real.semiring
+      (instAddCommGroupRestrictScalars ℝ ℂ M).toAddCommMonoid :=
+  fast_instance% RestrictScalars.module ℝ ℂ M
+
 
 namespace LinearMap
 
@@ -60,6 +85,49 @@ theorem conj_smul_apply_one_add_I_smul_apply_I {F : Type*} [AddCommGroup F] [Mod
   · ring
   · linear_combination -(e.im : ℂ) * I_sq
 
+/-- A real-linear map out of the complex plane that vanishes at `I` is unchanged by conjugating
+its argument. -/
+theorem apply_conj_of_apply_I_eq_zero {F : Type*} [AddCommGroup F] [Module ℝ F]
+    (L : ℂ →ₗ[ℝ] F) (hL : L I = 0) (z : ℂ) : L (conj z) = L z := by
+  rw [L.apply_eq_re_smul_one_add_im_smul_I (conj z), L.apply_eq_re_smul_one_add_im_smul_I z, hL]
+  simp
+
+/-- If a real-linear map out of the complex plane sends `I` to `A (L 1)`, where `A` squares to
+`-1`, then so does its precomposition with multiplication by any `b`: `L (b * I) = A (L b)`. -/
+theorem apply_mul_I_eq_of_apply_I_eq {F : Type*} [AddCommGroup F] [Module ℝ F]
+    (L : ℂ →ₗ[ℝ] F) {A : F →ₗ[ℝ] F} (hL : L I = A (L 1)) (hA : ∀ v, A (A v) = -v) (b : ℂ) :
+    L (b * I) = A (L b) := by
+  rw [L.apply_eq_re_smul_one_add_im_smul_I, L.apply_eq_re_smul_one_add_im_smul_I b, hL]
+  simp [hA]
+  module
+
+/-- A real-linear map `L` out of the complex plane intertwines multiplication by `I` with an
+endomorphism `A` squaring to `-1` exactly when `L 1 + A (L I) = 0`: the value at `I` is then
+determined by the value at `1`. -/
+theorem forall_apply_I_mul_eq_iff {F : Type*} [AddCommGroup F] [Module ℝ F]
+    (L : ℂ →ₗ[ℝ] F) {A : F →ₗ[ℝ] F} (hA : ∀ v, A (A v) = -v) :
+    (∀ w, L (I * w) = A (L w)) ↔ L 1 + A (L I) = 0 := by
+  refine ⟨fun h => ?_, fun h w => ?_⟩
+  · rw [← mul_one I, h 1, hA, add_neg_cancel]
+  · have hI : L I = A (L 1) := by
+      have h' := congrArg A h
+      rw [map_add, hA, map_zero] at h'
+      exact (add_neg_eq_zero.1 h').symm
+    rw [mul_comm]
+    exact L.apply_mul_I_eq_of_apply_I_eq hI hA w
+
+/-- A real-bilinear map on the complex plane with `B 1 I = B I 1 = 0` is unchanged by
+conjugating both arguments. -/
+theorem apply_conj_apply_conj_of_apply_one_I_eq_zero_of_apply_I_one_eq_zero {F : Type*}
+    [AddCommGroup F] [Module ℝ F] (B : ℂ →ₗ[ℝ] ℂ →ₗ[ℝ] F) (h₁ : B 1 I = 0) (h₂ : B I 1 = 0)
+    (v e : ℂ) : B (conj v) (conj e) = B v e := by
+  rw [B.apply_eq_re_smul_one_add_im_smul_I (conj v), B.apply_eq_re_smul_one_add_im_smul_I v]
+  simp only [LinearMap.add_apply, LinearMap.smul_apply]
+  rw [(B 1).apply_eq_re_smul_one_add_im_smul_I (conj e),
+    (B I).apply_eq_re_smul_one_add_im_smul_I (conj e), (B 1).apply_eq_re_smul_one_add_im_smul_I e,
+    (B I).apply_eq_re_smul_one_add_im_smul_I e, h₁, h₂]
+  simp
+
 end LinearMap
 
 namespace Complex
@@ -69,6 +137,12 @@ theorem I_smul_neg_I_smul {X : Type*} [MulAction ℂ X] (x : X) : I • (-I • 
 
 theorem neg_I_smul_I_smul {X : Type*} [MulAction ℂ X] (x : X) : -I • (I • x) = x := by
   rw [smul_smul, neg_mul, I_mul_I, neg_neg, one_smul]
+
+/-- Multiplication by `I` squares to `-1` as a real-linear endomorphism of a complex module. -/
+theorem toLinearMap_I_comp_toLinearMap_I {W : Type*} [AddCommGroup W] [Module ℂ W] [Module ℝ W]
+    [IsScalarTower ℝ ℂ W] :
+    DistribSMul.toLinearMap ℝ W I ∘ₗ DistribSMul.toLinearMap ℝ W I = -LinearMap.id :=
+  LinearMap.ext fun v ↦ by simp [smul_smul]
 
 /-- Decompose a complex scalar action into its real and imaginary parts. -/
 @[simp]
@@ -80,6 +154,18 @@ lemma re_smul_add_im_smul {V : Type*} [AddCommGroup V] [Module ℝ V] [Module �
       ((LinearMap.toSpanSingleton ℂ V v).restrictScalars ℝ) z).symm
 
 end Complex
+
+namespace TauCeti
+
+open scoped ComplexStarModule in
+/-- The real part `(a + a*) / 2` is `a` plus half the skew difference `a* - a`. -/
+theorem realPart_eq_add_half_star_sub {A : Type*} [AddCommGroup A] [Module ℂ A]
+    [StarAddMonoid A] [StarModule ℂ A] (a : A) :
+    (ℜ a : A) = a + (2 : ℝ)⁻¹ • (star a - a) := by
+  rw [realPart_apply_coe]
+  module
+
+end TauCeti
 
 section ComplexOfMapISmul
 
@@ -111,6 +197,31 @@ theorem restrictScalars_complexOfMapISmul (u : V →ₗ[ℝ] W)
   LinearMap.ext fun _ ↦ rfl
 
 end LinearMap
+
+namespace LinearEquiv
+
+/-- A conjugate-linear equivalence of complex vector spaces is real-linear, since complex
+conjugation fixes the real scalars. -/
+def toRealLinearEquiv (f : V ≃ₛₗ[starRingEnd ℂ] W) : V ≃ₗ[ℝ] W where
+  toFun := f
+  invFun := f.symm
+  map_add' := map_add f
+  map_smul' r x := by
+    rw [RingHom.id_apply, ← algebraMap_smul ℂ r x, map_smulₛₗ, ← algebraMap_smul ℂ r (f x),
+      Complex.coe_algebraMap, Complex.conj_ofReal]
+  left_inv := f.left_inv
+  right_inv := f.right_inv
+
+@[simp]
+theorem coe_toRealLinearEquiv (f : V ≃ₛₗ[starRingEnd ℂ] W) : ⇑f.toRealLinearEquiv = f :=
+  (rfl)
+
+@[simp]
+theorem toRealLinearEquiv_symm (f : V ≃ₛₗ[starRingEnd ℂ] W) :
+    f.toRealLinearEquiv.symm = f.symm.toRealLinearEquiv :=
+  (rfl)
+
+end LinearEquiv
 
 end ComplexOfMapISmul
 

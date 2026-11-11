@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 public import Mathlib.RingTheory.Localization.Away.Basic
+public import TauCeti.RingTheory.Spectrum.Prime.TensorProduct
 
 import Mathlib.RingTheory.Flat.Localization
 import Mathlib.RingTheory.Localization.Ideal
@@ -21,10 +22,15 @@ homomorphisms, via the pushout identification used by Mathlib's `RingHom.Flat.lT
 A finite family of flat ring homomorphisms `f i : R →+* S i` combines into a faithfully flat ring
 homomorphism `RingHom.pi f : R →+* ∀ i, S i` as soon as every maximal ideal of `R` stays proper
 under some `f i`. A single flat ring homomorphism is faithfully flat as soon as every maximal
-ideal is contracted from a prime of the target.
+ideal is contracted from a prime of the target. For a flat algebra whose spectral image has
+complement `V(I)`, faithful flatness after base change is equivalent to the extension of `I`
+being the unit ideal.
 
 ## Main results
 
+* `Ideal.faithfullyFlat_baseChange_iff_map_eq_top`: the spectral-complement criterion for
+  faithful flatness after base change.
+* `RingHom.FaithfullyFlat.comp`: composition preserves faithful flatness across universes.
 * `RingHom.FaithfullyFlat.lTensor`: scalar extension preserves faithful flatness.
 * `RingHom.FaithfullyFlat.pi_of_exists_map_ne_top`: the criterion above.
 * `RingHom.FaithfullyFlat.pi_algebraMap_localizationAway`: in particular, the product of the
@@ -37,7 +43,38 @@ public section
 
 open scoped TensorProduct
 
+namespace Ideal
+
+/-- If the complement of the spectral image of a flat algebra is `V(I)`, its base change is
+faithfully flat exactly when the extension of `I` is the unit ideal. -/
+theorem faithfullyFlat_baseChange_iff_map_eq_top
+    {A S T : Type*} [CommRing A] [CommRing S] [CommRing T]
+    [Algebra A S] [Algebra A T] [Module.Flat A S] (I : Ideal A)
+    (hI : (Set.range (PrimeSpectrum.comap (algebraMap A S)))ᶜ =
+      PrimeSpectrum.zeroLocus (I : Set A)) :
+    Module.FaithfullyFlat T (T ⊗[A] S) ↔ I.map (algebraMap A T) = ⊤ := by
+  rw [← RingHom.faithfullyFlat_algebraMap_iff,
+    RingHom.FaithfullyFlat.iff_flat_and_comap_surjective]
+  have hflat : (algebraMap T (T ⊗[A] S)).Flat :=
+    RingHom.flat_algebraMap_iff.mpr inferInstance
+  simp only [hflat, true_and, ← Set.range_eq_univ,
+    PrimeSpectrum.range_comap_algebraMap_tensorProduct]
+  rw [← Set.compl_empty_iff, ← Set.preimage_compl, hI,
+    PrimeSpectrum.preimage_comap_zeroLocus, ← PrimeSpectrum.zeroLocus_span,
+    ← Ideal.map_span, Ideal.span_eq, PrimeSpectrum.zeroLocus_empty_iff_eq_top]
+
+end Ideal
+
 namespace RingHom.FaithfullyFlat
+
+/-- The composite of faithfully flat ring homomorphisms is faithfully flat, even when the
+three rings live in different universes. -/
+theorem comp {R S T : Type*} [CommRing R] [CommRing S] [CommRing T]
+    {f : R →+* S} {g : S →+* T} (hf : f.FaithfullyFlat) (hg : g.FaithfullyFlat) :
+    (g.comp f).FaithfullyFlat := by
+  refine iff_flat_and_comap_surjective.mpr ⟨hf.flat.comp hg.flat, ?_⟩
+  exact (iff_flat_and_comap_surjective.mp hf).2.comp
+    (iff_flat_and_comap_surjective.mp hg).2
 
 section lTensor
 

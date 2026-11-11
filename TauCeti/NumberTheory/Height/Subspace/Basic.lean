@@ -74,6 +74,8 @@ namespace Submodule
 
 open Height TauCeti Set Module
 
+section Finite
+
 variable {ι K : Type*} [LinearOrder ι] [Finite ι] [Field K] [AdmissibleAbsValues K]
   (U : Submodule K (ι → K))
 
@@ -193,29 +195,6 @@ theorem relativeSubspaceLogHeight_span_singleton {x : ι → K} (hx : x ≠ 0) :
     relativeSubspaceHeight_span_singleton hx,
     logHeight_eq_log_mulHeight]
 
-/-- **Duality of heights.** The orthogonal complement of a subspace `U` of `ι → K` for the dot
-product has the relative height of `U`. -/
-@[simp]
-theorem relativeSubspaceHeight_euclideanDual [Fintype ι] :
-    relativeSubspaceHeight U.euclideanDual = relativeSubspaceHeight U := by
-  let b := finBasis K U
-  let b' := finBasis K U.euclideanDual
-  obtain ⟨c, hc, h⟩ :=
-    exists_plucker_eq_mul_plucker_compl_or_eq_neg (finrank_add_finrank_euclideanDual U)
-    b.linearIndependent_coe_basis b'.linearIndependent_coe_basis
-    fun i j ↦ mem_euclideanDual.1 (b' j).2 _ (b i).2
-  rw [relativeSubspaceHeight_eq_mulHeight_plucker b', relativeSubspaceHeight_eq_mulHeight_plucker b,
-    mulHeight_eq_of_forall_eq_or_eq_neg h]
-  -- The tuple `fun t ↦ c * plucker _ (compl _ t)` is `c • (plucker _ ∘ compl _)` pointwise.
-  exact (mulHeight_smul_eq_mulHeight _ hc).trans (mulHeight_comp_equiv _ _)
-
-/-- The orthogonal complement of a subspace `U` of `ι → K` for the dot product has the relative
-logarithmic height of `U`. -/
-@[simp]
-theorem relativeSubspaceLogHeight_euclideanDual [Fintype ι] :
-    relativeSubspaceLogHeight U.euclideanDual = relativeSubspaceLogHeight U := by
-  simp [relativeSubspaceLogHeight_eq_log_relativeSubspaceHeight]
-
 /-- The relative height of subspaces has the Northcott property whenever the scalar height does,
 for instance over a number field: for every `B` there are finitely many subspaces of `ι → K` of
 relative height at most `B`, of all dimensions together. -/
@@ -243,6 +222,38 @@ instance instNorthcottRelativeSubspaceLogHeight
   rw [heq]
   exact Northcott.comp_of_bddAbove _ _ fun B ↦
     bddAbove_def.mpr ⟨Real.exp B, fun _ ↦ Real.le_exp_of_log_le⟩
+
+end Finite
+
+section Fintype
+
+variable {ι K : Type*} [LinearOrder ι] [Fintype ι] [Field K] [AdmissibleAbsValues K]
+  (U : Submodule K (ι → K))
+
+/-- **Duality of heights.** The orthogonal complement of a subspace `U` of `ι → K` for the dot
+product has the relative height of `U`. -/
+@[simp]
+theorem relativeSubspaceHeight_euclideanDual :
+    relativeSubspaceHeight U.euclideanDual = relativeSubspaceHeight U := by
+  let b := finBasis K U
+  let b' := finBasis K U.euclideanDual
+  obtain ⟨c, hc, h⟩ :=
+    exists_plucker_eq_mul_plucker_compl_or_eq_neg (finrank_add_finrank_euclideanDual U)
+    b.linearIndependent_coe_basis b'.linearIndependent_coe_basis
+    fun i j ↦ mem_euclideanDual.1 (b' j).2 _ (b i).2
+  rw [relativeSubspaceHeight_eq_mulHeight_plucker b', relativeSubspaceHeight_eq_mulHeight_plucker b,
+    mulHeight_eq_of_forall_eq_or_eq_neg h]
+  -- The tuple `fun t ↦ c * plucker _ (compl _ t)` is `c • (plucker _ ∘ compl _)` pointwise.
+  exact (mulHeight_smul_eq_mulHeight _ hc).trans (mulHeight_comp_equiv _ _)
+
+/-- The orthogonal complement of a subspace `U` of `ι → K` for the dot product has the relative
+logarithmic height of `U`. -/
+@[simp]
+theorem relativeSubspaceLogHeight_euclideanDual :
+    relativeSubspaceLogHeight U.euclideanDual = relativeSubspaceLogHeight U := by
+  simp [relativeSubspaceLogHeight_eq_log_relativeSubspaceHeight]
+
+end Fintype
 
 end Submodule
 

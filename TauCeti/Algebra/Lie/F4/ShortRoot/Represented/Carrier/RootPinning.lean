@@ -66,11 +66,11 @@ theorem f4ShortRootQuotient_endOfPoint_root_pinning
       f4ShortRootExponential (F4ShortRoot.isogenyReverse k)
         (Multiplicative.toAdd u ^ F4ShortRoot.isogenyExponent k)
         ((f4ShortRootLieIdealBasis.baseChange A) a) := by
-  let c := TauCeti.cancelBaseChange ℤ 𝔽₂ A f4ChevalleyLieLattice
+  let c := TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange ℤ 𝔽₂ A f4ChevalleyLieLattice
   let z := (1 : A) ⊗ₜ[ℤ] f4IntegralShortRootQuotientLift a
   have hq : f4ShortRootSubspace.mkQ.baseChange A (c.symm z) =
       (f4ShortRootQuotientBasis.baseChange A) a := by
-    simp only [c, z, TauCeti.cancelBaseChange_symm_tmul,
+    simp only [c, z, TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange_symm_tmul,
       LinearMap.baseChange_tmul, f4IntegralShortRootQuotientLift_mkQ,
       Module.Basis.baseChange_apply]
   have h := f4ShortRootQuotient_endOfPoint_root g k u hg (c.symm z)

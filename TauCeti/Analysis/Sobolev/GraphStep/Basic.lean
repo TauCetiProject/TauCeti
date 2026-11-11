@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.TestFunctionLp
+public import TauCeti.Analysis.Sobolev.TestFunctionLp.Basic
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.MeasureTheory.Function.Holder
 
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The closed-graph step for weak Sobolev spaces
@@ -43,8 +44,15 @@ whose exponent is two whatever `p` is.  That is what makes the squared-norm iden
 * `TauCeti.WeakDerivStep`: the resulting graph space, with projections
   `TauCeti.WeakDerivStep.prev` and `TauCeti.WeakDerivStep.weakFDeriv`, constructor
   `TauCeti.WeakDerivStep.mk`, and extensionality `TauCeti.WeakDerivStep.ext`.
+* `TauCeti.WeakDerivStep.norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq`,
+  `TauCeti.WeakDerivStep.norm_prev_add_norm_weakFDeriv_le`: the graph norm in terms of its
+  components, and the bound `‖x‖ + ‖Du‖_p ≤ √2 ‖(x, Du)‖`.
 * `TauCeti.WeakDerivStep.restrictBaseL`: restriction of the selected field to an open subdomain,
   with its exact and almost-everywhere characteristic equations.
+* `TauCeti.WeakDerivStep.norm_prev_sq_eq_integral`,
+  `TauCeti.WeakDerivStep.norm_weakFDeriv_sq_eq_integral`: on the line, the squared norms of a
+  `W^{1,2}` path and of its weak derivative are the integrals of `‖φ‖²` and `‖φ'‖²` for a `C¹`
+  representative `φ`.
 
 ## References
 
@@ -387,6 +395,14 @@ theorem norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq
   rw [← Submodule.norm_coe, prev_coe, weakFDeriv_coe]
   exact WithLp.prod_norm_sq_eq_of_L2 u.1
 
+/-- The sum of the component norms is at most `√2` times the graph norm. -/
+theorem norm_prev_add_norm_weakFDeriv_le
+    (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (u : WeakDerivStep mu Omega p base) :
+    ‖prev base u‖ + ‖weakFDeriv base u‖ ≤ √2 * ‖u‖ := by
+  refine le_of_pow_le_pow_left₀ two_ne_zero (by positivity) ?_
+  rw [mul_pow, Real.sq_sqrt zero_le_two, norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq]
+  nlinarith [sq_nonneg (‖prev base u‖ - ‖weakFDeriv base u‖)]
+
 end SeminormedModule
 
 section UniformModule
@@ -400,6 +416,35 @@ instance [CompleteSpace X] (base : X →L[ℝ] Lp F p (mu.restrict Omega)) :
   (weakDerivStepSubmodule mu Omega p base).isClosed.completeSpace_coe
 
 end UniformModule
+
+/-! ### Norms of a path with a `C¹` representative on the line -/
+
+section Line
+
+variable {u : WeakDerivStep volume ⊤ 2
+    (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))} {φ : ℝ → F}
+
+/-- The squared `L²` norm of a path is the integral of the squared norm of a representative. -/
+theorem norm_prev_sq_eq_integral
+    (hu : ⇑(prev _ u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] φ) :
+    ‖prev _ u‖ ^ 2 = ∫ s, ‖φ s‖ ^ 2 := by
+  rw [← Lp.integral_norm_sq_eq_norm_sq,
+    integral_congr_ae (g := fun s ↦ ‖φ s‖ ^ 2) (hu.mono fun s hs ↦ by rw [hs])]
+  simp
+
+/-- The squared `L²` norm of the weak derivative is that of the classical derivative of a `C¹`
+representative. -/
+theorem norm_weakFDeriv_sq_eq_integral (hφ : ContDiff ℝ 1 φ)
+    (hu : ⇑(prev _ u) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] φ) :
+    ‖weakFDeriv _ u‖ ^ 2 = ∫ s, ‖deriv φ s‖ ^ 2 := by
+  have hw := ((hasWeakFDerivOn_base_prev _ u).congr_ae hu).ae_eq_fderiv
+    ((hφ.continuous_fderiv one_ne_zero).locallyIntegrable.locallyIntegrableOn _)
+    fun s _ ↦ hφ.differentiable one_ne_zero s
+  rw [← Lp.integral_norm_sq_eq_norm_sq,
+    integral_congr_ae (g := fun s ↦ ‖fderiv ℝ φ s‖ ^ 2) (hw.mono fun s hs ↦ by rw [hs])]
+  simp [← toSpanSingleton_deriv]
+
+end Line
 
 end WeakDerivStep
 

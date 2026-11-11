@@ -69,7 +69,7 @@ private theorem wordValue_def (g : G) (i : G ⧸ U.toSubgroup) :
 
 private theorem wordValue_one (g : G) :
     wordValue U hU s hs α g (QuotientGroup.mk 1) = evensB1 U.toSubgroup s α g := by
-  rw [← evensExtend_lWord_mk_one hU hs,
+  rw [← evensExtend_lWord_mk_one,
     evensExtend_of_mem (lWord_mem _ _ (Subgroup.indexTwoTransversal_mk hU hs) _ _)]
   simp only [wordValue, wordCoord, Subgroup.monomialHom_left, twoTransversal_rep]
 
@@ -92,12 +92,7 @@ end Transversal
 
 variable [IsTopologicalGroup G] (U : OpenSubgroup G)
 
--- The differential and homotopy use the direct-sum module action. Selecting it here keeps the
--- indexed tensor carrier identical to that of the tensor-induced resolution.
-private noncomputable local instance : Module ℤ (trivialF2 U.toSubgroup).gradedResolutionModule :=
-  @DirectSum.instModule ℤ _ ℕ
-    (fun n ↦ (TopRep.resolutionX (trivialF2 U.toSubgroup) (n + 1)).V)
-    (fun _ ↦ inferInstance) (fun n ↦ (TopRep.resolutionX (trivialF2 U.toSubgroup) (n + 1)).hV2)
+open scoped TopRep.GradedResolution
 
 section Character
 

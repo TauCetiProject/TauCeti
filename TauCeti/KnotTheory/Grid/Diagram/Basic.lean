@@ -572,6 +572,15 @@ theorem transpose_apply_apply (x : GridState n) (c : Fin n) : x.transpose (x c) 
 theorem transpose_transpose (x : GridState n) : x.transpose.transpose = x :=
   rfl
 
+/-- The diagonal reflection is injective on grid states. -/
+theorem transpose_injective : Function.Injective (transpose : GridState n → GridState n) :=
+  Function.Involutive.injective transpose_transpose
+
+/-- Two grid states have equal diagonal reflections exactly when they are equal. -/
+@[simp]
+theorem transpose_inj {x y : GridState n} : x.transpose = y.transpose ↔ x = y :=
+  transpose_injective.eq_iff
+
 /-- Reflecting after a row relabeling is the same as column relabeling after reflecting. -/
 @[simp]
 theorem relabelRows_transpose (ρ : Equiv.Perm (Fin n)) (x : GridState n) :

@@ -41,6 +41,8 @@ is the point work over an infinite field.
 
 * `TauCeti.Matrix.GeneralLinearGroup.det_zpow_mem_rationalFunctions`: every integral power of the
   determinant is a rational function.
+* `TauCeti.Matrix.GeneralLinearGroup.entry_inv_mem_rationalFunctions`: so is every entry of the
+  inverse matrix.
 * `TauCeti.Matrix.GeneralLinearGroup.exists_forall_det_pow_mul_eq_of_forall_mem_rationalFunctions`
   and its field form
   `TauCeti.Matrix.GeneralLinearGroup.exists_forall_eq_inv_mul_of_forall_mem_rationalFunctions`: a
@@ -183,6 +185,22 @@ theorem det_zpow_mem_rationalFunctions (m : ℤ) :
       ← Units.val_pow_eq_pow_val, ← Units.val_mul, ← zpow_natCast,
       ← zpow_add (_root_.Matrix.GeneralLinearGroup.det g)]
     simp
+
+/-- **The entries of the inverse matrix are rational functions**: `det g` times an entry of `g⁻¹`
+is the corresponding entry of the adjugate of `g`, a polynomial in the entries of `g`. -/
+theorem entry_inv_mem_rationalFunctions (i j : Fin n) :
+    (fun g : GL (Fin n) k => ((g⁻¹ : GL (Fin n) k) : Matrix (Fin n) (Fin n) k) i j)
+      ∈ rationalFunctions k n := by
+  refine mem_rationalFunctions.mpr
+    ⟨(_root_.Matrix.mvPolynomialX (Fin n) (Fin n) k).adjugate i j, 1, fun g => ?_⟩
+  have hadj := congrFun (congrFun (RingHom.map_adjugate
+    (MvPolynomial.eval fun p : Fin n × Fin n => (g : Matrix (Fin n) (Fin n) k) p.1 p.2)
+    (_root_.Matrix.mvPolynomialX (Fin n) (Fin n) k)) i) j
+  rw [_root_.Matrix.mvPolynomialX_mapMatrix_eval, RingHom.mapMatrix_apply,
+    _root_.Matrix.map_apply] at hadj
+  rw [hadj, pow_one, _root_.Matrix.coe_units_inv, _root_.Matrix.inv_def,
+    _root_.Matrix.smul_apply, smul_eq_mul, ← mul_assoc,
+    Ring.mul_inverse_cancel _ (_root_.Matrix.isUnits_det_units g), one_mul]
 
 /-- **A finite family of rational functions has a common denominator**: a single determinant power
 and a family of numerator polynomials express every member of the family. -/
