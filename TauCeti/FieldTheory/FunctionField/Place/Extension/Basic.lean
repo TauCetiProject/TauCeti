@@ -521,7 +521,6 @@ theorem algebraMap_mem_filtration {r : F} {m : ℕ}
   rw [mem_filtration_iff_le_ord _ h0] at hr
   rw [mem_filtration_iff_le_ord _ ((map_ne_zero _).mpr h0), ord_algebraMap_restrict k F P']
   have he : (1 : ℤ) ≤ ramificationIdx F P' := mod_cast ramificationIdx_pos F P'
-  have hm : (0 : ℤ) ≤ m := by positivity
   nlinarith
 
 end Restrict
