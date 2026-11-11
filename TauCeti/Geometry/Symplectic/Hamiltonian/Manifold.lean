@@ -221,6 +221,12 @@ theorem hamiltonianVectorField_eq_zero_of_eventuallyEq {x : M} {c : ℝ}
   rw [hamiltonianVectorField_def, h.mvfderiv_eq]
   simp [mvfderiv_const]
 
+/-- The Hamiltonian vector field vanishes at every point where the Hamiltonian is not
+differentiable, by the convention `mfderiv = 0` there. -/
+theorem hamiltonianVectorField_eq_zero_of_not_mdifferentiableAt {x : M}
+    (h : ¬MDifferentiableAt I 𝓘(ℝ) f x) : σ.hamiltonianVectorField f x = 0 := by
+  simp [hamiltonianVectorField_def, mvfderiv, mfderiv_zero_of_not_mdifferentiableAt h]
+
 /-- The Hamiltonian vector field is additive on differentiable functions. -/
 theorem hamiltonianVectorField_add {x : M} (hf : MDifferentiableAt I 𝓘(ℝ) f x)
     (hg : MDifferentiableAt I 𝓘(ℝ) g x) :

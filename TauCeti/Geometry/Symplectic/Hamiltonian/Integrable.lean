@@ -112,11 +112,15 @@ theorem isFirstIntegral_self (f : M → ℝ) : σ.IsFirstIntegral f f :=
 theorem isFirstIntegral_const (f : M → ℝ) (c : ℝ) : σ.IsFirstIntegral f fun _ ↦ c :=
   fun x ↦ poissonBracket_const_left σ c f x
 
-/-- A sum of differentiable first integrals is a first integral. -/
+/-- The sum of a first integral and a differentiable first integral is a first integral. -/
 theorem IsFirstIntegral.add (hg : σ.IsFirstIntegral f g) (hk : σ.IsFirstIntegral f k)
-    (hg' : MDifferentiable I 𝓘(ℝ) g) (hk' : MDifferentiable I 𝓘(ℝ) k) :
-    σ.IsFirstIntegral f (g + k) := fun x ↦ by
-  rw [poissonBracket_add_left (hg' x) (hk' x), hg x, hk x, add_zero]
+    (hk' : MDifferentiable I 𝓘(ℝ) k) : σ.IsFirstIntegral f (g + k) := fun x ↦ by
+  by_cases hgx : MDifferentiableAt I 𝓘(ℝ) g x
+  · rw [poissonBracket_add_left hgx (hk' x), hg x, hk x, add_zero]
+  · -- `g + k` is not differentiable at `x`, so its Hamiltonian vector field vanishes there.
+    have h : ¬MDifferentiableAt I 𝓘(ℝ) (g + k) x := fun h ↦ hgx (by simpa using h.sub (hk' x))
+    rw [poissonBracket_def, hamiltonianVectorField_eq_zero_of_not_mdifferentiableAt h,
+      SmoothBundleForm.eval₂_zero_left]
 
 /-- The negative of a first integral is a first integral. -/
 theorem IsFirstIntegral.neg (hg : σ.IsFirstIntegral f g) : σ.IsFirstIntegral f (-g) := fun x ↦ by
