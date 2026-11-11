@@ -43,7 +43,6 @@ segment between two times, and a path with equal endpoints is read as a loop wit
 
 public section
 
-open Real
 open scoped unitInterval
 
 namespace TauCeti
@@ -153,34 +152,14 @@ has the same Maslov index as `Λ`. -/
 theorem maslovIndex_shift (Λ : TotallyRealLoop E) (s : I) :
     (Λ.shift s).maslovIndex = Λ.maslovIndex := by
   have hL := Λ.isMaximalTotallyReal 0
-  -- A continuous angle function `θ` of `t ↦ ρ(Λ 0, Λ t)`.
-  obtain ⟨θ, hθ', -⟩ := Circle.isCoveringMap_exp.exists_path_lifts Λ.maslovPhasePath.toContinuousMap
-    0 (by simp)
-  have hθ (t : I) : Circle.exp (θ t) = Λ.maslovPhasePath t := congr_fun hθ' t
-  -- The phases of the two pieces of the shifted loop, as paths in the circle.
-  let γ₁ := (Λ.maslovPhasePath.subpath s 1).cast rfl Λ.maslovPhasePath.target.symm
-  let γ₂ := (Λ.maslovPhasePath.subpath 0 s).cast Λ.maslovPhasePath.source.symm rfl
-  have h₁ : Circle.angleChange γ₁ = θ 1 - θ s := by
-    rw [Circle.angleChange_eq_sub γ₁ (θ := fun t => θ (Set.Icc.convexComb s 1 t))
-      (θ.continuous.comp (Set.Icc.continuous_convexComb s 1)) fun t => hθ _]
-    simp only [Set.Icc.convexComb_zero, Set.Icc.convexComb_one]
-  have h₂ : Circle.angleChange γ₂ = θ s - θ 0 := by
-    rw [Circle.angleChange_eq_sub γ₂ (θ := fun t => θ (Set.Icc.convexComb 0 s t))
-      (θ.continuous.comp (Set.Icc.continuous_convexComb 0 s)) fun t => hθ _]
-    simp only [Set.Icc.convexComb_zero, Set.Icc.convexComb_one]
-  have hshift : (Λ.shift s).maslovIndex = Circle.degree (γ₁.trans γ₂) := by
-    refine (Λ.shift s).maslovIndex_eq_degree hL (γ₁.trans γ₂) fun t => ?_
-    rw [Path.trans_apply]
-    split_ifs with ht <;>
-    · rw [Path.cast_coe, Path.subpath, Path.coe_mk_mk, Function.comp_apply, maslovPhasePath_apply]
-      exact hL.maslovPhase_congr _ _ (by simp only [shift_apply, ht, ↓reduceDIte])
-  have hdeg := Circle.angleChange_eq_degree_mul (γ₁.trans γ₂)
-  rw [Circle.angleChange_trans, h₁, h₂, ← hshift] at hdeg
-  have hμ := Circle.sub_eq_degree_mul Λ.maslovPhasePath θ.continuous hθ
-  rw [← Λ.maslovIndex_eq_degree _ _ Λ.maslovPhasePath_apply] at hμ
-  have h2π : (2 * π : ℝ) ≠ 0 := by positivity
-  exact_mod_cast mul_right_cancel₀ h2π (by linarith : ((Λ.shift s).maslovIndex : ℝ) * (2 * π) =
-    Λ.maslovIndex * (2 * π))
+  -- Relative to `Λ 0`, the phase of the shifted loop is the phase of `Λ` restarted at time `s`.
+  refine ((Λ.shift s).maslovIndex_eq_degree hL _ fun t => ?_).trans
+    ((Circle.degree_subpath_trans_subpath Λ.maslovPhasePath s).trans
+      (Λ.maslovIndex_eq_degree _ _ Λ.maslovPhasePath_apply).symm)
+  rw [Path.trans_apply]
+  split_ifs with ht <;>
+  · exact (Λ.maslovPhasePath_apply _).trans
+      (hL.maslovPhase_congr _ _ (by simp only [shift_apply, ht, ↓reduceDIte]))
 
 end TotallyRealLoop
 

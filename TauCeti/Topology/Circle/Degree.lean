@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Homotopy.Lifting
 public import Mathlib.Topology.Homotopy.Path
+public import Mathlib.Topology.Subpath
 
 /-!
 # The degree of a loop and the angle swept by a path in the circle
@@ -49,6 +50,7 @@ continuous part of the Maslov index of a path of Lagrangian frames.
   `θ 1 - θ 0 = degree γ * (2 * π)`.
 * `Circle.degree_eq_of_homotopy`: the degree is invariant under free homotopies of loops.
 * `Circle.degree_symm_trans_trans`: the degree is invariant under change of basepoint.
+* `Circle.degree_subpath_trans_subpath`: restarting a loop at any time does not change its degree.
 * `Circle.degree_trans`, `Circle.degree_symm`: the degree of a concatenation of loops is the sum
   of the degrees, and reversing a loop negates its degree.
 * `Circle.degree_mul`: the degree of a pointwise product of loops is the sum of the degrees.
@@ -238,6 +240,13 @@ theorem angleChange_symm {x y : Circle} (γ : Path x y) : angleChange γ.symm = 
     angleChange_eq_sub γ θ.continuous hθ]
   simp
 
+/-- Rewriting the endpoints of a path does not change the angle it sweeps. -/
+@[simp]
+theorem angleChange_cast {x y x' y' : Circle} (γ : Path x y) (hx : x' = x) (hy : y' = y) :
+    angleChange (γ.cast hx hy) = angleChange γ := by
+  subst hx hy
+  rfl
+
 /-- The angle swept by the pointwise product of two paths is the sum of the angles they sweep. -/
 @[simp]
 theorem angleChange_mul {x₁ y₁ x₂ y₂ : Circle} (γ₁ : Path x₁ y₁) (γ₂ : Path x₂ y₂) :
@@ -322,6 +331,16 @@ theorem degree_symm_trans_trans {x y : Circle} (γ : Path x x) (p : Path x y) :
     degree (p.symm.trans (γ.trans p)) = degree γ :=
   degree_eq_of_angleChange_eq _ (by
     rw [angleChange_trans, angleChange_trans, angleChange_symm, angleChange_eq_degree_mul]; ring)
+
+/-- Restarting a loop at the time `s`, that is running it on `[s, 1]` and then on `[0, s]`, does
+not change its degree. -/
+theorem degree_subpath_trans_subpath {x : Circle} (γ : Path x x) (s : I) :
+    degree (((γ.subpath s 1).cast rfl γ.target.symm).trans
+      ((γ.subpath 0 s).cast γ.source.symm rfl)) = degree γ :=
+  degree_eq_of_angleChange_eq _ (by
+    rw [angleChange_trans, angleChange_cast, angleChange_cast, add_comm, ← angleChange_trans,
+      angleChange_eq_of_homotopic (Path.Homotopic.subpath_trans_subpath γ 0 s 1),
+      Path.subpath_zero_one, angleChange_cast, angleChange_eq_degree_mul])
 
 /-- The degree of the pointwise product of two loops is the sum of their degrees. -/
 @[simp]
