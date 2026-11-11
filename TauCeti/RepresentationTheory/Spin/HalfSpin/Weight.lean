@@ -36,8 +36,8 @@ single weight and `S⁻` carries none — which is why
 and its `S⁺` counterpart does not. Over a field, and for a polarization whose `W` is
 finite-dimensional and nonzero, `2 ^ (l - 1)` is also the dimension of each summand, computed
 independently in `TauCeti/RepresentationTheory/Spin/Dimension.lean` by a Clifford-algebraic
-argument (`TauCeti.finrank_spinPlus` and `TauCeti.finrank_spinMinus`, both of which exclude
-`W = ⊥`, the same degenerate case).
+argument (`TauCeti.finrank_spinPlus` and `TauCeti.finrank_spinMinus`, the latter of which
+excludes `W = ⊥`, the degenerate case).
 
 Nothing here needs a field, a nondegeneracy hypothesis, a finite dimension, or a polarization
 without a line summand: the parity grading of `⋀·W` and the diagonalization are both available

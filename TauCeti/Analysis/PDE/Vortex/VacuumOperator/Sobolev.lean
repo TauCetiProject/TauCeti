@@ -7,10 +7,8 @@ module
 
 public import TauCeti.Analysis.Distribution.TemperedDistribution.LaplacianResolvent
 public import TauCeti.Analysis.PDE.Vortex.VacuumOperator.Basic
-import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TemperedDistribution.Deriv
-import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 
 /-!
 # The vacuum vortex operator on the Sobolev scale
@@ -33,9 +31,7 @@ order one, while `L₀⁻¹` maps `H^{s-1}` back to `H^s`, since the resolvent g
 `L₀*` loses one. Hence `L₀ : H^s → H^{s-1}` is bijective for every `s`, in particular
 `H^k → H^{k-1}` for every integer `k`, and a tempered field `x` lies in `H^s` exactly when `L₀ x`
 lies in `H^{s-1}`. On Schwartz fields the tempered operators agree with `vacuumOperator` and
-`vacuumAdjoint`, and their transposes on real Schwartz fields are `vacuumAdjoint` and
-`vacuumOperator`. A tempered field is determined by its pairings with compactly supported real
-Schwartz fields.
+`vacuumAdjoint`.
 
 ## Main declarations
 
@@ -44,11 +40,8 @@ Schwartz fields.
 * `TauCeti.Vortex.temperedVacuumOperator_toTemperedDistribution` and
   `TauCeti.Vortex.temperedVacuumAdjoint_toTemperedDistribution`: they extend `vacuumOperator` and
   `vacuumAdjoint` from Schwartz fields.
-* `TauCeti.Vortex.sum_temperedVacuumOperator_apply` and
-  `TauCeti.Vortex.sum_temperedVacuumAdjoint_apply`: the transposes of `L₀` and `L₀*` on real
-  Schwartz fields are `vacuumAdjoint` and `vacuumOperator`.
-* `TauCeti.Vortex.eq_of_sum_apply_eq`: tempered fields are determined by their pairings with
-  compactly supported real Schwartz fields.
+* `TauCeti.Vortex.sum_temperedVacuumOperator_apply`: on tempered fields, `L₀` is the transpose of
+  `vacuumAdjoint` on real Schwartz fields.
 * `TauCeti.Vortex.temperedVacuumAdjoint_temperedVacuumOperator` and
   `TauCeti.Vortex.temperedVacuumOperator_temperedVacuumAdjoint`: the Weitzenböck identities
   `L₀* L₀ = L₀ L₀* = -Δ + 1 / 4`.
@@ -86,10 +79,6 @@ private abbrev D (v : ℂ) : 𝓢'(ℂ, ℂ) →L[ℂ] 𝓢'(ℂ, ℂ) := LineDe
 
 /-- The `i`-th component of a field of tempered distributions. -/
 private abbrev P (i : Fin 4) : (Fin 4 → 𝓢'(ℂ, ℂ)) →L[ℂ] 𝓢'(ℂ, ℂ) := ContinuousLinearMap.proj i
-
-/-- The `i`-th component of a real Schwartz field, as a complex Schwartz function. -/
-private abbrev R (η : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) (i : Fin 4) : 𝓢(ℂ, ℂ) :=
-  η.postcompCLM (ofRealCLM ∘L EuclideanSpace.proj i)
 
 /-- The vacuum operator `L₀` on fields `x = (b₁, b₂, p, q)` of complex tempered distributions on
 `ℂ`, producing `(G, C, H₁, H₂)`; see the component formulas `temperedVacuumOperator_apply_zero`
@@ -201,81 +190,31 @@ theorem temperedVacuumAdjoint_toTemperedDistribution (y : 𝓢(ℂ, EuclideanSpa
     ext z
     simp [div_eq_inv_mul]
 
-/-! ### Transposes on real Schwartz fields -/
-
-/-- On real Schwartz fields, the transpose of `temperedVacuumOperator` is `vacuumAdjoint`: pairing
-`L₀ T` with the components of `η` is pairing `T` with the components of `L₀* η`. -/
-theorem sum_temperedVacuumOperator_apply (T : Fin 4 → 𝓢'(ℂ, ℂ))
+/-- **`L₀` on tempered fields is the transpose of `L₀*` on real Schwartz fields.** For every field
+`Y` of complex tempered distributions and every real Schwartz field `η`,
+`∑ᵢ (L₀ Y)ᵢ (ηᵢ) = ∑ⱼ Yⱼ ((L₀* η)ⱼ)`. -/
+theorem sum_temperedVacuumOperator_apply (Y : Fin 4 → 𝓢'(ℂ, ℂ))
     (η : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) :
-    ∑ i, temperedVacuumOperator T i (η.postcompCLM (ofRealCLM ∘L EuclideanSpace.proj i)) =
-      ∑ i, T i ((vacuumAdjoint η).postcompCLM (ofRealCLM ∘L EuclideanSpace.proj i)) := by
-  have h₀ : R (vacuumAdjoint η) 0 =
-      -R (∂_{(1 : ℂ)} η) 0 - R (∂_{I} η) 1 + (1 / 2 : ℂ) • R η 3 := by
-    ext z; simp [div_eq_inv_mul]
-  have h₁ : R (vacuumAdjoint η) 1 =
-      -R (∂_{I} η) 0 + R (∂_{(1 : ℂ)} η) 1 - (1 / 2 : ℂ) • R η 2 := by
-    ext z; simp [div_eq_inv_mul]
-  have h₂ : R (vacuumAdjoint η) 2 =
-      -R (∂_{(1 : ℂ)} η) 2 - R (∂_{I} η) 3 + (1 / 2 : ℂ) • R η 1 := by
-    ext z; simp [div_eq_inv_mul]
-  have h₃ : R (vacuumAdjoint η) 3 =
-      R (∂_{I} η) 2 - R (∂_{(1 : ℂ)} η) 3 + (1 / 2 : ℂ) • R η 0 := by
-    ext z; simp [div_eq_inv_mul]
+    ∑ i, temperedVacuumOperator Y i (η.postcompCLM (ofRealCLM ∘L EuclideanSpace.proj i)) =
+      ∑ j, Y j ((vacuumAdjoint η).postcompCLM (ofRealCLM ∘L EuclideanSpace.proj j)) := by
+  set c : Fin 4 → 𝓢(ℂ, ℂ) := fun j ↦ η.postcompCLM (ofRealCLM ∘L EuclideanSpace.proj j)
+  set c' : Fin 4 → 𝓢(ℂ, ℂ) :=
+    fun j ↦ (vacuumAdjoint η).postcompCLM (ofRealCLM ∘L EuclideanSpace.proj j)
+  obtain ⟨h₀, h₁, h₂, h₃⟩ :
+      c' 0 = -∂_{(1 : ℂ)} (c 0) - ∂_{I} (c 1) + (1 / 2 : ℂ) • c 3 ∧
+      c' 1 = -∂_{I} (c 0) + ∂_{(1 : ℂ)} (c 1) - (1 / 2 : ℂ) • c 2 ∧
+      c' 2 = -∂_{(1 : ℂ)} (c 2) - ∂_{I} (c 3) + (1 / 2 : ℂ) • c 1 ∧
+      c' 3 = ∂_{I} (c 2) - ∂_{(1 : ℂ)} (c 3) + (1 / 2 : ℂ) • c 0 := by
+    refine ⟨?_, ?_, ?_, ?_⟩ <;>
+    · ext z
+      simp [c, c', TauCeti.lineDerivOp_postcompCLM]
+      ring
+  simp only [c, c'] at h₀ h₁ h₂ h₃
   simp only [Fin.sum_univ_four, h₀, h₁, h₂, h₃, temperedVacuumOperator_apply_zero,
     temperedVacuumOperator_apply_one, temperedVacuumOperator_apply_two,
-    temperedVacuumOperator_apply_three, add_apply, sub_apply, smul_apply, lineDerivOp_apply_apply,
-    TauCeti.lineDerivOp_postcompCLM, map_add, map_sub, map_neg, map_smul, real_smul, smul_eq_mul]
-  push_cast
+    temperedVacuumOperator_apply_three]
+  simp [lineDerivOp_apply_apply]
   ring
-
-/-- On real Schwartz fields, the transpose of `temperedVacuumAdjoint` is `vacuumOperator`: pairing
-`L₀* T` with the components of `η` is pairing `T` with the components of `L₀ η`. -/
-theorem sum_temperedVacuumAdjoint_apply (T : Fin 4 → 𝓢'(ℂ, ℂ))
-    (η : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) :
-    ∑ i, temperedVacuumAdjoint T i (η.postcompCLM (ofRealCLM ∘L EuclideanSpace.proj i)) =
-      ∑ i, T i ((vacuumOperator η).postcompCLM (ofRealCLM ∘L EuclideanSpace.proj i)) := by
-  have h₀ : R (vacuumOperator η) 0 =
-      R (∂_{(1 : ℂ)} η) 0 + R (∂_{I} η) 1 + (1 / 2 : ℂ) • R η 3 := by
-    ext z; simp [div_eq_inv_mul]
-  have h₁ : R (vacuumOperator η) 1 =
-      R (∂_{I} η) 0 - R (∂_{(1 : ℂ)} η) 1 + (1 / 2 : ℂ) • R η 2 := by
-    ext z; simp [div_eq_inv_mul]
-  have h₂ : R (vacuumOperator η) 2 =
-      R (∂_{(1 : ℂ)} η) 2 - R (∂_{I} η) 3 - (1 / 2 : ℂ) • R η 1 := by
-    ext z; simp [div_eq_inv_mul]
-  have h₃ : R (vacuumOperator η) 3 =
-      R (∂_{I} η) 2 + R (∂_{(1 : ℂ)} η) 3 + (1 / 2 : ℂ) • R η 0 := by
-    ext z; simp [div_eq_inv_mul]
-  simp only [Fin.sum_univ_four, h₀, h₁, h₂, h₃, temperedVacuumAdjoint_apply_zero,
-    temperedVacuumAdjoint_apply_one, temperedVacuumAdjoint_apply_two,
-    temperedVacuumAdjoint_apply_three, add_apply, sub_apply, neg_apply, smul_apply,
-    lineDerivOp_apply_apply, TauCeti.lineDerivOp_postcompCLM, map_add, map_sub, map_neg, map_smul,
-    real_smul, smul_eq_mul]
-  push_cast
-  ring
-
-/-- Two tempered fields agree if their pairings with all compactly supported real Schwartz fields
-agree. -/
-theorem eq_of_sum_apply_eq {U V : Fin 4 → 𝓢'(ℂ, ℂ)}
-    (h : ∀ η : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)), HasCompactSupport η →
-      ∑ i, U i (η.postcompCLM (ofRealCLM ∘L EuclideanSpace.proj i)) =
-        ∑ i, V i (η.postcompCLM (ofRealCLM ∘L EuclideanSpace.proj i))) : U = V := by
-  funext j
-  refine ext_real fun φ hφ ↦ ?_
-  set η : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) :=
-    φ.postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ (EuclideanSpace.single j (1 : ℝ)))
-  have hη : HasCompactSupport η := by
-    have : (η : ℂ → EuclideanSpace ℝ (Fin 4)) =
-        ContinuousLinearMap.toSpanSingleton ℝ (EuclideanSpace.single j (1 : ℝ)) ∘ φ :=
-      funext fun _ ↦ rfl
-    rw [this]
-    exact hφ.comp_left (map_zero _)
-  have hc (i : Fin 4) : R η i = if i = j then φ.postcompCLM ofRealCLM else 0 := by
-    ext z
-    by_cases hij : i = j
-    · subst hij; simp [η]
-    · simp [η, hij]
-  simpa [hc, apply_ite] using h η hη
 
 /-! ### The Weitzenböck identities -/
 

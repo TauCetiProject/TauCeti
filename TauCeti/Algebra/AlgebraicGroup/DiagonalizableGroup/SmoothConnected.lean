@@ -66,7 +66,7 @@ theorem connectedSpace_primeSpectrum_baseChange_coordinateRing
     (G : FGCommGrpCat.{w}) [IsDomain (MonoidAlgebra K G)] :
     ConnectedSpace (PrimeSpectrum
       (CommHopfAlgCat.baseChange (K := K) (coordinateRing k G).obj)) := by
-  let e := (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv k K (G := G)).toAlgEquiv
+  let e := (MonoidAlgebra.scalarTensorBialgEquiv k K (G := G)).toAlgEquiv
   have := connectedSpace_primeSpectrum_coordinateRing K G
   exact e.toRingHom.connectedSpace_primeSpectrum_of_injective e.injective
 
@@ -77,7 +77,7 @@ private noncomputable def coordinateRingBaseChangeEquiv
     (K : Type v) [Field K] [Algebra k K] :
     MonoidAlgebra k G ⊗[k] K ≃+* MonoidAlgebra K G :=
   (Algebra.TensorProduct.comm k _ K).toRingEquiv.trans
-    (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv k K (G := G)).toAlgEquiv.toRingEquiv
+    (MonoidAlgebra.scalarTensorBialgEquiv k K (G := G)).toAlgEquiv.toRingEquiv
 
 /-- **The coordinate Hopf algebra of a unique-product diagonalizable group is geometrically
 connected.** -/

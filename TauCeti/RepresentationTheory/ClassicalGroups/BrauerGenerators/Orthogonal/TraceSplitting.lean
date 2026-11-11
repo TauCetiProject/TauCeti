@@ -388,7 +388,7 @@ theorem isCompl_harmonicTensors_iSup_range_orthogonalCupCapAt :
   have h := LinearMap.isCompl_iInf_ker_iSup_range_of_isHermitian_toMatrix
     (tensorPowerBasis k n d)
     (fun p : {p : Fin d × Fin d // p.1 ≠ p.2} => orthogonalCupCapAt k n d p.1.1 p.1.2)
-    fun p => isHermitian_toMatrix_orthogonalCupCapAt p.2
+    fun _ => isHermitian_toMatrix_orthogonalCupCapAt
   simpa only [iInf_subtype, iSup_subtype, iInf_prod, iSup_prod, harmonicTensors_def] using h
 
 /-- **The trace splitting of the orthogonal tensor power.** Over a star-ordered field the harmonic

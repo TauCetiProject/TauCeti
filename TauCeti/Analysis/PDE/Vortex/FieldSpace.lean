@@ -37,9 +37,6 @@ represent `a = i (b₁ ds + b₂ dt)` and `α = 2 (p + i q)`.
   distribution lies in Mathlib's Bessel-potential space `H^s`
   (`TemperedDistribution.realSobolevFunctions`). This is the componentwise complexification on
   which the tempered vacuum operator `TauCeti.Vortex.temperedVacuumOperator` acts.
-* `temperedField hy` is the field of complexified tempered distributions of the components of a
-  square-integrable field `y`; `y` lies in `sobolevFields s` exactly when they lie in `H^s`
-  (`mem_sobolevFields_iff_memSobolev_temperedField`).
 * `framedFieldSpace f m s` is `A_m^s`, the affine subspace through `referenceField f m` with
   direction `sobolevFields s`.
 
@@ -286,120 +283,16 @@ theorem mem_sobolevFields {s : ℝ} {y : ℂ → EuclideanSpace ℝ (Fin 4)} :
     y ∈ sobolevFields s ↔ ∀ i, (fun z ↦ y z i) ∈ realSobolevFunctions ℂ s 2 :=
   Iff.rfl
 
-/-- The field of complex tempered distributions of the components of a square-integrable field
-`y`. -/
-def temperedField {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : MemLp y 2 volume) :
-    Fin 4 → 𝓢'(ℂ, ℂ) :=
-  fun i ↦ Lp.toTemperedDistribution (ofRealCLM.compLp (MemLp.toLp (fun z ↦ y z i)
-    ((EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).comp_memLp' hy)))
+/-- Every field of `sobolevFields s` is square integrable, whatever the order `s`. -/
+theorem memLp_of_mem_sobolevFields {s : ℝ} {y : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hy : y ∈ sobolevFields s) : MemLp y 2 volume :=
+  memLp_piLp_iff.2 fun i ↦ memLp_of_mem_realSobolevFunctions (mem_sobolevFields.1 hy i)
 
-/-- The tempered distribution of the `i`-th component of `y` is integration against `y i`. -/
-theorem temperedField_apply {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : MemLp y 2 volume)
-    (i : Fin 4) (ψ : 𝓢(ℂ, ℂ)) : temperedField hy i ψ = ∫ z, ψ z * (y z i : ℂ) := by
-  have hyi : MemLp (fun z ↦ y z i) 2 volume :=
-    (EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).comp_memLp' hy
-  rw [temperedField, Lp.toTemperedDistribution_apply]
-  refine integral_congr_ae ?_
-  filter_upwards [ofRealCLM.coeFn_compLp (p := 2) (μ := volume) (hyi.toLp _), hyi.coeFn_toLp]
-    with z h₁ h₂
-  rw [h₁, smul_eq_mul, ofRealCLM_apply, h₂]
-
-/-- The integrand of `temperedField_apply` is integrable. -/
-private theorem integrable_mul_temperedField {y : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hy : MemLp y 2 volume) (i : Fin 4) (ψ : 𝓢(ℂ, ℂ)) :
-    Integrable (fun z ↦ ψ z * (y z i : ℂ)) volume :=
-  (ψ.memLp 2).integrable_mul (q := 2) (g := fun z ↦ (y z i : ℂ))
-    ((ofRealCLM ∘L (EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ)).comp_memLp' hy)
-
-/-- The tempered field of `y` depends only on the almost-everywhere class of `y`. -/
-theorem temperedField_congr_ae {y y' : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : MemLp y 2 volume)
-    (hy' : MemLp y' 2 volume) (h : y =ᵐ[volume] y') : temperedField hy = temperedField hy' := by
-  ext i ψ
-  rw [temperedField_apply, temperedField_apply]
-  exact integral_congr_ae (by filter_upwards [h] with z hz; rw [hz])
-
-/-- The tempered field of the zero field is zero. -/
+/-- A field lies in `sobolevFields 0` exactly when it is square integrable. -/
 @[simp]
-theorem temperedField_zero (h : MemLp (0 : ℂ → EuclideanSpace ℝ (Fin 4)) 2 volume) :
-    temperedField h = 0 := by
-  ext i ψ
-  simp [temperedField_apply]
-
-/-- The tempered field is additive in the square-integrable field. -/
-@[simp]
-theorem temperedField_add {y y' : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : MemLp y 2 volume)
-    (hy' : MemLp y' 2 volume) (h : MemLp (y + y') 2 volume) :
-    temperedField h = temperedField hy + temperedField hy' := by
-  ext i ψ
-  simp only [Pi.add_apply, add_apply, temperedField_apply, PiLp.add_apply,
-    ofReal_add, mul_add]
-  exact integral_add (integrable_mul_temperedField hy i ψ) (integrable_mul_temperedField hy' i ψ)
-
-/-- The tempered field commutes with negation. -/
-@[simp]
-theorem temperedField_neg {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : MemLp y 2 volume)
-    (h : MemLp (-y) 2 volume) : temperedField h = -temperedField hy := by
-  ext i ψ
-  simp only [Pi.neg_apply, neg_apply, temperedField_apply, PiLp.neg_apply,
-    ofReal_neg, mul_neg]
-  exact integral_neg _
-
-/-- The tempered field commutes with subtraction. -/
-@[simp]
-theorem temperedField_sub {y y' : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : MemLp y 2 volume)
-    (hy' : MemLp y' 2 volume) (h : MemLp (y - y') 2 volume) :
-    temperedField h = temperedField hy - temperedField hy' := by
-  ext i ψ
-  simp only [Pi.sub_apply, sub_apply, temperedField_apply, PiLp.sub_apply,
-    ofReal_sub, mul_sub]
-  exact integral_sub (integrable_mul_temperedField hy i ψ) (integrable_mul_temperedField hy' i ψ)
-
-/-- The tempered field is homogeneous for real scalars. -/
-@[simp]
-theorem temperedField_smul (c : ℝ) {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : MemLp y 2 volume)
-    (h : MemLp (c • y) 2 volume) : temperedField h = c • temperedField hy := by
-  ext i ψ
-  simp only [Pi.smul_apply, smul_apply, temperedField_apply, PiLp.smul_apply,
-    smul_eq_mul, ofReal_mul, mul_left_comm _ (c : ℂ), Complex.real_smul]
-  exact integral_const_mul _ _
-
-open scoped RealInnerProductSpace in
-/-- Pairing the tempered field of `y` with the components of a real Schwartz field `η` gives
-`∫ ⟪y, η⟫`. -/
-theorem sum_temperedField_apply {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : MemLp y 2 volume)
-    (η : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4))) :
-    ∑ i, temperedField hy i (η.postcompCLM (ofRealCLM ∘L EuclideanSpace.proj i)) =
-      ((∫ z, ⟪y z, η z⟫ : ℝ) : ℂ) := by
-  have hint (i : Fin 4) : Integrable (fun z ↦ η z i * y z i) volume := by
-    have hηi : MemLp (fun z ↦ η z i) 2 volume :=
-      (EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).comp_memLp' (η.memLp 2)
-    have hyi : MemLp (fun z ↦ y z i) 2 volume :=
-      (EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).comp_memLp' hy
-    exact hηi.integrable_mul hyi
-  have hη (i : Fin 4) (z : ℂ) :
-      η.postcompCLM (ofRealCLM ∘L EuclideanSpace.proj i) z = (η z i : ℂ) :=
-    rfl
-  simp_rw [temperedField_apply, hη, ← ofReal_mul, integral_complex_ofReal, ← ofReal_sum,
-    ← integral_finsetSum _ fun i _ ↦ hint i]
-  simp_rw [PiLp.inner_apply, RCLike.inner_apply, conj_trivial]
-
-/-- The tempered distributions of the components of a square-integrable field lie in `H⁰ = L²`. -/
-theorem memSobolev_zero_temperedField {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : MemLp y 2 volume)
-    (i : Fin 4) : MemSobolev 0 2 (temperedField hy i) :=
-  memSobolev_zero_iff.2 ⟨_, rfl⟩
-
-/-- A square-integrable field lies in `sobolevFields s` exactly when the tempered distributions of
-its components lie in `H^s`. -/
-theorem mem_sobolevFields_iff_memSobolev_temperedField {s : ℝ}
-    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : MemLp y 2 volume) :
-    y ∈ sobolevFields s ↔ ∀ i, MemSobolev s 2 (temperedField hy i) := by
-  refine mem_sobolevFields.trans (forall_congr' fun i ↦ ?_)
-  have hyi : MemLp (fun z ↦ y z i) 2 volume :=
-    (EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).comp_memLp' hy
-  rw [temperedField]
-  refine ⟨fun h ↦ ?_, fun h ↦ mem_realSobolevFunctions.2 ⟨_, hyi.coeFn_toLp, h⟩⟩
-  obtain ⟨u, hu, hs⟩ := mem_realSobolevFunctions.1 h
-  rwa [show u = hyi.toLp _ from Lp.ext (hu.trans hyi.coeFn_toLp.symm)] at hs
+theorem mem_sobolevFields_zero_iff {y : ℂ → EuclideanSpace ℝ (Fin 4)} :
+    y ∈ sobolevFields 0 ↔ MemLp y 2 volume := by
+  simp [mem_sobolevFields, memLp_piLp_iff]
 
 /-- The section `2 (y₂ + i y₃)` of a field of `sobolevFields s` is square integrable. -/
 theorem memLp_sectionValue_of_mem_sobolevFields {s : ℝ} {y : ℂ → EuclideanSpace ℝ (Fin 4)}
