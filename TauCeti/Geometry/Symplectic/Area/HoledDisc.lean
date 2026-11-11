@@ -102,12 +102,8 @@ private theorem exists_integral_fderiv_apply_sdiff_ball (ω : SymplecticForm V) 
       have := hz.2
       rwa [mem_ball, dist_eq_norm, not_lt] at this
     simp only [(hvu z h).fderiv_eq]
-  have hint : IntegrableOn (fun z ↦ ω (fderiv ℝ v z 1) (fderiv ℝ v z I)) D := by
-    have hcont : ContinuousOn (fun z ↦ ‖fderiv ℝ v z‖ ^ 2) D := fun z hz ↦
-      (((hvD z hz).fderiv_right (m := 1) (by norm_num)).continuousAt.norm.pow
-        2).continuousWithinAt
-    exact ω.integrableOn_fderiv_apply_of_integrableOn_norm_fderiv_sq
-      (hcont.integrableOn_compact hD)
+  have hint : IntegrableOn (fun z ↦ ω (fderiv ℝ v z 1) (fderiv ℝ v z I)) D :=
+    ω.integrableOn_fderiv_apply_of_contDiffAt hD fun z hz ↦ (hvD z hz).of_le (by norm_num)
   rw [← hout, setIntegral_sdiff measurableSet_ball hint hBD, hball]
 
 /-- **Stokes' formula for symplectic area on a disc with holes.** Let the closed discs
