@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Spectrum.Basic
-import TauCeti.Analysis.PDE.EnergyForm.Restriction
+public import TauCeti.Analysis.PDE.EnergyForm.Restriction
 
 /-!
 # Domain monotonicity of the first Dirichlet eigenvalue
@@ -22,8 +22,9 @@ are coercive, even if the spectral bottom is not attained. On bounded nonempty o
 these quantities are actual eigenvalues. Nonemptiness of `U` is essential: on the empty
 set the solution operator is zero and its reciprocal norm has the default value zero.
 
-The coefficients are the same on the two domains. Symmetry need only be supplied on
-`Ω`, since it passes to `U` under zero extension. In particular the theorem applies to
+The coefficients are the same on the two domains. Coefficient boundedness, coercivity and
+symmetry need only be supplied on `Ω`: boundedness restricts to `U`, and the other two
+properties pass to `U` under zero extension. In particular the theorem applies to
 `-Δ` on bounded open sets, with the coercivity data supplied by
 `exists_isCoercive_laplacian_of_isBounded`.
 
@@ -52,15 +53,18 @@ can only decrease the spectral bottom of a symmetric coercive Dirichlet form wit
 coefficients. Boundedness and boundary regularity of the domains are not required. -/
 theorem firstDirichletEigenvalue_le_of_domain_le (hU : U ≤ Omega)
     (hU_nonempty : (U : Set (EuclideanSpace ℝ ι)).Nonempty)
-    (hcoeffU : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict U))
-    (hcoerciveU : IsCoercive (energyFormH1L0 hcoeffU))
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
     (hsymm : ∀ u v : W1p0 mu Omega 2,
       energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
         energyFormH1 a b c (v : W1p mu Omega 2) (u : W1p mu Omega 2)) :
     firstDirichletEigenvalue hcoeff hcoercive ≤
-      firstDirichletEigenvalue hcoeffU hcoerciveU := by
+      firstDirichletEigenvalue
+        (hcoeff.mono_measure (Measure.restrict_mono (SetLike.coe_subset_coe.mpr hU) le_rfl))
+        (isCoercive_energyFormH1L0_of_domain_le hU hcoeff hcoercive) := by
+  have hcoeffU :=
+    hcoeff.mono_measure (Measure.restrict_mono (SetLike.coe_subset_coe.mpr hU) le_rfl)
+  have hcoerciveU := isCoercive_energyFormH1L0_of_domain_le hU hcoeff hcoercive
   have hsymmU (u v : W1p0 mu U 2) :
       energyFormH1 a b c (u : W1p mu U 2) (v : W1p mu U 2) =
         energyFormH1 a b c (v : W1p mu U 2) (u : W1p mu U 2) := by
