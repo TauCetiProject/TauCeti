@@ -7,14 +7,14 @@ module
 
 public import TauCeti.AlgebraicTopology.Disk.Reattachment
 public import TauCeti.Topology.Category.TopCat.Pushout
-import TauCeti.Topology.Category.TopCat.OpenEmbedding
+import TauCeti.Topology.Category.TopCat.Limits.Products
 
 /-!
 # Attaching families of cells over a parameter space
 
-Let `A` be a subspace of a space `Y`, and let `α i : P × ∂D^{k i} → A` be continuous families of
-attaching maps, parametrized by a space `P`. Attaching, over each `p ∈ P`, one disc `D^{k i}` along
-each `α i p` gives the *fiberwise adjunction space*
+Let `A` be a space, and let `α i : P × ∂D^{k i} → A` be continuous families of attaching maps,
+parametrized by a space `P`. Attaching, over each `p ∈ P`, one disc `D^{k i}` along each `α i p`
+gives the *fiberwise adjunction space*
 
 `(P × A) ∪_α ⨆ᵢ (P × D^{k i})`,
 
@@ -22,10 +22,11 @@ the pushout in `TopCat` of `(p, s) ↦ (p, α i (p, s))` along the inclusions
 `P × ∂D^{k i} → P × D^{k i}` (`TauCeti.fiberwiseCellAttachment`). It lies over `P`
 (`TauCeti.fiberwiseCellAttachmentProj`), and its points over `p` are those of the attachment
 `A ∪_{α p} ⨆ᵢ D^{k i}`.
-Characteristic families `χ i : P × D^{k i} → Y` restricting to `α i` on the boundary spheres induce
-the comparison map `(P × A) ∪_α ⨆ᵢ (P × D^{k i}) → P × Y` over `P`
-(`TauCeti.fiberwiseCellComparison`). These are the families of cell attachments met when the charts
-of a Morse function at a critical level vary continuously with a parameter.
+When `A` is a subspace of a space `Y`, characteristic families `χ i : P × D^{k i} → Y` restricting
+to `α i` on the boundary spheres induce the comparison map
+`(P × A) ∪_α ⨆ᵢ (P × D^{k i}) → P × Y` over `P` (`TauCeti.fiberwiseCellComparison`). These are the
+families of cell attachments met when the charts of a Morse function at a critical level vary
+continuously with a parameter.
 
 Two families `χ₀` and `χ₁` of characteristic maps are compared as in Milnor's Lemma 3.6, now over
 `P`. Given self-maps `h i` of `P × D^{k i}` over `P` preserving `P × ∂D^{k i}`, and homotopies
@@ -64,10 +65,11 @@ universe u
 
 namespace TauCeti
 
-variable {P Y : Type u} [TopologicalSpace P] [TopologicalSpace Y] {A : Set Y} {ι : Type u}
-  {k : ι → ℕ}
+variable {P : Type u} [TopologicalSpace P] {ι : Type u} {k : ι → ℕ}
 
 section Attachment
+
+variable {A : Type u} [TopologicalSpace A]
 
 /-- The coproduct of the maps `(p, s) ↦ (p, α i (p, s))` from `P × ∂D^{k i}` to `P × A`. -/
 def fiberwiseAttachingMap (α : ∀ i, C(P × TopCat.diskBoundary.{u} (k i), A)) :
@@ -212,15 +214,8 @@ theorem fiberwiseCellAttachment_hom_ext {Z : TopCat.{u}} {g g' : fiberwiseCellAt
 theorem range_fiberwiseCellAttachmentIncl_union_iUnion_range_fiberwiseCellAttachmentCell :
     range (fiberwiseCellAttachmentIncl α) ∪ ⋃ i, range (fiberwiseCellAttachmentCell α i) =
       univ := by
-  refine eq_univ_of_forall fun y ↦ ?_
-  by_cases hy : y ∈ range (fiberwiseCellAttachmentIncl α)
-  · exact Or.inl hy
-  rw [← mem_compl_iff,
-    ← TopCat.image_compl_range_of_isPushout (isPushout_fiberwiseCellAttachment α)] at hy
-  obtain ⟨z, -, rfl⟩ := hy
-  obtain ⟨i, x, rfl⟩ := TopCat.exists_sigma_ι_eq _ z
-  refine Or.inr (mem_iUnion.2 ⟨i, x, ?_⟩)
-  rw [← ConcreteCategory.comp_apply, Sigma.ι_comp_desc]
+  simpa only [Sigma.ι_comp_desc] using
+    TopCat.range_union_iUnion_range_of_isPushout_sigma (isPushout_fiberwiseCellAttachment α)
 
 section CylinderDesc
 
@@ -290,9 +285,12 @@ theorem fiberwiseCellAttachment_induction {motive : fiberwiseCellAttachment α �
   · obtain ⟨i, x, rfl⟩ := mem_iUnion.1 hy
     exact h i x
 
+end Attachment
+
 section Comparison
 
-variable (χ : ∀ i, C(P × TopCat.disk.{u} (k i), Y))
+variable {Y : Type u} [TopologicalSpace Y] {A : Set Y}
+  (α : ∀ i, C(P × TopCat.diskBoundary.{u} (k i), A)) (χ : ∀ i, C(P × TopCat.disk.{u} (k i), Y))
   (hχ : ∀ i p s, χ i (p, TopCat.diskBoundaryInclusion (k i) s) = α i (p, s))
 
 /-- The **comparison map** `(P × A) ∪_α ⨆ᵢ (P × D^{k i}) → P × Y` over `P` of a family of
@@ -326,11 +324,10 @@ theorem fst_fiberwiseCellComparison (y : fiberwiseCellAttachment α) :
 
 end Comparison
 
-end Attachment
-
 section Reattachment
 
-variable (α₀ α₁ : ∀ i, C(P × TopCat.diskBoundary.{u} (k i), A))
+variable {Y : Type u} [TopologicalSpace Y] {A : Set Y}
+  (α₀ α₁ : ∀ i, C(P × TopCat.diskBoundary.{u} (k i), A))
   (χ₀ χ₁ : ∀ i, C(P × TopCat.disk.{u} (k i), Y))
   (hχ₀ : ∀ i p s, χ₀ i (p, TopCat.diskBoundaryInclusion (k i) s) = α₀ i (p, s))
   (hχ₁ : ∀ i p s, χ₁ i (p, TopCat.diskBoundaryInclusion (k i) s) = α₁ i (p, s))
@@ -615,7 +612,7 @@ variable {P' : Type u} [TopologicalSpace P'] (g : C(P', P))
 
 section Map
 
-variable (α : ∀ i, C(P × TopCat.diskBoundary.{u} (k i), A))
+variable {A : Type u} [TopologicalSpace A] (α : ∀ i, C(P × TopCat.diskBoundary.{u} (k i), A))
   (α' : ∀ i, C(P' × TopCat.diskBoundary.{u} (k i), A)) (hα : ∀ i p s, α' i (p, s) = α i (g p, s))
 
 /-- The map of fiberwise adjunction spaces over a map `g : P' → P` of parameter spaces, for
@@ -683,6 +680,15 @@ theorem fiberwiseCellAttachmentMap_comp {P'' : Type u} [TopologicalSpace P''] (g
       fiberwiseCellAttachmentMap_fiberwiseCellAttachmentCell,
       fiberwiseCellAttachmentMap_fiberwiseCellAttachmentCell, ContinuousMap.comp_apply]
 
+end Map
+
+variable {Y : Type u} [TopologicalSpace Y] {A : Set Y}
+
+section Comparison
+
+variable (α : ∀ i, C(P × TopCat.diskBoundary.{u} (k i), A))
+  (α' : ∀ i, C(P' × TopCat.diskBoundary.{u} (k i), A)) (hα : ∀ i p s, α' i (p, s) = α i (g p, s))
+
 /-- The map of fiberwise adjunction spaces over `g` intertwines the comparison maps of
 characteristic families `χ' i (p, x) = χ i (g p, x)` restricted along `g`. -/
 theorem fiberwiseCellComparison_fiberwiseCellAttachmentMap
@@ -701,7 +707,7 @@ theorem fiberwiseCellComparison_fiberwiseCellAttachmentMap
       fiberwiseCellComparison_fiberwiseCellAttachmentCell,
       fiberwiseCellComparison_fiberwiseCellAttachmentCell, hχχ']) y
 
-end Map
+end Comparison
 
 variable (α₀ α₁ : ∀ i, C(P × TopCat.diskBoundary.{u} (k i), A))
   (χ₀ χ₁ : ∀ i, C(P × TopCat.disk.{u} (k i), Y))
