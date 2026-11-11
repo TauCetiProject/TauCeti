@@ -89,6 +89,22 @@ theorem ext {z w : CotangentBundle I M} (hproj : z.proj = w.proj)
 
 variable [IsManifold I 1 M]
 
+/-- Read in the canonical trivialization at `x`, a covector at `x` itself is its own coordinate
+covector: the trivialization precomposes with the inverse tangent trivialization at `x`, which is
+the identity over its own base point. -/
+@[simp]
+theorem continuousLinearMapAt_trivializationAt_self (x : M) (p : TangentSpace I x →L[𝕜] 𝕜) :
+    (trivializationAt (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) x).continuousLinearMapAt
+      𝕜 x p = p := by
+  have hx := FiberBundle.mem_baseSet_trivializationAt' (F := E →L[𝕜] 𝕜)
+    (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) x
+  refine (Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) _ hx p).trans ?_
+  ext v
+  simp [hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates]
+  -- The two sides differ only in reading `v` in `E` or in `TangentSpace I x`, which agree by
+  -- definition.
+  rfl
+
 /-- The preferred chart of the cotangent bundle at `z₀` sends a covector `z` to the chart image of
 its base point and to the covector precomposed with the inverse of the tangent chart at `z₀`. -/
 theorem extChartAt_apply (z₀ z : CotangentBundle I M) :

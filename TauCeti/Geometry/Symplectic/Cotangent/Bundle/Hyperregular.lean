@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Legendre
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
+public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.LagrangianVectorField
 import TauCeti.Data.Bundle
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
@@ -29,10 +28,11 @@ and it is smooth when `L` is.
 
 For a smooth real regular Lagrangian on a boundaryless manifold, the Cartan two-form
 `ω_L = FL^*ω` is symplectic (`TauCeti.IsRegularLagrangian.isSymplectic_cartanTwoForm`), so the
-energy has a Hamiltonian vector field `X_E` for `ω_L` on `TM`: the Lagrangian vector field. On a
-finite-dimensional manifold and for a hyperregular Lagrangian, the Legendre map carries `X_E` to
-the Hamiltonian vector field `X_H` of `H` for the canonical symplectic form `ω` of `T*M`
-(`TauCeti.IsHyperregularLagrangian.mfderiv_legendreMap_hamiltonianVectorField`). Hence a curve
+energy has a Hamiltonian vector field `X_E` for `ω_L` on `TM`: the Lagrangian vector field
+(`TauCeti.lagrangianVectorField`). On a finite-dimensional manifold and for a hyperregular
+Lagrangian, the Legendre map carries `X_E` to the Hamiltonian vector field `X_H` of `H` for the
+canonical symplectic form `ω` of `T*M`
+(`TauCeti.IsHyperregularLagrangian.mfderiv_legendreMap_lagrangianVectorField`). Hence a curve
 `γ` in `TM` is an integral curve of `X_E` exactly when `FL ∘ γ` is an integral curve of `X_H`
 (`TauCeti.IsHyperregularLagrangian.isMIntegralCurve_legendreMap_comp_iff`): the Lagrangian and
 Hamiltonian flows are conjugate by `FL`.
@@ -225,13 +225,14 @@ variable (h : IsHyperregularLagrangian L) (hL : ContMDiff I.tangent 𝓘(ℝ, �
 
 /-- **The Legendre map carries the Lagrangian vector field to the Hamiltonian vector field.** For
 a smooth hyperregular Lagrangian `L` on a finite-dimensional boundaryless manifold, the differential
-of `FL` sends the Hamiltonian vector field of the energy `E_L` for the Cartan two-form `ω_L` to the
-Hamiltonian vector field of `H = E_L ∘ FL⁻¹` for the canonical symplectic form of `T*M`. -/
-theorem mfderiv_legendreMap_hamiltonianVectorField (v : TangentBundle I M) :
-    mfderiv I.tangent (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (legendreMap L) v
-        ((cartanTwoForm L hL).hamiltonianVectorField (lagrangianEnergy L) v) =
+of `FL` sends the Lagrangian vector field `X_E`, the Hamiltonian vector field of the energy `E_L`
+for the Cartan two-form `ω_L`, to the Hamiltonian vector field of `H = E_L ∘ FL⁻¹` for the
+canonical symplectic form of `T*M`. -/
+theorem mfderiv_legendreMap_lagrangianVectorField (v : TangentBundle I M) :
+    mfderiv I.tangent (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (legendreMap L) v (lagrangianVectorField L hL v) =
       (CotangentBundle.symplecticForm I M).hamiltonianVectorField h.hamiltonian
         (legendreMap L v) := by
+  rw [lagrangianVectorField_def]
   have hωL := h.isRegularLagrangian.isSymplectic_cartanTwoForm hL
   have := hωL.isNondegenerate.mfderiv_hamiltonianVectorField_comp
     (CotangentBundle.isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate
@@ -243,13 +244,13 @@ theorem mfderiv_legendreMap_hamiltonianVectorField (v : TangentBundle I M) :
 
 /-- **The Legendre map conjugates the Lagrangian and Hamiltonian flows.** For a smooth
 hyperregular Lagrangian `L` on a finite-dimensional boundaryless manifold, a curve `γ` in `TM` is
-an integral curve of the Hamiltonian vector field of the energy `E_L` for the Cartan two-form `ω_L`
-exactly when `FL ∘ γ` is an integral curve of the Hamiltonian vector field of `H = E_L ∘ FL⁻¹` for
-the canonical symplectic form of `T*M`. -/
+an integral curve of the Lagrangian vector field `X_E` exactly when `FL ∘ γ` is an integral curve of
+the Hamiltonian vector field of `H = E_L ∘ FL⁻¹` for the canonical symplectic form of `T*M`. -/
 theorem isMIntegralCurve_legendreMap_comp_iff {γ : ℝ → TangentBundle I M} :
     IsMIntegralCurve (legendreMap L ∘ γ)
         ((CotangentBundle.symplecticForm I M).hamiltonianVectorField h.hamiltonian) ↔
-      IsMIntegralCurve γ ((cartanTwoForm L hL).hamiltonianVectorField (lagrangianEnergy L)) := by
+      IsMIntegralCurve γ (lagrangianVectorField L hL) := by
+  rw [lagrangianVectorField_def]
   have hω := CotangentBundle.isSymplectic_symplecticForm (I := I) (M := M)
   have hωL := h.isRegularLagrangian.isSymplectic_cartanTwoForm hL
   set Φ := h.legendreDiffeomorph hL
