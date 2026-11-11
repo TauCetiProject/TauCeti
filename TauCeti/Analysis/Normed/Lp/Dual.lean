@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Dual
 public import Mathlib.Analysis.Normed.Lp.lpHolder
 import Mathlib.Analysis.Normed.Operator.Mul
 
@@ -33,9 +34,10 @@ action of its functionals accessible through coordinates.
 * `ContinuousLinearMap.sum_norm_lp_single_rpow_le`: for `p < ∞`, the coordinate values of a
   functional on `ℓ^q` have finite partial sums of `p`-th powers of norms bounded by the `p`-th
   power of its norm.
-* `lp.memℓp_lp_single`: the coordinate values of a functional on `ℓ^q` form an `ℓᵖ` family.
-* `lp.norm_le_of_forall_eq_lp_single`: an `ℓᵖ` family of coordinate values of a functional on
-  `ℓ^q` has norm at most the norm of the functional.
+* `ContinuousLinearMap.memℓp_lp_single`: the coordinate values of a functional on `ℓ^q` form an
+  `ℓᵖ` family.
+* `ContinuousLinearMap.norm_le_of_forall_eq_lp_single`: an `ℓᵖ` family of coordinate values of a
+  functional on `ℓ^q` has norm at most the norm of the functional.
 * `lp.dualEquiv`: the isometric equivalence `ℓᵖ ≃ₗᵢ (ℓ^q)*`.
 * `ContinuousLinearMap.norm_eq_ciSup_norm_lp_single`: the norm of a functional on ℓ¹ is the
   supremum of the norms of its coordinate values.
@@ -52,7 +54,7 @@ public section
 
 noncomputable section
 
-open scoped ENNReal ComplexConjugate
+open scoped ENNReal ComplexConjugate ZeroAtInfty
 
 namespace ContinuousLinearMap
 
@@ -87,35 +89,28 @@ variable {𝕜 ι : Type*} [RCLike 𝕜] [DecidableEq ι] {p q : ℝ≥0∞} [Fa
   [p.HolderConjugate q]
 
 /-- For `q = ∞` the coordinate values of a continuous linear functional `f` on `ℓ∞` at the unit
-coordinate vectors `eᵢ` satisfy `∑ i ∈ s, ‖f eᵢ‖ ≤ ‖f‖` on every finite set `s`. -/
+coordinate vectors `eᵢ` satisfy `∑ i ∈ s, ‖f eᵢ‖ ≤ ‖f‖` on every finite set `s`: restrict `f` to
+`c₀(ι)`. -/
 private theorem sum_norm_lp_single_top_le (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) ∞))
     (s : Finset ι) : ∑ i ∈ s, ‖f (lp.single ∞ i 1)‖ ≤ ‖f‖ := by
-  set c : ι → 𝕜 := fun i ↦ f (lp.single ∞ i 1)
-  -- Test `f` against the vector with coordinates `conj (c i) / ‖c i‖` on `s`.
-  set x : ι → 𝕜 := fun i ↦ ((‖c i‖⁻¹ : ℝ) : 𝕜) * conj (c i)
-  have hx (i : ι) : ‖x i‖ ≤ 1 := by
-    rcases eq_or_ne (c i) 0 with hc | hc
-    · simp [x, hc]
-    · simp [x, norm_mul, inv_mul_cancel₀ (norm_ne_zero_iff.2 hc)]
-  have hcx (i : ι) : c i * x i = ((‖c i‖ : ℝ) : 𝕜) := by
-    rcases eq_or_ne (c i) 0 with hc | hc
-    · simp [x, hc]
-    · rw [mul_left_comm, RCLike.mul_conj, ← RCLike.ofReal_pow, ← RCLike.ofReal_mul, sq,
-        inv_mul_cancel_left₀ (norm_ne_zero_iff.2 hc)]
-  set v : lp (fun _ : ι ↦ 𝕜) ∞ := ∑ i ∈ s, lp.single ∞ i (x i)
-  have hv : ‖v‖ ≤ 1 := by
-    refine lp.norm_le_of_forall_le zero_le_one fun j ↦ ?_
-    simp only [v, lp.coeFn_sum, Finset.sum_apply, lp.single_apply, Pi.single_apply,
-      Finset.sum_ite_eq]
-    split_ifs
-    exacts [hx j, by simp]
-  have hfv : f v = ((∑ i ∈ s, ‖c i‖ : ℝ) : 𝕜) := by
-    rw [map_sum, RCLike.ofReal_sum]
-    exact Finset.sum_congr rfl fun i _ ↦ (f.apply_lp_single i (x i)).trans (hcx i)
-  calc ∑ i ∈ s, ‖c i‖ = ‖f v‖ := by
-        rw [hfv, RCLike.norm_ofReal, abs_of_nonneg (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)]
-    _ ≤ ‖f‖ * ‖v‖ := f.le_opNorm v
-    _ ≤ ‖f‖ := mul_le_of_le_one_right (norm_nonneg f) hv
+  let _ : TopologicalSpace ι := ⊥
+  have : DiscreteTopology ι := ⟨rfl⟩
+  let J : C₀(ι, 𝕜) →L[𝕜] lp (fun _ : ι ↦ 𝕜) ∞ :=
+    (ZeroAtInftyContinuousMap.toLpInfty 𝕜).toContinuousLinearMap
+  have hJ (i : ι) : J (ZeroAtInftyContinuousMap.single i 1) = lp.single ∞ i 1 := by
+    refine lp.ext (funext fun j ↦ ?_)
+    simp only [J, LinearIsometry.coe_toContinuousLinearMap,
+      ZeroAtInftyContinuousMap.toLpInfty_apply, ZeroAtInftyContinuousMap.single_apply,
+      lp.single_apply, Pi.single_apply]
+  have h := ZeroAtInftyContinuousMap.sum_norm_apply_single_one_le (f.comp J) s
+  simp only [coe_comp, Function.comp_apply, hJ] at h
+  have hJ1 : ‖J‖ ≤ 1 :=
+    J.opNorm_le_bound zero_le_one fun x ↦ by
+      rw [one_mul]
+      exact ((ZeroAtInftyContinuousMap.toLpInfty 𝕜).norm_map x).le
+  have h2 : ‖f.comp J‖ ≤ ‖f‖ :=
+    (f.opNorm_comp_le J).trans (mul_le_of_le_one_right (norm_nonneg f) hJ1)
+  exact h.trans h2
 
 /-- For Hölder conjugate exponents `p` and `q` with `p < ∞`, the values of a continuous linear
 functional `f` on `ℓ^q` at the unit coordinate vectors `eᵢ` satisfy
@@ -174,14 +169,10 @@ theorem sum_norm_lp_single_rpow_le (hp : p ≠ ∞) (f : StrongDual 𝕜 (lp (fu
 
 end ContinuousLinearMap
 
-namespace lp
+namespace ContinuousLinearMap
 
 variable {𝕜 ι : Type*} [RCLike 𝕜] {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
-  [p.HolderConjugate q]
-
-section Coordinates
-
-variable [DecidableEq ι]
+  [p.HolderConjugate q] [DecidableEq ι]
 
 /-- The coordinate values of a functional on `ℓ^q` form an `ℓᵖ` family. -/
 theorem memℓp_lp_single (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q)) :
@@ -197,12 +188,17 @@ functional. -/
 theorem norm_le_of_forall_eq_lp_single (f : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q))
     (a : lp (fun _ : ι ↦ 𝕜) p) (ha : ∀ i, a i = f (lp.single q i 1)) : ‖a‖ ≤ ‖f‖ := by
   rcases eq_or_ne p ∞ with rfl | hp
-  · exact norm_le_of_forall_le (norm_nonneg f) fun i ↦ ha i ▸ f.norm_apply_lp_single_le i
+  · exact lp.norm_le_of_forall_le (norm_nonneg f) fun i ↦ ha i ▸ f.norm_apply_lp_single_le i
   · have hp₀ : 0 < p.toReal := ENNReal.toReal_pos (ENNReal.HolderConjugate.ne_zero p q) hp
-    refine norm_le_of_forall_sum_le hp₀ (norm_nonneg f) fun s ↦ ?_
+    refine lp.norm_le_of_forall_sum_le hp₀ (norm_nonneg f) fun s ↦ ?_
     simpa only [ha] using f.sum_norm_lp_single_rpow_le hp s
 
-end Coordinates
+end ContinuousLinearMap
+
+namespace lp
+
+variable {𝕜 ι : Type*} [RCLike 𝕜] {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
+  [p.HolderConjugate q]
 
 variable (𝕜 ι p q)
 
@@ -220,12 +216,12 @@ def dualEquiv (hq : q ≠ ∞) :
       Pi.single_apply, mul_ite, mul_one, mul_zero, tsum_ite_eq]
   have hnorm (a : lp (fun _ : ι ↦ 𝕜) p) : ‖P a‖ = ‖a‖ := by
     refine le_antisymm ((P.le_opNorm a).trans ?_)
-      (norm_le_of_forall_eq_lp_single (P a) a fun i ↦ (hP a i).symm)
+      ((P a).norm_le_of_forall_eq_lp_single a fun i ↦ (hP a i).symm)
     simpa using mul_le_mul_of_nonneg_right
       (norm_dualPairing (p := p) (q := q) (fun _ : ι ↦ ContinuousLinearMap.mul 𝕜 𝕜)
         (fun _ ↦ hmul)) (norm_nonneg a)
   refine LinearIsometryEquiv.ofSurjective { P.toLinearMap with norm_map' := hnorm } fun f ↦ ?_
-  refine ⟨⟨fun i ↦ f (lp.single q i 1), memℓp_lp_single f⟩, ContinuousLinearMap.ext fun x ↦ ?_⟩
+  refine ⟨⟨fun i ↦ f (lp.single q i 1), f.memℓp_lp_single⟩, ContinuousLinearMap.ext fun x ↦ ?_⟩
   simp only [LinearIsometry.coe_mk, ContinuousLinearMap.coe_coe, P, dualPairing_apply,
     ContinuousLinearMap.mul_apply']
   exact (f.hasSum_lp_single_mul hq x).tsum_eq
