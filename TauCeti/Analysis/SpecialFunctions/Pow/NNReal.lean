@@ -45,6 +45,10 @@ product of three linear factors follow: at infinity the kernel decays like `y ^ 
 three distinct poles the product of the factors `‖z - eᵢ‖ₑ ^ (-1/2)` is controlled by their sum,
 since at most one of them can be large.
 
+For `p ≥ 1` and every threshold `ε`, splitting at `ε` gives `x ≤ ε + ε ^ (1 - p) * x ^ p`, with
+no hypothesis on `x` or `ε`. Integrated, this bounds the averages of a function whose `p`-th power
+is integrable, uniformly over sets of large measure.
+
 A real power `y ↦ y ^ d` on `ℝ≥0∞` is upper semicontinuous from the right uniformly on intervals:
 for `ε ≠ 0`, every `y ∈ [x, z]` satisfies `y ^ d ≤ x ^ d + ε` once `z` is close enough to `x`.
 For `d ≥ 0` this is monotonicity and continuity; for `d < 0` the power is antitone. Enlarging a
@@ -80,6 +84,7 @@ On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every 
 * `ENNReal.ofReal_mul_rpow`: `ofReal (a * r) ^ d = ofReal a ^ d * ofReal r ^ d` for `0 ≤ a`.
 * `ENNReal.min_le_rpow_one_sub_mul_rpow`: `min x y ≤ x ^ (1 - p) * y ^ p` for `p ∈ [0, 1]`.
 * `ENNReal.rpow_le_rpow_of_nonpos`: `x ≤ y` gives `y ^ z ≤ x ^ z` for `z ≤ 0`.
+* `ENNReal.le_add_rpow_mul_rpow`: `x ≤ ε + ε ^ (1 - p) * x ^ p` for `p ≥ 1`.
 * `ENNReal.eventually_forall_mem_Icc_rpow_le_add`: `y ^ d ≤ x ^ d + ε` for `y ∈ [x, z]` and `z`
   near `x`.
 * `ENNReal.exists_pos_forall_mem_Icc_rpow_le_add`: for `x < r`, a radius `η > 0` with
@@ -192,6 +197,22 @@ theorem rpow_le_rpow_of_nonpos {x y : ℝ≥0∞} {z : ℝ} (hxy : x ≤ y) (hz 
   obtain ⟨w, hw, rfl⟩ : ∃ w, 0 ≤ w ∧ z = -w := ⟨-z, neg_nonneg.mpr hz, (neg_neg z).symm⟩
   rw [rpow_neg, rpow_neg]
   exact ENNReal.inv_le_inv.mpr (rpow_le_rpow hxy hw)
+
+/-- For `p ≥ 1` and every threshold `ε`, `x ≤ ε + ε ^ (1 - p) * x ^ p`, with no hypothesis on `x`
+or `ε`. -/
+theorem le_add_rpow_mul_rpow (x ε : ℝ≥0∞) {p : ℝ} (hp : 1 ≤ p) :
+    x ≤ ε + ε ^ (1 - p) * x ^ p := by
+  rcases le_or_gt x ε with hxε | hεx
+  · exact le_add_right hxε
+  refine le_add_left ?_
+  have hp' : 1 - p ≤ 0 := sub_nonpos.2 hp
+  rcases eq_or_ne x ⊤ with rfl | hx
+  · have hε : ε ^ (1 - p) ≠ 0 := by
+      simp [rpow_eq_zero_iff, hεx.ne, not_lt.2 hp']
+    rw [top_rpow_of_pos (zero_lt_one.trans_le hp), mul_top hε]
+  calc x = x ^ (1 - p) * x ^ p := by
+        rw [← rpow_add _ _ (pos_of_gt hεx).ne' hx, sub_add_cancel, rpow_one]
+    _ ≤ ε ^ (1 - p) * x ^ p := mul_le_mul_left (rpow_le_rpow_of_nonpos hεx.le hp') _
 
 /-- For `ε ≠ 0`, every `y ∈ [x, z]` satisfies `y ^ d ≤ x ^ d + ε` once `z` is close enough to
 `x`. -/
