@@ -202,7 +202,7 @@ theorem count_one_factorDegrees_eq_card_roots {f : ℤ[X]} {p : ℕ}
     [Fact p.Prime] (hlc : ¬ (p : ℤ) ∣ f.leadingCoeff) (hd : ¬ (p : ℤ) ∣ f.discr) :
     (f.factorDegrees p).count 1 = (f.map (Int.castRingHom (ZMod p))).roots.toFinset.card := by
   have hsep := (f.separable_map_zmod_iff_not_dvd_discr p hlc).mpr hd
-  rw [factorDegrees_def, count_one_map_natDegree_normalizedFactors hsep.ne_zero hsep.squarefree]
+  rw [factorDegrees_def, count_one_map_natDegree_normalizedFactors hsep.squarefree]
 
 /-- If the prime `p` divides neither the leading coefficient nor the discriminant of `f`, then at
 most `p` factor degrees equal `1`: the reduction is squarefree, so its linear factors are distinct

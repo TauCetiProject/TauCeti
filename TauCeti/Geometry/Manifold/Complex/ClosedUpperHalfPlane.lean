@@ -18,6 +18,11 @@ public import TauCeti.Geometry.Manifold.ModelTransport.Diffeomorph
 open upper half-plane, and its manifold boundary is the real axis. The inverse of the model
 retracts the lower half-plane onto the real axis; it is only a model inverse on the model range.
 
+`ClosedUpperHalfPlane.upperHalfPlaneChart` is the inclusion of the open upper half-plane into `ℂ`,
+as an open partial homeomorphism. A chart change that is `C^n` up to the boundary, read in `ℂ`
+through it, is `C^n`; see
+`ClosedUpperHalfPlane.upperHalfPlaneChart_symm_trans_mem_contDiffGroupoid_of_mem_contDiffGroupoid`.
+
 The real coordinate comparison uses `(Im z, Re z)`: Mathlib's `EuclideanHalfSpace 2` requires
 its *first* coordinate to be nonnegative. Thus the normal coordinate precedes the tangential one,
 whereas complex coordinates conventionally write `z = s + it`. The comparison is a smooth
@@ -129,6 +134,90 @@ theorem closedUpperHalfPlaneModel_isInteriorPoint_iff (z : ClosedUpperHalfPlane)
 theorem closedUpperHalfPlaneModel_isBoundaryPoint_iff (z : ClosedUpperHalfPlane) :
     closedUpperHalfPlaneModel.IsBoundaryPoint z ↔ (z : ℂ).im = 0 := by
   simp [ModelWithCorners.IsBoundaryPoint, mfld_simps]
+
+namespace ClosedUpperHalfPlane
+
+/-- The inclusion of the open upper half-plane into `ℂ`, as an open partial homeomorphism from the
+closed upper half-plane. Its source is the set of points of positive imaginary part, and its
+inverse is the model inverse `closedUpperHalfPlaneModel.symm`. -/
+def upperHalfPlaneChart : OpenPartialHomeomorph ClosedUpperHalfPlane ℂ where
+  toFun := Subtype.val
+  invFun := closedUpperHalfPlaneModel.symm
+  source := {z | 0 < (z : ℂ).im}
+  target := {z | 0 < z.im}
+  map_source' {_} hz := hz
+  map_target' {z} hz := by
+    simpa only [mem_ofPred_eq, coe_closedUpperHalfPlaneModel_symm_of_im_nonneg (le_of_lt hz)]
+      using hz
+  left_inv' z _ := closedUpperHalfPlaneModel_symm_coe z
+  right_inv' _ hz := coe_closedUpperHalfPlaneModel_symm_of_im_nonneg (le_of_lt hz)
+  open_source := isOpen_lt continuous_const (continuous_im.comp continuous_subtype_val)
+  open_target := isOpen_lt continuous_const continuous_im
+  continuousOn_toFun := continuous_subtype_val.continuousOn
+  continuousOn_invFun := closedUpperHalfPlaneModel.continuous_symm.continuousOn
+
+/-- `upperHalfPlaneChart` is the inclusion into `ℂ`. -/
+@[simp, mfld_simps]
+theorem upperHalfPlaneChart_apply (z : ClosedUpperHalfPlane) : upperHalfPlaneChart z = z :=
+  (rfl)
+
+/-- The inverse of `upperHalfPlaneChart` is the model inverse. -/
+@[simp, mfld_simps]
+theorem upperHalfPlaneChart_symm_apply (z : ℂ) :
+    upperHalfPlaneChart.symm z = closedUpperHalfPlaneModel.symm z :=
+  (rfl)
+
+/-- `upperHalfPlaneChart` is defined at the points of positive imaginary part. -/
+@[simp, mfld_simps]
+theorem upperHalfPlaneChart_source :
+    upperHalfPlaneChart.source = {z : ClosedUpperHalfPlane | 0 < (z : ℂ).im} :=
+  (rfl)
+
+/-- `upperHalfPlaneChart` takes values in the open upper half-plane. -/
+@[simp, mfld_simps]
+theorem upperHalfPlaneChart_target : upperHalfPlaneChart.target = {z : ℂ | 0 < z.im} :=
+  (rfl)
+
+/-- A chart change of the closed upper half-plane, read in `ℂ` through the open upper half-plane,
+is in `contDiffGroupoid n 𝓘(𝕜, ℂ)` when it and its inverse, so read, are `C^n` over `𝕜` on their
+sources. -/
+theorem upperHalfPlaneChart_symm_trans_mem_contDiffGroupoid_of_contDiffOn
+    {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 ℂ] {n : ℕ∞ω}
+    {e : OpenPartialHomeomorph ClosedUpperHalfPlane ClosedUpperHalfPlane}
+    (h : ContDiffOn 𝕜 n (upperHalfPlaneChart.symm ≫ₕ e ≫ₕ upperHalfPlaneChart)
+      (upperHalfPlaneChart.symm ≫ₕ e ≫ₕ upperHalfPlaneChart).source)
+    (h_symm : ContDiffOn 𝕜 n (upperHalfPlaneChart.symm ≫ₕ e.symm ≫ₕ upperHalfPlaneChart)
+      (upperHalfPlaneChart.symm ≫ₕ e.symm ≫ₕ upperHalfPlaneChart).source) :
+    upperHalfPlaneChart.symm ≫ₕ e ≫ₕ upperHalfPlaneChart ∈ contDiffGroupoid n 𝓘(𝕜, ℂ) := by
+  have hsymm : (upperHalfPlaneChart.symm ≫ₕ e ≫ₕ upperHalfPlaneChart).symm =
+      upperHalfPlaneChart.symm ≫ₕ e.symm ≫ₕ upperHalfPlaneChart := by
+    simp only [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
+      OpenPartialHomeomorph.symm_symm, OpenPartialHomeomorph.trans_assoc]
+  rw [contDiffGroupoid, mem_groupoid_of_pregroupoid, hsymm]
+  constructor
+  · simpa [contDiffPregroupoid, inter_assoc] using h
+  · simpa [contDiffPregroupoid, inter_assoc] using h_symm
+
+/-- A chart change of the closed upper half-plane that is `C^n` up to the boundary, read in `ℂ`
+through the open upper half-plane, is `C^n`. -/
+theorem upperHalfPlaneChart_symm_trans_mem_contDiffGroupoid_of_mem_contDiffGroupoid {n : ℕ∞ω}
+    {e : OpenPartialHomeomorph ClosedUpperHalfPlane ClosedUpperHalfPlane}
+    (he : e ∈ contDiffGroupoid n closedUpperHalfPlaneModel) :
+    upperHalfPlaneChart.symm ≫ₕ e ≫ₕ upperHalfPlaneChart ∈ contDiffGroupoid n 𝓘(ℝ, ℂ) := by
+  have hconj : ∀ {f : OpenPartialHomeomorph ClosedUpperHalfPlane ClosedUpperHalfPlane},
+      f ∈ contDiffGroupoid n closedUpperHalfPlaneModel →
+        ContDiffOn ℝ n (upperHalfPlaneChart.symm ≫ₕ f ≫ₕ upperHalfPlaneChart)
+          (upperHalfPlaneChart.symm ≫ₕ f ≫ₕ upperHalfPlaneChart).source := by
+    intro f hf
+    rw [contDiffGroupoid, mem_groupoid_of_pregroupoid] at hf
+    refine (hf.1.mono fun z hz ↦ ?_).congr fun z _ ↦ ?_
+    · simp only [mfld_simps] at hz
+      exact ⟨hz.2.1, by simpa using le_of_lt hz.1⟩
+    · simp
+  exact upperHalfPlaneChart_symm_trans_mem_contDiffGroupoid_of_contDiffOn (hconj he)
+    (hconj ((contDiffGroupoid _ _).symm he))
+
+end ClosedUpperHalfPlane
 
 /-- Real coordinates with the normal coordinate first: `s + it ↦ (t,s)`. -/
 def closedUpperHalfPlaneCoordinates : ℂ ≃L[ℝ] EuclideanSpace ℝ (Fin 2) :=
