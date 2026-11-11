@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.HeatKernel.Semigroup
 public import TauCeti.Analysis.PDE.HeatKernel.HeatEquation
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.Analysis.Convolution.Young
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.HeatKernel.Derivatives
@@ -176,12 +177,9 @@ private theorem ae_norm_heatSemigroup_le {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp :
     (ht : t ≠ 0) (f : Lp F p (volume : Measure E)) :
     ∀ᵐ x ∂volume, ‖heatSemigroup hp t f x‖ ≤
       (eLpNorm (heatSemigroup hp t f : E → F) ∞ volume).toReal := by
-  have hg : eLpNorm (heatSemigroup hp t f : E → F) ∞ volume ≠ ∞ :=
-    ((eLpNorm_heatSemigroup_top_le hp ht f).trans_lt (by finiteness)).ne
-  have h := enorm_ae_le_eLpNormEssSup (heatSemigroup hp t f : E → F) volume
-  rw [← eLpNorm_exponent_top (Lp.aestronglyMeasurable _)] at h
-  filter_upwards [h] with x hx
-  simpa only [toReal_enorm] using ENNReal.toReal_mono hg hx
+  have hg : MemLp (heatSemigroup hp t f : E → F) ∞ volume :=
+    (eLpNorm_heatSemigroup_top_le hp ht f).trans_lt (by finiteness)
+  simpa only [toReal_eLpNorm] using ae_le_lpNorm_exponent_top hg
 
 /-- Splitting the evolution in two half-steps writes the heat semigroup at a positive time as the
 heat convolution of an essentially bounded function: `e^{tΔ} f = K_{t/2} ⋆ e^{(t/2)Δ} f`. -/
@@ -235,10 +233,11 @@ theorem exists_eLpNorm_iteratedFDeriv_le_of_ae_eq_heatSemigroup (m : ℕ) :
     rw [← Lp.enorm_def, ← Lp.enorm_def, enorm_le_iff_norm_le]
     exact ContinuousLinearMap.le_of_opNorm_le _ ((heatSemigroup hp).contracting s) f |>.trans_eq
       (one_mul _)
+  have hs2 : (s : ℝ) = (t : ℝ) / 2 := by simp [s]
   have hst : (s : ℝ) ^ (-(m : ℝ) / 2) = 2 ^ ((m : ℝ) / 2) * (t : ℝ) ^ (-(m : ℝ) / 2) := by
-    rw [show (s : ℝ) = (t : ℝ) / 2 from NNReal.coe_div _ _ |>.trans (by norm_num),
-      div_rpow (by positivity) (by positivity), div_eq_mul_inv, mul_comm, ← rpow_neg (by norm_num),
-      neg_div, neg_neg]
+    rw [hs2, div_rpow t.coe_nonneg zero_le_two]
+    -- It remains to write `t ^ a / 2 ^ a` as `2 ^ (-a) * t ^ a`.
+    rw [div_eq_inv_mul, ← rpow_neg zero_le_two, neg_div, neg_neg]
   rw [hug]
   grw [hC hs (Lp.aestronglyMeasurable g) hbound Fact.out, hgf, hst, ← mul_assoc]
 
@@ -256,7 +255,7 @@ theorem exists_eLpNorm_laplacian_le_of_ae_eq_heatSemigroup :
     exists_eLpNorm_iteratedFDeriv_le_of_ae_eq_heatSemigroup (E := E) (F := F) 2
   refine ⟨Module.finrank ℝ E * C, by positivity, fun p _ hp t ht f u hu hfu => ?_⟩
   have hD := hC hp ht f hu hfu
-  rw [show -((2 : ℕ) : ℝ) / 2 = -1 by norm_num, rpow_neg_one] at hD
+  norm_num only [Nat.cast_ofNat, rpow_neg_one] at hD
   -- `u` is the smooth representative, so `Δ u` is continuous.
   obtain ⟨w, hw, hfw⟩ := exists_contDiff_ae_eq_heatSemigroup hp ht f
   have huw : u = w := (Continuous.ae_eq_iff_eq volume hu hw.continuous).1 (hfu.symm.trans hfw)
