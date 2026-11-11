@@ -439,6 +439,22 @@ theorem fixedPointDerivative_iterate (x : {x // f x = x}) (hf : MDifferentiableA
   rw [(hD.iterate x.2 n).fixedPointDerivative_eq, hD.fixedPointDerivative_eq,
     ContinuousLinearMap.toLinearMap_pow]
 
+/-- **The return maps of the covers of a periodic orbit.** If `x` is a periodic point of `f` of
+period `d` and `f^[d]` is differentiable at `x`, the fixed-point derivative of `f^[d * n]` at `x`,
+the return map of the `n`-fold cover of the orbit, is the `n`-th power of the return map
+`d(f^[d])_x`. -/
+theorem fixedPointDerivative_iterate_mul {d : ℕ} (hx : IsPeriodicPt f d x)
+    (hf : MDifferentiableAt I I f^[d] x) (n : ℕ) :
+    fixedPointDerivative I f^[d * n] ⟨x, (hx.mul_const n).eq⟩ =
+      fixedPointDerivative I f^[d] ⟨x, hx.eq⟩ ^ n := by
+  -- Transport the fixed-point derivative along the equation `f^[d * n] = (f^[d])^[n]`.
+  have key : ∀ (g : M → M) (hg : g = f^[d]^[n]) (p : g x = x),
+      fixedPointDerivative I g ⟨x, p⟩ = fixedPointDerivative I f^[d]^[n] ⟨x, hg ▸ p⟩ := by
+    rintro _ rfl _
+    rfl
+  rw [key _ (iterate_mul f d n)]
+  exact fixedPointDerivative_iterate ⟨x, hx.eq⟩ hf n
+
 /-- **Nondegeneracy as a determinant condition.** On a manifold modelled on a finite-dimensional
 space, a fixed point `x` at which `f` is differentiable is nondegenerate exactly when
 `det (1 - df_x) ≠ 0`. -/

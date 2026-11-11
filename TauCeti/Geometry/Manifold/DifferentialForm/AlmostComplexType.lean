@@ -186,8 +186,8 @@ theorem aeval_alternatingDerivation_apply (g : ℂ[X]) (φ : SmoothForm I M F k)
     { toFun φ := φ.1 x
       map_add' _ _ := rfl
       map_smul' _ _ := rfl }
-  exact (LinearMap.congr_fun (Polynomial.aeval_comp_eq_comp_aeval (σ := ev)
-    (f := A.alternatingDerivation) (g := (A x).alternatingDerivation) (LinearMap.ext
+  exact (LinearMap.congr_fun (Module.End.aeval_comp_of_comp_eq (f := ev)
+    (g := A.alternatingDerivation) (g₂ := (A x).alternatingDerivation) (LinearMap.ext
     fun φ ↦ rfl) g) φ).symm
 
 /-- A smooth endomorphism field `A` of the tangent bundle acts on real-valued smooth `k`-forms as a
