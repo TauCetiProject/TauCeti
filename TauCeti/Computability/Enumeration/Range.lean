@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Computability.Enumeration.Domain
 public import TauCeti.Computability.RE
-import Mathlib.Data.Set.Finite.Range
+import Mathlib.Data.Set.Finite.Basic
 
 /-!
 # Total and injective enumerations of c.e. sets
