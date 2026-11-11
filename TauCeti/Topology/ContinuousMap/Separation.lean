@@ -16,14 +16,14 @@ copies of `F`.
 
 ## Main declaration
 
-* `t2Space_of_separatesPoints`: a point-separating set of continuous functions into a Hausdorff
+* `Set.SeparatesPoints.t2Space`: a point-separating set of continuous functions into a Hausdorff
   space makes the source a Hausdorff space.
 -/
 
 public section
 
 /-- Continuous functions into a Hausdorff space that separate points make the source Hausdorff. -/
-theorem t2Space_of_separatesPoints {X F : Type*} [TopologicalSpace X] [TopologicalSpace F]
+theorem _root_.Set.SeparatesPoints.t2Space {X F : Type*} [TopologicalSpace X] [TopologicalSpace F]
     [T2Space F] {B : Set C(X, F)}
     (h : Set.SeparatesPoints ((fun b : C(X, F) => (b : X → F)) '' B)) : T2Space X := by
   refine T2Space.of_injective_continuous (f := fun x (b : B) => b.1 x) (fun x y hxy => ?_)
