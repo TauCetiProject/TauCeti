@@ -413,6 +413,29 @@ theorem norm_lt_iff {u : C.ComplexMethodSpace θ} {r : ℝ} :
 theorem norm_mk_le (g : C.stripTraces) : ‖mk θ g‖ ≤ ‖g‖ :=
   Submodule.Quotient.norm_mk_le _ g
 
+section Lift
+
+variable {E : Type*} [AddCommGroup E] [Module ℂ E] [TopologicalSpace E]
+
+/-- A continuous linear map on admissible traces descends to the interpolation space when it
+vanishes on the traces whose value at `θ` is zero. -/
+def lift (A : C.stripTraces →L[ℂ] E) (hA : ∀ g, C.stripEval θ g = 0 → A g = 0) :
+    C.ComplexMethodSpace θ →L[ℂ] E :=
+  (C.stripEval θ).ker.liftQL A hA
+
+@[simp]
+theorem lift_mk (A : C.stripTraces →L[ℂ] E) (hA : ∀ g, C.stripEval θ g = 0 → A g = 0)
+    (g : C.stripTraces) : lift A hA (mk θ g) = A g := (rfl)
+
+/-- A map from the interpolation space is determined by its values on admissible traces. -/
+theorem lift_unique (A : C.stripTraces →L[ℂ] E) (hA : ∀ g, C.stripEval θ g = 0 → A g = 0)
+    {T : C.ComplexMethodSpace θ →L[ℂ] E} (hT : ∀ g, T (mk θ g) = A g) : T = lift A hA := by
+  ext u
+  obtain ⟨g, rfl⟩ := mk_surjective u
+  simpa using hT g
+
+end Lift
+
 /-- The inclusion of `[X₀, X₁]_θ` into the sum space, `F ↦ F θ`. -/
 def toSum : C.ComplexMethodSpace θ →L[ℂ] C.SumSpace :=
   (C.stripEval θ).ker.liftQL (C.stripEval θ) le_rfl
