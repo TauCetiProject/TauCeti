@@ -40,8 +40,7 @@ instance : IsDirected (FiniteSubextension K L) (· ≤ ·) where
   directed E F := by
     have := E.2
     have := F.2
-    exact ⟨⟨E.1 ⊔ F.1, inferInstance⟩, (show E.1 ≤ E.1 ⊔ F.1 from le_sup_left),
-      (show F.1 ≤ E.1 ⊔ F.1 from le_sup_right)⟩
+    exact ⟨⟨E.1 ⊔ F.1, inferInstance⟩, le_sup_left, le_sup_right⟩
 
 instance : IsFiltered (FiniteSubextension K L) :=
   isFiltered_of_directed_le_nonempty _
@@ -56,16 +55,31 @@ def finiteSubextensionCocone : Cocone (finiteSubextensionDiagram K L) where
   pt := .of L
   ι := { app E := CommRingCat.ofHom (algebraMap E.1 L) }
 
-/-- An algebraic extension is the filtered colimit of its finite intermediate fields.
+/-- A stage of the finite-subextension diagram is its underlying commutative ring. -/
+@[simp] theorem finiteSubextensionDiagram_obj (E : FiniteSubextension K L) :
+    (finiteSubextensionDiagram K L).obj E = CommRingCat.of E.1 := (rfl)
 
-The forgetful functor reflects filtered colimits. Every element lies in its simple finite
-subextension, and the inclusion of each intermediate field is injective. -/
+/-- Transition maps are inclusions of intermediate fields. -/
+@[simp] theorem finiteSubextensionDiagram_map {E F : FiniteSubextension K L} (f : E ⟶ F) :
+    (finiteSubextensionDiagram K L).map f =
+      CommRingCat.ofHom (_root_.IntermediateField.inclusion (leOfHom f)).toRingHom := (rfl)
+
+/-- The cocone point is the ambient extension. -/
+@[simp] theorem finiteSubextensionCocone_pt :
+    (finiteSubextensionCocone K L).pt = CommRingCat.of L := (rfl)
+
+/-- Cocone legs are the inclusions into the ambient extension. -/
+@[simp] theorem finiteSubextensionCocone_ι_app (E : FiniteSubextension K L) :
+    (finiteSubextensionCocone K L).ι.app E = CommRingCat.ofHom (algebraMap E.1 L) := (rfl)
+
+/-- An algebraic extension is the filtered colimit of its finite intermediate fields. -/
 noncomputable def isColimitFiniteSubextensionCocone [Algebra.IsAlgebraic K L] :
     IsColimit (finiteSubextensionCocone K L) := by
+  -- The forgetful functor reflects filtered colimits. Each element belongs to a simple
+  -- finite subextension, and each intermediate-field inclusion is injective.
   apply isColimitOfReflects (forget CommRingCat)
   refine Types.FilteredColimit.isColimitOf' _ _ ?_ ?_
   · intro x
-    change L at x
     let E : FiniteSubextension K L :=
       ⟨_root_.IntermediateField.adjoin K {x},
         _root_.IntermediateField.adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral x)⟩
