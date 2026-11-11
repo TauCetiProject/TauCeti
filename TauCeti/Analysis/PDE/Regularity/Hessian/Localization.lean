@@ -205,7 +205,6 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le
       exact hx)
   rw [Wkp0.iteratedGradient_extendByZeroₗᵢ, LinearIsometry.norm_map, LinearIsometry.norm_map]
     at hkey
-  have hCl : 0 ≤ (C : ℝ) / lam := by positivity
   rw [hζD]
   calc ‖Wkp.iteratedGradient 1 w - TL‖
       ≤ ‖Wkp.iteratedGradient 1 w‖ + ‖TL‖ := norm_sub_le _ _

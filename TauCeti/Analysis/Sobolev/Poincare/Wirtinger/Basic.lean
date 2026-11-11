@@ -100,7 +100,7 @@ theorem lintegral_enorm_sub_setAverage_rpow_le_of_convex (hΩ : IsOpen Ω) (hΩc
       enorm_sub_setAverage_le_of_convex hΩ hΩc hb hu hx hS hS₀
   rcases subsingleton_or_nontrivial E with hE | hE
   · -- In dimension zero the left-hand side vanishes.
-    rw [setLIntegral_congr_fun hΩ.measurableSet fun x hx => by
+    rw [setLIntegral_congr_fun hΩ.measurableSet fun x _ => by
       rw [enorm_sub_setAverage_eq_zero_of_subsingleton x hS₀ hS_top,
         ENNReal.zero_rpow_of_pos (zero_lt_one.trans_le hp)], lintegral_zero]
     exact bot_le
@@ -166,13 +166,13 @@ theorem setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_of_convex (hΩ
   rw [← hμA']
   -- The Riesz kernel and the pointwise potential estimate, with its constant `c`.
   set k : E → E → ℝ≥0∞ := fun x y => ‖x - y‖ₑ ^ (1 - (n : ℝ))
-  set c : ℝ≥0∞ := ENNReal.ofReal (d ^ n / n) / μ S with hc_def
+  set c : ℝ≥0∞ := ENNReal.ofReal (d ^ n / n) / μ S
   have hpoint : ∀ x ∈ Ω, ‖u x - ⨍ y in S, u y ∂μ‖ₑ ≤
       c * ∫⁻ y in Ω, ‖fderiv ℝ u y‖ₑ * k x y ∂μ := fun x hx =>
     enorm_sub_setAverage_le_of_convex hΩ hΩc hb hu hx hS hS₀
   rcases subsingleton_or_nontrivial E with hE | hE
   · -- In dimension zero the left-hand side vanishes.
-    have hzero : ∀ x ∈ A', ‖u x - ⨍ y in S, u y ∂μ‖ₑ = 0 := fun x hx =>
+    have hzero : ∀ x ∈ A', ‖u x - ⨍ y in S, u y ∂μ‖ₑ = 0 := fun x _ =>
       enorm_sub_setAverage_eq_zero_of_subsingleton x hS₀ hS_top
     rw [setLIntegral_congr_fun hA'm hzero, lintegral_zero]
     exact bot_le

@@ -268,7 +268,7 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_rpow_mul_norm_gradient_sq_le
     (fun _ _ => by simp) u (v : W1p mu Omega 2)
   have hpt := h.ae_mul_sq_mul_rpow_mul_norm_sq_le_energyIntegrand hε hεu hp hvg
   -- Integrability of the three terms.
-  obtain ⟨M, hM, hψM, hgradM⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hcpt
+  obtain ⟨M, _, hψM, hgradM⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hcpt
   have hF := integrable_sq_mul_rpow_mul_norm_gradient_sq hε hεu hp hψ.continuous hψM
   have hY := integrable_norm_gradient_sq_mul_rpow (u := u) hε hεu hp hψ hgradM
   -- Integrate the pointwise estimate and absorb half of the left side.

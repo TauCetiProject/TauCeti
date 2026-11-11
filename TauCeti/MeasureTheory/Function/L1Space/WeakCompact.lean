@@ -148,7 +148,7 @@ theorem uniformIntegrable_of_isCompact_closure_toWeakSpace {A : Set (Lp 𝕜 1 �
     (u := fun n ↦ (i n : Lp 𝕜 1 μ)) fun n ↦ (i n).2
   set h : ℕ → α → 𝕜 := fun k x ↦ (i (τ k) : α → 𝕜) x - (f : α → 𝕜) x
   have hh (k : ℕ) : Integrable (h k) μ := (L1.integrable_coeFn _).sub (L1.integrable_coeFn f)
-  have hset (S : Set α) (hS : MeasurableSet S) :
+  have hset (S : Set α) :
       Tendsto (fun k ↦ ∫ x in S, h k x ∂μ) atTop (𝓝 0) := by
     have hS' := TauCeti.tendsto_toWeakSpace_iff_forall_eval_tendsto.1 hlim
       (Set.setIntegralLp (𝕜 := 𝕜) S (measure_lt_top μ S))
@@ -183,7 +183,7 @@ theorem uniformIntegrable_of_isCompact_closure_toWeakSpace {A : Set (Lp 𝕜 1 �
     rw [ENNReal.add_halves] at this
     exact lt_irrefl _ this
   have hzero := tendsto_setIntegral_norm_of_pairwise_disjoint (fun j ↦ hh (σ j + K))
-    (fun S hS ↦ (hset S hS).comp ((tendsto_add_atTop_nat K).comp hσ.tendsto_atTop)) hBm hB
+    (fun S _ ↦ (hset S).comp ((tendsto_add_atTop_nat K).comp hσ.tendsto_atTop)) hBm hB
   have hzero' : Tendsto (fun j ↦ ∫⁻ x in B j, ‖h (σ j + K) x‖ₑ ∂μ) atTop (𝓝 0) := by
     refine (ENNReal.tendsto_ofReal hzero).congr' (.of_forall fun j ↦ ?_) |>.trans ?_
     · exact ofReal_integral_norm_eq_lintegral_enorm (hh _).integrableOn

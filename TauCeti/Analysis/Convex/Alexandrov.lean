@@ -162,7 +162,6 @@ private theorem abs_toReal_sub_toReal_sub_le_of_mem_subdifferential {p₀ p₁ y
   rw [innerₗ_apply_apply, ← neg_sub, hp, inner_neg_left, real_inner_smul_left] at hup
   have l₀ := mul_le_mul_of_nonneg_left (abs_le.1 e₀).1 ha
   have u₁ := mul_le_mul_of_nonneg_left (abs_le.1 e₁).2 ha
-  have a₁ := mul_le_mul_of_nonneg_left (abs_le.1 hX).1 (sq_nonneg a)
   have a₂ := mul_le_mul_of_nonneg_left (abs_le.1 hX).2 (sq_nonneg a)
   rw [abs_le]
   constructor <;> nlinarith

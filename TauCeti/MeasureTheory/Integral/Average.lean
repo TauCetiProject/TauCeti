@@ -466,8 +466,6 @@ theorem setLAverage_enorm_sq_le_of_setIntegral_le {V W Y : Type*} [NormedAddComm
   rw [setLAverage_eq]
   refine ENNReal.div_le_of_le_mul ?_
   rw [← MeasureTheory.ofReal_setIntegral_norm_sq_eq hg]
-  have hP : 0 ≤ ∫ x in t, ‖f x‖ ^ 2 ∂μ := integral_nonneg fun x => sq_nonneg _
-  have hQ : 0 ≤ ∫ x in t, ‖G x‖ ^ 2 ∂μ := integral_nonneg fun x => sq_nonneg _
   calc ENNReal.ofReal (∫ x in s, ‖g x‖ ^ 2 ∂μ)
       ≤ ENNReal.ofReal (α * ∫ x in t, ‖f x‖ ^ 2 ∂μ + β * ∫ x in t, ‖G x‖ ^ 2 ∂μ) :=
         ENNReal.ofReal_le_ofReal h

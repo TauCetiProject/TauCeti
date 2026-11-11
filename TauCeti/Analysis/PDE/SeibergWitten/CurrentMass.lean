@@ -219,8 +219,7 @@ theorem exists_mass_integral_wedge_le_of_add_hodgeStar_eq (h₀ : J (e 0) = e 1)
     ((ae_restrict_iff' Ω.isOpen.measurableSet).2 (Filter.Eventually.of_forall fun x hx ↦ ?_))
     ((LinearMap.continuous_of_finiteDimensional
       (alternatingFormEquiv V 2).toLinearMap).comp_aestronglyMeasurable hF) (fun x hx ↦ ?_) m
-  · have hm : 0 ≤ max (1 - ‖φ x‖ ^ 2) 0 := le_max_right _ _
-    calc ‖β x‖ ^ 2 ≤ K / r * max (1 - ‖φ x‖ ^ 2) 0 + K / r ^ 2 := hβK x hx
+  · calc ‖β x‖ ^ 2 ≤ K / r * max (1 - ‖φ x‖ ^ 2) 0 + K / r ^ 2 := hβK x hx
       _ ≤ C' / r * max (1 - ‖φ x‖ ^ 2) 0 + C' / r ^ 2 := by gcongr
   · have hm : 0 ≤ max (1 - ‖φ x‖ ^ 2) 0 := le_max_right _ _
     have hFx := norm_le_of_add_hodgeStar_eq h₀ h₂₃ hQ hkl he (hφ x hx) (hβ x hx) hρ h₂ hr1

@@ -903,7 +903,7 @@ private theorem exists_fibreSheet_eq {h j : ℝ} (hj : j ≠ 0)
   simp only [cylindricalPoint_fst_two, cylindricalPoint_snd_two] at hw2
   obtain ⟨hx1, hx2⟩ := mem_sphericalPendulumPhaseSpace_cylindricalPoint_iff.1 hx
   rw [sphericalPendulumEnergyMomentum_cylindricalPoint, Prod.mk.injEq] at hF
-  obtain ⟨hF1, hF2⟩ := hF
+  obtain ⟨_, hF2⟩ := hF
   -- Since `r b = j ≠ 0`, the point is off the axis.
   have hr0 : 0 < r := hr.lt_of_ne fun h0 ↦ hj (by rw [← hF2, ← h0, zero_mul])
   have hz : z ∈ Ioo (-1 : ℝ) 1 := ((sq_lt_one_iff_abs_lt_one _).trans abs_lt).1 (by nlinarith)

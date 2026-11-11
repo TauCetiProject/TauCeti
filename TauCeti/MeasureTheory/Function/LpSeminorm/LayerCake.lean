@@ -61,7 +61,7 @@ theorem eLpNorm_le_lintegral_measure_norm_gt (hf : AEStronglyMeasurable f μ)
       (μ.prod (volume.restrict (Ioi (0 : ℝ)))))
     (by simpa using ENNReal.toReal_mono hp_top hp)).trans_eq ?_
   apply setLIntegral_congr_fun measurableSet_Ioi
-  intro t ht
+  intro t _
   have hpow : (fun x ↦ H x t ^ p.toReal) = {x | t < g x}.indicator 1 := by
     ext x
     by_cases hx : t < g x <;> simp [H, hx, ENNReal.toReal_pos

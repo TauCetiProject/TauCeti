@@ -186,8 +186,6 @@ private theorem HasCompactSpatialSupport.seminorm_slice_le (ha : a.HasCompactSpa
     SchwartzMap.seminorm ℂ k l (ha.sliceSchwartz ξ) ≤
         R ^ k * (∑ r : Fin l → Fin n, Symbol.seminorm K (List.ofFn r) [] a) *
           (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
-  have hP : 0 ≤ ∑ r : Fin l → Fin n, Symbol.seminorm K (List.ofFn r) [] a :=
-    Finset.sum_nonneg fun r _ ↦ apply_nonneg _ _
   refine SchwartzMap.seminorm_le_bound ℂ k l _ (by positivity) fun x ↦ ?_
   rw [ha.coe_sliceSchwartz]
   by_cases hx : x ∈ K
@@ -250,7 +248,6 @@ theorem exists_one_add_norm_pow_mul_norm_fourier_le_sum_seminorm
   set g := ha.sliceSchwartz ξ
   set P := ∑ α ∈ t, Symbol.seminorm K α [] a
   set w := (1 + ‖ξ‖ ^ 2) ^ (m / 2)
-  have hP : 0 ≤ P := Finset.sum_nonneg fun _ _ ↦ apply_nonneg _ _
   -- Each seminorm of `g` occurring in `key` is bounded by `max R 0 ^ k * P * w`.
   have hs {k : ℕ} {s : Finset (ℕ × ℕ)} {c : ℝ} (hc : 0 ≤ c) (hss : s ⊆ s₀ ∪ s₁)
       (h : ∀ g : 𝓢(CoordinateSpace n, V →L[ℂ] W),

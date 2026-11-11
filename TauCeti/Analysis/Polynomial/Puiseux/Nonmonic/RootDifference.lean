@@ -95,8 +95,6 @@ theorem exists_analyticOnNhd_nonmonic_root_sub_eq_zpow_mul_unit
     analyticAt_fst.prod (analyticAt_snd.pow n)
   have hqfull : MapsTo q (U ×ˢ ball 0 R') (U ×ˢ ball 0 R) :=
     (mapsTo_id U).prodMap (mapsTo_pow_ball_zero hn hR)
-  have hqmem : MapsTo q (U ×ˢ (ball 0 R' \ {0})) (U ×ˢ (ball 0 R \ {0})) :=
-    (mapsTo_id U).prodMap (mapsTo_pow_ball_zero_diff_singleton hn hR)
   have hRpos : 0 < R := lt_of_lt_of_le (pow_pos hR' n) hR
   have hxR : (x, (0 : ℂ)) ∈ U ×ˢ ball 0 R := ⟨hx, mem_ball_self hRpos⟩
   have hx' : (x, (0 : ℂ)) ∈ U ×ˢ ball 0 R' := ⟨hx, mem_ball_self hR'⟩

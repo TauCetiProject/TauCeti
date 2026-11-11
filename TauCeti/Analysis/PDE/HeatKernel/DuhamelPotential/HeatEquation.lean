@@ -110,7 +110,7 @@ on every interval: it is `O(H (σ - s)^((α - 2)/2))` for `σ > s` and vanishes 
 private theorem intervalIntegrable_laplacianSlice {s : ℝ} (hg : AEStronglyMeasurable (f s))
     (hM : ∀ᵐ y, ‖f s y‖ ≤ M) (hH : HolderWith H α (f s)) (hα : 0 < α) (x : E) (a b : ℝ) :
     IntervalIntegrable (laplacianSlice f x s) volume a b := by
-  obtain ⟨C, hC₀, hC⟩ := exists_norm_laplacian_heatKernel_convolution_le (E := E) (F := F) (α := α)
+  obtain ⟨C, _, hC⟩ := exists_norm_laplacian_heatKernel_convolution_le (E := E) (F := F) (α := α)
   refine ((intervalIntegrable_sub_const_rpow (neg_one_lt_sub_two_div_two hα) s a b).const_mul
     (C * H)).mono_fun ?_
     (ae_of_all _ fun σ => ?_)

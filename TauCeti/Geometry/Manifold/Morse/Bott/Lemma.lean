@@ -178,7 +178,7 @@ theorem exists_morseBott_chart (hi : i.IsNondegenerateCriticalSubmanifold f)
             (ψ z).2 (ψ z).2 := by
   set φ := h.domChart.extend J with hφ
   set ξ := h.codChart.extend I with hξ
-  set L := h.equiv with hL
+  set L := h.equiv
   set g := f ∘ ξ.symm ∘ L with hg
   set a := φ s with ha
   have hn : n ≠ 0 := fun h0 ↦ by simp [h0] at hkn
@@ -281,7 +281,7 @@ theorem exists_normalized_morseBott_chart (hi : i.IsNondegenerateCriticalSubmani
         (if j.val < manifoldMorseIndex I f (i s) then -1 else 1) * (ψ z).2 j ^ 2 := by
   set φ := h.domChart.extend J with hφ
   set ξ := h.codChart.extend I with hξ
-  set L := h.equiv with hL
+  set L := h.equiv
   set g := f ∘ ξ.symm ∘ L with hg
   set a := φ s with ha
   obtain ⟨ψ, U, V, hU, hV, haU, h0V, hsource, hUφ, hUVξ, hsec, hψfst, hψ0, hψsymm, hψ, hψinv,

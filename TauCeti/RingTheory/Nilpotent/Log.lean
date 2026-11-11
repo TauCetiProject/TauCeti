@@ -228,9 +228,9 @@ theorem Commute.nilpotentLog {A : Type*} [Ring A] [Algebra ℚ A] {a b : A}
     (h : Commute a b) : Commute (IsNilpotent.log a) (IsNilpotent.log b) := by
   rw [IsNilpotent.log_def, IsNilpotent.log_def]
   apply Commute.sum_left
-  intro i hi
+  intro i _
   apply Commute.sum_right
-  intro j hj
+  intro j _
   have hab : Commute (a - 1) (b - 1) :=
     (h.sub_left (Commute.one_left b)).sub_right (Commute.one_right (a - 1))
   exact ((hab.pow_pow i j).smul_left _).smul_right _

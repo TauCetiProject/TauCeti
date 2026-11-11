@@ -259,7 +259,6 @@ private theorem toReal_edist_sq_le_mul_sub
   rw [hem, hen, ← EReal.coe_ennreal_toReal hP, ← EReal.coe_add, EReal.coe_le_coe_iff] at hC1
   simp only [ENNReal.toReal_div, ENNReal.toReal_pow, ENNReal.toReal_mul, ENNReal.toReal_ofNat,
     ENNReal.toReal_natCast, ENNReal.coe_toReal] at hC1
-  have hτr : (0 : ℝ) < τ := NNReal.coe_pos.2 hτ
   have := (div_le_iff₀ (by positivity)).1
     (by linarith : (edist (u m) (u n)).toReal ^ 2 / (2 * ((n - m : ℕ) * τ)) ≤ em - en)
   linarith
@@ -388,7 +387,6 @@ theorem exists_eventually_forall_le_apply_and_edist_le_of_forall_mem_moreauYosid
       (L : EReal) ≤ φ (U k n) ∧ edist x₀ (U k n) ≤ R := by
   set τ' : ℝ≥0 := τ₀ / 2
   have hτ'τ₀ : τ' < τ₀ := half_lt_self hτ₀
-  have hτ₀τ'r : (0 : ℝ) < τ₀ - τ' := sub_pos.2 (NNReal.coe_lt_coe.2 hτ'τ₀)
   -- Eventually the initial point is within distance `1` of `x₀`, hence within `D` of `x₁`, and
   -- `4 τ k ≤ τ'`.
   set D : ℝ := (edist x₀ x₁).toReal + 1

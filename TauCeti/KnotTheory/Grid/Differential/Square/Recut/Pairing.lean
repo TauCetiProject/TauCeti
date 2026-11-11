@@ -273,7 +273,6 @@ theorem IsRecut.target_ne_source {D E : GridRectangleDecomposition x z} (h : D.I
   intro hzx
   have hsides := D.target_eq_source_iff_sideColumns_eq.mp hzx
   have h₁ := D.first.left_ne_right
-  have h₂ := D.second.left_ne_right
   have hl : D.first.left ∈ D.second.sideColumns := hsides ▸ by simp
   have hr : D.first.right ∈ D.second.sideColumns := hsides ▸ by simp
   simp only [GridRectangleBetween.mem_sideColumns] at hl hr

@@ -670,7 +670,6 @@ theorem exists_norm_coefficient_add_sub_le (a : Symbol n V W m)
   have hv : ‖v‖ ≤ (1 + ‖v‖ ^ 2) ^ ((1 : ℝ) / 2) := by
     rw [← Real.sqrt_eq_rpow]
     exact Real.le_sqrt_of_sq_le (by linarith)
-  have hB0 : 0 ≤ B := by positivity
   have hsplit : (1 + ‖v‖ ^ 2) ^ ((|m - 1| + 1) / 2) =
       (1 + ‖v‖ ^ 2) ^ (|m - 1| / 2) * (1 + ‖v‖ ^ 2) ^ ((1 : ℝ) / 2) := by
     rw [← Real.rpow_add (by positivity)]

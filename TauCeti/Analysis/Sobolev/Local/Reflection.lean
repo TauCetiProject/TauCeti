@@ -234,7 +234,7 @@ private theorem setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g' : ℂ → 
     ∫ z in {z : ℂ | 0 < z.im}, fderiv ℝ χ z v • g z =
       -∫ z in {z : ℂ | 0 < z.im}, χ z • g' z := by
   have := hgW.completeSpace
-  set H := {z : ℂ | 0 < z.im} with hHdef
+  set H := {z : ℂ | 0 < z.im}
   have hHm : MeasurableSet H := measurableSet_lt measurable_const measurable_im
   set K := tsupport χ ∩ {z : ℂ | 0 ≤ z.im}
   have hK : IsCompact K := hχc.isCompact.inter_right (isClosed_le continuous_const continuous_im)
@@ -266,8 +266,6 @@ private theorem setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g' : ℂ → 
   have I2 (n : ℕ) : IntegrableOn (fun z => D n z • g z) H :=
     hint hg (hχ.continuous.mul ((hdst.comp ((continuous_const.mul continuous_im).sub
       continuous_const)).mul continuous_const)) tsupport_mul_subset_left
-  have I3' (n : ℕ) : IntegrableOn (fun z => (imCutoff n z * χ z) • g' z) H :=
-    hint hg' ((contDiff_imCutoff n).continuous.mul hχ.continuous) tsupport_mul_subset_right
   -- The weak derivative identity, tested against `imCutoff n * χ`.
   have key (n : ℕ) : (∫ z in H, (imCutoff n z * fderiv ℝ χ z v) • g z) +
       ∫ z in H, D n z • g z = -∫ z in H, (imCutoff n z * χ z) • g' z := by

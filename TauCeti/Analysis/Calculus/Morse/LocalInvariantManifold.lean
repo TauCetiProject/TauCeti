@@ -307,7 +307,7 @@ theorem exists_localStableSet_eq_lipschitzGraph_of_contDiffAt
   have hN0 := h.negativeGradientRemainder_centered_zero
   have hN' := h.hasFDerivAt_negativeGradientRemainder_centered
   have hfield_time := neg_gradient_centered_time_eq (f := f) (x := x)
-  set N : E → E := fun z ↦ negativeGradientRemainder f x (x + z) with hNdef
+  set N : E → E := fun z ↦ negativeGradientRemainder f x (x + z)
   -- Choose `rho` so that the Lyapunov--Perron solutions with parameters in `closedBall 0 rho`
   -- stay strictly inside the ball of confinement, where the cutoff is invisible.
   obtain ⟨rho, hrho, hrho_lt⟩ :=
@@ -415,7 +415,7 @@ theorem exists_localUnstableSet_eq_lipschitzGraph_of_contDiffAt
   have hN0 := h.negativeGradientRemainder_centered_zero
   have hN' := h.hasFDerivAt_negativeGradientRemainder_centered
   have hfield_time := neg_gradient_centered_time_eq (f := f) (x := x)
-  set N : E → E := fun z ↦ negativeGradientRemainder f x (x + z) with hNdef
+  set N : E → E := fun z ↦ negativeGradientRemainder f x (x + z)
   obtain ⟨rho, hrho, hrho_lt⟩ :=
     exists_pos_mul_lt hr ((K : ℝ) / (1 - 2 * K * ((epsilon : ℝ) * 2) / alpha))
   have hset :=

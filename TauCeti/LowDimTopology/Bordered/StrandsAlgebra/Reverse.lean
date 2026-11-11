@@ -217,7 +217,7 @@ theorem reverse_apply (φ : StrandDiagram α) (i : αᵒᵈ) :
   ext j
   rw [← Option.mem_def, mem_reverse, ← Option.mem_def, Option.mem_map]
   simp only [PEquiv.mem_iff_mem, coe_toPEquiv]
-  exact ⟨fun h ↦ ⟨_, h, rfl⟩, fun ⟨k, hk, hj⟩ ↦ hj ▸ hk⟩
+  exact ⟨fun h ↦ ⟨_, h, rfl⟩, fun ⟨_, hk, hj⟩ ↦ hj ▸ hk⟩
 
 theorem toDual_mem_reverse_toDual {φ : StrandDiagram α} {i j : α} :
     toDual j ∈ φ.reverse (toDual i) ↔ i ∈ φ j :=

@@ -1096,7 +1096,7 @@ theorem exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_bmoSeminorm_l
           C * μ (ball x₀ r) := by
   rcases isEmpty_or_nonempty ι with hι | hι
   · -- `ℝⁿ` is a point, so the oscillation vanishes and `C = 1` works.
-    refine ⟨1, one_pos, 1, fun {E} _ _ _ μ _ f M σ hf hM hσ x₀ r => ?_⟩
+    refine ⟨1, one_pos, 1, fun {E} _ _ _ μ _ f M σ _ _ _ x₀ r => ?_⟩
     have hsub : Subsingleton (EuclideanSpace ℝ ι) := inferInstance
     by_cases h0 : μ (ball x₀ r) = 0
     · simp [Measure.restrict_eq_zero.2 h0]
@@ -1107,9 +1107,6 @@ theorem exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_bmoSeminorm_l
     simp
   obtain ⟨A, hA, C, h⟩ := exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le (ι := ι)
   refine ⟨A, hA, C, fun {E} _ _ _ μ _ f M σ hf hM hσ x₀ r => ?_⟩
-  have hn : 0 < 2 * √(Fintype.card ι : ℝ) := by
-    have : (0 : ℝ) < Fintype.card ι := by exact_mod_cast Fintype.card_pos
-    positivity
   have hR : 2 * √(Fintype.card ι : ℝ) * r / (2 * √(Fintype.card ι : ℝ)) = r := by
     field_simp
   have := h (x₀ := x₀) (R := 2 * √(Fintype.card ι : ℝ) * r)

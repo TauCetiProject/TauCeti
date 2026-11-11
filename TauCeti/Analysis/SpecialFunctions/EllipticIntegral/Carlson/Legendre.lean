@@ -100,7 +100,6 @@ private theorem abs_deriv_smul_carlson_integrand_eq {φ k θ : ℝ} {H : ℂ} {G
   have hs : 0 < s := sin_pos_of_pos_of_lt_pi hφ0 (by linarith [pi_pos])
   have hu : 0 < sin θ := sin_pos_of_pos_of_lt_pi hθ0 (by linarith [pi_pos])
   have hc : 0 < cos θ := cos_pos_of_mem_Ioo ⟨by linarith [pi_pos], by linarith⟩
-  have hus : sin θ < s := sin_lt_sin_of_lt_of_le_pi_div_two (by linarith [pi_pos]) hφ hθ
   have hku : 0 < 1 - k ^ 2 * sin θ ^ 2 :=
     sub_pos.mpr (mul_sin_sq_lt_one_of_abs_le hk ((abs_of_pos hθ0).trans_le hθ.le) hφ)
   -- The three arguments of the square roots are perfect squares up to `1 - k² sin² θ`.
@@ -132,7 +131,6 @@ private theorem abs_deriv_smul_carlson_integrand_eq {φ k θ : ℝ} {H : ℂ} {G
   rw [hC, sqrt_sq hpos.le] at hCc
   rw [abs_neg, abs_of_pos (by positivity), real_smul, hAc, hBc, hCc, hH,
     legendreF_integrand_eq_inv_sqrt]
-  have hsq := sqrt_pos.mpr hku
   norm_cast
   field_simp
 
@@ -214,10 +212,8 @@ private theorem carlsonRJ_eq_of_pos {φ k α2 : ℝ} (hφ0 : 0 < φ) (hφ : φ �
   -- Under the substitution, `(t + 1 - α² sin² φ)⁻¹ = sin² θ / (sin² φ (1 - α² sin² θ))`.
   have h := integral_carlson_eq_integral_legendre
     (h := fun t ↦ ((t : ℂ) + ((1 - α2 * sin φ ^ 2 : ℝ) : ℂ))⁻¹)
-    (g := fun θ ↦ sin θ ^ 2 / (1 - α2 * sin θ ^ 2) / sin φ ^ 2) hφ0 hφ hk fun θ ⟨hθ0, _⟩ ↦ by
+    (g := fun θ ↦ sin θ ^ 2 / (1 - α2 * sin θ ^ 2) / sin φ ^ 2) hφ0 hφ hk fun θ ⟨hθ0, hθ⟩ ↦ by
       have hu : sin θ ≠ 0 := (sin_pos_of_pos_of_lt_pi hθ0 (by linarith [pi_pos])).ne'
-      have hαu : 1 - α2 * sin θ ^ 2 ≠ 0 :=
-        (sub_pos.mpr (mul_sin_sq_lt_one_of_abs_le hα ((abs_of_pos hθ0).trans_le hθ.le) hφ)).ne'
       have hsum : sin φ ^ 2 / sin θ ^ 2 - 1 + (1 - α2 * sin φ ^ 2) =
           sin φ ^ 2 * (1 - α2 * sin θ ^ 2) / sin θ ^ 2 := by
         field_simp

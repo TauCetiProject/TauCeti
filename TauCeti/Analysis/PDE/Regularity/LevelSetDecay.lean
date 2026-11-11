@@ -162,7 +162,6 @@ theorem sqrt_mul_measureReal_le_mul_measureReal_ball_of_forall_setIntegral_le
   have : IsFiniteMeasure nu := isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   set V := mu.real (ball x₀ R)
   set d := M - k
-  have hd : 0 < d := sub_pos.2 hkM
   set lev : ℕ → ℝ := fun j => M - d / 2 ^ j
   set A : ℕ → ℝ := fun j => nu.real {x | lev j ≤ W1p.value u x}
   set D : ℕ → ℝ := fun j => nu.real (W1p.value u ⁻¹' Ioo (lev j) (lev (j + 1)))

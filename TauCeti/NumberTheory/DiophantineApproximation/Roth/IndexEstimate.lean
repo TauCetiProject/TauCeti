@@ -325,7 +325,7 @@ private theorem false_of_index_bounds {n m : ℕ} {θ σ t : ℝ} {a b : ℝ≥0
 /-- The inductive step of Roth's lemma. -/
 private theorem indexBound_succ {n : ℕ} (ih : IndexBound K n) : IndexBound K (n + 1) := by
   intro θ hθ hθσ r hr hratio P hP hdeg β hβ
-  set σ := θ ^ 2 ^ (n + 1) with hσ
+  set σ := θ ^ 2 ^ (n + 1)
   have hσ0 : 0 < σ := by positivity
   have hanti : Antitone r := Fin.antitone_iff_succ_le.2 fun i ↦ by
     have h := hratio i

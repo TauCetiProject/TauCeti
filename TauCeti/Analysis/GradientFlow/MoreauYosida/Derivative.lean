@@ -326,6 +326,7 @@ theorem tendsto_moreauYosida_nhdsGT_zero (hφ : LowerSemicontinuousAt φ x) {σ 
   filter_upwards [(hinv.const_mul_atTop (by positivity : (0 : ℝ) < δ₀ ^ 2 / 2)).eventually_ge_atTop
       (c' - m + δ₀ ^ 2 / (2 * σ)), nhdsWithin_le_nhds (Iio_mem_nhds hσ), self_mem_nhdsWithin]
     with τ hτK (hτσ : τ < σ) (hτ : 0 < τ)
+  have hτ₀ : (0 : ℝ) < τ := NNReal.coe_pos.2 hτ
   refine hcc'.trans_le (le_moreauYosida_iff.2 fun z hz ↦ ?_)
   rcases lt_or_ge (edist x z) δ₀ with hzδ | hzδ
   · refine (hball ?_ |>.le).trans (le_add_of_nonneg_right (EReal.coe_ennreal_nonneg _))

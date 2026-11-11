@@ -235,7 +235,6 @@ theorem CurvatureDimensionInfinity.exists_dist_sq_add_dist_sq_le
   set d := dist x₀ x₁
   -- Choose `r > 0` with `2 (d / 2 + 2 r)² ≤ d² / 2 + ε`.
   set r := min 1 (ε / (4 * d + 8))
-  have hd : 0 ≤ d := dist_nonneg
   have hr : 0 < r := lt_min one_pos (by positivity)
   have hrε : 4 * d * r + 8 * r ^ 2 ≤ ε := by
     have h1 : r ≤ 1 := min_le_left _ _

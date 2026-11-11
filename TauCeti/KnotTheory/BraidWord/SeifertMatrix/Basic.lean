@@ -1025,7 +1025,6 @@ private theorem exists_rotate_map :
     ∃ κ : seifertLoops (n := n) (x :: v) → (v ++ [x]).seifertLoops,
       (∀ c, c.1.1 ≠ 0 → (κ c).1 = (c.1.1 - 1, c.1.2 - 1)) ∧
         ∀ c, c.1.1 = 0 → (κ c).1 = (m - 1, v.length) := by
-  have hmlen := lt_length_of_levelAt_cons hm
   -- a loop through the first letter lies on the level of `x`, so that level has a second letter
   have hm0 : ∀ c : seifertLoops (n := n) (x :: v), c.1.1 = 0 → m ≠ 0 := fun c h0 ↦ by
     have hc := (mem_seifertLoops _).1 c.2

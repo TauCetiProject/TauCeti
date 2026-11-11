@@ -505,7 +505,6 @@ theorem exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul [Complete
   rcases lt_or_gt_of_ne ha with ha | ha
   · rw [abs_of_neg ha]
     have hd : 0 < -a := neg_pos.2 ha
-    have hX : 0 ≤ H * (|b - a| * (-a) ^ (β - 1)) := by positivity
     calc ‖u b - u a‖ ≤ H * Mα * (|b - a| * (-a) ^ (β - 1)) :=
           norm_sub_le_mul_abs_sub_mul_rpow_of_neg_left hβ₀ hβ₁ hneg hrate ha b
       _ = Mα * (H * (|b - a| * (-a) ^ (β - 1))) := by ring

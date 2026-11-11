@@ -148,7 +148,6 @@ private theorem exists_mem_inter_norm_sub_sq_le {t₀ c₁ : ℝ} {c₂ : Strong
   have hav : (β - α) * ‖u s'‖ ^ 2 ≤ ∫ r in Ioo α β, ‖u r‖ ^ 2 := by
     rw [setAverage_eq, measureReal_def, hμK, ENNReal.toReal_ofReal (sub_nonneg.2 hαβ.le),
       smul_eq_mul, setIntegral_congr_set (hK ▸ sdiff_null_ae_eq_self hN)] at hs'le
-    have hpos := sub_pos.2 hαβ
     calc (β - α) * ‖u s'‖ ^ 2 ≤ (β - α) * ((β - α)⁻¹ * ∫ r in Ioo α β, ‖u r‖ ^ 2) := by
           gcongr
       _ = ∫ r in Ioo α β, ‖u r‖ ^ 2 := by field_simp

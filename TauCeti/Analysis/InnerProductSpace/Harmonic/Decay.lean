@@ -122,7 +122,6 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.measureReal_ball_mul_norm_sq_le_s
     {y : E} {s : ℝ} (hu : HarmonicOnNhd u (closedBall y s)) :
     μ.real (ball y s) * ‖u y‖ ^ 2 ≤ ∫ x in ball y s, ‖u x‖ ^ 2 ∂μ := by
   have hc : ContinuousOn u (closedBall y s) := hu.continuousOn
-  have hint : IntegrableOn u (ball y s) μ := hu.integrableOn_ball
   have hint2 : IntegrableOn (fun x ↦ ‖u x‖ ^ 2) (ball y s) μ :=
     ((hc.norm.pow 2).integrableOn_compact (isCompact_closedBall y s)).mono_set
       ball_subset_closedBall

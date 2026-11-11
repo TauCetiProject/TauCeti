@@ -226,7 +226,7 @@ theorem card_fixed_canonicalWalk (w : Fin (n + 1) → α) :
     exact canonicalWalk_apply w i.isLt
   rw [himage]
   apply card_image_of_injOn
-  intro x hx y hy hxy
+  intro x hx y _ hxy
   obtain ⟨i, -, rfl⟩ := mem_image.mp hx
   exact (List.idxOf_inj (List.mem_ofFn.mpr ⟨i, rfl⟩)).1 hxy
 

@@ -382,7 +382,7 @@ private theorem pullbackCLM_reparam_apply (hab : a ≠ b) {m : ℕ}
       rw [SetLike.mem_coe.symm, coe_reparamPreimage, mem_preimage]
       exact ω.tsupport_subset h
     rw [pullbackCLM_apply_of_notMem _ hp, image_eq_zero_of_notMem_tsupport hp']
-    ext v
+    ext _
     simp
 
 variable {hW : ∀ p ∈ W, p.2 ∈ uIcc a b → p.1 ∈ Ω}

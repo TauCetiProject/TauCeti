@@ -369,8 +369,7 @@ private theorem milnorFunction_eq_add_iff (hμ_nonneg : ∀ r, 0 ≤ μ r) :
     set e := EuclideanSpace.sumComplEquivProd ℝ fun j : Fin n ↦ j.val < k i
     rcases le_or_gt (2 * ε) (‖(e (ψ i x)).1‖ ^ 2 + 2 * ‖(e (ψ i x)).2‖ ^ 2) with h | h
     · rw [hFx, hμ₀ _ h, sub_zero, ← hfx]
-    · have hu := sq_nonneg ‖(e (ψ i x)).1‖
-      have hμx := hμ_nonneg (‖(e (ψ i x)).1‖ ^ 2 + 2 * ‖(e (ψ i x)).2‖ ^ 2)
+    · have hμx := hμ_nonneg (‖(e (ψ i x)).1‖ ^ 2 + 2 * ‖(e (ψ i x)).2‖ ^ 2)
       rw [hFx, hfx]
       constructor <;> intro h' <;> nlinarith
   · rw [milnorFunction_of_forall_notMem (not_exists.1 hxs)]

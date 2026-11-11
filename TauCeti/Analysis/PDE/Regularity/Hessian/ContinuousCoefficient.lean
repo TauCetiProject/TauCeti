@@ -101,7 +101,7 @@ private theorem exists_lpNorm_iteratedGradient_ball_le_mul_norm_add_norm (hn : 0
   refine ⟨C₀, δ, hδ, fun {A lam} hl0 hA {Omega x₀ r} hr0 hR {a b c β γ} ha hosc hb hbβ hc hcγ
     u f heq => ?_⟩
   set Λ := ∑ i, ∑ j, |A i j| + δ * lam with hΛ
-  set T := (1 + (Λ + β * (2 * r) + γ * (2 * r) ^ 2) / lam) ^ 2 with hT
+  set T := (1 + (Λ + β * (2 * r) + γ * (2 * r) ^ 2) / lam) ^ 2
   have hT0 : 0 ≤ T := sq_nonneg _
   -- The bounds on `Ω` restrict to `B(x₀, 2 r)`.
   have hball_ae : ∀ {P : EuclideanSpace ℝ (Fin n) → Prop},

@@ -143,7 +143,7 @@ conjugate of `ξ`, and approximates `ξ` with exponent `w`, where
 `(n + 1) (2 + |ξ|) ^ n ≤ H(α) ^ (w - w')`, then the coefficient vector of its primitive minimal
 polynomial is a `w'`-approximation of the linear form in `ξ, ξ², …, ξⁿ`. -/
 private theorem coeffVec_primitiveMinpoly_mem_linearFormApproximations {n : ℕ} {ξ w w' : ℝ}
-    {α : ℂ} (hw' : 0 ≤ w') (hww' : w' < w) (halg : IsAlgebraic ℚ α)
+    {α : ℂ} (hw' : 0 ≤ w') (_ : w' < w) (halg : IsAlgebraic ℚ α)
     (hdeg : (minpoly ℚ α).natDegree ≤ n)
     (hle : ‖(ξ : ℂ) - α‖ ≤ naiveHeight α ^ (-w - 1)) (hconj : α ∉ (minpoly ℚ ξ).rootSet ℂ)
     (hR : (n + 1) * (2 + |ξ|) ^ n ≤ naiveHeight α ^ (w - w')) :
@@ -164,8 +164,6 @@ private theorem coeffVec_primitiveMinpoly_mem_linearFormApproximations {n : ℕ}
     rw [← minpoly_eq_of_aeval_primitiveMinpoly_eq_zero h₀, mem_rootSet]
     exact ⟨minpoly.ne_zero halg.isIntegral, minpoly.aeval ℚ α⟩
   have hx₀ : x ≠ 0 := fun hx ↦ hne (by rw [← hL, hx]; simp)
-  have hξα : ‖(ξ : ℂ) - α‖ ≤ 1 :=
-    hle.trans (Real.rpow_le_one_of_one_le_of_nonpos hH₁ (by linarith))
   rw [mem_linearFormApproximations, hL]
   refine ⟨abs_pos.2 hne, ?_⟩
   have hK : ((minpoly ℚ α).natDegree + 1) * (2 + ‖(ξ : ℂ)‖) ^ (minpoly ℚ α).natDegree ≤ K := by

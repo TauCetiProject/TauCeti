@@ -655,13 +655,12 @@ private theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_sub_le {α :
   obtain ⟨K, hK₀, hK⟩ :=
     exists_ae_norm_iteratedFDeriv_two_heatKernel_convolution_sub_time_le (E := E) (F := F) (α := α)
   have hα₂' : (α : ℝ) < 2 := hα₂
-  have h2α : (0 : ℝ) < 2 - α := sub_pos.2 hα₂'
   refine ⟨3 * C₁ + 2 / (2 - α) * K, by positivity,
     fun {f M t t' H} hf hfM hH ht' htt' x => ?_⟩
   rcases htt'.eq_or_lt with rfl | htt'
   · rw [sub_self, norm_zero]; positivity
   have ht : 0 < t := ht'.trans_lt htt'
-  set h := t - t'
+  set h := t - t' with hh_def
   have hh : 0 < h := sub_pos.2 htt'
   set Φ : ℝ → ℝ → ContinuousMultilinearMap ℝ (fun _ : Fin 2 => E) F :=
     fun τ s => iteratedFDeriv ℝ 2 (heatKernel (τ - s) ⋆ f s) x

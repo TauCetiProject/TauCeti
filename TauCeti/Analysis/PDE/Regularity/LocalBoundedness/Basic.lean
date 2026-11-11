@@ -681,6 +681,7 @@ private theorem exists_ae_value_le_add_mul_rpow_mul_rpow_mul_rpow_mul_sqrt_setIn
       rw [hα, sub_pos, div_lt_one (by linarith)]
       exact h2q
   -- Enlarge the cutoff constant to `c + 1 ≥ 1`.
+  have hc'0 : 1 ≤ c + 1 := by linarith
   have hc' : ∀ (x₀ : EuclideanSpace ℝ ι) {r R : ℝ}, 0 < r → r < R →
       ∃ ψ : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧
         EqOn ψ 1 (Metric.closedBall x₀ r) ∧ tsupport ψ ⊆ Metric.closedBall x₀ R ∧
@@ -1208,7 +1209,7 @@ private theorem ae_eq_zero_of_forall_ball_le_mul_rpow {e : ℝ} (he : 0 < e) (D 
   rcases le_or_gt R 0 with hR | hR
   · simp [Metric.ball_eq_empty.2 (by linarith : R / 2 ≤ 0)]
   set L := √(∫ x in Metric.ball x₀ R, w x ^ 2 ∂mu)
-  set s : ℕ → ℝ := fun k => R / (2 * ((k : ℝ) + 1)) with hs_def
+  set s : ℕ → ℝ := fun k => R / (2 * ((k : ℝ) + 1))
   have hs0 : ∀ k, 0 < s k := fun k => by positivity
   have hsR : ∀ k, s k ≤ R / 2 := fun k =>
     div_le_div_of_nonneg_left hR.le two_pos (by linarith [Nat.cast_nonneg (α := ℝ) k])

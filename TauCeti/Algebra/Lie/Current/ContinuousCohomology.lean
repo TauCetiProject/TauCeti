@@ -237,7 +237,7 @@ theorem residueClass_eq_zero_iff {Φ : LinearMap.BilinForm R L}
     (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) :
     residueClass R L Φ hΦ hΦs = 0 ↔ Φ = 0 := by
   have h0i : (0 : LinearMap.BilinForm R L).lieInvariant L := fun x y z ↦ by simp
-  have h0s : (0 : LinearMap.BilinForm R L).IsSymm := ⟨fun x y ↦ by simp⟩
+  have h0s : (0 : LinearMap.BilinForm R L).IsSymm := ⟨fun _ _ ↦ by simp⟩
   rw [← residueClass_zero h0i h0s, residueClass_inj]
 
 /-- The residue class of a nonzero invariant symmetric form is nonzero over every commutative
