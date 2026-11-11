@@ -89,8 +89,7 @@ theorem eq_zero_of_finsupp_comul_comp_eq
     (hf : comul ∘ₗ f = TensorProduct.map f f ∘ₗ comul)
     (hd : comul ∘ₗ d = (TensorProduct.map d f + TensorProduct.map f d) ∘ₗ comul) :
     d = 0 := by
-  apply Finsupp.lhom_ext
-  intro i r
+  refine Finsupp.lhom_ext' fun i => LinearMap.ext_ring ?_
   have hsingle : comul (R := R) (Finsupp.single i (1 : R)) =
       Finsupp.single i 1 ⊗ₜ[R] Finsupp.single i 1 := by
     simp
@@ -98,11 +97,8 @@ theorem eq_zero_of_finsupp_comul_comp_eq
       f (Finsupp.single i 1) ⊗ₜ[R] f (Finsupp.single i 1) := by
     simpa only [LinearMap.comp_apply, hsingle, TensorProduct.map_tmul] using
       LinearMap.congr_fun hf (Finsupp.single i 1)
-  have hzero : d (Finsupp.single i 1) = 0 := by
-    apply Finsupp.eq_zero_of_comul_eq_tmul_add_tmul hgroup
+  simpa using Finsupp.eq_zero_of_comul_eq_tmul_add_tmul hgroup <| by
     simpa only [LinearMap.comp_apply, hsingle, LinearMap.add_apply, TensorProduct.map_tmul] using
       LinearMap.congr_fun hd (Finsupp.single i 1)
-  rw [← mul_one r, ← smul_eq_mul, ← Finsupp.smul_single, map_smul, hzero, smul_zero]
-  rfl
 
 end LinearMap
