@@ -27,7 +27,7 @@ index-two generator, whose Riemann--Roch space contains `1` and `x`.  The other 
 its class to an effective divisor `B`, picks a function `x ∈ L(B)` outside the constants — which
 positivity of `ℓ(B)` over the line of constants provides — and reads `[F : k(x)] = deg (x)_∞`
 off the product formula: the pole divisor of `x` is dominated by `B`, so the degree is at most
-two, and it is not one because a rational function field has genus zero.
+two.  If it is one then `F = k(x)`, and `k(x ^ 2)` has index two instead.
 
 In genus two the canonical divisor is such an `A`, since `deg W = 2g - 2 = 2` and `ℓ(W) = g = 2`;
 so every function field of genus two has an index-two rational subfield, and away from
@@ -118,17 +118,18 @@ theorem IsHyperellipticFunctionField.exists_degree_eq_two_and_two_le_dim
 /-! ### From a divisor of degree two to the index-two subfield -/
 
 /-- **A divisor of degree two whose Riemann--Roch space has dimension at least two produces a
-rational subfield of index two**.
+rational subfield of index two**: some transcendental `x` has `[F : k(x)] = 2`.
 
 No hypothesis on the characteristic is made, and no separability is claimed: this is the part of
-Stichtenoth's Section VI.2 dictionary that holds over an arbitrary constant field.  The subfield
-is `k(x)` for a nonconstant `x` in the Riemann--Roch space of an effective divisor `B` linearly
-equivalent to `A`, and its index is at most two. If `k(x)` has index one, so `k(x) = F`, then `x` is
-replaced by `x ^ 2`, whose subfield has index two; otherwise `k(x)` already has index two. -/
+Stichtenoth's Section VI.2 dictionary that holds over an arbitrary constant field.  The case of a
+rational function field `F = k(t)` is included. -/
 theorem exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two
     (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
     {A : Divisor k F} (hA : Divisor.degree A = 2) (hdim : 2 ≤ Divisor.dim A) :
     ∃ x : F, Transcendental k x ∧ Module.finrank k⟮x⟯ F = 2 := by
+  -- The subfield is `k(x)` for a nonconstant `x` in the Riemann--Roch space of an effective
+  -- divisor `B` linearly equivalent to `A`; its index is at most two.  If it is one, so
+  -- `k(x) = F`, replace `x` by `x ^ 2`, whose subfield has index two.
   -- Move `A` inside its class to an effective divisor `B`, which has the same degree and `ℓ`.
   obtain ⟨z, hzA, hz0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
     ((Divisor.one_le_dim_iff_riemannRochSpace_ne_bot hF A).mp (by omega))
