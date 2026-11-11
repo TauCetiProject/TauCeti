@@ -15,10 +15,14 @@ Over a seminormed commutative ring `R`, which need not be a field, an `R`-biline
 scalar action with `‖r • m‖ ≤ C * ‖r‖ * ‖m‖` (`TauCeti.continuousSMul_of_norm_smul_le`). For an
 `R`-algebra `S`, such a bound on the action makes the structure map bounded
 (`TauCeti.exists_norm_algebraMap_le_of_norm_smul_le`).
+
+A fibrewise linear change of coordinates `(x, v) ↦ (x, e x v)`, with `e` continuous at `a`, tends
+to `(a, 0)` at `(a, 0)` (`ContinuousAt.tendsto_prodMk_clm_apply`).
 -/
 
 public section
 
+open Filter Topology
 open scoped NNReal
 
 variable {R : Type*} [SeminormedCommRing R]
@@ -49,5 +53,15 @@ theorem TauCeti.exists_norm_algebraMap_le_of_norm_smul_le {S : Type*} [Seminorme
     ∃ C : ℝ≥0, ∀ r : R, ‖algebraMap R S r‖ ≤ C * ‖r‖ :=
   h.elim fun C hC ↦ ⟨C * ‖(1 : S)‖₊, fun r ↦ by
     simpa [Algebra.algebraMap_eq_smul_one, mul_right_comm] using hC r 1⟩
+
+/-- A fibrewise linear change of coordinates `(x, v) ↦ (x, e x v)`, with `e` continuous at `a`,
+tends to `(a, 0)` at `(a, 0)`. -/
+theorem ContinuousAt.tendsto_prodMk_clm_apply {𝕜 X E F : Type*} [NontriviallyNormedField 𝕜]
+    [TopologicalSpace X] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {e : X → E →L[𝕜] F} {a : X} (he : ContinuousAt e a) :
+    Tendsto (fun z : X × E ↦ (z.1, e z.1 z.2)) (𝓝 (a, 0)) (𝓝 (a, 0)) := by
+  have h : ContinuousAt (fun z : X × E ↦ e z.1 z.2) (a, 0) :=
+    (he.comp (f := Prod.fst) (x := (a, (0 : E))) continuousAt_fst).clm_apply continuousAt_snd
+  simpa using continuousAt_fst.tendsto.prodMk_nhds h.tendsto
 
 end

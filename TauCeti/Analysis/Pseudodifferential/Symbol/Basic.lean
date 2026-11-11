@@ -33,7 +33,9 @@ space, and develop the first operations of the symbol calculus:
 * `TauCeti.Symbol.frequencyDeriv`: a frequency derivative `∂_{ξ_j}` lowers the order by one;
 * `TauCeti.Symbol.frequencyLaplacian`: the frequency Laplacian `Δ_ξ = ∑ⱼ ∂²_{ξ_j}` lowers the
   order by two, and `TauCeti.Symbol.frequencyLaplacianPow` iterates it;
-* `TauCeti.Symbol.spatialDeriv`: a spatial derivative `∂_{x_j}` preserves the order;
+* `TauCeti.Symbol.spatialDeriv`: a spatial derivative `∂_{x_j}` preserves the order; spatial and
+  frequency derivatives commute with each other (`TauCeti.Symbol.spatialDeriv_comm`,
+  `TauCeti.Symbol.frequencyDeriv_comm`, `TauCeti.Symbol.spatialDeriv_frequencyDeriv_comm`);
 * `TauCeti.Symbol.ofSpatial`: a smooth coefficient `f(x)` independent of the frequency, the symbol
   of multiplication by `f`, has order `0`; in particular so does a constant
   (`TauCeti.Symbol.const`);
@@ -58,7 +60,9 @@ coefficient vanishing at all large frequencies is smoothing
 constant is not (`TauCeti.Symbol.isSmoothing_const_iff`).
 
 The image of a symbol under a continuous linear map of the coefficient spaces, such as conjugation
-by isomorphisms of `V` and `W`, has the same order (`TauCeti.Symbol.map`).
+by isomorphisms of `V` and `W`, has the same order (`TauCeti.Symbol.map`), and commutes with
+spatial and frequency derivatives (`TauCeti.Symbol.spatialDeriv_map`,
+`TauCeti.Symbol.frequencyDeriv_map`).
 
 The estimates are only required locally uniformly in `x`. The predicate
 `TauCeti.Symbol.IsUniform` asks for constants independent of `x`, and
@@ -559,6 +563,32 @@ theorem mixedDeriv_spatialDeriv (j : Fin n) (a : Symbol n V W m) (α β : List (
     funext fun p => coefficient_spatialDeriv j a p.1 p.2
   rw [h, mixedDeriv_coordinateDeriv_fst a.contDiff_coefficient]
 
+/-- Two frequency derivatives of a symbol commute. -/
+theorem frequencyDeriv_comm (j l : Fin n) (a : Symbol n V W m) :
+    frequencyDeriv j (frequencyDeriv l a) = frequencyDeriv l (frequencyDeriv j a) := by
+  ext1
+  funext ⟨x, ξ⟩
+  simp only [coefficient_frequencyDeriv]
+  rw [← coordinateDeriv_append, ← coordinateDeriv_append]
+  exact coordinateDeriv_pair_comm
+    ((a.contDiff_coefficient.comp (contDiff_prodMk_right x)).of_le (by simp)) j l ξ
+
+/-- Two spatial derivatives of a symbol commute. -/
+theorem spatialDeriv_comm (j l : Fin n) (a : Symbol n V W m) :
+    spatialDeriv j (spatialDeriv l a) = spatialDeriv l (spatialDeriv j a) := by
+  ext1
+  funext ⟨x, ξ⟩
+  simp only [coefficient_spatialDeriv]
+  rw [← coordinateDeriv_append, ← coordinateDeriv_append]
+  exact coordinateDeriv_pair_comm ((a.contDiff_coefficient_slice ξ).of_le (by simp)) j l x
+
+/-- A spatial and a frequency derivative of a symbol commute. -/
+theorem spatialDeriv_frequencyDeriv_comm (j l : Fin n) (a : Symbol n V W m) :
+    spatialDeriv j (frequencyDeriv l a) = frequencyDeriv l (spatialDeriv j a) := by
+  ext1
+  funext ⟨x, ξ⟩
+  exact (coordinateDeriv_coordinateDeriv_comm a.contDiff_coefficient [j] [l] x ξ).symm
+
 /-- The position derivative of a symbol in the `j`-th coordinate direction is the coefficient of
 its spatial derivative `∂_{x_j} a`. -/
 theorem fderiv_coefficient_single (a : Symbol n V W m) (j : Fin n) (x ξ : CoordinateSpace n) :
@@ -648,6 +678,22 @@ theorem exists_norm_coefficient_add_sub_le (a : Symbol n V W m)
   calc ‖a.coefficient (x, ξ + v) - a.coefficient (x, ξ)‖ ≤ B * ‖v‖ := hmv
     _ ≤ B * (1 + ‖v‖ ^ 2) ^ ((1 : ℝ) / 2) := by gcongr
     _ = _ := by rw [hsplit, hB]; ring
+
+/-- Frequency derivatives commute with the order inclusions. -/
+@[simp]
+theorem frequencyDeriv_inclusion (j : Fin n) (h : m ≤ m') (a : Symbol n V W m) :
+    frequencyDeriv j (inclusion h a) = inclusion (by linarith) (frequencyDeriv j a) := by
+  ext1
+  funext ⟨x, ξ⟩
+  simp
+
+/-- Spatial derivatives commute with the order inclusions. -/
+@[simp]
+theorem spatialDeriv_inclusion (j : Fin n) (h : m ≤ m') (a : Symbol n V W m) :
+    spatialDeriv j (inclusion h a) = inclusion h (spatialDeriv j a) := by
+  ext1
+  funext ⟨x, ξ⟩
+  simp
 
 theorem IsUniform.frequencyDeriv {a : Symbol n V W m} (ha : a.IsUniform) (j : Fin n) :
     (frequencyDeriv j a).IsUniform := by
@@ -1305,6 +1351,23 @@ theorem HasCompactSpatialSupport.map {a : Symbol n V W m} (ha : a.HasCompactSpat
     (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) : (a.map Φ).HasCompactSpatialSupport := by
   obtain ⟨K, hK, hKa⟩ := ha
   exact ⟨K, hK, fun x hx ξ ↦ by rw [coefficient_map, hKa x hx ξ, map_zero]⟩
+
+/-- Spatial derivatives commute with the image under a continuous linear map. -/
+@[simp]
+theorem spatialDeriv_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : Symbol n V W m) (j : Fin n) :
+    spatialDeriv j (a.map Φ) = (spatialDeriv j a).map Φ :=
+  Symbol.ext (funext fun ⟨x, ξ⟩ ↦ by
+    rw [coefficient_spatialDeriv, coefficient_map, coefficient_spatialDeriv]
+    exact Φ.coordinateDeriv_comp_left [j] ((a.contDiff_coefficient_slice ξ).of_le (by simp)) x)
+
+/-- Frequency derivatives commute with the image under a continuous linear map. -/
+@[simp]
+theorem frequencyDeriv_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : Symbol n V W m)
+    (j : Fin n) : frequencyDeriv j (a.map Φ) = (frequencyDeriv j a).map Φ :=
+  Symbol.ext (funext fun ⟨x, ξ⟩ ↦ by
+    rw [coefficient_frequencyDeriv, coefficient_map, coefficient_frequencyDeriv]
+    exact Φ.coordinateDeriv_comp_left [j]
+      ((a.contDiff_coefficient.comp (contDiff_const.prodMk contDiff_id)).of_le (by simp)) ξ)
 
 end Map
 
