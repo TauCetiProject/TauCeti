@@ -47,6 +47,8 @@ preconnected base these are all of its orientations
 * `TauCeti.VectorBundleOrientation.trivial`: the constant orientations of a trivial bundle.
 * `TauCeti.VectorBundleOrientation.pullback`: the pullback of an orientation along a continuous
   map of bases.
+* `TauCeti.VectorBundleOrientation.reindex`: an orientation reindexed along an equivalence of
+  index types.
 
 ## Main results
 
@@ -109,6 +111,14 @@ theorem mapOrientation_neg (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b :
     (hb : b ∈ e.baseSet) (o : Orientation ℝ (E b) ι) :
     e.mapOrientation ι hb (-o) = -e.mapOrientation ι hb o :=
   Module.Ray.map_neg _ o
+
+/-- Reading a fibre orientation in a trivialization commutes with reindexing its index type. -/
+@[simp]
+theorem mapOrientation_reindex {ι' : Type*} (e : Trivialization F (π F E)) [e.IsLinear ℝ] {b : B}
+    (hb : b ∈ e.baseSet) (f : ι ≃ ι') (o : Orientation ℝ (E b) ι) :
+    e.mapOrientation ι' hb (Orientation.reindex ℝ (E b) f o) =
+      Orientation.reindex ℝ F f (e.mapOrientation ι hb o) :=
+  Orientation.map_reindex _ f o
 
 /-- Reading a fibre orientation in a second trivialization applies the coordinate change to its
 reading in the first. -/
@@ -311,6 +321,66 @@ theorem pullback_neg (o : VectorBundleOrientation F E ι) : (-o).pullback f = -o
   ext fun _ ↦ (rfl)
 
 end Pullback
+
+section Reindex
+
+variable {ι' ι'' : Type*}
+
+/-- **Reindexing an orientation** along an equivalence `ι ≃ ι'` of index types: the orientation of
+every fibre is reindexed by `Orientation.reindex`. -/
+def reindex (f : ι ≃ ι') : VectorBundleOrientation F E ι ≃ VectorBundleOrientation F E ι' where
+  toFun o := ⟨fun b ↦ Orientation.reindex ℝ (E b) f (o b), fun b ↦
+    (o.eventually_mapOrientation_eq' b).mono fun _ hx hx' ↦ by
+      rw [Trivialization.mapOrientation_reindex, Trivialization.mapOrientation_reindex]
+      exact congrArg _ (hx hx')⟩
+  invFun o := ⟨fun b ↦ Orientation.reindex ℝ (E b) f.symm (o b), fun b ↦
+    (o.eventually_mapOrientation_eq' b).mono fun _ hx hx' ↦ by
+      rw [Trivialization.mapOrientation_reindex, Trivialization.mapOrientation_reindex]
+      exact congrArg _ (hx hx')⟩
+  left_inv o := ext fun b ↦ by
+    simp only [coe_mk, ← Orientation.reindex_symm, Equiv.symm_apply_apply]
+  right_inv o := ext fun b ↦ by
+    simp only [coe_mk, ← Orientation.reindex_symm, Equiv.apply_symm_apply]
+
+@[simp]
+theorem reindex_apply (f : ι ≃ ι') (o : VectorBundleOrientation F E ι) (b : B) :
+    reindex f o b = Orientation.reindex ℝ (E b) f (o b) :=
+  (rfl)
+
+@[simp]
+theorem reindex_symm (f : ι ≃ ι') :
+    (reindex f : VectorBundleOrientation F E ι ≃ _).symm = reindex f.symm :=
+  (rfl)
+
+@[simp]
+theorem reindex_refl :
+    (reindex (Equiv.refl ι) : VectorBundleOrientation F E ι ≃ _) = Equiv.refl _ :=
+  Equiv.ext fun o ↦ ext fun b ↦ by
+    rw [reindex_apply, Orientation.reindex_refl, Equiv.refl_apply, Equiv.refl_apply]
+
+theorem reindex_trans (f : ι ≃ ι') (f' : ι' ≃ ι'') (o : VectorBundleOrientation F E ι) :
+    reindex (f.trans f') o = reindex f' (reindex f o) :=
+  ext fun b ↦ Orientation.reindex_trans f f' (o b)
+
+/-- Reindexing commutes with reversing the orientation. -/
+@[simp]
+theorem reindex_neg (f : ι ≃ ι') (o : VectorBundleOrientation F E ι) :
+    reindex f (-o) = -reindex f o :=
+  ext fun b ↦ Module.Ray.map_neg _ (o b)
+
+/-- Reindexing commutes with pullback along a continuous map of bases. -/
+@[simp]
+theorem pullback_reindex {B' : Type*} [TopologicalSpace B'] (g : C(B', B)) (f : ι ≃ ι')
+    (o : VectorBundleOrientation F E ι) : (reindex f o).pullback g = reindex f (o.pullback g) :=
+  ext fun _ ↦ (rfl)
+
+/-- Reindexing a constant orientation of a trivial bundle reindexes the constant. -/
+@[simp]
+theorem reindex_trivial (f : ι ≃ ι') (o : Orientation ℝ F ι) :
+    reindex f (trivial B o) = trivial B (Orientation.reindex ℝ F f o) :=
+  ext fun _ ↦ (rfl)
+
+end Reindex
 
 /-- The set of points where two orientations agree is open. -/
 theorem isOpen_setOf_eq (o o' : VectorBundleOrientation F E ι) :
