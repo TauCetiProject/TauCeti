@@ -5,32 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.FreeAbelianGroup.Finsupp
 public import Mathlib.GroupTheory.FreeGroup.IsFreeGroup
+public import TauCeti.Algebra.FreeAbelianGroup.Basic
 
 /-!
 # The abelianization of a free group is torsion-free
 
-The free abelian group `FreeAbelianGroup α` is isomorphic to the group `α →₀ ℤ` of finitely
-supported integer-valued functions (`FreeAbelianGroup.equivFinsupp`), so it is torsion-free. It is
-by definition the additive version of the abelianization of the free group `FreeGroup α`. Hence the
-abelianization of every free group is torsion-free: if `g ^ n` lies in the commutator subgroup of a
-free group for some `n ≠ 0`, then so does `g`.
+The free abelian group `FreeAbelianGroup α` is torsion-free
+(`FreeAbelianGroup.instIsAddTorsionFree`), and it is by definition the additive version of the
+abelianization of the free group `FreeGroup α`. Hence the abelianization of every free group is
+torsion-free: if `g ^ n` lies in the commutator subgroup of a free group for some `n ≠ 0`, then
+so does `g`.
 
 ## Main results
 
-* `FreeAbelianGroup.instIsAddTorsionFree`: a free abelian group is torsion-free.
 * `IsFreeGroup.instIsMulTorsionFreeAbelianization`: the abelianization of a free group is
   torsion-free.
 -/
 
 public section
-
-/-- A free abelian group is torsion-free. -/
-instance FreeAbelianGroup.instIsAddTorsionFree {α : Type*} :
-    IsAddTorsionFree (FreeAbelianGroup α) :=
-  (FreeAbelianGroup.equivFinsupp α).injective.isAddTorsionFree
-    (FreeAbelianGroup.equivFinsupp α).toAddMonoidHom
 
 namespace IsFreeGroup
 
