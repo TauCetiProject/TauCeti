@@ -326,7 +326,8 @@ theorem exists_setIntegral_norm_fourierInv_sub_sub_le_of_support_subset {ι : Ty
     exact le_max_right _ _
   · -- the tail of the kernel
     calc ∫ x in {x | 2 * ‖h‖ < ‖x‖}, ‖𝓕⁻ σ (x - h) - 𝓕⁻ σ x‖
-        ≤ 2 * ∫ x in {x | ‖h‖ < ‖x‖}, ‖𝓕⁻ σ x‖ := hK.setIntegral_norm_comp_sub_sub_le h
+        ≤ 2 * ∫ x in {x | ‖h‖ < ‖x‖}, ‖𝓕⁻ σ x‖ :=
+          hK.integrableOn.setIntegral_norm_comp_sub_sub_le (two_mul _).ge
       _ ≤ 2 * (C₁ * A * (t * ‖h‖) ^ ((finrank ℝ V : ℝ) / 2 - N)) := by
           gcongr
           exact hC₁' σ ht hA hσ (hσk N le_rfl) ‖h‖ (norm_pos_iff.2 hh)
