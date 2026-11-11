@@ -26,7 +26,9 @@ between `T*M` and `T*N`. It is parametrized by `(q, Q)` through its source proje
 `(q, Q) ↦ (Q, -d_Q S)` (`TauCeti.CotangentBundle.generatingTarget`); together they form the map
 `TauCeti.CotangentBundle.generatingCorrespondence I J S : M × N → T*M × T*N`. This is the manifold
 version of the linear relation of `TauCeti.cotangentGeneratingSource` and
-`TauCeti.cotangentGeneratingTarget`.
+`TauCeti.cotangentGeneratingTarget`. The target point of the relation of `S` over `(q, Q)` is the
+source point of the relation of a second function `T` on `N × P` over `(Q, Q')` exactly when the
+two covectors at `Q` agree (`TauCeti.CotangentBundle.generatingTarget_eq_generatingSource_iff`).
 
 * The relation is the graph of `dS` in `T*(M × N)` with the second covector reversed: the
   identification `T*(M × N) ≃ T*M × T*N` of `TauCeti.CotangentBundle.prodDiffeomorph` sends the
@@ -122,6 +124,21 @@ omit [TopologicalSpace M] in
 theorem generatingTarget_snd (x : M × N) :
     (generatingTarget J S x).2 = -mvfderiv J (fun Q ↦ S (x.1, Q)) x.2 :=
   (rfl)
+
+omit [TopologicalSpace M] in
+/-- The target point of the relation of `S` over `(a, b)` is the source point of the relation of
+`T` over `(b, c)` exactly when their covectors at `b` agree. -/
+theorem generatingTarget_eq_generatingSource_iff {P : Type*} {T : N × P → ℝ}
+    {a : M} {b : N} {c : P} :
+    generatingTarget J S (a, b) = generatingSource J T (b, c) ↔
+      -mvfderiv J (fun x ↦ S (a, x)) b = mvfderiv J (fun x ↦ T (x, c)) b := by
+  have hS : generatingTarget J S (a, b) =
+      TotalSpace.mk' (F →L[ℝ] ℝ) b (-mvfderiv J (fun x ↦ S (a, x)) b) :=
+    TotalSpace.ext (proj_generatingTarget (a, b)) (heq_of_eq (generatingTarget_snd (a, b)))
+  have hT : generatingSource J T (b, c) =
+      TotalSpace.mk' (F →L[ℝ] ℝ) b (mvfderiv J (fun x ↦ T (x, c)) b) :=
+    TotalSpace.ext (proj_generatingSource (b, c)) (heq_of_eq (generatingSource_snd (b, c)))
+  rw [hS, hT, TotalSpace.mk_inj]
 
 /-- The generated relation is the pair of its source and target projections. -/
 @[simp]

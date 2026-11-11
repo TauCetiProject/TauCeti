@@ -123,38 +123,7 @@ theorem mvfderiv_cyclicAction_apply {S : ZMod N → Q × Q → ℝ} {q : ZMod N 
         -- The two sides differ only in the point at which the tangent space of `ℝ` is taken.
         rfl
 
-/-- **The differential on the diagonal.** If `S` is differentiable at `(q, q)`, the differential
-of `ψ(x) = S(x, x)` at `q` is the sum `d₁S(q, q) + d₂S(q, q)` of the partial differentials. This
-is the differential of the cyclic action with a single vertex. -/
-theorem mvfderiv_diag_eq_add {S : Q × Q → ℝ} {q : Q}
-    (hS : MDifferentiableAt (I.prod I) 𝓘(ℝ) S (q, q)) :
-    mvfderiv I (fun x ↦ S (x, x)) q =
-      mvfderiv I (fun x ↦ S (x, q)) q + mvfderiv I (fun x ↦ S (q, x)) q := by
-  have hdiag : MDifferentiableAt I (I.prod I) (fun x : Q ↦ (x, x)) q :=
-    mdifferentiableAt_id.prodMk mdifferentiableAt_id
-  refine ContinuousLinearMap.ext fun v : E ↦ ?_
-  -- `ψ` is `S` composed with the diagonal, whose differential is `v ↦ (v, v)`.
-  refine (mvfderiv_comp_apply (g := S) (f := fun x : Q ↦ (x, x)) q hS hdiag v).trans ?_
-  have hd : mfderiv I (I.prod I) (fun x : Q ↦ (x, x)) q =
-      (mfderiv I I (@id Q) q).prod (mfderiv I I (@id Q) q) :=
-    mfderiv_prodMk (f := id) (g := id) mdifferentiableAt_id mdifferentiableAt_id
-  rw [hd, mfderiv_id]
-  exact mfderiv_prod_eq_add_apply (v := (v, v)) hS
-
 namespace CotangentBundle
-
-/-- The target point of the relation of `S` over `(a, b)` is the source point of the relation of
-`T` over `(b, c)` exactly when their covectors at `b` agree. -/
-theorem generatingTarget_eq_generatingSource_iff {S T : Q × Q → ℝ} {a b c : Q} :
-    generatingTarget I S (a, b) = generatingSource I T (b, c) ↔
-      -mvfderiv I (fun x ↦ S (a, x)) b = mvfderiv I (fun x ↦ T (x, c)) b := by
-  have hS : generatingTarget I S (a, b) =
-      TotalSpace.mk' (E →L[ℝ] ℝ) b (-mvfderiv I (fun x ↦ S (a, x)) b) :=
-    TotalSpace.ext (proj_generatingTarget (a, b)) (heq_of_eq (generatingTarget_snd (a, b)))
-  have hT : generatingSource I T (b, c) =
-      TotalSpace.mk' (E →L[ℝ] ℝ) b (mvfderiv I (fun x ↦ T (x, c)) b) :=
-    TotalSpace.ext (proj_generatingSource (b, c)) (heq_of_eq (generatingSource_snd (b, c)))
-  rw [hS, hT, TotalSpace.mk_inj]
 
 /-- **Critical points of the cyclic discrete action.** If each `S_i` is differentiable at the
 edge `(q_i, q_(i+1))`, then `q` is a critical point of `A(q) = Σ_i S_i(q_i, q_(i+1))` exactly
