@@ -5,25 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.RiemannSurface.Branch.EulerCharacteristic
+public import TauCeti.Analysis.Complex.RiemannSurface.Branch.Sphere
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Canonical.Degree
 public import TauCeti.Topology.Triangulable.FiniteCWType
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Sphere
-import TauCeti.Topology.Triangulable.Sphere
 
 /-!
 # The degree of a canonical divisor is minus the Euler characteristic
 
 Let `X` be a compact connected Riemann surface of finite CW type admitting a finite holomorphic
-map `f : X → ℙ¹`. The topological Riemann–Hurwitz formula
-(`FiniteHolomorphicMap.eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree_of_subset`),
-applied with the branch values as punctures and with `χ(ℙ¹) = 2`, gives
+map `f : X → ℙ¹`. The topological Riemann–Hurwitz formula over the sphere gives
 `-2 deg f + deg R_f = -χ(X)`
 (`FiniteHolomorphicMap.neg_two_mul_degree_add_ramificationDegree_eq_neg_eulerChar`, in the
-namespace `TauCeti.RiemannSurface`).
-The punctured Riemann sphere has finite CW type because the sphere is triangulable
-(`Set.Finite.finiteCWType_compl_onePoint_complex`).
+namespace `TauCeti.RiemannSurface`, proved in `Branch.Sphere`).
 
 The canonical-divisor form of Riemann–Hurwitz says that every canonical divisor `K` of `X` has
 degree `-2 deg f + deg R_f`
@@ -55,29 +50,6 @@ open AlgebraicGeometry
 
 variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
   [CompactSpace X] [T2Space X]
-
-namespace FiniteHolomorphicMap
-
-/-- **Riemann–Hurwitz over the sphere, topological form.** A finite holomorphic map `f : X → ℙ¹`
-from a compact Riemann surface of finite CW type satisfies `-2 deg f + deg R_f = -χ(X)`. -/
-theorem neg_two_mul_degree_add_ramificationDegree_eq_neg_eulerChar [FiniteCWType X]
-    (f : FiniteHolomorphicMap X (OnePoint ℂ)) :
-    -2 * (degree f : ℤ) + ramificationDegree f = -eulerChar X := by
-  have := f.finite_branchValues.finiteCWType_compl_onePoint_complex
-  rw [f.eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree_of_subset f.finite_branchValues
-    subset_rfl, eulerChar_onePoint, Complex.finrank_real_complex]
-  ring
-
-/-- For the power map `z ↦ z²` of the sphere both sides are `-2`: the analytic count is
-`-2 · 2 + 2` and the topological side is `-χ(ℙ¹)`. -/
-example : -2 * (degree (spherePow two_ne_zero) : ℤ) + ramificationDegree (spherePow two_ne_zero) =
-      -2 ∧ -eulerChar (OnePoint ℂ) = -2 := by
-  refine ⟨?_, by rw [eulerChar_onePoint, Complex.finrank_real_complex]; norm_num⟩
-  rw [coe_spherePow, ramificationDegree_onePointMap_pow two_ne_zero,
-    degree_onePointMap_pow two_ne_zero]
-  norm_num
-
-end FiniteHolomorphicMap
 
 namespace IsCanonicalDivisor
 

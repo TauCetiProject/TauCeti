@@ -34,6 +34,22 @@ open scoped Manifold
 
 universe u v w
 
+namespace Set.Finite
+
+open TauCeti
+
+/-- Deleting finitely many points from a compact connected triangulable Riemann surface leaves a
+space of finite CW type. -/
+theorem finiteCWType_compl_of_isTriangulable_complex {Y : Type u} [TopologicalSpace Y]
+    [ChartedSpace ℂ Y] [IsManifold 𝓘(ℂ) 1 Y] [T2Space Y] [ConnectedSpace Y] [CompactSpace Y]
+    {S : Set Y} (hS : S.Finite) (hY : IsTriangulable.{w} Y) : FiniteCWType ↥Sᶜ := by
+  have : IsManifold 𝓘(ℝ, ℂ) 2 Y :=
+    (inferInstance : IsManifold 𝓘(ℂ) 1 Y).restrictScalars_of_ne_zero 2 (by norm_num)
+  exact hS.finiteCWType_compl_of_isTriangulable (E := ℂ)
+    (by rw [← Module.finrank_eq_rank, Complex.finrank_real_complex]; norm_num) hY
+
+end Set.Finite
+
 namespace TauCeti.RiemannSurface.FiniteHolomorphicMap
 
 variable {X Y : Type u} [TopologicalSpace X] [ChartedSpace ℂ X]
@@ -54,12 +70,9 @@ theorem eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree_of_isTriangulab
   obtain ⟨x, _, _⟩ := f.nonconstant
   have : ConnectedSpace Y := ⟨⟨f x⟩⟩
   have : CompactSpace Y := f.surjective.compactSpace f.holomorphic.continuous
-  have : IsManifold 𝓘(ℝ, ℂ) 2 Y :=
-    (inferInstance : IsManifold 𝓘(ℂ) 1 Y).restrictScalars_of_ne_zero 2 (by norm_num)
   have := hX.finiteCWType
   have := hY.finiteCWType
-  have := f.finite_branchValues.finiteCWType_compl_of_isTriangulable (E := ℂ)
-    (by rw [← Module.finrank_eq_rank, Complex.finrank_real_complex]; norm_num) hY
+  have := f.finite_branchValues.finiteCWType_compl_of_isTriangulable_complex hY
   exact f.eulerChar_eq_degree_mul_eulerChar_sub_ramificationDegree
 
 end TauCeti.RiemannSurface.FiniteHolomorphicMap
