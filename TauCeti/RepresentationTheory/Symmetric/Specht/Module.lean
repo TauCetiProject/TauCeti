@@ -53,6 +53,8 @@ here do not require characteristic zero.
 * `TauCeti.spechtSubrepresentation`: the span of the polytabloids, as a subrepresentation of `M^μ`.
 * `TauCeti.spechtModule`: the Specht module `S^μ` of a partition `μ` of `n`, that subrepresentation
   of the diagram of `μ` bundled as a finitely generated representation of `Sₙ`.
+* `TauCeti.spechtSubrepresentationCongr`: the transport of a Specht module along an equation of
+  diagrams.
 
 ## Main results
 
@@ -400,6 +402,24 @@ noncomputable abbrev spechtModule {n : ℕ} (μ : n.Partition) :
     FDRep R (Equiv.Perm (Fin n)) :=
   FDRep.of ((spechtSubrepresentation (R := R) (YoungDiagram.ofPartition μ)).toRepresentation.comp
     (finCongr (YoungDiagram.card_ofPartition μ).symm).permCongrHom.toMonoidHom)
+
+/-- **Specht modules of equal diagrams are equivalent**, the symmetric groups on their labels both
+being identified with `Sₙ`.  This transports a Specht module along an equation of diagrams such as
+`YoungDiagram.ofPartition_conjugate`. -/
+noncomputable def spechtSubrepresentationCongr {n : ℕ} {D E : YoungDiagram}
+    (h : D = E) (hD : n = D.card) (hE : n = E.card) :
+    Representation.Equiv ((spechtSubrepresentation (R := R) D).toRepresentation.comp
+        (finCongr hD).permCongrHom.toMonoidHom)
+      ((spechtSubrepresentation (R := R) E).toRepresentation.comp
+        (finCongr hE).permCongrHom.toMonoidHom) := by
+  subst h
+  exact .refl _
+
+/-- Transport along the trivial equation of diagrams is the identity. -/
+@[simp]
+theorem spechtSubrepresentationCongr_rfl {n : ℕ} (D : YoungDiagram) (hD hD' : n = D.card) :
+    spechtSubrepresentationCongr (R := R) rfl hD hD' = .refl _ :=
+  (rfl)
 
 end CommRing
 

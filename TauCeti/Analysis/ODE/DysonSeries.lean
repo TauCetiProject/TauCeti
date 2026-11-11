@@ -8,9 +8,11 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Star
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Algebra.Star.Unitary
+public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import TauCeti.Analysis.ODE.Caratheodory
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.SmoothSeries
+import Mathlib.Analysis.SpecialFunctions.Exponential
 import Mathlib.Analysis.SpecificLimits.Normed
 
 /-!
@@ -60,6 +62,7 @@ one-parameter automorphism groups of C⋆-algebras.
 * `TauCeti.apply_dysonSeriesLeft_apply_dysonSeriesLeft`: the propagator of a continuous path
   that is skew for a continuous bilinear map `B` preserves `B`.
 * `TauCeti.contDiff_dysonSeriesLeft`: the left series of a `Cⁿ` path is `Cⁿ⁺¹`.
+* `TauCeti.dysonSeriesLeft_const`: the left series of a constant path `a` is `t ↦ exp (t • a)`.
 * `TauCeti.dysonSeries_neg_mul_dysonSeriesLeft`, `TauCeti.dysonSeriesLeft_mul_dysonSeries_neg`:
   the Dyson series of `-p` is the inverse of the left Dyson series of `p`.
 * `TauCeti.eq_dysonSeriesLeft_apply_add_integral`: variation of constants, every solution of
@@ -358,6 +361,14 @@ theorem eq_dysonSeriesLeft_mul (hp : Continuous p) {f : ℝ → B}
     (w := fun t => dysonSeriesLeft p t * f 0) (fun t => by simpa using hf t) (fun t => ?_)
     (t₀ := 0) (by simp)) t
   simpa [mul_assoc] using (hasDerivAt_dysonSeriesLeft hp t).mul_const (f 0)
+
+/-- **The Dyson series of a constant path is the exponential.** For the constant path `a`, the
+solution of `Γ' t = a * Γ t` with `Γ 0 = 1` is `Γ t = exp (t • a)`. -/
+@[simp]
+theorem dysonSeriesLeft_const (a : B) (t : ℝ) :
+    dysonSeriesLeft (fun _ ↦ a) t = NormedSpace.exp (t • a) := by
+  simpa using (eq_dysonSeriesLeft_mul continuous_const
+    (fun t ↦ hasDerivAt_exp_smul_const' (𝕂 := ℝ) a t) t).symm
 
 /-- For a periodic path, the left Dyson series over a translated period factors through the
 left Dyson series over one period: `Γ (t + d) = Γ t * Γ d`. -/
