@@ -304,6 +304,28 @@ theorem mlieBracket_neg_left {V W : ∀ y : M, TangentSpace I y} {x : M} :
     mlieBracket I (-V) W x = -mlieBracket I V W x := by
   rw [mlieBracket_swap_apply, mlieBracket_neg_right, neg_neg, mlieBracket_swap_apply]
 
+omit [CompleteSpace E] in
+/-- Scaling the first vector field by a constant scales the manifold Lie bracket. This is Mathlib's
+`mlieBracket_const_smul_left` without its differentiability hypothesis, and without completeness:
+`fderivWithin` of a constant multiple is the constant multiple of `fderivWithin`
+(`fderivWithin_const_smul_field`). -/
+theorem mlieBracket_const_smul_left_field {V W : ∀ y : M, TangentSpace I y} {x : M} (c : 𝕜) :
+    mlieBracket I (c • V) W x = c • mlieBracket I V W x := by
+  have hs : UniqueDiffWithinAt 𝕜 ((extChartAt I x).symm ⁻¹' Set.univ ∩ Set.range I)
+      (extChartAt I x x) := by
+    rw [Set.preimage_univ, Set.univ_inter]
+    exact I.uniqueDiffOn _ (Set.mem_range_self _)
+  have key (V' W' : E → E) :
+      lieBracketWithin 𝕜 (c • V') W' ((extChartAt I x).symm ⁻¹' Set.univ ∩ Set.range I)
+          (extChartAt I x x) =
+        c • lieBracketWithin 𝕜 V' W' ((extChartAt I x).symm ⁻¹' Set.univ ∩ Set.range I)
+          (extChartAt I x x) := by
+    simp only [lieBracketWithin, fderivWithin_const_smul_field c hs, Pi.smul_apply, map_smul,
+      smul_apply, smul_sub]
+  simp only [← mlieBracketWithin_univ, mlieBracketWithin_def, mpullbackWithin_const_smul,
+    mpullback]
+  exact (congrArg _ (key _ _)).trans (map_smul _ _ _)
+
 /-- The **Jacobi identity** for the manifold Lie bracket, in cyclic form:
 `[U, [V, W]] + [V, [W, U]] + [W, [U, V]] = 0`. This rearranges Mathlib's Leibniz form
 `leibniz_identity_mlieBracket_apply`. -/

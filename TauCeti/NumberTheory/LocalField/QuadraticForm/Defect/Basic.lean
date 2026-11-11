@@ -619,7 +619,6 @@ theorem exists_mul_sq_cases_of_not_isSquare
       dsimp only [c]
       rw [normalizedValuation_zpow_of_eq_ofAdd_one ((isUniformizer_def π).mp hπ),
         toAdd_ofAdd]
-    have hdiv : n % 2 + 2 * (n / 2) = n := Int.emod_add_mul_ediv n 2
     simp only [b, map_mul, map_pow, toAdd_mul, toAdd_pow, hc, nsmul_eq_mul]
     omega
   have hb : ¬IsSquare b := by

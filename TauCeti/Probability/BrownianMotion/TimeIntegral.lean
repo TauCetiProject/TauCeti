@@ -260,7 +260,7 @@ theorem norm_sum_leftRiemannError_sq (hB : IsPreBrownianReal B P)
     · rw [real_inner_comm]
       exact hB.inner_leftRiemannError_eq_zero (ht (Nat.le_succ j))
         (ht (by omega)) (ht (Nat.le_succ i))
-  rw [TauCeti.norm_sum_sq_eq_sum_norm_sq_of_pairwise_inner_eq_zero horth]
+  rw [TauCeti.norm_sum_sq_eq_sum_norm_sq_of_pairwise_inner_eq_zero (horth.set_pairwise _)]
   simp_rw [hB.norm_leftRiemannError_sq (ht (Nat.le_succ _))]
   rw [Finset.sum_div]
 
