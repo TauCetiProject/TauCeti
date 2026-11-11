@@ -79,57 +79,42 @@ theorem lebesgue_fstToSum_add_sndToSum_eq_iff {f₀ g₀ : Lp E p₀ μ} {f₁ g
     (lebesgue 𝕜 E μ p₀ p₁).fstToSum f₀ + (lebesgue 𝕜 E μ p₀ p₁).sndToSum f₁ =
         (lebesgue 𝕜 E μ p₀ p₁).fstToSum g₀ + (lebesgue 𝕜 E μ p₀ p₁).sndToSum g₁ ↔
       ⇑f₀ + ⇑f₁ =ᵐ[μ] ⇑g₀ + ⇑g₁ := by
-  rw [← (lebesgue 𝕜 E μ p₀ p₁).sumSpaceEmbed_injective.eq_iff, map_add, map_add,
-    sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, sumSpaceEmbed_fstToSum,
-    sumSpaceEmbed_sndToSum, ← (l1Linfty 𝕜 E μ).sumSpaceEmbed_injective.eq_iff, map_add, map_add]
-  simp only [lebesgue_embed₀, lebesgue_embed₁, L1AddLinfty.sumSpaceEmbed_ofLp]
+  simp only [← (lebesgue 𝕜 E μ p₀ p₁).sumSpaceEmbed_injective.eq_iff,
+    ← (l1Linfty 𝕜 E μ).sumSpaceEmbed_injective.eq_iff, map_add, sumSpaceEmbed_fstToSum,
+    sumSpaceEmbed_sndToSum, lebesgue_embed₀, lebesgue_embed₁, L1AddLinfty.sumSpaceEmbed_ofLp]
   exact L1AddLinfty.lpToAmbient_add_lpToAmbient_eq_add_iff 𝕜
 
 section Intermediate
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-private theorem exists_sumSpaceEmbed_eq_and_norm_le (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) (f : Lp E p μ) :
-    ∃ u : (lebesgue 𝕜 E μ p₀ p₁).SumSpace,
-      (lebesgue 𝕜 E μ p₀ p₁).sumSpaceEmbed u = L1AddLinfty.ofLp f ∧ ‖u‖ ≤ 2 * ‖f‖ := by
-  obtain ⟨g, h, hgh, hg, hh⟩ := Lp.exists_add_ae_eq_of_le_of_le f h₀ h₁
-  refine ⟨(lebesgue 𝕜 E μ p₀ p₁).fstToSum g + (lebesgue 𝕜 E μ p₀ p₁).sndToSum h, ?_,
-    (norm_fstToSum_add_sndToSum_le _ _ _).trans (by linarith)⟩
-  apply (l1Linfty 𝕜 E μ).sumSpace_ext
-  rw [map_add, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, map_add]
-  simp only [lebesgue_embed₀, lebesgue_embed₁, L1AddLinfty.sumSpaceEmbed_ofLp]
-  exact (L1AddLinfty.lpToAmbient_add_lpToAmbient_eq_iff 𝕜).2 hgh
-
 /-- The inclusion `Lᵖ → L^{p₀} + L^{p₁}` for `p₀ ≤ p ≤ p₁`, of norm at most `2`
 (`TauCeti.CompatibleCouple.norm_lpToLebesgueSum_le`): `f` is sent to `g + h` for a decomposition
 `f = g + h` with `g ∈ L^{p₀}` and `h ∈ L^{p₁}`. -/
 def lpToLebesgueSum (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) :
     Lp E p μ →L[𝕜] (lebesgue 𝕜 E μ p₀ p₁).SumSpace :=
-  LinearMap.mkContinuous
-    { toFun f := (exists_sumSpaceEmbed_eq_and_norm_le h₀ h₁ f).choose
-      map_add' f g := sumSpace_ext _ <|
-        (exists_sumSpaceEmbed_eq_and_norm_le h₀ h₁ (f + g)).choose_spec.1.trans <| by
-          simp only [map_add, (exists_sumSpaceEmbed_eq_and_norm_le h₀ h₁ f).choose_spec.1,
-            (exists_sumSpaceEmbed_eq_and_norm_le h₀ h₁ g).choose_spec.1]
-      map_smul' c f := sumSpace_ext _ <|
-        (exists_sumSpaceEmbed_eq_and_norm_le h₀ h₁ (c • f)).choose_spec.1.trans <| by
-          simp only [RingHom.id_apply, map_smul,
-            (exists_sumSpaceEmbed_eq_and_norm_le h₀ h₁ f).choose_spec.1] }
-    2 fun f => (exists_sumSpaceEmbed_eq_and_norm_le h₀ h₁ f).choose_spec.2
+  (lebesgue 𝕜 E μ p₀ p₁).toSum (L1AddLinfty.ofLp : Lp E p μ →L[𝕜] L1AddLinfty 𝕜 E μ) 2
+    fun f => by
+      obtain ⟨g, h, hgh, hg, hh⟩ := Lp.exists_add_ae_eq_of_le_of_le f h₀ h₁
+      refine ⟨(lebesgue 𝕜 E μ p₀ p₁).fstToSum g + (lebesgue 𝕜 E μ p₀ p₁).sndToSum h, ?_,
+        (norm_fstToSum_add_sndToSum_le _ _ _).trans (by linarith)⟩
+      apply (l1Linfty 𝕜 E μ).sumSpace_ext
+      simpa only [map_add, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, lebesgue_embed₀,
+        lebesgue_embed₁, L1AddLinfty.sumSpaceEmbed_ofLp, ContinuousLinearMap.coe_coe] using
+        (L1AddLinfty.lpToAmbient_add_lpToAmbient_eq_iff 𝕜).2 hgh
 
 @[simp]
 theorem sumSpaceEmbed_lpToLebesgueSum (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) (f : Lp E p μ) :
     (lebesgue 𝕜 E μ p₀ p₁).sumSpaceEmbed (lpToLebesgueSum h₀ h₁ f) = L1AddLinfty.ofLp f :=
-  (exists_sumSpaceEmbed_eq_and_norm_le h₀ h₁ f).choose_spec.1
+  sumSpaceEmbed_toSum _ _ _ _ f
 
 theorem norm_lpToLebesgueSum_le (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) (f : Lp E p μ) :
     ‖(lpToLebesgueSum h₀ h₁ f : (lebesgue 𝕜 E μ p₀ p₁).SumSpace)‖ ≤ 2 * ‖f‖ :=
-  (exists_sumSpaceEmbed_eq_and_norm_le h₀ h₁ f).choose_spec.2
+  norm_toSum_le _ _ _ _ f
 
 theorem lpToLebesgueSum_injective (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) :
     Function.Injective (lpToLebesgueSum h₀ h₁ : Lp E p μ → (lebesgue 𝕜 E μ p₀ p₁).SumSpace) :=
-  fun f g h => L1AddLinfty.ofLp_injective (𝕜 := 𝕜) <| by
-    rw [← sumSpaceEmbed_lpToLebesgueSum h₀ h₁, h, sumSpaceEmbed_lpToLebesgueSum]
+  toSum_injective _ _ _ _ L1AddLinfty.ofLp_injective
 
 omit [Fact (1 ≤ p)] in
 private theorem memLp_inter_fst (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) (x : (lebesgue 𝕜 E μ p₀ p₁).inter) :

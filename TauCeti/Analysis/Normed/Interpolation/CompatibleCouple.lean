@@ -34,6 +34,8 @@ We realise both spaces without choosing a norm on `V`:
   inclusions `interFst`, `interSnd`.
 * `TauCeti.CompatibleCouple.SumSpace`: the sum, with its norm-nonincreasing inclusions
   `fstToSum`, `sndToSum` and the injective map `sumSpaceEmbed` into `V`.
+* `TauCeti.CompatibleCouple.toSum`: the factorisation through the sum space of a linear map into
+  `V` whose values have bounded preimages in the sum.
 * `TauCeti.CompatibleCouple.sumLift`: the extension to the sum of continuous linear maps on `X₀`
   and `X₁` that agree on the intersection.
 * `TauCeti.CompatibleCouple.norm_sumSpace_lt_iff`, `TauCeti.CompatibleCouple.le_norm_sumSpace_iff`:
@@ -298,6 +300,38 @@ theorem sndToSum_injective : Function.Injective C.sndToSum := fun x y h =>
 /-- The two routes from the intersection to the sum agree. -/
 theorem fstToSum_interFst (x : C.inter) : C.fstToSum (C.interFst x) = C.sndToSum (C.interSnd x) :=
   C.sumSpace_ext <| by simpa using C.embed₀_interFst x
+
+section ToSum
+
+variable {X : Type*} [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
+
+/-- A linear map `T : X → V` whose values `T x` are images of elements of the sum space of norm at
+most `c ‖x‖` factors through the sum space: this is the continuous linear map `X → X₀ + X₁` sending
+`x` to the unique `u` with `sumSpaceEmbed u = T x` (`sumSpaceEmbed_toSum`), of norm at most `c`
+(`norm_toSum_le`). -/
+def toSum (T : X →ₗ[𝕜] V) (c : ℝ) (hT : ∀ x, ∃ u, C.sumSpaceEmbed u = T x ∧ ‖u‖ ≤ c * ‖x‖) :
+    X →L[𝕜] C.SumSpace :=
+  LinearMap.mkContinuous
+    { toFun x := (hT x).choose
+      map_add' x y := C.sumSpace_ext <| (hT (x + y)).choose_spec.1.trans <| by
+        simp only [map_add, (hT x).choose_spec.1, (hT y).choose_spec.1]
+      map_smul' a x := C.sumSpace_ext <| (hT (a • x)).choose_spec.1.trans <| by
+        simp only [RingHom.id_apply, map_smul, (hT x).choose_spec.1] }
+    c fun x => (hT x).choose_spec.2
+
+variable (T : X →ₗ[𝕜] V) (c : ℝ) (hT : ∀ x, ∃ u, C.sumSpaceEmbed u = T x ∧ ‖u‖ ≤ c * ‖x‖)
+
+@[simp]
+theorem sumSpaceEmbed_toSum (x : X) : C.sumSpaceEmbed (C.toSum T c hT x) = T x :=
+  (hT x).choose_spec.1
+
+theorem norm_toSum_le (x : X) : ‖C.toSum T c hT x‖ ≤ c * ‖x‖ :=
+  (hT x).choose_spec.2
+
+theorem toSum_injective (hTi : Function.Injective T) : Function.Injective (C.toSum T c hT) :=
+  fun x y h => hTi <| by rw [← sumSpaceEmbed_toSum C T c hT, h, sumSpaceEmbed_toSum]
+
+end ToSum
 
 section Lift
 

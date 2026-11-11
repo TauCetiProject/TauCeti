@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
+import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 
@@ -147,18 +148,14 @@ theorem eLpNorm_indicator_enorm_le_eLpNorm_le {f : α → E} {p p₁ : ℝ≥0�
     eLpNorm ({x | ‖f x‖ₑ ≤ eLpNorm f p μ}.indicator f) p₁ μ ≤ eLpNorm f p μ := by
   set t := eLpNorm f p μ
   set s := {x | ‖f x‖ₑ ≤ t}
-  have hs : AEStronglyMeasurable (s.indicator f) μ :=
-    hf.indicator₀ (nullMeasurableSet_le hf.enorm aemeasurable_const)
+  have hs₀ : NullMeasurableSet s μ := nullMeasurableSet_le hf.enorm aemeasurable_const
+  have hs : AEStronglyMeasurable (s.indicator f) μ := hf.indicator₀ hs₀
   have hst (x : α) : ‖s.indicator f x‖ₑ ≤ t := by
     by_cases hx : x ∈ s
     · rw [Set.indicator_of_mem hx]
       exact hx
     · rw [Set.indicator_of_notMem hx, enorm_zero]
       exact zero_le
-  rcases eq_or_ne p₁ ∞ with rfl | hp₁
-  · rw [eLpNorm_exponent_top hs]
-    exact eLpNormEssSup_le_of_ae_enorm_bound (Filter.Eventually.of_forall hst)
-  have hp : p ≠ ∞ := ne_top_of_le_ne_top hp₁ h₁
   rcases eq_or_ne t 0 with ht0 | ht0
   · -- `s.indicator f` vanishes identically.
     have h0 : s.indicator f = 0 :=
@@ -169,12 +166,13 @@ theorem eLpNorm_indicator_enorm_le_eLpNorm_le {f : α → E} {p p₁ : ℝ≥0�
   have hp0 : p ≠ 0 := by
     rintro rfl
     exact ht0 (eLpNorm_exponent_zero hf)
-  have hp₁0 : p₁ ≠ 0 := (hp0.bot_lt.trans_le h₁).ne'
-  refine eLpNorm_le_of_rpow_le_rpow_mul hp0 hp hp₁0 hp₁ hf hs ht0 ht fun x =>
-    (ENNReal.rpow_le_rpow_sub_mul_rpow (ENNReal.toReal_pos hp₁0 hp₁) enorm_ne_top
-      (ENNReal.rpow_le_rpow (hst x) (sub_nonneg.2 (ENNReal.toReal_mono hp₁ h₁)))).trans ?_
-  gcongr
-  exact enorm_indicator_le_enorm_self f x
+  -- `s.indicator f` is bounded by `t` both in `Lᵖ` and pointwise.
+  rw [← ENNReal.ofReal_toReal ht]
+  refine eLpNorm_le_of_exponent_le hs hp0.bot_lt h₁ (ENNReal.toReal_pos ht0 ht)
+    (by rw [ENNReal.ofReal_toReal ht]; exact eLpNorm_indicator_le f hs₀)
+    (Filter.Eventually.of_forall fun x => ?_)
+  rw [← toReal_enorm]
+  exact ENNReal.toReal_mono ht (hst x)
 
 /-- A function in `Lᵖ` is the sum of a function in `L^{p₀}` and a function in `L^{p₁}` for every
 `p₀ ≤ p ≤ p₁`, each of norm at most `‖f‖_p`. This is the inclusion `Lᵖ ⊆ L^{p₀} + L^{p₁}`. -/

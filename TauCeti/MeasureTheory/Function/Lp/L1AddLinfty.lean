@@ -170,40 +170,26 @@ open CompatibleCouple
 
 variable {𝕜 E μ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- Every `f ∈ Lᵖ` is the image of an element of `L¹ + L^∞` of norm at most `2 ‖f‖_p`. -/
-private theorem exists_sumSpaceEmbed_eq_and_norm_le (f : Lp E p μ) :
-    ∃ u : L1AddLinfty 𝕜 E μ,
-      (l1Linfty 𝕜 E μ).sumSpaceEmbed u = lpToAmbient 𝕜 f ∧ ‖u‖ ≤ 2 * ‖f‖ := by
-  obtain ⟨g, h, hgh, hg, hh⟩ := Lp.exists_add_ae_eq_of_le_of_le f (Fact.out : 1 ≤ p) le_top
-  refine ⟨(l1Linfty 𝕜 E μ).fstToSum g + (l1Linfty 𝕜 E μ).sndToSum h, ?_,
-    (norm_fstToSum_add_sndToSum_le _ _ _).trans (by linarith)⟩
-  rw [map_add, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, l1Linfty_embed₀, l1Linfty_embed₁,
-    lpToAmbient_add_lpToAmbient_eq_iff]
-  exact hgh
-
 /-- The inclusion `Lᵖ → L¹ + L^∞` for `1 ≤ p ≤ ∞`: `f` is sent to `g + h` for any decomposition
 `f = g + h` with `g ∈ L¹` and `h ∈ L^∞`. It is injective (`TauCeti.L1AddLinfty.ofLp_injective`)
 of norm at most `2` (`TauCeti.L1AddLinfty.norm_ofLp_le`). -/
 def ofLp : Lp E p μ →L[𝕜] L1AddLinfty 𝕜 E μ :=
-  LinearMap.mkContinuous
-    { toFun f := (exists_sumSpaceEmbed_eq_and_norm_le f).choose
-      map_add' f g := sumSpace_ext _ <|
-        (exists_sumSpaceEmbed_eq_and_norm_le (f + g)).choose_spec.1.trans <| by
-          simp only [map_add, (exists_sumSpaceEmbed_eq_and_norm_le f).choose_spec.1,
-            (exists_sumSpaceEmbed_eq_and_norm_le g).choose_spec.1]
-      map_smul' c f := sumSpace_ext _ <|
-        (exists_sumSpaceEmbed_eq_and_norm_le (c • f)).choose_spec.1.trans <| by
-          simp only [RingHom.id_apply, map_smul,
-            (exists_sumSpaceEmbed_eq_and_norm_le f).choose_spec.1] }
-    2 fun f => (exists_sumSpaceEmbed_eq_and_norm_le f).choose_spec.2
+  (l1Linfty 𝕜 E μ).toSum (lpToAmbient 𝕜 : Lp E p μ →L[𝕜] Ambient E μ) 2 fun f => by
+    -- Split `f` where `‖f‖` exceeds `‖f‖_p` and where it does not.
+    obtain ⟨g, h, hgh, hg, hh⟩ := Lp.exists_add_ae_eq_of_le_of_le f (Fact.out : 1 ≤ p) le_top
+    refine ⟨(l1Linfty 𝕜 E μ).fstToSum g + (l1Linfty 𝕜 E μ).sndToSum h, ?_,
+      (norm_fstToSum_add_sndToSum_le _ _ _).trans (by linarith)⟩
+    simpa only [map_add, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, l1Linfty_embed₀,
+      l1Linfty_embed₁, ContinuousLinearMap.coe_coe] using
+      (lpToAmbient_add_lpToAmbient_eq_iff 𝕜).2 hgh
 
 @[simp]
 theorem sumSpaceEmbed_ofLp (f : Lp E p μ) :
     (l1Linfty 𝕜 E μ).sumSpaceEmbed (ofLp f) = lpToAmbient 𝕜 f :=
-  (exists_sumSpaceEmbed_eq_and_norm_le f).choose_spec.1
+  sumSpaceEmbed_toSum _ _ _ _ f
 
 theorem norm_ofLp_le (f : Lp E p μ) : ‖(ofLp f : L1AddLinfty 𝕜 E μ)‖ ≤ 2 * ‖f‖ :=
-  (exists_sumSpaceEmbed_eq_and_norm_le f).choose_spec.2
+  norm_toSum_le _ _ _ _ f
 
 theorem ofLp_eq_ofLp_iff {q : ℝ≥0∞} [Fact (1 ≤ q)] {f : Lp E p μ} {g : Lp E q μ} :
     (ofLp f : L1AddLinfty 𝕜 E μ) = ofLp g ↔ ⇑f =ᵐ[μ] ⇑g := by
@@ -211,7 +197,7 @@ theorem ofLp_eq_ofLp_iff {q : ℝ≥0∞} [Fact (1 ≤ q)] {f : Lp E p μ} {g : 
     lpToAmbient_eq_lpToAmbient_iff]
 
 theorem ofLp_injective : Function.Injective (ofLp : Lp E p μ → L1AddLinfty 𝕜 E μ) :=
-  fun _ _ h => Lp.ext (ofLp_eq_ofLp_iff.1 h)
+  toSum_injective _ _ _ _ (lpToAmbient_injective 𝕜)
 
 /-- On `L¹`, the inclusion into `L¹ + L^∞` is the inclusion of the first space of the couple. -/
 theorem ofLp_eq_fstToSum (f : Lp E 1 μ) :
