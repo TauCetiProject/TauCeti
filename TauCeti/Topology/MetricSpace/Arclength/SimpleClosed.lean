@@ -84,7 +84,6 @@ theorem exists_simple_closed_arclength_parametrization
   let s := variationOnFromTo γ (Icc a b) a
   let L := (eVariationOn γ (Icc a b)).toReal
   have ha : a ∈ Icc a b := left_mem_Icc.mpr hab
-  have hb : b ∈ Icc a b := right_mem_Icc.mpr hab
   have himage : s '' Icc a b = Icc 0 L := hγ.image_variationOnFromTo_Icc hcont hab
   let g := naturalParameterization γ (Icc a b) a
   have hunit : HasUnitSpeedOn g (Icc 0 L) := by
