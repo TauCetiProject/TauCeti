@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.AtomlessStandardBorel.Transport
 public import TauCeti.MeasureTheory.OptimalTransport.GraphPlan.Basic
+import TauCeti.MeasureTheory.MeasurableSpace.Option
 
 /-!
 # Realizing a coupling along a source partition
@@ -41,25 +42,6 @@ variable {X Y ι : Type*} [MeasurableSpace X] [StandardBorelSpace X]
   [MeasurableSpace Y] [StandardBorelSpace Y] [Nonempty Y] [Countable ι]
   {μ : Measure X} {ν : Measure Y} {π : Measure (X × Y)}
   [IsFiniteMeasure μ] [NullSingletonClass μ]
-
-omit [StandardBorelSpace X] in
-/-- Disjoint measurable sets `Z i`, together with the complement of their union as one more cell
-indexed by `none`, form a measurable partition of the space. -/
-private theorem measurable_disjoint_iUnion_option {κ : Type*} [Countable κ] {Z : κ → Set X}
-    (hZm : ∀ i, MeasurableSet (Z i)) (hZd : Pairwise (Disjoint on Z)) :
-    (∀ o : Option κ, MeasurableSet (o.elim (⋃ i, Z i)ᶜ Z)) ∧
-      Pairwise (Disjoint on fun o : Option κ ↦ o.elim (⋃ i, Z i)ᶜ Z) ∧
-      ⋃ o : Option κ, o.elim (⋃ i, Z i)ᶜ Z = univ := by
-  refine ⟨?_, ?_, ?_⟩
-  · rintro (_ | i)
-    exacts [(MeasurableSet.iUnion hZm).compl, hZm _]
-  · rintro (_ | i) (_ | j) hij
-    · exact absurd rfl hij
-    · exact disjoint_compl_left_iff_subset.2 (subset_iUnion Z j)
-    · exact (disjoint_compl_left_iff_subset.2 (subset_iUnion Z i)).symm
-    · exact hZd fun h ↦ hij (congrArg some h)
-  · rw [iUnion_option]
-    exact compl_union_self _
 
 /-- Let `π` be concentrated on a union of disjoint measurable pieces `S i`, and let `Z i` be
 disjoint measurable source sets with `μ (Z i) = π (S i)`. Then one transport map sends `μ`
