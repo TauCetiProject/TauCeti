@@ -25,6 +25,8 @@ used for initial velocities and velocity lifts of curves.
   the differential of the inverse isometry.
 * `TauCeti.RiemannianIsometry.toDiffeomorph_tangent_apply`: the tangent-bundle lift has this
   fibrewise linear-isometry equivalence as its fibre map.
+* `TauCeti.mfderiv_smul_image_ball`: the differential of an isometric group action maps each ball
+  about the origin of `T_x M` onto the ball of the same radius in `T_{a • x} M`.
 -/
 
 public section
@@ -113,5 +115,29 @@ theorem toDiffeomorph_tangent_apply [IsManifold I 1 M] [IsManifold J 1 N]
   rfl
 
 end TauCeti.RiemannianIsometry
+
+namespace TauCeti
+
+open Metric
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  {G : Type*} [Group G] [MulAction G M] [ContMDiffConstSMul I ∞ G M]
+
+/-- The differential of an isometric action at `x` maps the ball of radius `r` about the origin of
+`T_x M` onto the ball of radius `r` about the origin of `T_{a • x} M`. -/
+theorem mfderiv_smul_image_ball
+    (hG : ∀ (a : G) (y : M) (v w : TangentSpace I y),
+      inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w)
+    (a : G) (x : M) (r : ℝ) :
+    mfderiv I I (a • ·) x '' ball (0 : TangentSpace I x) r =
+      ball (0 : TangentSpace I (a • x)) r := by
+  have h := ((RiemannianIsometry.ofSMul hG a).mfderivToLinearIsometryEquiv x).image_ball 0 r
+  rw [RiemannianIsometry.coe_mfderivToLinearIsometryEquiv, RiemannianIsometry.coe_ofSMul] at h
+  simpa using h
+
+end TauCeti
 
 end

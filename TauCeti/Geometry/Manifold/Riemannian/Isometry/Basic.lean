@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import Mathlib.Geometry.Manifold.Riemannian.PathELength
+public import Mathlib.Geometry.Manifold.Algebra.SMul
 
 /-!
 # Smooth Riemannian isometries
@@ -19,6 +20,9 @@ is the natural map for transporting the Levi-Civita connection and geodesics.
 The pointwise condition says that the pullback of the metric on the target is the metric on the
 source; see J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Chapter 2. Isometries
 preserve tangent-vector norms and the Riemannian length `pathELength` of every curve.
+
+Each element of a group acting on `M` by smooth maps whose differentials preserve the metric is a
+smooth Riemannian isometry (`TauCeti.RiemannianIsometry.ofSMul`).
 -/
 
 public section
@@ -267,6 +271,30 @@ theorem pathELength_comp (Φ : RiemannianIsometry I J M N)
     have hzero : ‖(0 : TangentSpace J (Φ (γ t)))‖ₑ =
         ‖(0 : TangentSpace I (γ t))‖ₑ := by simp
     exact hzero
+
+section SMul
+
+variable {G : Type*} [Group G] [MulAction G M] [ContMDiffConstSMul I ∞ G M]
+
+/-- Every element of a group acting by smooth maps whose differentials preserve the metric, as a
+Riemannian isometry of `M`. -/
+@[expose] def ofSMul
+    (hG : ∀ (a : G) (y : M) (v w : TangentSpace I y),
+      inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w) (a : G) :
+    RiemannianIsometry I I M M where
+  toEquiv := MulAction.toPerm a
+  contMDiff_toFun := contMDiff_const_smul a
+  contMDiff_invFun := contMDiff_const_smul a⁻¹
+  inner_mfderiv' := hG a
+
+@[simp]
+theorem coe_ofSMul
+    (hG : ∀ (a : G) (y : M) (v w : TangentSpace I y),
+      inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w) (a : G) :
+    ⇑(ofSMul hG a) = (a • ·) :=
+  (rfl)
+
+end SMul
 
 end RiemannianIsometry
 

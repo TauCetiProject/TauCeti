@@ -20,8 +20,9 @@ isometry of `T_x M`. Isometries intertwine exponential maps, so
 
 `a • exp_x v = exp_x (d(a •)_x v)`
 
-for every `a : G` and every `v : T_x M` (`TauCeti.riemannianExp_mfderiv_smul_of_smul_eq`). More
-generally, without a fixed point, `exp_{a • x} (d(a •)_x v) = a • exp_x v`
+for every `v : T_x M` and every `a : G` with `a • x = x`
+(`TauCeti.riemannianExp_mfderiv_smul_of_smul_eq`). More generally, without a fixed point,
+`exp_{a • x} (d(a •)_x v) = a • exp_x v`
 (`TauCeti.riemannianExp_mfderiv_smul`), the differential `d(a •)_x` maps balls about the origin of
 `T_x M` onto the balls of the same radius in `T_{a • x} M` (`TauCeti.mfderiv_smul_image_ball`), and
 so `a` carries `exp_x '' ball 0 r` onto `exp_{a • x} '' ball 0 r`
@@ -61,86 +62,29 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   {G : Type*} [Group G] [MulAction G M] [ContMDiffConstSMul I ∞ G M]
-
-/-- Every element of a group acting by smooth maps whose differentials preserve the metric, as a
-Riemannian isometry of `M`. -/
-def RiemannianIsometry.ofSMul
-    (hG : ∀ (a : G) (y : M) (v w : TangentSpace I y),
-      inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w) (a : G) :
-    RiemannianIsometry I I M M where
-  toEquiv := MulAction.toPerm a
-  contMDiff_toFun := contMDiff_const_smul a
-  contMDiff_invFun := contMDiff_const_smul a⁻¹
-  inner_mfderiv' := hG a
-
-@[simp]
-theorem RiemannianIsometry.coe_ofSMul
-    (hG : ∀ (a : G) (y : M) (v w : TangentSpace I y),
-      inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w) (a : G) :
-    ⇑(RiemannianIsometry.ofSMul hG a) = (a • ·) :=
-  (rfl)
-
-/-- The differential of an isometric action at `x` maps the ball of radius `r` about the origin of
-`T_x M` onto the ball of radius `r` about the origin of `T_{a • x} M`. -/
-theorem mfderiv_smul_image_ball
-    (hG : ∀ (a : G) (y : M) (v w : TangentSpace I y),
-      inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w)
-    (a : G) (x : M) (r : ℝ) :
-    mfderiv I I (a • ·) x '' ball (0 : TangentSpace I x) r =
-      ball (0 : TangentSpace I (a • x)) r := by
-  set Φ := RiemannianIsometry.ofSMul hG a
-  have hnorm (v : TangentSpace I x) : ‖mfderiv I I (a • ·) x v‖ = ‖v‖ := Φ.norm_mfderiv x v
-  ext w
-  simp only [mem_image, mem_ball_zero_iff]
-  constructor
-  · rintro ⟨v, hv, rfl⟩
-    rwa [hnorm]
-  · intro hw
-    obtain ⟨v, rfl⟩ := Φ.mfderiv_surjective x w
-    exact ⟨v, by rwa [← hnorm], rfl⟩
-
-variable [FiniteDimensional ℝ E] [IsManifold I ∞ M]
+  [FiniteDimensional ℝ E] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] [I.Boundaryless] [T2Space M]
 
-/-- **Isometric actions intertwine exponential maps.** If every element of `G` acts by a smooth
-map whose differential preserves the metric, then `exp_{a • x} (d(a •)_x v) = a • exp_x v`. -/
-theorem riemannianExp_mfderiv_smul
-    (hG : ∀ (a : G) (y : M) (v w : TangentSpace I y),
-      inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w)
-    (a : G) (x : M) (v : TangentSpace I x) :
-    riemannianExp I M (a • x) (mfderiv I I (a • ·) x v) = a • riemannianExp I M x v :=
-  (RiemannianIsometry.ofSMul hG a).riemannianExp_mfderiv x v
-
-/-- An isometric action carries the image under `exp_x` of the ball of radius `r` about the
-origin onto the image under `exp_{a • x}` of the ball of the same radius. -/
-theorem smul_riemannianExp_image_ball
-    (hG : ∀ (a : G) (y : M) (v w : TangentSpace I y),
-      inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w)
-    (a : G) (x : M) (r : ℝ) :
-    a • (riemannianExp I M x '' ball 0 r) = riemannianExp I M (a • x) '' ball 0 r := by
-  rw [← mfderiv_smul_image_ball hG a x r, image_image, ← image_smul, image_image]
-  exact image_congr fun v _ ↦ (riemannianExp_mfderiv_smul hG a x v).symm
-
-/-- At a point fixed by an isometric action, the exponential map is equivariant for the tangent
-representation: `exp_x (d(a •)_x v) = a • exp_x v`. -/
+/-- At a point `x` fixed by an element `a` of an isometric action, the exponential map intertwines
+`a` with its differential: `exp_x (d(a •)_x v) = a • exp_x v`. -/
 theorem riemannianExp_mfderiv_smul_of_smul_eq
     (hG : ∀ (a : G) (y : M) (v w : TangentSpace I y),
       inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w)
-    {x : M} (hx : ∀ a : G, a • x = x) (a : G) (v : TangentSpace I x) :
+    {x : M} (a : G) (hx : a • x = x) (v : TangentSpace I x) :
     riemannianExp I M x (mfderiv I I (a • ·) x v) = a • riemannianExp I M x v := by
   have h := riemannianExp_mfderiv_smul hG a x v
-  rw [hx a] at h
+  rw [hx] at h
   exact h
 
-/-- At a point fixed by an isometric action, the image under `exp_x` of every ball about the
-origin of `T_x M` is invariant. -/
+/-- At a point `x` fixed by an element `a` of an isometric action, the image under `exp_x` of every
+ball about the origin of `T_x M` is invariant under `a`. -/
 theorem smul_riemannianExp_image_ball_of_smul_eq
     (hG : ∀ (a : G) (y : M) (v w : TangentSpace I y),
       inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w)
-    {x : M} (hx : ∀ a : G, a • x = x) (a : G) (r : ℝ) :
+    {x : M} (a : G) (hx : a • x = x) (r : ℝ) :
     a • (riemannianExp I M x '' ball 0 r) = riemannianExp I M x '' ball 0 r := by
   have h := smul_riemannianExp_image_ball hG a x r
-  rw [hx a] at h
+  rw [hx] at h
   exact h
 
 /-- **Equivariant exponential charts at a fixed point.** Let `G` act on `M` by smooth maps whose
@@ -159,7 +103,7 @@ theorem exists_isNormalDomain_ball_riemannianExp_mfderiv_smul
         riemannianExp I M x (mfderiv I I (a • ·) x v) = a • riemannianExp I M x v := by
   obtain ⟨r, hr, hU⟩ := Manifold.exists_isNormalDomain_ball (I := I) (M := M) x
   refine ⟨r, hr, hU, hU.isOpen_image, ⟨0, mem_ball_self hr, riemannianExp_zero x⟩,
-    fun a ↦ smul_riemannianExp_image_ball_of_smul_eq hG hx a r,
-    riemannianExp_mfderiv_smul_of_smul_eq hG hx⟩
+    fun a ↦ smul_riemannianExp_image_ball_of_smul_eq hG a (hx a) r,
+    fun a ↦ riemannianExp_mfderiv_smul_of_smul_eq hG a (hx a)⟩
 
 end TauCeti

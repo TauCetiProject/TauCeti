@@ -31,6 +31,9 @@ Riemannian Manifolds*, 2nd ed., Chapter 5 (naturality of the exponential map), a
 * `RiemannianIsometry.mfderiv_image_expDomain`: the differential of an isometry maps the domain of
   the exponential map onto the domain at the image point.
 * `RiemannianIsometry.riemannianExp_mfderiv`: an isometry intertwines the exponential maps.
+* `TauCeti.riemannianExp_mfderiv_smul`, `TauCeti.smul_riemannianExp_image_ball`: for a group acting
+  by smooth maps whose differentials preserve the metric, `exp_{a • x} (d(a •)_x v) = a • exp_x v`,
+  and `a` carries `exp_x '' ball 0 r` onto `exp_{a • x} '' ball 0 r`.
 -/
 
 public section
@@ -121,5 +124,39 @@ theorem riemannianExp_mfderiv [I.Boundaryless] [J.Boundaryless]
   simp only [riemannianExp_def, Φ.maximalGeodesic_mfderiv]
 
 end TauCeti.RiemannianIsometry
+
+namespace TauCeti
+
+open TauCeti.Manifold Metric
+open scoped Pointwise
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  {G : Type*} [Group G] [MulAction G M] [ContMDiffConstSMul I ∞ G M]
+  [FiniteDimensional ℝ E] [IsManifold I ∞ M]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] [I.Boundaryless] [T2Space M]
+
+/-- **Isometric actions intertwine exponential maps.** If every element of `G` acts by a smooth
+map whose differential preserves the metric, then `exp_{a • x} (d(a •)_x v) = a • exp_x v`. -/
+theorem riemannianExp_mfderiv_smul
+    (hG : ∀ (a : G) (y : M) (v w : TangentSpace I y),
+      inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w)
+    (a : G) (x : M) (v : TangentSpace I x) :
+    riemannianExp I M (a • x) (mfderiv I I (a • ·) x v) = a • riemannianExp I M x v :=
+  (RiemannianIsometry.ofSMul hG a).riemannianExp_mfderiv x v
+
+/-- An isometric action carries the image under `exp_x` of the ball of radius `r` about the
+origin onto the image under `exp_{a • x}` of the ball of the same radius. -/
+theorem smul_riemannianExp_image_ball
+    (hG : ∀ (a : G) (y : M) (v w : TangentSpace I y),
+      inner ℝ (mfderiv I I (a • ·) y v) (mfderiv I I (a • ·) y w) = inner ℝ v w)
+    (a : G) (x : M) (r : ℝ) :
+    a • (riemannianExp I M x '' ball 0 r) = riemannianExp I M (a • x) '' ball 0 r := by
+  rw [← mfderiv_smul_image_ball hG a x r, image_image, ← image_smul, image_image]
+  exact image_congr fun v _ ↦ (riemannianExp_mfderiv_smul hG a x v).symm
+
+end TauCeti
 
 end
