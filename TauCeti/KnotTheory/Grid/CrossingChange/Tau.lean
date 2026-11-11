@@ -7,6 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.CrossingChange.Grading
 public import TauCeti.KnotTheory.Grid.Homology.Commutation.Tau
+import TauCeti.KnotTheory.Grid.CrossingChange.Homotopy.Equation
 
 /-!
 # Crossing change maps and the invariant `τ`
@@ -34,14 +35,18 @@ both composites are chain homotopic to multiplication by a variable, `ΨΦ` to `
 Given two such homotopies, `τ(G) - 1 ≤ τ(G') ≤ τ(G)`
 (`GridDiagram.IsKnot.tau_swapColumns_mem_Icc_of_homotopy`). No assumption that `GH⁻` is non-torsion
 is needed here: the two composites show that `GH⁻(G)` and `GH⁻(G')` are torsion together, and then
-both invariants vanish. This is the inequality from which the bound of `|τ|` by the unknotting
-number follows.
+both invariants vanish. The two homotopies are supplied by the homotopy equations of
+`CrossingChange/Homotopy/Equation.lean`, which gives the inequality unconditionally
+(`GridDiagram.IsKnot.tau_swapColumns_mem_Icc`). This is the inequality from which the bound of `|τ|`
+by the unknotting number follows.
 
 ## Main results
 
-* `TauCeti.GridDiagram.IsKnot.tau_swapColumns_mem_Icc_of_homotopy`: **the crossing change
-  inequality**, `τ(G) - 1 ≤ τ(G') ≤ τ(G)` across a crossing change whose two composites are chain
-  homotopic to multiplication by the variables of the exchanged columns.
+* `TauCeti.GridDiagram.IsKnot.tau_swapColumns_mem_Icc_of_homotopy`: `τ(G) - 1 ≤ τ(G') ≤ τ(G)`
+  across a crossing change whose two composites are chain homotopic to multiplication by the
+  variables of the exchanged columns.
+* `TauCeti.GridDiagram.IsKnot.tau_swapColumns_mem_Icc`: **the crossing change inequality**,
+  `τ(G) - 1 ≤ τ(G') ≤ τ(G)` across every crossing change with `O_a` on the arc of column `b`.
 
 ## References
 
@@ -144,6 +149,23 @@ theorem tau_swapColumns_mem_Icc_of_homotopy
     rw [hΦ, Prod.snd_zero, sub_zero] at h₁
     rw [hΨ, tau_swapColumns_swapColumns hG K C, sub_neg_eq_add] at h₂
     exact ⟨by linarith, h₁⟩
+
+/-- **The crossing change inequality for `τ`.** Let the segments of the columns `a` and
+`b = finRotate n a` of a knot grid `G` interleave with `O_a` on the arc of column `b`, and let `C`
+turn in the row of `O_a`. Then `τ(G) - 1 ≤ τ(G') ≤ τ(G)` for `G' = G.swapColumns a b`, over every
+commutative ring of characteristic two. -/
+theorem tau_swapColumns_mem_Icc (h : G.ColumnsInterleaving a b) (hO : G.O a ∈ G.columnArc b)
+    (hs : C.turnRow = G.O a) :
+    (hG.swapColumns a b).tau K ∈ Set.Icc (hG.tau K - 1) (hG.tau K) :=
+  hG.tau_swapColumns_mem_Icc_of_homotopy h hO hs
+    ⟨G.crossingChangeHomotopy K C (G.X b),
+      unblockedDifferential_crossingChangeHomotopy_add_eq_of_mem_columnArc K h hO hs rfl⟩
+    ⟨(G').crossingChangeHomotopy K (C.withTurnRow (G.X b)) (G.O a),
+      unblockedDifferential_crossingChangeHomotopy_add_eq_of_notMem_columnArc K
+        ((columnsInterleaving_swapColumns G _ _).mpr h.symm)
+        (fun hO' => h.O_swapColumns_mem_columnArc_iff.mp hO' hO)
+        (by simp [swapColumns_X, GridState.swapColumns_apply])
+        (by simp [swapColumns_O, GridState.swapColumns_apply])⟩
 
 end IsKnot
 

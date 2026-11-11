@@ -29,7 +29,7 @@ for the round-trip commutation map. Combining this count with the four hexagon--
 indicators proves the diagonal coefficient of the homotopy equation in characteristic two.
 
 Off the diagonal as well, the replaced grid line is a common side of the two rectangles of
-every pentagon pair.
+every pentagon pair, for arbitrary turn rows of the two pentagons.
 
 ## References
 
@@ -565,18 +565,26 @@ theorem sum_hexagonRectangleWeight_add_sum_rectangleHexagonWeight_self_eq_one_ad
     G.sum_rename_commutationPentagonCoefficient_mul_commutationPentagonCoefficient C R] using
     G.unblockedDifferential_commutationHomotopy_add_single_apply_self_eq_one_add C R x
 
+end GridDiagram
+
 /-! ### The replaced grid line as a common side -/
 
-/-- The replaced grid line is a common side of the two rectangles of a pentagon pair: the
-terminal side of a terminal-side pentagon and the initial side of an initial-side one. -/
-theorem finRotate_mem_commonSideColumns_of_pentagonPair {x z : GridState n}
-    (D : GridPentagonPairDecomposition a C.turnRow C.reverse.column C.reverse.turnRow x z) :
-    b ∈ D.toRectangleDecomposition.commonSideColumns := by
+namespace GridPentagonPairDecomposition
+
+variable {n : ℕ} {a a' s t : Fin n} {x z : GridState n}
+
+/-- The replaced grid line is a common side of the two rectangles of a pair of pentagons at the
+same column, whatever their turn rows: the terminal side of a terminal-side pentagon and the
+initial side of an initial-side one. -/
+theorem finRotate_mem_commonSideColumns (D : GridPentagonPairDecomposition a s a' t x z)
+    (ha' : a' = a) : finRotate n a ∈ D.toRectangleDecomposition.commonSideColumns := by
+  subst ha'
   rcases D with ⟨m, P | P, Q | Q⟩
   · simp [P.right_eq, Q.right_eq]
   · simp [P.right_eq, Q.left_eq]
   · simp [P.left_eq, Q.right_eq]
   · simp [P.left_eq, Q.left_eq]
 
-end GridDiagram
+end GridPentagonPairDecomposition
+
 end TauCeti

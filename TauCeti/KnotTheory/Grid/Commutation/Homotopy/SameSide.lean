@@ -33,6 +33,33 @@ Proposition 3.2 (arXiv:math/0610559). The geometric input is the weighted recut 
 
 public section
 
+namespace TauCeti.GridPentagonPairDecomposition
+
+variable {n : ℕ} {a a' s t : Fin n} {x z : GridState n}
+
+/-- The recut of a pair of pentagons at the same column turning on the same side does not have
+the replaced grid line as a common side column, whatever the turn rows of the two pentagons. -/
+theorem finRotate_notMem_commonSideColumns_of_isRecut
+    {D : GridPentagonPairDecomposition a s a' t x z} (ha' : a' = a)
+    (hside : D.first.isLeft = D.second.isLeft) {E : GridRectangleDecomposition x z}
+    (h : D.toRectangleDecomposition.IsRecut E) : finRotate n a ∉ E.commonSideColumns := by
+  subst ha'
+  rcases D with ⟨m, P | P, Q | Q⟩
+  · have hcommon := h.isRecutOfRightEqRight (by
+      simp only [toRectangleDecomposition,
+        GridCommutationPentagonBetween.toGridRectangleBetween_inl, P.right_eq, Q.right_eq])
+    simpa only [toRectangleDecomposition, GridCommutationPentagonBetween.toGridRectangleBetween_inl,
+      P.right_eq] using hcommon.first_right_notMem_commonSideColumns
+  · simp at hside
+  · simp at hside
+  · have hcommon := h.isRecutOfLeftEqLeft (by
+      simp only [toRectangleDecomposition,
+        GridCommutationPentagonBetween.toGridRectangleBetween_inr, P.left_eq, Q.left_eq])
+    simpa only [toRectangleDecomposition, GridCommutationPentagonBetween.toGridRectangleBetween_inr,
+      P.left_eq] using hcommon.first_left_notMem_commonSideColumns
+
+end TauCeti.GridPentagonPairDecomposition
+
 namespace TauCeti.GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)

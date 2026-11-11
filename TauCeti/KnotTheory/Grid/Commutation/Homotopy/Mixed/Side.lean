@@ -179,34 +179,9 @@ theorem disjoint_sameSidePentagonPartners_mixedSidePentagonPartners {x z : GridS
   intro F hS hM
   obtain ⟨-, D, hD, hrecut⟩ := (G.mem_sameSidePentagonPartners C F).mp hS
   obtain ⟨-, E, -, hEF⟩ := (G.mem_mixedSidePentagonPartners C F).mp hM
-  have hb : b ∈ F.toRectangleDecomposition.commonSideColumns :=
-    hEF ▸ G.finRotate_mem_commonSideColumns_of_pentagonPair C E
-  have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hrecut
-  obtain ⟨-, hside⟩ := (G.mem_sameSidePentagonPairs C D).mp hD
-  rcases D with ⟨m, P, Q⟩
-  cases P with
-  | inl P =>
-    cases Q with
-    | inl Q =>
-      have hcommon := (hrecut.isRecutOfRightEqRight (by
-        simp only [GridPentagonPairDecomposition.toRectangleDecomposition,
-          GridCommutationPentagonBetween.toGridRectangleBetween_inl, P.right_eq, Q.right_eq,
-          C.reverse_column]))
-      apply hcommon.first_right_notMem_commonSideColumns
-      simpa only [GridPentagonPairDecomposition.toRectangleDecomposition,
-        GridCommutationPentagonBetween.toGridRectangleBetween_inl, P.right_eq] using hb
-    | inr Q => simp at hside
-  | inr P =>
-    cases Q with
-    | inl Q => simp at hside
-    | inr Q =>
-      have hcommon := (hrecut.isRecutOfLeftEqLeft (by
-        simp only [GridPentagonPairDecomposition.toRectangleDecomposition,
-          GridCommutationPentagonBetween.toGridRectangleBetween_inr, P.left_eq, Q.left_eq,
-          C.reverse_column]))
-      apply hcommon.first_left_notMem_commonSideColumns
-      simpa only [GridPentagonPairDecomposition.toRectangleDecomposition,
-        GridCommutationPentagonBetween.toGridRectangleBetween_inr, P.left_eq] using hb
+  exact GridPentagonPairDecomposition.finRotate_notMem_commonSideColumns_of_isRecut
+    C.reverse_column ((G.mem_sameSidePentagonPairs C D).mp hD).2 hrecut
+    (hEF ▸ GridPentagonPairDecomposition.finRotate_mem_commonSideColumns E C.reverse_column)
 
 /-! ### The residual coefficient equation -/
 
