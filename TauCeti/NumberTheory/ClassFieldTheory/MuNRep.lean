@@ -11,7 +11,7 @@ public import TauCeti.FieldTheory.GaloisCohomology.Kummer
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp
 public import TauCeti.RingTheory.RootsOfUnity.ZMod
-public import TauCeti.Topology.Instances.ZMod
+public import TauCeti.Topology.Algebra.MulAction.Discrete
 
 /-!
 # The roots of unity as a coefficient object, and the transported Kummer isomorphism

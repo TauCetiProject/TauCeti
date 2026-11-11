@@ -138,7 +138,7 @@ noncomputable def mapBoundedDerivedCategory :
 @[simp]
 lemma mapBoundedDerivedCategory_functor :
     e.mapBoundedDerivedCategory.functor = e.functor.mapBoundedDerivedCategory := by
-  simp only [mapBoundedDerivedCategory, congrFullSubcategory_functor_eq_lift,
+  simp only [mapBoundedDerivedCategory, congrFullSubcategory_functor,
     mapDerivedCategory_functor]
   rfl
 
@@ -146,7 +146,7 @@ lemma mapBoundedDerivedCategory_functor :
 @[simp]
 lemma mapBoundedDerivedCategory_inverse :
     e.mapBoundedDerivedCategory.inverse = e.inverse.mapBoundedDerivedCategory := by
-  simp only [mapBoundedDerivedCategory, congrFullSubcategory_inverse_eq_lift,
+  simp only [mapBoundedDerivedCategory, congrFullSubcategory_inverse,
     mapDerivedCategory_inverse]
   rfl
 

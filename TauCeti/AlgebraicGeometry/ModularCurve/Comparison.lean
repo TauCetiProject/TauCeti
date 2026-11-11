@@ -186,24 +186,24 @@ theorem gammaOneEquiv_inv_gammaOneToGammaOneNaive_app (X : EllObj B)
 /-- For `N ≥ 4` invertible on `B`, the existing fine curve `Y₁(N)` also represents the
 integral Drinfeld `[Γ₁(N)]` problem restricted to `B`. -/
 noncomputable def gammaOneRepresentableBy (h4 : 4 ≤ N) :
-    (gammaOne B N).RepresentableBy (EllObj.yOne B N hN) :=
-  (gammaOneNaiveRepresentableBy hN h4).ofIso
+    (gammaOne B N).RepresentableBy (EllObj.yOne B N) :=
+  (gammaOneNaiveRepresentableBy h4).ofIso
     (asIso (gammaOneToGammaOneNaive B N hN)).symm
 
 /-- The Drinfeld point classified by an arrow to `Y₁(N)` is the pullback of the universal
 Tate point `(0, 0)`. -/
 @[simp]
 theorem gammaOneEquiv_gammaOneRepresentableBy_homEquiv (h4 : 4 ≤ N) {X : EllObj B}
-    (k : X ⟶ EllObj.yOne B N hN) :
+    (k : X ⟶ EllObj.yOne B N) :
     (gammaOneEquiv X ((gammaOneRepresentableBy (hN := hN) h4).homEquiv k)).1 =
-      EllipticCurveGeom.pointsPullback (k ≫ EllObj.yOneι B N hN).isPullback
-        (k ≫ EllObj.yOneι B N hN).zero_total (EllObj.universalTatePoint B) := by
+      EllipticCurveGeom.pointsPullback (k ≫ EllObj.yOneι B N).isPullback
+        (k ≫ EllObj.yOneι B N).zero_total (EllObj.universalTatePoint B) := by
   -- `RepresentableBy.ofIso` composes the representing equivalence with the component
   -- of the isomorphism; the pinned Mathlib has no evaluation lemma for this construction.
   dsimp only [gammaOneRepresentableBy, Functor.RepresentableBy.ofIso, Equiv.trans_apply]
   simp only [Iso.toEquiv_fun, Iso.app_hom, Iso.symm_hom, asIso_inv, NatIso.isIso_inv_app,
     gammaOneEquiv_inv_gammaOneToGammaOneNaive_app]
-  exact naiveLevelEquiv_gammaOneNaiveRepresentableBy_homEquiv hN h4 k
+  exact naiveLevelEquiv_gammaOneNaiveRepresentableBy_homEquiv h4 k
 
 variable (B N) in
 /-- **`[Γ₁(N)]` is rigid for `N ≥ 4` where `N` is invertible.** Over a base `B` on which `N` is

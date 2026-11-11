@@ -85,6 +85,7 @@ theorem weightLeviDefiningHopfIdeal_le_definingIdeal :
   refine ⟨fun k ↦ ?_, ?_⟩
   · apply GeneralLinear.weightLeviDefiningHopfIdeal_toIdeal_le_ker
     intro a b hab
+    simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
     have hne : a ≠ b := fun h ↦ hab (congrArg d4TripledSummand h)
     have hrefl (i : Fin 4) : a ≠ d4TripledReflection i b := fun h ↦
       hab (h ▸ d4TripledSummand_d4TripledReflection i b)
@@ -102,6 +103,7 @@ theorem weightLeviDefiningHopfIdeal_le_definingIdeal :
         loweringMatrix_apply, hrefl i, and_false, ↓reduceIte, Int.cast_zero, smul_zero, zero_add]
   · apply GeneralLinear.weightLeviDefiningHopfIdeal_toIdeal_le_ker
     intro a b hab
+    simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
     have hne : a ≠ b := fun h ↦ hab (congrArg d4TripledSummand h)
     simpa only [hne, ↓reduceIte, BialgHom.coe_toAlgHom] using
       GeneralLinear.weightTorusCoordinateMap_X (R := ℤ) d4TripledWeight a b

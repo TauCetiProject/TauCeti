@@ -38,6 +38,7 @@ simplicial suspension and loops.
   `[X.right, Y.right]` of simplicial sets.
 * `PointedSSet.ihom X`: the functor `Y ↦ Map_*(X, Y)`, acting by postcomposition.
 * `PointedSSet.tensorHomEquiv X Y Z`: the currying bijection `(X ⊗ Y ⟶ Z) ≃ (Y ⟶ Map_*(X, Z))`.
+* `PointedSSet.pointRestriction E K`: the constant family of maps to the basepoint of `E`.
 
 ## Main statements
 
@@ -45,6 +46,9 @@ simplicial suspension and loops.
   `tensorLeft X`.
 * `PointedSSet.homEquiv_def`: its hom-set bijection is `PointedSSet.tensorHomEquiv`.
 * Simplex-level descriptions of currying, uncurrying, evaluation and coevaluation.
+* `PointedSSet.range_le_basedMaps_iff`: a family is based exactly when its restriction to the
+  source basepoint is constant at the target basepoint.
+* `PointedSSet.basedMaps_isPullback`: based maps are the fibre of restriction to the basepoint.
 
 ## References
 
@@ -261,6 +265,29 @@ lemma ihom_obj_point_coe_app_apply {n m : SimplexCategoryᵒᵖ} (f : n ⟶ m) (
   -- the internal hom of `MonoidalClosed` here, so the unfolded goal is closed by `map_point`.
   map_point Y _
 
+/-- Precomposition of a based mapping simplex acts on its source components. -/
+@[simp]
+lemma pre_right_app_coe_app_apply {W : PointedSSet.{u}} (i : W ⟶ X)
+    {n m : SimplexCategoryᵒᵖ} (φ : ((ihom X).obj Y).right.obj n)
+    (f : n ⟶ m) (x : W.right.obj m) :
+    dsimp% ((((MonoidalClosed.pre i).app Y).right.app n φ :
+      (basedMaps W Y).obj n).1.app m f x) =
+        (φ : (basedMaps X Y).obj n).1.app m f (i.right.app m x) := by
+  have h := congrArg (fun k : W ⊗ (ihom X).obj Y ⟶ Y ↦
+    k.right.app m (smashMk x (((ihom X).obj Y).right.map f φ)))
+    (MonoidalClosed.id_tensor_pre_app_comp_ev i Y)
+  simp only [Under.comp_right, NatTrans.comp_app, types_comp_apply,
+    whiskerLeft_app_smashMk, whiskerRight_app_smashMk,
+    ← MonoidalClosed.uncurry_id_eq_ev, uncurry_right_app_smashMk,
+    Under.id_right, NatTrans.id_app, types_id_apply] at h
+  have hn := congrArg (fun ψ : ((ihom W).obj Y).right.obj m ↦
+    (ψ : (basedMaps W Y).obj m).1.app m (𝟙 m) x)
+    (NatTrans.naturality_apply ((MonoidalClosed.pre i).app Y).right f φ)
+  simpa only [Under.comp_right, NatTrans.comp_app, types_comp_apply,
+    whiskerLeft_app_smashMk, whiskerRight_app_smashMk,
+    ihom_obj_right_map_coe_app_apply,
+    Category.comp_id] using hn.symm.trans h
+
 /-- The internal hom acts on based maps by postcomposition. -/
 @[simp]
 lemma ihom_map_right_app_coe_app_apply (g : Y ⟶ Z) {n m : SimplexCategoryᵒᵖ}
@@ -285,6 +312,158 @@ lemma ihom_coev_app_right_app_coe_app_apply {n m : SimplexCategoryᵒᵖ} (y : Y
       smashMk x (Y.right.map f y) := by
   rw [← MonoidalClosed.curry_id_eq_coev, curry_right_app_coe_app_apply]
   simp
+
+section Restriction
+
+open CategoryTheory.ConcreteCategory MonoidalClosed Limits
+
+variable {E B : PointedSSet.{u}}
+
+/-- Restriction of an unpointed mapping simplex to the chosen point of its source. -/
+@[simp]
+lemma pre_point_app (X E : PointedSSet.{u}) {n m : SimplexCategoryᵒᵖ}
+    (φ : ((CategoryTheory.ihom X.right).obj E.right).obj n) (f : n ⟶ m)
+    (z : (Δ[0] : SSet.{u}).obj m) :
+    (((MonoidalClosed.pre X.hom).app E.right).app n φ).app m f z =
+      φ.app m f (X.point m) := by
+  have h := congrArg (fun k : (Δ[0] : SSet.{u}) ⊗
+      (CategoryTheory.ihom X.right).obj E.right ⟶ E.right ↦
+    k.app m (z, ((CategoryTheory.ihom X.right).obj E.right).map f φ))
+      (id_tensor_pre_app_comp_ev X.hom E.right)
+  -- Evaluation applies a mapping simplex at the identity; simplicial restriction by `f`
+  -- turns that identity component into its `f` component.
+  change (((MonoidalClosed.pre X.hom).app E.right).app m
+    (((CategoryTheory.ihom X.right).obj E.right).map f φ)).app m (𝟙 m) z =
+      (((CategoryTheory.ihom X.right).obj E.right).map f φ).app m (𝟙 m)
+        (X.hom.app m z) at h
+  have hn := congrArg (fun ψ : ((CategoryTheory.ihom (Δ[0] : SSet.{u})).obj
+      E.right).obj m ↦ ψ.app m (𝟙 m) z)
+    (NatTrans.naturality_apply ((MonoidalClosed.pre X.hom).app E.right) f φ)
+  have result := hn.symm.trans h
+  -- The simplicial operator on the native internal hom precomposes its simplex index.
+  change (((MonoidalClosed.pre X.hom).app E.right).app n φ).app m (f ≫ 𝟙 m) z =
+    φ.app m (f ≫ 𝟙 m) (X.hom.app m z) at result
+  simpa only [Category.comp_id, hom_app] using result
+
+/-- The constant family of maps from the zero-simplex to the chosen point of `E`. -/
+def pointRestriction (E : PointedSSet.{u}) (K : SSet.{u}) :
+    K ⟶ (CategoryTheory.ihom (Δ[0] : SSet.{u})).obj E.right where
+  app _ := ↾fun _ ↦ Functor.HomObj.ofNatTrans E.hom
+
+/-- Every component of the constant family is the chosen point. -/
+@[simp]
+lemma pointRestriction_app_app (E : PointedSSet.{u}) (K : SSet.{u})
+    {n m : SimplexCategoryᵒᵖ} (x : K.obj n) (f : n ⟶ m) (z : (Δ[0] : SSet.{u}).obj m) :
+    ((pointRestriction E K).app n x).app m f z = E.point m :=
+  hom_app E m z
+
+/-- Constant families at the basepoint are natural in their parameter. -/
+@[reassoc (attr := simp)]
+lemma comp_pointRestriction (E : PointedSSet.{u}) {K L : SSet.{u}} (f : K ⟶ L) :
+    f ≫ pointRestriction E L = pointRestriction E K := (rfl)
+
+/-- Based maps preserve the constant family at the basepoint. -/
+@[reassoc (attr := simp)]
+lemma pointRestriction_comp_ihom_map (p : E ⟶ B) (K : SSet.{u}) :
+    pointRestriction E K ≫ (CategoryTheory.ihom (Δ[0] : SSet.{u})).map p.right =
+      pointRestriction B K := by
+  ext n : 1
+  apply ConcreteCategory.hom_ext
+  intro x
+  apply Functor.functorHom_ext fun m f ↦ ?_
+  ext z
+  -- Postcomposition on the unpointed internal hom composes its component maps.
+  change p.right.app m (E.hom.app m z) = B.hom.app m z
+  simp only [hom_app, app_point]
+
+/-- A family of unpointed maps is based exactly when restriction to the source basepoint
+is the constant family at the target basepoint. -/
+lemma range_le_basedMaps_iff (X E : PointedSSet.{u}) {K : SSet.{u}}
+    (f : K ⟶ (CategoryTheory.ihom X.right).obj E.right) :
+    SSet.Subcomplex.range f ≤ basedMaps X E ↔
+      f ≫ (MonoidalClosed.pre X.hom).app E.right = pointRestriction E K := by
+  constructor
+  · intro hf
+    ext n : 1
+    apply ConcreteCategory.hom_ext
+    intro x
+    apply Functor.functorHom_ext fun m g ↦ ?_
+    ext z
+    exact (pre_point_app X E (f.app n x) g z).trans
+      (((mem_basedMaps_iff _).1 (hf n ⟨x, rfl⟩) m g).trans
+        (pointRestriction_app_app E K x g z).symm)
+  · intro hf n φ hφ
+    obtain ⟨x, rfl⟩ := hφ
+    apply (mem_basedMaps_iff _).2
+    intro m g
+    have h := congrArg (fun k : K ⟶ (CategoryTheory.ihom (Δ[0] : SSet.{u})).obj E.right ↦
+      (k.app n x).app m g (SSet.stdSimplex.const 0 0 m)) hf
+    exact (pre_point_app X E (f.app n x) g _).symm.trans
+      (h.trans (pointRestriction_app_app E K x g _))
+
+/-- The inclusion of based maps restricts to the constant family at the basepoint. -/
+@[reassoc (attr := simp)]
+lemma basedMaps_ι_comp_pre (X E : PointedSSet.{u}) :
+    (basedMaps X E).ι ≫ (MonoidalClosed.pre X.hom).app E.right =
+      pointRestriction E (basedMaps X E).toSSet :=
+  (range_le_basedMaps_iff X E _).1 (by rintro n _ ⟨φ, rfl⟩; exact φ.2)
+
+/-- The based mapping simplicial set is the fibre of restriction to the source basepoint
+at the target basepoint, expressed as a pullback over the zero-simplex. -/
+theorem basedMaps_isPullback (X E : PointedSSet.{u}) :
+    IsPullback (basedMaps X E).ι (SSet.stdSimplex.isTerminalObj₀.from _)
+      ((MonoidalClosed.pre X.hom).app E.right) (pointRestriction E Δ[0]) := by
+  have hw : (basedMaps X E).ι ≫ (MonoidalClosed.pre X.hom).app E.right =
+      SSet.stdSimplex.isTerminalObj₀.from _ ≫ pointRestriction E Δ[0] := by simp
+  let lift (s : PullbackCone ((MonoidalClosed.pre X.hom).app E.right)
+      (pointRestriction E Δ[0])) : s.pt ⟶ (basedMaps X E).toSSet :=
+    SSet.Subcomplex.lift s.fst ((range_le_basedMaps_iff X E _).2
+      (s.condition.trans (comp_pointRestriction E s.snd)))
+  exact IsPullback.of_isLimit (PullbackCone.IsLimit.mk hw lift
+    (fun _ ↦ SSet.Subcomplex.lift_ι _ _)
+    (fun _ ↦ SSet.stdSimplex.isTerminalObj₀.hom_ext _ _)
+    (fun s m hm _ ↦ (cancel_mono (basedMaps X E).ι).1
+      (hm.trans (SSet.Subcomplex.lift_ι _ _).symm)))
+
+/-- Inclusion of based maps into unpointed maps commutes with postcomposition. -/
+@[simp, reassoc]
+lemma ihom_map_right_comp_ι (X : PointedSSet.{u}) (p : E ⟶ B) :
+    ((PointedSSet.ihom X).map p).right ≫ (basedMaps X B).ι =
+      (basedMaps X E).ι ≫ (CategoryTheory.ihom X.right).map p.right := by
+  ext n : 1
+  rfl
+
+/-- Inclusion of based maps into unpointed maps commutes with precomposition. -/
+@[simp, reassoc]
+lemma pre_right_comp_ι {W X : PointedSSet.{u}} (i : W ⟶ X) (E : PointedSSet.{u}) :
+    ((MonoidalClosed.pre i).app E).right ≫ (basedMaps W E).ι =
+      (basedMaps X E).ι ≫ (MonoidalClosed.pre i.right).app E.right := by
+  ext n : 1
+  apply ConcreteCategory.hom_ext
+  intro φ
+  apply Functor.functorHom_ext fun m f ↦ ?_
+  ext x
+  have h := congrArg (fun k : W.right ⊗ (CategoryTheory.ihom X.right).obj E.right ⟶
+      E.right ↦ k.app m (x, ((CategoryTheory.ihom X.right).obj E.right).map f φ.1))
+    (MonoidalClosed.id_tensor_pre_app_comp_ev i.right E.right)
+  have hn := congrArg (fun ψ : ((CategoryTheory.ihom W.right).obj E.right).obj m ↦
+    ψ.app m (𝟙 m) x)
+    (NatTrans.naturality_apply ((MonoidalClosed.pre i.right).app E.right) f φ.1)
+  -- The unpointed internal hom is the native functor HomObj; evaluation is application.
+  change (((MonoidalClosed.pre i.right).app E.right).app m
+    (((CategoryTheory.ihom X.right).obj E.right).map f φ.1)).app m (𝟙 m) x =
+      φ.1.app m (f ≫ 𝟙 m) (i.right.app m x) at h
+  -- Its simplicial operators precompose the simplex index.
+  change (((MonoidalClosed.pre i.right).app E.right).app n φ.1).app m (f ≫ 𝟙 m) x =
+    _ at hn
+  -- The subcomplex inclusions forget the proofs that the mapping simplices are based.
+  change (((MonoidalClosed.pre i).app E).right.app n φ :
+    (basedMaps W E).obj n).1.app m f x =
+      (((MonoidalClosed.pre i.right).app E.right).app n φ.1).app m f x
+  rw [pre_right_app_coe_app_apply]
+  simpa only [Category.comp_id] using (hn.trans h).symm
+
+end Restriction
 
 end PointedSSet
 

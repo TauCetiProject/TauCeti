@@ -13,6 +13,7 @@ import Mathlib.Analysis.Complex.UpperHalfPlane.FixedPoints
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Series
 import TauCeti.Analysis.Complex.Fuchsian.Jorgensen
+import TauCeti.Analysis.Complex.UpperHalfPlane.Stabilizer
 import TauCeti.Analysis.Complex.UpperHalfPlane.Displacement
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
@@ -46,6 +47,8 @@ explicit radius `1 / 4`.
 
 * `Subgroup.conj_eq_or_conj_eq_inv_of_cosh_dist`: if
   `|tr² A - 4| + 4 (cosh δ_A cosh δ_B - 1) < 1`, then `B A B⁻¹ = A` or `B A B⁻¹ = A⁻¹`.
+* `Subgroup.smul_eq_self_of_cosh_dist`: in the same situation, if `A ≠ 1` fixes
+  a point `w`, then `B` fixes `w` as well.
 * `Subgroup.conj_eq_or_conj_eq_inv_of_dist_le`: **the Margulis lemma.** If `g, h ∈ Γ` both move
   `z` a distance at most `1 / 4` and `g` fixes no point of `ℍ`, then `h g h⁻¹ = g` or
   `h g h⁻¹ = g⁻¹`.
@@ -124,5 +127,26 @@ theorem conj_eq_or_conj_eq_inv_of_dist_le [DiscreteTopology Γ] {g h : PSL(2, �
   refine conj_eq_or_conj_eq_inv_of_cosh_dist hg hh z ?_
   rw [abs_of_nonneg (by linarith)]
   nlinarith
+
+/-- **Margulis step at an elliptic point.** In a discrete `Γ ≤ PSL(2, ℝ)`, if a nonidentity `A ∈ Γ`
+fixes `w` and `B ∈ Γ` is such that the Margulis inequality holds at some point `y`, then `B` fixes
+`w` as well, since it conjugates `A` to `A` or `A⁻¹`. -/
+theorem smul_eq_self_of_cosh_dist [DiscreteTopology Γ] {A B : SL(2, ℝ)}
+    (hg : (A : PSL(2, ℝ)) ∈ Γ) (hk : (B : PSL(2, ℝ)) ∈ Γ) (hg₁ : (A : PSL(2, ℝ)) ≠ 1) {w : ℍ}
+    (hgw : (A : PSL(2, ℝ)) • w = w) (y : ℍ)
+    (h : |(A : Matrix (Fin 2) (Fin 2) ℝ).trace ^ 2 - 4| +
+      4 * (Real.cosh (dist (A • y) y) * Real.cosh (dist (B • y) y) - 1) < 1) :
+    (B : PSL(2, ℝ)) • w = w := by
+  have hM := conj_eq_or_conj_eq_inv_of_cosh_dist hg hk y h
+  by_contra hne
+  have hfix : ((B : PSL(2, ℝ)) * A * (B : PSL(2, ℝ))⁻¹) • ((B : PSL(2, ℝ)) • w) =
+      (B : PSL(2, ℝ)) • w := by
+    rw [mul_smul, mul_smul, inv_smul_smul, hgw]
+  have hgw' : (A : PSL(2, ℝ))⁻¹ • w = w := by rw [inv_smul_eq_iff, hgw]
+  rcases hM with h | h <;> rw [h] at hfix
+  · exact hg₁ (Matrix.ProjectiveSpecialLinearGroup.eq_one_of_smul_eq_self_of_smul_eq_self hgw
+      hfix hne)
+  · exact hg₁ (inv_eq_one.1
+      (Matrix.ProjectiveSpecialLinearGroup.eq_one_of_smul_eq_self_of_smul_eq_self hgw' hfix hne))
 
 end Subgroup

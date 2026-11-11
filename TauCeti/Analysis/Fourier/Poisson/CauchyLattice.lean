@@ -9,8 +9,8 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 
 import Mathlib.Analysis.Fourier.PoissonSummation
-import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.SpecialFunctions.Exp.LatticeSum
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Probability.Distributions.Cauchy.Basic
 
 /-!
@@ -51,44 +51,17 @@ private theorem tsum_cexp_neg_mul_abs_int_eq_tsum_div {y : ℝ} (hy : 0 < y) :
   have hfContinuous : Continuous f := by
     dsimp only [f]
     fun_prop
-  -- Check the Poisson decay hypothesis at the two ends of the real line.
-  have hfLittleO : f =o[cocompact ℝ] (fun x : ℝ => |x| ^ (-2 : ℝ)) := by
-    apply IsLittleO.of_norm_left
-    simp only [f, Complex.norm_exp, Complex.ofReal_re]
-    rw [cocompact_eq_atBot_atTop, isLittleO_sup]
-    constructor
-    · have h := (isLittleO_exp_neg_mul_rpow_atTop hscale (-2)).comp_tendsto
-        tendsto_neg_atBot_atTop
-      refine h.congr' ?_ ?_
-      · filter_upwards [eventually_lt_atBot 0] with x hx
-        simp [abs_of_neg hx]
-      · filter_upwards [eventually_lt_atBot 0] with x hx
-        simp [abs_of_neg hx]
-    · refine (isLittleO_exp_neg_mul_rpow_atTop hscale (-2)).congr' ?_ ?_
-      · filter_upwards [eventually_gt_atTop 0] with x hx
-        simp [abs_of_pos hx]
-      · filter_upwards [eventually_gt_atTop 0] with x hx
-        simp [abs_of_pos hx]
-  have hfDecay : f =O[cocompact ℝ] (fun x : ℝ => |x| ^ (-2 : ℝ)) := hfLittleO.isBigO
+  have hfDecay : f =O[cocompact ℝ] (fun x : ℝ => |x| ^ (-2 : ℝ)) := by
+    refine IsLittleO.isBigO (IsLittleO.of_norm_left ?_)
+    simpa only [f, Complex.norm_exp, Complex.ofReal_re] using
+      exp_neg_mul_abs_isLittleO_abs_rpow_cocompact hscale (-2)
   set γ : NNReal := ⟨y, hy.le⟩ with hγdef
-  have hγ_coe : (γ : ℝ) = y := by
-    calc
-      (γ : ℝ) = ((⟨y, hy.le⟩ : NNReal) : ℝ) :=
-        congrArg (fun u : NNReal => (u : ℝ)) hγdef
-      _ = y := NNReal.coe_mk y hy.le
-  have hγ : γ ≠ 0 := by
-    intro hz
-    have hzero : (γ : ℝ) = 0 := congrArg (fun u : NNReal => (u : ℝ)) hz
-    rw [hγ_coe] at hzero
-    exact hy.ne' hzero
-  have hfun : f = fun t : ℝ =>
-      (Real.exp (-(2 * Real.pi * (γ : ℝ) * |t|)) : ℂ) := by
-    funext t
-    simp only [f, Complex.ofReal_exp, hγ_coe]
+  have hγ_coe : (γ : ℝ) = y := NNReal.coe_mk y hy.le
+  have hγ : γ ≠ 0 := fun hz => hy.ne' (hγ_coe ▸ congrArg (fun u : NNReal => (u : ℝ)) hz)
   have hFourierCauchy : 𝓕 f = fun x : ℝ =>
       (ProbabilityTheory.cauchyPDFReal 0 γ x : ℂ) := by
-    rw [hfun]
-    exact funext (TauCeti.Probability.fourier_exp_neg_mul_abs_eq_cauchyPDFReal_zero_loc hγ)
+    simpa only [f, hγ_coe, Complex.ofReal_exp] using
+      funext (TauCeti.Probability.fourier_exp_neg_mul_abs_eq_cauchyPDFReal_zero_loc hγ)
   have hFourier : 𝓕 f = fun x : ℝ =>
       ((y / (Real.pi * (y ^ 2 + x ^ 2)) : ℝ) : ℂ) := by
     rw [hFourierCauchy]

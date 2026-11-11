@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Hypergraph.Colored.Basic
+public import TauCeti.Combinatorics.Hypergraph.Colored.EditDiscrepancy
 public import Mathlib.Algebra.BigOperators.Field
 public import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.Data.Rat.Cast.Order
+import Mathlib.Tactic.Linarith
 
 /-!
-# Relative color densities over supports of injective triples
+# Relative color densities and their stability under edits
 
 For a coloring `H` of the unordered triples of `V`, the relative density `H.relDensityOn c supp`
 of a color `c` over a finite support of injective triples is the fraction of the supported
@@ -20,7 +23,9 @@ contributes once for each of its supported orderings, both to the count and to t
 The relative density is `0` on the empty support.
 
 Relative densities lie between `0` and `1`, and on a nonempty support the densities of all colors
-sum to one.
+sum to one. Recoloring changes `relDensityOn`, multiplied by the support size, by at most
+the number of supported edited triples `editedOn`, defined in
+`TauCeti.Combinatorics.Hypergraph.Colored.EditDiscrepancy`.
 
 ## Main definitions
 
@@ -29,6 +34,12 @@ sum to one.
 ## Main results
 
 * `TauCeti.Colored3Graph.sum_relDensityOn`: on a nonempty support the densities sum to one.
+* `TauCeti.Colored3Graph.abs_relDensityOn_sub_mul_card_le_card_editedOn`: the count-scaled
+  density change is bounded by the supported edit count.
+* `TauCeti.Colored3Graph.abs_relDensityOn_sub_le_div_of_card_editedOn_le`: an `η`-fraction
+  of edits on a support changes density on an `ε`-fraction subsupport by at most `η / ε`.
+* `TauCeti.Colored3Graph.abs_relDensityOn_sub_le_div_of_card_sdiff_le`: removing few triples
+  from a support changes the density of every color by little.
 -/
 
 public section
@@ -65,6 +76,47 @@ theorem relDensityOn_mul_card (H : Colored3Graph κ V) (c : κ)
   · simp
   · rw [relDensityOn_def, div_mul_cancel₀ _ (by exact_mod_cast hs.card_pos.ne')]
 
+/-- Recoloring changes a color count by at most the number of edited supported triples.
+The count-scaled form includes empty supports and does not require a finite palette. -/
+theorem abs_relDensityOn_sub_mul_card_le_card_editedOn (H H' : Colored3Graph κ V) (c : κ)
+    (supp : Finset {x : Fin 3 → V // Function.Injective x}) :
+    |H.relDensityOn c supp - H'.relDensityOn c supp| * #supp ≤
+      (#(H.editedOn H' supp) : ℚ) := by
+  rw [editedOn_def]
+  rw [← abs_of_nonneg (Nat.cast_nonneg (α := ℚ) #supp), ← abs_mul, sub_mul,
+    relDensityOn_mul_card, relDensityOn_mul_card]
+  simp only [← sum_boole]
+  rw [← sum_sub_distrib]
+  refine (abs_sum_le_sum_abs _ _).trans (sum_le_sum fun x _ ↦ ?_)
+  by_cases h : H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) =
+      H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩)
+  · simp [h]
+  · split_ifs <;> simp
+
+/-- Recoloring at most an `η`-fraction of `B` changes the density on any subsupport `A`
+carrying at least an `ε`-fraction of `B` by at most `η / ε`. Empty supports are allowed. -/
+theorem abs_relDensityOn_sub_le_div_of_card_editedOn_le (H H' : Colored3Graph κ V) (c : κ)
+    {A B : Finset {x : Fin 3 → V // Function.Injective x}} {ε η : ℝ}
+    (hAB : A ⊆ B) (hε : 0 < ε) (hη : 0 ≤ η) (hsize : ε * #B ≤ #A)
+    (hedit : (#(H.editedOn H' B) : ℝ) ≤ η * #B) :
+    |(H.relDensityOn c A : ℝ) - H'.relDensityOn c A| ≤ η / ε := by
+  obtain rfl | hB := B.eq_empty_or_nonempty
+  · have hA := subset_empty.1 hAB
+    simp [hA, relDensityOn_def, div_nonneg hη hε.le]
+  have hBpos : (0 : ℝ) < #B := Nat.cast_pos.2 hB.card_pos
+  have hd : |(H.relDensityOn c A : ℝ) - H'.relDensityOn c A| * #A ≤
+      (#(H.editedOn H' A) : ℝ) := by
+    exact_mod_cast H.abs_relDensityOn_sub_mul_card_le_card_editedOn H' c A
+  have hmono : (#(H.editedOn H' A) : ℝ) ≤ #(H.editedOn H' B) := by
+    exact_mod_cast card_le_card (H.editedOn_mono H' hAB)
+  apply (le_div_iff₀ hε).2
+  apply (mul_le_mul_iff_left₀ hBpos).1
+  calc
+    _ = |(H.relDensityOn c A : ℝ) - H'.relDensityOn c A| * (ε * #B) := by ac_rfl
+    _ ≤ |(H.relDensityOn c A : ℝ) - H'.relDensityOn c A| * #A :=
+      mul_le_mul_of_nonneg_left hsize (abs_nonneg _)
+    _ ≤ η * #B := hd.trans (hmono.trans hedit)
+
 /-- Relative densities are nonnegative. -/
 theorem relDensityOn_nonneg (H : Colored3Graph κ V) (c : κ)
     (supp : Finset {x : Fin 3 → V // Function.Injective x}) : 0 ≤ H.relDensityOn c supp := by
@@ -76,6 +128,57 @@ theorem relDensityOn_le_one (H : Colored3Graph κ V) (c : κ)
     (supp : Finset {x : Fin 3 → V // Function.Injective x}) : H.relDensityOn c supp ≤ 1 := by
   rw [relDensityOn_def]
   exact div_le_one_of_le₀ (mod_cast card_filter_le _ _) (by positivity)
+
+section Subset
+
+variable [DecidableEq V]
+
+/-- Shrinking a support to a subsupport changes the count-scaled density by at most the number
+of removed triples. Empty supports are allowed. -/
+theorem abs_relDensityOn_sub_mul_card_le_card_sdiff (H : Colored3Graph κ V) (c : κ)
+    {A B : Finset {x : Fin 3 → V // Function.Injective x}} (hAB : A ⊆ B) :
+    |H.relDensityOn c B - H.relDensityOn c A| * #B ≤ (#(B \ A) : ℚ) := by
+  have hB := H.relDensityOn_mul_card c B
+  have hA := H.relDensityOn_mul_card c A
+  have hcard : (#(B \ A) : ℚ) + #A = #B := by exact_mod_cast card_sdiff_add_card_eq_card hAB
+  -- The colored triples of `B` are those of `A` together with at most the removed ones.
+  have hlow := card_le_card (filter_subset_filter
+    (fun x ↦ H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c) hAB)
+  have hsub : {x ∈ B | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} ⊆
+      {x ∈ A | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} ∪ (B \ A) := by
+    intro x hx
+    obtain ⟨hxB, hx⟩ := mem_filter.1 hx
+    by_cases hxA : x ∈ A
+    · exact mem_union_left _ (mem_filter.2 ⟨hxA, hx⟩)
+    · exact mem_union_right _ (mem_sdiff.2 ⟨hxB, hxA⟩)
+  have hhigh := (card_le_card hsub).trans (card_union_le _ _)
+  have h₀ := H.relDensityOn_nonneg c A
+  have h₁ := H.relDensityOn_le_one c A
+  have hd : (0 : ℚ) ≤ #(B \ A) := Nat.cast_nonneg _
+  rw [← abs_of_nonneg (Nat.cast_nonneg (α := ℚ) #B), ← abs_mul, sub_mul, hB, ← hcard, mul_add,
+    hA, abs_le]
+  have hlow' : (_ : ℚ) ≤ _ := Nat.cast_le.2 hlow
+  have hhigh' : (_ : ℚ) ≤ _ := Nat.cast_le.2 hhigh
+  push_cast at hlow' hhigh'
+  constructor <;> nlinarith
+
+/-- If at most `η N` triples are removed from a support `B` with `ε N ≤ #B`, the density of every
+color changes by at most `η / ε`. Empty supports are allowed. -/
+theorem abs_relDensityOn_sub_le_div_of_card_sdiff_le (H : Colored3Graph κ V) (c : κ)
+    {A B : Finset {x : Fin 3 → V // Function.Injective x}} {N ε η : ℝ} (hAB : A ⊆ B)
+    (hε : 0 < ε) (hη : 0 ≤ η) (hsize : ε * N ≤ #B) (hsdiff : (#(B \ A) : ℝ) ≤ η * N) :
+    |(H.relDensityOn c B : ℝ) - H.relDensityOn c A| ≤ η / ε := by
+  obtain rfl | hB := B.eq_empty_or_nonempty
+  · simp [subset_empty.1 hAB, div_nonneg hη hε.le]
+  have hBpos : (0 : ℝ) < #B := Nat.cast_pos.2 hB.card_pos
+  have hd : |(H.relDensityOn c B : ℝ) - H.relDensityOn c A| * #B ≤ #(B \ A) := by
+    exact_mod_cast H.abs_relDensityOn_sub_mul_card_le_card_sdiff c hAB
+  have hN : η * N ≤ η / ε * #B := by
+    rw [div_mul_eq_mul_div, le_div_iff₀ hε, mul_assoc]
+    exact mul_le_mul_of_nonneg_left (by linarith) hη
+  exact le_of_mul_le_mul_right (hd.trans (hsdiff.trans hN)) hBpos
+
+end Subset
 
 /-- Every relative density over the empty support is `0`. -/
 @[simp]

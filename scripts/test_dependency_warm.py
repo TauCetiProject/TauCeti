@@ -232,6 +232,10 @@ class Boundary(unittest.TestCase):
         self.assertNotIn("secrets.", json.dumps(warmer))
         self.assertNotIn("lake build", json.dumps(steps))
         pr = (ROOT / ".github/workflows/pr-build.yml").read_text()
+        pr_steps = yaml.safe_load(pr)["jobs"]["sandboxed-build"]["steps"]
+        toolchain = next(s for s in pr_steps if s.get("uses") == "./gate/.github/actions/restore-lean-toolchain")
+        self.assertEqual(toolchain["with"]["cold"],
+                         "${{ startsWith(runner.name, 'fleet-') && 'true' || 'false' }}")
         self.assertNotIn("actions/cache/save", pr)
         self.assertIn('--ro-bind "$HOME/.elan" "$HOME/.elan"', pr)
         self.assertNotIn('--bind "$HOME/.elan"', pr)
@@ -248,7 +252,7 @@ class Boundary(unittest.TestCase):
     def test_main_saves_mathlib_before_root_build(self):
         steps = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text())["jobs"]["build"]["steps"]
         save = next(i for i, s in enumerate(steps) if s.get("name") == "Save Mathlib's compressed download cache")
-        build = next(i for i, s in enumerate(steps) if s.get("run") == "lake build")
+        build = next(i for i, s in enumerate(steps) if s.get("name") == "Build")
         self.assertLess(save, build)
 
 

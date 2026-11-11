@@ -62,11 +62,17 @@ namespace NumberField
 variable {K : Type*} [Field K] [NumberField K] {p : ℕ} [Fact p.Prime]
 
 variable (K) in
+omit [NumberField K] in
 /-- **Relative Frobenius elements exist.** For a finite Galois extension `L/K` of number fields
 and a nonzero prime `Q` of `𝓞 L`, some `σ ∈ Gal(L/K)` is an arithmetic Frobenius at `Q`. -/
 theorem exists_isArithFrobAt {L : Type*} [Field L] [NumberField L] [Algebra K L] [IsGalois K L]
     (Q : Ideal (𝓞 L)) [Q.IsPrime] (hQ : Q ≠ ⊥) :
     ∃ σ : L ≃ₐ[K] L, IsArithFrobAt (𝓞 K) σ Q := by
+  have : CharZero K := (algebraMap K L).charZero
+  have : FiniteDimensional ℚ K :=
+    Module.Finite.of_injective (algebraMap K L).toRatAlgHom.toLinearMap
+      (algebraMap K L).injective
+  have : NumberField K := ⟨⟩
   let _ : Finite (𝓞 L ⧸ Q) := Ring.HasFiniteQuotients.finiteQuotient hQ
   exact IsArithFrobAt.exists_of_isInvariant (𝓞 K) (L ≃ₐ[K] L) Q
 

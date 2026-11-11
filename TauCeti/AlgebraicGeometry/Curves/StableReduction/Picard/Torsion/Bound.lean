@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Topology
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Picard.Torsion.Basic
-public import TauCeti.LinearAlgebra.Matrix.Rank
+import Mathlib.LinearAlgebra.Matrix.Rank
 
 /-!
 # Bounding prime torsion by the topological genus
@@ -45,7 +45,7 @@ The Stacks Project argues with dual lattices. The proof here is instead linear a
   `Bᵀ W B` of the intersection graph, where `B` is an oriented incidence matrix and `W` is the
   diagonal matrix of the edge weights `-mᵢ aᵢⱼ mⱼ`, again units modulo `ℓ`. Connectedness gives
   `rank B ≥ n - 1`, and Sylvester's rank inequality
-  `Matrix.rank_add_rank_le_rank_mul_add_card` then gives `rank (A mod ℓ) ≥ 2(n - 1) - e`.
+  `Matrix.rank_mul_ge` then gives `rank (A mod ℓ) ≥ 2(n - 1) - e`.
 
 Together these give `dim Coker(A)[ℓ] ≤ n - rank (A mod ℓ) - 1 ≤ 1 - n + e`.
 -/
@@ -408,7 +408,7 @@ private lemma finrank_ker_intersectionMod_add_card_le [Fact ℓ.Prime]
       ((incidence T ℓ)ᵀ * edgeWeightDiagonal T ℓ * incidence T ℓ).rank := by
     rw [← multiplicityDiagonal_mul_mul, rank_mul_eq_left_of_isUnit_det _ _ hD,
       rank_mul_eq_right_of_isUnit_det _ _ hD]
-  have hsyl := rank_add_rank_le_rank_mul_add_card
+  have hsyl := rank_mul_ge
     ((incidence T ℓ)ᵀ * edgeWeightDiagonal T ℓ) (incidence T ℓ)
   rw [rank_mul_eq_left_of_isUnit_det _ _ hW, rank_transpose, ← hrank] at hsyl
   have hsymm : (intersectionMod T ℓ).vecMulLinear = (intersectionMod T ℓ).mulVecLin := by

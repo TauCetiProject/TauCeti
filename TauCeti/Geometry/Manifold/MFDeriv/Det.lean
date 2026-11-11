@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
-import TauCeti.Analysis.Calculus.FDeriv.Det
+public import TauCeti.Analysis.Matrix.Normed
+public import TauCeti.Geometry.Manifold.RegularValue
+import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -23,6 +25,20 @@ where `dA (v)` is the matrix of the derivatives of the entries of `A` along `v`.
 only involves derivatives of scalar functions, so no normed structure on matrices appears in it;
 the proof reads `A` as a map into the product space of its entries and applies the flat formula
 `Matrix.fderiv_det_apply`.
+
+The determinant has every nonzero scalar as a regular value for a nonempty matrix index.
+At the identity its model-valued derivative is the trace, with no completeness assumption.
+
+## Main declarations
+
+* `TauCeti.mvfderiv_det_apply`: Jacobi's formula along a manifold-valued map.
+* `Matrix.mvfderiv_det_one`: the trace formula at the identity.
+* `Matrix.isRegularValue_det`: nonzero values of the determinant are regular.
+
+## References
+
+* John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer GTM 218 (2013),
+  Chapter 7, Example 7.18(c),(e).
 -/
 
 public section
@@ -31,7 +47,7 @@ open scoped Manifold Matrix
 
 namespace TauCeti
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
@@ -50,8 +66,7 @@ theorem mvfderiv_det_apply {A : M → Matrix n n 𝕜} {x : M}
   -- Read `A` as the map `A'` into the product space `n → n → 𝕜` of its entries, and the
   -- determinant as a function on that space through the identification `L` with matrices.
   let A' : M → n → n → 𝕜 := fun y ↦ Matrix.of.symm (A y)
-  let L : (n → n → 𝕜) →L[𝕜] Matrix n n 𝕜 :=
-    LinearMap.toContinuousLinearMap (Matrix.ofLinearEquiv 𝕜).toLinearMap
+  let L : (n → n → 𝕜) →L[𝕜] Matrix n n 𝕜 := ⟨(Matrix.ofLinearEquiv 𝕜).toLinearMap, continuous_id⟩
   have hA'row (i : n) : MDifferentiableAt I 𝓘(𝕜, n → 𝕜) (fun y ↦ A' y i) x :=
     mdifferentiableAt_pi_space.2 fun j ↦ hA i j
   have hA' : MDifferentiableAt I 𝓘(𝕜, n → n → 𝕜) A' x := mdifferentiableAt_pi_space.2 hA'row
@@ -62,15 +77,51 @@ theorem mvfderiv_det_apply {A : M → Matrix n n 𝕜} {x : M}
     rw [← h₁]
     exact h₂
   have hdet' : HasFDerivAt (fun B : n → n → 𝕜 ↦ (L B).det)
-      (((A x).det • (LinearMap.toContinuousLinearMap (Matrix.traceLinearMap n 𝕜 𝕜)).comp
-        (LinearMap.toContinuousLinearMap (LinearMap.mulLeft 𝕜 (A x)⁻¹))).comp L) (A' x) :=
-    (Matrix.hasFDerivAt_det hdet).comp (A' x) L.hasFDerivAt
-  have hLA : (fun y ↦ (L (A' y)).det) = fun y ↦ (A y).det := funext fun y ↦ by simp [L, A']
+      ((fderiv 𝕜 (Matrix.det : Matrix n n 𝕜 → 𝕜) (A x)).comp L) (A' x) :=
+    (Matrix.differentiable_det (A x)).hasFDerivAt.comp (A' x) L.hasFDerivAt
+  -- `L` is the entrywise identification `Matrix.of`, as a continuous linear map.
+  have hL (B : n → n → 𝕜) : L B = Matrix.of B := by
+    exact (congrFun (ContinuousLinearMap.coe_mk' _ _) B).trans (by simp)
+  have hLA : (fun y ↦ (L (A' y)).det) = fun y ↦ (A y).det := funext fun y ↦ by simp [hL, A']
   have hcomp := mvfderiv_comp_apply_of_differentiableAt hdet'.differentiableAt hA' v
   rw [Function.comp_def, hLA] at hcomp
   rw [hcomp, hdet'.fderiv]
   simp only [hentry]
   generalize mvfderiv I A' x v = B
-  simp [L]
+  rw [ContinuousLinearMap.comp_apply, hL, Matrix.fderiv_det_apply hdet]
 
 end TauCeti
+
+namespace Matrix
+
+open scoped Matrix.Norms.Operator
+attribute [local instance] Matrix.linftyOpTopologicalSpace
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- The determinant's model-valued differential at the identity is the matrix trace. -/
+theorem mvfderiv_det_one (v : TangentSpace 𝓘(𝕜, Matrix n n 𝕜) (1 : Matrix n n 𝕜)) :
+    mvfderiv 𝓘(𝕜, Matrix n n 𝕜) (det : Matrix n n 𝕜 → 𝕜) 1 v =
+      trace (NormedSpace.fromTangentSpace (1 : Matrix n n 𝕜) v) := by
+  rw [mvfderiv_eq_fderiv]
+  exact congrArg (fun L : Matrix n n 𝕜 →L[𝕜] 𝕜 ↦
+    L (NormedSpace.fromTangentSpace (1 : Matrix n n 𝕜) v))
+    (hasFDerivAt_det_one (n := n) (𝕜 := 𝕜)).fderiv
+
+/-- Every nonzero scalar is a regular value of the determinant for a nonempty matrix index. -/
+theorem isRegularValue_det [Nonempty n] {c : 𝕜} (hc : c ≠ 0) :
+    TauCeti.IsRegularValue 𝓘(𝕜, Matrix n n 𝕜) 𝓘(𝕜, 𝕜) (det : Matrix n n 𝕜 → 𝕜) c := by
+  rw [TauCeti.isRegularValue_iff]
+  intro A hA
+  apply TauCeti.isRegularPoint_iff_surjective_fderiv.mpr
+  intro z
+  obtain ⟨B, hB⟩ := trace_surjective (n := n) (R := 𝕜) (c⁻¹ * z)
+  refine ⟨A * B, ?_⟩
+  have hu : IsUnit A.det := isUnit_iff_ne_zero.mpr (hA ▸ hc)
+  calc
+    fderiv 𝕜 det A (A * B) = A.det * trace (A⁻¹ * (A * B)) :=
+      fderiv_det_apply hu (A * B)
+    _ = z := by
+      rw [hA, nonsing_inv_mul_cancel_left A B hu, hB, ← mul_assoc, mul_inv_cancel₀ hc, one_mul]
+
+end Matrix

@@ -299,10 +299,11 @@ theorem dual_intermediateCarrierOfDiscriminantSubgroup
     L.discriminantSubgroup_intermediateCarrierOfDiscriminantSubgroup _
   exact h1.trans h2.symm
 
-/-- **The overlattice glued along `H` is unimodular exactly when `H` is Lagrangian.** For an even
-lattice `L` and a quadratic-isotropic subgroup `H`, the glued overlattice `L_H` is even by
-`TauCeti.IntegralLattice.isEven_intermediateCarrierOfDiscriminantSubgroup_iff`, so this is the
-criterion for `L_H` to be an even unimodular overlattice of `L`. -/
+/-- **The glued carrier is self-dual exactly when `H` is Lagrangian.** The carrier `L_H` of the
+overlattice glued along `H` equals its own dual exactly when `H` is a Lagrangian subgroup of the
+discriminant form. No integrality, evenness or isotropy hypothesis is needed for this carrier-level
+statement; for an isotropic `H` the equivalent unimodularity of the glued lattice is
+`TauCeti.IntegralLattice.isUnimodular_ofIsotropicSubgroup_iff_isLagrangian`. -/
 theorem dual_intermediateCarrierOfDiscriminantSubgroup_eq_self_iff
     (H : AddSubgroup L.DiscriminantGroup) :
     dual (L.intermediateCarrierOfDiscriminantSubgroup H) =
@@ -368,13 +369,13 @@ theorem dual_orthogonalSumIntermediateCarrier (L : IntegralLattice V) (M : Integ
   constructor
   · refine fun hp ↦ ⟨fun x hx ↦ ?_, fun y hy ↦ ?_⟩
     · have h := hp (x, 0) ⟨hx, zero_mem _⟩
-      simpa only [orthogonalSum_form, orthogonalSumForm_apply, map_zero, LinearMap.zero_apply,
-        add_zero] using h
+      simpa only [orthogonalSum_form, LinearMap.BilinForm.prod_apply, map_zero,
+        LinearMap.zero_apply, add_zero] using h
     · have h := hp (0, y) ⟨zero_mem _, hy⟩
-      simpa only [orthogonalSum_form, orthogonalSumForm_apply, map_zero, LinearMap.zero_apply,
-        zero_add] using h
+      simpa only [orthogonalSum_form, LinearMap.BilinForm.prod_apply, map_zero,
+        LinearMap.zero_apply, zero_add] using h
   · rintro ⟨hp₁, hp₂⟩ q hq
-    rw [orthogonalSum_form, orthogonalSumForm_apply]
+    rw [orthogonalSum_form, LinearMap.BilinForm.prod_apply]
     exact add_mem (hp₁ q.1 hq.1) (hp₂ q.2 hq.2)
 
 section OrthogonalSum

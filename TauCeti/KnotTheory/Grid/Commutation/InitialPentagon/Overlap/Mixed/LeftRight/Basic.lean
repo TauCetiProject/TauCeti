@@ -226,6 +226,84 @@ theorem recutLeftEqRightSecond_toGridRectangleDecomposition
       D.leftRightRecut hcommon hother hfirst hsecond :=
   (rfl)
 
+/-- The column `finRotate n a` balances row by row in the mixed `left = right` recut: both
+underlying pentagons cover the column, and the two whole row intervals split into their
+below-turn and above-turn pieces. -/
+private theorem ite_mem_cIoo_add_ite_mem_coveredSquares_finRotate_eq
+    (D : GridRectangleInitialPentagonDecomposition a s x z)
+    (E : GridInitialPentagonRectangleDecomposition a s x z)
+    (hD1ab : finRotate n a ∈ Grid.cIco D.first.left D.first.right ↔
+      a ∈ Grid.cIco D.first.left D.first.right)
+    (hbD2 : finRotate n a ∈ Grid.cIco D.second.left D.second.right)
+    (hbE1 : finRotate n a ∈ Grid.cIco E.first.left E.first.right)
+    (hEbottom : E.first.bottom = D.second.bottom)
+    (hcounts : ∀ q : Fin n × Fin n,
+      ((if q ∈ E.first.toGridRectangle.coveredSquares then 1 else 0) +
+          if q ∈ E.second.toGridRectangle.coveredSquares then 1 else 0 : ℕ) =
+        (if q ∈ D.first.toGridRectangle.coveredSquares then 1 else 0) +
+          if q ∈ D.second.toGridRectangle.coveredSquares then 1 else 0) (t : Fin n) :
+    ((if t ∈ Grid.cIoo s E.first.top then 1 else 0) +
+        if (finRotate n a, t) ∈ E.second.toGridRectangle.coveredSquares then 1 else 0 : ℕ) =
+      (if (a, t) ∈ D.first.toGridRectangle.coveredSquares then 1 else 0) +
+        if t ∈ Grid.cIoo s D.second.top then 1 else 0 := by
+  have h := hcounts (finRotate n a, t)
+  have hD1count :
+      (if (finRotate n a, t) ∈ D.first.toGridRectangle.coveredSquares then 1 else 0 : ℕ) =
+        if (a, t) ∈ D.first.toGridRectangle.coveredSquares then 1 else 0 := by
+    simp only [GridRectangleBetween.mem_toGridRectangle_coveredSquares,
+      ← GridRectangleBetween.bottom_def, ← GridRectangleBetween.top_def, hD1ab]
+  have hD1b :
+      (if (finRotate n a, t) ∈ D.first.toGridRectangle.coveredSquares then 1 else 0 : ℕ) =
+        if finRotate n a ∈ Grid.cIco D.first.left D.first.right ∧
+            t ∈ Grid.cIco D.first.bottom D.first.top then 1 else 0 := by
+    simp only [GridRectangleBetween.mem_toGridRectangle_coveredSquares,
+      ← GridRectangleBetween.bottom_def, ← GridRectangleBetween.top_def]
+  have hE2b :
+      (if (finRotate n a, t) ∈ E.second.toGridRectangle.coveredSquares then 1 else 0 : ℕ) =
+        if finRotate n a ∈ Grid.cIco E.second.left E.second.right ∧
+            t ∈ Grid.cIco E.second.bottom E.second.top then 1 else 0 := by
+    simp only [GridRectangleBetween.mem_toGridRectangle_coveredSquares,
+      ← GridRectangleBetween.bottom_def, ← GridRectangleBetween.top_def]
+  have hsplitE := Grid.ite_mem_cIco_eq_add_add E.first_turn_mem t
+  have hsplitD := Grid.ite_mem_cIco_eq_add_add D.second_turn_mem t
+  rw [hEbottom] at hsplitE
+  simp only [GridRectangleBetween.mem_toGridRectangle_coveredSquares,
+    ← GridRectangleBetween.bottom_def, ← GridRectangleBetween.top_def, hbD2, hbE1,
+    true_and, hEbottom] at h
+  omega
+
+/-- The column `a` balances row by row in the mixed `left = right` recut: neither underlying
+pentagon rectangle covers the column, so repartition and adjacency identify the two rectangle
+contributions directly. -/
+private theorem ite_mem_cIco_add_ite_mem_coveredSquares_eq
+    (D : GridRectangleInitialPentagonDecomposition a s x z)
+    (E : GridInitialPentagonRectangleDecomposition a s x z)
+    (hD1ab : finRotate n a ∈ Grid.cIco D.first.left D.first.right ↔
+      a ∈ Grid.cIco D.first.left D.first.right)
+    (haD2 : a ∉ Grid.cIco D.second.left D.second.right)
+    (haE1 : a ∉ Grid.cIco E.first.left E.first.right)
+    (hEbottom : E.first.bottom = D.second.bottom)
+    (hcounts : ∀ q : Fin n × Fin n,
+      ((if q ∈ E.first.toGridRectangle.coveredSquares then 1 else 0) +
+          if q ∈ E.second.toGridRectangle.coveredSquares then 1 else 0 : ℕ) =
+        (if q ∈ D.first.toGridRectangle.coveredSquares then 1 else 0) +
+          if q ∈ D.second.toGridRectangle.coveredSquares then 1 else 0) (t : Fin n) :
+    ((if t ∈ Grid.cIco E.first.bottom s then 1 else 0) +
+        if (a, t) ∈ E.second.toGridRectangle.coveredSquares then 1 else 0 : ℕ) =
+      (if (finRotate n a, t) ∈ D.first.toGridRectangle.coveredSquares then 1 else 0) +
+        if t ∈ Grid.cIco D.second.bottom s then 1 else 0 := by
+  have h := hcounts (a, t)
+  have hD1expanded :
+      (if finRotate n a ∈ Grid.cIco D.first.left D.first.right ∧
+            t ∈ Grid.cIco D.first.bottom D.first.top then 1 else 0 : ℕ) =
+        if a ∈ Grid.cIco D.first.left D.first.right ∧
+            t ∈ Grid.cIco D.first.bottom D.first.top then 1 else 0 := by
+    simp only [hD1ab]
+  simp only [GridRectangleBetween.mem_toGridRectangle_coveredSquares,
+    ← GridRectangleBetween.bottom_def, ← GridRectangleBetween.top_def, haD2, haE1,
+    false_and, hEbottom] at h ⊢
+  omega
+
 /-- When the first rectangle of the mixed `left = right` recut contains the turn row, promoting
 it to an initial-side pentagon preserves the composite domain with multiplicity. The rectangle
 of the commuted diagram is read in the original diagram with the two columns next to the
@@ -285,49 +363,11 @@ theorem coveredSquares_val_add_val_recutLeftEqRightFirst
     Finset.mem_val] at hcounts
   dsimp only [toGridRectangleDecomposition,
     GridInitialPentagonRectangleDecomposition.toGridRectangleDecomposition] at hcounts
-  -- Away from the two commuted columns the generic repartition already proves the claim. In
-  -- these columns, split each pentagon's row interval at the common turn row.
-  refine D.coveredSquares_val_add_val_eq_of_isRepartition E hrep (fun t => ?_) (fun t => ?_)
-  -- Column `finRotate n a`: both underlying pentagons cover the column, and the two whole row
-  -- intervals split into their below-turn and above-turn pieces.
-  · have h := hcounts (finRotate n a, t)
-    have hD1count :
-        (if (finRotate n a, t) ∈ D.first.toGridRectangle.coveredSquares then 1 else 0 : ℕ) =
-          if (a, t) ∈ D.first.toGridRectangle.coveredSquares then 1 else 0 := by
-      simp only [GridRectangleBetween.mem_toGridRectangle_coveredSquares,
-        ← GridRectangleBetween.bottom_def, ← GridRectangleBetween.top_def, hD1ab]
-    have hD1b :
-        (if (finRotate n a, t) ∈ D.first.toGridRectangle.coveredSquares then 1 else 0 : ℕ) =
-          if finRotate n a ∈ Grid.cIco D.first.left D.first.right ∧
-              t ∈ Grid.cIco D.first.bottom D.first.top then 1 else 0 := by
-      simp only [GridRectangleBetween.mem_toGridRectangle_coveredSquares,
-        ← GridRectangleBetween.bottom_def, ← GridRectangleBetween.top_def]
-    have hE2b :
-        (if (finRotate n a, t) ∈ E.second.toGridRectangle.coveredSquares then 1 else 0 : ℕ) =
-          if finRotate n a ∈ Grid.cIco E.second.left E.second.right ∧
-              t ∈ Grid.cIco E.second.bottom E.second.top then 1 else 0 := by
-      simp only [GridRectangleBetween.mem_toGridRectangle_coveredSquares,
-        ← GridRectangleBetween.bottom_def, ← GridRectangleBetween.top_def]
-    have hsplitE := Grid.ite_mem_cIco_eq_add_add E.first_turn_mem t
-    have hsplitD := Grid.ite_mem_cIco_eq_add_add D.second_turn_mem t
-    rw [hEbottom] at hsplitE
-    simp only [GridRectangleBetween.mem_toGridRectangle_coveredSquares,
-      ← GridRectangleBetween.bottom_def, ← GridRectangleBetween.top_def, hbD2, hbE1,
-      true_and, hEbottom] at h
-    omega
-  -- Column `a`: neither underlying pentagon rectangle covers the column, so repartition and
-  -- adjacency identify the two rectangle contributions directly.
-  · have h := hcounts (a, t)
-    have hD1expanded :
-        (if finRotate n a ∈ Grid.cIco D.first.left D.first.right ∧
-              t ∈ Grid.cIco D.first.bottom D.first.top then 1 else 0 : ℕ) =
-          if a ∈ Grid.cIco D.first.left D.first.right ∧
-              t ∈ Grid.cIco D.first.bottom D.first.top then 1 else 0 := by
-      simp only [hD1ab]
-    simp only [GridRectangleBetween.mem_toGridRectangle_coveredSquares,
-      ← GridRectangleBetween.bottom_def, ← GridRectangleBetween.top_def, haD2, haE1,
-      false_and, hEbottom] at h ⊢
-    omega
+  -- Away from the two commuted columns the generic repartition already proves the claim; the two
+  -- columns balance row by row.
+  exact D.coveredSquares_val_add_val_eq_of_isRepartition E hrep
+    (ite_mem_cIoo_add_ite_mem_coveredSquares_finRotate_eq D E hD1ab hbD2 hbE1 hEbottom hcounts)
+    (ite_mem_cIco_add_ite_mem_coveredSquares_eq D E hD1ab haD2 haE1 hEbottom hcounts)
 
 end TauCeti.GridRectangleInitialPentagonDecomposition
 
@@ -488,10 +528,9 @@ private theorem initialPentagonLeftRightOverlapPartner_injective :
     G.initialPentagonLeftRightOverlapSource_recut_data C D.val D.property
   obtain ⟨honeE, hfE, hsE⟩ :=
     G.initialPentagonLeftRightOverlapSource_recut_data C E.val E.property
-  have hbackD := hD.symm honeD hfD hsD
-  have hbackE := hE.symm honeE hfE hsE
+  have hbackD := hD.symm hfD hsD
+  have hbackE := hE.symm hfE hsE
   have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hbackD
-    (D.val.toGridRectangleDecomposition.target_ne_source_of_hasOneCommonSide honeD)
   apply Subtype.ext
   apply GridRectangleInitialPentagonDecomposition.toGridRectangleDecomposition_injective
   exact (GridRectangleDecomposition.existsUnique_isRecut _ hone

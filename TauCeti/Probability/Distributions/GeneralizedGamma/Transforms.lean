@@ -120,10 +120,9 @@ theorem not_integrable_exp_mul_id_generalizedGammaMeasure_of_lt_one
   · have hq : 0 ≤ -a * c := mul_nonneg_of_nonpos_of_nonpos (neg_nonpos.2 ha.le) hcneg.le
     have hmom : ¬ Integrable (fun x : ℝ ↦ x ^ (-a * c))
         (generalizedGammaMeasure a c s) := by
-      rw [integrable_rpow_generalizedGammaMeasure_iff ha hc hs, mul_div_cancel_right₀ _ hc]
+      rw [integrable_rpow_generalizedGammaMeasure_iff ha hs, mul_div_cancel_right₀ _ hc]
       linarith
     exact not_integrable_exp_mul_of_not_integrable_rpow (-a * c)
-      measurable_id.aemeasurable
       ((ae_pos_generalizedGammaMeasure a c s).mono fun _ hx ↦ hx.le) hq hmom ht
   · exact not_integrable_exp_mul_id_generalizedGammaMeasure_of_pos_lt_one
       ha hcpos hc1 hs ht

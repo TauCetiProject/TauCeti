@@ -132,6 +132,13 @@ theorem exists_e6MinusculeWeight_apply_eq_neg_one (i : Fin 6) :
     ∃ a : Fin 27, e6MinusculeWeight a i = -1 :=
   ⟨e6MinusculeNegOneIndex i, e6MinusculeWeight_e6MinusculeNegOneIndex i⟩
 
+/-- At distinct nodes `i`, `j`, some minuscule weight has coordinates `0`, `-1` respectively. At
+adjacent nodes, raising first at `j` and then at `i` gives a nonzero height-two root operator. -/
+theorem exists_e6MinusculeWeight_apply_eq_zero_and_eq_neg_one {i j : Fin 6} (hij : i ≠ j) :
+    ∃ b : Fin 27, e6MinusculeWeight b i = 0 ∧ e6MinusculeWeight b j = -1 := by
+  revert i j
+  decide +kernel
+
 /-! ## Simple reflections -/
 
 /-- **The permutation of the twenty-seven minuscule weights induced by the `i`-th simple

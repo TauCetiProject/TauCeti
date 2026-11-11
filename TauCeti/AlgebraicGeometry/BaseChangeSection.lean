@@ -21,6 +21,9 @@ projection `T ×_S X ⟶ T` (`graphSection`). Graphs commute with base change al
 For a base change `X' = S' ×_S X` along `g : S' ⟶ S`, the base-changed sections of `x₀` and of
 its base change `x₀'` agree under `T ×_S X ≅ T ×_{S'} X'`
 (`baseChangeSection_comp_pullbackRightPullbackFstIso_inv`).
+
+Over an open `U` of `S`, a section `σ` of `g : Z ⟶ S` restricts functions on `g⁻¹ U` to `U`,
+giving a `Γ(S, U)`-algebra map `σ^* : Γ(Z, g⁻¹ U) → Γ(S, U)` (`sectionAlgHom`).
 -/
 
 public section
@@ -154,6 +157,42 @@ lemma baseChangeSection_comp_pullbackRightPullbackFstIso_inv (T : Over S') :
     · simp [h₂, h₄]
 
 end
+
+section SectionAlgHom
+
+variable {Z S : Scheme.{u}} (g : Z ⟶ S) {σ : S ⟶ Z} (hσ : σ ≫ g = 𝟙 S)
+
+include hσ in
+/-- A section `σ` of `g` pulls `g⁻¹ U` back to `U`. -/
+theorem preimage_preimage_of_comp_eq_id (U : S.Opens) : σ ⁻¹ᵁ g ⁻¹ᵁ U = U := by
+  rw [← Scheme.Hom.comp_preimage, hσ, Scheme.Hom.id_preimage]
+
+/-- The ring map `Γ(S, U) → Γ(Z, g⁻¹ U) → Γ(S, U)` of a section is the identity. -/
+theorem app_comp_appLE_of_comp_eq_id (U : S.Opens) :
+    g.app U ≫ σ.appLE (g ⁻¹ᵁ U) U (preimage_preimage_of_comp_eq_id g hσ U).ge = 𝟙 _ := by
+  rw [Scheme.Hom.app_eq_appLE, Scheme.Hom.appLE_comp_appLE]
+  have key : ∀ (f : S ⟶ S) (_ : f = 𝟙 S) (e : U ≤ f ⁻¹ᵁ U), f.appLE U U e = 𝟙 _ := by
+    rintro _ rfl e
+    simp only [Scheme.Hom.appLE, Scheme.Hom.id_app]
+    exact S.presheaf.map_id _
+  exact key _ hσ _
+
+/-- The `Γ(S, U)`-algebra map `σ^* : Γ(Z, g⁻¹ U) → Γ(S, U)` of a section `σ` of `g`, over an open
+`U` of `S`. -/
+noncomputable def sectionAlgHom (U : S.Opens) :
+    letI := (g.app U).hom.toAlgebra
+    Γ(Z, g ⁻¹ᵁ U) →ₐ[Γ(S, U)] Γ(S, U) :=
+  letI := (g.app U).hom.toAlgebra
+  { (σ.appLE (g ⁻¹ᵁ U) U (preimage_preimage_of_comp_eq_id g hσ U).ge).hom with
+    commutes' a := congr($(app_comp_appLE_of_comp_eq_id g hσ U).hom a) }
+
+/-- The algebra map `σ^*` of a section evaluates the restriction along `σ`. -/
+@[simp]
+theorem sectionAlgHom_apply (U : S.Opens) (b : Γ(Z, g ⁻¹ᵁ U)) :
+    sectionAlgHom g hσ U b = σ.appLE (g ⁻¹ᵁ U) U (preimage_preimage_of_comp_eq_id g hσ U).ge b :=
+  (rfl)
+
+end SectionAlgHom
 
 end AlgebraicGeometry
 end TauCeti

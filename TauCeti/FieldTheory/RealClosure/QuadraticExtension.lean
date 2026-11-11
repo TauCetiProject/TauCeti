@@ -9,20 +9,27 @@ public import TauCeti.FieldTheory.RealClosure.AlgebraicClosed
 public import Mathlib.Algebra.QuadraticAlgebra.IsQuadraticExtension
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 import Mathlib.Algebra.Polynomial.SpecificDegree
+import Mathlib.Algebra.QuadraticAlgebra.Discriminant
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.FieldTheory.IsAlgClosed.OddDegreeRoot
 
 /-! # Real closed fields and their algebraically closed quadratic extensions
 
-A field `R` is real closed exactly when `-1` is not a square in `R` and some (equivalently,
-every) quadratic extension of `R` is algebraically closed. In particular, when `X ^ 2 + 1` is
-irreducible, `R` is real closed exactly when `R(√-1) = AdjoinRoot (X ^ 2 + 1)` is
-algebraically closed.
+A field `R` is real closed exactly when some quadratic extension of `R` is algebraically
+closed. Moreover, every quadratic extension of a real closed field is algebraically closed, so
+for a fixed quadratic extension `K` of `R` that exists, `R` is real closed exactly when `K` is
+algebraically closed. In particular, when `X ^ 2 + 1` is irreducible, `R` is real closed exactly
+when `R(√-1) = AdjoinRoot (X ^ 2 + 1)` is algebraically closed.
 
 For the forward direction, a quadratic extension embeds into the algebraically closed
 `QuadraticAlgebra R (-1) 0` of the same dimension, so all its elements are squares. For the
-converse, an
-algebraically closed extension `K` of degree two identifies `K` with `R(√-1)`. Writing a
+converse, first `-1` is not a square in `R`: writing `K ≅ QuadraticAlgebra R a b`, suppose `-1`
+is a square. If `2 ≠ 0`, every element of `K` being a square (in particular `-b + 2ω`) makes the
+discriminant a square, so the algebra is not a field. In characteristic two with `b ≠ 0`,
+algebraic closure gives a root in `K` of the Artin–Schreier polynomial `X ^ 2 + b X - (a / b) ω`,
+which yields a zero divisor; with `b = 0`, the generator `ω` is not a square. Each case
+contradicts that `K` is a field. Hence an algebraically closed extension `K` of degree two
+identifies `K` with `R(√-1)`. Writing a
 square root of `x + y √-1` in coordinates shows that every element or its negative is a
 square, and that a sum of two squares is a square. Every irreducible polynomial over `R`
 has degree dividing two, so a polynomial of odd degree has a root.
@@ -31,8 +38,10 @@ has degree dividing two, so a polynomial of odd degree has a root.
 
 * `TauCeti.RealClosure.isAlgClosed_of_isQuadraticExtension`: every quadratic extension of a
   real closed field is algebraically closed.
-* `TauCeti.RealClosure.isRealClosed_of_isAlgClosed_of_isQuadraticExtension`: a field in
-  which `-1` is not a square, with an algebraically closed quadratic extension, is real closed.
+* `TauCeti.RealClosure.not_isSquare_neg_one_of_isAlgClosed_of_isQuadraticExtension`: `-1` is
+  not a square in a field with an algebraically closed quadratic extension.
+* `TauCeti.RealClosure.isRealClosed_of_isAlgClosed_of_isQuadraticExtension`: a field with an
+  algebraically closed quadratic extension is real closed.
 * `TauCeti.RealClosure.isRealClosed_iff_isAlgClosed_of_isQuadraticExtension`: the
   characterization by any fixed quadratic extension.
 * `TauCeti.RealClosure.isRealClosed_of_isAlgClosed_adjoin`: the same converse, phrased with
@@ -74,16 +83,89 @@ theorem isAlgClosed_of_isQuadraticExtension [IsRealClosed R]
   obtain ⟨y, rfl⟩ := hf w
   exact ⟨y, f.injective (by simp [hw])⟩
 
+/-- In characteristic two, a field `QuadraticAlgebra R a b` cannot have every element a square and
+a solution of the Artin–Schreier equation `z ^ 2 + b z = a / b • ω` when `b ≠ 0`. -/
+private theorem false_of_forall_isSquare_of_two_eq_zero {a b : R} (h2 : (2 : R) = 0)
+    (hfield : IsField (QuadraticAlgebra R a b)) (hsq : ∀ q : QuadraticAlgebra R a b, ∃ z, z * z = q)
+    (hroot : b ≠ 0 → ∃ w : QuadraticAlgebra R a b, w * w + b • w = ⟨0, a / b⟩) : False := by
+  by_cases hb : b = 0
+  · subst hb
+    obtain ⟨z, hz⟩ := hsq ⟨0, 1⟩
+    have him := congrArg QuadraticAlgebra.im hz
+    simp only [QuadraticAlgebra.im_mul, zero_mul, add_zero] at him
+    have : (1 : R) = 0 := by linear_combination -him + z.re * z.im * h2
+    exact one_ne_zero this
+  · obtain ⟨w, hz⟩ := hroot hb
+    have him := congrArg QuadraticAlgebra.im hz
+    simp only [QuadraticAlgebra.im_add, QuadraticAlgebra.im_mul, QuadraticAlgebra.im_smul,
+      smul_eq_mul] at him
+    rw [eq_div_iff hb] at him
+    -- `r = b * w.im` is a root of `X ^ 2 - b X - a`, so the algebra has zero divisors
+    have hr : (b * w.im) * (b * w.im) = a + b * (b * w.im) := by
+      linear_combination him - (b ^ 2 * w.im + b * w.re * w.im) * h2
+    have h0 : (⟨-(b * w.im), 1⟩ : QuadraticAlgebra R a b) * ⟨b * w.im - b, 1⟩ = 0 := by
+      ext
+      · simp only [QuadraticAlgebra.re_mul, QuadraticAlgebra.re_zero]
+        linear_combination -hr
+      · simp only [QuadraticAlgebra.im_mul, QuadraticAlgebra.im_zero]
+        ring
+    let := hfield.toField
+    rcases mul_eq_zero.mp h0 with h | h <;>
+      simpa using congrArg QuadraticAlgebra.im h
+
+/-- If `2 ≠ 0` and `-1` is a square in `R`, then `QuadraticAlgebra R a b` is not a field when
+every element is a square: the discriminant is then a square. -/
+private theorem false_of_forall_isSquare_of_ne_two {a b : R} (h2 : (2 : R) ≠ 0)
+    (hs : IsSquare (-1 : R)) (hfield : IsField (QuadraticAlgebra R a b))
+    (hsq : ∀ q : QuadraticAlgebra R a b, ∃ z, z * z = q) : False := by
+  have : NeZero (2 : R) := ⟨h2⟩
+  obtain ⟨s, hs⟩ := hs
+  obtain ⟨z, hz⟩ := hsq ⟨-b, 2⟩
+  have hre := congrArg QuadraticAlgebra.re hz
+  have him := congrArg QuadraticAlgebra.im hz
+  simp only [QuadraticAlgebra.re_mul, QuadraticAlgebra.im_mul] at hre him
+  have hd : z.im ≠ 0 := by
+    rintro hd
+    rw [hd] at him
+    exact h2 (by linear_combination -him)
+  refine QuadraticAlgebra.not_isField_of_isSquare_discr ⟨s * (2 * z.re + z.im * b) / z.im, ?_⟩
+    hfield
+  rw [QuadraticAlgebra.discr_def, div_mul_div_comm, eq_div_iff (mul_ne_zero hd hd)]
+  linear_combination (2 * z.re + z.im * b) ^ 2 * hs + 4 * hre + 2 * b * him
+
+/-- `-1` is never a square in a field with an algebraically closed quadratic extension. -/
+theorem not_isSquare_neg_one_of_isAlgClosed_of_isQuadraticExtension [IsAlgClosed K]
+    [Algebra.IsQuadraticExtension R K] : ¬IsSquare (-1 : R) := by
+  intro hs
+  obtain ⟨a, b, ⟨e⟩⟩ :=
+    Algebra.IsQuadraticExtension.exists_algEquiv_quadraticAlgebra (R := R) (A := K)
+  have hfield : IsField (QuadraticAlgebra R a b) :=
+    e.symm.toRingEquiv.toMulEquiv.isField (Field.toIsField K)
+  -- every element of `QuadraticAlgebra R a b` is a square
+  have hsq (q : QuadraticAlgebra R a b) : ∃ z, z * z = q := by
+    obtain ⟨w, hw⟩ := IsAlgClosed.exists_pow_nat_eq (e.symm q) two_pos
+    exact ⟨e w, by rw [← map_mul, ← sq, hw, AlgEquiv.apply_symm_apply]⟩
+  by_cases h2 : (2 : R) = 0
+  · refine false_of_forall_isSquare_of_two_eq_zero h2 hfield hsq fun hb => ?_
+    -- solve the Artin–Schreier equation `z ^ 2 + b z = a / b • ω` in `K`
+    have hdeg : (X ^ 2 + C (algebraMap R K b) * X - C (e.symm ⟨0, a / b⟩)).degree = 2 := by
+      compute_degree!
+    obtain ⟨w, hw⟩ := IsAlgClosed.exists_root
+      (X ^ 2 + C (algebraMap R K b) * X - C (e.symm ⟨0, a / b⟩)) (by rw [hdeg]; decide)
+    simp only [IsRoot, eval_sub, eval_add, eval_pow, eval_mul, eval_C, eval_X,
+      sub_eq_zero] at hw
+    refine ⟨e w, ?_⟩
+    simpa [sq, Algebra.smul_def] using congrArg e hw
+  · exact false_of_forall_isSquare_of_ne_two h2 hs hfield hsq
+
 section Converse
 
 variable [IsAlgClosed K]
 
-variable (hR : ¬IsSquare (-1 : R))
-include hR
-
 /-- If `-1` is not a square in `R` and `R` has an algebraically closed quadratic extension,
 then every `a + b √-1` has a square root `c + d √-1` with `c, d ∈ R`. -/
-private theorem exists_coords_sqrt [Algebra.IsQuadraticExtension R K] (a b : R) :
+private theorem exists_coords_sqrt (hR : ¬IsSquare (-1 : R)) [Algebra.IsQuadraticExtension R K]
+    (a b : R) :
     ∃ c d : R, c * c - d * d = a ∧ 2 * (c * d) = b := by
   have : Fact (¬IsSquare (-1 : R)) := ⟨hR⟩
   have : FiniteDimensional R K :=
@@ -102,10 +184,11 @@ private theorem exists_coords_sqrt [Algebra.IsQuadraticExtension R K] (a b : R) 
   simp only [QuadraticAlgebra.re_mul, QuadraticAlgebra.im_mul] at hre him
   exact ⟨y.re, y.im, by linear_combination hre, by linear_combination him⟩
 
-/-- A field in which `-1` is not a square and which has an algebraically closed quadratic
-extension is real closed. -/
+/-- A field with an algebraically closed quadratic extension is real closed. -/
 theorem isRealClosed_of_isAlgClosed_of_isQuadraticExtension [Algebra.IsQuadraticExtension R K] :
     IsRealClosed R := by
+  have hR : ¬IsSquare (-1 : R) :=
+    not_isSquare_neg_one_of_isAlgClosed_of_isQuadraticExtension (K := K)
   have h2 : (2 : R) ≠ 0 := fun h => hR ⟨1, by linear_combination -h⟩
   -- A sum of two squares `a² + b²` is the norm `(c² + d²)²` of a square root of `a + b √-1`.
   have hsumsq {s : R} (hs : IsSumSq s) : IsSquare s := by
@@ -130,14 +213,12 @@ theorem isRealClosed_of_isAlgClosed_of_isQuadraticExtension [Algebra.IsQuadratic
 
 end Converse
 
-/-- A field is real closed exactly when `-1` is not a square in it and a given quadratic
-extension is algebraically closed. -/
+/-- A field is real closed exactly when a given quadratic extension is algebraically closed. -/
 theorem isRealClosed_iff_isAlgClosed_of_isQuadraticExtension
     [Algebra.IsQuadraticExtension R K] :
-    IsRealClosed R ↔ ¬IsSquare (-1 : R) ∧ IsAlgClosed K :=
-  ⟨fun _ => ⟨fun h => IsSemireal.not_isSumSq_neg_one R h.isSumSq,
-      isAlgClosed_of_isQuadraticExtension (R := R)⟩,
-    fun ⟨hR, _⟩ => isRealClosed_of_isAlgClosed_of_isQuadraticExtension (K := K) hR⟩
+    IsRealClosed R ↔ IsAlgClosed K :=
+  ⟨fun _ => isAlgClosed_of_isQuadraticExtension (R := R),
+    fun _ => isRealClosed_of_isAlgClosed_of_isQuadraticExtension (K := K)⟩
 
 /-- A field in which `-1` is not a square is real closed when adjoining a square root of `-1`,
 taken in some extension, gives an algebraically closed field. -/
@@ -153,7 +234,7 @@ theorem isRealClosed_of_isAlgClosed_adjoin (hR : ¬IsSquare (-1 : R)) {i : K} (h
     (minpoly.eq_of_irreducible_of_monic hirr hroot (monic_X_pow_add_C 1 two_ne_zero)).symm
   have : Algebra.IsQuadraticExtension R R⟮i⟯ :=
     { finrank_eq_two' := by rw [adjoin.finrank hint, hmin, hdeg] }
-  exact isRealClosed_of_isAlgClosed_of_isQuadraticExtension (K := R⟮i⟯) hR
+  exact isRealClosed_of_isAlgClosed_of_isQuadraticExtension (K := R⟮i⟯)
 
 /-- A field over which `X ^ 2 + 1` is irreducible is real closed exactly when
 `AdjoinRoot (X ^ 2 + 1)` is algebraically closed. -/
@@ -164,12 +245,6 @@ theorem isRealClosed_iff_isAlgClosed_adjoinRoot [Fact (Irreducible (X ^ 2 + 1 : 
     { finrank_eq_two' := by
         rw [(AdjoinRoot.powerBasis hirr.ne_zero).finrank, AdjoinRoot.powerBasis_dim, ← C_1,
           natDegree_X_pow_add_C] }
-  rw [isRealClosed_iff_isAlgClosed_of_isQuadraticExtension (K := AdjoinRoot (X ^ 2 + 1 : R[X])),
-    and_iff_right_iff_imp]
-  rintro - ⟨x, hx⟩
-  have hroot : (X ^ 2 + 1 : R[X]).IsRoot x := by simp [IsRoot, sq, ← hx]
-  have := degree_eq_one_of_irreducible_of_root hirr hroot
-  rw [← C_1, degree_X_pow_add_C two_pos] at this
-  exact absurd this (by decide)
+  exact isRealClosed_iff_isAlgClosed_of_isQuadraticExtension (K := AdjoinRoot (X ^ 2 + 1 : R[X]))
 
 end TauCeti.RealClosure

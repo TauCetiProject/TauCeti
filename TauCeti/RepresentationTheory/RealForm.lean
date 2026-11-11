@@ -161,13 +161,13 @@ theorem isRealForm_iff_nonempty_equiv :
 
 /-- The character of a representation with a real form is the character of that real form.  In
 particular it takes real values (`Representation.IsRealForm.conj_char`). -/
-theorem IsRealForm.char_eq [FiniteDimensional ℝ W] (h : IsRealForm ρ σ) (g : G) :
+theorem IsRealForm.char_eq (h : IsRealForm ρ σ) (g : G) :
     ρ.character g = (σ.character g : ℂ) := by
   obtain ⟨φ⟩ := isRealForm_iff_nonempty_equiv.mp h
   rw [← congrFun (char_iso φ) g, Representation.character_baseChange, Complex.coe_algebraMap]
 
 /-- The character of a representation with a real form is fixed by complex conjugation. -/
-theorem IsRealForm.conj_char [FiniteDimensional ℝ W] (h : IsRealForm ρ σ) (g : G) :
+theorem IsRealForm.conj_char (h : IsRealForm ρ σ) (g : G) :
     (starRingEnd ℂ) (ρ.character g) = ρ.character g := by
   rw [h.char_eq g, Complex.conj_ofReal]
 
@@ -368,9 +368,7 @@ theorem IsRealForm.exists_isRealStructure (h : IsRealForm ρ σ) :
   have hφ : ∀ (g : G) (u : ℂ ⊗[ℝ] W), e (baseChange ℂ σ g u) = ρ g (e u) := fun g u => by
     simpa [he, Equiv.toLinearEquiv_apply] using φ.isIntertwining (g := g) (v := u)
   -- The witness is a composition of semilinear maps; `LinearMap.comp` supplies its map laws.
-  refine ⟨e.toLinearMap ∘ₛₗ (tmulConj W ∘ₛₗ e.symm.toLinearMap), ?_, ?_⟩
-  · intro v
-    simp
+  refine ⟨e.conjugationOfComplexification, e.conjugationOfComplexification_involutive, ?_⟩
   · intro g v
     have hu : tmulConj W (baseChange ℂ σ g (e.symm v))
         = baseChange ℂ σ g (tmulConj W (e.symm v)) := by
@@ -378,7 +376,7 @@ theorem IsRealForm.exists_isRealStructure (h : IsRealForm ρ σ) :
       exact tmulConj_baseChange (σ g) (e.symm v)
     have hsymm : e.symm (ρ g v) = baseChange ℂ σ g (e.symm v) := by
       rw [e.symm_apply_eq, hφ, e.apply_symm_apply]
-    simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe]
+    simp only [LinearEquiv.conjugationOfComplexification_apply]
     rw [hsymm, hu, hφ]
 
 /-- **Realizability over `ℝ` is the existence of a real structure.**  This is the working form of

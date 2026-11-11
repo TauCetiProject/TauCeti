@@ -7,6 +7,9 @@ module
 
 public import Mathlib.CategoryTheory.ObjectProperty.Equivalence
 public import Mathlib.CategoryTheory.Linear.LinearFunctor
+public import Mathlib.CategoryTheory.Groupoid
+public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
+public import Mathlib.CategoryTheory.Preadditive.Biproducts
 
 /-!
 # Successive full-subcategory restrictions
@@ -24,6 +27,10 @@ public section
 namespace CategoryTheory.ObjectProperty
 
 variable {C : Type*} [Category* C] (P Q : ObjectProperty C)
+
+/-- A full subcategory of a groupoid is a groupoid, without any closure condition on objects. -/
+instance FullSubcategory.isGroupoid [IsGroupoid C] : IsGroupoid P.FullSubcategory :=
+  isGroupoid_of_reflects_iso P.ι
 
 /-- Two successive full-subcategory restrictions agree with restriction to the intersection.
 The comparison and its inverse leave the underlying objects and morphisms unchanged. -/
@@ -124,5 +131,19 @@ instance iteratedFullSubcategoryEquivalence_functor_linear (R : Type*) [Semiring
   map_smul f r := by ext; rfl
 
 end Linear
+
+section Biproducts
+
+open Limits
+
+variable [Preadditive C] [HasFiniteBiproducts C]
+
+/-- A full subcategory of a preadditive category with finite biproducts, closed under finite
+products, has finite biproducts. -/
+instance hasFiniteBiproducts_fullSubcategory [P.IsClosedUnderFiniteProducts] :
+    HasFiniteBiproducts P.FullSubcategory :=
+  .of_hasFiniteProducts
+
+end Biproducts
 
 end CategoryTheory.ObjectProperty

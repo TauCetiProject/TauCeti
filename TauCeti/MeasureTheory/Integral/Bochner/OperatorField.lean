@@ -27,6 +27,36 @@ namespace MeasureTheory
 variable {α E F : Type*} [MeasurableSpace α] [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {μ : Measure α}
 
+/-- Bounded operator fields converging almost everywhere, applied to a fixed integrable vector
+field, have integrals of the differences tending to `0`. -/
+theorem tendsto_integral_clm_sub_apply_of_ae_tendsto
+    {ωn : ℕ → α → E →L[ℝ] F} {ω : α → E →L[ℝ] F} {v : α → E} {C : ℝ}
+    (hωn : ∀ n, AEStronglyMeasurable (ωn n) μ) (hω : AEStronglyMeasurable ω μ)
+    (hboundn : ∀ n, ∀ᵐ x ∂μ, ‖ωn n x‖ ≤ C) (hbound : ∀ᵐ x ∂μ, ‖ω x‖ ≤ C)
+    (hωconv : ∀ᵐ x ∂μ, Tendsto (fun n ↦ ωn n x) atTop (nhds (ω x)))
+    (hv : Integrable v μ) :
+    Tendsto (fun n ↦ ∫ x, (ωn n x - ω x) (v x) ∂μ) atTop (nhds 0) := by
+  have ht := tendsto_integral_filter_of_dominated_convergence
+    (μ := μ) (l := atTop) (F := fun n x ↦ (ωn n x - ω x) (v x)) (f := fun _ ↦ (0 : F))
+    (fun x ↦ (C + C) * ‖v x‖)
+    (Eventually.of_forall fun n ↦ ((ContinuousLinearMap.id ℝ (E →L[ℝ] F)).aestronglyMeasurable_comp₂
+      ((hωn n).sub hω) hv.1)) ?_
+    (hv.norm.const_mul (C + C)) ?_
+  · simpa only [integral_zero] using ht
+  · apply Eventually.of_forall
+    intro n
+    filter_upwards [hboundn n, hbound] with x hx hy
+    exact ((ωn n x - ω x).le_opNorm (v x)).trans
+      (mul_le_mul_of_nonneg_right ((norm_sub_le _ _).trans (add_le_add hx hy))
+        (norm_nonneg _))
+  · filter_upwards [hωconv] with x hx
+    have hxzero : Tendsto (fun n ↦ ωn n x - ω x) atTop (nhds 0) := by
+      simpa only [sub_self] using hx.sub (tendsto_const_nhds (x := ω x))
+    convert ((ContinuousLinearMap.apply ℝ F (v x)).continuous.tendsto 0).comp hxzero using 1
+    · ext n
+      exact (ContinuousLinearMap.apply_apply (v x) (ωn n x - ω x)).symm
+    · simp
+
 /-- Bounded operator fields converging almost everywhere can be paired with velocities
 converging in `L¹`. This gives convergence of the actual Bochner integrals. -/
 theorem tendsto_integral_clm_apply_of_integral_norm_sub
@@ -50,26 +80,8 @@ theorem tendsto_integral_clm_apply_of_integral_norm_sub
   have hdint (n) : Integrable (d n) μ :=
     (ContinuousLinearMap.id ℝ (E →L[ℝ] F)).integrable_of_bilin_of_bdd_left
       C (hωn n) (hboundn n) ((hvn n).sub hv)
-  have he : Tendsto (fun n ↦ ∫ x, e n x ∂μ) atTop (nhds 0) := by
-    have ht := tendsto_integral_filter_of_dominated_convergence
-      (μ := μ) (l := atTop) (F := e) (f := fun _ ↦ (0 : F))
-      (fun x ↦ (C + C) * ‖v x‖)
-      (Eventually.of_forall fun n ↦ (heint n).1) ?_
-      (hv.norm.const_mul (C + C)) ?_
-    · simpa only [integral_zero] using ht
-    · apply Eventually.of_forall
-      intro n
-      filter_upwards [hboundn n, hbound] with x hx hy
-      exact ((ωn n x - ω x).le_opNorm (v x)).trans
-        (mul_le_mul_of_nonneg_right ((norm_sub_le _ _).trans (add_le_add hx hy))
-          (norm_nonneg _))
-    · filter_upwards [hωconv] with x hx
-      have hxzero : Tendsto (fun n ↦ ωn n x - ω x) atTop (nhds 0) := by
-        simpa only [sub_self] using hx.sub (tendsto_const_nhds (x := ω x))
-      convert ((ContinuousLinearMap.apply ℝ F (v x)).continuous.tendsto 0).comp hxzero using 1
-      · ext n
-        exact (ContinuousLinearMap.apply_apply (v x) (ωn n x - ω x)).symm
-      · simp
+  have he : Tendsto (fun n ↦ ∫ x, e n x ∂μ) atTop (nhds 0) :=
+    tendsto_integral_clm_sub_apply_of_ae_tendsto hωn hω hboundn hbound hωconv hv
   have hd : Tendsto (fun n ↦ ∫ x, d n x ∂μ) atTop (nhds 0) := by
     apply squeeze_zero_norm (fun n ↦ ?_) (by simpa using hvconv.const_mul C)
     calc

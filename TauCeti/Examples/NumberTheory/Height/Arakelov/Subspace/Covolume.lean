@@ -52,8 +52,7 @@ example :
   have hdim : finrank ℝ W.euclideanSpan = 1 := by
     rw [W.finrank_euclideanSpan, finrank_self, one_mul, finrank_span_singleton hv]
   refine ⟨hH, hcov_int, hcov, ?_⟩
-  rw [ZLattice.covolume_smul W.integerLattice (by norm_num : (2 : ℝ) ≠ 0) volume, hdim, pow_one,
-    hcov]
+  rw [ZLattice.covolume_smul W.integerLattice volume, hdim, pow_one, hcov]
   norm_num
 
 end

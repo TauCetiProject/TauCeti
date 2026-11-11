@@ -8,6 +8,8 @@ module
 public import TauCeti.RingTheory.RegularLocalRing.ProjectiveDimension
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
+import Mathlib.RingTheory.RingHom.Flat
+import TauCeti.RingTheory.Flat.Noetherian
 
 /-!
 # Descent of regularity along flat local homomorphisms
@@ -17,9 +19,14 @@ Noetherianity of the source is necessary: both descend by faithful flatness. The
 dimension of the source residue field is then bounded by the dimension of the target, so
 Serre's criterion proves regularity.
 
-In particular, regularity descends along any flat local homomorphism. The closed fibre need
-not be a field or be regular. This is the local input for descent of regularity of schemes
-along faithfully flat covers.
+In particular, regularity descends along any flat local homomorphism
+(`TauCeti.IsRegularLocalRing.of_flat_of_isLocalHom`). The closed fibre need not be a field or be
+regular. This is the local input for descent of regularity of schemes along faithfully flat
+covers.
+
+Globally, a ring faithfully flat in a regular ring is a regular ring
+(`TauCeti.IsRegularRing.of_faithfullyFlat`), by passing to localizations at primes and a prime
+of the target above each.
 
 ## References
 
@@ -43,9 +50,7 @@ Noetherianity of the source follow from faithful flatness, rather than being hyp
 theorem of_faithfullyFlat [IsRegularLocalRing S]
     [Module.FaithfullyFlat R S] : IsRegularLocalRing R := by
   have := Module.FaithfullyFlat.isLocalRing R S
-  have : IsNoetherianRing R :=
-    Submodule.IsNoetherian.of_isNoetherian_tensorProduct_of_faithfullyFlat
-      (R := R) (A := S) (M := R) inferInstance
+  have : IsNoetherianRing R := .of_faithfullyFlat S
   apply (isRegularLocalRing_iff_projectiveDimension_ne_top (R := R)).mpr
   exact ((IsRegularRing.projectiveDimension_le_ringKrullDim_of_faithfullyFlat
     (R := S) (Shrink.{u} (R ⧸ maximalIdeal R))).trans_lt
@@ -59,3 +64,13 @@ theorem of_flat_of_isLocalHom [IsLocalRing R] [IsRegularLocalRing S] [Module.Fla
   exact of_faithfullyFlat (S := S)
 
 end TauCeti.IsRegularLocalRing
+
+/-- **Regularity descends along faithfully flat extensions by regular rings.** If a regular ring
+`S` is faithfully flat over a ring `R`, then `R` is a regular ring (in particular Noetherian). -/
+theorem TauCeti.IsRegularRing.of_faithfullyFlat {R : Type u} {S : Type v} [CommRing R] [CommRing S]
+    [Algebra R S] [IsRegularRing S] [Module.FaithfullyFlat R S] : IsRegularRing R := by
+  have : IsNoetherianRing R := .of_faithfullyFlat S
+  refine isRegularRing_iff.mpr fun p _ ↦ ?_
+  obtain ⟨q, _, _⟩ := Ideal.exists_isPrime_liesOver_of_faithfullyFlat (B := S) p
+  let := Localization.AtPrime.algebraOfLiesOver p q
+  exact TauCeti.IsRegularLocalRing.of_flat_of_isLocalHom (S := Localization.AtPrime q)
