@@ -19,18 +19,19 @@ preserved by negation, with no convergence hypothesis.
 ## Main results
 
 * `Filter.limUnder_neg_eq_zero`: if the chosen limit of `G` along a filter that is not trivial is
-  `0`, so is that of `-G`, in a Hausdorff topological additive group.
+  `0`, so is that of `-G`, in a Hausdorff additive group with continuous negation.
 -/
 
 public section
 
 open Filter Topology
 
-/-- In a Hausdorff topological additive group, if the chosen limit of `G` along a nontrivial
-filter is `0`, so is the chosen limit of `-G`. If `G` converges, `-G` converges to the negative of
-the limit. Otherwise neither converges, and both chosen limits are the same junk value. -/
-theorem Filter.limUnder_neg_eq_zero {α X : Type*} [AddCommGroup X] [TopologicalSpace X]
-    [IsTopologicalAddGroup X] [T2Space X] {f : Filter α} [f.NeBot] {G : α → X}
+/-- In a Hausdorff additive group with continuous negation, if the chosen limit of `G` along a
+nontrivial filter is `0`, so is the chosen limit of `-G`. If `G` converges, `-G` converges to the
+negative of the limit. Otherwise neither converges, and both chosen limits are the same junk
+value. -/
+theorem Filter.limUnder_neg_eq_zero {α X : Type*} [AddGroup X] [TopologicalSpace X]
+    [ContinuousNeg X] [T2Space X] {f : Filter α} [f.NeBot] {G : α → X}
     (hG : limUnder f G = 0) : limUnder f (fun x ↦ -G x) = 0 := by
   by_cases hex : ∃ L, Tendsto G f (𝓝 L)
   · obtain ⟨L, hL⟩ := hex
