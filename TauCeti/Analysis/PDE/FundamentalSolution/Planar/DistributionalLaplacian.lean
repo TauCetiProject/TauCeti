@@ -83,8 +83,8 @@ theorem locallyIntegrable_fderiv_planarNewtonianKernel :
     LocallyIntegrable (fderiv ℝ planarNewtonianKernel) := by
   refine locallyIntegrable_of_norm_le_rpow (μ := volume) (by simp) (C := (2 * Real.pi)⁻¹)
     (α := 1) (by simp) ?_ (measurable_fderiv ℝ _).aestronglyMeasurable
-  filter_upwards [volume.ae_ne (0 : ℂ)] with z hz
-  rw [norm_fderiv_planarNewtonianKernel hz, Real.rpow_neg_one, mul_inv]
+  filter_upwards with z
+  rw [norm_fderiv_planarNewtonianKernel, Real.rpow_neg_one, mul_inv]
 
 /-- The planar Newtonian kernel regularized at scale `t`:
 `-(4π)⁻¹ (log (‖z‖² + t) - log (1 + t))`. Subtracting the constant `log (1 + t)` makes the
@@ -102,9 +102,9 @@ private lemma regKernel_zero : regKernel 0 = planarNewtonianKernel := by
     Real.log_pow]
   ring
 
-private lemma regKernelDeriv_zero (v : ℂ) {z : ℂ} (hz : z ≠ 0) :
+private lemma regKernelDeriv_zero (v : ℂ) (z : ℂ) :
     regKernelDeriv v 0 z = fderiv ℝ planarNewtonianKernel z v := by
-  rw [regKernelDeriv, fderiv_planarNewtonianKernel_apply hz, add_zero]
+  rw [regKernelDeriv, fderiv_planarNewtonianKernel_apply, add_zero]
 
 private lemma hasLineDerivAt_regKernel (v : ℂ) {t : ℝ} (ht : 0 < t) (z : ℂ) :
     HasLineDerivAt ℝ (regKernel t) (regKernelDeriv v t z) z v := by
@@ -212,11 +212,10 @@ theorem integral_planarNewtonianKernel_mul_fderiv_eq_neg_fderiv_mul {g : ℂ →
       (((continuous_regKernel ht).mul hg.continuous).integrable_of_hasCompactSupport hc.mul_left)
       (fun z _ ↦ hasLineDerivAt_regKernel v ht z)
       (fun z _ ↦ ((hg.differentiable one_ne_zero) z).hasFDerivAt.hasLineDerivAt v)
-  -- At `t = 0` the regularizations are the kernel and, away from the pole, its derivative.
+  -- At `t = 0` the regularizations are the kernel and its derivative.
   have hderiv : (fun z ↦ fderiv ℝ planarNewtonianKernel z v * g z) =ᵐ[volume]
-      fun z ↦ regKernelDeriv v 0 z * g z := by
-    filter_upwards [volume.ae_ne (0 : ℂ)] with z hz
-    rw [regKernelDeriv_zero v hz]
+      fun z ↦ regKernelDeriv v 0 z * g z :=
+    ae_of_all _ fun z ↦ by simp only [regKernelDeriv_zero v z]
   -- Both sides converge as `t → 0⁺`.
   have hL := tendsto_integral_mul_of_dominated_away (measure_singleton (0 : ℂ))
     (μ := volume) (l := 𝓝[>] (0 : ℝ)) (K := regKernel) (K₀ := regKernel 0)
@@ -246,13 +245,13 @@ theorem hasWeakFDerivOn_planarNewtonianKernel (Ω : Opens ℂ) :
 
 /-- Away from the pole, the gradient pairing `∇G · ∇f` is `-(2π)⁻¹ ‖z‖⁻² f' z z`. -/
 private lemma sum_fderiv_planarNewtonianKernel_mul_fderiv (b : OrthonormalBasis (Fin 2) ℝ ℂ)
-    (f : ℂ → ℝ) {z : ℂ} (hz : z ≠ 0) :
+    (f : ℂ → ℝ) (z : ℂ) :
     ∑ i, fderiv ℝ planarNewtonianKernel z (b i) * fderiv ℝ f z (b i) =
       -(2 * Real.pi)⁻¹ * (‖z‖ ^ (-(2 : ℝ)) * fderiv ℝ f z z) := by
   have hz' : fderiv ℝ f z z = ∑ i, ⟪b i, z⟫ * fderiv ℝ f z (b i) := by
     have h := congrArg (fderiv ℝ f z) (b.sum_repr' z).symm
     simpa only [map_sum, map_smul, smul_eq_mul] using h
-  simp_rw [fderiv_planarNewtonianKernel_apply hz, hz', Finset.mul_sum, real_inner_comm z,
+  simp_rw [fderiv_planarNewtonianKernel_apply, hz', Finset.mul_sum, real_inner_comm z,
     Real.rpow_neg (norm_nonneg z), Real.rpow_two]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   ring
@@ -270,9 +269,8 @@ theorem integral_laplacian_mul_planarNewtonianKernel {f : ℂ → ℝ} (hf : Con
   rw [hvol] at hrad
   set b := Complex.orthonormalBasisOneI
   have hsum : (fun z ↦ ∑ i, fderiv ℝ planarNewtonianKernel z (b i) * fderiv ℝ f z (b i))
-      =ᵐ[volume] fun z ↦ -(2 * Real.pi)⁻¹ * (‖z‖ ^ (-(2 : ℝ)) * fderiv ℝ f z z) := by
-    filter_upwards [volume.ae_ne (0 : ℂ)] with z hz
-    exact sum_fderiv_planarNewtonianKernel_mul_fderiv b f hz
+      =ᵐ[volume] fun z ↦ -(2 * Real.pi)⁻¹ * (‖z‖ ^ (-(2 : ℝ)) * fderiv ℝ f z z) :=
+    ae_of_all _ (sum_fderiv_planarNewtonianKernel_mul_fderiv b f)
   rw [locallyIntegrable_planarNewtonianKernel.integral_laplacian_mul_eq_neg_integral_sum
       locallyIntegrable_fderiv_planarNewtonianKernel
       (fun _ ↦ integral_planarNewtonianKernel_mul_fderiv_eq_neg_fderiv_mul) hf hc b,

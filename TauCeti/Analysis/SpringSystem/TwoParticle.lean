@@ -19,8 +19,10 @@ stiffness `κ` and rest length `1`. Displacing them by `u₁` and `u₂` changes
 `TauCeti.springForce κ 1 ((1, 0) + u₂ - u₁)`, the second particle feeling its opposite. The
 declarations specific to this example live in the namespace `TauCeti.TwoParticleSpring`.
 
-**The linearization.** In the coordinate order `(x₁, y₁, x₂, y₂)` the linearized force is
-`κ H u`, with `H = TauCeti.TwoParticleSpring.forceMatrix`: only the stretching of the spring along
+**The linearization.** In the coordinate order `(x₁, y₁, x₂, y₂)` the exact force on the two
+particles (`TauCeti.TwoParticleSpring.exactForce`) has derivative `u ↦ κ H u` at the rest
+configuration, with `H = TauCeti.TwoParticleSpring.forceMatrix`
+(`TauCeti.TwoParticleSpring.hasFDerivAt_exactForce_zero`): only the stretching of the spring along
 the rest direction is felt to first order. Its eigenvectors are the stretching mode
 `(1, 0, -1, 0)`, of eigenvalue `-2`, the two translations `(1, 0, 1, 0)` and `(0, 1, 0, 1)` and
 the transverse mode `(0, 1, 0, -1)`, all three of eigenvalue `0`.
@@ -52,6 +54,7 @@ not solutions of the spring equation.
 ## Main definitions
 
 * `TauCeti.TwoParticleSpring.forceMatrix`: the linearized force matrix `H`.
+* `TauCeti.TwoParticleSpring.exactForce`: the exact force on the two particles, in coordinates.
 * `TauCeti.TwoParticleSpring.transverseLength`, `TauCeti.TwoParticleSpring.transverseEnergy`: the
   exact length and potential along the transverse displacement.
 * `TauCeti.TwoParticleSpring.rotatedRestFirst`, `TauCeti.TwoParticleSpring.rotatedRestSecond`: the
@@ -59,6 +62,9 @@ not solutions of the spring equation.
 
 ## Main results
 
+* `TauCeti.TwoParticleSpring.hasFDerivAt_exactForce_zero`,
+  `TauCeti.TwoParticleSpring.hasFDerivAt_inv_smul_exactForce_zero`: the exact force linearizes to
+  `κ H` at the rest configuration, and the acceleration of particles of mass `m` to `(κ / m) H`.
 * `TauCeti.TwoParticleSpring.springPotential_transverse`,
   `TauCeti.TwoParticleSpring.springForce_transverse`: the exact potential and force along the
   transverse displacement.
@@ -91,9 +97,11 @@ open Real Filter Topology Matrix
 
 /-- The **force matrix** `H` of the linearized system of two particles at `(0, 0)` and `(1, 0)`
 joined by a spring of stiffness `κ` and rest length `1`, in the coordinate order
-`(x₁, y₁, x₂, y₂)`: the linearized force is `κ H u`, in which only the stretching `x₂ - x₁` along
-the rest direction is felt. Along the transverse mode `(0, 1, 0, -1)` this first-order vanishing
-of the exact force is `TauCeti.TwoParticleSpring.hasDerivAt_springForce_transverse_zero`. -/
+`(x₁, y₁, x₂, y₂)`: the linearized force is `κ H u`
+(`TauCeti.TwoParticleSpring.hasFDerivAt_exactForce_zero`), in which only the stretching `x₂ - x₁`
+along the rest direction is felt. Along the transverse mode `(0, 1, 0, -1)` this first-order
+vanishing of the exact force is
+`TauCeti.TwoParticleSpring.hasDerivAt_springForce_transverse_zero`. -/
 def forceMatrix : Matrix (Fin 4) (Fin 4) ℝ :=
   !![-1, 0, 1, 0; 0, 0, 0, 0; 1, 0, -1, 0; 0, 0, 0, 0]
 
@@ -125,6 +133,72 @@ theorem forceMatrix_mulVec_transverse (ε : ℝ) :
     forceMatrix *ᵥ ![0, ε, 0, -ε] = 0 := by
   ext i
   fin_cases i <;> simp [forceMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_four]
+
+/-! ### `H` is the linearization of the exact force -/
+
+/-- The **exact force** on the two particles at the displacement `u = (x₁, y₁, x₂, y₂)`, in the same
+coordinate order: the force `F = springForce κ 1 ((1, 0) + u₂ - u₁)` on the first particle,
+followed by the opposite force `-F` on the second. -/
+noncomputable def exactForce (κ : ℝ) (u : Fin 4 → ℝ) : Fin 4 → ℝ :=
+  let F := springForce κ 1 (!₂[1, 0] + !₂[u 2, u 3] - !₂[u 0, u 1] : EuclideanSpace ℝ (Fin 2))
+  ![F 0, F 1, -F 0, -F 1]
+
+theorem exactForce_def (κ : ℝ) (u : Fin 4 → ℝ) :
+    exactForce κ u =
+      let F := springForce κ 1 (!₂[1, 0] + !₂[u 2, u 3] - !₂[u 0, u 1] : EuclideanSpace ℝ (Fin 2))
+      ![F 0, F 1, -F 0, -F 1] :=
+  (rfl)
+
+/-- The rest configuration is an equilibrium: the exact force vanishes at `u = 0`. -/
+@[simp]
+theorem exactForce_zero (κ : ℝ) : exactForce κ 0 = 0 := by
+  have h : (!₂[1, 0] + !₂[0, 0] - !₂[0, 0] : EuclideanSpace ℝ (Fin 2)) = !₂[1, 0] := by
+    ext i
+    fin_cases i <;> simp
+  have hn : ‖(!₂[1, 0] : EuclideanSpace ℝ (Fin 2))‖ = 1 := by
+    simp [EuclideanSpace.norm_eq, Fin.sum_univ_two]
+  ext i
+  fin_cases i <;> simp [exactForce_def, h, springForce_def, hn]
+
+/-- **`H` is the linearization of the exact force**: the exact force on the two particles has
+derivative `u ↦ κ H u` at the rest configuration `u = 0`. This is the pair-force linearization
+`TauCeti.hasFDerivAt_springForce_add_sub` for the rest vector `(1, 0)`, whose projection keeps
+only the stretching `x₂ - x₁`. -/
+theorem hasFDerivAt_exactForce_zero (κ : ℝ) :
+    HasFDerivAt (exactForce κ) (κ • (Matrix.toLin' forceMatrix).toContinuousLinearMap)
+      0 := by
+  have hv : (!₂[1, 0] : EuclideanSpace ℝ (Fin 2)) ≠ 0 := fun h ↦ by simpa using congr($h 0)
+  have hn : ‖(!₂[1, 0] : EuclideanSpace ℝ (Fin 2))‖ = 1 := by
+    simp [EuclideanSpace.norm_eq, Fin.sum_univ_two]
+  -- the positions of the two particles, as a linear function of the coordinates
+  let L : (Fin 4 → ℝ) →L[ℝ] EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2) :=
+    LinearMap.toContinuousLinearMap
+      { toFun u := (!₂[u 0, u 1], !₂[u 2, u 3])
+        map_add' u w := by ext i <;> fin_cases i <;> simp
+        map_smul' c u := by ext i <;> fin_cases i <;> simp }
+  have hp := hasFDerivAt_springForce_add_sub κ hv
+  rw [← map_zero L, hn] at hp
+  have hF := hp.comp (0 : Fin 4 → ℝ) L.hasFDerivAt
+  refine hasFDerivAt_pi'.2 fun i ↦ ?_
+  -- each coordinate of the exact force is `±` a coordinate of the force on the first particle
+  fin_cases i <;> [
+    convert (EuclideanSpace.proj (𝕜 := ℝ) (0 : Fin 2)).hasFDerivAt.comp 0 hF using 1;
+    convert (EuclideanSpace.proj (𝕜 := ℝ) (1 : Fin 2)).hasFDerivAt.comp 0 hF using 1;
+    convert ((EuclideanSpace.proj (𝕜 := ℝ) (0 : Fin 2)).hasFDerivAt.comp 0 hF).neg using 1;
+    convert ((EuclideanSpace.proj (𝕜 := ℝ) (1 : Fin 2)).hasFDerivAt.comp 0 hF).neg using 1] <;>
+  first
+    | funext u
+      simp [exactForce_def, L]
+    | ext u
+      simp [L, forceMatrix, Submodule.starProjection_singleton, dotProduct, Fin.sum_univ_four,
+        PiLp.inner_apply, Fin.sum_univ_two, hn, neg_add_eq_sub, ← sub_eq_add_neg, ← mul_neg]
+
+/-- **The linearized equation of motion.** For particles of equal mass `m`, the acceleration
+`m⁻¹ • exactForce κ u` has derivative `u ↦ (κ / m) H u` at the rest configuration. -/
+theorem hasFDerivAt_inv_smul_exactForce_zero (κ m : ℝ) :
+    HasFDerivAt (fun u ↦ m⁻¹ • exactForce κ u)
+      ((κ / m) • (Matrix.toLin' forceMatrix).toContinuousLinearMap) 0 := by
+  simpa [smul_smul, div_eq_inv_mul] using (hasFDerivAt_exactForce_zero κ).const_smul m⁻¹
 
 /-! ### The exact length and potential along the transverse displacement -/
 
