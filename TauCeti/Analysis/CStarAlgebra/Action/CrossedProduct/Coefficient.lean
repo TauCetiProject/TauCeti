@@ -108,7 +108,8 @@ theorem isometry_coefficient (hρ : Function.Injective ρ) : Isometry (coefficie
   have h : Function.LeftInverse (fourierCoeff α ρ hρ 1) (coefficient α ρ) := fun a => by simp
   exact NonUnitalStarAlgHom.isometry (coefficient α ρ) h.injective
 
-/-- Left multiplication of compactly supported coefficients is pointwise multiplication. -/
+/-- Left multiplication by an included coefficient `a` on the image of a compactly supported
+function `f` is the image of the pointwise product `a • f.ofConv`. -/
 theorem coefficient_mul_of (a : A) (f : ConvolutionAlgebra α Measure.count) :
     coefficient α ρ a * of α ρ Measure.count f =
       of α ρ Measure.count (ConvolutionAlgebra.toConv (a • f.ofConv)) := by

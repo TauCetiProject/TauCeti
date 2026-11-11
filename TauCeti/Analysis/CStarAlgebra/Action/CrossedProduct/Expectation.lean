@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Action.CrossedProduct.Coefficient
+public import TauCeti.Analysis.CStarAlgebra.Action.CrossedProduct.Fourier
 public import Mathlib.Analysis.InnerProductSpace.StarOrder
 import TauCeti.MeasureTheory.Function.L2Space
 
