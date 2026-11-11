@@ -70,12 +70,6 @@ by left multiplication. -/
     cayleyDartEquiv (g • e) = (g * (cayleyDartEquiv e).1, (cayleyDartEquiv e).2) :=
   cayleyDartEquiv_cayleyMulLeft_smul g e
 
-/-- The distance between two vertices `g` and `h` of the Cayley tree is the length of the reduced
-word of `g⁻¹ * h`. -/
-theorem cayley_dist [DecidableEq α] (v w : (cayley α).V) :
-    (cayley α).dist v w = ((cayleyVertexEquiv v)⁻¹ * cayleyVertexEquiv w).norm :=
-  SerreGraph.cayley_dist v w
-
 /-! ### The action is free -/
 
 /-- A free group acts freely on the vertices of its Cayley tree. -/
@@ -121,8 +115,8 @@ theorem cayley_translationLength [DecidableEq α] (g : FreeGroup α) :
     (cayley α).translationLength g = (FreeGroup.reduceCyclically g.toWord).length := by
   -- The vertex `v` is moved by the length of the conjugate `v⁻¹ * g * v`.
   have key (v : (cayley α).V) : (cayley α).dist v (g • v) =
-      ((cayleyVertexEquiv v)⁻¹ * g * cayleyVertexEquiv v).norm := by
-    rw [cayley_dist, cayleyVertexEquiv_cayley_smul, mul_assoc]
+      ((cayleyVertexEquiv v)⁻¹ * g * cayleyVertexEquiv v).norm :=
+    (SerreGraph.cayley_dist v (g • v)).trans (by rw [cayleyVertexEquiv_cayley_smul, mul_assoc])
   refine le_antisymm ?_ ?_
   · obtain ⟨v, hv⟩ : ∃ v : (cayley α).V, cayleyVertexEquiv v =
         FreeGroup.mk (FreeGroup.reduceCyclically.conjugator g.toWord) :=
