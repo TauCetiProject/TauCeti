@@ -76,30 +76,22 @@ section Classification
 
 variable {R : Type*} [CommRing R]
 
-private theorem χ₄_ringHomComp_three : χ₄.ringHomComp (Int.castRingHom R) 3 = -1 := by
-  rw [MulChar.ringHomComp_apply, show χ₄ 3 = -1 by decide]
-  simp
-
-private theorem changeLevel_χ₄_ringHomComp_eight_three :
-    changeLevel (by norm_num : 4 ∣ 8) (χ₄.ringHomComp (Int.castRingHom R)) 3 = -1 := by
-  have := changeLevel_ringHomComp_intCast_apply (R := R) (by norm_num : 4 ∣ 8) χ₄
-    (n := 3) (Int.isCoprime_iff_gcd_eq_one.mpr rfl)
-  rw [Int.cast_ofNat, Int.cast_ofNat, show χ₄ 3 = -1 by decide] at this
-  simpa using this
-
-private theorem changeLevel_χ₄_ringHomComp_eight_five :
-    changeLevel (by norm_num : 4 ∣ 8) (χ₄.ringHomComp (Int.castRingHom R)) 5 = 1 := by
-  have := changeLevel_ringHomComp_intCast_apply (R := R) (by norm_num : 4 ∣ 8) χ₄
-    (n := 5) (Int.isCoprime_iff_gcd_eq_one.mpr rfl)
-  rw [Int.cast_ofNat, Int.cast_ofNat, show χ₄ 5 = 1 by decide] at this
-  simpa using this
+/-- The value of the lift of `χ₄` to level eight at a unit, read off from the value of `χ₄` at
+its reduction modulo four. -/
+private theorem changeLevel_χ₄_ringHomComp_eight_apply {a : ZMod 8} (ha : IsUnit a) {b : ℤ}
+    (h : χ₄ a.cast = b) :
+    changeLevel (by norm_num : 4 ∣ 8) (χ₄.ringHomComp (Int.castRingHom R)) a = b := by
+  rw [← ha.unit_spec, changeLevel_eq_cast_of_dvd, ha.unit_spec,
+    MulChar.ringHomComp_intCast_apply_of_apply_eq _ h]
 
 /-- The quadratic characters of level four: the principal character and `χ₄`. -/
 theorem eq_one_or_eq_χ₄_of_isQuadratic {χ : DirichletCharacter R 4} (hχ : χ.IsQuadratic) :
     χ = 1 ∨ χ = χ₄.ringHomComp (Int.castRingHom R) := by
   rcases hχ.apply_eq_one_or_eq_neg_one (a := 3) (by decide) with h3 | h3
   · exact Or.inl (ext_of_level_four (by rw [h3, MulChar.one_apply (by decide)]))
-  · exact Or.inr (ext_of_level_four (by rw [h3, χ₄_ringHomComp_three]))
+  · refine Or.inr (ext_of_level_four ?_)
+    rw [h3, MulChar.ringHomComp_intCast_apply_of_apply_eq χ₄ (a := 3) (b := -1) (by decide),
+      Int.cast_neg, Int.cast_one]
 
 /-- The quadratic characters of level eight: the principal character, the lift of `χ₄`, `χ₈`
 and `χ₈'`. -/
@@ -109,22 +101,25 @@ theorem eq_one_or_eq_χ₄_or_eq_χ₈_or_eq_χ₈'_of_isQuadratic {χ : Dirichl
       χ = χ₈.ringHomComp (Int.castRingHom R) ∨ χ = χ₈'.ringHomComp (Int.castRingHom R) := by
   have h1 (a : ZMod 8) (ha : IsUnit a) : (1 : DirichletCharacter R 8) a = 1 :=
     MulChar.one_apply ha
-  have hv (ψ : DirichletCharacter ℤ 8) (a : ZMod 8) (b : ℤ) (h : ψ a = b) :
-      ψ.ringHomComp (Int.castRingHom R) a = b := by
-    rw [MulChar.ringHomComp_apply, h, eq_intCast]
   rcases hχ.apply_eq_one_or_eq_neg_one (a := 3) (by decide) with h3 | h3 <;>
   rcases hχ.apply_eq_one_or_eq_neg_one (a := 5) (by decide) with h5 | h5
   · exact Or.inl (ext_of_level_eight (by rw [h3, h1 _ (by decide)])
       (by rw [h5, h1 _ (by decide)]))
   · refine Or.inr (Or.inr (Or.inr (ext_of_level_eight ?_ ?_)))
-    · rw [h3, hv χ₈' 3 1 (by decide), Int.cast_one]
-    · rw [h5, hv χ₈' 5 (-1) (by decide), Int.cast_neg, Int.cast_one]
+    · rw [h3, MulChar.ringHomComp_intCast_apply_of_apply_eq χ₈' (a := 3) (b := 1) (by decide),
+        Int.cast_one]
+    · rw [h5, MulChar.ringHomComp_intCast_apply_of_apply_eq χ₈' (a := 5) (b := -1) (by decide),
+        Int.cast_neg, Int.cast_one]
   · refine Or.inr (Or.inl (ext_of_level_eight ?_ ?_))
-    · rw [h3, changeLevel_χ₄_ringHomComp_eight_three]
-    · rw [h5, changeLevel_χ₄_ringHomComp_eight_five]
+    · rw [h3, changeLevel_χ₄_ringHomComp_eight_apply (a := 3) (by decide) (b := -1) (by decide),
+        Int.cast_neg, Int.cast_one]
+    · rw [h5, changeLevel_χ₄_ringHomComp_eight_apply (a := 5) (by decide) (b := 1) (by decide),
+        Int.cast_one]
   · refine Or.inr (Or.inr (Or.inl (ext_of_level_eight ?_ ?_)))
-    · rw [h3, hv χ₈ 3 (-1) (by decide), Int.cast_neg, Int.cast_one]
-    · rw [h5, hv χ₈ 5 (-1) (by decide), Int.cast_neg, Int.cast_one]
+    · rw [h3, MulChar.ringHomComp_intCast_apply_of_apply_eq χ₈ (a := 3) (b := -1) (by decide),
+        Int.cast_neg, Int.cast_one]
+    · rw [h5, MulChar.ringHomComp_intCast_apply_of_apply_eq χ₈ (a := 5) (b := -1) (by decide),
+        Int.cast_neg, Int.cast_one]
 
 /-! ### The quadratic characters at level `2 ^ k` -/
 
@@ -177,22 +172,22 @@ variable [NeZero (2 : R)]
 /-- When `2 ≠ 0` in the coefficient ring, `χ₄` is primitive of conductor `4`. -/
 theorem conductor_χ₄_ringHomComp : conductor (χ₄.ringHomComp (Int.castRingHom R)) = 4 := by
   refine conductor_eq_four_of_apply_one_ne_apply_three _ ?_
-  rw [MulChar.ringHomComp_apply, MulChar.ringHomComp_apply, show χ₄ ((1 : ℤ) : ZMod 4) = 1 by
-    decide, show χ₄ ((3 : ℤ) : ZMod 4) = -1 by decide]
+  rw [MulChar.ringHomComp_intCast_apply_of_apply_eq χ₄ (b := 1) (by decide),
+    MulChar.ringHomComp_intCast_apply_of_apply_eq χ₄ (b := -1) (by decide)]
   simpa [eq_neg_iff_add_eq_zero, one_add_one_eq_two] using two_ne_zero (α := R)
 
 /-- When `2 ≠ 0` in the coefficient ring, `χ₈` is primitive of conductor `8`. -/
 theorem conductor_χ₈_ringHomComp : conductor (χ₈.ringHomComp (Int.castRingHom R)) = 8 := by
   refine conductor_eq_eight_of_apply_one_ne_apply_five _ ?_
-  rw [MulChar.ringHomComp_apply, MulChar.ringHomComp_apply, show χ₈ ((1 : ℤ) : ZMod 8) = 1 by
-    decide, show χ₈ ((5 : ℤ) : ZMod 8) = -1 by decide]
+  rw [MulChar.ringHomComp_intCast_apply_of_apply_eq χ₈ (b := 1) (by decide),
+    MulChar.ringHomComp_intCast_apply_of_apply_eq χ₈ (b := -1) (by decide)]
   simpa [eq_neg_iff_add_eq_zero, one_add_one_eq_two] using two_ne_zero (α := R)
 
 /-- When `2 ≠ 0` in the coefficient ring, `χ₈'` is primitive of conductor `8`. -/
 theorem conductor_χ₈'_ringHomComp : conductor (χ₈'.ringHomComp (Int.castRingHom R)) = 8 := by
   refine conductor_eq_eight_of_apply_one_ne_apply_five _ ?_
-  rw [MulChar.ringHomComp_apply, MulChar.ringHomComp_apply, show χ₈' ((1 : ℤ) : ZMod 8) = 1 by
-    decide, show χ₈' ((5 : ℤ) : ZMod 8) = -1 by decide]
+  rw [MulChar.ringHomComp_intCast_apply_of_apply_eq χ₈' (b := 1) (by decide),
+    MulChar.ringHomComp_intCast_apply_of_apply_eq χ₈' (b := -1) (by decide)]
   simpa [eq_neg_iff_add_eq_zero, one_add_one_eq_two] using two_ne_zero (α := R)
 
 end Conductor

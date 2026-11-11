@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.DirichletCharacter.Dyadic.Basic
 import TauCeti.NumberTheory.DirichletCharacter.Basic
+import TauCeti.NumberTheory.MulChar.Basic
 import TauCeti.Data.ZMod.UnitSquare
 
 /-!
@@ -49,9 +50,8 @@ theorem factorsThrough_half_of_sq_eq_one [NeZero N] (χ : DirichletCharacter R N
   obtain ⟨y, hy⟩ := (ZMod.isSquare_of_cast_half_eq_one (u : ZMod N) hN hcast).exists_sq
   have hyunit : IsUnit y := (isUnit_pow_iff two_ne_zero).mp (hy ▸ u.isUnit)
   apply Units.ext
-  rw [MulChar.coe_toUnitHom, Units.val_one, hy, map_pow]
-  simpa only [MulChar.pow_apply' χ two_ne_zero, MulChar.one_apply hyunit] using
-    congrArg (fun ψ : DirichletCharacter R N ↦ ψ y) hχ
+  rw [MulChar.coe_toUnitHom, Units.val_one, hy]
+  exact MulChar.apply_sq_eq_one_of_sq_eq_one hχ hyunit
 
 /-- A character of order dividing two at level `2 ^ k`, `k ≥ 3`, factors through `8`: every
 unit congruent to `1` modulo `8` is a square. -/
@@ -75,9 +75,8 @@ theorem factorsThrough_eight_of_sq_eq_one {k : ℕ} (hk : 3 ≤ k) (χ : Dirichl
     push_cast
     ring
   apply Units.ext
-  rw [MulChar.coe_toUnitHom, Units.val_one, hu', map_pow]
-  simpa only [MulChar.pow_apply' χ two_ne_zero, MulChar.one_apply y.isUnit] using
-    congrArg (fun ψ : DirichletCharacter R (2 ^ (k + 1)) ↦ ψ y) hχ
+  rw [MulChar.coe_toUnitHom, Units.val_one, hu']
+  exact MulChar.apply_sq_eq_one_of_sq_eq_one hχ y.isUnit
 
 /-- The dyadic exponent of a primitive character of order dividing two is at most three.
 At level zero this uses the zero convention for `Nat.factorization`. -/
