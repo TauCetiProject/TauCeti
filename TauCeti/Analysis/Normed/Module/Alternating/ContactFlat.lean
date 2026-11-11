@@ -28,12 +28,12 @@ manifold. The linear algebra is that of `Module.Dual.IsContact`.
 
 ## Main declarations
 
-* `ContinuousAlternatingMap.toDual`: a one-form at a point, read as a continuous linear
-  functional.
 * `ContinuousAlternatingMap.contactFlatMap`: the contact flat map `v ↦ ι_v ω + a(v) a`.
 * `ContinuousAlternatingMap.isInvertible_contactFlatMap`: it is invertible at a contact covector.
 * `ContinuousAlternatingMap.reeb_of_contactFlatMap_apply_eq`: the preimage of `a` satisfies the
   Reeb equations.
+* `ContinuousAlternatingMap.contactMoser_of_contactFlatMap_apply_eq`: the horizontal contact-Moser
+  equations, `a(X) = 0` and `ι_X ω = b(R) a - b`, for the preimage `X` of `b(R) a - b`.
 -/
 
 public section
@@ -41,21 +41,6 @@ public section
 namespace ContinuousAlternatingMap
 
 variable {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
-
-/-- A one-form at a point, read as a continuous linear functional. -/
-noncomputable def toDual : (V [⋀^Fin 1]→L[𝕜] 𝕜) →L[𝕜] V →L[𝕜] 𝕜 :=
-  (ofSubsingletonLIE (𝕜 := 𝕜) (E := V) (F := 𝕜) (ι := Fin 1)
-    0).symm.toContinuousLinearEquiv.toContinuousLinearMap
-
-/-- The functional of a one-form evaluates the form on the one-vector family. -/
-@[simp]
-theorem toDual_apply (a : V [⋀^Fin 1]→L[𝕜] 𝕜) (v : V) : toDual a v = a ![v] := by
-  simp only [toDual, ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-    ofSubsingletonLIE_symm_apply, ofSubsingleton_symm_apply_apply]
-  congr 1
-  funext i
-  rw [Subsingleton.elim i 0]
-  rfl
 
 /-- The contact flat map `v ↦ ι_v ω + a(v) a` of a covector `a` and a two-form `ω`, with values
 in the dual. -/
@@ -110,6 +95,32 @@ theorem reeb_of_contactFlatMap_apply_eq {a : V [⋀^Fin 1]→L[𝕜] 𝕜}
     rw [ω.map_eq_zero_of_eq ![R, R] (i := 0) (j := 1) rfl Fin.zero_ne_one, zero_add] at this
     exact (mul_eq_left₀ h0).1 this
   exact ⟨h1, fun w ↦ by simpa [h1] using hR' w⟩
+
+/-- **The contact Moser equation, pointwise.** Let `A` be the contact flat map of `a` and `ω`,
+let `R` solve `A R = a` with `a(R) ≠ 0`, and let `X` solve `A X = b(R) a - b`. Then `X` lies in
+`ker a` and `ι_X ω = b(R) a - b`. -/
+theorem contactMoser_of_contactFlatMap_apply_eq {a b : V [⋀^Fin 1]→L[𝕜] 𝕜}
+    {ω : V [⋀^Fin 2]→L[𝕜] 𝕜} {R X : V} (hR : contactFlatMap a ω R = toDual a) (h0 : a ![R] ≠ 0)
+    (hX : contactFlatMap a ω X = toDual b R • toDual a - toDual b) :
+    a ![X] = 0 ∧ ω.curryLeft X = b ![R] • a - b := by
+  obtain ⟨h1, hRω⟩ := reeb_of_contactFlatMap_apply_eq hR h0
+  have hX' (w : V) : ω ![X, w] + a ![X] * a ![w] = b ![R] * a ![w] - b ![w] := by
+    rw [← contactFlatMap_apply_apply, hX]
+    simp [toDual_apply]
+  have hXa : a ![X] = 0 := by
+    have := hX' R
+    have hswap : ω ![X, R] = -ω ![R, X] := by
+      simpa using ω.map_swap ![R, X] (i := 0) (j := 1) Fin.zero_ne_one
+    rw [hswap, hRω, neg_zero, zero_add, h1, mul_one, mul_one, sub_self] at this
+    exact this
+  refine ⟨hXa, ?_⟩
+  ext m
+  have hm : m = ![m 0] := by
+    funext i
+    rw [Subsingleton.elim i 0]
+    rfl
+  rw [curryLeft_apply_apply, hm]
+  simpa [hXa] using hX' (m 0)
 
 /-- At a contact covector `a` for `ω`, the vector `R` solving `ι_R ω + a(R) a = a` is the Reeb
 vector, so `a(R) = 1 ≠ 0`. -/

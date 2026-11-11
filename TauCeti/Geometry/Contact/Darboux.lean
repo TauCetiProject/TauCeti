@@ -8,10 +8,9 @@ module
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Geometry.Contact.Standard
-import TauCeti.Analysis.Normed.Module.Alternating.ContactFlat
+import TauCeti.Analysis.Normed.Module.Alternating.ContactNormalForm
 import TauCeti.Geometry.Contact.LocalMoser
 import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
-import TauCeti.LinearAlgebra.BilinearForm.Contact.NormalForm
 
 /-!
 # The contact Darboux theorem
@@ -29,7 +28,8 @@ coordinates, is not proved here.
 
 The proof is the contact version of Moser's argument. Take affine coordinates centred at `x₀` in
 which `α(x₀)` and `dα(x₀)` are the standard `dz` and `Σᵢ dqᵢ ∧ dpᵢ`
-(`Module.Dual.IsContact.exists_linearEquiv_eq_stdContact`), and let `α₀` be the standard form
+(`ContinuousAlternatingMap.exists_continuousLinearEquiv_stdContact`, from the linear normal form
+`Module.Dual.IsContact.exists_linearEquiv_eq_stdContact`), and let `α₀` be the standard form
 pulled back along them. Then `α₀` and `α` have equal values and exterior derivatives at `x₀`, and
 the local **contact Moser lemma**
 (`TauCeti.exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul`) gives a
@@ -65,31 +65,6 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 section Darboux
 
 variable [FiniteDimensional ℝ V]
-
-/-- A covector `a` which is contact for an alternating form `ω` is the standard covector `dz`, and
-`ω` the standard form `Σᵢ dqᵢ ∧ dpᵢ`, in suitable linear coordinates `V ≃ ℝⁿ × ℝⁿ × ℝ`. -/
-private theorem exists_continuousLinearEquiv_stdContact {a : V [⋀^Fin 1]→L[ℝ] ℝ}
-    {ω : V [⋀^Fin 2]→L[ℝ] ℝ} (hne : a ≠ 0)
-    (hnd : ∀ v, a ![v] = 0 → (∀ w, a ![w] = 0 → ω ![v, w] = 0) → v = 0) :
-    ∃ (n : ℕ) (e : V ≃L[ℝ] EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ),
-      (∀ v, a ![v] = (e v).2.2) ∧
-        ∀ v w, ω ![v, w] = ∑ i, ((e v).1 i * (e w).2.1 i - (e v).2.1 i * (e w).1 i) := by
-  let B : LinearMap.BilinForm ℝ V := (flatL ℝ V ℝ ω).toLinearMap₁₂
-  have hB (v w : V) : B v w = ω ![v, w] := flatL_apply_apply ω v w
-  have hBalt : B.IsAlt := isAlt_toLinearMap₁₂_flatL ω
-  have hcon : Module.Dual.IsContact (toDual a : V →ₗ[ℝ] ℝ) B := isContact_toDual hne hnd
-  obtain ⟨n, e₁, ha₁, hB₁⟩ := hcon.exists_linearEquiv_eq_stdContact hBalt
-  let L := (EuclideanSpace.equiv (Fin n) ℝ).symm
-  let e : V ≃L[ℝ] EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ :=
-    e₁.toContinuousLinearEquiv.trans (L.prodCongr (L.prodCongr (ContinuousLinearEquiv.refl ℝ ℝ)))
-  refine ⟨n, e, fun v ↦ ?_, fun v w ↦ ?_⟩
-  · have h := LinearMap.congr_fun ha₁ v
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, stdContactCovector_apply,
-      ContinuousLinearMap.coe_coe] at h
-    rw [← toDual_apply, ← h]
-    simp [e]
-  · rw [← hB, ← LinearMap.congr_fun₂ hB₁ v w]
-    simp [e, L, stdContactBilinForm_apply, dotProduct, Finset.sum_sub_distrib]
 
 /-- **The contact Darboux theorem**, local form. Let `α` be a `C^(r+1)` one-form (`r ≥ 1`) on an
 open subset `W` of a finite-dimensional real normed space, which is a contact form at `x₀ ∈ W`:

@@ -68,32 +68,6 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 /-! ### The local contact Moser field -/
 
-/-- **The contact Moser equation, pointwise.** Let `A` be the contact flat map of `a` and `ω`,
-let `R` solve `A R = a` with `a(R) ≠ 0`, and let `X` solve `A X = b(R) a - b`. Then `X` lies in
-`ker a` and `ι_X ω = b(R) a - b`. -/
-private theorem contactMoser_of_contactFlatMap {a b : V [⋀^Fin 1]→L[ℝ] ℝ}
-    {ω : V [⋀^Fin 2]→L[ℝ] ℝ} {R X : V} (hR : contactFlatMap a ω R = toDual a) (h0 : a ![R] ≠ 0)
-    (hX : contactFlatMap a ω X = toDual b R • toDual a - toDual b) :
-    a ![X] = 0 ∧ ω.curryLeft X = b ![R] • a - b := by
-  obtain ⟨h1, hRω⟩ := reeb_of_contactFlatMap_apply_eq hR h0
-  have hX' (w : V) : ω ![X, w] + a ![X] * a ![w] = b ![R] * a ![w] - b ![w] := by
-    rw [← contactFlatMap_apply_apply, hX]
-    simp [toDual_apply]
-  have hXa : a ![X] = 0 := by
-    have := hX' R
-    have hswap : ω ![X, R] = -ω ![R, X] := by
-      simpa using ω.map_swap ![R, X] (i := 0) (j := 1) Fin.zero_ne_one
-    rw [hswap, hRω, neg_zero, zero_add, h1, mul_one, mul_one, sub_self] at this
-    exact this
-  refine ⟨hXa, ?_⟩
-  ext m
-  have hm : m = ![m 0] := by
-    funext i
-    rw [Subsingleton.elim i 0]
-    rfl
-  rw [curryLeft_apply_apply, hm]
-  simpa [hXa] using hX' (m 0)
-
 /-- **Gray's equation along the straight-line family.** Let `αₜ = (1 - t) α₀ + t α₁`. If the
 field `X` lies in `ker αₜ` near `y` and `ι_X dαₜ = μ αₜ - (α₁ - α₀)` at `y`, then
 `∂ₜ αₜ + L_X αₜ = μ αₜ` at `y`. -/
@@ -245,7 +219,7 @@ private theorem exists_contactMoserField {α₀ α₁ : V → V [⋀^Fin 1]→L[
   refine ⟨T, U, X, μ, hT, hU, hIT, hxU, hUW, hXs, hμs.continuousOn, fun t ↦ ?_, fun p hp ↦ ?_⟩
   · simp [hX_def, hμ_def, hb_def, heq]
   obtain ⟨hpA, hp0⟩ := hTU p hp
-  have h := contactMoser_of_contactFlatMap (hpA.self_apply_inverse _) hp0
+  have h := contactMoser_of_contactFlatMap_apply_eq (hpA.self_apply_inverse _) hp0
     (hpA.self_apply_inverse (μ p • toDual (a p) - toDual (b p.2)))
   have hμp : μ p = (α₁ p.2 - α₀ p.2) ![R p] := toDual_apply _ _
   rw [hμp]
