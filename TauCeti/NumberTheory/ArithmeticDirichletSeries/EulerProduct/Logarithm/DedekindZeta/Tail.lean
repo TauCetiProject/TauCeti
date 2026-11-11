@@ -62,9 +62,10 @@ is the closed condition `1 ≤ s` rather than a neighbourhood of `1`: both are f
 consumer that wants an eventual statement near `s = 1` gets it by weakening, whereas the
 converse costs work.
 
-The two halves carry different hypotheses on purpose. Nonnegativity holds as soon as
-`N(𝔭) ^ (-s) < 1`, so it is stated on `0 < s`; the uniform upper bound uses
-`N(𝔭) ^ (-s) ≤ 1 / 2`. No uniform bound can persist as `s ↓ 1 / 2`, where the dominating
+The two halves carry different hypotheses on purpose. The `tsum` is nonnegative for every real
+`s`, with no hypothesis: for `0 < s` the terms are termwise nonnegative, since
+`N(𝔭) ^ (-s) < 1`, and for `s ≤ 0` the family is not summable, so the `tsum` is `0` by convention.
+The uniform upper bound uses `N(𝔭) ^ (-s) ≤ 1 / 2`. No uniform bound can persist as `s ↓ 1 / 2`, where the dominating
 prime series approaches its convergence endpoint.
 
 The one-variable estimate behind the termwise bound is not proved again: it is Mathlib's
@@ -114,8 +115,8 @@ theorem summable_neg_log_one_sub_sub_absNorm_rpow {s : ℝ} (hs : 1 / 2 < s) :
   simpa only [div_eq_mul_inv, mul_comm] using
     Real.neg_log_one_sub_rpow_sub_le_div (two_le_absNorm_asIdeal_real 𝔭) hs0
 
-/-- **The prime-power tail is termwise nonnegative.** For `s > 0`, termwise nonnegativity yields a
-nonnegative `tsum`. This statement does not assert summability, which is supplied by
+/-- **The prime-power tail has nonnegative sum.** For `s > 0` the terms are nonnegative, so the
+`tsum` is nonnegative. This statement does not assert summability, which is supplied by
 `TauCeti.summable_neg_log_one_sub_sub_absNorm_rpow` for `s > 1 / 2`. For `s ≤ 0` the terms are
 bounded above by `-1` off a finite set of primes, so the family is not summable and the `tsum` is
 `0`. -/
