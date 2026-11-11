@@ -12,7 +12,8 @@ public import Mathlib.GroupTheory.GroupAction.Primitive
 # Primitivity of a permutation triple
 
 This module supplies the primitivity predicate for permutation triples. The finite decision
-procedure and its correctness theorem use this predicate to state what their test decides.
+procedure and its correctness theorem use this predicate to state what their test decides. A
+connected triple of prime degree is primitive.
 -/
 
 public section
@@ -31,6 +32,13 @@ def IsPrimitive : Prop := IsPreprimitive t.monodromyGroup (Fin n)
 
 /-- Primitivity of a triple is preprimitivity of its monodromy action. -/
 theorem isPrimitive_iff : t.IsPrimitive ↔ IsPreprimitive t.monodromyGroup (Fin n) := Iff.rfl
+
+/-- A connected triple of prime degree is primitive: a block of a transitive action has size
+dividing the degree. -/
+theorem IsConnected.isPrimitive_of_prime {t : PermutationTriple n} (ht : t.IsConnected)
+    (hn : n.Prime) : t.IsPrimitive :=
+  have := ht.isPretransitive
+  IsPreprimitive.of_prime_card (by rwa [Nat.card_fin])
 
 end PermutationTriple
 

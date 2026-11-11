@@ -77,7 +77,6 @@ theorem map_dirichletNormalize_sum_pi_gammaMeasure {a : ι → ℝ} {r : ℝ}
     (Measure.pi fun i ↦ gammaMeasure (a i) r).map
         (fun x ↦ (dirichletNormalize x, ∑ i, x i)) =
       (dirichletMeasure a).prod (gammaMeasure (∑ i, a i) r) := by
-  have hA : 0 < ∑ i, a i := Finset.sum_pos (fun i _ ↦ ha i) Finset.univ_nonempty
   let _ i := isProbabilityMeasure_gammaMeasure (ha i) one_pos
   let _ i := isProbabilityMeasure_gammaMeasure (ha i) hr
   have hscale : (Measure.pi fun i ↦ gammaMeasure (a i) 1).map
