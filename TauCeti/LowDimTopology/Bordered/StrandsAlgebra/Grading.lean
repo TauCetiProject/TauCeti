@@ -54,8 +54,13 @@ the grading group is the central extension `TauCeti.FactorSet.Extension` of `α 
 from the bimultiplicative factor set `L` (`TauCeti.StrandGradingGroup.linkingFactorSet`), with the
 action trivial, so that `λ` is the image of `1` under its central inclusion `TauCeti.FactorSet.inl`.
 Lipshitz, Ozsváth and Thurston's `G'(n)` is the subgroup `TauCeti.StrandGradingGroup.gPrime`
-of `TauCeti.StrandGradingGroup (Fin n)` of the elements with half-integral Maslov component and
-boundary of total sum zero, and every grading of a diagram lies in it
+of `TauCeti.StrandGradingGroup (Fin n)` of the elements `(j, β)` with boundary of total sum zero
+and `j ≡ ε(β) mod 1`, where `ε(β)` is a quarter of the number of parity changes of `β`, the
+points at which `∂β` is odd (`TauCeti.StrandGradingGroup.parityChanges`). That this is a subgroup
+is the congruence `ε(β₁ + β₂) ≡ ε(β₁) + ε(β₂) + L(β₁, β₂) mod 1`
+(`TauCeti.StrandGradingGroup.exists_card_parityChanges_add_eq`). Its elements have half-integral
+Maslov component, those with zero class are exactly the powers of `λ`
+(`TauCeti.StrandGradingGroup.mem_zpowers_lambda_iff`), and every grading of a diagram lies in it
 (`TauCeti.StrandDiagram.grading_mem_gPrime`).
 
 ## Main definitions
@@ -65,6 +70,7 @@ boundary of total sum zero, and every grading of a diagram lies in it
 * `TauCeti.StrandGradingGroup.linking`: the bilinear form `L(β₁, β₂) = m(β₂, ∂β₁)`.
 * `TauCeti.StrandGradingGroup.linkingFactorSet`: `L` as a factor set for the trivial action.
 * `TauCeti.StrandGradingGroup.lambda`: the central element `λ = (1, 0)`.
+* `TauCeti.StrandGradingGroup.parityChanges`: the parity changes of a class.
 * `TauCeti.StrandGradingGroup.gPrime`: the subgroup `G'(n)`.
 * `TauCeti.StrandDiagram.boundary`: the boundary of the class of the strands of a diagram.
 * `TauCeti.StrandDiagram.grading`: the grading `gr(φ)` of a strand diagram.
@@ -72,6 +78,11 @@ boundary of total sum zero, and every grading of a diagram lies in it
 
 ## Main results
 
+* `TauCeti.StrandGradingGroup.linking_add_linking_swap`: the form `L` is antisymmetric on
+  classes.
+* `TauCeti.StrandGradingGroup.exists_card_parityChanges_add_eq`: `ε` refines `L` modulo one.
+* `TauCeti.StrandGradingGroup.mem_zpowers_lambda_iff`: the elements of `G'(n)` with zero class
+  are the powers of `λ`.
 * `TauCeti.StrandDiagram.grading_trans`: the grading is multiplicative on composable diagrams.
 * `TauCeti.StrandDiagram.grading_idOn`: the identity diagrams have grading `1`.
 * `TauCeti.StrandDiagram.grading_mem_gPrime`: every grading of a diagram lies in `G'(n)`.
@@ -91,8 +102,8 @@ boundary of total sum zero, and every grading of a diagram lies in it
 
 * R. Lipshitz, P. Ozsváth and D. Thurston, *Bordered Heegaard Floer homology*, Mem. Amer. Math.
   Soc. **254** (2018), no. 1216, [arXiv:0810.0687](https://arxiv.org/abs/0810.0687), §3.3.1 (the
-  group `G'(n)`, the multiplicity `m`, the grading of `A(n, k)` and its compatibility with the
-  product and the differential).
+  group `G'(n)` of Definition 3.33 and Lemmas 3.35–3.36, the multiplicity `m`, the grading of
+  `A(n, k)` and its compatibility with the product and the differential).
 -/
 
 public section
@@ -145,6 +156,130 @@ theorem exists_linking_eq (δ₁ δ₂ : α → ℤ) :
   refine ⟨∑ p, δ₁ p * k p, ?_⟩
   simp [linking_apply, hk, div_eq_mul_inv, Finset.sum_mul, mul_assoc]
 
+/-- An integer is its parity plus an even integer. -/
+private theorem exists_eq_ite_odd_add_two_mul (n : ℤ) :
+    ∃ c : ℤ, n = (if Odd n then 1 else 0) + 2 * c := by
+  refine ⟨n / 2, ?_⟩
+  rcases Int.emod_two_eq_zero_or_one n with h | h <;> simp [Int.odd_iff, h] <;> omega
+
+/-- The parity changes of the class with boundary `δ`: the points `p` at which the multiplicities
+of the class on the two sides of `p` have different parities, that is, at which `δ p` is odd, or
+equivalently at which the multiplicity `m(β, p)` is not an integer. A quarter of their number,
+modulo one, is the term `ε(β)` of Lipshitz, Ozsváth and Thurston. -/
+def parityChanges (δ : α → ℤ) : Finset α :=
+  {p | Odd (δ p)}
+
+omit [LinearOrder α] in
+@[simp]
+theorem mem_parityChanges {δ : α → ℤ} {p : α} : p ∈ parityChanges δ ↔ Odd (δ p) := by
+  simp [parityChanges]
+
+omit [LinearOrder α] in
+@[simp]
+theorem parityChanges_zero : parityChanges (0 : α → ℤ) = ∅ := by
+  ext; simp [mem_parityChanges]
+
+omit [LinearOrder α] in
+@[simp]
+theorem parityChanges_neg (δ : α → ℤ) : parityChanges (-δ) = parityChanges δ := by
+  ext; simp [mem_parityChanges]
+
+/-- **The form `L` is antisymmetric on classes** (Lipshitz, Ozsváth and Thurston, Lemma 3.35):
+in general `L(β₁, β₂) + L(β₂, β₁) = -(∑ ∂β₁) (∑ ∂β₂)`, which vanishes when one of the two
+boundaries has total sum zero, as boundaries of relative classes do. -/
+theorem linking_add_linking_swap (δ₁ δ₂ : α → ℤ) :
+    linking δ₁ δ₂ + linking δ₂ δ₁ = -((∑ p, (δ₁ p : ℚ)) * ∑ p, (δ₂ p : ℚ)) := by
+  -- Split the total sum of `δ₂` at each point `p` into the points below, at and above `p`.
+  have hsplit (p : α) : ∑ y, (δ₂ y : ℚ) = ∑ y ∈ ({y | y < p} : Finset α), (δ₂ y : ℚ) + δ₂ p +
+      ∑ y ∈ ({y | p < y} : Finset α), (δ₂ y : ℚ) := by
+    have h (y : α) : (δ₂ y : ℚ) = (if y < p then (δ₂ y : ℚ) else 0) +
+        (if p = y then (δ₂ y : ℚ) else 0) + if p < y then (δ₂ y : ℚ) else 0 := by
+      rcases lt_trichotomy y p with h | rfl | h
+      · simp [h, h.ne', h.not_gt]
+      · simp
+      · simp [h, h.ne, h.not_gt]
+    rw [Finset.sum_congr rfl fun y _ ↦ h y, Finset.sum_add_distrib, Finset.sum_add_distrib,
+      Finset.sum_ite_eq, ← Finset.sum_filter, ← Finset.sum_filter]
+    simp
+  -- Exchanging the order of summation moves the points below `p` to the points above.
+  have hswap : ∑ p, (δ₂ p : ℚ) * ∑ y ∈ ({y | y < p} : Finset α), (δ₁ y : ℚ) =
+      ∑ p, (δ₁ p : ℚ) * ∑ y ∈ ({y | p < y} : Finset α), (δ₂ y : ℚ) := by
+    simp only [Finset.mul_sum]
+    rw [Finset.sum_comm' (t' := Finset.univ) (s' := fun y ↦ ({p | y < p} : Finset α))]
+    · exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ mul_comm _ _
+    · intro x y
+      simp
+  simp only [linking_apply, pointMultiplicity_apply, Finset.sum_mul]
+  rw [Finset.sum_congr rfl fun p _ ↦ congrArg (fun z ↦ (δ₁ p : ℚ) * z) (hsplit p)]
+  have h₂ : ∑ p, (δ₂ p : ℚ) * (-∑ y ∈ ({y | y < p} : Finset α), (δ₁ y : ℚ) - δ₁ p / 2) =
+      -∑ p, (δ₁ p : ℚ) * ∑ y ∈ ({y | p < y} : Finset α), (δ₂ y : ℚ) -
+        ∑ p, (δ₁ p : ℚ) * δ₂ p / 2 := by
+    rw [← hswap, ← Finset.sum_neg_distrib, ← Finset.sum_sub_distrib]
+    exact Finset.sum_congr rfl fun _ _ ↦ by ring
+  rw [h₂, ← Finset.sum_neg_distrib, ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib,
+    ← Finset.sum_neg_distrib]
+  exact Finset.sum_congr rfl fun _ _ ↦ by ring
+
+omit [LinearOrder α] in
+/-- The total sum of `δ` has the parity of the number of parity changes. -/
+theorem exists_sum_eq_card_parityChanges_add (δ : α → ℤ) :
+    ∃ k : ℤ, ∑ p, δ p = #(parityChanges δ) + 2 * k := by
+  choose c hc using fun p ↦ exists_eq_ite_odd_add_two_mul (δ p)
+  refine ⟨∑ p, c p, ?_⟩
+  rw [parityChanges, Finset.natCast_card_filter, Finset.mul_sum, ← Finset.sum_add_distrib]
+  exact Finset.sum_congr rfl fun p _ ↦ hc p
+
+omit [LinearOrder α] in
+/-- A class whose boundary has total sum zero has an even number of parity changes. -/
+theorem even_card_parityChanges_of_sum_eq_zero {δ : α → ℤ} (hδ : ∑ p, δ p = 0) :
+    Even #(parityChanges δ) := by
+  obtain ⟨k, hk⟩ := exists_sum_eq_card_parityChanges_add δ
+  exact (Int.even_natCast _).1 ⟨-k, by omega⟩
+
+/-- The form `L(β₁, β₂)` is, modulo one, half the number of common parity changes of `β₁` and
+`β₂`. -/
+theorem exists_linking_eq_card_inter_parityChanges_add (δ₁ δ₂ : α → ℤ) :
+    ∃ k : ℤ, linking δ₁ δ₂ = #(parityChanges δ₁ ∩ parityChanges δ₂) / 2 + k := by
+  choose c hc using fun p ↦ exists_eq_ite_odd_add_two_mul (δ₁ p * δ₂ p)
+  refine ⟨∑ p, (-(δ₁ p * ∑ y ∈ ({y | y < p} : Finset α), δ₂ y) -
+    (if Odd (δ₁ p * δ₂ p) then 1 else 0) - c p), ?_⟩
+  have hinter : parityChanges δ₁ ∩ parityChanges δ₂ =
+      ({p | Odd (δ₁ p * δ₂ p)} : Finset α) := by
+    ext p
+    simp [mem_parityChanges, Int.odd_mul]
+  rw [hinter, Finset.natCast_card_filter, div_eq_mul_inv, Finset.sum_mul, linking_apply]
+  push_cast
+  rw [← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun p _ ↦ ?_
+  have := congrArg (fun z : ℤ ↦ (z : ℚ)) (hc p)
+  push_cast at this
+  rw [pointMultiplicity_apply]
+  split_ifs at this ⊢ <;> linear_combination (-1 / 2 : ℚ) * this
+
+/-- **The term `ε` is a quadratic refinement of `L` modulo one** (Lipshitz, Ozsváth and
+Thurston, Lemma 3.36): `ε(β₁ + β₂) ≡ ε(β₁) + ε(β₂) + L(β₁, β₂)`, where `ε(β)` is a quarter of the
+number of parity changes of `β`. -/
+theorem exists_card_parityChanges_add_eq (δ₁ δ₂ : α → ℤ) :
+    ∃ k : ℤ, (#(parityChanges (δ₁ + δ₂)) : ℚ) / 4 =
+      #(parityChanges δ₁) / 4 + #(parityChanges δ₂) / 4 + linking δ₁ δ₂ + k := by
+  obtain ⟨k, hk⟩ := exists_linking_eq_card_inter_parityChanges_add δ₁ δ₂
+  refine ⟨-#(parityChanges δ₁ ∩ parityChanges δ₂) - k, ?_⟩
+  have hcard : (#(parityChanges (δ₁ + δ₂)) : ℚ) =
+      #(parityChanges δ₁) + #(parityChanges δ₂) - 2 * #(parityChanges δ₁ ∩ parityChanges δ₂) := by
+    have hinter : parityChanges δ₁ ∩ parityChanges δ₂ =
+        ({p | Odd (δ₁ p) ∧ Odd (δ₂ p)} : Finset α) := by
+      ext p
+      simp [mem_parityChanges]
+    rw [hinter]
+    simp only [parityChanges, Finset.natCast_card_filter, Finset.mul_sum,
+      ← Finset.sum_add_distrib, ← Finset.sum_sub_distrib]
+    refine Finset.sum_congr rfl fun p _ ↦ ?_
+    by_cases h₁ : Odd (δ₁ p) <;> by_cases h₂ : Odd (δ₂ p) <;>
+      simp [Pi.add_apply, Int.odd_add, h₁, h₂, ← Int.not_odd_iff_even]; norm_num
+  rw [hcard, hk]
+  push_cast
+  ring
+
 end StrandGradingGroup
 
 section GradingGroup
@@ -173,8 +308,7 @@ of the group of boundaries `∂β : α → ℤ` of classes `β ∈ H₁([1, n], 
 component in `ℚ`, built from the factor set `L`. An element is a pair of a Maslov component
 `maslov` and a boundary `boundary`, multiplied by
 `(j₁, β₁) (j₂, β₂) = (j₁ + j₂ + L(β₁, β₂), β₁ + β₂)`. For `α = Fin n`, Lipshitz, Ozsváth and
-Thurston's group `G'(n)` is its subgroup `StrandGradingGroup.gPrime` of elements with
-half-integral Maslov component and boundary of total sum zero. -/
+Thurston's group `G'(n)` is its subgroup `StrandGradingGroup.gPrime`. -/
 abbrev StrandGradingGroup (α : Type*) [LinearOrder α] [Fintype α] : Type _ :=
   (StrandGradingGroup.linkingFactorSet (α := α)).Extension
 
@@ -269,33 +403,68 @@ theorem lambda_mem_center : (lambda : StrandGradingGroup α) ∈ Subgroup.center
   FactorSet.inl_range_le_center _ trivialMulDistribMulAction_smul ⟨_, rfl⟩
 
 /-- The grading group `G'(n)` of Lipshitz, Ozsváth and Thurston, for `α = Fin n`: the subgroup of
-the elements with half-integral Maslov component and boundary of total sum zero. -/
+the elements `(j, β)` whose boundary has total sum zero and whose Maslov component satisfies
+`j ≡ ε(β) mod 1`, where `ε(β)` is a quarter of the number of parity changes of `β`. Since such a
+class has an even number of parity changes, `j` is a half-integer
+(`TauCeti.StrandGradingGroup.exists_maslov_eq_of_mem_gPrime`). -/
 def gPrime : Subgroup (StrandGradingGroup α) where
-  carrier := {g | (∃ k : ℤ, g.maslov = k / 2) ∧ ∑ x, g.boundary x = 0}
+  carrier := {g | (∃ k : ℤ, g.maslov = #(parityChanges g.boundary) / 4 + k) ∧
+    ∑ x, g.boundary x = 0}
   mul_mem' := by
     rintro g h ⟨⟨k₁, hk₁⟩, hg⟩ ⟨⟨k₂, hk₂⟩, hh⟩
-    obtain ⟨k₃, hk₃⟩ := exists_linking_eq g.boundary h.boundary
-    refine ⟨⟨k₁ + k₂ + k₃, ?_⟩, ?_⟩
-    · rw [mul_maslov, hk₁, hk₂, hk₃]
+    obtain ⟨k₃, hk₃⟩ := exists_card_parityChanges_add_eq g.boundary h.boundary
+    refine ⟨⟨k₁ + k₂ - k₃, ?_⟩, ?_⟩
+    · rw [mul_maslov, mul_boundary, hk₁, hk₂, hk₃]
       push_cast
       ring
     · simp [Finset.sum_add_distrib, hg, hh]
   one_mem' := ⟨⟨0, by simp⟩, by simp⟩
   inv_mem' := by
     rintro g ⟨⟨k₁, hk₁⟩, hg⟩
-    obtain ⟨k₂, hk₂⟩ := exists_linking_eq g.boundary g.boundary
-    refine ⟨⟨-k₁ + k₂, ?_⟩, ?_⟩
-    · rw [inv_maslov, hk₁, hk₂]
+    obtain ⟨k₂, hk₂⟩ := exists_linking_eq_card_inter_parityChanges_add g.boundary g.boundary
+    refine ⟨⟨k₂ - k₁, ?_⟩, ?_⟩
+    · rw [inv_maslov, inv_boundary, parityChanges_neg, hk₁, hk₂, Finset.inter_self]
       push_cast
       ring
     · simp [hg]
 
 theorem mem_gPrime {g : StrandGradingGroup α} :
-    g ∈ gPrime ↔ (∃ k : ℤ, g.maslov = k / 2) ∧ ∑ x, g.boundary x = 0 :=
+    g ∈ gPrime ↔ (∃ k : ℤ, g.maslov = #(parityChanges g.boundary) / 4 + k) ∧
+      ∑ x, g.boundary x = 0 :=
   Iff.rfl
 
+/-- The Maslov component of an element of `G'(n)` is a half-integer. -/
+theorem exists_maslov_eq_of_mem_gPrime {g : StrandGradingGroup α} (hg : g ∈ gPrime) :
+    ∃ k : ℤ, g.maslov = k / 2 := by
+  obtain ⟨⟨k, hk⟩, hsum⟩ := hg
+  obtain ⟨m, hm⟩ := even_card_parityChanges_of_sum_eq_zero hsum
+  refine ⟨m + 2 * k, ?_⟩
+  rw [hk, hm]
+  push_cast
+  ring
+
+/-- Every class with boundary of total sum zero is the class of an element of `G'(n)`, with
+Maslov component `ε(β)`. -/
+theorem mk_mem_gPrime {δ : α → ℤ} (hδ : ∑ x, δ x = 0) :
+    mk (#(parityChanges δ) / 4) δ ∈ gPrime :=
+  ⟨⟨0, by simp⟩, by simpa using hδ⟩
+
 theorem lambda_mem_gPrime : (lambda : StrandGradingGroup α) ∈ gPrime :=
-  ⟨⟨2, by simp⟩, by simp⟩
+  ⟨⟨1, by simp⟩, by simp⟩
+
+/-- **The center of the extension `G'(n)`.** The elements of `G'(n)` with zero class are exactly
+the powers of `λ`: the condition `j ≡ ε(0) = 0 mod 1` makes their Maslov component an integer. -/
+theorem mem_zpowers_lambda_iff {g : StrandGradingGroup α} :
+    g ∈ Subgroup.zpowers lambda ↔ g ∈ gPrime ∧ g.boundary = 0 := by
+  constructor
+  · rintro ⟨n, rfl⟩
+    exact ⟨zpow_mem lambda_mem_gPrime n, by simp [lambda_zpow]⟩
+  · rintro ⟨⟨⟨k, hk⟩, -⟩, hb⟩
+    refine Subgroup.mem_zpowers_iff.2 ⟨k, ?_⟩
+    rw [lambda_zpow]
+    ext
+    · simp [hk, hb]
+    · simp [hb]
 
 end StrandGradingGroup
 
@@ -506,8 +675,38 @@ theorem grading_eq_lambda_zpow_mul {φ ψ : StrandDiagram α} (hs : ψ.source = 
 
 /-- The grading of a diagram lies in the grading group `G'(n)` of Lipshitz, Ozsváth and
 Thurston. -/
-theorem grading_mem_gPrime (φ : StrandDiagram α) : φ.grading ∈ gPrime :=
-  ⟨φ.exists_grading_maslov_eq, φ.sum_boundary⟩
+theorem grading_mem_gPrime (φ : StrandDiagram α) : φ.grading ∈ gPrime := by
+  refine ⟨?_, φ.sum_boundary⟩
+  -- The parity changes of `[φ]` are the points of `S \ T` and of `T \ S`, which are equally
+  -- many, and modulo one `m([φ], S)` is half the number of points of `S \ T`.
+  have hcard : #(parityChanges φ.boundary) = 2 * #(φ.source \ φ.target) := by
+    have hpc : parityChanges φ.boundary = φ.source \ φ.target ∪ φ.target \ φ.source := by
+      ext x
+      by_cases hs : x ∈ φ.source <;> by_cases ht : x ∈ φ.target <;>
+        simp [mem_parityChanges, boundary_apply, hs, ht]
+    rw [hpc, Finset.card_union_of_disjoint disjoint_sdiff_sdiff,
+      Finset.card_sdiff_comm φ.card_target]
+    ring
+  have hsum : ∑ s ∈ φ.source, pointMultiplicity s φ.boundary =
+      -∑ s ∈ φ.source, ∑ y ∈ ({y | y < s} : Finset α), (φ.boundary y : ℚ) +
+        #(φ.source \ φ.target) / 2 := by
+    have hinter := Finset.card_sdiff_add_card_inter φ.source φ.target
+    have hterm : ∀ s ∈ φ.source, pointMultiplicity s φ.boundary =
+        -∑ y ∈ ({y | y < s} : Finset α), (φ.boundary y : ℚ) + 1 / 2 -
+          if s ∈ φ.target then 1 / 2 else 0 := fun s hs ↦ by
+      rw [pointMultiplicity_apply, boundary_apply]
+      split_ifs <;> simp [*]; ring
+    rw [Finset.sum_congr rfl hterm, Finset.sum_sub_distrib, Finset.sum_add_distrib,
+      Finset.sum_ite_mem, Finset.sum_neg_distrib, Finset.sum_const, Finset.sum_const]
+    have : (#φ.source : ℚ) = #(φ.source \ φ.target) + #(φ.source ∩ φ.target) := by
+      exact_mod_cast hinter.symm
+    simp only [nsmul_eq_mul, this]
+    ring
+  refine ⟨φ.inversionCount + ∑ s ∈ φ.source, ∑ y ∈ ({y | y < s} : Finset α), φ.boundary y -
+    #(φ.source \ φ.target), ?_⟩
+  rw [grading_maslov, grading_boundary, hsum, hcard]
+  push_cast
+  ring
 
 end StrandDiagram
 
