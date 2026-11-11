@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Subgroup.Map
 public import TauCeti.InformationTheory.Coding.Reindex
 public import TauCeti.InformationTheory.Coding.MinimumDistance.Basic
+public import TauCeti.LinearAlgebra.LinearEquiv.Basic
 
 /-!
 # Permutation equivalence of additive codes
@@ -269,16 +270,9 @@ theorem mem_permutationAut_reindex {C : AddSubgroup (ι → A)} {e : κ ≃ ι} 
 /-- Coordinate relabelling maps the permutation automorphism group along `e.symm.permCongrHom`. -/
 theorem permutationAut_reindex (C : AddSubgroup (ι → A)) (e : κ ≃ ι) :
     permutationAut (reindex C e) = (permutationAut C).map e.symm.permCongrHom.toMonoidHom := by
+  rw [Subgroup.map_equiv_eq_comap_symm', ← Equiv.permCongrHom_symm, MulEquiv.symm_symm]
   ext σ
-  rw [mem_permutationAut_reindex, Subgroup.mem_map]
-  refine ⟨fun h ↦ ⟨e.permCongr σ, h, ?_⟩, ?_⟩
-  · ext j
-    simp [Equiv.permCongr_def]
-  · rintro ⟨τ, hτ, rfl⟩
-    have hτ' : e.permCongr (e.symm.permCongr τ) = τ := by
-      ext i
-      simp [Equiv.permCongr_def]
-    simpa [hτ'] using hτ
+  exact mem_permutationAut_reindex
 
 /-- Coordinate relabelling induces a group isomorphism between permutation automorphism groups. -/
 def reindexPermutationAutEquiv (C : AddSubgroup (ι → A)) (e : κ ≃ ι) :
@@ -359,27 +353,12 @@ noncomputable def permutationAutToAddSubgroupMulEquiv (C : Submodule R (ι → R
   MulEquiv.ofBijective
     ({ toFun := fun e ↦ ⟨LinearEquiv.funCongrLeft R R (e : Equiv.Perm ι).symm,
          (mem_permutationAut_toAddSubgroup_iff C e).mp e.2⟩
-       map_one' := Subtype.ext <| by
-         dsimp only
-         rw [Subgroup.coe_one, Equiv.Perm.one_def, Equiv.refl_symm,
-           LinearEquiv.funCongrLeft_id, Subgroup.coe_one, LinearEquiv.one_eq_refl]
-       map_mul' := fun e₁ e₂ ↦ Subtype.ext <| by
-         dsimp only
-         rw [Subgroup.coe_mul, Equiv.Perm.mul_def, Equiv.symm_trans,
-           LinearEquiv.funCongrLeft_comp, Subgroup.coe_mul, LinearEquiv.mul_eq_trans] } :
+       map_one' := by ext; simp [Equiv.Perm.one_def]
+       map_mul' := fun _ _ ↦ by ext; simp [Equiv.Perm.mul_def] } :
       permutationAut C.toAddSubgroup →* TauCeti.permutationAut C)
-    ⟨fun e₁ e₂ h ↦ by
-        classical
-        refine Subtype.ext <| Equiv.symm_bijective.injective <| Equiv.ext fun j ↦ ?_
-        have hj := congrArg
-          (fun f : (ι → R) ≃ₗ[R] (ι → R) ↦ f (Pi.single ((e₁ : Equiv.Perm ι).symm j) 1) j)
-          (congrArg Subtype.val h)
-        dsimp only [MonoidHom.coe_mk, OneHom.coe_mk] at hj
-        simp only [LinearEquiv.funCongrLeft_apply, LinearMap.funLeft_apply,
-          Pi.single_eq_same] at hj
-        by_contra hne
-        rw [Pi.single_eq_of_ne (Ne.symm hne)] at hj
-        exact one_ne_zero hj,
+    ⟨fun _ _ h ↦ Subtype.ext <|
+        ((LinearEquiv.funCongrLeft_injective R R).comp Equiv.symm_bijective.injective)
+          (congrArg Subtype.val h),
       fun f ↦ by
         obtain ⟨e, he⟩ := TauCeti.mem_permutationGroup.mp (TauCeti.mem_permutationAut.mp f.2).1
         exact ⟨⟨e, (mem_permutationAut_toAddSubgroup_iff C e).mpr (he.symm ▸ f.2)⟩,

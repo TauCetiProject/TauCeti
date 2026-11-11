@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.GroupAction.Orbit.Finset
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Mathieu.TwentyFour.PermutationModel
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Mathieu.TwentyFour.Order
 public import TauCeti.InformationTheory.Coding.Binary.Golay.Automorphism
 
 /-!
@@ -26,19 +25,17 @@ Reindexing `TauCeti.BinaryGolay.code` along `golayCoordPerm` yields the permutat
 code `TauCeti.Sporadic.M24.golayCode`, preserved directly by `M24.a` and `M24.b`. Conjugating by
 `golayCoordPerm` embeds `M24` into `AdditiveCode.permutationAut BinaryGolay.code.toAddSubgroup`.
 
-To prove surjectivity, a fifteen-step straight-line program in the conjugated generators constructs
-elements stabilizing the prefixes of `TauCeti.BinaryGolay.base` (`0, 1, 2, 3, 4, 17, 5`) whose
-computed basic orbits achieve the upper-bound sets of lengths `24, 23, 22, 21, 20, 3, 16`
-established by octad rigidity in `TauCeti.InformationTheory.Coding.Binary.Golay.Automorphism`.
-Because the seven-point stabilizer in `AdditiveCode.permutationAut BinaryGolay.code.toAddSubgroup`
-is trivial, `Subgroup.eq_of_le_of_stabilizerChain_eq_bot` forces equality of the subgroups.
+Combining the exact order `Nat.card M24 = 244823040` (`TauCeti.Sporadic.card_M24`) with the octad
+rigidity upper bound `Nat.card (AdditiveCode.permutationAut BinaryGolay.code.toAddSubgroup) ≤
+244823040` (`TauCeti.BinaryGolay.natCard_permutationAut_code_toAddSubgroup_le`) forces equality of
+the subgroups via `Subgroup.eq_of_le_of_card_ge`.
 
 This produces explicit group isomorphisms between `M24` and both the coordinate-permutation
 automorphism group `AdditiveCode.permutationAut BinaryGolay.code.toAddSubgroup` and the linear-code
 permutation automorphism group `TauCeti.permutationAut BinaryGolay.code`, equivariant with respect
 to `golayCoordPerm`, together with the direct linear automorphism isomorphism
 `M24.golayCodePermutationAutEquiv` for `M24.golayCode`, and determines the exact order `244823040`
-of all three groups.
+of the Golay permutation automorphism groups.
 
 ## Main declarations
 
@@ -58,8 +55,7 @@ of all three groups.
   vectors.
 * `TauCeti.Sporadic.M24.golayCodePermutationAutEquiv`: explicit group isomorphism
   `M24 ≃* TauCeti.permutationAut M24.golayCode` compatible with `M24`'s natural action on `Fin 24`.
-* `TauCeti.Sporadic.card_M24`,
-  `TauCeti.BinaryGolay.natCard_permutationAut_code_toAddSubgroup`,
+* `TauCeti.BinaryGolay.natCard_permutationAut_code_toAddSubgroup`,
   `TauCeti.BinaryGolay.natCard_permutationAut_code`: the exact order `244823040`.
 
 ## References
@@ -75,8 +71,6 @@ of all three groups.
 public section
 
 namespace TauCeti.Sporadic
-
-open MulAction
 
 namespace M24
 
@@ -123,73 +117,13 @@ theorem generatedBy_golayGenerator : golayGenerator.generatedBy = golayCode := b
   rw [golayGenerator_def, Matrix.generatedBy_submatrix_equiv, ← TauCeti.BinaryGolay.code_def,
     ← TauCeti.reindex_def, ← golayCode_def]
 
-/-! ### Straight-line program and inclusion of `M24` -/
-
-/-- Forward lookup tables of `golayCoordPerm.permCongr a`, `golayCoordPerm.permCongr b`, and fifteen
-words in those two generators witnessing basic-orbit transitivity along `BinaryGolay.base`. -/
-private def slpFwd : Fin 17 → Fin 24 → Fin 24 :=
-  ![![3, 7, 21, 0, 22, 9, 8, 1, 6, 5, 20, 18, 17, 16, 19, 23, 13, 12, 11, 14, 10, 2, 4, 15],
-    ![3, 6, 9, 5, 12, 0, 18, 7, 8, 13, 4, 22, 10, 2, 14, 15, 16, 17, 1, 20, 23, 11, 21, 19],
-    ![0, 8, 5, 9, 17, 3, 11, 1, 6, 16, 22, 4, 20, 21, 19, 23, 13, 12, 7, 10, 15, 18, 2, 14],
-    ![0, 1, 2, 4, 21, 9, 13, 11, 19, 20, 12, 16, 15, 14, 6, 10, 7, 17, 18, 22, 5, 3, 8, 23],
-    ![0, 1, 3, 11, 16, 4, 12, 19, 9, 17, 15, 22, 14, 13, 10, 6, 7, 20, 2, 5, 21, 8, 18, 23],
-    ![0, 1, 21, 5, 14, 13, 2, 22, 7, 18, 12, 19, 3, 9, 15, 11, 4, 6, 10, 20, 16, 8, 17, 23],
-    ![0, 1, 6, 16, 21, 23, 8, 7, 12, 13, 14, 18, 2, 5, 10, 15, 11, 20, 3, 22, 19, 4, 17, 9],
-    ![0, 1, 2, 4, 8, 23, 7, 22, 3, 9, 15, 10, 21, 13, 12, 11, 19, 16, 5, 17, 20, 14, 6, 18],
-    ![0, 1, 2, 8, 15, 12, 18, 21, 3, 22, 10, 11, 5, 17, 14, 4, 20, 13, 6, 19, 16, 7, 9, 23],
-    ![0, 1, 2, 3, 22, 23, 16, 19, 21, 5, 12, 15, 4, 6, 10, 7, 8, 11, 20, 17, 9, 13, 14, 18],
-    ![0, 1, 2, 3, 11, 21, 5, 14, 4, 6, 15, 10, 23, 16, 12, 8, 20, 13, 7, 17, 19, 22, 9, 18],
-    ![0, 1, 2, 3, 4, 12, 7, 22, 8, 13, 11, 15, 19, 20, 16, 10, 18, 23, 14, 5, 9, 17, 6, 21],
-    ![0, 1, 2, 3, 4, 14, 16, 12, 15, 5, 8, 11, 20, 18, 9, 10, 19, 21, 22, 6, 7, 23, 13, 17],
-    ![0, 1, 2, 3, 4, 9, 22, 8, 7, 5, 19, 14, 16, 15, 11, 13, 12, 17, 20, 10, 18, 21, 6, 23],
-    ![0, 1, 2, 3, 4, 16, 18, 19, 10, 12, 8, 15, 9, 14, 13, 11, 5, 17, 6, 7, 22, 21, 20, 23],
-    ![0, 1, 2, 3, 4, 20, 12, 13, 15, 18, 11, 10, 6, 7, 19, 8, 22, 17, 9, 14, 5, 21, 16, 23],
-    ![0, 1, 2, 3, 4, 14, 8, 22, 6, 11, 18, 9, 15, 16, 5, 12, 13, 17, 10, 20, 19, 21, 7, 23]]
-
-/-- Inverse lookup tables corresponding to `slpFwd`. -/
-private def slpInv : Fin 17 → Fin 24 → Fin 24 :=
-  ![![3, 7, 21, 0, 22, 9, 8, 1, 6, 5, 20, 18, 17, 16, 19, 23, 13, 12, 11, 14, 10, 2, 4, 15],
-    ![5, 18, 13, 0, 10, 3, 1, 7, 8, 2, 12, 21, 4, 9, 14, 15, 16, 17, 6, 23, 19, 22, 11, 20],
-    ![0, 7, 22, 5, 11, 2, 8, 18, 1, 3, 19, 6, 17, 16, 23, 20, 9, 4, 21, 14, 12, 13, 10, 15],
-    ![0, 1, 2, 21, 3, 20, 14, 16, 22, 5, 15, 7, 10, 6, 13, 12, 11, 17, 18, 8, 9, 4, 19, 23],
-    ![0, 1, 18, 2, 5, 19, 15, 16, 21, 8, 14, 3, 6, 13, 12, 10, 4, 9, 22, 7, 17, 20, 11, 23],
-    ![0, 1, 6, 12, 16, 3, 17, 8, 21, 13, 18, 15, 10, 5, 4, 14, 20, 22, 9, 11, 19, 2, 7, 23],
-    ![0, 1, 12, 18, 21, 13, 2, 7, 6, 23, 14, 16, 8, 9, 10, 15, 3, 22, 11, 20, 17, 4, 19, 5],
-    ![0, 1, 2, 8, 3, 18, 22, 6, 4, 9, 11, 15, 14, 13, 21, 10, 17, 19, 23, 16, 20, 12, 7, 5],
-    ![0, 1, 2, 8, 15, 12, 18, 21, 3, 22, 10, 11, 5, 17, 14, 4, 20, 13, 6, 19, 16, 7, 9, 23],
-    ![0, 1, 2, 3, 12, 9, 13, 15, 16, 20, 14, 17, 10, 21, 22, 11, 6, 19, 23, 7, 18, 8, 4, 5],
-    ![0, 1, 2, 3, 8, 6, 9, 18, 15, 22, 11, 4, 14, 17, 7, 10, 13, 19, 23, 20, 16, 5, 21, 12],
-    ![0, 1, 2, 3, 4, 19, 22, 6, 8, 20, 15, 10, 5, 9, 18, 11, 14, 21, 16, 12, 13, 23, 7, 17],
-    ![0, 1, 2, 3, 4, 9, 19, 20, 10, 14, 15, 11, 7, 22, 5, 8, 6, 23, 13, 16, 12, 17, 18, 21],
-    ![0, 1, 2, 3, 4, 9, 22, 8, 7, 5, 19, 14, 16, 15, 11, 13, 12, 17, 20, 10, 18, 21, 6, 23],
-    ![0, 1, 2, 3, 4, 16, 18, 19, 10, 12, 8, 15, 9, 14, 13, 11, 5, 17, 6, 7, 22, 21, 20, 23],
-    ![0, 1, 2, 3, 4, 20, 12, 13, 15, 18, 11, 10, 6, 7, 19, 8, 22, 17, 9, 14, 5, 21, 16, 23],
-    ![0, 1, 2, 3, 4, 14, 8, 22, 6, 11, 18, 9, 15, 16, 5, 12, 13, 17, 10, 20, 19, 21, 7, 23]]
-
-private theorem slp_leftInv : ∀ k : Fin 17, Function.LeftInverse (slpInv k) (slpFwd k) := by
-  decide +kernel
-
-private theorem slp_rightInv : ∀ k : Fin 17, Function.RightInverse (slpInv k) (slpFwd k) := by
-  decide +kernel
-
-private def slpPerm (k : Fin 17) : Equiv.Perm (Fin 24) where
-  toFun := slpFwd k
-  invFun := slpInv k
-  left_inv := slp_leftInv k
-  right_inv := slp_rightInv k
-
-private theorem slpPerm_zero_eq : slpPerm 0 = golayCoordPerm.permCongr a := by
-  decide +kernel
-
-private theorem slpPerm_one_eq : slpPerm 1 = golayCoordPerm.permCongr b := by
-  decide +kernel
+/-! ### Subgroup inclusion and identification with `M24` -/
 
 /-- Conjugating `M24.a` by `golayCoordPerm` gives a permutation automorphism of
 `BinaryGolay.code`. -/
 theorem permCongr_a_mem_permutationAut :
     golayCoordPerm.permCongr a ∈
       TauCeti.AdditiveCode.permutationAut TauCeti.BinaryGolay.code.toAddSubgroup := by
-  rw [← slpPerm_zero_eq]
   decide +kernel
 
 /-- Conjugating `M24.b` by `golayCoordPerm` gives a permutation automorphism of
@@ -197,7 +131,6 @@ theorem permCongr_a_mem_permutationAut :
 theorem permCongr_b_mem_permutationAut :
     golayCoordPerm.permCongr b ∈
       TauCeti.AdditiveCode.permutationAut TauCeti.BinaryGolay.code.toAddSubgroup := by
-  rw [← slpPerm_one_eq]
   decide +kernel
 
 /-- `M24.a` preserves `M24.golayCode`. -/
@@ -230,154 +163,26 @@ theorem map_permCongrHom_golayCoordPerm_le :
   rwa [Subgroup.mem_comap, MulEquiv.coe_toMonoidHom, Equiv.permCongrHom_coe,
     ← TauCeti.AdditiveCode.mem_permutationAut_reindex_toAddSubgroup, ← golayCode_def]
 
-/-! ### Surjectivity via basic orbits along `BinaryGolay.base` -/
-
-private theorem slpPerm_words :
-    slpPerm 2 = slpPerm 0 * slpPerm 1 ∧
-    slpPerm 3 = slpPerm 0 * (slpPerm 2)⁻¹ * (slpPerm 2)⁻¹ * (slpPerm 2)⁻¹ * slpPerm 1 *
-      slpPerm 2 * slpPerm 0 ∧
-    slpPerm 4 = slpPerm 2 * (slpPerm 3)⁻¹ * slpPerm 2 * slpPerm 2 * slpPerm 2 ∧
-    slpPerm 5 = (slpPerm 2)⁻¹ * (slpPerm 3)⁻¹ * slpPerm 4 * (slpPerm 2)⁻¹ ∧
-    slpPerm 6 = (slpPerm 2)⁻¹ * slpPerm 4 * (slpPerm 5)⁻¹ * slpPerm 2 ∧
-    slpPerm 7 = slpPerm 5 * slpPerm 6 ∧
-    slpPerm 8 = (slpPerm 5)⁻¹ * (slpPerm 3)⁻¹ * slpPerm 4 ∧
-    slpPerm 9 = (slpPerm 3)⁻¹ * slpPerm 7 ∧
-    slpPerm 10 = slpPerm 7 * slpPerm 8 ∧
-    slpPerm 11 = (slpPerm 9)⁻¹ * (slpPerm 9)⁻¹ * (slpPerm 10)⁻¹ * (slpPerm 9)⁻¹ ∧
-    slpPerm 12 = slpPerm 10 * slpPerm 11 * (slpPerm 10)⁻¹ ∧
-    slpPerm 13 = (slpPerm 10)⁻¹ * (slpPerm 9)⁻¹ * slpPerm 12 * (slpPerm 10)⁻¹ ∧
-    slpPerm 14 = slpPerm 11 * slpPerm 12 ∧
-    slpPerm 15 = (slpPerm 11)⁻¹ * (slpPerm 12)⁻¹ ∧
-    slpPerm 16 = (slpPerm 11)⁻¹ * slpPerm 13 * slpPerm 11 := by
-  decide +kernel
-
-private theorem slpPerm_mem (k : Fin 17) :
-    slpPerm k ∈ M24.map golayCoordPerm.permCongrHom.toMonoidHom := by
-  let H := M24.map golayCoordPerm.permCongrHom.toMonoidHom
-  have h0 : slpPerm 0 ∈ H := slpPerm_zero_eq ▸ Subgroup.mem_map_of_mem _ a_mem
-  have h1 : slpPerm 1 ∈ H := slpPerm_one_eq ▸ Subgroup.mem_map_of_mem _ b_mem
-  obtain ⟨e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13, e14, e15, e16⟩ := slpPerm_words
-  have h2 : slpPerm 2 ∈ H := e2 ▸ mul_mem h0 h1
-  have h3 : slpPerm 3 ∈ H :=
-    e3 ▸ mul_mem (mul_mem (mul_mem (mul_mem (mul_mem (mul_mem h0 (inv_mem h2)) (inv_mem h2))
-      (inv_mem h2)) h1) h2) h0
-  have h4 : slpPerm 4 ∈ H :=
-    e4 ▸ mul_mem (mul_mem (mul_mem (mul_mem h2 (inv_mem h3)) h2) h2) h2
-  have h5 : slpPerm 5 ∈ H :=
-    e5 ▸ mul_mem (mul_mem (mul_mem (inv_mem h2) (inv_mem h3)) h4) (inv_mem h2)
-  have h6 : slpPerm 6 ∈ H :=
-    e6 ▸ mul_mem (mul_mem (mul_mem (inv_mem h2) h4) (inv_mem h5)) h2
-  have h7 : slpPerm 7 ∈ H := e7 ▸ mul_mem h5 h6
-  have h8 : slpPerm 8 ∈ H := e8 ▸ mul_mem (mul_mem (inv_mem h5) (inv_mem h3)) h4
-  have h9 : slpPerm 9 ∈ H := e9 ▸ mul_mem (inv_mem h3) h7
-  have h10 : slpPerm 10 ∈ H := e10 ▸ mul_mem h7 h8
-  have h11 : slpPerm 11 ∈ H :=
-    e11 ▸ mul_mem (mul_mem (mul_mem (inv_mem h9) (inv_mem h9)) (inv_mem h10)) (inv_mem h9)
-  have h12 : slpPerm 12 ∈ H := e12 ▸ mul_mem (mul_mem h10 h11) (inv_mem h10)
-  have h13 : slpPerm 13 ∈ H :=
-    e13 ▸ mul_mem (mul_mem (mul_mem (inv_mem h10) (inv_mem h9)) h12) (inv_mem h10)
-  have h14 : slpPerm 14 ∈ H := e14 ▸ mul_mem h11 h12
-  have h15 : slpPerm 15 ∈ H := e15 ▸ mul_mem (inv_mem h11) (inv_mem h12)
-  have h16 : slpPerm 16 ∈ H := e16 ▸ mul_mem (mul_mem (inv_mem h11) h13) h11
-  fin_cases k
-  exacts [h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16]
-
-/-- Indices into `slpPerm` generating the basic orbits at each of the seven levels of
-`BinaryGolay.base`. -/
-private def levelGenIdx : Fin 7 → List (Fin 17)
-  | 0 => [0, 1]
-  | 1 => [2]
-  | 2 => [4, 6]
-  | 3 => [3, 10]
-  | 4 => [9, 10]
-  | 5 => [11]
-  | 6 => [13, 14, 15, 16]
-
-private theorem slpPerm_fixes :
-    ∀ i : Fin 7, ∀ k ∈ levelGenIdx i, ∀ j : Fin 7, j.val < i.val →
-      slpPerm k (TauCeti.BinaryGolay.base j.val) = TauCeti.BinaryGolay.base j.val := by
-  decide +kernel
-
-private def levelGens (i : Fin 7) : Finset (Equiv.Perm (Fin 24)) :=
-  ((levelGenIdx i).map slpPerm).toFinset
-
-private theorem levelGens_subset_stabilizerChain (i : Fin 7) :
-    (levelGens i : Set (Equiv.Perm (Fin 24))) ⊆
-      (M24.map golayCoordPerm.permCongrHom.toMonoidHom).stabilizerChain
-        TauCeti.BinaryGolay.base i.val := by
-  intro g hg
-  rw [Finset.mem_coe, levelGens, List.mem_toFinset, List.mem_map] at hg
-  obtain ⟨k, hk, rfl⟩ := hg
-  rw [SetLike.mem_coe, Subgroup.mem_stabilizerChain_iff]
-  exact ⟨slpPerm_mem k, fun j hj ↦ slpPerm_fixes i k hk ⟨j, hj.trans i.isLt⟩ hj⟩
-
-/-- The seven basic-orbit finsets of `BinaryGolay.code` along `BinaryGolay.base`. -/
-private def targetOrbitFinset (i : Fin 7) : Finset (Fin 24) :=
-  if i.val < 5 then ((Finset.range i.val).image TauCeti.BinaryGolay.base)ᶜ
-  else if i.val = 5 then {17, 21, 23}
-  else ({0, 1, 2, 3, 4, 17, 21, 23} : Finset (Fin 24))ᶜ
-
-private theorem orbitFinset_levelGens_eq :
-    ∀ i : Fin 7,
-      Finset.orbitFinset (levelGens i) (TauCeti.BinaryGolay.base i.val) = targetOrbitFinset i := by
-  decide +kernel
-
-private theorem coe_targetOrbitFinset_subset_orbit (i : Fin 7) :
-    (targetOrbitFinset i : Set (Fin 24)) ⊆
-      orbit ((M24.map golayCoordPerm.permCongrHom.toMonoidHom).stabilizerChain
-        TauCeti.BinaryGolay.base i.val) (TauCeti.BinaryGolay.base i.val) := by
-  rw [← orbitFinset_levelGens_eq i, Finset.coe_orbitFinset]
-  have hle : Subgroup.closure (levelGens i : Set (Equiv.Perm (Fin 24))) ≤
-      (M24.map golayCoordPerm.permCongrHom.toMonoidHom).stabilizerChain
-        TauCeti.BinaryGolay.base i.val :=
-    (Subgroup.closure_le _).mpr (levelGens_subset_stabilizerChain i)
-  intro y hy
-  obtain ⟨g, rfl⟩ := mem_orbit_iff.mp hy
-  exact mem_orbit_iff.mpr ⟨⟨g.val, hle g.2⟩, rfl⟩
-
-private theorem orbit_stabilizerChain_permutationAut_eq (i : Fin 7) :
-    orbit ((TauCeti.AdditiveCode.permutationAut
-      TauCeti.BinaryGolay.code.toAddSubgroup).stabilizerChain TauCeti.BinaryGolay.base i.val)
-        (TauCeti.BinaryGolay.base i.val) = (targetOrbitFinset i : Set (Fin 24)) := by
-  refine Set.Subset.antisymm ?_
-    ((coe_targetOrbitFinset_subset_orbit i).trans fun y hy ↦ ?_)
-  · by_cases hi5 : i.val < 5
-    · refine (TauCeti.BinaryGolay.orbit_stabilizerChain_subset_compl_of_lt_seven i.isLt).trans ?_
-      simp only [targetOrbitFinset, hi5, ↓reduceIte, Finset.coe_compl, Finset.coe_image,
-        Finset.coe_range]
-      exact Set.Subset.rfl
-    · fin_cases i <;> simp at hi5
-      · exact TauCeti.BinaryGolay.orbit_stabilizerChain_five_subset
-      · exact TauCeti.BinaryGolay.orbit_stabilizerChain_six_subset
-  · obtain ⟨g, rfl⟩ := mem_orbit_iff.mp hy
-    exact mem_orbit_iff.mpr
-      ⟨⟨g.val, Subgroup.stabilizerChain_mono map_permCongrHom_golayCoordPerm_le
-        TauCeti.BinaryGolay.base i.val g.2⟩, rfl⟩
-
 /-- **Conjugating `M24` by `golayCoordPerm` yields the full coordinate permutation automorphism
 group of `TauCeti.BinaryGolay.code`.** -/
 theorem map_permCongrHom_golayCoordPerm :
     M24.map golayCoordPerm.permCongrHom.toMonoidHom =
       TauCeti.AdditiveCode.permutationAut TauCeti.BinaryGolay.code.toAddSubgroup := by
-  refine Subgroup.eq_of_le_of_stabilizerChain_eq_bot map_permCongrHom_golayCoordPerm_le
-    TauCeti.BinaryGolay.stabilizerChain_permutationAut_seven fun i hi ↦ ?_
-  rw [orbit_stabilizerChain_permutationAut_eq ⟨i, hi⟩]
-  exact coe_targetOrbitFinset_subset_orbit ⟨i, hi⟩
+  refine Subgroup.eq_of_le_of_card_ge map_permCongrHom_golayCoordPerm_le ?_
+  rw [MulEquiv.toMonoidHom_eq_coe,
+    ← Nat.card_congr (golayCoordPerm.permCongrHom.subgroupMap M24).toEquiv,
+    TauCeti.Sporadic.card_M24]
+  exact TauCeti.BinaryGolay.natCard_permutationAut_code_toAddSubgroup_le
 
 /-- **`M24` is the full coordinate permutation automorphism group of `M24.golayCode`.** -/
 theorem eq_permutationAut_golayCode :
     M24 = TauCeti.AdditiveCode.permutationAut golayCode.toAddSubgroup := by
+  have hmap := map_permCongrHom_golayCoordPerm
+  rw [MulEquiv.toMonoidHom_eq_coe] at hmap
   rw [golayCode_def, ← TauCeti.AdditiveCode.reindex_toAddSubgroup,
-    TauCeti.AdditiveCode.permutationAut_reindex, ← map_permCongrHom_golayCoordPerm,
-    ← Equiv.permCongrHom_symm, Subgroup.map_map]
-  ext σ
-  rw [Subgroup.mem_map]
-  refine ⟨fun h ↦ ⟨σ, h, ?_⟩, ?_⟩
-  · rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.coe_toMonoidHom,
-      MulEquiv.symm_apply_apply]
-  · rintro ⟨τ, hτ, rfl⟩
-    rwa [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulEquiv.coe_toMonoidHom,
-      MulEquiv.symm_apply_apply]
+    TauCeti.AdditiveCode.permutationAut_reindex, ← Equiv.permCongrHom_symm,
+    MulEquiv.toMonoidHom_eq_coe]
+  exact ((Subgroup.map_symm_eq_iff_map_eq M24).mpr hmap).symm
 
 /-! ### Explicit group isomorphisms and coordinate action compatibility -/
 
@@ -385,15 +190,18 @@ theorem eq_permutationAut_golayCode :
 `TauCeti.BinaryGolay.code`, acting by conjugation along `golayCoordPerm`. -/
 noncomputable def golayAdditivePermutationAutEquiv :
     M24 ≃* TauCeti.AdditiveCode.permutationAut TauCeti.BinaryGolay.code.toAddSubgroup :=
-  (golayCoordPerm.permCongrHom.subgroupMap M24).trans
-    (MulEquiv.subgroupCongr map_permCongrHom_golayCoordPerm)
+  (MulEquiv.subgroupCongr (by
+    rw [TauCeti.AdditiveCode.reindex_toAddSubgroup, ← golayCode_def,
+      ← eq_permutationAut_golayCode])).trans
+    (TauCeti.AdditiveCode.reindexPermutationAutEquiv
+      TauCeti.BinaryGolay.code.toAddSubgroup golayCoordPerm).symm
 
 /-- `golayAdditivePermutationAutEquiv` conjugates underlying permutations along `golayCoordPerm`. -/
 @[simp]
 theorem coe_golayAdditivePermutationAutEquiv_apply (g : M24) :
     (golayAdditivePermutationAutEquiv g : Equiv.Perm (Fin 24)) =
-      golayCoordPerm.permCongr (g : Equiv.Perm (Fin 24)) :=
-  (rfl)
+      golayCoordPerm.permCongr (g : Equiv.Perm (Fin 24)) := by
+  simp [golayAdditivePermutationAutEquiv]
 
 /-- The inverse of `golayAdditivePermutationAutEquiv` conjugates underlying permutations along
 `golayCoordPerm.symm`. -/
@@ -402,9 +210,7 @@ theorem coe_golayAdditivePermutationAutEquiv_symm_apply
     (h : TauCeti.AdditiveCode.permutationAut TauCeti.BinaryGolay.code.toAddSubgroup) :
     (golayAdditivePermutationAutEquiv.symm h : Equiv.Perm (Fin 24)) =
       golayCoordPerm.symm.permCongr (h : Equiv.Perm (Fin 24)) := by
-  apply golayCoordPerm.permCongr.injective
-  rw [← coe_golayAdditivePermutationAutEquiv_apply, MulEquiv.apply_symm_apply,
-    ← Equiv.permCongr_symm, Equiv.apply_symm_apply]
+  simp [golayAdditivePermutationAutEquiv]
 
 /-- `golayCoordPerm` intertwines the action of `M24` on `Fin 24` with that of
 `AdditiveCode.permutationAut BinaryGolay.code.toAddSubgroup` via
@@ -476,39 +282,11 @@ theorem golayCodePermutationAutEquiv_apply_smul (g : M24) (x : Fin 24 → ZMod 2
 
 end M24
 
-/-! ### Exact group orders -/
-
-/-- **The order of `M₂₄`.** The permutation model `M24` has `244823040` elements. -/
-@[simp↓]
-theorem card_M24 : Nat.card M24 = 244823040 := by
-  let A := TauCeti.AdditiveCode.permutationAut TauCeti.BinaryGolay.code.toAddSubgroup
-  rw [Nat.card_congr M24.golayAdditivePermutationAutEquiv.toEquiv,
-    ← A.prod_ncard_orbit_stabilizerChain_eq_card TauCeti.BinaryGolay.base
-      TauCeti.BinaryGolay.stabilizerChain_permutationAut_seven]
-  have hcard : ∀ i : Fin 7, (M24.targetOrbitFinset i).card = ![24, 23, 22, 21, 20, 3, 16] i := by
-    decide +kernel
-  have heq : ∀ i : Fin 7,
-      (orbit (A.stabilizerChain TauCeti.BinaryGolay.base i.val)
-        (TauCeti.BinaryGolay.base i.val)).ncard = ![24, 23, 22, 21, 20, 3, 16] i := by
-    intro i
-    rw [M24.orbit_stabilizerChain_permutationAut_eq i, Set.ncard_coe_finset, hcard i]
-  calc
-    ∏ i ∈ Finset.range 7,
-        (orbit (A.stabilizerChain TauCeti.BinaryGolay.base i)
-          (TauCeti.BinaryGolay.base i)).ncard =
-        ∏ i : Fin 7,
-          (orbit (A.stabilizerChain TauCeti.BinaryGolay.base i.val)
-            (TauCeti.BinaryGolay.base i.val)).ncard :=
-      (Fin.prod_univ_eq_prod_range
-        (fun i ↦ (orbit (A.stabilizerChain TauCeti.BinaryGolay.base i)
-          (TauCeti.BinaryGolay.base i)).ncard) 7).symm
-    _ = ∏ i : Fin 7, ![24, 23, 22, 21, 20, 3, 16] i :=
-      Finset.prod_congr rfl fun i _ ↦ heq i
-    _ = 244823040 := by decide
-
 end TauCeti.Sporadic
 
 namespace TauCeti.BinaryGolay
+
+/-! ### Exact group orders -/
 
 /-- **The coordinate permutation automorphism group of `BinaryGolay.code` has order `244823040`.**
 -/

@@ -45,8 +45,6 @@ membership in it to computations of orbits of explicit permutations.
 * `Subgroup.mem_iff_inv_mul_mem_stabilizerChain`: any sift decides membership.
 * `Subgroup.mem_iff_exists_inv_mul_mem_stabilizerChain`: the membership criterion.
 * `Subgroup.mem_iff_exists_prod_eq`: the membership criterion along a base.
-* `Subgroup.eq_of_le_of_stabilizerChain_eq_bot`: a subgroup exhausting the basic orbits of a base
-  equals the ambient subgroup.
 * `Subgroup.orbit_stabilizerChain_subset_compl`, `Subgroup.orbit_stabilizerChain_eq_compl`,
   `Subgroup.ncard_orbit_stabilizerChain`: upper bounds on basic orbits and their exact values under
   a multiply transitive subgroup.
@@ -218,30 +216,6 @@ theorem mem_iff_exists_prod_eq {k : ℕ} (hk : H.stabilizerChain b k = ⊥) {R :
       (∀ i < k, r i ∈ R i ∧ r i • b i = ((List.range i).map r).prod⁻¹ • g • b i) ∧
         ((List.range k).map r).prod = g := by
   simp_rw [mem_iff_exists_inv_mul_mem_stabilizerChain hRle hRorbit, hk, mem_bot, inv_mul_eq_one]
-
-/-- Monotonicity of a stabilizer chain in the subgroup. -/
-theorem stabilizerChain_mono {K : Subgroup G} (hKH : K ≤ H) (b : ℕ → α) (i : ℕ) :
-    K.stabilizerChain b i ≤ H.stabilizerChain b i :=
-  inf_le_inf_right _ hKH
-
-/-- **Equality along a base.** If `K ≤ H`, the points `b 0, …, b (k - 1)` form a base of `H`, and
-every basic orbit of `H` is contained in the corresponding basic orbit of `K`, then `K = H`. -/
-theorem eq_of_le_of_stabilizerChain_eq_bot {K : Subgroup G} (hKH : K ≤ H) {k : ℕ}
-    (hk : H.stabilizerChain b k = ⊥)
-    (horb : ∀ i < k, orbit (H.stabilizerChain b i) (b i) ⊆ orbit (K.stabilizerChain b i) (b i)) :
-    K = H := by
-  refine le_antisymm hKH fun g hg ↦ ?_
-  have hRle : ∀ i < k, (K.stabilizerChain b i : Set G) ⊆ H.stabilizerChain b i :=
-    fun i _ ↦ stabilizerChain_mono hKH b i
-  have hRorbit : ∀ i < k,
-      orbit (H.stabilizerChain b i) (b i) ⊆ (· • b i) '' (K.stabilizerChain b i : Set G) := by
-    intro i hi y hy
-    obtain ⟨x, rfl⟩ := mem_orbit_iff.mp (horb i hi hy)
-    exact ⟨x, x.2, rfl⟩
-  obtain ⟨r, hr, rfl⟩ := (mem_iff_exists_prod_eq hk hRle hRorbit).mp hg
-  refine K.list_prod_mem fun x hx ↦ ?_
-  obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hx
-  exact K.stabilizerChain_le b i (hr i (List.mem_range.mp hi)).1
 
 /-! ### Basic orbits of a multiply transitive subgroup -/
 
