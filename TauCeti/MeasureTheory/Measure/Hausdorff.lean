@@ -21,8 +21,9 @@ infinite set contains finite subsets of every cardinality, so its measure is `�
 
 If `K` is a compact subset of an extended metric space and `f` is continuous on `K` with values in
 a Hausdorff space, then `y ↦ μH[d] (K ∩ f ⁻¹' {y})` is Borel measurable for every real `d`. The
-same follows for σ-compact sets, by continuity of measures from below. These are the fiber
-measures integrated by the coarea formula.
+same follows for σ-compact sets, by continuity of measures from below, and up to `μ`-null sets when
+`A` contains a σ-compact subset `S` whose complement `A \ S` has `μH[d]`-null fibers `μ`-almost
+everywhere. These are the fiber measures integrated by the coarea formula.
 
 Fix a scale `r`. Write `H_r (s)` for the approximate Hausdorff content of `s` at scale `r`,
 the infimum of `∑ i, diam (t i) ^ d` over countable covers of `s` by sets of diameter at most
@@ -47,6 +48,9 @@ diameter at most `2 r`.
 * `IsCompact.measurable_hausdorffMeasure_inter_preimage`: fiber measures of a continuous map on a
   compact set are measurable.
 * `IsSigmaCompact.measurable_hausdorffMeasure_inter_preimage`: the same on a σ-compact set.
+* `TauCeti.aemeasurable_hausdorffMeasure_inter_preimage_of_ae_eq_zero`: almost-everywhere
+  measurability of fiber measures when `A` contains a σ-compact subset `S` on which `f` is
+  continuous and `A \ S` has almost-everywhere null fibers.
 * `TauCeti.hausdorffMeasure_le_of_forall_exists_closedBall_cover`: an upper bound for `μH[d]` from
   countable covers by small closed balls.
 
@@ -204,6 +208,19 @@ theorem IsSigmaCompact.measurable_hausdorffMeasure_inter_preimage {A : Set X}
   exact Measurable.iSup fun n ↦
     (isCompact_accumulate hK n).measurable_hausdorffMeasure_inter_preimage
       (hf.mono (accumulate_subset_iUnion n)) d
+
+/-- **Fiber measures on a set σ-compact up to a fiberwise-null remainder are almost everywhere
+measurable.** If `f` is continuous on a σ-compact subset `S ⊆ A` of an extended metric space, with
+values in a Hausdorff space whose open sets are measurable, and `μ`-almost every fiber of `A \ S`
+is `μH[d]`-null, then `y ↦ μH[d] (A ∩ f ⁻¹' {y})` is `μ`-almost everywhere measurable. -/
+theorem TauCeti.aemeasurable_hausdorffMeasure_inter_preimage_of_ae_eq_zero {A S : Set X}
+    {μ : Measure Y} {d : ℝ} (hSA : S ⊆ A) (hS : IsSigmaCompact S) (hf : ContinuousOn f S)
+    (hnull : ∀ᵐ y ∂μ, μH[d] ((A \ S) ∩ f ⁻¹' {y}) = 0) :
+    AEMeasurable (fun y ↦ μH[d] (A ∩ f ⁻¹' {y})) μ := by
+  refine (hS.measurable_hausdorffMeasure_inter_preimage hf d).aemeasurable.congr ?_
+  filter_upwards [hnull] with y hy
+  exact measure_eq_measure_of_null_sdiff (inter_subset_inter_left _ hSA)
+    (by rwa [← inter_sdiff_distrib_right])
 
 end Compact
 
