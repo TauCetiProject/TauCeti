@@ -119,18 +119,13 @@ theorem derivation_T_zsmul (d : Derivation R H C) (n : ℤ) :
   simpa only [zsmul_one, Int.cast_id, monomialValues_apply] using
     map_zsmul (monomialValues d) n (1 : ℤ)
 
-private lemma dualNumberUnit_map_fst (c : C) :
-    Units.map (fstHom R C C : DualNumber C →* C) (dualNumberUnit c) = 1 := by
-  ext
-  simp
-
 private theorem tangentCoordinate_surjective :
     Function.Surjective (tangentCoordinate (R := R) (B := B)) := by
   intro b
   let c : C := (CounitAlgebra.algEquivSelf R H B).symm b
   let q : H →ₐ[R] DualNumber C := laurentEval (dualNumberUnit c)
   have hq : (fstHom R C C).comp q = IsScalarTower.toAlgHom R H C := by
-    simp only [q, comp_laurentEval, dualNumberUnit_map_fst]
+    simp only [q, comp_laurentEval, map_fstHom_dualNumberUnit]
     apply (laurentEval_unique 1 _ ?_).symm
     simp only [IsScalarTower.toAlgHom_apply, CounitAlgebra.algebraMap_apply,
       LaurentPolynomial.counit_T, ← CounitAlgebra.algebraMap_base R H B, map_one,

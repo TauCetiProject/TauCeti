@@ -57,6 +57,14 @@ theorem coe_dualNumberUnit_inv {R : Type*} [Ring R] (c : R) :
     (((dualNumberUnit c)⁻¹ : (DualNumber R)ˣ) : DualNumber R) =
       1 - TrivSqZeroExt.inr c := (rfl)
 
+/-- The scalar projection sends `dualNumberUnit c` to the identity unit. -/
+@[simp]
+theorem map_fstHom_dualNumberUnit {R B : Type*} [CommSemiring R] [Ring B] [Algebra R B]
+    (c : B) :
+    Units.map (TrivSqZeroExt.fstHom R B B : DualNumber B →* B) (dualNumberUnit c) = 1 := by
+  ext
+  simp
+
 variable {R B : Type*} [CommSemiring R] [Semiring B] [Algebra R B]
 
 /-- Coordinatewise scalar multiplication associates with multiplication of dual numbers. -/
