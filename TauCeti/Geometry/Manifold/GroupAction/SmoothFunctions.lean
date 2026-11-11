@@ -7,10 +7,9 @@ module
 
 public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 public import TauCeti.Geometry.Manifold.Algebra.SMul
-public import TauCeti.Geometry.Manifold.Instances.Quotient
+public import TauCeti.Geometry.Manifold.Quotient.Descent
 public import TauCeti.RepresentationTheory.FunLeft
 public import TauCeti.RepresentationTheory.Induction.AlmostConjugate
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.LinearAlgebra.Eigenspace.Transport
 
 /-!
@@ -50,9 +49,6 @@ here.
   maps `M → F`.
 * `TauCeti.mem_invariants_smoothFunctionRep_iff`: its invariant vectors are the maps with
   `f (g • x) = f x`.
-* `ContMDiffMap.descend`: a `G`-invariant `C^n` map into any manifold, as a `C^n` map on the
-  orbit space of a free, properly discontinuous action.
-* `TauCeti.smoothQuotientMk`: the orbit projection, as a `C^n` map.
 * `TauCeti.smoothQuotientEquivInvariants`: pullback along the orbit projection is a linear
   equivalence from the `C^n` maps on `M ⧸ G` onto the `G`-invariant `C^n` maps on `M`.
 * `TauCeti.eigenspaceEquivInvariantsInfEigenspace`: for operators intertwined by pullback, each
@@ -134,81 +130,9 @@ theorem invariants_smoothFunctionRep_comp_subtype (K : Subgroup G) :
   · simpa [Subgroup.smul_def] using DFunLike.congr_fun (h k⁻¹) x
   · simpa [Subgroup.smul_def] using h k⁻¹ x
 
-/-! ### Descent to the orbit space -/
-
-section Quotient
+/-! ### Functions on the orbit space -/
 
 variable [ProperlyDiscontinuousSMul G M] [ContinuousConstSMul G M] [IsCancelSMul G M]
-  [T2Space M] [LocallyCompactSpace M] [IsManifold I n M]
-
-variable (I M n G) in
-/-- The orbit projection `M → M ⧸ G` of a free, properly discontinuous action by `C^n` maps, as a
-`C^n` map. -/
-def smoothQuotientMk : C^n⟮I, M; I, MulAction.orbitRel.Quotient G M⟯ :=
-  ⟨Quotient.mk _, isLocalDiffeomorph_quotientMk.contMDiff⟩
-
-@[simp]
-theorem smoothQuotientMk_apply (x : M) :
-    smoothQuotientMk I M n G x = Quotient.mk (MulAction.orbitRel G M) x :=
-  (rfl)
-
-end Quotient
-
-end TauCeti
-
-namespace ContMDiffMap
-
-open TauCeti
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
-  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
-  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] {n : ℕ∞ω}
-  {G : Type*} [Group G] [MulAction G M] [ContMDiffConstSMul I n G M]
-  [ProperlyDiscontinuousSMul G M] [ContinuousConstSMul G M] [IsCancelSMul G M]
-  [T2Space M] [LocallyCompactSpace M] [IsManifold I n M]
-
-/-- A `C^n` map constant on the orbits of a free, properly discontinuous action by `C^n` maps
-descends to a `C^n` map on the orbit space. -/
-def descend (f : C^n⟮I, M; I', N⟯) (hf : ∀ (g : G) (x : M), f (g • x) = f x) :
-    C^n⟮I, MulAction.orbitRel.Quotient G M; I', N⟯ :=
-  ⟨Quotient.lift f fun _ y ⟨g, hg⟩ ↦ hg ▸ hf g y,
-    (isLocalDiffeomorph_quotientMk.contMDiff_comp_iff Quotient.mk_surjective le_rfl).1
-      f.contMDiff⟩
-
-@[simp]
-theorem descend_apply_mk (f : C^n⟮I, M; I', N⟯) (hf : ∀ (g : G) (x : M), f (g • x) = f x)
-    (x : M) : f.descend hf (Quotient.mk (MulAction.orbitRel G M) x) = f x :=
-  (rfl)
-
-@[simp]
-theorem descend_comp_smoothQuotientMk (f : C^n⟮I, M; I', N⟯)
-    (hf : ∀ (g : G) (x : M), f (g • x) = f x) :
-    (f.descend hf).comp (smoothQuotientMk I M n G) = f :=
-  (rfl)
-
-/-- The descent of `f` is the unique map on the orbit space whose pullback is `f`. -/
-theorem eq_descend_iff (f : C^n⟮I, M; I', N⟯) (hf : ∀ (g : G) (x : M), f (g • x) = f x)
-    {u : C^n⟮I, MulAction.orbitRel.Quotient G M; I', N⟯} :
-    u = f.descend hf ↔ u.comp (smoothQuotientMk I M n G) = f := by
-  refine ⟨fun h ↦ h ▸ rfl, fun h ↦ ContMDiffMap.ext fun y ↦ ?_⟩
-  induction y using Quotient.inductionOn with
-  | h x => exact DFunLike.congr_fun h x
-
-end ContMDiffMap
-
-namespace TauCeti
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {n : ℕ∞ω}
-  {G : Type*} [Group G] [MulAction G M] [ContMDiffConstSMul I n G M]
-  [ProperlyDiscontinuousSMul G M] [ContinuousConstSMul G M] [IsCancelSMul G M]
   [T2Space M] [LocallyCompactSpace M] [IsManifold I n M]
 
 variable (𝕜 I M F n G) in
