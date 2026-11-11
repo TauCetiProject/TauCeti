@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Completeness
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Flow
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Flow.Basic
 public import TauCeti.MeasureTheory.MeasurableSpace.RayCutTime
 
 /-!
@@ -126,37 +126,16 @@ theorem upperSemicontinuous_rayCutTime_maximalGeodesic (hZ : Continuous Z) (hK :
     UpperSemicontinuous fun q ↦ rayCutTime (maximalGeodesic I M (Z q).proj (Z q).2) S
       (geodesicInterval I M (Z q).proj (Z q).2 ∩ maximalGeodesic I M (Z q).proj (Z q).2 ⁻¹' K)
       R := by
-  set γ : P → ℝ → M := fun q ↦ maximalGeodesic I M (Z q).proj (Z q).2
-  set T : P → Set ℝ := fun q ↦ geodesicInterval I M (Z q).proj (Z q).2 ∩ γ q ⁻¹' K
-  have hγ (q : P) : ∀ u ≤ R, Icc 0 u ⊆ T q → LipschitzOnWith 1 (γ q) (Icc 0 u) := fun u _ hu ↦
-    (lipschitzOnWith_maximalGeodesic.mono (hu.trans inter_subset_left)).weaken (mod_cast hv q)
-  have h0 (q : P) : γ q 0 = (Z q).proj := maximalGeodesic_zero _ _
-  have h0T (q : P) : 0 ∈ T q := ⟨zero_mem_geodesicInterval, mem_preimage.2 (h0 q ▸ hZK q)⟩
-  have h0S (q : P) : γ q 0 ∈ S := h0 q ▸ hZS q
-  rw [upperSemicontinuous_iff_isClosed_preimage]
-  intro t
-  rcases lt_or_ge t 0 with ht0 | ht0
-  · convert isClosed_univ
-    exact eq_univ_of_forall fun q ↦ ht0.le.trans (rayCutTime_mem_Icc hR (h0T q) (h0S q)).1
-  have heq : (fun q ↦ rayCutTime (γ q) S (T q) R) ⁻¹' Ici t =
-      {q | t ∈ Icc 0 R ∧ Icc 0 t ⊆ T q ∧ infEDist (γ q t) S = ENNReal.ofReal t} := by
-    ext q
-    have hmem := mem_rayMinimizingTimes.1 (rayCutTime_maximalGeodesic_mem_rayMinimizingTimes
-      (v := (Z q).2) hK (hv q) hR (hZS q) (hZK q))
-    exact (le_rayCutTime_iff (hγ q) hR (h0T q) (h0S q) (hmem.2.1 (right_mem_Icc.2 hmem.1.1))
-      ht0).trans mem_rayMinimizingTimes
-  rw [heq]
-  refine isClosed_of_closure_subset fun q hq ↦ ?_
-  obtain ⟨q₀, hq₀⟩ := closure_nonempty_iff.1 ⟨q, hq⟩
-  have hqT : Icc 0 t ⊆ T q := by
-    refine (isClosed_setOfPred_Icc_subset_geodesicInterval_inter_preimage hZ hK t).closure_subset
-      (closure_mono (fun q' hq' ↦ ?_) hq)
-    exact hq'.2.1
-  have hc : ContinuousAt (fun q' ↦ infEDist (γ q' t) S) q :=
-    continuous_infEDist.continuousAt.comp (continuousAt_maximalGeodesic_comp hZ.continuousAt
-      continuousAt_const (hqT (right_mem_Icc.2 ht0)).1)
-  exact ⟨hq₀.1, hqT, isClosed_singleton.closure_subset
-    (hc.continuousWithinAt.mem_closure hq fun _ hq' ↦ hq'.2.2)⟩
+  have hmem (q : P) := mem_rayMinimizingTimes.1 <|
+    rayCutTime_maximalGeodesic_mem_rayMinimizingTimes (v := (Z q).2) hK (hv q) hR (hZS q) (hZK q)
+  refine upperSemicontinuous_rayCutTime (fun q u _ hu ↦ (lipschitzOnWith_maximalGeodesic.mono
+      (hu.trans inter_subset_left)).weaken (mod_cast hv q)) hR
+    (fun q ↦ (hmem q).2.1 (left_mem_Icc.2 (hmem q).1.1))
+    (fun q ↦ by rw [maximalGeodesic_zero]; exact hZS q)
+    (fun q ↦ (hmem q).2.1 (right_mem_Icc.2 (hmem q).1.1))
+    (fun t _ ↦ isClosed_setOfPred_Icc_subset_geodesicInterval_inter_preimage hZ hK t)
+    fun t ht q hq ↦ continuousAt_maximalGeodesic_comp hZ.continuousAt continuousAt_const
+      (hq (right_mem_Icc.2 ht.1)).1
 
 /-- The cut time in a compact set `K` of the maximal geodesics of a continuous family of tangent
 vectors of norm at most one, based at points of `S` and of `K`, is a measurable function of the

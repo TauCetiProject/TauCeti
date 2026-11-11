@@ -152,17 +152,9 @@ maximal geodesic with initial data `(p, v)` is defined at time `t`. -/
 private theorem mem_geodesicInterval_of_nonneg {t : ℝ} (ht0 : 0 ≤ t)
     (ht : |(p : ℝ) + t * NormedSpace.fromTangentSpace (p : ℝ) (tangentSpaceOpenEquiv p v)| < 1) :
     t ∈ geodesicInterval 𝓘(ℝ, ℝ) realOpenUnitBall p v := by
-  set J := geodesicInterval 𝓘(ℝ, ℝ) realOpenUnitBall p v
   set c := NormedSpace.fromTangentSpace (p : ℝ) (tangentSpaceOpenEquiv p v)
-  by_contra htJ
-  -- Otherwise the maximal interval is bounded above by `t`; let `b ≤ t` be its supremum.
-  have hub : t ∈ upperBounds J := fun s hs ↦ le_of_not_ge fun hts ↦
-    htJ (ordConnected_geodesicInterval.out zero_mem_geodesicInterval hs ⟨ht0, hts⟩)
-  have hlub := isLUB_csSup ⟨0, zero_mem_geodesicInterval⟩ ⟨t, hub⟩
-  have hbt : sSup J ≤ t := hlub.2 hub
-  obtain ⟨a, ha, hb0, hsub⟩ := exists_Ioo_subset_geodesicInterval_of_isLUB hlub
-  -- The segment of the line over `[0, b]` is a compact subset of the open unit ball.
-  set S := (fun s : ℝ ↦ (p : ℝ) + s * c) '' Icc 0 (sSup J)
+  -- The segment of the line over `[0, t]` is a compact subset of the open unit ball.
+  set S := (fun s : ℝ ↦ (p : ℝ) + s * c) '' Icc 0 t
   have hS : IsCompact S := isCompact_Icc.image (by fun_prop)
   have hSU : S ⊆ range (Subtype.val : realOpenUnitBall → ℝ) := by
     rintro _ ⟨s, hs, rfl⟩
@@ -170,7 +162,7 @@ private theorem mem_geodesicInterval_of_nonneg {t : ℝ} (ht0 : 0 ≤ t)
     -- The line is inside the ball at times `0` and `t`, hence at every time in between.
     have hp := abs_lt.1 (mem_iff.1 p.2)
     have ht' := abs_lt.1 ht
-    have hst : s ≤ t := hs.2.trans hbt
+    have hst : s ≤ t := hs.2
     rw [abs_lt]
     rcases le_total 0 c with hc | hc
     · constructor <;> nlinarith [mul_le_mul_of_nonneg_right hst hc, mul_nonneg hs.1 hc]
@@ -178,12 +170,10 @@ private theorem mem_geodesicInterval_of_nonneg {t : ℝ} (ht0 : 0 ≤ t)
         nlinarith [mul_le_mul_of_nonpos_right hst hc, mul_nonpos_of_nonneg_of_nonpos hs.1 hc]
   have hC : IsCompact ((Subtype.val : realOpenUnitBall → ℝ) ⁻¹' S) :=
     (Topology.IsInducing.subtypeVal.isCompact_preimage_iff hSU).2 hS
-  -- By the escape lemma the geodesic leaves this compact set before time `b`, but it runs along it.
-  obtain ⟨s, hsC, hs⟩ :=
-    ((eventually_notMem_nhdsLT_maximalGeodesic hlub hC).and (Ioo_mem_nhdsLT hb0)).exists
-  apply hsC
-  rw [mem_preimage, coe_maximalGeodesic p v (hsub ⟨ha.trans hs.1, hs.2⟩)]
-  exact ⟨s, ⟨hs.1.le, hs.2.le⟩, rfl⟩
+  -- The geodesic runs along this compact set, so by the escape lemma it is defined at time `t`.
+  refine mem_geodesicInterval_of_isCompact_of_mapsTo_Ico hC ht0 fun s hs ↦ ?_
+  rw [mem_preimage, coe_maximalGeodesic p v hs.2]
+  exact ⟨s, ⟨hs.1.1, hs.1.2.le⟩, rfl⟩
 
 /-- **The maximal interval of a geodesic in the open unit ball** is the set of times at which the
 affine line `t ↦ p + t * v` stays in the ball. -/
