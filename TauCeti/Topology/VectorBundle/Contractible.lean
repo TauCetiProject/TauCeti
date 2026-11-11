@@ -161,10 +161,12 @@ theorem exists_homeomorph_prod_of_contractibleSpace :
     exists_orthonormal_trivialization_baseSet_eq_univ_of_contractibleSpace F E
   let L : ∀ b, E b ≃ₗᵢ[ℝ] F := fun b ↦
     { toLinearEquiv := e.linearEquivAt ℝ b (he ▸ mem_univ b)
-      norm_map' := hiso b }
+      norm_map' v := by rw [Trivialization.linearEquivAt_apply]; exact hiso b v }
   refine ⟨e.toHomeomorphOfSourceEqUnivTargetEqUniv (by simp [e.source_eq, he])
     (by simp [e.target_eq, he]), L, fun b v ↦ ?_⟩
-  exact e.apply_eq_prod_continuousLinearEquivAt ℝ b (he ▸ mem_univ b) v
+  simp only [L, OpenPartialHomeomorph.toHomeomorphOfSourceEqUnivTargetEqUniv_apply,
+    LinearIsometryEquiv.coe_mk, Trivialization.linearEquivAt_apply]
+  exact (e.mk_proj_snd' (he ▸ mem_univ b)).symm
 
 end Riemannian
 
@@ -181,7 +183,11 @@ variable (F E) in
 with a continuous fibre metric over a contractible paracompact R₁ space `B`, the unit disc bundle
 `D(E)` is homeomorphic to `B × D(F)`, the product with the closed unit ball of `F`, by a map
 covering the identity of `B` which is a linear isometry `L b : E b ≃ₗᵢ[ℝ] F` on each fibre. It
-carries the unit sphere bundle `S(E)` onto `B × S(F)`. -/
+carries the unit sphere bundle `S(E)` onto `B × S(F)`.
+
+The base `B` and the fibres `E b` share a universe because `discBundle` and `sphereBundle` are
+defined only in that setting, so that the disc-sphere pair `(D(E), S(E))` is a topological pair
+in a single universe. -/
 theorem exists_homeomorph_discBundle_prod_closedBall_of_contractibleSpace :
     ∃ (h : discBundle F E ≃ₜ B × closedBall (0 : F) 1) (L : ∀ b, E b ≃ₗᵢ[ℝ] F),
       (∀ v : discBundle F E,
