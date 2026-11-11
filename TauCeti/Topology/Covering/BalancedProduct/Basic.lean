@@ -282,7 +282,6 @@ private theorem isOpen_of_isOpen_preimage_inter_sheet (hqc : IsQuotientCoveringM
     {U : Set E} (hUo : IsOpen U) (a : A) {W : Set X} (hWV : W ⊆ q '' U)
     (hW : IsOpen (proj A hq ⁻¹' W ∩ Quotient.mk (MulAction.orbitRel G (E × A)) '' (U ×ˢ {a}))) :
     IsOpen W := by
-  have hcsG : ContinuousConstSMul G E := hqc.toContinuousConstSMul
   -- The slice at `a` of the preimage of that open set, cut down to `U`, is `q ⁻¹' W ∩ U`.
   have hslice : IsOpen (q ⁻¹' W ∩ U) := by
     have hopen : IsOpen (Quotient.mk (MulAction.orbitRel G (E × A)) ⁻¹'
