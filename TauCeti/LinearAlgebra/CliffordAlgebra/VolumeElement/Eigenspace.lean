@@ -284,17 +284,12 @@ theorem finrank_eigenspace_complexVolume_neg (hn : Even n) (hn0 : n ≠ 0) (μ :
       rw [complexVolume_def, smul_mul_smul_comm, ← map_mul, volumeElement_eq o b hb hQb,
         prod_map_ι_sq_scalar hl, hprod]
       simp
+    have hnil : IsNilpotent (Algebra.lsmul ℂ ℂ E (complexVolume Q o)) :=
+      ⟨2, by rw [pow_two, ← map_mul, hsq, map_zero]⟩
     have hker : ∀ ν : ℂ, ν ≠ 0 →
-        (Algebra.lsmul ℂ ℂ E (complexVolume Q o)).eigenspace ν = ⊥ := by
-      intro ν hν
-      refine (Submodule.eq_bot_iff _).2 fun ψ hψ ↦ ?_
-      simp only [mem_eigenspace_iff, Algebra.lsmul_coe] at hψ
-      have h0 : ν • ν • ψ = 0 := by
-        calc ν • ν • ψ = ν • complexVolume Q o • ψ := by rw [hψ]
-          _ = complexVolume Q o • ν • ψ := smul_comm _ _ _
-          _ = complexVolume Q o • complexVolume Q o • ψ := by rw [hψ]
-          _ = 0 := by rw [← mul_smul, hsq, zero_smul]
-      exact (smul_eq_zero.1 ((smul_eq_zero.1 h0).resolve_left hν)).resolve_left hν
+        (Algebra.lsmul ℂ ℂ E (complexVolume Q o)).eigenspace ν = ⊥ := fun ν hν ↦
+      by_contra fun h ↦ hν <| isNilpotent_iff_eq_zero.1 <|
+        (Module.End.hasEigenvalue_iff.2 h).isNilpotent_of_isNilpotent hnil
     by_cases hμ : μ = 0
     · rw [hμ, neg_zero]
     · rw [hker μ hμ, hker (-μ) (neg_ne_zero.2 hμ)]
