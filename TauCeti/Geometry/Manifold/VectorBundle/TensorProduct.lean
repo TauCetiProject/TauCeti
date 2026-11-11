@@ -17,11 +17,17 @@ For `C^n` vector bundles `E₁` and `E₂` over a manifold `B` with finite-dimen
 bundle `fun x ↦ E₁ x ⊗[𝕜] E₂ x` is a `C^n` vector bundle (`ContMDiffVectorBundle.tensorProduct`).
 This file also establishes chart and coordinate smoothness criteria, `C^n` regularity of pure
 tensors (`ContMDiffWithinAt.tmul_section`, `ContMDiffSection.tmul`), the `C^n` universal property
-(`TauCeti.contMDiff_bundleTensorLift_iff`), and functoriality, symmetry, associativity, and
-dual-tensor-Hom diffeomorphisms (`ContMDiffSection.dualTensorHomEquiv`).
+(`TauCeti.contMDiff_bundleTensorLift_iff`), functoriality, symmetry, and associativity
+diffeomorphisms (`TauCeti.bundleTensorCongrDiffeomorph`, `TauCeti.bundleTensorCommDiffeomorph`,
+`TauCeti.bundleTensorAssocDiffeomorph`), and the dual-tensor-Hom diffeomorphism
+(`TauCeti.bundleDualTensorHomDiffeomorph`) together with the induced `𝕜`-linear equivalence
+`ContMDiffSection.dualTensorHomEquiv` on bundled `C^n` sections.
+
+The coordinate-change smoothness proof and `IsContMDiff` construction follow Mathlib's
+`Mathlib.Geometry.Manifold.VectorBundle.Hom` by Floris van Doorn and Heather Macbeth.
 
 ## References
-* [J. M. Lee, *Introduction to Smooth Manifolds* (2nd ed.), Chapters 10 and 12][lee2013]
+* J. M. Lee, *Introduction to Smooth Manifolds* (2nd ed.), Chapters 10 and 12.
 -/
 
 public section
@@ -44,8 +50,12 @@ variable {𝕜 B M EB : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace �
 local notation "PF₁F₂" => TauCeti.ProjectiveTensor 𝕜 F₁ F₂
 local notation "TE₁E₂" => fun x : B ↦ E₁ x ⊗[𝕜] E₂ x
 
+namespace TauCeti
 section SmoothPrebundle
 variable {e₁ e₁' : Trivialization F₁ (π F₁ E₁)} {e₂ e₂' : Trivialization F₂ (π F₂ E₂)}
+
+/-- For `C^n` vector bundles `E₁` and `E₂`, the tensor-product transition operator
+`tensorProductCoordChange` is `C^n` on the common base set of the four factor trivializations. -/
 theorem contMDiffOn_tensorProductCoordChange
     [ContMDiffVectorBundle n F₁ E₁ IB] [ContMDiffVectorBundle n F₂ E₂ IB]
     [MemTrivializationAtlas e₁] [MemTrivializationAtlas e₁']
@@ -58,8 +68,12 @@ theorem contMDiffOn_tensorProductCoordChange
   have h₂ := (contMDiffOn_coordChangeL (IB := IB) e₂ e₂' (n := n)).mono
     fun (_ : B) (hb : _ ∈ s) ↦ ⟨hb.1.2, hb.2.2⟩
   exact ContMDiffOn.congr (fun b hb ↦
-    ((TauCeti.ProjectiveTensor.mapCLM 𝕜 F₁ F₁ F₂ F₂).contDiff.comp_contMDiffWithinAt
+    ((ProjectiveTensor.mapLBilinear 𝕜 F₁ F₁ F₂ F₂).contDiff.comp_contMDiffWithinAt
       (h₁ b hb)).clm_apply (h₂ b hb)) fun _ _ ↦ by simp [tensorProductCoordChange_eq]
+
+/-- For `C^1` vector bundles `E₁` and `E₂`, the tensor-product transition operator
+`tensorProductCoordChange` is differentiable on the common base set of the four factor
+trivializations. -/
 theorem mdifferentiableOn_tensorProductCoordChange
     [ContMDiffVectorBundle 1 F₁ E₁ IB] [ContMDiffVectorBundle 1 F₂ E₂ IB]
     [MemTrivializationAtlas e₁] [MemTrivializationAtlas e₁']
@@ -68,16 +82,26 @@ theorem mdifferentiableOn_tensorProductCoordChange
       (e₁.baseSet ∩ e₂.baseSet ∩ (e₁'.baseSet ∩ e₂'.baseSet)) :=
   (contMDiffOn_tensorProductCoordChange (IB := IB) (n := 1)).mdifferentiableOn one_ne_zero
 end SmoothPrebundle
+end TauCeti
 
 variable [FiniteDimensional 𝕜 F₂]
 section FiniteRankCharts
 variable [∀ x, TopologicalSpace (E₁ x ⊗[𝕜] E₂ x)] [∀ x, IsModuleTopology 𝕜 (E₁ x ⊗[𝕜] E₂ x)]
+
+namespace TauCeti
+
+/-- Manifold chart of the total space of `E₁ ⊗ E₂` at `y₀`, given in the fibre component by
+`TensorProduct.inCoordinates`. -/
 @[simp] theorem chartAt_tensorProduct (y₀ y : TotalSpace PF₁F₂ TE₁E₂) :
     chartAt (ModelProd HB PF₁F₂) y₀ y =
       (chartAt HB y₀.1 y.1, TensorProduct.inCoordinates F₁ E₁ F₂ E₂ y₀.1 y.1 y₀.1 y.1 y.2) := by
   rw [FiberBundle.chartedSpace_chartAt, trans_apply, OpenPartialHomeomorph.prod_apply,
     Trivialization.coe_coe, OpenPartialHomeomorph.refl_apply, Function.id_def,
     tensorProduct_trivializationAt_apply]
+
+/-- A map into the total space of `E₁ ⊗ E₂` is `C^n` within `s` at `x₀` if and only if its base
+projection and its coordinate expression `TensorProduct.inCoordinates` are `C^n` within `s` at
+`x₀`. -/
 theorem contMDiffWithinAt_tensorProduct_bundle (f : M → TotalSpace PF₁F₂ TE₁E₂) {s : Set M}
     {x₀ : M} : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, PF₁F₂)) n f s x₀ ↔
       ContMDiffWithinAt IM IB n (fun x ↦ (f x).1) s x₀ ∧ ContMDiffWithinAt IM 𝓘(𝕜, PF₁F₂) n
@@ -85,6 +109,9 @@ theorem contMDiffWithinAt_tensorProduct_bundle (f : M → TotalSpace PF₁F₂ T
         s x₀ := by
   simpa only [tensorProduct_trivializationAt_apply] using contMDiffWithinAt_totalSpace (IB := IB)
     (IM := IM) (n := n) (F := PF₁F₂) (E := TE₁E₂) (f := f) (s := s) (x₀ := x₀)
+
+/-- A map into the total space of `E₁ ⊗ E₂` is `C^n` at `x₀` if and only if its base projection
+and its coordinate expression `TensorProduct.inCoordinates` are `C^n` at `x₀`. -/
 theorem contMDiffAt_tensorProduct_bundle (f : M → TotalSpace PF₁F₂ TE₁E₂) {x₀ : M} :
     ContMDiffAt IM (IB.prod 𝓘(𝕜, PF₁F₂)) n f x₀ ↔
       ContMDiffAt IM IB n (fun x ↦ (f x).1) x₀ ∧ ContMDiffAt IM 𝓘(𝕜, PF₁F₂) n
@@ -92,6 +119,10 @@ theorem contMDiffAt_tensorProduct_bundle (f : M → TotalSpace PF₁F₂ TE₁E�
         x₀ := by
   simpa only [← contMDiffWithinAt_univ] using
     contMDiffWithinAt_tensorProduct_bundle (IB := IB) (IM := IM) (n := n) f (s := univ) (x₀ := x₀)
+
+/-- A map into the total space of `E₁ ⊗ E₂` is differentiable within `s` at `x₀` if and only if its
+base projection and its coordinate expression `TensorProduct.inCoordinates` are differentiable
+within `s` at `x₀`. -/
 theorem mdifferentiableWithinAt_tensorProduct_bundle (f : M → TotalSpace PF₁F₂ TE₁E₂) {s : Set M}
     {x₀ : M} : MDifferentiableWithinAt IM (IB.prod 𝓘(𝕜, PF₁F₂)) f s x₀ ↔
       MDifferentiableWithinAt IM IB (fun x ↦ (f x).1) s x₀ ∧ MDifferentiableWithinAt IM 𝓘(𝕜, PF₁F₂)
@@ -99,6 +130,10 @@ theorem mdifferentiableWithinAt_tensorProduct_bundle (f : M → TotalSpace PF₁
         s x₀ := by
   simpa only [tensorProduct_trivializationAt_apply] using
     mdifferentiableWithinAt_totalSpace IB (IM := IM) (F := PF₁F₂) (E := TE₁E₂) f (s := s) (x₀ := x₀)
+
+/-- A map into the total space of `E₁ ⊗ E₂` is differentiable at `x₀` if and only if its base
+projection and its coordinate expression `TensorProduct.inCoordinates` are differentiable at
+`x₀`. -/
 theorem mdifferentiableAt_tensorProduct_bundle (f : M → TotalSpace PF₁F₂ TE₁E₂) {x₀ : M} :
     MDifferentiableAt IM (IB.prod 𝓘(𝕜, PF₁F₂)) f x₀ ↔
       MDifferentiableAt IM IB (fun x ↦ (f x).1) x₀ ∧ MDifferentiableAt IM 𝓘(𝕜, PF₁F₂)
@@ -107,9 +142,13 @@ theorem mdifferentiableAt_tensorProduct_bundle (f : M → TotalSpace PF₁F₂ T
   simpa only [← mdifferentiableWithinAt_univ] using
     mdifferentiableWithinAt_tensorProduct_bundle (IB := IB) (IM := IM) f (s := univ) (x₀ := x₀)
 
+end TauCeti
+
 section IsContMDiff
 variable [ContMDiffVectorBundle n F₁ E₁ IB] [ContMDiffVectorBundle n F₂ E₂ IB]
 
+/-- For finite-rank `C^n` vector bundles `E₁` and `E₂`, the tensor-product prebundle
+`Bundle.TensorProduct.vectorPrebundle` has `C^n` coordinate changes. -/
 instance Bundle.TensorProduct.vectorPrebundle.isContMDiff :
     (Bundle.TensorProduct.vectorPrebundle 𝕜 F₁ E₁ F₂ E₂).IsContMDiff IB n where
   exists_contMDiffCoordChange := by
@@ -120,11 +159,14 @@ instance Bundle.TensorProduct.vectorPrebundle.isContMDiff :
       ⟨e₁', e₂', _, _, rfl⟩
     exact ⟨tensorProductCoordChange 𝕜 e₁ e₁' e₂ e₂',
       by simpa only [Pretrivialization.tensorProduct_baseSet] using
-        (contMDiffOn_tensorProductCoordChange (IB := IB) (n := n)
+        (TauCeti.contMDiffOn_tensorProductCoordChange (IB := IB) (n := n)
           (e₁ := e₁) (e₁' := e₁') (e₂ := e₂) (e₂' := e₂')),
       by simpa only [Pretrivialization.tensorProduct_baseSet] using
         tensorProductCoordChange_apply 𝕜 e₁ e₁' e₂ e₂'⟩
 
+/-- `ContMDiffVectorBundle` structure on `fun x ↦ E₁ x ⊗[𝕜] E₂ x` modelled on
+`ProjectiveTensor 𝕜 F₁ F₂` for finite-rank `C^n` vector bundles `E₁` and `E₂` whose tensor fibres
+carry the `𝕜`-module topology. -/
 instance ContMDiffVectorBundle.tensorProduct : ContMDiffVectorBundle n PF₁F₂ TE₁E₂ IB :=
   (Bundle.TensorProduct.vectorPrebundle 𝕜 F₁ E₁ F₂ E₂).contMDiffVectorBundle IB
 end IsContMDiff
@@ -135,6 +177,8 @@ variable [∀ x, IsTopologicalAddGroup (E₁ x)] [∀ x, ContinuousSMul 𝕜 (E�
   [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)]
   [∀ x, TopologicalSpace (E₁ x ⊗[𝕜] E₂ x)] [∀ x, IsModuleTopology 𝕜 (E₁ x ⊗[𝕜] E₂ x)]
 
+/-- The fibrewise pure-tensor map `bundleTmul` forms a `C^n` section of the iterated Hom bundle
+`E₁ →L E₂ →L (E₁ ⊗ E₂)`. -/
 theorem TauCeti.contMDiff_bundleTmul :
     ContMDiff IB (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂ →L[𝕜] PF₁F₂)) n
       (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂ →L[𝕜] PF₁F₂)
@@ -146,6 +190,8 @@ theorem TauCeti.contMDiff_bundleTmul :
 
 variable {b : M → B} {v : ∀ m, E₁ (b m)} {w : ∀ m, E₂ (b m)} {s : Set M} {x : M}
 
+/-- The pointwise pure tensor of two sections along `b` that are `C^n` within `s` at `x` is `C^n`
+within `s` at `x`. -/
 theorem ContMDiffWithinAt.tmul_section
     (hv : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₁)) n (fun m ↦ TotalSpace.mk' F₁ (b m) (v m)) s x)
     (hw : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₂)) n (fun m ↦ TotalSpace.mk' F₂ (b m) (w m)) s x) :
@@ -161,6 +207,7 @@ theorem ContMDiffWithinAt.tmul_section
   simpa only [TauCeti.bundleTmul_apply] using htmul.clm_bundle_apply₂ (F₁ := F₁) (F₂ := F₂)
     (F₃ := PF₁F₂) (E₁ := E₁) (E₂ := E₂) (E₃ := TE₁E₂) hv hw
 
+/-- The pointwise pure tensor of two sections along `b` that are `C^n` at `x` is `C^n` at `x`. -/
 theorem ContMDiffAt.tmul_section
     (hv : ContMDiffAt IM (IB.prod 𝓘(𝕜, F₁)) n (fun m ↦ TotalSpace.mk' F₁ (b m) (v m)) x)
     (hw : ContMDiffAt IM (IB.prod 𝓘(𝕜, F₂)) n (fun m ↦ TotalSpace.mk' F₂ (b m) (w m)) x) :
@@ -168,6 +215,7 @@ theorem ContMDiffAt.tmul_section
       (fun m ↦ TotalSpace.mk' PF₁F₂ (E := TE₁E₂) (b m) (v m ⊗ₜ[𝕜] w m)) x := by
   rw [← contMDiffWithinAt_univ] at hv hw ⊢; exact hv.tmul_section hw
 
+/-- The pointwise pure tensor of two sections along `b` that are `C^n` on `s` is `C^n` on `s`. -/
 theorem ContMDiffOn.tmul_section
     (hv : ContMDiffOn IM (IB.prod 𝓘(𝕜, F₁)) n (fun m ↦ TotalSpace.mk' F₁ (b m) (v m)) s)
     (hw : ContMDiffOn IM (IB.prod 𝓘(𝕜, F₂)) n (fun m ↦ TotalSpace.mk' F₂ (b m) (w m)) s) :
@@ -175,6 +223,7 @@ theorem ContMDiffOn.tmul_section
       (fun m ↦ TotalSpace.mk' PF₁F₂ (E := TE₁E₂) (b m) (v m ⊗ₜ[𝕜] w m)) s :=
   fun m hm ↦ (hv m hm).tmul_section (hw m hm)
 
+/-- The pointwise pure tensor of two `C^n` sections along `b` is `C^n`. -/
 theorem ContMDiff.tmul_section
     (hv : ContMDiff IM (IB.prod 𝓘(𝕜, F₁)) n (fun m ↦ TotalSpace.mk' F₁ (b m) (v m)))
     (hw : ContMDiff IM (IB.prod 𝓘(𝕜, F₂)) n (fun m ↦ TotalSpace.mk' F₂ (b m) (w m))) :
@@ -185,24 +234,6 @@ end PureTensorSmooth
 
 namespace TauCeti
 
-private def bundleDiffeomorphOfHom {G₁ G₂ : Type*}
-    [NormedAddCommGroup G₁] [NormedSpace 𝕜 G₁] [FiniteDimensional 𝕜 G₁]
-    [NormedAddCommGroup G₂] [NormedSpace 𝕜 G₂] {V₁ V₂ : B → Type*}
-    [∀ x, AddCommGroup (V₁ x)] [∀ x, Module 𝕜 (V₁ x)] [∀ x, TopologicalSpace (V₁ x)]
-    [∀ x, IsTopologicalAddGroup (V₁ x)] [∀ x, ContinuousSMul 𝕜 (V₁ x)]
-    [TopologicalSpace (TotalSpace G₁ V₁)] [FiberBundle G₁ V₁] [VectorBundle 𝕜 G₁ V₁]
-    [∀ x, AddCommGroup (V₂ x)] [∀ x, Module 𝕜 (V₂ x)] [∀ x, TopologicalSpace (V₂ x)]
-    [∀ x, IsTopologicalAddGroup (V₂ x)] [∀ x, ContinuousSMul 𝕜 (V₂ x)]
-    [TopologicalSpace (TotalSpace G₂ V₂)] [FiberBundle G₂ V₂] [VectorBundle 𝕜 G₂ V₂]
-    (e : ∀ x, V₁ x ≃L[𝕜] V₂ x)
-    (he : ContMDiff IB (IB.prod 𝓘(𝕜, G₁ →L[𝕜] G₂)) n
-      (fun x ↦ TotalSpace.mk' (G₁ →L[𝕜] G₂) (E := fun y ↦ V₁ y →L[𝕜] V₂ y)
-        x (e x).toContinuousLinearMap)) :
-    TotalSpace G₁ V₁ ≃ₘ^n⟮IB.prod 𝓘(𝕜, G₁), IB.prod 𝓘(𝕜, G₂)⟯ TotalSpace G₂ V₂ :=
-  bundleDiffeomorph e
-    (((contMDiff_hom_bundle_iff (IB := IB) (fun x ↦ (e x).toContinuousLinearMap)).1 he).congr
-      fun _ ↦ rfl)
-
 section LiftSmooth
 
 variable {F₃ : Type*} [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃] {E₃ : B → Type*}
@@ -211,6 +242,9 @@ variable {F₃ : Type*} [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃] {E₃ 
   [TopologicalSpace (TotalSpace F₃ E₃)] [FiberBundle F₃ E₃] [VectorBundle 𝕜 F₃ E₃]
   [∀ x, TopologicalSpace (E₁ x ⊗[𝕜] E₂ x)] [∀ x, IsModuleTopology 𝕜 (E₁ x ⊗[𝕜] E₂ x)]
 
+/-- Pointwise `C^n` universal property of the tensor-product bundle into any normed-fibre (not
+necessarily finite-rank) target bundle `E₃`: `bundleTensorLift Φ` is `C^n` at `a` as a Hom-bundle
+section if and only if `Φ` is `C^n` at `a` as a section of `E₁ →L E₂ →L E₃`. -/
 theorem contMDiffAt_bundleTensorLift_iff (Φ : ∀ x, E₁ x →L[𝕜] E₂ x →L[𝕜] E₃ x) (a : B) :
     ContMDiffAt IB (IB.prod 𝓘(𝕜, PF₁F₂ →L[𝕜] F₃)) n (fun x ↦ TotalSpace.mk' (PF₁F₂ →L[𝕜] F₃)
         (E := fun y ↦ TE₁E₂ y →L[𝕜] E₃ y) x (bundleTensorLift Φ x)) a ↔
@@ -220,17 +254,16 @@ theorem contMDiffAt_bundleTensorLift_iff (Φ : ∀ x, E₁ x →L[𝕜] E₂ x �
   let L := (ProjectiveTensor.liftIsometry 𝕜 F₁ F₂ F₃).toContinuousLinearEquiv
   have hev : (fun x ↦ ContinuousLinearMap.inCoordinates PF₁F₂ TE₁E₂ F₃ E₃ a x a x
       (bundleTensorLift Φ x)) =ᶠ[𝓝 a] (L ∘ fun x ↦ ContinuousLinearMap.inCoordinates F₁ E₁
-        (F₂ →L[𝕜] F₃) (fun y ↦ E₂ y →L[𝕜] E₃ y) a x a x (Φ x)) := by
-    filter_upwards [(trivializationAt F₁ E₁ a).open_baseSet.mem_nhds
-        (mem_baseSet_trivializationAt ..),
-      (trivializationAt F₂ E₂ a).open_baseSet.mem_nhds (mem_baseSet_trivializationAt ..),
-      (trivializationAt F₃ E₃ a).open_baseSet.mem_nhds (mem_baseSet_trivializationAt ..)] with x
-    exact bundleTensorLift_inCoordinates Φ a x
+        (F₂ →L[𝕜] F₃) (fun y ↦ E₂ y →L[𝕜] E₃ y) a x a x (Φ x)) :=
+    bundleTensorLift_inCoordinates_eventuallyEq (F₁ := F₁) (F₂ := F₂) (F₃ := F₃) Φ a
   exact ⟨fun h ↦ (L.symm.contDiff.comp_contMDiffAt
       (h.congr_of_eventuallyEq hev.symm)).congr_of_eventuallyEq
       (Filter.Eventually.of_forall fun _ ↦ (L.symm_apply_apply _).symm),
     fun h ↦ (L.contDiff.comp_contMDiffAt h).congr_of_eventuallyEq hev⟩
 
+/-- `C^n` universal property of the tensor-product bundle on Hom-bundle sections into any
+normed-fibre (not necessarily finite-rank) target bundle `E₃`: `bundleTensorLift Φ` is `C^n` if and
+only if `Φ` is `C^n`. -/
 theorem contMDiff_bundleTensorLift_iff (Φ : ∀ x, E₁ x →L[𝕜] E₂ x →L[𝕜] E₃ x) :
     ContMDiff IB (IB.prod 𝓘(𝕜, PF₁F₂ →L[𝕜] F₃)) n (fun x ↦ TotalSpace.mk' (PF₁F₂ →L[𝕜] F₃)
         (E := fun y ↦ TE₁E₂ y →L[𝕜] E₃ y) x (bundleTensorLift Φ x)) ↔
@@ -256,6 +289,8 @@ local notation "TE₁'E₂'" => fun x : B ↦ E₁' x ⊗[𝕜] E₂' x
 local notation "LE₁" => fun y : B ↦ E₁ y →L[𝕜] E₁' y
 local notation "LE₂" => fun y : B ↦ E₂ y →L[𝕜] E₂' y
 
+/-- If two Hom-bundle sections `f` and `g` along `b` are `C^n` within `s` at `x₀`, so is their
+fibrewise tensor product `bundleTensorMap f g`. -/
 theorem contMDiffWithinAt_bundleTensorMap {b : M → B}
     {f : ∀ x, E₁ x →L[𝕜] E₁' x} {g : ∀ x, E₂ x →L[𝕜] E₂' x} {s : Set M} {x₀ : M}
     (hf : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₁')) n
@@ -266,22 +301,20 @@ theorem contMDiffWithinAt_bundleTensorMap {b : M → B}
       (fun m ↦ TotalSpace.mk' (PF₁F₂ →L[𝕜] PF₁'F₂')
         (E := fun y ↦ TE₁E₂ y →L[𝕜] TE₁'E₂' y) (b m) (bundleTensorMap f g (b m))) s x₀ := by
   simp only [contMDiffWithinAt_hom_bundle] at hf hg ⊢
-  have h₁ := mem_baseSet_trivializationAt F₁ E₁ (b x₀)
-  have h₁' := mem_baseSet_trivializationAt F₁' E₁' (b x₀)
-  have h₂ := mem_baseSet_trivializationAt F₂ E₂ (b x₀)
-  have h₂' := mem_baseSet_trivializationAt F₂' E₂' (b x₀)
-  let M' := ProjectiveTensor.mapCLM 𝕜 F₁ F₁' F₂ F₂'
-  refine ⟨hf.1, ((M'.contDiff.comp_contMDiffWithinAt hf.2).clm_apply hg.2).congr_of_eventuallyEq ?_
-    ((bundleTensorMap_inCoordinates f g (b x₀) (b x₀) h₁ h₁' h₂ h₂').trans
-      (ProjectiveTensor.mapCLM_apply _ _).symm)⟩
-  filter_upwards [hf.1.continuousWithinAt.preimage_mem_nhdsWithin <| Filter.inter_mem
-    (Filter.inter_mem ((trivializationAt F₁ E₁ (b x₀)).open_baseSet.mem_nhds h₁)
-      ((trivializationAt F₁' E₁' (b x₀)).open_baseSet.mem_nhds h₁'))
-    (Filter.inter_mem ((trivializationAt F₂ E₂ (b x₀)).open_baseSet.mem_nhds h₂)
-      ((trivializationAt F₂' E₂' (b x₀)).open_baseSet.mem_nhds h₂'))] with m hm
-  exact (bundleTensorMap_inCoordinates f g (b x₀) (b m) hm.1.1 hm.1.2 hm.2.1 hm.2.2).trans
-    (ProjectiveTensor.mapCLM_apply _ _).symm
+  let M' := ProjectiveTensor.mapLBilinear 𝕜 F₁ F₁' F₂ F₂'
+  have hev : (fun m ↦ ContinuousLinearMap.inCoordinates PF₁F₂ TE₁E₂ PF₁'F₂' TE₁'E₂'
+      (b x₀) (b m) (b x₀) (b m) (bundleTensorMap f g (b m))) =ᶠ[𝓝[insert x₀ s] x₀]
+      fun m ↦ (M' ∘ fun m ↦ ContinuousLinearMap.inCoordinates F₁ E₁ F₁' E₁'
+        (b x₀) (b m) (b x₀) (b m) (f (b m))) m
+        (ContinuousLinearMap.inCoordinates F₂ E₂ F₂' E₂' (b x₀) (b m) (b x₀) (b m) (g (b m))) :=
+    bundleTensorMap_inCoordinates_eventuallyEq (F₁ := F₁) (F₁' := F₁') (F₂ := F₂) (F₂' := F₂')
+      f g hf.1.continuousWithinAt.insert
+  exact ⟨hf.1, ((M'.contDiff.comp_contMDiffWithinAt hf.2).clm_apply hg.2).congr_of_eventuallyEq
+    (hev.filter_mono (nhdsWithin_mono _ (subset_insert _ _)))
+    (hev.self_of_nhdsWithin (mem_insert x₀ s))⟩
 
+/-- The fibrewise tensor product `bundleTensorMap f g` of two `C^n` Hom-bundle sections is a `C^n`
+Hom-bundle section. -/
 theorem contMDiff_bundleTensorMap {f : ∀ x, E₁ x →L[𝕜] E₁' x} {g : ∀ x, E₂ x →L[𝕜] E₂' x}
     (hf : ContMDiff IB (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₁')) n
       (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₁') (E := LE₁) x (f x)))
@@ -312,12 +345,12 @@ def bundleTensorCongrDiffeomorph :
 @[simp] theorem bundleTensorCongrDiffeomorph_apply (p : TotalSpace PF₁F₂ TE₁E₂) :
     bundleTensorCongrDiffeomorph e₁ e₂ he₁ he₂ p =
       ⟨p.proj, bundleTensorCongr e₁ e₂ p.proj p.2⟩ := by
-  rw [bundleTensorCongrDiffeomorph, bundleDiffeomorphOfHom, bundleDiffeomorph_apply]
+  rw [bundleTensorCongrDiffeomorph, bundleDiffeomorphOfHom_apply]
 
 @[simp] theorem bundleTensorCongrDiffeomorph_symm_apply (p : TotalSpace PF₁'F₂' TE₁'E₂') :
     (bundleTensorCongrDiffeomorph e₁ e₂ he₁ he₂).symm p =
       ⟨p.proj, (bundleTensorCongr e₁ e₂ p.proj).symm p.2⟩ := by
-  rw [bundleTensorCongrDiffeomorph, bundleDiffeomorphOfHom, bundleDiffeomorph_symm_apply]
+  rw [bundleTensorCongrDiffeomorph, bundleDiffeomorphOfHom_symm_apply]
 
 @[simp] theorem toHomeomorph_bundleTensorCongrDiffeomorph :
     (bundleTensorCongrDiffeomorph e₁ e₂ he₁ he₂).toHomeomorph =
@@ -331,7 +364,9 @@ variable [∀ x, TopologicalSpace (E₁ x ⊗[𝕜] E₂ x)] [∀ x, IsModuleTop
 local notation "PF₂F₁" => ProjectiveTensor 𝕜 F₂ F₁
 local notation "TE₂E₁" => fun x : B ↦ E₂ x ⊗[𝕜] E₁ x
 
-theorem contMDiff_bundleTensorComm :
+/-- The fibrewise symmetry equivalence `bundleTensorCommEquiv` forms a `C^n` section of the Hom
+bundle `(E₁ ⊗ E₂) →L (E₂ ⊗ E₁)`. -/
+theorem contMDiff_bundleTensorCommEquiv :
     ContMDiff IB (IB.prod 𝓘(𝕜, PF₁F₂ →L[𝕜] PF₂F₁)) n
       (fun x ↦ TotalSpace.mk' (PF₁F₂ →L[𝕜] PF₂F₁) (E := fun y ↦ TE₁E₂ y →L[𝕜] TE₂E₁ y)
         x (bundleTensorCommEquiv x).toContinuousLinearMap) :=
@@ -347,17 +382,17 @@ def bundleTensorCommDiffeomorph :
     TotalSpace (ProjectiveTensor 𝕜 F₁ F₂) (fun x ↦ E₁ x ⊗[𝕜] E₂ x)
       ≃ₘ^n⟮IB.prod 𝓘(𝕜, ProjectiveTensor 𝕜 F₁ F₂), IB.prod 𝓘(𝕜, ProjectiveTensor 𝕜 F₂ F₁)⟯
       TotalSpace (ProjectiveTensor 𝕜 F₂ F₁) (fun x ↦ E₂ x ⊗[𝕜] E₁ x) :=
-  bundleDiffeomorphOfHom (IB := IB) bundleTensorCommEquiv contMDiff_bundleTensorComm
+  bundleDiffeomorphOfHom (IB := IB) bundleTensorCommEquiv contMDiff_bundleTensorCommEquiv
 
 @[simp] theorem bundleTensorCommDiffeomorph_apply (p : TotalSpace PF₁F₂ TE₁E₂) :
     bundleTensorCommDiffeomorph IB n F₁ E₁ F₂ E₂ p =
       ⟨p.proj, bundleTensorCommEquiv p.proj p.2⟩ := by
-  rw [bundleTensorCommDiffeomorph, bundleDiffeomorphOfHom, bundleDiffeomorph_apply]
+  rw [bundleTensorCommDiffeomorph, bundleDiffeomorphOfHom_apply]
 
 @[simp] theorem bundleTensorCommDiffeomorph_symm_apply (p : TotalSpace PF₂F₁ TE₂E₁) :
     (bundleTensorCommDiffeomorph IB n F₁ E₁ F₂ E₂).symm p =
       ⟨p.proj, (bundleTensorCommEquiv p.proj).symm p.2⟩ := by
-  rw [bundleTensorCommDiffeomorph, bundleDiffeomorphOfHom, bundleDiffeomorph_symm_apply]
+  rw [bundleTensorCommDiffeomorph, bundleDiffeomorphOfHom_symm_apply]
 
 @[simp] theorem toHomeomorph_bundleTensorCommDiffeomorph :
     (bundleTensorCommDiffeomorph IB n F₁ E₁ F₂ E₂).toHomeomorph =
@@ -379,7 +414,9 @@ local notation "PAssocR" => ProjectiveTensor 𝕜 F₁ (ProjectiveTensor 𝕜 F�
 local notation "TAssocL" => fun x : B ↦ (E₁ x ⊗[𝕜] E₂ x) ⊗[𝕜] E₃ x
 local notation "TAssocR" => fun x : B ↦ E₁ x ⊗[𝕜] (E₂ x ⊗[𝕜] E₃ x)
 
-theorem contMDiff_bundleTensorAssoc :
+/-- The fibrewise associativity equivalence `bundleTensorAssocEquiv` forms a `C^n` section of the
+Hom bundle `((E₁ ⊗ E₂) ⊗ E₃) →L (E₁ ⊗ (E₂ ⊗ E₃))`. -/
+theorem contMDiff_bundleTensorAssocEquiv :
     ContMDiff IB (IB.prod 𝓘(𝕜, PAssocL →L[𝕜] PAssocR)) n
       (fun x ↦ TotalSpace.mk' (PAssocL →L[𝕜] PAssocR) (E := fun y ↦ TAssocL y →L[𝕜] TAssocR y)
         x (bundleTensorAssocEquiv x).toContinuousLinearMap) :=
@@ -399,17 +436,17 @@ def bundleTensorAssocDiffeomorph :
         IB.prod 𝓘(𝕜, ProjectiveTensor 𝕜 F₁ (ProjectiveTensor 𝕜 F₂ F₃))⟯
       TotalSpace (ProjectiveTensor 𝕜 F₁ (ProjectiveTensor 𝕜 F₂ F₃))
         (fun x ↦ E₁ x ⊗[𝕜] (E₂ x ⊗[𝕜] E₃ x)) :=
-  bundleDiffeomorphOfHom (IB := IB) bundleTensorAssocEquiv contMDiff_bundleTensorAssoc
+  bundleDiffeomorphOfHom (IB := IB) bundleTensorAssocEquiv contMDiff_bundleTensorAssocEquiv
 
 @[simp] theorem bundleTensorAssocDiffeomorph_apply (p : TotalSpace PAssocL TAssocL) :
     bundleTensorAssocDiffeomorph IB n F₁ E₁ F₂ E₂ F₃ E₃ p =
       ⟨p.proj, bundleTensorAssocEquiv p.proj p.2⟩ := by
-  rw [bundleTensorAssocDiffeomorph, bundleDiffeomorphOfHom, bundleDiffeomorph_apply]
+  rw [bundleTensorAssocDiffeomorph, bundleDiffeomorphOfHom_apply]
 
 @[simp] theorem bundleTensorAssocDiffeomorph_symm_apply (p : TotalSpace PAssocR TAssocR) :
     (bundleTensorAssocDiffeomorph IB n F₁ E₁ F₂ E₂ F₃ E₃).symm p =
       ⟨p.proj, (bundleTensorAssocEquiv p.proj).symm p.2⟩ := by
-  rw [bundleTensorAssocDiffeomorph, bundleDiffeomorphOfHom, bundleDiffeomorph_symm_apply]
+  rw [bundleTensorAssocDiffeomorph, bundleDiffeomorphOfHom_symm_apply]
 
 @[simp] theorem toHomeomorph_bundleTensorAssocDiffeomorph :
     (bundleTensorAssocDiffeomorph IB n F₁ E₁ F₂ E₂ F₃ E₃).toHomeomorph =
@@ -424,6 +461,8 @@ local notation "PDual" => ProjectiveTensor 𝕜 (StrongDual 𝕜 F₁) F₂
 local notation "TDual" => fun x : B ↦ StrongDual 𝕜 (E₁ x) ⊗[𝕜] E₂ x
 local notation "LE₁E₂" => fun x : B ↦ E₁ x →L[𝕜] E₂ x
 
+/-- The total-space map from `StrongDual 𝕜 E₁ ⊗ E₂` to `E₁ →L E₂` induced by `bundleDualTensorHom`
+is `C^n`. -/
 theorem contMDiff_bundleDualTensorHom :
     ContMDiff (IB.prod 𝓘(𝕜, PDual)) (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
       (fun p : TotalSpace PDual TDual ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := LE₁E₂)

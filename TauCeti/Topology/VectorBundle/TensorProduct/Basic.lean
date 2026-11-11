@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.VectorBundle.Constructions
 public import TauCeti.Analysis.Normed.Module.TensorProduct.FiniteDimension
 public import TauCeti.Analysis.Normed.Module.TensorProduct.Map
+public import TauCeti.Topology.Algebra.Module.ModuleTopology
 public import TauCeti.Topology.VectorBundle.Hom
 
 /-!
@@ -22,6 +23,9 @@ trivializations (`Bundle.Trivialization.tensorProduct`), coordinate expressions
 
 Each fibre `E₁ x ⊗[𝕜] E₂ x` is assumed to carry `IsModuleTopology 𝕜 (E₁ x ⊗[𝕜] E₂ x)`; opening
 `TauCeti.TensorProduct` equips every `M ⊗[𝕜] N` with `moduleTopology 𝕜 (M ⊗[𝕜] N)` by default.
+
+The prebundle and coordinate-change construction follows Mathlib's
+`Mathlib.Topology.VectorBundle.Hom` by Floris van Doorn and Heather Macbeth.
 
 ## References
 * A. Hatcher, *Vector Bundles and K-Theory*, §1.1; J. M. Lee, *Smooth Manifolds* (2nd ed.), Ch. 12.
@@ -47,37 +51,13 @@ namespace TensorProduct
 scoped instance instTopologicalSpaceTensorProduct : TopologicalSpace (M ⊗[𝕜] N) :=
   moduleTopology 𝕜 (M ⊗[𝕜] N)
 
+/-- Under the scoped default topology `TauCeti.TensorProduct`, `M ⊗[𝕜] N` carries the `𝕜`-module
+topology. -/
 scoped instance instIsModuleTopologyTensorProduct : IsModuleTopology 𝕜 (M ⊗[𝕜] N) := ⟨rfl⟩
 
 end TensorProduct
 
-instance instIsTopologicalAddGroupTensorProductOfIsModuleTopology
-    [TopologicalSpace (M ⊗[𝕜] N)] [IsModuleTopology 𝕜 (M ⊗[𝕜] N)] :
-    IsTopologicalAddGroup (M ⊗[𝕜] N) :=
-  IsModuleTopology.isTopologicalAddGroup 𝕜 (M ⊗[𝕜] N)
-
 end FiberTopology
-
-/-- A Hom-bundle section whose coordinate expression in the preferred frames at each point is
-constant on their common base set is continuous. -/
-theorem continuous_hom_bundle_of_inCoordinates_eq_const {𝕜 B F₁ F₂ : Type*}
-    [NontriviallyNormedField 𝕜] [TopologicalSpace B] [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
-    [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂] {V W : B → Type*}
-    [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
-    [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)] [∀ x, TopologicalSpace (W x)]
-    [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul 𝕜 (W x)]
-    [TopologicalSpace (TotalSpace F₁ V)] [FiberBundle F₁ V] [VectorBundle 𝕜 F₁ V]
-    [TopologicalSpace (TotalSpace F₂ W)] [FiberBundle F₂ W] [VectorBundle 𝕜 F₂ W]
-    {ϕ : ∀ x, V x →L[𝕜] W x} {c : B → F₁ →L[𝕜] F₂}
-    (hϕ : ∀ a x, x ∈ (trivializationAt F₁ V a).baseSet → x ∈ (trivializationAt F₂ W a).baseSet →
-      ContinuousLinearMap.inCoordinates F₁ V F₂ W a x a x (ϕ x) = c a) :
-    Continuous (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) x (ϕ x)) := by
-  refine continuous_iff_continuousAt.2 fun a ↦ ?_
-  rw [continuousAt_hom_bundle]; refine ⟨continuousAt_id,
-    (continuous_const (y := c a)).continuousAt.congr_of_eventuallyEq ?_⟩
-  filter_upwards [(trivializationAt F₁ V a).open_baseSet.mem_nhds (mem_baseSet_trivializationAt ..),
-    (trivializationAt F₂ W a).open_baseSet.mem_nhds (mem_baseSet_trivializationAt ..)] with x
-  exact hϕ a x
 
 end TauCeti
 
@@ -163,6 +143,8 @@ variable {𝕜 e₁ e₁' e₂ e₂'}
   [∀ x, TopologicalSpace (E₁ x)] [FiberBundle F₁ E₁] [VectorBundle 𝕜 F₁ E₁]
   [∀ x, TopologicalSpace (E₂ x)] [FiberBundle F₂ E₂] [VectorBundle 𝕜 F₂ E₂]
 
+/-- The tensor-product transition operator `tensorProductCoordChange` is continuous on the common
+base set of the four factor trivializations. -/
 theorem continuousOn_tensorProductCoordChange
     [MemTrivializationAtlas e₁] [MemTrivializationAtlas e₁']
     [MemTrivializationAtlas e₂] [MemTrivializationAtlas e₂'] :
@@ -172,7 +154,7 @@ theorem continuousOn_tensorProductCoordChange
     fun (_ : B) (hb : _ ∈ e₁.baseSet ∩ e₂.baseSet ∩ (e₁'.baseSet ∩ e₂'.baseSet)) ↦ ⟨hb.1.1, hb.2.1⟩
   have h₂ := (continuousOn_coordChange 𝕜 e₂ e₂').mono
     fun (_ : B) (hb : _ ∈ e₁.baseSet ∩ e₂.baseSet ∩ (e₁'.baseSet ∩ e₂'.baseSet)) ↦ ⟨hb.1.2, hb.2.2⟩
-  exact (((TauCeti.ProjectiveTensor.mapCLM 𝕜 F₁ F₁ F₂ F₂).continuous.comp_continuousOn
+  exact (((TauCeti.ProjectiveTensor.mapLBilinear 𝕜 F₁ F₁ F₂ F₂).continuous.comp_continuousOn
     h₁).clm_apply h₂).congr fun _ _ ↦ by simp [tensorProductCoordChange]
 
 end CoordChangeContinuity
@@ -244,11 +226,13 @@ theorem tensorProductCoordChange_apply (b : B)
     tensorProduct_symm_apply' 𝕜 e₁ e₂ hb.1, TauCeti.ProjectiveTensor.linearEquiv_apply,
     TauCeti.ProjectiveTensor.linearEquiv_apply, ← LinearMap.comp_apply,
     ← _root_.TensorProduct.map_comp]
-  have h₁ : e₁'.linearMapAt 𝕜 b ∘ₗ e₁.symmₗ 𝕜 b = (e₁.coordChangeL 𝕜 e₁' b).toLinearMap := by
+  have h₁ : e₁'.linearMapAt 𝕜 b ∘ₗ e₁.symmₗ 𝕜 b =
+      (e₁.coordChangeL 𝕜 e₁' b : F₁ →L[𝕜] F₁).toLinearMap := by
     ext; simp [Trivialization.coordChangeL_apply, hb.1.1, hb.2.1]
-  have h₂ : e₂'.linearMapAt 𝕜 b ∘ₗ e₂.symmₗ 𝕜 b = (e₂.coordChangeL 𝕜 e₂' b).toLinearMap := by
+  have h₂ : e₂'.linearMapAt 𝕜 b ∘ₗ e₂.symmₗ 𝕜 b =
+      (e₂.coordChangeL 𝕜 e₂' b : F₂ →L[𝕜] F₂).toLinearMap := by
     ext; simp [Trivialization.coordChangeL_apply, hb.1.2, hb.2.2]
-  rw [h₁, h₂]; rfl
+  rw [h₁, h₂]
 
 end Bundle.Pretrivialization
 
@@ -282,21 +266,21 @@ def Bundle.TensorProduct.vectorPrebundle : VectorPrebundle 𝕜 PF₁F₂ TE₁E
     let φ₀ := (_root_.TensorProduct.congr ((trivializationAt F₁ E₁ b).linearEquivAt 𝕜 b h₁)
       ((trivializationAt F₂ E₂ b).linearEquivAt 𝕜 b h₂)).trans
       (TauCeti.ProjectiveTensor.linearEquiv 𝕜 F₁ F₂).symm
-    let φ : E₁ b ⊗[𝕜] E₂ b ≃L[𝕜] PF₁F₂ :=
-      { φ₀ with continuous_toFun := IsModuleTopology.continuous_of_linearMap φ₀.toLinearMap
-                continuous_invFun := φ₀.symm.toLinearMap.continuous_of_finiteDimensional }
+    have : IsModuleTopology 𝕜 PF₁F₂ := isModuleTopologyOfFiniteDimensional
+    let φ : E₁ b ⊗[𝕜] E₂ b ≃L[𝕜] PF₁F₂ := φ₀.toContinuousLinearEquivOfIsModuleTopology
     have heq : (Pretrivialization.tensorProduct 𝕜 (trivializationAt F₁ E₁ b)
         (trivializationAt F₂ E₂ b) : TotalSpace _ _ → _) ∘ TotalSpace.mk b = fun u ↦ (b, φ u) := by
       ext u; · rfl
       simp only [Function.comp_apply, φ, φ₀, Pretrivialization.tensorProduct_apply,
         Trivialization.linearMapAt_def_of_mem _ h₁, Trivialization.linearMapAt_def_of_mem _ h₂,
-        ContinuousLinearEquiv.coe_mk, LinearEquiv.trans_apply,
+        LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology, LinearEquiv.trans_apply,
         TauCeti.ProjectiveTensor.linearEquiv_symm_apply]
       induction u using _root_.TensorProduct.inductionOn with
       | tmul _ _ => simp
       | add _ _ hx hy => simp [hx, hy]
     exact heq ▸ isInducing_const_prod.mpr φ.toHomeomorph.isInducing
 
+/-- Membership in the pretrivialization atlas of `Bundle.TensorProduct.vectorPrebundle`. -/
 theorem Bundle.TensorProduct.mem_pretrivializationAtlas_iff
     {e : Pretrivialization PF₁F₂ (π PF₁F₂ TE₁E₂)} :
     e ∈ (Bundle.TensorProduct.vectorPrebundle 𝕜 F₁ E₁ F₂ E₂).pretrivializationAtlas ↔
@@ -304,13 +288,19 @@ theorem Bundle.TensorProduct.mem_pretrivializationAtlas_iff
         (_ : MemTrivializationAtlas e₁) (_ : MemTrivializationAtlas e₂),
           e = Pretrivialization.tensorProduct 𝕜 e₁ e₂ := Iff.rfl
 
+/-- Total-space topology on `fun x ↦ E₁ x ⊗[𝕜] E₂ x` for finite-rank vector bundles `E₁` and `E₂`
+whose tensor fibres carry the `𝕜`-module topology. -/
 instance Bundle.TensorProduct.topologicalSpaceTotalSpace :
     TopologicalSpace (TotalSpace PF₁F₂ TE₁E₂) :=
   (Bundle.TensorProduct.vectorPrebundle 𝕜 F₁ E₁ F₂ E₂).totalSpaceTopology
 
+/-- `FiberBundle` structure on `fun x ↦ E₁ x ⊗[𝕜] E₂ x` modelled on `ProjectiveTensor 𝕜 F₁ F₂`
+for finite-rank vector bundles `E₁` and `E₂` whose tensor fibres carry the `𝕜`-module topology. -/
 instance Bundle.TensorProduct.fiberBundle : FiberBundle PF₁F₂ TE₁E₂ :=
   (Bundle.TensorProduct.vectorPrebundle 𝕜 F₁ E₁ F₂ E₂).toFiberBundle
 
+/-- `VectorBundle` structure on `fun x ↦ E₁ x ⊗[𝕜] E₂ x` modelled on `ProjectiveTensor 𝕜 F₁ F₂`
+for finite-rank vector bundles `E₁` and `E₂` whose tensor fibres carry the `𝕜`-module topology. -/
 instance Bundle.TensorProduct.vectorBundle : VectorBundle 𝕜 PF₁F₂ TE₁E₂ :=
   (Bundle.TensorProduct.vectorPrebundle 𝕜 F₁ E₁ F₂ E₂).toVectorBundle
 
@@ -322,6 +312,8 @@ variable {F₁ E₁ F₂ E₂} [he₁ : MemTrivializationAtlas e₁] [he₂ : Me
 def Bundle.Trivialization.tensorProduct : Trivialization PF₁F₂ (π PF₁F₂ TE₁E₂) :=
   VectorPrebundle.trivializationOfMemPretrivializationAtlas _ ⟨e₁, e₂, he₁, he₂, rfl⟩
 
+/-- The tensor product of two atlas trivializations belongs to the trivialization atlas of the
+tensor-product bundle. -/
 instance Bundle.TensorProduct.memTrivializationAtlas :
     MemTrivializationAtlas (e₁.tensorProduct 𝕜 e₂ : Trivialization PF₁F₂ (π PF₁F₂ TE₁E₂)) where
   out := ⟨_, ⟨e₁, e₂, inferInstance, inferInstance, rfl⟩, rfl⟩
@@ -363,12 +355,18 @@ end TrivializationAPI
 
 section PreferredTrivialization
 
+namespace TauCeti
+
 variable {𝕜 F₁ E₁ F₂ E₂}
 
+/-- The preferred trivialization of `E₁ ⊗ E₂` at `x₀` is the tensor product of the preferred
+trivializations of `E₁` and `E₂` at `x₀`. -/
 theorem tensorProduct_trivializationAt (x₀ : B) :
     trivializationAt PF₁F₂ TE₁E₂ x₀ =
       (trivializationAt F₁ E₁ x₀).tensorProduct 𝕜 (trivializationAt F₂ E₂ x₀) := (rfl)
 
+/-- Applying the preferred trivialization of `E₁ ⊗ E₂` at `x₀` reads the fibre component via
+`TensorProduct.inCoordinates`. -/
 theorem tensorProduct_trivializationAt_apply (x₀ : B) (p : TotalSpace PF₁F₂ TE₁E₂) :
     trivializationAt PF₁F₂ TE₁E₂ x₀ p =
       ⟨p.1, TensorProduct.inCoordinates F₁ E₁ F₂ E₂ x₀ p.1 x₀ p.1 p.2⟩ := by
@@ -387,12 +385,17 @@ theorem tensorProduct_trivializationAt_apply (x₀ : B) (p : TotalSpace PF₁F�
     (trivializationAt PF₁F₂ TE₁E₂ x₀).baseSet =
       (trivializationAt F₁ E₁ x₀).baseSet ∩ (trivializationAt F₂ E₂ x₀).baseSet := (rfl)
 
+/-- The inverse of the preferred trivialization of `E₁ ⊗ E₂` at `x₀` sends a pure tensor to the
+pure tensor of the factor inverse trivializations. -/
 theorem tensorProduct_trivializationAt_symm_apply_tmul {x₀ x : B}
     (hx₁ : x ∈ (trivializationAt F₁ E₁ x₀).baseSet) (hx₂ : x ∈ (trivializationAt F₂ E₂ x₀).baseSet)
     (v : F₁) (w : F₂) : (trivializationAt PF₁F₂ TE₁E₂ x₀).symm x ⟨v ⊗ₜ[𝕜] w⟩ =
       (trivializationAt F₁ E₁ x₀).symm x v ⊗ₜ[𝕜] (trivializationAt F₂ E₂ x₀).symm x w :=
   Bundle.Trivialization.tensorProduct_symm_apply_tmul ⟨hx₁, hx₂⟩ v w
 
+/-- A map into the total space of `E₁ ⊗ E₂` is continuous within `s` at `x₀` if and only if its
+base projection and its coordinate expression `TensorProduct.inCoordinates` are continuous within
+`s` at `x₀`. -/
 theorem continuousWithinAt_tensorProduct_bundle {M : Type*} [TopologicalSpace M]
     (f : M → TotalSpace PF₁F₂ TE₁E₂) {s : Set M} {x₀ : M} :
     ContinuousWithinAt f s x₀ ↔ ContinuousWithinAt (fun x ↦ (f x).1) s x₀ ∧ ContinuousWithinAt
@@ -401,12 +404,16 @@ theorem continuousWithinAt_tensorProduct_bundle {M : Type*} [TopologicalSpace M]
   simpa only [tensorProduct_trivializationAt_apply] using
     FiberBundle.continuousWithinAt_totalSpace (F := PF₁F₂) (E := TE₁E₂) (f := f) (s := s) (x₀ := x₀)
 
+/-- A map into the total space of `E₁ ⊗ E₂` is continuous at `x₀` if and only if its base
+projection and its coordinate expression `TensorProduct.inCoordinates` are continuous at `x₀`. -/
 theorem continuousAt_tensorProduct_bundle {M : Type*} [TopologicalSpace M]
     (f : M → TotalSpace PF₁F₂ TE₁E₂) {x₀ : M} :
     ContinuousAt f x₀ ↔ ContinuousAt (fun x ↦ (f x).1) x₀ ∧ ContinuousAt
       (fun x ↦ TensorProduct.inCoordinates F₁ E₁ F₂ E₂ (f x₀).1 (f x).1 (f x₀).1 (f x).1 (f x).2)
       x₀ := by
   simpa only [← continuousWithinAt_univ] using continuousWithinAt_tensorProduct_bundle f (s := univ)
+
+end TauCeti
 
 end PreferredTrivialization
 
@@ -445,6 +452,8 @@ def bundleTmul (x : B) : E₁ x →L[𝕜] E₂ x →L[𝕜] (E₁ x ⊗[𝕜] E
 @[simp] theorem bundleTmul_apply (x : B) (v : E₁ x) (w : E₂ x) :
     bundleTmul F₁ F₂ (E₁ := E₁) (E₂ := E₂) x v w = v ⊗ₜ[𝕜] w := by simp [bundleTmul]
 
+/-- In preferred coordinates around `a`, `bundleTmul` is the constant operator
+`ProjectiveTensor.tmulL 𝕜 F₁ F₂`. -/
 theorem bundleTmul_inCoordinates (a x : B) (hx₁ : x ∈ (trivializationAt F₁ E₁ a).baseSet)
     (hx₂ : x ∈ (trivializationAt F₂ E₂ a).baseSet) :
     ContinuousLinearMap.inCoordinates F₁ E₁ (F₂ →L[𝕜] PF₁F₂) (fun y ↦ E₂ y →L[𝕜] TE₁E₂ y)
@@ -461,6 +470,8 @@ theorem bundleTmul_inCoordinates (a x : B) (hx₁ : x ∈ (trivializationAt F₁
     Trivialization.linearMapAt_symm _ hx₁, Trivialization.linearMapAt_symm _ hx₂,
     ProjectiveTensor.tmulL_apply]
 
+/-- The fibrewise pure-tensor map `bundleTmul` forms a continuous section of the iterated Hom
+bundle `E₁ →L E₂ →L (E₁ ⊗ E₂)`. -/
 theorem continuous_bundleTmul :
     Continuous (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂ →L[𝕜] PF₁F₂)
       (E := fun y ↦ E₁ y →L[𝕜] E₂ y →L[𝕜] TE₁E₂ y) x (bundleTmul F₁ F₂ x)) :=
@@ -472,6 +483,8 @@ end TauCeti
 
 variable {b : M → B} {v : ∀ m, E₁ (b m)} {w : ∀ m, E₂ (b m)} {s : Set M} {x : M}
 
+/-- The pointwise pure tensor of two sections along `b` that are continuous within `s` at `x` is
+continuous within `s` at `x`. -/
 theorem ContinuousWithinAt.tmul_section
     (hv : ContinuousWithinAt (fun m ↦ TotalSpace.mk' F₁ (b m) (v m)) s x)
     (hw : ContinuousWithinAt (fun m ↦ TotalSpace.mk' F₂ (b m) (w m)) s x) :
@@ -482,18 +495,23 @@ theorem ContinuousWithinAt.tmul_section
     (TauCeti.continuous_bundleTmul (F₁ := F₁) (F₂ := F₂)).continuousAt.comp_continuousWithinAt hb
   exact htmul.clm_bundle_apply₂ hv hw
 
+/-- The pointwise pure tensor of two sections along `b` that are continuous at `x` is continuous at
+`x`. -/
 theorem ContinuousAt.tmul_section
     (hv : ContinuousAt (fun m ↦ TotalSpace.mk' F₁ (b m) (v m)) x)
     (hw : ContinuousAt (fun m ↦ TotalSpace.mk' F₂ (b m) (w m)) x) :
     ContinuousAt (fun m ↦ TotalSpace.mk' PF₁F₂ (E := TE₁E₂) (b m) (v m ⊗ₜ[𝕜] w m)) x := by
   rw [← continuousWithinAt_univ] at hv hw ⊢; exact hv.tmul_section hw
 
+/-- The pointwise pure tensor of two sections along `b` that are continuous on `s` is continuous on
+`s`. -/
 theorem ContinuousOn.tmul_section
     (hv : ContinuousOn (fun m ↦ TotalSpace.mk' F₁ (b m) (v m)) s)
     (hw : ContinuousOn (fun m ↦ TotalSpace.mk' F₂ (b m) (w m)) s) :
     ContinuousOn (fun m ↦ TotalSpace.mk' PF₁F₂ (E := TE₁E₂) (b m) (v m ⊗ₜ[𝕜] w m)) s :=
   fun m hm ↦ (hv m hm).tmul_section (hw m hm)
 
+/-- The pointwise pure tensor of two continuous sections along `b` is continuous. -/
 theorem Continuous.tmul_section
     (hv : Continuous (fun m ↦ TotalSpace.mk' F₁ (b m) (v m)))
     (hw : Continuous (fun m ↦ TotalSpace.mk' F₂ (b m) (w m))) :

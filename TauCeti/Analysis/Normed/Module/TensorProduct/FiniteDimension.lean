@@ -18,8 +18,7 @@ Over a complete nontrivially normed field `𝕜`, finite dimensionality of `E` m
 (`TensorProduct.contractStrongDualEquiv`), so both the injective and projective tensor seminorms on
 `E ⊗[𝕜] F` are definite norms. Evaluating pure tensors as rank-one operators gives
 `TauCeti.ProjectiveTensor.toOperator 𝕜 E F` and, when `E` is finite-dimensional, the continuous
-linear equivalence `TauCeti.ProjectiveTensor.toOperatorEquiv`, as well as
-`TauCeti.ProjectiveTensor.toInjectiveTensorEquiv` when both factors are finite-dimensional.
+linear equivalence `TauCeti.ProjectiveTensor.toOperatorEquiv`.
 
 ## References
 
@@ -61,6 +60,8 @@ noncomputable def contractStrongDualEquiv : E ⊗[𝕜] F ≃ₗ[𝕜] StrongDua
     contractStrongDualEquiv 𝕜 E F u = contractStrongDual 𝕜 E F u :=
   LinearMap.congr_fun contractStrongDualEquiv_toLinearMap u
 
+/-- When `E` is finite-dimensional over a complete nontrivially normed field `𝕜`,
+`contractStrongDual 𝕜 E F` is bijective. -/
 theorem contractStrongDual_bijective_of_finiteDimensional :
     Function.Bijective (contractStrongDual 𝕜 E F) :=
   contractStrongDualEquiv_toLinearMap (𝕜 := 𝕜) (E := E) (F := F) ▸
@@ -72,22 +73,21 @@ section Normed
 
 variable [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
+/-- When `E` is finite-dimensional over a complete nontrivially normed field `𝕜`, the injective
+tensor seminorm on `E ⊗[𝕜] F` vanishes only at `0`. -/
 theorem injectiveSeminorm_eq_zero_iff_of_finiteDimensional_left [FiniteDimensional 𝕜 E]
     {u : E ⊗[𝕜] F} : injectiveSeminorm 𝕜 E F u = 0 ↔ u = 0 := by
   rw [injectiveSeminorm_apply, ContinuousLinearMap.opNorm_zero_iff]
   exact LinearMap.map_eq_zero_iff _
     (contractStrongDual_bijective_of_finiteDimensional (𝕜 := 𝕜) (E := E) (F := F)).injective
 
+/-- When `E` is finite-dimensional over a complete nontrivially normed field `𝕜`, the projective
+tensor seminorm on `E ⊗[𝕜] F` vanishes only at `0`. -/
 theorem projectiveSeminorm_eq_zero_iff_of_finiteDimensional_left [FiniteDimensional 𝕜 E]
     {u : E ⊗[𝕜] F} : projectiveSeminorm 𝕜 E F u = 0 ↔ u = 0 :=
   ⟨fun hu ↦ injectiveSeminorm_eq_zero_iff_of_finiteDimensional_left.1 <|
     le_antisymm ((injectiveSeminorm_le_projectiveSeminorm u).trans_eq hu) (apply_nonneg _ u),
     fun hu ↦ by simp [hu]⟩
-
-theorem projectiveSeminorm_eq_zero_iff_of_finiteDimensional_right [FiniteDimensional 𝕜 F]
-    {u : E ⊗[𝕜] F} : projectiveSeminorm 𝕜 E F u = 0 ↔ u = 0 := by
-  rw [← projectiveSeminorm_comm, projectiveSeminorm_eq_zero_iff_of_finiteDimensional_left,
-    LinearEquiv.map_eq_zero_iff]
 
 end Normed
 
@@ -95,67 +95,32 @@ end TensorProduct
 
 namespace TauCeti
 
+/-- The projective tensor product of finitely generated seminormed `𝕜`-modules is finitely
+generated. -/
 instance ProjectiveTensor.instModuleFinite {𝕜 E F : Type*} [NormedField 𝕜]
     [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [Module.Finite 𝕜 E]
     [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [Module.Finite 𝕜 F] :
     Module.Finite 𝕜 (ProjectiveTensor 𝕜 E F) :=
   Module.Finite.equiv (ProjectiveTensor.linearEquiv 𝕜 E F).symm
 
-instance InjectiveTensor.instModuleFinite {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
-    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [Module.Finite 𝕜 E]
-    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [Module.Finite 𝕜 F] :
-    Module.Finite 𝕜 (InjectiveTensor 𝕜 E F) :=
-  Module.Finite.equiv (InjectiveTensor.linearEquiv 𝕜 E F).symm
-
 section NormedFiniteDimensional
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
+/-- When `E` is finite-dimensional over a complete nontrivially normed field `𝕜`, the projective
+tensor seminorm on `ProjectiveTensor 𝕜 E F` is definite, giving a `NormedAddCommGroup` structure. -/
 noncomputable instance ProjectiveTensor.instNormedAddCommGroupOfFiniteDimensionalLeft
     [FiniteDimensional 𝕜 E] : NormedAddCommGroup (ProjectiveTensor 𝕜 E F) :=
   NormedAddCommGroup.ofSeparation fun _ hu ↦
     (ProjectiveTensor.linearEquiv 𝕜 E F).map_eq_zero_iff.1 <|
       TensorProduct.projectiveSeminorm_eq_zero_iff_of_finiteDimensional_left.1 hu
 
-noncomputable instance InjectiveTensor.instNormedAddCommGroupOfFiniteDimensionalLeft
-    [FiniteDimensional 𝕜 E] : NormedAddCommGroup (InjectiveTensor 𝕜 E F) :=
-  NormedAddCommGroup.ofSeparation fun _ hu ↦
-    (InjectiveTensor.linearEquiv 𝕜 E F).map_eq_zero_iff.1 <|
-      TensorProduct.injectiveSeminorm_eq_zero_iff_of_finiteDimensional_left.1 hu
-
 example {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
     [NormedAddCommGroup F] [NormedSpace 𝕜 F] :
     (ProjectiveTensor.instNormedAddCommGroupOfFiniteDimensionalLeft :
       NormedAddCommGroup (ProjectiveTensor 𝕜 E F)) =
       inferInstanceAs (NormedAddCommGroup (ProjectiveTensor 𝕜 E F)) := rfl
-
-section BothFiniteDimensional
-
-variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
-
-/-- Between finite-dimensional normed spaces over a complete nontrivially normed field, the
-contraction from the projective to the injective tensor product is a continuous linear
-equivalence. -/
-noncomputable def ProjectiveTensor.toInjectiveTensorEquiv :
-    ProjectiveTensor 𝕜 E F ≃L[𝕜] InjectiveTensor 𝕜 E F :=
-  LinearEquiv.toContinuousLinearEquiv
-    ((ProjectiveTensor.linearEquiv 𝕜 E F).trans (InjectiveTensor.linearEquiv 𝕜 E F).symm)
-
-@[simp] theorem ProjectiveTensor.toInjectiveTensorEquiv_toContinuousLinearMap :
-    (ProjectiveTensor.toInjectiveTensorEquiv (𝕜 := 𝕜) (E := E) (F := F)).toContinuousLinearMap =
-      ProjectiveTensor.toInjectiveTensor 𝕜 E F := by
-  ext u; simp [ProjectiveTensor.toInjectiveTensorEquiv]
-
-@[simp] theorem ProjectiveTensor.toInjectiveTensorEquiv_apply (u : ProjectiveTensor 𝕜 E F) :
-    ProjectiveTensor.toInjectiveTensorEquiv u = ⟨u.toTensorProduct⟩ := by
-  simp [ProjectiveTensor.toInjectiveTensorEquiv]
-
-@[simp] theorem ProjectiveTensor.toInjectiveTensorEquiv_symm_apply (u : InjectiveTensor 𝕜 E F) :
-    (ProjectiveTensor.toInjectiveTensorEquiv (𝕜 := 𝕜) (E := E) (F := F)).symm u =
-      ⟨u.toTensorProduct⟩ := by simp [ProjectiveTensor.toInjectiveTensorEquiv]
-
-end BothFiniteDimensional
 
 end NormedFiniteDimensional
 
@@ -193,34 +158,53 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
 
+private noncomputable def toOperatorInvOfBasis {ι : Type*} [Fintype ι]
+    (b : Module.Basis ι 𝕜 E) : (E →L[𝕜] F) →L[𝕜] ProjectiveTensor 𝕜 (StrongDual 𝕜 E) F :=
+  ∑ i, (tmulL 𝕜 (StrongDual 𝕜 E) F (LinearMap.toContinuousLinearMap (b.coord i))).comp
+    (ContinuousLinearMap.apply 𝕜 F (b i))
+
+private theorem toLinearMap_toOperator_congr (v : Module.Dual 𝕜 E ⊗[𝕜] F) :
+    (TensorProduct.toOperator (E := E) (F := F)
+      (_root_.TensorProduct.congr
+        (LinearMap.toContinuousLinearMap : Module.Dual 𝕜 E ≃ₗ[𝕜] StrongDual 𝕜 E)
+        (LinearEquiv.refl 𝕜 F) v)).toLinearMap =
+      dualTensorHom 𝕜 E F v := by
+  induction v with
+  | tmul φ y => ext x; simp
+  | add v₁ v₂ hv₁ hv₂ => simp [hv₁, hv₂]
+
+private theorem toTensorProduct_toOperatorInvOfBasis {ι : Type*} [DecidableEq ι] [Fintype ι]
+    (b : Module.Basis ι 𝕜 E) (T : E →L[𝕜] F) :
+    (toOperatorInvOfBasis b T).toTensorProduct =
+      _root_.TensorProduct.congr
+        (LinearMap.toContinuousLinearMap : Module.Dual 𝕜 E ≃ₗ[𝕜] StrongDual 𝕜 E)
+        (LinearEquiv.refl 𝕜 F)
+        ((dualTensorHomEquivOfBasis (N := F) b).symm T.toLinearMap) := by
+  rw [← linearEquiv_apply]
+  simp [toOperatorInvOfBasis, dualTensorHomEquivOfBasis]
+
 variable (𝕜 E F) in
 /-- When `E` is a finite-dimensional normed space over a complete nontrivially normed field `𝕜`,
 `ProjectiveTensor.toOperator 𝕜 E F` is a continuous linear equivalence onto `E →L[𝕜] F` for any
 seminormed `𝕜`-module `F`. -/
-noncomputable def toOperatorEquiv : ProjectiveTensor 𝕜 (StrongDual 𝕜 E) F ≃L[𝕜] E →L[𝕜] F := by
+noncomputable def toOperatorEquiv : ProjectiveTensor 𝕜 (StrongDual 𝕜 E) F ≃L[𝕜] E →L[𝕜] F :=
   let b := Module.Basis.ofVectorSpace 𝕜 E
   letI := FiniteDimensional.fintypeBasisIndex b
-  let inv : (E →L[𝕜] F) →L[𝕜] ProjectiveTensor 𝕜 (StrongDual 𝕜 E) F :=
-    ∑ i, (tmulL 𝕜 (StrongDual 𝕜 E) F (LinearMap.toContinuousLinearMap (b.coord i))).comp
-      (ContinuousLinearMap.apply 𝕜 F (b i))
-  have hleft : inv.comp (toOperator 𝕜 E F) = ContinuousLinearMap.id 𝕜 _ := by
-    refine continuousLinearMap_ext fun f y ↦ (linearEquiv 𝕜 (StrongDual 𝕜 E) F).injective ?_
-    simp only [inv, ContinuousLinearMap.coe_comp, Function.comp_apply, ContinuousLinearMap.id_apply,
-      toOperator_tmul, FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.apply_apply,
-      ContinuousLinearMap.smulRight_apply, map_sum, map_smul, tmulL_apply, linearEquiv_apply,
-      TensorProduct.smul_tmul', ← TensorProduct.sum_tmul]
-    refine congrArg (fun g : StrongDual 𝕜 E ↦ g ⊗ₜ[𝕜] y) ?_; ext x
-    simp only [LinearMap.coe_toContinuousLinearMap', LinearMap.sum_apply, LinearMap.smul_apply,
-      Module.Basis.coord_apply, smul_eq_mul, mul_comm (f _), ← map_smul, ← map_sum]
-    simpa only [map_sum, map_smul, smul_eq_mul] using congrArg f (b.sum_repr x)
-  refine ContinuousLinearEquiv.equivOfInverse (toOperator 𝕜 E F) inv
-    (fun u ↦ DFunLike.congr_fun hleft u) fun T ↦ ?_
-  simp only [inv, sum_apply, map_sum]; ext x
-  simp only [FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.coe_comp, Function.comp_apply,
-    ContinuousLinearMap.apply_apply, tmulL_apply, toOperator_tmul,
-    ContinuousLinearMap.smulRight_apply, LinearMap.coe_toContinuousLinearMap',
-    Module.Basis.coord_apply, ← map_smul, ← map_sum]
-  exact congrArg T (b.sum_repr x)
+  letI : DecidableEq (Module.Basis.ofVectorSpaceIndex 𝕜 E) := Classical.decEq _
+  let c : Module.Dual 𝕜 E ⊗[𝕜] F ≃ₗ[𝕜] StrongDual 𝕜 E ⊗[𝕜] F :=
+    _root_.TensorProduct.congr LinearMap.toContinuousLinearMap (LinearEquiv.refl 𝕜 F)
+  ContinuousLinearEquiv.equivOfInverse (toOperator 𝕜 E F) (toOperatorInvOfBasis b)
+    (fun ⟨u⟩ ↦ (linearEquiv 𝕜 (StrongDual 𝕜 E) F).injective <| by
+      obtain ⟨v, rfl⟩ := c.surjective u
+      rw [linearEquiv_apply, linearEquiv_apply, toTensorProduct_toOperatorInvOfBasis b,
+        toOperator_mk, toLinearMap_toOperator_congr, dualTensorHomEquivOfBasis_symm_cancel_left])
+    (fun T ↦ ContinuousLinearMap.coe_injective <| DFunLike.coe_injective <| by
+      rcases hv : toOperatorInvOfBasis b T with ⟨w⟩
+      have h : w = c ((dualTensorHomEquivOfBasis (N := F) b).symm T.toLinearMap) := by
+        simpa [hv] using toTensorProduct_toOperatorInvOfBasis b T
+      have hr := congrArg DFunLike.coe
+        (dualTensorHomEquivOfBasis_symm_cancel_right b T.toLinearMap)
+      rwa [← toLinearMap_toOperator_congr, ← h, ← toOperator_mk] at hr)
 
 @[simp] theorem toOperatorEquiv_toContinuousLinearMap :
     (toOperatorEquiv 𝕜 E F).toContinuousLinearMap = toOperator 𝕜 E F := (rfl)

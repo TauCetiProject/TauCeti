@@ -32,7 +32,9 @@ over a semiring with the indiscrete topology, the module topology of every modul
 separation of the scalars.
 
 Without a basis, any linear equivalence between modules with the module topology is a continuous
-linear equivalence (`LinearEquiv.toContinuousLinearEquivOfIsModuleTopology`). The module topology
+linear equivalence (`LinearEquiv.toContinuousLinearEquivOfIsModuleTopology`), and a tensor product
+`M ⊗[𝕜] N` carrying the `𝕜`-module topology is a topological additive group
+(`TauCeti.instIsTopologicalAddGroupTensorProductOfIsModuleTopology`). The module topology
 on `M` is the quotient topology along any linear surjection `q : F → M` from a module with its
 module topology (`LinearMap.quotKerContinuousLinearEquivOfSurjective`), so any two presentations of
 an untopologised module from modules with the module topology induce topologically isomorphic
@@ -336,5 +338,15 @@ theorem _root_.IndiscreteTopology.of_continuousSMul (R M : Type*) [MonoidWithZer
   have h (x : M) : Inseparable (0 : M) x := by
     simpa using (Inseparable.all (0 : R) 1).smul (.refl x)
   exact .of_forall_inseparable fun x y ↦ (h x).symm.trans (h y)
+
+/-- A tensor product `M ⊗[𝕜] N` carrying the `𝕜`-module topology is a topological additive group;
+unlike `IsModuleTopology.isTopologicalAddGroup`, this can be an instance because `𝕜` appears in the
+type `TensorProduct 𝕜 M N`. -/
+instance instIsTopologicalAddGroupTensorProductOfIsModuleTopology
+    {𝕜 M N : Type*} [CommRing 𝕜] [TopologicalSpace 𝕜]
+    [AddCommGroup M] [Module 𝕜 M] [AddCommGroup N] [Module 𝕜 N]
+    [TopologicalSpace (TensorProduct 𝕜 M N)] [IsModuleTopology 𝕜 (TensorProduct 𝕜 M N)] :
+    IsTopologicalAddGroup (TensorProduct 𝕜 M N) :=
+  IsModuleTopology.isTopologicalAddGroup 𝕜 (TensorProduct 𝕜 M N)
 
 end TauCeti
