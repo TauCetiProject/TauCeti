@@ -420,6 +420,8 @@ theorem IsOrientationPreservingAt.partialDiffeomorph_symm [IsManifold I 1 M]
     (Φ.toPartialEquiv.right_inv hy) ?_) (Φ.symm.mdifferentiableAt hn hy)
   have heq : ⇑Φ ∘ ⇑Φ.symm =ᶠ[𝓝 y] id := Φ.toOpenPartialHomeomorph.eventually_right_inverse hy
   rw [heq.mfderiv_eq, mfderiv_id]
+  -- `EventuallyEq.mfderiv_eq` composes with `tangentSpaceCast`, the identification of the
+  -- tangent spaces at `y` and `Φ (Φ.symm y)`, which is the identity map.
   exact ContinuousLinearMap.ext fun _ ↦ rfl
 
 /-- If a `C^n` diffeomorphism `φ` of `M`, `n ≠ 0`, preserves an orientation `o` at every point,
