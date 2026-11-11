@@ -43,7 +43,9 @@ images of the fixed vectors of `Ψ`
 (`Matrix.forall_im_symplecticGraphFrame_mulVec_eq_zero_iff`), so the crossings of a path of graphs
 with the diagonal are the times at which `Ψ` has the eigenvalue `1`.
 
-The unitary polar factor of `N(Ψ)` (`TauCeti.GLSymplectic.graphFrame`) is a unitary frame of the
+The unitary polar factor of `N(Ψ)` (`TauCeti.GLSymplectic.graphFrame`, so that
+`N(Ψ) = graphFrame Ψ * √(N(Ψ)ᴴ N(Ψ))` by
+`TauCeti.GLSymplectic.graphFrame_mul_sqrt_conjTranspose_mul_self`) is a unitary frame of the
 same Lagrangian (`TauCeti.GLSymplectic.realImage_graphFrame`), depending continuously on `Ψ`, and
 equal to `1` at `Ψ = 1`. The Maslov index of the path of these frames is the Robbin–Salamon index
 `μ_RS(graph Ψ, Δ)` of the path of graphs relative to the diagonal
@@ -261,6 +263,16 @@ theorem continuous_graphFrame : Continuous (graphFrame : GLSymplectic n ℝ → 
     ((contMDiff_toUnits_polarUnitary (n := n ⊕ n) (𝕜 := ℂ) (k := 0)).continuous.comp
       continuous_graphFrameUnit)
   exact continuous_induced_rng.2 h
+
+/-- **The polar decomposition of the graph frame.** The unitary graph frame of `A` is the unitary
+polar factor of `N(A)`: `N(A) = graphFrame A * √(N(A)ᴴ N(A))`. -/
+theorem graphFrame_mul_sqrt_conjTranspose_mul_self (A : GLSymplectic n ℝ) :
+    (graphFrame A : Matrix (n ⊕ n) (n ⊕ n) ℂ) *
+        CFC.sqrt ((symplecticGraphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ))ᴴ *
+          symplecticGraphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)) =
+      symplecticGraphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) := by
+  have h := Units.polarUnitary_mul_sqrt_star_mul (graphFrameUnit A)
+  rwa [coe_graphFrameUnit, star_eq_conjTranspose] at h
 
 private theorem star_graphFrameUnit_mul_self (A : GLSymplectic n ℝ) :
     star (graphFrameUnit A : Matrix (n ⊕ n) (n ⊕ n) ℂ) *
