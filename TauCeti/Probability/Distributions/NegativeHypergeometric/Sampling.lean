@@ -100,8 +100,9 @@ theorem map_failuresBeforeSuccess_preimage_uniformOn_perm (s : Finset (Fin N)) (
   have hsN : #s ≤ N := by simpa using s.card_le_univ
   have h := congrArg (fun μ ↦ (μ.map (Finset.map Fin.valEmbedding)).map
     (fun t : Finset ℕ ↦ t.failuresBeforeSuccess r)) s.map_preimage_uniformOn_perm
-  rw [Fin.valEmbedding.map_finsetMap_uniformOn_powersetCard, Fin.map_valEmbedding_univ,
-    Nat.Iio_eq_range, map_failuresBeforeSuccess_uniformOn_powersetCard hr hsN,
+  rw [Set.powersetCard.coe_finset, Fin.valEmbedding.map_finsetMap_uniformOn_powersetCard,
+    Fin.map_valEmbedding_univ, Nat.Iio_eq_range,
+    map_failuresBeforeSuccess_uniformOn_powersetCard hr hsN,
     Measure.map_map (measurable_of_countable _) (measurable_of_countable _),
     Measure.map_map (measurable_of_countable _) (measurable_of_countable _)] at h
   exact h

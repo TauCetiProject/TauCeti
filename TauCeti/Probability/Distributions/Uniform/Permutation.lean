@@ -82,16 +82,16 @@ end Finset
 
 namespace Function.Embedding
 
-variable {α β : Type*} [Fintype α]
+variable {α β : Type*}
     [MeasurableSpace (Finset α)] [MeasurableSingletonClass (Finset α)]
     [MeasurableSpace (Finset β)] [MeasurableSingletonClass (Finset β)]
 
-/-- An embedding sends a uniform `n`-element subset of a finite type to a uniform `n`-element
-subset of the image of the embedding. This moves positions indexed by `Fin N` into `ℕ`. -/
-theorem map_finsetMap_uniformOn_powersetCard (f : α ↪ β) (n : ℕ) :
-    (uniformOn (Set.powersetCard α n)).map (Finset.map f) =
-      uniformOn ((Finset.univ.map f).powersetCard n : Set (Finset β)) := by
-  rw [Set.powersetCard.coe_finset, Finset.powersetCard_map]
+/-- An embedding sends a uniform `n`-element subset of a finset `s` to a uniform `n`-element
+subset of the image of `s`. This moves positions indexed by `Fin N` into `ℕ`. -/
+theorem map_finsetMap_uniformOn_powersetCard (f : α ↪ β) (s : Finset α) (n : ℕ) :
+    (uniformOn (s.powersetCard n : Set (Finset α))).map (Finset.map f) =
+      uniformOn ((s.map f).powersetCard n : Set (Finset β)) := by
+  rw [Finset.powersetCard_map]
   exact (Finset.mapEmbedding f).toEmbedding.map_uniformOn_finset _
 
 end Function.Embedding
