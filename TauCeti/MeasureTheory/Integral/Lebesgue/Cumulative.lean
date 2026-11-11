@@ -13,7 +13,7 @@ import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.Topology.Order.IsLUB
 
 /-!
-# Left continuity of cumulative lower integrals
+# Cumulative lower integrals: left continuity and budget truncation
 
 Cumulative nonnegative integrals over open initial segments are left-continuous, even when
 infinite. For an atomless measure the same holds for closed initial segments. No integrability

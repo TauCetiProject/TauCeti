@@ -21,7 +21,8 @@ bounds it, and it lies between the open and the closed interval spanned by its i
 supremum.
 
 Pulling real Lebesgue measure on `(0,T]` back to `ℝ≥0` commutes with restriction,
-and the resulting finite-horizon measure has total mass `T`.
+and the resulting finite-horizon measure has total mass `T`. The unrestricted pullback is
+atomless and finite on compact sets.
 
 On a finite coordinate space `ι → ℝ`, permuting the coordinates and changing their signs
 preserves Lebesgue measure (`TauCeti.volume_preserving_signedPerm`).
@@ -36,6 +37,17 @@ open MeasureTheory Set
 open scoped ENNReal NNReal Interval
 
 namespace NNReal
+
+/-- The pullback of real Lebesgue measure to `ℝ≥0` is finite on compact sets. -/
+instance instIsFiniteMeasureOnCompactsComapVolume :
+    IsFiniteMeasureOnCompacts (volume.comap ((↑) : ℝ≥0 → ℝ)) :=
+  .comap' volume NNReal.continuous_coe NNReal.isClosedEmbedding_coe.measurableEmbedding
+
+/-- The pullback of real Lebesgue measure to `ℝ≥0` has no atoms. -/
+instance instNullSingletonClassComapVolume :
+    NullSingletonClass (volume.comap ((↑) : ℝ≥0 → ℝ)) := ⟨fun t ↦ by
+  rw [NNReal.isClosedEmbedding_coe.measurableEmbedding.comap_apply]
+  simp⟩
 
 /-- Pulling Lebesgue measure on `(0,T]` back to `ℝ≥0` is the restriction of its pullback. -/
 theorem comap_volume_restrict_Ioc (T : ℝ≥0) :

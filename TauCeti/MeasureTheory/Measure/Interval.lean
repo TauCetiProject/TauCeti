@@ -22,11 +22,16 @@ Mathlib's `MeasureTheory.tendsto_measure_Ioc_atBot` lets the left endpoint of `(
 `x ↦ μ (-∞, x]` and `x ↦ μ (-∞, x)` at `a` from the right, where both tend to `μ (-∞, a]`.
 Reflection exchanges the two open tails.
 
+In a second-countable order topology, a set has mass at most `C` if every closed initial
+segment `(-∞, x]` with `x` in the set has mass at most `C`; the set need not be measurable.
+
 On `ℝ`, a uniform bound `C` on the mass of the unit windows `[a, a + 1]` bounds the mass of
 longer windows linearly in their length, and so makes the measure locally finite.
 
 ## Main results
 
+* `MeasureTheory.Measure.measure_le_of_forall_measure_Iic_le`: bounds the mass of a set by
+  a uniform bound on closed initial segments ending in that set, without measurability of the set.
 * `MeasureTheory.tendsto_measure_Ioo_atBot`, `MeasureTheory.tendsto_measure_Icc_atBot`:
   `μ (x, a) → μ (-∞, a)` and `μ [x, a] → μ (-∞, a]` as `x → -∞`.
 * `MeasureTheory.tendsto_measure_Iio_nhdsGT`, `MeasureTheory.tendsto_measure_Iic_nhdsGT`:

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Process.AccumulatedEnergy
-public import TauCeti.Probability.BrownianMotion.Integral.Integrable
 
 /-!
 # Bounded-energy truncations of predictable integrands
@@ -17,10 +16,10 @@ original path has infinite energy. Under a finite sample measure the truncation 
 belongs to the expected-square-energy domain. No moment assumption on the original
 integrand or usual conditions on the filtration are needed.
 
-For a locally square-integrable integrand, the integer-budget truncations eventually agree
-with the original integrand on each finite horizon, path by path outside one null set.
-These approximations allow local stochastic integration to be reduced to the expected-energy
-case. They do not themselves construct stochastic integrals or stopping times.
+On any finite-energy path and horizon, the integer-budget truncations eventually agree
+with the original integrand on that horizon. Brownian-specific integrability and almost-everywhere
+recovery results are in `TauCeti.Probability.BrownianMotion.Integral.EnergyTruncation`.
+These approximations do not themselves construct stochastic integrals or stopping times.
 
 ## References
 
@@ -84,11 +83,9 @@ theorem lintegral_sq_energyTruncation_le (μ : Measure ℝ≥0) (H : ℝ≥0 →
   have heq (t : ℝ≥0) : ‖μ.energyTruncation H C t ω‖ₑ ^ 2 =
       {u | ∫⁻ v in Iic u, ‖H v ω‖ₑ ^ 2 ∂μ ≤ C}.indicator
         (fun u ↦ ‖H u ω‖ₑ ^ 2) t := by
-    by_cases h : μ.accumulatedEnergy H t ω ≤ C
-    · simp [energyTruncation_def, accumulatedEnergy_def] at h ⊢
-      simp [h]
-    · simp [energyTruncation_def, accumulatedEnergy_def] at h ⊢
-      simp [h]
+    simp only [energyTruncation_def, accumulatedEnergy_def, Set.indicator_apply,
+      Set.mem_ofPred_eq]
+    split_ifs <;> simp
   simpa only [heq] using
     μ.lintegral_indicator_setLIntegral_Iic_le (fun t ↦ ‖H t ω‖ₑ ^ 2) C
 
@@ -138,52 +135,3 @@ theorem memLp_energyTruncation {P : Measure Ω} [IsFiniteMeasure P]
     _ < ∞ := by simp [ENNReal.mul_lt_top, measure_lt_top]
 
 end MeasureTheory.IsStronglyPredictable
-
-namespace TauCeti
-
-variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ}
-  {P : Measure Ω} {H : ℝ≥0 → Ω → ℝ}
-
-/-- Every finite-budget truncation of a predictable real process is Brownian integrable
-under a finite sample measure, even when the original process has infinite expected energy. -/
-theorem brownianIntegrable_energyTruncation [IsFiniteMeasure P]
-    (hH : IsStronglyPredictable ℱ H) (C : ℝ≥0) :
-    BrownianIntegrable ℱ P
-      ((volume.comap ((↑) : ℝ≥0 → ℝ)).energyTruncation H C) := by
-  let μ := volume.comap ((↑) : ℝ≥0 → ℝ)
-  let : IsFiniteMeasureOnCompacts μ := .comap' volume NNReal.continuous_coe
-    NNReal.isClosedEmbedding_coe.measurableEmbedding
-  let : NullSingletonClass μ := ⟨fun t ↦ by
-    rw [NNReal.isClosedEmbedding_coe.measurableEmbedding.comap_apply]
-    simp⟩
-  refine ⟨hH.energyTruncation μ C, fun T ↦ ?_⟩
-  rw [NNReal.comap_volume_restrict_Ioc]
-  exact (hH.memLp_energyTruncation μ C).mono_measure
-    (Measure.prod_mono Measure.restrict_le_self le_rfl)
-
-/-- For a locally Brownian-integrable process, on one sample-full event and each finite
-horizon, integer-budget truncations eventually agree with the original process everywhere
-on that horizon. There is no uniform deterministic budget across samples. -/
-theorem LocallyBrownianIntegrable.ae_eventually_energyTruncation_eqOn
-    (hH : LocallyBrownianIntegrable ℱ P H) :
-    ∀ᵐ ω ∂P, ∀ T : ℝ≥0, ∀ᶠ n : ℕ in atTop,
-      EqOn (fun t ↦ (volume.comap ((↑) : ℝ≥0 → ℝ)).energyTruncation H n t ω)
-        (fun t ↦ H t ω) (Iic T) := by
-  let μ := volume.comap ((↑) : ℝ≥0 → ℝ)
-  let : NullSingletonClass μ := ⟨fun t ↦ by
-    rw [NNReal.isClosedEmbedding_coe.measurableEmbedding.comap_apply]
-    simp⟩
-  filter_upwards [hH.ae_memLp] with ω hω
-  intro T
-  have heq : Ioc 0 T =ᵐ[μ] Iic T := by
-    have hnonzero : ∀ᵐ t ∂μ, t ≠ 0 := by simp [ae_iff]
-    filter_upwards [hnonzero] with t ht
-    simp [pos_iff_ne_zero, ht]
-  have hfinite := (eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top
-    (by norm_num) (by norm_num) (hω T).aestronglyMeasurable).mp (hω T)
-  norm_num only [ENNReal.toReal_ofNat, ENNReal.rpow_two] at hfinite
-  rw [NNReal.comap_volume_restrict_Ioc, Measure.restrict_congr_set heq] at hfinite
-  exact μ.eventually_energyTruncation_eqOn
-    (by simpa only [Measure.accumulatedEnergy_def] using hfinite)
-
-end TauCeti
