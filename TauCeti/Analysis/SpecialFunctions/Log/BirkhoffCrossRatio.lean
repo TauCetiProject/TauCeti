@@ -22,11 +22,11 @@ derivative `l * exp σ / (1 + l * exp σ) - exp σ / (l + exp σ)`, which is at 
 `(l - 1) / (l + 1)` (with equality at `σ = 0`). It is therefore bounded by `(l - 1) / (l + 1) * σ`
 for `σ ≥ 0`. Writing `l = exp (Δ / 2)`, the slope is `tanh (Δ / 4)`.
 
-Combined with a polynomial inequality, this gives the following for `R ≥ 1`, `l ≥ 1` and
-nonnegative `α, β, α', β'`. The logarithmic cross ratio of the pairs `(R * α + β, α + β)` and
-`(R * α' + β', α' + β')` is at most `(l - 1) / (l + 1) * log R` whenever the pairs `(α, β)` and
-`(α', β')` themselves have cross ratio `α * β' / (β * α')` at most `l ^ 2`. This is Birkhoff's
-theorem in two dimensions.
+Combined with a polynomial inequality, this gives the following for `R ≥ 1`, `l ≥ 1`,
+nonnegative `α, β, β'` and arbitrary `α'`. The logarithmic cross ratio of the pairs
+`(R * α + β, α + β)` and `(R * α' + β', α' + β')` is at most `(l - 1) / (l + 1) * log R`
+whenever the pairs `(α, β)` and `(α', β')` themselves have cross ratio `α * β' / (β * α')` at most
+`l ^ 2`. This is Birkhoff's theorem in two dimensions.
 
 ## Main results
 
@@ -76,19 +76,31 @@ theorem log_one_add_mul_exp_div_add_exp_le {l σ : ℝ} (hl : 1 ≤ l) (hσ : 0 
   linarith
 
 /-- If `α' < 0`, then the inequality `α * β' ≤ l ^ 2 * (β * α')` with `α, β, β' ≥ 0` and `1 ≤ l`
-forces `β = 0` and `α * β' = 0`. -/
-private theorem eq_zero_of_birkhoff_of_neg {α β α' β' l : ℝ} (hα : 0 ≤ α) (hβ : 0 ≤ β)
-    (hβ' : 0 ≤ β') (hα' : α' < 0) (hl : 1 ≤ l) (h : α * β' ≤ l ^ 2 * (β * α')) :
-    β = 0 ∧ α * β' = 0 := by
+forces `β = 0` and `α * β' = 0`, so for every `c ≠ 0` the cross ratio of `(c * α + β, α + β)` and
+`(c * α' + β', α' + β')` is `0` or `1`. -/
+private theorem cross_ratio_eq_zero_or_one_of_birkhoff_of_neg {α β α' β' c l : ℝ} (hc : c ≠ 0)
+    (hα : 0 ≤ α) (hβ : 0 ≤ β) (hβ' : 0 ≤ β') (hα' : α' < 0) (hl : 1 ≤ l)
+    (h : α * β' ≤ l ^ 2 * (β * α')) :
+    (c * α + β) * (α' + β') / ((α + β) * (c * α' + β')) = 0 ∨
+      (c * α + β) * (α' + β') / ((α + β) * (c * α' + β')) = 1 := by
   have hl2 : 0 < l ^ 2 := pow_pos (zero_lt_one.trans_le hl) 2
   have h1 : l ^ 2 * (β * α') ≤ 0 :=
     mul_nonpos_of_nonneg_of_nonpos hl2.le (mul_nonpos_of_nonneg_of_nonpos hβ hα'.le)
-  have h2 : α * β' = 0 := le_antisymm (h.trans h1) (mul_nonneg hα hβ')
-  refine ⟨?_, h2⟩
-  by_contra hβ0
-  have : l ^ 2 * (β * α') < 0 :=
-    mul_neg_of_pos_of_neg hl2 (mul_neg_of_pos_of_neg (lt_of_le_of_ne hβ (Ne.symm hβ0)) hα')
-  linarith
+  have hαβ' : α * β' = 0 := le_antisymm (h.trans h1) (mul_nonneg hα hβ')
+  obtain rfl : β = 0 := by
+    by_contra hβ0
+    have : l ^ 2 * (β * α') < 0 :=
+      mul_neg_of_pos_of_neg hl2 (mul_neg_of_pos_of_neg (lt_of_le_of_ne hβ (Ne.symm hβ0)) hα')
+    linarith
+  rcases hα.eq_or_lt with rfl | hαpos
+  · left
+    simp
+  right
+  obtain rfl : β' = 0 := (mul_eq_zero.mp hαβ').resolve_left hαpos.ne'
+  have hα0 : α ≠ 0 := hαpos.ne'
+  have hα'0 : α' ≠ 0 := hα'.ne
+  field_simp
+  ring
 
 /-- The two-dimensional cross-ratio inequality behind Birkhoff's theorem. Let `1 ≤ s` and
 `1 ≤ l`, let `α, β, β'` be nonnegative, and let `α'` be arbitrary with
@@ -100,18 +112,11 @@ theorem birkhoff_cross_ratio_le {α β α' β' s l : ℝ} (hα : 0 ≤ α) (hβ 
       ((1 + l * s) / (l + s)) ^ 2 := by
   by_cases hα' : 0 ≤ α'
   swap
-  · -- A negative `α'` forces `β = 0` and `α * β' = 0`, so the cross ratio is `0` or `1`.
-    obtain ⟨rfl, hαβ'⟩ := eq_zero_of_birkhoff_of_neg hα hβ hβ' (not_le.mp hα') hl h
-    rcases hα.eq_or_lt with rfl | hαpos
-    · simp only [mul_zero, zero_add, zero_mul, zero_div]
+  · -- A negative `α'` makes the cross ratio `0` or `1`.
+    rcases cross_ratio_eq_zero_or_one_of_birkhoff_of_neg (c := s ^ 2) (by positivity) hα hβ hβ'
+      (not_le.mp hα') hl h with h0 | h1
+    · rw [h0]
       positivity
-    obtain rfl : β' = 0 := (mul_eq_zero.mp hαβ').resolve_left hαpos.ne'
-    have hs0 : s ≠ 0 := by positivity
-    have hα0 : α ≠ 0 := hαpos.ne'
-    have hα'0 : α' ≠ 0 := (not_le.mp hα').ne
-    have h1 : (s ^ 2 * α + 0) * (α' + 0) / ((α + 0) * (s ^ 2 * α' + 0)) = 1 := by
-      field_simp
-      ring
     have hls : l + s ≤ 1 + l * s := by nlinarith
     rw [h1, div_pow]
     refine (one_le_div (by positivity)).2 ?_
@@ -137,8 +142,8 @@ theorem birkhoff_cross_ratio_le {α β α' β' s l : ℝ} (hα : 0 ≤ α) (hβ 
   linear_combination mul_le_mul_of_nonneg_right h₁ (by positivity : 0 ≤ (α' + β') * (l + s) ^ 2) +
     mul_le_mul_of_nonneg_left h₂ (by positivity : 0 ≤ α + β)
 
-/-- The two-dimensional form of Birkhoff's theorem: for `R ≥ 1`, `l ≥ 1` and nonnegative
-`α, β, α', β'` with `α * β' ≤ l ^ 2 * (β * α')`, the logarithmic cross ratio of
+/-- The two-dimensional form of Birkhoff's theorem: for `R ≥ 1`, `l ≥ 1`, nonnegative `α, β, β'`
+and arbitrary `α'` with `α * β' ≤ l ^ 2 * (β * α')`, the logarithmic cross ratio of
 `(R * α + β, α + β)` and `(R * α' + β', α' + β')` is at most `(l - 1) / (l + 1) * log R`. -/
 theorem log_birkhoff_cross_ratio_le {α β α' β' R l : ℝ} (hα : 0 ≤ α) (hβ : 0 ≤ β)
     (hβ' : 0 ≤ β') (hR : 1 ≤ R) (hl : 1 ≤ l) (h : α * β' ≤ l ^ 2 * (β * α')) :
@@ -150,19 +155,12 @@ theorem log_birkhoff_cross_ratio_le {α β α' β' R l : ℝ} (hα : 0 ≤ α) (
   have hnn : 0 ≤ (R * α + β) * (α' + β') / ((α + β) * (R * α' + β')) := by
     by_cases hα' : 0 ≤ α'
     · positivity
-    -- A negative `α'` forces `β = 0` and `α * β' = 0`, so the cross ratio is `0` or `1`.
-    obtain ⟨rfl, hαβ'⟩ := eq_zero_of_birkhoff_of_neg hα hβ hβ' (not_le.mp hα') hl h
-    rcases hα.eq_or_lt with rfl | hαpos
-    · simp
-    obtain rfl : β' = 0 := (mul_eq_zero.mp hαβ').resolve_left hαpos.ne'
-    have hR0 : R ≠ 0 := by positivity
-    have hα0 : α ≠ 0 := hαpos.ne'
-    have hα'0 : α' ≠ 0 := (not_le.mp hα').ne
-    have h1 : (R * α + 0) * (α' + 0) / ((α + 0) * (R * α' + 0)) = 1 := by
-      field_simp
-      ring
-    rw [h1]
-    exact zero_le_one
+    -- A negative `α'` makes the cross ratio `0` or `1`.
+    rcases cross_ratio_eq_zero_or_one_of_birkhoff_of_neg (c := R) (by positivity) hα hβ hβ'
+      (not_le.mp hα') hl h with h0 | h1
+    · rw [h0]
+    · rw [h1]
+      exact zero_le_one
   rcases hnn.eq_or_lt with h0 | h0
   · rw [← h0, log_zero]
     exact mul_nonneg (div_nonneg (by linarith) (by linarith)) (log_nonneg hR)
