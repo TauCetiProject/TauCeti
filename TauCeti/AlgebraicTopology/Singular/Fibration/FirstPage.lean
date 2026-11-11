@@ -63,9 +63,9 @@ lemma ofInclusion_preimageSkeleton_eq_preimageSkeletonPair (d : ℕ)
     (h : preimageSkeleton C p ((d : ℤ) - 1) ⊆ preimageSkeleton C p d) :
     TopPair.ofInclusion h = preimageSkeletonPair p C d := by
   have h₁ : preimageSkeleton C p ((d : ℤ) - 1) = p ⁻¹' skeletonLT C (d : ℕ∞) := by
-    rw [preimageSkeleton_def, show ((d : ℤ) - 1 + 1).toNat = d by lia]
+    rw [preimageSkeleton_def, sub_add_cancel, Int.toNat_natCast]
   have h₂ : preimageSkeleton C p d = p ⁻¹' skeletonLT C ((d : ℕ∞) + 1) := by
-    rw [preimageSkeleton_def, show ((d : ℤ) + 1).toNat = d + 1 by lia, Nat.cast_add, Nat.cast_one]
+    rw [preimageSkeleton_def, ← Nat.cast_add_one (R := ℤ), Int.toNat_natCast, Nat.cast_add_one]
   revert h
   rw [h₁, h₂]
   intro h

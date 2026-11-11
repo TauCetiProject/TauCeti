@@ -95,6 +95,7 @@ def serreSpectralObjectPullbackAbutmentIso {g : B' ⟶ B} (hg : g.hom.IsWeakHomo
     asIso (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
       (ModuleCat.of R R)).map (_root_.TopCat.pullbackSnd g p))
 
+@[simp]
 lemma serreSpectralObjectPullbackAbutmentIso_hom {g : B' ⟶ B}
     (hg : g.hom.IsWeakHomotopyEquivalence) (n : ℕ) :
     (serreSpectralObjectPullbackAbutmentIso hp R C hg n).hom =
@@ -122,7 +123,7 @@ def serreSpectralSequencePullbackFirstPageXIsoSigma (g : B' ⟶ B) (pq : ℤ × 
     Sigma.mapIso fun j ↦ ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) t).obj
       (ModuleCat.of R R)).mapIso (p.fiberPullbackFstIso g (map d j 0))
 
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma ι_serreSpectralSequencePullbackFirstPageXIsoSigma_inv (g : B' ⟶ B) (pq : ℤ × ℤ) (d t : ℕ)
     (hd : pq.2 + 1 = d) (ht : pq.1 + pq.2 = -((t + d : ℕ) : ℤ)) (j : cell C d) :
     Sigma.ι _ j ≫ (serreSpectralSequencePullbackFirstPageXIsoSigma hp R C g pq d t hd ht).inv =
@@ -173,6 +174,14 @@ def arbitraryBaseSerreAbutmentIso (n : ℕ) :
   serreSpectralObjectPullbackAbutmentIso hp R univ
     (isWeakHomotopyEquivalence_sigmaCWApproximationMap B) n
 
+@[simp]
+lemma arbitraryBaseSerreAbutmentIso_hom (n : ℕ) :
+    (arbitraryBaseSerreAbutmentIso hp R n).hom =
+      (filteredSpaceAbutmentIso (ModuleCat.of R R) (monotone_preimageSkeleton _) n).hom ≫
+        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
+          (ModuleCat.of R R)).map (_root_.TopCat.pullbackSnd (sigmaCWApproximationMap B) p) :=
+  serreSpectralObjectPullbackAbutmentIso_hom ..
+
 include hp in
 /-- **The first page of the Serre spectral sequence over an arbitrary base.** The object of the
 first page (numbered `2`) of `TauCeti.TopCat.arbitraryBaseSerreSpectralSequence p R` at
@@ -187,6 +196,22 @@ def arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigma (pq : ℤ × ℤ) (d t 
           (ModuleCat.of R R)).obj (p.fiber (sigmaCWApproximationMap B (map d j 0))) :=
   serreSpectralSequencePullbackFirstPageXIsoSigma hp R univ (sigmaCWApproximationMap B) pq d t hd
     ht
+
+@[reassoc (attr := simp)]
+lemma ι_arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigma_inv (pq : ℤ × ℤ) (d t : ℕ)
+    (hd : pq.2 + 1 = d) (ht : pq.1 + pq.2 = -((t + d : ℕ) : ℤ))
+    (j : cell (univ : Set (sigmaCWApproximation B)) d) :
+    Sigma.ι _ j ≫ (arbitraryBaseSerreSpectralSequenceFirstPageXIsoSigma hp R pq d t hd ht).inv =
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) t).obj
+          (ModuleCat.of R R)).map
+          (p.fiberPullbackFstIso (sigmaCWApproximationMap B) (map d j 0)).inv ≫
+        Sigma.ι (fun j : cell (univ : Set (sigmaCWApproximation B)) d ↦
+          ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) t).obj
+            (ModuleCat.of R R)).obj
+            ((_root_.TopCat.pullbackFst (sigmaCWApproximationMap B) p).fiber (map d j 0))) j ≫
+        (serreSpectralSequenceFirstPageXIsoSigma univ
+          (mem_serreFibrations_pullbackFst hp (sigmaCWApproximationMap B)) R pq d t hd ht).inv :=
+  ι_serreSpectralSequencePullbackFirstPageXIsoSigma_inv ..
 
 include hp in
 /-- **The filtration of the abutment of the Serre spectral sequence over an arbitrary base reaches
