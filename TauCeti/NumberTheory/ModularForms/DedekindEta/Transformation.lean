@@ -64,9 +64,12 @@ namespace TauCeti.ModularForm
 /-- **The translation law of `η`**: `η(τ + n) = e^{π i n / 12} η(τ)` for every integer `n`. -/
 theorem eta_add_intCast (τ : ℂ) (n : ℤ) : η (τ + n) = cexp (π * I * n / 12) * η τ := by
   have hq (m : ℕ) : _root_.ModularForm.eta_q m (τ + n) = _root_.ModularForm.eta_q m τ := by
+    have harg : 2 * π * I * (m + 1) * (τ + n) =
+        2 * π * I * (m + 1) * τ + ((m + 1) * n : ℤ) * (2 * π * I) := by
+      push_cast
+      ring
     simp only [_root_.ModularForm.eta_q_eq_cexp]
-    rw [show 2 * π * I * (m + 1) * (τ + n) = 2 * π * I * (m + 1) * τ + ((m + 1) * n : ℤ) *
-      (2 * π * I) by push_cast; ring, Complex.exp_add, exp_int_mul_two_pi_mul_I, mul_one]
+    rw [harg, Complex.exp_add, exp_int_mul_two_pi_mul_I, mul_one]
   have hexp : Function.Periodic.qParam 24 (τ + n) =
       cexp (π * I * n / 12) * Function.Periodic.qParam 24 τ := by
     simp only [Function.Periodic.qParam, ← Complex.exp_add]
@@ -79,26 +82,11 @@ theorem eta_add_intCast (τ : ℂ) (n : ℤ) : η (τ + n) = cexp (π * I * n / 
 theorem eta_add_one (τ : ℂ) : η (τ + 1) = cexp (π * I / 12) * η τ := by
   simpa using eta_add_intCast τ 1
 
-/-- On the upper half-plane, the principal root of `-i τ` is `(√i)⁻¹ √τ`: both have argument
-`(arg τ - π / 2) / 2`. -/
-private theorem sqrt_neg_I_mul {τ : ℂ} (hτ : 0 < τ.im) :
-    Complex.sqrt (-I * τ) = (Complex.sqrt I)⁻¹ * Complex.sqrt τ := by
-  have hτ₀ : τ ≠ 0 := fun h ↦ by simp [h] at hτ
-  have hlog : log (-I * τ) = log (-I) + log τ := by
-    refine (log_mul_eq_add_log_iff (neg_ne_zero.2 I_ne_zero) hτ₀).2 ?_
-    rw [arg_neg_I]
-    have h₀ : 0 ≤ arg τ := arg_nonneg_iff.2 hτ.le
-    constructor <;> linarith [arg_le_pi τ, Real.pi_pos]
-  rw [sqrt_eq_exp (mul_ne_zero (neg_ne_zero.2 I_ne_zero) hτ₀), sqrt_eq_exp I_ne_zero,
-    sqrt_eq_exp hτ₀, hlog, log_neg_I, log_I, ← Complex.exp_neg, ← Complex.exp_add]
-  congr 1
-  ring
-
 /-- **The inversion law of `η`**: `η(-1/τ) = √(-i τ) η(τ)` on the upper half-plane, with the
 principal square root, which is positive at `τ = i`. -/
 theorem eta_neg_one_div {τ : ℂ} (hτ : 0 < τ.im) :
     η (-1 / τ) = Complex.sqrt (-I * τ) * η τ := by
-  rw [sqrt_neg_I_mul hτ, mul_assoc]
+  rw [Complex.sqrt_neg_I_mul hτ, mul_assoc]
   simpa using _root_.ModularForm.eta_comp_eq_csqrt_I_inv hτ
 
 /-! ### The eta multiplier -/
@@ -123,7 +111,7 @@ private theorem denom_ne_zero' (γ : SL(2, ℤ)) (τ : ℍ) : (γ 1 0 : ℂ) * �
 
 private theorem sqrt_denom_mul_eta_ne_zero (γ : SL(2, ℤ)) (τ : ℍ) :
     Complex.sqrt ((γ 1 0 : ℂ) * τ + γ 1 1) * η τ ≠ 0 :=
-  mul_ne_zero (by simpa [Complex.sqrt, cpow_eq_zero_iff] using denom_ne_zero' γ τ)
+  mul_ne_zero (Complex.sqrt_eq_zero_iff.not.2 (denom_ne_zero' γ τ))
     (_root_.ModularForm.eta_ne_zero τ.2)
 
 /-- `Δ(γ τ) = (c τ + d)¹² Δ(τ)` for `γ ∈ SL(2, ℤ)`, in terms of `η`. -/
@@ -141,8 +129,8 @@ private noncomputable def etaQuotient (γ : SL(2, ℤ)) (τ : ℍ) : ℂ :=
 private theorem etaQuotient_pow_twentyFour (γ : SL(2, ℤ)) (τ : ℍ) :
     etaQuotient γ τ ^ 24 = 1 := by
   have hη : η τ ≠ 0 := _root_.ModularForm.eta_ne_zero τ.2
-  have hs : Complex.sqrt ((γ 1 0 : ℂ) * τ + γ 1 1) ^ 24 = ((γ 1 0 : ℂ) * τ + γ 1 1) ^ 12 := by
-    rw [show 24 = 2 * 12 from rfl, pow_mul, Complex.sq_sqrt]
+  have hs : Complex.sqrt ((γ 1 0 : ℂ) * τ + γ 1 1) ^ 24 = ((γ 1 0 : ℂ) * τ + γ 1 1) ^ 12 :=
+    (pow_mul _ 2 12).trans (congrArg (· ^ 12) (Complex.sq_sqrt _))
   rw [etaQuotient, div_pow, mul_pow, hs,
     eta_smul_pow_twentyFour, div_self (mul_ne_zero (pow_ne_zero _ (denom_ne_zero' γ τ))
       (pow_ne_zero _ hη))]
@@ -200,11 +188,7 @@ principal root is `i`. -/
 @[simp]
 theorem etaMultiplier_neg_one : etaMultiplier (-1) = -I := by
   refine etaMultiplier_eq_of_eta_smul_eq (τ := UpperHalfPlane.I) ?_
-  have hsqrt : Complex.sqrt (-1) = I := by
-    rw [sqrt_eq_exp (by norm_num), log_neg_one]
-    convert exp_pi_div_two_mul_I using 2
-    ring
-  simp [hsqrt]
+  simp [Complex.sqrt_neg_one]
 
 /-- `ε(Tⁿ) = e^{π i n / 12}`, by the translation law. -/
 @[simp]
@@ -226,12 +210,9 @@ theorem etaMultiplier_S : etaMultiplier S = cexp (-(π * I / 4)) := by
   have hS : ((S • UpperHalfPlane.I : ℍ) : ℂ) = -1 / (UpperHalfPlane.I : ℂ) := by
     rw [UpperHalfPlane.modular_S_smul]
     simp [neg_div]
-  have hsqrt : (Complex.sqrt I)⁻¹ = cexp (-(π * I / 4)) := by
-    rw [sqrt_eq_exp I_ne_zero, log_I, ← Complex.exp_neg]
-    congr 1
-    ring
-  rw [hS, ← hsqrt]
-  simpa [S, mul_assoc] using _root_.ModularForm.eta_comp_eq_csqrt_I_inv (x := I) (by simp)
+  rw [hS, eta_neg_one_div (by simp), Complex.sqrt_neg_I_mul (by simp), Complex.sqrt_I_eq_exp,
+    ← Complex.exp_neg]
+  simp [coe_S]
 
 /-- `ε(γ Tⁿ) = e^{π i n / 12} ε(γ)`: right translation by `Tⁿ` replaces `τ` by `τ + n`. -/
 theorem etaMultiplier_mul_T_zpow (γ : SL(2, ℤ)) (n : ℤ) :
