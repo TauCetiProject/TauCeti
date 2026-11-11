@@ -100,8 +100,7 @@ theorem harmonicOnNhd_newtonianKernel_convolution (hn : 3 ≤ n)
   refine ⟨(contDiff_newtonianKernel_convolution hf hc).contDiffAt, ?_⟩
   by_cases hF : CompleteSpace F
   swap
-  · have h0 : newtonianKernel n ⋆ f = 0 :=
-      funext fun y => by simp [convolution_def, integral_of_not_completeSpace hF]
+  · have h0 : newtonianKernel n ⋆ f = 0 := convolution_eq_zero_of_not_completeSpace hF
     exact Eventually.of_forall fun y => by
       rw [h0]
       exact congrFun (laplacian_const (c := (0 : F))) y
