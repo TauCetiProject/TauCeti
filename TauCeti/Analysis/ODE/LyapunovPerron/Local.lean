@@ -395,7 +395,7 @@ variable (A P : X →L[ℝ] X) (N : X → X) (r : ℝ)
 omit [CompleteSpace X] in
 /-- Time reversal turns the unstable dichotomy bound into the stable bound for `-A`
 and the complementary projection. -/
-theorem reversed_stable_bound (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X,
+theorem norm_exp_smul_neg_id_sub_apply_le (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X,
     ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (α * t) * ‖v‖)
     (t : ℝ) (ht : 0 ≤ t) (v : X) :
     ‖exp (t • (-A)) ((ContinuousLinearMap.id ℝ X - P) v)‖ ≤
@@ -406,7 +406,7 @@ theorem reversed_stable_bound (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X,
 omit [CompleteSpace X] in
 /-- Time reversal turns the stable dichotomy bound into the unstable bound for `-A`
 and the complementary projection. -/
-theorem reversed_unstable_bound (hs : ∀ t : ℝ, 0 ≤ t → ∀ v : X,
+theorem norm_exp_smul_neg_sub_id_sub_apply_le (hs : ∀ t : ℝ, 0 ≤ t → ∀ v : X,
     ‖exp (t • A) (P v)‖ ≤ K * Real.exp (-α * t) * ‖v‖)
     (t : ℝ) (ht : t ≤ 0) (v : X) :
     ‖exp (t • (-A)) (v - (ContinuousLinearMap.id ℝ X - P) v)‖ ≤
@@ -421,16 +421,16 @@ the complementary projection `1 - P`, by
 values lie in the range of `P`, by `ContinuousLinearMap.apply_localUnstableGraphMap`. -/
 def localUnstableGraphMap : X → X :=
   localStableGraphMap (-A) (ContinuousLinearMap.id ℝ X - P) (-N) r
-    (reversed_stable_bound (A := A) (P := P) hu)
-    (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall
+    (norm_exp_smul_neg_id_sub_apply_le A P hu)
+    (norm_exp_smul_neg_sub_id_sub_apply_le A P hs) hr hN.neg hsmall
 
 /-- Time reversal exchanges the local unstable graph with a local stable graph, using
 the reversed dichotomy bounds for `-A` and the complementary projection. -/
 theorem localUnstableGraphMap_def :
     localUnstableGraphMap A P N r hs hu hr hN hsmall =
       localStableGraphMap (-A) (ContinuousLinearMap.id ℝ X - P) (-N) r
-        (reversed_stable_bound (A := A) (P := P) hu)
-        (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall :=
+        (norm_exp_smul_neg_id_sub_apply_le A P hu)
+        (norm_exp_smul_neg_sub_id_sub_apply_le A P hs) hr hN.neg hsmall :=
   (rfl)
 
 variable {A P N r}
@@ -441,8 +441,8 @@ that is, `P` fixes them. -/
 theorem apply_localUnstableGraphMap (hP : IsIdempotentElem P) (hAP : Commute A P) (v : X) :
     P (localUnstableGraphMap A P N r hs hu hr hN hsmall v) =
       localUnstableGraphMap A P N r hs hu hr hN hsmall v := by
-  have h0 := apply_localStableGraphMap (reversed_stable_bound (A := A) (P := P) hu)
-    (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall hP.one_sub
+  have h0 := apply_localStableGraphMap (norm_exp_smul_neg_id_sub_apply_le A P hu)
+    (norm_exp_smul_neg_sub_id_sub_apply_le A P hs) hr hN.neg hsmall hP.one_sub
       ((Commute.one_right (-A)).sub_right hAP.neg_left) v
   rw [sub_apply, ContinuousLinearMap.id_apply, sub_eq_zero] at h0
   rw [localUnstableGraphMap]
@@ -453,8 +453,8 @@ theorem apply_localUnstableGraphMap (hP : IsIdempotentElem P) (hAP : Commute A P
 theorem localUnstableGraphMap_sub_map (hP : IsIdempotentElem P) (v : X) :
     localUnstableGraphMap A P N r hs hu hr hN hsmall (v - P v) =
       localUnstableGraphMap A P N r hs hu hr hN hsmall v := by
-  have h0 := localStableGraphMap_map (reversed_stable_bound (A := A) (P := P) hu)
-    (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall hP.one_sub v
+  have h0 := localStableGraphMap_map (norm_exp_smul_neg_id_sub_apply_le A P hu)
+    (norm_exp_smul_neg_sub_id_sub_apply_le A P hs) hr hN.neg hsmall hP.one_sub v
   rw [sub_apply, ContinuousLinearMap.id_apply] at h0
   rw [localUnstableGraphMap]
   exact h0
@@ -463,8 +463,8 @@ theorem localUnstableGraphMap_sub_map (hP : IsIdempotentElem P) (v : X) :
 @[simp]
 theorem localUnstableGraphMap_zero (hN0 : N 0 = 0) :
     localUnstableGraphMap A P N r hs hu hr hN hsmall 0 = 0 := by
-  exact localStableGraphMap_zero (reversed_stable_bound (A := A) (P := P) hu)
-    (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall (by simp [hN0])
+  exact localStableGraphMap_zero (norm_exp_smul_neg_id_sub_apply_le A P hu)
+    (norm_exp_smul_neg_sub_id_sub_apply_le A P hs) hr hN.neg hsmall (by simp [hN0])
 
 /-- **The local unstable graph map is flat at the equilibrium.** If the nonlinear remainder fixes
 the equilibrium and has derivative zero there, then the local unstable graph map also has
@@ -475,8 +475,8 @@ theorem hasFDerivAt_localUnstableGraphMap_zero (hr0 : 0 < r) (hN0 : N 0 = 0)
       (0 : X →L[ℝ] X) 0 := by
   rw [localUnstableGraphMap]
   exact hasFDerivAt_localStableGraphMap_zero
-    (reversed_stable_bound (A := A) (P := P) hu)
-    (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall hr0
+    (norm_exp_smul_neg_id_sub_apply_le A P hu)
+    (norm_exp_smul_neg_sub_id_sub_apply_le A P hs) hr hN.neg hsmall hr0
     (by simp [hN0]) (by simpa using hN'.neg)
 
 /-- **The local unstable graph map is `C^n`** under the hypotheses of
@@ -487,8 +487,8 @@ theorem contDiffAt_localUnstableGraphMap_of_uniformContDiffOn (hN0 : N 0 = 0) {n
     ContDiffAt ℝ n (localUnstableGraphMap A P N r hs hu hr hN hsmall) ξ₀ := by
   rw [localUnstableGraphMap]
   exact contDiffAt_localStableGraphMap_of_uniformContDiffOn
-    (reversed_stable_bound (A := A) (P := P) hu)
-    (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall (by simp [hN0])
+    (norm_exp_smul_neg_id_sub_apply_le A P hu)
+    (norm_exp_smul_neg_sub_id_sub_apply_le A P hs) hr hN.neg hsmall (by simp [hN0])
     hNn.neg hξ₀
 
 /-- **The local unstable graph map is `C¹`** under the hypotheses of
@@ -500,16 +500,16 @@ theorem contDiffAt_localUnstableGraphMap (hN0 : N 0 = 0) {N' : X → X →L[ℝ]
     ContDiffAt ℝ 1 (localUnstableGraphMap A P N r hs hu hr hN hsmall) ξ₀ := by
   rw [localUnstableGraphMap]
   exact contDiffAt_localStableGraphMap
-    (reversed_stable_bound (A := A) (P := P) hu)
-    (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall (by simp [hN0])
+    (norm_exp_smul_neg_id_sub_apply_le A P hu)
+    (norm_exp_smul_neg_sub_id_sub_apply_le A P hs) hr hN.neg hsmall (by simp [hN0])
     (fun x hx ↦ (hNd x hx).neg) (uniformContinuous_neg.comp_uniformContinuousOn hN') hξ₀
 
 /-- The local unstable graph map has the same Lipschitz bound as the stable graph map. -/
 theorem lipschitzWith_localUnstableGraphMap :
     LipschitzWith (2 * K * (ε * 2) / α * (K / (1 - 2 * K * (ε * 2) / α)))
       (localUnstableGraphMap A P N r hs hu hr hN hsmall) := by
-  exact lipschitzWith_localStableGraphMap (reversed_stable_bound (A := A) (P := P) hu)
-    (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall
+  exact lipschitzWith_localStableGraphMap (norm_exp_smul_neg_id_sub_apply_le A P hu)
+    (norm_exp_smul_neg_sub_id_sub_apply_le A P hs) hr hN.neg hsmall
 
 /-- If the nonlinearity fixes the equilibrium, the local unstable set lies in a cone around
 `range (1 - P)` whose opening tends to `0` with the Lipschitz constant of the nonlinearity. This
@@ -517,8 +517,8 @@ is the unstable counterpart of `ContinuousLinearMap.norm_localStableGraphMap_le`
 theorem norm_localUnstableGraphMap_le (hN0 : N 0 = 0) (v : X) :
     ‖localUnstableGraphMap A P N r hs hu hr hN hsmall v‖ ≤
       ((2 * K * (ε * 2) / α * (K / (1 - 2 * K * (ε * 2) / α)) : ℝ≥0) : ℝ) * ‖v‖ :=
-  norm_localStableGraphMap_le (reversed_stable_bound (A := A) (P := P) hu)
-    (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall (by simp [hN0]) v
+  norm_localStableGraphMap_le (norm_exp_smul_neg_id_sub_apply_le A P hu)
+    (norm_exp_smul_neg_sub_id_sub_apply_le A P hs) hr hN.neg hsmall (by simp [hN0]) v
 
 open scoped Pointwise
 
@@ -542,8 +542,8 @@ theorem tendsto_atBot_of_isIntegralCurveOn_mapsTo_closedBall
       (isIntegralCurveOn_comp_mul_ne_zero (γ := y) (v := fun _ z ↦ A z + N z)
         (s := Iic 0) (a := -1) (by norm_num)).mpr hy
   have hforward := tendsto_of_isIntegralCurveOn_mapsTo_closedBall
-    (reversed_stable_bound (A := A) (P := P) hu)
-    (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall
+    (norm_exp_smul_neg_id_sub_apply_le A P hu)
+    (norm_exp_smul_neg_sub_id_sub_apply_le A P hs) hr hN.neg hsmall
     (by simp [hN0]) hP.one_sub ((Commute.one_right (-A)).sub_right hAP.neg_left)
     hy' hmaps'
   simpa only [Function.comp_def, neg_neg] using hforward.comp tendsto_neg_atBot_atTop
@@ -568,8 +568,8 @@ theorem setOf_exists_isIntegralCurveOn_Iic_mapsTo_closedBall_eq_image
       (fun v ↦ v + localUnstableGraphMap A P N r hs hu hr hN hsmall v) ''
         (range (ContinuousLinearMap.id ℝ X - P) ∩ closedBall 0 ρ) := by
   rw [localUnstableGraphMap, ← setOf_exists_isIntegralCurveOn_mapsTo_closedBall_eq_image
-    (reversed_stable_bound (A := A) (P := P) hu)
-    (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall
+    (norm_exp_smul_neg_id_sub_apply_le A P hu)
+    (norm_exp_smul_neg_sub_id_sub_apply_le A P hs) hr hN.neg hsmall
     (by simp [hN0]) hP.one_sub ((Commute.one_right (-A)).sub_right hAP.neg_left) hρ]
   ext x
   simp only [mem_ofPred_eq]

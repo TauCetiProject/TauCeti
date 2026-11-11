@@ -163,7 +163,8 @@ theorem tendstoUniformlyOn_fderiv_localUnstableGraphMap
       (fderiv ℝ (localUnstableGraphMap A P N r hs hu hr hN hsmall)) l U := by
   simp_rw [localUnstableGraphMap_def A P _ r hs hu hr _ hsmall]
   exact tendstoUniformlyOn_fderiv_localStableGraphMap
-    (reversed_stable_bound A P hu) (reversed_unstable_bound A P hs) hr hN.neg
+    (norm_exp_smul_neg_id_sub_apply_le A P hu)
+    (norm_exp_smul_neg_sub_id_sub_apply_le A P hs) hr hN.neg
     (fun i ↦ (hF i).neg) hsmall
     (fun i ↦ by simpa using congrArg Neg.neg (hF0 i))
     (fun i z hz ↦ (hFd i z hz).neg)
