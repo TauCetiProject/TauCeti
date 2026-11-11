@@ -105,7 +105,7 @@ theorem upperIncompleteGamma_ofReal (a : ℂ) (x : ℝ) :
 
 /-- At shape one the ray integral is an exponential, even on the branch cut. -/
 @[simp]
-theorem upperIncompleteGamma_one (z : ℂ) :
+theorem upperIncompleteGamma_one_left (z : ℂ) :
     upperIncompleteGamma 1 z = _root_.Complex.exp (-z) := by
   have hi : (∫ t in Ioi (0 : ℝ), _root_.Complex.exp (-(t : ℂ))) = 1 := by
     simpa using integral_exp_mul_complex_Ioi (a := -1) (by norm_num) 0
