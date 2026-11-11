@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.ReducedFunctional
+public import TauCeti.Analysis.PDE.Vortex.Reduced.Functional
 public import TauCeti.Analysis.PDE.Vortex.Reconstruction
 public import TauCeti.Analysis.PDE.Vortex.Symmetry
 public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
