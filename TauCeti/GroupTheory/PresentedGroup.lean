@@ -20,9 +20,14 @@ to a presented group. The corresponding formulas for free groups are in
 Equality of the normal closures of two relator sets gives a canonical isomorphism of the
 presented groups, preserving the image of every word.
 
+Generators that occur in no relator span a free factor of the presented group.
+
 ## Main results
 
 * `PresentedGroup.mk_mk`: the class of a word is the product of its signed generators.
+* `PresentedGroup.coprodFreeGroupEquiv`: if the relators only involve the generators from a part
+  `α` of the generators `α ⊕ β`, the presented group is the free product of the group presented
+  on `α` and the free group on `β`.
 -/
 
 public section
@@ -40,6 +45,20 @@ theorem lift_of_eq_mk {α : Type*} {rels : Set (FreeGroup α)} (x : FreeGroup α
 theorem toGroup_mk {α G : Type*} [Group G] {f : α → G} {rels : Set (FreeGroup α)}
     (h : ∀ r ∈ rels, FreeGroup.lift f r = 1) (x : FreeGroup α) :
     toGroup h (mk rels x) = FreeGroup.lift f x := (rfl)
+
+/-- The homomorphism of presented groups induced by a homomorphism of free groups sends the class
+of a word to the class of its image. -/
+@[simp]
+theorem map_mk {α β : Type*} (f : FreeGroup α →* FreeGroup β) {s : Set (FreeGroup α)}
+    {t : Set (FreeGroup β)} (hst : s.MapsTo f t) (x : FreeGroup α) :
+    PresentedGroup.map f hst (mk s x) = mk t (f x) := (rfl)
+
+/-- The homomorphism of presented groups induced by a homomorphism of free groups sends a
+generator to the class of its image. -/
+@[simp]
+theorem map_of {α β : Type*} (f : FreeGroup α →* FreeGroup β) {s : Set (FreeGroup α)}
+    {t : Set (FreeGroup β)} (hst : s.MapsTo f t) (a : α) :
+    PresentedGroup.map f hst (of a) = mk t (f (FreeGroup.of a)) := (rfl)
 
 /-- Relator sets with the same normal closure present canonically isomorphic groups. -/
 def equivOfNormalClosureEq {α : Type*} {S T : Set (FreeGroup α)}
@@ -79,5 +98,53 @@ theorem mk_mk {α : Type*} (S : Set (FreeGroup α)) (L : List (α × Bool)) :
     mk S (FreeGroup.mk L) =
       (L.map fun p => cond p.2 (of p.1) (of p.1)⁻¹).prod :=
   (mk S).apply_freeGroup_mk L
+
+section CoprodFreeGroup
+
+variable {α β γ : Type*} (rels : Set (FreeGroup α)) (e : α ⊕ β ≃ γ)
+
+/-- Generators occurring in no relator span a free factor: if the generators `γ` split as
+`α ⊕ β` and the relators are words in the generators from `α`, then the presented group is the
+free product of the group presented by these relators on `α` and the free group on `β`. -/
+def coprodFreeGroupEquiv :
+    PresentedGroup (FreeGroup.map (e ∘ Sum.inl) '' rels) ≃*
+      Monoid.Coprod (PresentedGroup rels) (FreeGroup β) :=
+  MonoidHom.toMulEquiv
+    (toGroup (f := fun c => Sum.elim (fun a => Monoid.Coprod.inl (of a))
+        (fun b => Monoid.Coprod.inr (FreeGroup.of b)) (e.symm c)) <| by
+      rintro _ ⟨r, hr, rfl⟩
+      have h : (FreeGroup.lift fun c => Sum.elim (fun a => Monoid.Coprod.inl (of a))
+          (fun b => Monoid.Coprod.inr (FreeGroup.of b)) (e.symm c)).comp
+            (FreeGroup.map (e ∘ Sum.inl)) = Monoid.Coprod.inl.comp (mk rels) :=
+        FreeGroup.ext_hom _ _ fun a => by simp [of]
+      simpa [one_of_mem hr] using DFunLike.congr_fun h r)
+    (Monoid.Coprod.lift
+      (PresentedGroup.map (FreeGroup.map (e ∘ Sum.inl)) (Set.mapsTo_image _ _))
+      (FreeGroup.lift fun b => of (e (Sum.inr b))))
+    (ext fun c => by obtain ⟨a | b, rfl⟩ := e.surjective c <;> simp [of])
+    (Monoid.Coprod.hom_ext (ext fun a => by simp) (FreeGroup.ext_hom _ _ fun b => by simp))
+
+@[simp]
+theorem coprodFreeGroupEquiv_of_inl (a : α) :
+    coprodFreeGroupEquiv rels e (of (e (Sum.inl a))) = Monoid.Coprod.inl (of a) := by
+  simp [coprodFreeGroupEquiv]
+
+@[simp]
+theorem coprodFreeGroupEquiv_of_inr (b : β) :
+    coprodFreeGroupEquiv rels e (of (e (Sum.inr b))) = Monoid.Coprod.inr (FreeGroup.of b) := by
+  simp [coprodFreeGroupEquiv]
+
+@[simp]
+theorem coprodFreeGroupEquiv_symm_inl_of (a : α) :
+    (coprodFreeGroupEquiv rels e).symm (Monoid.Coprod.inl (of a)) = of (e (Sum.inl a)) := by
+  simp [MulEquiv.symm_apply_eq]
+
+@[simp]
+theorem coprodFreeGroupEquiv_symm_inr_of (b : β) :
+    (coprodFreeGroupEquiv rels e).symm (Monoid.Coprod.inr (FreeGroup.of b)) =
+      of (e (Sum.inr b)) := by
+  simp [MulEquiv.symm_apply_eq]
+
+end CoprodFreeGroup
 
 end PresentedGroup

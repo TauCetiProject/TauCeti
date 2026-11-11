@@ -133,6 +133,14 @@ generators. -/
 def nonorientableRelator (g m : ℕ) : FreeGroup (NonorientableGenerator g m) :=
   nonorientableWord (fun i ↦ of (.c i)) fun j ↦ of (.peripheral j)
 
+theorem orientableRelator_def (g m : ℕ) :
+    orientableRelator g m =
+      orientableWord (fun i ↦ of (.a i)) (fun i ↦ of (.b i)) fun j ↦ of (.peripheral j) := (rfl)
+
+theorem nonorientableRelator_def (g m : ℕ) :
+    nonorientableRelator g m =
+      nonorientableWord (fun i ↦ of (.c i)) fun j ↦ of (.peripheral j) := (rfl)
+
 /-- The orientable surface group
 `S⁺(g, m) = ⟨a₁, b₁, …, a_g, b_g, p₁, …, p_m | [a₁, b₁] ⋯ [a_g, b_g] p₁ ⋯ p_m⟩`, the fundamental
 group of the compact orientable surface of genus `g` with `m` boundary components. -/
@@ -155,6 +163,12 @@ def b (i : Fin g) : Orientable g m := PresentedGroup.of (.b i)
 
 /-- The peripheral element `pⱼ` of `S⁺(g, m)`, a loop around the `j`-th boundary component. -/
 def peripheral (j : Fin m) : Orientable g m := PresentedGroup.of (.peripheral j)
+
+theorem a_def (i : Fin g) : a g m i = PresentedGroup.of (.a i) := (rfl)
+
+theorem b_def (i : Fin g) : b g m i = PresentedGroup.of (.b i) := (rfl)
+
+theorem peripheral_def (j : Fin m) : peripheral g m j = PresentedGroup.of (.peripheral j) := (rfl)
 
 /-- The defining relation `[a₁, b₁] ⋯ [a_g, b_g] p₁ ⋯ p_m = 1` of `S⁺(g, m)`. -/
 @[simp]
@@ -243,6 +257,10 @@ def c (i : Fin g) : Nonorientable g m := PresentedGroup.of (.c i)
 
 /-- The peripheral element `pⱼ` of `S⁻(g, m)`, a loop around the `j`-th boundary component. -/
 def peripheral (j : Fin m) : Nonorientable g m := PresentedGroup.of (.peripheral j)
+
+theorem c_def (i : Fin g) : c g m i = PresentedGroup.of (.c i) := (rfl)
+
+theorem peripheral_def (j : Fin m) : peripheral g m j = PresentedGroup.of (.peripheral j) := (rfl)
 
 /-- The defining relation `c₁ ^ 2 ⋯ c_g ^ 2 p₁ ⋯ p_m = 1` of `S⁻(g, m)`. -/
 @[simp]
