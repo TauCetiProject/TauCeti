@@ -167,8 +167,7 @@ theorem bruhatCell_mul_subgroupB (w : T.WeylGroup) :
   simp only [QuotientGroup.mk'_apply, bruhatCell_mk, DoubleCoset.doubleCoset]
   rw [mul_assoc, coe_mul_coe]
 
-/-- A subgroup containing a Bruhat cell contains `B`: for `n` in the cell, `n` and `n * b` lie in
-it for every `b ∈ B`, hence so does `b`. -/
+/-- A subgroup containing a Bruhat cell contains `B`. -/
 theorem subgroupB_le_of_bruhatCell_subset {P : Subgroup G} {w : T.WeylGroup}
     (hw : T.bruhatCell w ⊆ P) : T.subgroupB ≤ P := by
   obtain ⟨n, _, hn⟩ := T.exists_mem_bruhatCell w
