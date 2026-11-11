@@ -92,14 +92,10 @@ omit hp in
 /-- `ξ_m` divides `ω_n` for `m ≤ n`. -/
 theorem cyclotomic_prime_pow_comp_X_add_one_dvd {m n : ℕ} (h : m ≤ n) :
     (cyclotomic (p ^ m) R).comp (X + 1) ∣ (1 + X) ^ p ^ n - 1 := by
-  have hX : ((X : R[X]) ^ p ^ m - 1) ∣ X ^ p ^ n - 1 := by
-    obtain ⟨c, hc⟩ := pow_dvd_pow p h
-    rw [hc, pow_mul]
-    exact sub_one_dvd_pow_sub_one _ _
-  obtain ⟨q, hq⟩ := (cyclotomic.dvd_X_pow_sub_one (p ^ m) R).trans hX
-  refine ⟨q.comp (X + 1), ?_⟩
-  have := congr_arg (·.comp (X + 1 : R[X])) hq
-  simpa [mul_comp, add_comm] using this
+  have hX := dvd_pow_sub_one_of_dvd (r := (X : R[X])) (pow_dvd_pow p h)
+  simpa [add_comm (1 : R[X]) X] using
+    _root_.map_dvd (compRingHom (X + 1 : R[X]))
+      ((cyclotomic.dvd_X_pow_sub_one (p ^ m) R).trans hX)
 
 /-- The constant coefficient of `ξ_{n+1}` is `p`. -/
 @[simp]
