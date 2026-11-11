@@ -673,7 +673,7 @@ theorem exists_eventuallyEq_prodMap_of_mfderiv_eq
     have hmem := (hρ₂O (hu₁.trans hδρ₂) u.2 ht).2
     exact hballO' (h u) u.2 ht (spliceAlong_mem (convex_ball (φ p, u.2) ε')
       (Metric.mem_ball.2 hmem.1) (Metric.mem_ball.2 hmem.2))
-  obtain ⟨hinj, hinj'⟩ := injOn_and_injective_fderiv_spliceAlong_fst hρ₁'0 hδ
+  obtain ⟨hinj, hinj'⟩ := injOn_and_injective_fderiv_spliceAlong_fst
     ((hkC.mono fun u hu => hρ₁r hu).of_le (by simp))
     ((hlC.mono fun u hu => hρ₁r hu).of_le (by simp)) hkl0 hbound hB hP hPε
   have hstrip {u : ℝ × ℝ} (hu : |u.1| < ρ) : |u.1| < ρ₁' := hu.trans hρρ₁
@@ -702,7 +702,7 @@ theorem exists_eventuallyEq_prodMap_of_mfderiv_eq
       with z hz t
     have hzρ : |angle z₀ (z, t).1| < ρ := (le_of_lt hz).trans_lt (by linarith)
     have hhl : h (ofCyl z₀ (z, t)) = l (ofCyl z₀ (z, t)) :=
-      spliceAlong_of_abs_le hδ (le_of_lt hz)
+      spliceAlong_of_abs_le (le_of_lt hz)
     rw [hG, spliceTrack_of_abs_lt hzρ, hhl]
     have hL' := hLφ (ofCyl z₀ (z, t)) (hρ₁r (hstrip hzρ))
     simp only [hl_def, toCyl_ofCyl] at hL' ⊢
