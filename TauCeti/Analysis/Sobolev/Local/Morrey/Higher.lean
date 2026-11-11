@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Local.Morrey
 public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
-import Mathlib.LinearAlgebra.Multilinear.FiniteDimensional
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.Sobolev.WeakDeriv.ContinuousRepresentative
 
 /-!
@@ -39,15 +39,13 @@ For the Hölder bound, the classical derivative of a `C¹` representative `g` of
 derivative of `u` (`TauCeti.MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn`), so by induction
 `iteratedFDeriv ℝ k g` agrees, up to the currying isometries, with the `k`-th weak derivative of
 `u` and lies in `W^{1,p}_loc` (`TauCeti.MemWkpLoc.iteratedFDeriv_of_contDiffOn`). The order-one
-estimates then apply to it.
+estimates then apply to it. These two derivative results hold for every `p` and live in
+`TauCeti.Analysis.Sobolev.Local.Basic`. The finite-dimensionality of the space of `k`-multilinear
+maps needed by the order-one estimates is `ContinuousMultilinearMap.instModuleFinite`.
 
 ## Main declarations
 
 * `TauCeti.MemWkpLoc.exists_contDiffOn_ae_eq`: `W^{k+1,p}_loc ⊆ Cᵏ` for `p > 2`.
-* `TauCeti.MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn`: the classical derivative of a `C¹`
-  representative is a weak derivative, in the preceding local Sobolev class.
-* `TauCeti.MemWkpLoc.iteratedFDeriv_of_contDiffOn`: the iterated classical derivatives of a `Cᵏ`
-  representative lie in the corresponding local Sobolev classes.
 * `TauCeti.MemWkpLoc.exists_dist_iteratedFDeriv_le`: the local Morrey inequality for the top
   derivative.
 * `TauCeti.MemWkpLoc.exists_holderOnWith_iteratedFDeriv_of_isCompact`: Hölder continuity of the
@@ -70,53 +68,7 @@ open scoped ENNReal NNReal Topology
 namespace TauCeti
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℝ≥0∞} {Ω : Opens ℂ}
-  {k m : ℕ} {u g : ℂ → F}
-
-/-! ### Classical derivatives of `Cᵏ` representatives -/
-
-/-- **The derivative of a `C¹` representative is a weak derivative.** If `g` is `C¹` on `Ω` and
-agrees almost everywhere on `Ω` with `u ∈ MemWkpLoc p Ω (k + 1)`, then `fderiv ℝ g` is a weak
-derivative of `u` on `Ω` and lies in `MemWkpLoc p Ω k`. By uniqueness of weak derivatives
-(`TauCeti.HasWeakFDerivOn.ae_eq`), every weak derivative of `u` on `Ω` agrees with `fderiv ℝ g`
-almost everywhere on `Ω`. -/
-theorem MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn (hu : MemWkpLoc p Ω (k + 1) u)
-    (hg : ContDiffOn ℝ 1 g Ω) (hug : u =ᵐ[volume.restrict Ω] g) :
-    HasWeakFDerivOn volume Ω u (fderiv ℝ g) ∧ MemWkpLoc p Ω k (fderiv ℝ g) := by
-  have := hu.completeSpace
-  have hg' : HasWeakFDerivOn volume Ω g (fderiv ℝ g) :=
-    hasWeakFDerivOn_of_differentiableOn
-      ((hg.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl).locallyIntegrableOn
-        Ω.isOpen.measurableSet)
-      fun x hx => (hg.differentiableOn one_ne_zero x hx).differentiableAt (Ω.isOpen.mem_nhds hx)
-  obtain ⟨D, hD, hDk⟩ := hu.exists_weakFDeriv_of_isOpen
-  exact ⟨hg'.congr_ae hug.symm, hDk.congr_ae ((hD.congr_ae hug).ae_eq hg')⟩
-
-/-- **Iterated derivatives of a `Cᵏ` representative.** If `g` is `Cᵏ` on `Ω` and agrees almost
-everywhere on `Ω` with `u ∈ MemWkpLoc p Ω (k + m)`, then `iteratedFDeriv ℝ k g` lies in
-`MemWkpLoc p Ω m`. It is, up to the currying isometries, the `k`-th weak derivative of `u`.
-No restriction on `p` is needed. -/
-theorem MemWkpLoc.iteratedFDeriv_of_contDiffOn (hu : MemWkpLoc p Ω (k + m) u)
-    (hg : ContDiffOn ℝ k g Ω) (hug : u =ᵐ[volume.restrict Ω] g) :
-    MemWkpLoc p Ω m (iteratedFDeriv ℝ k g) := by
-  induction k generalizing F with
-  | zero =>
-    rw [iteratedFDeriv_zero_eq_comp]
-    exact (continuousMultilinearCurryFin0 ℝ ℂ F).symm.toContinuousLinearEquiv.comp_memWkpLoc_iff.2
-      ((Nat.zero_add m ▸ hu).congr_ae hug)
-  | succ k ih =>
-    rw [Nat.add_right_comm] at hu
-    obtain ⟨-, hDk⟩ := hu.hasWeakFDerivOn_fderiv_of_contDiffOn
-      (hg.of_le (by exact_mod_cast Nat.le_add_left 1 k)) hug
-    have hgk : ContDiffOn ℝ k (fderiv ℝ g) Ω := hg.fderiv_of_isOpen Ω.isOpen (by push_cast; rfl)
-    have h := ih hDk hgk (Filter.EventuallyEq.refl _ _)
-    have heq : iteratedFDeriv ℝ (k + 1) g =
-        fun z => (continuousMultilinearCurryRightEquiv' ℝ k ℂ F).symm
-          (iteratedFDeriv ℝ k (fderiv ℝ g) z) := by
-      ext1 z
-      exact iteratedFDeriv_succ_eq_comp_right
-    rw [heq]
-    exact (continuousMultilinearCurryRightEquiv' ℝ k ℂ F).symm.toContinuousLinearEquiv
-      |>.comp_memWkpLoc_iff.2 h
+  {k : ℕ} {u g : ℂ → F}
 
 /-! ### Morrey's embedding at higher order -/
 
@@ -153,12 +105,6 @@ private theorem iteratedFDeriv_memWkpLoc_one_and_eqOn (hu : MemWkpLoc p Ω (k + 
   exact ⟨h1, eqOn_preciseRepresentative_of_continuousOn Ω.isOpen
     (hcont.locallyIntegrableOn Ω.isOpen.measurableSet) (Filter.EventuallyEq.refl _ _) hcont⟩
 
-/-- The spaces of `k`-multilinear maps on `ℂ` with values in `F` are finite-dimensional. -/
-private theorem finiteDimensional_continuousMultilinearMap :
-    FiniteDimensional ℝ (ContinuousMultilinearMap ℝ (fun _ : Fin k => ℂ) F) :=
-  Module.Finite.of_injective ContinuousMultilinearMap.toMultilinearMapLinear
-    ContinuousMultilinearMap.toMultilinearMap_injective
-
 /-- **The local Morrey inequality at higher order.** Let `2 < p ≤ ∞`, `α = 1 - 2 / p` and
 `k ≥ 0`. There is a constant `C > 0`, depending only on `p`, `k` and `F`, such that the following
 holds. Let `u ∈ MemWkpLoc p Ω (k + 1)`, let `g` be `Cᵏ` on `Ω` and equal to `u` almost everywhere
@@ -175,7 +121,6 @@ theorem MemWkpLoc.exists_dist_iteratedFDeriv_le (hp : 2 < p) (k : ℕ) :
         dist (iteratedFDeriv ℝ k g x) (iteratedFDeriv ℝ k g y) ≤
           C * (eLpNorm E p (volume.restrict (ball x (2 * dist x y)))).toReal *
             dist x y ^ (((1 : ℝ≥0∞) - 2 / p).toNNReal : ℝ) := by
-  have := finiteDimensional_continuousMultilinearMap (k := k) (F := F)
   obtain ⟨C, hC, hdist⟩ := MemWkpLoc.exists_dist_preciseRepresentative_le
     (F := ContinuousMultilinearMap ℝ (fun _ : Fin k => ℂ) F) hp
   refine ⟨C, hC, fun {Ω u g E} hu hg hug hE x y hxy => ?_⟩
@@ -195,7 +140,6 @@ theorem MemWkpLoc.exists_holderOnWith_iteratedFDeriv_of_isCompact (hp : 2 < p)
     (hu : MemWkpLoc p Ω (k + 1) u) (hg : ContDiffOn ℝ k g Ω) (hug : u =ᵐ[volume.restrict Ω] g)
     {K : Set ℂ} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
     ∃ C : ℝ≥0, HolderOnWith C ((1 : ℝ≥0∞) - 2 / p).toNNReal (iteratedFDeriv ℝ k g) K := by
-  have := finiteDimensional_continuousMultilinearMap (k := k) (F := F)
   obtain ⟨h1, heq⟩ := iteratedFDeriv_memWkpLoc_one_and_eqOn hu hg hug
   obtain ⟨C, hC⟩ := h1.exists_holderOnWith_preciseRepresentative_of_isCompact hp hK hKΩ
   refine ⟨C, fun x hx y hy => ?_⟩

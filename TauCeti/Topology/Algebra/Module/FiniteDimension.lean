@@ -38,10 +38,13 @@ construction, say — rather than from analysis. In particular alternating maps 
 are the same as continuous alternating maps: `AlternatingMap.toContinuousAlternatingMap` is the
 alternating companion of `LinearMap.toContinuousLinearMap`.
 
-Continuous alternating maps between finite free modules over a Noetherian ring form a finite
-module, `ContinuousAlternatingMap.instModuleFinite`, the alternating companion of Mathlib's
-`ContinuousLinearMap.instModuleFinite`. No topological assumption beyond what makes them a module
-is needed: they embed linearly into the finite module of multilinear maps.
+Continuous multilinear and continuous alternating maps between finite free modules over a
+Noetherian ring form finite modules, `ContinuousMultilinearMap.instModuleFinite` and
+`ContinuousAlternatingMap.instModuleFinite`, the multilinear and alternating companions of
+Mathlib's `ContinuousLinearMap.instModuleFinite`. No topological assumption beyond what makes them
+a module is needed: they embed linearly into the finite module of multilinear maps. Over a field
+this says that spaces of continuous multilinear maps between finite-dimensional spaces are
+finite-dimensional.
 
 In the same setting every seminorm on a finite-dimensional Hausdorff topological vector space is
 continuous: `Seminorm.continuous_of_finiteDimensional`. Such a seminorm is dominated by a multiple
@@ -171,6 +174,21 @@ theorem toContinuousAlternatingMap_symm_apply (f : M [⋀^ι]→L[𝕜] N) :
   (rfl)
 
 end AlternatingMap
+
+namespace ContinuousMultilinearMap
+
+variable {R ι N : Type*} {M : ι → Type*} [CommRing R] [IsNoetherianRing R] [Finite ι]
+  [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)] [∀ i, TopologicalSpace (M i)]
+  [∀ i, Module.Finite R (M i)] [∀ i, Module.Free R (M i)] [AddCommGroup N] [Module R N]
+  [TopologicalSpace N] [ContinuousAdd N] [ContinuousConstSMul R N] [Module.Finite R N]
+  [Module.Free R N]
+
+/-- The space of continuous multilinear maps between finite free modules over a Noetherian ring
+is a finite module. -/
+instance instModuleFinite : Module.Finite R (ContinuousMultilinearMap R M N) :=
+  .of_injective toMultilinearMapLinear toMultilinearMap_injective
+
+end ContinuousMultilinearMap
 
 namespace ContinuousAlternatingMap
 
