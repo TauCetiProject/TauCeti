@@ -43,9 +43,9 @@ This gives continuity of quotient-range coordinates for families of valid splitt
 * `ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional_domain`: an injective
   continuous linear map out of a finite-dimensional space over `ℝ` or `ℂ` has a continuous left
   inverse.
-* `ContinuousAt.inverse_of_eventually_isInvertible`: inversion preserves continuity at a point
+* `ContinuousAt.clm_inverse_of_eventually_isInvertible`: inversion preserves continuity at a point
   where the family is eventually invertible, without completeness.
-* `Continuous.inverse_of_forall_isInvertible`: inversion is continuous along a continuous family
+* `Continuous.clm_inverse`: inversion is continuous along a continuous family
   of invertible operators between normed spaces, with no completeness assumption.
 * `ContinuousAt.exists_continuousAt_leftInverse`: continuously varying left inverses of a
   continuous family of operators whose member at `x₀` has a continuous left inverse.
@@ -96,7 +96,7 @@ end ContinuousLinearMap
 
 /-- Inversion preserves continuity at a point of an eventually invertible operator family,
 without completeness of either space. -/
-theorem ContinuousAt.inverse_of_eventually_isInvertible {X E F : Type*} [TopologicalSpace X]
+theorem ContinuousAt.clm_inverse_of_eventually_isInvertible {X E F : Type*} [TopologicalSpace X]
     [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
     {f : X → E →L[𝕜] F} {x₀ : X} (hf : ContinuousAt f x₀)
     (h : ∀ᶠ y in 𝓝 x₀, (f y).IsInvertible) :
@@ -136,12 +136,12 @@ theorem ContinuousAt.inverse_of_eventually_isInvertible {X E F : Type*} [Topolog
 
 /-- Inversion is continuous along a continuous family of invertible operators, without
 completeness of either space. -/
-theorem Continuous.inverse_of_forall_isInvertible {X E F : Type*} [TopologicalSpace X]
+theorem Continuous.clm_inverse {X E F : Type*} [TopologicalSpace X]
     [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
     {f : X → E →L[𝕜] F} (hf : Continuous f) (h : ∀ x, (f x).IsInvertible) :
     Continuous (fun x => (f x).inverse) :=
   continuous_iff_continuousAt.mpr fun _ =>
-    hf.continuousAt.inverse_of_eventually_isInvertible (.of_forall h)
+    hf.continuousAt.clm_inverse_of_eventually_isInvertible (.of_forall h)
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G] [CompleteSpace G]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {X : Type*} [TopologicalSpace X]

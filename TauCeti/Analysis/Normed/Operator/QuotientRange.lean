@@ -90,6 +90,6 @@ theorem Continuous.quotientRangeCoordinate [TopologicalSpace X]
     {A : X → E →L[𝕜] F} (hA : Continuous A) (B : G →L[𝕜] F)
     (h : ∀ x, ((A x).coprod B).IsInvertible) :
     Continuous (fun x => (A x).quotientRangeCoordinate B) := by
-  have hg := (hA.continuousLinearMapCoprod continuous_const).inverse_of_forall_isInvertible h
+  have hg := (hA.continuousLinearMapCoprod continuous_const).clm_inverse h
   simpa only [ContinuousLinearMap.quotientRangeCoordinate_def] using
     (continuous_const (y := ContinuousLinearMap.snd 𝕜 E G)).clm_comp hg
