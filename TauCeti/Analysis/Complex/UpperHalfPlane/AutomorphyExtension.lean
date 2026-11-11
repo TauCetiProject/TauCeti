@@ -31,6 +31,9 @@ with `g • τ ∈ U`, and `0` off the saturation:
   the extension is `f` (`Subgroup.automorphyExtension_of_mem`);
 * the extension satisfies the weight-`k` transformation law for every element of `Γ'` at every
   point of `ℍ` (`Subgroup.automorphyExtension_smul`);
+* it is the unique such function agreeing with `f` on `U`, on the saturation
+  (`Subgroup.eqOn_automorphyExtension`), and globally among functions vanishing off the saturation
+  (`Subgroup.eq_automorphyExtension`);
 * if `U` is open and `f` is holomorphic on `U`, the extension is holomorphic on the open set
   `Γ' • U` (`Subgroup.mdifferentiableOn_automorphyExtension`).
 
@@ -43,6 +46,7 @@ between the two trivializations is the coefficient of the extended frame.
 * `Subgroup.automorphyExtension`: the automorphic extension of a compatible local section.
 * `Subgroup.automorphyExtension_eq`, `Subgroup.automorphyExtension_of_mem`: its values.
 * `Subgroup.automorphyExtension_smul`: its transformation law.
+* `Subgroup.eqOn_automorphyExtension`, `Subgroup.eq_automorphyExtension`: its uniqueness.
 * `Subgroup.mdifferentiableOn_automorphyExtension`: its holomorphy on the saturation.
 
 ## References
@@ -135,6 +139,29 @@ theorem automorphyExtension_smul {g : SL(2, ℝ)} (hg : g ∈ Γ') (τ : ℍ) :
       exact hτ ⟨h * g, Γ'.mul_mem hh hg, by rwa [mul_smul]⟩
     rw [automorphyExtension_of_notMem hgτ, automorphyExtension_of_notMem
       (mem_smul_set_iff_exists_smul_mem.not.mpr hτ), mul_zero]
+
+/-- **Uniqueness of the extension on the saturation.** A function satisfying the weight-`k`
+transformation law for every element of `Γ'` and agreeing with `f` on `U` agrees with the
+extension on the saturation `Γ' • U`. -/
+theorem eqOn_automorphyExtension {F : ℍ → ℂ} (hF : ∀ g ∈ Γ', ∀ τ : ℍ,
+    F (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * F τ) (hFU : EqOn F f U) :
+    EqOn F (automorphyExtension Γ' U k f) ((Γ' : Set SL(2, ℝ)) • U) := by
+  intro τ hτ
+  obtain ⟨g, hg, hgτ⟩ := mem_smul_set_iff_exists_smul_mem.mp hτ
+  rw [automorphyExtension_eq hf hg hgτ, ← hFU hgτ, hF g hg τ, ← mul_assoc,
+    zpow_neg_mul_zpow_self k (denom_ne_zero _ _), one_mul]
+
+/-- **Uniqueness of the extension.** A function satisfying the weight-`k` transformation law for
+every element of `Γ'`, agreeing with `f` on `U` and vanishing off the saturation `Γ' • U` is the
+extension. -/
+theorem eq_automorphyExtension {F : ℍ → ℂ} (hF : ∀ g ∈ Γ', ∀ τ : ℍ,
+    F (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * F τ) (hFU : EqOn F f U)
+    (hF0 : ∀ τ ∉ (Γ' : Set SL(2, ℝ)) • U, F τ = 0) :
+    F = automorphyExtension Γ' U k f := by
+  ext τ
+  by_cases hτ : τ ∈ (Γ' : Set SL(2, ℝ)) • U
+  · exact eqOn_automorphyExtension hf hF hFU hτ
+  · rw [hF0 τ hτ, automorphyExtension_of_notMem hτ]
 
 /-- **The extension is holomorphic on the saturation.** If `U` is open and `f` is holomorphic on
 `U`, then the extension is holomorphic on the open set `Γ' • U`. -/

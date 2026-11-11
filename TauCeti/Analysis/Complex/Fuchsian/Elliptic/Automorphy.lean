@@ -122,6 +122,8 @@ Diamond–Shurman §3.5.
   `Subgroup.LinearizingCoordinate.automorphyFrame_mul_automorphyDescent_automorphyExtension` and
   `Subgroup.LinearizingCoordinate.automorphyDescent_automorphyExtension_ne_zero`: the transition
   function from another chart, the coefficient of the automorphic extension of its frame.
+* `Subgroup.LinearizingCoordinate.automorphyFrame_compatible`: on a precisely invariant disc the
+  frame is compatible with the weight-`k` action, so it is such a frame of another chart.
 * `Subgroup.LinearizingCoordinate.automorphyDescent_eq_mul_automorphyDescent` and
   `Subgroup.LinearizingCoordinate.automorphyDescent_automorphyExtension_eq_mul`: the coefficients
   of a section in two charts differ by the transition function, and the cocycle law.
@@ -868,10 +870,11 @@ theorem automorphyDescent_automorphyExtension_ne_zero
   have h0 := ψ.automorphyFrame_mul_automorphyDescent_automorphyExtension hΓ hk hU' hF' hF'd hr hh hτ
   exact right_ne_zero_of_mul (h0 ▸ mul_ne_zero (zpow_ne_zero _ (denom_ne_zero _ _)) hF'0)
 
-/-- On a precisely invariant disc, the frame, read on the upper half-plane, is compatible with the
+/-- **The frame is compatible on a precisely invariant disc.** On a disc `ball z ε` that is
+precisely invariant under `Γ'`, the frame, read on the upper half-plane, is compatible with the
 weight-`k` action of `Γ'`, so that it has an automorphic extension
-(`Subgroup.automorphyExtension`). -/
-private theorem automorphyFrame_compatible
+(`Subgroup.automorphyExtension`) and the transition-function lemmas above apply to it. -/
+theorem automorphyFrame_compatible
     (hΓ : Γ'.map (QuotientGroup.mk' (center SL(2, ℝ))) ≤ Γ)
     (hk : ∀ g ∈ Γ', g • z = z → denom (Matrix.SpecialLinearGroup.mapGL ℝ g) z ^ (2 * r + k) = 1)
     (hprec : ∀ g ∈ Γ', ∀ σ ∈ ball z ε, g • σ ∈ ball z ε → g • z = z) :
