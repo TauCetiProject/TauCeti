@@ -22,11 +22,11 @@ nonsingular, so some partial derivative of the cubic is nonzero there: the cone 
 cubic is surjective at every point of the curve
 (`WeierstrassCurve.Projective.mulVec_surjective_jacobiMatrixAt`). By the holomorphic implicit
 function theorem, the curve is therefore flattened near each point by an analytic slice chart of
-`ℂℙ²` (`TauCeti.complexProjectiveZeroLocusSliceChart`), taken in a standard affine chart `Xᵢ ≠ 0`:
-in the affine chart `Z ≠ 0` this is the classical chart given by `x` near points with
-`2y + a₁x + a₃ ≠ 0` and by `y` elsewhere, and near the point at infinity it is the chart given by
-`X / Y`. Reading the tangential coordinate of these slice charts in `ℂ` gives an atlas of `W.Point`
-modelled on `ℂ`, whose transition maps are analytic.
+`ℂℙ²` (`TauCeti.complexProjectiveZeroLocusSliceChart`), taken in a standard affine chart `Xᵢ ≠ 0`
+containing the point. Its tangential coordinate is an abstract linear coordinate on the kernel of
+the derivative of the affine equation; it is not identified here with the classical local
+coordinates `x`, `y` or `X / Y`. Reading the tangential coordinate of these slice charts in `ℂ`
+gives an atlas of `W.Point` modelled on `ℂ`, whose transition maps are analytic.
 
 This makes the points of a complex elliptic curve, already compact and connected in their analytic
 topology, a one-dimensional complex manifold
