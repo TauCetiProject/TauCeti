@@ -111,7 +111,7 @@ theorem eVariationOn_toReal_sq_eq_four_pi_mul_abs_rectifiableSignedArea_of_image
   have habs : |rectifiableSignedArea γ a b| = π * r ^ 2 := by
     rcases hcont.rectifiableSignedArea_eq_or_eq_neg_of_image_eq_sphere hclosed hinj himage hr
       with h | h <;> simp [h, abs_of_pos, Real.pi_pos, hr]
-  rw [hcont.eVariationOn_eq_of_image_eq_sphere (hinj.mono Ioo_subset_Ico_self) himage hr.le,
+  rw [hcont.eVariationOn_eq_of_image_eq_sphere (hinj.mono Ioo_subset_Ico_self) himage,
     ENNReal.toReal_ofReal (by positivity), habs]
   ring
 
@@ -123,7 +123,7 @@ theorem eVariationOn_toReal_sq_eq_four_pi_mul_volume_real_filledHull_sdiff_of_im
     (himage : γ '' Icc a b = sphere c r) (hr : 0 ≤ r) :
     (eVariationOn γ (Icc a b)).toReal ^ 2 =
       4 * π * volume.real (filledHull (γ '' Icc a b) \ γ '' Icc a b) := by
-  rw [hcont.eVariationOn_eq_of_image_eq_sphere hinj himage hr, himage, filledHull_sphere c hr,
+  rw [hcont.eVariationOn_eq_of_image_eq_sphere hinj himage, himage, filledHull_sphere c hr,
     closedBall_sdiff_sphere, measureReal_def, Complex.volume_ball,
     ENNReal.toReal_ofReal (by positivity)]
   simp [ENNReal.toReal_pow, hr]

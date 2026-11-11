@@ -391,8 +391,7 @@ theorem grayDiffeomorph_symm_apply (s t : ℝ) (x : M) :
 /-- Gray's isotopy from a time to itself is the identity. -/
 @[simp]
 theorem grayDiffeomorph_self (s : ℝ) (x : M) : grayDiffeomorph hc s s x = x := by
-  rw [grayDiffeomorph_apply,
-    timeDependentFlowOf_self ((contMDiff_grayVectorField hc).of_le (by simp))]
+  rw [grayDiffeomorph_apply, timeDependentFlowOf_self]
 
 /-- Gray's isotopy composes: flowing from `r` to `s` and then from `s` to `t` is flowing from `r`
 to `t`. -/

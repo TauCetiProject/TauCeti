@@ -277,13 +277,12 @@ private theorem mul_volume_add_mul_volume_lt_le {f g h : ℝ → ℝ≥0∞} (hf
       eq_empty_of_forall_notMem fun y hy ↦ hs (hfg ▸ hy.trans_le (le_iSup g y))
     simp [hf0, hg0]
 
-/-- **Prékopa–Leindler inequality for the minimum** on `ℝ`. If `f` and `g` have the same
-supremum and `h (c * x + d * y)` dominates `min (f x) (g y)` for all `x` and `y`, then
-`c ∫ f + d ∫ g ≤ ∫ h`. The coefficients may vanish, and the common supremum and the integrals may
-be infinite. -/
-theorem mul_lintegral_add_mul_lintegral_le {f g h : ℝ → ℝ≥0∞} (hf : AEMeasurable f)
-    (hg : AEMeasurable g) (hh : AEMeasurable h) (hfg : ⨆ x, f x = ⨆ y, g y) {c d : ℝ}
-    (hc : 0 ≤ c) (hd : 0 ≤ d) (hmin : ∀ x y, min (f x) (g y) ≤ h (c * x + d * y)) :
+/-- The inequality of `TauCeti.Real.mul_lintegral_add_mul_lintegral_le` for nonnegative
+coefficients. -/
+private theorem mul_lintegral_add_mul_lintegral_le_of_nonneg {f g h : ℝ → ℝ≥0∞}
+    (hf : AEMeasurable f) (hg : AEMeasurable g) (hh : AEMeasurable h)
+    (hfg : ⨆ x, f x = ⨆ y, g y) {c d : ℝ} (hc : 0 ≤ c) (hd : 0 ≤ d)
+    (hmin : ∀ x y, min (f x) (g y) ≤ h (c * x + d * y)) :
     ENNReal.ofReal c * (∫⁻ x, f x) + ENNReal.ofReal d * ∫⁻ y, g y ≤ ∫⁻ z, h z := by
   -- The layer-cake formula in `ℝ≥0∞`, at the exponent one.
   have hlayer {u : ℝ → ℝ≥0∞} (hu : AEMeasurable u) :
@@ -293,6 +292,40 @@ theorem mul_lintegral_add_mul_lintegral_le {f g h : ℝ → ℝ≥0∞} (hf : AE
     ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
   exact (le_lintegral_add _ _).trans <| lintegral_mono fun t ↦
     mul_volume_add_mul_volume_lt_le hf hg hfg hc hd hmin _
+
+/-- **Prékopa–Leindler inequality for the minimum** on `ℝ`. If `f` and `g` have the same
+supremum and `h (c * x + d * y)` dominates `min (f x) (g y)` for all `x` and `y`, then
+`c ∫ f + d ∫ g ≤ ∫ h`. The coefficients may vanish, and the common supremum and the integrals may
+be infinite. A negative coefficient contributes nothing to the left side. -/
+theorem mul_lintegral_add_mul_lintegral_le {f g h : ℝ → ℝ≥0∞} (hf : AEMeasurable f)
+    (hg : AEMeasurable g) (hh : AEMeasurable h) (hfg : ⨆ x, f x = ⨆ y, g y) {c d : ℝ}
+    (hmin : ∀ x y, min (f x) (g y) ≤ h (c * x + d * y)) :
+    ENNReal.ofReal c * (∫⁻ x, f x) + ENNReal.ofReal d * ∫⁻ y, g y ≤ ∫⁻ z, h z := by
+  -- Reflect `f` and `g` where needed, so that the coefficients become `|c|` and `|d|`.
+  have hrefl (u : ℝ → ℝ≥0∞) (hu : AEMeasurable u) (s : ℝ) (hs : s = 1 ∨ s = -1) :
+      AEMeasurable (fun x ↦ u (s * x)) ∧ ∫⁻ x, u (s * x) = ∫⁻ x, u x ∧
+        ⨆ x, u (s * x) = ⨆ x, u x := by
+    rcases hs with rfl | rfl
+    · simp [hu]
+    · simp only [neg_mul, one_mul]
+      exact ⟨hu.comp_quasiMeasurePreserving
+        (Measure.measurePreserving_neg volume).quasiMeasurePreserving,
+        lintegral_neg_eq_self u, (Equiv.neg ℝ).iSup_comp (g := u)⟩
+  have hsign (a : ℝ) : ∃ s : ℝ, (s = 1 ∨ s = -1) ∧ a * s = |a| := by
+    rcases le_or_gt 0 a with ha | ha
+    · exact ⟨1, Or.inl rfl, by simp [abs_of_nonneg ha]⟩
+    · exact ⟨-1, Or.inr rfl, by simp [abs_of_neg ha]⟩
+  obtain ⟨sc, hsc, hcs⟩ := hsign c
+  obtain ⟨sd, hsd, hds⟩ := hsign d
+  obtain ⟨hf', hfi, hfs⟩ := hrefl f hf sc hsc
+  obtain ⟨hg', hgi, hgs⟩ := hrefl g hg sd hsd
+  have key := mul_lintegral_add_mul_lintegral_le_of_nonneg hf' hg' hh
+    (hfs.trans (hfg.trans hgs.symm)) (abs_nonneg c) (abs_nonneg d) fun x y ↦ by
+      simpa only [← mul_assoc, hcs, hds] using hmin (sc * x) (sd * y)
+  rw [hfi, hgi] at key
+  exact le_trans (add_le_add
+    (mul_le_mul_left (ENNReal.ofReal_le_ofReal (le_abs_self c)) _)
+    (mul_le_mul_left (ENNReal.ofReal_le_ofReal (le_abs_self d)) _)) key
 
 /-- The one-dimensional Prékopa–Leindler inequality at an interior weight, for `f` and `g` with
 finite suprema. -/
@@ -321,7 +354,7 @@ private theorem rpow_mul_rpow_le_of_iSup_ne_top {θ : ℝ} (hθ₀ : 0 < θ) (h�
     rw [← ENNReal.mul_iSup, ← ENNReal.mul_iSup, ENNReal.inv_mul_cancel hF0 hF,
       ENNReal.inv_mul_cancel hG0 hG]
   have key := mul_lintegral_add_mul_lintegral_le (hf.const_mul _).aemeasurable
-    (hg.const_mul _).aemeasurable (hh.const_mul K⁻¹).aemeasurable hsup h1θ.le hθ₀.le
+    (hg.const_mul _).aemeasurable (hh.const_mul K⁻¹).aemeasurable hsup
     fun x y ↦ (ENNReal.min_le_rpow_one_sub_mul_rpow _ _ hθ₀.le hθ₁.le).trans <| by
       rw [hscale]
       gcongr

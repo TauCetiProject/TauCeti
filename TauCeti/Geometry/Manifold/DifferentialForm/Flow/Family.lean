@@ -229,7 +229,7 @@ theorem mpullback_prodMk_mlieDerivForm_vertical (t : ℝ) (x : M)
       (ContinuousLinearMap.ext fun r ↦ Prod.ext (smul_zero _).symm (rfl))
   have hψ := hasDerivAt_mpullback_of_eq_id (I := 𝓘(ℝ, ℝ).prod I) (ψ := ψ)
     (V := fun p : ℝ × M ↦ ((0 : ℝ), X p.1 p.2)) (t := 0) (t, x)
-    (Eventually.of_forall fun p ↦ by simp [ψ, timeDependentFlowOf_self hX₁])
+    (Eventually.of_forall fun p ↦ by simp [ψ, timeDependentFlowOf_self])
     (hψsmooth 0 (t, x) (by simpa using mem_timeDependentFlowDomain_self hX₁ t x))
     (Eventually.of_forall hψvel) (hα.mdifferentiableAt one_ne_zero)
   -- Slicing at time `t` turns `ψ_r` into the time-dependent flow from `t` to `t + r`.
@@ -340,7 +340,7 @@ private theorem hasDerivAt_mpullback_timeDependentFlowOf_mpullback_prodMk_suspen
         flowOf (timeDependentSuspensionField X) (u - s) ∘ Prod.mk s := by
       filter_upwards [(by fun_prop : Continuous fun y : M ↦ ((s, u), y)).continuousAt.eventually_mem
         (hD.mem_nhds hu)] with y hy
-      exact (flowOf_timeDependentSuspensionField hX₁ hy).symm
+      exact (flowOf_timeDependentSuspensionField hy).symm
     have hφu : MDifferentiableAt I I (timeDependentFlowOf X s u) x :=
       ((hflow.contMDiffAt (hD.mem_nhds hu)).comp x
         ((contMDiff_const (c := (s, u))).prodMk contMDiff_id).contMDiffAt).mdifferentiableAt
@@ -356,7 +356,7 @@ private theorem hasDerivAt_mpullback_timeDependentFlowOf_mpullback_prodMk_suspen
       ((𝓘(ℝ, ℝ).prod I).prod 𝓘(ℝ, (ℝ × E) [⋀^Fin k]→L[ℝ] F))
       (fun p ↦ TotalSpace.mk' ((ℝ × E) [⋀^Fin k]→L[ℝ] F) p (α p))
       (flowOf (timeDependentSuspensionField X) (t - s) (s, x)) := by
-    rwa [flowOf_timeDependentSuspensionField hX₁ h]
+    rwa [flowOf_timeDependentSuspensionField h]
   have hd := ((compContinuousLinearMapCLM (ι := Fin k) (F := F) L).hasFDerivAt.comp_hasDerivAt
     (t - s) (hasDerivAt_mpullback_flowOf hZ (mem_timeDependentFlowDomain.1 h) hαΨ)).comp_sub_const
     t s
@@ -423,7 +423,7 @@ theorem mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smu
     have h := hasDerivAt_mpullback_timeDependentFlowOf_mpullback_prodMk hX hu hα.contMDiffAt
     rwa [hL u, mpullback_fun_smul] at h
   have hP0 : P s = mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α x := by
-    have h : timeDependentFlowOf X s s = id := funext (timeDependentFlowOf_self hX₁ s)
+    have h : timeDependentFlowOf X s s = id := funext (timeDependentFlowOf_self X s)
     exact (congrArg (fun f ↦ mpullback I I f (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α) x)
       h).trans (congrFun (mpullback_id _) x)
   rw [← hP0]

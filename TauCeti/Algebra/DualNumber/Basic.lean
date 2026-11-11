@@ -9,6 +9,7 @@ public import Mathlib.Algebra.DualNumber
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.LinearAlgebra.Basis.Fin
 public import Mathlib.RingTheory.Artinian.Module
+import Mathlib.RingTheory.DualNumber
 
 /-!
 # Basic properties of dual numbers
@@ -19,8 +20,9 @@ Dual numbers over an Artinian ring are also Artinian, using their product module
 they are a finite module over their coefficient ring.
 Multiplication by `ε` is exact over any semiring.
 Algebra maps on dual numbers evaluate in terms of their restriction to constants and
-their value on `ε`. The dual numbers are free of rank two on the basis `1, ε`, so linear maps
-out of them are determined by their values on `1` and `ε`.
+their value on `ε`. Over a nontrivial semiring `ε` is a nonzero nilpotent, so the dual numbers
+are neither reduced nor a field. The dual numbers are free of rank two on the basis `1, ε`, so
+linear maps out of them are determined by their values on `1` and `ε`.
 -/
 
 public section
@@ -83,6 +85,24 @@ theorem apply_dualNumber {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring
     AlgHom.comp_apply, inlAlgHom_apply] using hz.symm
 
 end AlgHom
+
+namespace DualNumber
+
+variable {R : Type*} [Semiring R] [Nontrivial R]
+
+/-- Over a nontrivial semiring, `ε` is nonzero. -/
+theorem eps_ne_zero : (ε : R[ε]) ≠ 0 := fun h ↦
+  one_ne_zero (α := R) (by simpa using congr(TrivSqZeroExt.snd $h))
+
+/-- Over a nontrivial semiring, the dual numbers are not reduced: `ε` is a nonzero nilpotent. -/
+theorem not_isReduced : ¬IsReduced R[ε] := fun _ ↦ eps_ne_zero (R := R) isNilpotent_eps.eq_zero
+
+/-- Over a nontrivial semiring, the dual numbers do not form a field. -/
+theorem not_isField : ¬IsField R[ε] := fun h ↦ by
+  have := h.isDomain
+  exact not_isReduced (R := R) inferInstance
+
+end DualNumber
 
 namespace TauCeti
 
