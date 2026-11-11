@@ -13,6 +13,7 @@ public import TauCeti.MeasureTheory.Group.LocalFieldScaling
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
 import TauCeti.NumberTheory.LocalField.Uniformizer
 import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
+import TauCeti.Topology.Algebra.ValuativeRel.AdicTopology
 import Mathlib.RingTheory.Polynomial.GaussLemma
 import Mathlib.RingTheory.Valuation.ValuationRing
 
@@ -266,10 +267,7 @@ theorem measure_eisensteinSet_pos {n : ℕ} [MeasurableSpace (Fin n → K)]
   · rw [eisensteinSet_eq_sdiff hn]
     refine IsOpen.sdiff (isOpen_set_pi Set.finite_univ fun i _ ↦ ?_)
       (isClosed_univ_pi_image_maximalIdeal_pow _)
-    have h := image_maximalIdeal_pow_eq_smul hϖ 1
-    rw [pow_one] at h
-    rw [h]
-    exact Valuation.isOpen_integer.smul₀ (pow_ne_zero _ (by simp [hϖ.ne_zero]))
+    simpa only [pow_one] using isOpen_image_maximalIdeal_pow (K := K) 1
   · rw [eisensteinSet_eq_sdiff hn]
     refine ⟨fun i _ ↦ ?_, fun h ↦ ?_⟩
     · by_cases hi : i = i₀
