@@ -53,6 +53,7 @@ namespace AlgebraicGeometry.AffineSpace
 /-- **The points of affine space.** For a field `L` over a commutative ring `k` and a finite index
 type `n`, the affine space `𝔸(n; Spec k)` has `|L| ^ |n|` points with values in `L` over
 `Spec k`. -/
+@[simp]
 theorem numberOfRationalPoints_eq {k : Type u} [CommRing k] (L : Type u) [Field L] [Algebra k L]
     (n : Type u) [Finite n] :
     (𝔸(n; Spec (.of k)) ↘ Spec (.of k)).numberOfRationalPoints L = Nat.card L ^ Nat.card n := by
@@ -67,6 +68,7 @@ theorem numberOfRationalPoints_eq {k : Type u} [CommRing k] (L : Type u) [Field 
 `L` a separably closed algebraic extension of `k`, for instance an algebraic closure. For
 `r ≠ 0`, the `r`-th power of the arithmetic Frobenius `x ↦ x ^ q` of `L` fixes exactly
 `(q ^ r) ^ |n|` of the `L`-valued points of the affine space `𝔸(n; Spec k)`. -/
+@[simp]
 theorem natCard_fixedPoints_frobeniusAlgEquivOfAlgebraic_pow (k L : Type u) [Field k] [Fintype k]
     [Field L] [Algebra k L] [Algebra.IsAlgebraic k L] [IsSepClosed L] (n : Type u) [Finite n]
     {r : ℕ} (hr : r ≠ 0) :
