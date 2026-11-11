@@ -247,8 +247,7 @@ field.** Let `ι : S → M` be a smooth map with injective differentials into th
 Liouville domain, from a manifold of one dimension less, and let `γ` be an integral curve of the
 Reeb field of `ι^* α`. For `t > 0`, the curve `τ ↦ ψ_t (ι (γ (-τ)))`, on the level `e^t` of the
 radial coordinate, is an integral curve of `X_r`. -/
-theorem isMIntegralCurve_flowOf_comp_reebVectorField [FiniteDimensional ℝ E']
-    (h : IsLiouvilleCompletion ω α W)
+theorem isMIntegralCurve_flowOf_comp_reebVectorField (h : IsLiouvilleCompletion ω α W)
     (hZ : RoughForm.interior Z ω.1 = α.1) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
     (hιW : ∀ s, ι s ∈ frontier W)
     (hιs : ∀ s, Function.Injective (mfderiv J I ι s)) (hdim : finrank ℝ E' + 1 = finrank ℝ E)
