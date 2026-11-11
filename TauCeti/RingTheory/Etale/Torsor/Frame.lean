@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Etale.Torsor.Descent
 public import TauCeti.RingTheory.Unramified.Frame
+import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 import Mathlib.RingTheory.TotallySplit
 
 /-!
@@ -50,17 +51,6 @@ namespace TauCeti.Algebra.FrameAlgebra
 
 attribute [local instance] Algebra.TensorProduct.rightMulSemiringAction
 
-/-- A split finite étale algebra `T ⊗[R] S ≃ₐ[T] (Fin m → T)` over a nontrivial ring has as many
-factors as the rank of `S`. -/
-private theorem eq_of_rankAtStalk_eq {R S T : Type*} [CommRing R] [CommRing S] [Algebra R S]
-    [Module.Flat R S] [Module.Finite R S] [CommRing T] [Algebra R T] [Nontrivial T] {n m : ℕ}
-    (h : Module.rankAtStalk (R := R) S = n) (f : T ⊗[R] S ≃ₐ[T] (Fin m → T)) : m = n := by
-  obtain ⟨p⟩ : Nonempty (PrimeSpectrum T) := inferInstance
-  have h₁ := Module.rankAtStalk_baseChange (R := R) (M := S) p
-  rw [Module.rankAtStalk_eq_of_equiv f.toLinearEquiv, Module.rankAtStalk_eq_finrank_of_free,
-    Module.finrank_fin_fun, h] at h₁
-  exact h₁
-
 /-- **The frame algebra is a torsor.** For a finite étale `R`-algebra `S` of constant rank
 `Fintype.card ι`, the frame algebra of `ι`-tuples of pairwise distinct points of `S` is a finite
 étale `Perm ι`-torsor over `R`. -/
@@ -73,16 +63,15 @@ theorem isFiniteEtaleTorsor {R S : Type u} [CommRing R] [CommRing S] [Algebra R 
   obtain ⟨T, _, _, _, _, _, hT⟩ := Algebra.IsFiniteSplit.exists_tensorProduct_of_etale h
   obtain ⟨m, ⟨f⟩⟩ := Algebra.IsFiniteSplit.nonempty_algEquiv_fun T (T ⊗[R] S)
   have : Nontrivial T := (FaithfulSMul.algebraMap_injective R T).nontrivial
-  obtain rfl := eq_of_rankAtStalk_eq h f
+  obtain rfl : m = Fintype.card ι := by
+    simpa using TauCeti.Module.card_eq_of_rankAtStalk_eq_of_linearEquiv h f.toLinearEquiv
   -- Over `T`, the frame algebra is that of the split algebra `ι → T`, the trivial torsor.
   let g : T ⊗[R] S ≃ₐ[T] (ι → T) :=
     f.trans (AlgEquiv.piCongrLeft' T (fun _ ↦ T) (Fintype.equivFin ι).symm)
   refine .of_baseChange_algEquiv_pi T
     ((baseChangeEquiv R S ι T).trans ((FrameAlgebra.congr ι g).trans (permEquiv T ι)))
     fun σ x τ ↦ ?_
-  have hσ : σ • x =
-      Algebra.TensorProduct.map (AlgHom.id T T) (permAlgEquiv R S ι σ).toAlgHom x := (rfl)
-  rw [AlgEquiv.trans_apply, AlgEquiv.trans_apply, hσ, baseChangeEquiv_map_permAlgEquiv,
-    ← smul_def, congr_smul, permEquiv_smul, AlgEquiv.trans_apply, AlgEquiv.trans_apply]
+  rw [AlgEquiv.trans_apply, AlgEquiv.trans_apply, baseChangeEquiv_smul, congr_smul, permEquiv_smul,
+    AlgEquiv.trans_apply, AlgEquiv.trans_apply]
 
 end TauCeti.Algebra.FrameAlgebra

@@ -58,6 +58,8 @@ At a maximal ideal `P`, the rank of a finite flat module is the dimension of its
   most `n` is a direct factor of a module of constant rank `n`.
 * `Module.finrank_quotient_tensorProduct_eq_rankAtStalk`: the rank of a finite flat module at a
   maximal ideal `P` is the dimension of its reduction modulo `P`.
+* `TauCeti.Module.card_eq_of_rankAtStalk_eq_of_linearEquiv`: a finite flat module of constant rank
+  `n` whose base change to a nontrivial ring is free on `ι` has `Fintype.card ι = n`.
 * `TauCeti.Module.exists_rankAtStalk_tensorProduct_eq`: a finite flat module whose rank is
   constant on the primes under a base change acquires constant rank after that base change.
 
@@ -278,6 +280,18 @@ theorem exists_rankAtStalk_tensorProduct_eq {R T' M : Type*} [CommRing R] [CommR
     exact ⟨rankAtStalk M (q₀.comap (algebraMap R T')), funext fun q ↦ by
       rw [rankAtStalk_baseChange, Pi.natCast_apply, h q₀ q, Nat.cast_id]⟩
   · exact ⟨0, funext fun q ↦ (hne ⟨q⟩).elim⟩
+
+open scoped TensorProduct in
+/-- If a finite flat module `M` has constant rank `n` and its base change to a nontrivial ring `T`
+is free on a finite type `ι`, then `ι` has `n` elements. -/
+theorem card_eq_of_rankAtStalk_eq_of_linearEquiv {R T M ι : Type*} [CommRing R] [CommRing T]
+    [Algebra R T] [Nontrivial T] [AddCommGroup M] [Module R M] [Module.Flat R M]
+    [Module.Finite R M] [Fintype ι] {n : ℕ} (h : rankAtStalk (R := R) M = n)
+    (f : T ⊗[R] M ≃ₗ[T] (ι → T)) : Fintype.card ι = n := by
+  obtain ⟨p⟩ : Nonempty (PrimeSpectrum T) := inferInstance
+  have h₁ := rankAtStalk_baseChange (R := R) (M := M) p
+  rwa [rankAtStalk_eq_of_equiv f, rankAtStalk_eq_finrank_of_free,
+    Module.finrank_fintype_fun_eq_card, h] at h₁
 
 end TauCeti.Module
 

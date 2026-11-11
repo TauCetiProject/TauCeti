@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
+public import TauCeti.Algebra.TensorProduct.BaseChange
 public import TauCeti.RingTheory.Etale.PiTensorProduct
 public import TauCeti.RingTheory.PiTensorProduct.BaseChange
 public import TauCeti.RingTheory.PiTensorProduct.Equiv
@@ -70,7 +71,7 @@ split model of that torsor.
 * `TauCeti.Algebra.FrameAlgebra.piEquiv_smul`, `TauCeti.Algebra.FrameAlgebra.permEquiv_smul`:
   equivariance of the split computation.
 * `TauCeti.Algebra.FrameAlgebra.congr_smul`,
-  `TauCeti.Algebra.FrameAlgebra.baseChangeEquiv_map_permAlgEquiv`: equivariance of the isomorphism
+  `TauCeti.Algebra.FrameAlgebra.baseChangeEquiv_smul`: equivariance of the isomorphism
   invariance and of the base change.
 
 ## References
@@ -501,6 +502,34 @@ theorem FrameAlgebra.congr_smul (e : S ≃ₐ[R] S') (σ : Equiv.Perm ι) (y : F
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
   rw [smul_mk, congr_mk, congr_mk, smul_mk, PiTensorProduct.congrAlgEquiv_permAlgEquiv]
 
+omit [Algebra.EssFiniteType R S'] [Algebra.FormallyUnramified R S'] in
+/-- The identity of `S` induces the identity of the frame algebra. -/
+@[simp]
+theorem FrameAlgebra.congr_refl : FrameAlgebra.congr ι (AlgEquiv.refl : S ≃ₐ[R] S) = .refl :=
+  AlgEquiv.ext fun y ↦ by
+    obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
+    rw [congr_mk, PiTensorProduct.congrAlgEquiv_refl]; rfl
+
+/-- The inverse of `TauCeti.Algebra.FrameAlgebra.congr ι e` is induced by the inverse of `e`. -/
+@[simp]
+theorem FrameAlgebra.congr_symm (e : S ≃ₐ[R] S') :
+    (FrameAlgebra.congr ι e).symm = FrameAlgebra.congr ι e.symm :=
+  AlgEquiv.ext fun y ↦ by
+    obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
+    rw [AlgEquiv.symm_apply_eq, congr_mk, congr_mk, ← PiTensorProduct.congrAlgEquiv_symm,
+      AlgEquiv.apply_symm_apply]
+
+/-- `TauCeti.Algebra.FrameAlgebra.congr` sends a composite of isomorphisms to the composite of the
+induced isomorphisms. -/
+theorem FrameAlgebra.congr_trans {S'' : Type*} [CommRing S''] [Algebra R S'']
+    [Algebra.EssFiniteType R S''] [Algebra.FormallyUnramified R S''] (e : S ≃ₐ[R] S')
+    (e' : S' ≃ₐ[R] S'') :
+    FrameAlgebra.congr ι (e.trans e') = (FrameAlgebra.congr ι e).trans (FrameAlgebra.congr ι e') :=
+  AlgEquiv.ext fun y ↦ by
+    obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
+    rw [AlgEquiv.trans_apply, congr_mk, congr_mk, congr_mk, PiTensorProduct.congrAlgEquiv_trans,
+      AlgEquiv.trans_apply]
+
 end Congr
 
 section BaseChange
@@ -555,22 +584,23 @@ theorem FrameAlgebra.baseChangeEquiv_tmul_mk (t : T) (x : ⨂[R] _ : ι, S) :
     FrameAlgebra.baseChangeEquiv R S ι T (t ⊗ₜ Ideal.Quotient.mk _ x) =
       Ideal.Quotient.mk _ (PiTensorProduct.baseChangeAlgEquiv T (fun _ ↦ S) (t ⊗ₜ x)) := (rfl)
 
-/-- `TauCeti.Algebra.FrameAlgebra.baseChangeEquiv` is equivariant: permuting the slots of the
-frame algebra of `S` and then extending scalars is extending scalars and then permuting the slots
-of the frame algebra of `T ⊗[R] S`. -/
-theorem FrameAlgebra.baseChangeEquiv_map_permAlgEquiv (σ : Equiv.Perm ι)
-    (x : T ⊗[R] FrameAlgebra R S ι) :
-    FrameAlgebra.baseChangeEquiv R S ι T
-        (Algebra.TensorProduct.map (AlgHom.id T T) (permAlgEquiv R S ι σ).toAlgHom x) =
-      permAlgEquiv T (T ⊗[R] S) ι σ (FrameAlgebra.baseChangeEquiv R S ι T x) := by
+attribute [local instance] Algebra.TensorProduct.rightMulSemiringAction in
+/-- `TauCeti.Algebra.FrameAlgebra.baseChangeEquiv` is equivariant, for the permutations acting on
+`T ⊗[R] FrameAlgebra R S ι` through the right factor: permuting the slots of the frame algebra of
+`S` and then extending scalars is extending scalars and then permuting the slots of the frame
+algebra of `T ⊗[R] S`. -/
+theorem FrameAlgebra.baseChangeEquiv_smul (σ : Equiv.Perm ι) (x : T ⊗[R] FrameAlgebra R S ι) :
+    FrameAlgebra.baseChangeEquiv R S ι T (σ • x) = σ • FrameAlgebra.baseChangeEquiv R S ι T x := by
   induction x using TensorProduct.inductionOn with
   | tmul t y =>
     obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective y
-    rw [Algebra.TensorProduct.map_tmul, AlgHom.id_apply, AlgEquiv.coe_toAlgHom, ← smul_def,
-      smul_mk, baseChangeEquiv_tmul_mk, baseChangeEquiv_tmul_mk, ← smul_def, smul_mk]
+    rw [Algebra.TensorProduct.rightMulSemiringAction_smul_tmul, smul_mk, baseChangeEquiv_tmul_mk,
+      baseChangeEquiv_tmul_mk, smul_mk]
     congr 1
     exact PiTensorProduct.baseChangeAlgEquiv_map_permAlgEquiv T σ (t ⊗ₜ y)
-  | add x y hx hy => simp only [map_add, hx, hy]
+  | add x y hx hy =>
+    simp only [Algebra.TensorProduct.rightMulSemiringAction_smul_def, smul_def, map_add] at hx hy ⊢
+    rw [hx, hy]
 
 end BaseChange
 

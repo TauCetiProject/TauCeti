@@ -119,6 +119,26 @@ theorem congrAlgEquiv_symm {ι : Type*} {A B : ι → Type*} [∀ i, Semiring (A
     | smul_tprod r x => simp
     | add x y hx hy => rw [map_add, map_add, ← hx, ← hy]
 
+/-- `PiTensorProduct.congrAlgEquiv` of the identities is the identity. -/
+@[simp]
+theorem congrAlgEquiv_refl {ι : Type*} {A : ι → Type*} [∀ i, Semiring (A i)]
+    [∀ i, Algebra R (A i)] :
+    congrAlgEquiv (fun i ↦ (AlgEquiv.refl : A i ≃ₐ[R] A i)) = .refl :=
+  AlgEquiv.ext fun x ↦ by
+    induction x using PiTensorProduct.induction_on with
+    | smul_tprod r x => simp
+    | add x y hx hy => rw [map_add, hx, hy]; rfl
+
+/-- `PiTensorProduct.congrAlgEquiv` sends slotwise composites to composites. -/
+theorem congrAlgEquiv_trans {ι : Type*} {A B C : ι → Type*} [∀ i, Semiring (A i)]
+    [∀ i, Algebra R (A i)] [∀ i, Semiring (B i)] [∀ i, Algebra R (B i)] [∀ i, Semiring (C i)]
+    [∀ i, Algebra R (C i)] (e : ∀ i, A i ≃ₐ[R] B i) (e' : ∀ i, B i ≃ₐ[R] C i) :
+    congrAlgEquiv (fun i ↦ (e i).trans (e' i)) = (congrAlgEquiv e).trans (congrAlgEquiv e') :=
+  AlgEquiv.ext fun x ↦ by
+    induction x using PiTensorProduct.induction_on with
+    | smul_tprod r x => simp
+    | add x y hx hy => rw [map_add, map_add, hx, hy]
+
 /-- `PiTensorProduct.congrAlgEquiv e` sends the factor inclusion at `i` to the factor inclusion at
 `i` composed with `e i`. It is a pre-simp lemma since `singleAlgHom_apply` would otherwise rewrite
 the factor inclusion first. -/
