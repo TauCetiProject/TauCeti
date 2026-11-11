@@ -231,10 +231,12 @@ theorem sum_range_finrank_range_singularHomologyδ_eq {N : ℕ}
     -- Add the triple `(A (N + 2), A (N + 1), A 0)` to the filtration of `A (N + 1)`.
     have hfin' (j : ℕ) (hj : j ≤ N) := hfin j (hj.trans N.le_succ)
     let T := TopTriple.ofInclusions (hA (Nat.zero_le (N + 1))) (hA (N + 1).le_succ)
-    have : ∀ i, Module.Finite k ((TopTriple.innerPair.obj T).singularHomology V i : ModuleCat k) :=
-      fun i ↦ finite_singularHomology_ofInclusion_of_monotone hA V i fun j hj ↦ hfin' j hj i
-    have : ∀ i, Module.Finite k ((TopTriple.outerPair.obj T).singularHomology V i : ModuleCat k) :=
-      hfin (N + 1) le_rfl
+    have hinner (i : ℕ) :
+        Module.Finite k ((TopTriple.innerPair.obj T).singularHomology V i : ModuleCat k) :=
+      finite_singularHomology_ofInclusion_of_monotone hA V i fun j hj ↦ hfin' j hj i
+    have houter (i : ℕ) :
+        Module.Finite k ((TopTriple.outerPair.obj T).singularHomology V i : ModuleCat k) :=
+      hfin (N + 1) le_rfl i
     -- The pairs of `T` are the inclusions of `A 0 ⊆ A (N + 1) ⊆ A (N + 2)`, by
     -- `TopTriple.innerPair_obj_ofInclusions` and its siblings, which hold by `rfl`.
     have h : ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) *
@@ -245,7 +247,8 @@ theorem sum_range_finrank_range_singularHomologyδ_eq {N : ℕ}
           finrank k ((TopPair.ofInclusion (hA (N + 1).le_succ)).singularHomology V i :
             ModuleCat k)) =
         finrank k (LinearMap.range (T.singularHomologyδ V (n + 1) n rfl).hom) :=
-      T.sum_range_neg_one_pow_mul_finrank_singularHomology_eq V n
+      T.sum_range_neg_one_pow_mul_finrank_singularHomology_eq V n (fun i _ ↦ hinner i)
+        (fun i _ ↦ houter i)
     simp only [mul_add, mul_sub, Finset.sum_add_distrib, Finset.sum_sub_distrib] at h
     rw [Finset.sum_range_succ, ih hfin', Finset.sum_range_succ _ (N + 1)]
     linarith
