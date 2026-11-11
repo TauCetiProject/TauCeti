@@ -34,13 +34,13 @@ public section
 open MeasureTheory Set TopologicalSpace
 open scoped Topology
 
-namespace TauCeti
+namespace IsPreconnected
 
 /-- **A locally almost everywhere constant function on a preconnected set is almost everywhere
 constant.** Let `μ` be positive on nonempty open sets of a second-countable space. If every point
 of a preconnected set `s` has a neighbourhood on which `f` is `μ`-almost everywhere equal to a
 constant, then `f` is `μ`-almost everywhere equal to a single constant on `s`. -/
-theorem _root_.IsPreconnected.exists_ae_eq_const_of_forall_nhds {X β : Type*}
+theorem exists_ae_eq_const_of_forall_nhds {X β : Type*}
     [TopologicalSpace X] [SecondCountableTopology X] [MeasurableSpace X] {μ : Measure X}
     [μ.IsOpenPosMeasure] [Nonempty β] {s : Set X} (hs : IsPreconnected s) {f : X → β}
     (hf : ∀ x ∈ s, ∃ c, ∃ U ∈ 𝓝 x, ∀ᵐ y ∂μ.restrict U, f y = c) :
@@ -89,6 +89,6 @@ theorem _root_.IsPreconnected.exists_ae_eq_const_of_forall_nhds {X β : Type*}
   exact (ae_restrict_biUnion_iff _ hTc _).2 fun x hx =>
     ae_restrict_of_ae_restrict_of_subset interior_subset (hUc x (hTs hx))
 
-end TauCeti
+end IsPreconnected
 
 end
