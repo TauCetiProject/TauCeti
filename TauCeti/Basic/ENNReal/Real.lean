@@ -26,6 +26,8 @@ reparametrization of the class along surjections.
 
 * `TauCeti.ofReal_sub_add_ofReal`: `ENNReal.ofReal (p - q) + ENNReal.ofReal q = ENNReal.ofReal p`
   for `0 ≤ q ≤ p`.
+* `TauCeti.le_ofReal_inv_add_mul_of_add_le`: if `a + b ≤ V` and `b ≥ ω V`, then
+  `a ≤ (1 + ω)⁻¹ V`.
 * `TauCeti.iSup₂_ofReal_iSup_eq_ofReal_mul`: if the class `Q` consists of the `c • F` with `F`
   in `P`, for `c > 0`, then the supremum for `Q` is `c` times that for `P`.
 * `TauCeti.iSup₂_ofReal_iSup_eq_of_comp`: classes related by composition with surjections have
@@ -33,6 +35,8 @@ reparametrization of the class along surjections.
 -/
 
 public section
+
+open scoped ENNReal
 
 namespace TauCeti
 
@@ -43,6 +47,24 @@ variable {α β : Type*}
 theorem ofReal_sub_add_ofReal {p q : ℝ} (hq : 0 ≤ q) (hqp : q ≤ p) :
     ENNReal.ofReal (p - q) + ENNReal.ofReal q = ENNReal.ofReal p := by
   rw [← ENNReal.ofReal_add (sub_nonneg.2 hqp) hq, sub_add_cancel]
+
+/-- If `a + b ≤ V` and `b ≥ ω V`, then `a ≤ (1 + ω)⁻¹ V`: the complement of a set filling an
+`ω` fraction of a set of measure `V` fills at most a `(1 + ω)⁻¹` fraction of it. -/
+theorem le_ofReal_inv_add_mul_of_add_le {a b : ℝ≥0∞} {V ω : ℝ} (hV : 0 ≤ V) (hω : 0 ≤ ω)
+    (hb : ENNReal.ofReal (ω * V) ≤ b) (hab : a + b ≤ ENNReal.ofReal V) :
+    a ≤ ENNReal.ofReal (1 + ω)⁻¹ * ENNReal.ofReal V := by
+  have hδV : V - ω * V ≤ (1 + ω)⁻¹ * V := by
+    have h : (1 + ω)⁻¹ * V - (V - ω * V) = ω ^ 2 / (1 + ω) * V := by
+      field_simp
+      ring
+    nlinarith [mul_nonneg (div_nonneg (sq_nonneg ω) (by positivity : (0 : ℝ) ≤ 1 + ω)) hV]
+  calc a ≤ ENNReal.ofReal V - b :=
+        ENNReal.le_sub_of_add_le_right (ne_top_of_le_ne_top ENNReal.ofReal_ne_top
+          (le_add_self.trans hab)) hab
+    _ ≤ ENNReal.ofReal V - ENNReal.ofReal (ω * V) := tsub_le_tsub_left hb _
+    _ = ENNReal.ofReal (V - ω * V) := (ENNReal.ofReal_sub _ (by positivity)).symm
+    _ ≤ ENNReal.ofReal ((1 + ω)⁻¹ * V) := ENNReal.ofReal_le_ofReal hδV
+    _ = ENNReal.ofReal (1 + ω)⁻¹ * ENNReal.ofReal V := ENNReal.ofReal_mul (by positivity)
 
 /-- **Rescaling a class of functions.** If, for `c > 0`, the functions satisfying `Q` are exactly
 the `c • F` with `F` satisfying `P`, then the supremum of their maxima is `c` times that for `P`. -/

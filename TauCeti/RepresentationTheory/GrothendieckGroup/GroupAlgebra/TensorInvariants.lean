@@ -18,7 +18,7 @@ tensor-invariant dimension `TauCeti.finrankTensorInvariantsK0 A`, `[M] ↦ dim�
 two kinds of classes that occur in the Grothendieck-group computation of local Galois cohomology:
 
 * for a one-dimensional representation `M`, the line `M^∨ ⊗ M` is trivial
-  (`Representation.dualTprodEquivTrivialOfFinrankEqOne`), so `[M^∨] * [M] = 1` in `G₀(k[G])`
+  (`Representation.dualTprodEquivTrivial`), so `[M^∨] * [M] = 1` in `G₀(k[G])`
   (`TauCeti.fdRepK0RingEquiv_dual_mul_self_eq_one`);
 * the regular representation `k[G]` is induced from the trivial subgroup, so by the projection
   formula and Frobenius reciprocity `dimₖ (k[G] ⊗ V)ᴳ = dimₖ V`
@@ -53,6 +53,7 @@ theorem fdRepK0RingEquiv_dual_mul_self_eq_one (M : FDRep k G) (h : finrank k M =
     fdRepK0RingEquiv k G (ExactK0.of (FDRep.of (Representation.dual M.ρ))) *
       fdRepK0RingEquiv k G (ExactK0.of M) = 1 := by
   have : FiniteDimensional k M := Module.finite_of_finrank_eq_succ h
+  have := Module.Invertible.of_finrank_eq_one h
   have : Module.Finite k[G] (Representation.trivial k G k).asModule :=
     Module.Finite.of_restrictScalars_finite k k[G] _
   rw [← map_mul, ExactK0.of_mul_of, fdRepK0RingEquiv_of, exactK0_one_eq_of_trivial]
@@ -61,7 +62,7 @@ theorem fdRepK0RingEquiv_dual_mul_self_eq_one (M : FDRep k G) (h : finrank k M =
     Module.Finite.of_restrictScalars_finite k k[G] _
   exact ExactK0.of_congr
     (Representation.asModuleLinearEquivOfEquiv
-      (Representation.dualTprodEquivTrivialOfFinrankEqOne M.ρ h)).toFGModuleCatIso
+      (Representation.dualTprodEquivTrivial M.ρ)).toFGModuleCatIso
 
 variable [NeZero (Nat.card G : k)]
 

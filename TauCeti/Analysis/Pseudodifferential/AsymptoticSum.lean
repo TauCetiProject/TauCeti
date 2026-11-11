@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Frequency.Cutoff
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Topology
 import Mathlib.Algebra.Order.Field.GeomSum
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
@@ -53,6 +54,11 @@ remainders after `N` terms are then continuous in `τ`: up to the tail of the se
 uniformly small, they are finite sums of the families `aⱼ` composed with fixed symbols. Such
 families arise, for instance, from continuous homotopies of symbols.
 
+Applied to the cut-off terms `χ(ξ) a_{m-j}(x, ξ)` of a sequence of homogeneous symbols, asymptotic
+summation constructs a classical symbol with these homogeneous terms. So the homogeneous terms
+identify the classical symbols of order `m` modulo smoothing symbols with all sequences of
+homogeneous symbols of degrees `m - j`.
+
 ## Main declarations
 
 * `TauCeti.Symbol.exists_norm_mixedDeriv_cutoff_smul_le`: the estimates of the cut-off symbols
@@ -65,6 +71,13 @@ families arise, for instance, from continuous homotopies of symbols.
   remainders.
 * `TauCeti.Symbol.exists_asymptoticSum`: every sequence of symbols of orders decreasing to `-∞`
   has an asymptotic sum.
+* `TauCeti.Symbol.exists_forall_of_exists_add`: successive corrections of orders `μ - N` that
+  improve a symbol step by step can be summed to one symbol with every improved property.
+* `TauCeti.ClassicalSymbol.exists_term_eq`: every sequence of homogeneous terms of degrees `m - j`
+  is the expansion of a classical symbol of order `m`.
+* `TauCeti.ClassicalSymbol.termsEquiv`: the classical symbols of order `m` modulo the smoothing
+  ones (`TauCeti.ClassicalSymbol.mem_ker_termsLinearMap`) are linearly equivalent to the sequences
+  of their homogeneous terms.
 
 ## References
 
@@ -628,6 +641,82 @@ theorem exists_asymptoticSum {m : ℕ → ℝ} (hm : Antitone m) (hm' : Tendsto 
   obtain ⟨r, -, hr⟩ := hb N
   exact ⟨r (), hr ()⟩
 
+/-- **Asymptotic summation of successive corrections.** Let `P N` be properties of symbols of
+order `μ` which `b₀` has for `N = 0`, which are stable under changes by symbols of order `μ - N`,
+and which can be improved from `N` to `N + 1` by such a change. Then one symbol has all of them. -/
+theorem exists_forall_of_exists_add {μ : ℝ} (P : ℕ → Symbol n V W μ → Prop)
+    {b₀ : Symbol n V W μ} (h₀ : P 0 b₀)
+    (hcongr : ∀ (N : ℕ) b b' (d : Symbol n V W (μ - N)), P N b →
+      b'.coefficient = b.coefficient + d.coefficient → P N b')
+    (hsucc : ∀ (N : ℕ) b, P N b →
+      ∃ d : Symbol n V W (μ - N), P (N + 1) (b + inclusion (by simp) d)) :
+    ∃ b, ∀ N, P N b := by
+  choose d hd using hsucc
+  -- The successive approximations `s N`, with `P N (s N)`, and the corrections `c N` between them.
+  let s : ∀ N, {b : Symbol n V W μ // P N b} := fun N ↦ Nat.rec ⟨b₀, h₀⟩
+    (fun N b ↦ ⟨b.1 + inclusion (by simp) (d N b.1 b.2), hd N b.1 b.2⟩) N
+  let c : ∀ N : ℕ, Symbol n V W (μ - N) := fun N ↦ d N (s N).1 (s N).2
+  have hs (N : ℕ) :
+      (s N).1.coefficient = b₀.coefficient + ∑ j ∈ Finset.range N, (c j).coefficient := by
+    induction N with
+    | zero => simp [s]
+    | succ N ih =>
+      rw [Finset.sum_range_succ, ← add_assoc, ← ih]
+      simp [s, c]
+  have hm : Antitone fun j : ℕ ↦ μ - j := fun _ _ hij ↦ sub_le_sub_left (Nat.cast_le.2 hij) μ
+  have hm' : Tendsto (fun j : ℕ ↦ μ - j) atTop atBot :=
+    tendsto_atBot_add_const_left atTop μ <| tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop
+  obtain ⟨B, hB⟩ := exists_asymptoticSum hm hm' c
+  refine ⟨b₀ + inclusion (by simp) B, fun N ↦ ?_⟩
+  obtain ⟨r, hr⟩ := isAsymptoticSum_iff.1 hB N
+  refine hcongr N (s N).1 _ r (s N).2 ?_
+  rw [coefficient_add, coefficient_inclusion, ← hr, hs]
+  abel
+
 end Symbol
+
+/-! ### Classical symbols with prescribed homogeneous terms -/
+
+namespace ClassicalSymbol
+
+open HomogeneousSymbol
+
+variable {m : ℝ}
+
+/-- **Borel summation of homogeneous terms.** Every sequence of homogeneous symbols `a_{m-j}` of
+degrees `m - j` is the sequence of homogeneous terms of a classical symbol of order `m`. -/
+theorem exists_term_eq
+    (a : ∀ j : ℕ, HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W (m - j)) :
+    ∃ b : ClassicalSymbol n V W m, b.term = a := by
+  let χ : FrequencyCutoff (CoordinateSpace n) := default
+  -- An asymptotic sum of the cut-off terms `χ(ξ) a_{m-j}(x, ξ)` is the required full symbol.
+  have hm : Antitone fun j : ℕ => m - j := fun _ _ hij => sub_le_sub_left (Nat.cast_le.2 hij) m
+  have hm' : Tendsto (fun j : ℕ => m - j) atTop atBot :=
+    tendsto_atBot_add_const_left atTop m <| tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop
+  obtain ⟨b, hb⟩ := Symbol.exists_asymptoticSum hm hm' fun j => cutoffSymbol χ (a j)
+  refine ⟨⟨Symbol.inclusion (by simp) b, a, χ, fun N => ?_⟩, rfl⟩
+  obtain ⟨r, hr⟩ := hb N
+  exact ⟨r, fun p => by simp [← hr, Finset.sum_apply]⟩
+
+/-- Every sequence of homogeneous terms of degrees `m - j` is the expansion of a classical symbol of
+order `m`. -/
+theorem termsLinearMap_surjective : Function.Surjective (termsLinearMap n V W m) :=
+  fun a => (exists_term_eq a).imp fun b hb => (termsLinearMap_apply b).trans hb
+
+variable (n V W m) in
+/-- Classical symbols of order `m` modulo smoothing symbols are the formal sums of homogeneous terms
+of degrees `m - j`: the homogeneous terms identify the quotient by the kernel of
+`TauCeti.ClassicalSymbol.termsLinearMap`, the smoothing classical symbols
+(`TauCeti.ClassicalSymbol.mem_ker_termsLinearMap`), with all sequences of homogeneous terms. -/
+def termsEquiv : (ClassicalSymbol n V W m ⧸ LinearMap.ker (termsLinearMap n V W m)) ≃ₗ[ℂ]
+    ∀ j : ℕ, HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W (m - j) :=
+  (termsLinearMap n V W m).quotKerEquivOfSurjective termsLinearMap_surjective
+
+@[simp]
+theorem termsEquiv_mk (a : ClassicalSymbol n V W m) :
+    termsEquiv n V W m (Submodule.Quotient.mk a) = a.term :=
+  (LinearMap.quotKerEquivOfSurjective_apply_mk _ _ a).trans (termsLinearMap_apply a)
+
+end ClassicalSymbol
 
 end TauCeti
