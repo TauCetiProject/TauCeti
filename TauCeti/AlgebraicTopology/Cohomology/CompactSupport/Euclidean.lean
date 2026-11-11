@@ -72,11 +72,12 @@ variable (R k M)
 
 /-- **Cohomology with compact supports of a real normed space is local cohomology at a point.**
 For a real normed space `E` and `y : E`, the map `Hⁿ(E, E ∖ {y}) ⟶ Hⁿ_c(E)` is an isomorphism.
-Every compact `K ⊆ E` lies in the compact union of the segments from `y` to the points of `K`,
-which is star-convex about `y`, and for such sets the restriction `Hⁿ(E, E ∖ {y}) ⟶ Hⁿ(E, E ∖ K)`
-is an isomorphism (`TauCeti.isIso_singularCohomologyMap_compl_of_starConvex`). -/
+-/
 instance isIso_compactSupportCohomologyι_singleton (y : E) (n : ℕ) :
     IsIso (compactSupportCohomologyι (R := R) (k := k) (M := M) (X := TopCat.of E) n {y}) := by
+  -- Every compact `K ⊆ E` lies in the compact union of the segments from `y` to the points of
+  -- `K`, which is star-convex about `y`, and for such sets the restriction
+  -- `Hⁿ(E, E ∖ {y}) ⟶ Hⁿ(E, E ∖ K)` is an isomorphism.
   rw [ConcreteCategory.isIso_iff_bijective]
   refine ⟨(injective_iff_map_eq_zero _).2 fun z hz ↦ ?_, fun x ↦ ?_⟩
   · obtain ⟨L, hL, hzL⟩ := (compactSupportCohomologyι_eq_zero_iff z).1 hz

@@ -79,15 +79,14 @@ variable {C : Type*} [Category.{w} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
 
 /-- **Removing a bounded star-convex set does not change cohomology.** If `K` contains `y`, is
 star-convex about `y` and is bounded, then the inclusion `(E, E ∖ K) ⟶ (E, E ∖ {y})` induces
-isomorphisms on relative singular cohomology. Both `E ∖ K` and `E ∖ {y}` deformation retract
-onto a sphere about `y` containing `K` in its interior (`StarConvex.complSphereHomotopyEquiv`), so
-the inclusion induces isomorphisms on the cohomology of the subspaces, and
-`TopPair.isIso_singularCohomologyMap_of_forall_isIso` applies. -/
+isomorphisms on relative singular cohomology. -/
 theorem isIso_singularCohomologyMap_compl_of_starConvex (hK : StarConvex ℝ y K) (hy : y ∈ K)
     (hKb : Bornology.IsBounded K) (n : ℕ) :
     IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
       (TopPair.ofSubsetMap (𝟙 (TopCat.of E)) (B := Kᶜ) (B' := {y}ᶜ)
         (Set.compl_subset_compl.2 (Set.singleton_subset_iff.2 hy))) n) := by
+  -- Both `E ∖ K` and `E ∖ {y}` deformation retract onto a sphere about `y` containing `K` in its
+  -- interior, so the inclusion induces isomorphisms on the cohomology of the subspaces.
   obtain ⟨r, hKr⟩ := (isBounded_iff_subset_ball y).1 hKb
   let e₁ := hK.complSphereHomotopyEquiv hy hKr
   let e₂ := (starConvex_singleton y).complSphereHomotopyEquiv rfl
