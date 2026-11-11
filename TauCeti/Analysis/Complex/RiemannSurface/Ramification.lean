@@ -281,8 +281,7 @@ omit [CompactSpace Y] in
 surfaces, with `Y` connected, is `deg R_f + deg f · deg R_g`. -/
 theorem ramificationDegree_comp (g : FiniteHolomorphicMap Y Z) (f : FiniteHolomorphicMap X Y) :
     ramificationDegree (g.comp f) = ramificationDegree f + degree f * ramificationDegree g := by
-  have : CompactSpace Y :=
-    ⟨by simpa [f.surjective.range_eq] using isCompact_range f.holomorphic.continuous⟩
+  have : CompactSpace Y := f.surjective.compactSpace f.holomorphic.continuous
   have h := congrArg WeilDivisor.degree (ramificationDivisor_comp g f)
   rw [map_add, degree_divisorPullback, degree_ramificationDivisor, degree_ramificationDivisor,
     degree_ramificationDivisor] at h
