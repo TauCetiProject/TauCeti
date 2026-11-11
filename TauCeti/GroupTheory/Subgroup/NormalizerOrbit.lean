@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Subgroup.Centralizer
+public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 public import TauCeti.GroupTheory.GroupAction.ConjAct
 
 /-!
@@ -35,13 +36,13 @@ variable {G : Type*} [Group G]
 /-- The map sending the `N(H)`-orbit of an element of `H` to its conjugation orbit in `G`. -/
 def normalizerOrbitMap (H : Subgroup G) :
     orbitRel.Quotient (normalizer (H : Set G)) H → orbitRel.Quotient (ConjAct G) G :=
-  Quotient.map' (fun h : H ↦ (h : G)) fun _ _ ⟨n, hn⟩ ↦
-    ⟨ConjAct.toConjAct (n : G), (ConjAct.toConjAct_smul _ _).trans (congrArg Subtype.val hn)⟩
+  MulActionHom.orbitRelQuotientMap (σ := fun n ↦ ConjAct.toConjAct (n : G))
+    ⟨Subtype.val, fun _ _ ↦ rfl⟩
 
 @[simp]
 theorem normalizerOrbitMap_mk (H : Subgroup G) (h : H) :
     H.normalizerOrbitMap (Quotient.mk'' h) = Quotient.mk'' (h : G) :=
-  (rfl)
+  MulActionHom.orbitRelQuotientMap_mk _ h
 
 /-- The map from `N(H)`-orbits to conjugation orbits is injective exactly when elements of `H`
 that are conjugate in `G` are conjugate by an element of `N(H)`. -/
@@ -72,12 +73,14 @@ theorem normalizerOrbitMap_surjective_iff (H : Subgroup G) :
     obtain ⟨q, hq⟩ := h (Quotient.mk'' g)
     induction q using Quotient.inductionOn' with
     | h t =>
+      rw [normalizerOrbitMap_mk] at hq
       obtain ⟨c, rfl⟩ := isConj_iff.mp (ConjAct.mk_eq_mk_iff_isConj.mp hq)
       exact Set.mem_iUnion.mpr ⟨c, t, t.2, rfl⟩
   · intro h q
     induction q using Quotient.inductionOn' with
     | h g =>
       obtain ⟨a, t, ht, rfl⟩ := Set.mem_iUnion.mp (h ▸ Set.mem_univ g)
-      exact ⟨Quotient.mk'' ⟨t, ht⟩, ConjAct.mk_eq_mk_iff_isConj.mpr (isConj_iff.mpr ⟨a, rfl⟩)⟩
+      exact ⟨Quotient.mk'' ⟨t, ht⟩, (H.normalizerOrbitMap_mk _).trans
+        (ConjAct.mk_eq_mk_iff_isConj.mpr (isConj_iff.mpr ⟨a, rfl⟩))⟩
 
 end Subgroup
