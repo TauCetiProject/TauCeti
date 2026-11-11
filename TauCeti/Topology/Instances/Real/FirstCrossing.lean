@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Instances.Real.Lemmas
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # First self-intersections and first crossings of curves
@@ -13,12 +14,12 @@ public import Mathlib.Topology.Instances.Real.Lemmas
 Two compactness arguments extract simple closed curves from curves parametrized by compact
 intervals of `ℝ`.
 
-* A curve `σ`, continuous on `[c, d]` and injective near each parameter, which is not injective
-  on `[c, d]`, has a first return: there are `a < b` in `[c, d]` with `σ a = σ b` and `σ`
-  injective on `[c, b)`. Then `σ` on `[a, b]` is a simple closed curve. Local injectivity, made
-  uniform by the Lebesgue number lemma, keeps the pairs of parameters with the same image away
-  from the diagonal, so the set of such pairs is compact and its second coordinate attains its
-  minimum.
+* A curve `σ`, continuous on `[c, d]` and injective near each parameter of `[c, d]` (on the
+  trace on `[c, d]` of a neighbourhood), which is not injective on `[c, d]`, has a first return:
+  there are `a < b` in `[c, d]` with `σ a = σ b` and `σ` injective on `[c, b)`. Then `σ` on
+  `[a, b]` is a simple closed curve. Local injectivity, made uniform by the Lebesgue number
+  lemma, keeps the pairs of parameters with the same image away from the diagonal, so the set of
+  such pairs is compact and its second coordinate attains its minimum.
 * Two injective arcs `α, β` on `[0, 1]` with common endpoints that do not meet for small
   positive parameters have a first crossing: a pair `(a, b)` with `a, b > 0` and `α a = β b`,
   such that `α` on `(0, a)` does not meet `β` on `[0, 1]`. Then `α` on `[0, a]` followed by `β`
@@ -41,25 +42,12 @@ namespace TauCeti
 
 variable {X : Type*} [TopologicalSpace X]
 
-private theorem isCompact_inter_setOf_eq [T2Space X] {σ τ : ℝ → X} {a b a' b' : ℝ}
-    {F : Set (ℝ × ℝ)} (hF : IsClosed F) (hσ : ContinuousOn σ (Icc a b))
-    (hτ : ContinuousOn τ (Icc a' b')) :
-    IsCompact ((Icc a b ×ˢ Icc a' b') ∩ F ∩ {z | σ z.1 = τ z.2}) := by
-  set S := (Icc a b ×ˢ Icc a' b') ∩ F
-  have hS : ∀ z ∈ S, z.1 ∈ Icc a b ∧ z.2 ∈ Icc a' b' := fun _ hz ↦ hz.1
-  have hK : IsCompact S := (isCompact_Icc.prod isCompact_Icc).inter_right hF
-  refine hK.of_isClosed_subset ?_ inter_subset_left
-  refine ContinuousOn.preimage_isClosed_of_isClosed (f := fun z : ℝ × ℝ ↦ (σ z.1, τ z.2))
-    ?_ hK.isClosed isClosed_diagonal
-  exact (hσ.comp continuousOn_fst fun z hz ↦ (hS z hz).1).prodMk
-    (hτ.comp continuousOn_snd fun z hz ↦ (hS z hz).2)
-
 /-- **First self-intersection of a locally injective curve.** A curve continuous on `[c, d]`,
-injective on a neighbourhood of each parameter of `[c, d]` but not injective on `[c, d]`,
-returns to an earlier point at a first time `b`: there is `a < b` with `σ a = σ b`, and `σ` is
-injective on `[c, b)`. -/
+injective on the trace on `[c, d]` of a neighbourhood of each parameter of `[c, d]` but not
+injective on `[c, d]`, returns to an earlier point at a first time `b`: there is `a < b` with
+`σ a = σ b`, and `σ` is injective on `[c, b)`. -/
 theorem exists_eq_injOn_Ico_of_not_injOn [T2Space X] {σ : ℝ → X} {c d : ℝ}
-    (hσ : ContinuousOn σ (Icc c d)) (hloc : ∀ t ∈ Icc c d, ∃ U ∈ 𝓝 t, InjOn σ U)
+    (hσ : ContinuousOn σ (Icc c d)) (hloc : ∀ t ∈ Icc c d, ∃ U ∈ 𝓝 t, InjOn σ (U ∩ Icc c d))
     (hnot : ¬ InjOn σ (Icc c d)) :
     ∃ a b, c ≤ a ∧ a < b ∧ b ≤ d ∧ σ a = σ b ∧ InjOn σ (Ico c b) := by
   choose! U hU hinj using hloc
@@ -70,22 +58,23 @@ theorem exists_eq_injOn_Ico_of_not_injOn [T2Space X] {σ : ℝ → X} {c d : ℝ
       (heq : σ s = σ t) : s = t := by
     obtain ⟨i, hi⟩ := hball s hs
     have hsub := hi.trans interior_subset
-    exact hinj i i.2 (hsub (mem_ball_self hδ)) (hsub (by rwa [mem_ball, Real.dist_eq])) heq
-  set K := (Icc c d ×ˢ Icc c d) ∩ {z : ℝ × ℝ | z.1 + δ ≤ z.2} ∩ {z | σ z.1 = σ z.2}
+    exact hinj i i.2 ⟨hsub (mem_ball_self hδ), hs⟩
+      ⟨hsub (by rwa [mem_ball, Real.dist_eq]), ht⟩ heq
+  set K := (Icc c d ×ˢ Icc c d) ∩ {z : ℝ × ℝ | σ z.1 = σ z.2} ∩ {z | z.1 + δ ≤ z.2}
   have hmem {s t : ℝ} (hs : s ∈ Icc c d) (ht : t ∈ Icc c d) (hst : s < t) (heq : σ s = σ t) :
       (s, t) ∈ K := by
     have hδst : s + δ ≤ t := le_of_not_gt fun hlt ↦
       hst.ne (hnear hs ht (by rw [abs_of_pos (sub_pos.2 hst)]; linarith) heq)
-    exact ⟨⟨⟨hs, ht⟩, hδst⟩, heq⟩
-  have hKc : IsCompact K := isCompact_inter_setOf_eq
-    (isClosed_le (continuous_fst.add continuous_const) continuous_snd) hσ hσ
+    exact ⟨⟨⟨hs, ht⟩, heq⟩, hδst⟩
+  have hKc : IsCompact K := (isCompact_Icc.prod_inter_setOf_eq isCompact_Icc hσ hσ).inter_right
+    (isClosed_le (continuous_fst.add continuous_const) continuous_snd)
   have hne : K.Nonempty := by
     simp only [InjOn, not_forall] at hnot
     obtain ⟨s, hs, t, ht, heq, hst⟩ := hnot
     rcases lt_or_gt_of_ne hst with h | h
     · exact ⟨_, hmem hs ht h heq⟩
     · exact ⟨_, hmem ht hs h heq.symm⟩
-  obtain ⟨⟨a, b⟩, ⟨⟨⟨ha, hb⟩, hlt⟩, heq⟩, hmin⟩ :=
+  obtain ⟨⟨a, b⟩, ⟨⟨⟨ha, hb⟩, heq⟩, hlt⟩, hmin⟩ :=
     hKc.exists_isMinOn hne continuous_snd.continuousOn
   have hδb : a + δ ≤ b := hlt
   refine ⟨a, b, ha.1, by linarith, hb.2, heq, fun s hs t ht h ↦ ?_⟩
@@ -111,8 +100,8 @@ theorem exists_first_crossing [T2Space X] {α β : ℝ → X}
   set η := min (ε / 2) 1
   have hη0 : 0 < η := lt_min (half_pos hε) one_pos
   have hηε : η < ε := (min_le_left _ _).trans_lt (half_lt_self hε)
-  set K := (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1) ∩ {z : ℝ × ℝ | η ≤ max z.1 z.2} ∩
-    {z | α z.1 = β z.2}
+  set K := (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1) ∩ {z : ℝ × ℝ | α z.1 = β z.2} ∩
+    {z | η ≤ max z.1 z.2}
   have hzero {s t : ℝ} (hs : s ∈ Icc (0 : ℝ) 1) (ht : t ∈ Icc (0 : ℝ) 1) (heq : α s = β t) :
       s = 0 ↔ t = 0 := by
     constructor
@@ -125,11 +114,11 @@ theorem exists_first_crossing [T2Space X] {α β : ℝ → X}
     have ht0 : 0 < t := lt_of_le_of_ne ht.1 fun h ↦ hs0.ne' ((hzero hs ht heq).2 h.symm)
     have hηst : η ≤ max s t := le_of_not_gt fun hlt ↦ hsep s
       ⟨hs0, (max_lt_iff.1 hlt).1.trans hηε⟩ t ⟨ht0, (max_lt_iff.1 hlt).2.trans hηε⟩ heq
-    exact ⟨⟨⟨hs, ht⟩, hηst⟩, heq⟩
-  have hKc : IsCompact K := isCompact_inter_setOf_eq
-    (isClosed_le continuous_const (continuous_fst.max continuous_snd)) hα hβ
+    exact ⟨⟨⟨hs, ht⟩, heq⟩, hηst⟩
+  have hKc : IsCompact K := (isCompact_Icc.prod_inter_setOf_eq isCompact_Icc hα hβ).inter_right
+    (isClosed_le continuous_const (continuous_fst.max continuous_snd))
   have h1mem : (1 : ℝ) ∈ Icc (0 : ℝ) 1 := right_mem_Icc.2 zero_le_one
-  obtain ⟨⟨a, b⟩, ⟨⟨⟨ha, hb⟩, hmax⟩, heq⟩, hmin⟩ :=
+  obtain ⟨⟨a, b⟩, ⟨⟨⟨ha, hb⟩, heq⟩, hmax⟩, hmin⟩ :=
     hKc.exists_isMinOn ⟨_, hmem h1mem h1mem one_pos h1⟩ continuous_fst.continuousOn
   replace ha : a ∈ Icc (0 : ℝ) 1 := ha
   replace hb : b ∈ Icc (0 : ℝ) 1 := hb
