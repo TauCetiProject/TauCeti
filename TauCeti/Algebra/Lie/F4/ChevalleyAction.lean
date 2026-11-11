@@ -662,7 +662,7 @@ theorem f4_ad_pow_three_rootVector_eq_zero (α β : Fin 48) :
     · rcases f4Length_eq_one_or_eq_two α with hα | hα
       · apply f4_ad_pow_rootVector_eq_zero_of_no_endpoint α β 3 hopp
         intro δ hpinned
-        exact (f4_not_root_eq_long_add_three_short α β δ hα hβ hpinned).elim
+        exact (f4_not_root_eq_add_three_zsmul α β δ hpinned).elim
       · have hdiv := f4_dividedPower_two_ad_rootVector_eq_zero_of_long α β hα hβ hopp
         simpa only [Nat.reduceAdd] using
         (Associative.pow_succ_apply_eq_zero_of_dividedPower_apply_eq_zero
