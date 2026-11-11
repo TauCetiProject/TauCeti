@@ -49,8 +49,10 @@ This file defines `δ₀` on smooth differential forms and proves two foundation
 
 ## Main results
 
-* `TauCeti.SeibergWitten.deformationTargetRescale_comp_asdDeformationOperator`:
-  `deformationTargetRescale ∘ δ₀ = abelianDeformationOperator`.
+* `TauCeti.SeibergWitten.deformationTargetRescale_comp_asdDeformationOperator`,
+  `TauCeti.SeibergWitten.asdDeformationDetLineEquiv_def`:
+  `deformationTargetRescale ∘ δ₀ = abelianDeformationOperator` and the induced determinant-line
+  transport.
 * `TauCeti.SeibergWitten.ker_asdDeformationOperator`: on a closed oriented four-manifold,
   `ker δ₀ = ker d ⊓ ker d*`.
 * `TauCeti.SeibergWitten.asdDeformationOperator_commutator_eq_deformationSymbol`: the commutator of
@@ -172,6 +174,16 @@ def asdDeformationDetLineEquiv :
     (deformationTargetRescale o)
     (by rw [LinearEquiv.refl_toLinearMap, LinearMap.comp_id,
       deformationTargetRescale_comp_asdDeformationOperator])
+
+/-- Unfolding `asdDeformationDetLineEquiv` as determinant-line transport along the identity on
+`Ω¹(M)` and `deformationTargetRescale` on `Ω⁰(M) × Ω⁺(M)`. -/
+theorem asdDeformationDetLineEquiv_def :
+    asdDeformationDetLineEquiv o =
+      LinearMap.detLineCongr (asdDeformationOperator o) (LinearEquiv.refl ℝ _)
+        (deformationTargetRescale o)
+        (by rw [LinearEquiv.refl_toLinearMap, LinearMap.comp_id,
+          deformationTargetRescale_comp_asdDeformationOperator]) :=
+  (rfl)
 
 section ClosedManifold
 

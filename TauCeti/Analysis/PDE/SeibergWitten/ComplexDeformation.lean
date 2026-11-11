@@ -7,18 +7,15 @@ module
 
 public import TauCeti.Analysis.PDE.SeibergWitten.ASDDeformation
 public import TauCeti.Geometry.Manifold.Riemannian.AlmostComplex
-public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
-public import TauCeti.Geometry.Symplectic.Orientation
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.AlmostComplexType
-import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 
 /-!
 # The complex-linear Seiberg–Witten deformation operator and principal-symbol homotopy
 
 On an oriented Riemannian four-manifold `(M, g, o)` equipped with a smooth almost complex structure
-`J` compatible with the metric and inducing the orientation `o`
-(`TauCeti.SeibergWitten.IsCompatibleOrientation`), Taubes's Gromov–Seiberg–Witten theory compares
-the Atiyah–Hitchin–Singer deformation operator `δ₀(a) = (-d*a, √2 (da)⁺)`
+`J` compatible with the metric and orientation
+(`TauCeti.SmoothAlmostComplexStructure.IsCompatibleOrientation`), Taubes's Gromov–Seiberg–Witten
+theory compares the Atiyah–Hitchin–Singer deformation operator `δ₀(a) = (-d*a, √2 (da)⁺)`
 (`TauCeti.SeibergWitten.asdDeformationOperator`) with its complex-linear part
 
 `δ_ω = (δ₀ - J′ ∘ δ₀ ∘ J₁) / 2`
@@ -44,10 +41,6 @@ elliptic principal symbol as `δ₀`
 
 ## Main definitions
 
-* `TauCeti.SeibergWitten.IsCompatibleOrientation`: existence at every point of a positively oriented
-  unitary orthonormal tangent frame for `(o, J)`, satisfied by any nondegenerate two-form `σ` whose
-  associated bilinear form `σ(·, J ·)` is the metric and whose symplectic orientation agrees with
-  `o` (`TauCeti.SeibergWitten.isCompatibleOrientation_of_symplectic`).
 * `TauCeti.SeibergWitten.deformationTargetComplexStructure`: the global almost complex structure
   `J′` on `Ω⁰(M) × Ω⁺(M)`.
 * `TauCeti.SeibergWitten.complexDeformationOperator`: Taubes's complex-linear operator
@@ -56,8 +49,6 @@ elliptic principal symbol as `δ₀`
 
 ## Main results
 
-* `TauCeti.SeibergWitten.isCompatibleOrientation_of_symplectic`: symplectic four-manifolds with a
-  compatible almost-Kähler metric satisfy `IsCompatibleOrientation`.
 * `TauCeti.SeibergWitten.deformationTargetComplexStructure_apply_fst`,
   `TauCeti.SeibergWitten.coe_deformationTargetComplexStructure_apply_snd`, and
   `TauCeti.SeibergWitten.deformationTargetComplexStructure_apply_eq`: global component formulas and
@@ -92,30 +83,86 @@ namespace TauCeti.SeibergWitten
 section PrivateHelpers
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [FiniteDimensional ℝ E] [IsManifold I ∞ M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+
+/-- Pointwise evaluation `g ↦ g(x)` of a smooth zero-form as a linear map. -/
+private def zeroFormEval (x : M) : SmoothForm I M ℝ 0 →ₗ[ℝ] ℝ where
+  toFun g := g.1 x 0
+  map_add' _ _ := by simp
+  map_smul' _ _ := by simp
+
+@[simp]
+private theorem zeroFormEval_apply (x : M) (g : SmoothForm I M ℝ 0) :
+    zeroFormEval x g = g.1 x 0 :=
+  (rfl)
+
+section TwoFormBivectorEval
+
+variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+
+/-- Fibrewise bivector evaluation `η ↦ (alternatingFormEquiv (T_x M) 2).symm η_x` of a smooth
+two-form as a linear map. -/
+private def twoFormBivectorEval (x : M) [FiniteDimensional ℝ (TangentSpace I x)] :
+    SmoothForm I M ℝ 2 →ₗ[ℝ] ⋀[ℝ]^2 (TangentSpace I x) where
+  toFun η := (alternatingFormEquiv (TangentSpace I x) 2).symm (η.1 x)
+  map_add' _ _ := by simp
+  map_smul' _ _ := by simp
+
+@[simp]
+private theorem twoFormBivectorEval_apply (x : M) [FiniteDimensional ℝ (TangentSpace I x)]
+    (η : SmoothForm I M ℝ 2) :
+    twoFormBivectorEval x η = (alternatingFormEquiv (TangentSpace I x) 2).symm (η.1 x) :=
+  (rfl)
+
+section TargetEval
+
+variable [FiniteDimensional ℝ E]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
-/-- Fibrewise extensionality for elements of `Ω⁰(M) × Ω⁺(M)` read in `ℝ × ⋀² T_x M`. -/
+/-- Fibrewise evaluation `(g, η) ↦ (g(x), (alternatingFormEquiv (T_x M) 2).symm η_x)` on
+`Ω⁰(M) × Ω⁺(M)`, bundled as a linear map. -/
+private def deformationTargetEval (o : Manifold.Orientation I M (Fin (2 + 2))) (x : M) :
+    letI := o.fact_finrank_tangentSpace x
+    haveI : FiniteDimensional ℝ (TangentSpace I x) :=
+      VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
+    SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o →ₗ[ℝ]
+      ℝ × ⋀[ℝ]^2 (TangentSpace I x) :=
+  letI := o.fact_finrank_tangentSpace x
+  haveI : FiniteDimensional ℝ (TangentSpace I x) :=
+    VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
+  (zeroFormEval x).prodMap (twoFormBivectorEval x ∘ₗ (SmoothForm.selfDualForms o).subtype)
+
+@[simp]
+private theorem deformationTargetEval_apply (o : Manifold.Orientation I M (Fin (2 + 2))) (x : M)
+    (p : SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o) :
+    (letI := o.fact_finrank_tangentSpace x
+     haveI : FiniteDimensional ℝ (TangentSpace I x) :=
+       VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
+     deformationTargetEval o x p) =
+      (letI := o.fact_finrank_tangentSpace x
+       haveI : FiniteDimensional ℝ (TangentSpace I x) :=
+         VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
+       (p.1.1 x 0,
+         (alternatingFormEquiv (TangentSpace I x) 2).symm ((p.2 : SmoothForm I M ℝ 2).1 x))) :=
+  (rfl)
+
+/-- Fibrewise extensionality for elements of `Ω⁰(M) × Ω⁺(M)` read via `deformationTargetEval`. -/
 private theorem ext_deformationTarget (o : Manifold.Orientation I M (Fin (2 + 2)))
     {p q : SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o}
-    (h : ∀ x : M,
-      (letI := o.fact_finrank_tangentSpace x
-       (p.1.1 x 0,
-         (alternatingFormEquiv (TangentSpace I x) 2).symm
-           ((p.2 : SmoothForm I M ℝ 2).1 x))) =
-        (letI := o.fact_finrank_tangentSpace x
-         (q.1.1 x 0,
-           (alternatingFormEquiv (TangentSpace I x) 2).symm
-             ((q.2 : SmoothForm I M ℝ 2).1 x)))) :
+    (h : ∀ x : M, deformationTargetEval o x p = deformationTargetEval o x q) :
     p = q := by
   refine Prod.ext (Subtype.ext <| funext fun x ↦ ContinuousAlternatingMap.ext fun u ↦ ?_)
     (Subtype.ext <| Subtype.ext <| funext fun x ↦ ?_)
   · rw [Subsingleton.elim u 0]
     exact (Prod.mk.inj (h x)).1
   · let _ := o.fact_finrank_tangentSpace x
+    have _ : FiniteDimensional ℝ (TangentSpace I x) :=
+      VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
     exact (alternatingFormEquiv (TangentSpace I x) 2).symm.injective (Prod.mk.inj (h x)).2
+
+end TargetEval
+
+end TwoFormBivectorEval
 
 end PrivateHelpers
 
@@ -127,61 +174,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [FiniteDimensional ℝ E] [IsManifold I ∞ M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-
-/-- A smooth almost complex structure `J` on an oriented Riemannian four-manifold `(M, g, o)` is
-**compatible with the metric and orientation** if every tangent space `T_x M` admits a positively
-oriented orthonormal basis `(e₀, e₁, e₂, e₃)` with `J_x e₀ = e₁` and `J_x e₂ = e₃`. -/
-def IsCompatibleOrientation (o : Manifold.Orientation I M (Fin (2 + 2)))
-    (J : SmoothAlmostComplexStructure I M) : Prop :=
-  ∀ x : M, ∃ e : OrthonormalBasis (Fin 4) ℝ (TangentSpace I x),
-    e.toBasis.orientation = o.orientationAt x ∧ J x (e 0) = e 1 ∧ J x (e 2) = e 3
-
-/-- Unpacks `IsCompatibleOrientation o J` at `x : M` in terms of the fibrewise
-`AlmostComplexStructure` `J.almostComplexStructureAt x`. -/
-theorem IsCompatibleOrientation.exists_frame {o : Manifold.Orientation I M (Fin (2 + 2))}
-    {J : SmoothAlmostComplexStructure I M} (hJo : IsCompatibleOrientation o J) (x : M) :
-    ∃ e : OrthonormalBasis (Fin 4) ℝ (TangentSpace I x),
-      e.toBasis.orientation = o.orientationAt x ∧
-        J.almostComplexStructureAt x (e 0) = e 1 ∧
-        J.almostComplexStructureAt x (e 2) = e 3 := by
-  obtain ⟨e, he, h₀, h₂⟩ := hJo x
-  exact ⟨e, he,
-    by rwa [SmoothAlmostComplexStructure.almostComplexStructureAt_apply],
-    by rwa [SmoothAlmostComplexStructure.almostComplexStructureAt_apply]⟩
-
-/-- A metric- and orientation-compatible smooth almost complex structure is fibrewise orthogonal. -/
-theorem IsCompatibleOrientation.inner_apply_apply {o : Manifold.Orientation I M (Fin (2 + 2))}
-    {J : SmoothAlmostComplexStructure I M} (hJo : IsCompatibleOrientation o J)
-    (x : M) (u w : TangentSpace I x) :
-    ⟪J x u, J x w⟫ = ⟪u, w⟫ := by
-  let _ := o.fact_finrank_tangentSpace x
-  obtain ⟨e, _, h₀, h₂⟩ := hJo.exists_frame x
-  simpa only [SmoothAlmostComplexStructure.almostComplexStructureAt_apply] using
-    AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂ u w
-
-/-- **Any nondegenerate two-form `σ` whose associated bilinear form `σ(·, J ·)` is the Riemannian
-bundle metric and whose symplectic orientation agrees with `o` satisfies
-`IsCompatibleOrientation o J`.** -/
-theorem isCompatibleOrientation_of_symplectic (o : Manifold.Orientation I M (Fin (2 + 2)))
-    {σ : SmoothTwoForm I M} (hσ : σ.IsNondegenerate) {J : SmoothAlmostComplexStructure I M}
-    (hg : ∀ (x : M) (v w : TangentSpace I x), ⟪v, w⟫ = σ.eval₂ x v (J x w))
-    (ho : ∀ x : M,
-      (letI : Fact (finrank ℝ (TangentSpace I x) = 4) := o.fact_finrank_tangentSpace x
-       (hσ.symplecticFormAt x).orientation Fact.out) = o.orientationAt x) :
-    IsCompatibleOrientation o J := by
-  intro x
-  let _ : Fact (finrank ℝ (TangentSpace I x) = 4) := o.fact_finrank_tangentSpace x
-  have hg' : ∀ v w : TangentSpace I x,
-      ⟪v, w⟫ = (hσ.symplecticFormAt x) v (J.almostComplexStructureAt x w) := fun v w ↦ by
-    rw [SmoothAlmostComplexStructure.almostComplexStructureAt_apply,
-      hσ.symplecticFormAt_apply, hg x v w]
-  obtain ⟨e, he, h₀, h₂⟩ :=
-    AlmostComplexStructure.exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation
-      hg'
-  rw [SmoothAlmostComplexStructure.almostComplexStructureAt_apply] at h₀ h₂
-  exact ⟨e, he.trans (ho x), h₀, h₂⟩
-
-variable [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   (o : Manifold.Orientation I M (Fin (2 + 2)))
 
 /-- The ambient smooth-form linear map underlying `deformationTargetComplexStructure` on
@@ -224,30 +217,19 @@ private theorem deformationTargetAmbientMap_apply_eq {J : SmoothAlmostComplexStr
          (p.1.1 x 0, (alternatingFormEquiv (TangentSpace I x) 2).symm (p.2.1 x))) := by
   let _ := o.fact_finrank_tangentSpace x
   refine Prod.ext ?_ ?_
-  · rw [deformationTargetAmbientMap_fst, Submodule.coe_neg, Submodule.coe_smul, Pi.neg_apply,
-      Pi.smul_apply, ContinuousAlternatingMap.neg_apply, ContinuousAlternatingMap.smul_apply,
-      smul_eq_mul, SmoothForm.innerZeroForm_apply, alternatingFormInner_apply,
-      J.alternatingFormEquiv_symm_kahlerTwoForm, deformationComplexStructure_apply_fst]
-  · have hwedge := SmoothForm.wedge_zero_right_apply_eq_smul (J.kahlerTwoForm hJ) p.1 x
-    have hsub : ((deformationTargetAmbientMap o J hJ p).2).1 x =
-        (√2 / 2 * p.1.1 x 0) • (J.kahlerTwoForm hJ).1 x +
-          (2⁻¹ : ℝ) • (-J.toEndomorphism.realAlternatingDerivation p.2).1 x := by
-      ext w
-      rw [deformationTargetAmbientMap_snd, Submodule.coe_sub, Submodule.coe_smul,
-        Submodule.coe_smul, Pi.sub_apply, Pi.smul_apply, Pi.smul_apply,
-        ContinuousAlternatingMap.sub_apply, ContinuousAlternatingMap.smul_apply,
-        ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.add_apply,
-        ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.smul_apply,
-        Submodule.coe_neg, Pi.neg_apply, ContinuousAlternatingMap.neg_apply, hwedge,
-        ContinuousAlternatingMap.smul_apply]
-      simp only [smul_eq_mul]
-      ring
-    rw [hsub, map_add, map_smul, map_smul, J.alternatingFormEquiv_symm_kahlerTwoForm,
-      J.alternatingFormEquiv_symm_neg_realAlternatingDerivation_two hJ,
-      deformationComplexStructure_apply_snd]
+  · rw [← zeroFormEval_apply, deformationTargetAmbientMap_fst, map_neg, map_smul]
+    simp [alternatingFormInner_apply]
+  · have hsnd : (deformationTargetAmbientMap o J hJ p).2 =
+        (√2 / 2 : ℝ) • SmoothForm.wedge (J.kahlerTwoForm hJ) p.1 +
+          (2⁻¹ : ℝ) • (-J.toEndomorphism.realAlternatingDerivation p.2) := by
+      rw [deformationTargetAmbientMap_snd, smul_neg, sub_eq_add_neg]
+    rw [← twoFormBivectorEval_apply, hsnd, map_add, map_smul, map_smul,
+      twoFormBivectorEval_apply, twoFormBivectorEval_apply,
+      J.alternatingFormEquiv_symm_neg_realAlternatingDerivation_two hJ]
+    simp [SmoothForm.wedge_zero_right_apply_eq_smul, smul_smul]
 
 private theorem deformationTargetAmbientMap_snd_mem_selfDualForms
-    (J : SmoothAlmostComplexStructure I M) (hJo : IsCompatibleOrientation o J)
+    (J : SmoothAlmostComplexStructure I M) (hJo : J.IsCompatibleOrientation o)
     (p : SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o) :
     (deformationTargetAmbientMap o J hJo.inner_apply_apply
       (p.1, (p.2 : SmoothForm I M ℝ 2))).2 ∈
@@ -281,7 +263,7 @@ private theorem deformationTargetAmbientMap_snd_mem_selfDualForms
   exact hsd
 
 private def deformationTargetLinearMap (J : SmoothAlmostComplexStructure I M)
-    (hJo : IsCompatibleOrientation o J) :
+    (hJo : J.IsCompatibleOrientation o) :
     Module.End ℝ (SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o) :=
   let embed : SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o →ₗ[ℝ]
       SmoothForm I M ℝ 0 × SmoothForm I M ℝ 2 :=
@@ -293,40 +275,30 @@ private def deformationTargetLinearMap (J : SmoothAlmostComplexStructure I M)
       (deformationTargetAmbientMap_snd_mem_selfDualForms o J hJo)
 
 private theorem deformationTargetLinearMap_apply_eq (J : SmoothAlmostComplexStructure I M)
-    (hJo : IsCompatibleOrientation o J)
+    (hJo : J.IsCompatibleOrientation o)
     (p : SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o) (x : M) :
-    (letI := o.fact_finrank_tangentSpace x
-     ((deformationTargetLinearMap o J hJo p).1.1 x 0,
-       (alternatingFormEquiv (TangentSpace I x) 2).symm
-         (((deformationTargetLinearMap o J hJo p).2 : SmoothForm I M ℝ 2).1 x))) =
+    deformationTargetEval o x (deformationTargetLinearMap o J hJo p) =
       (letI := o.fact_finrank_tangentSpace x
-       deformationComplexStructure (J.almostComplexStructureAt x)
-         (p.1.1 x 0,
-           (alternatingFormEquiv (TangentSpace I x) 2).symm ((p.2 : SmoothForm I M ℝ 2).1 x))) :=
+       deformationComplexStructure (J.almostComplexStructureAt x) (deformationTargetEval o x p)) :=
   deformationTargetAmbientMap_apply_eq o hJo.inner_apply_apply (p.1, (p.2 : SmoothForm I M ℝ 2)) x
 
 private theorem deformationTargetLinearMap_comp_self (J : SmoothAlmostComplexStructure I M)
-    (hJo : IsCompatibleOrientation o J) :
+    (hJo : J.IsCompatibleOrientation o) :
     deformationTargetLinearMap o J hJo ∘ₗ deformationTargetLinearMap o J hJo = -LinearMap.id := by
   refine LinearMap.ext fun p ↦ ext_deformationTarget o fun x ↦ ?_
   let _ := o.fact_finrank_tangentSpace x
   obtain ⟨e, he, h₀, h₂⟩ := hJo.exists_frame x
-  rw [LinearMap.comp_apply, deformationTargetLinearMap_apply_eq,
-    deformationTargetLinearMap_apply_eq,
+  rw [LinearMap.comp_apply, LinearMap.neg_apply, LinearMap.id_apply, map_neg,
+    deformationTargetLinearMap_apply_eq, deformationTargetLinearMap_apply_eq,
     deformationComplexStructure_deformationComplexStructure
       (o.fact_finrank_tangentSpace x).out.symm he h₀ h₂
       (SmoothForm.hodgeStar_alternatingFormEquiv_symm_of_mem_selfDualForms o p.2.2 x)]
-  refine Prod.ext ?_ ?_
-  · rw [Prod.fst_neg, LinearMap.neg_apply, LinearMap.id_apply, Prod.fst_neg, Submodule.coe_neg,
-      Pi.neg_apply, ContinuousAlternatingMap.neg_apply]
-  · rw [Prod.snd_neg, LinearMap.neg_apply, LinearMap.id_apply, Prod.snd_neg, Submodule.coe_neg,
-      Submodule.coe_neg, Pi.neg_apply, map_neg]
 
 /-- **The global almost complex structure `J′` on `Ω⁰(M) × Ω⁺(M)`** induced by a metric- and
 orientation-compatible smooth almost complex structure `J` on `(M, g, o)`. At every point `x : M`,
 it acts on `(g(x), η_x)` as `deformationSelfDualComplexStructure` on `ℝ × Λ⁺_x`. -/
 def deformationTargetComplexStructure (J : SmoothAlmostComplexStructure I M)
-    (hJo : IsCompatibleOrientation o J) :
+    (hJo : J.IsCompatibleOrientation o) :
     AlmostComplexStructure
       (SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o) where
   toLinearMap := deformationTargetLinearMap o J hJo
@@ -336,7 +308,7 @@ def deformationTargetComplexStructure (J : SmoothAlmostComplexStructure I M)
 `⟨ω, η⟩ = SmoothForm.innerZeroForm o ω η`. -/
 @[simp]
 theorem deformationTargetComplexStructure_apply_fst (J : SmoothAlmostComplexStructure I M)
-    (hJo : IsCompatibleOrientation o J)
+    (hJo : J.IsCompatibleOrientation o)
     (p : SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o) :
     (deformationTargetComplexStructure o J hJo p).1 =
       -((√2 / 2 : ℝ) • SmoothForm.innerZeroForm (k := 2) (l := 2) o
@@ -347,7 +319,7 @@ theorem deformationTargetComplexStructure_apply_fst (J : SmoothAlmostComplexStru
 `ω = J.kahlerTwoForm` and `D_J = J.toEndomorphism.realAlternatingDerivation`. -/
 @[simp]
 theorem coe_deformationTargetComplexStructure_apply_snd (J : SmoothAlmostComplexStructure I M)
-    (hJo : IsCompatibleOrientation o J)
+    (hJo : J.IsCompatibleOrientation o)
     (p : SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o) :
     ((deformationTargetComplexStructure o J hJo p).2 : SmoothForm I M ℝ 2) =
       (√2 / 2 : ℝ) • SmoothForm.wedge (J.kahlerTwoForm hJo.inner_apply_apply) p.1 -
@@ -358,7 +330,7 @@ theorem coe_deformationTargetComplexStructure_apply_snd (J : SmoothAlmostComplex
 `deformationTargetComplexStructure o J hJo` acts as `deformationComplexStructure
 (J.almostComplexStructureAt x)`. -/
 theorem deformationTargetComplexStructure_apply_eq (J : SmoothAlmostComplexStructure I M)
-    (hJo : IsCompatibleOrientation o J)
+    (hJo : J.IsCompatibleOrientation o)
     (p : SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o) (x : M) :
     (letI := o.fact_finrank_tangentSpace x
      ((deformationTargetComplexStructure o J hJo p).1.1 x 0,
@@ -370,11 +342,19 @@ theorem deformationTargetComplexStructure_apply_eq (J : SmoothAlmostComplexStruc
            (alternatingFormEquiv (TangentSpace I x) 2).symm ((p.2 : SmoothForm I M ℝ 2).1 x))) :=
   deformationTargetLinearMap_apply_eq o J hJo p x
 
+private theorem deformationTargetEval_complexStructure (J : SmoothAlmostComplexStructure I M)
+    (hJo : J.IsCompatibleOrientation o)
+    (p : SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o) (x : M) :
+    deformationTargetEval o x (deformationTargetComplexStructure o J hJo p) =
+      (letI := o.fact_finrank_tangentSpace x
+       deformationComplexStructure (J.almostComplexStructureAt x) (deformationTargetEval o x p)) :=
+  deformationTargetComplexStructure_apply_eq o J hJo p x
+
 /-- **Pointwise orthogonality of `deformationTargetComplexStructure`:** at every point `x : M`,
 `J′` preserves the pointwise inner product `(p, q) ↦ p.1(x) q.1(x) + ⟨p.2(x), q.2(x)⟩` on
 `Ω⁰(M) × Ω⁺(M)`. -/
 theorem inner_deformationTargetComplexStructure (J : SmoothAlmostComplexStructure I M)
-    (hJo : IsCompatibleOrientation o J)
+    (hJo : J.IsCompatibleOrientation o)
     (p q : SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o) (x : M) :
     (deformationTargetComplexStructure o J hJo p).1.1 x 0 *
         (deformationTargetComplexStructure o J hJo q).1.1 x 0 +
@@ -396,30 +376,21 @@ theorem inner_deformationTargetComplexStructure (J : SmoothAlmostComplexStructur
 /-- `deformationTargetComplexStructure o J hJo` commutes with right multiplication by smooth
 functions (`C^∞(M)`-linearity). -/
 theorem deformationTargetComplexStructure_mulRight (J : SmoothAlmostComplexStructure I M)
-    (hJo : IsCompatibleOrientation o J) (f : SmoothForm I M ℝ 0)
+    (hJo : J.IsCompatibleOrientation o) (f : SmoothForm I M ℝ 0)
     (p : SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o) :
     deformationTargetComplexStructure o J hJo (deformationTargetMulRight o f p) =
       deformationTargetMulRight o f (deformationTargetComplexStructure o J hJo p) := by
   have hmulfib (r : SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o) (x : M) :
-      (letI := o.fact_finrank_tangentSpace x
-       ((deformationTargetMulRight o f r).1.1 x 0,
-         (alternatingFormEquiv (TangentSpace I x) 2).symm
-           (((deformationTargetMulRight o f r).2 : SmoothForm I M ℝ 2).1 x))) =
-        (letI := o.fact_finrank_tangentSpace x
-         f.1 x 0 • (r.1.1 x 0,
-           (alternatingFormEquiv (TangentSpace I x) 2).symm
-             ((r.2 : SmoothForm I M ℝ 2).1 x))) := by
+      deformationTargetEval o x (deformationTargetMulRight o f r) =
+        f.1 x 0 • deformationTargetEval o x r := by
     let _ := o.fact_finrank_tangentSpace x
     refine Prod.ext ?_ ?_
-    · rw [deformationTargetMulRight_apply_fst, SmoothForm.wedge_apply_zero_right, Prod.smul_fst,
-        smul_eq_mul, mul_comm]
-    · rw [coe_deformationTargetMulRight_apply_snd,
-        SmoothForm.wedge_zero_right_apply_eq_smul (r.2 : SmoothForm I M ℝ 2) f x, map_smul,
-        Prod.smul_snd]
+    · simp [SmoothForm.wedge_apply_zero_right, mul_comm]
+    · simp [SmoothForm.wedge_zero_right_apply_eq_smul]
   refine ext_deformationTarget o fun x ↦ ?_
   let _ := o.fact_finrank_tangentSpace x
-  rw [deformationTargetComplexStructure_apply_eq, hmulfib p x, map_smul,
-    ← deformationTargetComplexStructure_apply_eq, hmulfib _ x]
+  rw [deformationTargetEval_complexStructure, hmulfib, map_smul, hmulfib,
+    deformationTargetEval_complexStructure]
 
 end Target
 
@@ -438,14 +409,14 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 `Ω⁰(M) × Ω⁺(M)` on an oriented Riemannian four-manifold with a compatible almost complex structure
 `J`. -/
 def complexDeformationOperator (o : Manifold.Orientation I M (Fin (2 + 2)))
-    (J : SmoothAlmostComplexStructure I M) (hJo : IsCompatibleOrientation o J) :
+    (J : SmoothAlmostComplexStructure I M) (hJo : J.IsCompatibleOrientation o) :
     SmoothForm I M ℝ 1 →ₗ[ℝ] SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o :=
   TauCeti.complexLinearPart J.covectorComplexStructure.toLinearMap
     (deformationTargetComplexStructure o J hJo).toLinearMap (asdDeformationOperator o)
 
 /-- Unfolding `complexDeformationOperator` as `(2⁻¹ : ℝ) • (δ₀ a - J′ (δ₀ (J₁ a)))`. -/
 theorem complexDeformationOperator_apply (o : Manifold.Orientation I M (Fin (2 + 2)))
-    (J : SmoothAlmostComplexStructure I M) (hJo : IsCompatibleOrientation o J)
+    (J : SmoothAlmostComplexStructure I M) (hJo : J.IsCompatibleOrientation o)
     (a : SmoothForm I M ℝ 1) :
     complexDeformationOperator o J hJo a =
       (2⁻¹ : ℝ) • (asdDeformationOperator o a -
@@ -456,7 +427,7 @@ theorem complexDeformationOperator_apply (o : Manifold.Orientation I M (Fin (2 +
 /-- **`δ_ω` is complex linear** with respect to `J.covectorComplexStructure` on `Ω¹(M)` and
 `deformationTargetComplexStructure o J hJo` on `Ω⁰(M) × Ω⁺(M)`. -/
 theorem isComplexLinearMap_complexDeformationOperator (o : Manifold.Orientation I M (Fin (2 + 2)))
-    (J : SmoothAlmostComplexStructure I M) (hJo : IsCompatibleOrientation o J) :
+    (J : SmoothAlmostComplexStructure I M) (hJo : J.IsCompatibleOrientation o) :
     IsComplexLinearMap J.covectorComplexStructure (deformationTargetComplexStructure o J hJo)
       (complexDeformationOperator o J hJo) :=
   TauCeti.complexLinearPart_isComplexLinear J.covectorComplexStructure.square_neg
@@ -465,7 +436,7 @@ theorem isComplexLinearMap_complexDeformationOperator (o : Manifold.Orientation 
 /-- The difference `δ_ω - δ₀` is minus the `(J₁, J′)`-complex-antilinear part of `δ₀`. -/
 theorem complexDeformationOperator_sub_asdDeformationOperator_eq_neg_complexAntilinearPart
     (o : Manifold.Orientation I M (Fin (2 + 2))) (J : SmoothAlmostComplexStructure I M)
-    (hJo : IsCompatibleOrientation o J) :
+    (hJo : J.IsCompatibleOrientation o) :
     complexDeformationOperator o J hJo - asdDeformationOperator o =
       -TauCeti.complexAntilinearPart J.covectorComplexStructure.toLinearMap
         (deformationTargetComplexStructure o J hJo).toLinearMap (asdDeformationOperator o) := by
@@ -480,7 +451,7 @@ theorem complexDeformationOperator_sub_asdDeformationOperator_eq_neg_complexAnti
 
 private theorem complexDeformationOperator_commutator_eq_two_inv_smul
     (o : Manifold.Orientation I M (Fin (2 + 2))) (J : SmoothAlmostComplexStructure I M)
-    (hJo : IsCompatibleOrientation o J) (a : SmoothForm I M ℝ 1) (f : SmoothForm I M ℝ 0) :
+    (hJo : J.IsCompatibleOrientation o) (a : SmoothForm I M ℝ 1) (f : SmoothForm I M ℝ 0) :
     complexDeformationOperator o J hJo (SmoothForm.wedge a f) -
         deformationTargetMulRight o f (complexDeformationOperator o J hJo a) =
       (2⁻¹ : ℝ) •
@@ -500,42 +471,10 @@ private theorem complexDeformationOperator_commutator_eq_two_inv_smul
   congr 1
   abel
 
-private theorem deformationTarget_two_inv_smul_sub_apply_eq
-    (o : Manifold.Orientation I M (Fin (2 + 2)))
-    (p q : SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o) (x : M) :
-    (letI := o.fact_finrank_tangentSpace x
-     ((((2⁻¹ : ℝ) • (p - q)).1).1 x 0,
-       (alternatingFormEquiv (TangentSpace I x) 2).symm
-         ((((2⁻¹ : ℝ) • (p - q)).2 : SmoothForm I M ℝ 2).1 x))) =
-      (letI := o.fact_finrank_tangentSpace x
-       (2⁻¹ : ℝ) • ((p.1.1 x 0,
-           (alternatingFormEquiv (TangentSpace I x) 2).symm
-             ((p.2 : SmoothForm I M ℝ 2).1 x)) -
-         (q.1.1 x 0,
-           (alternatingFormEquiv (TangentSpace I x) 2).symm
-             ((q.2 : SmoothForm I M ℝ 2).1 x)))) := by
-  let _ := o.fact_finrank_tangentSpace x
-  have h1a : ((2⁻¹ : ℝ) • (p - q)).1 = (2⁻¹ : ℝ) • (p.1 - q.1) := by
-    rw [Prod.smul_fst, Prod.fst_sub]
-  have h1x : (((2⁻¹ : ℝ) • (p - q)).1).1 x 0 = (2⁻¹ : ℝ) • (p.1.1 x 0 - q.1.1 x 0) := by
-    rw [h1a, Submodule.coe_smul, Submodule.coe_sub, Pi.smul_apply, Pi.sub_apply,
-      ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.sub_apply]
-  have h2a : (((2⁻¹ : ℝ) • (p - q)).2 : SmoothForm I M ℝ 2) =
-      (2⁻¹ : ℝ) • ((p.2 : SmoothForm I M ℝ 2) - (q.2 : SmoothForm I M ℝ 2)) := by
-    rw [Prod.smul_snd, Prod.snd_sub, Submodule.coe_smul, Submodule.coe_sub]
-  have h2x : (((2⁻¹ : ℝ) • (p - q)).2 : SmoothForm I M ℝ 2).1 x =
-      (2⁻¹ : ℝ) • ((p.2 : SmoothForm I M ℝ 2).1 x - (q.2 : SmoothForm I M ℝ 2).1 x) := by
-    ext w
-    rw [h2a, Submodule.coe_smul, Submodule.coe_sub, Pi.smul_apply, Pi.sub_apply,
-      ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.sub_apply]
-  refine Prod.ext ?_ ?_
-  · rw [h1x, Prod.smul_fst, Prod.fst_sub]
-  · rw [h2x, map_smul, map_sub, Prod.smul_snd, Prod.snd_sub]
-
 /-- **`δ_ω` and `δ₀` have the exact same commutator with multiplication by smooth functions:**
 `δ_ω(a ∧ f) - δ_ω(a) ∧ f = δ₀(a ∧ f) - δ₀(a) ∧ f`. -/
 theorem complexDeformationOperator_commutator_eq (o : Manifold.Orientation I M (Fin (2 + 2)))
-    (J : SmoothAlmostComplexStructure I M) (hJo : IsCompatibleOrientation o J)
+    (J : SmoothAlmostComplexStructure I M) (hJo : J.IsCompatibleOrientation o)
     (a : SmoothForm I M ℝ 1) (f : SmoothForm I M ℝ 0) :
     complexDeformationOperator o J hJo (SmoothForm.wedge a f) -
         deformationTargetMulRight o f (complexDeformationOperator o J hJo a) =
@@ -545,23 +484,19 @@ theorem complexDeformationOperator_commutator_eq (o : Manifold.Orientation I M (
   refine ext_deformationTarget o fun x ↦ ?_
   let _ := o.fact_finrank_tangentSpace x
   obtain ⟨e, he, h₀, h₂⟩ := hJo.exists_frame x
-  have hCa := asdDeformationOperator_commutator_eq_deformationSymbol o a f x
-  have hCJa := asdDeformationOperator_commutator_eq_deformationSymbol o
-    (J.covectorComplexStructure a) f x
+  have hCa : deformationTargetEval o x
+      (asdDeformationOperator o (SmoothForm.wedge a f) -
+        deformationTargetMulRight o f (asdDeformationOperator o a)) = _ :=
+    asdDeformationOperator_commutator_eq_deformationSymbol o a f x
+  have hCJa : deformationTargetEval o x
+      (asdDeformationOperator o (SmoothForm.wedge (J.covectorComplexStructure a) f) -
+        deformationTargetMulRight o f
+          (asdDeformationOperator o (J.covectorComplexStructure a))) = _ :=
+    asdDeformationOperator_commutator_eq_deformationSymbol o
+      (J.covectorComplexStructure a) f x
   rw [J.rieszDual_covectorComplexStructure hJo.inner_apply_apply a x,
     ← SmoothAlmostComplexStructure.almostComplexStructureAt_apply] at hCJa
-  have hJCJa := deformationTargetComplexStructure_apply_eq o J hJo
-    (asdDeformationOperator o (SmoothForm.wedge (J.covectorComplexStructure a) f) -
-      deformationTargetMulRight o f
-        (asdDeformationOperator o (J.covectorComplexStructure a))) x
-  rw [deformationTarget_two_inv_smul_sub_apply_eq o
-      (asdDeformationOperator o (SmoothForm.wedge a f) -
-        deformationTargetMulRight o f (asdDeformationOperator o a))
-      (deformationTargetComplexStructure o J hJo
-        (asdDeformationOperator o (SmoothForm.wedge (J.covectorComplexStructure a) f) -
-          deformationTargetMulRight o f
-            (asdDeformationOperator o (J.covectorComplexStructure a)))) x,
-    hJCJa, hCa, hCJa]
+  rw [map_smul, map_sub, deformationTargetEval_complexStructure, hCa, hCJa]
   exact two_inv_smul_sub_deformationComplexStructure_deformationSymbol
     (o.fact_finrank_tangentSpace x).out.symm he h₀ h₂
     (Riemannian.Tensor.rieszDual (I := I) x (SmoothForm.degreeOneEquiv (mextDerivₗ I 0 f) x))
@@ -571,7 +506,7 @@ theorem complexDeformationOperator_commutator_eq (o : Manifold.Orientation I M (
 multiplication by any smooth function `f ∈ Ω⁰(M)`. -/
 theorem complexDeformationOperator_sub_asdDeformationOperator_wedge
     (o : Manifold.Orientation I M (Fin (2 + 2))) (J : SmoothAlmostComplexStructure I M)
-    (hJo : IsCompatibleOrientation o J) (a : SmoothForm I M ℝ 1) (f : SmoothForm I M ℝ 0) :
+    (hJo : J.IsCompatibleOrientation o) (a : SmoothForm I M ℝ 1) (f : SmoothForm I M ℝ 0) :
     (complexDeformationOperator o J hJo - asdDeformationOperator o) (SmoothForm.wedge a f) =
       deformationTargetMulRight o f
         ((complexDeformationOperator o J hJo - asdDeformationOperator o) a) := by
@@ -582,26 +517,26 @@ theorem complexDeformationOperator_sub_asdDeformationOperator_wedge
 the real Atiyah–Hitchin–Singer operator `δ₀` (`t = 0`) and Taubes's complex-linear operator `δ_ω`
 (`t = 1`). -/
 def deformationHomotopy (o : Manifold.Orientation I M (Fin (2 + 2)))
-    (J : SmoothAlmostComplexStructure I M) (hJo : IsCompatibleOrientation o J) (t : ℝ) :
+    (J : SmoothAlmostComplexStructure I M) (hJo : J.IsCompatibleOrientation o) (t : ℝ) :
     SmoothForm I M ℝ 1 →ₗ[ℝ] SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o :=
   (1 - t) • asdDeformationOperator o + t • complexDeformationOperator o J hJo
 
 @[simp]
 theorem deformationHomotopy_zero (o : Manifold.Orientation I M (Fin (2 + 2)))
-    (J : SmoothAlmostComplexStructure I M) (hJo : IsCompatibleOrientation o J) :
+    (J : SmoothAlmostComplexStructure I M) (hJo : J.IsCompatibleOrientation o) :
     deformationHomotopy o J hJo 0 = asdDeformationOperator o := by
   simp [deformationHomotopy]
 
 @[simp]
 theorem deformationHomotopy_one (o : Manifold.Orientation I M (Fin (2 + 2)))
-    (J : SmoothAlmostComplexStructure I M) (hJo : IsCompatibleOrientation o J) :
+    (J : SmoothAlmostComplexStructure I M) (hJo : J.IsCompatibleOrientation o) :
     deformationHomotopy o J hJo 1 = complexDeformationOperator o J hJo := by
   simp [deformationHomotopy]
 
 /-- `δ_t = δ₀ + t (δ_ω - δ₀)`: the homotopy perturbs `δ₀` by `t` times the order-zero operator
 `δ_ω - δ₀`. -/
 theorem deformationHomotopy_eq_add_smul_sub (o : Manifold.Orientation I M (Fin (2 + 2)))
-    (J : SmoothAlmostComplexStructure I M) (hJo : IsCompatibleOrientation o J) (t : ℝ) :
+    (J : SmoothAlmostComplexStructure I M) (hJo : J.IsCompatibleOrientation o) (t : ℝ) :
     deformationHomotopy o J hJo t =
       asdDeformationOperator o +
         t • (complexDeformationOperator o J hJo - asdDeformationOperator o) := by
@@ -611,7 +546,7 @@ theorem deformationHomotopy_eq_add_smul_sub (o : Manifold.Orientation I M (Fin (
 /-- **Invariance of the principal symbol along `deformationHomotopy`:** for every `t : ℝ`,
 `[δ_t, · ∧ f] = [δ₀, · ∧ f]`. -/
 theorem deformationHomotopy_commutator_eq (o : Manifold.Orientation I M (Fin (2 + 2)))
-    (J : SmoothAlmostComplexStructure I M) (hJo : IsCompatibleOrientation o J) (t : ℝ)
+    (J : SmoothAlmostComplexStructure I M) (hJo : J.IsCompatibleOrientation o) (t : ℝ)
     (a : SmoothForm I M ℝ 1) (f : SmoothForm I M ℝ 0) :
     deformationHomotopy o J hJo t (SmoothForm.wedge a f) -
         deformationTargetMulRight o f (deformationHomotopy o J hJo t a) =
@@ -628,7 +563,7 @@ at `x` to `deformationSymbol (o.orientationAt x) _ (df_x)♯ (a_x)♯`, which is
 `ℝ × Λ⁺_x` whenever `(df)_x ≠ 0` (`TauCeti.SeibergWitten.deformationSymbolSelfDual_bijective`). -/
 theorem deformationHomotopy_commutator_eq_deformationSymbol
     (o : Manifold.Orientation I M (Fin (2 + 2))) (J : SmoothAlmostComplexStructure I M)
-    (hJo : IsCompatibleOrientation o J) (t : ℝ) (a : SmoothForm I M ℝ 1)
+    (hJo : J.IsCompatibleOrientation o) (t : ℝ) (a : SmoothForm I M ℝ 1)
     (f : SmoothForm I M ℝ 0) (x : M) :
     (letI := o.fact_finrank_tangentSpace x
      (((deformationHomotopy o J hJo t (SmoothForm.wedge a f) -

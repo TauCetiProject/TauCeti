@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Basic
+import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Square
 
 /-!
@@ -44,8 +45,10 @@ their difference is of order zero.
 `J e₂ = e₃`, and put `ρ₁ = (√2 / 2) (e₀ ∧ e₂ - e₁ ∧ e₃)` and `ρ₂ = (√2 / 2) (e₀ ∧ e₃ + e₁ ∧ e₂)`.
 At `ξ = e₀` the symbol sends the frame `(e₀, e₁, e₂, e₃)` to `((1, 0), (0, ω_u), (0, ρ₁), (0, ρ₂))`,
 an orthonormal frame of `ℝ ⊕ Λ⁺`, and `J′ (1, 0) = (0, ω_u)`, `J′ (0, ρ₁) = (0, ρ₂)`. So the
-symbol carries the complex frame `(e₀, J e₀, e₂, J e₂)` of `(V, J)` to the complex frame
-`(1, J′ 1, ρ₁, J′ ρ₁)` of `(ℝ ⊕ Λ⁺, J′)`. Every unit covector is `e₀` for such a frame
+symbol carries the `J`-adapted real orthonormal basis `(e₀, J e₀, e₂, J e₂)` of `V` (with complex
+basis `(e₀, e₂)`) to the `J′`-adapted real orthonormal basis
+`((1, 0), J′ (1, 0), (0, ρ₁), J′ (0, ρ₁))` of `ℝ ⊕ Λ⁺` (with complex basis `((1, 0), (0, ρ₁))`).
+Every unit covector is `e₀` for such a frame
 (`TauCeti.AlmostComplexStructure.exists_orthonormalBasis_apply_zero_eq`), so by unitary covariance
 the calculation holds at every unit `ξ`.
 
@@ -529,7 +532,8 @@ omit he in
 /-- **`J′ ρ₁ = ρ₂`**: `J′ (0, ρ₁) = (0, ρ₂)` for `ρ₁ = (√2 / 2) (e₀ ∧ e₂ - e₁ ∧ e₃)` and
 `ρ₂ = (√2 / 2) (e₀ ∧ e₃ + e₁ ∧ e₂)`, the images of `e₂` and `e₃ = J e₂` under the symbol at `e₀`.
 With `J′ (1, 0) = (0, ω_u)` (`deformationComplexStructure_one_zero`), the symbol at `e₀` thus sends
-the frame `(e₀, J e₀, e₂, J e₂)` to `(1, J′ 1, ρ₁, J′ ρ₁) = (1, ω_u, ρ₁, ρ₂)`. -/
+the frame `(e₀, J e₀, e₂, J e₂)` to
+`((1, 0), J′ (1, 0), (0, ρ₁), J′ (0, ρ₁)) = ((1, 0), (0, ω_u), (0, ρ₁), (0, ρ₂))`. -/
 theorem deformationComplexStructure_zero_smul_sub :
     deformationComplexStructure J
         (0, (√2 / 2) • (ιMulti ℝ 2 ![e 0, e 2] - ιMulti ℝ 2 ![e 1, e 3])) =

@@ -35,11 +35,6 @@ four, any unit vector extends to an oriented unitary orthonormal frame for a com
 form
 (`exists_orthonormalBasis_toBasis_orientation_eq_symplecticForm_orientation_of_norm_eq_one`).
 
-## Main definitions
-
-* `TauCeti.AlmostComplexStructure.symplecticForm`: the symplectic form `ω(v, w) = ⟪J v, w⟫` of an
-  orthogonal almost complex structure `J`.
-
 ## Main results
 
 * `TauCeti.AlmostComplexStructure.exists_adapted_orthonormalBasis`: adapted orthonormal bases
@@ -68,32 +63,6 @@ namespace TauCeti.AlmostComplexStructure
 
 open Module
 open scoped RealInnerProductSpace
-
-section SymplecticForm
-
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-
-/-- The **symplectic form** `ω(v, w) = ⟪J v, w⟫` associated to an orthogonal almost complex
-structure `J` on a real inner product space. -/
-noncomputable def symplecticForm {J : AlmostComplexStructure V}
-    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) : SymplecticForm V :=
-  have halt : ((innerₗ V).comp J.toLinearMap).IsAlt := fun v ↦ by
-    simpa [LinearMap.comp_apply] using J.inner_apply_self hJ v
-  { toBilinForm := (innerₗ V).comp J.toLinearMap
-    isAlt := halt
-    nondegenerate := by
-      refine (LinearMap.IsRefl.nondegenerate_iff_separatingLeft halt.isRefl).2 fun v hv ↦ ?_
-      have h0 : ⟪J v, J v⟫ = 0 := by simpa [LinearMap.comp_apply] using hv (J v)
-      rw [hJ, inner_self_eq_zero] at h0
-      exact h0 }
-
-@[simp]
-theorem symplecticForm_apply {J : AlmostComplexStructure V}
-    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) (v w : V) :
-    J.symplecticForm hJ v w = ⟪J v, w⟫ :=
-  (rfl)
-
-end SymplecticForm
 
 section EvenDimension
 

@@ -34,6 +34,9 @@ smooth differential forms:
 
 * `TauCeti.SmoothAlmostComplexStructure.kahlerTwoForm`: the smooth Kähler two-form
   `ω_x(u, w) = ⟪J_x u, w⟫` of an orthogonal smooth almost complex structure `J`.
+* `TauCeti.SmoothAlmostComplexStructure.IsCompatibleOrientation`: existence at every point of an
+  oriented Riemannian four-manifold `(M, g, o)` of a positively oriented unitary orthonormal tangent
+  frame `(e₀, e₁, e₂, e₃)` with `J_x e₀ = e₁` and `J_x e₂ = e₃`.
 
 ## Main results
 
@@ -47,6 +50,10 @@ smooth differential forms:
   `SmoothAlmostComplexStructure.alternatingFormEquiv_symm_neg_realAlternatingDerivation_two`:
   fibrewise bivector formulas for `J.kahlerTwoForm` and
   `-J.toEndomorphism.realAlternatingDerivation`.
+* `TauCeti.SmoothAlmostComplexStructure.IsCompatibleOrientation.exists_frame` and
+  `TauCeti.SmoothAlmostComplexStructure.IsCompatibleOrientation.inner_apply_apply`: fibrewise
+  unitary frames and orthogonality for metric- and orientation-compatible smooth almost complex
+  structures on four-manifolds.
 
 ## References
 
@@ -252,6 +259,49 @@ theorem kahlerTwoForm_apply_two (J : SmoothAlmostComplexStructure I M)
     AlmostComplexStructure.inner_kahlerForm_ιMulti hJ', almostComplexStructureAt_apply]
 
 end SmoothKahler
+
+section FourManifolds
+
+/-- A smooth almost complex structure `J` on an oriented Riemannian four-manifold `(M, g, o)` is
+**compatible with the metric and orientation** if every tangent space `T_x M` admits a positively
+oriented orthonormal basis `(e₀, e₁, e₂, e₃)` with `J_x e₀ = e₁` and `J_x e₂ = e₃`. -/
+def IsCompatibleOrientation (J : SmoothAlmostComplexStructure I M)
+    (o : Manifold.Orientation I M (Fin 4)) : Prop :=
+  ∀ x : M, ∃ e : OrthonormalBasis (Fin 4) ℝ (TangentSpace I x),
+    e.toBasis.orientation = o.orientationAt x ∧ J x (e 0) = e 1 ∧ J x (e 2) = e 3
+
+/-- Pointwise characterization of `J.IsCompatibleOrientation o`. -/
+theorem isCompatibleOrientation_iff (J : SmoothAlmostComplexStructure I M)
+    (o : Manifold.Orientation I M (Fin 4)) :
+    J.IsCompatibleOrientation o ↔
+      ∀ x : M, ∃ e : OrthonormalBasis (Fin 4) ℝ (TangentSpace I x),
+        e.toBasis.orientation = o.orientationAt x ∧ J x (e 0) = e 1 ∧ J x (e 2) = e 3 :=
+  Iff.rfl
+
+/-- Unpacks `J.IsCompatibleOrientation o` at `x : M` in terms of the fibrewise
+`AlmostComplexStructure` `J.almostComplexStructureAt x`. -/
+theorem IsCompatibleOrientation.exists_frame {J : SmoothAlmostComplexStructure I M}
+    {o : Manifold.Orientation I M (Fin 4)} (hJo : J.IsCompatibleOrientation o) (x : M) :
+    ∃ e : OrthonormalBasis (Fin 4) ℝ (TangentSpace I x),
+      e.toBasis.orientation = o.orientationAt x ∧
+        J.almostComplexStructureAt x (e 0) = e 1 ∧
+        J.almostComplexStructureAt x (e 2) = e 3 := by
+  obtain ⟨e, he, h₀, h₂⟩ := hJo x
+  exact ⟨e, he,
+    by rwa [almostComplexStructureAt_apply],
+    by rwa [almostComplexStructureAt_apply]⟩
+
+/-- A metric- and orientation-compatible smooth almost complex structure is fibrewise orthogonal. -/
+theorem IsCompatibleOrientation.inner_apply_apply {J : SmoothAlmostComplexStructure I M}
+    {o : Manifold.Orientation I M (Fin 4)} (hJo : J.IsCompatibleOrientation o)
+    (x : M) (u w : TangentSpace I x) :
+    ⟪J x u, J x w⟫ = ⟪u, w⟫ := by
+  let _ := o.fact_finrank_tangentSpace x
+  obtain ⟨e, _, h₀, h₂⟩ := hJo.exists_frame x
+  simpa only [almostComplexStructureAt_apply] using
+    AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂ u w
+
+end FourManifolds
 
 end SmoothAlmostComplexStructure
 

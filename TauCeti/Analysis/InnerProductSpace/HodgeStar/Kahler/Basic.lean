@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 import TauCeti.Analysis.InnerProductSpace.Orientation
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
+import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.Matrix.Determinant.FinFour
 
 /-!
@@ -100,16 +101,6 @@ noncomputable section
 
 open Module exteriorPower
 open scoped RealInnerProductSpace
-
-/-- Mapping a decomposable two-vector `u ∧ w` by `exteriorPower.map 2 f` gives `f u ∧ f w`. -/
-theorem exteriorPower.map_apply_ιMulti_two {R M₁ M₂ : Type*} [CommRing R]
-    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
-    (f : M₁ →ₗ[R] M₂) (u w : M₁) :
-    exteriorPower.map 2 f (ιMulti R 2 ![u, w]) = ιMulti R 2 ![f u, f w] := by
-  rw [exteriorPower.map_apply_ιMulti]
-  congr 1
-  funext i
-  fin_cases i <;> rfl
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
