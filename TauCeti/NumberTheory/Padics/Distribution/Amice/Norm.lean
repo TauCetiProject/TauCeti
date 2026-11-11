@@ -156,14 +156,23 @@ theorem strictMono_amiceRadius : StrictMono (amiceRadius p) := by
   gcongr
   exact lt_mul_of_one_lt_right (by positivity) one_lt_natCast
 
+omit hp in
 /-- The radii `r_h` tend to `1`. -/
 theorem tendsto_amiceRadius : Tendsto (amiceRadius p) atTop (𝓝 1) := by
-  have hexp : Tendsto (fun h : ℕ ↦ -(1 / (((p : ℝ) - 1) * (p : ℝ) ^ h))) atTop (𝓝 0) := by
-    simpa using ((tendsto_pow_atTop_atTop_of_one_lt (one_lt_natCast (p := p))).const_mul_atTop
-      (sub_one_pos (p := p))).inv_tendsto_atTop.neg
-  have hlim := (Real.continuousAt_const_rpow (natCast_pos (p := p)).ne').tendsto.comp hexp
-  rw [Real.rpow_zero] at hlim
-  exact hlim
+  rcases lt_or_ge 1 p with hp1 | hp1
+  · have h1 : (1 : ℝ) < p := by exact_mod_cast hp1
+    have hexp : Tendsto (fun h : ℕ ↦ -(1 / (((p : ℝ) - 1) * (p : ℝ) ^ h))) atTop (𝓝 0) := by
+      simpa using ((tendsto_pow_atTop_atTop_of_one_lt h1).const_mul_atTop
+        (sub_pos.mpr h1)).inv_tendsto_atTop.neg
+    have hlim := (Real.continuousAt_const_rpow (zero_lt_one.trans h1).ne').tendsto.comp hexp
+    rw [Real.rpow_zero] at hlim
+    exact hlim
+  · -- The degenerate values `p = 0` and `p = 1`: the radii are eventually constant `1`.
+    interval_cases p
+    · refine tendsto_const_nhds.congr' ?_
+      filter_upwards [eventually_ge_atTop 1] with h hh
+      simp [amiceRadius, zero_pow (Nat.pos_iff_ne_zero.mp hh)]
+    · exact tendsto_const_nhds.congr fun h ↦ by simp [amiceRadius]
 
 /-! ### The weights `‖⌊n / pʰ⌋!‖` -/
 
@@ -346,15 +355,19 @@ theorem onOpenDisc_iff_forall_bddAbove_norm_coeff_mul_norm_factorial :
 open scoped ENNReal in
 variable (p) in
 /-- **Weighted coefficients on the open unit disc are bounded.** If `F` lies on the open unit disc
-of a normed `ℚ_p`-algebra `K` with `‖1‖ = 1`, then at every level `h` the family
-`⌊n / pʰ⌋! coeff n F`, the factorials being taken in `K`, is bounded. -/
-theorem memℓp_factorial_mul_coeff_of_onOpenDisc [NormedAlgebra ℚ_[p] K] [NormOneClass K]
+of a normed `ℚ_p`-algebra `K`, then at every level `h` the family `⌊n / pʰ⌋! coeff n F`, the
+factorials being taken in `K`, is bounded. -/
+theorem memℓp_factorial_mul_coeff_of_onOpenDisc [NormedAlgebra ℚ_[p] K]
     (hF : F.OnOpenDisc 1) (h : ℕ) : Memℓp (fun n ↦ ((n / p ^ h)! : K) * F.coeff n) ∞ := by
   obtain ⟨B, hB⟩ := (onOpenDisc_iff_forall_bddAbove_norm_coeff_mul_norm_factorial (p := p)).mp hF h
-  refine memℓp_infty ⟨B, ?_⟩
+  refine memℓp_infty ⟨B * ‖(1 : K)‖, ?_⟩
   rintro _ ⟨n, rfl⟩
-  refine (norm_mul_le _ _).trans ?_
-  simpa only [norm_natCast_eq_norm_padic (p := p), mul_comm] using hB ⟨n, rfl⟩
+  have hn : ‖((n / p ^ h)! : K)‖ = ‖((n / p ^ h)! : ℚ_[p])‖ * ‖(1 : K)‖ := by
+    rw [← map_natCast (algebraMap ℚ_[p] K), Algebra.algebraMap_eq_smul_one, norm_smul]
+  calc ‖((n / p ^ h)! : K) * F.coeff n‖
+      ≤ ‖((n / p ^ h)! : K)‖ * ‖F.coeff n‖ := norm_mul_le _ _
+    _ = ‖F.coeff n‖ * ‖((n / p ^ h)! : ℚ_[p])‖ * ‖(1 : K)‖ := by rw [hn]; ring
+    _ ≤ B * ‖(1 : K)‖ := mul_le_mul_of_nonneg_right (hB ⟨n, rfl⟩) (norm_nonneg _)
 
 /-! ### Examples: the exponential and the logarithm -/
 

@@ -21,14 +21,8 @@ The boundary, barycentric subdivision and its prism operator preserve these subm
 They therefore give a chain complex with an injective inclusion into twisted singular chains.
 Nested support submodules give functorial inclusions between these small-chain complexes.
 For an open cover, every finite twisted chain becomes small after sufficiently many
-subdivisions; in particular, when the interiors of `A` and `B` cover `X`, it becomes a sum of a
-chain supported in `A` and one supported in `B`. A chain whose boundary is subordinate to `U`
-differs from its subdivisions by a boundary modulo chains subordinate to `U`. Along a
-monomorphism of spaces, push-forward preserves coefficients, so a pushed-forward chain is
-supported in a set exactly when the chain is supported in its preimage; along an inducing map,
-every chain supported in the range is pushed forward. These supply the support calculations of
-the local-coefficient excision argument; no natural choice of subdivision depth or chain
-retraction is asserted here.
+subdivisions. This supplies the smallness input to the local-coefficient excision argument;
+no natural choice of subdivision depth or chain retraction is asserted here.
 
 The constructions use `twistedSingularChain`, `twistedSubdivisionChainMap` and the native
 Lebesgue-number theorem for affine subdivision. Coefficients remain in their actual fibres
@@ -146,20 +140,16 @@ lemma smallTwistedChains_bool (U V : Set X) (n : ℕ) :
   rw [smallTwistedChains_eq_iSup, iSup_bool_eq, sup_comm]
 
 /-- The twisted singular boundary preserves chains subordinate to a family of subsets. -/
-lemma d_mem_smallTwistedChains {i j : ℕ} {c : L.twistedChainComplex.X i}
-    (hc : c ∈ smallTwistedChains L U i) :
-    (L.twistedChainComplex.d i j).hom c ∈ smallTwistedChains L U j := by
-  by_cases hij : j + 1 = i
-  · subst hij
-    refine smallTwistedChains_le_comap L U (n := j + 1)
-      (L.twistedChainComplex.d (j + 1) j).hom (smallTwistedChains L U j) ?_ hc
-    intro σ hσ x
-    rw [d_ιTwistedChainComplex_apply]
-    exact Submodule.sum_mem _ fun i _ ↦ (smallTwistedChains L U j).toAddSubgroup.zsmul_mem
-      (ιTwistedChainComplex_mem_smallTwistedChains L U
-        ((X.smallSingularSubcomplex U).map (SimplexCategory.δ i).op hσ) _) _
-  · rw [L.twistedChainComplex.shape i j hij, ModuleCat.hom_zero, LinearMap.zero_apply]
-    exact zero_mem _
+lemma d_mem_smallTwistedChains {n : ℕ} {c : L.twistedChainComplex.X (n + 1)}
+    (hc : c ∈ smallTwistedChains L U (n + 1)) :
+    (L.twistedChainComplex.d (n + 1) n).hom c ∈ smallTwistedChains L U n := by
+  refine smallTwistedChains_le_comap L U (n := n + 1)
+    (L.twistedChainComplex.d (n + 1) n).hom (smallTwistedChains L U n) ?_ hc
+  intro σ hσ x
+  rw [d_ιTwistedChainComplex_apply]
+  exact Submodule.sum_mem _ fun i _ ↦ (smallTwistedChains L U n).toAddSubgroup.zsmul_mem
+    (ιTwistedChainComplex_mem_smallTwistedChains L U
+      ((X.smallSingularSubcomplex U).map (SimplexCategory.δ i).op hσ) _) _
 
 /-- The complex of singular chains subordinate to `U`, with coefficients in `L`. -/
 def smallTwistedChainComplex : ChainComplex (ModuleCat.{max v w} R) ℕ :=
@@ -317,31 +307,6 @@ lemma idPow_twistedSubdivisionHomotopy_hom_mem_smallTwistedChains {n : ℕ}
     twistedPrismX_mem_smallTwistedChains L U
       (iterate_twistedSubdivision_mem_smallTwistedChains L U hc k)
 
-/-- If the boundary of a twisted chain `c` is subordinate to `U`, then `c` differs from its
-`N`-fold subdivision by the boundary of the subdivision prism, up to a chain subordinate to `U`.
-This is the relative form of the homotopy identity between the identity and subdivision. -/
-lemma sub_iterate_twistedSubdivision_sub_d_mem_smallTwistedChains {n : ℕ}
-    (c : L.twistedChainComplex.X n)
-    (hc : (L.twistedChainComplex.d n (n - 1)).hom c ∈ smallTwistedChains L U (n - 1)) (N : ℕ) :
-    c - (((End.of (twistedSubdivisionChainMap L)) ^ N).asHom.f n).hom c -
-        (L.twistedChainComplex.d (n + 1) n).hom
-          ((((twistedSubdivisionHomotopy L).idPow N).hom n (n + 1)).hom c) ∈
-      smallTwistedChains L U n := by
-  cases n with
-  | zero =>
-    have h := ((twistedSubdivisionHomotopy L).idPow N).comm_zero_apply c
-    rw [HomologicalComplex.id_f, ModuleCat.id_apply] at h
-    rw [sub_sub, add_comm, ← h, sub_self]
-    exact zero_mem _
-  | succ n =>
-    have h := ((twistedSubdivisionHomotopy L).idPow N).comm_succ_apply n c
-    rw [HomologicalComplex.id_f, ModuleCat.id_apply] at h
-    have hc' : (L.twistedChainComplex.d (n + 1) n).hom c ∈ smallTwistedChains L U n := by
-      simpa using hc
-    convert idPow_twistedSubdivisionHomotopy_hom_mem_smallTwistedChains L U hc' N using 1
-    nth_rw 1 [h]
-    abel
-
 /-- For an open cover, a uniform number of subdivisions makes the whole coefficient fibre
 on a given singular simplex small. -/
 theorem exists_iterate_twistedSubdivision_small_simplex (hU : ∀ i, IsOpen (U i))
@@ -378,23 +343,6 @@ theorem exists_iterate_twistedSubdivision_small (hU : ∀ i, IsOpen (U i))
   exact Submodule.sum_mem _ fun σ hσ ↦
     hN σ k ((Finset.le_sup (f := N) hσ).trans hk) _
 
-/-- If the interiors of `A` and `B` cover `X`, every twisted chain becomes, after sufficiently
-many barycentric subdivisions, the sum of a chain supported in `A` and a chain supported in
-`B`. -/
-theorem exists_iterate_twistedSubdivision_mem_sup {A B : Set X}
-    (h : interior A ∪ interior B = Set.univ) {n : ℕ} (c : L.twistedChainComplex.X n) :
-    ∃ N, (((End.of (twistedSubdivisionChainMap L)) ^ N).asHom.f n).hom c ∈
-      smallTwistedChains L (fun _ : Unit ↦ A) n ⊔ smallTwistedChains L (fun _ : Unit ↦ B) n := by
-  obtain ⟨N, hN⟩ := exists_iterate_twistedSubdivision_small L (Bool.rec (interior A) (interior B))
-    (fun b ↦ by cases b <;> exact isOpen_interior)
-    (Set.eq_univ_of_forall fun x ↦ by
-      rcases (h ▸ Set.mem_univ x : x ∈ interior A ∪ interior B) with hx | hx
-      exacts [Set.mem_iUnion.2 ⟨false, hx⟩, Set.mem_iUnion.2 ⟨true, hx⟩]) c
-  refine ⟨N, ?_⟩
-  rw [← smallTwistedChains_bool]
-  exact smallTwistedChains_mono L _ _ id (fun b ↦ by cases b <;> exact interior_subset) n
-    (hN N le_rfl)
-
 section Naturality
 
 variable {L} {K : LocalCoefficientSystem.{u, v, max v w} R X}
@@ -430,64 +378,39 @@ lemma twistedChainComplexMap_mem_smallTwistedChains (r : ι → κ)
     ContinuousMap.coe_comp, Set.range_comp]
   exact ⟨r i, ((hf i).mono_left hi).image_subset⟩
 
-/-- Along a monomorphism of spaces, the coefficient of a pushed-forward chain on the image of a
-simplex is the coefficient of the chain on that simplex. -/
-@[reassoc]
-lemma twistedChainComplexMap_f_comp_twistedChainComplexCoeff [Mono f] {n : ℕ}
-    (σ : (TopCat.toSSet.obj X) _⦋n⦌) :
-    (twistedChainComplexMap f M).f n ≫
-        twistedChainComplexCoeff M ((TopCat.toSSet.map f).app _ σ) =
-      twistedChainComplexCoeff ((pullback f.hom).obj M) σ := by
-  refine twistedChainComplex_hom_ext _ fun τ ↦ ?_
-  rw [ιTwistedChainComplex_twistedChainComplexMap_f_assoc]
-  -- The summand of `τ` over `X` is, by definition of the pullback, the summand of its image.
-  by_cases h : τ = σ
-  · subst h
-    exact (ιTwistedChainComplex_twistedChainComplexCoeff M _).trans
-      (ιTwistedChainComplex_twistedChainComplexCoeff ((pullback f.hom).obj M) τ).symm
-  · exact (ιTwistedChainComplex_twistedChainComplexCoeff_of_ne M
-      fun h' ↦ h (injective_of_mono ((TopCat.toSSet.map f).app _) h')).trans
-      (ιTwistedChainComplex_twistedChainComplexCoeff_of_ne ((pullback f.hom).obj M) h).symm
-
-/-- Along a monomorphism of spaces, the coefficient of a pushed-forward chain on the image of a
-simplex is the coefficient of the chain on that simplex, evaluated at a chain. -/
-@[simp]
-lemma twistedChainComplexCoeff_twistedChainComplexMap_f_apply [Mono f] {n : ℕ}
-    (σ : (TopCat.toSSet.obj X) _⦋n⦌) (c : ((pullback f.hom).obj M).twistedChainComplex.X n) :
-    (twistedChainComplexCoeff M ((TopCat.toSSet.map f).app _ σ)).hom
-        (((twistedChainComplexMap f M).f n).hom c) =
-      (twistedChainComplexCoeff ((pullback f.hom).obj M) σ).hom c :=
-  congrArg (fun g ↦ g.hom c) (twistedChainComplexMap_f_comp_twistedChainComplexCoeff f M σ)
-
-/-- Along a monomorphism of spaces, a pushed-forward chain is supported in a set `S` exactly when
-the chain is supported in the preimage of `S`. -/
-lemma twistedChainComplexMap_f_mem_smallTwistedChains_iff [Mono f] (S : Set Y) {n : ℕ}
-    (c : ((pullback f.hom).obj M).twistedChainComplex.X n) :
+/-- Along an injective map `f`, a chain is supported in `f ⁻¹' S` exactly when its pushforward is
+supported in `S`. -/
+lemma twistedChainComplexMap_f_mem_smallTwistedChains_iff [Mono f] {n : ℕ} {S : Set Y}
+    {c : ((pullback f.hom).obj M).twistedChainComplex.X n} :
     ((twistedChainComplexMap f M).f n).hom c ∈ smallTwistedChains M (fun _ : Unit ↦ S) n ↔
       c ∈ smallTwistedChains ((pullback f.hom).obj M) (fun _ : Unit ↦ f ⁻¹' S) n := by
-  refine ⟨fun hc ↦ ?_, twistedChainComplexMap_mem_smallTwistedChains (fun _ : Unit ↦ f ⁻¹' S)
-    (fun _ : Unit ↦ S) f M id (fun _ ↦ Set.mapsTo_preimage f S)⟩
+  refine ⟨fun hc ↦ ?_, twistedChainComplexMap_mem_smallTwistedChains _ _ f M id
+    (fun _ ↦ Set.mapsTo_preimage f S)⟩
   rw [mem_smallTwistedChains_iff] at hc ⊢
-  intro σ hσ
+  intro τ hτ
   rw [← twistedChainComplexCoeff_twistedChainComplexMap_f_apply]
-  refine hc _ fun hfσ ↦ hσ ?_
+  refine hc _ fun h ↦ hτ ?_
   simp only [TopCat.mem_smallSingularSubcomplex_iff, exists_const,
-    TopCat.toSSetObjEquiv_toSSet_map_app, ContinuousMap.coe_comp, Set.range_comp,
-    Set.image_subset_iff] at hfσ ⊢
-  exact hfσ
+    TopCat.toSSetObjEquiv_toSSet_map_app, ContinuousMap.coe_comp, Set.range_comp] at h ⊢
+  exact Set.image_subset_iff.1 h
 
-/-- Along an inducing map, every chain supported in the range is pushed forward from the
-source. -/
-lemma smallTwistedChains_range_le_range_twistedChainComplexMap_f
-    (hf : Topology.IsInducing f) (n : ℕ) :
-    smallTwistedChains M (fun _ : Unit ↦ Set.range f) n ≤
-      LinearMap.range ((twistedChainComplexMap f M).f n).hom := by
-  refine iSup_le fun σ ↦ ?_
-  obtain ⟨σ, hσ⟩ := σ
-  rintro _ ⟨x, rfl⟩
-  obtain ⟨_, hσ⟩ := (TopCat.mem_smallSingularSubcomplex_iff Y _ σ).1 hσ
-  obtain ⟨τ, rfl⟩ := (hf.mem_range_toSSet_map_app_iff _ σ).2 hσ
-  exact ⟨(ιTwistedChainComplex _ n τ).hom x, twistedChainComplexMap_f_ι_apply f M n τ x⟩
+/-- Along an inducing map, the pushforwards of twisted chains are exactly the chains supported in
+its range. -/
+lemma range_twistedChainComplexMap_f (hf : Topology.IsInducing f) (n : ℕ) :
+    LinearMap.range ((twistedChainComplexMap f M).f n).hom =
+      smallTwistedChains M (fun _ : Unit ↦ Set.range f) n := by
+  refine le_antisymm ?_ ?_
+  · rintro _ ⟨c, rfl⟩
+    refine twistedChainComplexMap_mem_smallTwistedChains (fun _ : Unit ↦ Set.univ) _ f M id
+      (fun _ x _ ↦ Set.mem_range_self x) ?_
+    rw [mem_smallTwistedChains_iff]
+    intro σ hσ
+    exact (hσ ((TopCat.mem_smallSingularSubcomplex_iff _ _ σ).2 ⟨(), Set.subset_univ _⟩)).elim
+  · simpa only [Submodule.comap_id] using smallTwistedChains_le_comap M _ LinearMap.id
+      (LinearMap.range ((twistedChainComplexMap f M).f n).hom) fun σ hσ x ↦ by
+        obtain ⟨_, hσ⟩ := (TopCat.mem_smallSingularSubcomplex_iff Y _ σ).1 hσ
+        obtain ⟨τ, rfl⟩ := (hf.mem_range_toSSet_map_app_iff _ σ).2 hσ
+        exact ⟨(ιTwistedChainComplex _ n τ).hom x, twistedChainComplexMap_f_ι_apply f M n τ x⟩
 
 end Naturality
 

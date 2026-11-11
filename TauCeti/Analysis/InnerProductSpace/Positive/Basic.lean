@@ -23,9 +23,9 @@ entries along any orthonormal family sum to at most the trace
 (`LinearMap.IsPositive.sum_re_inner_le_re_trace`). These are the inputs to Ky Fan's maximum
 principle for positive operators.
 
-A contraction between real or complex Hilbert spaces satisfies `D D† ≤ 1` in the Loewner
-order (`ContinuousLinearMap.self_comp_adjoint_le_one`), so its defect operator `1 - D D†`
-is positive.
+An operator `D` between real or complex Hilbert spaces satisfies `D D† ≤ 1` in the Loewner
+order exactly when it is a contraction (`ContinuousLinearMap.self_comp_adjoint_le_one_iff`), so
+the defect operator `1 - D D†` of a contraction is positive.
 -/
 
 public section
@@ -88,17 +88,19 @@ theorem IsPositive.isUnit_one_add {T : E →L[𝕜] E} (hT : T.IsPositive) : IsU
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
 
-/-- A contraction composed with its adjoint is bounded above by the identity in the Loewner
-order. Equivalently, its defect operator is positive. -/
-theorem self_comp_adjoint_le_one (D : F →L[𝕜] E) (hD : ‖D‖ ≤ 1) :
-    D ∘L D.adjoint ≤ 1 := by
-  rw [le_def, isPositive_def']
-  refine ⟨(IsSelfAdjoint.one _).sub (isPositive_self_comp_adjoint D).isSelfAdjoint, ?_⟩
-  intro z
-  have hz : ‖D.adjoint z‖ ≤ ‖z‖ := by
-    simpa only [one_mul] using D.adjoint.le_of_opNorm_le (c := 1) (by simpa using hD) z
-  simpa only [reApplyInnerSelf, sub_apply, one_apply_eq_self, inner_sub_left, comp_apply,
-    ← D.adjoint_inner_right, map_sub, inner_self_eq_norm_sq] using
-    sub_nonneg.mpr (pow_le_pow_left₀ (norm_nonneg _) hz 2)
+/-- An operator `D` composed with its adjoint is bounded above by the identity in the Loewner
+order exactly when `D` is a contraction, `‖D‖ ≤ 1`; that is, the defect operator `1 - D D†` is
+positive exactly for contractions. -/
+theorem self_comp_adjoint_le_one_iff (D : F →L[𝕜] E) : D ∘L D.adjoint ≤ 1 ↔ ‖D‖ ≤ 1 := by
+  have hsa : IsSelfAdjoint (1 - D ∘L D.adjoint) :=
+    (IsSelfAdjoint.one _).sub (isPositive_self_comp_adjoint D).isSelfAdjoint
+  have hquad (z : E) :
+      (1 - D ∘L D.adjoint).reApplyInnerSelf z = ‖z‖ ^ 2 - ‖D.adjoint z‖ ^ 2 := by
+    simp only [reApplyInnerSelf, sub_apply, one_apply_eq_self, inner_sub_left, comp_apply,
+      ← D.adjoint_inner_right, map_sub, inner_self_eq_norm_sq]
+  rw [le_def, isPositive_def', and_iff_right hsa, ← LinearIsometryEquiv.norm_map adjoint D,
+    opNorm_le_iff zero_le_one]
+  refine forall_congr' fun z ↦ ?_
+  rw [hquad, sub_nonneg, one_mul, pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero]
 
 end ContinuousLinearMap

@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Lie.Adjoint.Exponential.Basic
 public import TauCeti.Geometry.Lie.Adjoint.Infinitesimal
 public import TauCeti.Geometry.Lie.Exponential.Smoothness
 public import TauCeti.Geometry.Lie.Exponential.Trotter
+public import Mathlib.Topology.Connected.TotallyDisconnected
 -- Non-public: the slope characterisation of a derivative and the module description of a slope
 -- are used only inside proofs, and no statement below mentions `slope`.
 import Mathlib.Analysis.Calculus.Deriv.Slope
@@ -26,6 +27,11 @@ subalgebra of `𝔤` they generate, defined for every subgroup, and this file pr
 **closed** `K` the generating set is already a Lie subalgebra, so that the generation is inert and
 membership is exactly the defining condition
 (`TauCeti.Lie.mem_lieSubalgebraOfSubgroup`).
+
+For a totally disconnected subgroup, closed or not, the canonical Lie algebra is zero.
+Exponential curves in the subgroup are constant by connectedness, and their initial velocities
+vanish. The same criterion is used for countable subgroups and for the discrete direction of
+the closed-subgroup theorem.
 
 Addition and the bracket produce the new element as a *limit* of elements of `K`, each using a
 different piece of the Layer 0/1 machinery; scalars involve no limit at all:
@@ -67,6 +73,9 @@ target — the closed-subgroup theorem, promoting `K` to an embedded Lie subgrou
 * `TauCeti.Lie.lieSubalgebraOfSubgroup`: the Lie algebra of a subgroup.
 
 ## Main results
+
+* `TauCeti.Lie.lieSubalgebraOfSubgroup_eq_bot_of_isTotallyDisconnected`: a totally disconnected
+  subgroup, closed or not, has zero Lie algebra.
 
 * `TauCeti.Lie.lieExp_smul_add_mem`, `TauCeti.Lie.lieExp_smul_smul_mem` and
   `TauCeti.Lie.lieExp_smul_lie_mem`: the three closure properties, stated on the defining
@@ -303,6 +312,43 @@ theorem lieSubalgebraOfSubgroup_le_iff {K : Subgroup G}
     lieSubalgebraOfSubgroup (I := I) K ≤ L ↔
       ∀ X : LeftInvariantDerivation I G, (∀ t : ℝ, lieExp (I := I) (t • X) ∈ K) → X ∈ L :=
   LieSubalgebra.lieSpan_le
+
+/-- The canonical Lie algebra of a totally disconnected subgroup is zero, without closedness. -/
+theorem lieSubalgebraOfSubgroup_eq_bot_of_isTotallyDisconnected {K : Subgroup G}
+    (hK : IsTotallyDisconnected (K : Set G)) :
+    TauCeti.Lie.lieSubalgebraOfSubgroup (I := I) K = ⊥ := by
+  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
+  apply le_antisymm _ bot_le
+  apply TauCeti.Lie.lieSubalgebraOfSubgroup_le_iff.mpr
+  intro X hX
+  rw [LieSubalgebra.mem_bot]
+  let eG := leftInvariantDerivationEquivGroupLieAlgebra (I := I) (G := G)
+    BoundarylessManifold.isInteriorPoint
+  let γ : ℝ → G := fun t ↦ mulInvariantExp (I := I) (G := G) (t • eG X)
+  have hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ := contMDiff_mulInvariantExp_smul (eG X)
+  have hγexp (t : ℝ) : γ t = lieExp (I := I) (t • X) := by
+    rw [lieExp_eq_mulInvariantExp]
+    simp only [map_smul, γ, eG]
+  have hr : Set.range γ ⊆ K := by
+    rintro _ ⟨t, rfl⟩
+    exact hγexp t ▸ hX t
+  have hs : (Set.range γ).Subsingleton :=
+    hK (Set.range γ) hr (isPreconnected_range hγ.continuous)
+  have hγ0 : γ 0 = 1 := by simp [γ]
+  have hconst : γ = fun _ ↦ (1 : G) :=
+    funext fun t ↦ (hs (Set.mem_range_self t) (Set.mem_range_self 0)).trans hγ0
+  have hd : mfderiv 𝓘(ℝ, ℝ) I γ 0 = (1 : ℝ →L[ℝ] ℝ).smulRight (eG X) :=
+    (hasMFDerivAt_mulInvariantExp_smul_zero (I := I) (G := G) (eG X)).mfderiv
+  rw [hconst, mfderiv_const] at hd
+  -- Normalize the tangent-space zero map so zero_apply matches its continuous-linear-map instance.
+  change (0 : ℝ →L[ℝ] GroupLieAlgebra I G) =
+    (1 : ℝ →L[ℝ] ℝ).smulRight (eG X) at hd
+  have hv := congrArg (fun F : ℝ →L[ℝ] GroupLieAlgebra I G ↦ F (1 : ℝ)) hd
+  have hx0 : eG X = 0 := by
+    simpa only [zero_apply, ContinuousLinearMap.smulRight_apply,
+      one_apply_eq_self, one_smul] using hv.symm
+  exact eG.injective (hx0.trans eG.map_zero.symm)
+
 
 /-- **Induction on the Lie algebra of a subgroup.** A property that holds for every derivation
 whose one-parameter subgroup lies in `K` and for `0`, and is preserved by addition, scalar
