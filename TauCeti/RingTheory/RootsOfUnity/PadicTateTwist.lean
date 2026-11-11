@@ -241,7 +241,6 @@ def galoisRepresentation : Representation ℤ_[p] (K ≃ₐ[F] K) (PadicTateTwis
       TateModule.levelMap_apply]
 
 /-- The Galois representation applies the field automorphism to every roots-of-unity component. -/
-@[simp]
 theorem coe_tateModuleProj_galoisRepresentation (σ : K ≃ₐ[F] K) (x : PadicTateTwist p K) (n : ℕ) :
     (((TateModule.proj n (galoisRepresentation (p := p) (F := F) σ x) :
         Additive Kˣ).toMul : Kˣ) : K) =
