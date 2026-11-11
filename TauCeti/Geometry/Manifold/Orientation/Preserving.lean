@@ -26,7 +26,8 @@ point either preserves or reverses orientations there
 The inverse of a diffeomorphism preserves orientation wherever the diffeomorphism does
 (`IsOrientationPreservingAt.diffeomorph_symm`), so a diffeomorphism of `M` preserving an
 orientation everywhere has all its integer powers orientation preserving
-(`isOrientationPreservingAt_zpow`).
+(`isOrientationPreservingAt_zpow`). These diffeomorphisms form the subgroup
+`Diffeomorph.orientationPreservingSubgroup o` of the smooth diffeomorphism group.
 
 For orientation lifts whose model orientations correspond under a linear equivalence of the model
 spaces, the chart signs of the lifts compensate the sign of the coordinate Jacobian of an
@@ -765,3 +766,36 @@ theorem signAt_mul_signAt_mul_det_pos
       (tangentCoordChange I β x x).det) * ((c : ℝ) * c * ha' + hc')
 
 end TauCeti.Manifold.OrientationLift
+
+namespace Diffeomorph
+
+open scoped ContDiff
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+
+variable {ι : Type*} [Fintype ι]
+
+/-- The subgroup of smooth self-diffeomorphisms of `M` preserving the orientation `o` at every
+point. -/
+def orientationPreservingSubgroup (o : TauCeti.Manifold.Orientation I M ι) :
+    Subgroup (TauCeti.Diff I M ∞) where
+  carrier := {f | ∀ x, TauCeti.Manifold.Orientation.IsOrientationPreservingAt o o f x}
+  mul_mem' {f g} hf hg x := by
+    rw [coe_mul]
+    exact (hf (g x)).comp (hg x)
+  one_mem' x := TauCeti.Manifold.Orientation.isOrientationPreservingAt_id o x
+  inv_mem' {f} hf y := by
+    rw [coe_inv]
+    exact (hf (f.symm y)).diffeomorph_symm (by simp)
+
+/-- Membership in the orientation-preserving subgroup is preservation of `o` at every point. -/
+@[simp]
+theorem mem_orientationPreservingSubgroup_iff {o : TauCeti.Manifold.Orientation I M ι}
+    {f : TauCeti.Diff I M ∞} :
+    f ∈ orientationPreservingSubgroup o ↔
+      ∀ x, TauCeti.Manifold.Orientation.IsOrientationPreservingAt o o f x :=
+  Iff.rfl
+
+end Diffeomorph

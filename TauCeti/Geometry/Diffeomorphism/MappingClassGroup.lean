@@ -23,14 +23,15 @@ component of the identity, a normal subgroup, that is, the group `π₀ Diff(M, 
 For an orientation `o` of `M`, `Mod⁺(M)` is the subgroup of classes of orientation-preserving
 diffeomorphisms.
 
-This is the mapping class group of the geometric-topology roadmap, where it is studied for compact
-connected surfaces; the definition is the same in every dimension.
+The definition is the same in every dimension; the classical case is that of compact connected
+surfaces.
 
 ## Main definitions
 
 * `TauCeti.MappingClassGroup I M`: the mapping class group `Mod(M)`.
 * `TauCeti.MappingClassGroup.mk`: the quotient homomorphism `Diff(M, ∂M) →* Mod(M)`.
-* `Diffeomorph.orientationPreservingSubgroup o`: the diffeomorphisms preserving `o` at every point.
+* `TauCeti.MappingClassGroup.lift`: a homomorphism out of `Diff(M, ∂M)` that is trivial on
+  diffeomorphisms isotopic to the identity relative to `∂M` descends to `Mod(M)`.
 * `TauCeti.MappingClassGroup.orientationPreserving o`: the subgroup `Mod⁺(M)`.
 
 ## Main results
@@ -39,6 +40,8 @@ connected surfaces; the definition is the same in every dimension.
 * `TauCeti.MappingClassGroup.mk_eq_mk_iff`: two relative diffeomorphisms have the same class
   exactly when they are joined by a path in `Diff(M, ∂M)`.
 * `TauCeti.MappingClassGroup.ker_mk`: the kernel of `mk` is the path component of the identity.
+* `TauCeti.MappingClassGroup.lift_mk`, `TauCeti.MappingClassGroup.hom_ext`: the universal property
+  of `mk`.
 * `TauCeti.MappingClassGroup.mk_final_eq_one`: the final diffeomorphism of a diffeotopy fixing
   `∂M` pointwise at every time represents the trivial class.
 
@@ -55,33 +58,6 @@ open scoped Manifold ContDiff TauCeti.DiffeomorphWeakWhitney
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-
-namespace Diffeomorph
-
-variable {ι : Type*} [Fintype ι]
-
-/-- The subgroup of smooth self-diffeomorphisms of `M` preserving the orientation `o` at every
-point. -/
-def orientationPreservingSubgroup (o : TauCeti.Manifold.Orientation I M ι) :
-    Subgroup (TauCeti.Diff I M ∞) where
-  carrier := {f | ∀ x, TauCeti.Manifold.Orientation.IsOrientationPreservingAt o o f x}
-  mul_mem' {f g} hf hg x := by
-    rw [coe_mul]
-    exact (hf (g x)).comp (hg x)
-  one_mem' x := TauCeti.Manifold.Orientation.isOrientationPreservingAt_id o x
-  inv_mem' {f} hf y := by
-    rw [coe_inv]
-    exact (hf (f.symm y)).diffeomorph_symm (by simp)
-
-/-- Membership in the orientation-preserving subgroup is preservation of `o` at every point. -/
-@[simp]
-theorem mem_orientationPreservingSubgroup_iff {o : TauCeti.Manifold.Orientation I M ι}
-    {f : TauCeti.Diff I M ∞} :
-    f ∈ orientationPreservingSubgroup o ↔
-      ∀ x, TauCeti.Manifold.Orientation.IsOrientationPreservingAt o o f x :=
-  Iff.rfl
-
-end Diffeomorph
 
 namespace TauCeti
 
@@ -121,16 +97,55 @@ theorem ker_mk : (mk I M).ker = Subgroup.pathComponentOne (RelativeDiff I M ∞ 
 /-- A diffeomorphism fixing `∂M` pointwise represents the trivial mapping class exactly when it
 is isotopic to the identity relative to `∂M`. -/
 theorem mk_eq_one_iff {f : RelativeDiff I M ∞ (I.boundary M)} : mk I M f = 1 ↔ Joined 1 f := by
-  rw [← MonoidHom.mem_ker, ker_mk]
-  exact Iff.rfl
+  rw [← MonoidHom.mem_ker, ker_mk, ← SetLike.mem_coe, Subgroup.coe_pathComponentOne,
+    mem_pathComponent_iff]
 
 /-- Two diffeomorphisms fixing `∂M` pointwise have the same mapping class exactly when they are
 isotopic relative to `∂M`. -/
 theorem mk_eq_mk_iff {f g : RelativeDiff I M ∞ (I.boundary M)} :
     mk I M f = mk I M g ↔ Joined f g := by
-  refine (QuotientGroup.eq (s := Subgroup.pathComponentOne _)).trans ⟨fun h => ?_, fun h => ?_⟩
-  · simpa using (show Joined 1 (f⁻¹ * g) from h).map (f := (f * ·)) (by fun_prop)
-  · exact (by simpa using h.map (f := (f⁻¹ * ·)) (by fun_prop) : Joined 1 (f⁻¹ * g))
+  rw [← div_eq_one, ← map_div, mk_eq_one_iff, div_eq_mul_inv]
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · simpa using (h.map (f := (· * g)) (by fun_prop)).symm
+  · simpa using (h.map (f := (· * g⁻¹)) (by fun_prop)).symm
+
+section Lift
+
+variable {G : Type*} [Group G]
+
+/-- A homomorphism out of `Diff(M, ∂M)` that is trivial on every diffeomorphism isotopic to the
+identity relative to `∂M` descends to the mapping class group. -/
+noncomputable def lift (φ : RelativeDiff I M ∞ (I.boundary M) →* G)
+    (hφ : ∀ f, Joined 1 f → φ f = 1) : MappingClassGroup I M →* G :=
+  QuotientGroup.lift _ φ fun f hf => hφ f <| by
+    rwa [← SetLike.mem_coe, Subgroup.coe_pathComponentOne, mem_pathComponent_iff] at hf
+
+/-- The descended homomorphism sends the class of `f` to `φ f`. -/
+@[simp]
+theorem lift_mk (φ : RelativeDiff I M ∞ (I.boundary M) →* G) (hφ : ∀ f, Joined 1 f → φ f = 1)
+    (f : RelativeDiff I M ∞ (I.boundary M)) : lift φ hφ (mk I M f) = φ f :=
+  QuotientGroup.lift_mk' _ _ f
+
+/-- The descended homomorphism composed with `mk` is `φ`. -/
+@[simp]
+theorem lift_comp_mk (φ : RelativeDiff I M ∞ (I.boundary M) →* G)
+    (hφ : ∀ f, Joined 1 f → φ f = 1) : (lift φ hφ).comp (mk I M) = φ :=
+  MonoidHom.ext (lift_mk φ hφ)
+
+/-- Two homomorphisms out of the mapping class group agreeing on every class `mk I M f` are
+equal. -/
+@[ext]
+theorem hom_ext {ψ ψ' : MappingClassGroup I M →* G}
+    (h : ψ.comp (mk I M) = ψ'.comp (mk I M)) : ψ = ψ' :=
+  QuotientGroup.monoidHom_ext _ h
+
+/-- The descended homomorphism is the only one whose composite with `mk` is `φ`. -/
+theorem eq_lift_iff {φ : RelativeDiff I M ∞ (I.boundary M) →* G}
+    {hφ : ∀ f, Joined 1 f → φ f = 1} {ψ : MappingClassGroup I M →* G} :
+    ψ = lift φ hφ ↔ ψ.comp (mk I M) = φ :=
+  ⟨fun h => h ▸ lift_comp_mk φ hφ, fun h => hom_ext (h.trans (lift_comp_mk φ hφ).symm)⟩
+
+end Lift
 
 /-- The final diffeomorphism of a diffeotopy fixing `∂M` pointwise at every time represents the
 trivial mapping class. -/
