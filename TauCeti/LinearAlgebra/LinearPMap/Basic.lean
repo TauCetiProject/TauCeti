@@ -17,6 +17,8 @@ General lemmas on `LinearPMap` that Mathlib does not provide.
 * `LinearPMap.congr_fun`: the value-level part of `LinearPMap.ext_iff`, with the two domain
   memberships as explicit arguments.
 * `LinearPMap.neg_smul` and `LinearPMap.smul_neg`: a negation moves through a scalar multiple.
+* `LinearPMap.eq_of_le_of_smul_sub_surjective_of_injective`: an extension `B` of `A` equals `A`
+  when `lambda • I - A` is surjective and `lambda • I - B` is injective.
 * `LinearPMap.exists_eq_add_smul_supSpanSingleton`: every vector of the domain of
   `f.supSpanSingleton x y hx` is `s + c • x` with `s` in the domain of `f`, sent to `f s + σ c • y`.
 * `LinearPMap.supSpanSingleton_injective`: extending an injective partial map by `x ↦ y` with `y`
@@ -48,6 +50,25 @@ theorem neg_smul {M : Type*} [Ring M] [Module M F] [SMulCommClass S M F] (c : M)
 theorem smul_neg {M : Type*} [Monoid M] [DistribMulAction M F] [SMulCommClass S M F] (c : M)
     (A : E →ₛₗ.[σ] F) : c • (-A) = -(c • A) :=
   LinearPMap.ext rfl fun _ _ _ => _root_.smul_neg _ _
+
+/-- **An operator has no proper extension on which a shift stays injective.** If `A ≤ B`,
+`lambda • I - A` maps `D(A)` onto `E` and `lambda • I - B` is injective on `D(B)`, then `A = B`.
+
+A vector `y ∈ D(B)` has `lambda • y - B y = lambda • x - A x` for some `x ∈ D(A)`, by
+surjectivity for `A`; injectivity for `B` then forces `y = x`, so `D(B) ⊆ D(A)`. -/
+theorem eq_of_le_of_smul_sub_surjective_of_injective {A B : E →ₗ.[R] E} {lambda : R}
+    (hAB : A ≤ B) (hA : Function.Surjective fun x : A.domain => lambda • (x : E) - A x)
+    (hB : Function.Injective fun x : B.domain => lambda • (x : E) - B x) : A = B := by
+  refine eq_of_le_of_domain_eq hAB (le_antisymm hAB.1 fun y hy => ?_)
+  obtain ⟨x, hx⟩ := hA (lambda • y - B ⟨y, hy⟩)
+  obtain ⟨x', hx'coe, hx'val⟩ := exists_of_le hAB x
+  have hxy : x' = (⟨y, hy⟩ : B.domain) := by
+    refine hB ?_
+    simp only [← hx'coe, ← hx'val]
+    exact hx
+  have hcoe : (x : E) = y := by rw [hx'coe, hxy]
+  rw [← hcoe]
+  exact x.property
 
 section supSpanSingleton
 

@@ -11,16 +11,16 @@ public import Mathlib.LinearAlgebra.LinearPMap
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 import Mathlib.Analysis.Calculus.ContDiff.Convolution
-import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.Analysis.Normed.Module.Dual
+import Mathlib.MeasureTheory.Measure.Haar.Unique
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Analysis.Convolution.Basic
+import TauCeti.Analysis.Distribution.TestFunction.Lp
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Convolution
 import TauCeti.Analysis.InnerProductSpace.Laplacian.ZerothOrderMaximumPrinciple
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
-import TauCeti.Data.ENNReal.Inv
-import TauCeti.MeasureTheory.Function.Lp.IntegralBoundedSmul
 
 /-!
 # The Laplacian on `Lᵖ` in the sense of distributions
@@ -85,28 +85,8 @@ omit [CompleteSpace F] in
 private theorem integrable_laplacian_smul (φ : 𝓓((⊤ : Opens E), ℝ))
     (f : Lp F p (volume : Measure E)) :
     Integrable (fun x ↦ Δ (φ : E → ℝ) x • f x) volume := by
-  have hf : LocallyIntegrableOn f (⊤ : Opens E) volume := by
-    rw [Opens.coe_top, locallyIntegrableOn_univ]
-    exact (Lp.memLp f).locallyIntegrable Fact.out
   simpa only [TestFunction.laplacianCLM_apply] using
-    TestFunction.integrable_smul (LineDeriv.laplacianCLM ℝ E (𝓓((⊤ : Opens E), ℝ)) φ) hf
-
-omit [CompleteSpace F] in
-/-- A test function, multiplied by an `Lᵖ` function, is integrable. -/
-private theorem integrable_testFunction_smul (φ : 𝓓((⊤ : Opens E), ℝ))
-    (f : Lp F p (volume : Measure E)) :
-    Integrable (fun x ↦ φ x • f x) volume := by
-  have hf : LocallyIntegrableOn f (⊤ : Opens E) volume := by
-    rw [Opens.coe_top, locallyIntegrableOn_univ]
-    exact (Lp.memLp f).locallyIntegrable Fact.out
-  exact TestFunction.integrable_smul φ hf
-
-omit [CompleteSpace F] [Fact (1 ≤ p)] in
-/-- Pairing anything with the zero class of `Lᵖ` gives zero. -/
-private theorem integral_smul_coeFn_zero (k : E → ℝ) :
-    ∫ x, k x • (0 : Lp F p (volume : Measure E)) x = 0 :=
-  (integral_congr_ae <| (Lp.coeFn_zero F p volume).mono fun x hx ↦ by
-    rw [hx, Pi.zero_apply, smul_zero]).trans (integral_zero E F)
+    (LineDeriv.laplacianCLM ℝ E (𝓓((⊤ : Opens E), ℝ)) φ).integrable_smul_of_memLp (Lp.memLp f)
 
 /-- The pairs `(f, g)` of `Lᵖ` functions with `Δf = g` in the sense of distributions. -/
 private def weakLaplacianGraph :
@@ -122,9 +102,9 @@ private def weakLaplacianGraph :
       integral_congr_ae <| (Lp.coeFn_add fg₁.2 fg₂.2).mono fun x hx ↦ by
         simp only [Prod.snd_add, hx, Pi.add_apply, smul_add]
     rw [hl, hr, integral_add (integrable_laplacian_smul φ _) (integrable_laplacian_smul φ _),
-      integral_add (integrable_testFunction_smul φ _) (integrable_testFunction_smul φ _), h₁ φ,
-      h₂ φ]
-  zero_mem' φ := (integral_smul_coeFn_zero _).trans (integral_smul_coeFn_zero _).symm
+      integral_add (φ.integrable_smul_of_memLp (Lp.memLp _))
+        (φ.integrable_smul_of_memLp (Lp.memLp _)), h₁ φ, h₂ φ]
+  zero_mem' φ := by simp
   smul_mem' c fg h φ := by
     have hl : ∫ x, Δ (φ : E → ℝ) x • (c • fg).1 x = ∫ x, c • (Δ (φ : E → ℝ) x • fg.1 x) :=
       integral_congr_ae <| (Lp.coeFn_smul c fg.1).mono fun x hx ↦ by
@@ -135,19 +115,12 @@ private def weakLaplacianGraph :
     have h' : ∫ x, Δ (φ : E → ℝ) x • fg.1 x = ∫ x, φ x • fg.2 x := h φ
     rw [hl, hr, integral_smul, integral_smul, h']
 
-/-- An `Lᵖ` function all of whose pairings with test functions vanish is zero. -/
-private theorem eq_zero_of_forall_integral_smul_eq_zero {g : Lp F p (volume : Measure E)}
-    (h : ∀ φ : 𝓓((⊤ : Opens E), ℝ), ∫ x, φ x • g x = 0) : g = 0 := by
-  refine Lp.eq_zero_iff_ae_eq_zero.2 <| ae_eq_zero_of_integral_contDiff_smul_eq_zero
-    ((Lp.memLp g).locallyIntegrable Fact.out) fun ψ hψ hψc ↦ ?_
-  exact h ⟨ψ, hψ, hψc, by simp⟩
-
 private theorem weakLaplacianGraph_snd_eq_zero
     (fg : Lp F p (volume : Measure E) × Lp F p (volume : Measure E))
     (hfg : fg ∈ weakLaplacianGraph (E := E) (F := F) (p := p)) (h0 : fg.1 = 0) : fg.2 = 0 := by
-  refine eq_zero_of_forall_integral_smul_eq_zero fun φ ↦ ?_
+  refine Lp.eq_zero_of_forall_integral_testFunction_smul_eq_zero fun φ ↦ ?_
   have h : ∫ x, Δ (φ : E → ℝ) x • fg.1 x = ∫ x, φ x • fg.2 x := hfg φ
-  rw [← h, h0, integral_smul_coeFn_zero]
+  simp [← h, h0]
 
 variable (E F p) in
 /-- **The Laplacian on `Lᵖ` in the sense of distributions**, as a partial linear map on
@@ -204,41 +177,6 @@ theorem mem_graph_weakLaplacianLp_of_contDiff {u : E → F} (hu : ContDiff ℝ 2
 
 /-! ### `c - Δ` is injective -/
 
-/-- The convolution `ρ ⋆ v` of a test function with an `Lᵖ` function is bounded. -/
-private theorem isBounded_range_convolution {ρ : E → ℝ} (hρ : Continuous ρ)
-    (hρc : HasCompactSupport ρ) {v : E → ℝ} (hv : MemLp v p volume) :
-    Bornology.IsBounded (range (ρ ⋆[lsmul ℝ ℝ, volume] v)) := by
-  obtain ⟨R, hR⟩ := hρc.isCompact.isBounded.subset_closedBall 0
-  obtain ⟨B, hB⟩ := hρc.exists_bound_of_continuous hρ
-  have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 0)
-  refine isBounded_iff_forall_norm_le.2 ⟨B * ((volume (closedBall (0 : E) R)) ^
-    (1 - 1 / p.toReal) * eLpNorm v p volume).toReal, ?_⟩
-  rintro _ ⟨y, rfl⟩
-  -- Only the values of `v` on `W` enter: `ρ (y - t) = 0` for `t ∉ W`.
-  have hzero : ∀ t ∉ closedBall y R, ρ (y - t) = 0 := fun t ht ↦ image_eq_zero_of_notMem_tsupport
-    fun h ↦ ht (by rw [mem_closedBall, dist_comm, dist_eq_norm]; simpa using hR h)
-  have hval : (ρ ⋆[lsmul ℝ ℝ, volume] v) y = ∫ t, ρ (y - t) • (closedBall y R).indicator v t := by
-    rw [convolution_lsmul_swap]
-    refine integral_congr_ae (ae_of_all _ fun t ↦ ?_)
-    dsimp only
-    by_cases ht : t ∈ closedBall y R
-    · rw [indicator_of_mem ht]
-    · rw [hzero t ht, zero_smul, zero_smul]
-  have hW : volume (closedBall y R) ≠ ∞ := measure_closedBall_lt_top.ne
-  obtain ⟨-, hle⟩ := integrable_smul_and_norm_integral_smul_le hW hB0
-    (hρ.comp (continuous_const.sub continuous_id)).aestronglyMeasurable
-    (ae_of_all _ fun t ↦ hB (y - t)) Fact.out
-    (hv.indicator measurableSet_closedBall.nullMeasurableSet)
-    (ae_of_all _ fun t ht ↦ indicator_of_notMem ht v)
-  rw [hval]
-  refine hle.trans (mul_le_mul_of_nonneg_left (ENNReal.toReal_mono ?_ ?_) hB0)
-  · exact ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg
-      (ENNReal.one_sub_one_div_toReal_nonneg Fact.out) measure_closedBall_lt_top.ne)
-      hv.eLpNorm_ne_top
-  · rw [Measure.addHaar_closedBall_center]
-    gcongr
-    exact eLpNorm_indicator_le v measurableSet_closedBall.nullMeasurableSet
-
 /-- **A scalar `Lᵖ` solution of `Δv = c v`, `c > 0`, is orthogonal to every test function.** -/
 private theorem integral_smul_eq_zero_of_laplacian_eq_smul {c : ℝ} (hc : 0 < c) {v : E → ℝ}
     (hv : MemLp v p volume)
@@ -277,9 +215,14 @@ private theorem integral_smul_eq_zero_of_laplacian_eq_smul {c : ℝ} (hc : 0 < c
     simp only [ψ, TestFunction.coe_mk, hΔg] at hψ
     rw [hlap, hψ, hu_def, convolution_lsmul_swap, ← smul_eq_mul, ← integral_smul]
     exact integral_congr_ae (ae_of_all _ fun t ↦ by simp only [g, smul_eq_mul]; ring)
+  -- `u` is bounded since `ρ` lies in the Hölder-conjugate space `L^{p'}`.
+  have : (ENNReal.conjExponent p).HolderConjugate p :=
+    (ENNReal.HolderConjugate.conjExponent Fact.out).symm
+  have hub : Bornology.IsBounded (range u) :=
+    isBounded_range_convolution_of_memLp (p := ENNReal.conjExponent p) (lsmul ℝ ℝ)
+      (hρ.continuous.memLp_of_hasCompactSupport hρc) hv
   -- The maximum principle makes `u` vanish, and `u 0` is the pairing of `v` with `φ`.
-  have hu0 := congrFun (eq_zero_of_laplacian_eq_mul_of_isBounded hc hu
-    (isBounded_range_convolution hρ.continuous hρc hv) hΔu) 0
+  have hu0 := congrFun (eq_zero_of_laplacian_eq_mul_of_isBounded hc hu hub hΔu) 0
   rw [hu_def, convolution_lsmul_swap, Pi.zero_apply] at hu0
   simpa [hρ_def] using hu0
 
@@ -289,7 +232,7 @@ theorem eq_zero_of_mem_graph_weakLaplacianLp_smul {c : ℝ} (hc : 0 < c)
     {f : Lp F p (volume : Measure E)} (h : (f, c • f) ∈ (weakLaplacianLp E F p).graph) :
     f = 0 := by
   rw [mem_graph_weakLaplacianLp_iff] at h
-  refine eq_zero_of_forall_integral_smul_eq_zero fun φ ↦ ?_
+  refine Lp.eq_zero_of_forall_integral_testFunction_smul_eq_zero fun φ ↦ ?_
   refine SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := ℝ) fun ℓ ↦ ?_
   -- Apply the scalar statement to `ℓ ∘ f`.
   have hℓ : MemLp (fun x ↦ ℓ (f x)) p volume := ℓ.comp_memLp' (Lp.memLp f)
@@ -298,11 +241,11 @@ theorem eq_zero_of_mem_graph_weakLaplacianLp_smul {c : ℝ} (hc : 0 < c)
     intro ψ
     have := congrArg ℓ (h ψ)
     rw [← ℓ.integral_comp_comm (integrable_laplacian_smul ψ f),
-      ← ℓ.integral_comp_comm (integrable_testFunction_smul ψ _)] at this
+      ← ℓ.integral_comp_comm (ψ.integrable_smul_of_memLp (Lp.memLp _))] at this
     simp only [map_smul] at this
     refine this.trans (integral_congr_ae <| (Lp.coeFn_smul c f).mono fun x hx ↦ ?_)
     simp only [hx, Pi.smul_apply, map_smul, smul_eq_mul]
-  rw [← ℓ.integral_comp_comm (integrable_testFunction_smul φ f)]
+  rw [← ℓ.integral_comp_comm (φ.integrable_smul_of_memLp (Lp.memLp f))]
   simpa only [map_smul] using integral_smul_eq_zero_of_laplacian_eq_smul hc hℓ hscal φ
 
 /-- **`c - Δ` is injective on `Lᵖ` for `c > 0`.** -/

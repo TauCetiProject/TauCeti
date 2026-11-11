@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.Function.Lp.WeakLaplacian
 import Mathlib.MeasureTheory.Function.AEEqOfIntegral
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Semigroups.Resolvent.Identity
+import TauCeti.LinearAlgebra.LinearPMap.Basic
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.Basic
 

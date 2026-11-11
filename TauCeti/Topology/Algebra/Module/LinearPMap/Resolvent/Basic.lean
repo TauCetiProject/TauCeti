@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Spectrum.Basic
 public import Mathlib.LinearAlgebra.LinearPMap
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
+import TauCeti.LinearAlgebra.LinearPMap.Basic
 
 /-!
 # Continuous inverses of shifts of partial linear maps
@@ -213,26 +214,6 @@ theorem eq_zero_of_apply_eq_smul (h : lambda ∈ resolventSet A) (x : A.domain)
   Subtype.ext <| by rw [ZeroMemClass.coe_zero, ← resolvent_smul_sub_apply h x, hx, sub_self,
     ContinuousLinearMap.map_zero]
 
-omit [TopologicalSpace X] in
-/-- **An operator has no proper extension on which a shift stays injective.** If `A ≤ B`,
-`lambda • I - A` maps `D(A)` onto `X` and `lambda • I - B` is injective on `D(B)`, then `A = B`.
-
-A vector `y ∈ D(B)` has `lambda • y - B y = lambda • x - A x` for some `x ∈ D(A)`, by
-surjectivity for `A`; injectivity for `B` then forces `y = x`, so `D(B) ⊆ D(A)`. -/
-theorem eq_of_le_of_smul_sub_surjective_of_injective {A B : X →ₗ.[𝕜] X} (hAB : A ≤ B)
-    (hA : Function.Surjective fun x : A.domain => lambda • (x : X) - A x)
-    (hB : Function.Injective fun x : B.domain => lambda • (x : X) - B x) : A = B := by
-  refine LinearPMap.eq_of_le_of_domain_eq hAB (le_antisymm hAB.1 fun y hy => ?_)
-  obtain ⟨x, hx⟩ := hA (lambda • y - B ⟨y, hy⟩)
-  obtain ⟨x', hx'coe, hx'val⟩ := LinearPMap.exists_of_le hAB x
-  have hxy : x' = (⟨y, hy⟩ : B.domain) := by
-    refine hB ?_
-    simp only [← hx'coe, ← hx'val]
-    exact hx
-  have hcoe : (x : X) = y := by rw [hx'coe, hxy]
-  rw [← hcoe]
-  exact x.property
-
 /-- **An operator has no proper extension sharing a resolvent point.** If `A ≤ B` and some
 `lambda` lies in the resolvent set of both, then `A = B`.
 
@@ -319,7 +300,7 @@ theorem resolvent_comm (hl : lambda ∈ A.resolventSet) (hm : mu ∈ A.resolvent
     have h2 := resolvent_sub_resolvent_apply hm hl y
     have h3 : (mu - lambda) • A.resolvent lambda (A.resolvent mu y)
         = (mu - lambda) • A.resolvent mu (A.resolvent lambda y) := by
-      rw [← h1, ← neg_sub lambda mu, neg_smul, ← h2]
+      rw [← h1, ← neg_sub lambda mu, _root_.neg_smul, ← h2]
       abel
     have h4 := congrArg (fun x : X => (mu - lambda)⁻¹ • x) h3
     simpa only [ContinuousLinearMap.comp_apply, smul_smul, inv_mul_cancel₀ hsub, one_smul]

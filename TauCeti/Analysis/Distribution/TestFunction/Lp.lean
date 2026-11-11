@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import TauCeti.Analysis.Distribution.Mass.Basic
+import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.MeasureTheory.Function.ContinuousMapDense
 import TauCeti.Analysis.Distribution.TestFunction.Approximation
 import TauCeti.Analysis.Distribution.TestFunction.Integral
@@ -41,6 +42,9 @@ evaluation on integrable forms (`Distribution.extendL1`).
 * `HasCompactSupport.exists_testFunction_eLpNorm_sub_le`: a continuous compactly supported
   function on `Ω` is an `Lᵖ(μ)` limit of test functions for `p < ∞`.
 * `TestFunction.denseRange_toLp`: test functions are dense in `Lᵖ(μ)` for `p < ∞`.
+* `TestFunction.integrable_smul_of_memLp`: a test function times an `Lᵖ` function is integrable.
+* `MeasureTheory.Lp.eq_zero_of_forall_integral_testFunction_smul_eq_zero`: an `Lᵖ` function on a
+  finite-dimensional space whose pairings with all test functions vanish is zero.
 
 ## References
 
@@ -301,5 +305,20 @@ theorem denseRange_toLp [FiniteDimensional ℝ E] [CompleteSpace F] [μ.Regular]
   rw [Metric.mem_closedEBall', ← Lp.toLp_coeFn f (Lp.memLp f), toLp_apply, Lp.edist_toLp_toLp,
     ← ENNReal.add_halves ε, ← sub_add_sub_cancel (⇑f) g]
   exact (eLpNorm_add_le Fact.out).trans (add_le_add hfg hφ)
+
+/-- A test function multiplied by an `Lᵖ` function, `1 ≤ p`, is integrable. -/
+theorem integrable_smul_of_memLp {ν : Measure E} [IsLocallyFiniteMeasure ν] (φ : 𝓓^{n}(Ω, ℝ))
+    {f : E → F} (hf : MemLp f p ν) : Integrable (fun x ↦ φ x • f x) ν :=
+  φ.integrable_smul ((hf.locallyIntegrable Fact.out).locallyIntegrableOn _)
+
+/-- **An `Lᵖ` function is determined by its pairings with test functions.** If `1 ≤ p` and
+`∫ φ • g = 0` for every test function `φ` on a finite-dimensional space, then `g = 0` in `Lᵖ`. -/
+theorem _root_.MeasureTheory.Lp.eq_zero_of_forall_integral_testFunction_smul_eq_zero
+    [FiniteDimensional ℝ E] [CompleteSpace F] {ν : Measure E} [IsLocallyFiniteMeasure ν]
+    {g : Lp F p ν}
+    (h : ∀ φ : 𝓓((⊤ : Opens E), ℝ), ∫ x, φ x • g x ∂ν = 0) : g = 0 := by
+  refine Lp.eq_zero_iff_ae_eq_zero.2 <| ae_eq_zero_of_integral_contDiff_smul_eq_zero
+    ((Lp.memLp g).locallyIntegrable Fact.out) fun ψ hψ hψc ↦ ?_
+  exact h ⟨ψ, hψ, hψc, by simp⟩
 
 end TestFunction

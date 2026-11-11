@@ -19,7 +19,8 @@ An essentially bounded function convolves with an integrable function at every p
 measurable additive group with a measure invariant under left translations and negation
 (`MeasureTheory.convolutionExists_of_ae_norm_le_of_integrable` and
 `MeasureTheory.convolutionExists_of_integrable_of_ae_norm_le`). No topology on the group or
-sigma-finiteness of the measure is required. For two integrable scalar kernels and an
+sigma-finiteness of the measure is required. For Hölder conjugate exponents `p` and `q`, the
+convolution of `f ∈ Lᵖ` with `g ∈ L^q` is bounded. For two integrable scalar kernels and an
 essentially bounded function, convolution is associative at every point; this associativity
 statement additionally assumes s-finiteness.
 
@@ -56,6 +57,8 @@ integrals of increments of `f`; when `ψ` has integral `1`, is bounded by `M` an
 * `MeasureTheory.convolutionExists_of_ae_norm_le_of_integrable`,
   `MeasureTheory.convolutionExists_of_integrable_of_ae_norm_le`: existence of `f ⋆ g` when one
   factor is integrable and the other essentially bounded.
+* `MeasureTheory.isBounded_range_convolution_of_memLp`: the convolution of `f ∈ Lᵖ` with
+  `g ∈ L^q`, for Hölder conjugate `p` and `q`, is bounded.
 * `MeasureTheory.convolution_lsmul_assoc_of_integrable_of_ae_norm_le`: pointwise associativity
   for two integrable kernels and an essentially bounded function.
 * `ContinuousLinearMap.convolution_lsmul_comp_comm`: `ρ ⋆ (L ∘ f) = L (ρ ⋆ f)`.
@@ -112,6 +115,19 @@ theorem convolutionExists_of_integrable_of_ae_norm_le (hf : Integrable f μ)
     have hsub := (Measure.measurePreserving_sub_left μ x).quasiMeasurePreserving
     simpa only [ConvolutionExistsAt, Function.comp_def] using
       L.integrable_of_bilin_of_bdd_right M hf (hg.comp_quasiMeasurePreserving hsub) (hsub.ae hgM)
+
+omit [MeasurableAdd G] in
+/-- If `p` and `q` are Hölder conjugate, the convolution of `f ∈ Lᵖ` with `g ∈ L^q` is bounded,
+by `‖L‖ ‖f‖_p ‖g‖_q` at every point (`MeasureTheory.enorm_convolution_le`). -/
+theorem isBounded_range_convolution_of_memLp [NormedSpace ℝ F] [MeasurableAdd₂ G]
+    {p q : ENNReal} [p.HolderConjugate q] (hf : MemLp f p μ) (hg : MemLp g q μ) :
+    Bornology.IsBounded (Set.range (f ⋆[L, μ] g)) := by
+  refine isBounded_iff_forall_norm_le.2 ⟨(‖L‖ₑ * eLpNorm f p μ * eLpNorm g q μ).toReal, ?_⟩
+  rintro _ ⟨x, rfl⟩
+  rw [← toReal_enorm]
+  exact ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.mul_ne_top enorm_ne_top
+    hf.eLpNorm_ne_top) hg.eLpNorm_ne_top) (enorm_convolution_le L hf.aestronglyMeasurable
+      hg.aestronglyMeasurable x)
 
 section Assoc
 
