@@ -53,12 +53,12 @@ In the namespace `TauCeti.SmoothEmbedding`:
 * `IsCriticalSubmanifold.inner_eq_zero_of_mem_negativeNormalSpace` and
   `IsCriticalSubmanifold.normalHessian_eq_zero_of_mem_negativeNormalSpace`: the two spaces are
   orthogonal for the metric and for the normal Hessian.
-* `IsNondegenerateCriticalSubmanifold.finrank_negativeNormalSpace` and
-  `IsNondegenerateCriticalSubmanifold.finrank_positiveNormalSpace`: their dimensions are the
-  Morse indices of `f` and of `-f`.
 * `IsNondegenerateCriticalSubmanifold.isCompl_negativeNormalSpace_positiveNormalSpace`: for a
   Morse–Bott submanifold the normal space is the direct sum of the negative normal space for one
   fibre metric and the positive normal space for any other.
+* `IsNondegenerateCriticalSubmanifold.finrank_negativeNormalSpace` and
+  `IsNondegenerateCriticalSubmanifold.finrank_positiveNormalSpace`: their dimensions are the
+  Morse indices of `f` and of `-f`.
 * `IsNondegenerateCriticalSubmanifold.negativeNormalSpaceEquiv` and
   `IsNondegenerateCriticalSubmanifold.positiveNormalSpaceEquiv`: the negative, respectively
   positive, normal spaces for two fibre metrics are identified by projection along the positive,
@@ -157,7 +157,7 @@ end IsCriticalSubmanifold
 namespace IsNondegenerateCriticalSubmanifold
 
 variable [I.Boundaryless] [IsManifold I 2 M] [FiniteDimensional ℝ E]
-  (h : i.IsNondegenerateCriticalSubmanifold f) (g : RiemannianMetric fun s ↦ i.NormalSpace s hn)
+  (h : i.IsNondegenerateCriticalSubmanifold f) (g g' : RiemannianMetric fun s ↦ i.NormalSpace s hn)
 
 /-- **The negative normal space has the dimension of the Morse index**, for every fibre metric. -/
 theorem finrank_negativeNormalSpace (s : S) :
@@ -179,20 +179,19 @@ theorem finrank_positiveNormalSpace (s : S) :
     h.sigPos_normalHessian hn s]
 
 /-- **The normal space of a Morse–Bott submanifold splits into its negative and positive parts.**
-The negative normal space relative to a fibre metric `g` and the positive normal space relative to
-a fibre metric `g'` are complementary, for any two metrics, possibly equal. The normal Hessian is
-negative definite on the first and positive definite on the second, and their dimensions are the
-Morse indices of `f` and of `-f`, which add up to the dimension of the normal space. -/
-theorem isCompl_negativeNormalSpace_positiveNormalSpace
-    (g' : RiemannianMetric fun s ↦ i.NormalSpace s hn) (s : S) :
+Since the normal Hessian is nondegenerate, the negative normal space relative to a fibre metric `g`
+and the positive normal space relative to a fibre metric `g'` are complementary. The two metrics
+may differ: the normal Hessian is negative definite on the first space and positive definite on
+the second, so they meet only in `0`, and their dimensions are the Morse indices of `f` and `-f`,
+which add up to the rank of the normal bundle. -/
+theorem isCompl_negativeNormalSpace_positiveNormalSpace (s : S) :
     IsCompl (h.negativeNormalSpace hn g s) (h.positiveNormalSpace hn g' s) := by
-  -- For the single metric `g'` the two relative spectral subspaces are complementary.
-  have hc : IsCompl (h.negativeNormalSpace hn g' s) (h.positiveNormalSpace hn g' s) :=
+  have hsplit : IsCompl (h.negativeNormalSpace hn g' s) (h.positiveNormalSpace hn g' s) :=
     LinearMap.BilinForm.isCompl_relativeSpectralSubspace_Iio_Ioi
       (g'.isSymm_toBilinForm_inner s) (g'.pos s)
       (h.isSymm_normalHessian hn s) (h.ker_normalHessian hn s)
-  refine (Submodule.isCompl_iff_disjoint _ _ ?_).mpr <| Submodule.disjoint_def.mpr fun v hv hv' ↦ ?_
-  · rw [← Submodule.finrank_add_eq_of_isCompl hc, h.finrank_negativeNormalSpace hn g,
+  refine (Submodule.isCompl_iff_disjoint _ _ ?_).2 (Submodule.disjoint_def.2 fun v hv hv' ↦ ?_)
+  · rw [← Submodule.finrank_add_eq_of_isCompl hsplit, h.finrank_negativeNormalSpace hn g,
       h.finrank_negativeNormalSpace hn g']
   · by_contra hv0
     exact (h.normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn g hv hv0).not_gt
@@ -202,7 +201,7 @@ theorem isCompl_negativeNormalSpace_positiveNormalSpace
 space relative to `g` is identified with the negative normal space relative to `g'` by projecting
 along the positive normal space relative to `g'`: both are complements of that space
 (`isCompl_negativeNormalSpace_positiveNormalSpace`). -/
-def negativeNormalSpaceEquiv (g' : RiemannianMetric fun s ↦ i.NormalSpace s hn) (s : S) :
+def negativeNormalSpaceEquiv (s : S) :
     h.negativeNormalSpace hn g s ≃ₗ[ℝ] h.negativeNormalSpace hn g' s :=
   (Submodule.quotientEquivOfIsCompl _ _
       (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g g' s).symm).symm.trans
@@ -212,8 +211,7 @@ def negativeNormalSpaceEquiv (g' : RiemannianMetric fun s ↦ i.NormalSpace s hn
 /-- The identification of the negative normal spaces for two fibre metrics is the projection onto
 the negative normal space for `g'` along the positive normal space for `g'`. -/
 @[simp]
-theorem coe_negativeNormalSpaceEquiv_apply (g' : RiemannianMetric fun s ↦ i.NormalSpace s hn)
-    {s : S} (v : h.negativeNormalSpace hn g s) :
+theorem coe_negativeNormalSpaceEquiv_apply {s : S} (v : h.negativeNormalSpace hn g s) :
     (h.negativeNormalSpaceEquiv hn g g' s v : i.NormalSpace s hn) =
       (h.negativeNormalSpace hn g' s).projection (h.positiveNormalSpace hn g' s)
         (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g' s) v := by
@@ -234,7 +232,7 @@ theorem negativeNormalSpaceEquiv_self (s : S) :
 space relative to `g` is identified with the positive normal space relative to `g'` by projecting
 along the negative normal space relative to `g'`: both are complements of that space
 (`isCompl_negativeNormalSpace_positiveNormalSpace`). -/
-def positiveNormalSpaceEquiv (g' : RiemannianMetric fun s ↦ i.NormalSpace s hn) (s : S) :
+def positiveNormalSpaceEquiv (s : S) :
     h.positiveNormalSpace hn g s ≃ₗ[ℝ] h.positiveNormalSpace hn g' s :=
   (Submodule.quotientEquivOfIsCompl _ _
       (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g s)).symm.trans
@@ -244,8 +242,7 @@ def positiveNormalSpaceEquiv (g' : RiemannianMetric fun s ↦ i.NormalSpace s hn
 /-- The identification of the positive normal spaces for two fibre metrics is the projection onto
 the positive normal space for `g'` along the negative normal space for `g'`. -/
 @[simp]
-theorem coe_positiveNormalSpaceEquiv_apply (g' : RiemannianMetric fun s ↦ i.NormalSpace s hn)
-    {s : S} (v : h.positiveNormalSpace hn g s) :
+theorem coe_positiveNormalSpaceEquiv_apply {s : S} (v : h.positiveNormalSpace hn g s) :
     (h.positiveNormalSpaceEquiv hn g g' s v : i.NormalSpace s hn) =
       (h.positiveNormalSpace hn g' s).projection (h.negativeNormalSpace hn g' s)
         (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g' g' s).symm v := by
