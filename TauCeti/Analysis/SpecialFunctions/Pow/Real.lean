@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.SpecialFunctions.Sqrt
 
 /-!
 # Real powers
@@ -41,6 +42,12 @@ for `r ≥ 0`, `R > 0` and `C₀ ≥ 0`.
 
 A natural power `b ^ n` with `1 ≤ b` and `n ≤ δ r` is at most `(b ^ δ) ^ r`, which turns a degree
 bound with a real factor `δ` into a bound by an `r`-th power.
+
+For a positive base `a`, the real powers `(a ^ (n + 1)) ^ B` and `(a ^ n) ^ C` multiply to
+`a ^ B * (a ^ (B + C)) ^ n`, a geometric term in `n`. This is how dyadic annuli are summed against
+a geometric series.
+For `1 ≤ b`, moving the exponent of `b ^ (s y)` to `s x` with `|x - y| ≤ L` costs at most the
+factor `b ^ (|s| L)`. This compares dyadic weights `2 ^ (s j)` and `2 ^ (s k)` at nearby indices.
 
 A power `x ^ y` of a nonnegative real with exponent `0 ≤ y ≤ 1` is at most `1 + x`, which bounds
 the fractional powers `T ^ (α / 2)` and `√T` of a time horizon uniformly by `1 + T`.
@@ -88,6 +95,10 @@ with the corresponding integral of `q`-th powers.
 * `Real.rpow_one_sub_inv_natCast_pow`: `(x ^ (1 - 1/n)) ^ n = x ^ (n - 1)` for `0 ≤ x` and
   `n ≠ 0`.
 * `Real.pow_le_rpow_pow_of_le_mul`: `b ^ n ≤ (b ^ δ) ^ r` when `1 ≤ b` and `n ≤ δ r`.
+* `Real.pow_succ_rpow_mul_pow_rpow`: `(a ^ (n + 1)) ^ B * (a ^ n) ^ C = a ^ B * (a ^ (B + C)) ^ n`
+  for `0 < a`.
+* `Real.rpow_mul_le_rpow_abs_mul_mul_rpow_mul`: `b ^ (s x) ≤ b ^ (|s| L) b ^ (s y)` when `1 ≤ b`
+  and `|x - y| ≤ L`.
 * `Real.rpow_le_one_add`: `x ^ y ≤ 1 + x` for `0 ≤ x` and `0 ≤ y ≤ 1`.
 * `Real.image_rpow_Ioo_zero_one`: a positive power maps the open unit interval onto itself.
 * `Real.tendsto_pow_div_mul_sub_pow_atTop`: `D ^ n / (n ω (D ^ n - ρ ^ n)) → (n ω)⁻¹` as `D → ∞`.
@@ -97,6 +108,8 @@ with the corresponding integral of `q`-th powers.
   real power at both ends of the real line.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
 * `Real.mul_rpow_of_pos_left`: `(a t) ^ z = a ^ z t ^ z` for `0 < a` and every real `t`.
+* `Real.rpow_le_mul_of_mul_le_of_inv_le`: from `a * b ≤ K` and `t⁻¹ ≤ c * b ^ q`, deduce
+  `a ^ q ≤ K ^ q * c * t`.
 * `Real.le_mul_rpow_one_div_iff`: `a ≤ C * I ^ (1 / q) ↔ a ^ q ≤ C ^ q * I` for nonnegative
   `a`, `C`, `I` and `0 < q`.
 * `Real.exists_le_mul_rpow_lt_of_neg`: for `0 < ε` and `p < 0`, arbitrarily large `R'` satisfy
@@ -107,6 +120,9 @@ with the corresponding integral of `q`-th powers.
   exponents have finite multiplicative support.
 * `Real.rpow_finsum_of_pos`: `a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i` for `0 < a` and finitely supported
   `f`.
+* `Real.le_sqrt_mul_rpow_sub_one_of_sq_le`: `x ≤ √B * d ^ (β - 1)` when
+  `d ^ 2 * x ^ 2 ≤ B * d ^ (2 * β)` with `d > 0`, the step turning a mean-value bound on `d ^ 2 *
+  x ^ 2` into a pointwise power bound on `x`.
 -/
 
 public section
@@ -182,6 +198,28 @@ theorem pow_le_rpow_pow_of_le_mul {b δ : ℝ} (hb : 1 ≤ b) {n r : ℕ} (hn : 
     b ^ n ≤ (b ^ δ) ^ r := by
   rw [← rpow_mul_natCast (by linarith), ← rpow_natCast]
   exact rpow_le_rpow_of_exponent_le hb hn
+
+/-- Real powers of consecutive natural powers of a positive base combine into a geometric term:
+`(a ^ (n + 1)) ^ B * (a ^ n) ^ C = a ^ B * (a ^ (B + C)) ^ n`. This is the form in which the
+contributions of the annuli `a ^ n ≤ r < a ^ (n + 1)` are compared with a geometric series. -/
+theorem pow_succ_rpow_mul_pow_rpow {a : ℝ} (ha : 0 < a) (B C : ℝ) (n : ℕ) :
+    (a ^ (n + 1)) ^ B * (a ^ n) ^ C = a ^ B * (a ^ (B + C)) ^ n := by
+  rw [← rpow_natCast_mul ha.le, ← rpow_natCast_mul ha.le, ← rpow_add ha,
+    ← rpow_mul_natCast ha.le, ← rpow_add ha]
+  congr 1
+  push_cast
+  ring
+
+/-- For `1 ≤ b`, moving the exponent of `b ^ (s y)` to `s x` with `|x - y| ≤ L` costs at most the
+factor `b ^ (|s| L)`. -/
+theorem rpow_mul_le_rpow_abs_mul_mul_rpow_mul {b : ℝ} (hb : 1 ≤ b) (s : ℝ) {x y L : ℝ}
+    (h : |x - y| ≤ L) : b ^ (s * x) ≤ b ^ (|s| * L) * b ^ (s * y) := by
+  rw [← rpow_add (by linarith)]
+  refine rpow_le_rpow_of_exponent_le hb ?_
+  have : s * (x - y) ≤ |s| * L := (le_abs_self _).trans <| by
+    rw [abs_mul]
+    exact mul_le_mul_of_nonneg_left h (abs_nonneg s)
+  linarith
 
 /-- A power of a nonnegative real with exponent in `[0, 1]` is at most `1 + x`: `x ^ y ≤ 1` for
 `x ≤ 1` and `x ^ y ≤ x` for `1 ≤ x`. -/
@@ -292,6 +330,31 @@ theorem tendsto_pow_div_mul_sub_pow_atTop {n : ℕ} {ω : ℝ} (hn0 : n ≠ 0) (
   rw [div_pow, one_sub_div (pow_pos hD0 n).ne', inv_div]
   field_simp
 
+/-- `ρ ^ γ ≤ R₁ ^ (γ - β) ρ ^ β` for `0 < ρ ≤ R₁` and `β ≤ γ`. -/
+theorem rpow_le_rpow_sub_mul_rpow {ρ R₁ β γ : ℝ} (hρ : 0 < ρ) (hρR : ρ ≤ R₁) (hβγ : β ≤ γ) :
+    ρ ^ γ ≤ R₁ ^ (γ - β) * ρ ^ β :=
+  calc ρ ^ γ = ρ ^ (γ - β) * ρ ^ β := by rw [← Real.rpow_add hρ, sub_add_cancel]
+    _ ≤ R₁ ^ (γ - β) * ρ ^ β := by gcongr
+
+/-- If `a * b ≤ K` and `t⁻¹ ≤ c * b ^ q` with `a, b ≥ 0`, `t > 0` and `q ≥ 0`, then
+`a ^ q ≤ K ^ q * c * t`. -/
+theorem rpow_le_mul_of_mul_le_of_inv_le {a b K c t q : ℝ} (hq : 0 ≤ q)
+    (ha : 0 ≤ a) (hb : 0 ≤ b) (h : a * b ≤ K) (hx : t⁻¹ ≤ c * b ^ q) (ht : 0 < t) :
+    a ^ q ≤ K ^ q * c * t := by
+  have hc : 0 ≤ c := by
+    by_contra hc
+    have := mul_nonpos_of_nonpos_of_nonneg (not_le.1 hc).le (Real.rpow_nonneg hb q)
+    linarith [inv_pos.2 ht]
+  have hone : 1 ≤ c * b ^ q * t := by
+    rw [← inv_mul_cancel₀ ht.ne']
+    exact mul_le_mul_of_nonneg_right hx ht.le
+  calc a ^ q ≤ a ^ q * (c * b ^ q * t) := le_mul_of_one_le_right (by positivity) hone
+    _ = (a * b) ^ q * (c * t) := by
+        rw [Real.mul_rpow ha hb]
+        ring
+    _ ≤ K ^ q * (c * t) := by gcongr
+    _ = K ^ q * c * t := by ring
+
 /-- Dividing the base of a real power by a positive number divides the power by the same power
 of that number, whatever the sign of the base. Mathlib's `Real.div_rpow` needs a nonnegative
 base. -/
@@ -310,6 +373,17 @@ lemma mul_rpow_div_mul_le_two_mul {α C₀ N R r X C : ℝ} (hC₀ : 0 ≤ C₀)
     C₀ * (r / R) ^ α * X ≤ 2 * (C * r ^ α) :=
   calc _ ≤ C₀ * (r / R) ^ α * N := by gcongr
     _ = 2 * (C * r ^ α) := by rw [hC, Real.div_rpow hr hR.le]; field_simp
+
+/-- If `d ^ 2 * x ^ 2 ≤ B * d ^ (2 * β)` with `d > 0`, then `x ≤ √B * d ^ (β - 1)`. -/
+theorem le_sqrt_mul_rpow_sub_one_of_sq_le {x d B β : ℝ} (hd : 0 < d)
+    (h : d ^ 2 * x ^ 2 ≤ B * d ^ (2 * β)) : x ≤ Real.sqrt B * d ^ (β - 1) := by
+  have hsq : (d * x) ^ 2 ≤ B * (d ^ β) ^ 2 := by
+    have hp : d ^ (2 * β) = (d ^ β) ^ 2 := by
+      simpa only [Nat.cast_ofNat, mul_comm] using Real.rpow_mul_natCast hd.le β 2
+    rwa [hp, ← mul_pow] at h
+  have h' := Real.le_sqrt_mul_of_sq_le_mul (Real.rpow_nonneg hd.le β) hsq
+  rw [Real.rpow_sub_one hd.ne', ← mul_div_assoc, le_div_iff₀ hd]
+  linarith
 
 end Real
 

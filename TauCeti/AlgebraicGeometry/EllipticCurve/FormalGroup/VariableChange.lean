@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.InvariantDiffe
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.WExpansion
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.VariableChange
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
+public import TauCeti.RingTheory.FormalGroup.Height.Ideal
 public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
 public import TauCeti.RingTheory.MvPowerSeries.Inverse
 import Mathlib.Algebra.CharP.Algebra
@@ -45,6 +46,8 @@ fields, for the inverse morphism, is
 `TauCeti.Isogeny.pullbackDifferential_variableChangeIsogeny_invariantDifferential`;
 here it is read in the formal neighbourhood of the identity, over every ring. Consequently
 `ψ` is an isomorphism of formal group laws from `Ê_{C • W}` to `Ê_W`: `ψ • Ê_{C • W} = Ê_W`.
+So the height ideals, and over a field the height, of the formal group of a Weierstrass equation
+do not depend on the chosen equation, and over a `ℚ`-algebra `log_W(ψ(z)) = u⁻¹ log_{C • W}(z)`.
 All statements hold over every commutative ring, including singular equations,
 characteristics two and three and rings with nilpotents.
 
@@ -59,6 +62,11 @@ characteristics two and three and rings with nilpotents.
 * `WeierstrassCurve.VariableChange.formalGroup_smul` and
   `WeierstrassCurve.VariableChange.formalCoordinate_smul_formalGroup`: the formal group law of
   `C • W` is the transport of that of `W` along `ψ⁻¹`.
+* `WeierstrassCurve.VariableChange.subst_formalCoordinate_log_formalGroup`: over a `ℚ`-algebra,
+  `log_W ∘ ψ = u⁻¹ log_{C • W}`.
+* `WeierstrassCurve.VariableChange.heightIdeal_formalGroup_variableChange` and
+  `WeierstrassCurve.VariableChange.height_formalGroup_variableChange`: the height ideals, and over
+  a field the height, are unchanged by a change of variables.
 
 ## Implementation notes
 
@@ -71,7 +79,7 @@ group laws is the uniqueness of the logarithm over a `ℚ`-algebra, transported 
 
 ## References
 
-* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], III.1, IV.1 and IV.4.
+* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], III.1, IV.1, IV.4 and IV.5.
 -/
 
 public section
@@ -531,5 +539,31 @@ formal group law of `C • W` along the transition `ψ` to `W` gives that of `W`
 theorem formalCoordinate_smul_formalGroup (C : VariableChange R) (W : WeierstrassCurve R) :
     C.formalCoordinate W • formalGroup (C • W) = formalGroup W := by
   rw [formalGroup_smul, smul_inv_smul]
+
+/-- **The logarithm under a change of variables**: over a `ℚ`-algebra, the logarithm of the
+formal group of `W` composed with the transition `ψ` is `u⁻¹` times the logarithm of the formal
+group of `C • W`. -/
+theorem subst_formalCoordinate_log_formalGroup [Algebra ℚ R] (C : VariableChange R)
+    (W : WeierstrassCurve R) :
+    subst (C.formalCoordinate W).toPowerSeries (formalGroup W).log =
+      ((C.u⁻¹ : Rˣ) : R) • (formalGroup (C • W)).log := by
+  rw [formalGroup_smul, FormalGroup.log_smul, inv_inv]
+  simp [smul_smul]
+
+/-- The height ideals of the formal group of a Weierstrass curve do not depend on the chosen
+Weierstrass equation. -/
+@[simp]
+theorem heightIdeal_formalGroup_variableChange (C : VariableChange R) (W : WeierstrassCurve R)
+    (p n : ℕ) :
+    (formalGroup (C • W)).heightIdeal p n = (formalGroup W).heightIdeal p n := by
+  rw [formalGroup_smul, FormalGroup.heightIdeal_smul]
+
+/-- Over a field, the height of the formal group of a Weierstrass curve does not depend on the
+chosen Weierstrass equation. -/
+@[simp]
+theorem height_formalGroup_variableChange {K : Type*} [Field K] (C : VariableChange K)
+    (W : WeierstrassCurve K) (p : ℕ) :
+    (formalGroup (C • W)).height p = (formalGroup W).height p := by
+  rw [formalGroup_smul, FormalGroup.height_smul]
 
 end WeierstrassCurve.VariableChange

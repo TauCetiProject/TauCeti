@@ -43,6 +43,8 @@ covers is how minimal free resolutions are built.
   ring `(R, 𝔪, k)` is a quotient of `R ^ dim_k (k ⊗ M)` by a submodule of `𝔪 • R ^ dim_k (k ⊗ M)`.
 * `TauCeti.IsLocalRing.exists_linearMap_quotient_eq_one`: an element of a module `M` outside
   `𝔪 • M` is sent to `1` by a linear map `M → R ⧸ 𝔪`.
+* `Module.free_of_projective_of_isLocalRing`: a finitely generated projective module over a local
+  ring is free, for any `AddCommMonoid` module.
 
 ## References
 
@@ -159,4 +161,24 @@ theorem exists_linearMap_quotient_eq_one {m : M}
     Module.Projective.exists_dual_eq_one (R ⧸ _root_.IsLocalRing.maximalIdeal R) hx
   exact ⟨(φ.restrictScalars R) ∘ₗ Submodule.mkQ _, hφ⟩
 
+/-- A scalar killing a nonzero element of a module over a local ring lies in the maximal ideal,
+since a unit kills only zero. -/
+theorem mem_maximalIdeal_of_smul_eq_zero {m : M} (hm : m ≠ 0) {r : R} (h : r • m = 0) :
+    r ∈ _root_.IsLocalRing.maximalIdeal R := by
+  by_contra hr
+  exact hm (((_root_.IsLocalRing.notMem_maximalIdeal.mp hr).smul_eq_zero).mp h)
+
 end TauCeti.IsLocalRing
+
+namespace Module
+
+/-- A finitely generated projective module over a local ring is free. This is
+`Module.free_of_flat_of_isLocalRing`, once the module carries the additive group structure that
+it asks for. -/
+theorem free_of_projective_of_isLocalRing {R M : Type*} [CommRing R] [IsLocalRing R]
+    [AddCommMonoid M] [Module R M] [Module.Finite R M] [Module.Projective R M] :
+    Module.Free R M :=
+  let _ := Module.addCommMonoidToAddCommGroup R (M := M)
+  Module.free_of_flat_of_isLocalRing
+
+end Module

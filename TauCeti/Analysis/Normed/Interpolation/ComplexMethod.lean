@@ -26,7 +26,9 @@ function is determined on the closed strip by its two boundary traces, and it is
 bounded there in the sum norm by their sup norms. We therefore realise the Banach space of
 admissible functions through their boundary traces:
 
-* `CompatibleCouple.IsStripFunction F g`: `F` is admissible with boundary traces `g = (g₀, g₁)`;
+* `CompatibleCouple.IsStripFunction F g`: `F` is admissible with boundary traces `g = (g₀, g₁)`.
+  It satisfies the three-lines bound `‖F z‖ ≤ ‖g₀‖ ^ (1 - re z) * ‖g₁‖ ^ re z`
+  (`CompatibleCouple.IsStripFunction.norm_le_rpow_mul_rpow`);
 * `CompatibleCouple.stripTraces`: the submodule of `C₀(ℝ, X₀) × C₀(ℝ, X₁)` of the boundary
   traces of admissible functions, normed by `max ‖g₀‖ ‖g₁‖`. It is closed when `X₀` and `X₁` are
   complete (`CompatibleCouple.isClosed_stripTraces`), hence then a Banach space;
@@ -37,7 +39,8 @@ admissible functions through their boundary traces:
   `stripEval θ`, with its quotient (infimum) norm, a Banach space when `X₀` and `X₁` are. The
   map `ComplexMethodSpace.toSum` embeds it injectively into the sum space without increasing
   norms, with image the values `F θ` of admissible functions
-  (`ComplexMethodSpace.exists_toSum_eq_iff`);
+  (`ComplexMethodSpace.exists_toSum_eq_iff`), and each such `F` bounds the norm of `F θ` by the
+  norm of its traces (`ComplexMethodSpace.norm_le_of_toSum_eq`);
 * `ComplexMethodSpace.ofInter`: the intersection embeds with `‖x‖_θ ≤ ‖x‖_{X₀ ∩ X₁}`
   (`ComplexMethodSpace.norm_ofInter_le`), using the admissible functions `exp (δ (z - θ)²) x`
   with `δ → 0`;
@@ -137,25 +140,35 @@ theorem sub (hF : C.IsStripFunction F g) (hG : C.IsStripFunction G h) :
     C.IsStripFunction (F - G) (g - h) := by
   simpa [sub_eq_add_neg] using hF.add (hG.const_smul (-1))
 
-/-- **Maximum principle.** On the closed strip, an admissible function is bounded in the sum norm
-by the norm `max ‖g₀‖ ‖g₁‖` of its boundary traces. This is Hadamard's three-lines theorem with
-equal bounds on the two boundary lines. -/
-theorem norm_le (hF : C.IsStripFunction F g) {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) :
-    ‖F z‖ ≤ ‖g‖ := by
+/-- **Three-lines bound.** On the closed strip, an admissible function with boundary traces
+`(g₀, g₁)` satisfies `‖F z‖ ≤ ‖g₀‖ ^ (1 - re z) * ‖g₁‖ ^ re z`. -/
+theorem norm_le_rpow_mul_rpow (hF : C.IsStripFunction F g) {z : ℂ}
+    (hz : z ∈ verticalClosedStrip 0 1) : ‖F z‖ ≤ ‖g.1‖ ^ (1 - z.re) * ‖g.2‖ ^ z.re := by
   have hB : BddAbove ((norm ∘ F) '' verticalClosedStrip 0 1) := by
     obtain ⟨M, hM⟩ := hF.exists_norm_le
     refine ⟨M, ?_⟩
     rintro _ ⟨w, hw, rfl⟩
     exact hM w hw
-  have h := norm_le_interp_of_mem_verticalClosedStrip₀₁' F hz hF.diffContOnCl hB
-    (a := ‖g‖) (b := ‖g‖) (fun w hw => ?_) (fun w hw => ?_)
-  · rwa [← Real.rpow_add' (norm_nonneg g) (by simp), sub_add_cancel, Real.rpow_one] at h
+  refine norm_le_interp_of_mem_verticalClosedStrip₀₁' F hz hF.diffContOnCl hB
+    (fun w hw => ?_) (fun w hw => ?_)
   · rw [← re_add_im w, hw, ofReal_zero, zero_add, hF.apply_mul_I]
-    exact (C.norm_fstToSum_le _).trans
-      ((ZeroAtInftyContinuousMap.norm_coe_le_norm _ _).trans (norm_fst_le g))
+    exact (C.norm_fstToSum_le _).trans (ZeroAtInftyContinuousMap.norm_coe_le_norm _ _)
   · rw [← re_add_im w, hw, ofReal_one, hF.apply_one_add_mul_I]
-    exact (C.norm_sndToSum_le _).trans
-      ((ZeroAtInftyContinuousMap.norm_coe_le_norm _ _).trans (norm_snd_le g))
+    exact (C.norm_sndToSum_le _).trans (ZeroAtInftyContinuousMap.norm_coe_le_norm _ _)
+
+/-- **Maximum principle.** On the closed strip, an admissible function is bounded in the sum norm
+by the norm `max ‖g₀‖ ‖g₁‖` of its boundary traces. -/
+theorem norm_le (hF : C.IsStripFunction F g) {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) :
+    ‖F z‖ ≤ ‖g‖ := by
+  refine (hF.norm_le_rpow_mul_rpow hz).trans ?_
+  calc ‖g.1‖ ^ (1 - z.re) * ‖g.2‖ ^ z.re ≤ ‖g‖ ^ (1 - z.re) * ‖g‖ ^ z.re := by
+        gcongr
+        · exact sub_nonneg.2 hz.2
+        · exact norm_fst_le g
+        · exact hz.1
+        · exact norm_snd_le g
+    _ = ‖g‖ := by
+        rw [← Real.rpow_add' (norm_nonneg g) (by simp), sub_add_cancel, Real.rpow_one]
 
 /-- An admissible function is determined on the closed strip by its boundary traces. -/
 theorem eqOn (hF : C.IsStripFunction F g) (hG : C.IsStripFunction G g) :
@@ -421,6 +434,10 @@ theorem norm_toSum_le (u : C.ComplexMethodSpace θ) : ‖toSum u‖ ≤ ‖u‖ 
   rw [toSum_mk]
   exact ((C.stripEval θ).le_of_opNorm_le (C.norm_stripEval_le θ) g).trans_lt (by simpa using hg)
 
+/-- The inclusion of `[X₀, X₁]_θ` into the sum space has operator norm at most one. -/
+theorem opNorm_toSum_le : ‖(toSum : C.ComplexMethodSpace θ →L[ℂ] C.SumSpace)‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u => by simpa using norm_toSum_le u
+
 /-- An element of the sum space lies in `[X₀, X₁]_θ` exactly when it is the value at `θ` of an
 admissible function. -/
 theorem exists_toSum_eq_iff (hθ : θ ∈ Icc 0 1) {u : C.SumSpace} :
@@ -433,6 +450,15 @@ theorem exists_toSum_eq_iff (hθ : θ ∈ Icc 0 1) {u : C.SumSpace} :
   · rintro ⟨F, g, hF, rfl⟩
     exact ⟨mk θ ⟨g, F, hF⟩, by
       simpa using stripFunction_eq hF (by simpa using hθ)⟩
+
+/-- For `0 ≤ θ ≤ 1`, an admissible function `F` with boundary traces `g` and `F θ = u` bounds the
+norm of `u` by the norm of `g`. -/
+theorem norm_le_of_toSum_eq (hθ : θ ∈ Icc 0 1) {u : C.ComplexMethodSpace θ}
+    {F : ℂ → C.SumSpace} {g : C₀(ℝ, X₀) × C₀(ℝ, X₁)} (hF : C.IsStripFunction F g)
+    (hu : toSum u = F θ) : ‖u‖ ≤ ‖g‖ := by
+  have : u = mk θ ⟨g, F, hF⟩ := ext <| by
+    rw [hu, toSum_mk, stripEval_apply, stripFunction_eq hF (by simpa using hθ)]
+  exact this ▸ norm_mk_le _
 
 end ComplexMethodSpace
 
@@ -575,6 +601,12 @@ theorem norm_ofInter_le {θ : ℝ} (hθ : θ ∈ Icc 0 1) (x : C.inter) : ‖ofI
     have : Continuous fun δ : ℝ => Real.exp (δ * (|θ| + 1) ^ 2) * ‖x‖ := by fun_prop
     simpa using (this.tendsto 0).mono_left nhdsWithin_le_nhds
   exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall key)
+
+/-- For `0 ≤ θ ≤ 1`, the inclusion of the intersection into `[X₀, X₁]_θ` has operator norm at
+most one. -/
+theorem opNorm_ofInter_le {θ : ℝ} (hθ : θ ∈ Icc 0 1) :
+    ‖(ofInter θ : C.inter →L[ℂ] C.ComplexMethodSpace θ)‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x => by simpa using norm_ofInter_le hθ x
 
 /-- For the couple `(X, X)`, the norm of `[X, X]_θ` is the norm of `X`: the inclusion into the sum
 space, which is `X`, is an isometry. -/

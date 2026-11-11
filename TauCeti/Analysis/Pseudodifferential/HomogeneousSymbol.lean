@@ -828,8 +828,7 @@ theorem iteratedFDeriv_coefficient_smul_frequency {x : X} {ξ : E} (hξ : ξ ≠
     (ht : 0 < t) (k : ℕ) (v : Fin k → X × E) :
     iteratedFDeriv ℝ k a.coefficient (x, t • ξ) (fun i ↦ ((v i).1, t • (v i).2)) =
       t ^ m • iteratedFDeriv ℝ k a.coefficient (x, ξ) v :=
-  iteratedFDeriv_smul_snd_of_smul_snd_eq a.contDiffOn_coefficient
-    (fun x ξ _ t ht ↦ a.homogeneous x ξ t ht) (mod_cast le_top) hξ ht v
+  iteratedFDeriv_smul_snd_of_smul_snd_eq (fun x ξ _ t ht ↦ a.homogeneous x ξ t ht) hξ ht v
 
 /-- The derivative of a homogeneous symbol of degree `m` in `j` position directions and `l`
 frequency directions is homogeneous of degree `m - l` in the frequency. -/
@@ -840,8 +839,7 @@ theorem iteratedFDeriv_coefficient_smul_frequency_append {x : X} {ξ : E} (hξ :
       t ^ (m - l) •
         iteratedFDeriv ℝ (j + l) a.coefficient (x, ξ)
           (Fin.append (fun i ↦ (u i, 0)) (fun i ↦ (0, w i))) :=
-  iteratedFDeriv_append_smul_snd_of_smul_snd_eq a.contDiffOn_coefficient
-    (fun x ξ _ t ht ↦ a.homogeneous x ξ t ht) (mod_cast le_top) hξ ht u w
+  iteratedFDeriv_append_smul_snd_of_smul_snd_eq (fun x ξ _ t ht ↦ a.homogeneous x ξ t ht) hξ ht u w
 
 /-- On a proper frequency space, the derivatives of a homogeneous symbol of degree `m` in `j`
 position directions and `l` frequency directions are bounded by `C ‖ξ‖ ^ (m - l)` for positions

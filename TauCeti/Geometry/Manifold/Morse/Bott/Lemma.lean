@@ -33,10 +33,24 @@ the submanifold itself, and puts `g` in the form
 (`TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold.exists_morseBott_chart`). In
 particular `f` is constant along `i` near `s`.
 
+A further base-dependent linear change of the normal coordinates diagonalizes the normal form
+(`OpenPartialHomeomorph.exists_normalized_morseBott_chart`). This gives the **normalized
+Morse–Bott lemma**
+(`TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold.exists_normalized_morseBott_chart`):
+in a chart onto an open subset of `E' × ℝᵐ`, `m` the codimension of `S`,
+
+`g z = f (i s) - Σ_{j < λ} (ψ z).2ⱼ² + Σ_{j ≥ λ} (ψ z).2ⱼ²`,
+
+where `λ` is the Morse index of `f` at `i s`. This is the local model of the negative and positive
+normal directions of a Morse–Bott critical submanifold.
+
 ## Main declarations
 
 * `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold.exists_morseBott_chart`: the
   Morse–Bott lemma in a slice chart of a Morse–Bott critical submanifold.
+* `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold.exists_normalized_morseBott_chart`:
+  the normalized Morse–Bott lemma, with the normal form a signed sum of squares of the Morse
+  index.
 
 ## References
 
@@ -238,6 +252,99 @@ theorem exists_morseBott_chart (hi : i.IsNondegenerateCriticalSubmanifold f)
     fun b hb ↦ (hsec (hUφ hb)).2.2.1, hψfst, hψ0, hψsymm, hψ, hψinv,
     fun b hb ↦ by rw [← hval (hUφ hb), hconst b hb, hga0], hinv, fun z hz ↦ ?_⟩
   rw [hψg z hz, hga0]
+
+/-- **The normalized Morse–Bott lemma.** Let `i : S → M` be a Morse–Bott critical submanifold of
+`f`, with slice charts `h.domChart` of `S` and `h.codChart` of `M` at `s` and
+`h.equiv : E' × F ≃ E` in which `i` reads `b ↦ (b, 0)`, and let `f` be `C^{k+2}` near `i s` with
+`1 ≤ k` and `k + 2 ≤ n`. Write `g = f ∘ (h.codChart.extend I).symm ∘ h.equiv`. There is a `C^k`
+chart `ψ` from a product neighbourhood `U ×ˢ V` of `(h.domChart.extend J s, 0)`, inside the chart
+domains, onto an open subset of `E' × ℝᵐ`, where `m = dim F` is the codimension of `S`, preserving
+the base coordinate and fixing the zero section, whose zero section over `U` is the submanifold,
+and in which
+
+`g z = f (i s) - Σ_{j < λ} (ψ z).2ⱼ² + Σ_{j ≥ λ} (ψ z).2ⱼ²`
+
+on the whole source, where `λ` is the Morse index of `f` at `i s`. -/
+theorem exists_normalized_morseBott_chart (hi : i.IsNondegenerateCriticalSubmanifold f)
+    (h : IsImmersionAtOfComplement F J I n i s) (hkn : (k : ℕ∞ω) + 2 ≤ n) (hk : k ≠ 0)
+    (hf : ∀ᶠ y in 𝓝 (i s), ContMDiffAt I 𝓘(ℝ) (k + 2) f y) :
+    ∃ (ψ : OpenPartialHomeomorph (E' × F) (E' × EuclideanSpace ℝ (Fin (Module.finrank ℝ F))))
+      (U : Set E') (V : Set F),
+      IsOpen U ∧ IsOpen V ∧ h.domChart.extend J s ∈ U ∧ (0 : F) ∈ V ∧ ψ.source = U ×ˢ V ∧
+      U ⊆ (h.domChart.extend J).target ∧
+      U ×ˢ V ⊆ h.equiv ⁻¹' (h.codChart.extend I).target ∧
+      (∀ b ∈ U, (h.codChart.extend I).symm (h.equiv (b, 0)) = i ((h.domChart.extend J).symm b)) ∧
+      (∀ z, (ψ z).1 = z.1) ∧ (∀ b, ψ (b, 0) = (b, 0)) ∧
+      (∀ z ∈ ψ.target, (ψ.symm z).1 = z.1) ∧
+      ContDiffOn ℝ k ψ ψ.source ∧ ContDiffOn ℝ k ψ.symm ψ.target ∧
+      ∀ z ∈ ψ.source, (f ∘ (h.codChart.extend I).symm ∘ h.equiv) z = f (i s) + ∑ j,
+        (if j.val < manifoldMorseIndex I f (i s) then -1 else 1) * (ψ z).2 j ^ 2 := by
+  set φ := h.domChart.extend J with hφ
+  set ξ := h.codChart.extend I with hξ
+  set L := h.equiv with hL
+  set g := f ∘ ξ.symm ∘ L with hg
+  set a := φ s with ha
+  obtain ⟨ψ, U, V, hU, hV, haU, h0V, hsource, hUφ, hUVξ, hsec, hψfst, hψ0, hψsymm, hψ, hψinv,
+    -, hinv, hψg⟩ := hi.exists_morseBott_chart h hkn hk hf
+  have : FiniteDimensional ℝ (E' × F) := L.symm.toLinearEquiv.finiteDimensional
+  have : FiniteDimensional ℝ E' :=
+    Module.Finite.of_surjective (LinearMap.fst ℝ E' F) LinearMap.fst_surjective
+  have : FiniteDimensional ℝ F :=
+    Module.Finite.of_surjective (LinearMap.snd ℝ E' F) LinearMap.snd_surjective
+  have he : h.codChart ∈ IsManifold.maximalAtlas I (k + 2) M :=
+    IsManifold.maximalAtlas_subset_of_le hkn h.codChart_mem_maximalAtlas
+  have he2 : h.codChart ∈ IsManifold.maximalAtlas I 2 M :=
+    IsManifold.maximalAtlas_subset_of_le le_add_self he
+  have he1 : h.codChart ∈ IsManifold.maximalAtlas I 1 M :=
+    IsManifold.maximalAtlas_subset_of_le (by norm_num) he2
+  -- A point of the chart target is the chart image of its inverse image in `M`.
+  have hpt {z : E' × F} (hz : L z ∈ ξ.target) :
+      ξ.symm (L z) ∈ h.codChart.source ∧ ξ (ξ.symm (L z)) = L z :=
+    ⟨by simpa [hξ] using ξ.map_target hz, ξ.right_inv hz⟩
+  have ha0 : ((a, 0) : E' × F) ∈ U ×ˢ V := mk_mem_prod haU h0V
+  have hsa : ξ.symm (L (a, 0)) = i s := by
+    rw [hsec a haU, ha, φ.left_inv (by simpa [hφ] using h.mem_domChart_source)]
+  -- The coordinate expression `g` is `C^{k+2}` near `(a, 0)`.
+  have hgC : ∀ᶠ z in 𝓝 (a, 0), ContDiffAt ℝ (k + 2) g z := by
+    have hcont : ContinuousAt (fun z : E' × F ↦ ξ.symm (L z)) (a, 0) :=
+      (h.codChart.continuousOn_extend_symm.continuousAt
+        (h.codChart.isOpen_extend_target.mem_nhds (hUVξ ha0))).comp L.continuous.continuousAt
+    filter_upwards [hcont.preimage_mem_nhds (by rw [hsa]; exact hf),
+      (h.codChart.isOpen_extend_target.preimage L.continuous).mem_nhds (hUVξ ha0)] with z hz hzξ
+    obtain ⟨hy, hyz⟩ := hpt hzξ
+    have h1 := (contMDiffAt_iff_contDiffAt_comp_extend_symm he hy).mp hz
+    rw [hyz] at h1
+    exact h1.comp z L.contDiff.contDiffAt
+  -- The zero section over `U` consists of critical points of `g`.
+  have hcrit_g {b : E'} (hb : b ∈ U) : fderiv ℝ (f ∘ ξ.symm) (L (b, 0)) = 0 := by
+    obtain ⟨hy, hyz⟩ := hpt (hUVξ (mk_mem_prod hb h0V))
+    rw [hsec b hb] at hy hyz
+    rw [← hyz]
+    exact (mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero he1 hy).mp
+      (mem_criticalPoints.mp (hi.mem_criticalPoints (φ.symm b)))
+  have hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ g (b, 0) = 0 := by
+    filter_upwards [hU.mem_nhds haU] with b hb
+    rw [hg, ← Function.comp_assoc, L.comp_right_fderiv, hcrit_g hb,
+      ContinuousLinearMap.zero_comp]
+  -- The Morse index of `f` at `i s` is the index of the vertical Hessian of `g` at `a`.
+  have hidx : morseIndex (fun v ↦ g (a, v)) 0 = manifoldMorseIndex I f (i s) := by
+    obtain ⟨hx, hxz⟩ := hpt (hUVξ ha0)
+    rw [hsa] at hx hxz
+    have hQ2 : ContDiffAt ℝ 2 (f ∘ ξ.symm) (L (a, 0)) := by
+      rw [← hxz]
+      exact (contMDiffAt_iff_contDiffAt_comp_extend_symm he2 hx).mp (hi.contMDiffAt s)
+    rw [morseIndex_slice_right (hgC.self_of_nhds.of_le le_add_self) hcrit, hg,
+      ← Function.comp_assoc, morseIndex_comp hQ2 L.contDiff.contDiffAt (hcrit_g haU)
+        (by rw [L.fderiv]; exact ⟨L, rfl⟩), ← hxz]
+    exact (manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas he2 hx (hi.contMDiffAt s)
+      (mem_criticalPoints.mp (hi.mem_criticalPoints s))).symm
+  obtain ⟨ψ', U', hU', haU', hU'U, hsource', hψ'fst, hψ'0, hψ'symm, hψ', hψ'inv, hψ'g⟩ :=
+    ψ.exists_normalized_morseBott_chart hU haU hsource hψfst hψ0 hψsymm hψ hψinv hgC
+      (hinv a haU) hψg
+  rw [hidx] at hψ'g
+  exact ⟨ψ', U', V, hU', hV, haU', h0V, hsource', hU'U.trans hUφ,
+    (prod_mono hU'U subset_rfl).trans hUVξ, fun b hb ↦ hsec b (hU'U hb), hψ'fst, hψ'0, hψ'symm,
+    hψ', hψ'inv, hψ'g⟩
 
 end SmoothEmbedding.IsNondegenerateCriticalSubmanifold
 

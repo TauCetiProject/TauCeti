@@ -32,6 +32,8 @@ the two valuative topologies.
 ## Main results
 
 * `TauCeti.ValuativeExtension.trans`: compatibility of valuative relations in an algebra tower.
+* `TauCeti.ValuativeExtension.of_tower_top`: compatibility of the bottom step of a tower whose
+  top step and composite are compatible.
 * `ValuativeExtension.valuationHasExtension`: the canonical valuation on `B` extends the
   canonical valuation on `A`.
 * `ValuativeRel.IsNontrivial.of_valuativeExtension`: a compatible extension of a nontrivial
@@ -89,6 +91,17 @@ theorem ValuativeExtension.trans (A B C : Type*) [CommSemiring A] [CommSemiring 
   vle_iff_vle := by
     intro a b
     simp only [IsScalarTower.algebraMap_apply A B C, ValuativeExtension.vle_iff_vle]
+
+/-- Compatibility of valuative relations descends to the bottom step of an algebra tower whose
+top step and composite are compatible. -/
+theorem ValuativeExtension.of_tower_top (A B C : Type*) [CommSemiring A] [CommSemiring B]
+    [Semiring C] [ValuativeRel A] [ValuativeRel B] [ValuativeRel C]
+    [Algebra A B] [Algebra B C] [Algebra A C] [IsScalarTower A B C]
+    [ValuativeExtension A C] [ValuativeExtension B C] : ValuativeExtension A B where
+  vle_iff_vle := by
+    intro a b
+    rw [← ValuativeExtension.vle_iff_vle (A := B) (B := C), ← IsScalarTower.algebraMap_apply,
+      ← IsScalarTower.algebraMap_apply, ValuativeExtension.vle_iff_vle]
 
 variable {K L : Type*} [Field K] [ValuativeRel K] [Field L] [ValuativeRel L]
   [Algebra K L] [ValuativeExtension K L]

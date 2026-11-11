@@ -45,9 +45,11 @@ critical points and a nondegenerate critical point is isolated. On a closed coor
 it, the vector-space theorem
 `TauCeti.HasNondegenerateCriticalPointsOn.exists_pos_forall_hasNondegenerateCriticalPointsOn`
 applies to the uniformly `C²`-close coordinate expressions of nearby maps, and finitely many such
-balls cover `K`. Consequently the smooth functions which are Morse on `K` form an open set
-(`TauCeti.isOpen_setOf_isMorseOn`), and on a compact manifold so do the Morse functions
-(`TauCeti.isOpen_setOf_isMorse`). This is the openness half of the genericity of Morse functions.
+balls cover `K`. Consequently, for `n ≥ 2`, the `C^n` functions with only nondegenerate critical
+points in `K` form an open set (`TauCeti.isOpen_setOf_forall_isManifoldNondegenerateCriticalPoint`),
+and so do the smooth functions which are Morse on `K` (`TauCeti.isOpen_setOf_isMorseOn`); on a
+compact manifold so do the Morse functions (`TauCeti.isOpen_setOf_isMorse`). This is the openness
+half of the genericity of Morse functions.
 
 ## References
 
@@ -340,15 +342,30 @@ theorem eventually_forall_isManifoldNondegenerateCriticalPoint {f : C^n⟮I, M; 
   obtain ⟨x, hxt, hyx⟩ := mem_iUnion₂.1 (hKt hy)
   exact hg x hxt y hyx hcrit
 
+/-- For a compact set `K` and `n ≥ 2`, the `C^n` functions all of whose critical points in `K`
+are nondegenerate form an open set in the weak Whitney topology. -/
+theorem isOpen_setOf_forall_isManifoldNondegenerateCriticalPoint (hn : 2 ≤ n) {K : Set M}
+    (hK : IsCompact K) :
+    IsOpen {f : C^n⟮I, M; 𝓘(ℝ), ℝ⟯ |
+      ∀ x ∈ K, x ∈ criticalPoints I f → IsManifoldNondegenerateCriticalPoint I f x} :=
+  isOpen_iff_mem_nhds.2 fun _ hf ↦ eventually_forall_isManifoldNondegenerateCriticalPoint hn hK hf
+
+/-- On a compact manifold and for `n ≥ 2`, the `C^n` functions all of whose critical points are
+nondegenerate form an open set in the weak Whitney topology. -/
+theorem isOpen_setOf_forall_mem_criticalPoints_isManifoldNondegenerateCriticalPoint
+    [CompactSpace M] (hn : 2 ≤ n) :
+    IsOpen {f : C^n⟮I, M; 𝓘(ℝ), ℝ⟯ |
+      ∀ x ∈ criticalPoints I f, IsManifoldNondegenerateCriticalPoint I f x} := by
+  simpa using isOpen_setOf_forall_isManifoldNondegenerateCriticalPoint (I := I) hn isCompact_univ
+
 /-- For a compact set `K`, the smooth functions which are Morse on `K` form an open set in the
 weak Whitney topology. -/
 theorem isOpen_setOf_isMorseOn [IsManifold I ∞ M] {K : Set M} (hK : IsCompact K) :
     IsOpen {f : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯ | IsMorseOn I f K} := by
-  simp only [isMorseOn_iff_criticalPoints]
-  refine isOpen_iff_mem_nhds.2 fun f hf ↦ ?_
-  filter_upwards [eventually_forall_isManifoldNondegenerateCriticalPoint (by simp) hK hf.2]
-    with g hg
-  exact ⟨g.contMDiff.contMDiffOn, hg⟩
+  convert isOpen_setOf_forall_isManifoldNondegenerateCriticalPoint (I := I) (n := ∞) (by simp) hK
+    using 1
+  ext f
+  exact isMorseOn_iff_criticalPoints.trans (and_iff_right f.contMDiff.contMDiffOn)
 
 /-- **Morse functions on a compact manifold form an open set** in the weak Whitney topology on
 smooth functions. -/

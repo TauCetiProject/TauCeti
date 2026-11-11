@@ -88,6 +88,14 @@ theorem norm_hessianSymbol_le (v w ξ : E) : ‖hessianSymbol v w ξ‖ ≤ ‖v
         gcongr <;> exact abs_real_inner_le_norm _ _
     _ = ‖v‖ * ‖w‖ * ‖ξ‖ ^ 2 := by ring
 
+/-- For an orthonormal basis `eⱼ`, the symbols of `∂ⱼ ∂ⱼ Δ⁻¹` sum to `1` away from the origin:
+the trace of `D² Δ⁻¹` is the identity. -/
+theorem sum_hessianSymbol_self {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E) {ξ : E}
+    (hξ : ξ ≠ 0) : ∑ i, hessianSymbol (b i) (b i) ξ = 1 := by
+  simp_rw [hessianSymbol_apply, ← sq]
+  rw [← Complex.ofReal_sum, ← Finset.sum_div, b.sum_sq_inner_left,
+    div_self (pow_ne_zero 2 (norm_ne_zero_iff.2 hξ)), Complex.ofReal_one]
+
 variable [MeasurableSpace E]
 
 @[fun_prop]
