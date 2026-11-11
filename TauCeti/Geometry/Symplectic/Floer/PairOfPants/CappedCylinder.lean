@@ -58,8 +58,10 @@ same holds for the limiting actions at the two ends
 (`TauCeti.SymplecticForm.le_add_add_sum_of_tendsto_hamiltonianAction_cappedCylinderComponent`).
 This is the action filtration shift of the capping family, the same at every neck length.
 
-The same holds for a manifold target `M` with a nondegenerate two-form `ω`, such as a closed
-symplectic manifold, where the actions depend on discs bounding the loops. The curvature bound
+For a manifold target `M` with a nondegenerate two-form `ω`, such as a closed symplectic
+manifold, the curvature bound, the energy identity and the action bound between loops at finite
+ends hold, with actions depending on discs bounding the loops; the bound on limiting actions at
+the two ends is not proved for a manifold target here. The curvature bound
 holds along every map into `M`
 (`TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_cappedCylinderComponent_le`; the
 vector space bound is its case `TauCeti.SymplecticForm.constSmooth`). For a `C¹` map `u` with
