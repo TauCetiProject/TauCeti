@@ -31,6 +31,11 @@ attaching cells to a Hausdorff space is Hausdorff (`HomotopicalAlgebra.AttachCel
 points of the old space are separated by extending open sets, and a point of an open cell is
 separated from the other points inside the disks, which are regular.
 
+The same radial extension shows that the inclusion `∂𝔻 n × Z ⟶ 𝔻 n × Z` extends disjoint open
+sets for every space `Z` (`TauCeti.TopCat.extendsDisjointOpens_diskBoundaryInclusion_prodMap`);
+for `Z = 𝔻 l` this is the attaching region of a handle, and the statement for cells is the case of
+a point.
+
 The statements hold for any relative cell complex in `TopCat` whose basic cells are closed
 embeddings extending disjoint open sets into regular Hausdorff spaces
 (`HomotopicalAlgebra.RelativeCellComplex.t2Space`).
@@ -59,12 +64,14 @@ universe w' t u
 
 namespace TauCeti.TopCat
 
-/-- The inclusion `∂𝔻 n ⟶ 𝔻 n` of the boundary sphere of the disk extends disjoint open sets: an
-open subset `U` of the sphere is the trace of the open cone `{x | 1 / 2 < ‖x‖ ∧ x / ‖x‖ ∈ U}`,
-and the cones over disjoint sets are disjoint (`TauCeti.TopCat.extendsDisjointOpens_of_continuousOn`
-with the radial projection). -/
-theorem extendsDisjointOpens_diskBoundaryInclusion (n : ℕ) :
-    extendsDisjointOpens (TopCat.diskBoundaryInclusion.{u} n) := by
+/-- The inclusion `∂𝔻 n × Z ⟶ 𝔻 n × Z` extends disjoint open sets: an open subset `U` of
+`∂𝔻 n × Z` is the trace of the open set `{(x, y) | 1 / 2 < ‖x‖ ∧ (x / ‖x‖, y) ∈ U}`, and these
+sets are disjoint over disjoint sets (`TauCeti.TopCat.extendsDisjointOpens_of_continuousOn` with
+the radial projection). For `Z = 𝔻 l` this is the inclusion of the attaching region of a handle. -/
+theorem extendsDisjointOpens_diskBoundaryInclusion_prodMap (n : ℕ) (Z : Type u)
+    [TopologicalSpace Z] :
+    extendsDisjointOpens (TopCat.ofHom
+      ((TopCat.diskBoundaryInclusion.{u} n).hom.prodMap (ContinuousMap.id Z))) := by
   -- The points of the disk and of its boundary as vectors of `E`. The carriers of `TopCat.disk n`
   -- and `TopCat.diskBoundary n` are, by definition, the lifts of the closed unit ball and of the
   -- unit sphere; the ascriptions expose these carriers, which the `TopCat` wrappers hide.
@@ -79,17 +86,31 @@ theorem extendsDisjointOpens_diskBoundaryInclusion (n : ℕ) :
     coe_diskBoundaryInclusion_apply_down n s
   have hμ₁ (s : TopCat.diskBoundary.{u} n) : ‖μ s‖ = 1 := mem_sphere_zero_iff_norm.1
     (s : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)).down.2
-  -- The radial projection, continuous away from the centre, retracts the disk onto the sphere.
-  have hν : Continuous ν := continuous_subtype_val.comp continuous_uliftDown
-  refine extendsDisjointOpens_of_continuousOn _ hμ.isInducing (N := {z | 1 / 2 < ‖ν z‖})
-    (ρ := fun z ↦ ‖ν z‖⁻¹ • ν z) (isOpen_lt continuous_const hν.norm)
-    ((ContinuousOn.inv₀ hν.norm.continuousOn fun z hz ↦ (lt_trans (by norm_num) hz).ne').smul
-      hν.continuousOn) (fun s ↦ ?_) (fun z hz ↦ ?_) (fun s ↦ ?_)
+  -- The radial projection, continuous away from the centre, retracts the collar `1 / 2 < ‖x‖` onto
+  -- `∂𝔻 n × Z`.
+  have hν : Continuous fun p : TopCat.disk.{u} n × Z ↦ ν p.1 :=
+    (continuous_subtype_val.comp continuous_uliftDown).comp continuous_fst
+  refine extendsDisjointOpens_of_continuousOn _ (hμ.isInducing.prodMap .id)
+    (N := {p | 1 / 2 < ‖ν p.1‖}) (ρ := fun p ↦ (‖ν p.1‖⁻¹ • ν p.1, p.2))
+    (isOpen_lt continuous_const hν.norm)
+    (((ContinuousOn.inv₀ hν.norm.continuousOn fun p hp ↦ (lt_trans (by norm_num) hp).ne').smul
+      hν.continuousOn).prodMk continuous_snd.continuousOn) (fun q ↦ ?_) (fun p hp ↦ ?_)
+    (fun q ↦ ?_)
   · simp [hνμ, hμ₁, show (2 : ℝ)⁻¹ < 1 by norm_num]
-  · have h₁ : ‖‖ν z‖⁻¹ • ν z‖ = 1 :=
-      norm_smul_inv_norm (𝕜 := ℝ) (norm_pos_iff.1 (lt_trans (by norm_num) hz))
-    exact ⟨ULift.up ⟨_, mem_sphere_zero_iff_norm.2 h₁⟩, rfl⟩
-  · simp [hνμ, hμ₁]
+  · have h₁ : ‖‖ν p.1‖⁻¹ • ν p.1‖ = 1 :=
+      norm_smul_inv_norm (𝕜 := ℝ) (norm_pos_iff.1 (lt_trans (by norm_num) hp))
+    exact ⟨(ULift.up ⟨_, mem_sphere_zero_iff_norm.2 h₁⟩, p.2), rfl⟩
+  · simp [hνμ, hμ₁, Prod.map]
+
+/-- The inclusion `∂𝔻 n ⟶ 𝔻 n` of the boundary sphere of the disk extends disjoint open sets: an
+open subset `U` of the sphere is the trace of the open cone `{x | 1 / 2 < ‖x‖ ∧ x / ‖x‖ ∈ U}`,
+and the cones over disjoint sets are disjoint. This is the case of a point `Z` in
+`TauCeti.TopCat.extendsDisjointOpens_diskBoundaryInclusion_prodMap`. -/
+theorem extendsDisjointOpens_diskBoundaryInclusion (n : ℕ) :
+    extendsDisjointOpens (TopCat.diskBoundaryInclusion.{u} n) :=
+  (extendsDisjointOpens.arrow_mk_iso_iff (Arrow.isoMk (TopCat.isoOfHomeo (Homeomorph.prodPUnit _))
+    (TopCat.isoOfHomeo (Homeomorph.prodPUnit _)) rfl)).1
+      (extendsDisjointOpens_diskBoundaryInclusion_prodMap n PUnit)
 
 end TauCeti.TopCat
 
