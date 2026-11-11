@@ -27,7 +27,7 @@ factors through the open immersion `f⁻¹(V) ⟶ X`.
 The open subspaces of an adic space are adic spaces (`TauCeti.PreAdicSpace.isAdic_restrict`), so
 the same square lives in Wedhorn's category `TauCeti.AdicSpace` of adic spaces. This file defines
 the open adic subspace `TauCeti.AdicSpace.restrict` with its inclusion
-`TauCeti.AdicSpace.ofRestrict`, and the restriction `TauCeti.AdicSpace.Hom.restrictPreimage` of a
+`TauCeti.AdicSpace.ofRestrict`, and the restriction `TauCeti.AdicSpace.restrictPreimage` of a
 morphism of adic spaces over an open of its target, and proves the pullback property there. This is
 the adic-space form of pullback along a rational open immersion: for an adic `f` between affinoids
 and a rational subset `V = R(T/s)` the ring-level comparison with the completed tensor product is
@@ -38,14 +38,14 @@ subspace `f⁻¹(V)` for every `f`.
 
 * `TauCeti.AdicSpace.restrict`, `TauCeti.AdicSpace.ofRestrict`: the open adic subspace of an adic
   space on an open subset, and its inclusion.
-* `TauCeti.AdicSpace.Hom.restrictPreimage`: the restriction `f⁻¹(V) ⟶ V` of a morphism of adic
+* `TauCeti.AdicSpace.restrictPreimage`: the restriction `f⁻¹(V) ⟶ V` of a morphism of adic
   spaces.
 
 ## Main results
 
 * `TauCeti.PreAdicSpace.Hom.isPullback_restrictPreimage`: `f⁻¹(V)` is the pullback of `V ⟶ Y`
   along `f`, in pre-adic spaces.
-* `TauCeti.AdicSpace.Hom.isPullback_restrictPreimage`: the same in adic spaces.
+* `TauCeti.AdicSpace.isPullback_restrictPreimage`: the same in adic spaces.
 
 ## References
 
@@ -126,7 +126,7 @@ instance : Mono (X.ofRestrict U) :=
   (ObjectProperty.ι _).mono_of_mono_map
     (inferInstanceAs (Mono (X.ofRestrict U).hom))
 
-namespace Hom
+section Hom
 
 variable {X Y : AdicSpace.{u}} (f : X ⟶ Y) (V : Opens Y.obj)
 
