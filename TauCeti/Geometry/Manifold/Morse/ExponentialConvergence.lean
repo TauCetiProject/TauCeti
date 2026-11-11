@@ -204,12 +204,10 @@ theorem exists_pathELength_le_mul_sqrt_maximalIntegralCurve_neg_mgradient
     IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 1)
   have : IsManifold I 1 M := IsManifold.of_le one_le_two
   have hx : Ici 0 ⊆ maximalIntegralCurveInterval (-mgradient I f) x :=
-    Ici_subset_maximalIntegralCurveInterval_of_tendsto (contMDiff_neg_mgradient_one hf)
+    Ici_subset_maximalIntegralCurveInterval_of_tendsto
       (by
-        have h := (isManifoldNondegenerateCriticalPoint_iff I).1 hp
         rw [Pi.neg_apply, neg_eq_zero, mgradient_eq_zero_iff, ← mem_criticalPoints]
-        exact (mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero_of_differentiableAt
-          (h.contDiffAt.differentiableAt (by simp))).2 h.fderiv_eq_zero)
+        exact hp.mem_criticalPoints)
       hconv
   set γ := maximalIntegralCurve (-mgradient I f) x
   set e : ℝ → ℝ := fun s ↦ f (γ s) - f p
