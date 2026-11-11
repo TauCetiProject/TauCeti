@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
+public import TauCeti.Analysis.Complex.Circle
 public import TauCeti.Topology.ComplexProjectiveSpace.Hopf.Exact
 public import TauCeti.Topology.Homotopy.HomotopyGroup.TopologicalMonoid
 public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
 public import TauCeti.Topology.PathSpace.Moore.Comparison.HomotopyGroup
 import TauCeti.AlgebraicTopology.UniversalCover.Circle.HigherHomotopy
-import TauCeti.Analysis.Complex.Circle
 
 /-!
 # The loop space of `CPⁿ` splits as `S¹ × ΩS²ⁿ⁺¹`
@@ -153,6 +153,20 @@ def mooreLoopSpaceFundamentalGroupMulEquiv (hn : n ≠ 0) :
     (hopfBoundaryMulEquiv v (N := Fin 1) (by simp; omega)).trans <|
     (HomotopyGroup.homeomorphMulEquivOfEq Circle.homeomorphSphere.symm (by ext; simp)).trans <|
     HomotopyGroup.pi1MulEquivFundamentalGroup.trans (Circle.fundamentalGroupMulEquiv 1)
+
+/-- The isomorphism `π₁(ΩCPⁿ) ≃* ℤ` evaluated on a class `a`: shift `a` to `π₂(CPⁿ)` by the Moore
+loop-space shift, apply the boundary map of the Hopf fibration to land in `π₁(S¹)`, and take the
+degree of the resulting loop of the circle. -/
+theorem mooreLoopSpaceFundamentalGroupMulEquiv_apply (hn : n ≠ 0)
+    (a : FundamentalGroup (MooreLoopSpace (ComplexProjectiveSpace n) (mk n v)) 1) :
+    mooreLoopSpaceFundamentalGroupMulEquiv v hn a =
+      Circle.fundamentalGroupMulEquiv 1 (HomotopyGroup.pi1MulEquivFundamentalGroup
+        (HomotopyGroup.map ⟨Circle.homeomorphSphere.symm, Homeomorph.continuous _⟩
+          (by ext; simp)
+          (hopfBoundary v (Fin 1) (HomotopyGroup.congrEquiv (finSuccEquiv 1)
+            (MooreLoopSpace.homotopyGroupMulEquiv (mk n v) 0
+              (HomotopyGroup.pi1MulEquivFundamentalGroup.symm a)))))) := by
+  simp [mooreLoopSpaceFundamentalGroupMulEquiv]
 
 variable (v) in
 /-- **The based Hopf product realizes the splitting.** For `n ≥ 1` there is a based map
