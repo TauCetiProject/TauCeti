@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Series
 public import TauCeti.Topology.Algebra.InfiniteSum.IntegralCoefficients
 import Mathlib.Analysis.Normed.Group.Ultra
 import Mathlib.Analysis.SpecificLimits.Normed
-import Mathlib.NumberTheory.ArithmeticFunction.Misc
 import Mathlib.Topology.Algebra.InfiniteSum.Basic
 
 /-!
