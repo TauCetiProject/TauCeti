@@ -234,7 +234,6 @@ theorem contMDiffConstSMul_torusFamilyBaseChangeAffineMulAction
     (hequiv : ∀ (g : Γ) (y : Y) (l : Λ), P (g • y) (ρ g l) = R g y (P y l))
     (b : Γ → Y → letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E))
     (hb : ∀ (g : Γ) (y : Y), torusFamilyProjection P (b g y) = g • y)
-    (hbone : ∀ y : Y, b 1 y = Quotient.mk _ (y, 0))
     (hbmul : ∀ (g h : Γ) (y : Y), b (g * h) y = torusFamilyAffineMap R P ρ hequiv b hb g (b h y))
     (σ : Γ' →* Γ) (f : Z → Y) (hf_diff : ContMDiff J I n f)
     (hf : ∀ (g : Γ') (z : Z), f (g • z) = σ g • f z)
@@ -255,7 +254,6 @@ theorem contMDiffConstSMul_torusFamilyBaseChangeAffineMulAction
       (period_baseChange_equivariant R P ρ hequiv σ hf)
       (torusFamilyBaseChangeTranslation P f σ hf b hb)
       (torusFamilyProjection_baseChangeTranslation P f σ hf b hb)
-      (torusFamilyBaseChangeTranslation_one P b hb σ hf hbone)
       (torusFamilyBaseChangeTranslation_mul P b hb R ρ hequiv σ hf hbmul)
     ContMDiffConstSMul (J.prod 𝓘(𝕜, E)) n Γ' (AddAction.orbitRel.Quotient Λ (Z × E)) :=
   let : ∀ z, DiscreteTopology (LinearMap.range ((P ∘ f) z)) := fun z ↦ inferInstanceAs
@@ -269,7 +267,6 @@ theorem contMDiffConstSMul_torusFamilyBaseChangeAffineMulAction
     (torusFamilyProjection_baseChangeTranslation P f σ hf b hb)
     (linearCocycle_baseChange_one R hone σ f)
     (linearCocycle_baseChange_mul R hmul σ hf)
-    (torusFamilyBaseChangeTranslation_one P b hb σ hf hbone)
     (torusFamilyBaseChangeTranslation_mul P b hb R ρ hequiv σ hf hbmul)
     (fun g ↦ (hR (σ g)).comp (hf_diff.prodMap (contMDiff_id (I := 𝓘(𝕜, E)))))
     (fun g ↦ contMDiff_torusFamilyBaseChangeTranslation P hinj hP f hf_diff σ hf b hb
@@ -288,7 +285,6 @@ variable {Γ : Type*} [Group Γ] [MulAction Γ Y]
   (hequiv : ∀ (g : Γ) (y : Y) (l : Λ), P (g • y) (ρ g l) = R g y (P y l))
   (b : Γ → Y → letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E))
   (hb : ∀ (g : Γ) (y : Y), torusFamilyProjection P (b g y) = g • y)
-  (hbone : ∀ y : Y, b 1 y = Quotient.mk _ (y, 0))
   (hbmul : ∀ (g h : Γ) (y : Y), b (g * h) y = torusFamilyAffineMap R P ρ hequiv b hb g (b h y))
 
 /-- **Smoothness of the descended map of second quotients.** Suppose `Γ` and `Γ'` act properly
@@ -309,7 +305,7 @@ theorem contMDiff_orbitRelQuotientMap_torusFamilyAffineBaseChangeHom
     (σ : Γ' →* Γ) (f : Z → Y) (hf_diff : ContMDiff J I n f)
     (hf : ∀ (g : Γ') (z : Z), f (g • z) = σ g • f z)
     (hfreeY : letI := periodAddAction P
-      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
       IsCancelSMul Γ (AddAction.orbitRel.Quotient Λ (Y × E)))
     (hfreeZ : letI := periodAddAction (P ∘ f)
       letI := torusFamilyAffineMulAction (fun g z ↦ R (σ g) (f z))
@@ -318,7 +314,6 @@ theorem contMDiff_orbitRelQuotientMap_torusFamilyAffineBaseChangeHom
         (period_baseChange_equivariant R P ρ hequiv σ hf)
         (torusFamilyBaseChangeTranslation P f σ hf b hb)
         (torusFamilyProjection_baseChangeTranslation P f σ hf b hb)
-        (torusFamilyBaseChangeTranslation_one P b hb σ hf hbone)
         (torusFamilyBaseChangeTranslation_mul P b hb R ρ hequiv σ hf hbmul)
       IsCancelSMul Γ' (AddAction.orbitRel.Quotient Λ (Z × E)))
     {m : ℕ∞ω} (hm : m ≤ n) :
@@ -345,31 +340,30 @@ theorem contMDiff_orbitRelQuotientMap_torusFamilyAffineBaseChangeHom
       AddAction.isOpenQuotientMap_quotientMk.locallyCompactSpace
     letI : LocallyCompactSpace (AddAction.orbitRel.Quotient Λ (Z × E)) :=
       AddAction.isOpenQuotientMap_quotientMk.locallyCompactSpace
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     letI := torusFamilyAffineMulAction (fun g z ↦ R (σ g) (f z))
       (linearCocycle_baseChange_one R hone σ f)
       (linearCocycle_baseChange_mul R hmul σ hf) (P ∘ f) (ρ.comp σ)
       (period_baseChange_equivariant R P ρ hequiv σ hf)
       (torusFamilyBaseChangeTranslation P f σ hf b hb)
       (torusFamilyProjection_baseChangeTranslation P f σ hf b hb)
-      (torusFamilyBaseChangeTranslation_one P b hb σ hf hbone)
       (torusFamilyBaseChangeTranslation_mul P b hb R ρ hequiv σ hf hbmul)
     letI : ProperlyDiscontinuousSMul Γ (AddAction.orbitRel.Quotient Λ (Y × E)) :=
-      properlyDiscontinuousSMul_torusFamilyAffineMulAction _ _ _ _ _ _ _ _ _ _
+      properlyDiscontinuousSMul_torusFamilyAffineMulAction _ _ _ _ _ _ _ _ _
     letI : ProperlyDiscontinuousSMul Γ' (AddAction.orbitRel.Quotient Λ (Z × E)) :=
-      properlyDiscontinuousSMul_torusFamilyAffineMulAction _ _ _ _ _ _ _ _ _ _
-    letI := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+      properlyDiscontinuousSMul_torusFamilyAffineMulAction _ _ _ _ _ _ _ _ _
+    letI := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
       (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous)
     letI : ContinuousConstSMul Γ' Z :=
       ⟨fun g ↦ (contMDiff_const_smul (I := J) (n := n) g).continuous⟩
     letI := continuousConstSMul_torusFamilyBaseChangeAffineMulAction R hone hmul P
-      (fun l ↦ (hP l).continuous) ρ hequiv b hb hbone hbmul σ hf_diff.continuous hf
+      (fun l ↦ (hP l).continuous) ρ hequiv b hb hbmul σ hf_diff.continuous hf
       (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous)
     letI := hfreeY
     letI := hfreeZ
     ContMDiff (J.prod 𝓘(𝕜, E)) (I.prod 𝓘(𝕜, E)) m
       (MulActionHom.orbitRelQuotientMap
-        (torusFamilyAffineBaseChangeHom P b hb R ρ hequiv hone hmul hbone hbmul σ f hf)) := by
+        (torusFamilyAffineBaseChangeHom P b hb R ρ hequiv hone hmul hbmul σ f hf)) := by
   let : ∀ z, DiscreteTopology (LinearMap.range ((P ∘ f) z)) := fun z ↦ inferInstanceAs
     (DiscreteTopology (LinearMap.range (P (f z))))
   let : ∀ z, IsZLattice ℝ (LinearMap.range ((P ∘ f) z)) := fun z ↦ inferInstanceAs
@@ -395,23 +389,22 @@ theorem contMDiff_orbitRelQuotientMap_torusFamilyAffineBaseChangeHom
     AddAction.isOpenQuotientMap_quotientMk.locallyCompactSpace
   have := isManifold_torusFamily P hinj hP
   have := isManifold_torusFamily (P ∘ f) (fun z ↦ hinj (f z)) (fun l ↦ (hP l).comp hf_diff)
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
   let _ := torusFamilyAffineMulAction (fun g z ↦ R (σ g) (f z))
     (linearCocycle_baseChange_one R hone σ f)
     (linearCocycle_baseChange_mul R hmul σ hf) (P ∘ f) (ρ.comp σ)
     (period_baseChange_equivariant R P ρ hequiv σ hf)
     (torusFamilyBaseChangeTranslation P f σ hf b hb)
     (torusFamilyProjection_baseChangeTranslation P f σ hf b hb)
-    (torusFamilyBaseChangeTranslation_one P b hb σ hf hbone)
     (torusFamilyBaseChangeTranslation_mul P b hb R ρ hequiv σ hf hbmul)
   have : ProperlyDiscontinuousSMul Γ (AddAction.orbitRel.Quotient Λ (Y × E)) :=
-    properlyDiscontinuousSMul_torusFamilyAffineMulAction _ _ _ _ _ _ _ _ _ _
+    properlyDiscontinuousSMul_torusFamilyAffineMulAction _ _ _ _ _ _ _ _ _
   have : ProperlyDiscontinuousSMul Γ' (AddAction.orbitRel.Quotient Λ (Z × E)) :=
-    properlyDiscontinuousSMul_torusFamilyAffineMulAction _ _ _ _ _ _ _ _ _ _
+    properlyDiscontinuousSMul_torusFamilyAffineMulAction _ _ _ _ _ _ _ _ _
   have := contMDiffConstSMul_torusFamilyAffineMulAction P hinj hP R ρ hequiv b hb hone hmul
-    hbone hbmul hR hbc
+    hbmul hR hbc
   have := contMDiffConstSMul_torusFamilyBaseChangeAffineMulAction P hinj hP R hone hmul ρ hequiv
-    b hb hbone hbmul σ f hf_diff hf hR hbc
+    b hb hbmul σ f hf_diff hf hR hbc
   have : ContinuousConstSMul Γ (AddAction.orbitRel.Quotient Λ (Y × E)) :=
     ⟨fun g ↦ (contMDiff_const_smul (I := I.prod 𝓘(𝕜, E)) (n := n) g).continuous⟩
   have : ContinuousConstSMul Γ' (AddAction.orbitRel.Quotient Λ (Z × E)) :=
@@ -442,7 +435,6 @@ variable (P : Y → Λ →ₗ[ℤ] E)
   (hequiv : ∀ (g : Γ) (y : Y) (l : Λ), P (g • y) (ρ g l) = R g y (P y l))
   (b : Γ → Y → letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E))
   (hb : ∀ (g : Γ) (y : Y), torusFamilyProjection P (b g y) = g • y)
-  (hbone : ∀ y : Y, b 1 y = Quotient.mk _ (y, 0))
   (hbmul : ∀ (g h : Γ) (y : Y), b (g * h) y = torusFamilyAffineMap R P ρ hequiv b hb g (b h y))
 
 /-- **Manifold structure of the second quotient over the free locus.** Let `Γ` act properly
@@ -484,17 +476,16 @@ theorem isManifold_torusFamilyAffineQuotient_freeLocus
         (fun _ _ ↦ rfl) b hb)
       (torusFamilyProjection_baseChangeTranslation P (Subtype.val : freeLocus Γ Y → Y)
         (MonoidHom.id Γ) (fun _ _ ↦ rfl) b hb)
-      (torusFamilyBaseChangeTranslation_one P b hb (MonoidHom.id Γ) (fun _ _ ↦ rfl) hbone)
       (torusFamilyBaseChangeTranslation_mul P b hb R ρ hequiv (MonoidHom.id Γ)
         (fun _ _ ↦ rfl) hbmul)
     letI : ProperlyDiscontinuousSMul Γ (AddAction.orbitRel.Quotient Λ (freeLocus Γ Y × E)) :=
-      properlyDiscontinuousSMul_torusFamilyAffineMulAction _ _ _ _ _ _ _ _ _ _
+      properlyDiscontinuousSMul_torusFamilyAffineMulAction _ _ _ _ _ _ _ _ _
     letI := continuousConstSMul_torusFamilyBaseChangeAffineMulAction
-      R hone hmul P (fun l ↦ (hP l).continuous) ρ hequiv b hb hbone hbmul
+      R hone hmul P (fun l ↦ (hP l).continuous) ρ hequiv b hb hbmul
       (MonoidHom.id Γ) (f := (Subtype.val : freeLocus Γ Y → Y)) continuous_subtype_val
       (fun _ _ ↦ rfl) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous)
     letI : IsCancelSMul Γ (AddAction.orbitRel.Quotient Λ (freeLocus Γ Y × E)) :=
-      isCancelSMul_torusFamilyAffineMulAction _ _ _ _ _ _ _ _ _ _
+      isCancelSMul_torusFamilyAffineMulAction _ _ _ _ _ _ _ _ _
     IsManifold (I.prod 𝓘(𝕜, E)) n
       (MulAction.orbitRel.Quotient Γ
         (AddAction.orbitRel.Quotient Λ (freeLocus Γ Y × E))) := by
@@ -527,17 +518,16 @@ theorem isManifold_torusFamilyAffineQuotient_freeLocus
     (period_baseChange_equivariant R P ρ hequiv (MonoidHom.id Γ) fun _ _ ↦ rfl)
     (torusFamilyBaseChangeTranslation P f (MonoidHom.id Γ) (fun _ _ ↦ rfl) b hb)
     (torusFamilyProjection_baseChangeTranslation P f (MonoidHom.id Γ) (fun _ _ ↦ rfl) b hb)
-    (torusFamilyBaseChangeTranslation_one P b hb (MonoidHom.id Γ) (fun _ _ ↦ rfl) hbone)
     (torusFamilyBaseChangeTranslation_mul P b hb R ρ hequiv (MonoidHom.id Γ)
       (fun _ _ ↦ rfl) hbmul)
   have : ProperlyDiscontinuousSMul Γ (AddAction.orbitRel.Quotient Λ (freeLocus Γ Y × E)) :=
-    properlyDiscontinuousSMul_torusFamilyAffineMulAction _ _ _ _ _ _ _ _ _ _
+    properlyDiscontinuousSMul_torusFamilyAffineMulAction _ _ _ _ _ _ _ _ _
   have := contMDiffConstSMul_torusFamilyBaseChangeAffineMulAction P hinj hP R hone hmul ρ hequiv
-    b hb hbone hbmul (MonoidHom.id Γ) f hf_diff (fun _ _ ↦ rfl) hR hbc
+    b hb hbmul (MonoidHom.id Γ) f hf_diff (fun _ _ ↦ rfl) hR hbc
   have : ContinuousConstSMul Γ (AddAction.orbitRel.Quotient Λ (freeLocus Γ Y × E)) :=
     ⟨fun g ↦ (contMDiff_const_smul (I := I.prod 𝓘(𝕜, E)) (n := n) g).continuous⟩
   have : IsCancelSMul Γ (AddAction.orbitRel.Quotient Λ (freeLocus Γ Y × E)) :=
-    isCancelSMul_torusFamilyAffineMulAction _ _ _ _ _ _ _ _ _ _
+    isCancelSMul_torusFamilyAffineMulAction _ _ _ _ _ _ _ _ _
   exact instIsManifoldQuotient
 
 /-- **Smoothness of the inclusion of the free-locus second quotient.** When `Γ` acts properly
@@ -550,7 +540,7 @@ theorem contMDiff_orbitRelQuotientMap_torusFamilyAffineBaseChangeHom_freeLocus
       letI := torusFamilyChartedSpace (H := HY) P (fun l ↦ (hP l).continuous) hinj
       ∀ g : Γ, ContMDiff I (I.prod 𝓘(𝕜, E)) n (b g))
     (hfreeY : letI := periodAddAction P
-      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+      letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
       IsCancelSMul Γ (AddAction.orbitRel.Quotient Λ (Y × E)))
     {m : ℕ∞ω} (hm : m ≤ n) :
     letI : ∀ z : freeLocus Γ Y,
@@ -578,7 +568,7 @@ theorem contMDiff_orbitRelQuotientMap_torusFamilyAffineBaseChangeHom_freeLocus
       AddAction.isOpenQuotientMap_quotientMk.locallyCompactSpace
     letI : LocallyCompactSpace (AddAction.orbitRel.Quotient Λ (freeLocus Γ Y × E)) :=
       AddAction.isOpenQuotientMap_quotientMk.locallyCompactSpace
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
     letI := torusFamilyAffineMulAction
       (fun g (z : freeLocus Γ Y) ↦ R (MonoidHom.id Γ g) (z : Y))
       (linearCocycle_baseChange_one R hone (MonoidHom.id Γ) Subtype.val)
@@ -589,32 +579,31 @@ theorem contMDiff_orbitRelQuotientMap_torusFamilyAffineBaseChangeHom_freeLocus
         (fun _ _ ↦ rfl) b hb)
       (torusFamilyProjection_baseChangeTranslation P (Subtype.val : freeLocus Γ Y → Y)
         (MonoidHom.id Γ) (fun _ _ ↦ rfl) b hb)
-      (torusFamilyBaseChangeTranslation_one P b hb (MonoidHom.id Γ) (fun _ _ ↦ rfl) hbone)
       (torusFamilyBaseChangeTranslation_mul P b hb R ρ hequiv (MonoidHom.id Γ)
         (fun _ _ ↦ rfl) hbmul)
     letI : ProperlyDiscontinuousSMul Γ (AddAction.orbitRel.Quotient Λ (Y × E)) :=
-      properlyDiscontinuousSMul_torusFamilyAffineMulAction _ _ _ _ _ _ _ _ _ _
+      properlyDiscontinuousSMul_torusFamilyAffineMulAction _ _ _ _ _ _ _ _ _
     letI : ProperlyDiscontinuousSMul Γ (AddAction.orbitRel.Quotient Λ (freeLocus Γ Y × E)) :=
-      properlyDiscontinuousSMul_torusFamilyAffineMulAction _ _ _ _ _ _ _ _ _ _
-    letI := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbone hbmul
+      properlyDiscontinuousSMul_torusFamilyAffineMulAction _ _ _ _ _ _ _ _ _
+    letI := continuousConstSMul_torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
       (fun l ↦ (hP l).continuous) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous)
     letI := continuousConstSMul_torusFamilyBaseChangeAffineMulAction
-      R hone hmul P (fun l ↦ (hP l).continuous) ρ hequiv b hb hbone hbmul
+      R hone hmul P (fun l ↦ (hP l).continuous) ρ hequiv b hb hbmul
       (MonoidHom.id Γ) (f := (Subtype.val : freeLocus Γ Y → Y)) continuous_subtype_val
       (fun _ _ ↦ rfl) (fun g ↦ (hR g).continuous) (fun g ↦ (hbc g).continuous)
     letI := hfreeY
     letI : IsCancelSMul Γ (AddAction.orbitRel.Quotient Λ (freeLocus Γ Y × E)) :=
-      isCancelSMul_torusFamilyAffineMulAction _ _ _ _ _ _ _ _ _ _
+      isCancelSMul_torusFamilyAffineMulAction _ _ _ _ _ _ _ _ _
     ContMDiff (I.prod 𝓘(𝕜, E)) (I.prod 𝓘(𝕜, E)) m
       (MulActionHom.orbitRelQuotientMap
-        (torusFamilyAffineBaseChangeHom P b hb R ρ hequiv hone hmul hbone hbmul
+        (torusFamilyAffineBaseChangeHom P b hb R ρ hequiv hone hmul hbmul
           (MonoidHom.id Γ) (Subtype.val : freeLocus Γ Y → Y) fun _ _ ↦ rfl)) :=
   contMDiff_orbitRelQuotientMap_torusFamilyAffineBaseChangeHom P hinj hP R hone hmul ρ hequiv
-    b hb hbone hbmul hR hbc (MonoidHom.id Γ) (Subtype.val : freeLocus Γ Y → Y)
+    b hb hbmul hR hbc (MonoidHom.id Γ) (Subtype.val : freeLocus Γ Y → Y)
     (contMDiff_subtype_val (U := ⟨_, isOpen_freeLocus Γ Y⟩) :
       ContMDiff I I n (Subtype.val : freeLocus Γ Y → Y))
     (fun _ _ ↦ rfl) hfreeY
-    (isCancelSMul_torusFamilyAffineMulAction _ _ _ _ _ _ _ _ _ _) hm
+    (isCancelSMul_torusFamilyAffineMulAction _ _ _ _ _ _ _ _ _) hm
 
 end FreeLocus
 
