@@ -83,10 +83,10 @@ theorem mem_range_baseChange_of_zsmul_eq_zero_of_isAlgClosed [DecidableEq F] [De
     rw [Affine.Point.map_some]
     simp only [Algebra.ofId_apply]
 
-/-- **An extension of an algebraically closed field adds no `n`-torsion**: the `n`-torsion subgroup
-of `W` over `Ω` is trivial exactly when that of `W` is. Base change is injective on points, and for
-`n ≠ 0` every `n`-torsion point over `Ω` comes from one over `F`; for `n = 0` both subgroups are
-the whole group, which is nontrivial. -/
+/-- **Triviality of the `n`-torsion is invariant under extension of an algebraically closed
+field**: the `n`-torsion subgroup of `W` over `Ω` is trivial exactly when that of `W` is. Base
+change is injective on points, and for `n ≠ 0` every `n`-torsion point over `Ω` comes from one
+over `F`; for `n = 0` both subgroups are the whole group, which is nontrivial. -/
 theorem torsionBy_baseChange_eq_bot_iff_of_isAlgClosed [DecidableEq F] [DecidableEq Ω] {n : ℤ} :
     AddSubgroup.torsionBy (W.baseChange Ω).toAffine.Point n = ⊥ ↔
       AddSubgroup.torsionBy W.toAffine.Point n = ⊥ := by
