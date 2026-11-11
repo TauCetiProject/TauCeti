@@ -133,9 +133,7 @@ def contDiffOnSMulL (hU : IsOpen U) (hΩ : IsCompact (closure (Omega : Set E)))
         (tendsto_iff_norm_sub_tendsto_zero.1 hu).const_mul _
       rw [mul_zero] at hlim
       refine squeeze_zero (fun _ => norm_nonneg _) (fun n => ?_) hlim
-      have hsub : value k (L (u n)) - value k (L x) = value k (L (u n - x)) := by
-        simp only [← valueL_apply, map_sub]
-      rw [hsub, contDiffOnSMulₗ_apply]
+      rw [← value_sub, ← map_sub, contDiffOnSMulₗ_apply]
       exact (norm_lp_le_of_ae_eq_mul hC'
         (value_contDiffOnSMulAux hU hΩ hΩU k hpsi (u n - x))).trans
         (mul_le_mul_of_nonneg_left (norm_value_le k _) (le_max_right _ _))

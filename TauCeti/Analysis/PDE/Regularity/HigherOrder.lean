@@ -338,9 +338,7 @@ theorem exists_wkp_forcing_energyFormH1_principal_eq_of_contDiffOn
   have hMi : ∀ᵐ x ∂mu.restrict Omega, ∀ i, Wkp.value k (M i) x = ⟪b x, e i⟫_ℝ *
       Wkp.value k (D i) x := Filter.eventually_all.2 hM
   have hval : Wkp.value k (Wkp.lowerOrder k w) = W1p.value u := by rw [← Wkp.value_succ, hw]
-  have hsub : ∀ X Y : Wkp mu Omega 2 k, Wkp.value k (X - Y) = Wkp.value k X - Wkp.value k Y :=
-    fun X Y => by simp only [← Wkp.valueL_apply, map_sub]
-  rw [hsub, hsub]
+  rw [Wkp.value_sub, Wkp.value_sub]
   filter_upwards [Lp.coeFn_sub (Wkp.value k F - Wkp.value k (∑ i, M i)) (Wkp.value k N),
     Lp.coeFn_sub (Wkp.value k F) (Wkp.value k (∑ i, M i)),
     Wkp.value_finsetSum_ae k Finset.univ M, hDi, hMi, hN] with x h₁ h₂ h₃ h₄ h₅ h₆

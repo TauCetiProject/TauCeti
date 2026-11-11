@@ -807,6 +807,24 @@ theorem energyFormH1L0_comm
   exact hsymm u v
 
 open scoped InnerProductSpace in
+/-- A bounded drift paired with the gradient of an `H¹` function is square integrable. -/
+private theorem memLp_inner_gradient {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    (hb : MemLp b ⊤ (mu.restrict Omega)) (u : W1p mu Omega 2) :
+    MemLp (fun x => ⟪b x, W1p.gradient u x⟫_ℝ) 2 (mu.restrict Omega) :=
+  MemLp.of_bilin (inner ℝ) 1 hb (Lp.memLp _) continuous_inner
+    (.of_forall fun x => by simpa using nnnorm_inner_le_nnnorm (b x) (W1p.gradient u x))
+
+open scoped InnerProductSpace in
+/-- With bounded lower-order coefficients, the forcing `f - ⟪b, ∇u⟫ - c u` of the principal
+equation is square integrable. -/
+private theorem memLp_forcing_principal {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    {c : EuclideanSpace ℝ ι → ℝ} (hb : MemLp b ⊤ (mu.restrict Omega))
+    (hc : MemLp c ⊤ (mu.restrict Omega)) (f : Lp ℝ 2 (mu.restrict Omega)) (u : W1p mu Omega 2) :
+    MemLp (fun x => f x - ⟪b x, W1p.gradient u x⟫_ℝ - c x * W1p.value u x) 2
+      (mu.restrict Omega) :=
+  ((Lp.memLp f).sub (memLp_inner_gradient hb u)).sub (hc.fun_mul (Lp.memLp _))
+
+open scoped InnerProductSpace in
 /-- **Moving the lower-order terms to the right-hand side.** If `u ∈ H¹(Ω)` is a weak solution of
 `-∂ᵢ(aⁱʲ ∂ⱼu) + ⟪b, ∇u⟫ + c u = f` in `Ω`, with an essentially bounded principal energy density,
 bounded lower-order coefficients and `f ∈ L²(Ω)`, then `u` is a weak solution of the principal
@@ -827,9 +845,7 @@ theorem energyFormH1_principal_eq_setIntegral_sub {a : EuclideanSpace ℝ ι →
     energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
       ∫ x in Omega, (f x - ⟪b x, W1p.gradient u x⟫_ℝ - c x * W1p.value u x) *
         W1p.value (v : W1p mu Omega 2) x ∂mu := by
-  have hB : MemLp (fun x => ⟪b x, W1p.gradient u x⟫_ℝ) 2 (mu.restrict Omega) :=
-    MemLp.of_bilin (inner ℝ) 1 hb (Lp.memLp _) continuous_inner
-      (.of_forall fun x => by simpa using nnnorm_inner_le_nnnorm (b x) (W1p.gradient u x))
+  have hB := memLp_inner_gradient hb u
   have hC : MemLp (fun x => c x * W1p.value u x) 2 (mu.restrict Omega) :=
     hc.fun_mul (Lp.memLp _)
   have hv := Lp.memLp (W1p.value (v : W1p mu Omega 2))
@@ -889,11 +905,7 @@ theorem exists_forcing_energyFormH1_principal_eq {a : EuclideanSpace ℝ ι → 
     ∃ g : Lp ℝ 2 (mu.restrict Omega), ∀ v : W1p0 mu Omega 2,
       energyFormH1 a 0 0 u (v : W1p mu Omega 2) =
         ∫ x in Omega, g x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
-  have hB : MemLp (fun x => ⟪b x, W1p.gradient u x⟫_ℝ) 2 (mu.restrict Omega) :=
-    MemLp.of_bilin (inner ℝ) 1 hb (Lp.memLp _) continuous_inner
-      (.of_forall fun x => by simpa using nnnorm_inner_le_nnnorm (b x) (W1p.gradient u x))
-  have hG : MemLp (fun x => f x - ⟪b x, W1p.gradient u x⟫_ℝ - c x * W1p.value u x) 2
-      (mu.restrict Omega) := ((Lp.memLp f).sub hB).sub (hc.fun_mul (Lp.memLp _))
+  have hG := memLp_forcing_principal hb hc f u
   refine ⟨hG.toLp _, fun v => ?_⟩
   rw [energyFormH1_principal_eq_setIntegral_sub ha hb hc hu v]
   refine integral_congr_ae ?_
