@@ -13,7 +13,7 @@ public import Mathlib.Analysis.Analytic.Order
 import TauCeti.MeasureTheory.Integral.NormRpow
 import TauCeti.Analysis.Analytic.Order
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.Analysis.Calculus.FDeriv.OfReal
+import TauCeti.Analysis.Complex.Wirtinger.Radial
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
@@ -212,16 +212,10 @@ theorem expNegInvNormSq_isLittleO_pow (n : ℕ) :
 /-- `bar∂ exp (-1 / ‖z‖²) = z / ‖z‖⁴ · exp (-1 / ‖z‖²)`, both sides vanishing at `0`. -/
 theorem conjWirtingerDeriv_expNegInvNormSq (z : ℂ) :
     conjWirtingerDeriv expNegInvNormSq z 1 = z / (‖z‖ : ℂ) ^ 4 * expNegInvNormSq z := by
-  rw [conjWirtingerDeriv_apply, funext expNegInvNormSq_def]
-  simp only [fderiv_ofReal_comp_apply, (expNegInvGlue.hasFDerivAt_norm_sq z).fderiv,
-    smul_apply, innerSL_apply_apply, Complex.inner, smul_eq_mul, mul_one]
-  simp only [one_mul, conj_re, mul_re, I_re, I_im, conj_im, zero_mul, one_mul, neg_neg,
-    zero_sub, nsmul_eq_mul]
+  rw [funext expNegInvNormSq_def,
+    conjWirtingerDeriv_ofReal_comp_norm_sq_apply_one (expNegInvGlue.hasDerivAt _)]
   push_cast
-  generalize ((expNegInvGlue (‖z‖ ^ 2) : ℝ) : ℂ) = g
-  generalize ((‖z‖ : ℝ) : ℂ) = n
-  conv_rhs => rw [← re_add_im z]
-  ring
+  field_simp
 
 /-- The coefficient `C z = -2 z / ‖z‖⁴` forced away from the origin by `2 bar∂ξ + C ξ = 0` for
 `ξ = exp (-1 / ‖z‖²)`. Any value at the origin solves the equation there; the chosen extension
