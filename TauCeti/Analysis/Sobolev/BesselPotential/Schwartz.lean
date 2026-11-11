@@ -31,6 +31,8 @@ normed complex `F`.
 
 * `SchwartzMap.toBesselPotentialSpaceCLM`: the inclusion `𝓢(E, F) →L[ℂ] H^{s,p}(E, F)`.
 * `SchwartzMap.denseRange_toBesselPotentialSpaceCLM`: its range is dense for `p < ∞`.
+* `SchwartzMap.toLp_toBesselPotentialSpaceCLM_zero`,
+  `BesselPotentialSpace.toDistr_toLpₗᵢ_zero_symm_apply`: the identification `H^{0,p} = Lᵖ`.
 * `BesselPotentialSpace.continuousLinearMap_ext`: continuous linear maps out of `H^{s,p}`,
   `p < ∞`, are determined by their values on Schwartz functions.
 * `BesselPotentialSpace.norm_eq_of_smulLeftCLM_fourier_eq`: for Hilbert-space values, the `H^s`
@@ -77,6 +79,14 @@ theorem toLp_toBesselPotentialSpaceCLM (u : 𝓢(E, F)) :
   rw [← BesselPotentialSpace.toLpₗᵢ_apply, toBesselPotentialSpaceCLM]
   simp
 
+/-- The `Lᵖ` part of a Schwartz function `u` in `H^{s,p}` is almost everywhere the Schwartz function
+`J^s u`. -/
+theorem coeFn_toLp_toBesselPotentialSpaceCLM (u : 𝓢(E, F)) :
+    (toBesselPotentialSpaceCLM s p u).toLp =ᵐ[volume]
+      fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) u := by
+  rw [toLp_toBesselPotentialSpaceCLM]
+  exact coeFn_toLp _ p volume
+
 @[simp]
 theorem toDistr_toBesselPotentialSpaceCLM (u : 𝓢(E, F)) :
     (toBesselPotentialSpaceCLM s p u).toDistr = (u : 𝓢'(E, F)) := by
@@ -85,6 +95,11 @@ theorem toDistr_toBesselPotentialSpaceCLM (u : 𝓢(E, F)) :
     BesselPotentialSpace.toLpₗᵢ_symm_apply, Lp.toTemperedDistribution_toLp_eq,
     ← besselPotential_toTemperedDistributionCLM_eq, besselPotential_besselPotential_apply,
     add_neg_cancel, besselPotential_zero, ContinuousLinearMap.id_apply]
+
+/-- In `H^{0,p} = Lᵖ` the `Lᵖ` part of a Schwartz function `u` is `u` itself. -/
+theorem toLp_toBesselPotentialSpaceCLM_zero (u : 𝓢(E, F)) :
+    (toBesselPotentialSpaceCLM 0 p u).toLp = u.toLp p := by
+  simp [fourierMultiplierCLM_const]
 
 /-- **Schwartz functions are dense in `H^{s,p}`** for `p < ∞`. -/
 theorem denseRange_toBesselPotentialSpaceCLM (s : ℝ) (hp : p ≠ ∞) :
@@ -128,6 +143,12 @@ theorem continuousLinearMap_ext {G : Type*} [AddCommMonoid G] [Module ℂ G] [To
   ContinuousLinearMap.ext fun f ↦ congrFun
     ((SchwartzMap.denseRange_toBesselPotentialSpaceCLM s hp).equalizer T.continuous T'.continuous
       (funext h)) f
+
+/-- In `H^{0,p} = Lᵖ` the element with `Lᵖ` part `f` is the tempered distribution of `f`. -/
+theorem toDistr_toLpₗᵢ_zero_symm_apply {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (f : Lp F p (volume : Measure E)) :
+    ((toLpₗᵢ E F 0 p).symm f).toDistr = (f : 𝓢'(E, F)) := by
+  rw [toLpₗᵢ_symm_apply, neg_zero, besselPotential_zero, ContinuousLinearMap.id_apply]
 
 /-- The `H^s` norm is the `L²` norm of the weighted Fourier transform: if `⟨ξ⟩ ^ s 𝓕 u` is the
 tempered distribution of `G ∈ L²`, then `‖u‖ = ‖G‖`. -/

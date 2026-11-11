@@ -164,29 +164,19 @@ private theorem joined_of_joined_map_of_fiber (hp : serreFibrations p)
     (hp' : serreFibrations p') (hg : g.hom.IsWeakHomotopyEquivalence)
     (hfib : (sq.fiberMap b).hom.IsWeakHomotopyEquivalence) (y : p.fiber b)
     (h : Joined (f e.1) (f y.1)) : Joined e.1 y.1 := by
-  -- Points of the fibres are zero-dimensional generalized loops, whose classes are their path
-  -- components (`homotopyGroupEquivZerothHomotopyOfIsEmpty`).
-  let ℓ : Ω^ (Fin 0) (p.fiber b) e := (genLoopHomeoOfIsEmpty (Fin 0) e).symm y
-  have hℓ : ℓ 0 = y := genLoopHomeoOfIsEmpty_symm_apply y 0
   -- The image of `y` in the fibre of `p'` is joined to the base point in `E'`, so its class is a
   -- boundary, of an element which comes from `B` since `g` is surjective on `π_1`.
-  obtain ⟨y', hy'⟩ : HomotopyGroup.map (sq.fiberMap b).hom rfl (⟦ℓ⟧ : HomotopyGroup _ _ _) ∈
-      range (fibrationBoundary hp' (sq.fiberMap b e)) := by
-    rw [mem_range_fibrationBoundary_iff hp', HomotopyGroup.map_mk]
-    apply (homotopyGroupEquivZerothHomotopyOfIsEmpty (Fin 0) _).injective
-    rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_map_mk,
-      homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, GenLoop.map_apply, hℓ,
-      TopCat.Hom.fiberι_apply, sq.fiberMap_apply_coe, sq.fiberMap_apply_coe]
-    exact ZerothHomotopy.sound h.symm.somePath
+  obtain ⟨y', hy'⟩ := (joined_iff_mem_range_fibrationBoundary hp' (e := sq.fiberMap b e)
+    (sq.fiberMap b y)).1 <| by rwa [sq.fiberMap_apply_coe, sq.fiberMap_apply_coe]
   obtain ⟨γ, rfl⟩ := (hg.map_bijective (Option (Fin 0)) b).2 y'
   rw [fibrationBoundary_map sq hp hp'] at hy'
   -- Since the fibre map is injective on `π_0`, the class of `y` itself is a boundary, so it is
   -- joined to the base point in `E`.
-  have h0 := (mem_range_fibrationBoundary_iff hp).1 ⟨γ, (hfib.map_bijective (Fin 0) e).1 hy'⟩
-  have h1 := congrArg (homotopyGroupEquivZerothHomotopyOfIsEmpty (Fin 0) e.1) h0
-  rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_map_mk,
-    homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, hℓ, TopCat.Hom.fiberι_apply] at h1
-  exact (Quotient.exact h1).symm
+  refine (joined_iff_mem_range_fibrationBoundary hp (e := e) y).2
+    ⟨γ, (hfib.map_bijective (Fin 0) e).1 (hy'.trans ?_)⟩
+  rw [HomotopyGroup.map_mk]
+  exact congrArg _ (GenLoop.ext _ _ fun t ↦ by
+    rw [GenLoop.map_apply, genLoopHomeoOfIsEmpty_symm_apply, genLoopHomeoOfIsEmpty_symm_apply])
 
 end Comparison
 
