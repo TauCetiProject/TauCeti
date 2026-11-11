@@ -9,7 +9,6 @@ public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import Mathlib.RingTheory.GradedAlgebra.RingHom
 public import TauCeti.Algebra.DirectSum.Internal
-public import TauCeti.LinearAlgebra.Submodule.Independent
 
 /-!
 # The Veronese subalgebra of a graded algebra
@@ -20,7 +19,7 @@ subalgebra* of `A` is
 `A^{(d)} = ⨆ₖ 𝒜 (d k)`,
 
 the `R`-subalgebra of `A` spanned by the homogeneous components whose degree is a multiple of `d`.
-For `d ≠ 0` (and `A` a ring) this sum is direct, `A^{(d)} = ⨁ₖ 𝒜 (d k)`, and `A^{(d)}` is again an
+For `d ≠ 0` this sum is direct, `A^{(d)} = ⨁ₖ 𝒜 (d k)`, and `A^{(d)}` is again an
 `ℕ`-graded `R`-algebra, whose degree-`k` part is `𝒜 (d k)`; in particular its degree-zero part is
 `𝒜 0`, the degree-zero part of `A`.
 
@@ -131,11 +130,6 @@ instance : SetLike.GradedMonoid (veroneseGrading 𝒜 d) where
     rw [mem_veroneseGrading, mul_add]
     exact SetLike.mul_mem_graded hx hy
 
-/-- For `d ≠ 0`, the components `𝒜 (d k)` of the Veronese subalgebra are independent. -/
-theorem iSupIndep_veroneseGrading (hd : d ≠ 0) : iSupIndep (veroneseGrading 𝒜 d) :=
-  ((Decomposition.isInternal 𝒜).submodule_iSupIndep.comp (mul_right_injective₀ hd)).comap_subtype
-    (S := Subalgebra.toSubmodule (veronese 𝒜 d))
-
 /-- The Veronese subalgebra is spanned by its components `𝒜 (d k)`. -/
 theorem iSup_veroneseGrading_eq_top : ⨆ k, veroneseGrading 𝒜 d k = ⊤ := by
   apply Submodule.map_injective_of_injective (f := (veronese 𝒜 d).val.toLinearMap)
@@ -143,6 +137,49 @@ theorem iSup_veroneseGrading_eq_top : ⨆ k, veroneseGrading 𝒜 d k = ⊤ := b
   simp only [Submodule.map_iSup, map_veroneseGrading, Submodule.map_top]
   ext x
   simp [LinearMap.mem_range, mem_veronese]
+
+/-- For `d ≠ 0`, the Veronese subalgebra is the internal direct sum of its components
+`𝒜 (d k)`. -/
+theorem isInternal_veroneseGrading (hd : d ≠ 0) : IsInternal (veroneseGrading 𝒜 d) := by
+  -- The degree-`d k` component in `A` of a sum of elements of the `𝒜 (d j)` is its `k`-th term.
+  have hcomp (y : ⨁ k, veroneseGrading 𝒜 d k) (k : ℕ) :
+      (decompose 𝒜 ((DirectSum.coeAddMonoidHom (veroneseGrading 𝒜 d) y : veronese 𝒜 d) : A)
+        (d * k) : A) = ((y k : veronese 𝒜 d) : A) := by
+    induction y using DirectSum.induction_on with
+    | zero => simp
+    | of j x =>
+      rw [DirectSum.coeAddMonoidHom_of]
+      obtain rfl | hjk := eq_or_ne j k
+      · rw [decompose_of_mem_same 𝒜 (mem_veroneseGrading.1 x.2), of_eq_same]
+      · rw [decompose_of_mem_ne 𝒜 (mem_veroneseGrading.1 x.2) ((mul_right_injective₀ hd).ne hjk),
+          of_eq_of_ne _ _ _ hjk.symm, ZeroMemClass.coe_zero, ZeroMemClass.coe_zero]
+    | add y z hy hz => simp [hy, hz]
+  refine ⟨fun y z h ↦ DirectSum.ext fun k ↦ Subtype.ext <| Subtype.ext ?_, fun x ↦ ?_⟩
+  · rw [← hcomp, ← hcomp, h]
+  · -- The components span, so `coeLinearMap`, whose underlying map is `coeAddMonoidHom`, is onto.
+    obtain ⟨y, hy⟩ := LinearMap.range_eq_top.1
+      (range_coeLinearMap.trans (iSup_veroneseGrading_eq_top 𝒜 d)) x
+    exact ⟨y, hy⟩
+
+/-- For `d ≠ 0`, the components `𝒜 (d k)` of the Veronese subalgebra are independent. -/
+theorem iSupIndep_veroneseGrading (hd : d ≠ 0) : iSupIndep (veroneseGrading 𝒜 d) :=
+  (isInternal_veroneseGrading 𝒜 d hd).submodule_iSupIndep
+
+/-- For `d ≠ 0`, the Veronese subalgebra `⨁ₖ 𝒜 (d k)` is an `ℕ`-graded `R`-algebra, with
+degree-`k` part `𝒜 (d k)`. -/
+noncomputable instance instGradedAlgebraVeroneseGrading [NeZero d] :
+    GradedAlgebra (veroneseGrading 𝒜 d) where
+  __ := (isInternal_veroneseGrading 𝒜 d (NeZero.ne d)).chooseDecomposition
+
+variable {𝒜 d} in
+/-- The degree-`k` component of an element of the Veronese subalgebra is its degree-`d k`
+component in `A`. -/
+@[simp]
+theorem coe_decompose_veroneseGrading [NeZero d] (x : veronese 𝒜 d) (k : ℕ) :
+    ((decompose (veroneseGrading 𝒜 d) x k : veronese 𝒜 d) : A) = decompose 𝒜 (x : A) (d * k) :=
+  DirectSum.map_decompose_shift (veroneseGrading 𝒜 d) 𝒜
+    (veronese 𝒜 d).val.toAddMonoidHom (fun k ↦ d * k) (mul_right_injective₀ (NeZero.ne d))
+    (fun _ _ hx ↦ mem_veroneseGrading.mp hx) k x
 
 /-- The degree-zero part of the Veronese subalgebra is the degree-zero part `𝒜 0` of `A`, as
 rings. -/
@@ -198,34 +235,5 @@ theorem veroneseMap_comp {R'' C : Type*} [CommSemiring R''] [Semiring C] [Algebr
 end Map
 
 end Semiring
-
-section Ring
-
-variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
-  (𝒜 : ℕ → Submodule R A) [GradedAlgebra 𝒜] (d : ℕ)
-
-/-- For `d ≠ 0`, the Veronese subalgebra is the internal direct sum of its components
-`𝒜 (d k)`. -/
-theorem isInternal_veroneseGrading (hd : d ≠ 0) : IsInternal (veroneseGrading 𝒜 d) :=
-  (isInternal_submodule_iff_iSupIndep_and_iSup_eq_top _).2
-    ⟨iSupIndep_veroneseGrading 𝒜 d hd, iSup_veroneseGrading_eq_top 𝒜 d⟩
-
-/-- For `d ≠ 0`, the Veronese subalgebra `⨁ₖ 𝒜 (d k)` is an `ℕ`-graded `R`-algebra, with
-degree-`k` part `𝒜 (d k)`. -/
-noncomputable instance instGradedAlgebraVeroneseGrading [NeZero d] :
-    GradedAlgebra (veroneseGrading 𝒜 d) where
-  __ := (isInternal_veroneseGrading 𝒜 d (NeZero.ne d)).chooseDecomposition
-
-variable {𝒜 d} in
-/-- The degree-`k` component of an element of the Veronese subalgebra is its degree-`d k`
-component in `A`. -/
-@[simp]
-theorem coe_decompose_veroneseGrading [NeZero d] (x : veronese 𝒜 d) (k : ℕ) :
-    ((decompose (veroneseGrading 𝒜 d) x k : veronese 𝒜 d) : A) = decompose 𝒜 (x : A) (d * k) :=
-  DirectSum.map_decompose_shift (veroneseGrading 𝒜 d) 𝒜
-    (veronese 𝒜 d).val.toAddMonoidHom (fun k ↦ d * k) (mul_right_injective₀ (NeZero.ne d))
-    (fun _ _ hx ↦ mem_veroneseGrading.mp hx) k x
-
-end Ring
 
 end TauCeti.GradedAlgebra
