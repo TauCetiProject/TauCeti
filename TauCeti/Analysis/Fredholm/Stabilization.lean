@@ -89,10 +89,10 @@ theorem IsInvertible.prod_coprod_coprod {Λ Λ₃ G : Type*} [NormedAddCommGroup
     exact (congrArg (· z) he).symm
   -- The inverse solves `T x + D₂ l = y - D₃ l₃` and `q (x, l) = g` for `(x, l)`.
   let S : F × G × Λ₃ →L[𝕜] (F × G) × Λ₃ :=
-    ((ContinuousLinearMap.fst 𝕜 F (G × Λ₃) - D₃ ∘L ContinuousLinearMap.snd 𝕜 G Λ₃ ∘L
-        ContinuousLinearMap.snd 𝕜 F (G × Λ₃)).prod
-      (ContinuousLinearMap.fst 𝕜 G Λ₃ ∘L ContinuousLinearMap.snd 𝕜 F (G × Λ₃))).prod
-      (ContinuousLinearMap.snd 𝕜 G Λ₃ ∘L ContinuousLinearMap.snd 𝕜 F (G × Λ₃))
+    ((fst 𝕜 F (G × Λ₃) - D₃ ∘L snd 𝕜 G Λ₃ ∘L
+        snd 𝕜 F (G × Λ₃)).prod
+      (fst 𝕜 G Λ₃ ∘L snd 𝕜 F (G × Λ₃))).prod
+      (snd 𝕜 G Λ₃ ∘L snd 𝕜 F (G × Λ₃))
   let inv : F × G × Λ₃ →L[𝕜] E × Λ × Λ₃ :=
     (ContinuousLinearEquiv.prodAssoc 𝕜 E Λ Λ₃).toContinuousLinearMap ∘L
       ((e.symm : F × G →L[𝕜] E × Λ).prodMap (ContinuousLinearMap.id 𝕜 Λ₃)) ∘L S

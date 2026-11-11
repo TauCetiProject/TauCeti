@@ -20,7 +20,7 @@ not closed under countable intersections.
 public section
 
 open Filter
-open scoped ENNReal NNReal
+open scoped ENNReal
 
 namespace ENNReal
 
@@ -29,17 +29,9 @@ variable {α : Type*} {f : Filter α}
 /-- The upper limit of a sum of `ℝ≥0∞`-valued functions is at most the sum of their upper limits,
 along any filter. -/
 theorem limsup_add_le' (u v : α → ℝ≥0∞) : f.limsup (u + v) ≤ f.limsup u + f.limsup v := by
-  refine ENNReal.le_of_forall_pos_le_add fun ε hε hlt ↦ ?_
-  have hε2 : ((ε / 2 : ℝ≥0) : ℝ≥0∞) ≠ 0 := by simpa using hε.ne'
-  have hu := eventually_lt_of_limsup_lt (ENNReal.lt_add_right (lt_top_iff_ne_top.1 <|
-    (le_self_add.trans_lt hlt)) hε2)
-  have hv := eventually_lt_of_limsup_lt (ENNReal.lt_add_right (lt_top_iff_ne_top.1 <|
-    (le_add_self.trans_lt hlt)) hε2)
-  refine limsup_le_of_le (h := ?_)
-  filter_upwards [hu, hv] with a hua hva
-  calc (u + v) a ≤ (f.limsup u + (ε / 2 : ℝ≥0)) + (f.limsup v + (ε / 2 : ℝ≥0)) :=
-        add_le_add hua.le hva.le
-    _ = f.limsup u + f.limsup v + ε := by
-        rw [add_add_add_comm, ← ENNReal.coe_add, add_halves]
+  simp only [limsup_eq_iInf_iSup, iInf_subtype']
+  rw [ENNReal.iInf_add_iInf fun s t ↦ ⟨⟨s.1 ∩ t.1, inter_mem s.2 t.2⟩, add_le_add
+    (biSup_mono Set.inter_subset_left) (biSup_mono Set.inter_subset_right)⟩]
+  exact iInf_mono fun s ↦ iSup₂_le fun a ha ↦ add_le_add (le_biSup u ha) (le_biSup v ha)
 
 end ENNReal

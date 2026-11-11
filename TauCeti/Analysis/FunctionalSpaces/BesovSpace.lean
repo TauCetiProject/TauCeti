@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Normed.Lp.Basic
+import TauCeti.Analysis.Normed.Lp.Reindex
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Inhomogeneous Besov spaces
@@ -23,7 +25,13 @@ Let `φ : E → ℝ` be a smooth bump function on a finite-dimensional real inne
 
 The parameter `s` measures smoothness, `p` integrability and `q` is a fine index; for
 `p = q = ∞` this is the Hölder–Zygmund scale `𝒞^s = B^s_{∞,∞}`. The definition is relative to the
-chosen bump function `φ`.
+chosen bump function `φ`, but the space is not: the Besov spaces built from two bump functions
+contain the same tempered distributions, with equivalent norms. Indeed the blocks `Δ'ⱼ` of a
+second bump function `φ'` interact only with the blocks `Δₖ` of nearby index,
+`Δ'ⱼ u = ∑_{j - L ≤ k < j + L} Δ'ⱼ Δₖ u`
+(`TemperedDistribution.exists_littlewoodPaleyBlock_eq_sum_Ico`), and the blocks are uniformly
+bounded on `Lᵖ`, so `2^{js} ‖Δ'ⱼ u‖_p` is at most a constant times a window sum of the
+`2^{ks} ‖Δₖ u‖_p`, whose `ℓ^q` norm is at most `2 L` times theirs.
 
 We encode the norm through the sequence of weighted blocks `(2^{js} Δⱼ u)ⱼ`, an element of the
 normed space `ℓ^q(ℕ, Lᵖ)`. A tempered distribution is determined by its blocks
@@ -47,6 +55,15 @@ both its tempered distribution and this `Lᵖ` data.
 * `TauCeti.BesovSpace.inclusionOfLT`: `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for `s' < s` and arbitrary
   `q, q'`, with norm at most `(1 - 2^{s' - s})⁻¹`. At the level of the predicate these inclusions
   are `TemperedDistribution.MemBesov.mono` and `TemperedDistribution.MemBesov.of_lt`.
+* `TemperedDistribution.MemBesov.of_bump` and `TauCeti.BesovSpace.bumpEquiv`: the Besov space does
+  not depend on the bump function; the identity on tempered distributions is an isomorphism of
+  normed spaces between the Besov spaces built from two bump functions.
+* `TauCeti.BesovSpace.inclusionOfExponentLE`: the Bernstein embedding
+  `B^s_{p,q} ⊆ B^{s - n (1/p - 1/r)}_{r,q}` for `p ≤ r` in dimension `n`, bounded uniformly in `s`
+  and `q` (`TauCeti.BesovSpace.exists_norm_inclusionOfExponentLE_le`); at the level of the
+  predicate it is `TemperedDistribution.MemBesov.mono_exponent`. The Fourier transform of each
+  block `Δⱼ u` is carried by the ball of radius `2^j φ.rOut`, so Bernstein's inequality bounds its
+  `Lʳ` norm by `C 2^{j n (1/p - 1/r)}` times its `Lᵖ` norm, with `C` independent of `j` and `u`.
 * `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_eq`: a Schwartz function whose Fourier transform
   is carried by the region where `ψⱼ = 1` lies in every Besov space, with norm `2^{js} ‖u‖_p`;
   `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_eq_of_norm_le` is the low-frequency case `j = 0`,
@@ -159,6 +176,62 @@ theorem MemBesov.neg {u : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) : (-u).MemBeso
 theorem MemBesov.sub {u v : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) (hv : v.MemBesov φ s p q) :
     (u - v).MemBesov φ s p q := by
   simpa [sub_eq_add_neg] using hu.add hv.neg
+
+/-- **The blocks of another bump function.** If the blocks `Δₖ u` built from `φ` are `Lᵖ`
+functions `fₖ`, then the blocks `Δ'ⱼ u` built from `φ'` are `Lᵖ` functions `f'ⱼ`, with
+`2^{js} ‖f'ⱼ‖_p ≤ K ∑_{j - L ≤ k < j + L} 2^{ks} ‖fₖ‖_p`. The constants `K` and `L` depend only on
+`φ`, `φ'` and `s`. -/
+private theorem exists_littlewoodPaleyBlock_eq_and_le (φ φ' : ContDiffBump (0 : E)) (s : ℝ) :
+    ∃ K : ℝ, ∃ L : ℕ, 0 ≤ K ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] {u : 𝓢'(E, F)}
+      (f : ℕ → Lp F p (volume : Measure E)), (∀ k, littlewoodPaleyBlock F φ k u = f k) →
+      ∃ f' : ℕ → Lp F p (volume : Measure E), (∀ j, littlewoodPaleyBlock F φ' j u = f' j) ∧
+        ∀ j : ℕ, 2 ^ (s * j) * ‖f' j‖ ≤
+          K * ∑ k ∈ Finset.Ico (j - L) (j + L), 2 ^ (s * k) * ‖f k‖ := by
+  obtain ⟨L, hL⟩ := exists_littlewoodPaleyBlock_eq_sum_Ico (F := F) φ φ'
+  obtain ⟨C, hC⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ'
+  refine ⟨max C 0 * 2 ^ (|s| * L), L, by positivity, fun {p} _ {u} f hf ↦ ?_⟩
+  choose g hg hgC using fun j k ↦ hC (p := p) j (f k)
+  refine ⟨fun j ↦ ∑ k ∈ Finset.Ico (j - L) (j + L), g j k, fun j ↦ ?_, fun j ↦ ?_⟩
+  · rw [hL j u]
+    simp_rw [hf, hg]
+    exact (map_sum (Lp.toTemperedDistributionCLM F volume p) _ _).symm
+  · refine (mul_le_mul_of_nonneg_left (norm_sum_le _ _) (by positivity)).trans ?_
+    rw [Finset.mul_sum, Finset.mul_sum]
+    refine Finset.sum_le_sum fun k hk ↦ ?_
+    calc 2 ^ (s * j) * ‖g j k‖ ≤ 2 ^ (|s| * L) * 2 ^ (s * k) * (max C 0 * ‖f k‖) := by
+          gcongr
+          · rw [Finset.mem_Ico] at hk
+            refine Real.rpow_mul_le_rpow_abs_mul_mul_rpow_mul one_le_two s
+              (abs_sub_le_iff.2 ⟨?_, ?_⟩)
+            all_goals rw [sub_le_iff_le_add']; exact_mod_cast (by omega)
+          · exact (hgC j k).trans (by gcongr; exact le_max_left C 0)
+      _ = _ := by ring
+
+/-- **Independence of the bump function.** A tempered distribution in the Besov space `B^s_{p,q}`
+built from the Littlewood–Paley partition of `φ` lies in the Besov space `B^s_{p,q}` built from any
+other bump function `φ'`. -/
+theorem MemBesov.of_bump {u : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) (φ' : ContDiffBump (0 : E)) :
+    u.MemBesov φ' s p q := by
+  obtain ⟨f, hf, hmem⟩ := memBesov_iff.1 hu
+  obtain ⟨K, L, hK, hKL⟩ := exists_littlewoodPaleyBlock_eq_and_le (F := F) φ φ' s
+  obtain ⟨f', hf', hle⟩ := hKL f hf
+  refine memBesov_iff.2 ⟨f', hf', ((hmem.sum_Ico_sub_add L).const_mul K).mono fun j ↦ ?_⟩
+  rw [Real.norm_of_nonneg (by positivity)]
+  exact hle j
+
+/-- **The Bernstein embedding.** For `p ≤ r`, `B^s_{p,q} ⊆ B^{s - n (1/p - 1/r)}_{r,q}`, where `n`
+is the dimension of `E` and `1/∞ = 0`: raising the integrability exponent of the blocks from `p`
+to `r` costs `n (1/p - 1/r)` orders of smoothness. -/
+theorem MemBesov.mono_exponent {u : 𝓢'(E, F)} {r : ℝ≥0∞} [Fact (1 ≤ r)]
+    (hu : u.MemBesov φ s p q) (hpr : p ≤ r) :
+    u.MemBesov φ (s - Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹)) r q := by
+  obtain ⟨C, hC, hB⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le_of_le (F := F) φ hpr
+  set a : ℝ := Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹)
+  obtain ⟨f, hf, hmem⟩ := memBesov_iff.1 hu
+  choose g hg hgf using fun j ↦ hB j u (f j) (hf j)
+  refine memBesov_iff.2 ⟨g, hg, (hmem.const_mul C).mono fun j ↦ ?_⟩
+  rw [Real.norm_of_nonneg (by positivity), ← Real.rpow_sub_mul_mul_rpow_mul two_pos s a j]
+  exact (mul_le_mul_of_nonneg_left (hgf j) (by positivity)).trans_eq (by ring)
 
 end MemBesov
 
@@ -482,6 +555,67 @@ theorem norm_inclusionOfLT_le (hs : s' < s) (u : BesovSpace F φ s p q) :
 
 end Inclusion
 
+section Bernstein
+
+variable {r : ℝ≥0∞} [Fact (1 ≤ r)]
+
+/-- For `p ≤ r` there is `C`, independent of `s` and `q`, such that the
+`B^{s - n (1/p - 1/r)}_{r,q}` norm of a distribution is at most `C` times its `B^s_{p,q}` norm. -/
+private theorem exists_norm_le_of_toDistr_eq_of_exponent_le (hpr : p ≤ r) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {s : ℝ} {q : ℝ≥0∞} [Fact (1 ≤ q)] {u : BesovSpace F φ s p q}
+      {v : BesovSpace F φ (s - Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹)) r q},
+      u.toDistr = v.toDistr → ‖v‖ ≤ C * ‖u‖ := by
+  obtain ⟨C, hC, hB⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le_of_le (F := F) φ hpr
+  refine ⟨C, hC, ?_⟩
+  intro s q _ u v h
+  rw [← norm_weightedBlocks, ← norm_weightedBlocks]
+  calc ‖v.weightedBlocks‖ ≤ ‖(C : ℂ) • u.weightedBlocks‖ :=
+        lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun j ↦ ?_
+    _ = C * ‖u.weightedBlocks‖ := by
+        rw [lp.norm_const_smul (zero_lt_one.trans_le Fact.out).ne', Complex.norm_of_nonneg hC]
+  -- The block `Δⱼ v = Δⱼ u` is the `Lʳ` function given by Bernstein's inequality.
+  obtain ⟨g, hg, hgf⟩ := hB j u.toDistr (u.block j) (coe_block u j).symm
+  have hvg : v.block j = g := LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
+    simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply, coe_block, ← h, hg]
+  rw [norm_weightedBlocks_apply, hvg, lp.coeFn_smul, Pi.smul_apply, norm_smul,
+    Complex.norm_of_nonneg hC, norm_weightedBlocks_apply,
+    ← Real.rpow_sub_mul_mul_rpow_mul two_pos s (Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹)) j]
+  exact (mul_le_mul_of_nonneg_left hgf (by positivity)).trans_eq (by ring)
+
+variable [Fact (1 ≤ q)]
+
+variable (F φ q) in
+/-- **The Bernstein embedding.** For `p ≤ r`, `B^s_{p,q} ⊆ B^{s - n (1/p - 1/r)}_{r,q}`
+continuously, where `n` is the dimension of `E` and `1/∞ = 0`. The norm of the inclusion is
+bounded independently of `s` and `q` (`TauCeti.BesovSpace.exists_norm_inclusionOfExponentLE_le`).
+At the level of the predicate this is `TemperedDistribution.MemBesov.mono_exponent`. -/
+def inclusionOfExponentLE (hpr : p ≤ r) :
+    BesovSpace F φ s p q →L[ℂ]
+      BesovSpace F φ (s - Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹)) r q :=
+  LinearMap.mkContinuousOfExistsBound
+    { toFun u := (u.memBesov_toDistr.mono_exponent hpr).toBesovSpace
+      map_add' _ _ := ext rfl
+      map_smul' _ _ := ext rfl } <| by
+    obtain ⟨C, -, hC⟩ := exists_norm_le_of_toDistr_eq_of_exponent_le (F := F) (φ := φ) hpr
+    exact ⟨C, fun _ ↦ hC rfl⟩
+
+@[simp]
+theorem toDistr_inclusionOfExponentLE (hpr : p ≤ r) (u : BesovSpace F φ s p q) :
+    (inclusionOfExponentLE F φ q hpr u).toDistr = u.toDistr := by rfl
+
+variable (F φ) in
+/-- **The Bernstein embedding is bounded uniformly in `s` and `q`.** For `p ≤ r` there is `C`,
+depending only on `E`, `F`, `p`, `r` and `φ`, with
+`‖u‖_{B^{s - n (1/p - 1/r)}_{r,q}} ≤ C ‖u‖_{B^s_{p,q}}` for every `s`, every `q ≥ 1` and every
+`u ∈ B^s_{p,q}`. -/
+theorem exists_norm_inclusionOfExponentLE_le (hpr : p ≤ r) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {s : ℝ} {q : ℝ≥0∞} [Fact (1 ≤ q)] (u : BesovSpace F φ s p q),
+      ‖inclusionOfExponentLE F φ q hpr u‖ ≤ C * ‖u‖ := by
+  obtain ⟨C, hC, h⟩ := exists_norm_le_of_toDistr_eq_of_exponent_le (F := F) (φ := φ) hpr
+  exact ⟨C, hC, fun u ↦ h (toDistr_inclusionOfExponentLE hpr u).symm⟩
+
+end Bernstein
+
 section SingleBlock
 
 variable [Fact (1 ≤ q)]
@@ -516,6 +650,75 @@ theorem exists_toDistr_eq_and_norm_eq_of_norm_le (f : 𝓢(E, F))
   simpa using exists_toDistr_eq_and_norm_eq (s := s) (q := q) 0 f hf'
 
 end SingleBlock
+
+section ChangeOfBump
+
+variable [Fact (1 ≤ q)]
+
+/-- The Besov norms built from two bump functions are comparable: there is `C`, depending only on
+`φ`, `φ'` and `s`, with `‖u‖_{B'} ≤ C ‖u‖_B`. -/
+private theorem exists_norm_toBesovSpace_of_bump_le (φ' : ContDiffBump (0 : E)) :
+    ∃ C : ℝ, ∀ u : BesovSpace F φ s p q,
+      ‖(u.memBesov_toDistr.of_bump φ').toBesovSpace‖ ≤ C * ‖u‖ := by
+  obtain ⟨K, L, hK, hKL⟩ := exists_littlewoodPaleyBlock_eq_and_le (F := F) φ φ' s
+  refine ⟨K * (2 * L), fun u ↦ ?_⟩
+  obtain ⟨f', hf', hle⟩ := hKL u.block fun k ↦ (coe_block u k).symm
+  have hv (j : ℕ) : (u.memBesov_toDistr.of_bump φ').toBesovSpace.block j = f' j :=
+    LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
+      simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply, coe_block,
+        MemBesov.toDistr_toBesovSpace, hf' j]
+  -- The weighted block norms of `u`, and their window sums, as elements of `ℓ^q`.
+  set b : lp (fun _ : ℕ ↦ ℝ) q := ⟨fun k ↦ ‖u.weightedBlocks k‖, (lp.memℓp _).norm⟩
+  set w : lp (fun _ : ℕ ↦ ℝ) q :=
+    ⟨fun j ↦ ∑ k ∈ Finset.Ico (j - L) (j + L), b k, (lp.memℓp b).sum_Ico_sub_add L⟩
+  -- The entries of the anonymous `lp` elements `b` and `w` are their defining sequences by
+  -- definition: `lp` coerces through `Subtype.val` and has no lemma evaluating an anonymous
+  -- constructor.
+  have hw (j : ℕ) : w j = ∑ k ∈ Finset.Ico (j - L) (j + L), ‖u.weightedBlocks k‖ := rfl
+  have hp : q ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
+  have hb : ‖b‖ ≤ ‖u‖ := by
+    rw [← norm_weightedBlocks]
+    exact lp.norm_mono hp fun k ↦ (norm_norm _).le
+  calc ‖(u.memBesov_toDistr.of_bump φ').toBesovSpace‖ ≤ ‖K • w‖ := by
+        rw [← norm_weightedBlocks]
+        refine lp.norm_mono hp fun j ↦ ?_
+        rw [norm_weightedBlocks_apply, hv, lp.coeFn_smul, Pi.smul_apply, norm_smul,
+          Real.norm_of_nonneg hK, hw, Real.norm_of_nonneg (by positivity)]
+        simpa only [norm_weightedBlocks_apply] using hle j
+    _ = K * ‖w‖ := by rw [norm_smul, Real.norm_of_nonneg hK]
+    _ ≤ K * (2 * L * ‖b‖) := by
+        gcongr
+        exact lp.norm_le_of_forall_eq_sum_Ico_sub_add L fun _ ↦ rfl
+    _ ≤ K * (2 * L) * ‖u‖ := by rw [mul_assoc K]; gcongr
+
+variable (F) in
+/-- **Independence of the bump function.** The Besov spaces `B^s_{p,q}` built from the
+Littlewood–Paley partitions of two bump functions `φ` and `φ'` consist of the same tempered
+distributions, with equivalent norms: the identity on tempered distributions is an isomorphism of
+normed spaces between them (Triebel, *Theory of Function Spaces*, Section 2.3.2). -/
+def bumpEquiv (φ φ' : ContDiffBump (0 : E)) (s : ℝ) (p q : ℝ≥0∞) [Fact (1 ≤ p)] [Fact (1 ≤ q)] :
+    BesovSpace F φ s p q ≃L[ℂ] BesovSpace F φ' s p q :=
+  LinearEquiv.toContinuousLinearEquivOfBounds
+    { toFun u := (u.memBesov_toDistr.of_bump φ').toBesovSpace
+      invFun v := (v.memBesov_toDistr.of_bump φ).toBesovSpace
+      map_add' _ _ := ext rfl
+      map_smul' _ _ := ext rfl
+      left_inv _ := ext rfl
+      right_inv _ := ext rfl }
+    _ _ (exists_norm_toBesovSpace_of_bump_le φ').choose_spec
+    (exists_norm_toBesovSpace_of_bump_le φ).choose_spec
+
+@[simp]
+theorem toDistr_bumpEquiv (φ' : ContDiffBump (0 : E)) (u : BesovSpace F φ s p q) :
+    (bumpEquiv F φ φ' s p q u).toDistr = u.toDistr := by rfl
+
+@[simp]
+theorem bumpEquiv_symm (φ' : ContDiffBump (0 : E)) :
+    (bumpEquiv F φ φ' s p q).symm = bumpEquiv F φ' φ s p q := by
+  ext u
+  rfl
+
+end ChangeOfBump
 
 end BesovSpace
 
