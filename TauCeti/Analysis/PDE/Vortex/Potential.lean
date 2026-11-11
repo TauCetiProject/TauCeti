@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.Function.Lp.IntegralFunctional
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.MeasureTheory.Measure.WithDensity
+import TauCeti.Analysis.SpecialFunctions.Exp.Modular
 
 /-!
 # Weak lower semicontinuity of the reduced vortex potential
@@ -19,8 +20,9 @@ vortex equation gives the potential
 `∫ (|P|² / (1 + |P|²)) (exp(2w) - 1 - 2w)`.
 
 This file treats it as an extended nonnegative integral on real `L²(ℂ)`, for any measure on the
-plane. It is weakly lower semicontinuous, including at functions where it is infinite, and finite
-on continuous compactly supported corrections. Thus passage to a weak limit does not lose the
+plane and any measurable weight in place of `|P|² / (1 + |P|²)`. It is weakly lower semicontinuous,
+including at functions where it is infinite, and finite on continuous compactly supported
+corrections. Thus passage to a weak limit does not lose the
 nonlinear potential in the variational existence argument
 (`TauCeti.Vortex.exists_forall_sobolevReducedFunctional_le`).
 
@@ -40,19 +42,19 @@ open scoped ENNReal
 
 namespace TauCeti.Vortex
 
-/-- The nonlinear potential of the background-subtracted vortex equation is weakly lower
-semicontinuous on real `L²(ℂ, μ)`, for every measure `μ` on the plane against which both the
-`L²` space and the potential are taken. No monicity, degree, or integrability assumption on the
-polynomial or on the potential is needed. -/
-theorem lowerSemicontinuous_lintegral_ofReal_mul_exp_sub_one_sub (P : Polynomial ℂ)
-    (μ : Measure ℂ) :
+/-- The nonlinear potential `∫ h (exp(2u) - 1 - 2u)` of the background-subtracted vortex equation
+is weakly lower semicontinuous on real `L²(ℂ, μ)`, for every measure `μ` on the plane against which
+both the `L²` space and the potential are taken, and every a.e.-measurable real weight `h`. Where
+`h` is negative the integrand is cut off at zero by `ENNReal.ofReal`. No integrability assumption
+on the potential is needed. The weight of the vortex equation with zero divisor `P` is
+`h = ‖P‖² / (1 + ‖P‖²)`. -/
+theorem lowerSemicontinuous_lintegral_ofReal_mul_exp_sub_one_sub {μ : Measure ℂ} {h : ℂ → ℝ}
+    (hh : AEMeasurable h μ) :
     LowerSemicontinuous (fun u : WeakSpace ℝ (Lp ℝ 2 μ) ↦
-      ∫⁻ z, ENNReal.ofReal (‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
+      ∫⁻ z, ENNReal.ofReal (h z *
         (Real.exp (2 * ((toWeakSpace ℝ (Lp ℝ 2 μ)).symm u z)) - 1 -
           2 * ((toWeakSpace ℝ (Lp ℝ 2 μ)).symm u z))) ∂μ) := by
-  let h : ℂ → ℝ := fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2)
   let Φ : ℝ → ℝ := fun t ↦ Real.exp (2 * t) - 1 - 2 * t
-  have hh : Continuous h := by dsimp [h]; fun_prop (disch := intro z; positivity)
   have hΦ : Continuous Φ := by dsimp [Φ]; fun_prop
   have hconv : ConvexOn ℝ univ Φ := by
     have hlin := (LinearMap.mulLeft ℝ (2 : ℝ)).concaveOn (convex_univ : Convex ℝ (univ : Set ℝ))
@@ -64,13 +66,13 @@ theorem lowerSemicontinuous_lintegral_ofReal_mul_exp_sub_one_sub (P : Polynomial
         ∫⁻ z, ENNReal.ofReal (h z * Φ (u z)) ∂μ := by
     have hmeas : AEMeasurable (fun z ↦ ENNReal.ofReal (Φ (u z))) μ :=
       aemeasurable_ofReal_comp_Lp Measure.AbsolutelyContinuous.rfl hΦ u
-    rw [lintegral_withDensity_eq_lintegral_mul₀ hh.aemeasurable.ennreal_ofReal hmeas]
+    rw [lintegral_withDensity_eq_lintegral_mul₀ hh.ennreal_ofReal hmeas]
     apply lintegral_congr
     intro z
-    rw [ENNReal.ofReal_mul (by dsimp [h]; positivity), Pi.mul_apply]
+    rw [ENNReal.ofReal_mul' (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _), Pi.mul_apply]
   have hlsc := lowerSemicontinuous_lintegral_ofReal_comp_toWeakSpace_symm (p := 2)
     (withDensity_absolutelyContinuous μ (fun z ↦ ENNReal.ofReal (h z))) hΦ hconv
-  simpa only [heq, h, Φ] using hlsc
+  simpa only [heq, Φ] using hlsc
 
 /-- Continuous compactly supported corrections have finite nonlinear vortex potential.
 This supplies a finite-potential domain for the extended functional. -/
