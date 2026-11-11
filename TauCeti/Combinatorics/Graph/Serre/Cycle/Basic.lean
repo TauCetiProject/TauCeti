@@ -304,7 +304,7 @@ theorem eq_zero_of_incidenceBoundary_eq_zero
     Finsupp.mapDomain_injective hi (by simpa using hinj (hboundary.trans (map_zero _).symm))
   rw [← hb, hbzero, Finsupp.mapDomain_zero]
 
-/-- If the boundary is injective on a dart subset, chains in any larger dart set are
+/-- If the boundary is injective on a dart subset, chains in any ambient dart set are
 determined by their boundaries and their coordinates outside that subset. -/
 theorem eq_of_incidenceBoundary_eq_of_forall_notMem
     (hinj : Function.Injective (Γ.incidenceBoundary F R)) (c d : O →₀ R)
