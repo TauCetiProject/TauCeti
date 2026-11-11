@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Torsion.Basic
+public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.Dimension.Free
 public import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 public import Mathlib.RingTheory.LocalRing.Module
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+import Mathlib.Algebra.Module.Shrink
 
 /-!
 # Generators of modules over a local ring
@@ -38,6 +41,10 @@ covers is how minimal free resolutions are built.
   basis.
 * `TauCeti.IsLocalRing.exists_surjective_ker_le_maximalIdeal_smul`: a finite module over a local
   ring `(R, 𝔪, k)` is a quotient of `R ^ dim_k (k ⊗ M)` by a submodule of `𝔪 • R ^ dim_k (k ⊗ M)`.
+* `TauCeti.IsLocalRing.exists_linearMap_quotient_eq_one`: an element of a module `M` outside
+  `𝔪 • M` is sent to `1` by a linear map `M → R ⧸ 𝔪`.
+* `Module.free_of_projective_of_isLocalRing`: a finitely generated projective module over a local
+  ring is free, for any `AddCommMonoid` module.
 
 ## References
 
@@ -122,4 +129,56 @@ theorem exists_surjective_ker_le_maximalIdeal_smul [Module.Finite R M] :
   exact Submodule.sum_mem _ fun j _ ↦ Submodule.smul_mem_smul
     ((_root_.IsLocalRing.residue_eq_zero_iff _).mp (hres j)) Submodule.mem_top
 
+universe u v in
+/-- A finite module over a local ring is a quotient of a finite free module, with free module in
+the universe of the module, by a submodule contained in `𝔪 • ⊤`. -/
+theorem exists_surjective_ker_le_maximalIdeal_smul_shrink {R : Type u} [CommRing R]
+    [_root_.IsLocalRing R] [Small.{v} R] (M : Type v) [AddCommGroup M] [Module R M]
+    [Module.Finite R M] :
+    ∃ (n : ℕ) (g : (Fin n → Shrink.{v} R) →ₗ[R] M),
+      Function.Surjective g ∧ LinearMap.ker g ≤ _root_.IsLocalRing.maximalIdeal R • ⊤ := by
+  obtain ⟨f, hf, hfker⟩ := exists_surjective_ker_le_maximalIdeal_smul R M
+  let e : (Fin (Module.finrank (_root_.IsLocalRing.ResidueField R)
+      (_root_.IsLocalRing.ResidueField R ⊗[R] M)) → Shrink.{v} R) ≃ₗ[R]
+      (Fin (Module.finrank (_root_.IsLocalRing.ResidueField R)
+        (_root_.IsLocalRing.ResidueField R ⊗[R] M)) → R) :=
+    LinearEquiv.piCongrRight fun _ ↦ Shrink.linearEquiv R R
+  refine ⟨_, f ∘ₗ e.toLinearMap, hf.comp e.surjective, ?_⟩
+  rw [LinearMap.ker_comp, Submodule.comap_equiv_eq_map_symm]
+  refine (Submodule.map_mono hfker).trans ?_
+  rw [Submodule.map_smul'', Submodule.map_top, LinearEquiv.range]
+
+/-- **An element of a module over a local ring outside `𝔪 • M` is sent to `1` by a linear map to
+the residue field**, since its class in the vector space `M ⧸ 𝔪 • M` is nonzero. -/
+theorem exists_linearMap_quotient_eq_one {m : M}
+    (hm : m ∉ _root_.IsLocalRing.maximalIdeal R • (⊤ : Submodule R M)) :
+    ∃ r : M →ₗ[R] R ⧸ _root_.IsLocalRing.maximalIdeal R, r m = 1 := by
+  let : Field (R ⧸ _root_.IsLocalRing.maximalIdeal R) := Ideal.Quotient.field _
+  have hx : (Submodule.Quotient.mk m : M ⧸ _root_.IsLocalRing.maximalIdeal R • (⊤ : Submodule R M))
+      ≠ 0 := by
+    rwa [Ne, Submodule.Quotient.mk_eq_zero]
+  obtain ⟨φ, hφ⟩ :=
+    Module.Projective.exists_dual_eq_one (R ⧸ _root_.IsLocalRing.maximalIdeal R) hx
+  exact ⟨(φ.restrictScalars R) ∘ₗ Submodule.mkQ _, hφ⟩
+
+/-- A scalar killing a nonzero element of a module over a local ring lies in the maximal ideal,
+since a unit kills only zero. -/
+theorem mem_maximalIdeal_of_smul_eq_zero {m : M} (hm : m ≠ 0) {r : R} (h : r • m = 0) :
+    r ∈ _root_.IsLocalRing.maximalIdeal R := by
+  by_contra hr
+  exact hm (((_root_.IsLocalRing.notMem_maximalIdeal.mp hr).smul_eq_zero).mp h)
+
 end TauCeti.IsLocalRing
+
+namespace Module
+
+/-- A finitely generated projective module over a local ring is free. This is
+`Module.free_of_flat_of_isLocalRing`, once the module carries the additive group structure that
+it asks for. -/
+theorem free_of_projective_of_isLocalRing {R M : Type*} [CommRing R] [IsLocalRing R]
+    [AddCommMonoid M] [Module R M] [Module.Finite R M] [Module.Projective R M] :
+    Module.Free R M :=
+  let _ := Module.addCommMonoidToAddCommGroup R (M := M)
+  Module.free_of_flat_of_isLocalRing
+
+end Module

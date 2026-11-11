@@ -35,16 +35,20 @@ reflexivity), and `ℓ²` is finitely representable in every infinite-dimensiona
 * `LinearIsometry.finitelyRepresentable_of_denseRange`: a space is finitely representable in
   each of its isometrically embedded dense subspaces; so a space and its completion are each
   finitely representable in the other (`TauCeti.finitelyRepresentable_completion_iff`).
-* `TauCeti.finitelyRepresentable_iff_banachMazurDist_lt`: over `ℝ` or `ℂ`, `E` is finitely
-  representable in `F` if and only if every finite-dimensional subspace of `E` is at
-  Banach–Mazur distance less than `1 + ε` from some subspace of `F`, for every `ε > 0`.
+* `TauCeti.finitelyRepresentable_iff_banachMazurDist_lt`: over a densely normed field such as
+  `ℝ`, `ℂ` or `ℚ`, `E` is finitely representable in `F` if and only if every
+  finite-dimensional subspace of `E` is at Banach–Mazur distance less than `1 + ε` from some
+  subspace of `F`, for every `ε > 0`.
 
 ## Implementation notes
 
 The definition uses the two-sided bounds `(1 - ε) ‖x‖ ≤ ‖T x‖ ≤ (1 + ε) ‖x‖`, which make sense
-over every normed field. Over `ℝ` or `ℂ` they are equivalent to the classical formulation by the
-Banach–Mazur distance `‖T‖ ‖T⁻¹‖`, in which a rescaling of `T` is allowed; over a general normed
-field the norms of scalars need not fill out the positive reals, so the two formulations differ.
+over every normed field. The classical formulation by the Banach–Mazur distance `‖T‖ ‖T⁻¹‖`
+allows a rescaling of `T`. The two agree over every field whose norms of scalars are dense in
+the positive reals (a `DenselyNormedField`), such as `ℝ`, `ℂ` or `ℚ`, since the rescaling only
+needs a scalar whose norm lies in a small interval; completeness of the field is not needed. Over
+a discretely valued field such as `ℚ_p` the norms of scalars form a discrete set, and the two
+formulations differ.
 
 ## References
 
@@ -210,14 +214,14 @@ theorem finitelyRepresentable_completion_iff :
 
 end Completion
 
-section RCLike
+section DenselyNormedField
 
-variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+variable {𝕜 E F : Type*} [DenselyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-/-- Over `ℝ` or `ℂ`, `E` is finitely representable in `F` if and only if, for every `ε > 0`,
-every finite-dimensional subspace of `E` is isomorphic to a subspace of `F` at Banach–Mazur
-distance less than `1 + ε`. -/
+/-- Over a densely normed field such as `ℝ`, `ℂ` or `ℚ`, `E` is finitely representable in `F` if
+and only if, for every `ε > 0`, every finite-dimensional subspace of `E` is isomorphic to a
+subspace of `F` at Banach–Mazur distance less than `1 + ε`. -/
 theorem finitelyRepresentable_iff_banachMazurDist_lt :
     FinitelyRepresentable 𝕜 E F ↔
       ∀ S : Submodule 𝕜 E, FiniteDimensional 𝕜 S → ∀ ε : ℝ, 0 < ε →
@@ -236,17 +240,21 @@ theorem finitelyRepresentable_iff_banachMazurDist_lt :
       have := (hT x).1
       rw [hx, norm_zero] at this
       nlinarith [norm_nonneg x]
+    -- The bounds make the linear equivalence onto the range continuous in both directions, with
+    -- no completeness assumption on `𝕜`.
     let R := LinearMap.range (T : S →ₗ[𝕜] F)
-    let e : S ≃L[𝕜] R := (LinearEquiv.ofInjective (T : S →ₗ[𝕜] F) hinj).toContinuousLinearEquiv
-    have he (x : S) : ‖e x‖ = ‖T x‖ := by simp [e, ← Submodule.norm_coe]
+    let e₀ : S ≃ₗ[𝕜] R := LinearEquiv.ofInjective (T : S →ₗ[𝕜] F) hinj
+    have he (x : S) : ‖e₀ x‖ = ‖T x‖ := by simp [e₀, R, ← Submodule.norm_coe]
+    have hto (x : S) : ‖e₀ x‖ ≤ (1 + δ) * ‖x‖ := by simpa [he] using (hT x).2
+    have hinv (y : R) : ‖e₀.symm y‖ ≤ (1 - δ)⁻¹ * ‖y‖ := by
+      obtain ⟨x, rfl⟩ := e₀.surjective y
+      simpa [he, le_inv_mul_iff₀ hδ1] using (hT x).1
+    let e : S ≃L[𝕜] R := e₀.toContinuousLinearEquivOfBounds (1 + δ) (1 - δ)⁻¹ hto hinv
     refine ⟨R, ⟨e⟩, (banachMazurDist_le e).trans_lt ?_⟩
     have h₁ : ‖(e : S →L[𝕜] R)‖ ≤ 1 + δ :=
-      ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun x ↦ by
-        simpa [he] using (hT x).2
+      ContinuousLinearMap.opNorm_le_bound _ (by positivity) hto
     have h₂ : ‖(e.symm : R →L[𝕜] S)‖ ≤ (1 - δ)⁻¹ :=
-      ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun y ↦ by
-        obtain ⟨x, rfl⟩ := e.surjective y
-        simpa [he, le_inv_mul_iff₀ hδ1] using (hT x).1
+      ContinuousLinearMap.opNorm_le_bound _ (by positivity) hinv
     calc ‖(e : S →L[𝕜] R)‖ * ‖(e.symm : R →L[𝕜] S)‖ ≤ (1 + δ) * (1 - δ)⁻¹ := by
           gcongr
       _ < 1 + ε := by
@@ -257,21 +265,22 @@ theorem finitelyRepresentable_iff_banachMazurDist_lt :
     obtain ⟨e, he⟩ := banachMazurDist_lt_iff.1 hd
     rcases subsingleton_or_nontrivial S with hS | hS
     · exact ⟨0, fun x ↦ by simp [Subsingleton.elim x 0]⟩
-    -- Rescale `e` by `c = ‖e⁻¹‖`, so that it no longer shrinks any vector.
+    -- Rescale `e` by a scalar `a` with `‖e⁻¹‖ < ‖a‖ < (1 + ε) / ‖e‖`; the norms are dense.
+    set k := ‖(e : S →L[𝕜] G)‖
     set c := ‖(e.symm : G →L[𝕜] S)‖
-    have h₁ : 1 ≤ ‖(e : S →L[𝕜] G)‖ * c :=
-      (one_le_banachMazurDist hne).trans (banachMazurDist_le e)
+    have h₁ : 1 ≤ k * c := (one_le_banachMazurDist hne).trans (banachMazurDist_le e)
     have hc : 0 ≤ c := norm_nonneg _
-    refine ⟨(c : 𝕜) • G.subtypeL.comp (e : S →L[𝕜] G), fun x ↦ ?_⟩
-    have hTx : ‖((c : 𝕜) • G.subtypeL.comp (e : S →L[𝕜] G)) x‖ = c * ‖e x‖ := by
-      simp [norm_smul, abs_of_nonneg hc]
-    have hlow : ‖x‖ ≤ c * ‖e x‖ := by
-      simpa using (e.symm : G →L[𝕜] S).le_opNorm (e x)
-    have hup : ‖e x‖ ≤ ‖(e : S →L[𝕜] G)‖ * ‖x‖ := (e : S →L[𝕜] G).le_opNorm x
+    have hk_nonneg : 0 ≤ k := norm_nonneg _
+    have hk : 0 < k := by nlinarith
+    obtain ⟨a, ha₁, ha₂⟩ := NormedField.exists_lt_norm_lt 𝕜 hc ((lt_div_iff₀' hk).2 he)
+    refine ⟨a • G.subtypeL.comp (e : S →L[𝕜] G), fun x ↦ ?_⟩
+    have hTx : ‖(a • G.subtypeL.comp (e : S →L[𝕜] G)) x‖ = ‖a‖ * ‖e x‖ := by simp [norm_smul]
+    have hlow : ‖x‖ ≤ c * ‖e x‖ := by simpa using (e.symm : G →L[𝕜] S).le_opNorm (e x)
+    have hup : ‖e x‖ ≤ k * ‖x‖ := (e : S →L[𝕜] G).le_opNorm x
     rw [hTx]
-    have hx := norm_nonneg x
-    constructor <;> nlinarith [mul_le_mul_of_nonneg_left hup hc]
+    constructor <;> nlinarith [mul_le_mul_of_nonneg_right ha₁.le (norm_nonneg (e x)),
+      mul_le_mul_of_nonneg_left hup (norm_nonneg a), (lt_div_iff₀ hk).1 ha₂, norm_nonneg x]
 
-end RCLike
+end DenselyNormedField
 
 end TauCeti

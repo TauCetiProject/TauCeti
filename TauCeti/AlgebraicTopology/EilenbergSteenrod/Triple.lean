@@ -161,8 +161,9 @@ lemma map_innerToTotal_comp_map_totalToOuter (i : ι) (T : TopTriple.{u}) :
         (TopPair.ofHom T.outerMap (𝟙 T.snd) : diag.obj T.snd ⟶ outerPair.obj T) :=
     MorphismProperty.Arrow.Hom.ext ((Category.id_comp _).trans (Category.comp_id _).symm)
       ((Category.comp_id _).trans (Category.id_comp _).symm)
+  have : IsIso (diag.obj T.snd).map := inferInstanceAs (IsIso (𝟙 T.snd))
   rw [← CategoryTheory.Functor.map_comp, h, CategoryTheory.Functor.map_comp,
-    (HP.isZero_Hₚ_diag i T.snd).eq_of_tgt
+    (HP.isZero_Hₚ_of_isIso_map i (diag.obj T.snd)).eq_of_tgt
     ((HP.Hₚ i).map _) 0, zero_comp]
 
 end Preadditive
@@ -188,13 +189,10 @@ theorem exact_triple_total (i : ι) (T : TopTriple.{u}) :
       (z : W₁ ⟶ (HP.Hₚ i).obj (innerPair.obj T)) (w : W₁ ⟶ (HP.H i).obj T.fst),
       π₁ ≫ y = z ≫ (HP.Hₚ i).map (innerToTotal.app T) +
         w ≫ HP.hFstToHₚ i (totalPair.obj T) := by
-    by_cases hi : ∃ j, c.Rel i j
+    obtain ⟨j, hij⟩ | hi := em (∃ j, c.Rel i j)
     · -- The boundary of `y` in `Hⱼ(B)` vanishes in `Hⱼ(A)`, so it is a boundary of `Hᵢ(A, B)`.
-      obtain ⟨j, hij⟩ := hi
-      have h := HP.map_comp_pairδ i j (totalToOuter.app T)
-      rw [totalToOuter_app_snd] at h
       have hy' : (y ≫ HP.pairδ i j (totalPair.obj T)) ≫ (HP.H j).map T.innerMap = 0 := by
-        rw [Category.assoc, ← h, reassoc_of% hy, zero_comp]
+        rw [Category.assoc, ← totalToOuter_app_snd, ← map_comp_pairδ, reassoc_of% hy, zero_comp]
       obtain ⟨W₁, π₁, _, (z : W₁ ⟶ (HP.Hₚ i).obj (innerPair.obj T)), hz⟩ :=
         ((HP.exact_snd (innerPair.obj T) i j hij).exact 0).exact_up_to_refinements _ hy'
       replace hz : π₁ ≫ y ≫ HP.pairδ i j (totalPair.obj T) =
@@ -225,19 +223,8 @@ theorem exact_triple_total (i : ι) (T : TopTriple.{u}) :
     ((HP.exact_fst (outerPair.obj T) i).exact 0).exact_up_to_refinements _ hw
   replace hv : π₂ ≫ w = v ≫ (HP.H i).map T.outerMap := hv
   refine ⟨W₂, π₂ ≫ π₁, epi_comp _ _, π₂ ≫ z + v ≫ HP.hFstToHₚ i (innerPair.obj T), ?_⟩
-  have hn := HP.hFstToHₚ_naturality (innerToTotal.app T) i
-  rw [innerToTotal_app_fst] at hn
-  simp only [hzw, Preadditive.comp_add, Preadditive.add_comp, Category.assoc]
-  apply congrArg (π₂ ≫ z ≫ (HP.Hₚ i).map (innerToTotal.app T) + ·)
-  calc
-    π₂ ≫ w ≫ HP.hFstToHₚ i (totalPair.obj T) =
-        (π₂ ≫ w) ≫ HP.hFstToHₚ i (totalPair.obj T) := (Category.assoc _ _ _).symm
-    _ = (v ≫ (HP.H i).map T.outerMap) ≫ HP.hFstToHₚ i (totalPair.obj T) :=
-      congrArg (· ≫ HP.hFstToHₚ i (totalPair.obj T)) hv
-    _ = v ≫ HP.hFstToHₚ i (innerPair.obj T) ≫
-        (HP.Hₚ i).map (innerToTotal.app T) := by
-      erw [Category.assoc, ← hn]
-    _ = _ := by simp only [hFstToHₚ, Category.assoc]
+  rw [Category.assoc, hzw, Preadditive.comp_add, Preadditive.add_comp, Category.assoc,
+    Category.assoc, reassoc_of% hv, hFstToHₚ_naturality, innerToTotal_app_fst]
 
 /-- Exactness of the sequence of a triple at `Hᵢ(X, A)`:
 `Hᵢ(X, B) ⟶ Hᵢ(X, A) ⟶ Hⱼ(A, B)` is exact for `c.Rel i j`. -/

@@ -114,6 +114,40 @@ namespace Complex
 
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
 
+/-- The radial Jacobian makes the complex polar pullback of an integrable function integrable.
+This does not assert integrability on every angular slice; exceptional radii are only null. -/
+theorem _root_.MeasureTheory.Integrable.comp_complexPolarCoord_symm {f : ℂ → W}
+    (hf : Integrable f volume) :
+    IntegrableOn (fun p : ℝ × ℝ => p.1 • f (Complex.polarCoord.symm p))
+      _root_.polarCoord.target := by
+  have hr : Integrable (f ∘ Complex.measurableEquivRealProd.symm) volume :=
+    (Complex.volume_preserving_equiv_real_prod.symm.integrable_comp_emb
+      Complex.measurableEquivRealProd.symm.measurableEmbedding).mpr hf
+  have h := (integrableOn_image_iff_integrableOn_abs_det_fderiv_smul
+    (μ := (volume : Measure (ℝ × ℝ))) _root_.polarCoord.open_target.measurableSet
+    (fun p _ => (hasFDerivAt_polarCoord_symm p).hasFDerivWithinAt)
+    _root_.polarCoord.symm.injOn (f ∘ Complex.measurableEquivRealProd.symm)).mp
+      (by simpa only [OpenPartialHomeomorph.symm_image_target_eq_source] using hr.integrableOn)
+  refine h.congr (ae_restrict_of_forall_mem _root_.polarCoord.open_target.measurableSet
+    fun p hp => ?_)
+  dsimp only
+  rw [det_fderivPolarCoordSymm, abs_of_pos hp.1]
+  rfl
+
+/-- Polar Fubini for an integrable planar function, with angular slices understood almost
+everywhere in the radius. Integrable point singularities require no continuous extension. -/
+theorem _root_.MeasureTheory.Integrable.integral_eq_integral_circleMap {f : ℂ → W}
+    (hf : Integrable f volume) (c : ℂ) :
+    (∫ z, f z) = ∫ r in Ioi (0 : ℝ), r • ∫ θ in -π..π, f (circleMap c r θ) := by
+  have hg : Integrable (fun z : ℂ => f (c + z)) volume := hf.comp_add_left c
+  have hp := hg.comp_complexPolarCoord_symm
+  rw [← integral_add_left_eq_self f c, ← Complex.integral_comp_polarCoord_symm]
+  rw [_root_.polarCoord_target, Measure.volume_eq_prod] at hp ⊢
+  rw [setIntegral_prod _ hp]
+  simp only [TauCeti.add_polarCoord_symm_eq_circleMap, integral_smul,
+    ← integral_Ioc_eq_integral_Ioo,
+    intervalIntegral.integral_of_le (by linarith [Real.pi_pos] : -π ≤ π)]
+
 /-- Polar integration over the closed annulus of radii `a` and `b` about `z₀`, with radial
 Jacobian `p.1`, including the disc case `a = 0`. The angular interval includes both endpoints,
 whose contribution is null. -/

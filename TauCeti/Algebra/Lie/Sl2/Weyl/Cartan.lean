@@ -57,11 +57,12 @@ variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] [LieA
 /-- **The Weyl automorphism of a root acts on the Cartan subalgebra as its coreflection.** For an
 `sl₂` triple `(h, e, f)` with `e` in the root space of a root `α` and `f` in that of `-α`, the Weyl
 automorphism `exp (ad e) exp (-ad f) exp (ad e)` sends `y ∈ H` to its coreflection
-`y - α y • α^∨`. The nilpotency proofs `he` and `hf` passed to `TauCeti.weylAut` are arbitrary. -/
+`y - α y • α^∨`. Only local nilpotence of `ad e` and `ad f` is asked for, as by
+`TauCeti.weylAut`; the proofs `he` and `hf` are arbitrary. -/
 theorem _root_.IsSl2Triple.weylAut_apply_coe_of_mem_rootSpace {i : H.root} {h e f : L}
-    (t : IsSl2Triple h e f) (he : IsNilpotent (ad K L e)) (hf : IsNilpotent (ad K L f))
-    (heα : e ∈ rootSpace H (i : Weight K H L)) (hfα : f ∈ rootSpace H (-(i : Weight K H L)))
-    (y : H) :
+    (t : IsSl2Triple h e f) (he : ∀ y, ∃ k, ((ad K L e) ^ k) y = 0)
+    (hf : ∀ y, ∃ k, ((ad K L f) ^ k) y = 0) (heα : e ∈ rootSpace H (i : Weight K H L))
+    (hfα : f ∈ rootSpace H (-(i : Weight K H L))) (y : H) :
     weylAut t he hf (y : L) = ((rootSystem H).coreflection i y : L) := by
   have hα : (i : Weight K H L).IsNonZero := (Finset.mem_filter.mp i.2).2
   have hye : ⁅(y : L), e⁆ = (i : Weight K H L) y • e := lie_eq_smul_of_mem_rootSpace heα y
@@ -89,7 +90,8 @@ theorem exists_mem_intLieAlgebra_forall_smul_eq_coweightEquiv (w : (rootSystem H
     have he := isNilpotent_ad_of_mem_rootSpace H (χ := ⇑(i : Weight K H L)) hα heα
     have hf := isNilpotent_ad_of_mem_rootSpace H (χ := ⇑(-(i : Weight K H L))) hα.neg hfα
     refine ⟨_, t.ofLinearEquiv_weylAut_mem_intLieAlgebra he hf, fun y ↦ ?_⟩
-    simpa using t.weylAut_apply_coe_of_mem_rootSpace he hf heα hfα y
+    simpa using t.weylAut_apply_coe_of_mem_rootSpace he.exists_pow_apply_eq_zero
+      hf.exists_pow_apply_eq_zero heα hfα y
   | one => exact ⟨1, one_mem _, fun y ↦ by simp⟩
   | mul x z _ _ hx hz =>
     -- the action on coweights reverses products

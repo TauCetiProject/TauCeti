@@ -46,11 +46,14 @@ weight basis is a closed subgroup scheme of `GLₙ`
 * `TauCeti.DynkinType.scLattice`: the direct sum of the fundamental lattices in `V_sc(t)`, with
   `TauCeti.DynkinType.mem_scLattice_iff` describing it componentwise.
 * `TauCeti.DynkinType.representation_mem_scLattice`: its stability under the Kostant form.
+* `TauCeti.DynkinType.scLattice_eq_orbitOfRep`: it is the Kostant orbit `U_ℤ · {v⁺ᵢ}` of the
+  highest weight vectors of the summands.
 * `TauCeti.DynkinType.instIsLatticeScLattice`: it is a full lattice in `V_sc(t)`.
-* `TauCeti.DynkinType.mem_iSup_jointWeightSpace_of_mem_scLattice`: it lies in the span of the
-  integral weight spaces.
+* `TauCeti.DynkinType.mem_iSup_jointWeightSpace_scModule`: the integral weight spaces span it.
 * `TauCeti.DynkinType.scWeightBasis` and `TauCeti.DynkinType.scWeight`: its numbered weight basis
   and the weights of the basis vectors.
+* `TauCeti.DynkinType.scWeightBasisCard_eq_finrank`: the basis has one vector per unit of rank.
+* `TauCeti.DynkinType.single_mem_range_scWeight`: each fundamental weight is a weight of the basis.
 * `TauCeti.DynkinType.span_range_scWeight_eq_top`: those weights span `Fin t.rank → ℤ`.
 
 ## References
@@ -122,24 +125,57 @@ theorem representation_mem_scLattice
   rw [h]
   exact t.representation_mem_fundamentalLattice ht hu (hx i)
 
+/-- The inclusion of the `i`-th summand carries the fundamental lattice of `L(ϖᵢ)` into the Kostant
+orbit of the highest weight vectors of all the summands. -/
+private theorem fundamentalLattice_le_comap_orbitOfRep (i : Fin t.rank) :
+    t.fundamentalLattice ht i ≤ (Subring.orbitOfRep (t.kostantForm ht)
+      (representation ℚ (t.lieAlgebra ht) (t.scModule ht))
+      (Set.range fun j =>
+        lof ℚ _ (t.fundamentalModule ht) j (t.fundamentalModuleGenerator ht j))).comap
+      ((lof ℚ _ (t.fundamentalModule ht) i).restrictScalars ℤ) := by
+  refine (t.fundamentalLattice_def ht i).trans_le ((Subring.orbitOfRep_le_iff _ _ _ _).2 ?_)
+  rintro u hu _ rfl
+  have h := Subring.apply_mem_orbitOfRep (t.kostantForm ht)
+    (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (Set.range fun j =>
+      lof ℚ _ (t.fundamentalModule ht) j (t.fundamentalModuleGenerator ht j)) hu
+    (Set.mem_range_self i)
+  rwa [representation_lof] at h
+
+/-- **The full-weight lattice is the Kostant orbit of the highest weight vectors**: it is the
+represented orbit `U_ℤ · {v⁺ᵢ}` of the highest weight vectors of the summands of `V_sc(t)` under
+the simple-generator Kostant form, the shape in which Steinberg defines an admissible lattice. -/
+theorem scLattice_eq_orbitOfRep :
+    t.scLattice ht = Subring.orbitOfRep (t.kostantForm ht)
+      (representation ℚ (t.lieAlgebra ht) (t.scModule ht))
+      (Set.range fun i =>
+        lof ℚ _ (t.fundamentalModule ht) i (t.fundamentalModuleGenerator ht i)) := by
+  refine le_antisymm (fun x hx => ?_) ((Subring.orbitOfRep_le_iff _ _ _ _).2 ?_)
+  · rw [← sum_univ_of x]
+    refine Submodule.sum_mem _ fun i _ => ?_
+    rw [← lof_eq_of ℚ]
+    exact t.fundamentalLattice_le_comap_orbitOfRep ht i (mem_scLattice_iff.mp hx i)
+  · rintro u hu _ ⟨i, rfl⟩
+    exact t.representation_mem_scLattice ht hu
+      (lof_mem_scLattice_iff.mpr (t.fundamentalModuleGenerator_mem_fundamentalLattice ht i))
+
 /-- **The full-weight lattice is a full lattice in `V_sc(t)`**: it is finitely generated over `ℤ`
 and spans `V_sc(t)` over `ℚ`, being the direct sum of full lattices of the summands. -/
 instance instIsLatticeScLattice : (t.scLattice ht).IsLattice ℚ :=
   Submodule.isLattice_map _ _
     (linearEquivFunOnFintype ℚ (Fin t.rank) (t.fundamentalModule ht)).symm.surjective
 
-/-- **The full-weight lattice lies in the span of the integral weight spaces** of the Cartan
-generators: each component does, and the inclusion of a summand preserves weight vectors
+/-- **The integral weight spaces of the Cartan generators span `V_sc(t)`**:
+each component does, and the inclusion of a summand preserves weight vectors
 (`TauCeti.UniversalEnvelopingAlgebra.lof_mem_iSup_jointWeightSpace`). -/
-theorem mem_iSup_jointWeightSpace_of_mem_scLattice {x : t.scModule ht}
-    (hx : x ∈ t.scLattice ht) :
+@[simp]
+theorem mem_iSup_jointWeightSpace_scModule (x : t.scModule ht) :
     x ∈ ⨆ μ : Fin t.rank → ℤ, jointWeightSpace (t.lieBasis ht).h
       (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) μ := by
   rw [← sum_univ_of x]
   refine Submodule.sum_mem _ fun i _ => ?_
   rw [← lof_eq_of ℚ]
   exact lof_mem_iSup_jointWeightSpace _
-    (t.mem_iSup_jointWeightSpace_of_mem_fundamentalLattice ht (mem_scLattice_iff.mp hx i))
+    (by rw [t.iSup_jointWeightSpace_eq_top ht i]; trivial)
 
 /-! ### The weight basis -/
 
@@ -168,7 +204,7 @@ noncomputable def scWeightBasis :
   kostantWeightBasisFin (LieAlgebra.Basis.rootGenerator (t.lieBasis ht)) (t.lieBasis ht).h
     (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (t.scLattice ht).toAddSubgroup
     (t.kostantForm_apply_mem_scLattice ht)
-    (fun x => t.mem_iSup_jointWeightSpace_of_mem_scLattice ht x.2)
+    (fun x => t.mem_iSup_jointWeightSpace_scModule ht x)
 
 /-- The defining equation of `TauCeti.DynkinType.scWeightBasis`, through which
 `TauCeti.UniversalEnvelopingAlgebra.kostantWeightBasisFin_apply` and the rest of the numbered-basis
@@ -178,24 +214,20 @@ theorem scWeightBasis_def :
       kostantWeightBasisFin (LieAlgebra.Basis.rootGenerator (t.lieBasis ht)) (t.lieBasis ht).h
         (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (t.scLattice ht).toAddSubgroup
         (t.kostantForm_apply_mem_scLattice ht)
-        (fun x => t.mem_iSup_jointWeightSpace_of_mem_scLattice ht x.2) :=
+        (fun x => t.mem_iSup_jointWeightSpace_scModule ht x) :=
   (rfl)
 
 /-- The weight of each vector of the weight basis of the full-weight lattice, in the
 fundamental-weight coordinates `μ ↦ (μ(hⱼ))ⱼ`. -/
 noncomputable def scWeight : Fin (t.scWeightBasisCard ht) → Fin t.rank → ℤ :=
-  kostantWeightFin (LieAlgebra.Basis.rootGenerator (t.lieBasis ht)) (t.lieBasis ht).h
-    (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (t.scLattice ht).toAddSubgroup
-    (t.kostantForm_apply_mem_scLattice ht)
-    (fun x => t.mem_iSup_jointWeightSpace_of_mem_scLattice ht x.2)
+  kostantWeightFin (t.lieBasis ht).h (representation ℚ (t.lieAlgebra ht) (t.scModule ht))
+    (t.scLattice ht).toAddSubgroup
 
 /-- The defining equation of `TauCeti.DynkinType.scWeight`. -/
 theorem scWeight_def :
     t.scWeight ht =
-      kostantWeightFin (LieAlgebra.Basis.rootGenerator (t.lieBasis ht)) (t.lieBasis ht).h
-        (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (t.scLattice ht).toAddSubgroup
-        (t.kostantForm_apply_mem_scLattice ht)
-        (fun x => t.mem_iSup_jointWeightSpace_of_mem_scLattice ht x.2) :=
+      kostantWeightFin (t.lieBasis ht).h (representation ℚ (t.lieAlgebra ht) (t.scModule ht))
+        (t.scLattice ht).toAddSubgroup :=
   (rfl)
 
 /-- **The weight basis of the full-weight lattice consists of weight vectors**: the Cartan
@@ -204,6 +236,28 @@ theorem isCartanWeightVector_scWeightBasis (x : Fin (t.scWeightBasisCard ht)) :
     IsCartanWeightVector (t.lieBasis ht).h (representation ℚ (t.lieAlgebra ht) (t.scModule ht))
       (t.scWeight ht x) ((t.scWeightBasis ht x : (t.scLattice ht).toAddSubgroup) : t.scModule ht) :=
   isCartanWeightVector_kostantWeightBasisFin _ _ _ _ _ _ x
+
+/-- The rank of the full-weight lattice is the number of vectors of its weight basis. -/
+theorem scWeightBasisCard_eq_finrank :
+    t.scWeightBasisCard ht = Module.finrank ℤ (t.scLattice ht).toAddSubgroup :=
+  nat_card_kostantWeightBasis_index_eq_finrank _ _ _ _
+    (t.kostantForm_apply_mem_scLattice ht)
+    fun x => t.mem_iSup_jointWeightSpace_scModule ht x
+
+/-- **Each fundamental weight is a weight of the weight basis**: its coordinate vector, the `i`-th
+standard basis vector of `Fin t.rank → ℤ`, is `scWeight x` for some `x`, since `v⁺ᵢ` is a nonzero
+vector of the full-weight lattice of weight `ϖᵢ`. -/
+theorem single_mem_range_scWeight (i : Fin t.rank) :
+    (Pi.single i 1 : Fin t.rank → ℤ) ∈ Set.range (t.scWeight ht) := by
+  rw [scWeight_def, mem_range_kostantWeightFin_iff, Submodule.ne_bot_iff]
+  have hl : lof ℚ _ (t.fundamentalModule ht) i (t.fundamentalModuleGenerator ht i) ∈
+      (t.scLattice ht).toAddSubgroup :=
+    lof_mem_scLattice_iff.mpr (t.fundamentalModuleGenerator_mem_fundamentalLattice ht i)
+  refine ⟨⟨_, hl⟩, ?_, ?_⟩
+  · rw [mem_weightSublattice_iff]
+    exact isCartanWeightVector_lof (t.isCartanWeightVector_fundamentalModuleGenerator ht i)
+  · rw [ne_eq, AddSubgroup.mk_eq_zero]
+    exact (t.isHighestWeightVector_lof_fundamentalModuleGenerator ht i).ne_zero
 
 /-- **The weights of the full-weight lattice span the weight lattice**: the weights carried by the
 weight basis span `Fin t.rank → ℤ` over `ℤ`, since the highest weight vector of the `i`-th summand
@@ -214,15 +268,8 @@ theorem span_range_scWeight_eq_top :
   refine eq_top_iff.mpr
     ((Pi.basisFun ℤ (Fin t.rank)).span_eq.ge.trans (Submodule.span_mono ?_))
   rintro _ ⟨i, rfl⟩
-  rw [Pi.basisFun_apply, scWeight_def, mem_range_kostantWeightFin_iff, Submodule.ne_bot_iff]
-  have hl : lof ℚ _ (t.fundamentalModule ht) i (t.fundamentalModuleGenerator ht i) ∈
-      (t.scLattice ht).toAddSubgroup :=
-    lof_mem_scLattice_iff.mpr (t.fundamentalModuleGenerator_mem_fundamentalLattice ht i)
-  refine ⟨⟨_, hl⟩, ?_, ?_⟩
-  · rw [mem_weightSublattice_iff]
-    exact isCartanWeightVector_lof (t.isCartanWeightVector_fundamentalModuleGenerator ht i)
-  · rw [ne_eq, AddSubgroup.mk_eq_zero]
-    exact (t.isHighestWeightVector_lof_fundamentalModuleGenerator ht i).ne_zero
+  rw [Pi.basisFun_apply]
+  exact t.single_mem_range_scWeight ht i
 
 end
 

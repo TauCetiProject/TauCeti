@@ -12,10 +12,10 @@ public import Mathlib.RingTheory.Nullstellensatz
 
 Let `K` be an algebraically closed extension of a field `k` and `σ` a finite type. An ideal of
 `k[X_σ]` whose polynomials have no common zero in `K^σ` is the unit ideal. This is the weak form of
-Hilbert's Nullstellensatz, read off from Mathlib's description of the maximal ideals of `k[X_σ]` as
-vanishing ideals of points of `K^σ` (`MvPolynomial.eq_vanishingIdeal_singleton_of_isMaximal`). It
-is the form in which a polynomial condition checked at the points of `K^σ` gives an identity in
-`k[X_σ]`.
+Hilbert's Nullstellensatz, read off from Mathlib's strong form
+`MvPolynomial.vanishingIdeal_zeroLocus_eq_radical`: the vanishing ideal of the empty set is the unit
+ideal, so an ideal with empty zero locus has unit radical. It is the form in which a polynomial
+condition checked at the points of `K^σ` gives an identity in `k[X_σ]`.
 
 ## Main results
 
@@ -36,11 +36,7 @@ variable {k K σ : Type*} [Field k] [Field K] [Algebra k K] [IsAlgClosed K] [Fin
 theorem zeroLocus_eq_empty_iff {I : Ideal (MvPolynomial σ k)} :
     zeroLocus K I = ∅ ↔ I = ⊤ := by
   refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
-  by_contra hI
-  obtain ⟨M, hM, hIM⟩ := I.exists_le_maximal hI
-  obtain ⟨x, rfl⟩ := eq_vanishingIdeal_singleton_of_isMaximal K hM
-  have hx : x ∈ zeroLocus K I := fun p hp ↦ (mem_vanishingIdeal_singleton_iff x p).mp (hIM hp)
-  simp [h] at hx
+  rw [← I.radical_eq_top, ← vanishingIdeal_zeroLocus_eq_radical (K := K), h, vanishingIdeal_empty]
 
 /-- **The weak Nullstellensatz for generators**: for an algebraically closed extension `K` of
 `k`, polynomials in `k[X_σ]` generate the unit ideal exactly when they have no common zero in

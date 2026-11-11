@@ -105,15 +105,6 @@ theorem isGenusOneFourPathShape_iff {x y z t : T.Component} :
           T.intersection z t = 2 * T.weight y) :=
   Iff.rfl
 
-/-- A component of self-intersection `-2w` has a nonnegative intersection number only with
-other components. -/
-private lemma ne_of_intersection_nonneg {i j : T.Component}
-    (hi : T.intersection i i = -(2 * (T.weight i : ℤ))) (h : 0 ≤ T.intersection i j) :
-    i ≠ j := by
-  rintro rfl
-  have := (T.weight i).pos
-  omega
-
 /-- The fibre relation when four distinct components exhaust a numerical type. -/
 private lemma fiber_relation_of_card_eq_four (hcard : Fintype.card T.Component = 4)
     {i j k l : T.Component} (hij : i ≠ j) (hik : i ≠ k) (hil : i ≠ l) (hjk : j ≠ k)
@@ -185,10 +176,10 @@ theorem isGenusOneFourPathShape_or_isGenusOneFourPathShape
     (hjk0 : 0 < T.intersection j k) (hkl0 : 0 < T.intersection k l) :
     T.IsGenusOneFourPathShape i j k l ∨ T.IsGenusOneFourPathShape l k j i := by
   -- The four components are distinct, so they exhaust `T` and each satisfies a fibre relation.
-  have hr := fiber_relation_of_card_eq_four hcard (ne_of_intersection_nonneg hi hij0.le)
-    (ne_of_intersection_nonneg hi hik0.ge) (ne_of_intersection_nonneg hi hil0.ge)
-    (ne_of_intersection_nonneg hj hjk0.le) (ne_of_intersection_nonneg hj hjl0.ge)
-    (ne_of_intersection_nonneg hk hkl0.le)
+  have hr := fiber_relation_of_card_eq_four hcard (T.ne_of_intersection_nonneg hi hij0.le)
+    (T.ne_of_intersection_nonneg hi hik0.ge) (T.ne_of_intersection_nonneg hi hil0.ge)
+    (T.ne_of_intersection_nonneg hj hjk0.le) (T.ne_of_intersection_nonneg hj hjl0.ge)
+    (T.ne_of_intersection_nonneg hk hkl0.le)
   have ri := hr i
   have rj := hr j
   have rk := hr k
@@ -280,6 +271,43 @@ theorem isGenusOneFourStarShape_iff {c x y z : T.Component} :
           T.intersection c z = T.weight c) :=
   Iff.rfl
 
+/-- The bookkeeping step of `exists_isGenusOneFourStarShape`: if some ordering `x, y, z` of the
+three leaves `i, j, k` of a four-component star with centre `c` has a star shape, then the ordering
+also exhausts the components together with `c` and consists of distinct, pairwise disjoint leaves,
+which gives the full conclusion. -/
+private theorem exists_isGenusOneFourStarShape_of_exists_shape
+    (hcard : Fintype.card T.Component = 4) {c i j k : T.Component}
+    (hci : c ≠ i) (hcj : c ≠ j) (hck : c ≠ k) (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k)
+    (hij0 : T.intersection i j = 0) (hik0 : T.intersection i k = 0)
+    (hjk0 : T.intersection j k = 0)
+    (h : ∃ x y z, ({x, y, z} : Finset T.Component) = {i, j, k} ∧
+      T.IsGenusOneFourStarShape c x y z) :
+    ∃ x y z, ({x, y, z} : Finset T.Component) = {i, j, k} ∧
+      ({c, x, y, z} : Finset T.Component) = univ ∧
+      x ≠ y ∧ x ≠ z ∧ y ≠ z ∧
+      T.intersection x y = 0 ∧ T.intersection x z = 0 ∧ T.intersection y z = 0 ∧
+      T.IsGenusOneFourStarShape c x y z := by
+  classical
+  obtain ⟨x, y, z, hset, hshape⟩ := h
+  have huniv : ({c, x, y, z} : Finset T.Component) = univ := by
+    rw [hset]
+    apply eq_univ_of_card
+    simp [hci, hcj, hck, hij, hik, hjk, hcard]
+  have hxyz : x ≠ y ∧ x ≠ z ∧ y ≠ z := by
+    apply card_triple_eq_three_iff.mp
+    rw [hset]
+    exact card_triple_eq_three_iff.mpr ⟨hij, hik, hjk⟩
+  have hzero (u v : T.Component) (hu : u ∈ ({x, y, z} : Finset T.Component))
+      (hv : v ∈ ({x, y, z} : Finset T.Component)) (huv : u ≠ v) :
+      T.intersection u v = 0 := by
+    rw [hset] at hu hv
+    simp only [mem_insert, mem_singleton] at hu hv
+    grind [T.intersection_comm]
+  exact ⟨x, y, z, hset, huniv, hxyz.1, hxyz.2.1, hxyz.2.2,
+    hzero x y (by simp) (by simp) hxyz.1,
+    hzero x z (by simp) (by simp) hxyz.2.1,
+    hzero y z (by simp) (by simp) hxyz.2.2, hshape⟩
+
 /-- Four components forming a three-leaf star and having self-intersection `-2w` have one of the
 two star shapes in `IsGenusOneFourStarShape`, after designating a suitable leaf. -/
 theorem exists_isGenusOneFourStarShape (hcard : Fintype.card T.Component = 4)
@@ -296,33 +324,14 @@ theorem exists_isGenusOneFourStarShape (hcard : Fintype.card T.Component = 4)
       T.intersection x y = 0 ∧ T.intersection x z = 0 ∧ T.intersection y z = 0 ∧
       T.IsGenusOneFourStarShape c x y z := by
   classical
-  have hci := ne_of_intersection_nonneg hc hci0.le
-  have hcj := ne_of_intersection_nonneg hc hcj0.le
-  have hck := ne_of_intersection_nonneg hc hck0.le
-  have hij := ne_of_intersection_nonneg hi hij0.ge
-  have hik := ne_of_intersection_nonneg hi hik0.ge
-  have hjk := ne_of_intersection_nonneg hj hjk0.ge
-  suffices ∃ x y z, ({x, y, z} : Finset T.Component) = {i, j, k} ∧
-      T.IsGenusOneFourStarShape c x y z by
-    obtain ⟨x, y, z, hset, hshape⟩ := this
-    have huniv : ({c, x, y, z} : Finset T.Component) = univ := by
-      rw [hset]
-      apply eq_univ_of_card
-      simp [hci, hcj, hck, hij, hik, hjk, hcard]
-    have hxyz : x ≠ y ∧ x ≠ z ∧ y ≠ z := by
-      apply card_triple_eq_three_iff.mp
-      rw [hset]
-      exact card_triple_eq_three_iff.mpr ⟨hij, hik, hjk⟩
-    have hzero (u v : T.Component) (hu : u ∈ ({x, y, z} : Finset T.Component))
-        (hv : v ∈ ({x, y, z} : Finset T.Component)) (huv : u ≠ v) :
-        T.intersection u v = 0 := by
-      rw [hset] at hu hv
-      simp only [mem_insert, mem_singleton] at hu hv
-      grind [T.intersection_comm]
-    exact ⟨x, y, z, hset, huniv, hxyz.1, hxyz.2.1, hxyz.2.2,
-      hzero x y (by simp) (by simp) hxyz.1,
-      hzero x z (by simp) (by simp) hxyz.2.1,
-      hzero y z (by simp) (by simp) hxyz.2.2, hshape⟩
+  have hci := T.ne_of_intersection_nonneg hc hci0.le
+  have hcj := T.ne_of_intersection_nonneg hc hcj0.le
+  have hck := T.ne_of_intersection_nonneg hc hck0.le
+  have hij := T.ne_of_intersection_nonneg hi hij0.ge
+  have hik := T.ne_of_intersection_nonneg hi hik0.ge
+  have hjk := T.ne_of_intersection_nonneg hj hjk0.ge
+  refine exists_isGenusOneFourStarShape_of_exists_shape hcard hci hcj hck hij hik hjk hij0 hik0
+    hjk0 ?_
   -- The four components are distinct, so they exhaust `T` and each satisfies a fibre relation.
   have hr := fiber_relation_of_card_eq_four hcard hci hcj hck hij hik hjk
   have rc := hr c

@@ -104,13 +104,13 @@ of `K` outside the support of a modulus `𝔪`, the prime idele class at `v` has
 prime `v`, as does the class of any uniformizer at `v`
 (`GlobalNumberFields.rayClassQuotient_ofAdicCompletion_of_isUniformizer`). -/
 theorem rayClassQuotient_primeIdeleClass {𝔪 : Modulus K} {v : HeightOneSpectrum (𝓞 K)}
-    (hv : v ∉ 𝔪.support) (I : idealsPrimeTo 𝔪)
+    (I : idealsPrimeTo 𝔪)
     (hI : ((I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) =
       (v.asIdeal : FractionalIdeal (𝓞 K)⁰ K)) :
     rayClassQuotient 𝔪 (primeIdeleClass K v) = rayClassMk 𝔪 I := by
   obtain ⟨π, hπ, h⟩ := exists_isUniformizer_primeIdeleClass_eq K v
   rw [h]
-  exact rayClassQuotient_ofAdicCompletion_of_isUniformizer hv hπ I hI
+  exact rayClassQuotient_ofAdicCompletion_of_isUniformizer hπ I hI
 
 end PrimeIdeleClass
 
@@ -184,7 +184,7 @@ theorem rayClassArtinMap_comp_rayClassMk :
         h.isUnramifiedAway := by
   refine eq_artinHomAway_of_globalArtinMap L IsSepClosed.lift 𝔪.support h.isUnramifiedAway _
     fun I v hv hI ↦ ?_
-  rw [MonoidHom.comp_apply, ← rayClassQuotient_primeIdeleClass hv I hI,
+  rw [MonoidHom.comp_apply, ← rayClassQuotient_primeIdeleClass I hI,
     of_rayClassArtinMap_rayClassQuotient h IsSepClosed.lift, ofMul_toMul]
 
 /-- **On ideals, ray-class reciprocity is the ideal-theoretic Artin map**, pointwise. -/
@@ -232,8 +232,6 @@ theorem orderOf_rayClassArtinMap_idealClass (I : integralIdealsPrimeTo 𝔪)
     orderOf (rayClassArtinMap 𝔪 h (idealClass 𝔪 I)) = Q.inertiaDeg (𝓞 K) := by
   have : Algebra.IsUnramifiedAt (𝓞 K) Q := h.isUnramifiedAt_of_integralIdealsPrimeTo I Q
   exact Ideal.orderOf_eq_inertiaDeg_of_isArithFrobAt Q
-    (Ideal.ne_bot_of_liesOver_of_ne_bot (Ring.ne_bot_of_isMaximal_of_not_isField
-      ‹_› (RingOfIntegers.not_isField K)) Q)
     (isArithFrobAt_rayClassArtinMap_idealClass h I Q)
 
 /-- **The decomposition law for an admissible modulus**: a prime ideal `𝔭` of `K` prime to `𝔪`

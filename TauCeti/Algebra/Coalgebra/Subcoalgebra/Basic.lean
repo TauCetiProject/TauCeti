@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 public import Mathlib.RingTheory.Coalgebra.Basic
 
 /-!
@@ -14,16 +13,16 @@ public import Mathlib.RingTheory.Coalgebra.Basic
 This file defines subcoalgebras of a coalgebra as submodules whose elements have
 comultiplication in the tensor square of the submodule. It is deliberately a lightweight
 predicate-style API: over a general commutative semiring, the map `D ⊗ D → C ⊗ C` need not be
-known injective, so the induced coalgebra structure on `D` is not registered here.
-
-This is a Layer 1 prerequisite for the reductive-groups roadmap target on
-finite-dimensional subcoalgebras and the fundamental theorem of comodules. Later work can use
-`Module.Finite R D.toSubmodule` to state finitely generated subcoalgebras.
+known injective, so the induced coalgebra structure on `D` is not registered here (see
+`TauCeti.Algebra.Coalgebra.Subcoalgebra.Structure` for the flat case). Since the definition only
+involves the comultiplication, it is stated for a `CoalgebraStruct`. Finitely generated
+subcoalgebras can be expressed with `Module.Finite R D.toSubmodule`.
 
 ## Main definitions
 
 * `TauCeti.Subcoalgebra`: a submodule stable under comultiplication.
 * `TauCeti.Subcoalgebra.toSubmodule`: the underlying submodule.
+* `TauCeti.Subcoalgebra.ofSubmodule`: the subcoalgebra given by a stable submodule.
 * `⊤` and `⊥`: the full and zero subcoalgebras.
 
 ## References
@@ -40,34 +39,11 @@ namespace TauCeti
 
 universe u v
 
-namespace Subcoalgebra
-
-section CoalgebraStruct
-
-variable {R : Type u} {C : Type v}
+variable (R : Type u) (C : Type v)
 variable [CommSemiring R] [AddCommMonoid C] [Module R C] [CoalgebraStruct R C]
 
-/-- The comultiplication of any element lies in the tensor square of the top submodule,
-because the inclusion of `⊤` is surjective.
-
-Only the comultiplication map is involved, not the coalgebra axioms, so this is stated over
-`CoalgebraStruct`; it is what makes `⊤` a subcoalgebra. -/
-theorem comul_mem_tensorSquare_top (c : C) :
-    Coalgebra.comul (R := R) c ∈
-      LinearMap.range (TensorProduct.map (⊤ : Submodule R C).subtype
-        (⊤ : Submodule R C).subtype) :=
-  LinearMap.mem_range.mpr
-    (TensorProduct.map_surjective (fun c ↦ ⟨⟨c, Submodule.mem_top⟩, rfl⟩)
-      (fun c ↦ ⟨⟨c, Submodule.mem_top⟩, rfl⟩) _)
-
-end CoalgebraStruct
-
-end Subcoalgebra
-
-variable (R : Type u) (C : Type v)
-variable [CommSemiring R] [AddCommMonoid C] [Module R C] [Coalgebra R C]
-
-/-- A subcoalgebra of an `R`-coalgebra `C`.
+/-- A subcoalgebra of an `R`-coalgebra `C`. Only the comultiplication of `C` is used, so `C`
+need only carry a `CoalgebraStruct`.
 
 It is an `R`-submodule `carrier` such that the comultiplication of every element of
 `carrier` lies in the range of `carrier ⊗ carrier → C ⊗ C`. -/
@@ -87,10 +63,7 @@ variable {R C}
 instance : SetLike (Subcoalgebra R C) C where
   coe D := D.carrier
   coe_injective D E h := by
-    cases D with
-    | mk carrier hD =>
-    cases E with
-    | mk carrier' hE =>
+    cases D; cases E
     congr
     exact SetLike.ext' h
 
@@ -118,9 +91,6 @@ theorem mem_toSubmodule {D : Subcoalgebra R C} {c : C} : c ∈ D.toSubmodule ↔
 
 theorem toSubmodule_carrier (D : Subcoalgebra R C) : D.toSubmodule = D.carrier :=
   rfl
-
-theorem le_def {D E : Subcoalgebra R C} : D ≤ E ↔ ∀ ⦃c : C⦄, c ∈ D → c ∈ E :=
-  Iff.rfl
 
 theorem toSubmodule_le_toSubmodule {D E : Subcoalgebra R C} :
     D.toSubmodule ≤ E.toSubmodule ↔ D ≤ E :=
@@ -160,7 +130,9 @@ theorem mem_ofSubmodule {D : Submodule R C} {hD} {c : C} :
 instance instTop : Top (Subcoalgebra R C) where
   top :=
     { carrier := ⊤
-      comul_mem' := fun c _ ↦ comul_mem_tensorSquare_top c }
+      comul_mem' c _ := by
+        rw [TensorProduct.range_mapIncl, TensorProduct.map₂_mk_top_top_eq_top]
+        exact Submodule.mem_top }
 
 @[simp]
 theorem top_toSubmodule : (⊤ : Subcoalgebra R C).toSubmodule = (⊤ : Submodule R C) :=
@@ -178,11 +150,9 @@ instance : OrderTop (Subcoalgebra R C) where
 instance instBot : Bot (Subcoalgebra R C) where
   bot :=
     { carrier := ⊥
-      comul_mem' := by
-        intro c hc
-        rw [Submodule.mem_bot] at hc
-        subst c
-        exact ⟨0, by simp⟩ }
+      comul_mem' c hc := by
+        rw [(Submodule.mem_bot R).1 hc, map_zero]
+        exact zero_mem _ }
 
 @[simp]
 theorem bot_toSubmodule : (⊥ : Subcoalgebra R C).toSubmodule = (⊥ : Submodule R C) :=
@@ -196,8 +166,7 @@ theorem mem_bot {c : C} : c ∈ (⊥ : Subcoalgebra R C) ↔ c = 0 :=
 instance : OrderBot (Subcoalgebra R C) where
   bot := ⊥
   bot_le D c hc := by
-    rw [mem_bot] at hc
-    rw [hc]
+    rw [mem_bot.1 hc]
     exact zero_mem D
 
 end Subcoalgebra

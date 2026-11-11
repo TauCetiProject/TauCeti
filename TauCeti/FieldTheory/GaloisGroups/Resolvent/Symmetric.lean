@@ -9,27 +9,30 @@ public import Mathlib.Algebra.Polynomial.BigOperators
 public import Mathlib.Algebra.Polynomial.Degree.Lemmas
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.GroupTheory.Index
-public import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.Substitution
 
 import Mathlib.Algebra.Polynomial.Eval.Coeff
-import Mathlib.RingTheory.Polynomial.Subring
+import Mathlib.Algebra.Polynomial.Lifts
 
 /-!
 # Symmetric descent for the universal resolvent
 
-Given an integral multivariable polynomial `Φ` in `n` formal roots, its universal resolvent is
-the product of `X - Ψ` over the orbit of `Φ` under permutations of the variables. Permuting the
-formal roots permutes these factors, so every coefficient of the product is symmetric.
+Given a multivariable polynomial `Φ` over a commutative ring in finitely many formal roots, its
+universal resolvent is the product of `X - Ψ` over the orbit of `Φ` under permutations of the
+variables. Permuting the formal roots permutes these factors, so every coefficient of the product
+is symmetric.
 
-The fundamental theorem of symmetric polynomials then gives a unique polynomial whose
-coefficients specialize to the universal resolvent after sending the variables to the elementary
-symmetric polynomials. This is the integral orbit product used by a resolvent specification.
+For `n` formal roots, the fundamental theorem of symmetric polynomials then gives a unique
+polynomial whose coefficients specialize to the universal resolvent after sending the variables to
+the elementary symmetric polynomials (`TauCeti.esymmSubst`, defined in
+`TauCeti.RingTheory.MvPolynomial.Symmetric.Substitution`). Over `ℤ`, this is the integral orbit
+product used by a resolvent specification.
 
 ## Main definitions
 
 * `MvPolynomial.renameStabilizer`: the subgroup of permutations fixing an invariant.
+* `MvPolynomial.renameOrbit`: the finite set of polynomials obtained by permuting the variables.
 * `MvPolynomial.universalResolvent`: the product over the rename-orbit of an invariant.
-* `TauCeti.esymmSubst`: substitution of the elementary symmetric polynomials for the variables.
 
 ## Main results
 
@@ -38,19 +41,19 @@ symmetric polynomials. This is the integral orbit product used by a resolvent sp
 * `MvPolynomial.card_renameOrbit`: the rename-orbit has size the index of the stabilizer.
 * `MvPolynomial.renameOrbit_rename` and `MvPolynomial.universalResolvent_rename`: renaming an
   invariant does not change its orbit or universal resolvent.
+* `MvPolynomial.image_rename_renameOrbit`: renaming the variables permutes the rename-orbit.
 * `MvPolynomial.universalResolvent_def`: the universal resolvent is the product of the linear
   factors attached to the orbit.
 * `MvPolynomial.universalResolvent_map_rename`: the universal resolvent is invariant under
   renaming.
 * `MvPolynomial.isSymmetric_universalResolvent_coeff`: all of its coefficients are
   symmetric.
-* `TauCeti.esymmSubst_injective`: elementary-symmetric substitution is injective.
 * `MvPolynomial.existsUnique_orbitProduct`: the universal resolvent descends uniquely
   through elementary-symmetric substitution.
 * `MvPolynomial.monic_universalResolvent` and `MvPolynomial.natDegree_universalResolvent`: the
   universal resolvent is monic of degree the size of the orbit, and
   `MvPolynomial.monic_of_map_esymmSubst_eq`, `MvPolynomial.natDegree_of_map_esymmSubst_eq`
-  transfer this to its integral expression.
+  transfer this to its expression in the elementary symmetric polynomials.
 -/
 
 public section
@@ -73,9 +76,9 @@ def renameStabilizer (Φ : MvPolynomial σ R) : Subgroup (Equiv.Perm σ) where
   inv_mem' {a} ha := by
     simp only [Set.mem_ofPred_eq] at ha ⊢
     conv_lhs => rw [← ha]
-    simpa only [renameEquiv_symm, renameEquiv_apply, Equiv.Perm.inv_def] using
-      (renameEquiv R a).symm_apply_apply _
+    simp [rename_rename]
 
+/-- A permutation lies in the stabilizer exactly when renaming by it fixes the polynomial. -/
 @[simp]
 theorem mem_renameStabilizer {Φ : MvPolynomial σ R} {e : Equiv.Perm σ} :
     e ∈ renameStabilizer Φ ↔ rename (⇑e) Φ = Φ :=
@@ -84,17 +87,9 @@ theorem mem_renameStabilizer {Φ : MvPolynomial σ R} {e : Equiv.Perm σ} :
 /-- Two permutations rename a polynomial identically exactly when their quotient stabilizes it. -/
 theorem rename_eq_rename_iff (Φ : MvPolynomial σ R) (a b : Equiv.Perm σ) :
     rename (⇑a) Φ = rename (⇑b) Φ ↔ a⁻¹ * b ∈ renameStabilizer Φ := by
-  rw [mem_renameStabilizer]
-  constructor
-  · intro h
-    have h' := congrArg (renameEquiv R a).symm h
-    rw [← renameEquiv_apply R a, (renameEquiv R a).symm_apply_apply] at h'
-    simpa only [renameEquiv_symm, renameEquiv_apply, ← Equiv.Perm.inv_def,
-      rename_rename, ← Equiv.Perm.coe_mul] using h'.symm
-  · intro h
-    have h' := congrArg (rename (⇑a)) h
-    simpa only [rename_rename, ← Equiv.Perm.coe_mul,
-      mul_inv_cancel_left] using h'.symm
+  -- Cancel the injective renaming by `a`, then normalize the composite permutation.
+  rw [mem_renameStabilizer, ← (rename_injective _ a.injective).eq_iff (b := Φ)]
+  simp [rename_rename, ← Equiv.Perm.coe_mul, eq_comm]
 
 /-- A polynomial is symmetric exactly when its stabilizer is the whole symmetric group. -/
 @[simp]
@@ -107,58 +102,43 @@ theorem renameStabilizer_eq_top_iff {Φ : MvPolynomial σ R} :
 theorem renameStabilizer_rename (e : Equiv.Perm σ) (Φ : MvPolynomial σ R) :
     renameStabilizer (rename (⇑e) Φ) = (renameStabilizer Φ).map (MulAut.conj e).toMonoidHom := by
   ext τ
-  have hconj : rename (⇑((MulAut.conj e).symm τ)) Φ =
-      rename (⇑e⁻¹) (rename (⇑τ) (rename (⇑e) Φ)) := by
-    rw [MulAut.conj_symm_apply, rename_rename, rename_rename, Equiv.Perm.coe_mul,
-      Equiv.Perm.coe_mul, Function.comp_assoc]
-  rw [Subgroup.mem_map_equiv, mem_renameStabilizer, mem_renameStabilizer, hconj]
-  constructor
-  · intro h
-    rw [h]
-    simpa only [renameEquiv_symm, renameEquiv_apply, Equiv.Perm.inv_def] using
-      (renameEquiv R e).symm_apply_apply Φ
-  · intro h
-    have h' := congrArg (renameEquiv R e) h
-    rwa [Equiv.Perm.inv_def, ← renameEquiv_apply R e.symm, ← renameEquiv_symm,
-      (renameEquiv R e).apply_symm_apply, renameEquiv_apply] at h'
+  -- `τ` lies in the conjugate exactly when `e⁻¹ * (τ * e)` stabilizes `Φ`, that is, when
+  -- `e` and `τ * e` rename `Φ` identically.
+  rw [Subgroup.mem_map_equiv, MulAut.conj_symm_apply, mul_assoc, ← rename_eq_rename_iff]
+  simp [rename_rename, eq_comm]
 
 end Stabilizer
 
-open Classical in
+section Orbit
+
+variable {σ R : Type*} [Finite σ] [CommSemiring R]
+
 /-- The finite set of distinct polynomials obtained by permuting the variables of `Φ`. -/
-noncomputable def renameOrbit {n : ℕ} (Φ : MvPolynomial (Fin n) ℤ) :
-    Finset (MvPolynomial (Fin n) ℤ) := by
-  let _ := Fintype.ofFinite (Equiv.Perm (Fin n))
-  exact Finset.univ.image fun σ : Equiv.Perm (Fin n) => MvPolynomial.rename (⇑σ) Φ
+noncomputable def renameOrbit (Φ : MvPolynomial σ R) : Finset (MvPolynomial σ R) :=
+  (Set.finite_range fun e : Equiv.Perm σ => rename (⇑e) Φ).toFinset
 
 /-- Membership in the rename-orbit is witnessed by a permutation of the variables. -/
 @[simp]
-theorem mem_renameOrbit {n : ℕ} (Φ Ψ : MvPolynomial (Fin n) ℤ) :
-    Ψ ∈ renameOrbit Φ ↔ ∃ σ : Equiv.Perm (Fin n), MvPolynomial.rename (⇑σ) Φ = Ψ := by
-  classical
-  let _ := Fintype.ofFinite (Equiv.Perm (Fin n))
+theorem mem_renameOrbit (Φ Ψ : MvPolynomial σ R) :
+    Ψ ∈ renameOrbit Φ ↔ ∃ e : Equiv.Perm σ, rename (⇑e) Φ = Ψ := by
   simp [renameOrbit]
 
 /-- **Orbit–stabilizer for invariants.** The rename-orbit of `Φ` has as many elements as the
 index of its stabilizer. -/
-theorem card_renameOrbit {n : ℕ} (Φ : MvPolynomial (Fin n) ℤ) :
+theorem card_renameOrbit (Φ : MvPolynomial σ R) :
     (renameOrbit Φ).card = (renameStabilizer Φ).index := by
   -- The action of permutations on polynomials by renaming the variables, whose stabilizer and
   -- orbit of `Φ` are `renameStabilizer Φ` and `renameOrbit Φ` by definition.
-  let _ : MulAction (Equiv.Perm (Fin n)) (MvPolynomial (Fin n) ℤ) :=
+  let _ : MulAction (Equiv.Perm σ) (MvPolynomial σ R) :=
     { smul := fun e p => rename (⇑e) p
       one_smul := rename_id_apply
       mul_smul := fun a b p => (rename_rename (⇑b) (⇑a) p).symm }
-  have hstab : MulAction.stabilizer (Equiv.Perm (Fin n)) Φ = renameStabilizer Φ := (rfl)
-  have horbit : MulAction.orbit (Equiv.Perm (Fin n)) Φ = ↑(renameOrbit Φ) := by
-    ext Ψ
-    simp only [MulAction.mem_orbit_iff, Finset.mem_coe, mem_renameOrbit]
-    exact Iff.rfl
-  rw [← hstab, MulAction.index_stabilizer, horbit, Set.ncard_coe_finset]
+  exact (Set.ncard_eq_toFinset_card _ _).symm.trans
+    (MulAction.index_stabilizer (Equiv.Perm σ) Φ).symm
 
 /-- A renamed invariant has the same rename-orbit. -/
 @[simp]
-theorem renameOrbit_rename {n : ℕ} (e : Equiv.Perm (Fin n)) (Φ : MvPolynomial (Fin n) ℤ) :
+theorem renameOrbit_rename (e : Equiv.Perm σ) (Φ : MvPolynomial σ R) :
     renameOrbit (rename (⇑e) Φ) = renameOrbit Φ := by
   ext Ψ
   simp only [mem_renameOrbit, rename_rename, ← Equiv.Perm.coe_mul]
@@ -168,175 +148,100 @@ theorem renameOrbit_rename {n : ℕ} (e : Equiv.Perm (Fin n)) (Φ : MvPolynomial
   · rintro ⟨τ, rfl⟩
     exact ⟨τ * e⁻¹, by rw [inv_mul_cancel_right]⟩
 
+/-- Renaming the variables permutes the rename-orbit. -/
+@[simp]
+theorem image_rename_renameOrbit [DecidableEq (MvPolynomial σ R)]
+    (Φ : MvPolynomial σ R) (e : Equiv.Perm σ) :
+    (renameOrbit Φ).image (rename (⇑e)) = renameOrbit Φ := by
+  ext Ψ
+  simp only [Finset.mem_image, mem_renameOrbit]
+  constructor
+  · rintro ⟨-, ⟨τ, rfl⟩, rfl⟩
+    exact ⟨e * τ, by rw [Equiv.Perm.coe_mul, rename_rename]⟩
+  · rintro ⟨τ, rfl⟩
+    exact ⟨_, ⟨e⁻¹ * τ, rfl⟩, by rw [rename_rename, ← Equiv.Perm.coe_mul, mul_inv_cancel_left]⟩
+
+end Orbit
+
+section Resolvent
+
+variable {σ R : Type*} [Finite σ] [CommRing R]
+
 /-- The universal resolvent of `Φ`, formed over the orbit obtained by permuting its variables. -/
-noncomputable def universalResolvent {n : ℕ} (Φ : MvPolynomial (Fin n) ℤ) :
-    (MvPolynomial (Fin n) ℤ)[X] :=
+noncomputable def universalResolvent (Φ : MvPolynomial σ R) : (MvPolynomial σ R)[X] :=
   ∏ Ψ ∈ renameOrbit Φ, (Polynomial.X - Polynomial.C Ψ)
 
 /-- The universal resolvent is the product of the monic linear factors `X - Ψ` attached to the
 elements of the rename-orbit. -/
-theorem universalResolvent_def {n : ℕ} (Φ : MvPolynomial (Fin n) ℤ) :
+theorem universalResolvent_def (Φ : MvPolynomial σ R) :
     universalResolvent Φ = ∏ Ψ ∈ renameOrbit Φ, (Polynomial.X - Polynomial.C Ψ) := (rfl)
 
 /-- A renamed invariant has the same universal resolvent. -/
 @[simp]
-theorem universalResolvent_rename {n : ℕ} (e : Equiv.Perm (Fin n))
-    (Φ : MvPolynomial (Fin n) ℤ) :
+theorem universalResolvent_rename (e : Equiv.Perm σ) (Φ : MvPolynomial σ R) :
     universalResolvent (rename (⇑e) Φ) = universalResolvent Φ := by
   rw [universalResolvent_def, universalResolvent_def, renameOrbit_rename]
 
 /-- The universal resolvent is monic, being a product of monic linear factors. -/
-theorem monic_universalResolvent {n : ℕ} (Φ : MvPolynomial (Fin n) ℤ) :
-    (universalResolvent Φ).Monic := by
-  rw [universalResolvent_def]
-  exact Polynomial.monic_prod_of_monic _ _ fun _ _ => Polynomial.monic_X_sub_C _
+theorem monic_universalResolvent (Φ : MvPolynomial σ R) : (universalResolvent Φ).Monic :=
+  monic_prod_of_monic _ _ fun _ _ => monic_X_sub_C _
 
 /-- The universal resolvent has degree the number of elements of the rename-orbit. -/
 @[simp]
-theorem natDegree_universalResolvent {n : ℕ} (Φ : MvPolynomial (Fin n) ℤ) :
+theorem natDegree_universalResolvent [Nontrivial R] (Φ : MvPolynomial σ R) :
     (universalResolvent Φ).natDegree = (renameOrbit Φ).card := by
-  rw [universalResolvent_def,
-    Polynomial.natDegree_prod_of_monic _ _ fun _ _ => Polynomial.monic_X_sub_C _]
+  rw [universalResolvent_def, natDegree_prod_of_monic _ _ fun _ _ => monic_X_sub_C _]
   simp
-
-end MvPolynomial
-
-namespace TauCeti
-
-/-- The substitution sending variable `i` to the elementary symmetric polynomial `e_(i+1)`. -/
-noncomputable def esymmSubst (n : ℕ) :
-    MvPolynomial (Fin n) ℤ →+* MvPolynomial (Fin n) ℤ :=
-  (MvPolynomial.aeval fun i : Fin n =>
-    MvPolynomial.esymm (Fin n) ℤ ((i : ℕ) + 1)).toRingHom
-
-/-- Elementary-symmetric substitution sends `X i` to `e_(i+1)`. -/
-@[simp]
-theorem esymmSubst_X (n : ℕ) (i : Fin n) :
-    esymmSubst n (MvPolynomial.X i) = MvPolynomial.esymm (Fin n) ℤ ((i : ℕ) + 1) := by
-  simp [esymmSubst]
-
-/-- Elementary-symmetric substitution agrees with Mathlib's fundamental-theorem map. -/
-theorem esymmSubst_apply (n : ℕ) (p : MvPolynomial (Fin n) ℤ) :
-    esymmSubst n p = (MvPolynomial.esymmAlgHom (Fin n) ℤ n p).1 := by
-  rw [esymmSubst, AlgHom.toRingHom_eq_coe]
-  exact (MvPolynomial.esymmAlgHom_apply p).symm
-
-end TauCeti
-
-namespace MvPolynomial
-
-private lemma renameOrbit_image (n : ℕ) (Φ : MvPolynomial (Fin n) ℤ)
-    (σ : Equiv.Perm (Fin n)) :
-    (renameOrbit Φ).image (MvPolynomial.rename (⇑σ)) = renameOrbit Φ := by
-  classical
-  let _ := Fintype.ofFinite (Equiv.Perm (Fin n))
-  ext Ψ
-  simp only [renameOrbit, Finset.mem_image, Finset.mem_univ, true_and]
-  constructor
-  · rintro ⟨Φ', ⟨τ, rfl⟩, rfl⟩
-    exact ⟨σ * τ, by simp [MvPolynomial.rename_rename, Function.comp_def]⟩
-  · rintro ⟨τ, rfl⟩
-    refine ⟨MvPolynomial.rename (⇑σ⁻¹) (MvPolynomial.rename (⇑τ) Φ), ?_, ?_⟩
-    · exact ⟨σ⁻¹ * τ, by simp [MvPolynomial.rename_rename, Function.comp_def]⟩
-    · simp [MvPolynomial.rename_rename, Function.comp_def]
 
 /-- Permuting the formal roots leaves the universal resolvent unchanged. -/
 @[simp]
-theorem universalResolvent_map_rename {n : ℕ} (Φ : MvPolynomial (Fin n) ℤ)
-    (σ : Equiv.Perm (Fin n)) :
-    (universalResolvent Φ).map
-        (↑(MvPolynomial.rename (R := ℤ) (⇑σ)) :
-          MvPolynomial (Fin n) ℤ →+* MvPolynomial (Fin n) ℤ) =
+theorem universalResolvent_map_rename (Φ : MvPolynomial σ R) (e : Equiv.Perm σ) :
+    (universalResolvent Φ).map (rename (R := R) ⇑e : MvPolynomial σ R →+* MvPolynomial σ R) =
       universalResolvent Φ := by
   classical
-  rw [universalResolvent, Polynomial.map_prod]
-  refine Finset.prod_bij (fun Ψ _ => MvPolynomial.rename (⇑σ) Ψ) ?_ ?_ ?_ ?_
-  · intro Ψ hΨ
-    rw [← renameOrbit_image n Φ σ]
-    exact Finset.mem_image.mpr ⟨Ψ, hΨ, rfl⟩
-  · intro Ψ₁ _ Ψ₂ _ h
-    exact MvPolynomial.rename_injective (⇑σ) σ.injective h
-  · intro Ψ hΨ
-    have hΨ' : Ψ ∈ (renameOrbit Φ).image (MvPolynomial.rename (⇑σ)) := by
-      rw [renameOrbit_image n Φ σ]
-      exact hΨ
-    obtain ⟨Φ', hΦ', hΦΨ⟩ := Finset.mem_image.mp hΨ'
-    exact ⟨Φ', hΦ', hΦΨ⟩
-  · simp
+  rw [universalResolvent_def, Polynomial.map_prod]
+  conv_rhs => rw [← image_rename_renameOrbit Φ e,
+    Finset.prod_image fun _ _ _ _ h => rename_injective _ e.injective h]
+  simp
 
 /-- Every coefficient of the universal resolvent is symmetric in the formal roots. -/
-theorem isSymmetric_universalResolvent_coeff {n : ℕ} (Φ : MvPolynomial (Fin n) ℤ)
-    (k : ℕ) : ((universalResolvent Φ).coeff k).IsSymmetric := by
-  intro σ
-  have h := congrArg (fun p : (MvPolynomial (Fin n) ℤ)[X] => p.coeff k)
-    (universalResolvent_map_rename Φ σ)
-  rw [Polynomial.coeff_map] at h
-  exact (congrFun (AlgHom.coe_toRingHom (MvPolynomial.rename (⇑σ)))
-    ((universalResolvent Φ).coeff k)).symm.trans h
+theorem isSymmetric_universalResolvent_coeff (Φ : MvPolynomial σ R) (k : ℕ) :
+    ((universalResolvent Φ).coeff k).IsSymmetric := fun e => by
+  simpa only [Polynomial.coeff_map, RingHom.coe_coe] using
+    congrArg (Polynomial.coeff · k) (universalResolvent_map_rename Φ e)
 
-end MvPolynomial
+end Resolvent
 
-namespace TauCeti
+section Descent
 
-/-- Substitution by the elementary symmetric polynomials is injective. -/
-lemma esymmSubst_injective (n : ℕ) : Function.Injective (esymmSubst n) := by
-  intro p q hpq
-  apply (MvPolynomial.esymmAlgHom_fin_bijective ℤ n).1
-  apply Subtype.ext
-  simpa only [← esymmSubst_apply] using hpq
-
-end TauCeti
-
-namespace MvPolynomial
+variable {R : Type*} [CommRing R] {n : ℕ}
 
 /-- The universal resolvent has a unique expression in the elementary symmetric polynomials. -/
-theorem existsUnique_orbitProduct {n : ℕ} (Φ : MvPolynomial (Fin n) ℤ) :
-    ∃! D : (MvPolynomial (Fin n) ℤ)[X],
-      D.map (TauCeti.esymmSubst n) = universalResolvent Φ := by
-  classical
-  let S := MvPolynomial.symmetricSubalgebra (Fin n) ℤ
-  have hcoeffs : (↑(universalResolvent Φ).coeffs : Set (MvPolynomial (Fin n) ℤ)) ⊆ S := by
-    intro c hc
-    rw [Finset.mem_coe, Polynomial.mem_coeffs_iff] at hc
-    obtain ⟨k, -, rfl⟩ := hc
-    exact (MvPolynomial.mem_symmetricSubalgebra _).2
-      (isSymmetric_universalResolvent_coeff Φ k)
-  let P : S.toSubring[X] := (universalResolvent Φ).toSubring S.toSubring hcoeffs
-  obtain ⟨D, hD⟩ := Polynomial.map_surjective
-    (MvPolynomial.esymmAlgHom (Fin n) ℤ n).toRingHom
-    (MvPolynomial.esymmAlgHom_fin_bijective ℤ n).2 P
-  have hD' : D.map (TauCeti.esymmSubst n) = universalResolvent Φ := by
-    apply Polynomial.ext
-    intro k
-    have hk := congrArg (fun p : S.toSubring[X] => p.coeff k) hD
-    rw [Polynomial.coeff_map] at hk
-    rw [Polynomial.coeff_map, TauCeti.esymmSubst_apply]
-    have hk' :
-        ((MvPolynomial.esymmAlgHom (Fin n) ℤ n).toRingHom (D.coeff k)).1 =
-          (universalResolvent Φ).coeff k := by
-      simpa only [P, Polynomial.coeff_toSubring] using congrArg Subtype.val hk
-    exact (congrArg Subtype.val (congrFun
-      (AlgHom.coe_toRingHom (MvPolynomial.esymmAlgHom (Fin n) ℤ n)) (D.coeff k))).symm.trans hk'
-  refine ⟨D, hD', ?_⟩
-  intro E hE
-  apply Polynomial.map_injective (TauCeti.esymmSubst n) (TauCeti.esymmSubst_injective n)
-  exact hE.trans hD'.symm
+theorem existsUnique_orbitProduct (Φ : MvPolynomial (Fin n) R) :
+    ∃! D : (MvPolynomial (Fin n) R)[X], D.map (TauCeti.esymmSubst n) = universalResolvent Φ := by
+  obtain ⟨D, hD⟩ := (mem_lifts _).1 <| (lifts_iff_coeff_lifts _).2 fun k => by
+    obtain ⟨p, hp⟩ := (esymmAlgHom_fin_bijective R n).2
+      ⟨_, (mem_symmetricSubalgebra _).2 (isSymmetric_universalResolvent_coeff Φ k)⟩
+    exact ⟨p, by rw [TauCeti.esymmSubst_apply, hp]⟩
+  exact ⟨D, hD, fun E hE =>
+    Polynomial.map_injective _ (TauCeti.esymmSubst_injective n) (hE.trans hD.symm)⟩
 
-/-- An integral expression for the universal resolvent in the elementary symmetric polynomials is
-itself monic, since elementary-symmetric substitution is injective. -/
-theorem monic_of_map_esymmSubst_eq {n : ℕ} {Φ : MvPolynomial (Fin n) ℤ}
-    {D : (MvPolynomial (Fin n) ℤ)[X]}
+/-- An expression for the universal resolvent in the elementary symmetric polynomials is itself
+monic, since elementary-symmetric substitution is injective. -/
+theorem monic_of_map_esymmSubst_eq {Φ : MvPolynomial (Fin n) R}
+    {D : (MvPolynomial (Fin n) R)[X]}
     (hD : D.map (TauCeti.esymmSubst n) = universalResolvent Φ) : D.Monic :=
-  Polynomial.monic_of_injective (TauCeti.esymmSubst_injective n)
-    (hD ▸ monic_universalResolvent Φ)
+  monic_of_injective (TauCeti.esymmSubst_injective n) (hD ▸ monic_universalResolvent Φ)
 
-/-- An integral expression for the universal resolvent has the degree of the universal resolvent,
-the number of elements of the rename-orbit. -/
-theorem natDegree_of_map_esymmSubst_eq {n : ℕ} {Φ : MvPolynomial (Fin n) ℤ}
-    {D : (MvPolynomial (Fin n) ℤ)[X]}
+/-- An expression for the universal resolvent in the elementary symmetric polynomials has the
+degree of the universal resolvent, the number of elements of the rename-orbit. -/
+theorem natDegree_of_map_esymmSubst_eq [Nontrivial R] {Φ : MvPolynomial (Fin n) R}
+    {D : (MvPolynomial (Fin n) R)[X]}
     (hD : D.map (TauCeti.esymmSubst n) = universalResolvent Φ) :
     D.natDegree = (renameOrbit Φ).card := by
-  rw [← Polynomial.natDegree_map_eq_of_injective (TauCeti.esymmSubst_injective n) D, hD,
+  rw [← natDegree_map_eq_of_injective (TauCeti.esymmSubst_injective n) D, hD,
     natDegree_universalResolvent]
+
+end Descent
 
 end MvPolynomial

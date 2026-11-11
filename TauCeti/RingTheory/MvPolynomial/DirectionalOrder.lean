@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.MvPolynomial.OrderAt
 public import Mathlib.Algebra.Polynomial.Degree.TrailingDegree
-public import Mathlib.RingTheory.MvPolynomial.Homogeneous
+public import TauCeti.RingTheory.MvPolynomial.LineRestriction
 public import Mathlib.Algebra.MvPolynomial.Funext
 
 /-!
@@ -22,6 +22,9 @@ the product of their first nonzero homogeneous Taylor components remains nonzero
 
 These coefficient formulas supply the algebraic input for choosing uniform directions in
 families of constant ambient order, and hence for analytic preparation of discriminants.
+Restricting to lines through the origin also detects homogeneity over an infinite domain:
+`MvPolynomial.isHomogeneous_iff_forall_eval_smul` says that `p` is homogeneous of degree `n`
+exactly when `eval (a • x) p = a ^ n • eval x p` for all `a` and `x`.
 
 ## References
 
@@ -40,33 +43,6 @@ section CommSemiring
 
 variable [CommSemiring R]
 
-/-- Restriction to a line through the origin sends a monomial to a monomial of its total
-degree, with coefficient given by evaluation at the direction. -/
-theorem aeval_C_mul_X_monomial (v : σ → R) (d : σ →₀ ℕ) (r : R) :
-    aeval (fun i ↦ Polynomial.C (v i) * Polynomial.X) (monomial d r) =
-      Polynomial.monomial d.degree (eval v (monomial d r)) := by
-  simp only [aeval_monomial, Polynomial.algebraMap_apply, eval_monomial, Finsupp.prod,
-    mul_pow, ← map_pow, Finset.prod_mul_distrib, ← map_prod,
-    Finsupp.degree_apply]
-  rw [Finset.prod_pow_eq_pow_sum, ← mul_assoc, ← map_mul,
-    Algebra.algebraMap_self, RingHom.id_apply, Polynomial.C_mul_X_pow_eq_monomial]
-
-/-- The coefficient of a line restriction is the homogeneous component evaluated at its
-direction. -/
-@[simp]
-theorem coeff_aeval_C_mul_X (p : MvPolynomial σ R) (v : σ → R) (m : ℕ) :
-    (aeval (fun i ↦ Polynomial.C (v i) * Polynomial.X) p).coeff m =
-      eval v (homogeneousComponent m p) := by
-  classical
-  rw [p.as_sum]
-  simp only [map_sum, Polynomial.finsetSum_coeff]
-  simp only [aeval_C_mul_X_monomial, Polynomial.coeff_monomial,
-    homogeneousComponent_of_mem (isHomogeneous_monomial _ _)]
-  refine Finset.sum_congr rfl fun d _ ↦ ?_
-  by_cases h : d.degree = m
-  · simp [h]
-  · simp [h, Ne.symm h]
-
 /-- Translating the polynomial first gives the restriction to an affine line. -/
 theorem aeval_C_add_C_mul_X_eq (p : MvPolynomial σ R) (a v : σ → R) :
     aeval (fun i ↦ Polynomial.C (a i) + Polynomial.C (v i) * Polynomial.X) p =
@@ -75,25 +51,6 @@ theorem aeval_C_add_C_mul_X_eq (p : MvPolynomial σ R) (a v : σ → R) :
   congr 1
   ext i
   simp [add_comm]
-
-/-- Evaluation of the affine-line restriction is evaluation at the corresponding point. -/
-@[simp]
-theorem eval_aeval_C_add_C_mul_X (p : MvPolynomial σ R) (a v : σ → R) (t : R) :
-    (aeval (fun i ↦ Polynomial.C (a i) + Polynomial.C (v i) * Polynomial.X) p).eval t =
-      eval (a + t • v) p := by
-  have heq :
-      (aeval (fun i ↦ Polynomial.C (a i) + Polynomial.C (v i) * Polynomial.X) p).eval t =
-        aeval (fun i ↦ a i + v i * t) p := by
-    have h := comp_aeval_apply
-      (f := fun i ↦ Polynomial.C (a i) + Polynomial.C (v i) * Polynomial.X)
-      (Polynomial.aeval t : Polynomial R →ₐ[R] R) p
-    simp only [map_add, map_mul, Polynomial.aeval_C, Polynomial.aeval_X,
-      Algebra.algebraMap_self, RingHom.id_apply] at h
-    simpa only [Polynomial.coe_aeval_eq_eval] using h
-  have hpoint : (fun i ↦ a i + v i * t) = a + t • v := by
-    funext i
-    simp [mul_comm]
-  rw [heq, aeval_eq_eval, hpoint]
 
 /-- The coefficients of an affine-line restriction are the homogeneous Taylor components
 evaluated at the direction. -/
@@ -211,6 +168,31 @@ theorem exists_natTrailingDegree_aeval_C_add_C_mul_X_eq (p : MvPolynomial σ R)
     simpa only [hm] using hv () (Finset.mem_singleton_self ())
   refine ⟨v, Polynomial.trailingDegree_eq_top.not.1 (by simp [hdegree]), ?_⟩
   exact Polynomial.natTrailingDegree_eq_of_trailingDegree_eq_some hdegree
+
+/-- Over an infinite domain, a polynomial is homogeneous of degree `n` exactly when scaling the
+point by `a` scales its value by `a ^ n`. The reverse implication needs infinitely many scalars:
+over a finite field with `q` elements, `X ^ q - X` vanishes everywhere without being
+homogeneous. -/
+theorem isHomogeneous_iff_forall_eval_smul {p : MvPolynomial σ R} {n : ℕ} :
+    p.IsHomogeneous n ↔ ∀ (a : R) (x : σ → R), eval (a • x) p = a ^ n • eval x p := by
+  refine ⟨fun hp a x => hp.eval_smul x a, fun h => ?_⟩
+  -- The restriction of `p` to the line through `x` is the monomial `eval x p • t ^ n`, so its
+  -- coefficient of degree `m ≠ n`, the degree-`m` component evaluated at `x`, vanishes.
+  have hcomp : ∀ m ≠ n, homogeneousComponent m p = 0 := by
+    intro m hm
+    refine MvPolynomial.funext fun x => ?_
+    have hQ : aeval (fun i ↦ Polynomial.C (x i) * Polynomial.X) p =
+        Polynomial.monomial n (eval x p) := Polynomial.funext fun a => by
+      have hline := eval_aeval_C_add_C_mul_X p 0 x a
+      simp only [Pi.zero_apply, map_zero, zero_add] at hline
+      rw [hline, h, Polynomial.eval_monomial, smul_eq_mul, mul_comm]
+    rw [map_zero, ← coeff_aeval_C_mul_X, hQ, Polynomial.coeff_monomial_of_ne _ hm]
+  have hp : p = homogeneousComponent n p := by
+    conv_lhs => rw [← sum_homogeneousComponent p]
+    refine Finset.sum_eq_single n (fun m _ hm => hcomp m hm) fun hn => ?_
+    exact homogeneousComponent_eq_zero n p (by simpa [Nat.lt_succ_iff] using hn)
+  rw [hp]
+  exact homogeneousComponent_isHomogeneous n p
 
 end InfiniteDomain
 

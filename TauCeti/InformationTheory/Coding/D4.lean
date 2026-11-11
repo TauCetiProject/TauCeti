@@ -110,7 +110,7 @@ field with the Klein four-group. -/
 noncomputable def typeD4QuaternaryQuadraticMap (hF : Nat.card F = 4) :
     QuadraticMap ℤ F (AddCircle (1 : ℚ)) :=
   -- Transport the quadratic map on the Klein four-group along the chosen additive identification.
-  let hω := (exists_sq_add_self_add_one_eq_zero_of_card_eq_four hF).choose_spec
+  let hω := (exists_sq_add_self_add_one_eq_zero_of_natCard_eq_four hF).choose_spec
   (halfKleinFourMap.comp (zmodTwoProdAddEquiv hF hω).symm.toIntLinearEquiv.toLinearMap).copy
     (fun x ↦ if x = 0 then 0 else (((1 : ℚ) / 2 : ℚ) : AddCircle (1 : ℚ)))
     (funext fun x ↦ (halfKleinFourMap_symm_apply hF hω x).symm)
@@ -284,8 +284,8 @@ theorem typeD4QuaternaryDiscriminantQuadraticIsometry_root_sq (hF : Nat.card F =
 theorem isNondegenerate_typeD4QuaternaryQuadraticModule (hF : Nat.card F = 4) :
     (typeD4QuaternaryQuadraticModule hF).IsNondegenerate :=
   (typeD4QuaternaryDiscriminantQuadraticIsometry hF
-      (exists_sq_add_self_add_one_eq_zero_of_card_eq_four hF).choose_spec).isNondegenerate_iff.mpr
-    (isNondegenerate_discriminantQuadraticModule _ _)
+      (exists_sq_add_self_add_one_eq_zero_of_natCard_eq_four hF).choose_spec).isNondegenerate_iff
+    |>.mpr (isNondegenerate_discriminantQuadraticModule _ _)
 
 /-- **Multiplication by a nonzero scalar is an isometry of the quaternary `D₄` alphabet**, since
 the quadratic value of an element only records whether it is zero. In particular it preserves the

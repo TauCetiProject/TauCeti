@@ -73,7 +73,7 @@ theorem mdifferentiableAt_constantField (v : P) (p : Sol) :
     mlieBracket J (constantField u) (constantField v) p = 0 := by
   -- Sol inherits P's model-space atlas, so its tangent-space casts are definitionally
   -- the identity and its constant coordinate fields are model-space constant fields.
-  exact TauCeti.mlieBracket_const_model_space u v (toProd p)
+  exact mlieBracket_const_model_space u v (toProd p)
 
 private theorem hasFDerivAt_exp_height (c : ℝ) (p : Sol) :
     HasFDerivAt (fun q : P => exp (c * q.2.2))

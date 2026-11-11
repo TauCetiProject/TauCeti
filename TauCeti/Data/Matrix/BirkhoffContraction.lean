@@ -8,8 +8,10 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Data.Matrix.Mul
 import Mathlib.Data.Fintype.Lattice
+import Mathlib.Tactic.FinCases
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import TauCeti.Analysis.SpecialFunctions.Log.BirkhoffCrossRatio
+import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
 # Hilbert's projective metric and Birkhoff's contraction theorem
@@ -258,6 +260,32 @@ theorem projectiveDiameter_le {K : Matrix ι κ ℝ} {C : ℝ}
     K.projectiveDiameter ≤ C :=
   Real.iSup_le (fun j ↦ Real.iSup_le (fun j' ↦ hilbertProjectiveDist_le (h · · j j') hC) hC) hC
 
+/-- The projective diameter of a positive two-by-two kernel is the absolute logarithm of its
+cross ratio. -/
+theorem projectiveDiameter_fin_two {K : Matrix (Fin 2) (Fin 2) ℝ}
+    (hK : ∀ i j, 0 < K i j) :
+    K.projectiveDiameter = |log (K 0 0 * K 1 1 / (K 0 1 * K 1 0))| := by
+  have hlog (i i' j j' : Fin 2) :
+      log (K i j * K i' j' / (K i j' * K i' j)) =
+        log (K i j) + log (K i' j') - (log (K i j') + log (K i' j)) := by
+    rw [log_div (mul_pos (hK i j) (hK i' j')).ne'
+      (mul_pos (hK i j') (hK i' j)).ne', log_mul (hK i j).ne' (hK i' j').ne',
+      log_mul (hK i j').ne' (hK i' j).ne']
+  rw [hlog]
+  apply le_antisymm
+  · apply projectiveDiameter_le _ (abs_nonneg _)
+    intro i i' j j'
+    rw [hlog]
+    fin_cases i <;> fin_cases i' <;> fin_cases j <;> fin_cases j' <;>
+      dsimp <;> linarith [le_abs_self (log (K 0 0) + log (K 1 1) -
+        (log (K 0 1) + log (K 1 0))), neg_le_abs (log (K 0 0) + log (K 1 1) -
+        (log (K 0 1) + log (K 1 0)))]
+  · rw [abs_le]
+    have h₁ := log_le_projectiveDiameter K 0 1 1 0
+    have h₂ := log_le_projectiveDiameter K 0 1 0 1
+    rw [hlog] at h₁ h₂
+    constructor <;> linarith
+
 omit [Finite ι] [Finite κ] in
 /-- The projective diameter of a matrix whose entries lie between `m > 0` and `M` is at most
 `2 * log (M / m)`. -/
@@ -340,8 +368,8 @@ its projective diameter of each other. -/
 theorem hilbertProjectiveDist_mulVec_le_projectiveDiameter {K : Matrix ι κ ℝ}
     (hK : ∀ i j, 0 < K i j) {u v : κ → ℝ} (hu : ∀ j, 0 ≤ u j) (hv : ∀ j, 0 ≤ v j) :
     hilbertProjectiveDist (K *ᵥ u) (K *ᵥ v) ≤ K.projectiveDiameter := by
-  have hnonneg : ∀ {w : κ → ℝ}, (∀ j, 0 ≤ w j) → ∀ i, 0 ≤ (K *ᵥ w) i := fun hw i ↦
-    Finset.sum_nonneg fun j _ ↦ mul_nonneg (hK i j).le (hw j)
+  have hnonneg : ∀ {w : κ → ℝ}, (∀ j, 0 ≤ w j) → ∀ i, 0 ≤ (K *ᵥ w) i :=
+    mulVec_nonneg fun i j ↦ (hK i j).le
   refine hilbertProjectiveDist_le (fun i i' ↦ ?_) (projectiveDiameter_nonneg K)
   set r := (K *ᵥ u) i * (K *ᵥ v) i' / ((K *ᵥ v) i * (K *ᵥ u) i')
   rcases eq_or_ne r 0 with hr | hr
@@ -364,25 +392,20 @@ two-dimensional quantity bounded by `((1 + λ s) / (λ + s)) ^ 2`, where `λ = e
 (`TauCeti.log_one_add_mul_exp_div_add_exp_le`) finishes the proof
 (`TauCeti.log_birkhoff_cross_ratio_le`). -/
 
-/-- The cross-ratio estimate behind Birkhoff's theorem, for `m * y ≤ x ≤ M * y` with both bounds
-strict somewhere: every logarithmic cross ratio of `K *ᵥ x` and `K *ᵥ y` is at most
+/-- The cross-ratio estimate behind Birkhoff's theorem, for `m * y ≤ x ≤ M * y` with `m < M`:
+every logarithmic cross ratio of `K *ᵥ x` and `K *ᵥ y` is at most
 `(l - 1) / (l + 1) * log (M / m)`, where `l = exp (Δ(K) / 2)`. -/
 private theorem log_cross_mulVec_le {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 < K i j) {x y : κ → ℝ}
-    (hy : ∀ j, 0 < y j) {m M : ℝ} (hm : 0 < m) (hmx : ∀ j, m * y j ≤ x j)
-    (hxM : ∀ j, x j ≤ M * y j) {j₁ j₂ : κ} (hj₁ : m * y j₁ < x j₁) (hj₂ : x j₂ < M * y j₂)
+    {m M : ℝ} (hm : 0 < m) (hmx : ∀ j, m * y j ≤ x j) (hxM : ∀ j, x j ≤ M * y j) (hmM : m < M)
     (i i' : ι) :
     log ((K *ᵥ x) i * (K *ᵥ y) i' / ((K *ᵥ y) i * (K *ᵥ x) i')) ≤
       (exp (K.projectiveDiameter / 2) - 1) / (exp (K.projectiveDiameter / 2) + 1) *
         log (M / m) := by
-  have hmM : m < M := lt_of_mul_lt_mul_right (hj₁.trans_le (hxM j₁)) (hy j₁).le
   -- the images `α` and `β` of the nonnegative vectors `x - m • y` and `M • y - x`
   have hu : ∀ j, 0 ≤ (x - m • y) j := fun j ↦ by simpa using hmx j
   have hv : ∀ j, 0 ≤ (M • y - x) j := fun j ↦ by simpa using hxM j
-  have hpos : ∀ {w : κ → ℝ}, (∀ j, 0 ≤ w j) → ∀ {j₀}, 0 < w j₀ → ∀ i, 0 < (K *ᵥ w) i :=
-    fun hw j₀ hj₀ i ↦ Finset.sum_pos' (fun j _ ↦ mul_nonneg (hK i j).le (hw j))
-      ⟨j₀, Finset.mem_univ j₀, mul_pos (hK i j₀) hj₀⟩
-  have hα := hpos hu (j₀ := j₁) (by simpa using hj₁)
-  have hβ := hpos hv (j₀ := j₂) (by simpa using hj₂)
+  have hα := mulVec_nonneg (fun i j ↦ (hK i j).le) hu
+  have hβ := mulVec_nonneg (fun i j ↦ (hK i j).le) hv
   have hcross := mulVec_mul_mulVec_le hK hu hv i i'
   rw [← add_halves K.projectiveDiameter, exp_add, ← sq] at hcross
   have key := log_birkhoff_cross_ratio_le (R := M / m) (hα i) (hβ i) (hα i') (hβ i')
@@ -447,9 +470,8 @@ theorem hilbertProjectiveDist_mulVec_le {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 
     rw [div_div_div_eq]
     exact log_le_hilbertProjectiveDist x y j₁ j₂
   rw [htanh]
-  refine (log_cross_mulVec_le hK hy hm (fun j ↦ (le_div_iff₀ (hy j)).1 (hj₂ j))
-    (fun j ↦ (div_le_iff₀ (hy j)).1 (hj₁ j)) (j₁ := j₁) (j₂ := j₂)
-    ((lt_div_iff₀ (hy j₁)).1 hmM) ((div_lt_iff₀ (hy j₂)).1 hmM) i i').trans ?_
+  refine (log_cross_mulVec_le hK hm (fun j ↦ (le_div_iff₀ (hy j)).1 (hj₂ j))
+    (fun j ↦ (div_le_iff₀ (hy j)).1 (hj₁ j)) hmM i i').trans ?_
   rw [htanh] at hk
   exact mul_le_mul_of_nonneg_left hd hk
 

@@ -97,6 +97,7 @@ variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L]
 
 /-! ### Unramifiedness and the inertia subgroup -/
 
+omit [NumberField K] in
 /-- **Unramified means trivial inertia.** For a finite Galois extension `L / K` of number fields,
 `L / K` is unramified at a prime `Q` of `𝓞 L` exactly when the inertia subgroup of `Q` in
 `Gal(L/K)` is trivial.
@@ -105,10 +106,13 @@ This is the group-theoretic reading of `Ideal.card_inertia_eq_ramificationIdx`: 
 subgroup has as many elements as the ramification index of `Q` over `𝓞 K`. -/
 theorem isUnramifiedAt_iff_inertia_eq_bot (Q : Ideal (𝓞 L)) [Q.IsPrime] :
     Algebra.IsUnramifiedAt (𝓞 K) Q ↔ Q.inertia (L ≃ₐ[K] L) = ⊥ := by
+  have : CharZero K := (algebraMap K L).charZero
+  have : NumberField K := { to_finiteDimensional := Module.Finite.left ℚ K L }
   rw [← Ideal.ramificationIdx_eq_one_iff (R := 𝓞 K) (q := Q),
     ← Ideal.card_inertia_eq_ramificationIdx (𝓞 K) (L ≃ₐ[K] L) Q]
   exact ⟨Subgroup.eq_bot_of_card_eq _, fun h ↦ by rw [h]; simp⟩
 
+omit [NumberField K] in
 /-- **Unramified means trivial `G_0`.** For a finite Galois extension `L / K` of number fields,
 the ramification group `G_0` of a prime `Q` of `𝓞 L` is trivial exactly when `L / K` is unramified
 at `Q`. -/
@@ -116,6 +120,7 @@ theorem ramificationGroup_zero_eq_bot_iff_isUnramifiedAt (Q : Ideal (𝓞 L)) [Q
     Q.ramificationGroup (L ≃ₐ[K] L) 0 = ⊥ ↔ Algebra.IsUnramifiedAt (𝓞 K) Q := by
   rw [ramificationGroup_zero, isUnramifiedAt_iff_inertia_eq_bot]
 
+omit [NumberField K] in
 /-- **The ramification filtration of an unramified prime is trivial.** For a finite Galois
 extension `L / K` of number fields unramified at a prime `Q` of `𝓞 L`, every ramification group
 `G_i` of `Q` is trivial. -/
@@ -126,6 +131,7 @@ theorem ramificationGroup_eq_bot_of_isUnramifiedAt (Q : Ideal (𝓞 L)) [Q.IsPri
 
 /-! ### The decomposition group at an unramified prime -/
 
+omit [NumberField K] in
 /-- **The decomposition group of an unramified prime embeds in the residue Galois group.**
 Mathlib's `Ideal.Quotient.stabilizerHom` has the inertia subgroup as its kernel, and that
 subgroup is trivial at an unramified prime. -/
@@ -186,12 +192,12 @@ omit [IsGalois K L] in
 This is the defining congruence `σ x ≡ x ^ #(𝓞 K ⧸ 𝔭) (mod Q)` read as an equality of
 automorphisms of `𝓞 L ⧸ Q`; no unramifiedness is needed. -/
 theorem stabilizerHom_eq_frobeniusAlgEquivOfAlgebraic (Q : Ideal (𝓞 L)) [Q.IsPrime]
-    (hQ : Q ≠ ⊥) {σ : L ≃ₐ[K] L} (hσ : IsArithFrobAt (𝓞 K) σ Q) :
-    let _ : Q.IsMaximal := (inferInstance : Q.IsPrime).isMaximal hQ
+    {σ : L ≃ₐ[K] L} (hσ : IsArithFrobAt (𝓞 K) σ Q) :
+    let _ : Q.IsMaximal := (inferInstance : Q.IsPrime).isMaximal hσ.ne_bot
     letI := Fintype.ofFinite (𝓞 K ⧸ Q.under (𝓞 K))
     Ideal.Quotient.stabilizerHom Q (Q.under (𝓞 K)) (L ≃ₐ[K] L) ⟨σ, hσ.mem_stabilizer⟩ =
       FiniteField.frobeniusAlgEquivOfAlgebraic (𝓞 K ⧸ Q.under (𝓞 K)) (𝓞 L ⧸ Q) := by
-  let _ : Q.IsMaximal := (inferInstance : Q.IsPrime).isMaximal hQ
+  let _ : Q.IsMaximal := (inferInstance : Q.IsPrime).isMaximal hσ.ne_bot
   ext x
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
   rw [Ideal.Quotient.stabilizerHom_apply, FiniteField.coe_frobeniusAlgEquivOfAlgebraic,
@@ -210,7 +216,7 @@ theorem orderOf_stabilizerHom_eq_inertiaDeg_of_isArithFrobAt (Q : Ideal (𝓞 L)
       ⟨σ, hσ.mem_stabilizer⟩) = Q.inertiaDeg (𝓞 K) := by
   let _ : Q.IsMaximal := (inferInstance : Q.IsPrime).isMaximal hσ.ne_bot
   have : Fintype (𝓞 K ⧸ Q.under (𝓞 K)) := Fintype.ofFinite _
-  rw [stabilizerHom_eq_frobeniusAlgEquivOfAlgebraic Q hσ.ne_bot hσ,
+  rw [stabilizerHom_eq_frobeniusAlgEquivOfAlgebraic Q hσ,
     FiniteField.orderOf_frobeniusAlgEquivOfAlgebraic,
     Ideal.inertiaDeg_eq_of_isMaximal (Q.under (𝓞 K)) Q]
 
@@ -221,10 +227,9 @@ The decomposition group injects into the residue Galois group, where the image o
 residue Frobenius; that automorphism has order the degree of the residue extension, which is the
 inertia degree. -/
 theorem orderOf_eq_inertiaDeg_of_isArithFrobAt (Q : Ideal (𝓞 L)) [Q.IsPrime]
-    (hQ : Q ≠ ⊥) [Algebra.IsUnramifiedAt (𝓞 K) Q] {σ : L ≃ₐ[K] L}
-    (hσ : IsArithFrobAt (𝓞 K) σ Q) :
+    [Algebra.IsUnramifiedAt (𝓞 K) Q] {σ : L ≃ₐ[K] L} (hσ : IsArithFrobAt (𝓞 K) σ Q) :
     orderOf σ = Q.inertiaDeg (𝓞 K) := by
-  let _ : Q.IsMaximal := (inferInstance : Q.IsPrime).isMaximal hQ
+  let _ : Q.IsMaximal := (inferInstance : Q.IsPrime).isMaximal hσ.ne_bot
   have : Fintype (𝓞 K ⧸ Q.under (𝓞 K)) := Fintype.ofFinite _
   have key : orderOf (⟨σ, hσ.mem_stabilizer⟩ : MulAction.stabilizer (L ≃ₐ[K] L) Q) =
       Q.inertiaDeg (𝓞 K) := by
@@ -235,9 +240,8 @@ theorem orderOf_eq_inertiaDeg_of_isArithFrobAt (Q : Ideal (𝓞 L)) [Q.IsPrime]
 
 /-- **The decomposition group of an unramified prime has order the inertia degree.** -/
 theorem card_stabilizer_eq_inertiaDeg_of_isUnramifiedAt (Q : Ideal (𝓞 L))
-    [Q.IsPrime] (hQ : Q ≠ ⊥) [Algebra.IsUnramifiedAt (𝓞 K) Q] :
+    [Q.IsPrime] [Algebra.IsUnramifiedAt (𝓞 K) Q] :
     Nat.card (MulAction.stabilizer (L ≃ₐ[K] L) Q) = Q.inertiaDeg (𝓞 K) := by
-  let _ : Q.IsMaximal := (inferInstance : Q.IsPrime).isMaximal hQ
   rw [Ideal.card_stabilizer_eq_card_inertia_mul_finrank (Q.under (𝓞 K)) Q,
     (isUnramifiedAt_iff_inertia_eq_bot Q).mp ‹_›]
   simp
@@ -246,8 +250,7 @@ theorem card_stabilizer_eq_inertiaDeg_of_isUnramifiedAt (Q : Ideal (𝓞 L))
 cyclic subgroup generated by an arithmetic Frobenius at `Q` is the whole decomposition group,
 both having `f(Q / 𝔭)` elements. -/
 theorem zpowers_eq_stabilizer_of_isArithFrobAt (Q : Ideal (𝓞 L)) [Q.IsPrime]
-    (hQ : Q ≠ ⊥) [Algebra.IsUnramifiedAt (𝓞 K) Q] {σ : L ≃ₐ[K] L}
-    (hσ : IsArithFrobAt (𝓞 K) σ Q) :
+    [Algebra.IsUnramifiedAt (𝓞 K) Q] {σ : L ≃ₐ[K] L} (hσ : IsArithFrobAt (𝓞 K) σ Q) :
     Subgroup.zpowers σ = MulAction.stabilizer (L ≃ₐ[K] L) Q := by
   have hle : Subgroup.zpowers σ ≤ MulAction.stabilizer (L ≃ₐ[K] L) Q :=
     Subgroup.zpowers_le.mpr hσ.mem_stabilizer
@@ -255,8 +258,8 @@ theorem zpowers_eq_stabilizer_of_isArithFrobAt (Q : Ideal (𝓞 L)) [Q.IsPrime]
   rw [← Subgroup.subgroupOf_eq_top]
   apply Subgroup.eq_top_of_card_eq
   rw [Nat.card_congr (Subgroup.subgroupOfEquivOfLe hle).toEquiv, Nat.card_zpowers,
-    orderOf_eq_inertiaDeg_of_isArithFrobAt Q hQ hσ,
-    card_stabilizer_eq_inertiaDeg_of_isUnramifiedAt Q hQ]
+    orderOf_eq_inertiaDeg_of_isArithFrobAt Q hσ,
+    card_stabilizer_eq_inertiaDeg_of_isUnramifiedAt Q]
 
 /-- **The decomposition group of an unramified prime is cyclic.** A Frobenius element exists at
 every nonzero prime of `𝓞 L`, and at an unramified prime it generates the decomposition group. -/
@@ -264,7 +267,7 @@ theorem isCyclic_stabilizer_of_isUnramifiedAt (Q : Ideal (𝓞 L)) [Q.IsPrime] (
     [Algebra.IsUnramifiedAt (𝓞 K) Q] : IsCyclic (MulAction.stabilizer (L ≃ₐ[K] L) Q) := by
   obtain ⟨σ, hσ⟩ := NumberField.exists_isArithFrobAt K Q hQ
   exact (Subgroup.isCyclic_iff_exists_zpowers_eq _).mpr
-    ⟨σ, zpowers_eq_stabilizer_of_isArithFrobAt Q hQ hσ⟩
+    ⟨σ, zpowers_eq_stabilizer_of_isArithFrobAt Q hσ⟩
 
 /-! ### The decomposition group at a possibly ramified prime -/
 
@@ -291,7 +294,7 @@ theorem zpowers_sup_inertia_eq_top_of_isArithFrobAt (Q : Ideal (𝓞 L)) [Q.IsPr
   have hσn : Ideal.Quotient.stabilizerHom Q (Q.under (𝓞 K)) (L ≃ₐ[K] L)
       (⟨σ, hσ.mem_stabilizer⟩ ^ (n : ℕ)) =
       Ideal.Quotient.stabilizerHom Q (Q.under (𝓞 K)) (L ≃ₐ[K] L) τ := by
-    rw [map_pow, stabilizerHom_eq_frobeniusAlgEquivOfAlgebraic Q hQ hσ]
+    rw [map_pow, stabilizerHom_eq_frobeniusAlgEquivOfAlgebraic Q hσ]
     exact hn
   have hker : (⟨σ, hσ.mem_stabilizer⟩ ^ (n : ℕ))⁻¹ * τ ∈
       Q.inertia (MulAction.stabilizer (L ≃ₐ[K] L) Q) := by

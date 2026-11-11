@@ -41,14 +41,12 @@ def coordinateSimplex : Set (ι → ℝ) := {x | (∀ i, 0 ≤ x i) ∧ ∑ i, x
 theorem mem_coordinateSimplex (x : ι → ℝ) :
     x ∈ coordinateSimplex ι ↔ (∀ i, 0 ≤ x i) ∧ ∑ i, x i ≤ 1 := (Iff.rfl)
 
-/-- A simplex point has either positive missing mass or a positive coordinate. -/
-theorem sum_lt_one_or_exists_pos_of_mem_coordinateSimplex {x : ι → ℝ}
-    (hx : x ∈ coordinateSimplex ι) : ∑ i, x i < 1 ∨ ∃ j, 0 < x j := by
-  by_cases h : ∑ i, x i < 1
-  · exact Or.inl h
-  · have hp : 0 < ∑ i, x i := by linarith
-    obtain ⟨j, _, hj⟩ := (Finset.sum_pos_iff_of_nonneg (fun i _ => hx.1 i)).mp hp
-    exact Or.inr ⟨j, hj⟩
+variable {ι} in
+/-- Every point has positive missing mass `1 - ∑ i, x i` or a positive coordinate: its
+barycentric coordinates, including the missing mass, sum to one. -/
+theorem sum_lt_one_or_exists_pos (x : ι → ℝ) : ∑ i, x i < 1 ∨ ∃ j, 0 < x j := by
+  by_contra! h
+  linarith [Finset.sum_nonpos fun j (_ : j ∈ Finset.univ) => h.2 j]
 
 section VertexSwap
 
@@ -66,7 +64,6 @@ noncomputable def coordinateSimplexVertexSwap (j : ι) : (ι → ℝ) →ᴬ[ℝ
 /-- The swapped coordinate is the missing mass; all other coordinates are unchanged. -/
 theorem coordinateSimplexVertexSwap_apply [DecidableEq ι] (j : ι) (x : ι → ℝ) (i : ι) :
     coordinateSimplexVertexSwap j x i = if i = j then 1 - ∑ k, x k else x i := by
-  classical
   by_cases h : i = j <;> simp [coordinateSimplexVertexSwap, h, sub_eq_add_neg]
 
 /-- The total mass after a vertex swap is one minus the original swapped coordinate. -/
@@ -106,13 +103,11 @@ theorem coordinateSimplexVertexSwap_mem_iff (j : ι) (x : ι → ℝ) :
   classical
   have hmap (y : ι → ℝ) (hy : y ∈ coordinateSimplex ι) :
       coordinateSimplexVertexSwap j y ∈ coordinateSimplex ι := by
-    refine ⟨fun i => ?_, ?_⟩
-    · by_cases hi : i = j
-      · simp only [coordinateSimplexVertexSwap_apply, hi, ite_true]
-        linarith [hy.2]
-      · simpa [coordinateSimplexVertexSwap_apply, hi] using hy.1 i
-    · rw [sum_coordinateSimplexVertexSwap]
-      linarith [hy.1 j]
+    refine ⟨fun i => ?_, by linarith [hy.1 j, sum_coordinateSimplexVertexSwap j y]⟩
+    rw [coordinateSimplexVertexSwap_apply]
+    split_ifs
+    · linarith [hy.2]
+    · exact hy.1 i
   exact ⟨fun h => by simpa using hmap _ h, hmap x⟩
 
 /-- The ambient homeomorphism exchanging the origin and a coordinate vertex. -/
@@ -124,7 +119,7 @@ noncomputable def coordinateSimplexVertexSwapHomeomorph (j : ι) : (ι → ℝ) 
   continuous_toFun := (coordinateSimplexVertexSwap j).continuous
   continuous_invFun := (coordinateSimplexVertexSwap j).continuous
 
-/-- Both directions of the vertex homeomorphism use the same affine involution. -/
+/-- The vertex homeomorphism applies the affine vertex swap. -/
 @[simp] theorem coordinateSimplexVertexSwapHomeomorph_apply (j : ι) (x : ι → ℝ) :
     coordinateSimplexVertexSwapHomeomorph j x = coordinateSimplexVertexSwap j x := (rfl)
 
@@ -156,7 +151,8 @@ noncomputable def coordinateSimplexChartSwap (v : Option ι) : (ι → ℝ) →�
     coordinateSimplexChartSwap (some j) x = coordinateSimplexVertexSwap j x := (rfl)
 
 /-- The chart vertex swap is an involution. -/
-@[simp] theorem coordinateSimplexChartSwap_involutive (v : Option ι) (x : ι → ℝ) :
+@[simp] theorem coordinateSimplexChartSwap_coordinateSimplexChartSwap (v : Option ι)
+    (x : ι → ℝ) :
     coordinateSimplexChartSwap v (coordinateSimplexChartSwap v x) = x := by
   cases v <;> simp [coordinateSimplexChartSwap]
 
@@ -179,25 +175,15 @@ end VertexSwap
 
 /-- The coordinate simplex is convex. -/
 theorem convex_coordinateSimplex : Convex ℝ (coordinateSimplex ι) := by
-  have heq : coordinateSimplex ι =
-      (⋂ i, {x : ι → ℝ | 0 ≤ x i}) ∩ {x | ∑ i, x i ≤ 1} := by
-    ext x
-    simp
-  rw [heq]
-  refine (convex_iInter fun i =>
-    convex_halfSpace_ge (LinearMap.proj i : (ι → ℝ) →ₗ[ℝ] ℝ).isLinear 0).inter ?_
-  simpa using convex_halfSpace_le
-    (∑ i, (LinearMap.proj i : (ι → ℝ) →ₗ[ℝ] ℝ)).isLinear 1
+  rw [coordinateSimplex, ofPred_and, ofPred_forall]
+  exact (convex_iInter fun i => convex_halfSpace_ge (LinearMap.proj i).isLinear 0).inter <| by
+    simpa using convex_halfSpace_le (∑ i, (LinearMap.proj i : (ι → ℝ) →ₗ[ℝ] ℝ)).isLinear 1
 
 /-- The coordinate simplex is closed. -/
 theorem isClosed_coordinateSimplex : IsClosed (coordinateSimplex ι) := by
-  have heq : coordinateSimplex ι =
-      (⋂ i, {x : ι → ℝ | 0 ≤ x i}) ∩ {x | ∑ i, x i ≤ 1} := by
-    ext x
-    simp
-  rw [heq]
+  rw [coordinateSimplex, ofPred_and, ofPred_forall]
   exact (isClosed_iInter fun i => isClosed_le continuous_const (continuous_apply i)).inter
-    (isClosed_le (continuous_finsetSum _ fun i _ => continuous_apply i) continuous_const)
+    (isClosed_le (by fun_prop) continuous_const)
 
 /-- Every coordinate of a point of the simplex lies in the unit interval. -/
 theorem coordinateSimplex_subset_Icc : coordinateSimplex ι ⊆ Icc 0 1 := by
@@ -214,45 +200,26 @@ theorem isCompact_coordinateSimplex : IsCompact (coordinateSimplex ι) :=
 one. -/
 theorem interior_coordinateSimplex : interior (coordinateSimplex ι) =
     {x | (∀ i, 0 < x i) ∧ ∑ i, x i < 1} := by
-  cases isEmpty_or_nonempty ι with
-  | inl h =>
-    let := h
-    simp [coordinateSimplex]
-  | inr h =>
-    let := h
-    have heq : coordinateSimplex ι =
-        (⋂ i, (fun x : ι → ℝ => x i) ⁻¹' Ici 0) ∩
-          (fun x : ι → ℝ => ∑ i, x i) ⁻¹' Iic 1 := by
-      ext x
-      simp
-    let S : (ι → ℝ) →L[ℝ] ℝ := ∑ i, ContinuousLinearMap.proj i
-    have hS : Function.Surjective S := by
-      classical
-      intro r
-      exact ⟨Pi.single (Classical.arbitrary ι) r, by simp [S]⟩
-    rw [heq, interior_inter, interior_iInter_of_finite]
-    have hi (i : ι) : interior ((fun x : ι → ℝ => x i) ⁻¹' Ici 0) =
-        (fun x : ι → ℝ => x i) ⁻¹' Ioi 0 := by
-      rw [← (isOpenMap_eval i).preimage_interior_eq_interior_preimage
-        (continuous_apply i), interior_Ici]
-    simp_rw [hi]
-    have hsum : interior ((fun x : ι → ℝ => ∑ i, x i) ⁻¹' Iic 1) =
-        (fun x : ι → ℝ => ∑ i, x i) ⁻¹' Iio 1 := by
-      have hcoe : (S : (ι → ℝ) → ℝ) = fun x => ∑ i, x i := by
-        funext x
-        simp [S]
-      simpa only [hcoe, interior_Iic] using S.interior_preimage hS (Iic 1)
-    rw [hsum]
-    ext x
-    simp
+  rcases isEmpty_or_nonempty ι with h | h
+  · simp [coordinateSimplex]
+  classical
+  let S : (ι → ℝ) →L[ℝ] ℝ := ∑ i, ContinuousLinearMap.proj i
+  have hS : Function.Surjective S := fun r => ⟨Pi.single (Classical.arbitrary ι) r, by simp [S]⟩
+  have hsum : interior {x : ι → ℝ | ∑ i, x i ≤ 1} = {x | ∑ i, x i < 1} := by
+    simpa [S, interior_Iic, preimage] using S.interior_preimage hS (Iic 1)
+  have hi (i : ι) : interior {x : ι → ℝ | 0 ≤ x i} = {x | 0 < x i} := by
+    simpa [interior_Ici, preimage] using
+      ((isOpenMap_eval (X := fun _ : ι => ℝ) i).preimage_interior_eq_interior_preimage
+        (continuous_apply i) (Ici 0)).symm
+  rw [coordinateSimplex, ofPred_and, ofPred_forall, interior_inter, interior_iInter_of_finite, hsum,
+    ofPred_and, ofPred_forall]
+  simp_rw [hi]
 
 /-- The points of the coordinate simplex whose coordinate sum is less than one form an open
 set in its subtype topology. -/
 theorem isOpen_setOf_sum_lt_one_coordinateSimplex :
-    IsOpen {y : coordinateSimplex ι | ∑ i, y.1 i < 1} := by
-  exact isOpen_lt
-    (continuous_finsetSum _ fun i _ => (continuous_apply i).comp continuous_subtype_val)
-    continuous_const
+    IsOpen {y : coordinateSimplex ι | ∑ i, y.1 i < 1} :=
+  isOpen_lt (by fun_prop) continuous_const
 
 /-- A point lies on the frontier exactly when it is in the simplex and at least one of its
 barycentric coordinates, including the missing mass, vanishes. -/
@@ -261,29 +228,15 @@ theorem mem_frontier_coordinateSimplex (x : ι → ℝ) :
     x ∈ frontier (coordinateSimplex ι) ↔
       ((∀ i, 0 ≤ x i) ∧ ∑ i, x i ≤ 1) ∧ ((∃ i, x i = 0) ∨ ∑ i, x i = 1) := by
   rw [frontier, (isClosed_coordinateSimplex ι).closure_eq, interior_coordinateSimplex]
-  simp only [mem_sdiff, mem_ofPred_eq]
-  constructor
-  · rintro ⟨hx, h⟩
-    refine ⟨hx, ?_⟩
-    by_cases hs : ∑ i, x i = 1
-    · exact Or.inr hs
-    · have hn : ¬∀ i, 0 < x i := fun hp => h ⟨hp, lt_of_le_of_ne hx.2 hs⟩
-      obtain ⟨i, hi⟩ := not_forall.mp hn
-      exact Or.inl ⟨i, le_antisymm (not_lt.mp hi) (hx.1 i)⟩
-  · rintro ⟨hx, (⟨i, hi⟩ | hs)⟩
-    · exact ⟨hx, fun h => by simpa [hi] using h.1 i⟩
-    · exact ⟨hx, fun h => by simpa [hs] using h.2⟩
+  simp only [mem_sdiff, mem_coordinateSimplex, mem_ofPred_eq, not_and_or, not_forall]
+  exact and_congr_right fun hx => or_congr
+    (exists_congr fun i => (hx.1 i).not_lt_iff_eq.trans eq_comm) hx.2.not_lt_iff_eq
 
 /-- The coordinate simplex has nonempty interior. -/
 theorem nonempty_interior_coordinateSimplex : (interior (coordinateSimplex ι)).Nonempty := by
   rw [interior_coordinateSimplex]
-  have hp : (0 : ℝ) < Fintype.card ι + 1 := by positivity
-  refine ⟨fun _ => (Fintype.card ι + 1 : ℝ)⁻¹, fun _ => inv_pos.mpr hp, ?_⟩
-  simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
-  have he : (Fintype.card ι + 1 : ℝ) * (Fintype.card ι + 1 : ℝ)⁻¹ = 1 :=
-    mul_inv_cancel₀ hp.ne'
-  have hi := inv_pos.mpr hp
-  nlinarith
+  refine ⟨fun _ => (Fintype.card ι + 1 : ℝ)⁻¹, fun _ => by positivity, ?_⟩
+  simp [← div_eq_mul_inv, div_lt_one (by positivity : (0 : ℝ) < Fintype.card ι + 1)]
 
 /-- An ambient homeomorphism identifies the coordinate simplex, its interior and its
 frontier with the Euclidean unit closed ball, open ball and sphere, respectively. -/

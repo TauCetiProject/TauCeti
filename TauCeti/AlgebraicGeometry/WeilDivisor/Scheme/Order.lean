@@ -7,8 +7,10 @@ module
 
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Basic
 public import Mathlib.AlgebraicGeometry.OrderOfVanishing
+public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 import Mathlib.RingTheory.SimpleModule.Basic
 import TauCeti.AlgebraicGeometry.Scheme.StalkSpecializes
+import TauCeti.RingTheory.Length
 import TauCeti.RingTheory.OrderOfVanishing
 
 /-!
@@ -25,12 +27,14 @@ that map also requires the separate global theorem that a nonzero rational funct
 order at only finitely many codimension-one points; no finiteness assumption is hidden here.
 
 Elementary facts about `Scheme.ord` itself are recorded first: the order of one vanishes
-(`Scheme.ord_one`), the order of an inverse is the negative of the order (`Scheme.ord_inv`), and a
+(`Scheme.ord_one`), the order of an inverse is the negative of the order (`Scheme.ord_inv`), orders
+are invariant under dominant open immersions, in particular isomorphisms, of schemes
+(`Scheme.ord_functionFieldMap`), and a
 function regular on `U` has nonnegative order at every point of `U`
 (`Scheme.ord_germToFunctionField_nonneg`), that is, it has no poles where it is defined. On an
 element of the local ring at a codimension-one point, the order is the length `Ring.ord` of its
 quotient (`Scheme.ord_algebraMap_stalk`). More generally, at a codimension-one generization `η`
-of a point `x`, the order of a nonzero germ at `x` is the `Ring.ord` of its image in `𝒪_{X,η}`
+of a point `x`, the order of a germ at `x` is the `Ring.ord` of its image in `𝒪_{X,η}`
 (`Scheme.ord_algebraMap_stalk_of_specializes`), and in particular it is nonnegative
 (`Scheme.ord_algebraMap_stalk_nonneg`). It vanishes exactly when the germ lies outside the prime
 of `𝒪_{X,x}` under the maximal ideal of `𝒪_{X,η}` (`Scheme.ord_algebraMap_stalk_eq_zero_iff`),
@@ -78,6 +82,30 @@ lemma ord_inv (f : X.functionField) {x : X} : X.ord f⁻¹ x = -X.ord f x := by
     rw [mul_inv_cancel₀ hf, ord_one] at h
     omega
 
+open CategoryTheory in
+/-- **Orders of vanishing are local.** For a dominant open immersion `f : W ⟶ X` of locally
+Noetherian integral schemes (for instance an isomorphism), the order of the pullback `f^* g` of a
+rational function `g` at a point `w` is the order of `g` at `f w`: the map of local rings
+`𝒪_{X,f w} ⟶ 𝒪_{W,w}` is an isomorphism compatible with `f^*`, and lengths are invariant under
+ring isomorphisms (`TauCeti.Ring.ordFrac_map_of_ringEquiv`). -/
+@[simp]
+lemma ord_functionFieldMap {W : Scheme.{u}} [IsIntegral W] [IsLocallyNoetherian W] (f : W ⟶ X)
+    [IsOpenImmersion f] [IsDominant f] (g : X.functionField) (w : W) :
+    W.ord (f.functionFieldMap g) w = X.ord g (f w) := by
+  by_cases hw : Order.coheight w = 1
+  · have hfw : Order.coheight (f w) = 1 := (coheight_eq_of_isOpenImmersion f).trans hw
+    rw [AlgebraicGeometry.Scheme.ord_eq_ordHom_of_coheight_eq_one hw,
+      AlgebraicGeometry.Scheme.ord_eq_ordHom_of_coheight_eq_one hfw]
+    congr 2
+    have := krullDimLE_of_coheight_le hw.le
+    have := krullDimLE_of_coheight_le hfw.le
+    exact TauCeti.Ring.ordFrac_map_of_ringEquiv
+      (asIso (f.stalkMap w)).commRingCatIsoToRingEquiv f.functionFieldMap.hom
+      (f.functionFieldMap_algebraMap_stalk w) g
+  · rw [AlgebraicGeometry.Scheme.ord_eq_zero_of_coheight_neq_one hw,
+      AlgebraicGeometry.Scheme.ord_eq_zero_of_coheight_neq_one
+        (by rwa [coheight_eq_of_isOpenImmersion f])]
+
 /-- A regular function on `U` has nonnegative order at every point of `U`: it has no poles where
 it is defined. -/
 lemma ord_germToFunctionField_nonneg {U : X.Opens} [Nonempty U] (a : Γ(X, U)) {x : X}
@@ -87,14 +115,19 @@ lemma ord_germToFunctionField_nonneg {U : X.Opens} [Nonempty U] (a : Γ(X, U)) {
   · have h := Scheme.ord_le_smul hx ha (1 : X.functionField)
     rwa [Algebra.smul_def, mul_one, RingHom.algebraMap_toAlgebra, ord_one] at h
 
-/-- At a codimension-one point `x`, the order of the image in the function field of a nonzero
-element `c` of the local ring `𝒪_{X,x}` is its order of vanishing `Ring.ord`, the length of
-`𝒪_{X,x} ⧸ (c)`. -/
-theorem ord_algebraMap_stalk {x : X} (hx : Order.coheight x = 1) {c : X.presheaf.stalk x}
-    (hc : c ≠ 0) :
+/-- At a codimension-one point `x`, the order of the image in the function field of an element `c`
+of the local ring `𝒪_{X,x}` is its order of vanishing `Ring.ord`, the length of `𝒪_{X,x} ⧸ (c)`.
+Both sides are `0` for `c = 0`. -/
+theorem ord_algebraMap_stalk {x : X} (hx : Order.coheight x = 1)
+    (c : X.presheaf.stalk x) :
     X.ord (algebraMap (X.presheaf.stalk x) X.functionField c) x =
       (Ring.ord (X.presheaf.stalk x) c).toNat := by
   have : Ring.KrullDimLE 1 (X.presheaf.stalk x) := krullDimLE_of_coheight_le hx.le
+  rcases eq_or_ne c 0 with rfl | hc
+  · have htop := TauCeti.length_self_eq_top_of_ringKrullDim_pos (A := X.presheaf.stalk x)
+      (by rw [ringKrullDim_stalk_eq_coheight, hx]; exact zero_lt_one)
+    rw [map_zero, _root_.AlgebraicGeometry.Scheme.ord_zero, Ring.ord_zero, htop,
+      ENat.toNat_top, Pi.zero_apply, Nat.cast_zero]
   have hnz : c ∈ nonZeroDivisors (X.presheaf.stalk x) := mem_nonZeroDivisors_of_ne_zero hc
   obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.mp (Ring.ord_ne_top hnz)
   have hne : algebraMap (X.presheaf.stalk x) X.functionField c ≠ 0 :=
@@ -103,20 +136,19 @@ theorem ord_algebraMap_stalk {x : X} (hx : Order.coheight x = 1) {c : X.presheaf
   simp only [_root_.AlgebraicGeometry.Scheme.ordHom]
   rw [Ring.ordFrac_eq_ord _ hc, Ring.ordMonoidWithZeroHom_eq_coe _ hnz hn.symm]
 
-/-- At a codimension-one generization `η` of `x`, the order of a nonzero germ at `x` is the
-order of vanishing `Ring.ord` of its image in the one-dimensional local ring `𝒪_{X,η}`. -/
+/-- At a codimension-one generization `η` of `x`, the order of a germ at `x` is the order of
+vanishing `Ring.ord` of its image in the one-dimensional local ring `𝒪_{X,η}`. -/
 theorem ord_algebraMap_stalk_of_specializes {x η : X} (hη : Order.coheight η = 1) (h : η ⤳ x)
-    {b : X.presheaf.stalk x} (hb : b ≠ 0) :
+    (b : X.presheaf.stalk x) :
     X.ord (algebraMap (X.presheaf.stalk x) X.functionField b) η =
       (Ring.ord (X.presheaf.stalk η) ((X.presheaf.stalkSpecializes h).hom b)).toNat := by
-  rw [← algebraMap_stalkSpecializes h,
-    ord_algebraMap_stalk hη ((map_ne_zero_iff _ (stalkSpecializes_injective h)).mpr hb)]
+  rw [← algebraMap_stalkSpecializes h, ord_algebraMap_stalk hη]
 
-/-- A nonzero germ at `x` has nonnegative order at every codimension-one generization of `x`. -/
+/-- A germ at `x` has nonnegative order at every codimension-one generization of `x`. -/
 theorem ord_algebraMap_stalk_nonneg {x η : X} (hη : Order.coheight η = 1) (h : η ⤳ x)
-    {b : X.presheaf.stalk x} (hb : b ≠ 0) :
+    (b : X.presheaf.stalk x) :
     0 ≤ X.ord (algebraMap (X.presheaf.stalk x) X.functionField b) η := by
-  rw [ord_algebraMap_stalk_of_specializes hη h hb]
+  rw [ord_algebraMap_stalk_of_specializes hη h]
   exact Int.natCast_nonneg _
 
 /-- At a codimension-one generization `η` of `x`, a nonzero germ at `x` has order zero exactly
@@ -129,20 +161,20 @@ theorem ord_algebraMap_stalk_eq_zero_iff {x η : X} (hη : Order.coheight η = 1
   have hc := (map_ne_zero_iff _ (stalkSpecializes_injective h)).mpr hb
   have : Ring.KrullDimLE 1 (X.presheaf.stalk η) := krullDimLE_of_coheight_le hη.le
   have hnt := Ring.ord_ne_top (mem_nonZeroDivisors_of_ne_zero hc)
-  rw [ord_algebraMap_stalk_of_specializes hη h hb, Ideal.mem_comap, IsLocalRing.mem_maximalIdeal,
+  rw [ord_algebraMap_stalk_of_specializes hη h, Ideal.mem_comap, IsLocalRing.mem_maximalIdeal,
     mem_nonunits_iff, not_not, ← TauCeti.Ring.ord_eq_zero_iff, Int.natCast_eq_zero,
     ENat.toNat_eq_zero]
   exact or_iff_left hnt
 
-/-- At a codimension-one generization `η` of `x`, a nonzero generator of the prime of `𝒪_{X,x}`
+/-- At a codimension-one generization `η` of `x`, a generator of the prime of `𝒪_{X,x}`
 lying under the maximal ideal of `𝒪_{X,η}` has order one at `η`: its image generates the maximal
 ideal of `𝒪_{X,η}`. -/
 theorem ord_algebraMap_stalk_eq_one {x η : X} (hη : Order.coheight η = 1) (h : η ⤳ x)
     {p : X.presheaf.stalk x}
     (hp : (IsLocalRing.maximalIdeal (X.presheaf.stalk η)).comap
-      (X.presheaf.stalkSpecializes h).hom = Ideal.span {p}) (hp0 : p ≠ 0) :
+      (X.presheaf.stalkSpecializes h).hom = Ideal.span {p}) :
     X.ord (algebraMap (X.presheaf.stalk x) X.functionField p) η = 1 := by
-  rw [ord_algebraMap_stalk_of_specializes hη h hp0]
+  rw [ord_algebraMap_stalk_of_specializes hη h]
   suffices Ring.ord (X.presheaf.stalk η) ((X.presheaf.stalkSpecializes h).hom p) = 1 by
     rw [this, ENat.toNat_one, Nat.cast_one]
   let := (X.presheaf.stalkSpecializes h).hom.toAlgebra

@@ -1,11 +1,14 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, GPT 5.6 High, OpenAI GPT-6
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.Compression
+public import TauCeti.Analysis.InnerProductSpace.InvariantSubspace
 public import TauCeti.Analysis.InnerProductSpace.RangeProjection
+public import TauCeti.Analysis.InnerProductSpace.SingularValues
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Sylvester.Basic
 
 /-!
@@ -32,9 +35,9 @@ Ritz residual as its residual when `M` is the compression; the angles between th
 and a second subspace are read off the trial map by
 `Submodule.principalSines_range_eq_singularValues` and its companions.
 
-## Main definitions
 
-* `ContinuousLinearMap.compression A X`: the compression `X† A X` of `A` along `X`.
+The compression `ContinuousLinearMap.compression A X` itself is defined in
+`TauCeti.Analysis.InnerProductSpace.Compression`.
 
 ## Main results
 
@@ -70,79 +73,6 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
 
 namespace ContinuousLinearMap
-
-/-! ### Compressions -/
-
-section Compression
-
-variable (A : E →L[𝕜] E) (X : F →L[𝕜] E)
-
-/-- The *compression* `X† A X` of an operator `A` on `E` along an operator `X : F →L[𝕜] E`. When
-`X` is an isometry, it is `A` cut down to the trial subspace `range X`, in the coordinates of
-`F`. -/
-def compression : F →L[𝕜] F :=
-  adjoint X ∘L A ∘L X
-
-theorem compression_def : A.compression X = adjoint X ∘L A ∘L X :=
-  (rfl)
-
-@[simp]
-theorem compression_apply (x : F) : A.compression X x = adjoint X (A (X x)) :=
-  (rfl)
-
-/-- Compression sends the zero operator to zero. -/
-@[simp]
-theorem compression_zero : (0 : E →L[𝕜] E).compression X = 0 := by
-  ext x
-  simp
-
-/-- Compression preserves addition in the operator argument. -/
-@[simp]
-theorem compression_add (B : E →L[𝕜] E) :
-    (A + B).compression X = A.compression X + B.compression X := by
-  ext x
-  simp
-
-/-- Compression preserves subtraction in the operator argument. -/
-@[simp]
-theorem compression_sub (B : E →L[𝕜] E) :
-    (A - B).compression X = A.compression X - B.compression X := by
-  ext x
-  simp
-
-/-- Compression preserves scalar multiplication in the operator argument. -/
-@[simp]
-theorem compression_smul (c : 𝕜) : (c • A).compression X = c • A.compression X := by
-  ext x
-  simp
-
-/-- The matrix coefficients of the compression are those of `A` on the images under `X`. -/
-theorem inner_compression_apply (x y : F) :
-    ⟪x, A.compression X y⟫_𝕜 = ⟪X x, A (X y)⟫_𝕜 :=
-  adjoint_inner_right X x (A (X y))
-
-@[simp]
-theorem compression_id : A.compression (ContinuousLinearMap.id 𝕜 E) = A := by
-  ext x
-  simp [compression_def, adjoint_id]
-
-/-- Compressing in two steps is compressing along the composite. -/
-theorem compression_comp {G : Type*} [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
-    [CompleteSpace G] (Y : G →L[𝕜] F) :
-    A.compression (X ∘L Y) = (A.compression X).compression Y := by
-  simp only [compression_def, adjoint_comp, comp_assoc]
-
-/-- The adjoint of the compression is the compression of the adjoint. -/
-@[simp]
-theorem adjoint_compression : adjoint (A.compression X) = (adjoint A).compression X := by
-  simp only [compression_def, adjoint_comp, adjoint_adjoint, comp_assoc]
-
-/-- The compression of a symmetric operator is symmetric. -/
-theorem isSymmetric_compression {A : E →L[𝕜] E} (hA : (A : E →ₗ[𝕜] E).IsSymmetric) :
-    (A.compression X : F →ₗ[𝕜] F).IsSymmetric :=
-  isSelfAdjoint_iff_isSymmetric.1 <| (isSelfAdjoint_iff_isSymmetric.2 hA).adjoint_conj X
-
-end Compression
 
 /-! ### Ritz residuals -/
 
@@ -229,3 +159,104 @@ theorem map_sylvester_compression_le_map_sylvester (N : UnitarilyInvariantSemino
   exact N.map_starProjection_comp_le _ _
 
 end TauCeti.UnitarilyInvariantSeminorm
+
+namespace LinearMap
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+
+/-- The Ritz residual of a finite-dimensional isometric trial map is orthogonal to the trial
+space: `X† (A X - X (X† A X)) = 0`.
+
+This is the linear-map form of `ContinuousLinearMap.adjoint_comp_sylvester_compression`.
+The corresponding DKPS statement is in
+`ForTauCeti/Analysis/InnerProductSpace/Residual/Ritz.lean` (Jon Crall and GPT 5.6 High;
+Kitware, Apache-2.0); the proof here uses the accepted continuous-map theorem. -/
+theorem adjoint_comp_ritzResidual_eq_zero (A : E →ₗ[𝕜] E)
+    (X : F →ₗᵢ[𝕜] E) : X.toLinearMap.adjoint ∘ₗ (A ∘ₗ X.toLinearMap - X.toLinearMap ∘ₗ
+      (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap)) = 0 := by
+  let : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  let : CompleteSpace F := FiniteDimensional.complete 𝕜 F
+  have h := ContinuousLinearMap.adjoint_comp_sylvester_compression
+    A.toContinuousLinearMap (X := X.toContinuousLinearMap) X.isometry
+  simpa only [ContinuousLinearMap.compression_def, ContinuousLinearMap.sylvester_apply,
+    ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.toLinearMap_sub,
+    ← ContinuousLinearMap.adjoint_toLinearMap, LinearIsometry.toLinearMap_toContinuousLinearMap,
+    LinearMap.coe_toContinuousLinearMap, ContinuousLinearMap.toLinearMap_zero] using congrArg
+      ContinuousLinearMap.toLinearMap h
+
+/-- **Galerkin orthogonality, pointwise.** The Ritz residual of `v` is orthogonal to every vector
+`X u` of the trial space. -/
+@[simp]
+theorem inner_map_ritzResidual_eq_zero (A : E →ₗ[𝕜] E) (X : F →ₗᵢ[𝕜] E) (u v : F) :
+    ⟪X u, A (X v) - X (X.toLinearMap.adjoint (A (X v)))⟫_𝕜 = 0 := by
+  have h : ⟪X.toLinearMap u,
+      (A ∘ₗ X.toLinearMap - X.toLinearMap ∘ₗ (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap)) v⟫_𝕜 =
+      0 := by
+    rw [← LinearMap.adjoint_inner_right, ← LinearMap.comp_apply,
+      adjoint_comp_ritzResidual_eq_zero]
+    simp
+  simpa using h
+
+/-- The real part of the pairing of the `i`-th left singular vector of `Uᗮ.starProjection ∘ X`
+with the Ritz residual of the matching right singular vector is the corresponding singular value
+times the difference of the two displayed quadratic forms: that of `A` at the left singular
+vector, and that of `Xᴴ A X` at the right singular vector. -/
+theorem IsSymmetric.re_inner_leftSingularVector_ritzResidual
+    {A : E →ₗ[𝕜] E} (hA : A.IsSymmetric)
+    {U : Submodule 𝕜 E} [U.HasOrthogonalProjection] (hU : U ∈ Module.End.invtSubmodule A)
+    (X : F →ₗ[𝕜] E) (i : Fin (finrank 𝕜 F)) :
+    RCLike.re ⟪LinearMap.leftSingularVector (Uᗮ.starProjection.toLinearMap ∘ₗ X) i,
+        (A ∘ₗ X - X ∘ₗ (X.adjoint ∘ₗ A ∘ₗ X))
+          (LinearMap.rightSingularBasis (Uᗮ.starProjection.toLinearMap ∘ₗ X) i)⟫_𝕜 =
+      (Uᗮ.starProjection.toLinearMap ∘ₗ X).singularValues i *
+        (RCLike.re ⟪A (LinearMap.leftSingularVector
+            (Uᗮ.starProjection.toLinearMap ∘ₗ X) i),
+          LinearMap.leftSingularVector (Uᗮ.starProjection.toLinearMap ∘ₗ X) i⟫_𝕜 -
+          RCLike.re ⟪(X.adjoint ∘ₗ A ∘ₗ X)
+            (LinearMap.rightSingularBasis (Uᗮ.starProjection.toLinearMap ∘ₗ X) i),
+            LinearMap.rightSingularBasis
+              (Uᗮ.starProjection.toLinearMap ∘ₗ X) i⟫_𝕜) := by
+  let S := (Uᗮ.starProjection.toLinearMap ∘ₗ X)
+  let M := (X.adjoint ∘ₗ A ∘ₗ X)
+  let R := (A ∘ₗ X - X ∘ₗ (X.adjoint ∘ₗ A ∘ₗ X))
+  let σ := S.singularValues i
+  let v := LinearMap.rightSingularBasis S i
+  let y := LinearMap.leftSingularVector S i
+  have hSv : S v = ((σ : ℝ) : 𝕜) • y := by
+    simpa [S, σ, v, y] using LinearMap.apply_rightSingularBasis S i
+  have hSadj : S.adjoint y = ((σ : ℝ) : 𝕜) • v := by
+    simpa only [S, σ, v, y] using LinearMap.adjoint_leftSingularVector S i
+  have hyUperp : y ∈ Uᗮ := by
+    dsimp [y]
+    rw [LinearMap.leftSingularVector_def]
+    exact Uᗮ.smul_mem _ (Uᗮ.starProjection_apply_mem (X v))
+  have hSyl := LinearMap.congr_fun
+    (((hA.isReducing_iff_mem_invtSubmodule U).mpr hU).sylvester_starProjection_orthogonal_comp
+      X M) v
+  have hright :
+      ⟪y, Uᗮ.starProjection.toLinearMap (R v)⟫_𝕜 = ⟪y, R v⟫_𝕜 := by
+    -- Expand composition so the projection can move across the inner product.
+    change ⟪y, Uᗮ.starProjection (R v)⟫_𝕜 = ⟪y, R v⟫_𝕜
+    rw [← Uᗮ.inner_starProjection_left_eq_right,
+      Submodule.starProjection_eq_self_iff.mpr hyUperp]
+  have hsyl' : A (S v) - S (M v) = Uᗮ.starProjection.toLinearMap (R v) := by
+    simpa [S, M, R] using hSyl
+  have hSM : ⟪y, S (M v)⟫_𝕜 = ⟪S.adjoint y, M v⟫_𝕜 :=
+    (LinearMap.adjoint_inner_left S (M v) y).symm
+  have hpairComplex :
+      ⟪y, R v⟫_𝕜 = (((σ : ℝ) : 𝕜) * (⟪y, A y⟫_𝕜 - ⟪v, M v⟫_𝕜)) := by
+    calc
+      ⟪y, R v⟫_𝕜 = ⟪y, A (S v) - S (M v)⟫_𝕜 := by rw [hsyl', hright]
+      _ = (((σ : ℝ) : 𝕜) * ⟪y, A y⟫_𝕜) - (((σ : ℝ) : 𝕜) * ⟪v, M v⟫_𝕜) := by
+        rw [inner_sub_right, hSv, map_smul, inner_smul_right, hSM, hSadj, inner_smul_left,
+          RCLike.conj_ofReal]
+      _ = _ := by ring
+  have hAy : RCLike.re ⟪y, A y⟫_𝕜 = RCLike.re ⟪A y, y⟫_𝕜 := by
+    rw [← inner_conj_symm, RCLike.conj_re]
+  have hMv : RCLike.re ⟪v, M v⟫_𝕜 = RCLike.re ⟪M v, v⟫_𝕜 := by
+    rw [← inner_conj_symm, RCLike.conj_re]
+  rw [hpairComplex, RCLike.re_ofReal_mul, map_sub, hAy, hMv]
+
+end LinearMap

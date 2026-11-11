@@ -248,7 +248,7 @@ theorem fullSeminorm_convolutionMap_subtypeHom (hmul : ∀ a : A, ∀ x ∈ I, a
     (f : ConvolutionAlgebra hI.restrict μ) :
     fullSeminorm α μ (hI.subtypeHom.convolutionMap μ f) = fullSeminorm hI.restrict μ f := by
   refine le_antisymm (hI.subtypeHom.fullSeminorm_convolutionMap_le μ f) ?_
-  refine (fullSeminorm_le_iff (apply_nonneg _ _)).2 fun H _ _ _ P => ?_
+  refine fullSeminorm_le_iff.2 fun H _ _ _ P => ?_
   rw [← P.integratedStarAlgHom_idealExtension_convolutionMap hmul μ f]
   exact norm_integratedStarAlgHom_le_fullSeminorm
     (P.idealExtension hmul) (hI.subtypeHom.convolutionMap μ f)
