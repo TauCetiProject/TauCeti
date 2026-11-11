@@ -90,6 +90,12 @@ theorem mul_X_add_C_ne_zero {c d : K} (hcd : c ≠ 0 ∨ d ≠ 0) : C c * X + C 
   · exact h h1
   · exact h h0'
 
+/-- A linear polynomial in `X`, read in `k(X)`, vanishes exactly when both coefficients do. -/
+theorem mul_X_add_C_eq_zero_iff {c d : K} : C c * X + C d = 0 ↔ c = 0 ∧ d = 0 := by
+  refine ⟨fun h ↦ ?_, fun ⟨hc, hd⟩ ↦ by simp [hc, hd]⟩
+  by_contra hne
+  exact mul_X_add_C_ne_zero (not_and_or.mp hne) h
+
 section MobiusOf
 
 variable (a b c d : K)
@@ -105,11 +111,9 @@ include hdet
 
 /-- The denominator of a linear fractional transformation with invertible coefficients is
 nonzero. -/
-theorem mobiusOf_den_ne_zero : C c * X + C d ≠ 0 := by
-  refine mul_X_add_C_ne_zero ?_
-  by_contra h
-  simp only [not_or, not_not] at h
-  exact hdet (by rw [h.1, h.2]; ring)
+theorem mobiusOf_den_ne_zero : C c * X + C d ≠ 0 := fun h ↦ by
+  obtain ⟨rfl, rfl⟩ := mul_X_add_C_eq_zero_iff.mp h
+  exact hdet (by ring)
 
 /-- Clearing the denominator of a linear fractional transformation. -/
 theorem mobiusOf_mul_den : mobiusOf a b c d * (C c * X + C d) = C a * X + C b :=
@@ -121,10 +125,11 @@ vanishes, `c = d = 0` and both sides are `0`. -/
 theorem sub_mul_mobiusOf_mul_den :
     (C a - C c * mobiusOf a b c d) * (C c * X + C d) = C (a * d - b * c) := by
   by_cases hD : (C c * X + C d : RatFunc K) = 0
-  · have hcd : ¬ (c ≠ 0 ∨ d ≠ 0) := fun h ↦ mul_X_add_C_ne_zero h hD
-    simp only [not_or, not_not] at hcd
-    simp [hcd.1, hcd.2]
-  · have h : mobiusOf a b c d * (C c * X + C d) = C a * X + C b := div_mul_cancel₀ _ hD
+  · obtain ⟨rfl, rfl⟩ := mul_X_add_C_eq_zero_iff.mp hD
+    simp
+  · have h : mobiusOf a b c d * (C c * X + C d) = C a * X + C b := by
+      rw [mobiusOf_def]
+      exact div_mul_cancel₀ _ hD
     rw [map_sub, map_mul, map_mul]
     linear_combination (-(C c)) * h
 
