@@ -168,14 +168,14 @@ end Semiring
 
 section Sign
 
-variable [Ring R] {H ι₁ : Type*} [AddGroup H] [Finite ι₁] {N : H →+ ℝ}
+variable {H ι₁ : Type*} [AddGroup H] [Finite ι₁] {N : H →+ ℝ}
   {P₁ : ι₁ → Type*} [∀ i, AddTorsor H (P₁ i)] {F₁ : (Σ i, P₁ i) → ℝ}
   (hF₁ : ∀ i h (p : P₁ i), F₁ ⟨i, h +ᵥ p⟩ = F₁ ⟨i, p⟩ - N h) (r₁ : ∀ i, P₁ i)
 
 /-- If degrees change by even amounts within each orbit, then a combination of degree `e` has
 nonzero coordinates only in orbits whose reference generator has the parity of `e`: the
 coordinate in an orbit vanishes unless the orbit has generators of degree `e`. -/
-theorem even_sub_of_coordinates_ne_zero {d : (Σ i, P₁ i) → ℤ}
+theorem even_sub_of_coordinates_ne_zero [Semiring R] {d : (Σ i, P₁ i) → ℤ}
     (hd : ∀ i (h : H) (p : P₁ i), Even (d ⟨i, h +ᵥ p⟩ - d ⟨i, p⟩)) {e : ℤ} {a : NovikovModule R F₁}
     (ha : a ∈ gradeBy R F₁ d e) {i : ι₁} (h₀ : coordinates hF₁ r₁ a i ≠ 0) :
     Even (d ⟨i, r₁ i⟩ - e) := by
@@ -190,7 +190,7 @@ theorem even_sub_of_coordinates_ne_zero {d : (Σ i, P₁ i) → ℤ}
 of degree `e` the sign of the degree of a reference generator is the sign `(-1)^e`: the
 coordinate in an orbit vanishes unless the orbit has generators of degree `e`, which all have the
 parity of its reference generator. -/
-theorem negOnePowCast_smul_coordinates_of_mem_gradeBy {d : (Σ i, P₁ i) → ℤ}
+theorem negOnePowCast_smul_coordinates_of_mem_gradeBy [Ring R] {d : (Σ i, P₁ i) → ℤ}
     (hd : ∀ i (h : H) (p : P₁ i), Even (d ⟨i, h +ᵥ p⟩ - d ⟨i, p⟩)) {e : ℤ} {a : NovikovModule R F₁}
     (ha : a ∈ gradeBy R F₁ d e) (i : ι₁) :
     negOnePowCast R (d ⟨i, r₁ i⟩) • coordinates hF₁ r₁ a i =
