@@ -54,9 +54,27 @@ variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommG
 
 /-- Over the ambient coefficient ring `R` itself, `P.pairingIn R` agrees with `P.pairing`. -/
 @[simp]
-theorem pairingIn_self (P : RootPairing ι R M N) (i j : ι) :
+theorem pairingIn_eq_pairing (P : RootPairing ι R M N) (i j : ι) :
     P.pairingIn R i j = P.pairing i j := by
   simpa using P.algebraMap_pairingIn R i j
+
+/-- Rewrites a mixed `pairingIn`/`pairing` agreement `P₂.pairingIn R (e i) (e j) = P.pairing i j`
+into an agreement of `pairingIn R` on both sides. -/
+theorem pairingIn_eq_of_pairingIn_eq_pairing {ι₂ S M₂ N₂ : Type*} [CommRing S] [Algebra R S]
+    [AddCommGroup M₂] [Module S M₂] [AddCommGroup N₂] [Module S N₂]
+    {P : RootPairing ι R M N} {P₂ : RootPairing ι₂ S M₂ N₂} [P₂.IsValuedIn R]
+    {e : ι → ι₂} (he : ∀ i j, P₂.pairingIn R (e i) (e j) = P.pairing i j) (i j : ι) :
+    P₂.pairingIn R (e i) (e j) = P.pairingIn R i j := by
+  rw [he, pairingIn_eq_pairing]
+
+/-- Rewrites an agreement `P₂.pairing (e i) (e j) = P.pairing i j` over `R` into an agreement of
+`pairingIn R` on both sides. -/
+theorem pairingIn_eq_of_pairing_eq {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [Module R M₂]
+    [AddCommGroup N₂] [Module R N₂] {P : RootPairing ι R M N} {P₂ : RootPairing ι₂ R M₂ N₂}
+    {e : ι → ι₂} (he : ∀ i j, P₂.pairing (e i) (e j) = P.pairing i j) (i j : ι) :
+    P₂.pairingIn R (e i) (e j) = P.pairingIn R i j :=
+  pairingIn_eq_of_pairingIn_eq_pairing
+    (fun a b ↦ (P₂.pairingIn_eq_pairing _ _).trans (he a b)) i j
 
 /-- When three roots sum to zero, the opposite of the first equals the sum of the other two. -/
 theorem root_reflectionPerm_self_eq_add_of_add_add_eq_zero {P : RootPairing ι R M N} {i j k : ι}
@@ -66,15 +84,20 @@ theorem root_reflectionPerm_self_eq_add_of_add_add_eq_zero {P : RootPairing ι R
   calc -P.root i = P.root i + P.root j + P.root k - P.root i := by rw [h, zero_sub]
     _ = P.root j + P.root k := by abel
 
+/-- Negating all three indices via `reflectionPerm` preserves a root sum `αₖ = αᵢ + αⱼ`. -/
+theorem root_reflectionPerm_self_eq_add_of_root_eq_add {P : RootPairing ι R M N} {i j k : ι}
+    (h : P.root k = P.root i + P.root j) :
+    P.root (P.reflectionPerm k k) =
+      P.root (P.reflectionPerm i i) + P.root (P.reflectionPerm j j) := by
+  simp only [root_reflectionPerm, reflection_apply_self]
+  rw [h, neg_add]
+
 /-- Negating two roots via `reflectionPerm` preserves membership of their sum in `range P.root`. -/
 theorem root_reflectionPerm_add_mem_range_iff (P : RootPairing ι R M N) (i j : ι) :
     P.root (P.reflectionPerm i i) + P.root (P.reflectionPerm j j) ∈ range P.root ↔
       P.root i + P.root j ∈ range P.root := by
-  simp only [root_reflectionPerm, reflection_apply_self]
-  exact ⟨fun ⟨k, hk⟩ ↦ ⟨P.reflectionPerm k k, by
-      rw [root_reflectionPerm, reflection_apply_self, hk]; abel⟩,
-    fun ⟨k, hk⟩ ↦ ⟨P.reflectionPerm k k, by
-      rw [root_reflectionPerm, reflection_apply_self, hk]; abel⟩⟩
+  simpa only [root_reflectionPerm, reflection_apply_self, ← neg_add] using
+    (P.neg_mem_range_root_iff (x := P.root i + P.root j))
 
 end General
 

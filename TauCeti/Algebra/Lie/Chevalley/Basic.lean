@@ -6,8 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Abelian
+public import Mathlib.LinearAlgebra.Basis.Prod
+public import Mathlib.LinearAlgebra.Finsupp.VectorSpace
 public import Mathlib.LinearAlgebra.RootSystem.Chain
-public import Mathlib.LinearAlgebra.TensorProduct.Basis
+public import TauCeti.Algebra.Lie.FullCartan
+
+import TauCeti.LinearAlgebra.RootSystem.PairingInvariance
 
 /-!
 # The integral Chevalley Lie algebra over a full cocharacter lattice
@@ -20,8 +24,9 @@ torus, without assuming coroots span `Y` or split off integrally) and one root l
 This file defines extensional integer Chevalley structure-constant tables `P.ChevalleyConstants`
 (`⁅eᵢ, e_{-i}⁆ = H_{αᵢ∨}`, `|Nᵢⱼ| = P.chainBotCoeff i j + 1`, skew-symmetry, opposition symmetry,
 and three-root Jacobi identities) and constructs the `ℤ`-Lie algebra
-`RootPairing.ChevalleyLieAlgebra c` on `Y × (ι →₀ ℤ)`, following the full-Cartan carrier pattern of
-`Matrix.FullShellLieAlgebra` without restricting to simply-laced norm-two shells.
+`RootPairing.ChevalleyLieAlgebra c` on `TauCeti.FullCartan Y ι`, sharing the generic full-Cartan
+carrier and generator-reduction Lie axioms with `Matrix.FullShellLieAlgebra` without restricting to
+simply-laced norm-two shells.
 
 ## Main definitions and results
 
@@ -47,7 +52,6 @@ and three-root Jacobi identities) and constructs the `ℤ`-Lie algebra
 public section
 
 open Module Set
-open scoped TensorProduct
 
 namespace RootPairing
 
@@ -66,6 +70,8 @@ noncomputable def tripleRootCoeff (P : RootPairing ι ℤ X Y) (N : ι → ι �
     else 0
 
 open scoped Classical in
+/-- When `αⱼ + αₖ = 0`, `P.tripleRootCoeff N i j k l` is `-P.pairing i j` at `l = i` and `0`
+otherwise. -/
 theorem tripleRootCoeff_of_add_eq_zero (P : RootPairing ι ℤ X Y) (N : ι → ι → ℤ)
     {i j k l : ι} (hjk : P.root j + P.root k = 0) :
     P.tripleRootCoeff N i j k l = if l = i then -P.pairing i j else 0 := by
@@ -73,6 +79,8 @@ theorem tripleRootCoeff_of_add_eq_zero (P : RootPairing ι ℤ X Y) (N : ι → 
   by_cases hli : l = i <;> simp [hjk, hli]
 
 open scoped Classical in
+/-- When `αₘ = αⱼ + αₖ`, `P.tripleRootCoeff N i j k l` is `N i m * N j k` if `αₗ = αᵢ + αₘ` and
+`0` otherwise. -/
 theorem tripleRootCoeff_of_root_eq_add (P : RootPairing ι ℤ X Y) (N : ι → ι → ℤ)
     {i j k m l : ι} (hm : P.root m = P.root j + P.root k) :
     P.tripleRootCoeff N i j k l = if P.root l = P.root i + P.root m then N i m * N j k else 0 := by
@@ -80,12 +88,27 @@ theorem tripleRootCoeff_of_root_eq_add (P : RootPairing ι ℤ X Y) (N : ι → 
   rw [tripleRootCoeff, ite_eq_right (fun h ↦ P.ne_zero m (hm.trans h.1)), zero_add,
     dite_eq_left hex, P.root.injective (hex.choose_spec.trans hm.symm)]
 
+/-- When `αⱼ + αₖ` is neither a root nor zero, `P.tripleRootCoeff N i j k l` vanishes. -/
 theorem tripleRootCoeff_of_notMem_of_add_ne_zero (P : RootPairing ι ℤ X Y) (N : ι → ι → ℤ)
     {i j k l : ι} (hnot : P.root j + P.root k ∉ range P.root) (hne : P.root j + P.root k ≠ 0) :
     P.tripleRootCoeff N i j k l = 0 := by
   classical
   rw [tripleRootCoeff, ite_eq_right (fun h ↦ hne h.1),
     dite_eq_right (fun ⟨m, hm⟩ ↦ hnot ⟨m, hm⟩), add_zero]
+
+/-- `P.tripleRootCoeff N i j k l` vanishes whenever `P.root l ≠ P.root i + P.root j + P.root k`. -/
+theorem tripleRootCoeff_eq_zero_of_ne_sum (P : RootPairing ι ℤ X Y) (N : ι → ι → ℤ)
+    {i j k l : ι} (hl : P.root l ≠ P.root i + P.root j + P.root k) :
+    P.tripleRootCoeff N i j k l = 0 := by
+  classical
+  by_cases hjk0 : P.root j + P.root k = 0
+  · rw [P.tripleRootCoeff_of_add_eq_zero _ hjk0,
+      ite_eq_right (by rintro rfl; exact hl (by rw [add_assoc, hjk0, add_zero]))]
+  · by_cases hex : ∃ m, P.root m = P.root j + P.root k
+    · obtain ⟨m, hm⟩ := hex
+      rw [P.tripleRootCoeff_of_root_eq_add _ hm,
+        ite_eq_right (fun h ↦ hl (by rw [h, hm, add_assoc]))]
+    · exact P.tripleRootCoeff_of_notMem_of_add_ne_zero _ (fun ⟨m, hm⟩ ↦ hex ⟨m, hm⟩) hjk0
 
 variable [Finite ι]
 
@@ -151,9 +174,9 @@ theorem structConst_eq_natCast_or_eq_neg_natCast {i j k : ι}
   · exact .inr (hn.trans (by rw [c.natAbs_structConst h]))
 
 include c in
-/-- Any finite integral root pairing admitting Chevalley structure constants is reduced: skew
-symmetry forces `N_{i,i} = 0`, whereas `2 αᵢ ∈ Φ` would require `|N_{i,i}| = p + 1 ≥ 1`. -/
+/-- A finite integral root pairing admitting Chevalley structure constants is reduced. -/
 theorem isReduced : P.IsReduced := by
+  -- Skew-symmetry forces `N_{i,i} = 0`, whereas `2 αᵢ ∈ Φ` would require `|N_{i,i}| = p + 1 ≥ 1`.
   have : Module.IsReflexive ℤ X := .of_isPerfPair P.toLinearMap
   have : Module.IsReflexive ℤ Y := .of_isPerfPair P.toLinearMap.flip
   have hno2 (i : ι) : P.root i + P.root i ∉ range P.root := fun ⟨k, hk⟩ ↦ by
@@ -206,50 +229,51 @@ variable {ι X Y : Type*} [Finite ι] [AddCommGroup X] [AddCommGroup Y]
   {P : RootPairing ι ℤ X Y}
 
 /-- **The integral Chevalley Lie algebra** of a root datum `P` over its full cocharacter group `Y`,
-realized on the product `Y × (ι →₀ ℤ)` so that no splitting of `Y` into central and coroot summands
-is assumed. -/
+realized on `TauCeti.FullCartan Y ι` (`Y × (ι →₀ ℤ)`) so that no splitting of `Y` into central and
+coroot summands is assumed. -/
 def ChevalleyLieAlgebra {P : RootPairing ι ℤ X Y} (_c : P.ChevalleyConstants) : Type _ :=
-  Y × (ι →₀ ℤ)
+  TauCeti.FullCartan Y ι
 
 namespace ChevalleyLieAlgebra
 
 variable (c : P.ChevalleyConstants)
 
 noncomputable instance : AddCommGroup (ChevalleyLieAlgebra c) :=
-  inferInstanceAs (AddCommGroup (Y × (ι →₀ ℤ)))
+  inferInstanceAs (AddCommGroup (TauCeti.FullCartan Y ι))
 
 /-- Identification of `ChevalleyLieAlgebra c` with its underlying product `Y × (ι →₀ ℤ)`. -/
 noncomputable def equivProd : ChevalleyLieAlgebra c ≃ₗ[ℤ] Y × (ι →₀ ℤ) :=
-  LinearEquiv.refl ℤ _
+  TauCeti.FullCartan.equivProd Y ι
 
 /-- The Cartan vector `H_y` attached to a cocharacter `y : Y`, as a `ℤ`-linear embedding. -/
 noncomputable def cartan : Y →ₗ[ℤ] ChevalleyLieAlgebra c :=
-  (equivProd c).symm.toLinearMap ∘ₗ LinearMap.inl ℤ Y (ι →₀ ℤ)
+  TauCeti.FullCartan.cartan Y ι
 
 /-- The Chevalley root vector `eᵢ` attached to a root index `i : ι`. -/
 noncomputable def root (i : ι) : ChevalleyLieAlgebra c :=
-  (equivProd c).symm (0, Finsupp.single i 1)
-
-@[simp] theorem equivProd_cartan (y : Y) : equivProd c (cartan c y) = (y, 0) := by simp [cartan]
+  TauCeti.FullCartan.root Y ι i
 
 @[simp]
-theorem equivProd_root (i : ι) : equivProd c (root c i) = (0, Finsupp.single i 1) := by simp [root]
+theorem equivProd_cartan (y : Y) : equivProd c (cartan c y) = (y, 0) :=
+  TauCeti.FullCartan.equivProd_cartan y
 
-theorem cartan_injective : Function.Injective (cartan c) := fun _ _ h ↦ by
-  simpa using congrArg (fun u ↦ (equivProd c u).1) h
+@[simp]
+theorem equivProd_root (i : ι) : equivProd c (root c i) = (0, Finsupp.single i 1) :=
+  TauCeti.FullCartan.equivProd_root i
 
-theorem root_ne_zero (i : ι) : root c i ≠ 0 := fun h ↦ by
-  simpa using congrArg (fun u ↦ (equivProd c u).2 i) h
+theorem cartan_injective : Function.Injective (cartan c) :=
+  TauCeti.FullCartan.cartan_injective
+
+theorem root_ne_zero (i : ι) : root c i ≠ 0 :=
+  TauCeti.FullCartan.root_ne_zero i
 
 variable {c} in
 /-- Two `ℤ`-linear maps out of `ChevalleyLieAlgebra c` agree once they agree on all Cartan vectors
 and on all root vectors. -/
 theorem linearMap_ext {N : Type*} [AddCommGroup N] {f g : ChevalleyLieAlgebra c →ₗ[ℤ] N}
     (hc : ∀ y, f (cartan c y) = g (cartan c y)) (hr : ∀ i, f (root c i) = g (root c i)) :
-    f = g := by
-  have key : f ∘ₗ (equivProd c).symm.toLinearMap = g ∘ₗ (equivProd c).symm.toLinearMap :=
-    LinearMap.prod_ext (LinearMap.ext hc) (Finsupp.lhom_ext' fun i ↦ LinearMap.ext_ring (hr i))
-  simpa using congr($key ∘ₗ (equivProd c).toLinearMap)
+    f = g :=
+  TauCeti.FullCartan.linearMap_ext hc hr
 
 open scoped Classical in
 /-- The bracket `⁅eᵢ, eⱼ⁆` of two root vectors: `H_{αᵢ∨}` when `αᵢ + αⱼ = 0`, `Nᵢⱼ eₖ` when
@@ -327,77 +351,50 @@ theorem rootBracket_swap (i j : ι) : rootBracket c j i = -rootBracket c i j := 
       equivProd_rootBracket_snd_apply, add_comm (P.root j) (P.root i), c.structConst_swap i j]
     by_cases hl : P.root l = P.root i + P.root j <;> simp [hl]
 
-/-- The action `y ↦ (eᵢ ↦ ⟨αᵢ, y⟩ eᵢ)` of `Y` on the root part. -/
-private noncomputable def cartanAction : Y →ₗ[ℤ] (ι →₀ ℤ) →ₗ[ℤ] ChevalleyLieAlgebra c :=
-  (Finsupp.linearCombination ℤ fun i ↦ (P.toLinearMap (P.root i)).smulRight (root c i)).flip
-
-/-- Bilinear extension of `rootBracket` to `ι →₀ ℤ`. -/
-private noncomputable def rootPart : (ι →₀ ℤ) →ₗ[ℤ] (ι →₀ ℤ) →ₗ[ℤ] ChevalleyLieAlgebra c :=
-  Finsupp.linearCombination ℤ fun i ↦ Finsupp.linearCombination ℤ fun j ↦ rootBracket c i j
-
 /-- The `ℤ`-bilinear bracket on `ChevalleyLieAlgebra c`, determined by `⁅H_y, H_z⁆ = 0`,
 `⁅H_y, eⱼ⁆ = ⟨αⱼ, y⟩ eⱼ`, `⁅eᵢ, H_z⁆ = -⟨αᵢ, z⟩ eᵢ`, and `⁅eᵢ, eⱼ⁆ = rootBracket c i j`. -/
 noncomputable def bracketBilin :
     ChevalleyLieAlgebra c →ₗ[ℤ] ChevalleyLieAlgebra c →ₗ[ℤ] ChevalleyLieAlgebra c :=
-  let fst := LinearMap.fst ℤ Y (ι →₀ ℤ) ∘ₗ (equivProd c).toLinearMap
-  let snd := LinearMap.snd ℤ Y (ι →₀ ℤ) ∘ₗ (equivProd c).toLinearMap
-  (cartanAction c).compl₁₂ fst snd - ((cartanAction c).compl₁₂ fst snd).flip +
-    (rootPart c).compl₁₂ snd snd
+  TauCeti.FullCartan.bracketBilin (fun i ↦ P.toLinearMap (P.root i)) (rootBracket c)
 
 noncomputable instance : Bracket (ChevalleyLieAlgebra c) (ChevalleyLieAlgebra c) :=
   ⟨fun x y ↦ bracketBilin c x y⟩
 
 @[simp]
-theorem bracketBilin_apply_apply (x y : ChevalleyLieAlgebra c) : bracketBilin c x y = ⁅x, y⁆ := rfl
-
-protected theorem add_lie (x y z : ChevalleyLieAlgebra c) : ⁅x + y, z⁆ = ⁅x, z⁆ + ⁅y, z⁆ := by
-  rw [← bracketBilin_apply_apply, map_add, LinearMap.add_apply]; rfl
-
-protected theorem lie_add (x y z : ChevalleyLieAlgebra c) : ⁅x, y + z⁆ = ⁅x, y⁆ + ⁅x, z⁆ :=
-  (bracketBilin c x).map_add y z
-
-private theorem lie_zero' (x : ChevalleyLieAlgebra c) : ⁅x, (0 : ChevalleyLieAlgebra c)⁆ = 0 :=
-  (bracketBilin c x).map_zero
-
-private theorem lie_neg' (x y : ChevalleyLieAlgebra c) : ⁅x, -y⁆ = -⁅x, y⁆ :=
-  (bracketBilin c x).map_neg y
-
-protected theorem lie_zsmul (r : ℤ) (x y : ChevalleyLieAlgebra c) : ⁅x, r • y⁆ = r • ⁅x, y⁆ :=
-  (bracketBilin c x).map_smul r y
+theorem bracketBilin_apply_apply (x y : ChevalleyLieAlgebra c) : bracketBilin c x y = ⁅x, y⁆ :=
+  (rfl)
 
 @[simp]
-theorem cartan_lie_cartan (y z : Y) : ⁅cartan c y, cartan c z⁆ = 0 := by
-  simp [← bracketBilin_apply_apply, bracketBilin, cartanAction, rootPart]
+theorem cartan_lie_cartan (y z : Y) : ⁅cartan c y, cartan c z⁆ = 0 :=
+  TauCeti.FullCartan.bracketBilin_cartan_cartan _ _ y z
 
 @[simp]
 theorem cartan_lie_root (y : Y) (i : ι) :
-    ⁅cartan c y, root c i⁆ = P.toLinearMap (P.root i) y • root c i := by
-  simp [← bracketBilin_apply_apply, bracketBilin, cartanAction, rootPart]
+    ⁅cartan c y, root c i⁆ = P.toLinearMap (P.root i) y • root c i :=
+  TauCeti.FullCartan.bracketBilin_cartan_root _ _ y i
 
 @[simp]
 theorem root_lie_cartan (i : ι) (y : Y) :
-    ⁅root c i, cartan c y⁆ = -(P.toLinearMap (P.root i) y • root c i) := by
-  simp [← bracketBilin_apply_apply, bracketBilin, cartanAction, rootPart]
+    ⁅root c i, cartan c y⁆ = -(P.toLinearMap (P.root i) y • root c i) :=
+  TauCeti.FullCartan.bracketBilin_root_cartan _ _ i y
 
 @[simp]
-theorem root_lie_root (i j : ι) : ⁅root c i, root c j⁆ = rootBracket c i j := by
-  simp [← bracketBilin_apply_apply, bracketBilin, cartanAction, rootPart]
+theorem root_lie_root (i j : ι) : ⁅root c i, root c j⁆ = rootBracket c i j :=
+  TauCeti.FullCartan.bracketBilin_root_root _ _ i j
 
-protected theorem lie_skew (x y : ChevalleyLieAlgebra c) : ⁅y, x⁆ = -⁅x, y⁆ := by
-  have key : (bracketBilin c).flip = -bracketBilin c := by
-    refine linearMap_ext (fun _ ↦ linearMap_ext (by simp) (by simp))
-      fun i ↦ linearMap_ext (by simp) fun j ↦ ?_
-    simp [rootBracket_swap c i j]
-  simpa using congr($key x y)
-
-protected theorem lie_self (x : ChevalleyLieAlgebra c) : ⁅x, x⁆ = 0 := by
-  let q : ChevalleyLieAlgebra c →+ ChevalleyLieAlgebra c :=
-    { toFun u := ⁅u, u⁆
-      map_zero' := (bracketBilin c 0).map_zero
-      map_add' u v := by
-        rw [ChevalleyLieAlgebra.add_lie, ChevalleyLieAlgebra.lie_add,
-          ChevalleyLieAlgebra.lie_add, ChevalleyLieAlgebra.lie_skew c u v]; abel }
-  exact congr($(linearMap_ext (f := q.toIntLinearMap) (g := 0) (by simp [q]) (by simp [q])) x)
+private theorem cartan_lie_rootBracket (y : Y) (i j : ι) :
+    ⁅cartan c y, rootBracket c i j⁆ =
+      (P.toLinearMap (P.root i) y + P.toLinearMap (P.root j) y) • rootBracket c i j := by
+  by_cases h0 : P.root i + P.root j = 0
+  · have hsum : P.toLinearMap (P.root i) y + P.toLinearMap (P.root j) y = 0 := by
+      rw [← LinearMap.add_apply, ← map_add, h0, map_zero, LinearMap.zero_apply]
+    rw [rootBracket_of_add_eq_zero c h0, cartan_lie_cartan, hsum, zero_smul]
+  · by_cases hex : ∃ k, P.root k = P.root i + P.root j
+    · obtain ⟨k, hk⟩ := hex
+      rw [rootBracket_of_root_eq_add c hk, ← bracketBilin_apply_apply, map_smul,
+        bracketBilin_apply_apply, cartan_lie_root, hk, map_add, LinearMap.add_apply, smul_comm]
+    · rw [rootBracket_of_notMem_of_add_ne_zero c (fun ⟨k, hk⟩ ↦ hex ⟨k, hk⟩) h0,
+        ← bracketBilin_apply_apply, map_zero, smul_zero]
 
 open scoped Classical in
 private theorem equivProd_root_lie_rootBracket_fst (i j k : ι) :
@@ -409,18 +406,15 @@ private theorem equivProd_root_lie_rootBracket_fst (i j k : ι) :
     simp [rootBracket_of_add_eq_zero c hjk0, hsum]
   · by_cases hex : ∃ m, P.root m = P.root j + P.root k
     · obtain ⟨m, hm⟩ := hex
-      rw [rootBracket_of_root_eq_add c hm, ChevalleyLieAlgebra.lie_zsmul, map_smul, Prod.smul_fst,
-        root_lie_root, equivProd_rootBracket_fst]
+      rw [rootBracket_of_root_eq_add c hm, ← bracketBilin_apply_apply, map_smul,
+        bracketBilin_apply_apply, map_smul, Prod.smul_fst, root_lie_root, equivProd_rootBracket_fst]
       have hiff : P.root i + P.root m = 0 ↔ P.root i + P.root j + P.root k = 0 := by
         rw [hm, add_assoc]
       by_cases him : P.root i + P.root m = 0 <;> simp [him, hiff.symm]
-    · have hsum : P.root i + P.root j + P.root k ≠ 0 := fun h0 ↦ hex
-        ⟨P.reflectionPerm i i, by
-          rw [P.root_reflectionPerm, P.reflection_apply_self]
-          calc -P.root i = P.root i + P.root j + P.root k - P.root i := by rw [h0, zero_sub]
-            _ = P.root j + P.root k := by abel⟩
-      simp [rootBracket_of_notMem_of_add_ne_zero c (fun ⟨m, hm⟩ ↦ hex ⟨m, hm⟩) hjk0, lie_zero',
-        hsum]
+    · have hsum : P.root i + P.root j + P.root k ≠ 0 := fun h0 ↦
+        hex ⟨P.reflectionPerm i i, P.root_reflectionPerm_self_eq_add_of_add_add_eq_zero h0⟩
+      simp [rootBracket_of_notMem_of_add_ne_zero c (fun ⟨m, hm⟩ ↦ hex ⟨m, hm⟩) hjk0,
+        ← bracketBilin_apply_apply, hsum]
 
 private theorem equivProd_root_lie_rootBracket_snd_apply (i j k l : ι) :
     (equivProd c ⁅root c i, rootBracket c j k⁆).2 l = P.tripleRootCoeff c.structConst i j k l := by
@@ -434,44 +428,21 @@ private theorem equivProd_root_lie_rootBracket_snd_apply (i j k l : ι) :
   · by_cases hex : ∃ m, P.root m = P.root j + P.root k
     · obtain ⟨m, hm⟩ := hex
       rw [rootBracket_of_root_eq_add c hm, P.tripleRootCoeff_of_root_eq_add c.structConst hm,
-        ChevalleyLieAlgebra.lie_zsmul, map_smul, Prod.smul_snd, Finsupp.coe_smul, Pi.smul_apply,
-        root_lie_root, equivProd_rootBracket_snd_apply, smul_eq_mul]
+        ← bracketBilin_apply_apply, map_smul, bracketBilin_apply_apply, map_smul, Prod.smul_snd,
+        Finsupp.coe_smul, Pi.smul_apply, root_lie_root, equivProd_rootBracket_snd_apply,
+        smul_eq_mul]
       by_cases hlm : P.root l = P.root i + P.root m <;> simp [hlm, mul_comm]
     · have hnot : P.root j + P.root k ∉ range P.root := fun ⟨m, hm⟩ ↦ hex ⟨m, hm⟩
       simp [rootBracket_of_notMem_of_add_ne_zero c hnot hjk0,
-        P.tripleRootCoeff_of_notMem_of_add_ne_zero c.structConst hnot hjk0, lie_zero']
-
-private theorem jacobi_cartan_cartan_root (y z : Y) (k : ι) :
-    ⁅cartan c y, ⁅cartan c z, root c k⁆⁆ + ⁅cartan c z, ⁅root c k, cartan c y⁆⁆ +
-      ⁅root c k, ⁅cartan c y, cartan c z⁆⁆ = 0 := by
-  simp only [cartan_lie_root, root_lie_cartan, cartan_lie_cartan, ChevalleyLieAlgebra.lie_zsmul,
-    lie_neg', lie_zero', smul_smul, mul_comm (P.toLinearMap (P.root k) y)]
-  abel
-
-private theorem jacobi_cartan_root_root (y : Y) (i j : ι) :
-    ⁅cartan c y, ⁅root c i, root c j⁆⁆ + ⁅root c i, ⁅root c j, cartan c y⁆⁆ +
-      ⁅root c j, ⁅cartan c y, root c i⁆⁆ = 0 := by
-  rw [root_lie_root, root_lie_cartan, cartan_lie_root, lie_neg', ChevalleyLieAlgebra.lie_zsmul,
-    ChevalleyLieAlgebra.lie_zsmul, root_lie_root, root_lie_root, rootBracket_swap c i j, smul_neg]
-  by_cases h0 : P.root i + P.root j = 0
-  · rw [rootBracket_of_add_eq_zero c h0, cartan_lie_cartan, zero_add]
-    have hsum : P.toLinearMap (P.root i) y + P.toLinearMap (P.root j) y = 0 := by
-      rw [← LinearMap.add_apply, ← map_add, h0, map_zero, LinearMap.zero_apply]
-    rw [← neg_add_rev, ← add_smul, hsum, zero_smul, neg_zero]
-  · by_cases hex : ∃ k, P.root k = P.root i + P.root j
-    · obtain ⟨k, hk⟩ := hex
-      rw [rootBracket_of_root_eq_add c hk, ChevalleyLieAlgebra.lie_zsmul, cartan_lie_root,
-        smul_smul, smul_smul, smul_smul, hk, map_add, LinearMap.add_apply, mul_add, add_smul,
-        mul_comm (P.toLinearMap (P.root j) y), mul_comm (P.toLinearMap (P.root i) y)]
-      abel
-    · simp [rootBracket_of_notMem_of_add_ne_zero c (fun ⟨k, hk⟩ ↦ hex ⟨k, hk⟩) h0, lie_zero']
+        P.tripleRootCoeff_of_notMem_of_add_ne_zero c.structConst hnot hjk0,
+        ← bracketBilin_apply_apply]
 
 private theorem jacobi_root_root_root (i j k : ι) :
-    ⁅root c i, ⁅root c j, root c k⁆⁆ + ⁅root c j, ⁅root c k, root c i⁆⁆ +
-      ⁅root c k, ⁅root c i, root c j⁆⁆ = 0 := by
+    ⁅root c i, rootBracket c j k⁆ + ⁅root c j, rootBracket c k i⁆ +
+      ⁅root c k, rootBracket c i j⁆ = 0 := by
   classical
   apply (equivProd c).injective
-  rw [map_add, map_add, map_zero, root_lie_root, root_lie_root, root_lie_root]
+  rw [map_add, map_add, map_zero]
   ext1
   · simp only [Prod.fst_add, Prod.fst_zero, equivProd_root_lie_rootBracket_fst]
     by_cases h0 : P.root i + P.root j + P.root k = 0
@@ -482,54 +453,28 @@ private theorem jacobi_root_root_root (i j k : ι) :
   · ext l
     simpa [equivProd_root_lie_rootBracket_snd_apply] using c.root_jacobi i j k l
 
-private theorem jacobi_gen_gen (u v : Y ⊕ ι) (z : ChevalleyLieAlgebra c) :
-    let gen : Y ⊕ ι → ChevalleyLieAlgebra c := Sum.elim (cartan c) (root c)
-    ⁅gen u, ⁅gen v, z⁆⁆ + ⁅gen v, ⁅z, gen u⁆⁆ + ⁅z, ⁅gen u, gen v⁆⁆ = 0 := by
-  intro gen
-  have key : bracketBilin c (gen u) ∘ₗ bracketBilin c (gen v) +
-      bracketBilin c (gen v) ∘ₗ (bracketBilin c).flip (gen u) +
-      (bracketBilin c).flip (bracketBilin c (gen u) (gen v)) = 0 := by
-    refine linearMap_ext (fun y ↦ ?_) fun k ↦ ?_ <;>
-      simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.flip_apply,
-        bracketBilin_apply_apply, LinearMap.zero_apply] <;>
-      rcases u with y₁ | i <;> rcases v with y₂ | j <;> simp only [gen, Sum.elim_inl, Sum.elim_inr]
-    · simp [lie_zero']
-    · rw [← add_rotate]; exact jacobi_cartan_cartan_root c y y₁ j
-    · rw [add_rotate]; exact jacobi_cartan_cartan_root c y₂ y i
-    · rw [← add_rotate]; exact jacobi_cartan_root_root c y i j
-    · exact jacobi_cartan_cartan_root c y₁ y₂ k
-    · exact jacobi_cartan_root_root c y₁ j k
-    · rw [add_rotate]; exact jacobi_cartan_root_root c y₂ k i
-    · exact jacobi_root_root_root c i j k
-  simpa using congr($key z)
+protected theorem add_lie (x y z : ChevalleyLieAlgebra c) : ⁅x + y, z⁆ = ⁅x, z⁆ + ⁅y, z⁆ :=
+  LinearMap.congr_fun ((bracketBilin c).map_add x y) z
 
-protected theorem lie_jacobi (x y z : ChevalleyLieAlgebra c) :
-    ⁅x, ⁅y, z⁆⁆ + ⁅y, ⁅z, x⁆⁆ + ⁅z, ⁅x, y⁆⁆ = 0 := by
-  have h₂ (u : Y ⊕ ι) (y z : ChevalleyLieAlgebra c) :
-      ⁅Sum.elim (cartan c) (root c) u, ⁅y, z⁆⁆ + ⁅y, ⁅z, Sum.elim (cartan c) (root c) u⁆⁆ +
-        ⁅z, ⁅Sum.elim (cartan c) (root c) u, y⁆⁆ = 0 := by
-    have key : bracketBilin c (Sum.elim (cartan c) (root c) u) ∘ₗ (bracketBilin c).flip z +
-        (bracketBilin c).flip (bracketBilin c z (Sum.elim (cartan c) (root c) u)) +
-        bracketBilin c z ∘ₗ bracketBilin c (Sum.elim (cartan c) (root c) u) = 0 :=
-      linearMap_ext (fun y ↦ by simpa using jacobi_gen_gen c u (.inl y) z)
-        fun j ↦ by simpa using jacobi_gen_gen c u (.inr j) z
-    simpa [add_rotate] using congr($key y)
-  have key : (bracketBilin c).flip ⁅y, z⁆ + bracketBilin c y ∘ₗ bracketBilin c z +
-      bracketBilin c z ∘ₗ (bracketBilin c).flip y = 0 :=
-    linearMap_ext (fun y' ↦ by simpa using h₂ (.inl y') y z)
-      fun i ↦ by simpa using h₂ (.inr i) y z
-  simpa using congr($key x)
+protected theorem lie_add (x y z : ChevalleyLieAlgebra c) : ⁅x, y + z⁆ = ⁅x, y⁆ + ⁅x, z⁆ :=
+  (bracketBilin c x).map_add y z
+
+protected theorem lie_self (x : ChevalleyLieAlgebra c) : ⁅x, x⁆ = 0 :=
+  TauCeti.FullCartan.bracketBilin_self (rootBracket_swap c) (rootBracket_self c) x
+
+protected theorem leibniz_lie (x y z : ChevalleyLieAlgebra c) :
+    ⁅x, ⁅y, z⁆⁆ = ⁅⁅x, y⁆, z⁆ + ⁅y, ⁅x, z⁆⁆ :=
+  TauCeti.FullCartan.bracketBilin_leibniz (rootBracket_swap c)
+    (cartan_lie_rootBracket c) (jacobi_root_root_root c) x y z
+
+protected theorem lie_zsmul (r : ℤ) (x y : ChevalleyLieAlgebra c) : ⁅x, r • y⁆ = r • ⁅x, y⁆ :=
+  (bracketBilin c x).map_smul r y
 
 noncomputable instance instLieRing : LieRing (ChevalleyLieAlgebra c) where
   add_lie := ChevalleyLieAlgebra.add_lie c
   lie_add := ChevalleyLieAlgebra.lie_add c
   lie_self := ChevalleyLieAlgebra.lie_self c
-  leibniz_lie x y z := by
-    have h := ChevalleyLieAlgebra.lie_jacobi c x y z
-    rw [ChevalleyLieAlgebra.lie_skew c x z, lie_neg', ChevalleyLieAlgebra.lie_skew c ⁅x, y⁆ z] at h
-    calc ⁅x, ⁅y, z⁆⁆ = ⁅x, ⁅y, z⁆⁆ - (⁅x, ⁅y, z⁆⁆ + -⁅y, ⁅x, z⁆⁆ + -⁅⁅x, y⁆, z⁆) := by
-          rw [h, sub_zero]
-      _ = ⁅⁅x, y⁆, z⁆ + ⁅y, ⁅x, z⁆⁆ := by abel
+  leibniz_lie := ChevalleyLieAlgebra.leibniz_lie c
 
 noncomputable instance instLieAlgebra : LieAlgebra ℤ (ChevalleyLieAlgebra c) where
   lie_smul := ChevalleyLieAlgebra.lie_zsmul c
@@ -594,7 +539,7 @@ theorem mem_center_iff (x : ChevalleyLieAlgebra c) :
       (equivProd c x).2 = 0 ∧ ∀ i : ι, P.toLinearMap (P.root i) (equivProd c x).1 = 0 := by
   refine ⟨fun hx ↦ ?_, fun ⟨hroot, hweight⟩ ↦ ?_⟩
   · obtain ⟨y, rfl⟩ := (forall_cartan_lie_eq_zero_iff c x).mp fun y ↦ hx (cartan c y)
-    exact ⟨by simp, (forall_lie_cartan_eq_zero_iff c y).mp hx⟩
+    exact ⟨by simp, by simpa using (forall_lie_cartan_eq_zero_iff c y).mp hx⟩
   · have hx : x = cartan c (equivProd c x).1 :=
       (equivProd c).injective (by rw [equivProd_cartan]; exact Prod.ext rfl hroot)
     rw [hx]
@@ -629,14 +574,15 @@ noncomputable def cartanEquivOfIsEmpty [IsEmpty ι] : Y ≃ₗ[ℤ] ChevalleyLie
     (LinearMap.ext fun y ↦ by simp)
 
 @[simp]
-theorem cartanEquivOfIsEmpty_apply [IsEmpty ι] (y : Y) : cartanEquivOfIsEmpty c y = cartan c y := by
-  rfl
+theorem cartanEquivOfIsEmpty_apply [IsEmpty ι] (y : Y) : cartanEquivOfIsEmpty c y = cartan c y :=
+  (rfl)
 
 @[simp]
 theorem cartanEquivOfIsEmpty_symm_apply [IsEmpty ι] (x : ChevalleyLieAlgebra c) :
-    (cartanEquivOfIsEmpty c).symm x = (equivProd c x).1 := by rfl
+    (cartanEquivOfIsEmpty c).symm x = (equivProd c x).1 :=
+  (rfl)
 
-/-! ### Integral Chevalley basis and scalar extension -/
+/-! ### Integral Chevalley basis -/
 
 section Basis
 
@@ -663,18 +609,6 @@ theorem basis_repr_inl (x : ChevalleyLieAlgebra c) (j : J) :
 @[simp]
 theorem basis_repr_inr (x : ChevalleyLieAlgebra c) (i : ι) :
     (basis c bY).repr x (.inr i) = (equivProd c x).2 i := by simp [basis]
-
-/-- Scalar extension of the integral Chevalley basis to `R ⊗[ℤ] ChevalleyLieAlgebra c` over any
-commutative ring `R`. -/
-noncomputable abbrev baseChangeBasis (R : Type*) [CommRing R] :
-    Basis (J ⊕ ι) R (R ⊗[ℤ] ChevalleyLieAlgebra c) :=
-  (basis c bY).baseChange R
-
-theorem baseChangeBasis_inl (R : Type*) [CommRing R] (j : J) :
-    baseChangeBasis c bY R (.inl j) = 1 ⊗ₜ[ℤ] cartan c (bY j) := by simp [baseChangeBasis]
-
-theorem baseChangeBasis_inr (R : Type*) [CommRing R] (i : ι) :
-    baseChangeBasis c bY R (.inr i) = 1 ⊗ₜ[ℤ] root c i := by simp [baseChangeBasis]
 
 end Basis
 

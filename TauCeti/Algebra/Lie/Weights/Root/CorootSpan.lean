@@ -9,6 +9,8 @@ public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.Weights.Sl2System
 public import TauCeti.Algebra.Lie.Weights.WeightLattice
 
+import TauCeti.LinearAlgebra.RootSystem.PairingInvariance
+
 /-!
 # The integral span of root vectors and coroots
 
@@ -41,6 +43,8 @@ the Kostant `ℤ`-form used in the explicit Chevalley--Demazure construction.
   vanish at the zero weight, the one index that indexing by all weights adds to the roots.
 * `TauCeti.coweightPairing_toLinear_eq_rootCartanWeight`: the Cartan integers are the coroot
   pairings of `TauCeti.coweightPairing` at a weight of `L`.
+* `TauCeti.coe_weight_eq_add_of_root_eq_add`: a root-index bijection matching integer Cartan
+  pairings carries root sums in an integral root datum to weight sums on `H`.
 * `TauCeti.lie_coroot_coroot_eq_zero` and `TauCeti.IsSl2System.lie_coroot_rootVector`: the two
   bracket computations against a coroot, in their integral form.
 * `TauCeti.IsSl2System.lie_mem_rootCorootSpan`: closure under the bracket when the root-vector
@@ -168,6 +172,19 @@ theorem coweightPairing_toLinear_eq_rootCartanWeight (β : Weight K H L) (i : H.
   coweightPairing_eq_of_apply_coroot_eq_intCast <| by
     rw [intCast_rootCartanWeight_apply, IsKilling.rootSystem_coroot_apply,
       Weight.toLinear_apply]
+
+/-- A root-index bijection into `H.root` matching integer Cartan pairings carries root sums in an
+integral root datum `P` to weight sums on `H`. -/
+theorem coe_weight_eq_add_of_root_eq_add {ι X Y : Type*} [Finite ι] [AddCommGroup X]
+    [AddCommGroup Y] {P : RootPairing ι ℤ X Y} (e : ι ≃ H.root)
+    (he : ∀ i j, (rootSystem H).pairingIn ℤ (e i) (e j) = P.pairing i j)
+    {i j k : ι} (hk : P.root k = P.root i + P.root j) :
+    ((e k : Weight K H L) : H → K) = ((e i : Weight K H L) : H → K) + (e j : Weight K H L) := by
+  have hkH :=
+    (RootPairing.root_eq_add_iff_of_pairingIn e
+      (RootPairing.pairingIn_eq_of_pairingIn_eq_pairing he) k i j).mpr hk
+  funext z
+  simpa [rootSystem_root_apply, Weight.toLinear_apply] using DFunLike.congr_fun hkH z
 
 omit [CharZero K] [LieModule.IsTriangularizable K H L] in
 /-- **Two coroots commute**, being elements of the abelian Cartan subalgebra. -/
