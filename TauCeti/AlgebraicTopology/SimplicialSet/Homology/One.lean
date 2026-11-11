@@ -36,7 +36,7 @@ def ιHomology₁ (X : SSet.{w}) (s : X _⦋1⦌) (h : X.δ 0 s = X.δ 1 s) :
     simp) ≫ (X.chainComplex R).homologyπ 1
 
 /-- The class of a `1`-simplex with equal faces is the homology class of the cycle it defines. -/
-lemma ιHomology₁_eq (X : SSet.{w}) (s : X _⦋1⦌) (h : X.δ 0 s = X.δ 1 s) :
+lemma ιHomology₁_def (X : SSet.{w}) (s : X _⦋1⦌) (h : X.δ 0 s = X.δ 1 s) :
     ιHomology₁ R X s h = (X.chainComplex R).liftCycles (X.ιChainComplex s) 0 (by simp) (by
       rw [ιChainComplex_d, Fin.sum_univ_two, h]
       simp) ≫ (X.chainComplex R).homologyπ 1 := by
