@@ -8,10 +8,10 @@ module
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+public import TauCeti.Analysis.Complex.ReImTopology
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.Topology.Sets.Opens
-import Mathlib.Analysis.Complex.ReImTopology
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
@@ -152,25 +152,6 @@ theorem memLpLoc_of_forall_opens {Ω : Opens ℂ}
   obtain ⟨g, hg, hgf⟩ := h ⟨W, hWo⟩ hWc hWΩ
   exact (hg.ae_eq hgf).mono_measure (Measure.restrict_mono hKW le_rfl)
 
-/-- The open upper half `W ∩ {0 < im}` of an open planar set `W`. -/
-def _root_.TopologicalSpace.Opens.upperHalf (W : Opens ℂ) : Opens ℂ :=
-  ⟨(W : Set ℂ) ∩ {z : ℂ | 0 < z.im},
-    W.isOpen.inter (isOpen_lt continuous_const Complex.continuous_im)⟩
-
-@[simp]
-theorem _root_.TopologicalSpace.Opens.coe_upperHalf (W : Opens ℂ) :
-    (W.upperHalf : Set ℂ) = (W : Set ℂ) ∩ {z : ℂ | 0 < z.im} := (rfl)
-
-@[simp]
-theorem _root_.TopologicalSpace.Opens.mem_upperHalf {W : Opens ℂ} {z : ℂ} :
-    z ∈ W.upperHalf ↔ z ∈ W ∧ 0 < z.im :=
-  (Iff.rfl)
-
-/-- Taking upper halves is monotone. -/
-theorem _root_.TopologicalSpace.Opens.upperHalf_mono {V W : Opens ℂ} (h : V ≤ W) :
-    V.upperHalf ≤ W.upperHalf :=
-  fun _ hz => Opens.mem_upperHalf.2 ⟨h (Opens.mem_upperHalf.1 hz).1, (Opens.mem_upperHalf.1 hz).2⟩
-
 /-- **Local `Lᵖ` on a half-disc through upper halves.** A function is locally `Lᵖ` on
 `Ω ∩ {0 ≤ im}`, up to the real axis, exactly when it is `Lᵖ` on the upper half `W ∩ {0 < im}` of
 every open `W` whose closure is compact and contained in `Ω`. The real axis is null, so the
@@ -190,10 +171,8 @@ theorem memLpLoc_inter_setOf_im_nonneg_iff {Ω : Opens ℂ} :
   · obtain ⟨W, hWo, hKW, hWΩ, hWc⟩ := exists_open_between_and_isCompact_closure hK Ω.isOpen
       (hKU.trans Set.inter_subset_left)
     refine (h ⟨W, hWo⟩ hWc hWΩ).mono_measure (Measure.restrict_mono_ae ?_)
-    refine ae_le_set.2 (measure_mono_null (fun z hz => ?_) (Complex.volume_setOf_im_eq 0))
-    have h0 : 0 ≤ z.im := (hKU hz.1).2
-    have h1 : ¬ 0 < z.im := fun h => hz.2 ⟨hKW hz.1, h⟩
-    exact le_antisymm (not_lt.1 h1) h0
+    filter_upwards [(Complex.setOf_le_im_ae_eq 0).le] with z hz hzK
+    exact Opens.mem_upperHalf.2 ⟨hKW hzK, hz (hKU hzK).2⟩
 
 variable [NormedSpace ℝ F] [NormedSpace ℝ G]
 
@@ -260,18 +239,6 @@ theorem MemLpLoc.integrableOn_smul {S T : Set ℂ} {h : ℂ → F} (hh : MemLpLo
   refine (hhK.continuousOn_smul hf.continuousOn hK).of_forall_sdiff_eq_zero hT.measurableSet
     fun z hz => ?_
   simp [image_eq_zero_of_notMem_tsupport fun h => hz.2 ⟨h, hz.1⟩]
-
-/-- A relatively open subset `Ω ∩ {0 ≤ im}` of the closed upper half-plane has interior
-`Ω ∩ {0 < im}` in `ℂ`: points on the real axis are not interior, since every neighbourhood meets
-`{z | z.im < 0}`. -/
-theorem interior_inter_setOf_im_nonneg {Ω : Set ℂ} (hΩ : IsOpen Ω) :
-    interior (Ω ∩ {z : ℂ | 0 ≤ z.im}) = Ω ∩ {z : ℂ | 0 < z.im} := by
-  rw [interior_inter, hΩ.interior_eq, Complex.interior_setOfPred_le_im]
-
-/-- The interior of the half-disc `Ω ∩ {0 ≤ im}`, as an open set, is the upper half of `Ω`. -/
-theorem _root_.TopologicalSpace.Opens.interior_inter_setOf_im_nonneg_eq_upperHalf (Ω : Opens ℂ) :
-    Opens.interior ((Ω : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im}) = Ω.upperHalf :=
-  Opens.ext ((interior_inter_setOf_im_nonneg Ω.isOpen).trans (Opens.coe_upperHalf Ω).symm)
 
 variable {Ω : Opens ℂ} {k l : ℕ}
 
