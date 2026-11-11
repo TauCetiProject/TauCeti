@@ -19,9 +19,19 @@ algebra-finite model of `A` over `F` into an algebra-finite model of its image o
 
 * `AlgHom.apply_mem_adjoin_image`: `f x ∈ Algebra.adjoin R (f '' s)` whenever
   `x ∈ Algebra.adjoin F s`.
+* `Algebra.adjoin_toSubsemiring_le_comap`: a ring homomorphism `f : A →+* B` carrying scalars from
+  `R` and generators `s` into a subsemiring `S` carries `Algebra.adjoin R s` into `S`.
 -/
 
 public section
+
+/-- A ring homomorphism `f : A →+* B` that carries the image of `R` and the generating set `s` into
+a subsemiring `S` of `B` carries the generated `R`-subalgebra `Algebra.adjoin R s` into `S`. -/
+theorem Algebra.adjoin_toSubsemiring_le_comap {R A B : Type*} [CommSemiring R] [Semiring A]
+    [Semiring B] [Algebra R A] {f : A →+* B} {S : Subsemiring B} {s : Set A}
+    (hr : ∀ r : R, f (algebraMap R A r) ∈ S) (hs : Set.MapsTo f s S) :
+    (Algebra.adjoin R s).toSubsemiring ≤ S.comap f :=
+  Algebra.adjoin_le (S := { S.comap f with algebraMap_mem' := hr }) hs
 
 namespace AlgHom
 
