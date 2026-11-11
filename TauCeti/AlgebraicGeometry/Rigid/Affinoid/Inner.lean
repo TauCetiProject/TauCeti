@@ -49,6 +49,7 @@ in itself over `K`.
 
 ## Main results
 
+* `TauCeti.AffinoidSubdomain.isInner_def`: the defining characterisation by supremum norms.
 * `TauCeti.AffinoidSubdomain.isInner_iff_forall_pointNorm_lt`: the pointwise form of the
   definition.
 * `TauCeti.AffinoidSubdomain.isInner_iff_exists_pointNorm_le`: a single bound `ε < 1` in the
@@ -104,6 +105,14 @@ def IsInner (U : AffinoidSubdomain K B) (φ : A →ₐ[K] B) : Prop :=
 
 variable {U : AffinoidSubdomain K B} {φ : A →ₐ[K] B}
 
+/-- The defining property of `U ⋐_A Sp B`: some surjection `ψ : A⟨X₁, …, Xₙ⟩ → B` extending `φ`
+sends every variable `Xᵢ` to a function of supremum norm less than one on `U`. -/
+theorem isInner_def :
+    U.IsInner φ ↔ ∃ (n : ℕ) (ψ : IsRestricted.subring (R := A) (fun _ : Fin n ↦ 1) →ₐ[K] B),
+      Function.Surjective ψ ∧ (∀ a, ψ (algebraMap A _ a) = φ a) ∧
+        ∀ i, supSeminorm K (U.toSections (ψ ⟨X i, isRestricted_X _ i⟩)) < 1 :=
+  Iff.rfl
+
 /-- **Pointwise form of relative compactness.** `U ⋐_A Sp B` exactly when some surjection
 `ψ : A⟨X₁, …, Xₙ⟩ → B` extending `φ` satisfies `|(ψ Xᵢ)(y)| < 1` at every classical point `y`
 of `U`. -/
@@ -111,7 +120,7 @@ theorem isInner_iff_forall_pointNorm_lt (hB : IsAffinoidAlgebra K B) :
     U.IsInner φ ↔ ∃ (n : ℕ) (ψ : IsRestricted.subring (R := A) (fun _ : Fin n ↦ 1) →ₐ[K] B),
       Function.Surjective ψ ∧ (∀ a, ψ (algebraMap A _ a) = φ a) ∧
         ∀ i, ∀ y ∈ U, pointNorm K y (ψ ⟨X i, isRestricted_X _ i⟩) < 1 := by
-  simp only [IsInner, supSeminorm_toSections_lt_iff hB U _ one_pos]
+  simp only [isInner_def, supSeminorm_toSections_lt_iff hB U _ one_pos]
 
 /-- **A single radius bounds the generators.** `U ⋐_A Sp B` exactly when some surjection
 `ψ : A⟨X₁, …, Xₙ⟩ → B` extending `φ` and some `ε` with `0 < ε < 1` in the divisible hull
