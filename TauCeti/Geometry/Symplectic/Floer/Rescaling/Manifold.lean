@@ -77,6 +77,8 @@ singularity at infinity of the limit plane are not carried out here.
   maps converge to the area density of the limit.
 * `TauCeti.SmoothTwoForm.lintegral_eval₂_le_liminf_of_tendsto_rescale`: the area of a limit of
   rescaled maps is at most the energy concentrating at the bubbling point.
+* `TauCeti.SmoothTwoForm.lintegral_eval₂_le_liminf_of_tendsto_rescale_of_contMDiffOn`: the same
+  bound for maps that are `C¹` near the bubbling point, with no measurability hypothesis.
 
 ## References
 
@@ -429,6 +431,47 @@ theorem lintegral_eval₂_le_liminf_of_tendsto_rescale (ω : SmoothTwoForm I M) 
       = ∫⁻ w, liminf (fun i ↦ g i w) l := lintegral_congr fun w ↦ ((hlim w).liminf_eq).symm
     _ ≤ liminf (fun i ↦ ∫⁻ w, g i w) l := lintegral_liminf_le' hmeas'
     _ ≤ _ := liminf_le_liminf (Eventually.of_forall hint)
+
+/-- **The area of a bubble of `C¹` maps in a manifold is at most the energy concentrating at its
+bubbling point.** Let `u i` be `C¹` on an open set `U` containing `z₀`, and let the Hamiltonian
+vector fields of the perturbation `K` be continuous on `U × M` as maps into the tangent bundle.
+Rescale `u i` at centres `c i → z₀` by scales `ε i → 0`, and suppose that the derivatives of the
+rescaled maps `w ↦ u i (c i + ε i • w)` converge in the tangent bundle at every point of the plane
+to those of a map `v`. Then for every `δ > 0` the symplectic area `∫ ω(∂_s v, ∂_t v)` of `v` over
+the whole plane, with the area density truncated at zero, is at most the lower limit of the Floer
+energies of `u i` over the disc of radius `δ` about `z₀`. Unlike
+`TauCeti.SmoothTwoForm.lintegral_eval₂_le_liminf_of_tendsto_rescale`, no measurability hypothesis
+is needed: the energy densities are continuous on `U`. The vector-space case is
+`SymplecticForm.lintegral_symplecticForm_le_liminf_of_tendsto_rescale`. -/
+theorem lintegral_eval₂_le_liminf_of_tendsto_rescale_of_contMDiffOn (ω : SmoothTwoForm I M)
+    [l.NeBot] [l.IsCountablyGenerated] {U : Set (ℝ × ℝ)} {v : ℝ × ℝ → M} (hU : IsOpen U)
+    (hz₀ : z₀ ∈ U) (hu : ∀ i, ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 (u i) U)
+    (hXs : ContinuousOn (fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField (Ks p.1) p.2⟩ : TangentBundle I M)) (U ×ˢ univ))
+    (hXt : ContinuousOn (fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField (Kt p.1) p.2⟩ : TangentBundle I M)) (U ×ˢ univ))
+    (hc : Tendsto c l (𝓝 z₀)) (hε : Tendsto ε l (𝓝 0))
+    (hdv : ∀ w e, Tendsto (fun i ↦ (⟨u i (c i + ε i • w),
+      mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun w' ↦ u i (c i + ε i • w')) w e⟩ : TangentBundle I M)) l
+      (𝓝 ⟨v w, mfderiv 𝓘(ℝ, ℝ × ℝ) I v w e⟩))
+    {δ : ℝ} (hδ : 0 < δ) :
+    ∫⁻ w, ENNReal.ofReal (SmoothBundleForm.eval₂ ω (v w)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I v w stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I v w stdComplexLineImag)) ≤
+      liminf (fun i ↦ ∫⁻ z in Metric.ball z₀ δ,
+        ENNReal.ofReal (ω.floerEnergyDensity Ks Kt (u i) z)) l := by
+  -- Shrink the disc to a disc `B ⊆ U`, on which the energy densities are continuous; the energies
+  -- over `B` are smaller.
+  obtain ⟨r, hr, hrU⟩ := Metric.isOpen_iff.mp hU z₀ hz₀
+  have hBU : Metric.ball z₀ (min δ r) ⊆ U := (Metric.ball_subset_ball (min_le_right δ r)).trans hrU
+  have hUM (w : ℝ × ℝ) : U ×ˢ univ ∈ 𝓝 (z₀, v w) :=
+    (hU.prod isOpen_univ).mem_nhds (mk_mem_prod hz₀ (mem_univ (v w)))
+  refine (ω.lintegral_eval₂_le_liminf_of_tendsto_rescale (lt_min hδ hr)
+    (fun i ↦ ((ω.continuousOn_floerEnergyDensity hU (hu i) hXs hXt).mono hBU).aemeasurable
+      Metric.isOpen_ball.measurableSet) hc hε hdv (fun w ↦ hXs.continuousAt (hUM w))
+    (fun w ↦ hXt.continuousAt (hUM w))).trans ?_
+  exact liminf_le_liminf (Eventually.of_forall fun i ↦
+    lintegral_mono_set (Metric.ball_subset_ball (min_le_left δ r)))
 
 end Limit
 
