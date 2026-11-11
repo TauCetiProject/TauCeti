@@ -22,14 +22,15 @@ coefficient `1 / 2` is `0`, since the inverse of `0` is `0`). It is not the imag
 of `L`; it is a quadratic expression in the action, and its point is that it *commutes with the
 whole action*, over every field. The commutation is a short calculation from the relations
 `⁅e, f⁆ = h`, `⁅h, e⁆ = 2e`, `⁅h, f⁆ = -2f` alone, so — unlike the Casimir element of a general
-semisimple Lie algebra — it needs neither the universal enveloping algebra nor the Killing form,
-and is available at this, the bottom, layer of the theory.
+semisimple Lie algebra — it needs neither the universal enveloping algebra nor the Killing form.
 
 When `2 ≠ 0`, on a primitive vector of weight `n` the operator acts by the scalar `n (n + 2) / 2`
-(`TauCeti.sl2Casimir_apply_of_hasPrimitiveVectorWith`), which vanishes exactly when `n = 0`, that is
-exactly on the trivial module `V(0)`. That dichotomy is the whole content of the operator:
-`TauCeti.sl2Casimir_injective` turns it into the statement that on an irreducible module on which
-`L` acts at all, the Casimir operator is injective.
+(`TauCeti.sl2Casimir_apply_of_hasPrimitiveVectorWith`). In characteristic zero this scalar vanishes
+exactly when `n = 0` (`TauCeti.sl2CasimirScalar_ne_zero`), that is exactly on the trivial module
+`V(0)`; in positive characteristic it can also vanish for other `n`. That dichotomy is the whole
+content of the operator: `TauCeti.sl2Casimir_injective` turns it into the statement that, in
+characteristic zero, on an irreducible module on which `L` acts at all, the Casimir operator is
+injective.
 
 ## Main definitions
 
@@ -45,7 +46,7 @@ exactly on the trivial module `V(0)`. That dichotomy is the whole content of the
 * `TauCeti.sl2Casimir_apply_of_hasPrimitiveVectorWith`: the Casimir operator acts on a primitive
   vector of weight `n` by the scalar `n (n + 2) / 2`; this scalar result assumes `2 ≠ 0`.
 * `TauCeti.sl2Casimir_injective`: **the Casimir operator of a nontrivial irreducible module is
-  injective.**
+  injective** in characteristic zero.
 
 ## Implementation notes
 
@@ -55,8 +56,6 @@ are proved by the parenthesised `(rfl)`, which elaborates against the definition
 bare `rfl` in an exported theorem would demand that they be `@[expose]`d.
 
 ## References
-
-This is Layer 0 of `TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`.
 
 * [J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*][humphreys1972],
   §6.2 and §7.2.
