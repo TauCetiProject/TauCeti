@@ -70,6 +70,7 @@ def roundUnitTangentBundle : Set (TangentBundle 𝓘(ℝ, ℂ) (OnePoint ℂ)) :
 
 /-- A tangent vector `a` of the Riemann sphere is a round unit vector when
 `4π ω_FS(a, i a) = 1`. -/
+@[simp]
 theorem mem_roundUnitTangentBundle_iff (p : TangentBundle 𝓘(ℝ, ℂ) (OnePoint ℂ)) :
     p ∈ roundUnitTangentBundle ↔
       4 * Real.pi *
