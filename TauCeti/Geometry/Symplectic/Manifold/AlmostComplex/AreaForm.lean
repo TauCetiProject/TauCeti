@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Mean
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Pullback
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
+import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 
 /-!
 # Metrics compatible with an almost complex structure, and the area form of a surface
@@ -75,25 +76,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-! ### Compatible metrics -/
 
-/-- A smooth almost complex structure as a fibrewise continuous linear automorphism of the
-tangent spaces, with inverse `-j`. -/
-def tangentEquiv (x : M) : TangentSpace I x ≃L[ℝ] TangentSpace I x :=
-  ContinuousLinearEquiv.equivOfInverse (j.toEndomorphism x) (-j.toEndomorphism x)
-    (fun v ↦ by simp)
-    (fun v ↦ by simp)
-
-@[simp]
-theorem tangentEquiv_apply (x : M) (v : TangentSpace I x) : j.tangentEquiv x v = j x v :=
-  (rfl)
-
 variable {n : ℕ∞ω} [ENat.LEInfty n]
-
-/-- The tangent automorphisms `j` form a `C^n` section of the endomorphism bundle. -/
-theorem contMDiff_tangentEquiv :
-    ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
-      (fun x ↦ (⟨x, (j.tangentEquiv x).toContinuousLinearMap⟩ :
-        TotalSpace (E →L[ℝ] E) (fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y))) :=
-  j.toEndomorphism.contMDiff.of_le ENat.LEInfty.out
 
 /-- **The compatible average of a metric.** The mean of a metric `g` and its pullback by `j`,
 `½ (g(u, v) + g(j u, j v))`. It is compatible with `j`
@@ -147,16 +130,6 @@ section AreaForm
 variable [FiniteDimensional ℝ E] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   {o : Manifold.Orientation I M (Fin 2)}
 
-omit [FiniteDimensional ℝ E] in
-include j in
-/-- For a compatible metric, `j` makes every vector orthogonal to its image. -/
-private theorem inner_apply_self_of_compatible
-    (hg : ∀ x (u v : TangentSpace I x), ⟪j x u, j x v⟫ = ⟪u, v⟫) (x : M) (v : TangentSpace I x) :
-    ⟪v, j x v⟫ = 0 := by
-  have h := hg x v (j x v)
-  rw [apply_apply, inner_neg_right, real_inner_comm] at h
-  linarith
-
 /-- At a point of a surface where every frame `(v, j v)` is positive, `j` is the rotation by a
 right angle of the oriented Euclidean tangent plane. -/
 private theorem apply_eq_rightAngleRotation
@@ -180,12 +153,16 @@ private theorem apply_eq_rightAngleRotation
     rw [Orientation.areaForm_to_volumeForm, ← hb]
     exact Orientation.volumeForm_apply_pos_iff.2 (ho x b (by simp [hb]))
   -- Since `j v ⟂ v` and `|j v| = |v|`, the area `ω(v, j v)` is `|v|²`.
+  have hjx : ∀ u v, ⟪j.almostComplexStructureAt x u, j.almostComplexStructureAt x v⟫ = ⟪u, v⟫ :=
+    fun u v ↦ by simpa only [almostComplexStructureAt_apply] using hg x u v
   have hnorm : ‖j x v‖ = ‖v‖ := by
-    rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), ← real_inner_self_eq_norm_sq,
-      ← real_inner_self_eq_norm_sq, hg]
+    simpa only [almostComplexStructureAt_apply] using AlmostComplexStructure.norm_apply hjx v
+  have hperp : ⟪v, j x v⟫ = 0 := by
+    simpa only [almostComplexStructureAt_apply, real_inner_comm v] using
+      AlmostComplexStructure.inner_apply_self hjx v
   have harea : ox.areaForm v (j x v) = ‖v‖ ^ 2 := by
     have h := ox.inner_sq_add_areaForm_sq v (j x v)
-    rw [inner_apply_self_of_compatible j hg, hnorm] at h
+    rw [hperp, hnorm] at h
     nlinarith [sq_nonneg (ox.areaForm v (j x v) - ‖v‖ ^ 2),
       sq_nonneg (ox.areaForm v (j x v) + ‖v‖ ^ 2), sq_nonneg ‖v‖]
   -- Equality in Cauchy–Schwarz for `⟪J v, j v⟫ = ω(v, j v) = |J v| |j v|`.
@@ -238,13 +215,19 @@ theorem inner_apply_left_eq_mul_riemannianVolumeForm
   have hb : ⇑b = ![w, j x w] := by
     rw [coe_basisOfLinearIndependentOfCardEqFinrank, almostComplexStructureAt_apply]
   have h₀ : g'.inner x w (j x w) = 0 := by
-    have h := hg' x w (j x w)
-    simp only [apply_apply, map_neg] at h
-    linarith [g'.symm x (j x w) w]
-  have h₁ : ⟪w, j x w⟫ = 0 := inner_apply_self_of_compatible j hg x w
+    simpa only [almostComplexStructureAt_apply, ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply]
+      using (j.almostComplexStructureAt x).bilinForm_apply_apply_self_eq_zero
+        (g := (g'.inner x).toLinearMap₁₂) ⟨fun u v ↦ g'.symm x u v⟩
+        (fun u v ↦ by
+          simpa only [almostComplexStructureAt_apply,
+            ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply] using hg' x u v) w
+  have hjx : ∀ u v, ⟪j.almostComplexStructureAt x u, j.almostComplexStructureAt x v⟫ = ⟪u, v⟫ :=
+    fun u v ↦ by simpa only [almostComplexStructureAt_apply] using hg x u v
+  have h₁ : ⟪w, j x w⟫ = 0 := by
+    simpa only [almostComplexStructureAt_apply, real_inner_comm w] using
+      AlmostComplexStructure.inner_apply_self hjx w
   have h₂ : ‖j x w‖ = ‖w‖ := by
-    rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), ← real_inner_self_eq_norm_sq,
-      ← real_inner_self_eq_norm_sq, hg]
+    simpa only [almostComplexStructureAt_apply] using AlmostComplexStructure.norm_apply hjx w
   have key : ‖w‖ ^ 2 • (g'.inner x).toLinearMap₁₂ = g'.inner x w w • innerₗ (TangentSpace I x) := by
     refine LinearMap.ext_basis b b fun i k ↦ ?_
     fin_cases i <;> fin_cases k <;>

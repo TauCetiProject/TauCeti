@@ -8,15 +8,24 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 
 /-!
-# Lowering the smoothness of a Riemannian metric
+# Basic facts about `C^n` Riemannian metrics on vector bundles
 
 A `C^n` Riemannian metric on a vector bundle is in particular a `C^m` Riemannian metric for every
 `m ≤ n`. This lets a metric built with more regularity than needed, such as an analytic model
 metric, be used by results stated for smooth metrics.
 
+The diagonal values of a metric are nonnegative, and the pointwise inner product of two continuous
+sections is continuous.
+
 ## Main definitions
 
 * `Bundle.ContMDiffRiemannianMetric.ofLE`: a `C^n` metric regarded as a `C^m` metric, `m ≤ n`.
+
+## Main results
+
+* `Bundle.ContMDiffRiemannianMetric.inner_self_nonneg`: `0 ≤ g(v, v)`.
+* `Bundle.ContMDiffRiemannianMetric.continuous_inner_of_continuous`: the pointwise inner product of
+  continuous sections is continuous.
 -/
 
 public section
@@ -68,5 +77,22 @@ theorem norm_sq [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousConstSMul
     ‖v‖ ^ 2 = g.inner x v v := by
   let : RiemannianBundle E := ⟨g.toRiemannianMetric⟩
   exact norm_sq_eq_re_inner (𝕜 := ℝ) v
+
+/-- The diagonal values of a metric are nonnegative. -/
+theorem inner_self_nonneg (g : ContMDiffRiemannianMetric IB n F E) (x : B) (v : E x) :
+    0 ≤ g.inner x v v := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp
+  · exact (g.pos x v hv).le
+
+/-- The pointwise inner product of two continuous sections is continuous. -/
+theorem continuous_inner_of_continuous [∀ x, IsTopologicalAddGroup (E x)]
+    [∀ x, ContinuousConstSMul ℝ (E x)] (g : ContMDiffRiemannianMetric IB n F E)
+    {ξ η : ∀ x, E x} (hξ : Continuous fun x ↦ TotalSpace.mk' F x (ξ x))
+    (hη : Continuous fun x ↦ TotalSpace.mk' F x (η x)) :
+    Continuous fun x ↦ g.inner x (ξ x) (η x) := by
+  let : RiemannianBundle E := ⟨g.toRiemannianMetric⟩
+  have : IsContinuousRiemannianBundle F E := ⟨g.inner, g.contMDiff.continuous, fun _ _ _ ↦ rfl⟩
+  exact hξ.inner_bundle hη
 
 end Bundle.ContMDiffRiemannianMetric

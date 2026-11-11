@@ -22,8 +22,10 @@ integral of their pointwise inner product against the Riemannian volume form,
 `⟪ξ, η⟫ = ∫_M h(ξ, η) vol`,
 
 computed by `TauCeti.integralTopForm`. On a surface with an almost complex structure `j` and a
-compatible metric, the volume form is the area form `dA(u, v) = g(j u, v)`, by
-`TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.AreaForm`. For a complex bundle
+compatible metric, if `o` is the orientation for which every frame `(v, j v)` is positive, the
+volume form is the area form `dA(u, v) = g(j u, v)`, by
+`TauCeti.SmoothAlmostComplexStructure.riemannianVolumeForm_apply_eq_inner`; for the opposite
+orientation it is `-dA`. For a complex bundle
 with a Hermitian metric, `h` is the real part of the Hermitian product, so this is the pairing
 `∫_Σ Re⟨ξ, η⟩ dA` against which McDuff–Salamon define the formal adjoint of a real
 Cauchy–Riemann operator (Lemma C.1.9).
@@ -35,7 +37,8 @@ of `{x | ξ x ≠ 0}` is compact. No boundary condition is involved, and the bas
 
 ## Main declarations
 
-* `Bundle.ContMDiffRiemannianMetric.l2Pairing`: the pairing `∫_M h(ξ, η) vol`.
+* `Bundle.ContMDiffRiemannianMetric.l2Pairing`: the pairing `∫_M h(ξ, η) vol`, with defining
+  equation `Bundle.ContMDiffRiemannianMetric.l2Pairing_def`.
 * `Bundle.ContMDiffRiemannianMetric.l2Pairing_comm`,
   `Bundle.ContMDiffRiemannianMetric.l2Pairing_add_left`,
   `Bundle.ContMDiffRiemannianMetric.l2Pairing_smul_left` and their right-hand versions: it is
@@ -80,9 +83,28 @@ def l2Pairing (h : ContMDiffRiemannianMetric I n F V) (o : Manifold.Orientation 
 
 variable (h : ContMDiffRiemannianMetric I n F V) (o : Manifold.Orientation I M (Fin m))
 
+/-- The `L²` pairing is the integral of the pointwise inner product against the volume form. -/
+theorem l2Pairing_def (ξ η : ∀ x, V x) :
+    h.l2Pairing o ξ η =
+      integralTopForm o fun x ↦ h.inner x (ξ x) (η x) • riemannianVolumeForm o x :=
+  (rfl)
+
 /-- The `L²` pairing is symmetric. -/
 theorem l2Pairing_comm (ξ η : ∀ x, V x) : h.l2Pairing o ξ η = h.l2Pairing o η ξ := by
   simp only [l2Pairing, h.symm]
+
+/-- The `L²` pairing with the zero section on the left vanishes. -/
+@[simp]
+theorem l2Pairing_zero_left (η : ∀ x, V x) : h.l2Pairing o 0 η = 0 := by
+  rw [l2Pairing, ← integralTopForm_zero o]
+  congr 1
+  funext x
+  simp
+
+/-- The `L²` pairing with the zero section on the right vanishes. -/
+@[simp]
+theorem l2Pairing_zero_right (ξ : ∀ x, V x) : h.l2Pairing o ξ 0 = 0 := by
+  rw [l2Pairing_comm, l2Pairing_zero_left]
 
 /-- The `L²` pairing is homogeneous in its first argument. -/
 theorem l2Pairing_smul_left (c : ℝ) (ξ η : ∀ x, V x) :
@@ -97,13 +119,6 @@ theorem l2Pairing_smul_right (c : ℝ) (ξ η : ∀ x, V x) :
     h.l2Pairing o ξ (c • η) = c * h.l2Pairing o ξ η := by
   rw [l2Pairing_comm, l2Pairing_smul_left, l2Pairing_comm]
 
-omit [FiniteDimensional ℝ E] [IsManifold I 1 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)] in
-/-- The diagonal values of a bundle metric are nonnegative. -/
-private theorem metricInner_self_nonneg (x : M) (v : V x) : 0 ≤ h.inner x v v := by
-  rcases eq_or_ne v 0 with rfl | hv
-  · simp
-  · exact (h.pos x v hv).le
-
 /-- The integrand of the pairing vanishes outside the support of the first section. -/
 private theorem tsupport_metricInner_smul_riemannianVolumeForm_subset (ξ η : ∀ x, V x) :
     _root_.tsupport (α := E [⋀^Fin m]→L[ℝ] ℝ)
@@ -114,16 +129,6 @@ private theorem tsupport_metricInner_smul_riemannianVolumeForm_subset (ξ η : �
 
 variable [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousConstSMul ℝ (V x)]
 
-omit [FiniteDimensional ℝ E] [IsManifold I 1 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)] in
-/-- The pointwise pairing of continuous sections is continuous. -/
-private theorem continuous_metricInner {ξ η : ∀ x, V x}
-    (hξ : Continuous fun x ↦ TotalSpace.mk' F x (ξ x))
-    (hη : Continuous fun x ↦ TotalSpace.mk' F x (η x)) :
-    Continuous fun x ↦ h.inner x (ξ x) (η x) := by
-  let : RiemannianBundle V := ⟨h.toRiemannianMetric⟩
-  have : IsContinuousRiemannianBundle F V := ⟨h.inner, h.contMDiff.continuous, fun _ _ _ ↦ rfl⟩
-  exact hξ.inner_bundle hη
-
 variable [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)]
 
 /-- The integrand of the pairing of continuous sections is a continuous top form. -/
@@ -133,7 +138,7 @@ private theorem isSmoothForm_metricInner_smul_riemannianVolumeForm {ξ η : ∀ 
     IsSmoothForm I 0 fun x ↦ h.inner x (ξ x) (η x) • riemannianVolumeForm o x := by
   have : IsManifold I (0 + 1) M := by rw [zero_add]; infer_instance
   exact (isSmoothForm_riemannianVolumeForm (n := 0) o).fun_smul
-    (contMDiff_zero_iff.2 (continuous_metricInner h hξ hη))
+    (contMDiff_zero_iff.2 (h.continuous_inner_of_continuous hξ hη))
 
 /-- **Additivity of the `L²` pairing** in its first argument, for continuous sections when the
 second section is compactly supported. -/
@@ -170,7 +175,7 @@ theorem l2Pairing_self_nonneg [NeZero m] (ξ : ∀ x, V x) : 0 ≤ h.l2Pairing o
   refine integralTopForm_nonneg o fun x c hc ↦ ?_
   let := o.fact_finrank_tangentSpace x
   rw [ContinuousAlternatingMap.smul_apply, smul_eq_mul, riemannianVolumeForm_apply]
-  exact mul_nonneg (metricInner_self_nonneg h x (ξ x))
+  exact mul_nonneg (h.inner_self_nonneg x (ξ x))
     (Orientation.volumeForm_apply_pos_iff.2 hc).le
 
 /-- **The `L²` pairing is definite**: a continuous compactly supported section `ξ` has
@@ -193,13 +198,12 @@ theorem l2Pairing_self_eq_zero_iff [NeZero m] {ξ : ∀ x, V x}
       (fun y c hc ↦ ?_) ⟨x, b.toBasis, hb, ?_⟩).ne' h0
     · let := o.fact_finrank_tangentSpace y
       rw [ContinuousAlternatingMap.smul_apply, smul_eq_mul, riemannianVolumeForm_apply]
-      exact mul_nonneg (metricInner_self_nonneg h y (ξ y))
+      exact mul_nonneg (h.inner_self_nonneg y (ξ y))
         (Orientation.volumeForm_apply_pos_iff.2 hc).le
     · rw [ContinuousAlternatingMap.smul_apply, smul_eq_mul, OrthonormalBasis.coe_toBasis,
         riemannianVolumeForm_apply_orthonormal o x b hb, mul_one]
       exact h.pos x _ hx
   · subst h0
-    simp only [l2Pairing, Pi.zero_apply, map_zero, zero_smul]
-    exact integralTopForm_zero o
+    exact h.l2Pairing_zero_left o 0
 
 end Bundle.ContMDiffRiemannianMetric
