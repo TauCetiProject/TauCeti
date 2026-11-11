@@ -31,7 +31,8 @@ not vanish (`Projectivization.linearProjection_mk`).
 
 The projectivization of a vector space of dimension at most one, such as
 `Projectivization K (Fin 1 → K)`, has at most one point
-(`Projectivization.subsingleton_of_rank_le_one`).
+(`Projectivization.subsingleton_of_rank_le_one`), and two nonzero vectors of a subspace of
+dimension at most one give the same point (`Projectivization.mk_eq_mk_of_mem_of_rank_le_one`).
 
 The file also records `Projectivization.submodule_map`: the line of the image of a projective
 point under an injective semilinear map is the image of its line.
@@ -76,6 +77,15 @@ theorem subsingleton_of_rank_le_one (h : Module.rank K V ≤ 1) :
   obtain ⟨b, rfl⟩ := hv₀ w
   have hb : b ≠ 0 := by rintro rfl; simp at hw
   exact (mk_eq_mk_iff' K _ _ hv hw).2 ⟨a * b⁻¹, by rw [smul_smul, inv_mul_cancel_right₀ hb]⟩
+
+variable {K} in
+/-- Two nonzero vectors of a subspace of dimension at most one give the same projective point. -/
+theorem mk_eq_mk_of_mem_of_rank_le_one {S : Submodule K V} (hS : Module.rank K S ≤ 1) {v w : V}
+    (hv : v ∈ S) (hw : w ∈ S) (hv0 : v ≠ 0) (hw0 : w ≠ 0) : mk K v hv0 = mk K w hw0 := by
+  have := subsingleton_of_rank_le_one hS
+  have h := Subsingleton.elim (mk K (⟨v, hv⟩ : S) (by simpa using hv0))
+    (mk K (⟨w, hw⟩ : S) (by simpa using hw0))
+  simpa [map_mk] using congrArg (map S.subtype S.injective_subtype) h
 
 end DivisionRing
 
