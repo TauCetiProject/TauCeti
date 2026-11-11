@@ -40,12 +40,10 @@ theorem inv_mk_singleton (w : α × Bool) : (mk [w])⁻¹ = mk [(w.1, !w.2)] := 
 
 /-- The word consisting of `n` copies of a letter represents the `n`-th power of that letter. -/
 theorem mk_replicate (n : ℕ) (y : α × Bool) : mk (List.replicate n y) = mk [y] ^ n := by
-  induction n with
-  | zero => simp [one_eq_mk]
-  | succ n ih => rw [List.replicate_succ, pow_succ', ← ih, mul_mk, List.singleton_append]
+  simpa only [List.flatten_replicate_singleton] using (pow_mk (L := [y]) n).symm
 
 /-- A word made of copies of a single letter is reduced. -/
-theorem isReduced_replicate (n : ℕ) (y : α × Bool) : IsReduced (List.replicate n y) :=
+@[simp] theorem isReduced_replicate (n : ℕ) (y : α × Bool) : IsReduced (List.replicate n y) :=
   List.isChain_replicate_of_rel n fun _ => rfl
 
 /-- Reduced words representing the same element of a free group are equal. -/
