@@ -151,7 +151,8 @@ theorem Convex.injOn_and_injective_of_norm_hasFDerivAt_sub_le {𝕜 E F : Type*}
     refine InjOn.of_comp (g := ⇑P) <| happ.injOn <|
       (subsingleton_or_nontrivial E).imp id fun (_ : Nontrivial E) ↦ ?_
     simpa [ContinuousLinearMap.nnnorm_id] using NNReal.half_lt_self one_ne_zero
-  · have h1 := (P.comp (h' u) - ContinuousLinearMap.id 𝕜 E).le_of_opNorm_le (hclose u hu) w
+  · -- `P ∘ h' u - id` sends `w` to `-w` and has norm at most `1 / 2`, so `w = 0`.
+    have h1 := (P.comp (h' u) - ContinuousLinearMap.id 𝕜 E).le_of_opNorm_le (hclose u hu) w
     have hw' : (P.comp (h' u) - ContinuousLinearMap.id 𝕜 E) w = -w := by simp [hw]
     rw [hw', norm_neg] at h1
     have : ‖w‖ = 0 := by linarith [norm_nonneg w]
