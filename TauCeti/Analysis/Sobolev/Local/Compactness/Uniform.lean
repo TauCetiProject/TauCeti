@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Local.Compactness
 public import TauCeti.Analysis.Sobolev.Local.Morrey
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
-import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.Analysis.Sobolev.Wkp.Chain
 
 /-!
 # Locally uniform convergence of local Rellich subsequences for `p > 2`
@@ -38,7 +38,6 @@ derivatives is not known to have a weak derivative.
 
 ## Main declarations
 
-* `TauCeti.MemWkpLoc.exists_norm_preciseRepresentative_le`: the local Morrey sup bound.
 * `TauCeti.tendstoLocallyUniformlyOn_preciseRepresentative_of_tendsto_eLpNorm`: `Lᵖ` convergence
   on compact sets and `W^{1,p}` bounds give locally uniform convergence of precise
   representatives.
@@ -74,144 +73,6 @@ section Morrey
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {p : ℝ≥0∞} {Ω : Opens ℂ}
-
-/-- **The local Morrey sup bound.** Let `2 < p ≤ ∞` and `α = 1 - 2 / p`. There is a constant
-`C > 0`, depending only on `p` and `F`, such that the following holds. Let `u ∈ MemWkpLoc p Ω 1`
-with weak derivative `D` on `Ω`, let `r > 0` and let `x` be a point with `closedBall x (2 r) ⊆ Ω`.
-Then the precise representative `u*` of `u` satisfies
-
-`‖u*(x)‖ ≤ r^{-2/p} ‖u‖_{Lᵖ(B(x, r))} + C ‖D‖_{Lᵖ(B(x, 2 r))} r^α`.
-
-The proof averages the local Morrey inequality
-`TauCeti.MemWkpLoc.exists_dist_preciseRepresentative_le` over `B(x, r)`. -/
-theorem MemWkpLoc.exists_norm_preciseRepresentative_le (hp : 2 < p) :
-    ∃ C : ℝ, 0 < C ∧ ∀ {Ω : Opens ℂ} {u : ℂ → F} {D : ℂ → ℂ →L[ℝ] F}, MemWkpLoc p Ω 1 u →
-      HasWeakFDerivOn volume Ω u D → ∀ {x : ℂ} {r : ℝ}, 0 < r → closedBall x (2 * r) ⊆ Ω →
-        ‖preciseRepresentative volume u x‖ ≤
-          r ^ (-(2 / p.toReal)) * (eLpNorm u p (volume.restrict (ball x r))).toReal +
-            C * (eLpNorm D p (volume.restrict (ball x (2 * r)))).toReal *
-              r ^ (((1 : ℝ≥0∞) - 2 / p).toNNReal : ℝ) := by
-  obtain ⟨C, hC, hdist⟩ := MemWkpLoc.exists_dist_preciseRepresentative_le (F := F) hp
-  refine ⟨C, hC, fun {Ω u D} hu hD x r hr hxr => ?_⟩
-  have hp1 : 1 ≤ p := one_le_two.trans hp.le
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp1).ne'
-  set α : ℝ := (((1 : ℝ≥0∞) - 2 / p).toNNReal : ℝ)
-  set B := ball x r
-  set N := (eLpNorm D p (volume.restrict (ball x (2 * r)))).toReal
-  set A := C * N * r ^ α
-  set c := preciseRepresentative volume u x
-  have hBK : B ⊆ closedBall x (2 * r) :=
-    ball_subset_closedBall.trans (closedBall_subset_closedBall (by linarith))
-  have hBΩ : B ⊆ Ω := hBK.trans hxr
-  have hDfin : eLpNorm D p (volume.restrict (ball x (2 * r))) ≠ ∞ :=
-    ((memLpLoc_iff.1 (hu.memLpLoc_of_hasWeakFDerivOn hD) _ hxr
-      (isCompact_closedBall _ _)).mono_measure
-        (Measure.restrict_mono ball_subset_closedBall le_rfl)).eLpNorm_ne_top
-  -- Pointwise: `‖u*(x)‖ ≤ ‖u*(y)‖ + A` for `y ∈ B`.
-  have hpt : ∀ y ∈ B, ‖c‖ ≤ ‖preciseRepresentative volume u y‖ + A := by
-    intro y hy
-    have hxy : dist x y < r := by
-      rw [dist_comm]
-      exact hy
-    have hsub : closedBall x (2 * dist x y) ⊆ closedBall x (2 * r) :=
-      closedBall_subset_closedBall (by linarith)
-    have h := hdist hu hD (hsub.trans hxr)
-    have h2 : dist c (preciseRepresentative volume u y) ≤ A := by
-      refine h.trans ?_
-      have hN : (eLpNorm D p (volume.restrict (ball x (2 * dist x y)))).toReal ≤ N :=
-        ENNReal.toReal_mono hDfin (eLpNorm_mono_measure _
-          (Measure.restrict_mono (ball_subset_ball (by linarith)) le_rfl))
-      have hα : dist x y ^ α ≤ r ^ α :=
-        Real.rpow_le_rpow dist_nonneg hxy.le NNReal.zero_le_coe
-      have := mul_le_mul hN hα (Real.rpow_nonneg dist_nonneg _)
-        (ENNReal.toReal_nonneg.trans hN)
-      calc _ = C * ((eLpNorm D p (volume.restrict (ball x (2 * dist x y)))).toReal *
-            dist x y ^ α) := by ring
-        _ ≤ C * (N * r ^ α) := by gcongr
-        _ = A := by ring
-    calc ‖c‖ ≤ ‖preciseRepresentative volume u y‖ +
-          ‖c - preciseRepresentative volume u y‖ := norm_le_norm_add_norm_sub' _ _
-      _ ≤ _ := by
-        rw [← dist_eq_norm]
-        linarith
-  have hae : ∀ᵐ y ∂volume.restrict B, ‖c‖ ≤ ‖u y‖ + A := by
-    filter_upwards [ae_restrict_of_ae_restrict_of_subset hBΩ
-      (hu.memLpLoc.ae_eq_preciseRepresentative hp1), self_mem_ae_restrict measurableSet_ball]
-      with y hy hyB
-    rw [hy]
-    exact hpt y hyB
-  have huB : MemLp u p (volume.restrict B) :=
-    (memLpLoc_iff.1 hu.memLpLoc _ hxr (isCompact_closedBall _ _)).mono_measure
-      (Measure.restrict_mono hBK le_rfl)
-  -- Integrate the pointwise bound in `Lᵖ(B)`.
-  have hle : eLpNorm (fun _ : ℂ => c) p (volume.restrict B) ≤
-      eLpNorm u p (volume.restrict B) + eLpNorm (fun _ : ℂ => A) p (volume.restrict B) := by
-    calc _ ≤ eLpNorm (fun y => ‖u y‖ + A) p (volume.restrict B) :=
-          eLpNorm_mono_ae_real aestronglyMeasurable_const hae
-      _ ≤ eLpNorm (fun y => ‖u y‖) p (volume.restrict B) +
-          eLpNorm (fun _ : ℂ => A) p (volume.restrict B) :=
-          eLpNorm_add_le hp1
-      _ = _ := by rw [eLpNorm_norm _ huB.aestronglyMeasurable]
-  have hV : volume B = ENNReal.ofReal r ^ 2 * NNReal.pi := Complex.volume_ball x r
-  have hVpos : volume B ≠ 0 := (measure_ball_pos volume x hr).ne'
-  have hVfin : volume B ≠ ∞ := measure_ball_lt_top.ne
-  have hμ : volume.restrict B ≠ 0 := by
-    rwa [Ne, Measure.restrict_eq_zero]
-  rw [eLpNorm_const _ hp0 hμ, eLpNorm_const _ hp0 hμ, Measure.restrict_apply_univ] at hle
-  set s : ℝ := 1 / p.toReal
-  have hs : 0 ≤ s := by positivity
-  set V := (volume B).toReal
-  have hVr : V = r ^ 2 * Real.pi := by
-    simp only [V, hV, ENNReal.toReal_mul, ENNReal.toReal_pow, ENNReal.toReal_ofReal hr.le,
-      ENNReal.coe_toReal, NNReal.coe_real_pi]
-  have hVs : r ^ (2 * s) ≤ V ^ s := by
-    rw [Real.rpow_mul hr.le, hVr]
-    refine Real.rpow_le_rpow (by positivity) ?_ hs
-    rw [Real.rpow_two]
-    nlinarith [Real.two_le_pi, sq_nonneg r]
-  have hrs : 0 < r ^ (2 * s) := Real.rpow_pos_of_pos hr _
-  have hVs0 : 0 < V ^ s := hrs.trans_le hVs
-  have hufin : eLpNorm u p (volume.restrict B) ≠ ∞ := huB.eLpNorm_ne_top
-  -- Take real parts: `‖c‖ V^s ≤ ‖u‖_{Lᵖ(B)} + A V^s`.
-  have hreal : ‖c‖ * V ^ s ≤ (eLpNorm u p (volume.restrict B)).toReal + A * V ^ s := by
-    have hA : 0 ≤ A := by
-      have := ENNReal.toReal_nonneg (a := eLpNorm D p (volume.restrict (ball x (2 * r))))
-      positivity
-    have h := ENNReal.toReal_mono (ENNReal.add_ne_top.2 ⟨hufin, ENNReal.mul_ne_top
-      enorm_ne_top (ENNReal.rpow_ne_top_of_nonneg hs hVfin)⟩) hle
-    rwa [ENNReal.toReal_add hufin (ENNReal.mul_ne_top enorm_ne_top
-      (ENNReal.rpow_ne_top_of_nonneg hs hVfin)), ENNReal.toReal_mul, ENNReal.toReal_mul,
-      toReal_enorm, toReal_enorm, Real.norm_of_nonneg hA,
-      ← ENNReal.toReal_rpow] at h
-  have hexp : r ^ (-(2 / p.toReal)) = (r ^ (2 * s))⁻¹ := by
-    rw [← Real.rpow_neg hr.le]
-    congr 1
-    simp only [s]
-    ring
-  rw [hexp]
-  have hU := ENNReal.toReal_nonneg (a := eLpNorm u p (volume.restrict B))
-  have key : ‖c‖ - A ≤ (eLpNorm u p (volume.restrict B)).toReal / V ^ s := by
-    rw [le_div_iff₀ hVs0]
-    linarith
-  calc ‖c‖ ≤ (eLpNorm u p (volume.restrict B)).toReal / V ^ s + A := by linarith
-    _ ≤ (eLpNorm u p (volume.restrict B)).toReal / r ^ (2 * s) + A := by
-        gcongr
-    _ = _ := by
-        rw [div_eq_mul_inv, mul_comm]
-
-/-- On `Ω`, the precise representative of a difference of members of `MemWkpLoc p Ω 1` is the
-difference of their precise representatives, both being continuous there. -/
-private theorem eqOn_preciseRepresentative_sub (hp : 2 < p) {f g : ℂ → F}
-    (hf : MemWkpLoc p Ω 1 f) (hg : MemWkpLoc p Ω 1 g) :
-    EqOn (preciseRepresentative volume (f - g))
-      (preciseRepresentative volume f - preciseRepresentative volume g) Ω := by
-  have hp1 : 1 ≤ p := one_le_two.trans hp.le
-  refine eqOn_preciseRepresentative_of_continuousOn Ω.isOpen
-    ((hf.sub hg).memLpLoc.locallyIntegrableOn hp1 Ω.isOpen.isLocallyClosed) ?_
-    ((hf.continuousOn_preciseRepresentative hp).sub (hg.continuousOn_preciseRepresentative hp))
-  filter_upwards [hf.memLpLoc.ae_eq_preciseRepresentative hp1,
-    hg.memLpLoc.ae_eq_preciseRepresentative hp1] with z hfz hgz
-  simp only [Pi.sub_apply, hfz, hgz]
 
 /-- **Locally uniform convergence from `Lᵖ` convergence and `W^{1,p}` bounds.** Let `2 < p ≤ ∞`.
 Let `f m ∈ MemWkpLoc p Ω 1` have weak derivatives `D m` on `Ω` which are bounded in `Lᵖ(K)`
@@ -281,7 +142,7 @@ theorem tendstoLocallyUniformlyOn_preciseRepresentative_of_tendsto_eLpNorm (hp :
     have hball' : ball x r ⊆ cthickening R K :=
       (ball_subset_ball (by linarith)).trans hball
     have hb := hsup ((hf m).sub (hf n)) ((hD m).sub (hD n)) hr0 (hxr.trans hRK)
-    rw [eqOn_preciseRepresentative_sub hp (hf m) (hf n) (hRK (self_subset_cthickening K hx))]
+    rw [(hf m).eqOn_preciseRepresentative_sub hp (hf n) (hRK (self_subset_cthickening K hx))]
       at hb
     -- The `Lᵖ` term.
     have hfmg := ((hmem m).sub hgK).eLpNorm_ne_top
@@ -366,39 +227,6 @@ section Rellich
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {Ω : Opens ℂ} {k : ℕ}
 
-/-- A chain of iterated weak gradients on `W` of the value of `y ∈ W^{n+1,p}(W)` agrees with the
-derivatives recorded in `y`: its top field is the highest recorded derivative of `y`, and every
-field of the chain lies in `Lᵖ(W)` with norm at most `‖y‖`. -/
-private theorem chain_ae_eq_and_eLpNorm_le {W : Opens ℂ} : ∀ (n : ℕ) (y : Wkp volume W p (n + 1))
-    {f : ℂ → ℝ} {G : (i : ℕ) → ℂ → IteratedGradient ℂ i},
-    Wkp.value (n + 1) y =ᵐ[volume.restrict W] f →
-    HasWeakFDerivOn volume W f (fun z => innerSL ℝ (G 0 z)) →
-    (∀ i < n, HasWeakFDerivOn volume W (G i) (G (i + 1))) →
-    G n =ᵐ[volume.restrict W] Wkp.iteratedGradient n y ∧
-      ∀ i ≤ n, MemLp (G i) p (volume.restrict W) ∧
-        eLpNorm (G i) p (volume.restrict W) ≤ ENNReal.ofReal ‖y‖
-  | 0, y, f, G, hy, h0, _ => by
-    have hG0 : G 0 =ᵐ[volume.restrict W] Wkp.iteratedGradient 0 y := by
-      filter_upwards [(h0.congr_ae hy.symm).ae_eq (Wkp.hasWeakFDerivOn_value y)] with z hz
-      exact innerSL_inj.1 hz
-    refine ⟨hG0, fun i hi => ?_⟩
-    obtain rfl := Nat.le_zero.1 hi
-    refine ⟨(Lp.memLp _).ae_eq hG0.symm, ?_⟩
-    rw [eLpNorm_congr_ae hG0, ← Lp.enorm_def, ← ofReal_norm]
-    exact ENNReal.ofReal_le_ofReal (Wkp.norm_iteratedGradient_le 0 y)
-  | n + 1, y, f, G, hy, h0, hG => by
-    obtain ⟨hGn, hb⟩ := chain_ae_eq_and_eLpNorm_le n (Wkp.lowerOrder (n + 1) y)
-      (by rwa [← Wkp.value_succ]) h0 fun i hi => hG i (by omega)
-    have hGn1 : G (n + 1) =ᵐ[volume.restrict W] Wkp.iteratedGradient (n + 1) y :=
-      ((hG n (by omega)).congr_ae hGn).ae_eq (Wkp.hasWeakFDerivOn_iteratedGradient n y)
-    refine ⟨hGn1, fun i hi => ?_⟩
-    rcases Nat.lt_or_eq_of_le hi with hi | rfl
-    · obtain ⟨hm, hle⟩ := hb i (by omega)
-      exact ⟨hm, hle.trans (ENNReal.ofReal_le_ofReal (Wkp.norm_lowerOrder_le _ y))⟩
-    · refine ⟨(Lp.memLp _).ae_eq hGn1.symm, ?_⟩
-      rw [eLpNorm_congr_ae hGn1, ← Lp.enorm_def, ← ofReal_norm]
-      exact ENNReal.ofReal_le_ofReal (Wkp.norm_iteratedGradient_le (n + 1) y)
-
 /-- If `y m → w` in `W^{n,p}(W)` and the values of `y m` and `w` represent `f m` and `g` on `W`,
 then `f m → g` in `Lᵖ(W)`. -/
 private theorem tendsto_eLpNorm_sub_of_tendsto_wkp {W : Opens ℂ} {n : ℕ}
@@ -406,18 +234,9 @@ private theorem tendsto_eLpNorm_sub_of_tendsto_wkp {W : Opens ℂ} {n : ℕ}
     (hyw : Tendsto y atTop (𝓝 w)) (hy : ∀ m, Wkp.value n (y m) =ᵐ[volume.restrict W] f m)
     (hw : Wkp.value n w =ᵐ[volume.restrict W] g) :
     Tendsto (fun m => eLpNorm (f m - g) p (volume.restrict W)) atTop (𝓝 0) := by
-  have hle : ∀ m, eLpNorm (f m - g) p (volume.restrict W) ≤ ENNReal.ofReal ‖y m - w‖ := by
-    intro m
-    have hval : Wkp.value n (y m - w) =ᵐ[volume.restrict W] f m - g := by
-      rw [← Wkp.valueL_apply, map_sub, Wkp.valueL_apply, Wkp.valueL_apply]
-      filter_upwards [Lp.coeFn_sub (Wkp.value n (y m)) (Wkp.value n w), hy m, hw]
-        with z hz hyz hwz
-      rw [hz, Pi.sub_apply, Pi.sub_apply, hyz, hwz]
-    rw [← eLpNorm_congr_ae hval, ← Lp.enorm_def, ← ofReal_norm]
-    exact ENNReal.ofReal_le_ofReal (Wkp.norm_value_le n _)
-  have h0 : Tendsto (fun m => ENNReal.ofReal ‖y m - w‖) atTop (𝓝 0) := by
-    simpa using ENNReal.tendsto_ofReal (tendsto_iff_norm_sub_tendsto_zero.1 hyw)
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h0 (fun _ => bot_le) hle
+  refine ((Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).1
+    (((Wkp.valueL n).continuous.tendsto w).comp hyw)).congr fun m => eLpNorm_congr_ae ?_
+  simpa only [Function.comp_apply, Wkp.valueL_apply] using (hy m).sub hw
 
 /-- Every compact subset of an open `Ω ⊆ ℂ` lies in an open `W` whose closure is compact and
 contained in `Ω`, and then `W ≤ Ω`. -/
@@ -458,8 +277,8 @@ theorem tendstoLocallyUniformlyOn_preciseRepresentative_of_tendsto_wkp (hp : 2 <
     obtain ⟨R, hR⟩ := hu W hWc hWΩ
     refine ⟨R.toNNReal, fun m => ?_⟩
     obtain ⟨y, hyR, hy⟩ := hR m
-    obtain ⟨-, hb⟩ := chain_ae_eq_and_eLpNorm_le k y hy ((hG0 m).mono hWle)
-      fun i hi => (hG m i hi).mono hWle
+    obtain ⟨-, hb⟩ := Wkp.iteratedGradient_ae_eq_and_eLpNorm_le_of_chain k y hy
+      ((hG0 m).mono hWle) fun i hi => (hG m i hi).mono hWle
     calc eLpNorm (fun z => innerSL ℝ (G m 0 z)) p (volume.restrict K)
         ≤ eLpNorm (fun z => innerSL ℝ (G m 0 z)) p (volume.restrict W) :=
           eLpNorm_mono_measure _ (Measure.restrict_mono hKW le_rfl)
@@ -516,8 +335,8 @@ theorem tendstoLocallyUniformlyOn_preciseRepresentative_iteratedGradient_of_tend
     obtain ⟨R, hR⟩ := hu W hWc hWΩ
     refine ⟨R, fun m j hj => ?_⟩
     obtain ⟨y, hyR, hy⟩ := hR m
-    obtain ⟨-, hb⟩ := chain_ae_eq_and_eLpNorm_le (n + 1) y hy ((hG0 m).mono hWle)
-      fun i hi => (hG m i hi).mono hWle
+    obtain ⟨-, hb⟩ := Wkp.iteratedGradient_ae_eq_and_eLpNorm_le_of_chain (n + 1) y hy
+      ((hG0 m).mono hWle) fun i hi => (hG m i hi).mono hWle
     exact ⟨(hb j hj).1, (hb j hj).2.trans (ENNReal.ofReal_le_ofReal hyR)⟩
   have hGloc : ∀ m, ∀ j ≤ n + 1, MemLpLoc p Ω (G m j) := fun m j hj =>
     memLpLoc_of_forall_opens fun W hWc hWΩ => by
@@ -526,8 +345,8 @@ theorem tendstoLocallyUniformlyOn_preciseRepresentative_iteratedGradient_of_tend
   have hHloc : MemLpLoc p Ω (H i) := memLpLoc_of_forall_opens fun W hWc hWΩ => by
     have hWle : W ≤ Ω := SetLike.coe_subset_coe.1 (subset_closure.trans hWΩ)
     obtain ⟨w, hw⟩ := hv.exists_wkp hWc hWΩ
-    obtain ⟨-, hb⟩ := chain_ae_eq_and_eLpNorm_le n w hw ((hH0 (by omega)).mono hWle)
-      fun j hj => (hH j (by omega)).mono hWle
+    obtain ⟨-, hb⟩ := Wkp.iteratedGradient_ae_eq_and_eLpNorm_le_of_chain n w hw
+      ((hH0 (by omega)).mono hWle) fun j hj => (hH j (by omega)).mono hWle
     exact ⟨H i, (hb i (by omega)).1, EventuallyEq.rfl⟩
   refine tendstoLocallyUniformlyOn_preciseRepresentative_of_tendsto_eLpNorm hp
     (D := fun m => G m (i + 1))
@@ -563,7 +382,7 @@ theorem tendstoLocallyUniformlyOn_preciseRepresentative_iteratedGradient_of_tend
           funext fun z => by simp only [Pi.sub_apply, map_sub]
         rw [heq]
         exact ((hG0 m).sub (hH0 (by omega))).mono hWle
-      obtain ⟨-, hb⟩ := chain_ae_eq_and_eLpNorm_le n (y m - w) hval h0
+      obtain ⟨-, hb⟩ := Wkp.iteratedGradient_ae_eq_and_eLpNorm_le_of_chain n (y m - w) hval h0
         fun j hj => ((hG m j (by omega)).sub (hH j (by omega))).mono hWle
       exact (hb i (by omega)).2
     have h0 : Tendsto (fun m => ENNReal.ofReal ‖y m - w‖) atTop (𝓝 0) := by
@@ -609,23 +428,6 @@ section Basis
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {ι : Type*}
   {p : ℝ≥0∞} {Ω : Opens ℂ}
-
-/-- On `Ω`, the precise representative of a locally `Lᵖ` map whose coordinates in a basis have
-precise representatives continuous on `Ω` is the corresponding combination of those. -/
-private theorem eqOn_preciseRepresentative_basis [Fintype ι] [FiniteDimensional ℝ F]
-    (b : Module.Basis ι ℝ F) (hp : 1 ≤ p) {f : ℂ → F} (hf : MemLpLoc p Ω f)
-    (hc : ∀ i, ContinuousOn (preciseRepresentative volume fun z => b.repr (f z) i) Ω) :
-    EqOn (preciseRepresentative volume f)
-      (fun z => ∑ i, preciseRepresentative volume (fun w => b.repr (f w) i) z • b i) Ω := by
-  refine eqOn_preciseRepresentative_of_continuousOn Ω.isOpen
-    (hf.locallyIntegrableOn hp Ω.isOpen.isLocallyClosed) ?_
-    (continuousOn_finsetSum _ fun i _ => (hc i).smul continuousOn_const)
-  have hcoord : ∀ i, (fun z => b.repr (f z) i) =ᵐ[volume.restrict Ω]
-      preciseRepresentative volume fun z => b.repr (f z) i := fun i =>
-    (hf.clm_comp (LinearMap.toContinuousLinearMap (b.coord i))).ae_eq_preciseRepresentative hp
-  filter_upwards [ae_all_iff.2 hcoord] with z hz
-  conv_lhs => rw [← b.sum_repr (f z)]
-  exact Finset.sum_congr rfl fun i _ => by rw [← hz i]
 
 /-- **Locally uniform convergence of vector-valued local Rellich limits.** Let `F` be a
 finite-dimensional real vector space with basis `b`, let `2 < p ≤ ∞`, and let `u m : ℂ → F` have
@@ -688,9 +490,9 @@ theorem _root_.Module.Basis.tendstoLocallyUniformlyOn_preciseRepresentative_of_t
     | insert a s ha ih =>
       simpa only [Finset.sum_insert ha, Pi.add_def] using (hterm a).add ih
   refine ((hsum Finset.univ).congr fun m => ?_).congr_right ?_
-  · exact (eqOn_preciseRepresentative_basis b hp1 (b.memWkpLoc_iff.2 (hum m)).memLpLoc fun i =>
+  · exact (b.eqOn_preciseRepresentative_sum_repr hp1 (b.memWkpLoc_iff.2 (hum m)).memLpLoc fun i =>
       (hum m i).continuousOn_preciseRepresentative hp).symm
-  · exact (eqOn_preciseRepresentative_basis b hp1 hv.memLpLoc hcv).symm
+  · exact (b.eqOn_preciseRepresentative_sum_repr hp1 hv.memLpLoc hcv).symm
 
 /-- **Local Rellich compactness with `C^k` convergence on compact sets, vector-valued version.**
 Let `F` be a finite-dimensional real vector space with basis `b`, let `2 < p ≤ ∞`, and let

@@ -19,6 +19,10 @@ without choosing compatible representatives of their iterated weak derivatives.
 The criteria include the zero-dimensional codomain, order zero, and the exponent infinity.
 They also show that testing one basis is equivalent to testing every basis.
 
+On an open set, the precise representative of a locally `Lᵖ` map is reconstructed from the
+precise representatives of its coordinates wherever these are continuous
+(`Module.Basis.eqOn_preciseRepresentative_sum_repr`).
+
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
@@ -60,5 +64,33 @@ codomain is needed. -/
 theorem memLpLoc_iff (b : Module.Basis ι ℝ F) :
     MemLpLoc p U f ↔ ∀ i, MemLpLoc p U (fun z => b.repr (f z) i) := by
   simpa only [memWkpLoc_zero_iff] using b.memWkpLoc_iff (p := p) (U := U) (k := 0) (f := f)
+
+end Module.Basis
+
+namespace Module.Basis
+
+open TopologicalSpace TauCeti.MeasureTheory
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {ι : Type*} [Fintype ι]
+  {p : ENNReal} {Ω : Opens ℂ} {f : ℂ → F}
+
+/-- On an open set `Ω`, the precise representative of a locally `Lᵖ` map, `1 ≤ p`, whose
+coordinates in a finite basis `b` have precise representatives continuous on `Ω`, is the
+combination of those precise representatives with the vectors of `b`. -/
+theorem eqOn_preciseRepresentative_sum_repr (b : Module.Basis ι ℝ F) (hp : 1 ≤ p)
+    (hf : MemLpLoc p Ω f)
+    (hc : ∀ i, ContinuousOn (preciseRepresentative volume fun z => b.repr (f z) i) Ω) :
+    Set.EqOn (preciseRepresentative volume f)
+      (fun z => ∑ i, preciseRepresentative volume (fun w => b.repr (f w) i) z • b i) Ω := by
+  have : FiniteDimensional ℝ F := b.finiteDimensional_of_finite
+  refine eqOn_preciseRepresentative_of_continuousOn Ω.isOpen
+    (hf.locallyIntegrableOn hp Ω.isOpen.isLocallyClosed) ?_
+    (continuousOn_finsetSum _ fun i _ => (hc i).smul continuousOn_const)
+  have hcoord : ∀ i, (fun z => b.repr (f z) i) =ᵐ[volume.restrict Ω]
+      preciseRepresentative volume fun z => b.repr (f z) i := fun i =>
+    (hf.clm_comp (LinearMap.toContinuousLinearMap (b.coord i))).ae_eq_preciseRepresentative hp
+  filter_upwards [ae_all_iff.2 hcoord] with z hz
+  conv_lhs => rw [← b.sum_repr (f z)]
+  exact Finset.sum_congr rfl fun i _ => by rw [← hz i]
 
 end Module.Basis
