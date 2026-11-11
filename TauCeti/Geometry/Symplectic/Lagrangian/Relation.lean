@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Lagrangian.Constructions
-public import TauCeti.LinearAlgebra.Submodule.Relation
+public import TauCeti.LinearAlgebra.Submodule.Relation.FiberProduct
 
 /-!
 # Composition of linear Lagrangian relations
@@ -21,6 +21,14 @@ and invertible examples from `TauCeti.Geometry.Symplectic.Lagrangian.Constructio
 This is the tangent-space calculation for geometric composition of smooth
 Lagrangian correspondences. It does not supply smoothness or embeddedness of a
 set-theoretic geometric composite.
+
+The matching-space quotient and its excess are defined for arbitrary linear relations in
+`TauCeti.LinearAlgebra.Submodule.Relation.FiberProduct`. For Lagrangian relations the excess is
+the symplectic orthogonal of the sum of the middle projections
+(`TauCeti.SymplecticForm.IsLagrangian.orthogonal_middle_eq_relCompExcess`). Consequently the
+endpoint projection is injective exactly when those projections span the middle space. In the
+clean case with excess, the matching dimension is half the outer dimension plus the excess
+dimension; its quotient is the Lagrangian composite.
 
 The proof intersects the product relation with the matching subspace, then
 eliminates its characteristic directions. Orthogonal complementation exchanges
@@ -122,5 +130,88 @@ theorem IsLagrangian.relComp [FiniteDimensional ℝ V] [FiniteDimensional ℝ W]
     exact add_right_cancel (h₁.trans h₂.symm)
   apply Submodule.mem_relComp.mpr
   exact ⟨a.1.2, hav ▸ ha.1, hau ▸ haw ▸ ha.2⟩
+
+/-- The excess of two linear Lagrangian relations is the symplectic orthogonal of the sum of
+their middle projections. Thus the failure of transversality and the kernel of endpoint
+projection are dual manifestations of the same excess. This identity needs no finite dimension. -/
+theorem IsLagrangian.orthogonal_middle_eq_relCompExcess
+    (hL : (ω₁.twistedProd ω₂).IsLagrangian L)
+    (hK : (ω₂.twistedProd ω₃).IsLagrangian K) :
+    ω₂.orthogonal (L.map (LinearMap.snd ℝ V W) ⊔ K.map (LinearMap.fst ℝ W U)) =
+      L.relCompExcess K := by
+  ext w
+  rw [Submodule.mem_relCompExcess]
+  constructor
+  · intro hw
+    have hz := mem_orthogonal_iff.mp hw
+    constructor
+    · apply (isCoisotropic_iff_le.mp hL.isCoisotropic)
+      rw [mem_orthogonal_iff]
+      intro v hv
+      have hzero := hz v.2 (Submodule.mem_sup_left (Submodule.mem_map_of_mem hv))
+      simpa [twistedProd_apply] using hzero
+    · apply (isCoisotropic_iff_le.mp hK.isCoisotropic)
+      rw [mem_orthogonal_iff]
+      intro u hu
+      have hzero := hz u.1 (Submodule.mem_sup_right (Submodule.mem_map_of_mem hu))
+      simpa [twistedProd_apply] using hzero
+  · rintro ⟨hwL, hwK⟩
+    rw [mem_orthogonal_iff]
+    intro y hy
+    obtain ⟨a, ha, b, hb, rfl⟩ := Submodule.mem_sup.mp hy
+    obtain ⟨v, hv, rfl⟩ := ha
+    obtain ⟨u, hu, rfl⟩ := hb
+    have h₁ := hL.symplecticForm_apply_eq_zero hv hwL
+    have h₂ := hK.symplecticForm_apply_eq_zero hu hwK
+    simp only [twistedProd_apply, map_zero, zero_sub, sub_zero, neg_eq_zero] at h₁ h₂
+    simp [h₁, h₂]
+
+/-- For finite-dimensional linear Lagrangian relations, transversality of the middle
+projections is equivalent to vanishing excess. -/
+theorem IsLagrangian.middle_eq_top_iff_relCompExcess_eq_bot [FiniteDimensional ℝ W]
+    (hL : (ω₁.twistedProd ω₂).IsLagrangian L)
+    (hK : (ω₂.twistedProd ω₃).IsLagrangian K) :
+    L.map (LinearMap.snd ℝ V W) ⊔ K.map (LinearMap.fst ℝ W U) = ⊤ ↔
+      L.relCompExcess K = ⊥ := by
+  rw [← hL.orthogonal_middle_eq_relCompExcess hK]
+  constructor
+  · intro h
+    rw [h, orthogonal_top]
+  · intro h
+    rw [← ω₂.orthogonal_orthogonal
+      (L.map (LinearMap.snd ℝ V W) ⊔ K.map (LinearMap.fst ℝ W U)), h, orthogonal_bot]
+
+/-- The endpoint projection of matching linear Lagrangian relations is injective exactly
+when the two middle projections are transverse. -/
+theorem IsLagrangian.relCompProjection_injective_iff [FiniteDimensional ℝ W]
+    (hL : (ω₁.twistedProd ω₂).IsLagrangian L)
+    (hK : (ω₂.twistedProd ω₃).IsLagrangian K) :
+    Function.Injective (L.relCompProjection K) ↔
+      L.map (LinearMap.snd ℝ V W) ⊔ K.map (LinearMap.fst ℝ W U) = ⊤ := by
+  rw [Submodule.relCompProjection_injective_iff,
+    hL.middle_eq_top_iff_relCompExcess_eq_bot hK]
+
+/-- The dimension of a clean matching space is half the outer symplectic dimension plus
+the excess dimension. Quotienting the excess leaves precisely a Lagrangian dimension. -/
+theorem IsLagrangian.two_mul_finrank_relCompFiberProduct [FiniteDimensional ℝ V]
+    [FiniteDimensional ℝ W] [FiniteDimensional ℝ U]
+    (hL : (ω₁.twistedProd ω₂).IsLagrangian L)
+    (hK : (ω₂.twistedProd ω₃).IsLagrangian K) :
+    2 * Module.finrank ℝ (L.relCompFiberProduct K) =
+      Module.finrank ℝ V + Module.finrank ℝ U + 2 * Module.finrank ℝ (L.relCompExcess K) := by
+  have hdim := L.finrank_relComp_add_finrank_excess K
+  have hlag := (hL.relComp hK).two_mul_finrank
+  rw [Module.finrank_prod] at hlag
+  omega
+
+/-- The dimension of the excess also equals the codimension of the sum of the middle
+projections. Only the middle symplectic space needs to be finite-dimensional. -/
+theorem IsLagrangian.finrank_middle_add_finrank_relCompExcess [FiniteDimensional ℝ W]
+    (hL : (ω₁.twistedProd ω₂).IsLagrangian L)
+    (hK : (ω₂.twistedProd ω₃).IsLagrangian K) :
+    Module.finrank ℝ ↥(L.map (LinearMap.snd ℝ V W) ⊔ K.map (LinearMap.fst ℝ W U)) +
+      Module.finrank ℝ (L.relCompExcess K) = Module.finrank ℝ W := by
+  rw [← hL.orthogonal_middle_eq_relCompExcess hK]
+  exact ω₂.finrank_add_finrank_orthogonal _
 
 end TauCeti.SymplecticForm
