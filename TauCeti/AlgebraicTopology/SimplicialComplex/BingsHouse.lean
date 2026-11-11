@@ -22,17 +22,33 @@ not collapsible; this file proves this for an explicit triangulation.
 
 This file triangulates Bing's house by an abstract simplicial complex on `Fin 11` with
 thirty-one triangles. It comes from the cubical model in the box `[0, 5] × [0, 3] × [0, 2]`: the
-floor is at height `1`, the tubes lie over the unit squares `[1, 2] × [1, 2]` (for the lower room)
-and `[3, 4] × [1, 2]` (for the upper room), and the walls lie in the plane `y = 1`, over
-`[0, 1]` in the lower room and over `[4, 5]` in the upper room. Its unit squares, each split
-along the diagonal through its lowest corner, are reduced by edge contractions that are PL
-homeomorphisms of the polyhedron. The vertices `0, …, 10` are the surviving grid points
+floor is at height `1`, the tube crossing the lower room lies over the unit square
+`[1, 2] × [1, 2]` and the tube crossing the upper room over `[3, 4] × [1, 2]`, and the walls lie in
+the plane `y = 1`, over `[0, 1]` in the lower room and over `[4, 5]` in the upper room. Its unit
+squares, each split along the diagonal through its lowest corner, give `166` triangles on the `72`
+grid points. Writing the grid point `(x, y, z)` as `xyz`, the following sixty-one edge contractions
+`b → a`, merging `b` into `a` in this order, reduce it to `bingsHouseTriangles`:
+
+```text
+322→432, 522→512, 430→420, 302→201, 332→222, 211→110, 022→021, 120→020, 221→321, 032→031,
+202→201, 101→201, 301→201, 520→510, 300→400, 131→031, 532→432, 521→511, 210→320, 531→511,
+320→321, 421→511, 312→412, 220→321, 410→510, 021→031, 402→502, 422→321, 222→232, 121→111,
+102→001, 310→321, 500→511, 001→201, 030→130, 230→020, 012→031, 530→510, 502→512, 130→020,
+330→020, 212→201, 002→031, 431→511, 100→000, 132→122, 000→011, 200→011, 112→201, 231→331,
+420→510, 331→511, 432→232, 510→020, 311→110, 401→501, 501→511, 122→031, 400→011, 232→031,
+411→511
+```
+
+Each contraction is a PL homeomorphism of the polyhedron: it satisfies the link condition
+`lk a ∩ lk b = lk ab`, and the part of `lk b` outside the open star of `a` is a tree that is a cone
+on the points of `lk ab` relative to them, so the star of `b` is replaced by a book of triangles
+with the same boundary `lk b`. The vertices `0, …, 10` are the surviving grid points
 `(0, 1, 0)`, `(0, 1, 1)`, `(0, 2, 0)`, `(0, 3, 1)`, `(1, 1, 0)`, `(1, 1, 1)`, `(2, 0, 1)`,
 `(3, 2, 1)`, `(4, 1, 2)`, `(5, 1, 1)` and `(5, 1, 2)`. Every edge lies in two or three triangles,
 so there is no free face.
 
 Contractibility follows the picture of the box: a three-dimensional complex on the same vertices,
-with twenty-three tetrahedra and obtained from the triangulated box by the same contractions,
+with twenty-three tetrahedra and obtained from a triangulation of the box by edge contractions,
 collapses onto the house in `23` elementary collapses and to a vertex in `64`. Both sequences are
 checked with the bit-mask certificates of
 `TauCeti.AlgebraicTopology.SimplicialComplex.Collapse.Certificate`.
