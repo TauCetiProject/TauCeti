@@ -271,22 +271,24 @@ theorem isHyperbolic_of_smul_eq_add (hc : ∀ m n, T.dist (c m) (c n) = (m - n).
   rw [hv, dist_self] at hm
   omega
 
-/-- If `g` translates a geodesic line by `t ≠ 0`, its translation length is `|t|`. -/
+/-- If `g` translates a geodesic line by `t`, its translation length is `|t|`. -/
 theorem translationLength_eq_natAbs_of_smul_eq_add
-    (hc : ∀ m n, T.dist (c m) (c n) = (m - n).natAbs) (ht : t ≠ 0)
+    (hc : ∀ m n, T.dist (c m) (c n) = (m - n).natAbs)
     (hg : ∀ n, g • c n = c (n + t)) : T.translationLength g = t.natAbs := by
   refine le_antisymm ?_ ?_
   · have h := translationLength_le g (c 0)
     rw [hg, hc] at h
     omega
-  · obtain ⟨v, hv⟩ := exists_dist_eq_translationLength (T := T) g
+  · obtain rfl | ht := eq_or_ne t 0
+    · simp
+    obtain ⟨v, hv⟩ := exists_dist_eq_translationLength (T := T) g
     obtain ⟨m, hm⟩ := exists_dist_smul_eq_natAbs_add hc ht hg v
     omega
 
 /-- A geodesic line translated by `g` by a nonzero amount is the axis of `g`. -/
 theorem axis_eq_range_of_smul_eq_add (hc : ∀ m n, T.dist (c m) (c n) = (m - n).natAbs)
     (ht : t ≠ 0) (hg : ∀ n, g • c n = c (n + t)) : T.axis g = Set.range c := by
-  have hℓ := translationLength_eq_natAbs_of_smul_eq_add hc ht hg
+  have hℓ := translationLength_eq_natAbs_of_smul_eq_add hc hg
   refine Set.Subset.antisymm (fun v hv => ?_) ?_
   · obtain ⟨m, hm⟩ := exists_dist_smul_eq_natAbs_add hc ht hg v
     rw [mem_axis_iff.mp hv, hℓ] at hm
@@ -452,16 +454,12 @@ theorem dist_smul_eq_translationLength_add (g : G) (v : T.V) :
 
 /-- The translation of the line by `k` has translation length `|k|`. -/
 theorem line_translationLength (k : Multiplicative ℤ) :
-    line.translationLength k = k.toAdd.natAbs := by
-  obtain rfl | hk := eq_or_ne k 1
-  · rw [translationLength_one, toAdd_one, Int.natAbs_zero]
-  · exact translationLength_eq_natAbs_of_smul_eq_add
-      (c := fun n => (lineVertexEquiv.symm n : line.V))
-      (fun m n => (line_dist_eq_natAbs _ _).trans (by
-        rw [Equiv.apply_symm_apply, Equiv.apply_symm_apply]))
-      (toAdd_eq_zero.not.mpr hk) fun n => lineVertexEquiv.injective
-        ((lineVertexEquiv_line_smul k _).trans (by
-          rw [Equiv.apply_symm_apply, Equiv.apply_symm_apply, add_comm]))
+    line.translationLength k = k.toAdd.natAbs :=
+  translationLength_eq_natAbs_of_smul_eq_add (c := fun n => (lineVertexEquiv.symm n : line.V))
+    (fun m n => (line_dist_eq_natAbs _ _).trans (by
+      rw [Equiv.apply_symm_apply, Equiv.apply_symm_apply]))
+    fun n => lineVertexEquiv.injective ((lineVertexEquiv_line_smul k _).trans (by
+      rw [Equiv.apply_symm_apply, Equiv.apply_symm_apply, add_comm]))
 
 /-- Every vertex of the line lies on the axis of every translation. -/
 theorem line_axis (k : Multiplicative ℤ) : line.axis k = Set.univ := by
