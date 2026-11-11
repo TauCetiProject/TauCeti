@@ -27,8 +27,14 @@ the boundary maps of its exact homotopy sequence vanish
 * evaluation is split by the constant maps
   (`TauCeti.mapHom_mappingSpaceEval_comp_mapHom_const`), with no fibration hypothesis.
 
-For maps out of a circle or a sphere, the based maps are an iterated loop space, and this gives the
-split short exact sequences `1 → π_{m+1+k}(Q) → π_{m+1}(Map(Sᵏ, Q)) → π_{m+1}(Q) → 1` of
+Composed with any identification `e` of the homotopy groups of the based maps with a group `G`, the
+inclusion gives `TauCeti.basedMapHomotopyGroupHom e : G →* π_N(Map(B, Q))`, injective with image
+the kernel of evaluation (`TauCeti.injective_basedMapHomotopyGroupHom`,
+`TauCeti.range_basedMapHomotopyGroupHom`).
+
+For maps out of a circle or a sphere, the based maps are an iterated loop space, and taking `e` to
+be the loop-space shift gives the split short exact sequences
+`1 → π_{m+1+k}(Q) → π_{m+1}(Map(Sᵏ, Q)) → π_{m+1}(Q) → 1` of
 `TauCeti.AlgebraicTopology.Homotopy.LoopSpace.FreeLoop` and
 `TauCeti.AlgebraicTopology.Homotopy.LoopSpace.SphereMap`.
 
@@ -139,6 +145,66 @@ theorem mem_range_homotopyGroupMap_basedMap_val_iff
     exact ⟨_, (h c).symm⟩
   · rintro ⟨c, rfl⟩
     exact ⟨_, (h _).trans (congrArg _ (Equiv.symm_apply_apply _ c))⟩
+
+/-! ### Shifted based maps in all maps -/
+
+section Shift
+
+variable {x} [DecidableEq N] [Nonempty N] {G : Type*} [Group G]
+
+/-- The homomorphism `G → π_N(Map(B, Q), x)` at the constant map, for a group `G` identified with
+the homotopy group of the based maps by `e`: the inverse of `e`, followed by the inclusion of the
+based maps. For maps out of a circle or a sphere, `e` is the shift of the based maps, an iterated
+loop space, to the homotopy groups of `Q`. -/
+def basedMapHomotopyGroupHom
+    (e : HomotopyGroup N (BasedMap B Q b x)
+      ⟨ContinuousMap.const B x, ContinuousMap.const_apply x b⟩ ≃* G) :
+    G →* HomotopyGroup N C(B, Q) (ContinuousMap.const B x) :=
+  (HomotopyGroup.mapHom ⟨Subtype.val, continuous_subtype_val⟩ rfl).comp e.symm.toMonoidHom
+
+/-- On the image under `e` of a class of based maps, `TauCeti.basedMapHomotopyGroupHom` is the map
+induced by the inclusion of the based maps. -/
+theorem basedMapHomotopyGroupHom_apply_mulEquiv
+    (e : HomotopyGroup N (BasedMap B Q b x)
+      ⟨ContinuousMap.const B x, ContinuousMap.const_apply x b⟩ ≃* G)
+    (a : HomotopyGroup N (BasedMap B Q b x)
+      ⟨ContinuousMap.const B x, ContinuousMap.const_apply x b⟩) :
+    basedMapHomotopyGroupHom e (e a) =
+      HomotopyGroup.map ⟨Subtype.val, continuous_subtype_val⟩ rfl a := by
+  rw [basedMapHomotopyGroupHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    MulEquiv.symm_apply_apply, HomotopyGroup.mapHom_apply]
+
+/-- If evaluation `Map(B, Q) → Q` at `b` is a Serre fibration then
+`TauCeti.basedMapHomotopyGroupHom` is injective. -/
+theorem injective_basedMapHomotopyGroupHom
+    (hev : TopCat.serreFibrations (_root_.TopCat.ofHom (mappingSpaceEval (X := Q) b)))
+    [Finite N]
+    (e : HomotopyGroup N (BasedMap B Q b x)
+      ⟨ContinuousMap.const B x, ContinuousMap.const_apply x b⟩ ≃* G) :
+    Function.Injective (basedMapHomotopyGroupHom e) := by
+  rw [basedMapHomotopyGroupHom, MonoidHom.coe_comp]
+  exact (injective_homotopyGroupMap_basedMap_val x hev).comp (MulEquiv.injective _)
+
+/-- **Exactness at all maps.** If evaluation `Map(B, Q) → Q` at `b` is a Serre fibration then the
+image of `TauCeti.basedMapHomotopyGroupHom` is the kernel of evaluation on homotopy groups. -/
+theorem range_basedMapHomotopyGroupHom
+    (hev : TopCat.serreFibrations (_root_.TopCat.ofHom (mappingSpaceEval (X := Q) b)))
+    [Finite N]
+    (e : HomotopyGroup N (BasedMap B Q b x)
+      ⟨ContinuousMap.const B x, ContinuousMap.const_apply x b⟩ ≃* G) :
+    (basedMapHomotopyGroupHom e).range =
+      (HomotopyGroup.mapHom (N := N) (mappingSpaceEval (X := Q) b)
+        (leftInverse_mappingSpaceEval_const b x)).ker := by
+  ext a
+  rw [MonoidHom.mem_ker, HomotopyGroup.mapHom_apply, ← HomotopyGroup.mk_const_eq_one,
+    ← mem_range_homotopyGroupMap_basedMap_val_iff x hev]
+  constructor
+  · rintro ⟨c, rfl⟩
+    exact ⟨_, rfl⟩
+  · rintro ⟨c, rfl⟩
+    exact ⟨e c, basedMapHomotopyGroupHom_apply_mulEquiv e c⟩
+
+end Shift
 
 variable (b)
 

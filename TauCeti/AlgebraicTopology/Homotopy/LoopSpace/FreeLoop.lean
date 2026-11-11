@@ -66,11 +66,6 @@ namespace TauCeti
 
 variable {Q : Type u} [TopologicalSpace Q] (x : Q) {N : Type*}
 
-/-- Evaluation of free loops at `1 ∈ S¹` is a Serre fibration. -/
-private theorem mem_serreFibrations_freeLoopEval :
-    TopCat.serreFibrations (_root_.TopCat.ofHom (mappingSpaceEval (X := Q) (1 : Circle))) :=
-  isHurewiczFibration_mappingSpaceEval_one.{0}.mem_serreFibrations
-
 /-! ### Based loops in free loops -/
 
 /-- **The based-loop fibre computes the next homotopy group.** The loop-space shift
@@ -103,11 +98,10 @@ theorem basedMapCircleHomotopyGroupMulEquiv_apply (m : ℕ)
 
 /-- The injection `π_{m+2}(Q, x) → π_{m+1}(𝓛Q, x)` at the constant loop: the inverse of the
 loop-space shift `TauCeti.basedMapCircleHomotopyGroupMulEquiv`, followed by the inclusion of the
-based loops. -/
+based loops (`TauCeti.basedMapHomotopyGroupHom`). -/
 def freeLoopHomotopyGroupHom (m : ℕ) :
     π_ (m + 2) Q x →* π_ (m + 1) C(Circle, Q) (ContinuousMap.const Circle x) :=
-  (HomotopyGroup.mapHom ⟨Subtype.val, continuous_subtype_val⟩ rfl).comp
-    (basedMapCircleHomotopyGroupMulEquiv x m).symm.toMonoidHom
+  basedMapHomotopyGroupHom (basedMapCircleHomotopyGroupMulEquiv x m)
 
 /-- On the loop-space shift of a class of based loops, `TauCeti.freeLoopHomotopyGroupHom` is the
 map induced by the inclusion of the based loops. Not `@[simp]`: the simp normal form unfolds
@@ -116,32 +110,23 @@ theorem freeLoopHomotopyGroupHom_basedMapCircleHomotopyGroupMulEquiv (m : ℕ)
     (a : π_ (m + 1) (BasedMap Circle Q 1 x)
       ⟨ContinuousMap.const Circle x, ContinuousMap.const_apply x 1⟩) :
     freeLoopHomotopyGroupHom x m (basedMapCircleHomotopyGroupMulEquiv x m a) =
-      HomotopyGroup.map ⟨Subtype.val, continuous_subtype_val⟩ rfl a := by
-  rw [freeLoopHomotopyGroupHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    MulEquiv.symm_apply_apply, HomotopyGroup.mapHom_apply]
+      HomotopyGroup.map ⟨Subtype.val, continuous_subtype_val⟩ rfl a :=
+  basedMapHomotopyGroupHom_apply_mulEquiv _ a
 
 /-- The injection `π_{m+2}(Q, x) → π_{m+1}(𝓛Q, x)` is injective. -/
 theorem injective_freeLoopHomotopyGroupHom (m : ℕ) :
-    Function.Injective (freeLoopHomotopyGroupHom x m) := by
-  rw [freeLoopHomotopyGroupHom, MonoidHom.coe_comp]
-  exact (injective_homotopyGroupMap_basedMap_val x mem_serreFibrations_freeLoopEval).comp
-    (MulEquiv.injective _)
+    Function.Injective (freeLoopHomotopyGroupHom x m) :=
+  injective_basedMapHomotopyGroupHom
+    isHurewiczFibration_mappingSpaceEval_one.{0}.mem_serreFibrations _
 
 /-- **Exactness of the free-loop sequence.** The image of `π_{m+2}(Q, x) → π_{m+1}(𝓛Q, x)` is the
 kernel of evaluation `π_{m+1}(𝓛Q, x) → π_{m+1}(Q, x)`. -/
 theorem range_freeLoopHomotopyGroupHom (m : ℕ) :
     (freeLoopHomotopyGroupHom x m).range =
       (HomotopyGroup.mapHom (N := Fin (m + 1)) (mappingSpaceEval (X := Q) 1)
-        (leftInverse_mappingSpaceEval_const 1 x)).ker := by
-  ext a
-  rw [MonoidHom.mem_ker, HomotopyGroup.mapHom_apply, ← HomotopyGroup.mk_const_eq_one,
-    ← mem_range_homotopyGroupMap_basedMap_val_iff x mem_serreFibrations_freeLoopEval]
-  constructor
-  · rintro ⟨b, rfl⟩
-    exact ⟨_, rfl⟩
-  · rintro ⟨b, rfl⟩
-    exact ⟨basedMapCircleHomotopyGroupMulEquiv x m b,
-      freeLoopHomotopyGroupHom_basedMapCircleHomotopyGroupMulEquiv x m b⟩
+        (leftInverse_mappingSpaceEval_const 1 x)).ker :=
+  range_basedMapHomotopyGroupHom
+    isHurewiczFibration_mappingSpaceEval_one.{0}.mem_serreFibrations _
 
 /-! ### Contractible free loops -/
 

@@ -17,7 +17,7 @@ Every point `s₀` of the unit sphere `Sᵏ ⊆ ℝᵏ⁺¹` has the homotopy ex
 with its boundary collapsed to `s₀` (`TauCeti.sphereCollapse`), and the boundary of the cube has
 the homotopy extension property (`TauCeti.hasHomotopyExtensionProperty_cubeBoundary`), which passes
 to the collapsed point (`TauCeti.HasHomotopyExtensionProperty.image_of_isQuotientMap`). For `k = 0`
-the sphere consists of two points, so every point is open and closed.
+the sphere is a zero-dimensional manifold, hence discrete, so every point is open and closed.
 
 Restriction to a closed cofibration is a Hurewicz fibration of mapping spaces, so this makes
 evaluation `Map(Sᵏ, X) → X` at the basepoint a Hurewicz fibration, with fibre the based mapping
@@ -34,19 +34,6 @@ open Metric Set Topology
 
 namespace TauCeti
 
-/-- The unit sphere of `ℝ¹` is finite: its points are `±1`. -/
-private theorem finite_sphere_euclideanSpace_fin_one :
-    (sphere (0 : EuclideanSpace ℝ (Fin 1)) 1).Finite := by
-  refine ((Set.finite_singleton (1 : ℝ)).insert (-1)).image
-    (fun r : ℝ ↦ EuclideanSpace.single (0 : Fin 1) r) |>.subset fun v hv ↦ ?_
-  rw [mem_sphere_zero_iff_norm, EuclideanSpace.norm_eq, Fin.sum_univ_one,
-    Real.sqrt_sq_eq_abs, Real.norm_eq_abs, abs_abs] at hv
-  refine ⟨v 0, ?_, ?_⟩
-  · rcases abs_eq (zero_le_one' ℝ) |>.1 hv with h | h <;> simp [h]
-  · ext i
-    fin_cases i
-    simp
-
 /-- **A point of a sphere has the homotopy extension property.** Every point `s₀` of the unit
 sphere `Sᵏ` in `ℝᵏ⁺¹` has the homotopy extension property in the sphere, so the inclusion of the
 basepoint is a closed cofibration. -/
@@ -54,9 +41,9 @@ theorem hasHomotopyExtensionProperty_singleton_sphere (k : ℕ)
     (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) :
     HasHomotopyExtensionProperty ({s₀} : Set (sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1)) := by
   rcases Nat.eq_zero_or_pos k with rfl | hk
-  · -- The sphere `S⁰` is finite, hence discrete.
-    have : Finite (sphere (0 : EuclideanSpace ℝ (Fin 1)) 1) :=
-      finite_sphere_euclideanSpace_fin_one.to_subtype
+  · -- The sphere `S⁰` is a manifold modelled on the point `ℝ⁰`, hence discrete.
+    have := ChartedSpace.discreteTopology (EuclideanSpace ℝ (Fin 0))
+      (sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)
     exact (isClopen_discrete _).hasHomotopyExtensionProperty
   · have : NeZero k := ⟨hk.ne'⟩
     have : Nonempty (Fin k) := ⟨⟨0, hk⟩⟩

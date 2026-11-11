@@ -60,11 +60,6 @@ open BasedTopologicalSpace
 variable (k : ℕ) {Q : Type u} [TopologicalSpace Q] (x : Q)
   (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1)
 
-/-- Evaluation of maps out of the sphere at `s₀` is a Serre fibration. -/
-private theorem mem_serreFibrations_sphereMapEval :
-    TopCat.serreFibrations (_root_.TopCat.ofHom (mappingSpaceEval (X := Q) s₀)) :=
-  (isHurewiczFibration_mappingSpaceEval_sphere.{0} k s₀).mem_serreFibrations
-
 /-! ### The based-map fibre -/
 
 /-- **The based-map fibre computes the shifted homotopy groups.** For `k ≥ 1`, the shift
@@ -102,12 +97,11 @@ theorem basedMapSphereHomotopyGroupMulEquiv_apply [NeZero k] (m : ℕ)
 
 /-- The injection `π_{m+1+k}(Q, x) → π_{m+1}(Map(Sᵏ, Q), x)` at the constant map: the inverse of
 the shift `TauCeti.basedMapSphereHomotopyGroupMulEquiv`, followed by the inclusion of the based
-maps. -/
+maps (`TauCeti.basedMapHomotopyGroupHom`). -/
 def sphereMapHomotopyGroupHom [NeZero k] (m : ℕ) :
     π_ (m + 1 + k) Q x →*
       π_ (m + 1) C(sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1, Q) (ContinuousMap.const _ x) :=
-  (HomotopyGroup.mapHom ⟨Subtype.val, continuous_subtype_val⟩ rfl).comp
-    (basedMapSphereHomotopyGroupMulEquiv k x s₀ m).symm.toMonoidHom
+  basedMapHomotopyGroupHom (basedMapSphereHomotopyGroupMulEquiv k x s₀ m)
 
 /-- On the shift of a class of based maps, `TauCeti.sphereMapHomotopyGroupHom` is the map induced
 by the inclusion of the based maps. Not `@[simp]`: the simp normal form unfolds the shift through
@@ -116,16 +110,14 @@ theorem sphereMapHomotopyGroupHom_basedMapSphereHomotopyGroupMulEquiv [NeZero k]
     (a : π_ (m + 1) (BasedMap (sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) Q s₀ x)
       ⟨ContinuousMap.const _ x, ContinuousMap.const_apply x s₀⟩) :
     sphereMapHomotopyGroupHom k x s₀ m (basedMapSphereHomotopyGroupMulEquiv k x s₀ m a) =
-      HomotopyGroup.map ⟨Subtype.val, continuous_subtype_val⟩ rfl a := by
-  rw [sphereMapHomotopyGroupHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    MulEquiv.symm_apply_apply, HomotopyGroup.mapHom_apply]
+      HomotopyGroup.map ⟨Subtype.val, continuous_subtype_val⟩ rfl a :=
+  basedMapHomotopyGroupHom_apply_mulEquiv _ a
 
 /-- The injection `π_{m+1+k}(Q, x) → π_{m+1}(Map(Sᵏ, Q), x)` is injective. -/
 theorem injective_sphereMapHomotopyGroupHom [NeZero k] (m : ℕ) :
-    Function.Injective (sphereMapHomotopyGroupHom k x s₀ m) := by
-  rw [sphereMapHomotopyGroupHom, MonoidHom.coe_comp]
-  exact (injective_homotopyGroupMap_basedMap_val x (mem_serreFibrations_sphereMapEval k s₀)).comp
-    (MulEquiv.injective _)
+    Function.Injective (sphereMapHomotopyGroupHom k x s₀ m) :=
+  injective_basedMapHomotopyGroupHom
+    (isHurewiczFibration_mappingSpaceEval_sphere.{0} k s₀).mem_serreFibrations _
 
 /-- **Exactness of the sphere-map sequence.** The image of
 `π_{m+1+k}(Q, x) → π_{m+1}(Map(Sᵏ, Q), x)` is the kernel of evaluation
@@ -133,15 +125,8 @@ theorem injective_sphereMapHomotopyGroupHom [NeZero k] (m : ℕ) :
 theorem range_sphereMapHomotopyGroupHom [NeZero k] (m : ℕ) :
     (sphereMapHomotopyGroupHom k x s₀ m).range =
       (HomotopyGroup.mapHom (N := Fin (m + 1)) (mappingSpaceEval (X := Q) s₀)
-        (leftInverse_mappingSpaceEval_const s₀ x)).ker := by
-  ext a
-  rw [MonoidHom.mem_ker, HomotopyGroup.mapHom_apply, ← HomotopyGroup.mk_const_eq_one,
-    ← mem_range_homotopyGroupMap_basedMap_val_iff x (mem_serreFibrations_sphereMapEval k s₀)]
-  constructor
-  · rintro ⟨b, rfl⟩
-    exact ⟨_, rfl⟩
-  · rintro ⟨b, rfl⟩
-    exact ⟨basedMapSphereHomotopyGroupMulEquiv k x s₀ m b,
-      sphereMapHomotopyGroupHom_basedMapSphereHomotopyGroupMulEquiv k x s₀ m b⟩
+        (leftInverse_mappingSpaceEval_const s₀ x)).ker :=
+  range_basedMapHomotopyGroupHom
+    (isHurewiczFibration_mappingSpaceEval_sphere.{0} k s₀).mem_serreFibrations _
 
 end TauCeti
