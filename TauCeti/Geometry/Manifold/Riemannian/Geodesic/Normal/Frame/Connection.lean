@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Frame.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
-public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.ConnectionForm
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame.Orthonormal
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.LocalFrame
