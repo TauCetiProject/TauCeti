@@ -392,6 +392,19 @@ theorem ge_of_sum_mul_fderiv_fderiv_add_fderiv_le_mul_ge_frontier
     (fun y hy ↦ by simpa using hbdry hy) hx
   simpa using h
 
+omit [Fintype ι] [DecidableEq ι] in
+/-- A compact nonempty set `K` in Euclidean space has a nonempty frontier, so a bound `M` for the
+absolute value of a function on `frontier K` is nonnegative. -/
+theorem nonneg_of_forall_abs_le_frontier [Finite ι] {K : Set (EuclideanSpace ℝ ι)}
+    (hK : IsCompact K) (hne : K.Nonempty) {f : EuclideanSpace ℝ ι → ℝ} {M : ℝ}
+    (hbdry : ∀ ⦃x⦄, x ∈ frontier K → |f x| ≤ M) : 0 ≤ M := by
+  -- the frontier of `K` is nonempty: `K` is not empty, and not the noncompact connected space
+  have := Fintype.ofFinite ι
+  obtain ⟨v, hv⟩ := exists_ne (0 : EuclideanSpace ℝ ι)
+  have : Nontrivial (EuclideanSpace ℝ ι) := ⟨⟨v, 0, hv⟩⟩
+  obtain ⟨y, hy⟩ := nonempty_frontier_iff.2 ⟨hne, hK.ne_univ⟩
+  exact (abs_nonneg _).trans (hbdry hy)
+
 /-- **The maximum principle for solutions.** Under the hypotheses of
 `le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier`, a solution of
 `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼf + bⁱ ∂ᵢf = c f` is bounded in absolute value on `K` by every bound for its absolute
@@ -410,13 +423,7 @@ theorem abs_le_of_sum_mul_fderiv_fderiv_add_fderiv_eq_mul_abs_le_frontier
     (hbdry : ∀ ⦃x⦄, x ∈ frontier K → |f x| ≤ M) :
     ∀ ⦃x⦄, x ∈ K → |f x| ≤ M := by
   intro x hx
-  have hM : 0 ≤ M := by
-    -- the frontier of `K` is nonempty: `K` is not empty, and not the noncompact connected space
-    obtain ⟨v, hv⟩ := exists_ne (0 : EuclideanSpace ℝ ι)
-    have : Nontrivial (EuclideanSpace ℝ ι) := ⟨⟨v, 0, hv⟩⟩
-    have hne : K ≠ Set.univ := hK.ne_univ
-    obtain ⟨y, hy⟩ := nonempty_frontier_iff.2 ⟨⟨x, hx⟩, hne⟩
-    exact (abs_nonneg _).trans (hbdry hy)
+  have hM : 0 ≤ M := nonneg_of_forall_abs_le_frontier hK ⟨x, hx⟩ hbdry
   exact abs_le.mpr
     ⟨ge_of_sum_mul_fderiv_fderiv_add_fderiv_le_mul_ge_frontier hK hlam ha hb hc
       (neg_nonpos.mpr hM) hcont hcd (fun _ hy ↦ (hsol hy).le) (fun _ hy ↦ (abs_le.mp (hbdry hy)).1)
@@ -643,13 +650,7 @@ theorem abs_le_add_of_abs_sum_mul_fderiv_fderiv_add_fderiv_sub_mul_le_abs_le_fro
     (hbdry : ∀ ⦃x⦄, x ∈ frontier K → |f x| ≤ M) :
     ∀ ⦃x⦄, x ∈ K → |f x| ≤ M + (Real.exp ((β / lam + 1) * Metric.diam K) - 1) * F / lam := by
   intro x hx
-  have hM : 0 ≤ M := by
-    -- the frontier of `K` is nonempty: `K` is not empty, and not the noncompact connected space
-    obtain ⟨v, hv⟩ := exists_ne (0 : EuclideanSpace ℝ ι)
-    have : Nontrivial (EuclideanSpace ℝ ι) := ⟨⟨v, 0, hv⟩⟩
-    have hne : K ≠ Set.univ := hK.ne_univ
-    obtain ⟨y, hy⟩ := nonempty_frontier_iff.2 ⟨⟨x, hx⟩, hne⟩
-    exact (abs_nonneg _).trans (hbdry hy)
+  have hM : 0 ≤ M := nonneg_of_forall_abs_le_frontier hK ⟨x, hx⟩ hbdry
   have hle := le_add_of_mul_sub_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier hK hlam ha hb hc
     hβ hM hF hcont hcd (fun _ hy ↦ by linarith [(abs_le.mp (hL hy)).1])
     (fun _ hy ↦ (abs_le.mp (hbdry hy)).2) hx
