@@ -52,7 +52,7 @@ same order as the width-`m` expansion of the function it is built from
 (`qExpansion_one_galoisProd_order_eq`). The norm is the product of these Galois products over the
 orbits, so its order at `∞` is the sum of the orders of `f` at the cusp translation orbits.
 Nothing here divides by an order that could be `⊤`: each factor of a nonzero form is nonzero
-(`SlashInvariantForm.quotientFunc_ne_zero`), which is what the additivity of
+(`SlashInvariantForm.quotientFunc_eq_zero_iff`), which is what the additivity of
 `qExpansionOrderAtCusp` over products asks for.
 
 ## Main definitions
@@ -433,7 +433,7 @@ private lemma qExpansion_cuspTranslationOrbit_ne_zero {f : F} (hf : (⇑f : ℍ 
     (periodic_quotientFunc_out f c)
     (SlashInvariantForm.mdifferentiable_quotientFunc f _)
     (SlashInvariantForm.isBoundedAtImInfty_quotientFunc f _)).mp
-    (SlashInvariantForm.quotientFunc_ne_zero hf _)
+    ((SlashInvariantForm.quotientFunc_eq_zero_iff _).not.2 hf)
 
 omit [𝒢.IsFiniteRelIndex 𝒮ℒ] in
 /-- The period of the base coset is the integer cusp width of `𝒢`: both are characterised by
@@ -471,10 +471,14 @@ itself at the integer cusp width. -/
 
 /-- **The order of the norm at `∞` is the sum of the orders of `f` at the cusp translation
 orbits.** -/
-theorem qExpansionOrderAtCusp_one_norm_eq_sum_orderAtCuspTranslationOrbit (f : F)
-    (hf : (⇑f : ℍ → ℂ) ≠ 0) :
+theorem qExpansionOrderAtCusp_one_norm_eq_sum_orderAtCuspTranslationOrbit (f : F) :
     qExpansionOrderAtCusp 1 ⇑(_root_.ModularForm.norm 𝒮ℒ f) =
       ∑ c : CuspTranslationOrbit 𝒢, orderAtCuspTranslationOrbit f c := by
+  rcases eq_or_ne (⇑f : ℍ → ℂ) 0 with hf | hf
+  · -- the zero form: its norm and every coset factor are zero, with junk order `0`
+    have hq (c : CuspTranslationOrbit 𝒢) : quotientFunc f c.out = 0 :=
+      (SlashInvariantForm.quotientFunc_eq_zero_iff _).2 hf
+    simp [orderAtCuspTranslationOrbit, hq, (_root_.ModularForm.norm_eq_zero_iff 𝒮ℒ f).mpr hf]
   have hne : ∀ c : CuspTranslationOrbit 𝒢,
       analyticOrderAt (cuspFunction 1
         (galoisProd (cuspTranslationOrbitWidth c) (quotientFunc f c.out))) 0 ≠ ⊤ := fun c ↦ by
@@ -523,7 +527,7 @@ theorem valence_formula_finiteIndex (f : F) (hf : (⇑f : ℍ → ℂ) ≠ 0) :
           (orderAtCuspTranslationOrbit f c : ℚ) =
       (k : ℚ) * Nat.card (𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) / 12 := by
   rw [← valence_formula_finiteIndex_norm f hf,
-    qExpansionOrderAtCusp_one_norm_eq_sum_orderAtCuspTranslationOrbit f hf]
+    qExpansionOrderAtCusp_one_norm_eq_sum_orderAtCuspTranslationOrbit f]
   push_cast
   ring
 

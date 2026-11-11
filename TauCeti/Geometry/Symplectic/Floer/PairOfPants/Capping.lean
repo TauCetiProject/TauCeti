@@ -151,6 +151,13 @@ theorem negativePlanePerturbation_def (H : ℝ → M → ℝ) (w : ℂ) (x : M) 
         inf.endAngularForm w :=
   (rfl)
 
+/-- The negative plane datum of the zero Hamiltonian vanishes. -/
+@[simp]
+theorem negativePlanePerturbation_zero (w : ℂ) (x : M) :
+    negativePlanePerturbation (0 : ℝ → M → ℝ) w x = 0 := by
+  ext v
+  simp [negativePlanePerturbation_def]
+
 /-- **The plane is a pair of pants with zero inputs.** The pair-of-pants perturbation whose input
 Hamiltonians vanish and whose output Hamiltonian is `H` is the negative plane perturbation of
 `H`. -/
@@ -437,16 +444,11 @@ theorem contMDiffAt_plumbedPerturbation_single_inf {n : ℕ∞} (hq : q ≠ inf)
     filter_upwards [h] with p hp
     exact plumbedPerturbation_single_inf_eq_zero hq (by linarith) hp.le p.2
   · -- Off it, the point lies in the plumbed four-punctured sphere.
-    have hρ : 0 < ρ := by positivity
-    have hc : w ≠ q.endCenter := fun h => by
-      rw [h, sub_self, norm_zero] at hge
-      linarith
-    have h₁ : w ≠ q.plumbingMap L 1 := fun h =>
-      (h ▸ norm_plumbingMap_one_sub_endCenter_lt hq L).not_ge hge
     exact contMDiffAt_plumbedPerturbation hq
       (forall_single inf (P := fun f => Periodic f 1) (fun _ => rfl) (hHb q)) hHb
       (forall_single inf (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f))
-        contMDiff_const (hHbs q)) hHbs (by simp) hL ⟨hw.resolve_left hc, h₁⟩ x
+        contMDiff_const (hHbs q)) hHbs (by simp) hL
+      (mem_plumbedSphere_of_le_norm_sub_endCenter hq hw hge) x
 
 section VectorSpace
 

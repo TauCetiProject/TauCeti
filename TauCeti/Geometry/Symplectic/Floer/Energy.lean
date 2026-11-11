@@ -377,6 +377,13 @@ theorem perturbedFDeriv_congr_of_eventuallyEq (ω : SymplecticForm V) (Ks Kt : �
   refine ContinuousLinearMap.ext fun a ↦ ?_
   simp only [perturbedFDeriv_apply, h.fderiv_eq, h.eq_of_nhds]
 
+/-- The perturbed derivative at `z` only depends on the components of the perturbation at `z`. -/
+theorem perturbedFDeriv_congr (ω : SymplecticForm V) {Ks Kt Ks' Kt' : ℝ × ℝ → V → ℝ}
+    (u : ℝ × ℝ → V) {z : ℝ × ℝ} (hs : Ks z = Ks' z) (ht : Kt z = Kt' z) :
+    ω.perturbedFDeriv Ks Kt u z = ω.perturbedFDeriv Ks' Kt' u z := by
+  refine ContinuousLinearMap.ext fun a ↦ ?_
+  simp only [perturbedFDeriv_apply, hs, ht]
+
 end Differential
 
 section Density

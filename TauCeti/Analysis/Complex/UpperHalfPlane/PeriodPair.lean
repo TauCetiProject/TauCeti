@@ -459,12 +459,18 @@ open scoped Topology Manifold
 
 /-- The lattice series of `ζ` at the division point `(b₀ z + b₁) / M` converges locally uniformly
 in `z`. -/
-theorem tendstoLocallyUniformly_weierstrassZeta_periodPair_div (M : ℕ) [NeZero M] (b : Fin 2 → ℤ) :
+theorem tendstoLocallyUniformly_weierstrassZeta_periodPair_div (M : ℕ) (b : Fin 2 → ℤ) :
     TendstoLocallyUniformly
       (fun (s : Finset (Fin 2 → ℤ)) (z : ℍ) ↦ ∑ y ∈ s,
         (1 / (((b 0 : ℂ) * z + b 1) / M - (y 0 * z + y 1)) + 1 / ((y 0 : ℂ) * z + y 1) +
           ((b 0 : ℂ) * z + b 1) / M / ((y 0 : ℂ) * z + y 1) ^ 2))
       (fun z : ℍ ↦ z.periodPair.weierstrassZeta (((b 0 : ℂ) * z + b 1) / M)) atTop := by
+  rcases eq_or_ne M 0 with rfl | hM
+  · -- for `M = 0` every summand and the limit vanish
+    simp only [Nat.cast_zero, div_zero, zero_sub, one_div, inv_neg, zero_div, add_zero,
+      neg_add_cancel, Finset.sum_const_zero, PeriodPair.weierstrassZeta_zero]
+    exact (tendsto_const_nhds (x := (0 : ℂ))).tendstoUniformly_const.tendstoLocallyUniformly
+  have : NeZero M := ⟨hM⟩
   rw [tendstoLocallyUniformly_iff_forall_isCompact]
   intro K hK
   obtain ⟨A, B, hB, HABK⟩ := subset_verticalStrip_of_isCompact hK
@@ -539,9 +545,13 @@ private lemma mdifferentiable_weierstrassZeta_periodPair_div_term (M : ℕ) [NeZ
   exact ((mdifferentiable_const.mul (hS 1 _)).add (hS 1 y)).add (hx.mul (hS 2 y))
 
 /-- Each division value of `ζ` is holomorphic on `ℍ`. -/
-theorem mdifferentiable_weierstrassZeta_periodPair_div (M : ℕ) [NeZero M] (b : Fin 2 → ℤ) :
-    MDiff fun z : ℍ ↦ z.periodPair.weierstrassZeta (((b 0 : ℂ) * z + b 1) / M) :=
-  mdifferentiable_of_tendstoLocallyUniformly
+theorem mdifferentiable_weierstrassZeta_periodPair_div (M : ℕ) (b : Fin 2 → ℤ) :
+    MDiff fun z : ℍ ↦ z.periodPair.weierstrassZeta (((b 0 : ℂ) * z + b 1) / M) := by
+  rcases eq_or_ne M 0 with rfl | hM
+  · simpa [PeriodPair.weierstrassZeta_zero] using
+      (mdifferentiable_const : MDiff fun _ : ℍ ↦ (0 : ℂ))
+  have : NeZero M := ⟨hM⟩
+  exact mdifferentiable_of_tendstoLocallyUniformly
     (tendstoLocallyUniformly_weierstrassZeta_periodPair_div M b) (Eventually.of_forall fun s ↦ by
       convert MDifferentiable.sum (t := s)
         fun y _ ↦ mdifferentiable_weierstrassZeta_periodPair_div_term M b y using 1

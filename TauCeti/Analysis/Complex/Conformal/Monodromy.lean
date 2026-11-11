@@ -321,19 +321,6 @@ end IsAnalyticContinuationAlong
 
 /-! ### The monodromy theorem -/
 
-/-- Germ agreement at a point spreads to the points a moving base point reaches nearby: if `F` and
-`G` are analytic at `c t₀` and have the same germ there, then they have the same germ at `c t` for
-every `t` near `t₀`.
-
-This is the transport that lets a germ comparison made at the base point `c t₀` be re-used at the
-moving endpoint `c t` of a free homotopy, and it is why the two edges of such a homotopy may be
-compared against one fixed representative family. -/
-private lemma eventually_eventuallyEq_of_continuousAt {Z : Type*} [TopologicalSpace Z] {c : Z → ℂ}
-    {t₀ : Z} {F G : ℂ → E} (hc : ContinuousAt c t₀) (hF : AnalyticAt ℂ F (c t₀))
-    (hG : AnalyticAt ℂ G (c t₀)) (h : F =ᶠ[𝓝 (c t₀)] G) :
-    ∀ᶠ t in 𝓝 t₀, F =ᶠ[𝓝 (c t)] G :=
-  hc.eventually ((eventually_eventuallyEq_iff_of_analyticAt hF hG).mono fun _ hiff ↦ hiff.mpr h)
-
 /-- **The monodromy theorem for a free homotopy of paths.** Let `h` be a continuous map of the
 square, read as a family of paths `h (t, ·)` whose *endpoints are allowed to move*, and suppose a
 family of germs continues along each of those paths. If the initial germs — the germ of `f t 0` at
@@ -358,9 +345,7 @@ theorem monodromy_theorem_of_free_homotopy {h : I × I → ℂ} (hh : Continuous
     (hf t₀).exists_forall_eventuallyEq_of_dist_lt isCompact_univ isPreconnected_univ
   -- The representative of the row at `t₀` still matches `f t₀` at the points a moving edge reaches.
   have hedgeEq : ∀ y : I, ∀ᶠ t in 𝓝 t₀, F y =ᶠ[𝓝 (h (t, y))] f t₀ y := fun y ↦
-    eventually_eventuallyEq_of_continuousAt (hedge y).continuousAt
-      (((hf t₀).analyticAt y (mem_univ y)).congr (hF y (mem_univ y)).symm)
-      ((hf t₀).analyticAt y (mem_univ y)) (hF y (mem_univ y))
+    (hedge y).continuousAt.eventually (hF y (mem_univ y)).eventuallyEq_nhds
   -- Uniform closeness of nearby rows, from uniform continuity of `h` on the compact square.
   obtain ⟨δ, hδ, hδρ⟩ := Metric.uniformContinuous_iff.1
     (CompactSpace.uniformContinuous_of_continuous hh) ρ hρ
