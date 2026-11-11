@@ -839,8 +839,8 @@ private theorem IsNondegenerate.setIntegral_plumbedTruncation_eq_add
   obtain ⟨hEins, hAins⟩ := setIntegral_floerEnergyDensity_inserted (ω := ω) hq hHa hHb hHas hHbs
     hab hL hu
   rw [setIntegral_truncation_union_image_of_integrableOn hq
-      (hω.integrableOn_floerEnergyDensity_of_integrableOn hPo hu hKs hKt hTc hTP hRT)
-      (hω.integrableOn_floerEnergyDensity_of_integrableOn hPo hu hKs hKt hAc hAP hRA),
+      (hω.integrableOn_floerEnergyDensity hPo hu hKs hKt hTc hTP hRT)
+      (hω.integrableOn_floerEnergyDensity hPo hu hKs hKt hAc hAP hRA),
     setIntegral_truncation_union_image_of_integrableOn hq
       ((harea.mono hTP).integrableOn_compact hTc) ((harea.mono hAP).integrableOn_compact hAc),
     setIntegral_truncation_union_image_of_integrableOn hq hRT hRA,
