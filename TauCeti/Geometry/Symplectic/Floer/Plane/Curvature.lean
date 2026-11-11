@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Symplectic.Floer.Manifold
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
-import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
@@ -75,15 +74,13 @@ space target the area term is expressed through the action of the boundary loop 
 action of the boundary loop, capped by the plane, in
 `TauCeti.Geometry.Symplectic.Floer.Plane.CappedAction`.
 
-The plane is exhausted by the discs `{‖w‖ ≤ r}`: a nonnegative function whose integrals over
-these discs converge as `r → ∞` has the limit as its integral over the plane
+Both files then exhaust the plane by the discs `{‖w‖ ≤ r}`: a nonnegative function whose
+integrals over these discs converge as `r → ∞` has the limit as its integral over the plane
 (`TauCeti.lintegral_ofReal_eq_of_tendsto_setIntegral_closedBall`). This turns the identity on
 discs into the energy of a whole PSS plane.
 
 ## Main results
 
-* `TauCeti.lintegral_ofReal_eq_of_tendsto_setIntegral_closedBall`: the integral over the plane of
-  a nonnegative function is the limit of its integrals over growing discs.
 * `TauCeti.SmoothTwoForm.hamiltonianCurvature_pssPlaneEndComponent`: the curvature in end
   coordinates is `ε β'(ε s - 1) H(t)`.
 * `TauCeti.SmoothTwoForm.hamiltonianCurvature_pssPlaneEndComponent_eq_zero`: it vanishes outside
@@ -124,25 +121,6 @@ open TauCeti.Complex (realChart realChart_apply contDiff_realChart)
 open scoped Topology
 
 namespace TauCeti
-
-/-- **Exhausting the plane by discs.** If a nonnegative function on the plane is integrable on
-the discs `{‖w‖ ≤ r i}` and its integrals over them converge to `c` as the radii `r i` tend to
-infinity, then its integral over the whole plane is `c`. -/
-theorem lintegral_ofReal_eq_of_tendsto_setIntegral_closedBall {ι : Type*} {l : Filter ι}
-    [l.NeBot] [l.IsCountablyGenerated] {r : ι → ℝ} (hr : Tendsto r l atTop) {f : ℝ × ℝ → ℝ}
-    (hf : 0 ≤ᵐ[volume] f)
-    (hfi : ∀ i, IntegrableOn f (Complex.equivRealProdCLM.symm ⁻¹' Metric.closedBall 0 (r i)))
-    {c : ℝ} (hc : Tendsto (fun i ↦ ∫ z in Complex.equivRealProdCLM.symm ⁻¹'
-      Metric.closedBall 0 (r i), f z) l (𝓝 c)) :
-    ∫⁻ z, ENNReal.ofReal (f z) = ENNReal.ofReal c := by
-  have hφ : AECover volume l fun i ↦
-      Complex.equivRealProdCLM.symm ⁻¹' Metric.closedBall 0 (r i) :=
-    ⟨ae_of_all _ fun z ↦ (hr.eventually_ge_atTop ‖Complex.equivRealProdCLM.symm z‖).mono
-      fun i hi ↦ by simpa using hi, fun _ ↦
-      (Metric.isClosed_closedBall.preimage Complex.equivRealProdCLM.symm.continuous).measurableSet⟩
-  rw [← ofReal_integral_eq_lintegral_ofReal
-    (hφ.integrable_of_integral_tendsto_of_nonneg_ae c hfi hf hc) hf,
-    hφ.integral_eq_of_tendsto_of_nonneg_ae c hf hfi hc]
 
 namespace SmoothTwoForm
 

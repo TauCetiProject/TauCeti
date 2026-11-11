@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Plane.Curvature
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Capped
 public import Mathlib.Analysis.SpecialFunctions.PolarCoord
 import TauCeti.LinearAlgebra.BilinearMap.Multilinear
+import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.MeasureTheory.Integral.PolarCoord
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
@@ -413,7 +414,7 @@ theorem lintegral_floerEnergyDensity_pssPlanePerturbation_eq
   -- Exhaust the plane by the discs `D_R`, on which the energy is `ε` times the capped action
   -- minus the integrated curvature.
   refine lintegral_ofReal_eq_of_tendsto_setIntegral_closedBall
-    (r := fun R ↦ Real.exp (2 * π * R))
+    Complex.equivRealProdCLM.symm.continuous (r := fun R ↦ Real.exp (2 * π * R))
     (Real.tendsto_exp_atTop.comp (tendsto_id.const_mul_atTop Real.two_pi_pos))
     (ae_of_all _ fun z ↦ floerEnergyDensity_nonneg hω (hJ z) (hfloer z)) (fun _ ↦
       hω.integrableOn_floerEnergyDensity isOpen_univ hu.contMDiffOn

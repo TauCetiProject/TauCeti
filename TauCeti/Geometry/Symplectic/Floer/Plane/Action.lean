@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Curvature
 import TauCeti.Geometry.Symplectic.Area.PuncturedDisc
+import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 
 /-!
 # The energy of a PSS plane in terms of the action of its end
@@ -229,7 +230,8 @@ theorem lintegral_floerEnergyDensity_pssPlanePerturbation_eq (ω : SymplecticFor
       (hu.of_le one_le_two).contDiffOn
       (by simpa using (contDiff_uncurry_perturbation (p := p) hH hHs 1).contDiffOn)
       (by simpa using (contDiff_uncurry_perturbation (p := p) hH hHs Complex.I).contDiffOn))
-  exact lintegral_ofReal_eq_of_tendsto_setIntegral_closedBall (r := fun R ↦ Real.exp (2 * π * R))
+  exact lintegral_ofReal_eq_of_tendsto_setIntegral_closedBall
+    Complex.equivRealProdCLM.symm.continuous (r := fun R ↦ Real.exp (2 * π * R))
     (Real.tendsto_exp_atTop.comp (tendsto_id.const_mul_atTop Real.two_pi_pos))
     (ae_of_all _ fun z ↦ ω.floerEnergyDensity_nonneg (hJ z) (hfloer z))
     (fun _ ↦ hEc.continuousOn.integrableOn_compact
