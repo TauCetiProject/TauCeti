@@ -80,6 +80,11 @@ theorem MemLpLoc.memLp_of_closure_subset (hf : MemLpLoc p U f) (hV : IsCompact (
     (hVU : closure V ⊆ U) : MemLp f p (volume.restrict V) :=
   (hf _ hVU hV).mono_measure (Measure.restrict_mono subset_closure le_rfl)
 
+/-- A function that is `Lᵖ` on `U` is locally `Lᵖ` there. -/
+theorem _root_.MeasureTheory.MemLp.memLpLoc (hf : MemLp f p (volume.restrict U)) :
+    MemLpLoc p U f :=
+  fun _ hK _ => hf.mono_measure (Measure.restrict_mono hK le_rfl)
+
 /-- Almost-everywhere equality on `U` preserves local `Lᵖ` membership. -/
 theorem MemLpLoc.congr_ae (hf : MemLpLoc p U f)
     (hfg : f =ᵐ[volume.restrict U] g) : MemLpLoc p U g := by

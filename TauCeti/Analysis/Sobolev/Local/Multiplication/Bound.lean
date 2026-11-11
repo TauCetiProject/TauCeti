@@ -49,39 +49,28 @@ variable {F G H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedAddCommGroup H] [NormedSpace ℝ H]
   {Ω : Opens ℂ} {p q : ℝ≥0}
 
-/-- A finite first-order size on an open set is realized by a weak derivative, and then the
-function and that derivative are `Lᵖ` there. -/
-private theorem exists_weakFDeriv_memLp_of_eLpNormWkp_one_ne_top {E : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] {r : ℝ≥0∞} {W : Set ℂ} (hW : IsOpen W) {u : ℂ → E}
-    (hu : eLpNormWkp r W 1 u ≠ ∞) :
-    ∃ Du : ℂ → ℂ →L[ℝ] E, HasWeakFDerivOn volume ⟨W, hW⟩ u Du ∧
-      MemLp u r (volume.restrict W) ∧ MemLp Du r (volume.restrict W) ∧
-      eLpNormWkp r W 1 u = eLpNorm u r (volume.restrict W) + eLpNorm Du r (volume.restrict W) := by
-  have hW' : interior W = ((⟨W, hW⟩ : Opens ℂ) : Set ℂ) := hW.interior_eq
-  rw [eLpNormWkp_succ, ENNReal.add_ne_top] at hu
-  obtain ⟨Du, hDu, hlt⟩ : ∃ Du : ℂ → ℂ →L[ℝ] E,
-      HasWeakFDerivOn volume (Opens.interior W) u Du ∧ eLpNorm Du r (volume.restrict W) < ∞ := by
-    simpa [iInf_lt_iff, lt_top_iff_ne_top] using hu.2
-  have hDu' : HasWeakFDerivOn volume ⟨W, hW⟩ u Du := hDu.mono (le_of_eq (SetLike.ext' hW'.symm))
-  refine ⟨Du, hDu', memLp_iff.2 (lt_top_iff_ne_top.2 hu.1), memLp_iff.2 hlt, ?_⟩
-  exact (eLpNormWkp_succ_eq_of_hasWeakFDerivOn hDu').trans (by rw [eLpNormWkp_zero]; rfl)
-
-/-- A function that is `Lᵖ` on a set is locally `Lᵖ` there. -/
-private theorem memLpLoc_of_memLp {E : Type*} [NormedAddCommGroup E] {r : ℝ≥0∞} {W : Set ℂ}
-    {u : ℂ → E} (hu : MemLp u r (volume.restrict W)) : MemLpLoc r W u :=
-  memLpLoc_iff.2 fun _ hLW _ => hu.mono_measure (Measure.restrict_mono hLW le_rfl)
-
 omit [FiniteDimensional ℝ G] in
-/-- A nonzero continuous bilinear map has nonzero extended operator norm. -/
-private theorem enorm_ne_zero_of_ne_zero (B : F →L[ℝ] G →L[ℝ] H) (hB : B ≠ 0) : ‖B‖ₑ ≠ 0 := by
-  rw [← ofReal_norm, Ne, ENNReal.ofReal_eq_zero, not_le]
-  exact lt_of_le_of_ne (norm_nonneg _) (Ne.symm (mt B.opNorm_zero_iff.1 hB))
-
-/-- A function of zero first-order size on a set vanishes almost everywhere there. -/
-private theorem ae_eq_zero_of_eLpNormWkp_one_eq_zero {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {r : ℝ≥0∞} (hr : r ≠ 0) {W : Set ℂ} {u : ℂ → E}
-    (hu : eLpNormWkp r W 1 u = 0) : u =ᵐ[volume.restrict W] 0 :=
-  (eLpNorm_eq_zero_iff hr).1 (le_antisymm (hu ▸ eLpNorm_le_eLpNormWkp) zero_le)
+/-- To bound `L` by `C ‖B‖ a b` with `C ≠ 0`, it suffices to treat finite `a` and `b`, provided `L`
+vanishes when `B`, `a` or `b` does: otherwise the right side is infinite. -/
+private theorem le_mul_enorm_mul_mul_of_ne_top {L a b C : ℝ≥0∞} {B : F →L[ℝ] G →L[ℝ] H}
+    (hC : C ≠ 0) (hB : B = 0 → L = 0) (ha : a = 0 → L = 0) (hb : b = 0 → L = 0)
+    (hfin : a ≠ ∞ → b ≠ ∞ → L ≤ C * ‖B‖ₑ * a * b) : L ≤ C * ‖B‖ₑ * a * b := by
+  by_cases hB0 : B = 0
+  · exact (hB hB0).le.trans zero_le
+  by_cases ha0 : a = 0
+  · exact (ha ha0).le.trans zero_le
+  by_cases hb0 : b = 0
+  · exact (hb hb0).le.trans zero_le
+  -- `enorm_ne_zero` does not elaborate on this iterated operator space, so go through `‖B‖`.
+  have hCB : C * ‖B‖ₑ ≠ 0 := mul_ne_zero hC (ofReal_norm B ▸
+    (ENNReal.ofReal_pos.2 ((norm_nonneg B).lt_of_ne' (mt B.opNorm_zero_iff.1 hB0))).ne')
+  by_cases hat : a = ∞
+  · rw [hat, ENNReal.mul_top hCB, ENNReal.top_mul hb0]
+    exact le_top
+  by_cases hbt : b = ∞
+  · rw [hbt, ENNReal.mul_top (mul_ne_zero hCB ha0)]
+    exact le_top
+  exact hfin hat hbt
 
 /-- **Local bound for order-zero mixed products.** For `p > 2`, `1 ≤ q ≤ p` and a compact
 `K ⊆ Ω`, there are an open `W` between `K` and `Ω` with compact closure in `Ω` and a constant `C`
@@ -102,39 +91,26 @@ theorem exists_eLpNorm_bilin_le_eLpNormWkp_one (hp : 2 < p) (hqp : q ≤ p)
   have hvanish (h : (fun z => B (f z) (g z)) =ᵐ[volume.restrict K] 0) :
       eLpNorm (fun z => B (f z) (g z)) q (volume.restrict K) = 0 := by
     rw [eLpNorm_congr_ae h, eLpNorm_zero]
-  by_cases hB : B = 0
-  · exact (hvanish (.of_forall fun z => by simp [hB])).le.trans zero_le
-  by_cases hf0 : eLpNorm f p (volume.restrict K) = 0
-  · refine (hvanish ?_).le.trans zero_le
-    filter_upwards [(eLpNorm_eq_zero_iff (by simpa using (zero_lt_two.trans hp).ne')).1 hf0]
+  refine le_mul_enorm_mul_mul_of_ne_top (by simp)
+    (fun hB => hvanish (.of_forall fun z => by simp [hB])) (fun hf0 => hvanish ?_)
+    (fun hg0 => hvanish ?_) fun hf hg => ?_
+  · filter_upwards [(eLpNorm_eq_zero_iff (by simpa using (zero_lt_two.trans hp).ne')).1 hf0]
       with z hz
     simp [hz]
-  by_cases hg0 : eLpNormWkp q W 1 g = 0
-  · refine (hvanish ?_).le.trans zero_le
-    filter_upwards [ae_mono (Measure.restrict_mono hKW le_rfl)
-      (ae_eq_zero_of_eLpNormWkp_one_eq_zero hq0 hg0)] with z hz
+  · filter_upwards [ae_mono (Measure.restrict_mono hKW le_rfl)
+      (ae_eq_zero_of_eLpNormWkp_eq_zero hq0 hg0)] with z hz
     simp [hz]
-  have hCB : ((C + 1 : ℝ≥0) : ℝ≥0∞) * ‖B‖ₑ ≠ 0 :=
-    mul_ne_zero (by simp) (enorm_ne_zero_of_ne_zero B hB)
-  by_cases hfin : eLpNorm f p (volume.restrict K) ≠ ∞ ∧ eLpNormWkp q W 1 g ≠ ∞
-  · obtain ⟨Dg, hDg, hgq, hDgq, hgW⟩ := exists_weakFDeriv_memLp_of_eLpNormWkp_one_ne_top hWo hfin.2
-    have hf : AEStronglyMeasurable f (volume.restrict K) :=
-      (memLp_iff.2 (lt_top_iff_ne_top.2 hfin.1)).aestronglyMeasurable
-    calc
-      _ ≤ C * ‖B‖ₑ * eLpNorm f p (volume.restrict K) *
-          (eLpNorm g q (volume.restrict W) + eLpNorm Dg q (volume.restrict W)) :=
-        hC B f g Dg hf hDg hgq hDgq
-      _ ≤ _ := by
-        rw [← hgW]
-        gcongr
-        exact_mod_cast le_self_add
-  · -- Otherwise one factor on the right is infinite and the others are nonzero.
-    rw [not_and_or, not_not, not_not] at hfin
-    rcases hfin with hf | hg
-    · rw [hf, ENNReal.mul_top hCB, ENNReal.top_mul hg0]
-      exact le_top
-    · rw [hg, ENNReal.mul_top (mul_ne_zero hCB hf0)]
-      exact le_top
+  obtain ⟨Dg, hDg, hgq, hDgq, hgW⟩ := exists_weakFDeriv_memLp_of_eLpNormWkp_one_ne_top hWo hg
+  have hf : AEStronglyMeasurable f (volume.restrict K) :=
+    (memLp_iff.2 (lt_top_iff_ne_top.2 hf)).aestronglyMeasurable
+  calc
+    _ ≤ C * ‖B‖ₑ * eLpNorm f p (volume.restrict K) *
+        (eLpNorm g q (volume.restrict W) + eLpNorm Dg q (volume.restrict W)) :=
+      hC B f g Dg hf hDg hgq hDgq
+    _ ≤ _ := by
+      rw [← hgW]
+      gcongr
+      exact_mod_cast le_self_add
 
 /-- **Local bound for order-one mixed products.** For `p > 2`, `1 < q ≤ p` and a compact `K ⊆ Ω`,
 there are an open `W` between `K` and `Ω` with compact closure in `Ω` and a constant `C` such that
@@ -161,41 +137,26 @@ theorem exists_eLpNormWkp_one_bilin_le [FiniteDimensional ℝ F] [CompleteSpace 
   have hq0 : (q : ℝ≥0∞) ≠ 0 := (zero_lt_one.trans_le hq1).ne'
   have hp0 : (p : ℝ≥0∞) ≠ 0 := (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne'
   have hKm : volume.restrict K ≤ volume.restrict W := Measure.restrict_mono hKW le_rfl
-  -- If either factor vanishes almost everywhere on `W`, so does the product on `K`.
+  -- If `B = 0` or either factor vanishes almost everywhere on `W`, so does the product on `K`.
   have hvanish (h : (fun z => B (f z) (g z)) =ᵐ[volume.restrict W] 0) :
       eLpNormWkp q K 1 (fun z => B (f z) (g z)) = 0 := by
     rw [eLpNormWkp_congr_ae (ae_mono hKm h), eLpNormWkp_zero_fun]
-  have hC0 : ((C₁ * (C₂ + 1) + 1 : ℝ≥0) : ℝ≥0∞) ≠ 0 := by simp
-  by_cases hfg : eLpNormWkp p W 1 f = ∞ ∨ eLpNormWkp q W 1 g = ∞
-  · -- The right side is infinite unless `B = 0` or one factor has size zero.
-    by_cases hB : B = 0
-    · exact (hvanish (.of_forall fun z => by simp [hB])).le.trans zero_le
-    have hBe : ‖B‖ₑ ≠ 0 := enorm_ne_zero_of_ne_zero B hB
-    by_cases hf0 : eLpNormWkp p W 1 f = 0
-    · refine (hvanish ?_).le.trans zero_le
-      filter_upwards [ae_eq_zero_of_eLpNormWkp_one_eq_zero hp0 hf0] with z hz
-      simp [hz]
-    by_cases hg0 : eLpNormWkp q W 1 g = 0
-    · refine (hvanish ?_).le.trans zero_le
-      filter_upwards [ae_eq_zero_of_eLpNormWkp_one_eq_zero hq0 hg0] with z hz
-      simp [hz]
-    rcases hfg with hf | hg
-    · rw [hf, ENNReal.mul_top (mul_ne_zero hC0 hBe), ENNReal.top_mul hg0]
-      exact le_top
-    · rw [hg, ENNReal.mul_top (mul_ne_zero (mul_ne_zero hC0 hBe) hf0)]
-      exact le_top
-  rw [not_or] at hfg
-  obtain ⟨Df, hDf, hfp, hDfp, hfW⟩ := exists_weakFDeriv_memLp_of_eLpNormWkp_one_ne_top hWo
-    hfg.1
-  obtain ⟨Dg, hDg, hgq, hDgq, hgW⟩ := exists_weakFDeriv_memLp_of_eLpNormWkp_one_ne_top hWo
-    hfg.2
+  refine le_mul_enorm_mul_mul_of_ne_top (by simp)
+    (fun hB => hvanish (.of_forall fun z => by simp [hB])) (fun hf0 => hvanish ?_)
+    (fun hg0 => hvanish ?_) fun hf hg => ?_
+  · filter_upwards [ae_eq_zero_of_eLpNormWkp_eq_zero hp0 hf0] with z hz
+    simp [hz]
+  · filter_upwards [ae_eq_zero_of_eLpNormWkp_eq_zero hq0 hg0] with z hz
+    simp [hz]
+  obtain ⟨Df, hDf, hfp, hDfp, hfW⟩ := exists_weakFDeriv_memLp_of_eLpNormWkp_one_ne_top hWo hf
+  obtain ⟨Dg, hDg, hgq, hDgq, hgW⟩ := exists_weakFDeriv_memLp_of_eLpNormWkp_one_ne_top hWo hg
   -- `f` is locally bounded on `W`, so the weak Leibniz rule applies there.
   have hfloc : MemWkpLoc p W' 1 f :=
     memWkpLoc_succ_iff_of_isOpen.2
-      ⟨memLpLoc_of_memLp hfp, Df, hDf, memWkpLoc_zero_iff.2 (memLpLoc_of_memLp hDfp)⟩
+      ⟨hfp.memLpLoc, Df, hDf, memWkpLoc_zero_iff.2 hDfp.memLpLoc⟩
   have hLeib := hDf.bilin_of_memLpLoc B hp hq hqp
-    ((hfloc.memLpLoc_of_holderTriple hp le_rfl).mono_exponent le_top) (memLpLoc_of_memLp hDfp)
-    hDg (memLpLoc_of_memLp hgq) (memLpLoc_of_memLp hDgq)
+    ((hfloc.memLpLoc_of_holderTriple hp le_rfl).mono_exponent le_top) hDfp.memLpLoc
+    hDg hgq.memLpLoc hDgq.memLpLoc
   have hint : Opens.interior K ≤ W' := fun z hz => hKW (interior_subset hz)
   set Xf := eLpNorm f p (volume.restrict W) + eLpNorm Df p (volume.restrict W)
   set Xg := eLpNorm g q (volume.restrict W) + eLpNorm Dg q (volume.restrict W)
