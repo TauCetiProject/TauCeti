@@ -14,7 +14,8 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 This file collects bounds on iterated derivatives that follow from their continuity on compact
 sets: a uniform bound for a linear change of variables, and a bound by any power of the Japanese
-bracket near the zero frequency.
+bracket near the zero frequency. It also records the Leibniz bound for a bilinear expression in two
+maps whose derivatives have uniform bounds, and the effect of a dilation on such bounds.
 
 Fix maps `τ : E → F` and `L : E → (G →L H)` that are `C^n` on `s`. The operator
 `φ ↦ (z ↦ L z (φ (τ z)))` is linear in `φ`, and by the Leibniz and Faà di Bruno bounds its
@@ -51,6 +52,10 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   the Japanese bracket `(1 + ‖ξ‖ ^ 2) ^ (1 / 2)`.
 * `ContDiff.exists_norm_iteratedFDeriv_le_of_eq_of_lt_norm`: a smooth map which agrees outside a
   ball with a map of bounded order-`n` derivative has a bounded order-`n` derivative.
+* `ContinuousLinearMap.norm_iteratedFDeriv_le_two_pow_mul_of_bilinear`: the Leibniz bound for
+  `x ↦ B (f x) (g x)` when the derivatives of `f` and `g` have uniform bounds.
+* `ContDiff.norm_iteratedFDeriv_comp_const_smul_le`: rescaling the variable by `c` with
+  `1 ≤ ‖c‖` multiplies uniform derivative bounds of order at most `N` by at most `‖c‖ ^ N`.
 -/
 
 public section
@@ -225,6 +230,40 @@ theorem ContDiff.exists_norm_iteratedFDeriv_le_of_eq_of_lt_norm [ProperSpace E] 
     exact hfg y hy
   rw [(hfg'.iteratedFDeriv 𝕜 n).eq_of_nhds]
   exact (hg x hx).trans (le_max_right _ _)
+
+/-- **Leibniz bound with uniform constants.** If the derivatives of order at most `N` of `f` and
+`g` are bounded by `C` and `D` everywhere, those of `x ↦ B (f x) (g x)` of order `p ≤ N` are
+bounded by `2 ^ p * (C * D)`, for a bilinear map `B` of norm at most one. -/
+theorem ContinuousLinearMap.norm_iteratedFDeriv_le_two_pow_mul_of_bilinear
+    (B : F →L[𝕜] G →L[𝕜] H) (hB : ‖B‖ ≤ 1) {N : ℕ} {f : E → F} {g : E → G}
+    (hf : ContDiff 𝕜 N f) (hg : ContDiff 𝕜 N g) {C D : ℝ}
+    (hfC : ∀ p ≤ N, ∀ x, ‖iteratedFDeriv 𝕜 p f x‖ ≤ C)
+    (hgD : ∀ p ≤ N, ∀ x, ‖iteratedFDeriv 𝕜 p g x‖ ≤ D) {p : ℕ} (hp : p ≤ N) (x : E) :
+    ‖iteratedFDeriv 𝕜 p (fun y ↦ B (f y) (g y)) x‖ ≤ 2 ^ p * (C * D) := by
+  refine (B.norm_iteratedFDeriv_le_of_bilinear_of_le_one hf hg x (by exact_mod_cast hp)
+    hB).trans ?_
+  calc ∑ i ∈ Finset.range (p + 1), (p.choose i : ℝ) * ‖iteratedFDeriv 𝕜 i f x‖ *
+        ‖iteratedFDeriv 𝕜 (p - i) g x‖
+      ≤ ∑ i ∈ Finset.range (p + 1), (p.choose i : ℝ) * C * D := by
+        refine Finset.sum_le_sum fun i hi ↦ ?_
+        have hi : i ≤ p := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
+        have hC : 0 ≤ C := (norm_nonneg _).trans (hfC 0 (Nat.zero_le _) x)
+        gcongr
+        exacts [hfC i (hi.trans hp) x, hgD (p - i) ((Nat.sub_le p i).trans hp) x]
+    _ = 2 ^ p * (C * D) := by
+        rw [← Finset.sum_mul, ← Finset.sum_mul]
+        push_cast [← Nat.cast_sum, Nat.sum_range_choose]
+        ring
+
+/-- Rescaling the variable by `c` with `1 ≤ ‖c‖` multiplies uniform bounds for the derivatives
+of order at most `N` by at most `‖c‖ ^ N`. -/
+theorem ContDiff.norm_iteratedFDeriv_comp_const_smul_le {N : ℕ} {f : E → F}
+    (hf : ContDiff 𝕜 N f) {C : ℝ} (hC : ∀ p ≤ N, ∀ x, ‖iteratedFDeriv 𝕜 p f x‖ ≤ C) {c : 𝕜}
+    (hc : 1 ≤ ‖c‖) {p : ℕ} (hp : p ≤ N) (x : E) :
+    ‖iteratedFDeriv 𝕜 p (fun y ↦ f (c • y)) x‖ ≤ ‖c‖ ^ N * C := by
+  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0 (Nat.zero_le _) x)
+  rw [iteratedFDeriv_comp_const_smul c (hf.of_le (by exact_mod_cast hp)), norm_smul, norm_pow]
+  exact mul_le_mul (pow_le_pow_right₀ hc hp) (hC p hp _) (norm_nonneg _) (by positivity)
 
 namespace TauCeti
 

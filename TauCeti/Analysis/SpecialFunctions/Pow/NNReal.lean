@@ -57,6 +57,10 @@ A real power of `ENNReal.ofReal (a * r)` with `0 ≤ a` splits as `ofReal a ^ d 
 for every exponent `d`, since neither factor is `∞`. This rescales the gauge `(2 r) ^ d` of
 densities and Hausdorff measures.
 
+For a finite `x`, or a negative exponent `q`, the extended product `x * x ^ q` is the image under
+`ENNReal.ofReal` of the real product `x.toReal * x.toReal ^ q`; both sides vanish at `x = 0` and,
+for `q < 0`, at `x = ∞`.
+
 Marcinkiewicz interpolation at the height `t / 2` produces the constant
 `p * 2⁻¹ ^ (1 - p) / (p - 1)` times twice the weak-type constant; this simplifies to
 `2 * p * 2 ^ (p - 1) / (p - 1)` times that constant.
@@ -91,6 +95,8 @@ On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every 
   the `‖z - eᵢ‖ₑ ^ (-1/2)` is at most a constant times their sum.
 * `ENNReal.le_two_rpow_mul_inv_rpow_mul`: a bound `(s / 2) ^ q * a ≤ B` gives
   `a ≤ 2 ^ q * (s ^ q)⁻¹ * B` for `s ≠ 0, ∞`.
+* `ENNReal.ofReal_toReal_mul_rpow`: `ofReal (x.toReal * x.toReal ^ q) = x * x ^ q` for `q < 0` or
+  finite `x`.
 * `ENNReal.ofReal_mul_inv_two_rpow_div_mul_two_mul`: the Marcinkiewicz constant at height `t / 2`,
   `ofReal (p * 2⁻¹ ^ (1 - p) / (p - 1)) * (2 * A) = ofReal (2 * p * 2 ^ (p - 1) / (p - 1)) * A`.
 * `NNReal.rpow_neg_mem_Icc_iff`: an interval of negative powers is equivalent to an interval
@@ -320,6 +326,17 @@ theorem ofReal_mul_inv_two_rpow_div_mul_two_mul (p : ℝ) (A : ℝ≥0∞) :
   have hsplit : 2 * p * 2 ^ (p - 1) / (p - 1) = 2 * (p * 2 ^ (p - 1) / (p - 1)) := by ring
   rw [hinv, hsplit, ENNReal.ofReal_mul (by norm_num : (0 : ℝ) ≤ 2), ENNReal.ofReal_ofNat]
   ring
+
+/-- The real and extended forms of `x * x ^ q` agree everywhere, including at `0` and `∞`, provided
+`q < 0` (both sides vanish at `∞`) or `x` is finite. -/
+theorem ofReal_toReal_mul_rpow {x : ℝ≥0∞} {q : ℝ} (h : q < 0 ∨ x ≠ ∞) :
+    ENNReal.ofReal (x.toReal * x.toReal ^ q) = x * x ^ q := by
+  rcases eq_or_ne x ∞ with rfl | hx
+  · simp [ENNReal.top_rpow_of_neg (h.resolve_right (by simp))]
+  rcases eq_or_ne x 0 with rfl | hx₀
+  · simp
+  rw [ENNReal.ofReal_mul ENNReal.toReal_nonneg, ENNReal.ofReal_toReal hx, ENNReal.toReal_rpow,
+    ENNReal.ofReal_toReal (ENNReal.rpow_ne_top_of_ne_zero hx₀ hx)]
 
 end ENNReal
 
