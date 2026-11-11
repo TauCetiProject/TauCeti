@@ -15,6 +15,7 @@ import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
 import TauCeti.AlgebraicTopology.FundamentalGroup.HomotopyEquiv
 import TauCeti.AlgebraicTopology.FundamentalGroup.PlaneMinusPoints
+import TauCeti.Analysis.Normed.Module.Ball.Retraction
 import TauCeti.GroupTheory.FreeGroup.Rank
 import TauCeti.Topology.Homotopy.DeformationRetract
 import TauCeti.Topology.Homotopy.HomotopyEquiv
@@ -131,23 +132,16 @@ private theorem planarSurface_subset_compl_range :
 /-! ### Pushing the punctured plane onto the planar surface -/
 
 variable (g) in
-/-- Radial projection of the plane onto the closed disc of radius `g + 1`. -/
-private def clamp (z : ℂ) : ℂ := (((g : ℝ) + 1) / max ((g : ℝ) + 1) ‖z‖) • z
-
-variable (g) in
 /-- The radial push of the points inside each hole out to the boundary circle of the hole; it
 vanishes outside the holes. -/
 private def holePush (z : ℂ) : ℂ :=
   ∑ k : Fin g, (max (2⁻¹ / ‖z - holeCenter g k‖) 1 - 1) • (z - holeCenter g k)
 
 variable (g) in
-/-- The straight-line deformation from the identity to `clamp + holePush`. -/
+/-- The straight-line deformation from the identity to the radial retraction onto the closed disc
+of radius `g + 1` plus `holePush`. -/
 private def retract (p : unitInterval × ℂ) : ℂ :=
-  p.2 + (p.1 : ℝ) • (clamp g p.2 + holePush g p.2 - p.2)
-
-private theorem clamp_eq_self {z : ℂ} (hz : ‖z‖ ≤ g + 1) : clamp g z = z := by
-  have hR : (0 : ℝ) < g + 1 := by positivity
-  rw [clamp, max_eq_left hz, div_self hR.ne', one_smul]
+  p.2 + (p.1 : ℝ) • (radialRetraction ((g : ℝ) + 1) p.2 + holePush g p.2 - p.2)
 
 private theorem holePush_eq_zero {z : ℂ} (hz : ∀ k, 2⁻¹ ≤ ‖z - holeCenter g k‖) :
     holePush g z = 0 := by
@@ -178,8 +172,8 @@ private theorem norm_retract_sub_holeCenter {z : ℂ} {k : Fin g}
     linarith [norm_holeCenter_le k]
   have h : retract g (t, z) - holeCenter g k =
       (1 + (t : ℝ) * (2⁻¹ / ‖z - holeCenter g k‖ - 1)) • (z - holeCenter g k) := by
-    rw [retract, clamp_eq_self hz, holePush_eq hk hzk, add_sub_cancel_left, add_smul, one_smul,
-      smul_smul]
+    rw [retract, radialRetraction_of_norm_le hz, holePush_eq hk hzk, add_sub_cancel_left, add_smul,
+      one_smul, smul_smul]
     abel
   have hc : 0 ≤ 1 + (t : ℝ) * (2⁻¹ / ‖z - holeCenter g k‖ - 1) := by
     have := (one_lt_div ha).2 hk
@@ -196,7 +190,7 @@ private theorem norm_retract_of_lt {z : ℂ} (hz : g + 1 < ‖z‖) (t : unitInt
     have := norm_sub_norm_le z (holeCenter g k : ℂ)
     linarith [norm_holeCenter_le k]
   have h : retract g (t, z) = ((1 - (t : ℝ)) + t * (((g : ℝ) + 1) / ‖z‖)) • z := by
-    rw [retract, holePush_eq_zero hholes, add_zero, clamp, max_eq_right hz.le]
+    rw [retract, holePush_eq_zero hholes, add_zero, radialRetraction_of_le_norm hz.le]
     module
   have hc : 0 ≤ (1 - (t : ℝ)) + t * (((g : ℝ) + 1) / ‖z‖) :=
     add_nonneg (sub_nonneg.2 t.2.2) (mul_nonneg t.2.1 (by positivity))
@@ -207,7 +201,7 @@ private theorem norm_retract_of_lt {z : ℂ} (hz : g + 1 < ‖z‖) (t : unitInt
 private theorem retract_of_mem {z : ℂ} (hz : z ∈ planarSurface g) (t : unitInterval) :
     retract g (t, z) = z := by
   rw [mem_planarSurface_iff] at hz
-  rw [retract, clamp_eq_self hz.1, holePush_eq_zero hz.2]
+  rw [retract, radialRetraction_of_norm_le hz.1, holePush_eq_zero hz.2]
   simp
 
 /-- The deformation of a point that is in no hole and outside the big disc stays away from the
@@ -247,7 +241,7 @@ private theorem retract_mem_compl_range {z : ℂ}
       norm_num at h
   · simp only [not_exists, not_lt] at hhole
     by_cases hR : ‖z‖ ≤ g + 1
-    · rw [retract, clamp_eq_self hR, holePush_eq_zero hhole] at hj
+    · rw [retract, radialRetraction_of_norm_le hR, holePush_eq_zero hhole] at hj
       exact hz j (by simpa using hj)
     · have h := two_le_norm_retract_sub_of_lt (not_le.1 hR) t j
       rw [hj, sub_self, norm_zero] at h
@@ -279,11 +273,12 @@ private theorem retract_one_mem {z : ℂ} (hz : z ∈ (range fun k ↦ (holeCent
 private theorem continuous_retract :
     Continuous fun p : unitInterval × ↥(range fun k ↦ (holeCenter g k : ℂ))ᶜ ↦
       retract g (p.1, p.2) := by
-  have hR : (0 : ℝ) < g + 1 := by positivity
-  unfold retract clamp holePush
-  fun_prop (disch := first
-    | exact fun _ ↦ (lt_max_of_lt_left hR).ne'
-    | exact fun p ↦ norm_ne_zero_iff.2 (sub_ne_zero.2 (mem_compl_range_iff.1 p.2.2 _)))
+  have hc : Continuous fun p : unitInterval × ↥(range fun k ↦ (holeCenter g k : ℂ))ᶜ ↦
+      radialRetraction ((g : ℝ) + 1) (p.2 : ℂ) :=
+    continuous_const.radialRetraction (fun _ ↦ by positivity) (by fun_prop)
+  unfold retract holePush
+  fun_prop (disch :=
+    exact fun p ↦ norm_ne_zero_iff.2 (sub_ne_zero.2 (mem_compl_range_iff.1 p.2.2 _)))
 
 /-- The closed disc with `g` holes is homotopy equivalent to the plane punctured at the centres of
 its holes, by inclusion. -/
