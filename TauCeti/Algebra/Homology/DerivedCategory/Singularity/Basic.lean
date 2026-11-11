@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.DerivedCategory.Bounded.Basic
 public import TauCeti.Algebra.Homology.DerivedCategory.Bounded.Localization
+public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Generation
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.CategoryTheory.Localization.Triangulated
@@ -54,6 +55,10 @@ For a left noetherian ring `A`, the finitely generated left `A`-modules form the
   derived category has a perfect cone is in `(perfect C).trW`.
 * `TauCeti.SingularityCategory.isZero_Q_obj_of_perfect`: perfect objects vanish in the
   singularity category; in particular so do the projective objects of `C`.
+* `TauCeti.SingularityCategory.nonempty_iso_Q_obj_shift_of_shortExact`: a short exact sequence
+  `0 ⟶ X ⟶ P ⟶ Y ⟶ 0` with `P` projective gives `Y ≅ X[1]` in the singularity category.
+* `TauCeti.SingularityCategory.nonempty_iso_Q_obj_singleFunctor_cycles`: the cycles `Zᵐ` of an
+  acyclic complex of projectives placed in degree `n` are the cycles `Zᵐ⁻ⁿ` placed in degree zero.
 
 ## References
 
@@ -211,6 +216,66 @@ lemma isZero_Q_obj_of_perfect {X : DerivedCategory.Bounded C}
 lemma isZero_Q_obj_singleFunctor_obj {P : C} (hP : Projective P) :
     IsZero ((Q C).obj ((DerivedCategory.Bounded.singleFunctor C 0).obj P)) :=
   isZero_Q_obj_of_perfect (DerivedCategory.Bounded.perfect_singleFunctor_obj C 0 hP)
+
+section Shift
+
+/-- In the singularity category, a short exact sequence `0 ⟶ X ⟶ P ⟶ Y ⟶ 0` with `P` projective
+identifies `Y` with the shift `X[1]`, since the projective object `P` vanishes. -/
+theorem nonempty_iso_Q_obj_shift_of_shortExact {S : ShortComplex C} (hS : S.ShortExact)
+    (hP : Projective S.X₂) :
+    Nonempty ((Q C).obj ((DerivedCategory.Bounded.singleFunctor C 0).obj S.X₃) ≅
+      ((Q C).obj ((DerivedCategory.Bounded.singleFunctor C 0).obj S.X₁))⟦(1 : ℤ)⟧) := by
+  have hT := (Q C).map_distinguished _ hS.boundedSingleTriangle_distinguished
+  have := (Triangle.isZero₂_iff_isIso₃ _ hT).1 (isZero_Q_obj_singleFunctor_obj hP)
+  exact ⟨asIso ((Q C).mapTriangle.obj hS.boundedSingleTriangle).mor₃⟩
+
+variable {P : CochainComplex C ℤ} (hproj : ∀ m, Projective (P.X m)) (hacyclic : P.Acyclic)
+include hproj hacyclic
+
+/-- In the singularity category, the cycles of an acyclic complex of projectives placed in degree
+zero satisfy `Zᵐ⁺ᵏ ≅ Zᵐ[k]` for every integer `k`. -/
+theorem nonempty_iso_Q_obj_cycles_shift (k m : ℤ) :
+    Nonempty (((Q C).obj ((DerivedCategory.Bounded.singleFunctor C 0).obj (P.cycles m)))⟦k⟧ ≅
+      (Q C).obj ((DerivedCategory.Bounded.singleFunctor C 0).obj (P.cycles (m + k)))) := by
+  let L (m : ℤ) := (Q C).obj ((DerivedCategory.Bounded.singleFunctor C 0).obj (P.cycles m))
+  have hL (a b : ℤ) (h : a = b) : Nonempty (L a ≅ L b) := by subst h; exact ⟨Iso.refl _⟩
+  -- One step, from the short exact sequence `0 ⟶ Zᵐ ⟶ Pᵐ ⟶ Zᵐ⁺¹ ⟶ 0`.
+  have step (m : ℤ) : Nonempty (L (m + 1) ≅ (L m)⟦(1 : ℤ)⟧) :=
+    nonempty_iso_Q_obj_shift_of_shortExact
+      (P.shortExact_mk_iCycles_toCycles m (m + 1) rfl (hacyclic (m + 1))) (hproj m)
+  -- Fold the local abbreviation `L`, so that the statement is an invariant for integer induction
+  -- on `k`; the two sides agree by definition of `L`.
+  change Nonempty ((L m)⟦k⟧ ≅ L (m + k))
+  induction k using Int.induction_on generalizing m with
+  | zero =>
+    obtain ⟨e⟩ := hL m (m + 0) (add_zero m).symm
+    exact ⟨(shiftFunctorZero _ ℤ).app _ ≪≫ e⟩
+  | succ i ih =>
+    obtain ⟨e⟩ := ih m
+    obtain ⟨e₁⟩ := step (m + i)
+    obtain ⟨e₂⟩ := hL (m + i + 1) (m + (i + 1)) (add_assoc _ _ _)
+    exact ⟨(shiftFunctorAdd _ (i : ℤ) 1).app _ ≪≫ (shiftFunctor _ (1 : ℤ)).mapIso e ≪≫ e₁.symm ≪≫
+      e₂⟩
+  | pred i ih =>
+    obtain ⟨e⟩ := ih m
+    obtain ⟨e₁⟩ := step (m + (-i - 1))
+    obtain ⟨e₂⟩ := hL (m + -(i : ℤ)) (m + (-i - 1) + 1) (by ring)
+    exact ⟨(shiftFunctorAdd' _ (-(i : ℤ)) (-1) (-i - 1) (by ring)).app _ ≪≫
+      (shiftFunctor _ (-1 : ℤ)).mapIso (e ≪≫ e₂ ≪≫ e₁) ≪≫
+      (shiftFunctorCompIsoId _ (1 : ℤ) (-1) (by norm_num)).app _⟩
+
+/-- **Cycles of an acyclic complex of projectives in every degree**: in the singularity category,
+the cycles `Zᵐ` placed in degree `n` are isomorphic to the cycles `Zᵐ⁻ⁿ` placed in degree zero. -/
+theorem nonempty_iso_Q_obj_singleFunctor_cycles (n m : ℤ) :
+    Nonempty ((Q C).obj ((DerivedCategory.Bounded.singleFunctor C n).obj (P.cycles m)) ≅
+      (Q C).obj ((DerivedCategory.Bounded.singleFunctor C 0).obj (P.cycles (m - n)))) := by
+  obtain ⟨e⟩ := nonempty_iso_Q_obj_cycles_shift hproj hacyclic (-n) m
+  -- The object placed in degree `n` is the object placed in degree zero, shifted by `-n`.
+  exact ⟨(Q C).mapIso (((DerivedCategory.Bounded.singleFunctors C).shiftIso (-n) n 0
+      (by lia)).app (P.cycles m)).symm ≪≫ ((Q C).commShiftIso (-n)).app _ ≪≫ e ≪≫
+    eqToIso (by rw [sub_eq_add_neg])⟩
+
+end Shift
 
 end SingularityCategory
 

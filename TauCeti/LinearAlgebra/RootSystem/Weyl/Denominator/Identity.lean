@@ -79,20 +79,6 @@ variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
   [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   (P : _root_.RootPairing ι R M N) [Finite ι] (b : P.Base)
 
-section Reduced
-
-variable [LinearOrder R] [IsStrictOrderedRing R] [P.IsReduced]
-
-/-- A reduced root pairing has reduced coroots: both the weight and the coweight module are
-reflexive, being perfectly paired with each other, hence torsion free, which is what
-`RootPairing.instFlipIsReduced` needs. So `P.flip.IsReduced` need not be assumed separately. -/
-private theorem flip_isReduced : P.flip.IsReduced :=
-  have : Module.IsReflexive R M := .of_isPerfPair P.toLinearMap
-  have : Module.IsReflexive R N := .of_isPerfPair P.flip.toLinearMap
-  inferInstance
-
-end Reduced
-
 section Cone
 
 variable [LinearOrder R] [IsStrictOrderedRing R] [Invertible (2 : R)] [P.IsCrystallographic]
@@ -139,7 +125,7 @@ This is the case `λ = 0` of the Weyl character formula, in which the character 
 module is `1`. -/
 theorem weylDenominator_eq_weylNumerator_zero :
     weylDenominator P b = weylNumerator P b 0 := by
-  have := flip_isReduced P
+  have := P.flip_isReduced
   exact (isDotAlternating_weylDenominator P b).eq_weylNumerator
     (zero_mem_openDotDominantChamber P b) (coeff_weylDenominator_zero P b)
     fun _ hx hne => eq_zero_of_coeff_weylDenominator_ne_zero P b hne hx
@@ -149,7 +135,6 @@ element of the Weyl group. -/
 theorem support_coeff_weylDenominator [DecidableEq M] :
     (weylDenominator P b).coeff.support
       = Finset.univ.image fun w : P.weylGroup => dotAction P b w 0 := by
-  have := flip_isReduced P
   rw [weylDenominator_eq_weylNumerator_zero]
   exact support_coeff_weylNumerator P b (zero_mem_dominantChamber P b)
 
@@ -157,7 +142,6 @@ theorem support_coeff_weylDenominator [DecidableEq M] :
 gives `2^{|Φ⁺|}` terms, which collapse to one for each element of the Weyl group. -/
 theorem card_support_coeff_weylDenominator :
     (weylDenominator P b).coeff.support.card = Fintype.card P.weylGroup := by
-  have := flip_isReduced P
   rw [weylDenominator_eq_weylNumerator_zero]
   exact card_support_coeff_weylNumerator P b (zero_mem_dominantChamber P b)
 

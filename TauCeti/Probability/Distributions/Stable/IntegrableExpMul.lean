@@ -57,13 +57,12 @@ namespace TauCeti.Probability
 
 variable {α β ε t : ℝ}
 
-/-- For positive scale, exponential integrability at `t` is equivalent to exponential
-integrability at `s * t` for the scale-one, location-zero stable law. -/
-theorem mem_integrableExpSet_id_stableMeasure_iff_one_zero {s : ℝ≥0} {m : ℝ}
-    (hs : 0 < s) :
+/-- Exponential integrability at `t` is equivalent to exponential integrability at `s * t` for the
+scale-one, location-zero stable law. -/
+theorem mem_integrableExpSet_id_stableMeasure_iff_one_zero {s : ℝ≥0} {m : ℝ} :
     t ∈ integrableExpSet id (stableMeasure α β s m) ↔
       (s : ℝ) * t ∈ integrableExpSet id (stableMeasure α β 1 0) := by
-  rw [← stableMeasure_one_zero_map_affine hs, integrableExpSet_id_map_affine, mem_preimage]
+  rw [← stableMeasure_one_zero_map_affine, integrableExpSet_id_map_affine, mem_preimage]
 
 /-- The standardized totally skewed stable law has finite exponential moments on the
 half-line `β * t ≤ 0`, by lower semicontinuity along its compensated approximations. -/
@@ -83,7 +82,7 @@ private theorem integrable_exp_mul_stableMeasure_one_zero (hα : α ∈ Ioo 0 2)
     rw [← ofReal_integral_eq_lintegral_ofReal
       (integrable_exp_mul_stableCompensatedPoissonMeasure hae)
       (ae_of_all _ fun x ↦ (exp_pos _).le)]
-    exact ENNReal.ofReal_le_ofReal (mgf_stableCompensatedPoissonMeasure_le hα hβ.le hε hae)
+    exact ENNReal.ofReal_le_ofReal (mgf_stableCompensatedPoissonMeasure_le hε hae)
   refine ⟨by fun_prop, (hasFiniteIntegral_iff_ofReal (ae_of_all _ fun x ↦ (exp_pos _).le)).mpr
     ?_⟩
   exact hle.trans_lt ((liminf_le_of_frequently_le' (Frequently.of_forall hbound)).trans_lt
@@ -105,7 +104,7 @@ theorem integrable_exp_mul_stableMeasure (hβ : |β| = 1) (s : ℝ≥0) (m : ℝ
     exact integrable_dirac' (by fun_prop) (by simp)
   suffices h : t ∈ integrableExpSet id (stableMeasure α β s m) by
     simpa only [integrableExpSet, mem_ofPred_eq, id_eq] using h
-  rw [mem_integrableExpSet_id_stableMeasure_iff_one_zero hs]
+  rw [mem_integrableExpSet_id_stableMeasure_iff_one_zero]
   have hts : β * (s * t) ≤ 0 := by
     rw [mul_left_comm]; exact mul_nonpos_of_nonneg_of_nonpos s.2 ht
   simpa only [integrableExpSet, mem_ofPred_eq, id_eq] using
