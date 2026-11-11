@@ -51,8 +51,6 @@ unimodular lattice has a theta series of level one.
 * `ZLattice.IsEven.isIntegral`: an even lattice is integral.
 * `ZLattice.IsIntegral.discreteTopology`: an integral lattice is discrete.
 * `ZLattice.IsUnimodular.span_eq_top`: a unimodular lattice in a finite-dimensional space spans it.
-* `ZLattice.IsUnimodular.isZLattice`: a discrete unimodular lattice in a finite-dimensional space is
-  a full lattice.
 * `ZLattice.isEven_span_singleton_iff`: the lattice `ℤ v` is even if and only if `‖v‖² ∈ 2ℤ`.
 * `ZLattice.IsEven.exists_norm_add_sq_sub_norm_sq_eq`,
   `ZLattice.IsIntegral.exists_norm_add_sq_sub_norm_sq_eq`: for `γ ∈ L^∨` and `v ∈ L`,
@@ -262,11 +260,6 @@ theorem IsUnimodular.span_eq_top [FiniteDimensional ℝ E] {L : Submodule ℤ E}
   have h3 : (2 : ℝ) * m = 1 := by linarith
   have h4 : (2 : ℤ) * m = 1 := by exact_mod_cast h3
   omega
-
-/-- A unimodular lattice in a finite-dimensional real inner product space is a full lattice. -/
-theorem IsUnimodular.isZLattice [FiniteDimensional ℝ E] {L : Submodule ℤ E} [DiscreteTopology L]
-    (h : IsUnimodular L) : IsZLattice ℝ L :=
-  ⟨h.span_eq_top⟩
 
 /-- An integral lattice is unimodular as soon as its dual is contained in it. -/
 theorem IsIntegral.isUnimodular_iff {L : Submodule ℤ E} (h : IsIntegral L) :

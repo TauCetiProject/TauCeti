@@ -378,7 +378,7 @@ theorem IsUnimodular.not_isUnimodular_smul [Nontrivial E] (h : IsUnimodular L) {
     (hc : |c| ≠ 1) : ¬ IsUnimodular (c • L) := by
   borelize E
   have := h.isIntegral.discreteTopology
-  have := h.isZLattice
+  have : IsZLattice ℝ L := ⟨h.span_eq_top⟩
   intro hu
   rcases eq_or_ne c 0 with rfl | hc0
   · -- The lattice `0 • L` is zero, and the dual of the zero lattice is the whole space.
