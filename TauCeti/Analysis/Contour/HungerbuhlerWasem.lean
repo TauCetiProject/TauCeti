@@ -71,6 +71,24 @@ public section
 
 noncomputable section
 
+namespace Finset
+
+/-- Removing from `U` the points of the finite set `S` that lie in `U` is removing all of `S`. -/
+theorem sdiff_coe_filter_mem_eq {α : Type*} (S : Finset α) (U : Set α) [DecidablePred (· ∈ U)] :
+    U \ ↑(S.filter (· ∈ U)) = U \ ↑S := by
+  ext z
+  simp only [Set.mem_sdiff, coe_filter, Set.mem_ofPred_eq, mem_coe]
+  tauto
+
+/-- If the weight `w` vanishes outside `U`, then the weighted sum over the points of `S` lying in
+`U` is the weighted sum over all of `S`. -/
+theorem sum_filter_mem_mul_eq {α R : Type*} [NonUnitalNonAssocSemiring R] (S : Finset α)
+    (U : Set α) [DecidablePred (· ∈ U)] {w r : α → R} (hw : ∀ s ∉ U, w s = 0) :
+    ∑ s ∈ S.filter (· ∈ U), w s * r s = ∑ s ∈ S, w s * r s :=
+  sum_filter_of_ne fun s _ hs ↦ by_contra fun hsU ↦ hs <| by rw [hw s hsU, zero_mul]
+
+end Finset
+
 namespace TauCeti.Contour
 
 open Filter Set Topology
@@ -157,8 +175,8 @@ theorem hungerbuhlerWasem_residueTheorem {f : ℂ → ℂ} {U : Set ℂ} (hU : I
   classical
   -- Restrict to the singularities inside `U`; the others have winding number `0`.
   have hsub : S.filter (· ∈ U) ⊆ S := Finset.filter_subset _ _
-  have hf' : DifferentiableOn ℂ f (U \ ((S.filter (· ∈ U) : Finset ℂ) : Set ℂ)) :=
-    hf.mono fun z hz ↦ ⟨hz.1, fun hzS ↦ hz.2 (Finset.mem_filter.mpr ⟨hzS, hz.1⟩)⟩
+  have hf' : DifferentiableOn ℂ f (U \ ((S.filter (· ∈ U) : Finset ℂ) : Set ℂ)) := by
+    rwa [Finset.sdiff_coe_filter_mem_eq]
   have hmero' : ∀ s ∈ S.filter (· ∈ U), MeromorphicAt f s := fun s hs ↦
     hmero s (hsub hs) (Finset.mem_filter.mp hs).2
   have h := PolarPartDecomposition.hasCauchyPV_analyticRemainder_add_residue_sum_of_conditions
@@ -168,8 +186,7 @@ theorem hungerbuhlerWasem_residueTheorem {f : ℂ → ℂ} {U : Set ℂ} (hU : I
     (hA.mono hsub) hB
   have hsum : ∑ s ∈ S.filter (· ∈ U), windingNumber γ a b s * residue f s =
       ∑ s ∈ S, windingNumber γ a b s * residue f s :=
-    Finset.sum_filter_of_ne fun s _ hs ↦ by_contra fun hsU ↦ hs <| by
-      rw [isNullHomologous_iff.mp hnull s hsU, zero_mul]
+    Finset.sum_filter_mem_mul_eq S U fun s hsU ↦ isNullHomologous_iff.mp hnull s hsU
   rwa [PolarPartDecomposition.intervalIntegral_deriv_smul_analyticRemainder_eq_zero
     (PolarPartDecomposition.ofMeromorphic hU hf' hmero') hU hγ_imm.isPiecewiseC1On hγU hclosed
     hnull, zero_add, hsum] at h
@@ -201,7 +218,7 @@ theorem hasCauchyPV_half_residue {f : ℂ → ℂ} {U : Set ℂ} (hU : IsOpen U)
 
 /-! ### The simple-pole form
 
-When every prescribed singularity is at worst a simple pole, conditions (A′) and (B) hold
+When every prescribed singularity in `U` is at worst a simple pole, conditions (A′) and (B) hold
 automatically — first-order flatness is every immersion's geometry, and the sector condition
 only constrains poles of order `> 1`. This is HW's own base regime (Thm 3.3's unconditional
 case, "`C` only contains singularities of `f` which are poles of order `1`"), and the form
@@ -257,10 +274,11 @@ theorem conditionB_of_simple_poles {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → �
       (hγU (min a b) (by rw [← Set.Icc_min_max]; exact Set.left_mem_Icc.mpr min_le_max))))⟩
 
 /-- **The generalized residue theorem for simple poles** — HW Thm 3.3's unconditional regime:
-when every prescribed singularity is at worst a simple pole
+when every prescribed singularity in `U` is at worst a simple pole
 (`meromorphicOrderAt f s ≥ -1`), conditions (A′) and (B) hold automatically, and the
 principal value is the winding-weighted residue sum with no regularity hypotheses beyond the
-immersion. The form the argument principle and the valence formula consume. -/
+immersion. A point of `S` outside `U` has winding number `0` by null-homology and contributes
+nothing. The form the argument principle and the valence formula consume. -/
 theorem hungerbuhlerWasem_residueTheorem_of_simple_poles {f : ℂ → ℂ} {U : Set ℂ}
     (hU : IsOpen U) (S : Finset ℂ) (γ : ℝ → ℂ) (a b : ℝ) (hγ_imm : IsPwC1ImmersionOn γ a b)
     (hclosed : γ a = γ b) (hγa : γ a ∉ (S : Set ℂ))

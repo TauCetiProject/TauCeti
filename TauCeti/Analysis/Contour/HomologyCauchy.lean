@@ -55,8 +55,8 @@ interval-integrable derivative, and null-homologous in `U`. If `f` is holomorphi
 `2πi · windingNumber γ a b w · f w`. (For `w ∉ U` both sides vanish.)
 
 This is the Cauchy-integral-formula output of Dixon's vanishing theorem. The point is kept as an
-explicit hypothesis: it is any point off the curve, not necessarily in `U`, and proving that such
-a point exists is a separate geometric prerequisite for the full global homology Cauchy theorem. -/
+explicit hypothesis: it is any point off the curve, not necessarily in `U`; since the trace of the
+curve is compact, such a point always exists. -/
 theorem dixonH2_eq_windingNumber_mul_f_of_nullHomologous {f : ℂ → ℂ} {U : Set ℂ}
     {γ : ℝ → ℂ} {a b : ℝ} {P : Set ℝ} {w : ℂ} (hU : IsOpen U)
     (hf : DifferentiableOn ℂ f U) (hγ_cont : ContinuousOn γ (uIcc a b))

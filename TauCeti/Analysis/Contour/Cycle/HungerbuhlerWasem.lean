@@ -146,8 +146,8 @@ theorem hungerbuhlerWasem_residueTheorem (hU : IsOpen U) (S : Finset ℂ)
   classical
   -- Restrict to the singularities inside `U`; the others have winding number `0`.
   have hsub : S.filter (· ∈ U) ⊆ S := Finset.filter_subset _ _
-  have hf' : DifferentiableOn ℂ f (U \ ((S.filter (· ∈ U) : Finset ℂ) : Set ℂ)) :=
-    hf.mono fun z hz ↦ ⟨hz.1, fun hzS ↦ hz.2 (Finset.mem_filter.mpr ⟨hzS, hz.1⟩)⟩
+  have hf' : DifferentiableOn ℂ f (U \ ((S.filter (· ∈ U) : Finset ℂ) : Set ℂ)) := by
+    rwa [Finset.sdiff_coe_filter_mem_eq]
   have hmero' : ∀ s ∈ S.filter (· ∈ U), MeromorphicAt f s := fun s hs ↦
     hmero s (hsub hs) (Finset.mem_filter.mp hs).2
   have h := hasCauchyPV_analyticRemainder_add_residue_sum
@@ -157,8 +157,7 @@ theorem hungerbuhlerWasem_residueTheorem (hU : IsOpen U) (S : Finset ℂ)
     (fun γ hγ ↦ (hA γ hγ).mono hsub) hB
   have hsum : ∑ s ∈ S.filter (· ∈ U), windingNumber s C * residue f s =
       ∑ s ∈ S, windingNumber s C * residue f s :=
-    Finset.sum_filter_of_ne fun s _ hs ↦ by_contra fun hsU ↦ hs <| by
-      rw [isNullHomologous_iff.mp hnull s hsU, zero_mul]
+    Finset.sum_filter_mem_mul_eq S U fun s hsU ↦ isNullHomologous_iff.mp hnull s hsU
   rwa [homologyCauchyTheorem hU hCU
     (PolarPartDecomposition.ofMeromorphic hU hf' hmero').analyticRemainder_differentiableOn hnull,
     zero_add, hsum] at h
