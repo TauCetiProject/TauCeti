@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.SmoothTriangulation.StarImmersion
 
+import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Edgewise.ContDiff
 import TauCeti.Geometry.Manifold.SmoothTriangulation.Lipschitz
 
 /-!
