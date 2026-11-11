@@ -45,7 +45,7 @@ invertible derivative has a density, so preimages of null sets are null.
 * `TauCeti.isWeakCauchyRiemannOn_continuousLinearEquiv_comp_iff`: transport along a real-linear
   isomorphism `A : V ≃L[ℝ] W` of the target, `u ↦ A ∘ u`, `J ↦ A J A⁻¹`, `η ↦ A η(z, A⁻¹ x)`.
 * Checks: the dilation `z ↦ 2 z` doubles the inhomogeneous term, and the rotation `z ↦ i z`
-  carries the solution `z̄` of `∂ₛu + i ∂ₜu = 2` to the solution `z ↦ conj (i z)` of
+  carries the solution `conj z` of `∂ₛu + i ∂ₜu = 2` to the solution `z ↦ conj (i z)` of
   `∂ₛu + i ∂ₜu = -2 i`, which pins the sign of the `J η` term.
 
 ## References
@@ -296,7 +296,7 @@ private theorem isWeakCauchyRiemannOn_conj_two {Ω : Opens ℂ} :
   norm_num [Complex.ext_iff]
 
 /-- **Check: rotation.** The rotation `φ z = i z` has `φ' = i`, so `a = 0`, `b = 1`, and it
-carries the solution `z̄` of `∂ₛu + i ∂ₜu = 2` to the solution `z ↦ conj (i z)` of
+carries the solution `conj z` of `∂ₛu + i ∂ₜu = 2` to the solution `z ↦ conj (i z)` of
 `∂ₛu + i ∂ₜu = -2 i`. Since the inhomogeneous term of a weak solution is determined almost
 everywhere, the opposite sign `+ b J η` in the transformed term would give `2 i` and is ruled
 out. -/
