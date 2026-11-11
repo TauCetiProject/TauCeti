@@ -126,6 +126,10 @@ with tangential component `v`, where `J` is the rotation by a right angle. -/
 def outgoingDir (s v : ℝ) : E :=
   v • deriv χ s + √(1 - v ^ 2) • o.rightAngleRotation (deriv χ s)
 
+theorem outgoingDir_def (s v : ℝ) :
+    χ.outgoingDir s v = v • deriv χ s + √(1 - v ^ 2) • o.rightAngleRotation (deriv χ s) :=
+  (rfl)
+
 @[simp]
 theorem inner_deriv_outgoingDir (s v : ℝ) : ⟪deriv χ s, χ.outgoingDir s v⟫ = v := by
   simp [outgoingDir, inner_add_right, inner_smul_right, χ.norm_deriv _]
