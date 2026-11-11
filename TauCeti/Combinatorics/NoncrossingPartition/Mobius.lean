@@ -211,7 +211,7 @@ private theorem sum_erase_top_mu_bot (hpair : {m₁, m₂} ⊆ s) (hmin₁ : ∀
     · rw [part_splitPartition_of_mem (hCx.symm ▸ hzC), hCx,
         (x.1.mem_part_iff_part_eq_part hz hm₂s).1 hzC]
     · rw [part_splitPartition_of_notMem hz (hCx.symm ▸ hzC), hCx,
-        ← x.1.part_eq_sdiff_part hm₁ hm₂s hu hne,
+        ← x.1.part_eq_sdiff_part hu hne,
         (x.1.mem_part_iff_part_eq_part hz hm₁).1
           ((mem_union.1 (hu.symm ▸ hz)).resolve_right hzC)]
   · -- The Möbius function at the split partition is a product over its two parts.

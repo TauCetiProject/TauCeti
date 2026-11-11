@@ -87,7 +87,7 @@ coefficient rings here may have nilpotents.
   sums.
 * `PowerSeries.commute_evalScalar`: an element commuting with the coefficients of a series
   commutes with its value at a scalar.
-* `PowerSeries.norm_evalScalar_le`: in an ultrametric ring, a uniform bound `c ≥ 0` on
+* `PowerSeries.norm_evalScalar_le`: in an ultrametric ring, a uniform bound `c` on
   `‖a‖ ^ n * ‖Fₙ‖` bounds `‖F(a)‖`.
 -/
 
@@ -396,13 +396,13 @@ theorem norm_evalAt_le_mul_gaussNorm {r q : ℝ} (hf : f.HasGaussNorm norm r) (h
         gcongr
         nlinarith [norm_nonneg (1 : A)]
 
-/-- In an ultrametric normed ring, if `c ≥ 0` bounds `‖a‖ ^ n * ‖Fₙ‖` for every `n`, then it
+/-- In an ultrametric normed ring, if `c` bounds `‖a‖ ^ n * ‖Fₙ‖` for every `n`, then it
 bounds the value at the scalar `a` of the series `F = ∑ Fₙ Xⁿ`. This needs no convergence: the
 junk value `0` satisfies the bound too. -/
 theorem norm_evalScalar_le {R A : Type*} [SeminormedRing R] [NormedRing A] [Module R A]
-    [IsBoundedSMul R A] [IsUltrametricDist A] {F : A⟦X⟧} {a : R} {c : ℝ} (hc : 0 ≤ c)
+    [IsBoundedSMul R A] [IsUltrametricDist A] {F : A⟦X⟧} {a : R} {c : ℝ}
     (h : ∀ n, ‖a‖ ^ n * ‖coeff n F‖ ≤ c) : ‖F.evalScalar a‖ ≤ c := by
-  refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg hc fun n ↦ ?_
+  refine IsUltrametricDist.norm_tsum_le_of_forall_le fun n ↦ ?_
   -- `‖aⁿ‖ ≤ ‖a‖ⁿ` only holds for `n ≥ 1`, so the term of index `0` is treated separately
   cases n with
   | zero => simpa using h 0

@@ -30,6 +30,8 @@ statements are what the elliptic conjugacy classes of `GL₂(𝔽_q)` are read o
   involution. `TauCeti.FiniteField.pow_natCard_ne` and
   `TauCeti.FiniteField.pow_natCard_notMem_range_algebraMap` say that an element outside `K` is
   moved by the map and stays outside `K`; neither needs the quadratic hypothesis.
+* `TauCeti.FiniteField.pow_card_eq_neg_sub_of_not_exists_root`: the `q`-power map exchanges the two
+  roots of a monic quadratic over `K` that has no root in `K`.
 * `TauCeti.FiniteField.units_map_algebraMap_pow_natCard` and
   `TauCeti.FiniteField.units_pow_natCard_pow_natCard`: the fixed-point and involution statements
   as equalities of units, the form in which a character of `Lˣ` consumes them, with
@@ -129,9 +131,15 @@ theorem pow_natCard_notMem_range_algebraMap {a : L}
     exact iterateFrobenius_inj L p n
   exact ha ((pow_natCard_eq_self_iff_mem_range_algebraMap a).mp (hinj h1))
 
-/-- **An element outside the base field is not fixed by the `q`-power map.** -/
-theorem pow_natCard_ne {a : L} (ha : a ∉ Set.range (algebraMap K L)) : a ^ Nat.card K ≠ a :=
-  fun h => ha ((pow_natCard_eq_self_iff_mem_range_algebraMap a).mp h)
+omit [Finite K] in
+/-- **An element outside the base field is not fixed by the `q`-power map.** (For an infinite base
+field `Nat.card K = 0`, and `a ^ 0 = 1` lies in the base field.) -/
+theorem pow_natCard_ne {a : L} (ha : a ∉ Set.range (algebraMap K L)) : a ^ Nat.card K ≠ a := by
+  by_cases hK : Finite K
+  · exact fun h => ha ((pow_natCard_eq_self_iff_mem_range_algebraMap a).mp h)
+  · rw [not_finite_iff_infinite] at hK
+    rw [Nat.card_eq_zero_of_infinite, pow_zero]
+    exact fun h => ha ⟨1, by rw [map_one, h]⟩
 
 omit [IsDomain L] in
 /-- **A unit of the base field is fixed by the `q`-power map**, as an equality in `Lˣ`. -/
@@ -205,6 +213,34 @@ theorem _root_.AlgHom.frobeniusAlgHom_comm {K L Ω : Type*} [Field K] [Fintype K
       (_root_.FiniteField.frobeniusAlgHom K Ω).comp σ := by
   ext x
   simp [_root_.FiniteField.coe_frobeniusAlgHom]
+
+/-- **The `q`-power map exchanges the two roots of a monic quadratic over `K` without a root in
+`K`.** If `t ^ 2 + b * t + c` has no root in the field `K` with `q` elements, then every root `α`
+of it in an extension `L` of `K` satisfies `α ^ q = -b - α`, the other root. -/
+theorem pow_card_eq_neg_sub_of_not_exists_root {K L : Type*} [Field K] [Fintype K]
+    [CommRing L] [IsDomain L] [Algebra K L] {b c : K}
+    (hno : ¬ ∃ t : K, t ^ 2 + b * t + c = 0) {α : L}
+    (hα : α ^ 2 + algebraMap K L b * α + algebraMap K L c = 0) :
+    α ^ Fintype.card K = -algebraMap K L b - α := by
+  -- `α` does not come from `K`, since the quadratic has no root there
+  have hαK : α ∉ Set.range (algebraMap K L) := by
+    rintro ⟨t, rfl⟩
+    refine hno ⟨t, (algebraMap K L).injective ?_⟩
+    simp only [_root_.map_add, _root_.map_mul, _root_.map_pow, _root_.map_zero]
+    exact hα
+  -- `α ^ q` is again a root, being the image of `α` under the `q`-power ring endomorphism
+  have hroot : (α ^ Fintype.card K) ^ 2 + algebraMap K L b * α ^ Fintype.card K +
+      algebraMap K L c = 0 := by
+    have hfix (t : K) : (algebraMap K L t) ^ Fintype.card K = algebraMap K L t := by
+      rw [← map_pow, _root_.FiniteField.pow_card]
+    have := congrArg (_root_.FiniteField.frobeniusAlgHom K L) hα
+    rw [_root_.map_add, _root_.map_add, _root_.map_pow, _root_.map_mul, _root_.map_zero] at this
+    simpa only [_root_.FiniteField.frobeniusAlgHom_apply, hfix] using this
+  have hne : α ^ Fintype.card K - α ≠ 0 := sub_ne_zero.2 fun h' ↦
+    hαK ((pow_card_eq_self_iff_mem_range_algebraMap α).1 h')
+  have : (α ^ Fintype.card K - α) * (α ^ Fintype.card K - (-algebraMap K L b - α)) = 0 := by
+    linear_combination hroot - hα
+  exact sub_eq_zero.1 ((mul_eq_zero.1 this).resolve_left hne)
 
 end FiniteField
 

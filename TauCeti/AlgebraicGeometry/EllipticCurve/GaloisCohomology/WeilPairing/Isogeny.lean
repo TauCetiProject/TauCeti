@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Torsion
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Basic
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Cohomology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Duality.Basic
 
 import TauCeti.Algebra.Module.ZMod.Dual
@@ -276,6 +276,15 @@ def kerCoeffWeilDual : (ofIsogeny φ.dual).KerCoeff →+[AbsoluteGaloisGroup K]
 theorem toAddMonoidHom_kerCoeffWeilDual (Q : (ofIsogeny φ.dual).KerCoeff) :
     (φ.kerCoeffWeilDual hn Q).toAddMonoidHom = (φ.kerCoeffWeilPairing hn).flip Q := (rfl)
 
+/-- The Weil dual of the projection `E₁[n] → E₂[φ̂]` is restriction of characters along
+`E₁[φ] → E₁[n]`. -/
+theorem kerCoeffWeilDual_comp_torsionCoeffToDualKerCoeff :
+    (φ.kerCoeffWeilDual hn).comp φ.torsionCoeffToDualKerCoeff =
+      (InternalHom.precomp (AbsoluteGaloisGroup K) φ.kerCoeffToTorsionCoeff).comp
+        (W₁.torsionCoeffWeilDual φ.degree hn) := by
+  ext R P
+  simp [InternalHom.toAddMonoidHom_precomp]
+
 /-- **Duality of the kernels of an isogeny and of its dual as Galois modules**: every character
 `E₁(Kˢ)[φ] → μ_n` is `P ↦ e_φ(P, Q)` for a unique `Q ∈ E₂(Kˢ)[φ̂]`. -/
 theorem kerCoeffWeilDual_bijective : Function.Bijective (φ.kerCoeffWeilDual hn) := by
@@ -336,6 +345,40 @@ theorem kerH1WeilPairing_eq_explicitCup11
       InternalHom.evalPairing_apply, toAddMonoidHom_kerCoeffWeilDual]) a b
   simpa only [explicitCoeff2_id, explicitCoeff1_id, AddMonoidHom.id_apply,
     kerH1WeilPairing_eq_dualityMap1, dualityMap1_eq_explicitCup11] using h.symm
+
+private theorem explicitCoeff1_kerCoeffWeilDual_torsionCoeffToDualKerCoeff
+    (b : H1 (AbsoluteGaloisGroup K) (W₁.TorsionCoeff φ.degree)) :
+    explicitCoeff1 _ _ (φ.kerCoeffWeilDual hn) continuous_of_discreteTopology
+        (explicitCoeff1 _ _ φ.torsionCoeffToDualKerCoeff continuous_of_discreteTopology b) =
+      explicitCoeff1 _ _ (InternalHom.precomp (AbsoluteGaloisGroup K)
+        φ.kerCoeffToTorsionCoeff) continuous_of_discreteTopology
+        (explicitCoeff1 _ _ (W₁.torsionCoeffWeilDual φ.degree hn)
+          continuous_of_discreteTopology b) := by
+  have h := congrArg (fun f ↦ explicitCoeff1 _ _ f continuous_of_discreteTopology b)
+    (φ.kerCoeffWeilDual_comp_torsionCoeffToDualKerCoeff hn)
+  rw [explicitCoeff1_comp _ _ φ.torsionCoeffToDualKerCoeff (φ.kerCoeffWeilDual hn)
+      continuous_of_discreteTopology continuous_of_discreteTopology,
+    explicitCoeff1_comp _ _ (W₁.torsionCoeffWeilDual φ.degree hn)
+      (InternalHom.precomp (AbsoluteGaloisGroup K) φ.kerCoeffToTorsionCoeff)
+      continuous_of_discreteTopology continuous_of_discreteTopology,
+    AddMonoidHom.comp_apply, AddMonoidHom.comp_apply] at h
+  exact h
+
+/-- The isogeny Weil cup product with a class projected from degree-torsion is the
+multiplication Weil cup product with the first class included into degree-torsion. -/
+theorem kerH1WeilPairing_explicitCoeff1_torsionCoeffToDualKerCoeff
+    (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff)
+    (b : H1 (AbsoluteGaloisGroup K) (W₁.TorsionCoeff φ.degree)) :
+    φ.kerH1WeilPairing hn a
+        (explicitCoeff1 _ _ φ.torsionCoeffToDualKerCoeff continuous_of_discreteTopology b) =
+      W₁.torsionH1WeilPairing φ.degree hn
+        (explicitCoeff1 _ _ φ.kerCoeffToTorsionCoeff continuous_of_discreteTopology a) b := by
+  have := hn.neZero_natCast
+  rw [kerH1WeilPairing_eq_dualityMap1, torsionH1WeilPairing_eq_dualityMap1,
+    dualityMap1_explicitCoeff1]
+  exact congrArg (dualityMap1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff
+    (KummerCoeff K φ.degree) a)
+    (φ.explicitCoeff1_kerCoeffWeilDual_torsionCoeffToDualKerCoeff hn b)
 
 end TauCeti.Isogeny
 

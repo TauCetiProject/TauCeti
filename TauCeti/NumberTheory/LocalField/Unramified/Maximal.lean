@@ -314,7 +314,7 @@ theorem _root_.IntermediateField.le_maximalUnramifiedExtension_iff (E : Intermed
   let _ := finiteIntermediateFieldTopology K Ω L
   have := finiteIntermediateField_isNonarchimedeanLocalField K Ω L
   have := finiteIntermediateField_valuativeExtension K Ω L
-  have : IsUnramified K L := isUnramified_unramifiedExtension hf
+  have : IsUnramified K L := isUnramified_unramifiedExtension
   let ι : E →ₐ[K] L := inclusion hle
   let _ := ι.toAlgebra
   have : IsScalarTower K E L := .of_algebraMap_eq fun x ↦ (ι.commutes x).symm
@@ -332,7 +332,7 @@ private def frobeniusFactorial (n : ℕ) : unramifiedExtension K Ω n.factorial 
     (unramifiedExtension K Ω n.factorial)
   haveI := finiteIntermediateField_valuativeExtension K Ω (unramifiedExtension K Ω n.factorial)
   haveI : IsUnramified K (unramifiedExtension K Ω n.factorial) :=
-    isUnramified_unramifiedExtension n.factorial_ne_zero
+    isUnramified_unramifiedExtension
   (unramifiedExtension K Ω n.factorial).val.comp (frobeniusAlgEquiv (K := K)).toAlgHom
 
 private theorem frobeniusFactorial_apply {n g : ℕ} (hg : g ≠ 0)
@@ -343,7 +343,7 @@ private theorem frobeniusFactorial_apply {n g : ℕ} (hg : g ≠ 0)
   let _ := finiteIntermediateFieldTopology K Ω L
   have := finiteIntermediateField_isNonarchimedeanLocalField K Ω L
   have := finiteIntermediateField_valuativeExtension K Ω L
-  have : IsUnramified K L := isUnramified_unramifiedExtension n.factorial_ne_zero
+  have : IsUnramified K L := isUnramified_unramifiedExtension
   have h := frobeniusAlgEquiv_apply_of_pow_natCard_pow_eq_self (K := K) (L := L) hg
     (x := x) (Subtype.ext (by rw [SubmonoidClass.coe_pow, hx]))
   exact (congrArg Subtype.val h).trans (SubmonoidClass.coe_pow x _)
@@ -506,7 +506,7 @@ theorem fixedField_zpowers_maximalUnramifiedFrobenius :
   let _ := finiteIntermediateFieldTopology K Ω L
   have := finiteIntermediateField_isNonarchimedeanLocalField K Ω L
   have := finiteIntermediateField_valuativeExtension K Ω L
-  have : IsUnramified K L := isUnramified_unramifiedExtension hf
+  have : IsUnramified K L := isUnramified_unramifiedExtension
   -- The Frobenius of `K_f` fixes `y`, hence so does all of `Gal(K_f/K)`, so `y ∈ K`.
   have hσ : frobeniusAlgEquiv (K := K) (L := L) ⟨y, hyf⟩ = ⟨y, hyf⟩ := by
     refine Subtype.ext ?_
@@ -536,16 +536,16 @@ theorem topologicalClosure_zpowers_maximalUnramifiedFrobenius :
 variable {K Ω} in
 /-- **A uniformizer stays a uniformizer in `K_f`**, so it has no nontrivial root there: for a
 uniformizer `π` of `K` and `m ≠ 0`, the polynomial `X ^ m − π` is irreducible over the unramified
-extension `K_f` of each degree `f ≠ 0`. -/
+extension `K_f` of each degree `f`. -/
 theorem X_pow_sub_C_irreducible_unramifiedExtension {π : Kˣ} (hπ : IsUniformizer K π) {m : ℕ}
-    (hm : m ≠ 0) {f : ℕ} (hf : f ≠ 0) :
+    (hm : m ≠ 0) {f : ℕ} :
     Irreducible (X ^ m - C (algebraMap K (unramifiedExtension K Ω f) π)) := by
   let L := unramifiedExtension K Ω f
   let _ := finiteIntermediateFieldValuativeRel K Ω L
   let _ := finiteIntermediateFieldTopology K Ω L
   have := finiteIntermediateField_isNonarchimedeanLocalField K Ω L
   have := finiteIntermediateField_valuativeExtension K Ω L
-  have : IsUnramified K L := isUnramified_unramifiedExtension hf
+  have : IsUnramified K L := isUnramified_unramifiedExtension
   obtain ⟨ϖ, hϖ, hϖπ⟩ := (isUniformizer_iff_exists_irreducible K π).1 hπ
   have h := X_pow_sub_C_irreducible_of_irreducible (K := L)
     (IsUnramified.irreducible_algebraMap (K := K) (L := L) hϖ) hm
@@ -602,7 +602,7 @@ theorem X_pow_sub_C_irreducible_maximalUnramifiedExtension {π : Kˣ} (hπ : IsU
     -- `algebraMap E Ω ∘ ι` is `algebraMap L Ω`: both are the inclusions into `Ω`.
     rwa [← hqg, aeval_def, eval₂_map] at h
   -- Over `L` the minimal polynomial of `α` is `X ^ m − π`, which divides `q`.
-  have hirrL := X_pow_sub_C_irreducible_unramifiedExtension (Ω := Ω) hπ hm hN
+  have hirrL := X_pow_sub_C_irreducible_unramifiedExtension (Ω := Ω) (f := N) hπ hm
   have hrootL : aeval α (X ^ m - C (algebraMap K L π)) = 0 := by simp [hα]
   have hmin : minpoly L α = X ^ m - C (algebraMap K L π) :=
     (minpoly.eq_of_irreducible_of_monic hirrL hrootL (monic_X_pow_sub_C _ hm)).symm

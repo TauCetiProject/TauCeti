@@ -9,6 +9,7 @@ public import Mathlib.Topology.CWComplex.Classical.Finite
 public import TauCeti.AlgebraicTopology.Disk
 public import TauCeti.Topology.CWComplex.Classical.Pushout
 public import TauCeti.Topology.CWComplex.Classical.Sigma
+import TauCeti.Topology.Homotopy.Sigma
 
 /-!
 # The disk relative to its boundary sphere, and disjoint unions of disks
@@ -55,6 +56,10 @@ critical point of a critical level, of dimension its index.
 * `TauCeti.diskRelCWComplex_map_apply` and `TauCeti.sigmaDiskRelCWComplex_map_apply`: the
   characteristic maps.
 * `TauCeti.finite_diskRelCWComplex`: the disk is a finite relative CW complex.
+* `TauCeti.exists_map_sigmaDiskRelCWComplex_eq`: the characteristic map of an `m`-cell of the
+  disjoint union of disks maps the boundary sphere into the boundary of an `m`-disk.
+* `TauCeti.homotopic_sigmaDiskAttachingMap`: homotopic attaching maps combine to homotopic
+  attaching maps of the disjoint union.
 * `TauCeti.sigmaDiskAdjunctionSpaceCellEquiv`: gluing the disjoint union of disks to a space along
   a family of attaching maps attaches one `n i`-cell for each `i`.
 
@@ -254,6 +259,28 @@ theorem sigmaDiskRelCWComplex_map_apply (i : ι) (x : closedBall (0 : Fin (n i) 
   rw [sigmaDiskRelCWComplexCell, RelCWComplex.coe_map_sigma, Function.comp_apply,
     diskRelCWComplex_map_apply]
 
+variable {n} in
+/-- On its boundary sphere, the characteristic map of an `m`-cell of the disjoint union of disks
+lands on the boundary sphere of a disk of dimension `m`. -/
+theorem exists_map_sigmaDiskRelCWComplex_eq {m : ℕ}
+    (j : letI := sigmaDiskRelCWComplex n
+      cell (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i)))) m)
+    {x : Fin m → ℝ} (hx : x ∈ sphere 0 1) :
+    letI := sigmaDiskRelCWComplex n
+    ∃ s : Σ i, TopCat.diskBoundary.{u} (n i), n s.1 = m ∧
+      map m j x = ⟨s.1, TopCat.diskBoundaryInclusion (n s.1) s.2⟩ := by
+  let := sigmaDiskRelCWComplex n
+  obtain ⟨⟨i, rfl⟩, rfl⟩ : ∃ p, (sigmaDiskRelCWComplexCellEquiv n m).symm p = j :=
+    ⟨_, Equiv.symm_apply_apply _ j⟩
+  have hcell : (sigmaDiskRelCWComplexCellEquiv n (n i)).symm ⟨i, rfl⟩ =
+      sigmaDiskRelCWComplexCell n i :=
+    (Equiv.symm_apply_eq _).2 (sigmaDiskRelCWComplexCellEquiv_cell n i).symm
+  have hmap := sigmaDiskRelCWComplex_map_apply n i ⟨x, sphere_subset_closedBall hx⟩
+  obtain ⟨z, hz⟩ := (norm_diskHomeomorphClosedBall_eq_one_iff
+    ((diskHomeomorphClosedBall (n i)).symm ⟨x, sphere_subset_closedBall hx⟩)).1
+      (by simpa using hx)
+  exact ⟨⟨i, z⟩, rfl, by rw [hcell, hmap, hz]⟩
+
 /-- The inclusion of the disjoint union of the boundary spheres into the disjoint union of the
 disks. -/
 private def sigmaDiskBoundaryInclusion (s : Σ i, TopCat.diskBoundary.{u} (n i)) :
@@ -301,6 +328,19 @@ theorem sigmaDiskAttachingMap_apply (a : ∀ i, C(TopCat.diskBoundary.{u} (n i),
     sigmaDiskAttachingMap a ((sigmaDiskBoundaryHomeomorph n).symm ⟨i, s⟩) = a i s := by
   simp [sigmaDiskAttachingMap]
 
+/-- Following the attaching maps `a i` by a map `f` follows their combined attaching map by `f`. -/
+theorem _root_.ContinuousMap.sigmaDiskAttachingMap_comp {Z' : Type*} [TopologicalSpace Z']
+    (f : C(Z, Z')) (a : ∀ i, C(TopCat.diskBoundary.{u} (n i), Z)) :
+    sigmaDiskAttachingMap (fun i ↦ f.comp (a i)) = f.comp (sigmaDiskAttachingMap a) :=
+  (rfl)
+
+/-- Attaching maps `a i` and `a' i` that are homotopic for each `i` combine to homotopic attaching
+maps of the disjoint union of disks. -/
+theorem homotopic_sigmaDiskAttachingMap {a a' : ∀ i, C(TopCat.diskBoundary.{u} (n i), Z)}
+    (h : ∀ i, (a i).Homotopic (a' i)) :
+    (sigmaDiskAttachingMap a).Homotopic (sigmaDiskAttachingMap a') :=
+  (ContinuousMap.Homotopic.sigma h).comp (.refl _)
+
 /-- **Attaching cells along a family of maps.** Gluing the disjoint union of the disks
 `TopCat.disk (n i)` to a space `Y` along `TauCeti.sigmaDiskAttachingMap b` gives a relative CW
 complex over `Y` (`TauCeti.relativeCWPushout`) whose `m`-cells are the indices `i` with
@@ -315,6 +355,19 @@ def sigmaDiskAdjunctionSpaceCellEquiv {Y : Type u} [TopologicalSpace Y]
         {i // n i = m} :=
   letI := sigmaDiskRelCWComplex n
   (relativeCWPushoutCellEquiv _ _ m).trans (sigmaDiskRelCWComplexCellEquiv n m)
+
+/-- The cell of `Y ∪_b ⨆ᵢ Dⁿⁱ` with index `i` is the cell of the `i`-th disk. -/
+theorem sigmaDiskAdjunctionSpaceCellEquiv_symm_mk {Y : Type u} [TopologicalSpace Y]
+    (b : ∀ i, C(TopCat.diskBoundary.{u} (n i), Y)) (i : ι) :
+    letI := sigmaDiskRelCWComplex n
+    letI := relativeCWPushout (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i))))
+      (sigmaDiskAttachingMap b)
+    (sigmaDiskAdjunctionSpaceCellEquiv b (n i)).symm ⟨i, rfl⟩ =
+      (relativeCWPushoutCellEquiv _ (sigmaDiskAttachingMap b) (n i)).symm
+        (sigmaDiskRelCWComplexCell n i) := by
+  let := sigmaDiskRelCWComplex n
+  rw [Equiv.symm_apply_eq, sigmaDiskAdjunctionSpaceCellEquiv, Equiv.trans_apply,
+    Equiv.apply_symm_apply, sigmaDiskRelCWComplexCellEquiv_cell]
 
 end Sigma
 

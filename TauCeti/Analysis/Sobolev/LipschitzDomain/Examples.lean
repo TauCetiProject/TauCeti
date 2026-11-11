@@ -14,7 +14,7 @@ public import Mathlib.Analysis.Real.Sqrt
 # Planar examples and non-examples of Lipschitz domains
 
 The open unit square `(0, 1)²` is a Lipschitz domain with constant `1`. Along the open edges a
-translated and rotated chart `TauCeti.prodL2RotationChart` has the flat graph `0`; at a corner
+translated and rotated chart `TauCeti.prodRecentredRotation` has the flat graph `0`; at a corner
 the rotation by `π / 4` turns the quarter-plane into the region above `γ s = |s|`, which is
 `1`-Lipschitz.
 
@@ -90,7 +90,7 @@ theorem isLipschitzChartWith_openUnitSquare_of (c : WithLp 2 (ℝ × ℝ)) {α �
     (hφ : LipschitzWith 1 φ)
     (hmem : ∀ u v : ℝ, |u| < a → |v| < b →
       ((c.fst + (α * u - β * v) ∈ Ioo 0 1 ∧ c.snd + (β * u + α * v) ∈ Ioo 0 1) ↔ φ v < u)) :
-    openUnitSquare.IsLipschitzChartWith 1 (prodL2RotationChart c α β hαβ) φ a b := by
+    openUnitSquare.IsLipschitzChartWith 1 (prodRecentredRotation α β hαβ c) φ a b := by
   refine (Set.isLipschitzChartWith_iff ..).2 ⟨ha, hb, hφ0, hφ, fun z hz => ?_⟩
   rw [mem_normalCylinder, Real.norm_eq_abs] at hz
   simpa using hmem z.fst z.snd (abs_lt.2 ⟨hz.1, hz.2.1⟩) hz.2.2
@@ -121,7 +121,7 @@ theorem inv_sqrt_two_sq_add_inv_sqrt_two_sq : ((√2)⁻¹ : ℝ) ^ 2 + ((√2)�
 graph `|s|` and constant `1`. -/
 theorem isLipschitzChartWith_openUnitSquare_zero :
     openUnitSquare.IsLipschitzChartWith 1
-      (prodL2RotationChart 0 (√2)⁻¹ (√2)⁻¹ inv_sqrt_two_sq_add_inv_sqrt_two_sq)
+      (prodRecentredRotation (√2)⁻¹ (√2)⁻¹ inv_sqrt_two_sq_add_inv_sqrt_two_sq 0)
       (fun s => |s|) (1 / 2) (1 / 2) := by
   refine isLipschitzChartWith_openUnitSquare_of 0 _ (by norm_num) (by norm_num) abs_zero
     (lipschitzWith_one_norm (E := ℝ)) fun u v hu hv => ?_
@@ -141,10 +141,10 @@ theorem isLipschitzDomainWith_openUnitSquare :
   have hk' : ((√2)⁻¹ : ℝ) ^ 2 + (-(√2)⁻¹ : ℝ) ^ 2 = 1 := by rw [neg_sq]; exact hk0
   have hk'' : (-(√2)⁻¹ : ℝ) ^ 2 + (-(√2)⁻¹ : ℝ) ^ 2 = 1 := by rw [neg_sq]; exact hk0
   suffices ∃ (α β : ℝ) (hαβ : α ^ 2 + β ^ 2 = 1) (φ : ℝ → ℝ) (a b : ℝ),
-      openUnitSquare.IsLipschitzChartWith 1 (prodL2RotationChart x α β hαβ) φ a b by
+      openUnitSquare.IsLipschitzChartWith 1 (prodRecentredRotation α β hαβ x) φ a b by
     obtain ⟨α, β, hαβ, φ, a, b, hc⟩ := this
     exact (Set.isLipschitzDomainAtWith_iff ..).2
-      ⟨_, φ, a, b, prodL2RotationChart_apply_self x α β hαβ, hc⟩
+      ⟨_, φ, a, b, prodRecentredRotation_apply_self α β hαβ x, hc⟩
   have h01 : ∀ {w : ℝ}, 0 ≤ w → w ≤ 1 → w ∉ Ioo 0 1 → w = 0 ∨ w = 1 := by
     intro w hw0 hw1 hw
     by_contra! H

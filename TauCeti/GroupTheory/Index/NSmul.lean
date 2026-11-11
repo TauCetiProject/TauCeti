@@ -37,9 +37,12 @@ as a `ℤ`-module: `AddSubgroup.index_range_nsmul` gives `n ^ finrank ℤ M`. Th
   cross-multiplied form is asserted: nothing here forces `G[n]` finite or the indices nonzero, and
   `Nat.card` and `Subgroup.index` are both `0` on infinite arguments, so neither ratio need be
   defined.
-* `AddEquiv.map_ker_nsmulAddMonoidHom` and `AddEquiv.index_range_nsmulAddMonoidHom`: an additive
-  equivalence carries `G[n]` to `H[n]` and preserves the index of `n • G`. The first is the kernel
-  counterpart of Mathlib's `AddEquiv.map_range_nsmulAddMonoidHom`.
+* `MulEquiv.map_ker_powMonoidHom`, `MulEquiv.card_ker_powMonoidHom` and
+  `MulEquiv.index_range_powMonoidHom`, with their additive forms
+  `AddEquiv.map_ker_nsmulAddMonoidHom`, `AddEquiv.card_ker_nsmulAddMonoidHom` and
+  `AddEquiv.index_range_nsmulAddMonoidHom`: an equivalence carries `G[n]` onto `H[n]`, so preserves
+  its cardinality, and preserves the index of `Gⁿ`. The first is the kernel counterpart of
+  Mathlib's `MulEquiv.map_range_powMonoidHom`.
 
 The exact count, not merely finiteness of the index, is what turns an index computation into a rank
 computation: solved for the rank, `(G : nG) = n ^ finrank ℤ G * Nat.card G[n]` converts a bound on
@@ -143,38 +146,17 @@ theorem index_range_pow_mul_card_ker (U : Subgroup G) [U.FiniteIndex] (n : ℕ) 
 
 end Subgroup
 
-namespace AddEquiv
-
-variable {M N : Type*} [AddCommGroup M] [AddCommGroup N]
-
-/-- An additive equivalence maps `M[n]` to `N[n]`. This is the kernel counterpart of Mathlib's
-`AddEquiv.map_range_nsmulAddMonoidHom`. -/
--- Adapted from `AddEquiv.map_ker_nsmulAddMonoidHom` in Michael Stoll's `EllipticCurves`
--- (`EllipticCurves/Mathlib/SelmerGroup.lean`, pin `66889eada51a`).
-lemma map_ker_nsmulAddMonoidHom (e : M ≃+ N) (n : ℕ) :
-    ((nsmulAddMonoidHom (α := M) n).ker).map e.toAddMonoidHom =
-      (nsmulAddMonoidHom (α := N) n).ker := by
-  ext x
-  rw [AddSubgroup.mem_map_equiv]
-  simp only [AddMonoidHom.mem_ker, nsmulAddMonoidHom_apply]
-  rw [← map_nsmul, EmbeddingLike.map_eq_zero_iff]
-
-/-- The index of `n • M` is invariant under additive equivalence. -/
--- Adapted from `AddEquiv.index_range_nsmulAddMonoidHom` in Michael Stoll's `EllipticCurves`
--- (`EllipticCurves/Mathlib/SelmerGroup.lean`, pin `66889eada51a`).
-lemma index_range_nsmulAddMonoidHom (e : M ≃+ N) (n : ℕ) :
-    (nsmulAddMonoidHom (α := M) n).range.index = (nsmulAddMonoidHom (α := N) n).range.index := by
-  simpa [AddEquiv.map_range_nsmulAddMonoidHom]
-    using (AddSubgroup.index_map_equiv (nsmulAddMonoidHom (α := M) n).range e).symm
-
-end AddEquiv
-
 namespace MulEquiv
 
 variable {G H : Type*} [CommGroup G] [CommGroup H]
 
-/-- A multiplicative equivalence maps the kernel of the `n`-th power map on `G` onto that on `H`.
-This is the multiplicative form of `AddEquiv.map_ker_nsmulAddMonoidHom`. -/
+/-- A multiplicative equivalence maps `G[n]`, the kernel of the `n`-th power map on `G`, onto
+`H[n]`. This is the kernel counterpart of Mathlib's `MulEquiv.map_range_powMonoidHom`. -/
+-- The additive form is adapted from `AddEquiv.map_ker_nsmulAddMonoidHom` in Michael Stoll's
+-- `EllipticCurves` (`EllipticCurves/Mathlib/SelmerGroup.lean`, pin `66889eada51a`).
+@[to_additive /-- An additive equivalence maps `G[n]`, the kernel of multiplication by `n` on
+`G`, onto `H[n]`. This is the kernel counterpart of Mathlib's
+`AddEquiv.map_range_nsmulAddMonoidHom`. -/]
 lemma map_ker_powMonoidHom (e : G ≃* H) (n : ℕ) :
     ((powMonoidHom n : G →* G).ker).map e.toMonoidHom = (powMonoidHom n : H →* H).ker := by
   ext x
@@ -184,12 +166,17 @@ lemma map_ker_powMonoidHom (e : G ≃* H) (n : ℕ) :
 
 /-- The number of `n`-th roots of unity is invariant under multiplicative equivalence: the
 kernels of the `n`-th power maps on `G` and `H` have the same cardinality. -/
+@[to_additive /-- The size of the `n`-torsion is invariant under additive equivalence: the
+kernels of multiplication by `n` on `G` and `H` have the same cardinality. -/]
 theorem card_ker_powMonoidHom (e : G ≃* H) (n : ℕ) :
     Nat.card (powMonoidHom n : G →* G).ker = Nat.card (powMonoidHom n : H →* H).ker := by
   rw [← e.map_ker_powMonoidHom n]
   exact Nat.card_congr (Subgroup.equivMapOfInjective _ e.toMonoidHom e.injective).toEquiv
 
 /-- The index of the `n`-th powers is invariant under multiplicative equivalence. -/
+-- The additive form is adapted from `AddEquiv.index_range_nsmulAddMonoidHom` in Michael Stoll's
+-- `EllipticCurves` (`EllipticCurves/Mathlib/SelmerGroup.lean`, pin `66889eada51a`).
+@[to_additive /-- The index of `n • G` is invariant under additive equivalence. -/]
 theorem index_range_powMonoidHom (e : G ≃* H) (n : ℕ) :
     (powMonoidHom n : G →* G).range.index = (powMonoidHom n : H →* H).range.index := by
   rw [← e.map_range_powMonoidHom n, Subgroup.index_map_equiv]
@@ -236,8 +223,8 @@ theorem index_range_nsmul_of_fg (G : Type*) [AddCommGroup G] [AddGroup.FG G] (n 
       = (nsmulAddMonoidHom (α := (Fin r →₀ ℤ) × ⨁ i, ZMod (p i ^ e i)) n).range.index :=
     AddEquiv.index_range_nsmulAddMonoidHom eqv n
   have hker : Nat.card (nsmulAddMonoidHom (α := G) n).ker
-      = Nat.card (nsmulAddMonoidHom (α := (Fin r →₀ ℤ) × ⨁ i, ZMod (p i ^ e i)) n).ker := by
-    rw [← eqv.map_ker_nsmulAddMonoidHom n, card_map_of_injective eqv.injective]
+      = Nat.card (nsmulAddMonoidHom (α := (Fin r →₀ ℤ) × ⨁ i, ZMod (p i ^ e i)) n).ker :=
+    eqv.card_ker_nsmulAddMonoidHom n
   have hrk : finrank ℤ G = r := by
     have h1 : Module.rank ℤ ((Fin r →₀ ℤ) × ⨁ i, ZMod (p i ^ e i)) = r := by
       set π := LinearMap.fst ℤ (Fin r →₀ ℤ) (⨁ i, ZMod (p i ^ e i))

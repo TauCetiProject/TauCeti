@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.LevelSet
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
@@ -141,7 +142,6 @@ theorem legendreF_integrand_le {k : ℝ} (hk : k ^ 2 < 1) (θ : ℝ) :
 theorem legendreF_integrand_eq_inv_sqrt (k θ : ℝ) :
     (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ) = (√(1 - k ^ 2 * sin θ ^ 2))⁻¹ := by
   rw [inv_sqrt_eq_rpow]
-  norm_num
 
 theorem intervalIntegrable_legendreF_integrand {k : ℝ} (hk : k ^ 2 < 1) (a b : ℝ) :
     IntervalIntegrable (fun θ ↦ (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ)) volume a b :=
@@ -201,7 +201,6 @@ theorem inv_max_le_legendrePi_integrand {k α2 : ℝ} (hk : k ^ 2 < 1) (hα : α
     (max 1 (1 - α2))⁻¹ ≤ (1 - α2 * sin θ ^ 2)⁻¹ * (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ) := by
   have hpos := one_sub_mul_sin_sq_pos hα θ
   have hle : 1 - α2 * sin θ ^ 2 ≤ max 1 (1 - α2) := by
-    have h₀ := sq_nonneg (sin θ)
     have h₁ := sin_sq_le_one θ
     rcases le_or_gt α2 0 with h | h
     · exact le_max_of_le_right (by nlinarith)
@@ -220,7 +219,6 @@ theorem legendrePi_integrand_le {k α2 : ℝ} (hk : k ^ 2 < 1) (hα : α2 < 1) (
       (min 1 (1 - α2))⁻¹ * (1 - k ^ 2) ^ (-1 / 2 : ℝ) := by
   have hmin : 0 < min 1 (1 - α2) := lt_min one_pos (by linarith)
   have hle : min 1 (1 - α2) ≤ 1 - α2 * sin θ ^ 2 := by
-    have h₀ := sq_nonneg (sin θ)
     have h₁ := sin_sq_le_one θ
     rcases le_or_gt α2 0 with h | h
     · exact min_le_of_left_le (by nlinarith)
@@ -274,7 +272,6 @@ theorem legendreF_le_div_sqrt {φ k : ℝ} (hk : k ^ 2 < 1) (hφ : 0 ≤ φ) :
     (fun θ _ ↦ legendreF_integrand_le hk θ)
   have hr : (1 - k ^ 2) ^ (-1 / 2 : ℝ) = (√(1 - k ^ 2))⁻¹ := by
     rw [inv_sqrt_eq_rpow]
-    norm_num
   rw [hr] at h
   simpa [legendreF_def, div_eq_mul_inv] using h
 
@@ -390,10 +387,7 @@ theorem continuous_legendreE (k : ℝ) : Continuous (legendreE · k) :=
 theorem strictMono_legendreE {k : ℝ} (hk : k ^ 2 ≤ 1) : StrictMono (legendreE · k) := by
   intro a b hab
   -- The integrand is positive wherever `cos θ ≠ 0`, which holds off a countable set.
-  have hZ : {θ : ℝ | cos θ = 0}.Countable := by
-    refine (countable_range fun n : ℤ ↦ (2 * n + 1) * π / 2).mono fun θ hθ ↦ ?_
-    obtain ⟨n, hn⟩ := cos_eq_zero_iff.1 hθ
-    exact ⟨n, hn.symm⟩
+  have hZ := countable_setOf_cos_eq 0
   have hne : volume (Ioo a b \ {θ : ℝ | cos θ = 0}) ≠ 0 := by
     rw [measure_sdiff_null (hZ.measure_zero volume)]
     exact ((Measure.measure_Ioo_pos _).2 hab).ne'

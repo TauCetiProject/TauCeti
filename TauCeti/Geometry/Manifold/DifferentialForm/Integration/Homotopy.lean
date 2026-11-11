@@ -76,6 +76,7 @@ operator and Stokes' formula on a rectangle; no Stokes theorem on a manifold wit
 * `TauCeti.rectangleIntegral_congr`: the integral only depends on the map on the closed rectangle.
 * `TauCeti.rectangleIntegral_comp_fst`, `TauCeti.rectangleIntegral_comp_snd`: the integral over a
   map depending on only one coordinate vanishes.
+* `TauCeti.rectangleIntegral_const`: the integral over a constant map vanishes.
 * `TauCeti.rectangleIntegral_add_adjacent`: additivity over adjacent rectangles.
 * `TauCeti.rectangleIntegral_comp_prodMap`: reparametrization invariance in the first coordinate.
 * `TauCeti.rectangleIntegral_mextDeriv`: Stokes' formula for the integral of an exact form, in
@@ -262,8 +263,7 @@ theorem rectangleIntegral_comp_snd (φ : RoughForm I M F 2) (γ : ℝ → M) (a 
     rectangleIntegral φ (γ ∘ Prod.snd) a b = 0 := by
   have h (z : ℝ × ℝ) :
       mpullback 𝓘(ℝ, ℝ × ℝ) I (γ ∘ Prod.snd) φ z ![(1, 0), (0, 1)] = 0 :=
-    mpullback_comp_clm_apply_eq_zero φ γ (.snd ℝ ℝ ℝ) (j := fun t ↦ (z.1, t)) (by fun_prop)
-      (fun _ ↦ rfl) rfl (i := 0) rfl
+    mpullback_comp_clm_apply_eq_zero φ γ (.snd ℝ ℝ ℝ) (i := 0) rfl
   simp [rectangleIntegral_def, h]
 
 /-- The integral of a two-form over a map that only depends on the first coordinate vanishes. -/
@@ -272,9 +272,14 @@ theorem rectangleIntegral_comp_fst (φ : RoughForm I M F 2) (γ : ℝ → M) (a 
     rectangleIntegral φ (γ ∘ Prod.fst) a b = 0 := by
   have h (z : ℝ × ℝ) :
       mpullback 𝓘(ℝ, ℝ × ℝ) I (γ ∘ Prod.fst) φ z ![(1, 0), (0, 1)] = 0 :=
-    mpullback_comp_clm_apply_eq_zero φ γ (.fst ℝ ℝ ℝ) (j := fun s ↦ (s, z.2)) (by fun_prop)
-      (fun _ ↦ rfl) rfl (i := 1) rfl
+    mpullback_comp_clm_apply_eq_zero φ γ (.fst ℝ ℝ ℝ) (i := 1) rfl
   simp [rectangleIntegral_def, h]
+
+/-- The integral of a two-form over a constant map vanishes. -/
+@[simp]
+theorem rectangleIntegral_const (φ : RoughForm I M F 2) (x : M) (a b : ℝ × ℝ) :
+    rectangleIntegral φ (fun _ ↦ x) a b = 0 :=
+  rectangleIntegral_comp_fst φ (fun _ ↦ x) a b
 
 section Continuous
 
@@ -356,6 +361,7 @@ private theorem rectangleIntegral_side_eq_zero (φ : RoughForm I M F 2) {Φ : (�
 
 variable [CompleteSpace F] [IsManifold I 2 M]
 
+omit [CompleteSpace F] in
 /-- **Stokes' formula for a homotopy of maps of a rectangle.** Let `φ` be a closed `C¹` two-form
 and `Φ : (ℝ × ℝ) × ℝ → M` a `C²` homotopy from `Φ(·, 0)` to `Φ(·, 1)`. The integral of `Φ^* φ`
 over the boundary of the cube `[a, b] × [0, 1]` vanishes: the change of the integral over the
@@ -409,6 +415,7 @@ theorem rectangleIntegral_sub_rectangleIntegral_eq_sides {φ : RoughForm I M F 2
   rw [hc, hc, hs, hs, ht, ht]
   exact integral2_slice_sub_eq_sides hψ hdψ a b
 
+omit [CompleteSpace F] in
 /-- **Homotopy invariance of the integral over a cylinder.** Let `φ` be a closed `C¹` two-form and
 `Φ : (ℝ × ℝ) × ℝ → M` a `C²` homotopy through cylinders `Φ(·, c)` on the rectangle `[a, b]`: the
 edges `t = a.2` and `t = b.2` of each rectangle are mapped alike, so that `t ↦ Φ((s, t), c)` is a

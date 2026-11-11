@@ -8,9 +8,10 @@ module
 public import Mathlib.MeasureTheory.Measure.Stieltjes
 public import Mathlib.MeasureTheory.Measure.Real
 public import TauCeti.MeasureTheory.Measure.Interval
+public import TauCeti.MeasureTheory.Measure.Measurability
 
 /-!
-# Stieltjes measures and cumulative functions
+# Stieltjes measures, cumulative functions and measurable families
 
 A measure on the real line need not be finite to have a real-valued cumulative function:
 it suffices that every interval `(-∞, t]` has finite mass. This file bundles that cumulative
@@ -20,6 +21,13 @@ without normalizing them to probability measures.
 
 On the nonnegative half-line, the cumulative mass of a Stieltjes measure is the increment
 of its Stieltjes function from zero.
+
+For a family of Stieltjes functions, measurability of evaluations implies measurability of the
+associated measures, without normalization or a uniform bound on their masses. On a bounded
+interval only evaluations within that interval need be measurable; this is useful for random
+Stieltjes measures adapted to a filtration. These results extend the probability-CDF
+measurability criterion of Rémy Degenne in
+`Mathlib.Probability.Kernel.Disintegration.MeasurableStieltjes` by restricting to finite intervals.
 -/
 
 public section
@@ -72,3 +80,57 @@ theorem measure_cumulativeStieltjes : (μ.cumulativeStieltjes hμ).measure = μ 
     ← hdiff, ofReal_measureReal (measure_ne_top_of_subset Ioc_subset_Iic_self (hμ b))]
 
 end MeasureTheory.Measure
+
+namespace StieltjesFunction
+
+variable {Ω R : Type*} {mΩ : MeasurableSpace Ω}
+  [LinearOrder R] [TopologicalSpace R] [OrderTopology R] [CompactIccSpace R]
+  [MeasurableSpace R] [BorelSpace R] [SecondCountableTopology R] [DenselyOrdered R]
+
+/-- The Stieltjes measure restricted to `(a,b]` is a measurable family if evaluations inside
+`[a,b]` are measurable. No uniform bound on the random interval mass is required. -/
+theorem measurable_restrict_measure_Ioc {f : Ω → StieltjesFunction R} {a b : R}
+    (hf : ∀ t ∈ Icc a b, Measurable fun ω ↦ f ω t) :
+    Measurable fun ω ↦ (f ω).measure.restrict (Ioc a b) := by
+  by_cases hab : a ≤ b
+  · let μ : Ω → Measure R := fun ω ↦ (f ω).measure.restrict (Ioc a b)
+    have : ∀ ω, IsFiniteMeasure (μ ω) := fun ω ↦ by
+      constructor
+      simp [μ, measure_Ioc]
+    refine Measurable.measure_of_isPiSystem
+      (BorelSpace.measurable_eq.trans (borel_eq_generateFrom_Iic R)) isPiSystem_Iic ?_ ?_
+    · rintro _ ⟨c, rfl⟩
+      simp only [Measure.restrict_apply measurableSet_Iic, inter_comm (Iic c),
+        Ioc_inter_Iic]
+      by_cases hac : a ≤ min b c
+      · simp only [measure_Ioc]
+        simpa only [Pi.sub_apply] using
+          ((hf _ ⟨hac, min_le_left _ _⟩).sub (hf a ⟨le_rfl, hab⟩)).ennreal_ofReal
+      · simp only [Ioc_eq_empty (not_lt.mpr (le_of_not_ge hac)), measure_empty]
+        exact measurable_const
+    · simpa only [μ, Measure.restrict_apply_univ, measure_Ioc, Pi.sub_apply] using
+        ((hf b ⟨hab, le_rfl⟩).sub (hf a ⟨le_rfl, hab⟩)).ennreal_ofReal
+  · simp only [Ioc_eq_empty (not_lt.mpr (le_of_not_ge hab)), Measure.restrict_empty]
+    exact measurable_const
+
+/-- Measurable evaluations give a measurable family of locally finite Stieltjes measures.
+Unlike the probability-CDF criterion, this requires neither limits at infinity nor finite
+total mass. -/
+theorem measurable_measure_of_measurable_eval {f : Ω → StieltjesFunction ℝ}
+    (hf : ∀ t, Measurable fun ω ↦ f ω t) : Measurable fun ω ↦ (f ω).measure := by
+  refine Measurable.measure_of_isPiSystem_of_iUnion
+    (B := fun n : ℕ ↦ Ioc (-(n + 1 : ℝ)) (n + 1))
+    (BorelSpace.measurable_eq.trans (borel_eq_generateFrom_Ioc ℝ))
+    (isPiSystem_Ioc id id) ?_ ?_ ?_ ?_
+  · intro n
+    exact ⟨_, _, by have := Nat.cast_nonneg (α := ℝ) n; linarith, rfl⟩
+  · ext x
+    simp only [mem_iUnion, mem_Ioc, mem_univ, iff_true]
+    obtain ⟨n, hn⟩ := exists_nat_gt |x|
+    exact ⟨n, by have := neg_abs_le x; linarith, by have := le_abs_self x; linarith⟩
+  · intro ω n
+    simp only [measure_Ioc, ENNReal.ofReal_ne_top, ne_eq, not_false_eq_true]
+  · rintro _ ⟨a, b, _, rfl⟩
+    simpa only [measure_Ioc, Pi.sub_apply] using ((hf b).sub (hf a)).ennreal_ofReal
+
+end StieltjesFunction
