@@ -58,6 +58,9 @@ extensions of nonarchimedean local fields, the valuation-theoretic counterparts 
 * `TauCeti.Algebra.IsTamelyRamifiedWRT.tower_bot` and
   `TauCeti.Algebra.IsUnramifiedWRT.tower_bot`: both properties pass from an extension `L` of `M`
   to `M`, for `M` finite and separable over `K`.
+* `TauCeti.Algebra.IsTamelyRamifiedWRT.exists_isUnit_forall_ramificationIdx_dvd`: the
+  ramification indices of a tamely ramified extension have a common multiple invertible in the
+  residue field of `A`.
 * `TauCeti.Algebra.isTamelyRamifiedWRT_of_charZero`: if the residue field of `A` has
   characteristic zero, every finite extension of `K` is tamely ramified with respect to `A`.
 * `TauCeti.Algebra.isUnramifiedWRT_iff_forall_isUnramifiedAt`: `L` is unramified with respect
@@ -350,6 +353,25 @@ theorem isTotallyRamifiedWRT_iff_exists_ramificationIdx_eq_finrank :
       have := hf ⟨Q, hliesOver Q⟩
       nlinarith
     exact ⟨⟨P, hP, fun Q _ ↦ huniq Q⟩, fun Q _ ↦ huniq Q ▸ hPf⟩
+
+variable {A K L} in
+/-- The ramification indices of a tamely ramified extension have a common multiple that is
+invertible in the residue field. -/
+theorem IsTamelyRamifiedWRT.exists_isUnit_forall_ramificationIdx_dvd
+    (h : IsTamelyRamifiedWRT A L) : ∃ e₀ : ℕ, IsUnit (e₀ : A ⧸ maximalIdeal A) ∧
+      ∀ (P : Ideal (integralClosure A L)) [P.IsMaximal], P.ramificationIdx A ∣ e₀ := by
+  have : IsDedekindDomain (integralClosure A L) := integralClosure.isDedekindDomain A K L
+  have : Module.IsTorsionFree A L := .trans_faithfulSMul A K L
+  refine ⟨∏ Q : (maximalIdeal A).primesOver (integralClosure A L), Q.1.ramificationIdx A,
+    ?_, fun P _ ↦ ?_⟩
+  · rw [Nat.cast_prod]
+    refine IsUnit.prod_univ_iff.mpr fun Q ↦ ?_
+    have := Q.2.1
+    have := Q.2.2
+    have := Ideal.IsMaximal.of_liesOver_isMaximal Q.1 (maximalIdeal A)
+    exact (isTamelyRamifiedWRT_def.mp h Q.1).2
+  · exact Finset.dvd_prod_of_mem (fun Q : (maximalIdeal A).primesOver _ ↦ Q.1.ramificationIdx A)
+      (Finset.mem_univ ⟨P, inferInstance, ⟨(eq_maximalIdeal (Ideal.IsMaximal.under A P)).symm⟩⟩)
 
 end DiscreteValuationRing
 

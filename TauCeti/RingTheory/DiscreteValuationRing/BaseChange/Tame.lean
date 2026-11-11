@@ -13,6 +13,7 @@ import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.RingTheory.DiscreteValuationRing.AbhyankarModel.ValuationRing
 import TauCeti.RingTheory.DiscreteValuationRing.Kummer
+import TauCeti.RingTheory.LocalRing.Localization
 import TauCeti.RingTheory.Localization.Integral
 import TauCeti.RingTheory.RamificationInertia.Unramified
 
@@ -66,24 +67,6 @@ open Polynomial IsLocalRing
 open _root_.IntermediateField
 
 namespace TauCeti.Algebra
-
-section Residue
-
-variable {A B₀ : Type*} [CommRing A] [IsLocalRing A] [CommRing B₀] [Algebra A B₀]
-
-/-- Localizing at a maximal ideal `m` does not change the residue field, so separability of
-`(B₀ ⧸ m) / (A ⧸ 𝔪_A)` is separability of the residue extension of `A → (B₀)_m`. -/
-private theorem isSeparable_residueField_localization (m : Ideal B₀) [m.IsMaximal]
-    [m.LiesOver (maximalIdeal A)] [IsLocalHom (algebraMap A (Localization.AtPrime m))]
-    (h : Algebra.IsSeparable (A ⧸ maximalIdeal A) (B₀ ⧸ m)) :
-    Algebra.IsSeparable (ResidueField A) (ResidueField (Localization.AtPrime m)) := by
-  let σ := (IsLocalization.AtPrime.equivQuotMaximalIdeal m
-    (Localization.AtPrime m)).restrictScalars A
-  let τ := σ.extendScalarsOfSurjective (R := A) (S := A ⧸ maximalIdeal A)
-    Ideal.Quotient.mk_surjective
-  exact (AlgEquiv.Algebra.isSeparable_iff τ).mp h
-
-end Residue
 
 section Local
 
@@ -334,25 +317,6 @@ theorem IsTamelyRamifiedWRT.isUnramifiedWRT_adjoin_root (h : IsTamelyRamifiedWRT
   · have hc' : (c : L⟮α⟯) ≠ 0 := fun h ↦ hc (Subtype.ext h)
     obtain ⟨r, hr, q, hq, hqc⟩ := hF (c : L⟮α⟯)⁻¹
     exact ⟨r, hr, q, hq, Subtype.ext (by simp [hqc, hc'])⟩
-
-include K in
-/-- The ramification indices of a tamely ramified extension have a common multiple that is
-invertible in the residue field. -/
-private theorem IsTamelyRamifiedWRT.exists_isUnit_forall_ramificationIdx_dvd
-    (h : IsTamelyRamifiedWRT A L) : ∃ e₀ : ℕ, IsUnit (e₀ : A ⧸ maximalIdeal A) ∧
-      ∀ (P : Ideal (integralClosure A L)) [P.IsMaximal], P.ramificationIdx A ∣ e₀ := by
-  have : IsDedekindDomain (integralClosure A L) := integralClosure.isDedekindDomain A K L
-  have : Module.IsTorsionFree A L := .trans_faithfulSMul A K L
-  refine ⟨∏ Q : (maximalIdeal A).primesOver (integralClosure A L), Q.1.ramificationIdx A,
-    ?_, fun P _ ↦ ?_⟩
-  · rw [Nat.cast_prod]
-    refine IsUnit.prod_univ_iff.mpr fun Q ↦ ?_
-    have := Q.2.1
-    have := Q.2.2
-    have := Ideal.IsMaximal.of_liesOver_isMaximal Q.1 (maximalIdeal A)
-    exact (isTamelyRamifiedWRT_def.mp h Q.1).2
-  · exact Finset.dvd_prod_of_mem (fun Q : (maximalIdeal A).primesOver _ ↦ Q.1.ramificationIdx A)
-      (Finset.mem_univ ⟨P, inferInstance, ⟨(eq_maximalIdeal (Ideal.IsMaximal.under A P)).symm⟩⟩)
 
 /-- **Tame extensions have an unramified Kummer witness at every invertible multiple.** If `L` is
 tamely ramified with respect to `A`, there is `e₀`, invertible in the residue field, such that for
