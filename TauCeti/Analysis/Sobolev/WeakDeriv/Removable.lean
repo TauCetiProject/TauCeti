@@ -73,12 +73,11 @@ theorem hasWeakFDerivOn_of_hasFDerivAt_off_countable
     intro x
     simp [D, hφd]
   have hi₁ : Integrable (fun x ↦ (φ : E → ℝ) x • U x v) μ :=
-    integrable_smul_of_locallyIntegrableOn
-      (by simpa only [Function.comp_def, ContinuousLinearMap.apply_apply] using
-        (ContinuousLinearMap.apply ℝ F v).locallyIntegrableOn_comp hU) φ
+    φ.integrable_smul (by simpa only [Function.comp_def, ContinuousLinearMap.apply_apply] using
+        (ContinuousLinearMap.apply ℝ F v).locallyIntegrableOn_comp hU)
   have hi₂ := integrable_lineDeriv_smul_of_locallyIntegrableOn hui φ v
-  have hzero := integral_apply_eq_zero_of_hasFDerivAt_off_countable hs hc
-    φ.hasCompactSupport.smul_right hdφ v (by simpa only [hD] using hi₁.fun_add hi₂)
+  have hzero := integral_apply_eq_zero_of_hasFDerivAt_off_countable (μ := μ) hs hc
+    φ.hasCompactSupport.smul_right hdφ v
   rw [integral_congr_ae (Filter.Eventually.of_forall hD), integral_add hi₁ hi₂] at hzero
   exact eq_neg_of_add_eq_zero_right hzero
 

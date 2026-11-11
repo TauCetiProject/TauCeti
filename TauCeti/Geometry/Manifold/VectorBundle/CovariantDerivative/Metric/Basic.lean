@@ -57,6 +57,20 @@ as a tensor. Unlike the section-based characterization, this needs no manifold r
 theorem isMetricCompatible_iff_derivMetricTensor_eq_zero :
     cov.IsMetricCompatible ↔ cov.derivMetricTensor = fun _ ↦ 0 := (Iff.rfl)
 
+/-- The inner product of two sections parallel at a point has zero derivative there. -/
+theorem IsMetricCompatible.hasMFDerivAt_inner_of_eq_zero (hcov : cov.IsMetricCompatible)
+    {σ τ : Π x : M, V x} {x : M} (hσ : MDiffAt (T% σ) x) (hτ : MDiffAt (T% τ) x)
+    (hσ₀ : cov σ x = 0) (hτ₀ : cov τ x = 0) :
+    HasMFDerivAt I 𝓘(ℝ) (fun y ↦ inner ℝ (σ y) (τ y)) x 0 := by
+  have hd : mfderiv I 𝓘(ℝ) (fun y ↦ inner ℝ (σ y) (τ y)) x = 0 := by
+    ext w
+    apply (NormedSpace.fromTangentSpace (inner ℝ (σ x) (τ x))).injective
+    simpa only [mvfderiv, ContinuousLinearMap.comp_apply,
+      ContinuousLinearEquiv.coe_coe, hσ₀, hτ₀, zero_apply,
+      inner_zero_left, inner_zero_right, add_zero, map_zero] using
+      hcov.mvfderiv_inner_eq (fun _ ↦ w) hσ hτ
+  simpa only [hd] using (hσ.inner_bundle hτ).hasMFDerivAt
+
 variable [IsManifold I 1 M] {n : ℕ∞ω} [ContMDiffCovariantDerivative cov n]
 
 /-- The twice-differentiated metric product rule for a `C^n` metric-compatible connection. -/

@@ -98,21 +98,14 @@ theorem eventually_smul_eq_iff_on_ker (χ : OpenPartialHomeomorph X E) {x : X}
     have hnormal : q.comp (σ g) = q := by
       have hd := q.hasFDerivAt.comp (0 : E) (hderiv g)
       exact hd.unique (q.hasFDerivAt.congr_of_eventuallyEq hq)
-    have hfixed : q.ker ≤ LinearMap.ker ((σ g : Module.End 𝕜 E) - 1) := by
-      intro v hv
-      have h := DFunLike.congr_fun hfaceDeriv ⟨v, hv⟩
-      simpa using sub_eq_zero.mpr h
-    have hrange : LinearMap.range ((σ g : Module.End 𝕜 E) - 1) ≤ q.ker := by
-      rintro v ⟨w, rfl⟩
-      have h := DFunLike.congr_fun hnormal w
-      simpa using sub_eq_zero.mpr h
-    have hpow : (σ g : Module.End 𝕜 E) ^ Fintype.card G = 1 := by
-      have h : (σ g) ^ Fintype.card G = 1 := by
-        rw [← map_pow, pow_card_eq_one, map_one]
-      simpa using congrArg ContinuousLinearMap.toLinearMap h
-    have hone : σ g = 1 := ContinuousLinearMap.coe_injective <|
-      Module.End.eq_one_of_pow_eq_one_of_range_sub_one_le (σ g : Module.End 𝕜 E) q.ker
-        (Invertible.ne_zero _) hpow hfixed hrange
+    have hone : σ g = 1 := by
+      refine ContinuousLinearMap.coe_injective
+        (Module.End.eq_one_of_pow_eq_one_of_comp_ker_subtype_eq (σ g : Module.End 𝕜 E)
+          (q : E →ₗ[𝕜] F) (n := Fintype.card G) (Invertible.ne_zero _) ?_
+          (congrArg ContinuousLinearMap.toLinearMap hnormal)
+          (congrArg ContinuousLinearMap.toLinearMap hfaceDeriv))
+      have hpow : σ g ^ Fintype.card G = 1 := by rw [← map_pow, pow_card_eq_one, map_one]
+      simpa using congrArg ContinuousLinearMap.toLinearMap hpow
     exact MulAction.mem_germKernel.mp <|
       (χ.map_eq_one_iff_mem_germKernel hx hfix σ
         (hasStrictFDerivAt_conj_smul_isotropyRepresentation hx hfix hD) g).mp hone

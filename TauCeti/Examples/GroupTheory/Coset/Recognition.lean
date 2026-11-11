@@ -87,7 +87,8 @@ theorem zpowers_swap_eq_centralizer :
 theorem index_centralizer_swap :
     (Subgroup.centralizer {(swap 0 1 : Perm (Fin 3))}).index = 3 := by
   rw [← zpowers_swap_eq_centralizer]
-  apply table.index_eq_of_check generates check_table relations_hold subgroup_words_mem
+  refine (table.index_eq_iff_injective generates check_table relations_hold
+    subgroup_words_mem).2 ?_
   intro i j hij
   have hmem : (((table.word i).map generators).prod)⁻¹ *
       ((table.word j).map generators).prod ∈ Subgroup.zpowers (swap 0 1 : Perm (Fin 3)) := by

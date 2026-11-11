@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basis
 public import Mathlib.RepresentationTheory.Basic
-public import TauCeti.LinearAlgebra.Matrix.KroneckerPower
+public import TauCeti.LinearAlgebra.Matrix.Kronecker.Power
 
 /-!
 # Permuting tensor factors
@@ -255,9 +255,8 @@ theorem _root_.Matrix.toMatrix_piTensorProductMap_tensorPowerBasis {R : Type u} 
     LinearMap.toMatrix (tensorPowerBasis R n d) (tensorPowerBasis R n d)
         (PiTensorProduct.map fun _ : Fin d => A.mulVecLin) =
       A.kroneckerPower (Fin d) := by
-  ext v u
-  rw [LinearMap.toMatrix_apply, A.piTensorProductMap_tensorPowerBasis u, map_sum]
-  simp [Finsupp.single_apply, -tensorPowerBasis_apply]
+  rw [tensorPowerBasis_def]
+  exact A.toMatrix_piTensorProductMap_mulVecLin
 
 -- These two derived normal forms remain explicit rewrite lemmas: `simpNF` detects each as already
 -- provable from the underlying tensor-action rules, so adding them to the simp set is redundant.

@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 
 import Mathlib.FieldTheory.KummerExtension
 import TauCeti.RingTheory.RootsOfUnity.PowFiber
-import TauCeti.Algebra.Polynomial.XPowSubC
+import TauCeti.Algebra.Polynomial.XPow.SubC
 import TauCeti.LinearAlgebra.LinearIndependent.MonoidHom
 
 /-!
@@ -82,13 +82,14 @@ namespace TauCeti
 
 section RootsOfUnity
 
-variable {K : Type*} [CommRing K] [IsDomain K] {n : ℕ} [NeZero n] [HasEnoughRootsOfUnity K n]
+variable {K : Type*} [CommRing K] {n : ℕ} [NeZero n] [HasEnoughRootsOfUnity K n]
   {F : Type*} [Field F] [Algebra K F] [FaithfulSMul K F]
 
 /-- If the domain `K` contains the `n`-th roots of unity, then two elements of a field extension
 of `K` with the same `n`-th power differ by a unit from `K`. -/
 theorem exists_eq_algebraMap_mul_of_pow_eq {x y : F} (h : x ^ n = y ^ n) :
     ∃ z : Kˣ, x = algebraMap K F z * y := by
+  have : IsDomain K := (FaithfulSMul.algebraMap_injective K F).isDomain _
   obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K n
   have hK : (primitiveRoots n K).Nonempty := ⟨ζ, (mem_primitiveRoots (NeZero.pos n)).2 hζ⟩
   obtain ⟨ξ, rfl⟩ := (pow_eq_pow_iff_exists_rootsOfUnity_smul (NeZero.ne n)).1 h.symm
@@ -106,6 +107,7 @@ theorem _root_.AlgEquiv.exists_apply_eq_algebraMap_mul_of_pow_eq (σ : F ≃ₐ[
 `K`-automorphism only depends on `y ^ n`, even when this power does not lie in `K`. -/
 theorem _root_.AlgEquiv.apply_div_self_eq_of_pow_eq (σ : F ≃ₐ[K] F) {y y' : F}
     (h : y' ^ n = y ^ n) : σ y' / y' = σ y / y := by
+  have : IsDomain K := (FaithfulSMul.algebraMap_injective K F).isDomain _
   obtain ⟨z, rfl⟩ := exists_eq_algebraMap_mul_of_pow_eq (K := K) h
   rw [map_mul, AlgEquiv.commutes, mul_div_mul_left _ _ (by simp)]
 
@@ -113,6 +115,7 @@ theorem _root_.AlgEquiv.apply_div_self_eq_of_pow_eq (σ : F ≃ₐ[K] F) {y y' :
 trivial when `y ^ n` is the `n`-th power of a unit of `K`. -/
 theorem _root_.AlgEquiv.apply_div_self_eq_one_of_pow_eq (σ : F ≃ₐ[K] F) {y : F} {c : Kˣ}
     (hy : y ^ n = algebraMap K F ((c : K) ^ n)) : σ y / y = 1 := by
+  have : IsDomain K := (FaithfulSMul.algebraMap_injective K F).isDomain _
   rw [σ.apply_div_self_eq_of_pow_eq (n := n) (y := algebraMap K F c)
     (by rw [hy, map_pow]), AlgEquiv.commutes, div_self (by simp)]
 
@@ -183,6 +186,13 @@ theorem kummerField_def :
 theorem mem_kummerField_of_pow_eq {x : E} {a : Kˣ} (ha : a ∈ Δ)
     (hx : x ^ n = algebraMap K E a) : x ∈ kummerField E n Δ :=
   subset_adjoin _ _ ⟨a, ha, hx⟩
+
+/-- If every element of `Δ` has an `n`-th root in `E`, then it has one in `K(Δ^{1/n})`. -/
+theorem exists_pow_eq_kummerField (hroots : ∀ a ∈ Δ, ∃ x : E, x ^ n = algebraMap K E a) :
+    ∀ a ∈ Δ, ∃ y : kummerField E n Δ, y ^ n = algebraMap K (kummerField E n Δ) a := by
+  intro a ha
+  obtain ⟨x, hx⟩ := hroots a ha
+  exact ⟨⟨x, mem_kummerField_of_pow_eq ha hx⟩, Subtype.ext (by simpa using hx)⟩
 
 /-- The Kummer field `K(Δ^{1/n})` is generated over `K` by the `n`-th roots of the elements of `Δ`
 that it contains, viewed as elements of `K(Δ^{1/n})` itself. -/
@@ -282,11 +292,15 @@ instance isAbelianGalois_kummerField : IsAbelianGalois K (kummerField E n Δ) :=
   exact { is_comm := ⟨fun σ τ ↦ AlgEquiv.coe_toAlgHom_injective <|
     algHom_ext_of_eq_adjoin K kummerField_def fun x ⟨a, ha, hx⟩ ↦ hcomm σ τ _ (hgen ha hx)⟩ }
 
+omit [NeZero n] in
 /-- **The Galois group of a Kummer extension has exponent dividing the radical exponent.**
 Every `K`-automorphism of `K(Δ^{1/n})`, raised to the `n`-th power, fixes each radical generator.
 -/
 theorem exponent_algEquiv_kummerField_dvd :
     Monoid.exponent (kummerField E n Δ ≃ₐ[K] kummerField E n Δ) ∣ n := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact dvd_zero _
+  have : NeZero n := ⟨hn⟩
   rw [Monoid.exponent_dvd_iff_forall_pow_eq_one]
   intro σ
   apply AlgEquiv.coe_toAlgHom_injective
@@ -387,10 +401,7 @@ the image of `Δ` in `Kˣ ⧸ (Kˣ)ⁿ`, as soon as this index is finite. -/
 theorem finrank_kummerField [(powMonoidHom n : Kˣ →* Kˣ).range.IsFiniteRelIndex Δ]
     (hroots : ∀ a ∈ Δ, ∃ x : E, x ^ n = algebraMap K E a) :
     finrank K (kummerField E n Δ) = (powMonoidHom n : Kˣ →* Kˣ).range.relIndex Δ := by
-  have hr (a : Δ) : ∃ y : kummerField E n Δ, y ^ n = algebraMap K _ ((a : Kˣ) : K) := by
-    obtain ⟨x, hx⟩ := hroots a a.2
-    exact ⟨⟨x, mem_kummerField_of_pow_eq a.2 hx⟩, Subtype.ext (by simpa using hx)⟩
-  choose r hr using hr
+  choose r hr using fun a : Δ ↦ exists_pow_eq_kummerField hroots a a.2
   rw [← IsGalois.card_aut_eq_finrank]
   exact le_antisymm (natCard_algEquiv_kummerField_le hr)
     (relIndex_le_natCard_algEquiv_kummerField hr)

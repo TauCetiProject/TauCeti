@@ -186,59 +186,28 @@ theorem _root_.Equiv.Perm.exists_odd_isSwap_pow {σ : Equiv.Perm α}
 transposition and a three-cycle. -/
 theorem _root_.Equiv.Perm.cycleType_eq_two_three_of_orderOf_eq_six {σ : Equiv.Perm α}
     (hcard : Fintype.card α = 5) (hσ : orderOf σ = 6) : σ.cycleType = {2, 3} := by
-  have hsum : σ.cycleType.sum ≤ 5 := by
-    have := σ.sum_cycleType_le
-    rwa [hcard] at this
+  have hsum : σ.cycleType.sum ≤ 5 := hcard ▸ σ.sum_cycleType_le
+  have h2 : ∀ n ∈ σ.cycleType, 2 ≤ n := fun _ ↦ Equiv.Perm.two_le_of_mem_cycleType
   have hdvd : ∀ n ∈ σ.cycleType, n = 2 ∨ n = 3 := by
     intro n hn
-    have hn2 : 2 ≤ n := Equiv.Perm.two_le_of_mem_cycleType hn
-    have hnd : n ∣ 6 := by
-      have := Equiv.Perm.dvd_of_mem_cycleType hn
-      rwa [hσ] at this
-    have hn6 : n ≤ 6 := Nat.le_of_dvd (by omega) hnd
-    interval_cases n
-    · exact Or.inl rfl
-    · exact Or.inr rfl
-    · exact absurd hnd (by decide)
-    · exact absurd hnd (by decide)
-    · obtain ⟨t, ht⟩ := Multiset.exists_cons_of_mem hn
-      rw [ht, Multiset.sum_cons] at hsum
-      omega
-  have hex2 : (2 : ℕ) ∈ σ.cycleType := by
+    have hnd : n ∣ 6 := hσ ▸ Equiv.Perm.dvd_of_mem_cycleType hn
+    have := h2 n hn
+    have : n ≤ 5 := (Multiset.le_sum_of_mem hn).trans hsum
+    interval_cases n <;> omega
+  have hex : ∀ p, p = 2 ∨ p = 3 → p ∈ σ.cycleType := by
+    intro p hp
     by_contra h
-    have hall : ∀ n ∈ σ.cycleType, n ∣ 3 := by
-      intro n hn
-      obtain rfl | rfl := hdvd n hn
-      · exact absurd hn h
-      · exact dvd_rfl
-    have h3 : σ.cycleType.lcm ∣ 3 := Multiset.lcm_dvd.mpr hall
-    rw [Equiv.Perm.lcm_cycleType, hσ] at h3
-    omega
-  have hex3 : (3 : ℕ) ∈ σ.cycleType := by
-    by_contra h
-    have hall : ∀ n ∈ σ.cycleType, n ∣ 2 := by
-      intro n hn
-      obtain rfl | rfl := hdvd n hn
-      · exact dvd_rfl
-      · exact absurd hn h
-    have h2 : σ.cycleType.lcm ∣ 2 := Multiset.lcm_dvd.mpr hall
-    rw [Equiv.Perm.lcm_cycleType, hσ] at h2
-    omega
-  obtain ⟨m1, hm1⟩ := Multiset.exists_cons_of_mem hex3
-  have h2mem : (2 : ℕ) ∈ m1 := by
-    rw [hm1] at hex2
-    simpa using hex2
-  obtain ⟨m2, hm2⟩ := Multiset.exists_cons_of_mem h2mem
-  have hm2' : m2 = 0 := by
-    by_contra hne
-    obtain ⟨x, hx⟩ := Multiset.exists_mem_of_ne_zero hne
-    obtain ⟨t, ht⟩ := Multiset.exists_cons_of_mem hx
-    have hx2 : 2 ≤ x := Equiv.Perm.two_le_of_mem_cycleType (by rw [hm1, hm2]; simp [hx])
-    rw [hm1, hm2, ht] at hsum
-    simp only [Multiset.sum_cons] at hsum
-    omega
-  rw [hm1, hm2, hm2']
-  exact Multiset.pair_comm 3 2
+    have : σ.cycleType.lcm ∣ 5 - p := Multiset.lcm_dvd.mpr fun n hn ↦ by
+      rcases hdvd n hn with rfl | rfl <;> rcases hp with rfl | rfl <;> simp_all
+    rw [Equiv.Perm.lcm_cycleType, hσ] at this
+    rcases hp with rfl | rfl <;> omega
+  have hle : ({2, 3} : Multiset ℕ) ≤ σ.cycleType :=
+    (Multiset.le_iff_subset (by decide)).2 (by simp [hex])
+  refine (Multiset.eq_of_le_of_card_le hle ?_).symm
+  have := Multiset.card_nsmul_le_sum h2
+  simp only [smul_eq_mul] at this
+  simp only [Multiset.insert_eq_cons, Multiset.card_cons, Multiset.card_singleton]
+  omega
 
 /-- A permutation of order `3` on five points is a three-cycle. -/
 theorem _root_.Equiv.Perm.isThreeCycle_of_orderOf_eq_three {σ : Equiv.Perm α}

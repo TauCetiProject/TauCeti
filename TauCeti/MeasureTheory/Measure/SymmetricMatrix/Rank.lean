@@ -5,7 +5,7 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.Rank.Closed
+public import TauCeti.MeasureTheory.Measure.Matrix
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Basic
 
 /-!
@@ -22,6 +22,7 @@ such as the Gaussian-Gram Wishart law, to an almost-everywhere statement.
 
 * `TauCeti.isClosed_setOfPred_rank_le` — the symmetric matrices of rank at most `k` are closed.
 * `TauCeti.measurableSet_setOfPred_rank_le` — they are measurable.
+* `TauCeti.measurableSet_setOfPred_rank_eq` — exact-rank strata are measurable.
 -/
 
 public section
@@ -41,5 +42,11 @@ theorem measurableSet_setOfPred_rank_le (k : ℕ) :
     MeasurableSet {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
       (A : Matrix (Fin p) (Fin p) ℝ).rank ≤ k} :=
   (isClosed_setOfPred_rank_le k).measurableSet
+
+/-- The symmetric matrices of rank exactly `k` form a measurable set. -/
+theorem measurableSet_setOfPred_rank_eq (k : ℕ) :
+    MeasurableSet {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+      (A : Matrix (Fin p) (Fin p) ℝ).rank = k} :=
+  (Matrix.measurableSet_setOfPred_rank_eq k).preimage continuous_subtype_val.measurable
 
 end TauCeti

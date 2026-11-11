@@ -15,9 +15,9 @@ Let `Y : ℕ → ℝ` be a nonnegative sequence satisfying the superlinear recur
 
 `Y (n + 1) ≤ C * b ^ n * Y n ^ (1 + α)`
 
-with `b ≥ 0` and `α ≥ 0`. If `q ≥ 0`, `b * q ^ α ≤ 1`, and `C * Y 0 ^ α ≤ q`, then
-`Y n ≤ q ^ n * Y 0`. When `q < 1`, this bound implies `Y n → 0`. In its classical form, for
-`C > 0`, `b > 1`, `α > 0`,
+with `b ≥ 0` and `α > 0`. If `q ≥ 0`, `b * q ^ α ≤ 1`, and `C * Y 0 ^ α ≤ q`, then
+`Y n ≤ q ^ n * Y 0`; this bound holds more generally for every `α > -1`. When `q < 1`, it implies
+`Y n → 0`. In its classical form, for `C > 0`, `b > 1`, `α > 0`,
 
 `Y 0 ≤ C ^ (-α⁻¹) * b ^ (-(α ^ 2)⁻¹)` implies `Y n ≤ (b ^ (-α⁻¹)) ^ n * Y 0`, so `Y n → 0`.
 
@@ -67,57 +67,50 @@ open Filter Topology
 
 `Y (n + 1) ≤ C * b ^ n * Y n ^ (1 + α)`
 
-for some `b ≥ 0` and `α ≥ 0`. If `q ≥ 0` satisfies `b * q ^ α ≤ 1` and the starting value is
+for some `b ≥ 0` and `α > -1`. If `q ≥ 0` satisfies `b * q ^ α ≤ 1` and the starting value is
 small in the sense that `C * Y 0 ^ α ≤ q`, then `Y n ≤ q ^ n * Y 0` for every `n`.
 
-No sign condition on `C` is needed. -/
+No sign condition on `C` is needed. The superlinear case `α > 0` is the one used by De Giorgi's
+method. -/
 theorem le_geom_of_le_mul_pow_mul_rpow {Y : ℕ → ℝ} {C b q α : ℝ} (hY : ∀ n, 0 ≤ Y n)
-    (hb : 0 ≤ b) (hq : 0 ≤ q) (hα : 0 ≤ α) (hbq : b * q ^ α ≤ 1) (h0 : C * Y 0 ^ α ≤ q)
+    (hb : 0 ≤ b) (hq : 0 ≤ q) (hα : -1 < α) (hbq : b * q ^ α ≤ 1) (h0 : C * Y 0 ^ α ≤ q)
     (hrec : ∀ n, Y (n + 1) ≤ C * b ^ n * Y n ^ (1 + α)) (n : ℕ) :
     Y n ≤ q ^ n * Y 0 := by
   induction n with
   | zero => simp
   | succ n ih =>
-    have hgeom : 0 ≤ q ^ n * Y 0 := mul_nonneg (pow_nonneg hq n) (hY 0)
     refine (hrec n).trans ?_
+    have hYn := hY n
+    have hY0 := hY 0
     rcases lt_or_ge C 0 with hC | hC
     · -- A negative constant makes the right-hand side of the recurrence nonpositive.
-      have : C * b ^ n * Y n ^ (1 + α) ≤ 0 :=
-        mul_nonpos_of_nonpos_of_nonneg
-          (mul_nonpos_of_nonpos_of_nonneg hC.le (pow_nonneg hb n))
-          (Real.rpow_nonneg (hY n) _)
-      exact this.trans (mul_nonneg (pow_nonneg hq _) (hY 0))
+      have : 0 ≤ b ^ n * Y n ^ (1 + α) := by positivity
+      nlinarith [pow_nonneg hq (n + 1)]
     · -- Insert the inductive bound and regroup the powers of `q`.
-      have hsplit : (q ^ n * Y 0) ^ (1 + α) = (q ^ n * Y 0) * ((q ^ α) ^ n * Y 0 ^ α) := by
-        rw [Real.rpow_one_add' hgeom (by positivity), Real.mul_rpow (pow_nonneg hq n) (hY 0),
-          Real.rpow_pow_comm hq]
+      have hα' : 0 < 1 + α := by linarith
       calc C * b ^ n * Y n ^ (1 + α)
-          ≤ C * b ^ n * (q ^ n * Y 0) ^ (1 + α) := by
-            gcongr
-            exact hY n
+          ≤ C * b ^ n * (q ^ n * Y 0) ^ (1 + α) := by gcongr
         _ = (C * Y 0 ^ α) * (b * q ^ α) ^ n * (q ^ n * Y 0) := by
-            rw [hsplit, mul_pow]
+            rw [Real.rpow_one_add' (by positivity) hα'.ne', Real.mul_rpow (by positivity) hY0,
+              ← Real.rpow_pow_comm hq, mul_pow]
             ring
         _ ≤ q * 1 * (q ^ n * Y 0) := by
             gcongr
-            exact pow_le_one₀ (mul_nonneg hb (Real.rpow_nonneg hq _)) hbq
+            exact pow_le_one₀ (by positivity) hbq
         _ = q ^ (n + 1) * Y 0 := by ring
 
-private theorem rpow_neg_inv_pow_ratio_conditions {Y : ℕ → ℝ} {C b α : ℝ}
-    (hY : ∀ n, 0 ≤ Y n) (hC : 0 < C) (hb : 0 < b) (hα : 0 < α)
-    (h0 : Y 0 ≤ C ^ (-α⁻¹) * b ^ (-(α ^ 2)⁻¹)) :
-    b * (b ^ (-α⁻¹)) ^ α ≤ 1 ∧ C * Y 0 ^ α ≤ b ^ (-α⁻¹) := by
+private theorem rpow_neg_inv_pow_ratio_conditions {Y₀ C b α : ℝ}
+    (hY₀ : 0 ≤ Y₀) (hC : 0 < C) (hb : 0 < b) (hα : 0 < α)
+    (h0 : Y₀ ≤ C ^ (-α⁻¹) * b ^ (-(α ^ 2)⁻¹)) :
+    b * (b ^ (-α⁻¹)) ^ α ≤ 1 ∧ C * Y₀ ^ α ≤ b ^ (-α⁻¹) := by
   have e1 : -α⁻¹ * α = -1 := by field_simp
   have e2 : -(α ^ 2)⁻¹ * α = -α⁻¹ := by field_simp
   constructor
   · rw [← Real.rpow_mul hb.le, e1, Real.rpow_neg_one, mul_inv_cancel₀ hb.ne']
-  · calc C * Y 0 ^ α ≤ C * (C ^ (-α⁻¹) * b ^ (-(α ^ 2)⁻¹)) ^ α := by
-          gcongr
-          exact hY 0
+  · calc C * Y₀ ^ α ≤ C * (C ^ (-α⁻¹) * b ^ (-(α ^ 2)⁻¹)) ^ α := by gcongr
       _ = b ^ (-α⁻¹) := by
-          rw [Real.mul_rpow (Real.rpow_nonneg hC.le _) (Real.rpow_nonneg hb.le _),
-            ← Real.rpow_mul hC.le, ← Real.rpow_mul hb.le, e1, e2, Real.rpow_neg_one,
-            mul_inv_cancel_left₀ hC.ne']
+          rw [Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_mul hC.le,
+            ← Real.rpow_mul hb.le, e1, e2, Real.rpow_neg_one, mul_inv_cancel_left₀ hC.ne']
 
 /-- **Geometric bound, classical threshold.** Let `Y` be a nonnegative sequence with
 
@@ -130,14 +123,14 @@ theorem le_rpow_neg_inv_pow_mul_of_le_mul_pow_mul_rpow {Y : ℕ → ℝ} {C b α
     (h0 : Y 0 ≤ C ^ (-α⁻¹) * b ^ (-(α ^ 2)⁻¹))
     (hrec : ∀ n, Y (n + 1) ≤ C * b ^ n * Y n ^ (1 + α)) (n : ℕ) :
     Y n ≤ (b ^ (-α⁻¹)) ^ n * Y 0 := by
-  obtain ⟨hbq, hq⟩ := rpow_neg_inv_pow_ratio_conditions hY hC hb hα h0
-  exact le_geom_of_le_mul_pow_mul_rpow hY hb.le (Real.rpow_nonneg hb.le _) hα.le hbq hq hrec n
+  obtain ⟨hbq, hq⟩ := rpow_neg_inv_pow_ratio_conditions (hY 0) hC hb hα h0
+  exact le_geom_of_le_mul_pow_mul_rpow hY hb.le (by positivity) (by linarith) hbq hq hrec n
 
 /-- **Convergence to zero from a geometric bound.** If the ratio `q` in
 `le_geom_of_le_mul_pow_mul_rpow` is less than one, then `Y n → 0`. -/
 theorem tendsto_atTop_zero_of_le_mul_pow_mul_rpow_of_ratio_lt_one {Y : ℕ → ℝ}
     {C b q α : ℝ} (hY : ∀ n, 0 ≤ Y n) (hb : 0 ≤ b) (hq : 0 ≤ q) (hq1 : q < 1)
-    (hα : 0 ≤ α) (hbq : b * q ^ α ≤ 1) (h0 : C * Y 0 ^ α ≤ q)
+    (hα : -1 < α) (hbq : b * q ^ α ≤ 1) (h0 : C * Y 0 ^ α ≤ q)
     (hrec : ∀ n, Y (n + 1) ≤ C * b ^ n * Y n ^ (1 + α)) :
     Tendsto Y atTop (𝓝 0) := by
   have hlim : Tendsto (fun n : ℕ => q ^ n * Y 0) atTop (𝓝 0) := by
@@ -156,12 +149,11 @@ theorem tendsto_atTop_zero_of_le_mul_pow_mul_rpow {Y : ℕ → ℝ} {C b α : �
     (h0 : Y 0 ≤ C ^ (-α⁻¹) * b ^ (-(α ^ 2)⁻¹))
     (hrec : ∀ n, Y (n + 1) ≤ C * b ^ n * Y n ^ (1 + α)) :
     Tendsto Y atTop (𝓝 0) := by
-  have hq : b ^ (-α⁻¹) < 1 :=
-    Real.rpow_lt_one_of_one_lt_of_neg hb (neg_lt_zero.mpr (inv_pos.mpr hα))
-  obtain ⟨hbq, hq0⟩ :=
-    rpow_neg_inv_pow_ratio_conditions hY hC (zero_lt_one.trans hb) hα h0
-  exact tendsto_atTop_zero_of_le_mul_pow_mul_rpow_of_ratio_lt_one hY (zero_lt_one.trans hb).le
-    (Real.rpow_nonneg (zero_lt_one.trans hb).le _) hq hα.le hbq hq0 hrec
+  have hb₀ : 0 < b := one_pos.trans hb
+  have hq : b ^ (-α⁻¹) < 1 := Real.rpow_lt_one_of_one_lt_of_neg hb (by simpa)
+  obtain ⟨hbq, hq0⟩ := rpow_neg_inv_pow_ratio_conditions (hY 0) hC hb₀ hα h0
+  exact tendsto_atTop_zero_of_le_mul_pow_mul_rpow_of_ratio_lt_one hY hb₀.le (by positivity) hq
+    (by linarith) hbq hq0 hrec
 
 /-- A real sequence with `cₙ₊₁ = 1 + κ (cₙ² - 1)`, where `κ > 0`, `c₀ > 1` and `κ (1 + c₀) < 1`,
 decreases strictly: while `1 < cₙ ≤ c₀`, the step `cₙ₊₁ - 1 = κ (cₙ + 1) (cₙ - 1)` multiplies
@@ -171,14 +163,11 @@ theorem strictAnti_of_eq_one_add_mul_sq_sub_one {c : ℕ → ℝ} {κ : ℝ} (h�
     StrictAnti c := by
   have hstep (n : ℕ) (h₁ : 1 < c n) (h₀ : c n ≤ c 0) : 1 < c (n + 1) ∧ c (n + 1) < c n := by
     have hκc : κ * (c n + 1) < 1 := by nlinarith
-    have hpos : 0 < κ * ((c n + 1) * (c n - 1)) := mul_pos hκ (by nlinarith)
-    constructor <;> nlinarith [hrec n]
+    constructor <;> nlinarith [hrec n, mul_pos hκ (sub_pos.2 h₁)]
   have hdec (n : ℕ) : 1 < c n ∧ c n ≤ c 0 := by
     induction n with
     | zero => exact ⟨hc₀, le_rfl⟩
-    | succ n ih =>
-        have := hstep n ih.1 ih.2
-        exact ⟨this.1, this.2.le.trans ih.2⟩
+    | succ n ih => exact ⟨(hstep n ih.1 ih.2).1, (hstep n ih.1 ih.2).2.le.trans ih.2⟩
   exact strictAnti_nat_of_succ_lt fun n ↦ (hstep n (hdec n).1 (hdec n).2).2
 
 end TauCeti

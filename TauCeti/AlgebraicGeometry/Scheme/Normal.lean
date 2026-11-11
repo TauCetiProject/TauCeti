@@ -91,7 +91,7 @@ variable {X : Scheme.{u}}
 
 /-- A scheme is normal iff each of its local rings is an integrally closed domain; this is the
 definition, as a single condition per point. -/
-@[simp] theorem isNormalScheme_iff_forall_stalk :
+theorem isNormalScheme_iff_forall_stalk :
     IsNormalScheme X ↔
       ∀ x : X, IsDomain (X.presheaf.stalk x) ∧ IsIntegrallyClosed (X.presheaf.stalk x) :=
   ⟨fun _ _ ↦ ⟨inferInstance, inferInstance⟩, fun h ↦ ⟨fun x ↦ (h x).1, fun x ↦ (h x).2⟩⟩
@@ -200,8 +200,8 @@ theorem IsNormalScheme.isIntegrallyClosed_of_isAffineOpen [IsNormalScheme X]
 /-- On a locally Noetherian normal scheme the local ring at a point of coheight one is a
 discrete valuation ring. Stacks, Lemma 10.119.7 (00PD). -/
 @[stacks 00PD "the codimension-one stalk"]
-theorem IsNormalScheme.isDiscreteValuationRing_stalk (X : Scheme.{u}) [IsLocallyNoetherian X]
-    [IsNormalScheme X] (x : X) (hx : coheight x = 1) :
+theorem IsNormalScheme.isDiscreteValuationRing_stalk [IsLocallyNoetherian X] [IsNormalScheme X]
+    (x : X) (hx : coheight x = 1) :
     IsDiscreteValuationRing (X.presheaf.stalk x) := by
   have hdim : ringKrullDim (X.presheaf.stalk x) = 1 := by
     rw [ringKrullDim_stalk_eq_coheight]

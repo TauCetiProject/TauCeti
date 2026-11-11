@@ -52,38 +52,22 @@ theorem exists_factors_of_eq_prodMap
     [Nonempty M] [Nonempty N] (f : M → M') (g : N → N')
     (hQ : ⇑Q = Prod.map f g) :
     ∃ (φ : M ≃ₘ^n⟮I, I'⟯ M') (ψ : N ≃ₘ^n⟮J, J'⟯ N'), ⇑φ = f ∧ ⇑ψ = g := by
-  classical
   obtain ⟨x₀⟩ := ‹Nonempty M›
   obtain ⟨y₀⟩ := ‹Nonempty N›
-  have hbij : Function.Bijective (Prod.map f g) := hQ ▸ Q.bijective
-  obtain ⟨hf, hg⟩ := Prod.map_bijective.mp hbij
-  let e := Equiv.ofBijective f hf
-  let d := Equiv.ofBijective g hg
-  have hleft : ∀ u, e.symm u = (Q.symm (u, g y₀)).1 := by
-    intro u
-    apply e.injective
-    have h := congrArg Prod.fst (Q.apply_symm_apply (u, g y₀))
-    simpa only [hQ, Prod.map_fst, Equiv.apply_symm_apply, Equiv.ofBijective_apply, e] using h.symm
-  have hright : ∀ v, d.symm v = (Q.symm (f x₀, v)).2 := by
-    intro v
-    apply d.injective
-    have h := congrArg Prod.snd (Q.apply_symm_apply (f x₀, v))
-    simpa only [hQ, Prod.map_snd, Equiv.apply_symm_apply, Equiv.ofBijective_apply, d] using h.symm
-  have hfd : ContMDiff I I' n f := by
-    have h := (Q.contMDiff.comp (contMDiff_id.prodMk (contMDiff_const (c := y₀)))).fst
-    simpa only [hQ, Function.comp_def, Prod.map_fst, id_eq] using h
-  have hgd : ContMDiff J J' n g := by
-    have h := (Q.contMDiff.comp ((contMDiff_const (c := x₀)).prodMk contMDiff_id)).snd
-    simpa only [hQ, Function.comp_def, Prod.map_snd, id_eq] using h
-  have he : ContMDiff I' I n e.symm := by
-    have h := (Q.symm.contMDiff.comp
-      (contMDiff_id.prodMk (contMDiff_const (c := g y₀)))).fst
-    exact h.congr hleft
-  have hd : ContMDiff J' J n d.symm := by
-    have h := (Q.symm.contMDiff.comp
-      ((contMDiff_const (c := f x₀)).prodMk contMDiff_id)).snd
-    exact h.congr hright
-  exact ⟨⟨e, hfd, he⟩, ⟨d, hgd, hd⟩, rfl, rfl⟩
+  have hQ' (p : M × N) : Q p = (f p.1, g p.2) := by rw [hQ, Prod.map_apply']
+  -- The inverse factors are the slices of `Q.symm` through `(·, g y₀)` and `(f x₀, ·)`.
+  refine ⟨⟨⟨f, fun u ↦ (Q.symm (u, g y₀)).1, fun x ↦ ?_, fun u ↦ ?_⟩, ?_,
+      (Q.symm.contMDiff.comp (contMDiff_id.prodMk contMDiff_const)).fst⟩,
+    ⟨⟨g, fun v ↦ (Q.symm (f x₀, v)).2, fun y ↦ ?_, fun v ↦ ?_⟩, ?_,
+      (Q.symm.contMDiff.comp (contMDiff_const.prodMk contMDiff_id)).snd⟩, rfl, rfl⟩
+  · simpa [hQ'] using congrArg Prod.fst (Q.symm_apply_apply (x, y₀))
+  · simpa [hQ'] using congrArg Prod.fst (Q.apply_symm_apply (u, g y₀))
+  · simpa [hQ'] using
+      (Q.contMDiff.comp (contMDiff_id.prodMk (contMDiff_const (c := y₀)))).fst
+  · simpa [hQ'] using congrArg Prod.snd (Q.symm_apply_apply (x₀, y))
+  · simpa [hQ'] using congrArg Prod.snd (Q.apply_symm_apply (f x₀, v))
+  · simpa [hQ'] using
+      (Q.contMDiff.comp ((contMDiff_const (c := x₀)).prodMk contMDiff_id)).snd
 
 section prodAssocOfModels
 
@@ -93,10 +77,8 @@ variable (I J I' M N M' n)
 def prodAssocOfModels :
     ((M × N) × M') ≃ₘ^n⟮(I.prod J).prod I', I.prod (J.prod I')⟯ M × (N × M') where
   toEquiv := Equiv.prodAssoc M N M'
-  contMDiff_toFun := (contMDiff_fst.comp contMDiff_fst).prodMk
-    ((contMDiff_snd.comp contMDiff_fst).prodMk contMDiff_snd)
-  contMDiff_invFun := (contMDiff_fst.prodMk (contMDiff_fst.comp contMDiff_snd)).prodMk
-    (contMDiff_snd.comp contMDiff_snd)
+  contMDiff_toFun := contMDiff_prod_assoc
+  contMDiff_invFun := (contMDiff_fst.prodMk contMDiff_snd.fst).prodMk contMDiff_snd.snd
 
 /-- Reassociation sends `((x, y), z)` to `(x, (y, z))`. -/
 @[simp]
@@ -119,12 +101,10 @@ middle factors. -/
 def prodProdProdComm :
     ((M × N) × (M' × N')) ≃ₘ^n⟮(I.prod J).prod (I'.prod J'), (I.prod I').prod (J.prod J')⟯
       ((M × M') × (N × N')) where
-  contMDiff_toFun :=
-    ((contMDiff_fst.comp contMDiff_fst).prodMk (contMDiff_fst.comp contMDiff_snd)).prodMk
-      ((contMDiff_snd.comp contMDiff_fst).prodMk (contMDiff_snd.comp contMDiff_snd))
-  contMDiff_invFun :=
-    ((contMDiff_fst.comp contMDiff_fst).prodMk (contMDiff_fst.comp contMDiff_snd)).prodMk
-      ((contMDiff_snd.comp contMDiff_fst).prodMk (contMDiff_snd.comp contMDiff_snd))
+  contMDiff_toFun := (contMDiff_fst.fst.prodMk contMDiff_snd.fst).prodMk
+    (contMDiff_fst.snd.prodMk contMDiff_snd.snd)
+  contMDiff_invFun := (contMDiff_fst.fst.prodMk contMDiff_snd.fst).prodMk
+    (contMDiff_fst.snd.prodMk contMDiff_snd.snd)
   toEquiv := Equiv.prodProdProdComm M N M' N'
 
 /-- The inverse of the four-way exchange is the four-way exchange of the regrouped factors. -/

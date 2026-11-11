@@ -77,6 +77,8 @@ statements the classification runs on.
   multiple**.
 * `TauCeti.IsFiniteType.apply_eq_zero_of_apply_mul_apply_eq_three`: **a triple edge is isolated**,
   so it is a connected component of the diagram; this is why `G₂` has rank `2`.
+* `TauCeti.IsFiniteType.apply_mul_apply_eq_two_of_two_le`: a multiple edge with a further edge at
+  one end is double.
 * `TauCeti.IsFiniteType.apply_mul_apply_eq_one_of_three_le_card`: **a branch vertex is simply
   laced**. Three neighbours of an index are each joined to it by a single edge.
 * `TauCeti.IsFiniteType.det_ne_zero`: a finite-type matrix is nonsingular. Since the extended
@@ -637,6 +639,19 @@ theorem apply_eq_zero_of_apply_mul_apply_eq_three (h : IsFiniteType A) {i j k : 
   by_contra h0
   have h1 := h.one_le_apply_mul_apply h0
   have := h.apply_mul_apply_add_apply_mul_apply_lt_four hij hik hjk
+  omega
+
+/-- **A multiple edge with a further edge at one end is double**: a triple edge is isolated, so an
+edge `i - j` with Cartan product at least `2`, at whose end `j` a third index `k` is attached, has
+Cartan product exactly `2`. -/
+theorem apply_mul_apply_eq_two_of_two_le (h : IsFiniteType A) {i j k : B} (hij : i ≠ j)
+    (hik : i ≠ k) (hjk : j ≠ k) (h2 : 2 ≤ A i j * A j i) (hk : A j k ≠ 0) :
+    A i j * A j i = 2 := by
+  have hmem := h.apply_mul_apply_mem_of_ne hij
+  have h3 : A i j * A j i ≠ 3 := fun h3 ↦
+    hk (h.apply_eq_zero_of_apply_mul_apply_eq_three hjk hik (by rwa [mul_comm]))
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hmem
+  generalize A i j * A j i = p at *
   omega
 
 /-- **The degree bound: an index of a finite-type matrix has at most three neighbours**, so a

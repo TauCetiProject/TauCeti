@@ -109,8 +109,8 @@ def pointZero : (curve K).toAffine.Point :=
 variable {K} in
 /-- `T₀` is not the point at infinity. -/
 @[simp]
-theorem pointZero_ne_zero : pointZero K ≠ 0 := by
-  simp [pointZero, Affine.Point.zero_def]
+theorem pointZero_ne_zero : pointZero K ≠ 0 :=
+  Affine.Point.some_ne_zero _
 
 variable [NeZero (2 : K)]
 
@@ -126,13 +126,13 @@ variable {K}
 
 /-- `T₁` is not the point at infinity. -/
 @[simp]
-theorem pointOne_ne_zero : pointOne K ≠ 0 := by
-  simp [pointOne, Affine.Point.mk, Affine.Point.zero_def]
+theorem pointOne_ne_zero : pointOne K ≠ 0 :=
+  Affine.Point.some_ne_zero _
 
 /-- `T₋₁` is not the point at infinity. -/
 @[simp]
-theorem pointNegOne_ne_zero : pointNegOne K ≠ 0 := by
-  simp [pointNegOne, Affine.Point.mk, Affine.Point.zero_def]
+theorem pointNegOne_ne_zero : pointNegOne K ≠ 0 :=
+  Affine.Point.some_ne_zero _
 
 /-- `T₀ ≠ T₁`. -/
 @[simp]

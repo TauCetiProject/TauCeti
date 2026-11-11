@@ -11,6 +11,8 @@ public import Mathlib.Topology.IsLocalHomeomorph
 public import Mathlib.Topology.Maps.OpenQuotient
 public import Mathlib.Topology.Sets.Opens
 
+import TauCeti.Topology.Separation.OpenEmbedding
+
 /-!
 # The connected sum of two spaces along coordinate balls
 
@@ -45,8 +47,15 @@ manifolds, is the disc theorem of Palais and is not part of this file.
 
 * `TauCeti.ConnectedSum e₁ e₂`: the connected sum of `M` and `N` along `e₁` and `e₂`.
 * `TauCeti.ConnectedSum.puncture e`: the complement of the centre of the ball `e`, as an open set.
+* `TauCeti.ConnectedSum.punctureMap`: the restriction of a map preserving the centres to the
+  punctured summands.
 * `TauCeti.ConnectedSum.mk`, `TauCeti.ConnectedSum.inl`, `TauCeti.ConnectedSum.inr`: the quotient
   map from the disjoint union of the punctured summands and its two components.
+* `TauCeti.ConnectedSum.punctureBall`: a ball avoiding the centre of another ball, as a ball of
+  the punctured summand.
+* `TauCeti.ConnectedSum.inlBall`, `TauCeti.ConnectedSum.inrBall`: a ball of a summand avoiding
+  the centre of the ball of the connected sum, as a ball of the connected sum, through the
+  punctured summand.
 
 ## Main results
 
@@ -58,6 +67,12 @@ manifolds, is the disc theorem of Palais and is not part of this file.
 * `TauCeti.ConnectedSum.isLocalHomeomorph_mk`: the quotient map is a local homeomorphism.
 * `TauCeti.ConnectedSum.isOpenEmbedding_inl`, `TauCeti.ConnectedSum.isOpenEmbedding_inr`: each
   punctured summand is an open subspace.
+* `TauCeti.ConnectedSum.t1Space`: the connected sum of `T1` spaces is `T1`.
+* `TauCeti.ConnectedSum.isOpenEmbedding_inlBall`, `TauCeti.ConnectedSum.isOpenEmbedding_inrBall`:
+  balls of a summand which are open embeddings are open embeddings into the connected sum.
+* `TauCeti.ConnectedSum.inr_ne_inlBall_zero`, `TauCeti.ConnectedSum.inl_ne_inrBall_zero`: when a
+  ball of a summand also avoids the ball of that summand, its centre lies in one punctured summand
+  only.
 * `TauCeti.ConnectedSum.t2Space`: the connected sum of Hausdorff spaces along finite-dimensional
   balls is Hausdorff.
 
@@ -97,6 +112,59 @@ theorem apply_mem_puncture {M' : Type*} [TopologicalSpace M'] [T1Space M'] {e : 
     {e' : E → M'} {φ : M → M'} (hφ : Injective φ) (h0 : φ (e 0) = e' 0) {x : M}
     (hx : x ∈ puncture e) : φ x ∈ puncture e' :=
   mem_puncture.2 (h0 ▸ hφ.ne hx)
+
+section punctureMap
+
+variable {M' : Type*} [TopologicalSpace M'] [T1Space M'] {e : E → M} {e' : E → M'} {φ : M → M'}
+  (hφ : Injective φ) (h0 : φ (e 0) = e' 0)
+
+variable (φ) in
+/-- The restriction of an injective map carrying the centre of the ball `e` to the centre of the
+ball `e'` to the punctured summands `M ∖ {e 0} → M' ∖ {e' 0}`. -/
+def punctureMap : puncture e → puncture e' :=
+  MapsTo.restrict φ (puncture e) (puncture e') fun _ hx ↦ apply_mem_puncture hφ h0 hx
+
+@[simp]
+theorem coe_punctureMap (x : puncture e) : (punctureMap φ hφ h0 x : M') = φ x :=
+  (rfl)
+
+theorem subtypeVal_comp_punctureMap : Subtype.val ∘ punctureMap φ hφ h0 = φ ∘ Subtype.val :=
+  (rfl)
+
+@[simp]
+theorem punctureMap_id (h0 : id (e 0) = e 0) (x : puncture e) :
+    punctureMap id injective_id h0 x = x :=
+  (rfl)
+
+theorem continuous_punctureMap (hφc : Continuous φ) : Continuous (punctureMap φ hφ h0) :=
+  hφc.restrict _
+
+theorem isOpenMap_punctureMap (hφo : IsOpenMap φ) : IsOpenMap (punctureMap φ hφ h0) :=
+  (hφo.comp (puncture e).isOpen.isOpenMap_subtype_val).codRestrict _
+
+end punctureMap
+
+section punctureBall
+
+/-- A ball `f : E → M` whose image avoids the centre of the ball `e`, as a ball of the punctured
+summand `M ∖ {e 0}`. -/
+def punctureBall (e f : E → M) (h : e 0 ∉ range f) : E → puncture e :=
+  codRestrict f (puncture e) fun w ↦ mem_puncture.2 fun hw ↦ h ⟨w, hw⟩
+
+variable {e f : E → M} (h : e 0 ∉ range f)
+
+@[simp]
+theorem coe_punctureBall (w : E) : (punctureBall e f h w : M) = f w :=
+  (rfl)
+
+theorem subtypeVal_comp_punctureBall : Subtype.val ∘ punctureBall e f h = f :=
+  (rfl)
+
+theorem isOpenEmbedding_punctureBall (hf : IsOpenEmbedding f) :
+    IsOpenEmbedding (punctureBall e f h) :=
+  (puncture e).isOpen.isOpenEmbedding_subtypeVal.of_comp_iff _ |>.1 hf
+
+end punctureBall
 
 /-- An injective ball does not meet its centre at the inversion of a nonzero vector. -/
 theorem apply_inversion_mem_puncture [InnerProductSpace ℝ E] {e : E → M} (he : Injective e)
@@ -385,6 +453,77 @@ theorem isOpenEmbedding_inr (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbeddin
   .of_continuous_injective_isOpenMap (continuous_inr e₁ e₂)
     (inr_injective h₁.injective h₂.injective)
     ((isOpenQuotientMap_mk h₁ h₂).isOpenMap.comp isOpenMap_inr)
+
+/-- **The connected sum of `T1` spaces is `T1`**: each point lies in one of the two punctured
+summands, open subspaces which are `T1`. -/
+theorem t1Space (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂) :
+    T1Space (ConnectedSum e₁ e₂) := by
+  refine t1Space_iff_exists_open.2 fun p q hpq ↦ ?_
+  obtain ⟨x | y, rfl⟩ := mk_surjective e₁ e₂ p
+  · exact (isOpenEmbedding_inl h₁ h₂).exists_isOpen_mem_notMem (Ne.symm hpq)
+  · exact (isOpenEmbedding_inr h₁ h₂).exists_isOpen_mem_notMem (Ne.symm hpq)
+
+section Ball
+
+variable (e₁ e₂) {f : E → M} {g : E → N}
+
+/-- A ball `f : E → M` of the first summand avoiding the centre of `e₁`, as a ball of the
+connected sum along `e₁` and `e₂`, through the first punctured summand. -/
+def inlBall (f : E → M) (h : e₁ 0 ∉ range f) : E → ConnectedSum e₁ e₂ :=
+  inl e₁ e₂ ∘ punctureBall e₁ f h
+
+/-- A ball `g : E → N` of the second summand avoiding the centre of `e₂`, as a ball of the
+connected sum along `e₁` and `e₂`, through the second punctured summand. -/
+def inrBall (g : E → N) (h : e₂ 0 ∉ range g) : E → ConnectedSum e₁ e₂ :=
+  inr e₁ e₂ ∘ punctureBall e₂ g h
+
+@[simp]
+theorem inlBall_apply (h : e₁ 0 ∉ range f) (w : E) :
+    inlBall e₁ e₂ f h w = inl e₁ e₂ (punctureBall e₁ f h w) :=
+  (rfl)
+
+@[simp]
+theorem inrBall_apply (h : e₂ 0 ∉ range g) (w : E) :
+    inrBall e₁ e₂ g h w = inr e₁ e₂ (punctureBall e₂ g h w) :=
+  (rfl)
+
+theorem inl_comp_punctureBall (h : e₁ 0 ∉ range f) :
+    inl e₁ e₂ ∘ punctureBall e₁ f h = inlBall e₁ e₂ f h :=
+  (rfl)
+
+theorem inr_comp_punctureBall (h : e₂ 0 ∉ range g) :
+    inr e₁ e₂ ∘ punctureBall e₂ g h = inrBall e₁ e₂ g h :=
+  (rfl)
+
+variable {e₁ e₂}
+
+/-- If moreover `f 0 ∉ range e₁`, the centre of the ball `f` of the connected sum is not a point
+of the second summand. -/
+theorem inr_ne_inlBall_zero (he₁ : Injective e₁) (he₂ : Injective e₂) (h : e₁ 0 ∉ range f)
+    (hf : f 0 ∉ range e₁) (y : puncture e₂) : inr e₁ e₂ y ≠ inlBall e₁ e₂ f h 0 := by
+  intro hy
+  rw [inlBall_apply, eq_comm, inl_eq_inr_iff he₁ he₂] at hy
+  obtain ⟨v, -, hv, -⟩ := hy
+  exact hf ⟨v, by simpa using hv⟩
+
+/-- If moreover `g 0 ∉ range e₂`, the centre of the ball `g` of the connected sum is not a point
+of the first summand. -/
+theorem inl_ne_inrBall_zero (he₁ : Injective e₁) (he₂ : Injective e₂) (h : e₂ 0 ∉ range g)
+    (hg : g 0 ∉ range e₂) (x : puncture e₁) : inl e₁ e₂ x ≠ inrBall e₁ e₂ g h 0 := by
+  intro hx
+  rw [inrBall_apply, inl_eq_inr_iff he₁ he₂] at hx
+  obtain ⟨v, -, -, hv⟩ := hx
+  exact hg ⟨_, by simpa using hv⟩
+
+theorem isOpenEmbedding_inlBall (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂)
+    (h : e₁ 0 ∉ range f) (hf : IsOpenEmbedding f) : IsOpenEmbedding (inlBall e₁ e₂ f h) :=
+  (isOpenEmbedding_inl h₁ h₂).comp (isOpenEmbedding_punctureBall h hf)
+
+theorem isOpenEmbedding_inrBall (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂)
+    (h : e₂ 0 ∉ range g) (hg : IsOpenEmbedding g) : IsOpenEmbedding (inrBall e₁ e₂ g h) :=
+  (isOpenEmbedding_inr h₁ h₂).comp (isOpenEmbedding_punctureBall h hg)
+
+end Ball
 
 /-- The quotient map of the connected sum is a local homeomorphism: on each punctured summand, an
 open subset of the disjoint union, it restricts to an open embedding. -/

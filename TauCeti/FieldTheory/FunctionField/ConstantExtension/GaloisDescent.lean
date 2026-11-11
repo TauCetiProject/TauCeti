@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.GeometricDegree
 public import TauCeti.FieldTheory.Galois.SemilinearDescent
+public import Mathlib.FieldTheory.RatFunc.AsPolynomial
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Degree
 
 /-!
@@ -26,6 +27,8 @@ function field of the descended curve:
 * degrees over rational subfields descend: for every `x ∈ F₀`, `[F₀ : k(x)] = [F : L(x)]`
   (`TauCeti.GaloisDescent.finrank_fixedField_over_adjoin_simple`). For a Belyi function `t`
   fixed by the action, this says that `t` has the same degree as a function on `F₀` as on `F`.
+  When `F` is an algebra over `L(t)` and `F₀` over `k(t)` compatibly, this is
+  `[F₀ : k(t)] = [F : L(t)]` (`TauCeti.GaloisDescent.finrank_ratFunc_fixedField`).
 
 Effectiveness is Galois descent for `F` as an `L`-vector space with a semilinear action, which
 needs no finiteness of `F` over `L`: `F` is spanned over `L` by `F₀`
@@ -83,6 +86,32 @@ theorem finrank_fixedField_over_adjoin_simple [FiniteDimensional k L] [IsGalois 
     Module.finrank k⟮x⟯ (fixedField ρ.range) = Module.finrank L⟮(x : F)⟯ F :=
   (finrank_over_adjoin_simple_eq_of_constantCompositum_eq_top
     (isIntegrallyClosedIn_fixedField hρ hL) (constantCompositum_fixedField_eq_top hρ) x).symm
+
+variable [Algebra (RatFunc L) F] [IsScalarTower L (RatFunc L) F] [FiniteDimensional k L]
+  [IsGalois k L] {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)} [Algebra (RatFunc k) (fixedField ρ.range)]
+  [IsScalarTower k (RatFunc k) (fixedField ρ.range)]
+
+/-- **The degree of a Belyi map descends.** Let `ρ` be a semilinear action of `Gal(L/k)` on a
+field `F` over `L(t)` with exact constant field `L`. If the variable of `k(t)` acts on the fixed
+field `F₀` of `ρ` as the variable of `L(t)` acts on `F`, then `[F₀ : k(t)] = [F : L(t)]`. -/
+theorem finrank_ratFunc_fixedField (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a))
+    (hL : IsIntegrallyClosedIn L F)
+    (hX : algebraMap (fixedField ρ.range) F (algebraMap (RatFunc k) _ RatFunc.X) =
+      algebraMap (RatFunc L) F RatFunc.X) :
+    Module.finrank (RatFunc k) (fixedField ρ.range) = Module.finrank (RatFunc L) F :=
+  (finrank_ratFunc_eq_of_constantCompositum_eq_top (isIntegrallyClosedIn_fixedField hρ hL)
+    (constantCompositum_fixedField_eq_top hρ) hX).symm
+
+/-- The fixed field of a semilinear action of `Gal(L/k)` on a function field finite over `L(t)`,
+with exact constant field `L`, is finite over `k(t)`, when the variable of `k(t)` acts on it as
+the variable of `L(t)` acts on `F`. -/
+theorem finiteDimensional_ratFunc_fixedField [FiniteDimensional (RatFunc L) F]
+    (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a))
+    (hL : IsIntegrallyClosedIn L F)
+    (hX : algebraMap (fixedField ρ.range) F (algebraMap (RatFunc k) _ RatFunc.X) =
+      algebraMap (RatFunc L) F RatFunc.X) :
+    FiniteDimensional (RatFunc k) (fixedField ρ.range) :=
+  Module.finite_of_finrank_pos (finrank_ratFunc_fixedField hρ hL hX ▸ Module.finrank_pos)
 
 end GaloisDescent
 

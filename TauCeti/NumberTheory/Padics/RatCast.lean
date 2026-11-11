@@ -103,4 +103,31 @@ theorem addCircle_coe_eq_coe_of_eq_add_algebraMap {p : ℕ} [Fact p.Prime] {r s 
     exact PadicInt.norm_le_one z)
   exact Submodule.mem_one.mpr ⟨_, (eq_intCast _ _).trans ((Rat.den_eq_one_iff _).mp hden)⟩
 
+/-- The integer `D = ∏_p p ^ k p` of a finitely supported family of exponents factors at each
+prime `p` as `p ^ k p * D' p`, where `D' p` is a `p`-adic unit divisible by `q ^ k q` for
+`q ≠ p`. -/
+theorem exists_nat_eq_pow_mul (k : Nat.Primes → ℕ)
+    (hk : ∀ᶠ p in cofinite, k p = 0) :
+    ∃ (D : ℕ) (D' : Nat.Primes → ℕ), D ≠ 0 ∧ (∀ p : Nat.Primes, D = (p : ℕ) ^ k p * D' p) ∧
+      (∀ {p q : Nat.Primes}, q ≠ p → (q : ℕ) ^ k q ∣ D' p) ∧
+      ∀ p : Nat.Primes, IsUnit (D' p : ℤ_[p]) := by
+  classical
+  have hS : {p | k p ≠ 0}.Finite := eventually_cofinite.mp hk
+  let S := hS.toFinset
+  have hkS {q : Nat.Primes} (hq : q ∉ S) : k q = 0 := by simpa [S] using hq
+  refine ⟨∏ q ∈ S, (q : ℕ) ^ k q, fun p ↦ ∏ q ∈ S.erase p, (q : ℕ) ^ k q,
+    Finset.prod_ne_zero_iff.mpr fun q _ ↦ pow_ne_zero _ q.2.ne_zero, fun p ↦ ?_,
+    fun {p q} hqp ↦ ?_, fun p ↦ ?_⟩
+  · by_cases hp : p ∈ S
+    · exact (Finset.mul_prod_erase S _ hp).symm
+    · simp [hkS hp, Finset.erase_eq_of_notMem hp]
+  · by_cases hq : q ∈ S
+    · exact Finset.dvd_prod_of_mem _ (Finset.mem_erase.mpr ⟨hqp, hq⟩)
+    · simp [hkS hq]
+  · rw [PadicInt.isUnit_iff, PadicInt.norm_natCast_eq_one_iff,
+      Nat.Prime.coprime_iff_not_dvd p.2, Prime.dvd_finsetProd_iff p.2.prime]
+    rintro ⟨q, hq, hpq⟩
+    exact (Finset.mem_erase.mp hq).1
+      (Subtype.ext ((Nat.prime_dvd_prime_iff_eq p.2 q.2).mp (p.2.dvd_of_dvd_pow hpq))).symm
+
 end Padic

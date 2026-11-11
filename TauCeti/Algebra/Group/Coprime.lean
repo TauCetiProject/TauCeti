@@ -28,9 +28,14 @@ virtual characters induced from `p`-elementary subgroups.
 * `TauCeti.exists_zpow_mul_zpow_eq_of_coprime` and its additive form
   `TauCeti.exists_zsmul_add_zsmul_eq_of_coprime`: the factorization above, with coefficients
   independent of `y`.
-* `Subgroup.mem_of_forall_prime_exists_pow_mem` and its additive form
-  `AddSubgroup.mem_of_forall_prime_exists_nsmul_mem`: membership from prime-to-`p` powers, one
-  prime at a time.
+* `Commute.pow_eq_pow_iff_of_coprime'` and its additive form
+  `AddCommute.nsmul_eq_nsmul_iff_of_coprime'`: for coprime `m` and `n`, commuting elements `x`
+  and `y` of a group satisfy `x ^ m = y ^ n` exactly when they are `v ^ n` and `v ^ m` for a
+  single `v`; `TauCeti.pow_eq_pow_iff_of_coprime'` and
+  `TauCeti.nsmul_eq_nsmul_iff_of_coprime'` specialize this to commutative groups.
+* `TauCeti.mem_of_forall_prime_exists_pow_mem` and its additive form
+  `TauCeti.mem_of_forall_prime_exists_nsmul_mem`: membership from prime-to-`p` powers, one
+  prime at a time, in any subgroup (or additive subgroup) of a group.
 -/
 
 public section
@@ -54,29 +59,57 @@ theorem exists_zpow_mul_zpow_eq_of_coprime {G : Type*} [Group G] {n m : ℕ}
       _ = y ^ ((Nat.gcd n m : ℕ) : ℤ) := by rw [← Nat.gcd_eq_gcd_ab]
       _ = y := by rw [h.gcd_eq_one, zpow_natCast, pow_one]⟩
 
-end TauCeti
+/-- **Common roots for coprime exponents.** For coprime `m` and `n`, two commuting elements `x`
+and `y` of a group satisfy `x ^ m = y ^ n` exactly when they are the `n`-th and `m`-th powers of a
+single element `v`. Writing `1 = m i + n j`, the element `v = y ^ i * x ^ j` works. This is the
+group version of Mathlib's `Commute.pow_eq_pow_iff_of_coprime` for groups with zero. -/
+@[to_additive /-- **Common divisions for coprime coefficients.** For coprime `m` and `n`, two
+commuting elements `x` and `y` of an additive group satisfy `m • x = n • y` exactly when they are
+the multiples `n • v` and `m • v` of a single element `v`. -/]
+protected theorem _root_.Commute.pow_eq_pow_iff_of_coprime' {G : Type*} [Group G] {x y : G}
+    {m n : ℕ} (hxy : Commute x y) (hmn : m.Coprime n) :
+    x ^ m = y ^ n ↔ ∃ v, x = v ^ n ∧ y = v ^ m := by
+  refine ⟨fun h ↦ ?_, by rintro ⟨v, rfl, rfl⟩; rw [← pow_mul, ← pow_mul']⟩
+  obtain ⟨i, j, hij⟩ := exists_zpow_mul_zpow_eq_of_coprime (G := G) hmn
+  have hc : Commute (y ^ i) (x ^ j) := (hxy.zpow_zpow j i).symm
+  refine ⟨y ^ i * x ^ j, ?_, ?_⟩
+  · conv_lhs => rw [← hij x, h]
+    simp only [hc.mul_pow, ← zpow_natCast, zpow_comm]
+  · conv_lhs => rw [← hij y, ← h]
+    simp only [hc.mul_pow, ← zpow_natCast, zpow_comm]
+
+/-- **Common roots for coprime exponents** in a commutative group: for coprime `m` and `n`,
+`x ^ m = y ^ n` exactly when `x` and `y` are the `n`-th and `m`-th powers of a single element. -/
+@[to_additive /-- **Common divisions for coprime coefficients** in an additive commutative group:
+for coprime `m` and `n`, `m • x = n • y` exactly when `x` and `y` are the multiples `n • v` and
+`m • v` of a single element `v`. -/]
+theorem pow_eq_pow_iff_of_coprime' {G : Type*} [CommGroup G] {x y : G} {m n : ℕ}
+    (hmn : m.Coprime n) : x ^ m = y ^ n ↔ ∃ v, x = v ^ n ∧ y = v ^ m :=
+  (Commute.all x y).pow_eq_pow_iff_of_coprime' hmn
 
 /-- **Membership from prime-to-`p` powers.** If for every prime `p` some power `x ^ m` with
 `p ∤ m` lies in the subgroup `H`, then `x` lies in `H`. -/
 @[to_additive /-- **Membership from prime-to-`p` multiples.** If for every prime `p` some multiple
 `m • x` with `p ∤ m` lies in the additive subgroup `H`, then `x` lies in `H`. -/]
-theorem Subgroup.mem_of_forall_prime_exists_pow_mem {G : Type*} [Group G] {H : Subgroup G} {x : G}
-    (h : ∀ p : ℕ, p.Prime → ∃ m : ℕ, ¬ p ∣ m ∧ x ^ m ∈ H) : x ∈ H := by
+theorem mem_of_forall_prime_exists_pow_mem {G S : Type*} [Group G] [SetLike S G]
+    [SubgroupClass S G] {H : S} {x : G} (h : ∀ p : ℕ, p.Prime → ∃ m : ℕ, ¬ p ∣ m ∧ x ^ m ∈ H) :
+    x ∈ H := by
   have hex : ∃ d, 0 < d ∧ x ^ d ∈ H := by
     obtain ⟨m, hm, hmH⟩ := h 2 Nat.prime_two
-    exact ⟨m, Nat.pos_of_ne_zero (by rintro rfl; exact hm (dvd_zero 2)), hmH⟩
+    exact ⟨m, Nat.pos_of_ne_zero fun hm0 ↦ hm (hm0 ▸ dvd_zero 2), hmH⟩
   classical
   obtain ⟨hd, hdH⟩ := Nat.find_spec hex
   -- The least positive exponent `d` with `x ^ d ∈ H` divides every such exponent.
   have hdvd {m : ℕ} (hm : x ^ m ∈ H) : Nat.find hex ∣ m := by
-    have hr : x ^ (m % Nat.find hex) ∈ H := by
-      rw [← Nat.div_add_mod m (Nat.find hex), pow_add, pow_mul] at hm
-      exact (H.mul_mem_cancel_left (H.pow_mem hdH _)).mp hm
-    refine Nat.dvd_of_mod_eq_zero (by_contra fun hne => ?_)
-    exact Nat.find_min hex (Nat.mod_lt m hd) ⟨Nat.pos_of_ne_zero hne, hr⟩
+    rw [← Nat.div_add_mod m (Nat.find hex), pow_add, pow_mul,
+      mul_mem_cancel_left (pow_mem hdH _)] at hm
+    exact Nat.dvd_of_mod_eq_zero <| by_contra fun hne ↦
+      Nat.find_min hex (Nat.mod_lt m hd) ⟨Nat.pos_of_ne_zero hne, hm⟩
   -- So no prime divides `d`, which is therefore `1`.
   obtain h1 | h1 := eq_or_ne (Nat.find hex) 1
   · simpa [h1] using hdH
   · obtain ⟨p, hp, hpd⟩ := Nat.exists_prime_and_dvd h1
     obtain ⟨m, hm, hmH⟩ := h p hp
     exact absurd (hpd.trans (hdvd hmH)) hm
+
+end TauCeti

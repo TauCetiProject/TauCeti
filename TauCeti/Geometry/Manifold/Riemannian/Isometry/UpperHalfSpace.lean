@@ -122,7 +122,6 @@ private theorem tangentSpaceCastModel_mfderiv_inversionMap (a : E) (R : ℝ) (hR
         (ℝ ∙ ((x : WithLp 2 (E × ℝ)) - WithLp.toLp 2 (a, 0)))ᗮ.reflection
           (tangentSpaceCastModel 𝓘(ℝ, WithLp 2 (E × ℝ)) x v) :=
   tangentSpaceCastModel_mfderiv_apply
-    ((contMDiff_inversionMap (n := 1) a R hR x).mdifferentiableAt one_ne_zero)
     (EuclideanGeometry.hasFDerivAt_inversion (coe_ne_toLp x a))
     (coe_comp_inversionMap a R hR) v
 

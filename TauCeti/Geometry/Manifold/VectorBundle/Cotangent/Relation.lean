@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Diffeomorph.Cotangent
+public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Prod
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 /-!
 # The cotangent relation of a map
@@ -17,14 +19,16 @@ relation between `(x, p)` and `(f x, q)` given by `p = q ∘ df_x`.
 
 The relation of the identity is equality, and the relation of a composite is exactly
 the composite of the relations. For diffeomorphisms it is the graph of the existing
-cotangent lift `Diffeomorph.cotangent`. For constant maps, all target covectors over
-the constant value are related to the zero source covector; this illustrates why a
-relation is necessary for general maps.
+cotangent lift `Diffeomorph.cotangent`. Under `TauCeti.CotangentBundle.prodDiffeomorph`,
+the cotangent relation of a product map `Prod.map i₁ i₂` splits into the cotangent
+relations of its factors (`TauCeti.CotangentBundle.cotangentRel_prodMap_iff`). For
+constant maps, all target covectors over the constant value are related to the zero
+source covector; this illustrates why a relation is necessary for general maps.
 
 The definition uses Mathlib's `mfderiv`, with its usual zero value at points where
-the map is not differentiable. The composition theorem assumes differentiability
-only at the source point and its image. No finite-dimensionality or boundaryless
-assumptions are needed.
+the map is not differentiable. The composition and product theorems assume
+differentiability only at the source point (and its image, for composition). No
+finite-dimensionality or boundaryless assumptions are needed.
 
 ## References
 
@@ -153,6 +157,8 @@ theorem cotangentRel_const_iff (y : N) (z : CotangentBundle I M) (w : CotangentB
     exact w.2.map_zero
   rw [cotangentRel_iff, h0]
 
+section Diffeomorph
+
 variable [IsManifold I 2 M] [IsManifold J 2 N]
 
 /-- For a diffeomorphism, the cotangent relation is the graph of its cotangent lift. -/
@@ -170,5 +176,79 @@ theorem cotangentRel_diffeomorph_iff (h : M ≃ₘ⟮I, J⟯ N)
     refine ⟨(Diffeomorph.proj_cotangent h z).symm, ?_⟩
     ext v
     exact (Diffeomorph.cotangent_snd_apply_mfderiv h z v).symm
+
+end Diffeomorph
+
+section ProductMap
+
+variable {E₁ E₂ F₁ F₂ : Type*}
+  [NormedAddCommGroup E₁] [NormedSpace 𝕜 E₁]
+  [NormedAddCommGroup E₂] [NormedSpace 𝕜 E₂]
+  [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
+  [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
+  {H₁ H₂ G₁ G₂ : Type*}
+  [TopologicalSpace H₁] [TopologicalSpace H₂]
+  [TopologicalSpace G₁] [TopologicalSpace G₂]
+  {I₁ : ModelWithCorners 𝕜 E₁ H₁} {I₂ : ModelWithCorners 𝕜 E₂ H₂}
+  {J₁ : ModelWithCorners 𝕜 F₁ G₁} {J₂ : ModelWithCorners 𝕜 F₂ G₂}
+  {M₁ M₂ Q₁ Q₂ : Type*}
+  [TopologicalSpace M₁] [ChartedSpace H₁ M₁]
+  [TopologicalSpace M₂] [ChartedSpace H₂ M₂]
+  [TopologicalSpace Q₁] [ChartedSpace G₁ Q₁]
+  [TopologicalSpace Q₂] [ChartedSpace G₂ Q₂]
+  [IsManifold I₁ 2 M₁] [IsManifold I₂ 2 M₂]
+  [IsManifold J₁ 2 Q₁] [IsManifold J₂ 2 Q₂]
+
+/-- **The cotangent relation of a product map splits under `prodDiffeomorph`.** Assuming `i₁` and
+`i₂` are differentiable at the two components of `z.proj`, `Prod.map i₁ i₂` relates `z` to `w` if
+and only if `i₁` and `i₂` relate the corresponding factors of `prodDiffeomorph z` and
+`prodDiffeomorph w`. -/
+theorem cotangentRel_prodMap_iff {i₁ : Q₁ → M₁} {i₂ : Q₂ → M₂}
+    (z : CotangentBundle (J₁.prod J₂) (Q₁ × Q₂))
+    (w : CotangentBundle (I₁.prod I₂) (M₁ × M₂))
+    (hi₁ : MDifferentiableAt J₁ I₁ i₁ z.proj.1)
+    (hi₂ : MDifferentiableAt J₂ I₂ i₂ z.proj.2) :
+    cotangentRel (J₁.prod J₂) (I₁.prod I₂) (Prod.map i₁ i₂) z w ↔
+      cotangentRel J₁ I₁ i₁ (prodDiffeomorph J₁ J₂ Q₁ Q₂ z).1
+        (prodDiffeomorph I₁ I₂ M₁ M₂ w).1 ∧
+      cotangentRel J₂ I₂ i₂ (prodDiffeomorph J₁ J₂ Q₁ Q₂ z).2
+        (prodDiffeomorph I₁ I₂ M₁ M₂ w).2 := by
+  obtain ⟨⟨q₁, q₂⟩, α⟩ := z
+  obtain ⟨⟨x₁, x₂⟩, β⟩ := w
+  have hdiff : MDifferentiableAt (J₁.prod J₂) (I₁.prod I₂) (Prod.map i₁ i₂) (q₁, q₂) :=
+    (hi₁.comp (q₁, q₂) mdifferentiableAt_fst).prodMk (hi₂.comp (q₁, q₂) mdifferentiableAt_snd)
+  rw [prodDiffeomorph_fst, prodDiffeomorph_fst, prodDiffeomorph_snd, prodDiffeomorph_snd]
+  simp only [cotangentRel_iff]
+  constructor
+  · rintro ⟨hproj, hrel⟩
+    obtain ⟨rfl, rfl⟩ := Prod.mk.inj hproj
+    refine ⟨⟨rfl, ?_⟩, ⟨rfl, ?_⟩⟩
+    · rw [hrel, ContinuousLinearMap.comp_assoc, mfderiv_prodMap_comp_prodMkLeft hi₂,
+        ← ContinuousLinearMap.comp_assoc]
+    · rw [hrel, ContinuousLinearMap.comp_assoc, mfderiv_prodMap_comp_prodMkRight hi₁,
+        ← ContinuousLinearMap.comp_assoc]
+  · rintro ⟨⟨rfl, hrel₁⟩, ⟨rfl, hrel₂⟩⟩
+    refine ⟨rfl, ContinuousLinearMap.ext fun v ↦ ?_⟩
+    rw [ContinuousLinearMap.comp_apply]
+    have hz := snd_apply_eq_prodDiffeomorph_add (I := J₁) (J := J₂) ⟨(q₁, q₂), α⟩ v
+    have hw := snd_apply_eq_prodDiffeomorph_add (I := I₁) (J := I₂) ⟨(i₁ q₁, i₂ q₂), β⟩
+      (mfderiv (J₁.prod J₂) (I₁.prod I₂) (Prod.map i₁ i₂) (q₁, q₂) v)
+    rw [prodDiffeomorph_fst, prodDiffeomorph_snd] at hz hw
+    dsimp only at hz hw
+    rw [hz, hw]
+    have h₁ : mfderiv (I₁.prod I₂) I₁ Prod.fst (i₁ q₁, i₂ q₂)
+        (mfderiv (J₁.prod J₂) (I₁.prod I₂) (Prod.map i₁ i₂) (q₁, q₂) v) =
+        mfderiv J₁ I₁ i₁ q₁ (mfderiv (J₁.prod J₂) J₁ Prod.fst (q₁, q₂) v) :=
+      (mfderiv_comp_apply (q₁, q₂) (mdifferentiableAt_fst (x := (i₁ q₁, i₂ q₂))) hdiff v).symm
+        |>.trans (mfderiv_comp_apply (q₁, q₂) hi₁ mdifferentiableAt_fst v)
+    have h₂ : mfderiv (I₁.prod I₂) I₂ Prod.snd (i₁ q₁, i₂ q₂)
+        (mfderiv (J₁.prod J₂) (I₁.prod I₂) (Prod.map i₁ i₂) (q₁, q₂) v) =
+        mfderiv J₂ I₂ i₂ q₂ (mfderiv (J₁.prod J₂) J₂ Prod.snd (q₁, q₂) v) :=
+      (mfderiv_comp_apply (q₁, q₂) (mdifferentiableAt_snd (x := (i₁ q₁, i₂ q₂))) hdiff v).symm
+        |>.trans (mfderiv_comp_apply (q₁, q₂) hi₂ mdifferentiableAt_snd v)
+    rw [h₁, h₂]
+    exact congrArg₂ (· + ·) (DFunLike.congr_fun hrel₁ _) (DFunLike.congr_fun hrel₂ _)
+
+end ProductMap
 
 end TauCeti.CotangentBundle

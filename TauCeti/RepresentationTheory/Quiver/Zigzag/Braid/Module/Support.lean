@@ -64,7 +64,6 @@ private def positiveSupport (i : V) : TwoTermSupport (Bimod k G) where
   high := zigzagBraidComplexXIso₁ k G i
   ne := by decide
   outgoing j := zigzagBraidComplex_d_eq_zero₀ i j (by decide)
-  incoming j := zigzagBraidComplex_d_eq_zero₁ i j (by decide)
   support j := isZero_zigzagBraidComplex_X i
 
 private def inverseSupport (i : V) : TwoTermSupport (Bimod k G) where
@@ -77,7 +76,6 @@ private def inverseSupport (i : V) : TwoTermSupport (Bimod k G) where
   high := zigzagBraidInverseComplexXIso₁ k G i
   ne := by decide
   outgoing j := zigzagBraidInverseComplex_d_eq_zero₀ i j (by decide)
-  incoming j := zigzagBraidInverseComplex_d_eq_zero₁ i j (by decide)
   support j := isZero_zigzagBraidInverseComplex_X i
 
 /-- The natural two-support sequence of the positive braid tensor action has outer functors
@@ -179,21 +177,17 @@ theorem zigzagBraidInverseTensorSupportSequence_X₃ (i : V) :
 /-- The positive support sequence is short exact in the functor category. -/
 theorem zigzagBraidTensorSupportSequence_shortExact (i : V) :
     (zigzagBraidTensorSupportSequence.{u, v, w} k G i).ShortExact :=
-  ShortComplex.shortExact_of_iso
-    ((tensor.{u, v, w} k G).mapTwoTermSupportReframedIso (positiveSupport k G i)
-      ((tensor.{u, v, w} k G).mapBifunctorSingleRowZeroNatIso (zigzagGradedBimodule k G))
-      ((tensor.{u, v, w} k G).mapBifunctorSingleRowNatIso (zigzagGradedBraidBimodule k G i) (-1)))
-    ((tensor.{u, v, w} k G).mapTwoTermSupport_shortExact (positiveSupport k G i))
+  (tensor.{u, v, w} k G).mapTwoTermSupportReframed_shortExact (positiveSupport k G i)
+    ((tensor.{u, v, w} k G).mapBifunctorSingleRowZeroNatIso (zigzagGradedBimodule k G))
+    ((tensor.{u, v, w} k G).mapBifunctorSingleRowNatIso (zigzagGradedBraidBimodule k G i) (-1))
 
 /-- The inverse support sequence is short exact in the functor category. -/
 theorem zigzagBraidInverseTensorSupportSequence_shortExact (i : V) :
     (zigzagBraidInverseTensorSupportSequence.{u, v, w} k G i).ShortExact :=
-  ShortComplex.shortExact_of_iso
-    ((tensor.{u, v, w} k G).mapTwoTermSupportReframedIso (inverseSupport k G i)
-      ((tensor.{u, v, w} k G).mapBifunctorSingleRowNatIso
-        ((GradedModuleCat.shiftFunctor (-2)).obj (zigzagGradedBraidBimodule k G i)) 1)
-      ((tensor.{u, v, w} k G).mapBifunctorSingleRowZeroNatIso (zigzagGradedBimodule k G)))
-    ((tensor.{u, v, w} k G).mapTwoTermSupport_shortExact (inverseSupport k G i))
+  (tensor.{u, v, w} k G).mapTwoTermSupportReframed_shortExact (inverseSupport k G i)
+    ((tensor.{u, v, w} k G).mapBifunctorSingleRowNatIso
+      ((GradedModuleCat.shiftFunctor (-2)).obj (zigzagGradedBraidBimodule k G i)) 1)
+    ((tensor.{u, v, w} k G).mapBifunctorSingleRowZeroNatIso (zigzagGradedBimodule k G))
 
 /-- The positive support sequence has its canonical splitting after evaluating at a
 module complex and a cochain degree. -/

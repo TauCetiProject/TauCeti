@@ -41,11 +41,9 @@ namespace TauCeti
 variable {R : Type*} [Ring R] {x : R}
 
 /-- **An element of `p`-power order is unipotent** in a ring of exponential characteristic `p`:
-subtracting `1` and raising to the power `p ^ n` commutes with the subtraction, so `x ^ p ^ n = 1`
-forces `(x - 1) ^ p ^ n = 0`. -/
-theorem isNilpotent_sub_one_of_pow_expChar_pow_eq_one (p n : ℕ) [ExpChar R p]
+if `x ^ p ^ n = 1`, then `x - 1` is nilpotent, with `(x - 1) ^ p ^ n = 0`. -/
+theorem isNilpotent_sub_one_of_pow_expChar_pow_eq_one {p n : ℕ} [ExpChar R p]
     (h : x ^ p ^ n = 1) : IsNilpotent (x - 1) :=
-  ⟨p ^ n, by
-    rw [sub_pow_expChar_pow_of_commute p n (Commute.one_right x), h, one_pow, sub_self]⟩
+  ⟨p ^ n, by simp [sub_pow_expChar_pow_of_commute p n (.one_right x), h]⟩
 
 end TauCeti
