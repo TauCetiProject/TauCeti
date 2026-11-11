@@ -353,8 +353,7 @@ theorem tendsto_cdf_renewalCountNat_sub_div
       exact h.comp hm_top) ?_
   have hzero : P {ω | T 0 ω = 0} < 1 := by
     simpa only [Function.comp_apply, NNReal.coe_eq_zero] using
-      measure_setOf_eq_zero_lt_one_of_variance_ne_zero
-        (measurable_coe_nnreal_real.comp_aemeasurable (hid 0).aemeasurable_fst) hvar
+      measure_setOf_eq_zero_lt_one_of_variance_ne_zero hvar
   have hnonexp := ae_tendsto_arrival_atTop hindep hid hzero
   filter_upwards [eventually_gt_atTop (0 : ℝ≥0), hu_top.eventually_ge_atTop 0] with t ht hu0
   filter_upwards [hnonexp] with ω hω

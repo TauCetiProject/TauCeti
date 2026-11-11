@@ -122,8 +122,8 @@ private theorem lintegral_mul_setLIntegral_rpow_le_of_le [SFinite μ] {R : ℝ �
       _ ≤ ENNReal.ofReal K ^ (qᵢ / pᵢ)⁻¹ * f x ^ p := by
           gcongr
           simpa using ENNReal.le_rpow_add (f x) pᵢ (p - pᵢ)
-  calc _ ≤ _ := lintegral_mul_setLIntegral_rpow_le hR (measurable_id.pow_const s).ennreal_ofReal
-        (hf.pow_const pᵢ) hr
+  calc _ ≤ _ := lintegral_mul_setLIntegral_rpow_le hR
+        (measurable_id.pow_const s).ennreal_ofReal.aemeasurable (hf.pow_const pᵢ).aemeasurable hr
     _ ≤ (∫⁻ x, ENNReal.ofReal K ^ (qᵢ / pᵢ)⁻¹ * f x ^ p ∂μ) ^ (qᵢ / pᵢ) :=
         ENNReal.rpow_le_rpow (lintegral_mono hpt) hr0.le
     _ = ENNReal.ofReal K * (∫⁻ x, f x ^ p ∂μ) ^ (qᵢ / pᵢ) := by

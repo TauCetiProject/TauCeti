@@ -37,6 +37,8 @@ subring: lift a monic integral equation, whose evaluation then lies in the kerne
 
 * `TauCeti.isIntegrallyClosedIn_iff_forall_isAlgebraic`: the elementwise criterion for a field
   to be integrally closed in a nontrivial commutative algebra.
+* `IsIntegrallyClosedIn.transcendental_of_notMem_span_one`: if a field is integrally closed in a
+  nontrivial algebra, every element outside the line spanned by `1` is transcendental.
 * `TauCeti.isIntegrallyClosedIn_of_isAlgClosed`: an algebraically closed field is integrally
   closed in every domain algebra.
 * `IsIntegrallyClosedIn.pow_dvd_pow_iff`: for `a ∈ R` invertible in `A` and `n ≠ 0`,
@@ -97,6 +99,14 @@ theorem pow_dvd_pow_iff {n : ℕ} (hn : n ≠ 0) {a b : R} (ha : IsUnit (algebra
     (hpow ▸ isIntegral_algebraMap)
   refine ⟨d, IsIntegralClosure.algebraMap_injective R R A ?_⟩
   simp [hd, ← hu, mul_left_comm (u : A)]
+
+/-- If `k` is integrally closed in `A`, an element of `A` outside the line `k ∙ 1` is
+transcendental over `k`. -/
+theorem transcendental_of_notMem_span_one {K B : Type*} [Field K] [CommRing B] [Algebra K B]
+    [Nontrivial B] (hex : IsIntegrallyClosedIn K B) {u : B}
+    (hu : u ∉ Submodule.span K {(1 : B)}) : Transcendental K u := fun halg ↦ by
+  obtain ⟨c, hc⟩ := TauCeti.isIntegrallyClosedIn_iff_forall_isAlgebraic.mp hex u halg
+  exact hu (hc ▸ Submodule.mem_span_singleton.mpr ⟨c, by simp [Algebra.smul_def]⟩)
 
 omit [IsIntegrallyClosedIn R A] in
 /-- **Integral closedness is invariant under semilinear isomorphisms**: if `τ : A ≃+* B` carries

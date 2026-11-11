@@ -209,7 +209,7 @@ private theorem normSq_geodesicLine_rayToward_one_sub {A : ℍ} {q : ℍ ⊕ One
   have hQm : Complex.normSq ((Q : ℂ) - m) = r := by
     rw [← hQ]
     exact hg.normSq_geodesicLine_sub hp hq (by rwa [toComplex_inl]) hqm hre' 1
-  have hlt := hg.re_toComplex_lt_iff hgQ hp hq hre'
+  have hlt := hg.re_toComplex_lt_iff hgQ hq hre'
   rw [toComplex_inl, toComplex_inl, coe_re, coe_re] at hlt
   -- `Q ≠ A` are two points of `ℍ` on the same circle, so they have different real parts
   have hAQ : A.re ≠ Q.re := fun h ↦ by

@@ -202,7 +202,7 @@ private theorem IsJordanCurve.notMem_model_connectedComponentIn_of_locally_eq_li
       closure (C ∩ {q | ((q - (d * (0 : ℂ) + p)) / d).im < 0}) := by
     simpa only [mul_zero, zero_add] using hright
   have hsep := Contour.notMem_connectedComponentIn_compl_of_isPreconnected_sdiff_singleton
-    hC.isClosed hd hzero hseg hpre hleft' hright'
+    hC.isClosed hzero hseg hpre hleft' hright'
   simpa only [mul_zero, zero_add, hstart, hend] using hsep
 
 /-- **A Jordan curve separates the two sides of a straight piece.** If a Jordan curve `C` agrees
