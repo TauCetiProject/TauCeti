@@ -7,17 +7,21 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
+import TauCeti.AlgebraicTopology.Sphere.Zero
+import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 import TauCeti.Geometry.Manifold.ContMDiff.Parametrization
+import TauCeti.Geometry.Manifold.LocallyFlat.TwoEuclideanOpens
 import TauCeti.Geometry.Manifold.Morse.Deformation
 
 /-!
-# Two Euclidean open sets covering a manifold with two critical points
+# A manifold with a function with two critical points is a sphere
 
 Let `f` be a smooth function on a compact boundaryless manifold `M` of dimension `m`, with
 exactly two critical points. Then `M` is the union of two open sets, each homeomorphic to `ℝᵐ`
-(`TauCeti.exists_twoEuclideanOpenCover_of_two_criticalPoints`). The critical points may be
-degenerate: no Hessian condition is assumed, so the Morse lemma is not available and the proof
-uses only the descending flow of `f`.
+(`TauCeti.exists_twoEuclideanOpenCover_of_two_criticalPoints`), and hence `M` is homeomorphic to
+the sphere `Sᵐ` (`TauCeti.nonempty_homeomorph_sphere_of_two_criticalPoints`). The critical points
+may be degenerate: no Hessian condition is assumed, so the Morse lemma is not available and the
+proof uses only the descending flow of `f`.
 
 When `f` is not constant, its two critical points are its unique minimum `x₀` and its unique
 maximum `x₁`, and every value strictly between `f x₀` and `f x₁` is regular. Choose open
@@ -31,9 +35,12 @@ consists of the two critical points, and their coordinate neighbourhoods cover i
 
 By Brown's generalized Schoenflies theorem, a compact Hausdorff space covered by two open sets
 homeomorphic to `ℝᵐ`, `m > 0`, is homeomorphic to the sphere `Sᵐ` (Milnor 1959, Corollary 1;
-Rosen 1960, Lemma 1). Such a cover is therefore the analytic input of Reeb's sphere theorem for
-functions with two possibly degenerate critical points; for Morse functions that theorem is
-`TauCeti.IsMorse.nonempty_homeomorph_sphere_of_totalCriticalCount_eq_two`.
+Rosen 1960, Lemma 1; `TauCeti.nonempty_homeomorph_sphere_of_two_euclidean_opens`). Such a cover is
+therefore the analytic input of Reeb's sphere theorem for functions with two possibly degenerate
+critical points; for Morse functions that theorem is
+`TauCeti.IsMorse.nonempty_homeomorph_sphere_of_totalCriticalCount_eq_two`. In dimension `0` every
+point is critical, so `M` consists of two points and is the sphere `S⁰`. The conclusion is a
+homeomorphism, not a diffeomorphism: an exotic sphere carries such a function.
 
 ## Main results
 
@@ -41,6 +48,7 @@ functions with two possibly degenerate critical points; for Morse functions that
   complement of a neighbourhood of the maximum into a neighbourhood of the minimum.
 * `TauCeti.exists_twoEuclideanOpenCover_of_two_criticalPoints`: the cover of `M` by two open sets
   homeomorphic to `ℝᵐ`.
+* `TauCeti.nonempty_homeomorph_sphere_of_two_criticalPoints`: `M` is homeomorphic to `Sᵐ`.
 
 ## References
 
@@ -56,7 +64,7 @@ functions with two possibly degenerate critical points; for Morse functions that
 
 public section
 
-open Filter Set Module
+open Filter Metric Set Module
 open scoped ContDiff Manifold
 
 namespace TauCeti
@@ -131,5 +139,30 @@ theorem exists_twoEuclideanOpenCover_of_two_criticalPoints (hf : ContMDiff I �
   rw [hcrit, mem_insert_iff, mem_singleton_iff] at hx
   rcases hx with rfl | rfl
   exacts [Or.inl hx₀U, Or.inr hx₁V]
+
+/-- **A compact manifold with a function with exactly two critical points is a sphere** (Milnor
+1959, Theorem 1 and Corollary 1). If a smooth function on a compact boundaryless manifold `M`
+modelled on a real vector space of dimension `m` has exactly two critical points, then `M` is
+homeomorphic to the sphere `Sᵐ`. The critical points may be degenerate, and no connectedness or
+dimension hypothesis is needed. The conclusion is a homeomorphism, not a diffeomorphism. For
+Morse functions this is Reeb's theorem,
+`TauCeti.IsMorse.nonempty_homeomorph_sphere_of_totalCriticalCount_eq_two`. -/
+theorem nonempty_homeomorph_sphere_of_two_criticalPoints (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (h2 : totalCriticalCount I f = 2) :
+    Nonempty (M ≃ₜ sphere (0 : EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) 1) := by
+  rcases (finrank ℝ E).eq_zero_or_pos with hE | hE
+  · -- In dimension `0` every point is critical, so `M` consists of two points, the sphere `S⁰`.
+    have : Subsingleton E := finrank_zero_iff.1 hE
+    obtain ⟨p, q, -, -, hpq, hcrit, -⟩ :=
+      exists_isMinOn_isMaxOn_of_totalCriticalCount_eq_two (I := I) hf.continuous h2
+    obtain ⟨g, hg, hgi, hgr⟩ := exists_continuous_injective_range_sphere_eq_pair hpq
+    rw [← hcrit, criticalPoints_eq_univ_of_subsingleton] at hgr
+    exact ⟨((hg.homeoOfEquivCompactToT2 (f := Equiv.ofBijective g
+      ⟨hgi, range_eq_univ.1 hgr⟩)).symm.trans (sphereHomeomorphOfFinrankEq (by simp [hE])))⟩
+  -- In positive dimension `M` is covered by two open sets homeomorphic to `ℝᵐ`.
+  obtain ⟨U, V, hU, hV, hUV, ⟨eU⟩, ⟨eV⟩⟩ :=
+    exists_twoEuclideanOpenCover_of_two_criticalPoints hf h2
+  exact nonempty_homeomorph_sphere_of_two_euclidean_opens (by simpa using hE) (by simp) hU hV hUV
+    eU eV
 
 end TauCeti
