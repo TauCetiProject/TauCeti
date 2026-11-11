@@ -211,8 +211,8 @@ private def attachCollar : C(I × Z, Z) :=
     (by
       rintro ⟨t, x⟩ ⟨s, v⟩ h
       obtain ⟨rfl, hx⟩ : t = s ∧ (x : Z) = φ v := Prod.ext_iff.1 h
-      change (x : Z) = φ (discCollar hnorm (t, v))
-      rw [discCollar_of_mem_sphereBundle hnorm t (hφX v (hx ▸ x.2))]
+      rw [ContinuousMap.coe_mk, ContinuousMap.comp_apply,
+        discCollar_of_mem_sphereBundle hnorm t (hφX v (hx ▸ x.2))]
       exact hx)
 
 private lemma attachCollar_apply (t : I) (v : discBundle F E) :
