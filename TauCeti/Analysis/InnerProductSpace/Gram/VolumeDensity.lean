@@ -24,11 +24,12 @@ one.
 
 ## Main results
 
-* `TauCeti.metricVolumeDensity`: the square root of the Gram determinant of `g` in the basis `b`.
-* `TauCeti.metricVolumeDensity_innerSL`: the density of the inner product in an orthonormal basis
-  is one.
-* `TauCeti.contDiffAt_metricVolumeDensity`: the density is smooth in the form wherever the Gram
-  determinant is nonzero.
+* `Module.Basis.metricVolumeDensity`: the square root of the Gram determinant of `g` in the
+  basis `b`.
+* `OrthonormalBasis.metricVolumeDensity_innerSL`: the density of the inner product in an
+  orthonormal basis is one.
+* `Module.Basis.contDiffAt_metricVolumeDensity`: the density is smooth in the form wherever the
+  Gram determinant is nonzero.
 
 ## References
 
@@ -41,11 +42,9 @@ open scoped ContDiff
 
 noncomputable section
 
-namespace TauCeti
-
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-section NormedSpace
+namespace Module.Basis
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
@@ -71,16 +70,18 @@ theorem contDiffAt_metricVolumeDensity (b : Module.Basis ι ℝ F) {g : F →L[�
     ContDiff.matrix_det fun i j ↦ by fun_prop
   exact hdet.contDiffAt.sqrt hg
 
-end NormedSpace
+end Module.Basis
+
+namespace OrthonormalBasis
 
 /-- The volume density of the inner product in an orthonormal basis is one. -/
 @[simp]
 theorem metricVolumeDensity_innerSL {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-    (b : OrthonormalBasis ι ℝ F) : metricVolumeDensity b.toBasis (innerSL ℝ) = 1 := by
+    (b : OrthonormalBasis ι ℝ F) : b.toBasis.metricVolumeDensity (innerSL ℝ) = 1 := by
   have h : (fun i j ↦ innerSL ℝ (b.toBasis i) (b.toBasis j) : Matrix ι ι ℝ) = Matrix.gram ℝ b := by
     ext i j
     simp [Matrix.gram_apply]
-  rw [metricVolumeDensity_def, h, Matrix.gram_eq_one_iff_orthonormal.2 b.orthonormal,
+  rw [Module.Basis.metricVolumeDensity_def, h, Matrix.gram_eq_one_iff_orthonormal.2 b.orthonormal,
     Matrix.det_one, Real.sqrt_one]
 
-end TauCeti
+end OrthonormalBasis
