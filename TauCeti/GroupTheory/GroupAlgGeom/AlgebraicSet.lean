@@ -70,6 +70,10 @@ normal closure of `x ^ n` when `n ≠ 1`.
   `G`-homomorphisms from `G_{R(S)}` or from `G_S` to `H` correspond to the solutions of `S` in `H`.
 * `TauCeti.GroupAlgGeom.CoordGroup.coeff_injective`: `G_{R(S)}` is a `G`-group when `S` has a
   solution in a `G`-group.
+* `TauCeti.GroupAlgGeom.CoordGroup.homOfMapsToWordMap_id`,
+  `TauCeti.GroupAlgGeom.CoordGroup.homOfMapsToWordMap_comp`: a tuple of words mapping one
+  algebraic set into another induces a coefficient-preserving homomorphism of coordinate groups
+  in the opposite direction, contravariantly functorially.
 * `TauCeti.GroupAlgGeom.Rad_pow_eq_normalClosure`,
   `TauCeti.GroupAlgGeom.normalClosure_pow_ne_normalClosure`: over a torsion-free `H` with
   injective coefficients, the radical of `x ^ n` (`n ≠ 0`) is the normal closure of `x`, which
@@ -574,6 +578,20 @@ theorem Rad_le_comap_of_mapsToWordMap (w : Y → GX G X) (hw : MapsToWordMap ι 
   rw [← MonoidHom.comp_apply, eval_comp_eval]
   exact (mem_Rad.mp ht) _ ((mapsToWordMap_iff ι S T w).mp hw v hv)
 
+/-- The tuple of variables maps an algebraic set to itself. -/
+theorem mapsToWordMap_id : MapsToWordMap ι S S fun x => inr (FreeGroup.of x) :=
+  (mapsToWordMap_iff ι S S _).2 fun v hv => by rwa [wordMap_id]
+
+variable {ι S T} in
+/-- Substituting one tuple of words into another composes the corresponding maps of algebraic
+sets. -/
+theorem MapsToWordMap.comp {Z : Type*} {U : Set (GX G Z)} {w : Y → GX G X} {u : Z → GX G Y}
+    (hu : MapsToWordMap ι T U u) (hw : MapsToWordMap ι S T w) :
+    MapsToWordMap ι S U fun z => eval (inl : G →* GX G X) w (u z) := by
+  refine (mapsToWordMap_iff ι S U _).2 fun v hv => ?_
+  rw [← wordMap_wordMap]
+  exact (mapsToWordMap_iff ι T U u).1 hu _ ((mapsToWordMap_iff ι S T w).1 hw v hv)
+
 /-- A word map between algebraic sets induces a coefficient-preserving homomorphism of
 coordinate groups in the opposite direction. -/
 def homOfMapsToWordMap (w : Y → GX G X) (hw : MapsToWordMap ι S T w) :
@@ -588,6 +606,21 @@ theorem homOfMapsToWordMap_mk (w : Y → GX G X) (hw : MapsToWordMap ι S T w)
     homOfMapsToWordMap ι S T w hw (t : CoordGroup ι T) =
       (eval (inl : G →* GX G X) w t : CoordGroup ι S) := by
   simp [homOfMapsToWordMap]
+
+/-- The tuple of variables induces the identity of the coordinate group. -/
+@[simp]
+theorem homOfMapsToWordMap_id :
+    homOfMapsToWordMap ι S S (fun x => inr (FreeGroup.of x)) (mapsToWordMap_id ι S) =
+      GHom.id (coeff ι S) :=
+  gHom_ext fun _ => by simp
+
+/-- The homomorphism induced by a composite of word maps is the composite of the induced
+homomorphisms, in the opposite order. -/
+theorem homOfMapsToWordMap_comp {Z : Type*} (U : Set (GX G Z)) {w : Y → GX G X}
+    {u : Z → GX G Y} (hw : MapsToWordMap ι S T w) (hu : MapsToWordMap ι T U u) :
+    homOfMapsToWordMap ι S U (fun z => eval (inl : G →* GX G X) w (u z)) (hu.comp hw) =
+      (homOfMapsToWordMap ι S T w hw).comp (homOfMapsToWordMap ι T U u hu) :=
+  gHom_ext fun _ => by simp
 
 /-- Evaluating the induced coordinate-group homomorphism at a point is the original word
 map of that point. -/
