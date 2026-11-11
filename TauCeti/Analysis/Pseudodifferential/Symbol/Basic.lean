@@ -627,17 +627,6 @@ theorem fderiv_coefficient_single (a : Symbol n V W m) (j : Fin n) (x ξ : Coord
       (spatialDeriv j a).coefficient (x, ξ) := by
   rw [coefficient_spatialDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
 
-/-- The derivative of the coefficient of a symbol in terms of its first spatial and frequency
-derivatives. -/
-theorem fderiv_coefficient (a : Symbol n V W m) (p : CoordinateSpace n × CoordinateSpace n) :
-    fderiv ℝ a.coefficient p = coordCLM (fun j => (spatialDeriv j a).coefficient p)
-      (fun j => (frequencyDeriv j a).coefficient p) := by
-  refine ContinuousLinearMap.ext fun v => ?_
-  rw [fderiv_apply_eq_sum_coordinateDeriv
-    (a.contDiff_coefficient.differentiable (by simp) p) v, coordCLM_apply]
-  obtain ⟨x, ξ⟩ := p
-  simp only [coefficient_spatialDeriv, coefficient_frequencyDeriv]
-
 /-- The position derivative of a symbol of order `m` is bounded by `C ⟨ξ⟩ ^ m` locally uniformly in
 the position. -/
 theorem exists_bound_fderiv_coefficient (a : Symbol n V W m) (K : Set (CoordinateSpace n))
@@ -1388,6 +1377,13 @@ def map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : Symbol n V W m) 
 theorem coefficient_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : Symbol n V W m)
     (p : CoordinateSpace n × CoordinateSpace n) : (a.map Φ).coefficient p = Φ (a.coefficient p) :=
   (rfl)
+
+/-- The coefficient of the symbol transported by conjugation `T ↦ e₂ ∘ T ∘ e₁⁻¹` along
+isomorphisms `e₁ : V ≃L[ℂ] V'` and `e₂ : W ≃L[ℂ] W'` is the conjugated coefficient. -/
+theorem coefficient_map_arrowCongr (e₁ : V ≃L[ℂ] V') (e₂ : W ≃L[ℂ] W') (a : Symbol n V W m) :
+    (a.map ((e₁.arrowCongr e₂).toContinuousLinearMap.restrictScalars ℝ)).coefficient =
+      fun p ↦ e₁.arrowCongr e₂ (a.coefficient p) :=
+  funext fun p ↦ by simp
 
 theorem HasCompactSpatialSupport.map {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
     (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) : (a.map Φ).HasCompactSpatialSupport := by

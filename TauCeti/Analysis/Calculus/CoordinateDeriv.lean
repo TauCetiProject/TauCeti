@@ -76,8 +76,6 @@ symbol calculus. Its first-order case for a pointwise composition of continuous 
   the Leibniz rules.
 * `ContinuousLinearMap.apply_eq_sum_single`, `ContinuousLinearMap.opNorm_le_of_apply_eq_sum`:
   a continuous linear map on `ℝⁿ` (or on `ℝⁿ × ℝⁿ`) in terms of its values on the standard basis.
-* `TauCeti.coordCLM`: the continuous linear map on `ℝⁿ × ℝⁿ` with given values on the
-  coordinate vectors, with `TauCeti.norm_coordCLM_le`;
 * `TauCeti.fderiv_apply_eq_sum_coordinateDeriv`: the derivative of a function of a position and a
   frequency in terms of its first-order coordinate derivatives in the two variables.
 * `TauCeti.norm_mixedDeriv_comp_snd_smul_le`: the Leibniz bound for the product `ψ(ξ) a(x, ξ)`
@@ -978,45 +976,6 @@ theorem _root_.ContinuousLinearMap.opNorm_le_of_apply_eq_sum
         · exact norm_fst_le v
         · exact norm_snd_le v
     _ = _ := by ring
-
-/-- The continuous linear map `v ↦ ∑ j, v.1 j • X j + ∑ j, v.2 j • Ξ j` on `ℝⁿ × ℝⁿ`, taking the
-values `X j` and `Ξ j` on the position and frequency coordinate vectors. -/
-def coordCLM (X Ξ : Fin n → A) : CoordinateSpace n × CoordinateSpace n →L[ℝ] A :=
-  ∑ j, ((EuclideanSpace.proj j).comp (ContinuousLinearMap.fst ℝ _ _)).smulRight (X j) +
-    ∑ j, ((EuclideanSpace.proj j).comp (ContinuousLinearMap.snd ℝ _ _)).smulRight (Ξ j)
-
-@[simp]
-theorem coordCLM_apply (X Ξ : Fin n → A) (v : CoordinateSpace n × CoordinateSpace n) :
-    coordCLM X Ξ v = ∑ j, v.1 j • X j + ∑ j, v.2 j • Ξ j := by
-  simp [coordCLM]
-
-/-- The norm of `coordCLM X Ξ` is at most the sum of the norms of its values on the coordinate
-vectors. -/
-theorem norm_coordCLM_le (X Ξ : Fin n → A) : ‖coordCLM X Ξ‖ ≤ ∑ j, ‖X j‖ + ∑ j, ‖Ξ j‖ :=
-  (coordCLM X Ξ).opNorm_le_of_apply_eq_sum X Ξ (coordCLM_apply X Ξ)
-
-/-- `coordCLM` depends continuously on its values on the coordinate vectors. -/
-theorem continuous_coordCLM {T : Type*} [TopologicalSpace T] {X Ξ : Fin n → T → A}
-    (hX : ∀ j, Continuous (X j)) (hΞ : ∀ j, Continuous (Ξ j)) :
-    Continuous fun t ↦ coordCLM (fun j ↦ X j t) (fun j ↦ Ξ j t) := by
-  unfold coordCLM
-  refine (continuous_finsetSum _ fun j _ ↦ ?_).add (continuous_finsetSum _ fun j _ ↦ ?_)
-  · exact (ContinuousLinearMap.smulRightL ℝ (CoordinateSpace n × CoordinateSpace n) A
-      ((EuclideanSpace.proj j).comp (ContinuousLinearMap.fst ℝ _ _))).continuous.comp (hX j)
-  · exact (ContinuousLinearMap.smulRightL ℝ (CoordinateSpace n × CoordinateSpace n) A
-      ((EuclideanSpace.proj j).comp (ContinuousLinearMap.snd ℝ _ _))).continuous.comp (hΞ j)
-
-/-- `coordCLM` depends smoothly on its values on the coordinate vectors. -/
-theorem contDiff_coordCLM {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {X Ξ : Fin n → F → A} {k : WithTop ℕ∞} (hX : ∀ j, ContDiff ℝ k (X j))
-    (hΞ : ∀ j, ContDiff ℝ k (Ξ j)) :
-    ContDiff ℝ k fun p ↦ coordCLM (fun j ↦ X j p) (fun j ↦ Ξ j p) := by
-  unfold coordCLM
-  refine (ContDiff.sum fun j _ ↦ ?_).add (ContDiff.sum fun j _ ↦ ?_)
-  · exact (ContinuousLinearMap.smulRightL ℝ (CoordinateSpace n × CoordinateSpace n) A
-      ((EuclideanSpace.proj j).comp (ContinuousLinearMap.fst ℝ _ _))).contDiff.comp (hX j)
-  · exact (ContinuousLinearMap.smulRightL ℝ (CoordinateSpace n × CoordinateSpace n) A
-      ((EuclideanSpace.proj j).comp (ContinuousLinearMap.snd ℝ _ _))).contDiff.comp (hΞ j)
 
 /-- The derivative of a function of a position and a frequency, differentiable at `p`, in the
 direction `v` is the sum of its coordinate derivatives in the position and in the frequency,
