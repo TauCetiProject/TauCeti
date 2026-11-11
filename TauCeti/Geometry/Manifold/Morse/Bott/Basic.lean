@@ -57,6 +57,8 @@ conversely a nondegenerate critical point lies on no critical submanifold of pos
   coindex is the dimension of the normal space.
 * `TauCeti.SmoothEmbedding.isNondegenerateCriticalSubmanifold_iff_of_subsingleton`: in dimension
   zero, Morse–Bott means Morse.
+* `TauCeti.SmoothEmbedding.isNondegenerateCriticalSubmanifold_ofOpens_const`: a constant function
+  is Morse–Bott along every open subset, a critical submanifold of full dimension.
 * `TauCeti.SmoothEmbedding.isNondegenerateCriticalSubmanifold_comp_snd`: the model example, the
   slice `M × {0}` for `(x, v) ↦ q v` with `q` nondegenerate at `0`.
 
@@ -388,6 +390,19 @@ theorem isNondegenerateCriticalSubmanifold_id_const [IsManifold I n M] (c : ℝ)
   contMDiffAt _ := contMDiffAt_const
   mem_criticalPoints _ := mem_criticalPoints.mpr (mvfderiv_const c)
   ker_criticalHessian_le x v _ := ⟨v, by rw [coe_id, mfderiv_id]; rfl⟩
+
+/-- **The constant function is Morse–Bott along every open subset.** The inclusion of an open
+subset is tangent to every ambient direction (`TauCeti.SmoothEmbedding.tangentRange_ofOpens`), so
+it contains the kernel of the critical Hessian of a constant function, which is the whole tangent
+space. -/
+theorem isNondegenerateCriticalSubmanifold_ofOpens_const [IsManifold I n M] (hn : n ≠ 0)
+    (s : TopologicalSpace.Opens M) (c : ℝ) :
+    (ofOpens (I := I) (n := n) s).IsNondegenerateCriticalSubmanifold (fun _ ↦ c) where
+  contMDiffAt _ := contMDiffAt_const
+  mem_criticalPoints _ := mem_criticalPoints.mpr (mvfderiv_const c)
+  ker_criticalHessian_le x v _ := LinearMap.mem_range.2 <| (mem_tangentRange_iff _ x hn v).1 <| by
+    rw [tangentRange_ofOpens]
+    exact Submodule.mem_top
 
 section Prod
 
