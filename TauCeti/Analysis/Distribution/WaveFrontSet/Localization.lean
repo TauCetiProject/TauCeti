@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.TestFunction.FourierSeries
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Basic
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Distribution.Support
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Normed.Module.Cone
 
@@ -18,7 +19,11 @@ The definition of microlocal smoothness of a distribution `T` at `(x, ξ)` asks 
 with `φ x ≠ 0` whose localized Fourier transform `η ↦ T (φ e_η)` decays rapidly in an open cone
 around `ξ`. This file shows that the choice of cutoff does not matter near `x`: multiplying `φ` by
 a smooth function keeps rapid decay, at the price of shrinking the cone (Hörmander I,
-Lemma 8.1.1). Consequently the wave front set of a sum lies in the union of the wave front sets.
+Lemma 8.1.1). Consequently the wave front set of a sum lies in the union of the wave front sets,
+multiplication by a smooth function `g` does not enlarge the wave front set and leaves it unchanged
+where `g ≠ 0`, and the wave front set of the restriction of a distribution to an open subset is
+the part of its wave front set lying over that subset. In particular the wave front set over an
+open set depends only on the restriction to it.
 
 The proof expands the multiplier in a Fourier series. If `ψ = φ g` with `g` smooth, choose a compact
 set `K` around the support of `φ` and a full lattice `L` none of whose nonzero translates of `K`
@@ -52,6 +57,16 @@ decays rapidly, and the remaining terms are controlled by the rapid decay of `a_
 * `Distribution.IsMicrolocallySmoothAt.add`, `Distribution.waveFrontSet_add_subset`,
   `Distribution.waveFrontSet_sub_subset`, `Distribution.waveFrontSet_sum_subset`: the wave front
   set of a sum lies in the union of the wave front sets.
+* `Distribution.IsMicrolocallySmoothAt.smulLeftCLM`,
+  `Distribution.isMicrolocallySmoothAt_smulLeftCLM_iff`,
+  `Distribution.waveFrontSet_smulLeftCLM_subset`, `Distribution.mem_waveFrontSet_smulLeftCLM_iff`:
+  the wave front set of a smooth multiple `g T` lies in that of `T` over `tsupport g`, with
+  equality at the points where `g ≠ 0`, and everywhere when `g` vanishes nowhere on `Ω`
+  (`Distribution.waveFrontSet_smulLeftCLM_of_ne_zero`).
+* `Distribution.isMicrolocallySmoothAt_restrictCLM_iff`, `Distribution.waveFrontSet_restrictCLM`:
+  for an open subset `Ω' ≤ Ω`, `WF(T|_{Ω'}) = WF(T) ∩ (Ω' × E)`.
+* `Distribution.waveFrontSet_inter_eq_of_restrictCLM_eq`: distributions with the same restriction
+  to an open set have the same wave front set over it.
 
 ## References
 
@@ -275,5 +290,108 @@ theorem waveFrontSet_sum_subset {ι : Type*} (s : Finset ι) (T : ι → 𝓓'(�
   | insert i s hi ih =>
     rw [Finset.sum_insert hi, Finset.set_biUnion_insert]
     exact (waveFrontSet_add_subset _ _).trans (union_subset_union_right _ ih)
+
+section SmulLeft
+
+variable {g : E → ℝ}
+
+/-- A smooth multiple `g T` of a distribution microlocally smooth at `(x, ξ)` is microlocally
+smooth there. -/
+theorem IsMicrolocallySmoothAt.smulLeftCLM {T : 𝓓'(Ω, ℂ)} {x ξ : E}
+    (h : T.IsMicrolocallySmoothAt x ξ) (hg : ContDiff ℝ ∞ g) :
+    (smulLeftCLM hg T).IsMicrolocallySmoothAt x ξ := by
+  obtain ⟨φ, hφx, Γ, hΓ, hξ, hcone, hdecay⟩ := isMicrolocallySmoothAt_iff.1 h
+  obtain ⟨Γ', hΓ'o, hξ', hcone', c, hc, hΓ'⟩ := hΓ.exists_cone_closedBall_subset hcone hξ
+  -- The same cutoff `φ` works for `g T` on the smaller cone `Γ'`, since `g T` with cutoff `φ`
+  -- is `T` with cutoff `g φ`.
+  refine isMicrolocallySmoothAt_iff.2 ⟨φ, hφx, Γ', hΓ'o, hξ', hcone', fun N ↦ ?_⟩
+  simp only [localFourier_smulLeftCLM]
+  exact exists_one_add_norm_pow_mul_norm_localFourier_le_of_eq_mul
+    (ofRealCLM.contDiff.comp hg).contDiffOn (fun y ↦ by simp [mul_comm]) hc hΓ' (hdecay N)
+
+/-- Where `g` does not vanish, a smooth multiple `g T` is microlocally smooth exactly where `T`
+is. -/
+theorem isMicrolocallySmoothAt_smulLeftCLM_iff {T : 𝓓'(Ω, ℂ)} {x ξ : E} (hg : ContDiff ℝ ∞ g)
+    (hx : g x ≠ 0) :
+    (smulLeftCLM hg T).IsMicrolocallySmoothAt x ξ ↔ T.IsMicrolocallySmoothAt x ξ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.smulLeftCLM hg⟩
+  -- A cutoff `φ` for `g T` gives the cutoff `g φ` for `T`, which does not vanish at `x`.
+  obtain ⟨φ, hφx, Γ, hΓ, hξ, hcone, hdecay⟩ := isMicrolocallySmoothAt_iff.1 h
+  refine isMicrolocallySmoothAt_iff.2
+    ⟨TestFunction.smulLeftCLM hg φ, by simp [hx, hφx], Γ, hΓ, hξ, hcone, ?_⟩
+  simpa using hdecay
+
+/-- **Smooth multiplication** (Hörmander I, §8.1). The wave front set of a smooth multiple
+`g T` lies in the wave front set of `T`, over the support of `g`. -/
+theorem waveFrontSet_smulLeftCLM_subset (T : 𝓓'(Ω, ℂ)) (hg : ContDiff ℝ ∞ g) :
+    (smulLeftCLM hg T).waveFrontSet ⊆ T.waveFrontSet ∩ tsupport g ×ˢ univ := by
+  rintro ⟨x, ξ⟩ hp
+  obtain ⟨hx, hξ, hT⟩ := mem_waveFrontSet_iff.1 hp
+  have hxg : x ∈ dsupport (smulLeftCLM hg T) := (waveFrontSet_subset_dsupport _ hp).1
+  rw [coe_smulLeftCLM] at hxg
+  exact ⟨mem_waveFrontSet_iff.2 ⟨hx, hξ, fun h ↦ hT (h.smulLeftCLM hg)⟩,
+    (dsupport_comp_smulLeftCLM_subset T hg hxg).1, trivial⟩
+
+/-- Over the points where `g` does not vanish, a smooth multiple `g T` has the same wave front set
+as `T`. -/
+theorem mem_waveFrontSet_smulLeftCLM_iff {T : 𝓓'(Ω, ℂ)} {x ξ : E} (hg : ContDiff ℝ ∞ g)
+    (hx : g x ≠ 0) : (x, ξ) ∈ (smulLeftCLM hg T).waveFrontSet ↔ (x, ξ) ∈ T.waveFrontSet := by
+  simp [isMicrolocallySmoothAt_smulLeftCLM_iff hg hx]
+
+/-- Multiplying by a smooth function that vanishes nowhere on `Ω` does not change the wave front
+set. -/
+theorem waveFrontSet_smulLeftCLM_of_ne_zero (T : 𝓓'(Ω, ℂ)) (hg : ContDiff ℝ ∞ g)
+    (hg0 : ∀ x ∈ Ω, g x ≠ 0) : (smulLeftCLM hg T).waveFrontSet = T.waveFrontSet := by
+  ext ⟨x, ξ⟩
+  by_cases hx : x ∈ Ω
+  · exact mem_waveFrontSet_smulLeftCLM_iff hg (hg0 x hx)
+  · simp [hx]
+
+end SmulLeft
+
+section Restriction
+
+variable {Ω' : Opens E}
+
+/-- At a point of an open subset `Ω' ≤ Ω`, the restriction `T|_{Ω'}` is microlocally smooth
+exactly where `T` is. -/
+theorem isMicrolocallySmoothAt_restrictCLM_iff (h : Ω' ≤ Ω) {T : 𝓓'(Ω, ℂ)} {x ξ : E}
+    (hx : x ∈ Ω') :
+    (restrictCLM T : 𝓓'(Ω', ℂ)).IsMicrolocallySmoothAt x ξ ↔ T.IsMicrolocallySmoothAt x ξ := by
+  constructor
+  · -- A cutoff on `Ω'`, extended by zero, is a cutoff on `Ω`.
+    intro hT
+    obtain ⟨φ, hφx, Γ, hΓ, hξ, hcone, hdecay⟩ := isMicrolocallySmoothAt_iff.1 hT
+    exact isMicrolocallySmoothAt_iff.2 ⟨TestFunction.monoCLM ℝ φ, by simpa [h] using hφx, Γ, hΓ,
+      hξ, hcone, by simpa using hdecay⟩
+  · -- Every cutoff supported near `x` works for `T`; take one supported in `Ω'`.
+    intro hT
+    obtain ⟨U, hU, Γ, hΓ, hξ, hcone, hdecay⟩ := hT.exists_nhds_cone
+    obtain ⟨φ, hφ, hφx⟩ := exists_tsupport_subset_apply_eq (Ω := Ω') (n := ⊤)
+      (inter_mem hU (Ω'.isOpen.mem_nhds hx)) inter_subset_right (1 : ℂ)
+    refine isMicrolocallySmoothAt_iff.2 ⟨φ, by simp [hφx], Γ, hΓ, hξ, hcone, fun N ↦ ?_⟩
+    simp only [localFourier_restrictCLM]
+    exact hdecay _ (by simpa [h] using hφ.trans inter_subset_left) N
+
+/-- **Restriction** to an open subset `Ω' ≤ Ω` cuts the wave front set down to the points of
+`Ω'`. -/
+theorem waveFrontSet_restrictCLM (h : Ω' ≤ Ω) (T : 𝓓'(Ω, ℂ)) :
+    (restrictCLM T : 𝓓'(Ω', ℂ)).waveFrontSet = T.waveFrontSet ∩ (Ω' : Set E) ×ˢ univ := by
+  ext ⟨x, ξ⟩
+  simp only [mem_inter_iff, mem_waveFrontSet_iff, mem_prod, mem_univ, and_true]
+  constructor
+  · rintro ⟨hx, hξ, hT⟩
+    exact ⟨⟨h hx, hξ, fun h' ↦ hT ((isMicrolocallySmoothAt_restrictCLM_iff h hx).2 h')⟩, hx⟩
+  · rintro ⟨⟨-, hξ, hT⟩, hx⟩
+    exact ⟨hx, hξ, fun h' ↦ hT ((isMicrolocallySmoothAt_restrictCLM_iff h hx).1 h')⟩
+
+/-- The wave front set is local: two distributions with the same restriction to an open set
+`U ≤ Ω` have the same wave front set over `U`. -/
+theorem waveFrontSet_inter_eq_of_restrictCLM_eq {S T : 𝓓'(Ω, ℂ)} {U : Opens E} (hU : U ≤ Ω)
+    (h : (restrictCLM S : 𝓓'(U, ℂ)) = restrictCLM T) :
+    S.waveFrontSet ∩ (U : Set E) ×ˢ univ = T.waveFrontSet ∩ (U : Set E) ×ˢ univ := by
+  rw [← waveFrontSet_restrictCLM hU, h, waveFrontSet_restrictCLM hU]
+
+end Restriction
 
 end Distribution

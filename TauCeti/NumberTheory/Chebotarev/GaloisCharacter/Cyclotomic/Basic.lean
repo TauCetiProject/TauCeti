@@ -153,12 +153,10 @@ private theorem cyclotomicArtinIntegral_apply (I : integralIdealsPrimeTo (cyclot
 
 -- At a prime not dividing `m`, the integral Artin map is the Frobenius.
 private theorem cyclotomicArtinIntegral_of_isArithFrobAt (v : HeightOneSpectrum (𝓞 K))
-    (hv : v.asIdeal ∈ integralIdealsPrimeTo (cyclotomicModulus K m)) (Q : Ideal (𝓞 F)) [Q.IsPrime]
+    (hv : v.asIdeal ∈ integralIdealsPrimeTo (cyclotomicModulus K m)) (Q : Ideal (𝓞 F))
     [Q.LiesOver v.asIdeal] {σ : F ≃ₐ[K] F} (hσ : IsArithFrobAt (𝓞 K) σ Q) :
     cyclotomicArtinIntegral F m ⟨v.asIdeal, hv⟩ = σ :=
-  artinHomAwayIntegral_apply_prime _ _ _ v
-    (mem_cyclotomicModulus_support_iff.not.mpr
-      (asIdeal_mem_integralIdealsPrimeTo_cyclotomicModulus_iff.mp hv)) hv Q σ hσ
+  artinHomAwayIntegral_apply_prime _ _ _ v hv Q σ hσ
 
 -- The cyclotomic character of the integral Artin map is the absolute norm.
 private theorem autToPow_cyclotomicArtinIntegral {ζ : F} (hζ : IsPrimitiveRoot ζ m)
@@ -255,7 +253,7 @@ private theorem cyclotomicArtin_idealClass (I : integralIdealsPrimeTo (cyclotomi
 not dividing `m`, every arithmetic Frobenius at every prime of `𝓞 F` above `𝔭` is the image of
 the ray class of `𝔭`. -/
 theorem cyclotomicArtin_idealClass_of_isArithFrobAt (𝔭 : HeightOneSpectrum (𝓞 K))
-    (h𝔭 : 𝔭.asIdeal ∈ integralIdealsPrimeTo (cyclotomicModulus K m)) (Q : Ideal (𝓞 F)) [Q.IsPrime]
+    (h𝔭 : 𝔭.asIdeal ∈ integralIdealsPrimeTo (cyclotomicModulus K m)) (Q : Ideal (𝓞 F))
     [Q.LiesOver 𝔭.asIdeal] {σ : F ≃ₐ[K] F} (hσ : IsArithFrobAt (𝓞 K) σ Q) :
     cyclotomicArtin K F m (idealClass _ ⟨𝔭.asIdeal, h𝔭⟩) = σ := by
   rw [cyclotomicArtin_idealClass, cyclotomicArtinIntegral_of_isArithFrobAt F m 𝔭 h𝔭 Q hσ]
@@ -271,7 +269,7 @@ variable {K : Type*} [Field K] [NumberField K] {F : Type*} [Field F] [NumberFiel
 -- Read through a transition map, the Artin map sends the ray class of a prime to its Frobenius.
 private theorem cyclotomicArtin_classMap_idealClass_of_isArithFrobAt {𝔐 : Modulus K}
     (h : cyclotomicModulus K m ∣ 𝔐) (𝔭 : HeightOneSpectrum (𝓞 K))
-    (h𝔭 : 𝔭.asIdeal ∈ integralIdealsPrimeTo 𝔐) (Q : Ideal (𝓞 F)) [Q.IsPrime]
+    (h𝔭 : 𝔭.asIdeal ∈ integralIdealsPrimeTo 𝔐) (Q : Ideal (𝓞 F))
     [Q.LiesOver 𝔭.asIdeal] {σ : F ≃ₐ[K] F} (hσ : IsArithFrobAt (𝓞 K) σ Q) :
     cyclotomicArtin K F m (classMap h (idealClass 𝔐 ⟨𝔭.asIdeal, h𝔭⟩)) = σ := by
   have hincl : integralIdealsPrimeToInclusion h ⟨𝔭.asIdeal, h𝔭⟩ =

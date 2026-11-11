@@ -124,6 +124,8 @@ and letting the truncations increase to `F` gives the bound for `∫⁻ F ^ q`.
   almost everywhere.
 * `TauCeti.lowerSemicontinuous_maximalFunction`, `TauCeti.measurable_maximalFunction`: the
   superlevel sets `{x | t < M f x}` are open, so `M f` is Borel measurable.
+* `TauCeti.setLIntegral_ball_le_two_pow_mul_measure_mul_maximalFunction`: the average of `‖f‖ₑ`
+  over any ball containing `x` is at most `2ⁿ M f x`.
 * `TauCeti.mul_measure_le_of_forall_exists_ball`: the Vitali covering estimate for a Haar
   measure.
 * `TauCeti.mul_measure_lt_maximalFunction_le`, `TauCeti.measure_lt_maximalFunction_le`: the
@@ -309,6 +311,24 @@ private theorem addHaar_ball_four_mul (μ : Measure E) [μ.IsAddHaarMeasure] (x 
     ENNReal.ofReal_mul (by positivity : (0 : ℝ) ≤ 4 ^ finrank ℝ E),
     ENNReal.ofReal_pow (by norm_num : (0 : ℝ) ≤ 4)]
   norm_num
+
+/-- **The uncentred average is controlled by the centred maximal function.** If `x` lies in the
+ball `B(c, r)`, then `∫_{B(c, r)} ‖f‖ₑ ≤ 2ⁿ μ (B(c, r)) M f x`, with `n` the dimension of the space:
+the ball `B(c, r)` lies in the ball `B(x, 2 r)` centred at `x`, of measure `2ⁿ μ (B(c, r))`. -/
+theorem setLIntegral_ball_le_two_pow_mul_measure_mul_maximalFunction (μ : Measure E)
+    [μ.IsAddHaarMeasure] (f : E → F) {x c : E} {r : ℝ} (hx : x ∈ ball c r) :
+    ∫⁻ y in ball c r, ‖f y‖ₑ ∂μ ≤ 2 ^ finrank ℝ E * μ (ball c r) * maximalFunction μ f x := by
+  have hr : 0 < r := pos_of_mem_ball hx
+  have hsub : ball c r ⊆ ball x (2 * r) := fun y hy => by
+    rw [mem_ball] at hx hy ⊢
+    linarith [dist_triangle y c x, dist_comm x c]
+  have hμ : μ (ball x (2 * r)) = 2 ^ finrank ℝ E * μ (ball c r) := by
+    rw [μ.addHaar_ball_mul_of_pos x two_pos, μ.addHaar_ball_center c,
+      ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat]
+  calc ∫⁻ y in ball c r, ‖f y‖ₑ ∂μ ≤ ∫⁻ y in ball x (2 * r), ‖f y‖ₑ ∂μ := lintegral_mono_set hsub
+    _ ≤ μ (ball x (2 * r)) * maximalFunction μ f x :=
+        setLIntegral_ball_le_measure_mul_maximalFunction (by positivity) measure_ball_lt_top.ne
+    _ = 2 ^ finrank ℝ E * μ (ball c r) * maximalFunction μ f x := by rw [hμ]
 
 /-- **The Vitali covering estimate.** If every point of `S` is the centre of a ball of radius at
 most `R` on which `∫⁻ g` is at least `t` times the measure of the ball, then
@@ -858,8 +878,7 @@ theorem lintegral_rpow_tsum_maximalFunction_rpow_le (μ : Measure E) [μ.IsAddHa
     rw [Real.holderConjugate_iff_eq_conjExponent ((one_lt_div hr0).2 hrp)]
     field_simp
   rw [← one_div_div p (p - r)]
-  exact lintegral_rpow_le_of_forall_le
-    (Measurable.tsum fun i => (measurable_maximalFunction μ (f i)).pow_const r) hqs.pos
+  exact lintegral_rpow_le_of_forall_le hqs.pos
     fun φ hφ hφF hfin => lintegral_rpow_le_of_le_tsum_maximalFunction_rpow hf hr hqs hφ hφF hfin
 
 end VectorValued
