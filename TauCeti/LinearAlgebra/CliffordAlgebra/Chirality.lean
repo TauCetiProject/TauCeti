@@ -597,8 +597,7 @@ theorem bivectorExterior_smul_eq_zero_iff_of_hodgeStar_eq_self (hkl : 2 + 2 = fi
     bivectorExterior Q x • ψ = 0 ↔ x = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, map_zero, zero_smul]⟩
   let : Module ℝ S := Module.compHom S (algebraMap ℝ (CliffordAlgebra Q))
-  have : IsScalarTower ℝ (CliffordAlgebra Q) S :=
-    ⟨fun r a s ↦ by rw [Algebra.smul_def, mul_smul]; rfl⟩
+  have : IsScalarTower ℝ (CliffordAlgebra Q) S := IsScalarTower.of_compHom ℝ (CliffordAlgebra Q) S
   have hsq := bivectorExterior_smul_bivectorExterior_smul_self_of_hodgeStar_eq_self o hQ hkl hx hψ
   rw [h, smul_zero, eq_comm, smul_eq_zero] at hsq
   simpa [hψ₀] using hsq
@@ -612,8 +611,7 @@ theorem bivectorExterior_smul_eq_zero_iff_of_hodgeStar_eq_neg (hkl : 2 + 2 = fin
     bivectorExterior Q x • ψ = 0 ↔ x = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, map_zero, zero_smul]⟩
   let : Module ℝ S := Module.compHom S (algebraMap ℝ (CliffordAlgebra Q))
-  have : IsScalarTower ℝ (CliffordAlgebra Q) S :=
-    ⟨fun r a s ↦ by rw [Algebra.smul_def, mul_smul]; rfl⟩
+  have : IsScalarTower ℝ (CliffordAlgebra Q) S := IsScalarTower.of_compHom ℝ (CliffordAlgebra Q) S
   have hsq := bivectorExterior_smul_bivectorExterior_smul_self_of_hodgeStar_eq_neg o hQ hkl hx hψ
   rw [h, smul_zero, eq_comm, smul_eq_zero] at hsq
   simpa [hψ₀] using hsq
