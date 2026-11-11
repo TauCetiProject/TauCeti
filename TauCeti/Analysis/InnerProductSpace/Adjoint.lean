@@ -19,8 +19,10 @@ For bounded operators between complete inner product spaces, the adjoint takes v
 orthogonal complement of the kernel (`ContinuousLinearMap.adjoint_apply_mem_orthogonal_ker`).
 An operator on a Hilbert space is invertible exactly when its adjoint is
 (`ContinuousLinearMap.isUnit_adjoint_iff`), and inversion commutes with the adjoint
-(`ContinuousLinearMap.ringInverse_adjoint`). An operator on a Hilbert space that is bounded below
-by `M⁻¹` and has injective adjoint is invertible with `‖T⁻¹‖ ≤ M`
+(`ContinuousLinearMap.ringInverse_adjoint`). Likewise an operator between two Hilbert spaces is
+invertible exactly when its adjoint is (`ContinuousLinearMap.isInvertible_adjoint_iff`).
+An operator on a Hilbert space that is bounded below by `M⁻¹` and has injective adjoint is
+invertible with `‖T⁻¹‖ ≤ M`
 (`ContinuousLinearMap.isUnit_and_norm_ringInverse_le_of_forall_norm_le`). If an invertible
 operator satisfies `‖x‖ ≤ M ‖T x‖`, every vector is `T† z` with `‖z‖ ≤ M ‖y‖`
 (`ContinuousLinearMap.exists_adjoint_apply_eq_and_norm_le`).
@@ -288,6 +290,22 @@ theorem norm_le_inv_mul_norm_adjoint_comp_comp [CompleteSpace E] [CompleteSpace 
     simp [N, hM0]
 
 end ContinuousLinearEquiv
+
+namespace ContinuousLinearMap
+
+variable [CompleteSpace E] [CompleteSpace F]
+
+/-- The adjoint of an invertible operator between Hilbert spaces is invertible. -/
+theorem IsInvertible.adjoint {A : E →L[𝕜] F} (hA : A.IsInvertible) : (adjoint A).IsInvertible := by
+  obtain ⟨e, rfl⟩ := hA
+  exact ⟨e.adjointEquiv, by ext; simp⟩
+
+/-- An operator between Hilbert spaces is invertible exactly when its adjoint is. -/
+@[simp]
+theorem isInvertible_adjoint_iff {A : E →L[𝕜] F} : (adjoint A).IsInvertible ↔ A.IsInvertible :=
+  ⟨fun h ↦ adjoint_adjoint A ▸ h.adjoint, IsInvertible.adjoint⟩
+
+end ContinuousLinearMap
 
 /-! ### Operator corners -/
 
