@@ -9,7 +9,6 @@ public import Mathlib.Algebra.MvPolynomial.Equiv
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.RingTheory.Polynomial.Basic
-import Mathlib.Data.Finsupp.Interval
 
 /-!
 # Polynomials with restricted support
@@ -36,10 +35,7 @@ with the native degree spaces.
   `MvPolynomial.restrictTotalDegree_eq_restrictSupport`
   (`TauCeti/RingTheory/MvPolynomial/RestrictTotalDegree.lean`).
 * `MvPolynomial.degreeOf_lt_of_mem_restrictSupport`: a support restriction bounding the exponent
-  of one variable bounds `degreeOf`; for the weighted strip
-  `{μ | μ 0 < B ∧ μ 0 + B * μ 1 < N}` this is the `Z`-degree bound under which the power
-  substitution `Z ↦ X, W ↦ X ^ B` is injective, and `MvPolynomial.finite_weightedStrip` says that
-  the strip is finite.
+  of one variable bounds `degreeOf`.
 * `MvPolynomial.uniqueAlgEquiv_mem_degreeLT_iff`, `MvPolynomial.map_restrictSupport_uniqueAlgEquiv`:
   in one variable, the box `{μ | μ default < N}` corresponds to `Polynomial.degreeLT R N` under
   `MvPolynomial.uniqueAlgEquiv`.
@@ -144,16 +140,6 @@ of every polynomial supported on `s`. -/
 theorem degreeOf_lt_of_mem_restrictSupport {p : MvPolynomial σ R} (hp : p ∈ restrictSupport R s)
     {i : σ} {B : ℕ} (hB : 0 < B) (hs : ∀ μ ∈ s, μ i < B) : p.degreeOf i < B :=
   (degreeOf_lt_iff hB).2 fun μ hμ ↦ hs μ (hp hμ)
-
-/-- The weighted strip `{μ | μ 0 < B ∧ μ 0 + B * μ 1 < N}` of two-variable exponents is
-finite. -/
-theorem finite_weightedStrip (B N : ℕ) :
-    {μ : Fin 2 →₀ ℕ | μ 0 < B ∧ μ 0 + B * μ 1 < N}.Finite := by
-  refine (Set.finite_Iic (Finsupp.equivFunOnFinite.symm fun _ ↦ N)).subset fun μ ⟨h0, h1⟩ ↦ ?_
-  -- Both entries are at most `N`: `μ 1 ≤ B * μ 1` because `B > μ 0 ≥ 0`.
-  have := Nat.le_mul_of_pos_left (μ 1) (show 0 < B by omega)
-  intro i
-  fin_cases i <;> simp <;> omega
 
 /-- In one variable, the polynomials supported on the box `{μ | μ default < N}` are those whose
 image under `uniqueAlgEquiv` has degree below `N`. -/

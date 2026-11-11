@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.ToLin
-public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import TauCeti.Algebra.MvPolynomial.HasseDeriv.Basic
 public import TauCeti.RingTheory.MvPolynomial.RestrictSupport
 
@@ -36,8 +35,8 @@ interpolation matrix whose minors the arithmetic determinant method estimates.
 * `MvPolynomial.mem_ker_jetEval`: the kernel consists of the polynomials all of whose prescribed
   jets vanish.
 * `MvPolynomial.jetEval_mapRestrictSupport`, `MvPolynomial.jetMatrix_map`: naturality for a ring
-  map `R →+* S`; `MvPolynomial.jetEval_quotient` and `MvPolynomial.jetMatrix_quotient` are the
-  reduction modulo an ideal.
+  map `R →+* S`. Applied to `Ideal.Quotient.mk J`, they say that the jet map and the jet matrix
+  over `R ⧸ J` are the reductions of those over `R`.
 * `MvPolynomial.ordinaryJetEval_apply_eq_factorial_mul`, `MvPolynomial.toMatrix_ordinaryJetEval`:
   the ordinary jet map along multi-indices `k i • eᵥ₍ᵢ₎` is the Hasse one with row `i`
   multiplied by `(k i)!`.
@@ -95,16 +94,11 @@ theorem toMatrix_jetEval [Fintype s] [Finite ι] [DecidableEq s] :
 
 /-- The jet vector of a polynomial supported on a finite `s` is the jet matrix applied to its
 coefficients on `s`. -/
-theorem jetEval_eq_mulVec [Fintype s] [Finite ι] (f : restrictSupport R s) :
+theorem jetEval_eq_mulVec [Fintype s] (f : restrictSupport R s) :
     jetEval s a d f = jetMatrix s a d *ᵥ fun μ ↦ (f : MvPolynomial σ R).coeff μ := by
-  classical
-  have := LinearMap.toMatrix_mulVec_repr (basisRestrictSupport R s) (Pi.basisFun R ι)
-    (jetEval s a d) f
-  have hrepr : ⇑((basisRestrictSupport R s).repr f) = fun μ : s ↦ (f : MvPolynomial σ R).coeff μ :=
-    funext (basisRestrictSupport_repr_apply f)
-  rw [toMatrix_jetEval, hrepr] at this
   ext i
-  simpa using (congrFun this i).symm
+  conv_lhs => rw [← (basisRestrictSupport R s).sum_repr f]
+  simp [mulVec, dotProduct, jetMatrix, map_sum, basisRestrictSupport_repr_apply, mul_comm]
 
 /-- The kernel of the jet evaluation map consists of the polynomials supported on `s` all of
 whose prescribed jets vanish. -/
@@ -142,27 +136,6 @@ theorem jetMatrix_map (f : R →+* S) :
   rw [eval₂_comp, ← eval_map, ← hasseDeriv_map, map_monomial, RingHom.map_one]
 
 end Hasse
-
-section Quotient
-
-variable {R : Type*} [CommRing R] (J : Ideal R) (s : Set (σ →₀ ℕ)) (a : ι → σ → R)
-  (d : ι → σ →₀ ℕ)
-
-/-- Reduction modulo an ideal `J`: the jet map over `R ⧸ J` evaluates the reduced polynomial at the
-reduced points to the reduction of the jets over `R`. -/
-theorem jetEval_quotient (p : restrictSupport R s) :
-    jetEval s (fun i ↦ Ideal.Quotient.mk J ∘ a i) d
-        (mapRestrictSupport s (Ideal.Quotient.mk J) p) = Ideal.Quotient.mk J ∘ jetEval s a d p :=
-  jetEval_mapRestrictSupport s a d _ p
-
-/-- Reduction modulo an ideal `J`: the jet matrix at the reduced points is the entrywise reduction
-of the jet matrix. -/
-theorem jetMatrix_quotient :
-    jetMatrix s (fun i ↦ Ideal.Quotient.mk J ∘ a i) d =
-      (jetMatrix s a d).map (Ideal.Quotient.mk J) :=
-  jetMatrix_map s a d _
-
-end Quotient
 
 section Ordinary
 
@@ -225,7 +198,7 @@ example : jetMatrix {single (0 : Fin 1) 2} (fun _ : Unit ↦ fun _ ↦ (0 : ZMod
 
 example : ordinaryJetEval {single (0 : Fin 1) 2} (fun _ : Unit ↦ fun _ ↦ (0 : ZMod 2))
     (fun _ ↦ 0) (fun _ ↦ 2) ⟨X 0 ^ 2, by simp [X_pow_eq_monomial]⟩ () = 0 := by
-  rw [ordinaryJetEval_apply_eq_factorial_mul, show ((Nat.factorial 2 : ℕ) : ZMod 2) = 0 by decide,
-    zero_mul]
+  have h2 : ((Nat.factorial 2 : ℕ) : ZMod 2) = 0 := by decide
+  rw [ordinaryJetEval_apply_eq_factorial_mul, h2, zero_mul]
 
 end MvPolynomial
