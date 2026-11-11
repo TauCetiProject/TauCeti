@@ -190,21 +190,24 @@ theorem _root_.BoxIntegral.Prepartition.IsPartition.hasIntegral_sum {p : Prepart
 
 /-- A linear map commutes with the integral sum of a function against `BoxAdditiveMap.volume` over
 a tagged prepartition: the sums of `e ∘ g` are the images under `e` of those of `g`. -/
-theorem integralSum_volume_comp (e : E →ₗ[ℝ] F) {I : Box ι}
+protected theorem _root_.LinearMap.integralSum_volume_comp (e : E →ₗ[ℝ] F) {I : Box ι}
     (g : (ι → ℝ) → E) (π : TaggedPrepartition I) :
     integralSum (fun x ↦ e (g x)) BoxAdditiveMap.volume π =
       e (integralSum g BoxAdditiveMap.volume π) := by
   simp only [integralSum, BoxAdditiveMap.volume_apply, map_sum, map_smul]
 
-/-- A linear isometry `e : E →ₗᵢ[ℝ] F` does not change the existence or the value of a box
-integral against the volume: the integral sums of `e ∘ g` are the images of those of `g`, and `e`
-preserves distances. -/
-theorem hasIntegral_volume_comp_linearIsometry_iff (e : E →ₗᵢ[ℝ] F) {I : Box ι}
+/-- A linear isometry `e : E →ₗᵢ[ℝ] F` preserves and reflects the box integral against the volume
+with a prescribed value: `e ∘ g` has integral `e z` if and only if `g` has integral `z`. The
+integral sums of `e ∘ g` are the images of those of `g`, and `e` preserves distances. This does not
+assert that every integral of `e ∘ g` is of this form, since an integral in `F` need not lie in the
+range of `e`. -/
+protected theorem _root_.LinearIsometry.hasIntegral_volume_comp_iff (e : E →ₗᵢ[ℝ] F) {I : Box ι}
     {l : IntegrationParams} {g : (ι → ℝ) → E} {z : E} :
     HasIntegral I l (fun x ↦ e (g x)) BoxAdditiveMap.volume (e z) ↔
       HasIntegral I l g BoxAdditiveMap.volume z := by
   have h (π : TaggedPrepartition I) : integralSum (fun x ↦ e (g x)) BoxAdditiveMap.volume π =
-      e (integralSum g BoxAdditiveMap.volume π) := integralSum_volume_comp e.toLinearMap g π
+      e (integralSum g BoxAdditiveMap.volume π) :=
+      LinearMap.integralSum_volume_comp e.toLinearMap g π
   simp only [hasIntegral_iff, h, LinearIsometry.dist_map]
 
 end TauCeti.BoxIntegral

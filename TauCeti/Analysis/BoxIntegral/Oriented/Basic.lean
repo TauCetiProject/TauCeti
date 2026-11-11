@@ -243,18 +243,20 @@ theorem hasHenstockIntervalIntegral_zero (a b : ℝ) :
     HasHenstockIntervalIntegral (0 : ℝ → E) a b 0 := by
   simpa only [Pi.zero_def, smul_zero] using hasHenstockIntervalIntegral_const (0 : E) a b
 
-/-- A linear isometry `e : E →ₗᵢ[ℝ] F` does not change the existence or the value of an oriented
-Henstock integral: the integral sums of `e ∘ f` are the images of those of `f`. -/
+/-- A linear isometry `e : E →ₗᵢ[ℝ] F` preserves and reflects the oriented Henstock integral with a
+prescribed value: `e ∘ f` has integral `e y` if and only if `f` has integral `y`. The integral sums
+of `e ∘ f` are the images of those of `f`. This does not assert that every integral of `e ∘ f` is
+of this form, since an integral in `F` need not lie in the range of `e`. -/
 protected theorem _root_.LinearIsometry.hasHenstockIntervalIntegral_comp_iff {F : Type*}
     [NormedAddCommGroup F] [NormedSpace ℝ F] (e : E →ₗᵢ[ℝ] F) :
     HasHenstockIntervalIntegral (fun t ↦ e (f t)) a b (e y) ↔
       HasHenstockIntervalIntegral f a b y := by
   rcases lt_trichotomy a b with hab | rfl | hba
   · simp only [hasHenstockIntervalIntegral_iff_of_lt hab,
-      hasIntegral_volume_comp_linearIsometry_iff]
+      LinearIsometry.hasIntegral_volume_comp_iff]
   · simp only [hasHenstockIntervalIntegral_same, map_eq_zero_iff e e.injective]
   · simp only [hasHenstockIntervalIntegral_iff_of_gt hba, ← map_neg,
-      hasIntegral_volume_comp_linearIsometry_iff]
+      LinearIsometry.hasIntegral_volume_comp_iff]
 
 variable [CompleteSpace E]
 
