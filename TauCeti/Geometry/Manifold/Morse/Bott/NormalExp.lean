@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Bott.Basic
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Riemannian.Fiber
-public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Riemannian
 
 /-!
 # A function along the normal fibres of a critical submanifold
@@ -26,7 +25,7 @@ classes: the derivative of the normal exponential at `0` is the inclusion of `W`
 space, so this is the second-order chain rule at a critical point
 (`TauCeti.criticalHessian_comp_apply`). Since `W` maps isomorphically onto the normal space, the
 critical submanifold is Morse–Bott exactly when `0` is a nondegenerate critical point of every
-normal slice, and then the Morse index of the normal slice at `0` is the Morse index of `f` at
+normal slice. In general the Morse index of the normal slice at `0` is the Morse index of `f` at
 `i s`. This is Bott's description of a nondegenerate critical manifold: `f` restricted to each
 normal slice of a tubular neighbourhood has a nondegenerate critical point on the core, of the
 index of the critical manifold. It identifies the vertical Hessian of `f` read through the normal
@@ -43,8 +42,8 @@ In the namespace `TauCeti.SmoothEmbedding`:
 * `isNondegenerateCriticalSubmanifold_iff_forall_isNondegenerateCriticalPoint`, in the namespace
   `IsCriticalSubmanifold`: a critical submanifold is Morse–Bott exactly when every normal slice has
   a nondegenerate critical point at `0`.
-* `IsNondegenerateCriticalSubmanifold.morseIndex_comp_normalExp_fiber_zero`: the Morse index of a
-  normal slice of a Morse–Bott submanifold at `0` is the Morse index of `f` at the core point.
+* `IsCriticalSubmanifold.morseIndex_comp_normalExp_fiber_zero`: the Morse index of a normal slice
+  at `0` is the Morse index of `f` at the core point.
 
 ## References
 
@@ -67,26 +66,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S] [ChartedSpace H' S]
   {f : M → ℝ} {n : ℕ∞ω} {i : SmoothEmbedding J I n S M} (hn : n ≠ 0)
 
-/-- The normal exponential at `s`, restricted to the orthogonal normal space, is `C²` at `0` and
-sends `0` to `i s`. -/
-private theorem contMDiffAt_normalExp_fiber_zero (s : S) :
-    ContMDiffAt 𝓘(ℝ, (i.tangentRange s hn)ᗮ) I 2
-      (fun v : (i.tangentRange s hn)ᗮ ↦ i.normalExp (P := P) hn ⟨s, i.normalClass s hn v⟩) 0 := by
-  have hmem : (0 : (i.tangentRange s hn)ᗮ) ∈
-      {v : (i.tangentRange s hn)ᗮ |
-        (⟨s, i.normalClass s hn v⟩ : TotalSpace P (fun x ↦ i.NormalSpace x hn)) ∈
-          i.normalExpDomain hn} := by
-    simp
-  exact ((i.contMDiffOn_normalExp_fiber (P := P) hn s).contMDiffAt
-    ((i.isOpen_normalExpDomain_fiber (P := P) hn s).mem_nhds hmem)).of_le (by norm_cast)
-
-/-- The normal exponential sends the zero normal vector at `s` to `i s`. -/
-private theorem normalExp_fiber_zero (s : S) :
-    i.normalExp (P := P) hn ⟨s, i.normalClass s hn ((0 : (i.tangentRange s hn)ᗮ) :
-      TangentSpace I (i s))⟩ = i s := by
-  rw [Submodule.coe_zero, map_zero]
-  exact i.normalExp_zeroSection (P := P) hn s
-
 namespace IsCriticalSubmanifold
 
 variable (h : i.IsCriticalSubmanifold f)
@@ -100,10 +79,10 @@ theorem contDiffAt_comp_normalExp_fiber_zero (s : S) :
   have hf : ContMDiffAt I 𝓘(ℝ) 2 f
       (i.normalExp (P := P) hn ⟨s, i.normalClass s hn ((0 : (i.tangentRange s hn)ᗮ) :
         TangentSpace I (i s))⟩) := by
-    rw [normalExp_fiber_zero]
+    rw [i.normalExp_fiber_zero (P := P) hn s]
     exact h.contMDiffAt s
   exact (hf.comp (0 : (i.tangentRange s hn)ᗮ)
-    (contMDiffAt_normalExp_fiber_zero (P := P) (i := i) hn s)).contDiffAt
+    ((i.contMDiffAt_normalExp_fiber_zero (P := P) hn s).of_le (by norm_cast))).contDiffAt
 
 /-- The normal slice `v ↦ f (exp_{i s} v)` of a critical submanifold has a critical point at `0`.
 -/
@@ -113,15 +92,15 @@ theorem fderiv_comp_normalExp_fiber_zero (s : S) :
       0 = 0 := by
   have hcrit : i.normalExp (P := P) hn ⟨s, i.normalClass s hn ((0 : (i.tangentRange s hn)ᗮ) :
       TangentSpace I (i s))⟩ ∈ criticalPoints I f := by
-    rw [normalExp_fiber_zero]
+    rw [i.normalExp_fiber_zero (P := P) hn s]
     exact h.mem_criticalPoints s
   have hf : MDifferentiableAt I 𝓘(ℝ) f
       (i.normalExp (P := P) hn ⟨s, i.normalClass s hn ((0 : (i.tangentRange s hn)ᗮ) :
         TangentSpace I (i s))⟩) := by
-    rw [normalExp_fiber_zero]
+    rw [i.normalExp_fiber_zero (P := P) hn s]
     exact (h.contMDiffAt s).mdifferentiableAt two_ne_zero
   have hcomp := mfderiv_comp (0 : (i.tangentRange s hn)ᗮ) hf
-    ((contMDiffAt_normalExp_fiber_zero (P := P) (i := i) hn s).mdifferentiableAt two_ne_zero)
+    ((i.contMDiffAt_normalExp_fiber_zero (P := P) hn s).mdifferentiableAt (by simp))
   rw [mem_criticalPoints_iff_mfderiv_eq_zero.mp hcrit, ContinuousLinearMap.zero_comp,
     mfderiv_eq_fderiv] at hcomp
   exact hcomp
@@ -135,8 +114,9 @@ theorem fderiv_fderiv_comp_normalExp_fiber_zero_apply (s : S) (u w : (i.tangentR
       0 u w = h.normalHessian hn s (i.normalClass s hn u) (i.normalClass s hn w) := by
   have key := criticalHessian_comp_apply
     (φ := fun v : (i.tangentRange s hn)ᗮ ↦ i.normalExp (P := P) hn ⟨s, i.normalClass s hn v⟩)
-    (y := 0) (normalExp_fiber_zero hn s) (h.contMDiffAt s)
-    (contMDiffAt_normalExp_fiber_zero (P := P) (i := i) hn s) (h.mem_criticalPoints s) u w
+    (y := 0) (i.normalExp_fiber_zero hn s) (h.contMDiffAt s)
+    ((i.contMDiffAt_normalExp_fiber_zero (P := P) hn s).of_le (by norm_cast))
+    (h.mem_criticalPoints s) u w
   rw [criticalHessian_modelSpace] at key
   refine key.trans ?_
   -- The vertical derivative of the normal exponential at `0` is the inclusion of the
@@ -199,28 +179,19 @@ theorem isNondegenerateCriticalSubmanifold_iff_forall_isNondegenerateCriticalPoi
         zero_apply]
     rw [hv, map_zero]
 
-end IsCriticalSubmanifold
-
-namespace IsNondegenerateCriticalSubmanifold
-
-variable (h : i.IsNondegenerateCriticalSubmanifold f)
-include h
-
-/-- **The index of a normal slice.** For a Morse–Bott critical submanifold `i` of `f` and
-`s : S`, the Morse index at `0` of the normal slice `v ↦ f (exp_{i s} v)` on the orthogonal normal
-space is the Morse index of `f` at `i s`. -/
+/-- **The index of a normal slice.** For a critical submanifold `i` of `f` and `s : S`, the Morse
+index at `0` of the normal slice `v ↦ f (exp_{i s} v)` on the orthogonal normal space is the Morse
+index of `f` at `i s`. -/
 theorem morseIndex_comp_normalExp_fiber_zero (s : S) :
     morseIndex
       (fun v : (i.tangentRange s hn)ᗮ ↦ f (i.normalExp (P := P) hn ⟨s, i.normalClass s hn v⟩))
       0 = manifoldMorseIndex I f (i s) := by
-  rw [morseIndex_def,
-    h.toIsCriticalSubmanifold.hessianQuadraticForm_comp_normalExp_fiber_zero hn s,
+  rw [morseIndex_def, h.hessianQuadraticForm_comp_normalExp_fiber_zero hn s,
     ← h.sigNeg_normalHessian hn s]
   exact QuadraticMap.Equivalent.sigNeg_eq
-    ⟨(QuadraticMap.isometryEquivOfCompLinearEquiv
-      (h.toIsCriticalSubmanifold.normalHessian hn s).toQuadraticMap
+    ⟨(QuadraticMap.isometryEquivOfCompLinearEquiv (h.normalHessian hn s).toQuadraticMap
       (i.normalSpaceOrthogonalComplementEquiv s hn).symm.toLinearEquiv).symm⟩
 
-end IsNondegenerateCriticalSubmanifold
+end IsCriticalSubmanifold
 
 end TauCeti.SmoothEmbedding
