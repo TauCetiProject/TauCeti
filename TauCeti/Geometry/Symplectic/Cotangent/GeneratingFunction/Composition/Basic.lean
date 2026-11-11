@@ -16,7 +16,8 @@ import Mathlib.Analysis.Calculus.ImplicitContDiff
 For generating functions `S(q, a)` and `T(a, Q)`, composition eliminates the intermediate
 position `a` from `S(q, a) + T(a, Q)` by the stationary equation
 `∂ₐS + ∂ₐT = 0`. This is precisely equality of the intermediate cotangent points, with
-the convention `p = ∂qS`, `P = -∂QS`.
+the convention `p = ∂qS`, `P = -∂QS`
+(`cotangentGeneratingTarget_eq_cotangentGeneratingSource_iff`).
 
 `exists_cotangentGeneratingComposition` constructs the local stationary branch when the
 intermediate Hessian is invertible. The resulting generating function has the source of `S`
@@ -102,6 +103,22 @@ theorem cotangentGeneratingTarget_sum_snd_eq_zero_iff
       fderiv_cotangentGeneratingSum_apply hS hT, _root_.zero_apply,
       cotangentGeneratingSource_snd_apply, Prod.fst_zero, Prod.snd_zero] at hb ⊢
     linarith
+
+/-- The intermediate cotangent points of the two relations agree exactly when the intermediate
+position is a critical point of `a ↦ S(q, a) + T(a, Q)`. -/
+theorem cotangentGeneratingTarget_eq_cotangentGeneratingSource_iff
+    {S : V × W → ℝ} {T : W × U → ℝ} {q : V} {a : W} {Q : U}
+    (hS : DifferentiableAt ℝ S (q, a)) (hT : DifferentiableAt ℝ T (a, Q)) :
+    cotangentGeneratingTarget S (q, a) = cotangentGeneratingSource T (a, Q) ↔
+      fderiv ℝ (fun a' ↦ S (q, a') + T (a', Q)) a = 0 := by
+  have hF : DifferentiableAt ℝ (cotangentGeneratingSum S T) ((q, Q), a) :=
+    (hS.comp ((q, Q), a) (differentiableAt_fst.fst.prodMk differentiableAt_snd)).add
+      (hT.comp ((q, Q), a) (differentiableAt_snd.prodMk differentiableAt_fst.snd))
+  rw [← cotangentGeneratingTarget_sum_snd_eq_zero_iff (x := ((q, Q), a)) hS hT]
+  have hslice := fderiv_slice_right hF
+  simp only [cotangentGeneratingSum_apply] at hslice
+  simp only [hslice, ContinuousLinearMap.ext_iff, cotangentGeneratingTarget_snd_apply,
+    ContinuousLinearMap.comp_apply, inr_apply, _root_.zero_apply, neg_eq_zero]
 
 /-- Along a differentiable stationary branch, the intermediate derivatives cancel.
 The differential of the critical value is the sum of the two outer derivatives. -/
