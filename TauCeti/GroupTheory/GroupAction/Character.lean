@@ -30,7 +30,7 @@ identity map, rather than the constant character required by pointwise multiplic
 
 Finally, `TauCeti.natCard_additive_equivariantCharacterSubgroup_rootsOfUnity` counts the
 equivariant characters of a product of groups of roots of unity under the trivial action, over a
-commutative ring with enough roots of unity.
+commutative monoid with enough roots of unity.
 -/
 
 public section
@@ -81,18 +81,16 @@ section RootsOfUnity
 
 attribute [local instance] trivialMulDistribMulAction
 
-variable (k G : Type) [CommRing k] [Monoid G]
+variable (k G : Type) [CommMonoid k] [Monoid G]
 
-/-- When each `n i` is nonzero in `k` and `k` has enough `∏ i, n i`-th roots of unity, the group
+/-- When each `n i` is nonzero and `k` has enough `∏ i, n i`-th roots of unity, the group
 of equivariant `kˣ`-valued characters of `∏ i, μ_{n i}` has `∏ i, n i` elements. -/
 theorem natCard_additive_equivariantCharacterSubgroup_rootsOfUnity {ι : Type} [Fintype ι]
-    (n : ι → ℕ) (hncast : ∀ i, (n i : k) ≠ 0) [HasEnoughRootsOfUnity k (∏ i, n i)] :
+    (n : ι → ℕ) [∀ i, NeZero (n i)] [HasEnoughRootsOfUnity k (∏ i, n i)] :
     Nat.card (Additive (equivariantCharacterSubgroup G (∀ i, rootsOfUnity (n i) k) kˣ)) =
       ∏ i, n i := by
   classical
-  let hnroot (i : ι) : NeZero (n i : k) := ⟨hncast i⟩
-  have hne (i : ι) : NeZero (n i) := .of_neZero_natCast k
-  have : NeZero (∏ i, n i) := ⟨Finset.prod_ne_zero_iff.mpr fun i _ ↦ (hne i).out⟩
+  have : NeZero (∏ i, n i) := ⟨Finset.prod_ne_zero_iff.mpr fun i _ ↦ (NeZero.ne (n i))⟩
   have (i : ι) : HasEnoughRootsOfUnity k (n i) :=
     .of_dvd k (Finset.dvd_prod_of_mem n (Finset.mem_univ i))
   let M := ∀ i, rootsOfUnity (n i) k

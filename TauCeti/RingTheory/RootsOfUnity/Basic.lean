@@ -166,7 +166,7 @@ theorem card_rootsOfUnity_dvd [IsDomain R] (n : ℕ) : Nat.card (rootsOfUnity n 
   exact Monoid.exponent_dvd_of_forall_pow_eq_one fun ζ ↦ OneMemClass.coe_eq_one.mp ζ.prop
 
 /-- The exponent of the product of the groups of `n i`-th roots of unity divides `∏ i, n i`. -/
-theorem exponent_pi_rootsOfUnity_dvd_prod {K ι : Type*} [CommRing K] [Fintype ι]
+theorem exponent_pi_rootsOfUnity_dvd_prod {K ι : Type*} [CommMonoid K] [Fintype ι]
     (n : ι → ℕ) : Monoid.exponent (∀ i, rootsOfUnity (n i) K) ∣ ∏ i, n i := by
   rw [Monoid.exponent_pi]
   refine Finset.lcm_dvd fun i _ ↦ dvd_trans ?_ (Finset.dvd_prod_of_mem n (Finset.mem_univ i))
