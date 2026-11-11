@@ -77,10 +77,10 @@ variable {E₁ E₂ E₃ H₁ H₂ H₃ M₁ M₂ M₃ : Type*}
 section Charts
 
 variable [I₁.Boundaryless] [I₂.Boundaryless] [I₃.Boundaryless]
-  [IsManifold I₁ ∞ M₁] [IsManifold I₂ ∞ M₂] [IsManifold I₃ ∞ M₃]
+  [IsManifold I₁ 1 M₁] [IsManifold I₂ 1 M₂] [IsManifold I₃ 1 M₃]
 
-omit [I₁.Boundaryless] [I₂.Boundaryless] [I₃.Boundaryless] [IsManifold I₁ ∞ M₁]
-  [IsManifold I₃ ∞ M₃] in
+omit [I₁.Boundaryless] [I₂.Boundaryless] [I₃.Boundaryless] [IsManifold I₁ 1 M₁]
+  [IsManifold I₃ 1 M₃] in
 /-- The matching equation of `TauCeti.CotangentBundle.generatingTarget_eq_generatingSource_iff`
 read in extended charts at arbitrary base points: where the coordinate expressions of `S` and `T`
 are differentiable, it holds on the manifolds exactly when it holds for these expressions. -/
@@ -175,13 +175,21 @@ theorem exists_generatingComposition [CompleteSpace E₁] [CompleteSpace E₂] [
   let T' : E₂ × E₃ → ℝ := fun z ↦ T (e₂.symm z.1, e₃.symm z.2)
   -- `S'` and `T'` are `S` and `T` read in the product charts at the base points.
   have hS' : ContDiffAt ℝ (n + 2) S' (e₁ q₀, e₂ a₀) := by
-    have h := hS.contDiffAt_comp_extChartAt_symm
-    rw [extChartAt_prod] at h
-    exact h
+    have hfun : S ∘ (extChartAt (I₁.prod I₂) (q₀, a₀)).symm = S' := by
+      rw [extChartAt_prod, PartialEquiv.prod_symm]
+      rfl
+    have hpt : extChartAt (I₁.prod I₂) (q₀, a₀) (q₀, a₀) = (e₁ q₀, e₂ a₀) := by
+      rw [extChartAt_prod, PartialEquiv.prod_coe]
+    rw [← hfun, ← hpt]
+    exact hS.contDiffAt_comp_extChartAt_symm
   have hT' : ContDiffAt ℝ (n + 2) T' (e₂ a₀, e₃ Q₀) := by
-    have h := hT.contDiffAt_comp_extChartAt_symm
-    rw [extChartAt_prod] at h
-    exact h
+    have hfun : T ∘ (extChartAt (I₂.prod I₃) (a₀, Q₀)).symm = T' := by
+      rw [extChartAt_prod, PartialEquiv.prod_symm]
+      rfl
+    have hpt : extChartAt (I₂.prod I₃) (a₀, Q₀) (a₀, Q₀) = (e₂ a₀, e₃ Q₀) := by
+      rw [extChartAt_prod, PartialEquiv.prod_coe]
+    rw [← hfun, ← hpt]
+    exact hT.contDiffAt_comp_extChartAt_symm
   have h1 : (1 : WithTop ℕ∞) ≤ n + 2 := le_add_left one_le_two
   have hv₀ : e₁ q₀ ∈ e₁.target := mem_extChartAt_target q₀
   have hw₀ : e₂ a₀ ∈ e₂.target := mem_extChartAt_target a₀
@@ -296,18 +304,15 @@ theorem exists_generatingComposition [CompleteSpace E₁] [CompleteSpace E₂] [
         have hcont : ContinuousAt (fun v : E₁ ↦ (v, e₃ Q)) (e₁ q) := by fun_prop
         filter_upwards [hcont.eventually hReq] with v hv
         simpa only [comp_apply, e₃.left_inv hQ] using hv
-      have hRd : DifferentiableAt ℝ ((fun q' ↦ R (q', Q)) ∘ e₁.symm) (e₁ q) :=
-        (hRy'.comp (e₁ q) (differentiableAt_id.prodMk
-          (differentiableAt_const _))).congr_of_eventuallyEq hslice
-      have hSfun : (fun q' ↦ S (q', b (q, Q))) ∘ e₁.symm = fun v ↦ S' (v, b' y') := rfl
-      have hSd : DifferentiableAt ℝ ((fun q' ↦ S (q', b (q, Q))) ∘ e₁.symm) (e₁ q) := by
-        rw [hSfun]
-        exact DifferentiableAt.comp (g := S') (e₁ q) hS'y
-          (differentiableAt_id.prodMk (differentiableAt_const _))
+      -- By definition of `b` and `S'`, the slice of `S` through `b (q, Q)` reads in the chart as
+      -- the slice of `S'` through `b' y'`.
       have hmv : mvfderiv I₁ (fun q' ↦ R (q', Q)) q =
           mvfderiv I₁ (fun q' ↦ S (q', b (q, Q))) q := by
-        refine mvfderiv_eq_of_fderiv_comp_extChartAt_symm_eq hq hRd hSd ?_
-        rw [hslice.fderiv_eq, hSfun, fderiv_slice_left hRy', fderiv_slice_left hS'y]
+        refine mvfderiv_eq_of_fderiv_comp_extChartAt_symm_eq (g' := fun v ↦ S' (v, b' y')) hq
+          hslice .rfl (hRy'.comp (e₁ q) (differentiableAt_id.prodMk (differentiableAt_const _)))
+          (DifferentiableAt.comp (g := S') (e₁ q) hS'y
+            (differentiableAt_id.prodMk (differentiableAt_const _))) ?_
+        rw [fderiv_slice_left hRy', fderiv_slice_left hS'y]
         ext w
         simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inl_apply,
           cotangentGeneratingSource_snd_apply] using congr($hr₂.2 w)
@@ -318,18 +323,14 @@ theorem exists_generatingComposition [CompleteSpace E₁] [CompleteSpace E₂] [
         have hcont : ContinuousAt (fun u : E₃ ↦ (e₁ q, u)) (e₃ Q) := by fun_prop
         filter_upwards [hcont.eventually hReq] with u hu
         simpa only [comp_apply, e₁.left_inv hq] using hu
-      have hRd : DifferentiableAt ℝ ((fun Q' ↦ R (q, Q')) ∘ e₃.symm) (e₃ Q) :=
-        (hRy'.comp (e₃ Q) ((differentiableAt_const _).prodMk
-          differentiableAt_id)).congr_of_eventuallyEq hslice
-      have hTfun : (fun Q' ↦ T (b (q, Q), Q')) ∘ e₃.symm = fun u ↦ T' (b' y', u) := rfl
-      have hTd : DifferentiableAt ℝ ((fun Q' ↦ T (b (q, Q), Q')) ∘ e₃.symm) (e₃ Q) := by
-        rw [hTfun]
-        exact DifferentiableAt.comp (g := T') (e₃ Q) hT'y
-          ((differentiableAt_const _).prodMk differentiableAt_id)
+      -- As above, the slice of `T` through `b (q, Q)` reads in the chart as that of `T'`.
       have hmv : mvfderiv I₃ (fun Q' ↦ R (q, Q')) Q =
           mvfderiv I₃ (fun Q' ↦ T (b (q, Q), Q')) Q := by
-        refine mvfderiv_eq_of_fderiv_comp_extChartAt_symm_eq hQ hRd hTd ?_
-        rw [hslice.fderiv_eq, hTfun, fderiv_slice_right hRy', fderiv_slice_right hT'y]
+        refine mvfderiv_eq_of_fderiv_comp_extChartAt_symm_eq (g' := fun u ↦ T' (b' y', u)) hQ
+          hslice .rfl (hRy'.comp (e₃ Q) ((differentiableAt_const _).prodMk differentiableAt_id))
+          (DifferentiableAt.comp (g := T') (e₃ Q) hT'y
+            ((differentiableAt_const _).prodMk differentiableAt_id)) ?_
+        rw [fderiv_slice_right hRy', fderiv_slice_right hT'y]
         ext w
         simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inr_apply,
           cotangentGeneratingTarget_snd_apply, neg_inj] using congr($hr₃.2 w)
