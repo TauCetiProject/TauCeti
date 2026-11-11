@@ -396,6 +396,7 @@ theorem hodgeStar_neg_orientation (o : Manifold.Orientation I M (Fin m)) (hkl : 
 
 /-- The Hodge star of smooth forms commutes with multiplication by a smooth function,
 `⋆(f α) = f ⋆α`. -/
+@[simp]
 theorem hodgeStar_funSMulₗ (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
     (f : C^∞⟮I, M; ℝ⟯) (α : SmoothForm I M ℝ k) :
     hodgeStar o hkl (funSMulₗ f α) = funSMulₗ f (hodgeStar o hkl α) :=
