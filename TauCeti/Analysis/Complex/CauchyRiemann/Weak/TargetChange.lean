@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
 public import Mathlib.Topology.OpenPartialHomeomorph.Continuity
+public import TauCeti.Analysis.Calculus.FDeriv.PullbackEnd
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.Sobolev.Local.ChainRule
 import TauCeti.Analysis.Sobolev.WeakDeriv.ChainRule
@@ -33,12 +34,10 @@ subsets of `U`, every statement applies verbatim to half-discs.
 
 * `TauCeti.IsWeakCauchyRiemannOn.comp_contDiffOn_of_intertwine`: composition with a `C¹` map
   intertwining `J` with a field `J'`.
-* `TauCeti.transportCauchyRiemannStructure`, `TauCeti.transportCauchyRiemannTerm`: the fields
-  `Ψ_* J` and `Ψ_* η` transported by an open partial homeomorphism.
+* `TauCeti.transportCauchyRiemannTerm`: the term `Ψ_* η` transported by an open partial
+  homeomorphism; the field `Ψ_* J` is `OpenPartialHomeomorph.pullbackEnd` along `Ψ.symm`.
 * `TauCeti.isWeakCauchyRiemannOn_iff_openPartialHomeomorph_comp`: invariance under `C¹`
   diffeomorphisms of the target.
-* `TauCeti.transportCauchyRiemannStructure_mul_self`: the transport of an almost complex
-  structure is an almost complex structure.
 * `TauCeti.IsWeakCauchyRiemannOn.comp_graph_of_intertwine`: domain-dependent changes of target
   coordinates `z ↦ Φ(z, u z)`.
 * `TauCeti.IsWeakCauchyRiemannOn.conj_comp`: complex conjugation transports the standard
@@ -112,49 +111,14 @@ theorem IsWeakCauchyRiemannOn.comp_contDiffOn_of_intertwine [CompleteSpace W] {�
 
 section Diffeomorphism
 
-/-- The derivative of the inverse of a `C¹` open partial homeomorphism with `C¹` inverse is a
-left inverse of its derivative on the source. This is the chain rule for `Ψ.symm ∘ Ψ = id` near
-a point of the source. -/
-private theorem fderiv_symm_comp_fderiv (Ψ : OpenPartialHomeomorph V W)
-    (hΨ : ContDiffOn ℝ 1 Ψ Ψ.source) (hΨs : ContDiffOn ℝ 1 Ψ.symm Ψ.target) {x : V}
-    (hx : x ∈ Ψ.source) :
-    (fderiv ℝ Ψ.symm (Ψ x)).comp (fderiv ℝ Ψ x) = ContinuousLinearMap.id ℝ V := by
-  have h1 : HasFDerivAt Ψ (fderiv ℝ Ψ x) x :=
-    ((hΨ.differentiableOn one_ne_zero).differentiableAt (Ψ.open_source.mem_nhds hx)).hasFDerivAt
-  have h2 : HasFDerivAt Ψ.symm (fderiv ℝ Ψ.symm (Ψ x)) (Ψ x) :=
-    ((hΨs.differentiableOn one_ne_zero).differentiableAt
-      (Ψ.open_target.mem_nhds (Ψ.map_source hx))).hasFDerivAt
-  have hid : (id : V → V) =ᶠ[𝓝 x] Ψ.symm ∘ Ψ :=
-    (Ψ.eventually_left_inverse hx).mono fun y hy => hy.symm
-  exact ((h2.comp x h1).congr_of_eventuallyEq hid).unique (hasFDerivAt_id x)
-
-/-- The derivative of a `C¹` open partial homeomorphism with `C¹` inverse is a left inverse of
-the derivative of the inverse on the target. -/
-private theorem fderiv_comp_fderiv_symm (Ψ : OpenPartialHomeomorph V W)
-    (hΨ : ContDiffOn ℝ 1 Ψ Ψ.source) (hΨs : ContDiffOn ℝ 1 Ψ.symm Ψ.target) {y : W}
-    (hy : y ∈ Ψ.target) :
-    (fderiv ℝ Ψ (Ψ.symm y)).comp (fderiv ℝ Ψ.symm y) = ContinuousLinearMap.id ℝ W := by
-  have := fderiv_symm_comp_fderiv Ψ.symm hΨs (by rwa [Ψ.symm_symm]) (x := y) hy
-  rwa [Ψ.symm_symm] at this
-
-/-- The field of endomorphisms `Ψ_* J` transported by an open partial homeomorphism `Ψ`:
-`(Ψ_* J)(z, y) = dΨ(Ψ⁻¹ y) ∘ J(z, Ψ⁻¹ y) ∘ dΨ⁻¹(y)`, with `dΨ⁻¹(y)` the derivative of `Ψ.symm`
-at `y`. It is meaningful on the target of `Ψ`. -/
-@[expose] def transportCauchyRiemannStructure (Ψ : OpenPartialHomeomorph V W)
-    (J : ℂ → V → V →L[ℝ] V) : ℂ → W → W →L[ℝ] W :=
-  fun z y => (fderiv ℝ Ψ (Ψ.symm y)).comp ((J z (Ψ.symm y)).comp (fderiv ℝ Ψ.symm y))
-
 /-- The inhomogeneous term `Ψ_* η` transported by an open partial homeomorphism `Ψ`:
-`(Ψ_* η)(z, y) = dΨ(Ψ⁻¹ y) (η(z, Ψ⁻¹ y))`. It is meaningful on the target of `Ψ`. -/
+`(Ψ_* η)(z, y) = dΨ(Ψ⁻¹ y) (η(z, Ψ⁻¹ y))`. It is meaningful on the target of `Ψ`. The
+transported field of endomorphisms `Ψ_* J = dΨ ∘ J ∘ dΨ⁻¹` is the pullback
+`Ψ.symm.pullbackEnd (J z)` along the inverse, which squares to `-1` wherever `J` does
+(`OpenPartialHomeomorph.pullbackEnd_apply_pullbackEnd_apply`). -/
 @[expose] def transportCauchyRiemannTerm (Ψ : OpenPartialHomeomorph V W) (η : ℂ → V → V) :
     ℂ → W → W :=
   fun z y => fderiv ℝ Ψ (Ψ.symm y) (η z (Ψ.symm y))
-
-theorem transportCauchyRiemannStructure_apply (Ψ : OpenPartialHomeomorph V W)
-    (J : ℂ → V → V →L[ℝ] V) (z : ℂ) (y : W) :
-    transportCauchyRiemannStructure Ψ J z y =
-      (fderiv ℝ Ψ (Ψ.symm y)).comp ((J z (Ψ.symm y)).comp (fderiv ℝ Ψ.symm y)) :=
-  rfl
 
 theorem transportCauchyRiemannTerm_apply (Ψ : OpenPartialHomeomorph V W) (η : ℂ → V → V)
     (z : ℂ) (y : W) :
@@ -163,39 +127,28 @@ theorem transportCauchyRiemannTerm_apply (Ψ : OpenPartialHomeomorph V W) (η : 
 
 variable {Ψ : OpenPartialHomeomorph V W}
 
-/-- **Transport of almost complex structures.** If `J(z, Ψ⁻¹ y)` squares to `-1` at a point `y`
-of the target, so does `(Ψ_* J)(z, y)`. -/
-theorem transportCauchyRiemannStructure_mul_self (hΨ : ContDiffOn ℝ 1 Ψ Ψ.source)
-    (hΨs : ContDiffOn ℝ 1 Ψ.symm Ψ.target) {z : ℂ} {y : W} (hy : y ∈ Ψ.target)
-    (hJ : J z (Ψ.symm y) * J z (Ψ.symm y) = -1) :
-    transportCauchyRiemannStructure Ψ J z y * transportCauchyRiemannStructure Ψ J z y = -1 := by
-  have hl := fderiv_symm_comp_fderiv Ψ hΨ hΨs (Ψ.map_target hy)
-  rw [Ψ.right_inv hy] at hl
-  have hr := fderiv_comp_fderiv_symm Ψ hΨ hΨs hy
-  ext v
-  have hl' := congrArg (fun L : V →L[ℝ] V => L (J z (Ψ.symm y) (fderiv ℝ Ψ.symm y v))) hl
-  have hJ' : J z (Ψ.symm y) (J z (Ψ.symm y) (fderiv ℝ Ψ.symm y v)) = -fderiv ℝ Ψ.symm y v :=
-    congrArg (fun L : V →L[ℝ] V => L (fderiv ℝ Ψ.symm y v)) hJ
-  have hr' := congrArg (fun L : W →L[ℝ] W => L v) hr
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] at hl' hr'
-  change fderiv ℝ Ψ (Ψ.symm y) (J z (Ψ.symm y) (fderiv ℝ Ψ.symm y
-    (fderiv ℝ Ψ (Ψ.symm y) (J z (Ψ.symm y) (fderiv ℝ Ψ.symm y v))))) = -v
-  rw [hl', hJ', map_neg, hr']
-
 /-- **Invariance under `C¹` diffeomorphisms of the target, forward direction.** If `Ψ` is a `C¹`
 open partial homeomorphism with `C¹` inverse whose source contains `u '' U`, and `u` is a weak
 solution for `J` and `η`, then `Ψ ∘ u` is a weak solution for `Ψ_* J` and `Ψ_* η`. -/
 theorem IsWeakCauchyRiemannOn.openPartialHomeomorph_comp [CompleteSpace W]
     (h : IsWeakCauchyRiemannOn p U J η u) (hΨ : ContDiffOn ℝ 1 Ψ Ψ.source)
     (hΨs : ContDiffOn ℝ 1 Ψ.symm Ψ.target) (huΨ : MapsTo u U Ψ.source) :
-    IsWeakCauchyRiemannOn p U (transportCauchyRiemannStructure Ψ J)
+    IsWeakCauchyRiemannOn p U (fun z => Ψ.symm.pullbackEnd (J z))
       (transportCauchyRiemannTerm Ψ η) (fun z => Ψ (u z)) := by
   refine h.comp_contDiffOn_of_intertwine Ψ.open_source hΨ huΨ ?_ ?_ <;>
     refine (ae_restrict_iff' measurableSet_interior).2 (Filter.Eventually.of_forall fun z hz => ?_)
   · have hx := huΨ (interior_subset hz)
-    rw [transportCauchyRiemannStructure_apply, Ψ.left_inv hx, ContinuousLinearMap.comp_assoc,
-      ContinuousLinearMap.comp_assoc, fderiv_symm_comp_fderiv Ψ hΨ hΨs hx,
-      ContinuousLinearMap.comp_id]
+    have hd : DifferentiableAt ℝ Ψ (Ψ.symm (Ψ (u z))) := by
+      rw [Ψ.left_inv hx]
+      exact (hΨ.differentiableOn one_ne_zero).differentiableAt (Ψ.open_source.mem_nhds hx)
+    have hds : DifferentiableAt ℝ Ψ.symm (Ψ (u z)) :=
+      (hΨs.differentiableOn one_ne_zero).differentiableAt
+        (Ψ.open_target.mem_nhds (Ψ.map_source hx))
+    refine ContinuousLinearMap.ext fun v => ?_
+    have hl := Ψ.fderiv_symm_apply_fderiv_apply (Ψ.map_source hx) hd hds v
+    rw [Ψ.left_inv hx] at hl
+    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+      OpenPartialHomeomorph.pullbackEnd_apply, Ψ.symm_symm, Ψ.left_inv hx, hl]
   · rw [transportCauchyRiemannTerm_apply, Ψ.left_inv (huΨ (interior_subset hz))]
 
 /-- **Invariance under `C¹` diffeomorphisms of the target.** For a `C¹` open partial
@@ -206,21 +159,26 @@ theorem isWeakCauchyRiemannOn_iff_openPartialHomeomorph_comp [CompleteSpace V] [
     (hΨ : ContDiffOn ℝ 1 Ψ Ψ.source) (hΨs : ContDiffOn ℝ 1 Ψ.symm Ψ.target)
     (huΨ : MapsTo u U Ψ.source) :
     IsWeakCauchyRiemannOn p U J η u ↔
-      IsWeakCauchyRiemannOn p U (transportCauchyRiemannStructure Ψ J)
+      IsWeakCauchyRiemannOn p U (fun z => Ψ.symm.pullbackEnd (J z))
         (transportCauchyRiemannTerm Ψ η) (fun z => Ψ (u z)) := by
   refine ⟨fun h => h.openPartialHomeomorph_comp hΨ hΨs huΨ, fun h => ?_⟩
   have hvΨ : MapsTo (fun z => Ψ (u z)) U Ψ.target := fun z hz => Ψ.map_source (huΨ hz)
   refine (h.comp_contDiffOn_of_intertwine (J' := J) (η' := η) Ψ.open_target hΨs hvΨ ?_
     ?_).congr_eqOn fun z hz => Ψ.left_inv (huΨ hz) <;>
     refine (ae_restrict_iff' measurableSet_interior).2 (Filter.Eventually.of_forall fun z hz => ?_)
-  · have hx := huΨ (interior_subset hz)
-    simp only [transportCauchyRiemannStructure_apply, Ψ.left_inv hx]
-    rw [← ContinuousLinearMap.comp_assoc, fderiv_symm_comp_fderiv Ψ hΨ hΨs hx,
-      ContinuousLinearMap.id_comp]
-  · have hx := huΨ (interior_subset hz)
-    have := congrArg (fun L : V →L[ℝ] V => L (η z (u z))) (fderiv_symm_comp_fderiv Ψ hΨ hΨs hx)
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] at this
-    simp only [transportCauchyRiemannTerm_apply, Ψ.left_inv hx, this]
+  all_goals
+    have hx := huΨ (interior_subset hz)
+    have hd : DifferentiableAt ℝ Ψ (Ψ.symm (Ψ (u z))) := by
+      rw [Ψ.left_inv hx]
+      exact (hΨ.differentiableOn one_ne_zero).differentiableAt (Ψ.open_source.mem_nhds hx)
+    have hds : DifferentiableAt ℝ Ψ.symm (Ψ (u z)) :=
+      (hΨs.differentiableOn one_ne_zero).differentiableAt
+        (Ψ.open_target.mem_nhds (Ψ.map_source hx))
+  · have := Ψ.symm.fderiv_comp_pullbackEnd (J z) (Ψ.map_source hx) hds (by rwa [Ψ.symm_symm])
+    exact this.symm
+  · have := Ψ.fderiv_symm_apply_fderiv_apply (Ψ.map_source hx) hd hds (η z (u z))
+    rw [Ψ.left_inv hx] at this
+    rw [transportCauchyRiemannTerm_apply, Ψ.left_inv hx, this]
 
 end Diffeomorphism
 
@@ -319,10 +277,13 @@ example [CompleteSpace V] [CompleteSpace W] (A : V ≃L[ℝ] W) :
     (by simpa using A.symm.contDiff.contDiffOn) (mapsTo_univ _ _)
   have e1 : ⇑A.toHomeomorph.toOpenPartialHomeomorph = ⇑A := by ext; simp
   have e2 : ⇑A.toHomeomorph.toOpenPartialHomeomorph.symm = ⇑A.symm := by ext; simp
-  have hS : transportCauchyRiemannStructure A.toHomeomorph.toOpenPartialHomeomorph J =
+  have hS : (fun z => A.toHomeomorph.toOpenPartialHomeomorph.symm.pullbackEnd (J z)) =
       fun z y => (A : V →L[ℝ] W).comp ((J z (A.symm y)).comp (A.symm : W →L[ℝ] V)) := by
     funext z y
-    rw [transportCauchyRiemannStructure_apply, e1, e2, A.fderiv, A.symm.fderiv]
+    ext v
+    rw [OpenPartialHomeomorph.pullbackEnd_apply, OpenPartialHomeomorph.symm_symm, e1, e2,
+      A.fderiv, A.symm.fderiv]
+    rfl
   have hT : transportCauchyRiemannTerm A.toHomeomorph.toOpenPartialHomeomorph η =
       fun z y => A (η z (A.symm y)) := by
     funext z y
