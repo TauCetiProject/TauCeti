@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.UniformLimitsDeriv
 public import TauCeti.Analysis.ODE.LyapunovPerron.Local
 public import TauCeti.Analysis.ODE.LyapunovPerron.DerivativePerturbation
 
@@ -12,11 +13,12 @@ public import TauCeti.Analysis.ODE.LyapunovPerron.DerivativePerturbation
 # C¹ convergence of local invariant graphs
 
 For a fixed exponential dichotomy, local stable and unstable graphs depend continuously in
-C¹ on the nonlinear remainder. More precisely, suppose the remainders vanish at zero, share
-a small Lipschitz bound on a common ball, have uniformly continuous derivatives on its open
-interior, and converge uniformly together with their derivatives (values on the closed ball,
-derivatives on the open ball). On every bounded parameter set whose solution bound stays strictly
-inside that ball, the derivatives of the local graph maps converge uniformly in operator norm.
+C¹ on the nonlinear remainder. More precisely, suppose the approximating remainders vanish at
+zero, have uniformly continuous derivatives on the open interior of a common ball, and converge
+uniformly together with their derivatives (values on the closed ball, derivatives on the open
+ball). Suppose also that the approximants and limit share a small Lipschitz bound on that ball.
+On every bounded parameter set whose solution bound stays strictly inside that ball, the
+derivatives of the local graph maps converge uniformly in operator norm.
 The graph values already converge uniformly by
 `ContinuousLinearMap.tendstoUniformly_localStableGraphMap`
 and its unstable counterpart.
@@ -73,16 +75,16 @@ private theorem exists_localGraph_derivative_data (hα : 0 < α)
   · exact ball_lyapunovPerronSolution_comp_radialRetraction_subset
       hs hu hr hN hsmall hα hN0 (hU ξ hξ) t
 
-/-- Suppose the nonlinear remainders vanish at zero, share a small Lipschitz bound on a common
-confinement ball, and are differentiable on its open interior with uniformly continuous
-derivatives, for both the limit and every approximant. Uniform convergence of the remainders
+/-- Suppose the approximating nonlinear remainders vanish at zero and are differentiable on
+the open confinement ball with uniformly continuous derivatives. Suppose the approximants and
+limit share a small Lipschitz bound on the closed ball. Uniform convergence of the remainders
 on the closed ball and of their derivatives on the open ball implies uniform convergence of
-the local stable graph derivatives on any bounded parameter set with a strict solution reserve. -/
+the local stable graph derivatives on any bounded parameter set with a strict solution reserve.
+For a nontrivial filter, the corresponding regularity and vanishing of the limit follow from
+these convergence hypotheses. -/
 theorem tendstoUniformlyOn_fderiv_localStableGraphMap
-    (hN0 : N 0 = 0) (hF0 : ∀ i, F i 0 = 0)
-    (hNd : ∀ z ∈ ball (0 : X) r, HasFDerivAt N (N' z) z)
+    (hF0 : ∀ i, F i 0 = 0)
     (hFd : ∀ i z, z ∈ ball (0 : X) r → HasFDerivAt (F i) (F' i z) z)
-    (hN' : UniformContinuousOn N' (ball (0 : X) r))
     (hF' : ∀ i, UniformContinuousOn (F' i) (ball (0 : X) r))
     (hFN : TendstoUniformlyOn F N l (closedBall 0 r))
     (hFN' : TendstoUniformlyOn F' N' l (ball (0 : X) r))
@@ -91,6 +93,16 @@ theorem tendstoUniformlyOn_fderiv_localStableGraphMap
     TendstoUniformlyOn
       (fun i ↦ fderiv ℝ (localStableGraphMap A P (F i) r hs hu hr (hF i) hsmall))
       (fderiv ℝ (localStableGraphMap A P N r hs hu hr hN hsmall)) l U := by
+  rcases l.eq_or_neBot with rfl | hl
+  · simp [TendstoUniformlyOn]
+  have hN0 : N 0 = 0 := by
+    have hzero : Tendsto (fun _ : ι ↦ (0 : X)) l (𝓝 (N 0)) := by
+      simpa only [hF0] using hFN.tendsto_at (mem_closedBall_self hr)
+    exact tendsto_nhds_unique hzero tendsto_const_nhds
+  have hNd : ∀ z ∈ ball (0 : X) r, HasFDerivAt N (N' z) z :=
+    fun z hz ↦ hasFDerivAt_of_tendstoUniformlyOn isOpen_ball hFN' hFd
+      (fun x hx ↦ hFN.tendsto_at (ball_subset_closedBall hx)) hz
+  have hN' := hFN'.uniformContinuousOn (Eventually.frequently (Eventually.of_forall hF'))
   have hα : 0 < α := lt_of_le_of_lt zero_le hsmall
   let B : ℝ := K / (1 - 2 * K * ((ε : ℝ) * 2) / α)
   let D : ℝ := (2 * K / α * B) / (1 - 2 * K * ((ε : ℝ) * 2) / α)
@@ -139,10 +151,8 @@ theorem tendstoUniformlyOn_fderiv_localStableGraphMap
 /-- Under the same local C¹ convergence and confinement hypotheses, the derivatives of the
 local unstable graph maps converge uniformly on the bounded parameter set. -/
 theorem tendstoUniformlyOn_fderiv_localUnstableGraphMap
-    (hN0 : N 0 = 0) (hF0 : ∀ i, F i 0 = 0)
-    (hNd : ∀ z ∈ ball (0 : X) r, HasFDerivAt N (N' z) z)
+    (hF0 : ∀ i, F i 0 = 0)
     (hFd : ∀ i z, z ∈ ball (0 : X) r → HasFDerivAt (F i) (F' i z) z)
-    (hN' : UniformContinuousOn N' (ball (0 : X) r))
     (hF' : ∀ i, UniformContinuousOn (F' i) (ball (0 : X) r))
     (hFN : TendstoUniformlyOn F N l (closedBall 0 r))
     (hFN' : TendstoUniformlyOn F' N' l (ball (0 : X) r))
@@ -154,10 +164,9 @@ theorem tendstoUniformlyOn_fderiv_localUnstableGraphMap
   simp_rw [localUnstableGraphMap_def A P _ r hs hu hr _ hsmall]
   exact tendstoUniformlyOn_fderiv_localStableGraphMap
     (reversed_stable_bound A P hu) (reversed_unstable_bound A P hs) hr hN.neg
-    (fun i ↦ (hF i).neg) hsmall (by simpa using congrArg Neg.neg hN0)
+    (fun i ↦ (hF i).neg) hsmall
     (fun i ↦ by simpa using congrArg Neg.neg (hF0 i))
-    (fun z hz ↦ (hNd z hz).neg) (fun i z hz ↦ (hFd i z hz).neg)
-    (uniformContinuous_neg.comp_uniformContinuousOn hN')
+    (fun i z hz ↦ (hFd i z hz).neg)
     (fun i ↦ uniformContinuous_neg.comp_uniformContinuousOn (hF' i)) hFN.neg hFN'.neg hU hρ
 
 end ContinuousLinearMap

@@ -137,7 +137,7 @@ private theorem pos_of_two_mul_mul_lt (hsmall : 2 * K * (ε * 2) < α) : 0 < α 
 
 /-- The constant `K / (1 - 2 K (2 ε) / α)` bounding a Lyapunov--Perron solution in terms of its
 input parameter is nonnegative. -/
-theorem lyapunovPerronBound_nonneg (hsmall : 2 * K * (ε * 2) < α) :
+private theorem lyapunovPerronBound_nonneg (hsmall : 2 * K * (ε * 2) < α) :
     0 ≤ (K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) := by
   have hαR : (0 : ℝ) < α := pos_of_two_mul_mul_lt hsmall
   have hsmallR : 2 * (K : ℝ) * ((ε : ℝ) * 2) < α := by exact_mod_cast hsmall
