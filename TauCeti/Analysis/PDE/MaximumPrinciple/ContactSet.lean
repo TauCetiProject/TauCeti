@@ -52,12 +52,14 @@ elliptic operator applied to it, in
   the supporting slope at a contact point is the gradient.
 * `TauCeti.PDE.measurableSet_upperContactSet`: for `u` of class `C¹` on an open set, the upper
   contact set is relatively closed, hence measurable.
+* `TauCeti.PDE.measurableSet_upperContactSet_inter_setOf_norm_gradient_lt`: so is its part where
+  `‖∇u‖ < r`.
 * `TauCeti.PDE.fderiv_fderiv_self_nonpos_of_mem_upperContactSet`: the second derivative of a `C²`
   function is nonpositive on the diagonal at a point of the upper contact set.
 * `TauCeti.PDE.ball_subset_image_gradient_upperContactSet`: the ball of radius
   `(u x - m) / diam Ω` lies in the gradient image of the upper contact set.
-* `TauCeti.PDE.addHaar_image_gradient_upperContactSet_le`: the measure of that gradient image is
-  at most the integral of `|det D²u|` over the upper contact set.
+* `TauCeti.PDE.addHaar_image_gradient_le_lintegral_abs_det_hessianOperator`: the measure of the
+  gradient image of a measurable `S ⊆ Ω` is at most the integral of `|det D²u|` over `S`.
 * `TauCeti.PDE.addHaar_ball_le_lintegral_abs_det_hessianOperator`: the two combined.
 * `TauCeti.PDE.ball_subset_image_gradient_upperContactSet_inter`,
   `TauCeti.PDE.addHaar_ball_le_lintegral_abs_det_hessianOperator_inter`: the same with the contact
@@ -236,16 +238,28 @@ theorem measurableSet_upperContactSet [MeasurableSpace E] [OpensMeasurableSpace 
   filter_upwards [self_mem_nhdsWithin] with z hz
   exact ((mem_upperContactSet_iff_gradient hΩ hdiff).1 hz).2 x hx
 
+/-- For `u` of class `C¹` on an open set `Ω`, the part of the upper contact set where `‖∇u‖ < r`
+is measurable. -/
+theorem measurableSet_upperContactSet_inter_setOf_norm_gradient_lt [MeasurableSpace E]
+    [BorelSpace E] (hΩ : IsOpen Ω) (hu : ContDiffOn ℝ 1 u Ω) (r : ℝ) :
+    MeasurableSet (upperContactSet u Ω ∩ {y | ‖∇ u y‖ < r}) :=
+  (measurableSet_upperContactSet hΩ hu).inter
+    (measurableSet_lt (measurable_gradient u).norm measurable_const)
+
 variable [FiniteDimensional ℝ E]
 
 /-- **The gradient image of the upper contact set** (Gilbarg–Trudinger, Lemma 9.2). Let `Ω` be
 bounded and open, let `u` be continuous on `closure Ω` and differentiable in `Ω`, and let `m`
-bound `u` on `frontier Ω`. For `x ∈ Ω`, every vector of norm less than `(u x - m) / diam Ω` is the
-gradient of `u` at a point of the upper contact set. The ball is empty unless `u x > m`. -/
-theorem ball_subset_image_gradient_upperContactSet {m : ℝ} (hΩb : Bornology.IsBounded Ω)
+bound `u` on `frontier Ω`. For `x ∈ Ω` and `r = (u x - m) / diam Ω`, every vector of norm less
+than `r` is the gradient of `u` at a point of the upper contact set where the gradient has norm
+less than `r`. On that part of the contact set the supporting affine functions are at least `m`
+on `Ω` (`TauCeti.PDE.norm_mul_le_sub_of_forall_le_add_inner`). The ball is empty unless
+`u x > m`. -/
+theorem ball_subset_image_gradient_upperContactSet_inter {m : ℝ} (hΩb : Bornology.IsBounded Ω)
     (hΩ : IsOpen Ω) (hcont : ContinuousOn u (closure Ω)) (hdiff : DifferentiableOn ℝ u Ω)
     (hm : ∀ z ∈ frontier Ω, u z ≤ m) (hx : x ∈ Ω) :
-    ball 0 ((u x - m) / diam Ω) ⊆ ∇ u '' upperContactSet u Ω := by
+    ball 0 ((u x - m) / diam Ω) ⊆
+      ∇ u '' (upperContactSet u Ω ∩ {y | ‖∇ u y‖ < (u x - m) / diam Ω}) := by
   intro p hp
   rw [mem_ball_zero_iff] at hp
   have hd : 0 < diam Ω := by
@@ -263,34 +277,46 @@ theorem ball_subset_image_gradient_upperContactSet {m : ℝ} (hΩb : Bornology.I
     have := hy z hz
     rw [zero_add, inner_neg_right, real_inner_comm] at this
     linarith
-  exact ⟨y, ⟨hyΩ, p, hsupp⟩, (eq_gradient_of_forall_le (hΩ.mem_nhds hyΩ)
-    (hdiff.differentiableAt (hΩ.mem_nhds hyΩ)) hsupp).symm⟩
+  have hgrad : ∇ u y = p := (eq_gradient_of_forall_le (hΩ.mem_nhds hyΩ)
+    (hdiff.differentiableAt (hΩ.mem_nhds hyΩ)) hsupp).symm
+  exact ⟨y, ⟨⟨hyΩ, p, hsupp⟩, show ‖∇ u y‖ < _ by rw [hgrad]; exact hp⟩, hgrad⟩
 
-/-- **The gradient image of the contact set where the gradient is small.** Under the hypotheses
-of `TauCeti.PDE.ball_subset_image_gradient_upperContactSet`, with `r = (u x - m) / diam Ω`, every
-vector of norm less than `r` is the gradient of `u` at a point of the upper contact set where the
-gradient has norm less than `r`. On that part of the contact set the supporting affine functions
-are at least `m` on `Ω` (`TauCeti.PDE.norm_mul_le_sub_of_forall_le_add_inner`). -/
-theorem ball_subset_image_gradient_upperContactSet_inter {m : ℝ} (hΩb : Bornology.IsBounded Ω)
+/-- **The gradient image of the upper contact set** (Gilbarg–Trudinger, Lemma 9.2). Under the
+hypotheses of `TauCeti.PDE.ball_subset_image_gradient_upperContactSet_inter`, every vector of
+norm less than `(u x - m) / diam Ω` is the gradient of `u` at a point of the upper contact set. -/
+theorem ball_subset_image_gradient_upperContactSet {m : ℝ} (hΩb : Bornology.IsBounded Ω)
     (hΩ : IsOpen Ω) (hcont : ContinuousOn u (closure Ω)) (hdiff : DifferentiableOn ℝ u Ω)
     (hm : ∀ z ∈ frontier Ω, u z ≤ m) (hx : x ∈ Ω) :
-    ball 0 ((u x - m) / diam Ω) ⊆
-      ∇ u '' (upperContactSet u Ω ∩ {y | ‖∇ u y‖ < (u x - m) / diam Ω}) := by
-  intro p hp
-  obtain ⟨y, hy, rfl⟩ := ball_subset_image_gradient_upperContactSet hΩb hΩ hcont hdiff hm hx hp
-  exact ⟨y, ⟨hy, mem_ball_zero_iff.1 hp⟩, rfl⟩
+    ball 0 ((u x - m) / diam Ω) ⊆ ∇ u '' upperContactSet u Ω :=
+  (ball_subset_image_gradient_upperContactSet_inter hΩb hΩ hcont hdiff hm hx).trans
+    (image_mono inter_subset_left)
 
 variable [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
 
-/-- The measure of the gradient image of the upper contact set of a function `C²` on an open set
-is at most the integral of the absolute Hessian determinant over the upper contact set. -/
-theorem addHaar_image_gradient_upperContactSet_le (hΩ : IsOpen Ω) (hu : ContDiffOn ℝ 2 u Ω) :
-    μ (∇ u '' upperContactSet u Ω) ≤
-      ∫⁻ y in upperContactSet u Ω, ENNReal.ofReal |(hessianOperator u y).det| ∂μ :=
-  addHaar_image_le_lintegral_abs_det_fderiv μ
-    (measurableSet_upperContactSet hΩ (hu.of_le (by norm_num))) fun _ hy =>
-      (hu.contDiffAt (hΩ.mem_nhds
-        (upperContactSet_subset hy))).hasFDerivAt_gradient.hasFDerivWithinAt
+/-- The measure of the gradient image of a measurable subset `S` of an open set `Ω` on which `u`
+is `C²` is at most the integral of the absolute Hessian determinant over `S`. -/
+theorem addHaar_image_gradient_le_lintegral_abs_det_hessianOperator {S : Set E} (hΩ : IsOpen Ω)
+    (hu : ContDiffOn ℝ 2 u Ω) (hS : MeasurableSet S) (hSΩ : S ⊆ Ω) :
+    μ (∇ u '' S) ≤ ∫⁻ y in S, ENNReal.ofReal |(hessianOperator u y).det| ∂μ :=
+  addHaar_image_le_lintegral_abs_det_fderiv μ hS fun _ hy =>
+    (hu.contDiffAt (hΩ.mem_nhds (hSΩ hy))).hasFDerivAt_gradient.hasFDerivWithinAt
+
+/-- **The Aleksandrov measure estimate** (Gilbarg–Trudinger, Lemma 9.2). Let `Ω` be bounded and
+open, let `u` be continuous on `closure Ω` and `C²` in `Ω`, and let `m` bound `u` on
+`frontier Ω`. For `x ∈ Ω`, every additive Haar measure `μ` and `r = (u x - m) / diam Ω`, the
+integral may be restricted to the points of the upper contact set where `‖∇u‖ < r`:
+`μ (ball 0 r) ≤ ∫⁻ y in upperContactSet u Ω ∩ {‖∇u‖ < r}, |det D²u(y)| ∂μ`. -/
+theorem addHaar_ball_le_lintegral_abs_det_hessianOperator_inter {m : ℝ}
+    (hΩb : Bornology.IsBounded Ω) (hΩ : IsOpen Ω) (hcont : ContinuousOn u (closure Ω))
+    (hu : ContDiffOn ℝ 2 u Ω) (hm : ∀ z ∈ frontier Ω, u z ≤ m) (hx : x ∈ Ω) :
+    μ (ball 0 ((u x - m) / diam Ω)) ≤
+      ∫⁻ y in upperContactSet u Ω ∩ {y | ‖∇ u y‖ < (u x - m) / diam Ω},
+        ENNReal.ofReal |(hessianOperator u y).det| ∂μ :=
+  (measure_mono (ball_subset_image_gradient_upperContactSet_inter hΩb hΩ hcont
+    (hu.differentiableOn two_ne_zero) hm hx)).trans
+    (addHaar_image_gradient_le_lintegral_abs_det_hessianOperator μ hΩ hu
+      (measurableSet_upperContactSet_inter_setOf_norm_gradient_lt hΩ (hu.of_le (by norm_num)) _)
+      (inter_subset_left.trans upperContactSet_subset))
 
 /-- **The Aleksandrov measure estimate** (Gilbarg–Trudinger, Lemma 9.2). Let `Ω` be bounded and
 open, let `u` be continuous on `closure Ω` and `C²` in `Ω`, and let `m` bound `u` on
@@ -301,30 +327,8 @@ theorem addHaar_ball_le_lintegral_abs_det_hessianOperator {m : ℝ}
     (hu : ContDiffOn ℝ 2 u Ω) (hm : ∀ z ∈ frontier Ω, u z ≤ m) (hx : x ∈ Ω) :
     μ (ball 0 ((u x - m) / diam Ω)) ≤
       ∫⁻ y in upperContactSet u Ω, ENNReal.ofReal |(hessianOperator u y).det| ∂μ :=
-  (measure_mono (ball_subset_image_gradient_upperContactSet hΩb hΩ hcont
-    (hu.differentiableOn two_ne_zero) hm hx)).trans
-    (addHaar_image_gradient_upperContactSet_le μ hΩ hu)
-
-/-- **The Aleksandrov measure estimate where the gradient is small.** Under the
-hypotheses of `TauCeti.PDE.addHaar_ball_le_lintegral_abs_det_hessianOperator`, with
-`r = (u x - m) / diam Ω`, the integral may be restricted to the points of the upper contact set
-where `‖∇u‖ < r`:
-`μ (ball 0 r) ≤ ∫⁻ y in upperContactSet u Ω ∩ {‖∇u‖ < r}, |det D²u(y)| ∂μ`. -/
-theorem addHaar_ball_le_lintegral_abs_det_hessianOperator_inter {m : ℝ}
-    (hΩb : Bornology.IsBounded Ω) (hΩ : IsOpen Ω) (hcont : ContinuousOn u (closure Ω))
-    (hu : ContDiffOn ℝ 2 u Ω) (hm : ∀ z ∈ frontier Ω, u z ≤ m) (hx : x ∈ Ω) :
-    μ (ball 0 ((u x - m) / diam Ω)) ≤
-      ∫⁻ y in upperContactSet u Ω ∩ {y | ‖∇ u y‖ < (u x - m) / diam Ω},
-        ENNReal.ofReal |(hessianOperator u y).det| ∂μ := by
-  have hmeas : MeasurableSet (upperContactSet u Ω ∩ {y | ‖∇ u y‖ < (u x - m) / diam Ω}) :=
-    (measurableSet_upperContactSet hΩ (hu.of_le (by norm_num))).inter
-      (measurableSet_lt (((InnerProductSpace.toDual ℝ E).symm.continuous.measurable.comp
-        (measurable_fderiv ℝ u)).norm) measurable_const)
-  refine (measure_mono (ball_subset_image_gradient_upperContactSet_inter hΩb hΩ hcont
-    (hu.differentiableOn two_ne_zero) hm hx)).trans
-    (addHaar_image_le_lintegral_abs_det_fderiv μ hmeas fun y hy => ?_)
-  exact (hu.contDiffAt (hΩ.mem_nhds (upperContactSet_subset hy.1))).hasFDerivAt_gradient
-    |>.hasFDerivWithinAt
+  (addHaar_ball_le_lintegral_abs_det_hessianOperator_inter μ hΩb hΩ hcont hu hm hx).trans
+    (lintegral_mono_set inter_subset_left)
 
 end PDE
 

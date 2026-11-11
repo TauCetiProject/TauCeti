@@ -9,13 +9,13 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.Defs
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.Analysis.PDE.Ellipticity.Basic
 import Mathlib.Algebra.Order.Star.Real
-import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.Analysis.Calculus.SecondDerivative
+import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 import TauCeti.Analysis.MeanInequalities
 import TauCeti.Analysis.PDE.MaximumPrinciple.AleksandrovBakelmanPucci.Basic
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # The local maximum principle for non-divergence-form operators
@@ -79,69 +79,6 @@ section Cutoff
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {c x : E} {R : ℝ}
 
-/-- The derivative of `1 - ‖y - c‖² / R²` is `-(2 / R²) ⟪x - c, ·⟫`. -/
-private theorem hasFDerivAt_one_sub_norm_sq_div (c x : E) (R : ℝ) :
-    HasFDerivAt (fun y : E ↦ 1 - ‖y - c‖ ^ 2 / R ^ 2) (-(2 / R ^ 2) • innerSL ℝ (x - c)) x := by
-  have h0 : HasFDerivAt (fun y : E ↦ ‖y - c‖ ^ 2) _ x := ((hasFDerivAt_id x).sub_const c).norm_sq
-  have h := (HasFDerivAt.mul_const h0 (R ^ 2)⁻¹).const_sub 1
-  simp only [← div_eq_mul_inv] at h
-  refine h.congr_fderiv ?_
-  ext v
-  simp only [id_eq, map_sub, ContinuousLinearMap.comp_id, neg_apply, smul_apply, sub_apply,
-    coe_innerSL_apply, nsmul_eq_mul, Nat.cast_ofNat, smul_eq_mul, neg_smul, neg_inj]
-  ring
-
-private theorem fderiv_one_sub_norm_sq_div (c : E) (R : ℝ) :
-    fderiv ℝ (fun y : E ↦ 1 - ‖y - c‖ ^ 2 / R ^ 2) = fun x ↦ -(2 / R ^ 2) • innerSL ℝ (x - c) :=
-  funext fun x ↦ (hasFDerivAt_one_sub_norm_sq_div c x R).fderiv
-
-/-- `1 - ‖y - c‖² / R²` is smooth. -/
-private theorem contDiff_one_sub_norm_sq_div (c : E) (R : ℝ) {k : WithTop ℕ∞} :
-    ContDiff ℝ k (fun y : E ↦ 1 - ‖y - c‖ ^ 2 / R ^ 2) :=
-  contDiff_const.sub (((contDiff_id.sub contDiff_const).norm_sq ℝ).div_const _)
-
-/-- The second derivative of `1 - ‖y - c‖² / R²` is `-(2 / R²) ⟪·, ·⟫`. -/
-private theorem fderiv_fderiv_one_sub_norm_sq_div_apply (c x : E) (R : ℝ) (v w : E) :
-    fderiv ℝ (fderiv ℝ fun y : E ↦ 1 - ‖y - c‖ ^ 2 / R ^ 2) x v w = -(2 / R ^ 2) * ⟪v, w⟫ := by
-  have h2 : HasFDerivAt (fun z : E ↦ -(2 / R ^ 2) • innerSL ℝ (z - c))
-      (-(2 / R ^ 2) • innerSL ℝ) x := by
-    have h1 : HasFDerivAt (fun z : E ↦ innerSL ℝ (z - c)) (innerSL ℝ) x := by
-      simpa only [map_sub] using ((innerSL ℝ (E := E)).hasFDerivAt (x := x)).sub_const
-        (innerSL ℝ c)
-    exact h1.const_smul (-(2 / R ^ 2))
-  rw [fderiv_one_sub_norm_sq_div, h2.fderiv, smul_apply, smul_apply, innerSL_apply_apply,
-    smul_eq_mul]
-
-/-- The second derivative of the cutoff `(1 - ‖y - c‖² / R²)^(m + 2)`. -/
-private theorem fderiv_fderiv_cutoff_apply (c x : E) (R : ℝ) (m : ℕ) (v w : E) :
-    fderiv ℝ (fderiv ℝ fun y : E ↦ (1 - ‖y - c‖ ^ 2 / R ^ 2) ^ (m + 2)) x v w =
-      (m + 2) * (m + 1) * (1 - ‖x - c‖ ^ 2 / R ^ 2) ^ m * (2 / R ^ 2) ^ 2 * ⟪x - c, v⟫ *
-          ⟪x - c, w⟫ -
-        (m + 2) * (1 - ‖x - c‖ ^ 2 / R ^ 2) ^ (m + 1) * (2 / R ^ 2) * ⟪v, w⟫ := by
-  have h := fderiv_fderiv_scalar_comp_apply (f := fun y : E ↦ 1 - ‖y - c‖ ^ 2 / R ^ 2)
-    (φ := fun t : ℝ ↦ t ^ (m + 2)) (x := x) (contDiff_id.pow _).contDiffAt
-    (contDiff_one_sub_norm_sq_div c R).contDiffAt v w
-  simp only [Function.comp_def] at h
-  rw [h, fderiv_fderiv_one_sub_norm_sq_div_apply, fderiv_one_sub_norm_sq_div,
-    iteratedDeriv_pow, deriv_pow_field]
-  simp only [smul_apply, innerSL_apply_apply, smul_eq_mul, Nat.descFactorial_succ,
-    Nat.descFactorial_zero]
-  push_cast
-  ring
-
-/-- The derivative of the cutoff `(1 - ‖y - c‖² / R²)^(m + 2)` has norm
-`(m + 2) (1 - ‖x - c‖² / R²)^(m + 1) (2 / R²) ‖x - c‖`. -/
-private theorem norm_fderiv_cutoff (c x : E) (R : ℝ) (m : ℕ)
-    (hs : 0 ≤ 1 - ‖x - c‖ ^ 2 / R ^ 2) :
-    ‖fderiv ℝ (fun y : E ↦ (1 - ‖y - c‖ ^ 2 / R ^ 2) ^ (m + 2)) x‖ =
-      (m + 2) * (1 - ‖x - c‖ ^ 2 / R ^ 2) ^ (m + 1) * (2 / R ^ 2) * ‖x - c‖ := by
-  have hD := (hasDerivAt_pow (m + 2) _).comp_hasFDerivAt x (hasFDerivAt_one_sub_norm_sq_div c x R)
-  simp only [Function.comp_def] at hD
-  rw [hD.fderiv, norm_smul, norm_smul, innerSL_apply_norm,
-    Real.norm_of_nonneg (by positivity), norm_neg, Real.norm_of_nonneg (by positivity)]
-  push_cast
-  ring
-
 omit [InnerProductSpace ℝ E] in
 /-- On `B(c, R)` the base `s = 1 - ‖x - c‖² / R²` of the cutoff lies in `(0, 1]`. -/
 private theorem one_sub_norm_sq_div_mem_Ioc (hx : x ∈ ball c R) :
@@ -169,7 +106,7 @@ private theorem norm_fderiv_cutoff_mul_norm_fderiv_le {u : E → ℝ} {y : E} (m
   have hηy : η y = s ^ (m + 2) := rfl
   -- `‖Dη‖ ≤ 2 (m + 2) s^(m + 1) / R`.
   have hDη : ‖fderiv ℝ η y‖ ≤ (m + 2) * s ^ (m + 1) * (2 / R) := by
-    rw [norm_fderiv_cutoff c y R m hs0.le]
+    rw [norm_fderiv_one_sub_norm_sq_sub_div_pow c y R m hs0.le]
     have : 2 / R ^ 2 * ‖y - c‖ ≤ 2 / R := by
       rw [div_mul_eq_mul_div, div_le_div_iff₀ (by positivity) hR]
       nlinarith [norm_nonneg (y - c)]
@@ -195,7 +132,7 @@ private theorem norm_fderiv_cutoff_mul_norm_fderiv_le {u : E → ℝ} {y : E} (m
   -- From `Dv = η Du + u Dη`, `s ‖Du‖ ≤ 2 (m + 3) u / R`.
   have hDu : s * ‖fderiv ℝ u y‖ ≤ 2 * (m + 3) * u y / R := by
     have hDv : fderiv ℝ (η * u) y = η y • fderiv ℝ u y + u y • fderiv ℝ η y :=
-      fderiv_mul (((contDiff_one_sub_norm_sq_div c R (k := 1)).pow _).differentiable
+      fderiv_mul (((contDiff_one_sub_norm_sq_sub_div c R (k := 1)).pow _).differentiable
         one_ne_zero y) hu
     have htri : η y * ‖fderiv ℝ u y‖ ≤ ‖fderiv ℝ (η * u) y‖ + u y * ‖fderiv ℝ η y‖ := by
       have h := norm_sub_le (fderiv ℝ (η * u) y) (u y • fderiv ℝ η y)
@@ -248,7 +185,8 @@ private theorem neg_le_sum_mul_fderiv_fderiv_cutoff {A : Matrix ι ι ℝ}
       (m + 2) * (1 - ‖x - c‖ ^ 2 / R ^ 2) ^ (m + 1) * (2 / R ^ 2) * A.trace := by
     simp only [trace, diag, Finset.mul_sum, ← hδ]
     exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
-  simp only [fderiv_fderiv_cutoff_apply, hz, mul_sub, Finset.sum_sub_distrib, h1, h2]
+  simp only [fderiv_fderiv_one_sub_norm_sq_sub_div_pow_apply, hz, mul_sub, Finset.sum_sub_distrib,
+    h1, h2]
   rw [neg_le_sub_iff_le_add, le_add_iff_nonneg_left]
   exact mul_nonneg (by positivity) (hA (x - c))
 
@@ -275,7 +213,7 @@ private theorem neg_sum_mul_fderiv_fderiv_cutoff_mul_le {lam Lam R : ℝ}
   set n : ℝ := (Fintype.card ι : ℝ)
   obtain ⟨hs0, hs1⟩ := one_sub_norm_sq_div_mem_Ioc hy
   have hLam := ha.upper_nonneg
-  have hη : ContDiffAt ℝ 2 η y := ((contDiff_one_sub_norm_sq_div c R).pow _).contDiffAt
+  have hη : ContDiffAt ℝ 2 η y := ((contDiff_one_sub_norm_sq_sub_div c R).pow _).contDiffAt
   -- The three terms of the expansion of `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼ(η u)`.
   rw [sum_mul_fderiv_fderiv_mul (a y) hη hu]
   set T₁ := ∑ i, ∑ j, a y i j * fderiv ℝ (fderiv ℝ u) y (EuclideanSpace.single i 1)
@@ -371,7 +309,7 @@ private theorem abs_det_hessianOperator_cutoff_mul_le {lam Lam R M : ℝ}
   have hlam := ha.pos
   have hLam := ha.upper_nonneg
   have hv2 : ContDiffOn ℝ 2 v (ball c R) :=
-    ((contDiff_one_sub_norm_sq_div c R).pow _).contDiffOn.mul hu
+    ((contDiff_one_sub_norm_sq_sub_div c R).pow _).contDiffOn.mul hu
   -- The gradient of `v` at `y` is controlled by the distance to the sphere.
   have hgrad : ‖∇ v y‖ * (R - ‖y - c‖) ≤ v y - 0 := by
     refine norm_mul_le_sub_of_forall_le_add_inner isBounded_ball hx₀
@@ -441,6 +379,23 @@ private theorem toReal_eLpNorm_inv_mul_add_le {X : Type*} [MeasurableSpace X] {�
   rw [ENNReal.toReal_add hf.eLpNorm_ne_top hfin, h2, eLpNorm_const_smul, ENNReal.toReal_mul,
     toReal_enorm, Real.norm_of_nonneg hC, eLpNorm_norm_rpow _ hu hq, ENNReal.toReal_rpow]
 
+omit [DecidableEq ι] in
+/-- For `u` continuous on `closedBall c R` and `q ≥ 0`, `(u⁺)^q` is bounded and measurable on
+`B(c, R)`, hence in every `Lᵖ(B)`. -/
+private theorem memLp_posPart_rpow {R q : ℝ} {c : EuclideanSpace ℝ ι}
+    {u : EuclideanSpace ℝ ι → ℝ} (hcont : ContinuousOn u (closedBall c R)) (hq : 0 ≤ q)
+    (p : ℝ≥0∞) : MemLp (fun y ↦ (u y)⁺ ^ q) p (volume.restrict (ball c R)) := by
+  have : IsFiniteMeasure (volume.restrict (ball c R)) :=
+    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  obtain ⟨C, hC⟩ := (isCompact_closedBall c R).exists_bound_of_continuousOn hcont
+  refine MemLp.of_bound ((Real.continuous_rpow_const hq).comp_aestronglyMeasurable
+    (continuous_posPart.comp_aestronglyMeasurable
+      ((hcont.mono ball_subset_closedBall).aestronglyMeasurable measurableSet_ball)))
+    (max C 0 ^ q) (ae_restrict_of_forall_mem measurableSet_ball fun y hy => ?_)
+  rw [Real.norm_of_nonneg (by positivity)]
+  refine Real.rpow_le_rpow (posPart_nonneg _) (max_le_max ?_ le_rfl) hq
+  exact (le_abs_self _).trans (Real.norm_eq_abs (u y) ▸ hC y (ball_subset_closedBall hy))
+
 variable [Nonempty ι]
 
 /-- **The Aleksandrov–Bakelman–Pucci step for the localized function.** Let `u` be continuous on
@@ -475,7 +430,7 @@ private theorem le_mul_add_of_cutoff_mul_le {lam Lam R M : ℝ} {c x₀ : Euclid
   have hR : 0 < R := pos_of_mem_ball hx₀
   have hlam := ha.pos
   have hK' : 0 ≤ K' := by have := ha.upper_nonneg; positivity
-  have hηc : ContDiff ℝ 2 η := (contDiff_one_sub_norm_sq_div c R).pow _
+  have hηc : ContDiff ℝ 2 η := (contDiff_one_sub_norm_sq_sub_div c R).pow _
   have hvcont : ContinuousOn v (closure B) := by
     rw [closure_ball c hR.ne']
     exact hηc.continuous.continuousOn.mul hcont
@@ -492,9 +447,8 @@ private theorem le_mul_add_of_cutoff_mul_le {lam Lam R M : ℝ} {c x₀ : Euclid
   set Γ := upperContactSet v B ∩ {y | ‖∇ v y‖ < (v x₀ - 0) / diam B}
   have hΓB : Γ ⊆ B := inter_subset_left.trans upperContactSet_subset
   have hΓm : MeasurableSet Γ :=
-    (measurableSet_upperContactSet isOpen_ball (hv2.of_le (by norm_num))).inter
-      (measurableSet_lt (((InnerProductSpace.toDual ℝ _).symm.continuous.measurable.comp
-        (measurable_fderiv ℝ v)).norm) measurable_const)
+    measurableSet_upperContactSet_inter_setOf_norm_gradient_lt isOpen_ball
+      (hv2.of_le (by norm_num)) _
   have hpt (y : EuclideanSpace ℝ ι) (hy : y ∈ Γ) : ENNReal.ofReal |(hessianOperator v y).det| ≤
       ENNReal.ofReal (((-G y)⁻ / N) ^ N / (lam • (1 : Matrix ι ι ℝ)).det) := by
     have hyM : ‖∇ v y‖ * diam B ≤ M := by
@@ -509,17 +463,9 @@ private theorem le_mul_add_of_cutoff_mul_le {lam Lam R M : ℝ} {c x₀ : Euclid
     (addHaar_ball_le_lintegral_abs_det_hessianOperator_inter volume isBounded_ball isOpen_ball
       hvcont hv2 hfront hx₀).trans ((setLIntegral_mono' hΓm hpt).trans (lintegral_mono_set hΓB))
   -- `G ∈ Lⁿ(B)`: `u⁺^q` is bounded and measurable on `B`.
-  have : IsFiniteMeasure (volume.restrict B) := isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  obtain ⟨C, hC⟩ := (isCompact_closedBall c R).exists_bound_of_continuousOn hcont
-  have hupos : AEStronglyMeasurable (fun y ↦ (u y)⁺) (volume.restrict B) :=
-    continuous_posPart.comp_aestronglyMeasurable
-      ((hcont.mono ball_subset_closedBall).aestronglyMeasurable measurableSet_ball)
-  have hupq : MemLp (fun y ↦ (u y)⁺ ^ q) N (volume.restrict B) := by
-    refine MemLp.of_bound ((Real.continuous_rpow_const hq.le).comp_aestronglyMeasurable hupos)
-      (max C 0 ^ q) (ae_restrict_of_forall_mem measurableSet_ball fun y hy => ?_)
-    rw [Real.norm_of_nonneg (by positivity)]
-    refine Real.rpow_le_rpow (posPart_nonneg _) (max_le_max ?_ le_rfl) hq.le
-    exact (le_abs_self _).trans (Real.norm_eq_abs (u y) ▸ hC y (ball_subset_closedBall hy))
+  have hupos : AEStronglyMeasurable (fun y ↦ (u y)⁺) (volume.restrict B) := by
+    simpa only [Real.rpow_one] using (memLp_posPart_rpow hcont zero_le_one ⊤).aestronglyMeasurable
+  have hupq : MemLp (fun y ↦ (u y)⁺ ^ q) N (volume.restrict B) := memLp_posPart_rpow hcont hq.le N
   have hfun : (fun y ↦ (-G y)⁻ / (lam • (1 : Matrix ι ι ℝ)).det ^ (N : ℝ)⁻¹) =
       fun y ↦ lam⁻¹ * G y := by
     funext y
@@ -588,7 +534,7 @@ private theorem le_mul_add_mul_of_two_mul_card_div {κ lam Lam R : ℝ}
   have hF : 0 ≤ F := ENNReal.toReal_nonneg
   have hNq : 0 ≤ Nq := ENNReal.toReal_nonneg
   have hvc : ContinuousOn (fun y ↦ η y * u y) (closedBall c R) :=
-    ((contDiff_one_sub_norm_sq_div c R (k := 0)).pow _).continuous.continuousOn.mul hcont
+    ((contDiff_one_sub_norm_sq_sub_div c R (k := 0)).pow _).continuous.continuousOn.mul hcont
   obtain ⟨x₀, hx₀, hmax⟩ :=
     (isCompact_closedBall c R).exists_isMaxOn (nonempty_closedBall.2 hR.le) hvc
   set M := η x₀ * u x₀
@@ -660,35 +606,19 @@ private theorem rpow_mul_toReal_eLpNorm_posPart_le {R p q : ℝ} {c : EuclideanS
   set n : ℝ := (Fintype.card ι : ℝ)
   set ω := (volume (ball (0 : EuclideanSpace ℝ ι) 1)).toReal
   have hω : 0 ≤ ω := ENNReal.toReal_nonneg
-  have hp : 0 < p := hq.trans_le hqp
-  have hd : 0 ≤ 1 / q - 1 / p := sub_nonneg.2 (one_div_le_one_div_of_le hq hqp)
-  have hvol : volume (ball c R) = ENNReal.ofReal (R ^ Fintype.card ι * ω) := by
-    rw [Measure.addHaar_ball_of_pos _ _ hR, finrank_euclideanSpace,
-      ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_toReal measure_ball_lt_top.ne,
-      ENNReal.ofReal_pow hR.le]
-  have hupos : AEStronglyMeasurable (fun y ↦ (u y)⁺) (volume.restrict (ball c R)) :=
-    continuous_posPart.comp_aestronglyMeasurable
-      ((hcont.mono ball_subset_closedBall).aestronglyMeasurable measurableSet_ball)
-  -- `u⁺` is bounded on the ball, so its `Lᵖ` norm is finite.
-  have hNp : eLpNorm (fun y ↦ (u y)⁺) (ENNReal.ofReal p) (volume.restrict (ball c R)) ≠ ∞ := by
-    have : IsFiniteMeasure (volume.restrict (ball c R)) :=
-      isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-    obtain ⟨C, hC⟩ := (isCompact_closedBall c R).exists_bound_of_continuousOn hcont
-    refine (MemLp.of_bound hupos (max C 0) (ae_restrict_of_forall_mem measurableSet_ball
-      fun y hy => ?_)).eLpNorm_ne_top
-    rw [Real.norm_of_nonneg (posPart_nonneg _)]
-    exact max_le_max ((le_abs_self _).trans (Real.norm_eq_abs (u y) ▸
-      hC y (ball_subset_closedBall hy))) le_rfl
-  -- Hölder: `‖u⁺‖_{L^q(B)} ≤ ‖u⁺‖_{Lᵖ(B)} |B|^(1/q - 1/p)`.
+  have hu1 : MemLp (fun y ↦ (u y)⁺) (ENNReal.ofReal p) (volume.restrict (ball c R)) := by
+    simpa only [Real.rpow_one] using memLp_posPart_rpow hcont zero_le_one (ENNReal.ofReal p)
+  -- Hölder: `‖u⁺‖_{L^q(B)} ≤ ‖u⁺‖_{Lᵖ(B)} |B|^(1/q - 1/p)`, with `|B| = Rⁿ ωₙ`.
   have hhol : (eLpNorm (fun y ↦ (u y)⁺) (ENNReal.ofReal q) (volume.restrict (ball c R))).toReal ≤
       (eLpNorm (fun y ↦ (u y)⁺) (ENNReal.ofReal p) (volume.restrict (ball c R))).toReal *
         (R ^ Fintype.card ι * ω) ^ (1 / q - 1 / p) := by
-    have h := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (ENNReal.ofReal_le_ofReal hqp) hupos
-    rw [Measure.restrict_apply_univ, hvol, ENNReal.toReal_ofReal hq.le,
-      ENNReal.toReal_ofReal hp.le] at h
-    refine (ENNReal.toReal_mono (ENNReal.mul_ne_top hNp
-      (ENNReal.rpow_ne_top_of_nonneg hd ENNReal.ofReal_ne_top)) h).trans_eq ?_
-    rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (by positivity)]
+    have h := Measure.eLpNorm_ball_le_mul_rpow volume (x₀ := c) (R := R) hq hqp
+      hu1.aestronglyMeasurable
+    rw [finrank_euclideanSpace] at h
+    refine (ENNReal.toReal_mono (ENNReal.mul_ne_top hu1.eLpNorm_ne_top ENNReal.ofReal_ne_top)
+      h).trans_eq ?_
+    rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity)]
+    rfl
   -- `R^(-n/q) |B|^(1/q - 1/p) = ω^(1/q - 1/p) R^(-n/p)`.
   have hRpow : R ^ (-(n / q)) * (R ^ Fintype.card ι * ω) ^ (1 / q - 1 / p) =
       ω ^ (1 / q - 1 / p) * R ^ (-n / p) := by
