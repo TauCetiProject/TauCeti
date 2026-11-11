@@ -246,9 +246,14 @@ theorem pairOfPantsEndComponent_of_pos (hH : Function.Periodic (H q) 1) {z : ℝ
   pairOfPantsPerturbation_cylindricalEndLift_of_pos hH hz x v
 
 /-- On the part `±s > 0` of the end `q`, the `ds` component of the perturbation vanishes. -/
-theorem pairOfPantsEndComponent_one_of_pos (hH : Function.Periodic (H q) 1) {z : ℝ × ℝ}
+theorem pairOfPantsEndComponent_one_of_pos {z : ℝ × ℝ}
     (hz : 0 < q.endSign * z.1) (x : M) : pairOfPantsEndComponent H q 1 z x = 0 := by
-  simp [pairOfPantsEndComponent_of_pos hH hz]
+  rw [pairOfPantsEndComponent_def, pairOfPantsPerturbation, Finset.sum_eq_single q]
+  · rw [smul_apply, endAngularForm_cylindricalEndLift]
+    simp
+  · intro r _ hr
+    simp [smoothTransition_endCoord_cylindricalEndLift_eq_zero (z := ⟨z.1, z.2⟩) hr hz]
+  · simp
 
 /-- On the part `±s > 0` of the end `q`, the `dt` component of the perturbation is
 `β(±s - 1) H_q(t)`. -/
@@ -280,10 +285,22 @@ theorem eventuallyEq_pairOfPantsEndComponent (hH : Function.Periodic (H q) 1) {z
         fun w x ↦ smoothTransition (q.endSign * w.1 - 1) * H q w.2 x := by
   have h := (isOpen_endSign_mul_fst_pos q).mem_nhds hz
   refine ⟨?_, ?_⟩ <;> filter_upwards [h] with w hw <;> funext x
-  exacts [pairOfPantsEndComponent_one_of_pos hH hw x, pairOfPantsEndComponent_I_of_pos hH hw x]
+  exacts [pairOfPantsEndComponent_one_of_pos hw x, pairOfPantsEndComponent_I_of_pos hH hw x]
 
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
+
+/-- Away from the center of the end `q`, the shifted cutoff `β(±s_q - c)` is `C^n` along a `C^n`
+family `f` of points of `ℂ`. -/
+theorem contMDiffAt_smoothTransition_endCoord_comp {F G' N : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [TopologicalSpace G'] {I' : ModelWithCorners ℝ F G'} [TopologicalSpace N]
+    [ChartedSpace G' N] {n : WithTop ℕ∞} [ENat.LEInfty n] (q : Puncture) (c : ℝ) {f : N → ℂ}
+    {y₀ : N} (hf : ContMDiffAt I' 𝓘(ℝ, ℂ) n f y₀) (hq : f y₀ ≠ q.endCenter) :
+    ContMDiffAt I' 𝓘(ℝ) n (fun y => smoothTransition (q.endSign * (q.endCoord (f y)).re - c))
+      y₀ :=
+  (((smoothTransition.contDiff (n := ⊤)).of_le ENat.LEInfty.out).contDiffAt.comp (f y₀)
+    ((contDiffAt_const.mul (q.contDiffAt_re_endCoord hq)).sub contDiffAt_const)).contMDiffAt.comp
+    y₀ hf
 
 /-- Away from the center of the end `q`, the shifted cutoff `β(±s_q - c)` is `C^n` as a function
 on `ℂ × M` which ignores the point of `M`. -/
@@ -291,9 +308,7 @@ theorem contMDiffAt_smoothTransition_endCoord {n : ℕ∞} (q : Puncture) (c : �
     (hw : w ≠ q.endCenter) (x : M) :
     ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℝ) n
       (fun p : ℂ × M => smoothTransition (q.endSign * (q.endCoord p.1).re - c)) (w, x) :=
-  (smoothTransition.contDiff.contDiffAt.comp w
-    ((contDiffAt_const.mul (q.contDiffAt_re_endCoord hw)).sub contDiffAt_const)).contMDiffAt.comp
-    (w, x) contMDiffAt_fst
+  contMDiffAt_smoothTransition_endCoord_comp q c contMDiffAt_fst hw
 
 /-- **The perturbation is smooth.** For Hamiltonians of period one which are `C^n` on `ℝ × M`,
 the perturbation is `C^n` on `S × M`, where `S = ℂ ∖ {0, 1}` is the thrice-punctured sphere. -/
