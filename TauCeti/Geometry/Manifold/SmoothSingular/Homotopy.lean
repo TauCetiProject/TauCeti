@@ -229,7 +229,7 @@ theorem isZero_homology_smoothSingularSubcomplex_of_contMDiff [CategoryWithHomol
   rw [smoothSingularSubcomplexMap_id, SSet.homologyMap_id, SSet.homologyMap_comp] at hid
   rw [IsZero.iff_id_eq_zero, hid, hpt.eq_of_src (SSet.homologyMap s R n) 0, comp_zero]
 
-/-- **A star-convex open subset of a normed space has the smooth singular homology of a point.**
+/-- **A star-convex open subset has vanishing positive-degree smooth singular homology.**
 The smooth contraction `(t, x) ↦ c + (1 - ψ t) • (x - c)` towards the centre `c`, with `ψ` the
 smooth transition function from `0` to `1`, stays in the subset, so its smooth singular homology
 vanishes in every positive degree. -/

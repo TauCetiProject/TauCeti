@@ -331,11 +331,13 @@ lemma stdSimplex.coe_homeomorph_toSSetObjEquiv_toSSetObjI_app {n : ℕ}
       (w.map (stdSimplex.objEquiv α)).weights 1 := by
   rw [stdSimplex.toSSetObjI, ← apply_toTopObjMk, toTopObjMk_def]
   have hunit := sSetTopAdj_unit_app_app_down Δ[1] (op ⦋n⦌) α
-  rw [show yonedaEquiv.symm α = stdSimplex.map (stdSimplex.objEquiv α) from
-    hom_ext (congrFun rfl)] at hunit
+  rw [yonedaEquiv.symm_apply_eq.2
+    (by rw [yonedaEquiv_map, Equiv.symm_apply_apply])] at hunit
   have hnat := SimplexCategory.toTopHomeo_naturality_apply.{u} (stdSimplex.objEquiv α)
     ((SimplexCategory.toTopHomeo ⦋n⦌).symm w)
   rw [Homeomorph.apply_symm_apply] at hnat
+  -- Evaluate `hunit` at the point `ULift.up w` of `SimplexCategory.toTop.obj ⦋n⦌`; on the left
+  -- this is the singular simplex at `w`, and `toTopSimplex.inv` sends it to `toTopHomeo.symm w`.
   rw [show TopCat.toSSetObjEquiv _ _ ((sSetTopAdj.unit.app Δ[1]).app (op ⦋n⦌) α) w =
       toTop.map (stdSimplex.map (stdSimplex.objEquiv α)) ((SimplexCategory.toTopHomeo ⦋n⦌).symm w)
     from ConcreteCategory.congr_hom hunit (ULift.up w)]
