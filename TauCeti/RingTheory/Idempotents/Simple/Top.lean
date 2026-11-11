@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.Torsion.ScalarAction
 public import TauCeti.RingTheory.Idempotents.Corner.RadicalLayer
+public import TauCeti.RingTheory.Idempotents.QuotientSpan
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
@@ -71,31 +72,6 @@ variable {k : Type*} {A : Type*} [CommRing k] [Ring A] [Algebra k A]
   {ι : Type*} [Fintype ι] {e : ι → A} {J : Ideal A} [J.IsTwoSided]
   {M N : Type*} [AddCommGroup M] [Module A M] [Module k M] [IsScalarTower k A M]
   [AddCommGroup N] [Module A N] [Module k N] [IsScalarTower k A N]
-
-/-- If the classes of the `e i` span `A ⧸ J` over `k`, then for every `a` and `j` there is a
-scalar `c` with `e j * a ≡ c • e j ≡ a * e j` modulo `J`. -/
-private theorem exists_mul_sub_smul_mem (he : CompleteOrthogonalIdempotents e)
-    (hquot : Submodule.span k (Set.range fun i ↦ Ideal.Quotient.mk J (e i)) = ⊤) (a : A)
-    (j : ι) : ∃ c : k, e j * a - c • e j ∈ J ∧ a * e j - c • e j ∈ J := by
-  classical
-  have ha : Ideal.Quotient.mk J a ∈
-      Submodule.span k (Set.range fun i ↦ Ideal.Quotient.mk J (e i)) :=
-    hquot ▸ Submodule.mem_top
-  obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun k).mp ha
-  have hmem : a - ∑ i, c i • e i ∈ J := by
-    refine Ideal.Quotient.eq.mp ?_
-    rw [← hc, map_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [← Ideal.Quotient.mkₐ_eq_mk k, map_smul]
-  have hl : e j * ∑ i, c i • e i = c j • e j := by
-    simp [Finset.mul_sum, he.mul_eq]
-  have hr : (∑ i, c i • e i) * e j = c j • e j := by
-    simp [Finset.sum_mul, he.mul_eq]
-  refine ⟨c j, ?_, ?_⟩
-  · rw [← hl, ← mul_sub]
-    exact J.mul_mem_left _ hmem
-  · rw [← hr, ← sub_mul]
-    exact J.mul_mem_right _ hmem
 
 /-- **Maps into a vertex-`j` module.** Let the classes of a complete family of orthogonal
 idempotents `e` span `A ⧸ J` over `k`, so that modules killed by `J` are modules over a product

@@ -29,6 +29,8 @@ the classes of the elements `f x g` with `x ∈ J`. For idempotents `f` and `g`,
 * `TauCeti.coe_mem_of_mem_smul` and `TauCeti.coe_mem_sq_of_mem_smul`: the elements of `J • N`
   lie in `J`, and those of `J • K` lie in `J ^ 2` when `K ≤ J • N`, for submodules `N` and `K`
   of a left ideal.
+* `TauCeti.exists_mem_smul_coe_eq_mul`: conversely, every element of `J ^ 2 g` comes from
+  `J • (J • Ag)`.
 
 ## References
 
@@ -82,6 +84,19 @@ theorem coe_mem_sq_of_mem_smul {A : Type*} [Ring A] {J : Ideal A} [J.IsTwoSided]
       exact Ideal.mul_mem_mul hr (coe_mem_of_mem_smul (hK n.property)))
     fun _ _ h₁ h₂ ↦ by simpa using (J ^ 2).add_mem h₁ h₂
 
+/-- Every element of `J ^ 2 g` is the underlying element of some element of `J • (J • Ag)`. -/
+theorem exists_mem_smul_coe_eq_mul {A : Type*} [Ring A] {J : Ideal A} {g z : A}
+    (hz : z ∈ J ^ 2) :
+    ∃ t ∈ J • (⊤ : Submodule A ↥(J • (⊤ : Submodule A (Ideal.span {g} : Ideal A)))),
+      ((t : (Ideal.span {g} : Ideal A)) : A) = z * g := by
+  have h : z • spanSingletonGenerator g ∈
+      J • J • (⊤ : Submodule A (Ideal.span {g} : Ideal A)) := by
+    rw [Submodule.pow_succ, Submodule.pow_one] at hz
+    rw [← Submodule.mul_smul]
+    exact Submodule.smul_mem_smul hz Submodule.mem_top
+  exact ⟨⟨_, Submodule.smul_le_right h⟩, (Submodule.mem_smul_top_iff _ _ _).mpr h,
+    by simp [coe_spanSingletonGenerator]⟩
+
 end TauCeti
 
 namespace IsIdempotentElem
@@ -109,19 +124,6 @@ private theorem radicalLayerToQuotient_mk
     radicalLayerToQuotient k J g (Submodule.Quotient.mk y) =
       Ideal.Quotient.mk (J ^ 2) ((y : (Ideal.span {g} : Ideal A)) : A) :=
   (rfl)
-
-omit [Algebra k A] [J.IsTwoSided] in
-/-- Every element of `J ^ 2 g` is the underlying element of some element of `J • (J • Ag)`. -/
-private theorem exists_mem_smul_coe_eq_mul {z : A} (hz : z ∈ J ^ 2) :
-    ∃ t ∈ J • (⊤ : Submodule A ↥(J • (⊤ : Submodule A (Ideal.span {g} : Ideal A)))),
-      ((t : (Ideal.span {g} : Ideal A)) : A) = z * g := by
-  have h : z • spanSingletonGenerator g ∈
-      J • J • (⊤ : Submodule A (Ideal.span {g} : Ideal A)) := by
-    rw [Submodule.pow_succ, Submodule.pow_one] at hz
-    rw [← Submodule.mul_smul]
-    exact Submodule.smul_mem_smul hz Submodule.mem_top
-  exact ⟨⟨_, Submodule.smul_le_right h⟩, (Submodule.mem_smul_top_iff _ _ _).mpr h,
-    by simp [coe_spanSingletonGenerator]⟩
 
 /-- **The corners of the first radical layer.** For idempotents `f` and `g` and a two-sided ideal
 `J`, the piece `f M` of the first radical layer `M = J(Ag) / J²(Ag)` of the left ideal `Ag` is
