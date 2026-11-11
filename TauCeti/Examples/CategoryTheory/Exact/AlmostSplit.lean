@@ -12,9 +12,9 @@ public import Mathlib.RingTheory.SimpleModule.Basic
 public import Mathlib.RingTheory.ZMod.LocalRing
 public import TauCeti.Algebra.DualNumber.Basic
 public import TauCeti.CategoryTheory.Exact.YonedaExt.AlmostSplit
-public import TauCeti.CategoryTheory.Functor.RingEquivEnd
 public import TauCeti.RingTheory.LocalRing.Module
 import TauCeti.Algebra.Category.FGModuleCat.Basic
+import TauCeti.Algebra.Category.FGModuleCat.End
 import TauCeti.CategoryTheory.Exact.Abelian
 
 /-!
@@ -96,11 +96,10 @@ instance : IsLocalRing (End (residueFG R)) := by
   have : IsLocalRing (Module.End R (R ⧸ maximalIdeal R)) :=
     .of_isUnit_or_isUnit_one_sub_self fun a ↦ (LinearMap.bijective_or_eq_zero a).elim
       (fun h ↦ .inl ((Module.End.isUnit_iff a).mpr h)) fun h ↦ .inr (by simp [h])
-  have : IsLocalRing (Module.End R (residueFG R).obj) :=
+  -- `(residueFG R).obj` is `ModuleCat.of R (R ⧸ maximalIdeal R)`, whose carrier is
+  -- `R ⧸ maximalIdeal R` by definition.
+  exact FGModuleCat.isLocalRing_end_of_isLocalRing_moduleEnd
     ‹IsLocalRing (Module.End R (R ⧸ maximalIdeal R))›
-  have : IsLocalRing (End ((ObjectProperty.ι _).obj (residueFG R))) :=
-    (ModuleCat.endRingEquiv (residueFG R).obj).symm.isLocalRing
-  exact ((ObjectProperty.fullyFaithfulι _).ringEquivEnd (residueFG R)).symm.isLocalRing
 
 /-- The sequence `0 ⟶ R/𝔪 ⟶ R ⟶ R/𝔪 ⟶ 0` of finitely generated modules, whose first map is
 multiplication by a generator `ε` of the maximal ideal with `ε * ε = 0` and whose second map is the

@@ -14,8 +14,10 @@ import TauCeti.CategoryTheory.Functor.RingEquivEnd
 /-!
 # Endomorphism rings in `FGModuleCat`
 
-A local ring, as a finitely generated module over itself, has a local endomorphism ring without
-any finiteness assumption, that ring being the opposite of the ring.
+An object of `FGModuleCat A` has a local endomorphism ring when its underlying module does
+(`FGModuleCat.isLocalRing_end_of_isLocalRing_moduleEnd`). In particular a local ring, as a finitely
+generated module over itself, has a local endomorphism ring without any finiteness assumption, that
+ring being the opposite of the ring.
 -/
 
 public section
@@ -28,13 +30,18 @@ universe v
 
 variable {A : Type v} [Ring A]
 
+/-- An object of `FGModuleCat A` has a local endomorphism ring as soon as its underlying module
+does. -/
+theorem isLocalRing_end_of_isLocalRing_moduleEnd {X : FGModuleCat A}
+    (h : IsLocalRing (Module.End A X.obj)) : IsLocalRing (End X) := by
+  have : IsLocalRing (End ((ObjectProperty.ι _).obj X)) :=
+    (ModuleCat.endRingEquiv X.obj).symm.isLocalRing
+  exact ((ObjectProperty.fullyFaithfulι _).ringEquivEnd X).symm.isLocalRing
+
 /-- A local ring, as a finitely generated module over itself, has a local endomorphism ring: that
 ring is the opposite of the ring. -/
-instance [IsLocalRing A] : IsLocalRing (End (FGModuleCat.of A A)) := by
-  have : IsLocalRing (Module.End A A) := (RingEquiv.moduleEndSelf A).isLocalRing
-  have : IsLocalRing (Module.End A (FGModuleCat.of A A).obj) := ‹IsLocalRing (Module.End A A)›
-  have : IsLocalRing (End ((ObjectProperty.ι _).obj (FGModuleCat.of A A))) :=
-    (ModuleCat.endRingEquiv (FGModuleCat.of A A).obj).symm.isLocalRing
-  exact ((ObjectProperty.fullyFaithfulι _).ringEquivEnd (FGModuleCat.of A A)).symm.isLocalRing
+instance [IsLocalRing A] : IsLocalRing (End (FGModuleCat.of A A)) :=
+  -- `(FGModuleCat.of A A).obj` is `ModuleCat.of A A`, whose carrier is `A` by definition.
+  isLocalRing_end_of_isLocalRing_moduleEnd (RingEquiv.moduleEndSelf A).isLocalRing
 
 end FGModuleCat
