@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Basic
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Topology.VectorBundle.Riemannian
-import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # Orthogonal representatives of normal classes
