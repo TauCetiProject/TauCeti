@@ -30,7 +30,7 @@ identity map, rather than the constant character required by pointwise multiplic
 
 Finally, `TauCeti.natCard_additive_equivariantCharacterSubgroup_rootsOfUnity` counts the
 equivariant characters of a product of groups of roots of unity under the trivial action, over a
-field with enough roots of unity.
+commutative ring with enough roots of unity.
 -/
 
 public section
@@ -81,7 +81,7 @@ section RootsOfUnity
 
 attribute [local instance] trivialMulDistribMulAction
 
-variable (k G : Type) [Field k] [Group G]
+variable (k G : Type) [CommRing k] [Monoid G]
 
 /-- When each `n i` is nonzero in `k` and `k` has enough `∏ i, n i`-th roots of unity, the group
 of equivariant `kˣ`-valued characters of `∏ i, μ_{n i}` has `∏ i, n i` elements. -/
