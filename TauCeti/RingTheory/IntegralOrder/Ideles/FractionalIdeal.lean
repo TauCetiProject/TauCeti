@@ -158,8 +158,7 @@ theorem lattice_bot_mulSingle_principal [DecidableEq (HeightOneSpectrum A)]
     lattice K ⊥ (.mulSingle _ w (principal K ⊥
       (IntegralOrder.isOrder_bot (R := A) (F := K)).span_eq_top b w)) =
       span A {(b : K)} := by
-  rw [lattice_mulSingle_principal (Ring.not_isField_of_ne_of_ne w.ne_bot w.isPrime.ne_top),
-    Algebra.toSubmodule_bot, Units.smul_def, smul_one_eq_span]
+  rw [lattice_mulSingle_principal, Algebra.toSubmodule_bot, Units.smul_def, smul_one_eq_span]
   intro v hv
   -- The image of `b` in `K_v` and its inverse are integral, because `b` is a unit at `v`.
   have hval (c : K) (hc : v.valuation K c = 1) :

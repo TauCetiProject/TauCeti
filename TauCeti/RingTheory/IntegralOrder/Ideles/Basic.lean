@@ -260,12 +260,13 @@ theorem lattice_principal_mul (hΛ : span F (Λ : Set B) = ⊤) (b : Bˣ) (α : 
 
 /-- **Ideles concentrated at one place.** Let `b` be a unit of `B` whose image is a unit of `Λ_v`
 at every place `v ≠ w`. The idele which is `b` at `w` and `1` elsewhere has lattice `b Λ`. -/
-theorem lattice_mulSingle_principal [DecidableEq (HeightOneSpectrum A)] (hA : ¬IsField A)
+theorem lattice_mulSingle_principal [DecidableEq (HeightOneSpectrum A)]
     (hΛ : span F (Λ : Set B) = ⊤) {w : HeightOneSpectrum A} {b : Bˣ}
     (hb : ∀ v ≠ w, principal F Λ hΛ b v ∈
       (Λ.baseChange (v.adicCompletionIntegers F)).toSubmonoid.units) :
     lattice F Λ (.mulSingle _ w (principal F Λ hΛ b w)) = b • Subalgebra.toSubmodule Λ := by
-  rw [← lattice_one (F := F) hA, ← lattice_principal_mul hΛ, mul_one, lattice_eq_lattice_iff hΛ]
+  rw [← lattice_one (F := F) (Ring.not_isField_of_ne_of_ne w.ne_bot w.isPrime.ne_top),
+    ← lattice_principal_mul hΛ, mul_one, lattice_eq_lattice_iff hΛ]
   intro v
   rw [RestrictedProduct.mul_apply, RestrictedProduct.inv_apply]
   rcases eq_or_ne v w with rfl | hv
