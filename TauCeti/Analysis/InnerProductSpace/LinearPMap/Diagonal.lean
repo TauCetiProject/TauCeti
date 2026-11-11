@@ -135,6 +135,7 @@ theorem mem_diagonal_domain_iff {x : E} :
   norm_num
 
 /-- The coordinates of `b.diagonal c x` in the Hilbert basis `b` are `c i * ⟪b i, x⟫`. -/
+@[simp]
 theorem repr_diagonal_apply (x : (b.diagonal c).domain) (i : ι) :
     b.repr (b.diagonal c x) i = c i * ⟪b i, (x : E)⟫_𝕜 := by
   rw [diagonal_apply_eq_repr_symm, LinearIsometryEquiv.apply_symm_apply]
@@ -256,6 +257,7 @@ variable [CompleteSpace E]
 
 /-- **The adjoint of a diagonal operator** is the diagonal operator of the conjugate coefficients.
 -/
+@[simp]
 theorem adjoint_diagonal : (b.diagonal c)† = b.diagonal (star c) := by
   have hdense := b.dense_diagonal_domain c
   refine eq_of_eq_graph (Submodule.ext fun ⟨y, z⟩ ↦ ?_)
