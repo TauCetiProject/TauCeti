@@ -44,10 +44,12 @@ differentials, `λ⁻¹` in the bordered algebras.
   is needed, since an infinite sum is `0` by the convention of
   `TauCeti.UngradedAInfinityRightModule.twistedDifferential`. A morphism of type `D` structures
   homogeneous of central degree `c` induces a map of box tensor products of degree `c`
-  (`TauCeti.TypeDStructure.typeABoxMap_mem_boxGradedPart`), and the homotopy comparing the maps
-  induced by morphisms of degrees `c` and `c'` with the map of their composite has degree
-  `l⁻¹ c c'` (`TauCeti.TypeDStructure.typeABoxCompHomotopy_mem_boxGradedPart`), one `l` below
-  the degree of the composite, as the homotopy equation requires.
+  (`TauCeti.TypeDStructure.typeABoxMap_mem_boxGradedPart`). For morphisms of degrees `c` and
+  `c'`, the construction `TauCeti.TypeDStructure.typeABoxCompHomotopy` has degree `l⁻¹ c c'`
+  (`TauCeti.TypeDStructure.typeABoxCompHomotopy_mem_boxGradedPart`), one `l` below the degree of
+  the composite. Over a ring of characteristic two, for homomorphisms and a bounded module or
+  bounded type `D` structures, it is the homotopy comparing the composite of the induced maps with
+  the map of the composite morphism, and this degree is the one its homotopy equation requires.
 
 ## Main definitions
 
@@ -178,38 +180,6 @@ namespace UngradedAInfinityRightModule
 
 variable {T : Type*} [MulAction G T] {X : Type*}
 
-/-- Along a path `t 0 → ⋯ → t n` of degrees in which the step `i` has degree `g i` and raises the
-degree by `l`, `g i • t (i + 1) = l • t i`, the class of the endpoint in the balanced product,
-paired with `s` translated by the product of the step degrees, is `l ^ n` times the class of the
-starting point. -/
-private theorem mk_inv_prod_ofFn_smul {n : ℕ} (l : Subgroup.center G) (g : Fin n → G)
-    (t : Fin (n + 1) → T) (h : ∀ i, g i • t i.succ = (l : G) • t i.castSucc) (s : S) :
-    BalancedProduct.mk G ((List.ofFn g).prod⁻¹ • s) (t (Fin.last n)) =
-      l ^ n • BalancedProduct.mk G s (t 0) := by
-  induction n generalizing s with
-  | zero =>
-    rw [List.ofFn_zero, List.prod_nil, inv_one, one_smul, pow_zero, one_smul]
-    rfl
-  | succ n ih =>
-    have ih' := ih (fun i ↦ g i.succ) (fun i ↦ t i.succ)
-      (fun i ↦ by rw [Fin.succ_castSucc]; exact h i.succ) ((g 0)⁻¹ • s)
-    rw [Fin.succ_last] at ih'
-    rw [List.ofFn_succ, List.prod_cons, mul_inv_rev, mul_smul, ih',
-      BalancedProduct.mk_smul_left, inv_inv]
-    rw [h 0, Fin.castSucc_zero, ← BalancedProduct.center_smul_mk, ← mul_smul, pow_succ]
-
-/-- The degree of the value of `m_{n+1}` along a path of `n` steps raising the degree by `l`: the
-steps contribute `l ^ n` and the operation `l ^ (1 - n)`, so the class in the balanced product is
-raised by `l`. -/
-private theorem mk_inv_prod_ofFn_zpow_smul {n : ℕ} (l : Subgroup.center G) (g : Fin n → G)
-    (t : Fin (n + 1) → T) (h : ∀ i, g i • t i.succ = (l : G) • t i.castSucc) (s : S) :
-    BalancedProduct.mk G ((List.ofFn g).prod⁻¹ • (l : G) ^ ((n : ℤ) - 1) • s) (t (Fin.last n)) =
-      l • BalancedProduct.mk G s (t 0) := by
-  rw [mk_inv_prod_ofFn_smul l g t h, BalancedProduct.mk_smul_left, ← Subgroup.coe_zpow,
-    ← Subgroup.coe_inv, ← BalancedProduct.center_smul_mk, smul_smul]
-  congr 1
-  group
-
 variable [Fintype X] [DecidableEq X] {Mm : UngradedAInfinityRightModule d M}
 
 /-- **The operations of the matrix module along homogeneous matrices.** Let `M` be a graded `A∞`
@@ -244,8 +214,8 @@ theorem IsGraded.matrixAct_mem_boxGradedPart {l : Subgroup.center G}
   simp only [Set.mem_pi, Set.mem_univ, true_implies, D, Set.mem_iUnion, SetLike.mem_coe] at ha
   choose g hg using ha
   refine Submodule.mem_iSup_of_mem ⟨_, ?_⟩ (hMm.act_mem (g := fun i ↦ (g i : G)) hg hm)
-  rw [← hz, mk_inv_prod_ofFn_zpow_smul l (fun i ↦ (g i : G)) (fun j ↦ gr (x j)) (fun i ↦ (g i).2),
-    hs]
+  rw [← hz, BalancedProduct.mk_inv_prod_ofFn_zpow_smul l (fun i ↦ (g i : G)) (fun j ↦ gr (x j))
+    (fun i ↦ (g i).2), hs]
 
 /-- **The twisted differential of the matrix module along a homogeneous matrix.** For a graded
 `A∞` module with differentials of central degree `l` and a matrix `C` homogeneous of degree `l`,
@@ -282,28 +252,6 @@ theorem typeABoxDifferential_mem_boxGradedPart {l : Subgroup.center G}
   rw [typeABoxDifferential_def]
   exact hMm.twistedDifferential_matrix_mem_boxGradedPart hN hφ
 
-omit [Fintype X] [DecidableEq X] in
-/-- A row vector supported on `X` has the degree of its `X`-part for any grading of the other
-summand. -/
-private theorem sumElim_zero_mem_boxGradedPart {Y : Type*} {gr : X → T} {grY : Y → T}
-    {u : BalancedProduct G S T} {φ : X → M} (hφ : φ ∈ boxGradedPart Mg gr u) :
-    Sum.elim φ 0 ∈ boxGradedPart Mg (Sum.elim gr grY) u := by
-  rw [mem_boxGradedPart_iff] at hφ ⊢
-  rintro (x | y)
-  · exact hφ x
-  · exact zero_mem _
-
-/-- Reading the degree of a row vector at a generator whose grading was translated by a central
-element `k`: the degree `v` for the translated grading is `k⁻¹ • v` for the original one. -/
-private theorem mem_iSup_of_mem_iSup_smul {k : Subgroup.center G} {t : T}
-    {v : BalancedProduct G S T} {m : M}
-    (hm : m ∈ ⨆ s : {s : S // BalancedProduct.mk G s ((k : G) • t) = v}, Mg s) :
-    m ∈ ⨆ s : {s : S // BalancedProduct.mk G s t = k⁻¹ • v}, Mg s := by
-  refine Submodule.iSup_induction _ (motive := fun m ↦ m ∈ _) hm (fun s m hm ↦ ?_) (zero_mem _)
-    fun _ _ ↦ add_mem
-  refine Submodule.mem_iSup_of_mem ⟨s.1, ?_⟩ hm
-  rw [eq_inv_smul_iff, BalancedProduct.center_smul_mk, s.2]
-
 /-- **Induced maps of graded box tensor products.** Let `M` be a graded `A∞` module with
 differentials of central degree `l`, let the structure maps of `N` and `N'` have degree `l`, and
 let the morphism `F` from `N` to `N'` be homogeneous of central degree `c`. Then the induced map
@@ -331,16 +279,20 @@ theorem typeABoxMap_mem_boxGradedPart {l : Subgroup.center G} (hMm : Mm.IsGraded
   rw [typeABoxMap_apply]
   have hk : k⁻¹ * l = c := by simp [k]
   rw [← hk, mul_smul]
-  exact mem_iSup_of_mem_iSup_smul
+  exact mem_iSup_mk_smul_iff.mp
     (hMm.twistedDifferential_matrix_mem_boxGradedPart hC
       (sumElim_zero_mem_boxGradedPart hφ) |> mem_boxGradedPart_iff.mp <| Sum.inr z)
 
 /-- **The composition homotopies of graded box tensor products.** Let `M` be a graded `A∞` module
 with differentials of central degree `l`, let the structure maps of `N`, `N'` and `N''` have
 degree `l`, and let the morphisms `F` from `N` to `N'` and `G'` from `N'` to `N''` be homogeneous
-of central degrees `c` and `c'`. Then the homotopy `K` with
-`T_{G'} ∘ T_F + T_{F G'} = ∂'' ∘ K + K ∘ ∂` maps row vectors of degree `u` to row vectors of degree
-`(l⁻¹ * c * c') • u`, one `l` below the degree of the composite. -/
+of central degrees `c` and `c'`. Then `K = TauCeti.TypeDStructure.typeABoxCompHomotopy` maps row
+vectors of degree `u` to row vectors of degree `(l⁻¹ * c * c') • u`, one `l` below the degree of
+the composite. Over a ring of characteristic two, when `F` and `G'` are homomorphisms and `M`, or
+`N`, `N'` and `N''`, are bounded, `K` satisfies `T_{G'} ∘ T_F + T_{F G'} = ∂'' ∘ K + K ∘ ∂`
+(`TauCeti.TypeDStructure.typeABoxMap_typeABoxMap_add_typeABoxMap_mul_of_act_eq_zero` and
+`TauCeti.TypeDStructure.typeABoxMap_typeABoxMap_add_typeABoxMap_mul_of_lt`), so this is the degree
+that equation requires. -/
 theorem typeABoxCompHomotopy_mem_boxGradedPart [Fintype X''] [DecidableEq X'']
     {l : Subgroup.center G} (hMm : Mm.IsGraded Ag Mg l) {N : TypeDStructure d ι X}
     {N' : TypeDStructure d ι X'} {N'' : TypeDStructure d ι X''} {gr : X → T} {gr' : X' → T}
@@ -383,7 +335,7 @@ theorem typeABoxCompHomotopy_mem_boxGradedPart [Fintype X''] [DecidableEq X'']
     simp only [k', k]
     group
   rw [← hk, mul_smul]
-  exact mem_iSup_of_mem_iSup_smul
+  exact mem_iSup_mk_smul_iff.mp
     (hMm.twistedDifferential_matrix_mem_boxGradedPart hC
       (sumElim_zero_mem_boxGradedPart hφ) |> mem_boxGradedPart_iff.mp <| Sum.inr (Sum.inr z))
 
