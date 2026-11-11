@@ -41,15 +41,29 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {Ω : Opens E}
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ∞}
 
 /-- **Convergence of test functions with a common compact support.** If the test functions `φ i`
-and `ψ` on `Ω` are all supported in a fixed compact subset `K` of `Ω`, and for every order
+on `Ω` are all supported in a fixed compact subset `K` of `Ω`, and for every order
 `k ≤ n` the `k`-th derivatives of the `φ i` converge uniformly to that of `ψ`, then `φ i → ψ` in
 the LF topology of `𝓓^{n}(Ω, F)`. -/
 theorem tendsto_of_tendstoUniformly_iteratedFDeriv {ι : Type*} {l : Filter ι}
     {φ : ι → 𝓓^{n}(Ω, F)} {ψ : 𝓓^{n}(Ω, F)} {K : Set E} (hK : IsCompact K)
-    (hKΩ : K ⊆ Ω) (hφK : ∀ i, tsupport (φ i) ⊆ K) (hψK : tsupport ψ ⊆ K)
+    (hKΩ : K ⊆ Ω) (hφK : ∀ i, tsupport (φ i) ⊆ K)
     (h : ∀ k : ℕ, (k : ℕ∞) ≤ n →
       TendstoUniformly (fun i ↦ iteratedFDeriv ℝ k (φ i)) (iteratedFDeriv ℝ k ψ) l) :
     Tendsto φ l (𝓝 ψ) := by
+  rcases l.eq_or_neBot with rfl | hl
+  · simp
+  have hψK : tsupport ψ ⊆ K := by
+    refine closure_minimal (fun x hx ↦ ?_) hK.isClosed
+    by_contra hxK
+    refine hx ?_
+    have h0 := (h 0 (by simp)).tendsto_at x
+    have hz : ∀ i, iteratedFDeriv ℝ 0 (φ i) x = 0 := fun i ↦ by
+      ext m
+      simp [iteratedFDeriv_zero_apply,
+        image_eq_zero_of_notMem_tsupport fun hmem ↦ hxK (hφK i hmem)]
+    simp_rw [hz] at h0
+    have := tendsto_nhds_unique h0 tendsto_const_nhds
+    simpa [iteratedFDeriv_zero_apply] using congrArg (fun f ↦ f 0) this
   let K' : Compacts E := ⟨K, hK⟩
   -- The same functions, as tests supported in `K`.
   let φK : ι → 𝓓^{n}_{K'}(E, F) := fun i ↦

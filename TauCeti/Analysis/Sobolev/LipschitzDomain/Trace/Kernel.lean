@@ -91,7 +91,7 @@ theorem W1p.contDiffSMul_mem_w1p0Submodule_of_lipschitzChartTrace_eq_zero (hp : 
       simp [V, G, coe_normalEpigraph_eq_preimage e h.lipschitzWith.continuous]
   let w' := W1p.compAffineIsometryEquivL e hVG w
   have hw' : w' ∈ w1p0Submodule volume V p :=
-    W1p.compAffineIsometryEquivL_mem_w1p0Submodule hp e hVG hw
+    W1p.compAffineIsometryEquivL_mem_w1p0Submodule e hVG hw
   -- A cutoff `χ`, equal to one near `tsupport ψ` and supported in the chart cylinder.
   have hK : IsCompact (tsupport ψ) :=
     Metric.isCompact_of_isClosed_isBounded (isClosed_tsupport ψ)

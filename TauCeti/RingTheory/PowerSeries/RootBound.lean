@@ -167,18 +167,13 @@ theorem isLowestDominant_multiset_prod_X_sub_C (hc : 0 < c) (s : Multiset K) :
   induction s using Multiset.induction_on with
   | empty => simpa using isLowestDominant_monomial hc (one_ne_zero (α := K)) 0
   | cons a s ih =>
-    have hs := hasGaussNorm_of_isRestricted (isRestricted_polynomial (c := c)
-      (s.map fun a ↦ (Polynomial.X - Polynomial.C a : Polynomial K)).prod)
-    have ha' := hasGaussNorm_of_isRestricted
-      (isRestricted_polynomial (c := c) (Polynomial.X - Polynomial.C a))
-    rw [Polynomial.coe_sub, Polynomial.coe_X, Polynomial.coe_C] at ha'
     rw [Multiset.map_cons, Multiset.prod_cons, Polynomial.coe_mul, Polynomial.coe_sub,
       Polynomial.coe_X, Polynomial.coe_C, Multiset.filter_cons]
     by_cases ha : ‖a‖ < c
     · simpa [ha, add_comm] using
-        (isLowestDominant_X_sub_C hc ha).mul ih hc ha' hs (norm_mul _ _)
+        (isLowestDominant_X_sub_C ha).mul ih hc (norm_mul _ _)
     · simpa [ha] using
-        (isLowestDominant_zero_X_sub_C hc (not_lt.mp ha)).mul ih hc ha' hs (norm_mul _ _)
+        (isLowestDominant_zero_X_sub_C hc (not_lt.mp ha)).mul ih hc (norm_mul _ _)
 
 /-- **Roots in the closed disc.** A polynomial over an ultrametric normed field distinguished of
 degree `d` at the radius `c > 0` has at most `d` roots `x` with `‖x‖ ≤ c`, counted with
@@ -212,9 +207,7 @@ theorem IsLowestDominant.card_filter_roots_norm_lt_le
     (P.roots.filter (‖·‖ < c)).card ≤ l := by
   obtain ⟨q, hq0, hq⟩ := exists_prod_roots_mul_eq hP.ne_zero
   obtain ⟨e, he⟩ := exists_isLowestDominant hc (isRestricted_polynomial q) hq0
-  have h := (isLowestDominant_multiset_prod_X_sub_C hc P.roots).mul he hc
-    (hasGaussNorm_of_isRestricted (isRestricted_polynomial _))
-    (hasGaussNorm_of_isRestricted (isRestricted_polynomial _)) (norm_mul _ _)
+  have h := (isLowestDominant_multiset_prod_X_sub_C hc P.roots).mul he hc (norm_mul _ _)
   rw [← Polynomial.coe_mul, hq] at h
   exact (hP.unique h).symm ▸ Nat.le_add_right _ _
 
@@ -227,8 +220,7 @@ theorem IsLowestDominant.card_filter_roots_norm_lt_eq
   have hlc : P.leadingCoeff ≠ 0 :=
     Polynomial.leadingCoeff_ne_zero.mpr (mt Polynomial.coe_eq_zero_iff.mpr hP.ne_zero)
   have h0 := isLowestDominant_monomial hc hlc 0
-  have h := h0.mul (isLowestDominant_multiset_prod_X_sub_C hc P.roots) hc h0.hasGaussNorm
-    (hasGaussNorm_of_isRestricted (isRestricted_polynomial _)) (norm_mul _ _)
+  have h := h0.mul (isLowestDominant_multiset_prod_X_sub_C hc P.roots) hc (norm_mul _ _)
   rw [PowerSeries.monomial_zero_eq_C_apply, ← Polynomial.coe_C, ← Polynomial.coe_mul,
     ← hs.eq_prod_roots, zero_add] at h
   exact hP.unique h |>.symm
