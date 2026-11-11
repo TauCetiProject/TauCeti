@@ -45,7 +45,7 @@ closed, since a proper specialization of such a point would have codimension at 
 * `TauCeti.topologicalKrullDim_closure_singleton_le_of_not_isMax`: on a quasi-sober T₀ space all
   of whose points have codimension at most `d + 1`, the closure of a point that is not the generic
   point of an irreducible component has dimension at most `d`.
-* `SpecializingMap.height_apply_le_height`: a specializing map between T₀ spaces cannot
+* `SpecializingMap.height_apply_le_height`: a specializing map from a T₀ space cannot
   increase point height.
 * `SpecializingMap.topologicalKrullDim_le_of_surjective`: a surjective specializing map to a
   quasi-sober T₀ space cannot increase dimension; source sobriety is unnecessary.
@@ -225,12 +225,12 @@ theorem topologicalKrullDim_preimage {X Y : Type*} [TopologicalSpace X] [Topolog
 
 end Topology.IsEmbedding
 
-attribute [local instance] specializationOrder in
+attribute [local instance] specializationPreorder specializationOrder in
 /-- A specializing map cannot increase the height of a point in the specialization orders.
 Continuity is unnecessary: each strict specialization chain lifts, and its lifted points are
 distinct because their images are distinct. -/
 theorem SpecializingMap.height_apply_le_height {X Y : Type*}
-    [TopologicalSpace X] [TopologicalSpace Y] [T0Space X] [T0Space Y]
+    [TopologicalSpace X] [TopologicalSpace Y] [T0Space X]
     {f : X → Y} (hf : SpecializingMap f) (x : X) : height (f x) ≤ height x := by
   refine height_le fun p hp ↦ ?_
   induction p using RelSeries.inductionOn' generalizing x with
