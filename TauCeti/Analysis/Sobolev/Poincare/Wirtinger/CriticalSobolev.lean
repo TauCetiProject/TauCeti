@@ -262,7 +262,7 @@ private theorem lintegral_ofReal_max_sub_rpow_le_of_convex (hp : p ≠ ∞) (hn 
   -- The weak inequality at the height `2^k`, raised to the power `s`.
   have hlevel : ∀ k : ℤ, ENNReal.ofReal ((2 : ℝ) ^ k) ^ s *
       mu ((Omega : Set E) ∩ {x | m + 2 * (2 : ℝ) ^ k ≤ W1p.value u x}) ≤ (C * D k) ^ s :=
-    fun k => ENNReal.rpow_mul_le_rpow_of_mul_le_mul_rpow hninv0 hninv1
+    fun k => ENNReal.rpow_mul_le_rpow_of_mul_le_mul_rpow hninv1
       (ne_top_of_le_ne_top hb.measure_lt_top.ne (measure_mono inter_subset_left))
       ((ofReal_mul_measure_le_of_convex hp hconv hb hS hS0 u huS (zpow_pos two_pos k)).trans_eq
         (mul_right_comm _ _ _))

@@ -69,7 +69,7 @@ closed intervals for a reciprocal radius parameter `α / r`.
 * `ENNReal.rpow_one_sub_le_of_le_mul_rpow`: `m ≤ K * m ^ p` gives `m ^ (1 - p) ≤ K` for a finite
   `m` and `p < 1`.
 * `ENNReal.rpow_mul_le_rpow_of_mul_le_mul_rpow`: `x a ≤ c a ^ θ` gives
-  `x ^ (1 - θ)⁻¹ a ≤ c ^ (1 - θ)⁻¹` for a finite `a` and `0 ≤ θ < 1`.
+  `x ^ (1 - θ)⁻¹ a ≤ c ^ (1 - θ)⁻¹` for a finite `a` and `θ < 1`.
 * `ENNReal.rpow_le_of_le_rpow_mul_rpow`: `X ≤ (Z X ^ a) ^ s` gives `X ^ b ≤ Z` for a finite `X`
   when `s⁻¹ = b + a` and `b, s > 0`.
 * `ENNReal.rpow_mul_rpow_one_sub`: `x ^ p * x ^ (1 - p) = x` for `p ∈ [0, 1]`.
@@ -124,17 +124,17 @@ theorem rpow_one_sub_le_of_le_mul_rpow {m K : ℝ≥0∞} {p : ℝ} (hp : p < 1)
   rwa [rpow_sub _ _ h0 hm, rpow_one, ENNReal.div_le_iff
     (rpow_pos (pos_iff_ne_zero.2 h0) hm).ne' (rpow_ne_top_of_ne_zero h0 hm)]
 
-/-- From `x a ≤ c a^θ` with `a` finite and `0 ≤ θ < 1`, cancelling `a^θ` and raising to the power
+/-- From `x a ≤ c a^θ` with `a` finite and `θ < 1`, cancelling `a^θ` and raising to the power
 `(1 - θ)⁻¹` gives `x^{(1 - θ)⁻¹} a ≤ c^{(1 - θ)⁻¹}`. -/
-theorem rpow_mul_le_rpow_of_mul_le_mul_rpow {x a c : ℝ≥0∞} {θ : ℝ} (hθ0 : 0 ≤ θ)
-    (hθ1 : θ < 1) (ha : a ≠ ∞) (h : x * a ≤ c * a ^ θ) :
+theorem rpow_mul_le_rpow_of_mul_le_mul_rpow {x a c : ℝ≥0∞} {θ : ℝ} (hθ1 : θ < 1)
+    (ha : a ≠ ∞) (h : x * a ≤ c * a ^ θ) :
     x ^ (1 - θ)⁻¹ * a ≤ c ^ (1 - θ)⁻¹ := by
   rcases eq_or_ne a 0 with ha0 | ha0
   · simp [ha0]
   have hr : 0 < (1 - θ)⁻¹ := inv_pos.2 (sub_pos.2 hθ1)
   have h' : x * a ^ (1 - θ) ≤ c := by
     refine (ENNReal.mul_le_mul_iff_left (rpow_pos (pos_iff_ne_zero.2 ha0) ha).ne'
-      (rpow_ne_top_of_nonneg hθ0 ha)).1 ?_
+      (rpow_ne_top_of_ne_zero (y := θ) ha0 ha)).1 ?_
     rwa [mul_assoc, ← rpow_add _ _ ha0 ha, sub_add_cancel, rpow_one]
   calc x ^ (1 - θ)⁻¹ * a = (x * a ^ (1 - θ)) ^ (1 - θ)⁻¹ := by
         rw [mul_rpow_of_nonneg _ _ hr.le, ← rpow_mul, mul_inv_cancel₀ (sub_pos.2 hθ1).ne',
