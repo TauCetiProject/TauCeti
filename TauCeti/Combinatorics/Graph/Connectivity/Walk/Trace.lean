@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Graph.Delete
-public import TauCeti.Combinatorics.Graph.Connectivity.Component
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Decomposition
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Maps
 public import TauCeti.Combinatorics.Graph.Union
@@ -94,6 +93,10 @@ theorem walkGraph_le_of_pos (p : G.Walk x y) (hp : 0 < p.length) : G.walkGraph p
   apply p.walkGraph_le
   exact p.support_subset_vertexSet_of_pos hp x p.start_mem_support
 
+/-- Every cycle traces a subgraph of its ambient graph. -/
+theorem IsCycle.walkGraph_le {p : G.Walk x x} (hp : p.IsCycle) : G.walkGraph p ≤ G :=
+  p.walkGraph_le_of_pos hp.length_pos
+
 /-- The endpoints of a walk are reachable within the graph traced by that walk. -/
 theorem reachable_walkGraph (p : G.Walk x y) :
     (G.walkGraph p).Reachable x y := by
@@ -105,6 +108,30 @@ theorem reachable_walkGraph (p : G.Walk x y) :
       · exact (Walk.cons e h p).walkGraph_le_of_pos (by simp)
       · intro f hf
         exact ((Walk.cons e h p).mem_edgeSet_walkGraph f).mpr hf
+
+/-- Any two vertices visited by a walk are reachable in its traced graph. -/
+theorem reachable_walkGraph_of_mem_support (p : G.Walk x y) {a b : α}
+    (ha : a ∈ p.support) (hb : b ∈ p.support) :
+    (G.walkGraph p).Reachable a b := by
+  classical
+  cases p with
+  | nil =>
+      simp only [support_nil, List.mem_singleton] at ha hb
+      subst a
+      subst b
+      exact Reachable.refl (by simp)
+  | cons e h p =>
+      let r := Walk.cons e h p
+      let q := (r.takeUntil a ha).reverse.append (r.takeUntil b hb)
+      have hq : ∀ e ∈ q.edges, e ∈ E(G.walkGraph r) := by
+        intro e he
+        rw [r.mem_edgeSet_walkGraph]
+        simp only [q, edges_append, edges_reverse, List.mem_append] at he
+        exact he.elim
+          (fun h ↦ r.edges_takeUntil_subset_edges ha (by simpa only [List.mem_reverse] using h))
+          (fun h ↦ r.edges_takeUntil_subset_edges hb h)
+      simpa only [r] using
+        (q.transfer (r.walkGraph_le_of_pos (by simp [r])) hq).reachable (by simpa [r] using ha)
 
 /-- Inclusion between two traced graphs is equivalent to inclusion of their vertex and edge
 lists, regarded as sets. -/
@@ -126,26 +153,6 @@ theorem walkGraph_le_walkGraph_iff (p : G.Walk x y) (q : G.Walk z w) :
     rw [q.walkGraph_isLink]
     rcases (p.walkGraph_isLink e a b).mp hab with ⟨hab, hep⟩
     exact ⟨hab, he hep⟩
-
-/-- Every visited vertex of a walk is reachable from its starting point within its traced graph. -/
-theorem reachable_walkGraph_of_mem_support {a : α} (p : G.Walk x y) (ha : a ∈ p.support) :
-    (G.walkGraph p).Reachable x a := by
-  classical
-  exact (p.takeUntil a ha).reachable_walkGraph.mono <|
-    (walkGraph_le_walkGraph_iff (p.takeUntil a ha) p).mpr
-      ⟨p.support_takeUntil_subset_support ha, p.edges_takeUntil_subset_edges ha⟩
-
-/-- Any two visited vertices of a walk are reachable from each other within its traced graph. -/
-theorem reachable_walkGraph_of_mem_support_of_mem_support {a b : α} (p : G.Walk x y)
-    (ha : a ∈ p.support) (hb : b ∈ p.support) : (G.walkGraph p).Reachable a b :=
-  (p.reachable_walkGraph_of_mem_support ha).symm.trans (p.reachable_walkGraph_of_mem_support hb)
-
-/-- The graph traced by any walk is connected. -/
-theorem connected_walkGraph (p : G.Walk x y) : (G.walkGraph p).Connected := by
-  refine connected_iff_forall_reachable.mpr
-    ⟨⟨x, by simp [vertexSet_walkGraph]⟩, fun u v hu hv ↦ ?_⟩
-  rw [vertexSet_walkGraph] at hu hv
-  exact p.reachable_walkGraph_of_mem_support_of_mem_support hu hv
 
 /-- Mapping a walk to a supergraph does not change its traced graph. -/
 @[simp, grind =]

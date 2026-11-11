@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.BaseChange
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Separation
 public import TauCeti.Algebra.AlgebraicGroup.Torus.Basic
+import TauCeti.Algebra.AlgebraicGroup.Torus.SmoothConnected
 
 /-!
 # Maximal tori in Hopf coordinates
@@ -19,6 +21,8 @@ then `I = J`.
 ## Main declarations
 
 * `TauCeti.HopfIdeal.IsMaximalTorus`: maximality among torus Hopf ideals.
+* `TauCeti.HopfIdeal.isMaximalTorus_of_maximal_points`: maximal commutativity of geometric
+  points implies maximality of a torus.
 * `TauCeti.HopfIdeal.isMaximalTorus_of_baseChange`: maximality descends from an algebraic
   closure along a base-change isomorphism of the ambient coordinate Hopf algebra.
 
@@ -69,6 +73,27 @@ theorem isMaximalTorus_iff (k : Type u) [Field k] (H : _root_.CommHopfAlgCat.{u}
                 ⟨H, (finiteTypeCommHopfAlgProperty_iff H).2 inferInstance⟩ J) →
             J ≤ I → I ≤ J :=
   Iff.rfl
+
+/-- A torus over an algebraically closed field is maximal if its points embed as a maximal
+commutative subgroup of a group. -/
+theorem isMaximalTorus_of_maximal_points {k : Type u} [Field k] [IsAlgClosed k]
+    {H : _root_.CommHopfAlgCat.{u} k} [Algebra.FiniteType k H]
+    (T : HopfIdeal k H)
+    (hT : torusCommHopfAlgProperty k
+      (FiniteTypeCommHopfAlgCat.quotient
+        ⟨H, (finiteTypeCommHopfAlgProperty_iff H).2 inferInstance⟩ T))
+    {G : Type*} [Group G]
+    (φ : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k) →* G)
+    (hφ : Function.Injective φ) {S : Subgroup G}
+    (hpoints : (CommHopfAlgCat.quotientPointsSubgroup H T (CommAlgCat.of k k)).map φ = S)
+    (hmax : ∀ (P : Subgroup G) [IsMulCommutative P], S ≤ P → P = S) :
+    IsMaximalTorus k H T := by
+  rw [isMaximalTorus_iff]
+  refine ⟨hT, ?_⟩
+  intro I hI hIT
+  let _ : IsReduced (CommHopfAlgCat.quotient H I) := hI.geometricallyReduced.isReduced
+  let _ : Coalgebra.IsCocomm k (CommHopfAlgCat.quotient H I) := hI.isCocomm k _
+  exact (eq_of_le_of_isCocomm_of_maximal_points T φ hφ hpoints hmax I hIT).ge
 
 namespace IsMaximalTorus
 

@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Order.Module.PositiveLinearMap
 public import Mathlib.Analysis.Normed.Operator.Extend
 public import TauCeti.Analysis.Normed.Order.PositiveLinearMap
 public import TauCeti.MeasureTheory.Integral.AddContent
-public import TauCeti.MeasureTheory.Measure.AddContent
+public import TauCeti.MeasureTheory.Measure.AddContent.Basic
 public import TauCeti.Topology.ContinuousMap.Bounded.SimpleFunc
 
 /-!

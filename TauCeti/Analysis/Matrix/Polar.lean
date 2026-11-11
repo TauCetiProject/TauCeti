@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import TauCeti.Analysis.Matrix.Rpow
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
 
 /-!
 # The polar decomposition of an invertible matrix
@@ -24,12 +25,20 @@ positive factor is positive definite, and computes the determinants of both fact
 In particular, for `A` of determinant one, as in `SL(n, ℂ)` or `SL(n, ℝ)`, both factors have
 determinant one, and so does every real power `P ^ s` of the positive factor.
 
+The decomposition also commutes with the inverse-transpose automorphism `A ↦ (A⁻¹)ᵀ` of
+`GL n 𝕜`: since `(A⁻¹)ᵀ = (P⁻¹)ᵀ (U⋆)ᵀ` with `(P⁻¹)ᵀ` positive definite and `(U⋆)ᵀ` unitary, these
+are its two factors, and `(U⋆)ᵀ` is the entrywise conjugate of `U`. Together with the unitary
+equivariance `Units.polarUnitary_unitary_mul_mul_unitary`, this shows that a matrix group cut out
+by an equation `(A⁻¹)ᵀ = W A W⋆` with `W` unitary, such as the complex orthogonal group (`W = 1`)
+or the symplectic group (`W = J`), contains the polar factors of its elements.
+
 ## Main results
 
 * `Matrix.GeneralLinearGroup.posDef_sqrt_mul_star`: the positive factor `√(A Aᴴ)` is positive
   definite.
 * `Matrix.GeneralLinearGroup.existsUnique_posDef_mul_unitary`: existence and uniqueness of the
   polar decomposition `A = P U` with `P` positive definite and `U` unitary.
+* `Matrix.GeneralLinearGroup.coe_mul_inv_toUnits_polarUnitary`: the positive factor is `A U⁻¹`.
 * `Matrix.det_sqrt_mul_star`, `Matrix.GeneralLinearGroup.det_polarUnitary`: the determinants of
   the two factors; the first holds for every square matrix.
 * `Matrix.GeneralLinearGroup.exists_scalar_mul_mul_toGL_eq`: every invertible matrix is a scalar
@@ -37,6 +46,9 @@ determinant one, and so does every real power `P ^ s` of the positive factor.
 * `Matrix.GeneralLinearGroup.det_rpow_sqrt_mul_star_of_det_eq_one`,
   `Matrix.GeneralLinearGroup.det_polarUnitary_of_det_eq_one`: for `det A = 1`, every real power of
   the positive factor, and the unitary factor, have determinant one.
+* `Matrix.GeneralLinearGroup.sqrt_inverseTranspose`,
+  `Matrix.GeneralLinearGroup.polarUnitary_inverseTranspose`: the positive factor of `(A⁻¹)ᵀ` is
+  `(P⁻¹)ᵀ` and its unitary factor is the entrywise conjugate of `U`.
 
 ## References
 
@@ -81,6 +93,15 @@ theorem existsUnique_posDef_mul_unitary :
   exact Prod.ext (Units.sqrt_mul_star_eq_of_mul_eq A hP.posSemidef.nonneg h).symm
     (Units.polarUnitary_eq_of_mul_eq A hP.posSemidef.nonneg h).symm
 
+/-- The positive factor `√(A Aᴴ)` of the polar decomposition `A = P U` is `A U⁻¹`, computed in
+`GL n 𝕜`. -/
+theorem coe_mul_inv_toUnits_polarUnitary :
+    ((A * (Unitary.toUnits (Units.polarUnitary A))⁻¹ : GL n 𝕜) : Matrix n n 𝕜) =
+      CFC.sqrt ((A : Matrix n n 𝕜) * star (A : Matrix n n 𝕜)) := by
+  apply (Unitary.mul_left_inj (Units.polarUnitary A)).mp
+  rw [Units.sqrt_mul_star_mul_polarUnitary]
+  exact congrArg Units.val (inv_mul_cancel_right A (Unitary.toUnits (Units.polarUnitary A)))
+
 /-- The determinant of the unitary factor of `A` is `det A / ‖det A‖`. -/
 theorem det_polarUnitary :
     ((Units.polarUnitary A : unitaryGroup n 𝕜) : Matrix n n 𝕜).det =
@@ -101,6 +122,42 @@ theorem det_polarUnitary_of_det_eq_one (hA : (A : Matrix n n 𝕜).det = 1) :
     ((Units.polarUnitary A : unitaryGroup n 𝕜) : Matrix n n 𝕜).det = 1 := by
   rw [det_polarUnitary, hA]
   simp
+
+/-- The inverse transpose `(A⁻¹)ᵀ` is the product of the positive definite matrix `(P⁻¹)ᵀ` and the
+entrywise conjugate of the unitary factor `U` of `A = P U`. -/
+private theorem inv_transpose_sqrt_mul_map_star_polarUnitary :
+    (CFC.sqrt ((A : Matrix n n 𝕜) * star (A : Matrix n n 𝕜)))⁻¹ᵀ *
+        (UnitaryGroup.map_star (Units.polarUnitary A) : Matrix n n 𝕜) =
+      (inverseTranspose A : Matrix n n 𝕜) := by
+  set P := CFC.sqrt ((A : Matrix n n 𝕜) * star (A : Matrix n n 𝕜))
+  set U := Units.polarUnitary A
+  have hPU : P * U = A := Units.sqrt_mul_star_mul_polarUnitary A
+  have hU : (U : Matrix n n 𝕜)⁻¹ = star (U : Matrix n n 𝕜) :=
+    inv_eq_left_inv (Unitary.star_mul_self_of_mem U.2)
+  -- `(A⁻¹)ᵀ = ((P U)⁻¹)ᵀ = (U⋆ P⁻¹)ᵀ = (P⁻¹)ᵀ (U⋆)ᵀ`, and `(U⋆)ᵀ` is the conjugate of `U`
+  rw [coe_inverseTranspose, coe_units_inv, ← hPU, mul_inv_rev, hU, transpose_mul,
+    star_eq_conjTranspose, conjTranspose_transpose, UnitaryGroup.map_star_coe]
+
+/-- The matrix `(P⁻¹)ᵀ`, for the positive factor `P` of `A`, is positive semidefinite. -/
+private theorem inv_transpose_sqrt_mul_star_nonneg :
+    0 ≤ (CFC.sqrt ((A : Matrix n n 𝕜) * star (A : Matrix n n 𝕜)))⁻¹ᵀ :=
+  nonneg_iff_posSemidef.2 (posDef_sqrt_mul_star A).inv.transpose.posSemidef
+
+/-- **The positive factor of the inverse transpose.** The positive factor of `(A⁻¹)ᵀ` is `(P⁻¹)ᵀ`,
+where `P = √(A Aᴴ)` is the positive factor of `A`. -/
+theorem sqrt_inverseTranspose :
+    CFC.sqrt ((inverseTranspose A : Matrix n n 𝕜) * star (inverseTranspose A : Matrix n n 𝕜)) =
+      (CFC.sqrt ((A : Matrix n n 𝕜) * star (A : Matrix n n 𝕜)))⁻¹ᵀ :=
+  Units.sqrt_mul_star_eq_of_mul_eq _ (inv_transpose_sqrt_mul_star_nonneg A)
+    (inv_transpose_sqrt_mul_map_star_polarUnitary A)
+
+/-- **The unitary factor of the inverse transpose.** The unitary factor of `(A⁻¹)ᵀ` is the entrywise
+conjugate of the unitary factor of `A`; over `ℝ` the two coincide. -/
+@[simp]
+theorem polarUnitary_inverseTranspose :
+    Units.polarUnitary (inverseTranspose A) = UnitaryGroup.map_star (Units.polarUnitary A) :=
+  Units.polarUnitary_eq_of_mul_eq _ (inv_transpose_sqrt_mul_star_nonneg A)
+    (inv_transpose_sqrt_mul_map_star_polarUnitary A)
 
 /-- **Every invertible matrix over `ℝ` or `ℂ` is a scalar times a unitary matrix times a matrix of
 determinant one**: `A = c V g` with `c` a scalar matrix, `V` unitary and `g ∈ SL n 𝕜`. -/

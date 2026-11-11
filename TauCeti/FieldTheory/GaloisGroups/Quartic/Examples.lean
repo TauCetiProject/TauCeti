@@ -74,8 +74,8 @@ local instance factPrimeSeven : Fact (Nat.Prime 7) := ⟨by decide⟩
 factor `X² + aX + b` would force `1 = a³ - 2ab` and `1 = a²b - b²`, which has no solution
 modulo `2`. -/
 theorem irreducible_X_pow_four_add_X_add_one : Irreducible (X ^ 4 + X + 1 : ℚ[X]) := by
-  have := irreducible_map_intCast_of_natDegree_eq_four (g := X ^ 4 + X + 1) (by monicity!)
-    (by compute_degree!)
+  have := Monic.irreducible_map_of_natDegree_eq_four (K := ℚ) (g := (X ^ 4 + X + 1 : ℤ[X]))
+    (by monicity!) (by compute_degree!)
     (fun m hm => by
       have h2 := congrArg (Int.cast : ℤ → ZMod 2) hm
       push_cast [eval_add, eval_pow, eval_X, eval_one] at h2
@@ -115,7 +115,7 @@ theorem discr_X_pow_four_add_X_add_one : (X ^ 4 + X + 1 : ℚ[X]).discr = 229 :=
 no root modulo `3`, so no integral root. -/
 theorem irreducible_X_pow_three_sub_four_mul_X_sub_one :
     Irreducible (X ^ 3 - 4 * X - 1 : ℚ[X]) := by
-  have := irreducible_map_intCast_of_natDegree_eq_three (g := X ^ 3 - 4 * X - 1)
+  have := Monic.irreducible_map_of_natDegree_eq_three (K := ℚ) (g := (X ^ 3 - 4 * X - 1 : ℤ[X]))
     (by monicity!) (by compute_degree!) fun m hm => by
       have h3 := congrArg (Int.cast : ℤ → ZMod 3) hm
       push_cast [eval_sub, eval_pow, eval_X, eval_mul, eval_one, eval_ofNat] at h3
@@ -146,8 +146,8 @@ theorem natCard_gal_X_pow_four_add_X_add_one : Nat.card (X ^ 4 + X + 1 : ℚ[X])
 `8 = a³ - 2ab` and `12 = a²b - b²`, which has no solution modulo `5`. -/
 theorem irreducible_X_pow_four_add_eight_mul_X_add_twelve :
     Irreducible (X ^ 4 + 8 * X + 12 : ℚ[X]) := by
-  have := irreducible_map_intCast_of_natDegree_eq_four (g := X ^ 4 + 8 * X + 12) (by monicity!)
-    (by compute_degree!)
+  have := Monic.irreducible_map_of_natDegree_eq_four (K := ℚ) (g := (X ^ 4 + 8 * X + 12 : ℤ[X]))
+    (by monicity!) (by compute_degree!)
     (fun m hm => by
       simp only [eval_add, eval_pow, eval_X, eval_mul, eval_ofNat] at hm
       have _ : 0 < (m ^ 2 - 2) ^ 2 + 4 * (m + 1) ^ 2 + 4 := by positivity
@@ -187,7 +187,7 @@ theorem discr_X_pow_four_add_eight_mul_X_add_twelve :
 it has no root modulo `5`, so no integral root. -/
 theorem irreducible_X_pow_three_sub_fortyEight_mul_X_sub_sixtyFour :
     Irreducible (X ^ 3 - 48 * X - 64 : ℚ[X]) := by
-  have := irreducible_map_intCast_of_natDegree_eq_three (g := X ^ 3 - 48 * X - 64)
+  have := Monic.irreducible_map_of_natDegree_eq_three (K := ℚ) (g := (X ^ 3 - 48 * X - 64 : ℤ[X]))
     (by monicity!) (by compute_degree!) fun m hm => by
       have h5 := congrArg (Int.cast : ℤ → ZMod 5) hm
       push_cast [eval_sub, eval_pow, eval_X, eval_mul, eval_ofNat] at h5

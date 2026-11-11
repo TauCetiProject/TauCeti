@@ -13,7 +13,8 @@ public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 # Locally finite families
 
 A locally finite family of sets stays locally finite when it is reindexed along the first
-projection `ι × κ → ι` with `κ` finite (`LocallyFinite.comp_fst`). Together with
+projection `ι × κ → ι` with `κ` finite (`LocallyFinite.comp_fst`), and more generally along
+`(Σ i, κ i) → ι` with every `κ i` finite (`LocallyFinite.comp_sigma_fst`). Together with
 `LocallyFinite.subset`, this makes a family indexed by `ι × κ` whose `(i, k)`-th member lies in
 the `i`-th member of a locally finite family locally finite. Dually, the pointwise union of
 finitely many locally finite families is locally finite (`LocallyFinite.iUnion`), as is the family
@@ -43,11 +44,19 @@ namespace LocallyFinite
 variable {ι κ X : Type*} [TopologicalSpace X] {f : ι → Set X}
 
 /-- A locally finite family stays locally finite when reindexed along the first projection
-`ι × κ → ι`, for `κ` finite. -/
-theorem comp_fst [Finite κ] (hf : LocallyFinite f) : LocallyFinite fun p : ι × κ ↦ f p.1 :=
+`(Σ i, κ i) → ι`, for finite fibres `κ i`. -/
+theorem comp_sigma_fst {κ : ι → Type*} [∀ i, Finite (κ i)] (hf : LocallyFinite f) :
+    LocallyFinite fun p : (Σ i, κ i) ↦ f p.1 :=
   fun x ↦
     let ⟨U, hU, hfin⟩ := hf x
-    ⟨U, hU, (hfin.prod (finite_univ (α := κ))).subset fun _ hp ↦ ⟨hp, mem_univ _⟩⟩
+    ⟨U, hU, (hfin.biUnion fun i _ ↦ finite_range (Sigma.mk i)).subset
+      fun ⟨_, k⟩ hp ↦ mem_biUnion hp ⟨k, rfl⟩⟩
+
+/-- A locally finite family stays locally finite when reindexed along the first projection
+`ι × κ → ι`, for `κ` finite. -/
+theorem comp_fst [Finite κ] (hf : LocallyFinite f) : LocallyFinite fun p : ι × κ ↦ f p.1 :=
+  (Equiv.locallyFinite_comp_iff (Equiv.sigmaEquivProd ι κ).symm).mpr
+    (hf.comp_sigma_fst (κ := fun _ ↦ κ))
 
 /-- The pairwise intersections of two locally finite families form a locally finite family.
 The index set includes all pairs, whether or not the two families are the same. -/

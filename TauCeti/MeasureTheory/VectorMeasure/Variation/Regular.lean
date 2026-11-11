@@ -7,9 +7,10 @@ module
 
 public import Mathlib.MeasureTheory.VectorMeasure.Variation.Basic
 public import TauCeti.MeasureTheory.Measure.Regular
+public import TauCeti.MeasureTheory.VectorMeasure.WithDensity
 
 /-!
-# Finiteness and regularity of the variation of sums and scalar multiples
+# Finiteness and regularity of the variation of sums, scalar multiples and densities
 
 The variation `|μ|` of a vector measure is subadditive, `|μ + ν| ≤ |μ| + |ν|` and
 `|μ - ν| ≤ |μ| + |ν|`, and homogeneous, `|c • μ| = ‖c‖ • |μ|`. Finiteness of the variation
@@ -19,9 +20,12 @@ Regularity passes too, on an `R₁` space with its Borel σ-algebra, for example
 space. If `|μ|` and `|ν|` are finite and regular, then so is `|μ| + |ν|`. The variation of
 `μ + ν` or `μ - ν` is dominated by it, hence absolutely continuous with respect to it, and is
 therefore regular by `MeasureTheory.Measure.AbsolutelyContinuous.regular`. Regularity of
-`|c • μ|` needs no hypothesis on the space. These are the closure properties used for scalar
-measures of finite regular variation, which are the dual of the space of continuous functions on a
-compact Hausdorff space and arise by polarizing positive measures.
+`|c • μ|` needs no hypothesis on the space. The variation of a vector measure with density
+`μ.withDensity g B` is finite and absolutely continuous with respect to `|μ|`, so it is regular
+whenever `|μ|` is finite and regular. For scalar measures this is the weighted measure `g · μ`.
+These are the closure properties used for scalar measures of finite regular variation, which are
+the dual of the space of continuous functions on a compact Hausdorff space and arise by polarizing
+positive measures.
 
 ## Main results
 
@@ -33,6 +37,8 @@ compact Hausdorff space and arise by polarizing positive measures.
 * `MeasureTheory.VectorMeasure.regular_variation_add`,
   `MeasureTheory.VectorMeasure.regular_variation_sub`: finite regular variation is closed under
   sums and differences.
+* `MeasureTheory.VectorMeasure.regular_variation_withDensity`: finite regular variation passes to
+  vector measures with density.
 
 ## References
 
@@ -91,5 +97,19 @@ instance regular_variation_sub [BorelSpace X] [R1Space X] [IsFiniteMeasure μ.va
   (Measure.absolutelyContinuous_of_le variation_sub_le).regular
 
 end NormedAddCommGroup
+
+section WithDensity
+
+variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
+  [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G] {μ : VectorMeasure X F} {g : X → E}
+  {B : E →L[ℝ] F →L[ℝ] G}
+
+/-- On an `R₁` space with its Borel σ-algebra, a vector measure with density with respect to a
+vector measure of finite regular variation has regular variation. -/
+instance regular_variation_withDensity [TopologicalSpace X] [BorelSpace X] [R1Space X]
+    [IsFiniteMeasure μ.variation] [μ.variation.Regular] : (μ.withDensity g B).variation.Regular :=
+  (variation_withDensity_absolutelyContinuous μ g B).regular
+
+end WithDensity
 
 end MeasureTheory.VectorMeasure

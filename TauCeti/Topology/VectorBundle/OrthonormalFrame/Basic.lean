@@ -62,6 +62,10 @@ space of `E` (`TauCeti.OrthonormalFrameBundle.associatedHomeomorph`).
   (`TauCeti.OrthonormalFrameBundle.continuousOn_coord`).
 * `Bundle.Trivialization.orthonormalFrame`: the Gram–Schmidt orthonormal frame over the base set
   of a linear trivialization.
+* `Bundle.Trivialization.orthonormalFrameAt`: that frame extended to every point of the base;
+  reading vectors in it is continuous over the base set
+  (`Bundle.Trivialization.continuousOn_orthonormalFrameAt_symm`), and so is applying it to a fixed
+  vector (`Bundle.Trivialization.continuousOn_totalSpaceMk_orthonormalFrameAt`).
 * `Bundle.Trivialization.orthonormalFrameBundle`: the induced trivialization of the frame bundle.
 * `TauCeti.OrthonormalFrameBundle.associatedRel`: the relation `(p, g w) ∼ (p • g, w)` on pairs of
   a frame and a vector, whose quotient is the associated bundle with fibre `V`.
@@ -72,6 +76,11 @@ space of `E` (`TauCeti.OrthonormalFrameBundle.associatedHomeomorph`).
 
 * `TauCeti.OrthonormalFrameBundle.continuous_totalSpaceMk_frame_apply`: applying frames to vectors
   is jointly continuous.
+* `Bundle.Trivialization.continuous_orthonormalFrame`,
+  `Bundle.Trivialization.continuous_orthonormalFrame_symm_apply`: the local orthonormal frame is a
+  continuous local section, and reading vectors in it is continuous.
+* `TauCeti.continuous_totalSpaceMk_apply_of_orthonormalFrame`: a family of operators on the fibres
+  acts continuously on the total space when it is continuous read in the local orthonormal frames.
 * `TauCeti.OrthonormalFrameBundle.smul_eq_self_iff`,
   `TauCeti.OrthonormalFrameBundle.exists_smul_eq_iff`: the action is free and transitive on fibres.
 * `TauCeti.OrthonormalFrameBundle.exists_trivialization`: the frame bundle is locally trivial,
@@ -125,6 +134,13 @@ theorem mk_eq_mk_iff {b : B} {φ ψ : V ≃ₗᵢ[𝕜] E b} :
   · exact fun h ↦ eq_of_heq (OrthonormalFrameBundle.mk.inj h).2
   · rintro rfl
     rfl
+
+/-- A frame equals the frame over any base point equal to its own, transported to that point. -/
+theorem eq_mk_of_proj_eq {b : B} (p : OrthonormalFrameBundle 𝕜 F E V) (h : p.proj = b) :
+    p = ⟨b, (h ▸ p.frame : V ≃ₗᵢ[𝕜] E b)⟩ := by
+  cases p
+  cases h
+  rfl
 
 section Action
 
@@ -365,34 +381,61 @@ theorem continuous_orthonormalFrame :
       map_sum, map_smul]
   simp [hsum, e.symm_apply_apply_mk y.2]
 
-open scoped Classical in
-/-- The chosen frame over each point: the local frame over the base set of `e`, and the local
-frame of the preferred trivialization elsewhere. Only its values over `e.baseSet` matter. -/
-private def frameAt (y : B) : V ≃ₗᵢ[𝕜] E y :=
-  if h : y ∈ e.baseSet then e.orthonormalFrame c b ⟨y, h⟩
-  else (trivializationAt F E y).orthonormalFrame c b ⟨y, mem_baseSet_trivializationAt F E y⟩
-
-omit [ContinuousFiberNorm F E] in
-private theorem frameAt_of_mem {y : B} (h : y ∈ e.baseSet) :
-    frameAt e c b y = e.orthonormalFrame c b ⟨y, h⟩ := by
-  simp [frameAt, h]
-
-/-- Over the base set of `e`, reading a vector of the total space in the chosen frame is
+/-- Reading a vector of the total space over the base set of `e` in the local orthonormal frame is
 continuous. -/
-private theorem continuousOn_frameAt_symm :
-    ContinuousOn (fun x : TotalSpace F E ↦ (frameAt e c b x.proj).symm x.2)
-      (TotalSpace.proj ⁻¹' e.baseSet) := by
-  rw [continuousOn_iff_continuous_domRestrict]
+theorem continuous_orthonormalFrame_symm_apply :
+    Continuous fun x : (TotalSpace.proj ⁻¹' e.baseSet : Set (TotalSpace F E)) ↦
+      (e.orthonormalFrame c b ⟨x.1.proj, x.2⟩).symm x.1.2 := by
   have hσ (i : ι) : Continuous fun x : (TotalSpace.proj ⁻¹' e.baseSet : Set (TotalSpace F E)) ↦
       (⟨x.1.proj, e.orthonormalBasis c ⟨x.1.proj, x.2⟩ i⟩ : TotalSpace F E) :=
     (e.continuous_orthonormalBasis c i).comp
       (((FiberBundle.continuous_proj F E).comp continuous_subtype_val).subtype_mk _)
-  -- Over the base set, the chosen frame is the Gram–Schmidt frame, so the coordinates of `x`
-  -- in the orthonormal basis `b` are its inner products with the Gram–Schmidt basis vectors.
+  -- The coordinates of `x` in the orthonormal basis `b` are its inner products with the
+  -- Gram–Schmidt basis vectors.
   refine (continuous_finsetSum Finset.univ fun i _ ↦
     ((hσ i).inner_bundle_of_continuousFiberNorm (𝕜 := 𝕜) continuous_subtype_val).smul
       (continuous_const (y := b i))).congr fun x ↦ ?_
-  simp [frameAt_of_mem e c b x.2, orthonormalFrame_symm_apply]
+  simp [orthonormalFrame_symm_apply]
+
+open scoped Classical in
+/-- The chosen orthonormal frame over each point of the base: the Gram–Schmidt frame
+`e.orthonormalFrame c b` over the base set of `e`, and the Gram–Schmidt frame of the preferred
+trivialization elsewhere. Only its values over `e.baseSet` matter. -/
+def orthonormalFrameAt (y : B) : V ≃ₗᵢ[𝕜] E y :=
+  if h : y ∈ e.baseSet then e.orthonormalFrame c b ⟨y, h⟩
+  else (trivializationAt F E y).orthonormalFrame c b ⟨y, mem_baseSet_trivializationAt F E y⟩
+
+omit [ContinuousFiberNorm F E] in
+/-- Over the base set of `e`, the chosen frame is the Gram–Schmidt frame of `e`. -/
+@[simp]
+theorem orthonormalFrameAt_of_mem {y : B} (h : y ∈ e.baseSet) :
+    orthonormalFrameAt e c b y = e.orthonormalFrame c b ⟨y, h⟩ := by
+  simp [orthonormalFrameAt, h]
+
+omit [ContinuousFiberNorm F E] in
+/-- Outside the base set of `e`, the chosen frame is the Gram–Schmidt frame of the preferred
+trivialization at the point. -/
+theorem orthonormalFrameAt_of_notMem {y : B} (h : y ∉ e.baseSet) :
+    orthonormalFrameAt e c b y = (trivializationAt F E y).orthonormalFrame c b
+      ⟨y, mem_baseSet_trivializationAt F E y⟩ := by
+  simp [orthonormalFrameAt, h]
+
+/-- Over the base set of `e`, the chosen frame applied to a fixed vector is a continuous local
+section. -/
+theorem continuousOn_totalSpaceMk_orthonormalFrameAt (v : V) :
+    ContinuousOn (fun y ↦ TotalSpace.mk' F y (orthonormalFrameAt e c b y v)) e.baseSet := by
+  rw [continuousOn_iff_continuous_domRestrict]
+  exact (OrthonormalFrameBundle.continuous_iff.1 (e.continuous_orthonormalFrame c b) v).congr
+    fun y ↦ by simp
+
+/-- Over the base set of `e`, reading a vector of the total space in the chosen frame is
+continuous. -/
+theorem continuousOn_orthonormalFrameAt_symm :
+    ContinuousOn (fun x : TotalSpace F E ↦ (orthonormalFrameAt e c b x.proj).symm x.2)
+      (TotalSpace.proj ⁻¹' e.baseSet) := by
+  rw [continuousOn_iff_continuous_domRestrict]
+  exact (e.continuous_orthonormalFrame_symm_apply c b).congr fun x ↦ by
+    simp [orthonormalFrameAt_of_mem e c b x.2]
 
 variable [CompleteSpace V] [FiniteDimensional 𝕜 V]
 
@@ -401,8 +444,9 @@ trivialization `e`, with fibre the unitary group of `V`: a frame `φ` over `y` g
 `(y, σ_y⁻¹ ∘ φ)`, where `σ = e.orthonormalFrame c b` is the local orthonormal frame. -/
 def orthonormalFrameBundle :
     Trivialization (unitary (V →L[𝕜] V)) (proj : OrthonormalFrameBundle 𝕜 F E V → B) where
-  toFun p := (p.proj, Unitary.linearIsometryEquiv.symm (p.frame.trans (frameAt e c b p.proj).symm))
-  invFun q := op q.2 • (⟨q.1, frameAt e c b q.1⟩ : OrthonormalFrameBundle 𝕜 F E V)
+  toFun p := (p.proj,
+    Unitary.linearIsometryEquiv.symm (p.frame.trans (orthonormalFrameAt e c b p.proj).symm))
+  invFun q := op q.2 • (⟨q.1, orthonormalFrameAt e c b q.1⟩ : OrthonormalFrameBundle 𝕜 F E V)
   source := proj ⁻¹' e.baseSet
   target := e.baseSet ×ˢ univ
   map_source' _ hp := ⟨hp, mem_univ _⟩
@@ -422,15 +466,15 @@ def orthonormalFrameBundle :
     refine continuous_proj.continuousOn.prodMk ?_
     refine Topology.IsInducing.subtypeVal.continuousOn_iff.2
       (continuousOn_clm_apply.2 fun v ↦ ?_)
-    exact (continuousOn_frameAt_symm e c b).comp (continuous_totalSpaceMk_frame v).continuousOn
-      fun p hp ↦ hp
+    exact (continuousOn_orthonormalFrameAt_symm e c b).comp
+      (continuous_totalSpaceMk_frame v).continuousOn fun p hp ↦ hp
   continuousOn_invFun := by
     rw [continuousOn_iff_continuous_domRestrict]
     have hσ : Continuous fun q : (e.baseSet ×ˢ univ : Set (B × unitary (V →L[𝕜] V))) ↦
-        (⟨q.1.1, frameAt e c b q.1.1⟩ : OrthonormalFrameBundle 𝕜 F E V) :=
+        (⟨q.1.1, orthonormalFrameAt e c b q.1.1⟩ : OrthonormalFrameBundle 𝕜 F E V) :=
       ((e.continuous_orthonormalFrame c b).comp
         ((continuous_fst.comp continuous_subtype_val).subtype_mk fun q ↦ q.2.1)).congr fun q ↦
-          mk_eq_mk_iff.2 (frameAt_of_mem e c b q.2.1).symm
+          mk_eq_mk_iff.2 (orthonormalFrameAt_of_mem e c b q.2.1).symm
     exact (continuous_op.comp (continuous_snd.comp continuous_subtype_val)).smul hσ
   baseSet := e.baseSet
   open_baseSet := e.open_baseSet
@@ -447,12 +491,13 @@ theorem baseSet_orthonormalFrameBundle :
 
 private theorem orthonormalFrameBundle_symm_apply' (q : B × unitary (V →L[𝕜] V)) :
     (e.orthonormalFrameBundle c b).toOpenPartialHomeomorph.symm q =
-      op q.2 • (⟨q.1, frameAt e c b q.1⟩ : OrthonormalFrameBundle 𝕜 F E V) :=
+      op q.2 • (⟨q.1, orthonormalFrameAt e c b q.1⟩ : OrthonormalFrameBundle 𝕜 F E V) :=
   rfl
 
 private theorem orthonormalFrameBundle_apply (p : OrthonormalFrameBundle 𝕜 F E V) :
     e.orthonormalFrameBundle c b p =
-      (p.proj, Unitary.linearIsometryEquiv.symm (p.frame.trans (frameAt e c b p.proj).symm)) :=
+      (p.proj,
+        Unitary.linearIsometryEquiv.symm (p.frame.trans (orthonormalFrameAt e c b p.proj).symm)) :=
   rfl
 
 /-- The trivialization reads a frame over the base set of `e` as its quotient by the local
@@ -460,14 +505,14 @@ orthonormal frame. -/
 theorem orthonormalFrameBundle_apply_mk (y : e.baseSet) (φ : V ≃ₗᵢ[𝕜] E y) :
     e.orthonormalFrameBundle c b (⟨y, φ⟩ : OrthonormalFrameBundle 𝕜 F E V) =
       ((y : B), Unitary.linearIsometryEquiv.symm (φ.trans (e.orthonormalFrame c b y).symm)) := by
-  rw [orthonormalFrameBundle_apply, frameAt_of_mem e c b y.2]
+  rw [orthonormalFrameBundle_apply, orthonormalFrameAt_of_mem e c b y.2]
 
 /-- The inverse of the trivialization carries `(y, g)` to the local orthonormal frame at `y`
 acted on by `g`. -/
 theorem orthonormalFrameBundle_symm_apply (y : e.baseSet) (g : unitary (V →L[𝕜] V)) :
     (e.orthonormalFrameBundle c b).toOpenPartialHomeomorph.symm ((y : B), g) =
       op g • (⟨y, e.orthonormalFrame c b y⟩ : OrthonormalFrameBundle 𝕜 F E V) := by
-  rw [orthonormalFrameBundle_symm_apply', frameAt_of_mem e c b y.2]
+  rw [orthonormalFrameBundle_symm_apply', orthonormalFrameAt_of_mem e c b y.2]
 
 /-- The local orthonormal frame corresponds to the identity of the unitary group. -/
 @[simp]
@@ -487,6 +532,52 @@ theorem orthonormalFrameBundle_smul (g : unitary (V →L[𝕜] V)) (p : Orthonor
   simp [orthonormalFrameBundle_apply, ← Unitary.coe_linearIsometryEquiv_apply]
 
 end Bundle.Trivialization
+
+namespace TauCeti
+
+variable [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace (TotalSpace F E)]
+  [TopologicalSpace B] [FiberBundle F E] [VectorBundle 𝕜 F E] [ContinuousFiberNorm F E]
+  [∀ b, FiniteDimensional 𝕜 (E b)]
+
+/-- A family of operators on the fibres acts continuously on the total space as soon as, read in
+the local Gram–Schmidt orthonormal frames of the linear trivializations, it is a continuous family
+of operators of the model. -/
+theorem continuous_totalSpaceMk_apply_of_orthonormalFrame {A : ∀ b, E b →L[𝕜] E b}
+    (hA : ∀ (e : Trivialization F (π F E)) [e.IsLinear 𝕜] (n : ℕ) (c : Module.Basis (Fin n) 𝕜 F),
+      Continuous fun y : e.baseSet ↦
+        ((e.orthonormalFrame c (EuclideanSpace.basisFun (Fin n) 𝕜) y).symm :
+          E y →L[𝕜] EuclideanSpace 𝕜 (Fin n)) ∘L A y ∘L
+          (e.orthonormalFrame c (EuclideanSpace.basisFun (Fin n) 𝕜) y :
+            EuclideanSpace 𝕜 (Fin n) →L[𝕜] E y)) :
+    Continuous fun p : TotalSpace F E ↦ (⟨p.proj, A p.proj p.2⟩ : TotalSpace F E) := by
+  refine continuous_iff_continuousAt.2 fun p₀ ↦ ?_
+  let e := trivializationAt F E p₀.proj
+  have hp₀ : p₀.proj ∈ e.baseSet := mem_baseSet_trivializationAt F E p₀.proj
+  have : FiniteDimensional 𝕜 F :=
+    (e.continuousLinearEquivAt 𝕜 p₀.proj hp₀).toLinearEquiv.finiteDimensional
+  let n := Module.finrank 𝕜 F
+  let c := Module.finBasis 𝕜 F
+  let σ := e.orthonormalFrame c (EuclideanSpace.basisFun (Fin n) 𝕜)
+  let U : Set (TotalSpace F E) := TotalSpace.proj ⁻¹' e.baseSet
+  have hU : U ∈ 𝓝 p₀ := (e.open_baseSet.preimage (FiberBundle.continuous_proj F E)).mem_nhds hp₀
+  refine ContinuousOn.continuousAt ?_ hU
+  rw [continuousOn_iff_continuous_domRestrict]
+  let y : U → e.baseSet := fun x ↦ ⟨x.1.proj, x.2⟩
+  have hy : Continuous y :=
+    ((FiberBundle.continuous_proj F E).comp continuous_subtype_val).subtype_mk _
+  -- Over `e.baseSet`, `A` applied to `v` is the frame `σ` applied to the operator read in `σ`,
+  -- applied to the coordinates of `v` in `σ`; all three pieces are continuous.
+  have hframe : Continuous fun x : U ↦
+      ((⟨y x, σ (y x)⟩ : OrthonormalFrameBundle 𝕜 F E (EuclideanSpace 𝕜 (Fin n))),
+        (((σ (y x)).symm : E (y x) →L[𝕜] EuclideanSpace 𝕜 (Fin n)) ∘L A (y x) ∘L
+          (σ (y x) : EuclideanSpace 𝕜 (Fin n) →L[𝕜] E (y x))) ((σ (y x)).symm x.1.2)) :=
+    ((e.continuous_orthonormalFrame c _).comp hy).prodMk
+      (((hA e n c).comp hy).clm_apply (e.continuous_orthonormalFrame_symm_apply c _))
+  refine (OrthonormalFrameBundle.continuous_totalSpaceMk_frame_apply.comp hframe).congr
+    fun x ↦ ?_
+  simp [y]
+
+end TauCeti
 
 namespace TauCeti.OrthonormalFrameBundle
 
@@ -518,7 +609,7 @@ theorem isOpenMap_totalSpaceMk_frame_apply [FiniteDimensional 𝕜 V] :
   let L : V ≃ₗ[𝕜] F := φ₀.toLinearEquiv.trans (e.continuousLinearEquivAt 𝕜 y₀ hy₀).toLinearEquiv
   have : FiniteDimensional 𝕜 F := L.finiteDimensional
   let c := Module.finBasisOfFinrankEq 𝕜 F L.finrank_eq.symm
-  let σ := Trivialization.frameAt e c (stdOrthonormalBasis 𝕜 V)
+  let σ := Trivialization.orthonormalFrameAt e c (stdOrthonormalBasis 𝕜 V)
   -- The local section through `(φ₀, v₀)`: the chosen frame `σ`, corrected at every point by the
   -- unitary transformation `h₀` that carries `σ y₀` to `φ₀`.
   let h₀ : V ≃ₗᵢ[𝕜] V := φ₀.trans (σ y₀).symm
@@ -527,7 +618,7 @@ theorem isOpenMap_totalSpaceMk_frame_apply [FiniteDimensional 𝕜 V] :
   · have hU : TotalSpace.proj ⁻¹' e.baseSet ∈ 𝓝 (⟨y₀, φ₀ v₀⟩ : TotalSpace F E) :=
       (e.open_baseSet.preimage (FiberBundle.continuous_proj F E)).mem_nhds hy₀
     refine ContinuousAt.prodMk ?_ (h₀.symm.continuous.continuousAt.comp
-      ((Trivialization.continuousOn_frameAt_symm e c _).continuousAt hU))
+      ((Trivialization.continuousOn_orthonormalFrameAt_symm e c _).continuousAt hU))
     -- The corrected frame is the inverse of the frame bundle trivialization at `(x.proj, h₀)`.
     let T := e.orthonormalFrameBundle c (stdOrthonormalBasis 𝕜 V)
     have hT : ContinuousAt T.toOpenPartialHomeomorph.symm

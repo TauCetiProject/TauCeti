@@ -122,7 +122,7 @@ theorem thetaSeries_sqrt_smul_dual_slash_frickeGL (hk : finrank ℝ E = 2 * k) :
   have hL : √(N : ℝ) • dual (√(N : ℝ) • dual L) = L := by
     rw [dual_smul _ hs.ne', dual_dual, smul_smul, mul_inv_cancel₀ hs.ne', one_smul]
   have hcov : (covolume (√(N : ℝ) • dual L) : ℂ) = (N : ℂ) ^ k * (covolume L : ℂ)⁻¹ := by
-    rw [covolume_smul (dual L) hs.ne' MeasureTheory.volume, covolume_dual, hk, abs_of_pos hs,
+    rw [covolume_smul (dual L) MeasureTheory.volume, covolume_dual, hk, abs_of_pos hs,
       pow_mul, Real.sq_sqrt hN.le]
     push_cast
     ring

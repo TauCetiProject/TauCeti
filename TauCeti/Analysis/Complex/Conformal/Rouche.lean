@@ -256,11 +256,13 @@ symmetric in `f` and `g` and strictly weaker than the classical `‖f z - g z‖
 
 The counts are the canonical finitely supported sums `∑ᶠ z ∈ ball c R, analyticOrderNatAt · z`;
 no finiteness witness appears in the statement. -/
-theorem rouche_symm (hR : 0 < R)
+theorem rouche_symm
     (hf : AnalyticOnNhd ℂ f (closedBall c R)) (hg : AnalyticOnNhd ℂ g (closedBall c R))
     (hs : ∀ z ∈ sphere c R, ‖f z - g z‖ < ‖f z‖ + ‖g z‖) :
     (∑ᶠ z ∈ ball c R, analyticOrderNatAt f z)
       = ∑ᶠ z ∈ ball c R, analyticOrderNatAt g z := by
+  rcases le_or_gt R 0 with hR | hR
+  · simp [Metric.ball_eq_empty.2 hR]
   have hnef : ∀ z ∈ sphere c R, f z ≠ 0 := fun z hz => ne_zero_left (hs z hz)
   have hneg : ∀ z ∈ sphere c R, g z ≠ 0 := fun z hz => ne_zero_right (hs z hz)
   have hsplit : (∮ z in C(c, R), logDeriv g z) = (∮ z in C(c, R), logDeriv f z) := by
@@ -291,21 +293,21 @@ and `g` have the same number of zeros in `ball c R`, each counted with multiplic
 
 This is the special case of `TauCeti.rouche_symm` obtained by discarding the nonnegative summand
 `‖g z‖` from the symmetric hypothesis. -/
-theorem rouche (hR : 0 < R)
+theorem rouche
     (hf : AnalyticOnNhd ℂ f (closedBall c R)) (hg : AnalyticOnNhd ℂ g (closedBall c R))
     (hs : ∀ z ∈ sphere c R, ‖f z - g z‖ < ‖f z‖) :
     (∑ᶠ z ∈ ball c R, analyticOrderNatAt f z)
       = ∑ᶠ z ∈ ball c R, analyticOrderNatAt g z :=
-  rouche_symm hR hf hg fun z hz => (hs z hz).trans_le (le_add_of_nonneg_right (norm_nonneg _))
+  rouche_symm hf hg fun z hz => (hs z hz).trans_le (le_add_of_nonneg_right (norm_nonneg _))
 
 /-- **Rouché's theorem**, in the additive phrasing of most textbooks: a holomorphic perturbation
 `g` that is dominated by `f` on the bounding circle does not change the number of zeros inside. -/
-theorem rouche_add (hR : 0 < R)
+theorem rouche_add
     (hf : AnalyticOnNhd ℂ f (closedBall c R)) (hg : AnalyticOnNhd ℂ g (closedBall c R))
     (hs : ∀ z ∈ sphere c R, ‖g z‖ < ‖f z‖) :
     (∑ᶠ z ∈ ball c R, analyticOrderNatAt f z)
       = ∑ᶠ z ∈ ball c R, analyticOrderNatAt (fun w => f w + g w) z :=
-  rouche hR hf (hf.add hg) fun z hz => by simpa using hs z hz
+  rouche hf (hf.add hg) fun z hz => by simpa using hs z hz
 
 /-!
 ## Detecting zeros
@@ -332,13 +334,15 @@ theorem exists_mem_closedBall_ne_zero_of_forall_mem_sphere_ne_zero (hR : 0 ≤ R
 /-- **Rouché's theorem as a zero-detection principle**, symmetric form. Under the hypothesis
 `‖f z - g z‖ < ‖f z‖ + ‖g z‖` on the bounding circle, `f` has a zero in the open disc if and only
 if `g` does. This is how Rouché is normally used: to import a zero of a comparison function. -/
-theorem rouche_symm_exists_eq_zero_iff (hR : 0 < R)
+theorem rouche_symm_exists_eq_zero_iff
     (hf : AnalyticOnNhd ℂ f (closedBall c R)) (hg : AnalyticOnNhd ℂ g (closedBall c R))
     (hs : ∀ z ∈ sphere c R, ‖f z - g z‖ < ‖f z‖ + ‖g z‖) :
     (∃ z ∈ ball c R, f z = 0) ↔ ∃ z ∈ ball c R, g z = 0 := by
+  rcases le_or_gt R 0 with hR | hR
+  · simp [Metric.ball_eq_empty.2 hR]
   have hnef : ∀ z ∈ sphere c R, f z ≠ 0 := fun z hz => ne_zero_left (hs z hz)
   have hneg : ∀ z ∈ sphere c R, g z ≠ 0 := fun z hz => ne_zero_right (hs z hz)
-  have hcount := rouche_symm hR hf hg hs
+  have hcount := rouche_symm hf hg hs
   have hef := hf.finsum_analyticOrderNatAt_ball_eq_zero_iff
     (exists_mem_closedBall_ne_zero_of_forall_mem_sphere_ne_zero hR.le hnef)
   have heg := hg.finsum_analyticOrderNatAt_ball_eq_zero_iff
@@ -356,22 +360,22 @@ theorem rouche_symm_exists_eq_zero_iff (hR : 0 < R)
 /-- **Rouché's theorem as a zero-detection principle**, classical form: under
 `‖f z - g z‖ < ‖f z‖` on the bounding circle, `f` has a zero in the open disc if and only if `g`
 does. -/
-theorem rouche_exists_eq_zero_iff (hR : 0 < R)
+theorem rouche_exists_eq_zero_iff
     (hf : AnalyticOnNhd ℂ f (closedBall c R)) (hg : AnalyticOnNhd ℂ g (closedBall c R))
     (hs : ∀ z ∈ sphere c R, ‖f z - g z‖ < ‖f z‖) :
     (∃ z ∈ ball c R, f z = 0) ↔ ∃ z ∈ ball c R, g z = 0 :=
-  rouche_symm_exists_eq_zero_iff hR hf hg fun z hz =>
+  rouche_symm_exists_eq_zero_iff hf hg fun z hz =>
     (hs z hz).trans_le (le_add_of_nonneg_right (norm_nonneg _))
 
 /-- **Rouché's theorem as a zero-detection principle**, additive form: a holomorphic perturbation
 `g` dominated by `f` on the bounding circle neither creates nor destroys zeros inside, so `f` has a
 zero in the open disc if and only if `f + g` does. This is the phrasing that reads a zero of a
 perturbed function off the unperturbed one, the existence counterpart of `TauCeti.rouche_add`. -/
-theorem rouche_add_exists_eq_zero_iff (hR : 0 < R)
+theorem rouche_add_exists_eq_zero_iff
     (hf : AnalyticOnNhd ℂ f (closedBall c R)) (hg : AnalyticOnNhd ℂ g (closedBall c R))
     (hs : ∀ z ∈ sphere c R, ‖g z‖ < ‖f z‖) :
     (∃ z ∈ ball c R, f z = 0) ↔ ∃ z ∈ ball c R, f z + g z = 0 :=
-  rouche_exists_eq_zero_iff hR hf (hf.add hg) fun z hz => by simpa using hs z hz
+  rouche_exists_eq_zero_iff hf (hf.add hg) fun z hz => by simpa using hs z hz
 
 /-!
 ## Rouché's theorem for a null-homologous cycle

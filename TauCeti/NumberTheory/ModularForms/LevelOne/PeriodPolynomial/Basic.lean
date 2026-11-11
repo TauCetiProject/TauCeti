@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import TauCeti.NumberTheory.ModularForms.BinaryForms
 import TauCeti.LinearAlgebra.End.OrderTwoThree
+import TauCeti.LinearAlgebra.Submodule.Compl
 import TauCeti.NumberTheory.Modular.Relations
 
 /-!
@@ -52,9 +53,11 @@ use this to reduce the trace of an operator exchanging `A` and `B` on `W_w` to i
 * `TauCeti.binaryFormRep_parity_involutive`: the parity action is an involution.
 * `TauCeti.mem_periodPolynomials_binaryFormRep_parity`: for even `w`, the parity involution
   preserves `W_w`.
-* `TauCeti.evenPeriodPolynomials_sup_oddPeriodPolynomials` and
-  `TauCeti.disjoint_evenPeriodPolynomials_oddPeriodPolynomials`: `W_w = W_w^+ ⊕ W_w^-` when
-  `2` is invertible (spanning) and multiplication by `2` is injective (disjointness).
+* `TauCeti.evenPeriodPolynomials_sup_oddPeriodPolynomials`,
+  `TauCeti.disjoint_evenPeriodPolynomials_oddPeriodPolynomials`, and
+  `TauCeti.isCompl_evenPeriodPolynomials_oddPeriodPolynomials`: `W_w = W_w^+ ⊕ W_w^-` when
+  `2` is invertible (spanning and complementarity) and multiplication by `2` is injective
+  (disjointness).
 * `TauCeti.periodPolynomials_eq_bot_of_odd`: `W_w = 0` for odd `w` when multiplication by `2`
   is injective.
 * `TauCeti.mem_evenPeriodPolynomials_eisensteinPeriodPolynomial`: `X^w - Y^w ∈ W_w^+` for even
@@ -296,6 +299,19 @@ theorem evenPeriodPolynomials_sup_oddPeriodPolynomials [Invertible (2 : R)] :
     rw [periodPolynomials_eq_bot_of_odd h2 hw] at hle
     rw [periodPolynomials_eq_bot_of_odd h2 hw]
     exact bot_unique hle
+
+/-- When `2` is invertible, `W_w` is the internal direct sum of `W_w^+` and `W_w^-`. -/
+theorem isCompl_evenPeriodPolynomials_oddPeriodPolynomials [Invertible (2 : R)] (w : ℕ) :
+    IsCompl ((evenPeriodPolynomials R w).comap (periodPolynomials R w).subtype)
+      ((oddPeriodPolynomials R w).comap (periodPolynomials R w).subtype) :=
+  Submodule.isCompl_comap_subtype
+    (disjoint_evenPeriodPolynomials_oddPeriodPolynomials
+      (isUnit_of_invertible (2 : R)).mul_right_injective)
+    (le_of_eq <| by
+      have heven : evenPeriodPolynomials R w ≤ periodPolynomials R w := inf_le_left
+      have hodd : oddPeriodPolynomials R w ≤ periodPolynomials R w := inf_le_left
+      rw [inf_of_le_right heven, inf_of_le_right hodd,
+        evenPeriodPolynomials_sup_oddPeriodPolynomials])
 
 /-! ### The Eisenstein polynomial -/
 

@@ -13,6 +13,7 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.Equiv
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.Presentation
 import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.Algebra.Group.Subgroup.Ker
+import TauCeti.NumberTheory.Padics.Matrix
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.CrossedHom
 
 /-!
@@ -81,42 +82,26 @@ attribute [local instance 2000] Ring.toAddCommGroup
 
 variable {p : ℕ} [Fact p.Prime] {X : Type u}
 
-section Presented
-
-variable [Finite X] {r : freeProP p X}
-
-/-- **A one-relator pro-`p` group whose relator has nondegenerate degree-one form has exactly one
-continuous character with the prescription property** (Labute, Theorem 4, without normal forms).
-Let `F` be the free pro-`p` group on a finite type `X` and `r ∈ Φ(F)` a relator whose class in
-`gr_1(F)` has nondegenerate degree-one form. Then the presented group `⟨X ∣ r⟩` has exactly one
-continuous character `χ : ⟨X ∣ r⟩ → ℤ_pˣ` with the prescription property, that is, exactly one
-continuous character for which every continuous crossed homomorphism `F → ℤ_p` for the induced
-character of `F` vanishes at `r` (the relator criterion,
-`TauCeti.presentedProP.hasPrescriptionProperty_iff_forall_isCrossedHom_eq_zero`). -/
-theorem existsUnique_hasPrescriptionProperty_presentedProP_of_nondegenerate
+/-- **Newton's method for the relator.** Under a nondegenerate degree-one form, there is exactly
+one continuous character of the free pro-`p` group, trivial modulo `p` on the generators, whose
+Kronecker crossed homomorphisms all vanish at the relator. -/
+private theorem existsUnique_character_forall_crossedHom_single_eq_zero [Finite X] [DecidableEq X]
+    {r : freeProP p X}
     (hr : r ∈ proPFrattini p (freeProP p X))
     (hnd : (degreeOneForm (gradedMk p (freeProP p X) 1
       ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le hr⟩)).Nondegenerate) :
-    ∃! χ : presentedProP p X {r} →ₜ* ℤ_[p]ˣ, HasPrescriptionProperty χ := by
+    ∃! χ : freeProP p X →ₜ* ℤ_[p]ˣ, (∀ i, (p : ℤ_[p]) ∣ (χ (of i) : ℤ_[p]) - 1) ∧
+      ∀ j, crossedHom χ (Pi.single j 1) r = 0 := by
   classical
   have := Fintype.ofFinite X
   set n : pLowerCentralSeries p (freeProP p X) 1 :=
     ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le hr⟩
-  set ρ := gradedMk p (freeProP p X) 1 n with hρ
   -- The matrix of the degree-one form in the dual basis of the generators, lifted to `ℤ_p` and
   -- transposed; its determinant is a unit because the form is nondegenerate.
-  set B : Matrix X X (ZMod p) := LinearMap.BilinForm.toMatrix (dualBasis p X) (degreeOneForm ρ)
-    with hB
-  have hBdet : B.det ≠ 0 :=
-    (LinearMap.BilinForm.nondegenerate_iff_det_ne_zero (dualBasis p X)).1 hnd
-  set M : Matrix X X ℤ_[p] := (B.map (ZMod.cast : ZMod p → ℤ_[p]))ᵀ with hM
-  have hMdet : IsUnit M.det := by
-    have h1 : (PadicInt.toZMod (p := p)).mapMatrix M = Bᵀ := by
-      ext i j
-      simp [hM, ZMod.ringHom_map_cast]
-    rw [← IsLocalRing.notMem_maximalIdeal, ← PadicInt.ker_toZMod, RingHom.mem_ker, RingHom.map_det,
-      h1, Matrix.det_transpose]
-    exact hBdet
+  set M : Matrix X X ℤ_[p] := ((LinearMap.BilinForm.toMatrix (dualBasis p X)
+    (degreeOneForm (gradedMk p (freeProP p X) 1 n))).map (ZMod.cast : ZMod p → ℤ_[p]))ᵀ with hM
+  have hMdet : IsUnit M.det := isUnit_det_transpose_map_cast _
+    ((LinearMap.BilinForm.nondegenerate_iff_det_ne_zero (dualBasis p X)).1 hnd)
   -- The character of `F` with values `v` on the generators, for `v ≡ 1 mod p`.
   let ψ : ∀ v : X → ℤ_[p], (∀ i, (p : ℤ_[p]) ∣ v i - 1) → freeProP p X →ₜ* ℤ_[p]ˣ := fun v hv ↦
     characterOfUnits p X fun i ↦ unitsPrincipalMk one_ne_zero (by rw [pow_one]; exact hv i)
@@ -142,18 +127,10 @@ theorem existsUnique_hasPrescriptionProperty_presentedProP_of_nondegenerate
     have hv₁ : ∀ i, (p : ℤ_[p]) ∣ v i - 1 := fun i ↦ by simpa using hv i
     have hv'₁ : ∀ i, (p : ℤ_[p]) ∣ v' i - 1 := fun i ↦ by simpa using hv' i
     rw [hA v hv₁ j, hA v' hv'₁ j]
-    have h := IsCrossedHom.pow_succ_dvd_sub_sub_sum_degreeOneForm (χ := ψ v hv₁) (χ' := ψ v' hv'₁)
-      (k := k) (fun i ↦ by rw [hψ v' hv'₁, hψ v hv₁]; exact hvv' i)
-      (isCrossedHom_crossedHom _ (Pi.single j 1))
-      (isCrossedHom_crossedHom _ (Pi.single j 1)) (continuous_crossedHom _ _)
-      (continuous_crossedHom _ _) (fun x ↦ by rw [crossedHom_of, crossedHom_of]) n
-    rw [← hρ] at h
-    convert h using 2
-    simp only [Matrix.mulVec, dotProduct, hM, Matrix.transpose_apply, Matrix.map_apply, hψ,
-      Pi.sub_apply, hB, LinearMap.BilinForm.toMatrix_apply, crossedHom_of, Pi.single_apply,
-      mul_ite, mul_one, mul_zero, ite_mul, zero_mul, Finset.sum_ite_eq', Finset.mem_univ,
-      ite_true]
-    exact Finset.sum_congr rfl fun i _ ↦ by ring
+    have key := pow_succ_dvd_crossedHom_single_sub_sub_mulVec (χ := ψ v hv₁) (χ' := ψ v' hv'₁)
+      (fun i ↦ by rw [hψ v' hv'₁, hψ v hv₁]; exact hvv' i) n j
+    simp only [hψ] at key
+    exact key
   -- Newton's method: the unique zero of `A` congruent to `1` modulo `p`.
   have : IsAdicComplete (Ideal.span {(p : ℤ_[p])}) ℤ_[p] := by
     rw [← PadicInt.maximalIdeal_eq_span_p]
@@ -161,20 +138,43 @@ theorem existsUnique_hasPrescriptionProperty_presentedProP_of_nondegenerate
   obtain ⟨v, ⟨hv, hAv⟩, huniq⟩ :=
     IsAdicComplete.existsUnique_eq_zero_of_isUnit_det (p : ℤ_[p]) A hMdet 1 h₀ hlin
   have hv₁ : ∀ i, (p : ℤ_[p]) ∣ v i - 1 := fun i ↦ by simpa using hv i
-  set χF := ψ v hv₁
-  -- Every continuous crossed homomorphism for `χF` kills `r`, by linearity in the generator values.
-  have hkill : ∀ F : freeProP p X → ℤ_[p], Continuous F → IsCrossedHom χF F → F r = 0 := by
-    intro F hFc hF
-    rw [hF.eq_crossedHom hFc, crossedHom_apply_eq_sum]
-    refine Finset.sum_eq_zero fun j _ ↦ ?_
-    rw [← hA v hv₁ j, hAv, Pi.zero_apply, mul_zero]
+  refine ⟨ψ v hv₁, ⟨fun i ↦ by rw [hψ v hv₁ i]; exact hv₁ i, fun j ↦ by rw [← hA v hv₁, hAv]; rfl⟩,
+    fun χ' ⟨hχ', hχ'₀⟩ ↦ ?_⟩
+  have hχ'₁ : ∀ i, (p : ℤ_[p]) ∣ (χ' (of i) : ℤ_[p]) - 1 := hχ'
+  have hψ' : ψ (fun i ↦ (χ' (of i) : ℤ_[p])) hχ'₁ = χ' := hom_ext fun x ↦ Units.ext (hψ _ hχ'₁ x)
+  have hveq : (fun i ↦ (χ' (of i) : ℤ_[p])) = v := huniq _
+    ⟨fun i ↦ by simpa using hχ' i, funext fun j ↦ by rw [hA _ hχ'₁ j, hψ']; exact hχ'₀ j⟩
+  rw [← hψ']
+  exact hom_ext fun x ↦ Units.ext (by rw [hψ _ hχ'₁, hψ v hv₁]; exact congrFun hveq x)
+
+section Presented
+
+variable [Finite X] {r : freeProP p X}
+
+/-- **A one-relator pro-`p` group whose relator has nondegenerate degree-one form has exactly one
+continuous character with the prescription property** (Labute, Theorem 4, without normal forms).
+Let `F` be the free pro-`p` group on a finite type `X` and `r ∈ Φ(F)` a relator whose class in
+`gr_1(F)` has nondegenerate degree-one form. Then the presented group `⟨X ∣ r⟩` has exactly one
+continuous character `χ : ⟨X ∣ r⟩ → ℤ_pˣ` with the prescription property, that is, exactly one
+continuous character for which every continuous crossed homomorphism `F → ℤ_p` for the induced
+character of `F` vanishes at `r` (the relator criterion,
+`TauCeti.presentedProP.hasPrescriptionProperty_iff_forall_isCrossedHom_eq_zero`). -/
+theorem existsUnique_hasPrescriptionProperty_presentedProP_of_nondegenerate
+    (hr : r ∈ proPFrattini p (freeProP p X))
+    (hnd : (degreeOneForm (gradedMk p (freeProP p X) 1
+      ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le hr⟩)).Nondegenerate) :
+    ∃! χ : presentedProP p X {r} →ₜ* ℤ_[p]ˣ, HasPrescriptionProperty χ := by
+  classical
+  have := Fintype.ofFinite X
+  obtain ⟨χF, ⟨-, hZ⟩, huniq⟩ := existsUnique_character_forall_crossedHom_single_eq_zero hr hnd
+  have hkill := (ContinuousMonoidHom.forall_isCrossedHom_apply_eq_zero_iff χF r).2 hZ
   -- In particular `χF - 1` kills `r`, so `χF` descends to the presented group.
   have hχr : χF r = 1 := by
     have h1 : IsCrossedHom χF fun g ↦ (χF g : ℤ_[p]) - 1 := isCrossedHom_iff.2 fun g h ↦ by
       rw [_root_.map_mul, Units.val_mul]
       ring
-    have h2 := hkill _ ((Units.continuous_val.comp χF.continuous).sub continuous_const) h1
-    exact Units.ext (sub_eq_zero.1 h2)
+    exact Units.ext (sub_eq_zero.1 (hkill _
+      ((Units.continuous_val.comp χF.continuous).sub continuous_const) h1))
   have hrel : ∀ s ∈ ({r} : Set (freeProP p X)), χF s = 1 := fun s hs ↦ by
     rw [Set.mem_singleton_iff.1 hs]
     exact hχr
@@ -184,25 +184,17 @@ theorem existsUnique_hasPrescriptionProperty_presentedProP_of_nondegenerate
     rw [Set.mem_singleton_iff.1 hs]
     rw [presentedProP.lift_comp_mk] at hF
     exact hkill F hFc hF
-  -- Uniqueness: the generator values of any character with the prescription property are a zero
-  -- of `A` congruent to `1` modulo `p`, hence equal to `v`.
-  · set χ₂F := χ₂.comp (presentedProP.mk p {r}) with hχ₂F
-    have hv₂ : ∀ i, (p : ℤ_[p]) ∣ (χ₂F (of i) : ℤ_[p]) - (1 : X → ℤ_[p]) i := fun i ↦ by
-      rw [Pi.one_apply, ← pow_one (p : ℤ_[p])]
-      exact mem_unitsPrincipal_iff.1 ((presentedProP.isProP p X {r}).mem_unitsPrincipal_one χ₂ _)
-    have hv₂' : ∀ i, (p : ℤ_[p]) ∣ (χ₂F (of i) : ℤ_[p]) - 1 := fun i ↦ by simpa using hv₂ i
-    have hψ₂ : ψ (fun i ↦ (χ₂F (of i) : ℤ_[p])) hv₂' = χ₂F :=
-      hom_ext fun x ↦ Units.ext (hψ _ hv₂' x)
-    have hA₂ : A (fun i ↦ (χ₂F (of i) : ℤ_[p])) = 0 := by
-      funext j
-      rw [hA _ hv₂' j, hψ₂, Pi.zero_apply]
-      exact (presentedProP.hasPrescriptionProperty_iff_forall_isCrossedHom_eq_zero
-        (Set.singleton_subset_iff.2 hr) χ₂).1 hχ₂ _ (continuous_crossedHom _ _)
-        (isCrossedHom_crossedHom _ _) r rfl
-    have hveq : (fun i ↦ (χ₂F (of i) : ℤ_[p])) = v := huniq _ ⟨hv₂, hA₂⟩
-    refine presentedProP.hom_ext ?_
-    rw [presentedProP.lift_comp_mk, ← hχ₂F, ← hψ₂]
-    exact hom_ext fun x ↦ Units.ext (by rw [hψ _ hv₂', hψ v hv₁]; exact congrFun hveq x)
+  -- Uniqueness: a character with the prescription property is trivial modulo `p` on the
+  -- generators and has vanishing Kronecker values at `r`, hence equals `χF`.
+  · refine presentedProP.hom_ext ?_
+    rw [presentedProP.lift_comp_mk]
+    refine huniq _ ⟨fun i ↦ ?_,
+      (ContinuousMonoidHom.forall_isCrossedHom_apply_eq_zero_iff _ r).1 ?_⟩
+    · have := mem_unitsPrincipal_iff.1
+        ((presentedProP.isProP p X {r}).mem_unitsPrincipal_one χ₂ (presentedProP.mk p {r} (of i)))
+      simpa using this
+    · exact fun F hFc hF ↦ (presentedProP.hasPrescriptionProperty_iff_forall_isCrossedHom_eq_zero
+        (Set.singleton_subset_iff.2 hr) χ₂).1 hχ₂ F hFc hF r rfl
 
 end Presented
 

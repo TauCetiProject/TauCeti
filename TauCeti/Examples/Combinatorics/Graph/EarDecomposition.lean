@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Combinatorics.Graph.Connectivity.Ear.EdgeConnected
+import TauCeti.Combinatorics.Graph.Connectivity.Ear.Characterization
 import TauCeti.Combinatorics.Graph.Orientation.Walk
 import Mathlib.Combinatorics.Quiver.ConnectedComponent
 
@@ -48,7 +48,7 @@ example :
 example :
     let G : Graph ℕ ℕ := banana 0 1 {0, 1}
     ∃ (c : G.Walk 0 0) (d : G.EarDecomposition G) (hlen : d.length = 1),
-      c.IsCycle ∧ c.edges = [0, 1] ∧ ¬ d.start.IsCycle ∧ d.kindAt ⟨0, by omega⟩ = .closed := by
+      c.IsCycle ∧ c.edges = [0, 1] ∧ d.IsVertexStart ∧ d.kindAt ⟨0, by omega⟩ = .closed := by
   intro G
   have h01 : G.IsLink 0 0 1 := by simp [G]
   have h10 : G.IsLink 1 1 0 := by simp [G]
@@ -67,21 +67,11 @@ example :
       omega
     · ext e
       simp [ear, c, G, IsLink.edges_toWalk]
-  let d0 : G.EarDecomposition (Graph.noEdge {0} ℕ) :=
-    EarDecomposition.vertex ⟨0, by simp [G]⟩
-  let d : G.EarDecomposition G := (d0.snoc ear).copy hadd
-  have hlen : d.length = 1 := by simp [d, d0]
-  refine ⟨c, d, hlen, hc, by simp [c, IsLink.edges_toWalk], by simp [d, d0], ?_⟩
-  have hidx : (⟨0, by omega⟩ : Fin d.length) =
-      Fin.cast (EarDecomposition.length_copy _ hadd).symm
-        (Fin.cast (EarDecomposition.length_snoc d0 ear).symm (Fin.last d0.length)) := by
-    ext
-    simp [d0]
-  rw [hidx]
+  let d : G.EarDecomposition G := (EarDecomposition.ofEar ear).copy hadd
+  refine ⟨c, d, by simp [d], hc, by simp [c, IsLink.edges_toWalk], by simp [d], ?_⟩
   dsimp only [d]
-  rw [EarDecomposition.kindAt_copy, EarDecomposition.kindAt_snoc_last]
-  dsimp only [ear]
-  simp
+  rw [EarDecomposition.kindAt_copy, EarDecomposition.kindAt_ofEar]
+  simp [ear]
 
 -- Orienting edge `0` from `0` to `1` and edge `1` from `1` to `0` makes `banana 0 1 {0, 1}`
 -- strongly connected.
@@ -188,12 +178,13 @@ example :
   have hconn : G.edgeConnectivity = 1 := by
     dsimp only [G]
     rw [edgeConnectivity_banana (by decide), Set.encard_singleton]
-  have hfin : Finite E(G) := by
+  have : Finite E(G) := by
     have : E(G) = {0} := by simp [G]
     rw [this]
     infer_instance
+  have : Nonempty V(G) := ⟨⟨0, by simp [G]⟩⟩
   have hnoEar : ¬ Nonempty (G.EarDecomposition G) := by
-    rw [← G.isEdgeConnected_two_iff_nonempty_earDecomposition ⟨0, by simp [G]⟩,
+    rw [← G.isEdgeConnected_two_iff_nonempty_earDecomposition,
       isEdgeConnected_iff_le_edgeConnectivity, hconn]
     decide
   refine ⟨hbridge, hconn, hnoEar, fun o hsc ↦ ?_⟩
@@ -226,7 +217,7 @@ example :
 example :
     let G : Graph ℕ ℕ := bouquet 0 {0}
     (∃ (c : G.Walk 0 0) (d : G.EarDecomposition G) (hlen : d.length = 1),
-        c.IsCycle ∧ c.edges = [0] ∧ ¬ d.start.IsCycle ∧ d.kindAt ⟨0, by omega⟩ = .closed) ∧
+        c.IsCycle ∧ c.edges = [0] ∧ d.IsVertexStart ∧ d.kindAt ⟨0, by omega⟩ = .closed) ∧
       (∀ e, ¬ G.IsBridge e) ∧
       G.IsEdgeConnected 2 ∧
       G.edgeConnectivity = ⊤ ∧
@@ -248,22 +239,12 @@ example :
       dsimp only [ear, G]
       rw [Ear.edgeSet_add, Ear.edgeSet_toGraph, Ear.toWalk_ofIsLoopAt]
       simp [IsLink.edges_toWalk]
-  let d0 : G.EarDecomposition (Graph.noEdge {0} ℕ) :=
-    EarDecomposition.vertex ⟨0, by simp [G]⟩
-  let d : G.EarDecomposition G := (d0.snoc ear).copy hadd
-  have hlen : d.length = 1 := by simp [d, d0]
-  refine ⟨⟨hl.toWalk, d, hlen, hl.isCycle_toWalk, by simp [IsLink.edges_toWalk],
-    by simp [d, d0], ?_⟩, ?_, d.isEdgeConnected_two, ?_, fun S ↦ ?_⟩
-  · have hidx : (⟨0, by omega⟩ : Fin d.length) =
-        Fin.cast (EarDecomposition.length_copy _ hadd).symm
-          (Fin.cast (EarDecomposition.length_snoc d0 ear).symm (Fin.last d0.length)) := by
-      ext
-      simp [d0]
-    rw [hidx]
-    dsimp only [d]
-    rw [EarDecomposition.kindAt_copy, EarDecomposition.kindAt_snoc_last]
-    dsimp only [ear]
-    simp
+  let d : G.EarDecomposition G := (EarDecomposition.ofEar ear).copy hadd
+  refine ⟨⟨hl.toWalk, d, by simp [d], hl.isCycle_toWalk, by simp [IsLink.edges_toWalk],
+    by simp [d], ?_⟩, ?_, d.isEdgeConnected_two, ?_, fun S ↦ ?_⟩
+  · dsimp only [d]
+    rw [EarDecomposition.kindAt_copy, EarDecomposition.kindAt_ofEar]
+    simp [ear]
   · intro e he
     have he0 : e = 0 := by simpa [G] using he.mem_edgeSet
     subst he0

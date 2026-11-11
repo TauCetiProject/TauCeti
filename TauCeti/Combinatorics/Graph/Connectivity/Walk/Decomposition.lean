@@ -16,8 +16,7 @@ uses vertices and edge identities in their original order, so it can replace a w
 connectivity arguments without losing the distinction between parallel edges.
 
 The interface is adapted from Mathlib's `SimpleGraph.Walk.takeUntil`,
-`SimpleGraph.Walk.dropUntil`, `SimpleGraph.Walk.exists_mem_support_forall_mem_support_imp_eq`,
-and `SimpleGraph.Walk.bypass`.
+`SimpleGraph.Walk.dropUntil`, and `SimpleGraph.Walk.bypass`.
 -/
 
 public section
@@ -213,41 +212,52 @@ protected theorem IsPath.dropUntil {p : G.Walk x y} (hp : p.IsPath)
   (isPath_def _).mpr <|
     List.Nodup.sublist (p.support_dropUntil_suffix_support ha).sublist ((isPath_def p).mp hp)
 
-/-- Along any walk visiting a vertex set `S`, there is a first visited vertex of `S`: no vertex of
-`S` other than it appears in the initial segment up to it. -/
-theorem exists_mem_support_forall_mem_support_imp_eq {S : Set α} (p : G.Walk x y)
-    (hS : ∃ z ∈ p.support, z ∈ S) :
-    ∃ z ∈ S, ∃ hz : z ∈ p.support,
-      ∀ w ∈ S, w ∈ (p.takeUntil z hz).support → w = z := by
-  induction p with
-  | @nil u =>
-      obtain ⟨z, hz, hzS⟩ := hS
-      simp only [support_nil, List.mem_singleton] at hz
-      subst z
-      refine ⟨u, hzS, start_mem_support _, fun w _ hw ↦ ?_⟩
-      rw [takeUntil_first] at hw
-      simpa using hw
-  | @cons x u y e h p ih =>
-      by_cases hxS : x ∈ S
-      · refine ⟨x, hxS, start_mem_support _, fun w _ hw ↦ ?_⟩
-        rw [takeUntil_first] at hw
-        simpa using hw
-      · have hS' : ∃ z ∈ p.support, z ∈ S := by
-          obtain ⟨z, hz, hzS⟩ := hS
-          simp only [support_cons, List.mem_cons] at hz
-          rcases hz with rfl | hz
-          · exact absurd hzS hxS
-          · exact ⟨z, hz, hzS⟩
-        obtain ⟨z, hzS, hz, hmin⟩ := ih hS'
-        have hxz : x ≠ z := fun h ↦ hxS (h ▸ hzS)
-        have hz_cons : z ∈ (cons e h p).support := by simp [hz]
-        refine ⟨z, hzS, hz_cons, fun w hwS hw ↦ ?_⟩
-        rw [takeUntil_cons_of_ne e h p hxz hz_cons, support_cons, List.mem_cons] at hw
-        rcases hw with rfl | hw
-        · exact absurd hwS hxS
-        · exact hmin w hwS hw
-
 end Split
+
+/-- A path from outside a vertex set to a vertex in it has an initial segment whose endpoint is
+the first visited vertex in the set.  Every other vertex of the segment is outside the set, and
+the segment uses only vertices and edge identities of the original path. -/
+theorem IsPath.exists_initialSegment_to_set {p : G.Walk x y} (hp : p.IsPath)
+    {S : Set α} (hx : x ∉ S) (hy : y ∈ S) :
+    ∃ (z : α) (q : G.Walk x z), q.IsPath ∧ z ∈ S ∧
+      (∀ w ∈ q.support, w ≠ x → w ≠ z → w ∉ S) ∧
+      q.support ⊆ p.support ∧ q.edges ⊆ p.edges := by
+  induction p with
+  | nil => exact (hx hy).elim
+  | @cons x y z e h p ih =>
+      have hp' := (isPath_cons e h p).mp hp
+      by_cases hyS : y ∈ S
+      · refine ⟨y, .cons e h .nil, ?_, hyS, ?_, ?_, ?_⟩
+        · have hxy : x ≠ y := by
+            intro hxy
+            subst y
+            exact hx hyS
+          exact (isPath_cons e h .nil).mpr
+            ⟨(isPath_def .nil).mpr (by simp),
+              by simpa only [support_nil, List.mem_singleton] using hxy⟩
+        · simp
+        · intro w hw
+          simp only [support_cons, support_nil, List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
+          rcases hw with rfl | rfl
+          · exact Or.inl rfl
+          · exact Or.inr p.start_mem_support
+        · simp
+      · obtain ⟨w, q, hq, hwS, hinter, hsupport, hedges⟩ := ih hp'.1 hyS hy
+        refine ⟨w, .cons e h q, (isPath_cons e h q).mpr ⟨hq, ?_⟩, hwS, ?_, ?_, ?_⟩
+        · exact fun hmem ↦ hp'.2 (hsupport hmem)
+        · intro a ha hax haw
+          simp only [support_cons, List.mem_cons] at ha
+          rcases ha with rfl | ha
+          · exact (hax rfl).elim
+          · by_cases hay : a = y
+            · exact hay ▸ hyS
+            · exact hinter a ha hay haw
+        · intro a ha
+          simp only [support_cons, List.mem_cons] at ha ⊢
+          exact ha.elim (fun h ↦ Or.inl h) fun h ↦ Or.inr (hsupport h)
+        · intro f hf
+          simp only [edges_cons, List.mem_cons] at hf ⊢
+          exact hf.elim (fun h ↦ Or.inl h) fun h ↦ Or.inr (hedges h)
 
 /-- An edge identity occurs on a walk exactly when the walk can be split around one traversal of
 that edge. -/
@@ -268,23 +278,6 @@ theorem mem_edges_iff_exists_append {p : G.Walk x y} {e : β} :
   · rintro ⟨u, v, h, q, r, rfl⟩
     simp [edges_append]
 
-/-- Every edge traversed by a path links a visited vertex distinct from the path's endpoint to a
-visited vertex distinct from the path's starting point. -/
-theorem IsPath.exists_isLink_mem_support_ne {p : G.Walk x y} (hp : p.IsPath) {e : β}
-    (he : e ∈ p.edges) :
-    ∃ u v, G.IsLink e u v ∧ u ∈ p.support ∧ v ∈ p.support ∧ u ≠ y ∧ v ≠ x := by
-  induction p with
-  | nil => simp at he
-  | @cons x z y f hf p ih =>
-    rw [isPath_cons] at hp
-    simp only [edges_cons, List.mem_cons] at he
-    rcases he with rfl | he
-    · exact ⟨x, z, hf, start_mem_support _, by simp [p.start_mem_support],
-        fun hxy ↦ hp.2 (hxy ▸ p.end_mem_support), fun hzx ↦ hp.2 (hzx ▸ p.start_mem_support)⟩
-    · obtain ⟨u, v, huv, hu, hv, huy, _⟩ := ih hp.1 he
-      exact ⟨u, v, huv, by simp [hu], by simp [hv],
-        huy, fun hvx ↦ hp.2 (hvx ▸ hv)⟩
-
 /-- A path whose endpoints are joined by an edge that it traverses consists of that edge alone. -/
 theorem IsPath.eq_toWalk_of_isLink_mem_edges {p : G.Walk x y} (hp : p.IsPath)
     (h : G.IsLink e x y) (he : e ∈ p.edges) : p = h.toWalk := by
@@ -300,6 +293,15 @@ theorem IsPath.eq_toWalk_of_isLink_mem_edges {p : G.Walk x y} (hp : p.IsPath)
   · subst u
     subst v
     exact absurd (hp.2.2 x q.start_mem_support x r.start_mem_support rfl) (by simp)
+
+/-- A path cannot traverse a loop edge. -/
+theorem IsPath.not_isLoopAt_of_mem_edges {p : G.Walk x y} (hp : p.IsPath)
+    (he : e ∈ p.edges) (a : α) : ¬G.IsLoopAt e a := by
+  intro hloop
+  obtain ⟨u, v, huv, q, r, rfl⟩ := mem_edges_iff_exists_append.1 he
+  rw [isPath_def, support_append, support_cons, List.tail_cons, List.nodup_append] at hp
+  rcases huv.eq_and_eq_or_eq_and_eq hloop with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  all_goals exact hp.2.2 _ q.end_mem_support _ r.start_mem_support rfl
 
 section Extraction
 

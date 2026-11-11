@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Differential
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Monoid
 
 /-!
 # The compact real Spin projection is a local diffeomorphism
@@ -111,24 +110,13 @@ theorem realCliffordSpinToSpecialOrthogonalRangeLieEquiv_toLieHom (n : ℕ) :
     (realCliffordSpinToSpecialOrthogonalRangeLieEquiv n).toLieHom =
       realCliffordSpinToSpecialOrthogonalRangeLieMap n := (rfl)
 
-/-- At the identity, the smooth Spin projection has a smooth local inverse, since its Lie
-differential is the bivector equivalence. -/
-private theorem isLocalDiffeomorphAt_realCliffordSpinToSpecialOrthogonalSmoothRange_one (n : ℕ) :
-    IsLocalDiffeomorphAt 𝓘(ℝ, SpinLieModel(n)) 𝓘(ℝ, SpecialOrthogonalLieModel(n)) ∞
-      (realCliffordSpinToSpecialOrthogonalSmoothRange n) 1 := by
-  apply ContMDiffMonoidMorphism.isLocalDiffeomorphAt_of_lieMap_bijective
-    (realCliffordSpinToSpecialOrthogonalSmoothRange n)
-  simpa only [realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_lieMap] using
-    realCliffordSpinToSpecialOrthogonalRangeLieMap_bijective n
-
 /-- The smooth compact real Spin projection is a local diffeomorphism on the native
 units-range Lie-group carriers. This includes the native trivial group in dimension zero. -/
 theorem isLocalDiffeomorph_realCliffordSpinToSpecialOrthogonalSmoothRange (n : ℕ) :
     IsLocalDiffeomorph 𝓘(ℝ, SpinLieModel(n)) 𝓘(ℝ, SpecialOrthogonalLieModel(n)) ∞
       (realCliffordSpinToSpecialOrthogonalSmoothRange n) := by
-  apply (MonoidHom.isLocalDiffeomorph_iff_isLocalDiffeomorphAt
-    (I := 𝓘(ℝ, SpinLieModel(n))) (I' := 𝓘(ℝ, SpecialOrthogonalLieModel(n)))
-    (realCliffordSpinToSpecialOrthogonalSmoothRange n).toMonoidHom 1).mpr
-  exact isLocalDiffeomorphAt_realCliffordSpinToSpecialOrthogonalSmoothRange_one n
+  apply (realCliffordSpinToSpecialOrthogonalSmoothRange n).isLocalDiffeomorph_of_lieMap_bijective
+  simpa only [realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_lieMap] using
+    realCliffordSpinToSpecialOrthogonalRangeLieMap_bijective n
 
 end TauCeti.CliffordAlgebra

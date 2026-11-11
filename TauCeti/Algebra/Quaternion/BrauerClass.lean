@@ -58,7 +58,8 @@ translates into the solvability of the norm equation `b = x² - ay²` and into t
   **bilinearity of the quaternion symbol**.
 * `TauCeti.BrauerGroup.quaternionClassOnSquareClasses`: the symbol as a pairing of square classes,
   which is symmetric and bilinear (`quaternionClassOnSquareClasses_comm`,
-  `quaternionClassOnSquareClasses_add_left`, `quaternionClassOnSquareClasses_add_right`).
+  `quaternionClassOnSquareClasses_add_left`, `quaternionClassOnSquareClasses_add_right`) with
+  `2`-torsion values (`quaternionClassOnSquareClasses_sq`).
 * `TauCeti.BrauerGroup.quaternionClass_congr`: isometric binary forms `⟨a,b⟩ ≅ ⟨c,d⟩`
   have equal symbols `[(a,b)] = [(c,d)]`.
 
@@ -177,7 +178,7 @@ theorem quaternionClass_comm (a b : Kˣ) : quaternionClass a b = quaternionClass
 theorem quaternionClass_mul_sq_right (a b c : Kˣ) :
     quaternionClass a (b * c ^ 2) = quaternionClass a b := by
   rw [mul_comm b (c ^ 2)]
-  exact quaternionClass_eq_of_algEquiv (QuaternionAlgebra.rescaleJEquiv (a : K) (b : K) c)
+  exact quaternionClass_eq_of_algEquiv (QuaternionAlgebra.rescaleJEquiv (a : K) 0 (b : K) c)
 
 /-- The quaternion symbol is invariant under multiplying its first argument by a square. -/
 theorem quaternionClass_mul_sq_left (a b c : Kˣ) :
@@ -372,6 +373,13 @@ theorem quaternionClassOnSquareClasses_zero_right (x : SquareClassGroup K) :
     quaternionClassOnSquareClasses x 0 = 1 := by
   rw [quaternionClassOnSquareClasses_comm, quaternionClassOnSquareClasses_zero_left]
 
+/-- The square-class pairing takes `2`-torsion values. -/
+@[simp]
+theorem quaternionClassOnSquareClasses_sq (x y : SquareClassGroup K) :
+    quaternionClassOnSquareClasses x y ^ 2 = 1 := by
+  rw [← squareClass_toMul_out x, ← squareClass_toMul_out y,
+    quaternionClassOnSquareClasses_squareClass, quaternionClass_sq]
+
 /-! ### Invariance under isometry of binary forms -/
 
 /-- **The quaternion symbol is an invariant of the binary form `⟨a,b⟩`**: isometric binary forms
@@ -380,7 +388,7 @@ makes the Hasse invariant well defined on isometry classes. -/
 theorem quaternionClass_congr {a b c d : Kˣ}
     (h : (weightedSumSquares K ![(a : K), b]).Equivalent (weightedSumSquares K ![(c : K), d])) :
     quaternionClass a b = quaternionClass c d :=
-  let ⟨e⟩ := QuaternionAlgebra.nonempty_algEquiv_of_equivalent_binary (a : K) b c d h
+  let ⟨e⟩ := QuaternionAlgebra.nonempty_algEquiv_of_equivalent_binary h
   quaternionClass_eq_of_algEquiv e
 
 end BrauerGroup

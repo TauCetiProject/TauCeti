@@ -298,8 +298,8 @@ theorem Monic.coe_tschirnhausRootMap {f : K[X]} (hf : f.Monic) (T : K[X]) (x : f
     (hf.tschirnhausRootMap T x : L) = aeval (x : L) T :=
   Set.MapsTo.val_restrict_apply _ _
 
-/-- Every root of the Tschirnhaus transform of a monic polynomial is the image of a root of the
-original polynomial. -/
+/-- If the monic polynomial `f` splits in the domain `L`, then every root in `L` of its Tschirnhaus
+transform is the image of a root of `f` in `L`. -/
 theorem Monic.tschirnhausRootMap_surjective {f : K[X]} (hf : f.Monic)
     (hs : (f.map (algebraMap K L)).Splits) (T : K[X]) :
     Function.Surjective (hf.tschirnhausRootMap (L := L) T) := by

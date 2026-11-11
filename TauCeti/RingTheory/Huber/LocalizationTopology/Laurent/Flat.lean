@@ -625,42 +625,24 @@ theorem flat_restrictionRingHomOfSubset_of_span_eq_top [IsHuberRing A]
       hden.of_eq_image_mul_left hu hU
     have hdenU' : HasDenominatorPower P U' (u * s) S' :=
       hden'.of_eq_image_mul_left hu hU'
-    have hUU' : ∀ x ∈ U, x ∈ U' := by
-      intro x hx
-      obtain ⟨t, ht, rfl⟩ := hU ▸ Finset.mem_coe.mpr hx
-      exact Finset.mem_coe.mp (hU' ▸ Set.mem_image_of_mem _ (hTT' t ht))
+    have hUU' : ∀ x ∈ U, x ∈ U' := fun _ ↦ (Finset.image_subset_image hTT' ·)
+    -- rescaling by a unit does not change the ideal generated together with the denominator
     have hspanU : Ideal.span (insert (u * s) (U : Set A)) = ⊤ := by
-      apply top_unique
-      rw [← hspan hproper, Ideal.span_le]
-      intro x hx
-      have hux : u * x ∈ insert (u * s) (U : Set A) := by
-        rcases hx with rfl | hx
-        · exact Set.mem_insert _ _
-        · exact Set.mem_insert_iff.mpr <| Or.inr <| hU ▸ Set.mem_image_of_mem _ hx
-      have huinv : (↑hu.unit⁻¹ : A) * u = 1 := by
-        simpa only [hu.unit_spec] using Units.inv_mul hu.unit
-      have hmul := (Ideal.span (insert (u * s) (U : Set A))).mul_mem_left
-        (↑hu.unit⁻¹ : A) (Ideal.subset_span hux)
-      rwa [← mul_assoc, huinv, one_mul] at hmul
-    have hflat :=
-      flat_restrictionRingHomOfSubset_of_isTopologicallyNilpotent_of_span_eq_top
-        P U (u * s) S hdenU U' S' hdenU' hUU' (fun _ ↦ inferInstance)
-          (fun _ ↦ inferInstance) (fun _ ↦ hnil) (fun _ ↦ hspanU)
+      open Pointwise in
+      have : insert (u * s) (U : Set A) = u • insert s (T : Set A) := by
+        rw [Set.smul_set_insert, hU]; rfl
+      rw [this, ← hspan hproper]
+      exact Submodule.span_smul_eq_of_isUnit _ u hu
     have hsource := locSubring_eq_of_eq_image_mul_left P T U u s S hU
     have htarget := locSubring_eq_of_eq_image_mul_left P T' U' u s S' hU'
-    have hmap := restrictionRingHomOfSubset_heq P T T' s S hden S' hden' hTT'
-      U U' (u * s) hdenU hdenU' hUU' hsource htarget
     exact ringHom_flat_of_completion_heq
       (locUniformSpace_congr P T U s (u * s) S hden hdenU hsource)
-      (locUniformSpace_congr P T' U' s (u * s) S' hden' hdenU' htarget)
-      (isUniformAddGroup_locUniformSpace P T s S hden)
-      (isUniformAddGroup_locUniformSpace P U (u * s) S hdenU)
-      (isTopologicalRing_locUniformSpace P T s S hden)
-      (isTopologicalRing_locUniformSpace P U (u * s) S hdenU)
-      (isUniformAddGroup_locUniformSpace P T' s S' hden')
-      (isUniformAddGroup_locUniformSpace P U' (u * s) S' hdenU')
-      (isTopologicalRing_locUniformSpace P T' s S' hden')
-      (isTopologicalRing_locUniformSpace P U' (u * s) S' hdenU') _ _ hmap hflat
+      (locUniformSpace_congr P T' U' s (u * s) S' hden' hdenU' htarget) _ _ _ _ _ _ _ _ _ _
+      (restrictionRingHomOfSubset_heq P T T' s S hden S' hden' hTT' U U' (u * s) hdenU hdenU'
+        hUU' hsource htarget)
+      (flat_restrictionRingHomOfSubset_of_isTopologicallyNilpotent_of_span_eq_top
+        P U (u * s) S hdenU U' S' hdenU' hUU' (fun _ ↦ inferInstance)
+          (fun _ ↦ inferInstance) (fun _ ↦ hnil) (fun _ ↦ hspanU))
   · exact flat_restrictionRingHomOfSubset_of_isTopologicallyNilpotent_of_span_eq_top
       P T s S hden T' S' hden' hTT' (False.elim ∘ hproper) (False.elim ∘ hproper)
       (False.elim ∘ hproper) (False.elim ∘ hproper)

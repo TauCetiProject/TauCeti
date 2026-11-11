@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.Topology.Algebra.Constructions
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+public import Mathlib.Topology.Clopen
 public import Mathlib.Topology.Instances.ZMod
 public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.MetricSpace.Ultra.Basic
@@ -42,6 +43,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   reduction and truncation, as divisibility statements; `PadicInt.toZModPow_eq_iff_dvd_sub`:
   two `p`-adic integers truncate to the same residue exactly when `p ^ n` divides their
   difference; `PadicInt.eight_dvd_sub_iff_toZModPow_three_eq` is its case `p ^ n = 8`.
+* `PadicInt.residueClopen`: the clopen fibre of a residue modulo `p ^ n`;
+  `PadicInt.mem_residueClopen_iff_dvd`: its description as a coset of `p ^ n ℤ_p`.
 * `PadicInt.isUnit_iff_toZModPow_three_mul_self`: the units of `ℤ_[2]` are exactly the elements
   whose residue modulo `8` squares to `1`; `PadicInt.eight_dvd_sq_sub_one_of_isUnit`: so the
   square of a unit is `1` modulo `8`; `PadicInt.eight_dvd_sub_or_eight_dvd_sub_add_of_eq`: for
@@ -92,6 +95,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   (`PadicInt.unitsToZModPow_zero_apply`).
 * `PadicInt.finite_residueField`, `PadicInt.card_residueField`: the residue field of `ℤ_[p]` is
   finite of cardinality `p`.
+* `PadicInt.ringHom_eq_id`, `PadicInt.RingHom.unique`: the identity is the unique ring
+  endomorphism of `ℤ_[p]`.
 -/
 
 public section
@@ -170,6 +175,20 @@ their difference. -/
 theorem toZModPow_eq_iff_dvd_sub (n : ℕ) {x y : ℤ_[p]} :
     toZModPow n x = toZModPow n y ↔ (p : ℤ_[p]) ^ n ∣ y - x := by
   rw [eq_comm, ← sub_eq_zero, ← map_sub, toZModPow_eq_zero_iff_dvd]
+
+/-- The clopen residue class `a` modulo `p ^ n` in `ℤ_p`. -/
+noncomputable def residueClopen (n : ℕ) (a : ZMod (p ^ n)) : TopologicalSpace.Clopens ℤ_[p] :=
+  ⟨toZModPow n ⁻¹' {a}, (isClopen_discrete {a}).preimage (continuous_toZModPow n)⟩
+
+@[simp]
+theorem mem_residueClopen (n : ℕ) (a : ZMod (p ^ n)) (x : ℤ_[p]) :
+    x ∈ residueClopen n a ↔ toZModPow n x = a := Iff.rfl
+
+/-- A residue class is the coset of `p ^ n ℤ_p` represented by `a.val`. -/
+theorem mem_residueClopen_iff_dvd (n : ℕ) (a : ZMod (p ^ n)) (x : ℤ_[p]) :
+    x ∈ residueClopen n a ↔ (p : ℤ_[p]) ^ n ∣ x - (a.val : ℤ_[p]) := by
+  rw [mem_residueClopen, ← toZModPow_eq_iff_dvd_sub]
+  simp [eq_comm]
 
 /-- Divisibility by `8` in `ℤ_[2]` is equality of residues modulo `8`. -/
 theorem eight_dvd_sub_iff_toZModPow_three_eq {a c : ℤ_[2]} :
@@ -528,6 +547,21 @@ theorem unitsMap_unitsToZModPow {m n : ℕ} (h : p ^ m ∣ p ^ n) (u : ℤ_[p]ˣ
 theorem unitsToZModPow_zero_apply (u : ℤ_[p]ˣ) : unitsToZModPow 0 u = 1 := by
   have : Subsingleton (ZMod (p ^ 0)) := by rw [pow_zero]; infer_instance
   exact Subsingleton.elim _ _
+
+/-- Every ring endomorphism of `ℤ_[p]` is the identity: any ring homomorphism preserves natural
+numbers and divisibility by `p ^ n`, so it preserves truncations in `ZMod (p ^ n)` for all `n`. -/
+theorem ringHom_eq_id (φ : ℤ_[p] →+* ℤ_[p]) : φ = RingHom.id ℤ_[p] := by
+  refine toZModPow_eq_iff_ext.mp fun n ↦ ?_
+  ext x
+  simp only [RingHom.comp_apply, RingHom.id_apply, toZModPow_eq_iff_dvd_sub]
+  have h1 : (p : ℤ_[p]) ^ n ∣ x - x.appr n := dvd_sub_appr x n
+  have h2 : (p : ℤ_[p]) ^ n ∣ φ x - x.appr n := by simpa using map_dvd φ h1
+  simpa using dvd_sub h1 h2
+
+/-- The identity is the unique ring endomorphism of `ℤ_[p]`. -/
+noncomputable instance RingHom.unique : Unique (ℤ_[p] →+* ℤ_[p]) where
+  default := RingHom.id ℤ_[p]
+  uniq := ringHom_eq_id
 
 variable {M : Type*} [Monoid M] {g : M} {n : ℕ}
 

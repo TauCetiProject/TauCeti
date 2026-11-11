@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Branch.Values
 /-!
 # Counting the points removed above branch values
 
-For a finite holomorphic map `f` from a compact connected Riemann surface to a connected
+For a finite holomorphic map `f` from a compact Riemann surface to a connected
 Riemann surface, the preimage of a finite set `S` has `degree f * S.ncard` points counted
 with multiplicity. Its ordinary cardinality is smaller by the sum of `e_x - 1` over that
 preimage, where `e_x` is the local multiplicity. If `S` contains all branch values, this
@@ -49,7 +49,7 @@ namespace TauCeti.RiemannSurface.FiniteHolomorphicMap
 variable {X Y : Type*} [TopologicalSpace X] [ChartedSpace ℂ X]
   [TopologicalSpace Y] [ChartedSpace ℂ Y]
   [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
-  [CompactSpace X] [T2Space X] [T2Space Y] [PreconnectedSpace X] [PreconnectedSpace Y]
+  [CompactSpace X] [T2Space X] [T2Space Y] [PreconnectedSpace Y]
 
 /-- Above a finite set containing all branch values, the defect in the number of distinct
 points is exactly the total ramification degree. Extra unramified values do not change the

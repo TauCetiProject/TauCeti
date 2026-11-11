@@ -58,7 +58,7 @@ theorem etale_iff_etale_fiber_of_height_le_one [IsNoetherianRing A]
   classical
   refine ⟨fun _ _ _ _ ↦ inferInstance, fun h ↦ ?_⟩
   let b := Module.Free.chooseBasis A B
-  apply (etale_iff_isUnit_discr A B b).mpr
+  apply (etale_iff_isUnit_discr b).mpr
   apply (isUnit_iff_forall_notMem_of_height_le_one _).mpr
   intro p _ hp hmem
   exact (algebraMap_discr_ne_zero_iff_etale_baseChange b p.ResidueField).mpr (h p hp)

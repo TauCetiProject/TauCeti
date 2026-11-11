@@ -80,6 +80,8 @@ free whenever the homology modules of `X` and `Y` are, of finite rank
   cycles split off, for instance over a principal ideal domain.
 * `TopCat.singularHomologyKunnethUnitIso`: its form `⨁ Hₚ(X; k) ⊗ H_q(Y; k) ≅ Hₙ(X × Y; k)`
   with coefficients in the ring itself.
+* `TopCat.isZero_singularHomology_tensor`: over a commutative semisimple ring, a product of spaces
+  with vanishing positive-degree homology has vanishing positive-degree homology.
 * `TopCat.free_singularHomology_tensor` and `TopCat.finrank_singularHomology_tensor`: the
   homology of a product of spaces with free homology, over any commutative ring.
 
@@ -342,6 +344,26 @@ lemma ι_singularHomologyKunnethUnitIso_hom (X Y : TopCat.{w}) (p q n : ℕ) (h 
     singularHomologyCross X Y _ _ p q n h ≫
       ((singularHomologyFunctor _ n).map (λ_ (𝟙_ (ModuleCat.{w} k))).hom).app (X ⊗ Y) := by
   simp [singularHomologyKunnethUnitIso]
+
+/-- **A product of acyclic spaces is acyclic.** Over a commutative semisimple ring `k`, for
+instance a field, if `X` and `Y` have vanishing singular homology with coefficients in `k` in every
+positive degree, then so does `X × Y`: in positive total degree, every summand
+`Hₚ(X; k) ⊗ H_q(Y; k)` of the Künneth isomorphism has a factor of positive degree. -/
+theorem isZero_singularHomology_tensor (X Y : TopCat.{w})
+    (hX : ∀ p, IsZero (((singularHomologyFunctor _ (p + 1)).obj (𝟙_ (ModuleCat.{w} k))).obj X))
+    (hY : ∀ q, IsZero (((singularHomologyFunctor _ (q + 1)).obj (𝟙_ (ModuleCat.{w} k))).obj Y))
+    (n : ℕ) :
+    IsZero (((singularHomologyFunctor _ (n + 1)).obj (𝟙_ (ModuleCat.{w} k))).obj (X ⊗ Y)) := by
+  refine IsZero.of_iso ?_ (singularHomologyKunnethUnitIso X Y (n + 1)).symm
+  rw [IsZero.iff_id_eq_zero]
+  refine GradedObject.Monoidal.tensorObj_ext _ _ fun p q h ↦ IsZero.eq_of_src ?_ _ _
+  -- One of the two degrees is positive, and tensoring with a zero object gives a zero object.
+  rcases p with _ | p
+  · obtain rfl : q = n + 1 := by omega
+    rw [IsZero.iff_id_eq_zero, ← MonoidalCategory.whiskerLeft_id,
+      (hY n).eq_of_src (𝟙 _) 0, MonoidalPreadditive.whiskerLeft_zero]
+  · rw [IsZero.iff_id_eq_zero, ← MonoidalCategory.id_whiskerRight,
+      (hX p).eq_of_src (𝟙 _) 0, MonoidalPreadditive.zero_whiskerRight]
 
 end Split
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.CochainComplexMinus
 public import Mathlib.Algebra.Homology.HomotopyCategory.Plus
 public import Mathlib.CategoryTheory.Localization.OfQuotient
 public import TauCeti.Algebra.Homology.EssentiallySmall
@@ -19,10 +20,13 @@ are represented by cochain complexes vanishing outside a finite interval. It als
 quotient functor from bounded cochain complexes and proves that this functor is full and
 essentially surjective.
 
-The boundedness predicate records both bounds at once. This matters for closure under cones: if
-the source has bounds `(a₁, b₁)` and the target has bounds `(a₂, b₂)`, the standard mapping
-cone has bounds `(min (a₁ - 1) a₂, max (b₁ - 1) b₂)`. Consequently the full subcategory is
-stable under shifts and distinguished triangles.
+The boundedness predicate records both bounds at once. This matters for closure under cones: the
+mapping cone of a morphism between bounded complexes is bounded
+(`CochainComplex.bounded_mappingCone`). The explicit bounds are given by
+`CochainComplex.isStrictlyGE_mappingCone` and `CochainComplex.isStrictlyLE_mappingCone`: if the
+source has bounds `(a₁, b₁)` and the target has bounds `(a₂, b₂)`, the cone is strictly bounded
+by `(min (a₁ - 1) a₂, max (b₁ - 1) b₂)`. Consequently the full subcategory is stable under
+shifts and distinguished triangles.
 
 The construction follows the organization of Mathlib's bounded-below category
 `HomotopyCategory.Plus`, replacing its one-sided support condition by two-sided boundedness.
@@ -36,6 +40,14 @@ The construction follows the organization of Mathlib's bounded-below category
 * `TauCeti.HomotopyCategory.Bounded.quotient`: the quotient functor from bounded complexes. It is
   a localization functor with respect to the homotopy equivalences, so functors and their shift
   compatibilities descend along it.
+* `TauCeti.HomotopyCategory.Bounded.rep`: the underlying cochain complex of an object of the
+  bounded homotopy category.
+* `TauCeti.HomotopyCategory.Bounded.quotientCompιIso`: the bounded quotient followed by the
+  inclusion agrees with the ordinary homotopy quotient.
+* `TauCeti.HomotopyCategory.Bounded.singleFunctors`: the single functors
+  `C ⥤ HomotopyCategory.Bounded C` with their shift compatibilities, with `singleFunctor` the
+  functor in degree `n` and `singleFunctorCompιIso` its comparison with
+  `HomotopyCategory.singleFunctor`.
 
 The homotopy category of bounded complexes over an essentially small category is essentially
 small (through `HomotopyCategory.essentiallySmall` and
@@ -61,11 +73,13 @@ variable (C : Type u) [Category.{v} C]
 
 namespace CochainComplex
 
-/-- A cochain complex is bounded when it is strictly bounded both below and above. -/
+/-- A cochain complex is bounded when it is strictly bounded both below and above: the meet of
+Mathlib's `CochainComplex.plus` and `CochainComplex.minus`. -/
 def bounded [HasZeroMorphisms C] : ObjectProperty (CochainComplex C ℤ) :=
-  fun K ↦ CochainComplex.plus C K ∧ ∃ b : ℤ, K.IsStrictlyLE b
+  CochainComplex.plus C ⊓ CochainComplex.minus C
 
-/-- The elementwise characterization of a bounded cochain complex. -/
+/-- A cochain complex is bounded iff it is strictly bounded below by some `a` and strictly bounded
+above by some `b`. -/
 lemma bounded_iff [HasZeroMorphisms C] (K : CochainComplex C ℤ) :
     CochainComplex.bounded C K ↔ ∃ a b : ℤ, K.IsStrictlyGE a ∧ K.IsStrictlyLE b := by
   constructor
@@ -87,26 +101,11 @@ lemma bounded_iff_exists_finset_isZero_X [HasZeroMorphisms C] (K : CochainComple
     exact ⟨a, b, (K.isStrictlyGE_iff a).2 fun i hi ↦ hs i fun h ↦ absurd (ha h) (not_le.2 hi),
       (K.isStrictlyLE_iff b).2 fun i hi ↦ hs i fun h ↦ absurd (hb h) (not_le.2 hi)⟩
 
-instance [HasZeroMorphisms C] : (CochainComplex.bounded C).IsClosedUnderIsomorphisms where
-  of_iso := by
-    rintro K L e h
-    rw [CochainComplex.bounded_iff] at h ⊢
-    obtain ⟨a, b, ha, hb⟩ := h
-    let _ := ha
-    let _ := hb
-    exact ⟨a, b, K.isStrictlyGE_of_iso e a, K.isStrictlyLE_of_iso e b⟩
+instance [HasZeroMorphisms C] : (CochainComplex.bounded C).IsClosedUnderIsomorphisms :=
+  inferInstanceAs (CochainComplex.plus C ⊓ CochainComplex.minus C).IsClosedUnderIsomorphisms
 
-instance [Preadditive C] : (CochainComplex.bounded C).IsStableUnderShift ℤ where
-  isStableUnderShiftBy n :=
-    ⟨by
-      rintro K h
-      rw [CochainComplex.bounded_iff] at h
-      obtain ⟨a, b, ha, hb⟩ := h
-      rw [ObjectProperty.prop_shift_iff, CochainComplex.bounded_iff]
-      let _ := ha
-      let _ := hb
-      exact ⟨a - n, b - n, K.isStrictlyGE_shift a n (a - n) (by omega),
-        K.isStrictlyLE_shift b n (b - n) (by omega)⟩⟩
+instance [Preadditive C] : (CochainComplex.bounded C).IsStableUnderShift ℤ :=
+  inferInstanceAs ((CochainComplex.plus C ⊓ CochainComplex.minus C).IsStableUnderShift ℤ)
 
 /-- The full subcategory of bounded cochain complexes. -/
 abbrev Bounded [HasZeroMorphisms C] :=
@@ -130,10 +129,11 @@ lemma bounded_cylinder {K : CochainComplex C ℤ} (hK : CochainComplex.bounded C
   · simp only [ComplexShape.up_Rel] at hj
     exact K.isZero_of_isStrictlyLE b _ (by lia)
 
+omit [HasBinaryBiproducts C] in
 /-- The mapping cone of a morphism `K ⟶ L` is strictly bounded above by `n` when `K` is strictly
 bounded above by `n + 1` and `L` by `n`. This is the upper-bound counterpart of Mathlib's
 `CochainComplex.isStrictlyGE_mappingCone`. -/
-lemma isStrictlyLE_mappingCone {K L : CochainComplex C ℤ} (f : K ⟶ L)
+lemma isStrictlyLE_mappingCone {K L : CochainComplex C ℤ} (f : K ⟶ L) [HasHomotopyCofiber f]
     (n₁ n₂ n : ℤ) [K.IsStrictlyLE n₁] [L.IsStrictlyLE n₂] (hn₁ : n₁ ≤ n + 1 := by lia)
     (hn₂ : n₂ ≤ n := by lia) :
     (CochainComplex.mappingCone f).IsStrictlyLE n := by
@@ -142,9 +142,8 @@ lemma isStrictlyLE_mappingCone {K L : CochainComplex C ℤ} (f : K ⟶ L)
   rw [CochainComplex.mappingCone.isZero_X_iff]
   exact ⟨K.isZero_of_isStrictlyLE n₁ (i + 1) (by lia), L.isZero_of_isStrictlyLE n₂ i (by lia)⟩
 
-/-- The mapping cone of a morphism between bounded cochain complexes is bounded. If the source
-and target have bounds `(a₁, b₁)` and `(a₂, b₂)`, the cone has bounds
-`(min (a₁ - 1) a₂, max (b₁ - 1) b₂)`. -/
+/-- The mapping cone of a morphism between bounded cochain complexes is bounded. The explicit
+bounds are given by `CochainComplex.isStrictlyGE_mappingCone` and `isStrictlyLE_mappingCone`. -/
 lemma bounded_mappingCone {K L : CochainComplex C ℤ} (f : K ⟶ L)
     (hK : CochainComplex.bounded C K) (hL : CochainComplex.bounded C L) :
     CochainComplex.bounded C (CochainComplex.mappingCone f) := by

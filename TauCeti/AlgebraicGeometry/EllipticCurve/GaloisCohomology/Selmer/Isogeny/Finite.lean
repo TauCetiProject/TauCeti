@@ -108,7 +108,6 @@ theorem finite_selmerGroup_place
       SeparableClosure K →ₐ[K] SeparableClosure v.Completion) :
     Finite (φ.selmerGroup τ) := by
   classical
-  have : NeZero φ.degree := ⟨φ.degree_pos.ne'⟩
   have h := W₁.finite_torsionBy_sha φ.degree
   rw [W₁.sha_eq_shafarevichTateGroup τ] at h
   have := WeierstrassCurve.Affine.fg_point_of_numberField (W := W₂.toAffine)

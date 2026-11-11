@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Star.BigOperators
 public import TauCeti.Combinatorics.NoncrossingPartition.Reverse
 public import TauCeti.Probability.FreeProbability.Cumulant.Basic
+import TauCeti.Algebra.Star.BigOperators
 
 /-!
 # Free cumulants of adjoints
@@ -67,11 +68,8 @@ theorem partitionMoment_star_comp_rev (hφ : ∀ x, φ (star x) = star (φ x)) (
   rw [partitionMoment_def, partitionMoment_def, NoncrossingPartition.prod_parts_reverse,
     star_prod]
   refine prod_congr rfl fun B _ => ?_
-  -- `star` is a monoid hom into the opposite monoid, so it reverses products.
-  have hstar := unop_map_list_prod (starMulEquiv : A ≃* Aᵐᵒᵖ) (B.sort.map a)
-  simp only [starMulEquiv_apply, MulOpposite.unop_op] at hstar
   -- Along the reversed part, the letters are the adjoints of those along `B` in reversed order.
-  rw [← hφ, sort_map_revPerm, hstar]
+  rw [← hφ, sort_map_revPerm, star_list_prod]
   simp [List.map_reverse, Function.comp_def]
 
 end Moment

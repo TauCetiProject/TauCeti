@@ -82,6 +82,8 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
   pair of polynomials.
 * `MvPowerSeries.coeff_subst_mem_span` : the coefficients of `f(a)` lie in the ideal generated
   by the coefficients of `f`.
+* `MvPowerSeries.coeff_subst_sub_subst` : the coefficients of `H(a) - H(b)` are those of `H`
+  paired with the coefficients of the differences `aᵈ - bᵈ` of monomials.
 * `MvPowerSeries.subst_eq_subst_of_coeff_mem` : if the coefficients of `f` annihilate an ideal `J`,
   then `f(a) = f(b)` for families `a` and `b` that agree modulo `J`.
 * `MvPowerSeries.subst_X_add_X_add_eq` : if the coefficients of `G` pairwise multiply to zero, then
@@ -514,6 +516,16 @@ theorem coeff_subst_mem_span {f : MvPowerSeries σ O} {a : σ → MvPowerSeries 
     ext fun d ↦ by simp
   rw [this, ← coe_substAlgHom (ha.map _), map_zero, map_zero]
 
+/-- The coefficients of `H(a) - H(b)` are the sums of the coefficients of `H` times those of the
+differences `aᵈ - bᵈ` of monomials. -/
+theorem coeff_subst_sub_subst {H : MvPowerSeries σ O} {a b : σ → MvPowerSeries τ O}
+    (ha : HasSubst a) (hb : HasSubst b) (e : τ →₀ ℕ) :
+    coeff e (H.subst a - H.subst b) = ∑ᶠ d, coeff d H •
+      coeff e ((d.prod fun i k ↦ a i ^ k) - d.prod fun i k ↦ b i ^ k) := by
+  simp_rw [map_sub, smul_sub]
+  rw [coeff_subst ha, coeff_subst hb,
+    finsum_sub_distrib (coeff_subst_finite ha H e) (coeff_subst_finite hb H e)]
+
 /-- Substitution is insensitive to an ideal annihilated by the coefficients of the series: if the
 coefficients of `f` kill the ideal `J` and the families `a` and `b` agree modulo `J`
 coefficientwise, then `f(a) = f(b)`. For instance, `f(a + b') = f(a)` when the coefficients of
@@ -542,10 +554,29 @@ into `F` a pair `(u', v')` that agrees with `(u, v)` modulo the coefficients of 
 `u' + v' + G(u, v)`. -/
 theorem subst_X_add_X_add_eq {G : MvPowerSeries (Fin 2) O}
     (hG : ∀ d e, coeff d G * coeff e G = 0) {u v u' v' : MvPowerSeries τ O}
-    (h' : HasSubst ![u', v']) (h : HasSubst ![u, v])
+    (h : HasSubst ![u, v])
     (hu : ∀ e, coeff e (u' - u) ∈ Ideal.span (Set.range fun d ↦ coeff d G))
     (hv : ∀ e, coeff e (v' - v) ∈ Ideal.span (Set.range fun d ↦ coeff d G)) :
     (X 0 + X 1 + G).subst ![u', v'] = u' + v' + G.subst ![u, v] := by
+  -- The ideal spanned by the coefficients of `G` squares to zero, so its elements are nilpotent.
+  have hsq : Ideal.span (Set.range fun d ↦ coeff d G) *
+      Ideal.span (Set.range fun d ↦ coeff d G) = ⊥ := by
+    rw [Ideal.span_mul_span, Ideal.span_eq_bot]
+    rintro _ ⟨_, ⟨d, rfl⟩, _, ⟨e, rfl⟩, rfl⟩
+    exact hG d e
+  have hnil {x : O} (hx : x ∈ Ideal.span (Set.range fun d ↦ coeff d G)) : IsNilpotent x :=
+    ⟨2, by
+      have := Ideal.mul_mem_mul hx hx
+      rwa [hsq, Ideal.mem_bot, ← pow_two] at this⟩
+  have hnil' {a b : MvPowerSeries τ O} (ha : IsNilpotent (constantCoeff a))
+      (hab : ∀ e, coeff e (b - a) ∈ Ideal.span (Set.range fun d ↦ coeff d G)) :
+      IsNilpotent (constantCoeff b) := by
+    have := (Commute.all _ _).isNilpotent_add ha (hnil (by simpa using hab 0))
+    rwa [add_sub_cancel] at this
+  have h' : HasSubst ![u', v'] := hasSubst_of_constantCoeff_nilpotent fun s ↦ by
+    fin_cases s
+    · exact hnil' (h.const_coeff 0) hu
+    · exact hnil' (h.const_coeff 1) hv
   rw [subst_add h', subst_add h', subst_X h', subst_X h', subst_eq_subst_of_coeff_mem
     (J := Ideal.span (Set.range fun d ↦ coeff d G)) h' h ?_ fun d ↦ Submodule.mem_annihilator.1
       ((Submodule.mem_annihilator_span _ _).2 fun ⟨_, e, rfl⟩ ↦ hG d e)]

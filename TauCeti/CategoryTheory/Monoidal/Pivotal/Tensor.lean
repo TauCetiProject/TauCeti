@@ -34,8 +34,9 @@ traces and dimensions are therefore multiplicative without further hypotheses.
   `TauCeti.pivotalExactPairing_tensor_coevaluation`: the pivotal pairing of `X ⊗ Y` is the tensor
   product of the pivotal pairings, up to `rightDualTensorIso X Y`, which is therefore also a
   comparison of left duals (`TauCeti.rightDualTensorIso_hom_eq_leftMate`);
-* `TauCeti.leftTrace_tensorHom` and `TauCeti.rightTrace_tensorHom`: the traces of `f ⊗ₘ g` as
-  nested loops;
+* `TauCeti.leftTrace_tensorObj`, `TauCeti.rightTrace_tensorObj`, `TauCeti.leftTrace_tensorHom` and
+  `TauCeti.rightTrace_tensorHom`: the traces of endomorphisms of `X ⊗ Y` via partial trace, and of
+  `f ⊗ₘ g` as nested loops;
 * `TauCeti.leftTrace_tensorHom_eq_comp`, `TauCeti.rightTrace_tensorHom_eq_comp`,
   `TauCeti.leftDim_tensor_eq_comp` and `TauCeti.rightDim_tensor_eq_comp`: multiplicativity of the
   traces and dimensions when the relevant scalar acts in the same way from both sides;
@@ -136,6 +137,32 @@ theorem pivotalExactPairing_tensor_coevaluation (X Y : C) :
   -- which carries one coevaluation to the other.
   rw [rightDualTensorIso_hom_eq_leftMate, coevaluation_comp_leftMate,
     MonoidalCategory.whiskerLeft_id, Category.comp_id]
+
+/-- **Partial-trace decomposition of the left trace**: the left trace of `h : X ⊗ Y ⟶ X ⊗ Y` is the
+left trace on `Y` of the left partial trace of `h` over `X`. -/
+theorem leftTrace_tensorObj {X Y : C} (h : X ⊗ Y ⟶ X ⊗ Y) :
+    leftTrace h = leftTrace ((λ_ Y).inv ≫
+      @coevaluation C _ _ Xᘁ X (pivotalExactPairing X) ▷ Y ≫ (α_ Xᘁ X Y).hom ≫
+        Xᘁ ◁ h ≫ (α_ Xᘁ X Y).inv ≫ ε_ X Xᘁ ▷ Y ≫ (λ_ Y).hom) := by
+  rw [leftTrace_def, leftTrace_def, ← rightDualTensorIso_hom_whiskerRight_evaluation,
+    whisker_exchange_assoc, pivotalExactPairing_tensor_coevaluation_assoc,
+    @ExactPairing.tensor_coevaluation C _ _ _ _ _ _ (pivotalExactPairing Y)
+      (pivotalExactPairing X),
+    ExactPairing.tensor_evaluation]
+  monoidal
+
+/-- **Partial-trace decomposition of the right trace**: the right trace of `h : X ⊗ Y ⟶ X ⊗ Y` is
+the right trace on `X` of the right partial trace of `h` over `Y`. -/
+theorem rightTrace_tensorObj {X Y : C} (h : X ⊗ Y ⟶ X ⊗ Y) :
+    rightTrace h = rightTrace ((ρ_ X).inv ≫ X ◁ η_ Y Yᘁ ≫ (α_ X Y Yᘁ).inv ≫
+      h ▷ Yᘁ ≫ (α_ X Y Yᘁ).hom ≫ X ◁ @evaluation C _ _ Yᘁ Y (pivotalExactPairing Y) ≫
+        (ρ_ X).hom) := by
+  rw [rightTrace_def, rightTrace_def, pivotalExactPairing_tensor_evaluation,
+    ← whisker_exchange_assoc, coevaluation_comp_whiskerLeft_rightDualTensorIso_hom_assoc,
+    ExactPairing.tensor_coevaluation,
+    @ExactPairing.tensor_evaluation C _ _ _ _ _ _ (pivotalExactPairing Y)
+      (pivotalExactPairing X)]
+  monoidal
 
 /-- **The left trace of a tensor product** is a nested loop: the left trace of `f` acts on `Y`
 from the left, inside the left trace of `g`. -/

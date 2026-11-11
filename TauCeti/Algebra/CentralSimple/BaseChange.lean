@@ -38,7 +38,7 @@ the degree bookkeeping that goes with it.
 
 Both halves are already available. Simplicity is a statement about `L ⊗[K] A` as a ring, so
 `IsSimpleRing.tensorProduct_of_isCentral_right` applies with `L` the simple factor and `A`
-the central simple one; centrality over `L` is `TauCeti.Algebra.IsCentral.baseChange`, in
+the central simple one; centrality over `L` is `Algebra.IsCentral.baseChange`, in
 `TauCeti/Algebra/Central/BaseChange.lean`. Both are instances, so instance search sees `L ⊗[K] A` as
 a central simple `L`-algebra with no glue at all.
 
@@ -51,7 +51,7 @@ a central simple `L`-algebra with no glue at all.
   is a field), then `A` is a simple ring.
 * `TauCeti.isSimpleRing_baseChange_iff`: for a central `K`-algebra `A` over a field `K` and a
   simple `K`-algebra `L`, **simplicity passes both ways** along the scalar extension,
-  `IsSimpleRing (L ⊗[K] A) ↔ IsSimpleRing A`. With `TauCeti.Algebra.isCentral_baseChange_iff`
+  `IsSimpleRing (L ⊗[K] A) ↔ IsSimpleRing A`. With `Algebra.isCentral_baseChange_iff`
   this makes central simplicity of `A` over `K` equivalent to central simplicity of `L ⊗[K] A`
   over a field extension `L`.
 
@@ -71,7 +71,7 @@ is what makes it one rather than what makes the two agree.
 
 The worked examples at the end check both directions on the two standard test cases: `ℂ ⊗[ℝ] ℍ[ℝ]`
 is central simple over `ℂ` of degree `2`, while `ℂ ⊗[ℝ] ℂ` is *not* central over `ℂ`, because `ℂ` is
-not central over `ℝ`. The second is the failure `TauCeti.Algebra.IsCentral.of_baseChange` detects,
+not central over `ℝ`. The second is the failure `Algebra.IsCentral.of_baseChange` detects,
 and it is the reason the centrality hypothesis on `A` cannot be dropped from the forward direction.
 
 ## References
@@ -126,7 +126,7 @@ nor `A` needs to be commutative. When `K` is a field every nontrivial `L` is fai
 the hypothesis is automatic there.
 
 This is the converse of `IsSimpleRing.tensorProduct_of_isCentral_right`, with no centrality
-hypothesis at all. Together with `TauCeti.Algebra.IsCentral.of_baseChange` it says that central
+hypothesis at all. Together with `Algebra.IsCentral.of_baseChange` it says that central
 simplicity over `K` is detected by central simplicity of `L ⊗[K] A` over `L`. -/
 theorem _root_.IsSimpleRing.of_baseChange [IsSimpleRing (L ⊗[K] A)] : IsSimpleRing A := by
   -- A proper two-sided ideal `I` of `A` gives a nontrivial quotient `A ⧸ I`, hence a surjection
@@ -169,7 +169,7 @@ variable (K L A : Type*) [Field K] [Ring L] [IsSimpleRing L] [Algebra K L]
 instance a field extension) is simple. The forward direction is the instance
 `IsSimpleRing.tensorProduct_of_isCentral_right` and the converse is
 `IsSimpleRing.of_baseChange`; this is the companion of
-`TauCeti.Algebra.isCentral_baseChange_iff`. -/
+`Algebra.isCentral_baseChange_iff`. -/
 @[simp]
 theorem isSimpleRing_baseChange_iff : IsSimpleRing (L ⊗[K] A) ↔ IsSimpleRing A :=
   ⟨fun _ => IsSimpleRing.of_baseChange (K := K) (L := L) (A := A), fun _ => inferInstance⟩
@@ -196,11 +196,11 @@ example : Algebra.deg ℂ (ℂ ⊗[ℝ] ℍ[ℝ]) = 2 := by
   rw [Algebra.deg_baseChange]
   exact Algebra.deg_eq_of_finrank_eq_sq (by rw [Quaternion.finrank_eq_four]; norm_num)
 
-/-- The negative control for `TauCeti.Algebra.IsCentral.baseChange`: `ℂ ⊗[ℝ] ℂ` is not central over
+/-- The negative control for `Algebra.IsCentral.baseChange`: `ℂ ⊗[ℝ] ℂ` is not central over
 `ℂ`, because `ℂ` is not central over `ℝ`. So centrality of the algebra being extended is doing real
 work, and `ℂ` is a simple finite-dimensional `ℝ`-algebra that base change excludes.
 
-The proof runs the converse `TauCeti.Algebra.IsCentral.of_baseChange` backwards: assuming
+The proof runs the converse `Algebra.IsCentral.of_baseChange` backwards: assuming
 `ℂ ⊗[ℝ] ℂ` central over `ℂ` makes `ℂ` central over `ℝ`, and then `Complex.I`, central because `ℂ` is
 commutative, would have to be real. -/
 example : ¬ Algebra.IsCentral ℂ (ℂ ⊗[ℝ] ℂ) := fun _ => by

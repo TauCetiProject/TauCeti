@@ -62,7 +62,7 @@ coprime product formula.
 
 public section
 
-open Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup HeckeRing.GLn
+open Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup HeckeRing.GLn TauCeti
 
 open scoped MatrixGroups ModularForm HeckeCosetModule
 
@@ -138,8 +138,8 @@ noncomputable def ofForallPrime {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
   toCuspForm := f
   χ := χ
   mem_charSpace := hχ
-  eigenvalue n := (exists_smul_heckeTCompositeGamma0_of_forall_prime h n n.pos.ne').choose
-  isEigen n := (exists_smul_heckeTCompositeGamma0_of_forall_prime h n n.pos.ne').choose_spec
+  eigenvalue n := (exists_smul_heckeTCompositeGamma0_of_forall_prime h n).choose
+  isEigen n := (exists_smul_heckeTCompositeGamma0_of_forall_prime h n).choose_spec
   ne_zero := hf
 
 @[simp]

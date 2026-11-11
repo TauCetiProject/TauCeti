@@ -1,0 +1,536 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
+public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Basic.Real.ENatENNReal
+public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+-- Proof-only: `Ψ₂Sq` is a cubic with leading coefficient `4`, so it is positive on a half-line.
+import Mathlib.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Degree
+import Mathlib.Analysis.Polynomial.Basic
+-- Proof-only: the three complex roots of the cubic `Ψ₂Sq` and its discriminant `16 Δ`.
+import Mathlib.Algebra.CubicDiscriminant
+import Mathlib.Analysis.Complex.Polynomial.Basic
+-- Proof-only: the tail bound `∫ (1 + |x|)^(-3/2) < ∞`.
+import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
+-- Proof-only: translation and dilation invariance of the Lebesgue integral.
+import Mathlib.MeasureTheory.Group.LIntegral
+-- Proof-only: `Ψ₂Sq` under a change of variables.
+import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
+-- Proof-only: bounds on `1 / √d` and on `∏ᵢ |z - eᵢ|^(-1/2)`, and `∫_{|x| ≤ R} |x - e|^(-1/2) < ∞`
+-- for `e ∈ ℂ`.
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.MeasureTheory.Integral.NormRpow
+-- Proof-only: the one-dimensional change of variables formula.
+import Mathlib.MeasureTheory.Function.JacobianOneDim
+-- Proof-only: where `Ψ₂Sq` is positive, with three real roots.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Real
+-- Proof-only: the area formula with multiplicity, and the Jacobian of a map `ℝ → ℝ`.
+import TauCeti.Analysis.InnerProductSpace.NormDet
+import TauCeti.MeasureTheory.Function.AreaFormula.Multiplicity
+
+/-!
+# The real period of a Weierstrass curve over `ℝ`
+
+Let `W` be a Weierstrass curve over `ℝ` and `ω = dx / (2y + a₁x + a₃)` its invariant differential.
+On the curve `(2y + a₁x + a₃)² = Ψ₂Sq(x)`, where
+
+  `Ψ₂Sq(x) = 4x³ + b₂x² + 2b₄x + b₆`
+
+is Mathlib's `WeierstrassCurve.Ψ₂Sq`. A real point with abscissa `x` exists exactly when
+`Ψ₂Sq(x) ≥ 0`, and over each `x` with `Ψ₂Sq(x) > 0` there are two real points, on which
+`|ω| = dx / √Ψ₂Sq(x)`. The **real period** of `W` is therefore defined by the explicit integral
+
+  `Ω(W) = 2 ∫_{Ψ₂Sq(x) > 0} dx / √Ψ₂Sq(x)`,
+
+the factor `2` counting the two branches of `y`. It treats curves with one real component
+(`Δ < 0`) and with two (`Δ > 0`) uniformly. The integral is a Lebesgue integral of a nonnegative
+function, `WeierstrassCurve.realPeriodLIntegral`, with values in `ℝ≥0∞`, and
+`WeierstrassCurve.realPeriod` is twice its value as a real number. So that a divergent integral
+cannot silently read as `0`, the finiteness is a theorem: for an elliptic curve the integral is
+finite and positive.
+
+The singularities of the integrand are the real roots of `Ψ₂Sq`. On an elliptic curve the
+discriminant of the cubic `Ψ₂Sq` is `16 Δ ≠ 0`, so its three complex roots `e₁, e₂, e₃` are
+distinct, and `|Ψ₂Sq(x)| = 4 |x - e₁| |x - e₂| |x - e₃|`. Near a root only one factor is small,
+so the integrand is at most a constant times `|x - Re eᵢ|^(-1/2)`, which is integrable; far from
+the roots it is at most a constant times `(1 + |x|)^(-3/2)`, which is integrable at infinity.
+
+Under a change of variables `C = (u, r, s, t)` the invariant differential becomes `u ω`, and
+correspondingly `Ω(C • W) = |u| Ω(W)`. In particular the period is unchanged by a change of
+variables with `u = ±1`, which is the residual freedom between minimal Weierstrass equations
+over `ℤ`. Taking the absolute value `|ω|` is what makes the period independent of the sign of
+`u`: the automorphism `[-1]` of the curve pulls `ω` back to `-ω`.
+
+More generally, a map of curves `W → W'` given in coordinates by `x' = r(x)` and
+`2y' + a₁'x' + a₃' = s(x) (2y + a₁x + a₃)`, and pulling `ω'` back to `c ω`, satisfies
+`Ψ₂Sq'(r(x)) = s(x)² Ψ₂Sq(x)` and `r'(x) = c s(x)`. This is the shape of an isogeny, whose
+`x`-coordinate is a rational function of `x`. Then `|c| dx / √Ψ₂Sq(x) = |r'(x)| dx / √Ψ₂Sq'(r(x))`,
+and the area formula turns the real period integral of `W`, scaled by `|c|`, into the integral of
+`dx' / √Ψ₂Sq'(x')` weighted by the number of `x` with `Ψ₂Sq(x) > 0` over each `x'`. When that
+number is a constant `n`, this reads `|c| Ω(W) = n Ω(W')`.
+
+When `Ψ₂Sq = 4 (x - e₁)(x - e₂)(x - e₃)` has three real roots `e₁ < e₂ < e₃`, the curve has two
+real components, over `[e₁, e₂]` and over `[e₃, ∞)`, and each carries half of the period. The
+substitution `x ↦ e₁ + (e₁ - e₂)(e₁ - e₃) / (x - e₁)`, which on points is translation by the point
+of order two over `e₁`, carries `(e₃, ∞)` onto `(e₁, e₂)` and preserves `dx / √Ψ₂Sq(x)`.
+
+## Main definitions
+
+* `WeierstrassCurve.realPeriodLIntegral`: the integral `∫_{Ψ₂Sq(x) > 0} dx / √Ψ₂Sq(x)` in `ℝ≥0∞`.
+* `WeierstrassCurve.realPeriod`: the real period `Ω(W)`, twice the real value of that integral.
+
+## Main results
+
+* `WeierstrassCurve.realPeriodLIntegral_eq_lintegral`: the integrand vanishes off the set
+  `Ψ₂Sq(x) > 0`, so the integral may be taken over all of `ℝ`.
+* `WeierstrassCurve.realPeriodLIntegral_pos`: the integral is positive, for every curve.
+* `WeierstrassCurve.realPeriodLIntegral_lt_top`: the integral is finite on an elliptic curve.
+* `WeierstrassCurve.ofReal_realPeriod`: on an elliptic curve, `Ω(W)` is exactly twice the
+  integral.
+* `WeierstrassCurve.realPeriod_pos`: the real period of an elliptic curve is positive.
+* `WeierstrassCurve.realPeriodLIntegral_variableChange` and
+  `WeierstrassCurve.realPeriod_variableChange`: `Ω(C • W) = |u| Ω(W)`.
+* `WeierstrassCurve.realPeriod_baseChange_variableChange`: the same scaling for the base change to
+  `ℝ` of a curve over a ring such as `ℚ`.
+* `WeierstrassCurve.ofReal_abs_mul_realPeriodLIntegral_eq_setLIntegral_encard`: the real period
+  integral under a substitution `x' = r(x)`, with the fibres of `r` counted.
+* `WeierstrassCurve.ofReal_abs_mul_realPeriodLIntegral_eq_of_ae_encard_eq` and
+  `WeierstrassCurve.abs_mul_realPeriod_eq_of_ae_encard_eq`: `|c| Ω(W) = n Ω(W')` when almost every
+  fibre has `n` elements.
+* `WeierstrassCurve.setLIntegral_Ioo_eq_setLIntegral_Ioi` and
+  `WeierstrassCurve.realPeriodLIntegral_eq_two_mul_setLIntegral_Ioi`: with three real roots
+  `e₁ < e₂ < e₃`, the integrals over `(e₁, e₂)` and over `(e₃, ∞)` agree, so each is half of the
+  real period integral.
+
+## References
+
+* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], III.1 and Appendix C, §16.
+* L. C. Evans, R. F. Gariepy, *Measure Theory and Fine Properties of Functions*, revised edition,
+  §3.3 (the area formula).
+-/
+
+public section
+
+open MeasureTheory Polynomial Set
+open scoped ENNReal
+
+namespace WeierstrassCurve
+
+variable (W : WeierstrassCurve ℝ)
+
+/-- The integral `∫_{Ψ₂Sq(x) > 0} dx / √Ψ₂Sq(x)` of a Weierstrass curve over `ℝ`, where
+`Ψ₂Sq(x) = 4x³ + b₂x² + 2b₄x + b₆` is the square of `2y + a₁x + a₃` on the curve, as a value in
+`ℝ≥0∞`. It is finite for an elliptic curve (`WeierstrassCurve.realPeriodLIntegral_lt_top`), and
+whenever it is finite it is half the real period `WeierstrassCurve.realPeriod`
+(`WeierstrassCurve.ofReal_realPeriod`). -/
+noncomputable def realPeriodLIntegral : ℝ≥0∞ :=
+  ∫⁻ x in {x | 0 < W.Ψ₂Sq.eval x}, ENNReal.ofReal (√(W.Ψ₂Sq.eval x))⁻¹
+
+/-- The **real period** `Ω(W)` of a Weierstrass curve over `ℝ`, defined as twice the real value of
+`WeierstrassCurve.realPeriodLIntegral`. When that integral is finite, for instance for an elliptic
+curve (`WeierstrassCurve.ofReal_realPeriod`), this is `Ω(W) = 2 ∫_{Ψ₂Sq(x) > 0} dx / √Ψ₂Sq(x)`;
+when it diverges, `Ω(W) = 0`. The motivation is that this integral computes `∫ |ω|` over the real
+points, `ω = dx / (2y + a₁x + a₃)` being the invariant differential and the factor `2` counting the
+two real points over each `x`. -/
+noncomputable def realPeriod : ℝ :=
+  2 * W.realPeriodLIntegral.toReal
+
+/-- The defining integral of `WeierstrassCurve.realPeriodLIntegral`, over the set where
+`Ψ₂Sq > 0`. -/
+theorem realPeriodLIntegral_def :
+    W.realPeriodLIntegral =
+      ∫⁻ x in {x | 0 < W.Ψ₂Sq.eval x}, ENNReal.ofReal (√(W.Ψ₂Sq.eval x))⁻¹ :=
+  (rfl)
+
+/-- The real period is twice the real value of `WeierstrassCurve.realPeriodLIntegral`. -/
+theorem realPeriod_def : W.realPeriod = 2 * W.realPeriodLIntegral.toReal :=
+  (rfl)
+
+/-! ### The integrand -/
+
+private theorem measurable_integrand :
+    Measurable fun x ↦ ENNReal.ofReal (√(W.Ψ₂Sq.eval x))⁻¹ :=
+  (W.Ψ₂Sq.continuous.measurable.sqrt.inv).ennreal_ofReal
+
+private theorem support_integrand :
+    Function.support (fun x ↦ ENNReal.ofReal (√(W.Ψ₂Sq.eval x))⁻¹) = {x | 0 < W.Ψ₂Sq.eval x} := by
+  ext x
+  simp [ENNReal.ofReal_eq_zero, Real.sqrt_pos]
+
+/-- The integrand of the real period vanishes off the set `Ψ₂Sq(x) > 0`, so the integral may be
+taken over all of `ℝ`. -/
+theorem realPeriodLIntegral_eq_lintegral :
+    W.realPeriodLIntegral = ∫⁻ x, ENNReal.ofReal (√(W.Ψ₂Sq.eval x))⁻¹ :=
+  setLIntegral_eq_of_support_subset (W.support_integrand ▸ subset_rfl)
+
+/-- The integral of the real period is positive, for every Weierstrass curve over `ℝ`: the cubic
+`Ψ₂Sq` has leading coefficient `4`, so it is positive on a half-line. -/
+theorem realPeriodLIntegral_pos : 0 < W.realPeriodLIntegral := by
+  rw [realPeriodLIntegral_eq_lintegral, lintegral_pos_iff_support W.measurable_integrand,
+    support_integrand]
+  have h4 : (4 : ℝ) ≠ 0 := by norm_num
+  have hdeg : 0 < W.Ψ₂Sq.degree := by
+    rw [degree_eq_natDegree (fun h ↦ by simpa [h] using W.leadingCoeff_Ψ₂Sq h4),
+      W.natDegree_Ψ₂Sq h4]
+    norm_num
+  obtain ⟨M, hM⟩ := Filter.eventually_atTop.mp
+    ((W.Ψ₂Sq.tendsto_atTop_of_leadingCoeff_nonneg hdeg
+      (by rw [W.leadingCoeff_Ψ₂Sq h4]; norm_num)).eventually_gt_atTop 0)
+  calc (0 : ℝ≥0∞) < volume (Ioi M) := by simp
+    _ ≤ volume {x | 0 < W.Ψ₂Sq.eval x} := measure_mono fun x hx ↦ hM x (le_of_lt hx)
+
+/-! ### Finiteness -/
+
+/-- On an elliptic curve, `|Ψ₂Sq(x)| = 4 |x - e₁| |x - e₂| |x - e₃|` for the three distinct complex
+roots `eᵢ` of `Ψ₂Sq`, which are distinct since the discriminant of `Ψ₂Sq` is `16 Δ ≠ 0`. -/
+private theorem exists_norm_eval_Ψ₂Sq_eq [W.IsElliptic] :
+    ∃ e₁ e₂ e₃ : ℂ, e₁ ≠ e₂ ∧ e₁ ≠ e₃ ∧ e₂ ≠ e₃ ∧ ∀ x : ℝ,
+      ‖W.Ψ₂Sq.eval x‖ = 4 * (‖(x : ℂ) - e₁‖ * ‖(x : ℂ) - e₂‖ * ‖(x : ℂ) - e₃‖) := by
+  have ha : W.twoTorsionPolynomial.a ≠ 0 := by norm_num [twoTorsionPolynomial]
+  obtain ⟨e₁, e₂, e₃, h3⟩ := (Cubic.splits_iff_roots_eq_three (φ := Complex.ofRealHom) ha).mp
+    (IsAlgClosed.splits _)
+  have hdisc := Cubic.discr_eq_prod_three_roots ha h3
+  rw [twoTorsionPolynomial_discr] at hdisc
+  have hne : (Complex.ofRealHom (16 * W.Δ)) ≠ 0 :=
+    (_root_.map_ne_zero _).mpr (mul_ne_zero (by norm_num) W.isUnit_Δ.ne_zero)
+  rw [hdisc] at hne
+  have hprod := pow_ne_zero_iff (n := 2) (by norm_num) |>.mp hne
+  simp only [mul_ne_zero_iff, sub_ne_zero] at hprod
+  obtain ⟨⟨⟨-, h₁₂⟩, h₁₃⟩, h₂₃⟩ := hprod
+  refine ⟨e₁, e₂, e₃, h₁₂, h₁₃, h₂₃, fun x ↦ ?_⟩
+  have hx := congrArg (Polynomial.eval (x : ℂ)) (Cubic.eq_prod_three_roots ha h3)
+  rw [Cubic.map_toPoly, ← Complex.ofRealHom_eq_coe, Polynomial.eval_map_apply,
+    Complex.ofRealHom_eq_coe] at hx
+  rw [Ψ₂Sq_eq, ← Complex.norm_real, hx]
+  simp [twoTorsionPolynomial, mul_assoc]
+
+/-- Near the roots of `Ψ₂Sq`, the integrand of the real period is at most a constant times
+`∑ᵢ |x - eᵢ|^(-1/2)`, so its integral over a bounded interval is finite. -/
+private theorem setLIntegral_closedBall_lt_top {e₁ e₂ e₃ : ℂ} (h₁₂ : e₁ ≠ e₂) (h₁₃ : e₁ ≠ e₃)
+    (h₂₃ : e₂ ≠ e₃)
+    (hfac : ∀ x : ℝ, ‖W.Ψ₂Sq.eval x‖ = 4 * (‖(x : ℂ) - e₁‖ * ‖(x : ℂ) - e₂‖ * ‖(x : ℂ) - e₃‖))
+    (R : ℝ) :
+    ∫⁻ x in Metric.closedBall 0 R, ENNReal.ofReal (√(W.Ψ₂Sq.eval x))⁻¹ < ∞ := by
+  obtain ⟨K, hK, hle⟩ := ENNReal.exists_enorm_sub_rpow_neg_half_mul_le h₁₂ h₁₃ h₂₃
+  have hmeas (e : ℂ) : Measurable fun x : ℝ ↦ ‖(x : ℂ) - e‖ₑ ^ (-2⁻¹ : ℝ) := by fun_prop
+  have hfin (e : ℂ) := Complex.setLIntegral_closedBall_enorm_ofReal_sub_rpow_lt_top e
+    (s := -2⁻¹) (by norm_num) 0 R
+  calc ∫⁻ x in Metric.closedBall 0 R, ENNReal.ofReal (√(W.Ψ₂Sq.eval x))⁻¹
+      ≤ ∫⁻ x : ℝ in Metric.closedBall 0 R, K * (‖(x : ℂ) - e₁‖ₑ ^ (-2⁻¹ : ℝ) +
+          ‖(x : ℂ) - e₂‖ₑ ^ (-2⁻¹ : ℝ) + ‖(x : ℂ) - e₃‖ₑ ^ (-2⁻¹ : ℝ)) := by
+        refine lintegral_mono fun x ↦ (ENNReal.ofReal_inv_sqrt_le_enorm_rpow _).trans ?_
+        refine (ENNReal.rpow_le_rpow_of_nonpos
+          (x := ‖(x : ℂ) - e₁‖ₑ * ‖(x : ℂ) - e₂‖ₑ * ‖(x : ℂ) - e₃‖ₑ) ?_ (by norm_num)).trans ?_
+        · have h0 : 0 ≤ ‖(x : ℂ) - e₁‖ * ‖(x : ℂ) - e₂‖ * ‖(x : ℂ) - e₃‖ := by positivity
+          simp only [← ofReal_norm]
+          rw [hfac, ← ENNReal.ofReal_mul (norm_nonneg _), ← ENNReal.ofReal_mul (by positivity)]
+          exact ENNReal.ofReal_le_ofReal (by linarith)
+        · rw [ENNReal.mul_rpow_of_ne_top (ENNReal.mul_ne_top enorm_ne_top enorm_ne_top)
+            enorm_ne_top, ENNReal.mul_rpow_of_ne_top enorm_ne_top enorm_ne_top]
+          exact hle x
+    _ = K * ((∫⁻ x : ℝ in Metric.closedBall 0 R, ‖(x : ℂ) - e₁‖ₑ ^ (-2⁻¹ : ℝ)) +
+          (∫⁻ x : ℝ in Metric.closedBall 0 R, ‖(x : ℂ) - e₂‖ₑ ^ (-2⁻¹ : ℝ)) +
+          ∫⁻ x : ℝ in Metric.closedBall 0 R, ‖(x : ℂ) - e₃‖ₑ ^ (-2⁻¹ : ℝ)) := by
+        rw [lintegral_const_mul' _ _ hK, lintegral_add_left (f := fun x : ℝ ↦
+          ‖(x : ℂ) - e₁‖ₑ ^ (-2⁻¹ : ℝ) + ‖(x : ℂ) - e₂‖ₑ ^ (-2⁻¹ : ℝ)) ((hmeas e₁).add (hmeas e₂)),
+          lintegral_add_left (hmeas e₁)]
+    _ < ∞ := ENNReal.mul_lt_top hK.lt_top <| ENNReal.add_lt_top.mpr
+        ⟨ENNReal.add_lt_top.mpr ⟨hfin e₁, hfin e₂⟩, hfin e₃⟩
+
+/-- Far from the roots of `Ψ₂Sq`, where each `|x - eᵢ|` is at least `(1 + |x|) / 2`, the integrand
+of the real period is at most `√2 (1 + |x|)^(-3/2)`, so its integral is finite. -/
+private theorem setLIntegral_compl_closedBall_lt_top {e₁ e₂ e₃ : ℂ}
+    (hfac : ∀ x : ℝ, ‖W.Ψ₂Sq.eval x‖ = 4 * (‖(x : ℂ) - e₁‖ * ‖(x : ℂ) - e₂‖ * ‖(x : ℂ) - e₃‖)) :
+    ∫⁻ x in (Metric.closedBall 0 (2 * (‖e₁‖ + ‖e₂‖ + ‖e₃‖) + 1))ᶜ,
+      ENNReal.ofReal (√(W.Ψ₂Sq.eval x))⁻¹ < ∞ := by
+  set R := 2 * (‖e₁‖ + ‖e₂‖ + ‖e₃‖) + 1
+  set F : ℝ → ℝ≥0∞ := fun x ↦ ENNReal.ofReal √2 * ENNReal.ofReal ((1 + ‖x‖) ^ (-(3 / 2 : ℝ)))
+  calc ∫⁻ x in (Metric.closedBall 0 R)ᶜ, ENNReal.ofReal (√(W.Ψ₂Sq.eval x))⁻¹
+      ≤ ∫⁻ x in (Metric.closedBall 0 R)ᶜ, F x := by
+        refine setLIntegral_mono_ae (by fun_prop) (ae_of_all _ fun x hx ↦ ?_)
+        refine ENNReal.ofReal_inv_sqrt_le_of_pow_three_le (by positivity) ?_
+        simp only [mem_compl_iff, Metric.mem_closedBall, dist_zero_right, not_le] at hx
+        -- each `|x - eᵢ|` is at least `(1 + |x|) / 2`
+        have hfar (e : ℂ) (he : 2 * ‖e‖ + 1 ≤ R) : (1 + ‖x‖) / 2 ≤ ‖(x : ℂ) - e‖ := by
+          have := norm_sub_norm_le (x : ℂ) e
+          rw [Complex.norm_real] at this
+          linarith
+        have h₁ := hfar e₁ (by linarith [norm_nonneg e₂, norm_nonneg e₃])
+        have h₂ := hfar e₂ (by linarith [norm_nonneg e₁, norm_nonneg e₃])
+        have h₃ := hfar e₃ (by linarith [norm_nonneg e₁, norm_nonneg e₂])
+        have hy : 0 ≤ (1 + ‖x‖) / 2 := by positivity
+        rw [← Real.norm_eq_abs, hfac]
+        nlinarith [mul_le_mul (mul_le_mul h₁ h₂ hy (hy.trans h₁)) h₃ hy
+          (mul_nonneg (hy.trans h₁) (hy.trans h₂))]
+    _ ≤ ∫⁻ x, F x := setLIntegral_le_lintegral _ _
+    _ < ∞ := by
+        rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+        exact ENNReal.mul_lt_top ENNReal.ofReal_lt_top
+          (finite_integral_one_add_norm (by norm_num))
+
+/-- **The real period integral of an elliptic curve is finite.** -/
+theorem realPeriodLIntegral_lt_top [W.IsElliptic] : W.realPeriodLIntegral < ∞ := by
+  obtain ⟨e₁, e₂, e₃, h₁₂, h₁₃, h₂₃, hfac⟩ := W.exists_norm_eval_Ψ₂Sq_eq
+  rw [realPeriodLIntegral_eq_lintegral, ← lintegral_add_compl _
+    (Metric.isClosed_closedBall (x := (0 : ℝ)) (ε := 2 * (‖e₁‖ + ‖e₂‖ + ‖e₃‖) + 1)).measurableSet]
+  exact ENNReal.add_lt_top.mpr ⟨W.setLIntegral_closedBall_lt_top h₁₂ h₁₃ h₂₃ hfac _,
+    W.setLIntegral_compl_closedBall_lt_top hfac⟩
+
+/-- On an elliptic curve, the real period is exactly twice the integral
+`∫_{Ψ₂Sq(x) > 0} dx / √Ψ₂Sq(x)`. -/
+theorem ofReal_realPeriod [W.IsElliptic] :
+    ENNReal.ofReal W.realPeriod = 2 * W.realPeriodLIntegral := by
+  rw [realPeriod, ENNReal.ofReal_mul zero_le_two,
+    ENNReal.ofReal_toReal W.realPeriodLIntegral_lt_top.ne, ENNReal.ofReal_ofNat]
+
+/-- **The real period of an elliptic curve is positive.** -/
+theorem realPeriod_pos [W.IsElliptic] : 0 < W.realPeriod :=
+  mul_pos two_pos <|
+    ENNReal.toReal_pos W.realPeriodLIntegral_pos.ne' W.realPeriodLIntegral_lt_top.ne
+
+/-! ### Changes of variables -/
+
+/-- Under a change of variables `C = (u, r, s, t)` the integral of the real period scales by `|u|`,
+as the invariant differential becomes `u ω`. -/
+@[simp]
+theorem realPeriodLIntegral_variableChange (C : VariableChange ℝ) :
+    (C • W).realPeriodLIntegral = ENNReal.ofReal |(C.u : ℝ)| * W.realPeriodLIntegral := by
+  have hu : (C.u : ℝ) ≠ 0 := C.u.ne_zero
+  have hu2 : (C.u : ℝ) ^ 2 ≠ 0 := pow_ne_zero 2 hu
+  set g : ℝ → ℝ≥0∞ := fun x ↦ ENNReal.ofReal (√(W.Ψ₂Sq.eval x))⁻¹ with g_def
+  -- the integrand of `C • W` at `x` is `|u|³` times that of `W` at `u² x + r`
+  have hpt (x : ℝ) : ENNReal.ofReal (√((C • W).Ψ₂Sq.eval x))⁻¹ =
+      ENNReal.ofReal (|(C.u : ℝ)| ^ 3) * g ((C.u : ℝ) ^ 2 * (x + C.r / (C.u : ℝ) ^ 2)) := by
+    rw [eval_variableChange_Ψ₂Sq, g_def, ← ENNReal.ofReal_mul (by positivity),
+      mul_add, mul_div_cancel₀ _ hu2]
+    congr 1
+    have h6 : ((C.u⁻¹ : ℝˣ) : ℝ) ^ 6 = ((|(C.u : ℝ)| ^ 3)⁻¹) ^ 2 := by
+      have habs : |(C.u : ℝ)| ^ 6 = (C.u : ℝ) ^ 6 := (by decide : Even 6).pow_abs _
+      rw [Units.val_inv_eq_inv_val, inv_pow, inv_pow, ← pow_mul, habs]
+    rw [h6, Real.sqrt_mul (by positivity), Real.sqrt_sq (by positivity), mul_inv, inv_inv]
+  -- translation invariance removes the shift by `r / u²`
+  have htrans : ∫⁻ x, g ((C.u : ℝ) ^ 2 * (x + C.r / (C.u : ℝ) ^ 2)) =
+      ∫⁻ x, g ((C.u : ℝ) ^ 2 * x) :=
+    lintegral_add_right_eq_self (fun y ↦ g ((C.u : ℝ) ^ 2 * y)) _
+  -- dilation by `u²` scales the integral by `|u²|⁻¹`
+  have hdil : ∫⁻ x, g ((C.u : ℝ) ^ 2 * x) = ENNReal.ofReal |((C.u : ℝ) ^ 2)⁻¹| * ∫⁻ x, g x := by
+    rw [← (measurableEmbedding_mulLeft₀ hu2).lintegral_map, Real.map_volume_mul_left hu2,
+      lintegral_smul_measure, smul_eq_mul]
+  rw [realPeriodLIntegral_eq_lintegral, realPeriodLIntegral_eq_lintegral]
+  simp_rw [hpt]
+  rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, htrans, hdil, ← mul_assoc,
+    ← ENNReal.ofReal_mul (by positivity)]
+  congr 2
+  rw [abs_inv, abs_pow]
+  field_simp
+
+/-- **The real period scales by `|u|` under a change of variables** `C = (u, r, s, t)`:
+`Ω(C • W) = |u| Ω(W)`. In particular it is unchanged when `u = ±1`. -/
+@[simp]
+theorem realPeriod_variableChange (C : VariableChange ℝ) :
+    (C • W).realPeriod = |(C.u : ℝ)| * W.realPeriod := by
+  rw [realPeriod, realPeriod, realPeriodLIntegral_variableChange, ENNReal.toReal_mul,
+    ENNReal.toReal_ofReal (abs_nonneg _)]
+  ring
+
+/-- For a Weierstrass curve `V` over a ring `R` with an algebra map to `ℝ` (such as `ℚ`), the real
+period of the base change of `C • V` is `|u|` times that of `V`, `u` being read in `ℝ`. -/
+@[simp]
+theorem realPeriod_baseChange_variableChange {R : Type*} [CommRing R] [Algebra R ℝ]
+    (C : VariableChange R) (V : WeierstrassCurve R) :
+    ((C • V).baseChange ℝ).realPeriod = |algebraMap R ℝ C.u| * (V.baseChange ℝ).realPeriod := by
+  simp [baseChange, ← map_variableChange, realPeriod_variableChange]
+
+/-! ### Substitutions -/
+
+/-- The pointwise identity behind the substitution formula: if `r` has derivative `c * sx` at `x`
+with `sx ≠ 0`, `0 < a` and `a' = sx² a`, then `|c| / √a = |r'(x)| / √a'`, in the extended
+nonnegative reals. -/
+private theorem ofReal_abs_mul_inv_sqrt_eq_normDet_fderiv_mul {r : ℝ → ℝ} {c sx x a a' : ℝ}
+    (hd : HasDerivAt r (c * sx) x) (ha : 0 < a) (hsx : sx ≠ 0) (hΨ : a' = sx ^ 2 * a) :
+    ENNReal.ofReal |c| * ENNReal.ofReal (√a)⁻¹ =
+      ENNReal.ofReal (fderiv ℝ r x).normDet * ENNReal.ofReal (√a')⁻¹ := by
+  have hnormDet : (fderiv ℝ r x).normDet = |c * sx| := by
+    rw [hd.hasFDerivAt.fderiv, LinearMap.normDet_eq_norm_apply_one]
+    simp
+  have hsx' : 0 < |sx| := abs_pos.mpr hsx
+  have hΨx : 0 < √a := Real.sqrt_pos.mpr ha
+  rw [hnormDet, hΨ, ← ENNReal.ofReal_mul (abs_nonneg _), ← ENNReal.ofReal_mul (abs_nonneg _),
+    Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq_eq_abs, abs_mul]
+  congr 1
+  field_simp
+
+/-- **The real period integral under a substitution `x' = r(x)`, counting fibres.** Suppose that on
+the set where `Ψ₂Sq(x) > 0`, away from a countable set `Z`, the function `r` has derivative
+`r'(x) = c s(x)` with `c ≠ 0` and `s(x) ≠ 0`, and `Ψ₂Sq'(r(x)) = s(x)² Ψ₂Sq(x)`, where `Ψ₂Sq'` is
+that of a second curve `W'`. Then `|c|` times the real period integral of `W` is the integral over
+`Ψ₂Sq'(x') > 0` of `dx' / √Ψ₂Sq'(x')`, weighted by the number of `x` with `Ψ₂Sq(x) > 0` and
+`r(x) = x'`. The hypotheses are those of a map `(x, y) ↦ (r(x), …)` sending `2y + a₁x + a₃` to
+`s(x) (2y + a₁x + a₃)` and pulling the invariant differential back to `c ω`. -/
+theorem ofReal_abs_mul_realPeriodLIntegral_eq_setLIntegral_encard {W' : WeierstrassCurve ℝ}
+    {r s : ℝ → ℝ} {c : ℝ} {Z : Set ℝ} (hc : c ≠ 0) (hZ : Z.Countable)
+    (hr : ∀ x, 0 < W.Ψ₂Sq.eval x → x ∉ Z → HasDerivAt r (c * s x) x)
+    (hs : ∀ x, 0 < W.Ψ₂Sq.eval x → x ∉ Z → s x ≠ 0)
+    (hΨ : ∀ x, 0 < W.Ψ₂Sq.eval x → x ∉ Z → W'.Ψ₂Sq.eval (r x) = s x ^ 2 * W.Ψ₂Sq.eval x) :
+    ENNReal.ofReal |c| * W.realPeriodLIntegral =
+      ∫⁻ y in {y | 0 < W'.Ψ₂Sq.eval y},
+        ({x | 0 < W.Ψ₂Sq.eval x} ∩ r ⁻¹' {y}).encard * ENNReal.ofReal (√(W'.Ψ₂Sq.eval y))⁻¹ := by
+  classical
+  set U := {x | 0 < W.Ψ₂Sq.eval x}
+  set S := U \ Z
+  set g : ℝ → ℝ≥0∞ := fun y ↦ ENNReal.ofReal (√(W'.Ψ₂Sq.eval y))⁻¹ with g_def
+  have hSm : MeasurableSet S :=
+    (measurableSet_lt measurable_const W.Ψ₂Sq.continuous.measurable).diff hZ.measurableSet
+  have hd (x : ℝ) (hx : x ∈ S) : HasDerivAt r (c * s x) x := hr x hx.1 hx.2
+  -- `r` is continuous on `S`, so it agrees there with a measurable function
+  set r₀ := S.piecewise r 0
+  have hrc : ContinuousOn r S := fun x hx ↦ (hd x hx).continuousAt.continuousWithinAt
+  have hr₀ : Measurable r₀ := hrc.measurable_piecewise continuousOn_const hSm
+  have hr₀S (x : ℝ) (hx : x ∈ S) : r₀ x = r x := piecewise_eq_of_mem _ _ _ hx
+  have hg : Measurable g := (W'.Ψ₂Sq.continuous.measurable.sqrt.inv).ennreal_ofReal
+  -- on `S`, `|c| / √Ψ₂Sq(x) = |r'(x)| / √Ψ₂Sq'(r(x))`
+  have hpt (x : ℝ) (hx : x ∈ S) : ENNReal.ofReal |c| * ENNReal.ofReal (√(W.Ψ₂Sq.eval x))⁻¹ =
+      ENNReal.ofReal (fderiv ℝ r x).normDet * g (r₀ x) := by
+    rw [hr₀S x hx, g_def]
+    exact ofReal_abs_mul_inv_sqrt_eq_normDet_fderiv_mul (hd x hx) hx.1 (hs x hx.1 hx.2)
+      (hΨ x hx.1 hx.2)
+  -- the area formula on `S`, where the derivative of `r` is injective
+  have harea := TauCeti.lintegral_normDet_fderiv_mul_eq_lintegral_tsum_of_injective_fderiv
+    hSm (fun x hx ↦ (hd x hx).differentiableAt) (fun x hx ↦ ?_) (g := fun x ↦ g (r₀ x))
+    (hg.comp hr₀)
+  swap
+  · rw [(hd x hx).hasFDerivAt.fderiv]
+    intro a b hab
+    simpa [hc, hs x hx.1 hx.2] using hab
+  rw [InnerProductSpace.euclideanHausdorffMeasure_eq_volume] at harea
+  -- the fibres over `S` and over `U` agree off the countable set `r '' Z`
+  have hfib : ∀ᵐ y, (S ∩ r ⁻¹' {y}).encard = (U ∩ r ⁻¹' {y}).encard := by
+    filter_upwards [measure_eq_zero_iff_ae_notMem.mp ((hZ.image r).measure_zero volume)] with y hy
+    congr 1
+    ext x
+    simp only [S, mem_inter_iff, mem_sdiff, mem_preimage, mem_singleton_iff]
+    exact ⟨fun h ↦ ⟨h.1.1, h.2⟩, fun h ↦ ⟨⟨h.1, fun hxZ ↦ hy ⟨x, hxZ, h.2⟩⟩, h.2⟩⟩
+  have hsupp : (Function.support fun y ↦ ((U ∩ r ⁻¹' {y}).encard : ℝ≥0∞) * g y) ⊆
+      {y | 0 < W'.Ψ₂Sq.eval y} :=
+    (Function.support_mul_subset_right _ _).trans W'.support_integrand.subset
+  calc ENNReal.ofReal |c| * W.realPeriodLIntegral
+      = ∫⁻ x in S, ENNReal.ofReal |c| * ENNReal.ofReal (√(W.Ψ₂Sq.eval x))⁻¹ := by
+        rw [realPeriodLIntegral_def, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+          setLIntegral_congr (sdiff_null_ae_eq_self (hZ.measure_zero _))]
+    _ = ∫⁻ x in S, ENNReal.ofReal (fderiv ℝ r x).normDet * g (r₀ x) :=
+        setLIntegral_congr_fun hSm hpt
+    _ = ∫⁻ y, ((S ∩ r ⁻¹' {y}).encard : ℝ≥0∞) * g y := by
+        rw [harea]
+        refine lintegral_congr fun y ↦ ?_
+        rw [← ENNReal.tsum_set_const]
+        exact tsum_congr fun x ↦ by rw [hr₀S x x.2.1, x.2.2]
+    _ = ∫⁻ y, ((U ∩ r ⁻¹' {y}).encard : ℝ≥0∞) * g y :=
+        lintegral_congr_ae (hfib.mono fun y hy ↦ by dsimp only; rw [hy])
+    _ = _ := (setLIntegral_eq_of_support_subset hsupp).symm
+
+/-- **The real period integral under a substitution with constant fibre count.** Under the
+hypotheses of `WeierstrassCurve.ofReal_abs_mul_realPeriodLIntegral_eq_setLIntegral_encard`, if
+almost every `x'` with `Ψ₂Sq'(x') > 0` is `r(x)` for exactly `n` values `x` with `Ψ₂Sq(x) > 0`,
+then `|c|` times the real period integral of `W` is `n` times that of `W'`. -/
+theorem ofReal_abs_mul_realPeriodLIntegral_eq_of_ae_encard_eq {W' : WeierstrassCurve ℝ}
+    {r s : ℝ → ℝ} {c : ℝ} {Z : Set ℝ} (hc : c ≠ 0) (hZ : Z.Countable)
+    (hr : ∀ x, 0 < W.Ψ₂Sq.eval x → x ∉ Z → HasDerivAt r (c * s x) x)
+    (hs : ∀ x, 0 < W.Ψ₂Sq.eval x → x ∉ Z → s x ≠ 0)
+    (hΨ : ∀ x, 0 < W.Ψ₂Sq.eval x → x ∉ Z → W'.Ψ₂Sq.eval (r x) = s x ^ 2 * W.Ψ₂Sq.eval x)
+    {n : ℕ} (hn : ∀ᵐ y, 0 < W'.Ψ₂Sq.eval y → ({x | 0 < W.Ψ₂Sq.eval x} ∩ r ⁻¹' {y}).encard = n) :
+    ENNReal.ofReal |c| * W.realPeriodLIntegral = n * W'.realPeriodLIntegral := by
+  rw [W.ofReal_abs_mul_realPeriodLIntegral_eq_setLIntegral_encard hc hZ hr hs hΨ,
+    realPeriodLIntegral_def, ← lintegral_const_mul' _ _ (ENNReal.natCast_ne_top n)]
+  refine setLIntegral_congr_fun_ae
+    (measurableSet_lt measurable_const W'.Ψ₂Sq.continuous.measurable) ?_
+  filter_upwards [hn] with y hy hy'
+  rw [hy hy', ENat.toENNReal_coe]
+
+/-- **The real period under a substitution with constant fibre count**: `|c| Ω(W) = n Ω(W')`, under
+the hypotheses of `WeierstrassCurve.ofReal_abs_mul_realPeriodLIntegral_eq_of_ae_encard_eq`. -/
+theorem abs_mul_realPeriod_eq_of_ae_encard_eq {W' : WeierstrassCurve ℝ}
+    {r s : ℝ → ℝ} {c : ℝ} {Z : Set ℝ} (hc : c ≠ 0) (hZ : Z.Countable)
+    (hr : ∀ x, 0 < W.Ψ₂Sq.eval x → x ∉ Z → HasDerivAt r (c * s x) x)
+    (hs : ∀ x, 0 < W.Ψ₂Sq.eval x → x ∉ Z → s x ≠ 0)
+    (hΨ : ∀ x, 0 < W.Ψ₂Sq.eval x → x ∉ Z → W'.Ψ₂Sq.eval (r x) = s x ^ 2 * W.Ψ₂Sq.eval x)
+    {n : ℕ} (hn : ∀ᵐ y, 0 < W'.Ψ₂Sq.eval y → ({x | 0 < W.Ψ₂Sq.eval x} ∩ r ⁻¹' {y}).encard = n) :
+    |c| * W.realPeriod = n * W'.realPeriod := by
+  have h := congrArg ENNReal.toReal
+    (W.ofReal_abs_mul_realPeriodLIntegral_eq_of_ae_encard_eq hc hZ hr hs hΨ hn)
+  rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (abs_nonneg c), ENNReal.toReal_mul,
+    ENNReal.toReal_natCast] at h
+  rw [realPeriod, realPeriod, mul_left_comm, h, mul_left_comm]
+
+/-! ### Curves with three real roots -/
+
+/-- **The two real components carry the same period.** If `Ψ₂Sq = 4 (X - e₁)(X - e₂)(X - e₃)`
+with `e₁ < e₂ < e₃`, then `∫_{e₁}^{e₂} dx / √Ψ₂Sq(x) = ∫_{e₃}^∞ dx / √Ψ₂Sq(x)`: the substitution
+`x ↦ e₁ + (e₁ - e₂)(e₁ - e₃) / (x - e₁)` carries `(e₃, ∞)` onto `(e₁, e₂)` and preserves
+`dx / √Ψ₂Sq(x)`. -/
+theorem setLIntegral_Ioo_eq_setLIntegral_Ioi {e₁ e₂ e₃ : ℝ} (h₁₂ : e₁ < e₂) (h₂₃ : e₂ < e₃)
+    (h : W.Ψ₂Sq = C 4 * (X - C e₁) * (X - C e₂) * (X - C e₃)) :
+    ∫⁻ x in Ioo e₁ e₂, ENNReal.ofReal (√(W.Ψ₂Sq.eval x))⁻¹ =
+      ∫⁻ x in Ioi e₃, ENNReal.ofReal (√(W.Ψ₂Sq.eval x))⁻¹ := by
+  have hΨ (x : ℝ) : W.Ψ₂Sq.eval x = 4 * (x - e₁) * (x - e₂) * (x - e₃) := by simp [h]
+  set k := (e₁ - e₂) * (e₁ - e₃)
+  have hk : 0 < k := mul_pos_of_neg_of_neg (by linarith) (by linarith)
+  set f : ℝ → ℝ := fun x ↦ e₁ + k * (x - e₁)⁻¹
+  have hf' (x : ℝ) (hx : x ∈ Ioi e₃) :
+      HasDerivWithinAt f (-k / (x - e₁) ^ 2) (Ioi e₃) x := by
+    have hx₁ : x - e₁ ≠ 0 := by rw [mem_Ioi] at hx; linarith
+    have hd := (((hasDerivAt_id x).sub_const e₁).inv hx₁).const_mul k |>.const_add e₁
+    exact (hd.congr_deriv (by simp only [id_eq]; field_simp)).hasDerivWithinAt
+  have hinj : InjOn f (Ioi e₃) := fun a ha b hb hab ↦ by
+    rw [mem_Ioi] at ha hb
+    have ha₁ : a - e₁ ≠ 0 := by linarith
+    have hb₁ : b - e₁ ≠ 0 := by linarith
+    simp only [f, add_right_inj, mul_right_inj' hk.ne', inv_inj, sub_left_inj] at hab
+    exact hab
+  have himage : f '' Ioi e₃ = Ioo e₁ e₂ := by
+    ext y
+    simp only [mem_image, mem_Ioi, mem_Ioo, f]
+    constructor
+    · rintro ⟨x, hx, rfl⟩
+      have hx₁ : 0 < x - e₁ := by linarith
+      refine ⟨by have := mul_pos hk (inv_pos.2 hx₁); linarith, ?_⟩
+      rw [← lt_sub_iff_add_lt', mul_inv_lt_iff₀ hx₁]
+      nlinarith
+    · rintro ⟨h₁, h₂⟩
+      have hy₁ : 0 < y - e₁ := by linarith
+      refine ⟨e₁ + k * (y - e₁)⁻¹, ?_, by field_simp [hk.ne', hy₁.ne']; ring⟩
+      rw [← sub_lt_iff_lt_add', lt_mul_inv_iff₀ hy₁]
+      nlinarith
+  rw [← himage, lintegral_image_eq_lintegral_abs_deriv_mul measurableSet_Ioi hf' hinj]
+  refine setLIntegral_congr_fun measurableSet_Ioi fun x hx ↦ ?_
+  rw [mem_Ioi] at hx
+  have hx₁ : 0 < x - e₁ := by linarith
+  set a := k / (x - e₁) ^ 2
+  have ha : 0 < a := by positivity
+  have hfx : W.Ψ₂Sq.eval (f x) = a ^ 2 * W.Ψ₂Sq.eval x := by
+    simp only [hΨ, f, a, k]
+    field_simp
+    ring
+  rw [← ENNReal.ofReal_mul (abs_nonneg _), hfx, Real.sqrt_mul (sq_nonneg a), Real.sqrt_sq ha.le,
+    show -k / (x - e₁) ^ 2 = -a by ring, abs_neg, abs_of_pos ha, mul_inv, ← mul_assoc,
+    mul_inv_cancel₀ ha.ne', one_mul]
+
+/-- **With three real roots `e₁ < e₂ < e₃`, the component over `(e₃, ∞)` carries half of the real
+period integral**: `Ψ₂Sq` is positive exactly on `(e₁, e₂) ∪ (e₃, ∞)`, and the integrals over the
+two intervals agree by `WeierstrassCurve.setLIntegral_Ioo_eq_setLIntegral_Ioi`. -/
+theorem realPeriodLIntegral_eq_two_mul_setLIntegral_Ioi {e₁ e₂ e₃ : ℝ} (h₁₂ : e₁ < e₂)
+    (h₂₃ : e₂ < e₃) (h : W.Ψ₂Sq = C 4 * (X - C e₁) * (X - C e₂) * (X - C e₃)) :
+    W.realPeriodLIntegral = 2 * ∫⁻ x in Ioi e₃, ENNReal.ofReal (√(W.Ψ₂Sq.eval x))⁻¹ := by
+  have hset : {x | 0 < W.Ψ₂Sq.eval x} = Ioo e₁ e₂ ∪ Ioi e₃ :=
+    ext (W.pos_eval_Ψ₂Sq_iff_of_eq_prod_three_roots h₁₂ h₂₃ h)
+  rw [realPeriodLIntegral_def, hset, lintegral_union measurableSet_Ioi
+    (disjoint_left.mpr fun x (hx : x ∈ Ioo e₁ e₂) (hx' : x ∈ Ioi e₃) ↦
+      (lt_trans hx.2 h₂₃).not_gt hx'),
+    W.setLIntegral_Ioo_eq_setLIntegral_Ioi h₁₂ h₂₃ h, two_mul]
+
+end WeierstrassCurve

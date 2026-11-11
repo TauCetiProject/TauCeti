@@ -21,7 +21,9 @@ singular homology, and maps of pairs that are inverse to each other up to homoto
 isomorphisms on it.  This is the homotopy axiom of Eilenberg--Steenrod for the relative singular
 theory.  In particular, if `s ⊆ c ⊆ t` and `t` strong deformation retracts onto `c`, the inclusion
 of pairs `(c, s) ⟶ (t, s)` induces isomorphisms on relative singular homology
-(`TopPair.isIso_singularHomologyMap_ofInclusionMap_inclusion_of_homotopyRel`).  In the absolute
+(`TopPair.isIso_singularHomologyMap_ofInclusionMap_inclusion_of_homotopyRel`), and if `t` strong
+deformation retracts onto `s` the relative homology of `(t, s)` vanishes
+(`TopPair.isZero_singularHomology_ofInclusion_of_homotopyRel`).  In the absolute
 case, a homotopy equivalence of spaces induces an isomorphism on singular homology
 (`ContinuousMap.HomotopyEquiv.singularHomologyIso`).
 
@@ -141,6 +143,26 @@ theorem isIso_singularHomologyMap_ofInclusionMap_inclusion_of_homotopyRel {X : T
     have h : G.toHomotopy (τ, x) = _ := G.eq_fst τ (hsc hx)
     exact h ▸ hrs x hx
 
+/-- **A pair with a strong deformation retraction onto its subspace has no relative homology.**
+If `s ⊆ t` and `t` deformation retracts onto `s` relative to `s`, the relative singular homology
+of `(t, s)` vanishes in every degree. -/
+theorem isZero_singularHomology_ofInclusion_of_homotopyRel {X : TopCat.{w}} {s t : Set X}
+    (hst : s ⊆ t) (r : C(t, s))
+    (G : ((ContinuousMap.inclusion hst).comp r).HomotopyRel (ContinuousMap.id t)
+      {x | (x : X) ∈ s})
+    (R : C) (n : ℕ) :
+    IsZero ((ofInclusion hst).singularHomology R n) := by
+  -- The identity of the pair is homotopic to the retraction, which factors through `s`.
+  refine isZero_singularHomology_of_homotopy
+    (f := ofInclusionMap hst hst ((ContinuousMap.inclusion hst).comp r) fun x _ ↦ (r x).2)
+    ?_ (TopCat.ofHom r)
+    (by ext x; exact (ofInclusionMap_fst_apply (hst := hst) (hst' := hst) _ _ x).symm) R n
+  rw [← ofInclusionMap_id]
+  refine ofInclusionHomotopy G.symm.toHomotopy fun τ x hx ↦ ?_
+  have h : G.symm.toHomotopy (τ, x) = x := G.symm.eq_fst τ hx
+  rw [h]
+  exact hx
+
 end TopPair
 
 namespace ContinuousMap.HomotopyEquiv
@@ -192,6 +214,14 @@ theorem singularHomologyMap_eq_of_homotopic {Y Z : Type w} [TopologicalSpace Y]
   congrArg ModuleCat.Hom.hom
     (TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor
       (f := TopCat.ofHom g) (g := TopCat.ofHom g') H.some (ModuleCat.of k k) n)
+
+/-- A continuous map with a left inverse up to homotopy is injective on singular homology. -/
+theorem injective_singularHomologyMap_of_homotopic_comp_id {Y Z : Type w} [TopologicalSpace Y]
+    [TopologicalSpace Z] {s : C(Y, Z)} {r : C(Z, Y)} (H : (r.comp s).Homotopic (.id Y)) :
+    Function.Injective (singularHomologyMap k n s) :=
+  Function.LeftInverse.injective (g := singularHomologyMap k n r) fun y ↦ by
+    rw [← singularHomologyMap_comp, singularHomologyMap_eq_of_homotopic k n H,
+      singularHomologyMap_id]
 
 /-- A homotopy equivalence induces a bijection on singular homology. -/
 theorem HomotopyEquiv.bijective_singularHomologyMap {Y Z : Type w}

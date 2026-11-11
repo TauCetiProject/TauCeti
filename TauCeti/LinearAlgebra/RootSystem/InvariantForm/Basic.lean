@@ -29,6 +29,7 @@ step towards a higher weight.
 
 ## Main results
 
+* `RootPairing.InvariantForm.form_root_add_root_self`: the squared length of a sum of two roots.
 * `RootPairing.InvariantForm.two_mul_apply_root`: `2 ⟨x, α⟩ = ⟨x, α^∨⟩ ⟨α, α⟩` for every `x`.
 * `RootPairing.InvariantForm.exists_pos_and_coroot'_neg_of_apply_self_eq`: if `x` and `y` have
   equal length and `y - x`, of positive length, is a nonnegative combination of roots of
@@ -141,5 +142,16 @@ theorem reflTransGen_of_sub_eq_sum [LinearOrder R] [IsStrictOrderedRing R]
       ← Finset.add_sum_erase _ _ (Finset.mem_univ j)]
     rw [add_right_comm, ← succ_nsmul, Nat.sub_add_cancel hcj]
   rw [hμa', sub_add_eq_sub_sub, h, hsum, add_sub_cancel_right]
+
+/-- The squared length of a sum of two roots in an invariant form. -/
+theorem form_root_add_root_self (i j : ι) :
+    B.form (P.root i + P.root j) (P.root i + P.root j) =
+      B.form (P.root i) (P.root i) + P.pairing j i * B.form (P.root i) (P.root i) +
+        B.form (P.root j) (P.root j) := by
+  have hsym : B.form (P.root j) (P.root i) = B.form (P.root i) (P.root j) := by
+    simpa only [RingHom.id_apply] using B.symm.eq (P.root j) (P.root i)
+  have hcross := B.two_mul_apply_root_root j i
+  simp only [map_add, LinearMap.add_apply]
+  linear_combination hcross - hsym
 
 end RootPairing.InvariantForm

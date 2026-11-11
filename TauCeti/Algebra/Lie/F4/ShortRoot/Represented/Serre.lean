@@ -89,6 +89,16 @@ theorem loweringMatrixBaseChange_apply (i : Fin 4) (a b : Fin 26) :
     loweringMatrixBaseChange R i a b = (loweringMatrix i a b : R) := by
   rw [loweringMatrixBaseChange, TauCeti.matrixIntCastLieHom_apply]
 
+/-- The base-changed raising matrix is obtained by casting each integral entry. -/
+theorem raisingMatrixBaseChange_eq_map (i : Fin 4) :
+    raisingMatrixBaseChange R i = (raisingMatrix i).map (Int.cast : ℤ → R) := by
+  rw [raisingMatrixBaseChange, TauCeti.matrixIntCastLieHom_eq_map]
+
+/-- The base-changed lowering matrix is obtained by casting each integral entry. -/
+theorem loweringMatrixBaseChange_eq_map (i : Fin 4) :
+    loweringMatrixBaseChange R i = (loweringMatrix i).map (Int.cast : ℤ → R) := by
+  rw [loweringMatrixBaseChange, TauCeti.matrixIntCastLieHom_eq_map]
+
 /-- The base-changed matrices satisfy the type-`F₄` Chevalley--Serre relations. -/
 theorem isSerreSystemBaseChange :
     IsSerreSystem R CartanMatrix.F₄ᵀ (cartanMatrixBaseChange R)

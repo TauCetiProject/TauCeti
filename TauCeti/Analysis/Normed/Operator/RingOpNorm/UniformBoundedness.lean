@@ -155,13 +155,14 @@ section Seminormed
 variable [SeminormedAddCommGroup F] [Module R F] [IsBoundedSMul R F]
 
 /-- If a family `g : α → E →L[R] F` converges pointwise to `f : E →L[R] F` along a nontrivial
-filter `l` and eventually satisfies `‖g a‖ ≤ C` with `0 ≤ C`, then `‖f‖ ≤ C`. -/
+filter `l` and eventually satisfies `‖g a‖ ≤ C`, then `‖f‖ ≤ C`. -/
 theorem ringOpNorm_le_of_tendsto {α : Type*} {l : Filter α} [l.NeBot]
-    (f : E →L[R] F) (g : α → E →L[R] F) {C : ℝ} (hC : 0 ≤ C)
+    (f : E →L[R] F) (g : α → E →L[R] F) {C : ℝ}
     (hf : ∀ x : E, Tendsto (fun a ↦ g a x) l (𝓝 (f x)))
     (hg : ∀ᶠ a in l, ‖g a‖ ≤ C) :
-    ‖f‖ ≤ C :=
-  f.ringOpNorm_le_bound hC fun x ↦
+    ‖f‖ ≤ C := by
+  obtain ⟨a, ha⟩ := hg.exists
+  exact f.ringOpNorm_le_bound ((g a).ringOpNorm_nonneg.trans ha) fun x ↦
     le_of_tendsto (hf x).norm (hg.mono fun a ha ↦ (g a).le_of_ringOpNorm_le ha x)
 
 end Seminormed

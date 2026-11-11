@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.HighestWeight.Basic
 import TauCeti.Algebra.Lie.Submodule.Atom
+import TauCeti.Algebra.Lie.Weights.Basic
 
 /-!
 # Highest weight modules: the weight cone and the highest weight line
@@ -55,6 +56,8 @@ legitimate because a positive root is never cancelled inside the cone
   generates under all of `L`, so in a highest weight module it is the whole module.
 * `TauCeti.iSup_genWeightSpace_sub_posRootCone_eq_top_of_isHighestWeightVector_of_lieSpan_eq_top`:
   the weight spaces at the weights `lam - ν`, `ν ∈ Q⁺`, span a highest weight module.
+* `TauCeti.isTriangularizable_of_isHighestWeightVector_of_lieSpan_eq_top`: hence a highest weight
+  module is triangularizable for the Cartan subalgebra.
 * `TauCeti.exists_sub_eq_of_genWeightSpace_ne_bot_of_isHighestWeightVector_of_lieSpan_eq_top`: hence
   every weight of a highest weight module is of the form `lam - ν` with `ν ∈ Q⁺`;
   `TauCeti.sub_mem_posRootCone_of_genWeightSpace_ne_bot_of_isHighestWeightVector_of_lieSpan_eq_top`
@@ -278,6 +281,18 @@ theorem iSup_genWeightSpace_sub_posRootCone_eq_top_of_isHighestWeightVector_of_l
   refine eq_top_iff.mpr (htop ▸ genWeightSpaceSpan_le_iff.mpr fun chi hchi => ?_)
   obtain ⟨nu, hnu, rfl⟩ := hchi
   exact le_iSup₂_of_le nu hnu le_rfl
+
+/-- **A highest weight module is triangularizable** for the Cartan subalgebra, finite-dimensional
+or not: its generalized weight spaces span it, so every element of `H` has generalized eigenspaces
+spanning it. In particular the weight-space machinery of Mathlib that assumes
+`LieModule.IsTriangularizable` applies to it over any field of characteristic zero over which `H`
+splits, with no algebraic closure needed. -/
+theorem isTriangularizable_of_isHighestWeightVector_of_lieSpan_eq_top
+    (hv : IsHighestWeightVector b lam v) (hgen : LieSubmodule.lieSpan K L {v} = ⊤) :
+    IsTriangularizable K H M :=
+  isTriangularizable_of_iSup_genWeightSpace_eq_top <| top_unique <|
+    (iSup_genWeightSpace_sub_posRootCone_eq_top_of_isHighestWeightVector_of_lieSpan_eq_top
+      hv hgen).ge.trans (iSup₂_le fun _ _ => le_iSup (genWeightSpace M) _)
 
 /-- **The weights of a highest weight module lie in `lam - Q⁺`.** A weight outside the cone would
 have its weight space disjoint from the ones that already exhaust the module.

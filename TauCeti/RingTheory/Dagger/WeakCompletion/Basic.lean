@@ -182,6 +182,26 @@ theorem weakCompletionSet_eq_of_adjoin_eq [Finite ι] {κ : Type*} [Finite κ] {
 
 end WeakCompletionSet
 
+/-- A polynomial expansion with a linear degree bound defines an element of the
+corresponding degree-growth set, with the prescribed truncations. -/
+theorem exists_mem_weakCompletionSet_of_degree_le {ι : Type*} (x : ι → S)
+    (P : ℕ → MvPolynomial ι O) {c : ℕ}
+    (hP : ∀ j, (P j).totalDegree ≤ c * (j + 1)) :
+    ∃ z ∈ weakCompletionSet π x, ∀ k, AdicCompletion.evalₐ _ k z =
+      Ideal.Quotient.mk _ (∑ j ∈ range k, algebraMap O S π ^ j * aeval x (P j)) := by
+  let a (k : ℕ) := ∑ j ∈ range k, algebraMap O S π ^ j * aeval x (P j)
+  have ha (k : ℕ) : a k ≡ a (k + 1)
+      [SMOD (Ideal.span {algebraMap O S π} ^ k • ⊤ : Ideal S)] := by
+    rw [SModEq.sub_mem]
+    simp only [a, sum_range_succ, sub_add_cancel_left]
+    apply Submodule.neg_mem
+    rw [smul_eq_mul, Ideal.mul_top]
+    exact Ideal.mul_mem_right _ _ (Ideal.pow_mem_pow (Ideal.subset_span rfl) k)
+  let z := AdicCompletion.mk _ S (AdicCompletion.AdicCauchySequence.mk _ S a ha)
+  have hz (k : ℕ) : AdicCompletion.evalₐ _ k z = Ideal.Quotient.mk _ (a k) :=
+    AdicCompletion.evalₐ_mk _ k _
+  exact ⟨z, mem_weakCompletionSet_iff.mpr ⟨c, P, hP, hz⟩, hz⟩
+
 variable (S) [Algebra.FiniteType O S]
 
 /-- The weak completion `S† ⊆ S^∧` of a finitely generated `O`-algebra `S`: the degree-growth set

@@ -176,7 +176,7 @@ theorem ext {Φ Ψ : AmbientIsotopy Y}
     (h : ∀ p, Φ.toContinuousMap p = Ψ.toContinuousMap p) : Φ = Ψ := by
   cases Φ
   cases Ψ
-  simp only [AmbientIsotopy.mk.injEq]
+  congr
   exact ContinuousMap.ext h
 
 /-- The level-preserving total map of an ambient isotopy. -/
@@ -192,20 +192,13 @@ theorem isHomeomorph_total : IsHomeomorph Φ.totalMap :=
 
 /-- Every time-slice of an ambient isotopy is a self-homeomorphism of `Y`. -/
 theorem isHomeomorph_apply (t : I) : IsHomeomorph fun y => Φ.toContinuousMap (t, y) := by
-  rw [isHomeomorph_iff_isEmbedding_surjective]
-  constructor
-  · let k : Y → I × Y := fun y => (t, y)
-    have hk_cont : Continuous k := by fun_prop
-    have hcomp : IsEmbedding (k ∘ fun y => Φ.toContinuousMap (t, y)) := by
-      convert Φ.isHomeomorph_total.isEmbedding.comp (isEmbedding_prodMkRight t) using 1
-      ext y <;> rfl
-    exact IsEmbedding.of_comp (by fun_prop) hk_cont hcomp
-  · intro y
-    rcases Φ.isHomeomorph_total.surjective (t, y) with ⟨p, hp⟩
-    refine ⟨p.2, ?_⟩
-    have ht : p.1 = t := congrArg Prod.fst hp
-    rw [← ht]
-    exact congrArg Prod.snd hp
+  -- the slice followed by `y ↦ (t, y)` is the total map restricted to the time-`t` fiber
+  refine isHomeomorph_iff_isEmbedding_surjective.2 ⟨IsEmbedding.of_comp (by fun_prop)
+    (by fun_prop : Continuous fun y : Y => (t, y))
+    (Φ.isHomeomorph_total.isEmbedding.comp (isEmbedding_prodMkRight t)), fun y => ?_⟩
+  obtain ⟨⟨s, z⟩, hp⟩ := Φ.isHomeomorph_total.surjective (t, y)
+  simp only [totalMap_apply, Prod.mk.injEq] at hp
+  exact ⟨z, hp.1 ▸ hp.2⟩
 
 /-- The ambient isotopy starts at the identity of `Y`. -/
 @[simp]
@@ -244,6 +237,9 @@ def refl (Y : Type*) [TopologicalSpace Y] : AmbientIsotopy Y where
   isHomeomorph_total' := .id
   map_zero_left' _ := rfl
 
+@[simp]
+theorem refl_apply (p : I × Y) : (refl Y).toContinuousMap p = p.2 := (rfl)
+
 /-- The final map of the constant ambient isotopy is the identity. -/
 @[simp 1100]
 theorem final_refl (y : Y) : (refl Y).final y = y := (rfl)
@@ -252,8 +248,7 @@ theorem final_refl (y : Y) : (refl Y).final y = y := (rfl)
 @[simp]
 theorem homeomorph_refl (t : I) : (refl Y).homeomorph t = Homeomorph.refl Y := by
   ext y
-  rw [homeomorph_apply, Homeomorph.refl_apply]
-  rfl
+  simp
 
 /-- The final homeomorphism of the constant ambient isotopy is the identity. -/
 @[simp]
@@ -293,47 +288,14 @@ theorem totalHomeomorph_apply (p : I × Y) :
 /-- The inverse total homeomorphism preserves the time coordinate. -/
 @[simp]
 theorem totalHomeomorph_symm_fst (p : I × Y) : (Φ.totalHomeomorph.symm p).1 = p.1 := by
-  have h := Φ.totalHomeomorph.apply_symm_apply p
-  rw [totalHomeomorph_apply] at h
-  exact (Prod.ext_iff.mp h).1
-
-/-- Reparametrising the ambient isotopy `Φ` by a continuous map `ρ : T → I` gives the
-level-preserving self-homeomorphism `(y, s) ↦ (Φ (ρ s, y), s)` of `Y × T`. With `T = ℝ` and `ρ` a
-clamp which is `0` near `-∞` and `1` near `+∞`, composing it with `f × id` for an embedding `f`
-gives the trace of `Φ` along `f`, a concordance from `f` to `Φ.final ∘ f`. -/
-noncomputable def reparamHomeomorph {T : Type*} [TopologicalSpace T] (ρ : C(T, I)) :
-    Y × T ≃ₜ Y × T where
-  toFun p := (Φ.toContinuousMap (ρ p.2, p.1), p.2)
-  invFun p := ((Φ.totalHomeomorph.symm (ρ p.2, p.1)).2, p.2)
-  left_inv p := by
-    have h : Φ.totalHomeomorph.symm (ρ p.2, Φ.toContinuousMap (ρ p.2, p.1)) = (ρ p.2, p.1) := by
-      simpa using Φ.totalHomeomorph.symm_apply_apply (ρ p.2, p.1)
-    simp [h]
-  right_inv p := by
-    have h1 : Φ.totalHomeomorph.symm (ρ p.2, p.1) =
-        (ρ p.2, (Φ.totalHomeomorph.symm (ρ p.2, p.1)).2) :=
-      Prod.ext (totalHomeomorph_symm_fst Φ _) rfl
-    have h2 := Φ.totalHomeomorph.apply_symm_apply (ρ p.2, p.1)
-    rw [h1, totalHomeomorph_apply] at h2
-    exact Prod.ext (congrArg Prod.snd h2) rfl
-  continuous_toFun := by fun_prop
-  continuous_invFun := by fun_prop
-
-@[simp]
-theorem reparamHomeomorph_apply {T : Type*} [TopologicalSpace T] (ρ : C(T, I)) (p : Y × T) :
-    Φ.reparamHomeomorph ρ p = (Φ.toContinuousMap (ρ p.2, p.1), p.2) :=
-  (rfl)
+  simpa only [totalHomeomorph_apply] using congrArg Prod.fst (Φ.totalHomeomorph.apply_symm_apply p)
 
 /-- **Composition of ambient isotopies**: follow `Φ_t` then `Ψ_t` at each time `t`. -/
 def trans (Ψ : AmbientIsotopy Y) : AmbientIsotopy Y where
   toContinuousMap := ⟨fun p => Ψ.toContinuousMap (p.1, Φ.toContinuousMap p), by fun_prop⟩
   isHomeomorph_total' := by
-    have heq : (fun p : I × Y => (p.1, Ψ.toContinuousMap (p.1, Φ.toContinuousMap p)))
-        = ⇑Ψ.totalMap ∘ ⇑Φ.totalMap := by
-      funext p
-      simp [Function.comp, totalMap_apply]
-    rw [heq]
-    exact Ψ.isHomeomorph_total.comp Φ.isHomeomorph_total
+    convert Ψ.isHomeomorph_total.comp Φ.isHomeomorph_total using 1
+    ext p <;> simp
   map_zero_left' y := by
     -- the composite's `toFun` at time `0` is `Ψ (0, Φ (0, y))`, which both factors fix.
     simp
@@ -347,7 +309,7 @@ maps of `Φ` and `Ψ`: at the endpoint it is `Ψ.final ∘ Φ.final`. -/
 @[simp 1100]
 theorem final_trans (Ψ : AmbientIsotopy Y) (y : Y) :
     (Φ.trans Ψ).final y = Ψ.final (Φ.final y) := by
-  rw [final_apply, trans_apply, final_apply, final_apply]
+  simp only [final_apply, trans_apply]
 
 /-- Every time slice of a composite ambient isotopy is the composite of the corresponding
 time slices. -/
@@ -355,7 +317,7 @@ time slices. -/
 theorem homeomorph_trans (Ψ : AmbientIsotopy Y) (t : I) :
     (Φ.trans Ψ).homeomorph t = (Φ.homeomorph t).trans (Ψ.homeomorph t) := by
   ext y
-  rw [homeomorph_apply, trans_apply, Homeomorph.trans_apply, homeomorph_apply, homeomorph_apply]
+  simp
 
 /-- The final homeomorphism of a composite ambient isotopy is the composite of the final
 homeomorphisms. -/
@@ -366,77 +328,73 @@ theorem finalHomeomorph_trans (Ψ : AmbientIsotopy Y) :
 
 /-- **Inverse of an ambient isotopy**: undo `Φ_t` at each time `t`. -/
 noncomputable def symm : AmbientIsotopy Y where
-  toContinuousMap := ⟨fun p => (Φ.totalHomeomorph.symm p).2,
-    continuous_snd.comp Φ.totalHomeomorph.symm.continuous⟩
+  toContinuousMap := ⟨fun p => (Φ.totalHomeomorph.symm p).2, by fun_prop⟩
   isHomeomorph_total' := by
-    have heq : (fun p : I × Y => (p.1, (Φ.totalHomeomorph.symm p).2))
-        = ⇑Φ.totalHomeomorph.symm := by
-      funext p
-      exact Prod.ext (Φ.totalHomeomorph_symm_fst p).symm rfl
-    rw [heq]
-    exact Φ.totalHomeomorph.symm.isHomeomorph
-  map_zero_left' y := by
-    have h0 : Φ.totalHomeomorph (0, y) = (0, y) := by
-      rw [totalHomeomorph_apply, Φ.map_zero_left]
-    have hsymm : Φ.totalHomeomorph.symm (0, y) = (0, y) :=
-      Φ.totalHomeomorph.symm_apply_eq.mpr h0.symm
-    simp [hsymm]
+    convert Φ.totalHomeomorph.symm.isHomeomorph using 1
+    ext p <;> simp
+  map_zero_left' y := congrArg Prod.snd <|
+    Φ.totalHomeomorph.symm_apply_eq.2 (by simp : ((0 : I), y) = Φ.totalHomeomorph (0, y))
 
 @[simp]
 theorem symm_apply (p : I × Y) :
     Φ.symm.toContinuousMap p = (Φ.totalHomeomorph.symm p).2 := (rfl)
 
+/-- The inverse ambient isotopy undoes the original at every time `t`. -/
+@[simp↓ 1100]
+theorem symm_apply_apply_slice (t : I) (y : Y) :
+    Φ.symm.toContinuousMap (t, Φ.toContinuousMap (t, y)) = y := by
+  rw [symm_apply, Φ.totalHomeomorph.symm_apply_eq.2 (Φ.totalHomeomorph_apply (t, y)).symm]
+
+/-- The original ambient isotopy undoes its inverse at every time `t`. -/
+@[simp↓ 1100]
+theorem apply_symm_apply_slice (t : I) (y : Y) :
+    Φ.toContinuousMap (t, Φ.symm.toContinuousMap (t, y)) = y := by
+  obtain ⟨z, rfl⟩ := (Φ.isHomeomorph_apply t).surjective y
+  simp only [symm_apply_apply_slice]
+
 /-- The inverse ambient isotopy undoes the original: its final map is a left inverse of the
 original final map. -/
 @[simp↓ 1100]
 theorem symm_final_final (y : Y) : Φ.symm.final (Φ.final y) = y := by
-  have h1 : Φ.totalHomeomorph (1, y) = (1, Φ.toContinuousMap (1, y)) := by
-    rw [totalHomeomorph_apply]
-  simp only [final_apply, symm_apply]
-  rw [Φ.totalHomeomorph.symm_apply_eq.mpr h1.symm]
+  simp only [final_apply, symm_apply_apply_slice]
 
 /-- The original ambient isotopy undoes its inverse: the original final map is a left inverse of
 the inverse final map. -/
 @[simp↓ 1100]
 theorem final_symm_final (y : Y) : Φ.final (Φ.symm.final y) = y := by
-  have hfst : (Φ.totalHomeomorph.symm (1, y)).1 = 1 := Φ.totalHomeomorph_symm_fst (1, y)
-  have happ := Φ.totalHomeomorph.apply_symm_apply (1, y)
-  rw [totalHomeomorph_apply] at happ
-  have hpair : ((1 : I), (Φ.totalHomeomorph.symm (1, y)).2) = Φ.totalHomeomorph.symm (1, y) :=
-    Prod.ext hfst.symm rfl
-  simp only [final_apply, symm_apply]
-  rw [hpair]
-  exact (Prod.ext_iff.mp happ).2
+  simp only [final_apply, apply_symm_apply_slice]
 
 /-- Every time slice of the inverse ambient isotopy is the inverse of the corresponding
 time slice. -/
 @[simp]
 theorem homeomorph_symm (t : I) : Φ.symm.homeomorph t = (Φ.homeomorph t).symm := by
   ext y
-  symm
-  apply (Φ.homeomorph t).symm_apply_eq.mpr
-  have hfst : (Φ.totalHomeomorph.symm (t, y)).1 = t := Φ.totalHomeomorph_symm_fst (t, y)
-  have happ := Φ.totalHomeomorph.apply_symm_apply (t, y)
-  rw [totalHomeomorph_apply] at happ
-  have hpair : (t, (Φ.totalHomeomorph.symm (t, y)).2) = Φ.totalHomeomorph.symm (t, y) :=
-    Prod.ext hfst.symm rfl
-  simp only [homeomorph_apply, symm_apply]
-  rw [hpair]
-  exact (Prod.ext_iff.mp happ).2.symm
+  rw [eq_comm, Homeomorph.symm_apply_eq, homeomorph_apply, homeomorph_apply,
+    apply_symm_apply_slice]
 
-/-- The inverse ambient isotopy undoes the original at every time `t`. -/
-@[simp↓ 1100]
-theorem symm_apply_apply_slice (t : I) (y : Y) :
-    Φ.symm.toContinuousMap (t, Φ.toContinuousMap (t, y)) = y := by
-  rw [← homeomorph_apply Φ.symm t, homeomorph_symm, ← homeomorph_apply Φ t,
-    Homeomorph.symm_apply_apply]
+/-- Reparametrising the ambient isotopy `Φ` by a continuous map `ρ : T → I` gives the
+level-preserving self-homeomorphism `(y, s) ↦ (Φ (ρ s, y), s)` of `Y × T`. With `T = ℝ` and `ρ` a
+clamp which is `0` near `-∞` and `1` near `+∞`, composing it with `f × id` for an embedding `f`
+gives the trace of `Φ` along `f`, a concordance from `f` to `Φ.final ∘ f`. -/
+noncomputable def reparamHomeomorph {T : Type*} [TopologicalSpace T] (ρ : C(T, I)) :
+    Y × T ≃ₜ Y × T where
+  toFun p := (Φ.toContinuousMap (ρ p.2, p.1), p.2)
+  invFun p := (Φ.symm.toContinuousMap (ρ p.2, p.1), p.2)
+  left_inv p := Prod.ext (Φ.symm_apply_apply_slice _ _) rfl
+  right_inv p := Prod.ext (Φ.apply_symm_apply_slice _ _) rfl
+  continuous_toFun := by fun_prop
+  continuous_invFun := by fun_prop
 
-/-- The original ambient isotopy undoes its inverse at every time `t`. -/
-@[simp↓ 1100]
-theorem apply_symm_apply_slice (t : I) (y : Y) :
-    Φ.toContinuousMap (t, Φ.symm.toContinuousMap (t, y)) = y := by
-  rw [← homeomorph_apply Φ.symm t, homeomorph_symm, ← homeomorph_apply Φ t,
-    Homeomorph.apply_symm_apply]
+@[simp]
+theorem reparamHomeomorph_apply {T : Type*} [TopologicalSpace T] (ρ : C(T, I)) (p : Y × T) :
+    Φ.reparamHomeomorph ρ p = (Φ.toContinuousMap (ρ p.2, p.1), p.2) :=
+  (rfl)
+
+@[simp]
+theorem reparamHomeomorph_symm_apply {T : Type*} [TopologicalSpace T] (ρ : C(T, I))
+    (p : Y × T) :
+    (Φ.reparamHomeomorph ρ).symm p = (Φ.symm.toContinuousMap (ρ p.2, p.1), p.2) :=
+  (rfl)
 
 /-- The final homeomorphism of the inverse ambient isotopy is the inverse final homeomorphism. -/
 @[simp]

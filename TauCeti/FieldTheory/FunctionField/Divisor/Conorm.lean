@@ -67,6 +67,8 @@ extension.
 * `TauCeti.Divisor.degree_conorm`: the same identity divided through by `[k' : k]`, for `F` and
   `k'` linearly disjoint over `k`: `deg (Con D) = n(F'/F) · deg D` (Stichtenoth,
   Corollary 3.6.4).
+* `TauCeti.Divisor.degree_conorm_of_finrank_eq_finrank`: `deg (Con D) = deg D` when `F' = F · k'`
+  and `[F' : F] = [k' : k]`.
 * `TauCeti.Divisor.degree_conorm_of_finrank_eq_one`: `deg (Con D) = [F' : F] · deg D` when the
   constant field does not grow, read straight off the cross-multiplied identity.
 
@@ -194,10 +196,8 @@ theorem conorm_mono : Monotone (conorm k' F' : Divisor k F → Divisor k' F') :=
   exact mul_le_mul_of_nonneg_left (WeilDivisor.coeff_le_coeff h _) (by positivity)
 
 /-- The conorm of an effective divisor is effective. -/
-theorem isEffective_conorm {D : Divisor k F} (hD : D.IsEffective) :
-    (conorm k' F' D).IsEffective :=
-  WeilDivisor.isEffective_iff_zero_le.mpr <| by
-    simpa using conorm_mono k' F' (WeilDivisor.isEffective_iff_zero_le.mp hD)
+theorem conorm_nonneg {D : Divisor k F} (hD : 0 ≤ D) : 0 ≤ conorm k' F' D := by
+  simpa using conorm_mono k' F' hD
 
 /-- **Every divisor of `F' / k'` is bounded above by a conorm**: for every divisor `D'` of
 `F' / k'` there is a divisor `D` of `F / k` with `D' ≤ Con D`.  This transports estimates on the
@@ -361,6 +361,14 @@ theorem degree_conorm (hF : IsFunctionField k F)
     (h : Module.finrank F (constantCompositum F k' F') = Module.finrank k k') (D : Divisor k F) :
     degree (conorm k' F' D) = geometricDegree F k' F' * degree D :=
   degree_conorm_of_cross_mul k' F' h D (finrank_mul_degree_conorm k' F' hF D)
+
+/-- **The conorm preserves degrees when `F' = F · k'` and `[F' : F] = [k' : k]`**: the geometric
+degree is then one, so `deg (Con D) = deg D`. No separability of `k' / k` is assumed. -/
+theorem degree_conorm_of_finrank_eq_finrank (hF : IsFunctionField k F)
+    (h : constantCompositum F k' F' = ⊤) (hn : Module.finrank F F' = Module.finrank k k')
+    (D : Divisor k F) : degree (conorm k' F' D) = degree D := by
+  rw [degree_conorm k' F' hF (by rw [h, IntermediateField.finrank_top', hn]) D,
+    (geometricDegree_eq_one_iff F k' F').2 h, Nat.cast_one, one_mul]
 
 /-- **The degree of a conorm for a separable extension, divided through**: the version of
 `TauCeti.Divisor.degree_conorm` which requires no function-field hypothesis on `F / k`, but

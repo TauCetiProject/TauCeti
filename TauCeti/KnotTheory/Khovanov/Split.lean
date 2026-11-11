@@ -32,7 +32,8 @@ the product. Consequently the split map along `f` satisfies the projection formu
 `Δ_f (m_f x * z) = x * Δ_f z`, the Frobenius identity `Δ(a b) = (a ⊗ 1) Δ(b)` for fibres. This
 reduces composites of merges and splits to multiplication by merged splits of the unit; in
 particular, merging and splitting around a commuting square of circle correspondences agree when
-those splits of the unit agree.
+those splits of the unit agree. It also shows that splitting carries `X` on a circle to `X` on
+any one of its output circles.
 
 ## References
 
@@ -187,6 +188,25 @@ theorem fiberwiseSplit_equiv (e : σ ≃ τ) :
   have he : (l = fun i ↦ k (e.symm i)) ↔ l ∘ e = k := e.eq_comp_symm l k
   simp only [Equiv.symm_symm, he]
 
+/-- The split map is natural in the index map: reindexing along bijections of the source and
+target carries the split along `f` to the split along `f'` when the square `eτ ∘ f = f' ∘ eσ`
+commutes. -/
+theorem reindex_fiberwiseSplit {σ' τ' : Type*} [Fintype σ'] [Fintype τ'] [DecidableEq τ']
+    (eσ : σ ≃ σ') (eτ : τ ≃ τ') {f : σ → τ} {f' : σ' → τ'} (h : eτ ∘ f = f' ∘ eσ)
+    (x : CircleTensor R τ) :
+    reindex R (fun _ ↦ R[ε]) eσ (fiberwiseSplit f x) =
+      fiberwiseSplit f' (reindex R (fun _ ↦ R[ε]) eτ x) := by
+  classical
+  have hcomp : f ∘ eσ.symm = eτ.symm ∘ f' := by
+    funext C
+    exact eτ.eq_symm_apply.2 (by simpa using congrFun h (eσ.symm C))
+  have hσ : (reindex R (fun _ ↦ R[ε]) eσ).toLinearMap = fiberwiseSplit eσ.symm := by
+    simpa only [Equiv.symm_symm] using (fiberwiseSplit_equiv (R := R) eσ.symm).symm
+  have hτ : (reindex R (fun _ ↦ R[ε]) eτ).toLinearMap = fiberwiseSplit eτ.symm := by
+    simpa only [Equiv.symm_symm] using (fiberwiseSplit_equiv (R := R) eτ.symm).symm
+  rw [← LinearEquiv.coe_coe, hσ, ← LinearEquiv.coe_coe, hτ, ← LinearMap.comp_apply,
+    fiberwiseSplit_comp, hcomp, ← fiberwiseSplit_comp, LinearMap.comp_apply]
+
 /-- **The projection formula.** The split map along `f : σ → τ` is linear over the algebra of
 the circles `σ`, which acts on the tensor over `τ` through multiplication along `f`. For a single
 splitting this is the Frobenius identity `Δ(a b) = (a ⊗ 1) Δ(b)`. -/
@@ -206,6 +226,13 @@ theorem fiberwiseSplit_fiberwiseMul_mul (f : σ → τ) (x : CircleTensor R σ)
           circleDuality_apply_eq_repr_mul]
         congr 2
         ring
+
+/-- Splitting along `f` carries `X` on the circle `f i` to `X` on the circle `i`. By the
+projection formula, `X` on a split circle may be applied on either output circle. -/
+theorem fiberwiseSplit_circleX [DecidableEq σ] (f : σ → τ) (i : σ) (z : CircleTensor R τ) :
+    fiberwiseSplit f (circleX R (f i) z) = circleX R i (fiberwiseSplit f z) := by
+  rw [circleX_apply, circleX_apply, ← fiberwiseMul_singleAlgHom (A := fun _ ↦ R[ε]) f i ε,
+    fiberwiseSplit_fiberwiseMul_mul]
 
 section Square
 

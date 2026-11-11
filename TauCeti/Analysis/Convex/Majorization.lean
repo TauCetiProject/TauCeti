@@ -255,6 +255,30 @@ end RobinHood
 
 /-! ### Transfer closure -/
 
+/-- The prefix-sum bookkeeping for a Robin Hood transfer of at most `y j - d j` from the first
+coordinate `j` where `y` exceeds `d` to a later coordinate `k`: given that `y` agrees with `d` below
+`j` and is at least `d` strictly between `j` and `k`, the prefix sums of `d` stay below those of the
+transferred tuple. -/
+private theorem prefixSum_le_prefixSum_robinHood {y d : Fin n → ℝ} {j k : Fin n} {δ : ℝ}
+    (hle : ∀ k, prefixSum k d ≤ prefixSum k y) (hj : d j < y j)
+    (hbelow : ∀ i, i < j → y i = d i) (hmid : ∀ i, j < i → i < k → d i ≤ y i) (hjk : j < k)
+    (hδj : δ ≤ y j - d j) (l : ℕ) : prefixSum l d ≤ prefixSum l (robinHood y j k δ) := by
+  rw [prefixSum_robinHood]
+  by_cases hkl : (k : ℕ) < l
+  · simpa [hkl, (Fin.lt_def.1 hjk).trans hkl] using hle l
+  by_cases hjl : (j : ℕ) < l
+  · -- Between `j` and `k`, the prefix sums of `y` exceed those of `d` by at least `y j - d j`.
+    have hgap : y j - d j ≤ prefixSum l y - prefixSum l d := by
+      rw [prefixSum_def, prefixSum_def, ← sum_sub_distrib]
+      refine single_le_sum (f := fun i ↦ y i - d i) (fun i hi ↦ ?_) (by simpa using hjl)
+      rcases lt_trichotomy i j with h | rfl | h
+      · simp [hbelow i h]
+      · exact sub_nonneg.2 hj.le
+      · exact sub_nonneg.2 (hmid i h (Fin.lt_def.2 (by simp at hi; omega)))
+    simp only [hjl, hkl, ite_true, ite_false, add_zero]
+    linarith
+  · simpa [hjl, hkl] using hle l
+
 /-- The inductive step of transfer closure: if `y ≠ d`, one Robin Hood transfer from a coordinate
 of `y` to one with no larger value makes it agree with `d` at more coordinates, while keeping the
 prefix bounds. -/
@@ -299,7 +323,8 @@ private theorem exists_robinHood_card_lt {y d : Fin n → ℝ} (hd : Antitone d)
   have hδ : 0 < δ := lt_min (sub_pos.2 hj) (sub_pos.2 hk.2)
   have hδj : δ ≤ y j - d j := min_le_left _ _
   refine ⟨j, k, δ, hδ.le, by linarith [hd hk.1.le, min_le_right (y j - d j) (d k - y k)],
-    card_lt_card ((ssubset_iff_of_subset fun i ↦ ?_).2 ?_), fun l ↦ ?_⟩
+    card_lt_card ((ssubset_iff_of_subset fun i ↦ ?_).2 ?_),
+    fun l ↦ prefixSum_le_prefixSum_robinHood hle hj hbelow hmid hk.1 hδj l⟩
   · simp only [mem_filter, mem_univ, true_and, D]
     intro hi
     by_cases hij : i = j
@@ -313,21 +338,6 @@ private theorem exists_robinHood_card_lt {y d : Fin n → ℝ} (hd : Antitone d)
     · refine ⟨k, by simpa [D] using hk.2.ne, ?_⟩
       simp only [mem_filter, mem_univ, true_and, not_not, robinHood_apply_right y hjk, δ, h]
       ring
-  rw [prefixSum_robinHood]
-  by_cases hkl : (k : ℕ) < l
-  · simpa [hkl, (Fin.lt_def.1 hk.1).trans hkl] using hle l
-  by_cases hjl : (j : ℕ) < l
-  · -- Between `j` and `k`, the prefix sums of `y` exceed those of `d` by at least `y j - d j`.
-    have hgap : y j - d j ≤ prefixSum l y - prefixSum l d := by
-      rw [prefixSum_def, prefixSum_def, ← sum_sub_distrib]
-      refine single_le_sum (f := fun i ↦ y i - d i) (fun i hi ↦ ?_) (by simpa using hjl)
-      rcases lt_trichotomy i j with h | rfl | h
-      · simp [hbelow i h]
-      · exact sub_nonneg.2 hj.le
-      · exact sub_nonneg.2 (hmid i h (Fin.lt_def.2 (by simp at hi; omega)))
-    simp only [hjl, hkl, ite_true, ite_false, add_zero]
-    linarith
-  · simpa [hjl, hkl] using hle l
 
 /-- **Transfer closure.** Let `K` be a set of real tuples that is closed under every Robin Hood
 transfer from a coordinate to one with no larger value. If `K` contains `y`, then it contains

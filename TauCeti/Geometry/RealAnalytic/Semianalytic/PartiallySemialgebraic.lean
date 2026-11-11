@@ -404,8 +404,6 @@ theorem IsAnalyticBooleanCombination.isAnalyticCoeffBooleanCombination_preimage_
   setOf_isAnalyticBooleanCombination_subset
     ((isSetAlgebra_setOf_isAnalyticCoeffBooleanCombination ι U).preimage Prod.fst)
     (fun _ ha =>
-      ha.isAnalyticCoeffPolynomialOn_comp_fst.isAnalyticCoeffBooleanCombination_setOf_eq_zero)
-    (fun _ ha =>
       ha.isAnalyticCoeffPolynomialOn_comp_fst.isAnalyticCoeffBooleanCombination_setOf_pos)
     ht
 
