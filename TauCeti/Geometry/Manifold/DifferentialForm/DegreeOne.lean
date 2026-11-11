@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
@@ -43,6 +44,8 @@ derivative applies.
   statements for fixed-coefficient forms. For `F = ℝ` the bundle of fibrewise linear maps is
   `TauCeti.CotangentBundle I M`, so these identify smooth real one-forms with smooth sections of
   the cotangent bundle.
+* `TauCeti.SmoothForm.degreeOneEquiv_mpullback_apply`: the section of a pulled-back one-form
+  evaluates a tangent vector through the differential of the map.
 * `ContMDiff.contMDiff_totalSpaceMk_mvfderiv`: the differential of a `C^(n+1)` function is a
   `C^n` section of the bundle of linear maps, through the exterior derivative of its `0`-form.
 * `ContMDiff.contMDiff_totalSpaceMk_mvfderiv_uncurry`: the differentials of a jointly `C^(n+1)`
@@ -339,6 +342,15 @@ theorem degreeOneEquiv_symm_apply_apply
     (v : Fin 1 → TangentSpace I x) :
     (degreeOneEquiv.symm s).1 x v = s x (v 0) :=
   (rfl)
+
+/-- The section of the pullback of a smooth one-form `φ` along `f` evaluates a tangent vector `v`
+at `x` as the section of `φ` evaluates `df_x v` at `f x`. -/
+theorem degreeOneEquiv_mpullback_apply {E' H' M' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] [IsManifold I' 1 M'] {f : M → M'} (hf : ContMDiff I I' ∞ f)
+    (φ : SmoothForm I' M' F 1) (x : M) (v : TangentSpace I x) :
+    degreeOneEquiv (mpullback f hf φ) x v = degreeOneEquiv φ (f x) (mfderiv I I' f x v) :=
+  mpullback_apply f hf φ x _
 
 end SmoothForm
 

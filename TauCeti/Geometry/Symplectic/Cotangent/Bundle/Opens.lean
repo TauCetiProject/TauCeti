@@ -35,9 +35,12 @@ only on `U`.
   fibre dilation of `T*M`.
 
 Both maps are the fibre translation or dilation of `T*U`, conjugated by
-`CotangentBundle.restrictOpen`. The comparison with the ambient maps rests on the fact that the
-cotangent inclusion `T*U → T*M` intertwines translations and dilations of `T*U` by restricted
-data with those of `T*M`
+`CotangentBundle.restrictOpen` through `Diffeomorph.diffCongr`. The dilation and its structural
+API live with `restrictOpen` in `TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Opens`,
+since they involve no differential forms. The translation by `0` is the identity, translations
+compose by adding the one-forms, and the inverse translates by `-β`. The comparison with the
+ambient maps rests on the fact that the cotangent inclusion `T*U → T*M` intertwines translations
+and dilations of `T*U` by restricted data with those of `T*M`
 (`TauCeti.CotangentBundle.openInclusion_vectorBundleTranslateDiffeomorph`,
 `TauCeti.CotangentBundle.openInclusion_vectorBundleScalarDiffeomorph`).
 
@@ -156,30 +159,10 @@ theorem openInclusion_vectorBundleTranslateDiffeomorph (U : Opens M) (α : Smoot
     openInclusion_def, openInclusion_def]
   refine CotangentBundle.ext rfl fun v ↦ ?_
   simp only [ContinuousLinearMap.comp_apply, add_apply]
-  rw [SmoothForm.degreeOneEquiv_apply_apply_vec, SmoothForm.mpullback_apply]
-  have key (x : U) (w : TangentSpace I (x : M)) :
-      (α.1 (x : M) fun i ↦ mfderiv I I (Subtype.val : U → M) x
-          (![(Manifold.tangentSpaceOpenEquiv (I := I) x).symm w] i)) =
-        SmoothForm.degreeOneEquiv α x w := by
-    rw [SmoothForm.degreeOneEquiv_apply_apply_vec, Manifold.mfderiv_subtype_val]
-    refine congrArg (α.1 (x : M)) (funext fun i ↦ ?_)
-    fin_cases i
-    exact (Manifold.tangentSpaceOpenEquiv (I := I) x).apply_symm_apply w
-  exact congrArg (_ + ·) (key _ _)
-
-/-- The cotangent inclusion `T*U → T*M` intertwines the fibre dilation of `T*U` by the
-restriction to `U` of a nowhere-zero function `a` on `M` with the fibre dilation of `T*M`
-by `a`. -/
-theorem openInclusion_vectorBundleScalarDiffeomorph (U : Opens M) {a : M → ℝ}
-    (ha : ContMDiff I 𝓘(ℝ) ∞ a) (ha0 : ∀ x, a x ≠ 0) (z : CotangentBundle I U) :
-    openInclusion U (vectorBundleScalarDiffeomorph (F := E →L[ℝ] ℝ)
-        (V := fun x : U ↦ TangentSpace I x →L[ℝ] ℝ) (a ∘ Subtype.val)
-        (ha.comp contMDiff_subtype_val) (fun x ↦ ha0 x) z) =
-      vectorBundleScalarDiffeomorph a ha ha0 (openInclusion U z) := by
-  rw [vectorBundleScalarDiffeomorph_apply, vectorBundleScalarDiffeomorph_apply,
-    openInclusion_def, openInclusion_def]
-  refine CotangentBundle.ext rfl fun v ↦ ?_
-  simp
+  refine congrArg (_ + ·) ((SmoothForm.degreeOneEquiv_mpullback_apply _ α _ _).trans ?_)
+  rw [Manifold.mfderiv_subtype_val]
+  exact congrArg (SmoothForm.degreeOneEquiv α _)
+    ((Manifold.tangentSpaceOpenEquiv (I := I) _).apply_symm_apply v)
 
 /-- Conjugating a diffeomorphism `g` of `T*U` by the open-restriction diffeomorphism, the
 pullback of a restricted ambient form is computed from the pullback by `g` of the corresponding
@@ -192,15 +175,22 @@ private theorem mpullback_conj_restrictOpen {k : ℕ} (U : Opens M)
     (hγ : SmoothForm.mpullback (restrictOpen U) (restrictOpen U).contMDiff
       (SmoothForm.mpullback (Subtype.val : overOpen (I := I) U → CotangentBundle I M)
         contMDiff_subtype_val γ) = γU) :
-    SmoothForm.mpullback (((restrictOpen U).symm.trans g).trans (restrictOpen U))
-        (((restrictOpen U).symm.trans g).trans (restrictOpen U)).contMDiff
+    SmoothForm.mpullback (Diffeomorph.diffCongr (restrictOpen U) g)
+        (Diffeomorph.diffCongr (restrictOpen U) g).contMDiff
         (SmoothForm.mpullback (Subtype.val : overOpen (I := I) U → CotangentBundle I M)
           contMDiff_subtype_val γ) =
       SmoothForm.mpullback (restrictOpen U).symm (restrictOpen U).symm.contMDiff
         (SmoothForm.mpullback g g.contMDiff γU) := by
-  refine (SmoothForm.mpullback_trans _ (restrictOpen U) _).trans ?_
-  rw [hγ]
-  exact SmoothForm.mpullback_trans _ _ _
+  suffices ∀ φ, φ = ((restrictOpen U).symm.trans g).trans (restrictOpen U) →
+      SmoothForm.mpullback φ φ.contMDiff
+          (SmoothForm.mpullback (Subtype.val : overOpen (I := I) U → CotangentBundle I M)
+            contMDiff_subtype_val γ) =
+        SmoothForm.mpullback (restrictOpen U).symm (restrictOpen U).symm.contMDiff
+          (SmoothForm.mpullback g g.contMDiff γU) from
+    this _ (Diffeomorph.diffCongr_apply _ _)
+  rintro _ rfl
+  exact (SmoothForm.mpullback_trans _ (restrictOpen U) _).trans
+    ((congrArg (SmoothForm.mpullback _ _) hγ).trans (SmoothForm.mpullback_trans _ _ _))
 
 /-- The **fibre translation of `π⁻¹(U)` by a one-form `β` on `U`**: a covector `p` of `M` over a
 point `x ∈ U` is sent to `p + β_x`, where `β_x` is read as a covector of `M` through the
@@ -209,24 +199,66 @@ the open-restriction diffeomorphism `T*U ≃ π⁻¹(U)`. The one-form `β` need
 def overOpenTranslateDiffeomorph (U : Opens M) (β : SmoothForm I U ℝ 1) :
     overOpen (I := I) U ≃ₘ⟮I.prod 𝓘(ℝ, E →L[ℝ] ℝ), I.prod 𝓘(ℝ, E →L[ℝ] ℝ)⟯
       overOpen (I := I) U :=
-  ((restrictOpen U).symm.trans (vectorBundleTranslateDiffeomorph (SmoothForm.degreeOneEquiv β)
-    (SmoothForm.degreeOneEquiv β).contMDiff)).trans (restrictOpen U)
+  Diffeomorph.diffCongr (restrictOpen U) (vectorBundleTranslateDiffeomorph
+    (SmoothForm.degreeOneEquiv β) (SmoothForm.degreeOneEquiv β).contMDiff)
 
 /-- The fibre translation of `π⁻¹(U)` is the conjugate of the fibre translation of `T*U` by the
 open-restriction diffeomorphism. -/
-theorem overOpenTranslateDiffeomorph_apply (U : Opens M) (β : SmoothForm I U ℝ 1)
-    (z : overOpen (I := I) U) :
-    overOpenTranslateDiffeomorph U β z = restrictOpen U (vectorBundleTranslateDiffeomorph
-      (SmoothForm.degreeOneEquiv β) (SmoothForm.degreeOneEquiv β).contMDiff
-        ((restrictOpen U).symm z)) :=
+theorem overOpenTranslateDiffeomorph_eq_diffCongr (U : Opens M) (β : SmoothForm I U ℝ 1) :
+    overOpenTranslateDiffeomorph U β =
+      Diffeomorph.diffCongr (restrictOpen U) (vectorBundleTranslateDiffeomorph
+        (SmoothForm.degreeOneEquiv β) (SmoothForm.degreeOneEquiv β).contMDiff) :=
   (rfl)
 
-/-- The fibre translation of `π⁻¹(U)` covers the identity of `U`. -/
+/-- The fibre translation of `π⁻¹(U)` by `β` adds to a covector over `x ∈ U` the value `β_x`,
+read as a covector of `M` through the identification `T_x U = T_x M`. -/
 @[simp]
+theorem coe_overOpenTranslateDiffeomorph (U : Opens M) (β : SmoothForm I U ℝ 1)
+    (z : overOpen (I := I) U) :
+    (overOpenTranslateDiffeomorph U β z : CotangentBundle I M) =
+      TotalSpace.mk' (E →L[ℝ] ℝ) z.val.proj (z.val.2 +
+        SmoothForm.degreeOneEquiv β ⟨z.val.proj, (mem_overOpen U _).1 z.property⟩ ∘L
+          (Manifold.tangentSpaceOpenEquiv (I := I)
+            ⟨z.val.proj, (mem_overOpen U _).1 z.property⟩).symm.toContinuousLinearMap) := by
+  rw [overOpenTranslateDiffeomorph_eq_diffCongr, Diffeomorph.diffCongr_apply_apply,
+    coe_restrictOpen, restrictOpen_symm_apply, vectorBundleTranslateDiffeomorph_apply,
+    openInclusion_def]
+  refine CotangentBundle.ext rfl fun v ↦ ?_
+  simp
+
+/-- The fibre translation of `π⁻¹(U)` covers the identity of `U`. -/
 theorem proj_overOpenTranslateDiffeomorph (U : Opens M) (β : SmoothForm I U ℝ 1)
     (z : overOpen (I := I) U) :
     (overOpenTranslateDiffeomorph U β z).val.proj = z.val.proj := by
-  simp [overOpenTranslateDiffeomorph_apply]
+  simp
+
+/-- Translating the fibres of `π⁻¹(U)` by the zero one-form is the identity. -/
+@[simp]
+theorem overOpenTranslateDiffeomorph_zero (U : Opens M) :
+    overOpenTranslateDiffeomorph U (0 : SmoothForm I U ℝ 1) =
+      Diffeomorph.refl (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (overOpen (I := I) U) ∞ :=
+  (congrArg (Diffeomorph.diffCongr (restrictOpen U))
+    (Diffeomorph.ext fun p ↦ by simp)).trans (map_one _)
+
+/-- Successive fibre translations of `π⁻¹(U)` add the one-forms on `U`. -/
+theorem overOpenTranslateDiffeomorph_trans (U : Opens M) (β β' : SmoothForm I U ℝ 1) :
+    (overOpenTranslateDiffeomorph U β).trans (overOpenTranslateDiffeomorph U β') =
+      overOpenTranslateDiffeomorph U (β + β') :=
+  (map_mul (Diffeomorph.diffCongr (restrictOpen (I := I) U))
+    (vectorBundleTranslateDiffeomorph (SmoothForm.degreeOneEquiv β')
+      (SmoothForm.degreeOneEquiv β').contMDiff)
+    (vectorBundleTranslateDiffeomorph (SmoothForm.degreeOneEquiv β)
+      (SmoothForm.degreeOneEquiv β).contMDiff)).symm.trans
+    (congrArg _ ((vectorBundleTranslateDiffeomorph_trans _ _ _ _).trans
+      (Diffeomorph.ext fun p ↦ by simp)))
+
+/-- The inverse of the fibre translation of `π⁻¹(U)` by `β` is the translation by `-β`. -/
+@[simp]
+theorem overOpenTranslateDiffeomorph_symm (U : Opens M) (β : SmoothForm I U ℝ 1) :
+    (overOpenTranslateDiffeomorph U β).symm = overOpenTranslateDiffeomorph U (-β) :=
+  (Diffeomorph.diffCongr_inv _ _).trans
+    (congrArg _ ((vectorBundleTranslateDiffeomorph_symm _ _).trans
+      (Diffeomorph.ext fun p ↦ by simp)))
 
 /-- For the restriction to `U` of a one-form `α` on `M`, the fibre translation of `π⁻¹(U)` is
 the restriction of the fibre translation of `T*M` by `α`. -/
@@ -236,45 +268,8 @@ theorem coe_overOpenTranslateDiffeomorph_mpullback_subtype_val (U : Opens M)
         z : CotangentBundle I M) =
       vectorBundleTranslateDiffeomorph (SmoothForm.degreeOneEquiv α)
         (SmoothForm.degreeOneEquiv α).contMDiff z := by
-  rw [overOpenTranslateDiffeomorph_apply, coe_restrictOpen,
-    openInclusion_vectorBundleTranslateDiffeomorph, ← coe_restrictOpen,
-    Diffeomorph.apply_symm_apply]
-
-/-- The **fibre dilation of `π⁻¹(U)` by a nowhere-zero function `a` on `U`**: a covector `p` of
-`M` over a point `x ∈ U` is sent to `a(x) • p`. It is the fibre dilation of `T*U` by `a`,
-transported along the open-restriction diffeomorphism `T*U ≃ π⁻¹(U)`. -/
-def overOpenScalarDiffeomorph (U : Opens M) (a : U → ℝ) (ha : ContMDiff I 𝓘(ℝ) ∞ a)
-    (ha0 : ∀ x, a x ≠ 0) :
-    overOpen (I := I) U ≃ₘ⟮I.prod 𝓘(ℝ, E →L[ℝ] ℝ), I.prod 𝓘(ℝ, E →L[ℝ] ℝ)⟯
-      overOpen (I := I) U :=
-  ((restrictOpen U).symm.trans (vectorBundleScalarDiffeomorph (F := E →L[ℝ] ℝ)
-    (V := fun x : U ↦ TangentSpace I x →L[ℝ] ℝ) a ha ha0)).trans (restrictOpen U)
-
-/-- The fibre dilation of `π⁻¹(U)` is the conjugate of the fibre dilation of `T*U` by the
-open-restriction diffeomorphism. -/
-theorem overOpenScalarDiffeomorph_apply (U : Opens M) (a : U → ℝ) (ha : ContMDiff I 𝓘(ℝ) ∞ a)
-    (ha0 : ∀ x, a x ≠ 0) (z : overOpen (I := I) U) :
-    overOpenScalarDiffeomorph U a ha ha0 z = restrictOpen U (vectorBundleScalarDiffeomorph
-      (F := E →L[ℝ] ℝ) (V := fun x : U ↦ TangentSpace I x →L[ℝ] ℝ) a ha ha0
-        ((restrictOpen U).symm z)) :=
-  (rfl)
-
-/-- The fibre dilation of `π⁻¹(U)` covers the identity of `U`. -/
-@[simp]
-theorem proj_overOpenScalarDiffeomorph (U : Opens M) (a : U → ℝ) (ha : ContMDiff I 𝓘(ℝ) ∞ a)
-    (ha0 : ∀ x, a x ≠ 0) (z : overOpen (I := I) U) :
-    (overOpenScalarDiffeomorph U a ha ha0 z).val.proj = z.val.proj := by
-  simp [overOpenScalarDiffeomorph_apply]
-
-/-- For the restriction to `U` of a nowhere-zero function `a` on `M`, the fibre dilation of
-`π⁻¹(U)` is the restriction of the fibre dilation of `T*M` by `a`. -/
-theorem coe_overOpenScalarDiffeomorph_comp_subtype_val (U : Opens M) {a : M → ℝ}
-    (ha : ContMDiff I 𝓘(ℝ) ∞ a) (ha0 : ∀ x, a x ≠ 0) (z : overOpen (I := I) U) :
-    (overOpenScalarDiffeomorph U (a ∘ Subtype.val) (ha.comp contMDiff_subtype_val)
-        (fun x ↦ ha0 x) z : CotangentBundle I M) =
-      vectorBundleScalarDiffeomorph a ha ha0 z := by
-  rw [overOpenScalarDiffeomorph_apply, coe_restrictOpen,
-    openInclusion_vectorBundleScalarDiffeomorph, ← coe_restrictOpen,
+  rw [overOpenTranslateDiffeomorph_eq_diffCongr, Diffeomorph.diffCongr_apply_apply,
+    coe_restrictOpen, openInclusion_vectorBundleTranslateDiffeomorph, ← coe_restrictOpen,
     Diffeomorph.apply_symm_apply]
 
 /-- **Fibre translation of `π⁻¹(U)` shifts the Liouville form.** Translating the fibres over an
@@ -304,8 +299,9 @@ theorem mpullback_overOpenScalarDiffeomorph_liouvilleForm (U : Opens M) {c : ℝ
         (SmoothForm.mpullback (Subtype.val : overOpen (I := I) U → CotangentBundle I M)
           contMDiff_subtype_val (liouvilleForm I M)) =
       c • SmoothForm.mpullback (Subtype.val : overOpen (I := I) U → CotangentBundle I M)
-          contMDiff_subtype_val (liouvilleForm I M) :=
-  (mpullback_conj_restrictOpen U _ _ _ (mpullback_restrictOpen_liouvilleForm U)).trans <|
+          contMDiff_subtype_val (liouvilleForm I M) := by
+  rw [overOpenScalarDiffeomorph_eq_diffCongr]
+  exact (mpullback_conj_restrictOpen U _ _ _ (mpullback_restrictOpen_liouvilleForm U)).trans <|
     (congrArg _ (mpullback_vectorBundleScalarDiffeomorph_liouvilleForm hc)).trans <|
       (map_smul _ _ _).trans (congrArg (c • ·) (mpullback_restrictOpen_symm_liouvilleForm U))
 
@@ -358,10 +354,10 @@ theorem mpullback_overOpenTranslateDiffeomorph_symplecticForm_eq_self_iff (U : O
       (restrictOpen (I := I) U).symm (restrictOpen U).symm.contMDiff) :=
     SmoothForm.mpullback_injective_of_rightInverse _ (restrictOpen U).contMDiff
       (restrictOpen U).symm_apply_apply
-  rw [mpullback_overOpenTranslateDiffeomorph_symplecticForm, sub_eq_self]
-  refine (map_eq_zero_iff _ hinj).trans ?_
-  rw [map_eq_zero_iff _ SmoothForm.mpullback_proj_injective, SmoothForm.isClosed_def,
-    ← mextDerivₗ_apply I 1 β, ZeroMemClass.coe_eq_zero]
+  rw [overOpenTranslateDiffeomorph_eq_diffCongr,
+    mpullback_conj_restrictOpen U _ _ _ (mpullback_restrictOpen_symplecticForm U),
+    ← mpullback_restrictOpen_symm_symplecticForm U, hinj.eq_iff]
+  exact mpullback_vectorBundleTranslateDiffeomorph_symplecticForm_eq_self_iff β
 
 /-- **Fibre dilation of `π⁻¹(U)` rescales the canonical symplectic form.** Multiplying the fibres
 over an open subset `U` by a nonzero real number `c` pulls the restricted symplectic form back to
@@ -372,8 +368,9 @@ theorem mpullback_overOpenScalarDiffeomorph_symplecticForm (U : Opens M) {c : �
         (SmoothForm.mpullback (Subtype.val : overOpen (I := I) U → CotangentBundle I M)
           contMDiff_subtype_val (symplecticForm I M)) =
       c • SmoothForm.mpullback (Subtype.val : overOpen (I := I) U → CotangentBundle I M)
-          contMDiff_subtype_val (symplecticForm I M) :=
-  (mpullback_conj_restrictOpen U _ _ _ (mpullback_restrictOpen_symplecticForm U)).trans <|
+          contMDiff_subtype_val (symplecticForm I M) := by
+  rw [overOpenScalarDiffeomorph_eq_diffCongr]
+  exact (mpullback_conj_restrictOpen U _ _ _ (mpullback_restrictOpen_symplecticForm U)).trans <|
     (congrArg _ (mpullback_vectorBundleScalarDiffeomorph_symplecticForm hc)).trans <|
       (map_smul _ _ _).trans (congrArg (c • ·) (mpullback_restrictOpen_symm_symplecticForm U))
 
