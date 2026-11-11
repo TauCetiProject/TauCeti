@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPolynomial.Dehomogenization
+public import Mathlib.LinearAlgebra.Matrix.Rank
 public import Mathlib.LinearAlgebra.Projectivization.Basic
-public import TauCeti.LinearAlgebra.Matrix.Rank
 public import TauCeti.RingTheory.MvPolynomial.DualNumber
 
 /-!
