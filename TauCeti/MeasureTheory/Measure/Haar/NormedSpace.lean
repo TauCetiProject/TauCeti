@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 import Mathlib.Analysis.Calculus.Deriv.Mul
@@ -88,6 +89,8 @@ to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` fiel
   unit ball.
 * `MeasureTheory.Measure.map_addHaar_homothety`: a homothety of nonzero ratio `r` pushes an
   additive Haar measure to its multiple by `|r ^ n|⁻¹`.
+* `MeasureTheory.Measure.integral_comp_continuousLinearEquiv`: precomposing by an invertible
+  linear map `A` divides an integral against an additive Haar measure by `|det A|`.
 * `MeasureTheory.Measure.map_affine_addHaar_eq_smul`: an invertible affine map `x ↦ c + A x` pushes
   an additive Haar measure to its multiple by `|det A|⁻¹`.
 * `MeasureTheory.Measure.eLpNorm_ball_le_mul_rpow`: Hölder's inequality on a ball, with the volume
@@ -476,6 +479,19 @@ theorem map_affine_addHaar_eq_smul
     _ = ENNReal.ofReal |(LinearMap.det (A : E →ₗ[ℝ] E))⁻¹| • μ := by
       rw [Measure.map_smul _ ((by fun_prop : Measurable fun y : E ↦ c + y).aemeasurable),
         map_add_left_eq_self]
+
+/-- **Linear change of variables in an integral.** Precomposing by an invertible linear map `A`
+divides the integral against an additive Haar measure by `|det A|`. -/
+theorem integral_comp_continuousLinearEquiv
+    {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (μ : Measure E) [μ.IsAddHaarMeasure] (f : E → F) (A : E ≃L[ℝ] E) :
+    ∫ x, f (A x) ∂μ = |LinearMap.det (A : E →ₗ[ℝ] E)|⁻¹ • ∫ x, f x ∂μ := by
+  have hcov := integral_map_equiv (μ := μ) A.toHomeomorph.toMeasurableEquiv f
+  simp only [Homeomorph.toMeasurableEquiv_coe, ContinuousLinearEquiv.coe_toHomeomorph] at hcov
+  have hmap : μ.map A = ENNReal.ofReal |(LinearMap.det (A : E →ₗ[ℝ] E))⁻¹| • μ :=
+    Measure.map_linearMap_addHaar_eq_smul_addHaar μ (LinearEquiv.isUnit_det' _).ne_zero
+  rw [← hcov, hmap, integral_smul_measure, ENNReal.toReal_ofReal (abs_nonneg _), abs_inv]
 
 end MeasureTheory.Measure
 

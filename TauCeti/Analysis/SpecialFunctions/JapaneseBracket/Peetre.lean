@@ -45,6 +45,9 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
   `r - s` in either variable.
 * `TauCeti.one_add_norm_sq_rpow_le_of_norm_sub_le_one`: for `‖x - y‖ ≤ 1`,
   `⟨x⟩ ^ s ≤ 2 ^ |s| ⟨y⟩ ^ s`.
+* `TauCeti.one_add_norm_sq_rpow_le_of_norm_le_mul`: if `‖x‖ ≤ c ‖y‖` and `‖y‖ ≤ c ‖x‖` with
+  `c ≥ 1`, then `⟨x⟩ ^ s ≤ c ^ |s| ⟨y⟩ ^ s`; for instance a linear automorphism changes the weight
+  by a bounded factor.
 * `TauCeti.one_add_norm_sq_rpow_le_of_norm_eq_mul`: rescaling by `c ≥ 1` changes the weight
   `⟨x⟩ ^ s` by at most the factor `c ^ |s|`.
 * `TauCeti.one_add_norm_smul_sq_rpow_le`: the same for the scalar multiple `c • x`,
@@ -174,31 +177,40 @@ theorem one_add_norm_sq_rpow_le_of_norm_sub_le_one [SeminormedAddCommGroup E] {x
         ring_nf
 
 omit [SeminormedAddGroup E] in
+/-- Comparable norms give comparable Japanese bracket weights: if `‖x‖ ≤ c ‖y‖` and
+`‖y‖ ≤ c ‖x‖` with `c ≥ 1`, then `(1 + ‖x‖ ^ 2) ^ (s / 2) ≤ c ^ |s| (1 + ‖y‖ ^ 2) ^ (s / 2)` for
+every real `s`. -/
+theorem one_add_norm_sq_rpow_le_of_norm_le_mul [SeminormedAddGroup E] {F : Type*}
+    [SeminormedAddGroup F] {c : ℝ} (hc : 1 ≤ c) (s : ℝ) {x : E} {y : F} (hxy : ‖x‖ ≤ c * ‖y‖)
+    (hyx : ‖y‖ ≤ c * ‖x‖) :
+    (1 + ‖x‖ ^ 2) ^ (s / 2) ≤ c ^ |s| * (1 + ‖y‖ ^ 2) ^ (s / 2) := by
+  have hx := norm_nonneg x
+  have hy := norm_nonneg y
+  have hc0 : 0 < c := by linarith
+  have hc2 : (c ^ 2) ^ (s / 2) = c ^ s := by
+    rw [← Real.rpow_natCast c 2, ← Real.rpow_mul hc0.le]
+    congr 1
+    push_cast
+    ring
+  rcases le_or_gt 0 s with hs | hs
+  · rw [abs_of_nonneg hs, ← hc2, ← Real.mul_rpow (by positivity) (by positivity)]
+    refine Real.rpow_le_rpow (by positivity) ?_ (by positivity)
+    nlinarith [mul_le_mul hxy hxy hx (by positivity), one_le_pow₀ (n := 2) hc]
+  · rw [abs_of_neg hs, Real.rpow_neg hc0.le, ← hc2, ← Real.inv_rpow (by positivity),
+      ← Real.mul_rpow (by positivity) (by positivity)]
+    refine Real.rpow_le_rpow_of_nonpos (by positivity) ?_ (by linarith)
+    rw [inv_mul_le_iff₀ (by positivity)]
+    nlinarith [mul_le_mul hyx hyx hy (by positivity), one_le_pow₀ (n := 2) hc]
+
+omit [SeminormedAddGroup E] in
 /-- Rescaling by a factor `c ≥ 1` changes the Japanese bracket weight by at most `c ^ |s|`: if
 `‖x‖ = c ‖y‖`, then `(1 + ‖x‖ ^ 2) ^ (s / 2) ≤ c ^ |s| (1 + ‖y‖ ^ 2) ^ (s / 2)` for every real `s`.
 For `s ≥ 0` this uses `‖x‖ ≤ c ‖y‖`, and for `s < 0` it uses `‖y‖ ≤ ‖x‖`. -/
 theorem one_add_norm_sq_rpow_le_of_norm_eq_mul [SeminormedAddGroup E] {F : Type*}
     [SeminormedAddGroup F] {c : ℝ} (hc : 1 ≤ c) (s : ℝ) {x : E} {y : F} (h : ‖x‖ = c * ‖y‖) :
-    (1 + ‖x‖ ^ 2) ^ (s / 2) ≤ c ^ |s| * (1 + ‖y‖ ^ 2) ^ (s / 2) := by
-  have hy := norm_nonneg y
-  rw [h]
-  rcases le_or_gt 0 s with hs | hs
-  · rw [abs_of_nonneg hs]
-    calc (1 + (c * ‖y‖) ^ 2) ^ (s / 2) ≤ (c ^ 2 * (1 + ‖y‖ ^ 2)) ^ (s / 2) :=
-          Real.rpow_le_rpow (by positivity) (by nlinarith) (by positivity)
-      _ = c ^ s * (1 + ‖y‖ ^ 2) ^ (s / 2) := by
-          rw [Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_natCast c 2,
-            ← Real.rpow_mul (by linarith)]
-          congr 2
-          push_cast
-          ring
-  · have hcy : ‖y‖ ^ 2 ≤ (c * ‖y‖) ^ 2 := by
-      rw [mul_pow]
-      exact le_mul_of_one_le_left (sq_nonneg _) (one_le_pow₀ hc)
-    calc (1 + (c * ‖y‖) ^ 2) ^ (s / 2) ≤ (1 + ‖y‖ ^ 2) ^ (s / 2) :=
-          Real.rpow_le_rpow_of_nonpos (by positivity) (by linarith) (by linarith)
-      _ ≤ c ^ |s| * (1 + ‖y‖ ^ 2) ^ (s / 2) :=
-          le_mul_of_one_le_left (by positivity) (Real.one_le_rpow hc (abs_nonneg s))
+    (1 + ‖x‖ ^ 2) ^ (s / 2) ≤ c ^ |s| * (1 + ‖y‖ ^ 2) ^ (s / 2) :=
+  one_add_norm_sq_rpow_le_of_norm_le_mul hc s h.le
+    (by rw [h]; nlinarith [norm_nonneg y, mul_le_mul hc hc zero_le_one (by linarith)])
 
 omit [SeminormedAddGroup E] in
 /-- Scaling by `c ≥ 1` changes the Japanese bracket weight by at most `c ^ |s|`:

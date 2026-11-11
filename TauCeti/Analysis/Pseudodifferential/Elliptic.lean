@@ -90,6 +90,18 @@ theorem IsElliptic.comp {b : HomogeneousSymbol X E W U m'} {a : HomogeneousSymbo
     (hb : b.IsElliptic) (ha : a.IsElliptic) : (b.comp a).IsElliptic :=
   fun x ξ hξ ↦ by simpa using (hb x ξ hξ).comp (ha x ξ hξ)
 
+/-- Pulling back the position preserves ellipticity. -/
+theorem IsElliptic.compPosition {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+    {a : HomogeneousSymbol X E V W m} (ha : a.IsElliptic) (g : Y → X) (hg : ContDiff ℝ ∞ g) :
+    (a.compPosition g hg).IsElliptic :=
+  isElliptic_iff.2 fun y ξ hξ => by simpa using isElliptic_iff.1 ha (g y) ξ hξ
+
+/-- A linear change of the frequency preserves ellipticity. -/
+theorem IsElliptic.compFrequency {a : HomogeneousSymbol X E V W m} (ha : a.IsElliptic)
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] (Q : E' ≃L[ℝ] E) :
+    (a.compFrequency Q).IsElliptic :=
+  isElliptic_iff.2 fun x ξ hξ => by simpa using isElliptic_iff.1 ha x (Q ξ) (by simpa using hξ)
+
 /-- Multiplying by a nonzero complex number does not change ellipticity. -/
 @[simp]
 theorem isElliptic_smul_iff {c : ℂ} (hc : c ≠ 0) {a : HomogeneousSymbol X E V W m} :
