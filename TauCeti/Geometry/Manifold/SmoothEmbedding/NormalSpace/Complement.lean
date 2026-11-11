@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Coordinates
 public import TauCeti.Analysis.Calculus.QuotientRange
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
+import TauCeti.Geometry.Manifold.MFDeriv.Coordinates
 
 /-!
 # Fixed complementary coordinates for intrinsic normal spaces
@@ -173,8 +174,9 @@ theorem exists_contMDiffOn_inTangentCoordinates_quotientRangeCoordinate
   have hA : ContMDiffAt I 𝓘(𝕜, E →L[𝕜] F) m A x₀ :=
     f.contMDiff.contMDiffAt.mfderiv_const hm
   obtain ⟨Q, hQ, W, hW, hxW, hInv⟩ := hA.continuousAt.exists_isInvertible_coprod_subtypeL
-    (f.hasLeftInverse_inTangentCoordinates_mfderiv hn (mem_chart_source H x₀)
-      (mem_chart_source G (f x₀)))
+    ((hasLeftInverse_inTangentCoordinates_iff (mem_chart_source H x₀)
+      (mem_chart_source G (f x₀))).2
+        (isDiffImmersionAt_iff.1 (f.isImmersion.isDiffImmersionAt hn x₀)))
   obtain ⟨V, hV, hAV⟩ := (contMDiffAt_iff_contMDiffOn_nhds hm').mp hA
   let S := (chartAt H x₀).source ∩ f ⁻¹' (chartAt G (f x₀)).source
   have hS : IsOpen S := (chartAt H x₀).open_source.inter
