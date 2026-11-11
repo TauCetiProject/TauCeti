@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Block
+public import Mathlib.Order.Interval.Set.OrdConnected
 public import Mathlib.RingTheory.Nilpotent.Defs
 import Mathlib.LinearAlgebra.Matrix.Reindex
 
@@ -42,6 +43,8 @@ Lie-algebra theory.
   diagonal are determined by their product with their transpose.
 * `Matrix.IsLowerTriangular.submatrix_castLE_mul_transpose` — a leading principal submatrix of a
   lower-triangular Gram matrix is the Gram matrix of the corresponding submatrix.
+* `Matrix.IsUpperTriangular.submatrix_mul` and `submatrix_pow` — restriction to order-connected
+  index sets preserves multiplication and powers.
 * `Matrix.pow_apply_diag_of_isUpperTriangular` — the diagonal of a power of an upper-triangular
   matrix is the corresponding power of the diagonal entry.
 * `Matrix.isUpperUnitriangular_geom_sum_of_isUpperTriangular_of_diag_eq_zero` — the geometric
@@ -121,13 +124,21 @@ theorem IsUpperUnitriangular.sub_one_apply_diag [LT m] [DecidableEq m] [AddGroup
     {M : Matrix m m R} (hM : M.IsUpperUnitriangular) (i : m) : (M - 1) i i = 0 := by
   simp [hM.apply_diag]
 
+/-- Selecting rows and columns by the same strictly increasing map preserves upper
+triangularity. -/
+theorem IsUpperTriangular.submatrix_of_strictMono {n : Type*} [Preorder m] [Preorder n]
+    [Zero R]
+    {M : Matrix m m R} (hM : M.IsUpperTriangular) {f : n → m} (hf : StrictMono f) :
+    (M.submatrix f f).IsUpperTriangular :=
+  fun _ _ hij ↦ hM (hf hij)
+
 /-- Selecting the same strictly increasing family of rows and columns preserves upper
 unitriangularity. In particular, this applies to principal submatrices and order-preserving
 reindexing. -/
 theorem IsUpperUnitriangular.submatrix {n : Type*} [Preorder m] [Preorder n] [Zero R] [One R]
     {M : Matrix m m R} (hM : M.IsUpperUnitriangular) {f : n → m} (hf : StrictMono f) :
     (M.submatrix f f).IsUpperUnitriangular :=
-  ⟨fun _ _ hij ↦ hM.isUpperTriangular (hf hij), fun i ↦ hM.apply_diag (f i)⟩
+  ⟨hM.isUpperTriangular.submatrix_of_strictMono hf, fun i ↦ hM.apply_diag (f i)⟩
 
 /-- Two upper-unitriangular matrices are equal if their entries strictly above the diagonal
 agree. -/
@@ -347,6 +358,39 @@ theorem IsLowerTriangular.eq_of_mul_transpose_self_eq
     L = L * 1 := (Matrix.mul_one L).symm
     _ = L * (L⁻¹ * M) := by rw [hQone]
     _ = M := by rw [← Matrix.mul_assoc, Matrix.mul_nonsing_inv L hLdet, Matrix.one_mul]
+
+section IntervalRestriction
+
+variable {ι κ R : Type*} [LinearOrder ι] [Fintype ι] [Fintype κ]
+
+/-- Restricting upper-triangular matrices to an order-connected set of indices preserves
+multiplication. -/
+theorem IsUpperTriangular.submatrix_mul [NonUnitalNonAssocSemiring R] {A B : Matrix ι ι R}
+    (hA : A.IsUpperTriangular) (hB : B.IsUpperTriangular)
+    (e : κ ↪ ι) (he : Set.OrdConnected (Set.range e)) :
+    (A * B).submatrix e e = A.submatrix e e * B.submatrix e e := by
+  ext i j
+  simp only [Matrix.submatrix_apply, Matrix.mul_apply]
+  symm
+  refine Fintype.sum_of_injective e e.injective _ _ ?_ (fun _ ↦ rfl)
+  intro k hk
+  by_cases hki : k < e i
+  · simp [hA hki]
+  by_cases hjk : e j < k
+  · simp [hB hjk]
+  exact False.elim (hk (he.out ⟨i, rfl⟩ ⟨j, rfl⟩ ⟨not_lt.mp hki, not_lt.mp hjk⟩))
+
+/-- Restricting an upper-triangular matrix to an order-connected set of indices preserves
+powers. -/
+theorem IsUpperTriangular.submatrix_pow [Semiring R] [DecidableEq ι] [DecidableEq κ]
+    {A : Matrix ι ι R} (hA : A.IsUpperTriangular)
+    (e : κ ↪ ι) (he : Set.OrdConnected (Set.range e)) (n : ℕ) :
+    (A ^ n).submatrix e e = (A.submatrix e e) ^ n := by
+  induction n with
+  | zero => simp only [pow_zero, Matrix.submatrix_one_embedding]
+  | succ n ih => rw [pow_succ, IsUpperTriangular.submatrix_mul (hA.pow n) hA e he, ih, pow_succ]
+
+end IntervalRestriction
 
 /-- The diagonal of a power of an upper-triangular matrix is the corresponding power of the
 diagonal entry. -/
