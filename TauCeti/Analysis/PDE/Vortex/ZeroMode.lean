@@ -7,10 +7,11 @@ module
 
 public import TauCeti.Analysis.PDE.Schrodinger.Stationary
 public import TauCeti.Analysis.PDE.Vortex.Deformation
-import Mathlib.Analysis.Calculus.BumpFunction.Basic
 import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.Vortex.ExteriorEstimate
+import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Zero modes of a plane vortex with a prescribed principal part
@@ -74,7 +75,7 @@ public section
 namespace TauCeti.Vortex
 
 open MeasureTheory Filter Metric Complex TemperedDistribution
-open scoped Laplacian ContDiff Topology
+open scoped Laplacian ContDiff Topology Distributions
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
@@ -205,38 +206,12 @@ private theorem memLp_laplacian_sub_mul_principalPart (hx : Continuous x) {a : �
   rw [Real.norm_of_nonneg (Set.indicator_nonneg (fun _ _ ↦ hM0) z)]
   exact hgbound z hz
 
-/-- The principal part `η₀ = ρ c / (z - a)^k` agrees, outside every disc about `a`, with a smooth
-compactly supported function: cut off the singularity at `a` by a bump function. -/
-private theorem exists_contDiff_eventuallyEq_principalPart {a : ℂ} {ρ : ℂ → ℝ}
-    (hρ : ContDiff ℝ ∞ ρ) (hρc : HasCompactSupport ρ) (c : ℂ) (k : ℕ) {r : ℝ} (hr : 0 < r) :
-    ∃ η₁ : ℂ → ℂ, ContDiff ℝ ∞ η₁ ∧ HasCompactSupport η₁ ∧ ∀ z, r ≤ ‖z - a‖ →
-      η₁ =ᶠ[𝓝 z] fun w ↦ (ρ w : ℂ) * (c / (w - a) ^ k) := by
-  let β : ContDiffBump a := ⟨r / 4, r / 2, by positivity, by linarith⟩
-  refine ⟨fun z ↦ (ρ z : ℂ) * (((1 - β z : ℝ) : ℂ) * (c / (z - a) ^ k)), ?_, ?_, ?_⟩
-  · refine contDiff_iff_contDiffAt.2 fun z ↦ ?_
-    by_cases hza : z = a
-    · subst hza
-      refine contDiffAt_const (c := (0 : ℂ)) |>.congr_of_eventuallyEq ?_
-      filter_upwards [ball_mem_nhds z (by positivity : (0 : ℝ) < r / 4)] with w hw
-      simp [β.one_of_mem_closedBall (ball_subset_closedBall hw)]
-    · have hden : ContDiffAt ℝ ∞ (fun w : ℂ ↦ (w - a) ^ k) z := by fun_prop
-      have hinv := hden.inv (pow_ne_zero k (sub_ne_zero.2 hza))
-      exact (ofRealCLM.contDiff.comp hρ).contDiffAt.mul
-        ((ofRealCLM.contDiff.comp (contDiff_const.sub β.contDiff)).contDiffAt.mul
-          (contDiffAt_const.mul hinv))
-  · exact (hρc.comp_left (g := ((↑) : ℝ → ℂ)) ofReal_zero).mul_right
-  · intro z hz
-    have hzβ : z ∉ tsupport β := by
-      have hβr : β.rOut = r / 2 := rfl
-      rw [β.tsupport_eq, mem_closedBall, dist_eq_norm, not_le, hβr]
-      linarith
-    filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hzβ] with w hw
-    simp [hw]
-
 /-- **The weak equation for the principal part.** For a smooth compactly supported real `φ`
-vanishing near `a`, `η₀ (Δφ - P φ)` is integrable and `∫ η₀ (Δφ - P φ) = ∫ (Δη₀ - P η₀) φ`. -/
+vanishing near `a`, `η₀ (Δφ - P φ)` is integrable and `∫ η₀ (Δφ - P φ) = ∫ (Δη₀ - P η₀) φ`. This
+is Green's identity on the punctured plane, where `η₀ = ρ c / (z - a)^k` is smooth and `φ` is a
+test function. -/
 private theorem integrable_and_integral_principalPart_mul_laplacian_sub_mul (hx : Continuous x)
-    {a : ℂ} {k : ℕ} {ρ : ℂ → ℝ} (hρ : ContDiff ℝ ∞ ρ) (hρc : HasCompactSupport ρ) (c : ℂ)
+    {a : ℂ} {k : ℕ} {ρ : ℂ → ℝ} (hρ : ContDiff ℝ ∞ ρ) (c : ℂ)
     {φ : ℂ → ℝ} (hφ : ContDiff ℝ ∞ φ) (hφc : HasCompactSupport φ) (haφ : a ∉ tsupport φ) :
     Integrable (fun z ↦ (ρ z : ℂ) * (c / (z - a) ^ k) *
         ((Δ φ z - (x z 2 ^ 2 + x z 3 ^ 2) * φ z : ℝ) : ℂ)) volume ∧
@@ -248,85 +223,39 @@ private theorem integrable_and_integral_principalPart_mul_laplacian_sub_mul (hx 
   have hPc : Continuous P := by
     have := hxi 2; have := hxi 3; fun_prop
   set η₀ : ℂ → ℂ := fun z ↦ (ρ z : ℂ) * (c / (z - a) ^ k) with hη₀def
-  set g : ℂ → ℂ := fun z ↦ Δ η₀ z - P z * η₀ z with hgdef
-  set L : ℂ → ℝ := fun z ↦ Δ φ z - P z * φ z with hLdef
   have hφ2 : ContDiff ℝ 2 φ := hφ.of_le (by simp)
-  have hL0 (z : ℂ) (hz : z ∉ tsupport φ) : L z = 0 := by
-    have hloc : φ =ᶠ[𝓝 z] fun _ ↦ 0 := notMem_tsupport_iff_eventuallyEq.1 hz
-    have hΔ : Δ φ z = 0 := by
-      rw [(InnerProductSpace.laplacian_congr_nhds hloc).eq_of_nhds]
-      simp
-    simp [hLdef, hΔ, hloc.eq_of_nhds]
-  -- The test function `φ` vanishes on a disc `ball a r` about `a`.
-  obtain ⟨r, hr, hrφ⟩ := Metric.mem_nhds_iff.1 ((isClosed_tsupport φ).isOpen_compl.mem_nhds haφ)
-  have hfar (z : ℂ) (hz : z ∈ tsupport φ) : r ≤ ‖z - a‖ := by
-    by_contra hlt
-    exact hrφ (mem_ball_iff_norm.2 (not_le.1 hlt)) hz
-  -- A smooth modification `η₁` of `η₀` vanishing near `a` and equal to `η₀` near `tsupport φ`.
-  obtain ⟨η₁, hη₁, hη₁c, hη₁far⟩ := exists_contDiff_eventuallyEq_principalPart hρ hρc c k hr
-  have hη₁eq (z : ℂ) (hz : z ∈ tsupport φ) : η₁ =ᶠ[𝓝 z] η₀ := hη₁far z (hfar z hz)
-  -- Pointwise comparisons of `η₀` and `η₁` against `φ` and `L`.
-  have e₁ (z : ℂ) : η₀ z * (L z : ℂ) = η₁ z * (L z : ℂ) := by
-    by_cases hz : z ∈ tsupport φ
-    · rw [(hη₁eq z hz).eq_of_nhds]
-    · simp [hL0 z hz]
-  have e₂ (z : ℂ) : Δ η₁ z * (φ z : ℂ) = Δ η₀ z * (φ z : ℂ) := by
-    by_cases hz : z ∈ tsupport φ
-    · rw [(InnerProductSpace.laplacian_congr_nhds (hη₁eq z hz)).eq_of_nhds]
-    · simp [image_eq_zero_of_notMem_tsupport hz]
-  have e₃ (z : ℂ) : η₁ z * (φ z : ℂ) = η₀ z * (φ z : ℂ) := by
-    by_cases hz : z ∈ tsupport φ
-    · rw [(hη₁eq z hz).eq_of_nhds]
-    · simp [image_eq_zero_of_notMem_tsupport hz]
-  -- Green's identity `∫ η₁ Δφ = ∫ Δη₁ φ` for the smooth compactly supported `η₁` and `φ`.
-  have hφℂ : ContDiff ℝ ∞ (fun z ↦ (φ z : ℂ)) := ofRealCLM.contDiff.comp hφ
-  have hφℂc : HasCompactSupport (fun z ↦ (φ z : ℂ)) :=
-    hφc.comp_left (g := ((↑) : ℝ → ℂ)) ofReal_zero
-  have hΔφℂ (z : ℂ) : Δ (fun w ↦ (φ w : ℂ)) z = (Δ φ z : ℂ) :=
-    (hφ2.contDiffAt).laplacian_CLM_comp_left (l := ofRealCLM)
-  have hgreen : ∫ z, η₁ z * (Δ φ z : ℂ) = ∫ z, Δ η₁ z * (φ z : ℂ) := by
-    have h := SchwartzMap.integral_mul_laplacian_right_eq_left (μ := volume)
-      (hη₁c.toSchwartzMap hη₁) (hφℂc.toSchwartzMap hφℂ)
-    have hc₁ : ⇑(hη₁c.toSchwartzMap hη₁) = η₁ :=
-      funext (HasCompactSupport.toSchwartzMap_toFun _ _)
-    have hc₂ : ⇑(hφℂc.toSchwartzMap hφℂ) = fun z ↦ (φ z : ℂ) :=
-      funext (HasCompactSupport.toSchwartzMap_toFun _ _)
-    simp only [SchwartzMap.laplacian_apply, hc₁, hc₂, hΔφℂ] at h
-    exact h
+  -- `φ` is a test function on the punctured plane `Ω`, where `η₀` is smooth.
+  let Ω : TopologicalSpace.Opens ℂ := ⟨{a}ᶜ, isOpen_compl_singleton⟩
+  have hφΩ : tsupport φ ⊆ Ω := fun z hz hza ↦ haφ (hza ▸ hz)
+  let ψ : 𝓓(Ω, ℝ) := ⟨φ, hφ, hφc, hφΩ⟩
+  have hη₀ : ContDiffOn ℝ 2 η₀ Ω := fun z hz ↦
+    ((contDiffAt_principalPart hρ c a k hz).of_le (by simp)).contDiffWithinAt
+  have hΩm : MeasurableSet (Ω : Set ℂ) := Ω.isOpen.measurableSet
   -- Integrability of the pieces.
-  have hη₁m : Continuous η₁ := hη₁.continuous
-  have hΔη₁ : Continuous (Δ η₁) := (hη₁.of_le (by simp)).continuous_laplacian
-  have i₁ : Integrable (fun z ↦ η₁ z * (Δ φ z : ℂ)) volume :=
-    (hη₁m.mul (continuous_ofReal.comp hφ2.continuous_laplacian)).integrable_of_hasCompactSupport
-      hη₁c.mul_right
-  have i₂ : Integrable (fun z ↦ η₁ z * ((P z : ℂ) * (φ z : ℂ))) volume :=
-    (hη₁m.mul ((continuous_ofReal.comp hPc).mul (continuous_ofReal.comp hφ.continuous))
-      ).integrable_of_hasCompactSupport hη₁c.mul_right
-  have i₃ : Integrable (fun z ↦ Δ η₁ z * (φ z : ℂ)) volume :=
-    (hΔη₁.mul (continuous_ofReal.comp hφ.continuous)).integrable_of_hasCompactSupport
-      hφℂc.mul_left
-  have i₄ : Integrable (fun z ↦ (P z : ℂ) * (η₁ z * (φ z : ℂ))) volume :=
-    ((continuous_ofReal.comp hPc).mul (hη₁m.mul (continuous_ofReal.comp hφ.continuous))
-      ).integrable_of_hasCompactSupport hφℂc.mul_left.mul_left
-  -- `η₀ L = η₁ L` is integrable, and the principal part contributes `∫ g φ`.
-  have hLc : Continuous L := hφ2.continuous_laplacian.sub (hPc.mul hφ.continuous)
-  refine ⟨?_, ?_⟩
-  · exact ((hη₁m.mul (continuous_ofReal.comp hLc)).integrable_of_hasCompactSupport
-      hη₁c.mul_right).congr (ae_of_all _ fun z ↦ (e₁ z).symm)
-  calc ∫ z, η₀ z * (L z : ℂ)
-      = ∫ z, (η₁ z * (Δ φ z : ℂ) - η₁ z * ((P z : ℂ) * (φ z : ℂ))) := by
-        refine integral_congr_ae (ae_of_all _ fun z ↦ ?_)
-        dsimp only
-        rw [e₁]
-        simp only [hLdef, ofReal_sub, ofReal_mul]
-        ring
-    _ = ∫ z, (Δ η₁ z * (φ z : ℂ) - (P z : ℂ) * (η₁ z * (φ z : ℂ))) := by
-        rw [integral_sub i₁ i₂, integral_sub i₃ i₄, hgreen]
+  have i₁ : Integrable (fun z ↦ Δ φ z • η₀ z) volume :=
+    (hη₀.continuousOn.locallyIntegrableOn hΩm).integrable_smul_left_of_hasCompactSupport
+      hφ2.continuous_laplacian
+      (hφc.mono' ((subset_tsupport _).trans (tsupport_laplacian_subset _)))
+      ((tsupport_laplacian_subset _).trans hφΩ)
+  have i₂ : Integrable (fun z ↦ φ z • (P z • η₀ z)) volume :=
+    ψ.integrable_smul ((hPc.continuousOn.smul hη₀.continuousOn).locallyIntegrableOn hΩm)
+  have i₃ : Integrable (fun z ↦ φ z • Δ η₀ z) volume :=
+    ψ.integrable_smul ((hη₀.continuousOn_laplacian Ω.isOpen).locallyIntegrableOn hΩm)
+  have e (z : ℂ) : η₀ z * ((Δ φ z - P z * φ z : ℝ) : ℂ) = Δ φ z • η₀ z - φ z • (P z • η₀ z) := by
+    simp only [Complex.real_smul, ofReal_sub, ofReal_mul]
+    ring
+  refine ⟨(i₁.sub i₂).congr (ae_of_all _ fun z ↦ (e z).symm), ?_⟩
+  calc ∫ z, η₀ z * ((Δ φ z - P z * φ z : ℝ) : ℂ)
+      = (∫ z, Δ φ z • η₀ z) - ∫ z, φ z • (P z • η₀ z) := by
+        rw [← integral_sub i₁ i₂]
+        exact integral_congr_ae (ae_of_all _ e)
+    _ = (∫ z, φ z • Δ η₀ z) - ∫ z, φ z • (P z • η₀ z) := by
         congr 1
-        exact integral_congr_ae (ae_of_all _ fun z ↦ by ring)
-    _ = ∫ z, g z * (φ z : ℂ) := by
+        exact hη₀.integral_laplacian_smul_eq_integral_smul_laplacian ψ
+    _ = ∫ z, (Δ η₀ z - (P z : ℂ) * η₀ z) * (φ z : ℂ) := by
+        rw [← integral_sub i₃ i₂]
         refine integral_congr_ae (ae_of_all _ fun z ↦ ?_)
-        simp only [e₂, e₃, hgdef]
+        simp only [Complex.real_smul]
         ring
 
 /-- **Zero modes of a plane vortex with a prescribed principal part.** Let `x` be a continuous
@@ -365,7 +294,7 @@ theorem exists_integral_mul_laplacian_sub_mul_eq_zero (hx : Continuous x)
   have hφ2 : ContDiff ℝ 2 φ := hφ.of_le (by simp)
   -- The principal part contributes `∫ g φ`, and the `H²` part `-∫ g φ`.
   obtain ⟨k₁, hA⟩ :=
-    integrable_and_integral_principalPart_mul_laplacian_sub_mul hx hρ hρc c hφ hφc haφ
+    integrable_and_integral_principalPart_mul_laplacian_sub_mul hx hρ c hφ hφc haφ
   obtain ⟨k₂, hB⟩ := integrable_and_integral_mul_neg_laplacian_add_mul_eq_of_re_im hP hg2
     (memLp_of_mem_realSobolevFunctions hh₁) (memLp_of_mem_realSobolevFunctions hh₂)
     (by simpa only [RCLike.re_to_complex] using hw₁)
