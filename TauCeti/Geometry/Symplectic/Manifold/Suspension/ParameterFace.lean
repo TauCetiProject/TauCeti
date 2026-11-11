@@ -44,7 +44,11 @@ hence the seam identity of both endpoints gives that of the interpolation. Compa
 from the convexity of the compatible Cayley ball
 (`TauCeti.SymplecticForm.Compatible.compatible_cayleyInterp`), and joint smoothness from the
 smoothness of the Cayley path expression in the tangent endomorphism bundle
-(`ContMDiffAt.cayleyPathFormula_hom_bundle`).
+(`ContMDiffAt.cayleyPathFormula_hom_bundle`). This cutoff argument, including the passage from a
+specified cutoff to a closed set, adapts the relative extension of a single compatible structure
+`TauCeti.SmoothTwoForm.Compatible.exists_compatible_eq_of_cutoff` and
+`TauCeti.SmoothTwoForm.Compatible.exists_compatible_eqOn` (`AlmostComplex/Extension.lean`) to
+parametrized seam-compatible vertical families.
 
 The descended block structures `J_l` on `X_φ` are then jointly smooth in `(l, y)`, compatible
 with `Ω`, send `∂_s` to the suspension vector field `T`, act through `L_l` for `l ∈ F` and are the
