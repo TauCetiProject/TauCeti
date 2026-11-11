@@ -46,29 +46,27 @@ variable {S : Type u} [TopologicalSpace S] [DiscreteTopology S]
 takes the value `f ∞` at all but finitely many points of `S`. -/
 theorem finite_setOf_apply_coe_ne_apply_infty {Y : Type*} [TopologicalSpace Y]
     [DiscreteTopology Y] (f : C(OnePoint S, Y)) : {s : S | f s ≠ f ∞}.Finite := by
-  have h := (_root_.OnePoint.continuous_iff_from_discrete f).mp f.continuous
-  rw [nhds_discrete, tendsto_pure] at h
-  exact eventually_cofinite.mp h
+  simpa [nhds_discrete, eventually_cofinite] using
+    (_root_.OnePoint.continuous_iff_from_discrete f).mp f.continuous
 
 section Zero
 
-variable (M : Type v) [Zero M] [TopologicalSpace M]
+variable {M : Type v} [Zero M] [TopologicalSpace M]
 
 /-- A finitely supported function `S →₀ M` is eventually `0` along the cofinite filter, so its
 extension by `0` at `∞` is continuous on the one-point compactification of the discrete space `S`,
 whatever the topology of `M`. -/
 noncomputable def continuousMapOfFinsupp (g : S →₀ M) : C(OnePoint S, M) :=
   _root_.OnePoint.continuousMapMkDiscrete g 0 <|
-    tendsto_const_nhds.congr' <|
-      (eventually_cofinite.mpr g.hasFiniteSupport).mono fun _ hs ↦ hs.symm
+    (tendsto_cofinite_pure_iff.mpr g.hasFiniteSupport).mono_right (pure_le_nhds 0)
 
 @[simp]
 theorem continuousMapOfFinsupp_apply_coe (g : S →₀ M) (s : S) :
-    continuousMapOfFinsupp M g s = g s :=
+    continuousMapOfFinsupp g s = g s :=
   (rfl)
 
 @[simp]
-theorem continuousMapOfFinsupp_apply_infty (g : S →₀ M) : continuousMapOfFinsupp M g ∞ = 0 :=
+theorem continuousMapOfFinsupp_apply_infty (g : S →₀ M) : continuousMapOfFinsupp g ∞ = 0 :=
   (rfl)
 
 end Zero
@@ -76,10 +74,10 @@ end Zero
 section Module
 
 variable (R : Type*) [Semiring R]
-variable (M : Type v) [AddCommMonoid M] [TopologicalSpace M] [ContinuousAdd M] [Module R M]
+variable (M : Type v) [AddCommMonoid M] [TopologicalSpace M] [DiscreteTopology M] [Module R M]
   [ContinuousConstSMul R M]
 
-variable (S) [DiscreteTopology M]
+variable (S)
 
 /-- **Continuous maps vanishing at infinity are finitely supported functions.** For a discrete
 space `S` and a discrete topological module `M`, restriction to `S` identifies the continuous maps
@@ -87,31 +85,24 @@ space `S` and a discrete topological module `M`, restriction to `S` identifies t
 inverse extends a finitely supported function by `0` at `∞`. -/
 noncomputable def finsuppLinearEquivKerEvalInfty :
     (S →₀ M) ≃ₗ[R] (ContinuousMap.evalCLM R (∞ : OnePoint S) : C(OnePoint S, M) →L[R] M).ker where
-  toFun g := ⟨continuousMapOfFinsupp M g, by simp⟩
-  map_add' g₁ g₂ := Subtype.ext <| ContinuousMap.ext fun x ↦ by
-    induction x using OnePoint.rec <;> simp
-  map_smul' c g := Subtype.ext <| ContinuousMap.ext fun x ↦ by
-    induction x using OnePoint.rec <;> simp
+  toFun g := ⟨continuousMapOfFinsupp g, by simp⟩
+  map_add' g₁ g₂ := by ext x; induction x using OnePoint.rec <;> simp
+  map_smul' c g := by ext x; induction x using OnePoint.rec <;> simp
   invFun f := Finsupp.ofSupportFinite (fun s ↦ f.1 s) <| by
-    have h := finite_setOf_apply_coe_ne_apply_infty f.1
-    rwa [(ContinuousMap.evalCLM_apply R ∞ f.1).symm.trans (LinearMap.mem_ker.mp f.2)] at h
-  left_inv g := by
-    ext s
-    exact congrFun Finsupp.ofSupportFinite_coe s
-  right_inv f := Subtype.ext <| ContinuousMap.ext fun x ↦ by
-    induction x using OnePoint.rec with
-    | infty =>
-      exact ((ContinuousMap.evalCLM_apply R ∞ f.1).symm.trans (LinearMap.mem_ker.mp f.2)).symm
-    | coe s =>
-      simp only [continuousMapOfFinsupp_apply_coe]
-      exact congrFun Finsupp.ofSupportFinite_coe s
+    have h : f.1 ∞ = 0 := LinearMap.map_coe_ker (ContinuousMap.evalCLM R ∞).toLinearMap f
+    simpa [h, Function.support] using finite_setOf_apply_coe_ne_apply_infty f.1
+  left_inv g := by ext; simp
+  right_inv f := by
+    have h : f.1 ∞ = 0 := LinearMap.map_coe_ker (ContinuousMap.evalCLM R ∞).toLinearMap f
+    ext x
+    induction x using OnePoint.rec <;> simp [h]
 
 @[simp]
 theorem coe_finsuppLinearEquivKerEvalInfty_apply (g : S →₀ M) :
     ((finsuppLinearEquivKerEvalInfty S R M g :
       (ContinuousMap.evalCLM R (∞ : OnePoint S) : C(OnePoint S, M) →L[R] M).ker) :
         C(OnePoint S, M)) =
-      continuousMapOfFinsupp M g :=
+      continuousMapOfFinsupp g :=
   (rfl)
 
 @[simp]

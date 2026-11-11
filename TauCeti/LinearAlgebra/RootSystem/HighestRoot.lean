@@ -9,7 +9,6 @@ public import Mathlib.LinearAlgebra.RootSystem.RootPositive
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 import Mathlib.LinearAlgebra.RootSystem.Finite.CanonicalBilinear
-import TauCeti.LinearAlgebra.RootSystem.Lowering
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
 
 /-!
@@ -44,6 +43,8 @@ root system is reduced and irreducible, and in particular show it does not depen
 * `RootPairing.Base.forall_root_sub_mem_posRootCone_iff`: the highest root is the only root
   lying above every root.
 * `RootPairing.Base.height_lt_height_highestRoot`: every other root has strictly smaller height.
+* `RootPairing.Base.indexEquiv_highestRoot`: an automorphism of the root system permuting the
+  simple roots fixes the highest root.
 * `RootPairing.Base.neg_height_highestRoot_lt_height`: every root other than `-θ` has height
   strictly greater than `-ht(θ)`.
 * `RootPairing.Base.exists_root_highestRoot_eq_sum_nat`: the coefficients of the highest root in
@@ -298,6 +299,14 @@ theorem height_lt_height_highestRoot {j : ι} (hj : j ≠ b.highestRoot) :
     (b.root_highestRoot_sub_mem_posRootCone j) ?_)).symm
   simp [h]
 
+/-- **An automorphism permuting the simple roots fixes the highest root**: it preserves heights,
+and `θ` is the only root of maximal height. -/
+theorem indexEquiv_highestRoot (u : P.Aut)
+    (hu : ∀ j ∈ b.support, u.indexEquiv j ∈ b.support) :
+    u.indexEquiv b.highestRoot = b.highestRoot := by
+  by_contra h
+  exact (b.height_lt_height_highestRoot h).ne (b.height_indexEquiv u hu _)
+
 /-- **Every root other than the negative of the highest root has height strictly greater than
 `-ht(θ)`.** -/
 theorem neg_height_highestRoot_lt_height {j : ι}
@@ -337,7 +346,7 @@ theorem rootLength_le_rootLength_highestRoot {S : Type*} [CommRing S] [LinearOrd
   have hdom : ∀ k ∈ b.support, 0 ≤ P.pairingIn ℤ β k := fun k hk ↦ by
     by_contra! hneg
     have := hβ (P.reflectionPerm k β) fun j ↦ by simpa using hβT j
-    rw [TauCeti.height_reflectionPerm_of_mem_support P b hk] at this
+    rw [b.height_reflectionPerm_of_mem_support hk] at this
     omega
   obtain ⟨c, hc⟩ := (TauCeti.mem_posRootCone P b).mp (b.root_highestRoot_sub_mem_posRootCone β)
   have hp (i k : ι) : ((P.pairingIn ℤ i k : ℤ) : R) = P.pairing i k := by

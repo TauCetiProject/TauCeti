@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Sphere
 public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
+import TauCeti.Algebra.Group.ZMultiples
 
 /-!
 # The absolute Hurewicz theorem
@@ -54,20 +55,6 @@ namespace HomotopyGroup
 
 open TauCeti
 
-/-- The Hurewicz homomorphism with integer coefficients, evaluated at `1 : ℤ`. -/
-private def hurewiczIntHom (X : Type) [TopologicalSpace X] (x : X) (n : ℕ) :
-    Additive (HomotopyGroup (Fin (n + 1)) X x) →+
-      ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj (ModuleCat.of ℤ ℤ)).obj
-        (TopCat.of X) where
-  toFun a := (hurewiczHom (ModuleCat.of ℤ ℤ) n a).hom 1
-  map_zero' := by simp
-  map_add' a b := by simp
-
-private lemma hurewiczIntHom_apply (X : Type) [TopologicalSpace X] (x : X) (n : ℕ)
-    (a : Additive (HomotopyGroup (Fin (n + 1)) X x)) :
-    hurewiczIntHom X x n a = (hurewicz (ModuleCat.of ℤ ℤ) n a.toMul).hom 1 :=
-  congrArg (fun f ↦ ModuleCat.Hom.hom f 1) (hurewiczHom_apply _ n a)
-
 /-- The cubical Hurewicz class of a generalized loop `p`, read in simplicial singular homology, is
 the image of that of the tautological loop `TauCeti.sphereGenLoop (n + 2)` under
 `(GenLoop.toSphere p)_*`. -/
@@ -108,30 +95,19 @@ private lemma exists_hurewicz_sphereGenLoop_eq_units_smul (n : ℕ) :
   -- The Hurewicz class `g` of `ι` generates `Hₙ₊₂(Sⁿ⁺²; ℤ)`: `k ↦ k • g` is bijective.
   let e := (asIso (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) ι)).toLinearEquiv
   let g := (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) ι).hom 1
-  have he (k : ℤ) : e k = k • g := by
-    have : e k = e (k • (1 : ℤ)) := by rw [smul_eq_mul, mul_one]
-    rw [this, map_zsmul, CategoryTheory.Iso.toLinearEquiv_apply, asIso_hom]
+  have he : ⇑e = fun k : ℤ ↦ k • g := by
+    funext k
+    rw [← map_zsmul, smul_eq_mul, mul_one, CategoryTheory.Iso.toLinearEquiv_apply, asIso_hom]
+  -- `h ∘ c⁻¹` sends `c ⟦ι⟧` to `h ⟦ι⟧ = g`, so `g` is a unit multiple of `c ⟦ι⟧`.
   let h := hurewiczIntHom (sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1) (sphereNorthPole (n + 2))
     (n + 1)
-  let a₁ : Additive (HomotopyGroup (Fin (n + 2))
-      (sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1) (sphereNorthPole (n + 2))) :=
-    Additive.ofMul ⟦ι⟧
-  -- Write `c a₀ = g`, `h a₀ = j • g` and `c a₁ = m • g` for `a₁ = ⟦ι⟧`. Then `a₁ = m • a₀`, so
-  -- `g = h a₁ = (m * j) • g`, and `m * j = 1`.
-  obtain ⟨a₀, ha₀⟩ := c.surjective g
-  obtain ⟨j, hj⟩ := e.surjective (h a₀)
-  obtain ⟨m, hm⟩ := e.surjective (c a₁)
-  have hι : a₁ = m • a₀ := c.injective (by rw [map_zsmul, ha₀, ← hm, he])
-  have hmj : m * j = 1 := e.injective <| by
-    rw [he, he, mul_smul, ← he j, hj, ← map_zsmul, ← hι, hurewiczIntHom_apply, one_smul]
+  obtain ⟨ε, hε⟩ := (h.comp c.symm.toAddMonoidHom).exists_eq_units_smul_of_map_eq
+    (he ▸ e.bijective) (x := c (Additive.ofMul ⟦ι⟧)) <| by
+    rw [AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, AddEquiv.symm_apply_apply,
+      hurewiczIntHom_apply]
     exact congrArg (fun f ↦ ModuleCat.Hom.hom f (1 : ℤ)) (hurewicz_mk (ModuleCat.of ℤ ℤ) (n + 1) ι)
-  have hc : c a₁ = (singularCubicalHomologyIso ℤ _ (n + 2)).inv
-      (cubicalHurewicz ℤ (n + 1) (⟦ι⟧ : HomotopyGroup (Fin (n + 2)) _ _)) :=
-    (cubicalHurewiczSingularHomologyAddEquiv_apply hS a₁).trans
-      (congrArg _ (cubicalHurewiczHom_apply ℤ (n + 1) a₁))
-  have hsphere : g = j • c a₁ := by
-    rw [← hm, he, smul_smul, mul_comm, hmj, one_smul]
-  exact ⟨⟨j, m, by rw [mul_comm, hmj], hmj⟩, hsphere.trans (congrArg ((j : ℤ) • ·) hc)⟩
+  exact ⟨ε, hε.trans (congrArg _ ((cubicalHurewiczSingularHomologyAddEquiv_apply hS _).trans
+    (congrArg _ (cubicalHurewiczHom_apply ℤ (n + 1) _))))⟩
 
 /-- **The Hurewicz map is the cubical Hurewicz map up to a universal sign.** There is a unit
 `ε` of `ℤ` such that for every space `X`, point `x` and class `a ∈ πₙ₊₂(X, x)`, the Hurewicz class
@@ -189,6 +165,6 @@ def hurewiczAddEquiv (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) X 
 theorem hurewiczAddEquiv_apply (hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) X x))
     (a : Additive (HomotopyGroup (Fin (n + 2)) X x)) :
     hurewiczAddEquiv hX a = (hurewiczHom (ModuleCat.of ℤ ℤ) (n + 1) a).hom 1 :=
-  AddEquiv.ofBijective_apply _ _ _
+  (AddEquiv.ofBijective_apply _ _ _).trans <| by rw [hurewiczIntHom_apply, hurewiczHom_apply]
 
 end HomotopyGroup

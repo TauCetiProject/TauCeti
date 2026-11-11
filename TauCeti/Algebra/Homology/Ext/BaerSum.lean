@@ -30,10 +30,16 @@ open Limits Abelian
 
 universe w v u
 
-variable {C : Type u} [Category.{v} C] [Abelian C]
+variable {C : Type u} [Category.{v} C]
+
+section
+
+variable [HasZeroMorphisms C] [HasBinaryBiproducts C] [HasPullbacks C] [HasPushouts C]
 
 /-- The Baer sum of `S` and `S.X₁ ⟶ E ⟶ S.X₃`, formed by pulling the componentwise
-sum back along the diagonal and then pushing out along the codiagonal.
+sum back along the diagonal and then pushing out along the codiagonal. The construction
+needs only zero morphisms, binary biproducts, pullbacks and pushouts; that it is again an
+extension and realises the group law of `Ext¹` is proved below for abelian categories.
 
 The body is exposed because the literal endpoint and middle-object carriers are
 needed when composing the canonical pullback and pushout maps. -/
@@ -48,6 +54,10 @@ noncomputable def baerSum (S : ShortComplex C) {E : C}
 lemma baerSum_X₃ (S : ShortComplex C) {E : C}
     (i : S.X₁ ⟶ E) (p : E ⟶ S.X₃) (w : i ≫ p = 0) :
     (S.baerSum i p w).X₃ = S.X₃ := rfl
+
+end
+
+variable [Abelian C]
 
 /-- The pullback and pushout defining a Baer sum preserve short exactness. -/
 lemma ShortExact.baerSum {S : ShortComplex C} (hS : S.ShortExact)

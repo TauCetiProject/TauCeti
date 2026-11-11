@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.LinearMap.FiniteRange
+import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.RingTheory.Noetherian.Basic
 
 /-!
@@ -26,6 +27,12 @@ addition, negation, scalar multiplication and composition on either side by arbi
 over any ring. Over a Noetherian ring the two notions coincide
 (`LinearMap.isFiniteRank_iff_hasFiniteRange`).
 
+Over a division ring, a finite-rank perturbation of the identity, or more generally of a linear
+equivalence, is injective if and only if it is surjective: it restricts to an endomorphism of the
+finite-dimensional range of the perturbation. This algebraic Fredholm alternative gives the
+equivalence of injectivity, surjectivity and invertibility for `1 - u` with `u` completely
+continuous (`ContinuousLinearMap.IsCompletelyContinuous.injective_one_sub_iff_surjective`).
+
 ## Main definitions
 
 * `LinearMap.IsFiniteRank`: the range of `f` is contained in a finitely generated submodule.
@@ -37,6 +44,10 @@ over any ring. Over a Noetherian ring the two notions coincide
   finitely generated range.
 * `LinearMap.IsFiniteRank.add`, `LinearMap.IsFiniteRank.smul`, `LinearMap.IsFiniteRank.comp_left`,
   `LinearMap.IsFiniteRank.comp_right`: the closure properties, with no Noetherian hypothesis.
+* `LinearMap.HasFiniteRange.injective_one_add_iff_surjective`: over a division ring, `1 + F` is
+  injective if and only if it is surjective when `F` has finitely generated range.
+* `LinearMap.HasFiniteRange.injective_equiv_add_iff_surjective`: the same for `e + w` with `e` a
+  linear equivalence and `w` of finitely generated range.
 
 ## References
 
@@ -141,5 +152,60 @@ theorem isFiniteRank_iff_hasFiniteRange [IsNoetherianRing R] {f : M →ₗ[R] N}
   ⟨IsFiniteRank.hasFiniteRange, HasFiniteRange.isFiniteRank⟩
 
 end Ring
+
+section DivisionRing
+
+variable {K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
+
+/-- For a linear map `F` with finitely generated range, `1 + F` is injective if and only if it is
+surjective (the Fredholm alternative for finite-rank perturbations of the identity). -/
+theorem HasFiniteRange.injective_one_add_iff_surjective {F : V →ₗ[K] V} (hF : F.HasFiniteRange) :
+    Function.Injective (1 + F : V →ₗ[K] V) ↔ Function.Surjective (1 + F : V →ₗ[K] V) := by
+  have : Module.Finite K (range F) := Module.Finite.iff_fg.mpr hF
+  have hmaps : ∀ r ∈ range F, (1 + F) r ∈ range F := fun r hr ↦
+    (range F).add_mem hr (mem_range_self F r)
+  have hgv (a : range F) : ((1 + F).restrict hmaps a : V) = a + F a := by
+    rw [coe_restrict_apply, LinearMap.add_apply, one_apply_eq_self]
+  constructor
+  · intro hinj y
+    obtain ⟨⟨r, hr⟩, hgr⟩ := (LinearMap.injective_iff_surjective (f := (1 + F).restrict hmaps)).mp
+      (fun a b hab ↦ Subtype.ext (hinj (by simpa [hgv] using congrArg Subtype.val hab)))
+      ⟨F y, mem_range_self F y⟩
+    have hr' : (1 + F) r = F y := by simpa [hgv] using congrArg Subtype.val hgr
+    exact ⟨y - r, by rw [map_sub, hr']; simp⟩
+  · intro hsurj
+    have hker : ∀ x, (1 + F) x = 0 → x ∈ range F := fun x hx ↦ by
+      have : x = -F x := eq_neg_of_add_eq_zero_left (by simpa using hx)
+      rw [this]
+      exact (range F).neg_mem (mem_range_self F x)
+    have hg : Function.Surjective ((1 + F).restrict hmaps) := by
+      rintro ⟨r, hr⟩
+      obtain ⟨x, hx⟩ := hsurj r
+      have hxR : x ∈ range F := by
+        have : x = r - F x := by rw [← hx]; simp
+        rw [this]
+        exact (range F).sub_mem hr (mem_range_self F x)
+      exact ⟨⟨x, hxR⟩, Subtype.ext (by simpa [hgv] using hx)⟩
+    have hginj := (LinearMap.injective_iff_surjective (f := (1 + F).restrict hmaps)).mpr hg
+    rw [← ker_eq_bot, Submodule.eq_bot_iff]
+    intro x hx
+    have hxR := hker x hx
+    have : (1 + F).restrict hmaps ⟨x, hxR⟩ = (1 + F).restrict hmaps 0 :=
+      Subtype.ext (by simpa [hgv] using hx)
+    simpa using congrArg Subtype.val (hginj this)
+
+/-- For a linear equivalence `e` and a linear map `w` with finitely generated range, `e + w` is
+injective if and only if it is surjective. -/
+theorem HasFiniteRange.injective_equiv_add_iff_surjective {W : Type*} [AddCommGroup W] [Module K W]
+    {e : V ≃ₗ[K] W} {w : V →ₗ[K] W}
+    (hw : w.HasFiniteRange) :
+    Function.Injective ((e : V →ₗ[K] W) + w) ↔ Function.Surjective ((e : V →ₗ[K] W) + w) := by
+  have h : (e : V →ₗ[K] W) + w = (e : V →ₗ[K] W) ∘ₗ (1 + (e.symm : W →ₗ[K] V) ∘ₗ w) := by
+    ext; simp
+  rw [h, coe_comp]
+  refine (e.toEquiv.comp_injective _).trans (Iff.trans ?_ (e.toEquiv.comp_surjective _).symm)
+  exact (hw.comp_left _).injective_one_add_iff_surjective
+
+end DivisionRing
 
 end LinearMap

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Huber.Basic
 public import TauCeti.RingTheory.Huber.WeightedEval.Basic
 
 /-!
@@ -40,6 +41,9 @@ the remaining step before 5.50 can be stated as a universal property.
   summable term families, with no weights, completeness or restrictedness in sight.
   `TauCeti.Huber.weightedEval_add` and its corollaries are that composed with a way of producing
   summability.
+* `TauCeti.Huber.weightedEval_mem_ringOfDefinition`: a restricted series with coefficients in a
+  ring of definition `A₀` takes values in `A₀` at points of `A₀^k`, because `A₀` is open, hence
+  closed, and contains every term of the evaluation.
 
 ## References
 
@@ -191,6 +195,27 @@ theorem weightedEval_add_of_forall_isPowerBounded (hφ : ContinuousAt φ 0)
   weightedEval_add hφ ((isWeightBounded_one_weight_iff_forall_isPowerBounded φ b).mpr hb) hf hg
 
 end Sums
+
+section RingOfDefinition
+
+variable {k : ℕ} {C : Type*} [CommRing C] [UniformSpace C] [IsUniformAddGroup C]
+  [IsTopologicalRing C] [CompleteSpace C] (P : PairOfDefinition C)
+
+/-- **A restricted series with integral coefficients takes integral values** at integral points:
+if the coefficients of `F` lie in the ring of definition `A₀`, then so does `F(x)` for every
+`x ∈ A₀^k`. -/
+theorem weightedEval_mem_ringOfDefinition {F : MvPowerSeries (Fin k) C}
+    (hF : IsWeightedRestricted (fun _ : Fin k ↦ ({1} : Set C)) F)
+    (hF₀ : ∀ ν, MvPowerSeries.coeff ν F ∈ P.ringOfDefinition) (x : Fin k → P.ringOfDefinition) :
+    weightedEval (RingHom.id C) (fun i ↦ (x i : C)) F ∈ P.ringOfDefinition := by
+  have := P.toNonarchimedeanRing
+  have hsum := hasSum_weightedEval_of_forall_isPowerBounded (φ := RingHom.id C)
+    continuous_id.continuousAt
+    (fun i ↦ P.isBounded_ringOfDefinition.isPowerBounded_of_mem (x i).2) hF
+  simpa using P.mem_smul_of_hasSum isUnit_one hsum fun ν ↦ by
+    simpa [weightedEvalTerm_def] using mul_mem (hF₀ ν) (prod_mem fun i _ ↦ pow_mem (x i).2 (ν i))
+
+end RingOfDefinition
 
 end TauCeti.Huber
 

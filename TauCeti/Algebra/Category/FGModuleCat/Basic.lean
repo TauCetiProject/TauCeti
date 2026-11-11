@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.FGModuleCat.Colimits
 public import Mathlib.Algebra.Category.ModuleCat.Algebra
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.RingTheory.Finiteness.Prod
+public import TauCeti.CategoryTheory.ObjectProperty
 
 /-!
 # Finitely generated modules
@@ -37,6 +38,8 @@ feeds the Grothendieck-group computation for finite-dimensional vector spaces.
 * `TauCeti.FGModuleCat.homLinearEquivOfIsScalarTower`: for an algebra `R` over a field `k`,
   morphisms into `FGModuleCat.of R M` are the `R`-linear maps into `M`, `k`-linearly for the
   original `k`-action on `M` rather than the category's restricted scalar action.
+* `FGModuleCat.tensorUnitHomLinearEquiv`: morphisms `𝟙_ (FGModuleCat R) ⟶ W` identify `R`-linearly
+  with `W` by evaluation at `1`.
 -/
 
 public section
@@ -192,4 +195,64 @@ theorem homLinearEquivOfIsScalarTower_symm_apply (N : FGModuleCat.{v} R)
 
 end FGModuleCat
 
+/-! ### Closure properties of `ModuleCat.isFG` -/
+
+variable (R : Type u) [Ring R]
+
+instance : (ModuleCat.isFG.{v} R).IsClosedUnderIsomorphisms where
+  of_iso {M N} e h := by
+    have : Module.Finite R M := (ModuleCat.isFG_iff M).mp h
+    exact (ModuleCat.isFG_iff N).mpr (Module.Finite.equiv e.toLinearEquiv)
+
+instance : (ModuleCat.isFG.{v} R).ContainsZero where
+  exists_zero := ⟨ModuleCat.of R PUnit, ModuleCat.isZero_of_subsingleton _,
+    (ModuleCat.isFG_iff _).mpr inferInstance⟩
+
+instance : (ModuleCat.isFG.{v} R).IsClosedUnderBinaryProducts :=
+  ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _ fun M N hM hN ↦ by
+    have : Module.Finite R M := (ModuleCat.isFG_iff M).mp hM
+    have : Module.Finite R N := (ModuleCat.isFG_iff N).mp hN
+    exact (ModuleCat.isFG_iff _).mpr
+      (Module.Finite.equiv (ModuleCat.biprodIsoProd M N).toLinearEquiv.symm)
+
 end TauCeti
+
+namespace FGModuleCat
+
+open CategoryTheory MonoidalCategory
+
+universe u
+
+variable {R : Type u} [CommRing R]
+
+/-- Morphisms out of the monoidal unit `𝟙_ (FGModuleCat R)` identify `R`-linearly with the elements
+of the target module by evaluation at `1 : R`. -/
+def tensorUnitHomLinearEquiv (W : FGModuleCat.{u} R) :
+    (𝟙_ (FGModuleCat.{u} R) ⟶ W) ≃ₗ[R] W :=
+  InducedCategory.homLinearEquiv ≪≫ₗ ModuleCat.homLinearEquiv ≪≫ₗ
+    LinearMap.ringLmapEquivSelf R R W
+
+/-- `tensorUnitHomLinearEquiv` evaluates a morphism out of `𝟙_ (FGModuleCat R)` at `1 : R`. -/
+@[simp]
+theorem tensorUnitHomLinearEquiv_apply (W : FGModuleCat.{u} R) (f : 𝟙_ (FGModuleCat.{u} R) ⟶ W) :
+    tensorUnitHomLinearEquiv W f = f.hom.hom (1 : R) :=
+  (rfl)
+
+/-- The inverse of `tensorUnitHomLinearEquiv` sends `w : W` to `LinearMap.toSpanSingleton R W w`. -/
+@[simp]
+theorem tensorUnitHomLinearEquiv_symm_apply_hom_hom (W : FGModuleCat.{u} R) (w : W) :
+    ((tensorUnitHomLinearEquiv W).symm w).hom.hom = LinearMap.toSpanSingleton R W w :=
+  (rfl)
+
+/-- Postcomposition on `𝟙_ (FGModuleCat R) ⟶ W` corresponds under `tensorUnitHomLinearEquiv` to the
+underlying linear map. -/
+theorem conj_tensorUnitHomLinearEquiv_rightComp {W : FGModuleCat.{u} R} (f : W ⟶ W) :
+    (tensorUnitHomLinearEquiv W).conj (Linear.rightComp R (𝟙_ (FGModuleCat.{u} R)) f) =
+      f.hom.hom := by
+  ext w
+  simp only [LinearEquiv.conj_apply_apply, Linear.rightComp_apply,
+    tensorUnitHomLinearEquiv_apply, hom_hom_comp, LinearMap.comp_apply,
+    tensorUnitHomLinearEquiv_symm_apply_hom_hom]
+  exact congrArg f.hom.hom (LinearMap.toSpanSingleton_apply_one R W w)
+
+end FGModuleCat

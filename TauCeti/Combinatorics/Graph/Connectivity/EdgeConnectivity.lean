@@ -9,7 +9,7 @@ public import TauCeti.Combinatorics.SimpleGraph.Connectivity.EdgeConnectivity
 public import TauCeti.Combinatorics.Graph.Connectivity.Bridge.Basic
 public import TauCeti.Combinatorics.Graph.Connectivity.Component
 public import TauCeti.Combinatorics.Graph.Delete
-public import TauCeti.Combinatorics.Graph.Incidence
+public import TauCeti.Combinatorics.Graph.Incidence.Basic
 public import TauCeti.Data.ENat.Lattice
 
 /-!
@@ -250,6 +250,13 @@ theorem isEdgeConnected_two_iff_connected_and_forall_not_isBridge (hV : V(G).Non
   rw [isEdgeConnected_two_iff_forall_reachable_and_forall_not_isBridge,
     connected_iff_forall_reachable, and_iff_right hV]
   exact and_congr_left' ⟨fun h _ _ hx hy ↦ h hx hy, fun h _ hx _ hy ↦ h hx hy⟩
+
+/-- The graph traced by a cycle is `2`-edge-connected. -/
+theorem Walk.IsCycle.isEdgeConnected_two_walkGraph {p : G.Walk x x} (hp : p.IsCycle) :
+    (G.walkGraph p).IsEdgeConnected 2 := by
+  rw [isEdgeConnected_two_iff_connected_and_forall_not_isBridge (by
+    exact ⟨x, by simp⟩)]
+  exact ⟨p.connected_walkGraph, hp.not_isBridge_walkGraph⟩
 
 /-! ### Graphs from simple graphs -/
 

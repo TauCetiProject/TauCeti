@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Young.SemistandardTableau
+public import TauCeti.Combinatorics.Young.Diagram
 
 /-!
 # Order properties of semistandard Young tableaux
@@ -49,5 +50,30 @@ theorem le_entry (T : SemistandardYoungTableau μ) {i j : ℕ} (h : (i, j) ∈ �
   | succ m ih =>
     exact Nat.succ_le_of_lt <|
       (ih (μ.up_left_mem m.le_succ le_rfl h)).trans_lt (T.col_strict m.lt_succ_self h)
+
+open Finset in
+/-- If some cell in a column at least `j` holds the letter `a`, there is a lowest row `k`
+holding such a cell, and no row below `k` holds one. -/
+theorem exists_lowestRow_of_exists {T : SemistandardYoungTableau μ} {j a : ℕ}
+    (hex : ∃ k c, c < μ.rowLen k ∧ j ≤ c ∧ T k c = a) :
+    ∃ k c, c < μ.rowLen k ∧ j ≤ c ∧ T k c = a ∧
+      ∀ r, k < r → #{c ∈ range (μ.rowLen r) | j ≤ c ∧ T r c = a} = 0 := by
+  classical
+  obtain ⟨k, hk⟩ : ∃ k, k = Nat.findGreatest
+      (fun k => ∃ c, c < μ.rowLen k ∧ j ≤ c ∧ T k c = a) (μ.colLen 0) := ⟨_, rfl⟩
+  obtain ⟨k₀, c₀, hc₀, hjc₀, hT₀⟩ := hex
+  have hk₀ : k₀ ≤ μ.colLen 0 :=
+    (YoungDiagram.lt_colLen_zero_of_mem (YoungDiagram.mem_iff_lt_rowLen.mpr hc₀)).le
+  have hspec := Nat.findGreatest_spec
+    (P := fun k => ∃ c, c < μ.rowLen k ∧ j ≤ c ∧ T k c = a) hk₀ ⟨c₀, hc₀, hjc₀, hT₀⟩
+  rw [← hk] at hspec
+  obtain ⟨c, hc, hjc, hTc⟩ := hspec
+  refine ⟨k, c, hc, hjc, hTc, fun r hr => ?_⟩
+  refine card_eq_zero.mpr (filter_eq_empty_iff.mpr fun c' hc' ⟨hjc', hTc'⟩ => ?_)
+  have hc' := mem_range.mp hc'
+  exact Nat.findGreatest_is_greatest
+    (P := fun k => ∃ c, c < μ.rowLen k ∧ j ≤ c ∧ T k c = a) (hk ▸ hr)
+    (YoungDiagram.lt_colLen_zero_of_mem (YoungDiagram.mem_iff_lt_rowLen.mpr hc')).le
+    ⟨c', hc', hjc', hTc'⟩
 
 end SemistandardYoungTableau

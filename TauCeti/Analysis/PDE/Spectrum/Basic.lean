@@ -218,6 +218,15 @@ def IsDirichletEigenvalue (mu : Measure (EuclideanSpace ℝ ι)) [mu.IsAddHaarMe
     energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
       kappa * ⟪W1p.value (u : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ
 
+/-- Unfolding `TauCeti.PDE.IsDirichletEigenvalue`: a nonzero `u ∈ H¹₀(Ω)` with
+`a(u, v) = κ ⟪u, v⟫_{L²(Ω)}` for every `v ∈ H¹₀(Ω)`. -/
+theorem isDirichletEigenvalue_iff (kappa : ℝ) :
+    IsDirichletEigenvalue mu Omega a b c kappa ↔
+      ∃ u : W1p0 mu Omega 2, u ≠ 0 ∧ ∀ v : W1p0 mu Omega 2,
+        energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
+          kappa * ⟪W1p.value (u : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ :=
+  Iff.rfl
+
 /-- Being a Dirichlet eigenvalue, written out as the integral identity
 `a(u, v) = κ ∫_Ω u v`. -/
 theorem isDirichletEigenvalue_iff_setIntegral (kappa : ℝ) :
@@ -227,6 +236,20 @@ theorem isDirichletEigenvalue_iff_setIntegral (kappa : ℝ) :
           kappa * ∫ x in Omega, W1p.value (u : W1p mu Omega 2) x *
             W1p.value (v : W1p mu Omega 2) x ∂mu := by
   simp only [IsDirichletEigenvalue, W1p.inner_value_eq_setIntegral]
+
+/-- A domain with a Dirichlet eigenvalue is nonempty: on the empty domain the only element of
+`H¹₀(Ω)` is `0`. -/
+theorem nonempty_of_isDirichletEigenvalue {kappa : ℝ}
+    (hkappa : IsDirichletEigenvalue mu Omega a b c kappa) :
+    (Omega : Set (EuclideanSpace ℝ ι)).Nonempty := by
+  obtain ⟨u, hu, -⟩ := hkappa
+  by_contra hempty
+  rw [Set.not_nonempty_iff_eq_empty] at hempty
+  refine hu (Subtype.ext (W1p.ext_value (Lp.ext ?_)))
+  have hbot : ae (mu.restrict (Omega : Set (EuclideanSpace ℝ ι))) = ⊥ :=
+    ae_eq_bot.2 (by rw [hempty, Measure.restrict_empty])
+  rw [hbot]
+  exact Filter.eventually_bot
 
 /-- A Dirichlet eigenvalue is exactly a scalar mass shift with a nonzero homogeneous weak
 solution. -/
@@ -617,20 +640,23 @@ theorem le_of_isDirichletEigenvalue_of_subset_ball
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) a lam Lam)
     (ha : AEStronglyMeasurable a (volume.restrict Omega))
     (hb : AEStronglyMeasurable b (volume.restrict Omega))
-    (hc : AEStronglyMeasurable c (volume.restrict Omega)) (hbeta : 0 ≤ beta)
+    (hc : AEStronglyMeasurable c (volume.restrict Omega))
     (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), ‖b x‖ ≤ beta)
     (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), ‖c x‖ ≤ gamma)
     (hc_nonneg : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), 0 ≤ c x)
-    {z : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ} (hR : 0 ≤ R)
+    {z : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ}
     (hball : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ Metric.ball z R)
     (hsmall : beta * (2 * R) < lam) {kappa : ℝ}
     (hkappa : IsDirichletEigenvalue volume Omega a b c kappa) :
     (lam ^ 2 - beta ^ 2 * (2 * R) ^ 2) / (2 * lam * ((2 * R) ^ 2 + 1)) ≤ kappa := by
+  obtain ⟨x, hx⟩ := nonempty_of_isDirichletEigenvalue hkappa
+  have hbeta : 0 ≤ beta := (norm_nonneg _).trans (hb_bound x hx)
+  have hR : 0 ≤ R := (Metric.mem_ball.1 (hball hx)).le.trans' dist_nonneg
   have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
     (fun _x hx eta xi ↦ h.upper_bound hx eta xi) hb_bound hc_bound
   exact le_of_isDirichletEigenvalue hcoeff
     (isCoercive_energyFormH1L0 hcoeff
-      (energyFormH1_poincare_constant_pos h.pos hbeta (by linarith) hsmall)
+      (energyFormH1_poincare_constant_pos hbeta (by linarith) hsmall)
       (fun w ↦ mul_norm_sq_le_energyFormH1_self_of_subset_ball h ha hb hc hb_bound hc_bound
         hc_nonneg hball w.2))
     (fun w ↦ mul_norm_sq_le_energyFormH1_self_of_subset_ball h ha hb hc hb_bound hc_bound
@@ -644,24 +670,24 @@ end UniformlyEllipticOn
 weak solution satisfies `1/(2(4R² + 1)) ≤ κ`; in particular the first Dirichlet eigenvalue of
 `-Δ` is positive.  The bound is the Poincaré constant of the ball, not the sharp eigenvalue. -/
 theorem le_of_isDirichletEigenvalue_laplacian_of_subset_ball
-    {z : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ} (hR : 0 ≤ R)
+    {z : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ}
     (hball : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ Metric.ball z R) {kappa : ℝ}
     (hkappa : IsDirichletEigenvalue volume Omega (fun _ ↦ 1) 0 0 kappa) :
     1 / (2 * ((2 * R) ^ 2 + 1)) ≤ kappa := by
   have key := UniformlyEllipticOn.le_of_isDirichletEigenvalue_of_subset_ball
     (uniformlyEllipticOn_const_one_one _) aestronglyMeasurable_const aestronglyMeasurable_const
-    aestronglyMeasurable_const le_rfl (fun _ _ ↦ by simp) (gamma := 0) (fun _ _ ↦ by simp)
-    (fun _ _ ↦ le_rfl) hR hball (by simp) hkappa
+    aestronglyMeasurable_const (beta := 0) (fun _ _ ↦ by simp) (gamma := 0) (fun _ _ ↦ by simp)
+    (fun _ _ ↦ le_rfl) hball (by simp) hkappa
   simpa using key
 
 /-- **Every Dirichlet eigenvalue of `-Δ` is positive** on a domain inside a ball. -/
 theorem pos_of_isDirichletEigenvalue_laplacian_of_subset_ball
-    {z : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ} (hR : 0 ≤ R)
+    {z : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ}
     (hball : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ Metric.ball z R) {kappa : ℝ}
     (hkappa : IsDirichletEigenvalue volume Omega (fun _ ↦ 1) 0 0 kappa) :
     0 < kappa :=
   lt_of_lt_of_le (by positivity)
-    (le_of_isDirichletEigenvalue_laplacian_of_subset_ball hR hball hkappa)
+    (le_of_isDirichletEigenvalue_laplacian_of_subset_ball hball hkappa)
 
 end Euclidean
 

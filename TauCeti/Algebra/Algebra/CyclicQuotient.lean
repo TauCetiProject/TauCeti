@@ -31,9 +31,10 @@ algebra are descended to it in `TauCeti.RepresentationTheory.Quiver.PathAlgebra.
 
 ## Main results
 
-* `TauCeti.neg_mem_commutatorSubmodule` and `TauCeti.neg_one_pow_mul_mem_commutatorSubmodule`: the
-  commutator submodule is closed under negation and under multiplication by signs, even over a
-  semiring of scalars.
+* `TauCeti.neg_mem_commutatorSubmodule`, `TauCeti.zsmul_mem_commutatorSubmodule` and
+  `TauCeti.neg_one_pow_mul_mem_commutatorSubmodule`: the commutator submodule is closed under
+  negation, under integer multiples and under multiplication by signs, even over a semiring of
+  scalars.
 * `TauCeti.mul_mem_commutatorSubmodule_comm`: a product is a sum of commutators exactly when its
   rotation is.
 * `TauCeti.commutatorSubmodule_le_ker_iff`: a linear map kills the commutator submodule exactly
@@ -81,6 +82,18 @@ theorem neg_mem_commutatorSubmodule {x : A} (hx : x ∈ commutatorSubmodule k A)
   | zero => simp
   | add y z _ _ hy hz => rw [neg_add]; exact add_mem hy hz
   | smul r y _ hy => simpa [smul_neg] using Submodule.smul_mem _ r hy
+
+variable {k A} in
+/-- The commutator submodule is closed under integer multiples even when `k` is only a
+semiring. -/
+theorem zsmul_mem_commutatorSubmodule {x : A} (hx : x ∈ commutatorSubmodule k A) (n : ℤ) :
+    n • x ∈ commutatorSubmodule k A := by
+  cases n with
+  | ofNat m => simpa using (commutatorSubmodule k A).toAddSubmonoid.nsmul_mem hx m
+  | negSucc m =>
+    rw [negSucc_zsmul]
+    exact neg_mem_commutatorSubmodule
+      ((commutatorSubmodule k A).toAddSubmonoid.nsmul_mem hx (m + 1))
 
 variable {k} in
 /-- The commutator submodule is closed under multiplication by a sign `(-1) ^ e`, even when `k` is

@@ -180,14 +180,15 @@ theorem _root_.ContinuousMonoidHom.cupFp_zmodFourReductionClass_self_eq_zero :
   rw [carryFourCochain_apply, carryFourCochain_apply, carryFourCochain_apply]
   rw [characterCochain_apply, characterCochain_apply]
   rw [fpPairing_bil_apply]
-  simp only [LinearEquiv.apply_symm_apply, _root_.ContinuousMonoidHom.zmodFourReduction_apply]
+  simp only [LinearEquiv.apply_symm_apply, _root_.ContinuousMonoidHom.zmodFourReduction_apply,
+    ZMod.castHom_apply]
   rw [← map_sub (trivialFpEquiv 2 G).symm, ← map_sub (trivialFpEquiv 2 G).symm]
   have hmul : g₀⁻¹ * g₂ = (g₀⁻¹ * g₁) * (g₁⁻¹ * g₂) := by group
   refine congrArg (trivialFpEquiv 2 G).symm ?_
   -- The identity `carryFour_add` differs from the coboundary equation by a sign, which is
   -- invisible in `𝔽₂`.
   rw [hmul, map_mul φ (g₀⁻¹ * g₁) (g₁⁻¹ * g₂), toAdd_mul,
-    ← ZMod.neg_eq_self_mod_two (ZMod.castHom _ (ZMod 2) _ * _), ZMod.carryFour_add]
+    ← ZMod.neg_eq_self_mod_two (ZMod.cast _ * _), ZMod.carryFour_add]
   abel
 
 /-! ### The converse: a class with vanishing cup square lifts to `ℤ/4` -/

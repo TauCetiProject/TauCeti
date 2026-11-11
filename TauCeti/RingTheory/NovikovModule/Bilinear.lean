@@ -282,6 +282,21 @@ theorem kernelProduct_ofFinsupp_single_val (p₁ : S₁) (p₂ : S₂) :
     · simp [Finsupp.single_apply, Ne.symm h₁]]
   simp
 
+/-- A product kernel whose outputs have finitely many nonzero coefficients maps pairs of finite
+combinations to finite combinations. -/
+theorem kernelProduct_ofFinsupp_mem_range (hn' : ∀ p₁ p₂, (support (n p₁ p₂)).Finite)
+    (a : S₁ →₀ R) (b : S₂ →₀ R) :
+    kernelProduct hn hfin (ofFinsupp F₁ a) (ofFinsupp F₂ b) ∈ LinearMap.range (ofFinsupp F₀) := by
+  refine mem_range_ofFinsupp_iff.2 (((a.hasFiniteSupport.prod b.hasFiniteSupport).biUnion
+    fun q _ => hn' q.1 q.2).subset ?_)
+  intro p₀ hp₀
+  obtain ⟨q, hq⟩ : ∃ q : S₁ × S₂, a q.1 * b q.2 * n q.1 q.2 p₀ ≠ 0 := by
+    by_contra! h
+    exact hp₀ (by simp [h])
+  exact Set.mem_biUnion (x := q)
+    ⟨left_ne_zero_of_mul (left_ne_zero_of_mul hq), right_ne_zero_of_mul (left_ne_zero_of_mul hq)⟩
+    (right_ne_zero_of_mul hq)
+
 section ProductKernel
 
 /-- The coefficients of a bilinear map of completed combinations: the coefficient of the output

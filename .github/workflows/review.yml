@@ -75,20 +75,20 @@ jobs:
     # GENERATING reviews in CI spends API budget, so it is OFF unless the repo variable
     # CI_REVIEW_ENABLED is set to 'true'. While off, reviews are run from the command line
     # (tauceti-review in TauCetiReview, or tauceti from TauCetiWorker). Merging is independent:
-    # auto-merge.yml merges a green PR regardless of this gate. Re-enable by setting the variable.
+    # The queue service admits green PRs independently of this gate. Re-enable by setting the variable.
     if: ${{ vars.CI_REVIEW_ENABLED == 'true' && needs.resolve.outputs.pr != '' }}
     # Pinned to a TauCetiReview commit; bump deliberately (an unpinned @main lets an upstream change
     # break every contributor's review at once, and this workflow inherits TauCeti's secrets).
-    # Re-pin together with the other two callers and .github/actions/checkout-merge-policy
+    # Re-pin together with .github/actions/checkout-merge-policy
     # (scripts/test_workflow_pins.py checks they agree). The called workflow checks out its own
     # commit, supplied explicitly as review_ref.
-    uses: TauCetiProject/TauCetiReview/.github/workflows/review.yml@2b4a9560bfc197a6e7b24c19d6da62b88addf4d3
+    uses: TauCetiProject/TauCetiReview/.github/workflows/review.yml@6b07b400ba129a0f2771d2d315a410f72d462244
     with:
-      review_ref: 2b4a9560bfc197a6e7b24c19d6da62b88addf4d3
+      review_ref: 6b07b400ba129a0f2771d2d315a410f72d462244
       tools_repository: TauCetiProject/TauCetiTools
-      tools_ref: a8b16c3dd0c0730a1963052cb520808e161222ef
+      tools_ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
       pr: ${{ needs.resolve.outputs.pr }}
       trigger: ${{ github.event_name }}
-      # Merging is handled by auto-merge.yml (the single merge path), so generation never merges.
+      # The queue service owns admission; this workflow only publishes review evidence.
       enable_automerge: false
     secrets: inherit

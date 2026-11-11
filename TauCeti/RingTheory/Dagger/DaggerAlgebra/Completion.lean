@@ -19,9 +19,9 @@ by the inclusion `W_n ⊆ T_n`. The completion is the affinoid algebra whose rig
 `Sp(Â)` underlies the affinoid dagger space of `A`. With the quotient topology of `T_n`, the image
 of `τ` is dense in `Â`, since `W_n` is dense in `T_n`.
 
-This file shows that `A` and `Â` have the same classical points, with the same residue fields.
-Contraction along `τ` is a bijection from the maximal ideals of `Â` onto those of `A`, and
-`A ⧸ (m ∩ A) → Â ⧸ m` is an isomorphism for every maximal ideal `m` of `Â`. This is the dagger
+This file shows that `A` and `Â` have the same classical points: contraction along `τ` is a
+bijection from the maximal ideals of `Â` onto those of `A`. That the residue fields agree as well
+is proved in `TauCeti.RingTheory.Dagger.DaggerAlgebra.FaithfullyFlat`. This is the dagger
 algebra form of the corresponding statement for `W_n ⊆ T_n`, proved in
 `TauCeti.RingTheory.Dagger.MaximalSpectrum`. Indeed a maximal ideal of `Â` is `M ⧸ I T_n` for a
 maximal ideal `M` of `T_n` containing `I T_n`. Then `M ∩ W_n` contains `I` because
@@ -44,8 +44,6 @@ maximal ideal of `Â` above it.
   contraction of exactly one maximal ideal of `Â`, and
   `TauCeti.Dagger.maximalSpectrumComap_toCompletion_bijective`: contraction is a bijection of
   maximal spectra.
-* `TauCeti.Dagger.quotientMap_toCompletion_bijective`: the residue fields of `A` and `Â` at
-  corresponding maximal ideals agree.
 * `TauCeti.Dagger.isUnit_iff_isUnit_completion`: an element of `A` is a unit iff its image in `Â`
   is a unit.
 
@@ -159,23 +157,6 @@ theorem maximalSpectrumComap_toCompletion_bijective :
       ⟨x.isMaximal, rfl⟩ ⟨y.isMaximal, hxy.symm⟩
   · obtain ⟨m', ⟨hm', hm'm⟩, -⟩ := completion_existsUnique_isMaximal_comap K m.asIdeal
     exact ⟨⟨m', hm'⟩, MaximalSpectrum.ext (by simpa using hm'm)⟩
-
-/-- **Residue fields of a dagger algebra and of its completion agree.** For a maximal ideal `m`
-of the completion `Â`, the induced map `A ⧸ (m ∩ A) → Â ⧸ m` is bijective. -/
-theorem quotientMap_toCompletion_bijective (m : Ideal (completion K A)) [m.IsMaximal] :
-    Function.Bijective (Ideal.quotientMapₐ m (toCompletion K A) le_rfl) := by
-  refine ⟨Ideal.quotientMap_injective, fun x ↦ ?_⟩
-  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
-  obtain ⟨t, rfl⟩ := Ideal.Quotient.mk_surjective x
-  -- The residue field of `T_n` at `M = m ∩ T_n` is a residue field of `W_n`.
-  set M := m.comap (Ideal.Quotient.mk _)
-  have : M.IsMaximal := Ideal.comap_isMaximal_of_surjective _ Ideal.Quotient.mk_surjective
-  obtain ⟨w, hw⟩ := (washnitzerAlgebra.quotientMap_toTate_bijective M).2 (Ideal.Quotient.mk M t)
-  obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective w
-  refine ⟨Ideal.Quotient.mk _ (presentation K A f), ?_⟩
-  rw [Ideal.quotient_map_mkₐ, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq]
-  rw [Ideal.quotient_map_mkₐ, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq] at hw
-  simpa [M] using hw
 
 variable (K) in
 /-- **Units of a dagger algebra are detected on its completion**: an element `a` of `A` is a unit

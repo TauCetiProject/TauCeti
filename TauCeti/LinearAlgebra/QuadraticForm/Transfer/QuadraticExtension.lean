@@ -257,7 +257,7 @@ theorem equivalent_traceTransfer_smul_sq_hyperbolicPlane [Invertible (2 : K)]
     rw [hac, Algebra.trace_algebraMap, hfin, two_nsmul, ← two_mul] at htr
     exact hce ((mul_eq_zero.mp htr).resolve_left (two_ne_zero' K))
   have hspan : Submodule.span K {1, y} = ⊤ := by
-    have hli := TauCeti.linearIndependent_one_of_notMem_range_algebraMap K L hy
+    have hli := (TauCeti.linearIndependent_one_iff_notMem_range_algebraMap K L).mpr hy
     rw [← Matrix.range_cons_cons_empty,
       hli.span_eq_top_of_card_eq_finrank (by rw [Fintype.card_fin, hfin])]
   exact QuadraticMap.Equivalent.trans

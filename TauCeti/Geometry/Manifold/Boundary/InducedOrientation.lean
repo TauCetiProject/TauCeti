@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.Boundary.Derivative
 public import TauCeti.Geometry.Manifold.Boundary.Orientation
 public import TauCeti.Geometry.Manifold.Orientation.Basic
+public import TauCeti.Geometry.Manifold.Orientation.Preserving
+public import TauCeti.LinearAlgebra.Orientation.Basis
 
 /-!
 # The induced boundary orientation
@@ -16,6 +18,18 @@ The normal coordinate of a half-space transition has strictly positive derivativ
 chart signs therefore constructs the actual boundary orientation. The model orientation uses
 the outward-first convention, so the standard ambient orientation induces the negative standard
 orientation on the coordinate-zero boundary, including a zero-dimensional boundary.
+
+The outward-first rule can be read in another manifold of the same dimension: if a map `φ`
+preserves orientations at a boundary point `x`, then an oriented boundary basis at `x`, carried by
+`dφ` and preceded by the image of an outward vector, is oriented in the target
+(`TauCeti.boundaryOrientation_spec_of_isOrientationPreservingAt`). This applies to the inclusion of
+a regular domain into an oriented manifold, with the pulled-back orientation.
+
+On the zero-dimensional boundary of a one-manifold, the induced orientation at a point is a sign
+`Orientation.signBasis` against a basis indexed by `Fin 0`. That sign is `1` exactly when an
+outward tangent vector is positively oriented, and `-1` exactly when it is negatively oriented
+(`TauCeti.signBasis_orientationAt_boundaryOrientation_eq_one_iff`,
+`TauCeti.signBasis_orientationAt_boundaryOrientation_eq_neg_one_iff`).
 -/
 
 public section
@@ -193,5 +207,108 @@ theorem orientationAt_boundaryOrientation_model (n : ℕ)
       -(EuclideanSpace.basisFun (Fin n) ℝ).toBasis.orientation := by
   rw [orientationAt_boundaryOrientation, Manifold.Orientation.orientationAt_model]
   exact Orientation.halfSpaceBoundaryOrientation_basisFun n
+
+section Preserving
+
+variable {E H M' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [FiniteDimensional ℝ E] [TopologicalSpace M'] [ChartedSpace H M']
+  [IsManifold I 1 M']
+
+/-- **Outward-first in an ambient manifold.** Let `φ` map a manifold with boundary `M` to a
+manifold `M'` of the same dimension, preserving orientations at a boundary point `x`, for instance
+the inclusion of a regular domain with the pulled-back orientation. Then an oriented basis of the
+boundary at `x`, carried into `M'` and preceded by the image under `dφ` of an outward vector, is
+oriented for `M'`. -/
+theorem boundaryOrientation_spec_of_isOrientationPreservingAt
+    {o : Manifold.Orientation (𝓡∂ (n + 1)) M (Fin (n + 1))}
+    {o' : Manifold.Orientation I M' (Fin (n + 1))} {φ : M → M'} (x : (𝓡∂ (n + 1)).boundary M)
+    (hφ : Manifold.Orientation.IsOrientationPreservingAt o o' φ x)
+    {v : TangentSpace (𝓡∂ (n + 1)) (x : M)} (hv : IsOutwardPointing (x : M) v)
+    (b : Module.Basis (Fin n) ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) x))
+    (b' : Module.Basis (Fin (n + 1)) ℝ (TangentSpace I (φ x)))
+    (hb' : ⇑b' = Fin.cons (mfderiv (𝓡∂ (n + 1)) I φ x v) (fun i ↦
+      mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I (fun y : (𝓡∂ (n + 1)).boundary M ↦ φ y) x
+        (b i))) :
+    b.orientation = Manifold.Orientation.orientationAt (boundaryOrientation o) x ↔
+      b'.orientation = Manifold.Orientation.orientationAt o' (φ x) := by
+  obtain ⟨D, hD, -⟩ :=
+    (Manifold.Orientation.isOrientationPreservingAt_iff o o' φ x).mp hφ
+  -- Pull the basis `b'` back to the tangent space of `M` by the derivative of `φ`.
+  have hval : MDifferentiableAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+      (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) x :=
+    ((isImmersion_subtypeVal_boundary M one_ne_zero).contMDiff x).mdifferentiableAt one_ne_zero
+  have hφx : MDifferentiableAt (𝓡∂ (n + 1)) I φ x :=
+    mdifferentiableAt_of_isInvertible_mfderiv ⟨D, hD⟩
+  have hb'' : ⇑(b'.map D.symm.toLinearEquiv) = Fin.cons v (fun i ↦
+      mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+        (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) x (b i)) := by
+    have hcomp : mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I
+        (fun y : (𝓡∂ (n + 1)).boundary M ↦ φ y) x =
+          (mfderiv (𝓡∂ (n + 1)) I φ x).comp (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+            (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) x) :=
+      mfderiv_comp x hφx hval
+    funext i
+    rw [Module.Basis.map_apply, hb']
+    refine Fin.cases ?_ (fun j ↦ ?_) i
+    · simp only [Fin.cons_zero, ← hD]
+      exact D.symm_apply_apply v
+    · simp only [Fin.cons_succ, hcomp, ContinuousLinearMap.comp_apply, ← hD]
+      exact D.symm_apply_apply _
+  have hB : ∀ i, mfderiv (𝓡∂ (n + 1)) I φ x (b'.map D.symm.toLinearEquiv i) = b' i := by
+    intro i
+    rw [Module.Basis.map_apply, ← hD]
+    exact D.apply_symm_apply (b' i)
+  exact (boundaryOrientation_spec o x hv b _ hb'').trans
+    ((Manifold.Orientation.isOrientationPreservingAt_iff_of_basis _ b' hB).mp hφ)
+
+end Preserving
+
+end TauCeti
+
+namespace TauCeti
+
+variable {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace (0 + 1)) M]
+  [IsManifold (𝓡∂ (0 + 1)) 1 M]
+
+local instance : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) 1 ((𝓡∂ (0 + 1)).boundary M) :=
+  isManifold_boundary M one_ne_zero
+
+/-- The boundary sign at `x`, read against any basis `e` of the zero-dimensional tangent space,
+is `1` exactly when an outward tangent vector at `x`, taken as a basis of the tangent line, is
+positively oriented. -/
+theorem signBasis_orientationAt_boundaryOrientation_eq_one_iff
+    (o : Manifold.Orientation (𝓡∂ (0 + 1)) M (Fin 1)) (x : (𝓡∂ (0 + 1)).boundary M)
+    {v : TangentSpace (𝓡∂ (0 + 1)) (x : M)} (hv : IsOutwardPointing (x : M) v)
+    (b : Module.Basis (Fin 1) ℝ (TangentSpace (𝓡∂ (0 + 1)) (x : M))) (hb : b 0 = v)
+    (e : Module.Basis (Fin 0) ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) x)) :
+    Orientation.signBasis ((boundaryOrientation o).orientationAt x) e = 1 ↔
+      b.orientation = o.orientationAt (x : M) := by
+  rw [← boundaryOrientation_spec o x hv e b (by funext i; rw [Fin.fin_one_eq_zero i, hb]; rfl)]
+  rcases e.orientation_eq_or_eq_neg ((boundaryOrientation o).orientationAt x) with h | h <;>
+    rw [h]
+  · exact ⟨fun _ ↦ rfl, fun _ ↦ Orientation.signBasis_orientation e⟩
+  · rw [Orientation.signBasis_neg, Orientation.signBasis_orientation]
+    exact ⟨fun h' ↦ absurd h' (by decide), fun h' ↦ absurd h' (Module.Ray.ne_neg_self _)⟩
+
+/-- The boundary sign at `x`, read against any basis `e` of the zero-dimensional tangent space,
+is `-1` exactly when an outward tangent vector at `x`, taken as a basis of the tangent line, is
+negatively oriented. -/
+theorem signBasis_orientationAt_boundaryOrientation_eq_neg_one_iff
+    (o : Manifold.Orientation (𝓡∂ (0 + 1)) M (Fin 1)) (x : (𝓡∂ (0 + 1)).boundary M)
+    {v : TangentSpace (𝓡∂ (0 + 1)) (x : M)} (hv : IsOutwardPointing (x : M) v)
+    (b : Module.Basis (Fin 1) ℝ (TangentSpace (𝓡∂ (0 + 1)) (x : M))) (hb : b 0 = v)
+    (e : Module.Basis (Fin 0) ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) x)) :
+    Orientation.signBasis ((boundaryOrientation o).orientationAt x) e = -1 ↔
+      b.orientation = -o.orientationAt (x : M) := by
+  have key := signBasis_orientationAt_boundaryOrientation_eq_one_iff o x hv b hb e
+  rcases Int.units_eq_one_or (Orientation.signBasis ((boundaryOrientation o).orientationAt x) e)
+    with h | h
+  · refine ⟨fun h' ↦ absurd (h.symm.trans h') (by decide), fun h' ↦ ?_⟩
+    exact absurd ((key.mp h).symm.trans h') (Module.Ray.ne_neg_self _)
+  · refine ⟨fun _ ↦ ?_, fun _ ↦ h⟩
+    have hne : o.orientationAt (x : M) ≠ b.orientation :=
+      fun he ↦ absurd (h.symm.trans (key.mpr he.symm)) (by decide)
+    rw [(b.orientation_ne_iff_eq_neg _).mp hne]
+    exact (neg_neg b.orientation).symm
 
 end TauCeti

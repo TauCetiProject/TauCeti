@@ -14,26 +14,34 @@ An open neighbourhood of the zero section in a continuous real Riemannian vector
 contains discs of a fixed positive radius over a neighbourhood of each base point. The
 radius is measured in the fibre metric, rather than in a chosen trivialization. This local
 uniformity permits continuous or smooth selection of a radius on the whole base, even when
-the bundle is nontrivial and the base is noncompact.
+the bundle is nontrivial and the base is noncompact. Over a compact subset of the base, a single
+positive radius works at every point.
 
 The proof uses Sébastien Gouëzel's `eventually_norm_trivializationAt_lt` to compare the
 fibre norm with coordinates in a bundle chart. No finite-dimensionality is required.
 
 Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition, Theorem 6.24,
 the shrinking step in the tubular neighbourhood theorem.
+
+## Main results
+
+* `IsOpen.exists_pos_forall_norm_le_subset_bundle`: fibre discs of one positive radius over a
+  neighbourhood of a base point.
+* `IsCompact.exists_pos_forall_norm_le_subset_bundle`: fibre discs of one positive radius over a
+  compact subset of the base.
 -/
 
 public section
 
 open Bundle Filter Set Topology
 
-namespace IsOpen
-
 variable {B F : Type*} [TopologicalSpace B]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {V : B → Type*} [∀ b, NormedAddCommGroup (V b)]
   [∀ b, InnerProductSpace ℝ (V b)] [TopologicalSpace (TotalSpace F V)]
   [FiberBundle F V] [VectorBundle ℝ F V] [IsContinuousRiemannianBundle F V]
+
+namespace IsOpen
 
 /-- Near each point of the base, a neighbourhood of the zero section contains all fibre
 vectors of sufficiently small norm, with one positive bound valid throughout that neighbourhood.
@@ -70,3 +78,22 @@ theorem exists_pos_forall_norm_le_subset_bundle {U : Set (TotalSpace F V)} (hU :
   exact e.injOn hpsource (e.mem_source.mpr hybase) hp ▸ hpU
 
 end IsOpen
+
+namespace IsCompact
+
+/-- Over a compact set `K` of the base, an open neighbourhood of the zero section contains all
+fibre vectors of norm at most `r`, for one positive `r` valid at every point of `K`. -/
+theorem exists_pos_forall_norm_le_subset_bundle {K : Set B} (hK : IsCompact K)
+    {U : Set (TotalSpace F V)} (hU : IsOpen U) (hzero : ∀ b ∈ K, zeroSection F V b ∈ U) :
+    ∃ r > 0, ∀ b ∈ K, ∀ v : V b, ‖v‖ ≤ r → (⟨b, v⟩ : TotalSpace F V) ∈ U := by
+  choose! r hr hdisc using fun b (hb : b ∈ K) ↦
+    hU.exists_pos_forall_norm_le_subset_bundle (hzero b hb)
+  obtain ⟨t, htK, hKt⟩ := hK.elim_nhds_subcover _ hdisc
+  rcases t.eq_empty_or_nonempty with rfl | ht
+  · exact ⟨1, one_pos, fun b hb ↦ by simpa using hKt hb⟩
+  refine ⟨t.inf' ht r, (Finset.lt_inf'_iff ht).2 fun b hb ↦ hr b (htK b hb), ?_⟩
+  intro b hb v hv
+  obtain ⟨c, hct, hbc⟩ := mem_iUnion₂.1 (hKt hb)
+  exact hbc v (hv.trans (Finset.inf'_le r hct))
+
+end IsCompact
