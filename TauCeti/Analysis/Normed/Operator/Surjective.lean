@@ -118,7 +118,8 @@ theorem surjective_add_of_norm_le (Q K : D →ₗ[R] Y) (hQ : Surjective Q) {θ 
   have hker : Q.toAddMonoidHom.ker ≤ K.toAddMonoidHom.ker := fun z hz ↦ by
     rw [AddMonoidHom.mem_ker, toAddMonoidHom_coe] at hz ⊢
     simpa [hz] using hK z
-  -- `K` factors through `Q` as `S ∘ Q`, with `S` additive.
+  -- `K` factors through `Q` as `S ∘ Q`, with `S` additive. (`liftOfSurjective` abbreviates
+  -- `liftOfRightInverse` at `surjInv hQ`, hence the lemma used for `hS`.)
   let S : Y →+ Y := Q.toAddMonoidHom.liftOfSurjective hQ ⟨K.toAddMonoidHom, hker⟩
   have hS (z : D) : S (Q z) = K z :=
     Q.toAddMonoidHom.liftOfRightInverse_comp_apply _ _ ⟨K.toAddMonoidHom, hker⟩ z
