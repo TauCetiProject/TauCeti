@@ -30,6 +30,7 @@ integrability hypotheses on `Ω`.
   extensions `u₀, v₀ ∈ H¹₀(Ω)`.
 * `TauCeti.PDE.energyFormH1_extendByZeroL_left`: `a(u₀, w) = a(u, w|_U)` for `u ∈ H¹₀(U)` with
   zero extension `u₀ ∈ H¹₀(Ω)` and any `w ∈ H¹(Ω)`.
+* `TauCeti.PDE.isCoercive_energyFormH1L0_of_domain_le`: coercivity passes to smaller domains.
 * `TauCeti.PDE.energyFormH1_restrictL_nonpos`: weak subsolutions restrict to weak subsolutions.
 * `TauCeti.PDE.energyFormH1_restrictL_nonneg`: weak supersolutions restrict to weak
   supersolutions.
@@ -164,6 +165,20 @@ theorem energyFormH1_extendByZeroL_left (a : EuclideanSpace ℝ ι → Matrix ι
     _ = ∫ x in U, energyIntegrand (a x) (b x) (c x) (jetField (u : W1p mu U 2) x)
           (jetField (W1p.restrictL hU w) x) ∂mu :=
         integral_congr_ae (by filter_upwards [hjetU] with x hx; rw [hx])
+
+/-- **Coercivity passes to smaller domains.** Zero extension preserves both the Sobolev norm
+and the energy, so the same coercivity constant works on every smaller open set. -/
+theorem isCoercive_energyFormH1L0_of_domain_le {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
+    (hU : U ≤ Omega)
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) :
+    IsCoercive (energyFormH1L0
+      (hcoeff.mono_measure (Measure.restrict_mono (SetLike.coe_subset_coe.mpr hU) le_rfl))) := by
+  obtain ⟨C, hC, hbound⟩ := hcoercive
+  refine ⟨C, hC, fun u ↦ ?_⟩
+  simpa only [W1p0.norm_extendByZeroL, energyFormH1L0_apply, energyFormH1_extendByZeroL]
+    using hbound (W1p0.extendByZeroL hU u)
 
 /-- **Weak subsolutions restrict to weak subsolutions.** If `u ∈ H¹(Ω)` satisfies `a(u, v) ≤ 0`
 for every nonnegative `v ∈ H¹₀(Ω)`, then for every open `U ⊆ Ω` its restriction `u|_U` satisfies
