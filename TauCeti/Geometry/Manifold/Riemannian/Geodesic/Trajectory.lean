@@ -125,8 +125,7 @@ theorem exists_Ioo_subset_geodesicInterval_of_isLUB {p : M} {v : TangentSpace I 
     (hb : IsLUB (geodesicInterval I M p v) b) :
     ∃ a < (0 : ℝ), 0 < b ∧ Ioo a b ⊆ geodesicInterval I M p v := by
   rw [← maximalIntegralCurveInterval_geodesicSpray] at hb ⊢
-  exact exists_Ioo_subset_maximalIntegralCurveInterval_of_isLUB
-    ((maximalIntegralCurveInterval_geodesicSpray p v).symm ▸ zero_mem_geodesicInterval) hb
+  exact exists_Ioo_subset_maximalIntegralCurveInterval_of_isLUB hb
 
 /-- The maximal geodesic interval contains an open interval with the same left endpoint and a
 positive right endpoint. In particular a finite greatest lower bound of the interval is
@@ -135,8 +134,7 @@ theorem exists_Ioo_subset_geodesicInterval_of_isGLB {p : M} {v : TangentSpace I 
     (ha : IsGLB (geodesicInterval I M p v) a) :
     ∃ b > (0 : ℝ), a < 0 ∧ Ioo a b ⊆ geodesicInterval I M p v := by
   rw [← maximalIntegralCurveInterval_geodesicSpray] at ha ⊢
-  exact exists_Ioo_subset_maximalIntegralCurveInterval_of_isGLB
-    ((maximalIntegralCurveInterval_geodesicSpray p v).symm ▸ zero_mem_geodesicInterval) ha
+  exact exists_Ioo_subset_maximalIntegralCurveInterval_of_isGLB ha
 
 /-- Outside its maximal interval, the total maximal geodesic takes its junk value `p`. -/
 @[simp] theorem maximalGeodesic_eq_of_not_mem {p : M} {v : TangentSpace I p} {t : ℝ}
@@ -174,10 +172,13 @@ theorem isGeodesicCurveOnFrom_maximalGeodesic (p : M) (v : TangentSpace I p) :
   unfold maximalGeodesic
   simpa only [curveVelocityLiftWithin_apply] using hlift.symm.trans hz0
 
+omit [I.Boundaryless] [T2Space M] in
 /-- The maximal geodesic starts at its prescribed base point. -/
 @[simp] theorem maximalGeodesic_zero (p : M) (v : TangentSpace I p) :
-    maximalGeodesic I M p v 0 = p :=
-  (isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v).base_eq
+    maximalGeodesic I M p v 0 = p := by
+  by_cases h : (0 : ℝ) ∈ maximalIntegralCurveInterval (geodesicSpray I M) (TotalSpace.mk' E p v)
+  · rw [maximalGeodesic, maximalIntegralCurve_zero h]
+  · rw [maximalGeodesic, maximalIntegralCurve_eq_of_not_mem h]
 
 /-- Every geodesic with initial data `(p, v)` on an open interval around zero agrees there with
 the maximal geodesic. -/

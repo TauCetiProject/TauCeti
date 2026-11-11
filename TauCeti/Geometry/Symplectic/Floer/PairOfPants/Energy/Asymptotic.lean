@@ -45,6 +45,10 @@ specializations to the constant form `SymplecticForm.constSmooth`.
 
 ## Main results
 
+* `TauCeti.Floer.tendsto_setIntegral_truncation`,
+  `TauCeti.Floer.tendsto_intervalIntegral_endLoop`: integrals over `S` are limits of integrals over
+  its truncations, and integrals of a Hamiltonian along the end loops converge to its integral
+  along their pointwise limits.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation`: the energy
   identity on the whole pair of pants, for a map with asymptotic loops at the ends; the
   vector-space case is `SymplecticForm.integral_floerEnergyDensity_pairOfPantsPerturbation`.
@@ -74,7 +78,7 @@ namespace TauCeti
 namespace Floer
 
 /-- Integrals over `S` are the limits of the integrals over its truncations. -/
-private theorem tendsto_setIntegral_truncation {f : ℝ × ℝ → ℝ}
+theorem tendsto_setIntegral_truncation {f : ℝ × ℝ → ℝ}
     (hf : IntegrableOn f thricePuncturedSphereReal) :
     Tendsto (fun R : ℝ => ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R, f z) atTop
       (𝓝 (∫ z in thricePuncturedSphereReal, f z)) := by
@@ -83,15 +87,13 @@ private theorem tendsto_setIntegral_truncation {f : ℝ × ℝ → ℝ}
     rw [← preimage_iUnion, iUnion_truncation]
     rfl
   rw [← hS] at hf ⊢
-  exact tendsto_setIntegral_of_monotone (fun R =>
-    (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
-      (isCompact_truncation R)).isClosed.measurableSet)
+  exact tendsto_setIntegral_of_monotone measurableSet_preimage_truncation
     (fun _ _ h => preimage_mono (truncation_mono h)) hf
 
 /-- If the loops of `u` along the circles `±s = R` of the end `q` converge pointwise to a loop `x`
 as `R → ∞`, then the integrals of a bounded continuous Hamiltonian along them converge to its
 integral along `x`. -/
-private theorem tendsto_intervalIntegral_endLoop {M : Type*} [TopologicalSpace M]
+theorem tendsto_intervalIntegral_endLoop {M : Type*} [TopologicalSpace M]
     {H : Puncture → ℝ → M → ℝ} (hHc : ∀ q, Continuous (uncurry (H q))) {B : Puncture → ℝ}
     (hB : ∀ q t x, |H q t x| ≤ B q) {u : ℝ × ℝ → M}
     (hu : ContinuousOn u thricePuncturedSphereReal) {q : Puncture} {x : ℝ → M}

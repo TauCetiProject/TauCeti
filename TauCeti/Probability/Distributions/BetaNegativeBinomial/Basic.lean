@@ -93,12 +93,16 @@ def betaNegativeBinomialMeasure (r a b : ℝ) : Measure ℕ :=
     (betaMeasure a b).bind fun p => negativeBinomialMeasure r p
   else 0
 
-/-- The defining mixture formula on the valid parameter range. -/
-theorem betaNegativeBinomialMeasure_eq_bind {r a b : ℝ} (hr : 0 ≤ r) (ha : 0 < a)
-    (hb : 0 < b) :
+/-- The defining mixture formula for positive Beta shapes. Negative `r` makes both sides zero. -/
+theorem betaNegativeBinomialMeasure_eq_bind {r a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
     betaNegativeBinomialMeasure r a b =
       (betaMeasure a b).bind fun p => negativeBinomialMeasure r p := by
-  simp [betaNegativeBinomialMeasure, hr, ha, hb]
+  by_cases hr : 0 ≤ r
+  · simp [betaNegativeBinomialMeasure, hr, ha, hb]
+  · have h : ¬ (0 ≤ r ∧ 0 < a ∧ 0 < b) := fun h => hr h.1
+    have hz (p : ℝ) : negativeBinomialMeasure r p = 0 :=
+      negativeBinomialMeasure_eq_zero_of_invalid fun h' => hr h'.1
+    simp [betaNegativeBinomialMeasure, h, hz]
 
 /-- Invalid beta-negative-binomial parameters give the zero measure. -/
 @[simp]
@@ -110,7 +114,7 @@ theorem betaNegativeBinomialMeasure_eq_zero_of_invalid {r a b : ℝ}
 theorem isProbabilityMeasure_betaNegativeBinomialMeasure {r a b : ℝ} (hr : 0 ≤ r)
     (ha : 0 < a) (hb : 0 < b) :
     IsProbabilityMeasure (betaNegativeBinomialMeasure r a b) := by
-  rw [betaNegativeBinomialMeasure_eq_bind hr ha hb]
+  rw [betaNegativeBinomialMeasure_eq_bind ha hb]
   let _ : IsProbabilityMeasure (betaMeasure a b) := isProbabilityMeasureBeta ha hb
   refine isProbabilityMeasure_bind
     (by fun_prop : Measurable fun p : ℝ => negativeBinomialMeasure r p).aemeasurable ?_
@@ -122,7 +126,7 @@ zero. -/
 @[simp]
 theorem betaNegativeBinomialMeasure_zero {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
     betaNegativeBinomialMeasure 0 a b = Measure.dirac 0 := by
-  rw [betaNegativeBinomialMeasure_eq_bind le_rfl ha hb,
+  rw [betaNegativeBinomialMeasure_eq_bind ha hb,
     Measure.bind_congr_right ((ae_mem_Ioo_betaMeasure a b).mono fun p hp =>
       negativeBinomialMeasure_zero hp.1 hp.2.le), Measure.bind_const]
   let _ : IsProbabilityMeasure (betaMeasure a b) := isProbabilityMeasureBeta ha hb
@@ -167,7 +171,7 @@ theorem betaNegativeBinomialMeasure_real_singleton {r a b : ℝ} (hr : 0 ≤ r) 
     · subst k
       simp [betaNegativeBinomialWeightReal]
     · simp [betaNegativeBinomialWeightReal, hk]
-  rw [betaNegativeBinomialMeasure_eq_bind hr.le ha hb, measureReal_def,
+  rw [betaNegativeBinomialMeasure_eq_bind ha hb, measureReal_def,
     Measure.bind_apply (measurableSet_singleton k)
       (by fun_prop : Measurable fun p : ℝ => negativeBinomialMeasure r p).aemeasurable]
   have hmass : AEMeasurable (fun p : ℝ => negativeBinomialMeasure r p {k})

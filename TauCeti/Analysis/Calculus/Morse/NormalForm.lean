@@ -11,6 +11,8 @@ public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import TauCeti.Analysis.Calculus.Hadamard
 public import TauCeti.Analysis.Calculus.Morse.Basic
 public import TauCeti.Analysis.Normed.Algebra.SquareRoot
+import TauCeti.Analysis.Normed.Operator.Bilinear
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 
 /-!
 # The Morse lemma
@@ -60,21 +62,36 @@ averaged Hessian of a `C^{n+2}` function is `C^n`, and the congruence constructi
 regularity of the family. The Morse lemma therefore gives a `C^n` chart for a `C^{n+2}`
 function when `1 ≤ n ≤ ∞`; taking `n = ∞` recovers the smooth Morse lemma.
 
+The operators are a definite choice: the canonical congruence `TauCeti.morseCongruence B₀ B`
+is the square root near the identity of `B₀⁻¹ ∘ B`. It is a congruence for every pair of symmetric
+forms near a pair `(B₀, B₀)` with `B₀` invertible (`TauCeti.eventually_morseCongruence_apply`),
+and it depends smoothly on both forms, so the reference form may vary too. Being canonical, it
+is compatible with linear changes of coordinates
+(`TauCeti.eventually_morseCongruence_bilinearComp`), which is what the parametric Morse lemma on
+a vector bundle needs to glue local normal forms.
+
 The varying-reference variant `TauCeti.exists_parametric_congruence_of_symmetric_family`
 compares a jointly smooth family `B (b, v)` to `B (b, 0)` by jointly smooth invertible
 operators `R (b, v)`, with `R (b, 0) = 1` throughout a base neighbourhood and jointly smooth
 inverses. This is the linear normalization needed for a parameter-dependent Morse change of
 coordinates fixing the zero section, with its Hessian as the reference quadratic form.
-The construction uses `TauCeti.exists_congruence_of_symmetric_family` to compare all forms
-to `B (a, 0)`, then divides by the resulting operator on the zero section. Inversion is smooth
-on a product neighbourhood of invertible operators. This preserves the differentiability
-order, including order zero.
+The operators are the canonical congruences `TauCeti.morseCongruence (B (b, 0)) (B (b, v))`.
+Inversion is smooth on a product neighbourhood of invertible operators. This preserves the
+differentiability order, including order zero.
 
 ## Main declarations
 
 * `TauCeti.hessianAverage`: the averaged Hessian along a segment, normalised so that
   `TauCeti.hessianAverage_zero` identifies its value at `0` with the Hessian.
 * `TauCeti.map_add_eq_add_hessianAverage`: the second-order Taylor formula it satisfies.
+* `TauCeti.hessianAverage_comp_continuousLinearEquiv_apply`: the averaged Hessian under a linear
+  change of variables.
+* `TauCeti.morseCongruence`: the canonical congruence `√(B₀⁻¹ ∘ B)` comparing a form `B` with a
+  reference form `B₀`, with `TauCeti.eventually_morseCongruence_apply` (it is a congruence),
+  `TauCeti.eventually_contDiffAt_morseCongruence` (it is smooth in both forms),
+  `TauCeti.tendsto_morseCongruence`, `TauCeti.eventually_morseCongruence_eq_of_tendsto` (it is
+  the unique square root near the identity) and `TauCeti.eventually_morseCongruence_bilinearComp`
+  (it is natural for linear changes of coordinates).
 * `TauCeti.exists_congruence_of_symmetric_family`: a `C^n` family of symmetric continuous
   bilinear forms whose value at a basepoint is invertible is, near that point, the congruence of
   that value by a `C^n` family of operators equal to the identity at the basepoint.
@@ -210,6 +227,16 @@ theorem hessianAverage_symm (hf : ContDiff ℝ 2 f) (x v w w' : E) :
   rw [(hf.contDiffAt.isSymmSndFDerivAt (by norm_num) :
     IsSymmSndFDerivAt ℝ f (x + t • v)) w w']
 
+/-- **The averaged Hessian under a linear change of variables.** For a continuous linear
+equivalence `e`, the averaged Hessian of `f ∘ e` at `x` in the direction `v`, applied to `w` and
+`w'`, is that of `f` at `e x` in the direction `e v`, applied to `e w` and `e w'`. -/
+theorem hessianAverage_comp_continuousLinearEquiv_apply {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] (hf : ContDiff ℝ 2 f) (e : G ≃L[ℝ] E) (x v w w' : G) :
+    hessianAverage (f ∘ e) x v w w' = hessianAverage f (e x) (e v) (e w) (e w') := by
+  rw [hessianAverage_apply (hf.comp e.contDiff), hessianAverage_apply hf]
+  refine intervalIntegral.integral_congr fun t _ ↦ ?_
+  simp only [e.fderiv_fderiv_comp_right_apply_apply, map_add, map_smul]
+
 /-- **Taylor's formula to second order**, with the remainder written as the averaged Hessian
 evaluated twice on the increment. -/
 theorem map_add_eq_add_hessianAverage (hf : ContDiff ℝ 2 f) (x v : E) :
@@ -236,58 +263,154 @@ open Set
 
 variable [CompleteSpace E]
 
+/-- The **canonical Morse congruence** comparing a bilinear form `B` with a reference form `B₀`:
+the square root near the identity of the comparison operator `B₀⁻¹ ∘ B`. When `B₀` is
+invertible, both forms are symmetric and `B` is close to `B₀`, it is a congruence,
+`B₀ (R w) (R w') = B w w'` (`TauCeti.eventually_morseCongruence_apply`). Its value is only
+meaningful for `B` close to an invertible `B₀`. -/
+def morseCongruence (B₀ B : E →L[ℝ] E →L[ℝ] ℝ) : E →L[ℝ] E :=
+  sqrtNearOne (E →L[ℝ] E) (B₀.inverse ∘L B)
+
+/-- The canonical congruence is the square root near the identity of `B₀⁻¹ ∘ B`. -/
+theorem morseCongruence_def (B₀ B : E →L[ℝ] E →L[ℝ] ℝ) :
+    morseCongruence B₀ B = sqrtNearOne (E →L[ℝ] E) (B₀.inverse ∘L B) := by
+  rw [morseCongruence]
+
+variable {B₀ : E →L[ℝ] E →L[ℝ] ℝ}
+
+/-- The canonical congruence of an invertible form with itself is the identity. -/
+@[simp]
+theorem morseCongruence_self (hB₀ : B₀.IsInvertible) : morseCongruence B₀ B₀ = 1 := by
+  rw [morseCongruence, hB₀.inverse_comp_self, ← ContinuousLinearMap.one_def, sqrtNearOne_one]
+
+/-- The canonical congruence tends to the identity as both forms tend to an invertible form. -/
+theorem tendsto_morseCongruence (hB₀ : B₀.IsInvertible) :
+    Tendsto (fun p : (E →L[ℝ] E →L[ℝ] ℝ) × (E →L[ℝ] E →L[ℝ] ℝ) ↦ morseCongruence p.1 p.2)
+      (𝓝 (B₀, B₀)) (𝓝 1) := by
+  simpa only [Function.comp_def, sqrtNearOne_one, morseCongruence] using
+    (continuousAt_sqrtNearOne (A := E →L[ℝ] E)).tendsto.comp hB₀.tendsto_inverse_comp
+
+/-- Near a pair of equal invertible forms, the canonical congruence is a square root of the
+comparison operator `B₀⁻¹ ∘ B`. -/
+theorem eventually_morseCongruence_mul_self (hB₀ : B₀.IsInvertible) :
+    ∀ᶠ p in 𝓝 (B₀, B₀), morseCongruence p.1 p.2 * morseCongruence p.1 p.2 = p.1.inverse ∘L p.2 :=
+  hB₀.tendsto_inverse_comp.eventually eventually_mul_self_sqrtNearOne
+
+/-- Near a pair of equal invertible forms, the canonical congruence depends smoothly, to every
+order, on the pair. -/
+theorem eventually_contDiffAt_morseCongruence (hB₀ : B₀.IsInvertible) {n : ℕ∞ω} :
+    ∀ᶠ p in 𝓝 (B₀, B₀),
+      ContDiffAt ℝ n (fun p : (E →L[ℝ] E →L[ℝ] ℝ) × (E →L[ℝ] E →L[ℝ] ℝ) ↦
+        morseCongruence p.1 p.2) p := by
+  filter_upwards [hB₀.tendsto_inverse_comp.eventually ((isOpen_analyticAt ℝ
+      (sqrtNearOne (E →L[ℝ] E))).mem_nhds analyticAt_sqrtNearOne),
+    continuousAt_fst.eventually hB₀.eventually_nhds] with p hp hp₁
+  exact hp.contDiffAt.comp p ((hp₁.contDiffAt_map_inverse.comp p contDiffAt_fst).clm_comp
+    contDiffAt_snd)
+
+/-- **The canonical congruence is a congruence.** Near a pair of equal invertible forms, if both
+forms are symmetric then `B₀ (R w) (R w') = B w w'` for `R = morseCongruence B₀ B`. -/
+theorem eventually_morseCongruence_apply (hB₀ : B₀.IsInvertible) :
+    ∀ᶠ p in 𝓝 (B₀, B₀), (∀ w w', p.1 w w' = p.1 w' w) → (∀ w w', p.2 w w' = p.2 w' w) →
+      ∀ w w', p.1 (morseCongruence p.1 p.2 w) (morseCongruence p.1 p.2 w') = p.2 w w' := by
+  -- The square root `R` of `C = B₀⁻¹ ∘ B` is self-adjoint for the pairing `B₀`: its adjoint is a
+  -- square root of the adjoint of `C`, which is `C` itself, and both are close to the identity.
+  have hadj : Tendsto (fun p : (E →L[ℝ] E →L[ℝ] ℝ) × (E →L[ℝ] E →L[ℝ] ℝ) ↦
+      ContinuousLinearMap.pairingAdjoint p.1 (morseCongruence p.1 p.2)) (𝓝 (B₀, B₀)) (𝓝 1) :=
+    hB₀.tendsto_pairingAdjoint.comp
+      (continuousAt_fst.tendsto.prodMk_nhds (tendsto_morseCongruence hB₀))
+  filter_upwards [eventually_morseCongruence_mul_self hB₀,
+    hadj.eventually eventually_sqrtNearOne_mul_self,
+    continuousAt_fst.eventually hB₀.eventually_nhds] with p hsq hu hp₁ h₁ h₂ w w'
+  obtain ⟨B₁, B⟩ := p
+  simp only at hsq hu hp₁ h₁ h₂ ⊢
+  set R := morseCongruence B₁ B with hRdef
+  -- The comparison operator `C = B₁⁻¹ ∘ B` is self-adjoint for `B₁`.
+  have hC (w w' : E) : B₁ ((B₁.inverse ∘L B) w) w' = B w w' := by
+    simp [hp₁.self_apply_inverse]
+  have hCadj : ContinuousLinearMap.pairingAdjoint B₁ (B₁.inverse ∘L B) = B₁.inverse ∘L B :=
+    hp₁.ext_of_pairing fun w w' ↦ by rw [hp₁.pairingAdjoint_apply, h₁, hC, hC, h₂]
+  -- Hence so is its square root `R`.
+  have hR : ContinuousLinearMap.pairingAdjoint B₁ R = R := by
+    rw [← hu, ← hp₁.pairingAdjoint_mul, hsq, hCadj, hRdef, morseCongruence_def]
+  calc B₁ (R w) (R w') = B₁ (ContinuousLinearMap.pairingAdjoint B₁ R w) (R w') := by rw [hR]
+    _ = B₁ w ((R * R) w') := by rw [hp₁.pairingAdjoint_apply, mul_apply_eq_comp]
+    _ = B w w' := by rw [hsq, h₁, hC, h₂]
+
+/-- **Uniqueness of the canonical congruence.** Along any filter, a family of operators tending
+to the identity that eventually squares to the comparison operator `B₁⁻¹ ∘ B` is eventually the
+canonical congruence `TauCeti.morseCongruence B₁ B`. -/
+theorem eventually_morseCongruence_eq_of_tendsto {α : Type*} {l : Filter α}
+    {B₁ B : α → E →L[ℝ] E →L[ℝ] ℝ} {r : α → E →L[ℝ] E} (hr : Tendsto r l (𝓝 1))
+    (hsq : ∀ᶠ t in l, r t * r t = (B₁ t).inverse ∘L B t) :
+    ∀ᶠ t in l, morseCongruence (B₁ t) (B t) = r t := by
+  simpa only [morseCongruence] using eventually_sqrtNearOne_eq_of_tendsto hr hsq
+
+/-- **The canonical congruence is natural for linear changes of coordinates.** Along a filter on
+which a pair of forms tends to a pair `(B₀, B₀)` of equal invertible forms and continuous linear
+equivalences `e t` tend to an equivalence, pulling both forms back along `e t` eventually
+conjugates their canonical congruence by `e t`. -/
+theorem eventually_morseCongruence_bilinearComp {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [CompleteSpace E'] {α : Type*} {l : Filter α}
+    {B₁ B : α → E →L[ℝ] E →L[ℝ] ℝ} {e : α → E' ≃L[ℝ] E} {e₀ : E' ≃L[ℝ] E}
+    (hB₀ : B₀.IsInvertible) (hB : Tendsto (fun t ↦ (B₁ t, B t)) l (𝓝 (B₀, B₀)))
+    (he : Tendsto (fun t ↦ (e t : E' →L[ℝ] E)) l (𝓝 e₀)) :
+    ∀ᶠ t in l, morseCongruence ((B₁ t).bilinearComp (e t : E' →L[ℝ] E) (e t : E' →L[ℝ] E))
+        ((B t).bilinearComp (e t : E' →L[ℝ] E) (e t : E' →L[ℝ] E)) =
+      ((e t).symm : E →L[ℝ] E') ∘L morseCongruence (B₁ t) (B t) ∘L (e t : E' →L[ℝ] E) := by
+  -- The inverses converge too, since inversion is continuous at `e₀`.
+  have he' : Tendsto (fun t ↦ ((e t).symm : E →L[ℝ] E')) l (𝓝 (e₀.symm : E →L[ℝ] E')) := by
+    simpa only [Function.comp_def, ContinuousLinearMap.inverse_equiv] using
+      ((ContinuousLinearMap.isInvertible_equiv (f := e₀)).contDiffAt_map_inverse
+        (n := 0)).continuousAt.tendsto.comp he
+  have hc : Continuous fun q : (E →L[ℝ] E') × (E →L[ℝ] E) × (E' →L[ℝ] E) ↦
+      q.1 ∘L q.2.1 ∘L q.2.2 :=
+    continuous_fst.clm_comp (continuous_snd.fst.clm_comp continuous_snd.snd)
+  have h := (hc.tendsto ((e₀.symm : E →L[ℝ] E'), 1, (e₀ : E' →L[ℝ] E))).comp
+    (he'.prodMk_nhds (((tendsto_morseCongruence hB₀).comp hB).prodMk_nhds he))
+  have hlim : (e₀.symm : E →L[ℝ] E') ∘L (1 : E →L[ℝ] E) ∘L (e₀ : E' →L[ℝ] E) = 1 := by
+    ext x
+    simp
+  -- `h` is the convergence of the conjugated congruences, with the projections not yet reduced.
+  have hr : Tendsto (fun t ↦ ((e t).symm : E →L[ℝ] E') ∘L morseCongruence (B₁ t) (B t) ∘L
+      (e t : E' →L[ℝ] E)) l (𝓝 ((e₀.symm : E →L[ℝ] E') ∘L (1 : E →L[ℝ] E) ∘L
+        (e₀ : E' →L[ℝ] E))) := h
+  rw [hlim] at hr
+  refine eventually_morseCongruence_eq_of_tendsto hr ?_
+  filter_upwards [hB.eventually (eventually_morseCongruence_mul_self hB₀),
+    hB.fst_nhds.eventually hB₀.eventually_nhds] with t hsq hinv
+  rw [ContinuousLinearMap.inverse_bilinearComp_comp_bilinearComp hinv, ← hsq]
+  ext x
+  simp [mul_apply_eq_comp]
+
 /-- A `C^n` family `B` of symmetric continuous bilinear forms on a Banach space whose value at
 `a` is invertible is, near `a`, the congruence of that value by a `C^n` family of continuous
 linear operators equal to the identity at `a`: there is `R` with `R a = 1` and
 `B₀ (R v w) (R v w') = B v w w'`. The parameter space `F` is independent of the Banach
 space `E` on which the forms act. In particular, continuity of the family suffices to obtain
-continuous congruences. -/
+continuous congruences. The operators are the canonical congruences
+`TauCeti.morseCongruence (B a) (B v)`. -/
 theorem exists_congruence_of_symmetric_family
     {n : ℕ∞ω} {a : F} {B : F → E →L[ℝ] E →L[ℝ] ℝ} (hB : ContDiff ℝ n B)
     (hsymm : ∀ v w w', B v w w' = B v w' w)
     (B₀ : E ≃L[ℝ] (E →L[ℝ] ℝ)) (hB₀ : (B₀ : E →L[ℝ] E →L[ℝ] ℝ) = B a) :
     ∃ (R : F → (E →L[ℝ] E)) (U : Set F), IsOpen U ∧ a ∈ U ∧ R a = 1 ∧
       ContDiffOn ℝ n R U ∧ ∀ v ∈ U, ∀ w w', B₀ (R v w) (R v w') = B v w w' := by
-  -- the adjoint of an operator for the pairing given by `B₀`
-  set adj : (E →L[ℝ] E) →L[ℝ] (E →L[ℝ] E) :=
-    (ContinuousLinearMap.compL ℝ E (E →L[ℝ] ℝ) E (B₀.symm : (E →L[ℝ] ℝ) →L[ℝ] E)).comp
-      (((ContinuousLinearMap.compL ℝ E (E →L[ℝ] ℝ) (E →L[ℝ] ℝ)).flip
-          (G' := E →L[ℝ] E →L[ℝ] ℝ) (B₀ : E →L[ℝ] E →L[ℝ] ℝ)).comp
-        ((ContinuousLinearMap.compL ℝ E E ℝ).flip)) with hadjdef
-  have adj_spec (T : E →L[ℝ] E) (w w' : E) : B₀ (adj T w) w' = B₀ w (T w') := by simp [hadjdef]
-  have hdet (T₁ T₂ : E →L[ℝ] E) (h : ∀ w w', B₀ (T₁ w) w' = B₀ (T₂ w) w') : T₁ = T₂ :=
-    ContinuousLinearMap.ext fun w ↦ B₀.injective (ContinuousLinearMap.ext (h w))
-  have adj_one : adj 1 = 1 := hdet _ _ fun w w' ↦ by simp [adj_spec]
-  have adj_mul (S T : E →L[ℝ] E) : adj (S * T) = adj T * adj S := hdet _ _ fun w w' ↦ by
-    rw [adj_spec, mul_apply_eq_comp, mul_apply_eq_comp, adj_spec, adj_spec]
-  have hB₀symm (w w' : E) : B₀ w w' = B₀ w' w := by simpa [← hB₀] using hsymm a w w'
-  -- the comparison operator `B₀⁻¹ ∘ B v`
-  set C : F → (E →L[ℝ] E) := fun v ↦ (B₀.symm : (E →L[ℝ] ℝ) →L[ℝ] E).comp (B v) with hCdef
-  have hCapply (v : F) (w w' : E) : B₀ (C v w) w' = B v w w' := by simp [hCdef]
-  have hCa : C a = 1 := hdet _ _ fun w w' ↦ by simp [hCapply, ← hB₀]
-  have hCsmooth : ContDiff ℝ n C := by
-    exact (ContinuousLinearMap.compL ℝ E (E →L[ℝ] ℝ) E
-      (B₀.symm : (E →L[ℝ] ℝ) →L[ℝ] E)).contDiff.comp hB
-  have hCadj (v : F) : adj (C v) = C v :=
-    hdet _ _ fun w w' ↦ by rw [adj_spec, hCapply, hB₀symm, hCapply, hsymm]
-  have hten : Filter.Tendsto C (𝓝 (a : F)) (𝓝 1) := hCa ▸ hCsmooth.continuous.continuousAt
-  have hspec : ∀ᶠ v in 𝓝 (a : F), ∀ w w', B₀ (sqrtNearOne (E →L[ℝ] E) (C v) w)
-      (sqrtNearOne (E →L[ℝ] E) (C v) w') = B v w w' := by
-    filter_upwards [hten.eventually (eventually_mul_self_sqrtNearOne (A := E →L[ℝ] E)),
-      hten.eventually (eventually_sqrtNearOne_fixed adj.continuous.continuousAt adj_one adj_mul)]
-      with v h1 h2 w w'
-    set R := sqrtNearOne (E →L[ℝ] E) (C v)
-    -- `R` is self-adjoint for `B₀` since `C v` is, `R * R = C v`, and `B₀ (C v ·) = B v`.
-    calc B₀ (R w) (R w') = B₀ (adj R w) (R w') := by rw [h2 (hCadj v)]
-      _ = B₀ w ((R * R) w') := by rw [adj_spec, mul_apply_eq_comp]
-      _ = B v w w' := by rw [h1, hB₀symm, hCapply, hsymm]
-  obtain ⟨W, hWsub, hWopen, haW⟩ := mem_nhds_iff.1 hspec
-  refine ⟨fun v ↦ sqrtNearOne (E →L[ℝ] E) (C v),
-    W ∩ C ⁻¹' {a | AnalyticAt ℝ (sqrtNearOne (E →L[ℝ] E)) a},
-    hWopen.inter ((isOpen_analyticAt ℝ _).preimage hCsmooth.continuous),
-    ⟨haW, by simpa [hCa] using analyticAt_sqrtNearOne⟩, by simp [hCa],
-    fun v hv ↦ (hv.2.contDiffAt.comp v hCsmooth.contDiffAt).contDiffWithinAt,
-    fun v hv ↦ hWsub hv.1⟩
+  have hBa : (B a).IsInvertible := ⟨B₀, hB₀⟩
+  have hpair : ContDiff ℝ n fun v ↦ (B a, B v) := contDiff_const.prodMk hB
+  have hT : Tendsto (fun v ↦ (B a, B v)) (𝓝 a) (𝓝 (B a, B a)) :=
+    hpair.continuous.tendsto a
+  let R : F → E →L[ℝ] E := fun v ↦ morseCongruence (B a) (B v)
+  have hS : {v | ContDiffAt ℝ n R v ∧ ∀ w w', B₀ (R v w) (R v w') = B v w w'} ∈ 𝓝 a := by
+    filter_upwards [hT.eventually (eventually_contDiffAt_morseCongruence hBa (n := n)),
+      hT.eventually (eventually_morseCongruence_apply hBa)] with v hv hv'
+    refine ⟨ContDiffAt.comp (g := fun p : (E →L[ℝ] E →L[ℝ] ℝ) × (E →L[ℝ] E →L[ℝ] ℝ) ↦
+      morseCongruence p.1 p.2) v hv hpair.contDiffAt, fun w w' ↦ ?_⟩
+    rw [← ContinuousLinearEquiv.coe_coe, hB₀]
+    exact hv' (hsymm a) (hsymm v) w w'
+  refine ⟨R, interior _, isOpen_interior, mem_interior_iff_mem_nhds.mpr hS,
+    morseCongruence_self hBa, fun v hv ↦ (interior_subset hv).1.contDiffWithinAt,
+    fun v hv ↦ (interior_subset hv).2⟩
 
 variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
 
@@ -308,46 +431,26 @@ theorem exists_parametric_congruence_of_symmetric_family
       ContDiffOn ℝ n (fun z ↦ (R z).inverse) (U ×ˢ V) ∧
       (∀ z ∈ U ×ˢ V, (R z).IsInvertible) ∧
       ∀ z ∈ U ×ˢ V, ∀ w w', B (z.1, 0) (R z w) (R z w') = B z w w' := by
-  obtain ⟨A, hA⟩ := hBa
-  obtain ⟨T, W, hW, haW, hTa, hT, hspec⟩ :=
-    exists_congruence_of_symmetric_family hB hsymm A hA
-  -- Shrink to a product neighbourhood where the fixed-reference operators are invertible.
-  have hTa_inv : (T (a, 0)).IsInvertible := by
-    rw [hTa]
-    exact ⟨ContinuousLinearEquiv.refl ℝ E, rfl⟩
-  have hnear : ∀ᶠ z in 𝓝 (a, (0 : F)), (T z).IsInvertible :=
-    (hT.continuousOn.continuousAt (hW.mem_nhds haW)).eventually hTa_inv.eventually_nhds
-  obtain ⟨U, V, hU, haU, hV, h0V, hUV⟩ :=
-    mem_nhds_prod_iff'.mp (Filter.inter_mem (hW.mem_nhds haW) hnear)
-  have hsub : U ×ˢ V ⊆ W := fun z hz ↦ (hUV hz).1
-  have hTi (z : P × F) (hz : z ∈ U ×ˢ V) : (T z).IsInvertible := (hUV hz).2
-  let S : P × F → E →L[ℝ] E := fun z ↦ T (z.1, 0)
-  have hS : ContDiffOn ℝ n S (U ×ˢ V) :=
-    hT.comp (contDiffOn_fst.prodMk contDiffOn_const)
-      (fun z hz ↦ hsub ⟨hz.1, h0V⟩)
-  have hSi (z : P × F) (hz : z ∈ U ×ˢ V) : (S z).IsInvertible :=
-    hTi (z.1, 0) ⟨hz.1, h0V⟩
-  have hSinv : ContDiffOn ℝ n (fun z ↦ (S z).inverse) (U ×ˢ V) := by
-    intro z hz
-    exact (hSi z hz).contDiffAt_map_inverse.comp_contDiffWithinAt z (hS z hz)
-  let R : P × F → E →L[ℝ] E := fun z ↦ (S z).inverse.comp (T z)
-  have hR : ContDiffOn ℝ n R (U ×ˢ V) := hSinv.clm_comp (hT.mono hsub)
-  have hRi (z : P × F) (hz : z ∈ U ×ˢ V) : (R z).IsInvertible :=
-    (hSi z hz).inverse.comp (hTi z hz)
-  refine ⟨R, U, V, hU, hV, haU, h0V, ?_, hR, ?_, hRi, ?_⟩
-  · intro b hb
-    exact (hTi (b, 0) ⟨hb, h0V⟩).inverse_comp_self
-  · intro z hz
-    exact (hRi z hz).contDiffAt_map_inverse.comp_contDiffWithinAt z (hR z hz)
-  · intro z hz w w'
-    -- Divide by the zero-section operator on both arguments of the reference form.
-    calc
-      B (z.1, 0) (R z w) (R z w') =
-          A (S z (R z w)) (S z (R z w')) :=
-        (hspec (z.1, 0) (hsub ⟨hz.1, h0V⟩) _ _).symm
-      _ = A (T z w) (T z w') := by
-        simp only [R, ContinuousLinearMap.comp_apply, (hSi z hz).self_apply_inverse]
-      _ = B z w w' := hspec z (hsub hz) w w'
+  have hpair : ContDiff ℝ n fun z : P × F ↦ (B (z.1, 0), B z) :=
+    (hB.comp (contDiff_fst.prodMk contDiff_const)).prodMk hB
+  have hT : Tendsto (fun z : P × F ↦ (B (z.1, 0), B z)) (𝓝 (a, 0)) (𝓝 (B (a, 0), B (a, 0))) :=
+    hpair.continuous.tendsto (a, 0)
+  -- The operators are the canonical congruences of `B (b, v)` with `B (b, 0)`.
+  let R : P × F → E →L[ℝ] E := fun z ↦ morseCongruence (B (z.1, 0)) (B z)
+  have h1 : (1 : E →L[ℝ] E).IsInvertible := ⟨ContinuousLinearEquiv.refl ℝ E, rfl⟩
+  have hS : ∀ᶠ z in 𝓝 (a, (0 : F)), ContDiffAt ℝ n R z ∧ (R z).IsInvertible ∧
+      (B (z.1, 0)).IsInvertible ∧ ∀ w w', B (z.1, 0) (R z w) (R z w') = B z w w' := by
+    filter_upwards [hT.eventually (eventually_contDiffAt_morseCongruence hBa (n := n)),
+      ((tendsto_morseCongruence hBa).comp hT).eventually h1.eventually_nhds,
+      hT.fst_nhds.eventually hBa.eventually_nhds,
+      hT.eventually (eventually_morseCongruence_apply hBa)] with z hz hzi hz₀ hz'
+    exact ⟨ContDiffAt.comp (g := fun p : (E →L[ℝ] E →L[ℝ] ℝ) × (E →L[ℝ] E →L[ℝ] ℝ) ↦
+      morseCongruence p.1 p.2) z hz hpair.contDiffAt, hzi, hz₀, hz' (hsymm _) (hsymm z)⟩
+  obtain ⟨U, V, hU, haU, hV, h0V, hUV⟩ := mem_nhds_prod_iff'.mp hS
+  refine ⟨R, U, V, hU, hV, haU, h0V, fun b hb ↦ morseCongruence_self (hUV ⟨hb, h0V⟩).2.2.1,
+    fun z hz ↦ (hUV hz).1.contDiffWithinAt, fun z hz ↦ ?_, fun z hz ↦ (hUV hz).2.1,
+    fun z hz ↦ (hUV hz).2.2.2⟩
+  exact ((hUV hz).2.1.contDiffAt_map_inverse.comp z (hUV hz).1).contDiffWithinAt
 
 end Congruence
 

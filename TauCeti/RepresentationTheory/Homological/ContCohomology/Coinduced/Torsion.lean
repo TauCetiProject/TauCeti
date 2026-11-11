@@ -35,9 +35,12 @@ section DiscreteCoind
 
 variable [DistribMulAction U M]
 
+omit [TopologicalSpace M] [DiscreteTopology M] in
 /-- Discrete coinduction from a subgroup preserves `p`-primary torsion over a compact group. -/
 theorem isAddPGroup_discreteCoind (hM : IsAddPGroup p M) :
     IsAddPGroup p (DiscreteCoind G U M) := by
+  let _ : TopologicalSpace M := ⊥
+  have _ : DiscreteTopology M := ⟨rfl⟩
   refine fun f ↦ ?_
   let cf := DiscreteCoind.toContinuousMap G U M f
   obtain ⟨k, hk⟩ := hM.continuousMap G cf
