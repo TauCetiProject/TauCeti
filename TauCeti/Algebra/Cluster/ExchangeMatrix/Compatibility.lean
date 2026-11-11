@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Cluster.ExchangeMatrix.Basic
 public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.Matrix.Rank
+import TauCeti.LinearAlgebra.Matrix.Dual
 
 /-!
 # Column compatibility and principal compatible pairs
@@ -17,7 +18,8 @@ Column compatibility of an extended matrix `B` with a matrix `Λ` means that `B�
 is diagonal on the mutable coordinates and vanishes on the frozen coordinates.
 The diagonal weights are separate from a positive skew-symmetrizer: they can vanish
 or be negative. For skew-symmetric `Λ` they satisfy the skew-symmetrizing identity
-on the principal block; nonzero weights force the extended columns to be independent.
+on the principal block; over an integral domain, nonzero weights force the extended
+columns to be independent.
 
 Every square exchange matrix has a principal extension `(B; 1)` and a compatible
 integer alternating form with blocks `(0, -D; D, BᵀD)`, where `D` is its chosen
@@ -112,22 +114,17 @@ theorem weight_mul (h : B.IsColumnCompatible row Λ w)
   have he := congrFun (congrFun hs l) k
   simpa using he
 
-/-- Nonzero compatibility weights force independence of the extended columns.
-Skew-symmetry of the form is not needed for this implication. -/
+/-- Over an integral domain, nonzero compatibility weights force independence of the
+extended columns. Skew-symmetry of the form is not needed for this implication. -/
 theorem linearIndependent [IsDomain R]
     (h : B.IsColumnCompatible row Λ w) (hw : ∀ k, w k ≠ 0) :
     LinearIndependent R B.col := by
   classical
-  let := Fintype.ofInjective row row.injective
-  apply Matrix.mulVec_injective_iff.mp
-  intro x y hxy
-  have he : (Bᵀ * Λ)ᵀ *ᵥ x = (Bᵀ * Λ)ᵀ *ᵥ y := by
-    simp only [transpose_mul, transpose_transpose, ← mulVec_mulVec, hxy]
-  rw [h] at he
-  funext k
-  have hk := congrFun he (row k)
-  apply mul_left_cancel₀ (hw k)
-  simpa [mulVec, dotProduct] using hk
+  exact TauCeti.linearIndependent_of_dotProduct_diagonal
+    (w := fun k i ↦ Λ i (row k)) (c := w)
+    (fun k ↦ (IsRegular.of_ne_zero (hw k)).right)
+    (fun k ↦ by simpa [Matrix.mul_apply, dotProduct] using h.apply_row k k)
+    (fun k l hkl ↦ by simpa [Matrix.mul_apply, dotProduct, hkl] using h.apply_row k l)
 
 /-- Over a field, a compatible extended matrix with nonzero weights has full column rank. -/
 theorem rank_eq_card {F : Type*} [Field F] [Fintype K]
@@ -286,13 +283,12 @@ end Finite
 
 /-- Principal extensions have rationally independent columns, irrespective of the rank
 of their mutable block. -/
-theorem linearIndependent_principalExtension [Finite K] :
+theorem linearIndependent_principalExtension :
     LinearIndependent ℚ (B.principalExtension.matrix.map (Int.castRingHom ℚ)).col := by
-  let := Fintype.ofFinite K
-  exact (B.isColumnCompatible_principalExtension.map (Int.castRingHom ℚ)).linearIndependent
-    fun k ↦ by
-      simpa only [Function.comp_apply, Int.coe_castRingHom, ne_eq, Int.cast_eq_zero] using
-        (B.symmetrizer_pos k).ne'
+  apply LinearIndependent.of_comp (LinearMap.funLeft ℚ ℚ Sum.inr)
+  convert Pi.linearIndependent_single_one K ℚ using 1
+  ext k i
+  simp [LinearMap.funLeft_apply, Matrix.one_apply, Pi.single_apply, eq_comm]
 
 /-- A zero mutable matrix in rank one still has a nonzero principal compatible form. -/
 example (B : ExchangeMatrix (Function.Embedding.refl Unit)) (h : B.symmetrizer () = 1) :
