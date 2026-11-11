@@ -13,7 +13,9 @@ import Mathlib.Analysis.Normed.Group.SeparationQuotient
 import Mathlib.Analysis.Normed.Module.Seminorm.Norm
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Probability.Distributions.Gaussian.Fernique
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import TauCeti.Probability.Distributions.Gaussian.Maximum
+import TauCeti.Probability.Distributions.Gaussian.Symmetry
 import TauCeti.Probability.Distributions.Rademacher.Norm
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
@@ -22,7 +24,8 @@ import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 Let `g i` be independent centered real Gaussian random variables and `v i` fixed vectors in a real
 vector space `E` carrying a seminorm `p`. Because each `g i` is symmetric, the tuple `(η i * g i)`
-has the same joint law as `(g i)` for every deterministic sign vector `η` with `|η i| = 1`.
+has the same joint law as `(g i)` for every deterministic sign vector `η` with `|η i| = 1`
+(`ProbabilityTheory.iIndepFun.hasLaw_pi_mul_gaussianReal_of_abs_eq_one`).
 Introducing an independent Rademacher tuple, swapping the expectations by Fubini's theorem, and
 applying the Rademacher convexity inequality pointwise gives the unconditional lower bound
 
@@ -41,15 +44,15 @@ finite-dimensionality of the target space.
 
 ## Main results
 
-* `ProbabilityTheory.iIndepFun.hasLaw_pi_mul_gaussianReal_of_abs_eq_one`: multiplying independent
-  centered Gaussian variables by deterministic signs preserves their joint product law.
-* `TauCeti.Probability.integral_sup'_mul_seminorm_le_integral_seminorm_sum_smul_gaussianReal`:
+* `Seminorm.integral_sup'_mul_seminorm_le_integral_seminorm_sum_smul_gaussianReal`:
   expected seminorm of a centered Gaussian sum bounds the expected maximum summand seminorm.
-* `TauCeti.Probability.mul_sqrt_log_card_div_le_integral_seminorm_sum_smul_gaussianReal`:
+* `Seminorm.mul_sqrt_log_card_div_le_integral_seminorm_sum_smul_gaussianReal`:
   logarithmic lower bound `c * √(log m) / 32` for standard Gaussian sums.
-* `TauCeti.Probability.mul_sqrt_log_finrank_div_le_integral_seminorm_stdGaussian`: logarithmic
+* `Seminorm.mul_sqrt_log_finrank_div_le_integral_seminorm_stdGaussian`: logarithmic
   lower bound for the standard Gaussian expectation of a seminorm on a finite-dimensional inner
   product space.
+* `LinearMap.mul_sqrt_log_finrank_div_le_integral_norm_comp_stdGaussian`: logarithmic lower
+  bound for the standard Gaussian expected norm of a linear map.
 
 ## References
 
@@ -60,39 +63,15 @@ public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory Real
+open MeasureTheory ProbabilityTheory Real TauCeti.Probability
 open scoped BigOperators NNReal
-
-namespace ProbabilityTheory
-
-/-- Multiplying a centered real Gaussian random variable by a scalar of unit modulus preserves its
-law. -/
-theorem HasLaw.gaussianReal_const_mul_of_abs_eq_one {Ω : Type*} [MeasurableSpace Ω]
-    {P : Measure Ω} {X : Ω → ℝ} {v : ℝ≥0} (hX : HasLaw X (gaussianReal 0 v) P)
-    {c : ℝ} (hc : |c| = 1) :
-    HasLaw (fun ω ↦ c * X ω) (gaussianReal 0 v) P := by
-  have hc2 : NNReal.mk (c ^ 2) (sq_nonneg c) = 1 :=
-    NNReal.eq (by simp [← sq_abs, hc])
-  simpa [hc2] using gaussianReal_const_mul hX c
-
-/-- Multiplying independent centered real Gaussian random variables by deterministic signs `η i`
-with `|η i| = 1` preserves their joint product law. -/
-theorem iIndepFun.hasLaw_pi_mul_gaussianReal_of_abs_eq_one {Ω ι : Type*} [MeasurableSpace Ω]
-    [Fintype ι] {P : Measure Ω} {g : ι → Ω → ℝ} {σ : ι → ℝ≥0}
-    (hindep : iIndepFun g P) (hlaw : ∀ i, HasLaw (g i) (gaussianReal 0 (σ i)) P)
-    {η : ι → ℝ} (hη : ∀ i, |η i| = 1) :
-    HasLaw (fun ω i ↦ η i * g i ω) (Measure.pi fun i ↦ gaussianReal 0 (σ i)) P :=
-  (hindep.comp (fun i x ↦ η i * x) fun _ ↦ by fun_prop).hasLaw_pi fun i ↦
-    (hlaw i).gaussianReal_const_mul_of_abs_eq_one (hη i)
-
-end ProbabilityTheory
-
-namespace TauCeti.Probability
 
 section Integrability
 
 variable {Ω ι E : Type*} [MeasurableSpace Ω] {P : Measure Ω} {g : ι → Ω → ℝ}
   {μ : ι → ℝ} {σ : ι → ℝ≥0}
+
+namespace Finset
 
 /-- A finite Gaussian linear combination of fixed vectors in a normed space is integrable, even
 without completeness or independence. -/
@@ -102,6 +81,10 @@ theorem integrable_sum_smul_gaussianReal [NormedAddCommGroup E] [NormedSpace ℝ
     Integrable (fun ω ↦ ∑ i ∈ s, g i ω • v i) P :=
   integrable_finsetSum s fun i hi ↦
     ((hlaw i hi).integrable IsGaussian.integrable_id).smul_const (v i)
+
+end Finset
+
+namespace Seminorm
 
 /-- A real seminorm evaluated on a finite Gaussian linear combination of fixed vectors is
 integrable. -/
@@ -115,7 +98,11 @@ theorem integrable_seminorm_sum_smul_gaussianReal [AddCommGroup E] [Module ℝ E
   have hq (ω : Ω) : ‖∑ i ∈ s, g i ω • q (v i)‖ = p (∑ i ∈ s, g i ω • v i) := by
     simp_rw [← map_smul, ← map_sum]
     exact SeparationQuotient.norm_mk _
-  simpa only [hq] using (integrable_sum_smul_gaussianReal s (fun i ↦ q (v i)) hlaw).norm
+  simpa only [hq] using (s.integrable_sum_smul_gaussianReal (fun i ↦ q (v i)) hlaw).norm
+
+end Seminorm
+
+namespace Finset
 
 /-- The norm of a finite Gaussian linear combination of fixed vectors in a seminormed space is
 integrable. -/
@@ -123,18 +110,19 @@ theorem integrable_norm_sum_smul_gaussianReal [SeminormedAddCommGroup E] [Normed
     (s : Finset ι) (v : ι → E)
     (hlaw : ∀ i ∈ s, HasLaw (g i) (gaussianReal (μ i) (σ i)) P) :
     Integrable (fun ω ↦ ‖∑ i ∈ s, g i ω • v i‖) P :=
-  integrable_seminorm_sum_smul_gaussianReal (normSeminorm ℝ E) s v hlaw
+  (normSeminorm ℝ E).integrable_seminorm_sum_smul_gaussianReal s v hlaw
+
+end Finset
+
+namespace TauCeti.Probability
 
 /-- The pointwise maximum of weighted absolute values of a nonempty finite Gaussian family is
 integrable, even without independence. -/
 theorem integrable_sup'_abs_mul_gaussianReal {s : Finset ι} (hs : s.Nonempty) (c : ι → ℝ)
     (hlaw : ∀ i ∈ s, HasLaw (g i) (gaussianReal (μ i) (σ i)) P) :
-    Integrable (fun ω ↦ s.sup' hs fun i ↦ |g i ω| * c i) P := by
-  rw [show (fun ω ↦ s.sup' hs fun i ↦ |g i ω| * c i) = s.sup' hs fun i ω ↦ |g i ω| * c i from
-    funext fun ω ↦ (Finset.sup'_apply hs (fun i ω ↦ |g i ω| * c i) ω).symm]
-  exact Finset.sup'_induction (p := fun f ↦ Integrable f P) hs (fun i ω ↦ |g i ω| * c i)
-    (fun _ hf _ hg ↦ Integrable.sup hf hg) fun i hi ↦
-      ((hlaw i hi).integrable IsGaussian.integrable_id).abs.mul_const (c i)
+    Integrable (fun ω ↦ s.sup' hs fun i ↦ |g i ω| * c i) P :=
+  integrable_finset_sup' hs fun i hi ↦
+    ((hlaw i hi).integrable IsGaussian.integrable_id).abs.mul_const (c i)
 
 /-- The pointwise maximum of the absolute values of a nonempty finite Gaussian family is
 integrable, even without independence. -/
@@ -143,11 +131,15 @@ theorem integrable_sup'_abs_gaussianReal {s : Finset ι} (hs : s.Nonempty)
     Integrable (fun ω ↦ s.sup' hs fun i ↦ |g i ω|) P := by
   simpa using integrable_sup'_abs_mul_gaussianReal hs (fun _ ↦ 1) hlaw
 
+end TauCeti.Probability
+
 end Integrability
 
 section Comparison
 
 variable {Ω ι E : Type*} [MeasurableSpace Ω] {P : Measure Ω} {g : ι → Ω → ℝ} {σ : ι → ℝ≥0}
+
+namespace Seminorm
 
 /-- Coordinate-space Rademacher comparison for a product of centered Gaussian laws. -/
 private theorem integral_sup'_mul_seminorm_le_integral_pi_gaussianReal [Fintype ι] [Nonempty ι]
@@ -199,7 +191,7 @@ private theorem integral_sup'_mul_seminorm_le_integral_pi_gaussianReal [Fintype 
         ∫ η, q (fun i ↦ η i * x i) ∂μR := by
     have hε_indep : iIndepFun (fun (i : ι) (η : ι → ℝ) ↦ η i) μR :=
       iIndepFun_pi (X := fun _ ↦ (id : ℝ → ℝ)) fun _ ↦ aemeasurable_id
-    have hrad := Finset.sup'_seminorm_le_integral_seminorm_sum_smul_rademacher p Finset.univ
+    have hrad := p.sup'_seminorm_le_integral_seminorm_sum_smul_rademacher Finset.univ
       Finset.univ_nonempty (fun i ↦ x i • v i) (fun i _ ↦ hlawR i)
       (fun i _ j _ hij ↦ hε_indep.indepFun hij)
     simpa [hq_apply, map_smul_eq_mul, mul_smul] using hrad
@@ -207,19 +199,20 @@ private theorem integral_sup'_mul_seminorm_le_integral_pi_gaussianReal [Fintype 
   rw [← hlhs, integral_integral_swap hF_int]
   exact integral_mono hM_int hF_int.integral_prod_right hpt
 
-/-- **Unconditional comparison for centered Gaussian sums (seminorm form).** For independent
-centered real Gaussian variables `g i` and any real seminorm `p`, the expected seminorm of
-`∑ i ∈ s, g i ω • v i` bounds the expected largest summand seminorm `sup_{i ∈ s} |g i ω| * p (v i)`.
--/
+/-- **Unconditional comparison for centered Gaussian sums (seminorm form).** For centered real
+Gaussian variables `g i` that are independent on `s` and any real seminorm `p`, the expected
+seminorm of `∑ i ∈ s, g i ω • v i` bounds the expected largest summand seminorm
+`sup_{i ∈ s} |g i ω| * p (v i)`. -/
 theorem integral_sup'_mul_seminorm_le_integral_seminorm_sum_smul_gaussianReal
     [AddCommGroup E] [Module ℝ E] (p : Seminorm ℝ E) {s : Finset ι} (hs : s.Nonempty) (v : ι → E)
-    (hindep : iIndepFun g P) (hlaw : ∀ i ∈ s, HasLaw (g i) (gaussianReal 0 (σ i)) P) :
+    (hindep : iIndepFun (fun i : s ↦ g i) P)
+    (hlaw : ∀ i ∈ s, HasLaw (g i) (gaussianReal 0 (σ i)) P) :
     ∫ ω, s.sup' hs (fun i ↦ |g i ω| * p (v i)) ∂P ≤
       ∫ ω, p (∑ i ∈ s, g i ω • v i) ∂P := by
   let _ : Nonempty s := hs.coe_sort
   let μG : Measure (s → ℝ) := Measure.pi fun i : s ↦ gaussianReal 0 (σ i)
   have hG : HasLaw (fun ω (i : s) ↦ g i ω) μG P :=
-    (hindep.restrict s).hasLaw_pi fun i ↦ hlaw i i.2
+    hindep.hasLaw_pi fun i ↦ hlaw i i.2
   let q : Seminorm ℝ (s → ℝ) := p.comp (∑ i : s, (LinearMap.proj i).smulRight (v i))
   have hsup (ω : Ω) : s.sup' hs (fun i ↦ |g i ω| * p (v i)) =
       Finset.univ.sup' Finset.univ_nonempty (fun i : s ↦ |g i ω| * p (v i)) :=
@@ -241,18 +234,26 @@ theorem integral_sup'_mul_seminorm_le_integral_seminorm_sum_smul_gaussianReal
     hG.integral_comp q.continuous_of_finiteDimensional.aestronglyMeasurable
   simp_rw [hsup, hsum, hM_eq, hq_eq]
   simpa [q, LinearMap.sum_apply] using
-    integral_sup'_mul_seminorm_le_integral_pi_gaussianReal p (fun i : s ↦ v i) (fun i : s ↦ σ i)
+    p.integral_sup'_mul_seminorm_le_integral_pi_gaussianReal (fun i : s ↦ v i) (fun i : s ↦ σ i)
 
-/-- **Unconditional comparison for centered Gaussian sums (norm form).** For independent centered
-real Gaussian variables `g i`, the expected norm of `∑ i ∈ s, g i ω • v i` bounds the expected
-maximum summand norm `sup_{i ∈ s} |g i ω| * ‖v i‖`. -/
+end Seminorm
+
+namespace TauCeti.Probability
+
+/-- **Unconditional comparison for centered Gaussian sums (norm form).** For centered real Gaussian
+variables `g i` that are independent on `s`, the expected norm of `∑ i ∈ s, g i ω • v i` bounds the
+expected maximum summand norm `sup_{i ∈ s} |g i ω| * ‖v i‖`. -/
 theorem integral_sup'_mul_norm_le_integral_norm_sum_smul_gaussianReal
     [SeminormedAddCommGroup E] [NormedSpace ℝ E] {s : Finset ι} (hs : s.Nonempty) (v : ι → E)
-    (hindep : iIndepFun g P) (hlaw : ∀ i ∈ s, HasLaw (g i) (gaussianReal 0 (σ i)) P) :
+    (hindep : iIndepFun (fun i : s ↦ g i) P)
+    (hlaw : ∀ i ∈ s, HasLaw (g i) (gaussianReal 0 (σ i)) P) :
     ∫ ω, s.sup' hs (fun i ↦ |g i ω| * ‖v i‖) ∂P ≤
       ∫ ω, ‖∑ i ∈ s, g i ω • v i‖ ∂P := by
-  simpa using integral_sup'_mul_seminorm_le_integral_seminorm_sum_smul_gaussianReal
-    (normSeminorm ℝ E) hs v hindep hlaw
+  simpa using
+    (normSeminorm ℝ E).integral_sup'_mul_seminorm_le_integral_seminorm_sum_smul_gaussianReal
+      hs v hindep hlaw
+
+end TauCeti.Probability
 
 end Comparison
 
@@ -260,6 +261,8 @@ section StandardGaussian
 
 variable {Ω ι E : Type*} [MeasurableSpace Ω] [Fintype ι] [Nonempty ι] {P : Measure Ω}
   {g : ι → Ω → ℝ}
+
+namespace Seminorm
 
 /-- **Logarithmic lower bound for standard Gaussian vector sums (seminorm form).** If `g i` are
 `m` independent standard Gaussian variables and `p (v i) ≥ c ≥ 0` for every `i`, then
@@ -291,8 +294,12 @@ theorem mul_sqrt_log_card_div_le_integral_seminorm_sum_smul_gaussianReal
             _ ≤ Finset.univ.sup' Finset.univ_nonempty fun j ↦ |g j ω| * p (v j) :=
                 Finset.le_sup' (fun j ↦ |g j ω| * p (v j)) (Finset.mem_univ i)
     _ ≤ ∫ ω, p (∑ i, g i ω • v i) ∂P :=
-        integral_sup'_mul_seminorm_le_integral_seminorm_sum_smul_gaussianReal p
-          Finset.univ_nonempty v hindep fun i _ ↦ hlaw i
+        p.integral_sup'_mul_seminorm_le_integral_seminorm_sum_smul_gaussianReal
+          Finset.univ_nonempty v (hindep.restrict Finset.univ) fun i _ ↦ hlaw i
+
+end Seminorm
+
+namespace TauCeti.Probability
 
 /-- **Logarithmic lower bound for standard Gaussian vector sums (norm form).** If `g i` are `m`
 independent standard Gaussian variables and `‖v i‖ ≥ c ≥ 0` for every `i`, then
@@ -302,8 +309,10 @@ theorem mul_sqrt_log_card_div_le_integral_norm_sum_smul_gaussianReal
     (hindep : iIndepFun g P) (hlaw : ∀ i, HasLaw (g i) (gaussianReal 0 1) P)
     {c : ℝ} (hc : 0 ≤ c) (hv : ∀ i, c ≤ ‖v i‖) :
     c * √(Real.log (Fintype.card ι)) / 32 ≤ ∫ ω, ‖∑ i, g i ω • v i‖ ∂P :=
-  mul_sqrt_log_card_div_le_integral_seminorm_sum_smul_gaussianReal
-    (normSeminorm ℝ E) v hindep hlaw hc hv
+  (normSeminorm ℝ E).mul_sqrt_log_card_div_le_integral_seminorm_sum_smul_gaussianReal
+    v hindep hlaw hc hv
+
+end TauCeti.Probability
 
 end StandardGaussian
 
@@ -311,6 +320,8 @@ section StdGaussian
 
 variable {ι E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
+
+namespace Seminorm
 
 /-- Every real seminorm on a finite-dimensional real inner product space is integrable under the
 standard Gaussian law. -/
@@ -332,9 +343,13 @@ theorem mul_sqrt_log_finrank_div_le_integral_seminorm_stdGaussian [Fintype ι] [
   rw [Module.finrank_eq_card_basis b.toBasis, stdGaussian_eq_map_pi_orthonormalBasis b,
     integral_map (Continuous.aemeasurable (by fun_prop))
       p.continuous_of_finiteDimensional.aestronglyMeasurable]
-  exact mul_sqrt_log_card_div_le_integral_seminorm_sum_smul_gaussianReal p b
+  exact p.mul_sqrt_log_card_div_le_integral_seminorm_sum_smul_gaussianReal b
     (iIndepFun_pi (X := fun _ ↦ (id : ℝ → ℝ)) fun _ ↦ aemeasurable_id)
     (fun i ↦ (measurePreserving_eval (fun _ : ι ↦ gaussianReal 0 1) i).hasLaw) hc hb
+
+end Seminorm
+
+namespace LinearMap
 
 /-- If an orthonormal basis `b` of `E` satisfies `c ≤ ‖T (b i)‖` for every `i`, then the expected
 norm of `T x` under `stdGaussian E` is at least `c * √(log (finrank ℝ E)) / 32`. -/
@@ -342,8 +357,8 @@ theorem mul_sqrt_log_finrank_div_le_integral_norm_comp_stdGaussian [Fintype ι] 
     [SeminormedAddCommGroup F] [NormedSpace ℝ F] (T : E →ₗ[ℝ] F) (b : OrthonormalBasis ι ℝ E)
     {c : ℝ} (hc : 0 ≤ c) (hb : ∀ i, c ≤ ‖T (b i)‖) :
     c * √(Real.log (Module.finrank ℝ E)) / 32 ≤ ∫ x, ‖T x‖ ∂stdGaussian E :=
-  mul_sqrt_log_finrank_div_le_integral_seminorm_stdGaussian ((normSeminorm ℝ F).comp T) b hc hb
+  ((normSeminorm ℝ F).comp T).mul_sqrt_log_finrank_div_le_integral_seminorm_stdGaussian b hc hb
+
+end LinearMap
 
 end StdGaussian
-
-end TauCeti.Probability

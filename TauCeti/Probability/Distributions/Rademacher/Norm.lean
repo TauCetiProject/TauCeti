@@ -101,7 +101,9 @@ private theorem norm_le_integral_norm_sum_smul_rademacher_of_normed (s : Finset 
 
 end Normed
 
-section Seminorm
+end Finset
+
+namespace Seminorm
 
 variable {Ω ι E : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   [AddCommGroup E] [Module ℝ E] {ε : ι → Ω → ℝ}
@@ -116,7 +118,7 @@ theorem integrable_seminorm_sum_smul_rademacher (p : Seminorm ℝ E) (s : Finset
   have hq (ω : Ω) : ‖∑ i ∈ s, ε i ω • q (v i)‖ = p (∑ i ∈ s, ε i ω • v i) := by
     simp_rw [← map_smul, ← map_sum]
     exact SeparationQuotient.norm_mk _
-  simpa only [hq] using (integrable_sum_smul_rademacher s (fun i ↦ q (v i)) hε).norm
+  simpa only [hq] using (s.integrable_sum_smul_rademacher (fun i ↦ q (v i)) hε).norm
 
 /-- **Rademacher convexity inequality for seminorms.** Every summand's seminorm is bounded by the
 expected seminorm of the signed sum, under pairwise independence of the Rademacher signs. -/
@@ -132,7 +134,7 @@ theorem seminorm_le_integral_seminorm_sum_smul_rademacher (p : Seminorm ℝ E) (
     simp_rw [← map_smul, ← map_sum]
     exact SeparationQuotient.norm_mk _
   simpa only [hqj, hq] using
-    norm_le_integral_norm_sum_smul_rademacher_of_normed s (fun i ↦ q (v i)) hε hind hj
+    s.norm_le_integral_norm_sum_smul_rademacher_of_normed (fun i ↦ q (v i)) hε hind hj
 
 /-- The largest seminorm in a nonempty finite family is bounded by the expected seminorm of its
 Rademacher sum. -/
@@ -141,11 +143,11 @@ theorem sup'_seminorm_le_integral_seminorm_sum_smul_rademacher (p : Seminorm ℝ
     (hind : (s : Set ι).Pairwise fun i j ↦ IndepFun (ε i) (ε j) P) :
     s.sup' hs (fun i ↦ p (v i)) ≤ ∫ ω, p (∑ i ∈ s, ε i ω • v i) ∂P :=
   (Finset.sup'_le_iff hs _).2 fun _ hj ↦
-    seminorm_le_integral_seminorm_sum_smul_rademacher p s v hε hind hj
+    p.seminorm_le_integral_seminorm_sum_smul_rademacher s v hε hind hj
 
 end Seminorm
 
-section Seminormed
+namespace Finset
 
 variable {Ω ι E : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   [SeminormedAddCommGroup E] [NormedSpace ℝ E] {ε : ι → Ω → ℝ}
@@ -154,7 +156,7 @@ variable {Ω ι E : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 theorem integrable_norm_sum_smul_rademacher (s : Finset ι) (v : ι → E)
     (hε : ∀ i ∈ s, HasLaw (ε i) rademacherMeasure P) :
     Integrable (fun ω ↦ ‖∑ i ∈ s, ε i ω • v i‖) P :=
-  integrable_seminorm_sum_smul_rademacher (normSeminorm ℝ E) s v hε
+  (normSeminorm ℝ E).integrable_seminorm_sum_smul_rademacher s v hε
 
 /-- **Rademacher convexity inequality.** Every summand's norm is bounded by the expected
 norm of the signed sum. Pairwise independence of the Rademacher signs suffices. -/
@@ -162,7 +164,7 @@ theorem norm_le_integral_norm_sum_smul_rademacher (s : Finset ι) (v : ι → E)
     (hε : ∀ i ∈ s, HasLaw (ε i) rademacherMeasure P)
     (hind : (s : Set ι).Pairwise fun i j ↦ IndepFun (ε i) (ε j) P) {j : ι} (hj : j ∈ s) :
     ‖v j‖ ≤ ∫ ω, ‖∑ i ∈ s, ε i ω • v i‖ ∂P :=
-  seminorm_le_integral_seminorm_sum_smul_rademacher (normSeminorm ℝ E) s v hε hind hj
+  (normSeminorm ℝ E).seminorm_le_integral_seminorm_sum_smul_rademacher s v hε hind hj
 
 /-- The largest norm in a nonempty finite family is bounded by the expected norm of its
 Rademacher sum. -/
@@ -170,8 +172,6 @@ theorem sup'_norm_le_integral_norm_sum_smul_rademacher (s : Finset ι) (hs : s.N
     (v : ι → E) (hε : ∀ i ∈ s, HasLaw (ε i) rademacherMeasure P)
     (hind : (s : Set ι).Pairwise fun i j ↦ IndepFun (ε i) (ε j) P) :
     s.sup' hs (fun i ↦ ‖v i‖) ≤ ∫ ω, ‖∑ i ∈ s, ε i ω • v i‖ ∂P :=
-  sup'_seminorm_le_integral_seminorm_sum_smul_rademacher (normSeminorm ℝ E) s hs v hε hind
-
-end Seminormed
+  (normSeminorm ℝ E).sup'_seminorm_le_integral_seminorm_sum_smul_rademacher s hs v hε hind
 
 end Finset

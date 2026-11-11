@@ -46,12 +46,12 @@ linear map `T : E →ₗ[ℝ] F` into an arbitrary real seminormed space `F`, an
 
 * `TauCeti.Probability.integral_stdGaussian_of_posHomog`: polar factorization of the standard
   Gaussian integral of a positively `1`-homogeneous vector-valued function.
-* `TauCeti.Probability.div_sqrt_finrank_le_integral_seminorm_uniformSphereMeasure`,
-  `TauCeti.Probability.integral_seminorm_uniformSphereMeasure_le_mul_sqrt_two_div_finrank`:
+* `Seminorm.div_sqrt_finrank_le_integral_seminorm_uniformSphereMeasure`,
+  `Seminorm.integral_seminorm_uniformSphereMeasure_le_mul_sqrt_two_div_finrank`:
   two-sided comparison between Gaussian and spherical expectations of a seminorm.
-* `TauCeti.Probability.mul_sqrt_log_finrank_div_le_integral_seminorm_uniformSphereMeasure`:
+* `Seminorm.mul_sqrt_log_finrank_div_le_integral_seminorm_uniformSphereMeasure`:
   logarithmic lower bound `c * √(log d / d) / 32` for the spherical mean of a seminorm.
-* `TauCeti.Probability.mul_sqrt_log_finrank_div_le_integral_norm_comp_uniformSphereMeasure`,
+* `LinearMap.mul_sqrt_log_finrank_div_le_integral_norm_comp_uniformSphereMeasure`,
   `TauCeti.Probability.mul_sqrt_log_card_div_le_integral_norm_sum_smul_uniformSphereMeasure`:
   norm forms for linear maps and Euclidean unit-sphere combinations.
 
@@ -64,7 +64,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory Metric Real
+open MeasureTheory ProbabilityTheory Metric Real TauCeti.Probability
 open scoped BigOperators
 
 namespace TauCeti.Probability
@@ -176,9 +176,11 @@ theorem integral_uniformSphereMeasure_le_mul_sqrt_two_div_finrank_of_posHomog [N
 
 end PosHomog
 
-section Seminorm
+end TauCeti.Probability
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+namespace Seminorm
+
+variable {ι E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
 /-- Every real seminorm on a finite-dimensional real inner product space is integrable on the unit
@@ -233,18 +235,11 @@ theorem integral_seminorm_uniformSphereMeasure_le_mul_sqrt_two_div_finrank [Nont
     (fun hr x ↦ by rw [map_smul_eq_mul, Real.norm_of_nonneg hr.le])
     fun u ↦ apply_nonneg p (u : E)
 
-end Seminorm
-
-section MeanNormLowerBound
-
-variable {ι E F : Type*} [Fintype ι] [Nonempty ι]
-
 /-- **Mean-seminorm lower bound on the unit sphere.** If `b` is an orthonormal basis of `E` and
 `c ≤ p (b i)` for every `i` (with `0 ≤ c`), then the average of `p` over the unit sphere of `E` is
 at least `c * √(log (finrank ℝ E) / finrank ℝ E) / 32`. -/
-theorem mul_sqrt_log_finrank_div_le_integral_seminorm_uniformSphereMeasure
-    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-    [MeasurableSpace E] [BorelSpace E] (p : Seminorm ℝ E) (b : OrthonormalBasis ι ℝ E)
+theorem mul_sqrt_log_finrank_div_le_integral_seminorm_uniformSphereMeasure [Fintype ι] [Nonempty ι]
+    (p : Seminorm ℝ E) (b : OrthonormalBasis ι ℝ E)
     {c : ℝ} (hc : 0 ≤ c) (hb : ∀ i, c ≤ p (b i)) :
     c * √(Real.log (Module.finrank ℝ E) / Module.finrank ℝ E) / 32 ≤
       ∫ u : sphere (0 : E) 1, p u ∂uniformSphereMeasure E := by
@@ -255,10 +250,16 @@ theorem mul_sqrt_log_finrank_div_le_integral_seminorm_uniformSphereMeasure
       = (c * √(Real.log (Module.finrank ℝ E)) / 32) / √(Module.finrank ℝ E) := by ring
     _ ≤ (∫ x, p x ∂stdGaussian E) / √(Module.finrank ℝ E) :=
         div_le_div_of_nonneg_right
-          (mul_sqrt_log_finrank_div_le_integral_seminorm_stdGaussian p b hc hb)
+          (p.mul_sqrt_log_finrank_div_le_integral_seminorm_stdGaussian b hc hb)
           (Real.sqrt_nonneg _)
     _ ≤ ∫ u : sphere (0 : E) 1, p u ∂uniformSphereMeasure E :=
-        div_sqrt_finrank_le_integral_seminorm_uniformSphereMeasure p
+        p.div_sqrt_finrank_le_integral_seminorm_uniformSphereMeasure
+
+end Seminorm
+
+namespace LinearMap
+
+variable {ι E F : Type*} [Fintype ι] [Nonempty ι]
 
 /-- **Mean-norm lower bound on the unit sphere for a linear map.** If `b` is an orthonormal basis
 of `E` and `T : E →ₗ[ℝ] F` maps every basis vector to a vector of norm at least `c ≥ 0` in a real
@@ -270,8 +271,14 @@ theorem mul_sqrt_log_finrank_div_le_integral_norm_comp_uniformSphereMeasure
     (hb : ∀ i, c ≤ ‖T (b i)‖) :
     c * √(Real.log (Module.finrank ℝ E) / Module.finrank ℝ E) / 32 ≤
       ∫ u : sphere (0 : E) 1, ‖T u‖ ∂uniformSphereMeasure E :=
-  mul_sqrt_log_finrank_div_le_integral_seminorm_uniformSphereMeasure
-    ((normSeminorm ℝ F).comp T) b hc hb
+  ((normSeminorm ℝ F).comp T).mul_sqrt_log_finrank_div_le_integral_seminorm_uniformSphereMeasure
+    b hc hb
+
+end LinearMap
+
+namespace TauCeti.Probability
+
+variable {ι F : Type*} [Fintype ι] [Nonempty ι]
 
 /-- **Mean-norm lower bound on the Euclidean unit sphere.** For `m = Fintype.card ι ≥ 1` vectors
 `v : ι → F` in a real seminormed space satisfying `0 ≤ c ≤ ‖v i‖`, the spherical average of
@@ -291,9 +298,7 @@ theorem mul_sqrt_log_card_div_le_integral_norm_sum_smul_uniformSphereMeasure
     rw [hT_apply, EuclideanSpace.basisFun_apply]
     simpa [Pi.single_apply] using hv i
   simpa only [finrank_euclideanSpace, hT_apply] using
-    mul_sqrt_log_finrank_div_le_integral_norm_comp_uniformSphereMeasure T
+    T.mul_sqrt_log_finrank_div_le_integral_norm_comp_uniformSphereMeasure
       (EuclideanSpace.basisFun ι ℝ) hc hT_basis
-
-end MeanNormLowerBound
 
 end TauCeti.Probability

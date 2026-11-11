@@ -180,9 +180,9 @@ theorem mul_div_sqrt_add_one_le_integral_id_chiMeasure (hk : 0 ≤ k) (hs : 0 �
   have h3 : ∫ x, x ^ 3 ∂chiMeasure k s = s ^ 2 * (k + 1) * m := by
     rw [integral_pow_chiMeasure hk hs 3]
     have hshift : (k + (3 : ℕ)) / 2 = (k + 1) / 2 + 1 := by push_cast; ring
+    have hexp : ((3 : ℕ) / 2 : ℝ) = 1 + 1 / 2 := by norm_num
     have h2 : (2 : ℝ) ^ ((3 : ℕ) / 2 : ℝ) = 2 * √2 := by
-      rw [show ((3 : ℕ) / 2 : ℝ) = 1 + 1 / 2 by norm_num, rpow_add two_pos, rpow_one,
-        sqrt_eq_rpow]
+      rw [hexp, rpow_add two_pos, rpow_one, sqrt_eq_rpow]
     rw [hshift, Real.Gamma_add_one (by positivity), h2]
     simp only [m, integral_id_chiMeasure hk.le hs]
     ring
