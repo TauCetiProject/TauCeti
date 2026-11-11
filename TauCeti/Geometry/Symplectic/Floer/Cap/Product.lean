@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.CoefficientComparison
 public import TauCeti.Geometry.Symplectic.Floer.Grading
 public import TauCeti.RingTheory.NovikovModule.Bilinear
+public import TauCeti.RingTheory.NovikovModule.Leibniz
 public import TauCeti.RingTheory.NovikovModule.Topology
 
 /-!
@@ -54,9 +55,17 @@ on the completed capped modules. This file proves:
 * **Change of reference caps.** Moving the reference caps by lifts `g₁, g₂, g₀ ∈ G` multiplies
   the generating series by `q^(g₀ - g₁ - g₂)` and leaves the kernel, hence the product, unchanged
   (`TauCeti.Floer.kernelOfMatrix_coefficientComparison_vadd`).
+* **The Leibniz rule from the count identity.** The rigid Floer cylinders between reference
+  capped orbits of each end are counted in the same way, by generating series `Dₗ` whose
+  comparisons are the matrices of the differentials on the completed capped modules
+  (`TauCeti.NovikovModule.novikovMapOfMatrix`). If the series obey the identity
+  `∑ₖ Qᵢⱼₖ D₀ₖₗ = ∑ₖ D₁ᵢₖ Qₖⱼₗ + (-1)^(n - μ₁(r₁ i)) ∑ₖ D₂ⱼₖ Qᵢₖₗ` given by the ends of the
+  one-dimensional moduli spaces, then the product obeys `d (a ⋆ b) = d a ⋆ b + (-1)^e a ⋆ d b`
+  for `a` of cochain degree `e`
+  (`TauCeti.Floer.novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_eq_add`).
 
-The energy, compactness and index hypotheses are the ones the geometric moduli spaces are to
-supply; no moduli space, orientation or count is constructed here.
+The energy, compactness, index and boundary-count hypotheses are the ones the geometric moduli
+spaces are to supply; no moduli space, orientation or count is constructed here.
 
 ## References
 
@@ -220,6 +229,57 @@ theorem novikovProductOfMatrix_coefficientComparison_mem_cochain_gradeBy {i' j' 
     hμ₁ hμ₂ hμ₀ Q hQ (AddMonoidHom.id ℤ) ha hb
 
 end Product
+
+section Leibniz
+
+variable [CommRing R] [Fintype ι₁] [Fintype ι₂] [Fintype ι₀] {F₁ : (Σ i, P₁ i) → ℝ}
+  {F₂ : (Σ j, P₂ j) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
+  (hF₁ : ∀ i γ (D : P₁ i), F₁ ⟨i, γ +ᵥ D⟩ = F₁ ⟨i, D⟩ - (-area ω c) γ)
+  (hF₂ : ∀ j γ (D : P₂ j), F₂ ⟨j, γ +ᵥ D⟩ = F₂ ⟨j, D⟩ - (-area ω c) γ)
+  (hF₀ : ∀ k γ (D : P₀ k), F₀ ⟨k, γ +ᵥ D⟩ = F₀ ⟨k, D⟩ - (-area ω c) γ)
+  {μ₁ : (Σ i, P₁ i) → ℤ} (hμ₁ : ∀ i γ (D : P₁ i), μ₁ ⟨i, γ +ᵥ D⟩ = degree ω c γ + μ₁ ⟨i, D⟩)
+
+include hμ₁ in
+/-- **The Leibniz rule for class-indexed counts.** Let `Q` be the generating series of rigid
+pairs of pants between reference capped orbits, and `D₁`, `D₂`, `D₀` those of rigid Floer
+cylinders of the two inputs and the output, all indexed by a common class group `G`. Suppose the
+series obey the identity
+
+`∑ₖ Qᵢⱼₖ D₀ₖₗ = ∑ₖ D₁ᵢₖ Qₖⱼₗ + (-1)^(n - μ₁(r₁ i)) ∑ₖ D₂ⱼₖ Qᵢₖₗ`
+
+in `G`-indexed series, which is the count, class by class, of the ends of one-dimensional
+pair-of-pants moduli spaces between reference capped orbits. Then on the completed capped
+modules, with the first input graded by the cochain degree `n - μ₁`, the product and the maps of
+the cylinder counts obey `d₀ (a ⋆ b) = d₁ a ⋆ b + (-1)^e a ⋆ d₂ b` for every `a` of degree `e`.
+The sign is constant on the capped generators of each orbit, because recapping changes the degree
+by the even number `2 c₁(γ)`. -/
+theorem novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_eq_add
+    (Q : ι₁ → ι₂ → ι₀ → NovikovSeries R G ωG) (D₁ : ι₁ → ι₁ → NovikovSeries R G ωG)
+    (D₂ : ι₂ → ι₂ → NovikovSeries R G ωG) (D₀ : ι₀ → ι₀ → NovikovSeries R G ωG) (n : ℤ)
+    (hL : ∀ i j l, ∑ k, Q i j k * D₀ k l =
+      ∑ k, D₁ i k * Q k j l + negOnePowCast R (n - μ₁ ⟨i, r₁ i⟩) • ∑ k, D₂ j k * Q i k l)
+    {e : ℤ} {a : NovikovModule R F₁} (ha : a ∈ gradeBy R F₁ (fun p => n - μ₁ p) e)
+    (b : NovikovModule R F₂) :
+    novikovMapOfMatrix hF₀ hF₀ r₀ r₀ (fun k l => coefficientComparison q hq (D₀ k l))
+        (novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀
+          (fun i j k => coefficientComparison q hq (Q i j k)) a b) =
+      novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀
+          (fun i j k => coefficientComparison q hq (Q i j k))
+          (novikovMapOfMatrix hF₁ hF₁ r₁ r₁ (fun i k => coefficientComparison q hq (D₁ i k)) a) b +
+        negOnePowCast R e • novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀
+          (fun i j k => coefficientComparison q hq (Q i j k)) a
+          (novikovMapOfMatrix hF₂ hF₂ r₂ r₂ (fun j k => coefficientComparison q hq (D₂ j k))
+            b) := by
+  refine novikovMapOfMatrix_novikovProductOfMatrix_eq_add hF₁ hF₂ hF₀ r₁ r₂ r₀ _ _ _ _
+    (fun i γ D => ?_) (fun i j l => ?_) ha b
+  · rw [hμ₁, show n - (degree ω c γ + μ₁ ⟨i, D⟩) - (n - μ₁ ⟨i, D⟩) = -degree ω c γ by ring]
+    exact (even_degree ω c γ).neg
+  · have h := congrArg (coefficientComparison q hq) (hL i j l)
+    simp only [map_sum, map_add, _root_.map_mul, ← negOnePow_smul_eq_negOnePowCast_smul,
+      Units.smul_def, map_zsmul] at h ⊢
+    exact h
+
+end Leibniz
 
 end Monoid
 

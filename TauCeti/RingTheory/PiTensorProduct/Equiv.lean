@@ -67,6 +67,18 @@ theorem reindexAlgEquiv_symm_tprod {ι κ : Type*} (A : ι → Type*)
     (reindexAlgEquiv (R := R) A e).symm (tprod R (fun j ↦ a (e.symm j))) = tprod R a := by
   rw [AlgEquiv.symm_apply_eq, reindexAlgEquiv_tprod]
 
+/-- Reindexing along `e` moves the factor inclusion at `i` to the factor inclusion at `e i`. It is
+a pre-simp lemma since `singleAlgHom_apply` would otherwise rewrite the factor inclusion first. -/
+@[simp↓]
+theorem reindexAlgEquiv_singleAlgHom {ι κ : Type*} [DecidableEq ι] [DecidableEq κ] {A : Type*}
+    [Semiring A] [Algebra R A] (e : ι ≃ κ) (i : ι) (a : A) :
+    reindexAlgEquiv (R := R) (fun _ ↦ A) e (singleAlgHom i a) = singleAlgHom (e i) a := by
+  rw [singleAlgHom_apply, singleAlgHom_apply, reindexAlgEquiv_tprod, MonoidHom.mulSingle_apply,
+    MonoidHom.mulSingle_apply]
+  have := Pi.mulSingle_comp_equiv e.symm i a
+  rw [Equiv.symm_symm] at this
+  exact congrArg (tprod R) this
+
 section Perm
 
 variable {ι : Type*} (A : Type*) [Semiring A] [Algebra R A]
@@ -99,13 +111,11 @@ theorem permAlgEquiv_tprod (σ : Equiv.Perm ι) (x : ι → A) :
     permAlgEquiv (R := R) A σ (tprod R x) = tprod R (x ∘ σ.symm) :=
   reindexAlgEquiv_tprod (fun _ ↦ A) σ x
 
-/-- A permutation `σ` moves the factor inclusion at `i` to the factor inclusion at `σ i`. It is
-a pre-simp lemma since `singleAlgHom_apply` would otherwise rewrite the factor inclusion first. -/
+/-- A permutation `σ` moves the factor inclusion at `i` to the factor inclusion at `σ i`. -/
 @[simp↓]
 theorem permAlgEquiv_singleAlgHom [DecidableEq ι] (σ : Equiv.Perm ι) (i : ι) (a : A) :
-    permAlgEquiv (R := R) A σ (singleAlgHom i a) = singleAlgHom (σ i) a := by
-  rw [singleAlgHom_apply, singleAlgHom_apply, permAlgEquiv_tprod, MonoidHom.mulSingle_apply,
-    MonoidHom.mulSingle_apply, Pi.mulSingle_comp_equiv, Equiv.symm_symm]
+    permAlgEquiv (R := R) A σ (singleAlgHom i a) = singleAlgHom (σ i) a :=
+  reindexAlgEquiv_singleAlgHom σ i a
 
 end Perm
 

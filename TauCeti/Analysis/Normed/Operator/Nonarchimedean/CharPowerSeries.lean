@@ -91,7 +91,7 @@ variable {I R : Type*} [TopologicalSpace I] [DiscreteTopology I] [DecidableEq I]
 are bounded by a common null row majorant `r`, then their Fredholm series converge in Gauss norm
 at every positive radius. -/
 theorem tendsto_gaussNorm_charPowerSeries_sub_charPowerSeries_of_tendsto_ringOpNorm_of_le
-    [CompleteSpace R] [NormOneClass R] {α : Type*} {l : Filter α}
+    [CompleteSpace R] {α : Type*} {l : Filter α}
     {w : α → C₀(I, R) →L[R] C₀(I, R)} {w₀ : C₀(I, R) →L[R] C₀(I, R)} {r : I → ℝ}
     (hr : Tendsto r cofinite (𝓝 0)) (hw : ∀ a i j, ‖(w a).matrixCoeff i j‖ ≤ r i)
     (hw₀ : ∀ i j, ‖w₀.matrixCoeff i j‖ ≤ r i) (h : Tendsto (fun a ↦ ‖w a - w₀‖) l (𝓝 0))
@@ -105,7 +105,7 @@ theorem tendsto_gaussNorm_charPowerSeries_sub_charPowerSeries_of_tendsto_ringOpN
 Gauss norm at every positive radius. Unlike coefficientwise convergence of arbitrary entire
 series, operator-norm convergence supplies uniform control of the determinant tails. -/
 theorem tendsto_gaussNorm_charPowerSeries_sub_charPowerSeries_of_tendsto_ringOpNorm
-    [CompleteSpace R] [NormOneClass R] (h : Tendsto (fun n ↦ ‖u - v n‖) atTop (𝓝 0))
+    [CompleteSpace R] (h : Tendsto (fun n ↦ ‖u - v n‖) atTop (𝓝 0))
     (hv : ∀ n, (v n).IsRowCompact) {ρ : ℝ} (hρ : 0 < ρ) :
     Tendsto (fun n ↦ ((v n).matrixCoeff.charPowerSeries -
       u.matrixCoeff.charPowerSeries).gaussNorm norm ρ) atTop (𝓝 0) := by
