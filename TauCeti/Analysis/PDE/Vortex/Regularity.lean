@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import TauCeti.Analysis.PDE.Regularity.Inhomogeneous
+import TauCeti.Analysis.PDE.Regularity.Semilinear
 import TauCeti.Analysis.Sobolev.Trudinger
 
 /-!
-# Continuity of weak solutions of Taubes's reduced vortex equation
+# Regularity of weak solutions of Taubes's reduced vortex equation
 
 Let `E` be a real inner product space of dimension two and let `h, k` be continuous on an open set
 `Ω ⊆ E`. The Euler–Lagrange equation of Taubes's functional `TauCeti.Vortex.taubesFunctional` is
@@ -36,7 +38,11 @@ applies, in the form `TauCeti.PDE.exists_continuousOn_ae_eq_of_forall_integral_i
 for weak solutions of Poisson's equation with a locally integrable right-hand side.
 
 Continuity makes the right-hand side locally bounded, which is the starting point of the bootstrap
-to a smooth classical solution. That bootstrap and the decay at infinity are not treated here.
+to a smooth classical solution. For smooth coefficients `h, k`, the bootstrap for semilinear
+equations, `TauCeti.PDE.contDiffOn_and_laplacian_eq_of_forall_integral_inner_gradient_eq_neg`,
+then shows that the continuous representative is smooth on `Ω` and solves the equation at every
+point (`exists_contDiffOn_ae_eq_and_laplacian_eq_of_forall_integral_inner_gradient_eq_neg`).
+The decay at infinity is not treated here.
 
 ## References
 
@@ -52,8 +58,8 @@ public section
 
 noncomputable section
 
-open InnerProductSpace MeasureTheory Module Set TopologicalSpace
-open scoped Distributions Gradient InnerProductSpace NNReal
+open InnerProductSpace Laplacian MeasureTheory Module Set TopologicalSpace
+open scoped ContDiff Distributions Gradient InnerProductSpace NNReal
 
 namespace TauCeti.Vortex
 
@@ -116,5 +122,35 @@ theorem exists_continuousOn_ae_eq_of_forall_integral_inner_gradient_eq_neg (hE :
         exact (abs_sub _ _).trans (by rw [abs_of_pos he, abs_one])
     _ ≤ M * (Real.exp (2 * W1p.value w x) + 1) / 8 + M := by gcongr
     _ = M / 8 * Real.exp (2 * W1p.value w x) + 9 * M / 8 := by ring
+
+/-- **Weak solutions of the reduced vortex equation are smooth.** Let `E` be a real inner product
+space of dimension two, `Ω ⊆ E` open, and `h, k` smooth on `Ω`. If `w ∈ H¹(Ω)` solves
+`Δw = h (exp (2w) - 1) / 8 + k` weakly in `Ω`, that is
+
+`∫_Ω ⟪∇w, ∇φ⟫ = -∫_Ω (h (exp (2w) - 1) / 8 + k) φ`
+
+for every test function `φ` on `Ω`, then `w` agrees almost everywhere on `Ω` with a function `g`
+that is smooth on `Ω` and solves `Δg = h (exp (2g) - 1) / 8 + k` at every point of `Ω`. -/
+theorem exists_contDiffOn_ae_eq_and_laplacian_eq_of_forall_integral_inner_gradient_eq_neg
+    (hE : finrank ℝ E = 2) {Omega : Opens E} {h k : E → ℝ} (hh : ContDiffOn ℝ ∞ h Omega)
+    (hk : ContDiffOn ℝ ∞ k Omega) {w : W1p volume Omega 2}
+    (hw : ∀ φ : 𝓓(Omega, ℝ),
+      ∫ x in Omega, ⟪W1p.gradient w x, ∇ (φ : E → ℝ) x⟫_ℝ =
+        -∫ x in Omega, (h x * (Real.exp (2 * W1p.value w x) - 1) / 8 + k x) * φ x) :
+    ∃ g : E → ℝ, ContDiffOn ℝ ∞ g Omega ∧ W1p.value w =ᵐ[volume.restrict Omega] g ∧
+      ∀ x ∈ Omega, Δ g x = h x * (Real.exp (2 * g x) - 1) / 8 + k x := by
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos (by omega : 0 < finrank ℝ E)
+  obtain ⟨g, hg, hwg⟩ := exists_continuousOn_ae_eq_of_forall_integral_inner_gradient_eq_neg hE
+    hh.continuousOn hk.continuousOn hw
+  have hmaps : MapsTo Prod.fst (Omega ×ˢ (univ : Set ℝ)) Omega := fun p hp => hp.1
+  have hF : ContDiffOn ℝ ∞
+      (Function.uncurry fun x t => h x * (Real.exp (2 * t) - 1) / 8 + k x)
+      (Omega ×ˢ univ) :=
+    (((hh.comp contDiffOn_fst hmaps).mul
+      ((contDiff_const.mul contDiff_snd).exp.sub contDiff_const).contDiffOn).div_const 8).add
+      (hk.comp contDiffOn_fst hmaps)
+  obtain ⟨hgs, hΔ⟩ :=
+    PDE.contDiffOn_and_laplacian_eq_of_forall_integral_inner_gradient_eq_neg hF hg hwg hw
+  exact ⟨g, hgs, hwg, hΔ⟩
 
 end TauCeti.Vortex
