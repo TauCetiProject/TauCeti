@@ -194,9 +194,7 @@ private instance isIso_singularHomologyMap_sphereWedgePairToSkeletonPair (k : �
     IsIso (TopPair.singularHomologyMap (sphereWedgePairToSkeletonPair ι n)
       (ModuleCat.of ℤ ℤ) k) := by
   have := isIso_sphereWedgePairToSkeletonPair ι n
-  exact ⟨TopPair.singularHomologyMap (inv (sphereWedgePairToSkeletonPair ι n)) _ k,
-    by rw [← TopPair.singularHomologyMap_comp, IsIso.hom_inv_id, TopPair.singularHomologyMap_id],
-    by rw [← TopPair.singularHomologyMap_comp, IsIso.inv_hom_id, TopPair.singularHomologyMap_id]⟩
+  exact (TopPair.toSSetPair ⋙ SSetPair.homologyFunctor (ModuleCat.of ℤ ℤ) k).map_isIso _
 
 /-- The Hurewicz isomorphism `πₙ₊₂(⋁ᵢ Sⁿ⁺²) ≅ Hₙ₊₂(⋁ᵢ Sⁿ⁺²; ℤ)`, followed by the identification
 of `Hₙ₊₂(⋁ᵢ Sⁿ⁺²; ℤ)` with the cellular chain group of the wedge in degree `n + 2`. -/
