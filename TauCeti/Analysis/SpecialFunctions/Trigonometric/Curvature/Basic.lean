@@ -197,6 +197,7 @@ theorem curvatureSine_nonneg {κ t : ℝ} (ht : 0 ≤ t)
     exact div_nonneg (sinh_nonneg_iff.2 (mul_nonneg (sqrt_nonneg _) ht)) (sqrt_nonneg _)
 
 /-- In positive curvature the model sine vanishes at `π / √κ`, its first positive zero. -/
+@[simp]
 theorem curvatureSine_pi_div_sqrt {κ : ℝ} (hκ : 0 < κ) : curvatureSine κ (π / √κ) = 0 := by
   rw [curvatureSine_of_pos hκ, mul_div_cancel₀ π (sqrt_pos.2 hκ).ne', sin_pi, zero_div]
 
@@ -208,6 +209,7 @@ theorem curvatureSine_eq_zero_iff_of_pos {κ t : ℝ} (hκ : 0 < κ) :
   exact exists_congr fun n ↦ by rw [div_eq_iff hs, mul_comm t]
 
 /-- In nonpositive curvature the model sine vanishes only at the origin. -/
+@[simp]
 theorem curvatureSine_eq_zero_iff_of_nonpos {κ t : ℝ} (hκ : κ ≤ 0) :
     curvatureSine κ t = 0 ↔ t = 0 := by
   rcases hκ.lt_or_eq with hκ | rfl

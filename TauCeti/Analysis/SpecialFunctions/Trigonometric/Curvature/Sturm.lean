@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Curvature.Cotangent
 import TauCeti.Analysis.Calculus.Deriv.Slope
+import TauCeti.Topology.Order.IntermediateValue
 
 /-!
 # Sturm comparison with the constant-curvature model sine
@@ -17,8 +18,9 @@ function `f` with `f(0) = 0`, right derivative `a` at `0` and `f'' + κ f ≥ 0`
 comparison under an upper curvature bound: along a unit-speed geodesic whose sectional curvatures
 are at most `κ`, the norm of a normal Jacobi field satisfies `|J|'' + κ |J| ≥ 0` wherever `J ≠ 0`.
 For this reason the comparison is also proved when the differential inequality, and the
-differentiability of `f`, are only assumed where `f` is positive: then `f` has no zero before the
-model zero.
+differentiability of `f`, are only assumed where `f` is positive, in two forms: for a positive
+initial slope `a > 0`, where it shows that `f` has no zero before the model zero, and for a
+nonnegative `f` with any initial slope.
 
 The proof uses the Wronskian `w = f' s_κ - f s_κ'`, which satisfies `w' = (f'' + κ f) s_κ ≥ 0`, so
 that `f / s_κ` has derivative `w / s_κ²`. The right derivative of `f` at the origin need not be a
@@ -165,28 +167,6 @@ theorem mul_curvatureSine_le_of_hasDerivAt (hb : 0 < κ → b ≤ π / √κ)
     ((hf t ht).mono Ioo_subset_Icc_self)
     fun r hr ↦ mul_curvatureSine_le_of_mem_Ioo hb hf0 hfa hf' hf'' hineq hr
 
-/-- A function continuous on `[0, b]`, positive just to the right of `0` and nonpositive somewhere
-in `(0, b)`, has a first nonpositive point `t₁ ∈ (0, b)`: `f t₁ ≤ 0` and `f > 0` on `(0, t₁)`. -/
-private theorem exists_first_nonpos (hf : ContinuousOn f (Icc 0 b))
-    (hpos : ∃ ε > 0, ∀ r ∈ Ioo 0 ε, 0 < f r) (hne : ∃ t ∈ Ioo 0 b, f t ≤ 0) :
-    ∃ t₁ ∈ Ioo 0 b, f t₁ ≤ 0 ∧ ∀ r ∈ Ioo 0 t₁, 0 < f r := by
-  obtain ⟨ε, hε, hεf⟩ := hpos
-  set Z := Ioo 0 b ∩ {t | f t ≤ 0}
-  have hZ : Z.Nonempty := by
-    obtain ⟨t, ht, hft⟩ := hne
-    exact ⟨t, ht, hft⟩
-  have hbdd : BddBelow Z := ⟨0, fun z hz ↦ hz.1.1.le⟩
-  have hεt₁ : ε ≤ sInf Z := le_csInf hZ fun z hz ↦ le_of_not_gt fun h ↦
-    hz.2.not_gt (hεf z ⟨hz.1.1, h⟩)
-  have ht₁ : sInf Z ∈ Ioo 0 b := by
-    obtain ⟨z, hz⟩ := hZ
-    exact ⟨hε.trans_le hεt₁, (csInf_le hbdd hz).trans_lt hz.1.2⟩
-  refine ⟨sInf Z, ht₁, ?_, fun r hr ↦ lt_of_not_ge fun h ↦
-    hr.2.not_ge (csInf_le hbdd ⟨⟨hr.1, hr.2.trans ht₁.2⟩, h⟩)⟩
-  have hclosed := hf.preimage_isClosed_of_isClosed isClosed_Icc (isClosed_Iic (a := (0 : ℝ)))
-  have hZsub : Z ⊆ Icc 0 b ∩ f ⁻¹' Iic 0 := fun z hz ↦ ⟨Ioo_subset_Icc_self hz.1, hz.2⟩
-  exact (closure_minimal hZsub hclosed (csInf_mem_closure hZ hbdd)).2
-
 /-- **Sturm comparison** with the model sine, for a positive initial slope, assuming the
 differential inequality only where `f` is positive. Let `f` be continuous on `[0, b]`, with
 `f(0) = 0` and right derivative `a > 0` at `0`, and with `f'' + κ f ≥ 0` at the points of `(0, b)`
@@ -203,12 +183,9 @@ theorem mul_curvatureSine_le_of_pos (ha : 0 < a) (hb : 0 < κ → b ≤ π / √
       (fun t ht ↦ hf'' t ht (hpos t ht)) (fun t ht ↦ hineq t ht (hpos t ht)) ht
   -- Otherwise apply the comparison before the first nonpositive value `t₁` of `f`.
   by_contra! hne
-  have hεpos : ∃ ε > 0, ∀ r ∈ Ioo 0 ε, 0 < f r := by
-    have h := ((hfa.tendsto_div_self_nhdsGT_zero hf0).eventually (lt_mem_nhds ha)).and
-      self_mem_nhdsWithin
-    obtain ⟨ε, hε, hsub⟩ := mem_nhdsGT_iff_exists_Ioo_subset.1 h
-    exact ⟨ε, hε, fun r hr ↦ (div_pos_iff_of_pos_right (hsub hr).2).1 (hsub hr).1⟩
-  obtain ⟨t₁, ht₁, hft₁, hbelow⟩ := exists_first_nonpos hf hεpos hne
+  have hεpos : ∀ᶠ r in 𝓝[>] 0, 0 < f r := by
+    simpa [hf0] using hfa.Ioi_of_Ici.eventually_nhdsGT_lt_of_pos ha
+  obtain ⟨t₁, ht₁, hft₁, hbelow⟩ := hf.exists_first_le_of_eventually_lt hεpos hne
   have hmem (r : ℝ) (hr : r ∈ Ioo 0 t₁) : r ∈ Ioo 0 b := ⟨hr.1, hr.2.trans ht₁.2⟩
   have hcomp := mul_curvatureSine_le_of_hasDerivAt (b := t₁)
     (fun hκ ↦ ht₁.2.le.trans (hb hκ)) (hf.mono (Icc_subset_Icc_right ht₁.2.le)) hf0 hfa
