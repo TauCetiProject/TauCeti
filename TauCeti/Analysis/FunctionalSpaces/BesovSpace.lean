@@ -225,7 +225,7 @@ to `r` costs `n (1/p - 1/r)` orders of smoothness. -/
 theorem MemBesov.mono_exponent {u : 𝓢'(E, F)} {r : ℝ≥0∞} [Fact (1 ≤ r)]
     (hu : u.MemBesov φ s p q) (hpr : p ≤ r) :
     u.MemBesov φ (s - Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹)) r q := by
-  obtain ⟨C, hC, hB⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le_of_le (F := F) φ hpr
+  obtain ⟨C, _, hB⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le_of_le (F := F) φ hpr
   set a : ℝ := Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹)
   obtain ⟨f, hf, hmem⟩ := memBesov_iff.1 hu
   choose g hg hgf using fun j ↦ hB j u (f j) (hf j)

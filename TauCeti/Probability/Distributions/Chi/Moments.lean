@@ -130,8 +130,6 @@ theorem variance_id_chiMeasure (hk : 0 ≤ k) (hs : 0 < s) :
 theorem integral_id_chiMeasure_pos (hk : 0 < k) (hs : 0 < s) :
     0 < ∫ x, x ∂chiMeasure k s := by
   rw [integral_id_chiMeasure hk.le hs]
-  have h1 : 0 < Real.Gamma ((k + 1) / 2) := Real.Gamma_pos_of_pos (by positivity)
-  have h2 : 0 < Real.Gamma (k / 2) := Real.Gamma_pos_of_pos (by positivity)
   positivity
 
 /-- The chi mean is nonnegative in every parameter regime. -/

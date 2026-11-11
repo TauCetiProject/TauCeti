@@ -187,7 +187,7 @@ theorem not_integrableOn_rpow_neg_one_add_norm_sq (μ : Measure V) [μ.IsAddHaar
         = ENNReal.ofReal (κ * ((4 : ℝ) ^ k) ^ (-d)) * μ (((4 : ℝ) ^ k) • A) := by
           rw [hμ, ← mul_assoc, ← ENNReal.ofReal_mul (by positivity), mul_assoc,
             ← Real.rpow_add (by positivity), neg_add_cancel, Real.rpow_zero, mul_one]
-      _ = ∫⁻ x in ((4 : ℝ) ^ k) • A, ENNReal.ofReal (κ * ((4 : ℝ) ^ k) ^ (-d)) ∂μ :=
+      _ = ∫⁻ _ in ((4 : ℝ) ^ k) • A, ENNReal.ofReal (κ * ((4 : ℝ) ^ k) ^ (-d)) ∂μ :=
           (setLIntegral_const _ _).symm
       _ ≤ ∫⁻ x in ((4 : ℝ) ^ k) • A, ‖(1 + ‖x‖ ^ 2) ^ (-r / 2)‖ₑ ∂μ := by
           refine setLIntegral_mono' (hSm k) fun x hx ↦ ?_

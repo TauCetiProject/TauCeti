@@ -394,9 +394,9 @@ theorem eventually_mem_range_of_mem_criticalPoints (hi : i.IsNondegenerateCritic
     i.isImmersion.isImmersionOfComplement_complement s
   set φ := h.domChart.extend J with hφ
   set ξ := h.codChart.extend I with hξ
-  set L := h.equiv with hL
+  set L := h.equiv
   set g := f ∘ ξ.symm ∘ L with hg
-  set a := φ s with ha
+  set a := φ s
   have he1 : h.codChart ∈ IsManifold.maximalAtlas I 1 M :=
     IsManifold.maximalAtlas_subset_of_le (by norm_num) (IsManifold.maximalAtlas_subset_of_le hn
       h.codChart_mem_maximalAtlas)
