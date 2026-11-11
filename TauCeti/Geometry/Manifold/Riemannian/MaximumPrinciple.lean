@@ -33,6 +33,8 @@ uniqueness mechanism for the curvature equation of conformal metrics on closed s
   `TauCeti.Manifold.hessian_self_nonneg_of_isLocalMin`: the second-derivative test.
 * `TauCeti.Manifold.laplaceBeltrami_nonpos_of_isLocalMax`,
   `TauCeti.Manifold.laplaceBeltrami_nonneg_of_isLocalMin`: the sign of `Δ` at local extrema.
+* `TauCeti.Manifold.exists_forall_le_and_laplaceBeltrami_nonpos`: on a compact manifold a `C²`
+  function attains its maximum at a point where `Δ` is nonpositive.
 * `TauCeti.Manifold.le_of_le_laplaceBeltrami_of_laplaceBeltrami_le`: the comparison principle.
 
 ## References
@@ -95,6 +97,14 @@ theorem laplaceBeltrami_nonneg_of_isLocalMin (hf : ContMDiffAt I 𝓘(ℝ) 2 f x
   rw [laplaceBeltrami_eq_sum_hessian I f x (stdOrthonormalBasis ℝ (TangentSpace I x))]
   exact Finset.sum_nonneg fun i _ ↦ hessian_self_nonneg_of_isLocalMin hf hmin _
 
+/-- On a compact boundaryless Riemannian manifold, a `C²` function attains its maximum at a point
+where its Laplace–Beltrami operator `Δ = div ∘ grad` is nonpositive. -/
+theorem exists_forall_le_and_laplaceBeltrami_nonpos [CompactSpace M] [Nonempty M]
+    (hf : ContMDiff I 𝓘(ℝ) 2 f) : ∃ x₀, (∀ y, f y ≤ f x₀) ∧ laplaceBeltrami I f x₀ ≤ 0 := by
+  obtain ⟨x₀, -, hx₀⟩ := isCompact_univ.exists_isMaxOn Set.univ_nonempty hf.continuous.continuousOn
+  exact ⟨x₀, fun y ↦ hx₀ (Set.mem_univ y),
+    laplaceBeltrami_nonpos_of_isLocalMax hf.contMDiffAt (hx₀.isLocalMax Filter.univ_mem)⟩
+
 /-- **The comparison principle** for semilinear equations `Δ u = h(x, u)` on a compact
 boundaryless Riemannian manifold, with `h(x, ·)` strictly increasing for every `x`: a `C²`
 subsolution `h(x, u) ≤ Δ u` lies below a `C²` supersolution `Δ v ≤ h(x, v)`. -/
@@ -103,16 +113,14 @@ theorem le_of_le_laplaceBeltrami_of_laplaceBeltrami_le [CompactSpace M] {h : M �
     (hv : ContMDiff I 𝓘(ℝ) 2 v) (hsub : ∀ x, h x (u x) ≤ laplaceBeltrami I u x)
     (hsuper : ∀ x, laplaceBeltrami I v x ≤ h x (v x)) : u ≤ v := by
   intro y
+  have : Nonempty M := ⟨y⟩
   -- At a maximum `x₀` of `u - v`, the Laplacian of `u - v` is nonpositive.
-  obtain ⟨x₀, -, hx₀⟩ := isCompact_univ.exists_isMaxOn ⟨y, Set.mem_univ y⟩
-    (hu.continuous.sub hv.continuous).continuousOn
-  have hmax : laplaceBeltrami I (u - v) x₀ ≤ 0 :=
-    laplaceBeltrami_nonpos_of_isLocalMax (hu.sub hv).contMDiffAt (hx₀.isLocalMax Filter.univ_mem)
+  obtain ⟨x₀, hx₀, hmax⟩ := exists_forall_le_and_laplaceBeltrami_nonpos (f := u - v) (hu.sub hv)
   rw [laplaceBeltrami_sub I hu hv] at hmax
   -- Hence `h x₀ (u x₀) ≤ h x₀ (v x₀)`, so `u x₀ ≤ v x₀` by strict monotonicity.
   have hle : u x₀ ≤ v x₀ :=
     (hh x₀).le_iff_le.1 (by linarith [hsub x₀, hsuper x₀])
-  have hy : u y - v y ≤ u x₀ - v x₀ := hx₀ (Set.mem_univ y)
+  have hy : u y - v y ≤ u x₀ - v x₀ := hx₀ y
   linarith
 
 end TauCeti.Manifold
