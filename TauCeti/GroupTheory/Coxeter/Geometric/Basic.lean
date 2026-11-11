@@ -92,6 +92,8 @@ The second simple root is handled without a second induction: `σᵢ' σᵢ` is 
 * `CoxeterSystem.geometricRepresentation`: **the standard geometric representation**, with
   `CoxeterSystem.geometricRepresentation_simple` its values on the simple reflections and
   `CoxeterSystem.geometricForm_geometricRepresentation` its orthogonality.
+* `CoxeterMatrix.pow_geometricReflection_mul_apply_single_of_eq_zero`: **for an entry `∞` the
+  product of two simple reflections is a shear**, moving `αᵢ` to `(2 k + 1) αᵢ + 2 k αᵢ'`.
 * `CoxeterSystem.simple_mul_simple_pow_eq_one_iff` and
   `CoxeterSystem.orderOf_simple_mul_simple`: **the entry `M i i'` is the exact order of
   `s i * s i'`**, not merely a multiple of it.
@@ -387,7 +389,7 @@ private theorem geometricReflection_mul_pow_eq_one (hm : 2 ≤ M i i') :
 /-- **The parabolic rotation formula.** When `M i i' = 0`, read as `∞`, the plane spanned by the
 two simple roots carries a degenerate form and the rotation is a shear: it moves the first simple
 root by `2 k` times the sum of the two roots. In particular it has infinite order. -/
-private theorem pow_geometricReflection_mul_apply_single_of_eq_zero (h : M i i' = 0) (k : ℕ) :
+theorem pow_geometricReflection_mul_apply_single_of_eq_zero (h : M i i' = 0) (k : ℕ) :
     ((M.geometricReflection i * M.geometricReflection i') ^ k) (Finsupp.single i 1) =
       (2 * k + 1 : ℝ) • Finsupp.single i (1 : ℝ) + (2 * k : ℝ) • Finsupp.single i' (1 : ℝ) := by
   induction k with
