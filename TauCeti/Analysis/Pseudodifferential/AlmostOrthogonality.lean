@@ -241,7 +241,7 @@ theorem IsUniform.exists_quantizeLittlewoodPaleyPiece_comp_adjoint_eq_zero {a : 
     ∃ L : ℕ, ∀ j k, j + L ≤ k ∨ k + L ≤ j →
       a.quantizeLittlewoodPaleyPiece φ 2 ha j ∘L
         adjoint (a.quantizeLittlewoodPaleyPiece φ 2 ha k) = 0 := by
-  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero
+  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ
   refine ⟨L, fun j k hjk ↦ ?_⟩
   have hψ (ξ : CoordinateSpace n) :
       φ.inhomogeneousLittlewoodPaley j ξ * φ.inhomogeneousLittlewoodPaley k ξ = 0 := by
