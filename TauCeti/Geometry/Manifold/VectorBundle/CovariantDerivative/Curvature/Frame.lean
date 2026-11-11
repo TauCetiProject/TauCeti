@@ -67,6 +67,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 local notation "A" => fun j l Z y ↦
   hs.coeff l y (cov (s j) y (Z y))
 
+omit [FiniteDimensional 𝕜 F] in
 include hu in
 /-- The curvature matrix in a C² moving frame is `dA + A∧A`, evaluated on arbitrary C¹
 vector fields. The exterior derivative includes the noncoordinate term `-A([X,Y])`. -/
@@ -78,6 +79,8 @@ theorem coeff_curvatureOperator (hx : x ∈ u)
           hs.coeff l x (cov (s j) x (mlieBracket I X Y x)) := by
   classical
   let : ContMDiffVectorBundle 1 F V I := ContMDiffVectorBundle.of_le one_le_two
+  have : FiniteDimensional 𝕜 F := Module.Finite.of_basis ((hs.toBasisAt hx).map
+    ((trivializationAt F V x).linearEquivAt 𝕜 x (FiberBundle.mem_baseSet_trivializationAt' x)))
   have hcov (Z : Π y : M, TangentSpace I y) (hZ : CMDiff[u] 1 (T% Z)) :
       CMDiff[u] 1 (T% (fun y ↦ cov (s j) y (Z y))) :=
     ContMDiffOn.clm_bundle_apply
@@ -118,6 +121,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 
 local notation "Γ" => fun i j l y ↦ hs.coeff l y (cov (s j) y (s i y))
 
+omit [FiniteDimensional 𝕜 E] in
 include hu in
 /-- The curvature coefficients in a C² tangent frame, with the Lie bracket expanded in the
 same frame. Its structure coefficients supply the correction absent from a coordinate frame. -/

@@ -405,7 +405,7 @@ theorem hochschildBimoduleCoboundary_ofSubsingleton_eq_zero_iff (f : A →ₗ[R]
 
 /-- A derivation into the bimodule is a degree-one Hochschild cocycle. -/
 theorem BimoduleDerivation.hochschildBimoduleCoboundary_ofSubsingleton_eq_zero
-    [SMulCommClass A Aᵐᵒᵖ M] (D : BimoduleDerivation R A M) :
+    (D : BimoduleDerivation R A M) :
     hochschildBimoduleCoboundary R A M 1 (MultilinearMap.ofSubsingleton R A M 0 D) = 0 :=
   (hochschildBimoduleCoboundary_ofSubsingleton_eq_zero_iff _).2 D.leibniz
 

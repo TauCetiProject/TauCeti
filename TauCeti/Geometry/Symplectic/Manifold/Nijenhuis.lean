@@ -118,7 +118,7 @@ private lemma nijenhuisAux_apply_left (X Y : Π x : M, TangentSpace I x) :
 lemmas. -/
 private lemma mdifferentiableAt_apply_field {X : Π x : M, TangentSpace I x}
     (hX : MDiffAt (T% X) x) : MDiffAt (T% (fun y ↦ J y (X y))) x :=
-  J.mdifferentiableAt_apply mdifferentiableAt_id hX
+  J.mdifferentiableAt_apply hX
 
 section Complete
 

@@ -43,8 +43,10 @@ the range of this map (`TauCeti.Vortex.mem_orthogonal_range_gaugeFixedAdjointToL
 integral lower bound for `L_x*` is a lower bound for it in `L²`
 (`TauCeti.Vortex.sqrt_mul_norm_ambientToLp_le`).
 
-These are statements about weak solutions in `L²`. That `Q f` lies in `H¹`, and the Fredholm
-property and dimension of the kernel of the Sobolev realization of `L_x`, are not proved here.
+These are statements about weak solutions in `L²`. At a bounded field, weak solutions lie in `H¹`
+by the elliptic regularity of `TauCeti.Analysis.PDE.Vortex.EllipticRegularity`, so `Q f ∈ H¹`
+there. The Fredholm property and the dimension of the kernel of the Sobolev realization of `L_x`
+are not proved here.
 
 ## Main results
 
