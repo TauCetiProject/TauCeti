@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
+public import TauCeti.Analysis.Normed.Operator.Compact.Pi
 
 /-!
 # Finite-basis reconstruction in `Lᵖ`
@@ -51,24 +51,21 @@ theorem eq_sum_basis_compLpL (b : Module.Basis ι 𝕜 F) (f : Lp F p μ) :
     ae_all_iff.mpr hcoord] with x hsum hcoords
   simpa only [hsum, hcoords, Module.Basis.coord_apply] using (b.sum_repr (f x)).symm
 
-/-- An operator into `Lᵖ` with finite-dimensional target is compact as soon as its composition
-with every scalar projection `ℓ.compLpL p μ` is compact. -/
+variable (𝕜) in
+/-- A map into `Lᵖ` with finite-dimensional target is a compact operator as soon as its
+composition with every scalar projection `ℓ.compLpL p μ` is. Neither linearity nor continuity
+of `T` is needed. The scalar field `𝕜` of the functionals `ℓ` is not determined by `T`: any
+complete nontrivially normed field over which `F` is a finite-dimensional normed space works. -/
 theorem isCompactOperator_of_forall_isCompactOperator_compLpL_comp
-    {Y : Type*} [SeminormedAddCommGroup Y] [NormedSpace 𝕜 Y] (T : Y →L[𝕜] Lp F p μ)
-    (h : ∀ ℓ : F →L[𝕜] 𝕜, IsCompactOperator ((ℓ.compLpL p μ).comp T)) :
+    {Y : Type*} [Zero Y] [TopologicalSpace Y] {T : Y → Lp F p μ}
+    (h : ∀ ℓ : F →L[𝕜] 𝕜, IsCompactOperator (ℓ.compLpL p μ ∘ T)) :
     IsCompactOperator T := by
-  classical
   let b := Module.finBasis 𝕜 F
-  let C := fun i ↦ ((ContinuousLinearMap.toSpanSingleton 𝕜 (b i)).compLpL p μ).comp
-    (((b.coord i).toContinuousLinearMap.compLpL p μ).comp T)
-  have hC (i) : IsCompactOperator (C i) := (h (b.coord i).toContinuousLinearMap).clm_comp
-    ((ContinuousLinearMap.toSpanSingleton 𝕜 (b i)).compLpL p μ)
-  have heq : T = ∑ i, C i := by
-    apply ContinuousLinearMap.ext
-    intro u
-    simpa only [sum_apply, C, ContinuousLinearMap.comp_apply] using eq_sum_basis_compLpL b (T u)
-  rw [heq]
-  -- Compact operators form a submodule, so finite coordinate reconstruction preserves compactness.
-  exact (compactOperator (RingHom.id 𝕜) _ _).sum_mem fun i _ ↦ hC i
+  -- Near `0`, the coordinate projections of `T` lie in a compact set `K`; `T` itself is recovered
+  -- from them by the continuous reconstruction map of `eq_sum_basis_compLpL`.
+  obtain ⟨K, hK, hKT⟩ := IsCompactOperator.pi fun i ↦ h (b.coord i).toContinuousLinearMap
+  refine ⟨(fun v ↦ ∑ i, (ContinuousLinearMap.toSpanSingleton 𝕜 (b i)).compLpL p μ (v i)) '' K,
+    hK.image (by fun_prop), Filter.mem_of_superset hKT fun y hy ↦ ⟨_, hy, ?_⟩⟩
+  exact (eq_sum_basis_compLpL b (T y)).symm
 
 end TauCeti
