@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Convolution
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
+public import TauCeti.Analysis.Complex.CauchyKernel
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.SpecialFunctions.PolarCoord
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
@@ -17,7 +18,7 @@ import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
-import TauCeti.Analysis.Complex.CauchyKernel
+import TauCeti.Analysis.Convolution.Holder
 
 /-!
 # The Cauchy–Pompeiu formula
@@ -125,6 +126,36 @@ theorem cauchyTransform_eq_convolution (f : ℂ → F) :
     (convolution_eq_swap (L := ContinuousLinearMap.lsmul ℝ ℂ)
       (f := fun z : ℂ ↦ z⁻¹) (g := f) (x := w)).symm
 
+/-- On a fixed output disc, truncating the reciprocal kernel at the sum of the input and
+output radii leaves its convolution integrand unchanged. -/
+theorem truncatedCauchyKernel_smul_eq {f : ℂ → F} {c w : ℂ} {r R : ℝ}
+    (hs : support f ⊆ closedBall c r) (hw : w ∈ closedBall c R) (z : ℂ) :
+    truncatedCauchyKernel (r + R) z • f (w - z) = z⁻¹ • f (w - z) := by
+  simpa only [truncatedCauchyKernel_def] using
+    (indicator_kernel_smul_sub_eq (K := fun z : ℂ ↦ z⁻¹) hs hw z)
+
+/-- On a fixed output disc, cutting the reciprocal off at the sum of the input and output
+radii preserves the actual Cauchy integral. -/
+theorem integral_sub_inv_smul_eq_truncatedCauchyKernel_smul
+    {f : ℂ → F} {c w : ℂ} {r R : ℝ}
+    (hs : support f ⊆ closedBall c r) (hw : w ∈ closedBall c R) :
+    (∫ z, (w - z)⁻¹ • f z) = ∫ z, truncatedCauchyKernel (r + R) z • f (w - z) := by
+  have h := integral_sub_left_eq_self (fun z : ℂ ↦ (w - z)⁻¹ • f z) volume w
+  simp only [sub_sub_cancel] at h
+  rw [← h]
+  apply integral_congr_ae
+  exact ae_of_all _ fun z ↦ (truncatedCauchyKernel_smul_eq hs hw z).symm
+
+/-- On the output disc, truncating the reciprocal kernel at the sum of the radii leaves
+the Cauchy integral unchanged. No integrability assumption is required for this identity. -/
+theorem cauchyTransform_eq_truncatedCauchyKernel_convolution
+    {f : ℂ → F} {c w : ℂ} {r R : ℝ}
+    (hs : support f ⊆ closedBall c r) (hw : w ∈ closedBall c R) :
+    cauchyTransform f w = (Real.pi : ℂ)⁻¹ •
+      ((truncatedCauchyKernel (r + R)) ⋆[ContinuousLinearMap.lsmul ℝ ℂ] f) w := by
+  rw [cauchyTransform_apply, integral_sub_inv_smul_eq_truncatedCauchyKernel_smul hs hw]
+  simp only [convolution_def, ContinuousLinearMap.lsmul_apply]
+
 /-- A supported input may be integrated over its input disc in the Cauchy formula. -/
 theorem cauchyTransform_eq_integral_closedBall {f : ℂ → F} {c : ℂ} {r : ℝ≥0}
     (hf : support f ⊆ closedBall c (r : ℝ)) (w : ℂ) :
@@ -144,7 +175,6 @@ theorem norm_mul_norm_cauchyTransform_le {f : ℂ → F} {r : ℝ}
   · simp only [norm_zero, zero_mul]
     have : 0 ≤ ∫ z, ‖f z‖ := integral_nonneg fun z ↦ norm_nonneg (f z)
     positivity
-  have hw' : 0 < ‖w‖ := norm_pos_iff.2 hw0
   have hpt : ∀ z, ‖(w - z)⁻¹ • f z‖ ≤ 2 * ‖w‖⁻¹ * ‖f z‖ := fun z ↦ by
     by_cases hz : f z = 0
     · simp [hz]
