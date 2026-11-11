@@ -40,6 +40,42 @@ universe v
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 variable (K : Type v) [Field K]
 
+private def RescalesRoots (g : D.weylSubgroup K) : Prop :=
+  ∀ γ : Fin t.numRoots, ∃ c : Kˣ, ∀ u : K,
+    MulAut.conj (g : D.points K) (D.rootSubgroupPoints γ K (ofAdd u)) =
+      D.rootSubgroupPoints
+        ((t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection K g) γ) K
+        (ofAdd ((c : K) * u))
+
+private theorem rescalesRoots_one : D.RescalesRoots K 1 := by
+  intro γ
+  exact ⟨1, fun u => by simp⟩
+
+private theorem RescalesRoots.mul {g h : D.weylSubgroup K}
+    (hg : D.RescalesRoots K g) (hh : D.RescalesRoots K h) :
+    D.RescalesRoots K (g * h) := by
+  intro γ
+  obtain ⟨d, hd⟩ := hh γ
+  obtain ⟨c, hc⟩ := hg
+    ((t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection K h) γ)
+  refine ⟨c * d, fun u => ?_⟩
+  simp only [Subgroup.coe_mul, map_mul, MulAut.mul_apply, Equiv.Perm.mul_apply,
+    hd, hc, Units.val_mul, mul_assoc]
+
+private theorem RescalesRoots.inv {g : D.weylSubgroup K}
+    (hg : D.RescalesRoots K g) : D.RescalesRoots K g⁻¹ := by
+  intro γ
+  let w := (t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection K g)
+  obtain ⟨c, hc⟩ := hg (w⁻¹ γ)
+  refine ⟨c⁻¹, fun u => ?_⟩
+  rw [Subgroup.coe_inv, map_inv, MulAut.inv_apply, map_inv, map_inv]
+  apply (MulAut.conj (g : D.points K)).symm_apply_eq.mpr
+  have hw : (t.simplyConnectedRootDatum ht).weylGroupToPerm
+      (D.weylProjection K g) (w⁻¹ γ) = γ := w.apply_symm_apply γ
+  simpa only [hw, ← mul_assoc, Units.val_inv_eq_inv_val,
+    mul_inv_cancel₀ (Units.ne_zero c), one_mul] using
+    (hc (((c⁻¹ : Kˣ) : K) * u)).symm
+
 /-- Every Weyl lift acts on a root subgroup by a unit rescaling of its additive parameter.
 The target root is specified by the existing Weyl projection, not by a choice of word. -/
 theorem exists_unit_conj_rootSubgroupPoints (g : D.weylSubgroup K) (γ : Fin t.numRoots) :
@@ -48,71 +84,31 @@ theorem exists_unit_conj_rootSubgroupPoints (g : D.weylSubgroup K) (γ : Fin t.n
         D.rootSubgroupPoints
           ((t.simplyConnectedRootDatum ht).weylGroupToPerm (D.weylProjection K g) γ) K
           (ofAdd ((c : K) * u)) := by
-  rcases g with ⟨g, hg⟩
-  -- Keep the membership proof for the projection separate from closure induction, so the
-  -- carrier of the Weyl subgroup need not be unfolded.
-  have hclosure := hg
-  rw [D.weylSubgroup_def] at hclosure
-  have hle := le_of_eq (D.weylSubgroup_def K).symm
-  revert hg γ
-  induction hclosure using Subgroup.closure_induction with
-  | mem g hg =>
-    -- The generators scale by a root character or by the pinned Weyl sign.
-    intro γ hmem
-    rcases hg with ⟨s, rfl⟩ | ⟨i, rfl⟩
-    · refine ⟨torusCharacter s (D.coordinateRoot γ), fun u => ?_⟩
+  let H : Subgroup (D.weylSubgroup K) :=
+    { carrier := {g | D.RescalesRoots K g}
+      one_mem' := D.rescalesRoots_one K
+      mul_mem' := RescalesRoots.mul D K
+      inv_mem' := RescalesRoots.inv D K }
+  have hle : D.weylSubgroup K ≤ H.map (D.weylSubgroup K).subtype := by
+    apply (D.weylSubgroup_def K).le.trans
+    apply (Subgroup.closure_le _).mpr
+    rintro _ (⟨s, rfl⟩ | ⟨i, rfl⟩)
+    · refine ⟨⟨_, D.torusPoints_mem_weylSubgroup K s⟩, ?_, rfl⟩
+      intro δ
+      refine ⟨torusCharacter s (D.coordinateRoot δ), fun u => ?_⟩
       simp only [D.weylProjection_torusPoints, map_one, Equiv.Perm.one_apply]
-      exact D.torusPoints_conj_rootSubgroupPoints γ K s u
-    · refine ⟨Units.map (Int.castRingHom K).toMonoidHom
-        (t.chevalleyWeylSign ht (t.simpleIndex ht i) γ), fun u => ?_⟩
+      exact D.torusPoints_conj_rootSubgroupPoints δ K s u
+    · refine ⟨⟨_, D.weylElement_mem_weylSubgroup K i⟩, ?_, rfl⟩
+      intro δ
+      refine ⟨Units.map (Int.castRingHom K).toMonoidHom
+        (t.chevalleyWeylSign ht (t.simpleIndex ht i) δ), fun u => ?_⟩
       simp only [D.weylProjection_weylElement, RootPairing.weylGroupToPerm_ofIdx_apply,
         Units.coe_map]
-      exact D.weylElement_conj_rootSubgroupPoints i γ K u
-  | one =>
-    intro γ hmem
-    have hone : (⟨1, hmem⟩ : D.weylSubgroup K) = 1 := Subtype.ext (by simp)
-    exact ⟨1, fun u => by simp [hone]⟩
-  | mul g h hg hh ihg ihh =>
-    -- Compose the rescalings in the same order as the two root permutations.
-    intro γ hmem
-    have hgN := hle hg
-    have hhN := hle hh
-    obtain ⟨d, hd⟩ := ihh γ hhN
-    obtain ⟨c, hc⟩ := ihg
-      ((t.simplyConnectedRootDatum ht).weylGroupToPerm
-        (D.weylProjection K ⟨h, hhN⟩) γ) hgN
-    refine ⟨c * d, fun u => ?_⟩
-    have hp : D.weylProjection K ⟨g * h, hmem⟩ =
-        D.weylProjection K ⟨g, hgN⟩ * D.weylProjection K ⟨h, hhN⟩ := by
-      have hmul : (⟨g * h, hmem⟩ : D.weylSubgroup K) = ⟨g, hgN⟩ * ⟨h, hhN⟩ :=
-        Subtype.ext (by simp)
-      rw [hmul, map_mul]
-    rw [hp, (t.simplyConnectedRootDatum ht).weylGroupToPerm.map_mul, Equiv.Perm.mul_apply]
-    calc
-      _ = MulAut.conj g (MulAut.conj h (D.rootSubgroupPoints γ K (ofAdd u))) := by
-        simp only [MulAut.conj_apply]; group
-      _ = _ := by rw [hd, hc]; simp [mul_assoc]
-  | inv g hg ih =>
-    -- Apply the forward formula at the preimage root and divide its parameter by the unit.
-    intro γ hmem
-    have hgN := hle hg
-    let w := (t.simplyConnectedRootDatum ht).weylGroupToPerm
-      (D.weylProjection K ⟨g, hgN⟩)
-    obtain ⟨c, hc⟩ := ih (w⁻¹ γ) hgN
-    refine ⟨c⁻¹, fun u => ?_⟩
-    have hp : D.weylProjection K ⟨g⁻¹, hmem⟩ =
-        (D.weylProjection K ⟨g, hgN⟩)⁻¹ := by
-      have hinv : (⟨g⁻¹, hmem⟩ : D.weylSubgroup K) = (⟨g, hgN⟩ : D.weylSubgroup K)⁻¹ :=
-        Subtype.ext (by simp)
-      rw [hinv, map_inv]
-    rw [hp, (t.simplyConnectedRootDatum ht).weylGroupToPerm.map_inv]
-    have hw : (t.simplyConnectedRootDatum ht).weylGroupToPerm
-        (D.weylProjection K ⟨g, hgN⟩) (w⁻¹ γ) = γ := w.apply_symm_apply γ
-    have h := hc (((c⁻¹ : Kˣ) : K) * u)
-    simp only [hw, ← mul_assoc, Units.val_inv_eq_inv_val,
-      mul_inv_cancel₀ (Units.ne_zero c), one_mul] at h
-    have h' := congrArg (MulAut.conj g⁻¹) h
-    simpa [MulAut.conj_apply, mul_assoc, w] using h'.symm
+      exact D.weylElement_conj_rootSubgroupPoints i δ K u
+  obtain ⟨h, hh, heq⟩ := hle g.property
+  have heq' : h = g := Subtype.ext heq
+  subst h
+  exact hh γ
 
 /-- Conjugation by a Weyl lift transports a root subgroup to the root subgroup at the
 projected root. The parameter scaling disappears on taking ranges. -/
