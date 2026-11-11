@@ -12,10 +12,10 @@ import Mathlib.Algebra.Module.Submodule.Equiv
 # Transport of supported smooth bundle sections
 
 A smooth fibrewise linear map over the identity induces a linear map on native
-`ContMDiffSection`s. It cannot enlarge closed support and therefore acts on compactly
-supported sections. If the fibre maps are injective, closed support is preserved exactly.
-A smooth fibrewise linear equivalence with smooth inverse consequently identifies both
-fixed-support stages and compactly supported sections.
+`ContMDiffSection`s. It cannot enlarge closed support and therefore acts on fixed-support
+stages and compactly supported sections. If the fibre maps are injective, closed support is
+preserved exactly. A smooth fibrewise linear equivalence with smooth inverse consequently
+identifies both fixed-support stages and compactly supported sections.
 
 These are algebraic equivalences on the existing section carriers, not assertions about a
 section-space topology. In particular, they provide support-preserving transport of tests
@@ -74,6 +74,22 @@ theorem tsupport_mapLinearMap (s : Cₛ^n⟮I; F, V⟯)
   congr 1
   ext x
   simp [LinearMap.map_eq_zero_iff _ (h x)]
+
+/-- Smooth fibrewise linear transport preserves any prescribed support bound. -/
+theorem mapLinearMap_mem_supportedIn {K : Set M} {s : Cₛ^n⟮I; F, V⟯}
+    (hs : s ∈ supportedIn I F n V K) :
+    mapLinearMap ϕ hϕ s ∈ supportedIn I G n W K :=
+  mem_supportedIn.2 <| (tsupport_mapLinearMap_subset ϕ hϕ s).trans (mem_supportedIn.1 hs)
+
+/-- Transport on the submodules of sections supported in a prescribed set. -/
+def mapSupportedIn (K : Set M) : supportedIn I F n V K →ₗ[𝕜]
+    supportedIn I G n W K :=
+  (mapLinearMap ϕ hϕ).restrict fun _ hs ↦ mapLinearMap_mem_supportedIn ϕ hϕ hs
+
+/-- Forgetting the fixed support recovers unrestricted transport. -/
+@[simp]
+theorem coe_mapSupportedIn (K : Set M) (s : supportedIn I F n V K) :
+    (mapSupportedIn ϕ hϕ K s : Cₛ^n⟮I; G, W⟯) = mapLinearMap ϕ hϕ s.val := (rfl)
 
 /-- Smooth fibrewise linear transport preserves compact support. -/
 theorem mapLinearMap_mem_compactlySupported {s : Cₛ^n⟮I; F, V⟯}
@@ -147,28 +163,56 @@ def mapEquiv : Cₛ^n⟮I; F, V⟯ ≃ₗ[𝕜] Cₛ^n⟮I; G, W⟯ :=
     left_inv := fun s ↦ by ext x; simp
     right_inv := fun s ↦ by ext x; simp }
 
+/-- The linear map underlying section equivalence is fibrewise linear transport. -/
+@[simp]
+theorem mapEquiv_toLinearMap :
+    (mapEquiv e he he').toLinearMap = mapLinearMap (fun x ↦ (e x).toLinearMap) he := (rfl)
+
 /-- The induced section equivalence acts pointwise. -/
 @[simp]
 theorem mapEquiv_apply (s : Cₛ^n⟮I; F, V⟯) (x : M) :
     mapEquiv e he he' s x = e x (s x) := (rfl)
 
-/-- The inverse section equivalence uses the inverse fibre maps. -/
+/-- Inverting the fibre equivalences inverts their section transport. -/
 @[simp]
-theorem mapEquiv_symm_apply (s : Cₛ^n⟮I; G, W⟯) (x : M) :
-    (mapEquiv e he he').symm s x = (e x).symm (s x) := (rfl)
+theorem mapEquiv_symm :
+    (mapEquiv e he he').symm = mapEquiv (fun x ↦ (e x).symm) he' (by simpa using he) := by
+  ext s x
+  rfl
+
+/-- Identity fibre equivalences induce the identity section equivalence. -/
+@[simp]
+theorem mapEquiv_refl :
+    mapEquiv (fun x ↦ LinearEquiv.refl 𝕜 (V x)) contMDiff_id contMDiff_id =
+      LinearEquiv.refl 𝕜 Cₛ^n⟮I; F, V⟯ := by
+  ext s x
+  rfl
+
+section Composition
+
+variable {J : Type*} [NormedAddCommGroup J] [NormedSpace 𝕜 J] {Z : M → Type*}
+  [∀ x, AddCommGroup (Z x)] [∀ x, Module 𝕜 (Z x)] [∀ x, TopologicalSpace (Z x)]
+  [TopologicalSpace (TotalSpace J Z)] [FiberBundle J Z] [VectorBundle 𝕜 J Z]
+  (f : ∀ x, W x ≃ₗ[𝕜] Z x)
+  (hf : ContMDiff (I.prod 𝓘(𝕜, G)) (I.prod 𝓘(𝕜, J)) n
+    (fun p : TotalSpace G W ↦ (⟨p.proj, f p.proj p.2⟩ : TotalSpace J Z)))
+  (hf' : ContMDiff (I.prod 𝓘(𝕜, J)) (I.prod 𝓘(𝕜, G)) n
+    (fun p : TotalSpace J Z ↦ (⟨p.proj, (f p.proj).symm p.2⟩ : TotalSpace G W)))
+
+/-- Composition of fibre equivalences induces composition of section equivalences. -/
+theorem mapEquiv_trans :
+    mapEquiv (fun x ↦ (e x).trans (f x)) (hf.comp he) (he'.comp hf') =
+      (mapEquiv e he he').trans (mapEquiv f hf hf') := by
+  ext s x
+  rfl
+
+end Composition
 
 /-- A smooth bundle equivalence preserves closed support exactly. -/
 @[simp]
 theorem tsupport_mapEquiv (s : Cₛ^n⟮I; F, V⟯) :
     (mapEquiv e he he' s).tsupport = s.tsupport :=
   tsupport_mapLinearMap (fun x ↦ (e x).toLinearMap) he s (fun x ↦ (e x).injective)
-
-/-- Inverse transport also preserves exact closed support. -/
-@[simp]
-theorem tsupport_mapEquiv_symm (s : Cₛ^n⟮I; G, W⟯) :
-    ((mapEquiv e he he').symm s).tsupport = s.tsupport := by
-  have h := tsupport_mapEquiv e he he' ((mapEquiv e he he').symm s)
-  simpa only [LinearEquiv.apply_symm_apply] using h.symm
 
 /-- Transport identifies the fixed-support submodules for every supporting set. -/
 theorem map_supportedIn (K : Set M) :
@@ -177,16 +221,22 @@ theorem map_supportedIn (K : Set M) :
   ext t
   constructor
   · rintro ⟨s, hs, rfl⟩
-    simpa using hs
+    exact mapLinearMap_mem_supportedIn (fun x ↦ (e x).toLinearMap) he hs
   · intro ht
-    refine ⟨(mapEquiv e he he').symm t, ?_, by simp⟩
+    refine ⟨(mapEquiv e he he').symm t, ?_, (mapEquiv e he he').apply_symm_apply t⟩
     apply mem_supportedIn.2
-    simpa only [tsupport_mapEquiv_symm] using mem_supportedIn.1 ht
+    simpa only [mapEquiv_symm, tsupport_mapEquiv] using mem_supportedIn.1 ht
 
 /-- The support-preserving equivalence on any fixed-support stage. -/
 def mapSupportedInEquiv (K : Set M) :
     supportedIn I F n V K ≃ₗ[𝕜] supportedIn I G n W K :=
   (mapEquiv e he he').ofSubmodules _ _ (map_supportedIn e he he' K)
+
+/-- Fixed-support equivalence has the same underlying linear map as transport. -/
+@[simp]
+theorem mapSupportedInEquiv_toLinearMap (K : Set M) :
+    (mapSupportedInEquiv e he he' K).toLinearMap =
+      mapSupportedIn (fun x ↦ (e x).toLinearMap) he K := (rfl)
 
 /-- Forgetting the fixed support recovers the unrestricted equivalence. -/
 @[simp]
@@ -206,16 +256,22 @@ theorem map_compactlySupported :
   ext t
   constructor
   · rintro ⟨s, hs, rfl⟩
-    simpa using hs
+    exact mapLinearMap_mem_compactlySupported (fun x ↦ (e x).toLinearMap) he hs
   · intro ht
-    refine ⟨(mapEquiv e he he').symm t, ?_, by simp⟩
+    refine ⟨(mapEquiv e he he').symm t, ?_, (mapEquiv e he he').apply_symm_apply t⟩
     apply mem_compactlySupported.2
-    simpa only [tsupport_mapEquiv_symm] using mem_compactlySupported.1 ht
+    simpa only [mapEquiv_symm, tsupport_mapEquiv] using mem_compactlySupported.1 ht
 
 /-- The induced linear equivalence on compactly supported smooth sections. -/
 def mapCompactlySupportedEquiv :
     compactlySupported I F n V ≃ₗ[𝕜] compactlySupported I G n W :=
   (mapEquiv e he he').ofSubmodules _ _ (map_compactlySupported e he he')
+
+/-- Compact-support equivalence has the same underlying linear map as transport. -/
+@[simp]
+theorem mapCompactlySupportedEquiv_toLinearMap :
+    (mapCompactlySupportedEquiv e he he').toLinearMap =
+      mapCompactlySupported (fun x ↦ (e x).toLinearMap) he := (rfl)
 
 /-- Forgetting compact support recovers the unrestricted equivalence. -/
 @[simp]
