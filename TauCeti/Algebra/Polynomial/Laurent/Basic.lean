@@ -53,8 +53,8 @@ every `R[T;T⁻¹]`-module. That automorphism is what a shift-compatible invaria
 * `TauCeti.laurentEval_unique`: an algebra map out of `R[T;T⁻¹]` is determined by its value at `T`.
 * `AlgHom.apply_laurentPolynomial_C` and `AlgHom.apply_laurentPolynomial_T_of_apply_T_one`: an
   algebra map out of `R[T;T⁻¹]` sends a constant `C x` to `algebraMap R A x`, and, if it sends
-  `T 1` to a unit `u`, sends `T n` to `u ^ n`; `AlgHom.apply_laurentPolynomial_C_self` and
-  `AlgHom.apply_laurentPolynomial_T_neg_one` are the forms for a field mapping to itself.
+  `T 1` to a unit `u`, sends `T n` to `u ^ n` (`AlgHom.apply_laurentPolynomial_T_neg_one` is the
+  case `n = -1`); `AlgHom.apply_laurentPolynomial_C_self` is the form for a ring mapping to itself.
 * `TauCeti.laurentEval_comp_mapDomainAlgHom_mulRight`: evaluating after `T ↦ Tⁿ` is evaluating
   at the `n`-th power.
 * `TauCeti.laurentEval_eq_eval₂`: over a commutative target, this evaluation is Mathlib's
@@ -186,12 +186,11 @@ theorem _root_.AlgHom.apply_laurentPolynomial_C_self {K : Type*} [CommSemiring K
     (φ : K[T;T⁻¹] →ₐ[K] K) (x : K) : φ (C x) = x := by
   rw [AlgHom.apply_laurentPolynomial_C, Algebra.algebraMap_self_apply]
 
-/-- A `K`-algebra map from `K[T;T⁻¹]` to a field `K` sending `T 1` to a unit `u` sends `T (-1)`
-to `u⁻¹`. -/
-theorem _root_.AlgHom.apply_laurentPolynomial_T_neg_one {K : Type*} [Field K]
-    {φ : K[T;T⁻¹] →ₐ[K] K} {u : Kˣ} (h : φ (T 1) = (u : K)) : φ (T (-1)) = (u : K)⁻¹ := by
-  rw [AlgHom.apply_laurentPolynomial_T_of_apply_T_one h, zpow_neg_one,
-    Units.val_inv_eq_inv_val]
+/-- An `R`-algebra map out of `R[T;T⁻¹]` sending `T 1` to a unit `u` sends `T (-1)` to the inverse
+unit `u⁻¹`. -/
+theorem _root_.AlgHom.apply_laurentPolynomial_T_neg_one {φ : R[T;T⁻¹] →ₐ[R] A} {u : Aˣ}
+    (h : φ (T 1) = u) : φ (T (-1)) = ↑(u⁻¹) := by
+  rw [AlgHom.apply_laurentPolynomial_T_of_apply_T_one h, zpow_neg_one]
 
 /-- **The Laurent polynomial ring is the free `R`-algebra on one invertible generator**: its
 `R`-algebra maps to `A` are exactly the units of `A`, through evaluation at `T`. -/
