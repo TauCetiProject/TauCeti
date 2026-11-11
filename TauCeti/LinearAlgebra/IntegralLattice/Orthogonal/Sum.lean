@@ -178,6 +178,17 @@ theorem coe_orthogonalSumCarrierEquiv_snd (L : IntegralLattice V) (M : IntegralL
     (p : L.orthogonalSum M) : ((orthogonalSumCarrierEquiv L M p).2 : W) = p.1.2 := by
   simp [orthogonalSumCarrierEquiv]
 
+/-- The inverse of the carrier-product equivalence, read in the ambient space. -/
+@[simp]
+theorem coe_orthogonalSumCarrierEquiv_symm_apply (L : IntegralLattice V) (M : IntegralLattice W)
+    (a : L) (b : M) :
+    ((orthogonalSumCarrierEquiv L M).symm (a, b) : V × W) = ((a : V), (b : W)) := by
+  apply Prod.ext
+  · rw [← coe_orthogonalSumCarrierEquiv_fst]
+    simp
+  · rw [← coe_orthogonalSumCarrierEquiv_snd]
+    simp
+
 /-- A vector in an orthogonal sum is the sum of the inclusions of its two projections. -/
 theorem orthogonalSumInl_fst_add_inr_snd_eq (L : IntegralLattice V) (M : IntegralLattice W)
     (p : L.orthogonalSum M) :
@@ -330,6 +341,14 @@ instance instIsNondegenerateOrthogonalSum (L : IntegralLattice V) (M : IntegralL
     [L.IsNondegenerate] [M.IsNondegenerate] : (L.orthogonalSum M).IsNondegenerate :=
   ⟨(L.nondegenerate_orthogonalSum_iff M).mpr
     ⟨L.form_nondegenerate, M.form_nondegenerate⟩⟩
+
+/-- An orthogonal sum of integral lattices is nondegenerate exactly when both summands are. -/
+@[simp]
+theorem isNondegenerate_orthogonalSum_iff (L : IntegralLattice V) (M : IntegralLattice W) :
+    (L.orthogonalSum M).IsNondegenerate ↔ L.IsNondegenerate ∧ M.IsNondegenerate := by
+  refine ⟨fun h ↦ ?_, fun ⟨hL, hM⟩ ↦ inferInstance⟩
+  obtain ⟨hL, hM⟩ := (L.nondegenerate_orthogonalSum_iff M).mp h.nondegenerate
+  exact ⟨⟨hL⟩, ⟨hM⟩⟩
 
 /-! ## Radical and signature -/
 
