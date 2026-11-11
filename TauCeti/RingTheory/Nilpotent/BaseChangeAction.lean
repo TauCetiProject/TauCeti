@@ -175,8 +175,8 @@ noncomputable def integralExpZSMul (x : A) (M : S)
     (hM : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M) (hx : IsNilpotent x) (t : ℤ) :
     M ≃ₗ[ℤ] M :=
   integralUnitRestrict (nilpotentExpUnit (hx.smul t)) M
-    (fun _ hv => by simpa using exp_zsmul_smul_mem hx hM t hv)
-    (fun _ hv => by simpa [neg_zsmul] using exp_zsmul_smul_mem hx hM (-t) hv)
+    (fun _ hv => by simpa using exp_zsmul_smul_mem hM t hv)
+    (fun _ hv => by simpa [neg_zsmul] using exp_zsmul_smul_mem hM (-t) hv)
 
 @[simp]
 theorem coe_integralExpZSMul_apply (x : A) (M : S)
