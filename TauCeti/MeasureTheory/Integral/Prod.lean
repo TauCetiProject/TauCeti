@@ -16,6 +16,8 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
 
 * `TauCeti.ae_of_ae_fst` / `TauCeti.ae_of_ae_snd` transfer an a.e. statement about one factor to the
   product measure, along `Measure.quasiMeasurePreserving_fst` / `_snd`.
+* `TauCeti.integrable_left_of_mul_prod_of_ae_ne_zero`: integrability of a separated product whose
+  right factor is nonzero almost everywhere implies integrability of its left factor.
 * `TauCeti.exists_ae_eq_const_of_ae_prod_eq`: if `f x = g y` for almost every `(x, y)` in a product
   of nonzero measures, then `f` and `g` are almost everywhere the same constant. This is the
   uniqueness of a function of the form `f(x) + g(y)` up to one additive constant.
@@ -31,6 +33,9 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
 * `TauCeti.abs_integral_prod_sub_integral_prod_le_of_ae`: if the integrals over the second factor
   differ by at most `C` for almost every point of a probability first factor, the integrals over
   the product measures differ by at most `C`.
+* `TauCeti.integrable_prod_restrict_of_continuous`: a continuous function on `α × β` vanishing on
+  `(α \ K) × D` for compact `K` and `D` is integrable for `μ × ν|_D`, the integrability needed to
+  apply Fubini's theorem to a compactly supported integrand over a compact parameter set.
 * `TauCeti.setIntegral_eq_zero_of_forall_prod` is the binary-product specialization of the Dynkin
   (π-λ) step for Bochner integrals: a function whose integral vanishes on every measurable rectangle
   has vanishing integral on every measurable set. Rectangles are a π-system generating the product
@@ -145,6 +150,15 @@ theorem ae_of_ae_snd {p : β → Prop} (hp : ∀ᵐ y ∂ν, p y) :
     ∀ᵐ q : α × β ∂(μ.prod ν), p q.2 :=
   Measure.quasiMeasurePreserving_snd.tendsto_ae.eventually hp
 
+/-- If a separated product `f x * g y` is integrable and `g` is nonzero almost everywhere
+under a nonzero s-finite measure, then `f` is integrable. -/
+theorem integrable_left_of_mul_prod_of_ae_ne_zero [SFinite μ] [SFinite ν] [NeZero ν]
+    {L : Type*} [NormedDivisionRing L] {f : α → L} {g : β → L}
+    (hfg : Integrable (fun z ↦ f z.1 * g z.2) (μ.prod ν))
+    (hg : ∀ᵐ y ∂ν, g y ≠ 0) : Integrable f μ := by
+  obtain ⟨y, hgy, hy⟩ := (hg.and hfg.prod_left_ae).exists
+  exact (integrable_mul_const_iff (isUnit_iff_ne_zero.2 hgy) f).1 hy
+
 /-- If `f x = g y` for `μ.prod ν`-almost every `(x, y)`, with both measures nonzero, then `f` and
 `g` are almost everywhere equal to one and the same constant. -/
 theorem exists_ae_eq_const_of_ae_prod_eq [SFinite ν] {δ : Type*} {f : α → δ} {g : β → δ}
@@ -204,6 +218,20 @@ theorem abs_integral_prod_sub_integral_prod_le_of_ae {ρ : Measure α} [IsProbab
     ← integral_sub h₁.integral_prod_left h₂.integral_prod_left, ← Real.norm_eq_abs]
   exact le_trans (norm_integral_le_of_norm_le_const (C := C)
     (by simpa only [Real.norm_eq_abs] using h)) (by simp)
+
+omit [NormedSpace ℝ E] in
+/-- A continuous function on `α × β` that vanishes on `(α \ K) × D`, for compact sets `K` and
+`D`, is integrable for `μ × ν|_D`. -/
+theorem integrable_prod_restrict_of_continuous [TopologicalSpace α] [TopologicalSpace β]
+    [T2Space α] [T2Space β] [OpensMeasurableSpace β] [OpensMeasurableSpace (α × β)]
+    [IsFiniteMeasureOnCompacts μ] [IsFiniteMeasureOnCompacts ν] [SFinite μ] [SFinite ν]
+    {G : α × β → E} (hG : Continuous G) {K : Set α} {D : Set β} (hK : IsCompact K)
+    (hD : IsCompact D)
+    (hGK : ∀ x y, y ∈ D → x ∉ K → G (x, y) = 0) : Integrable G (μ.prod (ν.restrict D)) := by
+  rw [← Measure.restrict_univ (μ := μ), Measure.prod_restrict]
+  refine IntegrableOn.of_forall_sdiff_eq_zero (hG.continuousOn.integrableOn_compact (hK.prod hD))
+    (MeasurableSet.univ.prod hD.measurableSet) fun q hq ↦ ?_
+  exact hGK q.1 q.2 hq.1.2 fun h ↦ hq.2 ⟨h, hq.1.2⟩
 
 /-- The weighted upper truncated integral of `f ^ q` is measurable in the height. -/
 theorem measurable_rpow_mul_setLIntegral_lt {f : α → ℝ≥0∞} {c : ℝ} [SFinite μ]

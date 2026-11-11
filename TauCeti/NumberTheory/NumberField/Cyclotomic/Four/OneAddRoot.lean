@@ -41,9 +41,8 @@ open NumberField Ideal IsCyclotomicExtension.Rat
 namespace IsPrimitiveRoot
 
 variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
-  [HasEnoughRootsOfUnity (𝓞 K) 4] {ζ : K}
+  {ζ : K}
 
-omit [IsCyclotomicExtension {4} ℚ K] in
 private theorem symbol_one_add_pair (hζ : IsPrimitiveRoot ζ 4) (I : Ideal (𝓞 K))
     (hu : IsUnit (Ideal.Quotient.mk I (1 - hζ.toInteger))) :
     powerResidueSymbolIdeal I 4 (Ideal.Quotient.mk I (1 - hζ.toInteger)) ^ 3 *
