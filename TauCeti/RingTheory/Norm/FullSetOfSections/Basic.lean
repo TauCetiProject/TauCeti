@@ -493,11 +493,8 @@ theorem IsFullSetOfSections.finite_of_nonempty [Nonempty ι] (h : IsFullSetOfSec
   · have := Module.subsingleton A B
     exact Module.Finite.of_finite
   by_contra hfin
-  have : Module.Free A (A ⊗[A] B) := Module.Free.of_equiv (TensorProduct.lid A B).symm
-  have hn : ¬ Module.Finite A (A ⊗[A] B) :=
-    fun hf => hfin (Module.Finite.of_surjective _ (TensorProduct.lid A B).surjective)
-  have h0 := isFullSetOfSections_iff.1 h A (0 : A ⊗[A] B)
-  simp only [Algebra.norm_eq_one_of_not_module_finite hn, map_zero] at h0
+  have h0 := h.norm_eq_prod (0 : B)
+  simp only [Algebra.norm_eq_one_of_not_module_finite hfin, map_zero] at h0
   exact one_ne_zero
     (h0.trans (Finset.prod_eq_zero (Finset.mem_univ (Classical.arbitrary ι)) rfl))
 
