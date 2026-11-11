@@ -18,7 +18,7 @@ Let `A(s)` be a family of bounded operators on a real inner product space `E` co
 `w' = -A(s) w`, the quadratic form `V(s) = ⟪w s, B (w s)⟫` is a Lyapunov function at the end: once
 `‖A(s) - B‖ ≤ α / 2`, it satisfies `V' ≤ -α² ‖w‖²`, so
 
-`V(s) + α² ∫ₜˢ ‖w‖² ≤ V(T)` for `T ≤ s`.
+`V(s) + α² ∫ₜˢ ‖w‖² ≤ V(T)` for `T ≤ s` (`TauCeti.inner_apply_add_integral_le`).
 
 This splits the solutions by the sign of `V` near the end.
 
@@ -76,9 +76,10 @@ private theorem two_mul_inner_neg_apply_add_le (hBα : ∀ v, α * ‖v‖ ≤ �
   rw [h₁]
   nlinarith
 
-/-- **The Lyapunov inequality near the end.** If `‖A(s) - B‖ ≤ α / 2` for `s ≥ T`, then along a
-solution of `w' = -A(s) w`, `⟪w s, B (w s)⟫ + α² ∫ₜˢ ‖w‖² ≤ ⟪w T, B (w T)⟫` for `s ≥ T`. -/
-private theorem inner_apply_add_integral_le (hBsym : (B : E →ₗ[ℝ] E).IsSymmetric)
+/-- **The Lyapunov inequality near the end.** Let `B` be symmetric with `α ‖v‖ ≤ ‖B v‖`. If
+`‖A(s) - B‖ ≤ α / 2` for `s ≥ T`, then along a solution of `w' = -A(s) w`,
+`⟪w s, B (w s)⟫ + α² ∫ₜˢ ‖w‖² ≤ ⟪w T, B (w T)⟫` for `s ≥ T`. -/
+theorem inner_apply_add_integral_le (hBsym : (B : E →ₗ[ℝ] E).IsSymmetric)
     (hBα : ∀ v, α * ‖v‖ ≤ ‖B v‖) (hAB : ∀ s, T ≤ s → ‖A s - B‖ ≤ α / 2)
     (hw : ∀ s, HasDerivAt w (-A s (w s)) s) {s : ℝ} (hs : T ≤ s) :
     ⟪w s, B (w s)⟫ + α ^ 2 * ∫ τ in T..s, ‖w τ‖ ^ 2 ≤ ⟪w T, B (w T)⟫ := by
