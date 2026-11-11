@@ -133,6 +133,18 @@ theorem substituteVars_map_inl (U : X → List (A × Bool)) (l : List X) :
     substituteVars U (l.map fun x => (Sum.inl x, true)) = l.flatMap U := by
   simp [substituteVars, List.flatMap_map]
 
+/-- Renaming the variables of a word by `f` and substituting the words `U'` is substituting the
+words `U`, provided `U' (f x) = U x` for every variable `x` occurring in the word. -/
+theorem substituteVars_map_sumMap {Y : Type*} {f : X → Y} {U' : Y → List (A × Bool)}
+    {U : X → List (A × Bool)} {w : List ((X ⊕ A) × Bool)}
+    (h : ∀ x b, (Sum.inl x, b) ∈ w → U' (f x) = U x) :
+    substituteVars U' (w.map (Prod.map (Sum.map f id) id)) = substituteVars U w := by
+  rw [substituteVars, substituteVars, List.flatMap_map]
+  refine List.flatMap_congr ?_
+  rintro ⟨x | a, b⟩ hy
+  · simp [substituteLetter, h x b hy]
+  · simp [substituteLetter]
+
 /-- Substitution without free reduction commutes with formal inverses. -/
 theorem substituteVars_invRev (U : X → List (A × Bool)) (w : List ((X ⊕ A) × Bool)) :
     substituteVars U (invRev w) = invRev (substituteVars U w) :=
@@ -151,6 +163,16 @@ theorem isReduced_substituteVars_cond (U : X → List (A × Bool)) (s : Bool)
     (w : List ((X ⊕ A) × Bool)) (h : IsReduced (substituteVars U w)) :
     IsReduced (substituteVars U (cond s w (invRev w))) := by
   cases s <;> simpa
+
+/-- If substituting into a word gives a reduced word, every variable occurring in the word is
+assigned a reduced word. -/
+theorem IsReduced.of_substituteVars {U : X → List (A × Bool)} {w : List ((X ⊕ A) × Bool)}
+    (h : IsReduced (substituteVars U w)) {x : X} {b : Bool} (hx : (Sum.inl x, b) ∈ w) :
+    IsReduced (U x) := by
+  obtain ⟨l₁, l₂, rfl⟩ := List.append_of_mem hx
+  rw [substituteVars_append, substituteVars_cons] at h
+  have := h.infix ⟨_, _, List.append_assoc ..⟩
+  cases b <;> simpa using this
 
 /-- Substitution followed by free reduction is evaluation in the free group. -/
 theorem mk_substituteVars (U : X → List (A × Bool)) (w : List ((X ⊕ A) × Bool)) :
