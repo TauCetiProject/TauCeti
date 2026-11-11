@@ -59,7 +59,7 @@ theorem radialExhaustionProfile_contDiff : ContDiff ℝ ∞ radialExhaustionProf
 
 /-- The profile is everywhere at least one, including at negative arguments. -/
 theorem one_le_radialExhaustionProfile (r : ℝ) : 1 ≤ radialExhaustionProfile r := by
-  by_cases hr : r ≤ 1 / 2
+  by_cases hr : r ≤ (2 : ℝ)⁻¹
   · rw [radialExhaustionProfile_eq_one hr]
   · exact le_add_of_nonneg_right
       (mul_nonneg (by linarith) (Real.smoothTransition.nonneg _))
@@ -67,7 +67,7 @@ theorem one_le_radialExhaustionProfile (r : ℝ) : 1 ≤ radialExhaustionProfile
 /-- The profile is nondecreasing, so it preserves the order of touching upper supports. -/
 theorem radialExhaustionProfile_monotone : Monotone radialExhaustionProfile := by
   intro r s hrs
-  by_cases hr : r ≤ 1 / 2
+  by_cases hr : r ≤ (2 : ℝ)⁻¹
   · rw [radialExhaustionProfile_eq_one hr]
     exact one_le_radialExhaustionProfile s
   · unfold radialExhaustionProfile
@@ -95,10 +95,10 @@ theorem radialExhaustionProfile_le_add {r : ℝ} (hr : 0 ≤ r) :
 theorem radialExhaustionProfile_deriv_nonneg (r : ℝ) :
     0 ≤ deriv radialExhaustionProfile r := radialExhaustionProfile_monotone.deriv_nonneg
 
-private theorem profile_derivs_outside {r : ℝ} (hr : r ∉ Icc (1 / 2 : ℝ) 1) :
+private theorem profile_derivs_outside {r : ℝ} (hr : r ∉ Icc ((2 : ℝ)⁻¹) 1) :
     (deriv radialExhaustionProfile r = 0 ∨ deriv radialExhaustionProfile r = 1) ∧
       deriv (deriv radialExhaustionProfile) r = 0 := by
-  by_cases hleft : r < 1 / 2
+  by_cases hleft : r < (2 : ℝ)⁻¹
   · have h : radialExhaustionProfile =ᶠ[𝓝 r] (fun _ ↦ (1 : ℝ)) := by
       filter_upwards [gt_mem_nhds hleft] with s hs
       exact radialExhaustionProfile_eq_one hs.le
@@ -124,11 +124,11 @@ theorem exists_radialExhaustionProfile_deriv_bounds :
   have hsecond : ContDiff ℝ ∞ (deriv (deriv radialExhaustionProfile)) :=
     (contDiff_infty_iff_deriv.mp hfirst).2
   obtain ⟨B, hB⟩ := isCompact_Icc.exists_bound_of_continuousOn
-    (hfirst.continuous.continuousOn (s := Icc (1 / 2 : ℝ) 1))
+    (hfirst.continuous.continuousOn (s := Icc ((2 : ℝ)⁻¹) 1))
   obtain ⟨D, hD⟩ := isCompact_Icc.exists_bound_of_continuousOn
-    (hsecond.continuous.continuousOn (s := Icc (1 / 2 : ℝ) 1))
+    (hsecond.continuous.continuousOn (s := Icc ((2 : ℝ)⁻¹) 1))
   refine ⟨max 1 (max B D), le_max_left _ _, fun r ↦ ?_⟩
-  by_cases hr : r ∈ Icc (1 / 2 : ℝ) 1
+  by_cases hr : r ∈ Icc ((2 : ℝ)⁻¹) 1
   · constructor
     · have hb : |deriv radialExhaustionProfile r| ≤ B := by
         simpa only [Real.norm_eq_abs] using hB r hr
