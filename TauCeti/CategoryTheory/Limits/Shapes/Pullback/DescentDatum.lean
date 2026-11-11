@@ -601,12 +601,6 @@ private noncomputable def ofPullbackAlongActionComparison :
       exact pullback.condition.symm))
     (pullback.snd _ _ ≫ (pullbackRightPullbackFstIso q p Y₀.hom).inv) (by simp)
 
-@[reassoc]
-private theorem hom_left_snd_pullbackAlong
-    (f : Hom (baseChange (pullback.fst q p) Y₀) (D.pullbackAlong q)) :
-    f.hom.left ≫ pullback.snd X.hom (pullback.snd q p) = pullback.snd Y₀.hom (pullback.fst q p) :=
-  Over.w f.hom
-
 /-- A morphism of descent data after base change along `q : T ⟶ S` gives one before base change.
 If `f` is a morphism from the canonical descent datum on `Y₀ ×_T (T ×_S S')` to the base change
 `D.pullbackAlong q`, then `Y₀ ×_S S' ≅ Y₀ ×_T (T ×_S S')`, followed by `f` and the projection of
@@ -617,7 +611,7 @@ noncomputable def Hom.ofPullbackAlong
     Hom (baseChange p ((Over.map q).obj Y₀)) D where
   hom := Over.homMk ((pullbackRightPullbackFstIso q p Y₀.hom).inv ≫ f.hom.left ≫
     pullback.fst X.hom (pullback.snd q p)) (by
-      simp [pullback.condition, hom_left_snd_pullbackAlong_assoc])
+      simp [pullback.condition, dsimp% Over.w_assoc f.hom])
   map_act := by
     -- The action space of `Y₀ ×_S S'` maps to that of `Y₀ ×_T (T ×_S S')`, compatibly with the
     -- canonical actions; `f` intertwines the latter with the action of `D.pullbackAlong q`, which
@@ -629,10 +623,10 @@ noncomputable def Hom.ofPullbackAlong
         simp [ofPullbackAlongActionComparison, baseChange]
     have key₂ : ofPullbackAlongActionComparison ≫
         pullback.map _ _ _ _ (𝟙 _) f.hom.left (𝟙 _) (by simp)
-          (by simp [hom_left_snd_pullbackAlong_assoc]) ≫ pullbackAlongActionComparison q X =
+          (by simp [dsimp% Over.w_assoc f.hom]) ≫ pullbackAlongActionComparison q X =
         pullback.map p _ p (X.hom ≫ p) (𝟙 S') ((pullbackRightPullbackFstIso q p Y₀.hom).inv ≫
           f.hom.left ≫ pullback.fst X.hom (pullback.snd q p)) (𝟙 S) (by simp)
-          (by simp [pullback.condition_assoc, hom_left_snd_pullbackAlong_assoc]) := by
+          (by simp [pullback.condition_assoc, dsimp% Over.w_assoc f.hom]) := by
       refine pullback.hom_ext ?_ ?_ <;>
         simp [ofPullbackAlongActionComparison, pullbackAlongActionComparison]
     simp only [Over.homMk_left]
