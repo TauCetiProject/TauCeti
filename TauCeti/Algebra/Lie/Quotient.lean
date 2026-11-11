@@ -50,9 +50,8 @@ https://github.com/yuma-mizuno-lean/Mei/blob/7f1e4c7714fb020473694755ad8748c8f15
   quotient map.
 * `LieIdeal.eq_liftQ`: the lifted homomorphism is the unique such factorization.
 * `LieIdeal.ker_liftQ_mkQ`: for ideals `J ≤ I`, the kernel of `L ⧸ J → L ⧸ I` is the image of `I`.
-* `LieIdeal.factor_refl`, `LieIdeal.factor_comp`, `LieIdeal.factor_surjective` and
-  `LieIdeal.ker_factor`: the transitions between nested quotients are the identity at equal ideals,
-  compose, are surjective, and have the image of the larger ideal as kernel.
+* `LieIdeal.factor_refl`, `LieIdeal.factor_comp` and `LieIdeal.factor_surjective`: the transitions
+  between nested quotients are the identity at equal ideals, compose, and are surjective.
 * `LieIdeal.coe_mkQ`: the linear map underlying `LieIdeal.mkQ` is the quotient map of submodules.
 * `LieIdeal.mkQ_comp_incl_surjective`: a Lie subalgebra `P` with `I + P = L` maps onto `L ⧸ I`.
 * `LieIdeal.ker_mkQ_comp_incl`: the kernel of `P → L ⧸ I` is the ideal `I ∩ P` of `P`.
@@ -154,6 +153,11 @@ theorem factor_apply {I J : LieIdeal R L} (h : I ≤ J) (x : L) :
     factor h (LieSubmodule.Quotient.mk x) = LieSubmodule.Quotient.mk x := by
   simp [factor]
 
+/-- A quotient transition commutes with the quotient projections. -/
+@[simp]
+theorem factor_mkQ {I J : LieIdeal R L} (h : I ≤ J) : (factor h).comp I.mkQ = J.mkQ :=
+  I.liftQ_mkQ J.mkQ _
+
 /-- A quotient transition at the same ideal is the identity. -/
 @[simp]
 theorem factor_refl : factor (le_refl I) = LieHom.id := by
@@ -170,10 +174,6 @@ theorem factor_comp {I J K : LieIdeal R L} (hIJ : I ≤ J) (hJK : J ≤ K) :
 /-- Quotient transitions are surjective. -/
 theorem factor_surjective {I J : LieIdeal R L} (h : I ≤ J) : Function.Surjective (factor h) :=
   liftQ_surjective _ _ _ J.surjective_mkQ
-
-/-- The kernel of a quotient transition is the image of the larger ideal. -/
-theorem ker_factor {I J : LieIdeal R L} (h : I ≤ J) : (factor h).ker = J.map I.mkQ :=
-  J.ker_liftQ_mkQ _
 
 section Supplement
 
@@ -398,47 +398,12 @@ section Nested
 
 variable (I J : LieIdeal R L)
 
-/-- The transition from the quotient by a smaller ideal to the quotient by a
-larger ideal. This is the Lie algebra analogue of `Submodule.factor`. -/
-def factor (h : I ≤ J) : L ⧸ I →ₗ⁅R⁆ L ⧸ J :=
-  I.liftQ J.mkQ (by rw [mkQ_ker]; exact h)
-
-/-- A quotient transition sends each representative to the same representative. -/
-@[simp]
-theorem factor_apply (h : I ≤ J) (x : L) :
-    I.factor J h (LieSubmodule.Quotient.mk x) = LieSubmodule.Quotient.mk x := by
-  simp [factor]
-
-/-- A quotient transition commutes with the quotient projections. -/
-@[simp]
-theorem factor_mkQ (h : I ≤ J) : (I.factor J h).comp I.mkQ = J.mkQ :=
-  I.liftQ_mkQ J.mkQ _
-
 /-- The identity induces the transition between nested quotient ideals. -/
 theorem mapQ_id_eq_factor (h : I ≤ J) :
-    I.mapQ J LieHom.id (fun _ hx => h hx) = I.factor J h := by
+    I.mapQ J LieHom.id (fun _ hx => h hx) = factor h := by
   apply I.lieHom_qext
   intro x
-  exact (I.mapQ_apply J LieHom.id h x).trans (I.factor_apply J h x).symm
-
-/-- A quotient transition at the same ideal is the identity. -/
-@[simp]
-theorem factor_refl : I.factor I le_rfl = LieHom.id := by
-  apply I.lieHom_qext
-  intro x
-  simp [mkQ_apply]
-
-/-- Successive quotient transitions agree with the direct transition. -/
-@[simp]
-theorem factor_comp (K : LieIdeal R L) (hIJ : I ≤ J) (hJK : J ≤ K) :
-    (J.factor K hJK).comp (I.factor J hIJ) = I.factor K (hIJ.trans hJK) := by
-  apply I.lieHom_qext
-  intro x
-  simp [mkQ_apply]
-
-/-- Quotient transitions are surjective. -/
-theorem factor_surjective (h : I ≤ J) : Function.Surjective (I.factor J h) :=
-  I.liftQ_surjective _ _ J.surjective_mkQ
+  exact (I.mapQ_apply J LieHom.id h x).trans (factor_apply h x).symm
 
 /-- An ideal has central image in the quotient by `I` exactly when all its
 brackets with the ambient algebra belong to `I`. -/
@@ -454,7 +419,7 @@ theorem map_mkQ_le_center_iff :
 /-- A quotient transition is a central extension exactly when bracketing with
 the larger ideal lands in the smaller ideal. -/
 theorem ker_factor_le_center_iff (h : I ≤ J) :
-    (I.factor J h).ker ≤ LieAlgebra.center R (L ⧸ I) ↔
+    (factor h).ker ≤ LieAlgebra.center R (L ⧸ I) ↔
       ⁅(⊤ : LieIdeal R L), J⁆ ≤ I := by
   rw [factor, J.ker_liftQ_mkQ]
   exact I.map_mkQ_le_center_iff J
@@ -466,8 +431,8 @@ and target ideals. -/
 theorem factor_comp_mapQ (I' : LieIdeal R L) (J' : LieIdeal R L')
     (hI : I ≤ I') (hJ : J ≤ J') (f : L →ₗ⁅R⁆ L')
     (hf : I ≤ J.comap f) (hf' : I' ≤ J'.comap f) :
-    (J.factor J' hJ).comp (I.mapQ J f hf) =
-      (I'.mapQ J' f hf').comp (I.factor I' hI) := by
+    (factor hJ).comp (I.mapQ J f hf) =
+      (I'.mapQ J' f hf').comp (factor hI) := by
   apply I.lieHom_qext
   intro x
   simp [mkQ_apply]
