@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.RieszProjection.Intertwining
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.RieszProjection.Multiplicity
 import TauCeti.Algebra.Ring.Commute
 
@@ -38,39 +37,8 @@ namespace ContinuousLinearMap
 
 variable {I R : Type*} [TopologicalSpace I]
   [NormedCommRing R] [TauCeti.NormedRing.IsTate R]
-  {u E F : C₀(I, R) →L[R] C₀(I, R)} {a b : R} {h k : ℕ}
-
-namespace IsRieszProjection
-
-/-- Riesz projectors at parameters separated by a unit annihilate each other. -/
-theorem mul_eq_zero (hE : IsRieszProjection u a h E) (hF : IsRieszProjection u b k F)
-    (hab : IsUnit (a - b)) : E * F = 0 := by
-  have hEF := hE.commute_of_commute hF.commute.symm
-  ext x : 1
-  apply (Submodule.disjoint_def.mp (hE.disjoint_range hF hab))
-  · exact ⟨F x, rfl⟩
-  · exact ⟨E x, congr($(hEF.eq) x)⟩
-
-end IsRieszProjection
-
-variable {ι : Type*} {a : ι → R} {h : ι → ℕ}
-  {E : ι → C₀(I, R) →L[R] C₀(I, R)}
-
-/-- Riesz projectors at pairwise unit-separated parameters form a family of orthogonal
-idempotents, in the native ring-theoretic sense. -/
-theorem orthogonalIdempotents_of_isRieszProjection
-    (hE : ∀ i, IsRieszProjection u (a i) (h i) (E i))
-    (ha : Pairwise fun i j ↦ IsUnit (a i - a j)) : OrthogonalIdempotents E :=
-  ⟨fun i ↦ (hE i).isIdempotentElem, fun i j hij ↦ (hE i).mul_eq_zero (hE j) (ha hij)⟩
-
-private theorem isIdempotentElem_sum_of_isRieszProjection (s : Finset ι)
-    (hE : ∀ i ∈ s, IsRieszProjection u (a i) (h i) (E i))
-    (ha : (s : Set ι).Pairwise fun i j ↦ IsUnit (a i - a j)) :
-    IsIdempotentElem (∑ i ∈ s, E i) := by
-  have he := orthogonalIdempotents_of_isRieszProjection
-    (fun i : s ↦ hE i i.property)
-    (fun i j hij ↦ ha i.property j.property (Subtype.coe_ne_coe.mpr hij))
-  simpa only [Finset.sum_coe_sort] using he.isIdempotentElem_sum (s := Finset.univ)
+  {u : C₀(I, R) →L[R] C₀(I, R)}
+  {ι : Type*} {a : ι → R} {h : ι → ℕ} {E : ι → C₀(I, R) →L[R] C₀(I, R)}
 
 section Complete
 

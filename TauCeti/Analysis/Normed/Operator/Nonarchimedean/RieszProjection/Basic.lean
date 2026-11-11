@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Resolvent
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
+public import Mathlib.RingTheory.Idempotents
 import Mathlib.RingTheory.Polynomial.Basic
 import TauCeti.Algebra.Polynomial.Coprime
 import TauCeti.Algebra.Ring.Commute
@@ -73,6 +74,10 @@ nilpotents and need not be Noetherian; over a ring the range need not be free.
 * `ContinuousLinearMap.IsRieszProjection.maxGenEigenspace_eq_range`: for `a * μ = 1` it is the
   maximal generalised eigenspace of `u` at `μ`.
 * `ContinuousLinearMap.IsRieszProjection.unique`: Riesz projections are unique.
+* `ContinuousLinearMap.IsRieszProjection.mul_eq_zero`: projectors at unit-separated
+  parameters annihilate each other, on any seminormed module.
+* `ContinuousLinearMap.orthogonalIdempotents_of_isRieszProjection`: a unit-separated family
+  of Riesz projectors forms orthogonal idempotents.
 * `ContinuousLinearMap.IsRieszProjection.comp_comp_of_retract`: Riesz projections compress along
   continuous linear retracts.
 * `ContinuousLinearMap.IsRowCompact.isRieszProjection_rieszProjection`: at a good zero, the
@@ -278,6 +283,19 @@ theorem disjoint_range {F : M →L[R] M} {b : R} {k : ℕ}
     Polynomial.aeval_X, Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul,
     toLinearMap_pow, toLinearMap_sub, toLinearMap_smul, toLinearMap_one] using hd
 
+/-- Riesz projectors at parameters separated by a unit annihilate each other. -/
+theorem mul_eq_zero {F : M →L[R] M} {b : R} {k : ℕ}
+    (hE : IsRieszProjection u a h E) (hF : IsRieszProjection u b k F)
+    (hab : IsUnit (a - b)) : E * F = 0 := by
+  have hEC := (hE.commute.symm.one_sub_smul_right (A := M →L[R] M) b).pow_right k
+  ext x : 1
+  apply (Submodule.disjoint_def.mp (hE.disjoint_range hF hab))
+  · exact ⟨F x, rfl⟩
+  · rw [hF.range_eq_ker, LinearMap.mem_ker, coe_coe]
+    have hx : ((1 - b • u) ^ k) (F x) = 0 := by
+      simpa only [mul_apply_eq_comp, zero_apply] using congr($(hF.pow_mul_eq_zero) x)
+    simpa only [mul_apply_eq_comp, hx, map_zero] using congr($(hEC.eq.symm) (F x))
+
 /-- **The range of a Riesz projection is the maximal generalised eigenspace.** If `a * μ = 1`,
 the range of a Riesz projection of `u` at `a` is the space of all vectors killed by some power of
 `u - μ`, the maximal generalised eigenspace of `u` at the eigenvalue `μ = a⁻¹`. -/
@@ -309,6 +327,26 @@ theorem unique {E' : M →L[R] M} (hE : IsRieszProjection u a h E)
     hE'.pow_mul_eq_zero hw hw' hw₂ hw₂'
 
 end IsRieszProjection
+
+variable {ι : Type*} {u : M →L[R] M} {a : ι → R} {h : ι → ℕ}
+  {E : ι → M →L[R] M}
+
+/-- Riesz projectors at pairwise unit-separated parameters form a family of orthogonal
+idempotents, in the native ring-theoretic sense. -/
+theorem orthogonalIdempotents_of_isRieszProjection
+    (hE : ∀ i, IsRieszProjection u (a i) (h i) (E i))
+    (ha : Pairwise fun i j ↦ IsUnit (a i - a j)) : OrthogonalIdempotents E :=
+  ⟨fun i ↦ (hE i).isIdempotentElem, fun i j hij ↦ (hE i).mul_eq_zero (hE j) (ha hij)⟩
+
+/-- A finite sum of Riesz projectors at pairwise unit-separated parameters is idempotent. -/
+theorem isIdempotentElem_sum_of_isRieszProjection (s : Finset ι)
+    (hE : ∀ i ∈ s, IsRieszProjection u (a i) (h i) (E i))
+    (ha : (s : Set ι).Pairwise fun i j ↦ IsUnit (a i - a j)) :
+    IsIdempotentElem (∑ i ∈ s, E i) := by
+  have he := orthogonalIdempotents_of_isRieszProjection
+    (fun i : s ↦ hE i i.property)
+    (fun i j hij ↦ ha i.property j.property (Subtype.coe_ne_coe.mpr hij))
+  simpa only [Finset.sum_coe_sort] using he.isIdempotentElem_sum (s := Finset.univ)
 
 end Module
 
