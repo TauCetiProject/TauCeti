@@ -66,6 +66,10 @@ vector bundle with a fibre metric, such as the normal Hessian of a Morse–Bott 
 * `ContinuousLinearMap.finrank_range_negativeSpectralProjection` and
   `ContinuousLinearMap.finrank_ker_negativeSpectralProjection`: the rank is the negative index of
   inertia of `q` and the nullity is the positive one.
+* `ContinuousLinearMap.negativeSpectralProjection_bilinearComp`: pulling `q` and `h` back along a
+  linear equivalence conjugates the projection by it.
+* `ContinuousLinearMap.map_relativeSpectralSubspace_bilinearComp`: pulling `q` and `h` back along a
+  linear equivalence pulls back their relative spectral subspaces.
 * `ContinuousLinearMap.contDiffOn_negativeSpectralProjection` and
   `ContDiffOn.negativeSpectralProjection`: the projection depends smoothly on `(q, h)`.
 * `TauCeti.exists_contDiffOn_range_eq_relativeSpectralSubspace`: on a finite-dimensional normed
@@ -123,21 +127,21 @@ variable {q h : E →L[ℝ] E →L[ℝ] ℝ}
 
 /-- The Riesz operator of the pullback of `q` along the transport of `h` represents
 `q (T u) (T v)`. -/
-private theorem inner_continuousLinearMapOfBilin_bilinearComp_apply (u v : E) :
+theorem inner_continuousLinearMapOfBilin_bilinearComp_apply (u v : E) :
     ⟪(q.bilinearComp h.metricChangeTransport h.metricChangeTransport)♯ u, v⟫_ℝ =
       q (h.metricChangeTransport u) (h.metricChangeTransport v) := by
   rw [continuousLinearMapOfBilin_apply, bilinearComp_apply]
 
 /-- The pullback of a symmetric form along the transport of `h` has a symmetric Riesz
 operator. -/
-private theorem isSymmetric_continuousLinearMapOfBilin_bilinearComp (hq : ∀ u v, q u v = q v u) :
+theorem isSymmetric_continuousLinearMapOfBilin_bilinearComp (hq : ∀ u v, q u v = q v u) :
     ((q.bilinearComp h.metricChangeTransport h.metricChangeTransport)♯ :
       E →ₗ[ℝ] E).IsSymmetric :=
   isSymmetric_continuousLinearMapOfBilin fun _ _ ↦ hq _ _
 
 /-- The pullback of a nondegenerate form along the transport of a positive definite `h` has an
 injective Riesz operator. -/
-private theorem ker_continuousLinearMapOfBilin_bilinearComp (hh : IsStrictlyPositive h♯)
+theorem ker_continuousLinearMapOfBilin_bilinearComp (hh : IsStrictlyPositive h♯)
     (hq : Function.Injective q) :
     LinearMap.ker
       ((q.bilinearComp h.metricChangeTransport h.metricChangeTransport)♯ : E →ₗ[ℝ] E) = ⊥ := by
@@ -435,6 +439,37 @@ theorem ker_negativeSpectralProjection (hh : IsStrictlyPositive h♯)
       (by rw [ker_toBilinForm, LinearMap.ker_eq_bot.mpr hq'])),
     LinearMap.coe_toContinuousLinearMap, Submodule.ker_projection]
 
+/-- **Naturality of the negative spectral projection.** Pulling the form and the metric back along
+a linear equivalence `e` conjugates the negative spectral projection by `e`. -/
+theorem negativeSpectralProjection_bilinearComp {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] (e : F ≃L[ℝ] E) (hh : IsStrictlyPositive h♯)
+    (hq : ∀ u v, q u v = q v u) (hq' : Function.Injective q) :
+    (q.bilinearComp (e : F →L[ℝ] E) (e : F →L[ℝ] E)).negativeSpectralProjection
+        (h.bilinearComp (e : F →L[ℝ] E) (e : F →L[ℝ] E)) =
+      (e.symm : E →L[ℝ] F) ∘L q.negativeSpectralProjection h ∘L (e : F →L[ℝ] E) := by
+  set P := q.negativeSpectralProjection h
+  refine ((eq_negativeSpectralProjection_iff
+    (isStrictlyPositive_continuousLinearMapOfBilin_bilinearComp_equiv h e hh)
+    (fun u v ↦ hq _ _) (injective_bilinearComp hq' e.bijective)).mpr
+    ⟨?_, fun u v ↦ ?_, fun u v ↦ ?_, fun u hu ↦ ?_, fun u hu ↦ ?_⟩).symm
+  · ext u
+    simp only [mul_apply_eq_comp, coe_comp, ContinuousLinearEquiv.coe_coe, Function.comp_apply,
+      ContinuousLinearEquiv.apply_symm_apply]
+    rw [← mul_apply_eq_comp P P, (isIdempotentElem_negativeSpectralProjection (q := q) hh).eq]
+  · simpa using metric_apply_negativeSpectralProjection_apply_sub_eq_zero (q := q) hh (e u) (e v)
+  · simpa using apply_negativeSpectralProjection_apply_sub_eq_zero (q := q) hh (e u) (e v)
+  · simp only [coe_comp, ContinuousLinearEquiv.coe_coe, Function.comp_apply, bilinearComp_apply,
+      ContinuousLinearEquiv.apply_symm_apply] at hu ⊢
+    exact apply_negativeSpectralProjection_apply_self_lt_zero hq
+      fun h0 ↦ hu (by rw [h0, map_zero])
+  · have hsub : u - e.symm (P (e u)) = e.symm (e u - P (e u)) := by
+      rw [map_sub, e.symm_apply_apply]
+    simp only [coe_comp, ContinuousLinearEquiv.coe_coe, Function.comp_apply] at hu ⊢
+    rw [hsub] at hu ⊢
+    rw [bilinearComp_apply, ContinuousLinearEquiv.coe_coe, e.apply_symm_apply]
+    exact apply_sub_negativeSpectralProjection_apply_self_pos hh hq hq'
+      fun h0 ↦ hu (by rw [h0, map_zero])
+
 /-! ### Smooth dependence -/
 
 /-- **The negative spectral projection depends smoothly on the form and the metric**, including
@@ -473,6 +508,42 @@ theorem _root_.ContDiffOn.negativeSpectralProjection {F : Type*} [NormedAddCommG
     ContDiffOn ℝ n (fun x ↦ (q x).negativeSpectralProjection (h x)) s :=
   contDiffOn_negativeSpectralProjection.comp (hqd.prodMk hhd) fun x hx ↦
     ⟨hq x hx, hq' x hx, hh x hx⟩
+
+end ContinuousLinearMap
+
+/-! ### Pullbacks of relative spectral subspaces -/
+
+namespace ContinuousLinearMap
+
+variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W]
+  [NormedSpace ℝ W]
+
+/-- Pulling a form and a metric back along a linear equivalence `e` pulls back their relative
+spectral subspaces: these are carried by `e` to the relative spectral subspaces of the original
+pair. -/
+theorem map_relativeSpectralSubspace_bilinearComp (e : W ≃L[ℝ] V) (q h : V →L[ℝ] V →L[ℝ] ℝ)
+    (Ω : Set ℝ) :
+    ((h.bilinearComp (e : W →L[ℝ] V) (e : W →L[ℝ] V)).toBilinForm.relativeSpectralSubspace
+      (q.bilinearComp (e : W →L[ℝ] V) (e : W →L[ℝ] V)).toBilinForm Ω).map
+        ((e : W →L[ℝ] V) : W →ₗ[ℝ] V) =
+      h.toBilinForm.relativeSpectralSubspace q.toBilinForm Ω := by
+  have hc (B : V →L[ℝ] V →L[ℝ] ℝ) : (B.bilinearComp (e : W →L[ℝ] V) (e : W →L[ℝ] V)).toBilinForm =
+      B.toBilinForm.compl₁₂ ((e : W →L[ℝ] V) : W →ₗ[ℝ] V) ((e : W →L[ℝ] V) : W →ₗ[ℝ] V) := by
+    ext u v
+    simp
+  rw [hc, hc]
+  exact LinearMap.BilinForm.map_relativeSpectralSubspace_compl₁₂ e.toLinearEquiv
+
+/-- A vector lies in a relative spectral subspace of a pulled-back pair exactly when its image
+lies in the corresponding relative spectral subspace of the original pair. -/
+theorem mem_relativeSpectralSubspace_bilinearComp_iff (e : W ≃L[ℝ] V) {q h : V →L[ℝ] V →L[ℝ] ℝ}
+    {Ω : Set ℝ} {u : W} :
+    u ∈ (h.bilinearComp (e : W →L[ℝ] V) (e : W →L[ℝ] V)).toBilinForm.relativeSpectralSubspace
+        (q.bilinearComp (e : W →L[ℝ] V) (e : W →L[ℝ] V)).toBilinForm Ω ↔
+      e u ∈ h.toBilinForm.relativeSpectralSubspace q.toBilinForm Ω := by
+  rw [← map_relativeSpectralSubspace_bilinearComp e q h Ω, Submodule.mem_map]
+  refine ⟨fun hu ↦ ⟨u, hu, rfl⟩, fun ⟨w, hw, hwu⟩ ↦ ?_⟩
+  rwa [← e.injective hwu]
 
 end ContinuousLinearMap
 
@@ -527,13 +598,8 @@ theorem exists_contDiffOn_range_eq_relativeSpectralSubspace :
   -- The relative spectral subspaces of the pulled-back forms are carried to those of `q` and `h`.
   have hmap (Ω : Set ℝ) : ((h.bilinearComp Ts Ts).toBilinForm.relativeSpectralSubspace
       (q.bilinearComp Ts Ts).toBilinForm Ω).map (Ts : W →ₗ[ℝ] P) =
-      h.toBilinForm.relativeSpectralSubspace q.toBilinForm Ω := by
-    have hc (B : P →L[ℝ] P →L[ℝ] ℝ) : (B.bilinearComp Ts Ts).toBilinForm =
-        B.toBilinForm.compl₁₂ (Ts : W →ₗ[ℝ] P) (Ts : W →ₗ[ℝ] P) := by
-      ext u v
-      simp
-    rw [hc, hc]
-    exact LinearMap.BilinForm.map_relativeSpectralSubspace_compl₁₂ T.symm.toLinearEquiv
+      h.toBilinForm.relativeSpectralSubspace q.toBilinForm Ω :=
+    ContinuousLinearMap.map_relativeSpectralSubspace_bilinearComp T.symm q h Ω
   have hT : LinearMap.range ((T : P →L[ℝ] W) : P →ₗ[ℝ] W) = ⊤ :=
     LinearMap.range_eq_top.mpr T.surjective
   have hTs : LinearMap.ker (Ts : W →ₗ[ℝ] P) = ⊥ := LinearMap.ker_eq_bot.mpr T.symm.injective

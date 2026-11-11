@@ -306,6 +306,13 @@ theorem inner_sqrt_apply_sqrt_apply_eq_inner {T : X →L[ℝ] X} (hT : 0 ≤ T) 
   rw [← (nonneg_iff_isPositive.mp (CFC.sqrt_nonneg T)).inner_left_eq_inner_right,
     ← mul_apply_eq_comp, CFC.sqrt_mul_sqrt_self T hT]
 
+/-- A strictly positive operator on a real Hilbert space is positive definite. -/
+theorem _root_.IsStrictlyPositive.inner_pos_left {T : X →L[ℝ] X} (hT : IsStrictlyPositive T)
+    {x : X} (hx : x ≠ 0) : 0 < ⟪T x, x⟫_ℝ := by
+  rw [← inner_sqrt_apply_sqrt_apply_eq_inner hT.nonneg]
+  refine real_inner_self_pos.mpr fun h0 ↦ hx ?_
+  exact (isUnit_iff_bijective.mp hT.isUnit_cfcSqrt).1 (h0.trans (map_zero _).symm)
+
 /-- Negative real powers of a positive real Hilbert space operator above the identity are
 contractions in operator norm. -/
 theorem norm_rpow_le_one_of_one_le_of_nonpos (P : X →L[ℝ] X) (hP : 1 ≤ P)
