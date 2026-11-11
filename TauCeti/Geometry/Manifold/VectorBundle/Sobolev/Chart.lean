@@ -157,7 +157,8 @@ the expression `y ↦ (e ⟨φ.symm y, s (φ.symm y)⟩).2` of `s` lies in the l
 is `TauCeti.SobolevSection.memWkpLoc_coord`. -/
 theorem memWkpLoc_trivialization_comp_chart_symm (hk : k ≤ 1) (w : SobolevSection A volume p k)
     {s : ∀ x, V x}
-    (hs : ∀ i, A.chartValueL volume p k i w =ᵐ[volume.restrict (A.image i)] A.coord i s)
+    (hs : ∀ i, A.sectionChartData.chartValueL volume p k i w
+      =ᵐ[volume.restrict (A.image i)] A.coord i s)
     {φ : OpenPartialHomeomorph M ℂ} (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, ℂ) 1 M)
     (e : Trivialization F (π F V)) [MemTrivializationAtlas e] :
     MemWkpLoc p (φ.target ∩ φ.symm ⁻¹' e.baseSet) k fun y ↦ (e ⟨φ.symm y, s (φ.symm y)⟩).2 := by
@@ -191,7 +192,8 @@ theorem exists_ae_eq_coord_of_memWkpLoc_trivialization_comp_chart_symm (hk : k �
     (hcover : ∀ x, ∃ j, x ∈ (φ j).source ∧ x ∈ (e j).baseSet ∧ φ j x ∈ U j) {s : ∀ x, V x}
     (hs : ∀ j, MemWkpLoc p (U j) k fun z ↦ (e j ⟨(φ j).symm z, s ((φ j).symm z)⟩).2) :
     ∃ w : SobolevSection A volume p k,
-      ∀ i, A.chartValueL volume p k i w =ᵐ[volume.restrict (A.image i)] A.coord i s := by
+      ∀ i, A.sectionChartData.chartValueL volume p k i w
+        =ᵐ[volume.restrict (A.image i)] A.coord i s := by
   refine exists_ae_eq_coord_of_memWkpLoc fun i ↦ ⟨_, (A.chart i).isOpen_inter_preimage_symm
     (A.triv i).open_baseSet, (A.closure_image_subset_chart_image_closure_dom i).trans
       (A.chart_image_closure_dom_subset i), ?_⟩
@@ -213,7 +215,8 @@ coordinates of the section `s`. In no chart `φ` of the maximal `C¹` atlas of `
 everywhere equal to the indicator of the right half-plane, provided the domain of the expression
 meets the imaginary axis, across which that indicator jumps. -/
 theorem not_ae_eq_indicator_re_pos (w : SobolevSection A volume p 1) {s : ∀ x, V x}
-    (hs : ∀ i, A.chartValueL volume p 1 i w =ᵐ[volume.restrict (A.image i)] A.coord i s)
+    (hs : ∀ i, A.sectionChartData.chartValueL volume p 1 i w
+      =ᵐ[volume.restrict (A.image i)] A.coord i s)
     {φ : OpenPartialHomeomorph M ℂ} (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, ℂ) 1 M)
     (e : Trivialization F (π F V)) [MemTrivializationAtlas e] (ℓ : F →L[ℝ] ℝ) {z₀ : ℂ}
     (hz₀ : z₀ ∈ φ.target ∩ φ.symm ⁻¹' e.baseSet) (hre : z₀.re = 0) :
