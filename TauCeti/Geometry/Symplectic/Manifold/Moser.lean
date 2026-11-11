@@ -181,7 +181,7 @@ theorem exists_isotopy_mpullback_eq_of_isCompact (σ : SmoothForm (𝓘(ℝ, ℝ
     exact (contMDiff_timeDependentFlowOf hc (n := ⊤) le_top hX).comp
       ((contMDiff_const.prodMk contMDiff_fst).prodMk contMDiff_snd)
   · rw [timeDependentFlowDiffeomorph_apply]
-    exact timeDependentFlowOf_self hX₁ 0 x
+    exact timeDependentFlowOf_self X 0 x
   · rw [timeDependentFlowDiffeomorph_apply]
     exact timeDependentFlowOf_eq_self_of_forall_eq_zero hX₁ (fun u ↦ (hX0 u x).2 (hx u)) 0 t
   · have hψ : ⇑(timeDependentFlowDiffeomorph hc (n := ⊤) le_top hX 0 t) =
