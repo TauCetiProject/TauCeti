@@ -40,17 +40,24 @@ namespace PositiveLinearMap
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
+/-- The GNS pre-Hilbert class map is bounded by the square root of the norm of the functional. -/
+theorem norm_toPreGNS_le (f : A →ₚ[ℂ] ℂ) (a : A) :
+    ‖f.toPreGNS a‖ ≤
+      Real.sqrt ‖(PositiveContinuousLinearMap.ofClass (R := ℂ) f : A →L[ℂ] ℂ)‖ * ‖a‖ := by
+  calc
+    ‖f.toPreGNS a‖ = Real.sqrt ‖f (star a * a)‖ := by simp [preGNS_norm_def']
+    _ ≤ Real.sqrt (‖(PositiveContinuousLinearMap.ofClass f : A →L[ℂ] ℂ)‖ * ‖a‖ ^ 2) := by
+      gcongr
+      simpa [CStarRing.norm_star_mul_self, sq] using
+        (PositiveContinuousLinearMap.ofClass f).toContinuousLinearMap.le_opNorm (star a * a)
+    _ = Real.sqrt ‖(PositiveContinuousLinearMap.ofClass f : A →L[ℂ] ℂ)‖ * ‖a‖ := by
+      rw [Real.sqrt_mul (norm_nonneg _), Real.sqrt_sq (norm_nonneg _)]
+
 /-- The class map of a positive linear functional on a C⋆-algebra into its GNS pre-Hilbert space
 is continuous. -/
 @[fun_prop]
-theorem continuous_toPreGNS (f : A →ₚ[ℂ] ℂ) : Continuous (f.toPreGNS : A → f.PreGNS) := by
-  obtain ⟨C, hC⟩ := f.exists_norm_apply_le
-  refine AddMonoidHomClass.continuous_of_bound f.toPreGNS (√C) fun a => ?_
-  calc ‖f.toPreGNS a‖ = √‖f (star a * a)‖ := by simp [preGNS_norm_def']
-    _ ≤ √(C * ‖a‖ ^ 2) := by
-      gcongr
-      simpa [CStarRing.norm_star_mul_self, sq] using hC (star a * a)
-    _ = √C * ‖a‖ := by rw [Real.sqrt_mul C.coe_nonneg, Real.sqrt_sq (norm_nonneg a)]
+theorem continuous_toPreGNS (f : A →ₚ[ℂ] ℂ) : Continuous (f.toPreGNS : A → f.PreGNS) :=
+  AddMonoidHomClass.continuous_of_bound f.toPreGNS _ (f.norm_toPreGNS_le)
 
 /-- The class map `a ↦ [a]` of a positive linear functional on a C⋆-algebra into its GNS Hilbert
 space, as a continuous linear map. -/
@@ -81,14 +88,7 @@ particular, it is contractive for a norm-one positive functional. -/
 theorem norm_toGNS_le (f : A →ₚ[ℂ] ℂ) (a : A) :
     ‖f.toGNS a‖ ≤
       Real.sqrt ‖(PositiveContinuousLinearMap.ofClass (R := ℂ) f : A →L[ℂ] ℂ)‖ * ‖a‖ := by
-  calc
-    ‖f.toGNS a‖ = Real.sqrt ‖f (star a * a)‖ := by simp [preGNS_norm_def']
-    _ ≤ Real.sqrt (‖(PositiveContinuousLinearMap.ofClass f : A →L[ℂ] ℂ)‖ * ‖a‖ ^ 2) := by
-      gcongr
-      simpa [CStarRing.norm_star_mul_self, sq] using
-        (PositiveContinuousLinearMap.ofClass f).toContinuousLinearMap.le_opNorm (star a * a)
-    _ = Real.sqrt ‖(PositiveContinuousLinearMap.ofClass f : A →L[ℂ] ℂ)‖ * ‖a‖ := by
-      rw [Real.sqrt_mul (norm_nonneg _), Real.sqrt_sq (norm_nonneg _)]
+  simpa only [toGNS_apply, UniformSpace.Completion.norm_coe] using f.norm_toPreGNS_le a
 
 /-- A GNS class vanishes exactly when its positive square has zero mass. -/
 -- Not a simp lemma: `toGNS_apply` already rewrites the class map to the completion embedding.
