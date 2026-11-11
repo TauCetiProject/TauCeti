@@ -99,9 +99,9 @@ private theorem dslope_diffquot_aestronglyMeasurable (hU : IsOpen U) (hf : Diffe
       (fun t ↦ (dslope f (γ t) (w₀ + s) - dslope f (γ t) w₀) / s * deriv γ t)
       (volume.restrict (Ι a b)) := by
   refine factor_mul_deriv_aestronglyMeasurable (ContinuousOn.div_const (ContinuousOn.sub ?_ ?_) _)
-  · exact (continuousOn_dslope_first_arg (hU.mem_nhds hs) hf.continuousOn
+  · exact (continuousOn_dslope_first_arg hf.continuousOn
       (hf.differentiableAt (hU.mem_nhds hs))).comp hγ_cont hγU
-  · exact (continuousOn_dslope_first_arg (hU.mem_nhds hw₀) hf.continuousOn
+  · exact (continuousOn_dslope_first_arg hf.continuousOn
       (hf.differentiableAt (hU.mem_nhds hw₀))).comp hγ_cont hγU
 
 /-- The `F'`-integrand `t ↦ deriv (dslope f (γ t)) w₀ · deriv γ t` is a.e. strongly measurable:

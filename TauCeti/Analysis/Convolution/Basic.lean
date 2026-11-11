@@ -59,6 +59,8 @@ integrals of increments of `f`; when `ψ` has integral `1`, is bounded by `M` an
   factor is integrable and the other essentially bounded.
 * `MeasureTheory.isBounded_range_convolution_of_memLp`: the convolution of `f ∈ Lᵖ` with
   `g ∈ L^q`, for Hölder conjugate `p` and `q`, is bounded.
+* `MeasureTheory.convolution_eq_zero_of_not_completeSpace`: without completeness of the target
+  every convolution is the zero function.
 * `MeasureTheory.convolution_lsmul_assoc_of_integrable_of_ae_norm_le`: pointwise associativity
   for two integrable kernels and an essentially bounded function.
 * `ContinuousLinearMap.convolution_lsmul_comp_comm`: `ρ ⋆ (L ∘ f) = L (ρ ⋆ f)`.
@@ -95,6 +97,20 @@ open scoped Convolution
 namespace MeasureTheory
 
 variable {G E E' F : Type*} {f : G → E} {g : G → E'} {M : ℝ}
+
+section NotCompleteSpace
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [NormedSpace 𝕜 F] [Sub G] [MeasurableSpace G] {μ : Measure G} {L : E →L[𝕜] E' →L[𝕜] F}
+
+/-- Without completeness of the target `F`, every Bochner integral valued in `F` is `0`, so every
+convolution valued in `F` is the zero function. -/
+theorem convolution_eq_zero_of_not_completeSpace (hF : ¬ CompleteSpace F) :
+    f ⋆[L, μ] g = 0 :=
+  funext fun x => by simp [convolution_def, integral_of_not_completeSpace hF]
+
+end NotCompleteSpace
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
