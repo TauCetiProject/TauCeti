@@ -5,28 +5,26 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Constructions.Projective
-public import Mathlib.MeasureTheory.Measure.Prod
+public import Mathlib.MeasureTheory.Constructions.Cylinders
+public import Mathlib.MeasureTheory.MeasurableSpace.Prod
+public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 
 /-!
 # A product law is determined by finite-dimensional marginals in its path coordinate
 
 A finite measure on `γ × (∀ i, β i)` is determined by its images under `Prod.map id F.restrict`,
-as `F` ranges over the finite sets of coordinates. On a rectangle `s ×ˢ t`, the section
-`t ↦ μ (s ×ˢ t)` is a finite measure on the path space `∀ i, β i`, which is the projective limit of
-its finite-dimensional marginals and hence determined by them; rectangles in turn determine a
-finite measure on a product.
+as `F` ranges over the finite sets of coordinates. The sets `s ×ˢ cylinder F S`, with `s`
+measurable in `γ` and `cylinder F S` a measurable cylinder of the path space `∀ i, β i`, form a
+π-system generating the product σ-algebra, and the measure of `s ×ˢ cylinder F S` is read off from
+the image under `Prod.map id F.restrict`.
 
 This is the shape in which a coding of an infinite family of random variables, jointly with a fixed
-observation, is assembled from the codings of its finite subfamilies. The argument is the one that
-closes `TauCeti.Probability.SeparatelyExchangeable.exists_common_visibleArray_coding` (in
-`TauCeti.Probability.Exchangeability.Arrays.Strip.Cell.CommonCoding`), stated here for an arbitrary
-observation space and path space.
+observation, is assembled from the codings of its finite subfamilies.
 
 ## Main result
 
-* `TauCeti.MeasureTheory.Measure.ext_prod_pi_of_forall_finset_map_restrict_eq` — two finite
-  measures on `γ × (∀ i, β i)` with the same image under every `Prod.map id F.restrict` are equal.
+* `TauCeti.MeasureTheory.Measure.ext_prod_pi_of_forall_finset_map_restrict_eq` — a finite measure
+  on `γ × (∀ i, β i)` equals any measure with the same image under every `Prod.map id F.restrict`.
 -/
 
 public section
@@ -37,39 +35,26 @@ namespace TauCeti.MeasureTheory.Measure
 
 variable {γ ι : Type*} {β : ι → Type*} [MeasurableSpace γ] [∀ i, MeasurableSpace (β i)]
 
-/-- **Finite-dimensional marginals in the path coordinate determine a finite product law.** Two
-finite measures on `γ × (∀ i, β i)` are equal as soon as, for every finite set `F` of coordinates,
-their images under `Prod.map id F.restrict` agree. -/
+/-- **Finite-dimensional marginals in the path coordinate determine a finite product law.** A
+finite measure `μ` on `γ × (∀ i, β i)` equals a measure `ν` as soon as, for every finite set `F` of
+coordinates, their images under `Prod.map id F.restrict` agree. -/
 theorem ext_prod_pi_of_forall_finset_map_restrict_eq {μ ν : Measure (γ × (∀ i, β i))}
-    [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+    [IsFiniteMeasure μ]
     (h : ∀ F : Finset ι, μ.map (Prod.map id F.restrict) = ν.map (Prod.map id F.restrict)) :
     μ = ν := by
-  -- Two finite laws on a product agree once they agree on rectangles `s ×ˢ t`; for a fixed
-  -- measurable `s`, the section `t ↦ μ (s ×ˢ t)` is a finite measure on the path space, which is
-  -- determined by its finite-dimensional marginals.
-  refine Measure.ext_prod fun {s t} hs ht => ?_
-  have hsec (μ : Measure (γ × (∀ i, β i))) :
-      μ (s ×ˢ t) = ((μ.restrict (s ×ˢ Set.univ)).map Prod.snd) t := by
-    rw [Measure.map_apply measurable_snd ht, Measure.restrict_apply (measurable_snd ht)]
-    congr 1
-    ext ⟨y, z⟩
-    simp [and_comm]
-  have hmarg (μ : Measure (γ × (∀ i, β i))) (F : Finset ι) :
-      ((μ.restrict (s ×ˢ Set.univ)).map Prod.snd).map F.restrict =
-        ((μ.map (Prod.map id F.restrict)).restrict (s ×ˢ Set.univ)).map Prod.snd := by
-    have hFr : Measurable (Prod.map (id : γ → γ) (F.restrict (π := β))) :=
-      measurable_id.prodMap (Finset.measurable_restrict F)
-    have hpre : Prod.map id F.restrict ⁻¹' (s ×ˢ Set.univ) =
-        (s ×ˢ Set.univ : Set (γ × (∀ i, β i))) := by
-      ext
-      simp
-    rw [Measure.restrict_map hFr (hs.prod .univ), Measure.map_map measurable_snd hFr,
-      Measure.map_map (Finset.measurable_restrict F) measurable_snd, hpre]
-    rfl
-  rw [hsec, hsec]
-  refine congrFun (congrArg _ (IsProjectiveLimit.unique (P := fun F : Finset ι =>
-    ((ν.restrict (s ×ˢ Set.univ)).map Prod.snd).map F.restrict) (fun F => ?_) fun F => rfl)) t
-  dsimp only
-  rw [hmarg, hmarg, h F]
+  have hF (F : Finset ι) : Measurable (Prod.map (id : γ → γ) (F.restrict (π := β))) :=
+    measurable_id.prodMap F.measurable_restrict
+  refine ext_of_generate_finite _ ?_
+    (MeasurableSpace.isPiSystem_measurableSet.prod isPiSystem_measurableCylinders) ?_ ?_
+  · rw [← generateFrom_prod_eq isCountablySpanning_measurableSet
+      ⟨fun _ => .univ, fun _ => univ_mem_measurableCylinders β, Set.iUnion_const _⟩,
+      MeasurableSpace.generateFrom_measurableSet, generateFrom_measurableCylinders]
+  · rintro _ ⟨s, hs, _, hC, rfl⟩
+    obtain ⟨F, S, hS, rfl⟩ := (mem_measurableCylinders _).1 hC
+    have := congr($(h F) (s ×ˢ S))
+    -- `cylinder F S` is by definition the preimage `F.restrict ⁻¹' S`.
+    rwa [Measure.map_apply (hF F) (hs.prod hS), Measure.map_apply (hF F) (hs.prod hS),
+      Set.preimage_prod_map_prod, Set.preimage_id] at this
+  · simpa [Measure.map_apply (hF ∅)] using congr($(h ∅) .univ)
 
 end TauCeti.MeasureTheory.Measure

@@ -31,9 +31,9 @@ cohomological vanishing hypothesis: it specializes the internal Laurent variable
 Maslov degree and rescales the formal variable by `-1`, forming a ring homomorphism
 `PowerSeries (LaurentPolynomial R) →+* PowerSeries R`.
 
-Over a strictly ordered commutative ring, for a series with nonnegative coefficients and no
-support strictly below the diagonal, the Alexander-graded and Maslov-graded Euler formal power
-series agree if and only if the series is supported on the diagonal `a = n`
+Over a commutative ring with an ordered cancellative addition, for a series with nonnegative
+coefficients and no support strictly below the diagonal, the Alexander-graded and Maslov-graded
+Euler formal power series agree if and only if the series is supported on the diagonal `a = n`
 (`TauCeti.Bigraded.eulerPowerSeries_eq_maslovEulerPowerSeries_iff`). This extends
 `TauCeti.Bigraded.euler_eq_maslovEuler_iff_isDiagonal` to unbounded cohomological support.
 
@@ -278,7 +278,7 @@ end MaslovEulerPowerSeries
 
 section DiagonalCriterion
 
-variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+variable {R : Type*} [CommRing R] [PartialOrder R] [IsOrderedCancelAddMonoid R]
 
 /-- **The Alexander-graded and Maslov-graded Euler formal power series agree exactly on diagonal
 series**, for any series with nonnegative coefficients and no support strictly below the diagonal.

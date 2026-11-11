@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.Ext.Finite
 public import TauCeti.Algebra.Category.GradedModuleCat.Idempotent.MinimalResolution
-public import TauCeti.Algebra.Category.GradedModuleCat.LinearResolution.Converse
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.FiniteLength
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Poincare.Euler
 

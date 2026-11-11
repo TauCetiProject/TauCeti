@@ -9,6 +9,8 @@ public import Mathlib.MeasureTheory.Function.EssSup
 public import Mathlib.MeasureTheory.Measure.Support
 public import Mathlib.Topology.Semicontinuity.Basic
 
+import Mathlib.MeasureTheory.Measure.OpenPos
+
 /-!
 # Essential suprema on the support of a measure
 
@@ -27,6 +29,8 @@ bounded function does not increase when the measure is replaced by an absolutely
 for example its restriction to a smaller set (`TauCeti.essSup_sub_essInf_mono_measure`). These
 make the essential oscillation on a ball the smallest length of an interval containing the
 function there, monotone in the radius, which is how oscillation decay estimates are iterated.
+The essential supremum of an essentially bounded real function is also the supremum of the levels
+that it exceeds on a set of positive measure (`TauCeti.ae_le_csSup_of_bddAbove`).
 -/
 
 public section
@@ -75,6 +79,57 @@ theorem essSup_sub_essInf_mono_measure [(ae ν).NeBot] {ν' : Measure α} {f : �
   refine essSup_sub_essInf_le (m := essInf f ν') (hν.ae_le ?_)
   filter_upwards [ae_le_essSup hf₁, ae_essInf_le hf₂] with x hx₁ hx₂
   exact ⟨hx₂, by linarith⟩
+
+/-- If a real function is not almost everywhere at most `k` but is essentially bounded above,
+the levels `l ≥ k` that it exceeds on a set of positive measure have a supremum `M`; then
+`f ≤ M` almost everywhere and `k < M`. -/
+theorem ae_le_csSup_of_bddAbove (f : α → ℝ) {k : ℝ} (hk : ¬ ∀ᵐ x ∂ν, f x ≤ k)
+    (hbdd : BddAbove {l : ℝ | k ≤ l ∧ ¬ ∀ᵐ x ∂ν, f x ≤ l}) :
+    (∀ᵐ x ∂ν, f x ≤ sSup {l : ℝ | k ≤ l ∧ ¬ ∀ᵐ x ∂ν, f x ≤ l}) ∧
+    k < sSup {l : ℝ | k ≤ l ∧ ¬ ∀ᵐ x ∂ν, f x ≤ l} := by
+  set L : Set ℝ := {l | k ≤ l ∧ ¬ ∀ᵐ x ∂ν, f x ≤ l}
+  have hkL : k ∈ L := ⟨le_rfl, hk⟩
+  set M := sSup L
+  have hle : ∀ᵐ x ∂ν, f x ≤ M := by
+    rw [eventually_le_const_iff_forall_gt_eventually_lt_const]
+    intro b hb
+    obtain ⟨c, hMc, hcb⟩ := exists_between hb
+    have hc : ∀ᵐ x ∂ν, f x ≤ c := by
+      by_contra hc
+      exact (le_csSup hbdd ⟨(le_csSup hbdd hkL).trans hMc.le, hc⟩).not_gt hMc
+    exact hc.mono fun x hx ↦ hx.trans_lt hcb
+  exact ⟨hle, lt_of_not_ge fun hMk ↦ hk (hle.mono fun x hx ↦ hx.trans hMk)⟩
+
+/-- The essential oscillation `φ ρ` of a function `v` on a ball `B(x₀, ρ)` for an open-positive
+measure is nonnegative and monotone in `ρ ∈ (0, R₁]`, and at most `2 M` at `R₁`, if `|v| ≤ M`
+almost everywhere on `B(x₀, R₁)`. -/
+theorem essSup_sub_essInf_nonneg_monotoneOn_ball {X : Type*} [PseudoMetricSpace X]
+    [MeasurableSpace X] {mu : Measure X} [mu.IsOpenPosMeasure] (x₀ : X) {R₁ M : ℝ}
+    {v : X → ℝ} {φ : ℝ → ℝ}
+    (hφ : ∀ ρ, φ ρ = essSup v (mu.restrict (Metric.ball x₀ ρ)) -
+      essInf v (mu.restrict (Metric.ball x₀ ρ)))
+    (hR₁ : 0 < R₁) (hM : ∀ᵐ x ∂mu.restrict (Metric.ball x₀ R₁), |v x| ≤ M) :
+    (∀ ρ ∈ Set.Ioc 0 R₁, 0 ≤ φ ρ) ∧ MonotoneOn φ (Set.Ioc 0 R₁) ∧ φ R₁ ≤ 2 * M := by
+  have hbdd : ∀ ρ ≤ R₁, _ ∧ _ := fun ρ hρ =>
+    Filter.isBoundedUnder_le_abs.mp (Filter.isBoundedUnder_of_eventually_le
+      (ae_restrict_of_ae_restrict_of_subset (Metric.ball_subset_ball hρ) hM))
+  have hne : ∀ ρ, 0 < ρ → (ae (mu.restrict (Metric.ball x₀ ρ))).NeBot := fun ρ hρ =>
+    ae_restrict_neBot.2 (Metric.measure_ball_pos mu x₀ hρ).ne'
+  refine ⟨fun ρ hρ => ?_, fun ρ hρ ρ' hρ' hρρ' => ?_, ?_⟩
+  · have := hne ρ hρ.1
+    rw [hφ]
+    exact sub_nonneg.2 (Filter.liminf_le_limsup (hbdd ρ hρ.2).1 (hbdd ρ hρ.2).2)
+  · have := hne ρ hρ.1
+    rw [hφ, hφ]
+    exact essSup_sub_essInf_mono_measure (Measure.absolutelyContinuous_of_le
+      (Measure.restrict_mono (Metric.ball_subset_ball hρρ') le_rfl)) (hbdd ρ' hρ'.2).1
+      (hbdd ρ' hρ'.2).2
+  · have := hne R₁ hR₁
+    rw [hφ]
+    refine essSup_sub_essInf_le (m := -M) ?_
+    filter_upwards [hM] with x hx
+    rw [abs_le] at hx
+    exact ⟨hx.1, by linarith only [hx.2]⟩
 
 end Oscillation
 

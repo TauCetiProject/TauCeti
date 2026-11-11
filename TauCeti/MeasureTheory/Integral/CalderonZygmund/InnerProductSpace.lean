@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.StandardKernel
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.StrongType
+import Mathlib.MeasureTheory.Group.Integral
 
 /-!
 # Calderón–Zygmund operators on a finite-dimensional inner product space
@@ -68,6 +69,8 @@ type `(p, p)` bounds (`TauCeti.exists_mul_volume_lt_enorm_le_of_hormander`,
 * `TauCeti.exists_eLpNorm_le_of_hormander`: operators on `L²(V)` such that both they
   and their adjoints have kernels satisfying Hörmander's condition are bounded in the `Lᵖ` norm
   for `1 < p < ∞`, uniformly.
+* `TauCeti.setLIntegral_enorm_sub_le_of_norm_sub_le`: a kernel dominated by the differences of a
+  translation-invariant kernel `K (x - y)` inherits Hörmander's condition from `K`.
 
 ## References
 
@@ -521,5 +524,36 @@ theorem _root_.TauCeti.exists_eLpNorm_le_of_hormander [Nontrivial V] {M B B' : �
     hC (coordConj b T) ((enorm_coordConj b T).trans_le hTM)
       (setLIntegral_compl_closedBall_enorm_coordConj_le_of_hormander b T hkm hk hrep) hT'
       (lpCoord b H f)
+
+/-- **Hörmander's condition for a translation-invariant kernel.** Let `k` be a kernel dominated by
+the differences of an integrable function `K`, `‖k x y - k x y'‖ ≤ ‖K (x - y) - K (x - y')‖`. If
+`K` satisfies Hörmander's condition in the translation-invariant form
+`∫_{‖x‖ > 2 ‖h‖} ‖K (x - h) - K x‖ dx ≤ B`, then `k` satisfies it in the two-variable form
+`∫_{‖x - y'‖ > 2 ‖y - y'‖} ‖k x y - k x y'‖ dx ≤ B` of the Calderón–Zygmund theorems. -/
+theorem _root_.TauCeti.setLIntegral_enorm_sub_le_of_norm_sub_le {G G' : Type*}
+    [NormedAddCommGroup G] [NormedAddCommGroup G'] {K : V → G'} (hK : Integrable K)
+    {k : V → V → G} (hk : ∀ x y y', ‖k x y - k x y'‖ ≤ ‖K (x - y) - K (x - y')‖) {B : ℝ}
+    (hB : ∀ h, ∫ x in {x | 2 * ‖h‖ < ‖x‖}, ‖K (x - h) - K x‖ ≤ B) (y y' : V) :
+    ∫⁻ x in {x | 2 * dist y y' < dist x y'}, ‖k x y - k x y'‖ₑ ≤ ENNReal.ofReal B := by
+  set h := y - y'
+  have hS : MeasurableSet {z : V | 2 * ‖h‖ < ‖z‖} :=
+    measurableSet_lt measurable_const measurable_norm
+  have hS' : MeasurableSet {x : V | 2 * dist y y' < dist x y'} :=
+    measurableSet_lt measurable_const (measurable_id.dist measurable_const)
+  have hint : Integrable (fun z ↦ K (z - h) - K z) := (hK.comp_sub_right h).sub hK
+  calc ∫⁻ x in {x | 2 * dist y y' < dist x y'}, ‖k x y - k x y'‖ₑ
+      ≤ ∫⁻ x, {z : V | 2 * ‖h‖ < ‖z‖}.indicator (fun z ↦ ‖K (z - h) - K z‖ₑ) (x - y') := by
+        rw [← lintegral_indicator hS']
+        refine lintegral_mono fun x ↦ ?_
+        simp only [Set.indicator, Set.mem_ofPred_eq, dist_eq_norm, h]
+        split_ifs
+        · refine enorm_le_iff_norm_le.2 ((hk x y y').trans_eq ?_)
+          rw [sub_sub_sub_cancel_right]
+        · exact le_rfl
+    _ = ∫⁻ z in {z | 2 * ‖h‖ < ‖z‖}, ‖K (z - h) - K z‖ₑ := by
+        rw [lintegral_sub_right_eq_self, lintegral_indicator hS]
+    _ = ENNReal.ofReal (∫ z in {z | 2 * ‖h‖ < ‖z‖}, ‖K (z - h) - K z‖) :=
+        (ofReal_integral_norm_eq_lintegral_enorm hint.integrableOn).symm
+    _ ≤ ENNReal.ofReal B := ENNReal.ofReal_le_ofReal (hB h)
 
 end ContinuousLinearMap

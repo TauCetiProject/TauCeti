@@ -40,11 +40,10 @@ not decrease weighted degree. -/
 lemma weightedDegree_le_of_le_of_nonneg_on_support {w : X → ℤ} {D E : WeilDivisor X}
     (hDE : D ≤ E) (hw : ∀ x ∈ (E - D).support, 0 ≤ w x) :
     weightedDegree w D ≤ weightedDegree w E := by
-  have hdiff : IsEffective (E - D) := le_iff_isEffective_sub.mp hDE
+  have hdiff : 0 ≤ E - D := sub_nonneg.mpr hDE
   have hnonneg : 0 ≤ weightedDegree w (E - D) := by
     rw [weightedDegree_apply]
-    exact Finsupp.sum_nonneg fun x hx =>
-      mul_nonneg ((isEffective_iff (E - D)).mp hdiff x) (hw x hx)
+    exact Finsupp.sum_nonneg fun x hx => mul_nonneg (coeff_nonneg hdiff x) (hw x hx)
   rw [map_sub] at hnonneg
   exact sub_nonneg.mp hnonneg
 
@@ -58,14 +57,14 @@ lemma weightedDegree_le_of_le {w : X → ℤ} (hw : ∀ x, 0 ≤ w x) {D E : Wei
 lemma monotone_weightedDegree {w : X → ℤ} (hw : ∀ x, 0 ≤ w x) :
     Monotone (weightedDegree w : WeilDivisor X → ℤ) :=
   (monotone_iff_map_nonneg (weightedDegree w)).2 fun _ hD =>
-    (isEffective_iff_zero_le.mpr hD).weightedDegree_nonneg hw
+    weightedDegree_nonneg hw hD
 
 /-- With positive weights on the support of the difference, a proper coefficientwise increase
 strictly increases weighted degree. -/
 lemma weightedDegree_lt_of_le_of_ne_of_pos_on_support {w : X → ℤ} {D E : WeilDivisor X}
     (hDE : D ≤ E) (hne : D ≠ E) (hw : ∀ x ∈ (E - D).support, 0 < w x) :
     weightedDegree w D < weightedDegree w E := by
-  have hdiff : IsEffective (E - D) := le_iff_isEffective_sub.mp hDE
+  have hdiff : 0 ≤ E - D := sub_nonneg.mpr hDE
   have hdiff_ne : E - D ≠ 0 := by
     intro hzero
     apply hne
@@ -73,11 +72,11 @@ lemma weightedDegree_lt_of_le_of_ne_of_pos_on_support {w : X → ℤ} {D E : Wei
   have hnonneg : 0 ≤ weightedDegree w (E - D) := by
     rw [weightedDegree_apply]
     exact Finsupp.sum_nonneg fun x hx =>
-      mul_nonneg ((isEffective_iff (E - D)).mp hdiff x) (le_of_lt (hw x hx))
+      mul_nonneg (coeff_nonneg hdiff x) (le_of_lt (hw x hx))
   have hpos : 0 < weightedDegree w (E - D) := by
     refine lt_of_le_of_ne hnonneg ?_
     intro hzero
-    exact hdiff_ne ((hdiff.weightedDegree_eq_zero_iff_of_pos_on_support hw).mp hzero.symm)
+    exact hdiff_ne ((weightedDegree_eq_zero_iff_of_pos_on_support hdiff hw).mp hzero.symm)
   rw [map_sub] at hpos
   exact sub_pos.mp hpos
 
@@ -112,13 +111,13 @@ lemma eq_of_le_of_weightedDegree_eq_of_pos {w : X → ℤ} (hw : ∀ x, 0 < w x)
 
 /-- **An effective divisor of weighted degree one is a point divisor**: with positive weights on
 its support, `weightedDegree w D = 1` forces `D = [x]` at a single point `x` of weight one. -/
-lemma IsEffective.exists_eq_ofPoint_of_weightedDegree_eq_one {w : X → ℤ} {D : WeilDivisor X}
-    (hD : IsEffective D) (hw : ∀ x ∈ D.support, 0 < w x) (hdeg : weightedDegree w D = 1) :
+lemma exists_eq_ofPoint_of_weightedDegree_eq_one {w : X → ℤ} {D : WeilDivisor X}
+    (hD : 0 ≤ D) (hw : ∀ x ∈ D.support, 0 < w x) (hdeg : weightedDegree w D = 1) :
     ∃ x, w x = 1 ∧ D = ofPoint x := by
   have hD0 : D ≠ 0 := by
     rintro rfl
     simp at hdeg
-  obtain ⟨x, hx⟩ := hD.exists_pos_coeff_of_ne_zero hD0
+  obtain ⟨x, hx⟩ := exists_pos_coeff_of_ne_zero hD hD0
   have hxmem : x ∈ D.support := mem_support_iff.mpr (by omega)
   have hle : ofPoint x ≤ D := by
     rw [le_iff]
@@ -127,7 +126,7 @@ lemma IsEffective.exists_eq_ofPoint_of_weightedDegree_eq_one {w : X → ℤ} {D 
     · rw [coeff_ofPoint_self]
       omega
     · rw [coeff_ofPoint_of_ne hy]
-      exact (isEffective_iff D).mp hD y
+      exact coeff_nonneg hD y
   -- the support of the difference `D - [x]` is contained in the support of `D`
   have hwsub : ∀ y ∈ (D - ofPoint x).support, 0 < w y := by
     intro y hy

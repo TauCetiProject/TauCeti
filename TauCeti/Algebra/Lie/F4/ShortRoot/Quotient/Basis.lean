@@ -99,66 +99,82 @@ theorem f4LongRootBasisCoordinate_injective :
     apply (F4.lieBasis valid_F4).baseSupportEquiv.injective
     exact Sum.inr.inj hab'
 
+/-- A complementary coordinate is not a short Chevalley index. -/
+private theorem f4LongRootBasisCoordinate_mem_compl (a : Fin 26) :
+    f4LongRootBasisCoordinate a ∈ f4ShortChevalleyIndicesᶜ := by
+  rcases h : f4ShortRootWeightIndexEquiv a with i | k
+  · simp only [f4LongRootBasisCoordinate, h, Set.mem_compl_iff,
+      mem_f4ShortChevalleyIndices_iff, f4ChevalleyIndexIsShort_inl_iff,
+      f4PinnedRootIndex_f4KillingRootLabel, f4SpecialIsogenyIndexEquiv_apply]
+    rw [f4Length_specialIsogenyIndex_eq_one_iff]
+    omega
+  · simp only [f4LongRootBasisCoordinate, h, Set.mem_compl_iff,
+      mem_f4ShortChevalleyIndices_iff, f4ChevalleyIndexIsShort_inr_iff]
+    rw [f4PinnedSimpleIndexEquiv_baseSupportEquiv]
+    fin_cases k <;> simp [f4LongSimpleIndex]
+
+/-- A long-root Chevalley coordinate is a complementary coordinate. -/
+private theorem exists_f4LongRootBasisCoordinate_eq_inl
+    (α : (F4.cartanSubalgebra valid_F4).root) (hx : Sum.inl α ∈ f4ShortChevalleyIndicesᶜ) :
+    ∃ a, f4LongRootBasisCoordinate a = Sum.inl α := by
+  have hne : f4Length (f4PinnedRootIndex α) ≠ 1 := by
+    simpa only [Set.mem_compl_iff, mem_f4ShortChevalleyIndices_iff,
+      f4ChevalleyIndexIsShort_inl_iff] using hx
+  have hlong : f4Length (f4PinnedRootIndex α) = 2 :=
+    (f4Length_eq_one_or_eq_two _).resolve_left hne
+  have hshort : f4Length (f4SpecialIsogenyIndexEquiv (f4PinnedRootIndex α)) = 1 := by
+    rw [f4SpecialIsogenyIndexEquiv_apply,
+      f4Length_specialIsogenyIndex_eq_one_iff]
+    exact hlong
+  let i : F4ShortRootIndex :=
+    ⟨f4SpecialIsogenyIndexEquiv (f4PinnedRootIndex α), hshort⟩
+  refine ⟨f4ShortRootWeightIndexEquiv.symm (Sum.inl i), ?_⟩
+  simp only [f4LongRootBasisCoordinate, Equiv.apply_symm_apply]
+  apply congrArg Sum.inl
+  dsimp only [i]
+  rw [f4SpecialIsogenyIndexEquiv_f4SpecialIsogenyIndexEquiv]
+  exact f4KillingRootLabel_f4PinnedRootIndex α
+
+/-- A long simple-coroot Chevalley coordinate is a complementary coordinate. -/
+private theorem exists_f4LongRootBasisCoordinate_eq_inr
+    (j) (hx : Sum.inr j ∈ f4ShortChevalleyIndicesᶜ) :
+    ∃ a, f4LongRootBasisCoordinate a = Sum.inr j := by
+  have hne : ¬(f4PinnedSimpleIndexEquiv j = 2 ∨ f4PinnedSimpleIndexEquiv j = 3) := by
+    simpa only [Set.mem_compl_iff, mem_f4ShortChevalleyIndices_iff,
+      f4ChevalleyIndexIsShort_inr_iff] using hx
+  have hj : f4PinnedSimpleIndexEquiv j = 0 ∨ f4PinnedSimpleIndexEquiv j = 1 := by
+    omega
+  rcases hj with h0 | h1
+  · refine ⟨f4ShortRootWeightIndexEquiv.symm (Sum.inr 1), ?_⟩
+    simp only [f4LongRootBasisCoordinate, Equiv.apply_symm_apply]
+    apply congrArg Sum.inr
+    apply f4PinnedSimpleIndexEquiv.injective
+    have hnode : f4PinnedSimpleIndexEquiv
+        ((F4.lieBasis valid_F4).baseSupportEquiv (f4LongSimpleIndex 1)) = 0 := by
+      rw [f4PinnedSimpleIndexEquiv_baseSupportEquiv, f4LongSimpleIndex_one,
+        Fin.cast_cast, Fin.cast_eq_self]
+    exact hnode.trans h0.symm
+  · refine ⟨f4ShortRootWeightIndexEquiv.symm (Sum.inr 0), ?_⟩
+    simp only [f4LongRootBasisCoordinate, Equiv.apply_symm_apply]
+    apply congrArg Sum.inr
+    apply f4PinnedSimpleIndexEquiv.injective
+    have hnode : f4PinnedSimpleIndexEquiv
+        ((F4.lieBasis valid_F4).baseSupportEquiv (f4LongSimpleIndex 0)) = 1 := by
+      rw [f4PinnedSimpleIndexEquiv_baseSupportEquiv, f4LongSimpleIndex_zero,
+        Fin.cast_cast, Fin.cast_eq_self]
+    exact hnode.trans h1.symm
+
 /-- The complementary coordinates exhaust exactly the Chevalley coordinates that are not short:
 the twenty-four long roots and the two long simple coroots. -/
 @[simp] theorem range_f4LongRootBasisCoordinate :
     Set.range f4LongRootBasisCoordinate = f4ShortChevalleyIndicesᶜ := by
   ext x
-  constructor
+  refine ⟨?_, fun hx => ?_⟩
   · rintro ⟨a, rfl⟩
-    rcases h : f4ShortRootWeightIndexEquiv a with i | k
-    · simp only [f4LongRootBasisCoordinate, h, Set.mem_compl_iff,
-        mem_f4ShortChevalleyIndices_iff, f4ChevalleyIndexIsShort_inl_iff,
-        f4PinnedRootIndex_f4KillingRootLabel, f4SpecialIsogenyIndexEquiv_apply]
-      rw [f4Length_specialIsogenyIndex_eq_one_iff]
-      omega
-    · simp only [f4LongRootBasisCoordinate, h, Set.mem_compl_iff,
-        mem_f4ShortChevalleyIndices_iff, f4ChevalleyIndexIsShort_inr_iff]
-      rw [f4PinnedSimpleIndexEquiv_baseSupportEquiv]
-      fin_cases k <;> simp [f4LongSimpleIndex]
-  · intro hx
-    rcases x with α | j
-    · have hne : f4Length (f4PinnedRootIndex α) ≠ 1 := by
-        simpa only [Set.mem_compl_iff, mem_f4ShortChevalleyIndices_iff,
-          f4ChevalleyIndexIsShort_inl_iff] using hx
-      have hlong : f4Length (f4PinnedRootIndex α) = 2 :=
-        (f4Length_eq_one_or_eq_two _).resolve_left hne
-      have hshort : f4Length (f4SpecialIsogenyIndexEquiv (f4PinnedRootIndex α)) = 1 := by
-        rw [f4SpecialIsogenyIndexEquiv_apply,
-          f4Length_specialIsogenyIndex_eq_one_iff]
-        exact hlong
-      let i : F4ShortRootIndex :=
-        ⟨f4SpecialIsogenyIndexEquiv (f4PinnedRootIndex α), hshort⟩
-      refine ⟨f4ShortRootWeightIndexEquiv.symm (Sum.inl i), ?_⟩
-      simp only [f4LongRootBasisCoordinate, Equiv.apply_symm_apply]
-      apply congrArg Sum.inl
-      dsimp only [i]
-      rw [f4SpecialIsogenyIndexEquiv_f4SpecialIsogenyIndexEquiv]
-      exact f4KillingRootLabel_f4PinnedRootIndex α
-    · have hne : ¬(f4PinnedSimpleIndexEquiv j = 2 ∨ f4PinnedSimpleIndexEquiv j = 3) := by
-        simpa only [Set.mem_compl_iff, mem_f4ShortChevalleyIndices_iff,
-          f4ChevalleyIndexIsShort_inr_iff] using hx
-      have hj : f4PinnedSimpleIndexEquiv j = 0 ∨ f4PinnedSimpleIndexEquiv j = 1 := by
-        omega
-      rcases hj with h0 | h1
-      · refine ⟨f4ShortRootWeightIndexEquiv.symm (Sum.inr 1), ?_⟩
-        simp only [f4LongRootBasisCoordinate, Equiv.apply_symm_apply]
-        apply congrArg Sum.inr
-        apply f4PinnedSimpleIndexEquiv.injective
-        have hnode : f4PinnedSimpleIndexEquiv
-            ((F4.lieBasis valid_F4).baseSupportEquiv (f4LongSimpleIndex 1)) = 0 := by
-          rw [f4PinnedSimpleIndexEquiv_baseSupportEquiv, f4LongSimpleIndex_one,
-            Fin.cast_cast, Fin.cast_eq_self]
-        exact hnode.trans h0.symm
-      · refine ⟨f4ShortRootWeightIndexEquiv.symm (Sum.inr 0), ?_⟩
-        simp only [f4LongRootBasisCoordinate, Equiv.apply_symm_apply]
-        apply congrArg Sum.inr
-        apply f4PinnedSimpleIndexEquiv.injective
-        have hnode : f4PinnedSimpleIndexEquiv
-            ((F4.lieBasis valid_F4).baseSupportEquiv (f4LongSimpleIndex 0)) = 1 := by
-          rw [f4PinnedSimpleIndexEquiv_baseSupportEquiv, f4LongSimpleIndex_zero,
-            Fin.cast_cast, Fin.cast_eq_self]
-        exact hnode.trans h1.symm
+    exact f4LongRootBasisCoordinate_mem_compl a
+  · rcases x with α | j
+    · exact exists_f4LongRootBasisCoordinate_eq_inl α hx
+    · exact exists_f4LongRootBasisCoordinate_eq_inr j hx
 
 /-- The coordinate complement to the modular short-root subspace. -/
 def f4LongRootComplement : Submodule (ZMod 2) f4ModularChevalleyLieAlgebra :=

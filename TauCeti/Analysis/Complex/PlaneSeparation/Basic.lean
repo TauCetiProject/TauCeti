@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.ContinuousLog.Basic
+public import TauCeti.Analysis.Complex.ContinuousLog.Circle
 import TauCeti.Topology.ConnectedComponents
 import TauCeti.Topology.Connected.LocallyPathConnected
 import Mathlib.Analysis.Complex.BranchLogRoot
@@ -57,9 +57,8 @@ A zero-free continuous function on the plane has a continuous logarithm by
 `Complex.exists_continuousOn_eqOn_exp_comp`, hence so does its restriction to any circle. But `V`
 is bounded, so a large enough circle about `a` misses `closure V`, and there `Φ z = z - a`, which
 has **no** continuous logarithm on a circle about `a`
-(`TauCeti.not_hasContinuousLogOn_sub_sphere`) — the classical winding obstruction, proved here by
-following `t ↦ h (a + r * exp (t * I)) - t * I - log r` once around and finding it both constant and
-shifted by `2 * π * I`. That contradiction is the theorem.
+(`TauCeti.not_hasContinuousLogOn_sub_sphere`, the classical winding obstruction, proved in
+`TauCeti/Analysis/Complex/ContinuousLog/Circle.lean`). That contradiction is the theorem.
 
 Nothing in the argument looks at curves inside `K`, or asks `K` to be connected, locally connected,
 or to contain an arc; `K` enters only through the frontier of one component of its complement.
@@ -101,8 +100,6 @@ Taking for `b` a point far to the left of a bounded closed set `K`, Borsuk's the
 
 ## Main results
 
-* `TauCeti.not_hasContinuousLogOn_sub_sphere` — `z ↦ z - a` has no continuous logarithm on a circle
-  centred at `a`.
 * `TauCeti.mem_connectedComponentIn_of_hasContinuousLogOn` — **Borsuk's separation theorem**: a
   continuous logarithm of the Borsuk map on a bounded closed set puts the two points in one
   component of the complement.
@@ -134,48 +131,6 @@ open scoped Real
 
 variable {K : Set ℂ} {a b : ℂ}
 
-/-! ## The winding obstruction on a circle -/
-
-/-- **A circle carries no continuous logarithm of the map to its centre.** This is the winding
-obstruction used in the plane-separation argument. -/
-theorem not_hasContinuousLogOn_sub_sphere {r : ℝ} (hr : 0 ≤ r) (a : ℂ) :
-    ¬ HasContinuousLogOn (fun z => z - a) (sphere a r) := by
-  rcases hr.eq_or_lt with rfl | hr
-  · intro hlog
-    exact (hlog.ne_zero (by simp : a ∈ sphere a 0)) (sub_self a)
-  rw [hasContinuousLogOn_iff]
-  rintro ⟨h, hcont, heq⟩
-  set γ : ℝ → ℂ := circleMap a r with hγdef
-  have hγsub : ∀ t, γ t - a = circleMap 0 r t := fun t => by
-    rw [hγdef, circleMap_sub_center]
-  have hγmem : ∀ t, γ t ∈ sphere a r := fun t => by
-    simpa only [hγdef] using circleMap_mem_sphere a hr.le t
-  have hγc : Continuous γ := by
-    simpa only [hγdef] using continuous_circleMap a r
-  set k : ℝ → ℂ := fun t => h (γ t) - t * Complex.I - Real.log r with hkdef
-  have hkc : Continuous k := by
-    have hhγ : Continuous fun t : ℝ => h (γ t) := hcont.comp_continuous hγc hγmem
-    exact (hhγ.sub (Complex.continuous_ofReal.mul continuous_const)).sub continuous_const
-  have hexpr : Complex.exp ((Real.log r : ℝ) : ℂ) = (r : ℂ) := by
-    rw [← Complex.ofReal_exp, Real.exp_log hr]
-  have hk1 : ∀ t, Complex.exp (k t) = 1 := fun t => by
-    rw [hkdef]
-    have hr0 : (r : ℂ) ≠ 0 := by exact_mod_cast hr.ne'
-    rw [Complex.exp_sub, Complex.exp_sub, heq _ (hγmem t), hγsub, circleMap_zero, hexpr]
-    field_simp
-  have hpre : IsPreconnected (range k) := isPreconnected_range hkc
-  have hconst : k 0 = k (2 * π) :=
-    eq_of_isPreconnected_of_forall_exp_eq_one hpre (by rintro w ⟨t, rfl⟩; exact hk1 t)
-      (mem_range_self 0) (mem_range_self (2 * π))
-  have hγ2 : γ (2 * π) = γ 0 := by
-    simpa [hγdef] using periodic_circleMap a r 0
-  rw [hkdef] at hconst
-  simp only [hγ2, Complex.ofReal_zero, zero_mul, sub_zero] at hconst
-  have hzero : ((2 * π : ℝ) : ℂ) * Complex.I = 0 := by linear_combination hconst
-  rcases mul_eq_zero.mp hzero with hπ | hI
-  · exact (by positivity : (0 : ℝ) < 2 * π).ne' (by exact_mod_cast hπ)
-  · exact Complex.I_ne_zero hI
-
 /-! ## Borsuk's separation theorem -/
 
 /-- The heart of `TauCeti.mem_connectedComponentIn_of_hasContinuousLogOn`, in the case where the
@@ -192,20 +147,17 @@ private theorem not_hasContinuousLogOn_of_isBounded_connectedComponentIn (hK : I
   have haV : a ∈ V := mem_connectedComponentIn ha
   have hfr : frontier V ⊆ K := by
     simpa [hVdef] using frontier_connectedComponentIn_subset_compl (X := ℂ) hK.isOpen_compl a
-  have hclV : closure V ⊆ V ∪ K := by
+  have hbcl : b ∉ closure V := by
     rw [closure_eq_self_union_frontier]
-    exact union_subset_union_right _ hfr
-  have hbcl : b ∉ closure V := fun hmem => (hclV hmem).elim hab hb
+    exact fun hmem => hmem.elim hab fun h => hb (hfr h)
   -- extend the logarithm to the whole plane and exponentiate it
   obtain ⟨H, hH⟩ :=
     ContinuousMap.exists_restrict_eq (Y := ℂ) hK ⟨K.domRestrict h, hcont.domRestrict⟩
   have hHK : ∀ z ∈ K, H z = h z := fun z hz => by
     simpa using DFunLike.congr_fun hH ⟨z, hz⟩
   set G : ℂ → ℂ := fun z => Complex.exp (H z) with hGdef
-  have hGK : ∀ z ∈ K, G z = (z - a) / (z - b) := fun z hz => by
-    simp only [hGdef]
-    rw [hHK z hz]
-    exact heq z hz
+  have hGK : ∀ z ∈ K, G z = (z - a) / (z - b) := fun z hz =>
+    (congrArg Complex.exp (hHK z hz)).trans (heq z hz)
   -- the two sides of `closure V` glue into a zero-free continuous function
   set Φ : ℂ → ℂ := (closure V).piecewise (fun z => G z * (z - b)) (fun z => z - a) with hΦdef
   have hglue : ∀ z ∈ frontier (closure V), G z * (z - b) = z - a := fun z hz => by
@@ -224,25 +176,20 @@ private theorem not_hasContinuousLogOn_of_isBounded_connectedComponentIn (hK : I
       exact mul_ne_zero (Complex.exp_ne_zero _)
         (sub_ne_zero.mpr fun hzeq => hbcl (hzeq ▸ hz))
     · rw [hΦdef, piecewise_eq_of_notMem _ _ _ hz]
-      refine sub_ne_zero.mpr fun hzeq => hz ?_
-      rw [hzeq]
-      exact subset_closure haV
+      exact sub_ne_zero.mpr fun hzeq => hz (hzeq ▸ subset_closure haV)
   -- a large circle about `a` misses `closure V`, and there `Φ` is the map to the centre
   obtain ⟨R, hR, hRsub⟩ := hVb.closure.subset_ball_lt 0 a
   have hsphere : EqOn Φ (fun z => z - a) (sphere a R) := by
     intro z hz
-    have hzcl : z ∉ closure V := fun hmem => by
-      have h₁ : dist z a < R := mem_ball.mp (hRsub hmem)
-      have h₂ : dist z a = R := mem_sphere.mp hz
-      exact absurd h₂ h₁.ne
+    have hzcl : z ∉ closure V := fun hmem => (mem_ball.mp (hRsub hmem)).ne (mem_sphere.mp hz)
     rw [hΦdef, piecewise_eq_of_notMem _ _ _ hzcl]
-  have hΦlog : HasContinuousLogOn Φ univ := by
-    have hUc : IsSimplyConnected (univ : Set ℂ) :=
-      (Homeomorph.Set.univ ℂ).toHomotopyEquiv.simplyConnectedSpace
-    obtain ⟨h, hcont, heq⟩ := Complex.exists_continuousOn_eqOn_exp_comp hUc isOpen_univ
-      hΦc.continuousOn (by rintro ⟨z, -, hz⟩; exact hΦ0 z hz)
-    exact hasContinuousLogOn_iff.mpr
-      ⟨h, hcont, fun z hz => by simpa only [Function.comp_apply] using heq hz⟩
+  have hUc : IsSimplyConnected (univ : Set ℂ) :=
+    (Homeomorph.Set.univ ℂ).toHomotopyEquiv.simplyConnectedSpace
+  obtain ⟨L, hLc, hLeq⟩ := Complex.exists_continuousOn_eqOn_exp_comp hUc isOpen_univ
+    hΦc.continuousOn (by rintro ⟨z, _, hz⟩; exact hΦ0 z hz)
+  have hΦlog : HasContinuousLogOn Φ univ :=
+    hasContinuousLogOn_iff.mpr
+      ⟨L, hLc, fun z hz ↦ by simpa only [Function.comp_apply] using hLeq hz⟩
   exact not_hasContinuousLogOn_sub_sphere hR.le a
     ((hΦlog.mono (subset_univ _)).congr hsphere)
 

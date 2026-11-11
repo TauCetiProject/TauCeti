@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Coalgebra.Comodule.Convolution
+public import TauCeti.Algebra.Coalgebra.Comodule.Convolution.Basic
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Submodule
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 public import TauCeti.RepresentationTheory.Irreducible

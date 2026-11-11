@@ -210,8 +210,8 @@ end LocalFunctional
 
 section Point
 
-variable (k H A : Type u) [Field k] [CommRing H] [HopfAlgebra k H]
-  [CommRing A] [Algebra k A]
+variable (k H A : Type u) [CommSemiring k] [Semiring H] [HopfAlgebra k H] [Module.Flat k H]
+  [CommSemiring A] [Algebra k A]
 
 /-- For a tensor automorphism induced by an algebra-valued point `g`, the local functional is
 the restriction of `g` to the chosen finite subcomodule of the regular comodule. -/

@@ -55,15 +55,6 @@ theorem coeff_one (d : ℤ) : (1 : R[T;T⁻¹]).coeff d = if d = 0 then 1 else 0
 
 /-- Truncation retains every coefficient of nonnegative exponent. -/
 @[simp]
-theorem coeff_trunc (f : R[T;T⁻¹]) (n : ℕ) : (trunc f).coeff n = f.coeff (n : ℤ) := by
-  induction f using LaurentPolynomial.induction_on' with
-  | add p q hp hq => simp [hp, hq]
-  | C_mul_T d r =>
-    rw [trunc_C_mul_T, ← single_eq_C_mul_T]
-    split_ifs with hd
-    · lift d to ℕ using hd
-      simp [Polynomial.coeff_monomial]
-    · have hdn : d ≠ (n : ℤ) := by omega
-      simp [hdn]
+theorem coeff_trunc (f : R[T;T⁻¹]) (n : ℕ) : (trunc f).coeff n = f.coeff (n : ℤ) := (rfl)
 
 end LaurentPolynomial

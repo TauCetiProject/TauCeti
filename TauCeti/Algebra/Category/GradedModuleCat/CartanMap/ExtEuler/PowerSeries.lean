@@ -9,7 +9,6 @@ public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.RingTheory.PowerSeries.NoZeroDivisors
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Coefficients
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.ExtEuler.Basic
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Matrix
 public import TauCeti.Algebra.Category.GradedModuleCat.Ext.EulerAdmissible
 public import TauCeti.Algebra.Category.GradedModuleCat.Idempotent.ProjectiveCover
 public import TauCeti.Algebra.Category.GradedModuleCat.LinearResolution.PowerSeries

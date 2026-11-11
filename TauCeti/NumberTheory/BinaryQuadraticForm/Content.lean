@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Basic
 public import Mathlib.RingTheory.Coprime.Lemmas
+public import Mathlib.RingTheory.Ideal.Span
 import Mathlib.Data.Int.GCD
 import Mathlib.Tactic.LinearCombination
 
@@ -105,6 +106,13 @@ theorem IsPrimitive.exists_linearCombination_eq_one {f : BinaryQuadraticForm ℤ
     (hf : f.IsPrimitive) : ∃ u v w : ℤ, u * f.a + v * f.b + w * f.c = 1 := by
   simpa only [(isPrimitive_iff f).mp hf, Nat.cast_one] using
     exists_linearCombination_eq_content f
+
+/-- The coefficients of a primitive form generate the unit ideal of every commutative ring `R`. -/
+theorem IsPrimitive.span_intCast_eq_top {R : Type*} [CommRing R] {f : BinaryQuadraticForm ℤ}
+    (hf : f.IsPrimitive) : Ideal.span {(f.a : R), (f.b : R), (f.c : R)} = ⊤ := by
+  obtain ⟨u, v, w, h⟩ := hf.exists_linearCombination_eq_one
+  refine (Ideal.eq_top_iff_one _).mpr (Submodule.mem_span_triple.mpr ⟨u, v, w, ?_⟩)
+  simpa using congrArg (Int.cast : ℤ → R) h
 
 /-- A natural number divides the content exactly when it divides all three coefficients. -/
 theorem dvd_content_iff (f : BinaryQuadraticForm ℤ) (n : ℕ) :
