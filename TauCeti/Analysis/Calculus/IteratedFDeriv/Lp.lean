@@ -11,9 +11,11 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.Monotonicity
 import TauCeti.Topology.MetricSpace.Thickening
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
+import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 
 /-!
-# Iterated derivative seminorms under linear changes of variables
+# Iterated derivative seminorms: linear changes of variables and the Euclidean Hessian
 
 Composing a vector-valued function with a linear automorphism `e` multiplies the `Lᵖ` seminorm
 of its `i`-th derivative by at most `‖e‖ ^ i * |det e|^(-1 / p)`. The estimate compares a set
@@ -26,6 +28,12 @@ of a `C²` function on a thickening: the `L²` norm of `D²u` on a thickening of
 finite (`MeasureTheory.Measure.eLpNorm_iteratedFDeriv_two_thickening_ne_top`), and `D²(u ∘ e)` on
 the preimage thickening is controlled by `D²u` through the ellipticity constants of `e`
 (`MeasureTheory.Measure.toReal_eLpNorm_iteratedFDeriv_two_comp_le`).
+
+On a finite-dimensional inner product space with an additive Haar measure, the `Lᵖ` norm of the
+Hessian of a function with continuous second derivative supported in a closed ball, with all second
+partial derivatives along an orthonormal basis bounded by `B`, is at most the `1/p`-th power of the
+measure of the ball times `(card ι)² B`
+(`MeasureTheory.Measure.toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall`).
 -/
 
 public section
@@ -133,5 +141,36 @@ theorem toReal_eLpNorm_iteratedFDeriv_two_comp_le [μ.IsAddHaarMeasure]
   rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity)]
 
 end Thickening
+
+section InnerHessian
+
+/-- The `Lᵖ` norm of the second derivative of a function `w` with continuous second derivative on a
+finite-dimensional real inner product space with an additive Haar measure `μ` is at most
+`μ (closedBall 0 R) ^ (1/p) * (card ι) ^ 2 * B`, when the second derivative of `w` is supported in
+the closed ball `closedBall x₀ R` and all its second partial derivatives along an orthonormal basis
+`b` are bounded by `B`. Only the second derivative needs to be supported there, so `w` itself may be
+nonzero outside. -/
+theorem toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall
+    {E ι : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
+    [Fintype ι] [Nonempty ι] (b : OrthonormalBasis ι ℝ E) {w : E → ℝ}
+    (hw : Continuous (iteratedFDeriv ℝ 2 w)) {x₀ : E} {R B : ℝ} {p : ℝ≥0∞}
+    (hsupp : Function.support (iteratedFDeriv ℝ 2 w) ⊆ closedBall x₀ R)
+    (hB : ∀ x i j, |fderiv ℝ (fderiv ℝ w) x (b i) (b j)| ≤ B) :
+    (eLpNorm (iteratedFDeriv ℝ 2 w) p μ).toReal ≤
+      (μ (closedBall (0 : E) R)).toReal ^ p.toReal⁻¹ * ((Fintype.card ι : ℝ) ^ 2 * B) := by
+  have hB₀ : 0 ≤ B :=
+    (abs_nonneg _).trans (hB 0 (Classical.arbitrary ι) (Classical.arbitrary ι))
+  have hnorm (x : E) : ‖iteratedFDeriv ℝ 2 w x‖ ≤ (Fintype.card ι : ℝ) ^ 2 * B := by
+    refine (iteratedFDeriv ℝ 2 w x).opNorm_le_card_sq_mul_of_norm_apply_le b (B := B) fun i j => ?_
+    simpa [iteratedFDeriv_two_apply] using hB x i j
+  refine (ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg (by positivity)
+    measure_closedBall_lt_top.ne) ENNReal.ofReal_ne_top) (eLpNorm_le_of_ae_bound_of_support_subset
+    hw.aestronglyMeasurable hsupp (ae_of_all _ hnorm))).trans
+    (le_of_eq ?_)
+  rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (by positivity),
+    Measure.addHaar_closedBall_center]
+
+end InnerHessian
 
 end MeasureTheory.Measure

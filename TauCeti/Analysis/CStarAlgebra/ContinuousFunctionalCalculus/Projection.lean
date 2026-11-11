@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Unital
-public import TauCeti.Topology.Indicator
+public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Continuity
+public import TauCeti.Analysis.Normed.Algebra.Spectrum
+import TauCeti.Topology.Algebra.Indicator
 
 /-!
 # Star projections from the continuous functional calculus
@@ -22,6 +24,10 @@ When `a` is self-adjoint and invertible, `0` is not in its spectrum, so the spec
 `P₊ = cfc ((Ioi 0).indicator 1) a` and `P₋ = cfc ((Iio 0).indicator 1) a` onto the positive and
 negative parts of the spectrum are complementary, `P₊ + P₋ = 1`.
 
+In a complete normed algebra with an isometric functional calculus, such as a C⋆-algebra, the
+spectral projector `cfc (Ω.indicator 1) a` depends continuously on the self-adjoint element `a`
+wherever the spectrum of `a` avoids the frontier of `Ω`.
+
 ## Main results
 
 * `TauCeti.isStarProjection_cfc` — `cfc f a` is a star projection when `f` is idempotent-valued on
@@ -31,7 +37,9 @@ negative parts of the spectrum are complementary, `P₊ + P₋ = 1`.
 * `IsUnit.continuousOn_indicator_spectrum` — at an invertible element, the indicator of a set
   whose frontier is contained in `{0}` is continuous on the spectrum;
 * `TauCeti.cfc_indicator_Ioi_add_cfc_indicator_Iio` — for invertible self-adjoint `a`, the
-  positive and negative spectral projectors add up to `1`.
+  positive and negative spectral projectors add up to `1`;
+* `IsSelfAdjoint.continuousWithinAt_cfc_indicator` — the spectral projector depends continuously
+  on the self-adjoint element when the frontier of the set avoids the spectrum.
 -/
 
 public section
@@ -69,9 +77,11 @@ omit [StarRing A] [TopologicalSpace A] [ContinuousFunctionalCalculus ℝ A IsSel
 /-- At an invertible element, the indicator of a set whose frontier is contained in `{0}`, such as
 a half-line ending at `0`, is continuous on the spectrum, since the spectrum avoids `0`. -/
 theorem _root_.IsUnit.continuousOn_indicator_spectrum {a : A} (ha : IsUnit a) {Ω : Set ℝ}
-    (hΩ : frontier Ω ⊆ {0}) : ContinuousOn (Ω.indicator (1 : ℝ → ℝ)) (spectrum ℝ a) :=
-  ContinuousOn.indicator_of_disjoint_frontier (by exact continuousOn_const) <| disjoint_left.2
-    fun _ hx hx' ↦ spectrum.zero_notMem ℝ ha (mem_singleton_iff.1 (hΩ hx') ▸ hx)
+    (hΩ : frontier Ω ⊆ {0}) : ContinuousOn (Ω.indicator (1 : ℝ → ℝ)) (spectrum ℝ a) := by
+  classical
+  rw [← piecewise_eq_indicator]
+  refine ContinuousOn.piecewise (fun x hx ↦ ?_) continuousOn_const continuousOn_const
+  exact absurd (mem_singleton_iff.mp (hΩ hx.2) ▸ hx.1) (spectrum.zero_notMem ℝ ha)
 
 /-- For an invertible self-adjoint `a`, the spectral projectors onto the positive and the negative
 parts of the spectrum add up to `1`. -/
@@ -86,3 +96,29 @@ theorem cfc_indicator_Ioi_add_cfc_indicator_Iio {a : A} (ha : IsUnit a)
   · simp [indicator_of_notMem, indicator_of_mem, hx, hx.not_gt]
 
 end TauCeti
+
+section Continuity
+
+open Filter Set Topology
+
+variable {A : Type*} [NormedRing A] [StarRing A] [NormedAlgebra ℝ A]
+  [IsometricContinuousFunctionalCalculus ℝ A IsSelfAdjoint] [ContinuousStar A] [CompleteSpace A]
+
+/-- The spectral projector for a set `Ω` depends continuously on the self-adjoint element at an
+element whose spectrum avoids the frontier of `Ω`. -/
+theorem IsSelfAdjoint.continuousWithinAt_cfc_indicator {a : A} (ha : IsSelfAdjoint a)
+    {Ω : Set ℝ} (hΩ : Disjoint (frontier Ω) (spectrum ℝ a)) :
+    ContinuousWithinAt (cfc (Ω.indicator (1 : ℝ → ℝ))) {b | IsSelfAdjoint b} a := by
+  set t := {b : A | IsSelfAdjoint b ∧ spectrum ℝ b ⊆ (frontier Ω)ᶜ}
+  have hcont : ContinuousOn (cfc (Ω.indicator (1 : ℝ → ℝ))) t :=
+    ContinuousOn.cfc_of_mem_nhdsSet (a := id) _
+      (isClosed_frontier.isOpen_compl.mem_nhdsSet.2 (iUnion₂_subset fun b hb ↦ hb.2))
+      continuousOn_id (fun b hb ↦ hb.1)
+      (continuousOn_const.continuousOn_indicator_of_disjoint_frontier disjoint_compl_right)
+  refine (hcont.continuousWithinAt ⟨ha, hΩ.subset_compl_left⟩).mono_of_mem_nhdsWithin ?_
+  filter_upwards [self_mem_nhdsWithin,
+    nhdsWithin_le_nhds (spectrum.eventually_disjoint_of_isClosed isClosed_frontier hΩ)]
+    with b hb hb'
+  exact ⟨hb, hb'.subset_compl_left⟩
+
+end Continuity

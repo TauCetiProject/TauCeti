@@ -170,10 +170,7 @@ private theorem exists_tendsto_dilation_conj_jorgensenSeq (hs : 0 < s)
   have h00 : Tendsto (fun n ↦ J (n + 1) 0 0) atTop (𝓝 ((dilation s : SL(2, ℝ)) 0 0)) := by
     simp only [J, jorgensenSeq_succ, conj_dilation_apply_zero_zero]
     simpa using tendsto_const_nhds.add (hβ.const_mul _)
-  have h11 : Tendsto (fun n ↦ J (n + 1) 1 1) atTop (𝓝 ((dilation s : SL(2, ℝ)) 1 1)) := by
-    simp only [J, jorgensenSeq_succ, conj_dilation_apply_one_one]
-    simpa using tendsto_const_nhds.sub (hβ.const_mul _)
-  exact exists_tendsto_dilation_conj hs h00 h11 (by simp) (by simp)
+  exact exists_tendsto_dilation_conj hs h00 (by simp) (by simp)
     ((tendsto_add_atTop_iff_nat 1).2 hβ)
 
 /-- The conjugates `Dᵏ Bₙ D⁻ᵏ` of the iterates by the powers of `D = dilation s` lie in `Γ`. -/

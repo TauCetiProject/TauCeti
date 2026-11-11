@@ -92,10 +92,10 @@ theorem isUnit_dblAddY_formalW :
 
 section FractionField
 
-variable {O : Type*} [CommRing O] [IsDomain O] (W : WeierstrassCurve O) {σ : Type*}
+variable {O : Type*} [CommRing O] (W : WeierstrassCurve O) {σ : Type*}
   {KK : Type*} [Field KK] [Algebra (MvPowerSeries σ O) KK] [IsFractionRing (MvPowerSeries σ O) KK]
 
-omit [IsDomain O] [IsFractionRing (MvPowerSeries σ O) KK] in
+omit [IsFractionRing (MvPowerSeries σ O) KK] in
 -- The point `[q : -1 : w(q)]`, read in `KK`, is a nonsingular point of `W` over `KK`.
 private theorem nonsingular_algebraMap_comp (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     {q : MvPowerSeries σ O} (hq : constantCoeff q = 0) :
