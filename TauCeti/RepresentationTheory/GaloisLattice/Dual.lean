@@ -9,14 +9,16 @@ public import Mathlib.LinearAlgebra.Dual.Basis
 public import Mathlib.LinearAlgebra.FreeModule.PID
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.RepresentationTheory.GaloisLattice.Basic
+public import TauCeti.RepresentationTheory.GaloisLattice.FiniteQuotient
 
 /-!
 # Duals of integral Galois lattices
 
 The contragredient representation on the integral dual of a Galois lattice is again a Galois
-lattice. Continuity is proved using a finite generating set: the pointwise stabilizer of that set
-is an open subgroup, and it fixes every linear functional under the contragredient action. The
-integral dual of a finitely generated module is finite free, so no freeness of `V` is assumed.
+lattice. Continuity is proved using the open kernel of the representation on a finitely generated
+module: it is an open subgroup, and it fixes every linear functional under the contragredient
+action. The integral dual of a finitely generated module is finite free, so no freeness of `V` is
+assumed.
 
 ## Main declaration
 
@@ -56,17 +58,8 @@ theorem galoisLatticeProperty_contragredient
   have : Module.Free ℤ (Module.Dual ℤ V) := inferInstance
   let _ : Module.Free ℤ W := Module.Free.of_equiv e.symm
   let _ : Module.Finite ℤ W := Module.Finite.equiv e.symm
-  -- `MulAction.stabilizer` needs actions on the carriers, while the hypotheses deliberately
-  -- retain the bundled representation form. These local actions expose exactly those maps.
-  let _ : MulAction (Field.absoluteGaloisGroup k) V := {
-    smul σ x := ρ σ x
-    one_smul x := by
-      change ρ 1 x = x
-      rw [map_one, one_apply_eq_self]
-    mul_smul σ τ x := by
-      change ρ (σ * τ) x = ρ σ (ρ τ x)
-      rw [map_mul, mul_apply_eq_comp]
-  }
+  -- `MulAction.stabilizer` needs an action on the carrier, while the hypotheses deliberately
+  -- retain the bundled representation form. This local action exposes exactly that map.
   let _ : MulAction (Field.absoluteGaloisGroup k) W := {
     smul σ w := τ σ w
     one_smul w := by
@@ -79,15 +72,11 @@ theorem galoisLatticeProperty_contragredient
   rw [galoisLatticeProperty_iff]
   refine ⟨⟨inferInstance, inferInstance⟩, ?_⟩
   intro w
-  obtain ⟨n, B, hB⟩ := Submodule.fg_iff_exists_fin_generating_family.mp
-    (Module.Finite.fg_top (R := ℤ) (M := V))
-  let U : Subgroup (Field.absoluteGaloisGroup k) :=
-    ⨅ i : Fin n, MulAction.stabilizer (Field.absoluteGaloisGroup k) (B i)
-  -- Rewrite the continuity goal as openness of a subgroup so an open basis stabilizer can be
+  -- Rewrite the continuity goal as openness of a subgroup so the open kernel of `ρ` can be
   -- enlarged with `Subgroup.isOpen_mono`.
   change IsOpen (↑(MulAction.stabilizer (Field.absoluteGaloisGroup k) w) :
     Set (Field.absoluteGaloisGroup k))
-  apply Subgroup.isOpen_mono (H₁ := U)
+  apply Subgroup.isOpen_mono (H₁ := ρ.ker)
   · intro σ hσ
     rw [MulAction.mem_stabilizer_iff]
     apply e.injective
@@ -95,16 +84,9 @@ theorem galoisLatticeProperty_contragredient
     intro x
     -- Expose the local action above before applying the stated equivariance formula for `e`.
     change e (τ σ w) x = e w x
-    rw [he]
-    have hσinv : σ⁻¹ ∈ U := U.inv_mem hσ
-    have hfix : ρ σ⁻¹ = LinearMap.id := by
-      apply LinearMap.ext_on hB
-      rintro _ ⟨i, rfl⟩
-      rw [LinearMap.id_apply]
-      exact MulAction.mem_stabilizer_iff.mp (Subgroup.mem_iInf.mp hσinv i)
-    rw [hfix, LinearMap.id_apply]
-  · rw [Subgroup.coe_iInf]
-    exact isOpen_iInter_of_finite fun i ↦ hopen (B i)
+    rw [he, (MonoidHom.mem_ker.mp (ρ.ker.inv_mem hσ) : ρ σ⁻¹ = 1)]
+    rfl
+  · exact Representation.isOpen_ker_of_finite ρ hopen
 
 /-- The contragredient representation on the integral dual of a Galois lattice is again a
 Galois lattice. -/
