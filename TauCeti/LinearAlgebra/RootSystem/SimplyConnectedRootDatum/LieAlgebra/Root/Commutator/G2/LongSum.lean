@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.StructureConstant.G2
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.Basic
 
 /-!
 # Chevalley commutators with a long sum in type `G₂`
@@ -18,9 +18,8 @@ The representation needs only nilpotence of the simple generators and a Kostant-
 subgroup; no weight basis or faithfulness is required.
 
 For two short summands the coefficient is `±3`, so the subgroups commute in characteristic
-three. The proof specializes the type-independent native class-two commutator formula
-`TauCeti.DynkinType.commutatorElement_chevalleyRootSubgroup_of_lie_eq` using the long-sum
-root geometry.
+three. The product and commutator relations specialize the type-independent native class-two
+relations to the long-sum root geometry.
 
 ## References
 
@@ -59,6 +58,25 @@ variable (hnil : ∀ i, IsNilpotent
 -- Match the scalar action on tensor products to the value algebra's stored instance.
 attribute [local instance high] Algebra.toModule
 
+/-- G₂ roots with long sum satisfy the single-term Chevalley product relation.
+The vanishing brackets are derived from the root datum; no auxiliary roots are required. -/
+theorem chevalleyRootSubgroup_mul_G2_of_long_sum {α β γ : Fin G2.numRoots}
+    (hγ : g2Length γ = 3)
+    (hadd : (G2.simplyConnectedRootDatum ht).root γ =
+      (G2.simplyConnectedRootDatum ht).root α + (G2.simplyConnectedRootDatum ht).root β)
+    (A : CommAlgCat ℤ) (u v : A) :
+    chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u) *
+        chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v) =
+      chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v) *
+        chevalleyRootSubgroup ρ M hM hnil γ A
+          (Multiplicative.ofAdd ((G2.structureConstant ht α β : A) * (u * v))) *
+        chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u) := by
+  exact chevalleyRootSubgroup_mul_of_add ρ M hM hnil hadd
+    (lie_chevalleySystem_eq_zero_of_add_eq hadd
+      (g2_root_add_notMem_range_of_long_sum hγ hadd))
+    (lie_chevalleySystem_eq_zero_of_add_eq (hadd.trans (add_comm _ _))
+      (g2_root_add_notMem_range_of_long_sum hγ (hadd.trans (add_comm _ _)))) A u v
+
 /-- If the sum of two `G₂` roots is long, their native root-subgroup commutator has the single
 factor `x_{α+β}(N_{α,β}uv)`, over any commutative coefficient ring. -/
 theorem commutatorElement_chevalleyRootSubgroup_G2_of_long_sum {α β γ : Fin G2.numRoots}
@@ -70,12 +88,13 @@ theorem commutatorElement_chevalleyRootSubgroup_G2_of_long_sum {α β γ : Fin G
         chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v)⁆ =
       chevalleyRootSubgroup ρ M hM hnil γ A
         (Multiplicative.ofAdd ((G2.structureConstant ht α β : A) * (u * v))) := by
-  apply commutatorElement_chevalleyRootSubgroup_of_lie_eq ρ M hM hnil
-    (lie_chevalleySystem_eq_structureConstant_zsmul hadd)
-  · exact lie_chevalleySystem_eq_zero_of_add_eq hadd
-      (g2_root_add_notMem_range_of_long_sum hγ hadd)
-  · exact lie_chevalleySystem_eq_zero_of_add_eq (hadd.trans (add_comm _ _))
-      (g2_root_add_notMem_range_of_long_sum hγ (hadd.trans (add_comm _ _)))
+  have hcomm := commute_chevalleyRootSubgroup_of_lie_eq_zero ρ M hM hnil
+    (lie_chevalleySystem_eq_zero_of_add_eq (hadd.trans (add_comm _ _))
+      (g2_root_add_notMem_range_of_long_sum hγ (hadd.trans (add_comm _ _)))) A
+    v ((G2.structureConstant ht α β : A) * (u * v))
+  rw [commutatorElement_def, chevalleyRootSubgroup_mul_G2_of_long_sum ρ M hM hnil hγ hadd,
+    mul_inv_cancel_right, hcomm.eq]
+  simp
 
 /-- Short `G₂` root subgroups whose sum is long commute in characteristic three. -/
 theorem commute_chevalleyRootSubgroup_G2_of_short_add_short_eq_long_of_char_three

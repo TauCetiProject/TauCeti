@@ -33,7 +33,8 @@ For a function on `AddCircle T`, the Fourier coefficients are those of its lift 
 interval (`TauCeti.fourierCoeff_eq_fourierCoeffOn`). On such an interval, each derivative of a
 `C^k` periodic function multiplies its coefficients by `2πin / T`
 (`TauCeti.fourierCoeffOn_iteratedDeriv`), since periodicity kills the boundary term of the
-integration by parts.
+integration by parts. The same holds for a function on the circle with values in any complete
+normed complex space and a continuous derivative (`TauCeti.fourierCoeff_of_hasDerivAt`).
 -/
 
 public section
@@ -218,11 +219,30 @@ theorem fourierCoeffOn_iteratedDeriv {f : ℝ → ℂ} {k : ℕ} (hf : ContDiff 
       ((hf.continuous_iteratedDeriv (j + 1) (by exact_mod_cast hj)).intervalIntegrable _ _)
     rw [hper.iteratedDeriv j a, sub_self, mul_zero, zero_sub, ih (by omega)] at h
     have hT0 : (T : ℂ) ≠ 0 := ofReal_ne_zero.2 hT.out.ne'
-    have hc : (2 * π * I * n : ℂ) ≠ 0 := by simp [hn, Real.pi_ne_zero, I_ne_zero]
     rw [pow_succ, mul_comm _ (2 * π * I * n / T), mul_assoc, h]
     push_cast
     field_simp
     ring
+
+/-- Differentiating a function on `AddCircle T` multiplies its Fourier coefficients by
+`2πin / T`, for functions with values in any complete normed complex space: if the lift of `f` to
+`ℝ` has the continuous derivative `g`, then `ĝ(n) = 2πin / T • f̂(n)`. -/
+theorem fourierCoeff_of_hasDerivAt [CompleteSpace E] {f g : AddCircle T → E}
+    (hf : ∀ x : ℝ, HasDerivAt (fun y : ℝ ↦ f y) (g x) x) (hg : Continuous g) (n : ℤ) :
+    fourierCoeff g n = (2 * π * I * n / T : ℂ) • fourierCoeff f n := by
+  have hu (x : ℝ) := hasDerivAt_fourier_neg T n x
+  have hgc : Continuous fun y : ℝ ↦ g y := hg.comp (AddCircle.continuous_mk' T)
+  have hibp := intervalIntegral.integral_smul_deriv_eq_deriv_smul (a := 0) (b := T)
+    (u := fun y : ℝ ↦ fourier (-n) (y : AddCircle T)) (v := fun y : ℝ ↦ f y)
+    (fun x _ ↦ hu x) (fun x _ ↦ hf x)
+    (Continuous.intervalIntegrable (by fun_prop) _ _) (hgc.intervalIntegrable _ _)
+  -- The boundary term vanishes because `T = 0` on the circle.
+  have hT0 : ((T : ℝ) : AddCircle T) = ((0 : ℝ) : AddCircle T) := by simp
+  simp only [hT0, sub_self, zero_sub, mul_smul, intervalIntegral.integral_smul] at hibp
+  rw [fourierCoeff_eq_intervalIntegral g n 0, fourierCoeff_eq_intervalIntegral f n 0, zero_add,
+    hibp, smul_comm, ← neg_smul]
+  congr 2
+  ring
 
 end Circle
 

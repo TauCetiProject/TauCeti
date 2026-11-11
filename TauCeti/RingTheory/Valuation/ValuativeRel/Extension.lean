@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Valuation.Extension
 public import Mathlib.RingTheory.Valuation.ValuativeRel.Basic
 public import Mathlib.RingTheory.Algebraic.Basic
 public import Mathlib.Algebra.Polynomial.Roots
+public import Mathlib.FieldTheory.Minpoly.Basic
 import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 import Mathlib.RingTheory.Localization.Integral
 import Mathlib.RingTheory.Valuation.Integral
@@ -31,6 +32,8 @@ the two valuative topologies.
 ## Main results
 
 * `TauCeti.ValuativeExtension.trans`: compatibility of valuative relations in an algebra tower.
+* `TauCeti.ValuativeExtension.of_tower_top`: compatibility of the bottom step of a tower whose
+  top step and composite are compatible.
 * `ValuativeExtension.valuationHasExtension`: the canonical valuation on `B` extends the
   canonical valuation on `A`.
 * `ValuativeRel.IsNontrivial.of_valuativeExtension`: a compatible extension of a nontrivial
@@ -44,6 +47,8 @@ the two valuative topologies.
   valuation ring of `K` are its roots in the valuation ring of `L`.
 * `IsAlgebraic.exists_ne_zero_vle`: a nonzero algebraic element has value at least that of some
   nonzero base-field element.
+* `AlgHom.aeval_residue_minpoly_eq_zero`: a residue embedding sends the residue of an integer to a
+  root of the reduction of its minimal polynomial.
 -/
 
 public section
@@ -86,6 +91,17 @@ theorem ValuativeExtension.trans (A B C : Type*) [CommSemiring A] [CommSemiring 
   vle_iff_vle := by
     intro a b
     simp only [IsScalarTower.algebraMap_apply A B C, ValuativeExtension.vle_iff_vle]
+
+/-- Compatibility of valuative relations descends to the bottom step of an algebra tower whose
+top step and composite are compatible. -/
+theorem ValuativeExtension.of_tower_top (A B C : Type*) [CommSemiring A] [CommSemiring B]
+    [Semiring C] [ValuativeRel A] [ValuativeRel B] [ValuativeRel C]
+    [Algebra A B] [Algebra B C] [Algebra A C] [IsScalarTower A B C]
+    [ValuativeExtension A C] [ValuativeExtension B C] : ValuativeExtension A B where
+  vle_iff_vle := by
+    intro a b
+    rw [← ValuativeExtension.vle_iff_vle (A := B) (B := C), ← IsScalarTower.algebraMap_apply,
+      ← IsScalarTower.algebraMap_apply, ValuativeExtension.vle_iff_vle]
 
 variable {K L : Type*} [Field K] [ValuativeRel K] [Field L] [ValuativeRel L]
   [Algebra K L] [ValuativeExtension K L]
@@ -165,3 +181,24 @@ theorem IsAlgebraic.exists_ne_zero_vle {y : L} (halg : IsAlgebraic K y) (hy : y 
     simpa [Submonoid.smul_def, Algebra.smul_def,
       IsScalarTower.algebraMap_apply v.integer K L,
       Algebra.algebraMap_ofSubring, mul_inv_le_iff₀ hyv] using hav
+
+namespace AlgHom
+
+variable {K L M : Type*} [Field K] [ValuativeRel K] [Field L] [ValuativeRel L] [Algebra K L]
+  [ValuativeExtension K L] [Field M] [ValuativeRel M] [Algebra K M] [ValuativeExtension K M]
+
+local notation "𝒪ᵥ[" K "]" => Valuation.integer (valuation K)
+local notation "𝓀ᵥ[" K "]" => IsLocalRing.ResidueField ↥𝒪ᵥ[K]
+
+/-- The image under a residue embedding `φ` of the residue of `z ∈ 𝒪ᵥ[L]` is a root of the
+reduction of the minimal polynomial of `z` over `𝒪ᵥ[K]`. -/
+@[simp]
+theorem aeval_residue_minpoly_eq_zero (φ : 𝓀ᵥ[L] →ₐ[𝓀ᵥ[K]] 𝓀ᵥ[M]) (z : 𝒪ᵥ[L]) :
+    Polynomial.aeval (φ (IsLocalRing.residue 𝒪ᵥ[L] z)) (minpoly 𝒪ᵥ[K] (z : L)) = 0 := by
+  have hz : (z : L) = algebraMap 𝒪ᵥ[L] L z :=
+    (Algebra.algebraMap_ofSubsemiring_apply 𝒪ᵥ[L] z).symm
+  rw [hz, minpoly.algebraMap_eq (FaithfulSMul.algebraMap_injective 𝒪ᵥ[L] L) z]
+  exact minpoly.aeval_algHom (A := 𝒪ᵥ[K])
+    ((φ.restrictScalars 𝒪ᵥ[K]).comp (IsScalarTower.toAlgHom 𝒪ᵥ[K] 𝒪ᵥ[L] 𝓀ᵥ[L])) z
+
+end AlgHom

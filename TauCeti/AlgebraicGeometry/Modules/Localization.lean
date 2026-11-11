@@ -260,7 +260,7 @@ quasi-coherent as soon as `X` is covered by affine opens `U i` such that, for ev
 `f ∈ Γ(X, U i)`, the sections of `M` over `X.basicOpen f` are the localization at `f` of the
 sections over `U i`. -/
 theorem _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_of_isLocalizedModule
-    {ι : Type u} (U : ι → X.Opens) (hU : ∀ i, IsAffineOpen (U i)) (hcov : ⨆ i, U i = ⊤)
+    {ι : Sort*} (U : ι → X.Opens) (hU : ∀ i, IsAffineOpen (U i)) (hcov : ⨆ i, U i = ⊤)
     (h : ∀ i (f : Γ(X, U i)), IsLocalizedModule.Away f (M.basicOpenRestrict f)) :
     M.IsQuasicoherent := by
   refine (M.isQuasicoherent_iff_of_iSup_eq_top U hcov).2 fun i ↦ ?_

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Add
 public import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
+public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Topology.Covering.AddCircle
 public import Mathlib.Topology.Instances.ZMultiples
 public import TauCeti.Geometry.Manifold.Algebra.LieGroup
@@ -75,6 +76,8 @@ analytic diffeomorphism with derivative `p⁻¹ * q`.
   `AddCircle.mfderiv_prodMap_coe`: the quotient map
   `ℝ × ℝ → AddCircle p × AddCircle q` is an analytic local diffeomorphism whose differential is the
   identity of `ℝ × ℝ`.
+* `AddCircle.mvfderiv_prodMap_coe_apply`: the differential of a vector-valued function on
+  `AddCircle p × AddCircle q` is the derivative of its lift to `ℝ × ℝ`.
 * `AddCircle.hasMFDerivAt_add_coe_comp`: the velocity of a curve `s ↦ x + [f s]` is the derivative
   of `f`.
 * `AddCircle.mfderiv_zsmul`: multiplication by an integer `k` has derivative multiplication by `k`.
@@ -359,6 +362,7 @@ theorem mem_maximalAtlas_of_coe_apply {n : ℕ∞ω} {c : OpenPartialHomeomorph 
       (contMDiffOn_id.congr fun x hx ↦ hc x hx),
     (contMDiff_coe p n).contMDiffOn.congr fun _ hu ↦ symm_apply_of_coe_apply hc hu⟩
 
+omit [Fact (0 < p)] in
 variable {p} in
 /-- Two local lifts of `AddCircle p` to `ℝ` differ, near each point of their common source, by a
 fixed integer multiple of `p`. -/
@@ -373,18 +377,25 @@ theorem exists_eventuallyEq_add_zsmul {c c' : OpenPartialHomeomorph (AddCircle p
     exact ⟨k, by rw [hk]; abel⟩
   obtain ⟨k, hk⟩ := hdiff x ⟨hx, hx'⟩
   refine ⟨k, ?_⟩
-  -- The difference is continuous, so near `x` it stays within `p` of `k • p`, and the only
+  -- For `p = 0` the lifts agree on the common source.
+  rcases eq_or_ne p 0 with rfl | hp
+  · filter_upwards [c.open_source.mem_nhds hx, c'.open_source.mem_nhds hx'] with y hy hy'
+    obtain ⟨m, hm⟩ := hdiff y ⟨hy, hy'⟩
+    rw [smul_zero] at hm ⊢
+    linarith
+  have hp' : 0 < |p| := abs_pos.mpr hp
+  -- The difference is continuous, so near `x` it stays within `|p|` of `k • p`, and the only
   -- multiple of `p` there is `k • p` itself.
-  have hnear : ∀ᶠ y in 𝓝 x, |(c' y - c y) - k • p| < p := by
+  have hnear : ∀ᶠ y in 𝓝 x, |(c' y - c y) - k • p| < |p| := by
     have h : ContinuousAt (fun y ↦ c' y - c y) x := (c'.continuousAt hx').sub (c.continuousAt hx)
-    filter_upwards [h.eventually (Metric.ball_mem_nhds _ (Fact.out : 0 < p))] with y hy
+    filter_upwards [h.eventually (Metric.ball_mem_nhds _ hp')] with y hy
     rwa [Real.dist_eq, hk] at hy
   filter_upwards [c.open_source.mem_nhds hx, c'.open_source.mem_nhds hx', hnear]
     with y hy hy' hyk
   obtain ⟨m, hm⟩ := hdiff y ⟨hy, hy'⟩
   have hmk : |((m - k : ℤ) : ℝ)| < 1 := by
-    rw [hm, ← sub_smul, zsmul_eq_mul, abs_mul, abs_of_pos (Fact.out : 0 < p)] at hyk
-    exact (mul_lt_iff_lt_one_left (Fact.out : 0 < p)).mp hyk
+    rw [hm, ← sub_smul, zsmul_eq_mul, abs_mul] at hyk
+    exact (mul_lt_iff_lt_one_left hp').mp hyk
   have hmk' : |m - k| < 1 := by exact_mod_cast hmk
   rw [← sub_eq_zero.mp (Int.abs_lt_one_iff.mp hmk'), ← hm]
   abel
@@ -447,15 +458,22 @@ theorem hasMFDerivAt_add_coe_comp {f : ℝ → ℝ} {f' t : ℝ} (hf : HasDerivA
     (hf.const_add a).hasFDerivAt.hasMFDerivAt).congr_mfderiv (ContinuousLinearMap.id_comp _)
 
 variable {p} in
-/-- At the image of `t`, a differentiable map out of `AddCircle p` has the derivative of its
+/-- At the image of `t`, a map out of `AddCircle p` has the derivative of its
 periodic lift at `t`. -/
 theorem mfderiv_comp_coe {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
     [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N]
-    [ChartedSpace H' N] {g : AddCircle p → N} {t : ℝ}
-    (hg : MDifferentiableAt 𝓘(ℝ) I' g (t : AddCircle p)) :
+    [ChartedSpace H' N] {g : AddCircle p → N} {t : ℝ} :
     mfderiv 𝓘(ℝ) I' (g ∘ (↑)) t = mfderiv 𝓘(ℝ) I' g (t : AddCircle p) := by
-  rw [mfderiv_comp t hg (hasMFDerivAt_coe p t).mdifferentiableAt, mfderiv_coe]
-  -- Composing with the identity of `ℝ`, read as the tangent space at `t`, changes nothing.
+  by_cases hg : MDifferentiableAt 𝓘(ℝ) I' g (t : AddCircle p)
+  · rw [mfderiv_comp t hg (hasMFDerivAt_coe p t).mdifferentiableAt, mfderiv_coe]
+    -- Composing with the identity of `ℝ`, read as the tangent space at `t`, changes nothing.
+    rfl
+  -- Near `t`, `g` is `g ∘ (↑)` after a local inverse of the quotient map, so `g ∘ (↑)` is not
+  -- differentiable at `t` either, and both derivatives vanish by convention.
+  have hgc : ¬MDifferentiableAt 𝓘(ℝ) I' (g ∘ (↑)) t :=
+    ((isLocalDiffeomorph_coe p 1 t).mdifferentiableAt_comp_iff one_ne_zero).not.mpr hg
+  rw [mfderiv_zero_of_not_mdifferentiableAt hg, mfderiv_zero_of_not_mdifferentiableAt hgc]
+  -- Both `TangentSpace`s unfold to `ℝ`, so the two zero maps coincide.
   rfl
 
 variable {p} in
@@ -551,7 +569,7 @@ theorem hasMFDerivAt_of_comp_coe_eq {g : AddCircle p → AddCircle q} {f : ℝ �
   have hlift : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ) (g ∘ (↑)) t f' := by
     rw [h]
     exact (hasMFDerivAt_coe q (f t)).comp t hf.hasMFDerivAt
-  rw [← (mfderiv_comp_coe hg).symm.trans hlift.mfderiv]
+  rw [← mfderiv_comp_coe.symm.trans hlift.mfderiv]
   exact hg.hasMFDerivAt
 
 end Lift
@@ -692,5 +710,20 @@ theorem mfderiv_prodMap_coe (z : ℝ × ℝ) :
         (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) z =
       ContinuousLinearMap.id ℝ (ℝ × ℝ) :=
   (hasMFDerivAt_prodMap_coe p q z).mfderiv
+
+variable {p q} in
+/-- At the image of `z`, the differential of a vector-valued function `σ` on
+`AddCircle p × AddCircle q` is the derivative of its lift to `ℝ × ℝ`. -/
+theorem mvfderiv_prodMap_coe_apply {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {σ : AddCircle p × AddCircle q → F} {z : ℝ × ℝ}
+    (hσ : MDifferentiableAt (𝓘(ℝ).prod 𝓘(ℝ)) 𝓘(ℝ, F) σ
+      (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q) z)) (v : ℝ × ℝ) :
+    mvfderiv (𝓘(ℝ).prod 𝓘(ℝ)) σ
+        (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q) z) v =
+      fderiv ℝ (σ ∘ Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) z v := by
+  have hπ := hasMFDerivAt_prodMap_coe p q z
+  have h := mvfderiv_comp_apply z hσ hπ.mdifferentiableAt v
+  rw [hπ.mfderiv, mvfderiv_eq_fderiv] at h
+  exact h.symm
 
 end AddCircle

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Homological.TateCohomology.Basic
+import TauCeti.GroupTheory.Index.Exact
 
 /-!
 # Finiteness of Tate cohomology
@@ -19,7 +20,9 @@ and its relatives).
 
 Along a short exact sequence, `tateCohomology X₁ (n + 1)` is finite whenever
 `tateCohomology X₃ n` and `tateCohomology X₂ (n + 1)` are
-(`TauCeti.TateCohomology.finite_tateCohomology_X₁_of_shortExact`).
+(`TauCeti.TateCohomology.finite_tateCohomology_X₁_of_shortExact`). Dually, `tateCohomology X₃ n` is
+finite whenever `tateCohomology X₁ (n + 1)` and `tateCohomology X₂ n` are
+(`TauCeti.TateCohomology.finite_tateCohomology_X₃_of_shortExact`).
 -/
 
 public section
@@ -62,5 +65,14 @@ theorem finite_tateCohomology_X₁_of_shortExact {S : ShortComplex (Rep R G)}
     ((tateCohomologyFunctor (n + 1)).map S.f).hom.toAddMonoidHom
     ((ShortComplex.moduleCat_exact_iff_ker_sub_range _).1 (_root_.TateCohomology.exact₁ hS n))
   infer_instance
+
+/-- For a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of representations of a finite group, if the
+degree `n + 1` Tate cohomology of `X₁` and the degree `n` Tate cohomology of `X₂` are finite, then
+so is the degree `n` Tate cohomology of `X₃`. -/
+theorem finite_tateCohomology_X₃_of_shortExact {S : ShortComplex (Rep R G)}
+    (hS : S.ShortExact) (n : ℤ) [Finite (tateCohomology S.X₁ (n + 1))]
+    [Finite (tateCohomology S.X₂ n)] : Finite (tateCohomology S.X₃ n) := by
+  have h := (_root_.TateCohomology.exact₃ hS n).moduleCat_range_eq_ker
+  exact Function.Exact.finite (LinearMap.exact_iff.2 h.symm)
 
 end TauCeti.TateCohomology

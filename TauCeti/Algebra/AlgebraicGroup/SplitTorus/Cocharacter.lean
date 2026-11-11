@@ -287,13 +287,6 @@ noncomputable local instance cocharacterLatticeAddCommGroup
       (toMultiplicativeTypeCommHopfAlgCat k σ)) :=
   MultiplicativeTypeCommHopfAlgCat.instCocharacterLatticeAddCommGroup _
 
-/-- The transported integer-module structure specialized to the standard split torus. -/
-noncomputable local instance cocharacterLatticeModule
-    (k : Type u) [Field k] (σ : Type u) [Finite σ] :
-    Module ℤ (MultiplicativeTypeCommHopfAlgCat.cocharacterLattice
-      (toMultiplicativeTypeCommHopfAlgCat k σ)) :=
-  MultiplicativeTypeCommHopfAlgCat.instCocharacterLatticeModule _
-
 /-- The dual comparison for a standard split torus, expressed in coordinates `σ → ℤ`. -/
 noncomputable def cocharacterLatticeCoordEquiv
     (k : Type u) [Field k] (σ : Type u) [Finite σ] :

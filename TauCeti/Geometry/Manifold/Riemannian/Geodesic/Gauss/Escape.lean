@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Polar
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Polar.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.RadialLength
 import TauCeti.Topology.Order.Interval
 
