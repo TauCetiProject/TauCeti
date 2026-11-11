@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Energy
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
 # Local-coordinate linearization of the inhomogeneous Floer equation
@@ -18,9 +19,10 @@ independent parameter variations of `K` and `J`. Domain dependence of the coeffi
 allowed; the derivative is at a fixed domain point. Along a line `J + q Y` of endomorphism fields
 the derivative is `Y(u)(∂t u - X_Kt)` (`hasDerivAt_floerOperator_add_smul`).
 
-`floerLinearization` is the map-direction operator with coefficients fixed. The universal
-variation theorem identifies its direction field with the actual parameter derivative of the
-map, using equality of mixed derivatives rather than assuming it. The endomorphism field need
+`floerLinearization` is the map-direction operator with coefficients fixed. Conjugated by an
+exponential weight `e^{δ s}` it becomes `floerLinearization - δ` (`floerLinearization_exp_smul`).
+The universal variation theorem identifies its direction field with the actual parameter derivative
+of the map, using equality of mixed derivatives rather than assuming it. The endomorphism field need
 not square to minus one for differentiation. For an almost complex structure the zero equation
 agrees with complex linearity of the existing perturbed derivative. The parameter calculation
 extends the unforced formula `TauCeti.fderiv_cauchyRiemannOperator_apply`.
@@ -138,6 +140,24 @@ theorem floerLinearization_zero (ω : SymplecticForm V)
     (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
     ω.floerLinearization J Ks Kt u 0 z = 0 := by
   simp [floerLinearization_def]
+
+/-- **Conjugating the linearization by an exponential weight.** On maps of the form
+`e^{-δ s} ξ`, the linearized Floer operator acts as `e^{-δ s} (D - δ) ξ`: the weight only
+differentiates in the `s` direction, where the operator has the leading term `∂s`. -/
+theorem floerLinearization_exp_smul (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ} (δ : ℝ) (hξ : DifferentiableAt ℝ ξ z) :
+    ω.floerLinearization J Ks Kt u (fun w ↦ Real.exp (-(δ * w.1)) • ξ w) z =
+      Real.exp (-(δ * z.1)) • (ω.floerLinearization J Ks Kt u ξ z - δ • ξ z) := by
+  have hc : HasFDerivAt (fun w : ℝ × ℝ ↦ Real.exp (-(δ * w.1)))
+      (Real.exp (-(δ * z.1)) • -(δ • ContinuousLinearMap.fst ℝ ℝ ℝ)) z := by
+    simpa using ((hasFDerivAt_fst (p := z)).const_smul δ).neg.exp
+  have hd : HasFDerivAt (fun w ↦ Real.exp (-(δ * w.1)) • ξ w) _ z := hc.smul hξ.hasFDerivAt
+  rw [floerLinearization_def, hd.fderiv, floerLinearization_def]
+  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, neg_apply,
+    ContinuousLinearMap.coe_fst', stdComplexLineReal_fst, stdComplexLineImag_fst, map_smul,
+    smul_eq_mul, mul_zero, mul_one, neg_zero, zero_smul, add_zero, map_sub]
+  module
 
 section Families
 

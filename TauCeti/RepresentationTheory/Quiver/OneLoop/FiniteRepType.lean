@@ -372,7 +372,7 @@ theorem indecomposable_oneLoopNilpotentRep (n : ℕ) :
     Indecomposable (oneLoopNilpotentRep.{u, w} k n) := by
   have hmul : ∀ e : oneLoopNilpotentRep.{u, w} k n ⟶ oneLoopNilpotentRep.{u, w} k n,
       oneLoopNilpotentRepApp e = LinearMap.mulRight k (oneLoopNilpotentRepApp e 1) := fun e ↦
-    AdjoinRoot.eq_mulRight_of_root_mul (monic_X_pow (R := k) (n + 1))
+    AdjoinRoot.eq_mulRight_of_root_mul
       (oneLoopNilpotentRepApp_root_mul e)
   refine indecomposable_of_injective_of_isLocalRing
     (fun e ↦ oneLoopNilpotentRepApp e 1) (fun e e' h ↦ ?_) ?_ ?_ fun e ↦ ?_

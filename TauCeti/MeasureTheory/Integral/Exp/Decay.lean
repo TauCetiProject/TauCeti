@@ -16,9 +16,10 @@ import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 This file records integrability and evaluation of exponential integrands: on a half-line or the
 whole real line, natural powers multiplied by an exponentially decaying factor, the exact rate at
-which a bare exponential is integrable on a right half-line, and integrability of the two-sided
-exponential; and, on a finite-dimensional real normed space, integrability of the radial
-exponential `exp (-a ‖x‖)` for every additive Haar measure, by integrating in polar coordinates.
+which a bare exponential is integrable on a right half-line, and integrability and the integral
+of the two-sided exponential; and, on a finite-dimensional real normed space, integrability of the
+radial exponential `exp (-a ‖x‖)` for every additive Haar measure, by integrating in polar
+coordinates.
 
 Mathlib supplies the *sufficient* direction of the right-half-line integrability criterion,
 `integrableOn_exp_mul_Ioi`, for a negative rate.  `integrableOn_exp_mul_Ioi_iff` adds the converse,
@@ -36,6 +37,9 @@ inclusion.
 * `TauCeti.integrableOn_exp_mul_Iic_iff`: `exp (a * ·)` is integrable on `(-∞, c]` exactly when
   `0 < a`.
 * `TauCeti.integrable_exp_neg_mul_abs`: `exp (-(a * |·|))` is integrable when `0 < a`.
+* `TauCeti.integral_exp_neg_mul_abs`: its integral is `2 / a`.
+* `TauCeti.lintegral_ofReal_mul_exp_neg_mul_abs`: the same evaluation as a lower Lebesgue integral
+  of `c * exp (-(a * |·|))`.
 * `TauCeti.integrable_exp_mul_I_mul_exp_neg_mul_abs`: the same times the oscillation
   `exp (b * x * I)`.
 * `TauCeti.integrable_exp_neg_mul_norm`: `exp (-(a * ‖·‖))` is integrable on a finite-dimensional
@@ -133,6 +137,28 @@ theorem integrable_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) :
     Integrable (fun x : ℝ ↦ Real.exp (-(a * |x|))) := by
   simpa only [neg_mul] using MeasureTheory.integrable_comp_abs
     (integrableOn_exp_mul_Ioi (a := -a) (by linarith) 0)
+
+/-- The two-sided exponential `exp (-(a * |x|))` has integral `2 / a` when `0 < a`. -/
+theorem integral_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) :
+    ∫ x : ℝ, Real.exp (-(a * |x|)) = 2 / a := by
+  rw [integral_comp_abs (f := fun x ↦ Real.exp (-(a * x)))]
+  simp only [← neg_mul]
+  rw [integral_exp_mul_Ioi (neg_neg_of_pos ha), mul_zero, Real.exp_zero, neg_div_neg_eq]
+  ring
+
+/-- The lower Lebesgue integral of a constant multiple of the two-sided exponential:
+`∫⁻ x, ofReal (c * exp (-(a * |x|))) = ofReal (2 * c / a)` when `0 < a`. For `c ≤ 0` both sides
+vanish. -/
+theorem lintegral_ofReal_mul_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) (c : ℝ) :
+    ∫⁻ x : ℝ, ENNReal.ofReal (c * Real.exp (-(a * |x|))) = ENNReal.ofReal (2 * c / a) := by
+  rcases le_total 0 c with hc | hc
+  · rw [← ofReal_integral_eq_lintegral_ofReal ((integrable_exp_neg_mul_abs ha).const_mul c)
+      (.of_forall fun _ ↦ by positivity), integral_const_mul, integral_exp_neg_mul_abs ha]
+    ring_nf
+  · have hc' : 2 * c / a ≤ 0 := div_nonpos_of_nonpos_of_nonneg (by linarith) ha.le
+    simp only [ENNReal.ofReal_of_nonpos hc',
+      ENNReal.ofReal_of_nonpos (mul_nonpos_of_nonpos_of_nonneg hc (Real.exp_pos _).le),
+      lintegral_zero]
 
 /-- The two-sided exponential times a unimodular oscillation `exp (b * x * I)` is integrable on
 the line. -/

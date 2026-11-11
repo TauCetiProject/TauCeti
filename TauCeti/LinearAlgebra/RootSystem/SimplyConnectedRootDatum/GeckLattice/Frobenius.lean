@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Frobenius.GeneralLinear
 public import TauCeti.Algebra.CharP.Frobenius.Basic
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Frobenius
 public import TauCeti.GroupTheory.FixedSubgroup
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.PointsFunctor
 
@@ -48,6 +49,8 @@ subgroup appearing in it is finite, is simple, or is a named finite group.
 ## Main results
 
 * `TauCeti.DynkinType.coe_geckFrobenius`: the endomorphism acts by the entrywise Frobenius.
+* `TauCeti.DynkinType.geckFrobenius_eq_kostantToralFrobenius`: the endomorphism specializes the
+  generic toral-closure Frobenius.
 * `TauCeti.DynkinType.geckFrobenius_zero`, `TauCeti.DynkinType.geckFrobenius_add` and
   `TauCeti.DynkinType.geckFrobenius_pow`: the iteration laws, the last of them saying that
   exponents multiply under taking powers in the endomorphism monoid.
@@ -106,6 +109,22 @@ theorem coe_geckFrobenius (g : t.geckPoints ht A) :
   (t.geckPointsPresentation ht A).coe_map (t.geckPointsPresentation ht A)
     (iterateFrobenius A p k) g
 
+/-- The Frobenius of the Geck carrier is the generic toral-closure Frobenius at its Kostant
+lattice data. -/
+theorem geckFrobenius_eq_kostantToralFrobenius :
+    t.geckFrobenius ht p k A =
+      TauCeti.UniversalEnvelopingAlgebra.kostantToralFrobenius
+        (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+        (t.geckCoordinateLattice ht).toAddSubgroup
+        (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+        (t.isNilpotent_geckRepresentation_rootGenerator ht)
+        (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) p k A := by
+  apply MonoidHom.ext
+  intro g
+  apply Subtype.ext
+  rw [coe_geckFrobenius,
+    TauCeti.UniversalEnvelopingAlgebra.coe_kostantToralFrobenius]
+
 /-- Entrywise, the Frobenius endomorphism of the points of the pinned Geck carrier raises each
 entry to the `p ^ k`-th power. -/
 theorem coe_geckFrobenius_apply (g : t.geckPoints ht A) (r c : Fin (t.geckDim ht)) :
@@ -135,9 +154,8 @@ Frobenius of the pinned Geck carrier, in the endomorphism monoid of its points, 
 -- structure before the power is elaborated.
 theorem geckFrobenius_pow (m : ℕ) :
     (show Monoid.End _ from t.geckFrobenius ht p k A) ^ m = t.geckFrobenius ht p (k * m) A := by
-  induction m with
-  | zero => rw [pow_zero, Nat.mul_zero, geckFrobenius_zero]; rfl
-  | succ m ih => rw [pow_succ, ih, Nat.mul_succ, t.geckFrobenius_add ht p (k * m) A k]; rfl
+  simp only [geckFrobenius_eq_kostantToralFrobenius]
+  exact TauCeti.UniversalEnvelopingAlgebra.kostantToralFrobenius_pow _ _ _ _ _ _ _ _ p k A m
 
 /-- A point of the pinned Geck carrier is fixed by its Frobenius endomorphism exactly when every
 one of its matrix entries lies in the Frobenius-fixed subring. -/

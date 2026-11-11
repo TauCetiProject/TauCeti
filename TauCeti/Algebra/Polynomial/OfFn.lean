@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.OfFn
+public import Mathlib.LinearAlgebra.Basis.Defs
+public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 
 -- Proof-only: supply `Polynomial.X_sub_C_pow_dvd_iff` and `Polynomial.X_pow_dvd_iff`.
 import Mathlib.Algebra.Polynomial.AlgebraMap
@@ -19,7 +21,9 @@ Mathlib records that a polynomial of `natDegree` below `n` is recovered from its
 coefficients; this file states the same recovery in terms of `degree`, so that it also applies
 to the zero polynomial. This file also records evaluation of the coefficient vector and
 reconstruction of a coordinate vector as a power of `X`, and characterizes divisibility of
-`ofFn n f` by `(X - t) ^ r` through the Taylor coefficients of order `< r` at `t`.
+`ofFn n f` by `(X - t) ^ r` through the Taylor coefficients of order `< r` at `t`. Finally, the
+polynomials whose coefficient vectors are the coordinates of finitely many vectors in a basis of
+their span are linearly independent.
 -/
 
 public section
@@ -78,5 +82,28 @@ theorem _root_.Polynomial.X_sub_C_pow_dvd_ofFn_iff {R : Type*} [CommRing R] [Dec
   rw [ofFn_eq_sum_monomial, X_sub_C_pow_dvd_iff, X_pow_dvd_iff]
   refine forall₂_congr fun k _ ↦ ?_
   simp [← C_mul_X_pow_eq_monomial, finsetSum_coeff, coeff_X_add_C_pow]
+
+/-- If a basis `b` of the span of finitely many vectors `Qⱼ` is given, the polynomials
+`∑ⱼ (b.repr Qⱼ k) Tʲ`, one for each basis index `k`, are linearly independent: a relation among
+them is a linear form on the span vanishing on every `Qⱼ`. -/
+theorem linearIndependent_ofFn_repr {K : Type*} [CommRing K] [DecidableEq K] {W : Type*}
+    [AddCommGroup W] [Module K W] {r N : ℕ}
+    (Q : Fin N → W) (b : Module.Basis (Fin r) K (Submodule.span K (Set.range Q))) :
+    LinearIndependent K fun k : Fin r ↦
+      ofFn N fun j ↦ b.repr ⟨Q j, Submodule.subset_span (Set.mem_range_self j)⟩ k := by
+  refine Fintype.linearIndependent_iff.2 fun a ha k ↦ ?_
+  set φ : Submodule.span K (Set.range Q) →ₗ[K] K := ∑ k, a k • b.coord k
+  have hφQ (j : Fin N) :
+      ∑ k, a k * b.repr ⟨Q j, Submodule.subset_span (Set.mem_range_self j)⟩ k = 0 := by
+    have hac : ∑ k, a k • (fun j ↦
+        b.repr ⟨Q j, Submodule.subset_span (Set.mem_range_self j)⟩ k) = 0 :=
+      injective_ofFn N (by simpa [map_sum] using ha)
+    simpa using congr_fun hac j
+  have hv : Submodule.span K (Set.range fun j : Fin N ↦
+      (⟨Q j, Submodule.subset_span (Set.mem_range_self j)⟩ : Submodule.span K (Set.range Q))) =
+      ⊤ :=
+    (Submodule.span_range_subtype_eq_top_iff _ _).mpr rfl
+  have hφ : φ = 0 := LinearMap.ext_on_range hv fun j ↦ by simpa [φ, mul_comm] using hφQ j
+  simpa [φ, Finsupp.single_apply] using LinearMap.congr_fun hφ (b k)
 
 end TauCeti

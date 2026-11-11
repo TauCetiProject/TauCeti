@@ -37,8 +37,10 @@ ring through Noether normalization.
   up and `Spec S → Spec R` is surjective.
 * `TauCeti.ringKrullDim_eq_of_isIntegral_of_faithfulSMul`: `dim S = dim R` for an injective
   integral extension.
+* `Ideal.height_eq_height_under_of_isIntegral_of_forall_isPrime`: along an integral extension,
+  heights of all ideals are the heights of their contractions as soon as that holds for primes.
 * `Ideal.height_eq_height_under_of_isIntegral_of_hasGoingDown`: an integral extension with
-  going down preserves the heights of prime ideals.
+  going down preserves the heights of ideals.
 * `Ideal.exists_isMaximal_height_add_one_le_of_ringEquiv_quotient`: a maximal ideal containing a
   non-zero-divisor `g` has height at least one more than some maximal ideal of `R`, when the
   quotient by `g` is an integral `R`-algebra with going down.
@@ -70,19 +72,40 @@ theorem primeSpectrumComap_strictMono_of_isIntegral [Algebra.IsIntegral R S] :
   rw [← PrimeSpectrum.asIdeal_lt_asIdeal, PrimeSpectrum.comap_asIdeal, PrimeSpectrum.comap_asIdeal]
   exact Ideal.IsIntegral.under_lt_under ((PrimeSpectrum.asIdeal_lt_asIdeal P Q).2 h)
 
-/-- Along an integral algebra with going down, the height of a prime is the height of the prime
+/-- **Heights of ideals from heights of primes along an integral extension.** If the height of
+every prime of `S` is the height of the prime below it, then the same holds for every ideal of
+`S`: heights are infima over primes containing the ideal, and every prime of `R` containing the
+contraction of an ideal `I` is the contraction of a prime containing `I` (going up). -/
+theorem _root_.Ideal.height_eq_height_under_of_isIntegral_of_forall_isPrime [Algebra.IsIntegral R S]
+    (h : ∀ Q : Ideal S, Q.IsPrime → Q.height = (Q.under R).height) (I : Ideal S) :
+    I.height = (I.under R).height := by
+  refine le_antisymm ?_ ?_
+  · rw [Ideal.height_eq_inf_minimalPrimes (I := I.under R)]
+    refine le_iInf₂ fun p hp ↦ ?_
+    have := hp.1.1
+    obtain ⟨Q, hIQ, hQ, hQp⟩ := Ideal.exists_ideal_over_prime_of_isIntegral p I hp.1.2
+    rw [← hQp, ← h Q hQ]
+    exact Ideal.height_mono hIQ
+  · rw [Ideal.height_eq_inf_minimalPrimes (I := I)]
+    refine le_iInf₂ fun J hJ ↦ ?_
+    have := hJ.1.1
+    rw [h J this]
+    exact Ideal.height_mono (Ideal.comap_mono hJ.1.2)
+
+/-- Along an integral algebra with going down, the height of an ideal is the height of the ideal
 below it. -/
 theorem _root_.Ideal.height_eq_height_under_of_isIntegral_of_hasGoingDown
     [Algebra.IsIntegral R S] [Algebra.HasGoingDown R S]
-    (P : Ideal S) [P.IsPrime] : P.height = (P.under R).height := by
-  -- Contraction is strictly monotone by incomparability, and chains below its values lift by
-  -- going down.
+    (P : Ideal S) : P.height = (P.under R).height := by
+  refine Ideal.height_eq_height_under_of_isIntegral_of_forall_isPrime (fun Q _ ↦ ?_) P
+  -- For a prime, contraction is strictly monotone by incomparability, and chains below its values
+  -- lift by going down.
   have h := Order.height_eq_of_strictMono (comap (algebraMap R S))
     primeSpectrumComap_strictMono_of_isIntegral (fun a b hb ↦ by
       have : a.asIdeal.LiesOver (comap (algebraMap R S) a).asIdeal := ⟨rfl⟩
       obtain ⟨Q, hQ, hQp, hQo⟩ :=
         Ideal.exists_ideal_lt_liesOver_of_lt (p := b.asIdeal) a.asIdeal hb
-      exact ⟨⟨Q, hQp⟩, hQ, PrimeSpectrum.ext hQo.over.symm⟩) ⟨P, ‹_›⟩
+      exact ⟨⟨Q, hQp⟩, hQ, PrimeSpectrum.ext hQo.over.symm⟩) ⟨Q, ‹_›⟩
   rwa [← height_eq_orderHeight, ← height_eq_orderHeight] at h
 
 open scoped nonZeroDivisors in

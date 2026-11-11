@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Ring.Units
+public import Mathlib.GroupTheory.PGroup
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.NumberTheory.Padics.ProperSpace
 public import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
@@ -59,9 +60,12 @@ calculation for first continuous cohomology with trivial integer coefficients.
 * `PadicInt.range_units_val`: the units of `ℤ_[p]` are the elements of norm `1`.
 * `PadicInt.norm_smul_of_isUnit`: a unit of `ℤ_[p]` acts isometrically on every module with
   contractive scalar action.
+* `PadicInt.norm_algebraMap_le_one`: a `p`-adic integer has norm at most `1` in every normed
+  field extension of `ℚ_p`.
 * `PadicInt.not_isUnit_iff_dvd`: the nonunits of `ℤ_[p]` are the multiples of `p`; in
   particular an integer is a unit of `ℤ_[p]` exactly when `p` does not divide it
-  (`PadicInt.isUnit_intCast_iff`), and `2` is not a unit of `ℤ_[2]` (`PadicInt.not_isUnit_two`).
+  (`PadicInt.isUnit_intCast_iff`, and `PadicInt.isUnit_natCast_iff` for natural numbers), and `2`
+  is not a unit of `ℤ_[2]` (`PadicInt.not_isUnit_two`).
 * `PadicInt.intCast_not_surjective`: not every `p`-adic integer is an integer.
 * `PadicInt.inv_eq_inverse`, `PadicInt.continuous_inverse`: Mathlib's `PadicInt.inv` is
   `Ring.inverse`, the inverse on units extended by `0`, and it is continuous because the nonunits
@@ -138,6 +142,14 @@ theorem isUnit_of_dvd_one_sub_sq {d : ℤ_[p]} (h : (p : ℤ_[p]) ∣ 1 - d ^ 2)
 theorem isUnit_natCast_of_coprime {n : ℕ} (h : p.Coprime n) : IsUnit (n : ℤ_[p]) :=
   isUnit_iff.mpr (norm_natCast_eq_one_iff.mpr h)
 
+/-- The order of a finite `ℓ`-group is a unit in `ℤ_p` for a prime `ℓ ≠ p`. -/
+theorem isUnit_natCard_of_isPGroup {ℓ : ℕ} [Fact ℓ.Prime] (hℓ : ℓ ≠ p) {S : Type*} [Group S]
+    [Finite S] (hS : IsPGroup ℓ S) : IsUnit (Nat.card S : ℤ_[p]) := by
+  obtain ⟨e, he⟩ := hS.exists_card_eq
+  rw [he, Nat.cast_pow]
+  exact (isUnit_natCast_of_coprime
+    ((Nat.coprime_primes Fact.out Fact.out).mpr (Ne.symm hℓ))).pow e
+
 /-- Every prime number `ℓ` is a unit in `ℤ_p` or generates a maximal ideal of `ℤ_p`: it is a unit
 for `ℓ ≠ p` and generates the maximal ideal for `ℓ = p`. -/
 theorem isUnit_natCast_or_isMaximal_span {ℓ : ℕ} (hℓ : ℓ.Prime) :
@@ -179,6 +191,12 @@ theorem norm_smul_of_isUnit {E : Type*} [SeminormedAddGroup E] [MulActionWithZer
         rw [smul_smul, Units.inv_mul, one_smul]
     _ ≤ ‖(u : ℤ_[p]) • e‖ := (norm_smul_le _ _).trans_eq (by rw [h1, one_mul])
 
+/-- A `p`-adic integer has norm at most `1` in every normed field extension of `ℚ_p`. -/
+theorem norm_algebraMap_le_one {K : Type*} [NormedField K] [NormedAlgebra ℚ_[p] K] (y : ℤ_[p]) :
+    ‖algebraMap ℚ_[p] K y‖ ≤ 1 := by
+  rw [norm_algebraMap', ← norm_def]
+  exact norm_le_one y
+
 /-- Mathlib's `PadicInt.inv` is the ring inverse: the inverse on units and `0` on nonunits. -/
 theorem inv_eq_inverse (z : ℤ_[p]) : z.inv = Ring.inverse z := by
   by_cases hz : IsUnit z
@@ -195,6 +213,13 @@ theorem not_isUnit_iff_dvd {z : ℤ_[p]} : ¬IsUnit z ↔ (p : ℤ_[p]) ∣ z :=
 theorem isUnit_intCast_iff {z : ℤ} : IsUnit (z : ℤ_[p]) ↔ ¬(p : ℤ) ∣ z := by
   rw [← not_iff_not, not_not, not_isUnit_iff_dvd, ← pow_one (p : ℤ_[p]), pow_p_dvd_int_iff,
     pow_one]
+
+/-- A natural number is a unit in `ℤ_p` exactly when `p` does not divide it.
+
+Not a `simp` lemma: `simp` rewrites the left-hand side by the general
+`IsLocalRing.isUnit_natCast_iff_not_dvd` first. -/
+theorem isUnit_natCast_iff {n : ℕ} : IsUnit (n : ℤ_[p]) ↔ ¬p ∣ n := by
+  rw [← Int.cast_natCast, isUnit_intCast_iff, Int.natCast_dvd_natCast]
 
 /-- Not every `p`-adic integer is an integer: the inverse in `ℤ_p` of the unit `1 + p` is not the
 image of an integer. -/

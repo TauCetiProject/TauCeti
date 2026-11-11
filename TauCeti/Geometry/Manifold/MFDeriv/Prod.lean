@@ -25,6 +25,8 @@ fields on a product manifold.
 
 * `TauCeti.mfderiv_comp_fst` and `TauCeti.mfderiv_comp_snd`: the derivative of a map that factors
   through a projection.
+* `TauCeti.mfderiv_snd_apply`: the derivative of the second projection takes the second component
+  of a tangent vector.
 * `TauCeti.mvfderiv_comp_fst_apply` and `TauCeti.mvfderiv_comp_snd_apply`: the same for
   vector-valued functions, applied to a tangent vector.
 * `TauCeti.mvfderiv_comp_fst_mul_comp_snd_apply`: the product rule for a function of the first
@@ -45,6 +47,10 @@ fields on a product manifold.
   differential of a coordinate of a map into a product.
 * `MDifferentiableAt.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct`: the derivative of a
   fibre-product condition `(f y).2 = (g y).1`.
+* `MDifferentiableAt.mfderiv_prodMk_fst_snd_comp_apply`: the differential of
+  `y ↦ ((φ (a y)).1, (ψ (b y)).2)`.
+* `MDifferentiableAt.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct_comp`: the derivative of a
+  fibre-product condition `(φ (a y)).2 = (ψ (b y)).1` along maps `a` and `b`.
 -/
 
 public section
@@ -104,6 +110,16 @@ theorem mfderiv_comp_snd (g : N → M'') (p : M × N) :
     -- Both zeros live in the same space of linear maps, up to the index of the target tangent
     -- space.
     rfl
+
+/-- The derivative of the second projection sends a tangent vector on a product to its second
+component. -/
+theorem mfderiv_snd_apply (p : M × N) (v : TangentSpace (I.prod J) p) :
+    mfderiv (I.prod J) J Prod.snd p v = v.2 := by
+  rw [mfderiv_snd]
+  -- `ContinuousLinearMap.snd` is the second projection by definition. Its domain, the product of
+  -- the coordinate tangent spaces, is the tangent space of the product only by definition, so
+  -- `ContinuousLinearMap.coe_snd'` cannot be rewritten here.
+  rfl
 
 /-- The derivative of the exchange of factors `Prod.swap : M × N → N × M` exchanges the two
 components of a tangent vector. -/
@@ -321,5 +337,42 @@ theorem MDifferentiableAt.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct {g : M → 
   -- The two coordinate maps are equal; ascribing `F'` gives both sides one type, since the tangent
   -- spaces of `N'` at `(f x).2` and `(g x).1` are both `F'`.
   exact congrArg (fun φ : M → N' ↦ (mfderiv I J' φ x v : F')) (funext hfg)
+
+
+section Comp
+
+variable {EL EL' HL HL' L L' : Type*} [NormedAddCommGroup EL] [NormedSpace 𝕜 EL]
+  [NormedAddCommGroup EL'] [NormedSpace 𝕜 EL'] [TopologicalSpace HL] [TopologicalSpace HL']
+  {K : ModelWithCorners 𝕜 EL HL} {K' : ModelWithCorners 𝕜 EL' HL'}
+  [TopologicalSpace L] [ChartedSpace HL L] [TopologicalSpace L'] [ChartedSpace HL' L']
+  {φ : L → N × N'} {ψ : L' → N' × N''} {a : M → L} {b : M → L'}
+
+/-- The differential of `y ↦ ((φ (a y)).1, (ψ (b y)).2)` reads off the first coordinate of
+`dφ (da v)` and the second coordinate of `dψ (db v)`. -/
+theorem MDifferentiableAt.mfderiv_prodMk_fst_snd_comp_apply
+    (hφ : MDifferentiableAt K (J.prod J') φ (a x)) (hψ : MDifferentiableAt K' (J'.prod J'') ψ (b x))
+    (ha : MDifferentiableAt I K a x) (hb : MDifferentiableAt I K' b x) (v : TangentSpace I x) :
+    mfderiv I (J.prod J'') (fun y ↦ ((φ (a y)).1, (ψ (b y)).2)) x v =
+      ((mfderiv K (J.prod J') φ (a x) (mfderiv I K a x v)).1,
+        (mfderiv K' (J'.prod J'') ψ (b x) (mfderiv I K' b x v)).2) := by
+  have hφa : MDifferentiableAt I (J.prod J') (φ ∘ a) x := hφ.comp x ha
+  have hψb : MDifferentiableAt I (J'.prod J'') (ψ ∘ b) x := hψ.comp x hb
+  have hh := hφa.fst.prodMk hψb.snd
+  rw [← mfderiv_comp_apply x hφ ha, ← mfderiv_comp_apply x hψ hb, ← hφa.mfderiv_fst_apply,
+    ← hψb.mfderiv_snd_apply]
+  exact Prod.ext (hh.mfderiv_fst_apply v).symm (hh.mfderiv_snd_apply v).symm
+
+/-- Differentiating a fibre-product condition `(φ (a y)).2 = (ψ (b y)).1` along maps `a` and `b`:
+the matching coordinates of `dφ (da v)` and `dψ (db v)` agree. -/
+theorem MDifferentiableAt.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct_comp
+    (hφ : MDifferentiableAt K (J.prod J') φ (a x)) (hψ : MDifferentiableAt K' (J'.prod J'') ψ (b x))
+    (ha : MDifferentiableAt I K a x) (hb : MDifferentiableAt I K' b x)
+    (hab : ∀ y, (φ (a y)).2 = (ψ (b y)).1) (v : TangentSpace I x) :
+    (mfderiv K (J.prod J') φ (a x) (mfderiv I K a x v)).2 =
+      (mfderiv K' (J'.prod J'') ψ (b x) (mfderiv I K' b x v)).1 := by
+  rw [← mfderiv_comp_apply x hφ ha, ← mfderiv_comp_apply x hψ hb]
+  exact (hφ.comp x ha).mfderiv_snd_eq_mfderiv_fst_of_fiberProduct (hψ.comp x hb) hab v
+
+end Comp
 
 end Coordinates

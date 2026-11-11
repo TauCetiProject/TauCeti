@@ -318,7 +318,7 @@ of vanishing `f.order` at zero. -/
 theorem order_eq_of_isUnit_X_pow_mul_finprod_eq {R ι : Type*} [NormedCommRing R]
     [IsUltrametricDist R] [Nontrivial R] {f : PowerSeries R} {r : ℝ}
     {u : IsRestricted.subring (R := R) r} (hu : IsUnit u) {a : ℕ} {g : ι → Polynomial R}
-    (hfin : (Function.mulSupport g).Finite) (hc0 : ∀ m, (g m).coeff 0 = 1)
+    (hc0 : ∀ m, (g m).coeff 0 = 1)
     (hmul : (u : PowerSeries R) * (((Polynomial.X ^ a * ∏ᶠ m, g m : Polynomial R) :
       PowerSeries R)) = f) :
     f.order = a := by
@@ -327,9 +327,11 @@ theorem order_eq_of_isUnit_X_pow_mul_finprod_eq {R ι : Type*} [NormedCommRing R
     rw [← hmul, Polynomial.coe_mul, Polynomial.coe_pow, Polynomial.coe_X]
     ring
   have hQ0 : constantCoeff Q = 1 := by
-    rw [Polynomial.constantCoeff_coe, ← Polynomial.constantCoeff_apply,
-      map_finprod Polynomial.constantCoeff hfin,
-      finprod_eq_one_of_forall_eq_one fun m => by simpa using hc0 m]
+    by_cases hfin : (Function.mulSupport g).Finite
+    · rw [Polynomial.constantCoeff_coe, ← Polynomial.constantCoeff_apply,
+        map_finprod Polynomial.constantCoeff hfin,
+        finprod_eq_one_of_forall_eq_one fun m => by simpa using hc0 m]
+    · simp [Q, finprod_of_infinite_mulSupport hfin]
   have hfa : f.coeff a ≠ 0 := by
     have ha : ((X : PowerSeries R) ^ a * ((u : PowerSeries R) * Q)).coeff (0 + a) = f.coeff a := by
       rw [zero_add, hmul']

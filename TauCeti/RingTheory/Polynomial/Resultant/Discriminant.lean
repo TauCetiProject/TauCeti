@@ -829,13 +829,15 @@ theorem separable_map_zmod_iff_not_dvd_discr {f : ℤ[X]} (hf : f.Monic)
   f.separable_map_zmod_iff_not_dvd_discr p <| by
     rw [hf.leadingCoeff]; exact_mod_cast (Fact.out : p.Prime).not_dvd_one
 
-/-- The discriminant of a monic integral polynomial is a square in `ℚ` exactly when it is a square
-in `ℤ`. -/
-theorem isSquare_discr_map_rat_iff {f : ℤ[X]} (hf : f.Monic) :
-    IsSquare (f.map (Int.castRingHom ℚ)).discr ↔ IsSquare f.discr := by
-  rw [hf.discr_map, eq_intCast, Rat.isSquare_intCast_iff]
-
 end Monic
+
+/-- The discriminant of an integral polynomial is a square in `ℚ` exactly when it is a square
+in `ℤ`. -/
+theorem isSquare_discr_map_rat_iff (f : ℤ[X]) :
+    IsSquare (f.map (Int.castRingHom ℚ)).discr ↔ IsSquare f.discr := by
+  rw [discr_map_of_natDegree_eq (Int.castRingHom ℚ)
+    (natDegree_map_eq_of_injective (RingHom.injective_int _) f), eq_intCast,
+    Rat.isSquare_intCast_iff]
 
 end Polynomial
 

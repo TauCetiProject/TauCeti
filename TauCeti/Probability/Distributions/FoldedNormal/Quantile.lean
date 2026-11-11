@@ -148,16 +148,35 @@ theorem hasDerivAt_cdf_foldedNormalMeasure (hs : 0 < s) (hx : x ≠ 0) :
 
 /-! ### Quantiles -/
 
-/-- Positive scaling multiplies interior folded normal quantiles by the scale factor, including on
-the nonpositive-scale zero branch. -/
-theorem quantile_foldedNormalMeasure_const_mul (hb : 0 < b) (hu : u ∈ Ioo 0 1) (m s : ℝ) :
+/-- The folded normal quantile takes the junk value `0` at levels outside `(0, 1)`. -/
+@[simp]
+theorem quantile_foldedNormalMeasure_of_notMem_Ioo (hu : u ∉ Ioo 0 1) :
+    (foldedNormalMeasure m s).quantile u = 0 := by
+  by_cases hs : 0 < s
+  · by_cases hu0 : u ≤ 0
+    · exact Measure.quantile_of_nonpos _ hu0
+    · have hu1 : 1 ≤ u := not_lt.mp fun h ↦ hu ⟨not_le.mp hu0, h⟩
+      have : {x : ℝ | u ≤ cdf (foldedNormalMeasure m s) x} = ∅ :=
+        eq_empty_of_forall_notMem fun x hx ↦
+          (cdf_foldedNormalMeasure_lt_one hs x).not_ge (hu1.trans hx)
+      rw [Measure.quantile_def, this, Real.sInf_empty]
+  · rw [foldedNormalMeasure_of_scale_nonpos (not_lt.mp hs), Measure.quantile_zero]
+
+/-- Nonnegative scaling multiplies folded normal quantiles by the scale factor, including on the
+nonpositive-scale zero branch. -/
+theorem quantile_foldedNormalMeasure_const_mul (hb : 0 ≤ b) (m s : ℝ) :
     (foldedNormalMeasure (b * m) (b * s)).quantile u =
       b * (foldedNormalMeasure m s).quantile u := by
+  rcases hb.eq_or_lt with rfl | hb
+  · simp
   by_cases hs : 0 < s
-  · let _ := isProbabilityMeasure_foldedNormalMeasure m hs
-    rw [← foldedNormalMeasure_map_const_mul hb]
-    simpa only [zero_add] using
-      quantile_map_affine_pos (μ := foldedNormalMeasure m s) (a := 0) hb hu.1 hu.2
+  · by_cases hu : u ∈ Ioo 0 1
+    · let _ := isProbabilityMeasure_foldedNormalMeasure m hs
+      rw [← foldedNormalMeasure_map_const_mul hb]
+      simpa only [zero_add] using
+        quantile_map_affine_pos (μ := foldedNormalMeasure m s) (a := 0) hb hu.1 hu.2
+    · rw [quantile_foldedNormalMeasure_of_notMem_Ioo hu,
+        quantile_foldedNormalMeasure_of_notMem_Ioo hu, mul_zero]
   · have hbs : b * s ≤ 0 := mul_nonpos_of_nonneg_of_nonpos hb.le (not_lt.mp hs)
     simp [foldedNormalMeasure_of_scale_nonpos (not_lt.mp hs),
       foldedNormalMeasure_of_scale_nonpos hbs]
@@ -170,7 +189,7 @@ theorem quantile_foldedNormalMeasure_zero_loc (hs : 0 < s) (hu : u ∈ Ioo 0 1) 
     ⟨by simpa only [Measure.neg_def, neg_zero] using (gaussianReal_map_neg (μ := 0) (v := 1))⟩
   have h1 : foldedNormalMeasure 0 1 = (gaussianReal 0 1).map (|·|) := by
     simpa using foldedNormalMeasure_of_scale_pos (m := 0) one_pos
-  have hscale := quantile_foldedNormalMeasure_const_mul hs hu 0 1
+  have hscale := quantile_foldedNormalMeasure_const_mul hs.le 0 1 (u := u)
   simp only [mul_zero, mul_one] at hscale
   rw [hscale, h1, Measure.quantile_map_abs _ hu.1]
 

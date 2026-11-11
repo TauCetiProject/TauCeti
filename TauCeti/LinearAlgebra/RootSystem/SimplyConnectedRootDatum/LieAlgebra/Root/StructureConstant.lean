@@ -7,6 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Vector
 import TauCeti.LinearAlgebra.RootSystem.InvariantForm.RootString
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
+import Mathlib.Algebra.Ring.Parity
 
 /-!
 # The structure constants of the pinned Chevalley system
@@ -42,6 +44,7 @@ to the Chevalley commutator formula for the root subgroups `x_α(u) = Σₙ uⁿ
 * `TauCeti.DynkinType.lie_chevalleySystem_eq_structureConstant_zsmul` and
   `TauCeti.DynkinType.eq_structureConstant_iff`: the defining bracket equation and its uniqueness.
 * `TauCeti.DynkinType.structureConstant_eq_natCast_or_eq_neg_natCast`: `N_{α,β} = ±(r + 1)`.
+* `TauCeti.DynkinType.chainBotCoeff_add_one_dvd_structureConstant`: `r + 1` divides `N_{α,β}`.
 * `TauCeti.DynkinType.structureConstant_eq_two_or_neg_two_of_pairingIn_eq_zero`:
   `N_{α,β} = ±2` for orthogonal roots whose sum is a root.
 * `TauCeti.DynkinType.structureConstant_ne_zero` and `TauCeti.DynkinType.structureConstant_eq_zero`:
@@ -49,6 +52,8 @@ to the Chevalley commutator formula for the root subgroups `x_α(u) = Σₙ uⁿ
 * `TauCeti.DynkinType.structureConstant_skew`: `N_{β,α} = -N_{α,β}`.
 * `TauCeti.DynkinType.structureConstant_reflectionPerm_self_reflectionPerm_self`:
   `N_{-α,-β} = -N_{α,β}`.
+* `TauCeti.DynkinType.two_dvd_structureConstant_mul_structureConstant`: `N_{α,β} N_{α,α+β}` is
+  even.
 * `TauCeti.DynkinType.lie_chevalleySystem_eq_zero`: `⁅e_α, e_β⁆ = 0` when `α + β` is neither a
   root nor zero.
 * `TauCeti.DynkinType.lie_chevalleySystem_eq_zero_of_add_eq`: if `γ = α + β` is a root and
@@ -153,13 +158,6 @@ theorem structureConstant_eq_natCast_or_eq_neg_natCast {α β : Fin t.numRoots}
     _ _ _ (LieSubalgebra.isNonZero_coe_root _) (LieSubalgebra.isNonZero_coe_root _)
     (LieSubalgebra.isNonZero_coe_root _) (coe_rootEquiv_eq_add_iff.2 hγ)
 
-/-- The structure constant of a genuine root sum is nonzero. -/
-theorem structureConstant_ne_zero {α β : Fin t.numRoots}
-    (h : (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β ∈
-      Set.range (t.simplyConnectedRootDatum ht).root) :
-    t.structureConstant ht α β ≠ 0 := by
-  rcases structureConstant_eq_natCast_or_eq_neg_natCast h with h | h <;> rw [h] <;> omega
-
 /-- The structure constant vanishes when `α + β` is not a root. -/
 theorem structureConstant_eq_zero {α β : Fin t.numRoots}
     (h : (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β ∉
@@ -167,6 +165,48 @@ theorem structureConstant_eq_zero {α β : Fin t.numRoots}
     t.structureConstant ht α β = 0 := by
   rw [structureConstant, dite_eq_right_iff]
   exact fun hex => (h hex).elim
+
+/-- The product of consecutive structure constants in a root string is even. Thus the
+coefficient of `e_{2α+β}` in `(ad e_α)² e_β / 2` is an integer. -/
+theorem two_dvd_structureConstant_mul_structureConstant {α β γ : Fin t.numRoots}
+    (hγ : (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β) :
+    2 ∣ t.structureConstant ht α β * t.structureConstant ht α γ := by
+  have := t.isReduced_simplyConnectedRootDatum ht
+  by_cases hδ : (t.simplyConnectedRootDatum ht).root α +
+      (t.simplyConnectedRootDatum ht).root γ ∈ Set.range (t.simplyConnectedRootDatum ht).root
+  · have hlin := (t.simplyConnectedRootDatum ht).linearIndependent_of_add_mem_range_root'
+      (i := α) (j := β) ⟨γ, hγ⟩
+    have hchain := (t.simplyConnectedRootDatum ht).chainBotCoeff_of_add hlin
+      (hγ.trans (add_comm _ _))
+    have heven : 2 ∣ (((t.simplyConnectedRootDatum ht).chainBotCoeff α β : ℤ) + 1) *
+        (((t.simplyConnectedRootDatum ht).chainBotCoeff α β : ℤ) + 2) := by
+      exact_mod_cast Nat.two_dvd_mul_add_one
+        ((t.simplyConnectedRootDatum ht).chainBotCoeff α β + 1)
+    rcases structureConstant_eq_natCast_or_eq_neg_natCast ⟨γ, hγ⟩ with h | h <;>
+      rcases structureConstant_eq_natCast_or_eq_neg_natCast hδ with h' | h' <;>
+      simp only [h, h', hchain, Nat.cast_add, Nat.cast_one, neg_mul, mul_neg, neg_neg,
+        dvd_neg] <;> convert heven using 1 <;> ring
+  · simp [structureConstant_eq_zero hδ]
+
+/-- The structure constant of a genuine root sum is nonzero. -/
+theorem structureConstant_ne_zero {α β : Fin t.numRoots}
+    (h : (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β ∈
+      Set.range (t.simplyConnectedRootDatum ht).root) :
+    t.structureConstant ht α β ≠ 0 := by
+  rcases structureConstant_eq_natCast_or_eq_neg_natCast h with h | h <;> rw [h] <;> omega
+
+/-- For every root pair, the descending root-string length plus one divides the structure
+constant. -/
+theorem chainBotCoeff_add_one_dvd_structureConstant {α β : Fin t.numRoots} :
+    (((t.simplyConnectedRootDatum ht).chainBotCoeff α β + 1 : ℕ) : ℤ) ∣
+      t.structureConstant ht α β := by
+  by_cases h : (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β ∈
+      Set.range (t.simplyConnectedRootDatum ht).root
+  · rcases structureConstant_eq_natCast_or_eq_neg_natCast h with h | h <;>
+      simp only [h, dvd_neg, dvd_refl]
+  · rw [structureConstant_eq_zero h]
+    exact dvd_zero _
 
 /-- **Skew-symmetry of the structure constants**: `N_{β,α} = -N_{α,β}`. -/
 theorem structureConstant_skew (α β : Fin t.numRoots) :

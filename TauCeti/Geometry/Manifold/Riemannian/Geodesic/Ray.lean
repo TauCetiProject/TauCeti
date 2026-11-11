@@ -74,14 +74,8 @@ theorem isometry_riemannianExp_smul_of_forall_dist_eq {u : TangentSpace I p} (hu
   have key (a s t : ℝ) (ha : 0 < a) (hs : s ∈ Icc 0 a) (ht : t ∈ Icc 0 a) :
       dist (riemannianExp I M p (s • u)) (riemannianExp I M p (t • u)) = |s - t| := by
     have hnorm : ‖a • u‖ = a := by rw [norm_smul, hu, mul_one, Real.norm_of_nonneg ha.le]
-    -- Outside the domain of `exp_p` the exponential map takes the junk value `p`.
-    have hmem : a • u ∈ expDomain I M p := by
-      by_contra hnot
-      have := h a ha.le
-      rw [riemannianExp_of_notMem_expDomain hnot, dist_self] at this
-      exact ha.ne this
-    simpa [hu] using
-      dist_riemannianExp_smul_riemannianExp_smul_of_mem_Icc hmem (by rw [hnorm, h a ha.le]) hs ht
+    simpa [hu] using dist_riemannianExp_smul_riemannianExp_smul_of_mem_Icc (v := u)
+      (by rw [hnorm, h a ha.le]) hs ht
   refine Isometry.of_dist_eq fun s t ↦ ?_
   -- Both times lie in `[0, a]` for `a = max s t + 1 > 0`.
   have hs : (s : ℝ) ≤ max s t + 1 := (le_max_left _ _).trans (le_add_of_nonneg_right zero_le_one)
@@ -105,7 +99,7 @@ theorem exists_norm_eq_one_isometry_riemannianExp_smul [CompleteSpace M] [Noncom
     isClosed_sphere.inter (hS.preimage (continuous_const_smul _))
   have hKmono (n : ℕ) : K (n + 1) ⊆ K n := by
     rintro u ⟨hu, hnu⟩
-    exact ⟨hu, dist_riemannianExp_smul_eq_norm_of_le (ha ▸ mem_univ _) hnu (Nat.cast_nonneg n)
+    exact ⟨hu, dist_riemannianExp_smul_eq_norm_of_le hnu (Nat.cast_nonneg n)
       (Nat.cast_le.2 n.le_succ)⟩
   -- A minimizing segment to a point at distance more than `n` gives an element of `K n`.
   have hKne (n : ℕ) : (K n).Nonempty := by
@@ -117,7 +111,7 @@ theorem exists_norm_eq_one_isometry_riemannianExp_smul [CompleteSpace M] [Noncom
     have hw0 : 0 < ‖w‖ := hw ▸ (Nat.cast_nonneg n).trans_lt hq
     refine ⟨‖w‖⁻¹ • w, by simp [norm_smul, hw0.ne'], ?_⟩
     have hw' : ‖w‖ • ‖w‖⁻¹ • w = w := smul_inv_smul₀ hw0.ne' w
-    exact dist_riemannianExp_smul_eq_norm_of_le (ha ▸ mem_univ _) (by rw [hw', hwq, hw])
+    exact dist_riemannianExp_smul_eq_norm_of_le (by rw [hw', hwq, hw])
       (Nat.cast_nonneg n) (hw ▸ hq.le)
   obtain ⟨u, hu⟩ := IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed K hKmono
     hKne ((isCompact_sphere 0 1).of_isClosed_subset (hKclosed 0) inter_subset_left) hKclosed
@@ -127,7 +121,7 @@ theorem exists_norm_eq_one_isometry_riemannianExp_smul [CompleteSpace M] [Noncom
   -- Every `t ≥ 0` is at most some `n` with `n • u` minimizing.
   obtain ⟨n, hn⟩ := exists_nat_ge t
   have hnorm : ‖t • u‖ = t := by rw [norm_smul, hu1, mul_one, Real.norm_of_nonneg ht]
-  exact (dist_riemannianExp_smul_eq_norm_of_le (ha ▸ mem_univ _) (hu n).2 ht hn).trans hnorm
+  exact (dist_riemannianExp_smul_eq_norm_of_le (hu n).2 ht hn).trans hnorm
 
 /-- **Rays exist.** In a complete noncompact Riemannian manifold, every point `p` is the origin of
 a geodesic `γ`, defined for all time, whose restriction to `[0, ∞)` is an isometric embedding:

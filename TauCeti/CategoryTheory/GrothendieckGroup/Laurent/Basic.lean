@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.GrothendieckGroup.Graded
+public import TauCeti.Algebra.Polynomial.Laurent.AEval
 public import TauCeti.Algebra.Polynomial.Laurent.Specialization
 
 /-!
@@ -18,10 +19,11 @@ automorphism `TauCeti.GradedExactStructure.shiftEquiv`, and iterating it gives t
 form can live.
 
 `TauCeti.LaurentK0 E` is the graded Grothendieck group of a graded exact category `E` carrying that
-module structure.  It is a type synonym for `TauCeti.ExactK0 E.toExactStructure`, moved across by
-the additive equivalence `TauCeti.LaurentK0.ofExactK0`: no new group is constructed, and no
-relation is added.  The synonym exists only because the module structure depends on the grading
-shift, which the underlying exact structure does not remember.  The defining property is
+module structure.  It is `TauCeti.LaurentAEval E.shiftEquiv`, the exact Grothendieck group
+`TauCeti.ExactK0 E.toExactStructure` with the Laurent variable acting by the grading shift, moved
+across by the additive equivalence `TauCeti.LaurentK0.ofExactK0`: no new group is constructed, and
+no relation is added.  The separate type exists only because the module structure depends on the
+grading shift, which the underlying exact structure does not remember.  The defining property is
 `TauCeti.LaurentK0.T_smul`, the normalization `[M{n}] = qⁿ [M]` of the roadmap.
 
 The universal property `TauCeti.LaurentK0.liftEquiv` is the `ℤ[q,q⁻¹]`-linear form of the graded
@@ -99,77 +101,28 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBin
 ring.**  The underlying additive group is the exact Grothendieck group of the underlying exact
 structure; the grading shift makes it a module over `ℤ[q,q⁻¹]`, with `q` acting as `[M] ↦ [M{1}]`.
 
-The type synonym is needed because a `ℤ[q,q⁻¹]`-module structure is determined by an automorphism
-of the group, and `ExactK0 E.toExactStructure` does not mention the grading shift.  Use
+It is `TauCeti.LaurentAEval E.shiftEquiv`: a separate type is needed because a
+`ℤ[q,q⁻¹]`-module structure is determined by an automorphism of the group, and
+`ExactK0 E.toExactStructure` does not mention the grading shift.  Use
 `TauCeti.LaurentK0.ofExactK0` to move between the two views. -/
-def LaurentK0 (E : GradedExactStructure C) : Type w := ExactK0 E.toExactStructure
+@[expose] def LaurentK0 (E : GradedExactStructure C) : Type w := LaurentAEval E.shiftEquiv
 
 namespace LaurentK0
 
 variable (E : GradedExactStructure C)
 
 instance : AddCommGroup (LaurentK0 E) :=
-  inferInstanceAs (AddCommGroup (ExactK0 E.toExactStructure))
-
-/-- **The graded Grothendieck group is the exact one.**  Moving a class across this equivalence
-changes nothing but which module structure is in scope. -/
-def ofExactK0 : ExactK0 E.toExactStructure ≃+ LaurentK0 E :=
-  AddEquiv.refl _
-
-/-- The grading shift, as a `ℤ`-linear automorphism of the graded Grothendieck group. -/
-private noncomputable def shiftLinearEquiv : LaurentK0 E ≃ₗ[ℤ] LaurentK0 E :=
-  let shiftAddEquiv := (ofExactK0 E).symm.trans (E.shiftEquiv.trans (ofExactK0 E))
-  { shiftAddEquiv with map_smul' := fun a x => map_zsmul shiftAddEquiv a x }
-
-/-- The grading shift as a unit of the endomorphism ring of the graded Grothendieck group: this is
-the unit at which the Laurent variable is evaluated. -/
-private noncomputable def shiftUnit : (Module.End ℤ (LaurentK0 E))ˣ where
-  val := shiftLinearEquiv E
-  inv := (shiftLinearEquiv E).symm
-  val_inv := LinearMap.ext fun x => (shiftLinearEquiv E).apply_symm_apply x
-  inv_val := LinearMap.ext fun x => (shiftLinearEquiv E).symm_apply_apply x
+  inferInstanceAs (AddCommGroup (LaurentAEval E.shiftEquiv))
 
 /-- **The Laurent coefficient ring acts on the graded Grothendieck group**, the variable acting
 by the grading shift. -/
 noncomputable instance : Module (LaurentPolynomial ℤ) (LaurentK0 E) :=
-  let shiftAddEquiv := (ofExactK0 E).symm.trans (E.shiftEquiv.trans (ofExactK0 E))
-  let shiftLinearEquiv : LaurentK0 E ≃ₗ[ℤ] LaurentK0 E :=
-    { shiftAddEquiv with map_smul' := fun a x => map_zsmul shiftAddEquiv a x }
-  Module.compHom (LaurentK0 E)
-    (laurentEval
-      ({ val := shiftLinearEquiv
-         inv := shiftLinearEquiv.symm
-         val_inv := LinearMap.ext fun x => shiftLinearEquiv.apply_symm_apply x
-         inv_val := LinearMap.ext fun x => shiftLinearEquiv.symm_apply_apply x } :
-        (Module.End ℤ (LaurentK0 E))ˣ)).toRingHom
+  inferInstanceAs (Module (LaurentPolynomial ℤ) (LaurentAEval E.shiftEquiv))
 
-/-- The Laurent action is evaluation of the polynomial at the grading shift. -/
-private lemma smul_def (p : LaurentPolynomial ℤ) (x : LaurentK0 E) :
-    p • x = laurentEval (shiftUnit E) p x :=
-  (rfl)
-
-private lemma shiftUnit_apply (x : ExactK0 E.toExactStructure) :
-    (shiftUnit E : Module.End ℤ (LaurentK0 E)) (ofExactK0 E x) = ofExactK0 E (E.shiftEquiv x) :=
-  (rfl)
-
-private lemma shiftUnit_inv_apply (x : ExactK0 E.toExactStructure) :
-    (↑(shiftUnit E)⁻¹ : Module.End ℤ (LaurentK0 E)) (ofExactK0 E x) =
-      ofExactK0 E (E.shiftEquiv.symm x) :=
-  (rfl)
-
-private lemma shiftUnit_zpow_apply (n : ℤ) (x : ExactK0 E.toExactStructure) :
-    (↑(shiftUnit E ^ n) : Module.End ℤ (LaurentK0 E)) (ofExactK0 E x) =
-      ofExactK0 E (E.shiftZPow n x) := by
-  induction n using Int.induction_on with
-  | zero => simp
-  | succ k ih =>
-      rw [GradedExactStructure.shiftZPow_add_one_apply, ← shiftUnit_apply, ← ih,
-        ← mul_apply_eq_comp, ← Units.val_mul, ← zpow_one_add, add_comm 1 (k : ℤ)]
-  | pred k ih =>
-      rw [GradedExactStructure.shiftZPow_sub_one_apply, ← shiftUnit_inv_apply, ← ih,
-        ← mul_apply_eq_comp, ← Units.val_mul, ← zpow_neg_one, ← zpow_add]
-      have h : (-1 : ℤ) + (-(k : ℤ)) = -(k : ℤ) - 1 := by ring
-      rw [h]
+/-- **The graded Grothendieck group is the exact one.**  Moving a class across this equivalence
+changes nothing but which module structure is in scope. -/
+noncomputable def ofExactK0 : ExactK0 E.toExactStructure ≃+ LaurentK0 E :=
+  LaurentAEval.of E.shiftEquiv
 
 /-- **`qⁿ · [M] = [M{n}]`**: the Laurent variable acts on the graded Grothendieck group by the
 grading shift, and its `n`-th power by the `n`-fold shift.  This is the normalization fixed by the
@@ -177,7 +130,8 @@ roadmap, and it determines the module structure. -/
 @[simp]
 theorem T_smul (n : ℤ) (x : ExactK0 E.toExactStructure) :
     (T n : LaurentPolynomial ℤ) • ofExactK0 E x = ofExactK0 E (E.shiftZPow n x) := by
-  rw [smul_def, laurentEval_T, shiftUnit_zpow_apply]
+  rw [GradedExactStructure.shiftZPow_apply]
+  exact LaurentAEval.T_smul_of E.shiftEquiv n x
 
 /-- The class `[M]` of an object in the graded Grothendieck group. -/
 noncomputable def of (X : C) : LaurentK0 E :=
@@ -212,14 +166,6 @@ theorem T_neg_one_smul_of (X : C) :
     (T (-1) : LaurentPolynomial ℤ) • of E X = of E (E.shift.inverse.obj X) := by
   rw [← ofExactK0_exactK0_of, T_smul, GradedExactStructure.shiftZPow_neg_one_apply_of,
     ofExactK0_exactK0_of]
-
-/-- **The Laurent action restricts along the constants to the underlying integer action**: an
-integer scalar may be pushed through a Laurent scalar.  This is the content of
-`TauCeti.laurentPolynomialC_smul` in the form `Module` consumers need, and it is what lets
-`ℤ`-linear arguments about the underlying group be reused verbatim over `ℤ[q,q⁻¹]`. -/
-instance : IsScalarTower ℤ (LaurentPolynomial ℤ) (LaurentK0 E) where
-  smul_assoc a p x := by
-    rw [zsmul_eq_mul, mul_smul, Int.cast_smul_eq_zsmul]
 
 /-- **A `ℤ[q,q⁻¹]`-linear map out of the graded Grothendieck group is determined by its values on
 object classes**, because those classes generate the underlying group. -/
@@ -258,48 +204,17 @@ theorem map_shiftZPow (f : ExactK0 E.toExactStructure →+ N)
       have h : (-1 : ℤ) + (-(k : ℤ)) = -(k : ℤ) - 1 := by ring
       rw [h]
 
-/-- The `ℤ[q,q⁻¹]`-linear map out of the graded Grothendieck group determined by a
-shift-compatible additive map on the underlying exact one. -/
-private noncomputable def liftAux (f : ExactK0 E.toExactStructure →+ N)
-    (hf : ∀ x, f (E.shiftEquiv x) = (T 1 : LaurentPolynomial ℤ) • f x) :
-    LaurentK0 E →ₗ[LaurentPolynomial ℤ] N where
-  toFun x := f ((ofExactK0 E).symm x)
-  map_add' x y := by simp
-  map_smul' p x := by
-    simp only [RingHom.id_apply]
-    obtain ⟨z, rfl⟩ : ∃ z, ofExactK0 E z = x := ⟨(ofExactK0 E).symm x, by simp⟩
-    simp only [AddEquiv.symm_apply_apply]
-    induction p using LaurentPolynomial.induction_on' with
-    | add p q hp hq =>
-        rw [add_smul, map_add, map_add, hp, hq, add_smul]
-    | C_mul_T n a =>
-        rw [mul_smul, T_smul, laurentPolynomialC_smul, ← map_zsmul (ofExactK0 E),
-          AddEquiv.symm_apply_apply, map_zsmul f, map_shiftZPow f hf, mul_smul,
-          laurentPolynomialC_smul]
-
-@[simp]
-private lemma liftAux_of (f : ExactK0 E.toExactStructure →+ N)
-    (hf : ∀ x, f (E.shiftEquiv x) = (T 1 : LaurentPolynomial ℤ) • f x) (X : C) :
-    liftAux f hf (of E X) = f (ExactK0.of X) :=
-  (rfl)
-
-private lemma liftAux_ofExactK0 (f : ExactK0 E.toExactStructure →+ N)
-    (hf : ∀ x, f (E.shiftEquiv x) = (T 1 : LaurentPolynomial ℤ) • f x)
-    (x : ExactK0 E.toExactStructure) :
-    liftAux f hf (ofExactK0 E x) = f x :=
-  congrArg f ((ofExactK0 E).symm_apply_apply x)
-
 variable (E) in
 /-- **The homomorphism out of graded `K₀` induced by a shift-compatible invariant**, as a map of
 `ℤ[q,q⁻¹]`-modules.  The invariant is compared against multiplication by `q` on the target. -/
 noncomputable def lift (a : GradedExactStructure.ShiftInvariant E (laurentTAut ℤ N)) :
     LaurentK0 E →ₗ[LaurentPolynomial ℤ] N :=
-  liftAux a.lift fun x => by simpa using a.lift_shiftEquiv x
+  LaurentAEval.lift a.lift fun x => by simpa using a.lift_shiftEquiv x
 
 @[simp]
 lemma lift_of (a : GradedExactStructure.ShiftInvariant E (laurentTAut ℤ N)) (X : C) :
-    lift E a (of E X) = a.obj X := by
-  rw [lift, liftAux_of, GradedExactStructure.ShiftInvariant.lift_of]
+    lift E a (of E X) = a.obj X :=
+  (LaurentAEval.lift_of _ _ (ExactK0.of X)).trans (a.lift_of X)
 
 variable (E) in
 /-- **The universal property of graded `K₀` over the Laurent coefficient ring.**  For a
@@ -324,7 +239,7 @@ noncomputable def liftEquiv :
     simp
   right_inv g := by
     refine hom_ext E fun X => ?_
-    simp [lift]
+    simp
 
 end UniversalProperty
 
@@ -338,21 +253,23 @@ variable {E} {E' : GradedExactStructure D} {F : C ⥤ D} [F.Additive]
 groups: the shift-equivariance proved in the `ℤ`-graded layer is exactly `q`-linearity. -/
 noncomputable def map (h : GradedConflationExact E E' F) :
     LaurentK0 E →ₗ[LaurentPolynomial ℤ] LaurentK0 E' :=
-  liftAux ((ofExactK0 E').toAddMonoidHom.comp (ExactK0.map F h.isConflationExact)) fun x => by
+  LaurentAEval.lift ((ofExactK0 E').toAddMonoidHom.comp (ExactK0.map F h.isConflationExact))
+    fun x => by
     simp [GradedExactStructure.map_shiftEquiv h]
 
 @[simp]
 lemma map_of (h : GradedConflationExact E E' F) (X : C) :
-    map h (of E X) = of E' (F.obj X) := by
-  rw [map, liftAux_of, AddMonoidHom.comp_apply, ExactK0.map_of, AddEquiv.coe_toAddMonoidHom,
-    ofExactK0_exactK0_of]
+    map h (of E X) = of E' (F.obj X) :=
+  (LaurentAEval.lift_of _ _ (ExactK0.of X)).trans <| by
+    rw [AddMonoidHom.comp_apply, ExactK0.map_of, AddEquiv.coe_toAddMonoidHom,
+      ofExactK0_exactK0_of]
 
 /-- On the underlying exact Grothendieck groups, the map induced by a graded conflation-exact
 functor is the map induced by the underlying conflation-exact functor. -/
 @[simp]
 theorem map_ofExactK0 (h : GradedConflationExact E E' F) (x : ExactK0 E.toExactStructure) :
-    map h (ofExactK0 E x) = ofExactK0 E' (ExactK0.map F h.isConflationExact x) := by
-  rw [map, liftAux_ofExactK0, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom]
+    map h (ofExactK0 E x) = ofExactK0 E' (ExactK0.map F h.isConflationExact x) :=
+  LaurentAEval.lift_of _ _ x
 
 /-- An essentially surjective graded conflation-exact functor induces a surjection of graded
 Grothendieck groups. -/

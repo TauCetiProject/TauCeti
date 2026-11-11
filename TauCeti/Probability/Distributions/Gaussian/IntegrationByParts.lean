@@ -7,7 +7,9 @@ module
 
 public import TauCeti.MeasureTheory.Function.L1Space.CenteredMoment
 public import TauCeti.Probability.Distributions.Gaussian.Basic
+public import TauCeti.Probability.Distributions.Gaussian.Moments
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
 # Gaussian integration by parts
@@ -16,6 +18,7 @@ This file proves Gaussian integration by parts for any mean and variance, for te
 values in a Banach space. For a differentiable test function, it assumes only that the derivative
 and the centered first moment are integrable; integrability of the function itself follows.
 Real-valued and standard-normal forms are recorded as corollaries.
+It also records the identity for affine test functions.
 -/
 
 public section
@@ -100,5 +103,37 @@ theorem integral_mul_eq_integral_deriv_gaussianReal (f : ℝ → ℝ)
   simpa using
     (integral_sub_mul_eq_mul_integral_deriv_gaussianReal
       (μ := 0) (v := 1) f hf hxf' hdf)
+
+/-- Gaussian integration by parts for `x * f (a + s * x)` under the standard law. -/
+theorem integral_mul_comp_affine_gaussianReal {f : ℝ → ℝ} {A B : ℝ}
+    (hf : ContDiff ℝ 1 f) (hA : ∀ x, |f x| ≤ A)
+    (hB : ∀ x, |deriv f x| ≤ B) (a s : ℝ) :
+    ∫ v, v * f (a + s * v) ∂(gaussianReal 0 1) =
+      s * ∫ v, deriv f (a + s * v) ∂(gaussianReal 0 1) := by
+  have hc : Continuous f := hf.continuous
+  have hc' : Continuous (deriv f) := hf.continuous_deriv le_rfl
+  have hd : ∀ v, HasDerivAt (fun v => f (a + s * v)) (deriv f (a + s * v) * s) v := fun v => by
+    have h1 : HasDerivAt (fun v : ℝ => a + s * v) s v := by
+      simpa using ((hasDerivAt_id v).const_mul s).const_add a
+    exact (hf.differentiable one_ne_zero (a + s * v)).hasDerivAt.comp v h1
+  have hder : deriv (fun v => f (a + s * v)) = fun v => deriv f (a + s * v) * s :=
+    funext fun v => (hd v).deriv
+  have hA0 : 0 ≤ A := (abs_nonneg _).trans (hA 0)
+  have hB0 : 0 ≤ B := (abs_nonneg _).trans (hB 0)
+  have key := integral_mul_eq_integral_deriv_gaussianReal (fun v => f (a + s * v))
+    (fun v => (hd v).differentiableAt)
+    (by
+      refine ((integrable_abs_gaussianReal 0 1).const_mul A).mono'
+        (by fun_prop) (ae_of_all _ fun x => ?_)
+      rw [Real.norm_eq_abs, abs_mul]
+      exact mul_le_mul_of_nonneg_left (hA _) (abs_nonneg _) |>.trans_eq (mul_comm _ _))
+    (by
+      rw [hder]
+      refine (integrable_const (B * |s|)).mono' (by fun_prop) (ae_of_all _ fun x => ?_)
+      rw [Real.norm_eq_abs, abs_mul]
+      exact mul_le_mul_of_nonneg_right (hB _) (abs_nonneg _))
+  rw [key, hder]
+  simp_rw [mul_comm (deriv f _) s]
+  exact integral_const_mul s _
 
 end TauCeti.Probability

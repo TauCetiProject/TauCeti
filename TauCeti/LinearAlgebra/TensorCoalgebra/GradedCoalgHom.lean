@@ -99,7 +99,7 @@ theorem isHomogeneous_coalgHom {f : ReducedTensorWords R M →ₗ[R] N}
   rw [LinearMap.isHomogeneous_def]
   intro D z hz
   rw [add_zero]
-  refine gradedPiece_induction (motive := fun w ↦ coalgHom R f w ∈ gradedPiece H D) hz ?_ ?_ ?_ ?_
+  refine gradedPiece_induction (motive := fun w ↦ coalgHom R f w ∈ gradedPiece H D) hz ?_ ?_ ?_
   · intro n hn 𝒟 x hx hD
     -- Extend the degrees to absolute positions, and induct on the length of a block.
     set g : ℕ → ℤ := fun k ↦ if h : k < n then 𝒟 ⟨k, h⟩ else 0 with hg
@@ -113,7 +113,7 @@ theorem isHomogeneous_coalgHom {f : ReducedTensorWords R M →ₗ[R] N}
         rw [coalgHom_subword]
         refine add_mem ?_ (Submodule.sum_mem _ fun d hd ↦ ?_)
         · refine ofLetter_mem_gradedPiece H ?_
-          simpa only [add_zero] using hf.map_mem (subword_mem_gradedPiece x g hxg a b hab)
+          simpa only [add_zero] using hf.map_mem (subword_mem_gradedPiece x g hxg a b)
         · rw [Finset.mem_range] at hd
           rcases Nat.eq_zero_or_pos d with rfl | hd0
           · rw [subword_length_zero, map_zero, LinearMap.map_zero₂]
@@ -126,14 +126,12 @@ theorem isHomogeneous_coalgHom {f : ReducedTensorWords R M →ₗ[R] N}
             rw [hsum]
             refine prepend_mem_gradedPiece ?_ (ih (b - d) (by omega) (a + d) (by omega))
             simpa only [add_zero] using
-              hf.map_mem (subword_mem_gradedPiece x g hxg a d (by omega))
+              hf.map_mem (subword_mem_gradedPiece x g hxg a d)
     have hsum : ∑ j ∈ Finset.range n, g (0 + j) = D := by
       rw [← hD, ← Fin.sum_univ_eq_sum_range (fun j ↦ g (0 + j)) n]
       exact Finset.sum_congr rfl fun i _ ↦ by simp [hg]
     rw [of_tprod_eq_subword R hn, ← hsum]
     exact key n 0 (by omega)
-  · rw [map_zero]
-    exact zero_mem _
   · intro u v _ _ hu hv
     rw [map_add]
     exact add_mem hu hv

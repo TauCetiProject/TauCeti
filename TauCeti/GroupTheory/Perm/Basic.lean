@@ -8,6 +8,8 @@ module
 public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.Data.Finset.Card
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
+import Mathlib.Data.Fintype.Pigeonhole
+import Mathlib.Data.ZMod.QuotientGroup
 import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.GroupTheory.Perm.ViaEmbedding
 import Mathlib.Tactic.Abel
@@ -33,9 +35,13 @@ carrying one finite family to another with the same equality pattern
 (`TauCeti.exists_perm_apply_eq_of_eq_iff`), the fact that a permutation
 is a single cycle on each of its own orbits, the transport of its cycles along an equivalence of
 types, transport of cycle quotients along conjugating equivalences, and the factorization of an
-invariant function through a map on whose fibres the permutation is a single cycle, and a correction
-by a power of a cycle for a permutation commuting with it. Points over distinct classes of the cycle
-quotient are distinct (`Equiv.Perm.ne_of_sameCycle_out`), every such class is nonempty
+invariant function through a map on whose fibres the permutation is a single cycle, also stated
+for the difference `x ↦ c (σ⁻¹ x) - c x` (`Equiv.Perm.forall_comp_symm_sub_eq_zero_iff`), and a
+correction by a power of a cycle for a permutation commuting with it. The set of points on the
+cycle through `x` has `Function.minimalPeriod σ x` elements, counted by `Set.ncard`
+(`Equiv.Perm.ncard_setOf_sameCycle`, and `Equiv.Perm.minimalPeriod_eq_natCard_of_forall_sameCycle`
+for a single cycle through every point). Points over distinct classes of the cycle quotient are
+distinct (`Equiv.Perm.ne_of_sameCycle_out`), every such class is nonempty
 (`Equiv.Perm.card_sameCycle_out_pos`), and precomposing with `σ` does not change a sum over a
 `σ`-orbit (`Equiv.Perm.sum_filter_sameCycle_comp`). It also identifies functions invariant under a
 permutation with functions on its cycle quotient (`TauCeti.invariantColouringEquiv`). Finally, right
@@ -50,10 +56,11 @@ front or to any other slot (`TauCeti.sum_sign_smul_comp_eq_sum_cons_removeNth`,
 involution `σ` by left multiplication with `Equiv.swap a (σ a)` leaves an involution that agrees
 with `σ` off the pair (`Function.Involutive.swap_mul`,
 `Function.Involutive.swap_mul_apply_eq_self_or`), and multiplying back on the right recovers `σ`
-(`Function.Involutive.swap_mul_mul_swap`). A permutation of a finite type sends as many points
-into a set as out of it (`Equiv.Perm.card_filter_not_and_apply_eq`), and the total decrease of a
-natural-number valued function along it equals the total increase
-(`Equiv.Perm.sum_tsub_comp_eq_sum_comp_tsub`).
+(`Function.Involutive.swap_mul_mul_swap`). An involutive permutation of an infinite type has
+infinitely many cycles (`Equiv.Perm.infinite_quotient_sameCycle_of_involutive`). A permutation of a
+finite type sends as many points into a set as out of it
+(`Equiv.Perm.card_filter_not_and_apply_eq`), and the total decrease of a natural-number valued
+function along it equals the total increase (`Equiv.Perm.sum_tsub_comp_eq_sum_comp_tsub`).
 -/
 
 public section
@@ -187,6 +194,32 @@ variable {α : Type*} (σ : Equiv.Perm α)
 theorem isCycleOn_setOf_sameCycle (x : α) : σ.IsCycleOn {y | σ.SameCycle x y} :=
   ⟨σ.bijOn fun _ => sameCycle_apply_right, fun _ hy _ hz => hy.symm.trans hz⟩
 
+/-- Two points lie on the same cycle of `σ` exactly when one is a `⟨σ⟩`-translate of the
+other. -/
+theorem sameCycle_iff_mem_orbit_zpowers {x y : α} :
+    σ.SameCycle x y ↔ y ∈ MulAction.orbit (Subgroup.zpowers σ) x := by
+  constructor
+  · rintro ⟨i, hi⟩
+    exact ⟨⟨σ ^ i, Subgroup.zpow_mem_zpowers σ i⟩, hi⟩
+  · rintro ⟨g, hg⟩
+    obtain ⟨i, hi⟩ := Subgroup.mem_zpowers_iff.mp g.2
+    exact ⟨i, by rw [hi]; exact hg⟩
+
+/-- The number `Set.ncard {y | σ.SameCycle x y}` of points on the cycle of `σ` through `x` is
+`Function.minimalPeriod σ x`; a fixed point is a cycle of length one. If the cycle is infinite, then
+both sides are `0`. -/
+theorem ncard_setOf_sameCycle (x : α) :
+    {y | σ.SameCycle x y}.ncard = Function.minimalPeriod σ x := by
+  simp_rw [sameCycle_iff_mem_orbit_zpowers, Set.ofPred_mem_eq, ← Nat.card_coe_set_eq]
+  exact (Nat.card_congr (MulAction.orbitZPowersEquiv σ x)).trans (Nat.card_zmod _)
+
+/-- If a single cycle of `σ` passes through every point, then every point has minimal period
+`Nat.card α`. If `α` is infinite, then both sides are `0`. -/
+theorem minimalPeriod_eq_natCard_of_forall_sameCycle {x : α}
+    (hx : ∀ y, σ.SameCycle x y) (y : α) : Function.minimalPeriod σ y = Nat.card α := by
+  rw [← ncard_setOf_sameCycle, Set.eq_univ_of_forall (s := {z | σ.SameCycle y z})
+    fun z => (hx y).symm.trans (hx z), Set.ncard_univ]
+
 /-- A permutation is a single cycle on each fibre of the quotient map onto its orbits. This is the
 form in which the cyclic order around a vertex of a ribbon graph is read off a permutation. -/
 theorem isCycleOn_preimage_quotientMk (b : Quotient (SameCycle.setoid σ)) :
@@ -207,6 +240,22 @@ theorem factorsThrough_of_forall_isCycleOn {ι β : Type*} {g : α → ι}
     (hσ : ∀ i, σ.IsCycleOn {x | g x = i}) {f : α → β} (hf : ∀ x, f (σ x) = f x) :
     f.FactorsThrough g :=
   fun _ b hab => ((hσ (g b)).2 hab rfl).apply_eq_of_apply_eq hf
+
+/-- If `σ` is a single cycle on each fibre of `g`, then a function `c` has vanishing difference
+`x ↦ c (σ⁻¹ x) - c x` exactly when it factors through `g`. -/
+theorem forall_comp_symm_sub_eq_zero_iff {ι M : Type*} [AddGroup M] {g : α → ι}
+    (hσ : ∀ i, σ.IsCycleOn {x | g x = i}) (c : α → M) :
+    (∀ x, c (σ.symm x) - c x = 0) ↔ ∃ a : ι → M, ∀ x, c x = a (g x) := by
+  simp only [sub_eq_zero]
+  constructor
+  · intro hc
+    obtain ⟨a, ha⟩ := (Function.factorsThrough_iff _).mp
+      (σ.factorsThrough_of_forall_isCycleOn hσ fun x => by simpa using (hc (σ x)).symm)
+    exact ⟨a, congrFun ha⟩
+  · rintro ⟨a, ha⟩ x
+    have hg : g (σ (σ.symm x)) = g (σ.symm x) := (hσ (g (σ.symm x))).1.mapsTo rfl
+    rw [Equiv.apply_symm_apply] at hg
+    rw [ha, ha, hg]
 
 variable {σ} in
 /-- Points in the orbits of the representatives of two distinct classes of the cycle quotient
@@ -476,6 +525,20 @@ theorem _root_.Function.Involutive.sameCycle_iff {α : Type*} {f : Equiv.Perm α
     f.SameCycle x y ↔ x = y ∨ x = f y := by
   have he : Function.Involutive.toPerm f hf = f := Equiv.ext fun _ ↦ rfl
   exact he ▸ sameCycle_toPerm_iff _ hf x y
+
+/-- An involutive permutation of an infinite type has infinitely many orbits, since each orbit has
+at most two points. -/
+theorem _root_.Equiv.Perm.infinite_quotient_sameCycle_of_involutive {α : Type*} [Infinite α]
+    {f : Equiv.Perm α} (hf : Function.Involutive f) :
+    Infinite (Quotient (Equiv.Perm.SameCycle.setoid f)) := by
+  by_contra hQ
+  rw [not_infinite_iff_finite] at hQ
+  obtain ⟨q, hq⟩ := Finite.exists_infinite_fiber
+    (Quotient.mk (Equiv.Perm.SameCycle.setoid f) : α → _)
+  refine (Set.infinite_coe_iff.mp hq) ((Set.toFinite {q.out, f q.out}).subset fun a ha => ?_)
+  have hq' : f.SameCycle q.out a :=
+    Quotient.exact (s := Equiv.Perm.SameCycle.setoid f) (q.out_eq.trans ha.symm)
+  exact (hf.sameCycle_iff a q.out).mp hq'.symm
 
 variable {α : Type*} [Fintype α] [DecidableEq α]
 

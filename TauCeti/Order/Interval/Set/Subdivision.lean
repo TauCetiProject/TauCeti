@@ -19,8 +19,13 @@ A family `s : Fin (N + 1) → α` of points in a linear order cuts out the cells
 and `d`, then `[c, d]` lies in a single cell. No monotonicity of `s` is needed. For a monotone
 family from `a` to `b`, every point of the family lies in `[a, b]`.
 
+Points in `(τ 0, τ n]` likewise lie in one of the cells `(τ j, τ (j + 1)]`, `j < n`,
+even when the sequence `τ` is not monotone.
+
 ## Main results
 
+* `TauCeti.exists_lt_mem_Ioc_of_mem_Ioc`: a point between the first and last entries of a
+  finite sequence lies in a successive half-open cell.
 * `TauCeti.exists_Icc_subset_Icc_castSucc_succ`: an interval meeting no point of the family in
   its interior lies in a single cell;
 * `Monotone.mem_Icc_of_map_zero_of_map_last`: every point of a monotone subdivision from `a` to
@@ -34,6 +39,19 @@ public section
 open Set
 
 namespace TauCeti
+
+/-- A point in `(τ 0, τ n]` lies in a successive cell `(τ j, τ (j + 1)]` with `j < n`.
+The sequence need not be monotone. -/
+theorem exists_lt_mem_Ioc_of_mem_Ioc {α : Type*} [LinearOrder α] {τ : ℕ → α}
+    {n : ℕ} {t : α} (ht : t ∈ Ioc (τ 0) (τ n)) :
+    ∃ j < n, t ∈ Ioc (τ j) (τ (j + 1)) := by
+  induction n with
+  | zero => exact (ht.1.not_ge ht.2).elim
+  | succ n ih =>
+    by_cases htn : t ≤ τ n
+    · obtain ⟨j, hj, htj⟩ := ih ⟨ht.1, htn⟩
+      exact ⟨j, hj.trans (Nat.lt_succ_self n), htj⟩
+    · exact ⟨n, Nat.lt_succ_self n, lt_of_not_ge htn, ht.2⟩
 
 /-- If `s 0 ≤ c < d ≤ s (Fin.last N)` and no point of the family `s` lies strictly between `c` and
 `d`, then `[c, d]` lies in a single cell `[s i.castSucc, s i.succ]`. -/

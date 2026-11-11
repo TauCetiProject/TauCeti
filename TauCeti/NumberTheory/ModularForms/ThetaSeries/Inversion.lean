@@ -7,8 +7,9 @@ module
 
 public import Mathlib.NumberTheory.ModularForms.SlashActions
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.FiniteFourier
+import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 import TauCeti.Analysis.Fourier.PoissonSummation
-import TauCeti.Analysis.SpecialFunctions.Gaussian.Schwartz
+import TauCeti.Analysis.SpecialFunctions.Gaussian.FourierTransform
 
 /-!
 # The inversion law of theta series
@@ -34,8 +35,6 @@ also holds with the opposite phase (`ZLattice.IsIntegral.sum_discriminantPairing
 
 * `ZLattice.thetaCoset_S_smul`: the inversion law at a general translate.
 * `ZLattice.thetaSeries_S_smul`, `ZLattice.thetaSeries_slash_S`: the scalar inversion law.
-* `ZLattice.thetaSeries_slash_S_slash_S`: the scalar inversion law applied twice gives
-  `(Θ_L ∣[k] S) ∣[k] S = (-1)^k Θ_L`, the action of `S² = -1` in weight `k`.
 * `ZLattice.IsUnimodular.thetaSeries_slash_S`: the scalar inversion law of a unimodular lattice.
 * `ZLattice.IsIntegral.thetaCoset_S_smul`, `ZLattice.IsIntegral.thetaCoset_slash_S`: the
   vector-valued inversion law, pointwise and in slash form.
@@ -71,14 +70,14 @@ theorem thetaCoset_S_smul (hk : finrank ℝ E = 2 * k) (v : E) (τ : ℍ) :
     simp [inv_neg]
   have hb : 0 < (-(π * I * (σ : ℂ))).re := by simpa using mul_pos Real.pi_pos σ.im_pos
   -- The theta series at `σ` is the periodization of the Schwartz Gaussian `exp (π i σ ‖x‖²)`.
-  have hg : (TauCeti.gaussianSchwartzMap hb : E → ℂ) =
+  have hg : (SchwartzMap.gaussian hb : E → ℂ) =
       fun x : E ↦ cexp (π * I * (‖x‖ ^ 2 : ℝ) * σ) := by
     ext x
-    rw [TauCeti.gaussianSchwartzMap_apply]
+    rw [SchwartzMap.gaussian_apply]
     push_cast
     ring_nf
   -- Its Fourier transform is `(-i)^k τ^k exp (π i τ ‖y‖²)`, since `-1/σ = τ`.
-  have hF (m : E) : 𝓕 (TauCeti.gaussianSchwartzMap hb : E → ℂ) m =
+  have hF (m : E) : 𝓕 (SchwartzMap.gaussian hb : E → ℂ) m =
       ((-I) ^ k * (τ : ℂ) ^ k) * cexp (π * I * (‖m‖ ^ 2 : ℝ) * τ) := by
     have hτ : (τ : ℂ) ≠ 0 := τ.ne_zero
     rw [hg, TauCeti.fourier_cexp_pi_mul_I_mul_norm_sq_mul_of_finrank_eq hk σ.im_pos, hστ]
@@ -90,7 +89,7 @@ theorem thetaCoset_S_smul (hk : finrank ℝ E = 2 * k) (v : E) (τ : ℍ) :
       simp [I_sq]
     · congr 1
       field_simp
-  calc thetaCoset L v σ = ∑' ℓ : L, (TauCeti.gaussianSchwartzMap hb : E → ℂ) (v + ℓ) := by
+  calc thetaCoset L v σ = ∑' ℓ : L, (SchwartzMap.gaussian hb : E → ℂ) (v + ℓ) := by
         rw [thetaCoset_apply, hg]
     _ = (covolume L : ℂ)⁻¹ * ∑' m : dual L, ((-I) ^ k * (τ : ℂ) ^ k) *
           (cexp (2 * π * I * ⟪v, (m : E)⟫) * cexp (π * I * (‖(m : E)‖ ^ 2 : ℝ) * τ)) := by
@@ -116,25 +115,6 @@ theorem thetaSeries_slash_S (hk : finrank ℝ E = 2 * k) :
   have hτ : (τ : ℂ) ≠ 0 := τ.ne_zero
   rw [ModularForm.SL_slash_apply, thetaSeries_S_smul L hk, ModularGroup.denom_S, Pi.smul_apply,
     smul_eq_mul, zpow_neg, zpow_natCast]
-  field_simp
-
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- **The inversion law applied twice**: if `dim E = 2k`, then in weight `k`,
-`(Θ_L ∣[k] S) ∣[k] S = (-1)^k Θ_L`. This agrees with the action of `S² = -1`, which acts on
-weight `k` by `(-1)^k`; in odd weight it is not trivial, as for the lattice `ℤ²` in weight
-one. -/
-theorem thetaSeries_slash_S_slash_S (hk : finrank ℝ E = 2 * k) :
-    (thetaSeries L ∣[(k : ℤ)] ModularGroup.S) ∣[(k : ℤ)] ModularGroup.S =
-      (-1 : ℂ) ^ k • thetaSeries L := by
-  -- The statement involves no measure; the inversion law uses the Borel volume.
-  borelize E
-  have hc : (covolume L : ℂ) ≠ 0 := ofReal_ne_zero.mpr (covolume_ne_zero L MeasureTheory.volume)
-  have hI : (-I) ^ k * (-I) ^ k = (-1 : ℂ) ^ k := by rw [← mul_pow, neg_mul_neg, I_mul_I]
-  rw [thetaSeries_slash_S L hk, ModularForm.SL_smul_slash, thetaSeries_slash_S (dual L) hk,
-    dual_dual, covolume_dual, smul_smul]
-  congr 1
-  push_cast
-  rw [← hI]
   field_simp
 
 omit [MeasurableSpace E] [BorelSpace E] in

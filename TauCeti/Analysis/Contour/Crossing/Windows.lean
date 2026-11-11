@@ -111,14 +111,17 @@ private theorem crossings_bounded_from_exceptional {crossings P : Finset ℝ}
 /-- **The common window radius**: for a finite set of crossings in `(a, b)` avoiding a finite
 exceptional set `P`, there is `r > 0` such that every window `[t_i - r, t_i + r]` stays within
 `[a, b]`, distinct crossings are more than `2r` apart (so the windows are pairwise disjoint),
-and no exceptional point comes within `r` of a crossing. -/
+and no exceptional point comes within `r` of a crossing. For no crossings all three conditions are
+vacuous and any positive radius serves. -/
 theorem exists_common_window_radius {a b : ℝ} {crossings P : Finset ℝ}
-    (h_nonempty : crossings.Nonempty) (h_Ioo : ∀ t ∈ crossings, t ∈ Ioo a b)
+    (h_Ioo : ∀ t ∈ crossings, t ∈ Ioo a b)
     (h_off : ∀ t ∈ crossings, t ∉ P) :
     ∃ r > 0,
       (∀ t ∈ crossings, a + r ≤ t ∧ t ≤ b - r) ∧
       (∀ t ∈ crossings, ∀ t' ∈ crossings, t' ≠ t → 2 * r < |t - t'|) ∧
       (∀ t ∈ crossings, ∀ p ∈ P, r < |t - p|) := by
+  rcases crossings.eq_empty_or_nonempty with rfl | h_nonempty
+  · exact ⟨1, one_pos, by simp, by simp, by simp⟩
   obtain ⟨c, hc_pos, h_endpts⟩ := crossings_bounded_from_endpoints h_nonempty h_Ioo
   obtain ⟨e, he_pos, h_exc⟩ := crossings_bounded_from_exceptional h_nonempty h_off
   by_cases h_card_one : crossings.card = 1
@@ -152,9 +155,6 @@ every crossing — which is what lets a family of per-crossing window results, e
 its own radius, be applied at one shared radius. There is no exceptional-set clause; use
 `exists_common_window_radius` directly when one is needed.
 
-Unlike that lemma this one does not ask for a nonempty family: for no crossings all three
-conditions are vacuous and any positive radius serves.
-
 The endpoint margins come out *strict* here: the radius is chosen strictly below the one that lemma
 supplies, so it clears both endpoints with room to spare. -/
 theorem exists_common_window_radius_le {a b : ℝ} {crossings : Finset ℝ}
@@ -164,10 +164,8 @@ theorem exists_common_window_radius_le {a b : ℝ} {crossings : Finset ℝ}
       (∀ t ∈ crossings, ∀ t' ∈ crossings, t' ≠ t → 2 * r < |t - t'|) ∧
       (∀ t ∈ crossings, r ≤ R t) := by
   classical
-  rcases crossings.eq_empty_or_nonempty with rfl | h_nonempty
-  · exact ⟨1, one_pos, by simp, by simp, by simp⟩
   obtain ⟨r₀, hr₀_pos, h_endpts, h_pair, -⟩ :=
-    exists_common_window_radius (P := ∅) h_nonempty h_Ioo fun t _ => Finset.notMem_empty t
+    exists_common_window_radius (P := ∅) h_Ioo fun t _ => Finset.notMem_empty t
   -- Pick one radius strictly under `r₀` and under every `R t`, indexing the bounds by
   -- `Option {t // t ∈ crossings}` so that `r₀` is the `none` component.
   obtain ⟨r, hr_pos, hr_all⟩ := Pi.exists_forall_pos_add_lt
@@ -318,21 +316,26 @@ theorem sorted_crossing_gluing_induction {E : Type*} [NormedAddCommGroup E] {γ 
     {Q : ℝ → ℝ → Prop} {A b r m : ℝ}
     (h_piece : ∀ l u : ℝ, A ≤ l → l ≤ u → u ≤ b → (∀ t ∈ Icc l u, m ≤ ‖γ t - s‖) → Q l u)
     (hglue : ∀ l u₀ u : ℝ, l ≤ u₀ → u₀ ≤ u → Q l u₀ → Q u₀ u → Q l u) :
-    ∀ (sorted : List ℝ), sorted.SortedLT → (sorted ≠ [] → 0 ≤ r) →
+    ∀ (sorted : List ℝ), sorted.SortedLT →
     ∀ a : ℝ, A ≤ a → a ≤ b → (∀ t ∈ sorted, a ≤ t - r) → (∀ t ∈ sorted, t + r ≤ b) →
       (∀ t ∈ sorted, ∀ t' ∈ sorted, t' ≠ t → 2 * r ≤ |t - t'|) →
       (∀ t ∈ sorted, Q (t - r) (t + r)) →
       (∀ u ∈ Icc a b, (∀ t ∈ sorted, u ∉ Ioo (t - r) (t + r)) → m ≤ ‖γ u - s‖) →
       Q a b := by
+  by_cases hr_nonneg : 0 ≤ r
+  swap
+  · -- For a negative radius every window is empty, so the whole interval is one plain piece.
+    intro sorted _ a hA hab _ _ _ _ h_far
+    exact h_piece a b hA hab le_rfl fun u hu =>
+      h_far u hu fun t _ h_in => by linarith [h_in.1, h_in.2, not_le.mp hr_nonneg]
   intro sorted
   induction sorted with
   | nil =>
-    intro _ _ a hA hab _ _ _ _ h_far
+    intro _ a hA hab _ _ _ _ h_far
     exact h_piece a b hA hab le_rfl
       fun u hu => h_far u hu fun t ht => absurd ht (List.not_mem_nil)
   | cons t rest IH =>
-    intro h_sorted hr a hA _ h_lo h_hi h_pair h_win h_far
-    have hr_nonneg : 0 ≤ r := hr (List.cons_ne_nil t rest)
+    intro h_sorted a hA _ h_lo h_hi h_pair h_win h_far
     have h_head_lo : a ≤ t - r := h_lo t List.mem_cons_self
     have h_head_hi : t + r ≤ b := h_hi t List.mem_cons_self
     have h_rest_above : ∀ t' ∈ rest, t + r ≤ t' - r := fun t' ht' => by
@@ -347,7 +350,7 @@ theorem sorted_crossing_gluing_induction {E : Type*} [NormedAddCommGroup E] {γ 
       · linarith [hu.2, h_in.1]
       · linarith [hu.2, h_in.1, h_rest_above t' h_rest]
     have h_rest : Q (t + r) b := IH
-      ((List.pairwise_cons.mp h_sorted.pairwise).2).sortedLT (fun _ => hr_nonneg) (t + r)
+      ((List.pairwise_cons.mp h_sorted.pairwise).2).sortedLT (t + r)
       (by linarith) h_head_hi (fun t' ht' => h_rest_above t' ht')
       (fun t' ht' => h_hi t' (List.mem_cons_of_mem t ht'))
       (fun t' ht' t'' ht'' hne => h_pair t' (List.mem_cons_of_mem t ht')

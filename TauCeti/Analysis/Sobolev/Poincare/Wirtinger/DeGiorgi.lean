@@ -306,7 +306,7 @@ theorem W1p.sq_sub_mul_measureReal_mul_measureReal_le_of_ball_subset {c : E} {R 
     ((Lp.memLp (W1p.gradient u)).mono_measure (Measure.restrict_mono_set mu hball)).norm
   have hCS := MeasureTheory.sq_setIntegral_le_measureReal_mul_setIntegral_sq
     (μ := nu) (fun x => ‖W1p.gradient u x‖) S (measure_ne_top _ _)
-    (hmem.integrable one_le_two).integrableOn hmem.integrable_sq.integrableOn
+    hmem.integrable_sq.integrableOn
   have hstrip : ∫ x in S, ‖W1p.gradient u x‖ ^ 2 ∂nu ≤
       ∫ x in ball c R, ‖W1p.gradient w x‖ ^ 2 ∂mu := by
     have hgw : ∀ᵐ x ∂nu, x ∈ S → ‖W1p.gradient u x‖ ^ 2 = ‖W1p.gradient w x‖ ^ 2 := by

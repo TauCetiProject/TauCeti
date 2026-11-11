@@ -187,10 +187,9 @@ theorem isIso_singularHomologyMap_bandPairInclusion (hf : ContMDiff I 𝓘(ℝ) 
     · refine ⟨a, le_rfl, le_rfl, Or.inr rfl, fun x h₁ h₂ hx ↦ ?_⟩
       exact isRegularPoint_iff_notMem_criticalPoints.1 (ha.isRegularPoint (le_antisymm h₂ h₁))
         (mem_criticalPoints_iff_mfderiv_eq_zero.2 hx)
-    · obtain ⟨a', ⟨h₁, h₂⟩, h⟩ :=
-        exists_mem_Ioc_forall_notMem_criticalPoints (hf.of_le (by simp)) hlt hcompact ha
-      exact ⟨a', h₁.le, h₂, Or.inl h₁, fun x hx₁ hx₂ hx ↦
-        h x (mem_criticalPoints_iff_mfderiv_eq_zero.2 hx) ⟨hx₁, hx₂⟩⟩
+    · obtain ⟨a', ⟨h₁, h₂⟩, -, h⟩ :=
+        exists_mem_Ioc_isCompact_forall_mfderiv_ne_zero (hf.of_le (by simp)) hlt hcompact ha
+      exact ⟨a', h₁.le, h₂, Or.inl h₁, h⟩
   have hcollar : IsCompact (f ⁻¹' Icc a a') :=
     hcompact.of_isClosed_subset (isClosed_Icc.preimage hfc)
       (preimage_mono (Icc_subset_Icc_right ha'b))

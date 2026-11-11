@@ -54,6 +54,9 @@ characteristic.
   then `z` generates `F` over `k(X)`.
 * `TauCeti.isScalarTower_ratFuncAlgebraOfTranscendental_algebraMap`: an algebra map `F → F'` is
   `k(X)`-linear for the structures induced by `x` and by its image.
+* `TauCeti.isScalarTower_ratFunc_ratFunc_of_transcendental`: for `y` transcendental over `k` and
+  over `k'`, the structures of `k(X)` and `k'(X)` on `F'` in which `X` acts as `y`, and of `k(X)` on
+  `k'(X)`, form a scalar tower.
 * `TauCeti.isSeparable_ratFuncAlgebraOfTranscendental`: separability over `k⟮x⟯` transfers to
   separability over `k(X)`.
 * `TauCeti.finiteDimensional_ratFuncAlgebraOfTranscendental`: finite-dimensionality over `k⟮x⟯`
@@ -192,6 +195,29 @@ theorem isScalarTower_ratFuncAlgebraOfTranscendental_algebraMap {F' : Type*} [Fi
     ((transcendental_algebraMap_iff (algebraMap F F').injective).mpr hx)
   exact .of_algebraMap_eq fun r ↦ (map_algebraMap_ratFuncAlgebraOfTranscendental
     (IsScalarTower.toAlgHom k F F') hx r).symm
+
+/-- **Compatible rational-function structures along a constant extension**: if `y` is
+transcendental over `k` and over `k'`, the algebra structures of `k(X)` and `k'(X)` on `F'` and of
+`k(X)` on `k'(X)` that let `X` act as `y` form a scalar tower. -/
+theorem isScalarTower_ratFunc_ratFunc_of_transcendental {k' F' : Type*} [Field k'] [Field F']
+    [Algebra k k'] [Algebra k F'] [Algebra k' F'] [IsScalarTower k k' F'] {y : F'}
+    (hy : Transcendental k y) (hy' : Transcendental k' y)
+    (hX : Transcendental k (RatFunc.X : RatFunc k')) :
+    letI := ratFuncAlgebraOfTranscendental hy
+    letI := ratFuncAlgebraOfTranscendental hy'
+    letI := ratFuncAlgebraOfTranscendental hX
+    IsScalarTower (RatFunc k) (RatFunc k') F' := by
+  let _ := ratFuncAlgebraOfTranscendental hy
+  let _ := ratFuncAlgebraOfTranscendental hy'
+  let _ := ratFuncAlgebraOfTranscendental hX
+  let _ := isScalarTower_ratFuncAlgebraOfTranscendental hy
+  let _ := isScalarTower_ratFuncAlgebraOfTranscendental hy'
+  let _ := isScalarTower_ratFuncAlgebraOfTranscendental hX
+  refine .of_algebraMap_eq fun r ↦ DFunLike.congr_fun (RatFunc.algHom_ext
+    (σ := IsScalarTower.toAlgHom k (RatFunc k) F')
+    (τ := ((IsScalarTower.toAlgHom k' (RatFunc k') F').restrictScalars k).comp
+      (IsScalarTower.toAlgHom k (RatFunc k) (RatFunc k'))) ?_) r
+  simp
 
 /-- Separability over `k(x)` transfers to the rational-function algebra structure induced by
 `x`. -/

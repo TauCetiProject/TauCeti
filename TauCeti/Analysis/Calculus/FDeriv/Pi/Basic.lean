@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Comp
 public import Mathlib.Analysis.Calculus.FDeriv.Pi
+public import Mathlib.Analysis.Calculus.FDeriv.Mul
 
 /-!
 # Differentiability of the coordinate slices of a function on a product
@@ -18,7 +19,9 @@ differentiable at `y i`.
 
 Conversely, for a finite family of functions `φ i : 𝕜 → 𝕜`, the *separated sum*
 `z ↦ ∑ i, φ i (z i)` on `ι → 𝕜` has derivative `∑ i, φ i' (y i) • dzᵢ` at `y`, so its critical
-points are the points whose coordinates are critical points of the summands.
+points are the points whose coordinates are critical points of the summands. The *separated
+product* `z ↦ ∏ i, φ i (z i)`, such as a multivariable Hermite function, has partial derivative in
+the `i`-th variable the separated product with the `i`-th factor replaced by its derivative.
 
 ## Main declarations
 
@@ -30,6 +33,15 @@ points are the points whose coordinates are critical points of the summands.
 * `TauCeti.fderiv_sum_comp_eval_eventuallyEq`: the same formula for the derivative near a point at
   which the summands are continuously differentiable.
 * `TauCeti.fderiv_sum_comp_eval_eq_zero_iff`: the critical points of a separated sum.
+* `TauCeti.hasFDerivAt_prod_comp_eval`, `TauCeti.fderiv_prod_comp_eval_apply_single`: the derivative
+  of a separated product `z ↦ ∏ i, φ i (z i)`, whose partial derivative in the `i`-th variable
+  replaces the `i`-th factor by its derivative.
+
+The derivative of coordinate replacement is the identity derivative with one row replaced
+(`HasFDerivAt.update_self`). Its scalar instance is adapted from
+[KLS](https://github.com/human-ai-mathematics/kls-lean), commit
+`65810c73f9dd7945fc646ab484cb19d673f5291d`,
+`formalization/FunctionalInequalities/Analysis/Sard/CoordinateChange.lean`.
 -/
 
 public section
@@ -102,4 +114,48 @@ theorem fderiv_sum_comp_eval_eventuallyEq (hφ : ∀ i, ContDiffAt 𝕜 1 (φ i)
 
 end SumCompEval
 
+section ProdCompEval
+
+variable {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [Fintype ι] [DecidableEq ι] {φ : ι → 𝕜 → 𝕜}
+  {y : ι → 𝕜}
+
+/-- The derivative of the separated product `z ↦ ∏ i, φ i (z i)` at `y` is
+`∑ i, (∏ j ≠ i, φ j (y j)) • φ i' (y i) • dzᵢ`. -/
+theorem hasFDerivAt_prod_comp_eval {φ' : ι → 𝕜} (hφ : ∀ i, HasDerivAt (φ i) (φ' i) (y i)) :
+    HasFDerivAt (fun z : ι → 𝕜 ↦ ∏ i, φ i (z i))
+      (∑ i, (∏ j ∈ Finset.univ.erase i, φ j (y j)) • φ' i • (proj i : (ι → 𝕜) →L[𝕜] 𝕜)) y :=
+  HasFDerivAt.finsetProd fun i _ ↦ (hφ i).comp_hasFDerivAt y (hasFDerivAt_apply i y)
+
+/-- **The partial derivative of a separated product.** Differentiating `z ↦ ∏ j, φ j (z j)` in the
+`i`-th variable replaces the factor `φ i` by its derivative. -/
+theorem fderiv_prod_comp_eval_apply_single (hφ : ∀ i, DifferentiableAt 𝕜 (φ i) (y i)) (i : ι) :
+    fderiv 𝕜 (fun z : ι → 𝕜 ↦ ∏ j, φ j (z j)) y (Pi.single i 1) =
+      ∏ j, update φ i (deriv (φ i)) j (y j) := by
+  rw [(hasFDerivAt_prod_comp_eval fun j ↦ (hφ j).hasDerivAt).fderiv,
+    ← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ i)]
+  simp only [sum_apply, smul_apply, proj_apply, Pi.single_apply, smul_eq_mul, mul_ite, mul_one,
+    mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true, update_self]
+  rw [mul_comm]
+  congr 1
+  exact Finset.prod_congr rfl fun j hj ↦ by rw [update_of_ne (Finset.ne_of_mem_erase hj)]
+
+end ProdCompEval
+
 end TauCeti
+
+/-- The derivative of a map that replaces one coordinate of its argument by a scalar or
+coordinate-valued function is obtained by replacing that row of the identity derivative. -/
+theorem HasFDerivAt.update_self {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {ι : Type*} [Finite ι] [DecidableEq ι] {E : ι → Type*}
+    [∀ j, NormedAddCommGroup (E j)] [∀ j, NormedSpace 𝕜 (E j)]
+    (i : ι) {w : (∀ j, E j) → E i} {w' : (∀ j, E j) →L[𝕜] E i} {x : ∀ j, E j}
+    (hw : HasFDerivAt w w' x) :
+    HasFDerivAt (fun x ↦ Function.update x i (w x))
+      (ContinuousLinearMap.pi (Function.update (fun j ↦
+        (ContinuousLinearMap.proj j : (∀ k, E k) →L[𝕜] E j)) i w')) x := by
+  let := Fintype.ofFinite ι
+  refine hasFDerivAt_pi'' fun j ↦ ?_
+  rw [ContinuousLinearMap.proj_pi]
+  rcases eq_or_ne j i with rfl | hji
+  · simpa using hw
+  · simpa [Function.update_apply, hji] using hasFDerivAt_apply (𝕜 := 𝕜) j x

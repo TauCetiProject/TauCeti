@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.NumberTheory.LFunctions.Theta.Decay
 public import TauCeti.NumberTheory.LFunctions.Theta.Inversion
 public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Invariance
@@ -35,8 +36,15 @@ and `1/w` accounts for the roots of unity, which act trivially on the parameters
   `(2^r₂ / w) vol(D)` with error `O(exp(-c u^(1/n)))`, uniformly from the decay of the theta
   series on bounded subsets of `S`, the second half of Neukirch (5.8);
   `isBigO_mellinKernel_sub_rpow` is the resulting decay faster than every power.
+* `mellinKernel_mixedDual_idealLattice`: for the lattice `σ(I)` of a fractional ideal, the dual
+  side is again the kernel of an ideal lattice, that of the trace dual `J = I^∨`, over the
+  translate of `D` by the point `traceShift K` of `S`. The Euclidean dual of `σ(I)` is
+  `traceToEuclidean K` applied to `σ(J)` (`mixedDual_idealLattice`); this map multiplies the
+  absolute value at `w` by `mult w`, which on the Gaussian multiplies the parameter by `mult w ^ 2`,
+  and the radial part `16 ^ r₂` of that multiplication is absorbed by the covolumes
+  `V_J = 4^(-r₂) V_I⁻¹` (`covolume_idealLattice_dual`).
 
-These are the transformation law, the local integrability and the decay at `∞` that Mathlib's
+The transformation law, the local integrability and the decay at `∞` are what Mathlib's
 Mellin principle `WeakFEPair` asks of a pair of kernels.
 
 ## References
@@ -50,7 +58,7 @@ noncomputable section
 
 open MeasureTheory NumberField NumberField.InfinitePlace NumberField.mixedEmbedding
   TauCeti.NumberField.mixedEmbedding
-open scoped Pointwise
+open scoped Pointwise nonZeroDivisors
 
 namespace TauCeti.LFunctions
 
@@ -249,5 +257,83 @@ theorem isBigO_mellinKernel_sub_rpow {D : Set (realSpace K)} (hDm : MeasurableSe
   rwa [Real.norm_of_nonneg (Real.exp_pos _).le]
 
 end
+
+/-! ### The dual of an ideal lattice -/
+
+variable (K) in
+/-- The point of the norm-one hypersurface by which the parameters are translated when the
+Euclidean dual of an ideal lattice is read as the lattice of its trace dual: the surface part of
+`(mult w ^ 2)_w`, that is `mult w ^ 2 / (16 ^ r₂) ^ (1 / n)`. `traceToEuclidean K` doubles the
+complex coordinates, and `|2 z|² = 4 |z|²`. -/
+def traceShift : realSpace K :=
+  surfacePart fun w ↦ (mult w : ℝ) ^ 2
+
+variable (K) in
+theorem traceShift_def : traceShift K = surfacePart fun w ↦ (mult w : ℝ) ^ 2 := (rfl)
+
+theorem traceShift_mem_normOneSurface : traceShift K ∈ normOneSurface K :=
+  surfacePart_mem_normOneSurface fun _ ↦ pow_pos (zero_lt_one.trans_le one_le_mult) 2
+
+/-- The coordinates of `traceShift K`: `mult w ^ 2 / (16 ^ r₂) ^ (1 / n)`. -/
+@[simp]
+theorem traceShift_apply (w : InfinitePlace K) :
+    traceShift K w =
+      (mult w : ℝ) ^ 2 / ((16 : ℝ) ^ nrComplexPlaces K) ^ (1 / (Module.finrank ℚ K : ℝ)) := by
+  rw [traceShift_def, surfacePart_apply _ (archNorm_mult_sq K ▸ by positivity),
+    archNorm_mult_sq]
+
+open scoped Classical in
+/-- **The dual side of the transformation law is an ideal kernel.** For the lattice `σ(I)` of a
+fractional ideal `I` and its trace dual `J = I^∨`, the kernel of the Euclidean dual of `σ(I)` over
+`D` is the kernel of `σ(J)` over the translate of `D` by `traceShift K`. The Euclidean dual is
+`traceToEuclidean K` applied to `σ(J)`, which multiplies the parameter by `(mult w ^ 2)_w`; its
+surface part is the translation by `traceShift K`, and its norm `16 ^ r₂` is absorbed by the
+covolume `V_J = 4^(-r₂) V_I⁻¹`. -/
+theorem mellinKernel_mixedDual_idealLattice {I J : (FractionalIdeal (𝓞 K)⁰ K)ˣ}
+    (hJ : (J : FractionalIdeal (𝓞 K)⁰ K) =
+      FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K))
+    (D : Set (realSpace K)) (u : ℝ) :
+    mellinKernel D (mixedDual K (idealLattice K I)) u =
+      mellinKernel ((traceShift K * ·) '' D) (idealLattice K J) u := by
+  classical
+  set c : normOneSurface K := ⟨traceShift K, traceShift_mem_normOneSurface⟩ with hc
+  have hV : 0 < ZLattice.covolume (idealLattice K I) := ZLattice.covolume_pos _ volume
+  have hm (w : InfinitePlace K) : (0 : ℝ) < (mult w : ℝ) ^ 2 :=
+    pow_pos (zero_lt_one.trans_le one_le_mult) 2
+  have hN : 0 < archNorm (fun w : InfinitePlace K ↦ (mult w : ℝ) ^ 2) := archNorm_pos hm
+  have hpt (x : normOneSurface K) :
+      latticeTheta (mixedDual K (idealLattice K I))
+          (surfaceScale (x : realSpace K)
+            (u / ZLattice.covolume (mixedDual K (idealLattice K I)) ^ 2)) =
+        latticeTheta (idealLattice K J) (surfaceScale (surfaceMul c x : realSpace K)
+          (u / ZLattice.covolume (idealLattice K J) ^ 2)) := by
+    have h16 : (16 : ℝ) ^ nrComplexPlaces K = ((4 : ℝ) ^ nrComplexPlaces K) ^ 2 := by
+      rw [← pow_mul, mul_comm, pow_mul]
+      norm_num
+    have hrad : u / (((4 : ℝ) ^ nrComplexPlaces K)⁻¹ *
+        (ZLattice.covolume (idealLattice K I))⁻¹) ^ 2 =
+        archNorm (fun w : InfinitePlace K ↦ (mult w : ℝ) ^ 2) *
+          (u / (ZLattice.covolume (idealLattice K I))⁻¹ ^ 2) := by
+      rw [archNorm_mult_sq, h16]
+      field_simp
+    have hN' : (0 : ℝ) < archNorm (fun w : InfinitePlace K ↦ (mult w : ℝ) ^ 2) ^
+        (1 / (Module.finrank ℚ K : ℝ)) := Real.rpow_pos_of_pos hN _
+    rw [covolume_mixedDual, covolume_idealLattice_dual hJ, mixedDual_idealLattice hJ,
+      latticeTheta_map_traceToEuclidean, surfaceMul_apply, hrad]
+    congr 1
+    ext w
+    simp only [Pi.mul_apply, surfaceScale_apply, hc, traceShift_def, surfacePart_apply _ hN.le,
+      Real.mul_rpow_of_pos_left hN]
+    field_simp
+  have hpre : surfaceMul c ⁻¹' (Subtype.val ⁻¹' ((traceShift K * ·) '' D)) =
+      Subtype.val ⁻¹' D := by
+    ext x
+    simp only [Set.mem_preimage, surfaceMul_apply]
+    refine (Function.Injective.mem_set_image fun a b hab ↦ funext fun w ↦ ?_)
+    exact mul_left_cancel₀ ((mem_normOneSurface.mp c.2).1 w).ne' (congrFun hab w)
+  simp_rw [mellinKernel_def, hpt]
+  rw [← hpre, (measurePreserving_surfaceMul c).setIntegral_preimage_emb
+    (surfaceMul c).measurableEmbedding fun y : normOneSurface K ↦ latticeTheta (idealLattice K J)
+      (surfaceScale (y : realSpace K) (u / ZLattice.covolume (idealLattice K J) volume ^ 2))]
 
 end TauCeti.LFunctions

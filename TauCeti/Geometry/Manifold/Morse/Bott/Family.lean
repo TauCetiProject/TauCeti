@@ -38,9 +38,11 @@ So the pieces are pairwise disjoint and cover the critical set
 each critical point lies on exactly one of them
 (`TauCeti.IsMorseBottFamily.existsUnique_mem_range`), only finitely many of them meet a compact set
 (by `LocallyFinite.finite_nonempty_inter_compact`), and on a compact manifold there are finitely
-many (`TauCeti.IsMorseBottFamily.finite`). On a boundaryless manifold each piece is closed
-(`TauCeti.IsMorseBottFamily.isClosed_range`). The same family exhibits `-f` as a Morse–Bott
-function (`TauCeti.IsMorseBottFamily.neg`).
+many (`TauCeti.IsMorseBottFamily.finite`). Each piece is closed
+(`TauCeti.IsMorseBottFamily.isClosed_range`). The function takes a single value on each piece
+(`TauCeti.IsMorseBottFamily.subsingleton_image_range`), so on a compact manifold it has finitely
+many critical values (`TauCeti.IsMorseBottFamily.finite_image_criticalPoints`). The same family
+exhibits `-f` as a Morse–Bott function (`TauCeti.IsMorseBottFamily.neg`).
 
 Morse functions are the zero-dimensional case. On a boundaryless finite-dimensional manifold, a
 critical point is nondegenerate exactly when the piece through it is modelled on a trivial space
@@ -149,12 +151,34 @@ theorem finite [CompactSpace M] : Finite ι :=
     have := h.nonempty a
     range_nonempty (i a)
 
-/-- On a boundaryless manifold each piece is closed, as a connected component of the closed
-critical set. -/
-theorem isClosed_range [I.Boundaryless] [IsManifold I 1 M] (a : ι) : IsClosed (range (i a)) := by
+/-- Each piece is closed, as a connected component of the closed critical set. -/
+theorem isClosed_range [IsManifold I 1 M] (a : ι) : IsClosed (range (i a)) := by
   obtain ⟨s⟩ := h.nonempty a
   rw [h.range_eq_connectedComponentIn a s]
   exact (isClosed_criticalPoints (h.contMDiff.of_le (by simp))).connectedComponentIn
+
+/-- **A Morse–Bott function takes a single value on each piece**, its critical value: `f ∘ i a` is
+locally constant, and the piece is connected because its image is a connected component of the
+critical set. -/
+theorem subsingleton_image_range [∀ a, IsManifold (J a) 1 (S a)] (hn : n ≠ 0) (a : ι) :
+    (f '' range (i a)).Subsingleton := by
+  obtain ⟨s₀⟩ := h.nonempty a
+  have : PreconnectedSpace (S a) := by
+    refine ⟨(i a).isEmbedding.isInducing.isPreconnected_image.1 ?_⟩
+    rw [image_univ, h.range_eq_connectedComponentIn a s₀]
+    exact isPreconnected_connectedComponentIn
+  have hloc :=
+    (h.isNondegenerateCriticalSubmanifold a).toIsCriticalSubmanifold.isLocallyConstant_comp hn
+  rintro _ ⟨_, ⟨s, rfl⟩, rfl⟩ _ ⟨_, ⟨s', rfl⟩, rfl⟩
+  exact hloc.apply_eq_of_preconnectedSpace s s'
+
+/-- **A Morse–Bott function on a compact manifold has finitely many critical values**: it has
+finitely many pieces and takes a single value on each. -/
+theorem finite_image_criticalPoints [CompactSpace M] [∀ a, IsManifold (J a) 1 (S a)]
+    (hn : n ≠ 0) : (f '' criticalPoints I f).Finite := by
+  have := h.finite
+  rw [← h.iUnion_range, image_iUnion]
+  exact finite_iUnion fun a ↦ (h.subsingleton_image_range hn a).finite
 
 /-- A Morse–Bott family of `f` is also a Morse–Bott family of `-f`. -/
 theorem neg : IsMorseBottFamily i (-f) where

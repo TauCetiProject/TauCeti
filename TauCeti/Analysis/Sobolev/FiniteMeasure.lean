@@ -318,15 +318,13 @@ theorem W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp [Nontrivial E]
   refine ⟨(W1p0.setIntegralMulₗ f hint).mkContinuous
     ((eLpNorm f r ν).toReal * S.toReal * ν.real univ ^ (1 - (r : ℝ)⁻¹ - (t : ℝ)⁻¹))
     fun v => ?_, fun v => rfl⟩
-  have hhol := TauCeti.MeasureTheory.abs_integral_mul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow
+  have hhol := TauCeti.MeasureTheory.norm_integral_smul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow
     (by exact_mod_cast zero_lt_one.trans hr) (by exact_mod_cast ht0) hrt hf (hmemt v)
-    MeasurableSet.univ (measure_ne_top ν univ)
-    (Filter.Eventually.of_forall fun x hx => absurd (mem_univ x) hx)
+    (measure_ne_top ν univ) (Filter.Eventually.of_forall fun x hx => absurd (mem_univ x) hx)
   have hsob : (eLpNorm (W1p.value (v : W1p mu Omega 2)) t ν).toReal ≤ S.toReal * ‖v‖ := by
     have := ENNReal.toReal_mono (ENNReal.mul_ne_top hSfin enorm_ne_top) (hS v)
     rw [ENNReal.toReal_mul, toReal_enorm] at this
     exact this.trans (mul_le_mul_of_nonneg_left (W1p.norm_gradient_le _) ENNReal.toReal_nonneg)
-  rw [Real.norm_eq_abs]
   refine hhol.trans ?_
   calc (eLpNorm f r ν).toReal * (eLpNorm (W1p.value (v : W1p mu Omega 2)) t ν).toReal *
         ν.real univ ^ (1 - (r : ℝ)⁻¹ - (t : ℝ)⁻¹)

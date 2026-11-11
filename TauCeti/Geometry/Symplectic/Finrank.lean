@@ -112,13 +112,14 @@ theorem even_finrank_genEigenspace_zero_of_anticommute (J : AlmostComplexStructu
   J.even_finrank_of_forall_mem fun _ hv ↦ by
     simpa using Module.End.mapsTo_genEigenspace_neg_of_anticommute h 0 k hv
 
-/-- A maximal totally real subspace `L` of a finite-dimensional almost complex module has real
-dimension equal to the complex dimension of the ambient module: `L` is "half-dimensional".
+/-- A maximal totally real subspace `L` of an almost complex module has real dimension equal to
+the complex dimension of the ambient module: `L` is "half-dimensional". (An infinite-dimensional
+module has both dimensions `0`, since `L` and `J L` span it.)
 
 For a Heegaard diagram of genus `g`, this is the statement that the totally real tori `T_α`,
 `T_β` are `g`-dimensional inside the `g`-complex-dimensional symmetric product `Sym^g(Σ)`
 (Ozsváth--Szabó, [arXiv:math/0101206](https://arxiv.org/abs/math/0101206), Section 2). -/
-theorem finrank_eq_complexFinrank_of_isMaximalTotallyReal [FiniteDimensional ℝ V]
+theorem finrank_eq_complexFinrank_of_isMaximalTotallyReal
     {J : AlmostComplexStructure V} {L : Submodule ℝ V}
     (hL : IsMaximalTotallyReal J.toLinearMap L) :
     Module.finrank ℝ L = J.complexFinrank := by

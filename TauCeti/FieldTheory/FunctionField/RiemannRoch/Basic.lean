@@ -130,10 +130,11 @@ theorem mem_riemannRochSpace_iff_neg_le_ord {D : Divisor k F} {f : F} (hf : f �
   rw [P.valuation_eq_exp_neg_ord hf, WithZero.exp_le_exp]
   omega
 
-/-- **Roots of functions in a Riemann–Roch space.** If `f ^ n ∈ L(D)` for some `n ≥ 1` and
-`D < n (E + 1)` at every place, then `f ∈ L(E)`: the pole orders of `f` are those of `f ^ n`
-divided by `n`. For instance `E = ⌊D / n⌋`. -/
-theorem mem_riemannRochSpace_of_pow_mem {n : ℕ} (hn : 0 < n) {D E : Divisor k F}
+/-- **Roots of functions in a Riemann–Roch space.** If `f ^ n ∈ L(D)` and `D < n (E + 1)` at
+every place, then `f ∈ L(E)`: the pole orders of `f` are those of `f ^ n` divided by `n`. For
+instance `E = ⌊D / n⌋`. For `n = 0` the hypotheses are contradictory as soon as there is a place,
+and otherwise `L(E)` is all of `F`. -/
+theorem mem_riemannRochSpace_of_pow_mem {n : ℕ} {D E : Divisor k F}
     (hDE : ∀ P : Place k F, D.coeff P < n * (E.coeff P + 1)) {f : F}
     (hf : f ^ n ∈ riemannRochSpace D) : f ∈ riemannRochSpace E := by
   rcases eq_or_ne f 0 with rfl | h0
@@ -144,6 +145,9 @@ theorem mem_riemannRochSpace_of_pow_mem {n : ℕ} (hn : 0 < n) {D E : Divisor k 
   have hord := (mem_riemannRochSpace_iff_neg_le_ord (pow_ne_zero n h0)).mp hf P
   rw [P.ord_pow] at hord
   have := hDE P
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp at hord this
+    omega
   have hn' : (0 : ℤ) < n := by exact_mod_cast hn
   nlinarith
 
@@ -681,5 +685,45 @@ theorem dim_add_le_one_add_dim_add_of_finrank_ker_eq_one (hF : IsFunctionField k
   rw [hker, Nat.add_comm] at hrank
   rw [← Divisor.dim_def B] at hrank
   omega
+
+namespace Place
+
+/-- If the Riemann--Roch dimensions of `(n - 1)P` and `nP` differ, there is a nonzero function
+with order exactly `-n` at `P` that is regular at every other place. -/
+theorem exists_ord_eq_neg_and_forall_ne_ord_nonneg_of_dim_lt
+    (P : Place k F) {n : ℕ}
+    (hdimlt : Divisor.dim (((n - 1 : ℕ) : ℤ) • WeilDivisor.ofPoint P) <
+      Divisor.dim ((n : ℤ) • WeilDivisor.ofPoint P)) :
+    ∃ x : F, x ≠ 0 ∧ P.ord x = -(n : ℤ) ∧ ∀ Q : Place k F, Q ≠ P → 0 ≤ Q.ord x := by
+  -- The strict inequality already forces `n` to be positive: for `n = 0` the two divisors agree.
+  have hnpos : 0 < n := by
+    rcases Nat.eq_zero_or_pos n with rfl | h
+    · simp at hdimlt
+    · exact h
+  let D : Divisor k F := (n : ℤ) • WeilDivisor.ofPoint P
+  let E : Divisor k F := ((n - 1 : ℕ) : ℤ) • WeilDivisor.ofPoint P
+  have hnsub : ((n - 1 : ℕ) : ℤ) = (n : ℤ) - 1 := by
+    omega
+  have hED : E ≤ D := by
+    refine WeilDivisor.le_iff.mpr fun Q ↦ ?_
+    rcases eq_or_ne Q P with rfl | hQP
+    · simp only [E, D, WeilDivisor.coeff_zsmul, WeilDivisor.coeff_ofPoint_self, mul_one,
+        hnsub]
+      omega
+    · simp [E, D, WeilDivisor.coeff_ofPoint_of_ne hQP]
+  have hfinranklt : Module.finrank k (riemannRochSpace E) <
+      Module.finrank k (riemannRochSpace D) := by
+    simpa only [← Divisor.dim_def, E, D] using hdimlt
+  have hlt : riemannRochSpace E < riemannRochSpace D :=
+    Submodule.lt_of_le_of_finrank_lt_finrank (riemannRochSpace_mono hED) hfinranklt
+  obtain ⟨x, hxD, hxE⟩ := IsConcreteLE.exists_of_lt hlt
+  have hx0 : x ≠ 0 := fun hx ↦ hxE (hx ▸ Submodule.zero_mem _)
+  have hEeq : E = D - WeilDivisor.ofPoint P := by
+    simp only [D, E, hnsub, sub_smul, one_smul]
+  have hord := Divisor.ord_eq_neg_coeff_of_not_mem_sub_ofPoint hxD (hEeq ▸ hxE)
+  refine ⟨x, hx0, ?_, ((mem_riemannRochSpace_zsmul_ofPoint_iff hx0).mp hxD).2⟩
+  simpa [D] using hord
+
+end Place
 
 end TauCeti

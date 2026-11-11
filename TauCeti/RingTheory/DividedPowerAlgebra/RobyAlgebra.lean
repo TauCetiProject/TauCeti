@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.DividedPowerAlgebra.TensorMap
 public import TauCeti.RingTheory.PolynomialLaw.Multiplicative
 import Mathlib.LinearAlgebra.TensorProduct.Finiteness
-import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 import TauCeti.Algebra.MvPolynomial.Monomial
 import TauCeti.RingTheory.TensorProduct.Maps
 import TauCeti.RingTheory.TensorProduct.MvPolynomial
@@ -110,6 +109,37 @@ theorem homogeneousMul_dp_dp (d : ℕ) (x y : A) :
   rw [homogeneousMul_apply, homogeneousTensorMap_dp_tmul_dp, mapHomogeneousSubmodule_dp,
     LinearMap.mul'_apply]
 
+/-- In bidegree `(d, d)`, the `e`-coefficient of `γ_d(W)`, for `W = ∑ᵢ ∑ⱼ XᵢYⱼ ⊗ (mᵢ ⊗ nⱼ)`,
+is the tensor map applied to the degree-`d` parts of the matching product of divided powers. -/
+private theorem lid_rTensor_lcoeff_gamma_toFun_of_sum_eq (d : ℕ) {ι κ : Type*} [Fintype ι]
+    [DecidableEq ι] [Fintype κ] [DecidableEq κ] (m : ι → A) (n : κ → A) {e : ι ⊕ κ →₀ ℕ}
+    (h : (∑ i, e (Sum.inl i) = d) ∧ ∑ j, e (Sum.inr j) = d) :
+    TensorProduct.lid R (homogeneousSubmodule (R := R) (M := A ⊗[R] A) d)
+        (LinearMap.rTensor (homogeneousSubmodule (R := R) (M := A ⊗[R] A) d) (lcoeff R e)
+          ((gamma R (A ⊗[R] A) d).toFun (MvPolynomial (ι ⊕ κ) R)
+            (∑ i, ∑ j, (X (Sum.inl i) * X (Sum.inr j)) ⊗ₜ[R] (m i ⊗ₜ[R] n j)))) =
+      ∑ a ∈ Finset.univ.finsuppAntidiag d, ∑ b ∈ Finset.univ.finsuppAntidiag d,
+        if (∀ i, a i = e (Sum.inl i)) ∧ ∀ j, b j = e (Sum.inr j) then
+          homogeneousTensorMap R A A d
+            (DirectSum.decompose (homogeneousSubmodule (R := R) (M := A))
+                (∏ i, dp R (a i) (m i)) d ⊗ₜ
+              DirectSum.decompose (homogeneousSubmodule (R := R) (M := A))
+                (∏ j, dp R (b j) (n j)) d) else 0 := by
+  classical
+  set a₀ : ι →₀ ℕ := Finsupp.equivFunOnFinite.symm fun i ↦ e (Sum.inl i)
+  set b₀ : κ →₀ ℕ := Finsupp.equivFunOnFinite.symm fun j ↦ e (Sum.inr j)
+  have ha₀ : ∑ i, a₀ i = d := by simpa [a₀] using h.1
+  have hb₀ : ∑ j, b₀ j = d := by simpa [b₀] using h.2
+  have he : Finsupp.sumElim a₀ b₀ = e := by ext (k | k) <;> simp [a₀, b₀]
+  have hcond (a : ι →₀ ℕ) (b : κ →₀ ℕ) :
+      ((∀ i, a i = e (Sum.inl i)) ∧ ∀ j, b j = e (Sum.inr j)) ↔ b = b₀ ∧ a = a₀ := by
+    simp [a₀, b₀, Finsupp.ext_iff, and_comm]
+  have hmix := homogeneousTensorMap_tmul_prod_dp (R := R) d m n a₀ b₀ ha₀ hb₀
+  rw [he] at hmix
+  simp only [hcond, ite_and, Finset.sum_ite_eq', Finset.mem_finsuppAntidiag, ha₀, hb₀,
+    Finset.subset_univ, and_self, ite_true]
+  rw [decompose_prod_dp m a₀ ha₀, decompose_prod_dp n b₀ hb₀, hmix]
+
 /-- The generic case of `homogeneousMul_baseChange_gamma`: two generic combinations in disjoint
 groups of variables. -/
 private theorem homogeneousMul_baseChange_gamma_generic (d : ℕ) {ι κ : Type*} [Fintype ι]
@@ -145,20 +175,7 @@ private theorem homogeneousMul_baseChange_gamma_generic (d : ℕ) {ι κ : Type*
     simp only [map_sum, LinearMap.rTensor_tmul, lcoeff_apply, TensorProduct.lid_tmul,
       coeff_prod_X_pow_mul_prod_X_pow, ite_smul, one_smul, zero_smul]
     by_cases h : (∑ i, e (Sum.inl i) = d) ∧ ∑ j, e (Sum.inr j) = d
-    · -- In bidegree `(d, d)`, the coefficient is given by the mixed coefficient formula.
-      set a₀ : ι →₀ ℕ := Finsupp.equivFunOnFinite.symm fun i ↦ e (Sum.inl i)
-      set b₀ : κ →₀ ℕ := Finsupp.equivFunOnFinite.symm fun j ↦ e (Sum.inr j)
-      have ha₀ : ∑ i, a₀ i = d := by simpa [a₀] using h.1
-      have hb₀ : ∑ j, b₀ j = d := by simpa [b₀] using h.2
-      have he : Finsupp.sumElim a₀ b₀ = e := by ext (k | k) <;> simp [a₀, b₀]
-      have hcond (a : ι →₀ ℕ) (b : κ →₀ ℕ) :
-          ((∀ i, a i = e (Sum.inl i)) ∧ ∀ j, b j = e (Sum.inr j)) ↔ b = b₀ ∧ a = a₀ := by
-        simp [a₀, b₀, Finsupp.ext_iff, and_comm]
-      have hmix := homogeneousTensorMap_tmul_prod_dp (R := R) d m n a₀ b₀ ha₀ hb₀
-      rw [he] at hmix
-      simp only [hcond, ite_and, Finset.sum_ite_eq', Finset.mem_finsuppAntidiag, ha₀, hb₀,
-        Finset.subset_univ, and_self, ite_true]
-      rw [decompose_prod_dp m a₀ ha₀, decompose_prod_dp n b₀ hb₀, hmix]
+    · exact lid_rTensor_lcoeff_gamma_toFun_of_sum_eq d m n h
     · -- Outside bidegree `(d, d)`, both coefficients vanish: `γ_d(W)` only involves monomials
       -- `∏_{(i, j)} (XᵢYⱼ) ^ lᵢⱼ` with `∑ l = d`, of weight `d` in each group of variables.
       have hW :
@@ -169,17 +186,7 @@ private theorem homogeneousMul_baseChange_gamma_generic (d : ℕ) {ι κ : Type*
       refine (Finset.sum_eq_zero fun l hl ↦ ?_).trans
         (Finset.sum_eq_zero fun a ha ↦ Finset.sum_eq_zero fun b hb ↦ ?_).symm
       · have hl := (Finset.mem_finsuppAntidiag.mp hl).1
-        have hw (w : ι ⊕ κ → ℕ) : IsWeightedHomogeneous w
-            (∏ p, (X (Sum.inl p.1) * X (Sum.inr p.2) : T) ^ l p)
-            (∑ p, l p • (w (Sum.inl p.1) + w (Sum.inr p.2))) :=
-          IsWeightedHomogeneous.prod _ _ _ fun p _ ↦
-            ((isWeightedHomogeneous_X R w _).mul (isWeightedHomogeneous_X R w _)).pow (l p)
-        have hweight (w : ι ⊕ κ → ℕ) : Finsupp.weight w e =
-            ∑ i, e (Sum.inl i) * w (Sum.inl i) + ∑ j, e (Sum.inr j) * w (Sum.inr j) := by
-          simp [Finsupp.weight_apply, Finsupp.sum_fintype, Fintype.sum_sum_type]
-        rcases not_and_or.mp h with h | h
-        · rw [(hw (Sum.elim 1 0)).coeff_eq_zero e (by simpa [hweight, hl] using h), zero_smul]
-        · rw [(hw (Sum.elim 0 1)).coeff_eq_zero e (by simpa [hweight, hl] using h), zero_smul]
+        rw [coeff_prod_X_mul_X_pow_eq_zero hl h, zero_smul]
       · refine ite_eq_right_iff.mpr fun ⟨ha', hb'⟩ ↦ absurd ⟨?_, ?_⟩ h
         · simpa [ha'] using (Finset.mem_finsuppAntidiag.mp ha).1
         · simpa [hb'] using (Finset.mem_finsuppAntidiag.mp hb).1

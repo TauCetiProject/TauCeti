@@ -576,15 +576,14 @@ end RepresentsLaplace
 
 /-! ## The real and extended-real Laplace transforms -/
 
-/-- The real value of the extended-real Laplace transform of a finite measure is its usual
+/-- The real value of the extended-real Laplace transform of a measure is its usual
 Laplace transform. -/
-theorem toReal_laplaceTransformENN (μ : Measure ℝ≥0) (t : ℝ≥0) [IsFiniteMeasure μ] :
+theorem toReal_laplaceTransformENN (μ : Measure ℝ≥0) (t : ℝ≥0) :
     (laplaceTransformENN μ t).toReal = laplaceTransform μ (t : ℝ) := by
-  have h := ofReal_integral_eq_lintegral_ofReal (integrable_exp_neg_mul μ t.coe_nonneg)
-    (.of_forall fun p => (Real.exp_pos _).le)
   rw [laplaceTransform_apply, laplaceTransformENN_apply]
   simp_rw [neg_mul]
-  rw [← h, ENNReal.toReal_ofReal (integral_nonneg fun p => (Real.exp_pos _).le)]
+  exact (integral_eq_lintegral_of_nonneg_ae (.of_forall fun p => (Real.exp_pos _).le)
+    (by fun_prop)).symm
 
 /-- **A finite measure is represented by its extended-real Laplace transform.** -/
 theorem representsLaplace_laplaceTransformENN (μ : Measure ℝ≥0) [IsFiniteMeasure μ] :

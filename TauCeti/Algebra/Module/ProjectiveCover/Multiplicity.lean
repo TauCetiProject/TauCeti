@@ -87,15 +87,15 @@ theorem IsProjectiveCover.finrank_linearMap_eq_finrank_end [Module k S] [IsScala
 
 /-- **The off-diagonal value of the projective/simple pairing.** Between a projective cover of `S`
 and a simple module not isomorphic to `S` the hom space vanishes, by Schur's lemma. -/
-theorem IsProjectiveCover.finrank_linearMap_eq_zero [Nontrivial k] [IsSimpleModule A S]
-    [IsSimpleModule A T] {f : P →ₗ[A] S} (hf : IsProjectiveCover f) (he : IsEmpty (T ≃ₗ[A] S)) :
+theorem IsProjectiveCover.finrank_linearMap_eq_zero [IsSimpleModule A S] [IsSimpleModule A T]
+    {f : P →ₗ[A] S} (hf : IsProjectiveCover f) (he : IsEmpty (T ≃ₗ[A] S)) :
     Module.finrank k (P →ₗ[A] T) = 0 := by
   rw [← (hf.homEquivOfIsSemisimpleModule k (T := T)).finrank_eq]
   exact finrank_linearMap_eq_zero_of_isEmpty_linearEquiv ⟨fun e => he.elim e.symm⟩
 
 /-- The simple case of the multiplicity formula, the step of the induction on a composition
 series. -/
-private theorem finrank_linearMap_simple_eq [Nontrivial k] [Module k S] [IsScalarTower k A S]
+private theorem finrank_linearMap_simple_eq [Module k S] [IsScalarTower k A S]
     [IsSimpleModule A S] [IsSimpleModule A T] {f : P →ₗ[A] S} (hf : IsProjectiveCover f) :
     Module.finrank k (P →ₗ[A] T)
       = jordanHolderMultiplicity A T S * Module.finrank k (Module.End A S) := by

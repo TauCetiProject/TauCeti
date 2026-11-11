@@ -106,11 +106,13 @@ theorem basisOfIrreducibleCharacters_apply (i : ι) :
     basisOfIrreducibleCharacters ρ hind hcard i = ofCharacter (ρ i) :=
   congrFun (coe_basisOfIrreducibleCharacters ρ hind hcard) i
 
+omit [Finite ι] in
 /-- **Completeness**: the irreducible characters span the class functions. -/
 theorem span_range_ofCharacter_eq_top :
     Submodule.span k (Set.range fun i => ofCharacter (ρ i)) =
-      (⊤ : Submodule k (ClassFunction k G)) :=
-  coe_basisOfIrreducibleCharacters ρ hind hcard ▸
+      (⊤ : Submodule k (ClassFunction k G)) := by
+  have : Finite ι := Nat.finite_of_card_ne_zero (by rw [hcard]; exact Nat.card_pos.ne')
+  exact coe_basisOfIrreducibleCharacters ρ hind hcard ▸
     (basisOfIrreducibleCharacters ρ hind hcard).span_eq
 
 end Basis
@@ -165,6 +167,19 @@ theorem apply_eq_sum_characterPairing_mul_character (f : ClassFunction k G) (y :
   conv_lhs => rw [← sum_characterPairing_smul_ofCharacter ρ hind hcard f]
   simp
 
+end Orthogonality
+
+section Columns
+
+variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k]
+  [Invertible (Nat.card G : k)] {ι : Type*} [Fintype ι] {V : ι → Type w}
+  [∀ i, AddCommGroup (V i)] [∀ i, Module k (V i)]
+  (ρ : ∀ i, Representation k G (V i)) [∀ i, (ρ i).IsIrreducible]
+  (hind : Pairwise fun i j => IsEmpty ((ρ i).Equiv (ρ j)))
+  (hcard : Nat.card ι = Nat.card (ConjClasses G))
+
+include hind hcard
+
 open scoped Classical in
 /-- **The second (column) orthogonality relation**, in a form free of division: the columns of the
 character table at `g` and at `h`, weighted by the size of the class of `g`, sum to `|G|` when `g`
@@ -174,6 +189,7 @@ theorem card_conjClass_mul_sum_char_mul_char_inv (g h : G) :
         ∑ i, (ρ i).character g * (ρ i).character h⁻¹ =
       if IsConj g h then (Nat.card G : k) else 0 := by
   classical
+  let _ := Fintype.ofFinite G
   have hval := apply_eq_sum_characterPairing_mul_character ρ hind hcard
     (classIndicator (k := k) g⁻¹) h⁻¹
   have hpair : ∀ i, characterPairing (ofCharacter (ρ i)) (classIndicator (k := k) g⁻¹) =
@@ -217,7 +233,7 @@ theorem sum_char_mul_char_inv (g h : G) :
   · rw [ite_eq_right hconj] at hgh ⊢
     exact (mul_eq_zero.mp hgh).resolve_left hc
 
-end Orthogonality
+end Columns
 
 section Classification
 
@@ -230,12 +246,14 @@ variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [IsAlgClosed k
 
 include hind hcard
 
+omit [Finite ι] in
 /-- **A complete family exhausts the irreducibles**: every irreducible
 representation of `G` is equivalent to a member of the family. Were it equivalent to none of them,
 its character would be orthogonal to a basis of the class functions, hence zero; but an irreducible
 character pairs to `1` with itself. -/
 theorem exists_nonempty_equiv {W : Type*} [AddCommGroup W] [Module k W]
     (σ : Representation k G W) [σ.IsIrreducible] : ∃ i, Nonempty (σ.Equiv (ρ i)) := by
+  have : Finite ι := Nat.finite_of_card_ne_zero (by rw [hcard]; exact Nat.card_pos.ne')
   let _ := Fintype.ofFinite G
   let _ := Fintype.ofFinite ι
   by_contra hcon
@@ -252,7 +270,7 @@ end Classification
 
 section Existence
 
-variable (k : Type u) (G : Type v) [Field k] [Group G] [Finite G] [IsAlgClosed k]
+variable (k : Type u) (G : Type v) [Field k] [Group G] [IsAlgClosed k]
   [Invertible (Nat.card G : k)]
 
 /-- **The irreducible characters of a finite group are a basis of its class functions.** There is a
@@ -265,6 +283,8 @@ theorem exists_basis_ofCharacter :
     ∃ (d : ConjClasses G → ℕ) (ρ : ∀ C, Representation k G (Fin (d C) → k))
       (b : Module.Basis (ConjClasses G) k (ClassFunction k G)),
       (∀ C, (ρ C).IsIrreducible) ∧ ∀ C, b C = ofCharacter (ρ C) := by
+  have : Finite G := Nat.finite_of_card_ne_zero fun h =>
+    Invertible.ne_zero (Nat.card G : k) (by simp [h])
   have : NeZero (Nat.card G : k) := ⟨Invertible.ne_zero _⟩
   obtain ⟨d, ρ, hirr, hind, -⟩ := exists_irreducible_family_conjClasses k G
   have := hirr
@@ -284,6 +304,8 @@ theorem le_span_irreducibleCharacters :
       {f : G → k | ∃ (n : ℕ) (ρ : Representation k G (Fin n → k)), ρ.IsIrreducible ∧
         ρ.character = f} := by
   classical
+  have : Finite G := Nat.finite_of_card_ne_zero fun h =>
+    Invertible.ne_zero (Nat.card G : k) (by simp [h])
   let _ := Fintype.ofFinite (ConjClasses G)
   obtain ⟨d, ρ, b, hirr, hb⟩ := exists_basis_ofCharacter k G
   have hcoe : ∀ C, ((ofCharacter (ρ C) : ClassFunction k G) : G → k) = (ρ C).character :=

@@ -10,7 +10,7 @@ public import TauCeti.Probability.Quantile
 import TauCeti.MeasureTheory.Measure.Measurability
 import TauCeti.Probability.Cdf.Density
 import TauCeti.Probability.Distributions.Gaussian.Cdf
-import TauCeti.Probability.Distributions.Mixture
+import TauCeti.Probability.Distributions.Mixture.Basic
 
 /-!
 # Cdfs and quantiles of noncentral t laws
@@ -111,7 +111,7 @@ theorem strictMonoOn_quantile_noncentralTMeasure (hν : 0 < ν) (δ : ℝ) :
 /-- For positive degrees, the noncentral t quantile is continuous on `(0, 1)`. -/
 theorem continuousOn_quantile_noncentralTMeasure (hν : 0 < ν) (δ : ℝ) :
     ContinuousOn (noncentralTMeasure ν δ).quantile (Ioo 0 1) :=
-  Measure.continuousOn_quantile _ (continuous_cdf_noncentralTMeasure hν δ)
+  Measure.continuousOn_quantile _
     ((strictMono_cdf_noncentralTMeasure hν δ).strictMonoOn _)
 
 /-- Noncentral t quantiles tend to minus infinity as the probability level tends to zero from
