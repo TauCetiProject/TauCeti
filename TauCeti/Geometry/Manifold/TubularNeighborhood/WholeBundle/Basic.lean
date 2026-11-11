@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Euclidean
-public import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
+public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 public import Mathlib.Topology.MetricSpace.Thickening
 
 /-!
@@ -103,21 +103,9 @@ def normalBundleHomeomorphTube (f : M → V) {ε : ℝ} (hε : 0 < ε) :
         ⟨ε⁻¹ • ⟨q.1.2, (mem_normalTube.mp q.2).1⟩, by
           rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg (inv_pos.mpr hε).le]
           exact (inv_mul_lt_iff₀ hε).mpr (by simpa using (mem_normalTube.mp q.2).2)⟩
-      -- Compose the explicit inverse formulas before rewriting: their intermediate subtypes
-      -- use the source and target of the partial homeomorphism, rather than `univ` and `ball`.
-      have hS : Homeomorph.unitBall.symm y = (Real.sqrt (1 - ‖y.1‖ ^ 2))⁻¹ • y.1 :=
-        (Homeomorph.unitBall_symm_apply y).trans
-          ((OpenPartialHomeomorph.toHomeomorphSourceTarget_symm_apply_coe
-            (OpenPartialHomeomorph.univUnitBall (E := normalSubspace I f q.1.1)) y).trans
-            (OpenPartialHomeomorph.univUnitBall_symm_apply y.1))
-      have hV : Homeomorph.unitBall.symm (k q) =
-          (Real.sqrt (1 - ‖(k q).1‖ ^ 2))⁻¹ • (k q).1 :=
-        (Homeomorph.unitBall_symm_apply (k q)).trans
-          ((OpenPartialHomeomorph.toHomeomorphSourceTarget_symm_apply_coe
-            (OpenPartialHomeomorph.univUnitBall (E := V)) (k q)).trans
-            (OpenPartialHomeomorph.univUnitBall_symm_apply (k q).1))
       simpa only [k, y, Function.comp_apply, Submodule.coe_smul, Submodule.norm_coe]
-        using congrArg ((↑) : normalSubspace I f q.1.1 → V) hS |>.trans hV.symm
+        using congrArg ((↑) : normalSubspace I f q.1.1 → V) (Homeomorph.unitBall_symm_apply_coe y)
+          |>.trans (Homeomorph.unitBall_symm_apply_coe (k q)).symm
 
 /-- The radial compression leaves the base point unchanged. -/
 @[simp]
@@ -150,18 +138,12 @@ theorem normalBundleHomeomorphTube_symm_apply_snd (f : M → V) {ε : ℝ} (hε 
     ⟨ε⁻¹ • ⟨q.1.2, (mem_normalTube.mp q.2).1⟩, by
       rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg (inv_pos.mpr hε).le]
       exact (inv_mul_lt_iff₀ hε).mpr (by simpa using (mem_normalTube.mp q.2).2)⟩
-  -- Compose the inverse formulas before coercing: the partial homeomorphism uses
-  -- its source subtype, whereas `unitBall.symm` returns a vector in the normal subspace.
-  have hy : Homeomorph.unitBall.symm y = (Real.sqrt (1 - ‖y.1‖ ^ 2))⁻¹ • y.1 :=
-    (Homeomorph.unitBall_symm_apply y).trans
-      ((OpenPartialHomeomorph.toHomeomorphSourceTarget_symm_apply_coe
-        (OpenPartialHomeomorph.univUnitBall (E := normalSubspace I f q.1.1)) y).trans
-        (OpenPartialHomeomorph.univUnitBall_symm_apply y.1))
-  -- The inverse fibre is definitionally `unitBall.symm y`; naming its subtype input
-  -- lets the explicit Mathlib formula apply without unfolding the partial homeomorphism.
+  -- The inverse fibre is definitionally `unitBall.symm y`; naming its subtype input lets the
+  -- explicit formula `Homeomorph.unitBall_symm_apply_coe` apply without unfolding the
+  -- partial homeomorphism.
   change ((Homeomorph.unitBall.symm y : normalSubspace I f q.1.1) : V) = _
   simpa only [y, ← Submodule.norm_coe, Submodule.coe_smul, Subtype.coe_mk]
-    using congrArg ((↑) : normalSubspace I f q.1.1 → V) hy
+    using congrArg ((↑) : normalSubspace I f q.1.1 → V) (Homeomorph.unitBall_symm_apply_coe y)
 
 /-- The zero section is carried to the zero vectors of the bounded normal tube. -/
 @[simp]
