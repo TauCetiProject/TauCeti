@@ -79,12 +79,12 @@ variable {P Q : Polynomial ℂ}
 carries the norms of `P` and `P'` to those of `Q` and `Q'`, then precomposition with `g` carries
 Taubes's functional for `P` to that for `Q`. -/
 theorem sobolevReducedFunctional_compAffineIsometryEquivL (g : ℂ ≃ᵃⁱ[ℝ] ℂ)
-    (hUV : ((⊤ : Opens ℂ) : Set ℂ) = g ⁻¹' (⊤ : Opens ℂ))
     (hQ : ∀ z, ‖Q.eval z‖ = ‖P.eval (g z)‖)
     (hQ' : ∀ z, ‖Q.derivative.eval z‖ = ‖P.derivative.eval (g z)‖)
     (u : W1p (volume : Measure ℂ) ⊤ 2) :
-    sobolevReducedFunctional Q (W1p.compAffineIsometryEquivL g hUV u) =
+    sobolevReducedFunctional Q (W1p.compAffineIsometryEquivL g (by simp) u) =
       sobolevReducedFunctional P u := by
+  have hUV : ((⊤ : Opens ℂ) : Set ℂ) = g ⁻¹' (⊤ : Opens ℂ) := by simp
   have hmp : MeasurePreserving g volume volume := g.measurePreserving
   have hemb : MeasurableEmbedding g := g.toHomeomorph.measurableEmbedding
   have hv : (W1p.value (W1p.compAffineIsometryEquivL g hUV u) : ℂ → ℝ) =ᵐ[volume]
@@ -117,15 +117,14 @@ theorem sobolevReducedFunctional_compAffineIsometryEquivL (g : ℂ ≃ᵃⁱ[ℝ
 `TauCeti.Vortex.sobolevReducedFunctional_compAffineIsometryEquivL`, `u ∘ g` minimizes Taubes's
 functional for `Q` exactly when `u` minimizes Taubes's functional for `P`. -/
 theorem forall_sobolevReducedFunctional_compAffineIsometryEquivL_le_iff (g : ℂ ≃ᵃⁱ[ℝ] ℂ)
-    (hUV : ((⊤ : Opens ℂ) : Set ℂ) = g ⁻¹' (⊤ : Opens ℂ))
     (hQ : ∀ z, ‖Q.eval z‖ = ‖P.eval (g z)‖)
     (hQ' : ∀ z, ‖Q.derivative.eval z‖ = ‖P.derivative.eval (g z)‖)
     (u : W1p (volume : Measure ℂ) ⊤ 2) :
-    (∀ v, sobolevReducedFunctional Q (W1p.compAffineIsometryEquivL g hUV u) ≤
+    (∀ v, sobolevReducedFunctional Q (W1p.compAffineIsometryEquivL g (by simp) u) ≤
         sobolevReducedFunctional Q v) ↔
       ∀ v, sobolevReducedFunctional P u ≤ sobolevReducedFunctional P v := by
   have hVU : ((⊤ : Opens ℂ) : Set ℂ) = g.symm ⁻¹' (⊤ : Opens ℂ) := by simp
-  have hI := sobolevReducedFunctional_compAffineIsometryEquivL g hUV hQ hQ'
+  have hI := sobolevReducedFunctional_compAffineIsometryEquivL g hQ hQ'
   rw [hI u]
   refine ⟨fun h v ↦ (h _).trans_eq (hI v), fun h v ↦ ?_⟩
   -- Every `v` is `(v ∘ g⁻¹) ∘ g`.
@@ -139,23 +138,21 @@ theorem forall_sobolevReducedFunctional_compAffineIsometryEquivL_le_iff (g : ℂ
 zeros are those of `P` translated by `-a`, it takes the value of `P`'s functional at `u` on
 `u (· + a)`. -/
 theorem sobolevReducedFunctional_comp_X_add_C (a : ℂ)
-    (hUV : ((⊤ : Opens ℂ) : Set ℂ) = AffineIsometryEquiv.vaddConst ℝ a ⁻¹' (⊤ : Opens ℂ))
     (u : W1p (volume : Measure ℂ) ⊤ 2) :
     sobolevReducedFunctional (P.comp (X + C a))
-        (W1p.compAffineIsometryEquivL (AffineIsometryEquiv.vaddConst ℝ a) hUV u) =
+        (W1p.compAffineIsometryEquivL (AffineIsometryEquiv.vaddConst ℝ a) (by simp) u) =
       sobolevReducedFunctional P u :=
-  sobolevReducedFunctional_compAffineIsometryEquivL _ hUV (fun z ↦ by simp)
+  sobolevReducedFunctional_compAffineIsometryEquivL _ (fun z ↦ by simp)
     (fun z ↦ by simp [derivative_comp]) u
 
 /-- Taubes's functional is invariant under rotations: for `Q = P.comp (C u * X)` with `u` on the
 unit circle, it takes the value of `P`'s functional at `w` on `w (u ·)`. -/
 theorem sobolevReducedFunctional_comp_C_mul_X (u : Circle)
-    (hUV : ((⊤ : Opens ℂ) : Set ℂ) = (rotation u).toAffineIsometryEquiv ⁻¹' (⊤ : Opens ℂ))
     (w : W1p (volume : Measure ℂ) ⊤ 2) :
     sobolevReducedFunctional (P.comp (C (u : ℂ) * X))
-        (W1p.compAffineIsometryEquivL (rotation u).toAffineIsometryEquiv hUV w) =
+        (W1p.compAffineIsometryEquivL (rotation u).toAffineIsometryEquiv (by simp) w) =
       sobolevReducedFunctional P w :=
-  sobolevReducedFunctional_compAffineIsometryEquivL _ hUV (fun z ↦ by simp)
+  sobolevReducedFunctional_compAffineIsometryEquivL _ (fun z ↦ by simp)
     (fun z ↦ by simp [derivative_comp]) w
 
 /-- Taubes's functional does not see a constant unit factor of the polynomial: the line-frame
@@ -170,25 +167,23 @@ theorem sobolevReducedFunctional_C_mul {c : ℂ} (hc : ‖c‖ = 1)
 /-- A function minimizes Taubes's functional for `P` exactly when its translate by `a`
 minimizes Taubes's functional for `P.comp (X + C a)`. -/
 theorem forall_sobolevReducedFunctional_comp_X_add_C_le_iff (a : ℂ)
-    (hUV : ((⊤ : Opens ℂ) : Set ℂ) = AffineIsometryEquiv.vaddConst ℝ a ⁻¹' (⊤ : Opens ℂ))
     (u : W1p (volume : Measure ℂ) ⊤ 2) :
     (∀ v, sobolevReducedFunctional (P.comp (X + C a))
-        (W1p.compAffineIsometryEquivL (AffineIsometryEquiv.vaddConst ℝ a) hUV u) ≤
+        (W1p.compAffineIsometryEquivL (AffineIsometryEquiv.vaddConst ℝ a) (by simp) u) ≤
           sobolevReducedFunctional (P.comp (X + C a)) v) ↔
       ∀ v, sobolevReducedFunctional P u ≤ sobolevReducedFunctional P v :=
-  forall_sobolevReducedFunctional_compAffineIsometryEquivL_le_iff _ hUV (fun z ↦ by simp)
+  forall_sobolevReducedFunctional_compAffineIsometryEquivL_le_iff _ (fun z ↦ by simp)
     (fun z ↦ by simp [derivative_comp]) u
 
 /-- A function minimizes Taubes's functional for `P` exactly when its rotation by `u` minimizes
 Taubes's functional for `P.comp (C u * X)`. -/
 theorem forall_sobolevReducedFunctional_comp_C_mul_X_le_iff (u : Circle)
-    (hUV : ((⊤ : Opens ℂ) : Set ℂ) = (rotation u).toAffineIsometryEquiv ⁻¹' (⊤ : Opens ℂ))
     (w : W1p (volume : Measure ℂ) ⊤ 2) :
     (∀ v, sobolevReducedFunctional (P.comp (C (u : ℂ) * X))
-        (W1p.compAffineIsometryEquivL (rotation u).toAffineIsometryEquiv hUV w) ≤
+        (W1p.compAffineIsometryEquivL (rotation u).toAffineIsometryEquiv (by simp) w) ≤
           sobolevReducedFunctional (P.comp (C (u : ℂ) * X)) v) ↔
       ∀ v, sobolevReducedFunctional P w ≤ sobolevReducedFunctional P v :=
-  forall_sobolevReducedFunctional_compAffineIsometryEquivL_le_iff _ hUV (fun z ↦ by simp)
+  forall_sobolevReducedFunctional_compAffineIsometryEquivL_le_iff _ (fun z ↦ by simp)
     (fun z ↦ by simp [derivative_comp]) w
 
 end Functional

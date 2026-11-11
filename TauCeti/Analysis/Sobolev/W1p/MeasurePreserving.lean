@@ -335,7 +335,7 @@ theorem W1p.norm_compAffineIsometryEquivL_le (g : F ≃ᵃⁱ[ℝ] F') (hUV : (U
     fun x _ => g.norm_fderiv_le x
 
 /-- Precomposition with an affine isometry preserves the `Lᵖ` norm of the weak gradient. -/
-theorem W1p.norm_gradient_compAffineIsometryEquivL (g : F ≃ᵃⁱ[ℝ] F')
+@[simp] theorem W1p.norm_gradient_compAffineIsometryEquivL (g : F ≃ᵃⁱ[ℝ] F')
     (hUV : (U : Set F) = g ⁻¹' V) (u : W1p volume V p) :
     ‖W1p.gradient (W1p.compAffineIsometryEquivL g hUV u)‖ = ‖W1p.gradient u‖ := by
   have hmp := measurePreserving_restrict g.measurePreserving hUV
