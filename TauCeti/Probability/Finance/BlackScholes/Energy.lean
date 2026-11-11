@@ -17,8 +17,8 @@ after expiry, give predictable coefficients in `TauCeti.BrownianIntegrable`. Thu
 expected square energy is finite on the full horizon, including arbitrarily close to expiry,
 where gamma can diverge. The result holds under any physical drift `μ`, not just `μ = r`.
 
-The driving process must be a predictable version with the filtered Brownian laws and
-almost-surely right-continuous paths. A continuous such version exists on the original raw
+The driving process must be a predictable version with the filtered Brownian laws; no path
+continuity assumption is needed. A continuous such version exists on the original raw
 filtration by
 `IsFilteredPreBrownianReal.exists_isStronglyPredictable_isBrownianReal_indist`.
 No usual-filtration assumption is required. The maturity slice is assigned zero explicitly;
@@ -56,12 +56,12 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
 maturity, is predictable and has finite expected square energy on every finite horizon.
 The stock may have any physical drift. -/
 theorem brownianIntegrable_call_hedge (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hp : IsStronglyPredictable ℱ W) (hc : ∀ᵐ ω ∂P, IsRightContinuous (fun t ↦ W t ω))
+    (hp : IsStronglyPredictable ℱ W)
     (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) (μ r : ℝ) :
     BrownianIntegrable ℱ P (fun t ω ↦ σ * geometricBrownianMotion s μ σ W t ω *
       (if (t : ℝ) < T then deriv (fun x ↦ callPrice x r σ K (T - t))
         (geometricBrownianMotion s μ σ W t ω) else 0)) := by
-  have hS := hW.brownianIntegrable_geometricBrownianMotion hp hc s μ σ
+  have hS := hW.brownianIntegrable_geometricBrownianMotion hp s μ σ
   have hd := hS.isStronglyPredictable.deriv_callPrice_spot
     (r := r) (T := T) (fun t ω _ ↦ geometricBrownianMotion_pos hs μ σ W t ω) hK hσ
   refine ⟨(hS.isStronglyPredictable.const_mul σ).mul hd, fun U ↦ ?_⟩
@@ -78,12 +78,12 @@ theorem brownianIntegrable_call_hedge (hW : IsFilteredPreBrownianReal ℱ W P)
 maturity, is predictable and has finite expected square energy on every finite horizon.
 No bound on gamma at expiry is needed. -/
 theorem brownianIntegrable_put_hedge (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hp : IsStronglyPredictable ℱ W) (hc : ∀ᵐ ω ∂P, IsRightContinuous (fun t ↦ W t ω))
+    (hp : IsStronglyPredictable ℱ W)
     (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) (μ r : ℝ) :
     BrownianIntegrable ℱ P (fun t ω ↦ σ * geometricBrownianMotion s μ σ W t ω *
       (if (t : ℝ) < T then deriv (fun x ↦ putPrice x r σ K (T - t))
         (geometricBrownianMotion s μ σ W t ω) else 0)) := by
-  have hS := hW.brownianIntegrable_geometricBrownianMotion hp hc s μ σ
+  have hS := hW.brownianIntegrable_geometricBrownianMotion hp s μ σ
   have hd := hS.isStronglyPredictable.deriv_putPrice_spot
     (r := r) (T := T) (fun t ω _ ↦ geometricBrownianMotion_pos hs μ σ W t ω) hK hσ
   refine ⟨(hS.isStronglyPredictable.const_mul σ).mul hd, fun U ↦ ?_⟩
