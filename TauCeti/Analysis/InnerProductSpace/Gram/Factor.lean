@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Positive
-public import Mathlib.Analysis.Normed.Operator.Extend
+public import TauCeti.Analysis.Normed.Operator.Extend
 public import TauCeti.Analysis.InnerProductSpace.PartialIsometry
 
 /-!
@@ -41,6 +41,8 @@ invertible, and for an endomorphism `A` with `‖T x‖ ≤ ‖A x‖` the facto
 
 * `ContinuousLinearMap.factorThru`: the canonical factor of `T` through `A`.
 * `ContinuousLinearMap.factorThru_comp`: `T.factorThru A ∘L A = T` under a norm bound.
+* `ContinuousLinearMap.factorThru_compLeftInverse_apply`: the factor of `f.compLeftInverse g`
+  through the inclusion of the range of `g` sends `g x` to `f x`.
 * `ContinuousLinearMap.eq_factorThru`: uniqueness of the factor vanishing on `(range A)ᗮ`.
 * `ContinuousLinearMap.adjoint_factorThru_comp`: `(T.factorThru A)† ∘L T = A` when
   `‖T x‖ = ‖A x‖` for every `x`.
@@ -129,6 +131,18 @@ theorem factorThru_apply_apply (h : ∃ C, ∀ x, ‖T x‖ ≤ C * ‖A x‖) (
 theorem factorThru_comp (h : ∃ C, ∀ x, ‖T x‖ ≤ C * ‖A x‖) : T.factorThru A ∘L A = T := by
   ext x
   exact factorThru_apply_apply h x
+
+/-- Under a bound `‖f x‖ ≤ C * ‖g x‖` for linear maps on a space without topology, the factor of
+`f.compLeftInverse g` through the inclusion of the range of `g` sends `g x` to `f x`. -/
+theorem factorThru_compLeftInverse_apply {Φ : Type*} [AddCommGroup Φ] [Module 𝕜 Φ]
+    {f : Φ →ₗ[𝕜] F} {g : Φ →ₗ[𝕜] G}
+    [(LinearMap.range g).subtypeL.range.topologicalClosure.HasOrthogonalProjection]
+    (h : ∃ C, ∀ x, ‖f x‖ ≤ C * ‖g x‖) (x : Φ) :
+    (f.compLeftInverse g).factorThru (LinearMap.range g).subtypeL (g x) = f x := by
+  obtain ⟨C, hC⟩ := h
+  have := factorThru_apply_apply (T := f.compLeftInverse g) (A := (LinearMap.range g).subtypeL)
+    ⟨C, LinearMap.norm_compLeftInverse_apply_le hC⟩ ⟨g x, LinearMap.mem_range_self g x⟩
+  rwa [LinearMap.compLeftInverse_apply_of_bdd _ _ ⟨C, hC⟩ x _ rfl] at this
 
 /-- The factor vanishes on the orthogonal complement of the range of `A`. -/
 @[simp]

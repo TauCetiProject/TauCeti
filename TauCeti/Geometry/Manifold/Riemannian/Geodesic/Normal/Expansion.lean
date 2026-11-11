@@ -12,7 +12,7 @@ import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Bianchi
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Calculus.SecondOrderExpansion
-import TauCeti.Analysis.Calculus.TaylorIntegral
+import TauCeti.Analysis.Calculus.Taylor.Integral
 
 /-!
 # Uniform quadratic expansion of the exponential metric

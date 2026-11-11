@@ -61,8 +61,7 @@ namespace TauCeti
 variable {p : ℕ} {G : Type*} [Group G] {H : Type*} [Group H]
 
 /-- **Every element in the image of a `p`-group under a monoid homomorphism has `p`-power order.**
-A homomorphism preserves powers and `1`, so `IsPGroup.exists_pow_pow_eq_one` transports along it;
-this is what supplies the power-order hypothesis of a representation of a `p`-group. -/
+This supplies the power-order hypothesis for a representation of a `p`-group. -/
 theorem _root_.IsPGroup.exists_pow_pow_eq_one_map {M : Type*} [Monoid M] (hG : IsPGroup p G)
     (f : G →* M) (g : G) : ∃ n : ℕ, f g ^ p ^ n = 1 :=
   (hG g).elim fun n hn => ⟨n, by rw [← map_pow, hn, map_one]⟩
@@ -73,9 +72,7 @@ theorem _root_.IsPGroup.prod (hG : IsPGroup p G) (hH : IsPGroup p H) :
   rintro ⟨g, h⟩
   obtain ⟨m, hm⟩ := hG g
   obtain ⟨n, hn⟩ := hH h
-  refine ⟨m + n, ?_⟩
-  rw [Prod.pow_mk, Prod.mk_eq_one, pow_add, pow_mul, hm, one_pow, mul_comm, pow_mul, hn, one_pow]
-  exact ⟨rfl, rfl⟩
+  exact ⟨m + n, Prod.ext (by simp [pow_add, pow_mul, hm]) (by simp [pow_add, pow_mul', hn])⟩
 
 /-- A product of finitely many `p`-groups is a `p`-group. -/
 theorem _root_.IsPGroup.pi {ι : Type*} [Finite ι] {G : ι → Type*} [∀ i, Group (G i)]
@@ -93,18 +90,15 @@ and the quotient `G ⧸ N` are both `p`-groups, then so is `G`. This is the conv
 `IsPGroup.to_subgroup` and `IsPGroup.to_quotient` taken together. -/
 theorem _root_.IsPGroup.of_subgroup_of_quotient {N : Subgroup G} [N.Normal]
     (hN : IsPGroup p N) (hQ : IsPGroup p (G ⧸ N)) : IsPGroup p G := by
-  intro g
-  obtain ⟨k, hk⟩ := hQ (QuotientGroup.mk' N g)
-  rw [← map_pow, QuotientGroup.mk'_apply, QuotientGroup.eq_one_iff] at hk
-  obtain ⟨m, hm⟩ := hN ⟨g ^ p ^ k, hk⟩
-  refine ⟨k + m, ?_⟩
-  rw [pow_add, pow_mul]
-  simpa using congrArg Subtype.val hm
+  have := (hQ.to_subgroup ⊤).comap_of_ker_isPGroup (QuotientGroup.mk' N)
+    (by rwa [QuotientGroup.ker_mk'])
+  rw [Subgroup.comap_top] at this
+  exact this.of_equiv Subgroup.topEquiv
 
 /-- A `p`-group meets a subgroup of order prime to `p` trivially. -/
 theorem disjoint_of_not_dvd_natCard_of_isPGroup [Fact p.Prime] {C Q : Subgroup G}
-    (hC : ¬ p ∣ Nat.card C) (hQ : IsPGroup p Q) : Disjoint C Q := by
-  exact (hQ.disjoint_of_coprime (IsPGroup.card (G := C))
+    (hC : ¬ p ∣ Nat.card C) (hQ : IsPGroup p Q) : Disjoint C Q :=
+  (hQ.disjoint_of_coprime (IsPGroup.card (G := C))
     ((Fact.out : p.Prime).coprime_iff_not_dvd.mpr hC)).symm
 
 /-- A group that is a `p`-group and a `q`-group for coprime `p` and `q` is trivial. -/
@@ -118,31 +112,27 @@ theorem _root_.IsPGroup.subsingleton_of_ne {q : ℕ} [Fact p.Prime] [Fact q.Prim
     (hp : IsPGroup p G) (hq : IsPGroup q G) (hpq : p ≠ q) : Subsingleton G :=
   hp.subsingleton_of_coprime hq ((Nat.coprime_primes Fact.out Fact.out).mpr hpq)
 
-/-- A `p`-group acts trivially on the additive group `ZMod p`, for `p` prime: every additive
-action of `g` on `ZMod p` is multiplication by `g • 1`, an element fixed by the `p`-th power map,
-and `g` has `p`-power order. -/
+/-- A `p`-group acts trivially on the additive group `ZMod p`, for `p` prime. -/
 theorem _root_.IsPGroup.smul_zmod_eq_self [Fact p.Prime] (hG : IsPGroup p G)
     [DistribMulAction G (ZMod p)] (g : G) (m : ZMod p) : g • m = m := by
-  have hlin : ∀ (g : G) (m : ZMod p), g • m = g • (1 : ZMod p) * m := fun g m ↦
+  -- The action of `g` on `ZMod p` is multiplication by `g • 1`.
+  have hlin : (g • · : ZMod p → ZMod p) = (g • (1 : ZMod p) * ·) := funext fun m ↦
     calc g • m = g • (m.val • (1 : ZMod p)) := by rw [nsmul_one, ZMod.natCast_zmod_val]
       _ = m.val • (g • (1 : ZMod p)) := smul_comm _ _ _
       _ = g • (1 : ZMod p) * m := by rw [nsmul_eq_mul, ZMod.natCast_zmod_val, mul_comm]
-  have hpow : ∀ n : ℕ, g ^ n • (1 : ZMod p) = (g • (1 : ZMod p)) ^ n := fun n ↦ by
-    induction n with
-    | zero => rw [pow_zero, one_smul, pow_zero]
-    | succ n ih => rw [pow_succ, mul_smul, hlin (g ^ n), ih, pow_succ]
   obtain ⟨k, hk⟩ := hG g
-  have hu := hpow (p ^ k)
-  rw [hk, one_smul, ZMod.pow_card_pow] at hu
-  rw [hlin, ← hu, one_mul]
+  -- Iterating `g • ·` `p ^ k` times is the identity, and `(g • 1) ^ p ^ k = g • 1`.
+  have hu := congrFun (smul_iterate g (p ^ k)) (1 : ZMod p)
+  rw [hk, one_smul, hlin, mul_left_iterate_apply, ZMod.pow_card_pow, mul_one] at hu
+  rw [congrFun hlin m, hu, one_mul]
 
 /-- An endomorphism of a group of prime order `p` some `p`-power iterate of which is the identity
 is itself the identity. This is the form in which a `p`-group acts trivially on a group of order
-`p`: the endomorphism is a power map `a ↦ a ^ m` of the cyclic group, and `m ^ (p ^ k) ≡ m`
-modulo `p`. -/
+`p`. -/
 theorem _root_.MonoidHom.apply_eq_self_of_iterate_pow_eq_self [Fact p.Prime] {A : Type*}
     [Group A] (f : A →* A) (hA : Nat.card A = p) {k : ℕ} (hf : ∀ a, f^[p ^ k] a = a) (a : A) :
     f a = a := by
+  -- `f` is a power map `a ↦ a ^ m` of the cyclic group `A`, and `m ^ (p ^ k) ≡ m` modulo `p`.
   have : IsCyclic A := isCyclic_of_prime_card (p := p) hA
   obtain ⟨m, hm⟩ := f.map_cyclic
   have hiter (n : ℕ) (b : A) : f^[n] b = b ^ (m ^ n) := by
@@ -202,11 +192,8 @@ theorem exists_isPGroup_quotient_notMem_of_pow_pow_eq_one {A : Type*} [Group A]
 theorem _root_.IsPGroup.exists_mem_center_orderOf_eq_prime [Fact p.Prime] [Finite G]
     [Nontrivial G] (hG : IsPGroup p G) : ∃ z ∈ Subgroup.center G, orderOf z = p := by
   have := hG.center_nontrivial
-  obtain ⟨z, hz⟩ : ∃ z : Subgroup.center G, orderOf z = p := by
-    refine exists_prime_orderOf_dvd_card' p ?_
-    rcases (hG.to_subgroup (Subgroup.center G)).card_eq_or_dvd with h | h
-    · exact absurd h Finite.one_lt_card.ne'
-    · exact h
+  obtain ⟨z, hz⟩ := exists_prime_orderOf_dvd_card' (G := Subgroup.center G) p
+    ((hG.to_subgroup _).card_eq_or_dvd.resolve_left Finite.one_lt_card.ne')
   exact ⟨z, z.2, (Subgroup.orderOf_coe z).trans hz⟩
 
 /-- A nontrivial finite `p`-subgroup `P` of `G` lies in the centralizer of one of its nontrivial
@@ -222,27 +209,19 @@ theorem _root_.IsPGroup.exists_ne_one_le_centralizer [Fact p.Prime] {P : Subgrou
 /-- The normal subgroups of `G` with `p`-group quotient are closed under binary intersection. -/
 theorem _root_.IsPGroup.quotient_inf {M N : Subgroup G} [M.Normal] [N.Normal]
     (hM : IsPGroup p (G ⧸ M)) (hN : IsPGroup p (G ⧸ N)) : IsPGroup p (G ⧸ M ⊓ N) := by
-  intro x
-  obtain ⟨g, rfl⟩ := QuotientGroup.mk'_surjective (M ⊓ N) x
-  obtain ⟨m, hm⟩ := hM (QuotientGroup.mk' M g)
-  obtain ⟨n, hn⟩ := hN (QuotientGroup.mk' N g)
-  rw [← map_pow, QuotientGroup.mk'_apply, QuotientGroup.eq_one_iff] at hm hn
-  refine ⟨m + n, ?_⟩
-  rw [← map_pow, QuotientGroup.mk'_apply, QuotientGroup.eq_one_iff, Subgroup.mem_inf]
-  refine ⟨?_, ?_⟩
-  · rw [pow_add, pow_mul]
-    exact Subgroup.pow_mem M hm _
-  · rw [pow_add, mul_comm, pow_mul]
-    exact Subgroup.pow_mem N hn _
+  -- `G ⧸ (M ⊓ N)` embeds in `(G ⧸ M) × (G ⧸ N)`.
+  have hker : ((QuotientGroup.mk' M).prod (QuotientGroup.mk' N)).ker = M ⊓ N := by
+    rw [MonoidHom.ker_prod, QuotientGroup.ker_mk', QuotientGroup.ker_mk']
+  exact ((hM.prod hN).of_injective _ (QuotientGroup.kerLift_injective _)).of_equiv
+    (QuotientGroup.quotientMulEquivOfEq hker)
 
 /-- The preimage of a normal subgroup with `p`-group quotient also has `p`-group quotient. -/
 theorem _root_.IsPGroup.quotient_comap {N : Subgroup H} [N.Normal] (hN : IsPGroup p (H ⧸ N))
     (f : G →* H) : IsPGroup p (G ⧸ N.comap f) := by
-  let φ := (QuotientGroup.mk' N).comp f
-  have hφ : N.comap f = φ.ker := by
-    simpa [φ] using MonoidHom.comap_ker (g := QuotientGroup.mk' N) (f := f)
-  exact (hN.of_injective (QuotientGroup.kerLift φ)
-    (QuotientGroup.kerLift_injective φ)).of_equiv
-      (QuotientGroup.quotientMulEquivOfEq hφ.symm)
+  -- `G ⧸ N.comap f` embeds in `H ⧸ N`.
+  have hker : ((QuotientGroup.mk' N).comp f).ker = N.comap f := by
+    simpa using (MonoidHom.comap_ker (QuotientGroup.mk' N) f).symm
+  exact (hN.of_injective _ (QuotientGroup.kerLift_injective _)).of_equiv
+    (QuotientGroup.quotientMulEquivOfEq hker)
 
 end TauCeti

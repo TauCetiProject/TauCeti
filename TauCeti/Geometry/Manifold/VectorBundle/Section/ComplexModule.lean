@@ -27,8 +27,10 @@ inclusion. Writing `J s = I • s` for fibrewise multiplication by `i`, a functi
 `u + i v` acts by `(u + i v) • s = u • s + v • J s`
 (`ContMDiffSection.smul_eq_re_smul_add_im_smul_I_smul`). On the complexification `ℂ ⊗[ℝ] E` of a
 real bundle `E`, the real and imaginary parts of `(u + i v) • σ` are `u Re σ - v Im σ` and
-`u Im σ + v Re σ`, and the identification of `ℂ ⊗[ℝ] Γ(E)` with the sections of `ℂ ⊗[ℝ] E`
-intertwines the real function actions.
+`u Im σ + v Re σ`. On a real section `s`, this reads
+`(u + i v) • (1 ⊗ s) = 1 ⊗ (u • s) + i ⊗ (v • s)`
+(`ContMDiffSection.smul_function_oneTmulLinearMap_of_normedAlgebra`). The identification of
+`ℂ ⊗[ℝ] Γ(E)` with the sections of `ℂ ⊗[ℝ] E` intertwines the real function actions.
 
 ## References
 
@@ -142,6 +144,15 @@ theorem oneTmulLinearMap_smul_function (f : C^n⟮IB, B; ℝ⟯) (s : Cₛ^n⟮I
 theorem ITmulLinearMap_smul_function (f : C^n⟮IB, B; ℝ⟯) (s : Cₛ^n⟮IB; F, E⟯) :
     ITmulLinearMap IB F n E (f • s) = f • ITmulLinearMap IB F n E s :=
   ext fun x ↦ by simp [TensorProduct.tmul_smul]
+
+/-- Multiplying the complexification `1 ⊗ s` of a real section by `u + i v` gives
+`1 ⊗ (u • s) + i ⊗ (v • s)`. -/
+theorem smul_function_oneTmulLinearMap_of_normedAlgebra (f : C^n⟮IB, B; 𝓘(ℝ, ℂ), ℂ⟯)
+    (s : Cₛ^n⟮IB; F, E⟯) :
+    f • oneTmulLinearMap IB F n E s =
+      oneTmulLinearMap IB F n E (f.re • s) + ITmulLinearMap IB F n E (f.im • s) := by
+  rw [smul_eq_re_smul_add_im_smul_I_smul, I_smul_oneTmulLinearMap, oneTmulLinearMap_smul_function,
+    ITmulLinearMap_smul_function]
 
 /-- The identification of `ℂ ⊗[ℝ] Γ(E)` with the sections of `ℂ ⊗[ℝ] E` carries the real
 function action on the second tensor factor to the real function action on sections of
