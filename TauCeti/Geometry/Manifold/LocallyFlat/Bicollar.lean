@@ -194,6 +194,20 @@ theorem apply_mem_closure_image (h : IsBicollar f b) {s : Set ℝ} (hs : (0 : �
   rw [closure_prod_eq, closure_univ]
   exact ⟨mem_univ _, hs⟩
 
+/-- The slice of a bicollar through a point `x` of the domain, at a preconnected set `s` of
+nonzero depths, misses the collared image and so lies in a single connected component of its
+complement. -/
+theorem image_singleton_prod_subset_connectedComponentIn (h : IsBicollar f b) (x : N)
+    {s : Set ℝ} (hs : IsPreconnected s) (h0 : (0 : ℝ) ∉ s) {t : ℝ} (ht : t ∈ s) :
+    b '' ({x} ×ˢ s) ⊆ connectedComponentIn (range f)ᶜ (b (x, t)) := by
+  refine ((isPreconnected_singleton.prod hs).image b
+    h.isOpenEmbedding.continuous.continuousOn).subset_connectedComponentIn
+    (mem_image_of_mem b ⟨rfl, ht⟩) ?_
+  rintro _ ⟨⟨y, r⟩, ⟨-, hr⟩, rfl⟩ hmem
+  have : (y, r) ∈ b ⁻¹' range f := hmem
+  rw [h.preimage_range] at this
+  exact h0 (this.2 ▸ hr)
+
 /-- A bicollar restricts to a bicollar over any open subset of the domain. -/
 theorem restrict (h : IsBicollar f b) {U : Set N} (hU : IsOpen U) :
     IsBicollar (f ∘ ((↑) : U → N)) (b ∘ Prod.map ((↑) : U → N) id) where
