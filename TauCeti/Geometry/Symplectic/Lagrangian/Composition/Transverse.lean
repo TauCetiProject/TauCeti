@@ -33,7 +33,8 @@ is a manifold of dimension `dim L₁ + dim L₂ - dim M₂`
   killed by `dh` gives `v ∈ T M₂` with `(0, v)` tangent to `f` and `(v, 0)` tangent to `g`.
   Isotropy makes `v` orthogonal to the projections of both tangent images, which span `T M₂` by
   transversality, so `v = 0`
-  (`TauCeti.SymplecticForm.IsIsotropic.eq_zero_of_map_snd_sup_map_fst_eq_top`).
+  (`TauCeti.SymplecticForm.IsIsotropic.eq_zero_of_map_snd_sup_map_fst_eq_top`). This
+  instantiates the pointwise statement `IsIsotropicMap.injective_mfderiv_relComp`.
 * Hence the transverse composite of Lagrangian immersions is a Lagrangian immersion
   (`IsLagrangianImmersion.relComp_transverseFiberProduct`). It is a Lagrangian embedding, that
   is a Lagrangian correspondence `M₁ ⇝ M₃`, exactly when it is moreover a topological embedding
@@ -73,26 +74,6 @@ variable {E₁ H₁ M₁ E₂ H₂ M₂ E₃ H₃ M₃ : Type*}
   [TopologicalSpace M₃] [ChartedSpace H₃ M₃] [IsManifold I₃ ∞ M₃]
   {σ₁ : SmoothTwoForm I₁ M₁} {σ₂ : SmoothTwoForm I₂ M₂} {σ₃ : SmoothTwoForm I₃ M₃}
   {hσ₁ : σ₁.IsNondegenerate} {hσ₂ : σ₂.IsNondegenerate} {hσ₃ : σ₃.IsNondegenerate}
-
-/-- Linear form of the excess computation at tangent spaces of `M₂` at two points that are equal
-but not syntactically so. If the projections of the ranges of `A` and `B` span the middle factor,
-`A u = (0, v)` and `B w = (v, 0)`, then `v = 0`. -/
-private theorem snd_eq_zero_of_isIsotropic_range {x₁ : M₁} {y y' : M₂} {x₃ : M₃} (hy : y = y')
-    {X Y : Type*} [AddCommGroup X] [Module ℝ X] [AddCommGroup Y] [Module ℝ Y]
-    {A : X →ₗ[ℝ] TangentSpace I₁ x₁ × TangentSpace I₂ y}
-    {B : Y →ₗ[ℝ] TangentSpace I₂ y' × TangentSpace I₃ x₃}
-    (hA : ((hσ₁.symplecticFormAt x₁).twistedProd (hσ₂.symplecticFormAt y)).IsIsotropic
-      (LinearMap.range A))
-    (hB : ((hσ₂.symplecticFormAt y').twistedProd (hσ₃.symplecticFormAt x₃)).IsIsotropic
-      (LinearMap.range B))
-    (htr : ∀ v : TangentSpace I₂ y, ∃ u w, (B w).1 = v - (A u).2) {u : X} {w : Y}
-    (hu : (A u).1 = 0) (hw : (B w).2 = 0) (huw : (A u).2 = (B w).1) : (A u).2 = 0 := by
-  subst hy
-  refine hA.eq_zero_of_map_snd_sup_map_fst_eq_top hB (eq_top_iff.mpr fun v _ ↦ ?_)
-    ⟨u, Prod.ext hu rfl⟩ ⟨w, Prod.ext huw.symm hw⟩
-  obtain ⟨u', w', h⟩ := htr v
-  rw [← add_sub_cancel (A u').2 v, ← h]
-  exact Submodule.add_mem_sup ⟨A u', ⟨u', rfl⟩, rfl⟩ ⟨B w', ⟨w', rfl⟩, rfl⟩
 
 variable [FiniteDimensional ℝ E₁] [FiniteDimensional ℝ E₂] [FiniteDimensional ℝ E₃]
   [I₂.Boundaryless]
@@ -144,84 +125,29 @@ theorem IsIsotropicMap.isImmersion_relComp_transverseFiberProduct
     (hgL : (hσ₂.twistedProd hσ₃).IsIsotropicMap K₂ g)
     (hfi : Manifold.IsImmersion K₁ (I₁.prod I₂) ∞ f)
     (hgi : Manifold.IsImmersion K₂ (I₂.prod I₃) ∞ g) [I₁.Boundaryless] [I₃.Boundaryless] :
-    letI := transverseFiberProductChartedSpace (WithTop.coe_le_coe.2 le_top) hf.snd hg.fst htrans
+    letI := transverseFiberProductChartedSpace (WithTop.coe_le_coe.2 le_top)
+      hfi.contMDiff.snd hgi.contMDiff.fst htrans
     Manifold.IsImmersion 𝓘(ℝ, Fin (finrank ℝ EL₁ + finrank ℝ EL₂ - finrank ℝ E₂) → ℝ)
       (I₁.prod I₃) ∞
       (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.1.1).1, (g p.1.2).2)) := by
+  have hf := hfi.contMDiff
+  have hg := hgi.contMDiff
   let := transverseFiberProductChartedSpace (WithTop.coe_le_coe.2 le_top) hf.snd hg.fst htrans
   have := isManifold_transverseFiberProduct (WithTop.coe_le_coe.2 le_top) hf.snd hg.fst htrans
   have hi := isSmoothEmbedding_coe_transverseFiberProduct (WithTop.coe_le_coe.2 le_top)
     hf.snd hg.fst htrans
   have hval := hi.contMDiff
   refine ((hf.comp hval.fst).fst.prodMk (hg.comp hval.snd).snd).isImmersion_of_injective_mfderiv
-    (WithTop.coe_le_coe.2 le_top) fun p ↦ (injective_iff_map_eq_zero _).mpr fun ξ hξ ↦ ?_
-  -- Name the differentials of the two projections and of the maps they feed.
+    (WithTop.coe_le_coe.2 le_top) fun p ↦ ?_
   have hvd := hval.mdifferentiable (by simp) p
-  have had := hvd.fst
-  have hbd := hvd.snd
-  have hfd := hf.mdifferentiable (by simp) p.1.1
-  have hgd := hg.mdifferentiable (by simp) p.1.2
-  have hfa := hfd.comp p had
-  have hgb := hgd.comp p hbd
-  have hhd := hfa.fst.prodMk hgb.snd
-  set u := mfderiv _ K₁ (fun q : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ q.1.1) p ξ with hu
-  set w := mfderiv _ K₂ (fun q : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ q.1.2) p ξ with hw
-  -- The outer coordinates of `df u` and `dg w` are those of `dh ξ = 0`.
-  have h₁ : (mfderiv K₁ (I₁.prod I₂) f p.1.1 u).1 = 0 := by
-    have h := hhd.mfderiv_fst_apply ξ
-    rw [hξ] at h
-    rw [hu, ← mfderiv_comp_apply p hfd had, ← hfa.mfderiv_fst_apply]
-    -- `Prod.fst_zero` does not rewrite `h`: the zero of the tangent space of `M₁ × M₃` is the
-    -- zero of `E₁ × E₃` only by definition.
-    exact h
-  have h₂ : (mfderiv K₂ (I₂.prod I₃) g p.1.2 w).2 = 0 := by
-    have h := hhd.mfderiv_snd_apply ξ
-    rw [hξ] at h
-    rw [hw, ← mfderiv_comp_apply p hgd hbd, ← hgb.mfderiv_snd_apply]
-    -- As above, `Prod.snd_zero` only applies to `h` up to definitional unfolding.
-    exact h
-  -- The middle coordinates match, and transversality forces them to vanish.
-  have h₃ : (mfderiv K₁ (I₁.prod I₂) f p.1.1 u).2 = (mfderiv K₂ (I₂.prod I₃) g p.1.2 w).1 := by
-    rw [hu, hw, ← mfderiv_comp_apply p hfd had, ← mfderiv_comp_apply p hgd hbd]
-    exact hfa.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct hgb (fun q ↦ q.2) ξ
-  let A := (Manifold.tangentSpaceProdEquiv (f p.1.1)).toLinearEquiv.toLinearMap ∘ₗ
-    (mfderiv K₁ (I₁.prod I₂) f p.1.1).toLinearMap
-  let B := (Manifold.tangentSpaceProdEquiv (g p.1.2)).toLinearEquiv.toLinearMap ∘ₗ
-    (mfderiv K₂ (I₂.prod I₃) g p.1.2).toLinearMap
-  -- `A` and `B` only change the types of tangent vectors.
-  have hA : ∀ u, A u = mfderiv K₁ (I₁.prod I₂) f p.1.1 u :=
-    fun u ↦ Manifold.tangentSpaceProdEquiv_apply _ _
-  have hB : ∀ w, B w = mfderiv K₂ (I₂.prod I₃) g p.1.2 w :=
-    fun w ↦ Manifold.tangentSpaceProdEquiv_apply _ _
-  have htr : ∀ v : TangentSpace I₂ (f p.1.1).2, ∃ u w, (B w).1 = v - (A u).2 := by
-    intro v
-    obtain ⟨_, ⟨u', rfl⟩, _, ⟨w', rfl⟩, hv⟩ :=
-      Submodule.mem_sup.mp ((htrans p.1 p.2).symm ▸ Submodule.mem_top : v ∈ _)
-    refine ⟨u', w', ?_⟩
-    rw [← hv, hA, hB]
-    simp only [ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_comp, Function.comp_apply]
-    rw [(hf.mdifferentiable (by simp) _).mfderiv_snd_apply,
-      (hg.mdifferentiable (by simp) _).mfderiv_fst_apply]
-    -- `tangentSpaceCast` is the identity of the underlying model space.
-    exact (add_sub_cancel_left _ _).symm
-  have hv : (mfderiv K₁ (I₁.prod I₂) f p.1.1 u).2 = 0 := by
-    rw [← hA]
-    exact snd_eq_zero_of_isIsotropic_range (hσ₂ := hσ₂) p.2
-      ((isIsotropicMap_twistedProd_iff_forall hσ₁ hσ₂).mp hfL p.1.1)
-      ((isIsotropicMap_twistedProd_iff_forall hσ₂ hσ₃).mp hgL p.1.2) htr
-      ((congrArg Prod.fst (hA u)).trans h₁) ((congrArg Prod.snd (hB w)).trans h₂)
-      ((congrArg Prod.snd (hA u)).trans (h₃.trans (congrArg Prod.fst (hB w)).symm))
-  -- Both maps are immersions, so `u = 0` and `w = 0`, and the inclusion is an immersion.
-  have hu₀ : u = 0 := hfi.mfderiv_injective (by simp) p.1.1 <| by
-    rw [map_zero]
-    exact Prod.ext h₁ hv
-  have hw₀ : w = 0 := hgi.mfderiv_injective (by simp) p.1.2 <| by
-    rw [map_zero]
-    exact Prod.ext (h₃ ▸ hv) h₂
-  refine hi.isImmersion.mfderiv_injective (by simp) p ?_
+  -- The inclusion of the fibre product is an immersion, so `(da, db)` is injective.
+  refine hfL.injective_mfderiv_relComp (hσ₁ := hσ₁) (hσ₂ := hσ₂) (hσ₃ := hσ₃) hgL
+    (hf.mdifferentiable (by simp) _) (hg.mdifferentiable (by simp) _) hvd.fst hvd.snd (fun q ↦ q.2)
+    (hfi.mfderiv_injective (by simp) p.1.1) (hgi.mfderiv_injective (by simp) p.1.2)
+    (fun ξ h₁ h₂ ↦ hi.isImmersion.mfderiv_injective (by simp) p ?_) (htrans p.1 p.2)
   rw [map_zero]
-  exact Prod.ext ((hvd.mfderiv_fst_apply ξ).symm.trans hu₀)
-    ((hvd.mfderiv_snd_apply ξ).symm.trans hw₀)
+  exact Prod.ext ((hvd.mfderiv_fst_apply ξ).symm.trans h₁)
+    ((hvd.mfderiv_snd_apply ξ).symm.trans h₂)
 
 /-- **Transverse composition of Lagrangian immersions.** If `f : L₁ → M₁ × M₂` and
 `g : L₂ → M₂ × M₃` are Lagrangian immersions for the twisted products and `x ↦ (f x).2`,
@@ -238,10 +164,8 @@ theorem IsLagrangianImmersion.relComp_transverseFiberProduct [I₁.Boundaryless]
   let := transverseFiberProductChartedSpace (WithTop.coe_le_coe.2 le_top)
     hfL.isImmersion.contMDiff.snd hgL.isImmersion.contMDiff.fst htrans
   refine ⟨IsIsotropicMap.isImmersion_relComp_transverseFiberProduct (hσ₁ := hσ₁) (hσ₂ := hσ₂)
-      (hσ₃ := hσ₃)
-      hfL.isImmersion.contMDiff hgL.isImmersion.contMDiff htrans
-      hfL.isLagrangianMap.isIsotropicMap hgL.isLagrangianMap.isIsotropicMap hfL.isImmersion
-      hgL.isImmersion,
+      (hσ₃ := hσ₃) htrans hfL.isLagrangianMap.isIsotropicMap hgL.isLagrangianMap.isIsotropicMap
+      hfL.isImmersion hgL.isImmersion,
     (IsLagrangianMap.relComp_transverseFiberProduct (hσ₁ := hσ₁) (hσ₂ := hσ₂) (hσ₃ := hσ₃)
       hfL.isImmersion.contMDiff hgL.isImmersion.contMDiff htrans hfL.isLagrangianMap
       hgL.isLagrangianMap).isIsotropicMap, ?_⟩
