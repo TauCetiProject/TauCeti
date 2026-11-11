@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.NovikovModule.Tensor
+public import TauCeti.Algebra.Homology.SquareZero.Graded
 
 /-!
 # Graded commutativity homotopies of supported kernel products
@@ -39,11 +40,15 @@ differential `δ₁ ⊗ 1 + (-1)^(d₁) ⊗ δ₂`, the second term is
 `K (δ₁ a ⊗ b) + (-1)^i K (a ⊗ δ₂ b)`
 (`NovikovModule.kernelProduct_sub_negOnePow_smul_kernelProduct_of_tensorDifferential`), so for
 cycles `a` and `b` the graded commutator is the coboundary `δ₀ (K (a ⊗ b))`
-(`NovikovModule.kernelProduct_sub_negOnePow_smul_kernelProduct_of_kernelMap_eq_zero`). Hence,
-once both products satisfy the Leibniz rule, the products they induce on homology agree up to
-the sign `(-1)^(i j)` of the exchange. The kernel identity and the potential bounds
-of the kernels remain hypotheses here: they are the geometric input from the compactified moduli
-spaces.
+(`NovikovModule.kernelProduct_sub_negOnePow_smul_kernelProduct_of_kernelMap_eq_zero`), which lies
+in the degree of the output when `K` lowers degree by one relative to the product
+(`NovikovModule.kernelProduct_sub_negOnePow_smul_kernelProduct_mem_coboundaries`). Hence, once both
+products satisfy the Leibniz rule, the products they induce on degree-wise cohomology
+(`LinearMap.cohomologyProduct`) agree up to the sign of the exchange,
+`[a] ⋆ [b] = (-1)^(i j) [b] ⋆' [a]`
+(`NovikovModule.cohomologyProduct_kernelProduct_eq_negOnePowCast_smul_cohomologyProduct`). The
+kernel identity and the potential bounds of the kernels remain hypotheses here: they are the
+geometric input from the compactified moduli spaces.
 
 ## Main results
 
@@ -55,6 +60,10 @@ spaces.
   homotopy with the tensor differential expanded by the Leibniz rule.
 * `NovikovModule.kernelProduct_sub_negOnePow_smul_kernelProduct_of_kernelMap_eq_zero`: on cycles
   the graded commutator is a coboundary.
+* `NovikovModule.kernelProduct_sub_negOnePow_smul_kernelProduct_mem_coboundaries`: the same
+  coboundary, in the degree of the output.
+* `NovikovModule.cohomologyProduct_kernelProduct_eq_negOnePowCast_smul_cohomologyProduct`: the
+  induced products on cohomology are graded commutative.
 
 ## References
 
@@ -193,6 +202,74 @@ theorem kernelProduct_sub_negOnePow_smul_kernelProduct_of_kernelMap_eq_zero
   rw [kernelProduct_sub_negOnePow_smul_kernelProduct_of_tensorDifferential hn hfin hn' hfin' hk
       hkfin hδ₀ hδ₀fin hδ₁ hδ₁fin hδ₂ hδ₂fin hcomm ha hb, hδa, hδb]
   simp
+
+section Cohomology
+
+variable {d₀ : S₀ → ℤ}
+
+include hn hfin hk hkfin in
+/-- **Graded commutativity on cocycles.** Under the kernel homotopy of
+`kernelProduct_sub_negOnePow_smul_kernelProduct_of_tensorDifferential`, if the homotopy kernel `k`
+shifts degree by `ε - 1`, then for cocycles `a` and `b` of degrees `i` and `j` the graded
+commutator `a ⋆ b - (-1)^(i j) b ⋆' a` is a coboundary of degree `i + j + ε`. -/
+theorem kernelProduct_sub_negOnePow_smul_kernelProduct_mem_coboundaries {ε : ℤ}
+    (hkd : ∀ q p₀, k q p₀ ≠ 0 → d₀ p₀ = d₁ q.1 + d₂ q.2 + (ε - 1))
+    (hcomm : ∀ (q : S₁ × S₂) p₀,
+      n q.1 q.2 p₀ - ((d₁ q.1 * d₂ q.2).negOnePow : R) * n' q.2 q.1 p₀ =
+        kernelComp k δ₀ q p₀ + kernelComp (tensorDifferential d₁ δ₁ δ₂) k q p₀)
+    (ha : a ∈ (kernelMap hδ₁ hδ₁fin).cocycles (gradeBy R F₁ d₁) i)
+    (hb : b ∈ (kernelMap hδ₂ hδ₂fin).cocycles (gradeBy R F₂ d₂) j) :
+    kernelProduct hn hfin a b - ((i * j).negOnePow : R) • kernelProduct hn' hfin' b a ∈
+      (kernelMap hδ₀ hδ₀fin).coboundaries (gradeBy R F₀ d₀) (i + j + ε) := by
+  rw [LinearMap.mem_cocycles_iff] at ha hb
+  rw [kernelProduct_sub_negOnePow_smul_kernelProduct_of_kernelMap_eq_zero hn hfin hn' hfin' hk
+      hkfin hδ₀ hδ₀fin hδ₁ hδ₁fin hδ₂ hδ₂fin hcomm ha.2 hb.2 ha.1 hb.1]
+  refine LinearMap.mem_coboundaries_iff.2 ⟨_, ?_, rfl⟩
+  have he : i + j + (ε - 1) = i + j + ε - 1 := by ring
+  exact he ▸ kernelMap_mem_gradeBy hk hkfin hkd (tensor_mem_gradeBy ha.2 hb.2)
+
+variable {ε ε' : ℤ}
+  {hndeg : ∀ {i j : ℤ} {a : NovikovModule R F₁} {b : NovikovModule R F₂},
+    a ∈ gradeBy R F₁ d₁ i → b ∈ gradeBy R F₂ d₂ j →
+      kernelProduct hn hfin a b ∈ gradeBy R F₀ d₀ (i + j + ε)}
+  {hnL : ∀ {i : ℤ} {a : NovikovModule R F₁}, a ∈ gradeBy R F₁ d₁ i → ∀ b,
+    kernelMap hδ₀ hδ₀fin (kernelProduct hn hfin a b) =
+      kernelProduct hn hfin (kernelMap hδ₁ hδ₁fin a) b +
+        negOnePowCast R i • kernelProduct hn hfin a (kernelMap hδ₂ hδ₂fin b)}
+  {hn'deg : ∀ {i j : ℤ} {a : NovikovModule R F₂} {b : NovikovModule R F₁},
+    a ∈ gradeBy R F₂ d₂ i → b ∈ gradeBy R F₁ d₁ j →
+      kernelProduct hn' hfin' a b ∈ gradeBy R F₀ d₀ (i + j + ε')}
+  {hn'L : ∀ {i : ℤ} {a : NovikovModule R F₂}, a ∈ gradeBy R F₂ d₂ i → ∀ b,
+    kernelMap hδ₀ hδ₀fin (kernelProduct hn' hfin' a b) =
+      kernelProduct hn' hfin' (kernelMap hδ₂ hδ₂fin a) b +
+        negOnePowCast R i • kernelProduct hn' hfin' a (kernelMap hδ₁ hδ₁fin b)}
+
+include hk hkfin in
+/-- **Graded commutativity on cohomology.** Let the product `⋆` and the exchanged product `⋆'`
+obey the Leibniz rule and shift degrees by `ε` and `ε'`, so that they induce products on
+degree-wise cohomology. Under the kernel homotopy of
+`kernelProduct_sub_negOnePow_smul_kernelProduct_of_tensorDifferential`, with the homotopy kernel
+`k` shifting degree by `ε - 1`, the induced products satisfy `[a] ⋆ [b] = (-1)^(i j) [b] ⋆' [a]`
+for classes of degrees `i` and `j`. -/
+theorem cohomologyProduct_kernelProduct_eq_negOnePowCast_smul_cohomologyProduct
+    (hkd : ∀ q p₀, k q p₀ ≠ 0 → d₀ p₀ = d₁ q.1 + d₂ q.2 + (ε - 1))
+    (hcomm : ∀ (q : S₁ × S₂) p₀,
+      n q.1 q.2 p₀ - ((d₁ q.1 * d₂ q.2).negOnePow : R) * n' q.2 q.1 p₀ =
+        kernelComp k δ₀ q p₀ + kernelComp (tensorDifferential d₁ δ₁ δ₂) k q p₀)
+    {i₀ : ℤ} (h₀ : i + j + ε = i₀) (h₀' : j + i + ε' = i₀)
+    (x : (kernelMap hδ₁ hδ₁fin).cohomology (gradeBy R F₁ d₁) i)
+    (y : (kernelMap hδ₂ hδ₂fin).cohomology (gradeBy R F₂ d₂) j) :
+    LinearMap.cohomologyProduct (kernelProduct hn hfin) hndeg hnL h₀ x y =
+      negOnePowCast R (i * j) •
+        LinearMap.cohomologyProduct (kernelProduct hn' hfin') hn'deg hn'L h₀' y x := by
+  refine LinearMap.cohomologyProduct_eq_negOnePowCast_smul_cohomologyProduct h₀ h₀'
+    (fun ha hb => ?_) x y
+  subst h₀
+  rw [negOnePowCast_eq_intCast]
+  exact kernelProduct_sub_negOnePow_smul_kernelProduct_mem_coboundaries hn hfin hn' hfin' hk hkfin
+    hδ₀ hδ₀fin hδ₁ hδ₁fin hδ₂ hδ₂fin hkd hcomm ha hb
+
+end Cohomology
 
 end NovikovModule
 

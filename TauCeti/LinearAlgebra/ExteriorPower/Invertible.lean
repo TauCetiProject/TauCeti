@@ -70,7 +70,7 @@ theorem invertible_of_invertible_of_rankAtStalk_eq {S : Type*} [CommRing S] [Alg
     [Module.Invertible S M] {d : ℕ} (hd : ∀ p, rankAtStalk (R := R) S p = d) :
     Module.Invertible R (⋀[R]^d M) :=
   have : Module.Finite R M := .trans S M
-  have : Module.Projective R M := .trans (S := S)
+  have : Module.Projective R M := .trans S M
   invertible_of_rankAtStalk_eq fun p ↦ by
     rw [Module.Invertible.rankAtStalk_eq_rankAtStalk_algebra (S := S), hd]
 

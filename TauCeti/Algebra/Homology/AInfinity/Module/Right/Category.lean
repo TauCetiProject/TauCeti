@@ -73,6 +73,15 @@ variable {M N P : AInfinityRightModuleCat.{uR, uA, uM} AA}
 theorem hom_ext {f g : M ⟶ N} (h : f.barMap = g.barMap) : f = g :=
   AInfinityRightModuleHom.barMap_injective h
 
+/-- Categorical composition is composition of module morphisms, in diagrammatic order. -/
+theorem comp_def (f : M ⟶ N) (g : N ⟶ P) : f ≫ g = AInfinityRightModuleHom.comp g f :=
+  (rfl)
+
+/-- The categorical identity is the identity module morphism. -/
+theorem id_def (M : AInfinityRightModuleCat.{uR, uA, uM} AA) :
+    𝟙 M = AInfinityRightModuleHom.id M.str :=
+  (rfl)
+
 /-- The bar map of the categorical identity is the identity map. -/
 @[simp]
 theorem barMap_id (M : AInfinityRightModuleCat.{uR, uA, uM} AA) :

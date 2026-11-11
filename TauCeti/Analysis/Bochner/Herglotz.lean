@@ -169,8 +169,9 @@ private lemma integral_zpow_fejerMeasure (hφ : IsPositiveDefiniteSub φ) (N : �
     have h0 := circleAverage_sub_zpow (c := 0) (R := 1) k
     simp only [smul_eq_mul, sub_zero] at h h0
     rw [h, h0, mul_ite, mul_one, mul_zero]
-  rw [integral_circleDensityMeasure (continuous_fejerDensity N).continuousOn
-    (fun ζ _ ↦ fejerDensity_nonneg hφ N ζ) (hzpow m)]
+  rw [integral_circleDensityMeasure
+    ((continuous_fejerDensity N).comp (continuous_circleMap 0 1)).aestronglyMeasurable
+    (fun ζ _ ↦ fejerDensity_nonneg hφ N ζ) fun ζ ↦ ζ ^ m]
   have hsphere : EqOn (fun ζ : ℂ ↦ fejerDensity φ N ζ • ζ ^ m)
       (fun ζ ↦ ∑ p ∈ range N ×ˢ range N, ((N : ℂ)⁻¹ * φ (p.1 - p.2)) * ζ ^ (m + p.2 - p.1))
       (sphere 0 |1|) := fun ζ hζ ↦ by
@@ -201,7 +202,8 @@ theorem exists_isFiniteMeasure_integral_zpow_eq (φ : ℤ → ℂ) (hφ : IsPosi
   -- The Fejér measures `ν N` at levels `N + 1`.
   set ν : ℕ → Measure Circle := fun N ↦ circleDensityMeasure (fejerDensity φ (N + 1))
   have hνfin (N : ℕ) : IsFiniteMeasure (ν N) :=
-    isFiniteMeasure_circleDensityMeasure (continuous_fejerDensity _).continuousOn
+    isFiniteMeasure_circleDensityMeasure
+      ((continuous_fejerDensity _).continuousOn.circleIntegrable zero_le_one)
   have hmoment (N : ℕ) (m : ℤ) : ∫ z : Circle, (z : ℂ) ^ m ∂ν N =
       ((fejerCount (N + 1) m / (N + 1) : ℝ) : ℂ) * φ m := by
     simpa using integral_zpow_fejerMeasure hφ (N + 1) m

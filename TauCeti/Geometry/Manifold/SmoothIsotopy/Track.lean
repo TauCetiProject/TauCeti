@@ -35,7 +35,7 @@ public section
 namespace TauCeti.SmoothIsotopy
 
 open Set Topology
-open scoped Manifold ContDiff
+open scoped _root_.Manifold ContDiff
 
 variable {E E' H H' M N : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -85,7 +85,7 @@ theorem hasLeftInverse_mfderiv_track (F : SmoothIsotopy f₀ f₁) (hn : n ≠ 0
 end TauCeti.SmoothIsotopy
 
 open Manifold
-open scoped Manifold ContDiff
+open scoped _root_.Manifold ContDiff
 
 /-- The time-preserving track of a jointly smooth motion through topological embeddings with
 split injective slice differentials, from a compact boundaryless source into a finite-dimensional

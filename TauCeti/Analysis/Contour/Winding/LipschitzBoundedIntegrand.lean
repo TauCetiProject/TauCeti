@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Contour.Winding.Integrand
 public import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Shift
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # Boundedness of the real winding integrand at `C^{1,1}` crossings
@@ -103,20 +104,6 @@ private theorem abs_im_mul_conj_le_norm_sub_mul_add_mul_norm_sub_smul (u z v : �
     rw [map_sub]; ring
   rw [hsplit, Complex.add_im, Complex.add_im, hreal, zero_add]
   exact (abs_add_le _ _).trans (add_le_add (habs _ _) (habs _ _))
-
-/-- **A quadratic error cannot swallow the linear term.** If `z` lies within `K * a ^ 2` of the
-real multiple `a • v`, and `a` is small enough that `|a| * (2 * K) ≤ ‖v‖`, then `z` still inherits
-half of the length `|a| * ‖v‖` of that multiple. -/
-private theorem mul_norm_le_two_mul_norm_of_norm_sub_smul_le {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {z v : E} {a K : ℝ} (hR : ‖z - a • v‖ ≤ K * a ^ 2)
-    (ha : |a| * (2 * K) ≤ ‖v‖) :
-    |a| * ‖v‖ ≤ 2 * ‖z‖ := by
-  have h1 : ‖a • v‖ - ‖z - a • v‖ ≤ ‖z‖ := by
-    simpa [norm_sub_rev z (a • v)] using norm_sub_norm_le (a • v) (a • v - z)
-  rw [norm_smul, Real.norm_eq_abs] at h1
-  rw [← sq_abs a] at hR
-  nlinarith [mul_le_mul_of_nonneg_left ha (abs_nonneg a),
-    mul_nonneg (abs_nonneg a) (norm_nonneg v)]
 
 /-- **A quadratically small numerator over a linearly large denominator.** If `|x|` is at most
 `N * a ^ 2` while the denominator `d` is at least half of `|a| * b`, the quotient `|x| / d ^ 2`

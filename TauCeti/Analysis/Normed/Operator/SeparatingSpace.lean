@@ -237,12 +237,16 @@ theorem isClosed_graph_mkQ_comp :
 
 end Topological
 
-section Banach
+section Normed
 
 variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   (T : E →ₗ[𝕜] F)
+
+section Banach
+
+variable [CompleteSpace E] [CompleteSpace F]
 
 /-- A linear map between Banach spaces is continuous if and only if its separating space is
 trivial. -/
@@ -272,15 +276,17 @@ theorem continuous_comp_iff_separatingSpace_le_ker [AddCommGroup G] [Module 𝕜
   rw [hW, coe_comp]
   exact (T.separatingSpace.liftQL W h).continuous.comp T.continuous_mkQ_comp
 
-/-- The separating space of `U ∘ T` is the closure of the image under `U` of the separating
-space of `T`. -/
-theorem separatingSpace_comp [NormedAddCommGroup G] [NormedSpace 𝕜 G] (U : F →L[𝕜] G) :
+/-- For a linear map `T` between Banach spaces and a continuous linear map `U` into a
+topological vector space, the separating space of `U ∘ T` is the closure of the image under `U`
+of the separating space of `T`. -/
+theorem separatingSpace_comp [AddCommGroup G] [Module 𝕜 G] [TopologicalSpace G]
+    [IsTopologicalAddGroup G] [ContinuousSMul 𝕜 G] (U : F →L[𝕜] G) :
     ((U : F →ₗ[𝕜] G) ∘ₗ T).separatingSpace =
       (T.separatingSpace.map (U : F →ₗ[𝕜] G)).topologicalClosure := by
   set K := (T.separatingSpace.map (U : F →ₗ[𝕜] G)).topologicalClosure
   refine le_antisymm ?_ (Submodule.topologicalClosure_minimal _ (T.map_separatingSpace_le U)
     ((U : F →ₗ[𝕜] G) ∘ₗ T).isClosed_separatingSpace)
-  -- Closedness of `K` makes `G ⧸ K` a normed, hence Hausdorff, space.
+  -- Closedness of `K` makes `G ⧸ K` Hausdorff.
   have : IsClosed (K : Set G) := Submodule.isClosed_topologicalClosure _
   have hKU : T.separatingSpace ≤ ker ((K.mkQL ∘L U : F →L[𝕜] G ⧸ K) : F →ₗ[𝕜] G ⧸ K) := by
     intro y hy
@@ -289,7 +295,9 @@ theorem separatingSpace_comp [NormedAddCommGroup G] [NormedSpace 𝕜 G] (U : F 
   have hcont := (T.continuous_comp_iff_separatingSpace_le_ker (K.mkQL ∘L U)).2 hKU
   simpa using ((U : F →ₗ[𝕜] G) ∘ₗ T).separatingSpace_le_ker_of_continuous_comp K.mkQL hcont
 
-/-- If the separating space of a linear map `T` between Banach spaces is not contained in a
+end Banach
+
+/-- If the separating space of a linear map `T` between normed spaces is not contained in a
 closed subspace `N`, then modulo `N` the map `T` sends arbitrarily small vectors to arbitrarily
 large ones. -/
 theorem exists_norm_le_le_norm_mkQ_apply {N : Submodule 𝕜 F} [IsClosed (N : Set F)]
@@ -299,10 +307,10 @@ theorem exists_norm_le_le_norm_mkQ_apply {N : Submodule 𝕜 F} [IsClosed (N : S
   obtain ⟨C, hC⟩ :=
     (N.mkQ ∘ₗ T).bound_of_ball_bound hδ c fun x hx ↦ (h x (mem_ball_zero_iff.1 hx).le).le
   refine hT ?_
-  simpa using (T.continuous_comp_iff_separatingSpace_le_ker N.mkQL).1
+  simpa using T.separatingSpace_le_ker_of_continuous_comp N.mkQL
     (AddMonoidHomClass.continuous_of_bound _ C hC)
 
-end Banach
+end Normed
 
 end LinearMap
 

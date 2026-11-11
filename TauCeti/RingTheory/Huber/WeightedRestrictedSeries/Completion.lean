@@ -458,16 +458,16 @@ section ZeroVariables
 
 variable {A}
 
+-- The zero-variable comparison lands in the completion of `A` for the uniform structure of its
+-- additive group, which Mathlib leaves to the caller to install.
+attribute [local instance] IsTopologicalAddGroup.rightUniformSpace isUniformAddGroup_of_addCommGroup
+
 /-- **`A⟨⟩` is the separated completion of `A`**, as topological rings: the ring isomorphism
 between the two completions induced by the zero-variable comparison
 `weightedRestrictedSubringFinZeroEquiv`, which is a homeomorphism, through
 `UniformSpace.Completion.mapRingEquiv`. -/
 noncomputable def restrictedMvPowerSeriesCompletionFinZeroEquiv :
-    letI := IsTopologicalAddGroup.rightUniformSpace A
-    letI : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
     restrictedMvPowerSeriesCompletion 0 A ≃+* UniformSpace.Completion A :=
-  letI := IsTopologicalAddGroup.rightUniformSpace A
-  letI : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
   UniformSpace.Completion.mapRingEquiv
     (weightedRestrictedSubringFinZeroEquiv (fun _ : Fin 0 ↦ ({1} : Set A)))
     (continuous_weightedRestrictedSubringFinZeroEquiv _)
@@ -478,13 +478,9 @@ comparison of the rings underneath. -/
 @[simp]
 theorem restrictedMvPowerSeriesCompletionFinZeroEquiv_coe
     (f : weightedRestrictedSubring (fun _ : Fin 0 ↦ ({1} : Set A)) isWeightFamily_one_weight) :
-    letI := IsTopologicalAddGroup.rightUniformSpace A
-    letI : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
     restrictedMvPowerSeriesCompletionFinZeroEquiv (f : restrictedMvPowerSeriesCompletion 0 A) =
       ((weightedRestrictedSubringFinZeroEquiv (fun _ : Fin 0 ↦ ({1} : Set A)) f : A) :
         UniformSpace.Completion A) := by
-  let _ := IsTopologicalAddGroup.rightUniformSpace A
-  let _ : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
   simp only [restrictedMvPowerSeriesCompletionFinZeroEquiv]
   exact UniformSpace.Completion.map_coe (uniformContinuous_addMonoidHom_of_continuous
     (continuous_weightedRestrictedSubringFinZeroEquiv _)) f
@@ -493,34 +489,22 @@ theorem restrictedMvPowerSeriesCompletionFinZeroEquiv_coe
 the inverse ring comparison. -/
 @[simp]
 theorem restrictedMvPowerSeriesCompletionFinZeroEquiv_symm_coe (a : A) :
-    letI := IsTopologicalAddGroup.rightUniformSpace A
-    letI : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
     (restrictedMvPowerSeriesCompletionFinZeroEquiv (A := A)).symm (a : UniformSpace.Completion A) =
       ((weightedRestrictedSubringFinZeroEquiv (fun _ : Fin 0 ↦ ({1} : Set A))).symm a :
         restrictedMvPowerSeriesCompletion 0 A) := by
-  let _ := IsTopologicalAddGroup.rightUniformSpace A
-  let _ : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
   simp only [restrictedMvPowerSeriesCompletionFinZeroEquiv]
   exact UniformSpace.Completion.map_coe (uniformContinuous_addMonoidHom_of_continuous
     (continuous_weightedRestrictedSubringFinZeroEquiv_symm _)) a
 
 /-- The comparison of completions is continuous. -/
 theorem continuous_restrictedMvPowerSeriesCompletionFinZeroEquiv :
-    letI := IsTopologicalAddGroup.rightUniformSpace A
-    letI : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
     Continuous (restrictedMvPowerSeriesCompletionFinZeroEquiv (A := A)) := by
-  let _ := IsTopologicalAddGroup.rightUniformSpace A
-  let _ : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
   simp only [restrictedMvPowerSeriesCompletionFinZeroEquiv]
   exact UniformSpace.Completion.continuous_mapRingEquiv _ _ _
 
 /-- Its inverse is continuous. -/
 theorem continuous_restrictedMvPowerSeriesCompletionFinZeroEquiv_symm :
-    letI := IsTopologicalAddGroup.rightUniformSpace A
-    letI : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
     Continuous (restrictedMvPowerSeriesCompletionFinZeroEquiv (A := A)).symm := by
-  let _ := IsTopologicalAddGroup.rightUniformSpace A
-  let _ : IsUniformAddGroup A := isUniformAddGroup_of_addCommGroup
   simp only [restrictedMvPowerSeriesCompletionFinZeroEquiv]
   exact UniformSpace.Completion.continuous_mapRingEquiv_symm _ _ _
 

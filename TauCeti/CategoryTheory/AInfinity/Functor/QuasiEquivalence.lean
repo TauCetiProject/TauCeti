@@ -167,66 +167,73 @@ theorem isQuasiFullyFaithful_id : (AInfinityFunctor.id ℬ).IsQuasiFullyFaithful
 
 /-! ### Comparison with the `A∞` morphism of total algebras -/
 
+/-- A quasi-isomorphism of total algebras makes an `A∞` functor quasi-fully faithful: this is the
+reverse implication of `isQuasiFullyFaithful_iff_isQuasiIso_toAInfinityHom`. -/
+private theorem isQuasiFullyFaithful_of_isQuasiIso_toAInfinityHom :
+    ℱ.toAInfinityHom.IsQuasiIso → ℱ.IsQuasiFullyFaithful := by
+  rw [isQuasiFullyFaithful_iff, AInfinityHom.isQuasiIso_iff_forall_cycles]
+  simp only [AInfinityAlgebra.cycles_def, AInfinityAlgebra.boundaries_def, LinearMap.mem_ker]
+  rintro ⟨hsurj, hinj⟩
+  refine fun X Y ↦ ⟨fun f hf hf' ↦ ?_, fun g hg ↦ ?_⟩
+  · obtain ⟨k, hk⟩ := hf'
+    obtain ⟨w, hw⟩ := hinj (homInclusion X Y f)
+      (by rw [← AInfinityCategory.homInclusion_homDifferential, hf, map_zero])
+      ⟨homInclusion (R := R) (C := InducedQuiver D ℱ.obj) ⟨X⟩ ⟨Y⟩ k, by
+        rw [← AInfinityCategory.homInclusion_homDifferential,
+          AInfinityCategory.homDifferential_induced, hk, homInclusion_map]⟩
+    exact ⟨homProjection X Y w, by
+      rw [← AInfinityCategory.homProjection_differential, hw, homProjection_homInclusion]⟩
+  · obtain ⟨x, hx, w, hw⟩ := hsurj (homInclusion (R := R) (C := InducedQuiver D ℱ.obj) ⟨X⟩ ⟨Y⟩ g)
+      (by rw [← AInfinityCategory.homInclusion_homDifferential,
+        AInfinityCategory.homDifferential_induced, hg, map_zero])
+    refine ⟨homProjection X Y x, by
+      rw [← AInfinityCategory.homProjection_differential, hx, map_zero],
+      -homProjection (R := R) (C := InducedQuiver D ℱ.obj) ⟨X⟩ ⟨Y⟩ w, ?_⟩
+    rw [map_neg, ← AInfinityCategory.homDifferential_induced 𝒞 ℱ.obj ⟨X⟩ ⟨Y⟩,
+      ← AInfinityCategory.homProjection_differential, hw, map_sub, homProjection_linearPart,
+      homProjection_homInclusion, neg_sub]
+
 /-- **Quasi-full faithfulness is a quasi-isomorphism of total algebras.**  An `A∞` functor is
 quasi-fully faithful exactly when the `A∞` morphism of total algebras of morphisms underlying it is
 a quasi-isomorphism: the cohomology of the total algebras is the direct sum of the cohomology of
 the Hom complexes, and the linear part is the direct sum of the maps on Hom complexes. -/
 theorem isQuasiFullyFaithful_iff_isQuasiIso_toAInfinityHom :
     ℱ.IsQuasiFullyFaithful ↔ ℱ.toAInfinityHom.IsQuasiIso := by
-  rw [isQuasiFullyFaithful_iff, AInfinityHom.isQuasiIso_iff_forall_cycles]
+  refine ⟨fun hℱ ↦ ?_, isQuasiFullyFaithful_of_isQuasiIso_toAInfinityHom ℱ⟩
+  rw [isQuasiFullyFaithful_iff] at hℱ
+  rw [AInfinityHom.isQuasiIso_iff_forall_cycles]
   simp only [AInfinityAlgebra.cycles_def, AInfinityAlgebra.boundaries_def, LinearMap.mem_ker]
-  constructor
-  · intro hℱ
-    refine ⟨fun y hy ↦ ?_, fun x hx hx' ↦ ?_⟩
-    · -- Lift each component of the cycle `y` separately, and add up the lifts.
-      refine totalHom_induction_homProjection (P := fun y ↦ ∃ x,
-          ℬ.toAInfinityAlgebra.differential x = 0 ∧ ℱ.toAInfinityHom.linearPart x - y ∈
-            LinearMap.range (𝒞.induced ℱ.obj).toAInfinityAlgebra.differential)
-        ⟨0, map_zero _, by simp⟩ (fun y y' ⟨x, hx, hxy⟩ ⟨x', hx', hxy'⟩ ↦ ?_) y fun X Y ↦ ?_
-      · refine ⟨x + x', by rw [map_add, hx, hx', add_zero], ?_⟩
-        rw [map_add, add_sub_add_comm]
-        exact add_mem hxy hxy'
-      · have hg := congrArg (homProjection (R := R) X Y) hy
-        rw [AInfinityCategory.homProjection_differential, map_zero,
-          AInfinityCategory.homDifferential_induced] at hg
-        obtain ⟨f, hf, k, hk⟩ := (hℱ X.obj Y.obj).2 _ hg
-        refine ⟨homInclusion X.obj Y.obj f, by
-          rw [← AInfinityCategory.homInclusion_homDifferential, hf, map_zero],
-          ⟨homInclusion X Y (-k), ?_⟩⟩
-        rw [← AInfinityCategory.homInclusion_homDifferential,
-          AInfinityCategory.homDifferential_induced, map_neg, hk, neg_sub, map_sub,
-          homInclusion_map]
-    · -- Each component of the cycle `x` is a boundary, so `x` is a boundary.
-      refine totalHom_induction_homProjection
-        (P := (· ∈ LinearMap.range ℬ.toAInfinityAlgebra.differential)) (zero_mem _)
-        (fun _ _ ↦ add_mem) x fun X Y ↦ ?_
-      obtain ⟨w, hw⟩ := hx'
-      have hc := congrArg (homProjection (R := R) X Y) hx
-      rw [AInfinityCategory.homProjection_differential, map_zero] at hc
-      obtain ⟨k, hk⟩ := (hℱ X Y).1 _ hc
-        ⟨homProjection (R := R) (C := InducedQuiver D ℱ.obj) ⟨X⟩ ⟨Y⟩ w, by
-          rw [← AInfinityCategory.homDifferential_induced 𝒞 ℱ.obj ⟨X⟩ ⟨Y⟩,
-            ← AInfinityCategory.homProjection_differential, hw, homProjection_linearPart]⟩
-      exact ⟨homInclusion X Y k, by rw [← AInfinityCategory.homInclusion_homDifferential, hk]⟩
-  · rintro ⟨hsurj, hinj⟩
-    refine fun X Y ↦ ⟨fun f hf hf' ↦ ?_, fun g hg ↦ ?_⟩
-    · obtain ⟨k, hk⟩ := hf'
-      obtain ⟨w, hw⟩ := hinj (homInclusion X Y f)
-        (by rw [← AInfinityCategory.homInclusion_homDifferential, hf, map_zero])
-        ⟨homInclusion (R := R) (C := InducedQuiver D ℱ.obj) ⟨X⟩ ⟨Y⟩ k, by
-          rw [← AInfinityCategory.homInclusion_homDifferential,
-            AInfinityCategory.homDifferential_induced, hk, homInclusion_map]⟩
-      exact ⟨homProjection X Y w, by
-        rw [← AInfinityCategory.homProjection_differential, hw, homProjection_homInclusion]⟩
-    · obtain ⟨x, hx, w, hw⟩ := hsurj (homInclusion (R := R) (C := InducedQuiver D ℱ.obj) ⟨X⟩ ⟨Y⟩ g)
-        (by rw [← AInfinityCategory.homInclusion_homDifferential,
-          AInfinityCategory.homDifferential_induced, hg, map_zero])
-      refine ⟨homProjection X Y x, by
-        rw [← AInfinityCategory.homProjection_differential, hx, map_zero],
-        -homProjection (R := R) (C := InducedQuiver D ℱ.obj) ⟨X⟩ ⟨Y⟩ w, ?_⟩
-      rw [map_neg, ← AInfinityCategory.homDifferential_induced 𝒞 ℱ.obj ⟨X⟩ ⟨Y⟩,
-        ← AInfinityCategory.homProjection_differential, hw, map_sub, homProjection_linearPart,
-        homProjection_homInclusion, neg_sub]
+  refine ⟨fun y hy ↦ ?_, fun x hx hx' ↦ ?_⟩
+  · -- Lift each component of the cycle `y` separately, and add up the lifts.
+    refine totalHom_induction_homProjection (P := fun y ↦ ∃ x,
+        ℬ.toAInfinityAlgebra.differential x = 0 ∧ ℱ.toAInfinityHom.linearPart x - y ∈
+          LinearMap.range (𝒞.induced ℱ.obj).toAInfinityAlgebra.differential)
+      ⟨0, map_zero _, by simp⟩ (fun y y' ⟨x, hx, hxy⟩ ⟨x', hx', hxy'⟩ ↦ ?_) y fun X Y ↦ ?_
+    · refine ⟨x + x', by rw [map_add, hx, hx', add_zero], ?_⟩
+      rw [map_add, add_sub_add_comm]
+      exact add_mem hxy hxy'
+    · have hg := congrArg (homProjection (R := R) X Y) hy
+      rw [AInfinityCategory.homProjection_differential, map_zero,
+        AInfinityCategory.homDifferential_induced] at hg
+      obtain ⟨f, hf, k, hk⟩ := (hℱ X.obj Y.obj).2 _ hg
+      refine ⟨homInclusion X.obj Y.obj f, by
+        rw [← AInfinityCategory.homInclusion_homDifferential, hf, map_zero],
+        ⟨homInclusion X Y (-k), ?_⟩⟩
+      rw [← AInfinityCategory.homInclusion_homDifferential,
+        AInfinityCategory.homDifferential_induced, map_neg, hk, neg_sub, map_sub,
+        homInclusion_map]
+  · -- Each component of the cycle `x` is a boundary, so `x` is a boundary.
+    refine totalHom_induction_homProjection
+      (P := (· ∈ LinearMap.range ℬ.toAInfinityAlgebra.differential)) (zero_mem _)
+      (fun _ _ ↦ add_mem) x fun X Y ↦ ?_
+    obtain ⟨w, hw⟩ := hx'
+    have hc := congrArg (homProjection (R := R) X Y) hx
+    rw [AInfinityCategory.homProjection_differential, map_zero] at hc
+    obtain ⟨k, hk⟩ := (hℱ X Y).1 _ hc
+      ⟨homProjection (R := R) (C := InducedQuiver D ℱ.obj) ⟨X⟩ ⟨Y⟩ w, by
+        rw [← AInfinityCategory.homDifferential_induced 𝒞 ℱ.obj ⟨X⟩ ⟨Y⟩,
+          ← AInfinityCategory.homProjection_differential, hw, homProjection_linearPart]⟩
+    exact ⟨homInclusion X Y k, by rw [← AInfinityCategory.homInclusion_homDifferential, hk]⟩
 
 /-- Along a bijective map of objects `F`, the `A∞` functor of an `A∞` morphism `f` of total
 algebras which is path-compatible along `F` is quasi-fully faithful exactly when `f` is a

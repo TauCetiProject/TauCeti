@@ -674,10 +674,11 @@ theorem successiveMin_pow_mul_measureReal_le_two_pow_mul_covolume (L : Submodule
 
 /-! ### The lower bound -/
 
+omit [FiniteDimensional ℝ E] in
 /-- **Minkowski's second theorem**, lower bound, general form. Let `L` be a discrete `ℤ`-submodule
 of an `n`-dimensional real normed space `E`, `μ` a Haar measure on `E`, and `K ⊆ E` convex,
 containing `0` and symmetric about it. If `b` is a basis of `E` over `ℝ` made of vectors of `L` and
-the positive numbers `a i` satisfy `b i ∈ a i • K`, then `2 ^ n / n! * covolume L μ ≤
+the nonnegative numbers `a i` satisfy `b i ∈ a i • K`, then `2 ^ n / n! * covolume L μ ≤
 (∏ i, a i) * μ K`. The basis already implies that `L` is a full lattice.
 
 A basis attaining the successive minima `λ₀ ≤ ⋯ ≤ λₙ₋₁` of `L` with respect to `K` satisfies the
@@ -686,11 +687,16 @@ hypothesis with `a = λ`, which gives the classical form `2ⁿ / n! · covolume 
 theorem two_pow_div_factorial_mul_covolume_le_prod_mul_measure (L : Submodule ℤ E)
     [DiscreteTopology L] (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure] {K : Set E}
     (hK : Convex ℝ K) (h0 : (0 : E) ∈ K) (hKs : ∀ x ∈ K, -x ∈ K) {ι : Type*} [Fintype ι]
-    (b : Basis ι ℝ E) (hbL : ∀ i, b i ∈ L) {a : ι → ℝ} (ha : ∀ i, 0 < a i)
+    (b : Basis ι ℝ E) (hbL : ∀ i, b i ∈ L) {a : ι → ℝ} (ha : ∀ i, 0 ≤ a i)
     (hbK : ∀ i, b i ∈ a i • K) :
     ENNReal.ofReal (2 ^ finrank ℝ E / (finrank ℝ E).factorial * ZLattice.covolume L μ) ≤
       ENNReal.ofReal (∏ i, a i) * μ K := by
   classical
+  have := Module.Finite.of_basis b
+  -- `hbK` excludes `a i = 0`, since `b i ≠ 0`.
+  replace ha : ∀ i, 0 < a i := fun i ↦ (ha i).lt_of_ne fun hz ↦ by
+    obtain ⟨x, -, hx⟩ := hbK i
+    exact b.ne_zero i (by simpa [← hz] using hx.symm)
   -- The fundamental parallelepiped of `b` bounds the covolume of `L`, the cross-polytope spanned
   -- by the `(a i)⁻¹ • b i` lies in `K`, and the two measures differ by `2 ^ n / n! / ∏ i, a i`.
   have hprod : 0 < ∏ i, a i := Finset.prod_pos fun i _ ↦ ha i
@@ -721,7 +727,7 @@ theorem two_pow_div_factorial_mul_covolume_le_prod_successiveMin_mul_measure (L 
       ENNReal.ofReal (∏ i, successiveMin L K i) * μ K := by
   obtain ⟨b, hbL, -, hbK, -⟩ := exists_basis_gauge_eq_successiveMin L hK
   exact two_pow_div_factorial_mul_covolume_le_prod_mul_measure L μ K.convex (interior_subset hK)
-    hKs b hbL (successiveMin_pos L hK) hbK
+    hKs b hbL (successiveMin_nonneg L K) hbK
 
 /-- **Minkowski's second theorem**, lower bound, in terms of the successive minima and with real
 measures: `2ⁿ / n! · covolume L μ ≤ λ₀ ⋯ λₙ₋₁ · μ.real K`. -/

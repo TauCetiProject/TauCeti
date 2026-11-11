@@ -110,8 +110,8 @@ divides every `k × k` minor of `A`, on arbitrary rows and columns. -/
 theorem prod_dvd_det_submatrix_of_mul_mul_eq_diagonal (hL : IsUnit L.det) (hQ : IsUnit Q.det)
     (hs : ∀ ⦃i j : Fin n⦄, i ≤ j → s i ∣ s j) (h : L * A * Q = diagonal s) {k : ℕ} (hk : k ≤ n)
     (f g : Fin k → Fin n) : ∏ j : Fin k, s (Fin.castLE hk j) ∣ (A.submatrix f g).det := by
-  rw [← GeneralLinearGroup.inv_mul_mul_inv_of_mul_mul_eq (nonsingInvUnit L hL)
-    (nonsingInvUnit Q hQ) h]
+  rw [← (GeneralLinearGroup.inv_mul_mul_inv_eq_iff_mul_mul_eq (nonsingInvUnit L hL)
+    (nonsingInvUnit Q hQ)).2 h]
   refine dvd_det_submatrix_mul_mul (fun f' g' ↦ ?_) _ _ f g
   simpa using prod_castLE_mul_prod_castLE_dvd_det_submatrix_diagonal_mul_diagonal hs
     (c₂ := 1) (fun _ _ _ ↦ dvd_rfl) 1 hk f' g'

@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.GaussSum
-public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.StickelbergerPhi
+public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.StickelbergerPhi.Basic
 import Mathlib.NumberTheory.LegendreSymbol.Complex
-import Mathlib.NumberTheory.SumTwoSquares
-import TauCeti.NumberTheory.GaussSum.Basic
 import TauCeti.NumberTheory.LegendreSymbol.Complex
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.RationalResidue
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.SupplementaryLaws
@@ -37,15 +35,15 @@ The proof proceeds in three stages:
 1. **Primary prime against an odd rational prime `q`**
    (`TauCeti.IsPrimaryGaussian.quartic_reciprocity_natCast_prime`):
    `(((-1) ^ ((q - 1) / 2) * q) / π)_4 = (π / q)_4`.
-   When `q ≡ 1 (mod 4)`, `q = β (σ β)` splits in `ℤ[i]` and the identity follows by evaluating the
+   When `q ≡ 1 (mod 4)`, `q = (σ β) β` splits in `ℤ[i]` and the identity follows by evaluating the
    Gauss sum power `Φ(π 𝓞 K) = π · (σ π) ^ 3` (`Ideal.stickelbergerPhi_four_eq`) modulo `β 𝓞 K`
    through `Ideal.powerResidueSymbol_stickelbergerPhi`. When `q ≡ 3 (mod 4)`, `Q = q 𝓞 K` is inert
    of norm `q²` and the `(q + 1)`-st power of the quartic Gauss sum modulo a prime of the algebraic
    integers over `Q` is computed in two ways: by the Frobenius congruence in characteristic `q` and
    from `g(χ, ψ) ^ 4 = π ^ 3 σ π`. Multiplicativity in both slots extends this to any primary `π`
    and odd rational integer `m` (`TauCeti.IsPrimaryGaussian.coe_quartic_reciprocity_intCast_of_odd`,
-   and in coordinates `TauCeti.IsPrimaryGaussian.quartic_reciprocity_intCast_add_mul_of_odd`), and
-   in particular gives `(a / π)_4 = (π / a)_4` for `a ≡ 1 (mod 4)`
+   and in coordinates `TauCeti.IsPrimaryGaussian.coe_quartic_reciprocity_intCast_add_mul_of_odd`),
+   and in particular gives `(a / π)_4 = (π / a)_4` for `a ≡ 1 (mod 4)`
    (`TauCeti.IsPrimaryGaussian.quartic_reciprocity_intCast`).
 2. **Primary elements with coprime coordinates**: for primary `π₁ = a + b i` and `π₂ = c + d i`
    with `gcd(a, b) = gcd(c, d) = 1`, setting `m = a c + b d` eliminates `(π₂ / π₁)_4` and
@@ -60,9 +58,9 @@ The proof proceeds in three stages:
 Together with the supplementary laws for `i` and `-1` in
 `TauCeti.NumberTheory.NumberField.Cyclotomic.Four.SupplementaryLaws` and the triviality of the
 quartic residue symbol on coprime rational integers in
-`TauCeti.NumberTheory.NumberField.Cyclotomic.Four.RationalResidue`, this evaluates the quartic
-residue symbol on odd-norm elements of `ℤ[i]` and supplies the reciprocity input for the
-supplementary law at the ramified prime `1 + i`.
+`TauCeti.NumberTheory.NumberField.Cyclotomic.Four.RationalResidue`, these results let the quartic
+residue symbol of a primary element be computed by flipping it to a symbol with a rational or
+primary denominator.
 
 ## Main results
 
@@ -72,7 +70,7 @@ supplementary law at the ramified prime `1 + i`.
   `(((-1) ^ ((q - 1) / 2) * q) / π)_4 = (π / q)_4` for a primary prime `π` and an odd rational
   prime `q`.
 * `TauCeti.IsPrimaryGaussian.coe_quartic_reciprocity_intCast_of_odd`,
-  `TauCeti.IsPrimaryGaussian.quartic_reciprocity_intCast_add_mul_of_odd`:
+  `TauCeti.IsPrimaryGaussian.coe_quartic_reciprocity_intCast_add_mul_of_odd`:
   `(m / π)_4 = (π / m)_4 · (-1) ^ (((m - 1) / 2) * ((N(π) - 1) / 4))` for primary `π` and an odd
   rational integer `m`, with exponent `((m - 1) / 2) * ((c - 1) / 2)` when `π = c + d i`.
 * `TauCeti.IsPrimaryGaussian.quartic_reciprocity_intCast`: `(a / π)_4 = (π / a)_4` for primary `π`
@@ -81,7 +79,7 @@ supplementary law at the ramified prime `1 + i`.
   with exponent `((N(π₂ 𝓞 K) - 1) / 4) * ((N(π₁ 𝓞 K) - 1) / 4)`.
 * `TauCeti.IsPrimaryGaussian.coe_quartic_reciprocity`: the law of biquadratic reciprocity read in
   `K`, with integer norm exponent `((N(π₂) - 1) / 4) * ((N(π₁) - 1) / 4)`.
-* `TauCeti.IsPrimaryGaussian.quartic_reciprocity_add_mul`: the coordinate form
+* `TauCeti.IsPrimaryGaussian.coe_quartic_reciprocity_add_mul`: the coordinate form
   `(π₂ / π₁)_4 = (π₁ / π₂)_4 · (-1) ^ (((a - 1) / 2) * ((c - 1) / 2))` for primary `π₁ = a + b i`
   and `π₂ = c + d i`.
 
@@ -151,23 +149,15 @@ private theorem quartic_reciprocity_natCast_prime_of_mod_four_eq_one {π : 𝓞 
     (hπq : ¬ π ∣ (q : 𝓞 K)) :
     powerResidueSymbolIdeal (span {π}) 4 (Ideal.Quotient.mk _ (q : 𝓞 K)) =
       powerResidueSymbolIdeal (span {(q : 𝓞 K)}) 4 (Ideal.Quotient.mk _ π) := by
-  have : Fact q.Prime := ⟨hq⟩
   have hPmax : (span {π}).IsMaximal :=
     ((span_singleton_prime hp.ne_zero).mpr hp).isMaximal (by simpa using hp.ne_zero)
-  -- Factor `q = x² + y² = β (τ β)` in `𝓞 K` using complex conjugation `τ`.
-  obtain ⟨x, y, hxy⟩ := Nat.Prime.sq_add_sq (p := q) (by omega)
-  have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ K
-  obtain ⟨τ, hτ⟩ := exists_ringEquiv_apply_eq_pow_three_of_four (K := K)
-  set β : 𝓞 K := x + y * hζ.toInteger
-  have hnorm : Algebra.norm ℤ β = q := by
-    have h := hζ.norm_intCast_add_intCast_mul_toInteger_of_four (x : ℤ) (y : ℤ)
-    rw [Int.cast_natCast, Int.cast_natCast] at h
-    rw [h, ← Nat.cast_pow, ← Nat.cast_pow, ← Nat.cast_add, hxy]
-  have hqβ : (q : 𝓞 K) = β * τ β := by
-    simpa only [hnorm, Int.cast_natCast] using intCast_norm_eq_mul_of_four hτ β
-  have hNβ : absNorm (span {β}) = q := by
-    rw [absNorm_span_singleton, hnorm, Int.natAbs_natCast]
-  have hβ0 : span {β} ≠ ⊥ := fun h ↦ hq.ne_zero (by rw [← hNβ, h, absNorm_bot])
+  -- Factor `q = (τ β) β` in `𝓞 K` using complex conjugation `τ`.
+  obtain ⟨σ, _, hτ⟩ := exists_gal_apply_eq_pow_three_of_four (K := K)
+  let τ := MulSemiringAction.toRingEquiv Gal(K/ℚ) (𝓞 K) σ
+  obtain ⟨β, hβ, hqβ, hNβ⟩ := exists_natCast_eq_mul_of_mod_four_ne_three
+    (σ := (τ : 𝓞 K →+* 𝓞 K)) hτ hq (by omega)
+  simp only [RingEquiv.coe_toRingHom] at hqβ
+  have hβ0 : span {β} ≠ ⊥ := by simpa using hβ
   have hτβ0 : span {τ β} ≠ ⊥ := by
     rw [← Set.image_singleton, ← map_span]
     exact (map_eq_bot_iff_of_injective τ.injective).not.mpr hβ0
@@ -202,7 +192,7 @@ private theorem quartic_reciprocity_natCast_prime_of_mod_four_eq_one {π : 𝓞 
     · have hp1 := powerResidueSymbol_pow_eq_one hL4 h0
       rw [← hτ _ hp1, ← powerResidueSymbolIdeal_of_isMaximal, map_powerResidueSymbolIdeal, hmapL,
         hττ]
-  rw [← hstick, hconj, ← powerResidueSymbolIdeal_of_isMaximal (span {β}), hqβ,
+  rw [← hstick, hconj, ← powerResidueSymbolIdeal_of_isMaximal (span {β}), hqβ, mul_comm (τ β) β,
     ← span_singleton_mul_span_singleton, powerResidueSymbolIdeal_mul_right hβ0 hτβ0]
 
 /-- Modulo an ideal `I` of characteristic `q ≡ 3 (mod 4)` prime to `N P`, the `(q + 1)`-st power of
@@ -217,7 +207,6 @@ private theorem gaussSum_pow_succ_of_mod_four_eq_three {P : Ideal (𝓞 K)} [P.I
       Ideal.Quotient.mk I (f (powerResidueSymbol P 4 (Ideal.Quotient.mk P (-(q : 𝓞 K))) *
         absNorm P)) := by
   intro χ
-  have hq : q.Prime := Fact.out
   let _ := Ideal.Quotient.field P
   let πI := Ideal.Quotient.mk I
   let χS := χ.ringHomComp πI
@@ -236,12 +225,8 @@ private theorem gaussSum_pow_succ_of_mod_four_eq_three {P : Ideal (𝓞 K)} [P.I
     rw [← MulChar.ringHomComp_inv, hk, pow_add, pow_mul, h4, one_pow, one_mul]
     exact (inv_eq_of_mul_eq_one_right (b := χS ^ 3) (by rw [← pow_succ', h4])).symm
   have hg_frob : πI (gaussSum χ ψ) ^ q = χS (q : 𝓞 K ⧸ P) * πI (gaussSum χ⁻¹ ψ) := by
-    have hsum : gaussSum χS ψS ^ q = gaussSum (χS ^ q) (ψS ^ q) := by
-      rw [gaussSum, gaussSum, sum_pow_char]
-      refine Finset.sum_congr rfl fun x _ ↦ ?_
-      rw [mul_pow, ← MulChar.pow_apply' χS hq.ne_zero, ← pow_apply]
-    rw [hgS χ, hsum, hχSq, AddChar.pow_mulShift, ← hqF.isUnit.unit_spec, gaussSum_mulShift_eq,
-      ← hgS χ⁻¹, ← MulChar.ringHomComp_inv, inv_inv]
+    rw [hgS χ, gaussSum_frob, hχSq, AddChar.pow_mulShift, ← hqF.isUnit.unit_spec,
+      gaussSum_mulShift_eq, ← hgS χ⁻¹, ← MulChar.ringHomComp_inv, inv_inv]
   have hχ_ne : χ ≠ 1 := by
     rw [MulChar.ringHomComp_ne_one_iff hf, Ne, ← orderOf_eq_one_iff, orderOf_powerResidueSymbol hP4]
     decide
@@ -388,16 +373,18 @@ private theorem quartic_reciprocity_natCast_prime_of_mod_four_eq_three {π : �
   have hNPQ : (absNorm P : 𝓞 K ⧸ Q) ≠ 0 := by
     rw [← map_natCast (Ideal.Quotient.mk Q), Ne, Ideal.Quotient.eq_zero_iff_mem]
     exact natCast_notMem_of_coprime_absNorm IsPrime.ne_top' hPQ
-  obtain ⟨σ, hσ⟩ := exists_ringHom_apply_eq_pow_three_of_four (K := K)
+  obtain ⟨γ, _, hσ⟩ := exists_gal_apply_eq_pow_three_of_four (K := K)
+  let σ : 𝓞 K →+* 𝓞 K := MulSemiringAction.toRingEquiv Gal(K/ℚ) (𝓞 K) γ
   have hπQ : Ideal.Quotient.mk Q π ≠ 0 := fun h0 ↦ hNPQ <| by
     rw [← map_natCast (Ideal.Quotient.mk Q), ← Int.cast_natCast,
-      RingOfIntegers.natCast_absNorm_span_singleton_of_four, intCast_norm_eq_mul_of_four hσ,
-      map_mul, h0, zero_mul]
+      RingOfIntegers.natCast_absNorm_span_singleton_of_four,
+      intCast_norm_eq_mul_of_four (σ := σ) hσ, map_mul, h0, zero_mul]
   have hmk_eq : Ideal.Quotient.mk Q (powerResidueSymbol P 4 (Ideal.Quotient.mk P (-(q : 𝓞 K)))) =
       Ideal.Quotient.mk Q (powerResidueSymbol Q 4 (Ideal.Quotient.mk Q π)) :=
     mul_right_cancel₀ hNPQ
-      ((mk_powerResidueSymbol_neg_natCast_mul_absNorm_of_mod_four_eq_three hπ hq hq3 hqF hσ).trans
-        (mk_pow_three_mul_pow_of_mod_four_eq_three hq hq3 hπQ hσ))
+      ((mk_powerResidueSymbol_neg_natCast_mul_absNorm_of_mod_four_eq_three
+        (σ := σ) hπ hq hq3 hqF hσ).trans
+        (mk_pow_three_mul_pow_of_mod_four_eq_three (σ := σ) hq hq3 hπQ hσ))
   have hnegq0 : Ideal.Quotient.mk P (-(q : 𝓞 K)) ≠ 0 := by
     rw [map_neg, map_natCast, neg_ne_zero]
     exact hqF
@@ -514,13 +501,22 @@ private theorem coe_quartic_reciprocity_intCast_of_prime_of_odd {π : 𝓞 K}
     obtain ⟨hp_odd, hm'_odd⟩ := hm
     have hp0 : span {(p : 𝓞 K)} ≠ ⊥ := by simpa using hp_int.ne_zero
     have hm'_span0 : span {(m' : 𝓞 K)} ≠ ⊥ := by simpa using hm'0
-    rw [Int.cast_mul, map_mul, map_mul, ← span_singleton_mul_span_singleton,
-      powerResidueSymbolIdeal_mul_right hp0 hm'_span0,
-      RingOfIntegers.coe_eq_algebraMap, map_mul,
-      ← RingOfIntegers.coe_eq_algebraMap, ← RingOfIntegers.coe_eq_algebraMap,
-      RingOfIntegers.coe_eq_algebraMap (_ * _), map_mul,
-      ← RingOfIntegers.coe_eq_algebraMap, ← RingOfIntegers.coe_eq_algebraMap,
-      coe_quartic_reciprocity_intCast_prime hπ hp hp_int hp_odd, ih hm'_odd,
+    have hL : ((powerResidueSymbolIdeal (span {π}) 4
+        (Ideal.Quotient.mk _ ((p * m' : ℤ) : 𝓞 K)) : 𝓞 K) : K) =
+        ((powerResidueSymbolIdeal (span {π}) 4 (Ideal.Quotient.mk _ (p : 𝓞 K)) : 𝓞 K) : K) *
+          ((powerResidueSymbolIdeal (span {π}) 4 (Ideal.Quotient.mk _ (m' : 𝓞 K)) : 𝓞 K) : K) := by
+      rw [Int.cast_mul, map_mul, map_mul]
+      push_cast
+      rfl
+    have hR : ((powerResidueSymbolIdeal (span {((p * m' : ℤ) : 𝓞 K)}) 4
+        (Ideal.Quotient.mk _ π) : 𝓞 K) : K) =
+        ((powerResidueSymbolIdeal (span {(p : 𝓞 K)}) 4 (Ideal.Quotient.mk _ π) : 𝓞 K) : K) *
+          ((powerResidueSymbolIdeal (span {(m' : 𝓞 K)}) 4 (Ideal.Quotient.mk _ π) : 𝓞 K) : K) := by
+      rw [Int.cast_mul, ← span_singleton_mul_span_singleton,
+        powerResidueSymbolIdeal_mul_right hp0 hm'_span0]
+      push_cast
+      rfl
+    rw [hL, hR, coe_quartic_reciprocity_intCast_prime hπ hp hp_int hp_odd, ih hm'_odd,
       mul_mul_mul_comm, ← zpow_add₀ (by norm_num), ← add_mul]
     congr 1
     refine zpow_eq_zpow_of_modEq (n := 2) (by norm_num) (Int.ModEq.mul_right N4 ?_)
@@ -597,14 +593,25 @@ theorem IsPrimaryGaussian.coe_quartic_reciprocity_intCast_of_odd {π : 𝓞 K}
       have hs0 : span {s.prod} ≠ ⊥ := by
         rw [Ne, span_singleton_eq_bot]
         exact fun h ↦ absurd (h ▸ hs_prim.odd_norm) (by simp)
-      rw [Multiset.prod_cons, ← span_singleton_mul_span_singleton,
-        powerResidueSymbolIdeal_mul_right hp0 hs0,
-        RingOfIntegers.coe_eq_algebraMap, map_mul,
-        ← RingOfIntegers.coe_eq_algebraMap, ← RingOfIntegers.coe_eq_algebraMap,
-        coe_quartic_reciprocity_intCast_of_prime_of_odd hp.2 hp.1 hm, ih hs',
-        map_mul, map_mul, RingOfIntegers.coe_eq_algebraMap (_ * _), map_mul,
-        ← RingOfIntegers.coe_eq_algebraMap, ← RingOfIntegers.coe_eq_algebraMap,
-        mul_mul_mul_comm,
+      have hL : ((powerResidueSymbolIdeal (span {(p ::ₘ s).prod}) 4
+          (Ideal.Quotient.mk _ (m : 𝓞 K)) : 𝓞 K) : K) =
+          ((powerResidueSymbolIdeal (span {p}) 4 (Ideal.Quotient.mk _ (m : 𝓞 K)) : 𝓞 K) : K) *
+            ((powerResidueSymbolIdeal (span {s.prod}) 4
+              (Ideal.Quotient.mk _ (m : 𝓞 K)) : 𝓞 K) : K) := by
+        rw [Multiset.prod_cons, ← span_singleton_mul_span_singleton,
+          powerResidueSymbolIdeal_mul_right hp0 hs0]
+        push_cast
+        rfl
+      have hR : ((powerResidueSymbolIdeal (span {(m : 𝓞 K)}) 4
+          (Ideal.Quotient.mk _ (p ::ₘ s).prod) : 𝓞 K) : K) =
+          ((powerResidueSymbolIdeal (span {(m : 𝓞 K)}) 4 (Ideal.Quotient.mk _ p) : 𝓞 K) : K) *
+            ((powerResidueSymbolIdeal (span {(m : 𝓞 K)}) 4
+              (Ideal.Quotient.mk _ s.prod) : 𝓞 K) : K) := by
+        rw [Multiset.prod_cons, map_mul, map_mul]
+        push_cast
+        rfl
+      rw [hL, hR, coe_quartic_reciprocity_intCast_of_prime_of_odd hp.2 hp.1 hm, ih hs',
+        mul_mul_mul_comm, Multiset.prod_cons, ← span_singleton_mul_span_singleton,
         neg_one_zpow_mul_absNorm_sub_one_div_four hp0 hs0 hp.2.absNorm_span_singleton_coprime_four
           hs_prim.absNorm_span_singleton_coprime_four]
   have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ K
@@ -614,7 +621,7 @@ theorem IsPrimaryGaussian.coe_quartic_reciprocity_intCast_of_odd {π : 𝓞 K}
 /-- **Quartic reciprocity in coordinates between a primary element and an odd rational integer.**
 If `K = ℚ(i)`, `π = c + d i` is primary, and `m` is an odd rational integer, then
 `(m / π)_4 = (π / m)_4 · (-1) ^ (((m - 1) / 2) * ((c - 1) / 2))`, read in `K`. -/
-theorem IsPrimaryGaussian.quartic_reciprocity_intCast_add_mul_of_odd {ζ : K}
+theorem IsPrimaryGaussian.coe_quartic_reciprocity_intCast_add_mul_of_odd {ζ : K}
     {hζ : IsPrimitiveRoot ζ 4} {c d m : ℤ}
     (hπ : IsPrimaryGaussian ((c : 𝓞 K) + (d : 𝓞 K) * hζ.toInteger)) (hm : Odd m) :
     ((powerResidueSymbolIdeal (span {(c : 𝓞 K) + (d : 𝓞 K) * hζ.toInteger}) 4
@@ -682,12 +689,8 @@ private theorem sign_exponent_modEq {a b c d : ℤ}
         (u + v) * (u + v + 1) + 2 * (2 * (t * (2 * (u + v) + 4 * t + 1))) := by ring
     rw [h, Int.add_mul_ediv_left _ _ (by decide)]
   have huv_tri : (u + v) * (u + v + 1) / 2 = u * (u + 1) / 2 + v * (v + 1) / 2 + u * v := by
-    have hev (z : ℤ) : 2 ∣ z * (z + 1) := by
-      rcases Int.even_or_odd z with ⟨x, rfl⟩ | ⟨x, rfl⟩
-      · exact ⟨x * (x + x + 1), by ring⟩
-      · exact ⟨(2 * x + 1) * (x + 1), by ring⟩
-    obtain ⟨eu, heu⟩ := hev u
-    obtain ⟨ev, hev⟩ := hev v
+    obtain ⟨eu, heu⟩ := Int.two_dvd_mul_add_one u
+    obtain ⟨ev, hev⟩ := Int.two_dvd_mul_add_one v
     have h : (u + v) * (u + v + 1) = 2 * (eu + ev + u * v) := by linear_combination heu + hev
     rw [h, heu, hev]
     omega
@@ -803,22 +806,9 @@ private theorem coe_powerResidueSymbolIdeal_span_intCast_add_mul_of_dvd {ζ : K}
   rw [hmk, map_mul, map_mul, map_intCast, powerResidueSymbolIdeal_intCast_four hyn, one_mul]
   exact hζ.powerResidueSymbolIdeal_span_intCast_mk_toInteger_of_odd hn
 
-/-- Cancels powers of `-1` in a field: if `(-1) ^ e₁ * x = (-1) ^ e₂ * y` and `e₁ + e₂ ≡ e (mod 2)`,
-then `x = y * (-1) ^ e`. -/
-private theorem eq_mul_neg_one_zpow_of_mul_eq {F : Type*} [Field F] {x y : F} {e₁ e₂ e : ℤ}
-    (h : (-1 : F) ^ e₁ * x = (-1 : F) ^ e₂ * y) (he : e₁ + e₂ ≡ e [ZMOD 2]) :
-    x = y * (-1) ^ e := by
-  have hsq : (-1 : F) ^ e₁ * (-1 : F) ^ e₁ = 1 := by
-    rw [← zpow_add₀ (by norm_num)]
-    exact Even.neg_one_zpow ⟨e₁, by ring⟩
-  calc x = ((-1 : F) ^ e₁ * (-1 : F) ^ e₁) * x := by rw [hsq, one_mul]
-    _ = (-1 : F) ^ e₁ * ((-1 : F) ^ e₂ * y) := by rw [mul_assoc, h]
-    _ = y * (-1) ^ (e₁ + e₂) := by rw [← mul_assoc, ← zpow_add₀ (by norm_num), mul_comm]
-    _ = y * (-1) ^ e := by rw [zpow_eq_zpow_of_modEq (n := 2) (by norm_num) he]
-
 /-- Quartic reciprocity for primary elements `π₁ = a + b i` and `π₂ = c + d i` whose coordinates
 are coprime (`IsCoprime a b` and `IsCoprime c d`). -/
-private theorem quartic_reciprocity_add_mul_of_isCoprime {ζ : K} {hζ : IsPrimitiveRoot ζ 4}
+private theorem coe_quartic_reciprocity_add_mul_of_isCoprime {ζ : K} {hζ : IsPrimitiveRoot ζ 4}
     {a b c d : ℤ} (hπ₁ : IsPrimaryGaussian ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger))
     (hπ₂ : IsPrimaryGaussian ((c : 𝓞 K) + (d : 𝓞 K) * hζ.toInteger))
     (hab : IsCoprime a b) (hcd : IsCoprime c d) :
@@ -847,7 +837,8 @@ private theorem quartic_reciprocity_add_mul_of_isCoprime {ζ : K} {hζ : IsPrimi
     obtain ⟨v, hc_eq⟩ := hc_odd
     obtain ⟨w, hb_eq⟩ : ∃ w, b = 2 * w := ⟨b / 2, by simp only [Int.ModEq] at hπ₁_coord; omega⟩
     exact ⟨2 * u * v + u + v + w * d, by simp only [m, ha_eq, hc_eq, hb_eq]; ring⟩
-  obtain ⟨τ, hτ⟩ := exists_ringEquiv_apply_eq_pow_three_of_four (K := K)
+  obtain ⟨σ, _, hτ⟩ := exists_gal_apply_eq_pow_three_of_four (K := K)
+  let τ := MulSemiringAction.toRingEquiv Gal(K/ℚ) (𝓞 K) σ
   have hτπ₁ : τ π₁ = (a : 𝓞 K) + ((-b : ℤ) : 𝓞 K) * i := by
     rw [hζ.apply_intCast_add_intCast_mul_toInteger_of_four hτ a b]
     push_cast
@@ -876,10 +867,10 @@ private theorem quartic_reciprocity_add_mul_of_isCoprime {ζ : K} {hζ : IsPrimi
   -- Push `hmaster` to `K`, substitute odd-integer reciprocity, and cancel the `(-1)` powers.
   have hmasterK := congrArg (algebraMap (𝓞 K) K) hmaster
   simp only [map_mul, ← RingOfIntegers.coe_eq_algebraMap] at hmasterK
-  rw [hπ₂.quartic_reciprocity_intCast_add_mul_of_odd hm_odd,
-    hπ₂.quartic_reciprocity_intCast_add_mul_of_odd hc_odd, hτπ₁,
-    hτπ₁_prim.quartic_reciprocity_intCast_add_mul_of_odd hm_odd,
-    hτπ₁_prim.quartic_reciprocity_intCast_add_mul_of_odd ha_odd, ← hτπ₁] at hmasterK
+  rw [hπ₂.coe_quartic_reciprocity_intCast_add_mul_of_odd hm_odd,
+    hπ₂.coe_quartic_reciprocity_intCast_add_mul_of_odd hc_odd, hτπ₁,
+    hτπ₁_prim.coe_quartic_reciprocity_intCast_add_mul_of_odd hm_odd,
+    hτπ₁_prim.coe_quartic_reciprocity_intCast_add_mul_of_odd ha_odd, ← hτπ₁] at hmasterK
   set eL : ℤ := (m ^ 2 - 1) / 8 + ((m - 1) / 2) * ((c - 1) / 2) + ((m - 1) / 2) * ((a - 1) / 2)
   set eR : ℤ := (c ^ 2 - 1) / 8 + ((c - 1) / 2) * ((c - 1) / 2) +
     (a ^ 2 - 1) / 8 + ((a - 1) / 2) * ((a - 1) / 2)
@@ -897,7 +888,22 @@ private theorem quartic_reciprocity_add_mul_of_isCoprime {ζ : K} {hζ : IsPrimi
       ← zpow_add₀ (by norm_num)]
     congr 1; simp only [eR]; ring
   rw [hLHS_sign, hRHS_sign] at hmasterK
-  exact eq_mul_neg_one_zpow_of_mul_eq hmasterK (sign_exponent_modEq hπ₁_coord hπ₂_coord)
+  have hsq_sign : (-1 : K) ^ eL * (-1 : K) ^ eL = 1 := by
+    rw [← zpow_add₀ (by norm_num)]
+    exact Even.neg_one_zpow ⟨eL, by ring⟩
+  calc ((powerResidueSymbolIdeal (span {π₁}) 4 (Ideal.Quotient.mk _ π₂) : 𝓞 K) : K)
+      = ((-1 : K) ^ eL * (-1 : K) ^ eL) *
+          ((powerResidueSymbolIdeal (span {π₁}) 4 (Ideal.Quotient.mk _ π₂) : 𝓞 K) : K) := by
+        rw [hsq_sign, one_mul]
+    _ = (-1 : K) ^ eL * ((-1 : K) ^ eR *
+          ((powerResidueSymbolIdeal (span {π₂}) 4 (Ideal.Quotient.mk _ π₁) : 𝓞 K) : K)) := by
+        rw [mul_assoc, hmasterK]
+    _ = ((powerResidueSymbolIdeal (span {π₂}) 4 (Ideal.Quotient.mk _ π₁) : 𝓞 K) : K) *
+          (-1) ^ (eL + eR) := by
+        rw [← mul_assoc, ← zpow_add₀ (by norm_num), mul_comm]
+    _ = _ := by
+        rw [zpow_eq_zpow_of_modEq (n := 2) (by norm_num)
+          (sign_exponent_modEq hπ₁_coord hπ₂_coord)]
 
 /-! ### The general law of biquadratic reciprocity -/
 
@@ -986,7 +992,7 @@ theorem IsPrimaryGaussian.quartic_reciprocity {π₁ π₂ : 𝓞 K} (hπ₁ : I
   have hcop_rec : ((powerResidueSymbolIdeal (span {α₁}) 4 (Ideal.Quotient.mk _ α₂) : 𝓞 K) :
       K) = ((powerResidueSymbolIdeal (span {α₂}) 4 (Ideal.Quotient.mk _ α₁) : 𝓞 K) : K) *
         (-1) ^ (((a - 1) / 2) * ((c - 1) / 2)) :=
-    quartic_reciprocity_add_mul_of_isCoprime hα₁ hα₂ hab hcd
+    coe_quartic_reciprocity_add_mul_of_isCoprime hα₁ hα₂ hab hcd
   rw [hLHS, hRHS]
   simp only [mul_assoc]
   congr 1
@@ -1024,7 +1030,7 @@ theorem IsPrimaryGaussian.coe_quartic_reciprocity {π₁ π₂ : 𝓞 K} (hπ₁
 `π₁ = a + b i` and `π₂ = c + d i` of `𝓞 K = ℤ[i]`,
 `(π₂ / π₁)_4 = (π₁ / π₂)_4 · (-1) ^ (((a - 1) / 2) * ((c - 1) / 2))`, read in `K`. Neither
 coprimality of `(a, b)` or `(c, d)` nor coprimality of `π₁` and `π₂` is required. -/
-theorem IsPrimaryGaussian.quartic_reciprocity_add_mul {ζ : K} {hζ : IsPrimitiveRoot ζ 4}
+theorem IsPrimaryGaussian.coe_quartic_reciprocity_add_mul {ζ : K} {hζ : IsPrimitiveRoot ζ 4}
     {a b c d : ℤ} (hπ₁ : IsPrimaryGaussian ((a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger))
     (hπ₂ : IsPrimaryGaussian ((c : 𝓞 K) + (d : 𝓞 K) * hζ.toInteger)) :
     ((powerResidueSymbolIdeal (span {(a : 𝓞 K) + (b : 𝓞 K) * hζ.toInteger}) 4
@@ -1109,7 +1115,7 @@ example :
   have hπ₁ : IsPrimaryGaussian π₁ := by rw [hζ.isPrimaryGaussian_add_mul_iff]; decide
   have hπ₂ : IsPrimaryGaussian π₂ := by rw [hζ.isPrimaryGaussian_add_mul_iff]; decide
   have hsign : (-1 : K) ^ (((-1 - 1 : ℤ) / 2) * ((3 - 1) / 2)) = -1 := by norm_num
-  rw [hπ₁.quartic_reciprocity_add_mul hπ₂, hsign, mul_neg_one]
+  rw [hπ₁.coe_quartic_reciprocity_add_mul hπ₂, hsign, mul_neg_one]
 
 /- For `π₁ = -1 + 2i` (norm `5`) and `π₂ = -3` (norm `9`, where `gcd(-3, 0) = 3 ≠ 1`), the general
 biquadratic reciprocity law gives `(π₂ / π₁)_4 = (π₁ / π₂)_4`. -/

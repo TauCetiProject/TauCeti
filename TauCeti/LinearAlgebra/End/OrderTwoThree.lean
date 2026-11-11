@@ -8,12 +8,12 @@ module
 public import Mathlib.Algebra.Module.Submodule.Invariant
 public import Mathlib.Algebra.Module.Submodule.Range
 
+import Mathlib.Algebra.Ring.Subring.Basic
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.NoncommRing
 import TauCeti.Algebra.Module.Submodule.Invariant
 import TauCeti.Algebra.Module.Submodule.Ker
-import TauCeti.RingTheory.Idempotents.CubeRootOne
-import TauCeti.RingTheory.Idempotents.SquareRootOne
+import TauCeti.RingTheory.Idempotents.RootOfOne
 
 /-!
 # Operators of order two and three: Choie–Zagier criterion, Popa–Zagier's projection and exactness
@@ -76,7 +76,7 @@ The ring identities are proved in an arbitrary ring and then applied in `Module.
 acyclicity hypothesis is stated as `Disjoint (ker (1 + σ)) (ker (1 + υ + υ ^ 2))`. The existence
 half of Lemma 3 for arbitrary idempotents is
 `TauCeti.End.exists_mem_sup_apply_sub_mem_of_isIdempotentElem`, and the exactness step for
-arbitrary commuting endomorphisms is `TauCeti.End.mem_inf_ker_sup_inf_ker_of_mem_sup`.
+arbitrary commuting endomorphisms is `TauCeti.End.mem_inf_ker_sup_inf_ker_iff`.
 
 ## References
 
@@ -247,10 +247,9 @@ theorem mem_sup_range_one_add_mul_one_sub [Invertible (2 : R)] [Invertible (3 : 
     ⟨.add_right (.one_right _) h', .add_right (.add_right (.one_right _) h') (h'.pow_right 2)⟩
   refine sup_le_sup ((inf_ker_one_sub_le_map_one_add _).trans_eq (range_comp _ _).symm)
     ((inf_ker_one_sub_le_map_one_add_add_sq _).trans_eq (range_comp _ _).symm) <|
-    mem_inf_ker_sup_inf_ker_of_mem_sup (hc hσσ').1
-    (hc hσυ').2 (hc hυσ').1 (hc hυυ').2 hacyc
-    (range_one_sub_le_ker_one_add hσ') (range_one_sub_le_ker_one_add_add_sq hυ') hξ
-    (range_one_add_add_sq_le_ker_one_sub hυ hσ'ξ) (range_one_add_le_ker_one_sub hσ hυ'ξ)
+    (mem_inf_ker_sup_inf_ker_iff (hc hσσ').1 (hc hσυ').2 (hc hυσ').1 (hc hυυ').2 hacyc
+      (range_one_sub_le_ker_one_add hσ') (range_one_sub_le_ker_one_add_add_sq hυ')).2
+      ⟨hξ, range_one_add_add_sq_le_ker_one_sub hυ hσ'ξ, range_one_add_le_ker_one_sub hσ hυ'ξ⟩
 
 end Semiring
 
@@ -277,10 +276,10 @@ theorem exists_mem_sup_one_add_apply_sub_mem [Invertible (2 : R)] [Invertible (3
   let _ : Invertible (3 : Subring.center R) :=
     ⟨⟨⅟3, Set.invOf_mem_center (Set.ofNat_mem_center _ _)⟩, Subtype.ext (invOf_mul_self _),
       Subtype.ext (mul_invOf_self _)⟩
-  have key := exists_mem_sup_apply_sub_mem_of_isIdempotentElem (ξ := ξ)
-    (halfOneAdd_def (Subring.center R) σ ▸
-      isIdempotentElem_halfOneAdd (Subring.center R) ((sq σ).symm.trans hσ))
-    (isIdempotentElem_invOf_three_smul_one_add_add_sq (Subring.center R) hυ)
+  have hσe := isIdempotentElem_invOf_smul_geom_sum (Subring.center R) hσ
+  have hυe := isIdempotentElem_invOf_smul_geom_sum (Subring.center R) hυ
+  simp only [Finset.sum_range_succ, Finset.sum_range_zero, zero_add, pow_zero, pow_one] at hσe hυe
+  have key := exists_mem_sup_apply_sub_mem_of_isIdempotentElem (ξ := ξ) hσe hυe
     (Module.End.invtSubmodule_le_invtSubmodule_smul _ _ hP)
     (Module.End.invtSubmodule_le_invtSubmodule_smul _ _ hQ)
   simp only [LinearMap.smul_apply] at key

@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.ChartedSpace
 public import TauCeti.Analysis.Polynomial.SymmetricPower
 public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 public import TauCeti.Topology.Sym.Family
+import TauCeti.Data.Fin.Sum
 
 /-!
 # A charted-space structure on a symmetric power
@@ -27,10 +28,10 @@ The chart at an unordered tuple `s` is assembled from three inputs, each already
   `V_j`, with multiplicities `n₁, …, n_k` as the degrees
   (`Finset.exists_mem_range_sumSubtype_of_t2`);
 * that concatenation is an open embedding
-  `Sym^{n₁}(V₁) × ⋯ × Sym^{n_k}(V_k) ↪ Sym α n` (`TauCeti.Sym.isOpenEmbedding_sumSubtype`);
+  `Sym^{n₁}(V₁) × ⋯ × Sym^{n_k}(V_k) ↪ Sym α n` (`Sym.isOpenEmbedding_sumSubtype`);
 * each factor is an open subspace of affine space, charted by the elementary symmetric functions
   of its points read in the ambient coordinate
-  (`TauCeti.Sym.isOpenEmbedding_coeffEquiv_comp_map`), and the factors regroup into `Fin n → K`
+  (`Sym.isOpenEmbedding_coeffEquiv_comp_map`), and the factors regroup into `Fin n → K`
   because the multiplicities add up to `n` (`TauCeti.piSigmaConstHomeomorph`).
 
 The charts so obtained depend on choices — of the separating neighbourhoods, and of the regrouping
@@ -149,6 +150,31 @@ theorem symOpenPartialHomeomorph_symm_apply {ι : Type*} [Fintype ι]
   apply OpenPartialHomeomorph.left_inv
   rw [symOpenPartialHomeomorph_source]
   exact Set.mem_range_self p
+
+omit [T2Space α] in
+/-- Near a tuple `p` of points in disjoint coordinate patches `V i`, the elementary-symmetric chart
+with one block per point reads the tuple `w` as its negated coordinates `(φᵢ(wᵢ))ᵢ`, where `φᵢ` is
+the chart of `α` at `p i`. -/
+theorem eventually_mem_source_symOpenPartialHomeomorph_ofFn {p : Fin n → α}
+    {V : Fin n → Set α} (hVo : ∀ i, IsOpen (V i)) (hpV : ∀ i, p i ∈ V i)
+    (hVsub : ∀ i, V i ⊆ (chartAt K (p i)).source) (hVdisj : Pairwise (Function.onFun Disjoint V))
+    (hm : ∑ _i : Fin n, 1 = n) (hq : Nonempty (∀ i, Sym ↥(V i) 1)) :
+    ∀ᶠ w in 𝓝 p,
+      Sym.ofFn w ∈ (symOpenPartialHomeomorph (fun i => chartAt K (p i)) V (fun _ => 1) hm hVo
+        hVsub hVdisj (Equiv.sigmaUnique (Fin n) fun _ => Fin 1) hq).source ∧
+      symOpenPartialHomeomorph (fun i => chartAt K (p i)) V (fun _ => 1) hm hVo hVsub hVdisj
+        (Equiv.sigmaUnique (Fin n) fun _ => Fin 1) hq (Sym.ofFn w) =
+        -fun j => chartAt K (p j) (w j) := by
+  filter_upwards [isOpen_set_pi Set.finite_univ (fun i _ => hVo i) |>.mem_nhds
+    fun i _ => hpV i] with w hw
+  have hsum : Sym.ofFn w =
+      Sym.sumSubtype V (fun _ => 1) hm fun i => Sym.ofFn fun _ => ⟨w i, hw i trivial⟩ := by
+    rw [Sym.sumSubtype_ofFn hm (Equiv.sigmaUnique (Fin n) fun _ => Fin 1)]
+    rfl
+  rw [hsum, symOpenPartialHomeomorph_source, symOpenPartialHomeomorph_apply]
+  refine ⟨Set.mem_range_self _, funext fun j => ?_⟩
+  rw [piSigmaConstHomeomorph_apply, Equiv.sigmaUnique_symm_apply]
+  exact Sym.coeffEquiv_one_apply (by simp [Sym.map_ofFn])
 
 omit [T2Space α] [ChartedSpace K α] in
 /-- The target of an elementary-symmetric chart is the range of its coefficient-coordinate map. -/
@@ -286,7 +312,7 @@ theorem exists_symOpenPartialHomeomorph (s : Sym α n) :
     Multiset.mem_toFinset.2 (_root_.Sym.mem_coe.2 ha)
   set m : ↥(s : Multiset α).toFinset → ℕ :=
     fun i => Multiset.count (i : α) (s : Multiset α)
-  let e : (Σ i, Fin (m i)) ≃ Fin n := (Sym.nonempty_sigmaFinEquiv hm).some
+  let e : (Σ i, Fin (m i)) ≃ Fin n := (nonempty_sigmaFinEquiv hm).some
   let hp : Nonempty (∀ i, Sym ↥(V i) (m i)) := ⟨hmem.choose⟩
   refine ⟨symOpenPartialHomeomorph
       (fun i : ↥(s : Multiset α).toFinset => chartAt K (i : α))
@@ -323,10 +349,10 @@ theorem symChartAt_spec (s : Sym α n) :
 /-- **The symmetric power of a Hausdorff space charted by `K` is charted by `Fin n → K`.** This
 constructs only the `ChartedSpace` structure. Reading it as a topological-manifold result also
 requires suitable countability hypotheses, which are not assumed here; the Hausdorff instance is
-already supplied by `TauCeti.Sym.instT2Space`.
+already supplied by `Sym.instT2Space`.
 
 Deliberately not an instance: when `α := K`, a later canonical single-chart structure built from
-`TauCeti.Sym.coeffHomeomorph` would have the same instance key. -/
+`Sym.coeffHomeomorph` would have the same instance key. -/
 @[instance_reducible]
 noncomputable def symChartedSpace : ChartedSpace (Fin n → K) (Sym α n) where
   atlas := Set.range (symChartAt (K := K))

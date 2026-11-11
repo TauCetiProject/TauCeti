@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Grading.SimplyBlocked
-public import TauCeti.KnotTheory.Grid.Homology.SimplyBlocked
+public import TauCeti.KnotTheory.Grid.Homology.SimplyBlocked.Basic
 public import TauCeti.Algebra.Module.GradedModule.Homology
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 

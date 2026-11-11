@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Euclidean.Volume.Sphere
 public import TauCeti.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import TauCeti.MeasureTheory.Function.Coarea.Eilenberg
+import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
 # Polar integration against Hausdorff measure on spheres
@@ -152,9 +153,8 @@ theorem ae_integrableOn_sphere (c : E) {f : E → F} (hf : Integrable f) :
   have hae : ∀ᵐ r : Ioi (0 : ℝ) ∂(volume.comap ((↑) : Ioi (0 : ℝ) → ℝ)),
       Integrable (fun u : sphere (0 : E) 1 ↦ f (c + (r : ℝ) • (u : E)))
         (volume : Measure E).toSphere :=
-    withDensity_absolutelyContinuous'
-      (measurable_subtype_coe.pow_const _).ennreal_ofReal.aemeasurable
-      (ae_of_all _ fun r ↦ (ENNReal.ofReal_pos.2 (pow_pos r.2 _)).ne') hint.prod_left_ae
+    absolutelyContinuous_withDensity_ofReal (measurable_subtype_coe.pow_const _).aemeasurable
+      (ae_of_all _ fun r ↦ pow_pos r.2 _) hint.prod_left_ae
   rw [ae_restrict_iff_subtype measurableSet_Ioi]
   filter_upwards [hae] with r hr
   rw [integrableOn_sphere_iff _ c r.2, IntegrableOn, euclideanHausdorffMeasure_restrict_sphere,

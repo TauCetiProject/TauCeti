@@ -40,9 +40,12 @@ algebraic closedness, and the answer names the basis vectors involved.
   the eigenvalues.
 * `Module.Basis.repr_eq_zero_of_weight_ne`: a joint eigenvector has zero coordinate at a basis
   vector of a different joint weight.
-* `Module.Basis.self_mem_of_repr_ne_zero` and `Module.Basis.eq_span_self_mem`: an invariant
-  subspace contains every basis vector occurring in one of its elements, and is spanned by the
-  basis vectors it contains.
+* `Module.Basis.self_mem_of_repr_ne_zero`, `Module.Basis.eq_span_self_mem`,
+  `Module.Basis.self_mem_of_repr_ne_zero_of_forall`, and
+  `Module.Basis.eq_span_self_mem_of_forall`: an invariant subspace (for a single diagonal
+  endomorphism with distinct eigenvalues, or for a jointly diagonal family whose joint weights are
+  pairwise distinct) contains every basis vector occurring in one of its elements, and is spanned
+  by the basis vectors it contains.
 * `Module.Basis.exists_apply_eq_and_mem_span_singleton`: a nonzero eigenvector of `f` is a
   multiple of a single basis vector, whose eigenvalue is its eigenvalue.
 * `Module.Basis.eigenspace_eq_span_image` and `Module.Basis.finrank_eigenspace_eq_card`: with
@@ -124,13 +127,13 @@ private theorem support_repr_sub_smul_subset [DecidableEq ι] (b : Module.Basis 
 
 end CoordinateSubtraction
 
-section Field
+section Family
 
-variable [Field K] [AddCommGroup V] [Module K V] {f : V →ₗ[K] V} {a : ι → K}
-  {W : Submodule K V}
+variable {κ : Type*} [Field K] [AddCommGroup V] [Module K V] {f : κ → V →ₗ[K] V}
+  {a : ι → κ → K} {W : Submodule K V}
 
-private theorem self_mem_aux (b : Module.Basis ι K V) (hf : ∀ i, f (b i) = a i • b i)
-    (ha : Function.Injective a) (hW : ∀ v ∈ W, f v ∈ W) :
+private theorem self_mem_aux (b : Module.Basis ι K V) (hf : ∀ i j, f j (b i) = a i j • b i)
+    (ha : Function.Injective a) (hW : ∀ j, ∀ v ∈ W, f j v ∈ W) :
     ∀ (n : ℕ) (w : V), w ∈ W → (b.repr w).support.card ≤ n →
       ∀ i : ι, b.repr w i ≠ 0 → b i ∈ W := by
   classical
@@ -149,18 +152,51 @@ private theorem self_mem_aux (b : Module.Basis ι K V) (hf : ∀ i, f (b i) = a 
       have hmem : c⁻¹ • w ∈ W := W.smul_mem _ hw
       rwa [b.eq_smul_of_repr_support_subset_singleton hsub, smul_smul, inv_mul_cancel₀ hi,
         one_smul] at hmem
-    · -- otherwise some other coordinate `j` is nonzero, and can be cleared
+    · -- otherwise some other coordinate `j` is nonzero, and can be cleared using an index `t`
+      -- at which the joint weights `a j` and `a i` differ
       obtain ⟨j, hjs, hji⟩ := Finset.not_subset.1 hsub
       have hjne : j ≠ i := fun h => hji (Finset.mem_singleton.2 h)
-      have hmem : f w - a j • w ∈ W := W.sub_mem (hW w hw) (W.smul_mem _ hw)
-      have hcard' : (b.repr (f w - a j • w)).support.card ≤ n := by
-        have hle := Finset.card_le_card (support_repr_sub_smul_subset b hf w j)
+      obtain ⟨t, ht⟩ := Function.ne_iff.1 (ha.ne hjne)
+      have hmem : f t w - a j t • w ∈ W := W.sub_mem (hW t w hw) (W.smul_mem _ hw)
+      have hcard' : (b.repr (f t w - a j t • w)).support.card ≤ n := by
+        have hle := Finset.card_le_card (support_repr_sub_smul_subset b (fun k => hf k t) w j)
         rw [Finset.card_erase_of_mem hjs] at hle
         have hpos : 0 < (b.repr w).support.card := Finset.card_pos.2 ⟨j, hjs⟩
         omega
       refine ih _ hmem hcard' i ?_
-      rw [repr_sub_smul_apply b hf w j i]
-      exact mul_ne_zero (sub_ne_zero.2 fun h => hjne (ha h).symm) hi
+      rw [repr_sub_smul_apply b (fun k => hf k t) w j i]
+      exact mul_ne_zero (sub_ne_zero.2 ht.symm) hi
+
+/-- **An invariant subspace for a jointly diagonal family contains every basis vector occurring in
+one of its elements**, when the joint weights `a : ι → κ → K` are pairwise distinct: any two
+distinct basis indices are separated by at least one operator in the family, so extra coordinates
+can be cleared one at a time. -/
+theorem _root_.Module.Basis.self_mem_of_repr_ne_zero_of_forall (b : Module.Basis ι K V)
+    (hf : ∀ i j, f j (b i) = a i j • b i) (ha : Function.Injective a)
+    (hW : ∀ j, ∀ v ∈ W, f j v ∈ W) {w : V} (hw : w ∈ W) {i : ι} (hi : b.repr w i ≠ 0) :
+    b i ∈ W :=
+  self_mem_aux b hf ha hW _ w hw le_rfl i hi
+
+/-- **An invariant subspace for a jointly diagonal family is spanned by the basis vectors it
+contains**, when the joint weights `a : ι → κ → K` are pairwise distinct. -/
+theorem _root_.Module.Basis.eq_span_self_mem_of_forall (b : Module.Basis ι K V)
+    (hf : ∀ i j, f j (b i) = a i j • b i) (ha : Function.Injective a)
+    (hW : ∀ j, ∀ v ∈ W, f j v ∈ W) :
+    W = Submodule.span K {v | ∃ i : ι, b i = v ∧ v ∈ W} := by
+  refine le_antisymm (fun w hw => ?_) (Submodule.span_le.2 ?_)
+  · rw [← b.linearCombination_repr w, Finsupp.linearCombination_apply, Finsupp.sum]
+    refine Submodule.sum_mem _ fun k hk => ?_
+    exact Submodule.smul_mem _ _ (Submodule.subset_span
+      ⟨k, rfl, b.self_mem_of_repr_ne_zero_of_forall hf ha hW hw (Finsupp.mem_support_iff.1 hk)⟩)
+  · rintro v ⟨-, -, hv⟩
+    exact hv
+
+end Family
+
+section Field
+
+variable [Field K] [AddCommGroup V] [Module K V] {f : V →ₗ[K] V} {a : ι → K}
+  {W : Submodule K V}
 
 /-- **An invariant subspace contains every basis vector occurring in one of its elements**, when
 the endomorphism is diagonal in the basis with pairwise distinct eigenvalues: the coordinates of
@@ -168,20 +204,16 @@ an element can then be separated by repeatedly clearing one of them. -/
 theorem _root_.Module.Basis.self_mem_of_repr_ne_zero (b : Module.Basis ι K V)
     (hf : ∀ i, f (b i) = a i • b i) (ha : Function.Injective a) (hW : ∀ v ∈ W, f v ∈ W) {w : V}
     (hw : w ∈ W) {i : ι} (hi : b.repr w i ≠ 0) : b i ∈ W :=
-  self_mem_aux b hf ha hW _ w hw le_rfl i hi
+  b.self_mem_of_repr_ne_zero_of_forall (κ := Unit) (f := fun _ => f) (a := fun i _ => a i)
+    (fun i _ => hf i) (fun _ _ h => ha (congr_fun h ())) (fun _ => hW) hw hi
 
 /-- **An invariant subspace is spanned by the basis vectors it contains**, when the endomorphism
 is diagonal in the basis with pairwise distinct eigenvalues. -/
 theorem _root_.Module.Basis.eq_span_self_mem (b : Module.Basis ι K V)
     (hf : ∀ i, f (b i) = a i • b i) (ha : Function.Injective a) (hW : ∀ v ∈ W, f v ∈ W) :
-    W = Submodule.span K {v | ∃ i : ι, b i = v ∧ v ∈ W} := by
-  refine le_antisymm (fun w hw => ?_) (Submodule.span_le.2 ?_)
-  · rw [← b.linearCombination_repr w, Finsupp.linearCombination_apply, Finsupp.sum]
-    refine Submodule.sum_mem _ fun k hk => ?_
-    exact Submodule.smul_mem _ _ (Submodule.subset_span
-      ⟨k, rfl, b.self_mem_of_repr_ne_zero hf ha hW hw (Finsupp.mem_support_iff.1 hk)⟩)
-  · rintro v ⟨-, -, hv⟩
-    exact hv
+    W = Submodule.span K {v | ∃ i : ι, b i = v ∧ v ∈ W} :=
+  b.eq_span_self_mem_of_forall (κ := Unit) (f := fun _ => f) (a := fun i _ => a i)
+    (fun i _ => hf i) (fun _ _ h => ha (congr_fun h ())) (fun _ => hW)
 
 end Field
 

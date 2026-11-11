@@ -348,6 +348,19 @@ theorem realize_iff_mem_of_isAtomic {φ : L[[ℕ]].Sentenceω} (hφ : φ.IsAtomi
 
 /-! ### The truth lemma -/
 
+/-- Both halves of the truth lemma for atomic formulas, from the atomic semantics of the term
+model. -/
+private theorem truth_atomic (hcon : ∀ φ ∈ S, φ.not ∉ S) {n : ℕ}
+    {φ : L[[ℕ]].BoundedFormulaω Empty n} (hφ : φ.IsAtomic) (c : Fin n → ℕ) :
+    (substBounds (fun i => (L.con (c i)).term) φ ∈ S →
+      φ.Realize Empty.elim fun i => (L.con (c i) : hS.TermModel)) ∧
+    ((substBounds (fun i => (L.con (c i)).term) φ).not ∈ S →
+      ¬φ.Realize Empty.elim fun i => (L.con (c i) : hS.TermModel)) := by
+  have hr := hS.realize_iff_mem_of_isAtomic (hφ.substBounds fun i => (L.con (c i)).term)
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, realize_substBounds,
+    realize_constants] at hr
+  exact ⟨hr.2, fun h h' => hcon _ (hr.1 h') h⟩
+
 /-- Both halves of the truth lemma, by one simultaneous induction. -/
 private theorem truth (hbot : (⊥ : L[[ℕ]].Sentenceω) ∉ S)
     (hcon : ∀ φ ∈ S, φ.not ∉ S) {n : ℕ} (φ : L[[ℕ]].BoundedFormulaω Empty n) (c : Fin n → ℕ) :
@@ -355,16 +368,6 @@ private theorem truth (hbot : (⊥ : L[[ℕ]].Sentenceω) ∉ S)
       φ.Realize Empty.elim fun i => (L.con (c i) : hS.TermModel)) ∧
     ((substBounds (fun i => (L.con (c i)).term) φ).not ∈ S →
       ¬φ.Realize Empty.elim fun i => (L.con (c i) : hS.TermModel)) := by
-  -- atomic formulas are decided by the atomic semantics of the term model
-  have atomic {n : ℕ} {φ : L[[ℕ]].BoundedFormulaω Empty n} (hφ : φ.IsAtomic) (c : Fin n → ℕ) :
-      (substBounds (fun i => (L.con (c i)).term) φ ∈ S →
-        φ.Realize Empty.elim fun i => (L.con (c i) : hS.TermModel)) ∧
-      ((substBounds (fun i => (L.con (c i)).term) φ).not ∈ S →
-        ¬φ.Realize Empty.elim fun i => (L.con (c i) : hS.TermModel)) := by
-    have hr := hS.realize_iff_mem_of_isAtomic (hφ.substBounds fun i => (L.con (c i)).term)
-    simp only [SentenceInf.realize_def, FormulaInf.realize_def, realize_substBounds,
-      realize_constants] at hr
-    exact ⟨hr.2, fun h h' => hcon _ (hr.1 h') h⟩
   -- extending the tuple of constants extends the tuples of their terms and interpretations
   have hterm {n : ℕ} (c : Fin n → ℕ) (d : ℕ) :
       (fun i => (L.con (Fin.snoc (α := fun _ => ℕ) c d i)).term : _ → L[[ℕ]].Term (Empty ⊕ Fin 0)) =
@@ -378,8 +381,8 @@ private theorem truth (hbot : (⊥ : L[[ℕ]].Sentenceω) ∉ S)
   | falsum =>
     refine ⟨fun h => (hbot ?_).elim, fun _ h => h⟩
     rwa [substBounds_falsum, ← bot_def] at h
-  | equal t₁ t₂ => exact atomic (.equal t₁ t₂) c
-  | rel R ts => exact atomic (.rel R ts) c
+  | equal t₁ t₂ => exact hS.truth_atomic hcon (.equal t₁ t₂) c
+  | rel R ts => exact hS.truth_atomic hcon (.rel R ts) c
   | imp φ ψ ihφ ihψ =>
     simp only [substBounds_imp, realize_imp]
     refine ⟨fun h hφ => ?_, fun h hφψ => ?_⟩

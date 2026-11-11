@@ -57,15 +57,15 @@ variable {X G : Type*} [AddCommGroup G] (S : OrderSystem X G)
 Classically these are the divisors `D + div f` for a rational function `f` with `D + div f`
 effective; see `mem_completeLinearSystem_iff_exists_principalDivisor`. -/
 def completeLinearSystem (D : WeilDivisor X) : Set (WeilDivisor X) :=
-  {E | IsEffective E ∧ S.LinearlyEquivalent D E}
+  {E | 0 ≤ E ∧ S.LinearlyEquivalent D E}
 
 @[simp]
 lemma mem_completeLinearSystem {D E : WeilDivisor X} :
-    E ∈ S.completeLinearSystem D ↔ IsEffective E ∧ S.LinearlyEquivalent D E :=
+    E ∈ S.completeLinearSystem D ↔ 0 ≤ E ∧ S.LinearlyEquivalent D E :=
   Iff.rfl
 
-lemma isEffective_of_mem_completeLinearSystem {D E : WeilDivisor X}
-    (hE : E ∈ S.completeLinearSystem D) : IsEffective E :=
+lemma nonneg_of_mem_completeLinearSystem {D E : WeilDivisor X}
+    (hE : E ∈ S.completeLinearSystem D) : 0 ≤ E :=
   hE.1
 
 lemma linearlyEquivalent_of_mem_completeLinearSystem {D E : WeilDivisor X}
@@ -73,14 +73,14 @@ lemma linearlyEquivalent_of_mem_completeLinearSystem {D E : WeilDivisor X}
   hE.2
 
 /-- An effective divisor lies in its own complete linear system. -/
-lemma self_mem_completeLinearSystem {D : WeilDivisor X} (hD : IsEffective D) :
+lemma self_mem_completeLinearSystem {D : WeilDivisor X} (hD : 0 ≤ D) :
     D ∈ S.completeLinearSystem D :=
   ⟨hD, LinearlyEquivalent.refl S D⟩
 
 /-- Membership in the complete linear system in terms of the divisor class: `|D|` consists of
 the effective divisors whose class equals that of `D`. -/
 lemma mem_completeLinearSystem_iff_divisorClass {D E : WeilDivisor X} :
-    E ∈ S.completeLinearSystem D ↔ IsEffective E ∧ S.divisorClass D = S.divisorClass E := by
+    E ∈ S.completeLinearSystem D ↔ 0 ≤ E ∧ S.divisorClass D = S.divisorClass E := by
   rw [mem_completeLinearSystem]
   exact and_congr_right fun _ => S.divisorClass_eq_iff.symm
 
@@ -92,7 +92,7 @@ lemma divisorClass_eq_of_mem_completeLinearSystem {D E : WeilDivisor X}
 /-- The classical description of the complete linear system: its members are exactly the
 effective divisors `D + div g` obtained from `D` by adding a principal divisor. -/
 lemma mem_completeLinearSystem_iff_exists_principalDivisor {D E : WeilDivisor X} :
-    E ∈ S.completeLinearSystem D ↔ IsEffective E ∧ ∃ g, E = D + S.principalDivisor g := by
+    E ∈ S.completeLinearSystem D ↔ 0 ≤ E ∧ ∃ g, E = D + S.principalDivisor g := by
   rw [mem_completeLinearSystem]
   refine and_congr_right fun _ => ?_
   rw [S.linearlyEquivalent_iff_exists_principalDivisor]
@@ -121,7 +121,7 @@ lemma completeLinearSystem_eq_of_linearlyEquivalent {D D' : WeilDivisor X}
 /-- The complete linear system of the zero divisor consists of the effective principal
 divisors. -/
 lemma mem_completeLinearSystem_zero {E : WeilDivisor X} :
-    E ∈ S.completeLinearSystem 0 ↔ IsEffective E ∧ ∃ g, E = S.principalDivisor g := by
+    E ∈ S.completeLinearSystem 0 ↔ 0 ≤ E ∧ ∃ g, E = S.principalDivisor g := by
   rw [mem_completeLinearSystem_iff_exists_principalDivisor]
   simp
 
@@ -147,10 +147,10 @@ lemma completeLinearSystem_eq_empty_of_weightedDegree_neg {w : X → ℤ} (hw : 
     S.completeLinearSystem D = ∅ := by
   rw [Set.eq_empty_iff_forall_notMem]
   intro E hE
-  have hEeff : IsEffective E := (S.mem_completeLinearSystem.mp hE).1
+  have hEeff : 0 ≤ E := (S.mem_completeLinearSystem.mp hE).1
   have hdeg : weightedDegree w E = weightedDegree w D :=
     S.weightedDegree_eq_of_mem_completeLinearSystem h hE
-  have hpos : 0 ≤ weightedDegree w E := hEeff.weightedDegree_nonneg hw
+  have hpos : 0 ≤ weightedDegree w E := weightedDegree_nonneg hw hEeff
   rw [hdeg] at hpos
   exact absurd hD (not_lt.mpr hpos)
 
@@ -159,10 +159,10 @@ complete linear system of a weighted-degree-zero divisor is zero. -/
 lemma eq_zero_of_mem_completeLinearSystem_of_weightedDegree_zero {w : X → ℤ}
     (hw : ∀ x, 0 < w x) (h : S.IsWeightedDegreeZero w) {D E : WeilDivisor X}
     (hE : E ∈ S.completeLinearSystem D) (hD : weightedDegree w D = 0) : E = 0 := by
-  have hEeff : IsEffective E := S.isEffective_of_mem_completeLinearSystem hE
+  have hEeff : 0 ≤ E := S.nonneg_of_mem_completeLinearSystem hE
   have hdeg : weightedDegree w E = 0 := by
     rw [S.weightedDegree_eq_of_mem_completeLinearSystem h hE, hD]
-  exact hEeff.eq_zero_of_weightedDegree_eq_zero_of_pos hw hdeg
+  exact eq_zero_of_weightedDegree_eq_zero_of_pos hw hEeff hdeg
 
 /-- With positive weights and weighted-degree-zero principal divisors, membership in the
 complete linear system of a weighted-degree-zero divisor is equivalent to being the zero divisor
@@ -179,7 +179,7 @@ lemma mem_completeLinearSystem_iff_eq_zero_and_divisorClass_eq_zero_of_weightedD
     have hclass := (S.mem_completeLinearSystem_iff_divisorClass.mp hE).2
     simpa [hE0] using hclass
   · rintro ⟨rfl, hclass⟩
-    exact S.mem_completeLinearSystem_iff_divisorClass.mpr ⟨isEffective_zero, by simpa using hclass⟩
+    exact S.mem_completeLinearSystem_iff_divisorClass.mpr ⟨le_rfl, by simpa using hclass⟩
 
 /-- With positive weights and weighted-degree-zero principal divisors, nonemptiness of the
 complete linear system of a weighted-degree-zero divisor is equivalent to the divisor class
@@ -222,7 +222,7 @@ lemma completeLinearSystem_eq_singleton_zero_iff_divisorClass_eq_zero_of_isWeigh
 /-- A complete linear system is nonempty exactly when the divisor class of `D` contains an
 effective divisor. -/
 lemma nonempty_completeLinearSystem_iff {D : WeilDivisor X} : (S.completeLinearSystem D).Nonempty ↔
-      ∃ E, IsEffective E ∧ S.divisorClass E = S.divisorClass D := by
+      ∃ E, 0 ≤ E ∧ S.divisorClass E = S.divisorClass D := by
   constructor
   · rintro ⟨E, hE⟩
     exact ⟨E, hE.1, S.divisorClass_eq_of_mem_completeLinearSystem hE⟩

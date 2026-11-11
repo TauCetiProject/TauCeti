@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.Belyi.Polynomial
+public import TauCeti.FieldTheory.FunctionField.Belyi.Polynomial.Basic
 public import TauCeti.FieldTheory.FunctionField.Basic
 public import TauCeti.FieldTheory.RatFunc.Transcendental
 import TauCeti.FieldTheory.FunctionField.Different.Divisor
 import TauCeti.FieldTheory.FunctionField.Place.Degree
-import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.FieldTheory.RatFunc.Automorphism
 
 /-!

@@ -539,6 +539,38 @@ private def pathTwo (t : unitInterval) : Fin 2 → Circle :=
 private def pathThree (t : unitInterval) : Fin 3 → Circle :=
   ![Circle.exp 0, Circle.exp (π + 3 * π / 4 * t), Circle.exp (3 * π / 4 + π / 4 * t)]
 
+private theorem pathTwo_zero : pathTwo 0 = ![1, -1] := by
+  funext j
+  fin_cases j <;> simp [pathTwo, Circle.exp_pi]
+
+private theorem pathTwo_one : pathTwo 1 = ![1, capPoint] := by
+  funext j
+  fin_cases j
+  · simp [pathTwo]
+  · simp only [pathTwo, Set.Icc.coe_one, mul_one]
+    exact circleExp_pi_add_three_pi_div_four
+
+private theorem pathThree_zero : pathThree 0 = ![1, -1, -capPoint] := by
+  funext j
+  fin_cases j <;> simp [pathThree, Circle.exp_pi, circleExp_three_pi_div_four]
+
+private theorem pathThree_one : pathThree 1 = ![1, capPoint, -1] := by
+  funext j
+  fin_cases j
+  · simp [pathThree]
+  · simp only [pathThree, Set.Icc.coe_one, mul_one]
+    exact circleExp_pi_add_three_pi_div_four
+  · have hangle : 3 * π / 4 + π / 4 = π := by ring
+    simp [pathThree, hangle, Circle.exp_pi]
+
+/-- At the end of `pathTwo` both caps are in the closed right half-plane, close to the real axis. -/
+private theorem re_pathTwo_one (j : Fin 2) :
+    0 ≤ (pathTwo 1 j : ℂ).re ∧ 1 - (pathTwo 1 j : ℂ).re ^ 2 < capRadius ^ 2 := by
+  rw [pathTwo_one]
+  fin_cases j
+  · simp [capRadius]
+  · exact re_capPoint
+
 private theorem contMDiff_pathTwo (j : Fin 2) :
     ContMDiff (𝓡∂ 1) (𝓡 1) ∞ fun t => pathTwo t j := by
   fin_cases j <;> first
@@ -618,46 +650,21 @@ theorem exists_concordant_connectedSum_assoc (h₁ : IsConnectedSumPosition ι K
     ⟨hr, fun j => by fin_cases j <;> assumption, inner_pathTwo_lt t⟩
   have hcap₃ (t : unitInterval) : IsCapConfig ι capRadius (pathThree t) ![L₁, L₂, L₃] :=
     ⟨hr, fun j => by fin_cases j <;> assumption, inner_pathThree_lt t⟩
-  have hpos₂ (j : Fin 2) :
-      0 ≤ (pathTwo 1 j : ℂ).re ∧ 1 - (pathTwo 1 j : ℂ).re ^ 2 < capRadius ^ 2 := by
-    fin_cases j
-    · simp [pathTwo, capRadius]
-    · simp only [pathTwo, Fin.mk_one, Matrix.cons_val_one, Set.Icc.coe_one, mul_one]
-      rw [circleExp_pi_add_three_pi_div_four]
-      exact re_capPoint
-  -- Evaluating the paths at their ends.
-  have hp₂₀ : pathTwo 0 0 = 1 := by simp [pathTwo]
-  have hp₂₁ : pathTwo 0 1 = -1 := by simp [pathTwo, Circle.exp_pi]
-  have hq₂₀ : pathTwo 1 0 = 1 := by simp [pathTwo]
-  have hq₂₁ : pathTwo 1 1 = capPoint := by
-    simp only [pathTwo, Matrix.cons_val_one, Matrix.cons_val_zero, Set.Icc.coe_one, mul_one]
-    exact circleExp_pi_add_three_pi_div_four
-  have hp₃₀ : pathThree 0 0 = 1 := by simp [pathThree]
-  have hp₃₁ : pathThree 0 1 = -1 := by simp [pathThree, Circle.exp_pi]
-  have hp₃₂ : pathThree 0 2 = -capPoint := by simp [pathThree, circleExp_three_pi_div_four]
-  have hq₃₀ : pathThree 1 0 = 1 := by simp [pathThree]
-  have hq₃₁ : pathThree 1 1 = capPoint := by
-    simp only [pathThree, Matrix.cons_val_one, Matrix.cons_val_zero, Set.Icc.coe_one, mul_one]
-    exact circleExp_pi_add_three_pi_div_four
-  have hq₃₂ : pathThree 1 2 = -1 := by
-    simp only [pathThree, Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons,
-      Set.Icc.coe_one, mul_one]
-    have hangle : 3 * π / 4 + π / 4 = π := by ring
-    rw [hangle, Circle.exp_pi]
+  have hpos := fun j => (re_pathTwo_one j).1
+  have hpos' := fun j => (re_pathTwo_one j).2
   set P := capSum (hcap₂ L₁ L₂ ha₁ ha₂ 1)
   set Q := capSum (hcap₂ L₂ L₃ ha₂ ha₃ 1)
   have hP : IsConnectedSumPosition ι P :=
-    (hcap₂ L₁ L₂ ha₁ ha₂ 1).isConnectedSumPosition_capSum (fun j => (hpos₂ j).1)
-      fun j => (hpos₂ j).2
+    (hcap₂ L₁ L₂ ha₁ ha₂ 1).isConnectedSumPosition_capSum hpos hpos'
   have hQ : IsConnectedSumPosition ι Q :=
-    (hcap₂ L₂ L₃ ha₂ ha₃ 1).isConnectedSumPosition_capSum (fun j => (hpos₂ j).1)
-      fun j => (hpos₂ j).2
+    (hcap₂ L₂ L₃ ha₂ ha₃ 1).isConnectedSumPosition_capSum hpos hpos'
   -- A connected sum of two boosted knots slides to a cap sum in connected-sum position.
   have hslide₂ (L L' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1))
       (hL : IsCapPosition ι capRadius L) (hL' : IsCapPosition ι capRadius L') :
       SmoothEmbedding.Concordant (connectedSum L L' (hL.isConnectedSumPosition hr)
         (hL'.isConnectedSumPosition hr)) (capSum (hcap₂ L L' hL hL' 1)) := by
-    rw [connectedSum_eq_capSum (hcap₂ L L' hL hL' 0) hp₂₀ hp₂₁]
+    rw [connectedSum_eq_capSum (hcap₂ L L' hL hL' 0) (by simp [pathTwo_zero])
+      (by simp [pathTwo_zero])]
     exact SmoothEmbedding.Concordant.of_smoothIsotopic
       (smoothIsotopic_capSum contMDiff_pathTwo (hcap₂ L L' hL hL')) (by simp) le_rfl
   refine ⟨P, Q, hP, hQ, ?_, ?_, ?_⟩
@@ -666,18 +673,18 @@ theorem exists_concordant_connectedSum_assoc (h₁ : IsConnectedSumPosition ι K
   · -- `P # K₃ ∼ P # L₃`, the cap sum at `1, capPoint, -1`; and `K₁ # Q ∼ L₁ # Q`, the cap sum at
     -- `1, -1, -capPoint`. The second slides to the first.
     have hA : connectedSum P L₃ hP (ha₃.isConnectedSumPosition hr) = capSum (hcap₃ 1) :=
-      connectedSum_capSum_eq (hcap₂ L₁ L₂ ha₁ ha₂ 1) (hcap₃ 1) (hq₃₀.trans hq₂₀.symm)
-        (hq₃₁.trans hq₂₁.symm) hq₃₂ (fun j => (hpos₂ j).1) (fun j => (hpos₂ j).2) hP _
+      connectedSum_capSum_eq (hcap₂ L₁ L₂ ha₁ ha₂ 1) (hcap₃ 1)
+        (by simp [pathThree_one, pathTwo_one]) (by simp [pathThree_one, pathTwo_one])
+        (by simp [pathThree_one]) hpos hpos' hP _
     have hB : connectedSum L₁ Q (ha₁.isConnectedSumPosition hr) hQ = capSum (hcap₃ 0) :=
-      connectedSum_capSum_eq' (hcap₂ L₂ L₃ ha₂ ha₃ 1) (hcap₃ 0) hp₃₀ (hp₃₁.trans (by rw [hq₂₀]))
-        (hp₃₂.trans (by rw [hq₂₁])) (fun j => (hpos₂ j).1) (fun j => (hpos₂ j).2) _ hQ
-    have hBA : SmoothEmbedding.Concordant (capSum (hcap₃ 0)) (capSum (hcap₃ 1)) :=
-      SmoothEmbedding.Concordant.of_smoothIsotopic
-        (smoothIsotopic_capSum contMDiff_pathThree hcap₃) (by simp) le_rfl
+      connectedSum_capSum_eq' (hcap₂ L₂ L₃ ha₂ ha₃ 1) (hcap₃ 0) (by simp [pathThree_zero])
+        (by simp [pathThree_zero, pathTwo_one]) (by simp [pathThree_zero, pathTwo_one]) hpos
+        hpos' _ hQ
     refine ((concordant_connectedSum_right hP hF₃).trans ?_).trans
       (concordant_connectedSum_left hF₁ hQ).symm
     rw [hA, hB]
-    exact hBA.symm
+    exact (SmoothEmbedding.Concordant.of_smoothIsotopic
+      (smoothIsotopic_capSum contMDiff_pathThree hcap₃) (by simp) le_rfl).symm
 
 end SmoothCircleEmbedding
 

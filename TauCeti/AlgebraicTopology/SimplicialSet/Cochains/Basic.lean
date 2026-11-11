@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Colimits
+public import TauCeti.Algebra.Homology.LinearYoneda
 
 /-!
 # Simplicial cochains as functions on simplices
@@ -18,7 +19,8 @@ alternating sum of values on faces, and pullback becomes precomposition on simpl
 
 The construction uses Mathlib's `SSet.isColimitChainComplexXCofan` and
 `Cofan.IsColimit.desc`, the coproduct universal property also used by `TauCeti.chainsDesc`.
-These coordinates allow comparison of coefficient rings without changing cochain values.
+These coordinates allow comparison of coefficient rings without changing cochain values. Over a
+commutative ring they are `k`-linear (`TauCeti.cochainValuesLinearEquiv`).
 
 ## References
 
@@ -35,6 +37,8 @@ open scoped Simplicial
 universe w
 
 namespace TauCeti
+
+section Ring
 
 variable (k : Type w) [Ring k] (M : ModuleCat.{w} k) (K : SSet.{w})
 
@@ -112,5 +116,39 @@ lemma cochainValuesEquiv_chainComplexMap {L : SSet.{w}} (f : K ⟶ L) (n : ℕ)
   have h := ConcreteCategory.congr_hom
     (ι_chainComplexMap_f (R := ModuleCat.of k k) K _ f σ) (1 : k)
   exact congrArg φ.hom h
+
+end Ring
+
+section CommRing
+
+variable (k : Type w) [CommRing k] (M : ModuleCat.{w} k) (K : SSet.{w})
+
+/-- For a commutative ring `k`, the identification `TauCeti.cochainValuesEquiv` of cochains with
+functions on simplices is `k`-linear. -/
+def cochainValuesLinearEquiv (n : ℕ) :
+    ((K.chainComplex (ModuleCat.of k k)).X n ⟶ M) ≃ₗ[k] (K _⦋n⦌ → M) :=
+  { cochainValuesEquiv k M K n with map_smul' := fun _ _ ↦ rfl }
+
+@[simp]
+lemma coe_cochainValuesLinearEquiv (n : ℕ) :
+    ⇑(cochainValuesLinearEquiv k M K n) = cochainValuesEquiv k M K n :=
+  (rfl)
+
+@[simp]
+lemma coe_cochainValuesLinearEquiv_symm (n : ℕ) :
+    ⇑(cochainValuesLinearEquiv k M K n).symm = (cochainValuesEquiv k M K n).symm :=
+  (rfl)
+
+/-- The values of the coboundary of a cochain in `Hom(C(K; k), M)` are alternating sums of its
+values on faces. -/
+lemma cochainValuesEquiv_linearYonedaObj_d (n : ℕ)
+    (φ : ((K.chainComplex (ModuleCat.of k k)).linearYonedaObj k M).X n) (σ : K _⦋n + 1⦌) :
+    cochainValuesEquiv k M K (n + 1)
+        (((K.chainComplex (ModuleCat.of k k)).linearYonedaObj k M).d n (n + 1) φ) σ =
+      ∑ i : Fin (n + 2), (-1 : ℤ) ^ i.val • cochainValuesEquiv k M K n φ (K.δ i σ) := by
+  rw [ChainComplex.linearYonedaObj_d_apply]
+  exact cochainValuesEquiv_d k M K n φ σ
+
+end CommRing
 
 end TauCeti

@@ -135,7 +135,7 @@ private theorem exists_spectralRadius_eq_aux [Nonempty n] (hA : ∀ i j, 0 ≤ A
     simp at hv1
   have hr : 0 ≤ r := hmax 0 fun w s hw hAw =>
     le_of_smul_le_mulVec hA hw hAw hv hv0 (by simpa using mulVec_nonneg hA hv)
-  refine ⟨r, hr, spectralRadius_eq_of_mulVec_eq_smul_of_forall_norm_le hr hv0 hAv ?_,
+  refine ⟨r, hr, spectralRadius_eq_of_mulVec_eq_smul_of_forall_norm_le hv0 hAv ?_,
     ⟨v, hv, hv0, hAv⟩, hmax⟩
   exact fun μ z hz hAz => hmax _ fun w s hw hAw => norm_le_of_mulVec_le_smul hA hw hAw hz hAz
 

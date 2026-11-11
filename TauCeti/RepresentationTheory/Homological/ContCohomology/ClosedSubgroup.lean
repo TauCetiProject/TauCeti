@@ -9,7 +9,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.CompactDis
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialGroup
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
-public import TauCeti.Topology.Separation.Profinite
+public import TauCeti.Topology.Separation.ZeroDimensional
 import Mathlib.Topology.Separation.Connected
 
 /-!
@@ -140,7 +140,7 @@ theorem resolutionMap_subgroupSubtype_surjective {H : Subgroup G} (hH : IsClosed
     have : CompactSpace H := isCompact_iff_compactSpace.mp hH.isCompact
     set w' : C(H, (TopRep.resolutionX (TopRep.res (H.subtype : H →* G) X) n).V) := w
     -- lift the values of `w` through the surjection in degree `n`, then extend to `G`
-    obtain ⟨W, hW⟩ := ContinuousMap.exists_extension_of_discrete hH.isClosedEmbedding_subtypeVal
+    obtain ⟨W, hW⟩ := ContinuousMap.exists_extension_of_discrete IsEmbedding.subtypeVal
       (⟨fun s ↦ Function.surjInv ih (w' s),
         (continuous_of_discreteTopology (f := Function.surjInv ih)).comp w'.continuous⟩ :
         C(H, (TopRep.resolutionX X n).V))

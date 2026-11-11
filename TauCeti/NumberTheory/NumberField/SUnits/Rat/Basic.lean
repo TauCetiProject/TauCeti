@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.EffectiveBounds.Regulator
 public import TauCeti.NumberTheory.Height.SInteger
 public import TauCeti.NumberTheory.NumberField.Global.Places.Rat
 public import TauCeti.NumberTheory.NumberField.SUnits.Regulator
+public import TauCeti.NumberTheory.NumberField.Units.Dirichlet
 public import TauCeti.NumberTheory.NumberField.Units.SUnit.Basic
 public import TauCeti.NumberTheory.NumberField.Units.SUnit.FundamentalSystem
 
