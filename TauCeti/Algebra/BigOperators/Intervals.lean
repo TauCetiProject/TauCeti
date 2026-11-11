@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Algebra.Group.Nat.Even
+public import Mathlib.Algebra.Notation.Indicator
 public import Mathlib.Data.Int.Interval
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.Ring.GeomSum
@@ -24,6 +25,8 @@ For a symmetric integer interval `[-N, N]`, adding the middle term `F 0` to
 `∑ i ∈ Icc (-(N : ℤ)) N, F i` splits the sum into the nonnegative half `∑ j ∈ range (N + 1), F j`
 and the nonpositive half `∑ j ∈ range (N + 1), F (-(j : ℤ))`. In a ring, the partial sums
 `∑_{1 ≤ k ≤ n} (-1) ^ (k + 1)` of the alternating sequence `1, -1, 1, …` are `0` or `1`.
+A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the shifts of `f` that read
+`f` at `j + d - L` where this index is defined, and vanish otherwise.
 
 ## Main results
 
@@ -35,6 +38,8 @@ and the nonpositive half `∑ j ∈ range (N + 1), F (-(j : ℤ))`. In a ring, t
 * `Finset.sum_range_sub_mul_two`: twice the sum of `r + 1 - j` over `j < e` is `e (2 r + 3 - e)`.
 * `Finset.sum_Icc_neg_one_pow_add_one`: `∑ k ∈ Icc 1 n, (-1) ^ (k + 1)` is `0` for even `n` and
   `1` for odd `n`.
+* `Finset.sum_Ico_sub_add_eq_sum_range_indicator`: a window sum `∑_{j - L ≤ k < j + L} f k` as the
+  sum of `2 L` shifts of `f`.
 -/
 
 public section
@@ -115,5 +120,19 @@ theorem sum_Icc_neg_one_pow_add_one {R : Type*} [Ring R] (n : ℕ) :
     ∑ k ∈ Icc 1 n, (-1 : R) ^ (k + 1) = if Even n then 0 else 1 := by
   rw [← Ico_add_one_right_eq_Icc, sum_Ico_eq_sum_range, add_tsub_cancel_right, ← neg_one_geom_sum]
   simp [pow_add]
+
+/-- A window sum `∑_{j - L ≤ k < j + L} f k` is the sum of `2 L` shifts of `f`: the `d`-th one
+reads `f` at `j + d - L`, where this index is defined. -/
+theorem sum_Ico_sub_add_eq_sum_range_indicator {M : Type*} [AddCommMonoid M] (f : ℕ → M)
+    (L j : ℕ) :
+    ∑ k ∈ Ico (j - L) (j + L), f k =
+      ∑ d ∈ range (2 * L), {i | L ≤ i + d}.indicator (f ∘ fun i ↦ i + d - L) j := by
+  classical
+  simp only [Set.indicator_apply, Set.mem_ofPred_eq, Function.comp_apply]
+  rw [← sum_filter]
+  refine sum_nbij' (fun k ↦ k + L - j) (fun d ↦ j + d - L) (fun k hk ↦ ?_) (fun d hd ↦ ?_)
+    (fun k hk ↦ ?_) (fun d hd ↦ ?_) fun k hk ↦ ?_
+  all_goals simp only [mem_Ico, mem_filter, mem_range] at *
+  all_goals first | omega | (congr 1; omega)
 
 end Finset
