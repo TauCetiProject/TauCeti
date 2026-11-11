@@ -42,22 +42,9 @@ theorem support_betaBinomialMeasure (n : ℕ) (a b : ℝ) :
     exact betaBinomialMeasure_singleton_ne_zero_iff h.1 h.2 n k
   · simp [h]
 
-/-- The support of a cast beta-binomial law is the finite image of its possible native counts
-when both shape parameters are positive, and is empty otherwise. -/
-@[simp]
-theorem support_map_cast_betaBinomialMeasure {R : Type*} [AddMonoidWithOne R]
-    [TopologicalSpace R] [T1Space R] [MeasurableSpace R] [BorelSpace R]
-    (n : ℕ) (a b : ℝ) :
-    ((betaBinomialMeasure n a b).map (Nat.cast : ℕ → R)).support =
-      if 0 < a ∧ 0 < b then (Nat.cast : ℕ → R) '' Iic n else ∅ := by
-  rw [Measure.support_map_eq_closure_image _ Measure.support_mem_ae
-    continuous_of_discreteTopology, support_betaBinomialMeasure]
-  split_ifs
-  · exact ((Set.finite_Iic n).image _).isClosed.closure_eq
-  · simp
-
 /-- Applying labels to a beta-binomial count transports its finite support exactly. Labels need
 not be injective, and invalid shape parameters give empty support. -/
+@[simp]
 theorem support_map_betaBinomialMeasure {E : Type*} [TopologicalSpace E] [T1Space E]
     [MeasurableSpace E] [BorelSpace E] (n : ℕ) (a b : ℝ) (f : ℕ → E) :
     ((betaBinomialMeasure n a b).map f).support =
@@ -67,5 +54,14 @@ theorem support_map_betaBinomialMeasure {E : Type*} [TopologicalSpace E] [T1Spac
   split_ifs
   · exact ((Set.finite_Iic n).image f).isClosed.closure_eq
   · simp
+
+/-- The support of a cast beta-binomial law is the finite image of its possible native counts
+when both shape parameters are positive, and is empty otherwise. -/
+theorem support_map_cast_betaBinomialMeasure {R : Type*} [AddMonoidWithOne R]
+    [TopologicalSpace R] [T1Space R] [MeasurableSpace R] [BorelSpace R]
+    (n : ℕ) (a b : ℝ) :
+    ((betaBinomialMeasure n a b).map (Nat.cast : ℕ → R)).support =
+      if 0 < a ∧ 0 < b then (Nat.cast : ℕ → R) '' Iic n else ∅ := by
+  exact support_map_betaBinomialMeasure n a b _
 
 end TauCeti.Probability
