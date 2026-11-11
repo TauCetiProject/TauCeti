@@ -58,11 +58,24 @@ def IsSolution (y : ℂ → ℂ) : Prop :=
     iteratedDeriv n y z + ∑ j, HolomorphicFunctions.extend (E.coeff j) z *
       iteratedDeriv j y z = 0
 
+/-- Scalar solutionhood is analyticity together with the homogeneous equation on the domain. -/
+theorem isSolution_iff (y : ℂ → ℂ) :
+    E.IsSolution y ↔ AnalyticOnNhd ℂ y U ∧ ∀ z ∈ U,
+      iteratedDeriv n y z + ∑ j, HolomorphicFunctions.extend (E.coeff j) z *
+        iteratedDeriv j y z = 0 := (Iff.rfl)
+
 /-- The companion matrix: superdiagonal ones, followed by the negative coefficient row. -/
 def companion (z : ℂ) : Matrix (Fin n) (Fin n) ℂ :=
   fun i j ↦ if i.val + 1 < n then
     if j.val = i.val + 1 then 1 else 0
   else -HolomorphicFunctions.extend (E.coeff j) z
+
+/-- Each companion-matrix entry is a superdiagonal entry or a negative coefficient. -/
+@[simp]
+theorem companion_apply (z : ℂ) (i j : Fin n) :
+    E.companion z i j = if i.val + 1 < n then
+      if j.val = i.val + 1 then 1 else 0
+    else -HolomorphicFunctions.extend (E.coeff j) z := (rfl)
 
 /-- The nonfinal rows of the companion matrix shift coordinates to the left. -/
 @[simp]
@@ -88,13 +101,23 @@ theorem companion_mulVec_of_not_lt (z : ℂ) (v : Fin n → ℂ) (i : Fin n)
 /-- The companion matrix is analytic on the domain, entry by entry. -/
 theorem analyticOnNhd_companion (i j : Fin n) :
     AnalyticOnNhd ℂ (fun z ↦ E.companion z i j) U := by
-  dsimp [companion]
+  simp only [companion_apply]
   split_ifs
   · exact analyticOnNhd_const
   · exact analyticOnNhd_const
   · exact (HolomorphicFunctions.analyticOnNhd_extend (Subset.refl _) (E.coeff j)).neg
 
 variable {E} {y f g : ℂ → ℂ}
+
+/-- A scalar solution is analytic on the domain. -/
+theorem IsSolution.analyticOnNhd (hy : E.IsSolution y) : AnalyticOnNhd ℂ y U :=
+  hy.1
+
+/-- A scalar solution satisfies the homogeneous equation at every point of the domain. -/
+theorem IsSolution.eq_zero (hy : E.IsSolution y) (z : ℂ) (hz : z ∈ U) :
+    iteratedDeriv n y z + ∑ j, HolomorphicFunctions.extend (E.coeff j) z *
+      iteratedDeriv j y z = 0 :=
+  hy.2 z hz
 
 /-- Solutionhood respects equality of scalar representatives on the domain. -/
 theorem IsSolution.congr (hy : E.IsSolution y) (hyf : EqOn y f U) : E.IsSolution f := by
@@ -118,7 +141,7 @@ theorem IsSolution.add (hf : E.IsSolution f) (hg : E.IsSolution g) :
   linear_combination hf.2 z hz + hg.2 z hz
 
 /-- Constant complex multiples of analytic solutions are solutions. -/
-theorem IsSolution.smul (hf : E.IsSolution f) (c : ℂ) : E.IsSolution (c • f) := by
+theorem IsSolution.const_smul (hf : E.IsSolution f) (c : ℂ) : E.IsSolution (c • f) := by
   refine ⟨hf.1.const_smul, ?_⟩
   intro z hz
   simp only [iteratedDeriv_const_smul_field, smul_eq_mul]
@@ -132,7 +155,7 @@ def solutionSpace : Submodule ℂ (holomorphicFunctions U) where
     simp [HolomorphicFunctions.extend_apply _ ⟨z, hz⟩])
   add_mem' {f g} hf hg := (hf.add hg).congr (fun z hz ↦ by
     simp [HolomorphicFunctions.extend_apply _ ⟨z, hz⟩, Subalgebra.coe_add])
-  smul_mem' c f hf := (hf.smul c).congr (fun z hz ↦ by
+  smul_mem' c f hf := (hf.const_smul c).congr (fun z hz ↦ by
     simp [HolomorphicFunctions.extend_apply _ ⟨z, hz⟩])
 
 /-- Membership in the solution subspace is the scalar equation for the zero extension. -/
@@ -154,6 +177,22 @@ theorem initialJet_apply {a : ℂ} (ha : a ∈ U) (f : E.solutionSpace) (j : Fin
 /-- An analytic vector solves the companion system if its derivative is the matrix action. -/
 def IsCompanionSolution (v : ℂ → Fin n → ℂ) : Prop :=
   AnalyticOnNhd ℂ v U ∧ ∀ z ∈ U, HasDerivAt v (E.companion z *ᵥ v z) z
+
+/-- Companion solutionhood is analyticity together with the matrix derivative equation. -/
+theorem isCompanionSolution_iff (v : ℂ → Fin n → ℂ) :
+    E.IsCompanionSolution v ↔ AnalyticOnNhd ℂ v U ∧
+      ∀ z ∈ U, HasDerivAt v (E.companion z *ᵥ v z) z := (Iff.rfl)
+
+/-- A companion-system solution is analytic on the domain. -/
+theorem IsCompanionSolution.analyticOnNhd {v : ℂ → Fin n → ℂ}
+    (hv : E.IsCompanionSolution v) : AnalyticOnNhd ℂ v U :=
+  hv.1
+
+/-- A companion-system solution has the derivative prescribed by the matrix action. -/
+theorem IsCompanionSolution.hasDerivAt {v : ℂ → Fin n → ℂ}
+    (hv : E.IsCompanionSolution v) (z : ℂ) (hz : z ∈ U) :
+    HasDerivAt v (E.companion z *ᵥ v z) z :=
+  hv.2 z hz
 
 /-- The derivative vector of a scalar solution solves the companion system. -/
 theorem IsSolution.isCompanionSolution (hy : E.IsSolution y) :
