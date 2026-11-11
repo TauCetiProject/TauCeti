@@ -153,6 +153,40 @@ theorem hasWeakConjWirtingerDerivRealBoundaryOn_iff :
               (lineDeriv ℝ (χ : ℂ → ℂ) z 1 + I * lineDeriv ℝ (χ : ℂ → ℂ) z I) • ξ z) =
             -(2 : ℝ) • ℜ (∫ z in {z : ℂ | 0 ≤ z.im}, χ z • η z) := Iff.rfl
 
+/-- Almost-everywhere replacement on `Ω ∩ {0 ≤ im}` preserves the source of the weak
+real-boundary equation. -/
+theorem HasWeakConjWirtingerDerivRealBoundaryOn.congr_ae {ξ' : ℂ → F}
+    (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ η)
+    (hξ : ξ =ᵐ[volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})] ξ') :
+    HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ' η := by
+  refine ⟨h.1, h.2.1.congr hξ, h.2.2.1, fun χ hχ ↦ ?_⟩
+  rw [← h.2.2.2 χ hχ]
+  congr 1
+  refine setIntegral_congr_ae measurableSet_im_nonneg ?_
+  filter_upwards [(ae_restrict_iff' (Ω.isOpen.measurableSet.inter measurableSet_im_nonneg)).1 hξ]
+    with z hz hz0
+  by_cases hzΩ : z ∈ (Ω : Set ℂ)
+  · rw [hz ⟨hzΩ, hz0⟩]
+  · have ht : z ∉ tsupport (χ : ℂ → ℂ) := fun h' ↦ hzΩ (χ.tsupport_subset h')
+    simp [lineDeriv_of_notMem_tsupport ht]
+
+/-- Almost-everywhere replacement on `Ω ∩ {0 ≤ im}` preserves the right-hand side of the weak
+real-boundary equation. -/
+theorem HasWeakConjWirtingerDerivRealBoundaryOn.congr_ae_deriv {η' : ℂ → F}
+    (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ η)
+    (hη : η =ᵐ[volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})] η') :
+    HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ η' := by
+  refine ⟨h.1, h.2.1, h.2.2.1.congr hη, fun χ hχ ↦ ?_⟩
+  rw [h.2.2.2 χ hχ]
+  congr 2
+  refine setIntegral_congr_ae measurableSet_im_nonneg ?_
+  filter_upwards [(ae_restrict_iff' (Ω.isOpen.measurableSet.inter measurableSet_im_nonneg)).1 hη]
+    with z hz hz0
+  by_cases hzΩ : z ∈ (Ω : Set ℂ)
+  · rw [hz ⟨hzΩ, hz0⟩]
+  · rw [image_eq_zero_of_notMem_tsupport (fun h' ↦ hzΩ (χ.tsupport_subset h'))]
+    simp
+
 /-! ### Test functions -/
 
 /-- Conjugation, as a continuous real-linear equivalence, maps a conjugation-invariant open set
