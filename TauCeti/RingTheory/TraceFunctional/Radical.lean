@@ -89,12 +89,14 @@ theorem traceRadical_ne_top (h : τ 1 ≠ 0) : τ.traceRadical hτ ≠ ⊤ := by
   have hmem : (1 : A) ∈ τ.traceRadical hτ := by rw [heq]; trivial
   exact h (by simpa using hmem 1)
 
-/-- The trace radical is the largest two-sided ideal annihilated by the trace. -/
-theorem le_traceRadical_iff (I : Ideal A) [I.IsTwoSided] :
+/-- The trace radical is the largest (left, hence by traciality two-sided) ideal annihilated by
+the trace. -/
+theorem le_traceRadical_iff (I : Ideal A) :
     I ≤ τ.traceRadical hτ ↔ I.restrictScalars R ≤ ker τ := by
   refine ⟨fun h ↦ le_trans (Submodule.restrictScalars_mono R h) (τ.traceRadical_le_ker hτ), ?_⟩
   intro h x hx y
-  exact h (I.mul_mem_right y hx)
+  rw [hτ]
+  exact h (I.mul_mem_left y hx)
 
 /-- The linear functional induced on the quotient by the trace radical. -/
 def quotientTrace : A ⧸ τ.traceRadical hτ →ₗ[R] R :=
