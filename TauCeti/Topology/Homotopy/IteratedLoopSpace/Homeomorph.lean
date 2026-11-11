@@ -21,7 +21,8 @@ carries the basepoint (the constant iterated loop) to the constant cube loop.
 * `TauCeti.BasedTopologicalSpace.iteratedLoopSpaceHomeomorph`:
   `Ω^[k] X ≃ₜ Ω^ (Fin k) X x`, with `iteratedLoopSpaceHomeomorph_zero` and
   `iteratedLoopSpaceHomeomorph_succ` its defining equations, and
-  `iteratedLoopSpaceHomeomorph_map` its naturality in `X`.
+  `iteratedLoopSpaceHomeomorph_map` its naturality in `X`, and
+  `iteratedLoopSpaceHomeomorph_two_apply` its value on a double loop.
 -/
 
 public section
@@ -105,6 +106,19 @@ theorem iteratedLoopSpaceHomeomorph_map :
       (iteratedLoopSpaceHomeomorph_map k f.loopSpace γ)).trans
         (ContinuousMap.genLoopLoopHomeomorph_map f.toContinuousMap f.map_basepoint
           f.loopSpace.toContinuousMap (fun γ t => Hom.loopSpace_apply' f γ t) k _)
+
+-- `Ω^[2] X` is `Ω (Ω X)` by definitional unfolding of the exposed `iteratedLoopSpace`, so a double
+-- loop is an element of its carrier.
+/-- A double loop `γ`, read as a cube loop in two directions, takes the value `γ t₀ t₁` at
+`(t₀, t₁)`: the first coordinate is the loop parameter of the loop of loops. -/
+theorem iteratedLoopSpaceHomeomorph_two_apply (X : BasedTopologicalSpace.{u})
+    (γ : Path (Path.refl X.basepoint) (Path.refl X.basepoint)) (t : Fin 2 → unitInterval) :
+    iteratedLoopSpaceHomeomorph 2 X γ t = γ (t 0) (t 1) := by
+  have h := GenLoop.genLoopLoopHomeomorph_apply X.basepoint 1
+    (iteratedLoopSpaceHomeomorph 1 X.loopSpace γ) t
+  have h' := GenLoop.genLoopLoopHomeomorph_apply X.loopSpace.basepoint 0
+    (iteratedLoopSpaceHomeomorph 0 X.loopSpace.loopSpace γ) (fun i => t i.castSucc)
+  exact h.trans (congrArg (· (t (Fin.last 1))) h')
 
 end BasedTopologicalSpace
 
