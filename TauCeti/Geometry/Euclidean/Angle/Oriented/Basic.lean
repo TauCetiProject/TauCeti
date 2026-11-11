@@ -28,7 +28,10 @@ of the third one plus `π` or minus `π`
 (`Orientation.oangle_toReal_add_oangle_neg_left_toReal_eq_add_pi_or_eq_sub_pi`): plus `π` exactly
 when this sum is positive (`Orientation.oangle_toReal_add_oangle_neg_left_toReal`,
 `Orientation.oangle_toReal_add_oangle_neg_left_toReal_eq_add_pi_iff`), and minus `π` exactly when
-it is nonpositive (`Orientation.oangle_toReal_add_oangle_neg_left_toReal_eq_sub_pi_iff`).
+it is nonpositive (`Orientation.oangle_toReal_add_oangle_neg_left_toReal_eq_sub_pi_iff`). These
+are the general facts `Real.Angle.toReal_add_toReal_eq_add_pi_or_eq_sub_pi`,
+`Real.Angle.toReal_add_toReal_eq_add_pi_iff` and `Real.Angle.toReal_add_toReal_eq_sub_pi_iff` about
+angles `θ₁ + θ₂ = θ + π`, applied to the half-turn law.
 
 These are the signed exterior angles at a point where the common boundary arc of two adjacent
 plane domains meets their outer boundary: the two domains traverse the common arc in opposite
@@ -91,14 +94,8 @@ adjacent domains at an endpoint of their common boundary arc, this hypothesis sa
 interior angle `(π - α₁) + (π - α₂)` is less than `2π`. -/
 theorem oangle_toReal_add_oangle_neg_left_toReal {u w v : V} (hu : u ≠ 0) (hw : w ≠ 0)
     (hv : v ≠ 0) (hpos : 0 < (o.oangle u w).toReal + (o.oangle (-w) v).toReal) :
-    (o.oangle u w).toReal + (o.oangle (-w) v).toReal = (o.oangle u v).toReal + π := by
-  have h₁ := Real.Angle.toReal_le_pi (o.oangle u w)
-  have h₂ := Real.Angle.toReal_le_pi (o.oangle (-w) v)
-  have h := (Real.Angle.toReal_coe_eq_self_iff
-    (θ := (o.oangle u w).toReal + (o.oangle (-w) v).toReal - π)).2 ⟨by linarith, by linarith⟩
-  rw [Real.Angle.coe_sub, Real.Angle.coe_add, Real.Angle.coe_toReal, Real.Angle.coe_toReal,
-    o.oangle_add_oangle_neg_left hu hw hv, add_sub_cancel_right] at h
-  linarith
+    (o.oangle u w).toReal + (o.oangle (-w) v).toReal = (o.oangle u v).toReal + π :=
+  (Real.Angle.toReal_add_toReal_eq_add_pi_iff (o.oangle_add_oangle_neg_left hu hw hv)).2 hpos
 
 /-- For nonzero `u`, `w`, `v`, the real oriented angles `α₁` from `u` to `w` and `α₂` from `-w` to
 `v` satisfy `α₁ + α₂ = α + π`, where `α` is the real oriented angle from `u` to `v`, if and only if
@@ -107,8 +104,7 @@ theorem oangle_toReal_add_oangle_neg_left_toReal_eq_add_pi_iff {u w v : V} (hu :
     (hw : w ≠ 0) (hv : v ≠ 0) :
     (o.oangle u w).toReal + (o.oangle (-w) v).toReal = (o.oangle u v).toReal + π ↔
       0 < (o.oangle u w).toReal + (o.oangle (-w) v).toReal :=
-  ⟨fun h ↦ by linarith [Real.Angle.neg_pi_lt_toReal (o.oangle u v)],
-    o.oangle_toReal_add_oangle_neg_left_toReal hu hw hv⟩
+  Real.Angle.toReal_add_toReal_eq_add_pi_iff (o.oangle_add_oangle_neg_left hu hw hv)
 
 /-- For nonzero `u`, `w`, `v`, the real oriented angles `α₁` from `u` to `w` and `α₂` from `-w` to
 `v` satisfy `α₁ + α₂ = α - π`, where `α` is the real oriented angle from `u` to `v`, if and only if
@@ -118,15 +114,8 @@ boundary arc, this condition says that the joined interior angle `(π - α₁) +
 theorem oangle_toReal_add_oangle_neg_left_toReal_eq_sub_pi_iff {u w v : V} (hu : u ≠ 0)
     (hw : w ≠ 0) (hv : v ≠ 0) :
     (o.oangle u w).toReal + (o.oangle (-w) v).toReal = (o.oangle u v).toReal - π ↔
-      (o.oangle u w).toReal + (o.oangle (-w) v).toReal ≤ 0 := by
-  refine ⟨fun h ↦ by linarith [Real.Angle.toReal_le_pi (o.oangle u v)], fun hnonpos ↦ ?_⟩
-  have h₁ := Real.Angle.neg_pi_lt_toReal (o.oangle u w)
-  have h₂ := Real.Angle.neg_pi_lt_toReal (o.oangle (-w) v)
-  have h := (Real.Angle.toReal_coe_eq_self_iff
-    (θ := (o.oangle u w).toReal + (o.oangle (-w) v).toReal + π)).2 ⟨by linarith, by linarith⟩
-  rw [Real.Angle.coe_add, Real.Angle.coe_add, Real.Angle.coe_toReal, Real.Angle.coe_toReal,
-    o.oangle_add_oangle_neg_left hu hw hv, add_assoc, Real.Angle.coe_pi_add_coe_pi, add_zero] at h
-  linarith
+      (o.oangle u w).toReal + (o.oangle (-w) v).toReal ≤ 0 :=
+  Real.Angle.toReal_add_toReal_eq_sub_pi_iff (o.oangle_add_oangle_neg_left hu hw hv)
 
 /-- For nonzero `u`, `w`, `v`, the sum of the real oriented angles from `u` to `w` and from `-w` to
 `v` is the real oriented angle from `u` to `v` plus `π` or minus `π`. -/
@@ -134,8 +123,6 @@ theorem oangle_toReal_add_oangle_neg_left_toReal_eq_add_pi_or_eq_sub_pi {u w v :
     (hw : w ≠ 0) (hv : v ≠ 0) :
     (o.oangle u w).toReal + (o.oangle (-w) v).toReal = (o.oangle u v).toReal + π ∨
       (o.oangle u w).toReal + (o.oangle (-w) v).toReal = (o.oangle u v).toReal - π :=
-  (lt_or_ge 0 ((o.oangle u w).toReal + (o.oangle (-w) v).toReal)).imp
-    (o.oangle_toReal_add_oangle_neg_left_toReal_eq_add_pi_iff hu hw hv).2
-    (o.oangle_toReal_add_oangle_neg_left_toReal_eq_sub_pi_iff hu hw hv).2
+  Real.Angle.toReal_add_toReal_eq_add_pi_or_eq_sub_pi (o.oangle_add_oangle_neg_left hu hw hv)
 
 end Orientation
