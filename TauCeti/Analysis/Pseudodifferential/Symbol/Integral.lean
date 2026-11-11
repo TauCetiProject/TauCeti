@@ -27,8 +27,18 @@ finite-dimensionality assumption on `V` or `W`. The parameter space needs only a
 The position estimates remain local on compact sets, with the native weight
 `⟨ξ⟩^(m - |β|) = (1 + ‖ξ‖²)^((m - |β|)/2)`.
 
+The integral commutes with addition and complex scalar multiplication and sends a zero
+family or a zero measure to the zero symbol. If `V →L[ℂ] W` is complete, a constant
+parameter family integrates to the total mass times its symbol, a probability average
+fixes that family, and a Dirac measure selects its symbol at the specified parameter.
+These normalization identities use completeness because Mathlib's Bochner integral in
+an incomplete target is defined to be zero. The algebra identities need no completeness.
+
 ## References
 
+* Mathlib, `MeasureTheory/Integral/Bochner/Basic.lean`: the algebra and normalization
+  identities of the coefficient integral.
+  <https://github.com/leanprover-community/mathlib4>.
 * Lean-Atiyah-Singer, `AtiyahSinger/Analysis/CompactSymbolIntegral.lean`:
   the source formalization of compact-parameter symbol integration.
   <https://github.com/alpha-squared-labs/Lean-Atiyah-Singer>.
@@ -47,6 +57,8 @@ open MeasureTheory Set
 open scoped ContDiff
 
 namespace TauCeti.Symbol
+
+section ContinuousJets
 
 variable {Y : Type*} [TopologicalSpace Y] [CompactSpace Y]
   [MeasurableSpace Y] [OpensMeasurableSpace Y]
@@ -132,5 +144,196 @@ theorem seminorm_integral_le_of_probability [IsProbabilityMeasure μ]
     {C : ℝ} (hC : 0 ≤ C) (h : ∀ y, Symbol.seminorm K α β (a y) ≤ C) :
     Symbol.seminorm K α β (integral μ a hjets hbound) ≤ C := by
   simpa using seminorm_integral_le μ a hjets hbound K α β hC h
+
+end ContinuousJets
+
+section IntegralAlgebra
+
+variable {Y : Type*} [TopologicalSpace Y]
+  {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
+  [NormedAddCommGroup W] [NormedSpace ℂ W] {m : ℝ}
+
+private theorem continuous_coefficient_family (a : Y → Symbol n V W m)
+    (hjets : ∀ k : ℕ, Continuous
+      (fun p : Y × (CoordinateSpace n × CoordinateSpace n) ↦
+        iteratedFDeriv ℝ k (a p.1).coefficient p.2))
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    Continuous (fun y ↦ (a y).coefficient p) := by
+  have hc := (hjets 0).comp (continuous_id.prodMk (continuous_const (y := p)))
+  -- Evaluating a degree-zero jet recovers the coefficient itself.
+  have he : Continuous (fun y ↦ (iteratedFDeriv ℝ 0 (a y).coefficient p)
+      (0 : Fin 0 → CoordinateSpace n × CoordinateSpace n)) :=
+    hc.eval continuous_const
+  simpa only [iteratedFDeriv_zero_apply] using he
+
+variable [CompactSpace Y] [MeasurableSpace Y] [OpensMeasurableSpace Y]
+
+private theorem integrable_coefficient_family (μ : Measure Y) [IsFiniteMeasure μ]
+    (a : Y → Symbol n V W m)
+    (hjets : ∀ k : ℕ, Continuous
+      (fun p : Y × (CoordinateSpace n × CoordinateSpace n) ↦
+        iteratedFDeriv ℝ k (a p.1).coefficient p.2))
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    Integrable (fun y ↦ (a y).coefficient p) μ :=
+  (continuous_coefficient_family a hjets p).integrable_of_hasCompactSupport
+    (HasCompactSupport.of_compactSpace _)
+
+variable (μ : Measure Y)
+
+section FiniteMeasure
+
+variable [IsFiniteMeasure μ]
+
+/-- The integral of a zero parameter family is the zero symbol. -/
+@[simp]
+theorem integral_zero
+    {hjets : ∀ k : ℕ, Continuous
+      (fun p : Y × (CoordinateSpace n × CoordinateSpace n) ↦
+        iteratedFDeriv ℝ k (0 : Symbol n V W m).coefficient p.2)}
+    {hbound : ∀ K : Set (CoordinateSpace n), IsCompact K → ∀ α β : List (Fin n),
+      ∃ C : ℝ, 0 ≤ C ∧ ∀ _ : Y, ∀ x ∈ K, ∀ ξ,
+        ‖mixedDeriv α β (0 : Symbol n V W m).coefficient x ξ‖ ≤
+          C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)} :
+    integral μ (fun _ : Y ↦ (0 : Symbol n V W m)) hjets hbound = 0 := by
+  apply Symbol.ext
+  funext p
+  simp only [coefficient_integral, coefficient_zero, Pi.zero_apply,
+    MeasureTheory.integral_zero]
+
+/-- Integrating against zero measure gives the zero symbol. -/
+@[simp]
+theorem integral_zero_measure (a : Y → Symbol n V W m)
+    (hjets : ∀ k : ℕ, Continuous
+      (fun p : Y × (CoordinateSpace n × CoordinateSpace n) ↦
+        iteratedFDeriv ℝ k (a p.1).coefficient p.2))
+    {hbound : ∀ K : Set (CoordinateSpace n), IsCompact K → ∀ α β : List (Fin n),
+      ∃ C : ℝ, 0 ≤ C ∧ ∀ y : Y, ∀ x ∈ K, ∀ ξ,
+        ‖mixedDeriv α β (a y).coefficient x ξ‖ ≤
+          C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)} :
+    integral (0 : Measure Y) a hjets hbound = 0 := by
+  apply Symbol.ext
+  funext p
+  simp only [coefficient_integral, coefficient_zero, Pi.zero_apply,
+    MeasureTheory.integral_zero_measure]
+
+/-- Integration preserves addition of compact continuous-jet symbol families. -/
+theorem integral_add (a b : Y → Symbol n V W m)
+    (ha : ∀ k : ℕ, Continuous
+      (fun p : Y × (CoordinateSpace n × CoordinateSpace n) ↦
+        iteratedFDeriv ℝ k (a p.1).coefficient p.2))
+    (hb : ∀ k : ℕ, Continuous
+      (fun p : Y × (CoordinateSpace n × CoordinateSpace n) ↦
+        iteratedFDeriv ℝ k (b p.1).coefficient p.2))
+    {hba : ∀ K : Set (CoordinateSpace n), IsCompact K → ∀ α β : List (Fin n),
+      ∃ C : ℝ, 0 ≤ C ∧ ∀ y : Y, ∀ x ∈ K, ∀ ξ,
+        ‖mixedDeriv α β (a y).coefficient x ξ‖ ≤
+          C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)}
+    {hbb : ∀ K : Set (CoordinateSpace n), IsCompact K → ∀ α β : List (Fin n),
+      ∃ C : ℝ, 0 ≤ C ∧ ∀ y : Y, ∀ x ∈ K, ∀ ξ,
+        ‖mixedDeriv α β (b y).coefficient x ξ‖ ≤
+          C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)}
+    {hab : ∀ k : ℕ, Continuous
+      (fun p : Y × (CoordinateSpace n × CoordinateSpace n) ↦
+        iteratedFDeriv ℝ k (a p.1 + b p.1).coefficient p.2)}
+    {hbab : ∀ K : Set (CoordinateSpace n), IsCompact K → ∀ α β : List (Fin n),
+      ∃ C : ℝ, 0 ≤ C ∧ ∀ y : Y, ∀ x ∈ K, ∀ ξ,
+        ‖mixedDeriv α β (a y + b y).coefficient x ξ‖ ≤
+          C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)} :
+    integral μ (fun y ↦ a y + b y) hab hbab =
+      integral μ a ha hba + integral μ b hb hbb := by
+  apply Symbol.ext
+  funext p
+  simp only [coefficient_integral, coefficient_add, Pi.add_apply]
+  exact MeasureTheory.integral_add (integrable_coefficient_family μ a ha p)
+    (integrable_coefficient_family μ b hb p)
+
+/-- Integration commutes with multiplication by a fixed complex scalar. -/
+theorem integral_smul (c : ℂ) (a : Y → Symbol n V W m)
+    (hjets : ∀ k : ℕ, Continuous
+      (fun p : Y × (CoordinateSpace n × CoordinateSpace n) ↦
+        iteratedFDeriv ℝ k (a p.1).coefficient p.2))
+    {hbound : ∀ K : Set (CoordinateSpace n), IsCompact K → ∀ α β : List (Fin n),
+      ∃ C : ℝ, 0 ≤ C ∧ ∀ y : Y, ∀ x ∈ K, ∀ ξ,
+        ‖mixedDeriv α β (a y).coefficient x ξ‖ ≤
+          C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)}
+    {hcs : ∀ k : ℕ, Continuous
+      (fun p : Y × (CoordinateSpace n × CoordinateSpace n) ↦
+        iteratedFDeriv ℝ k (c • a p.1).coefficient p.2)}
+    {hbcs : ∀ K : Set (CoordinateSpace n), IsCompact K → ∀ α β : List (Fin n),
+      ∃ C : ℝ, 0 ≤ C ∧ ∀ y : Y, ∀ x ∈ K, ∀ ξ,
+        ‖mixedDeriv α β (c • a y).coefficient x ξ‖ ≤
+          C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)} :
+    integral μ (fun y ↦ c • a y) hcs hbcs = c • integral μ a hjets hbound := by
+  apply Symbol.ext
+  funext p
+  simp only [coefficient_integral, coefficient_smul, Pi.smul_apply,
+    MeasureTheory.integral_smul]
+
+section CompleteCoefficients
+
+variable [CompleteSpace (V →L[ℂ] W)]
+
+/-- A constant parameter family integrates to the total mass times its symbol. -/
+@[simp]
+theorem integral_const (b : Symbol n V W m)
+    {hjets : ∀ k : ℕ, Continuous
+      (fun p : Y × (CoordinateSpace n × CoordinateSpace n) ↦
+        iteratedFDeriv ℝ k b.coefficient p.2)}
+    {hbound : ∀ K : Set (CoordinateSpace n), IsCompact K → ∀ α β : List (Fin n),
+      ∃ C : ℝ, 0 ≤ C ∧ ∀ _ : Y, ∀ x ∈ K, ∀ ξ,
+        ‖mixedDeriv α β b.coefficient x ξ‖ ≤
+          C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)} :
+    integral μ (fun _ : Y ↦ b) hjets hbound = (μ.real univ : ℂ) • b := by
+  apply Symbol.ext
+  funext p
+  simp only [coefficient_integral, MeasureTheory.integral_const, coefficient_smul,
+    Pi.smul_apply]
+  exact RCLike.real_smul_eq_coe_smul (K := ℂ) (μ.real univ) (b.coefficient p)
+
+end CompleteCoefficients
+
+end FiniteMeasure
+
+section CompleteCoefficients
+
+variable [CompleteSpace (V →L[ℂ] W)]
+
+/-- A probability average fixes a constant parameter family of symbols. -/
+@[simp high]
+theorem integral_const_of_probability [IsProbabilityMeasure μ] (b : Symbol n V W m)
+    {hjets : ∀ k : ℕ, Continuous
+      (fun p : Y × (CoordinateSpace n × CoordinateSpace n) ↦
+        iteratedFDeriv ℝ k b.coefficient p.2)}
+    {hbound : ∀ K : Set (CoordinateSpace n), IsCompact K → ∀ α β : List (Fin n),
+      ∃ C : ℝ, 0 ≤ C ∧ ∀ _ : Y, ∀ x ∈ K, ∀ ξ,
+        ‖mixedDeriv α β b.coefficient x ξ‖ ≤
+          C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)} :
+    integral μ (fun _ : Y ↦ b) hjets hbound = b := by
+  simpa only [probReal_univ, Complex.ofReal_one, one_smul] using
+    integral_const μ b (hjets := hjets) (hbound := hbound)
+
+/-- Integrating a compact continuous-jet symbol family against a Dirac measure selects its
+symbol at that parameter. -/
+@[simp]
+theorem integral_dirac (y₀ : Y) (a : Y → Symbol n V W m)
+    (hjets : ∀ k : ℕ, Continuous
+      (fun p : Y × (CoordinateSpace n × CoordinateSpace n) ↦
+        iteratedFDeriv ℝ k (a p.1).coefficient p.2))
+    {hbound : ∀ K : Set (CoordinateSpace n), IsCompact K → ∀ α β : List (Fin n),
+      ∃ C : ℝ, 0 ≤ C ∧ ∀ y : Y, ∀ x ∈ K, ∀ ξ,
+        ‖mixedDeriv α β (a y).coefficient x ξ‖ ≤
+          C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)} :
+    integral (Measure.dirac y₀) a hjets hbound = a y₀ := by
+  apply Symbol.ext
+  funext p
+  rw [coefficient_integral]
+  -- Compact-range strong measurability avoids any measurable-singleton assumption on Y.
+  exact MeasureTheory.integral_dirac' _ _
+    ((continuous_coefficient_family a hjets p).stronglyMeasurable_of_hasCompactSupport
+      (HasCompactSupport.of_compactSpace _))
+
+end CompleteCoefficients
+
+end IntegralAlgebra
 
 end TauCeti.Symbol
