@@ -30,7 +30,7 @@ open WeierstrassCurve
 
 -- No normalization of the input representative is required.
 example {K : Type*} [Field K] [DecidableEq K] {A B N D c : K}
-    (hB : B ≠ 0) (hD : D ≠ 0) (h : 4 * N = (A + 2) * D) (hc : c ≠ 0)
+    (hD : D ≠ 0) (h : 4 * N = (A + 2) * D) (hc : c ≠ 0)
     (P : (model A B).toAffine.Point) (k : ℕ) :
     double N D (c • coordinates A B (k • P)) ≠ 0 ∧
       (double N D (c • coordinates A B (k • P))).cross
@@ -38,7 +38,7 @@ example {K : Type*} [Field K] [DecidableEq K] {A B N D c : K}
   simpa only [mul_nsmul, two_nsmul, nsmul_add] using
     double_coordinates_of_cross_eq_zero hD h
       (P := k • P) (S := c • coordinates A B (k • P))
-      (by simp [hc, coordinates_ne_zero hB]) (by simp)
+      (by simp [hc]) (by simp)
 
 -- The scaled relation is sufficient even in characteristic two, on the singular model A = 0.
 example (P : (model (0 : ZMod 2) 1).toAffine.Point) (k : ℕ) :
@@ -47,7 +47,7 @@ example (P : (model (0 : ZMod 2) 1).toAffine.Point) (k : ℕ) :
         (coordinates 0 1 ((2 * k) • P)) = 0 := by
   simpa only [mul_nsmul, two_nsmul, nsmul_add] using
     double_coordinates_of_cross_eq_zero (N := 1) (D := 1) (by decide) (by decide)
-      (coordinates_ne_zero (by decide) (k • P)) (by simp)
+      (coordinates_ne_zero_of_field (k • P)) (by simp)
 
 -- Track actual raw outputs rather than assuming the group order or the intermediate multiples.
 example [Fact (Nat.Prime 7)] :
