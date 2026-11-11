@@ -60,6 +60,7 @@ theorem residueFieldEquivCompletion_algebraMap
     algebraMap_completionIntegersExtensionAlgebra,
     completionIntegersExtension_completionIntegersEmbedding]
 
+variable (k F) in
 /-- The residue embeddings commute with the canonical completion isomorphisms,
 expressed as an equality of ring homomorphisms. -/
 theorem algebraMap_comp_residueFieldEquivCompletion :
@@ -77,29 +78,33 @@ theorem algebraMap_comp_residueFieldEquivCompletion :
 factor. The completed residue-field algebra is induced by the canonical local map
 of completed valuation rings. -/
 @[simp]
-theorem finrank_residueField_completion :
-    letI := (P'.restrict k F).completionIntegersExtensionAlgebra P' rfl
-    Module.finrank (P'.restrict k F).completionPlace.ResidueField
+theorem finrank_residueField_completion (P : Place k F) (P' : Place k' F')
+    (hP : P'.restrict k F = P) :
+    letI := P.completionIntegersExtensionAlgebra P' hP
+    Module.finrank P.completionPlace.ResidueField
       P'.completionPlace.ResidueField = relativeDegree k F P' := by
+  subst P
   let := (P'.restrict k F).completionIntegersExtensionAlgebra P' rfl
   rw [relativeDegree_def]
   exact (Algebra.finrank_eq_of_equiv_equiv
     (P'.restrict k F).residueFieldEquivCompletion.toRingEquiv
     P'.residueFieldEquivCompletion.toRingEquiv
-    (P'.algebraMap_comp_residueFieldEquivCompletion (k := k) (F := F))).symm
+    (algebraMap_comp_residueFieldEquivCompletion k F P')).symm
 
 /-- Completion preserves, rather than repairs, separability of the residue extension.
 In particular, an inseparable residue extension remains inseparable after completion. -/
 @[simp]
-theorem isSeparable_residueField_completion_iff :
-    letI := (P'.restrict k F).completionIntegersExtensionAlgebra P' rfl
-    Algebra.IsSeparable (P'.restrict k F).completionPlace.ResidueField
+theorem isSeparable_residueField_completion_iff (P : Place k F) (P' : Place k' F')
+    (hP : P'.restrict k F = P) :
+    letI := P.completionIntegersExtensionAlgebra P' hP
+    Algebra.IsSeparable P.completionPlace.ResidueField
       P'.completionPlace.ResidueField ↔
         Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField := by
+  subst P
   let := (P'.restrict k F).completionIntegersExtensionAlgebra P' rfl
   exact (Algebra.IsSeparable.iff_of_equiv_equiv
     (P'.restrict k F).residueFieldEquivCompletion.toRingEquiv
     P'.residueFieldEquivCompletion.toRingEquiv
-    (P'.algebraMap_comp_residueFieldEquivCompletion (k := k) (F := F))).symm
+    (algebraMap_comp_residueFieldEquivCompletion k F P')).symm
 
 end TauCeti.Place

@@ -151,7 +151,7 @@ theorem span_completionIntegers_eq_top [Finite ι] (u : ι → P'.integers)
     push_cast
     simp only [map_sum, Algebra.smul_def]
     refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-    simp [mul_assoc, coe_algebraMap_completionIntegersExtensionAlgebra]
+    simp [mul_assoc]
   push_cast
   rw [key, ← Submodule.neg_mem_iff, neg_sub]
   have := (P'.completionPlace.filtration (ramificationIdx F P')).add_mem hy₀

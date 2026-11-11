@@ -171,8 +171,8 @@ theorem coe_completionIntegersExtension (x : P.completionPlace.integers) :
     (P.completionIntegersExtension P' hP x : P'.Completion) = P.completionExtension P' hP x :=
   (rfl)
 
-/-- Completing the valuation-ring embedding agrees with first completing both rings
-and then applying the completed extension. -/
+/-- The map of completed valuation rings agrees with the original valuation-ring embedding
+along the canonical completion embeddings. -/
 @[simp]
 theorem completionIntegersExtension_completionIntegersEmbedding
     (x : (P'.restrict k F).integers) :
@@ -207,6 +207,18 @@ theorem algebraMap_completionIntegersExtensionAlgebra :
     algebraMap P.completionPlace.integers P'.completionPlace.integers =
       P.completionIntegersExtension P' hP :=
   RingHom.algebraMap_toAlgebra _
+
+/-- The chosen algebra map of completed valuation rings agrees with the original
+valuation-ring embedding along the canonical completion embeddings. -/
+@[simp]
+theorem algebraMap_completionIntegersEmbedding (x : (P'.restrict k F).integers) :
+    letI := (P'.restrict k F).completionIntegersExtensionAlgebra P' rfl
+    algebraMap (P'.restrict k F).completionPlace.integers P'.completionPlace.integers
+        ((P'.restrict k F).completionIntegersEmbedding x) =
+      P'.completionIntegersEmbedding
+        (algebraMap (P'.restrict k F).integers P'.integers x) := by
+  rw [algebraMap_completionIntegersExtensionAlgebra]
+  exact completionIntegersExtension_completionIntegersEmbedding P' x
 
 /-- The algebra map of the chosen completed valuation-ring extension is local, so
 it induces the canonical extension of completed residue fields. -/
