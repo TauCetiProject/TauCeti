@@ -10,9 +10,8 @@ module
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 -- `Module.Free`, `Module.Finite` and `Module.finrank` occur in the statement, and
--- `Module.finBasisOfFinrankEq` in the body; all come from `Mathlib.LinearAlgebra.Dimension.Free`,
--- which this module imports.
-public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+-- `Module.finBasisOfFinrankEq`, which this import defines, in the body.
+public import Mathlib.LinearAlgebra.Dimension.Free
 
 /-!
 # Matrix realizations of endomorphisms and their action on a basis
