@@ -8,7 +8,6 @@ module
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Manifold.PontryaginThom.Degree
-public import TauCeti.Topology.IsLocalHomeomorph
 
 /-!
 # The Pontryagin–Thom collapse along a transverse map
@@ -32,8 +31,6 @@ one point: such a map, transverse to the core there, has collapse of degree `±1
 
 ## Main results
 
-* `TauCeti.IsFramedTube.isLocalHomeomorphOn_pontryaginThomCollapse_comp`: the collapse along a map
-  is a local homeomorphism where the normal coordinate of the map is.
 * `TauCeti.IsFramedTube.exists_isLocalDiffeomorphAt_snd_comp_of_transverse`: the normal coordinate
   of a smooth map transverse to the core of a smooth tube, from a manifold of the dimension of the
   fibre, is a local diffeomorphism at the meeting point.
@@ -61,34 +58,6 @@ open scoped Manifold ContDiff
 namespace TauCeti
 
 namespace IsFramedTube
-
-section Topological
-
-variable {S Q M V : Type*} [TopologicalSpace S] [TopologicalSpace Q] [TopologicalSpace M]
-  [TopologicalSpace V] [Zero V] {f : S → Q} {τ : S × V → Q}
-
-/-- Near a point where a map reads in the tube as `τ ∘ g`, its Pontryagin–Thom collapse is the
-normal coordinate `Prod.snd ∘ g` followed by the inclusion `V → OnePoint V`. -/
-theorem pontryaginThomCollapse_comp_eventuallyEq (h : IsFramedTube f τ) {σ : M → Q} {x : M}
-    {g : M → S × V} (hg : τ ∘ g =ᶠ[𝓝 x] σ) :
-    pontryaginThomCollapse τ ∘ σ =ᶠ[𝓝 x] ((↑) : V → OnePoint V) ∘ Prod.snd ∘ g := by
-  filter_upwards [hg] with m hm
-  rw [comp_apply, ← hm, comp_apply, pontryaginThomCollapse_apply h.isOpenEmbedding.injective]
-  simp only [comp_apply]
-
-/-- **The collapse along a map is a local homeomorphism where its normal coordinate is.** If a map
-`σ` reads in the tube as `τ ∘ g` near `x`, and its normal coordinate `Prod.snd ∘ g` is a local
-homeomorphism at `x`, then so is the composite of `σ` with the Pontryagin–Thom collapse. -/
-theorem isLocalHomeomorphOn_pontryaginThomCollapse_comp (h : IsFramedTube f τ) {σ : M → Q} {x : M}
-    {g : M → S × V} (hg : τ ∘ g =ᶠ[𝓝 x] σ) (hν : IsLocalHomeomorphOn (Prod.snd ∘ g) {x}) :
-    IsLocalHomeomorphOn (pontryaginThomCollapse τ ∘ σ) {x} := by
-  have hcoe : IsLocalHomeomorphOn ((↑) : V → OnePoint V) ((Prod.snd ∘ g) '' {x}) :=
-    OnePoint.isOpenEmbedding_coe.isLocalHomeomorph.isLocalHomeomorphOn.mono (subset_univ _)
-  refine (hcoe.comp hν (mapsTo_image _ _)).congr_of_eventuallyEq fun m hm ↦ ?_
-  rw [mem_singleton_iff.1 hm]
-  exact (h.pontryaginThomCollapse_comp_eventuallyEq hg).symm
-
-end Topological
 
 section Smooth
 
@@ -126,12 +95,9 @@ private theorem surjective_mfderiv_snd_comp_localInverse_comp (h : IsFramedTube 
   let dL : EQ →L[𝕂] ES × V := mfderiv IQ (IS.prod 𝓘(𝕂, V)) L (σ x)
   -- The differential of `L` inverts that of `τ`.
   have hLτ (p : ES × V) : dL (dτ p) = p := by
-    have hg : HasMFDerivAt IQ (IS.prod 𝓘(𝕂, V)) L (τ (y, 0)) dL := hτy ▸ hLd.hasMFDerivAt
-    have : dL.comp dτ = ContinuousLinearMap.id 𝕂 (ES × V) :=
-      (hg.comp (y, 0) hτd.hasMFDerivAt).mfderiv.symm.trans
-        ((hasMFDerivAt_id (y, 0)).congr_of_eventuallyEq_abuse
-          hτ.localInverse_eventuallyEq_left).mfderiv
-    exact congrArg (· p) this
+    simp only [dL]
+    rw [← hτy]
+    exact (hτ.mfderivToContinuousLinearEquiv hn0).symm_apply_apply p
   -- The differential of `f` is that of `τ` along the zero section.
   have hfd (v : ES) : mfderiv IS IQ f y v = dτ (v, 0) := by
     have hz : HasMFDerivAt IS (IS.prod 𝓘(𝕂, V)) (fun s ↦ (s, (0 : V))) y
