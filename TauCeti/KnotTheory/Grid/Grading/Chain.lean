@@ -45,11 +45,9 @@ sigma-currying equivalences; no second direct-sum or graded-module framework is 
 
 ## References
 
-This advances `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.3, by giving the grid
-chain module its missing bigraded decomposition. It is also the algebraic input for Lane G.4,
-where the Alexander-graded Euler characteristic is compared with the grid determinant. The
-grading conventions follow Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*,
-Chapter 4.
+The bigraded decomposition is the algebraic input for comparing the Alexander-graded Euler
+characteristic with the grid determinant. The grading conventions follow Ozsváth--Stipsicz--Szabó,
+*Grid Homology for Knots and Links*, Chapter 4.
 -/
 
 public section
