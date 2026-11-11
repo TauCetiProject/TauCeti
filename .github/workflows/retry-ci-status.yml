@@ -84,12 +84,17 @@ jobs:
           run = json.loads((Path(os.environ['RUNNER_TEMP']) / 'source-status-run.json').read_text())
           repo = os.environ['GITHUB_REPOSITORY']
           allowed = {'pull_request_target', 'repository_dispatch', 'merge_group', 'workflow_dispatch'}
+          # For a fork PR, the platform's pull_request_target completion names
+          # the fork as head_repository even though the trusted workflow ran here.
+          automatic_target = (os.environ.get('GITHUB_EVENT_NAME') == 'workflow_run'
+                              and run.get('event') == 'pull_request_target')
           if (run.get('id') != int(os.environ['CI_STATUS_SOURCE_RUN_ID'])
               or run.get('path') != '.github/workflows/pr-build.yml'
               or run.get('event') not in allowed
               or run.get('status') != 'completed'
               or run.get('conclusion') not in {'success', 'failure'}
-              or (run.get('head_repository') or {}).get('full_name') != repo
+              or (run.get('repository') or {}).get('full_name') != repo
+              or (not automatic_target and (run.get('head_repository') or {}).get('full_name') != repo)
               or (run.get('event') == 'workflow_dispatch' and run.get('head_branch') != os.environ['DEFAULT_BRANCH'])):
               raise SystemExit('Original run is not a completed trusted build; no status artifact may be replayed')
           data = json.loads((Path(os.environ['RUNNER_TEMP']) / 'source-status-artifacts.json').read_text())
