@@ -289,8 +289,8 @@ def IsChevalleyStableUnder (e : ι → L) (S T : Set ι) : Prop :=
     ∃ k ∈ S, ∃ c : ℤ, ⁅e i, e j⁆ = c • e k ∧ ⁅e i, e k⁆ = 0 ∧ ⁅e j, e k⁆ = 0
 
 omit [LieAlgebra ℚ L] in
-/-- Chevalley stability says that each relevant bracket vanishes or is a central root vector
-whose index remains in the stable set. -/
+/-- Chevalley stability says that each relevant bracket vanishes or is a multiple of a root
+vector `e k` with `k ∈ S` commuting with both `e i` and `e j`. -/
 theorem isChevalleyStableUnder_iff {S T : Set ι} :
     IsChevalleyStableUnder e S T ↔
       ∀ i ∈ T, ∀ j ∈ S, ⁅e i, e j⁆ = 0 ∨
