@@ -193,6 +193,14 @@ theorem Term.realize_equal_iff {G : Type*} [Group G] (c : A → G) (v : X → G)
   rw [Term.realize_eq_lift (G := G) c v t, Term.realize_eq_lift (G := G) c v s]
   simp only [map_mul, map_inv, mul_inv_eq_one]
 
+/-- The canonical term of a word evaluates to the value of the word. -/
+@[simp] theorem Term.realize_ofWord {G : Type*} [Group G] (c : A → G) (v : X → G)
+    (w : FreeGroup (X ⊕ A)) :
+    letI : Language.group.Structure G := TauCeti.Group.structureOfGroup G
+    letI : (Language.constantsOn A).Structure G := Language.constantsOn.structure c
+    (Term.ofWord w).realize v = FreeGroup.lift (Sum.elim v c) w := by
+  rw [Term.realize_eq_lift c v, Term.toWord_ofWord]
+
 example (a : A) (x : X) :
     Term.toWord ((Language.Constants.term (Sum.inr a) : Language.group[[A]].Term X)⁻¹ *
       (Language.Term.var x * Language.Constants.term (Sum.inr a))) =
@@ -220,7 +228,7 @@ attribute [local instance] TauCeti.Group.structureOfGroup
   let : (Language.constantsOn Empty).Structure G := Language.constantsOn.structure isEmptyElim
   have : (LEquiv.addEmptyConstants Language.group Empty).invLHom.IsExpansionOn G :=
     LHom.sumElim_isExpansionOn _ _ G
-  rw [wordTerm, LHom.realize_onTerm, Term.realize_eq_lift isEmptyElim, Term.toWord_ofWord]
+  rw [wordTerm, LHom.realize_onTerm, Term.realize_ofWord isEmptyElim]
   induction w using FreeGroup.induction_on <;> simp_all
 
 end WordTerm
