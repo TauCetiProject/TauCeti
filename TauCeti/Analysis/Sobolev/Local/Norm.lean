@@ -22,8 +22,9 @@ derivatives are unique almost everywhere, so the minimum is attained by every we
 
 This is the quantity in which interior estimates of elliptic equations are stated. The file
 supplies its unfolding, its value through a given weak derivative on an open set, monotonicity
-in the set, invariance under almost-everywhere change, the triangle inequality and the
-operator-norm bound under a continuous linear map of the codomain.
+in the set, invariance under almost-everywhere change, the triangle inequality, the
+operator-norm bound under a continuous linear map of the codomain, monotonicity in the derivative
+order, and finiteness on relatively compact open subsets for members of `TauCeti.MemWkpLoc`.
 
 ## References
 
@@ -85,6 +86,17 @@ theorem eLpNormWkp_mono_set (hVU : V ⊆ U) : eLpNormWkp p V k f ≤ eLpNormWkp 
     · exact eLpNorm_mono_measure _ (Measure.restrict_mono hVU le_rfl)
     · exact le_iInf₂ fun D hD => iInf₂_le_of_le D (hD.mono (interior_mono hVU)) ih
 
+/-- The `W^{k,p}(U)` norm increases with the derivative order. -/
+theorem eLpNormWkp_mono_order {l : ℕ} (hlk : l ≤ k) :
+    eLpNormWkp p U l f ≤ eLpNormWkp p U k f := by
+  induction l generalizing k F with
+  | zero => exact eLpNorm_le_eLpNormWkp.trans_eq' eLpNormWkp_zero.symm
+  | succ l ih =>
+    obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
+    rw [eLpNormWkp_succ, eLpNormWkp_succ]
+    gcongr
+    exact ih (by omega)
+
 /-- Almost-everywhere equality on `U` preserves the `W^{k,p}(U)` norm. -/
 theorem eLpNormWkp_congr_ae (hfg : f =ᵐ[volume.restrict U] g) :
     eLpNormWkp p U k f = eLpNormWkp p U k g := by
@@ -108,6 +120,21 @@ theorem eLpNormWkp_succ_eq_of_hasWeakFDerivOn {Ω : Opens ℂ} {D : ℂ → ℂ 
   rw [eLpNormWkp_succ, Opens.interior_coe]
   gcongr
   exact le_iInf₂ fun D' hD' => (eLpNormWkp_congr_ae (hD.ae_eq hD')).le
+
+/-- A member of `W^{k,p}_loc(Ω)` has finite `W^{k,p}(W)` norm on every open `W` whose closure is
+compact and contained in `Ω`. -/
+theorem MemWkpLoc.eLpNormWkp_ne_top {Ω W : Opens ℂ} (hf : MemWkpLoc p Ω k f)
+    (hWc : IsCompact (closure (W : Set ℂ))) (hWΩ : closure (W : Set ℂ) ⊆ Ω) :
+    eLpNormWkp p W k f ≠ ∞ := by
+  induction k generalizing F with
+  | zero =>
+    rw [eLpNormWkp_zero]
+    exact (hf.memLpLoc.memLp_of_closure_subset hWc hWΩ).eLpNorm_ne_top
+  | succ k ih =>
+    obtain ⟨D, hD, hDk⟩ := hf.exists_weakFDeriv_of_isOpen
+    rw [eLpNormWkp_succ_eq_of_hasWeakFDerivOn (hD.mono (subset_closure.trans hWΩ))]
+    exact ENNReal.add_ne_top.2
+      ⟨(hf.memLpLoc.memLp_of_closure_subset hWc hWΩ).eLpNorm_ne_top, ih hDk⟩
 
 /-- The zero function has zero `W^{k,p}` norm. -/
 @[simp]
