@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.ComposableArrows.Basic
 public import Mathlib.CategoryTheory.Filtered.Final
 public import TauCeti.AlgebraicTopology.RelativeCellComplex.AttachCells
 public import TauCeti.Topology.CWComplex.Abstract.Classical
-public import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
+public import TauCeti.Topology.CWComplex.Classical.Skeleton.CellMap
 
 /-!
 # Attaching cells of a single dimension is a relative CW complex
@@ -47,6 +47,10 @@ This is how cells are attached to kill homotopy groups.
   dimension `n`.
 * `HomotopicalAlgebra.AttachCells.skeletonLT_toRelCWComplex`: its skeleta up to dimension `n` are
   the range of `f`.
+* `HomotopicalAlgebra.AttachCells.skeletonLT_toRelCWComplex_eq_univ`: its skeleta above dimension
+  `n` are all of `Y`.
+* `HomotopicalAlgebra.AttachCells.coe_cellAttachingMap_toRelCWComplex_apply`: the attaching maps
+  of its classical cells are those of `c`.
 
 ## References
 
@@ -264,5 +268,27 @@ theorem skeletonLT_toRelCWComplex [T2Space Y] {m : ℕ} (hm : m ≤ n) :
     (RelCWComplex.skeletonLT (univ : Set Y) m : Set Y) = range f :=
   c.toRelativeCWComplex.skeletonLT_toRelCWComplex_eq_range fun _ hk ↦
     c.isEmpty_toRelativeCWComplex_attachCells_ι (by omega) _
+
+/-- From dimension `n + 1` on, the skeleta of the classical relative CW structure read off
+`c.toRelativeCWComplex` are all of `Y`: there are no cells of dimension greater than `n`. -/
+theorem skeletonLT_toRelCWComplex_eq_univ [T2Space Y] {m : ℕ} (hm : n < m) :
+    letI := c.toRelativeCWComplex.toRelCWComplex
+    (RelCWComplex.skeletonLT (univ : Set Y) m : Set Y) = univ :=
+  letI := c.toRelativeCWComplex.toRelCWComplex
+  skeletonLT_eq_complex_of_isEmpty_cell _ _ fun _ hl ↦ c.isEmpty_cell_toRelCWComplex (by omega)
+
+/-- The attaching map of an `n`-cell of the classical relative CW structure read off
+`c.toRelativeCWComplex` is the inclusion of the corresponding cell of `c`, restricted to the
+boundary sphere. -/
+theorem coe_cellAttachingMap_toRelCWComplex_apply [T2Space Y] :
+    letI := c.toRelativeCWComplex.toRelCWComplex
+    ∀ (j : RelCWComplex.cell (univ : Set Y) n) (z : TopCat.diskBoundary.{u} n),
+      (cellAttachingMap j z : Y) =
+        c.cell (c.cellToRelCWComplexEquiv j) (TopCat.diskBoundaryInclusion n z) := by
+  let := c.toRelativeCWComplex.toRelCWComplex
+  intro j z
+  obtain ⟨i, rfl⟩ := c.cellToRelCWComplexEquiv.symm.surjective j
+  rw [coe_cellAttachingMap_apply, c.map_cellToRelCWComplexEquiv_symm,
+    Homeomorph.symm_apply_apply, Equiv.apply_symm_apply]
 
 end HomotopicalAlgebra.AttachCells

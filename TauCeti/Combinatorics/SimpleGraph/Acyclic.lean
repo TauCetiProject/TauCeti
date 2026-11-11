@@ -6,21 +6,26 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Acyclic
-
-import Mathlib.Tactic.Linarith
+public import TauCeti.Data.List.OneDegenerateOrder
 
 /-!
 # Paths and degrees in acyclic simple graphs
 
-This file records consequences of acyclicity for paths, bounds the degree of a
-nonempty finite regular forest, and gives a height criterion for acyclicity.
+This file records consequences of acyclicity for paths and for degrees (a nonempty finite
+forest has a vertex of degree at most one, so a nonempty finite regular forest has degree at
+most one), deduces that the letters of a list on which a graph induces a forest can be put in a
+one-degenerate order by peeling off leaves, and gives a height criterion for acyclicity.
 
 ## Main results
 
 * `SimpleGraph.isAcyclic_of_forall_adj_le_eq`: a graph with a height function for which every
   vertex has at most one neighbour of height at most its own is acyclic.
+* `SimpleGraph.IsAcyclic.exists_degree_le_one`: a nonempty finite forest has a vertex of degree
+  at most one.
 * `SimpleGraph.IsAcyclic.degree_le_one_of_isRegularOfDegree`: a nonempty finite regular
   forest has degree at most one.
+* `List.exists_perm_isOneDegenerateOrder`: a list without repeated letters on which a graph
+  induces a forest can be rearranged into a one-degenerate order for the graph.
 * `SimpleGraph.IsAcyclic.not_adj_getVert_of_add_one_lt`: nonconsecutive vertices of a path
   in an acyclic graph are not adjacent.
 * `SimpleGraph.IsAcyclic.ne_of_adj_start_of_adj_end`: an off-path neighbour of a path's start
@@ -31,12 +36,12 @@ nonempty finite regular forest, and gives a height criterion for acyclicity.
 
 public section
 
-namespace TauCeti
+namespace SimpleGraph
 
 /-- **A height criterion for acyclicity.** If `f` is a height function on the vertices such that
 every vertex has at most one neighbour whose height is at most its own, then the graph is
 acyclic: on a cycle, a vertex of greatest height would have two distinct such neighbours. -/
-theorem _root_.SimpleGraph.isAcyclic_of_forall_adj_le_eq {V α : Type*} [LinearOrder α]
+theorem isAcyclic_of_forall_adj_le_eq {V α : Type*} [LinearOrder α]
     {G : SimpleGraph V} (f : V → α)
     (h : ∀ ⦃v u w : V⦄, G.Adj v u → G.Adj v w → f u ≤ f v → f w ≤ f v → u = w) :
     G.IsAcyclic := by
@@ -56,7 +61,7 @@ theorem _root_.SimpleGraph.isAcyclic_of_forall_adj_le_eq {V α : Type*} [LinearO
 
 /-- A path in an acyclic graph has no chord: vertices separated by at least one intermediate
 vertex cannot be adjacent. -/
-theorem _root_.SimpleGraph.IsAcyclic.not_adj_getVert_of_add_one_lt {V : Type*}
+theorem IsAcyclic.not_adj_getVert_of_add_one_lt {V : Type*}
     {G : SimpleGraph V} {u v : V}
     (hG : G.IsAcyclic) {p : G.Walk u v} (hp : p.IsPath) {i j : ℕ} (hij : i + 1 < j)
     (hj : j ≤ p.length) : ¬G.Adj (p.getVert i) (p.getVert j) := by
@@ -73,7 +78,7 @@ theorem _root_.SimpleGraph.IsAcyclic.not_adj_getVert_of_add_one_lt {V : Type*}
 /-- **An off-path neighbour of a path's start differs from every neighbour of its end.** In an
 acyclic graph, for a path with distinct endpoints. Only the start-side vertex is required to lie
 off the path; the end-side one is unconstrained. -/
-theorem _root_.SimpleGraph.IsAcyclic.ne_of_adj_start_of_adj_end {V : Type*} {G : SimpleGraph V}
+theorem IsAcyclic.ne_of_adj_start_of_adj_end {V : Type*} {G : SimpleGraph V}
     {u v : V} (hG : G.IsAcyclic) (huv : u ≠ v) {q : G.Walk u v} (hq : q.IsPath)
     {a b : V} (ha : G.Adj u a) (ha' : a ∉ q.support) (hb : G.Adj v b) : a ≠ b := fun hab ↦
   -- `a = b` makes `a` adjacent to the far end `v` of the path `a — u — … — v`, so acyclicity
@@ -85,7 +90,7 @@ theorem _root_.SimpleGraph.IsAcyclic.ne_of_adj_start_of_adj_end {V : Type*} {G :
 /-- **Neighbours of a path's two ends, both lying off the path, are not adjacent.** In an acyclic
 graph, no edge joins a vertex adjacent to the start of a path to one adjacent to its end. Here
 both are required to lie off the path, unlike in `ne_of_adj_start_of_adj_end`. -/
-theorem _root_.SimpleGraph.IsAcyclic.not_adj_of_adj_start_of_adj_end {V : Type*}
+theorem IsAcyclic.not_adj_of_adj_start_of_adj_end {V : Type*}
     {G : SimpleGraph V} {u v : V} (hG : G.IsAcyclic) {q : G.Walk u v} (hq : q.IsPath)
     {a b : V} (ha : G.Adj u a) (ha' : a ∉ q.support) (hb : G.Adj v b) (hb' : b ∉ q.support) :
     ¬G.Adj a b := by
@@ -96,17 +101,52 @@ theorem _root_.SimpleGraph.IsAcyclic.not_adj_of_adj_start_of_adj_end {V : Type*}
     hadj.isPath_toWalk hb (by simp [hb.ne, ne_of_mem_of_not_mem q.end_mem_support ha'])
   simp [hadj.ne', hb'] at hmem
 
-/-- A nonempty finite regular forest has degree at most one. -/
-theorem _root_.SimpleGraph.IsAcyclic.degree_le_one_of_isRegularOfDegree
-    {V : Type*} {G : SimpleGraph V} [DecidableRel G.Adj] [Fintype V] [Nonempty V] {d : ℕ}
-    (hG : G.IsAcyclic) (hd : G.IsRegularOfDegree d) : d ≤ 1 := by
+/-- **A nonempty finite forest has a vertex of degree at most one**: an isolated vertex or a
+leaf. -/
+theorem _root_.SimpleGraph.IsAcyclic.exists_degree_le_one {V : Type*} {G : SimpleGraph V}
+    [DecidableRel G.Adj] [Fintype V] [Nonempty V] (hG : G.IsAcyclic) : ∃ v, G.degree v ≤ 1 := by
   classical
+  by_contra! h
+  -- Every degree is at least two, so the degree sum `2 #E` is at least `2 #V`, while a forest has
+  -- at most `#V - 1` edges.
   have he := hG.ncard_edgeSet_add_one_le_card
   have hs := G.sum_degrees_eq_twice_card_edges
-  simp only [hd.degree_eq, Finset.sum_const, Finset.card_univ, smul_eq_mul] at hs
   rw [← G.coe_edgeFinset, Set.ncard_coe_finset] at he
-  rw [Fintype.card_eq_nat_card] at hs
-  have hv : 0 < Nat.card V := Nat.card_pos
-  nlinarith
+  have hle : ∑ _v : V, 2 ≤ ∑ v, G.degree v := Finset.sum_le_sum fun v _ ↦ h v
+  simp only [Finset.sum_const, Finset.card_univ, smul_eq_mul, Fintype.card_eq_nat_card] at hle
+  omega
 
-end TauCeti
+/-- A nonempty finite regular forest has degree at most one. -/
+theorem IsAcyclic.degree_le_one_of_isRegularOfDegree
+    {V : Type*} {G : SimpleGraph V} [DecidableRel G.Adj] [Fintype V] [Nonempty V] {d : ℕ}
+    (hG : G.IsAcyclic) (hd : G.IsRegularOfDegree d) : d ≤ 1 := by
+  obtain ⟨v, hv⟩ := hG.exists_degree_le_one
+  exact hd.degree_eq v ▸ hv
+
+/-- **A forest has a one-degenerate order.** A list without repeated letters on whose letters `G`
+induces a forest can be rearranged into a one-degenerate order for `G`: peel off a letter joined to
+at most one other letter, order the rest by induction, and put the peeled letter last. -/
+theorem _root_.List.exists_perm_isOneDegenerateOrder {α : Type*} {G : SimpleGraph α}
+    {l : List α} (hl : l.Nodup) (hG : (G.induce {i | i ∈ l}).IsAcyclic) :
+    ∃ S, S.Perm l ∧ List.IsOneDegenerateOrder G.Adj S := by
+  classical
+  obtain ⟨n, hn⟩ : ∃ n, l.length = n := ⟨_, rfl⟩
+  induction n generalizing l with
+  | zero => exact ⟨[], by simp [List.length_eq_zero_iff.mp hn], List.isOneDegenerateOrder_nil⟩
+  | succ n ih =>
+    -- The induced forest is finite and nonempty, so some letter `s` is joined to at most one
+    -- letter of `l`.
+    obtain ⟨a, ha⟩ := List.exists_mem_of_ne_nil l (List.ne_nil_of_length_eq_add_one hn)
+    have : Nonempty {i | i ∈ l} := ⟨⟨a, ha⟩⟩
+    have : Fintype {i | i ∈ l} := Set.Finite.fintype (List.finite_toSet l)
+    obtain ⟨⟨s, hs⟩, hdeg⟩ := hG.exists_degree_le_one
+    rw [← SimpleGraph.card_neighborFinset_eq_degree] at hdeg
+    have hsub : {i | i ∈ l.erase s} ≤ {i | i ∈ l} := fun i hi ↦ List.mem_of_mem_erase hi
+    obtain ⟨S, hS, hel⟩ := ih (hl.erase s) (hG.embedding (G.induceHomOfLE hsub))
+      (by simp [List.length_erase_of_mem hs, hn])
+    refine ⟨S ++ [s], ((List.perm_append_singleton s S).trans (hS.cons s)).trans
+      (List.perm_cons_erase hs).symm, hel.append_singleton fun x hx y hy hsx hsy ↦ ?_⟩
+    exact congrArg Subtype.val <| Finset.card_le_one.mp hdeg ⟨x, hsub (hS.subset hx)⟩
+      (by simpa using hsx) ⟨y, hsub (hS.subset hy)⟩ (by simpa using hsy)
+
+end SimpleGraph

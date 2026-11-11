@@ -221,6 +221,14 @@ noncomputable def pontryaginThomSphereMap {k : ℕ} [CompactSpace S] [T2Space M]
   (onePointHomeomorphSphere k s₀ : C(OnePoint (Fin k → ℝ), _)).comp
     (pontryaginThomCollapseMap hτ)
 
+/-- The collapse onto the sphere is the Pontryagin–Thom collapse followed by the homeomorphism
+`OnePoint ℝᵏ ≃ₜ Sᵏ`. -/
+theorem coe_pontryaginThomSphereMap {k : ℕ} [CompactSpace S] [T2Space M]
+    {τ : S × (Fin k → ℝ) → M} (hτ : IsOpenEmbedding τ)
+    (s₀ : Metric.sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) :
+    ⇑(pontryaginThomSphereMap hτ s₀) = onePointHomeomorphSphere k s₀ ∘ pontryaginThomCollapse τ :=
+  (rfl)
+
 @[simp]
 theorem pontryaginThomSphereMap_apply {k : ℕ} [CompactSpace S] [T2Space M]
     {τ : S × (Fin k → ℝ) → M} (hτ : IsOpenEmbedding τ)

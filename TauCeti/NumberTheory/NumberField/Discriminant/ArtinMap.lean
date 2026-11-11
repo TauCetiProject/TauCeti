@@ -76,14 +76,14 @@ theorem artinHomAwayRamifiedSupport_def (hab : ∀ σ τ : L ≃ₐ[K] L, Commut
 theorem artinHomAwayRamifiedSupport_apply_prime
     (hab : ∀ σ τ : L ≃ₐ[K] L, Commute σ τ)
     (I : idealsAway K (NumberField.ramifiedSupport K L))
-    (v : HeightOneSpectrum (𝓞 K)) (hv : v ∉ NumberField.ramifiedSupport K L)
+    (v : HeightOneSpectrum (𝓞 K))
     (hI : ((I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) =
       (v.asIdeal : FractionalIdeal (𝓞 K)⁰ K))
-    (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver v.asIdeal] (σ : L ≃ₐ[K] L)
+    (Q : Ideal (𝓞 L)) [Q.LiesOver v.asIdeal] (σ : L ≃ₐ[K] L)
     (hσ : IsArithFrobAt (𝓞 K) σ Q) :
     artinHomAwayRamifiedSupport hab I = σ :=
   artinHomAway_apply_prime hab (NumberField.ramifiedSupport K L)
-    NumberField.isUnramifiedAway_ramifiedSupport I v hv hI Q σ hσ
+    NumberField.isUnramifiedAway_ramifiedSupport I v hI Q σ hσ
 
 end NumberFieldArithmetic
 
