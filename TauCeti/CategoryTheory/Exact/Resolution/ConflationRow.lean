@@ -64,6 +64,7 @@ structure ProjectiveStep (R : ConflationRow E S₁.X₃ S₃.X₃)
   ι_snd : ι ≫ biprod.snd = R'.w ≫ S₃.f
 
 attribute [reassoc (attr := simp)] ProjectiveStep.zero
+attribute [reassoc] ProjectiveStep.inl_π ProjectiveStep.π_w ProjectiveStep.v_ι ProjectiveStep.ι_snd
 
 variable {S₁ S₃}
 

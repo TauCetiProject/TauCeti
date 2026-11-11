@@ -80,8 +80,8 @@ private noncomputable def middleι : r₁.complex ⟶ (middle r₁ r₃ f g zero
     obtain rfl : j + 1 = i := hij
     rw [complex_d, complex_d, d_def, d_def]
     -- The two adjacent blocks share the same syzygy row.
-    rw [← Category.assoc, (block r₁ r₃ f g zero hS (j + 1)).inl_π,
-      Category.assoc, (block r₁ r₃ f g zero hS j).v_ι, Category.assoc]
+    rw [(block r₁ r₃ f g zero hS (j + 1)).inl_π_assoc,
+      (block r₁ r₃ f g zero hS j).v_ι, Category.assoc]
 
 private noncomputable def middleπ : (middle r₁ r₃ f g zero hS).complex ⟶ r₃.complex where
   f _ := biprod.snd
@@ -90,8 +90,8 @@ private noncomputable def middleπ : (middle r₁ r₃ f g zero hS).complex ⟶ 
     rw [complex_d, complex_d, d_def, d_def]
     -- The two adjacent blocks share the same syzygy row.
     rw [Category.assoc, (block r₁ r₃ f g zero hS j).ι_snd]
-    simpa only [Category.assoc] using congrArg (fun t => t ≫ r₃.ι j)
-      (block r₁ r₃ f g zero hS (j + 1)).π_w.symm
+    simpa only [Category.assoc] using
+      ((block r₁ r₃ f g zero hS (j + 1)).π_w_assoc (r₃.ι j)).symm
 
 variable {r₁ r₃ f g} in
 /-- A projective horseshoe over `f` and `g`, with the prescribed outer resolutions.
