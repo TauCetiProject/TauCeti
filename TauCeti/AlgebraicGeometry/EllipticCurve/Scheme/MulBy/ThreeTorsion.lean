@@ -85,7 +85,7 @@ private theorem projModelAffinePoint_projModelMulBy_two_eq_projModelNeg_iff {x y
   have hm : IsUnit ((W.toProjective.map (RingHom.id R)).dblAddXYZ ![x, y, 1] ![x, y, 1] 2) := by
     rw [hdbl, Projective.dblXYZ_some h]
     simpa using hψ₂.pow 3
-  rw [comp_projModelMulBy_two (projModelAffinePoint_projModelOver h),
+  rw [comp_projModelMulBy_two,
     projModelAffinePoint_projModelNeg, projModelAffinePoint_def, projModelAffinePoint_def,
     lift_projModelPoint_additionMorphism_of_isUnit_dblAddXYZ (hm := hm),
     projModelPoint_eq_projModelPoint_iff, hdbl, Projective.dblXYZ_some h]
