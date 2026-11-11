@@ -13,6 +13,7 @@ import TauCeti.Algebra.Module.LocalizedModule.Map
 import TauCeti.AlgebraicGeometry.Cohomology.Affine
 import TauCeti.AlgebraicGeometry.Modules.Localization
 import TauCeti.AlgebraicGeometry.Scheme.Opens
+import TauCeti.AlgebraicGeometry.Scheme.Induction
 import TauCeti.CategoryTheory.Sites.SheafCohomology.MayerVietoris
 
 /-!
@@ -260,51 +261,12 @@ private lemma localizesAt_sup {U V : X.Opens} (hUV : IsCompact ((U ⊔ V : X.Ope
       (hU _ _ rfl n) (hV _ _ rfl n) (hUV₀ _ _ hD n) (hU _ _ rfl (n + 1)) (hV _ _ rfl (n + 1))
       (hUV₀ _ _ hD (n + 1))
 
-/-- Finite unions of basic opens of an affine open. -/
-private lemma localizesAt_finset_sup {U : X.Opens} (hU : IsAffineOpen U) {ι : Type*}
-    (s : Finset ι) (f : ι → Γ(X, U)) :
-    IsCompact ((s.sup fun i ↦ X.basicOpen (f i) : X.Opens) : Set X) ∧
-      LocalizesAt M g (s.sup fun i ↦ X.basicOpen (f i)) := by
-  classical
-  induction s using Finset.induction_on generalizing f with
-  | empty => exact ⟨isCompact_empty, localizesAt_of_isAffineOpen M g (isAffineOpen_bot X)⟩
-  | insert a s _ ih =>
-    rw [Finset.sup_insert]
-    obtain ⟨hc, hs⟩ := ih f
-    have ha := hU.basicOpen (f a)
-    have hc' : IsCompact ((X.basicOpen (f a) ⊔ s.sup fun i ↦ X.basicOpen (f i) : X.Opens) :
-        Set X) := by
-      rw [Opens.coe_sup]
-      exact ha.isCompact.union hc
-    refine ⟨hc', localizesAt_sup M g hc' (hU.isQuasiSeparated.of_subset ?_)
-      (localizesAt_of_isAffineOpen M g ha) hs ?_⟩
-    · exact sup_le (X.basicOpen_le _) (Finset.sup_le fun i _ ↦ X.basicOpen_le _)
-    · -- `D(f a) ⊓ D(f i) = D(f a * f i)`
-      rw [Finset.sup_inf_distrib_left]
-      simpa only [Scheme.basicOpen_mul] using (ih fun i ↦ f a * f i).2
-
-/-- Quasi-compact opens of an affine open. -/
-private lemma localizesAt_of_le_isAffineOpen {U W : X.Opens} (hU : IsAffineOpen U)
-    (hW : IsCompact (W : Set X)) (hWU : W ≤ U) : LocalizesAt M g W := by
-  -- Cover `W` by finitely many basic opens of `U` contained in `W`.
-  obtain ⟨s, hsW⟩ := hU.exists_finset_sup_basicOpen_eq hW hWU
-  rw [← hsW]
-  exact (localizesAt_finset_sup M g hU s fun i ↦ i.1).2
-
 private lemma localizesAt_of_isCompact {U : X.Opens} (hU : IsCompact (U : Set X))
     (hU' : IsQuasiSeparated (U : Set X)) : LocalizesAt M g U := by
-  revert hU'
-  refine compact_open_induction_on (P := fun U ↦ IsQuasiSeparated (U : Set X) → LocalizesAt M g U)
-    U hU (fun _ ↦ localizesAt_of_isAffineOpen M g (isAffineOpen_bot X))
-    fun W hW U ih hWU' ↦ ?_
-  have hc : IsCompact ((W ⊔ U.1 : X.Opens) : Set X) := by
-    rw [Opens.coe_sup]
-    exact hW.union U.2.isCompact
-  -- By quasi-separation, `W ⊓ U` is a quasi-compact open of the affine open `U`.
-  exact localizesAt_sup M g hc hWU' (ih (hWU'.of_subset Set.subset_union_left))
-    (localizesAt_of_isAffineOpen M g U.2) (localizesAt_of_le_isAffineOpen M g U.2
-      (hWU' _ _ Set.subset_union_left W.isOpen hW Set.subset_union_right U.1.isOpen
-        U.2.isCompact) inf_le_right)
+  refine Scheme.Opens.induction_on_isCompact_isQuasiSeparated U hU hU'
+    (fun _ h ↦ localizesAt_of_isAffineOpen M g h) ?_
+  intro V W hV hW hVW hPV hPW hPVW
+  exact localizesAt_sup M g (hV.union hW) hVW hPV hPW hPVW
 
 /-- **Cohomology of quasi-coherent sheaves commutes with localization.** Let `M` be a
 quasi-coherent sheaf on a scheme `X`, `g` a global function and `U` a quasi-compact and

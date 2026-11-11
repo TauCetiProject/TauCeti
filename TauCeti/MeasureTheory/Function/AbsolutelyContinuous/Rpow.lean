@@ -10,41 +10,43 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
-# Absolute continuity of nonnegative real powers
+# Absolute continuity of real powers
 
-Nonnegative real powers are absolutely continuous on every finite interval, including intervals
-meeting zero where the derivative may be unbounded. Square root is the exponent `1/2` case.
+A real power `x ↦ x ^ p` is absolutely continuous on a finite interval as soon as the exponent is
+nonnegative or the interval avoids zero. For `0 < p < 1` this includes intervals meeting zero,
+where the derivative is unbounded. Square root is the exponent `1/2` case.
 These results supply the regularity of power changes of parameter without a Lipschitz assumption.
 -/
 
 public section
 
 open MeasureTheory Set
+open scoped Interval
 
-/-- A nonnegative real power is absolutely continuous on every finite interval. -/
-theorem Real.absolutelyContinuousOnInterval_rpow_const {p : ℝ} (a b : ℝ)
-    (hp : 0 ≤ p := by positivity) :
+/-- A real power is absolutely continuous on a finite interval, provided the exponent is
+nonnegative or the interval avoids zero. -/
+theorem Real.absolutelyContinuousOnInterval_rpow_const {p a b : ℝ}
+    (h : 0 ≤ p ∨ (0 : ℝ) ∉ [[a, b]]) :
     AbsolutelyContinuousOnInterval (fun x : ℝ ↦ x ^ p) a b := by
-  rcases hp.eq_or_lt with rfl | hp
+  obtain rfl | hp := eq_or_ne p 0
   · simpa only [Real.rpow_zero] using
       (LipschitzWith.const (1 : ℝ)).lipschitzOnWith.absolutelyContinuousOnInterval
         (a := a) (b := b)
-  let m : ℝ → ℝ := fun t ↦ p * t ^ (p - 1)
-  have hexp : (-1 : ℝ) < p - 1 := by linarith
-  have hm : IntervalIntegrable m volume a b :=
-    (intervalIntegral.intervalIntegrable_rpow' hexp).const_mul _
+  have hexp : -1 < p - 1 ∨ p - 1 ≠ -1 ∧ (0 : ℝ) ∉ [[a, b]] :=
+    h.imp (fun h ↦ by linarith [h.lt_of_ne' hp]) (fun h ↦ ⟨by simpa using hp, h⟩)
+  have hm : IntervalIntegrable (fun t : ℝ ↦ p * t ^ (p - 1)) volume a b :=
+    (hexp.elim intervalIntegral.intervalIntegrable_rpow'
+      fun h ↦ intervalIntegral.intervalIntegrable_rpow (.inr h.2)).const_mul _
   apply ((isometry_add_right (a ^ p)).lipschitzWith.comp_absolutelyContinuousOnInterval
     (hm.absolutelyContinuousOnInterval_intervalIntegral left_mem_uIcc)).congr
-  intro t _
-  dsimp only [m, Function.comp_apply]
+  intro t ht
   -- Mathlib's power primitive includes the cosine convention at negative real bases.
-  rw [intervalIntegral.integral_const_mul, integral_rpow (Or.inl hexp), sub_add_cancel]
-  -- The remaining identity is `p * ((t^p - a^p)/p) + a^p = t^p`; `p ≠ 0` cancels its denominator.
-  field_simp [hp.ne']
-  ring
+  rw [Function.comp_apply, intervalIntegral.integral_const_mul,
+    integral_rpow (hexp.imp_right fun h ↦ ⟨h.1, fun h0 ↦ h.2 (uIcc_subset_uIcc_left ht h0)⟩),
+    sub_add_cancel, mul_div_cancel₀ _ hp, sub_add_cancel]
 
 /-- Square root is absolutely continuous on every finite interval. -/
 theorem Real.absolutelyContinuousOnInterval_sqrt (a b : ℝ) :
     AbsolutelyContinuousOnInterval Real.sqrt a b :=
-  (Real.absolutelyContinuousOnInterval_rpow_const (p := 1 / 2) a b).congr
+  (Real.absolutelyContinuousOnInterval_rpow_const (p := 1 / 2) (.inl (by positivity))).congr
     (fun t _ ↦ (Real.sqrt_eq_rpow t).symm)

@@ -124,7 +124,7 @@ variable {F : Formation G}
 /-- `H²` of a finite normal layer of a class formation has exactly `[K : F]` elements. -/
 theorem natCard_H2 (cf : ClassFormation F) (L : NormalLayer G) :
     Nat.card (L.H F 2) = L.degree :=
-  AddCircle.natCard_eq_of_injective_of_range_eq_torsionBy (1 : ℚ) L.degree_pos (cf.inv_injective L)
+  AddCircle.natCard_eq_of_injective_of_range_eq_torsionBy (1 : ℚ) (cf.inv_injective L)
     (cf.range_inv L)
 
 /-- There is exactly one class of invariant `1 / [K : F]`. -/

@@ -162,7 +162,7 @@ theorem isGeodesicallyCompleteAt_of_completeSpace [CompleteSpace M] (p : M) :
     exact ht1 (subset_closure (mem_image_of_mem _ ht2))
   have hinterval : geodesicInterval I M p v = univ := by
     rw [← maximalIntegralCurveInterval_geodesicSpray] at h0 hup hlow ⊢
-    exact maximalIntegralCurveInterval_eq_univ_of_not_bddAbove_not_bddBelow h0 hup hlow
+    exact maximalIntegralCurveInterval_eq_univ_of_not_bddAbove_not_bddBelow hup hlow
   rw [hinterval]
   exact mem_univ 1
 
