@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Distribution.ComplexPairing
 public import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
-import TauCeti.Analysis.Distribution.Support
 
 /-!
 # Multiplication of distributions by smooth functions
@@ -29,8 +28,6 @@ functions the product pairs as `(g T) ψ = T (g ψ)` (`Distribution.complexPairi
 * `Distribution.smulLeftCLM_const`: multiplying by the constant function `c` is the scalar `c`.
 * `Distribution.smulLeftCLM_smulLeftCLM`: multiplying by `h` and then by `g` is multiplying by
   `g h`.
-* `Distribution.dsupport_smulLeftCLM_subset_inter`: the support of `g T` lies in the supports of
-  `g` and of `T`.
 * `Distribution.complexPairing_smulLeftCLM`: the pairing of `g T` with a complex test function.
 
 ## References
@@ -86,12 +83,6 @@ theorem smulLeftCLM_smulLeftCLM (hg : ContDiff ℝ n g) (hh : ContDiff ℝ n h)
   congr 1
   ext x
   simp [mul_comm]
-
-/-- The support of `g T` lies both in the support of `g` and in the support of `T`. -/
-theorem dsupport_smulLeftCLM_subset_inter (hg : ContDiff ℝ n g) (T : 𝓓'^{n}(Ω, F)) :
-    dsupport (smulLeftCLM hg T) ⊆ tsupport g ∩ dsupport T := by
-  rw [coe_smulLeftCLM]
-  exact dsupport_comp_smulLeftCLM_subset T hg
 
 /-- The complex-linear extension of `g T` to complex test functions pairs `g T` with `ψ` as `T`
 with `g ψ`. -/

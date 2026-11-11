@@ -360,8 +360,10 @@ theorem waveFrontSet_smulLeftCLM_subset (T : 𝓓'(Ω, ℂ)) (hg : ContDiff ℝ 
     (smulLeftCLM hg T).waveFrontSet ⊆ T.waveFrontSet ∩ tsupport g ×ˢ univ := by
   rintro ⟨x, ξ⟩ hp
   obtain ⟨hx, hξ, hT⟩ := mem_waveFrontSet_iff.1 hp
+  have hxg : x ∈ dsupport (smulLeftCLM hg T) := (waveFrontSet_subset_dsupport _ hp).1
+  rw [coe_smulLeftCLM] at hxg
   exact ⟨mem_waveFrontSet_iff.2 ⟨hx, hξ, fun h ↦ hT (h.smulLeftCLM hg)⟩,
-    (dsupport_smulLeftCLM_subset_inter hg T (waveFrontSet_subset_dsupport _ hp).1).1, trivial⟩
+    (dsupport_comp_smulLeftCLM_subset T hg hxg).1, trivial⟩
 
 /-- Over the points where `g` does not vanish, a smooth multiple `g T` has the same wave front set
 as `T`. -/
