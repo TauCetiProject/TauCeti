@@ -279,10 +279,7 @@ theorem dual_dual : dual (dual L) = L := by
     rw [← hb]
     exact BilinForm.dualSubmodule_dualSubmodule_of_basis (innerₗ K)
       TauCeti.nondegenerate_inner (BilinForm.isSymm_iff.mpr isSymm_inner) b
-  refine le_antisymm (fun y hy ↦ ?_) fun y hy ↦ mem_dual.mpr fun x hx ↦ ?_
-  swap
-  · obtain ⟨m, hm⟩ := mem_dual.mp hx y hy
-    exact ⟨m, by rw [real_inner_comm]; exact hm⟩
+  refine le_antisymm (fun y hy ↦ ?_) (le_dual_dual L)
   replace hy := mem_dual.mp hy
   -- `y` lies in `K`: a vector `u` orthogonal to `K` lies in `L^∨` with all its real multiples.
   have hyK : y ∈ K := by
