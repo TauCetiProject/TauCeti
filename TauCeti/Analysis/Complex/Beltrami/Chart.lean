@@ -85,6 +85,7 @@ theorem cauchySolution_zero : cauchySolution 0 = id := by
   simp [cauchySolution]
 
 /-- The normalized chart of the identity is a translation. -/
+@[simp]
 theorem normalizedChart_id (c : ℂ) : normalizedChart id c = fun w ↦ w - c := by
   ext w
   simp [normalizedChart]
@@ -108,21 +109,23 @@ theorem hasFDerivAt_normalizedChart {ψ : ℂ → ℂ} {c z : ℂ} {L : ℂ →L
   (hψ.sub_const (ψ c)).const_smul (wirtingerDeriv ψ c 1)⁻¹
 
 /-- The real differential of the normalized chart is that of `ψ` divided by `∂ψ(c)`. -/
-theorem fderiv_normalizedChart {ψ : ℂ → ℂ} {c z : ℂ} (hψ : DifferentiableAt ℝ ψ z) :
-    fderiv ℝ (normalizedChart ψ c) z = (wirtingerDeriv ψ c 1)⁻¹ • fderiv ℝ ψ z :=
-  (hasFDerivAt_normalizedChart hψ.hasFDerivAt).fderiv
+theorem fderiv_normalizedChart {ψ : ℂ → ℂ} {c z : ℂ} :
+    fderiv ℝ (normalizedChart ψ c) z = (wirtingerDeriv ψ c 1)⁻¹ • fderiv ℝ ψ z := by
+  have hφ : normalizedChart ψ c = (wirtingerDeriv ψ c 1)⁻¹ • fun w ↦ ψ w - ψ c := rfl
+  rw [hφ, fderiv_const_smul_field, Pi.smul_apply, fderiv_sub_const]
 
 /-- The holomorphic derivative of the normalized chart is that of `ψ` divided by `∂ψ(c)`. -/
-theorem wirtingerDeriv_normalizedChart {ψ : ℂ → ℂ} {c z : ℂ} (hψ : DifferentiableAt ℝ ψ z) :
+theorem wirtingerDeriv_normalizedChart {ψ : ℂ → ℂ} {c z : ℂ} :
     wirtingerDeriv (normalizedChart ψ c) z 1 = (wirtingerDeriv ψ c 1)⁻¹ * wirtingerDeriv ψ z 1 := by
-  simp only [wirtingerDeriv_apply, fderiv_normalizedChart hψ, smul_apply, smul_eq_mul]
+  simp only [wirtingerDeriv_apply, fderiv_normalizedChart, smul_apply, smul_eq_mul]
   ring
 
 /-- **Normalization at the centre.** If `∂ψ(c) ≠ 0`, the normalized chart has holomorphic
 derivative `1` at `c`. -/
-theorem wirtingerDeriv_normalizedChart_self {ψ : ℂ → ℂ} {c : ℂ} (hψ : DifferentiableAt ℝ ψ c)
-    (hc : wirtingerDeriv ψ c 1 ≠ 0) : wirtingerDeriv (normalizedChart ψ c) c 1 = 1 := by
-  rw [wirtingerDeriv_normalizedChart hψ, inv_mul_cancel₀ hc]
+@[simp]
+theorem wirtingerDeriv_normalizedChart_self {ψ : ℂ → ℂ} {c : ℂ} (hc : wirtingerDeriv ψ c 1 ≠ 0) :
+    wirtingerDeriv (normalizedChart ψ c) c 1 = 1 := by
+  rw [wirtingerDeriv_normalizedChart, inv_mul_cancel₀ hc]
 
 /-- **The planar Beltrami chart.** Let `0 < α < 1` and `0 < r`. There are `δ > 0` and `C` such
 that the following holds. Let `J` be a field of almost complex structures on the plane, tame on
@@ -175,8 +178,6 @@ theorem exists_isComplexLinear_chart {α : ℝ≥0} {r : ℝ} (hα : 0 < α) (h�
   set ψ := cauchySolution h with hψdef
   have hsub : closedBall c r ⊆ ball c (r + 1) := closedBall_subset_ball (by linarith)
   have hc : c ∈ closedBall c r := mem_closedBall_self hr.le
-  have hd : ∀ z ∈ ball c (r + 1), DifferentiableAt ℝ ψ z := fun z hz ↦
-    (hC1.contDiffAt (isOpen_ball.mem_nhds hz)).differentiableAt one_ne_zero
   -- `J`-linearity of `dψ` on the disc, from the Beltrami equation.
   have hlin : ∀ z ∈ closedBall c r, IsComplexLinear (J z).toLinearMap
       (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap (fderiv ℝ ψ z).toLinearMap :=
@@ -194,13 +195,11 @@ theorem exists_isComplexLinear_chart {α : ℝ≥0} {r : ℝ} (hα : 0 < α) (h�
     exact one_ne_zero (L.injective (hzero.trans L.map_zero.symm))
   set a := wirtingerDeriv ψ c 1
   set φ := normalizedChart ψ c with hφdef
-  have hφd : ∀ z ∈ ball c (r + 1), fderiv ℝ φ z = a⁻¹ • fderiv ℝ ψ z := fun z hz ↦
-    fderiv_normalizedChart (hd z hz)
   refine ⟨h, hh, hhμ, hC1, hbel, hnear, hhol, hlin, ha, ?_, normalizedChart_self ψ c, ?_, ?_, ?_⟩
   · exact (hC1.sub contDiffOn_const).const_smul a⁻¹
-  · exact wirtingerDeriv_normalizedChart_self (hd c (hsub hc)) ha
+  · exact wirtingerDeriv_normalizedChart_self ha
   · intro z hz
-    rw [hφd z (hsub hz)]
+    rw [fderiv_normalizedChart]
     apply isComplexLinear_of_apply
     intro v
     have := (hlin z hz).apply v
