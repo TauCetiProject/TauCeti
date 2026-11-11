@@ -33,25 +33,23 @@ variable {Γ : Type*} [AddCommMonoid Γ] (R : Type) (L : Type*)
 corresponding piece of the enveloping algebra. This containment does not require the
 pieces of the original module to form a decomposition. -/
 theorem pbwSymmetrizationMap_totalDegreeSubmodule_le (n : Γ) :
-    SymmetricAlgebra.totalDegreeSubmodule ℒ n ≤
+    TauCeti.SymmetricAlgebra.totalDegreeSubmodule ℒ n ≤
       (homogeneousSubmodule ℒ n).comap (pbwSymmetrizationMap R L) := by
-  rw [SymmetricAlgebra.totalDegreeSubmodule_le_iff]
+  rw [TauCeti.SymmetricAlgebra.totalDegreeSubmodule_le_iff]
   intro l hl
   rw [Submodule.mem_comap]
   have hprod : (l.map (fun x => SymmetricAlgebra.ι R L (x.2 : L))).prod =
       ∏ i : Fin l.length, SymmetricAlgebra.ι R L ((l.get i).2 : L) := by
-    simpa only [List.map_ofFn, Function.comp_def, List.prod_ofFn] using
-      (congrArg (fun t => (t.map (fun x => SymmetricAlgebra.ι R L (x.2 : L))).prod)
-        (List.ofFn_get l)).symm
+    exact (Fin.prod_univ_fun_getElem l
+      (fun x => SymmetricAlgebra.ι R L (x.2 : L))).symm
   rw [hprod, pbwSymmetrizationMap_prod_ι]
   apply Submodule.smul_mem
   apply Submodule.sum_mem
   intro σ _
   have hdeg : ((List.ofFn fun i => l.get (σ i)).map Sigma.fst).sum = n := by
-    simp only [List.map_ofFn, List.sum_ofFn, Function.comp_def]
-    rw [Equiv.sum_comp (σ : Fin l.length ≃ Fin l.length) (fun i => (l.get i).1)]
-    have hsum := congrArg (fun t => (t.map Sigma.fst).sum) (List.ofFn_get l)
-    simpa only [List.map_ofFn, Function.comp_def, List.sum_ofFn] using hsum.trans hl
+    have hperm : (List.ofFn fun i => l.get (σ i)).Perm l := by
+      simpa only [Function.comp_def, List.ofFn_get] using σ.ofFn_comp_perm l.get
+    exact (hperm.map Sigma.fst).sum_eq.trans hl
   have hmem := prod_mem_homogeneousSubmodule ℒ (List.ofFn fun i => l.get (σ i))
   rw [hdeg] at hmem
   simpa only [List.map_ofFn, Function.comp_def] using hmem
@@ -63,11 +61,11 @@ gradings of the symmetric and enveloping algebras. -/
 @[simp]
 theorem pbwSymmetrizationMap_decompose (p : SymmetricAlgebra R L) (n : Γ) :
     pbwSymmetrizationMap R L
-      (DirectSum.decompose (SymmetricAlgebra.totalDegreeSubmodule ℒ) p n) =
+      (DirectSum.decompose (TauCeti.SymmetricAlgebra.totalDegreeSubmodule ℒ) p n) =
       (DirectSum.decompose (homogeneousSubmodule ℒ) (pbwSymmetrizationMap R L p) n :
         UniversalEnvelopingAlgebra R L) := by
   exact DirectSum.map_decompose_shift
-    (SymmetricAlgebra.totalDegreeSubmodule ℒ) (homogeneousSubmodule ℒ)
+    (TauCeti.SymmetricAlgebra.totalDegreeSubmodule ℒ) (homogeneousSubmodule ℒ)
     (pbwSymmetrizationMap R L).toAddMonoidHom id Function.injective_id
     (fun n _ hx => pbwSymmetrizationMap_totalDegreeSubmodule_le R L ℒ n hx) n p
 
