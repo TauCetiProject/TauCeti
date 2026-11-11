@@ -24,6 +24,7 @@ public import TauCeti.LinearAlgebra.UnitaryGroup
 -- `TauCeti.Analysis.Matrix.UnitaryGroup.Basic` supplies `Circle.coe_mem_unitary` and the
 -- decomposition `U(n) = Circle · SU(n)` used for `U(2)` below.
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
+import TauCeti.Analysis.Complex.Circle
 
 /-!
 # The real quaternions as two-by-two complex matrices, `SU(2)` and `U(2)`
@@ -74,6 +75,8 @@ Multiplying by scalars of modulus one then presents the whole unitary group: the
 
 * `Quaternion.toComplexMatrix`: the `ℝ`-algebra embedding `ℍ[ℝ] →⋆ₐ[ℝ] M₂(ℂ)`.
 * `Quaternion.unitaryEquivSpecialUnitaryGroup`: the unit quaternions are `SU(2)`.
+* `Quaternion.ofFirstColumn`: the quaternion whose matrix has a given first column.
+* `Quaternion.circleToUnitary`: the circle as the unit quaternions of the complex line.
 * `Quaternion.unitaryProdCircleToUnitaryGroup`: the homomorphism `Sp(1) × U(1) → U(2)`,
   `(q, w) ↦ w • q`.
 
@@ -287,6 +290,47 @@ theorem coe_unitaryEquivSpecialUnitaryGroup_symm_apply
     toComplexMatrix ((unitaryEquivSpecialUnitaryGroup.symm M : unitary ℍ[ℝ]) : ℍ[ℝ]) =
       (M : Matrix (Fin 2) (Fin 2) ℂ) :=
   congrArg Subtype.val (unitaryEquivSpecialUnitaryGroup.apply_symm_apply M)
+
+/-! ### First columns and the complex line -/
+
+/-- The quaternion whose matrix under `Quaternion.toComplexMatrix` has first column `z`
+(`toComplexMatrix_ofFirstColumn_apply_zero`). Through it, matrices of quaternions act on `ℂ²` by
+left multiplication (`ofFirstColumn_toComplexMatrix_mulVec`) and complex scalars by right
+multiplication (`ofFirstColumn_smul`). -/
+@[expose] def ofFirstColumn (z : Fin 2 → ℂ) : ℍ[ℝ] :=
+  ⟨(z 0).re, (z 0).im, -(z 1).re, (z 1).im⟩
+
+/-- The first column of the matrix of `ofFirstColumn z` is `z`. -/
+@[simp]
+theorem toComplexMatrix_ofFirstColumn_apply_zero (z : Fin 2 → ℂ) (i : Fin 2) :
+    toComplexMatrix (ofFirstColumn z) i 0 = z i := by
+  rw [toComplexMatrix_apply]
+  fin_cases i <;> apply Complex.ext <;> simp [ofFirstColumn]
+
+/-- Left multiplication by `q` is the matrix `toComplexMatrix q` on first columns. -/
+theorem ofFirstColumn_toComplexMatrix_mulVec (q : ℍ[ℝ]) (z : Fin 2 → ℂ) :
+    ofFirstColumn (toComplexMatrix q *ᵥ z) = q * ofFirstColumn z := by
+  rw [toComplexMatrix_apply]
+  ext <;> simp [ofFirstColumn, Matrix.mulVec, dotProduct, Fin.sum_univ_two] <;> ring
+
+/-- Complex scalars act on first columns by right multiplication. -/
+theorem ofFirstColumn_smul (c : ℂ) (z : Fin 2 → ℂ) :
+    ofFirstColumn (c • z) = ofFirstColumn z * (c : ℍ[ℝ]) := by
+  ext <;> simp [ofFirstColumn] <;> ring
+
+/-- The circle as the unit quaternions of the complex line `ℝ ⊕ ℝ i`. -/
+noncomputable def circleToUnitary : Circle →* unitary ℍ[ℝ] where
+  toFun w := ⟨((w : ℂ) : ℍ[ℝ]), by
+    rw [mem_unitary_iff_normSq_eq_one, normSq_def']
+    simpa [sq] using Circle.re_sq_add_im_sq w⟩
+  map_one' := Subtype.ext (by simp)
+  map_mul' _ _ := Subtype.ext (by simp)
+
+/-- The unit quaternion `circleToUnitary w` is the complex number `w`. -/
+@[simp]
+theorem coe_circleToUnitary (w : Circle) :
+    (circleToUnitary w : ℍ[ℝ]) = ((w : ℂ) : ℍ[ℝ]) :=
+  (rfl)
 
 /-! ### `U(2)` as a quotient of `Sp(1) × U(1)` -/
 

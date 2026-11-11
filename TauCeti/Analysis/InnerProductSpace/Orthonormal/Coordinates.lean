@@ -11,8 +11,9 @@ import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 /-!
 # Orthonormal coordinates
 
-This module describes coordinates adapted to a vector in a real inner product space and
-rotated coordinates in a complex inner product space.
+This module describes coordinates adapted to a vector in a real inner product space, rotated
+coordinates in a complex inner product space, and complex coordinates in an orthonormal frame of a
+four-dimensional real inner product space.
 
 For an orthonormal basis `b`, the `i`-th coordinate functional of the underlying basis is the
 inner product with `b i`.
@@ -34,6 +35,9 @@ every `v : E` has the complex coordinates `⟪b j, v⟫`:
 
 * `OrthonormalBasis.rotatedRealCoords`: the real and imaginary parts of the rotated coordinates
   `conj (ω j) ⟪b j, v⟫`, as a real linear equivalence `E ≃ₗ[ℝ] (ι ⊕ ι → ℝ)`.
+* `OrthonormalBasis.complexCoords`: for an orthonormal basis `(b₀, b₁, b₂, b₃)` of a real inner
+  product space, the complex coordinates `(⟪b₀, v⟫ + ⟪b₁, v⟫ i, ⟪b₂, v⟫ + ⟪b₃, v⟫ i)`, as a real
+  linear equivalence `V ≃ₗ[ℝ] ℂ²`.
 
 ## Main statements
 
@@ -157,5 +161,45 @@ theorem rotatedRealCoords_symm_apply (b : OrthonormalBasis ι ℂ E) (ω : ι �
     (hω : ∀ j, ω j * conj (ω j) = 1) (u : ι ⊕ ι → ℝ) :
     (b.rotatedRealCoords ω hω).symm u = ∑ j, (ω j * ⟨u (Sum.inl j), u (Sum.inr j)⟩) • b j := by
   rfl
+
+end OrthonormalBasis
+
+namespace OrthonormalBasis
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+  (b : OrthonormalBasis (Fin 4) ℝ V)
+
+/-- **Complex coordinates in a frame.** For an orthonormal basis `(b₀, b₁, b₂, b₃)`, the complex
+coordinates `(⟪b₀, v⟫ + ⟪b₁, v⟫ i, ⟪b₂, v⟫ + ⟪b₃, v⟫ i)` of a vector `v`. They identify `V` with
+`ℂ²`, turning the complex structure `b₀ ↦ b₁`, `b₂ ↦ b₃` into multiplication by `i`. -/
+noncomputable def complexCoords : V ≃ₗ[ℝ] (Fin 2 → ℂ) where
+  toFun v :=
+    ![inner ℝ (b 0) v + inner ℝ (b 1) v * Complex.I, inner ℝ (b 2) v + inner ℝ (b 3) v * Complex.I]
+  invFun z := (z 0).re • b 0 + (z 0).im • b 1 + (z 1).re • b 2 + (z 1).im • b 3
+  map_add' v w := by
+    ext i : 1
+    fin_cases i <;> apply Complex.ext <;> simp [inner_add_right]
+  map_smul' c v := by
+    ext i : 1
+    fin_cases i <;> apply Complex.ext <;> simp [real_inner_smul_right]
+  left_inv v := by
+    conv_rhs => rw [← b.sum_repr' v]
+    simp [Fin.sum_univ_four]
+  right_inv z := by
+    ext i : 1
+    fin_cases i <;> apply Complex.ext <;>
+      simp [inner_add_right, real_inner_smul_right, b.inner_eq_ite]
+
+@[simp]
+theorem complexCoords_apply (v : V) :
+    b.complexCoords v =
+      ![inner ℝ (b 0) v + inner ℝ (b 1) v * Complex.I,
+        inner ℝ (b 2) v + inner ℝ (b 3) v * Complex.I] :=
+  (rfl)
+
+@[simp]
+theorem complexCoords_symm_apply (z : Fin 2 → ℂ) :
+    b.complexCoords.symm z = (z 0).re • b 0 + (z 0).im • b 1 + (z 1).re • b 2 + (z 1).im • b 3 :=
+  (rfl)
 
 end OrthonormalBasis

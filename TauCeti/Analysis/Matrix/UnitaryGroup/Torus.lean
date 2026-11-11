@@ -57,7 +57,7 @@ the union of the conjugates of a maximal torus; for `SU(2)` the same statement i
   torus.
 * `TauCeti.exists_isConj_unitaryTorusHom`: every element of `U(n)` is conjugate to
   `diag (z₁, …, zₙ)` for some points `zᵢ` of the circle.
-* `TauCeti.isSquare_unitaryGroup`: every element of `U(n)` is a square.
+* `Matrix.UnitaryGroup.isSquare`: every element of `U(n)` is a square.
 
 ## References
 
@@ -193,9 +193,17 @@ theorem exists_isConj_unitaryTorusHom (g : unitaryGroup n ℂ) :
   obtain ⟨z, hz⟩ := mem_unitaryTorus_iff_exists_unitaryTorusHom.mp hu
   exact ⟨z, isConj_iff.mpr ⟨u, hz.symm⟩⟩
 
+end TauCeti
+
+namespace Matrix.UnitaryGroup
+
+open TauCeti
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
 /-- **Every element of `U(n)` is a square**: conjugate it into the diagonal torus and take a square
 root on the circle of each diagonal entry. -/
-theorem isSquare_unitaryGroup (g : unitaryGroup n ℂ) : IsSquare g := by
+theorem isSquare (g : unitaryGroup n ℂ) : IsSquare g := by
   obtain ⟨u, hu⟩ := exists_conj_mem_unitaryTorus g
   obtain ⟨z, hz⟩ := mem_unitaryTorus_iff_exists_unitaryTorusHom.mp hu
   choose y hy using fun i => Circle.exists_pow_nat_eq (z i) two_ne_zero
@@ -208,4 +216,4 @@ theorem isSquare_unitaryGroup (g : unitaryGroup n ℂ) : IsSquare g := by
   calc g = u⁻¹ * (u * g * u⁻¹) * u := by group
     _ = _ := by rw [← hy']; group
 
-end TauCeti
+end Matrix.UnitaryGroup

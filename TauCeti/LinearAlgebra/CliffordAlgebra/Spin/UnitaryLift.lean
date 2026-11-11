@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
+public import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.CircleLift
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Four
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Neg
@@ -36,8 +38,9 @@ multiplication by `i`. Then `OrthonormalBasis.spinCUnitary b : U(2) →* Spinᶜ
 
 Uniqueness holds because two such lifts differ by a homomorphism from `U(2)` to the central kernel
 `{1, [1, -1]}` of `Spinᶜ(4) → SO(4) × U(1)`, and every element of `U(2)` is a square
-(`TauCeti.isSquare_unitaryGroup`). Together with the naturality of the plane lift under quadratic
-isometries (`CliffordAlgebra.spinCGroupMap_spinCCircle`), applied to the stabilization of a
+(`Matrix.UnitaryGroup.isSquare`), so `CliffordAlgebra.spinCGroup.hom_ext_of_isSquare` applies.
+Together with the naturality of the plane lift under quadratic isometries
+(`CliffordAlgebra.spinCGroupMap_spinCCircle`), applied to the stabilization of a
 three-space by a line, the last property compares, at the structure-group level, the `Spinᶜ`
 structure of an oriented plane field on a three-manifold `Y`, stabilized to `S¹ × Y`, with the
 canonical `Spinᶜ` structure of an almost complex structure on `S¹ × Y` that sends `∂ₛ` into `Y`
@@ -71,36 +74,9 @@ open CliffordAlgebra Matrix TauCeti
 
 /-! ### The lift in the compact coordinate model -/
 
-/-- The quaternion whose matrix under `Quaternion.toComplexMatrix` has first column `z`. -/
-private def colQuat (z : Fin 2 → ℂ) : ℍ[ℝ] :=
-  ⟨(z 0).re, (z 0).im, -(z 1).re, (z 1).im⟩
-
-/-- Left multiplication by `q` is the matrix `Quaternion.toComplexMatrix q` on first columns. -/
-private theorem colQuat_mulVec (q : ℍ[ℝ]) (z : Fin 2 → ℂ) :
-    colQuat (Quaternion.toComplexMatrix q *ᵥ z) = q * colQuat z := by
-  rw [Quaternion.toComplexMatrix_apply]
-  ext <;> simp [colQuat, Matrix.mulVec, dotProduct, Fin.sum_univ_two] <;> ring
-
-/-- Complex scalars act on first columns by right multiplication. -/
-private theorem colQuat_smul (c : ℂ) (z : Fin 2 → ℂ) :
-    colQuat (c • z) = colQuat z * (c : ℍ[ℝ]) := by
-  ext <;> simp [colQuat] <;> ring
-
-/-- The circle as the unit quaternions of the complex line `ℝ ⊕ ℝ i`. -/
-private def circleToUnitary : Circle →* unitary ℍ[ℝ] where
-  toFun w := ⟨((w : ℂ) : ℍ[ℝ]), by
-    rw [Quaternion.mem_unitary_iff_normSq_eq_one, Quaternion.normSq_def']
-    simpa [sq] using Circle.re_sq_add_im_sq w⟩
-  map_one' := Subtype.ext (by simp)
-  map_mul' _ _ := Subtype.ext (by simp)
-
-private theorem coe_circleToUnitary (w : Circle) :
-    (circleToUnitary w : ℍ[ℝ]) = ((w : ℂ) : ℍ[ℝ]) :=
-  (rfl)
-
 private theorem coe_star_circleToUnitary_inv (w : Circle) :
-    ((star (circleToUnitary w⁻¹) : unitary ℍ[ℝ]) : ℍ[ℝ]) = ((w : ℂ) : ℍ[ℝ]) := by
-  rw [Unitary.coe_star, coe_circleToUnitary]
+    ((star (Quaternion.circleToUnitary w⁻¹) : unitary ℍ[ℝ]) : ℍ[ℝ]) = ((w : ℂ) : ℍ[ℝ]) := by
+  rw [Unitary.coe_star, Quaternion.coe_circleToUnitary]
   ext <;> simp
 
 private theorem realCliffordForm_four_ne_zero : realCliffordForm 4 0 ≠ 0 := by
@@ -114,12 +90,14 @@ private def spinCOfPair :
   (spinCGroup.mk _ _).comp
     ((realSpinFourEquivQuaternionUnitaryProd.symm.toMonoidHom.comp
       ((MonoidHom.fst _ _).prod
-        (circleToUnitary.comp ((invMonoidHom : Circle →* Circle).comp (MonoidHom.snd _ _))))).prod
+        (Quaternion.circleToUnitary.comp
+          ((invMonoidHom : Circle →* Circle).comp (MonoidHom.snd _ _))))).prod
       (MonoidHom.snd _ _))
 
 private theorem spinCOfPair_apply (p : unitary ℍ[ℝ] × Circle) :
     spinCOfPair p = spinCGroup.mk _ _
-      (realSpinFourEquivQuaternionUnitaryProd.symm (p.1, circleToUnitary p.2⁻¹), p.2) :=
+      (realSpinFourEquivQuaternionUnitaryProd.symm (p.1, Quaternion.circleToUnitary p.2⁻¹),
+        p.2) :=
   (rfl)
 
 /-- `spinCOfPair` is trivial on the kernel `{1, -1}` of `Sp(1) × U(1) → U(2)`. -/
@@ -128,8 +106,8 @@ private theorem ker_le_ker_spinCOfPair :
   intro p hp
   rcases Quaternion.mem_ker_unitaryProdCircleToUnitaryGroup_iff.mp hp with rfl | rfl
   · exact one_mem _
-  · have hc : circleToUnitary (-1 : Circle)⁻¹ = -1 :=
-      Subtype.ext (by ext <;> simp [circleToUnitary, Unitary.coe_neg])
+  · have hc : Quaternion.circleToUnitary (-1 : Circle)⁻¹ = -1 :=
+      Subtype.ext (by ext <;> simp [Unitary.coe_neg])
     rw [MonoidHom.mem_ker, spinCOfPair_apply, Prod.fst_neg, Prod.snd_neg, Prod.fst_one,
       Prod.snd_one, hc, ← Prod.neg_mk, Prod.mk_one_one, (MulEquiv.symm_apply_eq _).mpr
         (realSpinFourEquivQuaternionUnitaryProd_negOne realCliffordForm_four_ne_zero).symm,
@@ -146,9 +124,10 @@ private theorem realSpinCUnitary_apply (p : unitary ℍ[ℝ] × Circle) :
     realSpinCUnitary (Quaternion.unitaryProdCircleToUnitaryGroup p) = spinCOfPair p :=
   MonoidHom.liftOfRightInverse_comp_apply _ _ _ _ p
 
-/-- The vector of the compact coordinate model whose quaternion coordinate is `colQuat z`. -/
+/-- The vector of the compact coordinate model whose quaternion coordinate is
+`Quaternion.ofFirstColumn z`. -/
 private def coordVec (z : Fin 2 → ℂ) : Fin (4 + 0) → ℝ :=
-  realCliffordFourZeroQuaternionEquiv.symm (colQuat z)
+  realCliffordFourZeroQuaternionEquiv.symm (Quaternion.ofFirstColumn z)
 
 /-- In the coordinates `coordVec`, the rotation of `spinCOfPair (a, w)` is the matrix `w • a`. -/
 private theorem toSpecialOrthogonal_spinCOfPair_coordVec (p : unitary ℍ[ℝ] × Circle)
@@ -164,8 +143,8 @@ private theorem toSpecialOrthogonal_spinCOfPair_coordVec (p : unitary ℍ[ℝ] �
   rw [realSpinFourEquivQuaternionUnitaryProd_action, MulEquiv.apply_symm_apply, coordVec,
     coordVec, QuadraticMap.IsometryEquiv.apply_symm_apply,
     QuadraticMap.IsometryEquiv.apply_symm_apply, coe_star_circleToUnitary_inv,
-    Quaternion.coe_unitaryProdCircleToUnitaryGroup_apply, smul_mulVec, colQuat_smul,
-    colQuat_mulVec]
+    Quaternion.coe_unitaryProdCircleToUnitaryGroup_apply, smul_mulVec,
+    Quaternion.ofFirstColumn_smul, Quaternion.ofFirstColumn_toComplexMatrix_mulVec]
 
 private theorem det_spinCOfPair (p : unitary ℍ[ℝ] × Circle) :
     spinCGroup.det _ _ (spinCOfPair p) =
@@ -182,39 +161,6 @@ namespace OrthonormalBasis
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   (b : OrthonormalBasis (Fin 4) ℝ V)
-
-/-- **Complex coordinates in a frame.** For an orthonormal basis `(b₀, b₁, b₂, b₃)`, the complex
-coordinates `(⟪b₀, v⟫ + ⟪b₁, v⟫ i, ⟪b₂, v⟫ + ⟪b₃, v⟫ i)` of a vector `v`. They identify `V` with
-`ℂ²`, turning the complex structure `b₀ ↦ b₁`, `b₂ ↦ b₃` into multiplication by `i`. -/
-def complexCoords : V ≃ₗ[ℝ] (Fin 2 → ℂ) where
-  toFun v :=
-    ![inner ℝ (b 0) v + inner ℝ (b 1) v * Complex.I, inner ℝ (b 2) v + inner ℝ (b 3) v * Complex.I]
-  invFun z := (z 0).re • b 0 + (z 0).im • b 1 + (z 1).re • b 2 + (z 1).im • b 3
-  map_add' v w := by
-    ext i : 1
-    fin_cases i <;> apply Complex.ext <;> simp [inner_add_right]
-  map_smul' c v := by
-    ext i : 1
-    fin_cases i <;> apply Complex.ext <;> simp [real_inner_smul_right]
-  left_inv v := by
-    conv_rhs => rw [← b.sum_repr' v]
-    simp [Fin.sum_univ_four]
-  right_inv z := by
-    ext i : 1
-    fin_cases i <;> apply Complex.ext <;>
-      simp [inner_add_right, real_inner_smul_right, b.inner_eq_ite]
-
-@[simp]
-theorem complexCoords_apply (v : V) :
-    b.complexCoords v =
-      ![inner ℝ (b 0) v + inner ℝ (b 1) v * Complex.I,
-        inner ℝ (b 2) v + inner ℝ (b 3) v * Complex.I] :=
-  (rfl)
-
-@[simp]
-theorem complexCoords_symm_apply (z : Fin 2 → ℂ) :
-    b.complexCoords.symm z = (z 0).re • b 0 + (z 0).im • b 1 + (z 1).re • b 2 + (z 1).im • b 3 :=
-  (rfl)
 
 /-- The reordered frame `(b₂, b₁, -b₀, b₃)`, along which the quaternion coordinates `coordVec` of
 the compact model become the complex coordinates `b.complexCoords`. -/
@@ -244,7 +190,7 @@ private theorem quaternionFrame_negRealCliffordFormIsometryEquiv_coordVec (z : F
       b.complexCoords.symm z := by
   rw [negRealCliffordFormIsometryEquiv_apply, quaternionFrame, OrthonormalBasis.coe_mk,
     Fin.sum_univ_four, complexCoords_symm_apply]
-  simp [coordVec, colQuat]
+  simp [coordVec, Quaternion.ofFirstColumn]
   abel
 
 variable (hQ₀ : Q ≠ 0)
@@ -289,47 +235,26 @@ theorem eq_spinCUnitary {φ : unitaryGroup (Fin 2) ℂ →* spinCGroup Q hQ₀}
     (hdet : ∀ g, spinCGroup.det Q hQ₀ (φ g) = UnitaryGroup.detCircle g) :
     φ = b.spinCUnitary hQ hQ₀ := by
   have : FiniteDimensional ℝ V := b.toBasis.finiteDimensional_of_finite
-  set Φ := b.spinCUnitary hQ hQ₀
-  -- `φ g` and `Φ g` differ by an element of the kernel `{1, [1, -1]}` of `(rotation, det)`.
-  have hker (g : unitaryGroup (Fin 2) ℂ) :
-      φ g * (Φ g)⁻¹ = 1 ∨ φ g * (Φ g)⁻¹ = spinCGroup.ofCircle Q hQ₀ (-1) := by
-    rw [← spinCGroup.mem_ker_toSpecialOrthogonal_prod_det_iff Q hQ₀
-      (QuadraticMap.Anisotropic.nondegenerate fun v hv => by simpa [hQ] using hv),
-      MonoidHom.mem_ker, map_mul, map_inv, mul_inv_eq_one, MonoidHom.prod_apply,
-      MonoidHom.prod_apply, hdet, det_spinCUnitary]
-    refine Prod.ext (Subtype.ext (LinearEquiv.ext fun v => b.complexCoords.injective ?_)) rfl
-    rw [hrot, complexCoords_toSpecialOrthogonal_spinCUnitary_apply]
-  have hcen (g : unitaryGroup (Fin 2) ℂ) : φ g * (Φ g)⁻¹ ∈ Subgroup.center _ := by
-    rcases hker g with h | h <;> rw [h]
-    · exact one_mem _
-    · exact spinCGroup.ofCircle_mem_center Q hQ₀ _
-  -- As that kernel is central and of exponent two, `φ` and `Φ` agree on squares.
-  have hsq (g : unitaryGroup (Fin 2) ℂ) : φ (g * g) * (Φ (g * g))⁻¹ = 1 := by
-    have hcomm := Subgroup.mem_center_iff.mp (hcen g) (φ g)
-    calc φ (g * g) * (Φ (g * g))⁻¹
-        = φ g * (φ g * (Φ g)⁻¹) * (Φ g)⁻¹ := by simp only [map_mul, _root_.mul_inv_rev]; group
-      _ = (φ g * (Φ g)⁻¹) * (φ g * (Φ g)⁻¹) := by rw [hcomm]; group
-      _ = 1 := by
-        rcases hker g with h | h <;> rw [h]
-        · exact mul_one 1
-        · rw [← map_mul, neg_one_mul, neg_neg, map_one]
-  ext g
-  obtain ⟨h, rfl⟩ := isSquare_unitaryGroup g
-  exact mul_inv_eq_one.mp (hsq h)
+  refine spinCGroup.hom_ext_of_isSquare Q hQ₀
+    (QuadraticMap.Anisotropic.nondegenerate fun v hv => by simpa [hQ] using hv)
+    UnitaryGroup.isSquare (MonoidHom.ext fun g => ?_)
+  rw [MonoidHom.comp_apply, MonoidHom.comp_apply, MonoidHom.prod_apply, MonoidHom.prod_apply, hdet,
+    det_spinCUnitary]
+  refine Prod.ext (Subtype.ext (LinearEquiv.ext fun v => b.complexCoords.injective ?_)) rfl
+  rw [hrot, complexCoords_toSpecialOrthogonal_spinCUnitary_apply]
 
 /-- **Comparison with the lift of the plane rotations.** The lift of the unitary matrix
 `diag (1, z)`, which turns the plane `⟨b₂, b₃⟩` by `z` and fixes `b₀` and `b₁`, is the `Spinᶜ`
 lift `spinCCircle` of the rotations of that plane. -/
-theorem spinCUnitary_unitaryTorusHom_mulSingle_one (huw : Q.IsOrtho (b 2) (b 3))
-    (h : Q (b 2) * Q (b 3) = 1) (z : Circle) :
+theorem spinCUnitary_unitaryTorusHom_mulSingle_one (z : Circle) :
     b.spinCUnitary hQ hQ₀ (unitaryTorusHom (Fin 2) (Pi.mulSingle 1 z)) =
-      spinCCircle Q hQ₀ (b 2) (b 3) huw h z := by
+      spinCCircle Q hQ₀ (b 2) (b 3) (b.isOrtho_apply hQ (by decide))
+        (b.map_apply_mul_map_apply hQ 2 3) z := by
   have : FiniteDimensional ℝ V := b.toBasis.finiteDimensional_of_finite
   have hQb (i : Fin 4) : Q (b i) = -1 := by simp [hQ]
-  have hortho {i j : Fin 4} (hij : i ≠ j) : Q.IsOrtho (b i) (b j) := by
-    rw [QuadraticMap.isOrtho_def, hQ, hQ, hQ, norm_add_sq_real, b.inner_eq_ite,
-      ite_eq_right_iff.mpr fun heq => absurd heq hij]
-    ring
+  have hortho {i j : Fin 4} (hij : i ≠ j) : Q.IsOrtho (b i) (b j) := b.isOrtho_apply hQ hij
+  have huw := b.isOrtho_apply hQ (by decide : (2 : Fin 4) ≠ 3)
+  have h := b.map_apply_mul_map_apply hQ 2 3
   let φ : Circle →* spinCGroup Q hQ₀ := (b.spinCUnitary hQ hQ₀).comp
     ((unitaryTorusHom (Fin 2)).comp (MonoidHom.mulSingle (fun _ : Fin 2 => Circle) 1))
   have hφ : φ = spinCCircle Q hQ₀ (b 2) (b 3) huw h := by
