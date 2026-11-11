@@ -35,9 +35,11 @@ because subdivision and the prism operator restrict to the chains of `S`: the ch
 ## Main definitions and results
 
 * `TauCeti.smallSingularChainHomotopyEquiv`: the small-chain inclusion is a chain homotopy
-  equivalence, and `TauCeti.smallSingularHomologyIso` the induced isomorphism on homology.
+  equivalence, and `TauCeti.smallSingularHomologyIso` the induced isomorphism on homology. Its
+  homotopy inverse is a strict retraction
+  (`TauCeti.chainComplexMap_comp_smallSingularChainHomotopyEquiv_inv`).
 * `TauCeti.subcomplexSmallChainHomotopyEquiv`: the same for the chains of an affinely stable
-  subcomplex.
+  subcomplex (`TauCeti.chainComplexMap_comp_subcomplexSmallChainHomotopyEquiv_inv`).
 
 ## References
 
@@ -82,6 +84,15 @@ lemma smallSingularChainHomotopyEquiv_hom :
     (smallSingularChainHomotopyEquiv R U hU hcov).hom =
       SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R :=
   chainRangeHomotopyEquiv_hom ..
+
+/-- The homotopy inverse of the small-chain homotopy equivalence is a strict retraction of the
+inclusion of the chains subordinate to the cover. -/
+@[reassoc (attr := simp)]
+lemma chainComplexMap_comp_smallSingularChainHomotopyEquiv_inv :
+    SSet.chainComplexMap (X.smallSingularSubcomplex U).ι R ≫
+      (smallSingularChainHomotopyEquiv R U hU hcov).inv = 𝟙 _ := by
+  rw [smallSingularChainHomotopyEquiv, chainRangeHomotopyEquiv_inv,
+    chainComplexMap_comp_chainRangeRetraction]
 
 /-- The isomorphism on homology induced by the inclusion of the chains subordinate to an open
 cover.  Since the inclusion is natural in the covered space, so is this isomorphism, whereas the
@@ -193,6 +204,15 @@ lemma subcomplexSmallChainHomotopyEquiv_hom :
     (subcomplexSmallChainHomotopyEquiv R U S hU hcov).hom =
       SSet.chainComplexMap (homOfLE inf_le_left) R :=
   chainRangeHomotopyEquiv_hom ..
+
+/-- The homotopy inverse of the small-chain homotopy equivalence of an affinely stable subcomplex
+is a strict retraction of the inclusion of the chains subordinate to the cover. -/
+@[reassoc (attr := simp)]
+lemma chainComplexMap_comp_subcomplexSmallChainHomotopyEquiv_inv :
+    SSet.chainComplexMap (homOfLE (inf_le_left : S ⊓ X.smallSingularSubcomplex U ≤ S)) R ≫
+      (subcomplexSmallChainHomotopyEquiv R U S hU hcov).inv = 𝟙 _ := by
+  rw [subcomplexSmallChainHomotopyEquiv, chainRangeHomotopyEquiv_inv,
+    chainComplexMap_comp_chainRangeRetraction]
 
 end Subcomplex
 

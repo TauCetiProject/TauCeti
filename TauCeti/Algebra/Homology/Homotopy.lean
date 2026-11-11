@@ -66,6 +66,9 @@ maps agree after passing to a stable category that kills that term.
 
 `Homotopy.acyclic` says that a contractible complex, one whose identity is null-homotopic, is
 acyclic.
+
+`Homotopy.exists_comp_f_eq_comp_f` says that if a chain map and the components of a homotopy from
+it restrict along a pair of chain maps, then so does the other endpoint of the homotopy.
 -/
 
 @[expose] public section
@@ -124,6 +127,32 @@ lemma acyclic {C : Type u} [Category.{v} C] [Preadditive C]
   rw [HomologicalComplex.exactAt_iff_isZero_homology, IsZero.iff_id_eq_zero]
   simpa only [HomologicalComplex.homologyMap_id, HomologicalComplex.homologyMap_zero] using
     h.homologyMap_eq i
+
+/-- Restriction of the endpoint of a homotopy. Let `h` be a chain homotopy between chain maps
+`e e' : Q ⟶ Q'`, and let `φ : P ⟶ Q` and `φ' : P' ⟶ Q'` be chain maps. If `e` and the components of
+`h` restrict along `φ` and `φ'`, in the sense that their precompositions with `φ` factor through
+`φ'`, then so does `e'`, because `e' = e - ∂h - h∂` and `φ`, `φ'` commute with the differentials. -/
+theorem exists_comp_f_eq_comp_f {C : Type u} [Category.{v} C] [Preadditive C]
+    {ι : Type*} {c : ComplexShape ι} {P Q P' Q' : HomologicalComplex C c} {e e' : Q ⟶ Q'}
+    (h : Homotopy e e') (φ : P ⟶ Q) (φ' : P' ⟶ Q')
+    (he : ∀ i, ∃ g, g ≫ φ'.f i = φ.f i ≫ e.f i)
+    (hh : ∀ i j, c.Rel j i → ∃ g, g ≫ φ'.f j = φ.f i ≫ h.hom i j) (i : ι) :
+    ∃ g, g ≫ φ'.f i = φ.f i ≫ e'.f i := by
+  have hh' (i j : ι) : ∃ g, g ≫ φ'.f j = φ.f i ≫ h.hom i j := by
+    by_cases hij : c.Rel j i
+    · exact hh i j hij
+    · exact ⟨0, by rw [h.zero i j hij, zero_comp, comp_zero]⟩
+  obtain ⟨ge, hge⟩ := he i
+  obtain ⟨gn, hgn⟩ := hh' (c.next i) i
+  obtain ⟨gp, hgp⟩ := hh' i (c.prev i)
+  refine ⟨ge - (P.d i (c.next i) ≫ gn + gp ≫ P'.d (c.prev i) i), ?_⟩
+  have he' : e'.f i = e.f i - (dNext i h.hom + prevD i h.hom) := by
+    rw [h.comm i]
+    abel
+  rw [he', Preadditive.sub_comp, Preadditive.add_comp, Category.assoc, hgn, Category.assoc,
+    ← HomologicalComplex.Hom.comm, reassoc_of% hgp, hge, Preadditive.comp_sub,
+    Preadditive.comp_add, ← HomologicalComplex.Hom.comm_assoc, dNext, prevD,
+    AddMonoidHom.mk'_apply, AddMonoidHom.mk'_apply]
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] {ι : Type*} {c : ComplexShape ι}
   {K L M L' M' : HomologicalComplex C c}
