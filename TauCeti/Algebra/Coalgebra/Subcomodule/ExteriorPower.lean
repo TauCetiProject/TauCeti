@@ -77,20 +77,43 @@ local instance : Module.Flat k H := by
   let : AddCommGroup H := Module.addCommMonoidToAddCommGroup k
   infer_instance
 
-/-- The exterior image of a finite-dimensional subrepresentation has the expected
-binomial dimension. -/
+/-- A positive exterior power of an infinite-dimensional vector space over a field is
+infinite-dimensional: it has a basis indexed by the `n`-element subsets of a basis index set. -/
+private theorem not_finite_exteriorPower {V : Type*} [AddCommGroup V] [Module k V]
+    (hV : ¬ Module.Finite k V) {n : ℕ} (hn : n ≠ 0) : ¬ Module.Finite k (⋀[k]^n V) := by
+  intro h
+  classical
+  have ⟨I, b⟩ := Module.Free.exists_basis k V
+  have : Infinite I := by
+    by_contra hI
+    have := not_infinite_iff_finite.1 hI
+    exact hV (Module.Finite.of_basis b)
+  let : LinearOrder I := linearOrderOfSTO WellOrderingRel
+  have : NeZero n := ⟨hn⟩
+  have := Module.Finite.finite_basis (b.exteriorPower n)
+  exact not_finite (Set.powersetCard I n)
+
+/-- The exterior image of a subrepresentation has the expected binomial dimension. For an
+infinite-dimensional subrepresentation both sides are the junk value `0`, except for `n = 0`
+where both are `1`. -/
 @[simp]
-theorem finrank_exteriorPowerImage (W : Subcomodule k H M)
-    [Module.Finite k W.toSubmodule] (n : ℕ) :
+theorem finrank_exteriorPowerImage (W : Subcomodule k H M) (n : ℕ) :
     Module.finrank k (W.exteriorPowerImage n) =
       (Module.finrank k W.toSubmodule).choose n := by
   change Module.finrank k (W.exteriorPowerImage n).toSubmodule = _
-  rw [exteriorPowerImage_toSubmodule,
-    exteriorPower.finrank_range_map W.toSubmodule.injective_subtype]
+  rw [exteriorPowerImage_toSubmodule]
+  by_cases hfin : Module.Finite k W.toSubmodule
+  · rw [exteriorPower.finrank_range_map W.toSubmodule.injective_subtype]
+  · rw [LinearMap.finrank_range_of_inj
+      (exteriorPower.map_injective_field W.toSubmodule.injective_subtype)]
+    rcases n.eq_zero_or_pos with rfl | hn
+    · rw [(exteriorPower.zeroEquiv k W.toSubmodule).finrank_eq, Module.finrank_self,
+        Nat.choose_zero_right]
+    · rw [Module.finrank_of_not_finite (not_finite_exteriorPower hfin hn.ne'),
+        Module.finrank_of_not_finite hfin, Nat.choose_eq_zero_of_lt hn]
 
-/-- The top exterior image of a finite-dimensional subrepresentation is a line. -/
-theorem finrank_exteriorPowerImage_finrank (W : Subcomodule k H M)
-    [Module.Finite k W.toSubmodule] :
+/-- The top exterior image of a subrepresentation is a line. -/
+theorem finrank_exteriorPowerImage_finrank (W : Subcomodule k H M) :
     Module.finrank k (W.exteriorPowerImage (Module.finrank k W.toSubmodule)).toSubmodule = 1 :=
   (finrank_exteriorPowerImage W _).trans (Nat.choose_self _)
 
