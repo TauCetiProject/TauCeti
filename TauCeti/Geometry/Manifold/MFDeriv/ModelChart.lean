@@ -222,6 +222,24 @@ theorem exists_hasStrictFDerivAt_symm_trans (hn : n ≠ 0)
   obtain ⟨A, hA⟩ := exists_hasFDerivAt_symm_trans hn hq hq' hz
   exact ⟨A, (contDiffAt_symm_trans_of_mem_maximalAtlas hq hq' hz).hasStrictFDerivAt hA hn⟩
 
+/-- In charts `q` and `q'` of the maximal atlas around `y`, the parametrization
+`z ↦ q.symm (q y + z)` of a subspace `F` is strictly differentiable at `0` in the chart `q'`, with
+derivative the derivative of the transition `q' ∘ q.symm` at `q y` restricted to `F`. -/
+theorem hasStrictFDerivAt_comp_symm_add_subtypeL {y : M} (hn : n ≠ 0)
+    (hq : q ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M)
+    (hq' : q' ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M)
+    (hyq : y ∈ q.source) (hyq' : y ∈ q'.source) (F : Submodule 𝕜 E) :
+    HasStrictFDerivAt (fun z : F ↦ q' (q.symm (q y + (z : E))))
+      (fderiv 𝕜 (q.symm.trans q') (q y) ∘L F.subtypeL) 0 := by
+  have hyτ : q y ∈ (q.symm.trans q').source := by
+    simp [q.map_source hyq, q.left_inv hyq, hyq']
+  have hτ : HasStrictFDerivAt (q.symm.trans q') (fderiv 𝕜 (q.symm.trans q') (q y))
+      (q y + ((0 : F) : E)) := by
+    simpa using (contDiffAt_symm_trans_of_mem_maximalAtlas hq hq' hyτ).hasStrictFDerivAt_fderiv hn
+  have hlin : HasStrictFDerivAt (fun z : F ↦ q y + (z : E)) F.subtypeL 0 :=
+    F.subtypeL.hasStrictFDerivAt.const_add _
+  exact HasStrictFDerivAt.comp (f := fun z : F ↦ q y + (z : E)) 0 hτ hlin
+
 end StrictFDeriv
 
 section Preferred
