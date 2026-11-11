@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
+public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 public import Mathlib.RingTheory.MvPowerSeries.Order
 public import Mathlib.RingTheory.MvPowerSeries.Rename
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
@@ -36,7 +37,9 @@ finite sums of these polynomial components
 polynomial evaluated at the linear parts of the `a i`
 (`MvPowerSeries.homogeneousComponent_subst_eq_coe_aeval`). Homogeneous components and total-degree
 truncations also commute with variable renaming (`MvPowerSeries.rename_homogeneousComponent`,
-`MvPowerSeries.rename_homogeneousComponentPolynomial`, `MvPowerSeries.rename_truncTotal`).
+`MvPowerSeries.rename_homogeneousComponentPolynomial`, `MvPowerSeries.rename_truncTotal`). For a
+series invariant under renaming by every permutation of the variables the polynomial is symmetric
+(`MvPowerSeries.isSymmetric_homogeneousComponentPolynomial`).
 
 Products and powers of close series are close: the order of `x y - x' y'` is bounded through
 those of `x - x'` and `y - y'` (`MvPowerSeries.le_order_mul_sub_mul`), and if `x` and `y` have
@@ -397,6 +400,13 @@ theorem homogeneousComponent_subst_eq_coe_aeval [CommRing R] {n : ℕ} {f : MvPo
   simp_rw [hl]
   simpa using (MvPolynomial.comp_aeval_apply (MvPolynomial.coeToMvPowerSeries.algHom R)
     (homogeneousComponentPolynomial n f) (f := l)).symm
+
+/-- The degree-`n` part of a series `Φ` in finitely many variables that is invariant under every
+renaming of the variables by a permutation is a symmetric polynomial. -/
+theorem isSymmetric_homogeneousComponentPolynomial [CommSemiring R] {n : ℕ}
+    {Φ : MvPowerSeries σ R} (hsymm : ∀ e : Equiv.Perm σ, rename e Φ = Φ) :
+    (homogeneousComponentPolynomial n Φ).IsSymmetric := fun e ↦ by
+  rw [rename_homogeneousComponentPolynomial, hsymm e]
 
 end Polynomial
 
