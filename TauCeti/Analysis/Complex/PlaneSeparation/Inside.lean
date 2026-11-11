@@ -139,11 +139,12 @@ theorem IsJordanCurve.frontier_filledHull {C : Set ℂ} (hC : IsJordanCurve C) :
 
 /-- **A compact set bounded by a Jordan curve is the filled hull of the curve.** If `D ⊆ ℂ` is
 compact with nonempty interior and its frontier is a Jordan curve, then `D` is the filled hull of
-its frontier. Being bounded, `D` lies in that hull. Conversely, the inside of the curve is
-connected and misses the frontier of `D`, and it meets `D` at an interior point of `D`, so it lies
-in `D`. -/
+its frontier. -/
+@[simp]
 theorem IsJordanCurve.filledHull_frontier_eq {D : Set ℂ} (hJ : IsJordanCurve (frontier D))
     (hD : IsCompact D) (hint : (interior D).Nonempty) : filledHull (frontier D) = D := by
+  -- Being bounded, `D` lies in the hull. Conversely, the inside of the curve is connected, misses
+  -- the frontier of `D` and meets `D` at an interior point, so it lies in `D`.
   have hsub : D ⊆ filledHull (frontier D) :=
     subset_filledHull_of_frontier_subset hD.isBounded subset_rfl
   refine Subset.antisymm (fun x hx ↦ ?_) hsub
