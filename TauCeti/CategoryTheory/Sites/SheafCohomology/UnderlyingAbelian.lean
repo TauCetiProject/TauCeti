@@ -46,7 +46,8 @@ developed in `TauCeti.Topology.Sheaves.SupportedCohomology.UnderlyingAbelian`.
   coefficient sheaves;
 * `TauCeti.CategoryTheory.relativeExtToForget_mk₀_relativeFreeModuleYonedaSheafMap_comp`:
   naturality in commutative squares of the site;
-* `TauCeti.CategoryTheory.coe_relativeH'_zeroEquiv_relativeExtToForget` and
+* `TauCeti.CategoryTheory.ext_addEquiv₀_relativeExtToForget`,
+  `TauCeti.CategoryTheory.coe_relativeH'_zeroEquiv_relativeExtToForget` and
   `TauCeti.CategoryTheory.relativeExtToForget_zero_bijective`: the comparison in degree zero.
 
 ## References
@@ -85,6 +86,15 @@ def relativeFreeYonedaSheafToForget {U V : C} (i : U ⟶ V) :
     ⟨(relativeFreeModuleYonedaSheafHomEquiv J R i _ (𝟙 _)).1,
       (relativeFreeModuleYonedaSheafHomEquiv J R i _ (𝟙 _)).2⟩
 
+/-- Under the identification of morphisms out of `ℤ_{V,U}` with sections,
+`relativeFreeYonedaSheafToForget` is the section of `R_{V,U}` over `V` given by its identity. -/
+lemma coe_relativeFreeYonedaSheafHomEquiv_relativeFreeYonedaSheafToForget {U V : C}
+    (i : U ⟶ V) :
+    ((relativeFreeYonedaSheafHomEquiv J i _ (relativeFreeYonedaSheafToForget J R i)).1 :
+        (relativeFreeModuleYonedaSheaf J R i).obj.obj (op V)) =
+      (relativeFreeModuleYonedaSheafHomEquiv J R i _ (𝟙 _)).1 := by
+  rw [relativeFreeYonedaSheafToForget, AddEquiv.apply_symm_apply]
+
 /-- Under the identifications of morphisms out of relative free sheaves with sections, composing
 `relativeFreeYonedaSheafToForget` with the underlying morphism of abelian sheaves of
 `g : R_{V,U} ⟶ F` gives the same section of `F` as `g`. -/
@@ -94,8 +104,8 @@ lemma coe_relativeFreeYonedaSheafHomEquiv_toForget_comp {U V : C} (i : U ⟶ V)
         (sheafCompose J (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})).map g)).1 :
         F.obj.obj (op V)) =
       (relativeFreeModuleYonedaSheafHomEquiv J R i F g).1 := by
-  rw [relativeFreeYonedaSheafHomEquiv_naturality_right, relativeFreeYonedaSheafToForget,
-    AddEquiv.apply_symm_apply]
+  rw [relativeFreeYonedaSheafHomEquiv_naturality_right,
+    coe_relativeFreeYonedaSheafHomEquiv_relativeFreeYonedaSheafToForget]
   conv_rhs => rw [← Category.id_comp g, relativeFreeModuleYonedaSheafHomEquiv_naturality_right]
   -- the underlying additive map of `forget₂` applied to `g` is the linear map of `g` on sections
   rfl
@@ -109,13 +119,14 @@ lemma relativeFreeYonedaSheafMap_comp_relativeFreeYonedaSheafToForget {U' V' U V
       relativeFreeYonedaSheafToForget J R i' ≫
         (sheafCompose J (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})).map
           (relativeFreeModuleYonedaSheafMap J R i' i a b w) := by
-  apply (relativeFreeYonedaSheafHomEquiv J i' _).injective
-  apply Subtype.ext
+  refine (relativeFreeYonedaSheafHomEquiv J i' _).injective (Subtype.ext ?_)
+  -- the left side is the restriction along `b` of the section of `R_{V,U}` given by its identity
   rw [coe_relativeFreeYonedaSheafHomEquiv_map_comp,
-    coe_relativeFreeYonedaSheafHomEquiv_toForget_comp,
+    coe_relativeFreeYonedaSheafHomEquiv_relativeFreeYonedaSheafToForget]
+  -- and so is the right side
+  rw [coe_relativeFreeYonedaSheafHomEquiv_toForget_comp,
     ← Category.comp_id (relativeFreeModuleYonedaSheafMap J R i' i a b w),
-    coe_relativeFreeModuleYonedaSheafHomEquiv_map_comp, relativeFreeYonedaSheafToForget,
-    AddEquiv.apply_symm_apply]
+    coe_relativeFreeModuleYonedaSheafHomEquiv_map_comp]
   -- the restriction maps of the underlying abelian sheaf are those of the sheaf of modules
   rfl
 
@@ -149,6 +160,17 @@ lemma relativeExtToForget_apply {U V : C} (i : U ⟶ V) (F : Sheaf J (ModuleCat.
         (zero_add n) :=
   (rfl)
 
+/-- In degree zero the comparison sends the class of a morphism `g : R_{V,U} ⟶ F` to the class of
+the composite `ℤ_{V,U} ⟶ R_{V,U} ⟶ F` of abelian sheaves. -/
+lemma ext_addEquiv₀_relativeExtToForget {U V : C} (i : U ⟶ V) (F : Sheaf J (ModuleCat.{v} R))
+    (x : Ext.{w} (relativeFreeModuleYonedaSheaf J R i) F 0) :
+    Ext.addEquiv₀ (relativeExtToForget.{w, w'} J R i F 0 x) =
+      relativeFreeYonedaSheafToForget J R i ≫
+        (sheafCompose J (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})).map (Ext.addEquiv₀ x) := by
+  apply (Ext.mk₀_bijective _ _).1
+  rw [Ext.mk₀_addEquiv₀_apply, ← Ext.mk₀_comp_mk₀, ← Ext.mapExactFunctor_mk₀,
+    Ext.mk₀_addEquiv₀_apply, relativeExtToForget_apply]
+
 /-- The comparison is natural in the coefficients: it carries the Yoneda product with an `Ext`
 class `α` between sheaves of `R`-modules to the Yoneda product with the underlying `Ext` class of
 abelian sheaves. This covers morphisms of coefficient sheaves and the connecting classes of short
@@ -172,9 +194,8 @@ lemma relativeExtToForget_mk₀_relativeFreeModuleYonedaSheafMap_comp {U' V' U V
         ((Ext.mk₀ (relativeFreeModuleYonedaSheafMap J R i' i a b w)).comp x (zero_add n)) =
       (Ext.mk₀ (relativeFreeYonedaSheafMap J i' i a b w)).comp (relativeExtToForget J R i F n x)
         (zero_add n) := by
-  rw [relativeExtToForget_apply, relativeExtToForget_apply, Ext.mapExactFunctor_comp,
-    Ext.mapExactFunctor_mk₀, ← Ext.comp_assoc_of_second_deg_zero,
-    ← Ext.comp_assoc_of_second_deg_zero, Ext.mk₀_comp_mk₀, Ext.mk₀_comp_mk₀,
+  simp only [relativeExtToForget_apply, Ext.mapExactFunctor_comp, Ext.mapExactFunctor_mk₀,
+    ← Ext.comp_assoc_of_second_deg_zero, Ext.mk₀_comp_mk₀,
     relativeFreeYonedaSheafMap_comp_relativeFreeYonedaSheafToForget]
 
 /-- In degree zero the comparison is the identity on the sections of `F` over `V` restricting to
@@ -183,13 +204,11 @@ lemma coe_relativeH'_zeroEquiv_relativeExtToForget {U V : C} (i : U ⟶ V)
     (F : Sheaf J (ModuleCat.{v} R)) (x : Ext.{w} (relativeFreeModuleYonedaSheaf J R i) F 0) :
     ((Sheaf.relativeH'.zeroEquiv _ i (relativeExtToForget J R i F 0 x)).1 : F.obj.obj (op V)) =
       (relativeFreeModuleYonedaExtZeroEquiv J R i F x).1 := by
-  obtain ⟨g, rfl⟩ := Ext.addEquiv₀.symm.surjective x
-  rw [Ext.addEquiv₀_symm_apply, relativeExtToForget_apply, Ext.mapExactFunctor_mk₀,
-    Ext.mk₀_comp_mk₀, Sheaf.relativeH'.coe_zeroEquiv_apply,
-    coe_relativeFreeModuleYonedaExtZeroEquiv_apply, ← Ext.addEquiv₀_symm_apply,
-    ← Ext.addEquiv₀_symm_apply, AddEquiv.apply_symm_apply, AddEquiv.apply_symm_apply,
-    ← coe_relativeFreeYonedaSheafHomEquiv_apply, ← coe_relativeFreeModuleYonedaSheafHomEquiv_apply]
-  exact coe_relativeFreeYonedaSheafHomEquiv_toForget_comp J R i F g
+  -- both sides are the sections corresponding to morphisms out of relative free sheaves
+  rw [Sheaf.relativeH'.coe_zeroEquiv_apply, coe_relativeFreeModuleYonedaExtZeroEquiv_apply,
+    ext_addEquiv₀_relativeExtToForget, ← coe_relativeFreeYonedaSheafHomEquiv_apply,
+    ← coe_relativeFreeModuleYonedaSheafHomEquiv_apply]
+  exact coe_relativeFreeYonedaSheafHomEquiv_toForget_comp J R i F _
 
 /-- In degree zero the comparison is bijective. -/
 theorem relativeExtToForget_zero_bijective {U V : C} (i : U ⟶ V)

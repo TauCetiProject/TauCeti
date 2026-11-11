@@ -31,7 +31,8 @@ vanishes locally, so the local cohomology sheaf of the underlying abelian sheaf 
 * under the same hypothesis, the presheaf of `R`-modules `W ↦ H_Sⁿ(W, F)` is already a sheaf
   (`CategoryTheory.Sheaf.isSheaf_supportedModuleHPresheaf_of_isZero_supportedModuleHSheaf`), so the
   sheafification map is an `R`-linear isomorphism `H_Sⁿ(W, F) ≃ₗ[R] 𝓗_Sⁿ(F)(W)`
-  (`CategoryTheory.Sheaf.supportedModuleHSectionsEquiv`).
+  (`CategoryTheory.Sheaf.supportedModuleHSectionsEquiv`), compatible with restriction
+  (`CategoryTheory.Sheaf.supportedModuleHSectionsEquiv_supportedModuleHPresheaf_map`).
 
 For a real-analytic manifold `M` in a complexification, where purity gives `𝓗_M^q(𝓞) = 0` for
 `q < n` with `𝓞` the sheaf of holomorphic functions, a sheaf of complex vector spaces, these give
@@ -121,6 +122,17 @@ lemma supportedModuleHSectionsEquiv_apply
     F.supportedModuleHSectionsEquiv S h W x =
       (toSheafify _ (F.supportedModuleHPresheaf S n)).app (op W) x :=
   (rfl)
+
+/-- The edge comparison `H_Sⁿ(W, F) ≃ₗ[R] 𝓗_Sⁿ(F)(W)` is compatible with restriction to a
+smaller open `W' ≤ W`. -/
+lemma supportedModuleHSectionsEquiv_supportedModuleHPresheaf_map
+    (h : ∀ q < n, IsZero (F.supportedModuleHSheaf S q)) {W' W : Opens X} (hW : W' ≤ W)
+    (x : F.supportedModuleH S W n) :
+    F.supportedModuleHSectionsEquiv S h W'
+        ((F.supportedModuleHPresheaf S n).map (homOfLE hW).op x) =
+      (F.supportedModuleHSheaf S n).obj.map (homOfLE hW).op
+        (F.supportedModuleHSectionsEquiv S h W x) :=
+  congr($((toSheafify _ (F.supportedModuleHPresheaf S n)).naturality (homOfLE hW).op) x)
 
 end
 
