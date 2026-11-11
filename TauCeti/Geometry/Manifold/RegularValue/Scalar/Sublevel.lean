@@ -847,6 +847,16 @@ private theorem scalarRegularBandChartAt_of_ne {x : f ⁻¹' Icc a b} (hxa : f x
         (interiorChart_mem_iff _ hn _ (preimage_mono Ioo_subset_Icc_self)) x :=
   (dite_eq_right hxa).trans (dite_eq_right hxb)
 
+/-- A point of the source of the preferred chart at a point `x` of the upper level `f⁻¹(b)` forces
+`a < b`: for `b ≤ a` the chart at `x` is the lower face chart, whose source misses the band. -/
+private theorem lt_of_mem_scalarRegularBandChartAt_source_of_eq_right {x w : f ⁻¹' Icc a b}
+    (hx : f x = b) (hw : w ∈ (scalarRegularBandChartAt hf hn ha hb x).source) : a < b := by
+  by_contra hab
+  have hxa : f x = a := le_antisymm (hx.le.trans (not_lt.1 hab)) (mem_Icc.1 x.2).1
+  rw [scalarRegularBandChartAt_of_eq_left hf hn ha hb hxa, halfSpaceChart_source, mem_preimage,
+    restrFaceChart_source _ _ _ (isOpen_Iio.preimage hf.continuous)] at hw
+  exact absurd (mem_Iio.1 hw.2) (not_lt.2 ((not_lt.1 hab).trans (mem_Icc.1 w.2).1))
+
 variable (hab : a < b)
 include hab in
 /-- Every point of the band lies in the source of its preferred chart. -/
@@ -999,8 +1009,8 @@ end LowerFace
 
 section UpperFace
 
-variable (hab : a < b) {x : f ⁻¹' Icc a b} (hx : f x = b)
-include hab hx
+variable {x : f ⁻¹' Icc a b} (hx : f x = b)
+include hx
 
 /-- The source of the preferred chart at a point `x` of the upper level `f⁻¹(b)` is the part of the
 band in the source of the submersion chart of `f` at `x` where `a < f`. -/
@@ -1008,8 +1018,13 @@ theorem scalarRegularBandChartAt_source_of_eq_right :
     (scalarRegularBandChartAt hf hn ha hb x).source = Subtype.val ⁻¹'
       ((scalarSubmersionChartAt hf.contMDiffAt (hb.isRegularPoint hx)).source ∩
         f ⁻¹' Ioi a) := by
-  rw [scalarRegularBandChartAt_of_eq_right hf hn ha hb hab hx, halfSpaceChart_source,
-    restrFaceChart_source _ _ _ (isOpen_Ioi.preimage hf.continuous)]
+  by_cases hab : a < b
+  · rw [scalarRegularBandChartAt_of_eq_right hf hn ha hb hab hx, halfSpaceChart_source,
+      restrFaceChart_source _ _ _ (isOpen_Ioi.preimage hf.continuous)]
+  · ext w
+    refine iff_of_false (fun hw ↦ hab
+      (lt_of_mem_scalarRegularBandChartAt_source_of_eq_right hf hn ha hb hx hw)) fun hw ↦ hab ?_
+    exact (mem_Ioi.1 hw.2).trans_le (mem_Icc.1 w.2).2
 
 /-- At a point `x` of the upper level `f⁻¹(b)`, the preferred chart reads a point of its source in
 the extended submersion chart of `f` at `x`, followed by `TauCeti.scalarRegularSublevelFaceEquiv`.
@@ -1019,6 +1034,7 @@ theorem scalarRegularBandChartAt_apply_of_eq_right {w : f ⁻¹' Icc a b}
     (scalarRegularBandChartAt hf hn ha hb x w).1 =
       scalarRegularSublevelFaceEquiv hn (hb.isRegularPoint hx)
         ((scalarSubmersionChartAt hf.contMDiffAt (hb.isRegularPoint hx)).extend I w) := by
+  have hab := lt_of_mem_scalarRegularBandChartAt_source_of_eq_right hf hn ha hb hx hw
   rw [scalarRegularBandChartAt_of_eq_right hf hn ha hb hab hx, halfSpaceChart_source,
     mem_preimage] at hw
   rw [scalarRegularBandChartAt_of_eq_right hf hn ha hb hab hx, coe_halfSpaceChart_apply _ _ hw,
@@ -1033,9 +1049,22 @@ theorem mem_scalarRegularBandChartAt_target_iff_of_eq_right (z : EuclideanHalfSp
           ((scalarSubmersionChartAt hf.contMDiffAt (hb.isRegularPoint hx)).extend I).target ∧
         a < f (((scalarSubmersionChartAt hf.contMDiffAt (hb.isRegularPoint hx)).extend I).symm
           ((scalarRegularSublevelFaceEquiv hn (hb.isRegularPoint hx)).symm z.1)) := by
-  rw [scalarRegularBandChartAt_of_eq_right hf hn ha hb hab hx, halfSpaceChart_target, mem_preimage,
-    OpenPartialHomeomorph.extend_target, I.range_eq_univ, inter_univ]
-  simp [restrFaceChart, (isOpen_Ioi.preimage hf.continuous).interior_eq, mfld_simps]
+  by_cases hab : a < b
+  · rw [scalarRegularBandChartAt_of_eq_right hf hn ha hb hab hx, halfSpaceChart_target,
+      mem_preimage, OpenPartialHomeomorph.extend_target, I.range_eq_univ, inter_univ]
+    simp [restrFaceChart, (isOpen_Ioi.preimage hf.continuous).interior_eq, mfld_simps]
+  · refine iff_of_false (fun h ↦ hab (lt_of_mem_scalarRegularBandChartAt_source_of_eq_right hf hn
+      ha hb hx ((scalarRegularBandChartAt hf hn ha hb x).map_target h))) fun ⟨h₁, h₂⟩ ↦ hab ?_
+    have hy := ((scalarSubmersionChartAt hf.contMDiffAt (hb.isRegularPoint hx)).extend I).map_target
+      h₁
+    rw [OpenPartialHomeomorph.extend_source, scalarSubmersionChartAt_source] at hy
+    have h0 := scalarRegularSublevelFaceEquiv_extend_apply hn hf.contMDiffAt
+      (hb.isRegularPoint hx) hy.1
+    rw [((scalarSubmersionChartAt hf.contMDiffAt (hb.isRegularPoint hx)).extend I).right_inv h₁,
+      ContinuousLinearEquiv.apply_symm_apply] at h0
+    have hz : 0 ≤ z.1 0 := z.2
+    rw [h0, euclideanFinConsEquiv_apply_zero, hx] at hz
+    exact h₂.trans_le (by linarith)
 
 /-- At a point `x` of the upper level `f⁻¹(b)`, the inverse of the preferred chart is the inverse of
 `TauCeti.scalarRegularSublevelFaceEquiv` followed by the inverse extended submersion chart of `f`
@@ -1045,6 +1074,8 @@ theorem coe_scalarRegularBandChartAt_symm_apply_of_eq_right {z : EuclideanHalfSp
     ((scalarRegularBandChartAt hf hn ha hb x).symm z : M) =
       ((scalarSubmersionChartAt hf.contMDiffAt (hb.isRegularPoint hx)).extend I).symm
         ((scalarRegularSublevelFaceEquiv hn (hb.isRegularPoint hx)).symm z.1) := by
+  have hab := lt_of_mem_scalarRegularBandChartAt_source_of_eq_right hf hn ha hb hx
+    ((scalarRegularBandChartAt hf hn ha hb x).map_target hz)
   rw [scalarRegularBandChartAt_of_eq_right hf hn ha hb hab hx] at hz ⊢
   rw [halfSpaceChart_target, mem_preimage, modelWithCornersEuclideanHalfSpace_toFun] at hz
   rw [coe_halfSpaceChart_symm_apply _ _ hz, restrFaceChart_symm_apply]
@@ -1054,6 +1085,7 @@ inward coordinate `b - f`. -/
 theorem scalarRegularBandChartAt_apply_zero_of_eq_right {w : f ⁻¹' Icc a b}
     (hw : w ∈ (scalarRegularBandChartAt hf hn ha hb x).source) :
     (scalarRegularBandChartAt hf hn ha hb x w).1 0 = b - f w := by
+  have hab := lt_of_mem_scalarRegularBandChartAt_source_of_eq_right hf hn ha hb hx hw
   rw [scalarRegularBandChartAt_of_eq_right hf hn ha hb hab hx, halfSpaceChart_source,
     mem_preimage] at hw
   rw [scalarRegularBandChartAt_of_eq_right hf hn ha hb hab hx, coe_halfSpaceChart_apply _ _ hw,
@@ -1074,10 +1106,11 @@ theorem scalarRegularBandChartAt_apply_succ_of_eq_right {w : f ⁻¹' Icc a b}
         (hb.isRegularPoint hx).finrank_ker_fderiv_comp_extChartAt_symm
         (Classical.choose D.isFredholm_of_finiteDimensional.closedComplemented_ker
           (extChartAt I (x : M) w - extChartAt I (x : M) x)) (Fin.cast (by omega) i) := by
+  have hab := lt_of_mem_scalarRegularBandChartAt_source_of_eq_right hf hn ha hb hx hw
   have hw' := hw
   rw [scalarRegularBandChartAt_of_eq_right hf hn ha hb hab hx, halfSpaceChart_source,
     mem_preimage] at hw'
-  rw [scalarRegularBandChartAt_apply_of_eq_right hf hn ha hb hab hx hw,
+  rw [scalarRegularBandChartAt_apply_of_eq_right hf hn ha hb hx hw,
     scalarRegularSublevelFaceEquiv_extend_apply hn _ _
       (mem_chartAt_source_of_mem_restrFaceChart_source hf _
         (isOpen_Ioi.preimage hf.continuous) _ hw').1,
@@ -1093,7 +1126,7 @@ theorem scalarRegularBandChartAt_apply_succ_eq_regularLevelChartAt_of_eq_right
     (scalarRegularBandChartAt hf hn ha hb x w).1 i.succ =
       regularLevelChartAt (n := finrank ℝ E - 1) (fun y _ ↦ hf.contMDiffAt) hb
         (by rw [finrank_self]) ⟨x, hx⟩ ⟨w, hwb⟩ (Fin.cast (by omega) i) := by
-  rw [scalarRegularBandChartAt_apply_succ_of_eq_right hf hn ha hb hab hx hw,
+  rw [scalarRegularBandChartAt_apply_succ_of_eq_right hf hn ha hb hx hw,
     regularLevelChartAt_apply]
 
 end UpperFace
@@ -1209,7 +1242,7 @@ theorem boundary_scalarRegularBand {m : ℕ∞ω} [IsManifold I m M] (hm : 1 ≤
   · rw [scalarRegularBandChartAt_apply_zero_of_eq_left _ hn ha hb hxa hsrc, hxa, sub_self]
     exact iff_of_true rfl (Or.inl rfl)
   by_cases hxb : f x = b
-  · rw [scalarRegularBandChartAt_apply_zero_of_eq_right _ hn ha hb hab hxb hsrc, hxb, sub_self]
+  · rw [scalarRegularBandChartAt_apply_zero_of_eq_right _ hn ha hb hxb hsrc, hxb, sub_self]
     exact iff_of_true rfl (Or.inr rfl)
   obtain ⟨r, hr, -, happly⟩ := exists_scalarRegularBandChartAt_of_mem_Ioo (hfm.of_le hm) hn ha hb
     (mem_preimage.1 (mem_preimage_Ioo_of_ne x.2 hxa hxb))
