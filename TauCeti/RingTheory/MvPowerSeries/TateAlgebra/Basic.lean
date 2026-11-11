@@ -17,7 +17,6 @@ import Mathlib.LinearAlgebra.Dimension.Finite
 import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 import Mathlib.RingTheory.MvPolynomial.Basic
 import Mathlib.SetTheory.Cardinal.Order
-import TauCeti.Analysis.Normed.Group.NullFamily
 import TauCeti.Data.Finsupp.MonomialOrder.Basic
 import TauCeti.Topology.Order.OrderClosed
 import TauCeti.RingTheory.MvPowerSeries.Rename
