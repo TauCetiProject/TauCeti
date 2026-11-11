@@ -148,7 +148,7 @@ private theorem permanencesMinusVariations_signedPsc_neg_mod {p q : K[X]}
     simp [t, hρ.le]
   rw [List.map_reverse_range_succ s n,
     List.map_reverse_range_eq_replicate_append s 0 (a := ρ + 1) (b := n) hρ fun j hj hjn =>
-      signedPsc_eq_zero_of_natDegree_mod_lt le_rfl (by omega) hjn (by omega), hst,
+      signedPsc_eq_zero_of_natDegree_mod_lt le_rfl (by omega) hjn, hst,
     List.map_reverse_range_succ t n,
     List.map_reverse_range_eq_replicate_append t 0 (a := ρ + 1) (b := n) hρ fun j hj hjn => by
       have hmin : min n ρ < j := by omega
