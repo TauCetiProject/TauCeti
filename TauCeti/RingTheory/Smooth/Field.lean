@@ -9,7 +9,7 @@ public import Mathlib.FieldTheory.KummerPolynomial
 public import Mathlib.FieldTheory.Perfect
 public import Mathlib.RingTheory.Smooth.Field
 public import TauCeti.FieldTheory.Frobenius.Range
-public import TauCeti.RingTheory.Ideal.Quotient.SquareZero
+public import TauCeti.RingTheory.Ideal.Quotient.PowLift
 
 /-!
 # Extensions of perfect fields are formally smooth
@@ -176,7 +176,7 @@ section CharP
 variable (p : ℕ) [Fact p.Prime]
 variable {K L : Type*} [Field K] [Field L] [Algebra K L] [CharP K p] [PerfectField K]
 variable {B : Type*} [CommRing B] [Algebra K B] (hpB : (p : B) = 0) {I : Ideal B}
-  (hI : I ^ 2 = ⊥)
+  (hI : I ^ p = ⊥)
 
 /-- The only possible lift of `f` on the field `L ^ p`, as a ring homomorphism: it sends `x ^ p`
 to the `p`-th power of a lift of `f x`. -/
@@ -211,7 +211,7 @@ private theorem mk_powFieldLift (f : L →ₐ[K] B ⧸ I) (y : frobeniusPowers K
 open PartialLift in
 include hpB hI in
 /-- **In characteristic `p`, a map of a field `L` over a perfect field `K` into `B ⧸ I` lifts to
-`B` along a square-zero ideal `I`.** -/
+`B` along an ideal `I` with `I ^ p = ⊥`.** -/
 private theorem exists_comp_eq_of_charP [CharP L p] (f : L →ₐ[K] B ⧸ I) :
     ∃ g : L →ₐ[K] B, (Ideal.Quotient.mkₐ K I).comp g = f := by
   -- the partial lifts of `f` which extend its lift on `L ^ p`
@@ -257,7 +257,8 @@ instance (priority := low) formallySmooth_of_perfectField {K L : Type*} [Field K
       (K := IntermediateField.adjoin K (Set.range ((↑) : s → L))) (L := L)
     exact .of_algebraicIndependent_of_isSeparable hs.1
   · have : CharP L p := .of_ringHom_of_ne_zero (algebraMap K L) p hp.out.ne_zero
-    refine .of_comp_surjective fun B _ _ I hI f ↦ exists_comp_eq_of_charP p ?_ hI f
+    refine .of_comp_surjective fun B _ _ I hI f ↦ exists_comp_eq_of_charP p ?_
+      (le_bot_iff.mp ((Ideal.pow_le_pow_right hp.out.two_le).trans_eq hI)) f
     rw [← map_natCast (algebraMap K B), CharP.cast_eq_zero, map_zero]
 
 end TauCeti

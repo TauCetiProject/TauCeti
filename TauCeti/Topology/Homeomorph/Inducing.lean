@@ -12,15 +12,15 @@ public import Mathlib.Topology.Homeomorph.Lemmas
 
 Maps intertwined by a homeomorphism of the source and an inducing map of the target (for
 instance, conjugate by homeomorphisms of the source and target) are inducing simultaneously. The
-product form transports a family of maps into the factors of a product along homeomorphisms of
-the source and of every factor.
+product form transports a family of maps into the factors of a product along a homeomorphism of
+the source and an inducing map of every factor.
 
 ## Main results
 
 * `Homeomorph.isInducing_iff_of_homeomorph`: maps intertwined by a homeomorphism of the source
   and an inducing map of the target are inducing simultaneously.
 * `Homeomorph.isInducing_pi_iff_of_homeomorph`: the same for maps into a product, with one
-  homeomorphism for every factor.
+  inducing map for every factor.
 -/
 
 public section
@@ -39,13 +39,13 @@ theorem isInducing_iff_of_homeomorph {X X' Y Y' : Type*} [TopologicalSpace X]
   exact ⟨fun h' ↦ by simpa [Function.comp_assoc] using h'.comp e.symm.isInducing,
     (·.comp e.isInducing)⟩
 
-/-- Restriction maps that commute with homeomorphisms of the source and of every target induce
-the topology simultaneously. -/
+/-- Maps into a product intertwined by a homeomorphism of the source and an inducing map of every
+factor induce the topology simultaneously. -/
 theorem isInducing_pi_iff_of_homeomorph {X X' ι : Type*} [TopologicalSpace X]
     [TopologicalSpace X'] {Y Y' : ι → Type*} [∀ i, TopologicalSpace (Y i)]
-    [∀ i, TopologicalSpace (Y' i)] (e : X ≃ₜ X') (e' : ∀ i, Y i ≃ₜ Y' i)
-    {r : X → ∀ i, Y i} {r' : X' → ∀ i, Y' i} (h : ∀ x i, e' i (r x i) = r' (e x) i) :
-    IsInducing r ↔ IsInducing r' :=
-  e.isInducing_iff_of_homeomorph (piCongrRight e').isInducing fun x ↦ funext (h x)
+    [∀ i, TopologicalSpace (Y' i)] (e : X ≃ₜ X') {f : ∀ i, Y i → Y' i}
+    (hf : ∀ i, IsInducing (f i)) {r : X → ∀ i, Y i} {r' : X' → ∀ i, Y' i}
+    (h : ∀ x i, f i (r x i) = r' (e x) i) : IsInducing r ↔ IsInducing r' :=
+  e.isInducing_iff_of_homeomorph (.piMap hf) fun x ↦ funext (h x)
 
 end Homeomorph
