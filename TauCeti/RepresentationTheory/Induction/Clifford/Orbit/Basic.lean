@@ -160,9 +160,10 @@ theorem isotypicComponents_eq_range [ρ.IsIrreducible]
     exact ⟨_, Subrepresentation.isSimpleModule_asSubmodule_iff.mpr
       (isAtom_conjSubrep_iff.mpr hσ), rfl⟩
 
-/-- **A restriction along a normal subgroup of a finite group has finitely many isotypic
-components.**  There is one component for each translate of a minimal `N`-stable subspace, so at
-most one for each element of `G`; if there is no component at all there is nothing to count. -/
+/-- **The restriction of an irreducible representation along a normal subgroup of a finite group
+has finitely many isotypic components.**  There is one component for each translate of a minimal
+`N`-stable subspace, so at most one for each element of `G`; if there is no component at all there
+is nothing to count. -/
 theorem finite_isotypicComponents [ρ.IsIrreducible] [Finite G] :
     (isotypicComponents k[N] (_root_.Representation.asModule (ρ.comp N.subtype))).Finite := by
   rcases Set.eq_empty_or_nonempty
