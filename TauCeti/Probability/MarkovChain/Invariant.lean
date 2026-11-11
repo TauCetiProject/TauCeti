@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Dynamics.PeriodicPts.Lemmas
 public import TauCeti.Probability.MarkovChain.Recurrence
-import TauCeti.MeasureTheory.Integral.Lebesgue.Encard
 import TauCeti.MeasureTheory.Measure.GiryMonad
 import TauCeti.Probability.Kernel.Invariance
 
@@ -94,24 +93,7 @@ namespace ProbabilityTheory.Kernel
 
 variable {α : Type*} [MeasurableSpace α]
 
-/-! ### Mean return time and positive recurrence -/
-
-/-- Congruence in the kernel argument of `Kernel.meanReturnTime`. -/
-theorem meanReturnTime_congr {κ η : Kernel α α} [IsMarkovKernel κ] [IsMarkovKernel η]
-    (h : κ = η) (x : α) :
-    κ.meanReturnTime x = η.meanReturnTime x := by
-  subst h
-  rfl
-
-/-- The mean return time of any state is strictly positive. -/
-theorem meanReturnTime_pos (κ : Kernel α α) [IsMarkovKernel κ] (x : α) :
-    0 < κ.meanReturnTime x :=
-  zero_lt_one.trans_le κ.one_le_meanReturnTime
-
-/-- The mean return time of any state is nonzero. -/
-theorem meanReturnTime_ne_zero (κ : Kernel α α) [IsMarkovKernel κ] (x : α) :
-    κ.meanReturnTime x ≠ 0 :=
-  (κ.meanReturnTime_pos x).ne'
+/-! ### Positive recurrence -/
 
 /-- A state `x` is **positive recurrent** under `κ` when its mean return time is finite. -/
 def IsPositiveRecurrent (κ : Kernel α α) [IsMarkovKernel κ] (x : α) : Prop :=
@@ -142,37 +124,6 @@ theorem IsPositiveRecurrent.meanReturnTime_ne_top {κ : Kernel α α} [IsMarkovK
 theorem IsPositiveRecurrent.isRecurrent {κ : Kernel α α} [IsMarkovKernel κ] {x : α}
     (hx : κ.IsPositiveRecurrent x) : κ.IsRecurrent x :=
   isRecurrent_of_meanReturnTime_ne_top hx.meanReturnTime_ne_top
-
-/-- The pre-return event `{n < T_x⁺}` belongs to the history σ-algebra `Filtration.piLE n`. -/
-private theorem measurableSet_lt_hittingAfter [MeasurableSingletonClass α] (x : α) (n : ℕ) :
-    MeasurableSet[Filtration.piLE n]
-      {w : ℕ → α | (n : WithTop ℕ) < hittingAfter (fun k w => w k) {x} 1 w} := by
-  have hτ : IsStoppingTime (Filtration.piLE (X := fun _ : ℕ => α))
-      (hittingAfter (fun k (w : ℕ → α) => w k) {x} 1) :=
-    Filtration.adapted_piLE.isStoppingTime_hittingAfter (measurableSet_singleton x)
-  have heq : {w : ℕ → α | (n : WithTop ℕ) < hittingAfter (fun k w => w k) {x} 1 w} =
-      {w : ℕ → α | hittingAfter (fun k w => w k) {x} 1 w ≤ (n : WithTop ℕ)}ᶜ := by
-    ext w
-    simp
-  rw [heq]
-  exact (hτ n).compl
-
-private theorem toENNReal_withTop_eq_recTopCoe (z : WithTop ℕ) :
-    ENat.toENNReal z = z.recTopCoe ⊤ Nat.cast := by
-  induction z using WithTop.recTopCoe with
-  | top => rfl
-  | coe k => exact ENat.toENNReal_coe k
-
-/-- **Tail-sum formula for the mean return time.** -/
-theorem meanReturnTime_eq_tsum [MeasurableSingletonClass α] (κ : Kernel α α) [IsMarkovKernel κ]
-    (x : α) :
-    κ.meanReturnTime x =
-      ∑' n : ℕ, markovChainLaw (Measure.dirac x) κ
-        {w | (n : WithTop ℕ) < hittingAfter (fun k w => w k) {x} 1 w} := by
-  rw [meanReturnTime_def]
-  simp_rw [toENNReal_withTop_eq_recTopCoe]
-  exact lintegral_withTop_nat_eq_tsum _ fun n =>
-    Filtration.le _ n _ (measurableSet_lt_hittingAfter x n)
 
 /-- Started at a positive recurrent state `x`, the chain returns to `x` almost surely. -/
 theorem IsPositiveRecurrent.ae_hittingAfter_ne_top [MeasurableSingletonClass α]
@@ -253,9 +204,12 @@ theorem lintegral_cycleOccupation [MeasurableSingletonClass α] (κ : Kernel α 
         {w | (n : WithTop ℕ) < hittingAfter (fun k w => w k) {x} 1 w}.indicator
           (fun w => f (w n)) w
         ∂markovChainLaw (Measure.dirac x) κ := by
+  have hτ : IsStoppingTime (Filtration.piLE (X := fun _ : ℕ => α))
+      (hittingAfter (fun k (w : ℕ → α) => w k) {x} 1) :=
+    Filtration.adapted_piLE.isStoppingTime_hittingAfter (measurableSet_singleton x)
   have hE : ∀ n : ℕ, MeasurableSet
       {w : ℕ → α | (n : WithTop ℕ) < hittingAfter (fun k w => w k) {x} 1 w} :=
-    fun n => Filtration.le _ n _ (measurableSet_lt_hittingAfter x n)
+    fun n => Filtration.le _ n _ (hτ.measurableSet_gt n)
   have hfm : ∀ n : ℕ, AEMeasurable
       ({w : ℕ → α | (n : WithTop ℕ) < hittingAfter (fun k w => w k) {x} 1 w}.indicator
         fun w => f (w n))
@@ -315,7 +269,10 @@ private theorem comp_cycleStep [MeasurableSingletonClass α] (κ : Kernel α α)
     κ ∘ₘ cycleStep κ x n =
       ((markovChainLaw (Measure.dirac x) κ).restrict
         {w | (n : WithTop ℕ) < hittingAfter (fun k w => w k) {x} 1 w}).map fun w => w (n + 1) := by
-  have hEn := measurableSet_lt_hittingAfter x n
+  have hτ : IsStoppingTime (Filtration.piLE (X := fun _ : ℕ => α))
+      (hittingAfter (fun k (w : ℕ → α) => w k) {x} 1) :=
+    Filtration.adapted_piLE.isStoppingTime_hittingAfter (measurableSet_singleton x)
+  have hEn := hτ.measurableSet_gt n
   rw [Filtration.piLE_eq_comap_prefix] at hEn
   obtain ⟨A, hA, hAE⟩ := hEn
   have hshift := Measure.markovChainLaw_restrict_map_shift_iterate (Measure.dirac x) κ n hA
@@ -759,16 +716,12 @@ open scoped Classical in
 theorem meanReturnTime_deterministic {f : α → α} (hf : Measurable f) (x : α) :
     (deterministic f hf).meanReturnTime x =
       if x ∈ Function.periodicPts f then (Function.minimalPeriod f x : ℝ≥0∞) else ∞ := by
-  let g : WithTop ℕ → ℝ≥0∞ := WithTop.recTopCoe ⊤ Nat.cast
   have hτ : Measurable (hittingAfter (fun (n : ℕ) (w : ℕ → α) => w n) {x} 1) :=
     (Filtration.adapted_piLE.isStoppingTime_hittingAfter
       (f := Filtration.piLE (X := fun _ : ℕ => α)) (measurableSet_singleton x)).measurable'
   have hm : Measurable fun w : ℕ → α =>
-      g (hittingAfter (fun (n : ℕ) (w : ℕ → α) => w n) {x} 1 w) :=
-    (Measurable.of_discrete (f := g)).comp hτ
-  rw [meanReturnTime_def]
-  simp_rw [toENNReal_withTop_eq_recTopCoe]
-  rw [markovChainLaw_dirac_deterministic, lintegral_dirac' _ hm]
+      ENat.toENNReal (hittingAfter (fun (n : ℕ) (w : ℕ → α) => w n) {x} 1 w) :=
+    Measurable.of_discrete.comp hτ
   have hex : (∃ j : ℕ, 1 ≤ j ∧ f^[j] x ∈ ({x} : Set α)) ↔ x ∈ Function.periodicPts f := by
     rw [Function.mem_periodicPts]
     exact ⟨fun ⟨j, hj, hx⟩ => ⟨j, hj, hx⟩, fun ⟨j, hj, hx⟩ => ⟨j, hj, hx⟩⟩
@@ -776,13 +729,16 @@ theorem meanReturnTime_deterministic {f : α → α} (hf : Measurable f) (x : α
       {n : ℕ | 0 < n ∧ Function.IsPeriodicPt f n x} := by
     ext i
     simp [Nat.pos_iff_ne_zero, Nat.one_le_iff_ne_zero, Function.IsPeriodicPt, Function.IsFixedPt]
-  rw [hittingAfter_def]
-  dsimp only [g]
-  by_cases hx : x ∈ Function.periodicPts f
-  · rw [ite_eq_left (hex.mpr hx), ite_eq_left hx, hset,
-      ← Function.minimalPeriod_eq_sInf_n_pos_IsPeriodicPt, WithTop.recTopCoe_coe]
-  · rw [ite_eq_right (mt hex.mp hx), ite_eq_right hx]
-    rfl
+  have hhit : hittingAfter (fun (n : ℕ) (w : ℕ → α) => w n) {x} 1 (fun n => f^[n] x) =
+      if x ∈ Function.periodicPts f then WithTop.some (Function.minimalPeriod f x) else ⊤ := by
+    rw [hittingAfter_def]
+    dsimp only
+    by_cases hx : x ∈ Function.periodicPts f
+    · rw [ite_eq_left (hex.mpr hx), ite_eq_left hx, hset,
+        ← Function.minimalPeriod_eq_sInf_n_pos_IsPeriodicPt]
+    · rw [ite_eq_right (mt hex.mp hx), ite_eq_right hx]
+  rw [meanReturnTime_def, markovChainLaw_dirac_deterministic, lintegral_dirac' _ hm, hhit]
+  split_ifs <;> rfl
 
 open scoped Classical in
 /-- Under `deterministic f hf`, `x` is positive recurrent if and only if `x` is a periodic point of

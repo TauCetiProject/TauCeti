@@ -19,8 +19,6 @@ measures of the sets `{x | P k x}`, by exchanging the sum and the integral.
 
 * `MeasureTheory.lintegral_encard_setOf_eq_tsum`: `∫⁻ x, #{k | P k x} ∂μ = ∑' k, μ {x | P k x}`.
 * `MeasureTheory.lintegral_enat_eq_tsum`: `∫⁻ x, (f x : ℝ≥0∞) ∂μ = ∑' k, μ {x | (k : ℕ∞) < f x}`.
-* `MeasureTheory.lintegral_withTop_nat_eq_tsum`: the corresponding tail-sum formula for
-  `WithTop ℕ`-valued functions.
 -/
 
 public section
@@ -54,25 +52,5 @@ theorem lintegral_enat_eq_tsum {β : Type*} [MeasurableSpace β] (μ : Measure �
       rw [hr, Set.encard_coe_eq_coe_finsetCard, Finset.card_range, ENat.toENNReal_coe]
   simp_rw [hcount]
   exact lintegral_encard_setOf_eq_tsum μ hf
-
-/-- **Tail-sum formula for `WithTop ℕ`-valued functions.** The Lebesgue integral of a
-`WithTop ℕ`-valued function, mapping `⊤` to `∞` and `n : ℕ` to `(n : ℝ≥0∞)`, is
-`∑' k : ℕ, μ {x | (k : WithTop ℕ) < f x}` whenever those strict superlevel sets are measurable. -/
-theorem lintegral_withTop_nat_eq_tsum {β : Type*} [MeasurableSpace β] (μ : Measure β)
-    {f : β → WithTop ℕ} (hf : ∀ k : ℕ, MeasurableSet {x | (k : WithTop ℕ) < f x}) :
-    ∫⁻ x, (f x).recTopCoe ⊤ Nat.cast ∂μ = ∑' k : ℕ, μ {x | (k : WithTop ℕ) < f x} := by
-  let e : WithTop ℕ → ℕ∞ := fun z => z.recTopCoe ⊤ Nat.cast
-  have hint (z : WithTop ℕ) : z.recTopCoe ⊤ Nat.cast = (e z : ℝ≥0∞) := by
-    induction z using WithTop.recTopCoe with
-    | top => exact ENat.toENNReal_top.symm
-    | coe n => exact (ENat.toENNReal_coe n).symm
-  have hlt (k : ℕ) (z : WithTop ℕ) : (k : WithTop ℕ) < z ↔ (k : ℕ∞) < e z := by
-    induction z using WithTop.recTopCoe with
-    | top => exact iff_of_true (WithTop.coe_lt_top k) (ENat.natCast_lt_top k)
-    | coe n => exact WithTop.coe_lt_coe.trans Nat.cast_lt.symm
-  have hset (k : ℕ) : {x | (k : WithTop ℕ) < f x} = {x | (k : ℕ∞) < e (f x)} :=
-    Set.ext fun x => hlt k (f x)
-  simp_rw [fun x => hint (f x), hset]
-  exact lintegral_enat_eq_tsum μ fun k => hset k ▸ hf k
 
 end MeasureTheory
