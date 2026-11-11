@@ -27,8 +27,8 @@ lower bounds behind exponents of approximation.
 * `Matrix.exists_int_abs_sum_mul_sub_le`: for `P, δ ≥ 0` with `δ < 1` and `P ^ n δ ^ m ≥ 1`
   there is a nonzero `y ∈ ℤⁿ` with `|yⱼ| ≤ P` and `x ∈ ℤᵐ` with `|(A y)ᵢ - xᵢ| ≤ δ`.
 * `Matrix.dirichlet_linearForms`: Dirichlet's theorem with the bounds `Q` and `Q ^ (-n / m)`.
-* `Matrix.dirichlet_linearForms_infinite`: if `A y` is never an integer vector for nonzero
-  integral `y`, there are infinitely many solutions of `|(A y)ᵢ - xᵢ| ≤ ‖y‖∞ ^ (-n / m)`.
+* `Matrix.dirichlet_linearForms_infinite`: there are infinitely many solutions of
+  `|(A y)ᵢ - xᵢ| ≤ ‖y‖∞ ^ (-n / m)`.
 * `TauCeti.simultaneous_dirichlet`: for `α ∈ ℝᵐ` and `Q > 1` there are integers `x` and
   `0 < y ≤ Q ^ m` with `|xᵢ - αᵢ y| ≤ Q⁻¹`.
 * `TauCeti.dirichlet_linearForm_infinite`: the case of a single linear form.
@@ -140,14 +140,37 @@ theorem dirichlet_linearForms [Nonempty κ] (A : Matrix ι κ ℝ) {Q : ℝ}
     Real.rpow_natCast, mul_inv_cancel₀ (by positivity)]
 
 /-- **Dirichlet's theorem for systems of linear forms, infinitely many solutions.** Let `A` be
-a real matrix with `m = |ι|` rows and `n = |κ| ≥ 1` columns such that `A y` is an integer
-vector for an integer vector `y` only when `y = 0`. Then infinitely many pairs of integer
+a real matrix with `m = |ι|` rows and `n = |κ| ≥ 1` columns. Then infinitely many pairs of integer
 vectors `(y, x)` with `y ≠ 0` satisfy `|∑ⱼ Aᵢⱼ yⱼ - xᵢ| ≤ ‖y‖ ^ (-n / m)` for every `i`, where
-`‖y‖` is the sup norm. -/
-theorem dirichlet_linearForms_infinite [Nonempty κ] (A : Matrix ι κ ℝ)
-    (hA : ∀ y : κ → ℤ, (∀ i, ∃ k : ℤ, ∑ j, A i j * y j = k) → y = 0) :
+`‖y‖` is the sup norm. If `A y` is an integer vector for some nonzero integer vector `y`, the
+multiples `(k y, k x)` are exact solutions. -/
+theorem dirichlet_linearForms_infinite [Nonempty κ] (A : Matrix ι κ ℝ) :
     {p : (κ → ℤ) × (ι → ℤ) | p.1 ≠ 0 ∧ ∀ i, |∑ j, A i j * p.1 j - p.2 i| ≤
       ‖p.1‖ ^ (-(Fintype.card κ : ℝ) / Fintype.card ι)}.Infinite := by
+  by_cases hA : ∀ y : κ → ℤ, (∀ i, ∃ k : ℤ, ∑ j, A i j * y j = k) → y = 0
+  swap
+  · -- An exact solution `A y = x` has all its multiples `(k y, k x)` as exact solutions.
+    push Not at hA
+    obtain ⟨y, hyx, hy⟩ := hA
+    choose x hx using hyx
+    obtain ⟨j₀, hj₀⟩ := Function.ne_iff.1 hy
+    replace hj₀ : y j₀ ≠ 0 := hj₀
+    refine Set.infinite_of_injective_forall_mem
+      (f := fun m : ℕ ↦ ((((m + 1 : ℕ) : ℤ) • y), (((m + 1 : ℕ) : ℤ) • x))) (fun m n h ↦ ?_)
+      fun m ↦ ⟨fun h ↦ hj₀ ?_, fun i ↦ ?_⟩
+    · have := congrFun (congrArg Prod.fst h) j₀
+      simpa [hj₀] using this
+    · have := congrFun h j₀
+      simp only [Pi.smul_apply, smul_eq_mul, Pi.zero_apply, mul_eq_zero, Nat.cast_eq_zero,
+        Nat.add_one_ne_zero, false_or] at this
+      exact this
+    · have : ∑ j, A i j * (((m + 1 : ℕ) : ℤ) • y) j = ((m + 1 : ℕ) : ℝ) * x i := by
+        rw [← hx i, Finset.mul_sum]
+        exact Finset.sum_congr rfl fun j _ ↦ by simp; ring
+      have h2 : (((((m + 1 : ℕ) : ℤ) • x) i : ℤ) : ℝ) = ((m + 1 : ℕ) : ℝ) * x i := by simp
+      dsimp only
+      rw [this, h2, sub_self, abs_zero]
+      positivity
   -- Without rows, the hypothesis would force every integer vector to vanish.
   have : Nonempty ι := by
     by_contra hι
@@ -204,34 +227,13 @@ theorem simultaneous_dirichlet (α : ι → ℝ) {Q : ℝ} (hQ : 1 < Q) :
 
 /-- **Dirichlet's theorem for one linear form, infinitely many solutions.** Let `αⱼ`, `j ∈ κ`,
 be real numbers and `n = |κ| ≥ 1`. Then infinitely many pairs `(x, y)` with `y ≠ 0` satisfy
-`|∑ⱼ αⱼ yⱼ - x| ≤ ‖y‖ ^ (-n)`, where `‖y‖` is the sup norm. If `∑ⱼ αⱼ yⱼ` is an integer `k`
-for some nonzero integer vector `y`, the multiples `(m k, m y)` are exact solutions. -/
+`|∑ⱼ αⱼ yⱼ - x| ≤ ‖y‖ ^ (-n)`, where `‖y‖` is the sup norm. -/
 theorem dirichlet_linearForm_infinite [Nonempty κ] (α : κ → ℝ) :
     {p : ℤ × (κ → ℤ) | p.2 ≠ 0 ∧
       |∑ j, α j * p.2 j - p.1| ≤ ‖p.2‖ ^ (-(Fintype.card κ : ℝ))}.Infinite := by
-  by_cases hα : ∀ y : κ → ℤ, (∃ k : ℤ, ∑ j, α j * y j = k) → y = 0
-  swap
-  · push Not at hα
-    obtain ⟨y, ⟨k, hk⟩, hy⟩ := hα
-    obtain ⟨j₀, hj₀⟩ := Function.ne_iff.1 hy
-    replace hj₀ : y j₀ ≠ 0 := hj₀
-    refine Set.infinite_of_injective_forall_mem
-      (f := fun m : ℕ ↦ (((m + 1 : ℕ) : ℤ) * k, ((m + 1 : ℕ) : ℤ) • y)) (fun m n h ↦ ?_)
-      fun m ↦ ⟨fun h ↦ hj₀ ?_, ?_⟩
-    · have := congrFun (congrArg Prod.snd h) j₀
-      simpa [hj₀] using this
-    · have := congrFun h j₀
-      simp only [Pi.smul_apply, smul_eq_mul, Pi.zero_apply, mul_eq_zero, Nat.cast_eq_zero,
-        Nat.add_one_ne_zero, false_or] at this
-      exact this
-    · have : ∑ j, α j * (((m + 1 : ℕ) : ℤ) • y) j = ((m + 1 : ℕ) : ℝ) * k := by
-        rw [← hk, Finset.mul_sum]
-        exact Finset.sum_congr rfl fun j _ ↦ by simp; ring
-      simp only [this, Int.cast_mul, Int.cast_natCast, sub_self, abs_zero]
-      positivity
   refine Set.infinite_of_injOn_mapsTo (f := fun p : (κ → ℤ) × (Unit → ℤ) ↦ (p.2 (), p.1))
     (fun p _ q _ h ↦ ?_) (fun p hp ↦ ?_)
-    ((Matrix.of fun (_ : Unit) j ↦ α j).dirichlet_linearForms_infinite fun y hy ↦ hα y (hy ()))
+    (Matrix.of fun (_ : Unit) j ↦ α j).dirichlet_linearForms_infinite
   · simp only [Prod.mk.injEq] at h
     exact Prod.ext h.2 (funext fun _ ↦ h.1)
   · simpa [Unique.forall_iff] using hp
