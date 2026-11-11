@@ -149,7 +149,7 @@ theorem IsJordanCurve.image [T2Space Y] (h : IsJordanCurve C) {g : X → Y} (hg 
     (hgi : InjOn g C) : IsJordanCurve (g '' C) := by
   have hC := h.isCompact
   obtain ⟨e⟩ := h
-  exact ⟨(imageHomeomorphOfIsCompact hC hg hgi).symm.trans e⟩
+  exact ⟨(hC.imageHomeomorph hg hgi).symm.trans e⟩
 
 /-- **A compact set carried onto a Jordan curve by a continuous injection is a Jordan curve.**
 This is the converse of `TauCeti.IsJordanCurve.image`; compactness of the source has to be assumed
@@ -161,7 +161,7 @@ theorem IsJordanCurve.of_image (hC : IsCompact C) {g : X → Y} (hg : Continuous
     (hgi : InjOn g C) (h : IsJordanCurve (g '' C)) : IsJordanCurve C := by
   obtain ⟨e⟩ := h
   have : T2Space (g '' C) := e.symm.t2Space
-  exact ⟨(imageHomeomorphOfIsCompact hC hg hgi).trans e⟩
+  exact ⟨(hC.imageHomeomorph hg hgi).trans e⟩
 
 /-- The image of a Jordan curve under a homeomorphism of the ambient spaces is a Jordan curve.
 Unlike `TauCeti.IsJordanCurve.image` this needs no separation axiom on the codomain, because
