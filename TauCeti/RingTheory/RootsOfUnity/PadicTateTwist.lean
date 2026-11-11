@@ -275,9 +275,7 @@ theorem subsingleton_of_not_forall_hasEnoughRootsOfUnity
       ((TateModule.proj (n + j) x : Additive Kˣ).toMul : Kˣ) ^ p ^ j =
         (TateModule.proj n x : Additive Kˣ).toMul := by
     intro x n j
-    induction j with
-    | zero => simp
-    | succ j ih => rw [pow_succ', pow_mul, ← add_assoc, coe_tateModuleProj_succ_pow x (n + j), ih]
+    simpa [toMul_nsmul] using congrArg Additive.toMul (TateModule.coe_proj_eq_pow_nsmul x n j).symm
   refine ⟨fun x y ↦ ?_⟩
   have hzero : ∀ (z : PadicTateTwist p K) (n : ℕ), TateModule.proj n z = 0 := by
     intro z n
