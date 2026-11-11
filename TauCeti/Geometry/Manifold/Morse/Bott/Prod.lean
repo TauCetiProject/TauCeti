@@ -195,12 +195,6 @@ theorem criticalPoints_pow_four : criticalPoints 𝓘(ℝ, ℝ) (fun y : ℝ ↦
     ← ContinuousLinearMap.toSpanSingleton_zero, ContinuousLinearMap.toSpanSingleton_inj]
   simp
 
-/-- `0` is a degenerate critical point of `y ↦ y⁴`: the second derivative vanishes there. -/
-theorem not_isNondegenerateCriticalPoint_pow_four :
-    ¬IsNondegenerateCriticalPoint (fun y : ℝ ↦ y ^ 4) 0 := by
-  rw [isNondegenerateCriticalPoint_real_iff (by fun_prop)]
-  simp
-
 section Sq
 
 /-- **`y²` is Morse–Bott on `M × ℝ`.** For a nonempty connected manifold `M` without boundary,
