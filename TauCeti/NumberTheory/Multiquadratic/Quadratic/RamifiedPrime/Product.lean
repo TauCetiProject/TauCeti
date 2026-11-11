@@ -113,7 +113,7 @@ theorem span_singleton_eq_prod_primeFactors (hmin : minpoly ℤ θ = X ^ 2 - C d
     have := hprime p hp
     have := hover p hp
     rw [← map_span_eq_sq_of_dvd_fundamentalDiscriminant hmin hgen hsf
-      (Nat.prime_of_mem_primeFactors hp) (dvd_fundamentalDiscriminant_of_mem_primeFactors hp),
+      (dvd_fundamentalDiscriminant_of_mem_primeFactors hp),
       Ideal.map_span, Set.image_singleton]
   -- The product of the prime factors of `d` is `|d|`, since `d` is squarefree.
   have hprod : ∏ p ∈ d.natAbs.primeFactors, algebraMap ℤ (𝓞 K) (p : ℤ) =

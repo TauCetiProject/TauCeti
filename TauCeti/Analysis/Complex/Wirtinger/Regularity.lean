@@ -59,7 +59,7 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory TopologicalSpace ContinuousLinearMap Complex Set Filter LineDeriv
+open _root_.MeasureTheory TopologicalSpace ContinuousLinearMap Complex Set Filter LineDeriv
 open scoped ContDiff Distributions ENNReal NNReal
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
