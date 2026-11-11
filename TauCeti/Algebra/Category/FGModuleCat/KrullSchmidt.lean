@@ -11,8 +11,6 @@ public import Mathlib.RingTheory.Artinian.Defs
 public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.Algebra.Category.ModuleCat.FiniteLength
 public import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.Basic
-import Mathlib.RingTheory.HopkinsLevitzki
-import TauCeti.RingTheory.Artinian.FiniteLength
 import TauCeti.Algebra.Category.ModuleCat.KrullSchmidt
 import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.FullSubcategory
 import TauCeti.Algebra.Category.ModuleCat.Indecomposable
@@ -78,16 +76,6 @@ theorem isLocalRing_end_of_indecomposable {X : FGModuleCat.{w} A} [IsNoetherian 
   have : IsLocalRing (End ((ObjectProperty.ι _).obj X)) :=
     (TauCeti.indecomposable_iff_isLocalRing_end X.obj hfl).mp hX
   exact ((ObjectProperty.fullyFaithfulι _).ringEquivEnd X).symm.isLocalRing
-
-open TauCeti in
-/-- Over a left Artinian ring, a module is finitely generated exactly when it has finite length. -/
-theorem _root_.ModuleCat.isFiniteLength_eq_isFG [IsArtinianRing A] :
-    ModuleCat.isFiniteLength.{w} A = ModuleCat.isFG.{w} A :=
-  funext fun M ↦ propext <| by
-    rw [ModuleCat.isFiniteLength_iff, ModuleCat.isFG_iff]
-    refine ⟨fun h ↦ ?_, fun _ ↦ isFiniteLength_of_finite A M⟩
-    have := (isFiniteLength_iff_isNoetherian_isArtinian.1 h).1
-    infer_instance
 
 open TauCeti in
 /-- **`mod A` is Krull-Schmidt over a left Artinian ring `A`**, for instance an Artin algebra: the

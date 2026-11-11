@@ -340,17 +340,16 @@ namespace CategoryTheory.Equivalence
 
 open Limits
 
-variable {C : Type*} [Category* C] [Preadditive C] [HasBinaryBiproducts C]
-  {D : Type*} [Category* D] [Preadditive D] [HasBinaryBiproducts D]
+variable {C : Type*} [Category* C] [HasZeroMorphisms C] [HasBinaryBiproducts C]
+  {D : Type*} [Category* D] [HasZeroMorphisms D] [HasBinaryBiproducts D]
 
 /-- **An equivalence of categories carries indecomposable objects to indecomposable objects.** A
-decomposition of the image transports back along the inverse, which preserves biproducts. -/
+decomposition of the image transports back along the inverse, which preserves binary products. -/
 theorem indecomposable_functor_obj (e : C ≌ D) {X : C} (hX : Indecomposable X) :
     Indecomposable (e.functor.obj X) := by
-  have : e.inverse.Additive := Functor.additive_of_preserves_binary_products _
   refine ⟨fun h ↦ hX.1 (IsZero.of_full_of_faithful_of_isZero e.functor X h), fun Y Z f ↦ ?_⟩
-  have := preservesBinaryBiproduct_of_preservesBinaryProduct (F := e.inverse) (X := Y) (Y := Z)
-  exact (hX.2 _ _ (e.unitIso.app X ≪≫ e.inverse.mapIso f ≪≫ e.inverse.mapBiprod Y Z)).imp
+  exact (hX.2 _ _ (e.unitIso.app X ≪≫ e.inverse.mapIso (f ≪≫ biprod.isoProd Y Z) ≪≫
+      PreservesLimitPair.iso e.inverse Y Z ≪≫ (biprod.isoProd _ _).symm)).imp
     (IsZero.of_full_of_faithful_of_isZero e.inverse Y)
     (IsZero.of_full_of_faithful_of_isZero e.inverse Z)
 
