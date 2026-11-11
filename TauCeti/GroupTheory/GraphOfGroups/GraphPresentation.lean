@@ -269,67 +269,42 @@ theorem IsAcyclic.subsingleton_graphPresentation {Γ : SerreGraph.{u, w}} (h : �
   have := h.subsingleton_pathGroup v
   exact (T.pathGroupEquivGraphPresentation v).symm.injective.subsingleton
 
-/-- The image of a dart of a rose in the free group on the petals: the generator for the
-dart `(a, true)` and its inverse for `(a, false)`. -/
-private def rosePetalWord (α : Type w) (e : (rose α).E) : FreeGroup α :=
-  cond e.2 (FreeGroup.of e.1) (FreeGroup.of e.1)⁻¹
-
-private theorem rosePetalWord_true {α : Type w} (a : α) :
-    rosePetalWord α (a, true) = FreeGroup.of a := rfl
-
-private theorem rosePetalWord_false {α : Type w} (a : α) :
-    rosePetalWord α (a, false) = (FreeGroup.of a)⁻¹ := rfl
-
-private theorem rosePetalWord_rev {α : Type w} (e : (rose α).E) :
-    rosePetalWord α ((rose α).rev e) = (rosePetalWord α e)⁻¹ := by
-  obtain ⟨a, _ | _⟩ := e
-  · simp [rosePetalWord_true, rosePetalWord_false]
-  · simp [rosePetalWord_true, rosePetalWord_false]
-
-/-- The homomorphism from the fundamental group of a rose to the free group on its petals. -/
-private def rosePetalHom (α : Type w) : (rose α).GraphPresentation ∅ →* FreeGroup α :=
-  GraphPresentation.lift (rosePetalWord α) (fun _ h => (Set.notMem_empty _ h).elim)
-    rosePetalWord_rev
-
-private theorem rosePetalHom_of_true {α : Type w} (a : α) :
-    rosePetalHom α (PresentedGroup.of (a, true)) = FreeGroup.of a :=
-  (GraphPresentation.lift_of (rosePetalWord α) _ _ (a, true)).trans (rosePetalWord_true a)
-
-private theorem rosePetalHom_of_false {α : Type w} (a : α) :
-    rosePetalHom α (PresentedGroup.of (a, false)) = (FreeGroup.of a)⁻¹ :=
-  (GraphPresentation.lift_of (rosePetalWord α) _ _ (a, false)).trans (rosePetalWord_false a)
+/-- The positive darts of a rose are its petals. -/
+private def rosePositiveDartEquiv (α : Type w) :
+    ↥({e : (rose α).E | e.2 = true} \ (∅ : Set (rose α).E)) ≃ α where
+  toFun e := e.1.1
+  invFun a := ⟨(a, true), rfl, Set.notMem_empty _⟩
+  left_inv := by
+    rintro ⟨⟨a, b⟩, hb, -⟩
+    obtain rfl : b = true := hb
+    rfl
+  right_inv _ := rfl
 
 /-- The fundamental group of a rose is free on its petals: the dart `(a, true)` of the petal
 `a` is the free generator `a` and the reverse dart `(a, false)` is its inverse. The spanning
 tree of a rose has no darts. -/
-def roseGraphPresentationEquivFreeGroup (α : Type w) :
+noncomputable def roseGraphPresentationEquivFreeGroup (α : Type w) :
     (rose α).GraphPresentation ∅ ≃* FreeGroup α :=
-  MonoidHom.toMulEquiv (rosePetalHom α)
-    (FreeGroup.lift fun a => PresentedGroup.of (rels := (rose α).graphRelators ∅) (a, true))
-    (PresentedGroup.ext fun e => by
-      obtain ⟨a, _ | _⟩ := e
-      · rw [MonoidHom.comp_apply, rosePetalHom_of_false, map_inv, FreeGroup.lift_apply_of]
-        exact (GraphPresentation.of_rev (Γ := rose α) (a, true)).symm
-      · rw [MonoidHom.comp_apply, rosePetalHom_of_true, FreeGroup.lift_apply_of,
-          MonoidHom.id_apply])
-    (FreeGroup.ext_hom _ _ fun a => by
-      rw [MonoidHom.comp_apply, FreeGroup.lift_apply_of, rosePetalHom_of_true,
-        MonoidHom.id_apply])
+  (GraphPresentation.equivFreeGroup (rose_isOrientation α) (by simp)).trans
+    (FreeGroup.freeGroupCongr (rosePositiveDartEquiv α))
 
 @[simp] theorem roseGraphPresentationEquivFreeGroup_of_true {α : Type w} (a : α) :
     roseGraphPresentationEquivFreeGroup α
-      (PresentedGroup.of (rels := (rose α).graphRelators ∅) (a, true)) = FreeGroup.of a :=
-  rosePetalHom_of_true a
+      (PresentedGroup.of (rels := (rose α).graphRelators ∅) (a, true)) = FreeGroup.of a := by
+  have ha : ((a, true) : (rose α).E) ∈ {e : (rose α).E | e.2 = true} \ ∅ :=
+    ⟨rfl, Set.notMem_empty _⟩
+  simp [roseGraphPresentationEquivFreeGroup, GraphPresentation.equivFreeGroup_of _ _ ha,
+    rosePositiveDartEquiv]
 
 @[simp] theorem roseGraphPresentationEquivFreeGroup_of_false {α : Type w} (a : α) :
     roseGraphPresentationEquivFreeGroup α
-      (PresentedGroup.of (rels := (rose α).graphRelators ∅) (a, false)) = (FreeGroup.of a)⁻¹ :=
-  rosePetalHom_of_false a
+      (PresentedGroup.of (rels := (rose α).graphRelators ∅) (a, false)) = (FreeGroup.of a)⁻¹ := by
+  rw [← roseGraphPresentationEquivFreeGroup_of_true, ← map_inv]
+  exact congrArg _ (GraphPresentation.of_rev (Γ := rose α) (a, true))
 
 @[simp] theorem roseGraphPresentationEquivFreeGroup_symm_of {α : Type w} (a : α) :
     (roseGraphPresentationEquivFreeGroup α).symm (FreeGroup.of a) =
       PresentedGroup.of (rels := (rose α).graphRelators ∅) (a, true) := by
-  rw [roseGraphPresentationEquivFreeGroup, MonoidHom.toMulEquiv_symm_apply,
-    FreeGroup.lift_apply_of]
+  rw [MulEquiv.symm_apply_eq, roseGraphPresentationEquivFreeGroup_of_true]
 
 end TauCeti.SerreGraph
