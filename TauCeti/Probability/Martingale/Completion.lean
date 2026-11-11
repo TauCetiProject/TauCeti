@@ -49,17 +49,6 @@ theorem martingale_completion_iff :
     @Martingale (NullMeasurableSpace Ω P) E ι _ _ _ _
       X (ℱ.monoAmbient le_eventuallyMeasurableSpace) P.completion ↔
       Martingale X ℱ P := by
-  have hce (s t : ι) (hf : AEStronglyMeasurable (X t) P) :
-      @condExp Ω E (ℱ s) (eventuallyMeasurableSpace mΩ (ae P)) _ _ P.completion (X t)
-        =ᵐ[P] P[X t | ℱ s] := by
-    by_cases hσ : SigmaFinite (P.trim (ℱ.le s))
-    · exact TauCeti.MeasureTheory.condExp_completion (ℱ.le s) hf
-    · have hσ' : ¬SigmaFinite (@Measure.trim Ω (ℱ s)
-          (eventuallyMeasurableSpace mΩ (ae P)) P.completion
-          ((ℱ.le s).trans le_eventuallyMeasurableSpace)) := by
-        rwa [P.trim_completion (ℱ.le s)]
-      rw [condExp_of_not_sigmaFinite ((ℱ.le s).trans le_eventuallyMeasurableSpace) hσ',
-        condExp_of_not_sigmaFinite (ℱ.le s) hσ]
   -- Adaptation refers only to the unchanged raw time slices.
   constructor
   · intro hX
@@ -67,11 +56,13 @@ theorem martingale_completion_iff :
     refine ⟨hraw, fun s t hst ↦ ?_⟩
     have hf : AEStronglyMeasurable (X t) P :=
       ((hraw t).mono (ℱ.le t)).aestronglyMeasurable
-    exact (hce s t hf).symm.trans ((hX.condExp_ae_eq hst).filter_mono P.ae_completion.ge)
+    exact (TauCeti.MeasureTheory.condExp_completion (ℱ.le s) hf).symm.trans
+      ((hX.condExp_ae_eq hst).filter_mono P.ae_completion.ge)
   · intro hX
     refine ⟨(stronglyAdapted_monoAmbient_iff _).mpr hX.stronglyAdapted,
       fun s t hst ↦ ?_⟩
-    exact ((hce s t (hX.integrable t).aestronglyMeasurable).trans
+    exact ((TauCeti.MeasureTheory.condExp_completion (ℱ.le s)
+      (hX.integrable t).aestronglyMeasurable).trans
       (hX.condExp_ae_eq hst)).filter_mono P.ae_completion.le
 
 end Preorder
@@ -88,7 +79,8 @@ variable {Ω E ι : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
 /-- Native raw local martingales are invariant under completion of the ambient space.
 Both directions keep the witnessing localizers and their initial-time indicators.
 In particular, the original process need not be literally adapted or integrable. -/
-@[simp]
+-- Rewrite before simp changes the martingale predicate inside the lambda.
+@[simp↓]
 theorem martingale_completion_iff :
     @Locally ι (NullMeasurableSpace Ω P) E _ _ _ _ _ _
       (fun Y ↦ Martingale Y (ℱ.monoAmbient le_eventuallyMeasurableSpace) P.completion)
