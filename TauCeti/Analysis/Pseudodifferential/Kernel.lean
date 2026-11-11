@@ -7,10 +7,12 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Quantization
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 
 /-!
 # The kernel of the Kohn–Nirenberg quantization
@@ -63,6 +65,11 @@ the diagonal.
   controlled by the frequency integrals of the derivatives: if `∫ ‖a(x, ξ)‖ dξ ≤ A` and
   `∫ ‖∂_{ξ_j}^N a(x, ξ)‖ dξ ≤ A R^N` for every `j`, then
   `(1 + ‖x - y‖ / R)^N ‖K_a(x, y)‖ ≤ 2^N (1 + √n^N) (2π)⁻ⁿ A`.
+* `TauCeti.adjoint_quantizationKernel_eq_fourierInv` and
+  `TauCeti.integral_quantizationKernel_comp_adjoint`: for Hilbert-space coefficients, the adjoint
+  `K_b(z, y)†` is an inverse Fourier transform in `y`, and by Plancherel's theorem in the middle
+  variable the kernel of `Op(a) Op(b)†` is
+  `∫ K_a(x, y) K_b(z, y)† dy = ∫ exp(2πi ⟪ζ, x - z⟫) a(x, 2πζ) b(z, 2πζ)† dζ`.
 
 ## References
 
@@ -487,5 +494,83 @@ theorem one_add_norm_div_pow_mul_norm_quantizationKernel_le (a : Symbol n V W m)
     _ = 2 ^ N * (1 + √n ^ N) * c * A := by ring
 
 end Symbol
+
+end TauCeti
+
+namespace TauCeti
+
+/-! ### The kernel of `Op(a) Op(b)†` -/
+
+open ContinuousLinearMap
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+  {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
+
+/-- The adjoint of the kernel `K_b(z, y)` is the inverse Fourier transform, evaluated at `y`, of
+`ζ ↦ 𝐞 (-⟪ζ, z⟫) • b(z, 2πζ)†`. -/
+theorem adjoint_quantizationKernel_eq_fourierInv {b : E × E → V →L[ℂ] W} {z : E}
+    (hb : Integrable (fun ξ ↦ b (z, ξ))) (y : E) :
+    adjoint (quantizationKernel b z y) =
+      𝓕⁻ (fun ζ ↦ 𝐞 (-⟪ζ, z⟫) • adjoint (b (z, (2 * π) • ζ))) y := by
+  rw [quantizationKernel_def, ← adjointRealCLM_apply,
+    ← (adjointRealCLM (V := V) (W := W)).integral_comp_comm
+      (integrable_quantizationKernel_integrand hb y), Real.fourierInv_eq]
+  refine congrArg (integral volume) (funext fun ζ ↦ ?_)
+  rw [adjointRealCLM_apply, smul_smul, Circle.smul_def, Circle.smul_def,
+    LinearIsometryEquiv.map_smulₛₗ, ← Circle.coe_inv_eq_conj, ← AddChar.map_neg_eq_inv,
+    ← AddChar.map_add_eq_mul, inner_sub_right]
+  congr 3
+  ring
+
+/-- **The kernel of `Op(a) Op(b)†`.** If the frequency slices `ξ ↦ a(x, ξ)` and `ξ ↦ b(z, ξ)` are
+integrable, the second one is continuous and `y ↦ K_b(z, y)` is integrable, then
+
+`∫ K_a(x, y) K_b(z, y)† dy = ∫ exp(2πi ⟪ζ, x - z⟫) a(x, 2πζ) b(z, 2πζ)† dζ`,
+
+the kernel at `(x, z)` of the coefficient `(x', ξ) ↦ a(x', ξ) b(z, ξ)†`. -/
+theorem integral_quantizationKernel_comp_adjoint {a b : E × E → V →L[ℂ] W} {x z : E}
+    (ha : Integrable (fun ξ ↦ a (x, ξ))) (hb : Integrable (fun ξ ↦ b (z, ξ)))
+    (hbc : Continuous (fun ξ ↦ b (z, ξ))) (hK : Integrable (quantizationKernel b z)) :
+    ∫ y, quantizationKernel a x y ∘L adjoint (quantizationKernel b z y) =
+      quantizationKernel (fun p ↦ a p ∘L adjoint (b (z, p.2))) x z := by
+  -- The first factor is the Fourier transform of `g`, the second the inverse Fourier transform
+  -- of `G`. Self-adjointness of the Fourier transform moves the transform from the first factor
+  -- to the second, where it inverts the inverse transform.
+  set g : E → V →L[ℂ] W := fun ζ ↦ 𝐞 ⟪ζ, x⟫ • a (x, (2 * π) • ζ)
+  set G : E → W →L[ℂ] V := fun ζ ↦ 𝐞 (-⟪ζ, z⟫) • adjoint (b (z, (2 * π) • ζ))
+  have hg : Integrable g := by
+    simpa only [sub_zero] using integrable_quantizationKernel_integrand ha 0
+  have hGc : Continuous G := by
+    have : Continuous fun ζ : E ↦ adjoint (b (z, (2 * π) • ζ)) :=
+      (adjoint (𝕜 := ℂ) (E := V) (F := W)).continuous.comp (hbc.comp (continuous_const_smul _))
+    exact (Real.continuous_fourierChar.comp (continuous_id.inner continuous_const).neg).smul this
+  have hG : Integrable G := by
+    refine (hb.comp_smul two_pi_pos.ne').norm.mono' hGc.aestronglyMeasurable
+      (ae_of_all _ fun ζ ↦ ?_)
+    rw [Circle.norm_smul (E := W →L[ℂ] V), LinearIsometryEquiv.norm_map]
+  have hK' : Integrable (fun y ↦ adjoint (quantizationKernel b z y)) := by
+    simpa only [adjointRealCLM_apply] using (adjointRealCLM (V := V) (W := W)).integrable_comp hK
+  have hKG : (fun y ↦ adjoint (quantizationKernel b z y)) = 𝓕⁻ G :=
+    funext (adjoint_quantizationKernel_eq_fourierInv hb)
+  have hFG : Integrable (𝓕 G) := by
+    have := hK'
+    rw [hKG] at this
+    simpa [fourierInv_eq_fourier_neg] using this.comp_neg
+  have hL : Continuous fun p : E × E ↦ (innerₗ E).flip p.1 p.2 :=
+    continuous_snd.inner continuous_fst
+  have h := VectorFourier.integral_bilin_fourierIntegral_eq_flip (compL ℂ W V W)
+    Real.continuous_fourierChar hL hg hK'
+  simp only [g, fourierIntegral_flip_eq_quantizationKernel, compL_apply, LinearMap.flip_flip] at h
+  have hFKG : VectorFourier.fourierIntegral 𝐞 volume (innerₗ E)
+      (fun y ↦ adjoint (quantizationKernel b z y)) = G := by
+    rw [hKG]
+    exact hGc.fourier_fourierInv_eq hG hFG
+  rw [h, hFKG, quantizationKernel_def]
+  refine congrArg (integral volume) (funext fun ζ ↦ ?_)
+  simp only [G, Circle.smul_def, smul_comp, comp_smul, smul_smul, ← Circle.coe_mul,
+    ← AddChar.map_add_eq_mul]
+  rw [inner_sub_right, neg_add_eq_sub]
 
 end TauCeti
