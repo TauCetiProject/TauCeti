@@ -270,9 +270,6 @@ private theorem tendsto_unitRadialCoordDeriv (e : ℂ) {z : ℂ} (hz : z ≠ 0) 
     (((continuousAt_rpow_norm_sq_add hz _).mul continuousAt_const).smul
       continuousAt_const)).tendsto
 
-private theorem ae_ne_origin : ∀ᵐ z : ℂ ∂volume, z ≠ 0 := by
-  simp [ae_iff, measure_singleton]
-
 private theorem locallyIntegrable_unitRadialCoord {c : ℝ} (hc : 0 ≤ c) (e : ℂ) :
     LocallyIntegrable (unitRadialCoord c e) volume :=
   (locallyIntegrable_const ‖e‖).mono (measurable_unitRadialCoord c e).aestronglyMeasurable
@@ -280,7 +277,7 @@ private theorem locallyIntegrable_unitRadialCoord {c : ℝ} (hc : 0 ≤ c) (e : 
 
 private theorem norm_unitRadialCoordDeriv_le_rpow (e : ℂ) :
     ∀ᵐ z : ℂ ∂volume, ‖unitRadialCoordDeriv 0 e z‖ ≤ 2 * ‖e‖ * ‖z‖ ^ (-1 : ℝ) := by
-  filter_upwards [ae_ne_origin] with z hz
+  filter_upwards [volume.ae_ne 0] with z hz
   rw [Real.rpow_neg_one]
   exact norm_unitRadialCoordDeriv_le le_rfl e hz
 
@@ -293,29 +290,6 @@ private theorem locallyIntegrable_unitRadialCoordDeriv (e : ℂ) :
   rw [Pi.smul_apply, zero_sub, norm_neg, smul_eq_mul, Real.norm_of_nonneg (by positivity)]
   exact hz
 
-
-/-- Dominated convergence on the unit ball for an almost everywhere pointwise limit. -/
-private theorem tendsto_setLIntegral_ball_enorm_sub {F : Type*} [NormedAddCommGroup F]
-    [MeasurableSpace F] [BorelSpace F] [SecondCountableTopology F]
-    {f : ℕ → ℂ → F} {g : ℂ → F} (bound : ℂ → ℝ)
-    (hf : ∀ n, Measurable (f n)) (hg : Measurable g)
-    (hbound : ∀ n, ∀ᵐ z ∂volume, ‖f n z - g z‖ ≤ bound z)
-    (hint : IntegrableOn bound (ball (0 : ℂ) 1))
-    (hlim : ∀ᵐ z ∂volume, Tendsto (fun n => f n z) atTop (𝓝 (g z))) :
-    Tendsto (fun n => ∫⁻ z in ball (0 : ℂ) 1, ‖f n z - g z‖ₑ) atTop (𝓝 0) := by
-  have := tendsto_lintegral_filter_of_dominated_convergence
-    (μ := volume.restrict (ball (0 : ℂ) 1)) (l := atTop) (f := fun _ => 0)
-    (F := fun n z => ‖f n z - g z‖ₑ)
-    (fun z => ENNReal.ofReal (bound z)) (Eventually.of_forall fun n => by
-      have := hf n
-      fun_prop)
-    (Eventually.of_forall fun n => ae_restrict_of_ae ((hbound n).mono fun z hz => by
-      rw [← ofReal_norm]
-      exact ENNReal.ofReal_le_ofReal hz))
-    hint.lintegral_lt_top.ne
-    (ae_restrict_of_ae (hlim.mono fun z hz => by
-      simpa using (tendsto_sub_nhds_zero_iff.2 hz).enorm))
-  simpa using this
 
 /-- The unit disc as an open set. -/
 private def unitBall : Opens ℂ := ⟨ball 0 1, isOpen_ball⟩
@@ -337,25 +311,28 @@ private theorem hasWeakFDerivOn_unitRadialCoord_unitBall (e : ℂ) :
       (continuous_unitRadialCoord (hc0 n) e).continuousOn
       ((continuous_unitRadialCoordDeriv (hc0 n) e).locallyIntegrable.locallyIntegrableOn _)
       fun z _ => hasFDerivAt_unitRadialCoord e (by have := hc0 n; positivity)
-  · refine tendsto_setLIntegral_ball_enorm_sub (fun _ => 2 * ‖e‖)
-      (fun n => measurable_unitRadialCoord _ e) (measurable_unitRadialCoord 0 e)
-      (fun n => Eventually.of_forall fun z => ?_) integrableOn_const ?_
-    · refine (norm_sub_le _ _).trans ?_
-      linarith [norm_unitRadialCoord_le (hc0 n).le e z, norm_unitRadialCoord_le le_rfl e z]
-    · filter_upwards [ae_ne_origin] with z hz
-      exact (tendsto_unitRadialCoord e hz).comp hc
-  · refine tendsto_setLIntegral_ball_enorm_sub (fun z => 4 * ‖e‖ * ‖z‖ ^ (-1 : ℝ))
-      (fun n => measurable_unitRadialCoordDeriv _ e) (measurable_unitRadialCoordDeriv 0 e)
-      (fun n => ?_) ((integrableOn_norm_rpow_ball
-        (by simp [Complex.finrank_real_complex])).const_mul _) ?_
-    · filter_upwards [ae_ne_origin] with z hz
-      refine (norm_sub_le _ _).trans ?_
-      have h1 := norm_unitRadialCoordDeriv_le (hc0 n).le e hz
-      have h2 := norm_unitRadialCoordDeriv_le le_rfl e hz
-      rw [Real.rpow_neg_one]
-      linarith
-    · filter_upwards [ae_ne_origin] with z hz
-      exact (tendsto_unitRadialCoordDeriv e hz).comp hc
+  · simpa only [ofReal_norm, unitBall, Opens.coe_mk] using
+      tendsto_lintegral_norm_of_dominated_convergence
+        (μ := volume.restrict (ball (0 : ℂ) 1)) (bound := fun _ => ‖e‖)
+        (fun n => (measurable_unitRadialCoord _ e).aestronglyMeasurable)
+        (integrableOn_const (C := ‖e‖)).hasFiniteIntegral
+        (fun n => Eventually.of_forall fun z => norm_unitRadialCoord_le (hc0 n).le e z)
+        (ae_restrict_of_ae <| by
+          filter_upwards [volume.ae_ne 0] with z hz
+          exact (tendsto_unitRadialCoord e hz).comp hc)
+  · simpa only [ofReal_norm, unitBall, Opens.coe_mk] using
+      tendsto_lintegral_norm_of_dominated_convergence
+        (μ := volume.restrict (ball (0 : ℂ) 1)) (bound := fun z => 2 * ‖e‖ * ‖z‖ ^ (-1 : ℝ))
+        (fun n => (measurable_unitRadialCoordDeriv _ e).aestronglyMeasurable)
+        ((integrableOn_norm_rpow_ball (by simp [Complex.finrank_real_complex])).const_mul
+          (2 * ‖e‖)).hasFiniteIntegral
+        (fun n => ae_restrict_of_ae <| by
+          filter_upwards [volume.ae_ne 0] with z hz
+          rw [Real.rpow_neg_one]
+          exact norm_unitRadialCoordDeriv_le (hc0 n).le e hz)
+        (ae_restrict_of_ae <| by
+          filter_upwards [volume.ae_ne 0] with z hz
+          exact (tendsto_unitRadialCoordDeriv e hz).comp hc)
 
 
 private theorem hasWeakFDerivOn_unitRadialCoord (e : ℂ) :
