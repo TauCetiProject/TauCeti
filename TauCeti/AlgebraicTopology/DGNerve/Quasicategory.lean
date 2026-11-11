@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.Quasicategory.Basic
 public import TauCeti.AlgebraicTopology.DGNerve.HornFilling
 import Mathlib.AlgebraicTopology.SimplicialSet.HornColimits
+import TauCeti.Data.Fin.Basic
 import TauCeti.Data.Finset.Basic
 
 /-!
@@ -83,6 +84,125 @@ private lemma map_coh_heq_of_retraction {a b : Fin (n + 3)} (hab : a < b)
     (h₂ j (hT j (Or.inr (Or.inl rfl))).1 (hT j (Or.inr (Or.inl rfl))).2)
     fun s hs ↦ h₂ s (hT' s hs).1 (hT' s hs).2
 
+/-- The extensions along the retractions `ρ l` of faces that agree on their common faces give
+the same coherences away from both faces. -/
+private lemma coh_map_retraction_heq (P : Fin (n + 3) → Prop)
+    (y : ∀ l, P l → Simplex R C (n + 1))
+    (hy : ∀ a b (ha : P a) (hb : P b) (hab : a < b),
+      (y a ha).map (SimplexCategory.δ (b.pred (Fin.ne_zero_of_lt hab))).toOrderHom =
+        (y b hb).map (SimplexCategory.δ (a.castPred (Fin.ne_last_of_lt hab))).toOrderHom)
+    (ρ : Fin (n + 3) → Fin (n + 3) →o Fin (n + 2))
+    (hρ : ∀ (l v : Fin (n + 3)), v ≠ l → l.succAbove (ρ l v) = v) :
+    ∀ a b (ha : P a) (hb : P b) {i j S d hij hS hd},
+      (∀ v, (v = i ∨ v = j ∨ v ∈ S) → v ≠ a ∧ v ≠ b) →
+      ((y a ha).map (ρ a)).coh i j S d hij hS hd ≍
+        ((y b hb).map (ρ b)).coh i j S d hij hS hd := by
+  intro a b ha hb i j S d hij hS hd hT
+  rcases lt_trichotomy a b with hab | rfl | hab
+  · exact map_coh_heq_of_retraction hab _ _ (hy a b ha hb hab) (hρ a) (hρ b)
+      (Fin.exists_orderHom_succAbove_eq _).choose_spec hT
+  · rfl
+  · exact (map_coh_heq_of_retraction hab _ _ (hy b a hb ha hab) (hρ b) (hρ a)
+      (Fin.exists_orderHom_succAbove_eq _).choose_spec fun v hv ↦ (hT v hv).symm).symm
+
+/-- Glue the extended faces into coherences `f` on `X`: on a coherence missing a vertex `l`
+satisfying `P`, `f` is read off the face opposite to `l`. -/
+private lemma exists_coherences_heq_map_retraction (P : Fin (n + 3) → Prop)
+    (X : Fin (n + 3) → C) (y : ∀ l, P l → Simplex R C (n + 1))
+    (ρ : Fin (n + 3) → Fin (n + 3) →o Fin (n + 2))
+    (hz : ∀ l hl v, v ≠ l → ((y l hl).map (ρ l)).obj v = X v)
+    (hind : ∀ a b (ha : P a) (hb : P b) {i j S d hij hS hd},
+      (∀ v, (v = i ∨ v = j ∨ v ∈ S) → v ≠ a ∧ v ≠ b) →
+      ((y a ha).map (ρ a)).coh i j S d hij hS hd ≍
+        ((y b hb).map (ρ b)).coh i j S d hij hS hd) :
+    ∃ f : Coherences R X, ∀ l (hl : P l) {i j S d hij hS hd}, l ≠ i → l ≠ j → l ∉ S →
+      f i j S d hij hS hd ≍ ((y l hl).map (ρ l)).coh i j S d hij hS hd := by
+  classical
+  refine ⟨fun i j S d hij hS hd ↦
+    if h : ∃ l, P l ∧ l ≠ i ∧ l ≠ j ∧ l ∉ S then
+      cast (congrArg₂ (DGHom R d) (hz _ h.choose_spec.1 i (Ne.symm h.choose_spec.2.1))
+          (hz _ h.choose_spec.1 j (Ne.symm h.choose_spec.2.2.1)))
+        (((y _ h.choose_spec.1).map (ρ h.choose)).coh i j S d hij hS hd)
+    else 0, ?_⟩
+  intro l hl i j S d hij hS hd hli hlj hlS
+  have h : ∃ l, P l ∧ l ≠ i ∧ l ≠ j ∧ l ∉ S := ⟨l, hl, hli, hlj, hlS⟩
+  refine (heq_of_eq (dite_eq_left h)).trans ((cast_heq _ _).trans (hind _ _ _ _ ?_))
+  obtain ⟨-, hi, hj, hS'⟩ := h.choose_spec
+  rintro v (rfl | rfl | hv)
+  · exact ⟨Ne.symm hi, Ne.symm hli⟩
+  · exact ⟨Ne.symm hj, Ne.symm hlj⟩
+  · exact ⟨fun h ↦ hS' (h ▸ hv), fun h ↦ hlS (h ▸ hv)⟩
+
+/-- On the face opposite to `l` the glued coherences are those of `y l`. -/
+private lemma comap_heq_coh_of_heq_map_retraction (P : Fin (n + 3) → Prop) {X : Fin (n + 3) → C}
+    (y : ∀ l, P l → Simplex R C (n + 1))
+    (ρ : Fin (n + 3) → Fin (n + 3) →o Fin (n + 2))
+    (hρ : ∀ (l v : Fin (n + 3)), v ≠ l → l.succAbove (ρ l v) = v) (f : Coherences R X)
+    (hf : ∀ l (hl : P l) {i j S d hij hS hd}, l ≠ i → l ≠ j → l ∉ S →
+      f i j S d hij hS hd ≍ ((y l hl).map (ρ l)).coh i j S d hij hS hd)
+    (l : Fin (n + 3)) (hl : P l) {i' j' S'} {d : ℤ} (hij : i' ≤ j') (hS : S' ⊆ Ioo i' j')
+    (hd : d + #S' = 0) :
+    f.comap (Fin.strictMono_succAbove l) i' j' S' d hij hS hd ≍
+      (y l hl).coh i' j' S' d hij hS hd := by
+  have hρδ : ∀ w, ρ l (l.succAbove w) = w := fun w ↦
+    Fin.succAbove_right_injective (hρ l _ (Fin.succAbove_ne l w))
+  rw [Coherences.comap_apply _ _ _ _ _ ((Fin.strictMono_succAbove l).monotone hij)
+    ((Fin.strictMono_succAbove l).image_subset_Ioo hS)
+    (by rwa [card_image_of_injective _ (Fin.strictMono_succAbove l).injective])]
+  refine (hf l hl (Fin.succAbove_ne l i').symm (Fin.succAbove_ne l j').symm
+    (by simp [Fin.succAbove_ne])).trans ((heq_of_eq (((y l hl).map (ρ l)).map_coh_of_strictMono
+      (α := (SimplexCategory.δ l).toOrderHom) (Fin.strictMono_succAbove l) hij hS hd
+        ((Fin.strictMono_succAbove l).image_subset_Ioo hS)).symm).trans ?_)
+  rw [Simplex.map_map]
+  refine ((y l hl).map_coh_heq (β := OrderHom.id) (hρδ i') (hρδ j')
+    fun s _ ↦ hρδ s).trans ?_
+  rw [Simplex.map_id]
+
+/-- The glued coherences satisfy the dg nerve equation, read off a face. -/
+private lemma dgDifferential_eq_boundary_of_comap_heq (P : Fin (n + 3) → Prop)
+    {X : Fin (n + 3) → C} (y : ∀ l, P l → Simplex R C (n + 1))
+    (hX : ∀ l hl p, (y l hl).obj p = X (l.succAbove p)) (f : Coherences R X)
+    (hface : ∀ l (hl : P l) {i' j' S'} {d : ℤ} (hij : i' ≤ j') (hS : S' ⊆ Ioo i' j')
+      (hd : d + #S' = 0), f.comap (Fin.strictMono_succAbove l) i' j' S' d hij hS hd ≍
+        (y l hl).coh i' j' S' d hij hS hd) :
+    ∀ i j S d hij hS hd, (∃ l, P l ∧ l ≠ i ∧ l ≠ j ∧ l ∉ S) →
+      dgDifferential R d (f i j S d hij hS hd) = boundary R f i j S d hij hS hd := by
+  rintro i j S d hij hS hd ⟨l, hl, hli, hlj, hlS⟩
+  have he := Fin.strictMono_succAbove l
+  obtain ⟨i', j', S', rfl, rfl, rfl, hij', hS'⟩ := he.exists_image_eq_of_subset_Ioo hij hS
+    (Fin.exists_succAbove_eq (Ne.symm hli)) (Fin.exists_succAbove_eq (Ne.symm hlj))
+    fun s hs ↦ Fin.exists_succAbove_eq fun h ↦ hlS (h ▸ hs)
+  have hd' : d + #S' = 0 := by rwa [card_image_of_injective _ he.injective] at hd
+  let y' := (y l hl).copy (X ∘ l.succAbove) (funext (hX l hl))
+  have hcomap : f.comap he = y'.coh := by
+    funext i₁ j₁ S₁ d₁ h₁ h₂ h₃
+    exact eq_of_heq ((hface l hl h₁ h₂ h₃).trans (congr_arg_heq
+      (fun s : Simplex R C (n + 1) ↦ s.coh i₁ j₁ S₁ d₁ h₁ h₂ h₃) ((y l hl).copy_eq _ _)).symm)
+  rw [← Coherences.comap_apply f he hij' hS' hd', ← boundary_comap f he hij' hS' hd', hcomap]
+  exact y'.dgDifferential_coh i' j' S' d hij' hS' hd'
+
+/-- A simplex agreeing with the glued coherences has the faces `y l`. -/
+private lemma map_δ_eq_of_comap_heq (P : Fin (n + 3) → Prop) {X : Fin (n + 3) → C}
+    (y : ∀ l, P l → Simplex R C (n + 1))
+    (hX : ∀ l hl p, (y l hl).obj p = X (l.succAbove p)) (f : Coherences R X)
+    (hface : ∀ l (hl : P l) {i' j' S'} {d : ℤ} (hij : i' ≤ j') (hS : S' ⊆ Ioo i' j')
+      (hd : d + #S' = 0), f.comap (Fin.strictMono_succAbove l) i' j' S' d hij hS hd ≍
+        (y l hl).coh i' j' S' d hij hS hd)
+    (x : Simplex R C (n + 2)) (hxobj : x.obj = X)
+    (hxcoh : ∀ i j S d hij hS hd, (∃ l, P l ∧ l ≠ i ∧ l ≠ j ∧ l ∉ S) →
+      x.coh i j S d hij hS hd ≍ f i j S d hij hS hd) (l : Fin (n + 3)) (hl : P l) :
+    x.map (SimplexCategory.δ l).toOrderHom = y l hl := by
+  refine Simplex.ext (funext fun p ↦ (congrFun hxobj _).trans (hX l hl p).symm)
+    fun i' j' S' d hij hS hd ↦ ?_
+  refine (heq_of_eq (x.map_coh_of_strictMono (α := (SimplexCategory.δ l).toOrderHom)
+    (Fin.strictMono_succAbove l) hij hS hd
+    ((Fin.strictMono_succAbove l).image_subset_Ioo hS))).trans ?_
+  refine (hxcoh _ _ _ _ _ _ _ ⟨l, hl, (Fin.succAbove_ne l i').symm, (Fin.succAbove_ne l j').symm,
+    fun h ↦ ?_⟩).trans ((heq_of_eq (Coherences.comap_apply _ _ _ _ _ _ _ _).symm).trans
+      (hface l hl hij hS hd))
+  obtain ⟨s, -, hs⟩ := mem_image.1 h
+  exact Fin.succAbove_ne l s hs
+
 /-- **Gluing faces into coherences**: `(n + 1)`-simplices `y l` of the differential graded nerve,
 for the vertices `l` satisfying `P`, with objects given by `X` and agreeing on their common faces,
 glue to coherences on `X`. These coherences are normalized at every vertex `i` such that some
@@ -101,102 +221,18 @@ theorem exists_coherences_of_faces (P : Fin (n + 3) → Prop) (X : Fin (n + 3) �
       ∀ x : Simplex R C (n + 2), x.obj = X → (∀ i j S d hij hS hd,
         (∃ l, P l ∧ l ≠ i ∧ l ≠ j ∧ l ∉ S) → x.coh i j S d hij hS hd ≍ f i j S d hij hS hd) →
         ∀ l hl, x.map (SimplexCategory.δ l).toOrderHom = y l hl := by
-  classical
-  -- Each face map has a monotone retraction.
-  have hretr : ∀ {m : ℕ} (l : Fin (m + 2)),
-      ∃ ρ : Fin (m + 2) →o Fin (m + 1), ∀ v, v ≠ l → l.succAbove (ρ v) = v := by
-    intro m l
-    by_cases hl : l = Fin.last (m + 1)
-    · subst hl
-      refine ⟨⟨(Fin.last m).predAbove, Fin.predAbove_right_monotone _⟩, fun v hv ↦ ?_⟩
-      rw [← Fin.succ_last] at hv ⊢
-      exact Fin.succ_succAbove_predAbove hv
-    · refine ⟨⟨(l.castPred hl).predAbove, Fin.predAbove_right_monotone _⟩, fun v hv ↦ ?_⟩
-      have := Fin.succAbove_predAbove (p := l.castPred hl) (i := v)
-        (by rwa [Fin.castSucc_castPred])
-      rwa [Fin.castSucc_castPred] at this
-  choose ρ hρ using fun l : Fin (n + 3) ↦ hretr l
-  have hρδ : ∀ l w, ρ l (l.succAbove w) = w := fun l w ↦
-    Fin.succAbove_right_injective (hρ l _ (Fin.succAbove_ne l w))
+  choose ρ hρ using fun l : Fin (n + 3) ↦ Fin.exists_orderHom_succAbove_eq l
   -- The face opposite to `l`, extended degenerately to the whole simplex, has the objects `X`
-  -- away from `l`, and two such extensions have the same coherences away from both faces.
+  -- away from `l`.
   have hz : ∀ l hl v, v ≠ l → ((y l hl).map (ρ l)).obj v = X v := fun l hl v hv ↦
     (hX l hl _).trans (congrArg X (hρ l v hv))
-  have hind : ∀ a b (ha : P a) (hb : P b) {i j S d hij hS hd},
-      (∀ v, (v = i ∨ v = j ∨ v ∈ S) → v ≠ a ∧ v ≠ b) →
-      ((y a ha).map (ρ a)).coh i j S d hij hS hd ≍
-        ((y b hb).map (ρ b)).coh i j S d hij hS hd := by
-    intro a b ha hb i j S d hij hS hd hT
-    rcases lt_trichotomy a b with hab | rfl | hab
-    · exact map_coh_heq_of_retraction hab _ _ (hy a b ha hb hab) (hρ a) (hρ b)
-        (hretr _).choose_spec hT
-    · rfl
-    · exact (map_coh_heq_of_retraction hab _ _ (hy b a hb ha hab) (hρ b) (hρ a)
-        (hretr _).choose_spec fun v hv ↦ (hT v hv).symm).symm
-  -- The glued coherences: on a coherence missing a vertex `l` satisfying `P`, read off the face
-  -- opposite to any such `l`.
-  let f : Coherences R X := fun i j S d hij hS hd ↦
-    if h : ∃ l, P l ∧ l ≠ i ∧ l ≠ j ∧ l ∉ S then
-      cast (congrArg₂ (DGHom R d) (hz _ h.choose_spec.1 i (Ne.symm h.choose_spec.2.1))
-          (hz _ h.choose_spec.1 j (Ne.symm h.choose_spec.2.2.1)))
-        (((y _ h.choose_spec.1).map (ρ h.choose)).coh i j S d hij hS hd)
-    else 0
-  have hf : ∀ l (hl : P l) {i j S d hij hS hd}, l ≠ i → l ≠ j → l ∉ S →
-      f i j S d hij hS hd ≍ ((y l hl).map (ρ l)).coh i j S d hij hS hd := by
-    intro l hl i j S d hij hS hd hli hlj hlS
-    have h : ∃ l, P l ∧ l ≠ i ∧ l ≠ j ∧ l ∉ S := ⟨l, hl, hli, hlj, hlS⟩
-    refine (heq_of_eq (dite_eq_left h)).trans ((cast_heq _ _).trans (hind _ _ _ _ ?_))
-    obtain ⟨-, hi, hj, hS'⟩ := h.choose_spec
-    rintro v (rfl | rfl | hv)
-    · exact ⟨Ne.symm hi, Ne.symm hli⟩
-    · exact ⟨Ne.symm hj, Ne.symm hlj⟩
-    · exact ⟨fun h ↦ hS' (h ▸ hv), fun h ↦ hlS (h ▸ hv)⟩
-  -- On the face opposite to `l` the glued coherences are those of `y l`.
-  have hface : ∀ l (hl : P l) {i' j' S'} {d : ℤ} (hij : i' ≤ j') (hS : S' ⊆ Ioo i' j')
-      (hd : d + #S' = 0), f.comap (Fin.strictMono_succAbove l) i' j' S' d hij hS hd ≍
-        (y l hl).coh i' j' S' d hij hS hd := by
-    intro l hl i' j' S' d hij hS hd
-    rw [Coherences.comap_apply _ _ _ _ _ ((Fin.strictMono_succAbove l).monotone hij)
-      ((Fin.strictMono_succAbove l).image_subset_Ioo hS)
-      (by rwa [card_image_of_injective _ (Fin.strictMono_succAbove l).injective])]
-    refine (hf l hl (Fin.succAbove_ne l i').symm (Fin.succAbove_ne l j').symm
-      (by simp [Fin.succAbove_ne])).trans ((heq_of_eq (((y l hl).map (ρ l)).map_coh_of_strictMono
-        (α := (SimplexCategory.δ l).toOrderHom) (Fin.strictMono_succAbove l) hij hS hd
-          ((Fin.strictMono_succAbove l).image_subset_Ioo hS)).symm).trans
-          ?_)
-    rw [Simplex.map_map]
-    refine ((y l hl).map_coh_heq (β := OrderHom.id) (hρδ l i') (hρδ l j')
-      fun s _ ↦ hρδ l s).trans ?_
-    rw [Simplex.map_id]
-  refine ⟨f, fun i ⟨l, hl, hli⟩ ↦ ?_, ?_, ?_⟩
-  · exact eq_of_heq ((hf l hl hli hli (notMem_empty _)).trans
-      ((heq_of_eq (Simplex.coh_self _ i)).trans (by rw [hz l hl i (Ne.symm hli)])))
-  -- The glued coherences satisfy the dg nerve equation, read off a face.
-  · rintro i j S d hij hS hd ⟨l, hl, hli, hlj, hlS⟩
-    have he := Fin.strictMono_succAbove l
-    obtain ⟨i', j', S', rfl, rfl, rfl, hij', hS'⟩ := he.exists_image_eq_of_subset_Ioo hij hS
-      (Fin.exists_succAbove_eq (Ne.symm hli)) (Fin.exists_succAbove_eq (Ne.symm hlj))
-      fun s hs ↦ Fin.exists_succAbove_eq fun h ↦ hlS (h ▸ hs)
-    have hd' : d + #S' = 0 := by rwa [card_image_of_injective _ he.injective] at hd
-    let y' := (y l hl).copy (X ∘ l.succAbove) (funext (hX l hl))
-    have hcomap : f.comap he = y'.coh := by
-      funext i₁ j₁ S₁ d₁ h₁ h₂ h₃
-      exact eq_of_heq ((hface l hl h₁ h₂ h₃).trans (congr_arg_heq
-        (fun s : Simplex R C (n + 1) ↦ s.coh i₁ j₁ S₁ d₁ h₁ h₂ h₃) ((y l hl).copy_eq _ _)).symm)
-    rw [← Coherences.comap_apply f he hij' hS' hd', ← boundary_comap f he hij' hS' hd', hcomap]
-    exact y'.dgDifferential_coh i' j' S' d hij' hS' hd'
-  -- A simplex agreeing with the glued coherences has the faces `y l`.
-  intro x hxobj hxcoh l hl
-  refine Simplex.ext (funext fun p ↦ (congrFun hxobj _).trans (hX l hl p).symm)
-    fun i' j' S' d hij hS hd ↦ ?_
-  refine (heq_of_eq (x.map_coh_of_strictMono (α := (SimplexCategory.δ l).toOrderHom)
-    (Fin.strictMono_succAbove l) hij hS hd
-    ((Fin.strictMono_succAbove l).image_subset_Ioo hS))).trans ?_
-  refine (hxcoh _ _ _ _ _ _ _ ⟨l, hl, (Fin.succAbove_ne l i').symm, (Fin.succAbove_ne l j').symm,
-    fun h ↦ ?_⟩).trans ((heq_of_eq (Coherences.comap_apply _ _ _ _ _ _ _ _).symm).trans
-      (hface l hl hij hS hd))
-  obtain ⟨s, -, hs⟩ := mem_image.1 h
-  exact Fin.succAbove_ne l s hs
+  obtain ⟨f, hf⟩ := exists_coherences_heq_map_retraction P X y ρ hz
+    (coh_map_retraction_heq P y hy ρ hρ)
+  have hface := comap_heq_coh_of_heq_map_retraction P y ρ hρ f hf
+  refine ⟨f, fun i ⟨l, hl, hli⟩ ↦ ?_, dgDifferential_eq_boundary_of_comap_heq P y hX f hface,
+    fun x hxobj hxcoh l hl ↦ map_δ_eq_of_comap_heq P y hX f hface x hxobj hxcoh l hl⟩
+  exact eq_of_heq ((hf l hl hli hli (notMem_empty _)).trans
+    ((heq_of_eq (Simplex.coh_self _ i)).trans (by rw [hz l hl i (Ne.symm hli)])))
 
 end DGNerve
 

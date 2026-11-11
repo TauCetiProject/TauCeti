@@ -35,6 +35,8 @@ vectors converge too.
   subset of the total space.
 * `IsCompact.norm_le_bundle_of_continuous`: the same for a continuous fiber norm with locally
   bounded trivializations.
+* `Bundle.RiemannianMetric.isSymm_toBilinForm_inner`: the inner product of a Riemannian metric
+  on a fiber is a symmetric bilinear form.
 -/
 
 public section
@@ -142,3 +144,15 @@ theorem IsCompact.norm_le_bundle {K : Set B} (hK : IsCompact K) (r : ℝ) :
       h.2.mono fun _ hy ↦ (ContinuousLinearMap.le_of_opNorm_le _ hy.le)) r
 
 end Compact
+
+namespace Bundle.RiemannianMetric
+
+variable {B : Type*} {E : B → Type*} [∀ b, TopologicalSpace (E b)] [∀ b, AddCommGroup (E b)]
+  [∀ b, Module ℝ (E b)]
+
+/-- The inner product of a Riemannian metric on a fiber is a symmetric bilinear form. -/
+theorem isSymm_toBilinForm_inner (g : RiemannianMetric E) (b : B) :
+    (g.inner b).toBilinForm.IsSymm :=
+  LinearMap.BilinForm.isSymm_def.mpr (g.symm b)
+
+end Bundle.RiemannianMetric

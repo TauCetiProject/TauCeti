@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Brauer.Generator
 public import TauCeti.Combinatorics.NoncrossingPartition.PerfectMatching
 public import TauCeti.Combinatorics.PlanarMatching.TLDiagram
+public import TauCeti.Data.Finset.Sum
 public import TauCeti.Logic.Equiv.Fin.Basic
 
 /-!
@@ -32,6 +33,15 @@ matching, and the Brauer diagrams that arise are exactly the planar ones. Under 
 the identity diagram is the identity permutation diagram, vertical reflection is
 `TauCeti.BrauerDiagram.flip`, and horizontal reflection relabels both rows by `Fin.rev`.
 
+Stacking planar diagrams gives a planar diagram (`TauCeti.BrauerDiagram.IsPlanar.composeDiagram`),
+so the Brauer diagrams of Temperley–Lieb diagrams `k → k` are closed under
+`TauCeti.composeDiagram`. The proof is a parity count. If an arc `{y, y'}` of the composite
+crossed the arc `{x, x'}`, then the strand from `y` to `y'` would have to cross the strand from
+`x` to `x'` inside one of the two diagrams. Counting, modulo `2`, the points of the strand from
+`x` that precede a point of either diagram detects such a crossing: by planarity of the two
+diagrams the count does not change along the strand from `y`, although it is odd at `y` and even
+at `y'`.
+
 Two classes of Brauer diagrams are sorted by planarity. A permutation diagram is planar only for
 the identity permutation (`TauCeti.BrauerDiagram.isPlanar_permToBrauer_iff`): two through
 strands that swap their order cross. A cap-cup diagram `TauCeti.capCup a b` with `a ≠ b` is
@@ -54,6 +64,8 @@ since a strand starting strictly between them crosses the cap.
   the comparison is injective on matchings, with image the planar Brauer diagrams.
 * `TauCeti.BrauerDiagram.card_isPlanar`: there are `catalan k` planar Brauer diagrams on `k`
   strands.
+* `TauCeti.BrauerDiagram.IsPlanar.composeDiagram`: the composite of two planar Brauer diagrams is
+  planar.
 * `TauCeti.TLDiagram.toBrauerDiagram_id`, `TauCeti.TLDiagram.toBrauerDiagram_verticalReflect`,
   `TauCeti.TLDiagram.toBrauerDiagram_reflect`: the comparison carries the identity and the two
   reflections to their Brauer counterparts.
@@ -319,6 +331,380 @@ theorem isPlanar_capCup_iff {a b : Fin k} (hab : a ≠ b) :
   · rw [isPlanar_capCup_iff_of_lt h, or_iff_left (by have : (a : ℕ) < b := h; omega)]
   · rw [← capCup_comm, isPlanar_capCup_iff_of_lt h,
       or_iff_right (by have : (b : ℕ) < a := h; omega)]
+
+end BrauerDiagram
+
+/-! ### Stacking planar diagrams
+
+The composite of two planar diagrams is planar. Suppose that the arc `{x, x'}` of the composite
+interleaved the arc `{y, y'}`. Collect the strand from `x` to `x'` into a set `P` of points of the
+two stacked diagrams, closed under the arcs of both. For a point `z` of either diagram outside
+`P`, count the points of `P` of that diagram preceding `z` in its counterclockwise numbering. Since
+each diagram is planar, the parity of this count is the same at both ends of each of its arcs
+outside `P` (`Equiv.Perm.IsNoncrossingMatching.card_filter_lt_apply_modEq`), and at a middle
+point the counts in the two diagrams add up to a number depending on `P` alone. So, suitably
+normalised, the parity is constant along the strand from `y` to `y'`, which avoids `P`. On the
+outer boundary it counts the points of `{x, x'}` preceding a point, which is odd at `y` and even
+at `y'`. -/
+
+namespace BrauerDiagram
+
+open Finset Relation
+
+/-- The number of points of `s` preceding the boundary point `z` in the counterclockwise
+numbering. -/
+private def countBefore (s : Finset (Fin k ⊕ Fin k)) (z : Fin k ⊕ Fin k) : ℕ :=
+  {x ∈ s | finSumFinRevEquiv k k (k + k) rfl x < finSumFinRevEquiv k k (k + k) rfl z}.card
+
+/-- Count separately the points of the bottom and of the top row preceding `z`. -/
+private theorem countBefore_eq (s : Finset (Fin k ⊕ Fin k)) (z : Fin k ⊕ Fin k) :
+    countBefore s z =
+      {i ∈ s.toLeft | finSumFinRevEquiv k k (k + k) rfl (Sum.inl i) <
+          finSumFinRevEquiv k k (k + k) rfl z}.card +
+        {j ∈ s.toRight | finSumFinRevEquiv k k (k + k) rfl (Sum.inr j) <
+          finSumFinRevEquiv k k (k + k) rfl z}.card := by
+  rw [countBefore, ← card_toLeft_add_card_toRight, toLeft_filter, toRight_filter]
+
+/-- In a planar diagram, the parity of the number of points of a union `s` of arcs preceding a
+point is the same at both ends of an arc outside `s`. -/
+private theorem IsPlanar.countBefore_val_mod_two {D : BrauerDiagram k} (hD : D.IsPlanar)
+    {s : Finset (Fin k ⊕ Fin k)} (hs : ∀ x ∈ s, D.val x ∈ s) {z : Fin k ⊕ Fin k} (hz : z ∉ s) :
+    countBefore s (D.val z) % 2 = countBefore s z % 2 := by
+  set e := finSumFinRevEquiv k k (k + k) rfl
+  rw [IsPlanar] at hD
+  have key := hD.card_filter_lt_apply_modEq (PerfectMatching.congr e D).prop
+    (s := s.map e.toEmbedding) (a := e z)
+    (fun y hy => by
+      rw [mem_map_equiv] at hy ⊢
+      rw [PerfectMatching.congr_val_apply, Equiv.symm_apply_apply]
+      exact hs _ hy)
+    (by rwa [mem_map_equiv, Equiv.symm_apply_apply])
+  rw [PerfectMatching.congr_val_apply_apply, filter_map, filter_map, card_map, card_map] at key
+  exact key
+
+/-- A point outside a union of arcs is matched with a point outside it. -/
+private theorem val_notMem {D : BrauerDiagram k} {s : Finset (Fin k ⊕ Fin k)}
+    (hs : ∀ x ∈ s, D.val x ∈ s) {z : Fin k ⊕ Fin k} (hz : z ∉ s) : D.val z ∉ s :=
+  fun h => hz (D.apply_apply z ▸ hs _ h)
+
+variable {X : Finset (Fin k ⊕ Fin k)} {M : Finset (Fin k)}
+
+/-- At a middle point `a` outside `M`, the points of the lower diagram preceding `a` are the
+bottom points in `X` and the middle points of `M` to the right of `a`, and the points of the upper
+diagram preceding `a` are the middle points of `M` to the left of `a`. -/
+private theorem countBefore_disjSum_add_countBefore_disjSum {a : Fin k} (ha : a ∉ M) :
+    countBefore (X.toLeft.disjSum M) (Sum.inr a) + countBefore (M.disjSum X.toRight) (Sum.inl a) =
+      X.toLeft.card + M.card := by
+  have hsplit := card_filter_add_card_filter_not (s := M) (a < ·)
+  have hcongr : {b ∈ M | ¬a < b} = {b ∈ M | b < a} := filter_congr fun b hb => by
+    rw [not_lt]
+    exact ⟨fun h => h.lt_of_ne (ne_of_mem_of_not_mem hb ha), le_of_lt⟩
+  rw [hcongr] at hsplit
+  simp [countBefore_eq]
+  omega
+
+/-- The normalised count along a strand avoiding the union of strands, at an outer point: the
+count in the lower diagram at a bottom point, and the count in the upper diagram, shifted by a
+number depending only on `X` and `M`, at a top point. -/
+private def outerCount (X : Finset (Fin k ⊕ Fin k)) (M : Finset (Fin k)) (y : Fin k ⊕ Fin k) :
+    ℕ :=
+  Sum.elim (fun i => countBefore (X.toLeft.disjSum M) (Sum.inl i))
+    (fun j => countBefore (M.disjSum X.toRight) (Sum.inr j) +
+      (X.toLeft.card + M.card)) y
+
+/-- The normalised count at a middle point: the count in the lower diagram. -/
+private def middleCount (X : Finset (Fin k ⊕ Fin k)) (M : Finset (Fin k)) (a : Fin k) : ℕ :=
+  countBefore (X.toLeft.disjSum M) (Sum.inr a)
+
+/-- On the outer boundary, the normalised count is the number of points of `X` preceding the
+point, modulo `2`. -/
+private theorem outerCount_mod_two (y : Fin k ⊕ Fin k) :
+    outerCount X M y % 2 = countBefore X y % 2 := by
+  rcases y with i | j
+  · simp [outerCount, countBefore_eq]
+  · simp [outerCount, countBefore_eq]
+    omega
+
+variable (D₁ D₂ : BrauerDiagram k)
+
+open Classical in
+/-- The middle points of the strand of the stack of `D₁` above `D₂` that starts at the outer
+point `w`. -/
+private noncomputable def strandMiddle (w : Fin k ⊕ Fin k) : Finset (Fin k) :=
+  {a | ∃ s t, stackStart D₁ D₂ w = Sum.inr s ∧
+    ReflTransGen (fun u v => stackStep D₁ D₂ u = Sum.inr v) s t ∧ middlePoint t = a}
+
+variable {D₁ D₂}
+
+private theorem mem_strandMiddle {w : Fin k ⊕ Fin k} {a : Fin k} :
+    a ∈ strandMiddle D₁ D₂ w ↔ ∃ s t, stackStart D₁ D₂ w = Sum.inr s ∧
+      ReflTransGen (fun u v => stackStep D₁ D₂ u = Sum.inr v) s t ∧ middlePoint t = a := by
+  simp [strandMiddle]
+
+/-- The middle point of each middle state reached by the strand from `w` is on it. -/
+private theorem middlePoint_mem_strandMiddle {w s t : Fin k ⊕ Fin k}
+    (hs : stackStart D₁ D₂ w = Sum.inr s)
+    (hst : ReflTransGen (fun u v => stackStep D₁ D₂ u = Sum.inr v) s t) :
+    middlePoint t ∈ strandMiddle D₁ D₂ w :=
+  mem_strandMiddle.mpr ⟨s, t, hs, hst, rfl⟩
+
+/-- The lower diagram matches the bottom end `w` of a strand with a point of that strand. -/
+private theorem lower_val_inl_mem {w : Fin k ⊕ Fin k}
+    (hw' : (composeDiagram D₁ D₂).val w ∈ X) (hM : strandMiddle D₁ D₂ w ⊆ M) {i : Fin k}
+    (hi : Sum.inl i = w) : D₂.val (Sum.inl i) ∈ X.toLeft.disjSum M := by
+  subst hi
+  rcases h : D₂.val (Sum.inl i) with i' | a
+  · have hstart : stackStart D₁ D₂ (Sum.inl i) = Sum.inl (Sum.inl i') := by simp [h]
+    rw [inl_mem_disjSum, mem_toLeft, ← (composeDiagram_val_eq_iff D₁ D₂).mpr (Or.inl hstart)]
+    exact hw'
+  · have hstart : stackStart D₁ D₂ (Sum.inl i) = Sum.inr (Sum.inl a) := by simp [h]
+    exact inr_mem_disjSum.mpr (hM (by simpa using middlePoint_mem_strandMiddle hstart .refl))
+
+/-- The lower diagram matches a middle point of a strand with a point of that strand. -/
+private theorem lower_val_inr_mem {w : Fin k ⊕ Fin k} (hw : w ∈ X)
+    (hw' : (composeDiagram D₁ D₂).val w ∈ X) (hM : strandMiddle D₁ D₂ w ⊆ M) {a : Fin k}
+    (ha : a ∈ strandMiddle D₁ D₂ w) : D₂.val (Sum.inr a) ∈ X.toLeft.disjSum M := by
+  obtain ⟨s, t, hs, hst, hta⟩ := mem_strandMiddle.mp ha
+  rcases t with b | b <;> simp only [middlePoint_inl, middlePoint_inr] at hta <;> subst hta
+  · -- The strand reached `b` coming up through `D₂`: from `w` itself, or along a cup of `D₂`.
+    rcases hst.cases_tail with rfl | ⟨u, hsu, hu⟩
+    · obtain ⟨hl, he⟩ := stackStart_eq_inr_inl_iff.mp hs
+      rcases w with i | j
+      · rw [he]
+        simpa using hw
+      · simp at hl
+    · obtain ⟨c, rfl, hc⟩ := stackStep_eq_inr_inl_iff.mp hu
+      rw [hc, inr_mem_disjSum]
+      exact hM (by simpa using middlePoint_mem_strandMiddle hs hsu)
+  · -- The strand leaves `b` going down through `D₂`: out of the stack, or along a cup of `D₂`.
+    rcases h : D₂.val (Sum.inr b) with i | c
+    · have hstep : stackStep D₁ D₂ (Sum.inr b) = Sum.inl (Sum.inl i) := by simp [h]
+      rw [inl_mem_disjSum, mem_toLeft,
+        ← (composeDiagram_val_eq_iff D₁ D₂).mpr (Or.inr ⟨s, _, hs, hst, hstep⟩)]
+      exact hw'
+    · have hstep : stackStep D₁ D₂ (Sum.inr b) = Sum.inr (Sum.inl c) := by simp [h]
+      exact inr_mem_disjSum.mpr
+        (hM (by simpa using middlePoint_mem_strandMiddle hs (hst.tail hstep)))
+
+/-- The upper diagram matches the top end `w` of a strand with a point of that strand. -/
+private theorem upper_val_inr_mem {w : Fin k ⊕ Fin k}
+    (hw' : (composeDiagram D₁ D₂).val w ∈ X) (hM : strandMiddle D₁ D₂ w ⊆ M) {j : Fin k}
+    (hj : Sum.inr j = w) : D₁.val (Sum.inr j) ∈ M.disjSum X.toRight := by
+  subst hj
+  rcases h : D₁.val (Sum.inr j) with a | j'
+  · have hstart : stackStart D₁ D₂ (Sum.inr j) = Sum.inr (Sum.inr a) := by simp [h]
+    exact inl_mem_disjSum.mpr (hM (by simpa using middlePoint_mem_strandMiddle hstart .refl))
+  · have hstart : stackStart D₁ D₂ (Sum.inr j) = Sum.inl (Sum.inr j') := by simp [h]
+    rw [inr_mem_disjSum, mem_toRight, ← (composeDiagram_val_eq_iff D₁ D₂).mpr (Or.inl hstart)]
+    exact hw'
+
+/-- The upper diagram matches a middle point of a strand with a point of that strand. -/
+private theorem upper_val_inl_mem {w : Fin k ⊕ Fin k} (hw : w ∈ X)
+    (hw' : (composeDiagram D₁ D₂).val w ∈ X) (hM : strandMiddle D₁ D₂ w ⊆ M) {a : Fin k}
+    (ha : a ∈ strandMiddle D₁ D₂ w) : D₁.val (Sum.inl a) ∈ M.disjSum X.toRight := by
+  obtain ⟨s, t, hs, hst, hta⟩ := mem_strandMiddle.mp ha
+  rcases t with b | b <;> simp only [middlePoint_inl, middlePoint_inr] at hta <;> subst hta
+  · -- The strand leaves `b` going up through `D₁`: out of the stack, or along a cap of `D₁`.
+    rcases h : D₁.val (Sum.inl b) with c | j
+    · have hstep : stackStep D₁ D₂ (Sum.inl b) = Sum.inr (Sum.inr c) := by simp [h]
+      exact inl_mem_disjSum.mpr
+        (hM (by simpa using middlePoint_mem_strandMiddle hs (hst.tail hstep)))
+    · have hstep : stackStep D₁ D₂ (Sum.inl b) = Sum.inl (Sum.inr j) := by simp [h]
+      rw [inr_mem_disjSum, mem_toRight,
+        ← (composeDiagram_val_eq_iff D₁ D₂).mpr (Or.inr ⟨s, _, hs, hst, hstep⟩)]
+      exact hw'
+  · -- The strand reached `b` coming down through `D₁`: from `w` itself, or along a cap of `D₁`.
+    rcases hst.cases_tail with rfl | ⟨u, hsu, hu⟩
+    · obtain ⟨hr, he⟩ := stackStart_eq_inr_inr_iff.mp hs
+      rcases w with i | j
+      · simp at hr
+      · rw [he]
+        simpa using hw
+    · obtain ⟨c, rfl, hc⟩ := stackStep_eq_inr_inr_iff.mp hu
+      rw [hc, inl_mem_disjSum]
+      exact hM (by simpa using middlePoint_mem_strandMiddle hs hsu)
+
+/-- A union of strands, given by outer points `X` closed under the composite and middle points
+`M` lying exactly on the strands from `X`, is closed under the lower diagram. -/
+private theorem lower_mapsTo
+    (hX : ∀ w ∈ X, (composeDiagram D₁ D₂).val w ∈ X ∧ strandMiddle D₁ D₂ w ⊆ M)
+    (hM : ∀ a ∈ M, ∃ w ∈ X, a ∈ strandMiddle D₁ D₂ w) :
+    ∀ z ∈ X.toLeft.disjSum M, D₂.val z ∈ X.toLeft.disjSum M := by
+  rintro (i | a) hz
+  · rw [inl_mem_disjSum, mem_toLeft] at hz
+    exact lower_val_inl_mem (hX _ hz).1 (hX _ hz).2 rfl
+  · obtain ⟨w, hw, ha⟩ := hM a (inr_mem_disjSum.mp hz)
+    exact lower_val_inr_mem hw (hX w hw).1 (hX w hw).2 ha
+
+/-- A union of strands, given by outer points `X` closed under the composite and middle points
+`M` lying exactly on the strands from `X`, is closed under the upper diagram. -/
+private theorem upper_mapsTo
+    (hX : ∀ w ∈ X, (composeDiagram D₁ D₂).val w ∈ X ∧ strandMiddle D₁ D₂ w ⊆ M)
+    (hM : ∀ a ∈ M, ∃ w ∈ X, a ∈ strandMiddle D₁ D₂ w) :
+    ∀ z ∈ M.disjSum X.toRight, D₁.val z ∈ M.disjSum X.toRight := by
+  rintro (a | j) hz
+  · obtain ⟨w, hw, ha⟩ := hM a (inl_mem_disjSum.mp hz)
+    exact upper_val_inl_mem hw (hX w hw).1 (hX w hw).2 ha
+  · rw [inr_mem_disjSum, mem_toRight] at hz
+    exact upper_val_inr_mem (hX _ hz).1 (hX _ hz).2 rfl
+
+section Parity
+
+variable (h₁ : D₁.IsPlanar) (h₂ : D₂.IsPlanar)
+  (hlow : ∀ z ∈ X.toLeft.disjSum M, D₂.val z ∈ X.toLeft.disjSum M)
+  (hup : ∀ z ∈ M.disjSum X.toRight, D₁.val z ∈ M.disjSum X.toRight)
+include h₁ h₂ hlow hup
+
+/-- A strand outside the union of strands that leaves the stack along its first arc keeps the
+normalised count modulo `2`. -/
+private theorem outerCount_mod_two_of_stackStart_eq_inl {y y' : Fin k ⊕ Fin k} (hy : y ∉ X)
+    (h : stackStart D₁ D₂ y = Sum.inl y') : outerCount X M y' % 2 = outerCount X M y % 2 := by
+  rcases y with i | j
+  · rcases hD : D₂.val (Sum.inl i) with i' | a <;>
+      simp only [stackStart_inl, hD, Sum.elim_inl, Sum.elim_inr, Sum.inl.injEq,
+        reduceCtorEq] at h
+    subst h
+    have hpar := h₂.countBefore_val_mod_two hlow (z := Sum.inl i) (by simpa using hy)
+    rw [hD] at hpar
+    simpa [outerCount] using hpar
+  · rcases hD : D₁.val (Sum.inr j) with a | j' <;>
+      simp only [stackStart_inr, hD, Sum.elim_inl, Sum.elim_inr, Sum.inl.injEq,
+        reduceCtorEq] at h
+    subst h
+    have hpar := h₁.countBefore_val_mod_two hup (z := Sum.inr j) (by simpa using hy)
+    rw [hD] at hpar
+    simp only [outerCount, Sum.elim_inr]
+    omega
+
+/-- A strand outside the union of strands that crosses into the middle along its first arc
+reaches a middle point outside `M` with the same normalised count modulo `2`. -/
+private theorem middleCount_mod_two_of_stackStart_eq_inr {y s : Fin k ⊕ Fin k} (hy : y ∉ X)
+    (h : stackStart D₁ D₂ y = Sum.inr s) :
+    middlePoint s ∉ M ∧ middleCount X M (middlePoint s) % 2 = outerCount X M y % 2 := by
+  rcases y with i | j
+  · rcases hD : D₂.val (Sum.inl i) with i' | a <;>
+      simp only [stackStart_inl, hD, Sum.elim_inl, Sum.elim_inr, Sum.inr.injEq,
+        reduceCtorEq] at h
+    subst h
+    have hz : Sum.inl i ∉ X.toLeft.disjSum M := by simpa using hy
+    have hpar := h₂.countBefore_val_mod_two hlow hz
+    have hnot := val_notMem hlow hz
+    rw [hD] at hpar hnot
+    exact ⟨by simpa using hnot, by simpa [middleCount, outerCount] using hpar⟩
+  · rcases hD : D₁.val (Sum.inr j) with a | j' <;>
+      simp only [stackStart_inr, hD, Sum.elim_inl, Sum.elim_inr, Sum.inr.injEq,
+        reduceCtorEq] at h
+    subst h
+    have hz : Sum.inr j ∉ M.disjSum X.toRight := by simpa using hy
+    have hpar := h₁.countBefore_val_mod_two hup hz
+    have hnot := val_notMem hup hz
+    rw [hD] at hpar hnot
+    have ha : a ∉ M := by simpa using hnot
+    have hsum := countBefore_disjSum_add_countBefore_disjSum (X := X) ha
+    simp only [middlePoint_inr, middleCount, outerCount, Sum.elim_inr]
+    exact ⟨ha, by omega⟩
+
+/-- A strand outside the union of strands that stays in the middle keeps the normalised count
+modulo `2`. -/
+private theorem middleCount_mod_two_of_stackStep_eq_inr {u v : Fin k ⊕ Fin k}
+    (hu : middlePoint u ∉ M) (h : stackStep D₁ D₂ u = Sum.inr v) :
+    middlePoint v ∉ M ∧ middleCount X M (middlePoint v) % 2 = middleCount X M (middlePoint u) % 2
+    := by
+  rcases u with a | a
+  · obtain ⟨b, rfl, hD⟩ := stackStep_inl_eq_inr_iff.mp h
+    simp only [middlePoint_inl, middlePoint_inr] at hu ⊢
+    have hz : Sum.inl a ∉ M.disjSum X.toRight := by simpa using hu
+    have hpar := h₁.countBefore_val_mod_two hup hz
+    have hnot := val_notMem hup hz
+    rw [hD] at hpar hnot
+    have hb : b ∉ M := by simpa using hnot
+    have hsa := countBefore_disjSum_add_countBefore_disjSum (X := X) hu
+    have hsb := countBefore_disjSum_add_countBefore_disjSum (X := X) hb
+    simp only [middleCount]
+    exact ⟨hb, by omega⟩
+  · obtain ⟨b, rfl, hD⟩ := stackStep_inr_eq_inr_iff.mp h
+    simp only [middlePoint_inl, middlePoint_inr] at hu ⊢
+    have hz : Sum.inr a ∉ X.toLeft.disjSum M := by simpa using hu
+    have hpar := h₂.countBefore_val_mod_two hlow hz
+    have hnot := val_notMem hlow hz
+    rw [hD] at hpar hnot
+    exact ⟨by simpa using hnot, hpar⟩
+
+/-- A strand outside the union of strands that leaves the middle keeps the normalised count
+modulo `2`. -/
+private theorem outerCount_mod_two_of_stackStep_eq_inl {u y : Fin k ⊕ Fin k}
+    (hu : middlePoint u ∉ M) (h : stackStep D₁ D₂ u = Sum.inl y) :
+    outerCount X M y % 2 = middleCount X M (middlePoint u) % 2 := by
+  rcases u with a | a
+  · rcases hD : D₁.val (Sum.inl a) with b | j <;>
+      simp only [stackStep_inl, hD, Sum.elim_inl, Sum.elim_inr, Sum.inl.injEq,
+        reduceCtorEq] at h
+    subst h
+    simp only [middlePoint_inl] at hu
+    have hpar := h₁.countBefore_val_mod_two hup (z := Sum.inl a) (by simpa using hu)
+    rw [hD] at hpar
+    have hsum := countBefore_disjSum_add_countBefore_disjSum (X := X) hu
+    simp only [outerCount, middleCount, middlePoint_inl, Sum.elim_inr]
+    omega
+  · rcases hD : D₂.val (Sum.inr a) with i | b <;>
+      simp only [stackStep_inr, hD, Sum.elim_inl, Sum.elim_inr, Sum.inl.injEq,
+        reduceCtorEq] at h
+    subst h
+    simp only [middlePoint_inr] at hu
+    have hpar := h₂.countBefore_val_mod_two hlow (z := Sum.inr a) (by simpa using hu)
+    rw [hD] at hpar
+    simpa [outerCount, middleCount] using hpar
+
+/-- **The normalised count is constant along a strand** outside the union of strands, modulo
+`2`. -/
+private theorem outerCount_composeDiagram_val_mod_two {y : Fin k ⊕ Fin k} (hy : y ∉ X) :
+    outerCount X M ((composeDiagram D₁ D₂).val y) % 2 = outerCount X M y % 2 := by
+  rcases (composeDiagram_val_eq_iff D₁ D₂).mp rfl with h | ⟨s, t, hs, hst, ht⟩
+  · exact outerCount_mod_two_of_stackStart_eq_inl h₁ h₂ hlow hup hy h
+  · have key : middlePoint t ∉ M ∧
+        middleCount X M (middlePoint t) % 2 = outerCount X M y % 2 := by
+      clear ht
+      induction hst with
+      | refl => exact middleCount_mod_two_of_stackStart_eq_inr h₁ h₂ hlow hup hy hs
+      | tail _ huv ih =>
+        obtain ⟨hv, hcount⟩ := middleCount_mod_two_of_stackStep_eq_inr h₁ h₂ hlow hup ih.1 huv
+        exact ⟨hv, hcount.trans ih.2⟩
+    rw [outerCount_mod_two_of_stackStep_eq_inl h₁ h₂ hlow hup key.1 ht, key.2]
+
+end Parity
+
+/-- **Stacking planar diagrams gives a planar diagram**: the arcs of the composite of two planar
+Brauer diagrams can again be drawn inside the rectangle without crossing. -/
+theorem IsPlanar.composeDiagram (h₁ : D₁.IsPlanar) (h₂ : D₂.IsPlanar) :
+    (TauCeti.composeDiagram D₁ D₂).IsPlanar := by
+  rw [isPlanar_iff]
+  intro x y hxy hyx hlt
+  -- The strand from `x` to its partner `x'`, and the parity count it induces.
+  set x' := (TauCeti.composeDiagram D₁ D₂).val x
+  set X : Finset (Fin k ⊕ Fin k) := {x, x'}
+  set M := strandMiddle D₁ D₂ x ∪ strandMiddle D₁ D₂ x'
+  have hX : ∀ w ∈ X, (TauCeti.composeDiagram D₁ D₂).val w ∈ X ∧ strandMiddle D₁ D₂ w ⊆ M := by
+    simp only [X, mem_insert, mem_singleton]
+    rintro w (rfl | rfl)
+    · exact ⟨Or.inr rfl, subset_union_left⟩
+    · exact ⟨Or.inl ((TauCeti.composeDiagram D₁ D₂).apply_apply _), subset_union_right⟩
+  have hM : ∀ a ∈ M, ∃ w ∈ X, a ∈ strandMiddle D₁ D₂ w := by
+    intro a ha
+    rcases mem_union.mp ha with ha | ha
+    exacts [⟨x, by simp [X], ha⟩, ⟨x', by simp [X], ha⟩]
+  have hy : y ∉ X := by
+    simp only [X, mem_insert, mem_singleton, not_or]
+    exact ⟨fun h => hxy.ne' (by rw [h]), fun h => hyx.ne (by rw [h])⟩
+  have key := outerCount_composeDiagram_val_mod_two h₁ h₂ (lower_mapsTo hX hM)
+    (upper_mapsTo hX hM) hy
+  rw [outerCount_mod_two, outerCount_mod_two] at key
+  -- Exactly one point of `{x, x'}` precedes `y`, and both precede the partner of `y`.
+  have hxx' : x ≠ x' := ((TauCeti.composeDiagram D₁ D₂).apply_ne x).symm
+  have hcy : countBefore X y = 1 := by
+    simp [countBefore, X, filter_insert, filter_singleton, hxy, hyx.not_gt]
+  have hcy' : countBefore X ((TauCeti.composeDiagram D₁ D₂).val y) = 2 := by
+    simp [countBefore, X, filter_insert, filter_singleton, hxy.trans (hyx.trans hlt), hlt, hxx']
+  omega
 
 end BrauerDiagram
 

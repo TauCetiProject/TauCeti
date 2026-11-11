@@ -469,9 +469,10 @@ theorem transvectionHom_injective (hu : Q u = 0) (hu₀ : Q.polarBilin u ≠ 0) 
 
 /-- In dimension at least three, a vector outside the polar radical has an orthogonal vector
 outside its span. For an isotropic vector, this gives a nontrivial transvection parameter. -/
-theorem exists_polar_eq_zero_not_mem_span_of_finrank_ge_three [FiniteDimensional K V]
+theorem exists_polar_eq_zero_not_mem_span_of_finrank_ge_three
     (Q : QuadraticForm K V) (hpolar : Q.polarBilin u ≠ 0)
     (hdim : 3 ≤ Module.finrank K V) : ∃ w : V, polar Q u w = 0 ∧ w ∉ K ∙ u := by
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   have hu₀ : u ≠ 0 := by
     rintro rfl
     exact hpolar (by ext; simp)
@@ -507,16 +508,17 @@ theorem finrank_transvectionParameter [FiniteDimensional K V] (hu : Q u = 0)
 /-- In a binary quadratic space, the Eichler-transvection parameter space `u^⊥ / K ∙ u` of an
 isotropic vector outside the polar radical is trivial. This is the low-dimensional
 exception to the nontrivial transvection families available in dimension at least three. -/
-theorem subsingleton_transvectionParameter_of_finrank_eq_two [FiniteDimensional K V]
+theorem subsingleton_transvectionParameter_of_finrank_eq_two
     (hV : Module.finrank K V = 2) (hu : Q u = 0) (hpolar : Q.polarBilin u ≠ 0) :
     Subsingleton (LinearMap.ker (Q.polarBilin u) ⧸
       (K ∙ u).comap (LinearMap.ker (Q.polarBilin u)).subtype) := by
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   apply (Module.finrank_zero_iff (R := K)).mp
   rw [finrank_transvectionParameter hu hpolar, hV]
 
 /-- Every Eichler transvection in a binary quadratic space whose isotropic direction is outside
 the polar radical is the identity. -/
-theorem transvection_eq_one_of_finrank_eq_two [FiniteDimensional K V]
+theorem transvection_eq_one_of_finrank_eq_two
     (hV : Module.finrank K V = 2) (hu : Q u = 0) (huw : polar Q u w = 0)
     (hpolar : Q.polarBilin u ≠ 0) : transvection Q hu huw = 1 := by
   apply (transvection_eq_one_iff hu huw hpolar).2
@@ -529,7 +531,7 @@ theorem transvection_eq_one_of_finrank_eq_two [FiniteDimensional K V]
 
 /-- The Eichler root-subgroup homomorphism is zero in a binary quadratic space when its isotropic
 direction is outside the polar radical. -/
-theorem transvectionHom_eq_zero_of_finrank_eq_two [FiniteDimensional K V]
+theorem transvectionHom_eq_zero_of_finrank_eq_two
     (hV : Module.finrank K V = 2) (hu : Q u = 0) (hpolar : Q.polarBilin u ≠ 0) :
     transvectionHom Q hu = 0 := by
   have hsub := subsingleton_transvectionParameter_of_finrank_eq_two hV hu hpolar

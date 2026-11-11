@@ -117,7 +117,7 @@ theorem map_norm_sq_sub_eval_properComplexGaussianMeasure (m : ι → ℂ)
       (expMeasure 1).map (fun x ↦ (C i i).re * x) := by
     simp only [Fin.sum_univ_two, Fintype.card_fin, Nat.cast_ofNat,
       chiSquaredMeasure_two] at hsum
-    rw [← expMeasure_map_const_mul (r := 1) zero_lt_one (c := 2) (by norm_num),
+    rw [← expMeasure_map_const_mul (r := 1) (c := 2) (by norm_num),
       Measure.map_map (by fun_prop) (by fun_prop)] at hsum
     convert hsum using 1
     congr 1

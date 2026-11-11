@@ -48,10 +48,7 @@ noncomputable def spinGroupEquivQuaternionUnitaryOverCenter
     (he : ∀ x, e (reverseEven Q x) = star (e x)) :
     spinGroup Q ≃* unitary ℍ[Subalgebra.center K (even Q),a,0,b] := by
   let _ : FiniteDimensional K V := Module.finite_of_finrank_pos hV0
-  let eK : even Q ≃ₐ[K] ℍ[Subalgebra.center K (even Q),a,0,b] :=
-    @AlgEquiv.restrictScalars K (Subalgebra.center K (even Q)) (even Q)
-      ℍ[Subalgebra.center K (even Q),a,0,b]
-      _ _ _ _ _ _ _ _ _ Subalgebra.isScalarTower_centerAlgebra (by infer_instance) e
+  let eK : even Q ≃ₐ[K] ℍ[Subalgebra.center K (even Q),a,0,b] := e.restrictScalars K
   exact spinGroupEquivUnitaryOfAlgEquivOfFinrankLeFour
     Q hQ hV0 hV eK (fun x ↦ by
       -- Restricting scalars changes only the bundled algebra map, so its value is definitionally
