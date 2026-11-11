@@ -9,7 +9,7 @@ public import Mathlib.Algebra.MvPolynomial.Equiv
 public import Mathlib.Algebra.MvPolynomial.Variables
 
 /-!
-# Products of polynomials in disjoint sets of variables
+# Variables of products and renamings of multivariate polynomials
 
 If `P` and `Q` involve disjoint sets of variables, no two products of a monomial of `P` and a
 monomial of `Q` coincide: an exponent `a + b`, with `a` supported on the variables of `P` and `b`
@@ -18,6 +18,10 @@ of `P * Q` are exactly the products of a coefficient of `P` and a coefficient of
 cancellation or addition between them. This is what makes the height of such a product the product
 of the heights, as used in the inductive step of Roth's lemma, where a generalized Wronskian in
 some variables is multiplied by a Wronskian in another variable.
+
+The file also bounds the variables of renamed polynomials, using Mathlib's
+`MvPolynomial.vars_rename`: every variable of `rename f a` is the image under `f` of a variable
+of `a`.
 
 ## Main results
 
@@ -66,22 +70,19 @@ respectively, then the coefficient of `P * Q` at `a + b` is `P.coeff a * Q.coeff
 theorem coeff_add_mul_of_disjoint_vars (h : Disjoint P.vars Q.vars) {a b : σ →₀ ℕ}
     (ha : a.support ⊆ P.vars) (hb : b.support ⊆ Q.vars) :
     (P * Q).coeff (a + b) = P.coeff a * Q.coeff b := by
-  classical
-  rw [coeff_mul, sum_eq_single_of_mem (a, b) (mem_antidiagonal.2 rfl)]
-  intro p hp hne
-  by_contra hc
-  refine hne (injOn_add_of_disjoint_vars h ?_ ⟨ha, hb⟩ (mem_antidiagonal.1 hp))
-  exact ⟨support_subset_vars_of_mem_support (mem_support_iff.2 (left_ne_zero_of_mul hc)),
-    support_subset_vars_of_mem_support (mem_support_iff.2 (right_ne_zero_of_mul hc))⟩
+  refine AddMonoidAlgebra.coeff_mul_add_of_uniqueAdd fun ⦃a' b'⦄ ha' hb' he ↦
+    Prod.mk.inj (injOn_add_of_disjoint_vars h ?_ ⟨ha, hb⟩ he)
+  -- Exponents in the supports of `P` and `Q` are supported on their variables.
+  rw [finsupp_support_eq_support] at ha' hb'
+  exact ⟨support_subset_vars_of_mem_support ha', support_subset_vars_of_mem_support hb'⟩
 
 /-- If `f` sends every variable of `a` above `i`, then every variable of `rename f a` lies
 above `i`. -/
 theorem vars_rename_subset_Ioi {τ : Type*} [Preorder τ] [LocallyFiniteOrderTop τ]
     (f : σ → τ) {a : MvPolynomial σ R} {i : τ} (h : ∀ j ∈ a.vars, i < f j) :
-    (rename f a).vars ⊆ Ioi i := fun k hk ↦ by
+    (rename f a).vars ⊆ Ioi i := by
   classical
-  obtain ⟨j, hj, rfl⟩ := mem_image.1 (vars_rename f a hk)
-  exact mem_Ioi.2 (h j hj)
+  exact (vars_rename f a).trans (image_subset_iff.2 fun j hj ↦ mem_Ioi.2 (h j hj))
 
 end MvPolynomial
 
@@ -93,8 +94,6 @@ variable {R σ : Type*} [CommSemiring R]
 theorem vars_toMvPolynomial_subset (p : R[X]) (i : σ) : (p.toMvPolynomial i).vars ⊆ {i} := by
   classical
   rw [toMvPolynomial_eq_rename_comp, AlgHom.comp_apply]
-  refine (MvPolynomial.vars_rename _ _).trans fun j hj ↦ ?_
-  obtain ⟨_, -, rfl⟩ := mem_image.1 hj
-  exact mem_singleton_self i
+  exact (MvPolynomial.vars_rename _ _).trans (image_subset_iff.2 fun _ _ ↦ mem_singleton_self i)
 
 end Polynomial
