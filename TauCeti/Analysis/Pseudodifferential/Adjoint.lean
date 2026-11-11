@@ -166,26 +166,6 @@ section Abstract
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
-/-- The real-linear map `w ↦ ∑ⱼ w.1 j • A j + ∑ⱼ w.2 j • B j` on `ℝⁿ × ℝⁿ`, with values on the
-coordinate vectors given by `A` and `B`. -/
-private def coordCLM (A B : Fin n → E) : CoordinateSpace n × CoordinateSpace n →L[ℝ] E :=
-  ∑ j, ((EuclideanSpace.proj j).comp (ContinuousLinearMap.fst ℝ _ _)).smulRight (A j) +
-    ∑ j, ((EuclideanSpace.proj j).comp (ContinuousLinearMap.snd ℝ _ _)).smulRight (B j)
-
-private theorem coordCLM_apply (A B : Fin n → E) (w : CoordinateSpace n × CoordinateSpace n) :
-    coordCLM A B w = ∑ j, w.1 j • A j + ∑ j, w.2 j • B j := by
-  simp [coordCLM]
-
-private theorem norm_coordCLM_le (A B : Fin n → E) :
-    ‖coordCLM A B‖ ≤ ∑ j, ‖A j‖ + ∑ j, ‖B j‖ := by
-  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun w ↦ ?_
-  rw [coordCLM_apply, add_mul, Finset.sum_mul, Finset.sum_mul]
-  refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;>
-    refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_) <;>
-    rw [norm_smul, mul_comm] <;> gcongr
-  · exact (PiLp.norm_apply_le w.1 j).trans (norm_fst_le w)
-  · exact (PiLp.norm_apply_le w.2 j).trans (norm_snd_le w)
-
 /-- The derivative of `p ↦ exp(2πi ⟪θ, p.1⟫) S(θ, p.2 - 2πθ)` for a function `S(θ, ζ)` that is
 differentiable in `ζ`, with partial derivatives `B j θ ζ`, and whose products with `2πi θ_j` are
 `A j θ ζ`. -/
@@ -224,14 +204,6 @@ private theorem hasFDerivAt_fourierChar_smul_shift {S : CoordinateSpace n → Co
     push_cast
     ring
   · exact Finset.sum_congr rfl fun j _ ↦ smul_comm _ _ _
-
-private theorem continuous_coordCLM {X : Type*} [TopologicalSpace X] {A B : Fin n → X → E}
-    (hA : ∀ j, Continuous (A j)) (hB : ∀ j, Continuous (B j)) :
-    Continuous fun t ↦ coordCLM (fun j ↦ A j t) (fun j ↦ B j t) := by
-  unfold coordCLM
-  refine (continuous_finsetSum _ fun j _ ↦ ?_).add (continuous_finsetSum _ fun j _ ↦ ?_)
-  · exact (ContinuousLinearMap.smulRightL ℝ _ E _).continuous.comp (hA j)
-  · exact (ContinuousLinearMap.smulRightL ℝ _ E _).continuous.comp (hB j)
 
 /-- **Differentiation under the integral sign** for `p ↦ ∫ exp(2πi ⟪θ, p.1⟫) S(θ, p.2 - 2πθ) dθ`:
 if the functions `A j` and `B j` of `hasFDerivAt_fourierChar_smul_shift` are dominated by one

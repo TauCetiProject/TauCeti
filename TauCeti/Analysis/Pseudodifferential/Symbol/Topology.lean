@@ -41,6 +41,9 @@ The main results are:
   `TauCeti.Symbol.spatialDerivCLM`: these operations as continuous linear maps;
 * `TauCeti.Symbol.mixedDerivCLM`, `TauCeti.Symbol.continuous_mixedDeriv`: every mixed derivative
   at a point is a continuous linear function of the symbol;
+* `TauCeti.Symbol.continuous_coefficient_apply`: the value at a point is continuous in the symbol;
+* `TauCeti.Symbol.exists_seminorm_le_of_continuous`: the seminorms of a continuous family of
+  symbols over a compact space are bounded;
 * `TauCeti.Symbol.constCLM`: the constant symbol `T` is a continuous linear function of
   `T ∈ V →L[ℂ] W`, all of whose seminorms are at most `‖T‖` (`TauCeti.Symbol.seminorm_const_le`);
 * `TauCeti.Symbol.isUniform_iff_bddAbove_seminorm`: a symbol is uniform exactly when its seminorms
@@ -408,6 +411,19 @@ symbol `a`; in particular so is the value `a(x, ξ)`. -/
 theorem continuous_mixedDeriv (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     Continuous fun a : Symbol n V W m => mixedDeriv α β a.coefficient x ξ :=
   (mixedDerivCLM n V W m α β x ξ).continuous
+
+/-- The value `a ↦ a(p)` of a symbol at a point is continuous in the symbol. -/
+theorem continuous_coefficient_apply (p : CoordinateSpace n × CoordinateSpace n) :
+    Continuous fun a : Symbol n V W m => a.coefficient p := by
+  simpa using continuous_mixedDeriv (n := n) (V := V) (W := W) (m := m) [] [] p.1 p.2
+
+/-- On a compact parameter space each seminorm of a continuous family of symbols is bounded. -/
+theorem exists_seminorm_le_of_continuous {T : Type*} [TopologicalSpace T] [CompactSpace T]
+    {f : T → Symbol n V W m} (hf : Continuous f) (K : Compacts (CoordinateSpace n))
+    (α β : List (Fin n)) : ∃ C, ∀ t, Symbol.seminorm K α β (f t) ≤ C := by
+  obtain ⟨C, hC⟩ := isCompact_univ.exists_bound_of_continuousOn
+    ((withSeminorms.continuous_seminorm (K, α, β)).comp hf).continuousOn
+  exact ⟨C, fun t => (le_abs_self _).trans (by simpa using hC t (Set.mem_univ t))⟩
 
 variable (n V W) in
 /-- The constant symbol `T`, a symbol of order `0`, as a continuous linear function of `T`. -/

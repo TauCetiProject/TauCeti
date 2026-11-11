@@ -84,43 +84,6 @@ namespace Symbol
 variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W] {m : ℝ}
 
-/-! ### First derivatives of the coefficients -/
-
-/-- The value `a ↦ a(p)` of a symbol at a point is continuous in the symbol. -/
-private theorem continuous_coefficient_apply (p : CoordinateSpace n × CoordinateSpace n) :
-    Continuous fun a : Symbol n V W m => a.coefficient p := by
-  simpa using continuous_mixedDeriv (n := n) (V := V) (W := W) (m := m) [] [] p.1 p.2
-
-/-- The `j`-th position coordinate `(x, ξ) ↦ x_j`. -/
-private def coordFst (j : Fin n) : CoordinateSpace n × CoordinateSpace n →L[ℝ] ℝ :=
-  (EuclideanSpace.proj j).comp (ContinuousLinearMap.fst ℝ _ _)
-
-/-- The `j`-th frequency coordinate `(x, ξ) ↦ ξ_j`. -/
-private def coordSnd (j : Fin n) : CoordinateSpace n × CoordinateSpace n →L[ℝ] ℝ :=
-  (EuclideanSpace.proj j).comp (ContinuousLinearMap.snd ℝ _ _)
-
-/-- The derivative with the coordinate derivatives `X j` in position and `Ξ j` in frequency. -/
-private def coordDeriv (X Ξ : Fin n → V →L[ℂ] W) :
-    CoordinateSpace n × CoordinateSpace n →L[ℝ] V →L[ℂ] W :=
-  ∑ j, (coordFst j).smulRight (X j) + ∑ j, (coordSnd j).smulRight (Ξ j)
-
-private theorem coordDeriv_apply (X Ξ : Fin n → V →L[ℂ] W)
-    (v : CoordinateSpace n × CoordinateSpace n) :
-    coordDeriv X Ξ v = ∑ j, v.1 j • X j + ∑ j, v.2 j • Ξ j := by
-  simp [coordDeriv, coordFst, coordSnd]
-
-/-- The derivative of the coefficient of a symbol in terms of its first spatial and frequency
-derivatives. -/
-private theorem fderiv_coefficient (a : Symbol n V W m)
-    (p : CoordinateSpace n × CoordinateSpace n) :
-    fderiv ℝ a.coefficient p = coordDeriv (fun j => (spatialDeriv j a).coefficient p)
-      (fun j => (frequencyDeriv j a).coefficient p) := by
-  refine ContinuousLinearMap.ext fun v => ?_
-  rw [fderiv_apply_eq_sum_coordinateDeriv
-    (a.contDiff_coefficient.differentiable (by simp) p) v, coordDeriv_apply]
-  obtain ⟨x, ξ⟩ := p
-  simp only [coefficient_spatialDeriv, coefficient_frequencyDeriv]
-
 section Integral
 
 variable {T : Type*} [TopologicalSpace T]
@@ -145,13 +108,6 @@ private theorem frequencyDerivFamily_apply (j : Fin n) (f : C(T, Symbol n V W m)
 
 variable [CompactSpace T]
 
-/-- On a compact parameter space each seminorm of a continuous family of symbols is bounded. -/
-private theorem exists_seminorm_le (f : C(T, Symbol n V W m)) (K : Compacts (CoordinateSpace n))
-    (α β : List (Fin n)) : ∃ C, ∀ t, Symbol.seminorm K α β (f t) ≤ C := by
-  obtain ⟨C, hC⟩ := isCompact_univ.exists_bound_of_continuousOn
-    ((withSeminorms.continuous_seminorm (K, α, β)).comp f.continuous).continuousOn
-  exact ⟨C, fun t => (le_abs_self _).trans (by simpa using hC t (mem_univ t))⟩
-
 /-- The coefficients of a continuous family of symbols are bounded on compact sets, uniformly in
 the parameter. -/
 private theorem exists_norm_coefficient_le_of_continuous (f : C(T, Symbol n V W m))
@@ -162,7 +118,7 @@ private theorem exists_norm_coefficient_le_of_continuous (f : C(T, Symbol n V W 
       (p := m / 2) fun _ =>
         Or.inl (add_pos_of_pos_of_nonneg one_pos (sq_nonneg _)).ne').continuousOn
   let K₁ : Compacts (CoordinateSpace n) := ⟨_, hK.image continuous_fst⟩
-  obtain ⟨C, hC⟩ := exists_seminorm_le f K₁ [] []
+  obtain ⟨C, hC⟩ := exists_seminorm_le_of_continuous f.continuous K₁ [] []
   refine ⟨max C 0 * R, fun t p hp => ?_⟩
   calc ‖(f t).coefficient p‖ ≤ Symbol.seminorm K₁ [] [] (f t) * (1 + ‖p.2‖ ^ 2) ^ (m / 2) :=
         norm_coefficient_le_seminorm K₁ (f t) (mem_image_of_mem _ hp) p.2
@@ -180,7 +136,23 @@ private theorem integrable_of_continuous {E : Type*} [NormedAddCommGroup E] {g :
     (hg : Continuous g) : Integrable g μ :=
   hg.integrable_of_hasCompactSupport (.of_compactSpace g)
 
-variable [CompleteSpace W]
+/-- The integral of a continuous family of maps `coordCLM` is the map `coordCLM` of the integrals of
+its values on the coordinate vectors. -/
+private theorem integral_coordCLM {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {X Ξ : Fin n → T → E} (hX : ∀ j, Continuous (X j)) (hΞ : ∀ j, Continuous (Ξ j)) :
+    ∫ t, coordCLM (fun j => X j t) (fun j => Ξ j t) ∂μ =
+      coordCLM (fun j => ∫ t, X j t ∂μ) (fun j => ∫ t, Ξ j t ∂μ) := by
+  refine ContinuousLinearMap.ext fun v => ?_
+  have hX' (j : Fin n) : Integrable (fun t => v.1 j • X j t) μ :=
+    (integrable_of_continuous μ (hX j)).smul _
+  have hΞ' (j : Fin n) : Integrable (fun t => v.2 j • Ξ j t) μ :=
+    (integrable_of_continuous μ (hΞ j)).smul _
+  rw [ContinuousLinearMap.integral_apply (integrable_of_continuous μ (continuous_coordCLM hX hΞ))]
+  simp only [coordCLM_apply]
+  rw [integral_add (integrable_finsetSum _ fun j _ => hX' j)
+    (integrable_finsetSum _ fun j _ => hΞ' j), integral_finsetSum _ fun j _ => hX' j,
+    integral_finsetSum _ fun j _ => hΞ' j]
+  simp only [integral_smul]
 
 /-- The integral of the coefficients of a family of symbols. -/
 private def integralCoeff (f : C(T, Symbol n V W m))
@@ -193,7 +165,7 @@ derivatives. -/
 private theorem hasFDerivAt_integralCoeff (f : C(T, Symbol n V W m))
     (p₀ : CoordinateSpace n × CoordinateSpace n) :
     HasFDerivAt (integralCoeff μ f)
-      (coordDeriv (fun j => integralCoeff μ (spatialDerivFamily j f) p₀)
+      (coordCLM (fun j => integralCoeff μ (spatialDerivFamily j f) p₀)
         (fun j => integralCoeff μ (frequencyDerivFamily j f) p₀)) p₀ := by
   -- Bounds for the first derivatives on the unit ball around `p₀`, uniform in `t`, dominate the
   -- derivatives of the integrand; the integral of the derivative is then rewritten in terms of
@@ -213,9 +185,7 @@ private theorem hasFDerivAt_integralCoeff (f : C(T, Symbol n V W m))
   have hD (p : CoordinateSpace n × CoordinateSpace n) :
       Continuous fun t => fderiv ℝ (f t).coefficient p := by
     simp_rw [fderiv_coefficient]
-    refine (continuous_finsetSum _ fun j _ => ?_).add (continuous_finsetSum _ fun j _ => ?_)
-    · exact (ContinuousLinearMap.smulRightL ℝ _ _ (coordFst j)).continuous.comp (cX j p)
-    · exact (ContinuousLinearMap.smulRightL ℝ _ _ (coordSnd j)).continuous.comp (cΞ j p)
+    exact continuous_coordCLM (fun j => cX j p) (fun j => cΞ j p)
   have key := hasFDerivAt_integral_of_dominated_of_fderiv_le (μ := μ)
     (F := fun p t => (f t).coefficient p) (F' := fun p t => fderiv ℝ (f t).coefficient p)
     (bound := fun _ => ∑ j, X j + ∑ j, Ξ j) (Metric.closedBall_mem_nhds p₀ one_pos)
@@ -225,23 +195,10 @@ private theorem hasFDerivAt_integralCoeff (f : C(T, Symbol n V W m))
     (ae_of_all _ fun t p hp => ?_) (integrable_const _) (ae_of_all _ fun t p _ =>
       ((f t).contDiff_coefficient.differentiable (by simp) p).hasFDerivAt)
   · refine key.congr_fderiv ?_
-    simp_rw [fderiv_coefficient, coordDeriv]
-    rw [integral_add (integrable_finsetSum _ fun j _ => integrable_of_continuous μ
-        ((ContinuousLinearMap.smulRightL ℝ _ _ (coordFst j)).continuous.comp (cX j p₀)))
-      (integrable_finsetSum _ fun j _ => integrable_of_continuous μ
-        ((ContinuousLinearMap.smulRightL ℝ _ _ (coordSnd j)).continuous.comp (cΞ j p₀))),
-      integral_finsetSum _ fun j _ => integrable_of_continuous μ
-        ((ContinuousLinearMap.smulRightL ℝ _ _ (coordFst j)).continuous.comp (cX j p₀)),
-      integral_finsetSum _ fun j _ => integrable_of_continuous μ
-        ((ContinuousLinearMap.smulRightL ℝ _ _ (coordSnd j)).continuous.comp (cΞ j p₀))]
-    congr 1 <;> refine Finset.sum_congr rfl fun j _ => ?_
-    · exact (ContinuousLinearMap.smulRightL ℝ _ _ (coordFst j)).integral_comp_comm
-        (integrable_of_continuous μ (cX j p₀))
-    · exact (ContinuousLinearMap.smulRightL ℝ _ _ (coordSnd j)).integral_comp_comm
-        (integrable_of_continuous μ (cΞ j p₀))
+    simp_rw [fderiv_coefficient]
+    exact integral_coordCLM μ (fun j => cX j p₀) (fun j => cΞ j p₀)
   · rw [fderiv_coefficient]
-    refine (ContinuousLinearMap.opNorm_le_of_apply_eq_sum _ _ _
-      fun v => coordDeriv_apply _ _ v).trans (add_le_add ?_ ?_) <;>
+    refine (norm_coordCLM_le _ _).trans (add_le_add ?_ ?_) <;>
       exact Finset.sum_le_sum fun j _ => by first | exact hX j t p hp | exact hΞ j t p hp
 
 private theorem contDiff_integralCoeff_nat (k : ℕ) :
@@ -255,11 +212,8 @@ private theorem contDiff_integralCoeff_nat (k : ℕ) :
       intro m f
       rw [Nat.cast_add, Nat.cast_one, contDiff_succ_iff_hasFDerivAt]
       refine ⟨_, ?_, hasFDerivAt_integralCoeff μ f⟩
-      refine (ContDiff.sum fun j _ => ?_).add (ContDiff.sum fun j _ => ?_)
-      · exact (ContinuousLinearMap.smulRightL ℝ _ _ (coordFst j)).contDiff.comp
-          (ih (spatialDerivFamily j f))
-      · exact (ContinuousLinearMap.smulRightL ℝ _ _ (coordSnd j)).contDiff.comp
-          (ih (frequencyDerivFamily j f))
+      exact contDiff_coordCLM (fun j => ih (spatialDerivFamily j f))
+        (fun j => ih (frequencyDerivFamily j f))
 
 private theorem contDiff_integralCoeff (f : C(T, Symbol n V W m)) :
     ContDiff ℝ ∞ (integralCoeff μ f) :=
@@ -271,7 +225,7 @@ private theorem coordinateDeriv_fst_integralCoeff (f : C(T, Symbol n V W m)) (j 
       integralCoeff μ (spatialDerivFamily j f) := by
   funext p
   have h := hasFDerivAt_integralCoeff μ f p
-  rw [coordinateDeriv_fst_eq_fderiv h.differentiableAt, h.fderiv, coordDeriv_apply]
+  rw [coordinateDeriv_fst_eq_fderiv h.differentiableAt, h.fderiv, coordCLM_apply]
   simp [PiLp.single_apply]
 
 private theorem coordinateDeriv_snd_integralCoeff (f : C(T, Symbol n V W m)) (j : Fin n) :
@@ -280,7 +234,7 @@ private theorem coordinateDeriv_snd_integralCoeff (f : C(T, Symbol n V W m)) (j 
       integralCoeff μ (frequencyDerivFamily j f) := by
   funext p
   have h := hasFDerivAt_integralCoeff μ f p
-  rw [coordinateDeriv_snd_eq_fderiv h.differentiableAt, h.fderiv, coordDeriv_apply]
+  rw [coordinateDeriv_snd_eq_fderiv h.differentiableAt, h.fderiv, coordCLM_apply]
   simp [PiLp.single_apply]
 
 private theorem mixedDeriv_nil_integralCoeff (α : List (Fin n)) :
@@ -311,7 +265,7 @@ def integral (f : C(T, Symbol n V W m)) : Symbol n V W m where
   coefficient := integralCoeff μ f
   contDiff_coefficient := contDiff_integralCoeff μ f
   exists_bound K hK α β := by
-    obtain ⟨C, hC⟩ := exists_seminorm_le f ⟨K, hK⟩ α β
+    obtain ⟨C, hC⟩ := exists_seminorm_le_of_continuous f.continuous ⟨K, hK⟩ α β
     refine ⟨max C 0 * μ.real univ, by positivity, fun x hx ξ => ?_⟩
     rw [mixedDeriv_integralCoeff, mul_right_comm]
     refine norm_integral_le_of_norm_le_const (ae_of_all _ fun t => ?_)
@@ -385,7 +339,7 @@ theorem integral_smul (c : ℂ) (f : C(T, Symbol n V W m)) :
 
 /-- The integral of a constant family is the symbol multiplied by the total mass. -/
 @[simp]
-theorem integral_const (a : Symbol n V W m) :
+theorem integral_const [CompleteSpace W] (a : Symbol n V W m) :
     integral μ (ContinuousMap.const T a) = (μ.real univ : ℂ) • a := by
   refine Symbol.ext (funext fun p => ?_)
   rw [coefficient_integral]
@@ -430,8 +384,6 @@ private theorem integrable_conj (a : Symbol n V W m) (p : CoordinateSpace n × C
     Integrable (fun g => σW g ∘L a.coefficient p ∘L σV g⁻¹) μ :=
   integrable_of_continuous μ ((continuous_coefficient_apply p).comp (conjFamily σV σW a).continuous
     |>.congr fun g => by simp [coefficient_conjFamily])
-
-variable [CompleteSpace W]
 
 /-- The average `∫ σ_W(g) ∘ a ∘ σ_V(g)⁻¹ dμ(g)` of a symbol over a compact group `G` acting on the
 fibres `V` and `W` by continuous representations `σ_V` and `σ_W`, a symbol of the same order. -/
@@ -480,8 +432,8 @@ theorem seminorm_average_le (a : Symbol n V W m) {K : Compacts (CoordinateSpace 
 
 /-- **The average is invariant.** For a left-invariant measure, conjugating the coefficients of the
 average by the action of any `h ∈ G` returns them. -/
-theorem comp_coefficient_average_comp [μ.IsMulLeftInvariant] (a : Symbol n V W m) (h : G)
-    (p : CoordinateSpace n × CoordinateSpace n) :
+theorem comp_coefficient_average_comp [CompleteSpace W] [μ.IsMulLeftInvariant] (a : Symbol n V W m)
+    (h : G) (p : CoordinateSpace n × CoordinateSpace n) :
     σW h ∘L (average μ σV σW a).coefficient p ∘L σV h⁻¹ = (average μ σV σW a).coefficient p := by
   rw [coefficient_average, ← conjCLM_apply,
     ← (conjCLM (σW h) (σV h⁻¹)).integral_comp_comm (integrable_conj μ σV σW a p)]
@@ -493,15 +445,15 @@ theorem comp_coefficient_average_comp [μ.IsMulLeftInvariant] (a : Symbol n V W 
   exact integral_mul_left_eq_self (fun g => σW g ∘L a.coefficient p ∘L σV g⁻¹) h
 
 /-- The average of an invariant symbol is the symbol multiplied by the total mass. -/
-theorem average_eq_smul (a : Symbol n V W m)
+theorem average_eq_smul [CompleteSpace W] (a : Symbol n V W m)
     (ha : ∀ g p, σW g ∘L a.coefficient p ∘L σV g⁻¹ = a.coefficient p) :
     average μ σV σW a = (μ.real univ : ℂ) • a := by
-  refine Symbol.ext (funext fun p => ?_)
-  simp only [coefficient_average, ha]
-  rw [MeasureTheory.integral_const, coefficient_smul, Pi.smul_apply, Complex.coe_smul]
+  have h : conjFamily σV σW a = ContinuousMap.const G a :=
+    ContinuousMap.ext fun g => Symbol.ext (by simp [coefficient_conjFamily, Function.comp_def, ha])
+  rw [average, h, integral_const]
 
 /-- For a probability measure the average fixes the invariant symbols. -/
-theorem average_eq_self [IsProbabilityMeasure μ] (a : Symbol n V W m)
+theorem average_eq_self [CompleteSpace W] [IsProbabilityMeasure μ] (a : Symbol n V W m)
     (ha : ∀ g p, σW g ∘L a.coefficient p ∘L σV g⁻¹ = a.coefficient p) :
     average μ σV σW a = a := by
   simp [average_eq_smul μ σV σW a ha]
@@ -509,7 +461,8 @@ theorem average_eq_self [IsProbabilityMeasure μ] (a : Symbol n V W m)
 /-- For a left-invariant probability measure, such as the normalized Haar measure, averaging is a
 projection onto the invariant symbols. -/
 @[simp]
-theorem average_average [IsProbabilityMeasure μ] [μ.IsMulLeftInvariant] (a : Symbol n V W m) :
+theorem average_average [CompleteSpace W] [IsProbabilityMeasure μ] [μ.IsMulLeftInvariant]
+    (a : Symbol n V W m) :
     average μ σV σW (average μ σV σW a) = average μ σV σW a :=
   average_eq_self μ σV σW _ (comp_coefficient_average_comp μ σV σW a)
 
