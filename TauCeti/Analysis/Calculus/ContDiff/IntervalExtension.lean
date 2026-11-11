@@ -92,19 +92,9 @@ private theorem exists_small_endpointJet (k : ℕ) (A : E) {ε : ℝ} (hε : 0 <
   let φ := endpointJetBase k A
   have hφ : ContDiff ℝ ∞ φ := endpointJetBase_contDiff k A
   have hsupp : HasCompactSupport φ := endpointJetBase_hasCompactSupport k A
-  choose B hB using fun m : ℕ ↦
-    (hsupp.iteratedFDeriv m).exists_bound_of_continuous
-      ((hφ.of_le (show (m : ℕ∞ω) ≤ ∞ from
-        WithTop.coe_le_coe.mpr le_top)).continuous_iteratedFDeriv')
-  let C := 1 + ∑ m ∈ Finset.range k, max 0 (B m)
-  have hsum : 0 ≤ ∑ m ∈ Finset.range k, max 0 (B m) :=
-    Finset.sum_nonneg (fun m _ ↦ le_max_left _ _)
+  obtain ⟨B, hB0, hB⟩ := hsupp.exists_bound_iteratedFDeriv hφ k
+  let C := 1 + B
   have hC : 0 < C := by dsimp only [C]; linarith
-  have hBC (m : ℕ) (hm : m < k) : B m ≤ C := by
-    have h := Finset.single_le_sum (s := Finset.range k) (f := fun i ↦ max 0 (B i))
-      (fun i _ ↦ le_max_left 0 (B i)) (Finset.mem_range.mpr hm)
-    dsimp only [C]
-    linarith [le_max_right 0 (B m)]
   let r := min 1 (ε / C)
   have hr : 0 < r := lt_min zero_lt_one (div_pos hε hC)
   have hr1 : r ≤ 1 := min_le_left _ _
@@ -137,7 +127,7 @@ private theorem exists_small_endpointJet (k : ℕ) (A : E) {ε : ℝ} (hε : 0 <
       abs_of_nonneg (pow_nonneg hr.le _)]
     calc
       r ^ (k - m) * ‖iteratedFDeriv ℝ m φ (r⁻¹ * x)‖ ≤ r ^ (k - m) * C :=
-        mul_le_mul_of_nonneg_left ((hB m _).trans (hBC m hm)) (pow_nonneg hr.le _)
+        mul_le_mul_of_nonneg_left ((hB m hm.le _).trans (by dsimp only [C]; linarith)) (pow_nonneg hr.le _)
       _ ≤ r * C := mul_le_mul_of_nonneg_right hpow hC.le
       _ ≤ ε := hrC
   have hnear : f =ᶠ[𝓝 0] endpointJetPolynomial k A := by
@@ -167,10 +157,8 @@ theorem exists_smooth_endpoint_jets (A : ℕ → E) :
     exists_small_endpointJet k (A k) (ε := (1 / 2 : ℝ) ^ k) (by positivity)
   have hgeom : Summable (fun k : ℕ ↦ (1 / 2 : ℝ) ^ k) :=
     summable_geometric_of_lt_one (by norm_num) (by norm_num)
-  choose B hB using fun m k : ℕ ↦
-    ((hsupp k).iteratedFDeriv m).exists_bound_of_continuous
-      (((hf k).of_le (show (m : ℕ∞ω) ≤ ∞ from
-        WithTop.coe_le_coe.mpr le_top)).continuous_iteratedFDeriv')
+  choose B hB0 hB using fun m k : ℕ ↦
+    (hsupp k).exists_bound_iteratedFDeriv (hf k) m
   let C : ℕ → ℕ → ℝ := fun m k ↦ if m < k then (1 / 2 : ℝ) ^ k else B m k
   have hCsummable (m : ℕ) : Summable (C m) := by
     apply hgeom.congr_cofinite
@@ -180,7 +168,7 @@ theorem exists_smooth_endpoint_jets (A : ℕ → E) :
   have hbound (m k : ℕ) (x : ℝ) : ‖iteratedFDeriv ℝ m (f k) x‖ ≤ C m k := by
     by_cases h : m < k
     · simpa only [C, ite_eq_left h] using hsmall k m h x
-    · simpa only [C, ite_eq_right h] using hB m k x
+    · simpa only [C, ite_eq_right h] using hB m k m le_rfl x
   let g : ℝ → E := fun x ↦ ∑' k, f k x
   have hg : ContDiff ℝ ∞ g :=
     contDiff_tsum hf (fun m _ ↦ hCsummable m) (fun m k x _ ↦ hbound m k x)
