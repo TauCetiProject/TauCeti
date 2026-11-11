@@ -211,10 +211,6 @@ end BasisChange
 
 section TwoTerm
 
-private theorem add_one_add_one (i : ZMod 2) : i + 1 + 1 = i := by
-  revert i
-  decide
-
 private theorem eq_or_eq_add_one (i m : ZMod 2) : m = i ∨ m = i + 1 := by
   revert i m
   decide
@@ -251,8 +247,8 @@ the images of `c i'` by `C.d i' i` and of `c i'` itself, placed according to the
 private theorem parityTorsion_of_d_eq_zero_of_injective {i i' : ZMod 2} (hii' : i + 1 = i')
     (h : C.Acyclic) (hd : C.d i i' = 0) (hinj : Function.Injective (C.d i' i).hom)
     (hn : n i = n i') :
-    torsionBracket c (CochainComplex.prev_zmod_two (hii' ▸ add_one_add_one i))
-        ((ComplexShape.up _).next_eq' (hii' ▸ add_one_add_one i)) (h i')
+    torsionBracket c (CochainComplex.prev_zmod_two (hii' ▸ CharTwo.add_cancel_right i 1))
+        ((ComplexShape.up _).next_eq' (hii' ▸ CharTwo.add_cancel_right i 1)) (h i')
         (rangeBasisOfEqZero hd) (rangeBasisOfInjective c hinj) (c i') (fun l ↦ by simp) = 1 ∧
       torsionBracket c (CochainComplex.prev_zmod_two hii') ((ComplexShape.up _).next_eq' hii')
           (h i) (rangeBasisOfInjective c hinj) (rangeBasisOfEqZero hd) Fin.elim0
@@ -269,7 +265,7 @@ complex is exact in the odd degree. -/
 private theorem injective_of_d_eq_zero {i i' : ZMod 2} (hii' : i + 1 = i') (hd : C.d i i' = 0)
     (h : C.ExactAt i') : Function.Injective (C.d i' i).hom := by
   rw [← LinearMap.ker_eq_bot, ← (C.exactAt_iff_range_eq_ker
-    (hii' ▸ add_one_add_one i)).1 h, hd, ModuleCat.hom_zero,
+    (hii' ▸ CharTwo.add_cancel_right i 1)).1 h, hd, ModuleCat.hom_zero,
     LinearMap.range_zero]
 
 variable {c} in
@@ -290,7 +286,7 @@ private theorem acyclic_of_det_ne_zero {i i' : ZMod 2} (hii' : i + 1 = i') (hd :
     exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (by
       rw [finrank_eq_card_basis (c i), finrank_eq_card_basis (c i'), Fintype.card_fin,
         Fintype.card_fin, hn])).2 hsurj
-  have hi'i : i' + 1 = i := hii' ▸ add_one_add_one i
+  have hi'i : i' + 1 = i := hii' ▸ CharTwo.add_cancel_right i 1
   intro m
   obtain rfl | rfl : m = i ∨ m = i' := hii' ▸ eq_or_eq_add_one i m
   · rw [C.exactAt_iff_range_eq_ker hii', hd, ModuleCat.hom_zero, LinearMap.ker_zero,
