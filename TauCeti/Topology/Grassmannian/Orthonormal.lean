@@ -272,7 +272,8 @@ theorem continuous_orthonormalize :
       (v := fun j (f : finiteFullRankFrame 𝕜 r N) ↦
         (WithLp.toLp 2 (f.1 j) : EuclideanSpace 𝕜 (Fin N)))
       (fun j ↦ (PiLp.continuous_toLp 2 _).comp <|
-        (continuous_apply j).comp continuous_subtype_val) linearIndependent_toLp i) _
+        (continuous_apply j).comp continuous_subtype_val) i
+      fun f ↦ f.linearIndependent_toLp.linearIndepOn _) _
 
 /-- Gram-Schmidt orthonormalization does not change the span of a frame. -/
 @[simp] theorem span_range_orthonormalize (f : finiteFullRankFrame 𝕜 r N) :
