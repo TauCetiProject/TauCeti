@@ -21,6 +21,10 @@ seminorm is used to bound an integral, with no measurability side condition.
 Consequently a function in `Lᵖ` for `p ≠ 0` is finite almost everywhere
 (`MeasureTheory.MemLp.ae_enorm_lt_top`), including for `p = ∞`.
 
+For an almost everywhere strongly measurable function, square integrability is equivalent to
+finiteness of the lower integral of its squared extended norm
+(`MeasureTheory.AEStronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top`).
+
 The same identification gives monotone convergence for the seminorm: the `Lᵖ` seminorm of the
 supremum of an increasing sequence of functions with values in `[0, ∞]` is the supremum of their
 seminorms (`MeasureTheory.eLpNorm_iSup_eq_iSup_eLpNorm`), also for `p = ∞`.
@@ -48,6 +52,15 @@ theorem lintegral_rpow_enorm_le_rpow_eLpNorm {p : ℝ≥0} (hp : p ≠ 0) (f : �
 end TauCeti
 
 namespace MeasureTheory
+
+/-- An almost everywhere strongly measurable function is in `L²` exactly when the lower
+integral of its squared extended norm is finite. -/
+theorem AEStronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top {f : α → ε}
+    (hf : AEStronglyMeasurable f μ) :
+    MemLp f 2 μ ↔ ∫⁻ x, ‖f x‖ₑ ^ 2 ∂μ < ∞ := by
+  rw [memLp_iff, eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top
+    (by norm_num) (by norm_num) hf]
+  norm_num only [ENNReal.toReal_ofNat, ENNReal.rpow_two]
 
 /-- **Monotone convergence for the `Lᵖ` seminorm.** The `Lᵖ` seminorm of the pointwise supremum
 of an almost everywhere increasing sequence of almost everywhere measurable functions with values

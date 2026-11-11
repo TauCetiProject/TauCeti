@@ -60,9 +60,7 @@ theorem LocallyBrownianIntegrable.ae_eventually_energyTruncation_eqOn
   intro T
   have heq : Ioc 0 T =ᵐ[μ] Iic T := by
     simpa only [← bot_eq_zero, Icc_bot] using (Ioc_ae_eq_Icc (μ := μ) (a := 0) (b := T))
-  have hfinite := (eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top
-    (by norm_num) (by norm_num) (hω T).aestronglyMeasurable).mp (hω T)
-  norm_num only [ENNReal.toReal_ofNat, ENNReal.rpow_two] at hfinite
+  have hfinite := (hω T).aestronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top.mp (hω T)
   rw [NNReal.comap_volume_restrict_Ioc, Measure.restrict_congr_set heq] at hfinite
   exact μ.eventually_energyTruncation_eqOn
     (by simpa only [Measure.accumulatedEnergy_def] using hfinite)

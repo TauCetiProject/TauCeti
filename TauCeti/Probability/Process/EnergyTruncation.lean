@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Process.AccumulatedEnergy
+public import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
 # Bounded-energy truncations of predictable integrands
@@ -124,9 +125,7 @@ theorem memLp_energyTruncation {P : Measure Ω} [IsFiniteMeasure P]
     (hH : IsStronglyPredictable ℱ H) (C : ℝ≥0) :
     MemLp (Function.uncurry (μ.energyTruncation H C)) 2 (μ.prod P) := by
   have hm := (hH.energyTruncation μ C).mono ℱ.predictable_le_prod
-  rw [memLp_iff, eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top (by norm_num) (by norm_num)
-    hm.aestronglyMeasurable]
-  norm_num only [ENNReal.toReal_ofNat, ENNReal.rpow_two]
+  rw [hm.aestronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top]
   calc
     _ = ∫⁻ ω, ∫⁻ t, ‖μ.energyTruncation H C t ω‖ₑ ^ 2 ∂μ ∂P :=
       lintegral_prod_symm _ (hm.enorm.pow_const 2).aemeasurable
