@@ -207,9 +207,9 @@ theorem natCard_linearMap_eq_natCard_invariants_linHom {k : Type*} [CommRing k] 
 isomorphism `e : ρ.comp f ≅ ρ'.comp f` of representations restricted along `f : H →* G` induces
 the isomorphism `φ ↦ φ ∘ e.symm` between the conjugation representations `Hom_k(ρ, σ)` and
 `Hom_k(ρ', σ)` restricted along `f`. -/
-def Equiv.linHomComp {k : Type*} [CommRing k] {G H : Type*} [Group G] [Group H]
-    {V V' W : Type*} [AddCommGroup V] [Module k V] [AddCommGroup V'] [Module k V']
-    [AddCommGroup W] [Module k W] {ρ : Representation k G V} {ρ' : Representation k G V'}
+def Equiv.linHomComp {k : Type*} [CommSemiring k] {G H : Type*} [Group G] [Group H]
+    {V V' W : Type*} [AddCommMonoid V] [Module k V] [AddCommMonoid V'] [Module k V']
+    [AddCommMonoid W] [Module k W] {ρ : Representation k G V} {ρ' : Representation k G V'}
     {f : H →* G} (e : Representation.Equiv (ρ.comp f) (ρ'.comp f)) (σ : Representation k G W) :
     Representation.Equiv ((linHom ρ σ).comp f) ((linHom ρ' σ).comp f) :=
   .mk (LinearEquiv.congrLeft W k e.toLinearEquiv) fun h ↦ by
@@ -219,9 +219,9 @@ def Equiv.linHomComp {k : Type*} [CommRing k] {G H : Type*} [Group G] [Group H]
     exact congrArg (σ (f h)) (congrArg φ (e.symm.isIntertwining _ _ h⁻¹ x).symm)
 
 @[simp]
-theorem Equiv.linHomComp_apply {k : Type*} [CommRing k] {G H : Type*} [Group G] [Group H]
-    {V V' W : Type*} [AddCommGroup V] [Module k V] [AddCommGroup V'] [Module k V']
-    [AddCommGroup W] [Module k W] {ρ : Representation k G V} {ρ' : Representation k G V'}
+theorem Equiv.linHomComp_apply {k : Type*} [CommSemiring k] {G H : Type*} [Group G]
+    [Group H] {V V' W : Type*} [AddCommMonoid V] [Module k V] [AddCommMonoid V'] [Module k V']
+    [AddCommMonoid W] [Module k W] {ρ : Representation k G V} {ρ' : Representation k G V'}
     {f : H →* G} (e : Representation.Equiv (ρ.comp f) (ρ'.comp f)) (σ : Representation k G W)
     (φ : V →ₗ[k] W) (x : V') :
     e.linHomComp σ φ x = φ (e.symm x) :=
