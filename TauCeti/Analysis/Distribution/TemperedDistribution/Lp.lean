@@ -47,6 +47,8 @@ function by a function of temperate growth multiplies the function pointwise
 
 * `MeasureTheory.Lp.toTemperedDistribution_add`, `MeasureTheory.Lp.toTemperedDistribution_smul`
   and their companions: the embedding `Lᵖ → 𝓢'` is linear, stated on the coercion.
+* `MeasureTheory.Lp.toTemperedDistribution_injective`: an `Lᵖ` function is determined by its
+  tempered distribution.
 * `MeasureTheory.Lp.ae_eq_of_toTemperedDistribution_apply_eq`: an `Lᵖ` function whose pairings
   with Schwartz functions agree with those of a locally integrable `g` is almost everywhere
   equal to `g`.
@@ -123,6 +125,13 @@ end Linear
 section NormedSpace
 
 variable [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- An `Lᵖ` function is determined by its tempered distribution. -/
+theorem toTemperedDistribution_injective {μ : Measure E} [μ.HasTemperateGrowth] {p : ENNReal}
+    [Fact (1 ≤ p)] : Function.Injective fun f : Lp F p μ ↦ (f : 𝓢'(E, F)) := by
+  have := Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts μ
+  intro f g h
+  exact LinearMap.ker_eq_bot.1 ker_toTemperedDistributionCLM_eq_bot h
 
 /-- An `Lᵖ` function is almost everywhere equal to any locally integrable function with the same
 pairings against Schwartz functions. The two functions need not lie in the same `Lᵖ` space. -/
