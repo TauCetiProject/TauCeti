@@ -47,6 +47,7 @@ namespace Bundle.Trivialization
 variable (e e' : Trivialization F (π F V)) [MemTrivializationAtlas e]
   [MemTrivializationAtlas e']
 
+omit [FiniteDimensional ℝ F] in
 /-- Density transitions have the regularity of the vector-bundle transitions, since their
 absolute determinants are evaluated only at invertible maps. -/
 theorem contMDiffOn_densityCoordChange :
