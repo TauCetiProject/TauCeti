@@ -471,9 +471,9 @@ private theorem IsSymm.sub_mem_restrict_of_sub_mem_span_pair (h2 : (2 : R) ∈ m
       simp only [map_add, map_smul, smul_eq_mul]
       exact (maximalIdeal R).add_mem ((maximalIdeal R).mul_mem_left γ (hx' e' (by simp)))
         ((maximalIdeal R).mul_mem_left δ (hx' f' (by simp)))
-    obtain ⟨α, hα, β, hβ, hαβ⟩ := hC.exists_mem_maximalIdeal_of_mem_span_pair (h₁ ▸ isUnit_one)
-      (hee ▸ (maximalIdeal R).mul_mem_right q h2) (hff ▸ (maximalIdeal R).mul_mem_right q h2)
-      (hψ x) (hpair e he (Submodule.subset_span (by simp)))
+    obtain ⟨α, hα, β, hβ, hαβ⟩ := hC.exists_mem_maximalIdeal_of_mem_span_pair
+      (h₁ ▸ isUnit_one) (hff ▸ (maximalIdeal R).mul_mem_right q h2) (hψ x)
+      (hpair e he (Submodule.subset_span (by simp)))
       (hpair f hf (Submodule.subset_span (by simp)))
     exact ⟨α, hα, β, hβ, by rw [← hαβ, sub_add_cancel]⟩
   -- The discarded components change the pairings by multiples of their coordinates.
