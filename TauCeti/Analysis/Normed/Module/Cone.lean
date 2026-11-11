@@ -40,6 +40,9 @@ Fourier transform of a tensor product inherits the decay of one of its factors.
 * `TauCeti.exists_cone_decay_mul`: if `g` decays rapidly on an open cone around `a ζ₀ ≠ 0` and `h`
   grows at most polynomially, then `ζ ↦ g (a ζ) * h (b ζ)` decays rapidly on an open cone around
   `ζ₀`, provided `‖ζ‖ ≤ ‖a ζ‖ + ‖b ζ‖`.
+* `TauCeti.exists_cone_decay_of_comp_eq_mul`: conversely, if `F` decays rapidly on an open cone
+  around `ι ξ₀` and `F (ι ξ) = c * g ξ` with `c ≠ 0`, where `ι` does not decrease norms, then `g`
+  decays rapidly on an open cone around `ξ₀`.
 
 ## References
 
@@ -215,5 +218,28 @@ theorem exists_cone_decay_mul {X A B 𝕜 : Type*} [NormedField 𝕜] [NormedAdd
           rw [mul_pow, mul_pow, pow_add, pow_add]
           ring
       _ ≤ (1 + c) ^ (N + k) * C₀ * C := by gcongr; exact hC _ h₁
+
+/-- **Rapid decay along a linear map.** If `F` decays rapidly on an open cone `Γ` containing
+`ι ξ₀`, where `ι` does not decrease norms, and `F (ι ξ) = c * g ξ` with `c ≠ 0`, then `g` decays
+rapidly on an open cone containing `ξ₀`, namely `ι ⁻¹' Γ`. -/
+theorem exists_cone_decay_of_comp_eq_mul {X A 𝕜 : Type*} [NormedField 𝕜] [NormedAddCommGroup X]
+    [NormedSpace ℝ X] [NormedAddCommGroup A] [NormedSpace ℝ A]
+    (ι : A →L[ℝ] X) (hι : ∀ ξ, ‖ξ‖ ≤ ‖ι ξ‖) {Γ : Set X} (hΓ : IsOpen Γ)
+    (hcone : ∀ t : ℝ, 0 < t → ∀ ζ ∈ Γ, t • ζ ∈ Γ) {ξ₀ : A} (hξ₀ : ι ξ₀ ∈ Γ) {F : X → 𝕜}
+    {g : A → 𝕜} {c : 𝕜} (hc : c ≠ 0) (hFg : ∀ ξ, F (ι ξ) = c * g ξ)
+    (hF : ∀ N : ℕ, ∃ C, ∀ ζ ∈ Γ, (1 + ‖ζ‖) ^ N * ‖F ζ‖ ≤ C) :
+    ∃ Γ' : Set A, IsOpen Γ' ∧ ξ₀ ∈ Γ' ∧ (∀ t : ℝ, 0 < t → ∀ ξ ∈ Γ', t • ξ ∈ Γ') ∧
+      ∀ N : ℕ, ∃ C, ∀ ξ ∈ Γ', (1 + ‖ξ‖) ^ N * ‖g ξ‖ ≤ C := by
+  refine ⟨ι ⁻¹' Γ, hΓ.preimage ι.continuous, hξ₀, fun t ht ξ hξ ↦ ?_, fun N ↦ ?_⟩
+  · simpa using hcone t ht _ hξ
+  · obtain ⟨C, hC⟩ := hF N
+    have hc' : 0 < ‖c‖ := norm_pos_iff.2 hc
+    refine ⟨C / ‖c‖, fun ξ hξ ↦ ?_⟩
+    rw [le_div_iff₀ hc']
+    calc (1 + ‖ξ‖) ^ N * ‖g ξ‖ * ‖c‖ ≤ (1 + ‖ι ξ‖) ^ N * ‖F (ι ξ)‖ := by
+          rw [hFg, norm_mul, mul_comm ‖c‖, ← mul_assoc]
+          gcongr
+          exact hι ξ
+      _ ≤ C := hC _ hξ
 
 end TauCeti

@@ -151,6 +151,12 @@ theorem localFourier_smul_cutoff (T : 𝓓'(Ω, ℂ)) (c : ℂ) (φ : 𝓓(Ω, �
 theorem localFourier_zero_cutoff (T : 𝓓'(Ω, ℂ)) (η : E) : T.localFourier 0 η = 0 := by
   simpa using localFourier_smul_cutoff T 0 0 η
 
+/-- At zero frequency the localized Fourier transform is the pairing of `T` with the cutoff. -/
+@[simp]
+theorem localFourier_zero_frequency (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
+    T.localFourier φ 0 = T.complexPairing φ :=
+  localFourier_eq T φ fun x ↦ by simp
+
 /-- The localized Fourier transform of a smooth multiple `g T` with cutoff `φ` is that of `T` with
 cutoff `g φ`. -/
 @[simp]
