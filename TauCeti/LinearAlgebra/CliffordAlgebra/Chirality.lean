@@ -671,12 +671,14 @@ variable {K W W' : Type*} [CommRing K] [Algebra ℝ K] [AddCommGroup W] [Module 
   (ρ' : CliffordAlgebra Q' →ₐ[ℝ] Module.End K W')
 
 omit [Fact (finrank ℝ V = 4)] [Fact (finrank ℝ V' = 4)] in
-variable {ρ ρ'} in
 /-- **A nonzero intertwiner forces an isometry**: if a map `U` of Clifford modules intertwines the
 generators along a map `f`, `U c(v) = c(f v) U`, and `U w ≠ 0` for some `w`, then
 `Q' (f v) = Q v` for every `v`, the condition `QuadraticMap.Isometry.map_app` for `f`. Indeed
 `c(f v)² U w = U c(v)² w`, that is `Q' (f v) • U w = Q v • U w`. -/
-theorem map_app_of_forall_ι {f : V → V'} {U : W →ₗ[K] W'}
+theorem map_app_of_forall_ι {V V' : Type*} [AddCommGroup V] [Module ℝ V] [AddCommGroup V']
+    [Module ℝ V'] {Q : QuadraticForm ℝ V} {Q' : QuadraticForm ℝ V'}
+    {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End K W} {ρ' : CliffordAlgebra Q' →ₐ[ℝ] Module.End K W'}
+    {f : V → V'} {U : W →ₗ[K] W'}
     (hU : ∀ v, U ∘ₗ ρ (ι Q v) = ρ' (ι Q' (f v)) ∘ₗ U) {w : W} (hw : U w ≠ 0) (v : V) :
     Q' (f v) = Q v := by
   have h := LinearMap.congr_fun (hU v) (ρ (ι Q v) w)
