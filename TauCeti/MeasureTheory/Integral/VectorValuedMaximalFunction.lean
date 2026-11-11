@@ -190,34 +190,6 @@ private theorem maximalFunction_le_three_pow_mul_maximalFunction_cubeAverage
         gcongr
         exact setLAverage_le_maximalFunction _ _ _ (by positivity)
 
-/-- The doubled Calderón–Zygmund cubes of `G` at height `t` have total measure at most
-`2ⁿ ∫⁻ G / t`. -/
-private theorem mul_volume_biUnion_ball_le (G : (ι → ℝ) → ℝ≥0∞) (t : ℝ≥0∞) :
-    t * volume (⋃ q ∈ calderonZygmundCubes G t,
-        ball (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (2 ^ q.1)) ≤
-      2 ^ Fintype.card ι * ∫⁻ x, G x := by
-  set C := calderonZygmundCubes G t
-  have hsum :
-      ∑' q : C, volume (ball (fun i => ((q.1.2 i : ℝ) + 2⁻¹) * 2 ^ q.1.1) (2 ^ q.1.1)) =
-      2 ^ Fintype.card ι * volume (⋃ q ∈ C, dyadicCube q.1 q.2) := by
-    rw [measure_biUnion C.to_countable pairwiseDisjoint_calderonZygmundCubes
-      fun q _ => measurableSet_dyadicCube q.1 q.2, ← ENNReal.tsum_mul_left]
-    refine tsum_congr fun q => ?_
-    rw [Real.volume_pi_ball _ (by positivity), volume_dyadicCube, mul_pow,
-      ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow (by norm_num),
-      ENNReal.ofReal_ofNat]
-  calc t * volume (⋃ q ∈ C, ball (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (2 ^ q.1))
-      ≤ t * ∑' q : C,
-          volume (ball (fun i => ((q.1.2 i : ℝ) + 2⁻¹) * 2 ^ q.1.1) (2 ^ q.1.1)) := by
-        gcongr
-        exact measure_biUnion_le _ C.to_countable _
-    _ = 2 ^ Fintype.card ι * (t * volume (⋃ q ∈ C, dyadicCube q.1 q.2)) := by
-        rw [hsum]
-        ring
-    _ ≤ 2 ^ Fintype.card ι * ∫⁻ x, G x := by
-        gcongr
-        exact mul_volume_biUnion_calderonZygmundCubes_le.trans (setLIntegral_le_lintegral _ _)
-
 end Average
 
 section Family
@@ -378,6 +350,15 @@ private theorem mul_volume_lt_three_pow_mul_le (hg : ∀ i, Measurable (g i)) (h
   set Ωs := ⋃ q ∈ C, ball (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (2 ^ q.1)
   set S := {x | t ^ r ≤ ∑' i, maximalFunction volume (h i) x ^ r}
   have hr0 : 0 < r := by linarith
+  -- The doubled cubes lie in the closed balls of radius twice half the side around the cubes.
+  have hΩs : t * volume Ωs ≤ 2 ^ n * ∫⁻ x, G x := by
+    calc t * volume Ωs ≤ t * volume (⋃ q ∈ C,
+          closedBall (fun i => ((q.2 i : ℝ) + 2⁻¹) * 2 ^ q.1) (2 * (2 ^ q.1 / 2))) := by
+          refine mul_le_mul_right (measure_mono (biUnion_mono subset_rfl fun q _ => ?_)) _
+          rw [show (2 : ℝ) * (2 ^ q.1 / 2) = 2 ^ q.1 by ring]
+          exact ball_subset_closedBall
+      _ ≤ 2 ^ n * ∫⁻ x, G x := by
+          simpa only [ENNReal.ofReal_ofNat] using mul_volume_biUnion_closedBall_le 2 G t
   have hsub : {x | 3 ^ n * t < (∑' i, maximalFunction volume (g i) x ^ r) ^ (1 / r)} ⊆
       Ωs ∪ S := by
     intro x hx
@@ -395,7 +376,7 @@ private theorem mul_volume_lt_three_pow_mul_le (hg : ∀ i, Measurable (g i)) (h
     _ = t * volume Ωs + t * volume S := mul_add _ _ _
     _ ≤ (2 ^ n * ∫⁻ x, G x) + ENNReal.ofReal (2 * r * 2 ^ (r - 1) / (r - 1)) * 4 ^ n *
           (2 ^ n) ^ (r - 1) * ∫⁻ x, G x :=
-        add_le_add (mul_volume_biUnion_ball_le G t)
+        add_le_add hΩs
           (mul_volume_le_tsum_maximalFunction_cubeAverage_rpow hg hr hfin ht ht')
     _ = _ := by ring
 
@@ -404,17 +385,6 @@ end Family
 section Main
 
 variable {F : Type*} [ENorm F] {f : κ → (ι → ℝ) → F} {r : ℝ}
-
-/-- The maximal functions of `f` are those of measurable versions of `‖f i‖ₑ`. -/
-private theorem exists_measurable_maximalFunction_eq
-    (hf : ∀ i, AEMeasurable (fun x => ‖f i x‖ₑ)) :
-    ∃ g : κ → (ι → ℝ) → ℝ≥0∞, (∀ i, Measurable (g i)) ∧
-      (∀ i x, maximalFunction volume (f i) x = maximalFunction volume (g i) x) ∧
-      ∀ᵐ x, ∀ i, ‖f i x‖ₑ = g i x := by
-  refine ⟨fun i => (hf i).mk _, fun i => (hf i).measurable_mk, fun i x =>
-    maximalFunction_congr_ae ?_, ae_all_iff.2 fun i => (hf i).ae_eq_mk⟩
-  filter_upwards [(hf i).ae_eq_mk] with y hy
-  rw [hy, enorm_eq_self]
 
 /-- The part of a measurable family on a measurable set `V`, through the diagonal `Lʳ` bound and
 Chebyshev's inequality: the `ℓʳ` norm of its maximal functions reaches `t / 2` on a set of measure
