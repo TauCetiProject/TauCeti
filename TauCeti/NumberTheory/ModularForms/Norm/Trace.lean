@@ -20,6 +20,8 @@ translates of `f` times a `1`-periodic remainder analytic at `∞`.
 
 ## Main declarations
 
+* `TauCeti.SlashInvariantForm.quotientFunc_eq_zero_iff`: a coset factor of the norm vanishes
+  exactly when the form does.
 * `TauCeti.SlashInvariantForm.mdifferentiable_quotientFunc`.
 * `TauCeti.SlashInvariantForm.isBoundedAtImInfty_quotientFunc`.
 * `TauCeti.ModularForm.normRest`, with `TauCeti.ModularForm.periodic_normRest`,
@@ -70,6 +72,16 @@ local notation "𝒬" => ℋ ⧸ (𝒢.subgroupOf ℋ)
 namespace TauCeti
 
 namespace SlashInvariantForm
+
+/-- A coset factor of the norm of a form vanishes exactly when the form does: the factor is a slash
+translate of the form, and the slash action of a group element fixes `0` and kills only `0`. -/
+@[simp]
+lemma quotientFunc_eq_zero_iff [SlashInvariantFormClass F 𝒢 k] {f : F} (q : 𝒬) :
+    _root_.SlashInvariantForm.quotientFunc f q = 0 ↔ (⇑f : ℍ → ℂ) = 0 := by
+  induction q using Quotient.inductionOn with
+  | h g =>
+    rw [_root_.SlashInvariantForm.quotientFunc_mk]
+    exact SlashAction.slash_eq_zero_iff k g.val⁻¹ (⇑f : ℍ → ℂ)
 
 variable [ModularFormClass F 𝒢 k]
 

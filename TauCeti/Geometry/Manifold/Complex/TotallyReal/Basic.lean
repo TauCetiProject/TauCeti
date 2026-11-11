@@ -93,17 +93,10 @@ no separate injectivity assumption is needed. -/
 theorem IsMaximalTotallyRealMap.mfderiv_injective
     [FiniteDimensional ℝ F] (h : IsMaximalTotallyRealMap I' I A f)
     (hdim : 2 * finrank ℝ F = finrank ℝ E) (x : N) :
-    Function.Injective (mfderiv I' I f x) := by
-  have hr : finrank ℝ (LinearMap.range (mfderiv I' I f x).toLinearMap) =
-      finrank ℝ (TangentSpace I' x) := by
-    rw [finrank_tangentSpace]
-    have := h.two_mul_finrank_range x
-    omega
-  have hker : LinearMap.ker (mfderiv I' I f x).toLinearMap = ⊥ := by
-    apply Submodule.finrank_eq_zero.mp
-    have hnull := (mfderiv I' I f x).toLinearMap.finrank_range_add_finrank_ker
-    omega
-  exact LinearMap.ker_eq_bot.mp hker
+    Function.Injective (mfderiv I' I f x) :=
+  (h x).injective_of_two_mul_finrank_eq
+    ((A (f x)).injective.comp (LinearMap.range (mfderiv I' I f x).toLinearMap).subtype_injective)
+    (by simpa only [finrank_tangentSpace] using hdim)
 
 /-- A totally real `C^n` embedding has half the ambient dimension, and its tangent images are
 maximal totally real. The structure field imposes no regularity on the almost complex field. -/
