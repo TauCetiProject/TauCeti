@@ -11,9 +11,9 @@ public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import TauCeti.Analysis.Calculus.TangentCone.Basic
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
-import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
 # Tangent cones of sets flattened by a differentiable chart
@@ -42,6 +42,11 @@ charts used to verify it.
 * `TauCeti.IsSliceChart.eventually_forall_mem_span_tangentConeAt_inner_nonneg`: near a point
   where a `C¹` flattening chart is tangent to the identity, the tangent spaces of the flattened
   set stay in the cone where a quadratic form coercive on the model subspace is nonnegative.
+* `TauCeti.IsSliceChart.tangentConeAt_eq_empty`: at a point of the source outside the flattened
+  set, its tangent cone is empty, because a neighbourhood misses the set
+  (`TauCeti.IsSliceChart.exists_mem_nhds_disjoint`); near such a point a `C^n` chart with `C^n`
+  inverse flattens any set missing a neighbourhood onto the zero subspace
+  (`TauCeti.exists_isSliceChart_bot_of_disjoint`).
 -/
 
 public section
@@ -157,6 +162,15 @@ theorem finrank_span_tangentConeAt (h : IsSliceChart e (L : Set F) S)
   exact (Submodule.comap_equiv_eq_map_symm A.toLinearEquiv L) ▸
     LinearEquiv.finrank_map_eq A.symm.toLinearEquiv L
 
+/-- The tangent cone of a flattened set vanishes at a point of the chart's source outside the
+set. -/
+theorem tangentConeAt_eq_empty (h : IsSliceChart e (L : Set F) S) (hL : IsClosed (L : Set F))
+    (hy : y ∈ e.source) (hyS : y ∉ S) : tangentConeAt 𝕜 S y = ∅ := by
+  obtain ⟨U, hU, hdisj⟩ := h.exists_mem_nhds_disjoint hL hy hyS
+  rw [← tangentConeAt_inter_nhds hU, inter_comm, hdisj.inter_eq]
+  refine Set.not_nonempty_iff_eq_empty.1 fun hne => ?_
+  simpa using mem_closure_of_nonempty_tangentConeAt hne
+
 end IsSliceChart
 
 namespace IsSliceChart
@@ -224,5 +238,51 @@ theorem eventually_forall_mem_span_tangentConeAt_inner_nonneg {H : Type*} [Norme
   nlinarith
 
 end IsSliceChart
+
+section Flatten
+
+open scoped ContDiff
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- Near a point missing a flattened set, a `C^n` chart with `C^n` inverse flattens that set onto
+the zero subspace: it is empty there, and a restricted translation avoids `0`. -/
+theorem exists_isSliceChart_bot_of_disjoint {n : ℕ∞ω} {A U : Set E} {y : E} [Nontrivial E]
+    (hU : U ∈ 𝓝 y) (hA : Disjoint U A) :
+    ∃ e : OpenPartialHomeomorph E E, y ∈ e.source ∧
+      (∀ z ∈ e.source, ContDiffAt 𝕜 n e z) ∧
+      (∀ z ∈ e.target, ContDiffAt 𝕜 n e.symm z) ∧
+      IsSliceChart e ((⊥ : Submodule 𝕜 E) : Set E) A := by
+  obtain ⟨r, hr, hrU⟩ := Metric.mem_nhds_iff.1 hU
+  have : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
+  obtain ⟨c, hc⟩ := exists_norm_eq E hr.le
+  let e : OpenPartialHomeomorph E E :=
+    (Homeomorph.addRight (c - y)).toOpenPartialHomeomorph.restrOpen (Metric.ball y r)
+      Metric.isOpen_ball
+  have he_apply (x : E) : e x = x + (c - y) := by
+    simp only [e, OpenPartialHomeomorph.coe_restrOpen, Homeomorph.toOpenPartialHomeomorph_apply,
+      Homeomorph.coe_addRight]
+  have hesymm_apply (x : E) : e.symm x = x + -(c - y) := by
+    simp only [e, OpenPartialHomeomorph.coe_restrOpen_symm,
+      Homeomorph.toOpenPartialHomeomorph_symm_apply]
+    refine (Homeomorph.addRight (c - y)).symm_apply_eq.2 ?_
+    simp only [Homeomorph.coe_addRight]
+    abel
+  refine ⟨e, by simp [e, hr], fun z _ => ?_, fun z _ => ?_, isSliceChart_iff.2 fun z hz => ?_⟩
+  · have : (e : E → E) = fun x => x + (c - y) := funext he_apply
+    rw [this]
+    exact contDiffAt_id.add contDiffAt_const
+  · have : (e.symm : E → E) = fun x => x + -(c - y) := funext hesymm_apply
+    rw [this]
+    exact contDiffAt_id.add contDiffAt_const
+  · have hz' : z ∈ Metric.ball y r := by simpa [e] using hz
+    refine iff_of_false (fun hzA => Set.disjoint_left.1 hA (hrU hz') hzA) ?_
+    intro h0
+    have h0' : z + (c - y) = 0 := by rw [← he_apply]; exact Submodule.mem_bot 𝕜 |>.1 h0
+    have hzc : z - y = -c := eq_neg_of_add_eq_zero_left (by rw [← h0']; abel)
+    rw [Metric.mem_ball, dist_eq_norm, hzc, norm_neg, hc] at hz'
+    exact lt_irrefl _ hz'
+
+end Flatten
 
 end TauCeti

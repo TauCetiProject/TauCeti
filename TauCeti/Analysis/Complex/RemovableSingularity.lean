@@ -29,6 +29,13 @@ This extension theorem is the step of Puiseux-type arguments with parameters in 
 a polynomial with analytic coefficients, known to be analytic off a hyperplane and bounded near
 it, are shown to be analytic across it.
 
+The file also records the one-variable removable singularity at infinity used to extend
+functions to the Riemann sphere: if a `C^n` map `u : ℂ → E` is holomorphic near infinity and
+tends to `0` there, then `s ↦ u (1 / s)`, extended by `0` at `s = 0`, is `C^n`
+(`TauCeti.contDiff_update_comp_inv`). For compactly supported `u` this holds without
+holomorphy, since then `s ↦ u (1 / s)` vanishes near `0`
+(`HasCompactSupport.contDiff_update_comp_inv`).
+
 ## Main results
 
 * `TauCeti.exists_analyticOnNhd_prod_eqOn`: **the Riemann extension theorem across a coordinate
@@ -198,5 +205,68 @@ theorem exists_analyticOnNhd_prod_eqOn (hU : IsOpen U) (hs : IsOpen s)
   rw [circleIntegral.integral_congr hρ.le fun ζ hζ => by
       rw [← update_of_ne (hne ζ hζ) (limUnder (𝓝[≠] z₀) fun z => f (w, z)) fun z => f (w, z)],
     hd.circleIntegral_sub_inv_smul hz, inv_smul_smul₀ two_pi_I_ne_zero, hg_def]
+
+/-! ### A removable singularity at infinity -/
+
+section Infinity
+
+open Bornology
+open scoped ContDiff
+
+private theorem update_comp_inv_eventuallyEq {G : Type*} [Zero G] {u : ℂ → G} {s : ℂ}
+    (hs : s ≠ 0) :
+    update (fun y ↦ u y⁻¹) 0 0 =ᶠ[𝓝 s] fun y ↦ u y⁻¹ := by
+  filter_upwards [eventually_ne_nhds hs] with y hy using update_of_ne hy _ _
+
+/-- **A removable singularity at infinity.** If a `C^n` map `u` is holomorphic near infinity and
+tends to `0` there, then `s ↦ u (1 / s)`, extended by `0` at `s = 0`, is `C^n`. -/
+theorem contDiff_update_comp_inv {n : WithTop ℕ∞} {u : ℂ → E} (hu : ContDiff ℝ n u)
+    {R : ℝ} (hhol : ∀ w, R < ‖w‖ → DifferentiableAt ℂ u w) (hlim : Tendsto u (cobounded ℂ) (𝓝 0)) :
+    ContDiff ℝ n (update (fun s ↦ u s⁻¹) 0 0) := by
+  rw [contDiff_iff_contDiffAt]
+  intro s
+  rcases eq_or_ne s 0 with rfl | hs
+  · set r := (max R 1)⁻¹
+    have hr : 0 < r := inv_pos.2 (lt_max_of_lt_right one_pos)
+    have hd : DifferentiableOn ℂ (update (fun s ↦ u s⁻¹) 0 0) (ball 0 r) := by
+      rw [← differentiableOn_compl_singleton_and_continuousAt_iff (ball_mem_nhds 0 hr)]
+      refine ⟨fun s hs ↦ ?_, continuousAt_update_same.2 (hlim.comp tendsto_inv₀_nhdsNE_zero)⟩
+      have hs0 : s ≠ 0 := hs.2
+      have hsr : ‖s‖ < r := by simpa using hs.1
+      have hR : R < ‖s⁻¹‖ := by
+        rw [norm_inv]
+        exact (le_max_left R 1).trans_lt
+          ((lt_inv_comm₀ (norm_pos_iff.2 hs0) (lt_max_of_lt_right one_pos)).1 hsr)
+      exact (((hhol _ hR).comp s (differentiableAt_inv hs0)).congr_of_eventuallyEq
+        (update_comp_inv_eventuallyEq hs0)).differentiableWithinAt
+    exact ((hd.contDiffOn isOpen_ball).contDiffAt (ball_mem_nhds 0 hr)).restrict_scalars ℝ
+  · exact (hu.contDiffAt.comp s ((contDiffAt_inv ℂ hs).restrict_scalars ℝ)).congr_of_eventuallyEq
+      (update_comp_inv_eventuallyEq hs)
+
+/-- If a `C^n` map `u` on `ℂ` is compactly supported, then `s ↦ u (1 / s)`, extended by `0` at
+`s = 0`, is `C^n`: it vanishes near `s = 0`. -/
+theorem _root_.HasCompactSupport.contDiff_update_comp_inv {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {n : WithTop ℕ∞} {u : ℂ → G} (hc : HasCompactSupport u)
+    (hu : ContDiff ℝ n u) :
+    ContDiff ℝ n (update (fun s ↦ u s⁻¹) 0 0) := by
+  rw [contDiff_iff_contDiffAt]
+  intro s
+  rcases eq_or_ne s 0 with rfl | hs
+  · obtain ⟨R, hR⟩ := hc.isCompact.isBounded.subset_closedBall 0
+    have hR1 : 0 < max R 1 := lt_max_of_lt_right one_pos
+    refine (contDiffAt_const (c := (0 : G))).congr_of_eventuallyEq ?_
+    filter_upwards [ball_mem_nhds (0 : ℂ) (inv_pos.2 hR1)] with y hy
+    rcases eq_or_ne y 0 with rfl | hy0
+    · simp
+    rw [update_of_ne hy0]
+    refine image_eq_zero_of_notMem_tsupport fun h ↦ ?_
+    have hyR := hR h
+    rw [mem_closedBall, dist_zero_right, norm_inv] at hyR
+    rw [mem_ball, dist_zero_right] at hy
+    linarith [le_max_left R 1, (lt_inv_comm₀ (norm_pos_iff.2 hy0) hR1).1 hy]
+  · exact (hu.contDiffAt.comp s ((contDiffAt_inv ℂ hs).restrict_scalars ℝ)).congr_of_eventuallyEq
+      (update_comp_inv_eventuallyEq hs)
+
+end Infinity
 
 end TauCeti

@@ -82,11 +82,8 @@ theorem holderOnWith_pi_inv_smul_integral_sub_inv_smul
     (hr : 0 ≤ r) (hR : 0 ≤ R) (hs : Function.support f ⊆ closedBall c r) :
     HolderOnWith ((2 * (r + R)).toNNReal * H) α
       (fun w ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • f z) (closedBall c R) := by
-  have hc := HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall c r) hs
-  have hf' := hf.continuous hα
-  obtain ⟨M, hM⟩ := hf'.bounded_above_of_compact_support hc
   have h := (holderWith_integral_kernel_smul_sub
-    (integrable_truncatedCauchyKernel (r + R)) hα hf hM)
+    (integrable_truncatedCauchyKernel (r + R)) hα hf)
   have hscaled := (h.smul ((Real.pi : ℂ)⁻¹)).holderOnWith (closedBall c R)
   have hconst : ((∫ z, ‖truncatedCauchyKernel (r + R) z‖).toNNReal * H) *
       ‖(Real.pi : ℂ)⁻¹‖₊ =

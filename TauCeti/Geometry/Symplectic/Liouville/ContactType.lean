@@ -156,10 +156,6 @@ theorem exists_isRestrictedContactType_iff (hω : IsSmoothForm I 1 ω) (hdω : m
 
 /-! ### The contact form of a hypersurface of contact type -/
 
-section ContactForm
-
-variable [FiniteDimensional ℝ E]
-
 /-- **The primitive restricts to a contact form on a transverse hypersurface**, pointwise. Let
 `ι : S → M` be `C²` at `s`, with injective differential there, from a manifold of one dimension
 less. Let `ω` be nondegenerate at `ι s`, let `α` be a `C¹` primitive of `ω` at `ι s`, and let `z`
@@ -174,6 +170,7 @@ theorem isContactFormAt_mpullback [IsManifold I 2 M] [IsManifold J 2 S] {s : S}
     (hdα : mextDeriv α (ι s) = ω (ι s)) {z : TangentSpace I (ι s)}
     (hz : z ∉ (mfderiv J I ι s).range) (hzα : ∀ v, ω (ι s) ![z, v] = α (ι s) ![v]) :
     IsContactFormAt (mpullback J I ι α) s := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by omega)
   obtain ⟨B, hBω⟩ : ∃ B : LinearMap.BilinForm ℝ (TangentSpace I (ι s)),
       ∀ v w, B v w = ω (ι s) ![v, w] :=
     ⟨(ω (ι s)).toMultilinearMap.toBilinMap, fun _ _ ↦ MultilinearMap.toBilinMap_apply _ _ _⟩
@@ -230,7 +227,5 @@ theorem IsContactType.isContactForm_mpullback [IsManifold I (⊤ : ℕ∞) M] [I
   · exact (SmoothTwoForm.isNondegenerate_iff_separatingLeft.1 hσ) _ v fun w ↦ by
       simpa [SmoothBundleForm.eval₂_apply] using hv w
   · simpa only [RoughForm.interior_apply] using congrArg (fun a ↦ a ![v]) (hZα _ hs)
-
-end ContactForm
 
 end TauCeti

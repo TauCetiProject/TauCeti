@@ -38,9 +38,10 @@ formalised here.) In degree zero it is restriction of global sections:
 * `CategoryTheory.Sheaf.H.addEquiv₀_pullback`: in degree zero, a map `f : ℤ_J ⟶ G` goes to
   `c ≫ pb.map f`.
 * `CategoryTheory.Sheaf.H.pullback_naturality`, `pullback_id`, `pullback_comp_apply`,
-  `pullback_δ`:
+  `pullback_δ`, `map_pullback_δ`:
   naturality in the coefficient sheaf, the identity, composition, and compatibility with the
-  connecting homomorphisms of a short exact sequence and its image under `pb`.
+  connecting homomorphisms of a short exact sequence and its image under `pb`, also followed by
+  a morphism of short exact sequences.
 * `CategoryTheory.Sheaf.H.equiv₀_pullback_sheafPullback`: for a morphism of sites, the pullback
   in degree zero is restriction of global sections along the unit of `u^* ⊣ u_*`.
 
@@ -60,6 +61,7 @@ inductions over the affine opens of a quasi-compact quasi-separated scheme, tran
 statement about the cohomology of quasi-coherent sheaves from affine opens to the whole scheme.
 
 * `CategoryTheory.Sheaf.H'.pullback`: the pullback `Hⁿ(U, G) ⟶ Hⁿ(V, pb G)` along `ψ`.
+* `CategoryTheory.Sheaf.H'.pullback_naturality`: compatibility with coefficient morphisms.
 * `CategoryTheory.Sheaf.H'.pullback_comp_map`, `map_comp_pullback`: compatibility with
   restriction.
 * `CategoryTheory.Sheaf.H'.addEquiv₀_pullback`: in degree zero, the pullback of the class of
@@ -155,6 +157,16 @@ lemma pullback_δ {S : ShortComplex (Sheaf J AddCommGrpCat.{w})} (hS : S.ShortEx
   simp only [pullback_apply, H.δ, AddMonoidHom.flip_apply, Ext.bilinearComp_apply_apply,
     Ext.mapExactFunctor_comp, Ext.mapExactFunctor_extClass]
   exact (Ext.comp_assoc _ _ _ (zero_add n₀) h (by lia)).symm
+
+/-- Pullback followed by a morphism of short exact sequences commutes with the connecting
+homomorphisms. -/
+lemma map_pullback_δ {S : ShortComplex (Sheaf J AddCommGrpCat.{w})} (hS : S.ShortExact)
+    {T : ShortComplex (Sheaf K AddCommGrpCat.{w})} (hT : T.ShortExact) (φ : S.map pb ⟶ T)
+    (n₀ n₁ : ℕ) (h : n₀ + 1 = n₁) (x : H S.X₃ n₀) :
+    H.map φ.τ₁ n₁ (pullback pb c S.X₁ n₁ (H.δ hS n₀ n₁ h x)) =
+      H.δ hT n₀ n₁ h (H.map φ.τ₃ n₀ (pullback pb c S.X₃ n₀ x)) := by
+  rw [pullback_δ]
+  exact (H.δ_naturality n₀ n₁ h (hS.map_of_exact pb) hT φ _).symm
 
 end
 
@@ -283,6 +295,22 @@ lemma pullback_apply (G : Sheaf J AddCommGrpCat.{v}) (n : ℕ) {U : C} {V : D}
     pullback pb c G n ψ x = (Ext.mk₀ ((freeYonedaSheafFunctor K).map ψ ≫ c.app U)).comp
       (Ext.mapExactFunctor pb x) (zero_add n) :=
   (rfl)
+
+/-- Pullback of cohomology over an object is natural in the coefficient sheaf. -/
+@[reassoc]
+lemma pullback_naturality {G₁ G₂ : Sheaf J AddCommGrpCat.{v}} (f : G₁ ⟶ G₂) (n : ℕ)
+    {U : C} {V : D} (ψ : V ⟶ u.obj U) :
+    ((Sheaf.cohomologyPresheafFunctor J n).map f).app (op U) ≫ pullback pb c G₂ n ψ =
+      pullback pb c G₁ n ψ ≫
+        ((Sheaf.cohomologyPresheafFunctor K n).map (pb.map f)).app (op V) := by
+  refine AddCommGrpCat.ext fun (x : Ext ((freeYonedaSheafFunctor J).obj U) G₁ n) ↦ ?_
+  -- `H'` and the evaluated cohomology-presheaf maps use the unfolded free-sheaf functor.
+  -- Read both as extensions to apply functoriality of `Ext` without mixed source typings.
+  change (Ext.mk₀ ((freeYonedaSheafFunctor K).map ψ ≫ c.app U)).comp
+      ((x.comp (Ext.mk₀ f) (add_zero n)).mapExactFunctor pb) (zero_add n) =
+    ((Ext.mk₀ ((freeYonedaSheafFunctor K).map ψ ≫ c.app U)).comp
+      (x.mapExactFunctor pb) (zero_add n)).comp (Ext.mk₀ (pb.map f)) (add_zero n)
+  rw [Ext.mapExactFunctor_comp, Ext.mapExactFunctor_mk₀, Ext.comp_assoc_of_third_deg_zero]
 
 /-- Restricting the pullback along `j : V' ⟶ V` is pulling back along `j ≫ ψ`. -/
 @[reassoc]
