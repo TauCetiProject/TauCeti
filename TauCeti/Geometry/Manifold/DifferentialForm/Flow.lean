@@ -266,12 +266,11 @@ theorem mpullback_flowOf_apply_eq_exp_integral_smul {g : M → ℝ} (hg : Contin
     (hL : mlieDerivForm Z α = fun y ↦ g y • α y) {t : ℝ} {x : M} (hx : (t, x) ∈ flowDomain Z) :
     mpullback I I (flowOf Z t) α x = Real.exp (∫ s in 0..t, g (flowOf Z s x)) • α x := by
   have hZ1 := hZ.of_le one_le_two
-  -- The times at which the flow through `x` is defined form an open interval `J` containing `0`.
+  -- The times at which the flow through `x` is defined form an interval `J` containing `0`.
   set J : Set ℝ := {s | (s, x) ∈ flowDomain Z}
   have hJ : J = maximalIntegralCurveInterval Z x := by
     ext s
     exact mem_flowDomain
-  have hJo : IsOpen J := hJ ▸ isOpen_maximalIntegralCurveInterval
   have hJc : J.OrdConnected := hJ ▸ ordConnected_maximalIntegralCurveInterval
   have hJ0 : (0 : ℝ) ∈ J := mem_flowDomain_zero hZ1 x
   -- The pullbacks at `x`, as alternating maps on the model space.
@@ -287,8 +286,8 @@ theorem mpullback_flowOf_apply_eq_exp_integral_smul {g : M → ℝ} (hg : Contin
     exact congrFun h x
   -- The value at `x` of the pulled-back form is `P t`.
   rw [← hP0]
-  exact eq_exp_integral_smul_of_hasDerivAt_smul (V := E [⋀^Fin k]→L[ℝ] F) hJo hJc hcont hP hJ0
-    hx
+  exact eq_exp_integral_smul_of_hasDerivWithinAt_smul (V := E [⋀^Fin k]→L[ℝ] F) hJc hcont
+    (fun s hs ↦ (hP s hs).hasDerivWithinAt) hJ0 hx
 
 /-- **Maximal flows preserve closed forms with closed contraction.** For a closed smooth form `β`
 whose contraction `ι_Z β` with a `C²` vector field `Z` is closed, the time-`t` map of the maximal
