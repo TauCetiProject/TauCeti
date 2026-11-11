@@ -361,6 +361,7 @@ private theorem rectangleIntegral_side_eq_zero (φ : RoughForm I M F 2) {Φ : (�
 
 variable [CompleteSpace F] [IsManifold I 2 M]
 
+omit [CompleteSpace F] in
 /-- **Stokes' formula for a homotopy of maps of a rectangle.** Let `φ` be a closed `C¹` two-form
 and `Φ : (ℝ × ℝ) × ℝ → M` a `C²` homotopy from `Φ(·, 0)` to `Φ(·, 1)`. The integral of `Φ^* φ`
 over the boundary of the cube `[a, b] × [0, 1]` vanishes: the change of the integral over the
@@ -414,6 +415,7 @@ theorem rectangleIntegral_sub_rectangleIntegral_eq_sides {φ : RoughForm I M F 2
   rw [hc, hc, hs, hs, ht, ht]
   exact integral2_slice_sub_eq_sides hψ hdψ a b
 
+omit [CompleteSpace F] in
 /-- **Homotopy invariance of the integral over a cylinder.** Let `φ` be a closed `C¹` two-form and
 `Φ : (ℝ × ℝ) × ℝ → M` a `C²` homotopy through cylinders `Φ(·, c)` on the rectangle `[a, b]`: the
 edges `t = a.2` and `t = b.2` of each rectangle are mapped alike, so that `t ↦ Φ((s, t), c)` is a

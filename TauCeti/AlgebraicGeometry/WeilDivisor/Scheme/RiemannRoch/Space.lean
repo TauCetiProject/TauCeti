@@ -93,7 +93,7 @@ private lemma exists_algebraMap_eq_mul {g : X.functionField} (hg0 : g ≠ 0)
     (hs : s ∈ sections (D + WeilDivisor.ofPoint y) ⊤) :
     ∃ r : X.presheaf.stalk (y : X), algebraMap _ X.functionField r =
       g * Scheme.rationalFunctionsEquiv ⊤ s := by
-  refine Scheme.exists_algebraMap_stalk_eq_of_ord_nonneg y.property ?_
+  refine Scheme.exists_algebraMap_stalk_eq_of_ord_nonneg ?_
   rcases eq_or_ne (Scheme.rationalFunctionsEquiv ⊤ s) 0 with hf | hf
   · simp [hf]
   · have h := (mem_sections.mp hs y trivial).resolve_left hf

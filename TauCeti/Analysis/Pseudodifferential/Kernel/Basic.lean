@@ -54,6 +54,10 @@ the diagonal.
   `TauCeti.Symbol.quantizationKernel_frequencyDeriv`: for a symbol `a ∈ S^m_{1,0}` with `m < -n`
   the frequency slices are integrable, the kernel is continuous, and the kernel of `∂_{ξ_j} a` is
   `-i (x - y)_j K_a(x, y)`.
+* `TauCeti.Symbol.quantizationKernel_frequencyLaplacian` and
+  `TauCeti.Symbol.quantizationKernel_frequencyLaplacianPow_add`: for `m < -n` the kernel of the
+  frequency Laplacian `Δ_ξ a` is `-‖x - y‖² K_a(x, y)`, and iterating, the kernel of
+  `Δ_ξ^(N + k) a` is `(-‖x - y‖²)^k K_{Δ_ξ^N a}(x, y)` once `m - 2N < -n`.
 * `TauCeti.Symbol.quantizationKernel_mixedDeriv_replicate` and
   `TauCeti.Symbol.one_add_norm_div_pow_mul_norm_quantizationKernel_le`: iterating, the kernel of
   `∂_{ξ_j}^k a` is `(-i (x - y)_j)^k K_a(x, y)`, so the kernel decays off the diagonal at a rate
@@ -151,15 +155,6 @@ theorem quantizationKernel_add {b : E × E → V →L[ℂ] W} (ha : Integrable (
       (integrable_quantizationKernel_integrand hb y)]
   congr 1 with ζ
   simp only [Pi.add_apply, Circle.smul_def, smul_add]
-
-/-- The kernel of a finite sum of coefficients is the sum of their kernels at every position where
-all the frequency slices are integrable. -/
-theorem quantizationKernel_sum {ι : Type*} (s : Finset ι) {a : ι → E × E → V →L[ℂ] W}
-    (ha : ∀ i ∈ s, Integrable (fun ξ ↦ a i (x, ξ))) (y : E) :
-    quantizationKernel (∑ i ∈ s, a i) x y = ∑ i ∈ s, quantizationKernel (a i) x y := by
-  simp only [quantizationKernel_def, Finset.sum_apply, Circle.smul_def, Finset.smul_sum]
-  rw [integral_finsetSum s fun i hi ↦ by
-    simpa only [Circle.smul_def] using integrable_quantizationKernel_integrand (ha i hi) y]
 
 /-- **Continuity in the second variable.** If the frequency slice `ξ ↦ a(x, ξ)` is integrable, then
 `y ↦ K_a(x, y)` is continuous. -/
@@ -325,10 +320,23 @@ variable {n : ℕ} {m : ℝ}
 /-- The frequency slices of a symbol of order `m < -n` are integrable. -/
 theorem integrable_coefficient (a : Symbol n V W m) (hm : m < -n) (x : CoordinateSpace n) :
     Integrable (fun ξ ↦ a.coefficient (x, ξ)) := by
-  obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient {x} isCompact_singleton
+  obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient_slice x
   exact integrable_of_norm_le_one_add_norm_sq_rpow
     (a.contDiff_coefficient.continuous.comp (continuous_const.prodMk continuous_id)
-      ).aestronglyMeasurable (by simpa using hm) (hC x rfl)
+      ).aestronglyMeasurable (by simpa using hm) hC
+
+/-- For symbols of order `m < -n`, the kernel is additive over finite sums. -/
+theorem quantizationKernel_sum {ι : Type*} (s : Finset ι) (b : ι → Symbol n V W m)
+    (hm : m < -n) (x y : CoordinateSpace n) :
+    quantizationKernel (∑ i ∈ s, b i).coefficient x y =
+      ∑ i ∈ s, quantizationKernel (b i).coefficient x y := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    rw [Finset.sum_insert hi, Finset.sum_insert hi, coefficient_add,
+      quantizationKernel_add ((b i).integrable_coefficient hm x)
+        ((∑ i ∈ s, b i).integrable_coefficient hm x), ih]
 
 /-- The kernel of a symbol of order `m < -n` is continuous. -/
 theorem continuous_quantizationKernel (a : Symbol n V W m) (hm : m < -n) :
@@ -343,16 +351,43 @@ theorem quantizationKernel_frequencyDeriv (a : Symbol n V W m) (hm : m < -n) (j 
     (x y : CoordinateSpace n) :
     quantizationKernel (frequencyDeriv j a).coefficient x y =
       -Complex.I • ((x - y) j : ℂ) • quantizationKernel a.coefficient x y := by
-  have hda (ξ : CoordinateSpace n) : HasLineDerivAt ℝ (fun ξ ↦ a.coefficient (x, ξ))
-      ((frequencyDeriv j a).coefficient (x, ξ)) ξ (EuclideanSpace.single j 1) := by
-    rw [coefficient_frequencyDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
-    exact ((a.contDiff_coefficient.comp (contDiff_prodMk_right x)).differentiable
-      (by simp) ξ).hasFDerivAt.hasLineDerivAt _
-  have h := inner_smul_quantizationKernel hda (a.integrable_coefficient hm x)
+  have h := inner_smul_quantizationKernel (a.hasLineDerivAt_coefficient_single j x)
+    (a.integrable_coefficient hm x)
     ((frequencyDeriv j a).integrable_coefficient (by linarith) x) y
   rw [EuclideanSpace.inner_single_right, one_mul, conj_trivial] at h
   rw [h, smul_smul]
   simp
+
+/-- **Kernel of the frequency Laplacian.** For a symbol of order `m < -n`,
+`K_{Δ_ξ a}(x, y) = -‖x - y‖² K_a(x, y)`. -/
+theorem quantizationKernel_frequencyLaplacian (a : Symbol n V W m) (hm : m < -n)
+    (x y : CoordinateSpace n) :
+    quantizationKernel (frequencyLaplacian a).coefficient x y =
+      (-‖x - y‖ ^ 2) • quantizationKernel a.coefficient x y := by
+  rw [frequencyLaplacian_eq_sum, quantizationKernel_sum _ _ (by linarith)]
+  simp only [coefficient_inclusion]
+  simp_rw [quantizationKernel_frequencyDeriv _ (by linarith : m - 1 < -n),
+    quantizationKernel_frequencyDeriv _ hm, smul_smul, ← Finset.sum_smul]
+  rw [← Complex.coe_smul]
+  congr 1
+  rw [EuclideanSpace.real_norm_sq_eq]
+  push_cast
+  rw [← Finset.sum_neg_distrib]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  linear_combination (((x - y) j : ℂ)) ^ 2 * Complex.I_sq
+
+/-- Iterating `TauCeti.Symbol.quantizationKernel_frequencyLaplacian`: once `m - 2N < -n`,
+`K_{Δ_ξ^(N + k) a}(x, y) = (-‖x - y‖²)^k K_{Δ_ξ^N a}(x, y)`. -/
+theorem quantizationKernel_frequencyLaplacianPow_add (a : Symbol n V W m) {N : ℕ}
+    (hN : m - 2 * N < -n) (k : ℕ) (x y : CoordinateSpace n) :
+    quantizationKernel (frequencyLaplacianPow (N + k) a).coefficient x y =
+      (-‖x - y‖ ^ 2) ^ k • quantizationKernel (frequencyLaplacianPow N a).coefficient x y := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [← add_assoc, coefficient_frequencyLaplacianPow_succ',
+      quantizationKernel_frequencyLaplacian _ (by push_cast; linarith), ih, smul_smul,
+      pow_succ (-‖x - y‖ ^ 2) k, mul_comm]
 
 /-- **Kernel of an iterated frequency derivative.** For a symbol of order `m < -n`, the kernel of
 `∂_{ξ_j}^k a` is `(-i (x - y)_j)^k K_a(x, y)`. -/

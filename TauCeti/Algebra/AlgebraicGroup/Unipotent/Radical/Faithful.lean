@@ -63,7 +63,7 @@ noncomputable section
 
 variable (k : Type u) [Field k] [IsAlgClosed k]
 variable (H : FiniteTypeCommHopfAlgCat.{u, u} k) [IsReduced H]
-variable (M : Type u) [AddCommGroup M] [Module k M] [Comodule k H M] [FiniteDimensional k M]
+variable (M : Type u) [AddCommGroup M] [Module k M] [Comodule k H M]
 
 namespace HopfIdeal
 
@@ -80,6 +80,7 @@ theorem eq_augmentation_of_isNormal_of_forall_isUnipotentPoint_of_isFaithful
     (hu : ∀ g : WithConv (CommHopfAlgCat.quotient H.obj I →ₐ[k] k),
       HopfAlgebra.IsUnipotentPoint g) :
     I = HopfIdeal.augmentation k H := by
+  have := hM.finite
   have htrivial :=
     mkQuotient_coact_eq_tmul_one_of_isNormal_of_forall_isUnipotentPoint_of_isCompletelyReducible
       (M := M) hI hu hcr

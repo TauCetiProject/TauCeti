@@ -36,7 +36,8 @@ kernel of a smoothing symbol is smooth.
 Off the diagonal no decay is lost. Integrating by parts in the frequency gives
 `(x - y)ⱼ K_a = K_{i ∂_{ξⱼ} a}` (`TauCeti.Symbol.quantizationKernel_frequencyDeriv`), so the
 frequency Laplacian `Δ_ξ a = ∑ⱼ ∂²_{ξⱼ} a` (`TauCeti.Symbol.frequencyLaplacian`), which lowers the
-order by two, satisfies `K_{Δ_ξ a}(x, y) = -‖x - y‖² K_a(x, y)`. Hence
+order by two, satisfies `K_{Δ_ξ a}(x, y) = -‖x - y‖² K_a(x, y)`
+(`TauCeti.Symbol.quantizationKernel_frequencyLaplacian`). Hence
 `K_a(x, y) = (-‖x - y‖²)⁻ᴺ K_{Δ_ξᴺ a}(x, y)` for `x ≠ y`, and taking `N` large makes the right side
 as regular as wanted.
 
@@ -49,7 +50,6 @@ as regular as wanted.
   when `m + k < -n`.
 * `TauCeti.Symbol.IsSmoothing.contDiff_quantizationKernel`: the kernel of a smoothing symbol is
   smooth.
-* `TauCeti.Symbol.quantizationKernel_frequencyLaplacian`: `K_{Δ_ξ a} = -‖x - y‖² K_a`.
 * `TauCeti.Symbol.contDiffOn_quantizationKernel`: the kernel of a symbol of order `m < -n` is
   smooth off the diagonal.
 
@@ -286,26 +286,8 @@ theorem IsSmoothing.contDiff_quantizationKernel {a : Symbol n V W m} (ha : a.IsS
 
 /-! ### Smoothness off the diagonal -/
 
-/-- **Kernel of the frequency Laplacian.** For a symbol of order `m < -n`, integrating by parts
-twice in each frequency coordinate gives `K_{Δ_ξ a}(x, y) = -‖x - y‖² K_a(x, y)`. -/
-theorem quantizationKernel_frequencyLaplacian (a : Symbol n V W m) (hm : m < -n)
-    (x y : CoordinateSpace n) :
-    quantizationKernel (frequencyLaplacian a).coefficient x y =
-      (-‖x - y‖ ^ 2) • quantizationKernel a.coefficient x y := by
-  rw [coefficient_frequencyLaplacian_eq_sum, quantizationKernel_sum _ fun j _ ↦
-    (frequencyDeriv j (frequencyDeriv j a)).integrable_coefficient (by linarith) x]
-  simp only [quantizationKernel_frequencyDeriv _ (by linarith : m - 1 < -n),
-    quantizationKernel_frequencyDeriv _ hm, smul_smul, ← Finset.sum_smul,
-    EuclideanSpace.norm_sq_eq, Real.norm_eq_abs, sq_abs]
-  rw [← Complex.coe_smul]
-  congr 1
-  push_cast
-  rw [← Finset.sum_neg_distrib]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  linear_combination ((x - y) j : ℂ) ^ 2 * Complex.I_sq
-
-/-- Iterating `quantizationKernel_frequencyLaplacian`: some symbol of order `m - 2N`, namely
-`Δ_ξᴺ a`, has kernel `(-‖x - y‖²)ᴺ K_a(x, y)`. -/
+/-- Iterating `TauCeti.Symbol.quantizationKernel_frequencyLaplacian`: some symbol of order
+`m - 2N`, namely `Δ_ξᴺ a`, has kernel `(-‖x - y‖²)ᴺ K_a(x, y)`. -/
 private lemma exists_quantizationKernel_eq_pow_smul (a : Symbol n V W m) (hm : m < -n) (N : ℕ) :
     ∃ b : Symbol n V W (m - 2 * N), ∀ x y,
       quantizationKernel b.coefficient x y =

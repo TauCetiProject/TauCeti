@@ -9,6 +9,8 @@ public import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Tactic.FieldSimp
 
+import Mathlib.Analysis.MeanInequalitiesPow
+
 /-!
 # Square-root displacement estimates and limits at zero
 
@@ -255,6 +257,18 @@ theorem image_add_sqrt_sq_add_eq_Ioi {p : ℝ} (hp : 0 < p) :
   rw [hsqrt]
   field_simp
   ring
+
+/-- Subadditivity of the square root: `√(a + b) ≤ √a + √b`. -/
+theorem sqrt_add_le_add_sqrt (a b : ℝ) : √(a + b) ≤ √a + √b := by
+  rcases le_or_gt 0 a with ha | ha
+  · rcases le_or_gt 0 b with hb | hb
+    · have h := rpow_add_le_add_rpow (p := 1 / 2) (a := a) (b := b) ha hb (by norm_num)
+        (by norm_num)
+      simpa only [← sqrt_eq_rpow] using h
+    · rw [sqrt_eq_zero_of_nonpos hb.le, add_zero]
+      exact sqrt_le_sqrt (by linarith)
+  · rw [sqrt_eq_zero_of_nonpos ha.le, zero_add]
+    exact sqrt_le_sqrt (by linarith)
 
 end Real
 
