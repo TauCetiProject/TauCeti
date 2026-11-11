@@ -1,0 +1,268 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.PDE.DirichletProblem
+public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Basic
+public import Mathlib.Analysis.Convolution
+public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
+import TauCeti.Analysis.Convolution.Basic
+import TauCeti.Analysis.Convolution.CompactSupport
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.PDE.ClassicalSolution
+import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.DistributionalLaplacian
+import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Distribution
+import TauCeti.Analysis.PDE.Regularity.HarmonicReplacement
+
+/-!
+# The Newtonian potential of square-integrable data
+
+Let `n ≥ 3`, let `Gₙ = TauCeti.newtonianKernel n` be the Newtonian kernel of `ℝⁿ`, and let `f` be
+integrable with compact support. The Newtonian potential `Gₙ ⋆ f`,
+`(Gₙ ⋆ f) x = ∫ Gₙ(x - y) f(y) dy`, of a `C²` function `f` is a classical solution of Poisson's
+equation `-Δu = f` (`TauCeti.laplacian_newtonianKernel_convolution`). This file shows that for
+rough data it is a weak solution:
+
+* `Gₙ ⋆ f` is weakly differentiable on every open set, with weak derivative `∇Gₙ ⋆ f`, the
+  convolution of `f` with the locally integrable derivative of the kernel
+  (`TauCeti.hasWeakFDerivOn_newtonianKernel_convolution`);
+* `-Δ(Gₙ ⋆ f) = f` in the sense of distributions: `∫ Δφ (Gₙ ⋆ f) = -∫ φ f` for every `C²`
+  function `φ` with compact support (`TauCeti.integral_laplacian_mul_newtonianKernel_convolution`);
+* if `f ∈ L²`, then on every bounded open set `Ω` the potential lies in `H¹(Ω)` and satisfies
+  `∫_Ω ∇v · ∇(Gₙ ⋆ f) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`
+  (`TauCeti.PDE.exists_value_ae_eq_newtonianKernel_convolution_and_energyFormH1_eq`).
+
+The last statement gives the **Green representation of the weak Dirichlet solution for `L²`
+data**. Let `u ∈ H¹₀(Ω)` be the weak solution of `-Δu = f` in `Ω`, `u = 0` on `∂Ω`, given by the
+Lax--Milgram theorem. The difference `Gₙ ⋆ f - u` lies in `H¹(Ω)` and solves `Δh = 0` weakly, so by
+Weyl's lemma it agrees almost everywhere with a harmonic function `h`, and
+
+`u = Gₙ ⋆ f - h` almost everywhere on `Ω`
+
+(`TauCeti.PDE.IsWeakSolutionDirichlet.exists_harmonicOnNhd_value_ae_eq_of_memLp`). Since
+`u ∈ H¹₀(Ω)`, the harmonic correction `h` has the boundary values of the Newtonian potential:
+`h - Gₙ ⋆ f ∈ H¹₀(Ω)`, which is the trace condition `h = Gₙ ⋆ f` on `∂Ω` when `Ω` is a bounded
+Lipschitz domain (`TauCeti.W1p.mem_w1p0Submodule_iff_frontierTrace_eq_zero`). So `h` is the
+harmonic replacement of `Gₙ ⋆ f`, which is unique
+(`TauCeti.PDE.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq`). For `C²` data with
+compact support and `Ω` a ball the same representation holds with `h` continuous up to the
+sphere and equal to `Gₙ ⋆ f` there
+(`TauCeti.PDE.IsWeakSolutionDirichlet.exists_harmonicOnNhd_value_ae_eq`); here neither
+smoothness of the data nor regularity of `∂Ω` is used.
+
+## The argument
+
+The kernel is locally integrable with locally integrable derivative
+(`TauCeti.locallyIntegrable_newtonianKernel`, `TauCeti.locallyIntegrable_fderiv_newtonianKernel`),
+and integration by parts against it holds across the pole
+(`TauCeti.integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul`). Pairing the potential with a
+test function `ψ` and exchanging the integrals
+(`MeasureTheory.integral_mul_convolution_eq_integral_mul_integral_comp_sub`),
+
+`∫ ψ (Gₙ ⋆ f) = ∫ f(y) (∫ ψ(x) Gₙ(x - y) dx) dy`,
+
+moves every derivative from the potential onto the kernel with pole `y`. With `ψ = ∂ᵥφ` this gives
+the weak derivative, and with `ψ = Δφ` the distributional identity `-ΔGₙ = δ`
+(`TauCeti.integral_laplacian_mul_newtonianKernel_sub`) gives Poisson's equation. Square
+integrability on bounded sets is Young's inequality applied to the kernel cut off to a ball
+(`HasCompactSupport.memLp_convolution_right_of_isBounded`).
+
+## References
+
+* L. C. Evans, *Partial Differential Equations*, 2nd ed., Section 2.2.1 (the Newtonian potential)
+  and Section 6.2 (weak solutions).
+* D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
+  Lemma 4.1 (the gradient of the Newtonian potential is the potential of the kernel's gradient).
+* E. H. Lieb and M. Loss, *Analysis*, 2nd ed., Theorem 6.21 (the Newtonian potential of locally
+  integrable data solves Poisson's equation in the sense of distributions).
+-/
+
+public section
+
+noncomputable section
+
+namespace TauCeti
+
+open InnerProductSpace Laplacian MeasureTheory Metric Set TopologicalSpace ContinuousLinearMap
+open scoped Convolution Distributions Gradient InnerProductSpace
+
+variable {n : ℕ} {f : EuclideanSpace ℝ (Fin n) → ℝ}
+
+/-- Integration by parts against the Newtonian kernel with pole `t`:
+`∫ ∂ᵥg (x) Gₙ(x - t) dx = -∫ g(x) ∂ᵥGₙ(x - t) dx` for a `C¹` function `g` with compact support. -/
+private theorem integral_fderiv_mul_newtonianKernel_sub (hn : 3 ≤ n)
+    {g : EuclideanSpace ℝ (Fin n) → ℝ} (hg : ContDiff ℝ 1 g) (hc : HasCompactSupport g)
+    (v t : EuclideanSpace ℝ (Fin n)) :
+    ∫ x, fderiv ℝ g x v * newtonianKernel n (x - t) =
+      -∫ x, g x * fderiv ℝ (newtonianKernel n) (x - t) v := by
+  have h := integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul hn (g := fun y ↦ g (y + t))
+    (hg.comp (contDiff_id.add contDiff_const)) (hc.comp_homeomorph (Homeomorph.addRight t)) v
+  simp only [fderiv_comp_add_right] at h
+  rw [← integral_add_right_eq_self (fun x ↦ fderiv ℝ g x v * newtonianKernel n (x - t)) t,
+    ← integral_add_right_eq_self (fun x ↦ g x * fderiv ℝ (newtonianKernel n) (x - t) v) t]
+  simp only [add_sub_cancel_right]
+  simpa only [mul_comm] using h
+
+/-- **The Newtonian potential is weakly differentiable.** For `n ≥ 3` and `f` integrable with
+compact support, the derivative of the Newtonian potential `Gₙ ⋆ f` on every open set is, weakly,
+the convolution `∇Gₙ ⋆ f`, `x ↦ ∫ f(x - y) • DGₙ(y) dy`, of `f` with the locally integrable
+derivative of the kernel. -/
+theorem hasWeakFDerivOn_newtonianKernel_convolution (hn : 3 ≤ n) (hf : Integrable f)
+    (hfc : HasCompactSupport f) (Ω : Opens (EuclideanSpace ℝ (Fin n))) :
+    HasWeakFDerivOn volume Ω (newtonianKernel n ⋆ f)
+      (fderiv ℝ (newtonianKernel n) ⋆[(lsmul ℝ ℝ).flip] f) := by
+  have hG := locallyIntegrable_newtonianKernel n
+  have hG' := locallyIntegrable_fderiv_newtonianKernel n
+  refine hasWeakFDerivOn_of_forall_integral_fderiv_smul
+    (hfc.locallyIntegrable_convolution_right _ hG hf)
+    (hfc.locallyIntegrable_convolution_right _ hG' hf) (fun g hg hgc v ↦ ?_) Ω
+  have hGv : LocallyIntegrableOn (fun z ↦ fderiv ℝ (newtonianKernel n) z v) univ :=
+    (ContinuousLinearMap.apply ℝ ℝ v).locallyIntegrableOn_comp (hG'.locallyIntegrableOn univ)
+  have hgv : Continuous fun x ↦ fderiv ℝ g x v :=
+    (hg.continuous_fderiv one_ne_zero).clm_apply continuous_const
+  have hgvc : HasCompactSupport fun x ↦ fderiv ℝ g x v :=
+    (hgc.fderiv ℝ).comp_left (g := fun L : EuclideanSpace ℝ (Fin n) →L[ℝ] ℝ ↦ L v) rfl
+  -- Where the operator-valued convolution exists, it may be evaluated at `v` under the integral.
+  have hU : (fun x ↦ (fderiv ℝ (newtonianKernel n) ⋆[(lsmul ℝ ℝ).flip] f) x v) =ᵐ[volume]
+      f ⋆ fun z ↦ fderiv ℝ (newtonianKernel n) z v := by
+    filter_upwards [hfc.ae_convolutionExistsAt_right (lsmul ℝ ℝ).flip hG' hf] with x hx
+    rw [convolution_def, ContinuousLinearMap.integral_apply hx, convolution_lsmul_swap]
+    simp
+  calc ∫ x, fderiv ℝ g x v • (newtonianKernel n ⋆ f) x
+      = ∫ x, fderiv ℝ g x v * (f ⋆ newtonianKernel n) x := by
+        simp only [smul_eq_mul, convolution_lsmul_comm (newtonianKernel n) f]
+    _ = ∫ t, f t * ∫ x, fderiv ℝ g x v * newtonianKernel n (x - t) :=
+        integral_mul_convolution_eq_integral_mul_integral_comp_sub hgv hgvc hf hfc
+          (hG.locallyIntegrableOn univ) fun _ _ _ _ ↦ mem_univ _
+    _ = -∫ t, f t * ∫ x, g x * fderiv ℝ (newtonianKernel n) (x - t) v := by
+        simp_rw [integral_fderiv_mul_newtonianKernel_sub hn hg hgc v, mul_neg, integral_neg]
+    _ = -∫ x, g x * (f ⋆ fun z ↦ fderiv ℝ (newtonianKernel n) z v) x := by
+        rw [integral_mul_convolution_eq_integral_mul_integral_comp_sub hg.continuous hgc hf hfc hGv
+          fun _ _ _ _ ↦ mem_univ _]
+    _ = -∫ x, g x • (fderiv ℝ (newtonianKernel n) ⋆[(lsmul ℝ ℝ).flip] f) x v := by
+        refine congrArg Neg.neg (integral_congr_ae ?_)
+        filter_upwards [hU] with x hx
+        rw [smul_eq_mul, hx]
+
+/-- **The Newtonian potential solves Poisson's equation in the sense of distributions.** For
+`n ≥ 3` and `f` integrable with compact support, `-Δ(Gₙ ⋆ f) = f` weakly: for every `C²` function
+`φ` with compact support, `∫ Δφ (Gₙ ⋆ f) = -∫ φ f`. -/
+theorem integral_laplacian_mul_newtonianKernel_convolution (hn : 3 ≤ n) (hf : Integrable f)
+    (hfc : HasCompactSupport f) {φ : EuclideanSpace ℝ (Fin n) → ℝ} (hφ : ContDiff ℝ 2 φ)
+    (hφc : HasCompactSupport φ) :
+    ∫ x, Δ φ x * (newtonianKernel n ⋆ f) x = -∫ x, φ x * f x := by
+  rw [convolution_lsmul_comm, integral_mul_convolution_eq_integral_mul_integral_comp_sub
+    hφ.continuous_laplacian hφc.laplacian hf hfc
+    ((locallyIntegrable_newtonianKernel n).locallyIntegrableOn univ) fun _ _ _ _ ↦ mem_univ _,
+    ← integral_neg]
+  simp_rw [integral_laplacian_mul_newtonianKernel_sub hn hφ hφc, mul_neg, mul_comm]
+
+namespace PDE
+
+/-- **The Newtonian potential of `L²` data is a weak solution of Poisson's equation in `H¹`.** Let
+`n ≥ 3`, let `Ω ⊆ ℝⁿ` be a bounded open set and let `f ∈ L²(ℝⁿ)` have compact support. Then the
+Newtonian potential `Gₙ ⋆ f` is represented on `Ω` by an element `w` of `H¹(Ω)`, whose weak
+gradient is the convolution `∇Gₙ ⋆ f`, and `w` solves `-Δw = f` weakly in `Ω`:
+`∫_Ω ∇v · ∇w = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`. No boundary condition is imposed on `w`. -/
+theorem exists_value_ae_eq_newtonianKernel_convolution_and_energyFormH1_eq (hn : 3 ≤ n)
+    {Omega : Opens (EuclideanSpace ℝ (Fin n))}
+    (hOmega : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin n))))
+    (hf : MemLp f 2) (hfc : HasCompactSupport f) :
+    ∃ w : W1p volume Omega 2,
+      W1p.value w =ᵐ[volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin n)))]
+        newtonianKernel n ⋆ f ∧
+      W1p.gradient w =ᵐ[volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin n)))]
+        (fun x ↦ (toDual ℝ (EuclideanSpace ℝ (Fin n))).symm
+          ((fderiv ℝ (newtonianKernel n) ⋆[(lsmul ℝ ℝ).flip] f) x)) ∧
+      ∀ v : W1p0 volume Omega 2, energyFormH1 (fun _ => 1) 0 0 w (v : W1p volume Omega 2) =
+        ∫ x in Omega, f x * W1p.value (v : W1p volume Omega 2) x := by
+  have hO : MeasurableSet (Omega : Set (EuclideanSpace ℝ (Fin n))) := Omega.isOpen.measurableSet
+  -- `f` is integrable, being square integrable on the compact set carrying it.
+  have hfi : Integrable f := by
+    have : IsFiniteMeasure (volume.restrict (tsupport f)) :=
+      ⟨by rw [Measure.restrict_apply_univ]; exact hfc.isCompact.measure_lt_top⟩
+    exact (integrableOn_iff_integrable_of_support_subset (subset_tsupport f)).1
+      ((hf.restrict (tsupport f)).integrable one_le_two)
+  obtain ⟨w, hwv, hwg⟩ := W1p.exists_value_gradient_ae_eq_of_hasWeakFDerivOn
+    (hfc.memLp_convolution_right_of_isBounded _ (locallyIntegrable_newtonianKernel n) hf
+      one_le_two hOmega)
+    (hfc.memLp_convolution_right_of_isBounded _ (locallyIntegrable_fderiv_newtonianKernel n) hf
+      one_le_two hOmega)
+    (hasWeakFDerivOn_newtonianKernel_convolution hn hfi hfc Omega)
+  refine ⟨w, hwv, hwg, ?_⟩
+  have h1 := uniformlyEllipticOn_const_one_one (n := Fin n)
+    (Omega : Set (EuclideanSpace ℝ (Fin n)))
+  have hcoeff := memLp_energyIntegrand_of_bounds (mu := volume) (b := 0) (c := 0) (beta := 0)
+    (gamma := 0) h1.upper_nonneg aestronglyMeasurable_const aestronglyMeasurable_const
+    aestronglyMeasurable_const (fun _x hx eta xi => h1.upper_bound hx eta xi) (fun _ _ => by simp)
+    (fun _ _ => by simp)
+  have hF := (hf.restrict (Omega : Set (EuclideanSpace ℝ (Fin n)))).coeFn_toLp
+  intro v
+  rw [(forall_energyFormH1_eq_setIntegral_iff_forall_testFunction hcoeff
+    ((hf.restrict _).toLp f) w).2 (fun φ ↦ ?_) v]
+  · refine integral_congr_ae ?_
+    filter_upwards [hF] with x hx
+    rw [hx]
+  -- Against a test function: `∫ ⟪∇φ, ∇w⟫ = -∫ Δφ w = -∫ Δφ (Gₙ ⋆ f) = ∫ φ f`.
+  have hval : ∫ x, Δ (φ : EuclideanSpace ℝ (Fin n) → ℝ) x • W1p.value w x =
+      ∫ x, Δ (φ : EuclideanSpace ℝ (Fin n) → ℝ) x * (newtonianKernel n ⋆ f) x := by
+    refine integral_congr_ae ?_
+    filter_upwards [(ae_restrict_iff' hO).1 hwv] with x hx
+    by_cases hxΩ : x ∈ (Omega : Set (EuclideanSpace ℝ (Fin n)))
+    · rw [hx hxΩ, smul_eq_mul]
+    · rw [image_eq_zero_of_notMem_tsupport fun h' =>
+        hxΩ (φ.tsupport_subset (tsupport_laplacian_subset _ h'))]
+      simp
+  rw [energyFormH1_one_zero_zero_ofTestFunctionₗ_eq_neg_integral_laplacian_smul, hval,
+    integral_laplacian_mul_newtonianKernel_convolution hn hfi hfc
+      (φ.contDiff.of_le (by simp)) φ.hasCompactSupport, neg_neg,
+    ← setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by simp [φ.zero_on_compl hx]]
+  refine integral_congr_ae ?_
+  filter_upwards [hF] with x hx
+  rw [hx, mul_comm]
+
+/-- **The Green representation of the weak Dirichlet solution for `L²` data.** Let `n ≥ 3`, let
+`Ω ⊆ ℝⁿ` be a bounded open set, let `f ∈ L²(ℝⁿ)` have compact support and let `g ∈ L²(Ω)` agree
+with `f` on `Ω`. If `u ∈ H¹₀(Ω)` is the weak solution of `-Δu = g` in `Ω`, `u = 0` on `∂Ω`, then
+`u` is the Newtonian potential corrected by a harmonic function: there is `h`, harmonic on `Ω`,
+with `u = Gₙ ⋆ f - h` almost everywhere on `Ω`. As `u ∈ H¹₀(Ω)`, the correction `h` has the
+boundary values of `Gₙ ⋆ f` in the Sobolev sense. -/
+theorem IsWeakSolutionDirichlet.exists_harmonicOnNhd_value_ae_eq_of_memLp (hn : 3 ≤ n)
+    {Omega : Opens (EuclideanSpace ℝ (Fin n))}
+    (hOmega : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin n))))
+    (hf : MemLp f 2) (hfc : HasCompactSupport f)
+    {g : Lp ℝ 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin n))))}
+    (hg : g =ᵐ[volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin n)))] f)
+    {u : W1p0 volume Omega 2} (hu : IsWeakSolutionDirichlet (fun _ => 1) 0 0 g u) :
+    ∃ h : EuclideanSpace ℝ (Fin n) → ℝ, HarmonicOnNhd h Omega ∧
+      W1p.value (u : W1p volume Omega 2)
+        =ᵐ[volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin n)))]
+          newtonianKernel n ⋆ f - h := by
+  obtain ⟨w, hwv, -, hw⟩ :=
+    exists_value_ae_eq_newtonianKernel_convolution_and_energyFormH1_eq hn hOmega hf hfc
+  have h1 := uniformlyEllipticOn_const_one_one (n := Fin n)
+    (Omega : Set (EuclideanSpace ℝ (Fin n)))
+  have hcoeff := memLp_energyIntegrand_of_bounds (mu := volume) (b := 0) (c := 0) (beta := 0)
+    (gamma := 0) h1.upper_nonneg aestronglyMeasurable_const aestronglyMeasurable_const
+    aestronglyMeasurable_const (fun _x hx eta xi => h1.upper_bound hx eta xi) (fun _ _ => by simp)
+    (fun _ _ => by simp)
+  -- The difference `w - u` of the potential and the solution is weakly harmonic.
+  have hH : ∀ v : W1p0 volume Omega 2,
+      energyFormH1 (fun _ => 1) 0 0 (w - (u : W1p volume Omega 2)) (v : W1p volume Omega 2) = 0 :=
+        fun v ↦ by
+    rw [energyFormH1_sub_left hcoeff, hw v, (isWeakSolutionDirichlet_iff g u).1 hu v, sub_eq_zero]
+    refine integral_congr_ae ?_
+    filter_upwards [hg] with x hx
+    rw [hx]
+  obtain ⟨h, hh, hHh⟩ := exists_harmonicOnNhd_ae_eq_of_forall_energyFormH1_eq_zero fun φ ↦
+    hH ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩
+  refine ⟨h, hh, ?_⟩
+  filter_upwards [W1p.value_sub_ae w (u : W1p volume Omega 2), hwv, hHh] with x h₁ h₂ h₃
+  rw [Pi.sub_apply, ← h₂, ← h₃, h₁, Pi.sub_apply, sub_sub_cancel]
+
+end PDE
+
+end TauCeti
