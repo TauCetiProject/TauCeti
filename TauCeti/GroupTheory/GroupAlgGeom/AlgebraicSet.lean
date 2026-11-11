@@ -60,6 +60,13 @@ normal closure of `x ^ n` when `n ≠ 1`.
   variables, a single equation suffices.
 * `TauCeti.GroupAlgGeom.I_singleton_comp`: the ideal of a point with coordinates `ι (g x)` is the
   normal closure of the equations `x (g x)⁻¹`, for injective `ι`.
+* `TauCeti.GroupAlgGeom.Rad_range_inr_of_mul_inv_inl`,
+  `TauCeti.GroupAlgGeom.SystemGroup.coeff_bijective_range_inr_of_mul_inv_inl`: the system
+  `x (g x)⁻¹`, `x ∈ X`, is radical for injective `ι`, and its group is `G` itself.
+* `TauCeti.GroupAlgGeom.V_eq_empty_of_inl_mem`, `TauCeti.GroupAlgGeom.Rad_eq_top_of_V_eq_empty`,
+  `TauCeti.GroupAlgGeom.SystemGroup.isEmpty_gHom_iff`: a system containing a constant that is
+  nontrivial in `H` has no solutions; the radical of such a system is everything and its group has
+  no `G`-homomorphism to `H`.
 * `TauCeti.GroupAlgGeom.GX.quotientHomEquiv`: `G`-homomorphisms from `G[X] ⧸ N` to `H`
   correspond to the points of `V_H(N)`.
 * `TauCeti.GroupAlgGeom.CoordGroup.homEquiv`, `TauCeti.GroupAlgGeom.SystemGroup.homEquiv`:
@@ -236,6 +243,11 @@ theorem V_singleton_inl_eq_empty {g : G} (hg : ι g ≠ 1) :
   ext v
   simp [hg]
 
+/-- A system containing a constant that remains nontrivial in `H` has no solutions. -/
+theorem V_eq_empty_of_inl_mem {g : G} (hg : ι g ≠ 1) (hS : inl g ∈ S) : V ι S = ∅ :=
+  Set.subset_empty_iff.1 <|
+    (V_antitone ι (Set.singleton_subset_iff.2 hS)).trans (V_singleton_inl_eq_empty hg).subset
+
 @[simp]
 theorem I_union (Y Z : Set (X → H)) : I ι (Y ∪ Z) = I ι Y ⊓ I ι Z :=
   SetLike.coe_injective ((lowerPolar_union _ Y Z).trans (coe_inf (I ι Y) (I ι Z)).symm)
@@ -342,6 +354,10 @@ theorem Rad_normalClosure (S : Set (GX G X)) :
 theorem Rad_empty : Rad ι (∅ : Set (GX G X)) = I ι Set.univ := by
   rw [Rad_def, V_empty]
 
+/-- The radical of a system without solutions is all of `G[X]`. -/
+theorem Rad_eq_top_of_V_eq_empty (hS : V ι S = ∅) : Rad ι S = ⊤ := by
+  rw [Rad_def, hS, I_empty]
+
 /-- For injective coefficients, the ideal of a point `ι ∘ g` with coordinates in the image of `G`
 is the normal closure of the equations `x (g x)⁻¹`, `x ∈ X`. -/
 theorem I_singleton_comp (hι : Function.Injective ι) (g : X → G) :
@@ -363,6 +379,19 @@ theorem I_singleton_comp (hι : Function.Injective ι) (g : X → G) :
     simp [hw]
   · rintro _ ⟨x, rfl⟩ v rfl
     simp
+
+/-- For injective coefficients, the system of equations `x (g x)⁻¹`, `x ∈ X`, whose only solution
+is the point `ι ∘ g`, is radical: its radical is its normal closure. -/
+theorem Rad_range_inr_of_mul_inv_inl (hι : Function.Injective ι) (g : X → G) :
+    Rad ι (Set.range fun x => inr (FreeGroup.of x) * (inl (g x))⁻¹) =
+      normalClosure (Set.range fun x => inr (FreeGroup.of x) * (inl (g x))⁻¹) := by
+  rw [Rad_def, ← singleton_comp_eq_V, I_singleton_comp hι]
+
+/-- For injective coefficients, the radical of the one-variable equation `x = 1` is its normal
+closure. -/
+theorem Rad_singleton_inr_of (hι : Function.Injective ι) :
+    Rad ι {(inr (FreeGroup.of ()) : GX G Unit)} = normalClosure {inr (FreeGroup.of ())} := by
+  simpa [Set.range_unique] using Rad_range_inr_of_mul_inv_inl hι fun _ : Unit => 1
 
 /-! ### Quotients of `G[X]` -/
 
@@ -687,6 +716,44 @@ theorem toCoordGroup_surjective (S : Set (GX G X)) :
 theorem coeff_injective (hι : Function.Injective ι) (hS : (V ι S).Nonempty) :
     Function.Injective (coeff S) :=
   GX.quotientCoeff_injective hι (hS.mono (V_normalClosure (ι := ι) S).ge)
+
+variable (ι) in
+/-- The group `G_S` has no `G`-homomorphism to `H` exactly when `S` has no solution in `H`. -/
+theorem isEmpty_gHom_iff (S : Set (GX G X)) : IsEmpty (GHom (coeff S) ι) ↔ V ι S = ∅ :=
+  (homEquiv ι S).isEmpty_congr.trans Set.isEmpty_coe_sort
+
+/-- A constant occurring as an equation of `S` becomes trivial in `G_S`. -/
+theorem coeff_eq_one_of_inl_mem {g : G} (hS : inl g ∈ S) : coeff S g = 1 :=
+  (QuotientGroup.eq_one_iff _).2 (subset_normalClosure hS)
+
+/-- If a nontrivial constant occurs as an equation of `S`, the coefficients do not embed in
+`G_S`. -/
+theorem not_injective_coeff_of_inl_mem {g : G} (hg : g ≠ 1) (hS : inl g ∈ S) :
+    ¬Function.Injective (coeff S) := fun h =>
+  hg (h ((coeff_eq_one_of_inl_mem hS).trans (map_one _).symm))
+
+/-- The group of the system `x (g x)⁻¹`, `x ∈ X`, which prescribes the value `g x` of every
+variable, is `G` itself: its coefficient homomorphism is bijective. -/
+theorem coeff_bijective_range_inr_of_mul_inv_inl (g : X → G) :
+    Function.Bijective (coeff (Set.range fun x => inr (FreeGroup.of x) * (inl (g x))⁻¹)) := by
+  -- The normal closure of the system is the kernel of evaluation at `g`, a retraction onto `G`.
+  have hN : normalClosure (Set.range fun x => inr (FreeGroup.of x) * (inl (g x))⁻¹) =
+      (GroupAlgGeom.evalGHom (.id G) g : GX G X →* G).ker := by
+    rw [← I_singleton_comp (ι := .id G) Function.injective_id]
+    ext w
+    simp
+  obtain ⟨ψ, hψ, -⟩ := GX.exists_bijective_gHom_of_eq_ker (GroupAlgGeom.evalGHom (.id G) g)
+    (fun a => ⟨inl a, by simp⟩) hN
+  refine (Function.Bijective.of_comp_iff' hψ _).1 ?_
+  convert Function.bijective_id using 1
+  exact funext ψ.map_coeff
+
+/-- The group of the one-variable equation `x = 1` is `G` itself: its coefficient homomorphism
+is bijective. -/
+theorem coeff_bijective_singleton_inr_of :
+    Function.Bijective (coeff {(inr (FreeGroup.of ()) : GX G Unit)}) := by
+  have h := coeff_bijective_range_inr_of_mul_inv_inl fun _ : Unit => (1 : G)
+  rwa [Set.range_unique, map_one, inv_one, mul_one] at h
 
 /-- Restricting a `G`-homomorphism `G_{R(S)} → H` along `G_S → G_{R(S)}` gives the same solution
 of `S`. -/
