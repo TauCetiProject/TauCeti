@@ -132,10 +132,12 @@ theorem snd_eq_true_of_mem_merzljakovWord {x : α × Bool} (hx : x ∈ merzljako
     exacts [rfl, rfl, ih hx]
 
 /-- A Merzljakov word is reduced. -/
+@[simp]
 theorem isReduced_merzljakovWord (a b : α) (ms : List ℕ) : IsReduced (merzljakovWord a b ms) :=
   isReduced_of_forall_snd_eq fun _ ↦ snd_eq_true_of_mem_merzljakovWord
 
 /-- A Merzljakov word is cyclically reduced. -/
+@[simp]
 theorem isCyclicallyReduced_merzljakovWord (a b : α) (ms : List ℕ) :
     IsCyclicallyReduced (merzljakovWord a b ms) :=
   isCyclicallyReduced_of_forall_snd_eq fun _ ↦ snd_eq_true_of_mem_merzljakovWord
@@ -219,6 +221,7 @@ theorem merzljakovBlock_isInfix_merzljakovWord (a b : α) (hm : m ∈ ms) :
 
 /-- Over distinct letters `a ≠ b`, the block `b a^m b` occurs in a Merzljakov word exactly when
 `m` is one of its exponents. -/
+@[simp]
 theorem merzljakovBlock_isInfix_merzljakovWord_iff (hab : a ≠ b) :
     merzljakovBlock a b m <:+: merzljakovWord a b ms ↔ m ∈ ms := by
   refine ⟨?_, merzljakovBlock_isInfix_merzljakovWord a b⟩
@@ -251,6 +254,7 @@ theorem existsUnique_append_merzljakovBlock_append_eq (hab : a ≠ b) (hms : ms.
   simpa using (append_cancel_left (h'.trans h.symm))
 
 /-- No block `b a^m b` occurs in the formal inverse of a Merzljakov word. -/
+@[simp]
 theorem not_merzljakovBlock_isInfix_invRev_merzljakovWord (a b : α) (m : ℕ) (ms : List ℕ) :
     ¬ merzljakovBlock a b m <:+: invRev (merzljakovWord a b ms) := by
   intro h
@@ -260,6 +264,7 @@ theorem not_merzljakovBlock_isInfix_invRev_merzljakovWord (a b : α) (m : ℕ) (
   simp [snd_eq_true_of_mem_merzljakovWord hx] at hxb
 
 /-- The formal inverse of a block `b a^m b` does not occur in a Merzljakov word. -/
+@[simp]
 theorem not_invRev_merzljakovBlock_isInfix_merzljakovWord (a b : α) (m : ℕ) (ms : List ℕ) :
     ¬ invRev (merzljakovBlock a b m) <:+: merzljakovWord a b ms := by
   rw [← invRev_isInfix_invRev, invRev_invRev]
