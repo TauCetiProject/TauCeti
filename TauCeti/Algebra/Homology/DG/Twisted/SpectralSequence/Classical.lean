@@ -168,26 +168,19 @@ noncomputable def shiftedModuleComplexHomologyEquiv (p n : ℤ) :
     (shiftedModuleComplex.{uR, uA, uM, uP} hM p).homology n ≃ₗ[R]
       hM.cohomologyGrading (n + p) :=
   (LinearMap.quotKerEquivOfSurjective _
-      ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).moduleCat_homologyπ_surjective n)).symm.trans
-    (LinearEquiv.ofBijective
-      (Submodule.liftQ _ (cyclesToCohomologyGrading.{uR, uA, uM, uP} hM p n)
-        (ker_homologyπ_shiftedModuleComplex hM p n).le)
-      ⟨LinearMap.ker_eq_bot.mp (Submodule.ker_liftQ_eq_bot' _ _
-          (ker_homologyπ_shiftedModuleComplex hM p n)),
-        fun x ↦ (cyclesToCohomologyGrading_surjective hM p n x).elim fun z hz ↦
-          ⟨Submodule.Quotient.mk z, (Submodule.liftQ_apply _ _ z).trans hz⟩⟩)
+      ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).moduleCat_homologyπ_surjective n)).symm ≪≫ₗ
+    Submodule.quotEquivOfEq _ _ (ker_homologyπ_shiftedModuleComplex hM p n) ≪≫ₗ
+    (cyclesToCohomologyGrading.{uR, uA, uM, uP} hM p n).quotKerEquivOfSurjective
+      (cyclesToCohomologyGrading_surjective hM p n)
 
 private theorem shiftedModuleComplexHomologyEquiv_homologyπ_apply (p n : ℤ)
     (z : (shiftedModuleComplex.{uR, uA, uM, uP} hM p).cycles n) :
     shiftedModuleComplexHomologyEquiv.{uR, uA, uM, uP} hM p n
         (((shiftedModuleComplex.{uR, uA, uM, uP} hM p).homologyπ n).hom z) =
       cyclesToCohomologyGrading.{uR, uA, uM, uP} hM p n z := by
-  rw [shiftedModuleComplexHomologyEquiv, LinearEquiv.trans_apply,
-    (LinearEquiv.symm_apply_eq _).2 (LinearMap.quotKerEquivOfSurjective_apply_mk _ _ z).symm]
-  -- `LinearEquiv.ofBijective` of `Submodule.liftQ` sends the class of `z` to its value under
-  -- `cyclesToCohomologyGrading` by definition; `LinearEquiv.ofBijective_apply` does not match the
-  -- instance arguments with which the definition was elaborated.
-  rfl
+  rw [shiftedModuleComplexHomologyEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+    (LinearEquiv.symm_apply_eq _).2 (LinearMap.quotKerEquivOfSurjective_apply_mk _ _ z).symm,
+    Submodule.quotEquivOfEq_mk, LinearMap.quotKerEquivOfSurjective_apply_mk]
 
 /-- The identification of `shiftedModuleComplexHomologyEquiv` sends the class of a cycle `α` of
 `shiftedModuleComplex hM p` to the class in `H(ℳ)` of its value in `ℳ`. -/

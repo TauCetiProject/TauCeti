@@ -28,20 +28,18 @@ A cycle `a` of degree zero of `C_*(Ω_b B; R)` is a zero chain, and its class in
 the chain algebra is the class of its truncation `loopChainToGroupAlgebra a` in the group ring
 (`TauCeti.loopChainCohomologyClass_eq_groupAlgebraToLoopChainCohomology`). The group ring acts on
 `H(𝓕)` through the inclusion `groupAlgebraToLoopChainCohomology` of `R[π₁(B, b)]` as `H₀(Ω_b B; R)`,
-and a basis element `g` acts as `ρ(g⁻¹)`, where `ρ` is the representation of the fundamental group
-(`TauCeti.IsDGRightModule.cohomologyAction_groupAlgebraToLoopChainCohomology_of`). Under the
-identifications `TauCeti.shiftedModuleComplexHomologyEquiv` of the terms of the classical complex
-with `H^k(𝓕)`, the entry between a generator `x` of index `q + 1` and a generator `y` of index `q`
-therefore acts as `(-1)^k` times the truncation `∑ u_g g` of `m x y`, that is as
-`(-1)^k ∑ u_g ρ(g⁻¹)`
+and a basis element `g` acts as `ρ(g⁻¹)`, where `ρ` is the representation of the fundamental
+group, which lets `g` act as the basis element `g⁻¹`
+(`TauCeti.IsDGRightModule.cohomologyRepresentation_apply`). Under the identifications
+`TauCeti.shiftedModuleComplexHomologyEquiv` of the terms of the classical complex with `H^k(𝓕)`,
+the entry between a generator `x` of index `q + 1` and a generator `y` of index `q` therefore acts
+as `(-1)^k` times the truncation `∑ u_g g` of `m x y`, that is as `(-1)^k ∑ u_g ρ(g⁻¹)`
 (`TauCeti.TwistingCocycle.shiftedModuleComplexHomologyEquiv_indexClassicalEntry_loop`).
 
 ## Main results
 
 * `TauCeti.loopChainCohomologyClass_eq_groupAlgebraToLoopChainCohomology`: the class of a cycle of
   degree zero is the class of its truncation in the group ring.
-* `TauCeti.IsDGRightModule.cohomologyAction_groupAlgebraToLoopChainCohomology_of`: the group ring
-  acts on `H(𝓕)` through the representation of the fundamental group.
 * `TauCeti.TwistingCocycle.shiftedModuleComplexHomologyEquiv_indexClassicalEntry_loop`: the entries
   of the classical complex are the actions of the truncated entries of the cocycle on `H^k(𝓕)`.
 * `TauCeti.TwistingCocycle.shiftedModuleComplexHomologyEquiv_indexClassicalD_π_loop`: the
@@ -84,30 +82,6 @@ theorem loopChainCohomologyClass_eq_groupAlgebraToLoopChainCohomology
     rw [loopChainToGroupAlgebra_lof_zero,
       groupAlgebraToLoopChainCohomology_loopZeroChainToGroupAlgebra]
 
-namespace IsDGRightModule
-
-variable {M : Type uM} [AddCommGroup M] [Module R M] [Module (loopChainAlgebra B b R)ᵐᵒᵖ M]
-  [IsScalarTower R (loopChainAlgebra B b R)ᵐᵒᵖ M] {ℳ : ℤ → Submodule R M}
-  [DirectSum.Decomposition ℳ]
-  [SetLike.GradedSMul
-    (InternalGrading.ofDecomposition (cubicalChainGrading (MooreLoopSpace B b) R)).opposite.piece ℳ]
-  {dM : M →ₗ[R] M}
-
-/-- **The group ring acts on the homology of a DG local system through the fundamental group**: the
-basis element `g` of `R[π₁(B, b)]`, included in the cohomology of the chain algebra, acts on `H(𝓕)`
-as `ρ(g⁻¹)`, with `ρ` the representation `cohomologyRepresentation`. So `H(𝓕)` is the right
-`R[π₁(B, b)]`-module of the representation `ρ`, an element `∑ u_g g` acting as `∑ u_g ρ(g⁻¹)`. -/
-theorem cohomologyAction_groupAlgebraToLoopChainCohomology_of
-    (hM : IsDGRightModule (loopChain_isDGAlgebra B b R) ℳ dM) (g : FundamentalGroup B b)
-    (c : hM.Cohomology) :
-    (hM.cohomologyAction (groupAlgebraToLoopChainCohomology B b R (MonoidAlgebra.of R _ g))).unop
-      c = hM.cohomologyRepresentation g⁻¹ c := by
-  rw [cohomologyRepresentation_apply]
-  -- `simp` rather than `rw`: closing the rewritten goal by `rfl` would unfold `g⁻¹⁻¹` in `π₁`.
-  simp only [inv_inv]
-
-end IsDGRightModule
-
 namespace TwistingCocycle
 
 variable {M : Type uM} [AddCommGroup M] [Module R M] [Module (loopChainAlgebra B b R)ᵐᵒᵖ M]
@@ -135,7 +109,7 @@ in coefficient degree `k` with `H^k(𝓕)`, the entry between a generator `x` of
 generator `y` of index `q` is `(-1)^k` times the action on `H^k(𝓕)` of the truncation `u` of
 `m x y` in the group ring `R[π₁(B, b)]`. A basis element `g` acts as `ρ(g⁻¹)`, with `ρ` the
 representation of the fundamental group on the homology of `𝓕`
-(`IsDGRightModule.cohomologyAction_groupAlgebraToLoopChainCohomology_of`), so the entry is
+(`IsDGRightModule.cohomologyRepresentation_apply`), so the entry is
 `(-1)^k ∑ u_g ρ(g⁻¹)`. -/
 theorem shiftedModuleComplexHomologyEquiv_indexClassicalEntry_loop (q : ℤ)
     (x : {x : P // ind x = q + 1}) (y : {y : P // ind y = q})
