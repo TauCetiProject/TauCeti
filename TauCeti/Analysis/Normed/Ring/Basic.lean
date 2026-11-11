@@ -106,6 +106,12 @@ theorem norm_prod_le_prod_norm_of_nonempty {ι R : Type*} [SeminormedCommRing R]
     rw [Finset.prod_cons, Finset.prod_cons]
     exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left ih (norm_nonneg _))
 
+/-- A point within distance `1` of `1` is not `0`. -/
+theorem ne_zero_of_norm_sub_one_lt {R : Type*} [SeminormedRing R] [NormOneClass R] {z : R}
+    (hz : ‖z - 1‖ < 1) : z ≠ 0 := by
+  rintro rfl
+  simp at hz
+
 end TauCeti
 
 end

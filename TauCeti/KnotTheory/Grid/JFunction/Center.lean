@@ -60,12 +60,9 @@ square there too.
 
 ## References
 
-This supplies a prerequisite for `CombinatorialHeegaardFloer/README.md` in TauCetiRoadmap,
-Lane G.2, "Gradings. The `J`-function, `M_O`, `M_X`, `A`; integer-valuedness of `A`;
-grading-change formulas across a rectangle." The convention that the markings sit at the centers
-of their squares while a grid state sits on the grid lines is that of Ozsváth--Stipsicz--Szabó,
-*Grid Homology for Knots and Links*, Chapters 3.1--3.2 and 4.1 for the placement convention, and
-Chapter 4.3 for the grading pairing.
+The convention that the markings sit at the centers of their squares while a grid state sits on the
+grid lines is that of Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapters
+3.1--3.2 and 4.1 for the placement convention, and Chapter 4.3 for the grading pairing.
 
 * [TauCeti pull request #3135](https://github.com/TauCetiProject/TauCeti/pull/3135),
   whose square-centered marking convention and rotation-noninvariance argument this correction
