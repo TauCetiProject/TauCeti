@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Tree
+public import TauCeti.Combinatorics.Quiver.Prefunctor
 public import Mathlib.Data.Set.Finite.Lattice
 public import Mathlib.Order.Zorn
 
@@ -28,6 +29,8 @@ consists of the loops `T.path v (src e) · e · T.path (tgt e) v`.
 
 * `TauCeti.SerreGraph.SpanningTree`: a spanning tree of a Serre graph.
 * `TauCeti.SerreGraph.SpanningTree.path`: the reduced path between two vertices in a spanning tree.
+* `TauCeti.SerreGraph.SpanningTree.restrict`: a spanning tree contained in a subgraph, as a
+  spanning tree of the subgraph.
 
 ## Main results
 
@@ -274,6 +277,50 @@ theorem homotopic_path_comp_path (a b c : Γ.V) :
 /-- A spanning tree contains no loop. -/
 theorem src_ne_tgt {e : Γ.E} (he : e ∈ T.darts) : Γ.src e ≠ Γ.tgt e :=
   T.isTree.isAcyclic.src_ne_tgt ⟨e, he⟩
+
+section Restrict
+
+variable (S : Set Γ.E) (hS : ∀ e ∈ S, Γ.rev e ∈ S)
+
+/-- A spanning tree whose darts lie in a subgraph is a spanning tree of that subgraph. -/
+def restrict (hTS : T.darts ⊆ S) : (Γ.restrict S hS).SpanningTree where
+  darts := {e | e.1 ∈ T.darts}
+  rev_mem e he := T.rev_mem e.1 he
+  isTree := by
+    refine (isTree_iff _).mpr ⟨(connected_iff _).mpr ⟨((connected_iff _).mp T.isTree.connected).1,
+      (preconnected_restrict_iff _ _ _).mpr fun a b => ?_⟩,
+      (isAcyclic_restrict_iff _ _ _).mpr fun u p hp hpT => ?_⟩
+    · obtain ⟨p, hp⟩ := Γ.exists_restrict_path S hS (T.path a b)
+        fun e he => hTS (T.mem_of_mem_darts_path he)
+      have hmem (e : (Γ.restrict S hS).E) (he : e ∈ Path.darts (Γ.restrict S hS) p) :
+          e.1 ∈ Path.darts Γ ((Γ.restrictInclusion S hS).toPrefunctor.mapPath p) := by
+        rw [Hom.darts_mapPath]
+        exact List.mem_map.mpr ⟨e, he, rfl⟩
+      exact ⟨p, fun e he => T.mem_of_mem_darts_path (a := a) (b := b) (hp ▸ hmem e he)⟩
+    · have hq := T.eq_path ((Γ.isReduced_restrictInclusion_mapPath_iff S hS p).mpr hp)
+        fun e he => by
+          rw [Hom.darts_mapPath] at he
+          obtain ⟨d, hd, rfl⟩ := List.mem_map.mp he
+          exact hpT d hd
+      refine Quiver.Path.eq_nil_of_length_zero p ?_
+      rw [← Prefunctor.length_mapPath (Γ.restrictInclusion S hS).toPrefunctor, hq, T.path_self,
+        Quiver.Path.length_nil]
+
+@[simp] theorem mem_restrict_darts (hTS : T.darts ⊆ S) {e : (Γ.restrict S hS).E} :
+    e ∈ (T.restrict S hS hTS).darts ↔ e.1 ∈ T.darts := Iff.rfl
+
+/-- The inclusion of a subgraph containing a spanning tree sends the tree paths of the restricted
+tree to the tree paths of the tree. -/
+@[simp] theorem mapPath_path_restrict (hTS : T.darts ⊆ S) (a b : Γ.V) :
+    (Γ.restrictInclusion S hS).toPrefunctor.mapPath ((T.restrict S hS hTS).path a b) =
+      T.path a b :=
+  T.eq_path ((Γ.isReduced_restrictInclusion_mapPath_iff S hS _).mpr
+    ((T.restrict S hS hTS).isReduced_path a b)) fun e he => by
+      rw [Hom.darts_mapPath] at he
+      obtain ⟨d, hd, rfl⟩ := List.mem_map.mp he
+      exact (T.mem_restrict_darts S hS hTS).mp ((T.restrict S hS hTS).mem_of_mem_darts_path hd)
+
+end Restrict
 
 end SpanningTree
 

@@ -18,24 +18,22 @@ backtrack-homotopic paths to backtrack-homotopic paths. It therefore induces a h
 `PathGroup.map f` of reduced path groups, functorially in `f`. A morphism injective on darts
 sends reduced paths to reduced paths, so the induced homomorphism is injective; in particular the
 reduced path group of a subgraph embeds in that of the ambient graph, with image the reduced
-loops all of whose darts lie in the subgraph. Every reduced loop lies in a finite subgraph.
+loops all of whose darts lie in the subgraph. Every reduced loop lies in a spanning subgraph with
+finitely many darts (all vertices of the ambient graph are retained).
 
 A path `p` from `v` to `w` gives the change of base vertex `PathGroup.mulEquivOfPath p`,
 `g ↦ p⁻¹ g p`, which is natural in the graph.
 
 For spanning trees `T` of `Γ` and `T'` of `Δ` with `f T ⊆ T'`, the induced homomorphism sends
-the tree loop of a dart `e` to the tree loop of `f e`; a spanning tree contained in a subgraph
-restricts to a spanning tree of the subgraph, with the same tree loops. Changing the base vertex
-along a tree path sends tree loops to tree loops, and a closed path is the product of the tree
-loops of its darts, which expresses the tree loops of one spanning tree in those of another.
+the tree loop of a dart `e` to the tree loop of `f e`; in particular the inclusion of a subgraph
+containing a spanning tree sends the tree loops of the restricted tree to the tree loops of the
+tree. Changing the base vertex along a tree path sends tree loops to tree loops.
 
 ## Main definitions
 
 * `TauCeti.SerreGraph.PathGroup.map`: the homomorphism of reduced path groups induced by a
   morphism of Serre graphs.
 * `TauCeti.SerreGraph.PathGroup.mulEquivOfPath`: the change of base vertex along a path.
-* `TauCeti.SerreGraph.SpanningTree.restrict`: a spanning tree contained in a subgraph, as a
-  spanning tree of the subgraph.
 
 ## Main results
 
@@ -48,8 +46,6 @@ loops of its darts, which expresses the tree loops of one spanning tree in those
   change of base vertex.
 * `TauCeti.SerreGraph.SpanningTree.map_loop`: induced homomorphisms send tree loops to tree
   loops.
-* `TauCeti.SerreGraph.SpanningTree.loop_eq_prod_loop`: the tree loops of one spanning tree as
-  products of the tree loops of another.
 
 ## References
 
@@ -203,7 +199,8 @@ theorem mem_range_map_restrictInclusion_iff (g : PathGroup Γ w) :
 
 end Restrict
 
-/-- Every reduced loop lies in a finite subgraph. -/
+/-- Every reduced loop lies in a spanning subgraph with finitely many darts: the subgraph
+retains all vertices of the ambient graph, so only its set of darts is finite. -/
 theorem exists_finite_mem_range_map_restrictInclusion {v : Γ.V} (g : PathGroup Γ v) :
     ∃ (S : Set Γ.E) (hS : ∀ e ∈ S, Γ.rev e ∈ S), S.Finite ∧
       g ∈ (map (Γ.restrictInclusion S hS) (Γ.restrictInclusion_mapV S hS v)).range := by
@@ -350,30 +347,6 @@ namespace SpanningTree
 
 variable (T : Γ.SpanningTree) (v : Γ.V)
 
-/-- The based class of a path is the product of the tree loops of its darts. -/
-theorem basedPath_eq_prod_loop {a b : Γ.V} (p : Γ.Path a b) :
-    T.basedPath v p = ((Path.darts Γ p).map (T.loop v)).prod := by
-  induction p with
-  | nil => simp
-  | cons p e ih =>
-    rw [← Quiver.Path.comp_toPath_eq_cons, basedPath_comp, basedPath_toPath, ih,
-      Path.darts_comp, Path.darts_toPath, List.map_append, List.prod_append, List.map_singleton,
-      List.prod_singleton]
-
-/-- The class of a closed path is the product of the tree loops of its darts. -/
-theorem ofPath_eq_prod_loop (p : Γ.Path v v) :
-    PathGroup.ofPath p = ((Path.darts Γ p).map (T.loop v)).prod := by
-  rw [← T.basedPath_self, basedPath_eq_prod_loop]
-
-/-- Change of spanning tree: the tree loop of a dart relative to `T'` is the product of the tree
-loops relative to `T` of the darts on the `T'`-path to its source, of the dart itself, and of
-the darts on the `T'`-path back from its target. -/
-theorem loop_eq_prod_loop (T' : Γ.SpanningTree) (e : Γ.E) :
-    T'.loop v e = ((Path.darts Γ (T'.path v (Γ.src e))).map (T.loop v)).prod * T.loop v e *
-      ((Path.darts Γ (T'.path (Γ.tgt e) v)).map (T.loop v)).prod := by
-  rw [T'.loop_def, T.ofPath_eq_prod_loop]
-  simp [mul_assoc]
-
 /-- Changing the base vertex along a tree path carries based classes to based classes. -/
 @[simp] theorem mulEquivOfPath_path_basedPath (w : Γ.V) {a b : Γ.V} (p : Γ.Path a b) :
     PathGroup.mulEquivOfPath (T.path v w) (T.basedPath v p) = T.basedPath w p := by
@@ -419,51 +392,14 @@ section Restrict
 
 variable (S : Set Γ.E) (hS : ∀ e ∈ S, Γ.rev e ∈ S)
 
-/-- A spanning tree whose darts lie in a subgraph is a spanning tree of that subgraph. -/
-def restrict (hTS : T.darts ⊆ S) : (Γ.restrict S hS).SpanningTree where
-  darts := {e | e.1 ∈ T.darts}
-  rev_mem e he := T.rev_mem e.1 he
-  isTree := by
-    refine (isTree_iff _).mpr ⟨(connected_iff _).mpr ⟨((connected_iff _).mp T.isTree.connected).1,
-      (preconnected_restrict_iff _ _ _).mpr fun a b => ?_⟩,
-      (isAcyclic_restrict_iff _ _ _).mpr fun u p hp hpT => ?_⟩
-    · obtain ⟨p, hp⟩ := Γ.exists_restrict_path S hS (T.path a b)
-        fun e he => hTS (T.mem_of_mem_darts_path he)
-      have hmem (e : (Γ.restrict S hS).E) (he : e ∈ Path.darts (Γ.restrict S hS) p) :
-          e.1 ∈ Path.darts Γ ((Γ.restrictInclusion S hS).toPrefunctor.mapPath p) := by
-        rw [Hom.darts_mapPath]
-        exact List.mem_map.mpr ⟨e, he, rfl⟩
-      exact ⟨p, fun e he => T.mem_of_mem_darts_path (a := a) (b := b) (hp ▸ hmem e he)⟩
-    · have hq := T.eq_path ((Γ.isReduced_restrictInclusion_mapPath_iff S hS p).mpr hp)
-        fun e he => by
-          rw [Hom.darts_mapPath] at he
-          obtain ⟨d, hd, rfl⟩ := List.mem_map.mp he
-          exact hpT d hd
-      refine Quiver.Path.eq_nil_of_length_zero p ?_
-      rw [← Prefunctor.length_mapPath (Γ.restrictInclusion S hS).toPrefunctor, hq, T.path_self,
-        Quiver.Path.length_nil]
-
-@[simp] theorem mem_restrict_darts (hTS : T.darts ⊆ S) {e : (Γ.restrict S hS).E} :
-    e ∈ (T.restrict S hS hTS).darts ↔ e.1 ∈ T.darts := Iff.rfl
-
-/-- The inclusion of a subgraph containing a spanning tree sends the tree paths of the restricted
-tree to the tree paths of the tree. -/
-theorem mapPath_path_restrict (hTS : T.darts ⊆ S) (a b : Γ.V) :
-    (Γ.restrictInclusion S hS).toPrefunctor.mapPath ((T.restrict S hS hTS).path a b) =
-      T.path a b :=
-  T.eq_path ((Γ.isReduced_restrictInclusion_mapPath_iff S hS _).mpr
-    ((T.restrict S hS hTS).isReduced_path a b)) fun e he => by
-      rw [Hom.darts_mapPath] at he
-      obtain ⟨d, hd, rfl⟩ := List.mem_map.mp he
-      exact (T.mem_restrict_darts S hS hTS).mp ((T.restrict S hS hTS).mem_of_mem_darts_path hd)
-
 /-- The inclusion of a subgraph containing a spanning tree sends the tree loops of the
 restricted tree to the tree loops of the tree. -/
 @[simp] theorem map_restrictInclusion_loop (hTS : T.darts ⊆ S) {w : Γ.V}
     (h : (Γ.restrictInclusion S hS).mapV v = w) (e : (Γ.restrict S hS).E) :
     PathGroup.map (Γ.restrictInclusion S hS) h ((T.restrict S hS hTS).loop v e) =
       T.loop w e.1 := by
-  simpa using (T.restrict S hS hTS).map_loop v (Γ.restrictInclusion S hS) T (fun _ he => he) h e
+  simpa using (T.restrict S hS hTS).map_loop v (Γ.restrictInclusion S hS) T
+    (fun _ he => (T.mem_restrict_darts S hS hTS).mp he) h e
 
 end Restrict
 
