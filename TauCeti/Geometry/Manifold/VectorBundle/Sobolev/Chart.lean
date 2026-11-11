@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Local
-import Mathlib.Geometry.Manifold.ContMDiff.Atlas
-import TauCeti.Analysis.Calculus.TangentCone.Chart
+import TauCeti.Geometry.Manifold.ContMDiff.Atlas
+import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables
 import TauCeti.Analysis.Sobolev.Local.Examples
 import TauCeti.Analysis.Sobolev.Local.Locality
@@ -26,16 +26,19 @@ trivialization atlas: the expression `y ↦ (e ⟨φ.symm y, s (φ.symm y)⟩).2
 lies in `MemWkpLoc p (φ.target ∩ φ.symm ⁻¹' e.baseSet) k`. Conversely, a section whose expressions
 in a family of such charts and trivializations are in the local classes on open sets covering `M`
 defines an element of `W^{k,p}(V)`. Isothermal charts of a Riemann surface, being holomorphic
-charts, are a special case.
+charts, are a special case. For `Cⁿ` sections the localization holds at every order `n`
+(`TauCeti.memWkpLoc_trivialization_comp_chart_symm_of_contMDiff`).
 
 On the part of `φ.target` lying over the domain of chart `i` of `A`, the expression of `s` in
 `(φ, e)` is the coordinate change `e.coordChangeL` of the bundle applied to `A.coord i s` composed
 with the chart transition `A.chart i ∘ φ.symm`. The chart transition is a `C¹` diffeomorphism
 between open planar sets, so it preserves the local classes of order at most one
-(`TauCeti.MemWkpLoc.comp_symm_trans_of_mem_maximalAtlas`, the only place where `k ≤ 1` is used),
-and the coordinate change is a `C¹` field of linear maps, which preserves them as well
-(`TauCeti.MemWkpLoc.contDiffOn_clm_apply`). The pieces are glued over the charts of `A` by the
-locality of the local classes (`TauCeti.memWkpLoc_iff_forall_inter`).
+(`TauCeti.MemWkpLoc.comp_symm_trans_of_mem_maximalAtlas`), and the coordinate change is a `C¹`
+field of linear maps, which preserves them as well (`TauCeti.MemWkpLoc.contDiffOn_clm_apply`).
+Both steps need the order `k` to be at most one: the planar change of variables is only available
+for `k ≤ 1`, and a field of linear maps with `C¹` coefficients preserves the local classes only up
+to order one. The pieces are glued over the charts of `A` by the locality of the local classes
+(`TauCeti.memWkpLoc_iff_forall_inter`).
 
 ## Main results
 
@@ -45,16 +48,15 @@ locality of the local classes (`TauCeti.memWkpLoc_iff_forall_inter`).
   preserve the local classes of order at most one of the expressions of a section.
 * `TauCeti.SobolevSection.memWkpLoc_trivialization_comp_chart_symm`: the expressions of an element
   of `W^{k,p}(V)` in arbitrary charts and trivializations are in the local classes.
-* `TauCeti.SobolevSection.exists_of_memWkpLoc_trivialization_comp`: a section whose expressions in
-  a covering family of charts and trivializations are in the local classes defines an element of
-  `W^{k,p}(V)`.
+* `TauCeti.SobolevSection.exists_ae_eq_coord_of_memWkpLoc_trivialization_comp_chart_symm`: a
+  section whose expressions in a covering family of charts and trivializations are in the local
+  classes defines an element of `W^{k,p}(V)`.
 
 ## Checks
 
-* `TauCeti.memWkpLoc_trivialization_comp_chart_symm_of_contMDiff`: a `Cⁿ` section localizes in
-  every chart and trivialization, at every order `n`.
 * `TauCeti.SobolevSection.not_ae_eq_indicator_re_pos`: no component of an element of `W^{1,p}(V)`,
-  read in any chart and trivialization, jumps across the imaginary axis.
+  read in any chart and trivialization, is almost everywhere equal to the indicator of the right
+  half-plane on a domain meeting the imaginary axis.
 
 ## References
 
@@ -80,15 +82,6 @@ section ChangeOfChart
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℝ≥0∞} {k : ℕ}
 
-/-- The transition `ψ ∘ φ.symm` between two charts of the maximal `C¹` atlas is `C¹` on its
-source. -/
-private theorem contDiffOn_symm_trans {φ ψ : OpenPartialHomeomorph M ℂ}
-    (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, ℂ) 1 M)
-    (hψ : ψ ∈ IsManifold.maximalAtlas 𝓘(ℝ, ℂ) 1 M) :
-    ContDiffOn ℝ 1 (φ.symm.trans ψ) (φ.symm.trans ψ).source :=
-  contMDiffOn_iff_contDiffOn.1 ((contMDiffOn_of_mem_maximalAtlas hψ).comp
-    ((contMDiffOn_symm_of_mem_maximalAtlas hφ).mono inter_subset_left) inter_subset_right)
-
 /-- **Changes of chart preserve the local classes of order at most one.** For charts `φ` and `ψ`
 of the maximal `C¹` atlas of `M` and a map `u` in `MemWkpLoc p U k` with `k ≤ 1`, the map
 `u ∘ ψ ∘ φ.symm` lies in the local class on the set of points of the source of the chart transition
@@ -99,18 +92,17 @@ theorem MemWkpLoc.comp_symm_trans_of_mem_maximalAtlas (hk : k ≤ 1)
     (hu : MemWkpLoc p U k u) :
     MemWkpLoc p ((φ.symm.trans ψ).source ∩ φ.symm.trans ψ ⁻¹' U) k
       (fun y ↦ u (ψ (φ.symm y))) := by
-  set τ := φ.symm.trans ψ
-  have hτ : ContDiffOn ℝ 1 τ τ.source := contDiffOn_symm_trans hφ hψ
-  have hτ' : ContDiffOn ℝ 1 τ.symm τ.target := contDiffOn_symm_trans hψ hφ
-  refine hu.comp_contDiffOn_diffeo hk τ.open_source hτ (τ.injOn.mono inter_subset_left)
-    (fun y hy ↦ ?_) inter_subset_left fun y hy ↦ hy.2
-  obtain ⟨L, hL⟩ := τ.isInvertible_fderiv hy.1
-    ((hτ.differentiableOn one_ne_zero).differentiableAt (τ.open_source.mem_nhds hy.1))
-    ((hτ'.differentiableOn one_ne_zero).differentiableAt
-      (τ.open_target.mem_nhds (τ.map_source hy.1)))
-  change (fderiv ℝ τ y).det ≠ 0
-  rw [← hL]
-  exact L.toLinearEquiv.isUnit_det'.ne_zero
+  -- The chart transition has an invertible derivative on its source.
+  have hdet : ∀ y ∈ (φ.symm.trans ψ).source ∩ φ.symm.trans ψ ⁻¹' U,
+      (fderiv ℝ (φ.symm.trans ψ) y).det ≠ 0 := fun y hy ↦ by
+    obtain ⟨L, hL⟩ := exists_hasFDerivAt_symm_trans one_ne_zero hφ hψ hy.1
+    rw [hL.fderiv]
+    exact L.toLinearEquiv.isUnit_det'.ne_zero
+  -- As a function, the chart transition is `ψ ∘ φ.symm` (`OpenPartialHomeomorph.coe_trans`).
+  simpa only [OpenPartialHomeomorph.coe_trans, Function.comp_apply] using
+    hu.comp_contDiffOn_diffeo hk (φ.symm.trans ψ).open_source
+      (contDiffOn_symm_trans_of_mem_maximalAtlas hφ hψ)
+      ((φ.symm.trans ψ).injOn.mono inter_subset_left) hdet inter_subset_left fun y hy ↦ hy.2
 
 end ChangeOfChart
 
@@ -118,24 +110,6 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimension
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
   [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
   {p : ℝ≥0∞} {k : ℕ}
-
-/-- **`Cⁿ` sections are locally Sobolev in every chart and trivialization.** The expression in a
-chart `φ` of the maximal `Cⁿ` atlas of `M` and a trivialization `e` of the bundle's trivialization
-atlas of a `Cⁿ` section of a `Cⁿ` vector bundle lies in `MemWkpLoc p U n` for every exponent `p`,
-on the open set `U` of points of `φ.target` lying over `e.baseSet`. This extends
-`TauCeti.FiniteBundleAtlas.memWkpLoc_coord_of_contMDiff` from the charts of a finite bundle atlas
-to arbitrary charts. -/
-theorem memWkpLoc_trivialization_comp_chart_symm_of_contMDiff {n : ℕ}
-    [ContMDiffVectorBundle n F V 𝓘(ℝ, ℂ)] {s : ∀ x, V x}
-    (hs : ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, F)) n fun x ↦ TotalSpace.mk' F x (s x))
-    {φ : OpenPartialHomeomorph M ℂ} (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, ℂ) n M)
-    (e : Trivialization F (π F V)) [MemTrivializationAtlas e] (p : ℝ≥0∞) :
-    MemWkpLoc p (φ.target ∩ φ.symm ⁻¹' e.baseSet) n fun y ↦ (e ⟨φ.symm y, s (φ.symm y)⟩).2 := by
-  have hc : ContDiffOn ℝ n (fun y ↦ (e ⟨φ.symm y, s (φ.symm y)⟩).2)
-      (φ.target ∩ φ.symm ⁻¹' e.baseSet) :=
-    contMDiffOn_iff_contDiffOn.1 ((e.contMDiffOn_section_baseSet_iff.1 hs.contMDiffOn).comp
-      ((contMDiffOn_symm_of_mem_maximalAtlas hφ).mono inter_subset_left) inter_subset_right)
-  exact hc.memWkpLoc (Ω := ⟨_, φ.isOpen_inter_preimage_symm e.open_baseSet⟩) subset_rfl
 
 variable [ContMDiffVectorBundle 1 F V 𝓘(ℝ, ℂ)]
 
@@ -162,8 +136,7 @@ theorem MemWkpLoc.trivialization_comp_chart_symm (hk : k ≤ 1)
   -- The coordinate change from `e'` to `e`, read in the chart `φ`, is a `C¹` field of linear maps.
   have hT : ContDiffOn ℝ 1 (fun y ↦ (e'.coordChangeL ℝ e (φ.symm y) : F →L[ℝ] F))
       (φ.target ∩ φ.symm ⁻¹' (e'.baseSet ∩ e.baseSet)) :=
-    contMDiffOn_iff_contDiffOn.1 ((contMDiffOn_coordChangeL e' e).comp
-      ((contMDiffOn_symm_of_mem_maximalAtlas hφ).mono inter_subset_left) inter_subset_right)
+    (contMDiffOn_coordChangeL e' e).contDiffOn_comp_symm_of_mem_maximalAtlas hφ
   have h₂ := h₁.contDiffOn_clm_apply (Ω := ⟨_, φ.isOpen_inter_preimage_symm
     (e'.open_baseSet.inter e.open_baseSet)⟩) hT (by exact_mod_cast hk)
     fun y hy ↦ ⟨hy.1, hy.2.1.2, hy.2.1.1⟩
@@ -211,7 +184,7 @@ base set of `e j` with `φ j x ∈ U j`. If the expression of a section `s` in `
 `MemWkpLoc p (U j) k` for every `j`, with `k ≤ 1`, then `s` defines an element of `W^{k,p}(V)`:
 there is an element whose chart data are the coordinates of `s`. It is unique by
 `TauCeti.SobolevSection.eq_of_ae_eq_coord`. -/
-theorem exists_of_memWkpLoc_trivialization_comp (hk : k ≤ 1) {ι : Type*}
+theorem exists_ae_eq_coord_of_memWkpLoc_trivialization_comp_chart_symm (hk : k ≤ 1) {ι : Type*}
     (φ : ι → OpenPartialHomeomorph M ℂ) (hφ : ∀ j, φ j ∈ IsManifold.maximalAtlas 𝓘(ℝ, ℂ) 1 M)
     (e : ι → Trivialization F (π F V)) [∀ j, MemTrivializationAtlas (e j)] (U : ι → Set ℂ)
     (hU : ∀ j, IsOpen (U j))
@@ -234,7 +207,7 @@ theorem exists_of_memWkpLoc_trivialization_comp (hk : k ≤ 1) {ι : Type*}
     exact ((hs j).trivialization_comp_chart_symm hk (IsManifold.chart_mem_maximalAtlas _) (hφ j)
       (A.triv i) (e j) (hU j)).mono inter_subset_right
 
-/-- **No jumps across a curve.** Let `w` be an element of `W^{1,p}(V)` whose chart data are the
+/-- **Not the half-plane indicator.** Let `w` be an element of `W^{1,p}(V)` whose chart data are the
 coordinates of the section `s`. In no chart `φ` of the maximal `C¹` atlas of `M` and trivialization
 `e` of the bundle's trivialization atlas is a component `ℓ` of the expression of `s` almost
 everywhere equal to the indicator of the right half-plane, provided the domain of the expression

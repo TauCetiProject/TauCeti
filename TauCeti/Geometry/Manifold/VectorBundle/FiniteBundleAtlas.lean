@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import Mathlib.MeasureTheory.Function.Jacobian
 public import Mathlib.Topology.VectorBundle.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 
 /-!
 # Finite atlases of bundle charts
@@ -47,7 +48,9 @@ the transition (`TauCeti.FiniteBundleAtlas.ae_restrict_overlap_transition`).
 * `TauCeti.FiniteBundleAtlas.ae_restrict_overlap_transition`: chart transitions preserve null sets.
 * `TauCeti.FiniteBundleAtlas.contDiffOn_coord`: the chart coordinates of a `Cᵏ` section of a `Cᵏ`
   vector bundle are `Cᵏ`, on an open set containing the compact image of the closure of the chart
-  domain (`TauCeti.FiniteBundleAtlas.chart_image_closure_dom_subset`).
+  domain (`TauCeti.FiniteBundleAtlas.chart_image_closure_dom_subset`). More generally, the
+  expression of such a section in any chart of the maximal atlas and any trivialization of the
+  trivialization atlas is `Cᵏ` (`TauCeti.contDiffOn_trivialization_comp_chart_symm_of_contMDiff`).
 -/
 
 public section
@@ -325,21 +328,33 @@ variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] {M : Type*} [To
   [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
   {k : ℕ} [IsManifold 𝓘(ℝ, E) k M] [ContMDiffVectorBundle k F V 𝓘(ℝ, E)]
 
+omit [IsManifold 𝓘(ℝ, E) k M] in
+/-- **The expression of a `Cᵏ` section in a chart and a trivialization is `Cᵏ`.** For a chart `φ`
+of the maximal `Cᵏ` atlas of `M` and a trivialization `e` of the bundle's trivialization atlas, the
+expression `y ↦ (e ⟨φ.symm y, s (φ.symm y)⟩).2` of a `Cᵏ` section `s` is `Cᵏ` on the open set of
+points of `φ.target` lying over `e.baseSet`. -/
+theorem contDiffOn_trivialization_comp_chart_symm_of_contMDiff {s : ∀ x, V x}
+    (hs : ContMDiff 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, F)) k fun x ↦ TotalSpace.mk' F x (s x))
+    {φ : OpenPartialHomeomorph M E} (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) k M)
+    (e : Trivialization F (π F V)) [MemTrivializationAtlas e] :
+    ContDiffOn ℝ k (fun y ↦ (e ⟨φ.symm y, s (φ.symm y)⟩).2) (φ.target ∩ φ.symm ⁻¹' e.baseSet) :=
+  (e.contMDiffOn_section_baseSet_iff.1 hs.contMDiffOn).contDiffOn_comp_symm_of_mem_maximalAtlas hφ
+
 namespace FiniteBundleAtlas
 
 variable (A : FiniteBundleAtlas E M F V)
 
 /-- **The chart coordinates of a `Cᵏ` section are `Cᵏ`** on the open set of points of the chart
-target whose preimage lies in the base set of the bundle chart. -/
+target whose preimage lies in the base set of the bundle chart. This is
+`TauCeti.contDiffOn_trivialization_comp_chart_symm_of_contMDiff` for the charts and trivializations
+of `A`. -/
 theorem contDiffOn_coord {s : ∀ x, V x}
     (hs : ContMDiff 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, F)) k fun x ↦ TotalSpace.mk' F x (s x))
     (i : Fin A.n) :
     ContDiffOn ℝ k (A.coord i s)
-      ((A.chart i).target ∩ (A.chart i).symm ⁻¹' (A.triv i).baseSet) := by
-  rw [← contMDiffOn_iff_contDiffOn]
-  exact (((A.triv i).contMDiffOn_section_baseSet_iff.1 hs.contMDiffOn).comp
-    (contMDiffOn_chart_symm.mono inter_subset_left) fun _ hy ↦ hy.2).congr fun y _ ↦
-      A.coord_def i s y
+      ((A.chart i).target ∩ (A.chart i).symm ⁻¹' (A.triv i).baseSet) :=
+  (contDiffOn_trivialization_comp_chart_symm_of_contMDiff hs
+    (IsManifold.chart_mem_maximalAtlas _) (A.triv i)).congr fun y _ ↦ A.coord_def i s y
 
 end FiniteBundleAtlas
 
