@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Local.Morrey
 public import TauCeti.Analysis.Sobolev.Local.Norm
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Sobolev.Local.W1p
+import TauCeti.Analysis.Sobolev.MorreyExponent
 import TauCeti.Analysis.Sobolev.W1p.SobolevEmbedding
 import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 
@@ -30,10 +31,10 @@ lowers the derivative order while raising the integrability exponent:
 Iterating this, a member of `W^{k,p}_loc(Ω, F)` with `1 ≤ p` and `kp > 2` lies in
 `W^{1,r}_loc(Ω, F)` for some `r > 2`. For `p < 2` each step uses the critical exponent
 `1/s = 1/p - 1/2`, and `(k - 1) · 2p/(2 - p) > 2` is equivalent to `kp > 2`; for `p = 2` any finite
-`s > 2` serves. The order-one Morrey embedding of `TauCeti.Analysis.Sobolev.Local.Morrey` then
-makes the precise representative of `u` continuous on `Ω`, and the order-one `L^∞` bound gives the
-local estimate `‖u‖_{L^∞(V)} ≤ C ‖u‖_{W^{k,p}(W)}`. This covers the exponents `p ≤ 2` of the
-Morrey statement for `kp > 2`.
+`s > 2` serves (`TauCeti.exists_sobolev_exponent_step`). The order-one Morrey embedding of
+`TauCeti.Analysis.Sobolev.Local.Morrey` then makes the precise representative of `u` continuous on
+`Ω`, and the order-one `L^∞` bound gives the local estimate `‖u‖_{L^∞(V)} ≤ C ‖u‖_{W^{k,p}(W)}`.
+This covers the exponents `p ≤ 2` of the Morrey statement for `kp > 2`.
 
 The scalar estimate is the interior Sobolev embedding of `TauCeti.W1p` on a relatively compact
 open subset, through `TauCeti.MemWkpLoc.exists_w1p`; the vector-valued estimate follows in a basis
@@ -89,12 +90,10 @@ private theorem exists_eLpNorm_value_le (hqs : q ≤ s) (hgap : (q : ℝ)⁻¹ -
     have hs0 : s ≠ 0 := by
       rintro rfl
       exact hq0 (nonpos_iff_eq_zero.1 hqs)
+    have h : s⁻¹ + 2⁻¹ = q⁻¹ := NNReal.coe_injective (by push_cast; linarith)
     have hexp : (s : ℝ≥0∞)⁻¹ + (finrank ℝ ℂ : ℝ≥0∞)⁻¹ = (q : ℝ≥0∞)⁻¹ := by
-      rw [Complex.finrank_real_complex, Nat.cast_ofNat, ← ENNReal.coe_inv hs0,
-        ← ENNReal.coe_inv hq0, ← ENNReal.coe_ofNat, ← ENNReal.coe_inv two_ne_zero,
-        ← ENNReal.coe_add, ENNReal.coe_inj, ← NNReal.coe_inj]
-      push_cast
-      linarith
+      rw [Complex.finrank_real_complex, ← ENNReal.coe_inv hs0, ← ENNReal.coe_inv hq0, ← h]
+      simp [ENNReal.coe_inv two_ne_zero]
     exact W1p.exists_eLpNorm_value_le_of_isCompact_closure ENNReal.coe_ne_top hexp hVc hVW le_rfl
 
 /-- A bound for the values of `W1p volume W q` in `L^t(V)` passes to real members of
@@ -262,47 +261,6 @@ theorem exists_eLpNormWkp_le_mul_eLpNormWkp_succ (hqs : q ≤ s)
           push_cast
           ring
 
-/-- One step of the exponent iteration for `kp > 2` with `p ≤ 2`: there is a target exponent `s`
-admissible for the Sobolev embedding from `W^{1,p}` with `k s > 2`. For `p < 2` it is the critical
-exponent `1/s = 1/p - 1/2`, and for `p = 2` it is `4`. -/
-private theorem exists_exponent_step {p : ℝ≥0} (hp1 : 1 ≤ p) (hp2 : p ≤ 2)
-    (hkp : 2 < ((k + 1 : ℕ) : ℝ≥0) * p) :
-    ∃ s : ℝ≥0, p ≤ s ∧ (p : ℝ)⁻¹ - (s : ℝ)⁻¹ ≤ 2⁻¹ ∧ 2 < (k : ℝ≥0) * s := by
-  have hkp' : (2 : ℝ) < ((k : ℝ) + 1) * p := by exact_mod_cast hkp
-  have hp1' : (1 : ℝ) ≤ p := by exact_mod_cast hp1
-  rcases hp2.lt_or_eq with hlt | rfl
-  · have hlt' : (p : ℝ) < 2 := by exact_mod_cast hlt
-    have hp0 : (0 : ℝ) < p := by positivity
-    have ha : 0 < (p : ℝ)⁻¹ - 2⁻¹ := sub_pos.2 (inv_strictAnti₀ (by positivity) hlt')
-    obtain ⟨s, hs⟩ : ∃ s : ℝ≥0, (s : ℝ) = ((p : ℝ)⁻¹ - 2⁻¹)⁻¹ := ⟨⟨_, (inv_pos.2 ha).le⟩, rfl⟩
-    have hs0 : (0 : ℝ) < s := hs ▸ inv_pos.2 ha
-    have hsa : (s : ℝ)⁻¹ = (p : ℝ)⁻¹ - 2⁻¹ := by rw [hs, inv_inv]
-    refine ⟨s, ?_, ?_, ?_⟩
-    · rw [← NNReal.coe_le_coe, ← inv_le_inv₀ hs0 hp0, hsa]
-      have : (2 : ℝ)⁻¹ ≤ (p : ℝ)⁻¹ := inv_anti₀ hp0 hlt'.le
-      have : (p : ℝ)⁻¹ ≤ 1 := inv_le_one_of_one_le₀ hp1'
-      linarith
-    · rw [hsa]
-      linarith
-    · rw [← NNReal.coe_lt_coe]
-      push_cast
-      have hkey : (2 : ℝ) * ((p : ℝ)⁻¹ - 2⁻¹) < k := by
-        rw [mul_sub, inv_eq_one_div, mul_one_div, show (2 : ℝ) * 2⁻¹ = 1 by norm_num,
-          sub_lt_iff_lt_add, div_lt_iff₀ hp0]
-        linarith
-      rw [hs, ← div_eq_mul_inv, lt_div_iff₀ ha]
-      exact hkey
-  · refine ⟨4, by norm_num, by norm_num, ?_⟩
-    have hk : 1 ≤ k := by
-      by_contra h
-      have h0 : k = 0 := by omega
-      subst h0
-      norm_num at hkp'
-    rw [← NNReal.coe_lt_coe]
-    push_cast
-    have : (1 : ℝ) ≤ k := by exact_mod_cast hk
-    linarith
-
 /-- **Order one with exponent above two from `kp > 2`.** If `1 ≤ p` and `2 < k p`, every
 `u ∈ W^{k,p}_loc(Ω, F)` lies in `W^{1,r}_loc(Ω, F)` for some `r > 2`. For `p > 2` take `r = p`;
 otherwise lower the order with the critical exponent and induct. -/
@@ -315,7 +273,7 @@ theorem MemWkpLoc.exists_two_lt_memWkpLoc_one_of_two_lt_mul {p : ℝ≥0} [Fact 
     by_cases hp : 2 < p
     · exact ⟨p, hp, hu.of_le (by omega)⟩
     have hp1 : 1 ≤ p := by exact_mod_cast (Fact.out : (1 : ℝ≥0∞) ≤ p)
-    obtain ⟨s, hps, hgap, hks⟩ := exists_exponent_step hp1 (not_lt.1 hp) hkp
+    obtain ⟨s, hps, hgap, hks⟩ := exists_sobolev_exponent_step hp1 (not_lt.1 hp) hkp
     have : Fact (1 ≤ (s : ℝ≥0∞)) := ⟨(Fact.out : (1 : ℝ≥0∞) ≤ p).trans
       (ENNReal.coe_le_coe.2 hps)⟩
     exact ih hks (hu.of_succ_of_inv_sub_inv_le hps hgap)
@@ -355,7 +313,7 @@ theorem exists_eLpNorm_top_le_mul_eLpNormWkp_of_two_lt_mul {p : ℝ≥0} [Fact (
       exact ⟨C, fun u hu => (hC u (hu.of_le (by omega))).trans
         (by gcongr; exact eLpNormWkp_mono_order (by omega))⟩
     have hp1 : 1 ≤ p := by exact_mod_cast (Fact.out : (1 : ℝ≥0∞) ≤ p)
-    obtain ⟨s, hps, hgap, hks⟩ := exists_exponent_step hp1 (not_lt.1 hp) hkp
+    obtain ⟨s, hps, hgap, hks⟩ := exists_sobolev_exponent_step hp1 (not_lt.1 hp) hkp
     have : Fact (1 ≤ (s : ℝ≥0∞)) := ⟨(Fact.out : (1 : ℝ≥0∞) ≤ p).trans
       (ENNReal.coe_le_coe.2 hps)⟩
     obtain ⟨W', hVW', hW'W, hW'c⟩ := Opens.exists_between_and_isCompact_closure hVc hVW
