@@ -421,6 +421,7 @@ theorem extension_size : (PA.extension PC hi hiq hc hX).size = PA.size + PC.size
 
 /-- The relation matrix of the presentation of an extension is the block upper triangular matrix
 `[[ψ, -X], [0, φ]]`, indexed through `Fin n ⊕ Fin m ≃ Fin (n + m)`. -/
+@[simp]
 theorem extension_rel : (PA.extension PC hi hiq hc hX).rel =
     Matrix.reindex finSumFinEquiv finSumFinEquiv (Matrix.fromBlocks PA.rel (-X) 0 PC.rel) := by
   ext k l
@@ -430,7 +431,6 @@ theorem extension_rel : (PA.extension PC hi hiq hc hX).rel =
     simp [extension, LinearMap.toMatrix_apply]
 
 /-- The relation matrix of the presentation of an extension has determinant `det ψ * det φ`. -/
-@[simp]
 theorem det_extension_rel :
     (PA.extension PC hi hiq hc hX).rel.det = PA.rel.det * PC.rel.det := by
   have h := Matrix.det_fromBlocks_zero₂₁ PA.rel (-X) PC.rel

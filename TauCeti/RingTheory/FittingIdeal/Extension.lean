@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Module.Presentation.Quadratic
 
 import TauCeti.Algebra.Module.Projective.Schanuel
-import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # Fitting ideals of extensions
