@@ -201,7 +201,7 @@ private theorem halfFrobenius_simpleRootSubgroup_short (u : Multiplicative d.1.C
   exact SpStd.specialIsogeny_rootSubgroupPoints_inl_zero _ _
 
 /-- The length permutation of the index exchanges the two carrier nodes. -/
-private theorem carrierNode_lengthPerm (i : Fin d.1.rank) :
+theorem carrierNode_lengthPerm (i : Fin d.1.rank) :
     d.toRankTwoBLieIndex.carrierNode (SuzukiReeIndex.lengthPerm d.toSuzukiReeIndex i) =
       Equiv.swap 0 1 (d.toRankTwoBLieIndex.carrierNode i) := by
   have hswap : d.toRankTwoBLieIndex.carrierNode
@@ -218,7 +218,7 @@ private theorem carrierNode_lengthPerm (i : Fin d.1.rank) :
   decide
 
 /-- The exponent of the index is one at the final carrier node and two at the other. -/
-private theorem exponent_eq (i : Fin d.1.rank) :
+theorem exponent_eq_ite_carrierNode (i : Fin d.1.rank) :
     SuzukiReeIndex.exponent d.toSuzukiReeIndex i =
       if d.toRankTwoBLieIndex.carrierNode i = 1 then 1 else 2 := by
   have hnode := d.toRankTwoBLieIndex.carrierNode_eq_one_iff i
@@ -252,7 +252,7 @@ theorem halfFrobenius_simpleRootSubgroup (i : Fin d.1.rank) (u : Multiplicative 
         (d.toRankTwoBLieIndex.carrierNode.symm c) =
       d.toRankTwoBLieIndex.carrierNode.symm (Equiv.swap 0 1 c) := by
     rw [Equiv.eq_symm_apply, d.carrierNode_lengthPerm, Equiv.apply_symm_apply]
-  rw [hj, d.exponent_eq, Equiv.apply_symm_apply]
+  rw [hj, d.exponent_eq_ite_carrierNode, Equiv.apply_symm_apply]
   fin_cases c
   · simpa using d.halfFrobenius_simpleRootSubgroup_short u
   · simpa using d.halfFrobenius_simpleRootSubgroup_long u
