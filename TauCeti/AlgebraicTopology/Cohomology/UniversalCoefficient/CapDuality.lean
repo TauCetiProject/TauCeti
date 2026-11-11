@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Cohomology
-public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Surface
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Kronecker
 public import TauCeti.AlgebraicTopology.Cohomology.GradedCommutativity
+public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient.Field
 public import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 
 /-!
@@ -33,11 +32,6 @@ with its mod two fundamental class is bijective. When capping with `μ` is bijec
 numbers in the complementary degrees `p` and `q` agree
 (`TopCat.finrank_singularHomology_eq_of_bijective_singularCapLinearMap`).
 
-For a closed connected homologically oriented surface `M` of finite CW type, these give: if
-capping with the rational fundamental class is injective on `H¹(M; ℚ)`, then `b₁(M; ℚ)` is even
-and the Euler characteristic is `2 - 2g` for a natural number `g`. The injectivity is the
-degree-one part of Poincaré duality, which is a separate input here; no genus is defined.
-
 All cohomology and homology here has coefficients in the tensor unit `𝟙_ (ModuleCat k)`, that is
 `k` itself, and both products are taken along the unitors of `𝟙_ (ModuleCat k)`, as in
 `TopCat.singularCap_comp_singularKronecker`.
@@ -52,9 +46,6 @@ All cohomology and homology here has coefficients in the tensor unit `𝟙_ (Mod
 * `TopCat.even_finrank_singularCohomology_of_injective_singularCapLinearMap` and
   `TopCat.finrank_singularHomology_eq_of_bijective_singularCapLinearMap`: the Betti number
   consequences.
-* the surface case, in the namespace `TauCeti.HomologicalOrientation`:
-  `even_finrank_singularHomology_one_of_injective_singularCapLinearMap` and
-  `exists_eulerChar_eq_two_sub_two_mul_of_injective_singularCapLinearMap`.
 
 ## References
 
@@ -212,38 +203,3 @@ theorem finrank_singularHomology_eq_of_bijective_singularCapLinearMap {p q n : �
   exact X.finrank_singularCohomology p
 
 end TopCat
-
-namespace TauCeti.HomologicalOrientation
-
-variable {M E : Type} [TopologicalSpace M] [T2Space M] [CompactSpace M] [ConnectedSpace M]
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M]
-  [FiniteCWType M] (o : HomologicalOrientation M E 2) (hn : finrank ℝ E = 2)
-
-/-- **The first Betti number of a closed oriented surface is even** once capping with the
-rational fundamental class is injective on `H¹(M; ℚ)`: the cup pairing on `[M]_ℚ` is then a
-nondegenerate alternating form on `H¹(M; ℚ)`. The injectivity is the degree-one part of Poincaré
-duality, taken here as a hypothesis. -/
-theorem even_finrank_singularHomology_one_of_injective_singularCapLinearMap
-    (hinj : Function.Injective
-      ((TopCat.of M).singularCapLinearMap (k := ℚ) (p := 1) (q := 1) rfl
-        (o.rationalFundamentalClass hn))) :
-    Even (finrank ℚ
-      (((singularHomologyFunctor (ModuleCat.{0} ℚ) 1).obj (ModuleCat.of ℚ ℚ)).obj
-        (TopCat.of M))) := by
-  have := finite_singularCohomology_of_finiteCWType M ℚ 1
-  rw [← TopCat.finrank_singularCohomology]
-  exact (TopCat.of M).even_finrank_singularCohomology_of_injective_singularCapLinearMap
-    two_ne_zero odd_one (by rfl : 1 + 1 = 2) _ hinj
-
-/-- **The Euler characteristic of a closed oriented surface is `2 - 2g`** once capping with the
-rational fundamental class is injective on `H¹(M; ℚ)`. No genus is defined here: `g` is half the
-first rational Betti number. -/
-theorem exists_eulerChar_eq_two_sub_two_mul_of_injective_singularCapLinearMap
-    (hinj : Function.Injective
-      ((TopCat.of M).singularCapLinearMap (k := ℚ) (p := 1) (q := 1) rfl
-        (o.rationalFundamentalClass hn))) :
-    ∃ g : ℕ, eulerChar M = 2 - 2 * g := by
-  obtain ⟨g, hg⟩ := o.even_finrank_singularHomology_one_of_injective_singularCapLinearMap hn hinj
-  exact ⟨g, by rw [o.eulerChar_eq_two_sub_finrank_singularHomology_one hn, hg]; push_cast; ring⟩
-
-end TauCeti.HomologicalOrientation
