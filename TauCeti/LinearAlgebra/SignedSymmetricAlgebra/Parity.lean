@@ -102,6 +102,12 @@ theorem lift_generator (f : V →ₗ[R] A) (hf) (x : V) :
     lift G f hf (generator G x) = f x := by
   rw [← quotient_ι, lift_quotient, TensorAlgebra.lift_ι_apply]
 
+/-- The extension to the parity presentation is unique. -/
+theorem lift_unique (f : V →ₗ[R] A) (hf) (g : ParitySignedSym G →ₐ[R] A)
+    (hg : ∀ x, g (generator G x) = f x) : g = lift G f hf := by
+  apply hom_ext
+  simpa only [lift_generator] using hg
+
 /-- The universal property of the parity presentation. -/
 def liftEquiv :
     {f : V →ₗ[R] A // ∀ (i j : ZMod 2) (x y : V), x ∈ G.piece i → y ∈ G.piece j →
@@ -180,6 +186,12 @@ theorem parityEquiv_quotient (x : TensorAlgebra R V) :
     ext x
     simp
   exact AlgHom.congr_fun h x
+
+/-- The inverse comparison also commutes with the tensor-algebra quotient maps. -/
+@[simp]
+theorem parityEquiv_symm_quotient (x : TensorAlgebra R V) :
+    (parityEquiv G).symm (ParitySignedSym.quotient G.parity x) = quotient G x :=
+  (parityEquiv G).symm_apply_eq.2 (parityEquiv_quotient G x).symm
 
 end SignedSym
 
