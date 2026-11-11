@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Hessian.Eikonal
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Hessian
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
-public import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.SecondCovariantDerivative.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Torsion
 
 /-!
 # The Riccati identity for an eikonal gradient
@@ -40,41 +40,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
-/-- The Hessian endomorphism of a constant-speed eikonal function satisfies the intrinsic
-Riccati identity along its gradient. -/
-theorem secondCovariantDerivative_mgradient_riccati {f : M → ℝ}
-    (hf : ContMDiff I 𝓘(ℝ) ∞ f) {c : ℝ}
-    (hc : ∀ x, ‖mgradient I f x‖ ^ 2 = c) (x : M) (v : TangentSpace I x) :
-    (leviCivitaConnection I M).secondCovariantDerivative (leviCivitaConnection I M)
-        (mgradient I f) x (mgradient I f x) v +
-      leviCivitaConnection I M (mgradient I f) x
-        (leviCivitaConnection I M (mgradient I f) x v) +
-      (leviCivitaConnection I M).curvatureTensor x v (mgradient I f x) (mgradient I f x) =
-        0 := by
-  let cov := leviCivitaConnection I M
-  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  have hG : CMDiff ∞ (T% (mgradient I f)) := contMDiff_mgradient (by simpa using hf)
-  have hzero (y : M) : cov (mgradient I f) y (mgradient I f y) = 0 := by
-    apply ext_inner_right ℝ
-    intro w
-    simpa only [inner_zero_left, hessian_def] using
-      hessian_mgradient_eq_zero_of_eventually_norm_sq_eq_const
-        ((hf.of_le (by simp : (2 : ℕ∞ω) ≤ ∞)).contMDiffAt)
-        (Filter.Eventually.of_forall hc) w
-  have hz : (fun y ↦ cov (mgradient I f) y (mgradient I f y)) = 0 := funext hzero
-  have hsecond := cov.secondCovariantDerivative_apply cov hG x hG v
-  rw [hz, cov.zero, Pi.zero_apply, zero_apply, zero_sub] at hsecond
-  have ht : cov.IsTorsionFree := (isTorsionFree_iff_torsion_eq_zero cov).2
-    (torsion_leviCivitaConnection_eq_zero I)
-  have hR := cov.secondCovariantDerivative_sub_swap_of_isTorsionFree cov ht hG x v
-    (mgradient I f x)
-  rw [hsecond] at hR
-  change cov.secondCovariantDerivative cov (mgradient I f) x (mgradient I f x) v +
-    cov (mgradient I f) x (cov (mgradient I f) x v) +
-    cov.curvatureTensor x v (mgradient I f x) (mgradient I f x) = 0
-  rw [← hR]
-  abel
-
 /-- On an open eikonal domain, the induced Hom derivative of the Hessian endomorphism
 satisfies the Riccati identity. This local form does not require a globally smooth function. -/
 theorem hom_mgradient_riccati_on {f : M → ℝ} {U : Set M} (hU : IsOpen U)
@@ -87,8 +52,8 @@ theorem hom_mgradient_riccati_on {f : M → ℝ} {U : Set M} (hU : IsOpen U)
         (leviCivitaConnection I M (mgradient I f) x v) +
       (leviCivitaConnection I M).curvatureTensor x v (mgradient I f x) (mgradient I f x) =
         0 := by
-  let cov := leviCivitaConnection I M
-  let G := mgradient I f
+  set cov := leviCivitaConnection I M
+  set G := mgradient I f
   have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
   have hG : CMDiff[U] ∞ (T% G) := by
     intro y hy
@@ -109,9 +74,7 @@ theorem hom_mgradient_riccati_on {f : M → ℝ} {U : Set M} (hU : IsOpen U)
       ((hS.contMDiffAt (hU.mem_nhds hx)).mdifferentiableAt (by simp))
       ((contMDiff_zeroSection (n := 1) ℝ (TangentSpace I : M → Type _)).mdifferentiable (by simp) x)
       (Filter.univ_mem) (Filter.eventually_of_mem (hU.mem_nhds hx) hzero)
-    change cov (fun y ↦ cov G y (G y)) x =
-      cov (0 : Π y : M, TangentSpace I y) x at heq
-    simpa only [cov.zero, Pi.zero_apply] using heq
+    exact heq.trans (congrFun cov.zero x)
   obtain ⟨Y, hY, hv⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ v
   have hGx := (hG.contMDiffAt (hU.mem_nhds hx)).mdifferentiableAt (by simp)
   have hYx := hY.mdifferentiable (by simp) x
@@ -124,9 +87,23 @@ theorem hom_mgradient_riccati_on {f : M → ℝ} {U : Set M} (hU : IsOpen U)
   have hbracket := ((isTorsionFree_iff cov).mp ht hYx hGx).symm
   rw [hbracket, map_sub] at hR
   rw [hv] at hR hhom
-  change cov.hom cov (fun y ↦ cov G y) x (G x) v + cov G x (cov G x v) +
-    cov.curvatureTensor x v (G x) (G x) = 0
   rw [hhom, hR]
   abel
+
+/-- The Hessian endomorphism of a constant-speed eikonal function satisfies the intrinsic
+Riccati identity along its gradient. -/
+theorem secondCovariantDerivative_mgradient_riccati {f : M → ℝ}
+    (hf : ContMDiff I 𝓘(ℝ) ∞ f) {c : ℝ}
+    (hc : ∀ x, ‖mgradient I f x‖ ^ 2 = c) (x : M) (v : TangentSpace I x) :
+    (leviCivitaConnection I M).secondCovariantDerivative (leviCivitaConnection I M)
+        (mgradient I f) x (mgradient I f x) v +
+      leviCivitaConnection I M (mgradient I f) x
+        (leviCivitaConnection I M (mgradient I f) x v) +
+      (leviCivitaConnection I M).curvatureTensor x v (mgradient I f x) (mgradient I f x) =
+        0 := by
+  have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  rw [secondCovariantDerivative_eq_hom_apply _ _
+    (contMDiff_mgradient (I := I) (n := ∞) (by simpa using hf))]
+  exact hom_mgradient_riccati_on isOpen_univ hf.contMDiffOn (fun y _ ↦ hc y) (mem_univ x) v
 
 end TauCeti.Manifold
