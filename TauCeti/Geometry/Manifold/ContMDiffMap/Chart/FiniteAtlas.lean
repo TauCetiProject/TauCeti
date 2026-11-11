@@ -42,6 +42,7 @@ targets and interiors are relative to them. The coefficient space is an arbitrar
   seminorm is bounded by a multiple of the finite-atlas seminorm.
 * `ContMDiffMap.exists_finiteAtlasSeminorm_le`: the seminorm of any finite atlas is bounded by
   a multiple of that of a covering atlas; so any two covering atlases give equivalent norms.
+* `ContMDiffMap.norm_apply_le_finiteAtlasSeminorm`: the finite-atlas seminorm bounds every value.
 * `ContMDiffMap.finiteAtlasSeminorm_eq_zero_iff`: the finite-atlas seminorm is a norm.
 * `ContMDiffMap.withSeminorms_finiteAtlasSeminorm`: it generates the weak Whitney topology on
   `C^k` maps.
@@ -169,9 +170,29 @@ theorem exists_finiteAtlasSeminorm_le {ι' : Type*} [Fintype ι'] (c' : ι' → 
 
 end Cover
 
+/-- Every value of a map is bounded by its finite-atlas seminorm when the compact pieces cover the
+manifold, since every point then has coordinates in some compact piece, where the derivative of
+order zero is the value of the map. -/
+theorem norm_apply_le_finiteAtlasSeminorm
+    (hK : ∀ y : M, ∃ i, ∃ hy : y ∈ (extChartAt I (c i)).source,
+      (⟨extChartAt I (c i) y, (extChartAt I (c i)).map_source hy⟩ :
+        (extChartAt I (c i)).target) ∈ K i)
+    (k : ℕ) (hk : k ≤ n) (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (y : M) :
+    ‖f y‖ ≤ finiteAtlasSeminorm c K k hk f := by
+  obtain ⟨i, hy, hyK⟩ := hK y
+  have hle := (finiteAtlasSeminorm_le_iff c K k hk f (apply_nonneg _ _)).mp le_rfl i 0
+    (Nat.zero_le k) _ hyK
+  have hval := chartIteratedFDeriv_zero_apply f (c i)
+    ⟨extChartAt I (c i) y, (extChartAt I (c i)).map_source hy⟩ (fun j ↦ Fin.elim0 j)
+  rw [(extChartAt I (c i)).left_inv hy] at hval
+  rw [← hval]
+  -- The two norms differ only in the spelling of the chart target in the coercion type.
+  exact ((ContinuousMultilinearMap.le_opNorm _ _).trans_eq
+    (by rw [Finset.univ_eq_empty, Finset.prod_empty, mul_one]; rfl)).trans hle
+
 /-- **The finite-atlas seminorm is a norm**: it vanishes only on the zero map when the compact
-pieces cover the manifold, since every point then has coordinates in some compact piece, where
-the derivative of order zero is the value of the map. -/
+pieces cover the manifold, since it bounds every value of the map
+(`ContMDiffMap.norm_apply_le_finiteAtlasSeminorm`). -/
 theorem finiteAtlasSeminorm_eq_zero_iff
     (hK : ∀ y : M, ∃ i, ∃ hy : y ∈ (extChartAt I (c i)).source,
       (⟨extChartAt I (c i) y, (extChartAt I (c i)).map_source hy⟩ :
@@ -180,16 +201,7 @@ theorem finiteAtlasSeminorm_eq_zero_iff
     finiteAtlasSeminorm c K k hk f = 0 ↔ f = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ map_zero _⟩
   ext y
-  obtain ⟨i, hy, hyK⟩ := hK y
-  have hle := (finiteAtlasSeminorm_le_iff c K k hk f le_rfl).mp h.le i 0 (Nat.zero_le k) _ hyK
-  have h0 : chartIteratedFDeriv f (c i) 0 ((Nat.cast_le.mpr (Nat.zero_le k)).trans hk)
-      ⟨extChartAt I (c i) y, (extChartAt I (c i)).map_source hy⟩ = 0 :=
-    norm_le_zero_iff.mp hle
-  have hval := chartIteratedFDeriv_zero_apply f (c i)
-    ⟨extChartAt I (c i) y, (extChartAt I (c i)).map_source hy⟩ (fun j ↦ Fin.elim0 j)
-  rw [(extChartAt I (c i)).left_inv hy] at hval
-  rw [← hval]
-  exact congrArg (fun A : E [×0]→L[𝕜] F ↦ A (fun j ↦ Fin.elim0 j)) h0
+  exact norm_le_zero_iff.mp ((norm_apply_le_finiteAtlasSeminorm hK k hk f y).trans h.le)
 
 section Topology
 
