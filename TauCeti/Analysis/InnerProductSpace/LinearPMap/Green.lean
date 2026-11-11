@@ -31,7 +31,6 @@ multiplication by `μ⁻¹`. If `ker A = H` then `G = 0`.
 
 ## Main results
 
-* `IsSelfAdjoint.orthogonal_range_eq_ker`: for a self-adjoint `A`, `(range A)ᗮ = ker A`.
 * `IsSelfAdjoint.exists_pos_mul_norm_le_norm_apply_of_mem_orthogonal_ker`: with compact
   resolvent, `A` is bounded below on `D(A) ∩ (ker A)ᗮ`.
 * `IsSelfAdjoint.range_eq_orthogonal_ker`, `IsSelfAdjoint.exists_apply_eq_iff_mem_orthogonal_ker`
@@ -58,54 +57,6 @@ noncomputable section
 open scoped InnerProductSpace
 
 namespace LinearPMap
-
-section RCLike
-
-variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-  {A : E →ₗ.[𝕜] E}
-
-/-- The values of a symmetric partial linear map are orthogonal to its kernel. -/
-theorem IsFormalAdjoint.apply_mem_orthogonal_ker (hA : A.IsFormalAdjoint A) (x : A.domain) :
-    A x ∈ A.kerᗮ := by
-  refine (Submodule.mem_orthogonal _ _).2 fun y hy ↦ ?_
-  obtain ⟨z, rfl, hz⟩ := mem_ker_iff.1 hy
-  rw [← hA z x, hz, inner_zero_left]
-
-/-- The range of a symmetric partial linear map is orthogonal to its kernel. -/
-theorem IsFormalAdjoint.range_le_orthogonal_ker (hA : A.IsFormalAdjoint A) :
-    LinearMap.range A.toFun ≤ A.kerᗮ := by
-  rintro _ ⟨x, rfl⟩
-  exact hA.apply_mem_orthogonal_ker x
-
-/-- An operator with compact resolvent has a finite-dimensional, hence complete, kernel, which
-therefore admits an orthogonal projection. -/
-theorem HasCompactResolvent.hasOrthogonalProjection_ker (h : A.HasCompactResolvent) :
-    A.ker.HasOrthogonalProjection := by
-  have := h.finiteDimensional_ker
-  infer_instance
-
-/-- Removing the kernel component of `u ∈ D(A)` gives a vector of `D(A)` with the same image. -/
-private theorem exists_coe_eq_sub_starProjection [A.ker.HasOrthogonalProjection] (u : A.domain) :
-    ∃ v : A.domain, (v : E) = u - A.ker.starProjection u ∧ A v = A u :=
-  ⟨u - ⟨_, A.ker_le_domain (A.ker.starProjection_apply_mem u)⟩, rfl, by
-    rw [map_sub, (coe_mem_ker_iff (x := ⟨_, _⟩)).1 (A.ker.starProjection_apply_mem u), sub_zero]⟩
-
-variable [CompleteSpace E]
-
-/-- For a self-adjoint `A`, the orthogonal complement of the range is the kernel: a vector
-orthogonal to the range lies in the domain of `A† = A` and is killed by it. -/
-theorem _root_.IsSelfAdjoint.orthogonal_range_eq_ker (hA : IsSelfAdjoint A) :
-    (LinearMap.range A.toFun)ᗮ = A.ker := by
-  refine le_antisymm (fun y hy ↦ ?_)
-    (Submodule.isOrtho_comm.1 hA.isFormalAdjoint.range_le_orthogonal_ker)
-  have hortho : ∀ x : A.domain, ⟪y, (0 : 𝕜) • (x : E) - A x⟫_𝕜 = 0 := fun x ↦ by
-    rw [zero_smul, zero_sub, inner_neg_right, neg_eq_zero]
-    exact Submodule.inner_left_of_mem_orthogonal (LinearMap.mem_range_self A.toFun x) hy
-  obtain ⟨hy', hAy⟩ := exists_adjoint_apply_eq_of_inner_smul_sub_eq_zero hA.dense_domain hortho
-  obtain ⟨z, hz, hAz⟩ := exists_of_le (isSelfAdjoint_def.mp hA).le ⟨y, hy'⟩
-  exact mem_ker_iff.2 ⟨z, hz, by rw [← hAz, hAy]; simp⟩
-
-end RCLike
 
 section Complex
 
