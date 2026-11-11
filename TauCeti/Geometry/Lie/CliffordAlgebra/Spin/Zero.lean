@@ -19,9 +19,9 @@ the smooth structure furnished by the closed-subgroup theorem, retaining its ind
 topology. Its model and its Lie algebra are zero, and its inclusion in Clifford units
 is a smooth embedding.
 
-The existing algebraic identification with `Multiplicative (ZMod 2)` and the double
-cover of the trivial special orthogonal group therefore use a discrete,
-zero-dimensional Lie group, rather than a replacement abstract carrier.
+The carrier of the existing algebraic identification with `Multiplicative (ZMod 2)`
+and double cover of the trivial special orthogonal group now has a discrete,
+zero-dimensional Lie-group structure.
 
 ## References
 
@@ -44,63 +44,66 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 local notation "Q₀" => realCliffordForm 0 0
 local notation "μ₂" => evenUnitaryGroup Q₀
 
-/-- The geometric rank-zero Spin group is finite. The coordinate space has empty index
-set; registering finiteness here also makes its induced discrete topology inferable. -/
-instance instFiniteRealSpinZero : Finite μ₂ := by
-  let := Pi.uniqueOfIsEmpty (fun _ : Fin 0 ↦ ℝ)
-  have : Subsingleton (Fin (0 + 0) → ℝ) :=
-    inferInstanceAs (Subsingleton (Fin 0 → ℝ))
+/-- The geometric rank-zero Spin group is finite. -/
+instance instFiniteEvenUnitaryGroupZero : Finite μ₂ := by
+  have : Subsingleton (Fin (0 + 0) → ℝ) := by
+    rw [Nat.add_zero]
+    exact (Pi.uniqueOfIsEmpty _).instSubsingleton
   infer_instance
 
 /-- The ambient one-parameter-subgroup model for the geometric rank-zero Spin group.
-It is the zero subspace, as `realSpinZero_lieSubalgebra_eq_bot` proves. -/
-abbrev realSpinZeroLieModel :=
+It is the zero subspace, as `evenUnitaryGroupZero_lieSubalgebra_eq_bot` proves. -/
+abbrev evenUnitaryGroupZeroLieModel :=
   (TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, CliffordAlgebra Q₀)) μ₂).toSubmodule
 
 /-- The geometric rank-zero Spin subgroup is closed in Clifford units. -/
-theorem isClosed_realSpinZero : IsClosed (μ₂ : Set (CliffordAlgebra Q₀)ˣ) :=
+theorem isClosed_evenUnitaryGroupZero : IsClosed (μ₂ : Set (CliffordAlgebra Q₀)ˣ) :=
   (Set.finite_coe_iff.mp (inferInstanceAs (Finite μ₂))).isClosed
 
-/-- The canonical ambient Lie algebra of the geometric rank-zero Spin group is zero.
-Its topology is the induced subgroup topology, which is discrete since the group is finite. -/
+/-- The canonical ambient Lie algebra of the geometric rank-zero Spin group is zero. -/
 @[simp]
-theorem realSpinZero_lieSubalgebra_eq_bot :
+theorem evenUnitaryGroupZero_lieSubalgebra_eq_bot :
     TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, CliffordAlgebra Q₀)) μ₂ = ⊥ :=
   (TauCeti.Lie.discreteTopology_iff_lieSubalgebraOfSubgroup_eq_bot
-    (I := 𝓘(ℝ, CliffordAlgebra Q₀)) isClosed_realSpinZero).mp inferInstance
+    (I := 𝓘(ℝ, CliffordAlgebra Q₀)) isClosed_evenUnitaryGroupZero).mp inferInstance
 
 /-- The zero-dimensional model of the geometric rank-zero Spin group has just one vector. -/
-instance instSubsingletonRealSpinZeroLieModel : Subsingleton realSpinZeroLieModel := by
-  unfold realSpinZeroLieModel
-  rw [realSpinZero_lieSubalgebra_eq_bot]
-  exact LieSubalgebra.subsingleton_bot
+instance instSubsingletonEvenUnitaryGroupZeroLieModel :
+    Subsingleton evenUnitaryGroupZeroLieModel := by
+  unfold evenUnitaryGroupZeroLieModel
+  rw [evenUnitaryGroupZero_lieSubalgebra_eq_bot, LieSubalgebra.bot_toSubmodule]
+  infer_instance
 
 /-- The embedded smooth structure on the actual rank-zero even unitary subgroup of
 Clifford units, selected by the closed-subgroup theorem. -/
-def realSpinZeroEmbeddedLieSubgroupData :
-    TauCeti.Lie.EmbeddedLieSubgroupData 𝓘(ℝ, CliffordAlgebra Q₀) μ₂ realSpinZeroLieModel :=
-  TauCeti.Lie.EmbeddedLieSubgroupData.ofIsClosed isClosed_realSpinZero
+def evenUnitaryGroupZeroEmbeddedLieSubgroupData :
+    TauCeti.Lie.EmbeddedLieSubgroupData 𝓘(ℝ, CliffordAlgebra Q₀) μ₂
+      evenUnitaryGroupZeroLieModel :=
+  TauCeti.Lie.EmbeddedLieSubgroupData.ofIsClosed isClosed_evenUnitaryGroupZero
 
 /-- Charts on the geometric rank-zero Spin group, retaining its induced topology. -/
-instance instChartedSpaceRealSpinZero : ChartedSpace realSpinZeroLieModel μ₂ :=
-  realSpinZeroEmbeddedLieSubgroupData.chartedSpace
+instance instChartedSpaceEvenUnitaryGroupZero : ChartedSpace evenUnitaryGroupZeroLieModel μ₂ :=
+  evenUnitaryGroupZeroEmbeddedLieSubgroupData.chartedSpace
 
 /-- The geometric rank-zero Spin group is a zero-dimensional real Lie group. -/
-instance instLieGroupRealSpinZero : LieGroup 𝓘(ℝ, realSpinZeroLieModel) ∞ μ₂ :=
-  realSpinZeroEmbeddedLieSubgroupData.lieGroup
+instance instLieGroupEvenUnitaryGroupZero : LieGroup 𝓘(ℝ, evenUnitaryGroupZeroLieModel) ∞ μ₂ :=
+  evenUnitaryGroupZeroEmbeddedLieSubgroupData.lieGroup
 
 /-- The actual Lie algebra of the geometric rank-zero Spin group is trivial. -/
-instance instSubsingletonRealSpinZeroLieAlgebra :
-    Subsingleton (LeftInvariantDerivation 𝓘(ℝ, realSpinZeroLieModel) μ₂) := by
+instance instSubsingletonEvenUnitaryGroupZeroLieAlgebra :
+    Subsingleton (LeftInvariantDerivation 𝓘(ℝ, evenUnitaryGroupZeroLieModel) μ₂) := by
   have : Subsingleton (TauCeti.Lie.lieSubalgebraOfSubgroup
-      (I := 𝓘(ℝ, CliffordAlgebra Q₀)) μ₂) := instSubsingletonRealSpinZeroLieModel
-  exact realSpinZeroEmbeddedLieSubgroupData.lieEquivLieSubalgebraOfSubgroup.injective.subsingleton
+      (I := 𝓘(ℝ, CliffordAlgebra Q₀)) μ₂) := by
+    rw [evenUnitaryGroupZero_lieSubalgebra_eq_bot]
+    exact LieSubalgebra.subsingleton_bot
+  exact evenUnitaryGroupZeroEmbeddedLieSubgroupData.lieEquivLieSubalgebraOfSubgroup.injective
+    |>.subsingleton
 
 /-- The inclusion of the geometric rank-zero Spin group in Clifford units is a smooth
 embedding for the chosen closed-subgroup structure. -/
-theorem isSmoothEmbedding_realSpinZero_subtypeVal :
-    Manifold.IsSmoothEmbedding 𝓘(ℝ, realSpinZeroLieModel) 𝓘(ℝ, CliffordAlgebra Q₀) ∞
+theorem isSmoothEmbedding_evenUnitaryGroupZero_subtypeVal :
+    Manifold.IsSmoothEmbedding 𝓘(ℝ, evenUnitaryGroupZeroLieModel) 𝓘(ℝ, CliffordAlgebra Q₀) ∞
       (fun g : μ₂ ↦ (g : (CliffordAlgebra Q₀)ˣ)) :=
-  realSpinZeroEmbeddedLieSubgroupData.isSmoothEmbedding_subtypeVal
+  evenUnitaryGroupZeroEmbeddedLieSubgroupData.isSmoothEmbedding_subtypeVal
 
 end TauCeti.CliffordAlgebra
