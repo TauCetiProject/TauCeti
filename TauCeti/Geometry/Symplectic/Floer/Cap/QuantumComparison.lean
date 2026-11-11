@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Cap.Product
+public import TauCeti.Geometry.Symplectic.Floer.CoefficientComparison
 public import TauCeti.RingTheory.NovikovModule.Comparison
 
 /-!
@@ -95,8 +95,9 @@ include hμ₁ in
 `-2 c₁(γ)`. -/
 private theorem even_cochain_sub (i : κ₁) (γ : PeriodGroup ω c) (t : T₁ i) :
     Even (n - μ₁ ⟨i, γ +ᵥ t⟩ - (n - μ₁ ⟨i, t⟩)) := by
-  rw [hμ₁, show n - (degree ω c γ + μ₁ ⟨i, t⟩) - (n - μ₁ ⟨i, t⟩) = -degree ω c γ by ring]
-  exact (even_degree ω c γ).neg
+  rw [hμ₁]
+  convert (even_degree ω c γ).neg using 1
+  ring
 
 variable {G : Type*} [AddMonoid G] {ωG : G →+ ℝ} (q : G →+ PeriodGroup ω c)
   (hq : ∀ A, area ω c (q A) = ωG A)

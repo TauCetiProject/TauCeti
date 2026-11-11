@@ -367,35 +367,6 @@ end Cohomology
 
 section Matrix
 
-/-- Applying a matrix `Ψ` after the product of a matrix `M`, in coordinates, regroups as
-`∑ₖ (∑ᵢ ∑ⱼ xᵢ yⱼ Mᵢⱼₖ) Ψₖ = ∑ᵢ ∑ⱼ xᵢ yⱼ ∑ₖ Mᵢⱼₖ Ψₖ`. -/
-private theorem sum_mul_sum_sum_mul_mul {A ι₁ ι₂ ι₀ : Type*} [CommSemiring A] [Fintype ι₁]
-    [Fintype ι₂] [Fintype ι₀] (x : ι₁ → A) (y : ι₂ → A) (M : ι₁ → ι₂ → ι₀ → A) (Ψ : ι₀ → A) :
-    ∑ k, (∑ i, ∑ j, x i * y j * M i j k) * Ψ k = ∑ i, ∑ j, x i * y j * ∑ k, M i j k * Ψ k := by
-  simp only [Finset.sum_mul, Finset.mul_sum, mul_assoc]
-  rw [Finset.sum_comm]
-  exact Finset.sum_congr rfl fun i _ => Finset.sum_comm
-
-/-- Applying matrices `A` and `B` to the two inputs of the product of a matrix `M`, in
-coordinates, regroups as
-`∑ᵢ' ∑ⱼ' (∑ᵢ xᵢ Aᵢᵢ') (∑ⱼ yⱼ Bⱼⱼ') Mᵢ'ⱼ' = ∑ᵢ ∑ⱼ xᵢ yⱼ ∑ᵢ' ∑ⱼ' Aᵢᵢ' Bⱼⱼ' Mᵢ'ⱼ'`. -/
-private theorem sum_sum_sum_mul_sum_mul {A ι₁ ι₂ κ₁ κ₂ : Type*} [CommSemiring A] [Fintype ι₁]
-    [Fintype ι₂] [Fintype κ₁] [Fintype κ₂] (x : κ₁ → A) (y : κ₂ → A) (P : κ₁ → ι₁ → A)
-    (Q : κ₂ → ι₂ → A) (M : ι₁ → ι₂ → A) :
-    ∑ i', ∑ j', (∑ i, x i * P i i') * (∑ j, y j * Q j j') * M i' j' =
-      ∑ i, ∑ j, x i * y j * ∑ i', ∑ j', P i i' * Q j j' * M i' j' := by
-  simp only [Finset.sum_mul, Finset.mul_sum]
-  -- Move the sums over the inputs `i ∈ κ₁` and `j ∈ κ₂` outside those over `i' ∈ ι₁`, `j' ∈ ι₂`.
-  calc _ = ∑ i', ∑ j', ∑ i, ∑ j, x i * P i i' * (y j * Q j j') * M i' j' :=
-        Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => Finset.sum_comm
-    _ = ∑ i, ∑ i', ∑ j', ∑ j, x i * P i i' * (y j * Q j j') * M i' j' :=
-        (Finset.sum_congr rfl fun _ _ => Finset.sum_comm).trans Finset.sum_comm
-    _ = ∑ i, ∑ j, ∑ i', ∑ j', x i * P i i' * (y j * Q j j') * M i' j' :=
-        Finset.sum_congr rfl fun _ _ =>
-          (Finset.sum_congr rfl fun _ _ => Finset.sum_comm).trans Finset.sum_comm
-    _ = _ := Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ =>
-        Finset.sum_congr rfl fun _ _ => Finset.sum_congr rfl fun _ _ => by ring
-
 variable {R H ι₁ ι₂ ι₀ κ₁ κ₂ κ₀ : Type*} [CommRing R] [AddCommGroup H] {N : H →+ ℝ}
   {P₁ : ι₁ → Type*} {P₂ : ι₂ → Type*} {P₀ : ι₀ → Type*}
   {T₁ : κ₁ → Type*} {T₂ : κ₂ → Type*} {T₀ : κ₀ → Type*}
@@ -461,23 +432,10 @@ theorem novikovMapOfMatrix_novikovProductOfMatrix_novikovMapOfMatrix_sub_novikov
   have hT : ∑ k, (∑ i', ∑ j', (∑ i, x i * φ₁ i i') * (∑ j, y j * φ₂ j j') * Q i' j' k) *
       ψ₀ k l = ∑ i, ∑ j, x i * y j * ∑ i', ∑ j', φ₁ i i' * φ₂ j j' * ∑ k, Q i' j' k * ψ₀ k l := by
     simp_rw [sum_sum_sum_mul_sum_mul x y φ₁ φ₂, sum_mul_sum_sum_mul_mul]
-  have h₁ : ∑ k, ∑ j, (∑ i, x i * η₁ i k) * y j * K k j l =
-      ∑ i, ∑ j, x i * y j * ∑ k, η₁ i k * K k j l := by
-    simp only [Finset.sum_mul, Finset.mul_sum]
-    rw [Finset.sum_comm]
-    refine (Finset.sum_congr rfl fun j _ => Finset.sum_comm).trans ?_
-    rw [Finset.sum_comm]
-    exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ =>
-      Finset.sum_congr rfl fun k _ => by ring
-  have h₂ : ∑ i, ∑ j, (x i * ∑ m, y m * η₂ m j) * K i j l =
-      ∑ i, ∑ j, x i * y j * ∑ k, η₂ j k * K i k l := by
-    simp only [Finset.sum_mul, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun i _ => ?_
-    rw [Finset.sum_comm]
-    exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun k _ => by ring
   -- Termwise, this is the homotopy identity, with the sign of the orbit of `i` replaced by the
   -- sign of the degree of `a` on its nonzero coordinates.
-  rw [hT, sum_mul_sum_sum_mul_mul, h₁, h₂, ← Finset.sum_sub_distrib, Finset.smul_sum,
+  rw [hT, sum_mul_sum_sum_mul_mul x y K (η₀ · l), sum_sum_sum_mul_mul_mul x y η₁ (K · · l),
+    sum_sum_mul_sum_mul_mul x y η₂ (K · · l), ← Finset.sum_sub_distrib, Finset.smul_sum,
     ← Finset.sum_add_distrib, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [← Finset.sum_sub_distrib, Finset.smul_sum, ← Finset.sum_add_distrib,
