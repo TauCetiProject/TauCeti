@@ -178,6 +178,7 @@ theorem itemKind_eq_sectionKind {s : Ω.closedSections} {k : Fin Ω.numItems}
   exact Ω.mem_sectionItems.2 ⟨le_rfl, (Ω.mem_closedSections.1 s.2).lt⟩
 
 /-- The kind of an item is the kind of its closed section. -/
+@[simp]
 theorem sectionKind_closedSectionOfItem (k : Fin Ω.numItems) :
     P.sectionKind ⟨Ω.closedSectionOfItem k, Ω.closedSectionOfItem_mem_closedSections k⟩ =
       P.itemKind k :=
@@ -194,6 +195,7 @@ theorem itemKind_eq_baseKind {μ : Fin Ω.numBases} {k : Fin Ω.numItems} (hk : 
     (Ω.closedSectionOfItem_eq_closedSectionOfBase (Ω.left_mem_baseItems μ)).symm)
 
 /-- The kind of a variable base is the kind of its closed section. -/
+@[simp]
 theorem sectionKind_closedSectionOfBase (μ : Fin Ω.numBases) :
     P.sectionKind ⟨Ω.closedSectionOfBase μ, Ω.closedSectionOfBase_mem_closedSections μ⟩ =
       P.baseKind μ :=
