@@ -102,6 +102,17 @@ theorem IsInjectiveEnvelope.nakayamaEquiv_apply (hf : IsInjectiveEnvelope f) (x 
   obtain rfl : ψ = unopDualEvalEquiv A _ φ := LinearMap.ext fun p => by simp [hψ]
   simp [nakayamaEquiv]
 
+/-- `nakayamaEquiv x` sends the canonical evaluation `unopDualEvalEquiv A _ φ` at `φ : D_R I`
+to `φ x`. The finiteness and projectivity instances on `D_R I`, which follow from `hf`, are
+needed to state `unopDualEvalEquiv`; any goal mentioning it already has them in context. -/
+@[simp]
+theorem IsInjectiveEnvelope.nakayamaEquiv_apply_unopDualEvalEquiv (hf : IsInjectiveEnvelope f)
+    [Module.Finite Aᵐᵒᵖ (MatlisDual R E I)] [Module.Projective Aᵐᵒᵖ (MatlisDual R E I)] (x : I)
+    (φ : MatlisDual R E I) :
+    equivLinearMap R E _ (hf.nakayamaEquiv x) (unopDualEvalEquiv A _ φ) =
+      equivLinearMap R E I φ x :=
+  hf.nakayamaEquiv_apply x φ _ fun _ => unopDualEvalEquiv_apply A _ φ _
+
 end Artin
 
 section Characterization
