@@ -36,6 +36,8 @@ equivalence. A discrete subgroup containing a full lattice is a full lattice.
 * `Module.Basis.mem_span_basisFun_iff`: a point of `ℝ^ι` lies in the standard lattice `ℤ^ι`
   exactly when it is the coordinate vector of an element of `Λ` in a `ℤ`-basis of `Λ`.
 * `ZLattice.exists_basis_span_eq`: a full lattice is the `ℤ`-span of a basis of the ambient space.
+* `ZLattice.module_free_and_finite_of_injective`: the source of an injective linear map whose
+  range is a full lattice is a free `ℤ`-module of finite rank.
 * `ZLattice.mem_comap`: `x ∈ ZLattice.comap K L e` if and only if `e x ∈ L`.
 * `ZLattice.instDiscreteTopologyComapSubtype`: the restriction `L ∩ V` of a discrete subgroup `L`
   to a subspace `V` is discrete.
@@ -230,5 +232,15 @@ theorem exists_basis_span_eq (L : Submodule ℤ E) [DiscreteTopology L] [IsZLatt
   have := module_free K L
   ⟨_, inferInstance, Classical.decEq _, (Free.chooseBasis ℤ L).ofZLatticeBasis K L,
     (Free.chooseBasis ℤ L).ofZLatticeBasis_span K L⟩
+
+/-- An injective `ℤ`-linear map into a real vector space whose range is a full lattice makes its
+source a free `ℤ`-module of finite rank: the source is isomorphic to a lattice. -/
+theorem module_free_and_finite_of_injective {Λ : Type*} [AddCommGroup Λ] (f : Λ →ₗ[ℤ] E)
+    (hf : Function.Injective f) [DiscreteTopology (LinearMap.range f)]
+    [IsZLattice K (LinearMap.range f)] : Module.Free ℤ Λ ∧ Module.Finite ℤ Λ :=
+  have := module_free K (LinearMap.range f)
+  have := module_finite K (LinearMap.range f)
+  ⟨Module.Free.of_equiv (LinearEquiv.ofInjective f hf).symm,
+    Module.Finite.equiv (LinearEquiv.ofInjective f hf).symm⟩
 
 end ZLattice
