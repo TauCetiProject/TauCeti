@@ -15,13 +15,15 @@ public import Mathlib.Order.Preorder.Finsupp
 # Tropical coefficient semifields
 
 The tropical coefficient semifield `Trop J` is the free abelian group on `J`, with auxiliary
-addition given by the componentwise minimum of exponents. Its generators encode the frozen
-columns of a geometric cluster seed. The index type may be infinite: every element still has
-finite support. Relabelling the generators preserves both operations, and for finite `J` the
-exponent presentation agrees with the product of one-dimensional tropical groups.
+addition given by the componentwise minimum of exponents. Its generators correspond to the
+frozen variables of a geometric cluster seed; monomials encode the frozen parts of columns of
+the extended exchange matrix. The index type may be infinite: every element still has finite
+support. Relabelling the generators preserves both operations, and for finite `J` the exponent
+presentation agrees with the product of one-dimensional tropical groups.
 
-Group evaluation is supplied by `TauCeti.freeAbelianCharEquiv`: its inverse extends any
-family `J → Q` in a commutative group to a homomorphism `Trop J →* Q`. Such evaluations
+Group evaluation is supplied by `Trop.charEquiv`, using `TauCeti.freeAbelianCharEquiv`: its
+inverse extends any family `J → Q` in a commutative group to a homomorphism `Trop J →* Q`.
+Such evaluations
 need not preserve tropical addition, so they are deliberately not coefficient-semifield
 homomorphisms. In contrast, `Trop.reindex` is an isomorphism for both operations.
 
@@ -39,60 +41,148 @@ namespace TauCeti
 
 /-- The tropical coefficient semifield on `J`: finitely supported integer exponents,
 with multiplication adding exponents and auxiliary addition taking their minimum. -/
-abbrev Trop (J : Type*) := Multiplicative (J →₀ ℤ)
+def Trop (J : Type*) := Multiplicative (J →₀ ℤ)
 
 namespace Trop
 
+noncomputable section
+
 variable {J J' J'' : Type*}
 
-/-- The auxiliary addition of tropical monomials is the pointwise minimum of exponents. -/
-noncomputable instance : CoefficientSemifield (Trop J) where
-  toCommGroup := inferInstanceAs (CommGroup (Multiplicative (J →₀ ℤ)))
-  add a b := Multiplicative.ofAdd (a.toAdd ⊓ b.toAdd)
-  add_assoc a b c := congrArg Multiplicative.ofAdd (inf_assoc a.toAdd b.toAdd c.toAdd)
-  add_comm a b := congrArg Multiplicative.ofAdd (inf_comm a.toAdd b.toAdd)
-  left_distrib a b c := by
-    apply Multiplicative.toAdd.injective
-    ext j
-    exact (min_add_add_left (a.toAdd j) (b.toAdd j) (c.toAdd j)).symm
-  right_distrib a b c := by
-    apply Multiplicative.toAdd.injective
-    ext j
-    exact (min_add_add_right (a.toAdd j) (b.toAdd j) (c.toAdd j)).symm
+/-- The exponent vector of a tropical monomial. -/
+def toAdd : Trop J ≃ (J →₀ ℤ) := Multiplicative.toAdd
+
+/-- The tropical monomial with a specified exponent vector. -/
+def ofAdd : (J →₀ ℤ) ≃ Trop J := toAdd.symm
+
+instance : Inhabited (Trop J) := inferInstanceAs (Inhabited (Multiplicative (J →₀ ℤ)))
+
+instance [DecidableEq J] : DecidableEq (Trop J) :=
+  inferInstanceAs (DecidableEq (Multiplicative (J →₀ ℤ)))
+
+instance [IsEmpty J] : Unique (Trop J) :=
+  inferInstanceAs (Unique (Multiplicative (J →₀ ℤ)))
+
+@[ext]
+theorem ext {a b : Trop J} (h : toAdd a = toAdd b) : a = b := toAdd.injective h
 
 @[simp]
-theorem toAdd_add (a b : Trop J) : (a + b).toAdd = a.toAdd ⊓ b.toAdd :=
+theorem toAdd_ofAdd (a : J →₀ ℤ) : toAdd (ofAdd a) = a := toAdd.apply_symm_apply a
+
+@[simp]
+theorem ofAdd_toAdd (a : Trop J) : ofAdd (toAdd a) = a := toAdd.symm_apply_apply a
+
+/-- Tropical multiplication adds exponent vectors. -/
+instance : CommGroup (Trop J) := inferInstanceAs (CommGroup (Multiplicative (J →₀ ℤ)))
+
+/-- The auxiliary addition of tropical monomials is the pointwise minimum of exponents. -/
+instance : Add (Trop J) := ⟨fun a b => ofAdd (toAdd a ⊓ toAdd b)⟩
+
+@[simp]
+theorem toAdd_one : toAdd (1 : Trop J) = 0 := (rfl)
+
+@[simp]
+theorem toAdd_mul (a b : Trop J) : toAdd (a * b) = toAdd a + toAdd b := (rfl)
+
+@[simp]
+theorem toAdd_inv (a : Trop J) : toAdd a⁻¹ = -toAdd a := (rfl)
+
+@[simp]
+theorem toAdd_div (a b : Trop J) : toAdd (a / b) = toAdd a - toAdd b := (rfl)
+
+@[simp]
+theorem toAdd_pow (a : Trop J) (n : ℕ) : toAdd (a ^ n) = n • toAdd a := (rfl)
+
+@[simp]
+theorem toAdd_zpow (a : Trop J) (n : ℤ) : toAdd (a ^ n) = n • toAdd a := (rfl)
+
+@[simp]
+theorem toAdd_add (a b : Trop J) : toAdd (a + b) = toAdd a ⊓ toAdd b :=
   (rfl)
+
+/-- Tropical multiplication distributes over the auxiliary minimum. -/
+instance : CoefficientSemifield (Trop J) where
+  add_assoc a b c := by
+    apply toAdd.injective
+    simp only [toAdd_add, inf_assoc]
+  add_comm a b := by
+    apply toAdd.injective
+    simp only [toAdd_add, inf_comm]
+  left_distrib a b c := by
+    apply toAdd.injective
+    ext j
+    simp only [toAdd_mul, toAdd_add, Finsupp.add_apply, Finsupp.inf_apply]
+    exact (min_add_add_left (toAdd a j) (toAdd b j) (toAdd c j)).symm
+  right_distrib a b c := by
+    apply toAdd.injective
+    ext j
+    simp only [toAdd_mul, toAdd_add, Finsupp.add_apply, Finsupp.inf_apply]
+    exact (min_add_add_right (toAdd a j) (toAdd b j) (toAdd c j)).symm
 
 @[simp]
 theorem ofAdd_inf (a b : J →₀ ℤ) :
-    (Multiplicative.ofAdd (a ⊓ b) : Trop J) = Multiplicative.ofAdd a + Multiplicative.ofAdd b :=
+    (ofAdd (a ⊓ b) : Trop J) = ofAdd a + ofAdd b :=
   (rfl)
 
 /-- Tropical addition is idempotent. -/
 @[simp]
 theorem add_self (a : Trop J) : a + a = a := by
-  apply Multiplicative.toAdd.injective
+  apply toAdd.injective
   simp
 
 /-- The tropical generator with exponent one at `j` and zero elsewhere. -/
-noncomputable def generator (j : J) : Trop J := Multiplicative.ofAdd (Finsupp.single j 1)
+noncomputable def generator (j : J) : Trop J := ofAdd (Finsupp.single j 1)
 
 @[simp]
-theorem toAdd_generator (j : J) : (generator j).toAdd = Finsupp.single j 1 :=
+theorem toAdd_generator (j : J) : toAdd (generator j) = Finsupp.single j 1 :=
   (rfl)
+
+/-- Group homomorphisms out of `Trop J` are determined by their generator values. -/
+noncomputable def charEquiv {Q : Type*} [CommGroup Q] : (Trop J →* Q) ≃* (J → Q) :=
+  freeAbelianCharEquiv
+
+@[simp]
+theorem charEquiv_apply {Q : Type*} [CommGroup Q] (χ : Trop J →* Q) (j : J) :
+    charEquiv χ j = χ (generator j) := by
+  exact freeAbelianCharEquiv_apply χ j
 
 /-- Group evaluation sends each tropical generator to its chosen coordinate. -/
 @[simp]
-theorem eval_generator {Q : Type*} [CommGroup Q] (q : J → Q) (j : J) :
-    freeAbelianCharEquiv.symm q (generator j) = q j := by
-  simpa only [generator] using freeAbelianCharEquiv_symm_apply_ofAdd_single q j
+theorem charEquiv_symm_apply_generator {Q : Type*} [CommGroup Q] (q : J → Q) (j : J) :
+    charEquiv.symm q (generator j) = q j := by
+  rw [← charEquiv_apply, MulEquiv.apply_symm_apply]
+
+@[simp]
+theorem charEquiv_symm_apply_ofAdd {Q : Type*} [CommGroup Q] (q : J → Q) (a : J →₀ ℤ) :
+    charEquiv.symm q (ofAdd a) = a.prod fun j n => q j ^ n := by
+  exact freeAbelianCharEquiv_symm_apply_ofAdd q a
+
+@[ext]
+theorem hom_ext {Q : Type*} [CommGroup Q] {χ ψ : Trop J →* Q}
+    (h : ∀ j, χ (generator j) = ψ (generator j)) : χ = ψ :=
+  charEquiv.injective (funext fun j => by simpa only [charEquiv_apply] using h j)
+
+/-- Distinct indices give distinct tropical generators. -/
+theorem generator_injective : Function.Injective (generator : J → Trop J) := by
+  intro i j h
+  exact Finsupp.single_left_injective (by decide : (1 : ℤ) ≠ 0) (congrArg toAdd h)
+
+@[simp]
+theorem generator_inj {i j : J} : generator i = generator j ↔ i = j :=
+  generator_injective.eq_iff
+
+@[simp]
+theorem generator_ne_one (j : J) : generator j ≠ 1 := by
+  classical
+  intro h
+  have := congrArg (fun a => toAdd a j) h
+  simp at this
 
 /-- The minimum of two distinct generators is the multiplicative identity. -/
 @[simp]
-theorem generator_add_generator {i j : J} (h : i ≠ j) : generator i + generator j = 1 := by
+theorem generator_add_generator_of_ne {i j : J} (h : i ≠ j) : generator i + generator j = 1 := by
   classical
-  apply Multiplicative.toAdd.injective
+  apply toAdd.injective
   ext k
   by_cases hi : i = k <;> by_cases hj : j = k <;> simp_all
 
@@ -100,36 +190,53 @@ theorem generator_add_generator {i j : J} (h : i ≠ j) : generator i + generato
 @[simp]
 theorem inv_generator_add_one (j : J) : (generator j)⁻¹ + 1 = (generator j)⁻¹ := by
   classical
-  apply Multiplicative.toAdd.injective
+  apply toAdd.injective
   ext k
   by_cases h : j = k <;> simp [h]
 
+/-- The normalization factor is unchanged when its summands are exchanged. -/
+@[simp]
+theorem one_add_inv_generator (j : J) : 1 + (generator j)⁻¹ = (generator j)⁻¹ := by
+  rw [add_comm, inv_generator_add_one]
+
+/-- A positive generator has normalization factor one. -/
+@[simp]
+theorem generator_add_one (j : J) : generator j + 1 = 1 := by
+  classical
+  apply toAdd.injective
+  ext k
+  by_cases h : j = k <;> simp [h]
+
+@[simp]
+theorem one_add_generator (j : J) : 1 + generator j = 1 := by
+  rw [add_comm, generator_add_one]
+
 /-- Relabelling the tropical generators is an isomorphism of coefficient semifields. -/
 noncomputable def reindex (e : J ≃ J') : Trop J ≃+* Trop J' where
-  toEquiv := Multiplicative.toAdd.trans ((Finsupp.equivCongrLeft e).trans Multiplicative.ofAdd)
+  toEquiv := toAdd.trans ((Finsupp.equivCongrLeft e).trans ofAdd)
   map_mul' a b := by
-    apply Multiplicative.toAdd.injective
+    apply toAdd.injective
     ext j
     simp [Finsupp.equivCongrLeft_apply, Finsupp.equivMapDomain_apply]
   map_add' a b := by
-    apply Multiplicative.toAdd.injective
+    apply toAdd.injective
     ext j
     simp [Finsupp.equivCongrLeft_apply, Finsupp.equivMapDomain_apply]
 
 @[simp]
 theorem reindex_ofAdd (e : J ≃ J') (a : J →₀ ℤ) :
-    reindex e (Multiplicative.ofAdd a) = Multiplicative.ofAdd (Finsupp.equivMapDomain e a) :=
+    reindex e (ofAdd a) = ofAdd (Finsupp.equivMapDomain e a) :=
   (rfl)
 
 @[simp]
 theorem toAdd_reindex (e : J ≃ J') (a : Trop J) (j : J') :
-    (reindex e a).toAdd j = a.toAdd (e.symm j) :=
+    toAdd (reindex e a) j = toAdd a (e.symm j) :=
   (rfl)
 
 @[simp]
 theorem reindex_generator (e : J ≃ J') (j : J) :
     reindex e (generator j) = generator (e j) := by
-  apply Multiplicative.toAdd.injective
+  apply toAdd.injective
   exact Finsupp.equivMapDomain_single e j 1
 
 @[simp]
@@ -140,21 +247,31 @@ theorem reindex_refl : reindex (Equiv.refl J) = RingEquiv.refl (Trop J) := by
 /-- Relabellings compose in the same order as equivalences of the index sets. -/
 @[simp]
 theorem reindex_trans (e : J ≃ J') (e' : J' ≃ J'') :
-    reindex (e.trans e') = (reindex e).trans (reindex e') := by
+    (reindex e).trans (reindex e') = reindex (e.trans e') := by
   ext a j
   simp
 
 @[simp]
-theorem reindex_symm (e : J ≃ J') : (reindex e).symm = reindex e.symm := by
-  rfl
+theorem reindex_reindex (e : J ≃ J') (e' : J' ≃ J'') (a : Trop J) :
+    reindex e' (reindex e a) = reindex (e.trans e') a := by
+  apply toAdd.injective
+  ext j
+  simp
+
+@[simp]
+theorem reindex_symm (e : J ≃ J') : (reindex e).symm = reindex e.symm :=
+  (rfl)
 
 /-- Group evaluation is compatible with relabelling the generators. The evaluation is a group
 homomorphism, with no assertion that it preserves auxiliary addition. -/
-theorem eval_reindex {Q : Type*} [CommGroup Q] (q : J' → Q) (e : J ≃ J') (a : Trop J) :
-    freeAbelianCharEquiv.symm q (reindex e a) =
-      freeAbelianCharEquiv.symm (q ∘ e) a := by
-  induction a using Multiplicative.rec
+@[simp]
+theorem charEquiv_symm_apply_reindex {Q : Type*} [CommGroup Q] (q : J' → Q)
+    (e : J ≃ J') (a : Trop J) :
+    charEquiv.symm q (reindex e a) = charEquiv.symm (q ∘ e) a := by
+  obtain ⟨a, rfl⟩ := ofAdd.surjective a
   simp [Finsupp.prod_equivMapDomain]
+
+end
 
 end Trop
 
@@ -163,7 +280,7 @@ namespace CoefficientSemifield
 /-- A linearly ordered additive commutative group, with minimum as auxiliary addition,
 is a coefficient semifield. -/
 instance instMinTropical {A : Type*} [AddCommGroup A] [LinearOrder A]
-    [IsOrderedAddMonoid A] : CoefficientSemifield (MinTropical A) where
+    [AddLeftMono A] : CoefficientSemifield (MinTropical A) where
   toCommGroup := inferInstance
   toAddCommSemigroup := inferInstance
   left_distrib := mul_add
@@ -178,7 +295,7 @@ variable {J : Type*}
 /-- For finite `J`, a tropical monomial is equivalently an arbitrary tuple of integer
 exponents, regarded as one-dimensional tropical numbers. Both operations are componentwise. -/
 noncomputable def equivFun [Finite J] : Trop J ≃+* (J → MinTropical ℤ) where
-  toEquiv := Multiplicative.toAdd.trans
+  toEquiv := toAdd.trans
     (Finsupp.equivFunOnFinite.trans (Equiv.piCongrRight fun _ => MinTropical.tropEquiv))
   map_mul' a b := by
     funext j
@@ -191,22 +308,25 @@ noncomputable def equivFun [Finite J] : Trop J ≃+* (J → MinTropical ℤ) whe
 
 @[simp]
 theorem equivFun_apply [Finite J] (a : Trop J) (j : J) :
-    equivFun a j = MinTropical.trop (a.toAdd j) :=
+    equivFun a j = MinTropical.trop (toAdd a j) :=
   (rfl)
 
 @[simp]
 theorem toAdd_equivFun_symm [Finite J] (a : J → MinTropical ℤ) (j : J) :
-    ((equivFun (J := J)).symm a).toAdd j = (a j).untrop :=
+    toAdd ((equivFun (J := J)).symm a) j = (a j).untrop :=
   (rfl)
 
 /-! ### Checks of the tropical conventions -/
 
+/-- The finite-tuple presentation carries the intended coefficient-semifield structure. -/
+example : CoefficientSemifield (J → MinTropical ℤ) := inferInstance
+
 /-- There is only one monomial when there are no generators. -/
-example [IsEmpty J] : Unique (Trop J) := inferInstance
+noncomputable example [IsEmpty J] : Unique (Trop J) := inferInstance
 
 /-- Evaluating a Laurent monomial in any commutative group uses integer powers. -/
 example {Q : Type*} [CommGroup Q] (q : Fin 2 → Q) :
-    freeAbelianCharEquiv.symm q ((generator 0)⁻¹ * generator 1 ^ (2 : ℤ)) =
+    charEquiv.symm q ((generator 0)⁻¹ * generator 1 ^ (2 : ℤ)) =
       (q 0)⁻¹ * q 1 ^ (2 : ℤ) := by
   simp
 
