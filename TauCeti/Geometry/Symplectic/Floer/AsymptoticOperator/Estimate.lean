@@ -220,14 +220,12 @@ private theorem sq_add_sq_add_sq_le_of_le_add_mul {m σ p q w v g₁ g₂ g₃ :
     p ^ 2 + q ^ 2 + v ^ 2 ≤ (2 + 2 * σ ^ 2) / m * ((g₁ + g₂) + g₃) := by
   have hq2 : q ^ 2 ≤ 2 * w ^ 2 + 2 * σ ^ 2 * v ^ 2 := by
     nlinarith [sq_nonneg (w - σ * v)]
-  have hK : 0 ≤ 2 + 2 * σ ^ 2 := by positivity
-  rw [div_mul_eq_mul_div, le_div_iff₀ hm]
-  nlinarith [mul_le_mul_of_nonneg_left h₁ hK, mul_le_mul_of_nonneg_left h₂ hK,
-    mul_le_mul_of_nonneg_left h₃ hK, mul_le_mul_of_nonneg_left hq2 hm.le,
-    mul_nonneg (mul_nonneg hm.le (sq_nonneg σ)) (sq_nonneg v),
-    mul_nonneg (mul_nonneg hm.le (sq_nonneg σ)) (sq_nonneg w),
-    mul_nonneg (mul_nonneg hm.le (sq_nonneg σ)) (sq_nonneg p),
-    mul_nonneg hm.le (sq_nonneg p), mul_nonneg hm.le (sq_nonneg v), mul_nonneg hm.le (sq_nonneg w)]
+  calc p ^ 2 + q ^ 2 + v ^ 2 ≤ (2 + 2 * σ ^ 2) * (p ^ 2 + w ^ 2 + v ^ 2) := by
+        nlinarith [sq_nonneg p, sq_nonneg v, mul_nonneg (sq_nonneg σ) (sq_nonneg p),
+          mul_nonneg (sq_nonneg σ) (sq_nonneg w)]
+    _ = (2 + 2 * σ ^ 2) / m * ((m * p ^ 2 + m * w ^ 2) + m * v ^ 2) := by
+        field_simp
+    _ ≤ (2 + 2 * σ ^ 2) / m * ((g₁ + g₂) + g₃) := by gcongr
 
 /-- **The cylinder estimate in norms.** Under the hypotheses of
 `exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator`, there is a constant
@@ -265,8 +263,6 @@ theorem exists_forall_setIntegral_norm_sq_le_mul_setIntegral_norm_sq_stationaryC
   have hint {f : ℝ × ℝ → ℝ} (hf : Continuous f) : IntegrableOn f R :=
     hf.continuousOn.integrableOn_compact hR
   set w : ℝ × ℝ → V := fun z ↦ fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z)
-  have hw : Continuous w :=
-    (hdξ.clm_apply continuous_const).sub ((hSc.comp continuous_snd).clm_apply hξ.continuous)
   have hD := continuous_stationaryCylinderOperator hJc hSc hξ₁
   -- Pointwise, `‖∂t ξ‖² ≤ 2 ‖∂t ξ - S ξ‖² + 2 σ² ‖ξ‖²`, so the integrand is controlled by the
   -- energy density of the cylinder estimate.
