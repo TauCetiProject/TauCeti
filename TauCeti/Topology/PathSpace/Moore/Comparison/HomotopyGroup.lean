@@ -64,6 +64,23 @@ theorem homotopyGroupMulEquiv_apply (x : X) (n : ℕ)
     homeomorphMulEquivOfEq_apply, HomotopyGroup.map_comp_apply]
   congr 1
 
+/-- The Moore loop-space shift is natural: the map induced on `πₖ(ΩᴹX, 1)` by the Moore loop map
+of `f` corresponds to the map induced by `f` on `πₖ₊₁(X, x)`. -/
+theorem homotopyGroupMulEquiv_map {Y : Type*} [TopologicalSpace Y] (f : C(X, Y)) {x : X} (n : ℕ)
+    (a : π_ (n + 1) (MooreLoopSpace X x) 1) :
+    homotopyGroupMulEquiv (f x) n
+        (HomotopyGroup.map (map (x := x) f rfl).toContinuousMap (map_one (map f rfl)) a) =
+      HomotopyGroup.map f rfl (homotopyGroupMulEquiv x n a) := by
+  -- Normalizing Moore loops intertwines the Moore loop map with postcomposition of
+  -- fixed-interval loops (`toPath_map`), which commutes with the fixed-interval shift.
+  let F : C(Path x x, Path (f x) (f x)) :=
+    ⟨fun γ ↦ γ.map f.continuous,
+      continuous_induced_rng.2 ((ContinuousMap.continuous_postcomp f).comp continuous_induced_dom)⟩
+  rw [homotopyGroupMulEquiv_apply, homotopyGroupMulEquiv_apply, HomotopyGroup.map_comp_apply,
+    ← f.pathLoopSpaceMulEquiv_map rfl F (fun _ _ ↦ rfl), HomotopyGroup.map_comp_apply]
+  refine congrArg _ (HomotopyGroup.map_congr (ContinuousMap.ext fun γ ↦ ?_) _ _ a)
+  simp [F, homotopyEquivPath_apply]
+
 /-- **The path components of the double Moore loop space are the second homotopy group.** -/
 def zerothHomotopyDoubleEquiv (x : X) :
     ZerothHomotopy (MooreLoopSpace (MooreLoopSpace X x) 1) ≃ π_ 2 X x :=
