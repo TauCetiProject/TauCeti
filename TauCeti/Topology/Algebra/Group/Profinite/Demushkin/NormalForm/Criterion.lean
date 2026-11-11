@@ -61,6 +61,7 @@ variable {p : ℕ} [Fact p.Prime] {n : ℕ} {r : freeProP p (Fin n)}
   (hG : IsDemushkin p G)
 include hr e hG
 
+omit [CompactSpace G] in
 /-- **Labute's normal form modulo `λ_2` for a Demushkin relator, the alternating case.** Let
 `G ≅ ⟨x₁, …, x_n ∣ r⟩` with `r ∈ Φ(F)` be a Demushkin group on which every cup square
 `a ⌣ a` vanishes, which for odd `p` is automatic. Then `n` is even, and a continuous automorphism
@@ -81,8 +82,9 @@ theorem IsDemushkin.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWor
           (gradedMk p (freeProP p (Fin n)) 1
             ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le hr⟩) =
         gradedMk p (freeProP p (Fin n)) 1 ⟨demushkinWordNeTwo p n (freeProPGen p n),
-          demushkinWordNeTwo_mem_pLowerCentralSeries_one dvd_rfl n _⟩ :=
-  freeProP.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordNeTwo _
+          demushkinWordNeTwo_mem_pLowerCentralSeries_one dvd_rfl n _⟩ := by
+  have : CompactSpace G := e.toHomeomorph.compactSpace
+  exact freeProP.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordNeTwo _
     (hG.nondegenerate_degreeOneForm hr e)
     ((freeProP.isAlt_degreeOneForm_iff_forall_cupFp_self_eq_zero hr e).2 halt)
 
@@ -96,7 +98,7 @@ variable {n : ℕ} {r : freeProP 2 (Fin n)}
   (hG : IsDemushkin 2 G) (hnalt : ∃ a : cohomFp 2 G 1, cupFp 2 G a a ≠ 0)
 include hr e hG hnalt
 
-omit hnalt in
+omit [CompactSpace G] hnalt in
 /-- **Labute's normal form modulo `λ_2` for a Demushkin relator, the nonalternating case of odd
 rank.** Let `G ≅ ⟨x₁, …, x_n ∣ r⟩` with `r ∈ Φ(F)` be a Demushkin group at `p = 2` with `n` odd
 (so that the cup form is automatically not alternating). Then for every `f ≥ 2` a continuous
@@ -110,12 +112,13 @@ theorem IsDemushkin.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWor
           (gradedMk 2 (freeProP 2 (Fin n)) 1
             ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Nat.prime_two).symm.le hr⟩) =
         gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨demushkinWordTwoOdd f n (freeProPGen 2 n),
-          demushkinWordTwoOdd_mem_pLowerCentralSeries_one (zero_lt_two.trans_le hf) n _⟩ :=
-  freeProP.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoOdd _
+          demushkinWordTwoOdd_mem_pLowerCentralSeries_one (zero_lt_two.trans_le hf) n _⟩ := by
+  have : CompactSpace G := e.toHomeomorph.compactSpace
+  exact freeProP.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoOdd _
     (hG.nondegenerate_degreeOneForm hr e)
     hn hf
 
-omit hnalt in
+omit [CompactSpace G] hnalt in
 /-- **Labute's normal form modulo `λ_2` for a Demushkin relator, the nonalternating case of odd
 rank, at level `f = ∞`.** Let `G ≅ ⟨x₁, …, x_n ∣ r⟩` with `r ∈ Φ(F)` be a Demushkin group at
 `p = 2` with `n` odd (so that the cup form is automatically not alternating). Then a continuous
@@ -129,8 +132,9 @@ theorem IsDemushkin.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWor
           (gradedMk 2 (freeProP 2 (Fin n)) 1
             ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Nat.prime_two).symm.le hr⟩) =
         gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨demushkinWordTwoOddTop n (freeProPGen 2 n),
-          demushkinWordTwoOddTop_mem_pLowerCentralSeries_one n _⟩ :=
-  freeProP.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoOddTop _
+          demushkinWordTwoOddTop_mem_pLowerCentralSeries_one n _⟩ := by
+  have : CompactSpace G := e.toHomeomorph.compactSpace
+  exact freeProP.exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoOddTop _
     (hG.nondegenerate_degreeOneForm hr e)
     hn
 
