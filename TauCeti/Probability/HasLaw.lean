@@ -12,8 +12,6 @@ public import Mathlib.MeasureTheory.Measure.Support
 public import TauCeti.MeasureTheory.Measure.Atom
 public import TauCeti.MeasureTheory.Measure.Dirac
 
-import Mathlib.MeasureTheory.Function.Floor
-
 /-!
 # Conditioning laws, source atoms and connected sources
 
@@ -37,8 +35,6 @@ is the topological reason why optimal transport maps onto disconnected targets a
 
 Adjoining a coordinate with an s-finite measure to a random variable gives the pair the product
 measure. Completing the source measure preserves every random variable's law.
-An extended-nonnegative variable with a cast natural-valued law has a natural-valued
-version, recovered almost surely by taking the floor of its finite part.
 Nonnegative random variables whose real coercions have a common law are identically distributed.
 
 ## Main results
@@ -73,7 +69,7 @@ here are about a Dirac *source*, which is what `dirac_source` records in their n
 public section
 
 open MeasureTheory ProbabilityTheory
-open scoped ENNReal NNReal
+open scoped NNReal
 
 namespace TauCeti
 
@@ -93,28 +89,6 @@ theorem _root_.ProbabilityTheory.HasLaw.cond (hT : HasLaw T ν μ) {s : Set Y}
     ← Measure.restrict_map_of_aemeasurable hT.aemeasurable hs,
     ← Measure.map_apply_of_aemeasurable hT.aemeasurable hs, hT.map_eq,
     ProbabilityTheory.cond]
-
-/-- If an extended-nonnegative random variable has the cast of a natural-valued law,
-the floor of its finite part has the original law and its cast agrees almost surely
-with the random variable. This gives a natural-valued version without pathwise assumptions. -/
-theorem _root_.ProbabilityTheory.HasLaw.floor_toNNReal_of_map_natCast {Ω : Type*}
-    [MeasurableSpace Ω] {P : Measure Ω} {Z : Ω → ℝ≥0∞} {ρ : Measure ℕ}
-    (h : HasLaw Z (ρ.map (Nat.cast : ℕ → ℝ≥0∞)) P) :
-    HasLaw (fun ω ↦ ⌊(Z ω).toNNReal⌋₊) ρ P ∧
-      ∀ᵐ ω ∂P, (⌊(Z ω).toNNReal⌋₊ : ℝ≥0∞) = Z ω := by
-  let count (x : ℝ≥0∞) := ⌊x.toNNReal⌋₊
-  have hm : Measurable count := Nat.measurable_floor.comp ENNReal.measurable_toNNReal
-  constructor
-  · have hinv : HasLaw count ρ (ρ.map (Nat.cast : ℕ → ℝ≥0∞)) := by
-      refine ⟨hm.aemeasurable, ?_⟩
-      rw [Measure.map_map hm Measurable.of_discrete]
-      simp [count, Function.comp_def]
-    exact hinv.comp h
-  · refine (h.ae_iff (p := fun x ↦ (count x : ℝ≥0∞) = x) (by fun_prop)).mpr ?_
-    apply (ae_map_iff Measurable.of_discrete.aemeasurable
-      (measurableSet_eq_fun (f := fun x : ℝ≥0∞ ↦ (count x : ℝ≥0∞))
-        (by fun_prop) measurable_id)).mpr
-    exact ae_of_all _ fun k ↦ by simp [count]
 
 /-- Nonnegative random variables whose real coercions have the same law are identically
 distributed, even when defined on different measure spaces. -/

@@ -10,7 +10,7 @@ public import TauCeti.MeasureTheory.Measure.NNReal
 
 import TauCeti.Probability.Distributions.Poisson.SmallRate
 import Mathlib.Order.Interval.Set.Union
-import TauCeti.Probability.HasLaw
+import Mathlib.MeasureTheory.Function.Floor
 
 /-!
 # Simplicity of homogeneous temporal Poisson random measures
@@ -49,20 +49,20 @@ private theorem measure_exists_multiple_singleton_Ioc_eq_zero
   let := h.isProbabilityMeasure
   let δ (n : ℕ) := b / (n : ℝ≥0)
   let C (n k : ℕ) := Ioc ((k : ℝ≥0) * δ n) ((k : ℝ≥0) * δ n + δ n)
-  have hlaw (n k : ℕ) : HasLaw (fun ω ↦ N ω (C n k))
-      ((poissonMeasure (r * b / n)).map (Nat.cast : ℕ → ℝ≥0∞)) P := by
-    have hrate : ((r : ℝ≥0∞) • nnvolume) (C n k) = (r * b / n : ℝ≥0) := by
-      simp only [C, smul_apply, nnvolume_Ioc, add_tsub_cancel_left,
-        smul_eq_mul, ← ENNReal.coe_mul]
-      simp only [δ, mul_div_assoc]
-    simpa only [hrate, ENNReal.toNNReal_coe] using
-      h.hasLaw (A := C n k) measurableSet_Ioc (by rw [hrate]; exact ENNReal.coe_lt_top)
+  have hrate (n k : ℕ) : ((r : ℝ≥0∞) • nnvolume) (C n k) = (r * b / n : ℝ≥0) := by
+    simp only [C, smul_apply, nnvolume_Ioc, add_tsub_cancel_left,
+      smul_eq_mul, ← ENNReal.coe_mul]
+    simp only [δ, mul_div_assoc]
+  have hfin (n k : ℕ) : ((r : ℝ≥0∞) • nnvolume) (C n k) < ∞ := by
+    rw [hrate]
+    exact ENNReal.coe_lt_top
   -- Recover natural-valued cell counts to apply the existing small-rate limit.
   let X (n : ℕ) (i : Fin n) (ω : Ω) := ⌊(N ω (C n i)).toNNReal⌋₊
-  have hX (n : ℕ) (i : Fin n) : HasLaw (X n i) (poissonMeasure (r * b / n)) P :=
-    (hlaw n i).floor_toNNReal_of_map_natCast.1
+  have hX (n : ℕ) (i : Fin n) : HasLaw (X n i) (poissonMeasure (r * b / n)) P := by
+    simpa only [hrate, ENNReal.toNNReal_coe] using
+      h.hasLaw_natFloor (A := C n i) measurableSet_Ioc (hfin n i)
   have hcount (n : ℕ) : ∀ᵐ ω ∂P, ∀ i : Fin n, (X n i ω : ℝ≥0∞) = N ω (C n i) :=
-    ae_all_iff.mpr fun i ↦ (hlaw n i).floor_toNNReal_of_map_natCast.2
+    ae_all_iff.mpr fun i ↦ h.ae_natCast_natFloor_eq measurableSet_Ioc (hfin n i)
   rw [← measureReal_eq_zero_iff]
   apply le_antisymm _ measureReal_nonneg
   refine ge_of_tendsto (tendsto_measureReal_exists_two_le_of_hasLaw_poissonMeasure
