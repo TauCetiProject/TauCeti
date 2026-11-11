@@ -20,6 +20,12 @@ such a map equals `1` is a complement. This file proves both constructions and t
 existence criterion, without any finiteness assumption. The same projection for a local
 complement `K` of `N` in an intermediate subgroup `H` is a crossed map on `H`.
 
+Conjugating a complement `D` by `g` conjugates its crossed projection `c` to
+`x ↦ g • c (g⁻¹ * x * g)`. For `a ∈ N` this is `c` times the principal crossed map
+`x ↦ x • a / a`, so two complements are conjugate by `a` exactly when their crossed
+projections differ by that principal crossed map
+(`Subgroup.IsComplement'.eq_conj_smul_iff_crossedProjection_eq`).
+
 The conjugation action is explicit rather than a global instance. The additive
 coefficient action uses `Additive.distribMulAction`, and kernels use the existing
 `groupCohomology.zeroLocus` rather than a second notion of cocycle kernel.
@@ -34,7 +40,7 @@ its quotient-splitting formula supplies the crossed identity.
 
 public section
 
-open scoped IsMulCommutative
+open scoped IsMulCommutative Pointwise
 open groupCohomology
 
 namespace Subgroup
@@ -94,6 +100,49 @@ omit [N.Normal] in
 theorem crossedProjection_eq_one_iff (g : G) : h.crossedProjection g = 1 ↔ g ∈ D := by
   rw [← Subtype.coe_inj]
   exact h.coe_equiv_fst_eq_one_iff_mem N.one_mem
+
+/-- **Equivariance of crossed projections.** The crossed projection along the conjugate
+complement `g D g⁻¹` is `x ↦ g • c (g⁻¹ * x * g)`, where `c` is the crossed projection along
+`D`. -/
+theorem crossedProjection_conj_smul (g x : G) :
+    (h.conj_smul g).crossedProjection x = g • h.crossedProjection (g⁻¹ * x * g) := by
+  have hy : (h.crossedProjection (g⁻¹ * x * g) : G) * (h.equiv (g⁻¹ * x * g)).2 = g⁻¹ * x * g :=
+    h.equiv_fst_mul_equiv_snd _
+  have hd : g * (h.equiv (g⁻¹ * x * g)).2 * g⁻¹ ∈ MulAut.conj g • D := by
+    rw [mem_pointwise_smul_iff_inv_smul_mem]
+    convert (h.equiv (g⁻¹ * x * g)).2.2 using 1
+    simp [mul_assoc]
+  have hx : x = ((g • h.crossedProjection (g⁻¹ * x * g) : N) : G) *
+      (⟨_, hd⟩ : ↥(MulAut.conj g • D)) := by
+    rw [coe_conjugationAction_smul, coe_mk, ← mul_inv_eq_iff_eq_mul.mpr hy.symm]
+    group
+  conv_lhs => rw [hx]
+  exact (h.conj_smul g).crossedProjection_mul _ _
+
+variable [IsMulCommutative N]
+
+/-- **Conjugation by an element of `N`.** For `a ∈ N`, the crossed projection along `a D a⁻¹` is
+the crossed projection along `D` times the principal crossed map `x ↦ x • a / a`. -/
+theorem crossedProjection_conj_coe_smul (a : N) (x : G) :
+    (h.conj_smul a).crossedProjection x = h.crossedProjection x * (x • a / a) := by
+  rw [h.crossedProjection_conj_smul]
+  have hc (g k : G) := h.isMulCocycle₁_crossedProjection g k
+  simp only [hc, ← coe_inv, crossedProjection_coe,
+    mul_smul, conjugationAction_coe_smul, div_eq_mul_inv]
+  ac_rfl
+
+/-- Two complements of an abelian normal subgroup `N` are conjugate by `a ∈ N` exactly when
+their crossed projections differ by the principal crossed map `x ↦ x • a / a`. -/
+theorem eq_conj_smul_iff_crossedProjection_eq {D' : Subgroup G} (h' : N.IsComplement' D')
+    (a : N) : D' = MulAut.conj (a : G) • D ↔
+      ∀ x, h'.crossedProjection x = h.crossedProjection x * (x • a / a) := by
+  constructor
+  · rintro rfl x
+    exact h.crossedProjection_conj_coe_smul a x
+  · intro hD
+    ext x
+    rw [← h'.crossedProjection_eq_one_iff, ← (h.conj_smul a).crossedProjection_eq_one_iff, hD,
+      h.crossedProjection_conj_coe_smul]
 
 end IsComplement'
 
