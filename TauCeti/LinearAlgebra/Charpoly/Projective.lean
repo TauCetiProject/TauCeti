@@ -8,8 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Charpoly.BaseChange
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 public import Mathlib.RingTheory.TensorProduct.Free
-public import TauCeti.Algebra.Polynomial.AlgebraMap
 public import TauCeti.LinearAlgebra.Determinant.Projective
+public import TauCeti.LinearAlgebra.End.Aeval
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 import Mathlib.RingTheory.LocalProperties.Basic
 
@@ -272,7 +272,7 @@ theorem exists_aeval_reflect_projectiveCharpolyRev_eq_zero (f : Module.End R M) 
   refine ⟨n, (reverse_natDegree_le _).trans hdeg.le, ?_⟩
   -- the reflection of the reverse of the characteristic polynomial of `g` is that polynomial
   rw [reverse, hdeg, reflect_reflect]
-  have hgσ := congr(π ∘ₗ $(aeval_comp_eq_comp_aeval hg g.charpoly))
+  have hgσ := congr(π ∘ₗ $(Module.End.aeval_comp_of_comp_eq hg g.charpoly))
   rw [aeval_self_charpoly, zero_comp, comp_zero, ← comp_assoc, h, id_comp] at hgσ
   exact hgσ.symm
 

@@ -35,7 +35,7 @@ the descent of the continuous map `(g, x) ↦ ↑(g • x)` along `G × M → G 
 
 public section
 
-namespace TauCeti
+namespace AddSubgroup
 
 variable {G : Type*} [Monoid G] [TopologicalSpace G] {M : Type*}
 
@@ -45,7 +45,7 @@ variable [AddGroup M] [TopologicalSpace M] [DistribMulAction G M] [ContinuousSMu
 
 /-- The restricted action `AddSubgroup.restrictDistribMulAction` of `G` on a `G`-stable additive
 subgroup `N` of `M` is continuous for the subspace topology on `N`. -/
-theorem _root_.AddSubgroup.restrictDistribMulAction_continuousSMul (N : AddSubgroup M)
+theorem restrictDistribMulAction_continuousSMul (N : AddSubgroup M)
     (hN : ∀ g : G, ∀ x ∈ N, g • x ∈ N) :
     letI := N.restrictDistribMulAction hN
     ContinuousSMul G N :=
@@ -61,7 +61,7 @@ variable [AddCommGroup M] [TopologicalSpace M] [SeparatelyContinuousAdd M] [Dist
 
 /-- The quotient action `AddSubgroup.quotientDistribMulAction` of `G` on the quotient `M ⧸ N` by
 a `G`-stable additive subgroup `N` is continuous for the quotient topology on `M ⧸ N`. -/
-theorem _root_.AddSubgroup.quotientDistribMulAction_continuousSMul (N : AddSubgroup M)
+theorem quotientDistribMulAction_continuousSMul (N : AddSubgroup M)
     (hN : ∀ g : G, ∀ x ∈ N, g • x ∈ N) :
     letI := N.quotientDistribMulAction hN
     ContinuousSMul G (M ⧸ N) := by
@@ -74,4 +74,4 @@ theorem _root_.AddSubgroup.quotientDistribMulAction_continuousSMul (N : AddSubgr
 
 end AddCommGroup
 
-end TauCeti
+end AddSubgroup

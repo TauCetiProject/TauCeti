@@ -32,18 +32,31 @@ variables for it, `dAᵢ = (2π)⁻¹ ∑ⱼ λ⁽ⁱ⁾ⱼ dcⱼ`
 
 `Ψ(θ, c) = (∑ᵢ (θᵢ / 2π) λ⁽ⁱ⁾(c)) • s(c)`.
 
-It maps `(θ, c)` into the level `F⁻¹(c)`, and it is `2π`-periodic in each angle `θᵢ`. When the
-`λ⁽ⁱ⁾(c)` are a basis of the period lattice of `s(c)`, two angles have the same image exactly when
-they differ by `2π ℤ^ι`, so `θ ↦ Ψ(θ, c)` descends to an injective map from the torus
-`(ℝ / 2πℤ)^ι`. Since the period one-forms `∑ⱼ λ⁽ⁱ⁾ⱼ dcⱼ` are closed, the pullback of `σ` along
+It maps `(θ, c)` into the level `F⁻¹(c)`, and it is `2π`-periodic in each angle `θᵢ`. More
+generally, the Hamiltonian flows translate the angles: moving `Ψ(θ, c)` by `∑ᵢ wᵢ λ⁽ⁱ⁾(c)` adds
+`2π w` to them. When the `λ⁽ⁱ⁾(c)` are a basis of the period lattice of `s(c)`, two angles have the
+same image exactly when they differ by `2π ℤ^ι`, so `θ ↦ Ψ(θ, c)` descends to an injective map from
+the torus `(ℝ / 2πℤ)^ι`; for a section `s`, points of different levels never have the same image.
+Since the period one-forms `∑ⱼ λ⁽ⁱ⁾ⱼ dcⱼ` are closed, the pullback of `σ` along
 `Ψ` is
 
 `Ψ^* σ = ∑ᵢ dθᵢ ∧ dAᵢ + s^* σ`
 
 (`TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_angleMap`), and for an isotropic section `s`
-it is `Ψ^* σ = ∑ᵢ dθᵢ ∧ dAᵢ`. This pullback identity is not yet the Liouville–Arnold normal form
-`σ = ∑ᵢ dθᵢ ∧ dIᵢ`: that reading needs `(θ, c) ↦ Ψ(θ, c)` to be a local diffeomorphism, so that
-`(θ, A)` are coordinates, and this is not proved here.
+it is `Ψ^* σ = ∑ᵢ dθᵢ ∧ dAᵢ`. Reading this as the Liouville–Arnold normal form
+`σ = ∑ᵢ dθᵢ ∧ dIᵢ` needs `(θ, c) ↦ Ψ(θ, c)` to be a local diffeomorphism, so that `(θ, A)` are
+coordinates; this is proved in `TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Action.Chart`.
+
+## Action-angle coordinates
+
+Writing the values as `c = g(I)` for a local right inverse `g` of the action map `A`, the map
+`(θ, I) ↦ Ψ(θ, g I)` pulls `σ` back to
+
+`∑ᵢ dθᵢ ∧ dIᵢ + (s ∘ g)^* σ`
+
+(`TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_angleMap_comp_prodMap`), which is
+`∑ᵢ dθᵢ ∧ dIᵢ` when `s` is isotropic: in the parameters `(θ, I)` the pullback of `σ` is the
+standard form.
 
 ## Main definitions
 
@@ -53,12 +66,21 @@ it is `Ψ^* σ = ∑ᵢ dθᵢ ∧ dAᵢ`. This pullback identity is not yet the
 
 All in the namespace `TauCeti.SmoothTwoForm.IsSymplectic`:
 
-* `apply_angleMap`, `contMDiffOn_angleMap`: the angle map takes values in the levels of `F`, and it
-  is smooth.
+* `apply_angleMap`, `contMDiffOn_angleMap`, `mdifferentiableAt_angleMap`: the angle map takes
+  values in the levels of `F`, it is smooth, and it is differentiable wherever `s` and the
+  `λ⁽ⁱ⁾` are.
 * `angleMap_add_two_pi_mul_intCast`, `angleMap_eq_angleMap_iff`: the angle map is `2π`-periodic in
   the angles, and injective modulo `2π ℤ^ι` for a basis of periods.
+* `hamiltonianFlowAction_apply_angleMap`, `hamiltonianFlowAction_apply_angleMap_of_fderiv`: the
+  Hamiltonian flows act on the angles by translations.
+* `angleMap_eq_angleMap_iff_of_section`: for a section, the angle map is injective modulo
+  `2π ℤ^ι` across levels.
 * `eval₂_mfderiv_angleMap`: `Ψ^* σ = ∑ᵢ dθᵢ ∧ dAᵢ + s^* σ`.
 * `eval₂_mfderiv_angleMap_of_eval₂_eq_zero`: `Ψ^* σ = ∑ᵢ dθᵢ ∧ dAᵢ` for an isotropic section.
+* `eval₂_mfderiv_angleMap_comp_prodMap`: in the parameters `(θ, I)`, with `c = g(I)` for a local
+  right inverse `g` of `A`, the pullback of `σ` is `∑ᵢ dθᵢ ∧ dIᵢ + (s ∘ g)^* σ`;
+  `eval₂_mfderiv_angleMap_comp_prodMap_of_eval₂_eq_zero`: for an isotropic section, it is
+  `∑ᵢ dθᵢ ∧ dIᵢ`.
 
 ## References
 
@@ -138,6 +160,53 @@ theorem angleMap_add_two_pi_mul_intCast
   rw [angleMap_apply, angleMap_apply, hsum, hσ.hamiltonianFlowAction_add_apply hF hcomm hc,
     (hσ.mem_hamiltonianFlowStabilizer hF hcomm hc).1 hmem]
 
+/-- **The Hamiltonian flows translate the angles.** Moving `Ψ(θ, c)` by the combination
+`∑ᵢ wᵢ λ⁽ⁱ⁾(c)` of the vectors `λ⁽ⁱ⁾(c)` adds `2π w` to the angles. -/
+theorem hamiltonianFlowAction_apply_angleMap (θ w : ι → ℝ) :
+    (hσ.hamiltonianFlowAction hF hcomm hc (∑ i, w i • p i c)).toMul
+        (hσ.angleMap hF hcomm hc s p (θ, c)) =
+      hσ.angleMap hF hcomm hc s p (θ + (2 * π) • w, c) := by
+  have hsum : ∑ i, w i • p i c + ∑ i, ((2 * π)⁻¹ * θ i) • p i c =
+      ∑ i, ((2 * π)⁻¹ * (θ + (2 * π) • w) i) • p i c := by
+    rw [← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [← add_smul]
+    congr 1
+    simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+    field_simp
+    ring
+  rw [angleMap_apply, angleMap_apply, ← hσ.hamiltonianFlowAction_add_apply hF hcomm hc, hsum]
+
+/-- **The Hamiltonian flows in action-angle coordinates.** Let `A` be action variables at `c`,
+`dAᵢ = (2π)⁻¹ ∑ⱼ λ⁽ⁱ⁾ⱼ dcⱼ`. If `∑ᵢ uᵢ dAᵢ = v ⬝ᵥ dc` at `c`, then moving `Ψ(θ, c)` by `v`
+adds `u` to the angles.
+
+For a Hamiltonian `H = h ∘ F`, whose Hamiltonian vector field is `∑ⱼ (∂ⱼ h) X_{Fⱼ}`, the vector `v`
+is the gradient of `h` at `c`. Writing `h = K ∘ A`, the condition says that `uᵢ = ∂K / ∂Iᵢ`, so
+this is the integrated form of `X_H = ∑ᵢ (∂K / ∂Iᵢ) ∂_{θᵢ}`. -/
+theorem hamiltonianFlowAction_apply_angleMap_of_fderiv {A : (ι → ℝ) → ι → ℝ}
+    (hA : ∀ i, HasFDerivAt (fun c ↦ A c i)
+      ((2 * π)⁻¹ • ∑ j, p i c j • (proj j : (ι → ℝ) →L[ℝ] ℝ)) c)
+    {u v : ι → ℝ} (huv : ∀ w, ∑ i, u i * fderiv ℝ (fun c ↦ A c i) c w = v ⬝ᵥ w) (θ : ι → ℝ) :
+    (hσ.hamiltonianFlowAction hF hcomm hc v).toMul (hσ.angleMap hF hcomm hc s p (θ, c)) =
+      hσ.angleMap hF hcomm hc s p (θ + u, c) := by
+  classical
+  -- The condition on `u` says that `v = ∑ᵢ (uᵢ / 2π) λ⁽ⁱ⁾(c)`.
+  have hv : ∑ i, ((2 * π)⁻¹ * u i) • p i c = v := by
+    refine funext fun k ↦ ?_
+    have h := huv (Pi.single k 1)
+    simp only [fun i ↦ fderiv_apply_eq_of_hasFDerivAt_action (hA i), dotProduct_single,
+      mul_one] at h
+    rw [Finset.sum_apply, ← h]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [Pi.smul_apply, smul_eq_mul]
+    ring
+  have hθ : θ + u = θ + (2 * π) • fun i ↦ (2 * π)⁻¹ * u i := by
+    ext i
+    simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+    field_simp
+  rw [hθ, ← hσ.hamiltonianFlowAction_apply_angleMap hF hcomm hc, hv]
+
 /-- **The angle map is injective modulo `2π ℤ^ι`.** If the `λ⁽ⁱ⁾(c)` are linearly independent and
 generate the period lattice of `s c`, then two angles have the same image under the angle map
 exactly when they differ by `2π m` for some `m ∈ ℤ^ι`. Thus `θ ↦ Ψ(θ, c)` descends to an injective
@@ -168,6 +237,25 @@ theorem angleMap_eq_angleMap_iff (hli : LinearIndependent ℝ fun i ↦ p i c)
     refine ⟨m, Finset.sum_congr rfl fun i _ ↦ ?_⟩
     rw [Pi.add_apply, add_sub_cancel_left, ← mul_assoc, inv_mul_cancel₀ h2π, one_mul,
       Int.cast_smul_eq_zsmul]
+
+/-- **The angle map is injective modulo `2πℤ^ι` across levels.** Let `s c` and `s c'` lie in the
+levels `c` and `c'` of `F`, and let the `λ⁽ⁱ⁾(c)` be linearly independent and generate the period
+lattice of `s c`. Then `Ψ(θ, c) = Ψ(θ', c')` exactly when `c' = c` and `θ' - θ ∈ 2πℤ^ι`. -/
+theorem angleMap_eq_angleMap_iff_of_section {c' : ι → ℝ} (hFc : F (s c) = c)
+    (hFc' : F (s c') = c') (hli : LinearIndependent ℝ fun i ↦ p i c)
+    (hcl : hσ.hamiltonianFlowStabilizer hF hcomm hc (s c) =
+      AddSubgroup.closure (range fun i ↦ p i c)) {θ θ' : ι → ℝ} :
+    hσ.angleMap hF hcomm hc s p (θ, c) = hσ.angleMap hF hcomm hc s p (θ', c') ↔
+      c' = c ∧ ∃ m : ι → ℤ, θ' = θ + fun i ↦ 2 * π * m i := by
+  constructor
+  · intro h
+    obtain rfl : c' = c := by
+      have hF' := congrArg F h
+      rwa [hσ.apply_angleMap hF hcomm hc, hσ.apply_angleMap hF hcomm hc, hFc, hFc', eq_comm]
+        at hF'
+    exact ⟨rfl, (hσ.angleMap_eq_angleMap_iff hF hcomm hc hli hcl).1 h⟩
+  · rintro ⟨rfl, h⟩
+    exact (hσ.angleMap_eq_angleMap_iff hF hcomm hc hli hcl).2 h
 
 /-- **The angle map is smooth.** If `s` and the `λ⁽ⁱ⁾` are smooth on `t`, the angle map is smooth
 on `(ι → ℝ) × t`. -/
@@ -247,9 +335,8 @@ theorem eval₂_mfderiv_angleMap {A : (ι → ℝ) → ι → ℝ}
   have hsym (i : ι) : fderiv ℝ (p i) c b ⬝ᵥ b' = fderiv ℝ (p i) c b' ⬝ᵥ b :=
     hσ.fderiv_dotProduct_comm_of_mem_hamiltonianFlowStabilizer hF hcomm hc hs hFs (hp i) (hps i)
       b b'
-  have hdA (i : ι) (w : ι → ℝ) : fderiv ℝ (fun c ↦ A c i) c w = (2 * π)⁻¹ * (p i c ⬝ᵥ w) := by
-    rw [(hA i).fderiv]
-    simp [dotProduct, Finset.mul_sum, mul_comm]
+  have hdA (i : ι) (w : ι → ℝ) : fderiv ℝ (fun c ↦ A c i) c w = (2 * π)⁻¹ * (p i c ⬝ᵥ w) :=
+    fderiv_apply_eq_of_hasFDerivAt_action (hA i) w
   rw [show hσ.angleMap hF hcomm hc s p = fun q ↦
     (hσ.hamiltonianFlowAction hF hcomm hc (u q)).toMul (s q.2) from
       funext (hσ.angleMap_apply hF hcomm hc)]
@@ -264,9 +351,11 @@ theorem eval₂_mfderiv_angleMap {A : (ι → ℝ) → ι → ℝ}
 
 /-- **The angle map of an isotropic section.** If, in addition to the hypotheses of
 `TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_angleMap`, the section `s` is isotropic at `c`,
-`s^* σ = 0`, then the angle map pulls `σ` back to `Ψ^* σ = ∑ᵢ dθᵢ ∧ dAᵢ` at `(θ, c)`. Once `Ψ`
-is known to be a local diffeomorphism, so that `(θ, A)` are coordinates, this gives the
-Liouville–Arnold normal form `σ = ∑ᵢ dθᵢ ∧ dIᵢ` in the angles `θᵢ` and the actions `Iᵢ = Aᵢ`. -/
+`s^* σ = 0`, then the angle map pulls `σ` back to `Ψ^* σ = ∑ᵢ dθᵢ ∧ dAᵢ` at `(θ, c)`. Since `Ψ`
+is a local diffeomorphism for independent periods
+(`TauCeti.SmoothTwoForm.IsSymplectic.isLocalDiffeomorphAt_angleMap`), `(θ, A)` are coordinates,
+and this gives the Liouville–Arnold normal form `σ = ∑ᵢ dθᵢ ∧ dIᵢ` in the angles `θᵢ` and the
+actions `Iᵢ = Aᵢ`. -/
 theorem eval₂_mfderiv_angleMap_of_eval₂_eq_zero {A : (ι → ℝ) → ι → ℝ}
     (hs : MDifferentiableAt 𝓘(ℝ, ι → ℝ) I s c) (hFs : ∀ᶠ c' in 𝓝 c, F (s c') = c')
     (hL : ∀ b b', SmoothBundleForm.eval₂ σ (s c) (mfderiv 𝓘(ℝ, ι → ℝ) I s c b)
@@ -282,6 +371,87 @@ theorem eval₂_mfderiv_angleMap_of_eval₂_eq_zero {A : (ι → ℝ) → ι →
       ∑ i, (a i * fderiv ℝ (fun c ↦ A c i) c b' - a' i * fderiv ℝ (fun c ↦ A c i) c b) := by
   rw [hσ.eval₂_mfderiv_angleMap hF hcomm hc hs hFs hp hps hA]
   exact add_eq_left.2 (hL b b')
+
+/-- The angle map is differentiable at `(θ, c)` if `s` and the `λ⁽ⁱ⁾` are differentiable at `c`. -/
+theorem mdifferentiableAt_angleMap (hs : MDifferentiableAt 𝓘(ℝ, ι → ℝ) I s c)
+    (hp : ∀ i, DifferentiableAt ℝ (p i) c) (θ : ι → ℝ) :
+    MDifferentiableAt 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I (hσ.angleMap hF hcomm hc s p) (θ, c) := by
+  have hu : DifferentiableAt ℝ
+      (fun q : (ι → ℝ) × (ι → ℝ) ↦ ∑ i, ((2 * π)⁻¹ * q.1 i) • p i q.2) (θ, c) :=
+    DifferentiableAt.fun_sum fun i _ ↦
+      (by fun_prop : DifferentiableAt ℝ (fun q : (ι → ℝ) × (ι → ℝ) ↦ (2 * π)⁻¹ * q.1 i)
+        (θ, c)).fun_smul ((hp i).comp (θ, c) differentiableAt_snd)
+  rw [show hσ.angleMap hF hcomm hc s p = _ from funext (hσ.angleMap_apply hF hcomm hc)]
+  exact ((hσ.contMDiff_hamiltonianFlowAction_uncurry hF hcomm hc).mdifferentiableAt (by simp)).comp
+    (θ, c) (hu.mdifferentiableAt.prodMk (hs.comp (θ, c) differentiableAt_snd.mdifferentiableAt))
+
+/-- **The pullback of `σ` in action-angle coordinates.** In the setting of
+`TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_angleMap`, let `g` be a local right inverse of
+the action map `A` near `y`, with derivative `G` at `y`. Then at `(θ, y)` the map
+`(θ, I) ↦ Ψ(θ, g I)` pulls `σ` back to
+
+`∑ᵢ dθᵢ ∧ dIᵢ + (s ∘ g)^* σ`. -/
+theorem eval₂_mfderiv_angleMap_comp_prodMap {A g : (ι → ℝ) → ι → ℝ}
+    {G : (ι → ℝ) →L[ℝ] ι → ℝ} {y : ι → ℝ} (hg : HasFDerivAt g G y)
+    (hAg : ∀ᶠ y' in 𝓝 y, A (g y') = y') (hs : MDifferentiableAt 𝓘(ℝ, ι → ℝ) I s (g y))
+    (hFs : ∀ᶠ c' in 𝓝 (g y), F (s c') = c') (hp : ∀ i, DifferentiableAt ℝ (p i) (g y))
+    (hps : ∀ i, ∀ᶠ c' in 𝓝 (g y), p i c' ∈ hσ.hamiltonianFlowStabilizer hF hcomm hc (s c'))
+    (hA : ∀ i, HasFDerivAt (fun c ↦ A c i)
+      ((2 * π)⁻¹ • ∑ j, p i (g y) j • (proj j : (ι → ℝ) →L[ℝ] ℝ)) (g y))
+    (θ a a' b b' : ι → ℝ) :
+    SmoothBundleForm.eval₂ σ (hσ.angleMap hF hcomm hc s p (θ, g y))
+        (mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I (hσ.angleMap hF hcomm hc s p ∘ Prod.map id g) (θ, y)
+          (a, b))
+        (mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I (hσ.angleMap hF hcomm hc s p ∘ Prod.map id g) (θ, y)
+          (a', b')) =
+      a ⬝ᵥ b' - a' ⬝ᵥ b +
+        SmoothBundleForm.eval₂ σ (s (g y)) (mfderiv 𝓘(ℝ, ι → ℝ) I s (g y) (G b))
+          (mfderiv 𝓘(ℝ, ι → ℝ) I s (g y) (G b')) := by
+  -- The reparametrization `(θ, I) ↦ (θ, g I)` and the chain rule.
+  have hk : HasFDerivAt (Prod.map id g)
+      ((ContinuousLinearMap.fst ℝ (ι → ℝ) (ι → ℝ)).prod
+        (G.comp (ContinuousLinearMap.snd ℝ (ι → ℝ) (ι → ℝ)))) (θ, y) :=
+    hasFDerivAt_fst.prodMk (hg.comp (θ, y) hasFDerivAt_snd)
+  have hR (u v : ι → ℝ) :
+      mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I (hσ.angleMap hF hcomm hc s p ∘ Prod.map id g) (θ, y)
+          (u, v) =
+        mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I (hσ.angleMap hF hcomm hc s p) (θ, g y) (u, G v) :=
+    congrArg (fun L ↦ L (u, v))
+      ((hσ.mdifferentiableAt_angleMap hF hcomm hc hs hp θ).hasMFDerivAt.comp (θ, y)
+        hk.hasMFDerivAt).mfderiv
+  -- `dAᵢ ∘ G = dIᵢ`, since `A ∘ g` is the identity near `y`.
+  have hAG (i : ι) (u : ι → ℝ) : fderiv ℝ (fun c ↦ A c i) (g y) (G u) = u i := by
+    have h₁ : HasFDerivAt (fun y' ↦ A (g y') i) ((proj i : (ι → ℝ) →L[ℝ] ℝ)) y :=
+      (proj i : (ι → ℝ) →L[ℝ] ℝ).hasFDerivAt.congr_of_eventuallyEq
+        (hAg.mono fun y' h ↦ by simp [h])
+    rw [(hA i).fderiv]
+    exact congrArg (fun L : (ι → ℝ) →L[ℝ] ℝ ↦ L u) (((hA i).comp y hg).unique h₁)
+  rw [hR, hR, hσ.eval₂_mfderiv_angleMap hF hcomm hc hs hFs hp hps hA]
+  simp only [hAG, dotProduct, Finset.sum_sub_distrib]
+
+/-- **The pullback of `σ` in action-angle coordinates for an isotropic section.** If, in addition
+to the hypotheses of `TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_angleMap_comp_prodMap`, the
+section `s` is isotropic at `g y`, then at `(θ, y)` the map `(θ, I) ↦ Ψ(θ, g I)` pulls `σ` back
+to the standard form `∑ᵢ dθᵢ ∧ dIᵢ`. -/
+theorem eval₂_mfderiv_angleMap_comp_prodMap_of_eval₂_eq_zero {A g : (ι → ℝ) → ι → ℝ}
+    {G : (ι → ℝ) →L[ℝ] ι → ℝ} {y : ι → ℝ} (hg : HasFDerivAt g G y)
+    (hAg : ∀ᶠ y' in 𝓝 y, A (g y') = y') (hs : MDifferentiableAt 𝓘(ℝ, ι → ℝ) I s (g y))
+    (hFs : ∀ᶠ c' in 𝓝 (g y), F (s c') = c')
+    (hL : ∀ b b', SmoothBundleForm.eval₂ σ (s (g y)) (mfderiv 𝓘(ℝ, ι → ℝ) I s (g y) b)
+      (mfderiv 𝓘(ℝ, ι → ℝ) I s (g y) b') = 0)
+    (hp : ∀ i, DifferentiableAt ℝ (p i) (g y))
+    (hps : ∀ i, ∀ᶠ c' in 𝓝 (g y), p i c' ∈ hσ.hamiltonianFlowStabilizer hF hcomm hc (s c'))
+    (hA : ∀ i, HasFDerivAt (fun c ↦ A c i)
+      ((2 * π)⁻¹ • ∑ j, p i (g y) j • (proj j : (ι → ℝ) →L[ℝ] ℝ)) (g y))
+    (θ a a' b b' : ι → ℝ) :
+    SmoothBundleForm.eval₂ σ (hσ.angleMap hF hcomm hc s p (θ, g y))
+        (mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I (hσ.angleMap hF hcomm hc s p ∘ Prod.map id g) (θ, y)
+          (a, b))
+        (mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I (hσ.angleMap hF hcomm hc s p ∘ Prod.map id g) (θ, y)
+          (a', b')) =
+      a ⬝ᵥ b' - a' ⬝ᵥ b := by
+  rw [hσ.eval₂_mfderiv_angleMap_comp_prodMap hF hcomm hc hg hAg hs hFs hp hps hA]
+  exact add_eq_left.2 (hL (G b) (G b'))
 
 end IsSymplectic
 

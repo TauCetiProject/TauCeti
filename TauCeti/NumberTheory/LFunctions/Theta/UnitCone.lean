@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LFunctions.Theta.MellinKernel
+public import TauCeti.NumberTheory.LFunctions.Theta.Mellin.Kernel
 public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Cone
 
 /-!
@@ -61,8 +61,8 @@ theorem hasMellin_mellinKernel_sub {D : Set (realSpace K)} (hDm : MeasurableSet 
         c • F (u * (ZLattice.covolume L ^ 2)⁻¹) := by
     rw [mellinKernel_sub_eq_integral_sub_one hDm hD L hu]
     simp only [F, c, smul_eq_mul, div_eq_mul_inv]
-  have hc := (hasMellin_const_smul hscaled.1 c).congr_of_eqOn_Ioi
-    (fun u hu ↦ (havg u hu).symm)
+  have hc := (hasMellin_congr (fun u hu ↦ (havg u hu).symm)).mp
+    (hasMellin_const_smul hscaled.1 c)
   rw [hscaled.2, Complex.ofReal_inv, Complex.inv_cpow_ofReal_nonneg (sq_nonneg _),
     Complex.cpow_neg, inv_inv] at hc
   simpa only [c, smul_eq_mul, Complex.ofReal_pow, mul_assoc] using hc
