@@ -159,6 +159,7 @@ theorem nonempty_homeomorph_sphere_of_two_criticalPoints (hf : ContMDiff I 𝓘(
       (hpq' ▸ criticalPoints_eq_univ_of_subsingleton)
   obtain ⟨U, V, hU, hV, hUV, ⟨eU⟩, ⟨eV⟩⟩ :=
     exists_twoEuclideanOpenCover_of_two_criticalPoints hf h2
-  exact nonempty_homeomorph_sphere_of_two_euclidean_opens hU hV hUV eU eV hE (by simp)
+  exact nonempty_homeomorph_sphere_of_two_euclidean_opens hU hV hUV eU eV (by simpa using hE)
+    (by simp)
 
 end TauCeti
