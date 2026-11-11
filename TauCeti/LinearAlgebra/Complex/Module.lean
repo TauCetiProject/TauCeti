@@ -61,6 +61,7 @@ namespace LinearMap
 /-- A real-linear map out of the complex plane is evaluated in the real basis `(1,I)`. -/
 theorem apply_eq_re_smul_one_add_im_smul_I {F : Type*} [AddCommMonoid F] [Module ℝ F]
     (L : ℂ →ₗ[ℝ] F) (z : ℂ) : L z = z.re • L 1 + z.im • L Complex.I := by
+  -- Fold the right side into `L` of the real-basis expansion `z.re • 1 + z.im • I = z`.
   rw [← map_smul, ← map_smul, ← map_add]
   simp
 
