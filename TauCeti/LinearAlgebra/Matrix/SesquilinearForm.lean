@@ -184,15 +184,53 @@ section Field
 variable {n K : Type*} [Fintype n] [DecidableEq n] [Field K] {Q : Matrix n n K} {σ : K →+* K}
   {ε : K}
 
+omit [DecidableEq n] [Fintype n] in
+/-- If `σ` is an involution, `Q` is a nonzero `ε`-Hermitian matrix, and the trace `t ↦ t + ε σ(t)`
+is onto the elements `s` with `σ(s) = ε s`, then `ε * ε = 1`. -/
+theorem mul_self_eq_one_of_trace (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q)
+    (htr : ∀ s, σ s = ε * s → ∃ t, t + ε * σ t = s) (hQ0 : Q ≠ 0) : ε * ε = 1 := by
+  -- `σ ε * ε = 1`, by applying the Hermitian symmetry twice to a nonzero entry of `Q`.
+  have hsymm (i j : n) : σ (Q i j) = ε * Q j i := congrFun (congrFun hQ j) i
+  obtain ⟨i, j, hij⟩ : ∃ i j, Q i j ≠ 0 := by
+    by_contra h
+    exact hQ0 (Matrix.ext fun i j ↦ not_not.mp fun h' ↦ h ⟨i, j, h'⟩)
+  have hε' : σ ε * ε = 1 := by
+    have h : σ ε * ε * Q i j = Q i j := by
+      calc σ ε * ε * Q i j = σ ε * σ (Q j i) := by rw [hsymm j i]; ring
+        _ = σ (σ (Q i j)) := by rw [hsymm i j, map_mul]
+        _ = Q i j := hσ _
+    exact mul_right_cancel₀ hij (h.trans (one_mul _).symm)
+  -- `s = 1 + σ ε` satisfies `σ s = ε s`, so `s = t + ε σ t`, whence `ε σ s = s`.
+  obtain ⟨t, ht⟩ := htr (1 + σ ε) <| by
+    rw [map_add, map_one, hσ]
+    linear_combination -hε'
+  have h2 : σ (1 + σ ε) = σ t + σ ε * t := by
+    rw [← ht, map_add, map_mul, hσ]
+  have h1 : ε * σ (1 + σ ε) = 1 + σ ε := by
+    rw [h2, ← ht]
+    linear_combination t * hε'
+  by_cases hs : 1 + σ ε = 0
+  · have hε1 : ε = -1 := by
+      rw [← hσ ε, show σ ε = -1 by linear_combination hs, map_neg, map_one]
+    rw [hε1]
+    norm_num
+  · rw [map_add, map_one, hσ] at h1
+    refine mul_right_cancel₀ hs ?_
+    linear_combination h1 + ε * hε'
+
 omit [DecidableEq n] in
 /-- **Correcting a vector to an isotropic one.** If the trace `t ↦ t + ε σ(t)` is onto the
 elements `s` with `σ(s) = ε s`, then for isotropic `x` and `B(u, x) ≠ 0` some `u + c • x` is
 isotropic. -/
 theorem exists_comp_add_smul_dotProduct_mulVec_add_smul_eq_zero
-    (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q) (hε : ε * ε = 1)
+    (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q)
     (htr : ∀ s, σ s = ε * s → ∃ t, t + ε * σ t = s) {x : n → K}
     (hx : (σ ∘ x) ⬝ᵥ (Q *ᵥ x) = 0) {u : n → K} (hux : (σ ∘ u) ⬝ᵥ (Q *ᵥ x) ≠ 0) :
     ∃ c : K, (σ ∘ (u + c • x)) ⬝ᵥ (Q *ᵥ (u + c • x)) = 0 := by
+  have hε : ε * ε = 1 := by
+    refine mul_self_eq_one_of_trace hσ hQ htr ?_
+    rintro rfl
+    simp at hux
   obtain ⟨t, ht⟩ := htr (-((σ ∘ u) ⬝ᵥ (Q *ᵥ u))) <| by
     rw [map_neg, apply_comp_dotProduct_mulVec hσ hQ, mul_neg]
   refine ⟨t / (σ ∘ u) ⬝ᵥ (Q *ᵥ x), ?_⟩
@@ -221,16 +259,22 @@ theorem exists_comp_dotProduct_mulVec_ne_zero_pair (hdet : Q.det ≠ 0) {x y : n
   · exact ⟨v, hv, hvy⟩
 
 /-- **A matrix scaling every isotropic vector is scalar.** Let `σ` be an involution and `Q` an
-invertible `ε`-Hermitian matrix with `ε * ε = 1`, and suppose that the trace `t ↦ t + ε σ(t)` is
-onto the elements `s` with `σ(s) = ε s` and has a nonzero kernel element. If some nonzero vector
+invertible `ε`-Hermitian matrix, and suppose that the trace `t ↦ t + ε σ(t)` is onto the
+elements `s` with `σ(s) = ε s` and has a nonzero kernel element (surjectivity of the trace already
+forces `ε * ε = 1`, `Matrix.mul_self_eq_one_of_trace`). If some nonzero vector
 is isotropic and `M` maps every isotropic vector to a multiple of itself, then `M` is a scalar
 matrix. -/
 theorem exists_eq_scalar_of_forall_mulVec_eq_smul (hσ : Function.Involutive σ)
-    (hQ : (Q.map σ)ᵀ = ε • Q) (hε : ε * ε = 1) (hdet : Q.det ≠ 0)
+    (hQ : (Q.map σ)ᵀ = ε • Q) (hdet : Q.det ≠ 0)
     (htr : ∀ s, σ s = ε * s → ∃ t, t + ε * σ t = s) (hadm : ∃ d ≠ 0, d + ε * σ d = 0)
     {x₀ : n → K} (hx₀ : x₀ ≠ 0) (hx₀iso : (σ ∘ x₀) ⬝ᵥ (Q *ᵥ x₀) = 0) (M : Matrix n n K)
     (hM : ∀ v, (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0 → ∃ c : K, M *ᵥ v = c • v) :
     ∃ c : K, M = scalar n c := by
+  have hε : ε * ε = 1 := by
+    refine mul_self_eq_one_of_trace hσ hQ htr ?_
+    have : Nonempty n := ⟨(Function.ne_iff.mp hx₀).choose⟩
+    rintro rfl
+    exact hdet det_zero
   obtain ⟨α, hα⟩ := hM x₀ hx₀iso
   -- Every isotropic `v` has the eigenvalue `α`: compare `x₀` with an isotropic `x₀ + c v`.
   have hiso {v : n → K} (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) : M *ᵥ v = α • v := by
@@ -258,8 +302,7 @@ theorem exists_eq_scalar_of_forall_mulVec_eq_smul (hσ : Function.Involutive σ)
       linear_combination (mul_eq_zero.mp h2).resolve_left hc - h1]
   -- Every vector `u` with `B(u, x₀) ≠ 0` is an isotropic vector minus a multiple of `x₀`.
   have hpair {u : n → K} (hu : (σ ∘ u) ⬝ᵥ (Q *ᵥ x₀) ≠ 0) : M *ᵥ u = α • u := by
-    obtain ⟨c, hc⟩ := exists_comp_add_smul_dotProduct_mulVec_add_smul_eq_zero hσ hQ hε htr
-      hx₀iso hu
+    obtain ⟨c, hc⟩ := exists_comp_add_smul_dotProduct_mulVec_add_smul_eq_zero hσ hQ htr hx₀iso hu
     have h := hiso hc
     rw [mulVec_add, mulVec_smul, hα, smul_add, smul_comm α c] at h
     exact add_right_cancel h

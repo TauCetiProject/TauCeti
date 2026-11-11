@@ -200,10 +200,10 @@ theorem isProPSylow_iff_isPGroup_and_not_dvd_index :
   constructor
   · intro hP
     refine ⟨isProP_iff_isPGroup.mp hP.isProP, ?_⟩
-    let U := openNormalSubgroupBot G
+    let U : OpenNormalSubgroup G := ⊥
     have hindex : (P.map (QuotientGroup.mk' U.toSubgroup)).index = P.index :=
       P.index_map_eq (QuotientGroup.mk'_surjective U.toSubgroup) <| by
-        rw [QuotientGroup.ker_mk', openNormalSubgroupBot_toSubgroup]
+        rw [QuotientGroup.ker_mk', OpenNormalSubgroup.toSubgroup_bot]
         exact bot_le
     simpa only [hindex] using hP.not_dvd_index U
   · rintro ⟨hP, hindex⟩

@@ -12,6 +12,8 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 -- `FiniteDimensional` and `Module.finrank` occur in the statement, and
 -- `Module.finBasisOfFinrankEq` in the body.
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+-- `LinearMap.det` occurs in the statement of `TauCeti.Algebra.det_endAlgEquivMatrix`.
+public import Mathlib.LinearAlgebra.Determinant
 
 /-!
 # Matrix realizations of endomorphisms and their action on a basis
@@ -30,6 +32,7 @@ computation every matrix model of a Lie algebra performs on its root vectors.
 * `TauCeti.Algebra.endAlgEquivMatrix`: the above, read off the basis
   `Module.finBasisOfFinrankEq`.
 * `TauCeti.Algebra.endAlgEquivMatrix_apply`: its evaluation as `LinearMap.toMatrix` in that basis.
+* `TauCeti.Algebra.det_endAlgEquivMatrix`: its matrices compute determinants of endomorphisms.
 * `Module.Basis.toLinAlgEquiv_single_apply_basis`: the endomorphism of a matrix unit sends a basis
   vector to a single coordinate.
 * `TauCeti.matrixGeneralLinearEquiv`: matrix `GL` and the linear automorphisms of coordinate
@@ -177,8 +180,8 @@ theorem exists_toMatrixRight'_comp_eq_fromBlocks [Fintype n] [DecidableEq n]
     funext fun _ ↦ by simp [e, LinearMap.funLeft_apply]
   have hr (u : m → R) (v : n → R) : LinearMap.funLeft R R Sum.inr (e.symm (u, v)) = v :=
     funext fun _ ↦ by simp [e, LinearMap.funLeft_apply]
-  have hl' (x : m ⊕ n → R) : LinearMap.funLeft R R Sum.inl x = x ∘ Sum.inl := rfl
-  have hr' (x : m ⊕ n → R) : LinearMap.funLeft R R Sum.inr x = x ∘ Sum.inr := rfl
+  have hl' (x : m ⊕ n → R) : LinearMap.funLeft R R Sum.inl x = x ∘ Sum.inl := (rfl)
+  have hr' (x : m ⊕ n → R) : LinearMap.funLeft R R Sum.inr x = x ∘ Sum.inr := (rfl)
   refine ⟨f ∘ₗ s₁ ∘ₗ LinearMap.funLeft R R Sum.inl + σ ∘ₗ s₃ ∘ₗ LinearMap.funLeft R R Sum.inr,
     e.symm.toLinearMap ∘ₗ (i₁ ∘ₗ r).prod (i₃ ∘ₗ g), ?_, ?_⟩
   · refine LinearMap.ext fun x ↦ ?_
@@ -222,6 +225,27 @@ theorem leftMulMatrix_algebraMap {R S : Type*} [CommSemiring R] [Semiring S] [Al
     leftMulMatrix b (algebraMap R S r) = Matrix.scalar ι r := by
   simp [Matrix.algebraMap_eq_diagonal, Matrix.scalar_apply]
 
+/-- The matrix of multiplication by `ψ x` in the image of a basis is the image of the matrix of
+multiplication by `x`. -/
+lemma leftMulMatrix_map {R B R' B' : Type*} [CommSemiring R] [Semiring B]
+    [Algebra R B] [CommSemiring R'] [Semiring B'] [Algebra R' B']
+    {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι R B)
+    (b' : Module.Basis ι R' B') (σ : R →+* R') (ψ : B →+* B')
+    (hψ : ∀ r, ψ (algebraMap R B r) = algebraMap R' B' (σ r))
+    (hb : ∀ i, b' i = ψ (b i))
+    (x : B) : leftMulMatrix b' (ψ x) = (leftMulMatrix b x).map σ := by
+  have hrepr (y : B) : b'.repr (ψ y) = Finsupp.mapRange σ σ.map_zero (b.repr y) := by
+    conv_lhs => rw [← b.sum_repr y]
+    rw [map_sum]
+    simp_rw [Algebra.smul_def, map_mul, hψ, ← hb, ← Algebra.smul_def]
+    ext i
+    rw [b'.repr_sum_self, Finsupp.mapRange_apply]
+  ext i j
+  rw [Matrix.map_apply, leftMulMatrix_eq_repr_mul, leftMulMatrix_eq_repr_mul, hb, ← map_mul,
+    hrepr, Finsupp.mapRange_apply]
+
+
 end Algebra
 
 namespace TauCeti.Algebra
@@ -254,5 +278,12 @@ theorem endAlgEquivMatrix_apply {n : ℕ} (hn : Module.finrank K M = n) (f : Mod
     ext i j
     simp [endAlgEquivMatrix, algEquivMatrix, algEquivMatrix',
       LinearEquiv.conjAlgEquiv_apply, LinearMap.toMatrix_apply]
+
+/-- The chosen-basis matrix of an endomorphism has the determinant of the endomorphism. Since
+`endAlgEquivMatrix` is an algebra isomorphism, this computes the determinant of every polynomial
+expression in `f`, such as `det (1 - f ^ n)`, as that of the same expression in its matrix. -/
+theorem det_endAlgEquivMatrix {n : ℕ} (hn : Module.finrank K M = n) (f : Module.End K M) :
+    (endAlgEquivMatrix K M hn f).det = LinearMap.det f := by
+  rw [endAlgEquivMatrix_apply, LinearMap.det_toMatrix]
 
 end TauCeti.Algebra
