@@ -29,10 +29,11 @@ a compact Riemann surface, where coordinate discs have vanishing `H¹` for the s
 
 ## Main results
 
-* `TauCeti.Topology.isZero_homology_one_cechComplex_of_subsingleton_H`: a finite cover whose
-  members have vanishing `H¹` has vanishing first Čech cohomology when `H¹(X, F) = 0`.
-* `TauCeti.Topology.isZero_cechCohomology_one_of_subsingleton_H`: if every open cover is refined by
-  such a finite cover and `H¹(X, F) = 0`, the degree one Čech cohomology of `F` vanishes.
+* `CategoryTheory.Sheaf.isZero_homology_one_cechComplex_of_subsingleton_H`: a finite cover
+  whose members have vanishing `H¹` has vanishing first Čech cohomology when `H¹(X, F) = 0`.
+* `CategoryTheory.Sheaf.isZero_cechCohomology_one_of_subsingleton_H`: if every open cover is
+  refined by such a finite cover and `H¹(X, F) = 0`, the degree one Čech cohomology of `F`
+  vanishes.
 
 ## References
 
@@ -44,11 +45,11 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits TopologicalSpace TauCeti.CategoryTheory
+open CategoryTheory Limits TopologicalSpace TauCeti.CategoryTheory TauCeti.Topology
 
 universe u
 
-namespace TauCeti.Topology
+namespace CategoryTheory.Sheaf
 
 variable {X : TopCat.{u}} {R : Type u} [Ring R]
   (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R))
@@ -101,4 +102,4 @@ theorem isZero_cechCohomology_one_of_subsingleton_H
       (IsOpenCover.mk hW), NatTrans.comp_app, cechComplexHomologyMap_app]
   exact (congrArg (· ≫ _) (hz.eq_of_tgt _ 0)).trans zero_comp
 
-end TauCeti.Topology
+end CategoryTheory.Sheaf
