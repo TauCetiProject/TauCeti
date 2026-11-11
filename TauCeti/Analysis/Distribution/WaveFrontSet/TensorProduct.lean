@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.Distribution.LinearEquiv
 public import TauCeti.Analysis.Distribution.TensorProduct
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
-import TauCeti.Analysis.Distribution.LocalConstancy
+import TauCeti.Analysis.Distribution.Support
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Normed.Lp.ProdLp
 import TauCeti.Analysis.Normed.Module.Cone
@@ -127,37 +127,6 @@ theorem localFourier_transportCLM_tensorProduct {φ : 𝓓(Ω, ℂ)} {ψ : 𝓓(
     ofLp_fst, ofLp_snd, neg_add, AddChar.map_add_eq_mul, Circle.coe_mul]
   ring
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ D] in
-/-- Every neighbourhood `U` of a point `p` of `W` contains a box: there are neighbourhoods `B₁` of
-`p.fst` and `B₂` of `p.snd` such that the product of any cutoffs supported in `B₁` and in `B₂` is
-a cutoff on `W` supported in `U`. -/
-private theorem exists_prod_cutoff_of_tsupport_subset {p : WithLp 2 (E × D)} (hp : p ∈ W)
-    {U : Set (WithLp 2 (E × D))} (hU : U ∈ 𝓝 p) :
-    ∃ B₁ ∈ 𝓝 p.fst, ∃ B₂ ∈ 𝓝 p.snd, ∀ (φ : 𝓓(Ω, ℂ)) (ψ : 𝓓(O, ℂ)), tsupport φ ⊆ B₁ →
-      tsupport ψ ⊆ B₂ → ∃ χ : 𝓓(W, ℂ), tsupport χ ⊆ U ∧ ∀ q, χ q = φ q.fst * ψ q.snd := by
-  -- A box `B₁ × B₂` around `p` whose Euclidean copy lies in `U ∩ W`.
-  have hUW : toLp 2 ⁻¹' (U ∩ W) ∈ 𝓝 (ofLp p) :=
-    (prod_continuous_toLp 2 E D).continuousAt.preimage_mem_nhds
-      (by simpa using inter_mem hU (W.isOpen.mem_nhds hp))
-  obtain ⟨B₁, hB₁, B₂, hB₂, hB⟩ := mem_nhds_prod_iff.1 hUW
-  refine ⟨B₁, hB₁, B₂, hB₂, fun φ ψ hφ hψ ↦ ?_⟩
-  -- The product cutoff is supported in the compact set `ofLp ⁻¹' (tsupport φ ×ˢ tsupport ψ)`.
-  set K : Set (WithLp 2 (E × D)) := ofLp ⁻¹' (tsupport φ ×ˢ tsupport ψ) with hK_def
-  have hK : IsCompact K :=
-    (prodContinuousLinearEquiv 2 ℝ E D).toHomeomorph.isCompact_preimage.2
-      (φ.hasCompactSupport.isCompact.prod ψ.hasCompactSupport.isCompact)
-  have hsupp : tsupport (fun q : WithLp 2 (E × D) ↦ φ q.fst * ψ q.snd) ⊆ K := fun q hq ↦
-    ⟨tsupport_comp_subset_preimage φ (continuous_fst.comp (prod_continuous_ofLp 2 E D))
-        (tsupport_mul_subset_left hq),
-      tsupport_comp_subset_preimage ψ (continuous_snd.comp (prod_continuous_ofLp 2 E D))
-        (tsupport_mul_subset_right hq)⟩
-  have hKUW : K ⊆ U ∩ W := fun q ⟨hq₁, hq₂⟩ ↦ by simpa using hB ⟨hφ hq₁, hψ hq₂⟩
-  exact ⟨⟨fun q ↦ φ q.fst * ψ q.snd,
-    (φ.contDiff.comp (fstL 2 ℝ E D).contDiff).mul (ψ.contDiff.comp (sndL 2 ℝ E D).contDiff),
-    hK.of_isClosed_subset (isClosed_tsupport _) hsupp,
-    hsupp.trans (hKUW.trans inter_subset_right)⟩,
-    hsupp.trans (hKUW.trans inter_subset_left), fun _ ↦ rfl⟩
-
 /-- Around a point `p` of `W`, a cutoff `φ` near `p.fst` inside `U₁` and a cutoff `ψ` near
 `p.snd` inside `U₂` give a product cutoff on `W`, not vanishing at `p`, for which the localized
 Fourier transform of `S ⊗ T` is the product of those of `S` and `T`. -/
@@ -169,7 +138,7 @@ private theorem exists_prod_cutoff {p : WithLp 2 (E × D)} (hp : p ∈ W) {U₁ 
           S.localFourier φ ζ.fst * T.localFourier ψ ζ.snd := by
   have hpV : p.fst ∈ Ω ∧ p.snd ∈ O := by simpa [hV] using hW hp
   obtain ⟨B₁, hB₁, B₂, hB₂, hprod⟩ :=
-    exists_prod_cutoff_of_tsupport_subset (Ω := Ω) (O := O) hp (W.isOpen.mem_nhds hp)
+    TestFunction.exists_prod_cutoff_of_tsupport_subset (Ω := Ω) (O := O) hp (W.isOpen.mem_nhds hp)
   obtain ⟨φ, hφ, hφp⟩ := exists_tsupport_subset_apply_eq (n := ⊤)
     (inter_mem (inter_mem hU₁ hB₁) (Ω.isOpen.mem_nhds hpV.1)) inter_subset_right (1 : ℂ)
   obtain ⟨ψ, hψ, hψp⟩ := exists_tsupport_subset_apply_eq (n := ⊤)
@@ -250,7 +219,7 @@ theorem IsMicrolocallySmoothAt.of_transportCLM_tensorProduct_left {p ζ : WithLp
   have hpV : p.fst ∈ Ω ∧ p.snd ∈ O := by simpa [hV] using hW hp
   obtain ⟨U, hU, Γ, hΓ, hζΓ, hcone, hdecay⟩ := h.exists_nhds_cone
   obtain ⟨B₁, hB₁, B₂, hB₂, hprod⟩ :=
-    exists_prod_cutoff_of_tsupport_subset (Ω := Ω) (O := O) hp hU
+    TestFunction.exists_prod_cutoff_of_tsupport_subset (Ω := Ω) (O := O) hp hU
   obtain ⟨φ, hφ, hφp⟩ := exists_tsupport_subset_apply_eq (n := ⊤)
     (inter_mem hB₁ (Ω.isOpen.mem_nhds hpV.1)) inter_subset_right (1 : ℂ)
   -- Since `p.snd` lies in the support of `T`, some test function `u` near `p.snd` has `T u ≠ 0`;
@@ -282,7 +251,7 @@ theorem IsMicrolocallySmoothAt.of_transportCLM_tensorProduct_right {p ζ : WithL
   have hpV : p.fst ∈ Ω ∧ p.snd ∈ O := by simpa [hV] using hW hp
   obtain ⟨U, hU, Γ, hΓ, hζΓ, hcone, hdecay⟩ := h.exists_nhds_cone
   obtain ⟨B₁, hB₁, B₂, hB₂, hprod⟩ :=
-    exists_prod_cutoff_of_tsupport_subset (Ω := Ω) (O := O) hp hU
+    TestFunction.exists_prod_cutoff_of_tsupport_subset (Ω := Ω) (O := O) hp hU
   obtain ⟨ψ, hψ, hψp⟩ := exists_tsupport_subset_apply_eq (n := ⊤)
     (inter_mem hB₂ (O.isOpen.mem_nhds hpV.2)) inter_subset_right (1 : ℂ)
   -- Since `p.fst` lies in the support of `S`, some test function `u` near `p.fst` has `S u ≠ 0`;

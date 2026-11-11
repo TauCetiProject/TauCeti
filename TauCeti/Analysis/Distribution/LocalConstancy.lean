@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.Distribution
-public import Mathlib.Analysis.Distribution.Support
 public import TauCeti.Analysis.Distribution.TestFunction.Integral
 public import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import Mathlib.Topology.LocallyConstant.Basic
@@ -22,9 +21,6 @@ partitions of unity identify the resulting global distribution.
 The result applies to Banach-valued distributions and any locally finite measure positive on
 nonempty open sets. With Lebesgue measure it supplies the local-to-global step in distributional
 constancy proofs: establishing the local constant formulas is a separate analytic task.
-
-A nonzero constant distribution is supported on the closure of its domain
-(`Distribution.dsupport_ofFun_const`).
 
 ## References
 
@@ -54,24 +50,6 @@ theorem ofFun_const_injective (hne : (Ω : Set E).Nonempty) :
   have heq := congrArg (fun S : 𝓓'^{n}(Ω, F) ↦ S φ) h
   simpa only [ofFun_apply (locallyIntegrableOn_const _), integral_smul_const, hφ,
     one_smul] using heq
-
-/-- A nonzero constant distribution is supported on the closure of its domain. -/
-theorem dsupport_ofFun_const {c : F} (hc : c ≠ 0) :
-    dsupport (ofFun Ω (fun _ ↦ c) μ n) = closure (Ω : Set E) := by
-  refine subset_antisymm (fun x hx ↦ by_contra fun hxΩ ↦ ?_)
-    (closure_minimal (fun x hx ↦ ?_) isClosed_dsupport)
-  · -- Off the closure of `Ω` the constant distribution vanishes: no test function lives there.
-    refine (notMem_dsupport_iff x).2 ⟨(closure (Ω : Set E))ᶜ, fun φ hφ ↦ ?_,
-      isClosed_closure.isOpen_compl, hxΩ⟩ hx
-    have hφ0 (y : E) : φ y = 0 :=
-      image_eq_zero_of_notMem_tsupport fun hy ↦ hφ hy (subset_closure (φ.tsupport_subset hy))
-    simp [ofFun_apply (locallyIntegrableOn_const _), hφ0]
-  · -- Near a point of `Ω`, a nonnegative test function of integral one pairs to `c`.
-    refine (mem_dsupport_iff_forall_exists_ne x).2 fun s hxs hs ↦ ?_
-    obtain ⟨φ, hφ, -, hint⟩ := TestFunction.exists_nonneg_integral_eq_one (μ := μ) (n := n)
-      (hs.inter Ω.isOpen) ⟨x, hxs, hx⟩ inter_subset_right
-    refine ⟨φ, hφ.trans inter_subset_left, ?_⟩
-    simpa [ofFun_apply (locallyIntegrableOn_const _), integral_smul_const, hint] using hc
 
 /-- Local constant evaluation formulas for a distribution glue to one unique global constant
 on a connected nonempty domain. Neighborhoods need not form a finite cover, and their local

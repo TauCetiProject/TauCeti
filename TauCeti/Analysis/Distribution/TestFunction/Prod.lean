@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TestFunction
+public import Mathlib.Analysis.Normed.Lp.ProdLp
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
@@ -31,6 +32,11 @@ test functions on every open set `O ⊆ D` containing the second projection of `
 (`TestFunction.sliceRight`). Pairing the slices with a distribution on `O` is the first step of
 the tensor product of distributions.
 
+Every neighbourhood `U` of a point `z` of an open set `W ⊆ WithLp p (E × D)` contains a box: the
+product `(x, y) ↦ φ x * ψ y` of any complex test functions supported near `z.fst` and near `z.snd`
+is a test function on `W` supported in `U` (`TestFunction.exists_prod_cutoff_of_tsupport_subset`).
+Such product cutoffs localize tensor products of distributions.
+
 For complex smooth functions `φ` supported in a compact set `K₁ ⊆ E` and `ψ` supported in a
 compact set `K₂ ⊆ D`, the tensor product `(x, y) ↦ φ x * ψ y` is a smooth function supported in
 `K₁ ×ˢ K₂` (`ContDiffMapSupportedIn.tensor`), bilinear in `φ` and `ψ`. These are the tensor
@@ -45,6 +51,8 @@ products of test functions against which Schwartz kernels are tested.
   support `TestFunction.tsupport_sliceRight_subset`, derivative bound
   `TestFunction.norm_iteratedFDeriv_sliceRight_le` and derivatives
   `TestFunction.sliceRight_lineDerivOp_zero_prod`.
+* `TestFunction.exists_prod_cutoff_of_tsupport_subset`: product cutoffs supported in a prescribed
+  neighbourhood.
 * `ContDiffMapSupportedIn.tensor`: the tensor product `(x, y) ↦ φ x * ψ y` of complex smooth
   functions `φ`, `ψ` supported in compact sets `K₁`, `K₂`, supported in `K₁ ×ˢ K₂`, with
   `ContDiffMapSupportedIn.tensor_apply` and its bilinearity.
@@ -212,6 +220,45 @@ theorem sliceRight_prodSMulCLM (ψ : 𝓓(O, ℝ)) (hV : (Ω : Set E) ×ˢ (O : 
     (φ : 𝓓(Ω, ℝ)) (x : E) : sliceRight hO (prodSMulCLM ψ hV φ) x = φ x • ψ := by
   ext y
   simp [mul_comm]
+
+section ProdCutoff
+
+open Filter WithLp
+open scoped ENNReal Topology
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {W : Opens (WithLp p (E × D))}
+
+/-- Every neighbourhood `U` of a point `z` of `W` contains a box: there are neighbourhoods `B₁` of
+`z.fst` and `B₂` of `z.snd` such that the product of any cutoffs supported in `B₁` and in `B₂` is
+a cutoff on `W` supported in `U`. -/
+theorem exists_prod_cutoff_of_tsupport_subset {z : WithLp p (E × D)} (hz : z ∈ W)
+    {U : Set (WithLp p (E × D))} (hU : U ∈ 𝓝 z) :
+    ∃ B₁ ∈ 𝓝 z.fst, ∃ B₂ ∈ 𝓝 z.snd, ∀ (φ : 𝓓(Ω, ℂ)) (ψ : 𝓓(O, ℂ)), tsupport φ ⊆ B₁ →
+      tsupport ψ ⊆ B₂ → ∃ χ : 𝓓(W, ℂ), tsupport χ ⊆ U ∧ ∀ q, χ q = φ q.fst * ψ q.snd := by
+  -- A box `B₁ × B₂` around `z` whose copy in `WithLp p (E × D)` lies in `U ∩ W`.
+  have hUW : toLp p ⁻¹' (U ∩ W) ∈ 𝓝 (ofLp z) :=
+    (prod_continuous_toLp p E D).continuousAt.preimage_mem_nhds
+      (by simpa using inter_mem hU (W.isOpen.mem_nhds hz))
+  obtain ⟨B₁, hB₁, B₂, hB₂, hB⟩ := mem_nhds_prod_iff.1 hUW
+  refine ⟨B₁, hB₁, B₂, hB₂, fun φ ψ hφ hψ ↦ ?_⟩
+  -- The product cutoff is supported in the compact set `ofLp ⁻¹' (tsupport φ ×ˢ tsupport ψ)`.
+  set K : Set (WithLp p (E × D)) := ofLp ⁻¹' (tsupport φ ×ˢ tsupport ψ) with hK_def
+  have hK : IsCompact K :=
+    (prodContinuousLinearEquiv p ℝ E D).toHomeomorph.isCompact_preimage.2
+      (φ.hasCompactSupport.isCompact.prod ψ.hasCompactSupport.isCompact)
+  have hsupp : tsupport (fun q : WithLp p (E × D) ↦ φ q.fst * ψ q.snd) ⊆ K := fun q hq ↦
+    ⟨tsupport_comp_subset_preimage φ (continuous_fst.comp (prod_continuous_ofLp p E D))
+        (tsupport_mul_subset_left hq),
+      tsupport_comp_subset_preimage ψ (continuous_snd.comp (prod_continuous_ofLp p E D))
+        (tsupport_mul_subset_right hq)⟩
+  have hKUW : K ⊆ U ∩ W := fun q ⟨hq₁, hq₂⟩ ↦ by simpa using hB ⟨hφ hq₁, hψ hq₂⟩
+  exact ⟨⟨fun q ↦ φ q.fst * ψ q.snd,
+    (φ.contDiff.comp (fstL p ℝ E D).contDiff).mul (ψ.contDiff.comp (sndL p ℝ E D).contDiff),
+    hK.of_isClosed_subset (isClosed_tsupport _) hsupp,
+    hsupp.trans (hKUW.trans inter_subset_right)⟩,
+    hsupp.trans (hKUW.trans inter_subset_left), fun _ ↦ rfl⟩
+
+end ProdCutoff
 
 end TestFunction
 

@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Distribution.Distribution
 public import Mathlib.Analysis.Distribution.Support
 public import TauCeti.Analysis.Distribution.TestFunction.ExtDeriv
 public import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Analysis.Calculus.DifferentialForm.Const
+import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 
 /-!
@@ -43,6 +45,8 @@ the exterior derivative of a cutoff equal to one vanishes near the support.
   support is empty.
 * `Distribution.dsupport_comp_smulLeftCLM_subset`: a smooth multiple `T ∘ (g ·)` is supported in
   the supports of both `g` and `T`.
+* `Distribution.dsupport_ofFun_const`: a nonzero constant distribution is supported on the closure
+  of its domain.
 * `Distribution.augmentation`: the pairing `T (χ • c)` with a cutoff `χ` equal to one near the
   support; `Distribution.augmentation_eq` is its independence of the cutoff.
 * `Distribution.augmentation_comp_extDerivCLM`: the augmentation of a boundary is zero.
@@ -178,6 +182,33 @@ theorem dsupport_comp_smulLeftCLM_subset {g : E → ℝ} (hg : ContDiff ℝ n g)
       hs, hxs⟩
 
 end SmoothMultiple
+
+section Const
+
+open MeasureTheory
+
+variable [FiniteDimensional ℝ E] [MeasurableSpace E] [OpensMeasurableSpace E] [CompleteSpace F]
+  {μ : Measure E} [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure]
+
+/-- A nonzero constant distribution is supported on the closure of its domain. -/
+theorem dsupport_ofFun_const {c : F} (hc : c ≠ 0) :
+    dsupport (ofFun Ω (fun _ ↦ c) μ n) = closure (Ω : Set E) := by
+  refine subset_antisymm (fun x hx ↦ by_contra fun hxΩ ↦ ?_)
+    (closure_minimal (fun x hx ↦ ?_) isClosed_dsupport)
+  · -- Off the closure of `Ω` the constant distribution vanishes: no test function lives there.
+    refine (notMem_dsupport_iff x).2 ⟨(closure (Ω : Set E))ᶜ, fun φ hφ ↦ ?_,
+      isClosed_closure.isOpen_compl, hxΩ⟩ hx
+    have hφ0 (y : E) : φ y = 0 :=
+      image_eq_zero_of_notMem_tsupport fun hy ↦ hφ hy (subset_closure (φ.tsupport_subset hy))
+    simp [ofFun_apply (locallyIntegrableOn_const _), hφ0]
+  · -- Near a point of `Ω`, a nonnegative test function of integral one pairs to `c`.
+    refine (mem_dsupport_iff_forall_exists_ne x).2 fun s hxs hs ↦ ?_
+    obtain ⟨φ, hφ, -, hint⟩ := TestFunction.exists_nonneg_integral_eq_one (μ := μ) (n := n)
+      (hs.inter Ω.isOpen) ⟨x, hxs, hx⟩ inter_subset_right
+    refine ⟨φ, hφ.trans inter_subset_left, ?_⟩
+    simpa [ofFun_apply (locallyIntegrableOn_const _), integral_smul_const, hint] using hc
+
+end Const
 
 section Augmentation
 
