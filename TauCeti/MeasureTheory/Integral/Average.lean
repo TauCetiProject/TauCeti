@@ -12,6 +12,7 @@ import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.Analysis.Convex.Continuous
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
@@ -64,7 +65,14 @@ normalizing factor `μ s ^ (-1/p)`, and bounds its `q`-th power by `(μ s)⁻¹ 
 These estimates hold for arbitrary sets, including zero or infinite measure, with only the
 exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
 
+Jensen's inequality also holds for a function that is convex and monotone on a half-line `[a, ∞)`
+applied to an integrable function that is almost everywhere at least `a`.
+
 ## Main results
+
+* `ConvexOn.map_average_le_of_monotoneOn_Ici`: for `g` almost everywhere at least `a` over a
+  finite nonzero measure, `Φ (⨍ g) ≤ ⨍ Φ ∘ g` when `Φ` is convex and monotone on `[a, ∞)` and
+  `g`, `Φ ∘ g` are integrable; it rests on `ConvexOn.continuousOn_Ici_of_monotoneOn`.
 
 * `TauCeti.enorm_setAverage_rpow_le`, `TauCeti.enorm_setAverage_le`: Hölder's bounds on an
   average over an arbitrary set, in `∫⁻` and `Lᵖ` form.
@@ -1153,3 +1161,20 @@ theorem enorm_sub_setAverage_eq_zero_of_subsingleton [Subsingleton X] (x : X)
 end Subsingleton
 
 end TauCeti
+
+namespace ConvexOn
+
+open MeasureTheory Set Filter Topology
+
+/-- **Jensen's inequality for a monotone function convex on a half-line.** For a finite nonzero
+measure `μ`, an almost everywhere `a ≤ g`, and a function `Φ` that is convex and monotone
+on `[a, ∞)`, if `g` and `Φ ∘ g` are integrable then `Φ` of the average of `g` is at most the
+average of `Φ ∘ g`. -/
+theorem map_average_le_of_monotoneOn_Ici {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    [IsFiniteMeasure μ] [NeZero μ] {a : ℝ} {g : α → ℝ} {Φ : ℝ → ℝ}
+    (hΦ : ConvexOn ℝ (Ici a) Φ) (hΦm : MonotoneOn Φ (Ici a)) (hg : ∀ᵐ x ∂μ, a ≤ g x)
+    (hgi : Integrable g μ) (hΦi : Integrable (fun x ↦ Φ (g x)) μ) :
+    Φ (⨍ x, g x ∂μ) ≤ ⨍ x, Φ (g x) ∂μ :=
+  hΦ.map_average_le (hΦ.continuousOn_Ici_of_monotoneOn hΦm) isClosed_Ici hg hgi hΦi
+
+end ConvexOn

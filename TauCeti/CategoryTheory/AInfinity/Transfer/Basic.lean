@@ -301,8 +301,8 @@ private theorem perturbationSeries_mem
     · exact fun y hy ↦ 𝒞.higherBarDifferential_mem_composableWords hy
   obtain ⟨k, hk⟩ := 𝒞.exists_pow_higherBarDifferential_comp_homotopy_eq_zero c
     (𝒞.higherBarDifferential z)
-  refine LinearSpecialContraction.perturbationSeries_mem _ _
-    (𝒞.isUnit_one_add_higherBarDifferential_mul_barTensorTrick_homotopy c hh hincl hproj)
+  refine LinearSpecialContraction.perturbationSeries_mem
+    (𝒞.barTensorTrick c hh hincl hproj) 𝒞.higherBarDifferential
     (S := S.toAddSubgroup) hδ (fun y hy ↦ ?_) hz (k := k) ?_
   · rw [AInfinityAlgebra.barTensorTrick_homotopy]
     exact 𝒞.reducedTensorWordsHomotopy_mem e c hc hS hy

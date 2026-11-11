@@ -846,7 +846,7 @@ private theorem exists_pentagonPair_of_hasMixedSideOverlap_of_inr {x z : GridSta
     · exact Or.inr (G.exists_mixed_of_initial_second C C' hcol hturn hXcol hXnext _ hone h1 h2
         hfalse hcommon P.left_eq P.lower_mem P.upper_mem hX)
 
-include hcol hturn hXcol hXnext hH hcut in
+include hcol hturn hXcol hXnext hH in
 /-- **Unpaired composites are pentagon partners.** Let the `X`-marking of column `a` lie in the
 rows from `s'` up to the turn row `s` of `C`, and that of column `b` in the rows from `s` up to
 `s'`, and let the hexagons with corners in the rows `s` and `s'` be counted by their markings. A
@@ -881,9 +881,9 @@ theorem exists_pentagonPair_of_hasMixedSideOverlap_of_mem_iff {x z : GridState n
     rcases h with ⟨D, hD, hside, hD'⟩ | ⟨D, hD, hside, hD'⟩
     exacts [⟨D, hD, Or.inl ⟨hside, hD'⟩⟩, ⟨D, hD, Or.inr ⟨hside, hD'⟩⟩]
   rcases F with F | F
-  · exact G.exists_pentagonPair_of_hasMixedSideOverlap_of_inl C C' hcol hturn hXcol hXnext hH hcut
-      hF hnot hmixed
-  · exact G.exists_pentagonPair_of_hasMixedSideOverlap_of_inr C C' hcol hturn hXcol hXnext hH hcut
-      hF hnot hmixed
+  · exact G.exists_pentagonPair_of_hasMixedSideOverlap_of_inl C C' hcol hturn hXcol hXnext hH
+      (fun P => P.cutColumn_X_mem_toGridRectangle_coveredSquares_of_mem hXcol hXnext) hF hnot hmixed
+  · exact G.exists_pentagonPair_of_hasMixedSideOverlap_of_inr C C' hcol hturn hXcol hXnext hH
+      (fun P => P.cutColumn_X_mem_toGridRectangle_coveredSquares_of_mem hXcol hXnext) hF hnot hmixed
 
 end TauCeti.GridDiagram

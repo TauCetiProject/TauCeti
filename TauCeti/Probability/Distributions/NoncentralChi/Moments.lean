@@ -45,13 +45,10 @@ theorem integrable_exp_mul_id_noncentralChiMeasure (k : ℝ) (δ : ℝ≥0) (s t
   by_cases hs : 0 < s
   swap
   · simp [noncentralChiMeasure_of_scale_nonpos (le_of_not_gt hs)]
-  by_cases hk : 0 ≤ k
-  swap
-  · simp [noncentralChiMeasure_of_neg (lt_of_not_ge hk)]
   rw [noncentralChiMeasure_of_scale_pos hs,
     integrable_map_measure (by fun_prop) (by fun_prop)]
   simp only [Function.comp_def]
-  have hdom := (integrable_exp_mul_noncentralChiSquaredMeasure hk (δ ^ 2)
+  have hdom := (integrable_exp_mul_noncentralChiSquaredMeasure (k := k) (δ ^ 2)
     (t := 1 / 4) (by norm_num)).const_mul (exp ((t * s) ^ 2))
   apply hdom.mono' (by fun_prop)
   filter_upwards [ae_nonneg_noncentralChiSquaredMeasure k (δ ^ 2)] with x hx

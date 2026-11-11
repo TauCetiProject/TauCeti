@@ -153,6 +153,15 @@ theorem isotypicMultiplicity_eq_zero_of_subsingleton_codomain [Nontrivial R] [Su
     ⟨fun _ _ ↦ LieModuleHom.ext fun _ ↦ Subsingleton.elim _ _⟩
   Module.finrank_zero_of_subsingleton
 
+/-- The multiplicity in a Noetherian module of an irreducible type that is not finitely generated
+is `0`. -/
+theorem isotypicMultiplicity_eq_zero_of_not_finite [IsNoetherian R M] [IsIrreducible R L S]
+    (hS : ¬ Module.Finite R S) : isotypicMultiplicity R L M S = 0 :=
+  have := subsingleton_lieModuleHom_of_not_finite (R := R) (L := L) (M := M) (S := S) hS
+  have := nontrivial_of_isIrreducible R L S
+  have := Module.nontrivial R S
+  (isotypicMultiplicity_def R L M S).trans Module.finrank_zero_of_subsingleton
+
 end Def
 
 /-! ### The multiplicity depends only on the two equivalence classes -/

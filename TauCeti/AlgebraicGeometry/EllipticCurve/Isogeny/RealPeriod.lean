@@ -148,7 +148,7 @@ theorem ofReal_abs_mul_realPeriodLIntegral_eq_setLIntegral_encard (φ : Isogeny 
             (fun x ↦ φ.xRatFunc.num.eval x / φ.xRatFunc.denom.eval x) ⁻¹' {y}).encard *
           ENNReal.ofReal (√(W₂.Ψ₂Sq.eval y))⁻¹ := by
   refine W₁.ofReal_abs_mul_realPeriodLIntegral_eq_setLIntegral_encard
-    (ne_zero_of_pullbackDifferential_eq_smul φ hc) (countable_exceptional φ hc)
+    (countable_exceptional φ hc)
     (s := oddPart φ c)
     (fun x _ hx ↦ ?_) (fun x _ hx ↦ ?_) (fun x _ hx ↦ ?_) <;>
   · simp only [mem_union, mem_ofPred_eq, IsRoot.def, not_or] at hx
@@ -164,8 +164,7 @@ theorem abs_mul_realPeriod_eq_of_ae_encard_eq (φ : Isogeny W₁ W₂) {c : ℝ}
     {n : ℕ} (hn : ∀ᵐ y, 0 < W₂.Ψ₂Sq.eval y → ({x | 0 < W₁.Ψ₂Sq.eval x} ∩
       (fun x ↦ φ.xRatFunc.num.eval x / φ.xRatFunc.denom.eval x) ⁻¹' {y}).encard = n) :
     |c| * W₁.realPeriod = n * W₂.realPeriod := by
-  refine W₁.abs_mul_realPeriod_eq_of_ae_encard_eq (ne_zero_of_pullbackDifferential_eq_smul φ hc)
-    (countable_exceptional φ hc)
+  refine W₁.abs_mul_realPeriod_eq_of_ae_encard_eq (countable_exceptional φ hc)
     (s := oddPart φ c)
     (fun x _ hx ↦ ?_) (fun x _ hx ↦ ?_) (fun x _ hx ↦ ?_) hn <;>
   · simp only [mem_union, mem_ofPred_eq, IsRoot.def, not_or] at hx

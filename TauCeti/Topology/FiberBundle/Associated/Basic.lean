@@ -222,6 +222,13 @@ theorem mk_bijective {b : B} (p : P b) :
   unfold mk
   exact MulAction.bijective _
 
+/-- Every associated-bundle class has a representative in a principal frame over its base. -/
+theorem exists_mk {b : B} (v : AssociatedBundle G P F b) :
+    ∃ (p : P b) (w : F), mk G p w = v := by
+  let p := (FiberBundle.homeomorphAt G P b).symm 1
+  obtain ⟨w, hw⟩ := (mk_bijective (F := F) p).2 v
+  exact ⟨p, w, hw⟩
+
 /-! ### The quotient topology -/
 
 /-- The class of `(p • g, g⁻¹ • v)` is the class of `(p, v)`. -/
@@ -397,10 +404,8 @@ theorem isOpenQuotientMap_totalSpaceMk_mk :
     IsOpenQuotientMap fun x : TotalSpace G P × F ↦
       (⟨x.1.proj, mk G x.1.2 x.2⟩ : TotalSpace F (AssociatedBundle G P F)) where
   surjective y := by
-    -- Every fibre of `P` is nonempty, and any of its points gives every class over its base point.
-    set q := (FiberBundle.homeomorphAt G P y.proj).symm 1
-    obtain ⟨v, hv⟩ := (mk_bijective (F := F) q).2 y.2
-    exact ⟨(⟨y.proj, q⟩, v), congrArg (TotalSpace.mk y.proj) hv⟩
+    obtain ⟨p, v, hv⟩ := exists_mk y.2
+    exact ⟨(⟨y.proj, p⟩, v), congrArg (TotalSpace.mk y.proj) hv⟩
   continuous := continuous_totalSpaceMk_mk G P F
   isOpenMap := isOpenMap_totalSpaceMk_mk G P F
 
