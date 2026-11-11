@@ -50,6 +50,13 @@ lemma fiberι_comp (p : E ⟶ B) (b : B) : p.fiberι b ≫ p = TopCat.const b :=
   ext x
   exact x.2
 
+/-- A map `f` over `B`, that is with `f ≫ p' = p`, carries the part of `E` over a subset of `B`
+into the part of `E'` over it. -/
+lemma mapsTo_preimage_of_comp_eq {E' : TopCat.{u}} {p : E ⟶ B} {p' : E' ⟶ B} {f : E ⟶ E'}
+    (hf : f ≫ p' = p) (S : Set B) : Set.MapsTo f (p ⁻¹' S) (p' ⁻¹' S) := fun e he ↦ by
+  rw [Set.mem_preimage, ← ConcreteCategory.comp_apply, hf]
+  exact he
+
 /-- The composite of two maps with finite fibres has finite fibres. -/
 theorem finite_fibers_comp {E B X : TopCat.{u}} (p : E ⟶ B) (q : B ⟶ X)
     (hfinp : ∀ b, Finite ↥(p ⁻¹' {b})) (hfinq : ∀ x, Finite ↥(q ⁻¹' {x})) :
