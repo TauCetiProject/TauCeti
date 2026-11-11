@@ -18,27 +18,31 @@ principal character and, when `k ≥ 1`, the lift by `changeLevel` of the Legend
 `quadraticChar (ZMod p)`.
 
 The route avoids the primitive character. A character `χ` with `χ ^ 2 = 1` is trivial on squares
-of units, and every unit of `ZMod (p ^ (k + 1))` that reduces to `1` modulo `p` is a square
-(`ZMod.isSquare_of_unitsMap_eq_one`), so `χ` factors through `p`. At the prime level `p`, a
+of units, and for odd `p` every unit of `ZMod (p ^ (k + 1))` that reduces to `1` modulo `p` is a
+square (`ZMod.isSquare_of_unitsMap_eq_one`), so `χ` factors through `p`. At the prime level `p`, a
 nonprincipal quadratic character takes the value `-1` at some unit, which is then a nonsquare;
 since the product of two nonsquares is a square, it takes the value `-1` at every nonsquare, and
 so it is the Legendre character.
 
 The descent is proved for characters of order dividing two with values in any commutative monoid
-with zero, and the classification for values in any commutative ring.
+with zero, and the classification for values in any commutative ring. Every result in this file
+assumes that `p` is an odd prime, and none of them holds for all powers of `2`: there are four
+quadratic characters modulo `8`.
 
 ## Main results
 
-* `DirichletCharacter.factorsThrough_prime_of_sq_eq_one`: a character of order dividing two at
-  level `p ^ k`, `k ≠ 0`, factors through `p`.
-* `DirichletCharacter.conductor_eq_one_or_eq_prime_of_sq_eq_one`: its conductor is `1` or `p`.
+* `DirichletCharacter.factorsThrough_prime_of_sq_eq_one`: for an odd prime `p`, a character of
+  order dividing two at level `p ^ k`, `k ≠ 0`, factors through `p`.
+* `DirichletCharacter.conductor_eq_one_or_eq_prime_of_sq_eq_one`: for an odd prime `p`, its
+  conductor is `1` or `p`.
 * `DirichletCharacter.isQuadratic_iff_eq_one_or_eq_changeLevel_quadraticChar`: the classification
-  at level `p ^ k`.
-* `MulChar.IsQuadratic.apply_intCast_eq_legendreSym`: a nonprincipal quadratic character at level
-  `p ^ k` takes the value `legendreSym p n` at every integer `n`.
-* `DirichletCharacter.natCard_isQuadratic_prime_pow`: with values in a nontrivial ring of
-  characteristic other than `2`, there are two quadratic characters at level `p ^ k` for `k ≠ 0`
-  and one at level `1`. They form a group under multiplication by `MulChar.IsQuadratic.mul`.
+  at level `p ^ k` for an odd prime `p`.
+* `MulChar.IsQuadratic.apply_intCast_eq_legendreSym`: for an odd prime `p`, a nonprincipal
+  quadratic character at level `p ^ k` takes the value `legendreSym p n` at every integer `n`.
+* `DirichletCharacter.natCard_isQuadratic_prime_pow`: for an odd prime `p`, with values in a
+  nontrivial ring of characteristic other than `2`, there are two quadratic characters at level
+  `p ^ k` for `k ≠ 0` and one at level `1`. They form a group under multiplication by
+  `MulChar.IsQuadratic.mul`.
 
 The prime-level classification `DirichletCharacter.isQuadratic_iff_eq_one_or_eq_quadraticChar`
 and the conductor `p` of the lifted Legendre character,
@@ -119,9 +123,9 @@ theorem isQuadratic_iff_eq_one_or_eq_changeLevel_quadraticChar (hp2 : p ≠ 2) (
     · exact MulChar.isQuadratic_one
     · exact (quadraticChar_isQuadratic _ |>.comp _).changeLevel h
 
-/-- The value of a nonprincipal quadratic character at level `p ^ k` at an integer `n` is the
-Legendre symbol `legendreSym p n`, including the value `0` when `p ∣ n`. (A nonprincipal
-character exists only for `k ≠ 0`.) -/
+/-- For an odd prime `p`, the value of a nonprincipal quadratic character at level `p ^ k` at an
+integer `n` is the Legendre symbol `legendreSym p n`, including the value `0` when `p ∣ n`. (A
+nonprincipal character exists only for `k ≠ 0`.) -/
 theorem _root_.MulChar.IsQuadratic.apply_intCast_eq_legendreSym (hp2 : p ≠ 2) {k : ℕ}
     {χ : DirichletCharacter R (p ^ k)} (hχ : χ.IsQuadratic) (h1 : χ ≠ 1) (n : ℤ) :
     χ n = legendreSym p n := by
@@ -139,9 +143,9 @@ theorem _root_.MulChar.IsQuadratic.apply_intCast_eq_legendreSym (hp2 : p ≠ 2) 
     rw [changeLevel_eq_cast_of_dvd' _ h (by simpa using hcop.pow_right (n := k)),
       MulChar.ringHomComp_apply, eq_intCast, legendreSym]
 
-/-- **The number of quadratic characters at an odd prime-power level.** With values in a
-nontrivial ring of characteristic other than `2`, there are two quadratic characters modulo
-`p ^ k` for `k ≠ 0`, and one modulo `p ^ 0 = 1`. -/
+/-- **The number of quadratic characters at an odd prime-power level.** For an odd prime
+`p`, with values in a nontrivial ring of characteristic other than `2`, there are two quadratic
+characters modulo `p ^ k` for `k ≠ 0`, and one modulo `p ^ 0 = 1`. -/
 theorem natCard_isQuadratic_prime_pow [Nontrivial R] (hR : ringChar R ≠ 2) (hp2 : p ≠ 2)
     (k : ℕ) :
     Nat.card {χ : DirichletCharacter R (p ^ k) // χ.IsQuadratic} = if k = 0 then 1 else 2 := by
