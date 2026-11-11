@@ -15,8 +15,8 @@ The invariant open `U = D(c₄) ∪ D(Δ)` retains smooth and nodal cubics. The 
 source, target, identity and inversion maps extend to a groupoid presentation: its scheme of
 composable pairs is the fibre product of the restricted target and source. Composition is
 the restriction of the affine Weierstrass composition, with its identity, inverse and
-associativity laws. Thus the boundary is closed under composition, not just invariant on
-geometric points.
+associativity laws. Thus the open `U`, nodal boundary included, is closed under scheme-level
+composition.
 
 `compactifiedCompose` gives the operation on arrows parametrized by any test scheme. Its
 inclusion compatibility identifies the composite with the full affine composite and pins the
