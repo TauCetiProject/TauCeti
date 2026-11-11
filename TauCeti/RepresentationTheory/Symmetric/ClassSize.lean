@@ -23,9 +23,10 @@ the class of such a permutation has `n ! / zPart μ` elements.
 
 The main results are `nat_card_centralizer_eq_zPart`, the multiplicative class-size formula
 `card_partition_mul_zPart` with its transported form `card_partition_parts_mul_zPart_fin`, and the
-normalisation `sum_factorial_div_zPart`, which says the class sizes add up to `n !`.  These are the
-weights in the orthogonality relations for the characters of the symmetric group, where the class
-with partition `μ` is weighted by `1 / zPart μ`.  The last section reads the formula on a
+normalisation `sum_factorial_div_zPart`, which says the class sizes add up to `n !`, with its
+rational form `sum_inv_zPart`, `∑_μ 1 / zPart μ = 1`.  These are the weights in the orthogonality
+relations for the characters of the symmetric group, where the class with partition `μ` is weighted
+by `1 / zPart μ`.  The last section reads the formula on a
 conjugacy class itself rather than on a fibre of the partition map, as
 `ConjClasses.card_carrier_mul_zPart`, and specializes it to the class attached to a partition,
 `card_carrier_partitionEquivConjClasses` being the form those orthogonality relations consume.
@@ -272,11 +273,27 @@ theorem sum_card_partition_parts {n : ℕ} (α : Type*) [Fintype α] [DecidableE
 /-- The class sizes add up to the order of the group.  Every division here is exact, by
 `zPart_dvd_factorial`.
 
-This is the natural-number form of the normalisation of the orthogonality weights; the rational
-identity `∑_μ 1 / z_μ = 1`, which divides this one by `n !`, is not formalised here. -/
+This is the natural-number form of the normalisation of the orthogonality weights; the identity
+`∑_μ 1 / z_μ = 1`, which divides this one by `n !`, is `TauCeti.sum_inv_zPart`. -/
 theorem sum_factorial_div_zPart (n : ℕ) : ∑ μ : n.Partition, n ! / zPart μ = n ! :=
   Eq.trans (Finset.sum_congr rfl fun μ _ => (card_partition_parts_div_zPart_fin n μ).symm)
     (sum_card_partition_parts (Fin n) (Fintype.card_fin n))
+
+/-- **The orthogonality weights add up to one**: `∑_μ 1 / z_μ = 1`, summed over the partitions `μ`
+of `n`, in any semifield of characteristic zero.  This is `TauCeti.sum_factorial_div_zPart`
+divided by `n !`. -/
+theorem sum_inv_zPart {K : Type*} [Semifield K] [CharZero K] (n : ℕ) :
+    ∑ μ : n.Partition, (zPart μ : K)⁻¹ = 1 := by
+  have hn : (n ! : K) ≠ 0 := by exact_mod_cast n.factorial_ne_zero
+  calc ∑ μ : n.Partition, (zPart μ : K)⁻¹
+      = ∑ μ : n.Partition, ((n ! / zPart μ : ℕ) : K) * (n ! : K)⁻¹ := by
+        refine Finset.sum_congr rfl fun μ _ => ?_
+        have hz : (zPart μ : K) ≠ 0 := by exact_mod_cast (zPart_pos μ).ne'
+        have h : (zPart μ : K) * ((n ! / zPart μ : ℕ) : K) = n ! := by
+          exact_mod_cast Nat.mul_div_cancel' (zPart_dvd_factorial μ)
+        rw [eq_mul_inv_iff_mul_eq₀ hn, ← h, inv_mul_cancel_left₀ hz]
+    _ = 1 := by
+        rw [← Finset.sum_mul, ← Nat.cast_sum, sum_factorial_div_zPart, mul_inv_cancel₀ hn]
 
 /-! ### The class attached to a partition -/
 

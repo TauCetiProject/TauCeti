@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Normed.Module.FilledHull
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.MeasureTheory.Integral.CircleIntegral
-import TauCeti.Analysis.Calculus.Deriv.LevelCrossing
+import TauCeti.Analysis.Calculus.Deriv.Slope
 import TauCeti.Analysis.Complex.Conformal.Crosscut.Basic
 public import TauCeti.Analysis.Complex.Conformal.Crosscut.Image
 import TauCeti.Analysis.Complex.Conformal.Inverse.Function
@@ -196,9 +196,9 @@ theorem mem_closure_image_inter_sphere_inter_setOf_im_pos_and_mem_closure_inter_
   have hχ' : HasDerivAt (fun t => χ (θ₀ + t)) 1 0 :=
     HasDerivAt.comp_const_add θ₀ 0 (by rwa [add_zero])
   have hpos : ∀ᶠ t in 𝓝[>] (0 : ℝ), 0 < χ (θ₀ + t) := by
-    simpa [hχ0] using hχ'.eventually_nhdsGT_lt_of_pos zero_lt_one
+    simpa [hχ0] using hχ'.hasDerivWithinAt.eventually_nhdsGT_lt_of_pos zero_lt_one
   have hneg : ∀ᶠ t in 𝓝[<] (0 : ℝ), χ (θ₀ + t) < 0 := by
-    simpa [hχ0] using hχ'.eventually_nhdsLT_lt_of_pos zero_lt_one
+    simpa [hχ0] using hχ'.hasDerivWithinAt.eventually_nhdsLT_lt_of_pos zero_lt_one
   -- nearby crosscut points lie in the disc, and their images are close to `f z₀`
   have hcirc : Continuous fun t : ℝ => circleMap ζ ρ (θ₀ + t) :=
     (continuous_circleMap ζ ρ).comp (continuous_const.add continuous_id)
@@ -291,7 +291,7 @@ theorem image_inter_ball_subset_filledHull_or_image_sdiff_closedBall_subset_fill
     inter_subset_inter (subset_closure.trans hγKcl) subset_rfl
   have key := Contour.mem_filledHull_or_mem_filledHull_of_isPreconnected_sdiff_singleton
     (K := K) (v := v) (z₀ := p) (a := -(η / 2)) (b := η / 2) (s := 0)
-    hK hKb hv ⟨by linarith, by linarith⟩
+    hK hKb ⟨by linarith, by linarith⟩
     (by simpa using hseg) (by simpa using hKp)
     (by simpa using closure_mono (hγK' _) hleft) (by simpa using closure_mono (hγK' _) hright)
   rcases key with hx | hy

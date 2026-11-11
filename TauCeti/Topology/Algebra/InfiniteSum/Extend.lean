@@ -8,28 +8,28 @@ module
 public import Mathlib.Topology.Algebra.InfiniteSum.Basic
 
 /-!
-# Fiber sums of injective maps
+# Fiber products and sums of injective maps
 
-Summing along the fibers of an injective map extends a function by zero off the image.
-This identifies fiber sums with `Function.extend`, allowing its measurability API to be used.
+Multiplying (resp. summing) along the fibers of an injective map extends a function by one
+(resp. zero) off the image. This identifies fiber products and sums with `Function.extend`,
+allowing its measurability API to be used.
 -/
 
 public section
 
 open Function Set
 
-/-- A fiber sum along an injective map is the extension by zero of the summand. -/
-theorem Function.Injective.tsum_fiber_eq_extend {α β M : Type*}
-    [AddCommMonoid M] [TopologicalSpace M] {f : α → β} (hf : Injective f) (g : α → M)
-    (y : β) : (∑' x : f ⁻¹' {y}, g x) = extend f g 0 y := by
+/-- A fiber product along an injective map is the extension by one of the factor. -/
+@[to_additive /-- A fiber sum along an injective map is the extension by zero of the summand. -/]
+theorem Function.Injective.tprod_fiber_eq_extend {α β M : Type*}
+    [CommMonoid M] [TopologicalSpace M] {f : α → β} (hf : Injective f) (g : α → M)
+    (y : β) : (∏' x : f ⁻¹' {y}, g x) = extend f g 1 y := by
   classical
   by_cases hy : ∃ x, f x = y
   · obtain ⟨x, rfl⟩ := hy
     rw [hf.extend_apply]
-    exact tsum_eq_single (⟨x, rfl⟩ : f ⁻¹' {f x}) fun z hz ↦ by
-      exfalso
-      apply hz
-      exact Subtype.ext (hf z.property)
+    exact tprod_eq_mulSingle (⟨x, rfl⟩ : f ⁻¹' {f x}) fun z hz ↦
+      (hz <| Subtype.ext <| hf z.property).elim
   · rw [extend_apply' _ _ _ hy]
     have : IsEmpty (f ⁻¹' {y}) := ⟨fun x ↦ hy ⟨x, x.property⟩⟩
-    exact tsum_empty
+    exact tprod_empty
