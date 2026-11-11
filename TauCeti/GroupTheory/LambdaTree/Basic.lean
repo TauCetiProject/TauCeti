@@ -350,6 +350,9 @@ end Int
 def IsGeodesic (d : LambdaMetric Λ X) : Prop :=
   ∀ x y : X, ∃ σ, d.IsSegment σ x y
 
+theorem isGeodesic_iff : d.IsGeodesic ↔ ∀ x y : X, ∃ σ, d.IsSegment σ x y :=
+  Iff.rfl
+
 /-- `d` makes `X` a `Λ`-tree: `X` is nonempty and geodesic, two segments meeting only in a common
 endpoint have a segment as union (T2), and two segments with a common endpoint intersect in a
 segment (T3). -/

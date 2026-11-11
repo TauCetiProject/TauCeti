@@ -250,6 +250,12 @@ theorem min_gromovProduct_le (g f h : G) :
   by_contra! hlt
   exact (lt_min_iff.1 hlt).2.ne (l.gromovProduct_eq_of_lt (lt_min_iff.1 hlt).1)
 
+/-- Gromov products of a Lyndon length function are `0`-hyperbolic; this is
+`TauCeti.LyndonLength.min_gromovProduct_le` for their doubles, which lie in `Λ`. -/
+theorem min_map_add_map_sub_map_le (g f h : G) :
+    min (l g + l f - l (g⁻¹ * f)) (l f + l h - l (f⁻¹ * h)) ≤ l g + l h - l (g⁻¹ * h) := by
+  simpa only [min_le_iff, gromovProduct_le_gromovProduct_iff] using l.min_gromovProduct_le g f h
+
 /-! ### Free and regular length functions -/
 
 /-- A Lyndon length function is *free* when (L4) every Gromov product lies in `Λ` and (L5)
