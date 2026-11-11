@@ -129,13 +129,8 @@ theorem reverse_add_smul_volume_eq_self_iff
       rw [two_mul, add_smul]
       nth_rewrite 1 [← add_left_cancel h]
       exact neg_add_cancel _
-    have h3 : (2 * b) • (l.map (ι Q)).prod = algebraMap K (CliffordAlgebra Q) (2 * b) *
-        (l.map (ι Q)).prod := by rw [Algebra.smul_def]
-    rw [h3] at h2
-    have h4 := hunit.mul_left_eq_zero.mp h2
     let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
-    exact (mul_eq_zero.mp (algebraMap_injective Q (by simpa using h4) : 2 * b = 0)).resolve_left
-      (NeZero.ne (2 : K))
+    simpa [NeZero.ne (2 : K), hunit.ne_zero] using h2
   · rintro rfl
     simp
 
