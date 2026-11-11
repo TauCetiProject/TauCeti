@@ -14,24 +14,24 @@ public import Mathlib.Analysis.CStarAlgebra.GelfandDuality
 # Spectral measure of a unitary representation of a discrete abelian group
 
 Let `π` be a unitary representation of a discrete abelian group `G` on a complex Hilbert space
-`H`, written additively as `π : ContRepresentation ℂ (Multiplicative G) H`, and let `Ĝ` be the
-Pontryagin dual of `G`, a compact abelian group. This file constructs the projection-valued
-measure `P` on `Ĝ` with
+`H`, written additively as `π : ContRepresentation ℂ (Multiplicative G) H`, and let
+`PontryaginDual G` be the Pontryagin dual of `G`, a compact abelian group. This file constructs
+the projection-valued measure `P` on `PontryaginDual G` with
 
 `π g = ∫ χ(g) dP(χ)`,
 
 the spectral theorem of Stone, Naimark, Ambrose and Godement for discrete abelian groups. For
-`G = ℤⁿ` the dual `Ĝ` is the torus `𝕋ⁿ`, and `P` decomposes a representation of `ℤⁿ` over the
+`G = ℤⁿ` the dual is the torus `𝕋ⁿ`, and `P` decomposes a representation of `ℤⁿ` over the
 characters of `ℤⁿ`.
 
 The operators `π g` are commuting unitaries, so they generate a commutative unital C⋆-algebra
 `A`. Restricting a character of `A` to the operators `π g` gives a continuous character of `G`;
 composing with the inverse Gelfand transform of `A`, this yields a unital star homomorphism
-`C(Ĝ, ℂ) → (H →L[ℂ] H)`, the spectral calculus of `π`, sending the evaluation character
-`χ ↦ χ g` to `π g`. Its projection-valued measure `TauCeti.ProjValMeasure.ofRepresentation` is
-the spectral measure. The evaluation characters span a dense subspace of `C(Ĝ, ℂ)`
-(`PontryaginDual.dense_span_evalBoundedContinuous`), so both objects are determined by the values
-`π g`.
+`C(PontryaginDual G, ℂ) → (H →L[ℂ] H)`, the spectral calculus of `π`, sending the evaluation
+character `χ ↦ χ g` to `π g`. Its projection-valued measure
+`TauCeti.ProjValMeasure.ofRepresentation` is the spectral measure. The evaluation characters span
+a dense subspace of `C(PontryaginDual G, ℂ)` (`PontryaginDual.dense_span_evalBoundedContinuous`),
+so both objects are determined by the values `π g`.
 
 The trivial character carries the invariant vectors: the spectral projection of `{1}` is the
 projection onto the `π`-invariant vectors. Hence `π` has no nonzero invariant vector exactly

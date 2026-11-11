@@ -13,21 +13,23 @@ public import Mathlib.Topology.ContinuousMap.StoneWeierstrass
 /-!
 # Density of the evaluation characters on a compact Pontryagin dual
 
-The Pontryagin dual `Ĝ` of a discrete abelian group `G` is compact, and the evaluation characters
-`χ ↦ χ g`, `g ∈ G`, separate its points and are closed under conjugation. By the Stone–Weierstrass
-theorem they therefore span a dense subspace of `C(Ĝ, ℂ)`. Consequently a closed subspace of
-`C(Ĝ, ℂ)` containing every evaluation character is everything, and a star homomorphism out of
-`C(Ĝ, ℂ)` into a C⋆-algebra is determined by its values on the evaluation characters. This is the
-uniqueness statement for the spectral calculus of a unitary representation of `G`.
+The Pontryagin dual `PontryaginDual G` of a discrete abelian group `G` is compact, and the
+evaluation characters `χ ↦ χ g`, `g ∈ G`, separate its points and are closed under conjugation.
+By the Stone–Weierstrass theorem they therefore span a dense subspace of
+`C(PontryaginDual G, ℂ)`. Consequently a closed subspace of `C(PontryaginDual G, ℂ)` containing
+every evaluation character is everything, and a star homomorphism out of
+`C(PontryaginDual G, ℂ)` into a C⋆-algebra is determined by its values on the evaluation
+characters. This is the uniqueness statement for the spectral calculus of a unitary
+representation of `G`.
 
 ## Main declarations
 
 * `PontryaginDual.dense_span_evalBoundedContinuous`: the evaluation characters span a dense
-  subspace of `C(Ĝ, ℂ)`.
+  subspace of `C(PontryaginDual G, ℂ)`.
 * `PontryaginDual.mem_of_isClosed_of_forall_evalBoundedContinuous_mem`: a closed subspace
   containing every evaluation character is everything.
-* `PontryaginDual.starAlgHom_ext`: star homomorphisms out of `C(Ĝ, ℂ)` into a C⋆-algebra agreeing
-  on the evaluation characters are equal.
+* `PontryaginDual.starAlgHom_ext`: star homomorphisms out of `C(PontryaginDual G, ℂ)` into a
+  C⋆-algebra agreeing on the evaluation characters are equal.
 -/
 
 public section
