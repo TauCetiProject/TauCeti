@@ -27,7 +27,7 @@ Quality pass:
 - Q5 Proofs of at most 50 lines: …
 
 <!--
-The checks cover what this PR adds or changes, and nothing else. In Q3, assume each hypothesis
+You are looking for quality improvements to the PR so that we avoid duplication, remove unused hypothesis or variables, shortening/golfing proofs, check docstrings are accurate and do not overclaim and anything else you can think of to make the code closer to mathlib quality. In Q3, assume each hypothesis
 removable until shown otherwise.
 
 Q1. Mathlib must not already have any declaration the PR adds, or a more general one, under any
@@ -41,14 +41,10 @@ Tau Ceti lemma is a duplicate, so delete it and call the lemma. Reuse what exist
 a second copy of something an open PR already adds. The note says what you looked for.
 
 Q3. Take each theorem the PR adds or changes, and each of its hypotheses and instance arguments,
-including those from `variable` lines (`#check @foo` shows them all). Do not delete
-each and rebuild to find out: CI's `unusedArguments` linter already reports an argument the proof
-never uses, and a failed rebuild only says the current proof uses it, so decide each from the
-statement. Each ends in one of four states:
+including those from `variable` lines (`#check @foo` shows them all). Look at the statement and proof when trying to find what hypothesis can be removed. Each ends in one of four states:
 dropped (the statement holds without it: change the proof if needed, even to a new argument),
 derived (it follows from the others: derive it in the proof), needed to state (the statement
-does not elaborate without it), or kept (the statement is false without it: give the
-counterexample). Nothing else keeps one: not that the proof uses it, not that a related lemma or
+does not elaborate without it), or kept (the statement is false without it). Nothing else keeps one: not that the proof uses it, not that a related lemma or
 the docstring has it (fix the docstring), not that removing it needs a new proof. If you can
 neither drop one nor find its counterexample (an open conjecture, say), the Q3 line begins
 `declined` and says so. Look especially for:
