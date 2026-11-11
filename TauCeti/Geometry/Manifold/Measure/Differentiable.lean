@@ -66,12 +66,8 @@ theorem IsNullSet.image_of_mdifferentiableOn (hA : IsNullSet I A)
     IsNullSet J (g '' A) := by
   refine isNullSet_image_of_forall_addHaar_image_extChartAt (I := I) fun x₀ y₀ ν _ ↦ ?_
   refine DifferentiableOn.addHaar_image_eq_zero (Basis.addHaar (finBasis ℝ E)) ν hdim ?_ ?_
-  · rintro _ ⟨x, hx, rfl⟩
-    refine ((mdifferentiableWithinAt_iff_of_mem_source hx.1.2 hx.2).1 (hg x hx.1.1)).2.mono ?_
-    rintro _ ⟨x', hx', rfl⟩
-    refine ⟨?_, by rw [extChartAt_coe]; exact mem_range_self _⟩
-    rw [mem_preimage, (extChartAt I x₀).left_inv (by rw [extChartAt_source]; exact hx'.1.2)]
-    exact hx'.1.1
+  · exact ((mdifferentiableOn_iff_of_subset_source (s := A ∩ _ ∩ g ⁻¹' _) (fun _ hx ↦ hx.1.2)
+      fun _ hx ↦ hx.2).1 (hg.mono fun _ hx ↦ hx.1.1)).2
   · refine measure_mono_null (image_mono ?_) (hA.chartwise x₀ (finBasis ℝ E).addHaar)
     rintro x ⟨⟨hxA, hxsrc⟩, -⟩
     exact ⟨hxA, by rwa [extChartAt_source]⟩
