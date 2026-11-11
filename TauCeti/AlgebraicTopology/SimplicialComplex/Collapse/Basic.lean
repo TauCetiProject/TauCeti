@@ -242,5 +242,14 @@ theorem finite_faces (h : Collapsible K) : K.faces.Finite := by
 
 end Collapsible
 
+/-- A complex without free pairs and with a face of at least two vertices is not collapsible. -/
+theorem not_collapsible_of_forall_not_isFreePair {K : _root_.PreAbstractSimplicialComplex ι}
+    {σ : Finset ι} (hfree : ∀ σ τ, ¬ IsFreePair K σ τ) (hσ : σ ∈ K) (hcard : 1 < σ.card) :
+    ¬ Collapsible K := by
+  intro hcol
+  obtain ⟨v, hv⟩ := hcol.exists_eq_point_of_forall_not_isFreePair hfree
+  rw [hv, mem_point] at hσ
+  simp [hσ] at hcard
+
 end PreAbstractSimplicialComplex
 

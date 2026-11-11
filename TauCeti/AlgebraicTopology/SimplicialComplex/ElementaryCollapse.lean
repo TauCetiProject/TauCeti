@@ -94,18 +94,23 @@ each codimension-one face of a member of `T` lies properly in a second member of
 two-dimensional complex given by its triangles, this says that every edge lies in at least two
 triangles. -/
 theorem not_isFreePair_of_forall_erase_ssubset [DecidableEq ι]
-    {K : _root_.PreAbstractSimplicialComplex ι} {T : Set (Finset ι)}
-    (hK : ∀ σ, σ ∈ K ↔ σ.Nonempty ∧ ∃ t ∈ T, σ ⊆ t)
+    {T : Set (Finset ι)} {hcover : ∀ v, ∃ t ∈ T, v ∈ t}
     (hT : ∀ t ∈ T, ∀ a ∈ t, ∃ t' ∈ T, t' ≠ t ∧ t.erase a ⊂ t') (σ τ : Finset ι) :
-    ¬ IsFreePair K σ τ := by
+    ¬ IsFreePair
+      (TauCeti.AbstractSimplicialComplex.ofFacets T hcover).toPreAbstractSimplicialComplex σ τ := by
   intro h
-  obtain ⟨hτ, t, ht, hτt⟩ := (hK τ).mp h.upper_mem
-  obtain rfl : t = τ := h.upper_maximal ((hK t).mpr ⟨hτ.mono hτt, t, ht, subset_rfl⟩) hτt
+  have hτ := h.upper_mem
+  rw [AbstractSimplicialComplex.mem_toPreAbstractSimplicialComplex,
+    TauCeti.AbstractSimplicialComplex.mem_ofFacets] at hτ
+  obtain ⟨hτ, t, ht, hτt⟩ := hτ
+  obtain rfl : t = τ := h.upper_maximal
+    (TauCeti.AbstractSimplicialComplex.mem_ofFacets_of_mem ht (hτ.mono hτt)) hτt
   obtain ⟨a, haσ, rfl⟩ := Finset.covBy_iff_exists_insert.mp h.covBy
   obtain ⟨t', ht', hne, hσt'⟩ := hT _ ht a (Finset.mem_insert_self a σ)
   rw [Finset.erase_insert haσ] at hσt'
-  have hσ : σ.Nonempty := ((hK σ).mp h.lower_mem).1
-  rcases h.eq_lower_or_eq_upper ((hK t').mpr ⟨hσ.mono hσt'.subset, t', ht', subset_rfl⟩)
+  have hσ := (TauCeti.AbstractSimplicialComplex.ofFacets T hcover).isRelLowerSet_faces h.lower_mem
+  rcases h.eq_lower_or_eq_upper
+      (TauCeti.AbstractSimplicialComplex.mem_ofFacets_of_mem ht' (hσ.1.mono hσt'.subset))
       hσt'.subset with rfl | rfl
   · exact hσt'.ne rfl
   · exact hne rfl

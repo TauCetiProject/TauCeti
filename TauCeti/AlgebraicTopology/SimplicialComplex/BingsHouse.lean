@@ -102,25 +102,14 @@ theorem bingsHouseTriangles_def : bingsHouseTriangles =
 
 /-- **Bing's house** with two rooms, triangulated with eleven vertices: its faces are the nonempty
 subsets of the triangles in `bingsHouseTriangles`. -/
-def bingsHouse : AbstractSimplicialComplex (Fin 11) where
-  faces := {σ | σ.Nonempty ∧ ∃ t ∈ bingsHouseTriangles, σ ⊆ t}
-  isRelLowerSet_faces := by
-    rintro σ ⟨hσ, t, ht, hσt⟩
-    exact ⟨hσ, fun τ hτσ hτ => ⟨hτ, t, ht, hτσ.trans hσt⟩⟩
-  singleton_mem v := ⟨Finset.singleton_nonempty v, by
-    simpa only [Finset.singleton_subset_iff] using
-      (by decide : ∀ v : Fin 11, ∃ t ∈ bingsHouseTriangles, v ∈ t) v⟩
+def bingsHouse : AbstractSimplicialComplex (Fin 11) :=
+  AbstractSimplicialComplex.ofFacets {t | t ∈ bingsHouseTriangles} (by decide)
 
 /-- The faces of Bing's house are the nonempty subsets of its triangles. -/
 @[simp]
 theorem mem_bingsHouse {σ : Finset (Fin 11)} :
-    σ ∈ bingsHouse ↔ σ.Nonempty ∧ ∃ t ∈ bingsHouseTriangles, σ ⊆ t :=
-  Iff.rfl
-
-/-- Each triangle of Bing's house is a face. -/
-theorem mem_bingsHouse_of_mem_bingsHouseTriangles {t : Finset (Fin 11)}
-    (ht : t ∈ bingsHouseTriangles) : t ∈ bingsHouse :=
-  ⟨Finset.nonempty_iff_ne_empty.mpr (by rintro rfl; revert ht; decide), t, ht, subset_rfl⟩
+    σ ∈ bingsHouse ↔ σ.Nonempty ∧ ∃ t ∈ bingsHouseTriangles, σ ⊆ t := by
+  simp [bingsHouse]
 
 /-- The triangles of Bing's house have three vertices. -/
 theorem card_of_mem_bingsHouseTriangles {t : Finset (Fin 11)} (ht : t ∈ bingsHouseTriangles) :
@@ -128,20 +117,20 @@ theorem card_of_mem_bingsHouseTriangles {t : Finset (Fin 11)} (ht : t ∈ bingsH
   have h : bingsHouseTriangles.all (·.card == 3) = true := by decide +kernel
   exact beq_iff_eq.mp (List.all_eq_true.mp h t ht)
 
+/-- Each triangle of Bing's house is a face. -/
+theorem mem_bingsHouse_of_mem_bingsHouseTriangles {t : Finset (Fin 11)}
+    (ht : t ∈ bingsHouseTriangles) : t ∈ bingsHouse :=
+  AbstractSimplicialComplex.mem_ofFacets_of_mem ht
+    (Finset.card_pos.mp (by rw [card_of_mem_bingsHouseTriangles ht]; decide))
+
 /-- Bing's house has finitely many faces. -/
 theorem finite_faces_bingsHouse : bingsHouse.faces.Finite :=
   Set.toFinite _
 
 /-- Bing's house is two-dimensional. -/
-theorem dimension_bingsHouse : dimension bingsHouse = 2 := by
-  refine le_antisymm (AbstractSimplicialComplex.dimension_le_iff.mpr fun σ hσ => ?_) ?_
-  · obtain ⟨-, t, ht, hσt⟩ := mem_bingsHouse.mp hσ
-    have := Finset.card_le_card hσt
-    rw [card_of_mem_bingsHouseTriangles ht] at this
-    exact_mod_cast (by omega : σ.card - 1 ≤ 2)
-  · have ht : ({0, 1, 3} : Finset (Fin 11)) ∈ bingsHouseTriangles := by decide
-    simpa [card_of_mem_bingsHouseTriangles ht] using
-      AbstractSimplicialComplex.le_dimension (mem_bingsHouse_of_mem_bingsHouseTriangles ht)
+theorem dimension_bingsHouse : dimension bingsHouse = 2 :=
+  AbstractSimplicialComplex.dimension_ofFacets
+    (fun _ ht => card_of_mem_bingsHouseTriangles ht) ⟨{0, 1, 3}, by decide⟩
 
 /-- **Bing's house has no free face.** Every edge of a triangle lies in a second triangle. -/
 theorem not_isFreePair_bingsHouse (σ τ : Finset (Fin 11)) :
@@ -155,18 +144,13 @@ theorem not_isFreePair_bingsHouse (σ τ : Finset (Fin 11)) :
     simpa only [List.all_eq_true, List.any_eq_true, decide_eq_true_eq, Bool.and_eq_true,
       bne_iff_ne] using h
   exact not_isFreePair_of_forall_erase_ssubset (T := {t | t ∈ bingsHouseTriangles})
-    (fun _ => mem_bingsHouse) hT σ τ
+    hT σ τ
 
 /-- **Bing's house is not collapsible**: it has no free face to start a collapse. -/
 theorem not_collapsible_bingsHouse :
     ¬ PreAbstractSimplicialComplex.Collapsible bingsHouse.toPreAbstractSimplicialComplex := by
-  intro hcol
-  obtain ⟨v, hv⟩ := hcol.exists_eq_point_of_forall_not_isFreePair not_isFreePair_bingsHouse
-  have hmem : ({0, 1} : Finset (Fin 11)) ∈ bingsHouse.toPreAbstractSimplicialComplex :=
-    mem_bingsHouse.mpr ⟨by decide, {0, 1, 3}, by decide, by decide⟩
-  rw [hv, mem_point] at hmem
-  have := congrArg Finset.card hmem
-  simp at this
+  exact not_collapsible_of_forall_not_isFreePair not_isFreePair_bingsHouse
+    (mem_bingsHouse_of_mem_bingsHouseTriangles (t := {0, 1, 3}) (by decide)) (by decide)
 
 /-- Bit masks of the twenty-three tetrahedra of a three-dimensional complex containing Bing's
 house, with the vertex `v` encoded as bit `v`. -/
