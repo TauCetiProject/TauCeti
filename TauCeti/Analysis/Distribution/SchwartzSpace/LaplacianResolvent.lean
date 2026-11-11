@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 public import TauCeti.Analysis.Normed.Module.Complexification
-import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 
 /-!
 # The resolvent of the Laplacian on Schwartz space
@@ -115,8 +114,7 @@ theorem neg_laplacian_fourierMultiplierCLM_add_smul {c : ℝ} (hc : 0 < c) (f : 
 @[simp]
 theorem fourierMultiplierCLM_neg_laplacian_add_smul {c : ℝ} (hc : 0 < c) (f : 𝓢(E, F)) :
     fourierMultiplierCLM F (fun ξ : E ↦ ((2 * π) ^ 2 * ‖ξ‖ ^ 2 + c)⁻¹) (-Δ f + c • f) = f := by
-  rw [map_add, map_neg, map_smul, fourierMultiplierCLM_laplacian
-    (TauCeti.hasTemperateGrowth_inv_mul_norm_sq_add (by positivity) hc)]
+  rw [map_add, map_neg, map_smul, fourierMultiplierCLM_laplacian]
   exact neg_laplacian_fourierMultiplierCLM_add_smul hc f
 
 end Complex
@@ -165,24 +163,10 @@ omit [CompleteSpace G] in
 /-- The resolvent of the Laplacian commutes with the Laplacian. -/
 theorem laplacianResolvent_laplacian {c : ℝ} (f : 𝓢(E, G)) :
     laplacianResolvent c (Δ f) = Δ (laplacianResolvent c f) := by
-  by_cases hmain : CompleteSpace (TauCeti.Complexification G) ∧
-      (fun ξ : E ↦ ((2 * π) ^ 2 * ‖ξ‖ ^ 2 + c)⁻¹).HasTemperateGrowth
-  · obtain ⟨hG, hg⟩ := hmain
-    have hcomplex := fourierMultiplierCLM_laplacian hg
-      (f.postcompCLM (ofRealLI G).toContinuousLinearMap)
-    have hreal := congrArg (postcompCLM (reCLM G)) hcomplex
-    simpa only [laplacianResolvent_apply, TauCeti.laplacian_postcompCLM] using hreal
-  · -- Without completeness or temperate growth, the Fourier multiplier is zero.
-    have h : fourierMultiplierCLM (TauCeti.Complexification G)
-        (fun ξ : E ↦ ((2 * π) ^ 2 * ‖ξ‖ ^ 2 + c)⁻¹) = 0 := by
-      ext1 φ
-      by_cases hG : CompleteSpace (TauCeti.Complexification G)
-      · have hg := fun hg ↦ hmain ⟨hG, hg⟩
-        simp [fourierMultiplierCLM_apply, smulLeftCLM_of_not_hasTemperateGrowth hg]
-      · simp [fourierMultiplierCLM_apply, fourier_eq_zero_of_not_completeSpace hG]
-    simp only [laplacianResolvent, h, ContinuousLinearMap.comp_zero,
-      ContinuousLinearMap.zero_comp, zero_apply]
-    rw [← laplacianCLM_eq', map_zero]
+  have hcomplex := fourierMultiplierCLM_laplacian (fun ξ : E ↦ ((2 * π) ^ 2 * ‖ξ‖ ^ 2 + c)⁻¹)
+    (f.postcompCLM (ofRealLI G).toContinuousLinearMap)
+  have hreal := congrArg (postcompCLM (reCLM G)) hcomplex
+  simpa only [laplacianResolvent_apply, TauCeti.laplacian_postcompCLM] using hreal
 
 /-- The resolvent of the Laplacian is a left inverse of `-Δ + c`, for `c > 0`. -/
 @[simp]
