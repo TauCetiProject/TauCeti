@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
-import Mathlib.Algebra.Algebra.Spectrum.Basic
 import Mathlib.Analysis.Normed.Group.InfiniteSum
 
 /-!
