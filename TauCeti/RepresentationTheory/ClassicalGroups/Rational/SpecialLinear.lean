@@ -9,7 +9,6 @@ module
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.Rational
 public import TauCeti.RepresentationTheory.ClassicalGroups.SpecialLinear
--- `MvPolynomial.IsHomogeneous.eval_smul`, the scaling of a homogeneous component, and
 -- `MvPolynomial.eval_eq_sum_homogeneousComponent_of_eval_smul`, the averaging over roots of unity.
 import TauCeti.RingTheory.MvPolynomial.Homogeneous
 import Mathlib.RingTheory.RootsOfUnity.Complex

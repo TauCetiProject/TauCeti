@@ -23,7 +23,9 @@ multiplies its value by `a ^ n`. This permits normalizing linear substitutions w
 expanding the polynomial.
 
 The results live in `MvPolynomial.IsHomogeneous`, so a homogeneity proof supports dot
-notation such as `hp.eval₂_const_mul`, `hp.aeval_smul`, and `hp.eval_smul`. In the same way
+notation such as `hp.eval₂_const_mul` and `hp.aeval_smul_of_algebra`, the latter for a scalar
+algebra that may differ from the coefficient algebra; Mathlib supplies `hp.aeval_smul` and
+`hp.eval_smul` themselves. In the same way
 `hp.coeff_single_eq_eval` reads the coefficient of `X_j ^ n` off the value at the `j`-th basis
 vector, `hp.aeval_eq_sum_finsuppAntidiag` expands a value as a sum over the exponent vectors of
 degree `n`, `hp.constantCoeff_eq_zero` records that the constant coefficient vanishes in
