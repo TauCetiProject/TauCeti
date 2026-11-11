@@ -40,9 +40,9 @@ open MeasureTheory TopologicalSpace ContinuousLinearMap Complex Set Metric Filte
 open scoped ContDiff Convolution Distributions ENNReal NNReal Topology
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
-  {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [p.HolderConjugate q]
+  {p q : ℝ≥0∞} [p.HolderConjugate q]
 
-private theorem eLpNorm_fderiv_indicator_convolution_le
+private theorem eLpNorm_fderiv_indicator_convolution_le [Fact (1 ≤ p)]
     (hp_top : p ≠ (∞ : ℝ≥0∞)) {U : Opens ℂ} {W K : Set ℂ} {C : ℝ≥0}
     (hC : ∀ v : ℂ → F, ContDiffOn ℝ ∞ v W →
       eLpNorm (fderiv ℝ v) p (volume.restrict K) ≤
@@ -127,6 +127,8 @@ theorem exists_enorm_integral_lineDeriv_smul_le_of_integral_conjWirtingerDeriv_e
         ‖∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z v • u z‖ₑ ≤
           C * ‖v‖ₑ * (eLpNorm f p (volume.restrict U) + eLpNorm u p (volume.restrict U)) *
             eLpNorm (φ : ℂ → ℝ) q volume := by
+  have : Fact (1 ≤ p) := ⟨hp.le⟩
+  have : Fact (1 ≤ q) := ⟨ENNReal.HolderConjugate.one_le q p⟩
   obtain ⟨R, hR, hRU⟩ := hK.exists_cthickening_subset_open U.isOpen hKU
   let δ := R / 4
   have hδ : 0 < δ := by positivity
@@ -213,6 +215,8 @@ theorem exists_enorm_integral_lineDeriv_smul_le_of_integral_conjWirtingerDeriv_e
         ‖∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z v • u z‖ₑ ≤
           C * ‖v‖ₑ * (eLpNorm f p (volume.restrict U) + eLpNorm u r (volume.restrict U)) *
             eLpNorm (φ : ℂ → ℝ) q volume := by
+  have : Fact (1 ≤ p) := ⟨hp.le⟩
+  have : Fact (1 ≤ q) := ⟨ENNReal.HolderConjugate.one_le q p⟩
   obtain ⟨R, hR, hRU⟩ := hK.exists_cthickening_subset_open U.isOpen hKU
   let W : Opens ℂ := ⟨thickening R K, isOpen_thickening⟩
   have hKW : K ⊆ W := self_subset_thickening hR K

@@ -47,6 +47,8 @@ the constituents.
 
 ## Main results
 
+* `PadicInt.sum_stdAddChar_dotProduct_map_pow_smul_mulVec`: over `ℤ_[p]`, the Gauss sum of `p^i A`
+  modulo `p^(i + m)` is `p^{i n}` times the Gauss sum of `A` modulo `p^m`.
 * `PadicInt.sum_stdAddChar_toZModPow_mul_sq_eq_χ₈`: for a unit `u` of `ℤ_[2]`,
   `∑_{y ∈ ℤ/2^k} e(u y² / 2^k) = √2^{k + 1} · χ₈(u)^{k + 1} · e(u / 8)`.
 * `LinearMap.BilinForm.IsSymm.sum_stdAddChar_dotProduct_toMatrix_map_mulVec_eq_χ₈`: the Gauss
@@ -80,6 +82,56 @@ open TauCeti TauCeti.FiniteQuadraticModule
 open scoped Matrix
 
 namespace PadicInt
+
+section Scaling
+
+variable {p : ℕ} [Fact p.Prime] {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- **Gauss sums of a scaled matrix.** For a matrix `A` over `ℤ_[p]` and `i + m = k`, with
+`e(t) = exp (2πi t)`, the Gauss sum `∑_{x ∈ (ℤ/p^k)^n} e(p^i xᵀ A x / p^k)` is `p^{i n}` times the
+Gauss sum `∑_{y ∈ (ℤ/p^m)^n} e(yᵀ A y / p^m)`: the summand depends only on `x` modulo `p^m`. This
+reduces the Gauss sum of a `p^i`-modular Jordan constituent to that of its unimodular rescaling. -/
+theorem sum_stdAddChar_dotProduct_map_pow_smul_mulVec (A : Matrix ι ι ℤ_[p]) {i m k : ℕ}
+    (h : i + m = k) :
+    ∑ x : ι → ZMod (p ^ k), stdAddChar (x ⬝ᵥ ((p : ℤ_[p]) ^ i • A).map (toZModPow k) *ᵥ x) =
+      (p : ℂ) ^ (i * Fintype.card ι) *
+        ∑ x : ι → ZMod (p ^ m), stdAddChar (x ⬝ᵥ A.map (toZModPow m) *ᵥ x) := by
+  subst h
+  have hpow : p ^ i * p ^ m = p ^ (i + m) := (pow_add p i m).symm
+  -- On the multiples of `p ^ i`, the character of `ℤ/p^(i+m)` is that of `ℤ/p^m`.
+  have hchar (t : ZMod (p ^ (i + m))) : stdAddChar ((p ^ i : ZMod (p ^ (i + m))) * t) =
+      stdAddChar (castHom (Dvd.intro_left _ hpow) (ZMod (p ^ m)) t) := by
+    obtain ⟨n, rfl⟩ := ZMod.intCast_surjective t
+    have hp : (p : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
+    rw [map_intCast, ← Int.cast_natCast, ← Int.cast_pow, ← Int.cast_mul, stdAddChar_coe,
+      stdAddChar_coe]
+    congr 1
+    push_cast
+    field_simp
+    ring
+  have hmap : (castHom (Dvd.intro_left _ hpow) (ZMod (p ^ m))).comp (toZModPow (i + m)) =
+      toZModPow (p := p) m := zmod_cast_comp_toZModPow m (i + m) (by omega)
+  have hmap_smul : ((p : ℤ_[p]) ^ i • A).map (toZModPow (i + m)) =
+      (p ^ i : ZMod (p ^ (i + m))) • A.map (toZModPow (i + m)) := by
+    ext
+    simp
+  have hx (x : ι → ZMod (p ^ (i + m))) :
+      x ⬝ᵥ ((p : ℤ_[p]) ^ i • A).map (toZModPow (i + m)) *ᵥ x =
+        (p ^ i : ZMod (p ^ (i + m))) * (x ⬝ᵥ A.map (toZModPow (i + m)) *ᵥ x) := by
+    rw [hmap_smul, Matrix.smul_mulVec, dotProduct_smul, smul_eq_mul]
+  have hy (x : ι → ZMod (p ^ (i + m))) :
+      castHom (Dvd.intro_left _ hpow) (ZMod (p ^ m)) (x ⬝ᵥ A.map (toZModPow (i + m)) *ᵥ x) =
+        (fun a ↦ castHom (Dvd.intro_left _ hpow) (ZMod (p ^ m)) (x a)) ⬝ᵥ
+          A.map (toZModPow m) *ᵥ fun a ↦ castHom (Dvd.intro_left _ hpow) (ZMod (p ^ m)) (x a) := by
+    rw [RingHom.map_dotProduct, ← hmap, RingHom.coe_comp, ← Matrix.map_map]
+    congr 1
+    exact funext fun a ↦ RingHom.map_mulVec _ _ _ a
+  simp_rw [hx, hchar, hy]
+  rw [ZMod.sum_comp_castHom (p ^ m) hpow
+    fun y : ι → ZMod (p ^ m) ↦ stdAddChar (y ⬝ᵥ A.map (toZModPow m) *ᵥ y)]
+  simp [← pow_mul]
+
+end Scaling
 
 /-- For `j ≥ 1`, the Gauss sum `∑_{y ∈ ℤ/2^{j+1}} e(θy² / 2^{j+1})` is twice the Gauss sum of
 `q_θ^{(2)}(2^j)`: the summand depends only on `y` modulo `2^j`. -/

@@ -37,7 +37,7 @@ open _root_.Quiver PathAlgebra DoubledQuiver CategoryTheory
 
 variable (k : Type*) [Field k] {n : ℕ}
 
-attribute [local instance] finiteNeighborSetFintype
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 local notation "AG" => diagramGraph (DynkinType.cartanMatrix (DynkinType.A n))
 local notation "Q" => DoubledQuiver AG

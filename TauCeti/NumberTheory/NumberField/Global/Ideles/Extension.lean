@@ -109,6 +109,16 @@ theorem ideleFiniteCoord_ideleExtension (w : HeightOneSpectrum (𝓞 L))
 
 variable {K L}
 
+/-- Taking the finite component commutes with extension of ideles. -/
+@[simp]
+theorem toFiniteIdele_ideleExtension (x : IdeleGroup (𝓞 K) K) :
+    IdeleGroup.toFiniteIdele (𝓞 L) L (ideleExtension K L x) =
+      Units.map (finiteAdeleExtension (𝓞 K) K (𝓞 L) L).toMonoidHom
+        (IdeleGroup.toFiniteIdele (𝓞 K) K x) := by
+  apply Units.ext
+  ext w
+  simp [IdeleGroup.coe_toFiniteIdele, ← HeightOneSpectrum.coe_ideleFiniteCoord]
+
 private theorem prod_infiniteFactors_ideleExtension (x : IdeleGroup (𝓞 K) K) :
     (∏ w, completionNormalizedAbsValue w (w.ideleInfiniteCoord (ideleExtension K L x))) =
       (∏ v, completionNormalizedAbsValue v (v.ideleInfiniteCoord x)) ^

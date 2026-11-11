@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Distributions.Beta
+public import Mathlib.Topology.ContinuousMap.Bounded.Basic
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Analysis.Calculus.RealCharts
@@ -39,8 +41,14 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
 
 ## Main results
 
+* `BoundedContinuousFunction.continuous_integral_rpow_mul_one_sub_rpow_mul` — the beta kernel
+  integral against a bounded continuous function is continuous in the two positive shapes;
+* `ProbabilityTheory.continuous_one_div_beta` — `1 / Β(a, b)` is continuous in the two positive
+  shapes;
 * `TauCeti.intervalIntegrable_rpow_mul_one_sub_rpow` — interval integrability of the beta
   integrand between any two points of `[0, 1]`;
+* `TauCeti.intervalIntegrable_abs_sub_rpow_mul_abs_sub_rpow` — interval integrability of a product
+  of two power singularities `|x - p| ^ α * |x - q| ^ β` with exponents greater than `-1`;
 * `TauCeti.integrableOn_rpow_mul_one_sub_rpow_iff` — the sharp integrability criterion at both
   endpoints of the unit interval;
 * `TauCeti.integral_rpow_mul_one_sub_rpow` — Euler's beta integral,
@@ -86,8 +94,12 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
 * `ProbabilityTheory.beta_comm` — symmetry of `Β`;
 * `ProbabilityTheory.beta_one_half_left_eq_two_rpow_mul_beta_self` — Legendre's duplication
   formula as a relation between `Β(1/2, a)` and `Β(a, a)`;
-* `ProbabilityTheory.beta_one_right` — the value `Β(a, 1) = 1 / a`;
+* `ProbabilityTheory.beta_one_right`, `ProbabilityTheory.beta_one_left` — the values
+  `Β(a, 1) = Β(1, a) = 1 / a`;
 * `ProbabilityTheory.beta_add_one_left` — the unit step `Β(a + 1, b) = a / (a + b) * Β(a, b)`;
+* `ProbabilityTheory.beta_add_one_sub_one_div` and `ProbabilityTheory.beta_add_two_sub_two_div` —
+  the ratios `Β(a + 1, b - 1) / Β(a, b) = a / (b - 1)` and
+  `Β(a + 2, b - 2) / Β(a, b) = a (a + 1) / ((b - 1) (b - 2))`;
 * `ProbabilityTheory.beta_three_halves_three_halves` — the value `Β(3/2, 3/2) = π / 8`.
 * `ProbabilityTheory.tendsto_natCast_mul_beta_atTop` — `n Β(n, s) → 0` along the natural numbers
   for `s > 1`.
@@ -155,6 +167,48 @@ theorem intervalIntegrable_rpow_mul_one_sub_rpow (ha : 0 < a) (hb : 0 < b) {u v 
   refine key.mono_set (uIcc_subset_uIcc ?_ ?_) <;>
     rw [uIcc_of_le (zero_le_one : (0 : ℝ) ≤ 1)]
   exacts [hu, hv]
+
+/-- The product of two power singularities `|x - p| ^ α * |x - q| ^ β` is interval integrable
+between `p < q` when both exponents are greater than `-1`. This reduces to Euler's beta integral. -/
+private theorem intervalIntegrable_abs_sub_rpow_mul_abs_sub_rpow_of_lt {p q α β : ℝ} (hpq : p < q)
+    (hα : -1 < α) (hβ : -1 < β) :
+    IntervalIntegrable (fun x : ℝ ↦ |x - p| ^ α * |x - q| ^ β) volume p q := by
+  let L := q - p
+  have hL : 0 < L := sub_pos.mpr hpq
+  have hbeta : IntervalIntegrable (fun t : ℝ ↦ t ^ α * (1 - t) ^ β) volume 0 1 := by
+    simpa only [add_sub_cancel_right] using
+      intervalIntegrable_rpow_mul_one_sub_rpow (a := α + 1) (b := β + 1)
+        (by linarith) (by linarith) (u := 0) (v := 1) (by simp) (by simp)
+  have hscaled : IntervalIntegrable
+      (fun x : ℝ ↦ (x / L) ^ α * (1 - x / L) ^ β) volume 0 L := by
+    have h := hbeta.comp_mul_right (c := L⁻¹)
+    simpa [div_eq_mul_inv, hL.ne'] using h
+  have hshifted : IntervalIntegrable
+      (fun x : ℝ ↦ ((x - p) / L) ^ α * (1 - (x - p) / L) ^ β) volume p q := by
+    have h := hscaled.comp_sub_right p
+    simpa [L] using h
+  refine (hshifted.const_mul (L ^ (α + β))).congr fun x hx ↦ ?_
+  rw [uIoc_of_le hpq.le] at hx
+  have hxp : 0 < x - p := sub_pos.mpr hx.1
+  have hqx : 0 ≤ q - x := sub_nonneg.mpr hx.2
+  have hone : 1 - (x - p) / L = (q - x) / L := by
+    field_simp [hL.ne']
+    ring
+  rw [abs_of_pos hxp, abs_of_nonpos (sub_nonpos.mpr hx.2), neg_sub, hone,
+    Real.div_rpow hxp.le hL.le, Real.div_rpow hqx hL.le, div_eq_mul_inv]
+  rw [Real.rpow_add hL]
+  field_simp [(Real.rpow_pos_of_pos hL _).ne']
+
+/-- The product of two power singularities `|x - p| ^ α * |x - q| ^ β` is interval integrable
+between any two endpoints `p` and `q` when both exponents are greater than `-1`. -/
+theorem intervalIntegrable_abs_sub_rpow_mul_abs_sub_rpow {p q α β : ℝ}
+    (hα : -1 < α) (hβ : -1 < β) :
+    IntervalIntegrable (fun x : ℝ ↦ |x - p| ^ α * |x - q| ^ β) volume p q := by
+  rcases lt_trichotomy p q with hpq | rfl | hqp
+  · exact intervalIntegrable_abs_sub_rpow_mul_abs_sub_rpow_of_lt hpq hα hβ
+  · exact IntervalIntegrable.refl
+  · have h := (intervalIntegrable_abs_sub_rpow_mul_abs_sub_rpow_of_lt hqp hβ hα).symm
+    simpa only [mul_comm] using h
 
 /-- If the beta integrand is interval integrable on the unit interval, then its exponent at the
 left endpoint is greater than `-1`. -/
@@ -371,11 +425,10 @@ section SecondIntegral
 variable {s : ℝ}
 
 /-- Under the chart `u ↦ u / (1 - u)` the integrand of Euler's second beta integral becomes the
-integrand of Euler's first one. -/
-lemma abs_deriv_smul_one_add_rpow (a b : ℝ) {u : ℝ} (hu : u ∈ Ioo (0 : ℝ) 1) :
+integrand of Euler's first one, for every `u < 1`. -/
+lemma abs_deriv_smul_one_add_rpow (a b : ℝ) {u : ℝ} (hu : u < 1) :
     |((1 - u) ^ 2)⁻¹| • ((u / (1 - u)) ^ (a - 1) * (1 + u / (1 - u)) ^ (-(a + b))) =
       u ^ (a - 1) * (1 - u) ^ (b - 1) := by
-  obtain ⟨hu0, hu1⟩ := hu
   have h1u : (0 : ℝ) < 1 - u := by linarith
   have hbase : (1 : ℝ) + u / (1 - u) = (1 - u)⁻¹ := by field_simp; ring
   have e1 : ((1 - u) ^ (2 : ℕ))⁻¹ = (1 - u) ^ (-2 : ℝ) := by
@@ -388,8 +441,8 @@ lemma abs_deriv_smul_one_add_rpow (a b : ℝ) {u : ℝ} (hu : u ∈ Ioo (0 : ℝ
     rw [← Real.rpow_neg h1u.le, ← Real.rpow_add h1u, ← Real.rpow_add h1u]
     congr 1
     ring
-  rw [smul_eq_mul, abs_of_nonneg (by positivity), hbase, Real.div_rpow hu0.le h1u.le, e1, e2,
-    div_eq_mul_inv]
+  rw [smul_eq_mul, abs_of_nonneg (by positivity), hbase, Real.div_rpow_of_pos_right h1u u (a - 1),
+    e1, e2, div_eq_mul_inv]
   calc (1 - u) ^ (-2 : ℝ) * (u ^ (a - 1) * ((1 - u) ^ (a - 1))⁻¹ * (1 - u) ^ (a + b))
       = u ^ (a - 1) *
         ((1 - u) ^ (-2 : ℝ) * (((1 - u) ^ (a - 1))⁻¹ * (1 - u) ^ (a + b))) := by ring
@@ -410,8 +463,8 @@ theorem integrableOn_rpow_mul_one_add_rpow (ha : 0 < a) (hb : 0 < b) :
   rw [← hchart,
     integrableOn_image_iff_integrableOn_abs_deriv_smul measurableSet_Ioo
       (fun u hu => (hasDerivAt_div_one_sub (ne_of_lt hu.2)).hasDerivWithinAt)
-      (injOn_div_one_sub_Ioo (u0 := 0))]
-  exact hIoo.congr_fun (fun u hu => (abs_deriv_smul_one_add_rpow a b hu).symm) measurableSet_Ioo
+      (strictMonoOn_div_one_sub.injOn.mono Ioo_subset_Iio_self)]
+  exact hIoo.congr_fun (fun u hu => (abs_deriv_smul_one_add_rpow a b hu.2).symm) measurableSet_Ioo
 
 private lemma eventually_const_mul_rpow_le_rpow_mul_one_add_rpow (hab : 0 < a + b) :
     ∀ᶠ x in atTop,
@@ -513,8 +566,8 @@ theorem integral_rpow_mul_one_add_rpow (ha : 0 < a) (hb : 0 < b) :
   rw [← hchart,
     integral_image_eq_integral_abs_deriv_smul measurableSet_Ioo
       (fun u hu => (hasDerivAt_div_one_sub (ne_of_lt hu.2)).hasDerivWithinAt)
-      (injOn_div_one_sub_Ioo (u0 := 0)),
-    setIntegral_congr_fun measurableSet_Ioo (fun u hu => abs_deriv_smul_one_add_rpow a b hu),
+      (strictMonoOn_div_one_sub.injOn.mono Ioo_subset_Iio_self),
+    setIntegral_congr_fun measurableSet_Ioo (fun u hu => abs_deriv_smul_one_add_rpow a b hu.2),
     ← integral_rpow_mul_one_sub_rpow ha hb,
     intervalIntegral.integral_of_le (zero_le_one : (0 : ℝ) ≤ 1)]
   exact setIntegral_congr_set Ioo_ae_eq_Ioc
@@ -531,10 +584,8 @@ private lemma image_sqrt_Ioi : Real.sqrt '' Ioi 0 = Ioi 0 := by
     exact ⟨x ^ 2, mem_Ioi.mpr (pow_pos (mem_Ioi.mp hx) 2), Real.sqrt_sq (mem_Ioi.mp hx).le⟩
 
 /-- The square root is injective on the positive half-line. -/
-private lemma injOn_sqrt_Ioi : InjOn Real.sqrt (Ioi 0) := by
-  intro u hu v hv huv
-  have := congrArg (· ^ 2) huv
-  simpa [Real.sq_sqrt (mem_Ioi.mp hu).le, Real.sq_sqrt (mem_Ioi.mp hv).le] using this
+private lemma injOn_sqrt_Ioi : InjOn Real.sqrt (Ioi 0) := fun _ hu _ hv h =>
+  (Real.sqrt_inj (mem_Ioi.1 hu).le (mem_Ioi.1 hv).le).1 h
 
 /-- Under the square root the kernel `(1 + x ^ 2) ^ (-s)` becomes the integrand of Euler's second
 beta integral with first parameter `1 / 2`. -/
@@ -721,9 +772,6 @@ private theorem integral_rpow_mul_div_sq_add_sq_sub_div_one_add_sq_of_one_lt (hs
   have hsin : Real.sin (Real.pi * (s - 1) / 2) = -Real.cos (Real.pi * s / 2) := by
     rw [show Real.pi * (s - 1) / 2 = Real.pi * s / 2 - Real.pi / 2 by ring,
       Real.sin_sub_pi_div_two]
-  have hcos : Real.cos (Real.pi * s / 2) ≠ 0 :=
-    (Real.cos_neg_of_pi_div_two_lt_of_lt (by nlinarith [Real.pi_pos])
-      (by nlinarith [Real.pi_pos])).ne
   calc
     _ = ∫ y in Ioi (0 : ℝ), (t * (y ^ (s - 1 - 1) / (y ^ 2 + 1 ^ 2)) -
           t ^ 3 * (y ^ (s - 1 - 1) / (y ^ 2 + t ^ 2))) := by
@@ -927,7 +975,6 @@ theorem integral_mul_inv_add_sub_inv_add_div_one_add_sq {a : ℝ} (ha : 0 < a) :
     rw [hf, Real.norm_eq_abs, abs_mul, abs_of_pos (by positivity : 0 < a / (1 + x ^ 2))]
     have hle : |(a * x - 1) / (x + a)| ≤ a + a⁻¹ := by
       rw [abs_div, abs_of_pos (by positivity : 0 < x + a), div_le_iff₀ (by positivity)]
-      have hi : 0 ≤ a⁻¹ * x := by positivity
       rw [abs_le]
       constructor <;> field_simp <;> nlinarith [sq_nonneg a, mul_nonneg ha.le hx.le]
     calc
@@ -959,6 +1006,61 @@ end SecondIntegral
 
 end TauCeti
 
+namespace BoundedContinuousFunction
+
+open Filter MeasureTheory Set
+open scoped Topology
+
+/-- The unnormalized beta kernel integral `∫ x in (0, 1), x ^ (a - 1) * (1 - x) ^ (b - 1) * f x`
+against a bounded continuous function `f` is continuous in the two positive shape parameters
+`a` and `b`. -/
+theorem continuous_integral_rpow_mul_one_sub_rpow_mul (f : ℝ →ᵇ ℝ) :
+    Continuous fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦
+      ∫ x in Ioo (0 : ℝ) 1, x ^ ((p.1 : ℝ) - 1) * (1 - x) ^ ((p.2 : ℝ) - 1) * f x := by
+  have ha : Continuous fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦ (p.1 : ℝ) :=
+    continuous_subtype_val.comp continuous_fst
+  have hb : Continuous fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦ (p.2 : ℝ) :=
+    continuous_subtype_val.comp continuous_snd
+  refine continuous_iff_continuousAt.2 fun p ↦ ?_
+  -- Halving the shapes gives a locally uniform integrable bound at both endpoints.
+  let bound : ℝ → ℝ := fun x ↦
+    ‖f‖ * (x ^ ((p.1 : ℝ) / 2 - 1) * (1 - x) ^ ((p.2 : ℝ) / 2 - 1))
+  have hbound : Integrable bound (volume.restrict (Ioo (0 : ℝ) 1)) :=
+    (TauCeti.integrableOn_rpow_mul_one_sub_rpow_iff.2
+      ⟨half_pos p.1.2, half_pos p.2.2⟩).const_mul ‖f‖
+  apply continuousAt_of_dominated (bound := bound)
+  · exact .of_forall fun q ↦
+      (((by fun_prop : Measurable fun x : ℝ ↦
+        x ^ ((q.1 : ℝ) - 1) * (1 - x) ^ ((q.2 : ℝ) - 1))).mul
+        f.continuous.measurable).aestronglyMeasurable
+  · have hpa : ∀ᶠ q in 𝓝 p, (p.1 : ℝ) / 2 < (q.1 : ℝ) :=
+      ha.continuousAt (lt_mem_nhds (half_lt_self p.1.2))
+    have hpb : ∀ᶠ q in 𝓝 p, (p.2 : ℝ) / 2 < (q.2 : ℝ) :=
+      hb.continuousAt (lt_mem_nhds (half_lt_self p.2.2))
+    filter_upwards [hpa, hpb] with q hqa hqb
+    filter_upwards [ae_restrict_mem measurableSet_Ioo] with x hx
+    have hxa := Real.rpow_le_rpow_of_exponent_ge hx.1 hx.2.le
+      (sub_le_sub_right hqa.le 1)
+    have hxb := Real.rpow_le_rpow_of_exponent_ge (sub_pos.mpr hx.2)
+      (sub_le_self 1 hx.1.le) (sub_le_sub_right hqb.le 1)
+    have hnonneg : 0 ≤ x ^ ((q.1 : ℝ) - 1) * (1 - x) ^ ((q.2 : ℝ) - 1) :=
+      mul_nonneg (Real.rpow_nonneg hx.1.le _)
+        (Real.rpow_nonneg (sub_nonneg.mpr hx.2.le) _)
+    calc
+      _ = ‖f x‖ *
+          (x ^ ((q.1 : ℝ) - 1) * (1 - x) ^ ((q.2 : ℝ) - 1)) := by
+        rw [norm_mul, Real.norm_of_nonneg hnonneg, mul_comm]
+      _ ≤ bound x := mul_le_mul (f.norm_coe_le_norm x)
+        (mul_le_mul hxa hxb (Real.rpow_nonneg (sub_nonneg.mpr hx.2.le) _)
+          (Real.rpow_nonneg hx.1.le _)) hnonneg (norm_nonneg _)
+  · exact hbound
+  · filter_upwards [ae_restrict_mem measurableSet_Ioo] with x hx
+    exact ((((Real.continuous_const_rpow hx.1.ne').comp (ha.sub continuous_const)).mul
+      ((Real.continuous_const_rpow (sub_pos.mpr hx.2).ne').comp
+        (hb.sub continuous_const))).mul continuous_const).continuousAt
+
+end BoundedContinuousFunction
+
 namespace ProbabilityTheory
 
 variable {a b : ℝ}
@@ -967,12 +1069,10 @@ variable {a b : ℝ}
 theorem beta_comm (a b : ℝ) : beta a b = beta b a := by
   rw [ProbabilityTheory.beta, ProbabilityTheory.beta, mul_comm (Real.Gamma a), add_comm a b]
 
+variable (a) in
 /-- Legendre's duplication formula expressed through the symmetric beta integral. -/
-theorem beta_one_half_left_eq_two_rpow_mul_beta_self (ha : 0 < a) :
+theorem beta_one_half_left_eq_two_rpow_mul_beta_self :
     beta (1 / 2) a = (2 : ℝ) ^ (2 * a - 1) * beta a a := by
-  have hΓ₂ : Real.Gamma (2 * a) ≠ 0 := (Real.Gamma_pos_of_pos (by positivity)).ne'
-  have hΓh : Real.Gamma (a + 1 / 2) ≠ 0 :=
-    (Real.Gamma_pos_of_pos (by positivity)).ne'
   have hpow : (2 : ℝ) ^ (2 * a - 1) * (2 : ℝ) ^ (1 - 2 * a) = 1 := by
     rw [← Real.rpow_add (by norm_num)]
     ring_nf
@@ -984,15 +1084,34 @@ theorem beta_one_half_left_eq_two_rpow_mul_beta_self (ha : 0 < a) :
       _ = ((2 : ℝ) ^ (2 * a - 1) * (2 : ℝ) ^ (1 - 2 * a)) *
           (√Real.pi * Real.Gamma (2 * a)) := by rw [hpow, one_mul]
       _ = _ := by rw [hdup]; ring
-  rw [beta, beta, Real.Gamma_one_half_eq, add_comm (1 / 2) a, ← two_mul a]
-  rw [← mul_div_assoc, div_eq_div_iff hΓh hΓ₂]
-  linear_combination Real.Gamma a * hdup'
+  have hsqrt : √Real.pi ≠ 0 := (Real.sqrt_pos.2 Real.pi_pos).ne'
+  have h2 : (2 : ℝ) ^ (2 * a - 1) ≠ 0 := (Real.rpow_pos_of_pos two_pos _).ne'
+  by_cases hΓa : Real.Gamma a = 0
+  · simp [beta, hΓa]
+  by_cases hΓh : Real.Gamma (a + 1 / 2) = 0
+  · have hΓ₂ : Real.Gamma (2 * a) = 0 := by
+      have h := hdup'
+      rw [hΓh, mul_zero, mul_zero] at h
+      exact (mul_eq_zero.1 h).resolve_left hsqrt
+    rw [beta, beta, add_comm (1 / 2) a, ← two_mul a, hΓh, hΓ₂]
+    simp
+  · have hΓ₂ : Real.Gamma (2 * a) ≠ 0 := fun h ↦ by
+      rw [h, mul_zero] at hdup'
+      exact mul_ne_zero h2 (mul_ne_zero hΓa hΓh) hdup'.symm
+    rw [beta, beta, Real.Gamma_one_half_eq, add_comm (1 / 2) a, ← two_mul a]
+    rw [← mul_div_assoc, div_eq_div_iff hΓh hΓ₂]
+    linear_combination Real.Gamma a * hdup'
 
 /-- Euler's beta function at second parameter `1`. -/
 @[simp]
 theorem beta_one_right (ha : 0 < a) : beta a 1 = 1 / a := by
   rw [ProbabilityTheory.beta, Real.Gamma_one, mul_one, Real.Gamma_add_one ha.ne']
   field_simp
+
+/-- Euler's beta function at first parameter `1`. -/
+@[simp]
+theorem beta_one_left (ha : 0 < a) : beta 1 a = 1 / a := by
+  rw [beta_comm, beta_one_right ha]
 
 /-- The unit step of Euler's beta function in its first parameter. -/
 theorem beta_add_one_left (ha : a ≠ 0) (hab : a + b ≠ 0) :
@@ -1067,5 +1186,15 @@ theorem tendsto_natCast_mul_beta_atTop {s : ℝ} (hs : 1 < s) :
   filter_upwards [eventually_ne_atTop 0] with n hn
   rw [beta, Real.Gamma_add_one (Nat.cast_ne_zero.mpr hn)]
   ring
+
+/-- The reciprocal of the beta function is continuous in the two positive shape parameters. -/
+theorem continuous_one_div_beta :
+    Continuous fun p : Set.Ioi (0 : ℝ) × Set.Ioi (0 : ℝ) ↦ (1 / beta p.1 p.2) := by
+  have h := (TauCeti.continuous_Gamma_sum_div_prod (ι := Fin 2)).comp
+    (continuous_pi (Fin.forall_fin_two.2 ⟨continuous_fst, continuous_snd⟩) :
+      Continuous fun p : Set.Ioi (0 : ℝ) × Set.Ioi (0 : ℝ) ↦ ![p.1, p.2])
+  convert h using 1
+  ext p
+  simp [beta, Fin.sum_univ_two, Fin.prod_univ_two]
 
 end ProbabilityTheory

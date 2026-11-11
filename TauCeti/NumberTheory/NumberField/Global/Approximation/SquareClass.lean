@@ -57,17 +57,18 @@ theorem exists_fieldUnit_isSquare_div_at_places
     have hopen : IsOpen {u : (v.1.adicCompletion K)ˣ | IsSquare u} := by
       simpa only [← square_eq_range_powMonoidHom, Subgroup.coe_square]
         using isOpen_range_powMonoidHom (two_ne_zero' (v.1.adicCompletion K))
-    exact Filter.Tendsto.eventually_isSquare_div_of_isOpen_squares
+    exact Filter.Tendsto.eventually_isSquare_div
       (f := fun y : (∀ v : S, v.1.adicCompletion K) × (T → ℝ) => y.1 v)
-      hcont.continuousAt hopen (a v).ne_zero
+      hcont.continuousAt (hopen.mem_nhds .one) (a v).ne_zero
   have hr (w : T) : ∀ᶠ y in 𝓝 target, y.2 w ≠ 0 ∧ IsSquare (y.2 w / (b w : ℝ)) := by
     have hcont : Continuous (fun y : (∀ v : S, v.1.adicCompletion K) × (T → ℝ) =>
         y.2 w) :=
       (continuous_apply w).comp continuous_snd
-    exact hcont.continuousAt.eventually_isSquare_div_of_isOpen_squares
-      (by
+    exact hcont.continuousAt.eventually_isSquare_div
+      ((by
         simpa only [Units.isSquare_iff_pos] using
-          (isOpen_lt continuous_const Units.continuous_val : IsOpen {u : ℝˣ | 0 < (u : ℝ)}))
+          (isOpen_lt continuous_const Units.continuous_val : IsOpen {u : ℝˣ | 0 < (u : ℝ)}) :
+        IsOpen {u : ℝˣ | IsSquare u}).mem_nhds .one)
       (b w).ne_zero
   have he := (eventually_all.mpr hf).and (eventually_all.mpr hr)
   obtain ⟨y, hy, x, rfl⟩ := mem_closure_iff_nhds.mp

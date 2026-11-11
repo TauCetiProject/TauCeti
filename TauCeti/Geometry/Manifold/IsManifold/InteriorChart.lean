@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
+public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import Mathlib.Geometry.Manifold.ContMDiff.Basic
 
 /-!
@@ -27,6 +28,9 @@ when the model `I` itself has a boundary.
 
 * `OpenPartialHomeomorph.trans_interiorChart_symm_mem_maximalAtlas`: an open partial homeomorphism
   from a manifold to `E` that is `C^n` with `C^n` inverse, followed by the inverse of
+  `I.interiorChart`, is a chart of the `C^n` maximal atlas.
+* `PartialDiffeomorph.trans_trans_interiorChart_symm_mem_maximalAtlas`: a partial diffeomorphism
+  from a manifold to `E`, followed by a chart of the maximal atlas of `E` and by the inverse of
   `I.interiorChart`, is a chart of the `C^n` maximal atlas.
 -/
 
@@ -99,3 +103,17 @@ theorem OpenPartialHomeomorph.trans_interiorChart_symm_mem_maximalAtlas {n : ℕ
       fun y hy ↦ interior_subset (s := range I) (hsrc hy).2
   · -- As a map, the inverse chart is `e.symm ∘ I`.
     exact he'.comp I.contMDiff.contMDiffOn fun z hz ↦ htgt hz
+
+/-- A partial diffeomorphism from `M` to the model vector space, followed by a chart `σ` of the
+maximal atlas of the vector space and read back through the interior chart of the model, is a chart
+of the maximal atlas of `M`. -/
+theorem PartialDiffeomorph.trans_trans_interiorChart_symm_mem_maximalAtlas {n : ℕ∞ω}
+    [IsManifold I n M] (Φ : PartialDiffeomorph I 𝓘(𝕜, E) M E n) {σ : OpenPartialHomeomorph E E}
+    (hσ : σ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n E) :
+    (Φ.toOpenPartialHomeomorph.trans σ).trans I.interiorChart.symm ∈
+      IsManifold.maximalAtlas I n M :=
+  OpenPartialHomeomorph.trans_interiorChart_symm_mem_maximalAtlas
+    ((contMDiffOn_of_mem_maximalAtlas hσ).comp (Φ.contMDiffOn_toFun.mono inter_subset_left)
+      fun _ hy ↦ hy.2)
+    (Φ.contMDiffOn_invFun.comp ((contMDiffOn_symm_of_mem_maximalAtlas hσ).mono inter_subset_left)
+      fun _ hu ↦ hu.2)

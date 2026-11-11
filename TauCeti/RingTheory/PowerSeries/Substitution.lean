@@ -148,9 +148,9 @@ theorem subst_zero {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
 /-- Substitution preserves the constant series one. -/
 @[simp]
 theorem subst_one {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
-    {τ : Type*} {a : MvPowerSeries τ S} (ha : HasSubst a) :
-    (1 : R⟦X⟧).subst a = 1 := by
-  rw [← coe_substAlgHom ha, map_one]
+    {τ : Type*} (a : MvPowerSeries τ S) : (1 : R⟦X⟧).subst a = 1 := by
+  simpa only [subst_def, MvPolynomial.coe_one, map_one] using
+    (MvPowerSeries.subst_coe (a := fun _ : Unit ↦ a) (1 : MvPolynomial Unit R))
 
 /-- Substituting `X ^ b` into `X ^ a` multiplies the exponents. -/
 theorem subst_X_pow_X_pow {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
@@ -335,7 +335,7 @@ theorem subst_add_of_sq_eq_zero {a h : S⟦X⟧} (ha : HasSubst a) (hh : h ^ 2 =
         simp only [Derivation.map_algebraMap, map_zero, mul_zero, add_zero, AlgHom.commutes] }
   have hT (g : R⟦X⟧) : T g = g.subst a + h * (d⁄dX g).subst a := by
     simp [T, coe_substAlgHom]
-  have hTX : T X = a + h := by rw [hT, derivative_X, subst_X ha, subst_one ha, mul_one]
+  have hTX : T X = a + h := by rw [hT, derivative_X, subst_X ha, subst_one, mul_one]
   have hσ := congr($(algHom_eq_substAlgHom (σ := T) (hTX ▸ ha.add (.map ⟨2, hh⟩ _))) f)
   rw [coe_substAlgHom, hTX, hT] at hσ
   exact hσ.symm
@@ -355,10 +355,16 @@ theorem X_pow_dvd_subst {a : S⟦X⟧} (ha : constantCoeff a = 0) {n : ℕ} {f :
   exact (pow_dvd_pow_of_dvd (X_dvd_iff.mpr ha) n).mul_right _
 
 /-- Substitution respects congruence modulo `X ^ n` of the substituted series: if `a ≡ b` modulo
-`X ^ n`, then `f (a) ≡ f (b)` modulo `X ^ n`. -/
+`X ^ n`, then `f (a) ≡ f (b)` modulo `X ^ n`. For `n ≠ 0` the congruence forces `b` to have
+zero constant coefficient as well, so only `a` needs it. -/
 theorem X_pow_dvd_subst_sub_subst {a b : S⟦X⟧} (ha : constantCoeff a = 0)
-    (hb : constantCoeff b = 0) {n : ℕ} (hab : X ^ n ∣ a - b) (f : R⟦X⟧) :
+    {n : ℕ} (hab : X ^ n ∣ a - b) (f : R⟦X⟧) :
     X ^ n ∣ f.subst a - f.subst b := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp
+  have hb : constantCoeff b = 0 := by
+    have := X_dvd_iff.mp ((dvd_pow_self X hn.ne').trans hab)
+    rwa [map_sub, ha, zero_sub, neg_eq_zero] at this
   have ha' : HasSubst a := .of_constantCoeff_zero' ha
   have hb' : HasSubst b := .of_constantCoeff_zero' hb
   -- On the polynomial truncation this is `a - b ∣ p (a) - p (b)`; the remaining multiple of
@@ -432,29 +438,44 @@ theorem homogeneousComponent_subst_left_eq_C_mul_X_pow {f : R⟦X⟧} {φ : S⟦
   simp [← coeff_def, hφ₁]
 
 /-- The degree-`n` part of `φ (f)` is `a Xⁿ` when `f` has order at least `n ≥ 1` and coefficient
-`a` of `Xⁿ`, and `φ = X + ⋯`: the terms of `φ` of degree at least two contribute in degree at
-least `2 n`. -/
+`a` of `Xⁿ`, and `φ = c + X + ⋯`: the constant term `c` only contributes in degree `0`, and the
+terms of `φ` of degree at least two contribute in degree at least `2 n`. -/
 theorem homogeneousComponent_subst_right_eq_C_mul_X_pow {f : S⟦X⟧} {φ : R⟦X⟧} {n : ℕ}
-    (hn₀ : n ≠ 0) (hn : n ≤ f.order) (hφ : constantCoeff φ = 0) (hφ₁ : coeff 1 φ = 1) :
+    (hn₀ : n ≠ 0) (hn : n ≤ f.order) (hφ₁ : coeff 1 φ = 1) :
     MvPowerSeries.homogeneousComponent n (φ.subst f) =
       MvPowerSeries.C (coeff n f) * MvPowerSeries.X () ^ n := by
   have hf₀ : constantCoeff f = 0 := by
     rw [← coeff_zero_eq_constantCoeff_apply]
     exact coeff_of_lt_order 0 ((Nat.cast_lt.mpr (Nat.pos_of_ne_zero hn₀)).trans_le hn)
   have hS : HasSubst f := .of_constantCoeff_zero' hf₀
-  have h₂ : (2 : ℕ∞) ≤ (φ - X).order := nat_le_order _ 2 fun i hi ↦ by
-    interval_cases i <;> simp [hφ, hφ₁]
-  have hrest : ((n + 1 : ℕ) : ℕ∞) ≤ ((φ - X).subst f).order := by
+  have h₂ : (2 : ℕ∞) ≤ (φ - X - C (constantCoeff φ)).order := nat_le_order _ 2 fun i hi ↦ by
+    interval_cases i <;> simp [hφ₁]
+  have hrest : ((n + 1 : ℕ) : ℕ∞) ≤ ((φ - X - C (constantCoeff φ)).subst f).order := by
     refine le_trans ?_ (le_order_subst _ hS _)
     rw [← order_eq_order]
     calc ((n + 1 : ℕ) : ℕ∞) ≤ (n : ℕ∞) * 2 := by exact_mod_cast (by omega : n + 1 ≤ n * 2)
       _ ≤ _ := mul_le_mul' hn h₂
-  have hsplit : φ.subst f = (φ - X).subst f + f.subst X := by
-    rw [subst_sub hS, subst_X hS, X_subst, sub_add_cancel]
-  rw [hsplit, map_add, MvPowerSeries.homogeneousComponent_of_lt_order_eq_zero
+  have hCs : (C (constantCoeff φ)).subst f =
+      MvPowerSeries.C (algebraMap R S (constantCoeff φ)) := by
+    rw [← coe_substAlgHom hS, ← MvPowerSeries.algebraMap_apply]
+    exact (substAlgHom hS).commutes (constantCoeff φ)
+  have hsplit : φ.subst f = (φ - X - C (constantCoeff φ)).subst f + f.subst X +
+      MvPowerSeries.C (algebraMap R S (constantCoeff φ)) := by
+    rw [subst_sub hS, subst_sub hS, subst_X hS, X_subst, hCs]
+    ring
+  have hC : MvPowerSeries.homogeneousComponent n
+      (MvPowerSeries.C (algebraMap R S (constantCoeff φ)) : MvPowerSeries Unit S) = 0 := by
+    refine MvPowerSeries.ext fun d ↦ ?_
+    simp only [MvPowerSeries.coeff_homogeneousComponent, MvPowerSeries.coeff_C, map_zero]
+    split_ifs with h₁ h₂
+    · subst h₂
+      simp at h₁
+      exact absurd h₁.symm hn₀
+    all_goals rfl
+  rw [hsplit, map_add, map_add, MvPowerSeries.homogeneousComponent_of_lt_order_eq_zero
     ((Nat.cast_lt.mpr (Nat.lt_succ_self _)).trans_le hrest), _root_.zero_add,
     homogeneousComponent_subst_left_eq_C_mul_X_pow hn constantCoeff_X coeff_one_X,
-    Algebra.algebraMap_self, RingHom.id_apply]
+    Algebra.algebraMap_self, RingHom.id_apply, hC, add_zero]
 
 end Algebra
 

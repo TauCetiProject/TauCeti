@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.Binomial
 public import Mathlib.RingTheory.Finiteness.Basic
 public import TauCeti.LinearAlgebra.Graded.LinearMap
 import TauCeti.Algebra.DirectSum.Internal
+import TauCeti.Algebra.Module.NatInt
 import TauCeti.Algebra.Module.Submodule.Finite
 
 /-!
@@ -719,12 +720,12 @@ namespace InternalGrading
 
 section KoszulTwistMul
 
-variable {R : Type u} {A : Type v} [CommRing R]
+variable {R : Type u} {A : Type v} [Ring R]
 
 /-- **The Koszul twist of a graded algebra is multiplicative**: degrees add under multiplication,
 so the signs `(-1) ^ (q |a|)` multiply. -/
 theorem koszulTwist_ofDecomposition_mul [NonUnitalNonAssocSemiring A] [Module R A]
-    [IsScalarTower R A A] [SMulCommClass R A A] {𝒜 : ℤ → Submodule R A} [SetLike.GradedMul 𝒜]
+    {𝒜 : ℤ → Submodule R A} [SetLike.GradedMul 𝒜]
     [DirectSum.Decomposition 𝒜] (q : ℤ) (a b : A) :
     (ofDecomposition 𝒜).koszulTwist q (a * b) =
       (ofDecomposition 𝒜).koszulTwist q a * (ofDecomposition 𝒜).koszulTwist q b := by
@@ -740,8 +741,8 @@ theorem koszulTwist_ofDecomposition_mul [NonUnitalNonAssocSemiring A] [Module R 
       obtain ⟨b, hbq⟩ := b
       rw [koszulTwist_ofDecomposition_apply_of_mem _ (SetLike.GradedMul.mul_mem hap hbq),
         koszulTwist_ofDecomposition_apply_of_mem _ hap,
-        koszulTwist_ofDecomposition_apply_of_mem _ hbq, smul_mul_smul_comm, mul_add,
-        Int.negOnePow_add, Units.val_mul, Int.cast_mul]
+        koszulTwist_ofDecomposition_apply_of_mem _ hbq, intUnits_smul_mul_smul, mul_add,
+        Int.negOnePow_add]
 
 /-- The Koszul twist of a graded algebra fixes the unit, which has degree zero. -/
 @[simp]
@@ -755,8 +756,7 @@ end KoszulTwistMul
 
 section QuadraticTwist
 
-variable {R : Type u} {M : Type v}
-  [CommRing R] [AddCommMonoid M] [Module R M]
+variable {R : Type u} {M : Type v} [Ring R] [AddCommMonoid M] [Module R M]
 
 /-- The quadratic sign exponent attached to degree `p`, namely the generalized binomial
 coefficient `p choose 2`. -/
@@ -814,8 +814,9 @@ Koszul-signed opposite multiplication. -/
 noncomputable def quadraticTwist (G : InternalGrading R M) : M →ₗ[R] M :=
   DirectSum.coeLinearMap (fun p => G.piece p) ∘ₗ
     DirectSum.toModule R ℤ (⨁ p : ℤ, G.piece p)
-      (fun p => (((quadraticExponent p).negOnePow : ℤ) : R) •
-        DirectSum.lof R ℤ (fun p => G.piece p) p) ∘ₗ
+      (fun p => DirectSum.lof R ℤ (fun p => G.piece p) p ∘ₗ
+        Module.End.smulLeft (((quadraticExponent p).negOnePow : ℤ) : R)
+          (Set.intCast_mem_center R _)) ∘ₗ
     (DirectSum.decomposeLinearEquiv (ℳ := G.piece)).toLinearMap
 
 /-- On a homogeneous element of degree `p`, the quadratic twist is multiplication by

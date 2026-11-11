@@ -227,8 +227,7 @@ theorem integral_norm_sub_sq_ball {R : ℝ} (x₀ : E) :
   have h := integral_norm_sub_rpow_ball (mu := mu) (s := 2) (by linarith) hR.le x₀
   simp_rw [norm_sub_rev x₀, Real.rpow_two] at h
   have hball : mu.real (ball x₀ R) = R ^ Module.finrank ℝ E * mu.real (ball (0 : E) 1) := by
-    rw [measureReal_def, Measure.addHaar_ball_of_pos mu _ hR, ENNReal.toReal_mul,
-      ENNReal.toReal_ofReal (by positivity), measureReal_def]
+    exact mu.addHaar_real_ball_of_pos x₀ hR
   rw [h, hball, Real.rpow_add hR, Real.rpow_two, Real.rpow_natCast]
   field_simp
 
@@ -286,6 +285,20 @@ theorem setLIntegral_closedBall_enorm_sub_rpow {s : ℝ} (hs : -(Module.finrank 
     with y hy
   have hxy : 0 < ‖x - y‖ := norm_pos_iff.mpr (sub_ne_zero.mpr fun h => hy (h ▸ rfl))
   rw [← ENNReal.ofReal_rpow_of_pos hxy, ofReal_norm]
+
+/-- On a bounded set `Ω` containing `x`, the Riesz kernel `‖x - y‖ ^ (1 - n)` has integral over
+`Ω` at most `n μ(B(0, 1)) diam Ω`, since `Ω` lies in the closed ball of radius `diam Ω` about
+`x`. -/
+theorem lintegral_enorm_sub_rpow_le_of_mem {Ω : Set E} {x : E}
+    (hb : Bornology.IsBounded Ω) (hx : x ∈ Ω) :
+    ∫⁻ y in Ω, ‖x - y‖ₑ ^ (1 - (Module.finrank ℝ E : ℝ)) ∂mu ≤
+      ENNReal.ofReal (Module.finrank ℝ E * mu.real (ball 0 1) * diam Ω) := by
+  calc
+    _ ≤ ∫⁻ y in closedBall x (diam Ω), ‖x - y‖ₑ ^ (1 - (Module.finrank ℝ E : ℝ)) ∂mu :=
+      lintegral_mono_set fun _ hy => mem_closedBall.2 (dist_le_diam_of_mem hb hy hx)
+    _ = _ := by
+      rw [setLIntegral_closedBall_enorm_sub_rpow (by linarith) diam_nonneg, add_sub_cancel,
+        Real.rpow_one, div_one]
 
 end TauCeti
 

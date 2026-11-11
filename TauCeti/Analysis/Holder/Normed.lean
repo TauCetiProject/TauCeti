@@ -30,12 +30,15 @@ parallel notion of Hölder continuity.
 * `TauCeti.HolderSpace.instCompleteSpace`: completeness when the codomain is complete.
 * `TauCeti.HolderSpace.holderWith`, `TauCeti.HolderSpace.holderWith_nnnorm`: the Hölder bound
   with the canonical seminorm, and with the Hölder-space norm.
-* `TauCeti.supportedHolderSubmodule`: the Hölder subspace supported in a prescribed set.
+* `TauCeti.supportedHolderSubmodule`: the Hölder subspace supported in a prescribed set, which is
+  closed (`TauCeti.isClosed_supportedHolderSubmodule`) and hence complete for a complete codomain.
 * `TauCeti.HolderSpace.constL`, `TauCeti.HolderSpace.evalCLM`, and
   `TauCeti.HolderSpace.toBoundedContinuousFunctionCLM`: continuous linear maps for constants,
   evaluation, and inclusion, with operator-norm bounds.
 * `TauCeti.HolderSpace.compLipschitzL`: precomposition with a `K`-Lipschitz map, of operator norm
   at most `max 1 (K ^ α)`.
+* `TauCeti.HolderSpace.compLeftL`: postcomposition with a continuous linear map `g`, of operator
+  norm at most `‖g‖`.
 
 ## References
 
@@ -292,6 +295,15 @@ theorem sum_apply {ι : Type*} (s : Finset ι) (f : ι → HolderSpace α X Y) (
 theorem norm_apply_le (f : HolderSpace α X Y) (x : X) : ‖f x‖ ≤ ‖f‖ := by
   simpa using (f.toBoundedContinuousFunction.norm_coe_le_norm x).trans
     f.norm_toBoundedContinuousFunction_le
+
+/-- A Hölder function bounded pointwise by `M` and `α`-Hölder with constant `K` has
+supremum-plus-Hölder norm at most `M + K`. -/
+theorem norm_le_of_norm_le_of_holderWith {f : HolderSpace α X Y} {M : ℝ} {K : ℝ≥0}
+    (hM0 : 0 ≤ M) (hM : ∀ x, ‖f x‖ ≤ M) (hK : HolderWith K α f) : ‖f‖ ≤ M + K := by
+  rw [norm_def]
+  gcongr
+  · exact (BoundedContinuousFunction.norm_le hM0).mpr fun x ↦ by simpa using hM x
+  · simpa using hK.nnholderNorm_le
 
 /-- Evaluation has operator norm at most one. -/
 theorem norm_evalCLM_le_one (x : X) : ‖evalCLM (α := α) (Y := Y) x‖ ≤ 1 :=
@@ -565,6 +577,51 @@ theorem norm_compLipschitzL_le_one (hg : LipschitzWith 1 g) :
 
 end compLipschitz
 
+section compLeft
+
+variable {Y' : Type*} [NormedAddCommGroup Y'] [NormedSpace ℝ Y']
+
+/-- Postcomposition with a continuous linear map `g`, as a continuous linear map between bounded
+Hölder spaces of the same exponent. -/
+def compLeftL (g : Y →L[ℝ] Y') : HolderSpace α X Y →L[ℝ] HolderSpace α X Y' :=
+  LinearMap.mkContinuous
+    { toFun f := ofBoundedContinuousFunction
+        (g.compLeftContinuousBounded X f.toBoundedContinuousFunction) (by
+          have h := (holderWith_one.2 g.lipschitzWith).comp f.memHolder.holderWith
+          rw [NNReal.coe_one, one_mul] at h
+          have e : ⇑(g.compLeftContinuousBounded X f.toBoundedContinuousFunction) =
+              ⇑g ∘ ⇑f.toBoundedContinuousFunction :=
+            funext fun x ↦ g.compLeftContinuousBounded_apply _ x
+          rw [e]
+          exact h.memHolder)
+      map_add' f₁ f₂ := by ext; simp [ofBoundedContinuousFunction_apply]
+      map_smul' c f := by ext; simp [ofBoundedContinuousFunction_apply] }
+    ‖g‖ fun f ↦ by
+      have hH : HolderWith (‖g‖₊ * nnHolderNorm α (f : X → Y)) α (fun x ↦ g (f x)) := by
+        have h := (holderWith_one.2 g.lipschitzWith).comp f.holderWith
+        rwa [NNReal.coe_one, NNReal.rpow_one, one_mul] at h
+      rw [LinearMap.coe_mk, AddHom.coe_mk]
+      refine (norm_le_of_norm_le_of_holderWith (M := ‖g‖ * ‖f.toBoundedContinuousFunction‖)
+        (K := ‖g‖₊ * nnHolderNorm α (f : X → Y)) (by positivity) (fun x ↦ ?_) ?_).trans ?_
+      · rw [ofBoundedContinuousFunction_apply, g.compLeftContinuousBounded_apply]
+        exact g.le_of_opNorm_le_of_le le_rfl (f.toBoundedContinuousFunction.norm_coe_le_norm x)
+      · convert hH using 1
+        exact funext fun x ↦ g.compLeftContinuousBounded_apply _ x
+      · rw [norm_def f, mul_add, coe_toBoundedContinuousFunction]
+        push_cast
+        exact le_rfl
+
+@[simp]
+theorem compLeftL_apply (g : Y →L[ℝ] Y') (f : HolderSpace α X Y) (x : X) :
+    compLeftL g f x = g (f x) := by
+  simp [compLeftL, ofBoundedContinuousFunction_apply]
+
+/-- Postcomposition with a continuous linear map `g` has operator norm at most `‖g‖`. -/
+theorem norm_compLeftL_le (g : Y →L[ℝ] Y') : ‖compLeftL (α := α) (X := X) g‖ ≤ ‖g‖ :=
+  LinearMap.mkContinuous_norm_le _ (norm_nonneg g) _
+
+end compLeft
+
 end HolderSpace
 
 /-- Bounded Hölder functions vanishing off a prescribed set, as a normed subspace of the
@@ -594,5 +651,21 @@ theorem support_subset_of_mem_supportedHolderSubmodule {X Y : Type*} [MetricSpac
   intro z hz
   by_contra h
   exact hz (hf z h)
+
+/-- The fixed-support Hölder subspace is closed, as an intersection of kernels of evaluations. -/
+theorem isClosed_supportedHolderSubmodule {X Y : Type*} [MetricSpace X] [NormedAddCommGroup Y]
+    [NormedSpace ℝ Y] (α : ℝ≥0) (s : Set X) :
+    IsClosed (supportedHolderSubmodule (Y := Y) α s : Set (HolderSpace α X Y)) := by
+  have h : (supportedHolderSubmodule (Y := Y) α s : Set (HolderSpace α X Y)) =
+      ⋂ z ∈ sᶜ, (HolderSpace.evalCLM (α := α) (Y := Y) z) ⁻¹' {0} := by
+    ext f
+    simp [HolderSpace.evalCLM_apply]
+  rw [h]
+  exact isClosed_biInter fun z _ ↦ isClosed_singleton.preimage (ContinuousLinearMap.continuous _)
+
+/-- The fixed-support Hölder subspace is a Banach space when the codomain is. -/
+instance {X Y : Type*} [MetricSpace X] [NormedAddCommGroup Y] [NormedSpace ℝ Y] [CompleteSpace Y]
+    (α : ℝ≥0) (s : Set X) : CompleteSpace (supportedHolderSubmodule (Y := Y) α s) :=
+  (isClosed_supportedHolderSubmodule α s).completeSpace_coe
 
 end TauCeti

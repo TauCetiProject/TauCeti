@@ -42,7 +42,9 @@ is the single-neck model of the same deformation.
   `TauCeti.Floer.eventually_cocompact_cappedPerturbation_eq_zero`), so it extends by zero across
   the three poles of the capped sphere.
 * It is smooth on `ℂ × M`, jointly with the parameters `a` and `L`
-  (`TauCeti.Floer.contMDiff_cappedPerturbation`); the family `K_R` is smooth in `R`
+  (`TauCeti.Floer.contMDiff_cappedPerturbation`), and so are its components in the real
+  coordinates of `ℂ` (`TauCeti.Floer.contMDiff_cappedPerturbation_apply`,
+  `TauCeti.Floer.contDiff_cappedPerturbation_apply`); the family `K_R` is smooth in `R`
   (`TauCeti.Floer.contMDiff_cappedComparisonPerturbation`).
 * On the part `±s > 0` of the end `q` it pulls back to `a β(σ - 1) β(L + 3 - σ) H_q(t) dt`
   (`TauCeti.Floer.cappedPerturbation_cylindricalEndLift_of_pos`). For `L ≥ 0` it is
@@ -239,7 +241,7 @@ support: it vanishes outside the truncation `S_{L + 3}`. -/
 theorem hasCompactSupport_cappedPerturbation_apply (a L : ℝ) (u : ℝ × ℝ → M) (v : ℂ) :
     HasCompactSupport fun z ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) (u z) v :=
   HasCompactSupport.of_support_subset_isCompact
-    (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation (L + 3)))
+    (isCompact_preimage_truncation (L + 3))
     fun z hz ↦ by_contra fun h ↦ hz <| by
       have h' : Complex.equivRealProdCLM.symm z ∉ truncation (L + 3) := h
       dsimp only
@@ -249,12 +251,8 @@ theorem hasCompactSupport_cappedPerturbation_apply (a L : ℝ) (u : ℝ × ℝ �
 /-- **The datum vanishes near the poles `0` and `1`.** -/
 theorem eventually_cappedPerturbation_eq_zero_of_eq_zero_or_eq_one {c : ℂ} (hc : c = 0 ∨ c = 1) :
     ∀ᶠ w in 𝓝 c, ∀ x : M, cappedPerturbation a L H w x = 0 := by
-  have hT : c ∉ truncation (L + 3) := by
-    intro h
-    obtain ⟨h₀, h₁, -⟩ := mem_truncation.1 h
-    rcases hc with rfl | rfl
-    exacts [h₀ rfl, h₁ rfl]
-  filter_upwards [(isCompact_truncation (L + 3)).isClosed.isOpen_compl.mem_nhds hT] with w hw x
+  filter_upwards [(isCompact_truncation (L + 3)).isClosed.isOpen_compl.mem_nhds
+    (notMem_truncation_of_eq_zero_or_eq_one hc _)] with w hw x
   exact cappedPerturbation_eq_zero_of_notMem_truncation hw x
 
 /-- **The datum vanishes near the pole `∞`.** -/
@@ -443,6 +441,25 @@ theorem contMDiff_cappedPerturbation_apply {n : ℕ∞} (hH : ∀ q, Periodic (H
   exact ((contMDiff_cappedPerturbation hH hHs).comp hι).clm_apply contMDiff_const
 
 end Smooth
+
+section SmoothNormed
+
+variable [NormedAddCommGroup M] [NormedSpace ℝ M]
+
+/-- The components of the capped perturbation are `C^n` jointly in the real coordinates of `ℂ`
+and the target point, for `C^n` Hamiltonians on a vector space. -/
+theorem contDiff_cappedPerturbation_apply {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ n (uncurry (H q))) (a L : ℝ) (v : ℂ) :
+    ContDiff ℝ n
+      (uncurry fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x v) := by
+  have hHs' (q : Puncture) : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, M)) 𝓘(ℝ, ℝ) n (uncurry (H q)) := by
+    have h := (hHs q).contMDiff
+    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
+    exact h
+  rw [← contMDiff_iff_contDiff, modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+  exact contMDiff_cappedPerturbation_apply hH hHs' a L v
+
+end SmoothNormed
 
 /-! ### The comparison family -/
 

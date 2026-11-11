@@ -160,6 +160,22 @@ theorem IsNondegenerate.orientationAt_volumeOrientation [FiniteDimensional ℝ E
     h.orientation_eq_orientationAt_volumeOrientation_iff hn, h.volumeForm_apply_reindex hb]
   exact one_pos
 
+/-- **Pullback of the symplectic volume form.** If a map `f` pulls the two-form `τ` back to `σ`,
+then it pulls the volume form `τⁿ / n!` back to `σⁿ / n!`. -/
+theorem mpullback_volumeForm {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+    [IsManifold J ∞ N] {τ : SmoothTwoForm J N} {f : M → N} (hf : mpullback I J f τ.1 = σ.1) :
+    mpullback I J f (τ.volumeForm n).1 = (σ.volumeForm n).1 := by
+  ext x v
+  have hx : σ.1 x = (τ.1 (f x)).compContinuousLinearMap (mfderiv I J f x) := by
+    ext w
+    rw [← hf, mpullback_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply,
+      Function.comp_def]
+  rw [mpullback_apply, volumeForm_apply, volumeForm_apply, hx,
+    ← ContinuousAlternatingMap.wedgePow_compContinuousLinearMap,
+    ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.smul_apply,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def]
+
 end SmoothTwoForm
 
 end TauCeti

@@ -56,6 +56,9 @@ Positivity is not considered: everything here is algebraic, over any commutative
 
 * `TauCeti.TypeAHeckeAlgebra.commute_productDensity_signedChecked`: the density commutes with
   the representation.
+* `TauCeti.TypeAHeckeAlgebra.signedChecked_comp_eq_of_forall_T`: a map of Hecke algebras and a
+  linear map of word spaces intertwining the representations on generators intertwine them
+  everywhere.
 * `TauCeti.TypeAHeckeAlgebra.atomicTrace_mul_comm`, `TauCeti.TypeAHeckeAlgebra.atomicTrace_one`
   and `TauCeti.TypeAHeckeAlgebra.atomicTrace_strandIncl`: the atomic trace is tracial, its value
   at `1`, and its behaviour under adding a strand.
@@ -126,6 +129,29 @@ theorem commute_productDensity_signedChecked (p : ι → R) (x : TypeAHeckeAlgeb
   rintro _ ⟨i, rfl⟩
   simpa using (commute_productDensity_signedCheckedR pos p (q : R) _ _).smul_right _
 
+/-- A map of Hecke algebras and a linear map of word spaces which intertwine the signed checked
+representations on every generator intertwine them on every element. -/
+theorem signedChecked_comp_eq_of_forall_T {m : ℕ}
+    (f : TypeAHeckeAlgebra R q n →ₐ[R] TypeAHeckeAlgebra R q m)
+    (L : ((Fin n → ι) →₀ R) →ₗ[R] (Fin m → ι) →₀ R)
+    (h : ∀ i, (signedChecked pos q (f (T q i))).comp L = L.comp (signedChecked pos q (T q i)))
+    (x : TypeAHeckeAlgebra R q n) :
+    (signedChecked pos q (f x)).comp L = L.comp (signedChecked pos q x) := by
+  have hx : x ∈ Algebra.adjoin R (Set.range (T (n := n) q)) := by
+    rw [adjoin_range_T]
+    trivial
+  induction hx using Algebra.adjoin_induction with
+  | mem y hy =>
+    obtain ⟨i, rfl⟩ := hy
+    exact h i
+  | algebraMap r =>
+    rw [AlgHom.commutes, AlgHom.commutes]
+    exact LinearMap.ext fun v ↦ by simp [Module.algebraMap_end_apply]
+  | add x y _ _ hx hy => simp only [map_add, LinearMap.add_comp, LinearMap.comp_add, hx, hy]
+  | mul x y _ _ hx hy =>
+    rw [map_mul, map_mul, map_mul, Module.End.mul_eq_comp, Module.End.mul_eq_comp,
+      LinearMap.comp_assoc, hy, ← LinearMap.comp_assoc, hx, LinearMap.comp_assoc]
+
 /-- The action of an element after adding an uncrossed last strand is its original action with
 the last letter held fixed. -/
 @[simp]
@@ -136,25 +162,13 @@ theorem signedChecked_strandIncl_mapDomain_snoc (x : TypeAHeckeAlgebra R q n) (a
   set L := lmapDomain R R (fun w : Fin n → ι ↦ (Fin.snoc w a : Fin (n + 1) → ι))
   suffices h : (signedChecked pos q (strandIncl R q n x)).comp L = L.comp (signedChecked pos q x)
     by simpa [L] using LinearMap.congr_fun h v
-  have hx : x ∈ Algebra.adjoin R (Set.range (T (n := n) q)) := by
-    rw [adjoin_range_T]
-    trivial
-  induction hx using Algebra.adjoin_induction with
-  | mem y hy =>
-    obtain ⟨i, rfl⟩ := hy
-    have hj : BraidGroup.strand (Fin.castLE (by omega) i : Fin (n + 1 - 1)) =
-        (BraidGroup.strand i).castSucc := Fin.ext (by simp)
-    have hk : BraidGroup.strandSucc (Fin.castLE (by omega) i : Fin (n + 1 - 1)) =
-        (BraidGroup.strandSucc i).castSucc := Fin.ext (by simp)
-    rw [strandIncl_T, signedChecked_T, signedChecked_T, LinearMap.smul_comp, LinearMap.comp_smul,
-      hj, hk, signedCheckedR_comp_lmapDomain_snoc]
-  | algebraMap r =>
-    ext w : 2
-    simp [L, Algebra.algebraMap_eq_smul_one]
-  | add x y _ _ hx hy => simp only [map_add, LinearMap.add_comp, LinearMap.comp_add, hx, hy]
-  | mul x y _ _ hx hy =>
-    rw [map_mul, map_mul, map_mul, Module.End.mul_eq_comp, Module.End.mul_eq_comp,
-      LinearMap.comp_assoc, hy, ← LinearMap.comp_assoc, hx, LinearMap.comp_assoc]
+  refine signedChecked_comp_eq_of_forall_T pos q _ L (fun i ↦ ?_) x
+  have hj : BraidGroup.strand (Fin.castLE (by omega) i : Fin (n + 1 - 1)) =
+      (BraidGroup.strand i).castSucc := Fin.ext (by simp)
+  have hk : BraidGroup.strandSucc (Fin.castLE (by omega) i : Fin (n + 1 - 1)) =
+      (BraidGroup.strandSucc i).castSucc := Fin.ext (by simp)
+  rw [strandIncl_T, signedChecked_T, signedChecked_T, LinearMap.smul_comp, LinearMap.comp_smul,
+    hj, hk, signedCheckedR_comp_lmapDomain_snoc]
 
 /-- Adding an uncrossed last strand preserves the coefficients within each block of words with a
 fixed last letter, and has zero coefficients between blocks with different last letters. -/

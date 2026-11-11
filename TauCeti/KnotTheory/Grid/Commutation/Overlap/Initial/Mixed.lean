@@ -68,8 +68,6 @@ theorem hasOneCommonSide_of_left_eq_right (E : GridPentagonRectangleDecompositio
     simp only [GridRectangleBetween.mem_sideColumns, toRectangleDecomposition_first_left,
       toRectangleDecomposition_first_right, toRectangleDecomposition_second_left,
       toRectangleDecomposition_second_right] at hc
-    have hfirst := E.pentagon.left_ne_right
-    have hsecond := E.rectangle.left_ne_right
     grind
 
 /-- A pentagon followed by a rectangle ending on the pentagon's initial side has exactly one
@@ -85,8 +83,6 @@ theorem hasOneCommonSide_of_right_eq_left (E : GridPentagonRectangleDecompositio
     simp only [GridRectangleBetween.mem_sideColumns, toRectangleDecomposition_first_left,
       toRectangleDecomposition_first_right, toRectangleDecomposition_second_left,
       toRectangleDecomposition_second_right] at hc
-    have hfirst := E.pentagon.left_ne_right
-    have hsecond := E.rectangle.left_ne_right
     grind
 
 /-- If the intermediate state of a two-step decomposition exchanges two rows of the source state,
@@ -391,7 +387,7 @@ private theorem mem_initialOverlapPartners_of_recut
   have hrecut : E.toRectangleDecomposition.IsRecut D.toRectangleDecomposition := by
     rw [hD]
     exact E.toRectangleDecomposition.isRecut_recut hone hfirst hsecond
-  have hback := hrecut.symm hone hfirst hsecond
+  have hback := hrecut.symm hfirst hsecond
   have hcounted : D ∈ G.rectanglePentagonDecompositions C x z :=
     G.mem_rectanglePentagonDecompositions_of_val_add_val_eq_pentagonRectangle C hE
       (D.isEmpty_rectangle_of_isRecut hrecut) (D.isEmpty_pentagon_of_isRecut hrecut)
@@ -399,8 +395,7 @@ private theorem mem_initialOverlapPartners_of_recut
         (by simpa only [D, GridRectanglePentagonDecomposition.pentagon,
           GridPentagonBetween.ofRightEq_bottom] using hcol))
   refine (G.mem_initialOverlapPartners C E).2 ⟨D, (G.mem_initialOverlapSources C D).2
-    ⟨hcounted, ?_, GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback
-      (E.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone)⟩, hback⟩
+    ⟨hcounted, ?_, GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback⟩, hback⟩
   simpa only [D, GridRectanglePentagonDecomposition.rectangle,
     GridRectanglePentagonDecomposition.pentagon, GridPentagonBetween.ofRightEq_left] using
     x.toPerm.injective hleft

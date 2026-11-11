@@ -150,6 +150,51 @@ private theorem norm_gelfond_auxiliary_le_sqrt (l β : ℂ) (c : ℝ) {m n q r :
   refine (norm_gelfond_auxiliary_le l β (fun a b ↦ (hη a b).trans hA) hw).trans ?_
   gcongr
 
+/-- The natural numbers `1, …, m`, viewed in `ℂ`, have norm at most `m`. -/
+private theorem norm_le_of_mem_image_Icc {m : ℕ} {x : ℂ}
+    (hx : x ∈ (Icc 1 m).image fun t : ℕ ↦ (t : ℂ)) : ‖x‖ ≤ m := by
+  obtain ⟨t, ht, rfl⟩ := mem_image.mp hx
+  rw [Complex.norm_natCast]
+  exact_mod_cast (mem_Icc.mp ht).2
+
+/-- The zeros `1, …, m` other than `t₀` contribute a product of factors
+`(|t₀ - x| / (3 m S - |x|)) ^ r`, each at most `S⁻¹ ^ r` when `1 ≤ S`. -/
+private theorem prod_erase_norm_sub_div_pow_le {m r t₀ : ℕ} {S : ℝ} (hS : 1 ≤ S)
+    (ht₀ : t₀ ∈ Icc 1 m) :
+    ∏ x ∈ ((Icc 1 m).image fun t : ℕ ↦ (t : ℂ)).erase (t₀ : ℂ),
+        (‖(t₀ : ℂ) - x‖ / (3 * m * S - ‖x‖)) ^ r ≤ S⁻¹ ^ (r * (m - 1)) := by
+  have hS₀ : 0 < S := by linarith
+  set s : Finset ℂ := (Icc 1 m).image fun t : ℕ ↦ (t : ℂ)
+  set T := 3 * m * S
+  have hm' : (1 : ℝ) ≤ m := by
+    exact_mod_cast (mem_Icc.mp ht₀).1.trans (mem_Icc.mp ht₀).2
+  have hsm (x : ℂ) (hx : x ∈ s) : ‖x‖ ≤ m := norm_le_of_mem_image_Icc hx
+  have hTx (x : ℂ) (hx : x ∈ s) : 2 * m * S ≤ T - ‖x‖ := by
+    have := hsm x hx
+    nlinarith
+  have ht₀s : (t₀ : ℂ) ∈ s := mem_image.mpr ⟨t₀, ht₀, rfl⟩
+  -- Each zero other than `t₀` contributes at most `S⁻¹ ^ r`.
+  have hnonneg (x : ℂ) (hx : x ∈ s.erase (t₀ : ℂ)) :
+      0 ≤ (‖(t₀ : ℂ) - x‖ / (T - ‖x‖)) ^ r := by
+    have := hTx x (mem_of_mem_erase hx)
+    exact pow_nonneg (div_nonneg (norm_nonneg _) (by nlinarith)) r
+  have hfactor (x : ℂ) (hx : x ∈ s.erase (t₀ : ℂ)) :
+      (‖(t₀ : ℂ) - x‖ / (T - ‖x‖)) ^ r ≤ S⁻¹ ^ r := by
+    have hTx := hTx x (mem_of_mem_erase hx)
+    have hx' := hsm x (mem_of_mem_erase hx)
+    have ht₀' := hsm _ ht₀s
+    refine pow_le_pow_left₀ (div_nonneg (norm_nonneg _) (by nlinarith)) ?_ r
+    rw [div_le_iff₀ (by nlinarith), inv_mul_eq_div, le_div_iff₀ hS₀]
+    calc ‖(t₀ : ℂ) - x‖ * S ≤ 2 * m * S := by
+          gcongr
+          linarith [norm_sub_le (t₀ : ℂ) x]
+      _ ≤ T - ‖x‖ := hTx
+  have hcard : (s.erase (t₀ : ℂ)).card = m - 1 := by
+    rw [card_erase_of_mem ht₀s, card_image_of_injective _ Nat.cast_injective, Nat.card_Icc,
+      Nat.add_sub_cancel]
+  refine (prod_le_prod₀ hnonneg hfactor).trans_eq ?_
+  rw [prod_const, hcard, ← pow_mul]
+
 /-- Schwarz's lemma at the zeros `1, …, m`: if `f` is entire, bounded by `M` on the circle of
 radius `3 m √r`, and vanishes to order `r ≥ 1` at each of the points `1, …, m`, then
 `‖f⁽ʳ⁾(t₀)‖ √r ^ (m r) ≤ r! M` for every `1 ≤ t₀ ≤ m`. The zero `t₀` contributes the factor
@@ -174,49 +219,22 @@ private theorem norm_iteratedDeriv_mul_sqrt_pow_le {f : ℂ → ℂ} (hf : ∀ z
     rintro _ ⟨t, ht, rfl⟩
     exact (natCast_le_analyticOrderAt_iff_iteratedDeriv_eq_zero (hf _)).mpr
       fun k hk ↦ hzero k hk t ht
-  have hsm (x : ℂ) (hx : x ∈ s) : ‖x‖ ≤ m := by
-    obtain ⟨t, ht, rfl⟩ := mem_image.mp hx
-    rw [Complex.norm_natCast]
-    exact_mod_cast (mem_Icc.mp ht).2
-  have hTx (x : ℂ) (hx : x ∈ s) : 2 * m * S ≤ T - ‖x‖ := by
-    have := hsm x hx
-    nlinarith
   have hs : (s : Set ℂ) ⊆ ball 0 T := fun x hx ↦ by
     rw [mem_ball, dist_zero_right]
-    exact (hsm x hx).trans_lt (by nlinarith)
+    exact (norm_le_of_mem_image_Icc hx).trans_lt (by nlinarith)
   have ht₀s : (t₀ : ℂ) ∈ s := mem_image.mpr ⟨t₀, ht₀, rfl⟩
   have hmain := norm_iteratedDeriv_le_mul_prod_div_pow (fun z _ ↦ hf z) hk hs hM ht₀s
   simp only [sub_zero] at hmain
   -- Each zero other than `t₀` contributes at most `S⁻¹ ^ r`.
-  have hnonneg (x : ℂ) (hx : x ∈ s.erase (t₀ : ℂ)) :
-      0 ≤ (‖(t₀ : ℂ) - x‖ / (T - ‖x‖)) ^ r := by
-    have := hTx x (mem_of_mem_erase hx)
-    exact pow_nonneg (div_nonneg (norm_nonneg _) (by nlinarith)) r
-  have hfactor (x : ℂ) (hx : x ∈ s.erase (t₀ : ℂ)) :
-      (‖(t₀ : ℂ) - x‖ / (T - ‖x‖)) ^ r ≤ S⁻¹ ^ r := by
-    have hTx := hTx x (mem_of_mem_erase hx)
-    have hx' := hsm x (mem_of_mem_erase hx)
-    have ht₀' := hsm _ ht₀s
-    refine pow_le_pow_left₀ (div_nonneg (norm_nonneg _) (by nlinarith)) ?_ r
-    rw [div_le_iff₀ (by nlinarith), inv_mul_eq_div, le_div_iff₀ hS₀]
-    calc ‖(t₀ : ℂ) - x‖ * S ≤ 2 * m * S := by
-          gcongr
-          linarith [norm_sub_le (t₀ : ℂ) x]
-      _ ≤ T - ‖x‖ := hTx
-  have hcard : (s.erase (t₀ : ℂ)).card = m - 1 := by
-    rw [card_erase_of_mem ht₀s, card_image_of_injective _ Nat.cast_injective, Nat.card_Icc,
-      Nat.add_sub_cancel]
-  have hprod : ∏ x ∈ s.erase (t₀ : ℂ), (‖(t₀ : ℂ) - x‖ / (T - ‖x‖)) ^ r ≤
-      S⁻¹ ^ (r * (m - 1)) := by
-    refine (prod_le_prod₀ hnonneg hfactor).trans_eq ?_
-    rw [prod_const, hcard, ← pow_mul]
+  have hprod := prod_erase_norm_sub_div_pow_le (m := m) (r := r) (t₀ := t₀) hS ht₀
   have hTt₀ : S ≤ T - ‖(t₀ : ℂ)‖ := by
-    have := hTx _ ht₀s
+    have := norm_le_of_mem_image_Icc ht₀s
     nlinarith
   have hM₀ : 0 ≤ M := (norm_nonneg _).trans (hM T (by
     rw [mem_sphere_zero_iff_norm, Complex.norm_real, Real.norm_of_nonneg (by positivity)]))
   have h₁ : ‖iteratedDeriv r f t₀‖ ≤ r.factorial * M / S ^ r * S⁻¹ ^ (r * (m - 1)) := by
-    refine hmain.trans (mul_le_mul ?_ hprod (prod_nonneg hnonneg) (by positivity))
+    refine hmain.trans ((mul_le_mul_of_nonneg_left hprod
+      (div_nonneg (by positivity) (pow_nonneg (by linarith) _))).trans ?_)
     gcongr
   obtain ⟨m', rfl⟩ := Nat.exists_eq_add_of_le' hm
   simp only [Nat.add_sub_cancel] at h₁

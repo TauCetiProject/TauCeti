@@ -7,13 +7,22 @@ module
 
 public import TauCeti.Topology.PathSpace.Moore.Comparison.FundamentalGroup
 public import TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv
+import TauCeti.Topology.PathSpace.Moore.Between.Equiv
 
 /-!
 # The homotopy-group shift for Moore loops
 
 Normalizing a Moore loop to the unit interval induces the usual loop-space shift on higher
-homotopy groups. This identifies `πₖ(ΩᴹX, 1)` with `πₖ₊₁(X, x)` for positive `k`, and
-shows that the double Moore loop space is path connected when `π₂(X, x)` vanishes.
+homotopy groups. This identifies `πₖ(ΩᴹX, 1)` with `πₖ₊₁(X, x)` for positive `k`, identifies
+the path components of the double Moore loop space with the elements of `π₂(X, x)`
+(`TauCeti.MooreLoopSpace.zerothHomotopyDoubleEquiv`), and shows that the double Moore loop space
+is path connected when `π₂(X, x)` vanishes.
+
+The unit is not special: concatenation in front with a Moore loop `γ` is a homotopy equivalence
+of the Moore loop space carrying the unit to `γ`, so the positive homotopy groups of `ΩᴹX` at
+`γ` vanish exactly when the corresponding higher homotopy groups of `X` do
+(`TauCeti.MooreLoopSpace.subsingleton_homotopyGroup_succ_iff`). In particular every path component
+of the Moore loop space of an aspherical space is weakly contractible.
 
 The comparison uses the specified Moore/fixed-interval homotopy equivalence. The basepoint
 is the Moore loop of duration zero, which normalizes to the constant fixed-interval loop.
@@ -28,7 +37,7 @@ noncomputable section
 
 namespace TauCeti.MooreLoopSpace
 
-open scoped Topology Topology.Homotopy
+open scoped Topology Topology.Homotopy ContinuousMap
 open HomotopyGroup
 
 variable {X : Type*} [TopologicalSpace X]
@@ -54,6 +63,29 @@ theorem homotopyGroupMulEquiv_apply (x : X) (n : ℕ)
   simp only [homotopyGroupMulEquiv, MulEquiv.trans_apply, mulEquivOfHomotopyEquiv_apply,
     homeomorphMulEquivOfEq_apply, HomotopyGroup.map_comp_apply]
   congr 1
+
+/-- **The path components of the double Moore loop space are the second homotopy group.** -/
+def zerothHomotopyDoubleEquiv (x : X) :
+    ZerothHomotopy (MooreLoopSpace (MooreLoopSpace X x) 1) ≃ π_ 2 X x :=
+  (zerothHomotopyEquivFundamentalGroup (1 : MooreLoopSpace X x)).trans
+    (pi1MulEquivFundamentalGroup.symm.trans (homotopyGroupMulEquiv x 0)).toEquiv
+
+/-- The component of a double Moore loop `γ` is the image of its class in the fundamental group
+of `ΩᴹX` under the Moore loop-space shift. -/
+@[simp]
+theorem zerothHomotopyDoubleEquiv_mk (x : X) (γ : MooreLoopSpace (MooreLoopSpace X x) 1) :
+    zerothHomotopyDoubleEquiv x (.mk γ) =
+      homotopyGroupMulEquiv x 0 (pi1MulEquivFundamentalGroup.symm (fundamentalGroupHom 1 γ)) :=
+  congrArg (pi1MulEquivFundamentalGroup.symm.trans (homotopyGroupMulEquiv x 0))
+    (zerothHomotopyEquivFundamentalGroup_mk γ)
+
+/-- The component of the constant double Moore loop is the identity of `π₂(X, x)`. -/
+-- `high` priority: `simp` does not reduce the right-hand side of the general `_mk` lemma to `1`.
+@[simp high]
+theorem zerothHomotopyDoubleEquiv_mk_one (x : X) :
+    zerothHomotopyDoubleEquiv x (.mk 1) = 1 := by
+  rw [zerothHomotopyDoubleEquiv_mk, (fundamentalGroupHom (1 : MooreLoopSpace X x)).map_one]
+  exact (pi1MulEquivFundamentalGroup.symm.trans (homotopyGroupMulEquiv x 0)).map_one
 
 /-- The Moore loop space `MooreLoopSpace X x` is path connected if and only if `π_ 1 X x` is
 trivial. -/
@@ -99,5 +131,20 @@ theorem forall_subsingleton_homotopyGroup_double_iff (x : X) :
       ∀ n : ℕ, Subsingleton (π_ (n + 2) X x) :=
   (forall_subsingleton_homotopyGroup_iff (1 : MooreLoopSpace X x)).trans
     (forall_congr' fun n ↦ (homotopyGroupMulEquiv x n).toEquiv.subsingleton_congr)
+
+/-- At every Moore loop `γ`, not only at the unit, the homotopy group `π_ (n + 1)` of the Moore
+loop space is trivial exactly when `π_ (n + 2) X x` is. Concatenation in front with `γ` is a
+homotopy equivalence of the Moore loop space, with homotopy inverse concatenation in front with the
+reversal of `γ`, and it carries the unit to `γ`. -/
+theorem subsingleton_homotopyGroup_succ_iff {x : X} (γ : MooreLoopSpace X x) (n : ℕ) :
+    Subsingleton (π_ (n + 1) (MooreLoopSpace X x) γ) ↔ Subsingleton (π_ (n + 2) X x) := by
+  let E : MooreLoopSpace X x ≃ₕ MooreLoopSpace X x :=
+    (MoorePathBetween.loopPrependHomotopyEquiv (MoorePathBetween.loopHomeomorph x γ)).trans
+      (MoorePathBetween.loopHomeomorph x).symm.toHomotopyEquiv
+  have hE : E.toFun 1 = γ := by
+    simp [E, ContinuousMap.HomotopyEquiv.trans_apply, -Homeomorph.symm_toHomotopyEquiv,
+      Homeomorph.coe_toHomotopyEquiv, MoorePathBetween.rightAct_one]
+  rw [← (homotopyGroupMulEquiv x n).toEquiv.subsingleton_congr, ← hE]
+  exact (mulEquivOfHomotopyEquiv E 1).toEquiv.subsingleton_congr.symm
 
 end TauCeti.MooreLoopSpace

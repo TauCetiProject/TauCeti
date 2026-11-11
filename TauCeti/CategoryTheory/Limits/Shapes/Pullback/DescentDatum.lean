@@ -50,7 +50,8 @@ construct.
   (`isPullback_pullbackAlongObj`, `isPullback_pullbackAlongActionComparison`).
 * `TauCeti.DescentDatum.baseChange p X`: the canonical descent datum on the base change
   `X ×_S S'` of an object `X` over `S`, acting by `s · (x, s₀) = (x, s)`, with the morphism
-  `baseChangeHom p f : Hom (baseChange p X) (baseChange p Y)` induced by `f : X ⟶ Y` over `S`.
+  `baseChangeHom p f : Hom (baseChange p X) (baseChange p Y)` induced by `f : X ⟶ Y` over `S`, a
+  pullback of `f` (`isPullback_baseChangeHom`).
 * `TauCeti.DescentDatum.transportArrow e D`: the descent datum relative to `q` obtained from a
   descent datum `D` relative to `p` along an isomorphism of arrows `e : Arrow.mk p ≅ Arrow.mk q`,
   functorial on morphisms, inverse to transport along `e.symm` (`transportArrowSymmHom`), and
@@ -567,6 +568,15 @@ variable (p) in
 theorem baseChangeHom_comp {X Y Z : Over S} (f : X ⟶ Y) (g : Y ⟶ Z) :
     baseChangeHom p (f ≫ g) = (baseChangeHom p g).comp (baseChangeHom p f) :=
   Hom.ext ((Over.pullback p).map_comp f g)
+
+variable (p) in
+/-- The base change `X ×_S S' ⟶ Y ×_S S'` of a morphism `f : X ⟶ Y` over `S` is the pullback of
+`f` along the projection `Y ×_S S' ⟶ Y`. -/
+theorem isPullback_baseChangeHom {X Y : Over S} (f : X ⟶ Y) :
+    IsPullback (baseChangeHom p f).hom.left (pullback.fst X.hom p) (pullback.fst Y.hom p)
+      f.left :=
+  IsPullback.of_right (by simpa using (IsPullback.of_hasPullback X.hom p).flip) (by simp)
+    (IsPullback.of_hasPullback Y.hom p).flip
 
 section ArrowIso
 

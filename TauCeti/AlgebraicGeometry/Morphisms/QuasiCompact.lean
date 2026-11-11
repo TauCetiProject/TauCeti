@@ -6,16 +6,48 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
+public import Mathlib.AlgebraicGeometry.Morphisms.QuasiSeparated
 
 /-!
-# Neighbourhoods with quasi-compact preimage
+# Quasi-compact morphisms
+
+A morphism is quasi-compact if its restrictions to the members of a finite open cover of its
+source are quasi-compact. This allows quasi-compact morphisms to be glued along open subschemes.
+Finiteness is essential: an infinite union of quasi-compact pieces need not be quasi-compact.
 
 Every point of the target of a quasi-compact morphism of schemes has an open neighbourhood whose
 preimage is quasi-compact (`Scheme.Hom.exists_isOpen_mem_isCompact_preimage`): an affine open
 neighbourhood will do.
+
+A morphism of `S`-schemes from a scheme with quasi-compact structure map to one with
+quasi-separated structure map is quasi-compact
+(`AlgebraicGeometry.quasiCompact_left_of_quasiCompact_hom`).
 -/
 
 public section
+
+open CategoryTheory
+
+namespace AlgebraicGeometry
+
+universe u
+
+/-- A morphism is quasi-compact if its restrictions to a finite open cover of the source are
+quasi-compact. -/
+theorem QuasiCompact.of_openCover {X Y : Scheme.{u}} (f : X ⟶ Y) (𝒰 : X.OpenCover)
+    [Finite 𝒰.I₀] (H : ∀ i, QuasiCompact (𝒰.f i ≫ f)) : QuasiCompact f := by
+  constructor
+  intro V hV hVc
+  have he : f ⁻¹' V = ⋃ i, (𝒰.f i) '' ((𝒰.f i ≫ f) ⁻¹' V) := by
+    simp only [Scheme.Hom.comp_base, TopCat.coe_comp, Set.preimage_comp,
+      Set.image_preimage_eq_inter_range]
+    rw [← Set.inter_iUnion, 𝒰.iUnion_range, Set.inter_univ]
+  rw [he]
+  exact isCompact_iUnion fun i ↦ by
+    have := H i
+    exact (QuasiCompact.isCompact_preimage (f := 𝒰.f i ≫ f) V hV hVc).image (𝒰.f i).continuous
+
+end AlgebraicGeometry
 
 namespace AlgebraicGeometry.Scheme.Hom
 
@@ -32,3 +64,18 @@ lemma exists_isOpen_mem_isCompact_preimage (y : Y) :
   exact ⟨U, U.isOpen, hyU, QuasiCompact.isCompact_preimage (f := f) _ U.isOpen hU.isCompact⟩
 
 end AlgebraicGeometry.Scheme.Hom
+
+namespace AlgebraicGeometry
+
+open CategoryTheory
+
+/-- A morphism of `S`-schemes from a scheme with quasi-compact structure map to one with
+quasi-separated structure map has quasi-compact underlying map. -/
+theorem quasiCompact_left_of_quasiCompact_hom {S : Scheme.{u}} {T U : Over S} (f : T ⟶ U)
+    [QuasiCompact T.hom] [QuasiSeparated U.hom] : QuasiCompact f.left := by
+  have : QuasiCompact (f.left ≫ U.hom) := by
+    rw [Over.w f]
+    infer_instance
+  exact QuasiCompact.of_comp f.left U.hom
+
+end AlgebraicGeometry

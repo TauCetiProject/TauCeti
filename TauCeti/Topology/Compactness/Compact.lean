@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Compactness.Compact
 public import Mathlib.Topology.Compactness.SigmaCompact
 public import Mathlib.Topology.Connected.Basic
+public import Mathlib.Topology.DiscreteSubset
 public import Mathlib.Topology.Separation.Hausdorff
 import TauCeti.Topology.Separation.InvFunOn
 
@@ -39,6 +40,17 @@ theorem _root_.IsCompact.inter_of_forall_exists {U S : Set X} (hU : IsCompact U)
       (inter_subset_inter_left S (iUnion₂_subset fun x hx ↦ hWU x (htU hx)))
   rw [heq]
   exact htf.isCompact_biUnion fun x hx ↦ hWc x (htU hx)
+
+/-- **Connected components of a compact set are compact.** The connected component of a compact
+set `K` at a point is closed in `K`, hence compact; it is empty at a point outside `K`. -/
+protected theorem _root_.IsCompact.connectedComponentIn {K : Set X} (hK : IsCompact K)
+    (x : X) : IsCompact (connectedComponentIn K x) := by
+  by_cases hx : x ∈ K
+  · have : CompactSpace K := isCompact_iff_compactSpace.1 hK
+    rw [connectedComponentIn_eq_image hx]
+    exact isClosed_connectedComponent.isCompact.image continuous_subtype_val
+  · rw [connectedComponentIn_eq_empty hx]
+    exact isCompact_empty
 
 /-- **A continuous injection on a compact set maps components onto components.** If `f` is
 continuous and injective on a compact set `K` with values in a Hausdorff space, and `A ⊆ K`, then
@@ -112,6 +124,31 @@ theorem isCompact_inter_preimage_comp_prodMk_left {Y Z : Type*} [TopologicalSpac
   rw [h]
   exact ((hHp K hK hKU).inter_right (isClosed_singleton.preimage continuous_snd)).image
     continuous_fst
+
+/-- A compact set contains no infinite subset all of whose subsets are closed: such a subset would
+be closed, hence compact, and discrete. -/
+theorem _root_.IsCompact.finite_of_forall_isClosed {K S : Set X}
+    (hK : IsCompact K) (hSK : S ⊆ K) (hS : ∀ T ⊆ S, IsClosed T) : S.Finite := by
+  have hd : IsDiscrete S :=
+    isDiscrete_iff_forall_mem_exists_isClosed.2 fun T hT ↦
+      ⟨T, hS T hT, Set.inter_eq_left.2 hT⟩
+  exact (hK.of_isClosed_subset (hS S subset_rfl) hSK).finite hd
+
+section TubeLemma
+
+variable {α E P : Type*} [TopologicalSpace α] [CompactSpace α] [TopologicalSpace E]
+  [TopologicalSpace P] {ι : α → P} {W : Set (E × P)}
+
+/-- If `W` is open and `ι` is continuous on a compact space, the set of parameters `x` with
+`{x} × ι(α) ⊆ W` is open. -/
+theorem isOpen_forall_prodMk_mem (hι : Continuous ι) (hW : IsOpen W) :
+    IsOpen {x : E | ∀ y, (x, ι y) ∈ W} :=
+  isOpen_iff_eventually.2 fun _ hx₀ ↦
+    ((isCompact_range hι).eventually_forall_of_forall_eventually (P := fun x p ↦ (x, p) ∈ W)
+      (Set.forall_mem_range.2 fun y ↦ hW.mem_nhds (hx₀ y))).mono
+        fun _ h y ↦ h _ (Set.mem_range_self y)
+
+end TubeLemma
 
 end TauCeti
 

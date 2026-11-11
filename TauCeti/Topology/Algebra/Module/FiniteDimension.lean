@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.Module.Alternating.Basic
 public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
+import TauCeti.LinearAlgebra.Multilinear.Basis
 
 /-!
 # Finite-dimensional topological vector spaces
@@ -129,13 +130,8 @@ theorem continuous_of_finiteDimensional (f : MultilinearMap 𝕜 M N) : Continuo
   set b : ∀ i, Module.Basis (Fin (Module.finrank 𝕜 (M i))) 𝕜 (M i) :=
     fun i ↦ Module.finBasis 𝕜 (M i) with _
   have key : ⇑f = fun m : ∀ i, M i ↦ ∑ r : ∀ i, Fin (Module.finrank 𝕜 (M i)),
-      (∏ i, (b i).repr (m i) (r i)) • f fun i ↦ b i (r i) := by
-    funext m
-    have hm : f m = f fun i ↦ ∑ j, (b i).repr (m i) j • b i j := by
-      congr 1 with i
-      exact ((b i).sum_repr (m i)).symm
-    rw [hm, f.map_sum]
-    exact Finset.sum_congr rfl fun r _ ↦ f.map_smul_univ _ _
+      (∏ i, (b i).repr (m i) (r i)) • f fun i ↦ b i (r i) :=
+    funext (f.apply_eq_sum_prod_repr_smul b)
   rw [key]
   refine continuous_finsetSum _ fun r _ ↦ Continuous.smul ?_ continuous_const
   refine continuous_finsetProd _ fun i _ ↦ ?_
@@ -226,7 +222,15 @@ namespace Module.Basis
 
 variable {𝕜 E ι : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [AddCommGroup E]
   [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E] [T2Space E]
-  [Fintype ι]
+
+/-- Forgetting continuity in the coordinate equivalence recovers the algebraic coordinate
+equivalence. -/
+@[simp] theorem equivFunL_toLinearEquiv [Finite ι] (v : Basis ι 𝕜 E) :
+    v.equivFunL.toLinearEquiv = v.equivFun := by
+  ext x i
+  simp [equivFun_apply]
+
+variable [Fintype ι]
 
 /-- The inverse of the continuous coordinate equivalence of a finite basis `v` sends a coordinate
 vector `x` to the linear combination `∑ i, x i • v i`. -/
@@ -302,7 +306,7 @@ namespace ContinuousAffineMap
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E]
-  [Module 𝕜 E] [ContinuousSMul 𝕜 E] [T2Space E] [FiniteDimensional 𝕜 E]
+  [Module 𝕜 E] [ContinuousSMul 𝕜 E] [FiniteDimensional 𝕜 E]
   [AddCommGroup F] [TopologicalSpace F] [IsTopologicalAddGroup F]
   [Module 𝕜 F] [ContinuousSMul 𝕜 F] [T2Space F]
 
@@ -311,6 +315,7 @@ the translate of its linear part, which is an injective linear map, by `f 0`. Th
 companion of `LinearMap.isClosedEmbedding_of_injective`. -/
 theorem isClosedEmbedding_of_injective {f : E →ᴬ[𝕜] F} (hf : Function.Injective f) :
     Topology.IsClosedEmbedding f := by
+  have : T2Space E := T2Space.of_injective_continuous hf f.cont
   have hker : LinearMap.ker (f.contLinear : E →ₗ[𝕜] F) = ⊥ :=
     LinearMap.ker_eq_bot.2 (f.toAffineMap.linear_injective_iff.2 hf)
   have hf' : ⇑f = (· + f 0) ∘ f.contLinear := by

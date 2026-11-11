@@ -235,7 +235,7 @@ private theorem apply_subword_mem_piece
     F (subword R x 0 n) ∈
       𝒜.grading.piece ((∑ i ∈ Finset.range n, if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0) + q + 1) := by
   have hsub := subword_mem_gradedPiece x (fun i ↦ if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0)
-    (fun i ↦ by simpa only [Fin.is_lt, dite_true, Fin.eta] using hx i) 0 n (by omega)
+    (fun i ↦ by simpa only [Fin.is_lt, dite_true, Fin.eta] using hx i) 0 n
   simpa [InternalGrading.shift_piece] using hF.map_mem hsub
 
 /-- The Hochschild differential of a normalized cochain vanishes on a homogeneous word containing
@@ -284,7 +284,6 @@ private theorem hochschildDifferential_of_tprod_eq_zero (h : 𝒜.StrictUnit e)
     simp only [hS] at hsign
     rw [hsign, zero_smul, smul_zero, sub_zero]
   · -- A unit in the last position: the collapse `m₂(F(⋯), e)` cancels that of `[a, e]`.
-    obtain hjn' : j.1 = n := by omega
     have hW : splice R x 0 (n + 1) (j.1 - 1) 2 (x ⟨j.1 - 1, by omega⟩) = subword R x 0 n :=
       splice_two_pred_eq_subword R hn (by omega) x
     -- The value of `F` on the first `n` letters has degree `S n + q` after suspension.

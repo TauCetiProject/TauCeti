@@ -6,10 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
+public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
+import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 -- Access the constructor body to supply its missing public computation rule, and the body of
 -- `IsLocalDiffeomorphAt` to construct and destructure its witness.
@@ -42,17 +45,21 @@ serve as partial diffeomorphisms in constructions of local submanifolds.
 
 ## Main results
 
-* `TauCeti.coe_diffeomorphOfBijective`: the associated global diffeomorphism
+* `IsLocalDiffeomorph.coe_diffeomorphOfBijective`: the associated global diffeomorphism
   has the original forward map.
 * `OpenPartialHomeomorph.toPartialDiffeomorphOfMemMaximalAtlas`: extend any maximal-atlas chart
   for a boundaryless model to a partial diffeomorphism onto the model vector space.
 * `TauCeti.extChartPartialDiffeomorph`: an extended chart restricted to the interior of its target,
   as a partial diffeomorphism onto an open subset of the model space.
+* `TauCeti.exists_partialDiffeomorph_comp_extChartAt`: a diffeomorphism of the model space composed
+  with an extended chart restricted to an open set, as a partial diffeomorphism with its derivative.
 * `TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph`: an open partial homeomorphism between
   model spaces which is `C^n` in both directions, as a partial diffeomorphism.
 * `TauCeti.isLocalDiffeomorphAt_of_mfderiv_eq`: the inverse function theorem for manifolds.
 * `TauCeti.isLocalDiffeomorphAt_iff_exists_mfderiv_eq`: the resulting characterisation of
   `IsLocalDiffeomorphAt` at an interior point, for a map which is `C^n` on an open set.
+* `TauCeti.isLocalDiffeomorphAt_of_injective_mfderiv`: in equal finite dimensions, an injective
+  differential suffices.
 * `TauCeti.isLocalDiffeomorphAt_of_eqOn`: a map agreeing with a partial diffeomorphism on its
   source is a local diffeomorphism there.
 * `OpenPartialHomeomorph.isLocalDiffeomorphAt_of_mem_maximalAtlas`: a maximal-atlas chart is a
@@ -66,11 +73,13 @@ serve as partial diffeomorphisms in constructions of local submanifolds.
   maximal-atlas chart is a maximal-atlas chart.
 * `IsLocalDiffeomorphAt.exists_mem_maximalAtlas_eventuallyEq`: a maximal-atlas chart pulls back
   along a local diffeomorphism to a maximal-atlas chart.
-* `IsLocalDiffeomorphAt.exists_mem_maximalAtlas_extend_eventuallyEq`: between boundaryless
-  manifolds, the pulled back chart can be chosen so that coordinate expressions of `g ∘ f` agree
-  with those of `g`.
+* `IsLocalDiffeomorphAt.exists_mem_maximalAtlas_extend_eventuallyEq`: the pulled back chart can
+  be chosen so that coordinate expressions of `g ∘ f` agree with those of `g`.
 * `IsLocalDiffeomorphAt.eventually`: being a local diffeomorphism at a point is an open
   condition.
+* `IsLocalDiffeomorphAt.exists_mem_nhds_injOn`: a local diffeomorphism is locally injective.
+* `Set.InjOn.exists_isOpen_superset_isLocalDiffeomorphOn`: a local diffeomorphism injective on a
+  compact set is injective, and a local diffeomorphism, on an open neighbourhood of it.
 * `IsLocalDiffeomorphAt.of_comp_right`: a map whose composite with a local diffeomorphism is a local
   diffeomorphism is itself one.
 * `IsLocalDiffeomorphAt.isLocalDiffeomorphAt_comp_iff`: the resulting characterisation of local
@@ -149,6 +158,13 @@ theorem toPartialDiffeomorphOfMemMaximalAtlas_symm_apply (v : E) :
   change (e.extend I).symm v = _
   exact congrFun (e.extend_coe_symm (I := I)) v
 
+/-- The inverse partial diffeomorphism of the extended maximal-atlas chart is the inverse of the
+extended chart. -/
+theorem coe_toPartialDiffeomorphOfMemMaximalAtlas_symm :
+    ⇑(e.toPartialDiffeomorphOfMemMaximalAtlas he).symm = (e.extend I).symm :=
+  -- The constructor is opaque; its inverse field is the inverse of the extended chart.
+  (rfl)
+
 end OpenPartialHomeomorph
 
 namespace TauCeti
@@ -165,26 +181,36 @@ variable {𝕂 : Type*} [NontriviallyNormedField 𝕂]
 /-- The diffeomorphism associated to a bijective local diffeomorphism has the given forward map.
 This computation rule lets callers use the constructor without unfolding its choice of inverse. -/
 @[simp]
-theorem coe_diffeomorphOfBijective
+theorem _root_.IsLocalDiffeomorph.coe_diffeomorphOfBijective
     {I : ModelWithCorners 𝕂 E H} {J : ModelWithCorners 𝕂 F G} {n : WithTop ℕ∞}
-    {f : M → N} {hf : _root_.IsLocalDiffeomorph I J n f} {hf' : Function.Bijective f} :
+    {f : M → N} (hf : IsLocalDiffeomorph I J n f) (hf' : Function.Bijective f) :
     ⇑(hf.diffeomorphOfBijective hf') = f := by
   rfl
 
-/-- Precomposing a differentiable map with a local diffeomorphism does not change the
-image of its differential. -/
+/-- Precomposing a map with a local diffeomorphism does not change the image of its differential.
+No differentiability of `g` is assumed: when `g` is not differentiable at `φ x`, neither is
+`g ∘ φ` at `x`, and both differentials are zero. -/
 theorem _root_.IsLocalDiffeomorphAt.range_mfderiv_comp
     {I : ModelWithCorners 𝕂 E H} {J : ModelWithCorners 𝕂 F G} {n : WithTop ℕ∞}
     {E' H' P : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕂 E']
     [TopologicalSpace H'] {K : ModelWithCorners 𝕂 E' H'}
     [TopologicalSpace P] [ChartedSpace H' P]
     {φ : M → N} {g : N → P} {x : M}
-    (hφ : IsLocalDiffeomorphAt I J n φ x) (hn : n ≠ 0)
-    (hg : MDifferentiableAt J K g (φ x)) :
+    (hφ : IsLocalDiffeomorphAt I J n φ x) (hn : n ≠ 0) :
     (mfderiv I K (g ∘ φ) x).range = (mfderiv J K g (φ x)).range := by
-  rw [mfderiv_comp x hg (hφ.mdifferentiableAt hn), ContinuousLinearMap.toLinearMap_comp]
-  exact LinearMap.range_comp_of_range_eq_top _
-    (LinearMap.range_eq_top.2 (hφ.isInvertible_mfderiv hn).surjective)
+  by_cases hg : MDifferentiableAt J K g (φ x)
+  · rw [mfderiv_comp x hg (hφ.mdifferentiableAt hn), ContinuousLinearMap.toLinearMap_comp]
+    exact LinearMap.range_comp_of_range_eq_top _
+      (LinearMap.range_eq_top.2 (hφ.isInvertible_mfderiv hn).surjective)
+  · have hgφ : ¬MDifferentiableAt I K (g ∘ φ) x := fun h => hg <| by
+      have hx : hφ.localInverse (φ x) = x := hφ.localInverse_left_inv hφ.localInverse_mem_target
+      have hinv : MDifferentiableAt J I hφ.localInverse (φ x) :=
+        (hφ.localInverse_isLocalDiffeomorphAt).mdifferentiableAt hn
+      refine (MDifferentiableAt.comp (φ x) (by rwa [hx]) hinv).congr_of_eventuallyEq ?_
+      filter_upwards [hφ.localInverse.open_source.mem_nhds hφ.localInverse_mem_source] with y hy
+      simp [hφ.localInverse_right_inv hy]
+    rw [mfderiv_zero_of_not_mdifferentiableAt hg, mfderiv_zero_of_not_mdifferentiableAt hgφ]
+    simp
 
 section Charts
 
@@ -267,6 +293,39 @@ theorem extChartPartialDiffeomorph_symm_apply (x : M) (y : E) :
     (extChartPartialDiffeomorph I n x).toPartialEquiv.symm y = (extChartAt I x).symm y := by
   rw [extChartPartialDiffeomorph_toPartialEquiv,
     PartialEquiv.IsImage.restr_symm_apply]
+
+/-- A diffeomorphism of the model space, composed with the extended chart at `x₀` restricted to the
+preimage of an open set `V₀` inside the interior of the chart target, is a `C^n` partial
+diffeomorphism with source the restricted chart source, and its differential at a point of the
+source is the differential of the diffeomorphism after that of the extended chart. -/
+theorem exists_partialDiffeomorph_comp_extChartAt (x₀ : M) {V₀ : Set E} (hV₀ : IsOpen V₀)
+    (hV₀W : V₀ ⊆ interior (extChartAt I x₀).target) (hn : 1 ≤ n)
+    (Φ : E ≃ₘ^n⟮𝓘(𝕂, E), 𝓘(𝕂, E)⟯ E) :
+    ∃ chart : PartialDiffeomorph I 𝓘(𝕂, E) M E n,
+      chart.source = (extChartAt I x₀).source ∩ extChartAt I x₀ ⁻¹' V₀ ∧
+        (∀ y, chart y = Φ (extChartAt I x₀ y)) ∧
+        ∀ x ∈ chart.source, ∀ u : TangentSpace I x, mvfderiv I chart x u =
+          fderiv 𝕂 Φ (extChartAt I x₀ x) (mvfderiv I (extChartAt I x₀) x u) := by
+  let e₀ := extChartPartialDiffeomorph I n x₀
+  let S : Set M := (extChartAt I x₀).source ∩ extChartAt I x₀ ⁻¹' V₀
+  have hS_open : IsOpen S := isOpen_extChartAt_preimage' (I := I) x₀ hV₀
+  have hS_sub : S ⊆ e₀.source := by
+    rw [extChartPartialDiffeomorph_source]
+    exact inter_subset_inter_right _ (preimage_mono hV₀W)
+  let chart : PartialDiffeomorph I 𝓘(𝕂, E) M E n :=
+    (e₀.restrOpen S hS_open).trans Φ.toPartialDiffeomorph
+  have hchart_src : chart.source = S := by
+    simp [chart, inter_eq_right.2 hS_sub]
+  have hchart_coe (y : M) : chart y = Φ (extChartAt I x₀ y) := by
+    simp [chart, e₀]
+  refine ⟨chart, hchart_src, hchart_coe, fun x hx u ↦ ?_⟩
+  have hx_chart : x ∈ (chartAt H x₀).source := by
+    simpa only [extChartAt_source] using (hchart_src ▸ hx : x ∈ S).1
+  have : IsManifold I 1 M := IsManifold.of_le hn
+  have hcomp : ⇑chart = ⇑Φ ∘ ⇑(extChartAt I x₀) := funext hchart_coe
+  rw [hcomp,
+    mvfderiv_comp_apply_of_differentiableAt (Φ.differentiable (zero_lt_one.trans_le hn).ne' _)
+      (mdifferentiableAt_extChartAt hx_chart)]
 
 end Charts
 
@@ -369,12 +428,12 @@ theorem _root_.IsLocalDiffeomorphAt.exists_mem_maximalAtlas_eventuallyEq {N' : T
   filter_upwards [Φ.open_source.mem_nhds hxΦ] with y hy
   simp [hfΦ hy]
 
-/-- Between boundaryless manifolds, a chart `c` of the maximal `C^n` atlas of `N'` at `f x` pulls
-back along a `C^n` local diffeomorphism `f` at `x` to a chart `e` of the maximal `C^n` atlas of `M`
-at `x` with the same extended coordinates at `x`, in which the coordinate expression of every
-`g ∘ f` is the coordinate expression of `g` in `c`. -/
+/-- A chart `c` of the maximal `C^n` atlas of `N'` at `f x` pulls back along a `C^n` local
+diffeomorphism `f` at `x` to a chart `e` of the maximal `C^n` atlas of `M` at `x` with the same
+extended coordinates at `x`, in which the coordinate expression of every `g ∘ f` is the coordinate
+expression of `g` in `c`. -/
 theorem _root_.IsLocalDiffeomorphAt.exists_mem_maximalAtlas_extend_eventuallyEq {N' Y : Type*}
-    [TopologicalSpace N'] [ChartedSpace H N'] [IsManifold I n M] [I.Boundaryless] {f : M → N'}
+    [TopologicalSpace N'] [ChartedSpace H N'] [IsManifold I n M] {f : M → N'}
     {x : M} (hf : IsLocalDiffeomorphAt I I n f x) {c : OpenPartialHomeomorph N' H}
     (hc : c ∈ IsManifold.maximalAtlas I n N') (hfx : f x ∈ c.source) :
     ∃ e ∈ IsManifold.maximalAtlas I n M, x ∈ e.source ∧ e.extend I x = c.extend I (f x) ∧
@@ -387,10 +446,19 @@ theorem _root_.IsLocalDiffeomorphAt.exists_mem_maximalAtlas_extend_eventuallyEq 
       with y hy hye hyc
     exact ⟨hye, hyc, by simp only [OpenPartialHomeomorph.extend_coe, Function.comp_apply, hy]⟩
   refine ⟨e, he, hx, hext.self_of_nhds.2.2, fun g ↦ ?_⟩
-  rw [← e.map_extend_nhds_of_boundaryless hx, Filter.EventuallyEq, Filter.eventually_map]
-  filter_upwards [hext] with y ⟨hye, hyc, hy⟩
-  simp only [Function.comp_apply, e.extend_left_inv hye]
-  rw [hy, c.extend_left_inv hyc]
+  -- In the model space `H`, the coordinate expression of `g ∘ f` in `e` is that of `g` in `c`.
+  have hH : ∀ᶠ h in 𝓝 (e x), (g ∘ f) (e.symm h) = g (c.symm h) := by
+    rw [← e.map_nhds_eq hx, Filter.eventually_map]
+    filter_upwards [hext] with y ⟨hye, hyc, hy⟩
+    have hy' : e y = c (f y) :=
+      I.injective (by simpa only [OpenPartialHomeomorph.extend_coe, Function.comp_apply] using hy)
+    rw [Function.comp_apply, e.left_inv hye, hy', c.left_inv hyc]
+  -- Transport this along the continuous map `I.symm`, which is how the extended charts invert.
+  have hI : Filter.Tendsto I.symm (𝓝 (e.extend I x)) (𝓝 (e x)) := by
+    simpa only [OpenPartialHomeomorph.extend_coe, Function.comp_apply, I.left_inv] using
+      I.continuous_symm.continuousAt (x := e.extend I x) |>.tendsto
+  filter_upwards [hI.eventually hH] with w hw
+  simpa only [OpenPartialHomeomorph.extend_coe_symm, Function.comp_apply] using hw
 
 /-- **Being a local diffeomorphism at a point is an open condition.** A `C^n` local diffeomorphism
 at `x` is a `C^n` local diffeomorphism at every nearby point. -/
@@ -401,6 +469,27 @@ theorem _root_.IsLocalDiffeomorphAt.eventually {f : M → N} {x : M}
   obtain ⟨Φ, hxΦ, hfΦ⟩ := hf
   filter_upwards [Φ.open_source.mem_nhds hxΦ] with y hy
   exact isLocalDiffeomorphAt_of_eqOn hy hfΦ
+
+/-- **A local diffeomorphism is locally injective.** A `C^n` local diffeomorphism at `x` is
+injective on a neighbourhood of `x`, where its local inverse is a left inverse. -/
+theorem _root_.IsLocalDiffeomorphAt.exists_mem_nhds_injOn {f : M → N} {x : M}
+    (hf : IsLocalDiffeomorphAt I J n f x) : ∃ t ∈ 𝓝 x, InjOn f t :=
+  ⟨_, hf.localInverse_eventuallyEq_left, fun _ ha _ hb hab ↦
+    ha.symm.trans ((congrArg hf.localInverse hab).trans hb)⟩
+
+/-- **A local diffeomorphism injective on a compact set is injective near it.** A map into a
+Hausdorff manifold which is injective on a compact set `K` and a `C^n` local diffeomorphism at every
+point of `K` is injective, and a `C^n` local diffeomorphism, on an open neighbourhood of `K`. -/
+theorem _root_.Set.InjOn.exists_isOpen_superset_isLocalDiffeomorphOn [T2Space N] {f : M → N}
+    {K : Set M} (hinj : InjOn f K) (hK : IsCompact K)
+    (hf : ∀ x ∈ K, IsLocalDiffeomorphAt I J n f x) :
+    ∃ U, IsOpen U ∧ K ⊆ U ∧ InjOn f U ∧ IsLocalDiffeomorphOn I J n f U := by
+  obtain ⟨t, ht, hinj⟩ := hinj.exists_mem_nhdsSet hK
+    (fun x hx ↦ (hf x hx).contMDiffAt.continuousAt) fun x hx ↦ (hf x hx).exists_mem_nhds_injOn
+  have hloc : ∀ᶠ y in 𝓝ˢ K, IsLocalDiffeomorphAt I J n f y :=
+    eventually_nhdsSet_iff_forall.mpr fun x hx ↦ (hf x hx).eventually
+  obtain ⟨U, hUo, hKU, hU⟩ := mem_nhdsSet_iff_exists.mp (Filter.inter_mem ht hloc)
+  exact ⟨U, hUo, hKU, hinj.mono fun y hy ↦ (hU hy).1, fun y ↦ (hU y.2).2⟩
 
 /-- **Cancelling a local diffeomorphism on the right.** If `e` is a `C^n` local diffeomorphism at
 `x` and `f ∘ e` is a `C^n` local diffeomorphism at `x`, then `f` is a `C^n` local diffeomorphism at
@@ -559,6 +648,22 @@ theorem isLocalDiffeomorphAt_iff_exists_mfderiv_eq (hf : ContMDiffOn I J n f s) 
   refine ⟨fun h => ⟨h.mfderivToContinuousLinearEquiv hn0, rfl⟩, ?_⟩
   rintro ⟨e, he⟩
   exact isLocalDiffeomorphAt_of_mfderiv_eq hf hs hx hIx hn he
+
+/-- **The inverse function theorem for manifolds**, injective form: between manifolds of the same
+finite dimension, a map which is `C^n` on an open set, with `1 ≤ n`, and has injective differential
+at an interior point `x` of that set is a `C^n` local diffeomorphism at `x`. -/
+theorem isLocalDiffeomorphAt_of_injective_mfderiv [FiniteDimensional 𝕂 E]
+    [FiniteDimensional 𝕂 F] (hf : ContMDiffOn I J n f s) (hs : IsOpen s) (hx : x ∈ s)
+    (hIx : I.IsInteriorPoint x) (hn : 1 ≤ n) (hinj : Function.Injective (mfderiv I J f x))
+    (hdim : Module.finrank 𝕂 E = Module.finrank 𝕂 F) :
+    IsLocalDiffeomorphAt I J n f x := by
+  -- The tangent spaces are the model spaces by definition.
+  have : FiniteDimensional 𝕂 (TangentSpace I x) := inferInstanceAs (FiniteDimensional 𝕂 E)
+  have : FiniteDimensional 𝕂 (TangentSpace J (f x)) := inferInstanceAs (FiniteDimensional 𝕂 F)
+  exact isLocalDiffeomorphAt_of_mfderiv_eq hf hs hx hIx hn
+    (e := (LinearMap.linearEquivOfInjective (mfderiv I J f x).toLinearMap hinj
+      hdim).toContinuousLinearEquiv)
+    (ContinuousLinearMap.ext fun w ↦ LinearMap.linearEquivOfInjective_apply hinj hdim w)
 
 variable [BoundarylessManifold I M]
 

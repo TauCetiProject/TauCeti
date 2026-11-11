@@ -12,6 +12,7 @@ public import Mathlib.Topology.LocallyClosed
 public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
 import TauCeti.Topology.Homeomorph.SetCongr
+import TauCeti.Topology.OpenPartialHomeomorph.Box
 
 /-!
 # Locally flat embeddings
@@ -57,6 +58,8 @@ locally flat embedded discs are the objects used to define topological sliceness
 * `TauCeti.IsSliceChart`: an ambient chart flattening a set onto a model slice.
 * `TauCeti.IsSliceChart.subtypeChart`: the chart on a flattened set induced by a zero-slice chart,
   with values in the tangential model.
+* `TauCeti.linearSliceChart`, `TauCeti.linearSliceChartedSpace`: the charts and the charted space
+  on a subset induced by a family of zero-slice charts, one around each point of the subset.
 * `TauCeti.IsSliceEmbedding`: an embedding flattened onto a given model slice by ambient charts.
 * `TauCeti.IsLocallyFlat`: a locally flat embedding, the case of the standard coordinate slice.
 
@@ -64,6 +67,8 @@ locally flat embedded discs are the objects used to define topological sliceness
 
 * `TauCeti.isSliceChart_iff`: a chart is a slice chart iff, on its source, membership in the set is
   read off as membership of the coordinates in the slice.
+* `TauCeti.IsSliceChart.exists_mem_nhds_disjoint`: a point of the source of a slice chart for a
+  closed slice, outside the flattened set, has a neighbourhood missing the set.
 * `TauCeti.IsSliceChart.exists_target_eq`: a slice chart can be shrunk to have any prescribed open
   subset of its target as its target.
 * `TauCeti.isLocallyFlat_iff_isSliceEmbedding`, `TauCeti.isLocallyFlat_iff` and
@@ -205,6 +210,15 @@ coordinates in the model slice. This is the pointwise form of `TauCeti.isSliceCh
 shape proofs use it, as an elimination rule at a single point. -/
 theorem mem_iff (h : IsSliceChart φ S A) {y : M} (hy : y ∈ φ.source) : y ∈ A ↔ φ y ∈ S :=
   isSliceChart_iff.1 h y hy
+
+/-- A point of the source of a slice chart that lies outside the flattened set has a neighbourhood
+missing the set: the neighbourhood is where the chart misses the closed model slice. -/
+theorem exists_mem_nhds_disjoint (h : IsSliceChart φ S A) (hS : IsClosed S) {y : M}
+    (hy : y ∈ φ.source) (hyA : y ∉ A) : ∃ U ∈ 𝓝 y, Disjoint U A := by
+  have hU : IsOpen (φ.source ∩ φ ⁻¹' Sᶜ) :=
+    φ.continuousOn.isOpen_inter_preimage φ.open_source hS.isOpen_compl
+  have hyU : y ∈ φ.source ∩ φ ⁻¹' Sᶜ := ⟨hy, fun hyS => hyA ((h.mem_iff hy).2 hyS)⟩
+  exact ⟨_, hU.mem_nhds hyU, Set.disjoint_left.2 fun z hz hzA => hz.2 ((h.mem_iff hz.1).1 hzA)⟩
 
 section ZeroSlice
 
@@ -348,6 +362,82 @@ theorem prod {ψ : OpenPartialHomeomorph N F'} {S' : Set F'} {B : Set N}
   rw [OpenPartialHomeomorph.prod_apply, mem_prod, mem_prod, h.mem_iff hp.1, h'.mem_iff hp.2]
 
 end IsSliceChart
+
+section ChartedSpace
+
+variable {G : Type*} [TopologicalSpace G] [Zero G] {s : Set M}
+  (e : s → OpenPartialHomeomorph M (F × G))
+  (he : ∀ x, IsSliceChart (e x) ((univ : Set F) ×ˢ ({0} : Set G)) s)
+
+/-- The induced chart at a point of the subset. The base point supplies the fallback value
+of the partial inverse outside the chart target, so no nonemptiness assumption is needed. -/
+noncomputable def linearSliceChart (x : s) : OpenPartialHomeomorph s F :=
+  letI : Nonempty s := ⟨x⟩
+  (he x).subtypeChart
+
+/-- The induced chart source is the part of the subset in the ambient source. -/
+@[simp]
+theorem linearSliceChart_source (x : s) :
+    (linearSliceChart e he x).source = Subtype.val ⁻¹' (e x).source := by
+  let : Nonempty s := ⟨x⟩
+  unfold linearSliceChart
+  apply IsSliceChart.subtypeChart_source
+
+/-- The induced chart target is the zero-slice part of the ambient target. -/
+@[simp]
+theorem linearSliceChart_target (x : s) :
+    (linearSliceChart e he x).target = (fun v : F ↦ (v, (0 : G))) ⁻¹' (e x).target := by
+  let : Nonempty s := ⟨x⟩
+  unfold linearSliceChart
+  apply IsSliceChart.subtypeChart_target
+
+/-- The induced chart reads the tangential coordinate of the ambient chart. -/
+@[simp]
+theorem linearSliceChart_apply (x y : s) :
+    linearSliceChart e he x y = (e x y).1 := by
+  let : Nonempty s := ⟨x⟩
+  unfold linearSliceChart
+  apply IsSliceChart.subtypeChart_apply
+
+/-- On its source, the induced chart recovers the ambient coordinates by reinserting the zero
+transverse coordinate. -/
+theorem linearSliceChart_mk_zero_eq (x : s) {y : s} (hy : y ∈ (linearSliceChart e he x).source) :
+    (linearSliceChart e he x y, (0 : G)) = e x y := by
+  let : Nonempty s := ⟨x⟩
+  unfold linearSliceChart at hy ⊢
+  exact (he x).subtypeChart_mk_zero_eq hy
+
+/-- On the target, the induced inverse is the ambient inverse evaluated on the zero slice. -/
+@[simp]
+theorem coe_linearSliceChart_symm_apply (x : s) {v : F}
+    (hv : (v, (0 : G)) ∈ (e x).target) :
+    ((linearSliceChart e he x).symm v : M) = (e x).symm (v, 0) := by
+  let : Nonempty s := ⟨x⟩
+  unfold linearSliceChart
+  apply IsSliceChart.coe_subtypeChart_symm_apply
+  exact hv
+
+/-- A covering family of ambient linear-slice charts gives a charted-space structure on the
+subset, with its original topology and atlas exactly the induced charts. -/
+@[instance_reducible]
+noncomputable def linearSliceChartedSpace (hcover : ∀ x : s, (x : M) ∈ (e x).source) :
+    ChartedSpace F s where
+  atlas := range (linearSliceChart e he)
+  chartAt := linearSliceChart e he
+  mem_chart_source x := by rw [linearSliceChart_source]; exact hcover x
+  chart_mem_atlas := mem_range_self
+
+/-- The atlas consists exactly of the induced linear-slice charts. -/
+@[simp]
+theorem linearSliceChartedSpace_atlas (hcover : ∀ x : s, (x : M) ∈ (e x).source) :
+    @atlas F _ s _ (linearSliceChartedSpace e he hcover) = range (linearSliceChart e he) := (rfl)
+
+/-- The chosen chart at a point is its induced linear-slice chart. -/
+@[simp]
+theorem linearSliceChartedSpace_chartAt (hcover : ∀ x : s, (x : M) ∈ (e x).source) (x : s) :
+    @chartAt F _ s _ (linearSliceChartedSpace e he hcover) x = linearSliceChart e he x := (rfl)
+
+end ChartedSpace
 
 /-- A set flattened near each of its points onto the single point `0` of the model is discrete:
 a chart is injective on its source, so it sees no other point of the set. -/
@@ -938,56 +1028,46 @@ section ProductNeighborhood
 
 variable {G : Type*} [SeminormedAddCommGroup G] [NormedSpace ℝ G]
 
-/-- A slice chart whose target is a box `u ×ˢ ball 0 r` exhibits its source as a product of the
-part of the domain lying under it with the complementary model, the map being the zero slice.
-This is the geometric content of the local product statement; the general case reduces to it by
+omit [NormedSpace ℝ G] in
+/-- The zero slice of a slice chart whose target is a box `u ×ˢ ball 0 r` has, as image of `u`
+under the chart inverse, the part of `A` lying in the chart source. -/
+private theorem range_symm_zero_eq_inter {ψ : OpenPartialHomeomorph M (F × G)} {A : Set M}
+    {u : Set F} {r : ℝ} (hr : 0 < r) (hψt : ψ.target = u ×ˢ ball (0 : G) r)
+    (hψ : IsSliceChart ψ ((univ : Set F) ×ˢ ({0} : Set G)) A) :
+    range (fun v : u => ψ.symm ((v : F), (0 : G))) = ψ.source ∩ A := by
+  ext m
+  constructor
+  · rintro ⟨v, rfl⟩
+    have hmem : ((v : F), (0 : G)) ∈ ψ.target := by
+      rw [hψt]; exact ⟨v.2, mem_ball_self hr⟩
+    exact ⟨ψ.map_target hmem, hψ.symm_mk_zero_mem hmem⟩
+  · rintro ⟨hms, hmr⟩
+    have h1 : (ψ m).1 ∈ u := by
+      have hmt := ψ.map_source hms
+      rw [hψt] at hmt
+      exact hmt.1
+    refine ⟨⟨(ψ m).1, h1⟩, ?_⟩
+    simpa only [hψ.mk_fst_zero_eq hms hmr] using ψ.left_inv hms
+
+/-- For a topological embedding `f` and a slice chart `ψ` for `range f` whose target is a box
+`u ×ˢ ball 0 r`, the product of the part of the domain lying under the chart with the complementary
+model embeds openly into the ambient space, by a map that restricts to `f` on the zero slice. This
+is the geometric content of the local product statement; the general case reduces to it by
 shrinking the chart. -/
 private theorem exists_isOpenEmbedding_prod_of_target_eq_prod {ψ : OpenPartialHomeomorph M (F × G)}
-    {u : Set F} {r : ℝ} (hu : IsOpen u) (hr : 0 < r) (hψt : ψ.target = u ×ˢ ball (0 : G) r)
+    {u : Set F} {r : ℝ} (hr : 0 < r) (hψt : ψ.target = u ×ˢ ball (0 : G) r)
     (hψ : IsSliceChart ψ ((univ : Set F) ×ˢ ({0} : Set G)) (range f)) (hf : IsEmbedding f) :
     ∃ b : (f ⁻¹' ψ.source) × G → M,
       IsOpenEmbedding b ∧ ∀ y : (f ⁻¹' ψ.source), b (y, 0) = f y := by
-  -- Read the normal factor of the box as the whole complementary model.
-  set ρ := OpenPartialHomeomorph.univBall (0 : G) r with hρ
-  have hρs : ρ.source = univ := OpenPartialHomeomorph.univBall_source _ _
-  have hρr : range ρ = ball (0 : G) r := by
-    rw [← image_univ, ← hρs, OpenPartialHomeomorph.image_source_eq_target, hρ,
-      OpenPartialHomeomorph.univBall_target _ hr]
-  have hρ0 : ρ 0 = 0 := OpenPartialHomeomorph.univBall_apply_zero ..
-  -- `σ` presents the source of the chart as a product.
-  set j : u × G → F × G := Prod.map ((↑) : u → F) ρ with hj
-  have hje : IsOpenEmbedding j :=
-    hu.isOpenEmbedding_subtypeVal.prodMap (ρ.isOpenEmbedding hρs)
-  have hjr : range j = ψ.target := by
-    rw [hj, range_prodMap, Subtype.range_coe, hρr, hψt]
-  set σ : u × G → M := ψ.symm ∘ j with hσ
-  have hσe : IsOpenEmbedding σ := ψ.symm.isOpenEmbedding_comp hje hjr.subset
+  obtain ⟨σ, hσe, hσ0⟩ := OpenPartialHomeomorph.exists_isOpenEmbedding_prod_symm_zero hr hψt
   -- The zero slice of `σ` and the restriction of `f` are two embeddings with the same image.
   set e₁ : (f ⁻¹' ψ.source) → M := f ∘ ((↑) : (f ⁻¹' ψ.source) → N) with he₁
   set e₂ : u → M := fun v => σ (v, 0) with he₂
-  have he₂' : ∀ v : u, e₂ v = ψ.symm ((v : F), (0 : G)) := fun v => by
-    simp [he₂, hσ, hj, hρ0]
   have hr₁ : range e₁ = ψ.source ∩ range f := by
     rw [he₁, range_comp, Subtype.range_coe, image_preimage_eq_inter_range]
   have hr₂ : range e₂ = ψ.source ∩ range f := by
-    ext m
-    constructor
-    · rintro ⟨v, rfl⟩
-      have hmem : ((v : F), (0 : G)) ∈ ψ.target := by
-        rw [hψt]; exact ⟨v.2, mem_ball_self hr⟩
-      have hs : ψ.symm ((v : F), (0 : G)) ∈ ψ.source := ψ.map_target hmem
-      rw [he₂' v]
-      exact ⟨hs, (hψ.mem_iff hs).2 (by rw [ψ.right_inv hmem]; exact ⟨mem_univ _, rfl⟩)⟩
-    · rintro ⟨hms, hmr⟩
-      have h2 : (ψ m).2 = 0 := ((hψ.mem_iff hms).1 hmr).2
-      have h1 : (ψ m).1 ∈ u := by
-        have hmt := ψ.map_source hms
-        rw [hψt] at hmt
-        exact hmt.1
-      refine ⟨⟨(ψ m).1, h1⟩, ?_⟩
-      have hpair : (((ψ m).1 : F), (0 : G)) = ψ m := by rw [← h2]
-      rw [he₂' ⟨(ψ m).1, h1⟩, hpair]
-      exact ψ.left_inv hms
+    rw [← range_symm_zero_eq_inter hr hψt hψ]
+    exact congrArg range (funext hσ0)
   -- Two embeddings with the same image have homeomorphic domains, over the ambient space.
   have hb₁ : IsEmbedding e₁ := hf.comp IsEmbedding.subtypeVal
   have hb₂ : IsEmbedding e₂ := hσe.isEmbedding.comp (isEmbedding_prodMkLeft 0)
@@ -1027,7 +1107,7 @@ theorem IsLocallyFlat.exists_isOpenEmbedding_prod (h : IsLocallyFlat F G f) (x :
     rw [hψs]
     exact ⟨hφx, by rw [mem_preimage, hfx]; exact ⟨hxu, mem_ball_self hr⟩⟩
   exact ⟨f ⁻¹' ψ.source, ψ.open_source.preimage h.continuous, hψx,
-    exists_isOpenEmbedding_prod_of_target_eq_prod hu hr hψt hψ h.isEmbedding⟩
+    exists_isOpenEmbedding_prod_of_target_eq_prod hr hψt hψ h.isEmbedding⟩
 
 end ProductNeighborhood
 

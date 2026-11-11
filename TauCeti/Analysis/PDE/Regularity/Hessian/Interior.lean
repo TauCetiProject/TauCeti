@@ -155,12 +155,10 @@ private theorem exists_lpNorm_iteratedGradient_ball_le_of_lt (hn : 0 < n) (hp : 
     exact mul_le_of_le_one_left (norm_nonneg _) (hζabs x)
   have hng : ‖Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 v)‖ =
       lpNorm (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)) p (volume.restrict (ball x₀ t)) := by
-    rw [Lp.norm_def, hv, Wkp.lowerOrder_restrictL,
-      eLpNorm_congr_ae (Wkp.iteratedGradient_restrictL_ae hU 0 (Wkp.lowerOrder 1 u)),
-      toReal_eLpNorm]
-    rfl
+    rw [hv, Wkp.lowerOrder_restrictL]
+    exact Lp.norm_eq_lpNorm_of_ae_eq (Wkp.iteratedGradient_restrictL_ae hU 0 (Wkp.lowerOrder 1 u))
   have hnv : ‖Wkp.value 2 v‖ ≤ lpNorm (Wkp.value 2 u) p (volume.restrict (ball x₀ R)) := by
-    rw [Lp.norm_def, eLpNorm_congr_ae (Wkp.value_restrictL_ae hU 2 u), toReal_eLpNorm]
+    rw [Lp.norm_eq_lpNorm_of_ae_eq (Wkp.value_restrictL_ae hU 2 u)]
     exact lpNorm_mono_measure
       ((Lp.memLp (Wkp.value 2 u)).mono_measure (Measure.restrict_mono hR le_rfl))
       (Measure.restrict_mono hUR le_rfl)
@@ -386,7 +384,7 @@ theorem exists_mul_lpNorm_iteratedGradient_ball_le_of_sum_mul_inner_add_inner_ad
     fun {s t} hs hst htR {η} hη => by
       simpa only [finrank_euclideanSpace_fin] using
         hstepB u hs hst ((ball_subset_ball htR).trans hR) hη
-  have hΦ := sq_mul_le_of_forall_le (k := k) (h := h) (y := y) hR0 hz0
+  have hΦ := sq_mul_le_of_forall_le (k := k) (h := h) (y := y) hR0
     (by positivity : 0 ≤ C / lam * F) (by linarith : 1 ≤ K + Q) (by linarith : 0 ≤ cA + 1) hcB
     (by positivity : (0 : ℝ) ≤ n ^ 2) (fun _ => lpNorm_nonneg) (fun _ => lpNorm_nonneg)
     (fun σ hσ => hmono (Wkp.iteratedGradient 1 u) hσ.2.le) (fun σ hσ => hmono G hσ.2.le)

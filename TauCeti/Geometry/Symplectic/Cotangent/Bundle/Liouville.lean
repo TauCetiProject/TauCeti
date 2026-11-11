@@ -49,6 +49,8 @@ and nothing here assumes finite dimension.
 * `TauCeti.CotangentBundle.symplecticForm`: the canonical symplectic form `ω = -dλ`.
 * `TauCeti.CotangentBundle.inChartAt_symplecticForm_apply`: its chart formula.
 * `TauCeti.CotangentBundle.isSymplectic_symplecticForm`: `ω` is symplectic.
+* `TauCeti.CotangentBundle.isLagrangian_ker_mfderiv_proj`: the fibres of `T*M → M` are
+  Lagrangian.
 
 ## References
 
@@ -215,17 +217,23 @@ variable {F H' : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalS
   {J : ModelWithCorners ℝ F H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
   [IsManifold J 2 N] in
 /-- The Liouville form pulled back by a smooth map `ψ : T*M → T*N` covering a map `f : M → N`
-evaluates a tangent vector at `z` by applying the covector `ψ z` to `df (dπ v)`, provided `f` is
-differentiable at the base point of `z`. -/
+evaluates a tangent vector at `z` by applying the covector `ψ z` to `df (dπ v)`. The base map `f`
+is automatically smooth, as it is `x ↦ π (ψ (0_x))`. -/
 theorem mpullback_liouvilleForm_apply_of_proj_apply_eq
     {ψ : CotangentBundle I M → CotangentBundle J N}
     (hψ : ContMDiff (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, F →L[ℝ] ℝ)) ∞ ψ)
     {f : M → N} (hproj : ∀ z, (ψ z).proj = f z.proj) (z : CotangentBundle I M)
-    (hf : MDifferentiableAt I J f z.proj)
     (v : Fin 1 → TangentSpace (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) z) :
     (SmoothForm.mpullback ψ hψ (liouvilleForm J N)).1 z v =
       (ψ z).2 (mfderiv I J f z.proj (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I
         (π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)) z (v 0))) := by
+  -- The base map `f` is `x ↦ π_N (ψ (0_x))`, hence smooth.
+  have hf : MDifferentiableAt I J f z.proj := by
+    have : f = (π (F →L[ℝ] ℝ) (fun x : N ↦ TangentSpace J x →L[ℝ] ℝ)) ∘ ψ ∘ zeroSection _ _ :=
+      funext fun x ↦ by simp [hproj]
+    rw [this]
+    exact ((contMDiff_proj _).comp (hψ.comp (contMDiff_zeroSection ℝ _)) _).mdifferentiableAt
+      (by simp)
   -- Since `ψ` covers `f`, the chain rule gives `d(π_N ∘ ψ) = df ∘ dπ_M`.
   rw [SmoothForm.coe_mpullback, ← mfderiv_comp_apply z hf
     ((contMDiff_proj (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) _).mdifferentiableAt one_ne_zero)]
@@ -243,7 +251,7 @@ theorem mpullback_liouvilleForm_apply_of_proj_eq {g : CotangentBundle I M → Co
     (SmoothForm.mpullback g hg (liouvilleForm I M)).1 z v =
       (g z).2 (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I
         (π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)) z (v 0)) := by
-  rw [mpullback_liouvilleForm_apply_of_proj_apply_eq hg (f := id) hproj z mdifferentiableAt_id,
+  rw [mpullback_liouvilleForm_apply_of_proj_apply_eq hg (f := id) hproj z,
     mfderiv_id, ContinuousLinearMap.id_apply]
 
 variable {G H'' : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [TopologicalSpace H'']
@@ -345,6 +353,28 @@ theorem isSymplectic_symplecticForm : (symplecticForm I M).IsSymplectic where
     intro z v hv
     exact (strongDualCotangentSymplecticForm (V := E)).nondegenerate.1 v fun w ↦
       (eval₂_symplecticForm z v w).symm.trans (hv w)
+
+/-- At a covector `z`, read in the preferred chart at `z` itself, the tangent-space symplectic form
+of `ω` is the linear form `TauCeti.strongDualCotangentSymplecticForm`. -/
+theorem symplecticFormAt_symplecticForm (z : CotangentBundle I M) :
+    (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.symplecticFormAt z =
+      strongDualCotangentSymplecticForm (V := E) :=
+  SymplecticForm.toBilinForm_injective (LinearMap.ext₂ fun v w ↦
+    (SmoothTwoForm.IsNondegenerate.symplecticFormAt_apply _ z v w).trans
+      (eval₂_symplecticForm z v w))
+
+/-- **The fibres of a cotangent bundle are Lagrangian.** At every covector, the vertical tangent
+space, the kernel of the differential of the projection `T*M → M`, is a Lagrangian subspace for the
+canonical symplectic form. -/
+theorem isLagrangian_ker_mfderiv_proj (z : CotangentBundle I M) :
+    ((isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.symplecticFormAt
+        z).IsLagrangian
+      (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I (TotalSpace.proj : CotangentBundle I M → M) z).ker := by
+  have h := isLagrangian_strongDualCotangentFiber (V := E)
+  rw [← ker_fst_eq_strongDualCotangentFiber, ← symplecticFormAt_symplecticForm z] at h
+  rw [Bundle.mfderiv_proj, ContinuousLinearMap.coe_fst]
+  -- The tangent space at `z` is the model space `E × StrongDual ℝ E` of the preferred chart.
+  exact h
 
 end Symplectic
 

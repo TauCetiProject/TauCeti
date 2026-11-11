@@ -110,7 +110,8 @@ theorem three_mul_sq_le_four_mul_sub_of_forall_le {M : Type*} [AddCommGroup M]
     {B : LinearMap.BilinForm ℤ M} (hB : B.IsSymm) {v y : M} (hμ : 0 < B v v)
     (hmin : ∀ x, x ≠ 0 → B v v ≤ B x x) (hy : y ∉ ℤ ∙ v) :
     3 * B v v ^ 2 ≤ 4 * (B v v * B y y - B y v * B v y) := by
-  obtain ⟨k, hk⟩ := Int.exists_two_mul_abs_sub_mul_le (B v y) hμ
+  obtain ⟨k, hk⟩ := Int.exists_two_mul_abs_sub_mul_le (B v y) hμ.ne'
+  rw [abs_of_pos hμ] at hk
   have hk' : 0 ≤ B v v + 2 * |B v y - k * B v v| := by positivity
   have hne : y + (-k) • v ≠ 0 := fun h ↦ hy (Submodule.mem_span_singleton.mpr
     ⟨k, (sub_eq_zero.mp (by simpa [sub_eq_add_neg] using h)).symm⟩)

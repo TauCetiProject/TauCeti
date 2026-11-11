@@ -8,6 +8,9 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.UpperTriangular.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.TitsSystem
 import Mathlib.Data.Fintype.Fin
+import TauCeti.Data.Fin.Basic
+
+import all TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.TitsSystem
 
 /-!
 # Standard block weights for general linear groups
@@ -20,8 +23,23 @@ entries crossing a retained cut below the diagonal.
 The resulting ideals form an order embedding of the subsets of `Fin n`, with the ideal
 order reversed. In particular distinct labels give distinct subgroup schemes over any
 nontrivial commutative base ring. The empty label gives the upper-triangular subgroup,
-and the full label gives the whole general linear group. These statements identify the
-labels independently of any classification of closed subgroups.
+which is contained in every standard block subgroup, and the full label gives the whole
+general linear group. These statements identify the labels independently of any
+classification of closed subgroups.
+
+## Main declarations
+
+All declarations below are in the `TauCeti.GeneralLinear` namespace.
+
+* `standardWeight`, `standardWeight_antitone`, and `standardWeight_lt_iff`: standard block
+  weights and their decreasing-weight criterion.
+* `standardWeight_castSucc_eq_succ_iff`: adjacent weights are equal exactly at the selected
+  indices.
+* `standardWeightParabolicOrderEmbedding`: labels embed into the defining Hopf ideals with
+  the ideal order reversed.
+* `weightParabolicSimple_standardWeight` and
+  `simpleRep_mem_weightParabolicSimple_standardWeight_iff`: the selected simple reflections
+  are precisely the adjacent transpositions indexed by the label.
 
 ## References
 
@@ -48,6 +66,19 @@ theorem standardWeight_apply (J : Finset (Fin n)) (i : Fin (n + 1)) :
     standardWeight J i =
       -((Finset.univ.filter fun j : Fin n ↦ j.val < i.val ∧ j ∉ J).card : ℤ) :=
   (rfl)
+
+/-- Crossing an omitted adjacent pair decreases the normalized weight by one. -/
+theorem standardWeight_succ (J : Finset (Fin n)) (i : Fin n) :
+    standardWeight J i.succ = standardWeight J i.castSucc - if i ∈ J then 0 else 1 := by
+  have hfilter (a : Fin (n + 1)) :
+      (Finset.univ.filter fun j : Fin n ↦ j.val < a.val ∧ j ∉ J) =
+        (Finset.univ \ J).filter (fun j ↦ j.castSucc < a) := by
+    ext j
+    simp [and_comm, Fin.lt_def]
+  rw [standardWeight_apply, standardWeight_apply, hfilter, hfilter]
+  have h := Finset.card_filter_castSucc_lt_succ (Finset.univ \ J) i
+  rw [h]
+  by_cases hi : i ∈ J <;> simp [hi, sub_eq_add_neg, add_comm]
 
 /-- Standard block weights are decreasing. -/
 theorem standardWeight_antitone (J : Finset (Fin n)) : Antitone (standardWeight J) := by
@@ -161,6 +192,14 @@ theorem weightParabolicDefiningHopfIdeal_standardWeight_empty :
     simpa only [standardWeight_empty, UpperTriangular.weights_lt_weights_iff,
       neg_lt_neg_iff, Nat.cast_lt, Fin.lt_def] using hij
 
+/-- Standard block subgroups contain the upper-triangular subgroup. -/
+theorem weightParabolicDefiningHopfIdeal_standardWeight_le_upperTriangular
+    (J : Finset (Fin n)) :
+    weightParabolicDefiningHopfIdeal R (standardWeight J) ≤
+      UpperTriangular.definingHopfIdeal R (n + 1) := by
+  simpa only [weightParabolicDefiningHopfIdeal_standardWeight_empty] using
+    weightParabolicDefiningHopfIdeal_standardWeight_antitone R (Finset.empty_subset J)
+
 /-- The full label imposes no equations, so it defines the whole general linear group. -/
 @[simp]
 theorem weightParabolicDefiningHopfIdeal_standardWeight_univ :
@@ -205,5 +244,42 @@ theorem standardWeightParabolicOrderEmbedding_apply [Nontrivial R] (J : Finset (
     standardWeightParabolicOrderEmbedding R J =
       OrderDual.toDual (weightParabolicDefiningHopfIdeal R (standardWeight J)) :=
   (rfl)
+
+section Field
+
+variable (k : Type u) [Field k] [Nontrivial kˣ]
+
+/-- The selected simple reflections are those represented by the adjacent indices in `J`. -/
+theorem weightParabolicSimple_standardWeight (J : Finset (Fin n)) :
+    weightParabolicSimple k (standardWeight J) =
+      {s : (glTitsSystem k n).simple | ∃ i ∈ J, (s : (glTitsSystem k n).WeylGroup) =
+        QuotientGroup.mk (glTitsSystemSimpleRep k n i)} := by
+  ext s
+  simp only [weightParabolicSimple, Set.mem_ofPred_eq, standardWeight_castSucc_eq_succ_iff]
+
+/-- Under the standard adjacent-transposition indexing, the `i`-th simple reflection is
+selected exactly when `i ∈ J`. -/
+@[simp]
+theorem simpleRep_mem_weightParabolicSimple_standardWeight_iff (J : Finset (Fin n)) (i : Fin n) :
+    (⟨QuotientGroup.mk (glTitsSystemSimpleRep k n i),
+      by rw [glTitsSystem_simple]; exact ⟨i, rfl⟩⟩ : (glTitsSystem k n).simple) ∈
+      weightParabolicSimple k (standardWeight J) ↔ i ∈ J := by
+  constructor
+  · intro h
+    have hcell := (mem_weightParabolicSimple_iff k (standardWeight J)
+      (standardWeight_antitone J) _).mp h
+    have hrep : (glTitsSystemSimpleRep k n i : GL (Fin (n + 1)) k) ∈
+        (glTitsSystem k n).bruhatCell (QuotientGroup.mk (glTitsSystemSimpleRep k n i)) := by
+      rw [TitsSystem.bruhatCell_mk]
+      exact DoubleCoset.mem_doubleCoset_self _ _ _
+    have hm : (glTitsSystemSimpleRep k n i : GL (Fin (n + 1)) k) ∈
+        weightParabolicPoints k (standardWeight J) k := hcell hrep
+    rw [coe_glTitsSystemSimpleRep, permutationGL_swap_mem_weightParabolicPoints_iff,
+      standardWeight_castSucc_eq_succ_iff] at hm
+    exact hm
+  · intro hi
+    exact ⟨i, (standardWeight_castSucc_eq_succ_iff J i).mpr hi, rfl⟩
+
+end Field
 
 end TauCeti.GeneralLinear

@@ -72,16 +72,11 @@ theorem support_compoundPoissonMeasure_of_support_mem_ae (hr : r ≠ 0)
   let C := (AddSubmonoid.closure μ.support).topologicalClosure
   have hC : IsClosed (C : Set A) := isClosed_closure
   have hp (n : ℕ) : ∀ᵐ x ∂μ.convolutionPower n, x ∈ C := by
-    induction n with
-    | zero =>
-      rw [Measure.convolutionPower_zero]
-      exact (ae_dirac_iff hC.measurableSet).2 C.zero_mem
-    | succ n ih =>
-      rw [Measure.convolutionPower_succ]
-      refine Measure.ae_mem_conv_of_ae_mem hC.measurableSet ?_ ih
-        (Filter.eventually_mem_set.mpr hμ)
-      rintro _ ⟨x, hx, y, hy, rfl⟩
-      exact C.add_mem hx (subset_closure (AddSubmonoid.subset_closure hy))
+    refine Measure.ae_mem_convolutionPower_of_ae_mem hC.measurableSet C.zero_mem ?_
+      ((Filter.eventually_mem_set.mpr hμ).mono fun _ hx ↦
+        subset_closure (AddSubmonoid.subset_closure hx)) n
+    rintro _ ⟨x, hx, y, hy, rfl⟩
+    exact C.add_mem hx hy
   apply Subset.antisymm
   · apply Measure.support_subset_of_isClosed isClosed_closure
     rw [compoundPoissonMeasure_eq_sum]

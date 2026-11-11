@@ -13,8 +13,10 @@ import Mathlib.Tactic.Group
 /-!
 # Maps of subgroups
 
-Mathlib's `MonoidHom.subgroupComap` sends the preimage `K.comap f` of a subgroup `K` to `K`.
-This file records how surjective homomorphisms act on centres and on derived subgroups.
+Lemmas on how homomorphisms act on subgroups: the centre and kernels of surjections, the
+derived subgroup transported along isomorphisms, conjugation and images of subgroups, coset
+spaces and quotient maps, subgroup closure, and
+the action of a subgroup on a `G`-set.
 
 An isomorphism carrying a subgroup `A` onto a subgroup `B` restricts to an isomorphism `↥A ≃* ↥B`,
 and carries the coset space `G ⧸ A` bijectively onto `H ⧸ B`.
@@ -43,8 +45,6 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
   kernel lies in the subgroup.
 * `MonoidHom.center_le_ker`: the centre lies in the kernel of a surjection onto a
   centreless group.
-* `TauCeti.Subgroup.map_commutator_eq_commutator`: a surjective homomorphism carries the derived
-  subgroup onto the derived subgroup.
 * `Subgroup.map_inf_comap`: the image of `H ⊓ f⁻¹(K)` is `f(H) ⊓ K`.
 * `Subgroup.normalCore_comap_of_forall_exists_mul_eq`: the normal core of `f⁻¹(B)` is the preimage
   of the normal core of `B` when every element is `f x * b` with `b ∈ B`.
@@ -57,8 +57,8 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
   induced on quotients.
 * `QuotientGroup.map_mk'_eq_top`: the image of `K` in `G ⧸ N` is everything exactly when
   `N ⊔ K = ⊤`.
-* `MonoidHom.subgroupCongr_injective`, `MonoidHom.subgroupCongr_surjective`: transport along
-  equalities of the domain and codomain preserves injectivity and surjectivity.
+* `MonoidHom.subgroupCongr_injective`: transport along equalities of the domain and codomain
+  preserves injectivity.
 * `Subgroup.subtype_comp_subgroupOfEquivOfLe`, `TauCeti.Subgroup.subtype_comp_congrOfMapEq`: the
   isomorphisms `subgroupOfEquivOfLe` and `congrOfMapEq` commute with the inclusions of subgroups.
 * `Subgroup.subgroupOf_smul_eq`: the actions of `V` and of `V.subgroupOf U` on a `G`-set agree
@@ -218,35 +218,13 @@ theorem _root_.MonoidHom.subgroupCongr_comp {A A' : Subgroup G} {B B' : Subgroup
 /-- Transport along equalities of the domain and codomain preserves injectivity.
 
 The transport composes `f` with two isomorphisms, so it is injective exactly when `f` is; only the
-direction a use site needs is recorded. `MonoidHom.subgroupCongr_surjective` is the companion for
-surjectivity. -/
+direction a use site needs is the one recorded. -/
 theorem _root_.MonoidHom.subgroupCongr_injective {A A' : Subgroup G} {B B' : Subgroup H}
     (hA : A' = A) (hB : B' = B) {f : A →* B} (hf : Function.Injective f) :
     Function.Injective (f.subgroupCongr hA hB) :=
   (MulEquiv.subgroupCongr hB).symm.injective.comp <| hf.comp (MulEquiv.subgroupCongr hA).injective
 
-/-- Transport along equalities of the domain and codomain preserves surjectivity.
-
-The transport composes `f` with two isomorphisms, so it is surjective exactly when `f` is; only the
-direction a use site needs is recorded. `MonoidHom.subgroupCongr_injective` is the companion for
-injectivity. -/
-theorem _root_.MonoidHom.subgroupCongr_surjective {A A' : Subgroup G} {B B' : Subgroup H}
-    (hA : A' = A) (hB : B' = B) {f : A →* B} (hf : Function.Surjective f) :
-    Function.Surjective (f.subgroupCongr hA hB) :=
-  (MulEquiv.subgroupCongr hB).symm.surjective.comp <| hf.comp (MulEquiv.subgroupCongr hA).surjective
-
 /-! ## Transporting the derived subgroup -/
-
-/-- A surjective homomorphism carries the derived subgroup onto the derived subgroup.
-
-Without surjectivity only `≤` survives (Mathlib's `Subgroup.map_derivedSeries_le_derivedSeries`);
-Mathlib's `map_commutator_eq` keeps an equality for an arbitrary `f`, at the cost of describing the
-image as `⁅f.range, f.range⁆`. Reach for this lemma rather than `Subgroup.map_derivedSeries_eq`
-whenever the derived subgroup is spelled `commutator`; `MulEquiv.commutatorCongr` below is the
-isomorphism it unlocks. -/
-theorem Subgroup.map_commutator_eq_commutator {f : G →* H} (hf : Function.Surjective f) :
-    (commutator G).map f = commutator H := by
-  rw [_root_.map_commutator_eq, MonoidHom.range_eq_top_of_surjective _ hf, _root_.commutator_def]
 
 /-- The isomorphism of derived subgroups restricted from an isomorphism of groups.
 
@@ -255,7 +233,7 @@ so a use site names only `e`, and the target is `commutator H` itself rather tha
 `(commutator G).map e` that `MulEquiv.subgroupMap` would land in. It acts as `e` on elements, and
 its inverse as `e.symm`. -/
 def _root_.MulEquiv.commutatorCongr (e : G ≃* H) : ↥(commutator G) ≃* ↥(commutator H) :=
-  Subgroup.congrOfMapEq e <| Subgroup.map_commutator_eq_commutator e.surjective
+  Subgroup.congrOfMapEq e <| map_commutator_of_surjective e.surjective
 
 /-- The restriction `MulEquiv.commutatorCongr e` to the derived subgroups agrees with `e` on
 underlying
@@ -458,18 +436,11 @@ hypothesis supplies surjectivity. When `ψ` is the inclusion of a subgroup `K`, 
 Unlike `QuotientGroup.congrOfSurjectiveOfKerLe`, `ψ` itself need not be surjective, and neither
 subgroup need be normal. -/
 noncomputable def QuotientGroup.congrComapOfSurjectiveMk (ψ : G →* H) (B : Subgroup H)
-    (hψ : Function.Surjective fun g : G ↦ (ψ g : H ⧸ B)) : G ⧸ B.comap ψ ≃ H ⧸ B := by
-  have key : ∀ a b : G, a⁻¹ * b ∈ B.comap ψ ↔ (ψ a)⁻¹ * ψ b ∈ B := fun a b ↦ by
-    rw [Subgroup.mem_comap, map_mul, map_inv]
-  refine Equiv.ofBijective (Quotient.map' ψ fun a b hab ↦
-    QuotientGroup.leftRel_apply.mpr ((key a b).mp (QuotientGroup.leftRel_apply.mp hab))) ⟨?_, ?_⟩
-  · intro x y hxy
-    induction x using QuotientGroup.induction_on with | _ a =>
-    induction y using QuotientGroup.induction_on with | _ b =>
-    exact QuotientGroup.eq.mpr ((key a b).mpr (QuotientGroup.eq.mp hxy))
-  · intro q
-    obtain ⟨g, hg⟩ := hψ q
-    exact ⟨QuotientGroup.mk g, hg⟩
+    (hψ : Function.Surjective fun g : G ↦ (ψ g : H ⧸ B)) : G ⧸ B.comap ψ ≃ H ⧸ B :=
+  (Quotient.congrRight fun a b ↦ by
+    simp only [QuotientGroup.leftRel_apply, Setoid.ker_def,
+      QuotientGroup.eq, Subgroup.mem_comap, map_mul, map_inv]).trans
+    (Setoid.quotientKerEquivOfSurjective (fun g : G ↦ (ψ g : H ⧸ B)) hψ)
 
 /-- `QuotientGroup.congrComapOfSurjectiveMk` sends the coset of `a` to the coset of `ψ a`. -/
 @[simp]

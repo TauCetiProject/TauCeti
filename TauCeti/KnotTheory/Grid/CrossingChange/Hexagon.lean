@@ -230,33 +230,43 @@ variable (R : Type*) [CommSemiring R]
 variables of the `O`-markings it carries. -/
 noncomputable def crossingChangeHexagonWeight {a s s' : Fin n} {x y : GridState n}
     (P : GridHexagonBetween a s s' x y) : MvPolynomial (Fin n) R :=
-  ∏ c ∈ G.OColumnsOfSquares P.crossingCoveredSquares, MvPolynomial.X c
+  G.OMonomialOfSquares R P.crossingCoveredSquares
+
+/-- The weight of a crossing-change hexagon turning on its terminal side is the monomial of the
+squares it crossing-covers. -/
+theorem crossingChangeHexagonWeight_eq_OMonomialOfSquares {a s s' : Fin n} {x y : GridState n}
+    (P : GridHexagonBetween a s s' x y) :
+    G.crossingChangeHexagonWeight R P = G.OMonomialOfSquares R P.crossingCoveredSquares :=
+  (rfl)
 
 /-- The weight of a crossing-change hexagon turning on its terminal side is the squarefree
 monomial of the `O`-markings it carries. -/
 theorem crossingChangeHexagonWeight_eq_monomial {a s s' : Fin n} {x y : GridState n}
     (P : GridHexagonBetween a s s' x y) :
     G.crossingChangeHexagonWeight R P =
-      monomial (∑ c ∈ G.OColumnsOfSquares P.crossingCoveredSquares, Finsupp.single c 1) 1 := by
-  classical
-  rw [crossingChangeHexagonWeight, monomial_sum_one]
-  simp only [← X_pow_eq_monomial, pow_one]
+      monomial (∑ c ∈ G.OColumnsOfSquares P.crossingCoveredSquares, Finsupp.single c 1) 1 :=
+  G.OMonomialOfSquares_eq_monomial R _
 
 /-- The weight of a crossing-change hexagon turning on its initial side: the product of the
 variables of the `O`-markings it carries. -/
 noncomputable def crossingChangeInitialHexagonWeight {a s s' : Fin n} {x y : GridState n}
     (P : GridInitialHexagonBetween a s s' x y) : MvPolynomial (Fin n) R :=
-  ∏ c ∈ G.OColumnsOfSquares P.crossingCoveredSquares, MvPolynomial.X c
+  G.OMonomialOfSquares R P.crossingCoveredSquares
+
+/-- The weight of a crossing-change hexagon turning on its initial side is the monomial of the
+squares it crossing-covers. -/
+theorem crossingChangeInitialHexagonWeight_eq_OMonomialOfSquares {a s s' : Fin n}
+    {x y : GridState n} (P : GridInitialHexagonBetween a s s' x y) :
+    G.crossingChangeInitialHexagonWeight R P = G.OMonomialOfSquares R P.crossingCoveredSquares :=
+  (rfl)
 
 /-- The weight of a crossing-change hexagon turning on its initial side is the squarefree
 monomial of the `O`-markings it carries. -/
 theorem crossingChangeInitialHexagonWeight_eq_monomial {a s s' : Fin n} {x y : GridState n}
     (P : GridInitialHexagonBetween a s s' x y) :
     G.crossingChangeInitialHexagonWeight R P =
-      monomial (∑ c ∈ G.OColumnsOfSquares P.crossingCoveredSquares, Finsupp.single c 1) 1 := by
-  classical
-  rw [crossingChangeInitialHexagonWeight, monomial_sum_one]
-  simp only [← X_pow_eq_monomial, pow_one]
+      monomial (∑ c ∈ G.OColumnsOfSquares P.crossingCoveredSquares, Finsupp.single c 1) 1 :=
+  G.OMonomialOfSquares_eq_monomial R _
 
 /-- The matrix coefficient from `x` to `y` of the crossing change homotopy: the sum of the
 weights of the counted hexagons of both shapes. -/

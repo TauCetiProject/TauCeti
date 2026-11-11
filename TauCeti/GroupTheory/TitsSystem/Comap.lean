@@ -134,7 +134,7 @@ private theorem comapWeylGroupHom_mk_of_mul_eq {x : H} (hx : f x ∈ T.subgroupN
 
 private theorem comapWeylGroupHom_injective :
     Function.Injective (comapWeylGroupHom T (f := f)) :=
-  TauCeti.QuotientGroup.map_injective_of_eq_comap _ _ (comap_subgroupOf_eq T)
+  (TauCeti.QuotientGroup.map_injective_iff _ _ _).mpr (comap_subgroupOf_eq T)
 
 private theorem comapWeylGroupHom_surjective
     (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x * t = g) :

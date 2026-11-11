@@ -51,6 +51,8 @@ structure is the case of the cutoffs `β(±s_q(w) - 1)`. The results are:
 * `TauCeti.Floer.exists_cylindricalEndLift_of_pairOfPantsAlmostComplex_ne`: it is `J₀` off the
   parts `±s > 1` of the three ends; in particular it is `J₀` at the punctures `0` and `1`
   (`TauCeti.Floer.pairOfPantsAlmostComplex_endCenter`).
+* `TauCeti.Floer.pairOfPantsAlmostComplex_update_inf_base_eq`: the input part is `J₀` at distance
+  at least `1/2` from both inputs.
 * `TauCeti.Floer.contMDiffAt_pairOfPantsAlmostComplex`: for `C^n` families of period one, it is
   `C^n` on `S × M`.
 
@@ -273,6 +275,46 @@ theorem pairOfPantsAlmostComplex_endCenter (h₀ : ω.Compatible J₀) (q : Punc
   rcases q.endCenter_eq_zero_or_eq_one with hc | hc <;> rw [hc] at hrz
   exacts [hS.1 hrz, hS.2 hrz]
 
+/-! ### The input part of the pair-of-pants structure -/
+
+section InputPart
+
+open Function
+
+variable {Jb : Puncture → ℝ → M → AlmostComplexStructure V} {hJb : ∀ q t x, ω.Tames (Jb q t x)}
+
+omit [FiniteDimensional ℝ V] in
+/-- The input structures of `Jb`, with the output structure replaced by the base structure `J₀`,
+are tame when `J₀` and `Jb` are. -/
+theorem tames_update_inf_base (h₀ : ω.Tames J₀) (hJb : ∀ q t x, ω.Tames (Jb q t x))
+    (q : Puncture) (t : ℝ) (x : M) : ω.Tames (update Jb inf (fun _ _ => J₀) q t x) := by
+  rcases eq_or_ne q inf with rfl | hq
+  · simpa using h₀
+  · simpa [update_of_ne hq] using hJb q t x
+
+/-- **The input part away from the inputs.** The pair-of-pants structure of the input structures
+of `Jb` is the base structure `J₀` at distance at least `1/2` from both inputs `0` and `1`, where
+the longitudinal coordinates of both input ends are nonpositive. -/
+theorem pairOfPantsAlmostComplex_update_inf_base_eq (h₀ : ω.Compatible J₀) {w : ℂ}
+    (hw₀ : 1 / 2 ≤ ‖w‖) (hw₁ : 1 / 2 ≤ ‖w - 1‖) (x : M) :
+    pairOfPantsAlmostComplex h₀ (update Jb inf fun _ _ => J₀)
+      (tames_update_inf_base h₀.tames hJb) w x = J₀ := by
+  have hcut {q : Puncture} (hq : q ≠ inf) :
+      smoothTransition (q.endSign * (q.endCoord w).re - 1) = 0 := by
+    refine smoothTransition.zero_of_nonpos ?_
+    have h := re_endCoord_nonpos_of_le_norm_sub_endCenter hq (w := w) (by
+      rcases q.endCenter_eq_zero_or_eq_one with h | h <;> rw [h]
+      · rwa [sub_zero]
+      · exact hw₁)
+    rw [endSign_eq_one hq, one_mul]
+    linarith
+  refine h₀.eq_of_cayley_eq (tames_pairOfPantsAlmostComplex h₀ w x) h₀.tames ?_
+  rw [cayley_pairOfPantsAlmostComplex, Puncture.sum_univ, hcut (q := zero) (by decide),
+    hcut (q := one) (by decide)]
+  simp [AlmostComplexStructure.cayley_self]
+
+end InputPart
+
 end Algebraic
 
 section Smooth
@@ -337,7 +379,7 @@ theorem contMDiffAt_pairOfPantsAlmostComplex (h₀ : ω.Compatible J₀) {n : �
   have hFp : Function.Periodic
       (fun t y => LinearMap.toContinuousLinearMap (J₀.cayley (J q t y))) 1 := fun t => by
     simp only [hJp q t]
-  exact (contMDiffAt_smoothTransition_endCoord q hw x).smul (q.contMDiffAt_comp_im_endCoord hFp
+  exact (contMDiffAt_smoothTransition_endCoord q 1 hw x).smul (q.contMDiffAt_comp_im_endCoord hFp
     (h₀.tames.contMDiff_cayley (J := fun p : ℝ × M => J q p.1 p.2) (fun p => hJ q p.1 p.2)
       (hJs q)) hw x)
 

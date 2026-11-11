@@ -6,7 +6,7 @@ Authors: Jon Crall, GPT 5.6 High
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Positive
-public import TauCeti.Analysis.Normed.Operator.RealAlgebra
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.RealAlgebra
 
 /-!
 # Quadratic-form bounds on subspaces
@@ -14,6 +14,10 @@ public import TauCeti.Analysis.Normed.Operator.RealAlgebra
 Scalar-generic lower and upper bounds for the real part of the quadratic form
 of a bounded operator, restricted to a subspace.  These predicates are useful
 well beyond Davis--Kahan perturbation theory.
+
+The predicates, their monotonicity and the form of a real scalar operator only need a
+seminormed inner product space; the comparison with Mathlib's `IsPositive` uses the normed
+setting in which that predicate is defined.
 
 ## Provenance
 
@@ -30,11 +34,14 @@ public section
 open scoped InnerProductSpace
 
 variable {𝕜 E : Type*} [RCLike 𝕜]
-variable [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
 /-! Form-bound predicates extend the `ContinuousLinearMap` API and support
 dot notation on bounded operators. -/
 namespace ContinuousLinearMap
+
+section Seminormed
+
+variable [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
 /-- Lower quadratic-form bound on a subspace. -/
 def LowerFormBoundOn (A : E →L[𝕜] E) (U : Submodule 𝕜 E) (c : ℝ) : Prop :=
@@ -87,6 +94,12 @@ theorem UpperFormBoundOn.mono_subspace {A : E →L[𝕜] E} {U U' : Submodule �
   (upperFormBoundOn_iff A U' c).2 fun x hx =>
     (upperFormBoundOn_iff A U c).1 h x (hU hx)
 
+end Seminormed
+
+section Normed
+
+variable [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
 /-- Positivity implies the zero lower form bound on the whole space. -/
 theorem IsPositive.lowerFormBoundOn_top {A : E →L[𝕜] E} (hA : A.IsPositive) :
     A.LowerFormBoundOn ⊤ 0 :=
@@ -102,7 +115,11 @@ theorem isPositive_of_lowerFormBoundOn_top {A : E →L[𝕜] E} (hsym : A.IsSymm
     simpa [ContinuousLinearMap.reApplyInnerSelf] using
       (lowerFormBoundOn_iff A ⊤ 0).1 h x Submodule.mem_top⟩
 
+end Normed
+
 section RealScalar
+
+variable [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
 attribute [local instance] realAlgebra realIsScalarTower
 

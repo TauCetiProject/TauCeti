@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Reflection
-public import TauCeti.Algebra.Module.Basic
 public import TauCeti.RepresentationTheory.LSPath.PLPath
 import Mathlib.Algebra.Order.Group.MinMax
+import TauCeti.Algebra.GroupWithZero.Action.Basic
 import TauCeti.LinearAlgebra.Reflection
 
 /-!
@@ -664,7 +664,6 @@ private theorem normalize_reflectRecords_cons_cons (hvw : SameRay 𝕜 v w) (c :
   rcases eq_or_ne v 0 with rfl | hv
   · simp [reflectRecords_zero_cons]
   obtain ⟨μ, hμ, rfl⟩ := hvw.exists_nonneg_left hv
-  have hl := listMinHeight_nonpos (f := f) l
   have hvμ : v + μ • v = (1 + μ) • v := by module
   have hfμ : f (μ • v) = μ * f v := by simp
   rw [hvμ]

@@ -15,8 +15,8 @@ import Mathlib.Analysis.Normed.Module.FiniteDimension
 /-!
 # Immersion normal forms from split differentials
 
-A map between real or complex Banach spaces with a continuous left inverse to its
-derivative has the local normal form of an immersion. The map need only be `C^n` on
+A map from a real or complex normed space to a Banach space with a continuous left inverse to
+its derivative has the local normal form of an immersion. The map need only be `C^n` on
 an open neighbourhood, with `1 ≤ n`. This turns a differential splitting into
 actual slice charts, as needed to extend data from the image of an embedded map.
 
@@ -57,7 +57,7 @@ open scoped ContDiff Manifold
 section Euclidean
 
 variable {𝕜 E F : Type*} [RCLike 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
   {n : ℕ∞ω} {f : E → F} {s : Set E} {x : E}
 
@@ -67,6 +67,16 @@ theorem ContDiffOn.isImmersionAt_of_hasLeftInverse
     (hf : ContDiffOn 𝕜 n f s) (hs : IsOpen s) (hx : x ∈ s) (hn : 1 ≤ n)
     (hdf : (fderiv 𝕜 f x).HasLeftInverse) :
     IsImmersionAt 𝓘(𝕜, E) 𝓘(𝕜, F) n f x := by
+  -- `E` is complete: the derivative is a uniform embedding onto a closed subset of `F`.
+  have : CompleteSpace E :=
+    (completeSpace_iff_isComplete_range
+      (IsUniformInducing.of_comp (fderiv 𝕜 f x).uniformContinuous
+        hdf.leftInverse.uniformContinuous
+        (by
+          rw [show hdf.leftInverse ∘ fderiv 𝕜 f x = id from
+            funext hdf.leftInverse_leftInverse]
+          exact IsUniformInducing.id))).2
+      hdf.isClosed_range.isComplete
   -- Adjoin the closed complement so that the augmented derivative is invertible.
   let G := hdf.complement
   have : CompleteSpace G := hdf.isClosed_complement.completeSpace_coe
@@ -114,8 +124,8 @@ theorem ContDiffOn.isImmersionAt_of_hasLeftInverse
     have h := Θ.left_inv (hφtarget ▸ hy)
     simpa [φ, ψ, hΘ, g, mfld_simps] using congrArg e h
 
-/-- For a `C^n` map on an open subset of a Banach space, the immersion normal form
-is equivalent to the derivative having a continuous linear left inverse. -/
+/-- For a `C^n` map on an open subset of a normed space with values in a Banach space, the
+immersion normal form is equivalent to the derivative having a continuous linear left inverse. -/
 theorem ContDiffOn.isImmersionAt_iff_hasLeftInverse
     (hf : ContDiffOn 𝕜 n f s) (hs : IsOpen s) (hx : x ∈ s) (hn : 1 ≤ n) :
     IsImmersionAt 𝓘(𝕜, E) 𝓘(𝕜, F) n f x ↔ (fderiv 𝕜 f x).HasLeftInverse := by
@@ -134,7 +144,7 @@ theorem ContDiffOn.isImmersionAt_iff_hasLeftInverse
     ContinuousLinearEquiv.apply_symm_apply] using
     congrArg (NormedSpace.fromTangentSpace (𝕜 := 𝕜) x) hleft
 
-omit [CompleteSpace E] [CompleteSpace F] in
+omit [CompleteSpace F] in
 /-- For a finite-dimensional target, a `C^n` map on an open set has the immersion
 normal form exactly when its derivative is injective. -/
 theorem ContDiffOn.isImmersionAt_iff_injective_fderiv [FiniteDimensional 𝕜 F]
@@ -150,7 +160,6 @@ theorem ContDiffOn.isImmersionAt_iff_injective_fderiv [FiniteDimensional 𝕜 F]
     exact (NormedSpace.fromTangentSpace (𝕜 := 𝕜) x).symm.injective h'
   · have : FiniteDimensional 𝕜 E :=
       FiniteDimensional.of_injective (fderiv 𝕜 f x).toLinearMap hdf
-    have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
     have : CompleteSpace F := FiniteDimensional.complete 𝕜 F
     exact hf.isImmersionAt_of_hasLeftInverse hs hx hn
       (ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional hdf)
@@ -209,7 +218,7 @@ section Manifold
 
 variable {𝕜 : Type*} [RCLike 𝕜]
   {E E' H G M N : Type*}
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [CompleteSpace E']
   [TopologicalSpace H] [TopologicalSpace G]
   {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 E' G}
@@ -255,7 +264,7 @@ theorem ContMDiffOn.isImmersionAt_iff_hasLeftInverse_mfderiv
   exact ⟨fun h => isDiffImmersionAt_iff.mp (h.isDiffImmersionAt hn0),
     hf.isImmersionAt_of_hasLeftInverse_mfderiv hs hx hn⟩
 
-omit [CompleteSpace E] [CompleteSpace E'] in
+omit [CompleteSpace E'] in
 /-- For a finite-dimensional target model, a `C^n` map on an open subset of a boundaryless
 manifold, with values in a boundaryless manifold, has the immersion normal form exactly when its
 manifold derivative is injective. -/
@@ -266,12 +275,11 @@ theorem ContMDiffOn.isImmersionAt_iff_injective_mfderiv [FiniteDimensional 𝕜 
   refine ⟨fun h => h.mfderiv_injective hn0, fun hdf => ?_⟩
   have : FiniteDimensional 𝕜 E :=
     FiniteDimensional.of_injective (mfderiv I J f x).toLinearMap hdf
-  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
   have : CompleteSpace E' := FiniteDimensional.complete 𝕜 E'
   exact hf.isImmersionAt_of_hasLeftInverse_mfderiv hs hx hn
     (ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional hdf)
 
-omit [CompleteSpace E] [CompleteSpace E'] in
+omit [CompleteSpace E'] in
 /-- A `C^n` map between boundaryless manifolds, with a finite-dimensional target model, is an
 immersion when its manifold derivative is injective at every point. -/
 theorem ContMDiff.isImmersion_of_injective_mfderiv [FiniteDimensional 𝕜 E']
@@ -293,11 +301,13 @@ theorem ContMDiffOn.isImmersionAt_of_comp_eventuallyEq_id {g : N → M}
   rw [hgf.mfderiv_eq, mfderiv_id] at hcomp
   exact hf.isImmersionAt_of_hasLeftInverse_mfderiv hs hx hn ⟨_, fun u ↦ congr($hcomp u).symm⟩
 
+omit [CompleteSpace E'] in
 /-- A `C^n` map between boundaryless manifolds, with `1 ≤ n`, which has a left inverse
 differentiable along its image is an immersion. -/
 theorem ContMDiff.isImmersion_of_leftInverse [FiniteDimensional 𝕜 E'] {g : N → M}
     (hf : ContMDiff I J n f) (hn : 1 ≤ n) (hg : ∀ x, MDifferentiableAt J I g (f x))
     (hgf : LeftInverse g f) : IsImmersion I J n f :=
+  have : CompleteSpace E' := FiniteDimensional.complete 𝕜 E'
   TauCeti.isImmersion_iff_forall_isImmersionAt.2 fun x ↦
     hf.contMDiffOn.isImmersionAt_of_comp_eventuallyEq_id isOpen_univ (mem_univ x) hn (hg x)
       (Filter.Eventually.of_forall hgf)
@@ -318,7 +328,7 @@ theorem ContMDiff.isImmersionAt_fst_prod {G : P × M → N} (hG : ContMDiff (IP.
   exact ((hG q).mdifferentiableAt hn0).hasLeftInverse_mfderiv_fst_prod_iff.mpr
     (isDiffImmersionAt_iff.mp hq)
 
-omit [CompleteSpace E] [CompleteSpace E'] [CompleteSpace EP] [J.Boundaryless] in
+omit [CompleteSpace E'] [CompleteSpace EP] [J.Boundaryless] [IsManifold J n N] in
 /-- Postcomposing an immersion from a boundaryless manifold with a diffeomorphism of the target
 onto a boundaryless manifold gives an immersion, also when the new target has a different model,
 provided that model is finite dimensional. -/
@@ -330,7 +340,7 @@ theorem Diffeomorph.isImmersion_comp [FiniteDimensional 𝕜 EP] (Φ : N ≃ₘ^
     ContinuousLinearMap.coe_comp, ← Φ.mfderivToContinuousLinearEquiv_coe hn0]
   exact (Φ.mfderivToContinuousLinearEquiv hn0 (f x)).injective.comp (hf.mfderiv_injective hn0 x)
 
-omit [CompleteSpace E] [CompleteSpace E'] [CompleteSpace EP] in
+omit [CompleteSpace E'] [CompleteSpace EP] in
 /-- Pairing an immersion from a boundaryless manifold with a `C^n` map, both with values in
 boundaryless manifolds with finite-dimensional models, gives an immersion
 `x ↦ (f x, g x)`. -/

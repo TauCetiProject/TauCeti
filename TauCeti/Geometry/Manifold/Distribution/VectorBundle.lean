@@ -20,12 +20,12 @@ over `ℝ` or `ℂ` a continuous distribution of rank `k` (a `C^n` distribution 
 of the tangent bundle. Constructions on real vector bundles, such as the Euler class
 `TauCeti.eulerClass`, can then be applied to the tangent field of a foliation.
 
-The local trivializations come from local frames. A `C^n` local frame of `D` is in particular a
-continuous local frame of `D` as a family of subspaces of the tangent bundle
-(`TauCeti.IsDistributionFrameOn.isSubbundleFrameOn`), so the general local frame criterion for
-subbundles of a topological vector bundle (`TauCeti.IsSubbundleFrameOn.trivialization` and
-`TauCeti.IsSubbundleFrameOn.continuousOn_coordChangeL`) applies. The atlas consists of the
-trivializations of the `C^n` local frames.
+The local trivializations come from local frames. A `C^n` local frame of `D` is a local frame of
+`D`, as a family of subspaces of the tangent bundle, whose members are `C^n` sections
+(`TauCeti.IsDistributionFrameOn.isSubbundleFrameOn`). So `D` has `C^n` local frames near every
+point (`TauCeti.IsContMDiffDistribution.hasLocalContMDiffSubbundleFrames`), and the general local
+frame criterion for subbundles (`TauCeti.HasLocalContMDiffSubbundleFrames.fiberBundle`) applies.
+The atlas consists of the trivializations of the `C^n` local frames.
 
 The argument for continuity of the coordinates in a frame, with the derivative of operator
 inversion in place of its continuity, shows that the coordinates of a tangent vector field
@@ -36,10 +36,10 @@ For a continuous distribution `hD : IsContMDiffDistribution I n k D`, install
 `hD.fiberBundle` with `letI`; `hD.vectorBundle` then shows that it is a vector bundle.
 
 On a `C^(n+1)` manifold, the tangent bundle is a `C^n` vector bundle and the `C^n` local frames of
-`D` are `C^n` sections of it, so the coordinate changes between their trivializations are `C^n`
-(`TauCeti.IsSubbundleFrameOn.contMDiffOn_coordChangeL`). Hence a `C^n` distribution of rank `k`
-is a `C^n` vector bundle with model fibre `Fin k → 𝕜` (`hD.contMDiffVectorBundle`), a `C^n`
-subbundle of the tangent bundle.
+`D` are `C^n` sections of it, so the smooth local frame criterion
+(`TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle`) applies. Hence a `C^n`
+distribution of rank `k` is a `C^n` vector bundle with model fibre `Fin k → 𝕜`
+(`hD.contMDiffVectorBundle`), a `C^n` subbundle of the tangent bundle.
 
 ## Main definitions
 
@@ -50,6 +50,8 @@ subbundle of the tangent bundle.
 
 ## Main results
 
+* `TauCeti.IsContMDiffDistribution.hasLocalContMDiffSubbundleFrames`: a `C^n` distribution of rank
+  `k` has `C^n` local frames of size `k` near every point.
 * `TauCeti.IsContMDiffDistribution.mem_trivializationAtlas_fiberBundle_iff`: the trivializations
   of this fibre bundle are those of the `C^n` local frames of `D`.
 * `TauCeti.IsContMDiffDistribution.vectorBundle`: a continuous distribution of rank `k` is a
@@ -137,26 +139,23 @@ namespace IsContMDiffDistribution
 
 variable [IsRCLikeNormedField 𝕜] {D : Π x : M, Submodule 𝕜 (TangentSpace I x)}
 
+omit [IsRCLikeNormedField 𝕜] in
+/-- A `C^n` distribution of rank `k` has `C^n` local frames of size `k` near every point, as a
+family of subspaces of the tangent bundle. -/
+theorem hasLocalContMDiffSubbundleFrames (hD : IsContMDiffDistribution I n k D) :
+    HasLocalContMDiffSubbundleFrames I n E (Fin k) D :=
+  hasLocalContMDiffSubbundleFrames_iff.mpr fun x ↦ by
+    obtain ⟨U, hU, hx, X, hX⟩ := isContMDiffDistribution_iff.mp hD x
+    exact ⟨U, hU, hx, X, hX.isSubbundleFrameOn, hX.contMDiffOn⟩
+
 /-- A continuous distribution of rank `k` is a fibre bundle with fibre `Fin k → 𝕜`, the topology of
 its total space being that of a subspace of the tangent bundle. Its trivializations are those of
-the `C^n` local frames of `D` (`TauCeti.IsSubbundleFrameOn.trivialization`). Use this definition
-as a local instance, which chooses a local frame at every point. -/
+the `C^n` local frames of `D` (`TauCeti.HasLocalContMDiffSubbundleFrames.fiberBundle`). Use this
+definition as a local instance, which chooses a local frame at every point. -/
 @[instance_reducible]
 def fiberBundle (hD : IsContMDiffDistribution I n k D) :
     FiberBundle (Fin k → 𝕜) fun x ↦ D x :=
-  let U := fun x ↦ (isContMDiffDistribution_iff.mp hD x).choose
-  have hU := fun x ↦ (isContMDiffDistribution_iff.mp hD x).choose_spec
-  let X := fun x ↦ (hU x).2.2.choose
-  have hX := fun x ↦ (hU x).2.2.choose_spec
-  { totalSpaceMk_isInducing' := isInducing_totalSpaceMk_subbundle E (Fin k → 𝕜) D
-    trivializationAtlas' :=
-      {e | ∃ (V : Set M) (hV : IsOpen V) (Y : Fin k → Π y : M, TangentSpace I y)
-        (hY : IsDistributionFrameOn I n D Y V), hY.isSubbundleFrameOn.trivialization hV = e}
-    trivializationAt' := fun x ↦ (hX x).isSubbundleFrameOn.trivialization (hU x).1
-    mem_baseSet_trivializationAt' := fun x ↦ by
-      rw [IsSubbundleFrameOn.trivialization_baseSet]
-      exact (hU x).2.1
-    trivialization_mem_atlas' := fun x ↦ ⟨U x, (hU x).1, X x, hX x, rfl⟩ }
+  hD.hasLocalContMDiffSubbundleFrames.fiberBundle
 
 /-- The trivializations of `hD.fiberBundle` are the trivializations of the `C^n` local frames
 of `D`. -/
@@ -166,34 +165,28 @@ theorem mem_trivializationAtlas_fiberBundle_iff (hD : IsContMDiffDistribution I 
     e ∈ trivializationAtlas (Fin k → 𝕜) (fun x ↦ D x) ↔
       ∃ (V : Set M) (hV : IsOpen V) (Y : Fin k → Π y : M, TangentSpace I y)
         (hY : IsDistributionFrameOn I n D Y V), hY.isSubbundleFrameOn.trivialization hV = e :=
-  Iff.rfl
+  (hD.hasLocalContMDiffSubbundleFrames.mem_trivializationAtlas_fiberBundle_iff e).trans
+    ⟨fun ⟨V, hV, Y, hY, hYn, he⟩ ↦ ⟨V, hV, Y, ⟨hYn, hY.linearIndependent, hY.span_eq⟩, he⟩,
+      fun ⟨V, hV, Y, hY, he⟩ ↦ ⟨V, hV, Y, hY.isSubbundleFrameOn, hY.contMDiffOn, he⟩⟩
 
 /-- **A continuous distribution of rank `k` is a vector bundle**: with the subspace topology of the
 tangent bundle, its local frame trivializations are linear, with continuous coordinate changes. -/
 theorem vectorBundle (hD : IsContMDiffDistribution I n k D) :
     letI := hD.fiberBundle
     VectorBundle 𝕜 (Fin k → 𝕜) fun x ↦ D x :=
-  vectorBundle_of_forall_mem_trivializationAtlas hD.fiberBundle fun e he ↦ by
-    obtain ⟨V, hV, Y, hY, rfl⟩ := (mem_trivializationAtlas_fiberBundle_iff hD e).mp he
-    exact ⟨V, hV, Y, hY.isSubbundleFrameOn, rfl⟩
+  hD.hasLocalContMDiffSubbundleFrames.vectorBundle
 
 /-- **A `C^n` distribution of rank `k` is a `C^n` vector bundle.** On a `C^(n+1)` manifold, whose
-tangent bundle is a `C^n` vector bundle, the coordinate changes between the trivializations of the
-`C^n` local frames of `D` are `C^n`. So `D`, with the subspace topology of the tangent bundle and
-the atlas of `hD.fiberBundle`, is a `C^n` subbundle of the tangent bundle. -/
+tangent bundle is a `C^n` vector bundle, the `C^n` local frames of `D` are `C^n` sections of it. So
+`D`, with the subspace topology of the tangent bundle and the atlas of `hD.fiberBundle`, is a `C^n`
+subbundle of the tangent bundle (`TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle`).
+-/
 theorem contMDiffVectorBundle [IsManifold I (n + 1) M] (hD : IsContMDiffDistribution I n k D) :
     letI := hD.fiberBundle
     letI := hD.vectorBundle
-    ContMDiffVectorBundle n (Fin k → 𝕜) (fun x ↦ D x) I := by
+    ContMDiffVectorBundle n (Fin k → 𝕜) (fun x ↦ D x) I :=
   have := TangentBundle.contMDiffVectorBundle (n := n) (I := I) (M := M)
-  let := hD.fiberBundle
-  let := hD.vectorBundle
-  refine ⟨fun e e' he he' ↦ ?_⟩
-  obtain ⟨V, hV, Y, hY, rfl⟩ := (mem_trivializationAtlas_fiberBundle_iff hD e).mp he.out
-  obtain ⟨V', hV', Y', hY', rfl⟩ := (mem_trivializationAtlas_fiberBundle_iff hD e').mp he'.out
-  simpa only [IsSubbundleFrameOn.trivialization_baseSet] using
-    hY.isSubbundleFrameOn.contMDiffOn_coordChangeL hV hY.contMDiffOn hY'.isSubbundleFrameOn hV'
-      hY'.contMDiffOn
+  hD.hasLocalContMDiffSubbundleFrames.contMDiffVectorBundle
 
 end IsContMDiffDistribution
 

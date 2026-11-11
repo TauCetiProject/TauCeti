@@ -90,7 +90,7 @@ theorem IsContactHamiltonianVectorField.eval₂_mextDerivₗ_symplectization
       mvfderiv (𝓘(ℝ).prod I) (fun q : ℝ × M ↦ Real.exp q.1 * f q.2) p w := by
   have hexp (s : TangentSpace 𝓘(ℝ) p.1) :
       mvfderiv 𝓘(ℝ) Real.exp p.1 s = NormedSpace.fromTangentSpace p.1 s * Real.exp p.1 := by
-    rw [mvfderiv_eq_fderiv, (Real.hasDerivAt_exp p.1).hasFDerivAt.fderiv]
+    rw [TauCeti.mvfderiv_eq_fderiv_apply, (Real.hasDerivAt_exp p.1).hasFDerivAt.fderiv]
     -- `ContinuousLinearMap.toSpanSingleton ℝ (eᵗ)` sends `s` to `s • eᵗ`, read through
     -- `NormedSpace.fromTangentSpace`.
     rfl

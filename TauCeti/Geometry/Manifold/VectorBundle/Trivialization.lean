@@ -21,9 +21,13 @@ the base set of the trivialization is the topological fact
 
 For a vector bundle, the same reading applies to a `C^n` map from a normed space into the total
 space: its fibre part, read through the linear map of the trivialization at the image of the base
-point, is a `C^n` map between normed spaces there. Moreover, every atlas trivialization of a `C^n`
+point, is a `C^n` map between normed spaces there. Read in the same way, the inclusion of a fibre
+into the total space is a continuous linear isomorphism onto the model fibre; hence it is `C^n`
+and has injective derivative. Moreover, every atlas trivialization of a `C^n`
 vector bundle is a `C^n` partial diffeomorphism between its source in `TotalSpace F E` and its
 target `e.baseSet ×ˢ univ` in `B × F`, and hence a `C^n` local diffeomorphism in both directions.
+Read back through such a trivialization, a `C^n` family of vectors of the model fibre is a `C^n`
+section.
 
 ## Main results
 
@@ -32,9 +36,14 @@ target `e.baseSet ×ˢ univ` in `B × F`, and hence a `C^n` local diffeomorphism
 * `ContMDiffAt.contDiffAt_continuousLinearMapAt_trivializationAt`: a `C^n` map from a normed space
   into the total space of a vector bundle has `C^n` fibre coordinates in the trivialization at the
   base point of its value.
+* `TauCeti.Manifold.contMDiff_totalSpaceMk`, `TauCeti.Manifold.injective_mfderiv_totalSpaceMk`:
+  the inclusion of a fibre into the total space of a vector bundle is `C^n` and has injective
+  derivative.
 * `Bundle.Trivialization.toPartialDiffeomorph`, `Bundle.Trivialization.isLocalDiffeomorphAt`,
   `Bundle.Trivialization.isLocalDiffeomorphAt_symm`: an atlas trivialization of a `C^n` vector
   bundle as a `C^n` partial diffeomorphism and local diffeomorphism.
+* `Bundle.Trivialization.contMDiffOn_section_symm`: a `C^n` family of vectors of the model fibre,
+  read through an atlas trivialization, is a `C^n` section over its base set.
 -/
 
 public noncomputable section
@@ -81,6 +90,55 @@ theorem contDiffAt_continuousLinearMapAt_trivializationAt
   exact (trivializationAt F E (b z₀)).continuousLinearMapAt_apply_of_mem (R := 𝕜) hz _
 
 end ContMDiffAt
+
+namespace TauCeti.Manifold
+
+variable {n : WithTop ℕ∞} {𝕜 B F : Type*} {E : B → Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace (TotalSpace F E)]
+  [∀ x, NormedAddCommGroup (E x)] [∀ x, NormedSpace 𝕜 (E x)]
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB} [TopologicalSpace B]
+  [ChartedSpace HB B] [FiberBundle F E] [VectorBundle 𝕜 F E]
+
+/-- The inclusion of a fibre into the total space of a vector bundle is `C^n`: read in the
+trivialization at the base point, it is a continuous linear map into the model fibre. -/
+theorem contMDiff_totalSpaceMk (b : B) :
+    ContMDiff 𝓘(𝕜, E b) (IB.prod 𝓘(𝕜, F)) n (TotalSpace.mk b : E b → TotalSpace F E) := by
+  let e := trivializationAt F E b
+  have hb : b ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt F E b
+  intro y
+  refine contMDiffAt_totalSpace.2 ⟨contMDiffAt_const, ?_⟩
+  exact (e.continuousLinearMapAt 𝕜 b).contMDiff.contMDiffAt.congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun y' ↦ (e.continuousLinearMapAt_apply_of_mem 𝕜 hb y').symm)
+
+/-- The inclusion of a fibre into the total space of a vector bundle has injective derivative:
+composed with the fibre coordinate of the trivialization at the base point, it is the linear
+isomorphism of that fibre with the model fibre. -/
+theorem injective_mfderiv_totalSpaceMk (b : B) (y : E b) :
+    Function.Injective
+      (mfderiv 𝓘(𝕜, E b) (IB.prod 𝓘(𝕜, F)) (TotalSpace.mk b : E b → TotalSpace F E) y) := by
+  let e := trivializationAt F E b
+  have hb : b ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt F E b
+  have hι : MDifferentiableAt 𝓘(𝕜, E b) (IB.prod 𝓘(𝕜, F))
+      (TotalSpace.mk b : E b → TotalSpace F E) y :=
+    ((contMDiff_totalSpaceMk (n := 1) b).mdifferentiable one_ne_zero) y
+  have hσ : MDifferentiableAt (IB.prod 𝓘(𝕜, F)) 𝓘(𝕜, F) (fun z : TotalSpace F E ↦ (e z).2)
+      (TotalSpace.mk b y) :=
+    (Bundle.TotalSpace.contMDiffAt_trivializationAt_snd (n := 1) (IB := IB)
+      (TotalSpace.mk' F b y)).mdifferentiableAt one_ne_zero
+  have hcomp : (fun z : TotalSpace F E ↦ (e z).2) ∘ (TotalSpace.mk b : E b → TotalSpace F E) =
+      e.continuousLinearMapAt 𝕜 b :=
+    funext fun y' ↦ (e.continuousLinearMapAt_apply_of_mem 𝕜 hb y').symm
+  intro w₁ w₂ hw
+  -- After the fibre coordinate, the derivative is the injective map `e.continuousLinearMapAt`.
+  have h := congrArg (mfderiv (IB.prod 𝓘(𝕜, F)) 𝓘(𝕜, F) (fun z : TotalSpace F E ↦ (e z).2)
+    (TotalSpace.mk b y)) hw
+  rw [← mfderiv_comp_apply y hσ hι, ← mfderiv_comp_apply y hσ hι, hcomp,
+    ContinuousLinearMap.mfderiv_eq] at h
+  exact (e.symmL_continuousLinearMapAt (R := 𝕜) hb w₁).symm.trans
+    ((congrArg (e.symmL 𝕜 b) h).trans (e.symmL_continuousLinearMapAt (R := 𝕜) hb w₂))
+
+end TauCeti.Manifold
 
 namespace Bundle.Trivialization
 
@@ -171,5 +229,26 @@ theorem frameTransitionMap_apply (x : U) :
       (e.coordChangeL 𝕜 e' x : F →L[𝕜] F) := by
   rfl
 
+
+end Bundle.Trivialization
+
+namespace Bundle.Trivialization
+
+variable {𝕜 B F : Type*} {E : B → Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace (TotalSpace F E)]
+  [∀ x, TopologicalSpace (E x)] [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)]
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB} [TopologicalSpace B]
+  [ChartedSpace HB B] {n : WithTop ℕ∞} [FiberBundle F E] [VectorBundle 𝕜 F E]
+  [ContMDiffVectorBundle n F E IB]
+  (e : Trivialization F (π F E)) [MemTrivializationAtlas e]
+
+/-- **A `C^n` family of vectors of the model fibre, read through a trivialization, is a `C^n`
+section.** Over an open subset `U` of the base set of an atlas trivialization `e`, the section
+`x ↦ e.symm x (u x)` is `C^n` when `u` is. -/
+theorem contMDiffOn_section_symm {U : Set B} (hU : IsOpen U) (hUe : U ⊆ e.baseSet) {u : B → F}
+    (hu : ContMDiffOn IB 𝓘(𝕜, F) n u U) :
+    ContMDiffOn IB (IB.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F x (e.symm x (u x))) U :=
+  (e.contMDiffOn_section_iff hU hUe).mpr (hu.congr fun x hx ↦ by simp [e.apply_mk_symm (hUe hx)])
 
 end Bundle.Trivialization

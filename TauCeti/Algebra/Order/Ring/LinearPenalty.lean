@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.Ring.Defs
-import Mathlib.Tactic.Linarith
 
 /-!
 # Comparing two choices under two linear penalties
@@ -26,15 +25,16 @@ public section
 
 namespace TauCeti
 
-variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+variable {R : Type*} [Semiring R] [LinearOrder R] [IsStrictOrderedRing R] [ExistsAddOfLE R]
 
 /-- **Exchange argument for two linear penalties.** If `a₀ + s d₀ ≤ a₁ + s d₁` and
 `a₁ + t d₁ ≤ a₀ + t d₀` with `0 ≤ t < s`, then `d₀ ≤ d₁` and `a₁ ≤ a₀`. -/
 theorem le_and_le_of_add_mul_le_add_mul {a₀ a₁ d₀ d₁ s t : R} (ht : 0 ≤ t) (hts : t < s)
     (h₀ : a₀ + s * d₀ ≤ a₁ + s * d₁) (h₁ : a₁ + t * d₁ ≤ a₀ + t * d₀) : d₀ ≤ d₁ ∧ a₁ ≤ a₀ := by
-  have hd : d₀ ≤ d₁ := by
-    by_contra! h
-    nlinarith [mul_pos (sub_pos.2 hts) (sub_pos.2 h)]
-  exact ⟨hd, by nlinarith [mul_le_mul_of_nonneg_left hd ht]⟩
+  have hd : d₀ ≤ d₁ := le_of_not_gt fun h ↦
+    (add_lt_add_of_le_of_lt (add_le_add h₀ h₁) (mul_add_mul_lt_mul_add_mul hts h)).not_ge
+      (le_of_eq (by ac_rfl))
+  refine ⟨hd, le_of_add_le_add_right (h₁.trans ?_)⟩
+  gcongr
 
 end TauCeti

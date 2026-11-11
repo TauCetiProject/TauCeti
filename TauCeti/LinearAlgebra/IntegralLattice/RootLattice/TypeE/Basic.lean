@@ -123,6 +123,30 @@ theorem form_typeE₆SimpleRoot_typeE₆SimpleRoot (i j : Fin 6) :
   rw [typeE₆SimpleRoot, typeE₆SimpleRoot, typeE₆RootLattice]
   exact form_ofGramMatrix_basisFun_basisFun _ _ i j
 
+/-- The simple roots, as a `ℤ`-basis of the type `E₆` root lattice. -/
+noncomputable def typeE₆SimpleRootBasis : Module.Basis (Fin 6) ℤ typeE₆RootLattice :=
+  ofGramMatrix.basis (Pi.basisFun ℚ (Fin 6)) (CartanMatrix.E 6) (CartanMatrix.E_isSymm 6)
+
+/-- The simple-root basis agrees with the ambient simple roots. -/
+@[simp]
+theorem coe_typeE₆SimpleRootBasis_apply (i : Fin 6) :
+    (typeE₆SimpleRootBasis i : Fin 6 → ℚ) = typeE₆SimpleRoot i :=
+  ofGramMatrix.coe_basis _ _ _ i
+
+/-- The Gram matrix in the simple-root basis is the type `E₆` Cartan matrix. -/
+@[simp]
+theorem gramMatrix_typeE₆SimpleRootBasis :
+    typeE₆RootLattice.gramMatrix typeE₆SimpleRootBasis = CartanMatrix.E 6 :=
+  gramMatrix_ofGramMatrix _ _ _
+
+/-- Each simple-root basis vector of type `E₆` has squared norm `2`. -/
+@[simp]
+theorem integralNorm_typeE₆SimpleRootBasis (i : Fin 6) :
+    typeE₆RootLattice.integralNorm (typeE₆SimpleRootBasis i) = 2 := by
+  rw [integralNorm_apply, ← gramMatrix_apply, gramMatrix_typeE₆SimpleRootBasis]
+  revert i
+  decide
+
 /-- A vector belongs to the type `E₆` root lattice exactly when all of its simple-root coordinates
 are integers. -/
 @[simp]

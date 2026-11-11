@@ -23,16 +23,19 @@ This file records general-purpose facts about open subsets of schemes.
 * `AlgebraicGeometry.Scheme.Hom.preimage_finset_inf` and
   `AlgebraicGeometry.Scheme.Hom.preimage_finite_product`: inverse images commute with finite
   intersections, written as `Finset.inf` or as finite products of opens.
-* `AlgebraicGeometry.Scheme.Hom.nonempty_pi_preimage_hom`: the comparison morphism from the product
-  of the inverse images to the inverse image of the product, the hypothesis of
-  `TauCeti.CategoryTheory.cechComplexCompIso` for `f⁻¹`.
 * `AlgebraicGeometry.Scheme.Hom.isAffineOpen_finset_inf_preimage`: along an affine morphism, the
   inverse images of a family of opens with affine nonempty finite intersections, such as the covers
   used to compute cohomology by Čech complexes, again have affine nonempty finite intersections.
 * `AlgebraicGeometry.Scheme.Hom.iSup_affineOpens_le_preimage_eq_top`: the affine opens of `X`
   which a morphism `X ⟶ Y` maps into an affine open of `Y` cover `X`.
+* `AlgebraicGeometry.Scheme.toSpecΓ_morphismRestrict_comp_basicOpenIsoSpecAway_hom`:
+  restricting `toSpecΓ` to the basic open of a global section, as the map induced by a ring map out
+  of the localization extending the restriction.
 * `AlgebraicGeometry.Scheme.Hom.appLE_eq_id_of_eq_id` identifies the restriction maps of a scheme
   endomorphism equal to the identity.
+* `AlgebraicGeometry.Scheme.Hom.preimage_eq_preimage_inf_of_comp_eq`: in a commutative square, the
+  preimage under `f'` of an open of the base lying over `W` lies in the preimage under `g'` of
+  `f⁻¹ W`.
 * `AlgebraicGeometry.Scheme.forall_affineOpens_map_of_le`: a condition on the restrictions of a
   section over `V` to all affine opens inside `V` is inherited by its restriction to any smaller
   open.
@@ -103,15 +106,6 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.preimage_finite_product {Y : Scheme.{u
     (f.preimage_finset_inf _ U).trans
       (CompleteLattice.finite_product_eq_finset_image_inf (fun j ↦ f ⁻¹ᵁ U j) id).symm
 
-open Limits in
-/-- The finite product of the inverse images of opens maps to the inverse image of their product,
-as both are the same open (`preimage_finite_product`). This is the hypothesis of
-`TauCeti.CategoryTheory.cechComplexCompIso` for the functor `f⁻¹`. -/
-lemma _root_.AlgebraicGeometry.Scheme.Hom.nonempty_pi_preimage_hom {Y : Scheme.{u}} (f : X ⟶ Y)
-    {J : Type*} [Finite J] (U : J → Y.Opens) :
-    Nonempty ((∏ᶜ fun j ↦ f ⁻¹ᵁ U j) ⟶ f ⁻¹ᵁ ∏ᶜ U) :=
-  ⟨homOfLE (f.preimage_finite_product U).ge⟩
-
 /-- Along an affine morphism, the inverse images of a family of opens whose nonempty finite
 intersections are affine again have affine nonempty finite intersections. -/
 lemma _root_.AlgebraicGeometry.Scheme.Hom.isAffineOpen_finset_inf_preimage {Y : Scheme.{u}}
@@ -148,6 +142,16 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.appLE_eq_id_of_eq_id {f : X ⟶ X}
   subst hf
   rw [Scheme.Hom.appLE, Scheme.Hom.id_app]
   exact (Category.id_comp _).trans (X.presheaf.map_id _)
+
+/-- In a commutative square `g' ≫ f = f' ≫ g`, for an open `W' ⊆ g⁻¹ W` of the base `S'`, the
+preimage `f'⁻¹ W'` lies inside `g'⁻¹ (f⁻¹ W)`, so it equals its intersection with it. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.preimage_eq_preimage_inf_of_comp_eq
+    {X' S S' : Scheme.{u}} {f : X ⟶ S} {f' : X' ⟶ S'} {g : S' ⟶ S} {g' : X' ⟶ X}
+    (hw : g' ≫ f = f' ≫ g) {W : S.Opens} {W' : S'.Opens} (h : W' ≤ g ⁻¹ᵁ W) :
+    f' ⁻¹ᵁ W' = g' ⁻¹ᵁ (f ⁻¹ᵁ W) ⊓ f' ⁻¹ᵁ W' := by
+  refine (inf_eq_right.mpr ?_).symm
+  rw [← Scheme.Hom.comp_preimage, hw, Scheme.Hom.comp_preimage]
+  exact f'.preimage_mono h
 
 /-- A condition imposed on the restrictions of a section `b` over `V` to all affine opens inside `V`
 is inherited by the restriction of `b` to any smaller open `V'`. -/
@@ -344,6 +348,31 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.appLE_ΓSpecIso_hom_naturality {R S 
     (Scheme.Hom.appLE_comp_appLE (Spec.map φ) f V ⊤ ⊤ e le_top).symm.trans
       (congrArg (f.appLE V ⊤ e ≫ ·) (Scheme.Hom.appLE_eq_app (Spec.map φ) (U := ⊤)))
   rw [h, Category.assoc, Category.assoc, Scheme.ΓSpecIso_naturality]
+
+/-- Restricting the canonical map to the spectrum of global sections to the basic open of a
+global section `s` and identifying the spectrum of a localization with the basic open is the map
+induced by any ring map out of the localization that extends the restriction of global
+sections. -/
+lemma _root_.AlgebraicGeometry.Scheme.toSpecΓ_morphismRestrict_comp_basicOpenIsoSpecAway_hom
+    (s : Γ(X, ⊤)) (l : Localization.Away s →+* Γ(X, X.basicOpen s))
+    (hl : l.comp (algebraMap Γ(X, ⊤) (Localization.Away s)) =
+      (X.presheaf.map (homOfLE (le_top : X.basicOpen s ≤ ⊤)).op).hom) :
+    (X.isoOfEq (X.toSpecΓ_preimage_basicOpen s)).inv ≫
+        X.toSpecΓ ∣_ PrimeSpectrum.basicOpen s ≫
+        (basicOpenIsoSpecAway s).hom =
+      (X.basicOpen s).toSpecΓ ≫ Spec.map (CommRingCat.ofHom l) := by
+  rw [← cancel_mono (Spec.map (CommRingCat.ofHom
+    (algebraMap Γ(X, ⊤) (Localization.Away s))))]
+  simp only [Category.assoc, basicOpenIsoSpecAway_hom_SpecMap]
+  have hrest := congrArg
+    (fun e ↦ (X.isoOfEq (X.toSpecΓ_preimage_basicOpen s)).inv ≫ e)
+    (morphismRestrict_ι X.toSpecΓ
+      (PrimeSpectrum.basicOpen s : (Spec Γ(X, ⊤)).Opens))
+  simp only [Scheme.isoOfEq_inv_ι_assoc] at hrest
+  refine hrest.trans ?_
+  rw [← Spec.map_comp, ← CommRingCat.ofHom_comp]
+  rw [hl]
+  exact (Scheme.Opens.toSpecΓ_SpecMap_presheaf_map_top (X.basicOpen s)).symm
 
 end
 

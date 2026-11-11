@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Basic
 import Mathlib.FieldTheory.Minpoly.IsIntegrallyClosed
+public import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
 
 /-!
 # Minimal polynomials of algebraic integers
@@ -19,6 +20,8 @@ the second is the first with its coefficients cast to `ℚ`.
 
 * `NumberField.RingOfIntegers.minpoly_rat_coe`:
   `minpoly ℚ (x : K) = (minpoly ℤ x).map (algebraMap ℤ ℚ)`.
+* `NumberField.mem_roots_map_minpoly_iff`: the roots in `ℂ` of the minimal polynomial over `ℚ` of
+  `x : K` are the values of `x` at the complex embeddings of `K`.
 * `TauCeti.NumberField.minpoly_int_eq_of_aeval_eq_zero`: a root of `minpoly ℚ x` in a nontrivial
   `ℚ`-algebra has the same minimal polynomial over `ℤ` as `x`.
 * `TauCeti.NumberField.minpoly_two_mul_sub_one_of_minpoly_eq_X_sq_sub_X_add`: an algebraic
@@ -41,6 +44,25 @@ theorem minpoly_rat_coe (x : 𝓞 K) :
   rw [minpoly.isIntegrallyClosed_eq_field_fractions' ℚ x.isIntegral_coe, minpoly_coe]
 
 end NumberField.RingOfIntegers
+
+namespace NumberField
+
+open Polynomial
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- The roots in `ℂ` of the minimal polynomial over `ℚ` of an element of a number field are the
+values of that element at the complex embeddings. -/
+theorem mem_roots_map_minpoly_iff (x : K) (z : ℂ) :
+    z ∈ ((minpoly ℚ x).map (algebraMap ℚ ℂ)).roots ↔ ∃ φ : K →+* ℂ, φ x = z := by
+  have hx : IsIntegral ℚ x := IsIntegral.of_finite ℚ x
+  have hne : (minpoly ℚ x).map (algebraMap ℚ ℂ) ≠ 0 := ((minpoly.monic hx).map _).ne_zero
+  rw [mem_roots hne, IsRoot.def, eval_map, ← aeval_def]
+  have h := Set.ext_iff.mp (Embeddings.range_eval_eq_rootSet_minpoly K ℂ x) z
+  rw [Set.mem_range, mem_rootSet_of_ne (minpoly.ne_zero hx)] at h
+  exact h.symm
+
+end NumberField
 
 namespace TauCeti.NumberField
 

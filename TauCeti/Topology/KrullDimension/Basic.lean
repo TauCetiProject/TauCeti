@@ -40,8 +40,11 @@ closed, since a proper specialization of such a point would have codimension at 
   preorder is at most the Krull dimension of the space.
 * `TauCeti.topologicalKrullDim_eq_iSup_coheight`: on a quasi-sober space, the Krull dimension is
   the supremum of the codimensions of the points for the specialization preorder.
-* `TauCeti.height_eq_topologicalKrullDim_closure_singleton`: on a quasi-sober T₀ space, the height
+* `TauCeti.height_eq_topologicalKrullDim_closure_singleton`: on a quasi-sober space, the height
   of a point for the specialization preorder is the Krull dimension of its closure.
+* `TauCeti.topologicalKrullDim_closure_singleton_le_of_not_isMax`: on a quasi-sober space all
+  of whose points have codimension at most `d + 1`, the closure of a point that is not a generic
+  point of an irreducible component has dimension at most `d`.
 * `GeneralizingMap.coheight_apply_le_coheight`: a continuous generalizing map cannot increase
   the codimension of a point.
 * `GeneralizingMap.topologicalKrullDim_le_of_surjective`: the target of a continuous, surjective,
@@ -120,23 +123,40 @@ theorem topologicalKrullDim_eq_iSup_coheight (α : Type*) [TopologicalSpace α] 
   exact krullDim_le_of_strictMono g hmono
 
 attribute [local instance] specializationPreorder in
-/-- On a quasi-sober T₀ topological space, the height of a point for the specialization preorder
+/-- On a quasi-sober topological space, the height of a point for the specialization preorder
 (`x ≤ y ↔ y ⤳ x`) is the Krull dimension of its closure: the points below `x` are the points of
-`closure {x}`, and they correspond to its irreducible closed subsets. -/
+`closure {x}`, whose Krull dimension for the specialization preorder is the topological one. -/
 theorem height_eq_topologicalKrullDim_closure_singleton {α : Type*} [TopologicalSpace α]
-    [QuasiSober α] [T0Space α] (x : α) :
+    [QuasiSober α] (x : α) :
     (height x : WithBot ℕ∞) = topologicalKrullDim (closure ({x} : Set α)) := by
   have : QuasiSober (closure ({x} : Set α)) :=
     isClosed_closure.isClosedEmbedding_subtypeVal.quasiSober
   -- The points of the closure of `x`, ordered by specialization within the closure, are the
-  -- points below `x`. The order is passed explicitly: the closure also carries the order induced
-  -- from `α`, which agrees with it only propositionally.
-  let e : @OrderIso (closure ({x} : Set α)) (Set.Iic x)
-      (specializationOrder (closure ({x} : Set α))).toLE _ :=
+  -- points below `x`. The preorder is passed explicitly: the closure also carries the preorder
+  -- induced from `α`, which agrees with it only propositionally.
+  let P := specializationPreorder (closure ({x} : Set α))
+  let e : @OrderIso (closure ({x} : Set α)) (Set.Iic x) P.toLE _ :=
     ⟨Equiv.subtypeEquivRight fun _ ↦ specializes_iff_mem_closure.symm,
       fun {a b} ↦ IsInducing.subtypeVal.specializes_iff (x := b) (y := a)⟩
-  rw [height_eq_krullDim_Iic, topologicalKrullDim,
-    krullDim_eq_of_orderIso (RelIso.trans irreducibleSetEquivPoints e)]
+  rw [height_eq_krullDim_Iic, topologicalKrullDim_eq_iSup_coheight,
+    ← @krullDim_eq_iSup_coheight _ P, @krullDim_eq_of_orderIso _ _ P _ e]
+
+attribute [local instance] specializationPreorder in
+/-- On a quasi-sober topological space all of whose points have codimension at most `d + 1`
+for the specialization preorder, the closure of a point `x` which is not maximal, that is, not
+a generic point of an irreducible component, has Krull dimension at most `d`: a chain of
+specializations of `x` extends by a proper generalization of `x`. For instance, a prime divisor on
+a scheme of dimension at most two is a curve. -/
+theorem topologicalKrullDim_closure_singleton_le_of_not_isMax {α : Type*} [TopologicalSpace α]
+    [QuasiSober α] {d : ℕ} (hdim : ∀ y : α, coheight y ≤ d + 1) {x : α}
+    (hx : ¬IsMax x) : topologicalKrullDim (closure ({x} : Set α)) ≤ d := by
+  rw [← height_eq_topologicalKrullDim_closure_singleton]
+  obtain ⟨y, hxy⟩ := not_isMax_iff.mp hx
+  refine WithBot.coe_le_coe.mpr (height_le_iff'.mpr fun p hp ↦ ?_)
+  -- Extending a chain of specializations ending at `x` by `y` gives a longer chain.
+  have := (length_le_coheight_head (p := p.snoc y (hp ▸ hxy))).trans (hdim _)
+  simp only [RelSeries.snoc_length, Nat.cast_add, Nat.cast_one] at this
+  exact (ENat.add_le_add_iff_right ENat.one_ne_top).mp this
 
 end TauCeti
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Pompeiu.Basic
 public import TauCeti.Analysis.Complex.CauchyKernel
-public import TauCeti.MeasureTheory.Function.Lp.Operator.Integral
+public import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Basic
 import TauCeti.MeasureTheory.Integral.SchurTest
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 
@@ -22,6 +22,12 @@ The operator `TauCeti.cauchyTransformLp` has norm at most `2 * (r + R)`.
 The proof applies the existing operator-valued Schur test. Integrating the reciprocal kernel over
 the input or output disc gives the common bound `2π(r + R)` before normalization. The result
 controls the function term on bounded discs; no global `Lᵖ` bound for the transform is asserted.
+
+On data supported in the input disc the operator is the Cauchy transform
+(`TauCeti.cauchyTransformLp_toLp`). Its continuity therefore gives, for data with a common support
+disc, `Lᵖ` convergence of the transforms on each output disc from `Lᵖ` convergence of the data
+(`TauCeti.tendsto_toLp_cauchyTransform`), and continuous dependence of the transform on data that
+depends continuously on a parameter (`TauCeti.continuous_toLp_cauchyTransform`).
 
 ## References
 
@@ -202,5 +208,48 @@ theorem ae_integrable_cauchyTransform {f : ℂ → F} {c : ℂ} {r R : ℝ≥0} 
     exact heq ▸ hw'.smul (Real.pi : ℂ)
   exact hi.integrable_of_forall_notMem_eq_zero fun z hz ↦ by
     rw [notMem_support.mp (fun h ↦ hz (hs h)), smul_zero]
+
+/-- On data supported in the input disc, the bounded Cauchy operator `TauCeti.cauchyTransformLp`
+is the Cauchy transform. -/
+theorem cauchyTransformLp_toLp {f : ℂ → F} {c : ℂ} {r R : ℝ≥0} {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (hf : MemLp f p (volume.restrict (closedBall c (r : ℝ))))
+    (hs : support f ⊆ closedBall c (r : ℝ)) :
+    cauchyTransformLp c r R p (hf.toLp f) =
+      (memLp_cauchyTransform Fact.out hf hs).toLp (cauchyTransform f) := by
+  refine Lp.ext (((coeFn_cauchyTransformLp c r R p _).trans (.of_forall fun w ↦ ?_)).trans
+    (MemLp.coeFn_toLp _).symm)
+  rw [cauchyTransform_eq_integral_closedBall hs]
+  exact congrArg _ (integral_congr_ae (hf.coeFn_toLp.mono fun z hz ↦ by simp only [hz]))
+
+/-- If data `g i` with a common support disc tends to `f` in `Lᵖ(ℂ)`, then the Cauchy transforms
+`T (g i)` tend to `T f` in `Lᵖ` of every output disc. -/
+theorem tendsto_toLp_cauchyTransform {p : ℝ≥0∞} [Fact (1 ≤ p)] {ι : Type*} {l : Filter ι}
+    {f : ℂ → F} {g : ι → ℂ → F} (hf : MemLp f p volume) (hg : ∀ i, MemLp (g i) p volume)
+    {c : ℂ} {r : ℝ≥0} (hfs : support f ⊆ closedBall c r) (hgs : ∀ i, support (g i) ⊆ closedBall c r)
+    (h : Tendsto (fun i ↦ (hg i).toLp (g i)) l (𝓝 (hf.toLp f))) (R : ℝ≥0) :
+    Tendsto (fun i ↦ (memLp_cauchyTransform (R := R) Fact.out ((hg i).restrict _) (hgs i)).toLp
+        (cauchyTransform (g i)))
+      l (𝓝 ((memLp_cauchyTransform Fact.out (hf.restrict _) hfs).toLp (cauchyTransform f))) := by
+  have heq {u : ℂ → F} (hu : MemLp u p volume) (hus : support u ⊆ closedBall c r) :
+      (memLp_cauchyTransform (R := R) Fact.out (hu.restrict _) hus).toLp (cauchyTransform u) =
+        cauchyTransformLp c r R p (LpToLpRestrictCLM ℂ F ℂ volume p _ (hu.toLp u)) := by
+    rw [← cauchyTransformLp_toLp (hu.restrict _) hus]
+    exact congrArg _ (Lp.ext ((MemLp.coeFn_toLp _).trans
+      (hu.coeFn_toLp.restrict.symm.trans (LpToLpRestrictCLM_coeFn ℂ _ _).symm)))
+  simp only [heq hf hfs, heq (hg _) (hgs _)]
+  exact (((cauchyTransformLp c r R p).continuous.comp
+    (LpToLpRestrictCLM ℂ F ℂ volume p _).continuous).tendsto _).comp h
+
+/-- **Continuity in parameters of the Cauchy transform.** For a family `f x` of `Lᵖ` data with a
+common support disc of radius `r` about `c`, depending continuously on `x` in `Lᵖ(ℂ)`, the Cauchy
+transforms `T (f x)` depend continuously on `x` in `Lᵖ` of the closed disc of radius `R`. -/
+theorem continuous_toLp_cauchyTransform {p : ℝ≥0∞} [Fact (1 ≤ p)] {X : Type*}
+    [TopologicalSpace X] {f : X → ℂ → F} (hf : ∀ x, MemLp (f x) p volume) {c : ℂ} {r : ℝ≥0}
+    (hs : ∀ x, support (f x) ⊆ closedBall c r) (hcont : Continuous fun x ↦ (hf x).toLp (f x))
+    (R : ℝ≥0) :
+    Continuous fun x ↦ (memLp_cauchyTransform (R := R) (Fact.out : 1 ≤ p) ((hf x).restrict _)
+      (hs x)).toLp (cauchyTransform (f x)) :=
+  continuous_iff_continuousAt.2 fun x ↦
+    tendsto_toLp_cauchyTransform (hf x) hf (hs x) hs (hcont.tendsto x) R
 
 end TauCeti

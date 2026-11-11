@@ -60,8 +60,11 @@ alphabets of this kind arise from the vector representation of the quantum super
 * `TauCeti.signedCheckedR_braid`: the braid relation.
 * `TauCeti.signedCheckedR_single_apply_comm`: the matrix in the word basis is symmetric.
 * `TauCeti.signedCheckedR_apply`: the coefficient of a word in the image of an arbitrary vector.
-* `TauCeti.signedCheckedR_comp_lmapDomain_snoc`: appending a letter intertwines the operators on
-  the same two strands of the shorter and longer words.
+* `TauCeti.signedCheckedR_comp_lmapDomain`: the operators are local, so an embedding of words
+  along a map of strands intertwines the operators on corresponding strands. Special cases are
+  `TauCeti.signedCheckedR_comp_lmapDomain_snoc`, appending a letter, and
+  `TauCeti.signedCheckedR_castAdd_comp_lmapDomain_append` and
+  `TauCeti.signedCheckedR_natAdd_comp_lmapDomain_append`, appending a word on either side.
 * `TauCeti.commute_productDensity_signedCheckedR`: the operators commute with every product
   density, since they only permute the letters of a word.
 * `TauCeti.inv_smul_signedCheckedR_mul_self`: the Hecke quadratic relation for `s⁻¹ • X`.
@@ -257,17 +260,50 @@ theorem signedCheckedR_apply (s : R) (j k : Fin n) (v : (Fin n → ι) →₀ R)
     split_ifs <;> simp only [sub_apply, smul_apply, neg_apply, single_apply, smul_eq_mul,
       eq_comm (a := w)] <;> split_ifs <;> ring
 
+/-- **Locality of the signed checked R-matrix.** Let `E` embed the words on `m` strands into the
+words on `n` strands along the strand map `f`, so that `E u` carries the letter `u i` at the
+strand `f i`, and suppose that `E` intertwines the exchange of the strands `j` and `k` with that
+of `f j` and `f k`. Then `E` intertwines the signed checked R-matrix on the strands `j` and `k`
+with the one on the strands `f j` and `f k`. -/
+theorem signedCheckedR_comp_lmapDomain {m : ℕ} (s : R) {f : Fin m → Fin n}
+    (E : (Fin m → ι) → Fin n → ι) (hE : ∀ u i, E u (f i) = u i) (j k : Fin m)
+    (hswap : ∀ u, E u ∘ Equiv.swap (f j) (f k) = E (u ∘ Equiv.swap j k)) :
+    (signedCheckedR pos s (f j) (f k)).comp (lmapDomain R R E) =
+      (lmapDomain R R E).comp (signedCheckedR pos s j k) := by
+  ext w : 2
+  simp only [LinearMap.comp_apply, lsingle_apply]
+  rw [lmapDomain_apply, mapDomain_single, signedCheckedR_single_one, signedCheckedR_single_one]
+  simp only [hE, hswap]
+  split_ifs <;> simp only [map_sub, map_neg, map_smul, lmapDomain_apply, mapDomain_single]
+
 /-- Appending a letter intertwines the signed checked R-matrix on two strands with the one on the
 same two strands of the longer words. -/
 theorem signedCheckedR_comp_lmapDomain_snoc (s : R) (j k : Fin n) (a : ι) :
     (signedCheckedR pos s j.castSucc k.castSucc).comp
         (lmapDomain R R (fun w : Fin n → ι ↦ Fin.snoc w a)) =
-      (lmapDomain R R (fun w : Fin n → ι ↦ Fin.snoc w a)).comp (signedCheckedR pos s j k) := by
-  ext w : 2
-  simp only [LinearMap.comp_apply, lsingle_apply]
-  rw [lmapDomain_apply, mapDomain_single, signedCheckedR_single_one, signedCheckedR_single_one]
-  simp only [Fin.snoc_castSucc, Fin.snoc_comp_swap_castSucc]
-  split_ifs <;> simp only [map_sub, map_neg, map_smul, lmapDomain_apply, mapDomain_single]
+      (lmapDomain R R (fun w : Fin n → ι ↦ Fin.snoc w a)).comp (signedCheckedR pos s j k) :=
+  signedCheckedR_comp_lmapDomain pos s _ (fun _ _ ↦ Fin.snoc_castSucc ..) j k
+    (fun _ ↦ Fin.snoc_comp_swap_castSucc ..)
+
+/-- Appending a word of `n` letters on the right intertwines the signed checked R-matrix on two
+strands with the one on the same two strands of the longer words. -/
+theorem signedCheckedR_castAdd_comp_lmapDomain_append {m : ℕ} (s : R) (j k : Fin m)
+    (v : Fin n → ι) :
+    (signedCheckedR pos s (Fin.castAdd n j) (Fin.castAdd n k)).comp
+        (lmapDomain R R (fun u : Fin m → ι ↦ Fin.append u v)) =
+      (lmapDomain R R (fun u : Fin m → ι ↦ Fin.append u v)).comp (signedCheckedR pos s j k) :=
+  signedCheckedR_comp_lmapDomain pos s _ (fun _ _ ↦ Fin.append_left ..) j k
+    (fun _ ↦ Fin.append_comp_swap_castAdd ..)
+
+/-- Prepending a word of `m` letters on the left intertwines the signed checked R-matrix on two
+strands with the one on the corresponding two strands of the longer words. -/
+theorem signedCheckedR_natAdd_comp_lmapDomain_append {m : ℕ} (s : R) (j k : Fin n)
+    (u : Fin m → ι) :
+    (signedCheckedR pos s (Fin.natAdd m j) (Fin.natAdd m k)).comp
+        (lmapDomain R R (fun v : Fin n → ι ↦ Fin.append u v)) =
+      (lmapDomain R R (fun v : Fin n → ι ↦ Fin.append u v)).comp (signedCheckedR pos s j k) :=
+  signedCheckedR_comp_lmapDomain pos s _ (fun _ _ ↦ Fin.append_right ..) j k
+    (fun _ ↦ Fin.append_comp_swap_natAdd ..)
 
 /-- The product density commutes with the signed checked R-matrix on any two strands, which only
 permutes the letters of a word. -/

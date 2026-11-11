@@ -8,9 +8,11 @@ module
 public import Mathlib.NumberTheory.Cyclotomic.Gal
 public import Mathlib.NumberTheory.DirichletCharacter.GaussSum
 public import TauCeti.NumberTheory.DirichletCharacter.Conductor
+public import TauCeti.NumberTheory.LegendreSymbol.AddCharacter
 public import TauCeti.NumberTheory.MulChar.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 import TauCeti.Analysis.Fourier.ZMod
+import TauCeti.Data.ZMod.Count
 
 /-!
 # Primitive Dirichlet Gauss sums in characteristic zero
@@ -30,7 +32,9 @@ quadratic subfields of cyclotomic fields.
 For a primitive complex character `φ` of level `v`, the inverse `φ⁻¹` pulled back to the
 residues modulo a multiple `N` of `v` has Fourier coefficients supported on the multiples of
 `N / v`, where they are multiples of `φ` by the Gauss sum `g(φ⁻¹)`
-(`DirichletCharacter.IsPrimitive.sum_inv_mul_stdAddChar`).
+(`DirichletCharacter.IsPrimitive.sum_inv_mul_stdAddChar`). Dually, a primitive `ψ` modulo `u`
+carried to the multiples of `v` modulo `u v` has Fourier coefficients `ψ⁻¹` times the Gauss sum
+`g(ψ)` (`DirichletCharacter.IsPrimitive.sum_ite_dvd_val_mul_stdAddChar`).
 
 The Gauss-sum identities are classical; see K. Ireland and M. Rosen, *A Classical Introduction to
 Modern Number Theory*, Chapter 6.
@@ -115,25 +119,25 @@ theorem gaussSum_mul_gaussSum_inv_eq_neg_one_mul_card_of_isPrimitive
         _ = _ := by rw [χ.apply_neg_one_mul_self, one_mul]
     _ = _ := by rw [hprod]
 
-/-- If the level `n` is nonzero in `R`, the Gauss sum of a primitive Dirichlet character against
-a primitive additive character is nonzero. -/
+/-- The Gauss sum of a primitive Dirichlet character against a primitive additive character is
+nonzero. -/
 theorem gaussSum_ne_zero_of_isPrimitive
-    {R : Type*} [CommRing R] [IsDomain R] {n : ℕ} [NeZero n] (hn : (n : R) ≠ 0)
+    {R : Type*} [CommRing R] [IsDomain R] {n : ℕ} [NeZero n]
     {χ : DirichletCharacter R n} (hχ : IsPrimitive χ)
     {e : AddChar (ZMod n) R} (he : e.IsPrimitive) :
     gaussSum χ e ≠ 0 := by
   have hprod := gaussSum_mul_gaussSum_inv_eq_card_of_isPrimitive hχ he
   rw [ZMod.card] at hprod
-  exact left_ne_zero_of_mul (hprod ▸ hn)
+  exact left_ne_zero_of_mul (hprod ▸ he.natCast_ne_zero)
 
-/-- If the level `n` is nonzero in `R`, the Gauss sum of the inverse of a primitive Dirichlet
-character against a primitive additive character is nonzero. -/
+/-- The Gauss sum of the inverse of a primitive Dirichlet character against a primitive additive
+character is nonzero. -/
 theorem gaussSum_inv_ne_zero_of_isPrimitive
-    {R : Type*} [CommRing R] [IsDomain R] {n : ℕ} [NeZero n] (hn : (n : R) ≠ 0)
+    {R : Type*} [CommRing R] [IsDomain R] {n : ℕ} [NeZero n]
     {χ : DirichletCharacter R n} (hχ : IsPrimitive χ)
     {e : AddChar (ZMod n) R} (he : e.IsPrimitive) :
     gaussSum χ⁻¹ e ≠ 0 :=
-  gaussSum_ne_zero_of_isPrimitive hn hχ.inv he
+  gaussSum_ne_zero_of_isPrimitive hχ.inv he
 
 /-- The square of the Gauss sum of a primitive quadratic Dirichlet character is its value at
 `-1` times the level. -/
@@ -275,5 +279,29 @@ theorem IsPrimitive.sum_inv_mul_stdAddChar {v N : ℕ} [NeZero v] [NeZero N]
       hφ.inv.fourierTransform_eq_inv_mul_gaussSum, inv_inv, Int.cast_neg, neg_neg, nsmul_eq_mul,
       ← Int.natCast_div, Int.cast_natCast]
   · rfl
+
+/-- For primitive `ψ` modulo `u`, the Fourier coefficient modulo `u v` of `ψ` carried to the
+multiples of `v`, that is of `y ↦ ψ(y / v)` if `v ∣ y` and `0` otherwise: it is `ψ⁻¹(m) g(ψ)`. -/
+theorem IsPrimitive.sum_ite_dvd_val_mul_stdAddChar {u v : ℕ} [NeZero u] [NeZero v]
+    {ψ : DirichletCharacter ℂ u} (hψ : ψ.IsPrimitive) (m : ZMod (u * v)) :
+    ∑ y : ZMod (u * v), (if v ∣ y.val then ψ ((y.val / v : ℕ) : ZMod u) else 0) *
+      ZMod.stdAddChar (y * m) = ψ⁻¹ ((m.val : ℕ) : ZMod u) * gaussSum ψ ZMod.stdAddChar := by
+  have hsum := ZMod.sum_ite_dvd_val (m := u) (n := u * v) (dvd_mul_right u v)
+    (fun q ↦ ψ (q : ZMod u) * ZMod.stdAddChar (((v * q : ℕ) : ZMod (u * v)) * m))
+  rw [Nat.mul_div_cancel_left v (NeZero.pos u)] at hsum
+  convert hsum using 1
+  · refine Finset.sum_congr rfl fun y _ ↦ ?_
+    split_ifs with h
+    · rw [Nat.mul_div_cancel' h, ZMod.natCast_zmod_val]
+    · rw [zero_mul]
+  · -- the additive character modulo `u v` at `v k m` is the one modulo `u` at `k m`
+    have hchar (k : ℕ) : ZMod.stdAddChar (((v * k : ℕ) : ZMod (u * v)) * m) =
+        ZMod.stdAddChar ((k : ZMod u) * ((m.val : ℕ) : ZMod u)) := by
+      have h := ZMod.stdAddChar_intCast_natCast_mul (m := u) (n := v) ((k : ℤ) * m.val)
+      push_cast at h
+      rw [Nat.cast_mul]
+      rwa [ZMod.natCast_zmod_val, ← mul_assoc] at h
+    simp_rw [hchar, ZMod.natCast_zmod_val, ← gaussSum_mulShift_of_isPrimitive _ hψ, gaussSum,
+      AddChar.mulShift_apply, mul_comm]
 
 end DirichletCharacter

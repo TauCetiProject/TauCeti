@@ -56,10 +56,12 @@ theorem orthogonalDetSquareClass_apply {N : Type w} [AddCommMonoid N] [Module K 
 /-- **The determinant square class detects `SO(Q)`** when `-1` is not a square. The determinant of
 an orthogonal transformation of a nondegenerate form is `±1`, and the class of `-1` is nontrivial
 exactly when `-1` is not a square. -/
-theorem ker_orthogonalDetSquareClass [NeZero (2 : K)] [FiniteDimensional K V]
+theorem ker_orthogonalDetSquareClass [FiniteDimensional K V]
     {Q : QuadraticForm K V} (hQ : Q.Nondegenerate) (h : ¬IsSquare (-1 : K)) :
     (orthogonalDetSquareClass Q).ker = specialOrthogonalWithin Q := by
-  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne 2)
+  have h2 : (2 : K) ≠ 0 := fun h0 ↦
+    h ⟨1, by rw [mul_one]; exact (eq_neg_of_add_eq_zero_left (by rw [one_add_one_eq_two, h0])).symm⟩
+  let _ : Invertible (2 : K) := invertibleOfNonzero h2
   ext g
   rw [MonoidHom.mem_ker, orthogonalDetSquareClass_apply, squareClassHom_eq_one_iff,
     mem_specialOrthogonalWithin_iff, ← orthogonalDet_apply]

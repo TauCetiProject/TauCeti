@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Caccioppoli.LowerOrder
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.DeGiorgi
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.Order.SuccPred.IntervalSucc
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Decay of upper level sets of weak subsolutions (De Giorgi)
@@ -107,7 +108,7 @@ private theorem sq_measureReal_le_of_setIntegral_le
   have hV : 0 < V := by
     rw [hVeq]
     exact mul_pos (pow_pos hR n)
-      (ENNReal.toReal_pos (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne)
+      (Metric.measureReal_ball_pos mu 0 one_pos)
   have hiso := W1p.sq_sub_mul_measureReal_mul_measureReal_le_of_ball_subset hR.le hball u hll' hwl
   rw [show mu.real (ball 0 1) * (2 * R) ^ (n + 1) = 2 ^ (n + 1) * R * V by rw [hVeq]; ring]
     at hiso
@@ -165,7 +166,7 @@ theorem sqrt_mul_measureReal_le_mul_measureReal_ball_of_forall_setIntegral_le
   set lev : ℕ → ℝ := fun j => M - d / 2 ^ j
   set A : ℕ → ℝ := fun j => nu.real {x | lev j ≤ W1p.value u x}
   set D : ℕ → ℝ := fun j => nu.real (W1p.value u ⁻¹' Ioo (lev j) (lev (j + 1)))
-  have hV : 0 < V := ENNReal.toReal_pos (measure_ball_pos mu x₀ hR).ne' measure_ball_lt_top.ne
+  have hV : 0 < V := Metric.measureReal_ball_pos mu x₀ hR
   -- The energy bound at the level `k` forces `Q ≥ 0`.
   have hQ : 0 ≤ Q := by
     have h0 := (integral_nonneg fun x => sq_nonneg _).trans (henergy k le_rfl hkM hwLp)
@@ -269,7 +270,7 @@ theorem exists_sqrt_mul_measureReal_le_mul_measureReal_ball {θ : ℝ} (hθ : 0 
     (Q := (2 * Lam / lam) ^ 2 * c ^ 2 * 2 ^ n) hR ((ball_subset_ball (by linarith)).trans hball)
     hkM hθ hwLp (fun l hkl hlM hl => ?_) hθk j).trans ?_
   · -- Caccioppoli on `B_R ⊆ B_{2R}`, followed by the bound `(u - l)⁺ ≤ M - l` on `B_{2R}`.
-    have henergy := hcacc hl h ha hu hR (by linarith : R < 2 * R) hball
+    have henergy := hcacc hl h ha hu (by linarith : R < 2 * R) hball
     rw [(by ring : 2 * R - R = R)] at henergy
     refine (le_mul_sq_div_sq_mul_measureReal_ball_of_le_mul_setIntegral hR (by positivity) hlM.le
       hM henergy).trans_eq ?_
@@ -325,7 +326,7 @@ theorem exists_sqrt_mul_measureReal_le_mul_measureReal_ball_lowerOrder {θ : ℝ
     (W1p.memLp_posPartAbove hk u) (fun l hkl hlM hl => ?_) hθk j).trans ?_
   · -- Caccioppoli on `B_R ⊆ B_{2R}`, followed by the bound `(u - l)⁺ ≤ M - l` on `B_{2R}`.
     have hl0 : 0 ≤ l := hk.trans hkl
-    have henergy := hcacc hl0 h ha hb hc hb_bound hc_bound hc_nonneg hu hR
+    have henergy := hcacc hl0 h ha hb hc hb_bound hc_bound hc_nonneg hu
       (by linarith : R < 2 * R) hball
     rw [(by ring : 2 * R - R = R),
       W1p.posPartAboveOfMemLp_eq_posPartAbove (by norm_num) hl0 u hl |>.symm] at henergy

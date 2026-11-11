@@ -36,11 +36,13 @@ onto the fundamental interval `(F 0, F 0 + T]`, and applies the change of variab
 * `AddCircle.volume_le_smul_map_volume_of_lift`: if `0 < F' ≤ M`, then the measure of the
   circle is at most `M` times its pushforward along `φ`.
 * `AddCircle.map_volume_le_of_lift_of_leftInverse` and
-  `AddCircle.map_haarAddCircle_le_of_lift_of_leftInverse`: if `0 < F' ≤ M`, then a measurable
-  left inverse of `φ` pushes the measure of the circle forward to at most `M` times itself.
+  `AddCircle.map_haarAddCircle_le_of_lift_of_leftInverse`: if `0 < F' ≤ M`, then a left
+  inverse of `φ` pushes the measure of the circle forward to at most `M` times itself.
 * `AddCircle.integral_deriv_smul_comp_of_lift` and
   `AddCircle.integral_haarAddCircle_deriv_smul_comp_of_lift`: the change of variables formula
   `∫ F' x • g (φ x) dx = ∫ g x dx` over the circle, for a lift with nonnegative derivative.
+* `Function.Periodic.eqOn_zero_of_intervalIntegral_eq_zero`: a continuous periodic function which
+  is nonnegative over a period and has integral zero over a period vanishes inside that period.
 -/
 
 public section
@@ -112,13 +114,23 @@ theorem volume_le_smul_map_volume_of_lift (hpos : ∀ x, 0 < F' x) {M : ℝ} (hM
     fun x ↦ ?_)) hFc.measurable) AddCircle.measurable_mk'
   simpa [abs_of_pos (hpos x)] using ENNReal.ofReal_le_ofReal (hMF x)
 
-/-- If the lift `F` of `φ` satisfies `0 < F' ≤ M` and `ψ` is a measurable left inverse of `φ`,
-then `ψ` pushes the measure of the circle forward to at most `M` times itself. -/
+/-- If the lift `F` of `φ` has positive derivative, every left inverse `ψ` of `φ` is measurable:
+it is the inverse of the homeomorphism of the circle presented by `F`. -/
+private theorem measurable_of_lift_of_leftInverse (hpos : ∀ x, 0 < F' x)
+    {ψ : AddCircle T → AddCircle T} (hψφ : Function.LeftInverse ψ φ) : Measurable ψ := by
+  have hmono : StrictMono F := strictMono_of_hasDerivAt_pos hF hpos
+  have hFc : Continuous F := continuous_iff_continuousAt.2 fun x ↦ (hF x).continuousAt
+  rw [eq_homeomorphOfLift_symm_of_leftInverse hmono hFc hper hφ hψφ]
+  exact (homeomorphOfLift φ hmono hFc hper hφ).symm.continuous.measurable
+
+/-- If the lift `F` of `φ` satisfies `0 < F' ≤ M` and `ψ` is a left inverse of `φ`, then `ψ` pushes
+the measure of the circle forward to at most `M` times itself. -/
 theorem map_volume_le_of_lift_of_leftInverse (hpos : ∀ x, 0 < F' x) {M : ℝ}
-    (hMF : ∀ x, F' x ≤ M) {ψ : AddCircle T → AddCircle T} (hψ : Measurable ψ)
+    (hMF : ∀ x, F' x ≤ M) {ψ : AddCircle T → AddCircle T}
     (hψφ : Function.LeftInverse ψ φ) :
     (volume : Measure (AddCircle T)).map ψ ≤ ENNReal.ofReal M • volume := by
   have hFc : Continuous F := continuous_iff_continuousAt.2 fun x ↦ (hF x).continuousAt
+  have hψ := measurable_of_lift_of_leftInverse hF hper hφ hpos hψφ
   calc (volume : Measure (AddCircle T)).map ψ
       ≤ (ENNReal.ofReal M • (volume : Measure (AddCircle T)).map φ).map ψ :=
         Measure.map_mono (volume_le_smul_map_volume_of_lift hF hper hφ hpos hMF) hψ
@@ -138,12 +150,15 @@ theorem map_haarAddCircle_le_of_lift {c : ℝ} (hc : 0 < c) (hcF : ∀ x, c ≤ 
 
 /-- The `haarAddCircle` form of `AddCircle.map_volume_le_of_lift_of_leftInverse`. -/
 theorem map_haarAddCircle_le_of_lift_of_leftInverse (hpos : ∀ x, 0 < F' x) {M : ℝ}
-    (hMF : ∀ x, F' x ≤ M) {ψ : AddCircle T → AddCircle T} (hψ : Measurable ψ)
+    (hMF : ∀ x, F' x ≤ M) {ψ : AddCircle T → AddCircle T}
     (hψφ : Function.LeftInverse ψ φ) :
     (haarAddCircle : Measure (AddCircle T)).map ψ ≤ ENNReal.ofReal M • haarAddCircle := by
-  rw [haarAddCircle_eq_smul_volume, Measure.map_smul _ hψ.aemeasurable, smul_comm]
+  have hψ := measurable_of_lift_of_leftInverse hF hper hφ hpos hψφ
+  rw [haarAddCircle_eq_smul_volume,
+    Measure.map_smul _ hψ.aemeasurable,
+    smul_comm]
   gcongr
-  exact map_volume_le_of_lift_of_leftInverse hF hper hφ hpos hMF hψ hψφ
+  exact map_volume_le_of_lift_of_leftInverse hF hper hφ hpos hMF hψφ
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
@@ -170,3 +185,24 @@ theorem integral_haarAddCircle_deriv_smul_comp_of_lift (hpos : ∀ x, 0 ≤ F' x
 end Pushforward
 
 end AddCircle
+
+/-- A continuous `T`-periodic function which is nonnegative on `[a, a + T]` and whose integral over
+a period vanishes, vanishes on `(a, a + T)`. -/
+theorem Function.Periodic.eqOn_zero_of_intervalIntegral_eq_zero {f : ℝ → ℝ} {T : ℝ}
+    (hper : Function.Periodic f T) (hf : Continuous f) {a : ℝ}
+    (hnn : ∀ t ∈ Icc a (a + T), 0 ≤ f t) (hint : ∫ t in 0..T, f t = 0) :
+    EqOn f 0 (Ioo a (a + T)) := by
+  intro t ht
+  have hab : a ≤ a + T := (ht.1.trans ht.2).le
+  have hint' : ∫ t in a..a + T, f t = 0 := by
+    rw [hper.intervalIntegral_add_eq a 0, zero_add]
+    exact hint
+  have hzero := (intervalIntegral.integral_eq_zero_iff_of_nonneg_ae
+    (ae_restrict_of_forall_mem (measurableSet_Ioc.union measurableSet_Ioc) fun t ht ↦ by
+      rcases ht with ht | ht
+      · exact hnn t (Ioc_subset_Icc_self ht)
+      · exact absurd (ht.1.trans_le ht.2) (not_lt.mpr hab))
+    (hf.intervalIntegrable _ _)).mp hint'
+  exact Measure.eqOn_open_of_ae_eq (ae_restrict_of_ae_restrict_of_subset
+    (fun t ht ↦ Or.inl (Ioo_subset_Ioc_self ht)) hzero) isOpen_Ioo hf.continuousOn
+    continuousOn_const ht

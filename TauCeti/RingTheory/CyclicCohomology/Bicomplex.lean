@@ -771,12 +771,12 @@ private theorem injective_homologyMap_cyclicCochainComplexToTotal (m : ℕ)
     HomologicalComplex.moduleCat_homologyπ_eq_zero_iff _ rfl] at hc
   obtain ⟨y, hy⟩ := hc
   have hy' := congrArg ((cyclicTotalComplex R A M).iCycles m) hy
-  rw [← ModuleCat.comp_apply, HomologicalComplex.toCycles_i,
+  rw [HomologicalComplex.moduleCat_iCycles_toCycles_apply,
     HomologicalComplex.iCycles_moduleCatCyclesMk] at hy'
   obtain ⟨ψ, hψ⟩ := exists_cyclicCochainComplex_d_eq rfl hR φ y hy'
   rw [HomologicalComplex.moduleCat_homologyπ_eq_zero_iff _ rfl]
   refine ⟨ψ, (cyclicCochainComplex R A M).moduleCat_iCycles_injective m ?_⟩
-  rw [← ModuleCat.comp_apply, HomologicalComplex.toCycles_i,
+  rw [HomologicalComplex.moduleCat_iCycles_toCycles_apply,
     HomologicalComplex.iCycles_moduleCatCyclesMk, hψ]
 
 /-- In degree `m`, every total cocycle is the image of a cyclic cocycle up to a total coboundary. -/

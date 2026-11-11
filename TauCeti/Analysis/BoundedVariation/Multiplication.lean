@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.BoundedVariation.TotalVariation
+import TauCeti.Analysis.Distribution.TestFunction.NormDuality
+import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 
 /-!
 # Multiplication of a function of bounded variation by a smooth function
@@ -58,23 +60,20 @@ theorem totalVariationOn_mul_le {χ : E → ℝ} (hχ : ContDiff ℝ ∞ χ) {c 
   refine totalVariationOn_le_iff.mpr fun φ hφ => ?_
   have hφd : ContDiff ℝ ∞ (φ : E → E) := φ.contDiff
   -- The test vector field `χ φ` and the test function `Dχ φ` on `Ω`.
-  let χφ : 𝓓(Ω, E) := ⟨fun x => χ x • φ x, hχ.smul hφd, φ.hasCompactSupport.smul_left,
-    (subset_inter (tsupport_smul_subset_left _ _) (tsupport_smul_subset_right _ _)).trans
-      ((inter_subset_inter_right _ φ.tsupport_subset).trans hΩ')⟩
-  have hsupp : support (fun x => fderiv ℝ χ x (φ x)) ⊆ support (fderiv ℝ χ) ∩ support φ :=
-    fun x hx => ⟨fun h0 => hx (by simp [h0]), fun h0 => hx (by simp [h0])⟩
-  let a : 𝓓(Ω, ℝ) := ⟨fun x => fderiv ℝ χ x (φ x), (hχ.fderiv_right le_rfl).clm_apply hφd,
-    φ.hasCompactSupport.mono fun x hx => (hsupp hx).2,
-    (closure_mono hsupp |>.trans (closure_inter_subset_inter_closure _ _)).trans
-      ((inter_subset_inter (tsupport_fderiv_subset ℝ) φ.tsupport_subset).trans hΩ')⟩
-  have hχφ_apply : (χφ : E → E) = fun x => χ x • φ x := rfl
-  have ha : (a : E → ℝ) = fun x => fderiv ℝ χ x (φ x) := rfl
+  obtain ⟨χφ, hχφ_apply⟩ := TestFunction.exists_coe_eq_clm_apply_of_tsupport_inter_subset
+    (A := fun x => χ x • ContinuousLinearMap.id ℝ E) (hχ.smul contDiff_const)
+    ((inter_subset_inter_left _ (tsupport_smul_subset_left χ fun _ => ContinuousLinearMap.id ℝ E)
+      ).trans hΩ') φ
+  obtain ⟨a, ha⟩ := TestFunction.exists_coe_eq_clm_apply_of_tsupport_inter_subset
+    (hχ.fderiv_right le_rfl)
+    ((inter_subset_inter_left _ (tsupport_fderiv_subset ℝ)).trans hΩ') φ
+  have hχφ_apply' : (χφ : E → E) = fun x => χ x • φ x := by rw [hχφ_apply]; rfl
   -- The product rule `div (χ φ) = χ div φ + Dχ φ`.
   have hdiv (x : E) : divergenceCLM χφ x = χ x * divergenceCLM φ x + a x := by
-    rw [divergenceCLM_apply, divergenceCLM_apply, hχφ_apply, ha,
+    rw [divergenceCLM_apply, divergenceCLM_apply, hχφ_apply', ha,
       trace_fderiv_smul (hχ.differentiable (by simp) x) (hφd.differentiable (by simp) x)]
   have hχφ (x : E) : ‖χφ x‖ ≤ c := by
-    rw [hχφ_apply, norm_smul, Real.norm_eq_abs]
+    rw [hχφ_apply', norm_smul, Real.norm_eq_abs]
     exact (mul_le_of_le_one_right (abs_nonneg _) (hφ x)).trans (hχc x)
   have hint (ψ : 𝓓(Ω, ℝ)) : Integrable (fun x => ψ x * u x) μ := by
     simpa using ψ.integrable_smul hu
@@ -84,20 +83,12 @@ theorem totalVariationOn_mul_le {χ : E → ℝ} (hχ : ContDiff ℝ ∞ χ) {c 
     congr 1 with x
     rw [hdiv, Pi.mul_apply]
     ring
-  -- The remainder `∫ Dχ φ u` is at most `∫_{Ω'} ‖Dχ‖ |u|`.
   have hrem : ENNReal.ofReal |∫ x, a x * u x ∂μ| ≤
       ∫⁻ x in Ω', ‖fderiv ℝ χ x‖ₑ * ‖u x‖ₑ ∂μ := by
-    rw [← Real.enorm_eq_ofReal_abs, ← lintegral_indicator Ω'.isOpen.measurableSet]
-    refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono fun x => ?_)
-    by_cases hx : x ∈ (Ω' : Set E)
-    · rw [indicator_of_mem hx, enorm_mul]
-      gcongr
-      rw [ha, ← ofReal_norm, ← ofReal_norm]
-      exact ENNReal.ofReal_le_ofReal <| ((fderiv ℝ χ x).le_opNorm _).trans
-        (mul_le_of_le_one_right (norm_nonneg _) (hφ x))
-    · have hφx : φ x = 0 :=
-        image_eq_zero_of_notMem_tsupport fun hmem => hx (φ.tsupport_subset hmem)
-      simp [ha, hφx, hx]
+    have h := φ.enorm_integral_apply_le_setLIntegral_enorm hφ (μ := μ)
+      (fun x => u x • fderiv ℝ χ x)
+    rw [← Real.enorm_eq_ofReal_abs]
+    simpa only [smul_apply, smul_eq_mul, enorm_smul, ha, mul_comm] using h
   rw [hsplit]
   calc ENNReal.ofReal (∫ x, divergenceCLM χφ x * u x ∂μ - ∫ x, a x * u x ∂μ)
       ≤ ENNReal.ofReal (∫ x, divergenceCLM χφ x * u x ∂μ) +

@@ -27,10 +27,13 @@ free Lyndon length function with values in `Λ` (Chiswell), which is how `Λ`-tr
 study of limit groups: a finitely generated fully residually free group acts freely on a
 `ℤⁿ`-tree.
 
-We prove that segments in a `Λ`-tree are unique, that `Λ` itself, with the metric `|a - b|`, is a
-`Λ`-tree whose segments are its closed intervals, and that a one-point space is a `Λ`-tree. The
-vertex set of a cycle of length four, with its path metric, is a geodesic `ℤ`-metric space which is
-not a `ℤ`-tree, so geodesicity alone does not make a `Λ`-metric space a `Λ`-tree.
+Measuring the distance from `x` identifies a segment from `x` to `y` isometrically with the
+interval `[0, d x y]`, so the part of a segment between two of its points is again a segment. We
+prove that segments in a `Λ`-tree are unique, hence convex, that `Λ` itself, with the metric
+`|a - b|`, is a `Λ`-tree whose segments are its closed intervals, and that a one-point space is a
+`Λ`-tree. The vertex set of a cycle of length four, with its path metric, is a geodesic
+`ℤ`-metric space which is not a `ℤ`-tree, so geodesicity alone does not make a `Λ`-metric space a
+`Λ`-tree.
 
 ## Main definitions
 
@@ -47,8 +50,14 @@ not a `ℤ`-tree, so geodesicity alone does not make a `Λ`-metric space a `Λ`-
   closed intervals `[a, b]` of `Λ`.
 * `TauCeti.LambdaMetric.IsSegment.eq_of_subset`: a segment contained in a segment and containing
   its endpoints is equal to it.
+* `TauCeti.LambdaMetric.IsSegment.dist_add_dist`: a point `u` of a segment from `x` to `y`
+  satisfies `d x u + d u y = d x y`.
+* `TauCeti.LambdaMetric.IsSegment.isSegment_sep`: the part of a segment between two of its points
+  is a segment.
 * `TauCeti.LambdaMetric.IsTree.isSegment_unique`: in a `Λ`-tree, two points are joined by a
   unique segment.
+* `TauCeti.LambdaMetric.IsTree.segment_eq_sep`: in a `Λ`-tree, the segment between two points of
+  a segment is the part of that segment between them.
 * `TauCeti.LambdaMetric.isTree_self`: `Λ` is a `Λ`-tree.
 * `TauCeti.LambdaMetric.exists_isGeodesic_not_isTree`: a geodesic `ℤ`-metric space need not be a
   `ℤ`-tree.
@@ -138,6 +147,10 @@ theorem isometricOn_iff {f : Λ → X} {s : Set Λ} :
 theorem IsometricOn.dist_eq {d : LambdaMetric Λ X} {f : Λ → X} {s : Set Λ}
     (h : d.IsometricOn f s) {a b : Λ} (ha : a ∈ s) (hb : b ∈ s) : d (f a) (f b) = |a - b| :=
   h a ha b hb
+
+theorem IsometricOn.mono {d : LambdaMetric Λ X} {f : Λ → X} {s t : Set Λ} (h : d.IsometricOn f t)
+    (hst : s ⊆ t) : d.IsometricOn f s :=
+  fun a ha b hb => h a (hst ha) b (hst hb)
 
 /-- `σ` is a segment from `x` to `y`: the image of the interval `[0, d x y]` under a map, isometric
 on it, sending `0` to `x` and `d x y` to `y`. By `TauCeti.LambdaMetric.isSegment_iff_exists_Icc`
@@ -236,6 +249,55 @@ theorem eq_of_subset {ρ : Set X} {p q : X} (hσ : d.IsSegment σ x y) (hρ : d.
   obtain ⟨s, hs, rfl⟩ := hr'
   exact ⟨s, hs, (hfh s hs).symm⟩
 
+/-- Along a parametrisation `f` of a segment from `x = f 0`, the point `f s` is at distance `s`
+from `x`. -/
+private theorem dist_apply_of_isometricOn {f : Λ → X} {D s : Λ} (hf0 : f 0 = x)
+    (hf : d.IsometricOn f (Icc 0 D)) (hs : s ∈ Icc 0 D) : d x (f s) = s := by
+  rw [← hf0, hf 0 ⟨le_rfl, hs.1.trans hs.2⟩ s hs, zero_sub, abs_neg, abs_of_nonneg hs.1]
+
+/-- Two points of a segment from `x` are at distance the difference of their distances to `x`:
+the distance from `x` is an isometry of the segment onto an interval of `Λ`. -/
+theorem dist_eq_abs_sub (h : d.IsSegment σ x y) {u v : X} (hu : u ∈ σ) (hv : v ∈ σ) :
+    d u v = |d x u - d x v| := by
+  obtain ⟨f, hf0, -, hf, rfl⟩ := h
+  obtain ⟨s, hs, rfl⟩ := hu
+  obtain ⟨t, ht, rfl⟩ := hv
+  rw [hf s hs t ht, dist_apply_of_isometricOn hf0 hf hs, dist_apply_of_isometricOn hf0 hf ht]
+
+/-- A point of a segment from `x` to `y` lies between `x` and `y`. -/
+theorem dist_add_dist (h : d.IsSegment σ x y) {u : X} (hu : u ∈ σ) : d x u + d u y = d x y := by
+  obtain ⟨f, hf0, hfD, hf, rfl⟩ := h
+  obtain ⟨s, hs, rfl⟩ := hu
+  have h₂ : d (f s) y = d x y - s := by
+    conv_lhs => rw [← hfD]
+    rw [hf s hs _ ⟨d.nonneg x y, le_rfl⟩, abs_sub_comm, abs_of_nonneg (sub_nonneg.2 hs.2)]
+  rw [dist_apply_of_isometricOn hf0 hf hs, h₂, add_sub_cancel]
+
+/-- The part of a segment from `x` between two of its points `a` and `b`, that is, the set of its
+points whose distance from `x` lies between those of `a` and `b`, is a segment from `a` to `b`. -/
+theorem isSegment_sep (h : d.IsSegment σ x y) {a b : X} (ha : a ∈ σ) (hb : b ∈ σ) :
+    d.IsSegment {u ∈ σ | d x u ∈ uIcc (d x a) (d x b)} a b := by
+  obtain ⟨f, hf0, -, hf, rfl⟩ := h
+  have hdist {s : Λ} (hs : s ∈ Icc 0 (d x y)) : d x (f s) = s := dist_apply_of_isometricOn hf0 hf hs
+  obtain ⟨s, hs, rfl⟩ := ha
+  obtain ⟨t, ht, rfl⟩ := hb
+  have hsub : uIcc s t ⊆ Icc 0 (d x y) := uIcc_subset_Icc hs ht
+  have heq : {u ∈ f '' Icc 0 (d x y) | d x u ∈ uIcc (d x (f s)) (d x (f t))} = f '' uIcc s t := by
+    rw [hdist hs, hdist ht]
+    ext u
+    constructor
+    · rintro ⟨⟨r, hr, rfl⟩, hr'⟩
+      rw [hdist hr] at hr'
+      exact ⟨r, hr', rfl⟩
+    · rintro ⟨r, hr, rfl⟩
+      exact ⟨⟨r, hsub hr, rfl⟩, by rwa [hdist (hsub hr)]⟩
+  rw [heq]
+  rcases le_total s t with hst | hts
+  · rw [uIcc_of_le hst] at hsub ⊢
+    exact isSegment_iff_exists_Icc.2 ⟨s, t, f, hst, rfl, rfl, hf.mono hsub, rfl⟩
+  · rw [uIcc_of_ge hts] at hsub ⊢
+    exact (isSegment_iff_exists_Icc.2 ⟨t, s, f, hts, rfl, rfl, hf.mono hsub, rfl⟩).symm
+
 end IsSegment
 
 theorem isSegment_comm {σ : Set X} {x y : X} : d.IsSegment σ x y ↔ d.IsSegment σ y x :=
@@ -321,6 +383,33 @@ theorem IsTree.isSegment_iff_eq_segment (hd : d.IsTree) {σ : Set X} {x y : X} :
     d.IsSegment σ x y ↔ σ = hd.segment x y :=
   ⟨fun h => hd.isSegment_unique h (hd.isSegment_segment x y),
     fun h => h ▸ hd.isSegment_segment x y⟩
+
+@[simp]
+theorem IsTree.left_mem_segment (hd : d.IsTree) (x y : X) : x ∈ hd.segment x y :=
+  (hd.isSegment_segment x y).left_mem
+
+@[simp]
+theorem IsTree.right_mem_segment (hd : d.IsTree) (x y : X) : y ∈ hd.segment x y :=
+  (hd.isSegment_segment x y).right_mem
+
+@[simp]
+theorem IsTree.segment_self (hd : d.IsTree) (x : X) : hd.segment x x = {x} :=
+  isSegment_self_iff.1 (hd.isSegment_segment x x)
+
+theorem IsTree.segment_comm (hd : d.IsTree) (x y : X) : hd.segment x y = hd.segment y x :=
+  hd.isSegment_unique (hd.isSegment_segment x y) (hd.isSegment_segment y x).symm
+
+/-- In a `Λ`-tree, the segment between two points `a` and `b` of a segment `σ` from `x` is the
+part of `σ` between them. -/
+theorem IsTree.segment_eq_sep (hd : d.IsTree) {σ : Set X} {x y a b : X} (hσ : d.IsSegment σ x y)
+    (ha : a ∈ σ) (hb : b ∈ σ) : hd.segment a b = {u ∈ σ | d x u ∈ uIcc (d x a) (d x b)} :=
+  (hd.isSegment_iff_eq_segment.1 (hσ.isSegment_sep ha hb)).symm
+
+/-- In a `Λ`-tree, a segment contains the segment between any two of its points. -/
+theorem IsTree.segment_subset (hd : d.IsTree) {σ : Set X} {x y a b : X} (hσ : d.IsSegment σ x y)
+    (ha : a ∈ σ) (hb : b ∈ σ) : hd.segment a b ⊆ σ := by
+  rw [hd.segment_eq_sep hσ ha hb]
+  exact sep_subset _ _
 
 /-! ### Examples -/
 

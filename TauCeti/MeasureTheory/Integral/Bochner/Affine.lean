@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.WithDensity
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Affine change of variables for Bochner integrals
@@ -25,9 +26,9 @@ On `Fin n → ℝ` with Lebesgue measure, taking the parameter set to be `Set.Ic
 the change of variables from the unit cube to an affine parallelepiped. The same formula
 in one lower dimension gives the scaling of individual face integrals.
 
-The proofs use `MeasureTheory.Measure.map_affine_withDensity`, which combines Mathlib's
-`Measure.map_linearMap_addHaar_eq_smul_addHaar` with translation invariance, and Mathlib's
-transport of set integrals along measurable equivalences.
+The proofs use `MeasureTheory.Measure.map_affine_addHaar_eq_smul`, the image of an additive Haar
+measure under an affine map, and Mathlib's transport of set integrals along measurable
+equivalences.
 -/
 
 public section
@@ -54,8 +55,7 @@ theorem integrableOn_image_affine_iff (L : V ≃L[ℝ] V) (p : V) (f : V → E) 
       Function.comp_def]
   have hmap : μ.map e = ENNReal.ofReal |(LinearMap.det (L : V →ₗ[ℝ] V))⁻¹| • μ := by
     rw [he]
-    simpa only [mul_one, withDensity_const, one_smul] using
-      Measure.map_affine_withDensity μ L p (fun _ ↦ 1)
+    exact Measure.map_affine_addHaar_eq_smul μ L p
   have hdet : LinearMap.det (L : V →ₗ[ℝ] V) ≠ 0 := L.toLinearEquiv.isUnit_det'.ne_zero
   have h := integrableOn_map_equiv e (f := f) (s := e '' s) (μ := μ)
   rw [hmap, IntegrableOn, Measure.restrict_smul,
@@ -76,8 +76,7 @@ theorem integral_image_affine [NormedSpace ℝ E] (L : V ≃L[ℝ] V) (p : V) (f
       Function.comp_def]
   have hmap : μ.map e = ENNReal.ofReal |(LinearMap.det (L : V →ₗ[ℝ] V))⁻¹| • μ := by
     rw [he]
-    simpa only [mul_one, withDensity_const, one_smul] using
-      Measure.map_affine_withDensity μ L p (fun _ ↦ 1)
+    exact Measure.map_affine_addHaar_eq_smul μ L p
   have hdet : LinearMap.det (L : V →ₗ[ℝ] V) ≠ 0 := L.toLinearEquiv.isUnit_det'.ne_zero
   have h := setIntegral_map_equiv (μ := μ) e f (e '' s)
   rw [hmap, Measure.restrict_smul, integral_smul_measure,

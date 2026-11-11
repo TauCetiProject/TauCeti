@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Incidence
-public import TauCeti.Combinatorics.Graph.VertexCover
+public import Mathlib.Combinatorics.SimpleGraph.Bipartite
+public import TauCeti.Combinatorics.Graph.Incidence.Basic
+public import TauCeti.Combinatorics.Graph.VertexCover.Basic
 
 /-!
 # Bipartitions of multigraphs
@@ -26,16 +27,24 @@ usage of either side by edge multiplicities equals their sum.
 
 * `Graph.IsBipartition G L R`: the finite sets `L` and `R` of actual vertices form a bipartition of
   `G`.
+* `Graph.BipartiteHom G L`: one arrow for every actual edge, directed from `L` to its other end.
+* `Graph.BipartiteHom.arrowEquiv`: the equivalence between all such arrows and actual edges.
 
 ## Main results
 
 * `Graph.isBipartition_comm`: a bipartition is symmetric in its two sides.
 * `Graph.IsBipartition.loopless`: a multigraph with a bipartition has no loops.
 * `Graph.IsBipartition.finite`: a multigraph with a bipartition has finitely many actual vertices.
+* `Graph.IsBipartition.deleteEdges`: deleting edges preserves a displayed bipartition.
+* `SimpleGraph.isBipartition_ofSimpleGraph_iff`: covering bipartitions of
+  `Graph.ofSimpleGraph H` are precisely bipartitions of `H` whose two sides cover every vertex.
 * `Graph.IsBipartition.isVertexCover_left`: the side `L` of a bipartition is a vertex cover, and
   similarly for `R`.
 * `Graph.IsBipartition.sum_sum_incidentEdges_left`: summing over `L` the values of the edges
   incident with each vertex sums every actual edge once, and similarly for `R`.
+* `Graph.BipartiteHom.sum_outgoing_eq_sum_incidentEdges` and
+  `Graph.BipartiteHom.sum_incoming_eq_sum_incidentEdges`: sums over arrows at a vertex agree with
+  sums over its incident edges.
 -/
 
 public section
@@ -97,6 +106,14 @@ theorem finite (h : G.IsBipartition L R) : Finite V(G) := by
   exact Set.finite_univ_iff.1 <| (L ∪ R).finite_toSet.subset fun x _ ↦ by
     simpa using h.mem_or_mem x
 
+/-- Deleting any set of edges preserves a displayed bipartition. The actual vertex set, including
+its isolated vertices, is unchanged. -/
+theorem deleteEdges (h : G.IsBipartition L R) (F : Set β) :
+    (G.deleteEdges F).IsBipartition L R where
+  disjoint := h.disjoint
+  mem_or_mem := h.mem_or_mem
+  isLink he := h.isLink (he.mono Graph.deleteEdges_le)
+
 /-- The side `L` of a bipartition is a vertex cover. -/
 theorem isVertexCover_left (h : G.IsBipartition L R) : G.IsVertexCover (L : Set V(G)) :=
   isVertexCover_def.2 fun _ _ _ he ↦ (h.isLink he).imp And.left And.right
@@ -153,4 +170,215 @@ end IsBipartition
 theorem isBipartition_comm : G.IsBipartition L R ↔ G.IsBipartition R L :=
   ⟨IsBipartition.symm, IsBipartition.symm⟩
 
+/-! ### Bipartite arrow family -/
+
+/-- The arrow family obtained by directing every actual edge of `G` from its end in `L` to its
+other end. Under a bipartition by `L, R`, these are exactly the edges directed from `L` to `R`. -/
+@[expose] def BipartiteHom (G : Graph α β) (L : Finset V(G)) (x y : V(G)) : Type v :=
+  {e : E(G) // G.IsLink e x y ∧ x ∈ L}
+
+instance [Finite E(G)] (L : Finset V(G)) (x y : V(G)) : Finite (G.BipartiteHom L x y) := by
+  unfold BipartiteHom
+  infer_instance
+
+noncomputable instance [Fintype E(G)] (L : Finset V(G)) (x y : V(G)) :
+    Fintype (G.BipartiteHom L x y) :=
+  Fintype.ofFinite (G.BipartiteHom L x y)
+
+namespace BipartiteHom
+
+/-- The original edge underlying an arrow of the bipartite arrow family. -/
+@[expose] def edge {L : Finset V(G)} {x y : V(G)} (e : G.BipartiteHom L x y) : E(G) := e.1
+
+@[simp]
+theorem edge_mk {L : Finset V(G)} {x y : V(G)} (e : E(G))
+    (h : G.IsLink e x y ∧ x ∈ L) : edge (⟨e, h⟩ : G.BipartiteHom L x y) = e :=
+  rfl
+
+/-- The edge underlying a bipartite arrow links its source to its target. -/
+theorem isLink {L : Finset V(G)} {x y : V(G)} (e : G.BipartiteHom L x y) :
+    G.IsLink e.edge x y :=
+  e.2.1
+
+/-- Bipartite arrows are equal when their underlying edges are equal. -/
+@[ext]
+theorem ext {L : Finset V(G)} {x y : V(G)} {e e' : G.BipartiteHom L x y}
+    (h : e.edge = e'.edge) : e = e' :=
+  Subtype.ext h
+
+/-- The source of every bipartite arrow belongs to `L`. -/
+theorem source_mem {L : Finset V(G)} {x y : V(G)} (e : G.BipartiteHom L x y) : x ∈ L :=
+  e.2.2
+
+/-- The target of every bipartite arrow belongs to `R`. -/
+theorem target_mem {L R : Finset V(G)} (hLR : G.IsBipartition L R) {x y : V(G)}
+    (e : G.BipartiteHom L x y) : y ∈ R :=
+  hLR.mem_right_of_isLink e.isLink e.source_mem
+
+/-- The arrows leaving a vertex on the left side of a bipartition are in bijection with the
+actual edges incident with that vertex. -/
+noncomputable def outgoingEquiv {L : Finset V(G)} (x : V(G)) (hx : x ∈ L) :
+    (Σ y, G.BipartiteHom L x y) ≃ {e : E(G) // G.Inc e x} :=
+  Equiv.ofBijective (fun e ↦ ⟨e.2.edge, e.2.isLink.inc_left⟩) ⟨by
+    rintro ⟨y, e⟩ ⟨z, f⟩ h
+    have hef : e.edge = f.edge := congrArg Subtype.val h
+    have hyz : y = z := Subtype.ext (e.isLink.right_unique (hef ▸ f.isLink))
+    subst z
+    exact congrArg (fun a : G.BipartiteHom L x y ↦
+      (⟨y, a⟩ : Σ z, G.BipartiteHom L x z)) (BipartiteHom.ext hef), by
+    intro e
+    let y : V(G) := ⟨e.2.other, e.2.isLink_other.right_mem⟩
+    refine ⟨⟨y, ⟨e.1, e.2.isLink_other, hx⟩⟩, ?_⟩
+    apply Subtype.ext
+    rfl⟩
+
+@[simp]
+theorem outgoingEquiv_apply {L : Finset V(G)} (x : V(G)) (hx : x ∈ L)
+    (e : Σ y, G.BipartiteHom L x y) :
+    outgoingEquiv x hx e = ⟨e.2.edge, e.2.isLink.inc_left⟩ :=
+  (rfl)
+
+/-- The arrows entering a vertex on the right side of a bipartition are in bijection with the
+actual edges incident with that vertex. -/
+noncomputable def incomingEquiv {L R : Finset V(G)} (hLR : G.IsBipartition L R)
+    (x : V(G)) (hx : x ∈ R) :
+    (Σ y, G.BipartiteHom L y x) ≃ {e : E(G) // G.Inc e x} :=
+  Equiv.ofBijective (fun e ↦ ⟨e.2.edge, e.2.isLink.inc_right⟩) ⟨by
+    rintro ⟨y, e⟩ ⟨z, f⟩ h
+    have hef : e.edge = f.edge := congrArg Subtype.val h
+    have hyz : y = z := Subtype.ext (e.isLink.left_unique (hef ▸ f.isLink))
+    subst z
+    exact congrArg (fun a : G.BipartiteHom L y x ↦
+      (⟨y, a⟩ : Σ z, G.BipartiteHom L z x)) (BipartiteHom.ext hef), by
+    intro e
+    let y : V(G) := ⟨e.2.other, e.2.isLink_other.right_mem⟩
+    refine ⟨⟨y, ⟨e.1, e.2.isLink_other.symm,
+      hLR.mem_left_of_isLink e.2.isLink_other hx⟩⟩, ?_⟩
+    apply Subtype.ext
+    rfl⟩
+
+@[simp]
+theorem incomingEquiv_apply {L R : Finset V(G)} (hLR : G.IsBipartition L R)
+    (x : V(G)) (hx : x ∈ R) (e : Σ y, G.BipartiteHom L y x) :
+    incomingEquiv hLR x hx e = ⟨e.2.edge, e.2.isLink.inc_right⟩ :=
+  (rfl)
+
+/-- In a bipartite graph, directing an edge from the left side to the right side gives a
+bijection from all bipartite arrows to the actual edges. -/
+noncomputable def arrowEquiv {L R : Finset V(G)} (hLR : G.IsBipartition L R) :
+    (Σ x, Σ y, G.BipartiteHom L x y) ≃ E(G) :=
+  Equiv.ofBijective (fun e ↦ e.2.2.edge) ⟨by
+    rintro ⟨x, y, e⟩ ⟨x', y', f⟩ h
+    have hef : e.edge = f.edge := h
+    rcases e.isLink.eq_and_eq_or_eq_and_eq (hef ▸ f.isLink) with hxy | hxy
+    · rcases hxy with ⟨hxx, hyy⟩
+      have hxx' : x = x' := Subtype.ext hxx
+      have hyy' : y = y' := Subtype.ext hyy
+      subst x' y'
+      exact congrArg (fun a : G.BipartiteHom L x y ↦
+        (⟨x, y, a⟩ : Σ x, Σ y, G.BipartiteHom L x y)) (BipartiteHom.ext hef)
+    · have hxy' : x = y' := Subtype.ext hxy.1
+      exact (disjoint_left.1 hLR.disjoint e.source_mem
+        (hxy' ▸ f.target_mem hLR)).elim, by
+    intro e
+    obtain ⟨x, hxL, hx⟩ := (hLR.existsUnique_mem_left_inc e).exists
+    let y : V(G) := ⟨hx.other, hx.isLink_other.right_mem⟩
+    refine ⟨⟨x, y, ⟨e, hx.isLink_other, hxL⟩⟩, ?_⟩
+    apply Subtype.ext
+    rfl⟩
+
+@[simp]
+theorem arrowEquiv_apply {L R : Finset V(G)} (hLR : G.IsBipartition L R)
+    (e : Σ x, Σ y, G.BipartiteHom L x y) : (arrowEquiv hLR e) = e.2.2.edge :=
+  (rfl)
+
+@[simp]
+theorem arrowEquiv_symm_edge {L R : Finset V(G)} (hLR : G.IsBipartition L R)
+    {x y : V(G)} (e : G.BipartiteHom L x y) :
+    (arrowEquiv hLR).symm e.edge = ⟨x, y, e⟩ := by
+  apply (arrowEquiv hLR).injective
+  simp
+
+/-- Summing an edge weight over the arrows leaving a left-side vertex is the sum over the
+actual edges incident with that vertex. -/
+theorem sum_outgoing_eq_sum_incidentEdges [Fintype V(G)] [Fintype E(G)]
+    {M : Type*} [AddCommMonoid M] {L : Finset V(G)} (x : V(G)) (hx : x ∈ L)
+    (f : E(G) → M) :
+    ∑ y, ∑ e : G.BipartiteHom L x y, f e.edge = ∑ e ∈ G.incidentEdges {x}, f e := by
+  classical
+  rw [← Fintype.sum_sigma']
+  refine (Fintype.sum_equiv (outgoingEquiv x hx)
+    (fun e ↦ f e.2.edge) (fun e ↦ f e.1) fun e ↦ rfl).trans ?_
+  exact (Finset.sum_subtype (G.incidentEdges {x}) (by simp [mem_incidentEdges]) f).symm
+
+/-- Summing an edge weight over the arrows entering a right-side vertex is the sum over the
+actual edges incident with that vertex. -/
+theorem sum_incoming_eq_sum_incidentEdges [Fintype V(G)] [Fintype E(G)]
+    {M : Type*} [AddCommMonoid M] {L R : Finset V(G)} (hLR : G.IsBipartition L R)
+    (x : V(G)) (hx : x ∈ R) (f : E(G) → M) :
+    ∑ y, ∑ e : G.BipartiteHom L y x, f e.edge = ∑ e ∈ G.incidentEdges {x}, f e := by
+  classical
+  rw [← Fintype.sum_sigma']
+  refine (Fintype.sum_equiv (incomingEquiv hLR x hx)
+    (fun e ↦ f e.2.edge) (fun e ↦ f e.1) fun e ↦ rfl).trans ?_
+  exact (Finset.sum_subtype (G.incidentEdges {x}) (by simp [mem_incidentEdges]) f).symm
+
+end BipartiteHom
+
 end Graph
+
+namespace SimpleGraph
+
+variable {α : Type u}
+
+/-- Finite sets `L` and `R` form a covering bipartition of the multigraph associated to a simple
+graph `H` exactly when they are bipartition classes of `H` and cover its entire vertex type.
+
+The covering condition is separate because `SimpleGraph.IsBipartiteWith` permits isolated
+vertices outside both displayed sets, whereas `Graph.IsBipartition` partitions all actual
+vertices. -/
+theorem isBipartition_ofSimpleGraph_iff (H : SimpleGraph α)
+    (L R : Finset V(Graph.ofSimpleGraph H)) :
+    (Graph.ofSimpleGraph H).IsBipartition L R ↔
+      H.IsBipartiteWith (Subtype.val '' (L : Set V(Graph.ofSimpleGraph H)))
+          (Subtype.val '' (R : Set V(Graph.ofSimpleGraph H))) ∧
+        Subtype.val '' (L : Set V(Graph.ofSimpleGraph H)) ∪
+          Subtype.val '' (R : Set V(Graph.ofSimpleGraph H)) = Set.univ := by
+  constructor
+  · intro h
+    refine ⟨⟨?_, ?_⟩, Set.eq_univ_of_forall fun x ↦ ?_⟩
+    · rw [Set.disjoint_left]
+      rintro _ ⟨x, hxL, rfl⟩ ⟨y, hxR, hyx⟩
+      have hxy : x = y := Subtype.ext hyx.symm
+      exact Finset.disjoint_left.mp h.disjoint hxL (hxy ▸ hxR)
+    · intro x y hxy
+      obtain ⟨e, he⟩ : (Graph.ofSimpleGraph H).Adj x y :=
+        (Graph.ofSimpleGraph_adj_iff x y).2 hxy
+      rcases h.isLink (x := ⟨x, Set.mem_univ x⟩) (y := ⟨y, Set.mem_univ y⟩) he with
+        hxy | hxy
+      · exact Or.inl ⟨⟨_, hxy.1, rfl⟩, ⟨_, hxy.2, rfl⟩⟩
+      · exact Or.inr ⟨⟨_, hxy.1, rfl⟩, ⟨_, hxy.2, rfl⟩⟩
+    · rcases h.mem_or_mem ⟨x, Set.mem_univ x⟩ with hx | hx
+      · exact Or.inl ⟨_, hx, rfl⟩
+      · exact Or.inr ⟨_, hx, rfl⟩
+  · rintro ⟨h, hcover⟩
+    refine ⟨Finset.disjoint_left.mpr fun x hxL hxR ↦ ?_, fun x ↦ ?_, fun {e x y} he ↦ ?_⟩
+    · exact Set.disjoint_left.mp h.disjoint ⟨x, hxL, rfl⟩ ⟨x, hxR, rfl⟩
+    · have hx : x.1 ∈ Subtype.val '' (L : Set V(Graph.ofSimpleGraph H)) ∪
+          Subtype.val '' (R : Set V(Graph.ofSimpleGraph H)) := by
+        rw [hcover]
+        exact Set.mem_univ x.1
+      rcases hx with ⟨z, hz, hzx⟩ | ⟨z, hz, hzx⟩
+      · exact Or.inl (Subtype.ext hzx ▸ hz)
+      · exact Or.inr (Subtype.ext hzx ▸ hz)
+    · have hxy : H.Adj x.1 y.1 :=
+        (Graph.ofSimpleGraph_adj_iff x.1 y.1).1 ⟨_, he⟩
+      rcases h.mem_of_adj hxy with hxy | hxy
+      · obtain ⟨x', hx'L, hxx'⟩ := hxy.1
+        obtain ⟨y', hy'R, hyy'⟩ := hxy.2
+        exact Or.inl ⟨Subtype.ext hxx' ▸ hx'L, Subtype.ext hyy' ▸ hy'R⟩
+      · obtain ⟨x', hx'R, hxx'⟩ := hxy.1
+        obtain ⟨y', hy'L, hyy'⟩ := hxy.2
+        exact Or.inr ⟨Subtype.ext hxx' ▸ hx'R, Subtype.ext hyy' ▸ hy'L⟩
+
+end SimpleGraph

@@ -182,7 +182,7 @@ theorem exists_sub_mem_w1p0Submodule_harmonicOnNhd_ae_eq_of_subset_ball {n : ℕ
       (fun _ _ => by simp) (fun _ _ => le_rfl) hball (by simp) 0 u
   have hw0 : ∀ v : W1p0 volume Omega 2,
       energyFormH1 (fun _ => 1) 0 0 w (v : W1p volume Omega 2) = 0 := fun v => by
-    rw [hw v, ← dirichletForcing_apply_eq_setIntegral, dirichletForcing_apply, inner_zero_left]
+    rw [hw v, zero_apply]
   have hsub : u - w ∈ w1p0Submodule volume Omega 2 := by
     have hwu :=
       (ClosedSubmodule.mem_toSubmodule_iff (w - u) (w1p0Submodule volume Omega 2)).2 huw

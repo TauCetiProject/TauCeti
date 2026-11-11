@@ -39,7 +39,7 @@ namespace TauCeti
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  [T2Space M] [NormalSpace M] [SigmaCompactSpace M]
+  [T2Space M] [SigmaCompactSpace M]
 
 /-- Globalize a local smooth defining function without changing its germ on the closed
 nonpositive locus. Its strict negative and zero loci are also preserved, and it is positive
@@ -51,6 +51,7 @@ theorem exists_contMDiffMap_definingFunction {n : ℕ∞} {U : Set M} (hU : IsOp
       (∀ x, g x ≤ 0 ↔ x ∈ U ∧ f x ≤ 0) ∧
       (∀ x, g x < 0 ↔ x ∈ U ∧ f x < 0) ∧
       (∀ x, g x = 0 ↔ x ∈ U ∧ f x = 0) := by
+  have := Manifold.locallyCompact_of_finiteDimensional I (M := M)
   obtain ⟨β, hβ0, hβ1, hβ⟩ := exists_contMDiffMap_zero_one_nhds_of_isClosed I
     (n := n) hU.isClosed_compl hs (by
       exact disjoint_left.mpr fun x hx hx' => hx hx'.1)
@@ -126,7 +127,7 @@ variable {E H M F G N : Type*}
   [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
   [TopologicalSpace N] [ChartedSpace G N] [IsManifold J ∞ N]
-  [T2Space N] [NormalSpace N] [SigmaCompactSpace N]
+  [T2Space N] [SigmaCompactSpace N]
 
 /-- A regular domain carried into a manifold by smooth coordinates has a global regular
 defining function, provided its closed domain lies in the coordinate source and has closed
@@ -153,13 +154,9 @@ theorem exists_contMDiffMap_regular_definingFunction
   obtain ⟨g, hg, hgerm, hgle, hglt, hgeq⟩ :=
     TauCeti.exists_contMDiffMap_regular_definingFunction Φ.open_target hlocal
       (hle ▸ hclosed) (fun y hy hfy => by
-        have hdiff := Φ.symm.mdifferentiableAt (by simp) hy
         have hinv :=
           (PartialDiffeomorph.isLocalDiffeomorphAt J I ∞ Φ.symm hy).isInvertible_mfderiv (by simp)
-        exact (hreg _ hfy).comp (isRegularPoint_iff.mpr hinv.surjective)
-          (hf.contMDiffAt
-            (Φ.open_source.mem_nhds (Φ.toPartialEquiv.symm.map_source hy))
-              |>.mdifferentiableAt (by simp)) hdiff)
+        exact (hreg _ hfy).comp (isRegularPoint_iff.mpr hinv.surjective))
   refine ⟨g, hg, ?_, ?_, ?_, ?_⟩
   · intro x hx
     have hxsource := hsource hx

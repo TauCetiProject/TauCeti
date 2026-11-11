@@ -12,6 +12,7 @@ public import TauCeti.FieldTheory.FunctionField.AffineModel.Place
 public import TauCeti.AlgebraicGeometry.WeilDivisor.PicZeroQuotient
 public import TauCeti.FieldTheory.FunctionField.Divisor.Principal
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Principal
+import TauCeti.Data.Nat.MulSucc
 
 /-!
 # The product formula for algebraic function fields
@@ -22,15 +23,18 @@ have degree `[F : k(z)]`.  This is Stichtenoth, *Algebraic Function Fields and C
 Theorem 1.4.11.
 
 Here `k` is not assumed to be the exact constant field of `F`, so a function outside `k` may still
-be algebraic over `k`.  Accordingly the hypothesis throughout is transcendence over `k`, which is
-strictly stronger than nonconstancy.
+be algebraic over `k`.  Accordingly `degree_zeros` and `degree_poles` assume transcendence over
+`k`, which is strictly stronger than nonconstancy; the degree bounds built on them
+(`finrank_adjoin_le_degree_of_mem_riemannRochSpace`, `finrank_adjoin_eq_mul_degree_of_ord_eq_neg`)
+also cover algebraic functions, where the degree is `0` by convention.
 
 ## Main results
 
 * `TauCeti.Divisor.degree_zeros` and `TauCeti.Divisor.degree_poles` compute the two effective
   parts of the principal divisor of a function transcendental over `k`.
   Consequently `TauCeti.Divisor.finrank_adjoin_le_degree_of_mem_riemannRochSpace` bounds
-  `[F : k(x)]` by `deg W` for a transcendental `x` in `L(W)` with `W` effective.
+  `[F : k(x)]` by `deg W` for `x` in `L(W)` with `W` effective; for `x` algebraic over `k` the
+  degree is `0` by convention (`IsAlgebraic.finrank_adjoin_eq_zero`).
 * `TauCeti.Divisor.degree_principal` is the product formula, and
   `TauCeti.Divisor.degree_zeros_eq_degree_poles` restates it as equality of the degrees of the
   zero and pole divisors.
@@ -136,6 +140,22 @@ theorem Divisor.card_mul_succ_le_dim_nsmul_poles_add (hF : IsFunctionField k F) 
   rw [Divisor.dim_def]
   simpa using hcard
 
+/-- The pole divisor of a nonzero transcendental function has degree at most the degree of the
+resulting rational subfield. It is the zero divisor of the inverse function. -/
+private theorem degree_poles_le_finrank_adjoin (hF : IsFunctionField k F) {x : F}
+    (hx : Transcendental k x) (hx0 : x ≠ 0) :
+    Divisor.degree (Divisor.poles hF (Units.mk0 x hx0)) ≤ (Module.finrank k⟮x⟯ F : ℤ) := by
+  let _ : FiniteDimensional k⟮x⁻¹⟯ F := by
+    rw [IntermediateField.adjoin_simple_inv]
+    exact hF.finiteDimensional_adjoin hx
+  have hdegree_le := degree_zeros_le_finrank_adjoin hF (inv_ne_zero hx0)
+  have hunit : Units.mk0 x⁻¹ (inv_ne_zero hx0) = (Units.mk0 x hx0)⁻¹ := by
+    ext
+    simp only [Units.val_mk0, Units.val_inv_eq_inv_val]
+  rw [hunit, ← Divisor.poles_eq_zeros_inv hF (Units.mk0 x hx0),
+    IntermediateField.adjoin_simple_inv] at hdegree_le
+  exact hdegree_le
+
 /-- The pole divisor of a transcendental function has degree equal to the degree of the resulting
 rational subfield.  This is the growth argument in Stichtenoth's proof of Theorem 1.4.11. -/
 private theorem degree_poles_eq_finrank_adjoin (hF : IsFunctionField k F) {x : F}
@@ -183,27 +203,13 @@ private theorem degree_poles_eq_finrank_adjoin (hF : IsFunctionField k F) {x : F
         simpa only [E, q, nsmul_eq_mul] using hupp
       _ = (n : ℤ) * d + e + q := by rw [← hd, ← he]
   have hle : Module.finrank k⟮x⟯ F ≤ d := by
-    by_contra hnot
-    have hgt : d < Module.finrank k⟮x⟯ F := Nat.lt_of_not_ge hnot
-    have hgtZ : (d : ℤ) + 1 ≤ Module.finrank k⟮x⟯ F := by exact_mod_cast hgt
-    dsimp only [n] at hineq
-    push_cast at hineq
-    have hfactor : 0 ≤ (e : ℤ) + q + 1 := by positivity
-    have hmul := mul_le_mul_of_nonneg_right hgtZ hfactor
-    nlinarith
+    refine Nat.le_of_mul_succ_le_mul_add (n := e + q) ?_
+    rw [← add_assoc]
+    exact_mod_cast hineq
   have hdegree_ge : (Module.finrank k⟮x⟯ F : ℤ) ≤ Divisor.degree B := by
     rw [← hd]
     exact_mod_cast hle
-  let _ : FiniteDimensional k⟮x⁻¹⟯ F := by
-    rw [IntermediateField.adjoin_simple_inv]
-    exact hF.finiteDimensional_adjoin hx
-  have hdegree_le := degree_zeros_le_finrank_adjoin hF (inv_ne_zero hx0)
-  have hunit : Units.mk0 x⁻¹ (inv_ne_zero hx0) = (Units.mk0 x hx0)⁻¹ := by
-    ext
-    simp only [Units.val_mk0, Units.val_inv_eq_inv_val]
-  rw [hunit, ← Divisor.poles_eq_zeros_inv hF (Units.mk0 x hx0),
-    IntermediateField.adjoin_simple_inv] at hdegree_le
-  exact le_antisymm (by simpa only [B] using hdegree_le) hdegree_ge
+  exact le_antisymm (degree_poles_le_finrank_adjoin hF hx hx0) hdegree_ge
 
 namespace Divisor
 
@@ -232,15 +238,19 @@ theorem degree_zeros (hF : IsFunctionField k F) (z : Fˣ)
     IntermediateField.adjoin_simple_inv] at h
   exact h
 
-/-- A function `x` transcendental over `k` in the Riemann–Roch space `L(W)` of an effective
-divisor `W` has degree `[F : k(x)] ≤ deg W`: its pole divisor lies below `W`. -/
+/-- A function `x` in the Riemann–Roch space `L(W)` of an effective divisor `W` has degree
+`[F : k(x)] ≤ deg W`: its pole divisor lies below `W`. For `x` algebraic over `k` the degree is
+`0` by convention. -/
 theorem finrank_adjoin_le_degree_of_mem_riemannRochSpace (hF : IsFunctionField k F)
-    {W : Divisor k F} (hW : 0 ≤ W) {x : F} (hxW : x ∈ riemannRochSpace W)
-    (hxt : Transcendental k x) :
+    {W : Divisor k F} (hW : 0 ≤ W) {x : F} (hxW : x ∈ riemannRochSpace W) :
     (Module.finrank k⟮x⟯ F : ℤ) ≤ degree W := by
-  have hdeg := degree_le_of_le
-    ((poles_le_iff_mem_riemannRochSpace hF hW (Units.mk0 x hxt.ne_zero)).mpr hxW)
-  rwa [degree_poles hF (Units.mk0 x hxt.ne_zero) hxt, Units.val_mk0] at hdeg
+  by_cases hxt : Transcendental k x
+  · have hdeg := degree_le_of_le
+      ((poles_le_iff_mem_riemannRochSpace hF hW (Units.mk0 x hxt.ne_zero)).mpr hxW)
+    rwa [degree_poles hF (Units.mk0 x hxt.ne_zero) hxt, Units.val_mk0] at hdeg
+  · have : Algebra.Transcendental k F := ⟨hF.exists_transcendental⟩
+    rw [(not_not.mp hxt).finrank_adjoin_eq_zero, Nat.cast_zero]
+    exact degree_nonneg hW
 
 /-- **The product formula for an algebraic function field** (Stichtenoth, Theorem 1.4.11):
 every principal divisor has degree zero. -/
@@ -275,15 +285,21 @@ theorem isWeightedDegreeZero_orderSystem (hF : IsFunctionField k F) :
     Divisor.degree_principal]
 
 /-- **The degree of the rational subfield generated by a function with a single pole**: a function
-`z` with a pole of order `n ≠ 0` at `P` that is regular at every other place has
-`[F : k(z)] = n * deg P`, the degree of its pole divisor `nP` (Stichtenoth, Theorem 1.4.11). -/
+`z` with a pole of order `n` at `P` that is regular at every other place has
+`[F : k(z)] = n * deg P`, the degree of its pole divisor `nP` (Stichtenoth, Theorem 1.4.11). For
+`n = 0` both sides are `0`: `z` has no poles, so it is algebraic over `k`. -/
 theorem finrank_adjoin_eq_mul_degree_of_ord_eq_neg (hF : IsFunctionField k F) {z : F}
-    {P : Place k F} {n : ℕ} (hn : n ≠ 0) (hP : P.ord z = -(n : ℤ))
+    {P : Place k F} {n : ℕ} (hP : P.ord z = -(n : ℤ))
     (hQ : ∀ Q : Place k F, Q ≠ P → 0 ≤ Q.ord z) :
     Module.finrank k⟮z⟯ F = n * P.degree := by
-  have hz : z ≠ 0 := fun h0 ↦ hn (by simpa [h0] using hP)
-  have hdeg := Divisor.degree_poles hF (Units.mk0 z hz)
-    (P.transcendental_of_ord_ne_zero (by rw [Units.val_mk0, hP]; omega))
+  by_cases halg : IsAlgebraic k z
+  · have hn : n = 0 := by
+      have := P.ord_eq_zero_of_isAlgebraic halg
+      omega
+    have : Algebra.Transcendental k F := ⟨hF.exists_transcendental⟩
+    rw [halg.finrank_adjoin_eq_zero, hn, zero_mul]
+  have hz : z ≠ 0 := fun h0 ↦ halg (h0 ▸ isAlgebraic_zero)
+  have hdeg := Divisor.degree_poles hF (Units.mk0 z hz) halg
   rw [Divisor.poles_eq_natCast_zsmul_ofPoint_of_ord_eq_neg hF (z := Units.mk0 z hz) hP hQ,
     Divisor.degree_zsmul, Divisor.degree_ofPoint, Units.val_mk0] at hdeg
   exact_mod_cast hdeg.symm

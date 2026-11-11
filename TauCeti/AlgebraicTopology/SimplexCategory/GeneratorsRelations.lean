@@ -15,6 +15,8 @@ The canonical functor `SimplexCategoryGenRel.toSimplexCategory` is an equivalenc
 Thus faces and degeneracies satisfying the simplicial identities determine functors
 on the usual simplex category. This permits the construction of simplicial objects
 from algebraic operations, such as the counit and comultiplication of a comonad.
+The inverse `fromSimplexCategory` has a computing object map and sends each face
+and degeneracy to its corresponding generator.
 
 The proof completes Robin Carlier's presentation and degeneracy normal forms in
 Mathlib. Pure face maps are determined by their images, and pure degeneracies by
@@ -232,5 +234,68 @@ instance : toSimplexCategory.EssSurj where
 /-- The presentation by faces, degeneracies and simplicial identities is equivalent
 to the usual simplex category. -/
 instance : toSimplexCategory.IsEquivalence where
+
+/-- The inverse presentation functor, sending `[n]` to the presented object `mk n`
+and each morphism to its unique preimage.
+The body is exposed so dependent morphism types compute on finite ordinals. -/
+-- The object map uses the definitional equalities toSimplexCategory_obj_mk and
+-- SimplexCategory.mk_len: toSimplexCategory.obj (mk x.len) is definitionally x.
+-- This identifies the source and target of preimage in the laws and generator lemmas below.
+@[expose] noncomputable def fromSimplexCategory : SimplexCategory ⥤ SimplexCategoryGenRel where
+  obj x := mk x.len
+  map f := toSimplexCategory.preimage f
+  map_id x := toSimplexCategory.map_injective
+    ((toSimplexCategory.map_preimage (X := mk x.len) (Y := mk x.len) (𝟙 x)).trans
+      (toSimplexCategory.map_id (mk x.len)).symm)
+  map_comp {x y z} f g := toSimplexCategory.map_injective (by
+    rw [toSimplexCategory.map_comp]
+    exact (toSimplexCategory.map_preimage (X := mk x.len) (Y := mk z.len) (f ≫ g)).trans
+      (congrArg₂ (· ≫ ·)
+        (toSimplexCategory.map_preimage (X := mk x.len) (Y := mk y.len) f).symm
+        (toSimplexCategory.map_preimage (X := mk y.len) (Y := mk z.len) g).symm))
+
+@[simp]
+lemma fromSimplexCategory_obj (n : ℕ) :
+    fromSimplexCategory.obj (SimplexCategory.mk n) = mk n := (rfl)
+
+/-- The inverse presentation functor sends a face to the corresponding generator. -/
+@[simp]
+lemma fromSimplexCategory_map_δ {n : ℕ} (i : Fin (n + 2)) :
+    fromSimplexCategory.map (SimplexCategory.δ i) = δ i := by
+  apply toSimplexCategory.map_injective
+  exact (toSimplexCategory.map_preimage (X := mk n) (Y := mk (n + 1)) _).trans
+    (toSimplexCategory_map_δ i).symm
+
+/-- The inverse presentation functor sends a degeneracy to the corresponding generator. -/
+@[simp]
+lemma fromSimplexCategory_map_σ {n : ℕ} (i : Fin (n + 1)) :
+    fromSimplexCategory.map (SimplexCategory.σ i) = σ i := by
+  apply toSimplexCategory.map_injective
+  exact (toSimplexCategory.map_preimage (X := mk (n + 1)) (Y := mk n) _).trans
+    (toSimplexCategory_map_σ i).symm
+
+/-- Comparing a lifted morphism with the simplex category recovers the original map. -/
+@[simp]
+lemma toSimplexCategory_map_fromSimplexCategory_map {x y : SimplexCategory} (f : x ⟶ y) :
+    toSimplexCategory.map (fromSimplexCategory.map f) = f :=
+  toSimplexCategory.map_preimage (X := mk x.len) (Y := mk y.len) f
+
+/-- The inverse presentation functor is a section of the comparison functor. -/
+lemma fromSimplexCategory_comp_toSimplexCategory :
+    fromSimplexCategory ⋙ toSimplexCategory = 𝟭 SimplexCategory := by
+  exact CategoryTheory.Functor.hext (fun x ↦ SimplexCategory.mk_len x)
+    (fun _ _ f ↦ heq_of_eq (toSimplexCategory_map_fromSimplexCategory_map f))
+
+/-- The inverse presentation functor is also a retraction of the comparison functor. -/
+lemma toSimplexCategory_comp_fromSimplexCategory :
+    toSimplexCategory ⋙ fromSimplexCategory = 𝟭 SimplexCategoryGenRel := by
+  refine CategoryTheory.Functor.hext (fun x ↦ ?_) ?_
+  · cases x using SimplexCategoryGenRel.rec
+    rfl
+  · intro x y f
+    -- Reduce both quotient objects to mk n, so the inverse's map is preimage.
+    cases x using SimplexCategoryGenRel.rec
+    cases y using SimplexCategoryGenRel.rec
+    exact heq_of_eq (toSimplexCategory.preimage_map f)
 
 end SimplexCategoryGenRel

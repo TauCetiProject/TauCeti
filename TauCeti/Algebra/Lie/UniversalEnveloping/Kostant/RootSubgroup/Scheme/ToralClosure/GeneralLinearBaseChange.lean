@@ -581,8 +581,7 @@ theorem kostantToralBaseChangePresentationIsoOfEq_hom_comp_rootSubgroupBaseChang
 
 /-- On points, the transported factored root-subgroup map has the same divided-power exponential
 matrix as its integral source. -/
-theorem pointsMulEquiv_kostantRootSubgroupToralBaseChangeCoordinateMap
-    (hJ : J = kostantToralDefiningIdeal e h ρ M hM hnil b wt) (i : I)
+theorem pointsMulEquiv_kostantRootSubgroupToralBaseChangeCoordinateMap (i : I)
     (B : CommAlgCat.{x} A)
     (q : HopfAlgebra.points
       (R := A) (H := AdditiveGroup.coordinateHopfAlgebra A) B) :
@@ -596,6 +595,9 @@ theorem pointsMulEquiv_kostantRootSubgroupToralBaseChangeCoordinateMap
       kostantRootSubgroupMatrix e h ρ M hM i (hnil i) b
         ((@AdditiveGroup.gaPointsMulEquiv ℤ Int.instCommSemiring B _
           (Ring.toIntAlgebra B)).symm (AdditiveGroup.gaPointsMulEquiv q)) := by
+  -- name the defining ideal `J`, as the transport lemmas below are stated for a named spelling
+  obtain ⟨J, hJ⟩ : ∃ J : HopfIdeal ℤ (GeneralLinear.coordinateHopfAlgebra ℤ n),
+      J = kostantToralDefiningIdeal e h ρ M hM hnil b wt := ⟨_, rfl⟩
   let qTensor :=
     WithConv.toConv (q.ofConv.comp
       (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso ℤ A).hom.hom.toAlgHom)
@@ -641,7 +643,7 @@ theorem kostantToralBaseChangePresentationIsoOfEq_hom_comp_weightTorusBaseChange
             (kostantWeightTorusToralCoordinateMapOfEq e h ρ M hM hnil b wt hJ) ≫
         (_root_.CommHopfAlgCat.ofHom
           (BialgHomClass.toBialgHom
-            (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ A
+            (MonoidAlgebra.scalarTensorBialgEquiv ℤ A
               (G := SplitTorus.characterGroup κ)))) =
       kostantWeightTorusToralBaseChangePresentationCoordinateMap e h ρ M hM hnil b wt A := by
   let _ : Epi (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra A n)
@@ -697,10 +699,10 @@ theorem pointsMulEquiv_kostantWeightTorusToralBaseChangeCoordinateMap [Fintype �
     congr 1
     -- The diagonalizable coordinate ring unfolds to a monoid algebra, exposing its basis
     -- character to the public scalar-tensor formula.
-    change (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ A)
+    change (MonoidAlgebra.scalarTensorBialgEquiv ℤ A)
       (1 ⊗ₜ[ℤ] MonoidAlgebra.single
         (Multiplicative.ofAdd (Finsupp.single j 1)) 1) = _
-    rw [TauCeti.MonoidAlgebra.scalarTensorBialgEquiv_tmul]
+    rw [MonoidAlgebra.scalarTensorBialgEquiv_tmul]
     simp
   rw [← hparam,
     GeneralLinear.pointsMulEquiv_quotientPointsHom_mapPointsFunctor_of_comp_baseChangeMap

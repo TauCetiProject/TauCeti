@@ -76,12 +76,18 @@ private def gaussPatterns : List (Fin 14 → ℤ) := [
   ![2, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0],
   ![2, 1, 0, 0, 0, 0, 2, 0, 0, 1, 0, 0, 0, 0]]
 
+-- The kernel compares explicit lists of entries, with each product of step matrices reduced to
+-- a single term, rather than indexing the vectors and summing over the carrier basis.
 private theorem gaussEntries_mem (i : Fin 4) (hi : 2 ≤ i.val) (r s : Fin 26) :
     gaussEntries i r s ∈ gaussPatterns := by
-  simp only [gaussEntries, Matrix.mul_apply, raisingMatrix_apply, loweringMatrix_apply,
-    raisingDividedSquareMatrix_apply, loweringDividedSquareMatrix_apply, Matrix.one_apply]
-  revert i r s
-  decide +kernel
+  rw [← List.mem_map_of_injective List.ofFn_injective]
+  simp only [gaussEntries, gaussPatterns, List.map_cons, List.map_nil, List.ofFn_succ,
+    List.ofFn_zero, Matrix.cons_val_zero, Matrix.cons_val_succ, Matrix.mul_apply,
+    raisingMatrix_apply, loweringMatrix_apply, raisingDividedSquareMatrix_apply,
+    loweringDividedSquareMatrix_apply, Matrix.one_apply, mul_ite, mul_zero,
+    Fintype.sum_ite_eq']
+  revert hi r s
+  fin_cases i <;> decide +kernel
 
 private theorem gauss_scalar {A : Type*} [CommRing A] (a b : A) (c : Aˣ)
     (hc : (c : A) = 1 + a * b) (d : Fin 14 → ℤ) (hd : d ∈ gaussPatterns) :

@@ -379,12 +379,11 @@ private theorem initialPentagonInitialSelfPartner_injective :
     G.initialPentagonInitialSelfSource_data C D.val D.property
   obtain ⟨_, _, honeE, hfirstE, hsecondE⟩ :=
     G.initialPentagonInitialSelfSource_data C E.val E.property
-  have hbackD := hD.symm honeD (D.val.underlying_first_isEmpty hfirstD)
+  have hbackD := hD.symm (D.val.underlying_first_isEmpty hfirstD)
     (D.val.underlying_second_isEmpty hsecondD)
-  have hbackE := hE.symm honeE (E.val.underlying_first_isEmpty hfirstE)
+  have hbackE := hE.symm (E.val.underlying_first_isEmpty hfirstE)
     (E.val.underlying_second_isEmpty hsecondE)
   have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hbackD
-    (D.val.toGridRectangleDecomposition.target_ne_source_of_hasOneCommonSide honeD)
   apply Subtype.ext
   apply GridRectangleInitialPentagonDecomposition.toGridRectangleDecomposition_injective
   exact (GridRectangleDecomposition.existsUnique_isRecut _ hone

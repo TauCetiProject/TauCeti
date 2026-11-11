@@ -201,7 +201,7 @@ private theorem exists_hasCauchyPVAt_exp_mul_eq_of_crossing_window {γ : ℝ →
   have hw_L : γ (t₀ - ρ) - s ≠ 0 := hne _ ⟨le_rfl, by linarith⟩ (by intro h; linarith)
   have hw_R : γ (t₀ + ρ) - s ≠ 0 := hne _ ⟨by linarith, le_rfl⟩ (by intro h; linarith)
   refine ⟨_, hasCauchyPVAt_iff.mpr ⟨Filter.eventually_iff_exists_mem.mpr ⟨Ioi 0,
-    self_mem_nhdsWithin, fun ε hε => intervalIntegrable_inv_sub_truncated hpc.continuousOn
+    self_mem_nhdsWithin, fun ε hε => intervalIntegrable_inv_sub_truncated
       hpc.intervalIntegrable_deriv hε⟩, hspec _ _ (by linarith) (by linarith) (by linarith)
       (by linarith) hlo hhi h_unique⟩, ?_⟩
   have hnotmem : t₀ ∉ T.filter (fun t => t < t₀ - ρ) := by simp [hρ.le]
@@ -262,7 +262,7 @@ theorem IsPwC1ImmersionOn.exp_two_pi_I_mul_windingNumber_eq_exp_sum_crossingAngl
       (γ := γ) (s := s) (A := a) (b := b) (r := ρ) (m := m)
       (fun l u hal hlu hub hfar =>
         exists_hasCauchyPVAt_exp_mul_eq_of_forall_le h_imm hab hT hm_pos hal hlu hub hfar) ?_
-      (T.sort (· ≤ ·)) (Finset.sortedLT_sort T) (fun _ => hρ_pos.le) a le_rfl hab
+      (T.sort (· ≤ ·)) (Finset.sortedLT_sort T) a le_rfl hab
       (fun t ht => by linarith [(h_endpts t ((Finset.mem_sort _).mp ht)).1])
       (fun t ht => by linarith [(h_endpts t ((Finset.mem_sort _).mp ht)).2])
       (fun t ht t' ht' hne => (h_pair t ((Finset.mem_sort _).mp ht) t'

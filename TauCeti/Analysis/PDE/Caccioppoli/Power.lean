@@ -131,8 +131,8 @@ private theorem integrable_norm_gradient_sq_mul_rpow {u : W1p mu Omega 2} {ε : 
     Integrable (fun x => ‖∇ ψ x‖ ^ 2 * W1p.value u x ^ p) (mu.restrict Omega) := by
   obtain ⟨w, hwv, -⟩ := W1p.exists_value_gradient_ae_eq_rpow (by simp) hε
     (by linarith : p / 2 ≤ 1) hεu
-  refine ((W1p.integrable_value_sq w).bdd_mul
-    ((ContDiff.continuous_gradient hψ).norm.pow 2).aestronglyMeasurable (c := M ^ 2)
+  refine ((Lp.memLp (W1p.value w)).integrable_sq.bdd_mul
+    ((ContDiff.continuous_gradient hψ (by simp)).norm.pow 2).aestronglyMeasurable (c := M ^ 2)
     (Filter.Eventually.of_forall fun x => by
       rw [Pi.pow_apply, norm_pow, norm_norm]
       exact pow_le_pow_left₀ (norm_nonneg _) (hgradM x) 2)).congr ?_
@@ -301,9 +301,9 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_rpow_mul_norm_gradient_sq_le
 
 /-- **The Caccioppoli inequality for the power `w = u^{p/2}` of a positive supersolution.** Under
 the hypotheses of `TauCeti.PDE.UniformlyEllipticOn.setIntegral_sq_mul_rpow_mul_norm_gradient_sq_le`,
-let `w ∈ H¹(Ω)` have value `u^{p/2}` and gradient `(p/2) u^{p/2-1} ∇u`, as provided by
-`TauCeti.W1p.exists_value_gradient_ae_eq_rpow`. Then for every `p < 1` and every smooth `ψ`
-compactly supported in `Ω`,
+let `w ∈ H¹(Ω)` have value `u^{p/2}`, as provided by
+`TauCeti.W1p.exists_value_gradient_ae_eq_rpow`; its weak gradient is then `(p/2) u^{p/2-1} ∇u`.
+Then for every `p < 1` and every smooth `ψ` compactly supported in `Ω`,
 
 `∫_Ω ψ² ‖∇w‖² ≤ (|p| Λ / ((1 - p) λ))² ∫_Ω ‖∇ψ‖² w²`.
 
@@ -318,8 +318,6 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le_of_ae_eq_rpow
     {ε : ℝ} (hε : 0 < ε) (hεu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x)
     {p : ℝ} (hp : p < 1) {w : W1p mu Omega 2}
     (hwv : W1p.value w =ᵐ[mu.restrict Omega] fun x => W1p.value u x ^ (p / 2))
-    (hwg : W1p.gradient w =ᵐ[mu.restrict Omega]
-      fun x => (p / 2 * W1p.value u x ^ (p / 2 - 1)) • W1p.gradient u x)
     {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hcpt : HasCompactSupport ψ)
     (hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι))) :
     ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu ≤
@@ -328,6 +326,13 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le_of_ae_eq_rpow
   have hlam := h.pos
   have h1p : 0 < 1 - p := by linarith
   have hc := h.setIntegral_sq_mul_rpow_mul_norm_gradient_sq_le ha hu hε hεu hp hψ hcpt hts
+  -- The weak gradient of `w` is determined by its value, hence is that of `u ^ (p / 2)`.
+  have hwg : W1p.gradient w =ᵐ[mu.restrict Omega]
+      fun x => (p / 2 * W1p.value u x ^ (p / 2 - 1)) • W1p.gradient u x := by
+    obtain ⟨w', hw'v, hw'g⟩ := W1p.exists_value_gradient_ae_eq_rpow (by simp) hε
+      (by linarith : p / 2 ≤ 1) hεu
+    have hww' := W1p.ext_value (Lp.ext (hwv.trans hw'v.symm))
+    simpa only [hww'] using hw'g
   -- Both sides in terms of `u`: `‖∇w‖² = (p/2)² u^{p-2} ‖∇u‖²` and `w² = u^p`.
   have hl : ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu = (p / 2) ^ 2 *
       ∫ x in Omega, ψ x ^ 2 * (W1p.value u x ^ (p - 2) * ‖W1p.gradient u x‖ ^ 2) ∂mu := by

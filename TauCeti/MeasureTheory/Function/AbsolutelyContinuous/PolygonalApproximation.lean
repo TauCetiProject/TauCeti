@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuo
 public import Mathlib.Topology.UniformSpace.UniformConvergence
 public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
 import TauCeti.MeasureTheory.Function.IntervalStep
+import TauCeti.Order.Interval.Set.Subdivision
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.SpecificLimits.Basic
@@ -67,11 +68,7 @@ private theorem polygonal_primitive (hab : a < b) (N : ℕ) (hN : 0 < N)
     rw [intervalIntegrable_iff, uIoc_of_le hab.le]
     exact (integrableOn_intervalStep a b δ g).add (integrable_const c)
   refine ⟨N, hN, s, hs, by simp [s], hlast, fun i t ht ↦ ?_⟩
-  have hnode (j : Fin (N + 1)) : s j ∈ uIcc a b := by
-    rw [uIcc_of_le hab.le]
-    constructor
-    · simpa only [show s 0 = a from by simp [s]] using hs.monotone (Fin.zero_le _)
-    · simpa only [hlast] using hs.monotone (Fin.le_last _)
+  have hnode := hs.monotone.mem_uIcc_of_map_zero_of_map_last (show s 0 = a by simp [s]) hlast
   have hleft := hnode i.castSucc
   have hright := hnode i.succ
   have heq (u : ℝ) (hu : u ∈ Icc (s i.castSucc) (s i.succ)) :

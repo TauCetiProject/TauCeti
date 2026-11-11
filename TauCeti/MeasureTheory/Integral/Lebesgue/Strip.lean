@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Map
 import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.Algebra.Order.ToIntervalMod
 import Mathlib.MeasureTheory.Group.MeasurableEquiv
 import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
+import TauCeti.MeasureTheory.Integral.Lebesgue.Exhaustion
 
 /-!
 # Lebesgue integrals over a strip by exhaustion
@@ -22,10 +24,19 @@ integral of an `ℝ≥0∞`-valued function over `[-n, n] × T` is `ENNReal.ofRe
 real function `F` with limits `A₁` at `-∞` and `A₂` at `∞`, then its integral over the whole strip
 is `ENNReal.ofReal (A₂ - A₁)` (`TauCeti.setLIntegral_univ_prod_eq_ofReal_of_tendsto`). Since
 `ENNReal.ofReal` truncates at zero, this is `A₂ - A₁` when `A₁ ≤ A₂` and `0` otherwise.
+More generally, a correction term `G(n)` converging to `L` may be subtracted on each rectangle,
+giving `ENNReal.ofReal (A₂ - A₁ - L)` (`TauCeti.setLIntegral_univ_prod_eq_ofReal_of_tendsto_sub`);
+the correction term is typically the integral over `[-n, n] × T` of a function `g` integrable on
+the strip, and then `L` is the integral of `g` over the strip
+(`TauCeti.setLIntegral_univ_prod_eq_ofReal_of_tendsto_sub_integral`).
+Likewise the half-strip `[b, ∞) × T` is exhausted by the rectangles `[b, b + n] × T`: if the
+integral over `[b, b + n] × T` is `ENNReal.ofReal (F(b + n) - F(b))` and `F` tends to `L` at `∞`,
+then the integral over the half-strip is `ENNReal.ofReal (L - F(b))`
+(`TauCeti.setLIntegral_Ici_prod_eq_ofReal_of_tendsto`).
 
 This is the passage from the energy identity on finite rectangles to the energy of a
 holomorphic strip or a Floer cylinder, whose energy is the difference of the limiting actions at
-its two ends.
+its two ends, and of a Floer half-cylinder.
 
 The strip is also the union of the disjoint translates of a period rectangle
 `(a, a + c] × T`. A function on the strip that is periodic in the first variable has the same
@@ -68,10 +79,24 @@ theorem tendsto_setLIntegral_Icc_neg_prod {β : Type*} [MeasurableSpace β]
     (μ : Measure (ℝ × β)) (T : Set β) (f : ℝ × β → ℝ≥0∞) :
     Tendsto (fun n : ℕ ↦ ∫⁻ z in Icc (-(n : ℝ)) n ×ˢ T, f z ∂μ) atTop
       (𝓝 (∫⁻ z in (univ : Set ℝ) ×ˢ T, f z ∂μ)) := by
-  rw [← iUnion_Icc_neg_prod, setLIntegral_iUnion_of_directed _
-    (monotone_Icc_neg_prod T).directed_le]
-  exact tendsto_atTop_iSup fun _ _ hmn ↦
-    lintegral_mono' (Measure.restrict_mono (monotone_Icc_neg_prod T hmn) le_rfl) le_rfl
+  rw [← iUnion_Icc_neg_prod]
+  exact tendsto_setLIntegral_of_monotone (monotone_Icc_neg_prod T)
+
+/-- **Integrals over a strip by exhaustion, with a correction term.** If the integral of `f` over
+each rectangle `[-n, n] × T` is `ENNReal.ofReal (F(n) - F(-n) - G(n))`, where `F` tends to `A₁` at
+`-∞` and to `A₂` at `∞` and `G(n)` tends to `L`, then the integral of `f` over the strip `ℝ × T` is
+`ENNReal.ofReal (A₂ - A₁ - L)`. -/
+theorem setLIntegral_univ_prod_eq_ofReal_of_tendsto_sub {β : Type*} [MeasurableSpace β]
+    {μ : Measure (ℝ × β)} {T : Set β} {f : ℝ × β → ℝ≥0∞} {F : ℝ → ℝ} {G : ℕ → ℝ} {A₁ A₂ L : ℝ}
+    (hE : ∀ n : ℕ, ∫⁻ z in Icc (-(n : ℝ)) n ×ˢ T, f z ∂μ = ENNReal.ofReal (F n - F (-n) - G n))
+    (hbot : Tendsto F atBot (𝓝 A₁)) (htop : Tendsto F atTop (𝓝 A₂))
+    (hG : Tendsto G atTop (𝓝 L)) :
+    ∫⁻ z in (univ : Set ℝ) ×ˢ T, f z ∂μ = ENNReal.ofReal (A₂ - A₁ - L) := by
+  refine tendsto_nhds_unique (tendsto_setLIntegral_Icc_neg_prod μ T f) ?_
+  simp only [hE]
+  exact (ENNReal.continuous_ofReal.tendsto _).comp
+    (((htop.comp tendsto_natCast_atTop_atTop).sub
+      (hbot.comp (tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop))).sub hG)
 
 /-- **Integrals over a strip by exhaustion.** If the integral of `f` over each rectangle
 `[-n, n] × T` is `ENNReal.ofReal (F(n) - F(-n))`, where `F` tends to `A₁` at `-∞` and to `A₂` at
@@ -82,11 +107,52 @@ theorem setLIntegral_univ_prod_eq_ofReal_of_tendsto {β : Type*} [MeasurableSpac
     (hE : ∀ n : ℕ, ∫⁻ z in Icc (-(n : ℝ)) n ×ˢ T, f z ∂μ = ENNReal.ofReal (F n - F (-n)))
     (hbot : Tendsto F atBot (𝓝 A₁)) (htop : Tendsto F atTop (𝓝 A₂)) :
     ∫⁻ z in (univ : Set ℝ) ×ˢ T, f z ∂μ = ENNReal.ofReal (A₂ - A₁) := by
-  refine tendsto_nhds_unique (tendsto_setLIntegral_Icc_neg_prod μ T f) ?_
-  simp only [hE]
+  simpa using setLIntegral_univ_prod_eq_ofReal_of_tendsto_sub (G := 0) (L := 0)
+    (by simpa using hE) hbot htop tendsto_const_nhds
+
+/-- **Integrals over a strip by exhaustion, with an integral correction term.** Let `g` be
+integrable on the strip `ℝ × T`, for measurable `T`. If the integral of `f` over each rectangle
+`[-n, n] × T` is `ENNReal.ofReal (F(n) - F(-n) - ∫_{[-n, n] × T} g)`, where `F` tends to `A₁` at
+`-∞` and to `A₂` at `∞`, then the integral of `f` over the strip is
+`ENNReal.ofReal (A₂ - A₁ - ∫_{ℝ × T} g)`. -/
+theorem setLIntegral_univ_prod_eq_ofReal_of_tendsto_sub_integral {β : Type*} [MeasurableSpace β]
+    {μ : Measure (ℝ × β)} {T : Set β} (hT : MeasurableSet T) {f : ℝ × β → ℝ≥0∞} {g : ℝ × β → ℝ}
+    {F : ℝ → ℝ} {A₁ A₂ : ℝ} (hg : IntegrableOn g ((univ : Set ℝ) ×ˢ T) μ)
+    (hE : ∀ n : ℕ, ∫⁻ z in Icc (-(n : ℝ)) n ×ˢ T, f z ∂μ =
+      ENNReal.ofReal (F n - F (-n) - ∫ z in Icc (-(n : ℝ)) n ×ˢ T, g z ∂μ))
+    (hbot : Tendsto F atBot (𝓝 A₁)) (htop : Tendsto F atTop (𝓝 A₂)) :
+    ∫⁻ z in (univ : Set ℝ) ×ˢ T, f z ∂μ =
+      ENNReal.ofReal (A₂ - A₁ - ∫ z in (univ : Set ℝ) ×ˢ T, g z ∂μ) := by
+  refine setLIntegral_univ_prod_eq_ofReal_of_tendsto_sub hE hbot htop ?_
+  -- The integrals of `g` over the rectangles converge to its integral over the strip.
+  have h := tendsto_setIntegral_of_monotone (μ := μ) (f := g)
+    (fun _ ↦ measurableSet_Icc.prod hT) (monotone_Icc_neg_prod T)
+    (by rwa [iUnion_Icc_neg_prod])
+  rwa [iUnion_Icc_neg_prod] at h
+
+/-- **Integrals over a half-strip by exhaustion.** If the integral of `f` over each rectangle
+`[b, b + n] × T` is `ENNReal.ofReal (F(b + n) - F(b))`, where `F` tends to `L` at `∞`, then the
+integral of `f` over the half-strip `[b, ∞) × T` is `ENNReal.ofReal (L - F(b))`, that is
+`L - F(b)` truncated at zero. -/
+theorem setLIntegral_Ici_prod_eq_ofReal_of_tendsto {β : Type*} [MeasurableSpace β]
+    {μ : Measure (ℝ × β)} {T : Set β} {f : ℝ × β → ℝ≥0∞} {F : ℝ → ℝ} {b L : ℝ}
+    (hE : ∀ n : ℕ, ∫⁻ z in Icc b (b + n) ×ˢ T, f z ∂μ = ENNReal.ofReal (F (b + n) - F b))
+    (htop : Tendsto F atTop (𝓝 L)) :
+    ∫⁻ z in Ici b ×ˢ T, f z ∂μ = ENNReal.ofReal (L - F b) := by
+  set R : ℕ → Set (ℝ × β) := fun n ↦ Icc b (b + n) ×ˢ T
+  have hmono : Monotone R := fun m n hmn ↦
+    prod_mono (Icc_subset_Icc le_rfl (by simpa using hmn)) le_rfl
+  have hunion : ⋃ n, R n = Ici b ×ˢ T := by
+    refine (iUnion_subset fun n ↦ Set.prod_mono Icc_subset_Ici_self le_rfl).antisymm fun z hz ↦ ?_
+    obtain ⟨n, hn⟩ := exists_nat_ge (z.1 - b)
+    exact mem_iUnion.2 ⟨n, ⟨hz.1, by linarith⟩, hz.2⟩
+  -- The integrals over the rectangles increase to the integral over the half-strip.
+  have hlim := tendsto_setLIntegral_of_monotone (μ := μ) (f := f) hmono
+  rw [hunion] at hlim
+  refine tendsto_nhds_unique hlim ?_
+  simp only [R, hE]
   exact (ENNReal.continuous_ofReal.tendsto _).comp
-    ((htop.comp tendsto_natCast_atTop_atTop).sub
-      (hbot.comp (tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop)))
+    ((htop.comp (tendsto_atTop_add_const_left _ b tendsto_natCast_atTop_atTop)).sub_const _)
 
 /-- A function on the strip `ℝ × T`, periodic in the first variable with period `c` and with
 finite integral over the strip, has zero integral over each period rectangle `(a, a + c] × T`:

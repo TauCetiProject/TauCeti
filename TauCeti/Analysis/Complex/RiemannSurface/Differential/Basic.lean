@@ -10,7 +10,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import TauCeti.Geometry.Manifold.ChartedSpace
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -340,6 +340,50 @@ theorem HolomorphicAt.apply_eq_of_eventually [IsManifold 𝓘(ℂ) 1 X] (hω : �
   have h₂ := (coeff_eq_iff η (chart_mem_maximalAtlas x) hcx).1 rfl
   rw [← h₁, ← h₂, hc]
 
+/-- Where `ω` does not vanish, its coefficient in the chart at `x` does not vanish. -/
+theorem coeff_chartAt_ne_zero [IsManifold 𝓘(ℂ) 1 X] (hω : ω x ≠ 0) :
+    ω.coeff (chartAt ℂ x) (chartAt ℂ x x) ≠ 0 := by
+  intro h0
+  apply hω
+  rw [← (coeff_eq_iff ω (chart_mem_maximalAtlas x) (mem_chart_source ℂ x)).1 rfl, h0, zero_smul]
+
+/-- A `1`-form holomorphic at `x` and nonzero at `x` has order zero at `x`. -/
+theorem HolomorphicAt.order_eq_zero [IsManifold 𝓘(ℂ) 1 X] (hω : ω.HolomorphicAt x)
+    (hx : ω x ≠ 0) : ω.order x = 0 := by
+  rw [order_def, ((holomorphicAt_def ω x).1 hω).meromorphicOrderAt_eq,
+    analyticOrderAt_eq_zero.2 (Or.inr (coeff_chartAt_ne_zero hx))]
+  rfl
+
+/-- A `1`-form meromorphic at `x` is holomorphic on a punctured neighbourhood of `x`. -/
+theorem MeromorphicAt.eventually_holomorphicAt [IsManifold 𝓘(ℂ) 1 X]
+    (hω : ω.MeromorphicAt x) :
+    ∀ᶠ y in 𝓝[≠] x, ω.HolomorphicAt y := by
+  filter_upwards [(tendsto_chartAt_nhdsNE x).eventually
+      ((meromorphicAt_def ω x).1 hω).eventually_analyticAt,
+    nhdsWithin_le_nhds ((chartAt ℂ x).open_source.mem_nhds (mem_chart_source ℂ x))] with y hy hys
+  exact (holomorphicAt_iff_of_mem_maximalAtlas (chart_mem_maximalAtlas x) hys).2 hy
+
+/-- A `1`-form meromorphic and of finite order at `x` does not vanish on a punctured
+neighbourhood of `x`. -/
+theorem MeromorphicAt.eventually_apply_ne_zero [IsManifold 𝓘(ℂ) 1 X]
+    (hω : ω.MeromorphicAt x) (hx : ω.order x ≠ ⊤) :
+    ∀ᶠ y in 𝓝[≠] x, ω y ≠ 0 := by
+  filter_upwards [(tendsto_chartAt_nhdsNE x).eventually
+      ((meromorphicOrderAt_ne_top_iff_eventually_ne_zero ((meromorphicAt_def ω x).1 hω)).1
+        (by rwa [order_def] at hx)),
+    nhdsWithin_le_nhds ((chartAt ℂ x).open_source.mem_nhds (mem_chart_source ℂ x))]
+    with y hy hys h0
+  exact hy ((coeff_eq_iff ω (chart_mem_maximalAtlas x) hys).2 (by rw [h0]; exact zero_smul ℂ _))
+
+/-- A `1`-form of infinite order at `x` vanishes on a punctured neighbourhood of `x`. -/
+theorem eventually_apply_eq_zero_of_order_eq_top [IsManifold 𝓘(ℂ) 1 X] (hx : ω.order x = ⊤) :
+    ∀ᶠ y in 𝓝[≠] x, ω y = 0 := by
+  filter_upwards [(tendsto_chartAt_nhdsNE x).eventually (meromorphicOrderAt_eq_top_iff.1
+      (by rwa [order_def] at hx)),
+    nhdsWithin_le_nhds ((chartAt ℂ x).open_source.mem_nhds (mem_chart_source ℂ x))]
+    with y hy hys
+  exact ((coeff_eq_iff ω (chart_mem_maximalAtlas x) hys).1 hy).symm.trans (zero_smul ℂ _)
+
 end Local
 
 /-! ### Algebra -/
@@ -466,6 +510,11 @@ theorem _root_.TauCeti.RiemannSurface.mem_holomorphicOneForms :
     ω ∈ holomorphicOneForms X ↔ ∀ x, ω.HolomorphicAt x :=
   Iff.rfl
 
+/-- A holomorphic global `1`-form is meromorphic at every point. -/
+theorem meromorphicAt_of_mem_holomorphicOneForms
+    (hω : ω ∈ holomorphicOneForms X) (x : X) : ω.MeromorphicAt x :=
+  (mem_holomorphicOneForms.1 hω x).meromorphicAt
+
 end Algebra
 
 /-! ### The differential of a function -/
@@ -542,7 +591,7 @@ theorem order_mvfderiv_eq_localMultiplicity_sub_one
   set g : ℂ → ℂ := fun z ↦ f ((chartAt ℂ x).symm z) - f x
   have hg : AnalyticAt ℂ g (chartAt ℂ x x) :=
     (TauCeti.analyticAt_comp_chartAt_symm hf).sub analyticAt_const
-  have hmult := natCast_localMultiplicity hf hnc
+  have hmult := natCast_localMultiplicity hf.self_of_nhds.continuousAt hnc
   simp only [chartAt_self_eq, OpenPartialHomeomorph.refl_apply, id_eq] at hmult
   have hord : _root_.meromorphicOrderAt g (chartAt ℂ x x) = (localMultiplicity f x : ℤ) := by
     rw [hg.meromorphicOrderAt_eq, ← hmult]

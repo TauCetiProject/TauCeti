@@ -27,6 +27,9 @@ not belong to any particular application.
 * `TauCeti.intervalIntegral.norm_sub_sub_integral_le`: the defect `a₂ - a₁ - ∫ g` from an integral
   equation changes by at most the changes of the endpoint values plus `δ |t₂ - t₁|` when the
   integrand changes by at most `δ`.
+* `TauCeti.tendsto_intervalIntegral_atTop_atBot`: the accumulated integral of a locally
+  integrable function bounded below almost everywhere by a positive constant tends to `+∞` at
+  `+∞` and to `-∞` at `-∞`.
 * `MeasureTheory.IntegrableOn.intervalIntegrable_of_mem_Icc`: a function integrable on `(a, b)`
   for a measure without mass at points is interval integrable between any two points of `[a, b]`.
 * `ContinuousLinearEquiv.intervalIntegral_comp_comm`: a continuous linear equivalence commutes
@@ -130,6 +133,19 @@ theorem norm_sub_sub_integral_le {E : Type*} [NormedAddCommGroup E] [NormedSpace
 
 end intervalIntegral
 
+/-- A function vanishing on `(-∞, a]` and on a ball around `a` has zero integral on `a..t` for
+every `t < a + ε`, where `ε` is the radius of that ball. -/
+lemma integral_eq_zero_of_lt_add {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {μ : Measure ℝ} {a ε t : ℝ} {φ : ℝ → E} (hφ0 : ∀ x, x ≤ a → φ x = 0)
+    (hφa : ∀ ⦃y⦄, dist y a < ε → φ y = 0) (ht : t < a + ε) : ∫ s in a..t, φ s ∂μ = 0 := by
+  refine (intervalIntegral.integral_congr (g := fun _ ↦ (0 : E)) fun s hs ↦ ?_).trans
+    intervalIntegral.integral_zero
+  rcases le_or_gt s a with hsa | hsa
+  · exact hφ0 s hsa
+  · refine hφa ?_
+    rw [Real.dist_eq, abs_of_pos (sub_pos.mpr hsa)]
+    linarith [(le_max_iff.1 hs.2).resolve_left hsa.not_ge]
+
 /-- The primitive of a step velocity corrected by its average defect reaches the prescribed
 endpoint. -/
 theorem add_integral_add_inv_smul_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -149,6 +165,27 @@ theorem setIntegral_norm_inv_smul {E : Type*} [NormedAddCommGroup E] [NormedSpac
     ENNReal.toReal_ofReal (sub_nonneg.mpr hab.le)]
   simp only [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos (sub_pos.mpr hab), smul_eq_mul]
   rw [← mul_assoc, mul_inv_cancel₀ (sub_pos.mpr hab).ne', one_mul]
+
+open Filter in
+/-- The accumulated integral `t ↦ ∫ r in a..t, w r` of a locally integrable function bounded below
+almost everywhere by a positive constant tends to `+∞` at `+∞` and to `-∞` at `-∞`. -/
+theorem tendsto_intervalIntegral_atTop_atBot {w : ℝ → ℝ}
+    {a : ℝ} (hw : ∀ t, IntervalIntegrable w volume a t) {m : ℝ} (hm : 0 < m)
+    (hwm : ∀ᵐ t ∂volume, m ≤ w t) :
+    Tendsto (fun t ↦ ∫ r in a..t, w r) atTop atTop ∧
+      Tendsto (fun t ↦ ∫ r in a..t, w r) atBot atBot := by
+  -- Compare with the integral `(t - a) * m` of the constant lower bound.
+  refine ⟨tendsto_atTop_mono' _ ?_
+      ((tendsto_atTop_add_const_right _ (-a) tendsto_id).atTop_mul_const hm),
+    tendsto_atBot_mono' _ ?_
+      ((tendsto_atBot_add_const_right _ (-a) tendsto_id).atBot_mul_const hm)⟩
+  · filter_upwards [eventually_ge_atTop a] with t ht
+    simpa [sub_eq_add_neg] using
+      intervalIntegral.integral_mono_ae ht intervalIntegrable_const (hw t) hwm
+  · filter_upwards [eventually_le_atBot a] with t ht
+    rw [intervalIntegral.integral_symm t, neg_le]
+    simpa [sub_eq_add_neg, add_comm, ← neg_mul] using
+      intervalIntegral.integral_mono_ae ht intervalIntegrable_const (hw t).symm hwm
 
 end TauCeti
 

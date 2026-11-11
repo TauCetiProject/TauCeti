@@ -590,14 +590,16 @@ theorem exists_pairOfDefinition_ringOfDefinition_eq (B : Subring A)
   · -- Boundedness of `B` shrinks `Jᵐ` inside any neighbourhood of `0`.
     exact P.exists_span_pow_subset_of_isBounded hbdd hSk hs
 
-omit [IsHuberRing A] in
+omit [IsTopologicalRing A] [IsHuberRing A] in
 /-- **Wedhorn Lemma 6.2, the easy implication `(b) ⇒ (c)`.** An open subring whose subspace
 topology is adic is bounded: the powers of the ideal are open in `B`, hence open in `A`, and each
 of them absorbs multiplication by `B` because it is an ideal of `B`.
 
-No finite generation of `J` is asked, and `A` need not be Huber. -/
+No finite generation of `J` is asked, and `A` need be neither Huber nor a topological ring. -/
 theorem isBounded_of_isAdic {B : Subring A} (hopen : IsOpen (B : Set A)) {J : Ideal B}
     (hJ : IsAdic J) : IsBounded (B : Set A) := by
+  -- an adic topology is a ring topology
+  have : IsTopologicalRing B := hJ ▸ J.nonarchimedean.toIsTopologicalRing
   rw [isBounded_iff]
   intro U hU
   obtain ⟨n, hn⟩ := (isAdic_iff.mp hJ).2 _
@@ -643,6 +645,7 @@ theorem exists_pairOfDefinition_ringOfDefinition_eq_iff (B : Subring A) :
 
 /-! ### Additional parts of Wedhorn Corollary 6.4 -/
 
+omit [IsHuberRing A] in
 /-- **Wedhorn Corollary 6.4(1), the intersection half.** The intersection of two rings of
 definition is a ring of definition: it is open as an intersection of two opens and bounded as a
 subset of either.
@@ -653,6 +656,7 @@ generated ideal need not be finitely generated. It is Lemma 6.2 that supplies on
 theorem exists_pairOfDefinition_ringOfDefinition_eq_inf (P Q : PairOfDefinition A) :
     ∃ R : PairOfDefinition A,
       R.ringOfDefinition = P.ringOfDefinition ⊓ Q.ringOfDefinition :=
+  haveI : IsHuberRing A := ⟨⟨P⟩⟩
   exists_pairOfDefinition_ringOfDefinition_eq _
     (by rw [Subring.coe_inf]
         exact P.isOpen_ringOfDefinition.inter Q.isOpen_ringOfDefinition)
