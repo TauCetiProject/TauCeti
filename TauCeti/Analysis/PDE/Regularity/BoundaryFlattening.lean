@@ -41,14 +41,16 @@ The proof flattens the boundary (Evans, §6.3.2, proof of Theorem 4). The functi
 solution on `H ∩ U'` of an equation of the same form
 (`TauCeti.PDE.energyFormH1_compL_eq_setIntegral`), whose principal coefficient
 `a'(x) = |det DΦ(x)| DΦ(x)⁻¹ a(Φ x) DΦ(x)⁻ᵀ` is uniformly elliptic
-(`TauCeti.PDE.UniformlyEllipticOn.pullbackPrincipal`) and, because `DΦ` is Lipschitz on the convex
-set `U'`, Lipschitz (`TauCeti.PDE.exists_lipschitzOnWith_matrixBilinearForm_pullbackPrincipal`),
-with bounded lower-order coefficients and right-hand side in `L²`. It vanishes on the flat
-boundary portion: for a smooth `ψ` supported in `U'`, take a smooth `χ` supported in `U` and equal
-to one on `Φ(supp ψ)`; then `χ u ∈ H¹₀(Ω)`, its restriction lies in `H¹₀(Ω ∩ U)`, precomposition
-with `Φ` keeps it in `H¹₀(H ∩ U')`, and multiplying by `ψ` gives `ψ (u ∘ Φ)`. The flat-boundary
-theorem (`TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_mapsTo`) puts `u ∘ Φ`
-in `W^{2,2}` near the preimage of `V`, and precomposition with the `C²` map `Ψ`
+(`TauCeti.PDE.UniformlyEllipticOn.pullbackPrincipal`) and Lipschitz
+(`TauCeti.PDE.exists_lipschitzOnWith_matrixBilinearForm_pullbackPrincipal`). Here `DΦ` is Lipschitz
+on `U'` because `U'` is convex and `Wkp.IsChangeOfVariables 2` bounds the second derivative of `Φ`
+by `L` (`TauCeti.Wkp.IsChangeOfVariables.lipschitzOnWith_fderiv`). The transformed equation has
+bounded lower-order coefficients and right-hand side in `L²`. The function `u ∘ Φ` vanishes on
+the flat boundary portion: for a smooth `ψ` supported in `U'`, take a smooth `χ` supported in `U`
+and equal to one on `Φ(supp ψ)`; then `χ u ∈ H¹₀(Ω)`, its restriction lies in `H¹₀(Ω ∩ U)`,
+precomposition with `Φ` keeps it in `H¹₀(H ∩ U')`, and multiplying by `ψ` gives `ψ (u ∘ Φ)`. The
+flat-boundary theorem (`TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_mapsTo`)
+puts `u ∘ Φ` in `W^{2,2}` near the preimage of `V`, and precomposition with the `C²` map `Ψ`
 (`TauCeti.Wkp.compL`) carries this back to `u` on `Ω ∩ V`.
 
 ## References
