@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.FrameCover
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.TestFunction
 public import TauCeti.Analysis.LocallyConvex.FinalTopology
 import TauCeti.Analysis.Distribution.TestFunction.WeakWhitney
-import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 
 /-!
 # The fixed-compact inductive topology on bundle tests
