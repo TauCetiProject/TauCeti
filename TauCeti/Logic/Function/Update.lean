@@ -34,6 +34,8 @@ the map that sends `b` to `a` and fixes every other point.
 * `Function.update_id_apply_eq_update_id_apply_iff`, `Function.update_id_swap_apply`: two points
   have the same image under `Function.update id b a` exactly when they agree up to
   `Equiv.swap a b`.
+* `Function.Embedding.update_id_comp_eq_update_id_comp_iff`: two embeddings have the same
+  composite with `Function.update id b a` exactly when they agree up to `Equiv.swap a b`.
 -/
 
 public section
@@ -110,3 +112,42 @@ theorem update_id_swap_apply (x : α) :
   update_id_apply_eq_update_id_apply_iff.2 (Or.inr rfl)
 
 end Function
+
+namespace Function.Embedding
+
+variable {a b : α}
+
+/-- Two embeddings `f` and `g` have the same composite with `update id b a` exactly when `g` is `f`
+or `Equiv.swap a b ∘ f`. -/
+theorem update_id_comp_eq_update_id_comp_iff {ι : Type*} (f g : ι ↪ α) :
+    update id b a ∘ g = update id b a ∘ f ↔ g = f ∨ g = f.trans (Equiv.swap a b).toEmbedding := by
+  constructor
+  · intro h
+    have hpt (i : ι) : g i = f i ∨ g i = Equiv.swap a b (f i) :=
+      update_id_apply_eq_update_id_apply_iff.1 (congrFun h i)
+    by_contra hne
+    simp only [not_or, DFunLike.ext_iff, not_forall, Embedding.trans_apply,
+      Equiv.coe_toEmbedding] at hne
+    obtain ⟨⟨i, hi⟩, ⟨j, hj⟩⟩ := hne
+    have hi' : g i = Equiv.swap a b (f i) := (hpt i).resolve_left hi
+    have hj' : g j = f j := (hpt j).resolve_right hj
+    -- Both `f i` and `f j` are moved by the swap, so they are `a` and `b` in some order, and
+    -- then `g i = g j`.
+    have hfi : f i = a ∨ f i = b :=
+      (Equiv.swap_apply_ne_self_iff.1 fun h => hi (hi'.trans h)).2
+    have hfj : f j = a ∨ f j = b :=
+      (Equiv.swap_apply_ne_self_iff.1 fun h => hj (hj'.trans h.symm)).2
+    have hij : i ≠ j := by
+      rintro rfl
+      exact hi hj'
+    have hfij : f i ≠ f j := f.injective.ne hij
+    apply g.injective.ne hij
+    rw [hi', hj']
+    rcases hfi with hfi | hfi <;> rcases hfj with hfj | hfj <;>
+      simp_all [Equiv.swap_apply_left, Equiv.swap_apply_right]
+  · rintro (rfl | rfl)
+    · rfl
+    · funext i
+      exact update_id_swap_apply (f i)
+
+end Function.Embedding
