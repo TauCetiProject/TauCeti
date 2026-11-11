@@ -208,8 +208,6 @@ private theorem toReal_eLpNorm_posPartAbove_le
   set m := ν.real A ^ (1 - (r : ℝ)⁻¹ - (s : ℝ)⁻¹)
   have hlam := h.pos
   have hW : 0 ≤ W := ENNReal.toReal_nonneg
-  have hm : 0 ≤ m := by positivity
-  have hF : 0 ≤ F := ENNReal.toReal_nonneg
   have hkey : lam * W ^ 2 ≤ S ^ 2 * F * m * W := by
     calc lam * W ^ 2 ≤ lam * ((S : ℝ) * ‖W1p.gradient w‖) ^ 2 := by gcongr
       _ = S ^ 2 * (lam * ‖W1p.gradient w‖ ^ 2) := by ring
