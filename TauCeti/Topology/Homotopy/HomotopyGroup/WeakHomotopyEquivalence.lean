@@ -32,6 +32,8 @@ equivalence, is `ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquiv` in
 * `ContinuousMap.joined_iff_of_injective_homotopyGroupMap`,
   `ContinuousMap.IsWeakHomotopyEquivalence.joined_iff`: injectivity on `π_0` (and in particular a
   weak homotopy equivalence) means injectivity on path components.
+* `ContinuousMap.IsWeakHomotopyEquivalence.pathConnectedSpace_iff`: a weak homotopy equivalence
+  preserves and reflects path-connectedness.
 * `ContinuousMap.IsWeakHomotopyEquivalence.mapOfEq_bijective`: a weak homotopy
   equivalence induces bijections of fundamental groups.
 * `ContinuousMap.isWeakHomotopyEquivalence_iff_forall_bijective`: on a path-connected space it
@@ -161,6 +163,18 @@ a path exactly when their images are. -/
 theorem joined_iff (hf : f.IsWeakHomotopyEquivalence) {a b : X} :
     Joined (f a) (f b) ↔ Joined a b :=
   f.joined_iff_of_injective_homotopyGroupMap (hf.bijective 0 a).injective
+
+/-- **A weak homotopy equivalence preserves and reflects path-connectedness.** -/
+theorem pathConnectedSpace_iff (hf : f.IsWeakHomotopyEquivalence) :
+    PathConnectedSpace X ↔ PathConnectedSpace Y := by
+  refine ⟨fun _ ↦ ⟨⟨f (Classical.arbitrary X)⟩, fun y y' ↦ ?_⟩, fun _ ↦ ?_⟩
+  · -- Both points are joined to points of the image, which are joined to each other.
+    obtain ⟨a, ha⟩ := hf.exists_joined y
+    obtain ⟨b, hb⟩ := hf.exists_joined y'
+    exact ha.symm.trans (((PathConnectedSpace.joined a b).map f.continuous).trans hb)
+  · -- Every point of `Y` is joined to a point of the image, so `X` is nonempty.
+    obtain ⟨a, -⟩ := hf.exists_joined (Classical.arbitrary Y)
+    exact ⟨⟨a⟩, fun a b ↦ hf.joined_iff.1 (PathConnectedSpace.joined _ _)⟩
 
 /-- A map homotopic to a weak homotopy equivalence is a weak homotopy equivalence. -/
 theorem of_homotopic {f₀ f₁ : C(X, Y)} (hf : f₀.IsWeakHomotopyEquivalence) (h : f₀.Homotopic f₁) :
