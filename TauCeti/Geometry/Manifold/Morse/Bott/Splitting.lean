@@ -43,13 +43,9 @@ In the namespace `TauCeti.SmoothEmbedding`:
 * `IsCriticalSubmanifold.inner_eq_zero_of_mem_negativeNormalSpace` and
   `IsCriticalSubmanifold.normalHessian_eq_zero_of_mem_negativeNormalSpace`: the two spaces are
   orthogonal for the metric and for the normal Hessian.
-* `IsCriticalSubmanifold.disjoint_negativeNormalSpace_positiveNormalSpace_of_metric`: the
-  negative normal space relative to one fibre metric meets the positive normal space relative to
-  another only in `0`.
 * `IsNondegenerateCriticalSubmanifold.isCompl_negativeNormalSpace_positiveNormalSpace`: for a
-  Morse–Bott submanifold the normal space is their direct sum.
-* `IsNondegenerateCriticalSubmanifold.negativeNormalProjection`: the projection onto the negative
-  normal space along the positive one, with its range and kernel.
+  Morse–Bott submanifold the normal space is the direct sum of the negative normal space for one
+  fibre metric and the positive normal space for any other.
 * `IsNondegenerateCriticalSubmanifold.finrank_negativeNormalSpace` and
   `IsNondegenerateCriticalSubmanifold.finrank_positiveNormalSpace`: their dimensions are the
   Morse indices of `f` and of `-f`.
@@ -142,61 +138,12 @@ theorem normalHessian_apply_self_pos_of_mem_positiveNormalSpace
   LinearMap.BilinForm.apply_self_pos_of_mem_relativeSpectralSubspace_Ioi
     (g.isSymm_toBilinForm_inner s) (g.pos s) (h.isSymm_normalHessian hn s) hv hv0
 
-/-- The negative normal space relative to one fibre metric meets the positive normal space relative
-to another only in `0`: the normal Hessian is negative definite on the first and positive definite
-on the second. -/
-theorem disjoint_negativeNormalSpace_positiveNormalSpace_of_metric
-    (g' : RiemannianMetric fun s ↦ i.NormalSpace s hn) :
-    Disjoint (h.negativeNormalSpace hn g s) (h.positiveNormalSpace hn g' s) := by
-  refine Submodule.disjoint_def.2 fun v hv hv' ↦ by_contra fun hv0 ↦ ?_
-  exact (h.normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn g hv hv0).not_gt
-    (h.normalHessian_apply_self_pos_of_mem_positiveNormalSpace hn g' hv' hv0)
-
 end IsCriticalSubmanifold
 
 namespace IsNondegenerateCriticalSubmanifold
 
 variable [I.Boundaryless] [IsManifold I 2 M] [FiniteDimensional ℝ E]
-  (h : i.IsNondegenerateCriticalSubmanifold f) (g : RiemannianMetric fun s ↦ i.NormalSpace s hn)
-
-/-- **The normal space of a Morse–Bott submanifold splits into its negative and positive parts.**
-Since the normal Hessian is nondegenerate, the negative and positive normal spaces relative to any
-fibre metric are complementary. -/
-theorem isCompl_negativeNormalSpace_positiveNormalSpace (s : S) :
-    IsCompl (h.negativeNormalSpace hn g s) (h.positiveNormalSpace hn g s) :=
-  LinearMap.BilinForm.isCompl_relativeSpectralSubspace_Iio_Ioi
-    (g.isSymm_toBilinForm_inner s) (g.pos s)
-    (h.isSymm_normalHessian hn s) (h.ker_normalHessian hn s)
-
-/-- The projection of the normal space onto the negative normal space along the positive normal
-space, relative to a fibre metric `g`. -/
-def negativeNormalProjection (s : S) : i.NormalSpace s hn →L[ℝ] i.NormalSpace s hn :=
-  LinearMap.toContinuousLinearMap ((h.negativeNormalSpace hn g s).projection
-    (h.positiveNormalSpace hn g s) (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g s))
-
-/-- As a linear map, the negative normal projection is the projection onto the negative normal
-space along the positive normal space. -/
-theorem coe_negativeNormalProjection (s : S) :
-    (h.negativeNormalProjection hn g s : i.NormalSpace s hn →ₗ[ℝ] i.NormalSpace s hn) =
-      (h.negativeNormalSpace hn g s).projection (h.positiveNormalSpace hn g s)
-        (h.isCompl_negativeNormalSpace_positiveNormalSpace hn g s) :=
-  LinearMap.coe_toContinuousLinearMap _
-
-/-- The negative normal projection is idempotent. -/
-theorem isIdempotentElem_negativeNormalProjection (s : S) :
-    IsIdempotentElem (h.negativeNormalProjection hn g s) := by
-  rw [← ContinuousLinearMap.isIdempotentElem_toLinearMap_iff, coe_negativeNormalProjection]
-  exact Submodule.isIdempotentElem_projection _
-
-/-- The range of the negative normal projection is the negative normal space. -/
-theorem range_negativeNormalProjection (s : S) :
-    (h.negativeNormalProjection hn g s).range = h.negativeNormalSpace hn g s := by
-  rw [coe_negativeNormalProjection, Submodule.range_projection]
-
-/-- The kernel of the negative normal projection is the positive normal space. -/
-theorem ker_negativeNormalProjection (s : S) :
-    (h.negativeNormalProjection hn g s).ker = h.positiveNormalSpace hn g s := by
-  rw [coe_negativeNormalProjection, Submodule.ker_projection]
+  (h : i.IsNondegenerateCriticalSubmanifold f) (g g' : RiemannianMetric fun s ↦ i.NormalSpace s hn)
 
 /-- **The negative normal space has the dimension of the Morse index**, for every fibre metric. -/
 theorem finrank_negativeNormalSpace (s : S) :
@@ -216,6 +163,25 @@ theorem finrank_positiveNormalSpace (s : S) :
       (g.isSymm_toBilinForm_inner s) (g.pos s)
       (h.isSymm_normalHessian hn s),
     h.sigPos_normalHessian hn s]
+
+/-- **The normal space of a Morse–Bott submanifold splits into its negative and positive parts.**
+Since the normal Hessian is nondegenerate, the negative normal space relative to a fibre metric `g`
+and the positive normal space relative to a fibre metric `g'` are complementary. The two metrics
+may differ: the normal Hessian is negative definite on the first space and positive definite on
+the second, so they meet only in `0`, and their dimensions are the Morse indices of `f` and `-f`,
+which add up to the rank of the normal bundle. -/
+theorem isCompl_negativeNormalSpace_positiveNormalSpace (s : S) :
+    IsCompl (h.negativeNormalSpace hn g s) (h.positiveNormalSpace hn g' s) := by
+  have hsplit : IsCompl (h.negativeNormalSpace hn g' s) (h.positiveNormalSpace hn g' s) :=
+    LinearMap.BilinForm.isCompl_relativeSpectralSubspace_Iio_Ioi
+      (g'.isSymm_toBilinForm_inner s) (g'.pos s)
+      (h.isSymm_normalHessian hn s) (h.ker_normalHessian hn s)
+  refine (Submodule.isCompl_iff_disjoint _ _ ?_).2 (Submodule.disjoint_def.2 fun v hv hv' ↦ ?_)
+  · rw [← Submodule.finrank_add_eq_of_isCompl hsplit, h.finrank_negativeNormalSpace hn g,
+      h.finrank_negativeNormalSpace hn g']
+  · by_contra hv0
+    exact (h.normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn g hv hv0).not_gt
+      (h.normalHessian_apply_self_pos_of_mem_positiveNormalSpace hn g' hv' hv0)
 
 /-- **The rank of the negative normal space is locally constant** along a Morse–Bott
 submanifold. -/

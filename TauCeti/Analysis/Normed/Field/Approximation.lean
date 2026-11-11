@@ -51,15 +51,12 @@ theorem IsAlgebraic.mem_closure_setOf_isAlgebraic {x : L} (hx : IsAlgebraic K x)
   refine Metric.mem_closure_iff.mpr fun δ hδ ↦ ?_
   have hM : 0 < max ‖x‖ 1 := lt_max_of_lt_right one_pos
   -- the coefficient precision that continuity of roots turns into the distance `δ`
-  set ε := (δ / max ‖x‖ 1) ^ (minpoly K x).natDegree / ((minpoly K x).natDegree + 1) with hε_def
-  have hε : 0 < ε := by positivity
+  have hε : 0 < (δ / max ‖x‖ 1) ^ (minpoly K x).natDegree / ((minpoly K x).natDegree + 1) := by
+    positivity
   obtain ⟨g, hgm, hdeg, hcoeff⟩ :=
     exists_monic_and_natDegree_eq_and_norm_map_algebraMap_coeff_sub_lt hk hfm hε
   obtain ⟨b, hb, hxb⟩ := exists_aroots_norm_sub_lt_of_norm_coeff_sub_lt hε (minpoly.aeval K x) hfm
     (hgm.map _) (by rw [natDegree_map, hdeg]) hcoeff (IsAlgClosed.splits _)
-  refine ⟨b, ⟨g, hgm.ne_zero, ?_⟩, ?_⟩
-  · simpa only [aeval_map_algebraMap] using (mem_aroots.mp hb).2
-  · have hprec : ((minpoly K x).natDegree + 1) * ε = (δ / max ‖x‖ 1) ^ (minpoly K x).natDegree :=
-      by rw [hε_def]; field_simp
-    rwa [hprec, Real.pow_rpow_inv_natCast (div_pos hδ hM).le hn, div_mul_cancel₀ _ hM.ne',
-      ← dist_eq_norm] at hxb
+  refine ⟨b, ⟨g, hgm.ne_zero, by simpa using (mem_aroots.mp hb).2⟩, ?_⟩
+  rwa [mul_div_cancel₀ _ (by positivity), Real.pow_rpow_inv_natCast (div_pos hδ hM).le hn,
+    div_mul_cancel₀ _ hM.ne', ← dist_eq_norm] at hxb

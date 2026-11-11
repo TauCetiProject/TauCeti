@@ -122,7 +122,6 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.measureReal_ball_mul_norm_sq_le_s
     {y : E} {s : ℝ} (hu : HarmonicOnNhd u (closedBall y s)) :
     μ.real (ball y s) * ‖u y‖ ^ 2 ≤ ∫ x in ball y s, ‖u x‖ ^ 2 ∂μ := by
   have hc : ContinuousOn u (closedBall y s) := hu.continuousOn
-  have hint : IntegrableOn u (ball y s) μ := hu.integrableOn_ball
   have hint2 : IntegrableOn (fun x ↦ ‖u x‖ ^ 2) (ball y s) μ :=
     ((hc.norm.pow 2).integrableOn_compact (isCompact_closedBall y s)).mono_set
       ball_subset_closedBall
@@ -164,7 +163,6 @@ private lemma norm_sq_le_of_mem_ball_half {x₀ x : E} {R : ℝ} (hR : 0 < R)
       (ball_subset_closedBall.trans hsub).eventuallyLE
   rw [μ.addHaar_real_ball_of_pos x (half_pos hR), div_pow] at h
   rw [le_div_iff₀ (by positivity)]
-  have h2 : (0 : ℝ) < 2 ^ finrank ℝ E := by positivity
   calc ‖u x‖ ^ 2 * (R ^ finrank ℝ E * μ.real (ball (0 : E) 1))
       = 2 ^ finrank ℝ E *
           (R ^ finrank ℝ E / 2 ^ finrank ℝ E * μ.real (ball (0 : E) 1) * ‖u x‖ ^ 2) := by
@@ -256,7 +254,7 @@ private lemma mul_norm_sub_le_of_norm_le (μ : Measure E) [μ.IsAddHaarMeasure] 
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- **The Lipschitz bound for bounded harmonic functions.** Let `u` be harmonic on neighbourhoods
-of the closed balls `closedBall y s` and `closedBall z s`, with `0 < s` and `dist y z ≤ s`, and let
+of the closed balls `closedBall y s` and `closedBall z s`, with `0 < s`, and let
 `‖u‖ ≤ M` on the open balls `ball y s` and `ball z s`. Then
 
 `‖u y - u z‖ ≤ 2ⁿ n M dist y z / s`,
@@ -265,8 +263,30 @@ where `n` is the dimension of `E`. This is the difference form of the interior g
 `|∇u| ≤ C M / s` for harmonic functions. -/
 theorem _root_.InnerProductSpace.HarmonicOnNhd.norm_sub_le_of_norm_le {y z : E} {s M : ℝ}
     (hy : HarmonicOnNhd u (closedBall y s)) (hz : HarmonicOnNhd u (closedBall z s))
-    (hM : ∀ x ∈ ball y s ∪ ball z s, ‖u x‖ ≤ M) (hs : 0 < s) (hyz : dist y z ≤ s) :
+    (hM : ∀ x ∈ ball y s ∪ ball z s, ‖u x‖ ≤ M) (hs : 0 < s) :
     ‖u y - u z‖ ≤ 2 ^ finrank ℝ E * finrank ℝ E * M * dist y z / s := by
+  by_cases hyz : dist y z ≤ s
+  swap
+  · -- Far apart, the trivial bound `2 M` is already below the right-hand side.
+    have hMy := hM y (Or.inl (mem_ball_self hs))
+    have hMz := hM z (Or.inr (mem_ball_self hs))
+    have hM0 : 0 ≤ M := (norm_nonneg _).trans hMy
+    rcases Nat.eq_zero_or_pos (finrank ℝ E) with hn | hn
+    · have : Subsingleton E := finrank_zero_iff.mp hn
+      simp [Subsingleton.elim y z]
+    · rw [le_div_iff₀ hs]
+      have h2 : (2 : ℝ) ≤ 2 ^ finrank ℝ E * finrank ℝ E := by
+        calc (2 : ℝ) = 2 ^ 1 * 1 := by norm_num
+          _ ≤ _ := by
+            gcongr
+            · norm_num
+            · exact hn
+            · exact_mod_cast hn
+      have hd := not_le.mp hyz
+      calc ‖u y - u z‖ * s ≤ (2 * M) * dist y z := by
+            gcongr
+            exact (norm_sub_le _ _).trans (by linarith)
+        _ ≤ _ := by gcongr
   borelize E
   have hmain := mul_norm_sub_le_of_norm_le Measure.addHaar hy hz hM hs
   set n := finrank ℝ E
@@ -314,14 +334,12 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.norm_fderiv_le_of_norm_le {x : E}
   have hlip : LipschitzOnWith A.toNNReal u (ball x (ρ / 2)) := by
     rw [lipschitzOnWith_iff_dist_le_mul]
     intro y hy z hz
-    have hyz : dist y z ≤ ρ := by
-      linarith [mem_ball.mp hy, mem_ball.mp hz, dist_triangle_right y z x]
     have hN : ∀ w ∈ ball y ρ ∪ ball z ρ, ‖u w‖ ≤ M := by
       intro w hw
       exact hM w (hw.elim (fun h ↦ hball hy (ball_subset_closedBall h))
         (fun h ↦ hball hz (ball_subset_closedBall h)))
     have h := (hu.mono (hball hy)).norm_sub_le_of_norm_le
-      (hu.mono (hball hz)) hN hρ hyz
+      (hu.mono (hball hz)) hN hρ
     rw [dist_eq_norm, Real.coe_toNNReal _ hA]
     exact h.trans_eq (by dsimp only [A]; ring)
   have h := norm_fderiv_le_of_lipschitzOn ℝ (ball_mem_nhds x (half_pos hρ)) hlip
@@ -347,7 +365,7 @@ private lemma norm_sub_le_of_mem_ball_of_eight_mul_le {x₀ y z : E} {ρ R M : �
   have hyz : dist y z < 2 * ρ := by linarith [dist_triangle_right y z x₀]
   have hv : HarmonicOnNhd (fun x ↦ u x - c) (ball x₀ R) := hu.sub (harmonicOnNhd_const c)
   have h := (hv.mono (hcl y hy)).norm_sub_le_of_norm_le (hv.mono (hcl z hz))
-    (fun x hx ↦ hM x (hx.elim (hop y hy ·) (hop z hz ·))) (by positivity) (by linarith)
+    (fun x hx ↦ hM x (hx.elim (hop y hy ·) (hop z hz ·))) (by positivity)
   rw [sub_sub_sub_cancel_right] at h
   have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM x₀ (mem_ball_self (half_pos hR)))
   refine h.trans ?_
@@ -413,7 +431,6 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.setIntegral_ball_norm_sub_setAver
         ∫ x in ball x₀ R, ‖u x - c‖ ^ 2 ∂μ := by
   set n := finrank ℝ E with hn
   set I := ∫ x in ball x₀ R, ‖u x - c‖ ^ 2 ∂μ
-  have hI : 0 ≤ I := setIntegral_nonneg measurableSet_ball fun _ _ ↦ by positivity
   rcases hρ.eq_or_lt with rfl | hρ
   · simp only [ball_zero, Measure.restrict_empty, integral_zero_measure]
     positivity
@@ -559,7 +576,6 @@ theorem setIntegral_ball_norm_sub_setAverage_sq_le_of_harmonicOnNhd_comp (e : E'
         (ρ / R) ^ (finrank ℝ E + 2) * ∫ x in ball x₀ R, ‖u x - c‖ ^ 2 ∂μ := by
   set n := finrank ℝ E with hn
   set I := ∫ x in ball x₀ R, ‖u x - c‖ ^ 2 ∂μ
-  have hI : 0 ≤ I := setIntegral_nonneg measurableSet_ball fun _ _ ↦ by positivity
   -- `u` is continuous on `ball x₀ R`, so `u - c'` is square integrable there for every `c'`.
   have hcont : ContinuousOn u (ball x₀ R) := by
     refine (hu.continuousOn.comp e.symm.continuous.continuousOn fun x hx ↦ ?_).congr
