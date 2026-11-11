@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Basic
+public import TauCeti.Data.Fintype.CardLT
 public import TauCeti.LinearAlgebra.Matrix.NegSemidef
 import Mathlib.Algebra.Order.Field.Rat
 import Mathlib.Tactic.LinearCombination
@@ -46,7 +47,7 @@ multiplicities of a minimal numerical type.
   vector on a proper finite set of components.
 * `TauCeti.NumericalType.not_forall_fintype_sum_intersection_mul_nonneg_of_pos`: a nonnegative,
   nonzero vector on a finite family of components missing some component has a row with negative
-  intersection sum. `TauCeti.NumericalType.exists_forall_ne_of_card_lt` gives the hypothesis
+  intersection sum. `Fintype.exists_forall_ne_of_card_lt` gives the hypothesis
   from a cardinality bound.
 * `TauCeti.NumericalType.not_forall_sum_intersection_mul_nonneg_of_pos`: the specialization to a
   family indexed by an initial segment of the natural numbers.
@@ -201,20 +202,6 @@ theorem sum_sum_intersection_mul_neg {s : Finset T.Component} (hs : s ≠ univ)
     sum_congr rfl fun i hi ↦ sum_congr rfl fun j hj ↦ by simp [hxdef, hi, hj]
   have hneg := T.dotProduct_intersection_mulVec_neg hxne (hx m hm)
   rwa [T.dotProduct_intersection_mulVec_of_support_subset hx, heq] at hneg
-
-/-- A finite family of components which has fewer members than the numerical type misses a
-component. -/
-theorem exists_forall_ne_of_card_lt {I : Type*} [Fintype I] {e : I → T.Component}
-    (hcard : Fintype.card I < Fintype.card T.Component) : ∃ m, ∀ i, e i ≠ m := by
-  by_contra! h
-  exact absurd (Fintype.card_le_of_surjective e h) (not_le.mpr hcard)
-
-/-- An initial segment of the natural numbers with fewer members than the numerical type misses a
-component under any map to the components. -/
-theorem exists_forall_lt_ne_of_lt_card {t : ℕ} {c : ℕ → T.Component}
-    (hcard : t < Fintype.card T.Component) : ∃ m, ∀ i < t, c i ≠ m := by
-  obtain ⟨m, hm⟩ := T.exists_forall_ne_of_card_lt (e := fun i : Fin t ↦ c i) (by simpa using hcard)
-  exact ⟨m, fun i hi ↦ hm ⟨i, hi⟩⟩
 
 /-- A nonnegative, nonzero integral vector on a finite family of components which misses some
 component cannot have every row of the intersection form nonnegative. This excludes affine

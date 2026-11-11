@@ -421,7 +421,7 @@ private lemma IsSelfIntersectionMinusTwoChain.false_of_cycle {t : ℕ} {c : ℕ 
   -- The cycle is affine: the all-ones vector makes every row of the intersection form vanish,
   -- which negative definiteness on a proper subset of the components forbids.
   refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := c)
-    (T.exists_forall_lt_ne_of_lt_card hcard)
+    (Fintype.exists_forall_lt_ne_of_lt_card hcard)
     (y := fun _ ↦ (1 : ℤ)) (fun _ _ ↦ by norm_num) ⟨0, by omega, one_pos⟩ ?_
   intro i hi
   simp only [mul_one]
@@ -582,7 +582,7 @@ theorem IsSelfIntersectionMinusTwoChain.interior_sum_eq {t : ℕ} {c : ℕ → T
           (by omega) (by omega) (by omega) (by omega) (by omega) (by omega), zero_mul]
       · have h0 := (hc.shift (r := i) (s := t - i) (by omega)).intersection_eq_zero (by omega)
           (p := 0) (q := j - i) (by omega) (by omega) (by omega) (by omega) (by omega)
-        rw [show i + (j - i) = j by omega, Nat.add_zero] at h0
+        rw [Nat.add_sub_of_le (by omega : i ≤ j), Nat.add_zero] at h0
         rw [h0, zero_mul])
     rfl
 
@@ -941,7 +941,7 @@ private lemma IsSelfIntersectionMinusTwoChain.false_of_end_factors
     have e₂ : j ≠ t - 1 := by omega
     simp [hydef, e₁, e₂]
   refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := c)
-    (T.exists_forall_lt_ne_of_lt_card hcard)
+    (Fintype.exists_forall_lt_ne_of_lt_card hcard)
     (y := y) ?_ ⟨0, by omega, by rw [hy₀]; exact hα⟩
     (hc.sum_intersection_mul_nonneg_of_end_factors hcard h4 hy₀ hyₗ hy₂ hint hmidedge hα₁ hα₂
       hγ₁ hγ₂)

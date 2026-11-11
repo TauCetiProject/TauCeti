@@ -356,7 +356,7 @@ private lemma left_weight_eq (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
       affine_sum_nonneg hf ht α d y hd_lt hd_t hy0 hyInterior hyLast hyt
         hinterior hedge hwb hw₁ ha₂b hrow0 hrow1
     exact (T.not_forall_sum_intersection_mul_nonneg_of_pos
-      (T.exists_forall_lt_ne_of_lt_card hcard)
+      (Fintype.exists_forall_lt_ne_of_lt_card hcard)
       (y := y) (fun i _ ↦ by simp only [y]; split_ifs <;> omega)
       ⟨0, by omega, by rw [hy0]; exact hαpos⟩) hrow
 
