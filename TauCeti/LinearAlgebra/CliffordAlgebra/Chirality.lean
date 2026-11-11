@@ -11,7 +11,6 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 -- Private: the orthogonal-basis computations are used only inside proofs.
 import TauCeti.Algebra.CharP.Invertible
-import TauCeti.Analysis.Normed.Operator.LinearIsometryEquiv.QuadraticForm
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
@@ -121,6 +120,8 @@ spinors does.
   act faithfully on nonzero positive spinors, and anti-self-dual ones on nonzero negative spinors.
 * `CliffordAlgebra.map_chirality`: the algebra map induced by an isometry `e` of the quadratic
   forms sends the chirality element of `o` to that of the transported orientation.
+* `CliffordAlgebra.map_app_of_forall_ι`: a nonzero map of Clifford modules intertwining the
+  generators along a map `f` forces `f` to preserve the quadratic forms.
 * `CliffordAlgebra.comp_chirality_eq_chirality_comp`: a map of Clifford modules intertwining the
   generators along an orientation-preserving linear isometry intertwines the chirality elements.
 * `CliffordAlgebra.map_mem_positiveHalfSpinors`: a semilinear map of Clifford modules commuting
@@ -669,11 +670,34 @@ variable {K W W' : Type*} [CommRing K] [Algebra ℝ K] [AddCommGroup W] [Module 
   (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End K W) (o' : Orientation ℝ V' (Fin 4))
   (ρ' : CliffordAlgebra Q' →ₐ[ℝ] Module.End K W')
 
+omit [Fact (finrank ℝ V = 4)] [Fact (finrank ℝ V' = 4)] in
+variable {ρ ρ'} in
+/-- **A nonzero intertwiner forces an isometry**: if a map `U` of Clifford modules intertwines the
+generators along a map `f`, `U c(v) = c(f v) U`, and `U w ≠ 0` for some `w`, then
+`Q' (f v) = Q v` for every `v`, the condition `QuadraticMap.Isometry.map_app` for `f`. Indeed
+`c(f v)² U w = U c(v)² w`, that is `Q' (f v) • U w = Q v • U w`. -/
+theorem map_app_of_forall_ι {f : V → V'} {U : W →ₗ[K] W'}
+    (hU : ∀ v, U ∘ₗ ρ (ι Q v) = ρ' (ι Q' (f v)) ∘ₗ U) {w : W} (hw : U w ≠ 0) (v : V) :
+    Q' (f v) = Q v := by
+  have h := LinearMap.congr_fun (hU v) (ρ (ι Q v) w)
+  have h₁ : ρ (ι Q v) (ρ (ι Q v) w) = Q v • w := by
+    rw [← mul_apply_eq_comp, ← map_mul, ι_sq_scalar, AlgHom.commutes,
+      Module.algebraMap_end_apply]
+  have h₂ : ρ' (ι Q' (f v)) (ρ' (ι Q' (f v)) (U w)) = Q' (f v) • U w := by
+    rw [← mul_apply_eq_comp, ← map_mul, ι_sq_scalar, AlgHom.commutes,
+      Module.algebraMap_end_apply]
+  have h₃ := LinearMap.congr_fun (hU v) w
+  simp only [LinearMap.comp_apply] at h h₃
+  rw [h₃, h₁, LinearMap.map_smul_of_tower, h₂] at h
+  have h' : (Q v - Q' (f v)) • U w = 0 := by rw [sub_smul, h, sub_self]
+  rw [smul_eq_zero, sub_eq_zero] at h'
+  exact (h'.resolve_right hw).symm
+
 variable {o ρ o' ρ'} in
 /-- A map `U` of Clifford modules that intertwines the generators along an orientation-preserving
 linear isometry `f`, `U c(v) = c(f v) U`, intertwines the chirality elements: `U Γ = Γ' U`. No
 normalization of the quadratic forms is needed: unless `U = 0`, the intertwining forces
-`Q' (f v) = Q v`. -/
+`Q' (f v) = Q v` (`CliffordAlgebra.map_app_of_forall_ι`). -/
 theorem comp_chirality_eq_chirality_comp
     {f : V ≃ₗᵢ[ℝ] V'} (ho : o.map (Fin 4) f.toLinearEquiv = o')
     {U : W →ₗ[K] W'} (hU : ∀ v, U ∘ₗ ρ (ι Q v) = ρ' (ι Q' (f v)) ∘ₗ U) :
@@ -681,22 +705,8 @@ theorem comp_chirality_eq_chirality_comp
   by_cases hU₀ : U = 0
   · simp [hU₀]
   obtain ⟨w, hw⟩ : ∃ w, U w ≠ 0 := by simpa [LinearMap.ext_iff] using hU₀
-  -- A nonzero intertwiner forces the quadratic forms to agree along `f`.
-  have hQf (v : V) : Q' (f v) = Q v := by
-    have h := LinearMap.congr_fun (hU v) (ρ (ι Q v) w)
-    have h₁ : ρ (ι Q v) (ρ (ι Q v) w) = Q v • w := by
-      rw [← mul_apply_eq_comp, ← map_mul, ι_sq_scalar, AlgHom.commutes,
-        Module.algebraMap_end_apply]
-    have h₂ : ρ' (ι Q' (f v)) (ρ' (ι Q' (f v)) (U w)) = Q' (f v) • U w := by
-      rw [← mul_apply_eq_comp, ← map_mul, ι_sq_scalar, AlgHom.commutes,
-        Module.algebraMap_end_apply]
-    have h₃ := LinearMap.congr_fun (hU v) w
-    simp only [LinearMap.comp_apply] at h h₃
-    rw [h₃, h₁, LinearMap.map_smul_of_tower, h₂] at h
-    have h' : (Q v - Q' (f v)) • U w = 0 := by rw [sub_smul, h, sub_self]
-    rw [smul_eq_zero, sub_eq_zero] at h'
-    exact (h'.resolve_right hw).symm
-  let e : Q.IsometryEquiv Q' := { f.toLinearEquiv with map_app' := hQf }
+  let e : Q.IsometryEquiv Q' :=
+    { f.toLinearEquiv with map_app' := map_app_of_forall_ι hU hw }
   have he (v : V) : e.toIsometry v = f v := rfl
   rw [comp_eq_map_comp_of_forall_ι (f := e.toIsometry) (fun v ↦ he v ▸ hU v),
     chirality_eq_neg_volumeElement, chirality_eq_neg_volumeElement, map_neg,
