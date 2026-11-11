@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.NovikovModule.Tensor
 public import TauCeti.RingTheory.NovikovModule.Leibniz
+public import TauCeti.RingTheory.NovikovModule.Trilinear
 public import TauCeti.Algebra.Homology.SquareZero.Graded
 import Mathlib.Tactic.LinearCombination
 
@@ -88,10 +89,6 @@ counts indexed by classes of a period group enter.
   cocycles the two products differ by a coboundary.
 * `NovikovModule.cohomologyProduct_kernelProduct_assoc`: the induced products on cohomology are
   associative.
-* `NovikovModule.novikovTrilinearOfMatrix`: the trilinear map of a family of Novikov series
-  indexed by three input orbits and an output orbit, with its matrix formula
-  `NovikovModule.coordinates_novikovTrilinearOfMatrix` and its degree
-  `NovikovModule.novikovTrilinearOfMatrix_mem_gradeBy`.
 * `NovikovModule.novikovProductOfMatrix_assoc_sub_eq_add`: the associativity homotopy for
   products of matrices, from the associativity identity between matrices.
 
@@ -403,119 +400,6 @@ end NovikovModule
 
 namespace NovikovModule
 
-section TrilinearOfMatrix
-
-variable {R H ι₁ ι₂ ι₃ ι₀ : Type*} [CommSemiring R] [AddCommGroup H] {N : H →+ ℝ}
-  {P₁ : ι₁ → Type*} {P₂ : ι₂ → Type*} {P₃ : ι₃ → Type*} {P₀ : ι₀ → Type*}
-  [∀ i, AddTorsor H (P₁ i)] [∀ j, AddTorsor H (P₂ j)] [∀ k, AddTorsor H (P₃ k)]
-  [∀ l, AddTorsor H (P₀ l)]
-  {F₁ : (Σ i, P₁ i) → ℝ} {F₂ : (Σ j, P₂ j) → ℝ} {F₃ : (Σ k, P₃ k) → ℝ} {F₀ : (Σ l, P₀ l) → ℝ}
-  (hF₁ : ∀ i h (p : P₁ i), F₁ ⟨i, h +ᵥ p⟩ = F₁ ⟨i, p⟩ - N h)
-  (hF₂ : ∀ j h (p : P₂ j), F₂ ⟨j, h +ᵥ p⟩ = F₂ ⟨j, p⟩ - N h)
-  (hF₃ : ∀ k h (p : P₃ k), F₃ ⟨k, h +ᵥ p⟩ = F₃ ⟨k, p⟩ - N h)
-  (hF₀ : ∀ l h (p : P₀ l), F₀ ⟨l, h +ᵥ p⟩ = F₀ ⟨l, p⟩ - N h)
-  (r₁ : ∀ i, P₁ i) (r₂ : ∀ j, P₂ j) (r₃ : ∀ k, P₃ k) (r₀ : ∀ l, P₀ l)
-  [Fintype ι₁] [Fintype ι₂] [Fintype ι₃] [Fintype ι₀]
-  (K : ι₁ → ι₂ → ι₃ → ι₀ → NovikovSeries R H N)
-
-/-- **The Novikov-trilinear map of a family of Novikov series.** For finitely many orbits and
-reference generators `r₁`, `r₂`, `r₃` and `r₀`, a family `K` of Novikov series indexed by three
-input orbits and an output orbit defines a trilinear map over the Novikov ring for the module
-structures of `TauCeti.NovikovModule.module`. In the reference coordinates it is
-`K(a, b, c)ₗ = ∑ᵢ ∑ⱼ ∑ₖ aᵢ bⱼ cₖ Kᵢⱼₖₗ` (`NovikovModule.coordinates_novikovTrilinearOfMatrix`).
-In Floer theory `K` counts the rigid elements of a one-parameter family of four-punctured spheres,
-and the trilinear map is the homotopy between the two bracketings of the product. -/
-def novikovTrilinearOfMatrix :
-    letI := module (R := R) hF₁
-    letI := module (R := R) hF₂
-    letI := module (R := R) hF₃
-    letI := module (R := R) hF₀
-    NovikovModule R F₁ →ₗ[NovikovSeries R H N] NovikovModule R F₂ →ₗ[NovikovSeries R H N]
-      NovikovModule R F₃ →ₗ[NovikovSeries R H N] NovikovModule R F₀ :=
-  letI := module (R := R) hF₁
-  letI := module (R := R) hF₂
-  letI := module (R := R) hF₃
-  letI := module (R := R) hF₀
-  ∑ i, ∑ j, ∑ k, ∑ l, ((basis hF₁ r₁).coord i).smulRight (((basis hF₂ r₂).coord j).smulRight
-    (((basis hF₃ r₃).coord k).smulRight (K i j k l • basis hF₀ r₀ l)))
-
-/-- **The matrix formula for the trilinear map of a family.** In the coordinates relative to the
-reference generators, `K(a, b, c)ₗ = ∑ᵢ ∑ⱼ ∑ₖ aᵢ bⱼ cₖ Kᵢⱼₖₗ`. -/
-theorem coordinates_novikovTrilinearOfMatrix (a : NovikovModule R F₁) (b : NovikovModule R F₂)
-    (c : NovikovModule R F₃) (l : ι₀) :
-    coordinates hF₀ r₀ (novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀ K a b c) l =
-      ∑ i, ∑ j, ∑ k, coordinates hF₁ r₁ a i * coordinates hF₂ r₂ b j *
-        coordinates hF₃ r₃ c k * K i j k l := by
-  classical
-  let := module (R := R) hF₁
-  let := module (R := R) hF₂
-  let := module (R := R) hF₃
-  let := module (R := R) hF₀
-  rw [← basis_repr_apply hF₀ r₀]
-  simp [novikovTrilinearOfMatrix, LinearMap.sum_apply, map_sum, Finsupp.single_apply, mul_assoc]
-
-/-- The trilinear map of a family on three reference basis vectors has the `(i, j, k)` entries of
-the family as its coordinates: `K(eᵢ, eⱼ, eₖ) = ∑ₗ Kᵢⱼₖₗ eₗ`. -/
-@[simp]
-theorem coordinates_novikovTrilinearOfMatrix_basis (i : ι₁) (j : ι₂) (k : ι₃) (l : ι₀) :
-    coordinates hF₀ r₀ (novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀ K
-      (basis hF₁ r₁ i) (basis hF₂ r₂ j) (basis hF₃ r₃ k)) l = K i j k l := by
-  classical
-  simp [coordinates_novikovTrilinearOfMatrix, Pi.single_apply]
-
-/-- **Every Novikov-trilinear map is the trilinear map of a family.** A trilinear map over the
-Novikov ring between finitely generated completed modules is the trilinear map of the family of
-coordinates of its values on the reference basis vectors. -/
-theorem eq_novikovTrilinearOfMatrix (B :
-    letI := module (R := R) hF₁
-    letI := module (R := R) hF₂
-    letI := module (R := R) hF₃
-    letI := module (R := R) hF₀
-    NovikovModule R F₁ →ₗ[NovikovSeries R H N] NovikovModule R F₂ →ₗ[NovikovSeries R H N]
-      NovikovModule R F₃ →ₗ[NovikovSeries R H N] NovikovModule R F₀) :
-    B = novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀ (fun i j k l =>
-      coordinates hF₀ r₀ (B (basis hF₁ r₁ i) (basis hF₂ r₂ j) (basis hF₃ r₃ k)) l) := by
-  let := module (R := R) hF₁
-  let := module (R := R) hF₂
-  let := module (R := R) hF₃
-  let := module (R := R) hF₀
-  refine (basis hF₁ r₁).ext fun i => (basis hF₂ r₂).ext fun j => (basis hF₃ r₃).ext fun k => ?_
-  refine (coordinates hF₀ r₀).injective (funext fun l => ?_)
-  rw [coordinates_novikovTrilinearOfMatrix_basis]
-
-/-- **Degree of the trilinear map of a family.** Let the generators be graded by functions `dₗ`
-that change by `δ h` under the translation by `h`. If every entry `Kᵢⱼₖₗ` is homogeneous of the
-degree `d₁ (r₁ i) + d₂ (r₂ j) + d₃ (r₃ k) + ε - d₀ (r₀ l)`, then the trilinear map shifts degrees
-by `ε`: it sends combinations of degrees `e₁`, `e₂`, `e₃` to a combination of degree
-`e₁ + e₂ + e₃ + ε`. -/
-theorem novikovTrilinearOfMatrix_mem_gradeBy {D : Type*} [AddCommGroup D] (δ : H →+ D)
-    {d₁ : (Σ i, P₁ i) → D} {d₂ : (Σ j, P₂ j) → D} {d₃ : (Σ k, P₃ k) → D}
-    {d₀ : (Σ l, P₀ l) → D}
-    (hd₁ : ∀ i h (p : P₁ i), d₁ ⟨i, h +ᵥ p⟩ = δ h + d₁ ⟨i, p⟩)
-    (hd₂ : ∀ j h (p : P₂ j), d₂ ⟨j, h +ᵥ p⟩ = δ h + d₂ ⟨j, p⟩)
-    (hd₃ : ∀ k h (p : P₃ k), d₃ ⟨k, h +ᵥ p⟩ = δ h + d₃ ⟨k, p⟩)
-    (hd₀ : ∀ l h (p : P₀ l), d₀ ⟨l, h +ᵥ p⟩ = δ h + d₀ ⟨l, p⟩) {ε : D}
-    (hK : ∀ i j k l, K i j k l ∈ NovikovSeries.gradeBy R N δ
-      (d₁ ⟨i, r₁ i⟩ + d₂ ⟨j, r₂ j⟩ + d₃ ⟨k, r₃ k⟩ + ε - d₀ ⟨l, r₀ l⟩))
-    {e₁ e₂ e₃ : D} {a : NovikovModule R F₁} (ha : a ∈ gradeBy R F₁ d₁ e₁)
-    {b : NovikovModule R F₂} (hb : b ∈ gradeBy R F₂ d₂ e₂)
-    {c : NovikovModule R F₃} (hc : c ∈ gradeBy R F₃ d₃ e₃) :
-    novikovTrilinearOfMatrix hF₁ hF₂ hF₃ hF₀ r₁ r₂ r₃ r₀ K a b c ∈
-      gradeBy R F₀ d₀ (e₁ + e₂ + e₃ + ε) := by
-  rw [mem_gradeBy_iff_coordinates hF₁ δ hd₁ r₁] at ha
-  rw [mem_gradeBy_iff_coordinates hF₂ δ hd₂ r₂] at hb
-  rw [mem_gradeBy_iff_coordinates hF₃ δ hd₃ r₃] at hc
-  rw [mem_gradeBy_iff_coordinates hF₀ δ hd₀ r₀]
-  intro l
-  rw [coordinates_novikovTrilinearOfMatrix]
-  refine Submodule.sum_mem _ fun i _ => Submodule.sum_mem _ fun j _ =>
-    Submodule.sum_mem _ fun k _ => ?_
-  convert SetLike.mul_mem_graded (SetLike.mul_mem_graded (SetLike.mul_mem_graded (ha i) (hb j))
-    (hc k)) (hK i j k l) using 2
-  abel
-
-end TrilinearOfMatrix
-
 section AssociativityOfMatrix
 
 variable {R H ι₁ ι₂ ι₃ ι₀ ι₁₂ ι₂₃ : Type*} [CommRing R] [AddCommGroup H] {N : H →+ ℝ}
@@ -588,43 +472,44 @@ theorem novikovProductOfMatrix_assoc_sub_eq_add
   set y := coordinates hF₂ r₂ b
   set z := coordinates hF₃ r₃ c
   -- Each of the six sums is regrouped as `∑ᵢ ∑ⱼ ∑ₖ xᵢ yⱼ zₖ c(i, j, k)`, with `c(i, j, k)`
-  -- one of the six sums of the associativity identity, by reindexing the expanded sum.
+  -- one of the six sums of the associativity identity, by expanding the products and
+  -- interchanging the sums.
   have h₁ : ∑ t, ∑ k, (∑ i, ∑ j, x i * y j * Q i j t) * z k * Q' t k l =
       ∑ i, ∑ j, ∑ k, x i * y j * z k * ∑ t, Q i j t * Q' t k l := by
-    simp only [Finset.sum_mul, Finset.mul_sum, ← Fintype.sum_prod_type']
-    exact Fintype.sum_equiv ⟨fun p => (p.2.2.1, p.2.2.2, p.2.1, p.1),
-      fun p => (p.2.2.2, p.2.2.1, p.1, p.2.1), fun _ => rfl, fun _ => rfl⟩ _ _
-      fun _ => by dsimp only [Equiv.coe_fn_mk]; ring
+    simp only [Finset.sum_mul, Finset.mul_sum]
+    simp_rw [Finset.sum_comm (s := (Finset.univ : Finset ι₃)),
+      Finset.sum_comm (s := (Finset.univ : Finset ι₁₂))]
+    ac_rfl
   have h₂ : ∑ i, ∑ u, (x i * ∑ j, ∑ k, y j * z k * T j k u) * T' i u l =
       ∑ i, ∑ j, ∑ k, x i * y j * z k * ∑ u, T j k u * T' i u l := by
-    simp only [Finset.sum_mul, Finset.mul_sum, ← Fintype.sum_prod_type']
-    exact Fintype.sum_equiv ⟨fun p => (p.1, p.2.2.1, p.2.2.2, p.2.1),
-      fun p => (p.1, p.2.2.2, p.2.1, p.2.2.1), fun _ => rfl, fun _ => rfl⟩ _ _
-      fun _ => by dsimp only [Equiv.coe_fn_mk]; ring
+    simp only [Finset.sum_mul, Finset.mul_sum]
+    simp_rw [Finset.sum_comm (s := (Finset.univ : Finset ι₂₃))]
+    ac_rfl
   have h₃ : ∑ m, (∑ i, ∑ j, ∑ k, x i * y j * z k * K i j k m) * D₀ m l =
       ∑ i, ∑ j, ∑ k, x i * y j * z k * ∑ m, K i j k m * D₀ m l := by
-    simp only [Finset.sum_mul, Finset.mul_sum, ← Fintype.sum_prod_type']
-    exact Fintype.sum_equiv ⟨fun p => (p.2.1, p.2.2.1, p.2.2.2, p.1),
-      fun p => (p.2.2.2, p.1, p.2.1, p.2.2.1), fun _ => rfl, fun _ => rfl⟩ _ _
-      fun _ => by dsimp only [Equiv.coe_fn_mk]; ring
+    simp only [Finset.sum_mul, Finset.mul_sum]
+    simp_rw [Finset.sum_comm (s := (Finset.univ : Finset ι₀))]
+    ac_rfl
   have h₄ : ∑ m, ∑ j, ∑ k, (∑ i, x i * D₁ i m) * y j * z k * K m j k l =
       ∑ i, ∑ j, ∑ k, x i * y j * z k * ∑ m, D₁ i m * K m j k l := by
-    simp only [Finset.sum_mul, Finset.mul_sum, ← Fintype.sum_prod_type']
-    exact Fintype.sum_equiv ⟨fun p => (p.2.2.2, p.2.1, p.2.2.1, p.1),
-      fun p => (p.2.2.2, p.2.1, p.2.2.1, p.1), fun _ => rfl, fun _ => rfl⟩ _ _
-      fun _ => by dsimp only [Equiv.coe_fn_mk]; ring
+    simp only [Finset.sum_mul, Finset.mul_sum]
+    simp_rw [Finset.sum_comm (s := (Finset.univ : Finset ι₂)),
+      Finset.sum_comm (s := (Finset.univ : Finset ι₃))]
+    rw [Finset.sum_comm]
+    ac_rfl
   have h₅ : ∑ i, ∑ m, ∑ k, (x i * ∑ j, y j * D₂ j m) * z k * K i m k l =
       ∑ i, ∑ j, ∑ k, x i * y j * z k * ∑ m, D₂ j m * K i m k l := by
-    simp only [Finset.sum_mul, Finset.mul_sum, ← Fintype.sum_prod_type']
-    exact Fintype.sum_equiv ⟨fun p => (p.1, p.2.2.2, p.2.2.1, p.2.1),
-      fun p => (p.1, p.2.2.2, p.2.2.1, p.2.1), fun _ => rfl, fun _ => rfl⟩ _ _
-      fun _ => by dsimp only [Equiv.coe_fn_mk]; ring
+    simp only [Finset.sum_mul, Finset.mul_sum]
+    simp_rw [Finset.sum_comm (s := (Finset.univ : Finset ι₃))]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [Finset.sum_comm]
+    ac_rfl
   have h₆ : ∑ i, ∑ j, ∑ m, (x i * y j * ∑ k, z k * D₃ k m) * K i j m l =
       ∑ i, ∑ j, ∑ k, x i * y j * z k * ∑ m, D₃ k m * K i j m l := by
-    simp only [Finset.sum_mul, Finset.mul_sum, ← Fintype.sum_prod_type']
-    exact Fintype.sum_equiv ⟨fun p => (p.1, p.2.1, p.2.2.2, p.2.2.1),
-      fun p => (p.1, p.2.1, p.2.2.2, p.2.2.1), fun _ => rfl, fun _ => rfl⟩ _ _
-      fun _ => by dsimp only [Equiv.coe_fn_mk]; ring
+    simp only [Finset.sum_mul, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+    rw [Finset.sum_comm]
+    ac_rfl
   -- Termwise, this is the associativity identity, with the signs of the orbits of `i` and `j`
   -- replaced by the signs of the degrees of `a` and `b` on their nonzero coordinates.
   rw [h₁, h₂, h₃, h₄, h₅, h₆]
