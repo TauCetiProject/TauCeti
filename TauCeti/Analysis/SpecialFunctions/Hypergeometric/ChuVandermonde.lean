@@ -34,6 +34,9 @@ and the series stops before Mathlib's junk inverse `0⁻¹` is reached.
 ## References
 
 * NIST Digital Library of Mathematical Functions, 15.4.24, <https://dlmf.nist.gov/15.4.E24>.
+
+The proofs are adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), files
+`DLMF/Hypergeometric/EulerIntegral.lean` and `DLMF/Hypergeometric/Basic/GaussSeries.lean`.
 -/
 
 public section
