@@ -47,6 +47,10 @@ tangent vector `w` at `x` to the rotation with columns `x`, `dι w` and `x ⨯�
   inverse in terms of the base point and the differential of the inclusion.
 * `TauCeti.coe_sphereUnitTangentHomeomorphSpecialOrthogonalGroup_apply`: the rotation attached
   to a unit tangent vector of `S²`.
+* `TauCeti.proj_sphereUnitTangentHomeomorphSpecialOrthogonalGroup_symm_apply` and
+  `TauCeti.mfderiv_sphereUnitTangentHomeomorphSpecialOrthogonalGroup_symm_apply`: the unit tangent
+  vector attached to a rotation lies over its first column and is sent to its second column by
+  the differential of the inclusion.
 
 ## References
 
@@ -92,13 +96,6 @@ private def tangentOfStiefel (v : stiefel E 2) :
       rw [LinearIsometryEquiv.norm_map]
       exact (mem_stiefel_two_iff.1 v.2).2.1⟩
 
-/-- The image of a tangent vector to the sphere under the differential of the inclusion is the
-value of `TauCeti.sphereTangentEquiv` on it. -/
-private theorem mvfderiv_eq_sphereTangentEquiv (x : sphere (0 : E) 1)
-    (w : TangentSpace (𝓡 n) x) :
-    mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x w = sphereTangentEquiv x w := by
-  rw [coe_sphereTangentEquiv_apply, mvfderiv_apply_eq_mfderiv_apply]
-
 /-- The frame `(x, dι w)` of a unit tangent vector `w` at `x`. -/
 private def frame (p : {p : TangentBundle (𝓡 n) (sphere (0 : E) 1) | ‖p.2‖ = 1}) : stiefel E 2 :=
   ⟨_, frame_mem_stiefel p⟩
@@ -122,7 +119,7 @@ private theorem frame_tangentOfStiefel (v : stiefel E 2) :
   · -- The second vector of the frame is the image of the fibre component under `dι`.
     change mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) (stiefelProj E 2 0 v)
       ((sphereTangentEquiv _).symm ⟨v.1 1, _⟩) = v.1 1
-    rw [mvfderiv_eq_sphereTangentEquiv, LinearIsometryEquiv.apply_symm_apply]
+    rw [mvfderiv_subtypeVal_sphere_eq_sphereTangentEquiv, LinearIsometryEquiv.apply_symm_apply]
 
 variable (E n) in
 /-- The bijection between the unit tangent bundle of the round sphere and the Stiefel manifold of
@@ -146,8 +143,10 @@ private theorem continuous_frame :
   refine continuous_pi fun i ↦ ?_
   fin_cases i
   · exact continuous_subtype_val.comp (FiberBundle.continuous_proj _ _)
-  · refine hT.congr fun p ↦ ?_
-    exact (mvfderiv_apply_eq_mfderiv_apply _ _ _).symm
+  · -- `NormedSpace.fromTangentSpace` is definitionally the identity on `E`, identifying
+    -- `TangentSpace 𝓘(ℝ, E) p.proj` with `E` in the equality below.
+    exact hT.congr fun p ↦
+      ((mvfderiv_apply_eq_mfderiv_apply _ p.proj p.2).trans tangentMap_snd.symm).symm
 
 /-- **The unit tangent bundle of the round sphere is the Stiefel manifold of orthonormal pairs.**
 A unit tangent vector `w` of the round sphere `Sⁿ` of `E` at `x` goes to the orthonormal pair
@@ -207,5 +206,33 @@ theorem coe_sphereUnitTangentHomeomorphSpecialOrthogonalGroup_apply
           ((↑) : sphere (0 : EuclideanSpace ℝ (Fin 3)) 1 → EuclideanSpace ℝ (Fin 3)) p.1.proj
           p.1.2)) :=
   by simp [sphereUnitTangentHomeomorphSpecialOrthogonalGroup]
+
+/-- The unit tangent vector attached to a rotation `A` lies over the first column of `A`. -/
+@[simp]
+theorem proj_sphereUnitTangentHomeomorphSpecialOrthogonalGroup_symm_apply
+    (A : specialOrthogonalGroup (Fin 3) ℝ) :
+    ((sphereUnitTangentHomeomorphSpecialOrthogonalGroup.symm A).1.proj :
+        EuclideanSpace ℝ (Fin 3)) = toLp 2 ((A : Matrix (Fin 3) (Fin 3) ℝ).col 0) := by
+  have h := congr_arg (fun B : specialOrthogonalGroup (Fin 3) ℝ ↦
+    ((B : Matrix (Fin 3) (Fin 3) ℝ).col 0))
+    (sphereUnitTangentHomeomorphSpecialOrthogonalGroup.apply_symm_apply A)
+  simp only [coe_sphereUnitTangentHomeomorphSpecialOrthogonalGroup_apply, ofFrame_col_zero] at h
+  rw [← h, toLp_ofLp]
+
+/-- The unit tangent vector attached to a rotation `A` is sent to the second column of `A` by the
+differential of the inclusion. -/
+@[simp]
+theorem mfderiv_sphereUnitTangentHomeomorphSpecialOrthogonalGroup_symm_apply
+    (A : specialOrthogonalGroup (Fin 3) ℝ) :
+    mfderiv (𝓡 2) 𝓘(ℝ, EuclideanSpace ℝ (Fin 3))
+        ((↑) : sphere (0 : EuclideanSpace ℝ (Fin 3)) 1 → EuclideanSpace ℝ (Fin 3))
+        (sphereUnitTangentHomeomorphSpecialOrthogonalGroup.symm A).1.proj
+        (sphereUnitTangentHomeomorphSpecialOrthogonalGroup.symm A).1.2 =
+      toLp 2 ((A : Matrix (Fin 3) (Fin 3) ℝ).col 1) := by
+  have h := congr_arg (fun B : specialOrthogonalGroup (Fin 3) ℝ ↦
+    ((B : Matrix (Fin 3) (Fin 3) ℝ).col 1))
+    (sphereUnitTangentHomeomorphSpecialOrthogonalGroup.apply_symm_apply A)
+  simp only [coe_sphereUnitTangentHomeomorphSpecialOrthogonalGroup_apply, ofFrame_col_one] at h
+  rw [← h, toLp_ofLp, mvfderiv_apply_eq_mfderiv_apply]
 
 end TauCeti

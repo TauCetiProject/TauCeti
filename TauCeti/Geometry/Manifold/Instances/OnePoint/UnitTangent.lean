@@ -28,6 +28,8 @@ tangent vector `a` at `x` goes to the rotation whose columns are the oriented or
 
 ## Main definitions
 
+* `OnePoint.roundUnitTangentBundle`: the unit tangent bundle of the Riemann sphere for its round
+  metric, the tangent vectors `a` with `4π ω_FS(a, i a) = 1`.
 * `OnePoint.unitTangentHomeomorphSphere v ι`: the tangent map of `σ` identifies the unit tangent
   bundle of the Riemann sphere for its round metric with that of the round sphere `S²`.
 * `OnePoint.unitTangentHomeomorphSpecialOrthogonalGroup v ι`: the unit tangent bundle of the
@@ -38,9 +40,11 @@ tangent vector `a` at `x` goes to the rotation whose columns are the oriented or
 * `OnePoint.norm_mfderiv_diffeomorphSphere_sq`: `‖dσ a‖² = 4π ω_FS(a, i a)`.
 * `OnePoint.coe_unitTangentHomeomorphSpecialOrthogonalGroup_apply`: the rotation attached to a
   unit tangent vector.
-* `OnePoint.proj_unitTangentHomeomorphSpecialOrthogonalGroup_symm_apply`: the base point of the
-  unit tangent vector attached to a rotation `A` is the point of the Riemann sphere sent by `σ` to
-  the first column of `A`.
+* `OnePoint.diffeomorphSphere_proj_unitTangentHomeomorphSpecialOrthogonalGroup_symm_apply` and,
+  in the same namespace,
+  `mfderiv_mfderiv_diffeomorphSphere_unitTangentHomeomorphSpecialOrthogonalGroup_symm_apply`:
+  the unit tangent vector `a` at `x` attached to a rotation `A` has `σ x` equal to the first
+  column of `A` and `dσ a` equal to its second column.
 
 ## References
 
@@ -56,6 +60,21 @@ open scoped Manifold TauCeti.ComplexManifold
 noncomputable section
 
 namespace OnePoint
+
+/-- **The unit tangent bundle of the Riemann sphere for its round metric.** The tangent vectors `a`
+of the Riemann sphere with `4π ω_FS(a, i a) = 1`, the unit vectors of its round metric
+`g(a, b) = 4π ω_FS(a, i b)`. -/
+def roundUnitTangentBundle : Set (TangentBundle 𝓘(ℝ, ℂ) (OnePoint ℂ)) :=
+  {p | 4 * Real.pi *
+    SmoothBundleForm.eval₂ fubiniStudyForm p.proj p.2 (Complex.I * (id p.2 : ℂ)) = 1}
+
+/-- A tangent vector `a` of the Riemann sphere is a round unit vector when
+`4π ω_FS(a, i a) = 1`. -/
+theorem mem_roundUnitTangentBundle_iff (p : TangentBundle 𝓘(ℝ, ℂ) (OnePoint ℂ)) :
+    p ∈ roundUnitTangentBundle ↔
+      4 * Real.pi *
+        SmoothBundleForm.eval₂ fubiniStudyForm p.proj p.2 (Complex.I * (id p.2 : ℂ)) = 1 :=
+  Iff.rfl
 
 section Sphere
 
@@ -75,21 +94,18 @@ of `σ = diffeomorphSphere v ι` carries the tangent vectors `a` of the Riemann 
 `4π ω_FS(a, i a) = 1`, the unit vectors of its round metric, onto the unit tangent vectors of the
 round sphere `S²`. -/
 def unitTangentHomeomorphSphere :
-    {p : TangentBundle 𝓘(ℝ, ℂ) (OnePoint ℂ) | 4 * Real.pi *
-        SmoothBundleForm.eval₂ fubiniStudyForm p.proj p.2 (Complex.I * (id p.2 : ℂ)) = 1} ≃ₜ
-      {q : TangentBundle (𝓡 2) (sphere (0 : E) 1) | ‖q.2‖ = 1} :=
+    roundUnitTangentBundle ≃ₜ {q : TangentBundle (𝓡 2) (sphere (0 : E) 1) | ‖q.2‖ = 1} :=
   ((diffeomorphSphere v ι).tangentHomeomorph (by simp)).subtype fun p ↦ by
-    rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq, Diffeomorph.coe_tangentHomeomorph]
-    -- The fibre component of the tangent map at `p` is `dσ p.2`.
-    change _ ↔ ‖mfderiv 𝓘(ℝ, ℂ) (𝓡 2) (diffeomorphSphere v ι) p.proj p.2‖ = 1
-    rw [← pow_left_inj₀ (norm_nonneg _) zero_le_one two_ne_zero, one_pow]
+    rw [mem_roundUnitTangentBundle_iff, Set.mem_ofPred_eq, Diffeomorph.coe_tangentHomeomorph,
+      tangentMap_snd, tangentMap_proj, ← pow_left_inj₀ (norm_nonneg _) zero_le_one two_ne_zero,
+      one_pow]
+    -- The norm here is that of the tangent space at the projection of the tangent map, which is
+    -- only definitionally the one at `σ p.proj`, so close the goal by the equation itself.
     exact (congrArg (· = (1 : ℝ)) (norm_mfderiv_diffeomorphSphere_sq v ι p.proj p.2)).symm.to_iff
 
 /-- The unit tangent vector `a` at `x` goes to the unit tangent vector `dσ a` at `σ x`. -/
 @[simp]
-theorem coe_unitTangentHomeomorphSphere_apply
-    (p : {p : TangentBundle 𝓘(ℝ, ℂ) (OnePoint ℂ) | 4 * Real.pi *
-      SmoothBundleForm.eval₂ fubiniStudyForm p.proj p.2 (Complex.I * (id p.2 : ℂ)) = 1}) :
+theorem coe_unitTangentHomeomorphSphere_apply (p : roundUnitTangentBundle) :
     (unitTangentHomeomorphSphere v ι p : TangentBundle (𝓡 2) (sphere (0 : E) 1)) =
       tangentMap 𝓘(ℝ, ℂ) (𝓡 2) (diffeomorphSphere v ι) p :=
   by simp [unitTangentHomeomorphSphere]
@@ -116,17 +132,13 @@ Riemann sphere at `x` with `4π ω_FS(a, i a) = 1`, a unit vector for its round 
 rotation whose columns are the oriented orthonormal frame `(σ x, dσ a, σ x ⨯₃ dσ a)` of `ℝ³`, where
 `σ = diffeomorphSphere v ι` and `dσ a` is read in `ℝ³`. -/
 def unitTangentHomeomorphSpecialOrthogonalGroup :
-    {p : TangentBundle 𝓘(ℝ, ℂ) (OnePoint ℂ) | 4 * Real.pi *
-        SmoothBundleForm.eval₂ fubiniStudyForm p.proj p.2 (Complex.I * (id p.2 : ℂ)) = 1} ≃ₜ
-      specialOrthogonalGroup (Fin 3) ℝ :=
+    roundUnitTangentBundle ≃ₜ specialOrthogonalGroup (Fin 3) ℝ :=
   (unitTangentHomeomorphSphere v ι).trans sphereUnitTangentHomeomorphSpecialOrthogonalGroup
 
 /-- The rotation attached to the unit tangent vector `a` at `x` has columns `σ x`, `dσ a` and
 `σ x ⨯₃ dσ a`, with `dσ a` read in `ℝ³` through the differential of the inclusion of the sphere. -/
 @[simp]
-theorem coe_unitTangentHomeomorphSpecialOrthogonalGroup_apply
-    (p : {p : TangentBundle 𝓘(ℝ, ℂ) (OnePoint ℂ) | 4 * Real.pi *
-      SmoothBundleForm.eval₂ fubiniStudyForm p.proj p.2 (Complex.I * (id p.2 : ℂ)) = 1}) :
+theorem coe_unitTangentHomeomorphSpecialOrthogonalGroup_apply (p : roundUnitTangentBundle) :
     (unitTangentHomeomorphSpecialOrthogonalGroup v ι p : Matrix (Fin 3) (Fin 3) ℝ) =
       ofFrame (ofLp (diffeomorphSphere v ι p.1.proj : EuclideanSpace ℝ (Fin 3)))
         (ofLp (mvfderiv (𝓡 2)
@@ -136,16 +148,16 @@ theorem coe_unitTangentHomeomorphSpecialOrthogonalGroup_apply
   simp only [unitTangentHomeomorphSpecialOrthogonalGroup, Homeomorph.trans_apply,
     coe_sphereUnitTangentHomeomorphSpecialOrthogonalGroup_apply]
   -- The base point and the fibre component both depend on the image of `p`, so rewrite it as a
-  -- whole: it is the tangent map of `σ` at `p`, whose fibre component is `dσ a` by definition.
+  -- whole: it is the tangent map of `σ` at `p`.
   generalize hq : (unitTangentHomeomorphSphere v ι p).1 = q
   rw [coe_unitTangentHomeomorphSphere_apply] at hq
   subst hq
-  rfl
+  rw [tangentMap_proj, tangentMap_snd]
 
 /-- The unit tangent vector attached to a rotation `A` lies over the point of the Riemann sphere
 sent by `σ` to the first column of `A`. -/
 @[simp]
-theorem proj_unitTangentHomeomorphSpecialOrthogonalGroup_symm_apply
+theorem diffeomorphSphere_proj_unitTangentHomeomorphSpecialOrthogonalGroup_symm_apply
     (A : specialOrthogonalGroup (Fin 3) ℝ) :
     diffeomorphSphere v ι ((unitTangentHomeomorphSpecialOrthogonalGroup v ι).symm A).1.proj =
       toLp 2 ((A : Matrix (Fin 3) (Fin 3) ℝ).col 0) := by
@@ -154,6 +166,24 @@ theorem proj_unitTangentHomeomorphSpecialOrthogonalGroup_symm_apply
     ((unitTangentHomeomorphSpecialOrthogonalGroup v ι).apply_symm_apply A)
   simp only [coe_unitTangentHomeomorphSpecialOrthogonalGroup_apply, ofFrame_col_zero] at h
   rw [← h, toLp_ofLp]
+
+/-- The unit tangent vector `a` at `x` attached to a rotation `A` has `dσ a`, read in `ℝ³` through
+the differential of the inclusion of the sphere, equal to the second column of `A`. -/
+@[simp]
+theorem mfderiv_mfderiv_diffeomorphSphere_unitTangentHomeomorphSpecialOrthogonalGroup_symm_apply
+    (A : specialOrthogonalGroup (Fin 3) ℝ) :
+    mfderiv (𝓡 2) 𝓘(ℝ, EuclideanSpace ℝ (Fin 3))
+        ((↑) : sphere (0 : EuclideanSpace ℝ (Fin 3)) 1 → EuclideanSpace ℝ (Fin 3))
+        (diffeomorphSphere v ι ((unitTangentHomeomorphSpecialOrthogonalGroup v ι).symm A).1.proj)
+        (mfderiv 𝓘(ℝ, ℂ) (𝓡 2) (diffeomorphSphere v ι)
+          ((unitTangentHomeomorphSpecialOrthogonalGroup v ι).symm A).1.proj
+          ((unitTangentHomeomorphSpecialOrthogonalGroup v ι).symm A).1.2) =
+      toLp 2 ((A : Matrix (Fin 3) (Fin 3) ℝ).col 1) := by
+  have h := congr_arg (fun B : specialOrthogonalGroup (Fin 3) ℝ ↦
+    ((B : Matrix (Fin 3) (Fin 3) ℝ).col 1))
+    ((unitTangentHomeomorphSpecialOrthogonalGroup v ι).apply_symm_apply A)
+  simp only [coe_unitTangentHomeomorphSpecialOrthogonalGroup_apply, ofFrame_col_one] at h
+  rw [← h, toLp_ofLp, mvfderiv_apply_eq_mfderiv_apply]
 
 end SpecialOrthogonalGroup
 
