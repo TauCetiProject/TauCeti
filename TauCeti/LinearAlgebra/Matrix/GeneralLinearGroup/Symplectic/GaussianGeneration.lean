@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Levi
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.RootGeneration
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.UnipotentGeneration
-public import TauCeti.LinearAlgebra.Matrix.Pivot
 
 /-!
 # Gaussian generation of the symplectic group

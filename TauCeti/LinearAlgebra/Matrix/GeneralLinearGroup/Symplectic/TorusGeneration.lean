@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.GaussianGeneration
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.RootGeneration
+import TauCeti.LinearAlgebra.Matrix.Pivot
 
 /-!
 # Generating the symplectic diagonal torus by root subgroups
@@ -141,8 +143,7 @@ variable {K : Type u} [Field K]
 
 /-- **The standard symplectic root subgroups generate the full symplectic group over a field.**
 The long roots generate the diagonal Levi subgroup, and with the difference roots the whole
-general-linear Levi subgroup. Multiplying by an upper unipotent makes the upper-left block of any
-element invertible, and block Gaussian elimination (`mem_of_isUnit_toBlocks₁₁`) concludes. -/
+general-linear Levi subgroup. -/
 theorem eq_top_of_root_subgroups
     (H : Subgroup (GLSymplecticFin m K))
     (hroot : ∀ (root : RootSubgroupIndex m) (c : Multiplicative K), root.hom c ∈ H) :
@@ -157,6 +158,8 @@ theorem eq_top_of_root_subgroups
       simpa only [RootSubgroupIndex.hom_negativeLong,
         negativeLongRootTransvectionHom_apply, toAdd_ofAdd] using
           hroot (.negativeLong i) (Multiplicative.ofAdd c)
+  -- Multiplying by an upper unipotent makes the upper-left block of any element invertible, and
+  -- block Gaussian elimination (`mem_of_isUnit_toBlocks₁₁`) concludes.
   apply eq_top_iff.mpr
   intro g _
   have hdifference : ∀ {i j : Fin m} (hij : i ≠ j) (c : K),
