@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Local.Coordinates
 public import TauCeti.Analysis.Sobolev.Local.Wkp
 import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
+import TauCeti.Analysis.Sobolev.WeakDeriv.Chain
 import TauCeti.Analysis.Sobolev.Wkp.Chain
 
 /-!

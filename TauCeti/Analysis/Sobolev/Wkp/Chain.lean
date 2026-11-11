@@ -14,12 +14,10 @@ An element of `TauCeti.Wkp mu Ω p (n + 1)` is described by a chain of `Lᵖ` fi
 `G 0, …, G n` with `G i : E → TauCeti.IteratedGradient E i`: the value has weak derivative
 `innerSL ℝ ∘ G 0`, and each `G (i + 1)` is the weak derivative of `G i`. This file extracts such a
 chain from an element of `Wkp` and, conversely, assembles an element of `Wkp` from an `Lᵖ` chain,
-by induction on the order through `TauCeti.Wkp.lowerOrder` and `TauCeti.Wkp.mk`. Two such chains of
-the same function agree almost everywhere, level by level.
+by induction on the order through `TauCeti.Wkp.lowerOrder` and `TauCeti.Wkp.mk`.
 
 ## Main declarations
 
-* `TauCeti.ae_eq_of_iteratedGradient_chain`: uniqueness of weak derivative chains.
 * `TauCeti.Wkp.exists_iteratedGradient_chain`: the weak derivative chain of an element of `Wkp`.
 * `TauCeti.Wkp.exists_value_iteratedGradient_ae_eq_of_chain`: an `Lᵖ` weak derivative chain is
   represented by an element of `Wkp`.
@@ -41,24 +39,6 @@ namespace TauCeti
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-omit [mu.IsAddHaarMeasure] in
-/-- **Uniqueness of weak derivative chains.** Two chains of iterated weak gradients of the same
-function on `Ω` agree almost everywhere on `Ω`, level by level. -/
-theorem ae_eq_of_iteratedGradient_chain (n : ℕ) {u : E → ℝ}
-    {G G' : (i : ℕ) → E → IteratedGradient E i}
-    (h0 : HasWeakFDerivOn mu Omega u (fun x => innerSL ℝ (G 0 x)))
-    (hG : ∀ i < n, HasWeakFDerivOn mu Omega (G i) (G (i + 1)))
-    (h0' : HasWeakFDerivOn mu Omega u (fun x => innerSL ℝ (G' 0 x)))
-    (hG' : ∀ i < n, HasWeakFDerivOn mu Omega (G' i) (G' (i + 1))) :
-    ∀ i ≤ n, G i =ᵐ[mu.restrict Omega] G' i := by
-  intro i hi
-  induction i with
-  | zero =>
-    filter_upwards [h0.ae_eq h0'] with x hx
-    exact innerSL_inj.1 hx
-  | succ i ih =>
-    exact (hG i (by omega)).ae_eq ((hG' i (by omega)).congr_ae (ih (by omega)).symm)
 
 namespace Wkp
 
