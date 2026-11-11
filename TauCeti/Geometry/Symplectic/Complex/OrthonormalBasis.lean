@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.CompatibleMetric
 public import TauCeti.Geometry.Symplectic.Orientation
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 import TauCeti.Analysis.InnerProductSpace.Euclidean.Complex
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
@@ -77,10 +78,7 @@ structure `J` on a real inner product space. -/
 noncomputable def symplecticForm {J : AlmostComplexStructure V}
     (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) : SymplecticForm V :=
   have halt : ((innerₗ V).comp J.toLinearMap).IsAlt := fun v ↦ by
-    have h : ⟪J v, v⟫ = -⟪v, J v⟫ :=
-      J.bilinForm_apply_left_eq_neg_apply_right (g := innerₗ V) hJ v v
-    rw [real_inner_comm (J v) v] at h
-    simpa [LinearMap.comp_apply] using (by linarith : ⟪J v, v⟫ = 0)
+    simpa [LinearMap.comp_apply] using J.inner_apply_self hJ v
   { toBilinForm := (innerₗ V).comp J.toLinearMap
     isAlt := halt
     nondegenerate := by
@@ -219,39 +217,20 @@ theorem toBasis_orientation_eq_symplecticForm_orientation_four {ω : SymplecticF
 theorem exists_unitary_orthonormalBasis_of_norm_eq_one {J : AlmostComplexStructure V}
     (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) {ξ : V} (hξ : ‖ξ‖ = 1) :
     ∃ e : OrthonormalBasis (Fin 4) ℝ V, e 0 = ξ ∧ J (e 0) = e 1 ∧ J (e 2) = e 3 := by
+  classical
   have hskew (v w : V) : ⟪J v, w⟫ = -⟪v, J w⟫ :=
     J.bilinForm_apply_left_eq_neg_apply_right (g := innerₗ V) hJ v w
-  have hself (v : V) : ⟪v, J v⟫ = 0 := by
-    have h := hskew v v
-    rw [real_inner_comm v (J v)] at h
-    linarith
-  have norm_J (v : V) : ‖J v‖ = ‖v‖ := by
-    rw [norm_eq_sqrt_real_inner, hJ, ← norm_eq_sqrt_real_inner]
-  have hon₂ : Orthonormal ℝ ![ξ, J ξ] := by
-    refine ⟨fun i ↦ by fin_cases i <;> simp [hξ, norm_J], fun {i j} hij ↦ ?_⟩
-    fin_cases i <;> fin_cases j
-    · exact absurd rfl hij
-    · exact hself ξ
-    · rw [real_inner_comm]; exact hself ξ
-    · exact absurd rfl hij
-  let P : Submodule ℝ V := Submodule.span ℝ (Set.range ![ξ, J ξ])
-  have hPdim : finrank ℝ P = 2 := by
-    rw [finrank_span_eq_card hon₂.linearIndependent, Fintype.card_fin]
-  have hPorth : finrank ℝ Pᗮ = 2 := by
-    have hsum := P.finrank_add_finrank_orthogonal
-    have hv : finrank ℝ V = 4 := Fact.out
-    omega
-  let bP := stdOrthonormalBasis ℝ Pᗮ
-  let η : V := (bP ⟨0, by omega⟩ : Pᗮ)
-  have hη_norm : ‖η‖ = 1 :=
-    (Submodule.norm_coe _).trans (bP.orthonormal.1 ⟨0, by omega⟩)
-  have hη_mem : η ∈ Pᗮ := (bP ⟨0, by omega⟩).2
-  have hξη : ⟪ξ, η⟫ = 0 := hη_mem ξ (Submodule.subset_span ⟨0, rfl⟩)
-  have hJξη : ⟪J ξ, η⟫ = 0 := hη_mem (J ξ) (Submodule.subset_span ⟨1, rfl⟩)
+  have hself (v : V) : ⟪v, J v⟫ = 0 := by rw [real_inner_comm, J.inner_apply_self hJ]
+  obtain ⟨η, hη_norm, hηK⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank (𝕜 := ℝ)
+    ({ξ, J ξ} : Finset V) (by
+      rw [Fact.out (p := finrank ℝ V = 4)]
+      exact Finset.card_le_two.trans_lt (by norm_num))
+  have hξη : ⟪ξ, η⟫ = 0 := hηK ξ (by simp)
+  have hJξη : ⟪J ξ, η⟫ = 0 := hηK (J ξ) (by simp)
   have hξJη : ⟪ξ, J η⟫ = 0 := by rw [← neg_eq_zero, ← hskew, hJξη]
   have hJξJη : ⟪J ξ, J η⟫ = 0 := by rw [hJ, hξη]
   have hon₄ : Orthonormal ℝ ![ξ, J ξ, η, J η] := by
-    refine ⟨fun i ↦ by fin_cases i <;> simp [hξ, hη_norm, norm_J], fun {i j} hij ↦ ?_⟩
+    refine ⟨fun i ↦ by fin_cases i <;> simp [hξ, hη_norm, J.norm_apply hJ], fun {i j} hij ↦ ?_⟩
     have hξJ := hself ξ
     have hηJη := hself η
     fin_cases i <;> fin_cases j <;> dsimp only <;> first
