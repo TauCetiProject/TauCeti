@@ -324,7 +324,8 @@ variable (Φ : Hom 𝔸 𝔹) (hT : ∀ e ∈ T, Φ.edgeImage T' e = 1)
 end map
 
 /-- The identity morphism induces the identity of `π₁(𝔸, T)`. -/
-@[simp] theorem map_id (hT : ∀ e ∈ T, (Hom.id 𝔸).edgeImage T e = 1) :
+@[simp] theorem map_id (hT : ∀ e ∈ T, (Hom.id 𝔸).edgeImage T e = 1 := fun e he => by
+      rw [Hom.edgeImage_id, edge_eq_one he]) :
     map (Hom.id 𝔸) hT = MonoidHom.id (π₁Tree 𝔸 T) :=
   hom_ext (fun v => by rw [map_comp_of]; rfl) fun e => by simp
 
@@ -336,10 +337,19 @@ theorem _root_.TauCeti.GraphOfGroups.Hom.edgeImage_comp (Ψ : Hom 𝔹 ℂ) (Φ 
   simp only [Hom.edgeImage_def, map_mul, map_inv, map_of, map_edge, of_cast,
     mul_inv_rev, mul_assoc, Hom.of_twist_congr Ψ T'' (Φ.graph.map_rev e)]
 
+/-- If the darts of `T` have trivial image under `Φ` and those of `T'` under `Ψ`, then the darts
+of `T` have trivial image under the composite `Ψ ∘ Φ`. -/
+theorem _root_.TauCeti.GraphOfGroups.Hom.edgeImage_comp_eq_one (Ψ : Hom 𝔹 ℂ) (Φ : Hom 𝔸 𝔹)
+    (hΨ : ∀ e ∈ T', Ψ.edgeImage T'' e = 1) {e : Γ.E} (he : Φ.edgeImage T' e = 1) :
+    (Ψ.comp Φ).edgeImage T'' e = 1 := by
+  rw [Hom.edgeImage_comp Ψ Φ hΨ, he, map_one]
+
 /-- The homomorphism induced by a composite morphism is the composite of the induced
 homomorphisms. -/
 theorem map_comp (Ψ : Hom 𝔹 ℂ) (Φ : Hom 𝔸 𝔹) (hΨ : ∀ e ∈ T', Ψ.edgeImage T'' e = 1)
-    (hΦ : ∀ e ∈ T, Φ.edgeImage T' e = 1) (h : ∀ e ∈ T, (Ψ.comp Φ).edgeImage T'' e = 1) :
+    (hΦ : ∀ e ∈ T, Φ.edgeImage T' e = 1)
+    (h : ∀ e ∈ T, (Ψ.comp Φ).edgeImage T'' e = 1 := fun _ he =>
+      Hom.edgeImage_comp_eq_one Ψ Φ hΨ (hΦ _ he)) :
     map (Ψ.comp Φ) h = (map Ψ hΨ).comp (map Φ hΦ) :=
   hom_ext (fun v => MonoidHom.ext fun a => by simp only [MonoidHom.comp_apply, map_of])
     fun e => by simp [Hom.edgeImage_comp Ψ Φ hΨ]
