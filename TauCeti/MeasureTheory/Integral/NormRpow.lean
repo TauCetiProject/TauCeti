@@ -41,7 +41,7 @@ at most `|x - Re e| ^ s`.
   `TauCeti.integrableOn_norm_rpow_ball_iff`: its converse on a nontrivial space.
 * `TauCeti.integral_norm_rpow_ball`: the exact radial integral.
 * `MeasureTheory.Measure.not_integrable_norm_sub_rpow`: a power of the distance to a point is
-  never integrable over the whole space.
+  never integrable over the whole space, for an additive Haar measure on a nontrivial space.
 * `TauCeti.integrableOn_norm_sub_rpow_ball`: integrability after translation.
 * `TauCeti.integral_norm_sub_rpow_ball`: the exact integral with any centre.
 * `TauCeti.locallyIntegrable_norm_sub_rpow`: local integrability after translation.
