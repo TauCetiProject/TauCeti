@@ -205,7 +205,7 @@ theorem weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul (hF : IsFunc
       derivativeOfSeparating hx y • weilDifferentialOfSeparating hF hx := by
   -- Choose a place `P` with residue field separable over `k`, at which `x` and `y` are units and
   -- some `q(x)` and `r(y)` are prime elements.
-  obtain ⟨P, hPsep, hP⟩ := ((Place.infinite_setOf_isSeparable_residueField hF hx).sdiff
+  obtain ⟨P, hPsep, hP⟩ := ((Place.infinite_setOf_isSeparable_residueField hF (x := x)).sdiff
     (((Place.finite_setOf_forall_irreducible_ord_aeval_ne_one hF hx).union
       (Place.finite_setOf_forall_irreducible_ord_aeval_ne_one hF hy)).union
         ((Place.finite_setOf_ord_ne_zero hF x).union
