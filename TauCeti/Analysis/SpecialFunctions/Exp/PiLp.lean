@@ -104,8 +104,7 @@ theorem det_fderiv_log (x : EuclideanSpace ℝ ι) :
       refine Real.differentiableAt_log_iff.1 (h2.congr_of_eventuallyEq (Filter.Eventually.of_forall
         fun t ↦ ?_)) hi
       simp
-    rw [fderiv_zero_of_not_differentiableAt hnd, Finset.prod_eq_zero (Finset.mem_univ i) hi,
-      ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_zero, LinearMap.det_zero,
-      finrank_euclideanSpace, zero_pow Fintype.card_ne_zero, inv_zero]
+    rw [fderiv_zero_of_not_differentiableAt hnd, Finset.prod_eq_zero (Finset.mem_univ i) hi]
+    simp [ContinuousLinearMap.det, LinearMap.det_zero, finrank_euclideanSpace]
 
 end PiLp
