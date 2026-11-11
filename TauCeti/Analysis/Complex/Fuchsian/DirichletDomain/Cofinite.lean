@@ -28,9 +28,9 @@ the carrier of a finite-sided convex polygon whose ideal vertices are cusp point
 `p` has trivial stabilizer, this polygon carries a side pairing by elements of `Γ`. Conversely,
 the area of a convex polygon with finitely many vertices is finite by the Gauss–Bonnet formula,
 so a discrete group is cofinite exactly when one (equivalently, every) Dirichlet domain centred at
-a point is such a polygon. Its translates are locally finite with disjoint
-interiors, so its side pairing satisfies the hypotheses of Poincaré's polygon theorem, generates
-`Γ`, and presents it.
+a point is such a polygon. For a centre with trivial stabilizer, the translates of this polygon
+are locally finite with disjoint interiors, so its side pairing satisfies the hypotheses of
+Poincaré's polygon theorem, generates `Γ`, and presents it.
 
 The bounded truncation also gives compactness of the cusp compactification of `Γ`: the polygon
 minus cusp horodiscs is a compact set meeting every orbit outside the corresponding cusp
