@@ -504,18 +504,8 @@ applying it to `bar∂ u` recovers `u`, with no boundary term. -/
 theorem _root_.HasCompactSupport.cauchyTransform_conjWirtingerDeriv {u : ℂ → F}
     (hc : HasCompactSupport u) (hu : ContDiff ℝ 1 u) (w : ℂ) :
     cauchyTransform (fun z ↦ conjWirtingerDeriv u z 1) w = u w := by
-  rw [cauchyTransform_apply]
-  have heq : (fun z ↦ (w - z)⁻¹ • conjWirtingerDeriv u z 1) =
-      fun z ↦ (2 : ℂ)⁻¹ • ((w - z)⁻¹ •
-        (fderiv ℝ u z 1 + Complex.I • fderiv ℝ u z Complex.I)) := by
-    funext z
-    simp only [conjWirtingerDeriv_apply, smul_eq_mul, mul_one]
-    exact smul_comm _ _ _
-  rw [heq, integral_smul, smul_smul]
-  convert hc.two_pi_inv_smul_integral_sub_inv_smul_fderiv_apply_one_add_I_smul_apply_I hu w
-    using 1
-  congr 1
-  field_simp
+  rw [← two_pi_inv_smul_integral_sub_inv_smul_fderiv_apply_one_add_I_smul_apply_I_eq]
+  exact hc.two_pi_inv_smul_integral_sub_inv_smul_fderiv_apply_one_add_I_smul_apply_I hu w
 
 /-- **The plausible wrong kernel.** For compactly supported `C¹` data `f`, the transform with the
 transposed kernel `(z - w)⁻¹` satisfies `\bar∂ T' f = -f`, not `f`. -/
