@@ -20,9 +20,9 @@ chain map `SSetPair.chainComplexPairing : M ⊗ C(Y, X; S) ⟶ C(Y, X; N)` on re
 
 The descent uses that `M ⊗ -` preserves the cokernel `C(Y, X; S)` of `C(X; S) ⟶ C(Y; S)`.  No
 hypothesis on `M` beyond the preservation of coproducts is needed for this: in each degree the
-short exact sequence `0 ⟶ C(X) ⟶ C(Y) ⟶ C(Y, X) ⟶ 0` splits, since `C(X) ⟶ C(Y)` is induced by
-the injection of the simplices of `X` into those of `Y`, and the additive functor `M ⊗ -`
-preserves split short exact sequences.
+short exact sequence `0 ⟶ C(X) ⟶ C(Y) ⟶ C(Y, X) ⟶ 0` splits (`SSetPair.chainComplexXSplitting`),
+since `C(X) ⟶ C(Y)` is induced by the injection of the simplices of `X` into those of `Y`, and the
+additive functor `M ⊗ -` preserves split short exact sequences.
 
 This is how the coefficients of an absolute cochain act on relative chains in the cap product
 `Hᵖ(Y) ⊗ Hₙ(Y, X) ⟶ H_q(Y, X)`.
@@ -49,14 +49,6 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C] [Monoid
   [MonoidalPreadditive C] {M S N : C}
   [∀ J : Type w, PreservesColimitsOfShape (Discrete J) (tensorLeft M)]
 
-/-- The degree-`n` part `0 ⟶ Cₙ(X) ⟶ Cₙ(Y) ⟶ Cₙ(Y, X) ⟶ 0` of the short exact sequence of chain
-complexes of a pair `X ⟶ Y` of simplicial sets is split. -/
-private def chainComplexXSplitting (P : SSetPair.{w}) (S : C) (n : ℕ) :
-    (ShortComplex.mk _ _ (P.chainComplex_condition_f S n)).Splitting :=
-  ShortComplex.Splitting.ofExactOfRetraction _
-    (ShortComplex.exact_of_g_is_cokernel _ (P.isColimitCokernelCoforkChainComplexX S n))
-    (retraction ((SSet.chainComplexMap P.hom S).f n)) (IsSplitMono.id _) inferInstance
-
 /-- The chain map `M ⊗ C(Y; S) ⟶ C(Y; N)` induced by a coefficient pairing, followed by the
 quotient map to relative chains, vanishes on `M ⊗ C(X; S)`. -/
 private lemma whiskerLeft_chainComplexMap_f_comp_chainComplexPairing_f_comp_chainComplexπ_f
@@ -71,7 +63,7 @@ private lemma whiskerLeft_chainComplexMap_f_comp_chainComplexPairing_f_comp_chai
 private def chainComplexPairingX (P : SSetPair.{w}) (μ : M ⊗ S ⟶ N) (n : ℕ) :
     M ⊗ (P.chainComplex S).X n ⟶ (P.chainComplex N).X n :=
   (CokernelCofork.IsColimit.desc'
-    (((chainComplexXSplitting P S n).map (tensorLeft M)).gIsCokernel)
+    (((chainComplexXSplitting S P n).map (tensorLeft M)).gIsCokernel)
     ((P.right.chainComplexPairing μ).f n ≫ (P.chainComplexπ N).f n)
     (whiskerLeft_chainComplexMap_f_comp_chainComplexPairing_f_comp_chainComplexπ_f P μ n)).1
 
@@ -81,12 +73,12 @@ private lemma whiskerLeft_chainComplexπ_f_chainComplexPairingX (P : SSetPair.{w
     (M ◁ (P.chainComplexπ S).f n) ≫ chainComplexPairingX P μ n =
       (P.right.chainComplexPairing μ).f n ≫ (P.chainComplexπ N).f n :=
   (CokernelCofork.IsColimit.desc'
-    (((chainComplexXSplitting P S n).map (tensorLeft M)).gIsCokernel) _
+    (((chainComplexXSplitting S P n).map (tensorLeft M)).gIsCokernel) _
     (whiskerLeft_chainComplexMap_f_comp_chainComplexPairing_f_comp_chainComplexπ_f P μ n)).2
 
 instance epi_whiskerLeft_chainComplexπ_f (P : SSetPair.{w}) (S : C) (n : ℕ) :
     Epi (M ◁ (P.chainComplexπ S).f n) :=
-  ((chainComplexXSplitting P S n).map (tensorLeft M)).epi_g
+  ((chainComplexXSplitting S P n).map (tensorLeft M)).epi_g
 
 /-- **The chain map induced by a coefficient pairing on relative chains**: for a pair `X ⟶ Y` of
 simplicial sets and `μ : M ⊗ S ⟶ N`, the chain map `M ⊗ C(Y, X; S) ⟶ C(Y, X; N)` through which the
@@ -96,12 +88,14 @@ def chainComplexPairing (P : SSetPair.{w}) (μ : M ⊗ S ⟶ N) :
     ((tensorLeft M).mapHomologicalComplex _).obj (P.chainComplex S) ⟶ P.chainComplex N where
   f n := chainComplexPairingX P μ n
   comm' i j _ := by
+    have hπ : (M ◁ (P.chainComplexπ S).f i) ≫ (M ◁ (P.chainComplex S).d i j) =
+        (M ◁ (P.right.chainComplex S).d i j) ≫ (M ◁ (P.chainComplexπ S).f j) := by
+      simp only [← whiskerLeft_comp, HomologicalComplex.Hom.comm]
     have hμ := (P.right.chainComplexPairing μ).comm i j
     dsimp at hμ ⊢
-    rw [← cancel_epi (M ◁ (P.chainComplexπ S).f i),
-      whiskerLeft_chainComplexπ_f_chainComplexPairingX_assoc, (P.chainComplexπ N).comm,
-      reassoc_of% hμ, ← MonoidalCategory.whiskerLeft_comp_assoc, (P.chainComplexπ S).comm,
-      MonoidalCategory.whiskerLeft_comp_assoc, whiskerLeft_chainComplexπ_f_chainComplexPairingX]
+    rw [← cancel_epi (M ◁ (P.chainComplexπ S).f i)]
+    simp [whiskerLeft_chainComplexπ_f_chainComplexPairingX,
+      whiskerLeft_chainComplexπ_f_chainComplexPairingX_assoc, reassoc_of% hπ, reassoc_of% hμ]
 
 /-- The chain map induced by a coefficient pairing on relative chains is, in each degree, the
 descent of the chain map `SSet.chainComplexPairing μ` of the ambient simplicial set, followed by
@@ -130,13 +124,13 @@ lemma chainComplexPairing_naturality {P P' : SSetPair.{w}} (f : P ⟶ P') (μ : 
         P'.chainComplexPairing μ =
       P.chainComplexPairing μ ≫ SSetPair.chainComplexMap f N := by
   ext n : 1
-  have hS := congrArg (fun φ ↦ φ.f n) (chainComplexπ_naturality S f)
+  have hS : (M ◁ (P.chainComplexπ S).f n) ≫ (M ◁ (SSetPair.chainComplexMap f S).f n) =
+      (M ◁ (SSet.chainComplexMap f.right S).f n) ≫ (M ◁ (P'.chainComplexπ S).f n) := by
+    simp only [← whiskerLeft_comp, ← HomologicalComplex.comp_f, chainComplexπ_naturality]
   have hN := congrArg (fun φ ↦ φ.f n) (chainComplexπ_naturality N f)
   have hμ := congrArg (fun φ ↦ φ.f n) (SSet.chainComplexPairing_naturality f.right μ)
-  dsimp at hS hN hμ ⊢
-  rw [← cancel_epi (M ◁ (P.chainComplexπ S).f n), ← MonoidalCategory.whiskerLeft_comp_assoc,
-    ← hS, MonoidalCategory.whiskerLeft_comp_assoc,
-    whiskerLeft_chainComplexπ_f_chainComplexPairing_f, reassoc_of% hμ, hN,
-    whiskerLeft_chainComplexπ_f_chainComplexPairing_f_assoc]
+  dsimp at hN hμ ⊢
+  rw [← cancel_epi (M ◁ (P.chainComplexπ S).f n)]
+  simp [reassoc_of% hS, reassoc_of% hμ, hN]
 
 end SSetPair

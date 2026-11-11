@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Basic
-public import TauCeti.AlgebraicTopology.Cohomology.Relative
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Pairing
 public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney.RelativeCup
 
@@ -22,8 +21,9 @@ product
 `Hᵖ(X; M) ⊗ Hₙ(X, A) ⟶ H_q(X, A)`,  `p + q = n`,
 
 the second of the two same-pair cap products, next to `Hᵖ(X, A) ⊗ Hₙ(X, A) ⟶ H_q(X)` of
-`TopPair.singularCap`.  It is the cap product of Poincaré–Lefschetz duality
-`Hᵖ(M) ≅ H_{m - p}(M, ∂M)` for a compact manifold `M` with boundary.
+`TopPair.singularCap`.  It is the cap product of Poincaré–Lefschetz duality: for a compact
+`R`-oriented `m`-manifold `M` with boundary, capping with the relative fundamental class
+`[M] ∈ Hₘ(M, ∂M; R)` is an isomorphism `Hᵖ(M; R) ≅ H_{m - p}(M, ∂M; R)`.
 
 The construction caps along the descent `C(X, A) ⟶ C(X) ⊗ C(X, A)` of the Alexander–Whitney
 diagonal, followed by the quotient map on the second factor
@@ -39,7 +39,7 @@ abelian monoidal category.
 * `TopPair.absoluteSingularCap`: the cap product `Hᵖ(X; R, M) ⟶ (Hₙ(X, A; T) ⟶ H_q(X, A; N))`,
   with `TopPair.absoluteSingularCap_homologyπ` computing it on classes of relative cycles and
   absolute cocycles.
-* `TopPair.singularCap_singularHomologyπ`: compatibility with the absolute cap product,
+* `TopPair.singularHomologyπ_comp_absoluteSingularCap`: compatibility with the absolute cap product,
   `j_*(x ⌢ α) = j_*x ⌢ α` for `j_* : Hₙ(X) ⟶ Hₙ(X, A)`.
 * `TopPair.absoluteSingularCap_naturality`: naturality in maps of pairs, the projection formula
   `f_*(x ⌢ f^*α) = f_*x ⌢ α`.
@@ -104,23 +104,29 @@ lemma absoluteSingularCap_homologyπ (P : TopPair.{w}) (k : Type*) [Ring k] [Lin
 
 /-- **Compatibility of the absolute and relative cap products**: for a class `x` of `Hₙ(X)` with
 image `j_*x` in `Hₙ(X, A)` and a class `α` of `Hᵖ(X)`, `j_*(x ⌢ α) = j_*x ⌢ α`. -/
-lemma singularCap_singularHomologyπ (P : TopPair.{w}) (k : Type*) [Ring k] [Linear k C]
-    [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ N) (p q n : ℕ) (h : p + q = n)
+lemma singularHomologyπ_comp_absoluteSingularCap (P : TopPair.{w}) (k : Type*) [Ring k]
+    [Linear k C] [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ N) (p q n : ℕ) (h : p + q = n)
     (α : P.fst.singularCohomology R k M p) :
-    P.fst.singularCap k u μ p q n h α ≫ P.singularHomologyπ N q =
-      P.singularHomologyπ T n ≫ P.absoluteSingularCap k u μ p q n h α := by
+    P.singularHomologyπ T n ≫ P.absoluteSingularCap k u μ p q n h α =
+      P.fst.singularCap k u μ p q n h α ≫ P.singularHomologyπ N q := by
   have := TauCeti.ChainComplex.cap_naturality (k := k) (P.rightAlexanderWhitneyDiagonal u)
     ((toSSetPair.obj P).chainComplexPairing μ) (P.fst.alexanderWhitneyDiagonal u)
     ((TopCat.toSSet.obj P.fst).chainComplexPairing μ) (P.singularChainComplexπ T) (𝟙 _)
     (P.singularChainComplexπ S) (P.singularChainComplexπ N)
     (singularChainComplexπ_rightAlexanderWhitneyDiagonal P u)
     (SSetPair.chainComplexπ_chainComplexPairing (toSSetPair.obj P) μ).symm p q n h α
-  have hid : (TauCeti.ChainComplex.linearYonedaFunctor k M).map
-      (𝟙 ((TopCat.toSSet.obj P.fst).chainComplex R)).op = 𝟙 _ := by
+  -- `cap_naturality` types this map between `linearYonedaObj` complexes, so state it that way
+  -- for `rw` to find it; the identity morphism's type is matched only up to unfolding
+  -- `linearYonedaFunctor`, which `exact` performs.
+  have hid : HomologicalComplex.homologyMap
+      (K := ((TopCat.toSSet.obj P.fst).chainComplex R).linearYonedaObj k M)
+      (L := ((TopCat.toSSet.obj P.fst).chainComplex R).linearYonedaObj k M)
+      ((TauCeti.ChainComplex.linearYonedaFunctor k M).map (𝟙 _).op) p = 𝟙 _ := by
     rw [op_id, CategoryTheory.Functor.map_id]
-  erw [hid, HomologicalComplex.homologyMap_id] at this
+    exact HomologicalComplex.homologyMap_id _ _
+  rw [hid, ModuleCat.id_apply] at this
   rw [TopCat.singularCap_def, absoluteSingularCap_def]
-  exact this
+  exact this.symm
 
 /-- **Naturality of the cap product of absolute cohomology with relative homology**, the
 projection formula `f_*(x ⌢ f^*α) = f_*x ⌢ α`: for a map of pairs `f : (X, A) ⟶ (Y, B)`, capping
