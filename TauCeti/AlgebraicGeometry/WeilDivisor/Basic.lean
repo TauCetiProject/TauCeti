@@ -279,6 +279,21 @@ lemma mem_closure_ofPoint_image_of_support_subset {S : Set X} {D : WeilDivisor X
   have : D ∈ Finsupp.supported ℤ ℤ S := hD
   rwa [Finsupp.supported_eq_span_single] at this
 
+/-- A property of divisors that holds for `0` and is unchanged by adding a point holds for every
+divisor. Divisors are finitely supported, so each is reached from `0` by adding and removing
+points. -/
+lemma induction_add_ofPoint {P : WeilDivisor X → Prop} (zero : P 0)
+    (add_ofPoint : ∀ D x, P (D + ofPoint x) ↔ P D) (D : WeilDivisor X) : P D := by
+  induction D using Finsupp.induction with
+  | zero => exact zero
+  | single_add a b f _ _ ih =>
+    rw [add_comm, single_eq_zsmul_ofPoint]
+    clear * - ih add_ofPoint
+    induction b using Int.induction_on with
+    | zero => rwa [zero_smul, add_zero]
+    | succ n ihn => rwa [add_one_zsmul, ← add_assoc, add_ofPoint]
+    | pred n ihn => rwa [← add_ofPoint, add_assoc, ← add_one_zsmul, sub_add_cancel]
+
 /-- The unweighted degree of a Weil divisor, summing its coefficients.  On a curve over a
 non-algebraically-closed field, use `weightedDegree` with residue-field degrees instead. -/
 @[expose] noncomputable def degree : WeilDivisor X →+ ℤ :=

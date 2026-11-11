@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Cohomology
 import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Meromorphic
-import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Divisor
 
 /-!
 # Riemann–Roch for divisor sheaves
@@ -28,9 +27,9 @@ needs it takes it as an explicit instance argument. Under that hypothesis this f
   (holomorphic functions on `X` are constant) and `h¹(0) = g_an`;
 * the lower bound `deg D + 1 - g_an ≤ h⁰(D)`.
 
-Without any finiteness hypothesis, `h⁰(D) = 0` when `deg D < 0`: a nonzero section is a
-meromorphic function whose principal divisor is at least `-D`, and principal divisors have degree
-zero.
+Combined with the vanishing `h⁰(D) = 0` for `deg D < 0`
+(`finrank_divisorSheaf_eq_zero_of_degree_neg`, which needs no finiteness hypothesis), Riemann–Roch
+computes `h¹(D) = g_an - 1 - deg D` for divisors of negative degree.
 
 ## Main declarations
 
@@ -42,7 +41,8 @@ zero.
   is finite-dimensional does not depend on `D`;
 * `TauCeti.RiemannSurface.finrank_divisorSheaf_euler_characteristic`: Riemann–Roch for divisor
   sheaves;
-* `TauCeti.RiemannSurface.finrank_divisorSheaf_eq_zero_of_degree_neg`: `h⁰(D) = 0` if `deg D < 0`.
+* `TauCeti.RiemannSurface.finrank_divisorCechCohomology_one_of_degree_neg`:
+  `h¹(D) = g_an - 1 - deg D` if `deg D < 0`.
 
 ## References
 
@@ -58,21 +58,6 @@ open scoped Manifold
 namespace TauCeti.RiemannSurface
 
 variable {X : Type}
-
-/-- A property of divisors that holds for `0` and is unchanged by adding a point holds for every
-divisor. Divisors are finitely supported, so each is reached from `0` by adding and removing
-points. -/
-private theorem induction_add_ofPoint {P : WeilDivisor X → Prop} (zero : P 0)
-    (add_ofPoint : ∀ D x, P (D + WeilDivisor.ofPoint x) ↔ P D) (D : WeilDivisor X) : P D := by
-  induction D using Finsupp.induction with
-  | zero => exact zero
-  | single_add a b f _ _ ih =>
-    rw [add_comm, WeilDivisor.single_eq_zsmul_ofPoint]
-    clear * - ih add_ofPoint
-    induction b using Int.induction_on with
-    | zero => rwa [zero_smul, add_zero]
-    | succ n ihn => rwa [add_one_zsmul, ← add_assoc, add_ofPoint]
-    | pred n ihn => rwa [← add_ofPoint, add_assoc, ← add_one_zsmul, sub_add_cancel]
 
 variable [TopologicalSpace X] [ChartedSpace ℂ X]
 
@@ -128,7 +113,7 @@ theorem finiteDimensional_divisorCechCohomology_one_iff (D E : WeilDivisor X) :
       FiniteDimensional ℂ (divisorCechCohomology E 1) := by
   suffices h : ∀ D : WeilDivisor X, FiniteDimensional ℂ (divisorCechCohomology D 1) ↔
       FiniteDimensional ℂ (divisorCechCohomology (0 : WeilDivisor X) 1) from (h D).trans (h E).symm
-  exact induction_add_ofPoint Iff.rfl fun D x ↦ by
+  exact WeilDivisor.induction_add_ofPoint Iff.rfl fun D x ↦ by
     rw [finiteDimensional_divisorCechCohomology_one_add_point_iff]
 
 /-- If `H¹(X, 𝒪)` is finite-dimensional, then so is `H¹(X, 𝒪(D))` for every divisor `D`. -/
@@ -150,7 +135,7 @@ theorem finrank_divisorSheaf_euler_characteristic (D : WeilDivisor X) :
     (Module.finrank ℂ ((divisorSheaf D).obj.obj (op ⊤)) : ℤ) -
         Module.finrank ℂ (divisorCechCohomology D 1) =
       WeilDivisor.degree D + 1 - analyticGenus X := by
-  refine induction_add_ofPoint (P := fun D : WeilDivisor X ↦
+  refine WeilDivisor.induction_add_ofPoint (P := fun D : WeilDivisor X ↦
     (Module.finrank ℂ ((divisorSheaf D).obj.obj (op ⊤)) : ℤ) -
         Module.finrank ℂ (divisorCechCohomology D 1) =
       WeilDivisor.degree D + 1 - analyticGenus X) ?_ (fun D x ↦ ?_) D
@@ -165,39 +150,6 @@ theorem degree_add_one_sub_analyticGenus_le_finrank_divisorSheaf (D : WeilDiviso
     WeilDivisor.degree D + 1 - analyticGenus X ≤
       (Module.finrank ℂ ((divisorSheaf D).obj.obj (op ⊤)) : ℤ) := by
   rw [← finrank_divisorSheaf_euler_characteristic]
-  omega
-
-omit [FiniteDimensional ℂ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 1).obj
-  (holomorphicStructureSheafModules 𝓘(ℂ) X).obj)] in
-/-- A divisor of negative degree has no nonzero global sections: a nonzero section is a meromorphic
-function whose principal divisor is at least `-D`, and principal divisors have degree zero. This
-needs no finiteness of `H¹(X, 𝒪)`. -/
-theorem finrank_divisorSheaf_eq_zero_of_degree_neg {D : WeilDivisor X}
-    (hD : WeilDivisor.degree D < 0) :
-    Module.finrank ℂ ((divisorSheaf D).obj.obj (op ⊤)) = 0 := by
-  rw [(divisorSheafSectionsEquiv D ⊤).finrank_eq]
-  suffices h : ∀ f : divisorSections D ⊤, f = 0 by
-    have : Subsingleton (divisorSections D ⊤) := ⟨fun f g ↦ by rw [h f, h g]⟩
-    exact Module.finrank_zero_of_subsingleton
-  intro f
-  by_contra hf
-  have hm : divisorSections.toMeromorphic D f ≠ 0 := fun h ↦
-    hf (divisorSections.toMeromorphic_injective D (h.trans (map_zero _).symm))
-  let u : Additive (MeromorphicFunction X)ˣ := Additive.ofMul (Units.mk0 _ hm)
-  have hle : 0 ≤ (MeromorphicFunction.orderSystem X).principalDivisor u + D := by
-    rw [WeilDivisor.nonneg_iff]
-    intro x
-    have hx : ((-D x : ℤ) : WithTop ℤ) ≤
-        MeromorphicFunction.order x (u.toMul : MeromorphicFunction X) :=
-      divisorSections.neg_le_order_toMeromorphic f x
-    rw [← MeromorphicFunction.coe_coeff_principalDivisor_orderSystem u x] at hx
-    rw [WeilDivisor.coeff_add]
-    have : -D x ≤ WeilDivisor.coeff ((MeromorphicFunction.orderSystem X).principalDivisor u) x :=
-      WithTop.coe_le_coe.mp hx
-    simp only [WeilDivisor.coeff] at this ⊢
-    omega
-  have := WeilDivisor.degree_nonneg hle
-  rw [map_add, MeromorphicFunction.degree_principalDivisor, zero_add] at this
   omega
 
 /-- For a divisor of negative degree, Riemann–Roch computes the first cohomology alone:
