@@ -94,16 +94,6 @@ def complexHomologicalOrientation : HomologicalOrientation M ℂ 2 :=
     (finCongr ((finrank_real_of_complex ℂ).symm.trans Complex.finrank_real_complex))
     ).toHomologicalOrientation (n := 1) Complex.finrank_real_complex
 
-/-- Reindexing an orientation twice is reindexing it along the composite equivalence. -/
-private theorem reindex_reindex {V ι ι' ι'' : Type*} [AddCommGroup V] [Module ℝ V]
-    (e : ι ≃ ι') (e' : ι' ≃ ι'') (o : Orientation ℝ V ι) :
-    Orientation.reindex ℝ V e' (Orientation.reindex ℝ V e o) =
-      Orientation.reindex ℝ V (e.trans e') o := by
-  induction o using Module.Ray.ind with
-  | h v hv =>
-    simp only [Orientation.reindex_apply]
-    rfl
-
 omit [T2Space M] in
 /-- The reindexed canonical orientation is represented by the reindexed canonical lift. -/
 private theorem reindex_complexManifoldOrientation_eq_mk :
@@ -116,8 +106,8 @@ private theorem reindex_complexManifoldOrientation_eq_mk :
     Manifold.OrientationLift.orientationAt_reindex, orientationAt_complexOrientationLift,
     orientationAt_complexManifoldOrientation_eq_complexOrientation]
   -- The tangent space at `x` is `ℂ`, and reindexing twice is reindexing along the composite.
-  exact (reindex_reindex (V := ℂ) (finCongr (finrank_real_of_complex ℂ).symm)
-    (finCongr Complex.finrank_real_complex) (complexOrientation ℂ)).symm
+  exact Orientation.reindex_trans (M := ℂ) (finCongr (finrank_real_of_complex ℂ).symm)
+    (finCongr Complex.finrank_real_complex) (complexOrientation ℂ)
 
 /-- **The canonical local orientations, read in any holomorphic chart.** At every point `x`, the
 canonical homological orientation of a Riemann surface is the local orientation selected in any
@@ -135,7 +125,7 @@ theorem complexHomologicalOrientation_apply_of_mem_maximalAtlas
     Manifold.OrientationLift.chartOrientation_eq_ite]
   simp only [Manifold.OrientationLift.reindex_sign, complexOrientationLift_sign, ite_true,
     Manifold.OrientationLift.reindex_modelOrientation, complexOrientationLift_modelOrientation,
-    reindex_reindex]
+    ← Orientation.reindex_trans]
   -- The holomorphic transition from the preferred chart to `e` preserves orientation.
   have hmem := IsManifold.compatible_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas x) he
   have hy : chartAt ℂ x x ∈ ((chartAt ℂ x).symm.trans e).source := by
