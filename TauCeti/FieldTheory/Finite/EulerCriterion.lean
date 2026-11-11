@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Algebra.Field.Defs
 public import Mathlib.SetTheory.Cardinal.Finite
+public import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.Algebra.GroupWithZero.Units.Fintype
-import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.RingTheory.IntegralDomain
 import TauCeti.FieldTheory.Finite.Card
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.PowMonoidHom
@@ -26,6 +26,9 @@ exactly when `a ^ ((q - 1) / n) = 1`. At `n = 2` this is Mathlib's `FiniteField.
   `n`-th powers in a finite field.
 * `TauCeti.FiniteField.pow_card_div_two_eq_neg_one`: a nonsquare `r` satisfies
   `r ^ (#F / 2) = -1`.
+* `TauCeti.ZMod.ne_two_of_not_isSquare`: a modulus `p` admitting a nonsquare residue is not `2`.
+* `TauCeti.Int.dvd_pow_mul_pow_div_two_add`: for a prime `p` modulo which `r` is not a square and
+  every integer `v`, `p ∣ v ^ p r ^ ((p - 1) / 2) + v`.
 -/
 
 public section
@@ -68,3 +71,28 @@ theorem pow_card_div_two_eq_neg_one {F : Type*} [Field F] [Finite F] {r : F}
     fun h ↦ hr ((FiniteField.isSquare_iff hF hr0).mpr h)
 
 end TauCeti.FiniteField
+
+namespace TauCeti.ZMod
+
+/-- Modulo `2` every residue is a square, so a modulus admitting a nonsquare residue is not `2`. -/
+theorem ne_two_of_not_isSquare {p : ℕ} {a : ZMod p} (ha : ¬IsSquare a) : p ≠ 2 := by
+  rintro rfl
+  exact ha (FiniteField.isSquare_of_char_two (ZMod.ringChar_zmod_n 2) _)
+
+end TauCeti.ZMod
+
+namespace TauCeti.Int
+
+/-- **Euler's criterion times `v`.** For a prime `p` modulo which the integer `r` is not a square
+and every integer `v`, `p ∣ v ^ p r ^ ((p - 1) / 2) + v`: by Fermat `v ^ p ≡ v` and by Euler's
+criterion `r ^ ((p - 1) / 2) ≡ -1`, the exponent being written `p / 2`. For `p ∤ v` this is Euler's
+criterion for `r` itself. -/
+theorem dvd_pow_mul_pow_div_two_add {p : ℕ} [Fact p.Prime] {r : ℤ}
+    (hr : ¬IsSquare (r : ZMod p)) (v : ℤ) : (p : ℤ) ∣ v ^ p * r ^ (p / 2) + v := by
+  rw [← ZMod.intCast_zmod_eq_zero_iff_dvd]
+  have h := TauCeti.FiniteField.pow_card_div_two_eq_neg_one hr
+  rw [Nat.card_zmod] at h
+  push_cast
+  rw [ZMod.pow_card, h, mul_neg_one, neg_add_cancel]
+
+end TauCeti.Int

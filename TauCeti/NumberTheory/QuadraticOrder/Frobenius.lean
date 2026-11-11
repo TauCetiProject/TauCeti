@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.LegendreSymbol.Basic
 public import TauCeti.Algebra.QuadraticAlgebra.FiniteField
-public import TauCeti.NumberTheory.NumberField.Quadratic.Frobenius
 public import TauCeti.NumberTheory.QuadraticOrder.PrimeIdeal
+import Mathlib.NumberTheory.LegendreSymbol.Basic
+import TauCeti.FieldTheory.Finite.Card
 import TauCeti.FieldTheory.Finite.EulerCriterion
 
 /-!
@@ -31,20 +31,18 @@ violates the congruence.
   `ρ_p (z ^ p) = star (ρ_p z) = ρ_p (star z)` for reduction `ρ_p` modulo `p`.
 * `QuadraticAlgebra.frobenius_congruence`: `z ^ p - star z ∈ (p)`.
 * `QuadraticAlgebra.re_pow_modEq` and `QuadraticAlgebra.im_pow_modEq`: the coordinate form
-  `(z ^ p).re ≡ u` and `(z ^ p).im ≡ -v` modulo `p`, and
-  `QuadraticAlgebra.dvd_pow_mul_pow_div_two_add`: the integer consequence
-  `p ∣ v ^ p r ^ ((p - 1) / 2) + v`, which is Euler's criterion `r ^ ((p - 1) / 2) ≡ -1`
-  multiplied by `v`.
+  `(z ^ p).re ≡ u` and `(z ^ p).im ≡ -v` modulo `p`. The integer consequence
+  `p ∣ v ^ p r ^ ((p - 1) / 2) + v` is Euler's criterion `r ^ ((p - 1) / 2) ≡ -1` multiplied by
+  `v` (`TauCeti.Int.dvd_pow_mul_pow_div_two_add`).
 * `QuadraticAlgebra.omega_pow_sub_star_notMem_span_natCast` and
   `QuadraticAlgebra.forall_pow_sub_star_mem_span_natCast_iff`: when `r` is a square modulo `p`
   the congruence fails at `ω`, so it holds for every `z` exactly when `r` is not a square
   modulo `p`.
-* `QuadraticAlgebra.isMaximal_span_natCast_iff_not_isSquare`: the hypothesis is the inertness
-  of `(p)` in `ℤ[√r]`, a specialization of `QuadraticAlgebra.isMaximal_span_natCast_iff`.
-* `TauCeti.NumberField.arithFrobAt_ne_one_iff_isMaximal_span_natCast`: in a quadratic field
-  `ℚ(θ)` with `θ² = d`, at an odd prime `p ∤ d`, the arithmetic Frobenius
-  (`TauCeti.NumberField.arithFrobAt_eq_one_iff_legendreSym_eq_one`) is nontrivial exactly when
-  `(p)` is maximal in the presented order `ℤ[√d]`, that is, exactly when the congruence holds.
+
+The hypothesis is the inertness of `(p)` in `ℤ[√r]`
+(`QuadraticAlgebra.isMaximal_span_natCast_iff_not_isSquare`). In a quadratic field `ℚ(θ)` with
+`θ² = d`, at an odd prime `p ∤ d`, it is also the nontriviality of the arithmetic Frobenius
+(`TauCeti.NumberField.arithFrobAt_ne_one_iff_isMaximal_span_natCast`).
 
 The congruence takes place in the presented order `ℤ[√r]`, not in the maximal order: for `r = 5`
 the prime `2` is inert in the maximal order of `ℚ(√5)`, while `ℤ[√5]/(2)` has the nonzero
@@ -52,7 +50,9 @@ nilpotent `ω - 1` and the congruence fails at `ω`.
 
 ## References
 
-* B. Conrad, *The quadratic character of a prime*, Theorem 2.4 and Corollary 3.1.
+* B. Conrad, *Quadratic characters associated to quadratic fields*, course handout
+  (https://math.stanford.edu/~conrad/676Page/handouts/quadchar.pdf), Theorem 2.4 (p. 3) and
+  Corollary 3.1 (p. 4).
 * J. S. Milne, *Algebraic Number Theory*, Example 3.44: the decomposition of `p` in a quadratic
   field according to whether `d` is a square modulo `p`, and the inertness of `2` in `ℚ(√5)`.
 -/
@@ -61,14 +61,7 @@ public section
 
 namespace QuadraticAlgebra
 
-variable {r : ℤ} {p : ℕ}
-
-/-- Modulo `2` every residue is a square, so a prime modulo which `r` is not a square is odd. -/
-theorem ne_two_of_not_isSquare_intCast (hr : ¬IsSquare (r : ZMod p)) : p ≠ 2 := by
-  rintro rfl
-  exact hr (FiniteField.isSquare_of_char_two (ZMod.ringChar_zmod_n 2) _)
-
-variable [Fact p.Prime]
+variable {r : ℤ} {p : ℕ} [Fact p.Prime]
 
 /-- **The commuting square.** For a prime `p` modulo which `r` is not a square, reduction modulo
 `p` sends `z ^ p` to the conjugate of the reduction of `z`, which is the reduction of `star z`. -/
@@ -85,8 +78,8 @@ theorem mapRingHom_intCastRingHom_pow_eq_star (hr : ¬IsSquare (r : ZMod p))
   exact key _ (map_zero _) _
 
 /-- **The integral Frobenius congruence.** For an integer `r`, a prime `p` modulo which `r` is not
-a square (so `p` is odd, `ne_two_of_not_isSquare_intCast`), and every `z = u + v√r` in `ℤ[√r]`,
-`z ^ p ≡ u - v√r` modulo `p`: the difference `z ^ p - star z` lies in the ideal `(p)`. -/
+a square (so `p` is odd, `TauCeti.ZMod.ne_two_of_not_isSquare`), and every `z = u + v√r` in
+`ℤ[√r]`, `z ^ p ≡ u - v√r` modulo `p`: the difference `z ^ p - star z` lies in the ideal `(p)`. -/
 theorem frobenius_congruence (hr : ¬IsSquare (r : ZMod p)) (z : QuadraticAlgebra ℤ r 0) :
     z ^ p - star z ∈ Ideal.span {(p : QuadraticAlgebra ℤ r 0)} := by
   rw [← ker_mapRingHom_intCastRingHom, RingHom.mem_ker, map_sub,
@@ -102,21 +95,11 @@ theorem im_pow_modEq (hr : ¬IsSquare (r : ZMod p)) (z : QuadraticAlgebra ℤ r 
     (z ^ p).im ≡ -z.im [ZMOD p] := by
   simpa using (sub_mem_span_natCast_iff.mp (frobenius_congruence hr z)).2
 
-/-- **The coordinate consequence.** For a prime `p` modulo which `r` is not a square and every
-integer `v`, `p ∣ v ^ p r ^ ((p - 1) / 2) + v`: by Fermat `v ^ p ≡ v` and by Euler's criterion
-`r ^ ((p - 1) / 2) ≡ -1`, the exponent being written `p / 2`. For `p ∤ v` this is Euler's
-criterion for `r` itself. -/
-theorem dvd_pow_mul_pow_div_two_add (hr : ¬IsSquare (r : ZMod p)) (v : ℤ) :
-    (p : ℤ) ∣ v ^ p * r ^ (p / 2) + v := by
-  rw [← ZMod.intCast_zmod_eq_zero_iff_dvd]
-  have h := TauCeti.FiniteField.pow_card_div_two_eq_neg_one hr
-  rw [Nat.card_zmod] at h
-  push_cast
-  rw [ZMod.pow_card, h, mul_neg_one, neg_add_cancel]
-
 /-- **Sharpness of the hypothesis.** If `r` is a square modulo the prime `p`, including `r ≡ 0`
-and `p = 2`, then the generator `ω = √r` violates the Frobenius congruence: `ω ^ p` reduces to `0`
-or `ω` modulo `p`, so `ω ^ p - star ω = ω ^ p + ω` has second coordinate `1` or `2` modulo `p`. -/
+and `p = 2`, then the generator `ω = √r` violates the Frobenius congruence. Modulo an odd `p`, the
+power `ω ^ p` reduces to `0` when `r ≡ 0` and to `ω` otherwise, while for `p = 2` it is the scalar
+`ω ^ 2 = r`. In all cases `ω ^ p - star ω = ω ^ p + ω` has second coordinate `1` or `2` modulo `p`,
+which is nonzero. -/
 theorem omega_pow_sub_star_notMem_span_natCast (hr : IsSquare (r : ZMod p)) :
     (ω : QuadraticAlgebra ℤ r 0) ^ p - star ω ∉ Ideal.span {(p : QuadraticAlgebra ℤ r 0)} := by
   rw [← ker_mapRingHom_intCastRingHom, RingHom.mem_ker, map_sub, map_pow, mapRingHom_star,
@@ -130,22 +113,18 @@ theorem omega_pow_sub_star_notMem_span_natCast (hr : IsSquare (r : ZMod p)) :
   have hp := (Fact.out : p.Prime)
   rcases hp.eq_two_or_odd' with rfl | hodd
   · simp [sq] at him
-  have hpow := pow_card_eq_mk (by rwa [Nat.card_zmod])
-    (ω : QuadraticAlgebra (ZMod p) (r : ZMod p) 0)
-  rw [Nat.card_zmod] at hpow
-  rw [hpow] at him
-  simp only [im_sub, im_star, im_omega, im_zero, mul_one, sub_neg_eq_add] at him
+  have hodd' : Odd (Nat.card (ZMod p)) := by rwa [Nat.card_zmod]
   by_cases hr0 : (r : ZMod p) = 0
-  · rw [hr0, zero_pow (Nat.div_pos hp.two_le two_pos).ne', zero_add] at him
-    exact one_ne_zero him
-  · have hchar : ringChar (ZMod p) ≠ 2 := by
-      rw [ZMod.ringChar_zmod_n]
-      rintro rfl
-      exact Nat.not_odd_iff_even.mpr even_two hodd
-    have hone : (r : ZMod p) ^ (p / 2) = 1 := by
-      simpa only [ZMod.card] using (FiniteField.isSquare_iff hchar hr0).mp hr
-    rw [hone, one_add_one_eq_two] at him
-    exact Ring.two_ne_zero hchar him
+  · have hpow := pow_card_eq_mk hodd' (ω : QuadraticAlgebra (ZMod p) (r : ZMod p) 0)
+    rw [Nat.card_zmod] at hpow
+    rw [hpow, hr0, zero_pow (Nat.div_pos hp.two_le two_pos).ne'] at him
+    simp at him
+  · have hpow := pow_card_eq_self_of_square hodd' hr hr0
+      (ω : QuadraticAlgebra (ZMod p) (r : ZMod p) 0)
+    rw [Nat.card_zmod] at hpow
+    rw [hpow] at him
+    simp only [im_sub, im_star, im_omega, sub_neg_eq_add, one_add_one_eq_two] at him
+    exact Ring.two_ne_zero (TauCeti.FiniteField.ringChar_ne_two_of_odd_card hodd') him
 
 /-- **The congruence characterizes the nonsquares.** For a prime `p`, every `z ∈ ℤ[√r]` satisfies
 `z ^ p ≡ star z` modulo `p` exactly when `r` is not a square modulo `p`. -/
@@ -154,50 +133,7 @@ theorem forall_pow_sub_star_mem_span_natCast_iff :
       ¬IsSquare (r : ZMod p) :=
   ⟨fun h hr => omega_pow_sub_star_notMem_span_natCast hr (h ω), frobenius_congruence⟩
 
-/-- **The hypothesis is inertness in the presented order.** For a prime `p`, the ideal `(p)` of
-`ℤ[√r]` is maximal exactly when `r` is not a square modulo `p`. This is
-`isMaximal_span_natCast_iff` at `X² - r`. -/
-theorem isMaximal_span_natCast_iff_not_isSquare :
-    (Ideal.span {(p : QuadraticAlgebra ℤ r 0)}).IsMaximal ↔ ¬IsSquare (r : ZMod p) := by
-  rw [isMaximal_span_natCast_iff, not_iff_not.symm, not_forall]
-  simp only [not_not, zero_mul, sub_zero]
-  constructor
-  · rintro ⟨s, hs⟩
-    have := (ZMod.intCast_zmod_eq_zero_iff_dvd _ p).mpr hs
-    push_cast at this
-    exact ⟨s, by linear_combination -this⟩
-  · rintro ⟨t, ht⟩
-    obtain ⟨s, rfl⟩ := ZMod.intCast_surjective t
-    refine ⟨s, (ZMod.intCast_zmod_eq_zero_iff_dvd _ p).mp ?_⟩
-    push_cast
-    rw [ht, sq, sub_self]
-
 end QuadraticAlgebra
-
-namespace TauCeti.NumberField
-
-open Polynomial
-open scoped _root_.NumberField
-
-variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ} {p : ℕ} [Fact p.Prime]
-
-/-- **Comparison with the maximal order.** In a Galois quadratic field `ℚ(θ)` with `θ² = d` and at
-an odd prime `p ∤ d`, the arithmetic Frobenius at a prime above `p` is nontrivial exactly when `(p)`
-is maximal in the presented order `ℤ[√d]`, that is, exactly when `d` is not a square modulo `p`
-(`QuadraticAlgebra.isMaximal_span_natCast_iff_not_isSquare`), which is the hypothesis of
-`QuadraticAlgebra.frobenius_congruence`. -/
-theorem arithFrobAt_ne_one_iff_isMaximal_span_natCast [IsGalois ℚ K]
-    (hmin : minpoly ℤ θ = X ^ 2 - C d)
-    (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hodd : p ≠ 2) (hd : ¬ (p : ℤ) ∣ d)
-    (Q : Ideal (𝓞 K)) [Q.IsPrime] [Q.LiesOver (Ideal.span {(p : ℤ)})]
-    [Finite (𝓞 K ⧸ Q)] :
-    arithFrobAt ℤ (K ≃ₐ[ℚ] K) Q ≠ 1 ↔
-      (Ideal.span {(p : QuadraticAlgebra ℤ d 0)}).IsMaximal := by
-  rw [Ne, arithFrobAt_eq_one_iff_legendreSym_eq_one hmin hgen hodd hd Q,
-    legendreSym.eq_one_iff p (by rwa [Ne, ZMod.intCast_zmod_eq_zero_iff_dvd]),
-    QuadraticAlgebra.isMaximal_span_natCast_iff_not_isSquare]
-
-end TauCeti.NumberField
 
 /-! ### Checks -/
 
