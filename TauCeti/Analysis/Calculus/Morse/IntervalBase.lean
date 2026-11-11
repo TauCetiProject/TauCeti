@@ -456,10 +456,23 @@ theorem intervalBaseFlow_intervalBaseOrbit (C s r : ℝ) :
   rw [intervalBaseOrbit_eq_intervalBaseFlow, intervalBaseOrbit_eq_intervalBaseFlow,
     intervalBaseFlow_add C s r inv_sqrt_two_mem_Icc]
 
+/-- The flow of the base moves a signed copy of its trajectory `q` along itself, for a sign `a`
+in `{-1, 0, 1}`. -/
+theorem intervalBaseFlow_mul_intervalBaseOrbit (C s : ℝ) {a : ℝ} (ha : a = -1 ∨ a = 0 ∨ a = 1)
+    (t : ℝ) :
+    intervalBaseFlow C s (a * intervalBaseOrbit C t) = a * intervalBaseOrbit C (s + t) := by
+  rcases ha with rfl | rfl | rfl <;> simp [intervalBaseFlow_neg]
+
 /-- The trajectory `q` takes values in `(0, 1)`. -/
 theorem intervalBaseOrbit_mem_Ioo (C s : ℝ) : intervalBaseOrbit C s ∈ Ioo 0 1 := by
   rw [intervalBaseOrbit_eq_intervalBaseFlow]
   exact intervalBaseFlow_mem_Ioo_zero_one C s inv_sqrt_two_mem_Ioo
+
+/-- The trajectory `q` is smooth. -/
+theorem contDiff_intervalBaseOrbit (C : ℝ) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (intervalBaseOrbit C) := by
+  have h : ContDiff ℝ n fun s : ℝ ↦ 1 + Real.exp (-(2 * C * s)) := by fun_prop
+  exact (h.sqrt fun _ ↦ by positivity).inv fun _ ↦ by positivity
 
 /-- The trajectory `q` solves `q' = C q (1 - q²)`. -/
 theorem hasDerivAt_intervalBaseOrbit (C s : ℝ) :
@@ -542,6 +555,12 @@ theorem intervalBaseTimeCoordinate_intervalBaseOrbit (C s : ℝ) :
   rw [intervalBaseOrbit_eq_intervalBaseFlow,
     intervalBaseTimeCoordinate_intervalBaseFlow C s inv_sqrt_two_mem_Ioo,
     intervalBaseTimeCoordinate_inv_sqrt_two, zero_add]
+
+/-- For `C ≠ 0` the trajectory `q` is injective: its time coordinate is `C s`. -/
+theorem intervalBaseOrbit_injective (hC : C ≠ 0) : Function.Injective (intervalBaseOrbit C) :=
+  fun a b h ↦ mul_left_cancel₀ hC <| by
+    simpa only [intervalBaseTimeCoordinate_intervalBaseOrbit] using
+      congrArg intervalBaseTimeCoordinate h
 
 /-- The time coordinate is strictly increasing on `(0, 1)`. -/
 theorem strictMonoOn_intervalBaseTimeCoordinate :
