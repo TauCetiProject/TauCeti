@@ -90,6 +90,10 @@ homogeneous of degree one under `(ξ, z) ↦ (t ξ, t² z)`. -/
 def parameterWeight (ξ : CoordinateSpace n) (z : ℂ) : ℝ :=
   1 + ‖ξ‖ + Real.sqrt ‖z‖
 
+theorem parameterWeight_def (ξ : CoordinateSpace n) (z : ℂ) :
+    parameterWeight ξ z = 1 + ‖ξ‖ + Real.sqrt ‖z‖ :=
+  (rfl)
+
 theorem one_le_parameterWeight (ξ : CoordinateSpace n) (z : ℂ) : 1 ≤ parameterWeight ξ z := by
   have := Real.sqrt_nonneg ‖z‖
   have := norm_nonneg ξ
