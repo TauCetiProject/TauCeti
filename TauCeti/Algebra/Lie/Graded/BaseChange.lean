@@ -23,8 +23,8 @@ projections commute with pure tensors by
 hypothesis is imposed on the pieces or the coefficient algebra. For positive gradings,
 the degree ideals extend to the degree ideals of the scalar extension. The resulting
 finite-truncation Lie equivalence preserves homogeneous pieces and commutes with
-quotient projections and transitions between cutoffs. Its construction uses the same
-kernel computation and surjectivity argument as `LieIdeal.quotientBaseChangeEquiv`.
+quotient projections and transitions between cutoffs. Its construction transports
+`LieIdeal.quotientBaseChangeEquiv` along the equality of degree ideals.
 
 Adapted from `Mei/Algebra/Lie/Graded/BaseChange.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei),
@@ -99,19 +99,22 @@ theorem degreeIdeal_baseChange (k : ℕ) :
 noncomputable def truncatedBaseChangeEquiv (k : ℕ) :
     d.truncatedLie (fun n => (ℒ n).baseChange S) k ≃ₗ⁅S⁆
       S ⊗[R] d.truncatedLie ℒ k :=
-  LieEquiv.ofBijective
-    (LieIdeal.liftQ (d.degreeIdeal (fun n => (ℒ n).baseChange S) k)
-      (LieHom.baseChange S (d.degreeIdeal ℒ k).mkQ) (by rw [← degreeIdeal_baseChange]; simp))
-    ⟨LieIdeal.liftQ_injective _ _ _ (by rw [← degreeIdeal_baseChange]; simp),
-      LieIdeal.liftQ_surjective _ _ _
-        (LieHom.baseChange_surjective S _ (d.degreeIdeal ℒ k).surjective_mkQ)⟩
+  Eq.rec (motive := fun I _ => ((S ⊗[R] L) ⧸ I) ≃ₗ⁅S⁆ S ⊗[R] d.truncatedLie ℒ k)
+    (LieIdeal.quotientBaseChangeEquiv S (d.degreeIdeal ℒ k))
+    (d.degreeIdeal_baseChange ℒ k)
 
 /-- The comparison commutes with the scalar extension of the quotient projection. -/
 @[simp]
 theorem truncatedBaseChangeEquiv_mk (k : ℕ) (z : S ⊗[R] L) :
     d.truncatedBaseChangeEquiv ℒ k (LieSubmodule.Quotient.mk z) =
-      LieHom.baseChange S (d.degreeIdeal ℒ k).mkQ z :=
-  LieIdeal.liftQ_apply _ _ _ z
+      LieHom.baseChange S (d.degreeIdeal ℒ k).mkQ z := by
+  unfold truncatedBaseChangeEquiv truncatedLie
+  -- Eliminate the transport of the quotient before using the representative formula.
+  generalize_proofs
+  rename_i h
+  generalize d.degreeIdeal (fun n => (ℒ n).baseChange S) k = I at h ⊢
+  cases h
+  exact LieIdeal.quotientBaseChangeEquiv_mk S (d.degreeIdeal ℒ k) z
 
 /-- The comparison sends the class of a pure tensor to the tensor of the class. -/
 theorem truncatedBaseChangeEquiv_mk_tmul (k : ℕ) (s : S) (x : L) :
