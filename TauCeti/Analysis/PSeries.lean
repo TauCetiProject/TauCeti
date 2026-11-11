@@ -162,24 +162,23 @@ theorem summable_mul_rpow_of_count_growth {ι : Type*} (r w : ι → ℝ)
 
 /-- Along a nonvanishing arithmetic progression `w + v n`, the norms of the inverse `k`-th powers
 are not summable for `k < 2`: they are bounded below by a multiple of the harmonic series. -/
-theorem not_summable_norm_zpow_neg_add_mul {k v : ℕ} [NeZero v] (hk : k < 2) {w : ℂ}
-    (hne : ∀ n : ℕ, w + (v : ℂ) * n ≠ 0) :
-    ¬ Summable fun n : ℕ ↦ ‖(w + (v : ℂ) * n) ^ (-(k : ℤ))‖ := by
+theorem not_summable_norm_zpow_neg_add_mul {k : ℕ} {v : ℂ} (hk : k < 2) {w : ℂ}
+    (hne : ∀ n : ℕ, w + v * n ≠ 0) :
+    ¬ Summable fun n : ℕ ↦ ‖(w + v * n) ^ (-(k : ℤ))‖ := by
   intro h1
-  have hv : (1 : ℝ) ≤ v := Nat.one_le_cast.mpr (NeZero.pos v)
-  set C : ℝ := ‖w‖ + v with hC
-  have hC1 : 1 ≤ C := by linarith [norm_nonneg w]
+  set C : ℝ := ‖w‖ + ‖v‖ + 1 with hC
+  have hC1 : 1 ≤ C := by linarith [norm_nonneg w, norm_nonneg v]
   -- the harmonic lower bound `‖w + v n‖ ≤ C (n + 1)`, hence `1 / (C (n + 1)) ≤ ‖(w + v n)⁻ᵏ‖`
-  have hbound (n : ℕ) : 1 / (C * (n + 1)) ≤ ‖(w + (v : ℂ) * n) ^ (-(k : ℤ))‖ := by
-    have hpos : 0 < ‖w + (v : ℂ) * n‖ := norm_pos_iff.mpr (hne n)
-    have hle : ‖w + (v : ℂ) * n‖ ≤ C * (n + 1) := by
-      calc ‖w + (v : ℂ) * n‖ ≤ ‖w‖ + v * n := by
+  have hbound (n : ℕ) : 1 / (C * (n + 1)) ≤ ‖(w + v * n) ^ (-(k : ℤ))‖ := by
+    have hpos : 0 < ‖w + v * n‖ := norm_pos_iff.mpr (hne n)
+    have hle : ‖w + v * n‖ ≤ C * (n + 1) := by
+      calc ‖w + v * n‖ ≤ ‖w‖ + ‖v‖ * n := by
             refine (norm_add_le _ _).trans ?_
             simp
         _ ≤ C * (n + 1) := by
             rw [hC]
             have : (0 : ℝ) ≤ n := n.cast_nonneg
-            nlinarith [norm_nonneg w]
+            nlinarith [norm_nonneg w, norm_nonneg v]
     interval_cases k
     · simp only [Nat.cast_zero, neg_zero, zpow_zero, norm_one]
       rw [div_le_one (by positivity)]
