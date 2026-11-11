@@ -56,10 +56,10 @@ theorem eulerCorrection_ne_zero_of_re_ne_zero (χ : RayClassCharacter 𝔪)
     (𝔫 : Modulus K) {s : ℂ} (hs : s.re ≠ 0) : χ.eulerCorrection 𝔫 s ≠ 0 :=
   fun hz ↦ hs (re_eq_zero_of_eulerCorrection_eq_zero χ 𝔫 hz)
 
-/-- The logarithmic derivative of the Euler correction is the sum of its weighted local
-logarithmic derivatives. -/
+/-- At a point where the Euler correction does not vanish, its logarithmic derivative is the
+sum of its weighted local logarithmic derivatives. -/
 theorem logDeriv_eulerCorrection (χ : RayClassCharacter 𝔪) (𝔫 : Modulus K)
-    {s : ℂ} (hs : 0 < s.re) :
+    {s : ℂ} (hs : χ.eulerCorrection 𝔫 s ≠ 0) :
     logDeriv (χ.eulerCorrection 𝔫) s = ∑ P ∈ 𝔫.support,
       χ.toMultiplicativeIdealWeight P.asIdeal * (Ideal.absNorm P.asIdeal : ℂ) ^ (-s) *
         Complex.log (Ideal.absNorm P.asIdeal) /
@@ -71,12 +71,8 @@ theorem logDeriv_eulerCorrection (χ : RayClassCharacter 𝔪) (𝔫 : Modulus K
         (Ideal.absNorm P.asIdeal : ℂ) ^ (-z)) := funext (eulerCorrection_eq_prod_support χ 𝔫)
   rw [heq, logDeriv_fun_prod]
   · exact Finset.sum_congr rfl fun P _ ↦ logDeriv_one_sub_mul_cpow_neg P.natCast_absNorm_ne_zero _ _
-  · intro P _
-    have h := one_sub_mul_ofReal_cpow_neg_ne_zero
-      (q := (Ideal.absNorm P.asIdeal : ℝ))
-      (by exact_mod_cast NumberField.HeightOneSpectrum.one_lt_absNorm P)
-      (by simpa using χ.toUnitaryIdealWeight.norm_le_one P.asIdeal) hs
-    simpa using h
+  · rw [eulerCorrection_eq_prod_support] at hs
+    exact Finset.prod_ne_zero_iff.mp hs
   · intro P _
     exact ((differentiable_const 1).sub ((differentiable_const _).mul
       (differentiable_neg.const_cpow (.inl P.natCast_absNorm_ne_zero)))).differentiableAt
@@ -87,7 +83,8 @@ theorem norm_logDeriv_eulerCorrection_le (χ : RayClassCharacter 𝔪) (𝔫 : M
     {s : ℂ} (hs : 1 ≤ s.re) :
     ‖logDeriv (χ.eulerCorrection 𝔫) s‖ ≤ Real.log (Ideal.absNorm 𝔫.finitePart) := by
   classical
-  rw [logDeriv_eulerCorrection χ 𝔫 (zero_lt_one.trans_le hs)]
+  rw [logDeriv_eulerCorrection χ 𝔫
+    (eulerCorrection_ne_zero_of_re_ne_zero χ 𝔫 (zero_lt_one.trans_le hs).ne')]
   calc
     _ ≤ ∑ P ∈ 𝔫.support,
         ‖χ.toMultiplicativeIdealWeight P.asIdeal * (Ideal.absNorm P.asIdeal : ℂ) ^ (-s) *
