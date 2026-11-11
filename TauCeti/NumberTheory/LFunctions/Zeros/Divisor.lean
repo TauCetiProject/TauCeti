@@ -110,7 +110,7 @@ theorem HasMeromorphicContinuation.divisorCount_entireCompletion
     d.polarOrder.support.finite_toSet.subset fun s hs ↦ by simpa using hs.2
   simp_rw [divisorCount_def, h.divisor_entireCompletion]
   exact finsum_mem_add_distrib'
-    (h.meromorphic.meromorphicOn.divisor_finite_inter_support hR (subset_univ _)) hpoles
+    (MeromorphicOn.divisor_finite_inter_support hR (subset_univ _)) hpoles
 
 /-- On a region avoiding the recorded poles, the entire completion and the completed function
 have the same signed count. No boundedness is needed. -/
