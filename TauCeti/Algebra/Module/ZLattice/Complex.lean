@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.ZLattice.Covolume
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+public import TauCeti.Algebra.Module.ZLattice.Scaling
 public import TauCeti.Algebra.Module.ZLattice.ShortestPair
 import Mathlib.Analysis.InnerProductSpace.Convex
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -26,7 +27,8 @@ strictly convex.
 Multiplying a lattice by a nonzero complex number `c`, a rotation followed by a homothety, changes
 the normalization of a cusp but not the cusp: it carries the shortest pairs of `L` onto those of
 `c • L` (`ZLattice.isShortestPair_complex_smul_iff`), so lengths scale by `‖c‖`, and it multiplies
-the covolume by `‖c‖ ^ 2` (`ZLattice.covolume_complex_smul`).
+the covolume by `‖c‖ ^ 2` (`ZLattice.covolume_complex_smul`). The rescaled lattice is again a
+discrete lattice by the scaling instances of `TauCeti.Algebra.Module.ZLattice.Scaling`.
 
 ## Main results
 
@@ -72,41 +74,13 @@ theorem IsShortestPair.covolume_eq [DiscreteTopology L] [IsZLattice ℝ L]
     (h : IsShortestPair L v w) : covolume L = |(conj v * w).im| := by
   simpa using covolume_eq_abs_im L (h.basis Complex.finrank_real_complex)
 
-/-- Multiplying a lattice in `ℂ` by `c` is taking its image under the real-linear map
-`z ↦ c * z`. -/
-private theorem complex_smul_eq_map (L : Submodule ℤ ℂ) (c : ℂ) :
-    c • L = L.map ((LinearMap.mulLeft ℝ c).restrictScalars ℤ) := by
-  ext x
-  simp [mem_smul_pointwise_iff_exists]
-
 /-- **Shortest pairs are invariant under complex rescaling.** For `c ≠ 0`, the shortest pairs of
 `c • L` are the pairs `c * v, c * w` for the shortest pairs `v, w` of `L`. -/
 theorem isShortestPair_complex_smul_iff {c : ℂ} (hc : c ≠ 0) :
     IsShortestPair (c • L) (c * v) (c * w) ↔ IsShortestPair L v w := by
-  rw [complex_smul_eq_map]
+  -- `c • L` is the image of `L` under `z ↦ c * z` (`Submodule.pointwise_smul_def`).
+  rw [pointwise_smul_def]
   exact isShortestPair_map_iff (f := LinearMap.mulLeft ℝ c) (norm_pos_iff.2 hc) fun x ↦ norm_mul c x
-
-/-- For `c ≠ 0`, the rescaled lattice `c • L` is the pullback of `L` along multiplication by
-`c⁻¹`. -/
-theorem complex_smul_eq_comap (L : Submodule ℤ ℂ) {c : ℂ} (hc : c ≠ 0) :
-    c • L = ZLattice.comap ℝ L
-      (ContinuousLinearEquiv.smulLeft (Units.mk0 c hc)⁻¹ : ℂ ≃L[ℝ] ℂ).toLinearMap := by
-  ext x
-  rw [← SetLike.mem_coe, coe_pointwise_smul, Set.mem_smul_set_iff_inv_smul_mem₀ hc,
-    ← SetLike.mem_coe, coe_comap]
-  simp [Units.smul_def]
-
-/-- Rescaling a discrete lattice in `ℂ` by a nonzero complex number gives a discrete lattice. -/
-instance [DiscreteTopology L] (c : ℂ) [NeZero c] : DiscreteTopology (c • L : Submodule ℤ ℂ) := by
-  rw [complex_smul_eq_comap L (NeZero.ne c)]
-  infer_instance
-
-/-- Rescaling a lattice in `ℂ` by a nonzero complex number gives a lattice. -/
-instance [DiscreteTopology L] [IsZLattice ℝ L] (c : ℂ) [NeZero c] :
-    IsZLattice ℝ (c • L : Submodule ℤ ℂ) where
-  span_top := by
-    rw [complex_smul_eq_comap L (NeZero.ne c)]
-    exact IsZLattice.span_top
 
 /-- **Complex rescaling multiplies the covolume by `‖c‖ ^ 2`.** -/
 theorem covolume_complex_smul [DiscreteTopology L] [IsZLattice ℝ L] (c : ℂ) [NeZero c] :

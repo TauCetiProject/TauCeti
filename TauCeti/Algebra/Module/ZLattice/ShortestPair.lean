@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Convex.StrictConvexSpace
 public import TauCeti.Algebra.Module.ZLattice.SuccessiveMinima
 import Mathlib.Algebra.Order.Round
 import Mathlib.Analysis.Convex.Gauge
-import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 import TauCeti.Topology.MetricSpace.DiscreteAddSubgroup
 
 /-!
@@ -19,8 +18,9 @@ Let `L` be a discrete `ℤ`-submodule of a real normed space `E`. A *shortest pa
 (`ZLattice.IsShortestPair L v w`) is a shortest nonzero vector `v` of `L` together with a shortest
 vector `w` of `L` off the line `ℝ ∙ v`. Shortest pairs are not unique: the sign of either vector
 can be changed, and several vectors can tie for either minimum. The ties are all kept, as the set
-`{p | IsShortestPair L p.1 p.2}`, which is finite (`ZLattice.finite_setOf_isShortestPair`) and,
-for a spanning lattice in dimension at least two, nonempty (`ZLattice.exists_isShortestPair`).
+`{p | IsShortestPair L p.1 p.2}`. When `E` is finite-dimensional this set is finite
+(`ZLattice.finite_setOf_isShortestPair`) and, for a spanning lattice in dimension at least two,
+nonempty (`ZLattice.exists_isShortestPair`).
 
 The lengths of a shortest pair are the first two successive minima of `L` for the closed unit
 ball, whichever of the tied pairs is chosen (`ZLattice.IsShortestPair.successiveMin_zero` and
@@ -51,8 +51,9 @@ translation independent of it, and the pair does not depend on how the cusp is n
 
 ## Main results
 
-* `ZLattice.exists_isShortestPair` and `ZLattice.finite_setOf_isShortestPair`: shortest pairs
-  exist, and there are finitely many.
+* `ZLattice.exists_isShortestPair` and `ZLattice.finite_setOf_isShortestPair`: in a
+  finite-dimensional space, shortest pairs of a spanning lattice exist in dimension at least two,
+  and a discrete lattice has finitely many.
 * `ZLattice.IsShortestPair.successiveMin_zero`, `ZLattice.IsShortestPair.successiveMin_one`: the
   lengths of every shortest pair are the first two successive minima for the closed unit ball.
 * `ZLattice.IsShortestPair.span_eq`: in a strictly convex plane, every shortest pair generates
@@ -248,29 +249,6 @@ end IsShortestPair
 
 section Minima
 
-section UnitBall
-
-variable {K : ConvexBody E}
-
-/-- For the closed unit ball and `t ≥ 0`, the dilate `t • K` is the closed ball of radius `t`. -/
-private theorem mem_smul_iff_norm_le (hK : (K : Set E) = closedBall 0 1) {t : ℝ} (ht : 0 ≤ t)
-    {x : E} : x ∈ t • (K : Set E) ↔ ‖x‖ ≤ t := by
-  rw [hK, smul_closedBall t 0 zero_le_one, smul_zero, Real.norm_eq_abs, abs_of_nonneg ht,
-    mul_one, mem_closedBall_zero_iff]
-
-private theorem zero_mem_interior (hK : (K : Set E) = closedBall 0 1) :
-    0 ∈ interior (K : Set E) := by
-  rw [hK]
-  exact mem_interior_iff_mem_nhds.2 (closedBall_mem_nhds 0 one_pos)
-
-/-- The closed unit ball of a finite-dimensional space, as a convex body. -/
-private theorem exists_convexBody_closedBall [FiniteDimensional ℝ E] :
-    ∃ K : ConvexBody E, (K : Set E) = closedBall 0 1 :=
-  ⟨⟨closedBall 0 1, convex_closedBall 0 1, isCompact_closedBall 0 1,
-    nonempty_closedBall.2 zero_le_one⟩, rfl⟩
-
-end UnitBall
-
 variable {L : Submodule ℤ E} {K : ConvexBody E}
 
 /-- **Shortest pairs exist.** A discrete lattice spanning a real normed space of dimension at least
@@ -278,10 +256,10 @@ two has a shortest pair. -/
 theorem exists_isShortestPair (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L]
     (hE : 1 < finrank ℝ E) : ∃ v w, IsShortestPair L v w := by
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by omega)
-  obtain ⟨K, hK⟩ := exists_convexBody_closedBall (E := E)
-  have hK0 := zero_mem_interior hK
-  have hgauge (x : E) : gauge (K : Set E) x = ‖x‖ := by
-    rw [hK, gauge_closedBall zero_le_one, div_one]
+  have hK0 := ConvexBody.zero_mem_interior_of_coe_eq_closedBall
+    (ConvexBody.coe_closedUnitBall (E := E))
+  have hgauge (x : E) : gauge (ConvexBody.closedUnitBall E : Set E) x = ‖x‖ := by
+    rw [ConvexBody.coe_closedUnitBall, gauge_closedBall zero_le_one, div_one]
   -- A shortest vector off the zero subspace, then a shortest vector off its line.
   obtain ⟨v, hvL, hv0, hv⟩ := exists_mem_notMem_forall_gauge_le L hK0 (V := ⊥) (by
     intro h
@@ -322,14 +300,16 @@ theorem IsShortestPair.successiveMin_zero [DiscreteTopology L] [IsZLattice ℝ L
     (h : IsShortestPair L v w) (hK : (K : Set E) = closedBall 0 1) (hE : 0 < finrank ℝ E) :
     successiveMin L K ⟨0, hE⟩ = ‖v‖ := by
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos hE
-  have hK0 := zero_mem_interior hK
+  have hK0 := ConvexBody.zero_mem_interior_of_coe_eq_closedBall hK
+  have hball {t : ℝ} (ht : 0 ≤ t) {x : E} : x ∈ t • (K : Set E) ↔ ‖x‖ ≤ t :=
+    ConvexBody.mem_smul_iff_norm_le_of_coe_eq_closedBall hK ht
   refine le_antisymm ?_ ?_
   · exact (successiveMin_zero_le_iff L hK0 hE (norm_nonneg v)).2
-      ⟨v, h.left_mem, h.left_ne_zero, (mem_smul_iff_norm_le hK (norm_nonneg v)).2 le_rfl⟩
+      ⟨v, h.left_mem, h.left_ne_zero, (hball (norm_nonneg v)).2 le_rfl⟩
   · obtain ⟨x, hxL, hx0, hx⟩ := (successiveMin_zero_le_iff L hK0 hE
       (successiveMin_nonneg L K _)).1 le_rfl
     exact (h.norm_left_le x hxL hx0).trans
-      ((mem_smul_iff_norm_le hK (successiveMin_nonneg L K _)).1 hx)
+      ((hball (successiveMin_nonneg L K _)).1 hx)
 
 /-- **The second vector of a shortest pair has the length of the second successive minimum** for
 the closed unit ball. This holds for every shortest pair, whichever of the tied shortest vectors
@@ -338,14 +318,16 @@ theorem IsShortestPair.successiveMin_one [DiscreteTopology L] [IsZLattice ℝ L]
     (h : IsShortestPair L v w) (hK : (K : Set E) = closedBall 0 1) (hE : 1 < finrank ℝ E) :
     successiveMin L K ⟨1, hE⟩ = ‖w‖ := by
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by omega)
-  have hK0 := zero_mem_interior hK
+  have hK0 := ConvexBody.zero_mem_interior_of_coe_eq_closedBall hK
+  have hball {t : ℝ} (ht : 0 ≤ t) {x : E} : x ∈ t • (K : Set E) ↔ ‖x‖ ≤ t :=
+    ConvexBody.mem_smul_iff_norm_le_of_coe_eq_closedBall hK ht
   have hw := norm_nonneg w
   refine le_antisymm ?_ ?_
   · -- The independent vectors `v` and `w` both have length at most `‖w‖`.
     refine successiveMin_le hw h.linearIndependent (fun j ↦ ?_) fun j ↦ ?_
     · fin_cases j
       exacts [h.left_mem, h.right_mem]
-    · rw [mem_smul_iff_norm_le hK hw]
+    · rw [hball hw]
       fin_cases j
       exacts [h.norm_left_le_norm_right, le_rfl]
   · -- Of two independent lattice vectors attaining the minimum, one lies off the line `ℝ ∙ v`.
@@ -364,7 +346,7 @@ theorem IsShortestPair.successiveMin_one [DiscreteTopology L] [IsZLattice ℝ L]
           zero_smul])
       exact hu.ne_zero 1 (by rw [← hb, hab.1, zero_smul])
     obtain ⟨j, hj⟩ := hoff
-    exact (h.norm_right_le _ (huLK j).1 hj).trans ((mem_smul_iff_norm_le hK hlam).1 (huLK j).2)
+    exact (h.norm_right_le _ (huLK j).1 hj).trans ((hball hlam).1 (huLK j).2)
 
 end Minima
 
