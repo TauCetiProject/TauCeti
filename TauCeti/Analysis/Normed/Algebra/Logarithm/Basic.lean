@@ -69,11 +69,20 @@ variable [CharZero 𝕂] [ContinuousSMul ℚ≥0 𝕂]
 
 /-- The radius of `logSeries` is at least one. -/
 theorem one_le_logSeries_radius : 1 ≤ (logSeries 𝕂 A).radius := by
-  have hc : Tendsto (fun n : ℕ ↦ ‖(-1 : 𝕂) ^ (n.succ + 1) / n.succ‖ / ‖(-1 : 𝕂) ^ (n + 1) / n‖)
-      atTop (𝓝 ((1 : ℝ≥0) : ℝ)) := by
-    simpa [div_eq_mul_inv, mul_comm] using (tendsto_natCast_div_add_atTop (1 : 𝕂)).norm
-  simpa [logSeries_eq_ofScalars] using
-    FormalMultilinearSeries.inv_le_ofScalars_radius_of_tendsto A _ one_ne_zero hc
+  let c : ℕ → 𝕂 := fun n ↦ (-1 : 𝕂) ^ (n + 1) / n
+  -- The ratio of consecutive coefficient norms is `‖n / (n + 1)‖`. For `n = 0` both sides are
+  -- zero, since `c 0 = (-1) / 0 = 0` by the division-by-zero convention.
+  have hratio (n : ℕ) : ‖c (n + 1)‖ / ‖c n‖ = ‖(n : 𝕂) / (n + 1)‖ := by
+    rcases eq_or_ne n 0 with rfl | hn
+    · simp [c]
+    · have hn𝕂 : (n : 𝕂) ≠ 0 := Nat.cast_ne_zero.mpr hn
+      simp only [c, norm_div, norm_pow, norm_neg, norm_one, one_pow, Nat.cast_add_one]
+      field_simp
+  have hc : Tendsto (fun n ↦ ‖c (n + 1)‖ / ‖c n‖) atTop (𝓝 ((1 : ℝ≥0) : ℝ)) := by
+    simpa only [hratio, norm_one, NNReal.coe_one] using
+      (tendsto_natCast_div_add_atTop (1 : 𝕂)).norm
+  simpa [logSeries_eq_ofScalars, c] using
+    FormalMultilinearSeries.inv_le_ofScalars_radius_of_tendsto A c one_ne_zero hc
 
 variable [CompleteSpace A]
 
