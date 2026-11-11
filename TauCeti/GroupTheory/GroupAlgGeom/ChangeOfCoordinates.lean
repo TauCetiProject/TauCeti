@@ -19,6 +19,11 @@ the solutions of a system `S` and those of its image `φ S`.
 
 The construction is the invertible case of the word-map correspondence of Baumslag, Myasnikov
 and Remeslennikov, *Algebraic geometry over groups I*, §3.5.
+
+A `G`-homomorphism `σ : G[X'] → G[X]` extends by the identity on further variables `Y` to
+`sumExtend Y σ : G[X' ⊔ Y] → G[X ⊔ Y]`. The extension is functorial, bijective when `σ` is, and acts
+on points by the word map of `σ` on the coordinates in `X`, leaving those in `Y` unchanged; so
+systems in the variables `X ⊔ Y` can be transported along a change of coordinates of `X`.
 -/
 
 public section
@@ -146,6 +151,14 @@ theorem equivOfCoordinateChange_symm_coeff (S : Set (GX G X)) (g : G) :
   apply (equivOfCoordinateChange ι σ hσ S).injective
   simp
 
+/-- The coordinate-group isomorphism sends the generic point of the transformed system to the
+image of the generic point of the system under the word map of `σ`. -/
+theorem equivOfCoordinateChange_comp_genericPoint (S : Set (GX G X)) :
+    ⇑(equivOfCoordinateChange ι σ hσ S) ∘ genericPoint ι (σ ⁻¹' S) =
+      wordMap (coeff ι S) (fun y => σ (inr (FreeGroup.of y))) (genericPoint ι S) := by
+  funext y
+  simp [genericPoint_apply]
+
 end CoordGroup
 
 end CoordinateChange
@@ -185,6 +198,107 @@ theorem mem_V_image_mulEquiv_iff (S : Set (GX G X)) (v : Y → H) :
   simpa using (Set.ext_iff.1 (preimage_wordMap_V_eq_V_image ι (GHom.ofMulEquiv φ hφ) S) v).symm
 
 end MulEquiv
+
+/-! ### Extending a change of coordinates by further variables -/
+
+section SumExtend
+
+variable {X' : Type*}
+
+variable (Y) in
+/-- The extension of a `G`-homomorphism `σ : G[X'] → G[X]` to a `G`-homomorphism
+`G[X' ⊔ Y] → G[X ⊔ Y]` that is the identity on the further variables `Y`. -/
+def sumExtend (σ : GHom (inl : G →* GX G X') (inl : G →* GX G X)) :
+    GHom (inl : G →* GX G (X' ⊕ Y)) (inl : G →* GX G (X ⊕ Y)) :=
+  evalGHom inl (Sum.elim
+    (fun x' => Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inl) (σ (inr (FreeGroup.of x'))))
+    fun y => inr (FreeGroup.of (Sum.inr y)))
+
+variable (σ : GHom (inl : G →* GX G X') (inl : G →* GX G X))
+
+/-- The extension of `σ` sends a variable `x'` to `σ x'`, read in `G[X ⊔ Y]`. -/
+@[simp]
+theorem sumExtend_inr_of_inl (x' : X') : sumExtend Y σ (inr (FreeGroup.of (Sum.inl x'))) =
+    Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inl) (σ (inr (FreeGroup.of x'))) := by
+  simp [sumExtend]
+
+/-- The extension of `σ` fixes the further variables `Y`. -/
+@[simp]
+theorem sumExtend_inr_of_inr (y : Y) : sumExtend Y σ (inr (FreeGroup.of (Sum.inr y))) =
+    inr (FreeGroup.of (Sum.inr y)) := by
+  simp [sumExtend]
+
+/-- The extension of `σ` restricts to `σ` on the words in the variables `X'`. -/
+@[simp]
+theorem sumExtend_map_inl (w : GX G X') :
+    sumExtend Y σ (Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inl) w) =
+      Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inl) (σ w) := by
+  have h : (sumExtend Y σ : GX G (X' ⊕ Y) →* GX G (X ⊕ Y)).comp
+      (Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inl)) =
+      (Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inl)).comp (σ : GX G X' →* GX G X) :=
+    hom_ext (MonoidHom.ext fun g => by simp) (FreeGroup.ext_hom _ _ fun x' => by simp)
+  exact DFunLike.congr_fun h w
+
+variable (Y X) in
+/-- The extension of the identity is the identity. -/
+@[simp]
+theorem sumExtend_id : sumExtend Y (GHom.id (inl : G →* GX G X)) =
+    GHom.id (inl : G →* GX G (X ⊕ Y)) :=
+  GX.gHom_ext _ fun u => by cases u <;> simp
+
+/-- The extension of a composite is the composite of the extensions. -/
+theorem sumExtend_comp {X'' : Type*} (τ : GHom (inl : G →* GX G X'') (inl : G →* GX G X')) :
+    sumExtend Y (σ.comp τ) = (sumExtend Y σ).comp (sumExtend Y τ) :=
+  GX.gHom_ext _ fun u => by cases u <;> simp
+
+variable {σ}
+
+/-- The extension of a surjective `G`-homomorphism by the identity on further variables is
+surjective. -/
+theorem sumExtend_surjective (hσ : Function.Surjective σ) :
+    Function.Surjective (sumExtend Y σ) := by
+  -- A section of `σ`, defined on the variables of the free `G`-group `G[X]`.
+  let τ := evalGHom (inl : G →* GX G X') fun x => Function.surjInv hσ (inr (FreeGroup.of x))
+  have hτ : σ.comp τ = GHom.id _ := GX.gHom_ext _ fun x => by
+    simp [τ, Function.surjInv_eq hσ]
+  exact fun u =>
+    ⟨sumExtend Y τ u, by simpa [hτ] using (DFunLike.congr_fun (sumExtend_comp σ τ) u).symm⟩
+
+/-- The extension of a change of coordinates by the identity on further variables is a change of
+coordinates. -/
+theorem sumExtend_bijective (hσ : Function.Bijective σ) : Function.Bijective (sumExtend Y σ) := by
+  refine ⟨Function.LeftInverse.injective (g := sumExtend Y (σ.symmOfBijective hσ)) fun u => ?_,
+    sumExtend_surjective hσ.2⟩
+  simpa using (DFunLike.congr_fun (sumExtend_comp (σ.symmOfBijective hσ) σ) u).symm
+
+variable (σ) in
+/-- The extension of `σ` acts on points by the word map of `σ` on the coordinates in `X` and
+leaves the coordinates in `Y` unchanged. -/
+theorem wordMap_sumExtend (v : X → H) (w : Y → H) :
+    wordMap ι (fun u => sumExtend Y σ (inr (FreeGroup.of u))) (Sum.elim v w) =
+      Sum.elim (wordMap ι (fun x' => σ (inr (FreeGroup.of x'))) v) w := by
+  funext u
+  cases u <;> simp
+
+variable (σ) in
+/-- Evaluating the image of a word under the extension of `σ` at `(v, w)` is evaluating the word
+at the transformed point. -/
+theorem eval_sumExtend (v : X → H) (w : Y → H) (u : GX G (X' ⊕ Y)) :
+    eval ι (Sum.elim v w) (sumExtend Y σ u) =
+      eval ι (Sum.elim (wordMap ι (fun x' => σ (inr (FreeGroup.of x'))) v) w) u := by
+  rw [← wordMap_sumExtend, eval_wordMap]
+  simp
+
+/-- For a surjective `σ`, a point `(v', w)` with `v'` the image of `v` under the word map of `σ`
+solves the transformed system `sumExtend Y σ ⁻¹' T` exactly when `(v, w)` solves `T`. -/
+theorem sumElim_wordMap_mem_V_preimage_iff (hσ : Function.Surjective σ) {T : Set (GX G (X ⊕ Y))}
+    {v : X → H} {w : Y → H} :
+    Sum.elim (wordMap ι (fun x' => σ (inr (FreeGroup.of x'))) v) w ∈
+        V ι (sumExtend Y σ ⁻¹' T) ↔ Sum.elim v w ∈ V ι T := by
+  rw [← wordMap_sumExtend]
+  exact wordMap_mem_V_iff ι (sumExtend Y σ) (sumExtend_surjective hσ) T _
+
+end SumExtend
 
 end GroupAlgGeom
 end TauCeti
