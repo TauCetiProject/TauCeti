@@ -107,9 +107,7 @@ pullback of `L^{⊗n}` is isomorphic to `(f^* L)^{⊗n}`. -/
 theorem nonempty_pullback_tensorPow_iso (f : X ⟶ Y) (L : InvertibleSheaf Y) (n : ℕ) :
     Nonempty (((pullback f).obj (L.tensorPow n)).obj ≅ (((pullback f).obj L).tensorPow n).obj) := by
   rw [← LineBundleClass.mk_eq_mk_iff, ← LineBundleClass.pullback_mk]
-  simpa only [LineBundleClass.pullbackHom_apply, LineBundleClass.mk_tensorPow,
-    LineBundleClass.pullback_mk] using map_pow (LineBundleClass.pullbackHom f)
-      (LineBundleClass.mk L) n
+  simp
 
 end InvertibleSheaf
 
