@@ -13,6 +13,7 @@ import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import Mathlib.Analysis.Fourier.Inversion
+import TauCeti.Analysis.Fourier.ChangeOfVariables
 
 /-!
 # The kernel of the Kohn–Nirenberg quantization
@@ -89,12 +90,6 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
   {V W : Type*} [NormedAddCommGroup V] [NormedAddCommGroup W]
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The phase `exp(2πi ⟪ζ, y - z⟫)` splits as `exp(2πi ⟪ζ, y⟫) exp(-2πi ⟪ζ, z⟫)`. -/
-private theorem fourierChar_inner_sub (ζ y z : E) :
-    (𝐞 ⟪ζ, y - z⟫ : ℂ) = 𝐞 ⟪ζ, y⟫ * 𝐞 (-⟪ζ, z⟫) := by
-  rw [inner_sub_right, sub_eq_add_neg, AddChar.map_add_eq_mul, Circle.coe_mul]
 
 section NormedSpace
 
@@ -554,8 +549,7 @@ theorem integral_quantizationKernel_comp_adjoint {a b : E × E → V →L[ℂ] W
     simpa only [inner_neg_right, neg_neg] using (Real.fourierIntegral_convergent_iff (-w)).2 hg
   have hb' : Integrable fun ζ ↦ b (z, (2 * π) • ζ) := hb.comp_smul two_pi_pos.ne'
   have hB : Integrable B :=
-    hb'.norm.mono' ((LinearIsometryEquiv.continuous _).comp_aestronglyMeasurable
-      hb'.aestronglyMeasurable) (.of_forall fun ζ ↦ by simp [B])
+    (LinearIsometryEquiv.integrable_comp_iff (adjoint : (V →L[ℂ] W) ≃ₗᵢ⋆[ℂ] (W →L[ℂ] V))).2 hb'
   -- The adjoint of the kernel of `b` is an integral of adjoints.
   have hadj (y : E) :
       adjoint (quantizationKernel b z y) = ∫ ζ, 𝐞 ⟪ζ, y - z⟫ • B ζ := by

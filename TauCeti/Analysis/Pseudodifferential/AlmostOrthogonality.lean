@@ -217,10 +217,11 @@ theorem IsUniform.exists_norm_quantizeLittlewoodPaleyPiece_le {a : Symbol n V W 
     (by simpa only [coefficient_smoothingPiece] using hA)
     (by simpa only [coefficient_smoothingPiece] using hR)).trans_eq ?_
   have htn : t ^ n * t⁻¹ ^ n = 1 := by rw [← mul_pow, mul_inv_cancel₀ ht.ne', one_pow]
-  rw [Real.rpow_add ht, Real.rpow_natCast]
+  have htm : t ^ (m + n) * t⁻¹ ^ n = t ^ m := by
+    rw [Real.rpow_add ht, Real.rpow_natCast, mul_assoc, htn, mul_one]
+  rw [← htm]
   simp only [D]
-  linear_combination (2 ^ (n + 1) * (1 + √n ^ (n + 1)) * ((2 * π) ^ n)⁻¹ *
-    (∫ w : CoordinateSpace n, ((1 + ‖w‖) ^ (n + 1))⁻¹) * C * t ^ m) * htn
+  ring
 
 end NormedSpace
 
