@@ -5,7 +5,7 @@ Authors: Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Order.CompleteLattice.Mutation
+public import TauCeti.Algebra.Cluster.UpperBound.Lattice
 public import Mathlib.Algebra.Ring.Subring.Basic
 
 /-!
