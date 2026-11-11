@@ -60,6 +60,19 @@ theorem residueFieldEquivCompletion_algebraMap
     algebraMap_completionIntegersExtensionAlgebra,
     completionIntegersExtension_completionIntegersEmbedding]
 
+/-- The residue embeddings commute with the canonical completion isomorphisms,
+expressed as an equality of ring homomorphisms. -/
+theorem algebraMap_comp_residueFieldEquivCompletion :
+    letI := (P'.restrict k F).completionIntegersExtensionAlgebra P' rfl
+    (algebraMap (P'.restrict k F).completionPlace.ResidueField
+      P'.completionPlace.ResidueField).comp
+        (P'.restrict k F).residueFieldEquivCompletion.toRingHom =
+      P'.residueFieldEquivCompletion.toRingHom.comp
+        (algebraMap (P'.restrict k F).ResidueField P'.ResidueField) := by
+  let := (P'.restrict k F).completionIntegersExtensionAlgebra P' rfl
+  exact RingHom.ext fun x ↦
+    (P'.residueFieldEquivCompletion_algebraMap (k := k) (F := F) x).symm
+
 /-- Completion preserves the full relative residue degree, including its inseparable
 factor. The completed residue-field algebra is induced by the canonical local map
 of completed valuation rings. -/
@@ -73,8 +86,7 @@ theorem finrank_residueField_completion :
   exact (Algebra.finrank_eq_of_equiv_equiv
     (P'.restrict k F).residueFieldEquivCompletion.toRingEquiv
     P'.residueFieldEquivCompletion.toRingEquiv
-    (RingHom.ext fun x ↦
-      (P'.residueFieldEquivCompletion_algebraMap (k := k) (F := F) x).symm)).symm
+    (P'.algebraMap_comp_residueFieldEquivCompletion (k := k) (F := F))).symm
 
 /-- Completion preserves, rather than repairs, separability of the residue extension.
 In particular, an inseparable residue extension remains inseparable after completion. -/
@@ -88,7 +100,6 @@ theorem isSeparable_residueField_completion_iff :
   exact (Algebra.IsSeparable.iff_of_equiv_equiv
     (P'.restrict k F).residueFieldEquivCompletion.toRingEquiv
     P'.residueFieldEquivCompletion.toRingEquiv
-    (RingHom.ext fun x ↦
-      (P'.residueFieldEquivCompletion_algebraMap (k := k) (F := F) x).symm)).symm
+    (P'.algebraMap_comp_residueFieldEquivCompletion (k := k) (F := F))).symm
 
 end TauCeti.Place
