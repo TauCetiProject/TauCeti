@@ -200,7 +200,9 @@ theorem summable_prime_log_div_sq :
         exact_mod_cast (mem_filter.mp hp).2.two_le) using 1
     norm_num
 
-private theorem summable_prime_log_div_sq_of_pred (P : ℕ → Prop) [DecidablePred P] :
+/-- The series with terms `log p / p²` over primes satisfying a decidable predicate `P`
+is summable. -/
+theorem summable_prime_log_div_sq_of_pred (P : ℕ → Prop) [DecidablePred P] :
     Summable (fun n : ℕ ↦ if n.Prime ∧ P n then Real.log n / (n : ℝ) ^ 2 else 0) := by
   refine (summable_prime_log_div_sq.indicator {n : ℕ | P n}).congr fun n ↦ ?_
   simp only [Set.indicator_apply, Set.mem_ofPred_eq]
