@@ -310,28 +310,23 @@ include h
 
 /-- The action preserves the real points of a real structure: that is exactly the commutation
 `K (ρ g v) = ρ g (K v)` read on a fixed vector.  It is stated for the `ℝ`-linear restriction
-`(ρ g).restrictScalars ℝ` of the action, which is the shape `Representation.subrepresentation`
+`ρ.restrictScalars ℝ` of the action, which is the shape `Representation.subrepresentation`
 consumes in `Representation.IsRealStructure.rep`. -/
 theorem apply_mem_realPoints (g : G) :
-    ∀ v ∈ realPoints K, ((ρ g).restrictScalars ℝ) v ∈ realPoints K := by
+    ∀ v ∈ realPoints K, ρ.restrictScalars ℝ g v ∈ realPoints K := by
   intro v hv
   rw [mem_realPoints] at hv
-  rw [LinearMap.coe_restrictScalars, mem_realPoints, h.isIntertwining, hv]
+  rw [restrictScalars_apply, mem_realPoints, h.isIntertwining, hv]
 
 /-- **The real representation carried by the real points** of a real structure: reading `ρ` with
-only its `ℝ`-linearity, the real points are an invariant subspace, and
-`Representation.subrepresentation` restricts the action to them. -/
+only its `ℝ`-linearity (`Representation.restrictScalars`), the real points are an invariant
+subspace, and `Representation.subrepresentation` restricts the action to them. -/
 def rep : Representation ℝ G (realPoints K) :=
-  Representation.subrepresentation
-    { toFun := fun g => (ρ g).restrictScalars ℝ
-      map_one' := LinearMap.ext fun _ => by simp
-      map_mul' := fun _ _ => LinearMap.ext fun _ => by simp }
-    (realPoints K) h.apply_mem_realPoints
+  (ρ.restrictScalars ℝ).subrepresentation (realPoints K) h.apply_mem_realPoints
 
--- `(rfl)`, not `rfl`: the body of `rep` is not `@[expose]`d, so a bare `rfl` proof would be
--- rechecked against the exported environment, where the restriction is opaque.
 @[simp]
-theorem coe_rep_apply (g : G) (w : realPoints K) : (h.rep g w : V) = ρ g (w : V) := (rfl)
+theorem coe_rep_apply (g : G) (w : realPoints K) : (h.rep g w : V) = ρ g (w : V) := by
+  rw [rep, subrepresentation_apply, LinearMap.coe_restrict_apply, restrictScalars_apply]
 
 /-- **The real points of a real structure are a real form.**  The `ℂ`-linear isomorphism is
 `TauCeti.realPointsEquiv`, which says that `V` is the complexification of the real points, and it
