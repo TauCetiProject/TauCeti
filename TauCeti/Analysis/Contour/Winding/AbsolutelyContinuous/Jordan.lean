@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.UnboundedComponent
 public import TauCeti.Analysis.Normed.Module.FilledHull
+public import TauCeti.Topology.JordanCurve.Basic
 public import TauCeti.Topology.MetricSpace.Arclength.SimpleClosed
 import Mathlib.Analysis.Normed.Affine.AddTorsor
 import TauCeti.Analysis.Complex.PlaneSeparation.Inside
@@ -218,8 +219,10 @@ theorem jordanSign_same (γ : ℝ → ℂ) (a : ℝ) : jordanSign γ a a = 0 :=
 theorem jordanSign_const (c : ℂ) (a b : ℝ) : jordanSign (fun _ ↦ c) a b = 0 :=
   jordanSign_eq_zero_of_windingNumber_eq_zero (windingNumber_const c a b)
 
-private theorem isJordanCurve_uIcc {γ : ℝ → ℂ} {a b : ℝ} (hab : a < b)
-    (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
+/-- The trace of a simple closed absolutely continuous curve on `[a, b]` (`a < b`, `γ a = γ b`,
+`InjOn γ (Ico a b)`) is a Jordan curve. -/
+theorem _root_.AbsolutelyContinuousOnInterval.isJordanCurve_image_uIcc {γ : ℝ → ℂ} {a b : ℝ}
+    (hab : a < b) (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
     (hinj : InjOn γ (Ico a b)) : TauCeti.IsJordanCurve (γ '' uIcc a b) := by
   rw [uIcc_of_le hab.le]
   exact TauCeti.isJordanCurve_image_Icc hab (uIcc_of_le hab.le ▸ hγ.continuousOn) hclosed hinj
@@ -237,7 +240,7 @@ private theorem winding_dichotomy_of_points
     ((∀ z ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b), windingNumber γ a b z = -1) ∧
       q ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b) ∧ p ∉ filledHull (γ '' uIcc a b)) := by
   set C := γ '' uIcc a b
-  have hC : TauCeti.IsJordanCurve C := isJordanCurve_uIcc hab hγ hclosed hinj
+  have hC : TauCeti.IsJordanCurve C := hγ.isJordanCurve_image_uIcc hab hclosed hinj
   have hzero_out : ∀ {w : ℂ}, w ∉ filledHull C → windingNumber γ a b w = 0 :=
     hγ.windingNumber_eq_zero_of_notMem_filledHull hclosed
   by_cases hposF : p ∈ filledHull C
@@ -284,7 +287,7 @@ private theorem simple_closed_normal_dichotomy
         γ t₀ - h • (I * v) ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b) ∧
           γ t₀ + h • (I * v) ∉ filledHull (γ '' uIcc a b)) := by
   set C := γ '' uIcc a b
-  have hC : TauCeti.IsJordanCurve C := isJordanCurve_uIcc hab hγ hclosed hinj
+  have hC : TauCeti.IsJordanCurve C := hγ.isJordanCurve_image_uIcc hab hclosed hinj
   have hjump := hγ.eventually_windingNumber_add_I_mul_eq_add_one hab hclosed hinj ht₀ hd hv
   have hpointwise := fun {h : ℝ} (hh : γ t₀ + h • (I * v) ∉ γ '' uIcc a b ∧
       γ t₀ - h • (I * v) ∉ γ '' uIcc a b ∧
@@ -400,7 +403,7 @@ theorem jordanSign_eq_one_or_neg_one
       fun heq ↦ (by linarith : a ≠ (a + b) / 2)
         (hinj ⟨le_rfl, hab⟩ ⟨by linarith, by linarith⟩ heq)⟩
   obtain ⟨t₀, ht₀, v, hv, hd⟩ := hγ.exists_mem_Ioo_hasDerivAt_ne_zero hnonconst
-  have hC := isJordanCurve_uIcc hab hγ hclosed hinj
+  have hC := hγ.isJordanCurve_image_uIcc hab hclosed hinj
   rcases simple_closed_normal_dichotomy hab hγ hclosed hinj ht₀ hd hv with
     ⟨hall1, -⟩ | ⟨halln1, -⟩
   · exact Or.inl (jordanSign_of_windingNumber_eq_one hC.nonempty_filledHull_sdiff hall1)
@@ -449,7 +452,7 @@ theorem eventually_mem_filledHull_sdiff_and_notMem_of_hasDerivAt
       γ t₀ + h • ((jordanSign γ a b : ℝ) • (I * v)) ∈
         filledHull (γ '' uIcc a b) \ (γ '' uIcc a b) ∧
       γ t₀ - h • ((jordanSign γ a b : ℝ) • (I * v)) ∉ filledHull (γ '' uIcc a b) := by
-  have hC := isJordanCurve_uIcc hab hγ hclosed hinj
+  have hC := hγ.isJordanCurve_image_uIcc hab hclosed hinj
   rcases simple_closed_normal_dichotomy hab hγ hclosed hinj ht₀ hd hv with
     ⟨hall1, hev⟩ | ⟨halln1, hev⟩
   · rw [jordanSign_of_windingNumber_eq_one hC.nonempty_filledHull_sdiff hall1]

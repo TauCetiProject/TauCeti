@@ -444,6 +444,16 @@ end Helpers
 
 end TauCeti.Contour
 
+/-- A closed curve injective on `[a, b)` visits the value at an interior parameter `t₀ ∈ (a, b)`
+nowhere else on `[a, b]`: the endpoint `b` carries the value of `a`, which differs from `γ t₀`. -/
+theorem Set.InjOn.eq_of_mem_Icc_of_mem_Ioo {α : Type*} {γ : ℝ → α} {a b t₀ t : ℝ}
+    (hinj : InjOn γ (Ico a b)) (hclosed : γ a = γ b) (ht₀ : t₀ ∈ Ioo a b) (ht : t ∈ Icc a b)
+    (heq : γ t = γ t₀) : t = t₀ := by
+  rcases ht.2.eq_or_lt with rfl | htb
+  · exact absurd (hinj ⟨le_rfl, ht₀.1.trans ht₀.2⟩ (Ioo_subset_Ico_self ht₀) (hclosed.trans heq))
+      ht₀.1.ne
+  · exact hinj ⟨ht.1, htb⟩ (Ioo_subset_Ico_self ht₀) heq
+
 open TauCeti.Contour
 
 namespace AbsolutelyContinuousOnInterval
@@ -549,12 +559,8 @@ theorem eventually_windingNumber_add_I_mul_eq_add_one
       γ t₀ + h • (I * v) ∉ γ '' uIcc a b ∧
       γ t₀ - h • (I * v) ∉ γ '' uIcc a b ∧
       windingNumber γ a b (γ t₀ + h • (I * v)) =
-        windingNumber γ a b (γ t₀ - h • (I * v)) + 1 := by
-  refine hγ.eventually_windingNumber_add_I_mul_eq_add_one_of_forall_eq hab hclosed ht₀ hd hv ?_
-  intro t ht heq
-  rcases ht.2.eq_or_lt with htb | hlt
-  · rw [htb, ← hclosed] at heq
-    exact absurd (hinj ⟨le_rfl, hab⟩ ⟨ht₀.1.le, ht₀.2⟩ heq) ht₀.1.ne
-  · exact hinj ⟨ht.1, hlt⟩ ⟨ht₀.1.le, ht₀.2⟩ heq
+        windingNumber γ a b (γ t₀ - h • (I * v)) + 1 :=
+  hγ.eventually_windingNumber_add_I_mul_eq_add_one_of_forall_eq hab hclosed ht₀ hd hv
+    fun _ ht heq ↦ hinj.eq_of_mem_Icc_of_mem_Ioo hclosed ht₀ ht heq
 
 end AbsolutelyContinuousOnInterval
