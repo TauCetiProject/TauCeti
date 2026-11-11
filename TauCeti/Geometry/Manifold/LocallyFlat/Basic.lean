@@ -67,6 +67,8 @@ locally flat embedded discs are the objects used to define topological sliceness
 
 * `TauCeti.isSliceChart_iff`: a chart is a slice chart iff, on its source, membership in the set is
   read off as membership of the coordinates in the slice.
+* `TauCeti.IsSliceChart.exists_mem_nhds_disjoint`: a point of the source of a slice chart for a
+  closed slice, outside the flattened set, has a neighbourhood missing the set.
 * `TauCeti.IsSliceChart.exists_target_eq`: a slice chart can be shrunk to have any prescribed open
   subset of its target as its target.
 * `TauCeti.isLocallyFlat_iff_isSliceEmbedding`, `TauCeti.isLocallyFlat_iff` and
@@ -208,6 +210,15 @@ coordinates in the model slice. This is the pointwise form of `TauCeti.isSliceCh
 shape proofs use it, as an elimination rule at a single point. -/
 theorem mem_iff (h : IsSliceChart φ S A) {y : M} (hy : y ∈ φ.source) : y ∈ A ↔ φ y ∈ S :=
   isSliceChart_iff.1 h y hy
+
+/-- A point of the source of a slice chart that lies outside the flattened set has a neighbourhood
+missing the set: the neighbourhood is where the chart misses the closed model slice. -/
+theorem exists_mem_nhds_disjoint (h : IsSliceChart φ S A) (hS : IsClosed S) {y : M}
+    (hy : y ∈ φ.source) (hyA : y ∉ A) : ∃ U ∈ 𝓝 y, Disjoint U A := by
+  have hU : IsOpen (φ.source ∩ φ ⁻¹' Sᶜ) :=
+    φ.continuousOn.isOpen_inter_preimage φ.open_source hS.isOpen_compl
+  have hyU : y ∈ φ.source ∩ φ ⁻¹' Sᶜ := ⟨hy, fun hyS => hyA ((h.mem_iff hy).2 hyS)⟩
+  exact ⟨_, hU.mem_nhds hyU, Set.disjoint_left.2 fun z hz hzA => hz.2 ((h.mem_iff hz.1).1 hzA)⟩
 
 section ZeroSlice
 

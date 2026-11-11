@@ -563,15 +563,9 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_image_realChart
       (differentiableAt_perturbation_domain hH hHs _ _ Complex.I) (htgt w 1) (htgt w _), hds,
       hdt]
   -- Change variables to the end coordinates, in each of the three integrals.
-  have harea := ω.integral_floerEnergyDensity_image (Ks := fun _ _ ↦ 0) (Kt := fun _ _ ↦ 0)
-    hmeas hinj (fun w _ ↦ hφd w) (fun w _ ↦ hdet w) (fun w _ ↦ hud w)
-    (fun _ _ ↦ mdifferentiableAt_const) (fun _ _ ↦ mdifferentiableAt_const)
-  have h₀ (v : ℝ × ℝ) : perturbationPullback φ (fun (_ : ℝ × ℝ) (_ : M) ↦ (0 : ℝ))
-      (fun _ _ ↦ 0) v = fun _ _ ↦ 0 := by
-    funext w x
-    simp [perturbationPullback_apply]
-  simp only [h₀, floerEnergyDensity_zero] at harea
-  rw [harea, ω.integral_floerEnergyDensity_image hmeas hinj (fun w _ ↦ hφd w)
+  rw [ω.integral_eval₂_mfderiv_stdComplexLine_image hmeas hinj (fun w _ ↦ hφd w)
+      (fun w _ ↦ hdet w) (fun w _ ↦ hud w),
+    ω.integral_floerEnergyDensity_image hmeas hinj (fun w _ ↦ hφd w)
       (fun w _ ↦ hdet w) (fun w _ ↦ hud w) (fun w _ ↦ htgt w 1) (fun w _ ↦ htgt w _),
     ω.integral_hamiltonianCurvature_image hmeas hinj (fun w _ ↦ hφ.contDiffAt)
       (fun w _ ↦ hdet w)

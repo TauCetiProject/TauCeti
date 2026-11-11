@@ -95,6 +95,25 @@ theorem f4_not_root_eq_add_nsmul_of_length_eq_of_two_le (α β γ : Fin 48) (n :
         rcases f4Length_eq_one_or_eq_two γ with hγ | hγ <;>
         omega) hneg hn h
 
+/-- **Endpoints of a double step.** If `γ = β + 2 α` as roots and `β` is not opposite to `α`, then
+`α` is short and `β` is long. -/
+theorem f4Length_eq_one_and_eq_two_of_root_eq_add_two_zsmul (α β γ : Fin 48)
+    (hneg : f4SimplyConnectedRootDatum.root β ≠ -f4SimplyConnectedRootDatum.root α)
+    (h : f4SimplyConnectedRootDatum.root γ =
+      f4SimplyConnectedRootDatum.root β + (2 : ℤ) • f4SimplyConnectedRootDatum.root α) :
+    f4Length α = 1 ∧ f4Length β = 2 := by
+  have hlen := f4Length_of_root_eq_add_zsmul α β γ 2 h
+  have hcomm := f4Length_mul_pairing_comm α β
+  have hbound := abs_pairing_f4SimplyConnectedRootDatum_le_two α β
+  rcases f4Length_eq_one_or_eq_two α with hα | hα <;>
+    rcases f4Length_eq_one_or_eq_two β with hβ | hβ <;>
+    rcases f4Length_eq_one_or_eq_two γ with hγ | hγ
+  all_goals first
+    | exact ⟨hα, hβ⟩
+    | exact (f4_not_root_eq_add_nsmul_of_length_eq_of_two_le α β γ 2 (hα.trans hβ.symm) hneg
+        le_rfl (by simpa using h)).elim
+    | (rw [hα, hβ, hγ] at hlen; rw [hα, hβ] at hcomm; rw [abs_le] at hbound; omega)
+
 /-- When the sum of two short F4 roots is long, their Cartan pairing is zero. -/
 theorem f4_pairing_eq_zero_of_short_add_short_eq_long (α β γ : Fin 48)
     (hα : f4Length α = 1) (hβ : f4Length β = 1) (hγ : f4Length γ = 2)
@@ -168,7 +187,7 @@ theorem f4_chainBotCoeff_eq_zero_of_add_of_length_eq (α β γ : Fin 48)
   f4SimplyConnectedRootDatum.chainBotCoeff_eq_zero_of_add_of_length_eq f4Length
     f4Length_mul_pairing_comm α β γ (f4Length_pos α)
     (fun δ _ => by rcases f4Length_eq_one_or_eq_two δ with hδ | hδ <;> omega)
-    (f4Length_pos β) hβγ h
+    hβγ h
 
 /-- The sum of two long roots, when it is a root, is long. -/
 theorem f4Length_eq_two_of_root_eq_add_of_long_long (α β γ : Fin 48)
