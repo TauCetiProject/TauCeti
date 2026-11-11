@@ -130,8 +130,7 @@ theorem closure_sup_torsion_eq_top (hmin : minpoly ℤ θ = X ^ 2 - 2)
   obtain ⟨w, hw, hwu⟩ := exists_isReal_and_apply_eq_one_add_sqrt_two hmin hgen
   rw [← hu] at hwu
   have h1 : 1 < w u := by rw [hwu]; exact lt_add_of_pos_right 1 (by positivity)
-  refine UnitCandidateEliminationCertificate.sound ?_ (units_rank_eq_one hmin hgen)
-    (finrank_eq_two hmin hgen ▸ Nat.prime_two) hw h1
+  refine UnitCandidateEliminationCertificate.sound ?_ (units_rank_eq_one hmin hgen) hw h1
   rw [hwu]
   exact unitCandidateEliminationCertificate_one_add_sqrt_two hmin hgen
 
