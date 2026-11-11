@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Polynomial.Wronskian
+import TauCeti.Algebra.Polynomial.Derivative
 
 /-!
 # Further properties of the Wronskian of two polynomials
@@ -62,16 +63,9 @@ coefficients `deg b` and `deg a` times `leadingCoeff a · leadingCoeff b`. For e
 theorem coeff_wronskian_natDegree_add_natDegree_sub_one (a b : R[X]) :
     (wronskian a b).coeff (a.natDegree + b.natDegree - 1) =
       ((b.natDegree : R) - a.natDegree) * (a.leadingCoeff * b.leadingCoeff) := by
-  -- The coefficient of `p q'` in degree `deg p + deg q - 1` is `deg q · lc p · lc q`.
-  have key (p q : R[X]) : (p * derivative q).coeff (p.natDegree + q.natDegree - 1) =
-      q.natDegree * (p.leadingCoeff * q.leadingCoeff) := by
-    rcases hq : q.natDegree with _ | n
-    · simp [derivative_of_natDegree_zero hq]
-    · rw [Nat.add_succ_sub_one, coeff_mul_add_eq_of_natDegree_le le_rfl
-        ((natDegree_derivative_le q).trans_eq (by omega)), coeff_derivative]
-      simp only [leadingCoeff, hq, Nat.cast_add_one]
-      ring
-  rw [wronskian, coeff_sub, key, mul_comm (derivative a), add_comm a.natDegree, key]
+  rw [wronskian, coeff_sub, coeff_mul_derivative_natDegree_add_natDegree_sub_one,
+    mul_comm (derivative a), add_comm a.natDegree,
+    coeff_mul_derivative_natDegree_add_natDegree_sub_one]
   ring
 
 end Polynomial
