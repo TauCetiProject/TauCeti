@@ -85,11 +85,17 @@ theorem exists_eventually_strictMono_range_eq {B Y ι : Type*} [TopologicalSpace
 order, no two of which take the same value at any point, can be listed as `θ₀, θ₁, …, θₖ₋₁`
 with `θ₀ x < θ₁ x < ⋯ < θₖ₋₁ x` at every point `x`. -/
 theorem exists_strictMono_range_eq {B Y : Type*} [TopologicalSpace B] [PreconnectedSpace B]
-    [Nonempty B] [LinearOrder Y] [TopologicalSpace Y] [OrderClosedTopology Y] {G : Set (B → Y)}
+    [LinearOrder Y] [TopologicalSpace Y] [OrderClosedTopology Y] {G : Set (B → Y)}
     (hG : G.Finite) (hc : ∀ g ∈ G, Continuous g) (hne : G.Pairwise fun f g ↦ ∀ x, f x ≠ g x) :
     ∃ k, ∃ θ : Fin k → B → Y, range θ = G ∧ ∀ x, StrictMono fun i ↦ θ i x := by
   classical
-  obtain ⟨x₀⟩ := ‹Nonempty B›
+  -- Over an empty base there is a single function, so `G` has at most one member.
+  rcases isEmpty_or_nonempty B with hB | ⟨⟨x₀⟩⟩
+  · rcases G.eq_empty_or_nonempty with rfl | ⟨g, hg⟩
+    · exact ⟨0, Fin.elim0, by simp, fun x ↦ (hB.false x).elim⟩
+    · refine ⟨1, fun _ ↦ g, ?_, fun x ↦ (hB.false x).elim⟩
+      ext f
+      simp [Subsingleton.elim f g, hg]
   -- Two members are ordered everywhere as they are at `x₀`.
   have hlt {f g : B → Y} (hf : f ∈ G) (hg : g ∈ G) (h : f x₀ < g x₀) (x : B) : f x < g x := by
     have hfg : f ≠ g := by
