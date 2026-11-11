@@ -290,7 +290,7 @@ private lemma exists_littlewoodPaleyBlock_sum_Ico_eq :
         ∃ g : ℕ → Lp F 2 (volume : Measure E),
           (∀ k, littlewoodPaleyBlock F φ k (∑ j ∈ Finset.Ico m n, littlewoodPaleyBlock F φ j u) =
             g k) ∧ (∀ k, ‖g k‖ ≤ 2 * ‖f k‖) ∧ ∀ k, k + L ≤ m → g k = 0 := by
-  obtain ⟨L, hL⟩ := exists_littlewoodPaleyBlock_compL_eq_zero (F := F) φ
+  obtain ⟨L, hL⟩ := exists_littlewoodPaleyBlock_compL_eq_zero (F := F) φ φ
   refine ⟨L, fun {u f} hf {m n} hmn ↦ ?_⟩
   -- The symbol of `∑_{j < N} Δⱼ` is `φ (2^{1-N} ·) ∈ [0, 1]`.
   have hpartial : ∀ (N : ℕ) (ξ : E),
@@ -345,7 +345,7 @@ function whose Fourier transform is carried by the region where the enlarged cut
 private lemma memSobolev_littlewoodPaleyBlock {u : 𝓢'(E, F)} {f : Lp F 2 (volume : Measure E)}
     {j : ℕ} (hf : littlewoodPaleyBlock F φ j u = f) (s : ℝ) :
     (littlewoodPaleyBlock F φ j u).MemSobolev s 2 := by
-  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero
+  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ
   have hΨ : (fun ξ ↦ (φ.enlargedLittlewoodPaley L j ξ : ℂ)).HasTemperateGrowth :=
     ((φ.hasCompactSupport_enlargedLittlewoodPaley L j).comp_left
       Complex.ofReal_zero).hasTemperateGrowth

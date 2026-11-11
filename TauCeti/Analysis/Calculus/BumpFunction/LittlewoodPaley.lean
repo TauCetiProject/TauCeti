@@ -561,7 +561,7 @@ independently of `ξ`. -/
 theorem exists_one_le_mul_sum_sq_inhomogeneousLittlewoodPaley :
     ∃ L : ℕ, ∀ ξ : E, ∃ N : ℕ,
       1 ≤ L * ∑ j ∈ Finset.range N, φ.inhomogeneousLittlewoodPaley j ξ ^ 2 := by
-  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero
+  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ
   refine ⟨L, fun ξ ↦ ?_⟩
   obtain ⟨N, hN⟩ := pow_unbounded_of_one_lt (‖ξ‖ / φ.rIn) (one_lt_two (α := ℝ))
   have h1 : ∑ j ∈ Finset.range (N + 1), φ.inhomogeneousLittlewoodPaley j ξ = 1 := by
