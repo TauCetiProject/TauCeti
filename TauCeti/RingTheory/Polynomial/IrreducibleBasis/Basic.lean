@@ -68,6 +68,22 @@ public section
 
 open Polynomial
 
+section Helpers
+
+variable {D : Type*} [CommRing D]
+
+/-- If `D[X]` has an irreducible element then `D` is not the zero ring. -/
+private theorem nontrivial_of_irreducible {q : D[X]} (hq : Irreducible q) : Nontrivial D := by
+  by_contra h
+  rw [not_nontrivial_iff_subsingleton] at h
+  exact hq.not_isUnit (isUnit_of_subsingleton q)
+
+/-- A nontrivial commutative ring with GCDs is a domain. -/
+private theorem isDomain_of_nontrivial [IsGCDMonoid D] [Nontrivial D] : IsDomain D :=
+  { IsGCDMonoid.isCancelMulZero (α := D) with }
+
+end Helpers
+
 namespace Finset
 
 section Defs
@@ -114,10 +130,13 @@ theorem isSquarefreeBasis (hB : F.IsIrreducibleBasis B) : F.IsSquarefreeBasis B 
 
 variable [IsGCDMonoid D]
 
+omit [IsDomain D] in
 /-- An irreducible polynomial of positive degree is associated to a member of an irreducible
 basis of `F` exactly when it divides a nonzero member of `F`. -/
 theorem exists_associated_iff (hB : F.IsIrreducibleBasis B) {q : D[X]} (hq : Irreducible q)
     (hdeg : 0 < q.natDegree) : (∃ b ∈ B, Associated q b) ↔ ∃ f ∈ F, f ≠ 0 ∧ q ∣ f := by
+  have := nontrivial_of_irreducible hq
+  have : IsDomain D := isDomain_of_nontrivial
   refine ⟨fun ⟨b, hb, hqb⟩ ↦ ?_, fun ⟨f, hf, hf0, hqf⟩ ↦ ?_⟩
   · obtain ⟨f, hf, hf0, hbf⟩ := hB.exists_dvd b hb
     exact ⟨f, hf, hf0, hqb.dvd.trans hbf⟩
@@ -131,25 +150,36 @@ theorem exists_associated_iff (hB : F.IsIrreducibleBasis B) {q : D[X]} (hq : Irr
   obtain ⟨b, hb, hqb⟩ := (hq'.dvd_finsetProd_iff _).1 h
   exact ⟨b, hb, hq.associated_of_dvd (hB.irreducible b hb) (hq'.dvd_of_dvd_pow hqb)⟩
 
+omit [IsDomain D] in
 /-- Irreducible bases of the same family agree up to associates. -/
 theorem exists_associated (hB : F.IsIrreducibleBasis B) (hB' : F.IsIrreducibleBasis B')
     (hb : b ∈ B) : ∃ b' ∈ B', Associated b b' :=
   (hB'.exists_associated_iff (hB.irreducible b hb) (hB.natDegree_pos b hb)).2
     (hB.exists_dvd b hb)
 
+omit [IsDomain D] in
 /-- Each member of an irreducible basis is a unit multiple of a member of any other irreducible
 basis of the same family. -/
 theorem exists_eq_C_mul (hB : F.IsIrreducibleBasis B) (hB' : F.IsIrreducibleBasis B')
     (hb : b ∈ B) : ∃ b' ∈ B', ∃ r : D, IsUnit r ∧ b = C r * b' := by
+  have := nontrivial_of_irreducible (hB.irreducible b hb)
+  have : IsDomain D := isDomain_of_nontrivial
   obtain ⟨b', hb', hbb'⟩ := hB.exists_associated hB' hb
   obtain ⟨u, hu⟩ := hbb'.symm
   obtain ⟨r, hr, hru⟩ := Polynomial.isUnit_iff.1 u.isUnit
   exact ⟨b', hb', r, hr, by rw [← hu, ← hru, mul_comm]⟩
 
+omit [IsDomain D] in
 /-- Irreducible bases of the same family have the same number of members. -/
 theorem card_eq (hB : F.IsIrreducibleBasis B) (hB' : F.IsIrreducibleBasis B') :
     B.card = B'.card := by
   classical
+  rcases subsingleton_or_nontrivial D with hD | hD
+  · have hempty {B : Finset D[X]} (hB : F.IsIrreducibleBasis B) : B = ∅ :=
+      eq_empty_of_forall_notMem fun b hb ↦
+        (hB.irreducible b hb).not_isUnit (isUnit_of_subsingleton b)
+    rw [hempty hB, hempty hB']
+  have : IsDomain D := isDomain_of_nontrivial
   have hinj {B : Finset D[X]} (hB : F.IsIrreducibleBasis B) : Set.InjOn Associates.mk B :=
     fun b hb b' hb' h ↦ hB.eq_of_associated b hb b' hb' (Associates.mk_eq_mk_iff_associated.1 h)
   have himage : B.image Associates.mk = B'.image Associates.mk := by
@@ -164,20 +194,26 @@ theorem card_eq (hB : F.IsIrreducibleBasis B) (hB' : F.IsIrreducibleBasis B') :
       exact ⟨b, hb, (Associates.mk_eq_mk_iff_associated.2 h).symm⟩
   rw [← card_image_of_injOn (hinj hB), ← card_image_of_injOn (hinj hB'), himage]
 
+omit [IsDomain D] in
 /-- The discriminant of a member of an irreducible basis is associated to the discriminant of a
 member of any other irreducible basis of the same family. -/
 theorem exists_associated_discr (hB : F.IsIrreducibleBasis B) (hB' : F.IsIrreducibleBasis B')
     (hb : b ∈ B) : ∃ c ∈ B', Associated b.discr c.discr := by
+  have := nontrivial_of_irreducible (hB.irreducible b hb)
+  have : IsDomain D := isDomain_of_nontrivial
   obtain ⟨c, hc, r, hr, rfl⟩ := hB.exists_eq_C_mul hB' hb
   refine ⟨c, hc, ?_⟩
   rw [TauCeti.discr_C_mul _ hr.ne_zero]
   exact associated_unit_mul_left _ _ (hr.pow _)
 
+omit [IsDomain D] in
 /-- The resultant of two distinct members of an irreducible basis is associated to the resultant
 of two distinct members of any other irreducible basis of the same family. -/
 theorem exists_associated_resultant (hB : F.IsIrreducibleBasis B)
     (hB' : F.IsIrreducibleBasis B') (hb : b ∈ B) (hb' : b' ∈ B) (hne : b ≠ b') :
     ∃ c ∈ B', ∃ c' ∈ B', c ≠ c' ∧ Associated (resultant b b') (resultant c c') := by
+  have := nontrivial_of_irreducible (hB.irreducible b hb)
+  have : IsDomain D := isDomain_of_nontrivial
   obtain ⟨c, hc, r, hr, rfl⟩ := hB.exists_eq_C_mul hB' hb
   obtain ⟨c', hc', r', hr', rfl⟩ := hB.exists_eq_C_mul hB' hb'
   -- distinct members of `B` are not associated, so neither are the members of `B'` they are
@@ -210,13 +246,16 @@ end Finset
 
 namespace Polynomial
 
-variable {D : Type*} [CommRing D] [IsDomain D] [IsGCDMonoid D]
+variable {D : Type*} [CommRing D] [IsGCDMonoid D]
 
 /-- Over a GCD domain, every polynomial is a constant times a product of irreducible
 polynomials of positive degree. The zero polynomial is included by taking the constant zero. -/
 theorem exists_eq_C_mul_prod_irreducible (f : D[X]) :
     ∃ (c : D) (s : Multiset D[X]),
       (∀ q ∈ s, Irreducible q ∧ 0 < q.natDegree) ∧ f = C c * s.prod := by
+  rcases subsingleton_or_nontrivial D with hD | hD
+  · exact ⟨0, 0, by simp, Subsingleton.elim _ _⟩
+  have : IsDomain D := isDomain_of_nontrivial
   classical
   let := Classical.arbitrary (NormalizedGCDMonoid D)
   induction hn : f.natDegree using Nat.strong_induction_on generalizing f with
@@ -260,10 +299,13 @@ end Polynomial
 
 namespace Finset
 
-variable {D : Type*} [CommRing D] [IsDomain D] [IsGCDMonoid D]
+variable {D : Type*} [CommRing D] [IsGCDMonoid D]
 
 /-- Every finite family of polynomials over a GCD domain has an irreducible basis. -/
 theorem exists_isIrreducibleBasis (F : Finset D[X]) : ∃ B, F.IsIrreducibleBasis B := by
+  rcases subsingleton_or_nontrivial D with hD | hD
+  · exact ⟨∅, by simp, by simp, by simp, fun f _ ↦ ⟨0, 0, Subsingleton.elim _ _⟩, by simp⟩
+  have : IsDomain D := isDomain_of_nontrivial
   classical
   choose c factors hirr hfactor using (exists_eq_C_mul_prod_irreducible (D := D))
   -- Collect the positive-degree irreducible factors of the nonzero members of `F`.
