@@ -54,7 +54,7 @@ theorem hasDerivAt_of_bounded_second_derivative
   simp only [norm_pow, norm_norm]
   apply (BoundedContinuousFunction.norm_le (by positivity)).mpr
   intro x
-  simp only [BoundedContinuousFunction.sub_apply, BoundedContinuousFunction.smul_apply]
+  simp only [sub_apply, smul_apply]
   -- Mathlib already subtracts the fixed linear part in its mean-value inequality.
   have h := (convex_segment t s).norm_image_sub_le_of_norm_hasFDerivWithin_le'
     (φ := ContinuousLinearMap.toSpanSingleton ℝ (du t x))
@@ -90,9 +90,9 @@ theorem hasDerivAt_compactSlice {f : E × ℝ → F} (hf : ContDiff ℝ 2 f)
     (ddu := fun s x ↦ fderiv ℝ dt (x, s) (0, 1))
     (hK := (norm_nonneg _).trans (hK (0, 0)))
   · intro s x
-    exact TauCeti.hasDerivAt_slice_right (hf.differentiable (by norm_num) (x, s))
+    simpa only [compactSlice_apply] using TauCeti.hasDerivAt_slice_right (hf.differentiable (by norm_num) (x, s))
   · intro s x
-    exact TauCeti.hasDerivAt_slice_right (hdt.differentiable (by norm_num) (x, s))
+    simpa only [compactSlice_apply] using TauCeti.hasDerivAt_slice_right (hdt.differentiable (by norm_num) (x, s))
   · exact fun s x ↦ hK (x, s)
 
 end BoundedContinuousFunction
