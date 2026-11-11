@@ -134,7 +134,6 @@ private theorem integrableOn_summand_of_mem_slitPlane {u v w : ℂ} (hu : u ∈ 
   obtain ⟨Cv, hCv⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow hv hr
   obtain ⟨Cw, hCw⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow hw hr
   have hCv0 : 0 ≤ Cv := by simpa using (norm_nonneg _).trans (hCv 1 one_pos)
-  have hCw0 : 0 ≤ Cw := by simpa using (norm_nonneg _).trans (hCw 1 one_pos)
   push_cast at hCu hCv hCw
   refine ((TauCeti.integrableOn_rpow_mul_one_add_rpow one_pos one_half_pos).const_mul
     (Cu * Cv * Cw)).mono' (hcont.aestronglyMeasurable measurableSet_Ioi) ?_

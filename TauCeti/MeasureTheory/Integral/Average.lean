@@ -476,8 +476,6 @@ theorem setLAverage_enorm_sq_le_of_setIntegral_le {V W Y : Type*} [NormedAddComm
   rw [setLAverage_eq]
   refine ENNReal.div_le_of_le_mul ?_
   rw [← MeasureTheory.ofReal_setIntegral_norm_sq_eq hg]
-  have hP : 0 ≤ ∫ x in t, ‖f x‖ ^ 2 ∂μ := integral_nonneg fun x => sq_nonneg _
-  have hQ : 0 ≤ ∫ x in t, ‖G x‖ ^ 2 ∂μ := integral_nonneg fun x => sq_nonneg _
   calc ENNReal.ofReal (∫ x in s, ‖g x‖ ^ 2 ∂μ)
       ≤ ENNReal.ofReal (α * ∫ x in t, ‖f x‖ ^ 2 ∂μ + β * ∫ x in t, ‖G x‖ ^ 2 ∂μ) :=
         ENNReal.ofReal_le_ofReal h
@@ -773,7 +771,6 @@ theorem setIntegral_norm_sub_setAverage_sq_le_add_of_subset {t : Set X} {f H : X
     hH.integrableOn_norm_sub_sq_of_subset subset_rfl ht
   have hfH : IntegrableOn (fun x => ‖f x - H x‖ ^ 2) t μ :=
     (hf.sub hH).integrable_norm_pow two_ne_zero
-  have hE0 : 0 ≤ ∫ x in t, ‖f x - H x‖ ^ 2 ∂μ := integral_nonneg fun _ => by positivity
   -- On `s`, compare `f` with the average of `H`, then split off `f - H`.
   have step1 := setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq hs
     (hf.integrableOn_of_subset one_le_two hst hs)

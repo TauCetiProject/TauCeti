@@ -38,7 +38,7 @@ The prime-discriminant description of the genus field is classical; see D. A. Co
 ## Provenance
 
 The relative Galois equivalence and its action on generators specialize
-`TauCeti.NumberTheory.Multiquadratic.Galois.Relative`, whose Layer-0 multiquadratic machinery is
+`TauCeti.NumberTheory.Multiquadratic.Galois.Relative`, whose multiquadratic machinery is
 migrated from [kim-em/erdos-unit-distance](https://github.com/kim-em/erdos-unit-distance), the
 formalization of L. Alpöge's disproof of the uniform-constant Erdős unit-distance conjecture.
 

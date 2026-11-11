@@ -76,10 +76,10 @@ and replacing the constant by the average costs a factor `2`
 
 public section
 
-open MeasureTheory Metric Set
-open scoped ENNReal
-
 namespace TauCeti
+
+open _root_.MeasureTheory Metric Set
+open scoped ENNReal
 
 section Kernel
 
@@ -98,27 +98,31 @@ theorem enorm_integral_sub_integral_le_of_hormander {K : X → X → E →L[ℝ]
     {b : X → E} (hb : AEStronglyMeasurable b μ) {M : ℝ≥0∞} (hM : ∀ᵐ y ∂μ, ‖b y‖ₑ ≤ M)
     (hsupp : ∀ᵐ y ∂μ, y ∈ closedBall x' (2 * dist x x') → b y = 0) :
     ‖∫ y, K x y (b y) ∂μ - ∫ y, K x' y (b y) ∂μ‖ₑ ≤ B * M := by
+  have hKd : AEStronglyMeasurable (fun y => K x y - K x' y) μ := hKx.sub hKx'
   have hS : MeasurableSet {y | 2 * dist x x' < dist y x'} :=
     (isOpen_lt continuous_const (continuous_id.dist continuous_const)).measurableSet
   -- Since `b` vanishes off the region of Hörmander's condition, the difference of the integrands
   -- has integral at most `B M`.
-  refine (MeasureTheory.enorm_integral_sub_integral_le_lintegral_enorm_sub
-    ((ContinuousLinearMap.apply ℝ F).aestronglyMeasurable_comp₂ hb hKx)
-    ((ContinuousLinearMap.apply ℝ F).aestronglyMeasurable_comp₂ hb hKx')).trans ?_
-  calc ∫⁻ y, ‖K x y (b y) - K x' y (b y)‖ₑ ∂μ
-      ≤ ∫⁻ y in {y | 2 * dist x x' < dist y x'}, ‖K x y - K x' y‖ₑ * M ∂μ := by
-        rw [← lintegral_indicator hS]
-        refine lintegral_mono_ae ?_
-        filter_upwards [hM, hsupp] with y hy hy'
-        by_cases h : 2 * dist x x' < dist y x'
-        · rw [indicator_of_mem (show y ∈ {y | 2 * dist x x' < dist y x'} from h),
-            ← sub_apply]
-          exact (ContinuousLinearMap.le_opENorm _ _).trans (by gcongr)
-        · rw [hy' (mem_closedBall.2 (not_lt.1 h))]
-          simp
-    _ = (∫⁻ y in {y | 2 * dist x x' < dist y x'}, ‖K x y - K x' y‖ₑ ∂μ) * M :=
-        lintegral_mul_const'' _ (hKx.sub hKx').enorm.restrict
-    _ ≤ B * M := by gcongr
+  have hlint : ∫⁻ y, ‖(K x y - K x' y) (b y)‖ₑ ∂μ ≤ B * M := by
+    calc ∫⁻ y, ‖(K x y - K x' y) (b y)‖ₑ ∂μ
+        ≤ ∫⁻ y in {y | 2 * dist x x' < dist y x'}, ‖K x y - K x' y‖ₑ * M ∂μ := by
+          rw [← lintegral_indicator hS]
+          refine lintegral_mono_ae ?_
+          filter_upwards [hM, hsupp] with y hy hy'
+          by_cases h : 2 * dist x x' < dist y x'
+          · rw [indicator_of_mem (show y ∈ {y | 2 * dist x x' < dist y x'} from h)]
+            exact (ContinuousLinearMap.le_opENorm _ _).trans (by gcongr)
+          · rw [hy' (mem_closedBall.2 (not_lt.1 h))]
+            simp
+      _ = (∫⁻ y in {y | 2 * dist x x' < dist y x'}, ‖K x y - K x' y‖ₑ ∂μ) * M :=
+          lintegral_mul_const'' _ hKd.enorm.restrict
+      _ ≤ B * M := by gcongr
+  have hmeas (z : X) (hKz : AEStronglyMeasurable (K z) μ) :
+      AEStronglyMeasurable (fun y => K z y (b y)) μ := by
+    simpa using (ContinuousLinearMap.apply ℝ F).aestronglyMeasurable_comp₂ hb hKz
+  refine (MeasureTheory.enorm_integral_sub_integral_le_lintegral_enorm_sub (hmeas x hKx)
+    (hmeas x' hKx')).trans (le_of_eq_of_le ?_ hlint)
+  simp
 
 end Kernel
 

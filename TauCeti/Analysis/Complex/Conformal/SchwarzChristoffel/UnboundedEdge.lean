@@ -191,7 +191,6 @@ theorem schwarzChristoffelBoundary_image_Ici (a e : ι → ℝ) (z₀ : UpperHal
     have hinj := schwarzChristoffelBoundary_injOn_Ici a e z₀ hp ha
     have hpos : 0 < ‖B y - B x‖ :=
       norm_pos_iff.mpr (sub_ne_zero.mpr fun h => hxy.ne (hinj hx hy h.symm))
-    have hsumxy' : d y = d x + ‖B y - B x‖ := by simpa [d, B] using hsumxy
     linarith
   -- Strict monotonicity and the limit at infinity identify the distance parameter's image.
   have himage : d '' Ici p = Ico (d p) D := hdcont.image_Ici_of_strictMonoOn_of_tendsto hdmono hdl
@@ -398,7 +397,6 @@ theorem schwarzChristoffelBoundary_image_Iic (a e : ι → ℝ) (z₀ : UpperHal
     have hinj := schwarzChristoffelBoundary_injOn_Iic a e z₀ hp ha
     have hpos : 0 < ‖B y - B x‖ :=
       norm_pos_iff.mpr (sub_ne_zero.mpr fun h => hxy.ne (hinj hx hy h.symm))
-    have hsumxy' : d x = ‖B y - B x‖ + d y := by simpa [d, B] using hsumxy
     linarith
   -- Strict antitonicity and the limit at infinity identify the distance parameter's image.
   have himage : d '' Iic p = Ico (d p) D :=
