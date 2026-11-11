@@ -22,14 +22,15 @@ analyticity of Dixon's glued function.
 
 * `TauCeti.Contour.hasDerivAt_dixonH2` — at every point `w` off the curve,
   `fun w ↦ dixonH2 f γ a b w` has complex derivative
-  `∫ t in a..b, f (γ t) / (γ t - w) ^ 2 * deriv γ t`, given continuity of `γ` and
-  interval-integrability of the Cauchy integrand `f (γ ·) / (γ · - w) · deriv γ`.
+  `∫ t in a..b, f (γ t) / (γ t - w) ^ 2 * deriv γ t`, given continuity of `γ` on the interval,
+  with no integrability hypothesis (when the numerator `f (γ ·) * deriv γ` is not integrable,
+  every integral involved is `0`).
 
 ## Provenance
 
 Adapted from `dixonH2_differentiableAt` / `dixonH2_differentiableAt_of_regular` in `DixonDiff.lean`
 of the AINTLIB `LeanModularForms` development, restated for a raw `γ : ℝ → ℂ` on an oriented
-interval and phrased with the integrable Cauchy integrand (weaker than a continuous `f` and a
+interval and phrased without any integrability hypothesis (weaker than a continuous `f` and a
 separately integrable derivative). See J. D. Dixon, *A brief proof of Cauchy's integral theorem*
 (1971).
 -/
