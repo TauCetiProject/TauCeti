@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Complex.TotallyReal.Basic
 public import TauCeti.Geometry.Symplectic.Complex.CoordinateSpace
-public import TauCeti.Geometry.Symplectic.Lagrangian.Manifold
-public import TauCeti.Geometry.Symplectic.Rescale
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 

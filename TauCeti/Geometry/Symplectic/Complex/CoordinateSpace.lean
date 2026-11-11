@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Complex.Line
-public import Mathlib.Analysis.Complex.Basic
 
 /-!
 # The standard symplectic form on complex coordinate space
