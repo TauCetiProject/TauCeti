@@ -274,18 +274,25 @@ theorem dense_setOf_isMorseOn {K : Set M} (hK : IsCompact K) :
   ext f
   exact isMorseOn_iff_criticalPoints.trans (and_iff_right f.contMDiff.contMDiffOn)
 
+omit [FiniteDimensional ℝ E] in
 /-- **Morse functions are dense** in the smooth functions on a compact boundaryless
 finite-dimensional Hausdorff manifold, for the weak Whitney topology. -/
 theorem dense_setOf_isMorse [CompactSpace M] :
     Dense {f : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯ | IsMorse I f} := by
-  simpa only [isMorseOn_univ] using dense_setOf_isMorseOn (I := I) isCompact_univ
+  rcases isEmpty_or_nonempty M with hM | hM
+  · convert dense_univ using 1
+    refine eq_univ_of_forall fun f ↦ ?_
+    have h : IsMorseOn I (f : M → ℝ) ∅ := isMorseOn_empty
+    rwa [← univ_eq_empty_iff.2 hM, isMorseOn_univ] at h
+  · have := FiniteDimensional.of_locallyCompact_manifold M I
+    simpa only [isMorseOn_univ] using dense_setOf_isMorseOn (I := I) isCompact_univ
 
 end WeakWhitney
 
 /-- **Every compact manifold carries a Morse function**: a compact boundaryless
 finite-dimensional Hausdorff manifold has a smooth function all of whose critical points are
 nondegenerate. -/
-theorem exists_isMorse [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] [CompactSpace M] :
+theorem exists_isMorse [IsManifold I ∞ M] [T2Space M] [CompactSpace M] :
     ∃ f : M → ℝ, IsMorse I f := by
   open scoped TauCeti.ManifoldWeakWhitney in
   obtain ⟨f, hf⟩ := (dense_setOf_isMorse (I := I) (M := M)).nonempty_iff.2

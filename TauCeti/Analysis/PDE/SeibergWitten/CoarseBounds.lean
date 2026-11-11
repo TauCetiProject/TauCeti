@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Real.Sqrt
-public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Coarse bounds near the zeros of a large-parameter Seiberg–Witten solution
@@ -46,6 +46,14 @@ estimate, `TauCeti.SeibergWitten.integral_le_of_le_mul_max_one_sub`: a nonnegati
 bounded pointwise by `C r w₊ + C` has integral at most `2 C (C + Vol X)`. It holds because the
 `β` bound lets the vacuum defect be absorbed into the `L¹` defect, `w₊ ≤ 2 |1 - |ψ|²| + 2 C / r²`
 once `2 C ≤ r` (`TauCeti.SeibergWitten.max_one_sub_le_two_mul_abs_sub_add`).
+
+The same absorption gives `L¹` bounds on a measurable set `S` of finite measure with a separate
+`L¹` defect constant `L`: a field with `‖F‖ ≤ A r w₊ + B` has
+`∫_S ‖F‖ ≤ 2 A L + (2 A (C / r) + B) μ(S)`, with no measurability assumed on `F`
+(`TauCeti.SeibergWitten.setLIntegral_enorm_le_of_norm_le`), and in particular the vacuum defect
+satisfies `r ∫_S w₊ ≤ 2 L + 2 (C / r) μ(S)`
+(`TauCeti.SeibergWitten.mul_setIntegral_max_one_sub_le`). These bound the curvature `|F_a|` in
+`L¹` independently of `r`.
 
 The fields are functions on an arbitrary measure space with values in arbitrary normed groups,
 and the hypotheses are the displayed estimates, so the results apply in a coordinate chart and
@@ -123,6 +131,89 @@ theorem integral_le_of_le_mul_max_one_sub [IsFiniteMeasure μ] {g : X → ℝ} (
         gcongr
         linarith
     _ = 2 * C * (C + μ.real Set.univ) := by ring
+
+section SetIntegral
+
+variable {S : Set X} {s t : X → ℝ} {L : ℝ}
+
+/-- **`L¹` bound on the curvature.** Let `s = |α|²` and `t = |β|²` on a measurable set `S` of
+finite measure, with `t ≤ (C / r) w₊ + C / r²` on `S` for `w₊ = max (1 - s) 0`, `0 ≤ C` and
+`2 C ≤ r`, and suppose the spinor defect `1 - s - t` is integrable on `S` with
+`r ∫_S |1 - s - t| ≤ L`. Then a field `F` with the pointwise bound `‖F‖ ≤ A r w₊ + B` on `S`,
+`0 ≤ A`, satisfies `∫_S ‖F‖ ≤ 2 A L + (2 A (C / r) + B) μ(S)`. No measurability of `F` is needed:
+the bound is on the lower Lebesgue integral of `‖F‖`. -/
+theorem setLIntegral_enorm_le_of_norm_le {V : Type*} [NormedAddCommGroup V] {F : X → V}
+    {A B : ℝ} (hS : MeasurableSet S) (hμS : μ S ≠ ⊤) (hC : 0 ≤ C) (hr : 2 * C ≤ r)
+    (hd : IntegrableOn (fun x ↦ 1 - s x - t x) S μ)
+    (ht : ∀ x ∈ S, t x ≤ C / r * max (1 - s x) 0 + C / r ^ 2)
+    (hL : r * ∫ x in S, |1 - s x - t x| ∂μ ≤ L) (hA : 0 ≤ A)
+    (hF : ∀ x ∈ S, ‖F x‖ ≤ A * r * max (1 - s x) 0 + B) :
+    ∫⁻ x in S, ‖F x‖ₑ ∂μ ≤ ENNReal.ofReal (2 * A * L + (2 * A * (C / r) + B) * μ.real S) := by
+  have hr₀ : 0 ≤ r := by linarith
+  have hrC : r * (C / r ^ 2) = C / r := by
+    rcases eq_or_ne r 0 with h | h
+    · simp [h]
+    · field_simp
+  -- The pointwise majorant `g = 2 A r |1 - s - t| + (2 A (C / r) + B)` of `‖F‖` on `S`.
+  set g : X → ℝ := fun x ↦ 2 * A * r * |1 - s x - t x| + (2 * A * (C / r) + B)
+  have hg : IntegrableOn g S μ :=
+    (hd.abs.const_mul (2 * A * r)).add (integrableOn_const hμS)
+  have hFg (x : X) (hx : x ∈ S) : ‖F x‖ ≤ g x := by
+    have hw := max_one_sub_le_two_mul_abs_sub_add hC hr (ht x hx)
+    calc ‖F x‖ ≤ A * r * max (1 - s x) 0 + B := hF x hx
+      _ ≤ A * r * (2 * |1 - s x - t x| + 2 * (C / r ^ 2)) + B := by gcongr
+      _ = g x := by
+          simp only [g]
+          rw [← hrC]
+          ring
+  have hg₀ : 0 ≤ᵐ[μ.restrict S] g :=
+    (ae_restrict_iff' hS).2 (Eventually.of_forall fun x hx ↦ (norm_nonneg _).trans (hFg x hx))
+  calc ∫⁻ x in S, ‖F x‖ₑ ∂μ ≤ ∫⁻ x in S, ENNReal.ofReal (g x) ∂μ :=
+        setLIntegral_mono_ae' hS (Eventually.of_forall fun x hx ↦ by
+          rw [← ofReal_norm]
+          exact ENNReal.ofReal_le_ofReal (hFg x hx))
+    _ = ENNReal.ofReal (∫ x in S, g x ∂μ) := (ofReal_integral_eq_lintegral_ofReal hg hg₀).symm
+    _ ≤ ENNReal.ofReal (2 * A * L + (2 * A * (C / r) + B) * μ.real S) := by
+        refine ENNReal.ofReal_le_ofReal ?_
+        rw [integral_add (hd.abs.const_mul (2 * A * r)) (integrableOn_const hμS),
+          integral_const_mul, setIntegral_const, smul_eq_mul]
+        have h2A : 0 ≤ 2 * A := by positivity
+        nlinarith [mul_le_mul_of_nonneg_left hL h2A]
+
+/-- **`L¹` bound on the vacuum defect.** Let `s = |α|²` and `t = |β|²` on a measurable set `S` of
+finite measure, with `t ≤ (C / r) w₊ + C / r²` on `S` for `w₊ = max (1 - s) 0`, `0 ≤ C` and
+`2 C ≤ r`. If the spinor defect `1 - s - t` is integrable on `S` with
+`r ∫_S |1 - s - t| ≤ L`, then `r ∫_S w₊ ≤ 2 L + 2 (C / r) μ(S)`. -/
+theorem mul_setIntegral_max_one_sub_le (hS : MeasurableSet S) (hμS : μ S ≠ ⊤) (hC : 0 ≤ C)
+    (hr : 2 * C ≤ r) (hd : IntegrableOn (fun x ↦ 1 - s x - t x) S μ)
+    (ht : ∀ x ∈ S, t x ≤ C / r * max (1 - s x) 0 + C / r ^ 2)
+    (hL : r * ∫ x in S, |1 - s x - t x| ∂μ ≤ L) :
+    r * ∫ x in S, max (1 - s x) 0 ∂μ ≤ 2 * L + 2 * (C / r) * μ.real S := by
+  have hr₀ : 0 ≤ r := by linarith
+  have hL₀ : 0 ≤ L := (mul_nonneg hr₀ (integral_nonneg fun _ ↦ abs_nonneg _)).trans hL
+  rcases hr₀.eq_or_lt with rfl | hr₀
+  · simpa using hL₀
+  -- Apply the `L¹` bound on fields to `F = w₊`, with `A = r⁻¹` and `B = 0`.
+  set N : ℝ := 2 * r⁻¹ * L + (2 * r⁻¹ * (C / r) + 0) * μ.real S
+  have hint := setLIntegral_enorm_le_of_norm_le (F := fun x ↦ max (1 - s x) 0) (B := 0) hS hμS hC
+    hr hd ht hL (inv_nonneg.2 hr₀.le) fun x _ ↦ by
+      rw [Real.norm_of_nonneg (le_max_right _ _), inv_mul_cancel₀ hr₀.ne', one_mul, add_zero]
+  -- The Bochner integral of `w₊` is bounded by its lower Lebesgue integral.
+  have hN : ∫ x in S, max (1 - s x) 0 ∂μ ≤ N :=
+    calc ∫ x in S, max (1 - s x) 0 ∂μ
+        ≤ ‖∫ x in S, max (1 - s x) 0 ∂μ‖ := Real.le_norm_self _
+      _ ≤ (∫⁻ x in S, ENNReal.ofReal ‖max (1 - s x) 0‖ ∂μ).toReal :=
+          norm_integral_le_lintegral_norm _
+      _ ≤ (ENNReal.ofReal N).toReal :=
+          ENNReal.toReal_mono ENNReal.ofReal_ne_top (by simpa only [ofReal_norm] using hint)
+      _ = N := ENNReal.toReal_ofReal (by positivity)
+  calc r * ∫ x in S, max (1 - s x) 0 ∂μ ≤ r * N := mul_le_mul_of_nonneg_left hN hr₀.le
+    _ = 2 * L + 2 * (C / r) * μ.real S := by
+        simp only [N]
+        field_simp
+        ring
+
+end SetIntegral
 
 /-- **The volume of the low-modulus region.** If `r ∫ |1 - |α|² - |β|²| ≤ C` and, almost
 everywhere, `|β|² ≤ (C / r) w₊ + C / r²` with `w₊ = max (1 - |α|²) 0`, where `r ≥ 1` and
@@ -237,7 +328,6 @@ theorem norm_le_mul_sqrt_add_sqrt {a : A} {b : B} {Da : F₁} {Db : F₂} {d : F
     (hgrad : ‖Da‖ ^ 2 + r * ‖Db‖ ^ 2 ≤ C * r * max (1 - ‖a‖ ^ 2) 0 + C)
     (hd : ‖d‖ ≤ C * (‖Db‖ + ‖a‖ + ‖b‖)) :
     ‖d‖ ≤ C * (√(2 * C) + √(2 * (1 + C))) := by
-  have hr₀ : 0 < r := by linarith
   -- The gradient bound with `w₊ ≤ 1` and `r ≥ 1` gives `|∇β|² ≤ 2 C`.
   have hDb : ‖Db‖ ≤ √(2 * C) := by
     refine Real.le_sqrt_of_sq_le ?_

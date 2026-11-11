@@ -40,7 +40,8 @@ space of finite CW type.
 * `TauCeti.cwEulerChar_preimage`: the alternating count of the cells of the lifted complex, summed
   cell by cell over the fibres of the centres.
 * `TauCeti.cwEulerChar_preimage_of_card_fiber`: `χ(p⁻¹(C)) = d · χ(C)` for the alternating cell
-  counts, when every fibre over `C` has `d` points.
+  counts (with `Nat.card`, which is `0` on infinite types), when every fibre over `C` has `Nat.card`
+  equal to `d`; for finite fibres this is the count for a `d`-sheeted cover.
 * `TauCeti.eulerChar_preimage_of_card_fiber`: the same for the Euler characteristics of the spaces.
 * `TauCeti.eulerChar_eq_mul_of_isCoveringMap`: **finite-cover multiplicativity**, `χ(E) = d · χ(B)`
   for a `d`-sheeted cover of a space `B` of finite CW type.
@@ -82,19 +83,18 @@ theorem cwEulerChar_preimage :
   have : _root_.Finite (cell C n) := FiniteType.finite_cell n
   rw [nat_card_cell_preimage C hp hfin, Nat.cast_finsum]
 
-/-- **The cells of a `d`-sheeted cover.** If every fibre of `p` over `C` has `d` points, the
-alternating count of the cells of the lift of `C` along `p` is `d` times that of `C`. -/
+omit [RelCWComplex.Finite C] hfin in
+/-- **The cells of a cover with fibres of cardinality `d`.** If every fibre of `p` over `C` has
+`Nat.card` equal to `d`, the alternating count of the cells of the lift of `C` along `p` is `d`
+times that of `C`. The counts use `Nat.card`, which is `0` on infinite types, so no finiteness of
+`C` is needed; for finite fibres and a finite `C` this is the count for a `d`-sheeted cover. -/
 theorem cwEulerChar_preimage_of_card_fiber {d : ℕ} (hd : ∀ b ∈ C, Nat.card ↥(p ⁻¹' {b}) = d) :
     letI := cwComplexPreimage C hp
     cwEulerChar (p ⁻¹' C) = d * cwEulerChar C := by
   let := cwComplexPreimage C hp
-  obtain ⟨N, hN⟩ := Filter.eventually_atTop.1
-    (FiniteDimensional.eventually_isEmpty_cell (C := C) (D := ∅))
-  have hN' (n : ℕ) (hn : N ≤ n) : IsEmpty (cell (p ⁻¹' C) n) :=
-    (cellPreimageEquiv C hp n).isEmpty_congr.2 ⟨fun c ↦ (hN n hn).false c.1⟩
-  rw [cwEulerChar_eq_sum_range _ hN', cwEulerChar_eq_sum_range _ hN, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun n _ ↦ ?_
-  rw [nat_card_cell_preimage_of_card_fiber C hp hfin hd, Nat.cast_mul]
+  rw [cwEulerChar_def, cwEulerChar_def, mul_finsum]
+  refine finsum_congr fun n ↦ ?_
+  rw [nat_card_cell_preimage_of_card_fiber C hp hd, Nat.cast_mul]
   ring
 
 /-- If every fibre of `p` over the finite CW complex `C` has `d` points, then
@@ -107,7 +107,7 @@ theorem eulerChar_preimage_of_card_fiber {d : ℕ} (hd : ∀ b ∈ C, Nat.card �
   let := cwComplexPreimage C hp
   have := finite_cwComplexPreimage C hp hfin
   have := hp.t2Space
-  rw [eulerChar_cwComplex, eulerChar_cwComplex, cwEulerChar_preimage_of_card_fiber C hp hfin hd]
+  rw [eulerChar_cwComplex, eulerChar_cwComplex, cwEulerChar_preimage_of_card_fiber C hp hd]
 
 /-- Finite-cover multiplicativity over a finite CW complex, the case of
 `eulerChar_eq_mul_of_isCoveringMap` with a CW structure on the base itself. -/

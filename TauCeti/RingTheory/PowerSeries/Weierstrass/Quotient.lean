@@ -89,7 +89,7 @@ theorem IsDistinguished.irreducible_of_irreducible_polynomialToRestricted
     (hm : p.IsMonicOfDegree s) (h : Irreducible (polynomialToRestricted c p)) :
     Irreducible p :=
   have : Nontrivial R := nontrivial_of_ne _ _ hp.coeff_ne_zero
-  h.of_map_of_dvd hm.ne_zero fun g ↦ (hp.polynomialToRestricted_dvd_iff hc hm g).mp
+  h.of_map_of_dvd fun g ↦ (hp.polynomialToRestricted_dvd_iff hc hm g).mp
 
 section Complete
 

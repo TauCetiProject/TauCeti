@@ -148,13 +148,13 @@ with the standard symplectic and complex structures, the map `(s, t) ↦ γ(s)` 
 equation for `K = H dt` at `z` exactly when `γ'(s) = (∇h(q(s)), 0)`, where `γ(s) = (q(s), p(s))`
 and `s = z.1`. -/
 theorem isComplexLinearMap_perturbedFDeriv_comp_fst_iff_hasDerivAt {γ : ℝ → V × V} {z : ℝ × ℝ}
-    (hγ : DifferentiableAt ℝ γ z.1) (hh : DifferentiableAt ℝ h (γ z.1).1) :
+    (hγ : DifferentiableAt ℝ γ z.1) :
     IsComplexLinearMap (AlmostComplexStructure.product ℝ) (AlmostComplexStructure.product V)
         ((stdSymplecticForm (V := V)).perturbedFDeriv (fun _ _ ↦ 0) (fun _ y ↦ h y.1)
           (fun w ↦ γ w.1) z : ℝ × ℝ →ₗ[ℝ] V × V) ↔
       HasDerivAt γ (∇ h (γ z.1).1, 0) z.1 := by
   rw [SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_fst_iff hγ,
-    stdSymplecticForm_hamiltonianVectorField_comp_fst hh, AlmostComplexStructure.product_apply]
+    stdSymplecticForm_hamiltonianVectorField_comp_fst, AlmostComplexStructure.product_apply]
   refine ⟨fun hd ↦ ?_, fun hd ↦ ?_⟩
   · simpa [hd] using hγ.hasDerivAt
   · simp [hd.deriv]
@@ -173,13 +173,13 @@ theorem floerEnergyDensity_comp_fst_eq_norm_gradient_sq {γ : ℝ → V × V} {z
     ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst', ← inner_gradient_left,
     real_inner_self_eq_norm_sq]
 
-/-- **Time-independent Floer strips on the zero section are gradient lines.** Let `h` be
-differentiable with globally Lipschitz gradient, and let `φ` be its negative gradient flow. For
+/-- **Time-independent Floer strips on the zero section are gradient lines.** Let `h` have
+globally Lipschitz gradient, and let `φ` be its negative gradient flow. For
 `H(q, p) = h(q)` on `V × V`, a map `(s, t) ↦ γ(s)` is a differentiable solution of the Floer
 equation for `K = H dt` with boundary on the zero section `p = 0` exactly when
 `γ(s) = (φ₋ₛ(q₀), 0)` for every `s`, where `q₀` is the position of `γ(0)`. -/
 theorem isComplexLinearMap_perturbedFDeriv_comp_fst_and_snd_eq_zero_iff
-    (hd : Differentiable ℝ h) {K : ℝ≥0} (hf : LipschitzWith K (∇ h)) {γ : ℝ → V × V} :
+    {K : ℝ≥0} (hf : LipschitzWith K (∇ h)) {γ : ℝ → V × V} :
     (Differentiable ℝ γ ∧
         (∀ z : ℝ × ℝ, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
           (AlmostComplexStructure.product V)
@@ -194,7 +194,7 @@ theorem isComplexLinearMap_perturbedFDeriv_comp_fst_and_snd_eq_zero_iff
     have hq : IsIntegralCurve (fun τ ↦ (γ (-τ)).1) fun _ y ↦ -∇ h y := fun τ ↦ by
       have hγτ : HasDerivAt γ (∇ h (γ (-τ)).1, 0) (-τ) :=
         (isComplexLinearMap_perturbedFDeriv_comp_fst_iff_hasDerivAt (z := (-τ, 0))
-          (hγ _) (hd _)).mp (hF _)
+          (hγ _)).mp (hF _)
       have hqτ := (hasFDerivAt_fst.comp_hasDerivAt (-τ) hγτ).scomp τ (hasDerivAt_neg τ)
       simpa [Function.comp_def] using hqτ
     have := eq_negativeGradientFlow h hf hq (-s)
@@ -211,7 +211,7 @@ theorem isComplexLinearMap_perturbedFDeriv_comp_fst_and_snd_eq_zero_iff
         (Filter.EventuallyEq.of_eq (funext hγ))
     refine ⟨fun s ↦ (hderiv s).differentiableAt, fun z ↦ ?_, fun s ↦ by rw [hγ s]⟩
     exact (isComplexLinearMap_perturbedFDeriv_comp_fst_iff_hasDerivAt
-      (hderiv z.1).differentiableAt (hd _)).mpr (hderiv z.1)
+      (hderiv z.1).differentiableAt).mpr (hderiv z.1)
 
 /-- **The ends of a time-independent Floer strip on the zero section.** A time-independent
 Floer strip `γ(s) = (φ₋ₛ(q₀), 0)` converges to `(a, 0)` as `s → -∞` and to `(b, 0)` as

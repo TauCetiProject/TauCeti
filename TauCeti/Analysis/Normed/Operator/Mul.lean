@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.Normed.Operator.Mul
 
 /-!
@@ -16,6 +17,8 @@ algebraic multiplication maps and allow power-series calculations on multiplicat
 It also records the norm of a difference of scalar-to-vector maps.
 For unital algebras we also bundle the left regular representation as a unital algebra
 homomorphism and give its inverse norm bound without assuming that the identity has norm one.
+Finally, exponentiating bounded left or right multiplication by `x` gives multiplication by
+`exp x`, over any nontrivially normed field of characteristic zero and without completeness.
 -/
 
 public section
@@ -108,3 +111,57 @@ theorem Lmul_injective : Function.Injective (Lmul 𝕜 R) := by
   simpa using DFunLike.congr_fun h (1 : R)
 
 end AlgHom
+
+namespace TauCeti
+
+open NormedSpace
+
+variable {𝕜 R : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜] [NormedRing R]
+  [NormedAlgebra 𝕜 R]
+
+/-- Exponentiating the bounded left-multiplication operator gives the operator of left
+multiplication by the algebra exponential. Completeness is not needed: evaluation at `1` is a
+continuous left inverse of `ContinuousLinearMap.mul 𝕜 R`, so the exponential series of `x` and of
+its left multiplication operator are summable together, and both sides are the junk value `0`
+otherwise. -/
+theorem exp_mulLeft (x : R) :
+    exp (ContinuousLinearMap.mul 𝕜 R x) = ContinuousLinearMap.mul 𝕜 R (exp x) := by
+  have hinv : Function.LeftInverse (ContinuousLinearMap.apply 𝕜 R (1 : R))
+      (ContinuousLinearMap.mul 𝕜 R) := fun z => by simp
+  simp only [exp_eq_tsum 𝕜]
+  rw [hinv.map_tsum _ (ContinuousLinearMap.mul 𝕜 R).continuous
+    (ContinuousLinearMap.apply 𝕜 R (1 : R)).continuous]
+  refine tsum_congr fun n => ?_
+  ext z
+  simp [ContinuousLinearMap.mul_pow_apply]
+
+/-- Exponentiating the bounded right-multiplication operator gives the operator of right
+multiplication by the algebra exponential. As for `TauCeti.exp_mulLeft`, completeness is not
+needed. -/
+theorem exp_mulRight (x : R) :
+    exp ((ContinuousLinearMap.mul 𝕜 R).flip x) =
+      (ContinuousLinearMap.mul 𝕜 R).flip (exp x) := by
+  have hinv : Function.LeftInverse (ContinuousLinearMap.apply 𝕜 R (1 : R))
+      (ContinuousLinearMap.mul 𝕜 R).flip := fun z => by simp
+  simp only [exp_eq_tsum 𝕜]
+  rw [hinv.map_tsum _ (ContinuousLinearMap.mul 𝕜 R).flip.continuous
+    (ContinuousLinearMap.apply 𝕜 R (1 : R)).continuous]
+  refine tsum_congr fun n => ?_
+  ext z
+  simp [ContinuousLinearMap.flip_mul_pow_apply]
+
+/-- Exponentiating the bounded left-multiplication operator gives left multiplication by the
+algebra exponential. -/
+@[simp]
+theorem exp_mulLeft_apply (x y : R) :
+    exp (ContinuousLinearMap.mul 𝕜 R x) y = exp x * y := by
+  rw [exp_mulLeft, ContinuousLinearMap.mul_apply']
+
+/-- Exponentiating the bounded right-multiplication operator gives right multiplication by the
+algebra exponential. -/
+@[simp]
+theorem exp_mulRight_apply (x y : R) :
+    exp ((ContinuousLinearMap.mul 𝕜 R).flip x) y = y * exp x := by
+  rw [exp_mulRight, ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply']
+
+end TauCeti

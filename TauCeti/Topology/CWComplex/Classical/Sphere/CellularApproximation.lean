@@ -13,17 +13,17 @@ import TauCeti.Topology.CWComplex.Classical.Sphere.Basic
 /-!
 # Cellular approximation of maps of spheres
 
-Every map of the boundary sphere `∂Dᵐ` of the `m`-disk into a CW complex `W` is homotopic to a map
-into the skeleton `skeletonLT W m`, the union of the cells of `W` of dimension less than `m`
-(`ContinuousMap.exists_homotopic_mapsTo_skeletonLT_diskBoundary`). This is cellular approximation
-(`TauCeti.exists_isCellular_homotopic`) for the CW structure on the sphere with one `0`-cell and
-one top cell (`TauCeti.sphereCWComplex`). It is used to move attaching maps of cells into the
-skeleta of a CW complex.
+Every map of the boundary sphere `∂Dᵐ` of the `m`-disk into a relative CW complex `W` over a base
+`D` is homotopic to a map into the skeleton `skeletonLT W m`, the union of `D` and the cells of `W`
+of dimension less than `m` (`ContinuousMap.exists_homotopic_mapsTo_skeletonLT_diskBoundary`). This
+is cellular approximation (`TauCeti.exists_isCellular_homotopicRel`) for the CW structure on the
+sphere with one `0`-cell and one top cell (`TauCeti.sphereCWComplex`). It is used to move attaching
+maps of cells into the skeleta of a CW complex, or of a relative CW complex.
 
 ## Main results
 
-* `ContinuousMap.exists_homotopic_mapsTo_skeletonLT_diskBoundary`: a map of `∂Dᵐ` into a CW
-  complex is homotopic to a map into `skeletonLT W m`.
+* `ContinuousMap.exists_homotopic_mapsTo_skeletonLT_diskBoundary`: a map of `∂Dᵐ` into a relative
+  CW complex is homotopic to a map into `skeletonLT W m`.
 
 ## References
 
@@ -37,16 +37,18 @@ noncomputable section
 
 universe u
 
-open Metric Set Topology Topology.RelCWComplex
+open Metric Set Topology Topology.RelCWComplex TauCeti
 
-namespace TauCeti
+namespace ContinuousMap
 
-variable {W : Type u} [TopologicalSpace W] [T2Space W] [CWComplex (univ : Set W)]
+variable {W : Type u} [TopologicalSpace W] [T2Space W] {D : Set W}
+  [RelCWComplex (univ : Set W) D]
 
 /-- **Cellular approximation of a map of a sphere.** Every map of the boundary sphere `∂Dᵐ` of the
-`m`-disk into a CW complex `W` is homotopic to a map into the skeleton `skeletonLT W m`, the union
-of the cells of `W` of dimension less than `m`. -/
-theorem _root_.ContinuousMap.exists_homotopic_mapsTo_skeletonLT_diskBoundary {m : ℕ}
+`m`-disk into a relative CW complex `W` over `D` is homotopic to a map into the skeleton
+`skeletonLT W m`, the union of `D` and the cells of `W` of dimension less than `m`. For a CW
+complex, `D` is empty. -/
+theorem exists_homotopic_mapsTo_skeletonLT_diskBoundary {m : ℕ}
     (f : C(TopCat.diskBoundary.{u} m, W)) :
     ∃ g : C(TopCat.diskBoundary.{u} m, W), f.Homotopic g ∧
       ∀ x, g x ∈ (skeletonLT (univ : Set W) m : Set W) := by
@@ -66,9 +68,10 @@ theorem _root_.ContinuousMap.exists_homotopic_mapsTo_skeletonLT_diskBoundary {m 
   have hf : f = val.comp (φ.comp down) := by
     ext x
     simp [val, φ, down]
-  obtain ⟨g, hg, hφg⟩ := exists_isCellular_homotopic (TopCat.ofHom φ)
+  obtain ⟨g, hg, hφg⟩ := exists_isCellular_homotopicRel (TopCat.ofHom φ) fun _ hx ↦
+    absurd hx (notMem_empty _)
   refine ⟨val.comp (g.hom.comp down), hf ▸ (ContinuousMap.Homotopic.refl val).comp
-    (hφg.comp (ContinuousMap.Homotopic.refl down)), fun x ↦ hg (k + 1) ?_⟩
+    (hφg.homotopic.comp (ContinuousMap.Homotopic.refl down)), fun x ↦ hg (k + 1) ?_⟩
   -- Every point of `Sᵏ` lies in an open cell of dimension at most `k`.
   obtain ⟨l, -, j, hj⟩ := CWComplex.mem_skeletonLT_iff.1
     (by rw [← SetLike.mem_coe, skeletonLT_top]; exact (down x).2 :
@@ -76,6 +79,6 @@ theorem _root_.ContinuousMap.exists_homotopic_mapsTo_skeletonLT_diskBoundary {m 
   have hl : l < k + 1 := by
     by_contra! hl
     exact (isEmpty_cell_sphereCWComplex hι hl).elim j
-  exact CWComplex.mem_skeletonLT_iff.2 ⟨l, by exact_mod_cast hl, j, hj⟩
+  exact RelCWComplex.mem_skeletonLT_iff.2 (.inr ⟨l, by exact_mod_cast hl, j, hj⟩)
 
-end TauCeti
+end ContinuousMap
