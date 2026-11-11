@@ -123,15 +123,15 @@ theorem tendsto_sub_sum_taylor_two {f : ℝ → ℝ} {a b K : ℝ}
   rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity : 0 < max K 0 + 1)]
   linarith
 
-/-- Along grids in a compact metric set with vanishing mesh and bounded quadratic
-sums, the second-order Taylor expansion of a C² function along a continuous real path
-has vanishing accumulated remainder. No variation bound on the path is assumed. -/
+/-- Along grids eventually in a compact metric set with eventually controlled vanishing mesh
+and bounded quadratic sums, the second-order Taylor expansion of a C² function along a continuous
+real path has vanishing accumulated remainder. No variation bound on the path is assumed. -/
 theorem tendsto_sub_sum_taylor_two_of_continuousOn {f : ℝ → ℝ}
     (hf : ContDiff ℝ 2 f) {α : Type*} [PseudoMetricSpace α] {g : α → ℝ} {s : Set α}
     (hs : IsCompact s) (hg : ContinuousOn g s) {ι : Type*} {l : Filter ι}
     {n : ι → ℕ} {t : ι → ℕ → α} {δ : ι → ℝ} {K : ℝ}
-    (ht : ∀ k i, i ≤ n k → t k i ∈ s)
-    (hmesh : ∀ k i, i < n k → dist (t k (i + 1)) (t k i) ≤ δ k)
+    (ht : ∀ᶠ k in l, ∀ i ≤ n k, t k i ∈ s)
+    (hmesh : ∀ᶠ k in l, ∀ i < n k, dist (t k (i + 1)) (t k i) ≤ δ k)
     (hδ : Tendsto δ l (𝓝 0))
     (hQ : ∀ᶠ k in l, ∑ i ∈ Finset.range (n k), (g (t k (i + 1)) - g (t k i)) ^ 2 ≤ K) :
     Tendsto (fun k ↦ f (g (t k (n k))) - f (g (t k 0)) -
@@ -148,16 +148,16 @@ theorem tendsto_sub_sum_taylor_two_of_continuousOn {f : ℝ → ℝ}
     refine ⟨fun a ha ↦ (not_lt_of_ge (zero_le : 0 ≤ a) ha).elim, fun ε hε ↦ ?_⟩
     obtain ⟨η, hη, hηg⟩ := Metric.uniformContinuousOn_iff.1
       (hs.uniformContinuousOn_of_continuous hg) (ε : ℝ) hε
-    filter_upwards [hδ.eventually_lt_const hη] with k hk
+    filter_upwards [hδ.eventually_lt_const hη, ht, hmesh] with k hk htk hmeshk
     apply Finset.sup_lt_iff hε |>.2
     intro i hi
     have hi' := Finset.mem_range.1 hi
-    exact hηg _ (ht k (i + 1) hi') _ (ht k i hi'.le)
-      ((hmesh k i hi').trans_lt hk)
+    exact hηg _ (htk (i + 1) hi') _ (htk i hi'.le)
+      ((hmeshk i hi').trans_lt hk)
   apply tendsto_sub_sum_taylor_two (a := a) (b := b) (K := K)
     (fun z _ ↦ hf.contDiffAt) (δ := fun k ↦ (D k : ℝ))
-    (Eventually.of_forall fun k i hi ↦
-      ⟨ha (mem_image_of_mem g (ht k i hi)), hb (mem_image_of_mem g (ht k i hi))⟩)
+    (ht.mono fun k htk i hi ↦
+      ⟨ha (mem_image_of_mem g (htk i hi)), hb (mem_image_of_mem g (htk i hi))⟩)
     (Eventually.of_forall fun k i hi ↦ ?_)
     (by simpa only [Function.comp_def, NNReal.coe_zero] using
       NNReal.continuous_coe.tendsto 0 |>.comp hD) hQ

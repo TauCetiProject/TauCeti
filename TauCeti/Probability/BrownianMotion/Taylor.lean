@@ -89,8 +89,8 @@ theorem tendstoInMeasure_sub_sum_taylor_two (hB : IsBrownianReal B P)
   have hlim := TauCeti.tendsto_sub_sum_taylor_two_of_continuousOn hf isCompact_Icc
     (hcont.continuousOn (s := Icc 0 b))
     (t := fun k ↦ grid (ns (ms k))) (n := fun k ↦ N (ns (ms k)))
-    (fun k i hi ↦ ⟨bot_le, hlast _ _ hi⟩)
-    (fun k i hi ↦ by
+    (Eventually.of_forall fun k i hi ↦ ⟨bot_le, hlast _ _ hi⟩)
+    (Eventually.of_forall fun k i hi ↦ by
       have hd : 0 ≤ (grid (ns (ms k)) (i + 1) : ℝ) - grid (ns (ms k)) i :=
         sub_nonneg.2 (by exact_mod_cast hstep (ns (ms k)) i hi)
       simpa only [NNReal.dist_eq, Real.dist_eq, abs_of_nonneg hd, Function.comp_def] using
