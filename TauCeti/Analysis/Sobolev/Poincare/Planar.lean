@@ -375,28 +375,13 @@ theorem W1p.exists_norm_value_sq_le_of_finrank_eq_two (hE : finrank ℝ E = 2) :
     exact isClosed_le (hval.norm.pow 2) (by fun_prop)
   · intro φ
     set U := W1p.ofTestFunctionₗ μ ⊤ 2 φ
-    have hv : (W1p.value U : E → ℝ) =ᵐ[μ] φ := by
-      simpa only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] using
-        W1p.value_ofTestFunctionₗ_ae (mu := μ) (Omega := ⊤) (p := 2) φ
-    have hg : (W1p.gradient U : E → E) =ᵐ[μ] _root_.gradient (φ : E → ℝ) := by
-      rw [show W1p.gradient U = gradientTestFunctionLp 2 φ from W1p.gradient_ofTestFunctionₗ φ]
-      have := gradientTestFunctionLp_apply_ae (mu := μ) (Omega := ⊤) 2 φ
-      simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] at this
-      exact this
-    have hvalue : ‖W1p.value U‖ ^ 2 = ∫ x, (φ x) ^ 2 ∂μ := by
-      rw [← W1p.integral_value_sq_eq_norm_value_sq]
-      simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ]
-      exact integral_congr_ae (hv.mono fun x hx ↦ by simp only [hx])
+    have hv : (W1p.value U : E → ℝ) =ᵐ[μ] φ := W1p.value_ofTestFunctionₗ_top_ae φ
     have hgrad : ‖W1p.gradient U‖ = √(∫ x, ‖fderiv ℝ φ x‖ ^ 2 ∂μ) := by
-      rw [← Real.sqrt_sq (norm_nonneg (W1p.gradient U)),
-        ← W1p.integral_norm_gradient_sq_eq_norm_gradient_sq]
-      simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ]
-      congr 1
-      exact integral_congr_ae (hg.mono fun x hx ↦ by simp only [hx, norm_gradient_eq_norm_fderiv])
+      rw [← W1p.norm_gradient_ofTestFunctionₗ_top_sq, Real.sqrt_sq (norm_nonneg _)]
     have hmod : ∫ x in sᶜ, (√(1 + W1p.value U x ^ 2) - 1) ∂μ =
         ∫ x in sᶜ, (√(1 + φ x ^ 2) - 1) ∂μ :=
       integral_congr_ae (ae_restrict_of_ae (hv.mono fun x hx ↦ by simp only [hx]))
-    rw [hvalue, hgrad, hmod]
+    rw [W1p.norm_value_ofTestFunctionₗ_top_sq, hgrad, hmod]
     exact h φ (φ.contDiff.of_le (by exact_mod_cast le_top)) φ.hasCompactSupport s hs hμs
 
 end Sobolev

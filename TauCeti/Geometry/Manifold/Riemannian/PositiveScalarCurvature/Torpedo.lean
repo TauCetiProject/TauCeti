@@ -346,8 +346,8 @@ theorem scalarCurvature_torpedoMetric_of_ne_zero {y : F} (hy : y ≠ 0) :
       (finrank ℝ F - 1) * exp (-2 * torpedoProfile (log ‖y‖)) *
         ((finrank ℝ F - 2) * (1 - torpedoSlope (log ‖y‖) ^ 2) -
           2 * deriv torpedoSlope (log ‖y‖)) := by
-  rw [torpedoMetric, scalarCurvature_rescale_exp_radial contDiff_torpedoExponent_norm hy
-    (contDiff_torpedoProfile.contDiffAt.of_le (by simp)), deriv_torpedoProfile]
+  rw [torpedoMetric, scalarCurvature_rescale_exp_radial contDiff_torpedoExponent_norm hy,
+    deriv_torpedoProfile]
   filter_upwards [isOpen_ne.mem_nhds hy] with z hz
   exact torpedoExponent_of_ne_zero (norm_ne_zero_iff.2 hz)
 
