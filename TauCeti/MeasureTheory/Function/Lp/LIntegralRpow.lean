@@ -152,15 +152,19 @@ function with its derivative; only a topology and an extended norm on each is ne
 
 Only the function on the left has to be a.e. strongly measurable: without that its `Lᵖ` seminorm
 is `∞` by definition, whatever the integral bound says, while a non-measurable `w` only makes the
-right-hand side larger. The two integrals may be taken against different measures `μ` and `ν`, as
-when an estimate is transported by a change of variables. -/
+right-hand side larger. The exponent `0` is allowed, where the left-hand side vanishes. The two
+integrals may be taken against different measures `μ` and `ν`, as when an estimate is transported
+by a change of variables. -/
 theorem eLpNorm_le_eLpNorm_of_lintegral_rpow_le {α : Type*} [MeasurableSpace α] {μ ν : Measure α}
     {G H : Type*} [ENorm G] [TopologicalSpace G] [ENorm H] [TopologicalSpace H]
     {v : α → G} {w : α → H} {c : ℝ}
-    (hc : 0 ≤ c) {p : ℝ≥0∞} (hp₀ : p ≠ 0) (hp : p ≠ ∞) (hv : AEStronglyMeasurable v μ)
+    (hc : 0 ≤ c) {p : ℝ≥0∞} (hp : p ≠ ∞) (hv : AEStronglyMeasurable v μ)
     (h : ∫⁻ x, ‖v x‖ₑ ^ p.toReal ∂μ ≤
       ENNReal.ofReal (c ^ p.toReal) * ∫⁻ x, ‖w x‖ₑ ^ p.toReal ∂ν) :
     eLpNorm v p μ ≤ ENNReal.ofReal c * eLpNorm w p ν := by
+  rcases eq_or_ne p 0 with rfl | hp₀
+  · rw [eLpNorm_exponent_zero hv]
+    exact zero_le
   have hr0 : (0 : ℝ) < p.toReal := ENNReal.toReal_pos hp₀ hp
   have hwle : (∫⁻ x, ‖w x‖ₑ ^ p.toReal ∂ν) ^ (1 / p.toReal) ≤ eLpNorm w p ν := by
     by_cases hw : AEStronglyMeasurable w ν
@@ -179,39 +183,49 @@ theorem eLpNorm_le_eLpNorm_of_lintegral_rpow_le {α : Type*} [MeasurableSpace α
 /-- **Hölder's inequality in extended-valued `∫⁻` form**, raised to the power `r`: the `L¹`
 integral of `u : α → ℝ≥0∞` is controlled by its `L^r` integral at the cost of the factor
 `μ univ ^ (r - 1)`.  Stated for an `ℝ≥0∞`-valued `u`, so a norm-valued application passes
-`fun x => ‖f x‖ₑ` and needs only that this composite is measurable.
+`fun x => ‖f x‖ₑ`; no measurability of `u` is needed.
 
 On a finite measure space this is the nesting `L^r ⊆ L¹`; for a general `μ` it is only the
 displayed inequality, which does not by itself give that inclusion.  No finiteness is assumed, and
 the bound is not vacuous when `μ univ = ∞`: arithmetic in `ℝ≥0∞` makes the right-hand side `0`
-rather than `∞` whenever `∫⁻ ‖f‖ₑ ^ r = 0`, and the inequality still holds there because `f` then
-vanishes almost everywhere. -/
+rather than `∞` whenever `∫⁻ ‖f‖ₑ ^ r = 0`, and the inequality still holds there: a zero lower
+integral of `u ^ r` forces a zero lower integral of `u`.  (This does not make a nonmeasurable `u`
+vanish almost everywhere.) -/
 theorem rpow_lintegral_le_measure_univ_rpow_mul {α : Type*} [MeasurableSpace α]
-    {μ : Measure α} {u : α → ℝ≥0∞} (hu : AEMeasurable u μ) {r : ℝ} (hr : 1 ≤ r) :
+    {μ : Measure α} {u : α → ℝ≥0∞} {r : ℝ} (hr : 1 ≤ r) :
     (∫⁻ x, u x ∂μ) ^ r ≤ μ Set.univ ^ (r - 1) * ∫⁻ x, u x ^ r ∂μ := by
-  have hf : AEStronglyMeasurable u μ := hu.aestronglyMeasurable
-  have hr0 : (0 : ℝ) < r := one_pos.trans_le hr
-  have hCr : eLpNorm u (ENNReal.ofReal r) μ = (∫⁻ x, u x ^ r ∂μ) ^ (1 / r) := by
-    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by simpa using hr0) ENNReal.ofReal_ne_top hf,
-      ENNReal.toReal_ofReal hr0.le]
-    simp only [enorm_eq_self]
-  have holder : ∫⁻ x, u x ∂μ
-      ≤ (∫⁻ x, u x ^ r ∂μ) ^ (1 / r) * μ Set.univ ^ (1 - 1 / r) := by
-    have hle : (1 : ℝ≥0∞) ≤ ENNReal.ofReal r := by
-      rw [← ENNReal.ofReal_one]; exact ENNReal.ofReal_le_ofReal hr
-    have := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (f := u) (μ := μ) hle hf
-    rw [eLpNorm_one_eq_lintegral_enorm hf, hCr, ENNReal.toReal_one,
-      ENNReal.toReal_ofReal hr0.le, div_one] at this
-    simpa only [enorm_eq_self] using this
-  have hinv : 1 / r * r = 1 := by field_simp
-  have hexp : (1 - 1 / r) * r = r - 1 := by field_simp
-  calc (∫⁻ x, u x ∂μ) ^ r
-      ≤ ((∫⁻ x, u x ^ r ∂μ) ^ (1 / r) * μ Set.univ ^ (1 - 1 / r)) ^ r :=
-        ENNReal.rpow_le_rpow holder hr0.le
-    _ = ((∫⁻ x, u x ^ r ∂μ) ^ (1 / r)) ^ r * (μ Set.univ ^ (1 - 1 / r)) ^ r :=
-        ENNReal.mul_rpow_of_nonneg _ _ hr0.le
-    _ = (∫⁻ x, u x ^ r ∂μ) * μ Set.univ ^ (r - 1) := by
-        rw [← ENNReal.rpow_mul, ← ENNReal.rpow_mul, hinv, hexp, ENNReal.rpow_one]
-    _ = μ Set.univ ^ (r - 1) * ∫⁻ x, u x ^ r ∂μ := mul_comm _ _
+  have main (g : α → ℝ≥0∞) (hu : AEMeasurable g μ) :
+      (∫⁻ x, g x ∂μ) ^ r ≤ μ Set.univ ^ (r - 1) * ∫⁻ x, g x ^ r ∂μ := by
+    have hf : AEStronglyMeasurable g μ := hu.aestronglyMeasurable
+    have hr0 : (0 : ℝ) < r := one_pos.trans_le hr
+    have hCr : eLpNorm g (ENNReal.ofReal r) μ = (∫⁻ x, g x ^ r ∂μ) ^ (1 / r) := by
+      rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by simpa using hr0) ENNReal.ofReal_ne_top hf,
+        ENNReal.toReal_ofReal hr0.le]
+      simp only [enorm_eq_self]
+    have holder : ∫⁻ x, g x ∂μ
+        ≤ (∫⁻ x, g x ^ r ∂μ) ^ (1 / r) * μ Set.univ ^ (1 - 1 / r) := by
+      have hle : (1 : ℝ≥0∞) ≤ ENNReal.ofReal r := by
+        rw [← ENNReal.ofReal_one]; exact ENNReal.ofReal_le_ofReal hr
+      have := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (f := g) (μ := μ) hle hf
+      rw [eLpNorm_one_eq_lintegral_enorm hf, hCr, ENNReal.toReal_one,
+        ENNReal.toReal_ofReal hr0.le, div_one] at this
+      simpa only [enorm_eq_self] using this
+    have hinv : 1 / r * r = 1 := by field_simp
+    have hexp : (1 - 1 / r) * r = r - 1 := by field_simp
+    calc (∫⁻ x, g x ∂μ) ^ r
+        ≤ ((∫⁻ x, g x ^ r ∂μ) ^ (1 / r) * μ Set.univ ^ (1 - 1 / r)) ^ r :=
+          ENNReal.rpow_le_rpow holder hr0.le
+      _ = ((∫⁻ x, g x ^ r ∂μ) ^ (1 / r)) ^ r * (μ Set.univ ^ (1 - 1 / r)) ^ r :=
+          ENNReal.mul_rpow_of_nonneg _ _ hr0.le
+      _ = (∫⁻ x, g x ^ r ∂μ) * μ Set.univ ^ (r - 1) := by
+          rw [← ENNReal.rpow_mul, ← ENNReal.rpow_mul, hinv, hexp, ENNReal.rpow_one]
+      _ = μ Set.univ ^ (r - 1) * ∫⁻ x, g x ^ r ∂μ := mul_comm _ _
+  -- Replace `u` by a measurable minorant `g ≤ u` with the same lower integral.
+  obtain ⟨g, hgm, hgu, hg⟩ := exists_measurable_le_lintegral_eq μ u
+  calc (∫⁻ x, u x ∂μ) ^ r = (∫⁻ x, g x ∂μ) ^ r := by rw [hg]
+    _ ≤ μ Set.univ ^ (r - 1) * ∫⁻ x, g x ^ r ∂μ := main g hgm.aemeasurable
+    _ ≤ μ Set.univ ^ (r - 1) * ∫⁻ x, u x ^ r ∂μ := by
+        gcongr with x
+        exact hgu x
 
 end TauCeti

@@ -31,10 +31,10 @@ For real matrices it is the skew-symmetric matrices, with the commutator bracket
 
 ## Main declarations
 
-* `Unitary.lieAlgebraEquiv`: the native unitary Lie algebra is the skew-adjoint Lie subalgebra.
-* `Unitary.coe_lieAlgebraEquiv_apply`: the equivalence is the inclusion's Lie differential.
-* `Matrix.orthogonalGroupLieAlgebraEquiv`: the native orthogonal Lie algebra is `so`.
-* `Matrix.coe_orthogonalGroupLieAlgebraEquiv_apply`: its inclusion differential formula.
+* `Unitary.lieAlgebraLieEquiv`: the native unitary Lie algebra is the skew-adjoint Lie subalgebra.
+* `Unitary.coe_lieAlgebraLieEquiv_apply`: the equivalence is the inclusion's Lie differential.
+* `Matrix.orthogonalGroupLieAlgebraLieEquiv`: the native orthogonal Lie algebra is `so`.
+* `Matrix.coe_orthogonalGroupLieAlgebraLieEquiv_apply`: its inclusion differential formula.
 
 ## References
 
@@ -124,7 +124,7 @@ private def skewCoordinateEquiv :
     (unitsLieAlgebraLieEquiv_map_lieSubalgebraOfSubgroup_unitarySubgroup (R := R))
 
 /-- The Lie algebra of the native unitary group is the skew-adjoint Lie subalgebra. -/
-def lieAlgebraEquiv :
+def lieAlgebraLieEquiv :
     LeftInvariantDerivation (Unitary.model R) (unitary R) ≃ₗ⁅ℝ⁆ skewAdjoint.lieSubalgebra ℝ R :=
   (nativeToClosedLieEquiv R).trans
     ((data R).lieEquivLieSubalgebraOfSubgroup.trans (skewCoordinateEquiv R))
@@ -146,11 +146,11 @@ private theorem skewCoordinateEquiv_apply
 /-- In algebra coordinates, the native unitary Lie equivalence is the differential of
 `Unitary.toUnitsSmoothHom`. -/
 @[simp]
-theorem coe_lieAlgebraEquiv_apply
+theorem coe_lieAlgebraLieEquiv_apply
     (D : LeftInvariantDerivation (Unitary.model R) (unitary R)) :
-    (lieAlgebraEquiv R D : R) =
+    (lieAlgebraLieEquiv R D : R) =
       unitsLieAlgebraLieEquiv (R := R) (lieMap (toUnitsSmoothHom (R := R)) D) := by
-  simp only [lieAlgebraEquiv, LieEquiv.trans_apply]
+  simp only [lieAlgebraLieEquiv, LieEquiv.trans_apply]
   rw [skewCoordinateEquiv_apply, (data R).lieEquivLieSubalgebraOfSubgroup_apply,
     (data R).lieMapSubtypeVal_apply]
   have hnative : nativeToClosedLieEquiv R D = lieMap (comparisonSmoothHom R) D := by
@@ -174,21 +174,21 @@ variable (n : Type*) [Fintype n] [DecidableEq n]
 
 Use the `L∞` operator norm: enable `Matrix.Norms.Operator` and the local instances
 `Matrix.linftyOpTopologicalSpace` and `Matrix.linftyOpContinuousStar`. -/
-def orthogonalGroupLieAlgebraEquiv :
+def orthogonalGroupLieAlgebraLieEquiv :
     LeftInvariantDerivation (Unitary.model (Matrix n n ℝ)) (orthogonalGroup n ℝ) ≃ₗ⁅ℝ⁆
       LieAlgebra.Orthogonal.so n ℝ :=
-  (Unitary.lieAlgebraEquiv (Matrix n n ℝ)).trans
+  (Unitary.lieAlgebraLieEquiv (Matrix n n ℝ)).trans
     (LieEquiv.ofEq _ _ (congrArg SetLike.coe (skewAdjoint_lieSubalgebra_eq_so (n := n))))
 
 /-- The real orthogonal Lie equivalence is the differential of the original inclusion
-into the matrix units, expressed in matrix coordinates. -/
+into the general linear group, expressed in matrix coordinates. -/
 @[simp]
-theorem coe_orthogonalGroupLieAlgebraEquiv_apply
+theorem coe_orthogonalGroupLieAlgebraLieEquiv_apply
     (D : LeftInvariantDerivation (Unitary.model (Matrix n n ℝ)) (orthogonalGroup n ℝ)) :
-    (orthogonalGroupLieAlgebraEquiv n D : Matrix n n ℝ) =
+    (orthogonalGroupLieAlgebraLieEquiv n D : Matrix n n ℝ) =
       unitsLieAlgebraLieEquiv (R := Matrix n n ℝ)
         (lieMap (Unitary.toUnitsSmoothHom (R := Matrix n n ℝ)) D) := by
-  simpa only [orthogonalGroupLieAlgebraEquiv, LieEquiv.trans_apply, LieEquiv.ofEq_apply]
-    using Unitary.coe_lieAlgebraEquiv_apply (Matrix n n ℝ) D
+  simpa only [orthogonalGroupLieAlgebraLieEquiv, LieEquiv.trans_apply, LieEquiv.ofEq_apply]
+    using Unitary.coe_lieAlgebraLieEquiv_apply (Matrix n n ℝ) D
 
 end Matrix
