@@ -12,11 +12,11 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
 /-!
 # Local homology of a Serre fibration along a fibre
 
-Let `p : E → B` be a Serre fibration and `b` a point of `B` in the source of an open partial
-homeomorphism `e : B → V` to a real normed space of finite dimension `r`, such as a chart of a
-topological manifold modelled on `V`. The **local homology of `E` along the fibre** `F = p⁻¹(b)`
-is the relative singular homology `Hₖ(E, E ∖ F)`. This file computes it, with coefficients in a
-ring `R`:
+Let `p : E → B` be a Serre fibration over a `T₁` space `B` and `b` a point of `B` in the source
+of an open partial homeomorphism `e : B → V` to a real normed space of finite dimension `r`, such
+as a chart of a topological manifold modelled on `V`. The **local homology of `E` along the
+fibre** `F = p⁻¹(b)` is the relative singular homology `Hₖ(E, E ∖ F)`. This file computes it,
+with coefficients in a ring `R`:
 
 * `Hₘ(E, E ∖ F; R) = 0` for `m < r` (`TauCeti.TopCat.isZero_singularHomology_complFiber`);
 * `Hₙ₊ᵣ(E, E ∖ F; R) ≅ Hₙ(F; R)` (`TauCeti.TopCat.singularHomologyComplFiberIso`).
@@ -181,7 +181,8 @@ private def pairIso (p : E ⟶ B) :
 
 private lemma mem_nbhd_of_mem_fiber {p : E ⟶ B} {x : E} (hx : x ∈ p ⁻¹' {b}) :
     x ∈ p ⁻¹' nbhd e hb := by
-  rw [mem_preimage, show p x = b from hx]
+  rw [mem_preimage, mem_singleton_iff] at hx
+  rw [mem_preimage, hx]
   exact mem_nbhd e hb
 
 /-- The fibre over `0` of the fibration over `K` is the fibre `F = p⁻¹(b)`. -/
@@ -204,7 +205,7 @@ private lemma isIso_excision (p : E ⟶ B) (m : ℕ) :
   TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset (ModuleCat.of R R)
     ((isOpen_nbhd e hb).preimage p.hom.continuous)
     ((isClosed_singleton (x := b)).preimage p.hom.continuous)
-    (fun x hx ↦ by rw [mem_preimage, show p x = b from hx]; exact mem_nbhd e hb) m
+    (fun _ ↦ mem_nbhd_of_mem_fiber e hb) m
 
 /-- `Hₘ(E, E ∖ F) ≅ Hₘ(p⁻¹(U), p⁻¹(U) ∖ F)`, the excision isomorphism followed by the
 identification of the excised pair with the pair of the fibration over `K`. -/
@@ -281,6 +282,7 @@ theorem livesAboveFundamentalClass_iff (p : E ⟶ B) (b : B) {d : ℕ}
 variable {M}
 
 /-- The zero class does not live above the fundamental class. -/
+@[simp]
 theorem not_livesAboveFundamentalClass_zero (p : E ⟶ B) (b : B) (d : ℕ) :
     ¬ LivesAboveFundamentalClass M p b
       (0 : ((_root_.TopCat.toSSet.obj E).homology M d : ModuleCat.{u} k)) :=
@@ -315,7 +317,7 @@ variable {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensio
   (e : OpenPartialHomeomorph B V) {b : B} (hb : b ∈ e.source)
 
 /-- **Living above the fundamental class through the shriek map.** For a Serre fibration over a
-space with a chart `e` of dimension `r` at `b`, a class `α ∈ Hₙ₊ᵣ(E; R)` lives above the
+`T₁` space with a chart `e` of dimension `r` at `b`, a class `α ∈ Hₙ₊ᵣ(E; R)` lives above the
 fundamental class at `b` exactly when its image under
 `Hₙ₊ᵣ(E) → Hₙ₊ᵣ(E, E ∖ p⁻¹(b)) ≅ Hₙ(p⁻¹(b))` is nonzero. -/
 theorem livesAboveFundamentalClass_iff_singularHomologyComplFiberIso (hp : serreFibrations p)
