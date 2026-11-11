@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Presentation
+import TauCeti.GroupTheory.Perm.Fin
 import Mathlib.Data.Fin.VecNotation
 import Mathlib.Algebra.Group.Subgroup.Pointwise
 import Mathlib.Tactic.FinCases
@@ -155,17 +156,9 @@ theorem presentationImage_zero : presentationImage ⟨0, by simp⟩ = a⁻¹ := 
 @[simp]
 theorem presentationImage_one : presentationImage ⟨1, by simp⟩ = b⁻¹ := (rfl)
 
--- Check the long relators one row at a time. Each kernel decision covers only fourteen
--- points, avoiding the large intermediate terms from checking all 266 points together.
-private theorem perm_eq_one_of_rows (p : Equiv.Perm (Fin 266))
-    (h : ∀ i : Fin 19, ∀ j : Fin 14,
-      p ⟨i.val * 14 + j.val, by omega⟩ = ⟨i.val * 14 + j.val, by omega⟩) : p = 1 := by
-  refine Equiv.ext fun i ↦ ?_
-  rw [Equiv.Perm.one_apply]
-  have hi : (⟨(i.val / 14) * 14 + i.val % 14, by omega⟩ : Fin 266) = i :=
-    Fin.ext (Nat.div_add_mod' i.val 14)
-  simpa only [hi] using h ⟨i.val / 14, by omega⟩ ⟨i.val % 14, by omega⟩
-
+-- Check the long relators one row at a time with `TauCeti.perm_eq_one_of_rows`. Each kernel
+-- decision covers only fourteen points, avoiding the large intermediate terms from checking all
+-- 266 points together.
 private theorem relator_zero :
     Relator.eval presentationImage (Sporadic.j1Presentation.transcribed[0]'(by simp)) = 1 := by
   simp only [Sporadic.j1Presentation_transcribed, List.getElem_cons_zero,
@@ -183,7 +176,7 @@ private theorem relator_two :
   simp only [Sporadic.j1Presentation_transcribed, List.getElem_cons_succ, List.getElem_cons_zero,
     Relator.eval_pow, Relator.eval_mul, Relator.eval_gen,
     presentationImage_zero, presentationImage_one]
-  apply perm_eq_one_of_rows
+  apply TauCeti.perm_eq_one_of_rows (m := 19) (n := 14)
   intro i
   fin_cases i <;> decide +kernel
 
@@ -192,7 +185,7 @@ private theorem relator_three :
   simp only [Sporadic.j1Presentation_transcribed, List.getElem_cons_succ, List.getElem_cons_zero,
     Relator.eval_pow, Relator.eval_mul, Relator.eval_inv, Relator.eval_gen,
     presentationImage_zero, presentationImage_one]
-  apply perm_eq_one_of_rows
+  apply TauCeti.perm_eq_one_of_rows (m := 19) (n := 14)
   intro i
   fin_cases i <;> decide +kernel
 
@@ -201,7 +194,7 @@ private theorem relator_four :
   simp only [Sporadic.j1Presentation_transcribed, List.getElem_cons_succ, List.getElem_cons_zero,
     Relator.eval_pow, Relator.eval_mul, Relator.eval_inv, Relator.eval_gen,
     presentationImage_zero, presentationImage_one]
-  apply perm_eq_one_of_rows
+  apply TauCeti.perm_eq_one_of_rows (m := 19) (n := 14)
   intro i
   fin_cases i <;> decide +kernel
 
