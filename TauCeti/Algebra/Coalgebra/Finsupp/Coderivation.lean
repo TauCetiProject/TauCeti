@@ -56,12 +56,15 @@ theorem eq_zero_of_finsupp_comul_comp_eq (d f : C →ₗ[R] (κ →₀ R))
   refine LinearMap.ext fun c => Finsupp.ext fun i => ?_
   -- Project to the coordinate `i` and argue in the commutative convolution algebra `C → R`.
   let p : (κ →₀ R) →ₗ[R] R := Finsupp.lapply i
+  -- The coordinate projection `p` is comultiplicative, and `mul' R R` undoes the
+  -- comultiplication `r ↦ 1 ⊗ r` of the coalgebra `R`.
+  have hpc : comul ∘ₗ p = TensorProduct.map p p ∘ₗ comul := Finsupp.comul_comp_lapply R κ R i
+  have hR : mul' R R ∘ₗ (comul : R →ₗ[R] R ⊗[R] R) = .id := by
+    ext
+    simp
   have hp (u : C →ₗ[R] (κ →₀ R)) :
       mul' R R ∘ₗ TensorProduct.map p p ∘ₗ comul ∘ₗ u = p ∘ₗ u := by
-    have hdiag : (mul' R R ∘ₗ TensorProduct.map p p) ∘ₗ comul = p := by
-      ext j
-      by_cases hj : j = i <;> simp [p, hj]
-    rw [← comp_assoc, ← comp_assoc, hdiag]
+    rw [← comp_assoc _ comul, ← hpc, comp_assoc, ← comp_assoc _ comul, hR, id_comp]
   have hmul (u v : C →ₗ[R] (κ →₀ R)) : toConv (p ∘ₗ u) * toConv (p ∘ₗ v) =
       toConv (mul' R R ∘ₗ TensorProduct.map p p ∘ₗ TensorProduct.map u v ∘ₗ comul) := by
     simp only [convMul_def, map_comp, comp_assoc]
