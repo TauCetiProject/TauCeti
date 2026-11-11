@@ -139,9 +139,10 @@ normal subgroup of `G` with `G ⧸ N` cyclic. If the order of `N` is prime to th
 for every subgroup `B` the index of `A ⊓ B` is the least common multiple of the indices of `A` and
 `B`.
 
-When `N` is a `p`-group, the hypothesis says that `p` does not divide `[G : A]`. This is the shape
-of an inertia group, with `N` its wild part, and it is what Abhyankar's lemma on the ramification
-index in a compositum reduces to. Without the hypothesis on `A` the conclusion fails:
+When `N` is a nontrivial finite `p`-group, the hypothesis says that `p` does not divide `[G : A]`;
+for a trivial `N` it holds for every `A`. This is the
+shape of an inertia group, with `N` its wild part, and it is what Abhyankar's lemma on the
+ramification index in a compositum reduces to. Without the hypothesis on `A` the conclusion fails:
 in `(ℤ / p) × (ℤ / p)` with `N` the whole group, two distinct subgroups `A` and `B` of order `p`
 have index `p` each while `A ⊓ B = ⊥` has index `p ^ 2`. -/
 theorem index_inf_eq_lcm_of_isCyclic_quotient (N : Subgroup G) [N.Normal] [IsCyclic (G ⧸ N)]
