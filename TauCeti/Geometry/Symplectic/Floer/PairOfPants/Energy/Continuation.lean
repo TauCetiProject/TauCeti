@@ -107,6 +107,8 @@ namespace `SmoothTwoForm`).
 
 ## References
 
+* D. McDuff and D. Salamon, *J-holomorphic curves and symplectic topology*, Section 8.1, on the
+  energy identity for Hamiltonian perturbations and the curvature bounds on the energy.
 * M. Schwarz, *Cohomology operations from S¹-cobordisms in Floer homology*, PhD thesis,
   ETH Zürich (1995), on the compatibility of the pair-of-pants product with continuation maps.
 * D. Salamon, *Lectures on Floer homology*, in *Symplectic geometry and topology*, IAS/Park City
