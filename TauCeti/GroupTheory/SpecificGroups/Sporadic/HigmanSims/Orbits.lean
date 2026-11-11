@@ -8,7 +8,7 @@ module
 public import TauCeti.GroupTheory.SpecificGroups.Sporadic.HigmanSims.Basic
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Chain
 public import Mathlib.GroupTheory.GroupAction.Transitive
-import TauCeti.GroupTheory.GroupAction.PermutationRigidity
+import TauCeti.GroupTheory.Perm.Rigidity
 
 /-!
 # Basic orbits and a base of the Higman--Sims model

@@ -10,7 +10,7 @@ public import TauCeti.GroupTheory.GroupAction.Stabilizer.Chain
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.GroupAction.Transitive
 import Mathlib.Data.Nat.Bits
-import TauCeti.GroupTheory.GroupAction.PermutationRigidity
+import TauCeti.GroupTheory.Perm.Rigidity
 
 /-!
 # Basic orbits and a base of the McLaughlin permutation model
