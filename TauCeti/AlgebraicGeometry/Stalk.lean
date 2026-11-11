@@ -11,6 +11,7 @@ public import Mathlib.AlgebraicGeometry.Stalk
 public import TauCeti.AlgebraicGeometry.PuncturedSpectrum
 
 import Mathlib.CategoryTheory.Filtered.Final
+import TauCeti.Topology.Sober
 
 /-!
 # The local scheme of a stalk as a cofiltered limit of affine open neighbourhoods
@@ -47,8 +48,9 @@ contains the generic point `s` of one of its irreducible components, and for suc
 * `AlgebraicGeometry.Scheme.Opens.exists_notMem_specializes_imp_mem`: every proper open `U ≠ ⊤`
   misses a point `s` whose strict generizations all lie in `U`.
 * `TauCeti.fromSpecStalk_preimage_eq_puncturedSpectrum_of_specializes` and
-  `TauCeti.exists_notMem_fromSpecStalk_preimage_eq_puncturedSpectrum`: for such a point `s`, the
-  preimage of `U` in `Spec 𝒪_{X,s}` is `IsLocalRing.puncturedSpectrum 𝒪_{X,s}`.
+  `AlgebraicGeometry.Scheme.Opens.exists_notMem_fromSpecStalk_preimage_eq_puncturedSpectrum`: for
+  such a point `s`, the preimage of `U` in `Spec 𝒪_{X,s}` is
+  `IsLocalRing.puncturedSpectrum 𝒪_{X,s}`.
 
 ## References
 
@@ -107,9 +109,9 @@ instance : Nonempty (X.AffineOpenNhds x) := by
 
 instance : IsCofilteredOrEmpty (X.AffineOpenNhds x) where
   cone_objs W₁ W₂ := by
+    have hx12 : x ∈ W₁.opens ⊓ W₂.opens := ⟨W₁.mem, W₂.mem⟩
     obtain ⟨_, ⟨W₃, hW₃, rfl⟩, hxW₃, hle⟩ :=
-      X.isBasis_affineOpens.exists_subset_of_mem_open
-        (show x ∈ W₁.opens ⊓ W₂.opens from ⟨W₁.mem, W₂.mem⟩) (W₁.opens ⊓ W₂.opens).isOpen
+      X.isBasis_affineOpens.exists_subset_of_mem_open hx12 (W₁.opens ⊓ W₂.opens).isOpen
     exact ⟨⟨⟨W₃, hW₃⟩, hxW₃⟩, homOfLE (hle.trans inf_le_left),
       homOfLE (hle.trans inf_le_right), trivial⟩
   cone_maps W₁ _ _ _ := ⟨W₁, 𝟙 W₁, Subsingleton.elim _ _⟩
@@ -128,14 +130,15 @@ variable (X x) in
 @[expose, simps]
 def toOpenNhds : X.AffineOpenNhds x ⥤ OpenNhds x where
   obj W := ⟨W.opens, W.mem⟩
-  map f := homOfLE (show _ ≤ _ from leOfHom f)
+  map f := homOfLE (Subtype.mk_le_mk.mpr (mk_le_mk.mp (leOfHom f)))
 
 instance : (toOpenNhds X x).Initial := by
   refine Functor.initial_of_exists_of_isCofiltered (toOpenNhds X x) (fun U ↦ ?_)
     (fun {_} {W} _ _ ↦ ⟨W, 𝟙 W, Subsingleton.elim _ _⟩)
   obtain ⟨_, ⟨W, hW, rfl⟩, hxW, hle⟩ :=
     X.isBasis_affineOpens.exists_subset_of_mem_open U.2 U.1.isOpen
-  exact ⟨⟨⟨W, hW⟩, hxW⟩, ⟨homOfLE (show W ≤ U.1 from hle)⟩⟩
+  have hle' : (⟨W, hxW⟩ : OpenNhds x) ≤ U := hle
+  exact ⟨⟨⟨W, hW⟩, hxW⟩, ⟨homOfLE hle'⟩⟩
 
 end AffineOpenNhds
 
@@ -143,12 +146,13 @@ end AffineOpenNhds
 @[expose, simps]
 def affineOpenNhdsDiagram : X.AffineOpenNhds x ⥤ Scheme.{u} where
   obj W := W.opens.toScheme
-  map {W₁ W₂} f := X.homOfLE (show W₁.opens ≤ W₂.opens from leOfHom f)
+  map f := X.homOfLE (AffineOpenNhds.mk_le_mk.mp (leOfHom f))
   map_id W := X.homOfLE_rfl W.opens
   map_comp f g := (X.homOfLE_homOfLE (leOfHom f) (leOfHom g)).symm
 
-instance (W : X.AffineOpenNhds x) : IsAffine ((X.affineOpenNhdsDiagram x).obj W) :=
-  show IsAffine W.opens.toScheme from W.isAffineOpen
+instance (W : X.AffineOpenNhds x) : IsAffine ((X.affineOpenNhdsDiagram x).obj W) := by
+  rw [affineOpenNhdsDiagram_obj]
+  exact W.isAffineOpen
 
 instance {W₁ W₂ : X.AffineOpenNhds x} (f : W₁ ⟶ W₂) :
     IsAffineHom ((X.affineOpenNhdsDiagram x).map f) :=
@@ -206,16 +210,26 @@ def isLimitSpecStalkCone : IsLimit (X.specStalkCone x) := by
     (isLimitConeRightOpOfCocone F (isColimitStalkWhisker X x))
   let α : X.affineOpenNhdsDiagram x ≅ F.rightOp ⋙ Scheme.Spec :=
     X.affineOpenNhdsDiagramIsoSpec x
+  -- `TopCat.Presheaf.stalk` is `colimit ((OpenNhds.inclusion x).op ⋙ X.presheaf)` and
+  -- `TopCat.Presheaf.germ` is `colimit.ι ((OpenNhds.inclusion x).op ⋙ X.presheaf)`.
+  have hpt : ((Cone.postcompose α.inv).obj
+      (Scheme.Spec.mapCone (coneRightOpOfCocone
+        ((colimit.cocone ((OpenNhds.inclusion x).op ⋙ X.presheaf)).whisker
+          (AffineOpenNhds.toOpenNhds X x).op)))).pt = (X.specStalkCone x).pt := rfl
   refine IsLimit.ofIsoLimit ((IsLimit.postcomposeInvEquiv α _).symm hcSpec)
-    (Cone.ext (Iso.refl _) fun W ↦ ?_)
-  change Spec.map (X.presheaf.germ W.opens x W.mem) ≫
-      (X.affineOpenNhdsDiagramIsoSpec x).inv.app W =
-    𝟙 (Spec (X.presheaf.stalk x)) ≫ W.opens.fromSpecStalkOfMem x W.mem
-  rw [Category.id_comp, affineOpenNhdsDiagramIsoSpec_inv_app]
-  change Spec.map (X.presheaf.germ W.opens x W.mem) ≫ W.isAffineOpen.isoSpec.inv =
-    W.opens.fromSpecStalkOfMem x W.mem
-  rw [← Opens.fromSpecStalkOfMem_toSpecΓ W.opens x W.mem, ← IsAffineOpen.isoSpec_hom W.isAffineOpen,
-    Category.assoc, Iso.hom_inv_id, Category.comp_id]
+    (Cone.ext (eqToIso hpt) fun W ↦ ?_)
+  have hlhs :
+      ((Cone.postcompose α.inv).obj
+          (Scheme.Spec.mapCone (coneRightOpOfCocone
+            ((colimit.cocone ((OpenNhds.inclusion x).op ⋙ X.presheaf)).whisker
+              (AffineOpenNhds.toOpenNhds X x).op)))).π.app W =
+        Spec.map (X.presheaf.germ W.opens x W.mem) ≫ W.isAffineOpen.isoSpec.inv := rfl
+  have hrhs :
+      (eqToIso hpt).hom ≫ (X.specStalkCone x).π.app W =
+        W.opens.fromSpecStalkOfMem x W.mem :=
+    Category.id_comp (W.opens.fromSpecStalkOfMem x W.mem)
+  rw [hlhs, hrhs, ← Opens.fromSpecStalkOfMem_toSpecΓ_assoc W.opens x W.mem,
+    ← IsAffineOpen.isoSpec_hom W.isAffineOpen, Iso.hom_inv_id, Category.comp_id]
 
 /-- The directed system of section rings `Γ(X, W)` over `(X.AffineOpenNhds x)ᵒᵈ`. -/
 abbrev stalkDirectSystemObj (W : (X.AffineOpenNhds x)ᵒᵈ) : Type u :=
@@ -225,13 +239,10 @@ abbrev stalkDirectSystemObj (W : (X.AffineOpenNhds x)ᵒᵈ) : Type u :=
 def stalkDirectSystemMap (W₁ W₂ : (X.AffineOpenNhds x)ᵒᵈ) (h : W₁ ≤ W₂) :
     X.stalkDirectSystemObj x W₁ →+* X.stalkDirectSystemObj x W₂ :=
   (X.presheaf.map
-    (homOfLE (show (OrderDual.ofDual W₂).opens ≤ (OrderDual.ofDual W₁).opens from h)).op).hom
+    (homOfLE (AffineOpenNhds.mk_le_mk.mp (OrderDual.ofDual_le_ofDual.mpr h))).op).hom
 
 instance : DirectedSystem (X.stalkDirectSystemObj x) (X.stalkDirectSystemMap x · · ·) where
-  map_self W s := by
-    change (X.presheaf.map (𝟙 (op (OrderDual.ofDual W).opens))).hom s = s
-    rw [X.presheaf.map_id]
-    rfl
+  map_self W s := by simp [stalkDirectSystemMap]
   map_map _ _ _ _ _ s := by
     dsimp [stalkDirectSystemMap]
     rw [← CommRingCat.comp_apply, ← X.presheaf.map_comp]
@@ -292,43 +303,16 @@ theorem stalkRingEquivDirectLimit_of (W : (X.AffineOpenNhds x)ᵒᵈ)
 component of `X \ U`; every strict generization of `s` lies in `U`. -/
 theorem Opens.exists_notMem_specializes_imp_mem {X : Scheme.{u}} (U : X.Opens) (hU : U ≠ ⊤) :
     ∃ s : X, s ∉ U ∧ ∀ ⦃t : X⦄, t ⤳ s → t ≠ s → t ∈ U := by
-  let Z : Set X := (U : Set X)ᶜ
-  have hZclosed : IsClosed Z := U.isOpen.isClosed_compl
-  have hZne : Z.Nonempty := by
-    rw [Set.nonempty_compl]
-    intro htop
-    exact hU (SetLike.ext' htop)
-  obtain ⟨z₀, hz₀⟩ := hZne
-  let C : Set Z := irreducibleComponent ⟨z₀, hz₀⟩
-  have hCirr : IsIrreducible (Subtype.val '' C : Set X) :=
-    isIrreducible_irreducibleComponent.image Subtype.val continuous_subtype_val.continuousOn
-  have hCclosed : IsClosed (Subtype.val '' C : Set X) :=
-    hZclosed.isClosedEmbedding_subtypeVal.isClosedMap C isClosed_irreducibleComponent
-  obtain ⟨s, hs⟩ := QuasiSober.sober hCirr hCclosed
-  have hsZ : s ∈ Z := by
-    obtain ⟨y, -, rfl⟩ := hs.mem
-    exact y.2
-  refine ⟨s, hsZ, fun t hts hne ↦ ?_⟩
+  obtain ⟨z₀, hz₀⟩ : ((U : Set X)ᶜ).Nonempty :=
+    Set.nonempty_compl.mpr fun h ↦ hU (SetLike.ext' (h.trans Opens.coe_top.symm))
+  let : QuasiSober ((U : Set X)ᶜ : Set X) :=
+    U.isOpen.isClosed_compl.isClosedEmbedding_subtypeVal.quasiSober
+  obtain ⟨s, hs, -⟩ := U.isOpen.isClosed_compl.exists_genericPoint_specializes hz₀
+  refine ⟨s.1, s.2, fun t hts hne ↦ ?_⟩
   by_contra htU
-  have htZ : t ∈ Z := htU
-  let T : Set Z := closure ({⟨t, htZ⟩} : Set Z)
-  have hsT : (⟨s, hsZ⟩ : Z) ∈ T := by
-    rw [closure_subtype]
-    simpa using specializes_iff_mem_closure.mp hts
-  have hCT : C ⊆ T := by
-    intro y hy
-    have hyC : (y : X) ∈ closure ({s} : Set X) := by
-      rw [hs.def]
-      exact ⟨y, hy, rfl⟩
-    have hys : (y : Z) ∈ closure ({⟨s, hsZ⟩} : Set Z) := by
-      rw [closure_subtype]
-      simpa using hyC
-    exact closure_minimal (Set.singleton_subset_iff.mpr hsT) isClosed_closure hys
-  have hTC : T = C := eq_irreducibleComponent isIrreducible_singleton.closure.isPreirreducible hCT
-  have ht_in : t ∈ closure ({s} : Set X) := by
-    rw [hs.def]
-    exact ⟨⟨t, htZ⟩, hTC ▸ subset_closure (Set.mem_singleton _), rfl⟩
-  exact hne ((hts.antisymm (specializes_iff_mem_closure.mpr ht_in)).eq)
+  have hts' : (⟨t, htU⟩ : ((U : Set X)ᶜ : Set X)) ⤳ s :=
+    Topology.IsInducing.subtypeVal.specializes_iff.mp hts
+  exact hne (congrArg Subtype.val ((TauCeti.mem_genericPoints_iff.mp hs) ⟨t, htU⟩ hts'))
 
 end AlgebraicGeometry.Scheme
 
@@ -342,14 +326,9 @@ theorem fromSpecStalk_preimage_eq_puncturedSpectrum_of_specializes
     {X : Scheme.{u}} {U : X.Opens} {s : X} (hs : s ∉ U)
     (hgen : ∀ ⦃t : X⦄, t ⤳ s → t ≠ s → t ∈ U) :
     (X.fromSpecStalk s) ⁻¹ᵁ U = IsLocalRing.puncturedSpectrum (X.presheaf.stalk s) := by
-  apply SetLike.ext'
-  let f : PrimeSpectrum (X.presheaf.stalk s) → X := (X.fromSpecStalk s).base
-  change f ⁻¹' (U : Set X) =
-    (SetLike.coe (IsLocalRing.puncturedSpectrum (X.presheaf.stalk s)) :
-      Set (PrimeSpectrum (X.presheaf.stalk s)))
-  rw [IsLocalRing.coe_puncturedSpectrum]
   ext p
-  rw [Set.mem_preimage, Set.mem_compl_singleton_iff]
+  rw [SetLike.mem_coe, SetLike.mem_coe, Scheme.Hom.mem_preimage]
+  refine Iff.trans ?_ (IsLocalRing.mem_puncturedSpectrum_iff (X.presheaf.stalk s) p).symm
   constructor
   · intro hpU hpc
     subst hpc
@@ -365,13 +344,17 @@ theorem fromSpecStalk_preimage_eq_puncturedSpectrum_of_specializes
         (heq.trans Scheme.fromSpecStalk_closedPoint.symm)
     exact hgen hspec hinj
 
+end TauCeti
+
+namespace AlgebraicGeometry.Scheme.Opens
+
 /-- For any proper open `U ≠ ⊤` of a scheme `X`, there exists a point `s ∉ U` such that the
 preimage of `U` in `Spec 𝒪_{X,s}` is the punctured spectrum of `𝒪_{X,s}`. -/
 theorem exists_notMem_fromSpecStalk_preimage_eq_puncturedSpectrum
     {X : Scheme.{u}} (U : X.Opens) (hU : U ≠ ⊤) :
     ∃ s : X, s ∉ U ∧
-      (X.fromSpecStalk s) ⁻¹ᵁ U = IsLocalRing.puncturedSpectrum (X.presheaf.stalk s) := by
+      (X.fromSpecStalk s) ⁻¹ᵁ U = TauCeti.IsLocalRing.puncturedSpectrum (X.presheaf.stalk s) := by
   obtain ⟨s, hs, hgen⟩ := U.exists_notMem_specializes_imp_mem hU
-  exact ⟨s, hs, fromSpecStalk_preimage_eq_puncturedSpectrum_of_specializes hs hgen⟩
+  exact ⟨s, hs, TauCeti.fromSpecStalk_preimage_eq_puncturedSpectrum_of_specializes hs hgen⟩
 
-end TauCeti
+end AlgebraicGeometry.Scheme.Opens

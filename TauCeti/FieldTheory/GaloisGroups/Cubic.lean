@@ -77,7 +77,7 @@ private theorem HasGaloisLabel.isSquare_discr_iff_three {j : TransitiveGroupInde
     IsSquare f.discr ↔ referenceSubgroup 3 j ≤ alternatingGroup (Fin 3) := by
   have : IsGalois F f.SplittingField := IsGalois.of_separable_splitting_field h.separable
   let _ : Fact ((f.map (algebraMap F f.SplittingField)).Splits) := ⟨SplittingField.splits f⟩
-  obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f h.separable
+  obtain ⟨e⟩ := nonempty_rootSet_equiv_fin h.separable (SplittingField.splits f)
   exact (isSquare_discr_iff_mem_range e.symm).trans <|
     (discrSqrt_mem_range_iff hchar e.symm).trans h.range_le_alternatingGroup_iff
 
@@ -138,7 +138,7 @@ theorem discr_X_pow_three_sub_two : (X ^ 3 - 2 : ℚ[X]).discr = -108 := by
 /-- `X³ - 3X - 1` is irreducible over `ℚ`: it has no root modulo `2`, so no integral root. -/
 theorem irreducible_X_pow_three_sub_three_mul_X_sub_one :
     Irreducible (X ^ 3 - 3 * X - 1 : ℚ[X]) := by
-  have := irreducible_map_intCast_of_natDegree_eq_three (g := X ^ 3 - 3 * X - 1)
+  have := Monic.irreducible_map_of_natDegree_eq_three (K := ℚ) (g := (X ^ 3 - 3 * X - 1 : ℤ[X]))
     (by monicity!) (by compute_degree!) fun m hm => by
       have h2 := congrArg (Int.cast : ℤ → ZMod 2) hm
       push_cast [eval_sub, eval_pow, eval_X, eval_mul, eval_one, eval_ofNat] at h2
@@ -149,7 +149,7 @@ theorem irreducible_X_pow_three_sub_three_mul_X_sub_one :
 
 /-- `X³ - 2` is irreducible over `ℚ`: it has no root modulo `7`, so no integral root. -/
 theorem irreducible_X_pow_three_sub_two : Irreducible (X ^ 3 - 2 : ℚ[X]) := by
-  have := irreducible_map_intCast_of_natDegree_eq_three (g := X ^ 3 - 2)
+  have := Monic.irreducible_map_of_natDegree_eq_three (K := ℚ) (g := (X ^ 3 - 2 : ℤ[X]))
     (by monicity!) (by compute_degree!) fun m hm => by
       have h7 := congrArg (Int.cast : ℤ → ZMod 7) hm
       push_cast [eval_sub, eval_pow, eval_X, eval_ofNat] at h7

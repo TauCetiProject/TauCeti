@@ -26,7 +26,7 @@ analytic point outside `𝒴` on either side.
   and that `ϖ` is not a unit. The `p`-adic valuation of `𝕎 k`, pulled back along
   `𝕎 O → 𝕎 k`, kills `[ϖ]` but not `p`, so it lies in `D(p) \ 𝒴`. The `p`-adic valuation
   `x ↦ ρ ^ (ord_p x)` of `𝕎 k` is the Gauss valuation `λ_ρ` for the trivial valuation of `k`
-  (`Valuation.integers_one`).
+  (`Valuation.integers_self_iff`).
 
 In the usual picture of `Spa(A_inf, A_inf)` these are the points written `x_L` and `x_crys`.
 
@@ -84,7 +84,8 @@ private theorem exists_mem_spa_natCast_notMem_supp_teichmuller_mem_supp_of_ringH
       (p : WittVector p O) ∉ x.supp ∧ teichmuller p ϖ ∈ x.supp := by
   classical
   -- the Gauss valuation of `𝕎 k` for the trivial valuation of `k`, pulled back to `𝕎 O`
-  let w := (gaussValuation p (Valuation.integers_one (R := k) (Γ₀ := ℝ≥0)) 2⁻¹
+  let w := (gaussValuation p
+    (Valuation.integers_self_iff.2 (Valuation.one_apply_le_one (R := k))) 2⁻¹
     (by norm_num)).comap (WittVector.map φ)
   refine ⟨ofValuation w, ?_, ?_, ?_⟩
   · rw [mem_spa_iff, isContinuous_ofValuation_iff]

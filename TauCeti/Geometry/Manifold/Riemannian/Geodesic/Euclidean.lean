@@ -107,7 +107,7 @@ private theorem leviCivitaConnection_const_apply (u v : F) (x : F) :
   have hbracket (a b c : F) :
       inner ℝ (C a x) (VectorField.mlieBracket 𝓘(ℝ, F) (C b) (C c) x) = 0 := by
     have h : VectorField.mlieBracket 𝓘(ℝ, F) (C b) (C c) x = 0 := by
-      simpa only [C] using TauCeti.mlieBracket_const_model_space b c x
+      simpa only [C] using VectorField.mlieBracket_const_model_space b c x
     rw [h]
     exact inner_zero_right (𝕜 := ℝ) (C a x)
   let w : F := leviCivitaConnection 𝓘(ℝ, F) F (C v) x (C u x)

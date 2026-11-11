@@ -398,9 +398,7 @@ theorem ginzburgThreeDifferential_eq_of_cyclicQuotient_eq
       simpa only [Submodule.mkQ_apply, cyclicDerivativeCyclicQuotient_mk] using
         congrArg (cyclicDerivativeCyclicQuotient a) h
     · rw [ginzburgThreeArrowRelator_loop, ginzburgThreeArrowRelator_loop]
-  exact (liftDerivation_unique k ginzburgThreeDegree _
-    (vertexIdempotent_mul_ginzburgThreeArrowRelator k _)
-    (ginzburgThreeArrowRelator_mul_vertexIdempotent k _) (ginzburgThreeDifferential k W')
+  exact (liftDerivation_unique k ginzburgThreeDegree _ (ginzburgThreeDifferential k W')
     (ginzburgThreeDifferential_vertexIdempotent k W') (ginzburgThreeDifferential_mul k W')
     fun e => (ginzburgThreeDifferential_ofArrow k W' e).trans (hrel e).symm).symm
 

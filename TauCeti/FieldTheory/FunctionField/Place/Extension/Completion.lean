@@ -138,7 +138,7 @@ theorem ramificationGroup_eq_comap_completionDecompositionHom (i : ℕ) :
     ramificationGroup F P i =
       (IsLocalRing.ramificationGroup (P.completionPlace.integers.decompositionSubgroup k)
         P.completionPlace.integers i).comap (completionDecompositionHom F P) := by
-  rw [ramificationGroup_eq_isLocalRing_ramificationGroup]
+  rw [ramificationGroup_def]
   refine IsLocalRing.ramificationGroup_eq_comap_of_comap_maximalIdeal_pow _
     P.completionIntegersEmbedding.toRingHom
     (fun g x ↦ (completionDecompositionHom_smul_completionIntegersEmbedding g x).symm)
@@ -148,7 +148,7 @@ theorem ramificationGroup_eq_comap_completionDecompositionHom (i : ℕ) :
       mem_maximalIdeal_pow_iff_coe_mem_filtration, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
       completionIntegersEmbedding_apply, completionEmbedding_mem_filtration_iff]
   · -- approximate `y` to order `n` by a function in the valuation ring of `P`
-    obtain ⟨x, hx⟩ := P.exists_filtration_sub_completionEmbedding_mem (Nat.cast_nonneg n)
+    obtain ⟨x, hx⟩ := P.exists_filtration_sub_completionEmbedding_mem n
       ⟨y, P.completionPlace.mem_filtration_zero_iff.mpr y.2⟩
     refine ⟨⟨x, P.mem_filtration_zero_iff.mp x.2⟩, ?_⟩
     rw [mem_maximalIdeal_pow_iff_coe_mem_filtration, AddSubgroupClass.coe_sub,

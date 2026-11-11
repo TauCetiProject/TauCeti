@@ -74,8 +74,8 @@ theorem timeEHolderNorm_le_of_timeEHolderNorm_le [PseudoMetricSpace F]
   refine timeEHolderNorm_le_iff.2 fun x => ?_
   have hx : HolderOnWith K β (fun t => v (slabMk x t)) univ :=
     fun t _ s _ => timeEHolderNorm_le_iff.1 h x t s
-  exact fun t s => hx.of_le_of_dist_le (fun _ _ _ _ => hD _ _) hγ hδ t (mem_univ t) s
-    (mem_univ s)
+  exact fun t s => HolderOnWith.of_le_of_dist_le (fun _ ht _ hs _ => hx.dist_le ht hs)
+    (fun _ _ _ _ => hD _ _) hγ hδ t (mem_univ t) s (mem_univ s)
 
 /-- **The parabolic seminorm at a smaller exponent.** Let `v` be a function on the slab
 `E × [a, b]` whose values lie within distance `D` of each other, with spatial `β₁`-seminorm at most
@@ -95,8 +95,8 @@ theorem eHolderNorm_le_of_spaceEHolderNorm_le_of_timeEHolderNorm_le [MetricSpace
   · refine spaceEHolderNorm_le_iff.2 fun t => ?_
     have ht : HolderOnWith K₁ β₁ (fun x => v (slabMk x t)) univ :=
       fun x _ y _ => spaceEHolderNorm_le_iff.1 h₁ t x y
-    exact fun x y => ht.of_le_of_dist_le (fun _ _ _ _ => hD _ _) hα₁ hδ₁ x (mem_univ x) y
-      (mem_univ y)
+    exact fun x y => HolderOnWith.of_le_of_dist_le (fun _ hx _ hy _ => ht.dist_le hx hy)
+      (fun _ _ _ _ => hD _ _) hα₁ hδ₁ x (mem_univ x) y (mem_univ y)
   · exact timeEHolderNorm_le_of_timeEHolderNorm_le h₂ hD hα₂ hδ₂
 
 /-- Values bounded in norm by `C` on the slab lie within distance `2 C` of each other. -/

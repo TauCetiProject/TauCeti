@@ -17,7 +17,8 @@ scheme that land in presheaves: `AlgebraicGeometry.Scheme.Modules.toPresheafOfMo
 `AlgebraicGeometry.Scheme.Modules.toPresheaf`. This file adds the conversion of sheaf-level
 isomorphisms back to `𝒪_X`-module isomorphisms, the one that lands in abelian sheaves, and records
 that the latter is exact.
-It also gives an epimorphism criterion using surjectivity on sections over affine opens.
+It also gives an epimorphism criterion using surjectivity on sections over affine opens, and an
+isomorphism criterion using sections over the members of a basis.
 
 ## Main declarations
 
@@ -29,7 +30,9 @@ It also gives an epimorphism criterion using surjectivity on sections over affin
 * `AlgebraicGeometry.Scheme.Modules.sectionsLinearEquiv`, the `Γ(X, U)`-linear equivalence of
   sections over `U` induced by an isomorphism of `𝒪_X`-modules;
 * `TauCeti.AlgebraicGeometry.Scheme.Modules.shortExact_map_toSheaf`: a short exact sequence of
-  `𝒪_X`-modules stays short exact after forgetting the module structures.
+  `𝒪_X`-modules stays short exact after forgetting the module structures;
+* `AlgebraicGeometry.Scheme.Modules.Hom.isIso_of_isBasis`: a morphism of `𝒪_X`-modules that is an
+  isomorphism on the sections over the members of a basis is an isomorphism.
 
 `TauCeti/AlgebraicGeometry/Cohomology/Basic.lean` defines the cohomology of an `𝒪_X`-module as
 the sheaf cohomology of its underlying abelian sheaf, so this exactness is what puts that
@@ -165,6 +168,18 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.epi_of_surjective_on_affineO
     have hVU' : V ≤ U := hVU
     exact ⟨V, homOfLE hVU', hf V hV (N.presheaf.map (homOfLE hVU').op s), hxV⟩
   exact (toSheaf X).epi_of_epi_map (Sheaf.epi_of_isLocallySurjective _)
+
+/-- A morphism of `𝒪_X`-modules is an isomorphism as soon as it is one on the sections over the
+members of a basis of the topology of `X`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.isIso_of_isBasis {M N : X.Modules}
+    (φ : M ⟶ N) {ι : Type*} {B : ι → X.Opens} (hB : TopologicalSpace.Opens.IsBasis (Set.range B))
+    (h : ∀ i, IsIso (φ.app (B i))) : IsIso φ := by
+  let ψ : (⟨M.presheaf, M.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat.{u} X) ⟶ ⟨N.presheaf, N.isSheaf⟩ :=
+    ObjectProperty.homMk φ.mapPresheaf
+  have : IsIso ψ := TopCat.Sheaf.isIso_iff_isIso_basis hB h
+  have : IsIso ((TopCat.Sheaf.forget _ _).map ψ) := Functor.map_isIso _ _
+  exact Scheme.Modules.Hom.isIso_iff_isIso_app.2 fun U ↦
+    NatIso.isIso_app_of_isIso ((TopCat.Sheaf.forget _ _).map ψ) (Opposite.op U)
 
 end Scheme.Modules
 

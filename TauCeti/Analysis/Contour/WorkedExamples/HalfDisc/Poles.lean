@@ -160,10 +160,7 @@ theorem hasCauchyPV_halfDiscBoundary_diameter_of_simple_poles {f : ℂ → ℂ} 
   have harc : HasCauchyPVWith (halfDiscBoundary R) R (R + Real.pi) f T
       (∫ t in R..(R + Real.pi),
         f (halfDiscBoundary R t) * deriv (halfDiscBoundary R) t) :=
-    .of_integrable_of_finite_crossings T
-      (continuous_halfDiscBoundary R).measurable.aemeasurable h_arc
-      fun s _ => ((isPwC1ImmersionOn_halfDiscBoundary hR).finite_crossings (z₀ := s)).subset
-        (inter_subset_inter_left _ (uIoc_subset_uIcc.trans hsub))
+    .of_integrable T h_arc
   simpa [integral_halfDiscBoundary_arc] using (hT.sub_right harc).hasCauchyPV
 
 /-- **The identity along the real segment.** The diameter of the half-disc traces the straight line

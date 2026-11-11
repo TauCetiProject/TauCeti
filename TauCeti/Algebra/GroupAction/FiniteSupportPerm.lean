@@ -52,14 +52,19 @@ theorem finite_compl_fixedBy_of_eventually_eq_self {α : Type*} [LinearOrder α]
   obtain ⟨N, hN⟩ := hπ
   exact (Set.finite_Iio N).subset fun n hn => not_le.mp fun hNn => hn (by simpa using hN n hNn)
 
-/-- A finitely supported permutation of a nonempty directed order without maximal elements, such
-as `ℕ` or `ℤ`, fixes every point from some `N` on. -/
+/-- A finitely supported permutation of a nonempty preorder without maximal elements, such as `ℕ`
+or `ℤ`, fixes every point from some `N` on. -/
 theorem eventually_eq_self_of_finite_compl_fixedBy {α : Type*} [Preorder α]
-    [IsDirectedOrder α] [Nonempty α] [NoMaxOrder α] {π : Equiv.Perm α}
+    [Nonempty α] [NoMaxOrder α] {π : Equiv.Perm α}
     (hπ : (MulAction.fixedBy α π)ᶜ.Finite) : ∃ N, ∀ n, N ≤ n → π n = n := by
-  obtain ⟨M, hM⟩ := hπ.bddAbove
-  obtain ⟨N, hMN⟩ := exists_gt M
-  exact ⟨N, fun n hNn => by_contra fun hn => (hMN.trans_le hNn).not_ge (hM (by simpa using hn))⟩
+  rcases (MulAction.fixedBy α π)ᶜ.eq_empty_or_nonempty with hS | hS
+  · obtain ⟨N⟩ := ‹Nonempty α›
+    exact ⟨N, fun n _ => by_contra fun hn => hS.subset (by simpa using hn)⟩
+  · obtain ⟨M, hM, hmax⟩ := hπ.exists_maximal hS
+    obtain ⟨N, hMN⟩ := exists_gt M
+    refine ⟨N, fun n hNn => by_contra fun hn => ?_⟩
+    have hn' : n ∈ (MulAction.fixedBy α π)ᶜ := by simpa using hn
+    exact (hmax hn' (hMN.le.trans hNn)).not_gt (hMN.trans_le hNn)
 
 /-- A permutation of a nonempty linear order without maximal elements whose initial segments are
 finite (that is, of order type `ω`, such as `ℕ`) is finitely supported iff it fixes every point

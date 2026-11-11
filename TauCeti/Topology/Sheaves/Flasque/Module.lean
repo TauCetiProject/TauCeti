@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Sites.GlobalSections
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Exactness
 public import TauCeti.Topology.Sheaves.SupportedCohomology.Module
 
@@ -45,6 +46,8 @@ and in higher degrees because `Extⁿ⁺¹(R_U, F)` and `Extⁿ⁺²(R_V, F)` va
   `CategoryTheory.ShortComplex.ShortExact.isFlasque_X₃_of_isFlasque`: in a short exact sequence
   `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` of sheaves of `R`-modules with `F₁` flasque, sections of `F₃` lift to
   `F₂`, and `F₃` is flasque when `F₂` is;
+* `CategoryTheory.ShortComplex.ShortExact.map_Γ_of_isFlasque`: global sections `Γ` keep such a
+  short exact sequence short exact;
 * `CategoryTheory.Sheaf.subsingleton_ext_freeModuleYonedaSheaf_succ_of_isFlasque`:
   `Extⁿ⁺¹(R_U, F) = 0` for flasque `F`;
 * `CategoryTheory.Sheaf.subsingleton_ext_relativeFreeModuleYonedaSheaf_succ_of_isFlasque`:
@@ -95,6 +98,27 @@ theorem isFlasque_X₃_of_isFlasque [TopCat.Presheaf.IsFlasque S.X₁.obj]
   (TopCat.Presheaf.isFlasque_comp_iff S.X₃.obj _).1
     (TopCat.Sheaf.IsFlasque.of_shortExact_of_isFlasque₁₂
       (Sheaf.shortExact_map_sheafCompose_forget₂_moduleCat hS))
+
+/-- **Global sections are exact on flasque kernels.** If `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` is a short exact
+sequence of sheaves of `R`-modules with `F₁` flasque, then
+`0 ⟶ Γ(F₁) ⟶ Γ(F₂) ⟶ Γ(F₃) ⟶ 0` is short exact. -/
+theorem map_Γ_of_isFlasque [(Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).Additive]
+    [TopCat.Presheaf.IsFlasque S.X₁.obj] :
+    (S.map (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R))).ShortExact := by
+  obtain ⟨h, hm⟩ := (Functor.preservesFiniteLimits_iff_forall_exact_map_and_mono
+    (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R))).1 inferInstance S hS
+  refine ShortComplex.ShortExact.mk' h hm ?_
+  -- `Γ` is the functor of sections over `X`, on which `F₂ ⟶ F₃` is surjective
+  let e := Sheaf.ΓNatIsoSheafSections (Opens.grothendieckTopology X) (ModuleCat.{u} R) isTerminalTop
+  have : Epi (((sheafSections _ _).obj (Opposite.op ⊤)).map S.g) :=
+    (ModuleCat.epi_iff_surjective _).2 (hS.surjective_app_of_isFlasque (Opposite.op ⊤))
+  have hg : (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map S.g =
+      e.hom.app _ ≫ ((sheafSections _ _).obj (Opposite.op ⊤)).map S.g ≫ e.inv.app _ := by
+    rw [← Category.assoc, ← e.hom.naturality, Category.assoc, Iso.hom_inv_id_app,
+      Category.comp_id]
+  dsimp
+  rw [hg]
+  infer_instance
 
 end CategoryTheory.ShortComplex.ShortExact
 

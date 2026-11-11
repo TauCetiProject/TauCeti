@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.AdicCompletion.Basic
 public import Mathlib.RingTheory.MvPowerSeries.Evaluation
-public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
+public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 import Mathlib.RingTheory.AdicCompletion.Completeness
 import Mathlib.RingTheory.AdicCompletion.Functoriality
 import Mathlib.RingTheory.AdicCompletion.Topology

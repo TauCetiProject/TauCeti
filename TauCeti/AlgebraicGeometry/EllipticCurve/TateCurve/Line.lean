@@ -532,7 +532,7 @@ private theorem linearIndependent_of_hasSum (q : Kˣ) (hq : ‖(q : K)‖ < 1)
       ((hy u hu).mul_left (g 2))
     simp only [← mul_assoc, ← add_mul, hcoef, zero_mul] at h
     have hθ : tateTheta q u ^ 3 ≠ 0 :=
-      pow_ne_zero 3 fun h ↦ hu ((tateTheta_eq_zero_iff q u hq).mp h)
+      pow_ne_zero 3 (tateTheta_ne_zero q hq hu)
     refine (mul_eq_zero.mp ?_).resolve_left hθ
     linear_combination -(hasSum_zero.unique h)
   intro i
@@ -600,8 +600,6 @@ theorem exists_tateTheta_mul_tateTheta_mul_tateTheta_eq (q : Kˣ) (hq : ‖(q : 
     ∃ α β γ : K, γ ≠ 0 ∧ ∀ u : Kˣ, u ∉ Subgroup.zpowers q →
       tateTheta q (a⁻¹ * u) * tateTheta q (b⁻¹ * u) * tateTheta q (a * b * u) =
         tateTheta q u ^ 3 * (α + β * tateUniformizationX q u + γ * tateUniformizationY q u) := by
-  have hθ {v : Kˣ} (hv : v ∉ Subgroup.zpowers q) : tateTheta q v ≠ 0 :=
-    fun h ↦ hv ((tateTheta_eq_zero_iff q v hq).mp h)
   -- The coefficients of `θ(a⁻¹ u) θ(b⁻¹ u) θ(a b u)` lie in the degree-three space.
   have hF := tripleCoeff_mem q a⁻¹ b⁻¹ (a * b)
   rw [show -a⁻¹ * (-b⁻¹ * -(a * b)) = -1 by
@@ -615,9 +613,9 @@ theorem exists_tateTheta_mul_tateTheta_mul_tateTheta_eq (q : Kˣ) (hq : ‖(q : 
     simp only [Units.val_one, one_zpow, mul_one] at h
     rcases mul_eq_zero.mp (h.unique (h₀ hγ)) with h' | h'
     · rcases mul_eq_zero.mp h' with h' | h'
-      · exact hθ (fun h ↦ ha (by simpa using inv_mem h)) h'
-      · exact hθ (fun h ↦ hb (by simpa using inv_mem h)) h'
-    · exact hθ hab h'
+      · exact tateTheta_ne_zero q hq (fun h ↦ ha (by simpa using inv_mem h)) h'
+      · exact tateTheta_ne_zero q hq (fun h ↦ hb (by simpa using inv_mem h)) h'
+    · exact tateTheta_ne_zero q hq hab h'
   · rw [(hasSum_tripleCoeff q a⁻¹ b⁻¹ (a * b) u hq).unique (hid u hu)]
     ring
 
@@ -633,7 +631,7 @@ theorem exists_tateUniformizationY_eq_iff (q : Kˣ) (hq : ‖(q : K)‖ < 1) {a 
           a * b * u ∈ Subgroup.zpowers q) := by
   obtain ⟨α, β, γ, hγ, h⟩ := exists_tateTheta_mul_tateTheta_mul_tateTheta_eq q hq ha hb hab
   refine ⟨-β / γ, -α / γ, fun u hu ↦ ?_⟩
-  have hθ : tateTheta q u ≠ 0 := fun h ↦ hu ((tateTheta_eq_zero_iff q u hq).mp h)
+  have hθ := tateTheta_ne_zero q hq hu
   rw [← tateTheta_eq_zero_iff q _ hq, ← tateTheta_eq_zero_iff q _ hq,
     ← tateTheta_eq_zero_iff q _ hq, ← or_assoc, ← mul_eq_zero, ← mul_eq_zero, h u hu,
     mul_eq_zero, or_iff_right (pow_ne_zero 3 hθ)]

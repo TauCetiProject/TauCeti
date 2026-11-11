@@ -801,9 +801,13 @@ theorem mem_center_monomialGroup_iff [Fintype I] [Nontrivial R]
         congrArg Neg.neg (hcomm_basis ((g : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q))
 
 /-- **The group of signed monomials of a finite orthogonal basis is finite.** -/
-theorem finite_monomialGroup [Finite I] [Nontrivial R]
+theorem finite_monomialGroup [Finite I]
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) :
     Finite (monomialGroup Q b) := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · have : Subsingleton (CliffordAlgebra Q) := RingHom.codomain_trivial (algebraMap R _)
+    have : Subsingleton (CliffordAlgebra Q)ˣ := inferInstance
+    exact Finite.of_injective (Subgroup.subtype _) Subtype.val_injective
   have : Fintype I := Fintype.ofFinite I
   have h : Nat.card (monomialGroup Q b) ≠ 0 := by
     rw [natCard_monomialGroup hb hQ]

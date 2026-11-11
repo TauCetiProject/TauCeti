@@ -131,55 +131,54 @@ theorem cauchyTheorem_ball {c : ℂ} {r : ℝ} (hf : DifferentiableOn ℂ f (Met
 
 /-- **Cauchy's integral formula on a star-shaped open set, for the `k`-th derivative.** For `f`
 holomorphic on an open `Ω` star-shaped about `x`, a closed piecewise-`C¹` curve `γ` in `Ω`, and
-`z ∈ Ω` off the curve,
+`z` off the curve,
 
 `∫ t in a..b, γ' t • (f (γ t) / (γ t − z) ^ (k + 1)) = 2πi · n_z(γ) · f⁽ᵏ⁾(z) / k !`. -/
 theorem cauchyIntegralFormula_iteratedDeriv_starConvex {z : ℂ} (hstar : StarConvex ℝ x Ω)
     (hopen : IsOpen Ω) (hf : DifferentiableOn ℂ f Ω) (hγ : IsPiecewiseC1On γ a b)
-    (hγΩ : ∀ t ∈ uIcc a b, γ t ∈ Ω) (hclosed : γ a = γ b) (hz : z ∈ Ω)
+    (hγΩ : ∀ t ∈ uIcc a b, γ t ∈ Ω) (hclosed : γ a = γ b)
     (hoff : ∀ t ∈ uIcc a b, γ t ≠ z) (k : ℕ) :
     ∫ t in a..b, deriv γ t • (f (γ t) / (γ t - z) ^ (k + 1))
       = 2 * (Real.pi : ℂ) * Complex.I * windingNumber γ a b z *
           (iteratedDeriv k f z / (k.factorial : ℂ)) :=
   cauchyIntegralFormula_iteratedDeriv_nullHomologous hopen hf hγ hγΩ hclosed
-    (isNullHomologous_of_starConvex hstar hγ hclosed hγΩ) hz hoff k
+    (isNullHomologous_of_starConvex hstar hγ hclosed hγΩ) hoff k
 
 /-- **Cauchy's integral formula on a star-shaped open set.** For `f` holomorphic on an open `Ω`
-star-shaped about `x`, a closed piecewise-`C¹` curve `γ` in `Ω`, and `z ∈ Ω` off the curve,
+star-shaped about `x`, a closed piecewise-`C¹` curve `γ` in `Ω`, and `z` off the curve,
 
 `∫ t in a..b, γ' t • (f (γ t) / (γ t − z)) = 2πi · n_z(γ) · f z`. -/
 theorem cauchyIntegralFormula_starConvex {z : ℂ} (hstar : StarConvex ℝ x Ω) (hopen : IsOpen Ω)
     (hf : DifferentiableOn ℂ f Ω) (hγ : IsPiecewiseC1On γ a b)
-    (hγΩ : ∀ t ∈ uIcc a b, γ t ∈ Ω) (hclosed : γ a = γ b) (hz : z ∈ Ω)
+    (hγΩ : ∀ t ∈ uIcc a b, γ t ∈ Ω) (hclosed : γ a = γ b)
     (hoff : ∀ t ∈ uIcc a b, γ t ≠ z) :
     ∫ t in a..b, deriv γ t • (f (γ t) / (γ t - z))
       = 2 * (Real.pi : ℂ) * Complex.I * windingNumber γ a b z * f z :=
   cauchyIntegralFormula_nullHomologous hopen hf hγ hγΩ hclosed
-    (isNullHomologous_of_starConvex hstar hγ hclosed hγΩ) hz hoff
+    (isNullHomologous_of_starConvex hstar hγ hclosed hγΩ) hoff
 
 /-- **Cauchy's integral formula on a disc, for the `k`-th derivative** — the `Metric.ball` case of
 `TauCeti.Contour.cauchyIntegralFormula_iteratedDeriv_starConvex`. -/
 theorem cauchyIntegralFormula_iteratedDeriv_ball {c : ℂ} {r : ℝ} {z : ℂ}
     (hf : DifferentiableOn ℂ f (Metric.ball c r)) (hγ : IsPiecewiseC1On γ a b)
     (hγr : ∀ t ∈ uIcc a b, γ t ∈ Metric.ball c r) (hclosed : γ a = γ b)
-    (hz : z ∈ Metric.ball c r) (hoff : ∀ t ∈ uIcc a b, γ t ≠ z) (k : ℕ) :
+    (hoff : ∀ t ∈ uIcc a b, γ t ≠ z) (k : ℕ) :
     ∫ t in a..b, deriv γ t • (f (γ t) / (γ t - z) ^ (k + 1))
       = 2 * (Real.pi : ℂ) * Complex.I * windingNumber γ a b z *
           (iteratedDeriv k f z / (k.factorial : ℂ)) :=
   cauchyIntegralFormula_iteratedDeriv_starConvex
-    ((convex_ball c r).starConvex (hγr a left_mem_uIcc)) Metric.isOpen_ball hf hγ hγr hclosed hz
-    hoff k
+    ((convex_ball c r).starConvex (hγr a left_mem_uIcc)) Metric.isOpen_ball hf hγ hγr hclosed hoff k
 
 /-- **Cauchy's integral formula on a disc** — the `Metric.ball` case of
 `TauCeti.Contour.cauchyIntegralFormula_starConvex`. -/
 theorem cauchyIntegralFormula_ball {c : ℂ} {r : ℝ} {z : ℂ}
     (hf : DifferentiableOn ℂ f (Metric.ball c r)) (hγ : IsPiecewiseC1On γ a b)
     (hγr : ∀ t ∈ uIcc a b, γ t ∈ Metric.ball c r) (hclosed : γ a = γ b)
-    (hz : z ∈ Metric.ball c r) (hoff : ∀ t ∈ uIcc a b, γ t ≠ z) :
+    (hoff : ∀ t ∈ uIcc a b, γ t ≠ z) :
     ∫ t in a..b, deriv γ t • (f (γ t) / (γ t - z))
       = 2 * (Real.pi : ℂ) * Complex.I * windingNumber γ a b z * f z :=
   cauchyIntegralFormula_starConvex ((convex_ball c r).starConvex (hγr a left_mem_uIcc))
-    Metric.isOpen_ball hf hγ hγr hclosed hz hoff
+    Metric.isOpen_ball hf hγ hγr hclosed hoff
 
 /-- **The classical residue theorem on a star-shaped open set.** Let `Ω` be open and star-shaped
 about `x`, `S` a finite set, `f` holomorphic on `Ω ∖ S` and meromorphic at each point of `S` lying
@@ -304,15 +303,15 @@ Each curve of the cycle may run through the singularities, which are at worst si
 Cauchy principal value of the cycle integral is the winding-weighted residue sum. Null-homology,
 condition (A′) and condition (B) are all discharged. -/
 theorem hungerbuhlerWasem_residueTheorem_of_simple_poles_starConvex {S : Finset ℂ}
-    (hstar : StarConvex ℝ x Ω) (hopen : IsOpen Ω) (hSΩ : (S : Set ℂ) ⊆ Ω)
-    (hf : DifferentiableOn ℂ f (Ω \ (S : Set ℂ))) (hmero : ∀ s ∈ S, MeromorphicAt f s)
+    (hstar : StarConvex ℝ x Ω) (hopen : IsOpen Ω)
+    (hf : DifferentiableOn ℂ f (Ω \ (S : Set ℂ))) (hmero : ∀ s ∈ S, s ∈ Ω → MeromorphicAt f s)
     (hCΩ : IsIn C Ω)
     (h_imm : ∀ δ ∈ FreeAbelianGroup.support C, IsPwC1ImmersionOn (⇑δ) δ.a δ.b)
     (hbase : ∀ δ ∈ FreeAbelianGroup.support C, δ δ.a ∉ (S : Set ℂ))
-    (h_simple : ∀ s ∈ S, ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s) :
+    (h_simple : ∀ s ∈ S, s ∈ Ω → ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s) :
     HasCauchyPV C f
       (2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, windingNumber s C * residue f s) :=
-  hungerbuhlerWasem_residueTheorem_of_simple_poles hopen S hSΩ hf hmero hCΩ h_imm hbase
+  hungerbuhlerWasem_residueTheorem_of_simple_poles hopen S hf hmero hCΩ h_imm hbase
     (isNullHomologous_of_starConvex hstar hCΩ) h_simple
 
 end Cycle

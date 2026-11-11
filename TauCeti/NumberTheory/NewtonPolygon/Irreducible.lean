@@ -74,7 +74,7 @@ theorem den_dvd_natDegree_of_dvd (hint : ∀ x, x ≠ 0 → ∃ n : ℤ, v x = (
   have hf₀ : f ≠ 0 := by
     rintro rfl
     exact hf (coeff_zero 0)
-  have hle := newtonSlopes_le_of_dvd hv hf₀ hgf
+  have hle := newtonSlopes_le_of_dvd (newtonPolygon_ne_top_of_ne_zero hv hf₀) hgf
   have hdvd := den_dvd_card_newtonSlopes hint fun m hm => hq m (Multiset.subset_of_le hle hm)
   obtain ⟨h, rfl⟩ := hgf
   have hg : g.coeff 0 ≠ 0 := by

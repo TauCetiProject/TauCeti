@@ -16,9 +16,10 @@ import TauCeti.Algebra.Lie.Whitehead
 /-!
 # Two-cocycles on loop algebras and their cohomology classes
 
-Let `L` be a Lie algebra over a characteristic-zero domain `K` and write `x_m = t^m ⊗ x` for the
-modes of the polynomial loop algebra `loopAlgebra K ℤ L = K[t, t⁻¹] ⊗ L`. Mathlib attaches to an
-invariant symmetric form `Ψ` on `L` the residue 2-cocycle
+Let `L` be a Lie algebra over an additively torsion-free commutative ring `K`, such as a
+characteristic-zero domain, and write `x_m = t^m ⊗ x` for the modes of the polynomial loop algebra
+`loopAlgebra K ℤ L = K[t, t⁻¹] ⊗ L`. Mathlib attaches to an invariant symmetric form `Ψ` on `L` the
+residue 2-cocycle
 `LieAlgebra.LoopAlgebra.twoCocycleOfBilinear`, whose value on modes is
 `(x_m, y_n) ↦ n Ψ(x, y) δ_{m + n, 0}`, the residue of `x_m d y_n` paired by `Ψ`.
 
@@ -54,9 +55,9 @@ Combining the two steps, for `L` finite-dimensional with nondegenerate Killing f
 characteristic zero, that is for `L` semisimple, every 2-cocycle on `loopAlgebra K ℤ L` is the sum
 of the residue cocycle of an invariant symmetric form and a coboundary; when one form `Ψ` spans the
 invariant forms, the 2-cocycles are the sums of a multiple of the residue cocycle of `Ψ` and a
-coboundary. Conversely a nonzero multiple of the residue 2-cochain of a
-nonzero symmetric form is never a coboundary: on `(x_1, y_{-1})` and `(x_{-1}, y_1)` it takes
-opposite values `∓Ψ(x, y)`, while a coboundary takes the same value `-f(⁅x, y⁆_0)` on both.
+coboundary. Conversely, over a characteristic-zero domain, a nonzero multiple of the residue
+2-cochain of a nonzero symmetric form is never a coboundary: on `(x_1, y_{-1})` and `(x_{-1}, y_1)`
+it takes opposite values `∓Ψ(x, y)`, while a coboundary takes the same value `-f(⁅x, y⁆_0)` on both.
 Thus for a simple Lie algebra over an algebraically closed field of characteristic zero the second
 cohomology of its loop algebra with trivial coefficients is one-dimensional, spanned by the residue
 class of the Killing form.
@@ -79,8 +80,9 @@ class of the Killing form.
   of the Killing form of a simple Lie algebra.
 * `TauCeti.LieAlgebra.LoopAlgebra.exists_apply_one_tmul_eq_d₁₂_apply`: **every 2-cocycle agrees
   with a coboundary on constant loops**, for any exponent monoid.
-* `TauCeti.LieAlgebra.LoopAlgebra.smul_twoCochainOfBilinear_mem_range_d₁₂_iff`: a multiple of the
-  residue 2-cochain of a nonzero symmetric form is a coboundary only when the multiple is zero.
+* `TauCeti.LieAlgebra.LoopAlgebra.smul_twoCochainOfBilinear_mem_range_d₁₂_iff`: over a
+  characteristic-zero domain, a multiple of the residue 2-cochain of a nonzero symmetric form is a
+  coboundary only when the multiple is zero.
 * `TauCeti.LieAlgebra.LoopAlgebra.exists_eq_twoCochainOfBilinear_add_d₁₂`: **for a semisimple Lie
   algebra, every 2-cocycle is a residue cocycle plus a coboundary**.
 * `TauCeti.LieAlgebra.LoopAlgebra.twoCocycle_eq_span_sup_range_d₁₂`: the 2-cocycles are the
@@ -219,6 +221,31 @@ private theorem modeForm_lieInvariant
   rw [modeForm_apply, ← AddMonoidAlgebra.one_def, hc, map_zero, zero_add, zero_add] at h
   rw [← sub_eq_zero, sub_neg_eq_add, ← h]
 
+/-- The mode blocks of a 2-cochain are skew: `c(x_m, y_n) = -c(y_n, x_m)`. -/
+private theorem modeForm_skew
+    (c : twoCochain K (loopAlgebra K A L) (TrivialLieModule K (loopAlgebra K A L) K)) (m n : A)
+    (x y : L) : modeForm c m n x y = -modeForm c n m y x := by
+  rw [modeForm_apply, modeForm_apply, ← map_neg, twoCochain_skew]
+
+/-- **The block recurrence.** For a 2-cocycle vanishing on constant loops on the loop algebra of a
+perfect Lie algebra, the mode blocks satisfy `B_{k + m, n} = B_{k, m + n} + B_{m, k + n}`. By
+invariance, the cocycle identity on three modes is this identity evaluated on brackets, and
+brackets span the perfect Lie algebra `L`. -/
+private theorem modeForm_add_left (hL : derivedSeries K L 1 = ⊤)
+    (c : twoCocycle K (loopAlgebra K A L) (TrivialLieModule K (loopAlgebra K A L) K))
+    (hc : ∀ (x : L) (a : loopAlgebra K A L), c.1 (1 ⊗ₜ x) a = 0) (k m n : A) :
+    modeForm c.1 (k + m) n = modeForm c.1 k (m + n) + modeForm c.1 m (k + n) := by
+  have hinv := modeForm_lieInvariant c hc
+  refine LinearMap.ext_on (s := {⁅y, z⁆ | (y : L) (z : L)})
+    (eq_top_iff.mpr fun x _ ↦ mem_span_lie_of_derivedSeries_one_eq_top hL x) ?_
+  rintro _ ⟨x, y, rfl⟩
+  ext z
+  have h := cocycle_single_tmul c k m n x y z
+  rw [← neg_neg (modeForm c.1 k (m + n) x _), ← hinv k (m + n) y x z, ← lie_skew,
+    LinearMap.map_neg₂, neg_neg] at h
+  rw [LinearMap.add_apply, LinearMap.add_apply]
+  linear_combination -h - hinv m (k + n) x y z
+
 end ModeBlocks
 
 section Classification
@@ -228,7 +255,7 @@ variable {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L]
 /-- **The mode recurrence.** A function `λ : ℤ → ℤ → K` with `λ(m, 0) = 0` satisfying
 `λ(k + m, n) = λ(k, m + n) + λ(m, k + n)` vanishes off the line `m + n = 0`, and on that line it is
 `λ(m, -m) = m λ(1, -1)`. -/
-private theorem eq_ite_of_mode_recurrence [IsDomain K] [CharZero K] {lam : ℤ → ℤ → K}
+private theorem eq_ite_of_mode_recurrence [HasUniqueDiv K] {lam : ℤ → ℤ → K}
     (hzero : ∀ m, lam m 0 = 0) (hrec : ∀ k m n, lam (k + m) n = lam k (m + n) + lam m (k + n))
     (m n : ℤ) : lam m n = if m + n = 0 then m * lam 1 (-1) else 0 := by
   -- Along each line `m + n = s`, the coefficient `a ↦ λ(a, s - a)` is additive, hence linear.
@@ -244,15 +271,57 @@ private theorem eq_ite_of_mode_recurrence [IsDomain K] [CharZero K] {lam : ℤ �
   · rw [hm, h, zsmul_eq_mul, zero_sub]
   · -- Since `λ(s, 0) = 0`, the slope `λ(1, s - 1)` vanishes on the line `m + n = s ≠ 0`.
     have hs := hline (m + n) (m + n)
-    rw [sub_self, hzero, zsmul_eq_mul, eq_comm, mul_eq_zero, Int.cast_eq_zero] at hs
+    rw [sub_self, hzero, eq_comm, smul_eq_zero] at hs
     rw [hm, hs.resolve_left h, smul_zero]
 
+/-- **The scalar mode recurrence.** For a 2-cocycle vanishing on constant loops on the loop algebra
+of a perfect Lie algebra over an additively torsion-free commutative ring, `c(x_m, y_n)` vanishes
+off the line `m + n = 0`, and on that line it is `m c(x_1, y_{-1})`. -/
+private theorem modeForm_eq_ite [HasUniqueDiv K] (hL : derivedSeries K L 1 = ⊤)
+    (c : twoCocycle K (loopAlgebra K ℤ L) (TrivialLieModule K (loopAlgebra K ℤ L) K))
+    (hc : ∀ (x : L) (a : loopAlgebra K ℤ L), c.1 (1 ⊗ₜ x) a = 0) (x y : L) (m n : ℤ) :
+    modeForm c.1 m n x y = if m + n = 0 then m * modeForm c.1 1 (-1) x y else 0 :=
+  eq_ite_of_mode_recurrence (lam := fun m n ↦ modeForm c.1 m n x y)
+    (fun m ↦ by
+      rw [modeForm_skew, modeForm_apply, ← AddMonoidAlgebra.one_def, hc, map_zero, neg_zero])
+    (fun k m n ↦ by rw [modeForm_add_left hL c hc, LinearMap.add_apply, LinearMap.add_apply]) m n
+
+/-- A 2-cocycle vanishing on constant loops on the loop algebra of a perfect Lie algebra over an
+additively torsion-free commutative ring is, as a 2-cochain, the residue 2-cochain of the invariant
+symmetric form `-B_{1,-1}`. -/
+private theorem exists_coe_eq_twoCochainOfBilinear [HasUniqueDiv K]
+    (hL : derivedSeries K L 1 = ⊤)
+    (c : twoCocycle K (loopAlgebra K ℤ L) (TrivialLieModule K (loopAlgebra K ℤ L) K))
+    (hc : ∀ (x : L) (a : loopAlgebra K ℤ L), c.1 (1 ⊗ₜ x) a = 0) :
+    ∃ (Ψ : LinearMap.BilinForm K L) (_ : Ψ.lieInvariant L) (hΨs : Ψ.IsSymm),
+      (c : twoCochain K _ _) = twoCochainOfBilinear K ℤ L Ψ hΨs := by
+  -- The block `B = λ(1, -1)` is invariant and symmetric, and `c` is the residue cochain of `-B`.
+  set B := modeForm c.1 1 (-1)
+  have hB : (-B).lieInvariant L := fun x y z ↦ by
+    simp only [LinearMap.neg_apply, neg_neg, B, modeForm_lieInvariant c hc 1 (-1) x y z]
+  have hBs : (-B).IsSymm := LinearMap.BilinForm.isSymm_def.mpr fun x y ↦ by
+    simp only [LinearMap.neg_apply, B, modeForm_skew c.1 1 (-1) x y,
+      modeForm_eq_ite hL c hc y x (-1) 1]
+    norm_num
+  refine ⟨-B, hB, hBs, Subtype.ext ?_⟩
+  ext m x n y
+  apply (TrivialLieModule.equiv K (loopAlgebra K ℤ L) K).injective
+  simp only [TensorProduct.AlgebraTensorModule.curry_apply, LinearMap.comp_apply,
+    AddMonoidAlgebra.lsingle_apply, TensorProduct.curry_apply, LinearMap.coe_restrictScalars]
+  rw [twoCochain_val_apply, twoCochain_val_apply, ← modeForm_apply, modeForm_eq_ite hL c hc,
+    twoCochainOfBilinear_apply_apply, LinearEquiv.apply_symm_apply, residuePairing_single_tmul]
+  split_ifs with h
+  · rw [eq_neg_of_add_eq_zero_right h, zsmul_eq_mul, Int.cast_neg, LinearMap.neg_apply,
+      LinearMap.neg_apply]
+    ring
+  · rfl
+
 /-- **The 2-cocycles on the loop algebra of a perfect Lie algebra vanishing on constant loops are
-the residue cocycles.** Let `L` be a perfect Lie algebra over a characteristic-zero domain. A
-2-cocycle with trivial coefficients on the polynomial loop algebra `loopAlgebra K ℤ L` is the
-residue cocycle of an invariant symmetric form on `L` if and only if it vanishes whenever its first
-argument is a constant loop `1 ⊗ x`. -/
-theorem exists_eq_twoCocycleOfBilinear_iff [IsDomain K] [CharZero K]
+the residue cocycles.** Let `L` be a perfect Lie algebra over an additively torsion-free commutative
+ring. A 2-cocycle with trivial coefficients on the polynomial loop algebra `loopAlgebra K ℤ L` is
+the residue cocycle of an invariant symmetric form on `L` if and only if it vanishes whenever its
+first argument is a constant loop `1 ⊗ x`. -/
+theorem exists_eq_twoCocycleOfBilinear_iff [HasUniqueDiv K]
     (hL : derivedSeries K L 1 = ⊤)
     (c : twoCocycle K (loopAlgebra K ℤ L) (TrivialLieModule K (loopAlgebra K ℤ L) K)) :
     (∃ (Ψ : LinearMap.BilinForm K L) (hΨ : Ψ.lieInvariant L) (hΨs : Ψ.IsSymm),
@@ -262,59 +331,16 @@ theorem exists_eq_twoCocycleOfBilinear_iff [IsDomain K] [CharZero K]
   · rintro ⟨Ψ, hΨ, hΨs, rfl⟩ x a
     rw [twoCocycleOfBilinear_coe, twoCochainOfBilinear_apply_apply, residuePairing_one_tmul,
       map_zero]
-  -- Each mode block of `c` is an invariant form.
-  have hinv := modeForm_lieInvariant c hc
-  replace hc (x : L) (a : loopAlgebra K ℤ L) : c.1 (AddMonoidAlgebra.single 0 1 ⊗ₜ x) a = 0 := by
-    rw [← AddMonoidAlgebra.one_def, hc]
-  have hskew (m n : ℤ) (x y : L) : modeForm c.1 m n x y = -modeForm c.1 n m y x := by
-    rw [modeForm_apply, modeForm_apply, ← map_neg, twoCochain_skew]
-  -- By invariance, the cocycle identity on three modes is an identity between mode blocks
-  -- evaluated on brackets, and brackets span the perfect Lie algebra `L`.
-  have hrec (k m n : ℤ) :
-      modeForm c.1 (k + m) n = modeForm c.1 k (m + n) + modeForm c.1 m (k + n) := by
-    refine LinearMap.ext_on (s := {⁅y, z⁆ | (y : L) (z : L)})
-      (eq_top_iff.mpr fun x _ ↦ mem_span_lie_of_derivedSeries_one_eq_top hL x) ?_
-    rintro _ ⟨x, y, rfl⟩
-    ext z
-    have h := cocycle_single_tmul c k m n x y z
-    rw [← neg_neg (modeForm c.1 k (m + n) x _), ← hinv k (m + n) y x z, ← lie_skew,
-      LinearMap.map_neg₂, neg_neg] at h
-    rw [LinearMap.add_apply, LinearMap.add_apply]
-    linear_combination -h - hinv m (k + n) x y z
-  -- Evaluated on a pair of vectors, the mode blocks satisfy the scalar mode recurrence.
-  have hlam (x y : L) (m n : ℤ) :
-      modeForm c.1 m n x y = if m + n = 0 then m * modeForm c.1 1 (-1) x y else 0 :=
-    eq_ite_of_mode_recurrence (lam := fun m n ↦ modeForm c.1 m n x y)
-      (fun m ↦ by rw [modeForm_apply, ← twoCochain_skew, hc, neg_zero, map_zero])
-      (fun k m n ↦ by rw [hrec, LinearMap.add_apply, LinearMap.add_apply]) m n
-  -- The block `B = λ(1, -1)` is invariant and symmetric, and `c` is the residue cocycle of `-B`.
-  set B := modeForm c.1 1 (-1)
-  have hB : (-B).lieInvariant L := fun x y z ↦ by
-    simp only [LinearMap.neg_apply, neg_neg, B, hinv 1 (-1) x y z]
-  have hBs : (-B).IsSymm := LinearMap.BilinForm.isSymm_def.mpr fun x y ↦ by
-    simp only [LinearMap.neg_apply, B, hskew 1 (-1) x y, hlam y x (-1) 1]
-    norm_num
-  refine ⟨-B, hB, hBs, Subtype.ext <| Subtype.ext ?_⟩
-  ext m x n y
-  apply (TrivialLieModule.equiv K (loopAlgebra K ℤ L) K).injective
-  simp only [TensorProduct.AlgebraTensorModule.curry_apply, LinearMap.comp_apply,
-    AddMonoidAlgebra.lsingle_apply, TensorProduct.curry_apply, LinearMap.coe_restrictScalars]
-  rw [twoCochain_val_apply, twoCochain_val_apply, ← modeForm_apply, hlam,
-    twoCocycleOfBilinear_coe, twoCochainOfBilinear_apply_apply, LinearEquiv.apply_symm_apply,
-    residuePairing_single_tmul]
-  split_ifs with h
-  · rw [eq_neg_of_add_eq_zero_right h, zsmul_eq_mul, Int.cast_neg, LinearMap.neg_apply,
-      LinearMap.neg_apply]
-    ring
-  · rfl
+  obtain ⟨Ψ, hΨ, hΨs, h⟩ := exists_coe_eq_twoCochainOfBilinear hL c hc
+  exact ⟨Ψ, hΨ, hΨs, Subtype.ext h⟩
 
 /-- **The 2-cocycles on a loop algebra vanishing on constant loops are the multiples of the
-residue cocycle.** Let `L` be a perfect Lie algebra over a characteristic-zero domain and `Ψ` an
-invariant symmetric form on `L` such that every invariant bilinear form on `L` is a multiple of
-`Ψ`. A 2-cocycle with trivial coefficients on the polynomial loop algebra `loopAlgebra K ℤ L` is a
-scalar multiple of the residue cocycle of `Ψ` if and only if it vanishes whenever its first argument
-is a constant loop `1 ⊗ x`. -/
-theorem exists_eq_smul_twoCocycleOfBilinear_iff [IsDomain K] [CharZero K]
+residue cocycle.** Let `L` be a perfect Lie algebra over an additively torsion-free commutative
+ring and `Ψ` an invariant symmetric form on `L` such that every invariant bilinear form on `L` is a
+multiple of `Ψ`. A 2-cocycle with trivial coefficients on the polynomial loop algebra
+`loopAlgebra K ℤ L` is a scalar multiple of the residue cocycle of `Ψ` if and only if it vanishes
+whenever its first argument is a constant loop `1 ⊗ x`. -/
+theorem exists_eq_smul_twoCocycleOfBilinear_iff [HasUniqueDiv K]
     (hL : derivedSeries K L 1 = ⊤) {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lieInvariant L)
     (hΨs : Ψ.IsSymm)
     (hspan : ∀ Φ : LinearMap.BilinForm K L, Φ.lieInvariant L → ∃ t : K, Φ = t • Ψ)
@@ -437,16 +463,16 @@ theorem exists_eq_twoCochainOfBilinear_add_d₁₂
     ∃ (Ψ : LinearMap.BilinForm K L) (_ : Ψ.lieInvariant L) (hΨs : Ψ.IsSymm)
       (f : oneCochain K (loopAlgebra K ℤ L) (TrivialLieModule K (loopAlgebra K ℤ L) K)),
       (c : twoCochain K _ _) = twoCochainOfBilinear K ℤ L Ψ hΨs + d₁₂ K _ _ f := by
-  -- Normalize `c` on constant loops, then identify the result with a residue cocycle.
+  -- Normalize `c` on constant loops, then identify the result with a residue cochain. The value
+  -- `c + d₁₂ (-f)` of the shifted cocycle is read off from `add_mem`: written out, it would be
+  -- elaborated with the `CommRing` instances of the lemma rather than the `Field` instances of
+  -- `c`, and unifying the two spellings inside the membership in `ker d₂₃` unfolds `d₂₃`.
   obtain ⟨f, hf⟩ := exists_apply_one_tmul_eq_d₁₂_apply c
-  obtain ⟨Ψ, hΨ, hΨs, hc⟩ := (exists_eq_twoCocycleOfBilinear_iff
+  obtain ⟨Ψ, hΨ, hΨs, h⟩ := exists_coe_eq_twoCochainOfBilinear
     (derivedSeries_one_eq_top_of_isKilling K L)
-    ⟨(c : twoCochain K _ _) + d₁₂ K _ _ (-f), add_mem c.2 (range_d₁₂_le_twoCocycle ⟨-f, rfl⟩)⟩).mpr
-    fun x a ↦ by simp [hf, -map_neg]
-  refine ⟨Ψ, hΨ, hΨs, f, ?_⟩
-  have h := congrArg Subtype.val hc
-  rw [Submodule.coe_mk, twoCocycleOfBilinear_coe, map_neg] at h
-  exact eq_add_of_add_neg_eq h
+    ⟨_, add_mem c.2 (range_d₁₂_le_twoCocycle ⟨-f, rfl⟩)⟩ fun x a ↦ by simp [hf, -map_neg]
+  rw [Submodule.coe_mk, map_neg] at h
+  exact ⟨Ψ, hΨ, hΨs, f, eq_add_of_add_neg_eq h⟩
 
 /-- **The second cohomology of a loop algebra is spanned by the residue class.** Let `L` be a
 finite-dimensional Lie algebra with nondegenerate Killing form over a field of characteristic

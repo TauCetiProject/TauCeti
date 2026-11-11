@@ -20,8 +20,8 @@ homomorphism is faithfully flat, so Noetherianity descends along it, and it asce
 target is a localization of a finitely generated algebra
 (`AlgebraicGeometry.Scheme.Hom.isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType`). Between
 Noetherian local rings it preserves the Krull dimension
-(`TauCeti.ringKrullDim_eq_of_flat_of_map_maximalIdeal_eq`). Consequently, an open of `X` with
-Noetherian local rings and its image in `Y` have the same supremum of local dimensions.
+(`TauCeti.ringKrullDim_eq_of_hasGoingDown_of_map_maximalIdeal_eq`). Consequently, an open of `X`
+with Noetherian local rings and its image in `Y` have the same supremum of local dimensions.
 
 ## Main declarations
 
@@ -49,7 +49,7 @@ theorem ringKrullDim_stalk_eq_of_etale [IsNoetherianRing (Y.presheaf.stalk (f x)
   have := isLocalHom_stalkMap_toAlgebra f x
   have : Module.Flat (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := Flat.stalkMap f x
   have := (isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType f x).mp ‹_›
-  exact (TauCeti.ringKrullDim_eq_of_flat_of_map_maximalIdeal_eq
+  exact (TauCeti.ringKrullDim_eq_of_hasGoingDown_of_map_maximalIdeal_eq
     (map_maximalIdeal_stalkMap_of_formallyUnramified f x)).symm
 
 /-- If `f : X ⟶ Y` is étale and the open `V` of `Y` is the image of an open `U` of `X` whose local

@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Reduction
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.NonsingularReduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Range
+-- Proof-only: `O_u` is Henselian.
+import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 
 /-!
 # The formal group is the kernel of reduction
@@ -28,6 +30,8 @@ ideal: Silverman AEC VII.2.2.
 
 * `WeierstrassCurve.range_formalPointHomAdicCompletion_eq_kerReduction`: the image of the formal
   parametrisation is the kernel of reduction.
+* `WeierstrassCurve.index_kerReduction`: the reduction exact sequence computes the index of
+  `E₁(F_u)` as the nonsingular reduction count times the index of `E₀(F_u)`.
 
 ## References
 
@@ -38,7 +42,7 @@ public section
 
 namespace WeierstrassCurve
 
-open IsDedekindDomain
+open IsDedekindDomain IsLocalRing
 
 variable {A : Type*} [CommRing A] [IsDedekindDomain A]
   {F : Type*} [Field F] [Algebra A F] [IsFractionRing A F]
@@ -47,6 +51,13 @@ variable {A : Type*} [CommRing A] [IsDedekindDomain A]
 local notation "O_u" => u.adicCompletionIntegers F
 local notation "F_u" => u.adicCompletion F
 local notation "m_u" => IsLocalRing.maximalIdeal O_u
+local notation "R_u" =>
+  Valuation.valuationSubring
+    (Valued.v : Valuation (u.adicCompletion F) (WithZero (Multiplicative ℤ)))
+
+-- `adicCompletionIntegers` is by definition `Valued.v.valuationSubring`, so the Henselian
+-- structure on `O_u` also supplies the valuation-ring instance used by reduction.
+private local instance : HenselianLocalRing R_u := inferInstanceAs (HenselianLocalRing O_u)
 
 local instance : IsLinearTopology O_u O_u :=
   u.isAdic_maximalIdeal_adicCompletionIntegers (K := F) ▸ Ideal.isLinearTopology m_u
@@ -96,5 +107,28 @@ theorem coe_formalPointAddEquivKerReduction_apply (P : FormalGroupPoint C m_u) :
     (C.formalPointAddEquivKerReduction u P : (C.baseChange F_u).toAffine.Point) =
       C.formalPointHomAdicCompletion u P :=
   (rfl)
+
+open scoped Classical in
+/-- The reduction exact sequence computes the index of `E₁` in the whole point group. This
+holds for any integral equation, including one with bad or nonminimal reduction. -/
+theorem index_kerReduction :
+    (C.kerReduction u).index =
+      Nat.card ((integralModel R_u (C.baseChange F_u)).map (residue R_u)).toAffine.Point *
+        ((C.baseChange F_u).toAffine.nonsingularReduction Valued.v).index := by
+  have : IsIntegral O_u (C.baseChange F_u) := ⟨C, rfl⟩
+  let W := (C.baseChange F_u).toAffine
+  have hle : C.kerReduction u ≤ W.nonsingularReduction Valued.v := by
+    intro P hP
+    rw [Affine.mem_nonsingularReduction_iff, C.mem_kerReduction_iff u |>.mp hP,
+      Projective.nonsingularLift_iff]
+    exact Projective.nonsingular_zero
+  have hker : (C.kerReduction u).addSubgroupOf (W.nonsingularReduction Valued.v) =
+      (W.nonsingularReductionHom Valued.v).ker := by
+    ext P
+    rw [AddSubgroup.mem_addSubgroupOf, Affine.mem_ker_nonsingularReductionHom_iff,
+      C.mem_kerReduction_iff u, Affine.Point.reduction_eq_zero_iff]
+  rw [← AddSubgroup.relIndex_mul_index hle, AddSubgroup.relIndex, hker,
+    AddSubgroup.index_ker, AddMonoidHom.range_eq_top.mpr
+      (Affine.nonsingularReductionHom_surjective Valued.v), AddSubgroup.card_top]
 
 end WeierstrassCurve

@@ -72,6 +72,18 @@ theorem followsOrientation_append (p : G.Walk x y) (q : G.Walk y z) :
   | nil => simp
   | cons e h p ih => simp [ih, and_assoc]
 
+/-- Whether a walk follows an orientation depends only on the directions chosen for its own
+edges. -/
+theorem followsOrientation_congr {o' : G.Orientation} {p : G.Walk x y}
+    (h : ∀ e : G.edgeSet, e.1 ∈ p.edges → o.head e = o'.head e) :
+    p.FollowsOrientation o ↔ p.FollowsOrientation o' := by
+  induction p with
+  | nil => simp
+  | cons e he p ih =>
+    have hhead := h ⟨e, he.edge_mem⟩ (by simp)
+    simp only [followsOrientation_cons, Orientation.tail_eq_of_head_eq hhead, hhead,
+      ih fun f hf ↦ h f (by simp [hf])]
+
 /-- Reversing both the walk and the orientation preserves following the chosen directions. -/
 @[simp]
 theorem followsOrientation_reverse (p : G.Walk x y) :

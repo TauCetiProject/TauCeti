@@ -25,9 +25,10 @@ The matrix-level definition `PlumbingGraph.IsNegativeDefinite` says that the neg
 matrix is positive definite, i.e. `0 < xᵀ (-A) x` for every nonzero integer vector `x`. Here we
 transport that statement through `Matrix.toBilin'` to the bilinear form
 `PlumbingGraph.intersectionForm`, obtaining the self-pairing sign, the resulting vanishing
-criterion, nondegeneracy, and the injectivity of multiplication by the intersection matrix. As a
-self-validating example the `A₂` plumbing (two `-2`-framed spheres joined by an edge) is shown to
-be negative definite.
+criterion and nondegeneracy. The injectivity of multiplication by the intersection matrix, like
+the nonvanishing of its determinant below, follows directly from positive definiteness of the
+negated matrix (`PlumbingGraph.isNegativeDefinite_iff`). As a self-validating example the `A₂`
+plumbing (two `-2`-framed spheres joined by an edge) is shown to be negative definite.
 
 Three further results are the quantitative half of the same hypothesis: nonvanishing of `det A`,
 Cauchy--Schwarz, and finiteness of the superlevel sets of the self-pairing. Cauchy--Schwarz for
@@ -144,29 +145,18 @@ theorem IsNegativeDefinite.eq_zero_of_intersectionForm_right (h : P.IsNegativeDe
 /-- On a negative-definite plumbing, multiplication by the intersection matrix is injective: the
 lattice embeds along its intersection form, with no kernel. -/
 theorem IsNegativeDefinite.mulVec_injective (h : P.IsNegativeDefinite) :
-    Function.Injective (P.intersectionMatrix *ᵥ ·) := by
-  intro x y hxy
-  have hxy' : P.intersectionMatrix *ᵥ x = P.intersectionMatrix *ᵥ y := hxy
-  have hz : P.intersectionMatrix *ᵥ (x - y) = 0 := by
-    rw [Matrix.mulVec_sub, hxy', sub_self]
-  have hzero : P.intersectionForm (x - y) (x - y) = 0 := by
-    rw [P.intersectionForm_apply, ← Matrix.toBilin'_apply P.intersectionMatrix (x - y) (x - y),
-      Matrix.toBilin'_apply', hz]
-    simp
-  exact sub_eq_zero.mp ((h.intersectionForm_self_eq_zero_iff (x - y)).mp hzero)
+    Function.Injective (P.intersectionMatrix *ᵥ ·) := fun x y hxy =>
+  Matrix.PosDef.mulVec_injective (P.isNegativeDefinite_iff.mp h)
+    (by simpa [Matrix.neg_mulVec] using hxy)
 
 /-- The intersection matrix of a negative-definite plumbing has nonzero determinant: it kills no
 nonzero lattice vector. -/
 theorem IsNegativeDefinite.det_intersectionMatrix_ne_zero (h : P.IsNegativeDefinite) :
     P.intersectionMatrix.det ≠ 0 := by
-  refine LinearMap.BilinForm.nondegenerate_toBilin'_iff_det_ne_zero.mp ?_
-  -- `intersectionForm` is `Matrix.toBilin'` of the intersection matrix, but its body is not
-  -- exposed outside `IntersectionForm.lean`, so the two forms are identified on values
-  have hbil : Matrix.toBilin' P.intersectionMatrix = P.intersectionForm :=
-    LinearMap.ext fun x => LinearMap.ext fun y => by
-      rw [Matrix.toBilin'_apply, P.intersectionForm_apply]
-  rw [hbil]
-  exact h.intersectionForm_nondegenerate
+  have hpos := (P.isNegativeDefinite_iff.mp h).det_pos
+  rw [Matrix.det_neg] at hpos
+  intro h0
+  simp [h0] at hpos
 
 /-- Cauchy--Schwarz for the intersection form: on a plumbing whose self-pairing is everywhere
 nonpositive, the square of a pairing is at most the product of the two self-pairings.

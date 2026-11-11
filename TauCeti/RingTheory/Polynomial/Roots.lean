@@ -97,15 +97,15 @@ the gcd with the derivative as the number of distinct roots.
 
 public section
 
-namespace TauCeti
+namespace Polynomial
 
-open Finset Polynomial
+open Finset
 
 variable {F : Type*} [CommRing F] {E : Type*} [CommRing E] [IsDomain E] [Algebra F E] {f : F[X]}
 
 /-- If the derivative is nonzero at every rational root, the rational root multiset has no
 repetitions. Unlike separability, this imposes no condition on roots in larger fields. -/
-theorem _root_.Polynomial.nodup_roots_of_forall_derivative_eval_ne_zero [IsDomain F]
+theorem nodup_roots_of_forall_derivative_eval_ne_zero [IsDomain F]
     (h : ∀ x ∈ f.roots, f.derivative.eval x ≠ 0) : f.roots.Nodup := by
   classical
   refine Multiset.nodup_iff_count_le_one.mpr fun x ↦ ?_
@@ -120,7 +120,7 @@ theorem _root_.Polynomial.nodup_roots_of_forall_derivative_eval_ne_zero [IsDomai
 /-- The root set of a product of polynomials is the union of the root sets of the factors,
 provided neither factor vanishes after base change to `E`. -/
 @[simp]
-theorem _root_.Polynomial.rootSet_mul {g : F[X]} (hf : f.map (algebraMap F E) ≠ 0)
+theorem rootSet_mul {g : F[X]} (hf : f.map (algebraMap F E) ≠ 0)
     (hg : g.map (algebraMap F E) ≠ 0) : (f * g).rootSet E = f.rootSet E ∪ g.rootSet E := by
   ext x
   simp only [Set.mem_union, mem_rootSet', Polynomial.map_mul, map_mul, mul_eq_zero, ne_eq, hf, hg,
@@ -128,7 +128,7 @@ theorem _root_.Polynomial.rootSet_mul {g : F[X]} (hf : f.map (algebraMap F E) �
 
 /-- The distinct roots of a finite product of nonzero polynomials are those of the factors
 together. -/
-theorem _root_.Polynomial.roots_prod_toFinset [IsDomain F] [DecidableEq F]
+theorem roots_prod_toFinset [IsDomain F] [DecidableEq F]
     {ι : Type*} (s : Finset ι)
     (f : ι → F[X]) (hf : ∀ k ∈ s, f k ≠ 0) :
     (s.prod f).roots.toFinset = s.biUnion fun k ↦ (f k).roots.toFinset := by
@@ -137,7 +137,7 @@ theorem _root_.Polynomial.roots_prod_toFinset [IsDomain F] [DecidableEq F]
 
 /-- The distinct roots in `E` of a finite product of polynomials are those of the factors together,
 provided no factor vanishes after base change to `E`. -/
-theorem _root_.Polynomial.aroots_prod_toFinset [DecidableEq E] {ι : Type*} (s : Finset ι)
+theorem aroots_prod_toFinset [DecidableEq E] {ι : Type*} (s : Finset ι)
     (f : ι → F[X]) (hf : ∀ k ∈ s, (f k).map (algebraMap F E) ≠ 0) :
     ((∏ k ∈ s, f k).aroots E).toFinset = s.biUnion fun k ↦ ((f k).aroots E).toFinset := by
   ext z
@@ -149,7 +149,7 @@ theorem _root_.Polynomial.aroots_prod_toFinset [DecidableEq E] {ι : Type*} (s :
 /-- The factors of a separable product have pairwise disjoint root sets: a common root of two
 factors would be a repeated root of the product. Together with `Polynomial.rootSet_prod`, the
 root set of the product is the disjoint union of the root sets of the factors. -/
-theorem _root_.Polynomial.Separable.pairwiseDisjoint_rootSet {ι : Type*} {s : Finset ι}
+theorem Separable.pairwiseDisjoint_rootSet {ι : Type*} {s : Finset ι}
     {g : ι → F[X]} (hsep : (∏ i ∈ s, g i).Separable) :
     (s : Set ι).PairwiseDisjoint fun i => (g i).rootSet E := by
   classical
@@ -166,7 +166,7 @@ theorem _root_.Polynomial.Separable.pairwiseDisjoint_rootSet {ι : Type*} {s : F
 vanishes and `f' a` does not, then the roots of `f /ₘ (X - C a)` in `E` are the roots of `f`
 other than `a`. -/
 @[simp]
-theorem _root_.Polynomial.rootSet_divByMonic_X_sub_C {a : F} (ha : algebraMap F E (f.eval a) = 0)
+theorem rootSet_divByMonic_X_sub_C {a : F} (ha : algebraMap F E (f.eval a) = 0)
     (ha' : algebraMap F E (f.derivative.eval a) ≠ 0) :
     (f /ₘ (X - C a)).rootSet E = f.rootSet E \ {algebraMap F E a} := by
   -- `a` is not a root of the quotient in `E`: the quotient takes the value `f' a` there.
@@ -194,13 +194,13 @@ theorem _root_.Polynomial.rootSet_divByMonic_X_sub_C {a : F} (ha : algebraMap F 
     · exact hx
 
 /-- The roots of `f(X + t)` are the points `x` with `x + t` a root of `f`. -/
-theorem _root_.Polynomial.rootSet_comp_X_add_C (f : F[X]) (t : F) :
+theorem rootSet_comp_X_add_C (f : F[X]) (t : F) :
     (f.comp (X + C t)).rootSet E = (· + algebraMap F E t) ⁻¹' f.rootSet E := by
   ext x
   simp [mem_rootSet', Polynomial.map_comp, comp_X_add_C_ne_zero_iff, aeval_comp]
 
 /-- The bijection `x ↦ x + t` from the roots of `f(X + t)` to the roots of `f`. -/
-def _root_.Polynomial.rootSetCompXAddCEquiv (f : F[X]) (t : F) (E : Type*) [CommRing E]
+def rootSetCompXAddCEquiv (f : F[X]) (t : F) (E : Type*) [CommRing E]
     [IsDomain E] [Algebra F E] :
     (f.comp (X + C t)).rootSet E ≃ f.rootSet E :=
   (Equiv.addRight (algebraMap F E t)).subtypeEquiv fun x => by
@@ -208,35 +208,35 @@ def _root_.Polynomial.rootSetCompXAddCEquiv (f : F[X]) (t : F) (E : Type*) [Comm
 
 /-- The bijection `Polynomial.rootSetCompXAddCEquiv` adds `t`. -/
 @[simp]
-theorem _root_.Polynomial.coe_rootSetCompXAddCEquiv_apply (f : F[X]) (t : F)
+theorem coe_rootSetCompXAddCEquiv_apply (f : F[X]) (t : F)
     (x : (f.comp (X + C t)).rootSet E) :
     (rootSetCompXAddCEquiv f t E x : E) = x + algebraMap F E t :=
   (rfl)
 
 /-- The inverse of `Polynomial.rootSetCompXAddCEquiv` subtracts `t`. -/
 @[simp]
-theorem _root_.Polynomial.coe_rootSetCompXAddCEquiv_symm_apply (f : F[X]) (t : F)
+theorem coe_rootSetCompXAddCEquiv_symm_apply (f : F[X]) (t : F)
     (x : f.rootSet E) :
     ((rootSetCompXAddCEquiv f t E).symm x : E) = x - algebraMap F E t := by
   obtain ⟨y, rfl⟩ := (rootSetCompXAddCEquiv f t E).surjective x
   simp
 
 /-- Translating the variable preserves separability. -/
-theorem _root_.Polynomial.Separable.comp_X_add_C (hf : f.Separable) (t : F) :
+theorem Separable.comp_X_add_C (hf : f.Separable) (t : F) :
     (f.comp (X + C t)).Separable := by
   rw [Separable, derivative_comp, derivative_X_add_C, one_mul]
   exact IsCoprime.map hf (compRingHom (X + C t))
 
 /-- `f(X + t)` is separable exactly when `f` is. -/
 @[simp]
-theorem _root_.Polynomial.separable_comp_X_add_C_iff {t : F} :
+theorem separable_comp_X_add_C_iff {t : F} :
     (f.comp (X + C t)).Separable ↔ f.Separable := by
   refine ⟨fun h => ?_, fun h => h.comp_X_add_C t⟩
   simpa [comp_assoc, add_assoc] using h.comp_X_add_C (-t)
 
 /-- If every root of a nonzero polynomial `p` is some `θ i`, and the multiplicity of each `θ i`
 as a root of `p` is `m i`, then the roots of `p` are the `θ i` with `0 < m i`. -/
-theorem _root_.Polynomial.isRoot_iff_of_rootMultiplicity {ι : Type*} {p : F[X]} {θ : ι → F}
+theorem isRoot_iff_of_rootMultiplicity {ι : Type*} {p : F[X]} {θ : ι → F}
     {m : ι → ℕ} (hm : ∀ i, p.rootMultiplicity (θ i) = m i)
     (hθ : ∀ t, p.IsRoot t → ∃ i, θ i = t) (hp : p ≠ 0) (t : F) :
     p.IsRoot t ↔ ∃ i, θ i = t ∧ 0 < m i := by
@@ -249,7 +249,7 @@ theorem _root_.Polynomial.isRoot_iff_of_rootMultiplicity {ι : Type*} {p : F[X]}
 /-- A nonzero polynomial over a domain has at least `k` roots, counted with multiplicity, exactly
 when it is divisible by `∏ j, (X - x j)` for some `x : Fin k → R`. This is
 `Multiset.prod_X_sub_C_dvd_iff_le_roots` with the submultiset of roots listed by `Fin k`. -/
-theorem _root_.Polynomial.le_card_roots_iff_exists_prod_X_sub_C_dvd {R : Type*} [CommRing R]
+theorem le_card_roots_iff_exists_prod_X_sub_C_dvd {R : Type*} [CommRing R]
     [IsDomain R] {p : R[X]} (hp : p ≠ 0) {k : ℕ} :
     k ≤ p.roots.card ↔ ∃ x : Fin k → R, (∏ j, (X - C (x j))) ∣ p := by
   have key (x : Fin k → R) :
@@ -280,19 +280,19 @@ variable [IsDomain F]
 /-- The roots of the product of the linear factors of a finite family are the values of the
 family, with multiplicity. -/
 @[simp]
-theorem _root_.Polynomial.roots_prod_X_sub_C_map {ι : Type*} (s : Finset ι) (x : ι → F) :
+theorem roots_prod_X_sub_C_map {ι : Type*} (s : Finset ι) (x : ι → F) :
     (∏ i ∈ s, (X - C (x i))).roots = s.val.map x := by
   simp [roots_prod, X_sub_C_ne_zero, prod_ne_zero_iff]
 
 /-- The roots of a nonzero constant times the product of the linear factors of a finite family are
 the values of the family, with multiplicity. -/
-theorem _root_.Polynomial.roots_C_mul_prod_X_sub_C {ι : Type*} (s : Finset ι) (x : ι → F) {c : F}
+theorem roots_C_mul_prod_X_sub_C {ι : Type*} (s : Finset ι) (x : ι → F) {c : F}
     (hc : c ≠ 0) : (C c * ∏ i ∈ s, (X - C (x i))).roots = s.val.map x := by
   rw [roots_C_mul _ hc, roots_prod_X_sub_C_map]
 
 /-- The roots of a nonzero polynomial presented as its leading coefficient times the product of the
 linear factors of a finite family are the values of the family, with multiplicity. -/
-theorem _root_.Polynomial.roots_eq_map_of_eq_C_mul_prod_X_sub_C {ι : Type*} {s : Finset ι}
+theorem roots_eq_map_of_eq_C_mul_prod_X_sub_C {ι : Type*} {s : Finset ι}
     {x : ι → F} {p : F[X]} (hp : p ≠ 0) (hpx : p = C p.leadingCoeff * ∏ i ∈ s, (X - C (x i))) :
     p.roots = s.val.map x := by
   rw [hpx]
@@ -302,7 +302,7 @@ theorem _root_.Polynomial.roots_eq_map_of_eq_C_mul_prod_X_sub_C {ι : Type*} {s 
 multisets are related by `Multiset.Rel r` exactly when `f` and `g` are the products of the linear
 factors of enumerations `a` and `b` of their roots, indexed by `Fin f.natDegree`, with
 `r (a i) (b i)` for every `i`. -/
-theorem _root_.Polynomial.Monic.rel_roots_iff_exists_prod_X_sub_C {f g : F[X]} (hf : f.Monic)
+theorem Monic.rel_roots_iff_exists_prod_X_sub_C {f g : F[X]} (hf : f.Monic)
     (hg : g.Monic) (hfs : f.Splits) (hgs : g.Splits) {r : F → F → Prop} :
     f.roots.Rel r g.roots ↔ ∃ a b : Fin f.natDegree → F,
       f = ∏ i, (X - C (a i)) ∧ g = ∏ i, (X - C (b i)) ∧ ∀ i, r (a i) (b i) := by
@@ -324,7 +324,7 @@ variable [IsDomain F] [DecidableEq F]
 
 /-- The size of the multiset intersection of the roots of two polynomials is the sum, over their
 distinct common roots, of the minimum of the two multiplicities. -/
-theorem _root_.Polynomial.card_roots_inter_eq_sum_min_rootMultiplicity (p q : F[X]) :
+theorem card_roots_inter_eq_sum_min_rootMultiplicity (p q : F[X]) :
     Multiset.card (p.roots ∩ q.roots) =
       ∑ x ∈ p.roots.toFinset ∩ q.roots.toFinset,
         min (p.rootMultiplicity x) (q.rootMultiplicity x) := by
@@ -340,7 +340,7 @@ variable {K : Type*} [Field K] [DecidableEq K]
 
 /-- The multiplicity of a root in the gcd of two nonzero polynomials is the minimum of its
 multiplicities in the two polynomials. -/
-theorem _root_.Polynomial.rootMultiplicity_gcd (p q : K[X]) (hp : p ≠ 0) (hq : q ≠ 0)
+theorem rootMultiplicity_gcd (p q : K[X]) (hp : p ≠ 0) (hq : q ≠ 0)
     (x : K) :
     (EuclideanDomain.gcd p q).rootMultiplicity x =
       min (p.rootMultiplicity x) (q.rootMultiplicity x) := by
@@ -358,7 +358,7 @@ theorem _root_.Polynomial.rootMultiplicity_gcd (p q : K[X]) (hp : p ≠ 0) (hq :
 
 /-- The roots of the gcd of two nonzero polynomials are the multiset intersection of their roots.
 Thus a common root occurs with the minimum of its two input multiplicities. -/
-theorem _root_.Polynomial.roots_gcd (p q : K[X]) (hp : p ≠ 0) (hq : q ≠ 0) :
+theorem roots_gcd (p q : K[X]) (hp : p ≠ 0) (hq : q ≠ 0) :
     (EuclideanDomain.gcd p q).roots = p.roots ∩ q.roots := by
   ext x
   simp [count_roots, rootMultiplicity_gcd p q hp hq]
@@ -366,7 +366,7 @@ theorem _root_.Polynomial.roots_gcd (p q : K[X]) (hp : p ≠ 0) (hq : q ≠ 0) :
 /-- **Multiplicity formula for common roots.** If `p` and `q` are nonzero and `p` splits, then
 the degree of their gcd is the number of their common roots, each counted with the minimum of its
 multiplicities in `p` and in `q`. -/
-theorem _root_.Polynomial.natDegree_gcd_eq_card_roots_inter_of_splits {p q : K[X]} (hp : p ≠ 0)
+theorem natDegree_gcd_eq_card_roots_inter_of_splits {p q : K[X]} (hp : p ≠ 0)
     (hq : q ≠ 0) (hsplit : p.Splits) :
     (EuclideanDomain.gcd p q).natDegree = Multiset.card (p.roots ∩ q.roots) := by
   rw [← roots_gcd p q hp hq]
@@ -378,7 +378,7 @@ variable [CharZero K]
 
 /-- In characteristic zero, the roots of a polynomial's derivative gcd, together with one copy
 of each distinct root, recover all roots with multiplicity. -/
-theorem _root_.Polynomial.roots_gcd_derivative_add_dedup (p : K[X]) :
+theorem roots_gcd_derivative_add_dedup (p : K[X]) :
     (EuclideanDomain.gcd p p.derivative).roots + p.roots.dedup = p.roots := by
   by_cases hdeg : p.natDegree = 0
   · rw [eq_C_of_natDegree_eq_zero hdeg, roots_C, Multiset.dedup_zero, add_zero]
@@ -397,16 +397,18 @@ theorem _root_.Polynomial.roots_gcd_derivative_add_dedup (p : K[X]) :
       have hmem : x ∉ p.roots := fun h => hx ((mem_roots hp).mp h)
       rw [hm, zero_min, Multiset.count_dedup, ite_eq_right hmem]
 
-/-- For a split polynomial in characteristic zero, the number of distinct roots of a nonzero
-polynomial is its degree minus the degree of its gcd with its derivative. -/
-theorem _root_.Polynomial.natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset_of_splits
-    {p : K[X]} (hp : p ≠ 0) (hsplit : p.Splits) :
+/-- For a split polynomial in characteristic zero, the number of distinct entries of `roots` is the
+degree minus the degree of the gcd with the derivative. The zero polynomial has empty `roots` and
+natural degree `0`, so the formula holds for it as well. -/
+theorem natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset_of_splits
+    {p : K[X]} (hsplit : p.Splits) :
     p.natDegree - (EuclideanDomain.gcd p p.derivative).natDegree = p.roots.toFinset.card := by
   by_cases hdeg : p.natDegree = 0
   · have hpC : p = C (p.coeff 0) := eq_C_of_natDegree_eq_zero hdeg
     rw [hdeg, hpC, roots_C]
     simp
-  · have hsplitg : (EuclideanDomain.gcd p p.derivative).Splits :=
+  · have hp : p ≠ 0 := fun h ↦ hdeg (h ▸ natDegree_zero)
+    have hsplitg : (EuclideanDomain.gcd p p.derivative).Splits :=
       hsplit.of_dvd hp (EuclideanDomain.gcd_dvd_left p p.derivative)
     have hcard := congrArg Multiset.card (roots_gcd_derivative_add_dedup p)
     rw [Multiset.card_add] at hcard
@@ -423,7 +425,7 @@ variable [IsAlgClosed K]
 /-- **Multiplicity formula for common roots.** The degree of the gcd of two nonzero polynomials
 over a field `k`, taken over `k`, is the number of their common roots in an algebraically closed
 field `K`, each counted with the minimum of its two multiplicities. -/
-theorem _root_.Polynomial.natDegree_gcd_eq_card_aroots_inter {k : Type*} [Field k]
+theorem natDegree_gcd_eq_card_aroots_inter {k : Type*} [Field k]
     [DecidableEq k] [Algebra k K] {p q : k[X]} (hp : p ≠ 0) (hq : q ≠ 0) :
     (EuclideanDomain.gcd p q).natDegree = Multiset.card (p.aroots K ∩ q.aroots K) := by
   have hinj := (algebraMap k K).injective
@@ -433,27 +435,27 @@ theorem _root_.Polynomial.natDegree_gcd_eq_card_aroots_inter {k : Type*} [Field 
 
 variable [CharZero K]
 
-/-- Over an algebraically closed field of characteristic zero, the number of distinct roots of a
-nonzero polynomial is its degree minus the degree of its gcd with its derivative. -/
-theorem _root_.Polynomial.natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset
-    {p : K[X]} (hp : p ≠ 0) :
+/-- Over an algebraically closed field of characteristic zero, the number of distinct entries of
+`roots` of a polynomial is its degree minus the degree of its gcd with its derivative. The zero
+polynomial has empty `roots` and natural degree `0`, so the formula holds for it as well. -/
+theorem natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset
+    {p : K[X]} :
     p.natDegree - (EuclideanDomain.gcd p p.derivative).natDegree = p.roots.toFinset.card :=
-  natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset_of_splits hp
-    (IsAlgClosed.splits p)
+  natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset_of_splits (IsAlgClosed.splits p)
 
-/-- The number of distinct roots of a nonzero polynomial over a field `k` in an algebraically
-closed field `K` of characteristic zero is its degree minus the degree of its gcd with its
-derivative, both taken over `k`. -/
-theorem _root_.Polynomial.natDegree_sub_natDegree_gcd_derivative_eq_card_aroots_toFinset
-    {k : Type*} [Field k] [DecidableEq k] [Algebra k K] {p : k[X]} (hp : p ≠ 0) :
+/-- The number of distinct entries of `aroots` of a polynomial over a field `k` in an
+algebraically closed field `K` of characteristic zero is its degree minus the degree of its gcd
+with its derivative, both taken over `k`. The zero polynomial has empty `aroots` and natural
+degree `0`, so the formula holds for it as well. -/
+theorem natDegree_sub_natDegree_gcd_derivative_eq_card_aroots_toFinset
+    {k : Type*} [Field k] [DecidableEq k] [Algebra k K] {p : k[X]} :
     p.natDegree - (EuclideanDomain.gcd p p.derivative).natDegree =
       (p.aroots K).toFinset.card := by
-  rw [aroots_def, ← natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset
-    ((Polynomial.map_ne_zero_iff (algebraMap k K).injective).2 hp), derivative_map, gcd_map,
-    natDegree_map, natDegree_map]
+  rw [aroots_def, ← natDegree_sub_natDegree_gcd_derivative_eq_card_roots_toFinset,
+    derivative_map, gcd_map, natDegree_map, natDegree_map]
 
 end IsAlgClosed
 
 end GCD
 
-end TauCeti
+end Polynomial
