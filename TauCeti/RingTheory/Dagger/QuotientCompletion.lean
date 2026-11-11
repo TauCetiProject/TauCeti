@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Ring.Quotient.Isometry
 public import TauCeti.RingTheory.Dagger.ClosedIdeal
-public import Mathlib.Analysis.Normed.Module.Completion
+public import TauCeti.Analysis.Normed.Algebra.Completion
 
 /-!
 # Residue norms and completions of dagger presentation quotients
@@ -45,14 +45,8 @@ variable {σ K : Type*} [NormedCommRing K] [IsUltrametricDist K]
 
 /-- Every Tate quotient class can be approximated by overconvergent quotient classes. -/
 theorem denseRange_quotientMap_toTate (I : Ideal (washnitzerAlgebra σ K)) :
-    DenseRange (quotientMapₐ (I.map (toTate σ K)) (toTate σ K) le_comap_map) := by
-  have h : DenseRange (fun f : washnitzerAlgebra σ K ↦
-      Quotient.mk (I.map (toTate σ K)) (toTate σ K f)) :=
-    (Quotient.mk_surjective (I := I.map (toTate σ K))).denseRange.comp
-      denseRange_toTate continuous_quotient_mk'
-  refine Dense.mono ?_ h
-  rintro _ ⟨g, rfl⟩
-  exact ⟨Quotient.mk I g, rfl⟩
+    DenseRange (quotientMapₐ (I.map (toTate σ K)) (toTate σ K) le_comap_map) :=
+  RingHom.denseRange_quotientMap (toTate σ K).toRingHom denseRange_toTate I
 
 /-- The canonical map from a dagger presentation quotient to its affinoid quotient preserves
 residue Gauss distances. No reducedness hypothesis is needed. -/
@@ -68,48 +62,20 @@ variable {σ K : Type*} [Finite σ] [NontriviallyNormedField K] [IsUltrametricDi
 local notation "W" => washnitzerAlgebra σ K
 local notation "T" => IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ))
 
-private def washnitzerCompletionHom (I : Ideal W) :
-    Completion (W ⧸ I) →ₐ[K] T ⧸ I.map (toTate σ K) where
-  __ := Completion.extensionHom
-    (quotientMapₐ (I.map (toTate σ K)) (toTate σ K) le_comap_map).toRingHom
-    I.isometry_quotientMap_toTate.continuous
-  commutes' c :=
-    (Completion.extensionHom_coe _ I.isometry_quotientMap_toTate.continuous
-      (algebraMap K (W ⧸ I) c)).trans
-        ((quotientMapₐ (I.map (toTate σ K)) (toTate σ K) le_comap_map).commutes c)
-
-private theorem washnitzerCompletionHom_coe (I : Ideal W) (x : W ⧸ I) :
-    washnitzerCompletionHom I (x : Completion (W ⧸ I)) =
-      quotientMapₐ (I.map (toTate σ K)) (toTate σ K) le_comap_map x :=
-  Completion.extensionHom_coe _ I.isometry_quotientMap_toTate.continuous x
-
-private theorem isometry_washnitzerCompletionHom (I : Ideal W) :
-    Isometry (washnitzerCompletionHom I) :=
-  I.isometry_quotientMap_toTate.completion_extension
-
-private theorem surjective_washnitzerCompletionHom (I : Ideal W) :
-    Function.Surjective (washnitzerCompletionHom I) := by
-  have hd : DenseRange (washnitzerCompletionHom I) :=
-    I.denseRange_quotientMap_toTate.mono <| by
-      rintro _ ⟨x, rfl⟩
-      exact ⟨(x : Completion (W ⧸ I)), washnitzerCompletionHom_coe I x⟩
-  intro y
-  have hy := hd y
-  rwa [(isometry_washnitzerCompletionHom I).isClosedEmbedding.isClosed_range.closure_eq] at hy
-
 /-- The metric completion of a dagger presentation quotient `W/I` is the affinoid quotient
 `T/IT`, as an algebra over the coefficient field. -/
 def washnitzerCompletionAlgEquiv (I : Ideal W) :
     Completion (W ⧸ I) ≃ₐ[K] T ⧸ I.map (toTate σ K) :=
-  AlgEquiv.ofBijective (washnitzerCompletionHom I)
-    ⟨(isometry_washnitzerCompletionHom I).injective, surjective_washnitzerCompletionHom I⟩
+  AlgHom.completionAlgEquiv (R := K) (A := W ⧸ I) (B := T ⧸ I.map (toTate σ K))
+    (quotientMapₐ (I.map (toTate σ K)) (toTate σ K) le_comap_map)
+    I.isometry_quotientMap_toTate I.denseRange_quotientMap_toTate
 
 /-- The completion comparison extends the canonical map on every dagger quotient class. -/
 @[simp]
 theorem washnitzerCompletionAlgEquiv_coe (I : Ideal W) (x : W ⧸ I) :
     I.washnitzerCompletionAlgEquiv (x : Completion (W ⧸ I)) =
       quotientMapₐ (I.map (toTate σ K)) (toTate σ K) le_comap_map x :=
-  washnitzerCompletionHom_coe I x
+  AlgHom.completionAlgEquiv_coe _ _ _ x
 
 /-- The inverse comparison recovers the completion class of each dagger quotient class. -/
 @[simp]
@@ -122,7 +88,7 @@ theorem washnitzerCompletionAlgEquiv_symm_quotientMap (I : Ideal W) (x : W ⧸ I
 /-- The algebraic completion comparison is an isometry for the residue Gauss norms. -/
 theorem isometry_washnitzerCompletionAlgEquiv (I : Ideal W) :
     Isometry I.washnitzerCompletionAlgEquiv :=
-  isometry_washnitzerCompletionHom I
+  AlgHom.isometry_completionAlgEquiv _ _ _
 
 /-- The completion comparison preserves the norm of every completed quotient element. -/
 @[simp]
