@@ -136,14 +136,12 @@ theorem exists_continuousLinearMap_integral_mul_neg_laplacian_add_mul_eq [Nontri
   obtain ⟨c, hc, hgap⟩ :=
     exists_pos_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_integral_mul_norm_sq
       (μ := volume) (F := ℝ) (hP.locallyIntegrable le_top) hP₀ ha hPa
-  -- The `L²` inner product with, and the norm of, a square-integrable function.
+  -- The `L²` inner product with a square-integrable function.
   have inner_toLp_eq_integral (u : Lp ℝ 2 (volume : Measure E)) {f : E → ℝ}
       (hf : MemLp f 2 volume) : ⟪u, hf.toLp f⟫ = ∫ z, u z * f z := by
     rw [L2.inner_toLp]
     simp only [inner]
     exact integral_congr_ae (ae_of_all _ fun z ↦ mul_comm _ _)
-  have norm_toLp_sq {f : E → ℝ} (hf : MemLp f 2 volume) : ‖hf.toLp f‖ ^ 2 = ∫ z, f z ^ 2 := by
-    simpa only [Real.norm_eq_abs, sq_abs] using hf.norm_toLp_sq
   set S := schrodingerToLp hP
   set ι :=
     (TestFunction.ambientToLp 2 volume : TestFn E →L[ℝ] Lp ℝ 2 (volume : Measure E)).toLinearMap
@@ -183,8 +181,8 @@ theorem exists_continuousLinearMap_integral_mul_neg_laplacian_add_mul_eq [Nontri
             rw [integral_add hΔφ hPφ]
             simp only [mul_neg, integral_neg, hG]
     have hlow : c * ‖ι φ‖ ^ 2 ≤ ‖S φ‖ * ‖ι φ‖ := by
-      rw [hιφ, norm_toLp_sq, ← hιφ]
-      calc c * ∫ z, φ z ^ 2 ≤ (∫ z, ‖fderiv ℝ φ z‖ ^ 2) + ∫ z, P z * φ z ^ 2 := by
+      rw [show ‖ι φ‖ ^ 2 = ∫ z, ‖φ z‖ ^ 2 from TestFunction.norm_ambientToLp_sq φ]
+      calc c * ∫ z, ‖φ z‖ ^ 2 ≤ (∫ z, ‖fderiv ℝ φ z‖ ^ 2) + ∫ z, P z * φ z ^ 2 := by
             simpa only [Real.norm_eq_abs, sq_abs] using
               hgap φ (φ.contDiff.of_le (by norm_num)) φ.hasCompactSupport
         _ = ⟪S φ, ι φ⟫ := hinner.symm
@@ -197,7 +195,9 @@ theorem exists_continuousLinearMap_integral_mul_neg_laplacian_add_mul_eq [Nontri
     S ι hc hbound
   refine ⟨c, hc, Q, hQn, fun g φ hφ hφc ↦ ?_⟩
   have h := hQ g ⟨φ, hφ, hφc, by simp⟩
-  rwa [hSφ, hιφ, inner_toLp_eq_integral, inner_toLp_eq_integral] at h
+  rw [hSφ, inner_toLp_eq_integral, ContinuousLinearMap.coe_coe, TestFunction.inner_ambientToLp] at h
+  simp only [Real.inner_apply] at h
+  exact h
 
 end Weak
 
@@ -223,15 +223,6 @@ theorem mem_realSobolevFunctions_two_of_integral_mul_neg_laplacian_add_mul_eq {P
   have hU : -Δ U + (1 : ℝ) • U = Lp.toTemperedDistribution (Complex.ofRealCLM.compLp v) := by
     refine TemperedDistribution.ext_real fun φ hφc ↦ ?_
     have hφ : ContDiff ℝ ∞ φ := φ.smooth ⊤
-    have hΔ : (Δ (φ.postcompCLM Complex.ofRealCLM) : 𝓢(E, ℂ)) =
-        (Δ φ).postcompCLM Complex.ofRealCLM := by
-      have hcoe : ⇑(φ.postcompCLM Complex.ofRealCLM) = Complex.ofRealCLM ∘ φ :=
-        funext fun z ↦ SchwartzMap.postcompCLM_apply _ _ z
-      ext z
-      rw [SchwartzMap.laplacian_apply, SchwartzMap.postcompCLM_apply, hcoe,
-        SchwartzMap.laplacian_apply,
-        (hφ.contDiffAt.of_le (by simp)).laplacian_CLM_comp_left]
-      rfl
     have hφ2 : MemLp φ 2 volume := φ.continuous.memLp_of_hasCompactSupport hφc
     have hΔ2 : MemLp (Δ φ : 𝓢(E, ℝ)) 2 volume := (Δ φ).memLp 2
     have hi₁ : Integrable (fun z ↦ (Δ φ : 𝓢(E, ℝ)) z * u z) volume :=
@@ -243,7 +234,8 @@ theorem mem_realSobolevFunctions_two_of_integral_mul_neg_laplacian_add_mul_eq {P
       hh.integrable_mul
         ((memLp_top_const 1).sub hP |>.mul hφ2 : MemLp (fun z ↦ (1 - P z) * φ z) 2 volume)
     have hi₅ : Integrable (fun z ↦ g z * φ z) volume := hg.integrable_mul hφ2
-    simp only [add_apply, neg_apply, TemperedDistribution.laplacian_apply_apply, smul_apply, hΔ]
+    simp only [add_apply, neg_apply, TemperedDistribution.laplacian_apply_apply, smul_apply,
+      laplacian_postcompCLM]
     rw [Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM,
       Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM,
       Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM, Complex.real_smul,
