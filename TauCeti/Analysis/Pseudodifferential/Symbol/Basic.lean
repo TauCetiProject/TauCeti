@@ -758,6 +758,20 @@ theorem coefficient_frequencyLaplacianPow_succ' (N : ℕ) (a : Symbol n V W m) :
     rw [coefficient_frequencyLaplacianPow_succ, ih, coefficient_frequencyLaplacian,
       coefficient_frequencyLaplacian, coefficient_frequencyLaplacianPow_succ]
 
+/-- The frequency Laplacian of a uniform symbol is uniform. -/
+theorem IsUniform.frequencyLaplacian {a : Symbol n V W m} (ha : a.IsUniform) :
+    (frequencyLaplacian a).IsUniform := by
+  rw [frequencyLaplacian_eq_sum]
+  exact Finset.sum_induction _ IsUniform (fun _ _ => IsUniform.add) isUniform_zero
+    fun j _ => ((ha.frequencyDeriv j).frequencyDeriv j).inclusion _
+
+/-- The iterated frequency Laplacians of a uniform symbol are uniform. -/
+theorem IsUniform.frequencyLaplacianPow {a : Symbol n V W m} (ha : a.IsUniform) (N : ℕ) :
+    (frequencyLaplacianPow N a).IsUniform := by
+  induction N generalizing m with
+  | zero => exact ha.inclusion _
+  | succ N ih => exact (ih ha.frequencyLaplacian).inclusion (by push_cast; linarith)
+
 theorem HasCompactSpatialSupport.frequencyDeriv {a : Symbol n V W m}
     (ha : a.HasCompactSpatialSupport) (j : Fin n) :
     (frequencyDeriv j a).HasCompactSpatialSupport := by
@@ -1346,6 +1360,17 @@ def map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : Symbol n V W m) 
 theorem coefficient_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : Symbol n V W m)
     (p : CoordinateSpace n × CoordinateSpace n) : (a.map Φ).coefficient p = Φ (a.coefficient p) :=
   (rfl)
+
+/-- The image of a uniform symbol under a continuous linear map of the coefficient spaces is
+uniform. -/
+theorem IsUniform.map {a : Symbol n V W m} (ha : a.IsUniform)
+    (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) : (a.map Φ).IsUniform := by
+  intro α β
+  obtain ⟨C, hC0, hC⟩ := ha α β
+  refine ⟨‖Φ‖ * C, by positivity, fun x ξ ↦ ?_⟩
+  have hc : (a.map Φ).coefficient = Φ ∘ a.coefficient := funext (coefficient_map Φ a)
+  rw [hc, Φ.mixedDeriv_comp_left a.contDiff_coefficient, mul_assoc]
+  exact Φ.le_opNorm_of_le (hC x ξ)
 
 theorem HasCompactSpatialSupport.map {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
     (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) : (a.map Φ).HasCompactSpatialSupport := by

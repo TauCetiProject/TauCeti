@@ -30,6 +30,8 @@ normed complex `F`.
 ## Main declarations
 
 * `SchwartzMap.toBesselPotentialSpaceCLM`: the inclusion `𝓢(E, F) →L[ℂ] H^{s,p}(E, F)`.
+* `SchwartzMap.norm_toBesselPotentialSpaceCLM_zero`: on `H^{0,p}` it is isometric for the `Lᵖ`
+  norm.
 * `SchwartzMap.denseRange_toBesselPotentialSpaceCLM`: its range is dense for `p < ∞`.
 * `BesselPotentialSpace.continuousLinearMap_ext`: continuous linear maps out of `H^{s,p}`,
   `p < ∞`, are determined by their values on Schwartz functions.
@@ -93,6 +95,12 @@ theorem toDistr_toBesselPotentialSpaceCLM (u : 𝓢(E, F)) :
     BesselPotentialSpace.toLpₗᵢ_symm_apply, Lp.toTemperedDistribution_toLp_eq,
     ← besselPotential_toTemperedDistributionCLM_eq, besselPotential_besselPotential_apply,
     add_neg_cancel, besselPotential_zero, ContinuousLinearMap.id_apply]
+
+/-- The `H^{0,p}` norm of a Schwartz function is its `Lᵖ` norm. -/
+theorem norm_toBesselPotentialSpaceCLM_zero (u : 𝓢(E, F)) :
+    ‖toBesselPotentialSpaceCLM 0 p u‖ = (eLpNorm u p volume).toReal := by
+  rw [← BesselPotentialSpace.norm_toLp_eq, toLp_toBesselPotentialSpaceCLM]
+  simp [norm_toLp]
 
 /-- **Schwartz functions are dense in `H^{s,p}`** for `p < ∞`. -/
 theorem denseRange_toBesselPotentialSpaceCLM (s : ℝ) (hp : p ≠ ∞) :

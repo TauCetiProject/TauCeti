@@ -82,6 +82,8 @@ families of operators.
   of `Op(a) u`.
 * `TauCeti.Symbol.HasCompactSpatialSupport.exists_eLpNorm_smul_fourier_quantizeSchwartzValue_le`:
   the Sobolev estimate on Schwartz functions, on the Fourier side.
+  `TauCeti.Symbol.exists_eLpNorm_smul_fourier_quantizeSchwartzValue_le_of_decay` gives its constant
+  in terms of a decay constant of `â` alone, uniformly over symbols with arbitrary compact support.
 * `TauCeti.Symbol.quantizeSobolev`: the bounded operator `H^s → H^{s - m}`, with
   `TauCeti.Symbol.toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply` identifying its values
   on Schwartz functions.
@@ -598,6 +600,24 @@ theorem HasCompactSpatialSupport.exists_eLpNorm_smul_fourier_quantizeSchwartzVal
           eLpNorm (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 u ξ) 2 volume := by
   obtain ⟨C₀, hC₀, hdecay⟩ := ha.exists_one_add_norm_pow_mul_norm_fourier_le (⌈|s - m|⌉₊ + n + 1)
   exact ⟨sobolevFactor n m s * C₀, mul_nonneg (sobolevFactor_nonneg n m s) hC₀,
+    ha.eLpNorm_smul_fourier_quantizeSchwartzValue_le hC₀ hdecay⟩
+
+/-- **The Sobolev estimate from the decay of `â`, uniformly in the symbol.** For real `m` and `s`
+there are an exponent `N` and a constant `C` such that every symbol `a` of order `m` with compact
+spatial support whose position slices satisfy `(1 + ‖η‖) ^ N ‖â(η, ξ)‖ ≤ C₀ ⟨ξ⟩ ^ m` has
+`‖⟨ξ⟩ ^ (s - m) 𝓕 (Op(a) u)‖_{L²} ≤ C C₀ ‖⟨ξ⟩ ^ s 𝓕 u‖_{L²}` for every Schwartz function `u`.
+The constant depends on `a` only through the decay constant `C₀`, not through its support. -/
+theorem exists_eLpNorm_smul_fourier_quantizeSchwartzValue_le_of_decay (n : ℕ) (m s : ℝ) :
+    ∃ (N : ℕ) (C : ℝ), 0 ≤ C ∧ ∀ a : Symbol n V W m, a.HasCompactSpatialSupport →
+      ∀ C₀ : ℝ, 0 ≤ C₀ →
+        (∀ η ξ : CoordinateSpace n,
+          (1 + ‖η‖) ^ N * ‖𝓕 (fun x ↦ a.coefficient (x, ξ)) η‖ ≤ C₀ * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) →
+        ∀ u : 𝓢(CoordinateSpace n, V),
+          eLpNorm (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ ((s - m) / 2) : ℝ) : ℂ) •
+              𝓕 (quantizeSchwartzValue a.coefficient u) ξ) 2 volume ≤
+            ENNReal.ofReal (C * C₀) *
+              eLpNorm (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 u ξ) 2 volume :=
+  ⟨_, sobolevFactor n m s, sobolevFactor_nonneg n m s, fun _ ha _ hC₀ hdecay ↦
     ha.eLpNorm_smul_fourier_quantizeSchwartzValue_le hC₀ hdecay⟩
 
 end Quantization

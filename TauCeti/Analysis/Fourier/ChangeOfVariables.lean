@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.MeasureTheory.Function.Lp.Dilation
 
@@ -42,6 +43,8 @@ complex normed space, including Schwartz functions by coercion.
   Fourier transform.
 * `TauCeti.fourier_fourierChar_smul`: modulation by the character `𝐞 ⟪·, c⟫` translates the
   Fourier transform by `c`.
+* `TauCeti.fourier_comp_sub`, `TauCeti.norm_fourier_comp_sub`: translation by `z` modulates the
+  Fourier transform by `𝐞 (-⟪z, ·⟫)`, so it does not change its modulus.
 * `TauCeti.fourier_smul_const`: the Fourier transform of `f · • v` is `𝓕 f · • v`.
 * `TauCeti.exp_inner_mul_I_eq_fourierChar`: the exponential `exp(i ⟪y, ξ⟫)` is the Fourier
   character at the frequency `ξ / 2π`.
@@ -159,6 +162,23 @@ theorem fourier_fourierChar_smul (f : E → F) (c ζ : E) :
   simp only [Real.fourier_eq]
   congr 1 with y
   rw [smul_smul, ← AddChar.map_add_eq_mul, inner_sub_right, neg_sub, neg_add_eq_sub]
+
+/-! ### Translation in position -/
+
+/-- **Translation**: translating a function by `z` multiplies its Fourier transform by the
+character `𝐞 (-⟪z, ·⟫)`, `𝓕 (f (· - z)) ζ = 𝐞 (-⟪z, ζ⟫) • 𝓕 f ζ`. -/
+theorem fourier_comp_sub (f : E → F) (z ζ : E) :
+    𝓕 (fun y ↦ f (y - z)) ζ = 𝐞 (-⟪z, ζ⟫) • 𝓕 f ζ := by
+  simp only [Real.fourier_eq]
+  rw [← integral_add_right_eq_self _ z, Circle.smul_def, ← integral_smul]
+  congr 1 with y
+  rw [add_sub_cancel_right, Circle.smul_def, Circle.smul_def, smul_smul, ← Circle.coe_mul,
+    ← AddChar.map_add_eq_mul, inner_add_left, neg_add, add_comm]
+
+/-- Translating a function does not change the modulus of its Fourier transform. -/
+theorem norm_fourier_comp_sub (f : E → F) (z ζ : E) :
+    ‖𝓕 (fun y ↦ f (y - z)) ζ‖ = ‖𝓕 f ζ‖ := by
+  rw [fourier_comp_sub, Circle.norm_smul]
 
 /-- The Fourier transform of a scalar function times a constant vector:
 `𝓕 (f · • v) w = 𝓕 f w • v`. -/

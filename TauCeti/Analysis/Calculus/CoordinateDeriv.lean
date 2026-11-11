@@ -283,6 +283,17 @@ theorem coordinateDeriv_neg (α : List (Fin n)) (f : CoordinateSpace n → A) :
     rw [coordinateDeriv_cons, ih, fderiv_neg, neg_apply, Pi.neg_apply,
       coordinateDeriv_cons]
 
+/-- Coordinate derivatives commute with translations: the derivatives of `y ↦ f (y + z)` are the
+derivatives of `f` translated by `z`. -/
+theorem coordinateDeriv_comp_add_right (α : List (Fin n)) (f : CoordinateSpace n → A)
+    (z : CoordinateSpace n) :
+    coordinateDeriv α (fun y => f (y + z)) = fun x => coordinateDeriv α f (x + z) := by
+  induction α with
+  | nil => rfl
+  | cons j js ih =>
+    funext x
+    rw [coordinateDeriv_cons, ih, fderiv_comp_add_right, coordinateDeriv_cons]
+
 @[simp]
 theorem coordinateDeriv_zero (α : List (Fin n)) :
     coordinateDeriv α (0 : CoordinateSpace n → A) = 0 := by
@@ -477,6 +488,12 @@ theorem mixedDeriv_nil_comp_fst (f : CoordinateSpace n → A) (α : List (Fin n)
     (x ξ : CoordinateSpace n) :
     mixedDeriv α [] (fun p => f p.1) x ξ = coordinateDeriv α f x := by
   simp only [mixedDeriv_def, coordinateDeriv_nil]
+
+/-- Mixed derivatives commute with translations in the position. -/
+theorem mixedDeriv_comp_add_fst (α β : List (Fin n))
+    (a : CoordinateSpace n × CoordinateSpace n → A) (z x ξ : CoordinateSpace n) :
+    mixedDeriv α β (fun p => a (p.1 + z, p.2)) x ξ = mixedDeriv α β a (x + z) ξ :=
+  congrFun (coordinateDeriv_comp_add_right α (fun y => coordinateDeriv β (fun η => a (y, η)) ξ) z) x
 
 /-- The coordinate direction of `ℝⁿ × ℝⁿ` named by a letter: `Sum.inl j` is the `j`-th position
 direction `(eⱼ, 0)` and `Sum.inr j` the `j`-th frequency direction `(0, eⱼ)`. -/
