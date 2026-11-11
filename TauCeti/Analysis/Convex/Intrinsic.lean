@@ -65,6 +65,13 @@ unit vector `u` of `V` the number `(gauge (-c +ᵥ C) u)⁻¹` is the length of 
 direction `u` inside `C`. No finite-dimensionality is needed. This identifies every nonempty
 compact convex set of a finite-dimensional space with a disk, which is how Brouwer's fixed-point
 theorem passes from the disk to compact convex sets.
+
+`Convex.inter_affineSpan_subset` says that a convex set meeting a set and avoiding its
+intrinsic frontier meets its affine span only inside the set. Its statement and line-segment
+argument are adapted from `Mei/Analysis/Convex/Intrinsic.lean` in
+[yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
+`a79c57178cc83666fc244ca6e6eeaa722e9b8bc7` (Apache 2.0).
+Original copyright (c) 2026 Mei contributors; original author: Codex.
 -/
 
 public section
@@ -561,3 +568,32 @@ theorem coe_convexClosedBallHomeomorph_mem_intrinsicFrontier_iff (hconv : Convex
       (isVonNBounded_setOf_add_mem hb), gauge_closedBall zero_le_one, div_one]
 
 end TauCeti
+
+namespace Convex
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
+  [IsTopologicalAddGroup V] [ContinuousSMul ℝ V]
+
+/-- A convex set meeting a set and avoiding its intrinsic frontier meets its affine span
+only inside that set. Neither set needs to be closed. -/
+theorem inter_affineSpan_subset {S U : Set V} (hU : Convex ℝ U) (hUS : (U ∩ S).Nonempty)
+    (hfr : Disjoint U (intrinsicFrontier ℝ S)) : U ∩ affineSpan ℝ S ⊆ S := by
+  rintro z ⟨hzU, hzA⟩
+  obtain ⟨w, hwU, hwP⟩ := hUS
+  let g : unitInterval → affineSpan ℝ S := fun r =>
+    ⟨AffineMap.lineMap w z (r : ℝ),
+      AffineMap.lineMap_mem _ (subset_affineSpan ℝ S hwP) hzA⟩
+  have hg : Continuous g :=
+    (AffineMap.lineMap_continuous.comp continuous_subtype_val).subtype_mk _
+  let B : Set (affineSpan ℝ S) := (↑) ⁻¹' S
+  have havoid : Set.range g ⊆ (frontier B)ᶜ := by
+    rintro _ ⟨r, rfl⟩ hr
+    exact hfr.notMem_of_mem_left (hU.lineMap_mem hwU hzU r.property) ⟨g r, hr, rfl⟩
+  rw [compl_frontier_eq_union_interior] at havoid
+  rcases (isPreconnected_range hg).subset_or_subset isOpen_interior isOpen_interior
+      (disjoint_compl_right.mono interior_subset interior_subset) havoid with hin | hout
+  · simpa [B, g] using interior_subset (hin (Set.mem_range_self 1))
+  · have := interior_subset (hout (Set.mem_range_self 0))
+    exact (this (by simpa [B, g] using hwP)).elim
+
+end Convex
