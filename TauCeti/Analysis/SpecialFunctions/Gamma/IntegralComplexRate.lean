@@ -24,6 +24,9 @@ positive reals, so they agree on the half-plane by the identity theorem.
 ## Main results
 
 * `Complex.integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos`: the Gamma integral with complex rate.
+
+The proof is adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
+`DLMFMathlib/Analysis/Asymptotics/WatsonSector.lean`.
 -/
 
 @[expose] public section
