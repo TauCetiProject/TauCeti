@@ -30,8 +30,6 @@ to `G[Y]` being separated by `G`.
 
 ## Main results
 
-* `TauCeti.GroupAlgGeom.Quadratic.Standard.toWord_nonorientableCoeff_one_zero`: the standard
-  equation of type (4) with one square and no conjugated coefficient is `x² d`.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.Rad_toWord_nonorientableCoeff_one_zero`: if `b² = d`,
   the radical of `x² d` is the normal closure of `x b`.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.exists_sq_eq_and_Rad_toWord_nonorientableCoeff_one_zero`:
@@ -63,13 +61,6 @@ namespace Standard
 variable {x : Fin 1 → X} {z : Fin 0 → X} {inj : (Sum.elim x z).Injective} {c : Fin 0 → G}
   {hc : ∀ j, c j ≠ 1} {d : G} {hd : d ≠ 1}
 
-/-- The standard quadratic equation of type (4) with one square and no conjugated coefficient is
-`x² d = 1`. -/
-theorem toWord_nonorientableCoeff_one_zero :
-    (nonorientableCoeff 1 0 one_pos x z inj c hc d hd).toWord =
-      inr (FreeGroup.of (x 0)) ^ 2 * inl d := by
-  simp [toWord_def]
-
 /-- Over a group `H` with unique roots and injective coefficients, the radical of the
 one-variable standard quadratic equation `x² d = 1` with `d = b²` is the normal closure of
 `x b`. -/
@@ -90,7 +81,7 @@ theorem exists_sq_eq_and_Rad_toWord_nonorientableCoeff_one_zero [Subsingleton X]
         normalClosure {inr (FreeGroup.of (x 0)) * inl b} := by
   obtain ⟨v, hv⟩ := hS
   have hv : v (x 0) ^ 2 * d = 1 := by
-    simpa [toWord_nonorientableCoeff_one_zero, eval_inr_of] using hv
+    simpa [eval_inr_of] using hv
   have hb : (v (x 0))⁻¹ ^ 2 = d := by rw [inv_pow, inv_eq_of_mul_eq_one_right hv]
   exact ⟨_, hb, Rad_toWord_nonorientableCoeff_one_zero Function.injective_id hb⟩
 

@@ -468,6 +468,15 @@ theorem constant_nonorientableCoeff {x : Fin n → X} (hn : 0 < n)
 
 theorem toWord_def (S : Standard G X) : S.toWord = S.atoms.prod * inl S.constant := (rfl)
 
+/-- The standard quadratic equation of type (4) with one square and no conjugated coefficient is
+`x² d = 1`. -/
+@[simp]
+theorem toWord_nonorientableCoeff_one_zero {x : Fin 1 → X} {z : Fin 0 → X} {c : Fin 0 → G}
+    (inj : (Sum.elim x z).Injective) (hc : ∀ j, c j ≠ 1) (hd : d ≠ 1) :
+    (nonorientableCoeff 1 0 one_pos x z inj c hc d hd).toWord =
+      inr (FreeGroup.of (x 0)) ^ 2 * inl d := by
+  simp [toWord_def]
+
 theorem atomicRank_def (S : Standard G X) : S.atomicRank = S.atoms.length := (rfl)
 
 @[simp]
