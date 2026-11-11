@@ -136,7 +136,8 @@ theorem IntegrableOn.ae_eq_zero_of_forall_fourierCoeffOn_eq_zero {a b : ℝ} (ha
   have : Fact (0 < b - a) := ⟨sub_pos.2 hab⟩
   have hIoc : Ioc a (a + (b - a)) = Ioc a b := by rw [add_sub_cancel]
   have hc : ENNReal.ofReal (b - a) ≠ 0 := by simpa using hab
-  -- Transport `f` to the circle of length `b - a`, where it has the same Fourier coefficients.
+  -- Transport `f` to the circle of length `b - a`. By definition, `fourierCoeffOn` is the
+  -- Fourier coefficient of this lift.
   have hlift : (fun x : ℝ ↦ liftIoc (b - a) a f x) =ᵐ[volume.restrict (Ioc a b)] f := by
     filter_upwards [ae_restrict_mem measurableSet_Ioc] with x hx
     exact liftIoc_coe_apply (hIoc ▸ hx)
@@ -145,12 +146,7 @@ theorem IntegrableOn.ae_eq_zero_of_forall_fourierCoeffOn_eq_zero {a b : ℝ} (ha
     exact ((measurePreserving_subtype_coe measurableSet_Ioc).comp
       (measurePreserving_equivIoc _)).integrable_comp_of_integrable (hIoc ▸ hf)
   have hzero := hint.ae_eq_zero_of_forall_fourierCoeff_eq_zero fun n ↦ by
-    rw [← h n, fourierCoeffOn_eq_integral, fourierCoeff_eq_intervalIntegral _ n a, add_sub_cancel]
-    congr 1
-    refine intervalIntegral.integral_congr_ae_restrict ?_
-    rw [uIoc_of_le hab.le]
-    filter_upwards [hlift] with x hx
-    rw [hx]
+    simpa only [fourierCoeffOn] using h n
   rw [Filter.EventuallyEq, ← Measure.ae_ennreal_smul_measure_eq hc,
     ← volume_eq_smul_haarAddCircle] at hzero
   exact hlift.symm.trans
