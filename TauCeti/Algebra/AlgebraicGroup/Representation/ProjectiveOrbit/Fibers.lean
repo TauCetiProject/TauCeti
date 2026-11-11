@@ -29,9 +29,6 @@ nonreduced, and no field hypothesis is imposed on the base ring.
 
 ## Main declarations
 
-* `Comodule.SpecMap_projectiveOrbitMap_preimage_basicOpen_ι`: the pullback of a standard
-  chart along an algebra-valued orbit map is the principal open of the evaluated matrix
-  coefficient.
 * `Comodule.projectiveOrbitMap_SpecMap_eq_iff_exists_units_matrixCoefficient`: equality of
   algebra-valued orbit maps is global unit proportionality of matrix coefficients.
 
@@ -51,21 +48,6 @@ universe u
 variable {R H M A : Type u} [CommRing R] [CommRing H] [HopfAlgebra R H]
   [AddCommMonoid M] [Module R M] [Comodule R H M]
   [Module.Finite R M] [Module.Projective R M] [CommRing A] [Algebra R A]
-
-/-- The standard chart of a linear coordinate pulls back along an algebra-valued orbit map
-to the principal open of the evaluated matrix coefficient. -/
-theorem SpecMap_projectiveOrbitMap_preimage_basicOpen_ι (m : M)
-    (hm : Module.IsUnimodular R m) (g : H →ₐ[R] A) (φ : Module.Dual R M) :
-    (Spec.map (CommRingCat.ofHom g.toRingHom) ≫ projectiveOrbitMap (H := H) m hm) ⁻¹ᵁ
-        Proj.basicOpen _ (SymmetricAlgebra.ι R (Module.Dual R M) φ) =
-      (Spec (.of A)).basicOpen ((Scheme.ΓSpecIso (.of A)).inv
-        (g (matrixCoefficient (C := H) φ m))) := by
-  rw [Scheme.Hom.comp_preimage, projectiveOrbitMap_preimage_basicOpen_ι,
-    Scheme.preimage_basicOpen]
-  congr 1
-  exact congrArg (fun e : CommRingCat.of H ⟶ Γ(Spec (.of A), ⊤) ↦
-    e.hom (matrixCoefficient (C := H) φ m))
-      (Scheme.ΓSpecIso_inv_naturality (CommRingCat.ofHom g.toRingHom)).symm
 
 /-- Over a local value ring, algebra-valued orbit maps with the same image agree on which
 evaluated matrix coefficients are units: both conditions say that the closed point maps into
@@ -125,7 +107,7 @@ theorem projectiveOrbitMap_SpecMap_eq_iff_exists_units_matrixCoefficient (m : M)
       rw [← hspan (ι.comp g), Ideal.span_le]
       rintro _ ⟨t, rfl⟩
       exact (IsLocalRing.mem_maximalIdeal _).mpr (hne t)
-    obtain ⟨c, hc⟩ := (projectiveOrbitMap_SpecMap_eq_iff_exists_unit m hm _ _ t ht
+    obtain ⟨c, hc⟩ := (projectiveOrbitMap_SpecMap_eq_iff_exists_unit m hm _ _ t
       (isUnit_of_SpecMap_projectiveOrbitMap_eq m hm heqL ht)).mp heqL
     have hφ := hc φ
     have hψ := hc ψ
