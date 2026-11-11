@@ -59,7 +59,8 @@ eigenfunction.
   `IsCoercive.isCompactOperator_formSolutionOperator`,
   `IsCoercive.isSymmetric_formSolutionOperator` and
   `IsCoercive.inner_formSolutionOperator_self_nonneg`.
-* `IsCoercive.ker_formSolutionOperator`: the kernel of `S` is `(range J)ᗮ`.
+* `IsCoercive.ker_formSolutionOperator`: the kernel of `S` is `(range J)ᗮ`, and
+  `IsCoercive.injective_formSolutionOperator`: `S` is injective when `J` has dense range.
 * `IsCoercive.hasEigenvalue_formSolutionOperator_iff`: the reciprocal correspondence between
   the nonzero eigenvalues of `S` and the variational eigenvalues.
 * `IsCoercive.exists_ne_zero_forall_apply_eq_smul_inner`: existence of a variational
@@ -286,6 +287,12 @@ theorem eigenspace_formSolutionOperator_zero_eq_bot (hB : IsCoercive B) {J : V �
   rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
     formSolutionOperator_apply_eq_zero_iff hB J h] at hh
   exact (Submodule.mem_bot ℝ).mpr (hJ.eq_zero_of_inner_left ℝ hh)
+
+/-- With `J` of dense range, the solution operator is injective. -/
+theorem injective_formSolutionOperator (hB : IsCoercive B) {J : V →L[ℝ] H} (hJ : DenseRange J) :
+    Function.Injective (hB.formSolutionOperator J) :=
+  (injective_iff_map_eq_zero _).2 fun h hh =>
+    hJ.eq_zero_of_inner_left ℝ ((hB.formSolutionOperator_apply_eq_zero_iff J h).1 hh)
 
 /-! ### Variational eigenvalues -/
 

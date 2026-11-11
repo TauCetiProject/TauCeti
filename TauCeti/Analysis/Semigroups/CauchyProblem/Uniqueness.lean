@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Semigroups.CauchyProblem.Basic
 import TauCeti.Analysis.Semigroups.Generator.Uniqueness
 import Mathlib.Analysis.Calculus.Deriv.Shift
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
 # Uniqueness for the abstract Cauchy problem
@@ -136,5 +137,33 @@ theorem IsMildSolution.eq_realOperator {S : StronglyContinuousSemigroup X}
     {x : X} {u : ℝ → X} (hu : IsMildSolution S.generator x u) {t : ℝ} (ht : 0 ≤ t) :
     u t = S.realOperator t x :=
   hu.unique (S.isMildSolution_realOperator x) ht
+
+/-- **A semigroup acts on an eigenvector of its generator by an exponential.** If
+`A x = μ • x`, then `t ↦ exp (μ t) • x` is a classical solution of `u' = A u`, `u(0) = x`, so it
+is the orbit of `x`. -/
+theorem StronglyContinuousSemigroup.realOperator_apply_eq_exp_smul_of_generator_eq_smul
+    (S : StronglyContinuousSemigroup X) (x : S.generator.domain) {μ : ℝ}
+    (hx : S.generator x = μ • (x : X)) {t : ℝ} (ht : 0 ≤ t) :
+    S.realOperator t x = Real.exp (μ * t) • (x : X) := by
+  have hsol : IsClassicalSolution S.generator x fun s => Real.exp (μ * s) • (x : X) := by
+    refine isClassicalSolution_iff.2 ⟨by simp, fun s => (μ * Real.exp (μ * s)) • (x : X),
+      ((continuous_const.mul (Real.continuous_exp.comp (continuous_const.mul
+        continuous_id))).smul continuous_const).continuousOn, fun s _ => ?_⟩
+    refine ⟨S.generator.domain.smul_mem _ x.2, ?_, ?_⟩
+    · have h := ((hasDerivAt_id s).const_mul μ).exp.smul_const (x : X)
+      simp only [mul_one, id] at h
+      exact (by simpa only [mul_comm] using h : HasDerivAt _ _ s).hasDerivWithinAt
+    · have hsmul : (⟨Real.exp (μ * s) • (x : X), S.generator.domain.smul_mem _ x.2⟩ :
+          S.generator.domain) = Real.exp (μ * s) • x := rfl
+      rw [hsmul, S.generator.map_smul, hx, smul_smul, mul_comm]
+  exact (hsol.eq_realOperator ht).symm
+
+/-- The form of `realOperator_apply_eq_exp_smul_of_generator_eq_smul` at a time `t : ℝ≥0`. -/
+theorem StronglyContinuousSemigroup.apply_eq_exp_smul_of_generator_eq_smul
+    (S : StronglyContinuousSemigroup X) (x : S.generator.domain) {μ : ℝ}
+    (hx : S.generator x = μ • (x : X)) (t : NNReal) :
+    S t x = Real.exp (μ * t) • (x : X) := by
+  rw [← S.realOperator_coe]
+  exact S.realOperator_apply_eq_exp_smul_of_generator_eq_smul x hx t.2
 
 end TauCeti.Semigroups
