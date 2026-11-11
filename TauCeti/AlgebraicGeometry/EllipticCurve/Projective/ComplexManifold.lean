@@ -10,6 +10,9 @@ public import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.Projectivization.ZeroLocus
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.CoordinateRing
+import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
+import TauCeti.Geometry.Manifold.Immersion.ModelChange
+import TauCeti.Geometry.Manifold.ModelTransport.Diffeomorph
 
 /-!
 # Complex elliptic curves are Riemann surfaces
@@ -25,8 +28,12 @@ function theorem, the curve is therefore flattened near each point by an analyti
 `ℂℙ²` (`TauCeti.complexProjectiveZeroLocusSliceChart`), taken in a standard affine chart `Xᵢ ≠ 0`
 containing the point. Its tangential coordinate is an abstract linear coordinate on the kernel of
 the derivative of the affine equation; it is not identified here with the classical local
-coordinates `x`, `y` or `X / Y`. Reading the tangential coordinate of these slice charts in `ℂ`
-gives an atlas of `W.Point` modelled on `ℂ`, whose transition maps are analytic.
+coordinates `x`, `y` or `X / Y`. These slice charts make the zero locus a complex submanifold of
+`ℂℙ²` modelled on `Fin 1 → ℂ` (`TauCeti.complexProjectiveZeroLocusChartedSpace`). Pulling that
+atlas back to `W.Point` and reading its model `Fin 1 → ℂ` in `ℂ` (`ChartedSpace.comp`) gives an
+atlas of `W.Point` modelled on `ℂ`, whose transition maps are analytic. The embedding into `ℂℙ²`
+is transported along the same linear change of model
+(`TauCeti.isImmersionAt_comp_diffeomorph_of_image_range_eq`).
 
 This makes the points of a complex elliptic curve, already compact and connected in their analytic
 topology, a one-dimensional complex manifold
@@ -88,81 +95,90 @@ namespace Point
 private noncomputable abbrev zeroLocus : Set (ℙ ℂ (Fin 3 → ℂ)) :=
   TauCeti.complexProjectiveZeroLocus fun _ : Unit ↦ W.polynomial
 
-/-- The model `(Fin (2 - 1) → ℂ) × (Unit → ℂ)` of the slice charts of a plane curve, with its
-tangential factor read in `ℂ`. -/
-private noncomputable def modelEquiv :
-    ((Fin (2 - Fintype.card Unit) → ℂ) × (Unit → ℂ)) ≃L[ℂ] ℂ × (Unit → ℂ) :=
-  (ContinuousLinearEquiv.funUnique (Fin 1) ℂ ℂ).prodCongr (ContinuousLinearEquiv.refl ℂ _)
+/-- The tangential model `Fin (2 - 1) → ℂ` of the slice-chart atlas of a plane curve, read in
+`ℂ`. -/
+private noncomputable def modelEquiv : (Fin (2 - Fintype.card Unit) → ℂ) ≃L[ℂ] ℂ :=
+  ContinuousLinearEquiv.funUnique (Fin 1) ℂ ℂ
 
-/-- The model identification does not change the transverse coordinate. -/
-private theorem modelEquiv_toHomeomorph_apply_snd
-    (v : (Fin (2 - Fintype.card Unit) → ℂ) × (Unit → ℂ)) : (modelEquiv.toHomeomorph v).2 = v.2 :=
-  (rfl)
-
-/-- The analytic slice chart of `ℂℙ²` flattening the curve near the point `L`, with tangential
-coordinate in `ℂ`. -/
-private noncomputable def sliceChart (L : zeroLocus W) :
-    OpenPartialHomeomorph (ℙ ℂ (Fin 3 → ℂ)) (ℂ × (Unit → ℂ)) :=
-  (TauCeti.complexProjectiveZeroLocusSliceChart (fun _ ↦ W.isHomogeneous_polynomial) L.2
-    (exists_mem_affineOpen (L : ℙ ℂ (Fin 3 → ℂ))).choose_spec
-    (W.mulVec_surjective_jacobiMatrixAt L.2)).transHomeomorph modelEquiv.toHomeomorph
-
-private theorem isSliceChart_sliceChart (L : zeroLocus W) :
-    TauCeti.IsSliceChart (sliceChart W L) ((univ : Set ℂ) ×ˢ ({0} : Set (Unit → ℂ)))
-      (zeroLocus W) := by
-  refine TauCeti.isSliceChart_iff.2 fun y hy ↦ ?_
-  rw [sliceChart, OpenPartialHomeomorph.transHomeomorph_source] at hy
-  rw [sliceChart, OpenPartialHomeomorph.transHomeomorph_apply, Function.comp_apply,
-    TauCeti.isSliceChart_iff.1 (TauCeti.isSliceChart_complexProjectiveZeroLocusSliceChart _ _ _ _)
-      y hy]
-  simp only [mem_prod, mem_univ, true_and, mem_singleton_iff, modelEquiv_toHomeomorph_apply_snd]
-
-private theorem mem_sliceChart_source (L : zeroLocus W) :
-    (L : ℙ ℂ (Fin 3 → ℂ)) ∈ (sliceChart W L).source :=
-  TauCeti.mem_complexProjectiveZeroLocusSliceChart_source _ _ _ _
-
-private theorem contMDiffOn_sliceChart (r : ℕ∞ω) (L : zeroLocus W) :
-    ContMDiffOn 𝓘(ℂ, Fin 2 → ℂ) 𝓘(ℂ, ℂ × (Unit → ℂ)) r (sliceChart W L)
-      (sliceChart W L).source := by
-  rw [sliceChart, OpenPartialHomeomorph.transHomeomorph_apply,
-    OpenPartialHomeomorph.transHomeomorph_source]
-  exact modelEquiv.contDiff.contMDiff.comp_contMDiffOn
-    (TauCeti.contMDiffOn_complexProjectiveZeroLocusSliceChart _ _ _ _ r)
-
-private theorem contMDiffOn_sliceChart_symm (r : ℕ∞ω) (L : zeroLocus W) :
-    ContMDiffOn 𝓘(ℂ, ℂ × (Unit → ℂ)) 𝓘(ℂ, Fin 2 → ℂ) r (sliceChart W L).symm
-      (sliceChart W L).target := by
-  rw [sliceChart, OpenPartialHomeomorph.transHomeomorph_symm_apply,
-    OpenPartialHomeomorph.transHomeomorph_target]
-  exact (TauCeti.contMDiffOn_complexProjectiveZeroLocusSliceChart_symm _ _ _ _ r).comp
-    modelEquiv.symm.contDiff.contMDiff.contMDiffOn fun _ hv ↦ hv
-
-/-- The atlas of the zero locus induced by its slice charts. -/
+/-- The atlas of the zero locus induced by its slice charts, modelled on `Fin (2 - 1) → ℂ`. -/
 @[instance_reducible]
-private noncomputable def zeroLocusChartedSpace : ChartedSpace ℂ (zeroLocus W) :=
-  TauCeti.linearSliceChartedSpace (sliceChart W) (isSliceChart_sliceChart W)
-    (mem_sliceChart_source W)
+private noncomputable def zeroLocusChartedSpace :
+    ChartedSpace (Fin (2 - Fintype.card Unit) → ℂ) (zeroLocus W) :=
+  TauCeti.complexProjectiveZeroLocusChartedSpace (fun _ ↦ W.isHomogeneous_polynomial) isOpen_univ
+    (inter_univ _).symm fun _ hL ↦ W.mulVec_surjective_jacobiMatrixAt hL
+
+/-- The atlas of the zero locus, pulled back to the points of `W`. -/
+@[instance_reducible]
+private noncomputable def slicePointChartedSpace :
+    ChartedSpace (Fin (2 - Fintype.card Unit) → ℂ) W.Point :=
+  letI := zeroLocusChartedSpace W
+  (homeomorphZeroLocus W).pullbackChartedSpace
+
+/-- The tangential model `Fin (2 - 1) → ℂ`, charted by `ℂ` through `modelEquiv`. -/
+@[instance_reducible]
+private noncomputable def modelChartedSpace : ChartedSpace ℂ (Fin (2 - Fintype.card Unit) → ℂ) :=
+  (modelEquiv.toContDiffDiffeomorph ω).toHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace
+    (Homeomorph.toOpenPartialHomeomorph_source _)
 
 /-- **The complex charts of an elliptic curve.** The points of a complex elliptic curve are
 charted by `ℂ`: the chart at a point reads the tangential coordinate of the analytic slice chart of
 `ℂℙ²` that flattens the curve near that point. -/
 @[no_expose]
 noncomputable instance instChartedSpace : ChartedSpace ℂ W.Point :=
+  letI := slicePointChartedSpace W
+  letI := modelChartedSpace
+  ChartedSpace.comp ℂ (Fin (2 - Fintype.card Unit) → ℂ) W.Point
+
+/-- The points of `W` form a `C^r` manifold for the atlas pulled back from the zero locus. -/
+private theorem isManifold_slicePointChartedSpace (r : ℕ∞ω) :
+    letI := slicePointChartedSpace W
+    IsManifold 𝓘(ℂ, Fin (2 - Fintype.card Unit) → ℂ) r W.Point :=
   letI := zeroLocusChartedSpace W
-  (homeomorphZeroLocus W).pullbackChartedSpace
+  haveI := TauCeti.isManifold_complexProjectiveZeroLocus (fun _ ↦ W.isHomogeneous_polynomial)
+    isOpen_univ (inter_univ _).symm (fun _ hL ↦ W.mulVec_surjective_jacobiMatrixAt hL) r
+  (homeomorphZeroLocus W).pullback_isManifold _ r
 
 /-- **The points of a complex elliptic curve form a Riemann surface.** Their atlas is analytic,
 and `C^r` for every `r`. -/
 instance instIsManifold (r : ℕ∞ω) : IsManifold 𝓘(ℂ) r W.Point :=
-  letI := zeroLocusChartedSpace W
-  haveI : IsManifold 𝓘(ℂ) r (zeroLocus W) :=
-    TauCeti.isManifold_linearSliceChartedSpace (sliceChart W) (isSliceChart_sliceChart W)
-      (fun L _ hz ↦ (contMDiffOn_sliceChart W r L).contMDiffAt
-        ((sliceChart W L).open_source.mem_nhds hz))
-      (fun L _ hz ↦ (contMDiffOn_sliceChart_symm W r L).contMDiffAt
-        ((sliceChart W L).open_target.mem_nhds hz))
-      (mem_sliceChart_source W)
-  (homeomorphZeroLocus W).pullback_isManifold 𝓘(ℂ) r
+  letI := slicePointChartedSpace W
+  haveI := isManifold_slicePointChartedSpace W ω
+  haveI : IsManifold 𝓘(ℂ) ω W.Point :=
+    (modelEquiv.toContDiffDiffeomorph ω).isManifold_chartedSpaceComp W.Point
+  IsManifold.of_le le_top
+
+/-- The charts of `W.Point` are those of the zero locus atlas, read in `ℂ` through
+`modelEquiv`. -/
+private theorem extChartAt_eq (P : W.Point) :
+    letI := slicePointChartedSpace W
+    (extChartAt 𝓘(ℂ) P : W.Point → ℂ) =
+      modelEquiv ∘ extChartAt 𝓘(ℂ, Fin (2 - Fintype.card Unit) → ℂ) P := by
+  let := slicePointChartedSpace W
+  let := modelChartedSpace
+  funext Q
+  change modelEquiv.toContDiffDiffeomorph ω (chartAt _ P Q) = modelEquiv (chartAt _ P Q)
+  rw [ContinuousLinearEquiv.coe_toContDiffDiffeomorph]
+
+/-- The identity of `W.Point`, from the atlas modelled on `ℂ` to the zero locus atlas modelled on
+`Fin (2 - 1) → ℂ`. -/
+private noncomputable def modelChangeDiffeomorph (r : ℕ∞ω) :
+    letI := slicePointChartedSpace W
+    W.Point ≃ₘ^r⟮𝓘(ℂ), 𝓘(ℂ, Fin (2 - Fintype.card Unit) → ℂ)⟯ W.Point :=
+  letI := slicePointChartedSpace W
+  { toEquiv := Equiv.refl _
+    contMDiff_toFun := fun P ↦ by
+      refine contMDiffAt_iff_target.2 ⟨continuousAt_id, ?_⟩
+      have h : (extChartAt 𝓘(ℂ, Fin (2 - Fintype.card Unit) → ℂ) P : W.Point → _) ∘ id =
+          modelEquiv.symm ∘ extChartAt 𝓘(ℂ) P := by
+        rw [extChartAt_eq]
+        funext Q
+        exact (modelEquiv.symm_apply_apply _).symm
+      exact h ▸ modelEquiv.symm.contDiff.contMDiff.contMDiffAt.comp P contMDiffAt_extChartAt
+    contMDiff_invFun := fun P ↦ by
+      have := isManifold_slicePointChartedSpace W r
+      refine contMDiffAt_iff_target.2 ⟨continuousAt_id, ?_⟩
+      exact (extChartAt_eq W P).symm ▸
+        modelEquiv.contDiff.contMDiff.contMDiffAt.comp P contMDiffAt_extChartAt }
 
 /-- **A complex elliptic curve is holomorphically embedded in `ℂℙ²`.** The comparison of its
 points with lines in `ℂ³` is a `C^r` embedding for every `r`; in particular it is holomorphic. -/
@@ -170,19 +186,28 @@ theorem isSmoothEmbedding_toProjectivization (r : ℕ∞ω) :
     Manifold.IsSmoothEmbedding 𝓘(ℂ) 𝓘(ℂ, Fin 2 → ℂ) r
       (toProjectivization : W.Point → ℙ ℂ (Fin 3 → ℂ)) := by
   let := zeroLocusChartedSpace W
-  have hval : Manifold.IsSmoothEmbedding 𝓘(ℂ) 𝓘(ℂ, Fin 2 → ℂ) r
-      (Subtype.val : zeroLocus W → ℙ ℂ (Fin 3 → ℂ)) :=
-    TauCeti.isSmoothEmbedding_subtypeVal_linearSliceChartedSpace (sliceChart W)
-      (isSliceChart_sliceChart W)
-      (fun _ ↦ ContinuousLinearEquiv.ofFinrankEq (by simp))
-      (contMDiffOn_sliceChart W r) (contMDiffOn_sliceChart_symm W r) (mem_sliceChart_source W)
+  let := slicePointChartedSpace W
+  have := TauCeti.isManifold_complexProjectiveZeroLocus (fun _ ↦ W.isHomogeneous_polynomial)
+    isOpen_univ (inter_univ _).symm (fun _ hL ↦ W.mulVec_surjective_jacobiMatrixAt hL) r
+  have := isManifold_slicePointChartedSpace W r
   have h := TauCeti.isSmoothEmbedding_comp_isLocalDiffeomorph
-    ((homeomorphZeroLocus W).pullbackDiffeomorph 𝓘(ℂ) r).isLocalDiffeomorph
-    (by rw [Homeomorph.coe_pullbackDiffeomorph]; exact (homeomorphZeroLocus W).isEmbedding) hval
+    ((homeomorphZeroLocus W).pullbackDiffeomorph 𝓘(ℂ, Fin (2 - Fintype.card Unit) → ℂ)
+      r).isLocalDiffeomorph
+    (by rw [Homeomorph.coe_pullbackDiffeomorph]; exact (homeomorphZeroLocus W).isEmbedding)
+    (TauCeti.isSmoothEmbedding_subtypeVal_complexProjectiveZeroLocus
+      (fun _ ↦ W.isHomogeneous_polynomial) isOpen_univ (inter_univ _).symm
+      (fun _ hL ↦ W.mulVec_surjective_jacobiMatrixAt hL) r)
   rw [Homeomorph.coe_pullbackDiffeomorph] at h
-  convert h using 1
-  funext P
-  rw [Function.comp_apply, coe_homeomorphZeroLocus_apply]
+  have hP : (Subtype.val ∘ homeomorphZeroLocus W : W.Point → ℙ ℂ (Fin 3 → ℂ)) =
+      toProjectivization := by
+    funext P
+    rw [Function.comp_apply, coe_homeomorphZeroLocus_apply]
+  rw [hP] at h
+  refine ⟨TauCeti.isImmersion_iff_forall_isImmersionAt.2 fun P ↦ ?_, isEmbedding_toProjectivization⟩
+  exact TauCeti.isImmersionAt_comp_diffeomorph_of_image_range_eq modelEquiv.symm
+    (by simp only [modelWithCornersSelf_coe, range_id]
+        exact image_univ_of_surjective modelEquiv.symm.surjective)
+    (modelChangeDiffeomorph W r) le_rfl (h.isImmersion.isImmersionAt P)
 
 variable {W} {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [TopologicalSpace H]
   {I : ModelWithCorners ℂ E H} [TopologicalSpace M] [ChartedSpace H M] {r : ℕ∞ω}
