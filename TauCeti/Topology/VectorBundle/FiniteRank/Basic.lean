@@ -98,10 +98,6 @@ is definitionally the identity. This avoids unpacking the fields of `VectorBundl
   simpa only [A.indexAt_eq, ContinuousLinearMap.id_apply] using
     A.core.coordChange_self (A.core.indexAt x) x (A.core.mem_baseSet_at x) v
 
-/-- Every base point lies in the domain of its own chart. -/
-theorem mem_baseSet_self (A : FiniteRankBundleCore 𝕜 B) (x : B) : x ∈ A.core.baseSet x := by
-  simpa only [A.indexAt_eq] using A.core.mem_baseSet_at x
-
 /-- The preferred trivialization of `A.core` at `x` is the chart `A.core.localTriv x`. -/
 theorem trivializationAt_core (A : FiniteRankBundleCore 𝕜 B) (x : B) :
     trivializationAt (Fin A.rank → 𝕜) A.core.Fiber x = A.core.localTriv x := by
