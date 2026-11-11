@@ -9,48 +9,55 @@ public import TauCeti.Analysis.Pseudodifferential.Kernel
 import TauCeti.Analysis.Distribution.TemperateGrowth
 
 /-!
-# Pseudodifferential kernels are smooth off the diagonal
+# The kernel of a pseudodifferential operator off the diagonal
 
-The left quantization of a symbol `a ∈ S^m_{1,0}` on `ℝⁿ` is formally the integral operator with
-kernel `K_a(x, y) = ∫ exp(2πi ⟪ζ, x - y⟫) a(x, 2πζ) dζ`. For `m < -n` this integral converges
-absolutely (`TauCeti.quantizationKernel`); in general it does not, and `K_a` is only a distribution.
-Away from the diagonal it is nevertheless a smooth function, by repeated integration by parts in the
-frequency: multiplying the kernel by `-‖x - y‖²` replaces `a` by its frequency Laplacian `Δ_ξ a`,
-a symbol of order `m - 2`, so `K_a(x, y) = (-‖x - y‖²)⁻ᴺ K_{Δ_ξ^N a}(x, y)` where the right side
-converges absolutely as soon as `m - 2N < -n`, and is `C^k` as soon as `m - 2N + k < -n`.
+For a symbol `a` of order `m` on `ℝⁿ`, the Schwartz kernel of its Kohn–Nirenberg quantization,
+`K_a(x, y) = (2π)⁻ⁿ ∫ exp(i ⟪x - y, ξ⟫) a(x, ξ) dξ`, is an absolutely convergent integral only when
+`m < -n`; in general it is a distribution. Away from the diagonal it is nevertheless a function.
+This file proves this by repeated integration by parts in the frequency.
 
-The ingredients are proved where the kernel and the quantization are defined: the smoothness
-`TauCeti.Symbol.contDiff_quantizationKernel` and the identity
-`TauCeti.Symbol.quantizationKernel_iteratedFrequencyLaplacian` for the absolutely convergent kernel
-in `TauCeti.Analysis.Pseudodifferential.Kernel`, and its operator form
-`TauCeti.Symbol.quantizeSchwartzValue_iteratedFrequencyLaplacian`, valid for symbols of every order,
-in `TauCeti.Analysis.Pseudodifferential.Quantization`.
+Multiplying the input by the displacement `⟪x - y, v⟫` and evaluating `Op(a)` at `x` amounts to
+replacing the symbol by `i ∂_{ξ, v} a`, a symbol of one order lower
+(`TauCeti.quantizeSchwartzValue_smulLeftCLM_inner_sub` in
+`TauCeti.Analysis.Pseudodifferential.Quantization`). Summing over the coordinates, multiplying
+by `‖x - y‖ ^ (2N)` replaces `a` by `(-Δ_ξ)^N a`
+(`TauCeti.Symbol.quantizeSchwartzValue_smulLeftCLM_norm_sub_pow`). Once `m - 2N < -n`, the symbol
+`Δ_ξ^N a` has an absolutely convergent kernel, so for an input `u` vanishing near `x`,
+dividing `u` by `‖x - y‖ ^ (2N)` gives
+
+`Op(a) u (x) = ∫ (-1)^N ‖x - y‖^(-2N) K_{Δ_ξ^N a}(x, y) u(y) dy`.
+
+This defines the off-diagonal kernel `TauCeti.Symbol.offDiagonalKernel a`. It does not depend on
+`N`, because `K_{Δ_ξ b} = -‖x - y‖² K_b` for symbols `b` of order below `-n`
+(`TauCeti.Symbol.quantizationKernel_frequencyLaplacian`), and for `m < -n` it is the absolutely
+convergent kernel itself.
 
 ## Main results
 
-* `TauCeti.Symbol.offDiagonalKernel`: the kernel `K_a(x, y)` of a symbol of any order for `x ≠ y`,
-  with the formula `TauCeti.Symbol.offDiagonalKernel_eq` for every admissible `N`; it agrees with
-  `TauCeti.quantizationKernel` when `m < -n`
-  (`TauCeti.Symbol.offDiagonalKernel_eq_quantizationKernel`).
-* `TauCeti.Symbol.offDiagonalKernel_self`: the convention `K_a(x, x) = 0`, and
-  `TauCeti.Symbol.offDiagonalKernel_add`, `TauCeti.Symbol.offDiagonalKernel_smul`,
-  `TauCeti.Symbol.offDiagonalKernel_zero`: linearity in the symbol.
-* `TauCeti.Symbol.contDiffOn_offDiagonalKernel`: **the kernel is smooth off the diagonal.**
-* `TauCeti.Symbol.norm_offDiagonalKernel_le`: `‖K_a(x, y)‖ ≤ C_{x,N} ‖x - y‖⁻²ᴺ` for every `N`
-  with `m - 2N < -n`.
+* `TauCeti.Symbol.offDiagonalKernel_eq`: the off-diagonal kernel is
+  `(-1)^N ‖x - y‖^(-2N) K_{Δ_ξ^N a}(x, y)` for every `N` with `m - 2N < -n`.
 * `TauCeti.Symbol.quantizeSchwartzValue_eq_integral_offDiagonalKernel`: **kernel representation**,
-  `Op(a) u (x) = ∫ K_a(x, y) u(y) dy` for compactly supported Schwartz `u` vanishing near `x`.
+  `Op(a) u (x) = ∫ K(x, y) u(y) dy` for compactly supported `u` vanishing near `x`.
+* `TauCeti.Symbol.contDiffOn_offDiagonalKernel`: **the kernel is smooth off the diagonal**, since
+  `K_{Δ_ξ^N a}` is `C^k` once `m - 2N + k < -n`
+  (`TauCeti.Symbol.contDiff_quantizationKernel`); in particular it is continuous there
+  (`TauCeti.Symbol.continuousOn_offDiagonalKernel`).
+* `TauCeti.Symbol.offDiagonalKernel_add`, `TauCeti.Symbol.offDiagonalKernel_smul` and
+  `TauCeti.Symbol.offDiagonalKernel_zero`: the kernel is linear in the symbol.
+* `TauCeti.Symbol.exists_norm_offDiagonalKernel_le`: `‖K(x, y)‖ ≤ C ‖x - y‖^(-2N)` for `x` in a
+  compact set, for every `N` with `m - 2N < -n`; in particular the kernel decays faster than any
+  power of `‖x - y‖` as `y → ∞`.
 
 ## References
 
-* M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I.
+* M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I, §1.
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, §18.1.
 -/
 
 public section
 
-open scoped SchwartzMap ContDiff
-open MeasureTheory Real Module
+open scoped FourierTransform SchwartzMap RealInnerProductSpace ContDiff LineDeriv
+open MeasureTheory Real FourierTransform Module
 
 noncomputable section
 
@@ -63,173 +70,176 @@ namespace Symbol
 
 variable {n : ℕ} {m : ℝ}
 
-/-! ### The kernel off the diagonal -/
-
-/-- `N = ⌊(m + n) / 2⌋ + 1` frequency Laplacians bring the order `m` below `-n`. -/
-private theorem sub_two_mul_floor_add_one_lt (n : ℕ) (m : ℝ) :
+private lemma sub_two_mul_floor_lt (m : ℝ) (n : ℕ) :
     m - 2 * ((⌊(m + n) / 2⌋₊ + 1 : ℕ) : ℝ) < -n := by
   have := Nat.lt_floor_add_one ((m + n) / 2)
   push_cast
   linarith
 
-/-- The multiplier `(-‖x - y‖²)ᴺ` does not vanish off the diagonal. -/
-private theorem neg_norm_sub_sq_pow_ne_zero {x y : CoordinateSpace n} (hxy : x ≠ y) (N : ℕ) :
-    (-‖x - y‖ ^ 2) ^ N ≠ 0 :=
-  pow_ne_zero N (neg_ne_zero.2 (pow_ne_zero 2 (norm_ne_zero_iff.2 (sub_ne_zero.2 hxy))))
-
-/-- The multiplier `(x, y) ↦ (-‖x - y‖²)⁻ᴺ` is smooth off the diagonal. -/
-private theorem contDiffOn_inv_neg_norm_sub_sq_pow (N : ℕ) :
-    ContDiffOn ℝ ∞ (fun p : CoordinateSpace n × CoordinateSpace n ↦ ((-‖p.1 - p.2‖ ^ 2) ^ N)⁻¹)
-      {p | p.1 ≠ p.2} :=
-  (((contDiff_norm_sq ℝ).comp (contDiff_fst.sub contDiff_snd)).neg.pow N).contDiffOn.inv
-    fun _ hp ↦ neg_norm_sub_sq_pow_ne_zero hp N
-
-/-- The kernel `K_a(x, y)` of the quantization of a symbol `a` of order `m`, off the diagonal
-`x = y`. For any `N` with `m - 2N < -n`, the symbol `Δ_ξ^N a` has an absolutely convergent kernel,
-and `K_a(x, y) = (-‖x - y‖²)⁻ᴺ K_{Δ_ξ^N a}(x, y)` (`TauCeti.Symbol.offDiagonalKernel_eq`); when
-`m < -n` this is the kernel `TauCeti.quantizationKernel` itself
-(`TauCeti.Symbol.offDiagonalKernel_eq_quantizationKernel`), and for every order it represents
-`Op(a)` away from the diagonal
-(`TauCeti.Symbol.quantizeSchwartzValue_eq_integral_offDiagonalKernel`). The definition uses
-`N = ⌊(m + n) / 2⌋ + 1`. On the diagonal the kernel of a general symbol is singular, and the value
-`0` given by this formula there is a convention. -/
+/-- The Schwartz kernel of the quantization of a symbol of order `m`, off the diagonal:
+`(-1)^N ‖x - y‖^(-2N) K_{Δ_ξ^N a}(x, y)` with `N = ⌊(m + n) / 2⌋₊ + 1`, so that `m - 2N < -n`.
+It does not depend on this choice of `N` (`TauCeti.Symbol.offDiagonalKernel_eq`), and it has the
+junk value `0` on the diagonal. -/
 def offDiagonalKernel (a : Symbol n V W m) (x y : CoordinateSpace n) : V →L[ℂ] W :=
-  ((-‖x - y‖ ^ 2) ^ (⌊(m + n) / 2⌋₊ + 1))⁻¹ •
-    quantizationKernel (iteratedFrequencyLaplacian (⌊(m + n) / 2⌋₊ + 1) a).coefficient x y
+  ((-1) ^ (⌊(m + n) / 2⌋₊ + 1) / ‖x - y‖ ^ (2 * (⌊(m + n) / 2⌋₊ + 1))) •
+    quantizationKernel (frequencyLaplacianPow (⌊(m + n) / 2⌋₊ + 1) a).coefficient x y
 
-theorem offDiagonalKernel_def (a : Symbol n V W m) (x y : CoordinateSpace n) :
-    offDiagonalKernel a x y = ((-‖x - y‖ ^ 2) ^ (⌊(m + n) / 2⌋₊ + 1))⁻¹ •
-      quantizationKernel (iteratedFrequencyLaplacian (⌊(m + n) / 2⌋₊ + 1) a).coefficient x y :=
-  (rfl)
+/-- The off-diagonal kernel vanishes on the diagonal by convention. -/
+@[simp]
+theorem offDiagonalKernel_self (a : Symbol n V W m) (x : CoordinateSpace n) :
+    offDiagonalKernel a x x = 0 := by
+  simp [offDiagonalKernel]
 
-/-- Applying `M` more frequency Laplacians does not change the kernel formula off the diagonal. -/
-private theorem inv_smul_quantizationKernel_iteratedFrequencyLaplacian_add (a : Symbol n V W m)
-    {N : ℕ} (hN : m - 2 * N < -n) (M : ℕ) {x y : CoordinateSpace n} (hxy : x ≠ y) :
-    ((-‖x - y‖ ^ 2) ^ (N + M))⁻¹ •
-        quantizationKernel (iteratedFrequencyLaplacian (N + M) a).coefficient x y =
-      ((-‖x - y‖ ^ 2) ^ N)⁻¹ •
-        quantizationKernel (iteratedFrequencyLaplacian N a).coefficient x y := by
-  rw [coefficient_iteratedFrequencyLaplacian_add,
-    quantizationKernel_iteratedFrequencyLaplacian _ hN, smul_smul, pow_add, mul_inv,
-    mul_assoc, inv_mul_cancel₀ (neg_norm_sub_sq_pow_ne_zero hxy M), mul_one]
-
-/-- **Kernel formula off the diagonal.** For every `N` with `m - 2N < -n` and `x ≠ y`, the kernel
-of `a` is `(-‖x - y‖²)⁻ᴺ K_{Δ_ξ^N a}(x, y)`. -/
+/-- **Independence of the exponent.** Off the diagonal, for every `N` with `m - 2N < -n`,
+the kernel is `(-1)^N ‖x - y‖^(-2N) K_{Δ_ξ^N a}(x, y)`. -/
 theorem offDiagonalKernel_eq (a : Symbol n V W m) {N : ℕ} (hN : m - 2 * N < -n)
     {x y : CoordinateSpace n} (hxy : x ≠ y) :
-    offDiagonalKernel a x y = ((-‖x - y‖ ^ 2) ^ N)⁻¹ •
-      quantizationKernel (iteratedFrequencyLaplacian N a).coefficient x y := by
-  rw [offDiagonalKernel_def, ← inv_smul_quantizationKernel_iteratedFrequencyLaplacian_add a
-      (sub_two_mul_floor_add_one_lt n m) N hxy,
-    ← inv_smul_quantizationKernel_iteratedFrequencyLaplacian_add a hN
-      (⌊(m + n) / 2⌋₊ + 1) hxy, add_comm]
+    offDiagonalKernel a x y = ((-1) ^ N / ‖x - y‖ ^ (2 * N)) •
+      quantizationKernel (frequencyLaplacianPow N a).coefficient x y := by
+  have hr : ‖x - y‖ ≠ 0 := norm_ne_zero_iff.2 (sub_ne_zero.2 hxy)
+  have key (N : ℕ) (hN : m - 2 * N < -n) (k : ℕ) :
+      ((-1) ^ (N + k) / ‖x - y‖ ^ (2 * (N + k))) •
+          quantizationKernel (frequencyLaplacianPow (N + k) a).coefficient x y =
+        ((-1) ^ N / ‖x - y‖ ^ (2 * N)) •
+          quantizationKernel (frequencyLaplacianPow N a).coefficient x y := by
+    rw [quantizationKernel_frequencyLaplacianPow_add a hN k, smul_smul]
+    congr 1
+    have h1 : ((-1 : ℝ)) ^ (N + k) * (-1) ^ k = (-1) ^ N := by
+      simp [pow_add, mul_assoc, ← mul_pow]
+    rw [neg_pow, ← h1]
+    field_simp
+    ring
+  rw [offDiagonalKernel, ← key _ (sub_two_mul_floor_lt m n) N, add_comm, key _ hN]
 
-/-- For a symbol of order `m < -n`, the kernel off the diagonal is the absolutely convergent
-kernel `K_a(x, y) = ∫ exp(2πi ⟪ζ, x - y⟫) a(x, 2πζ) dζ`. -/
+/-- The off-diagonal kernel is additive in the symbol. -/
+@[simp]
+theorem offDiagonalKernel_add (a b : Symbol n V W m) (x y : CoordinateSpace n) :
+    offDiagonalKernel (a + b) x y = offDiagonalKernel a x y + offDiagonalKernel b x y := by
+  have h := sub_two_mul_floor_lt m n
+  simp only [offDiagonalKernel, map_add, coefficient_add, ← smul_add]
+  rw [quantizationKernel_add (integrable_coefficient _ h x) (integrable_coefficient _ h x)]
+
+/-- The off-diagonal kernel is homogeneous in the symbol. -/
+@[simp]
+theorem offDiagonalKernel_smul (c : ℂ) (a : Symbol n V W m) (x y : CoordinateSpace n) :
+    offDiagonalKernel (c • a) x y = c • offDiagonalKernel a x y := by
+  simp only [offDiagonalKernel, map_smul, coefficient_smul, quantizationKernel_smul]
+  exact smul_comm _ _ _
+
+/-- The off-diagonal kernel of the zero symbol vanishes. -/
+@[simp]
+theorem offDiagonalKernel_zero (x y : CoordinateSpace n) :
+    offDiagonalKernel (0 : Symbol n V W m) x y = 0 := by
+  simpa using offDiagonalKernel_smul 0 (0 : Symbol n V W m) x y
+
+/-- For a symbol of order `m < -n`, the off-diagonal kernel is the absolutely convergent kernel
+`TauCeti.quantizationKernel`. -/
 theorem offDiagonalKernel_eq_quantizationKernel (a : Symbol n V W m) (hm : m < -n)
     {x y : CoordinateSpace n} (hxy : x ≠ y) :
     offDiagonalKernel a x y = quantizationKernel a.coefficient x y := by
   rw [offDiagonalKernel_eq a (N := 0) (by simpa using hm) hxy]
   simp
 
-/-- **Pseudodifferential kernels are smooth off the diagonal.** The kernel of a symbol of any order
-is smooth on `{(x, y) | x ≠ y}`. -/
-theorem contDiffOn_offDiagonalKernel (a : Symbol n V W m) :
-    ContDiffOn ℝ ∞ (Function.uncurry (offDiagonalKernel a)) {p | p.1 ≠ p.2} := by
-  refine contDiffOn_infty.2 fun k ↦ ?_
-  -- Use `N` Laplacians, with `m - 2N + k < -n`, so that the kernel of `Δ_ξ^N a` is `C^k`.
-  have hN := sub_two_mul_floor_add_one_lt n (m + k)
-  set N := ⌊(m + k + n) / 2⌋₊ + 1
-  have h₁ := (contDiffOn_inv_neg_norm_sub_sq_pow (n := n) N).of_le (mod_cast le_top : (k : ℕ∞) ≤ ∞)
-  have h₂ := ((iteratedFrequencyLaplacian N a).contDiff_quantizationKernel k
-    (by linarith)).contDiffOn (s := {p | p.1 ≠ p.2})
-  exact (h₁.smul h₂).congr fun p hp ↦ offDiagonalKernel_eq a (by linarith) hp
-
-/-- **Decay off the diagonal.** For every `N` with `m - 2N < -n` and `x ≠ y`,
-`‖K_a(x, y)‖ ≤ ‖x - y‖⁻²ᴺ (2π)⁻ⁿ ∫ ‖Δ_ξ^N a(x, ξ)‖ dξ`. In particular, for fixed `x` the kernel
-decays faster than every power of `‖x - y‖`. -/
-theorem norm_offDiagonalKernel_le (a : Symbol n V W m) {N : ℕ} (hN : m - 2 * N < -n)
-    {x y : CoordinateSpace n} (hxy : x ≠ y) :
-    ‖offDiagonalKernel a x y‖ ≤ (‖x - y‖ ^ (2 * N))⁻¹ *
-      (((2 * π) ^ n)⁻¹ * ∫ ξ, ‖(iteratedFrequencyLaplacian N a).coefficient (x, ξ)‖) := by
-  rw [offDiagonalKernel_eq a hN hxy]
-  simp only [norm_smul, norm_inv, norm_pow, norm_neg, norm_norm, ← pow_mul]
-  gcongr
-  simpa using norm_quantizationKernel_le (iteratedFrequencyLaplacian N a).coefficient x y
-
-/-- **Kernel representation off the diagonal.** For a symbol `a` of any order, a compactly
-supported Schwartz function `u` and a point `x` outside the support of `u`,
-`Op(a) u (x) = ∫ K_a(x, y) u(y) dy`. Thus `offDiagonalKernel a` is the distribution kernel of
-`Op(a)` away from the diagonal. -/
+/-- **Kernel representation off the diagonal.** If a compactly supported Schwartz function `u`
+vanishes near `x`, then `Op(a) u (x) = ∫ K(x, y) u(y) dy` with the off-diagonal kernel `K`. -/
 theorem quantizeSchwartzValue_eq_integral_offDiagonalKernel [CompleteSpace V] [CompleteSpace W]
     (a : Symbol n V W m) {u : 𝓢(CoordinateSpace n, V)} (hu : HasCompactSupport u)
     {x : CoordinateSpace n} (hx : x ∉ tsupport u) :
     quantizeSchwartzValue a.coefficient u x = ∫ y, offDiagonalKernel a x y (u y) := by
-  have hN := sub_two_mul_floor_add_one_lt n m
   set N := ⌊(m + n) / 2⌋₊ + 1
-  have hux : ∀ y, y ∉ tsupport u → u y = 0 := fun y hy ↦ image_eq_zero_of_notMem_tsupport hy
-  -- `w = (-‖x - ·‖²)⁻ᴺ u` is smooth, since `u` vanishes near `x`, and compactly supported.
-  set g : CoordinateSpace n → ℝ := fun y ↦ ((-‖x - y‖ ^ 2) ^ N)⁻¹
-  have hg : ContDiffOn ℝ ∞ g {y | y ≠ x} :=
-    (contDiffOn_inv_neg_norm_sub_sq_pow (n := n) N).comp (s := {y | y ≠ x})
-      (f := fun y ↦ (x, y)) (contDiff_const.prodMk contDiff_id).contDiffOn fun _ hy ↦ Ne.symm hy
-  have hw_smooth : ContDiff ℝ ∞ fun y ↦ g y • u y := by
+  -- Divide `u` by `‖x - y‖ ^ (2N)`; the quotient `w` is smooth since `u` vanishes near `x`.
+  set g : CoordinateSpace n → ℝ := fun y ↦ (‖x - y‖ ^ (2 * N))⁻¹
+  have hwc : ContDiff ℝ ∞ (fun y ↦ g y • u y) := by
     refine contDiff_iff_contDiffAt.2 fun y ↦ ?_
     by_cases hy : y ∈ tsupport u
-    · have hyx : y ≠ x := fun h ↦ hx (h ▸ hy)
-      exact (hg.contDiffAt ((isOpen_ne_fun continuous_id continuous_const).mem_nhds hyx)).smul
-        (u.smooth ⊤).contDiffAt
+    · have hxy : x - y ≠ 0 := sub_ne_zero.2 fun h ↦ hx (h ▸ hy)
+      have hd : ContDiffAt ℝ ∞ (fun y : CoordinateSpace n ↦ ‖x - y‖ ^ (2 * N)) y :=
+        (Function.hasTemperateGrowth_norm_sub_pow x N).1.contDiffAt
+      exact (hd.inv (pow_ne_zero _ (norm_ne_zero_iff.2 hxy))).smul (u.smooth ⊤).contDiffAt
     · refine (contDiffAt_const (c := (0 : V))).congr_of_eventuallyEq ?_
-      filter_upwards [(isClosed_tsupport u).isOpen_compl.mem_nhds hy] with z hz
-      rw [hux z hz, smul_zero]
-  set w := (hu.smul_left (f := g)).toSchwartzMap hw_smooth
-  have hw (y : CoordinateSpace n) : w y = g y • u y :=
-    HasCompactSupport.toSchwartzMap_toFun _ _ y
-  -- `(-‖x - ·‖²)ᴺ w = u`.
-  have hwu : SchwartzMap.smulLeftCLM V (fun y : CoordinateSpace n ↦ (-‖x - y‖ ^ 2) ^ N) w = u := by
+      filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hy] with z hz
+      simp [hz]
+  have hws : HasCompactSupport (fun y ↦ g y • u y) := hu.smul_left
+  set w := hws.toSchwartzMap hwc
+  have hu_eq : SchwartzMap.smulLeftCLM V (fun y ↦ ‖x - y‖ ^ (2 * N)) w = u := by
     ext y
-    have htg : (fun y : CoordinateSpace n ↦ (-‖x - y‖ ^ 2) ^ N).HasTemperateGrowth := by fun_prop
-    rw [SchwartzMap.smulLeftCLM_apply_apply htg, hw, smul_smul]
+    rw [SchwartzMap.smulLeftCLM_apply_apply (Function.hasTemperateGrowth_norm_sub_pow x N),
+      HasCompactSupport.toSchwartzMap_toFun, smul_smul]
     by_cases hy : y = x
-    · rw [hy, hux x hx, smul_zero]
-    · rw [mul_inv_cancel₀ (neg_norm_sub_sq_pow_ne_zero (Ne.symm hy) N), one_smul]
-  conv_lhs => rw [← hwu]
-  rw [← quantizeSchwartzValue_iteratedFrequencyLaplacian,
+    · subst hy
+      simp [image_eq_zero_of_notMem_tsupport hx]
+    · rw [mul_inv_cancel₀ (pow_ne_zero _ (norm_ne_zero_iff.2 (sub_ne_zero.2 (Ne.symm hy)))),
+        one_smul]
+  conv_lhs => rw [← hu_eq]
+  rw [quantizeSchwartzValue_smulLeftCLM_norm_sub_pow,
     quantizeSchwartzValue_eq_integral_quantizationKernel
-      ((iteratedFrequencyLaplacian N a).integrable_coefficient hN x)]
-  refine integral_congr_ae (ae_of_all _ fun y ↦ ?_)
-  by_cases hy : y = x
-  · simp only [hw, hy, hux x hx, smul_zero, map_zero]
-  · dsimp only
-    rw [offDiagonalKernel_eq a hN (Ne.symm hy), hw, smul_apply,
-      ContinuousLinearMap.map_smul_of_tower]
+      ((frequencyLaplacianPow N a).integrable_coefficient (sub_two_mul_floor_lt m n) x),
+    ← integral_smul]
+  congr 1 with y
+  rw [offDiagonalKernel, smul_apply, HasCompactSupport.toSchwartzMap_toFun,
+    ContinuousLinearMap.map_smul_of_tower, smul_smul, div_eq_mul_inv]
 
-/-- The kernel off the diagonal is additive in the symbol. -/
-@[simp]
-theorem offDiagonalKernel_add (a b : Symbol n V W m) (x y : CoordinateSpace n) :
-    offDiagonalKernel (a + b) x y = offDiagonalKernel a x y + offDiagonalKernel b x y := by
-  have h := sub_two_mul_floor_add_one_lt n m
-  simp only [offDiagonalKernel_def, map_add, coefficient_add, ← smul_add]
-  rw [quantizationKernel_add (integrable_coefficient _ h x) (integrable_coefficient _ h x)]
+/-- **Continuity off the diagonal.** The off-diagonal kernel is continuous on `{(x, y) | x ≠ y}`. -/
+theorem continuousOn_offDiagonalKernel (a : Symbol n V W m) :
+    ContinuousOn (Function.uncurry (offDiagonalKernel a)) {p | p.1 ≠ p.2} := by
+  set N := ⌊(m + n) / 2⌋₊ + 1
+  have hK := (frequencyLaplacianPow N a).continuous_quantizationKernel (sub_two_mul_floor_lt m n)
+  have hs : ContinuousOn (fun p : CoordinateSpace n × CoordinateSpace n ↦
+      (-1) ^ N / ‖p.1 - p.2‖ ^ (2 * N)) {p | p.1 ≠ p.2} :=
+    continuousOn_const.div (by fun_prop) fun p hp ↦
+      pow_ne_zero _ (norm_ne_zero_iff.2 (sub_ne_zero.2 hp))
+  exact hs.smul hK.continuousOn
 
-/-- The kernel off the diagonal is homogeneous in the symbol. -/
-@[simp]
-theorem offDiagonalKernel_smul (c : ℂ) (a : Symbol n V W m) (x y : CoordinateSpace n) :
-    offDiagonalKernel (c • a) x y = c • offDiagonalKernel a x y := by
-  simp only [offDiagonalKernel_def, map_smul, coefficient_smul, quantizationKernel_smul]
-  exact smul_comm _ _ _
+/-- The multiplier `(x, y) ↦ (-1)^N ‖x - y‖^(-2N)` is smooth off the diagonal. -/
+private lemma contDiffOn_div_norm_sub_pow (N : ℕ) :
+    ContDiffOn ℝ ∞ (fun p : CoordinateSpace n × CoordinateSpace n ↦
+      (-1) ^ N / ‖p.1 - p.2‖ ^ (2 * N)) {p | p.1 ≠ p.2} := by
+  simp_rw [pow_mul]
+  exact contDiffOn_const.div
+    (((contDiff_norm_sq ℝ).comp (contDiff_fst.sub contDiff_snd)).pow N).contDiffOn
+    fun p hp ↦ pow_ne_zero _ (pow_ne_zero _ (norm_ne_zero_iff.2 (sub_ne_zero.2 hp)))
 
-/-- The kernel off the diagonal takes the conventional value `0` on the diagonal. -/
-@[simp]
-theorem offDiagonalKernel_self (a : Symbol n V W m) (x : CoordinateSpace n) :
-    offDiagonalKernel a x x = 0 := by
-  simp [offDiagonalKernel_def]
+/-- **Pseudodifferential kernels are smooth off the diagonal.** The off-diagonal kernel of a
+symbol of any order is smooth on `{(x, y) | x ≠ y}`. -/
+theorem contDiffOn_offDiagonalKernel (a : Symbol n V W m) :
+    ContDiffOn ℝ ∞ (Function.uncurry (offDiagonalKernel a)) {p | p.1 ≠ p.2} := by
+  refine contDiffOn_infty.2 fun k ↦ ?_
+  -- Use `N` Laplacians, with `m - 2N + k < -n`, so that the kernel of `Δ_ξ^N a` is `C^k`.
+  have hN := sub_two_mul_floor_lt (m + k) n
+  set N := ⌊(m + k + n) / 2⌋₊ + 1
+  have h₁ := (contDiffOn_div_norm_sub_pow (n := n) N).of_le (mod_cast le_top : (k : ℕ∞) ≤ ∞)
+  have h₂ := ((frequencyLaplacianPow N a).contDiff_quantizationKernel k
+    (by linarith)).contDiffOn (s := {p | p.1 ≠ p.2})
+  exact (h₁.smul h₂).congr fun p hp ↦ offDiagonalKernel_eq a (by linarith) hp
 
-/-- The kernel of the zero symbol vanishes. -/
-@[simp]
-theorem offDiagonalKernel_zero (x y : CoordinateSpace n) :
-    offDiagonalKernel (0 : Symbol n V W m) x y = 0 := by
-  simpa using offDiagonalKernel_smul 0 (0 : Symbol n V W m) x y
+/-- **Decay off the diagonal.** For every `N` with `m - 2N < -n` and every compact set `K` of
+positions, `‖K(x, y)‖ ≤ C ‖x - y‖^(-2N)` for `x ∈ K` and all `y`. -/
+theorem exists_norm_offDiagonalKernel_le (a : Symbol n V W m) {K : Set (CoordinateSpace n)}
+    (hK : IsCompact K) {N : ℕ} (hN : m - 2 * N < -n) :
+    ∃ C, ∀ x ∈ K, ∀ y, ‖offDiagonalKernel a x y‖ ≤ C / ‖x - y‖ ^ (2 * N) := by
+  set b := frequencyLaplacianPow N a
+  obtain ⟨C, hC0, hC⟩ := b.exists_bound_coefficient K hK
+  have hweight : Integrable (fun ξ : CoordinateSpace n ↦ (1 + ‖ξ‖ ^ 2) ^ ((m - 2 * N) / 2)) := by
+    have h := integrable_rpow_neg_one_add_norm_sq (μ := (volume : Measure (CoordinateSpace n)))
+      (r := -(m - 2 * N)) (by simp only [finrank_euclideanSpace_fin]; linarith)
+    simpa only [neg_neg, neg_div] using h
+  set I := ∫ ξ : CoordinateSpace n, (1 + ‖ξ‖ ^ 2) ^ ((m - 2 * N) / 2)
+  refine ⟨((2 * π) ^ n)⁻¹ * (C * I), fun x hx y ↦ ?_⟩
+  have hD : 0 ≤ ((2 * π) ^ n)⁻¹ * (C * I) :=
+    mul_nonneg (by positivity) (mul_nonneg hC0 (integral_nonneg fun _ ↦ by positivity))
+  rcases eq_or_ne x y with rfl | hxy
+  · rw [offDiagonalKernel_self, norm_zero]
+    exact div_nonneg hD (by positivity)
+  have hint : ∫ ξ, ‖b.coefficient (x, ξ)‖ ≤ C * I := by
+    rw [← integral_const_mul]
+    exact integral_mono (b.integrable_coefficient hN x).norm (hweight.const_mul C) (hC x hx)
+  have hk := norm_quantizationKernel_le b.coefficient x y
+  rw [finrank_euclideanSpace_fin] at hk
+  rw [offDiagonalKernel_eq a hN hxy]
+  simp only [norm_smul, norm_div, norm_pow, norm_neg, norm_one, one_pow, norm_norm,
+    one_div_mul_eq_div]
+  gcongr
+  exact hk.trans (mul_le_mul_of_nonneg_left hint (by positivity))
 
 end Symbol
 

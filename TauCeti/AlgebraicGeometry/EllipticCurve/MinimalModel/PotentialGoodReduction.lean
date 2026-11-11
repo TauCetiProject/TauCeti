@@ -67,6 +67,8 @@ discrete valuation ring of the extension dominating `R`.
   a change of variables.
 * `WeierstrassCurve.HasGoodReduction.isInteger_j`: a minimal equation with good reduction has
   integral `j`-invariant.
+* `WeierstrassCurve.HasPotentialGoodReduction.isElliptic`: a curve with potential good reduction
+  is elliptic.
 * `WeierstrassCurve.HasPotentialGoodReduction.isInteger_j`: a curve with potential good reduction
   has integral `j`-invariant.
 * `WeierstrassCurve.HasMultiplicativeReduction.not_isInteger_j` and
@@ -150,6 +152,17 @@ theorem hasPotentialGoodReduction_smul (D : VariableChange K) (W : WeierstrassCu
   rintro D W ⟨L, _, _, _, S, _, _, _, _, _, _, _, hRS, hW⟩
   refine .intro R L S hRS ?_
   rwa [baseChange, ← map_variableChange, hasGoodReduction_minimal_smul_iff]
+
+/-- **A curve with potential good reduction is elliptic**: its discriminant becomes a unit after
+the finite extension at which a minimal equation has good reduction, so it is nonzero. -/
+theorem HasPotentialGoodReduction.isElliptic {W : WeierstrassCurve K}
+    (h : W.HasPotentialGoodReduction R) : W.IsElliptic := by
+  obtain ⟨L, _, _, _, S, _, _, _, _, _, _, _, _, hW⟩ := hasPotentialGoodReduction_iff.1 h
+  obtain ⟨C, hC⟩ := (W.baseChange L).exists_smul_eq_minimal S
+  have h₁ : (C • W.baseChange L).IsElliptic := hC ▸ hW.isElliptic
+  have h₂ : (W.baseChange L).IsElliptic := by
+    simpa using (inferInstance : (C⁻¹ • C • W.baseChange L).IsElliptic)
+  exact ⟨isUnit_iff_ne_zero.2 fun h0 ↦ h₂.isUnit.ne_zero (by simp [baseChange, h0])⟩
 
 variable [IsDomain R] [IsDiscreteValuationRing R] [IsFractionRing R K]
 
@@ -336,8 +349,6 @@ private theorem hasPotentialGoodReduction_of_smul_baseChange_eq {W : Weierstrass
         (W'.map (f : L →+* E.extensionField)).HasGoodReduction E.localRing) :
     W.HasPotentialGoodReduction R := by
   -- a discrete valuation ring `S` dominating `R`, with fraction field `K`-isomorphic to `L`
-  let _ : Algebra R L := ((algebraMap K L).comp (algebraMap R K)).toAlgebra
-  have : IsScalarTower R K L := .of_algebraMap_eq' rfl
   obtain ⟨E, ⟨e⟩⟩ := TauCeti.FiniteDVRExtension.exists_algEquiv_extensionField R K L
   set L' := E.extensionField
   set S := E.localRing

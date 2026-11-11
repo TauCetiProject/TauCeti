@@ -1197,11 +1197,55 @@ private theorem toReal_eLpNormEssSup_le_half_add {w : EuclideanSpace ℝ ι → 
   rw [← hZY]
   nlinarith
 
+/-- **A positive power of the radius forces vanishing.** If `w ≥ 0` is `L²` on `B(x₀, R)` and
+`w ≤ D s^e ‖w‖_{L²(B(y, s))}` a.e. on `B(y, s/2)` for all `B(y, s) ⊆ B(x₀, R)`, `0 < e`, then
+`w = 0` a.e. on `B(x₀, R/2)`. -/
+private theorem ae_eq_zero_of_forall_ball_le_mul_rpow {e : ℝ} (he : 0 < e) (D : ℝ)
+    {w : EuclideanSpace ℝ ι → ℝ} {x₀ : EuclideanSpace ℝ ι} {R : ℝ}
+    (hw0 : ∀ x, 0 ≤ w x) (hint : IntegrableOn (fun x => w x ^ 2) (Metric.ball x₀ R) mu)
+    (H : ∀ y s, 0 < s → Metric.ball y s ⊆ Metric.ball x₀ R →
+      ∀ᵐ x ∂mu.restrict (Metric.ball y (s / 2)),
+        w x ≤ D * s ^ e * √(∫ x in Metric.ball y s, w x ^ 2 ∂mu)) :
+    ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)), w x = 0 := by
+  rcases le_or_gt R 0 with hR | hR
+  · simp [Metric.ball_eq_empty.2 (by linarith : R / 2 ≤ 0)]
+  set L := √(∫ x in Metric.ball x₀ R, w x ^ 2 ∂mu)
+  set s : ℕ → ℝ := fun k => R / (2 * ((k : ℝ) + 1)) with hs_def
+  have hs0 : ∀ k, 0 < s k := fun k => by positivity
+  have hsR : ∀ k, s k ≤ R / 2 := fun k =>
+    div_le_div_of_nonneg_left hR.le two_pos (by linarith [Nat.cast_nonneg (α := ℝ) k])
+  have hk (k : ℕ) : ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)), w x ≤ max D 0 * s k ^ e * L := by
+    obtain ⟨t, hts, htc, hcov⟩ := countable_cover_nhdsWithin
+      (s := Metric.ball x₀ (R / 2)) (f := fun y => Metric.ball y (s k / 2))
+      fun y _ => nhdsWithin_le_nhds (Metric.ball_mem_nhds y (by linarith [hs0 k]))
+    refine ae_restrict_of_ae_restrict_of_subset hcov
+      ((ae_restrict_biUnion_iff _ htc _).2 fun y hy => ?_)
+    have hsub : Metric.ball y (s k) ⊆ Metric.ball x₀ R := fun z hz => by
+      rw [Metric.mem_ball] at hz ⊢
+      have := Metric.mem_ball.1 (hts hy)
+      linarith [dist_triangle z y x₀, hsR k]
+    filter_upwards [H y (s k) (hs0 k) hsub] with x hx
+    refine hx.trans ?_
+    have hI := Real.sqrt_le_sqrt (setIntegral_mono_set hint
+      (Eventually.of_forall fun x => by positivity) (Eventually.of_forall hsub))
+    exact mul_le_mul (mul_le_mul_of_nonneg_right (le_max_left _ _)
+      (Real.rpow_nonneg (hs0 k).le _)) hI (Real.sqrt_nonneg _)
+      (mul_nonneg (le_max_right _ _) (Real.rpow_nonneg (hs0 k).le _))
+  have hs : Tendsto s atTop (𝓝 0) := tendsto_const_nhds.div_atTop
+    ((tendsto_atTop_add_const_right _ 1 tendsto_natCast_atTop_atTop).const_mul_atTop two_pos)
+  have hpow : Tendsto (fun k => s k ^ e) atTop (𝓝 0) := by
+    simpa [Function.comp_def, Real.zero_rpow he.ne'] using
+      (Real.continuousAt_rpow_const 0 e (Or.inr he.le)).tendsto.comp hs
+  have htend : Tendsto (fun k => max D 0 * s k ^ e * L) atTop (𝓝 0) := by
+    simpa using (hpow.const_mul (max D 0)).mul_const L
+  filter_upwards [ae_all_iff.2 hk] with x hx
+  exact le_antisymm (ge_of_tendsto' htend hx) (hw0 x)
+
 section L2ToLp
 
 variable [IsFiniteMeasureOnCompacts mu]
 
-/-- **`Lᵖ` local bounds from `L²` local bounds.** Fix `e ≤ 0`, `D` and `0 < p ≤ 2`. There is
+/-- **`Lᵖ` local bounds from `L²` local bounds.** Fix `e`, `D` and `0 < p ≤ 2`. There is
 `C > 0`, depending only on these, such that the following holds. Let `w ≥ 0` be square
 integrable on `B(x₀, R)` and suppose that on every ball `B(y, s) ⊆ B(x₀, R)`,
 
@@ -1212,7 +1256,7 @@ Then `w ≤ C R^{2e/p} ‖w‖_{Lᵖ(B(x₀, R))}` almost everywhere on `B(x₀,
 This is how local boundedness of subsolutions, proved by De Giorgi's or Moser's iteration with
 the `L²` norm on the right, is upgraded to every `Lᵖ` norm with `0 < p < 2`: the scaling
 exponent `e = -n/2` of the `L²` bound becomes `-n/p`. -/
-theorem exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball {e : ℝ} (he : e ≤ 0) (D : ℝ)
+theorem exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball (e : ℝ) (D : ℝ)
     {p : ℝ} (hp : 0 < p) (hp2 : p ≤ 2) :
     ∃ C : ℝ, 0 < C ∧ ∀ {w : EuclideanSpace ℝ ι → ℝ} {x₀ : EuclideanSpace ℝ ι} {R : ℝ},
       (∀ x, 0 ≤ w x) → MemLp w 2 (mu.restrict (Metric.ball x₀ R)) →
@@ -1221,6 +1265,14 @@ theorem exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball {e : ℝ} (he 
           w x ≤ D * s ^ e * √(∫ x in Metric.ball y s, w x ^ 2 ∂mu)) →
       ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)),
         w x ≤ C * R ^ (2 * e / p) * (∫ x in Metric.ball x₀ R, w x ^ p ∂mu) ^ p⁻¹ := by
+  refine (le_or_gt e 0).symm.elim (fun he => ⟨1, one_pos, fun {w x₀ R} hw0 hw2 H => ?_⟩)
+    fun he => ?_
+  · rcases le_or_gt R 0 with hR | hR
+    · simp [Metric.ball_eq_empty.2 (by linarith : R / 2 ≤ 0)]
+    filter_upwards [ae_eq_zero_of_forall_ball_le_mul_rpow he D hw0
+      hw2.integrable_sq H] with x hx
+    exact hx.le.trans (mul_nonneg (by positivity)
+      (Real.rpow_nonneg (integral_nonneg fun x => Real.rpow_nonneg (hw0 x) p) _))
   obtain ⟨C₀, hC₀, habs⟩ := exists_le_mul_mul_rpow_add_of_le_mul_add (θ := 1 / 2) (by norm_num)
     (by norm_num) (-(2 * e / p))
   set D' := max D 1
@@ -1278,8 +1330,8 @@ variable [mu.IsAddHaarMeasure]
 /-- Transfer of an `L²` local bound for `u` above the level `k` to every `Lᵖ` norm with
 `0 < p ≤ 2`, through `exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball` applied to
 `(u - k)⁺`. -/
-private theorem exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_forall_ball {e : ℝ}
-    (he : e ≤ 0) (D : ℝ) (hD : 0 ≤ D) {p : ℝ} (hp : 0 < p) (hp2 : p ≤ 2) :
+private theorem exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_forall_ball (e : ℝ)
+    (D : ℝ) (hD : 0 ≤ D) {p : ℝ} (hp : 0 < p) (hp2 : p ≤ 2) :
     ∃ C : ℝ, 0 < C ∧ ∀ {Omega : Opens (EuclideanSpace ℝ ι)} {u : W1p mu Omega 2} {k : ℝ}
       {x₀ : EuclideanSpace ℝ ι} {R : ℝ},
       Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
@@ -1291,7 +1343,7 @@ private theorem exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_forall_b
         W1p.value u x ≤ k + C * R ^ (2 * e / p) *
           (∫ x in Metric.ball x₀ R, max (W1p.value u x - k) 0 ^ p ∂mu) ^ p⁻¹ := by
   obtain ⟨C, hC, hmain⟩ :=
-    exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball (mu := mu) he D hp hp2
+    exists_ae_le_mul_rpow_mul_setIntegral_rpow_of_forall_ball (mu := mu) e D hp hp2
   refine ⟨C, hC, fun {Omega u k x₀ R} hball hu => ?_⟩
   have : IsFiniteMeasure (mu.restrict (Metric.ball x₀ R)) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
@@ -1337,12 +1389,11 @@ theorem exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_forall_eLpNorm_l
   obtain ⟨D, hD, hbound⟩ :=
     exists_ae_value_le_add_mul_rpow_mul_rpow_mul_sqrt_setIntegral_of_forall_eLpNorm_le (mu := mu)
       (lam := lam) (Lam := Lam) hq
-  have he : -(1 - 2 / q.toReal)⁻¹ ≤ 0 :=
-    neg_nonpos.2 (inv_nonneg.2 (one_sub_two_div_toReal_nonneg hq.le))
   -- Enlarge `S` to the positive constant `S + 1`.
   obtain ⟨C, hC, hmain⟩ :=
-    exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_forall_ball (mu := mu) he
-      (D * ((S + 1 : ℝ≥0) : ℝ) ^ (1 - 2 / q.toReal)⁻¹) (by positivity) hp hp2
+    exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_forall_ball (mu := mu)
+      (-(1 - 2 / q.toReal)⁻¹) (D * ((S + 1 : ℝ≥0) : ℝ) ^ (1 - 2 / q.toReal)⁻¹)
+      (by positivity) hp hp2
   refine ⟨C, hC, fun {Omega a u k x₀ R} h ha hS hu hball => ?_⟩
   have := hmain (u := u) (k := k) hball fun y s hs hsub =>
     hbound (S := S + 1) (by positivity) h ha hu hs hsub fun v hv =>
@@ -1375,12 +1426,9 @@ theorem exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow [Nonempty ι] {p : 
           (∫ x in Metric.ball x₀ R, max (W1p.value u x - k) 0 ^ p ∂mu) ^ p⁻¹ := by
   obtain ⟨D, hD, hbound⟩ :=
     exists_ae_value_le_add_mul_rpow_mul_sqrt_setIntegral (mu := mu) (lam := lam) (Lam := Lam)
-  have he : -(Fintype.card ι : ℝ) / 2 ≤ 0 := by
-    have := Nat.cast_nonneg (α := ℝ) (Fintype.card ι)
-    linarith
   obtain ⟨C, hC, hmain⟩ :=
-    exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_forall_ball (mu := mu) he D hD.le
-      hp hp2
+    exists_ae_value_le_add_mul_rpow_mul_setIntegral_rpow_of_forall_ball (mu := mu)
+      (-(Fintype.card ι : ℝ) / 2) D hD.le hp hp2
   refine ⟨C, hC, fun {Omega a u k x₀ R} h ha hu hball => ?_⟩
   have := hmain (u := u) (k := k) hball fun y s hs hsub => hbound h ha hu hs hsub
   rwa [show 2 * (-(Fintype.card ι : ℝ) / 2) / p = -(Fintype.card ι : ℝ) / p by ring] at this

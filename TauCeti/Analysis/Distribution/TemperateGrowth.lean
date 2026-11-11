@@ -34,11 +34,9 @@ A measure of temperate growth is finite on compact sets.
   give temperate growth.
 * `Function.hasTemperateGrowth_one_add_norm_smul_sq_rpow`: the rescaled Bessel potential has
   temperate growth.
+* `Function.hasTemperateGrowth_norm_sub_pow`: `y ↦ ‖x - y‖ ^ (2N)` has temperate growth.
 * `Function.HasTemperateGrowth.fderiv`: `Df` has temperate growth.
 * `Function.HasTemperateGrowth.fderiv_apply`: `x ↦ Df(x) v` has temperate growth.
-* `Function.HasTemperateGrowth.norm_sq`: `x ↦ ‖f x‖ ^ 2` has temperate growth for `f` of
-  temperate growth with values in a real inner product space, so that `fun_prop` handles
-  multipliers such as `y ↦ (-‖x - y‖ ^ 2) ^ N`.
 * `MeasureTheory.Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts`: a measure of temperate
   growth is finite on compact sets.
 -/
@@ -91,13 +89,6 @@ theorem fderiv_apply (hf : f.HasTemperateGrowth) (v : E) :
     (fun x ↦ _root_.fderiv ℝ f x v).HasTemperateGrowth :=
   (ContinuousLinearMap.apply ℝ F v).hasTemperateGrowth.comp hf.fderiv
 
-/-- The squared norm of a function of temperate growth with values in a real inner product space
-has temperate growth. -/
-@[fun_prop]
-theorem norm_sq {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H] {g : E → H}
-    (hg : g.HasTemperateGrowth) : (fun x ↦ ‖g x‖ ^ 2).HasTemperateGrowth :=
-  (hasTemperateGrowth_norm_sq H).comp hg
-
 end Function.HasTemperateGrowth
 
 namespace Function
@@ -109,6 +100,15 @@ variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H]
 theorem hasTemperateGrowth_one_add_norm_smul_sq_rpow (c r : ℝ) :
     (fun x : H ↦ (1 + ‖c • x‖ ^ 2) ^ r).HasTemperateGrowth :=
   (hasTemperateGrowth_one_add_norm_sq_rpow H r).comp (by fun_prop)
+
+/-- An even power `y ↦ ‖x - y‖ ^ (2N)` of the distance to a point has temperate growth. -/
+theorem hasTemperateGrowth_norm_sub_pow (x : H) (N : ℕ) :
+    (fun y : H ↦ ‖x - y‖ ^ (2 * N)).HasTemperateGrowth := by
+  have h : (fun y : H ↦ ‖x - y‖ ^ (2 * N)) = ((fun z : H ↦ ‖z‖ ^ 2) ∘ fun y ↦ x - y) ^ N := by
+    funext y
+    simp [pow_mul]
+  rw [h]
+  exact ((hasTemperateGrowth_norm_sq H).comp (by fun_prop)).pow N
 
 end Function
 

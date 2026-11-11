@@ -48,6 +48,7 @@ namespace ProbabilityTheory.Kernel
 
 variable {S : Type*} [MeasurableSpace S] [Finite S] [MeasurableSingletonClass S]
 
+omit [MeasurableSingletonClass S] in
 private theorem exists_pow_apply_isClosedSet_communicatingClass_pos (κ : Kernel S S)
     (x : S) :
     ∃ n, 0 < (κ ^ n) x {y | κ.IsClosedSet (κ.communicatingClass y)} := by
